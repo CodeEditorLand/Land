@@ -1,1 +1,9 @@
-import{AbstractOneDataSystemAppender as s}from"../common/1dsAppender.js";class h extends s{constructor(e,t,r,n){super(e,t,r,n),fetch(this.endPointHealthUrl,{method:"GET"}).catch(a=>{this._aiCoreOrKey=void 0})}}export{h as OneDataSystemWebAppender};
+import { AbstractOneDataSystemAppender } from '../common/1dsAppender.js';
+export class OneDataSystemWebAppender extends AbstractOneDataSystemAppender {
+    constructor(isInternalTelemetry, eventPrefix, defaultData, iKeyOrClientFactory) {
+        super(isInternalTelemetry, eventPrefix, defaultData, iKeyOrClientFactory);
+        fetch(this.endPointHealthUrl, { method: 'GET' }).catch(err => {
+            this._aiCoreOrKey = undefined;
+        });
+    }
+}

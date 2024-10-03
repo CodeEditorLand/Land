@@ -1,1 +1,47 @@
-import"./media/gettingStarted.css";import{localize as r}from"../../../../nls.js";import{EditorInput as o}from"../../../common/editor/editorInput.js";import{URI as i}from"../../../../base/common/uri.js";import{Schemas as s}from"../../../../base/common/network.js";import"../../../common/editor.js";import"../../../../platform/editor/common/editor.js";const d="workbench.editors.gettingStartedInput";class t extends o{static ID=d;static RESOURCE=i.from({scheme:s.walkThrough,authority:"vscode_getting_started_page"});get typeId(){return t.ID}get editorId(){return this.typeId}toUntyped(){return{resource:t.RESOURCE,options:{override:t.ID,pinned:!1}}}get resource(){return t.RESOURCE}matches(e){return super.matches(e)?!0:e instanceof t?e.selectedCategory===this.selectedCategory:!1}constructor(e){super(),this.selectedCategory=e.selectedCategory,this.selectedStep=e.selectedStep,this.showTelemetryNotice=!!e.showTelemetryNotice,this.showWelcome=e.showWelcome??!0}getName(){return r("getStarted","Welcome")}selectedCategory;selectedStep;showTelemetryNotice;showWelcome}export{t as GettingStartedInput,d as gettingStartedInputTypeId};
+import './media/gettingStarted.css';
+import { localize } from '../../../../nls.js';
+import { EditorInput } from '../../../common/editor/editorInput.js';
+import { URI } from '../../../../base/common/uri.js';
+import { Schemas } from '../../../../base/common/network.js';
+export const gettingStartedInputTypeId = 'workbench.editors.gettingStartedInput';
+export class GettingStartedInput extends EditorInput {
+    static { this.ID = gettingStartedInputTypeId; }
+    static { this.RESOURCE = URI.from({ scheme: Schemas.walkThrough, authority: 'vscode_getting_started_page' }); }
+    get typeId() {
+        return GettingStartedInput.ID;
+    }
+    get editorId() {
+        return this.typeId;
+    }
+    toUntyped() {
+        return {
+            resource: GettingStartedInput.RESOURCE,
+            options: {
+                override: GettingStartedInput.ID,
+                pinned: false
+            }
+        };
+    }
+    get resource() {
+        return GettingStartedInput.RESOURCE;
+    }
+    matches(other) {
+        if (super.matches(other)) {
+            return true;
+        }
+        if (other instanceof GettingStartedInput) {
+            return other.selectedCategory === this.selectedCategory;
+        }
+        return false;
+    }
+    constructor(options) {
+        super();
+        this.selectedCategory = options.selectedCategory;
+        this.selectedStep = options.selectedStep;
+        this.showTelemetryNotice = !!options.showTelemetryNotice;
+        this.showWelcome = options.showWelcome ?? true;
+    }
+    getName() {
+        return localize('getStarted', "Welcome");
+    }
+}

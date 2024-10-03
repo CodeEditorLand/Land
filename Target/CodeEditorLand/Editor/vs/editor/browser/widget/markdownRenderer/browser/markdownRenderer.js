@@ -1,1 +1,121 @@
-var m=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var l=(i,e,o,n)=>{for(var t=n>1?void 0:n?f(e,o):e,r=i.length-1,s;r>=0;r--)(s=i[r])&&(t=(n?s(e,o,t):s(t))||t);return n&&t&&m(e,o,t),t},p=(i,e)=>(o,n)=>e(o,n,i);import{renderMarkdown as g}from"../../../../../base/browser/markdownRenderer.js";import{createTrustedTypesPolicy as u}from"../../../../../base/browser/trustedTypes.js";import{onUnexpectedError as y}from"../../../../../base/common/errors.js";import{Emitter as k}from"../../../../../base/common/event.js";import"../../../../../base/common/htmlContent.js";import{DisposableStore as I}from"../../../../../base/common/lifecycle.js";import"./renderedMarkdown.css";import{applyFontInfo as S}from"../../../config/domFontInfo.js";import"../../../editorBrowser.js";import{EditorOption as _}from"../../../../common/config/editorOptions.js";import{ILanguageService as w}from"../../../../common/languages/language.js";import{PLAINTEXT_LANGUAGE_ID as M}from"../../../../common/languages/modesRegistry.js";import{tokenizeToString as O}from"../../../../common/languages/textToHtmlTokenizer.js";import{IOpenerService as h}from"../../../../../platform/opener/common/opener.js";let d=class{constructor(e,o,n){this._options=e;this._languageService=o;this._openerService=n}static _ttpTokenizer=u("tokenizeToString",{createHTML(e){return e}});_onDidRenderAsync=new k;onDidRenderAsync=this._onDidRenderAsync.event;dispose(){this._onDidRenderAsync.dispose()}render(e,o,n){if(!e)return{element:document.createElement("span"),dispose:()=>{}};const t=new I,r=t.add(g(e,{...this._getRenderOptions(e,t),...o},n));return r.element.classList.add("rendered-markdown"),{element:r.element,dispose:()=>t.dispose()}}_getRenderOptions(e,o){return{codeBlockRenderer:async(n,t)=>{let r;n?r=this._languageService.getLanguageIdByLanguageName(n):this._options.editor&&(r=this._options.editor.getModel()?.getLanguageId()),r||(r=M);const s=await O(this._languageService,t,r),a=document.createElement("span");if(a.innerHTML=d._ttpTokenizer?.createHTML(s)??s,this._options.editor){const c=this._options.editor.getOption(_.fontInfo);S(a,c)}else this._options.codeBlockFontFamily&&(a.style.fontFamily=this._options.codeBlockFontFamily);return this._options.codeBlockFontSize!==void 0&&(a.style.fontSize=this._options.codeBlockFontSize),a},asyncRenderCallback:()=>this._onDidRenderAsync.fire(),actionHandler:{callback:n=>this.openMarkdownLink(n,e),disposables:o}}}async openMarkdownLink(e,o){await v(this._openerService,e,o.isTrusted)}};d=l([p(1,w),p(2,h)],d);async function v(i,e,o){try{return await i.open(e,{fromUserGesture:!0,allowContributedOpeners:!0,allowCommands:b(o)})}catch(n){return y(n),!1}}function b(i){return i===!0?!0:i&&Array.isArray(i.enabledCommands)?i.enabledCommands:!1}export{d as MarkdownRenderer,v as openLinkFromMarkdown};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var MarkdownRenderer_1;
+import { renderMarkdown } from '../../../../../base/browser/markdownRenderer.js';
+import { createTrustedTypesPolicy } from '../../../../../base/browser/trustedTypes.js';
+import { onUnexpectedError } from '../../../../../base/common/errors.js';
+import { Emitter } from '../../../../../base/common/event.js';
+import { DisposableStore } from '../../../../../base/common/lifecycle.js';
+import './renderedMarkdown.css';
+import { applyFontInfo } from '../../../config/domFontInfo.js';
+import { ILanguageService } from '../../../../common/languages/language.js';
+import { PLAINTEXT_LANGUAGE_ID } from '../../../../common/languages/modesRegistry.js';
+import { tokenizeToString } from '../../../../common/languages/textToHtmlTokenizer.js';
+import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
+let MarkdownRenderer = class MarkdownRenderer {
+    static { MarkdownRenderer_1 = this; }
+    static { this._ttpTokenizer = createTrustedTypesPolicy('tokenizeToString', {
+        createHTML(html) {
+            return html;
+        }
+    }); }
+    constructor(_options, _languageService, _openerService) {
+        this._options = _options;
+        this._languageService = _languageService;
+        this._openerService = _openerService;
+        this._onDidRenderAsync = new Emitter();
+        this.onDidRenderAsync = this._onDidRenderAsync.event;
+    }
+    dispose() {
+        this._onDidRenderAsync.dispose();
+    }
+    render(markdown, options, markedOptions) {
+        if (!markdown) {
+            const element = document.createElement('span');
+            return { element, dispose: () => { } };
+        }
+        const disposables = new DisposableStore();
+        const rendered = disposables.add(renderMarkdown(markdown, { ...this._getRenderOptions(markdown, disposables), ...options }, markedOptions));
+        rendered.element.classList.add('rendered-markdown');
+        return {
+            element: rendered.element,
+            dispose: () => disposables.dispose()
+        };
+    }
+    _getRenderOptions(markdown, disposables) {
+        return {
+            codeBlockRenderer: async (languageAlias, value) => {
+                let languageId;
+                if (languageAlias) {
+                    languageId = this._languageService.getLanguageIdByLanguageName(languageAlias);
+                }
+                else if (this._options.editor) {
+                    languageId = this._options.editor.getModel()?.getLanguageId();
+                }
+                if (!languageId) {
+                    languageId = PLAINTEXT_LANGUAGE_ID;
+                }
+                const html = await tokenizeToString(this._languageService, value, languageId);
+                const element = document.createElement('span');
+                element.innerHTML = (MarkdownRenderer_1._ttpTokenizer?.createHTML(html) ?? html);
+                if (this._options.editor) {
+                    const fontInfo = this._options.editor.getOption(52);
+                    applyFontInfo(element, fontInfo);
+                }
+                else if (this._options.codeBlockFontFamily) {
+                    element.style.fontFamily = this._options.codeBlockFontFamily;
+                }
+                if (this._options.codeBlockFontSize !== undefined) {
+                    element.style.fontSize = this._options.codeBlockFontSize;
+                }
+                return element;
+            },
+            asyncRenderCallback: () => this._onDidRenderAsync.fire(),
+            actionHandler: {
+                callback: (link) => this.openMarkdownLink(link, markdown),
+                disposables: disposables
+            }
+        };
+    }
+    async openMarkdownLink(link, markdown) {
+        await openLinkFromMarkdown(this._openerService, link, markdown.isTrusted);
+    }
+};
+MarkdownRenderer = MarkdownRenderer_1 = __decorate([
+    __param(1, ILanguageService),
+    __param(2, IOpenerService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], MarkdownRenderer);
+export { MarkdownRenderer };
+export async function openLinkFromMarkdown(openerService, link, isTrusted) {
+    try {
+        return await openerService.open(link, {
+            fromUserGesture: true,
+            allowContributedOpeners: true,
+            allowCommands: toAllowCommandsOption(isTrusted),
+        });
+    }
+    catch (e) {
+        onUnexpectedError(e);
+        return false;
+    }
+}
+function toAllowCommandsOption(isTrusted) {
+    if (isTrusted === true) {
+        return true;
+    }
+    if (isTrusted && Array.isArray(isTrusted.enabledCommands)) {
+        return isTrusted.enabledCommands;
+    }
+    return false;
+}

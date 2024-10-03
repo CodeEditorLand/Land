@@ -1,1 +1,370 @@
-var V=Object.defineProperty;var F=Object.getOwnPropertyDescriptor;var v=(i,e,t,r)=>{for(var n=r>1?void 0:r?F(e,t):e,o=i.length-1,a;o>=0;o--)(a=i[o])&&(n=(r?a(e,t,n):a(n))||n);return r&&n&&V(e,t,n),n},p=(i,e)=>(t,r)=>e(t,r,i);import*as s from"../../../../base/browser/dom.js";import{CountBadge as j}from"../../../../base/browser/ui/countBadge/countBadge.js";import{HighlightedLabel as L}from"../../../../base/browser/ui/highlightedlabel/highlightedLabel.js";import"../../../../base/browser/ui/hover/hover.js";import{getDefaultHoverDelegate as A}from"../../../../base/browser/ui/hover/hoverDelegateFactory.js";import{CachedListVirtualDelegate as P}from"../../../../base/browser/ui/list/list.js";import"../../../../base/browser/ui/list/listWidget.js";import"../../../../base/browser/ui/tree/tree.js";import{createMatches as C}from"../../../../base/common/filters.js";import{Disposable as $,DisposableStore as f}from"../../../../base/common/lifecycle.js";import{basename as G}from"../../../../base/common/path.js";import R from"../../../../base/common/severity.js";import{ThemeIcon as B}from"../../../../base/common/themables.js";import{localize as b}from"../../../../nls.js";import"../../../../platform/configuration/common/configuration.js";import{IContextViewService as k}from"../../../../platform/contextview/browser/contextView.js";import{IHoverService as H}from"../../../../platform/hover/browser/hover.js";import{IInstantiationService as w}from"../../../../platform/instantiation/common/instantiation.js";import{ILabelService as W}from"../../../../platform/label/common/label.js";import{defaultCountBadgeStyles as U}from"../../../../platform/theme/browser/defaultStyles.js";import{IEditorService as q}from"../../../services/editor/common/editorService.js";import{IDebugService as J}from"../common/debug.js";import{Variable as g}from"../common/debugModel.js";import{RawObjectReplElement as K,ReplEvaluationInput as z,ReplEvaluationResult as h,ReplGroup as O,ReplOutputElement as E,ReplVariableElement as S}from"../common/replModel.js";import{AbstractExpressionsRenderer as Q}from"./baseDebugView.js";import"./debugExpressionRenderer.js";import{debugConsoleEvaluationInput as X}from"./debugIcons.js";const l=s.$;class T{static ID="replEvaluationInput";get templateId(){return T.ID}renderTemplate(e){s.append(e,l("span.arrow"+B.asCSSSelector(X)));const t=s.append(e,l(".expression"));return{label:new L(t)}}renderElement(e,t,r){const n=e.element;r.label.set(n.value,C(e.filterData))}disposeTemplate(e){e.label.dispose()}}let u=class{constructor(e,t){this.expressionRenderer=e;this.instaService=t}static ID="replGroup";get templateId(){return u.ID}renderTemplate(e){e.classList.add("group");const t=s.append(e,l(".output.expression.value-and-source")),r=s.append(t,l("span.label")),n=this.instaService.createInstance(I,t);return{label:r,source:n}}renderElement(e,t,r){r.elementDisposable?.dispose();const n=e.element;s.clearNode(r.label),r.elementDisposable=this.expressionRenderer.renderValue(r.label,n.name,{wasANSI:!0,session:e.element.session}),r.source.setSource(n.sourceData)}disposeTemplate(e){e.elementDisposable?.dispose(),e.source.dispose()}};u=v([p(1,w)],u);class x{constructor(e){this.expressionRenderer=e}static ID="replEvaluationResult";get templateId(){return x.ID}renderTemplate(e){const t=s.append(e,l(".evaluation-result.expression"));return{value:s.append(t,l("span.value")),elementStore:new f}}renderElement(e,t,r){r.elementStore.clear();const n=e.element;r.elementStore.add(this.expressionRenderer.renderValue(r.value,n,{colorize:!0,hover:!1,session:e.element.getSession()}))}disposeTemplate(e){e.elementStore.dispose()}}let c=class{constructor(e,t){this.expressionRenderer=e;this.instaService=t}static ID="outputReplElement";get templateId(){return c.ID}renderTemplate(e){const t=Object.create(null);e.classList.add("output");const r=s.append(e,l(".output.expression.value-and-source"));return t.container=e,t.countContainer=s.append(r,l(".count-badge-wrapper")),t.count=new j(t.countContainer,{},U),t.value=s.append(r,l("span.value.label")),t.source=this.instaService.createInstance(I,r),t.elementDisposable=new f,t}renderElement({element:e},t,r){r.elementDisposable.clear(),this.setElementCount(e,r),r.elementDisposable.add(e.onDidChangeCount(()=>this.setElementCount(e,r))),s.clearNode(r.value),r.value.className="value";const n=e.expression?.valueLocationReference;r.elementDisposable.add(this.expressionRenderer.renderValue(r.value,e.value,{wasANSI:!0,session:e.session,locationReference:n})),r.value.classList.add(e.severity===R.Warning?"warn":e.severity===R.Error?"error":e.severity===R.Ignore?"ignore":"info"),r.source.setSource(e.sourceData),r.getReplElementSource=()=>e.sourceData}setElementCount(e,t){e.count>=2?(t.count.setCount(e.count),t.countContainer.hidden=!1):t.countContainer.hidden=!0}disposeTemplate(e){e.source.dispose(),e.elementDisposable.dispose()}disposeElement(e,t,r){r.elementDisposable.clear()}};c=v([p(1,w)],c);let m=class extends Q{constructor(t,r,n,o){super(r,n,o);this.expressionRenderer=t}static ID="replVariable";get templateId(){return m.ID}renderElement(t,r,n){const o=t.element;n.elementDisposable.clear(),super.renderExpressionElement(o instanceof S?o.expression:o,t,n)}renderExpression(t,r,n){const o=t instanceof S;if(o||!t.name){r.label.set("");const a=o?t.expression:t;r.elementDisposable.add(this.expressionRenderer.renderValue(r.value,a,{colorize:!0,hover:!1,session:t.getSession()})),r.expression.classList.remove("nested-variable")}else r.elementDisposable.add(this.expressionRenderer.renderVariable(r,t,{showChanged:!0,highlights:n})),r.expression.classList.toggle("nested-variable",D(t))}getInputBoxOptions(t){}};m=v([p(1,J),p(2,k),p(3,H)],m);class y{constructor(e){this.expressionRenderer=e}static ID="rawObject";get templateId(){return y.ID}renderTemplate(e){e.classList.add("output");const t=s.append(e,l(".output.expression")),r=s.append(t,l("span.name")),n=new L(r),o=s.append(t,l("span.value"));return{container:e,expression:t,name:r,label:n,value:o,elementStore:new f}}renderElement(e,t,r){r.elementStore.clear();const n=e.element;r.label.set(n.name?`${n.name}:`:"",C(e.filterData)),n.name?r.name.textContent=`${n.name}:`:r.name.textContent="",r.elementStore.add(this.expressionRenderer.renderValue(r.value,n.value,{hover:!1,session:e.element.getSession()}))}disposeTemplate(e){e.elementStore.dispose(),e.label.dispose()}}function D(i){return i instanceof g&&(i.parent instanceof h||i.parent instanceof g)}class We extends P{constructor(t,r){super();this.configurationService=t;this.replOptions=r}getHeight(t){return this.configurationService.getValue("debug").console.wordWrap?super.getHeight(t):this.estimateHeight(t,!0)}estimateHeight(t,r=!1){const n=this.replOptions.replConfiguration.lineHeight,o=d=>d.match(/\n/g)?.length??0;if((d=>typeof d.value=="string")(t)&&!D(t)){const d=t.value,M=o(d)+(r?0:Math.floor(d.length/70))+(t instanceof E?0:1);return Math.max(M,1)*n}return n}getTemplateId(t){return t instanceof g||t instanceof S?m.ID:t instanceof h?x.ID:t instanceof z?T.ID:t instanceof E?c.ID:t instanceof O?u.ID:y.ID}hasDynamicHeight(t){return D(t)?!1:t.toString().length>0}}function N(i){return typeof i.getReplElements=="function"}class Ue{hasChildren(e){return N(e)?!0:!!e.hasChildren}getChildren(e){return N(e)?Promise.resolve(e.getReplElements()):Promise.resolve(e.getChildren())}}class qe{getWidgetAriaLabel(){return b("debugConsole","Debug Console")}getAriaLabel(e){return e instanceof g?b("replVariableAriaLabel","Variable {0}, value {1}",e.name,e.value):e instanceof E||e instanceof z||e instanceof h?e.value+(e instanceof E&&e.count>1?b({key:"occurred",comment:["Front will the value of the debug console element. Placeholder will be replaced by a number which represents occurrance count."]},", occurred {0} times",e.count):""):e instanceof K?b("replRawObjectAriaLabel","Debug console variable {0}, value {1}",e.name,e.value):e instanceof O?b("replGroup","Debug console group {0}",e.name):""}}let I=class extends ${constructor(t,r,n,o){super();this.hoverService=n;this.labelService=o;this.el=s.append(t,l(".source")),this._register(s.addDisposableListener(this.el,"click",a=>{a.preventDefault(),a.stopPropagation(),this.source&&this.source.source.openInEditor(r,{startLineNumber:this.source.lineNumber,startColumn:this.source.column,endLineNumber:this.source.lineNumber,endColumn:this.source.column})}))}el;source;hover;setSource(t){this.source=t,this.el.textContent=t?`${G(t.source.name)}:${t.lineNumber}`:"",this.hover??=this._register(this.hoverService.setupManagedHover(A("mouse"),this.el,"")),this.hover.update(t?`${this.labelService.getUriLabel(t.source.uri)}:${t.lineNumber}`:"")}};I=v([p(1,q),p(2,H),p(3,W)],I);export{qe as ReplAccessibilityProvider,Ue as ReplDataSource,We as ReplDelegate,T as ReplEvaluationInputsRenderer,x as ReplEvaluationResultsRenderer,u as ReplGroupRenderer,c as ReplOutputElementRenderer,y as ReplRawObjectsRenderer,m as ReplVariablesRenderer};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ReplGroupRenderer_1, ReplOutputElementRenderer_1, ReplVariablesRenderer_1;
+import * as dom from '../../../../base/browser/dom.js';
+import { CountBadge } from '../../../../base/browser/ui/countBadge/countBadge.js';
+import { HighlightedLabel } from '../../../../base/browser/ui/highlightedlabel/highlightedLabel.js';
+import { getDefaultHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { CachedListVirtualDelegate } from '../../../../base/browser/ui/list/list.js';
+import { createMatches } from '../../../../base/common/filters.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { basename } from '../../../../base/common/path.js';
+import severity from '../../../../base/common/severity.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { localize } from '../../../../nls.js';
+import { IContextViewService } from '../../../../platform/contextview/browser/contextView.js';
+import { IHoverService } from '../../../../platform/hover/browser/hover.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { defaultCountBadgeStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IDebugService } from '../common/debug.js';
+import { Variable } from '../common/debugModel.js';
+import { RawObjectReplElement, ReplEvaluationInput, ReplEvaluationResult, ReplGroup, ReplOutputElement, ReplVariableElement } from '../common/replModel.js';
+import { AbstractExpressionsRenderer } from './baseDebugView.js';
+import { DebugExpressionRenderer } from './debugExpressionRenderer.js';
+import { debugConsoleEvaluationInput } from './debugIcons.js';
+const $ = dom.$;
+export class ReplEvaluationInputsRenderer {
+    static { this.ID = 'replEvaluationInput'; }
+    get templateId() {
+        return ReplEvaluationInputsRenderer.ID;
+    }
+    renderTemplate(container) {
+        dom.append(container, $('span.arrow' + ThemeIcon.asCSSSelector(debugConsoleEvaluationInput)));
+        const input = dom.append(container, $('.expression'));
+        const label = new HighlightedLabel(input);
+        return { label };
+    }
+    renderElement(element, index, templateData) {
+        const evaluation = element.element;
+        templateData.label.set(evaluation.value, createMatches(element.filterData));
+    }
+    disposeTemplate(templateData) {
+        templateData.label.dispose();
+    }
+}
+let ReplGroupRenderer = class ReplGroupRenderer {
+    static { ReplGroupRenderer_1 = this; }
+    static { this.ID = 'replGroup'; }
+    constructor(expressionRenderer, instaService) {
+        this.expressionRenderer = expressionRenderer;
+        this.instaService = instaService;
+    }
+    get templateId() {
+        return ReplGroupRenderer_1.ID;
+    }
+    renderTemplate(container) {
+        container.classList.add('group');
+        const expression = dom.append(container, $('.output.expression.value-and-source'));
+        const label = dom.append(expression, $('span.label'));
+        const source = this.instaService.createInstance(SourceWidget, expression);
+        return { label, source };
+    }
+    renderElement(element, _index, templateData) {
+        templateData.elementDisposable?.dispose();
+        const replGroup = element.element;
+        dom.clearNode(templateData.label);
+        templateData.elementDisposable = this.expressionRenderer.renderValue(templateData.label, replGroup.name, { wasANSI: true, session: element.element.session });
+        templateData.source.setSource(replGroup.sourceData);
+    }
+    disposeTemplate(templateData) {
+        templateData.elementDisposable?.dispose();
+        templateData.source.dispose();
+    }
+};
+ReplGroupRenderer = ReplGroupRenderer_1 = __decorate([
+    __param(1, IInstantiationService),
+    __metadata("design:paramtypes", [DebugExpressionRenderer, Object])
+], ReplGroupRenderer);
+export { ReplGroupRenderer };
+export class ReplEvaluationResultsRenderer {
+    static { this.ID = 'replEvaluationResult'; }
+    get templateId() {
+        return ReplEvaluationResultsRenderer.ID;
+    }
+    constructor(expressionRenderer) {
+        this.expressionRenderer = expressionRenderer;
+    }
+    renderTemplate(container) {
+        const output = dom.append(container, $('.evaluation-result.expression'));
+        const value = dom.append(output, $('span.value'));
+        return { value, elementStore: new DisposableStore() };
+    }
+    renderElement(element, index, templateData) {
+        templateData.elementStore.clear();
+        const expression = element.element;
+        templateData.elementStore.add(this.expressionRenderer.renderValue(templateData.value, expression, {
+            colorize: true,
+            hover: false,
+            session: element.element.getSession(),
+        }));
+    }
+    disposeTemplate(templateData) {
+        templateData.elementStore.dispose();
+    }
+}
+let ReplOutputElementRenderer = class ReplOutputElementRenderer {
+    static { ReplOutputElementRenderer_1 = this; }
+    static { this.ID = 'outputReplElement'; }
+    constructor(expressionRenderer, instaService) {
+        this.expressionRenderer = expressionRenderer;
+        this.instaService = instaService;
+    }
+    get templateId() {
+        return ReplOutputElementRenderer_1.ID;
+    }
+    renderTemplate(container) {
+        const data = Object.create(null);
+        container.classList.add('output');
+        const expression = dom.append(container, $('.output.expression.value-and-source'));
+        data.container = container;
+        data.countContainer = dom.append(expression, $('.count-badge-wrapper'));
+        data.count = new CountBadge(data.countContainer, {}, defaultCountBadgeStyles);
+        data.value = dom.append(expression, $('span.value.label'));
+        data.source = this.instaService.createInstance(SourceWidget, expression);
+        data.elementDisposable = new DisposableStore();
+        return data;
+    }
+    renderElement({ element }, index, templateData) {
+        templateData.elementDisposable.clear();
+        this.setElementCount(element, templateData);
+        templateData.elementDisposable.add(element.onDidChangeCount(() => this.setElementCount(element, templateData)));
+        dom.clearNode(templateData.value);
+        templateData.value.className = 'value';
+        const locationReference = element.expression?.valueLocationReference;
+        templateData.elementDisposable.add(this.expressionRenderer.renderValue(templateData.value, element.value, { wasANSI: true, session: element.session, locationReference }));
+        templateData.value.classList.add((element.severity === severity.Warning) ? 'warn' : (element.severity === severity.Error) ? 'error' : (element.severity === severity.Ignore) ? 'ignore' : 'info');
+        templateData.source.setSource(element.sourceData);
+        templateData.getReplElementSource = () => element.sourceData;
+    }
+    setElementCount(element, templateData) {
+        if (element.count >= 2) {
+            templateData.count.setCount(element.count);
+            templateData.countContainer.hidden = false;
+        }
+        else {
+            templateData.countContainer.hidden = true;
+        }
+    }
+    disposeTemplate(templateData) {
+        templateData.source.dispose();
+        templateData.elementDisposable.dispose();
+    }
+    disposeElement(_element, _index, templateData) {
+        templateData.elementDisposable.clear();
+    }
+};
+ReplOutputElementRenderer = ReplOutputElementRenderer_1 = __decorate([
+    __param(1, IInstantiationService),
+    __metadata("design:paramtypes", [DebugExpressionRenderer, Object])
+], ReplOutputElementRenderer);
+export { ReplOutputElementRenderer };
+let ReplVariablesRenderer = class ReplVariablesRenderer extends AbstractExpressionsRenderer {
+    static { ReplVariablesRenderer_1 = this; }
+    static { this.ID = 'replVariable'; }
+    get templateId() {
+        return ReplVariablesRenderer_1.ID;
+    }
+    constructor(expressionRenderer, debugService, contextViewService, hoverService) {
+        super(debugService, contextViewService, hoverService);
+        this.expressionRenderer = expressionRenderer;
+    }
+    renderElement(node, _index, data) {
+        const element = node.element;
+        data.elementDisposable.clear();
+        super.renderExpressionElement(element instanceof ReplVariableElement ? element.expression : element, node, data);
+    }
+    renderExpression(expression, data, highlights) {
+        const isReplVariable = expression instanceof ReplVariableElement;
+        if (isReplVariable || !expression.name) {
+            data.label.set('');
+            const value = isReplVariable ? expression.expression : expression;
+            data.elementDisposable.add(this.expressionRenderer.renderValue(data.value, value, { colorize: true, hover: false, session: expression.getSession() }));
+            data.expression.classList.remove('nested-variable');
+        }
+        else {
+            data.elementDisposable.add(this.expressionRenderer.renderVariable(data, expression, { showChanged: true, highlights }));
+            data.expression.classList.toggle('nested-variable', isNestedVariable(expression));
+        }
+    }
+    getInputBoxOptions(expression) {
+        return undefined;
+    }
+};
+ReplVariablesRenderer = ReplVariablesRenderer_1 = __decorate([
+    __param(1, IDebugService),
+    __param(2, IContextViewService),
+    __param(3, IHoverService),
+    __metadata("design:paramtypes", [DebugExpressionRenderer, Object, Object, Object])
+], ReplVariablesRenderer);
+export { ReplVariablesRenderer };
+export class ReplRawObjectsRenderer {
+    static { this.ID = 'rawObject'; }
+    constructor(expressionRenderer) {
+        this.expressionRenderer = expressionRenderer;
+    }
+    get templateId() {
+        return ReplRawObjectsRenderer.ID;
+    }
+    renderTemplate(container) {
+        container.classList.add('output');
+        const expression = dom.append(container, $('.output.expression'));
+        const name = dom.append(expression, $('span.name'));
+        const label = new HighlightedLabel(name);
+        const value = dom.append(expression, $('span.value'));
+        return { container, expression, name, label, value, elementStore: new DisposableStore() };
+    }
+    renderElement(node, index, templateData) {
+        templateData.elementStore.clear();
+        const element = node.element;
+        templateData.label.set(element.name ? `${element.name}:` : '', createMatches(node.filterData));
+        if (element.name) {
+            templateData.name.textContent = `${element.name}:`;
+        }
+        else {
+            templateData.name.textContent = '';
+        }
+        templateData.elementStore.add(this.expressionRenderer.renderValue(templateData.value, element.value, {
+            hover: false,
+            session: node.element.getSession(),
+        }));
+    }
+    disposeTemplate(templateData) {
+        templateData.elementStore.dispose();
+        templateData.label.dispose();
+    }
+}
+function isNestedVariable(element) {
+    return element instanceof Variable && (element.parent instanceof ReplEvaluationResult || element.parent instanceof Variable);
+}
+export class ReplDelegate extends CachedListVirtualDelegate {
+    constructor(configurationService, replOptions) {
+        super();
+        this.configurationService = configurationService;
+        this.replOptions = replOptions;
+    }
+    getHeight(element) {
+        const config = this.configurationService.getValue('debug');
+        if (!config.console.wordWrap) {
+            return this.estimateHeight(element, true);
+        }
+        return super.getHeight(element);
+    }
+    estimateHeight(element, ignoreValueLength = false) {
+        const lineHeight = this.replOptions.replConfiguration.lineHeight;
+        const countNumberOfLines = (str) => str.match(/\n/g)?.length ?? 0;
+        const hasValue = (e) => typeof e.value === 'string';
+        if (hasValue(element) && !isNestedVariable(element)) {
+            const value = element.value;
+            const valueRows = countNumberOfLines(value)
+                + (ignoreValueLength ? 0 : Math.floor(value.length / 70))
+                + (element instanceof ReplOutputElement ? 0 : 1);
+            return Math.max(valueRows, 1) * lineHeight;
+        }
+        return lineHeight;
+    }
+    getTemplateId(element) {
+        if (element instanceof Variable || element instanceof ReplVariableElement) {
+            return ReplVariablesRenderer.ID;
+        }
+        if (element instanceof ReplEvaluationResult) {
+            return ReplEvaluationResultsRenderer.ID;
+        }
+        if (element instanceof ReplEvaluationInput) {
+            return ReplEvaluationInputsRenderer.ID;
+        }
+        if (element instanceof ReplOutputElement) {
+            return ReplOutputElementRenderer.ID;
+        }
+        if (element instanceof ReplGroup) {
+            return ReplGroupRenderer.ID;
+        }
+        return ReplRawObjectsRenderer.ID;
+    }
+    hasDynamicHeight(element) {
+        if (isNestedVariable(element)) {
+            return false;
+        }
+        return element.toString().length > 0;
+    }
+}
+function isDebugSession(obj) {
+    return typeof obj.getReplElements === 'function';
+}
+export class ReplDataSource {
+    hasChildren(element) {
+        if (isDebugSession(element)) {
+            return true;
+        }
+        return !!element.hasChildren;
+    }
+    getChildren(element) {
+        if (isDebugSession(element)) {
+            return Promise.resolve(element.getReplElements());
+        }
+        return Promise.resolve(element.getChildren());
+    }
+}
+export class ReplAccessibilityProvider {
+    getWidgetAriaLabel() {
+        return localize('debugConsole', "Debug Console");
+    }
+    getAriaLabel(element) {
+        if (element instanceof Variable) {
+            return localize('replVariableAriaLabel', "Variable {0}, value {1}", element.name, element.value);
+        }
+        if (element instanceof ReplOutputElement || element instanceof ReplEvaluationInput || element instanceof ReplEvaluationResult) {
+            return element.value + (element instanceof ReplOutputElement && element.count > 1 ? localize({ key: 'occurred', comment: ['Front will the value of the debug console element. Placeholder will be replaced by a number which represents occurrance count.'] }, ", occurred {0} times", element.count) : '');
+        }
+        if (element instanceof RawObjectReplElement) {
+            return localize('replRawObjectAriaLabel', "Debug console variable {0}, value {1}", element.name, element.value);
+        }
+        if (element instanceof ReplGroup) {
+            return localize('replGroup', "Debug console group {0}", element.name);
+        }
+        return '';
+    }
+}
+let SourceWidget = class SourceWidget extends Disposable {
+    constructor(container, editorService, hoverService, labelService) {
+        super();
+        this.hoverService = hoverService;
+        this.labelService = labelService;
+        this.el = dom.append(container, $('.source'));
+        this._register(dom.addDisposableListener(this.el, 'click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this.source) {
+                this.source.source.openInEditor(editorService, {
+                    startLineNumber: this.source.lineNumber,
+                    startColumn: this.source.column,
+                    endLineNumber: this.source.lineNumber,
+                    endColumn: this.source.column
+                });
+            }
+        }));
+    }
+    setSource(source) {
+        this.source = source;
+        this.el.textContent = source ? `${basename(source.source.name)}:${source.lineNumber}` : '';
+        this.hover ??= this._register(this.hoverService.setupManagedHover(getDefaultHoverDelegate('mouse'), this.el, ''));
+        this.hover.update(source ? `${this.labelService.getUriLabel(source.source.uri)}:${source.lineNumber}` : '');
+    }
+};
+SourceWidget = __decorate([
+    __param(1, IEditorService),
+    __param(2, IHoverService),
+    __param(3, ILabelService),
+    __metadata("design:paramtypes", [HTMLElement, Object, Object, Object])
+], SourceWidget);

@@ -1,1 +1,141 @@
-import{Codicon as E}from"../../../../base/common/codicons.js";import"../../../browser/editorBrowser.js";import{MinimapPosition as O,TrackedRangeStickiness as o}from"../../../common/model.js";import{ModelDecorationOptions as i}from"../../../common/model/textModel.js";import"./foldingModel.js";import{localize as n}from"../../../../nls.js";import{editorSelectionBackground as h,iconForeground as I,registerColor as c,transparent as D}from"../../../../platform/theme/common/colorRegistry.js";import{registerIcon as r}from"../../../../platform/theme/common/iconRegistry.js";import{themeColorFromId as f}from"../../../../platform/theme/common/themeService.js";import{ThemeIcon as s}from"../../../../base/common/themables.js";const m=c("editor.foldBackground",{light:D(h,.3),dark:D(h,.3),hcDark:null,hcLight:null},n("foldBackgroundBackground","Background color behind folded ranges. The color must not be opaque so as not to hide underlying decorations."),!0);c("editor.foldPlaceholderForeground",{light:"#808080",dark:"#808080",hcDark:null,hcLight:null},n("collapsedTextColor","Color of the collapsed text after the first line of a folded range.")),c("editorGutter.foldingControlForeground",I,n("editorGutter.foldingControlForeground","Color of the folding control in the editor gutter."));const g=r("folding-expanded",E.chevronDown,n("foldingExpandedIcon","Icon for expanded ranges in the editor glyph margin.")),A=r("folding-collapsed",E.chevronRight,n("foldingCollapsedIcon","Icon for collapsed ranges in the editor glyph margin.")),N=r("folding-manual-collapsed",A,n("foldingManualCollapedIcon","Icon for manually collapsed ranges in the editor glyph margin.")),C=r("folding-manual-expanded",g,n("foldingManualExpandedIcon","Icon for manually expanded ranges in the editor glyph margin.")),p={color:f(m),position:O.Inline},a=n("linesCollapsed","Click to expand the range."),l=n("linesExpanded","Click to collapse the range.");class e{constructor(t){this.editor=t}static COLLAPSED_VISUAL_DECORATION=i.register({description:"folding-collapsed-visual-decoration",stickiness:o.AlwaysGrowsWhenTypingAtEdges,afterContentClassName:"inline-folded",isWholeLine:!0,linesDecorationsTooltip:a,firstLineDecorationClassName:s.asClassName(A)});static COLLAPSED_HIGHLIGHTED_VISUAL_DECORATION=i.register({description:"folding-collapsed-highlighted-visual-decoration",stickiness:o.AlwaysGrowsWhenTypingAtEdges,afterContentClassName:"inline-folded",className:"folded-background",minimap:p,isWholeLine:!0,linesDecorationsTooltip:a,firstLineDecorationClassName:s.asClassName(A)});static MANUALLY_COLLAPSED_VISUAL_DECORATION=i.register({description:"folding-manually-collapsed-visual-decoration",stickiness:o.AlwaysGrowsWhenTypingAtEdges,afterContentClassName:"inline-folded",isWholeLine:!0,linesDecorationsTooltip:a,firstLineDecorationClassName:s.asClassName(N)});static MANUALLY_COLLAPSED_HIGHLIGHTED_VISUAL_DECORATION=i.register({description:"folding-manually-collapsed-highlighted-visual-decoration",stickiness:o.AlwaysGrowsWhenTypingAtEdges,afterContentClassName:"inline-folded",className:"folded-background",minimap:p,isWholeLine:!0,linesDecorationsTooltip:a,firstLineDecorationClassName:s.asClassName(N)});static NO_CONTROLS_COLLAPSED_RANGE_DECORATION=i.register({description:"folding-no-controls-range-decoration",stickiness:o.AlwaysGrowsWhenTypingAtEdges,afterContentClassName:"inline-folded",isWholeLine:!0,linesDecorationsTooltip:a});static NO_CONTROLS_COLLAPSED_HIGHLIGHTED_RANGE_DECORATION=i.register({description:"folding-no-controls-range-decoration",stickiness:o.AlwaysGrowsWhenTypingAtEdges,afterContentClassName:"inline-folded",className:"folded-background",minimap:p,isWholeLine:!0,linesDecorationsTooltip:a});static EXPANDED_VISUAL_DECORATION=i.register({description:"folding-expanded-visual-decoration",stickiness:o.NeverGrowsWhenTypingAtEdges,isWholeLine:!0,firstLineDecorationClassName:"alwaysShowFoldIcons "+s.asClassName(g),linesDecorationsTooltip:l});static EXPANDED_AUTO_HIDE_VISUAL_DECORATION=i.register({description:"folding-expanded-auto-hide-visual-decoration",stickiness:o.NeverGrowsWhenTypingAtEdges,isWholeLine:!0,firstLineDecorationClassName:s.asClassName(g),linesDecorationsTooltip:l});static MANUALLY_EXPANDED_VISUAL_DECORATION=i.register({description:"folding-manually-expanded-visual-decoration",stickiness:o.AlwaysGrowsWhenTypingAtEdges,isWholeLine:!0,firstLineDecorationClassName:"alwaysShowFoldIcons "+s.asClassName(C),linesDecorationsTooltip:l});static MANUALLY_EXPANDED_AUTO_HIDE_VISUAL_DECORATION=i.register({description:"folding-manually-expanded-auto-hide-visual-decoration",stickiness:o.AlwaysGrowsWhenTypingAtEdges,isWholeLine:!0,firstLineDecorationClassName:s.asClassName(C),linesDecorationsTooltip:l});static NO_CONTROLS_EXPANDED_RANGE_DECORATION=i.register({description:"folding-no-controls-range-decoration",stickiness:o.AlwaysGrowsWhenTypingAtEdges,isWholeLine:!0});static HIDDEN_RANGE_DECORATION=i.register({description:"folding-hidden-range-decoration",stickiness:o.NeverGrowsWhenTypingAtEdges});showFoldingControls="mouseover";showFoldingHighlights=!0;getDecorationOption(t,L,d){return L?e.HIDDEN_RANGE_DECORATION:this.showFoldingControls==="never"?t?this.showFoldingHighlights?e.NO_CONTROLS_COLLAPSED_HIGHLIGHTED_RANGE_DECORATION:e.NO_CONTROLS_COLLAPSED_RANGE_DECORATION:e.NO_CONTROLS_EXPANDED_RANGE_DECORATION:t?d?this.showFoldingHighlights?e.MANUALLY_COLLAPSED_HIGHLIGHTED_VISUAL_DECORATION:e.MANUALLY_COLLAPSED_VISUAL_DECORATION:this.showFoldingHighlights?e.COLLAPSED_HIGHLIGHTED_VISUAL_DECORATION:e.COLLAPSED_VISUAL_DECORATION:this.showFoldingControls==="mouseover"?d?e.MANUALLY_EXPANDED_AUTO_HIDE_VISUAL_DECORATION:e.EXPANDED_AUTO_HIDE_VISUAL_DECORATION:d?e.MANUALLY_EXPANDED_VISUAL_DECORATION:e.EXPANDED_VISUAL_DECORATION}changeDecorations(t){return this.editor.changeDecorations(t)}removeDecorations(t){this.editor.removeDecorations(t)}}export{e as FoldingDecorationProvider,A as foldingCollapsedIcon,g as foldingExpandedIcon,N as foldingManualCollapsedIcon,C as foldingManualExpandedIcon};
+import { Codicon } from '../../../../base/common/codicons.js';
+import { ModelDecorationOptions } from '../../../common/model/textModel.js';
+import { localize } from '../../../../nls.js';
+import { editorSelectionBackground, iconForeground, registerColor, transparent } from '../../../../platform/theme/common/colorRegistry.js';
+import { registerIcon } from '../../../../platform/theme/common/iconRegistry.js';
+import { themeColorFromId } from '../../../../platform/theme/common/themeService.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+const foldBackground = registerColor('editor.foldBackground', { light: transparent(editorSelectionBackground, 0.3), dark: transparent(editorSelectionBackground, 0.3), hcDark: null, hcLight: null }, localize('foldBackgroundBackground', "Background color behind folded ranges. The color must not be opaque so as not to hide underlying decorations."), true);
+registerColor('editor.foldPlaceholderForeground', { light: '#808080', dark: '#808080', hcDark: null, hcLight: null }, localize('collapsedTextColor', "Color of the collapsed text after the first line of a folded range."));
+registerColor('editorGutter.foldingControlForeground', iconForeground, localize('editorGutter.foldingControlForeground', 'Color of the folding control in the editor gutter.'));
+export const foldingExpandedIcon = registerIcon('folding-expanded', Codicon.chevronDown, localize('foldingExpandedIcon', 'Icon for expanded ranges in the editor glyph margin.'));
+export const foldingCollapsedIcon = registerIcon('folding-collapsed', Codicon.chevronRight, localize('foldingCollapsedIcon', 'Icon for collapsed ranges in the editor glyph margin.'));
+export const foldingManualCollapsedIcon = registerIcon('folding-manual-collapsed', foldingCollapsedIcon, localize('foldingManualCollapedIcon', 'Icon for manually collapsed ranges in the editor glyph margin.'));
+export const foldingManualExpandedIcon = registerIcon('folding-manual-expanded', foldingExpandedIcon, localize('foldingManualExpandedIcon', 'Icon for manually expanded ranges in the editor glyph margin.'));
+const foldedBackgroundMinimap = { color: themeColorFromId(foldBackground), position: 1 };
+const collapsed = localize('linesCollapsed', "Click to expand the range.");
+const expanded = localize('linesExpanded', "Click to collapse the range.");
+export class FoldingDecorationProvider {
+    static { this.COLLAPSED_VISUAL_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-collapsed-visual-decoration',
+        stickiness: 0,
+        afterContentClassName: 'inline-folded',
+        isWholeLine: true,
+        linesDecorationsTooltip: collapsed,
+        firstLineDecorationClassName: ThemeIcon.asClassName(foldingCollapsedIcon),
+    }); }
+    static { this.COLLAPSED_HIGHLIGHTED_VISUAL_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-collapsed-highlighted-visual-decoration',
+        stickiness: 0,
+        afterContentClassName: 'inline-folded',
+        className: 'folded-background',
+        minimap: foldedBackgroundMinimap,
+        isWholeLine: true,
+        linesDecorationsTooltip: collapsed,
+        firstLineDecorationClassName: ThemeIcon.asClassName(foldingCollapsedIcon)
+    }); }
+    static { this.MANUALLY_COLLAPSED_VISUAL_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-manually-collapsed-visual-decoration',
+        stickiness: 0,
+        afterContentClassName: 'inline-folded',
+        isWholeLine: true,
+        linesDecorationsTooltip: collapsed,
+        firstLineDecorationClassName: ThemeIcon.asClassName(foldingManualCollapsedIcon)
+    }); }
+    static { this.MANUALLY_COLLAPSED_HIGHLIGHTED_VISUAL_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-manually-collapsed-highlighted-visual-decoration',
+        stickiness: 0,
+        afterContentClassName: 'inline-folded',
+        className: 'folded-background',
+        minimap: foldedBackgroundMinimap,
+        isWholeLine: true,
+        linesDecorationsTooltip: collapsed,
+        firstLineDecorationClassName: ThemeIcon.asClassName(foldingManualCollapsedIcon)
+    }); }
+    static { this.NO_CONTROLS_COLLAPSED_RANGE_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-no-controls-range-decoration',
+        stickiness: 0,
+        afterContentClassName: 'inline-folded',
+        isWholeLine: true,
+        linesDecorationsTooltip: collapsed,
+    }); }
+    static { this.NO_CONTROLS_COLLAPSED_HIGHLIGHTED_RANGE_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-no-controls-range-decoration',
+        stickiness: 0,
+        afterContentClassName: 'inline-folded',
+        className: 'folded-background',
+        minimap: foldedBackgroundMinimap,
+        isWholeLine: true,
+        linesDecorationsTooltip: collapsed,
+    }); }
+    static { this.EXPANDED_VISUAL_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-expanded-visual-decoration',
+        stickiness: 1,
+        isWholeLine: true,
+        firstLineDecorationClassName: 'alwaysShowFoldIcons ' + ThemeIcon.asClassName(foldingExpandedIcon),
+        linesDecorationsTooltip: expanded,
+    }); }
+    static { this.EXPANDED_AUTO_HIDE_VISUAL_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-expanded-auto-hide-visual-decoration',
+        stickiness: 1,
+        isWholeLine: true,
+        firstLineDecorationClassName: ThemeIcon.asClassName(foldingExpandedIcon),
+        linesDecorationsTooltip: expanded,
+    }); }
+    static { this.MANUALLY_EXPANDED_VISUAL_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-manually-expanded-visual-decoration',
+        stickiness: 0,
+        isWholeLine: true,
+        firstLineDecorationClassName: 'alwaysShowFoldIcons ' + ThemeIcon.asClassName(foldingManualExpandedIcon),
+        linesDecorationsTooltip: expanded,
+    }); }
+    static { this.MANUALLY_EXPANDED_AUTO_HIDE_VISUAL_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-manually-expanded-auto-hide-visual-decoration',
+        stickiness: 0,
+        isWholeLine: true,
+        firstLineDecorationClassName: ThemeIcon.asClassName(foldingManualExpandedIcon),
+        linesDecorationsTooltip: expanded,
+    }); }
+    static { this.NO_CONTROLS_EXPANDED_RANGE_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-no-controls-range-decoration',
+        stickiness: 0,
+        isWholeLine: true
+    }); }
+    static { this.HIDDEN_RANGE_DECORATION = ModelDecorationOptions.register({
+        description: 'folding-hidden-range-decoration',
+        stickiness: 1
+    }); }
+    constructor(editor) {
+        this.editor = editor;
+        this.showFoldingControls = 'mouseover';
+        this.showFoldingHighlights = true;
+    }
+    getDecorationOption(isCollapsed, isHidden, isManual) {
+        if (isHidden) {
+            return FoldingDecorationProvider.HIDDEN_RANGE_DECORATION;
+        }
+        if (this.showFoldingControls === 'never') {
+            if (isCollapsed) {
+                return this.showFoldingHighlights ? FoldingDecorationProvider.NO_CONTROLS_COLLAPSED_HIGHLIGHTED_RANGE_DECORATION : FoldingDecorationProvider.NO_CONTROLS_COLLAPSED_RANGE_DECORATION;
+            }
+            return FoldingDecorationProvider.NO_CONTROLS_EXPANDED_RANGE_DECORATION;
+        }
+        if (isCollapsed) {
+            return isManual ?
+                (this.showFoldingHighlights ? FoldingDecorationProvider.MANUALLY_COLLAPSED_HIGHLIGHTED_VISUAL_DECORATION : FoldingDecorationProvider.MANUALLY_COLLAPSED_VISUAL_DECORATION)
+                : (this.showFoldingHighlights ? FoldingDecorationProvider.COLLAPSED_HIGHLIGHTED_VISUAL_DECORATION : FoldingDecorationProvider.COLLAPSED_VISUAL_DECORATION);
+        }
+        else if (this.showFoldingControls === 'mouseover') {
+            return isManual ? FoldingDecorationProvider.MANUALLY_EXPANDED_AUTO_HIDE_VISUAL_DECORATION : FoldingDecorationProvider.EXPANDED_AUTO_HIDE_VISUAL_DECORATION;
+        }
+        else {
+            return isManual ? FoldingDecorationProvider.MANUALLY_EXPANDED_VISUAL_DECORATION : FoldingDecorationProvider.EXPANDED_VISUAL_DECORATION;
+        }
+    }
+    changeDecorations(callback) {
+        return this.editor.changeDecorations(callback);
+    }
+    removeDecorations(decorationIds) {
+        this.editor.removeDecorations(decorationIds);
+    }
+}

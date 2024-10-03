@@ -1,2 +1,194 @@
-import{LcsDiff as k}from"../../../../../base/common/diff/diff.js";import{doHash as s,numberHash as g}from"../../../../../base/common/hash.js";import"../../../../../base/common/lifecycle.js";import{URI as h}from"../../../../../base/common/uri.js";import"../../../../../base/common/worker/simpleWorker.js";import{PieceTreeTextBufferBuilder as v}from"../../../../../editor/common/model/pieceTreeTextBuffer/pieceTreeTextBufferBuilder.js";import{CellKind as D,NotebookCellsChangeType as l}from"../notebookCommon.js";import{Range as N}from"../../../../../editor/common/core/range.js";import{SearchParams as _}from"../../../../../editor/common/model/textModelSearch.js";import{MirrorModel as w}from"../../../../../editor/common/services/textModelSync/textModelSync.impl.js";import{DefaultEndOfLine as f}from"../../../../../editor/common/model.js";import"../../../../../editor/common/model/mirrorTextModel.js";class M{constructor(e,t,o,a,n,m,i,r,b,c){this.handle=e;this._eol=a;this.language=m;this.cellKind=i;this.outputs=r;this.metadata=b;this.internalMetadata=c;this.textModel=new w(t,o,a,n)}textModel;_hash;get eol(){return this._eol===`\r
-`?f.CRLF:f.LF}onEvents(e){this.textModel.onEvents(e),this._hash=void 0}getValue(){return this.textModel.getValue()}async getComparisonValue(){return this._hash??=this._getHash()}async _getHash(){let e=g(104579,0);e=s(this.language,e),e=s(this.getValue(),e),e=s(this.metadata,e),e=s(this.internalMetadata,e);for(const o of this.outputs){e=s(o.metadata,e);for(const a of o.outputs)e=s(a.mime,e)}const t=await Promise.all(this.outputs.flatMap(o=>o.outputs.map(a=>crypto.subtle.digest("sha-1",a.data.buffer))));for(const o of t)e=g(new Int32Array(o)[0],e);return e}}class x{constructor(e,t,o){this.uri=e;this.cells=t;this.metadata=o}acceptModelChanged(e){e.rawEvents.forEach(t=>{if(t.kind===l.ModelChange)this._spliceNotebookCells(t.changes);else if(t.kind===l.Move){const o=this.cells.splice(t.index,1);this.cells.splice(t.newIdx,0,...o)}else if(t.kind===l.Output){const o=this.cells[t.index];o.outputs=t.outputs}else if(t.kind===l.ChangeCellLanguage){this._assertIndex(t.index);const o=this.cells[t.index];o.language=t.language}else if(t.kind===l.ChangeCellMetadata){this._assertIndex(t.index);const o=this.cells[t.index];o.metadata=t.metadata}else if(t.kind===l.ChangeCellInternalMetadata){this._assertIndex(t.index);const o=this.cells[t.index];o.internalMetadata=t.internalMetadata}else t.kind===l.ChangeDocumentMetadata&&(this.metadata=t.metadata)})}_assertIndex(e){if(e<0||e>=this.cells.length)throw new Error(`Illegal index ${e}. Cells length: ${this.cells.length}`)}_spliceNotebookCells(e){e.reverse().forEach(t=>{const a=t[2].map(n=>new M(n.handle,h.parse(n.url),n.source,n.eol,n.versionId,n.language,n.cellKind,n.outputs,n.metadata));this.cells.splice(t[0],t[1],...a)})}}class d{constructor(e){this.hashValue=e}static async create(e){const t=new Int32Array(e.cells.length);return await Promise.all(e.cells.map(async(o,a)=>{t[a]=await o.getComparisonValue()})),new d(t)}getElements(){return this.hashValue}}class y{_requestHandlerBrand;_models;constructor(){this._models=Object.create(null)}dispose(){}$acceptNewModel(e,t,o){this._models[e]=new x(h.parse(e),o.map(a=>new M(a.handle,h.parse(a.url),a.source,a.eol,a.versionId,a.language,a.cellKind,a.outputs,a.metadata)),t)}$acceptModelChanged(e,t){this._models[e]?.acceptModelChanged(t)}$acceptCellModelChanged(e,t,o){this._models[e].cells.find(n=>n.handle===t)?.onEvents(o)}$acceptRemovedModel(e){this._models[e]&&delete this._models[e]}async $computeDiff(e,t){const o=this._getModel(e),a=this._getModel(t),[n,m]=await Promise.all([d.create(o),d.create(a)]),r=new k(n,m).ComputeDiff(!1);return{metadataChanged:JSON.stringify(o.metadata)!==JSON.stringify(a.metadata),cellsDiff:r}}$canPromptRecommendation(e){const o=this._getModel(e).cells;for(let a=0;a<o.length;a++){const n=o[a];if(n.cellKind===D.Markup||n.language!=="python")continue;const i=new _("import\\s*pandas|from\\s*pandas",!0,!1,null).parseSearchRequest();if(!i)continue;const r=new v;r.acceptChunk(n.getValue());const c=r.finish(!0).create(n.eol).textBuffer,C=c.getLineCount(),p=Math.min(C,20),I=new N(1,1,p,c.getLineLength(p)+1);if(c.findMatchesLineByLine(I,i,!0,1).length>0)return!0}return!1}_getModel(e){return this._models[e]}}function te(u){return new y}export{y as NotebookEditorSimpleWorker,te as create};
+import { LcsDiff } from '../../../../../base/common/diff/diff.js';
+import { doHash, numberHash } from '../../../../../base/common/hash.js';
+import { URI } from '../../../../../base/common/uri.js';
+import { PieceTreeTextBufferBuilder } from '../../../../../editor/common/model/pieceTreeTextBuffer/pieceTreeTextBufferBuilder.js';
+import { CellKind, NotebookCellsChangeType } from '../notebookCommon.js';
+import { Range } from '../../../../../editor/common/core/range.js';
+import { SearchParams } from '../../../../../editor/common/model/textModelSearch.js';
+import { MirrorModel } from '../../../../../editor/common/services/textModelSync/textModelSync.impl.js';
+class MirrorCell {
+    get eol() {
+        return this._eol === '\r\n' ? 2 : 1;
+    }
+    constructor(handle, uri, source, _eol, versionId, language, cellKind, outputs, metadata, internalMetadata) {
+        this.handle = handle;
+        this._eol = _eol;
+        this.language = language;
+        this.cellKind = cellKind;
+        this.outputs = outputs;
+        this.metadata = metadata;
+        this.internalMetadata = internalMetadata;
+        this.textModel = new MirrorModel(uri, source, _eol, versionId);
+    }
+    onEvents(e) {
+        this.textModel.onEvents(e);
+        this._hash = undefined;
+    }
+    getValue() {
+        return this.textModel.getValue();
+    }
+    async getComparisonValue() {
+        return this._hash ??= this._getHash();
+    }
+    async _getHash() {
+        let hashValue = numberHash(104579, 0);
+        hashValue = doHash(this.language, hashValue);
+        hashValue = doHash(this.getValue(), hashValue);
+        hashValue = doHash(this.metadata, hashValue);
+        hashValue = doHash(this.internalMetadata, hashValue);
+        for (const op of this.outputs) {
+            hashValue = doHash(op.metadata, hashValue);
+            for (const output of op.outputs) {
+                hashValue = doHash(output.mime, hashValue);
+            }
+        }
+        const digests = await Promise.all(this.outputs.flatMap(op => op.outputs.map(o => crypto.subtle.digest('sha-1', o.data.buffer))));
+        for (const digest of digests) {
+            hashValue = numberHash(new Int32Array(digest)[0], hashValue);
+        }
+        return hashValue;
+    }
+}
+class MirrorNotebookDocument {
+    constructor(uri, cells, metadata) {
+        this.uri = uri;
+        this.cells = cells;
+        this.metadata = metadata;
+    }
+    acceptModelChanged(event) {
+        event.rawEvents.forEach(e => {
+            if (e.kind === NotebookCellsChangeType.ModelChange) {
+                this._spliceNotebookCells(e.changes);
+            }
+            else if (e.kind === NotebookCellsChangeType.Move) {
+                const cells = this.cells.splice(e.index, 1);
+                this.cells.splice(e.newIdx, 0, ...cells);
+            }
+            else if (e.kind === NotebookCellsChangeType.Output) {
+                const cell = this.cells[e.index];
+                cell.outputs = e.outputs;
+            }
+            else if (e.kind === NotebookCellsChangeType.ChangeCellLanguage) {
+                this._assertIndex(e.index);
+                const cell = this.cells[e.index];
+                cell.language = e.language;
+            }
+            else if (e.kind === NotebookCellsChangeType.ChangeCellMetadata) {
+                this._assertIndex(e.index);
+                const cell = this.cells[e.index];
+                cell.metadata = e.metadata;
+            }
+            else if (e.kind === NotebookCellsChangeType.ChangeCellInternalMetadata) {
+                this._assertIndex(e.index);
+                const cell = this.cells[e.index];
+                cell.internalMetadata = e.internalMetadata;
+            }
+            else if (e.kind === NotebookCellsChangeType.ChangeDocumentMetadata) {
+                this.metadata = e.metadata;
+            }
+        });
+    }
+    _assertIndex(index) {
+        if (index < 0 || index >= this.cells.length) {
+            throw new Error(`Illegal index ${index}. Cells length: ${this.cells.length}`);
+        }
+    }
+    _spliceNotebookCells(splices) {
+        splices.reverse().forEach(splice => {
+            const cellDtos = splice[2];
+            const newCells = cellDtos.map(cell => {
+                return new MirrorCell(cell.handle, URI.parse(cell.url), cell.source, cell.eol, cell.versionId, cell.language, cell.cellKind, cell.outputs, cell.metadata);
+            });
+            this.cells.splice(splice[0], splice[1], ...newCells);
+        });
+    }
+}
+class CellSequence {
+    static async create(textModel) {
+        const hashValue = new Int32Array(textModel.cells.length);
+        await Promise.all(textModel.cells.map(async (c, i) => {
+            hashValue[i] = await c.getComparisonValue();
+        }));
+        return new CellSequence(hashValue);
+    }
+    constructor(hashValue) {
+        this.hashValue = hashValue;
+    }
+    getElements() {
+        return this.hashValue;
+    }
+}
+export class NotebookEditorSimpleWorker {
+    constructor() {
+        this._models = Object.create(null);
+    }
+    dispose() {
+    }
+    $acceptNewModel(uri, metadata, cells) {
+        this._models[uri] = new MirrorNotebookDocument(URI.parse(uri), cells.map(dto => new MirrorCell(dto.handle, URI.parse(dto.url), dto.source, dto.eol, dto.versionId, dto.language, dto.cellKind, dto.outputs, dto.metadata)), metadata);
+    }
+    $acceptModelChanged(strURL, event) {
+        const model = this._models[strURL];
+        model?.acceptModelChanged(event);
+    }
+    $acceptCellModelChanged(strURL, handle, event) {
+        const model = this._models[strURL];
+        model.cells.find(cell => cell.handle === handle)?.onEvents(event);
+    }
+    $acceptRemovedModel(strURL) {
+        if (!this._models[strURL]) {
+            return;
+        }
+        delete this._models[strURL];
+    }
+    async $computeDiff(originalUrl, modifiedUrl) {
+        const original = this._getModel(originalUrl);
+        const modified = this._getModel(modifiedUrl);
+        const [originalSeq, modifiedSeq] = await Promise.all([
+            CellSequence.create(original),
+            CellSequence.create(modified),
+        ]);
+        const diff = new LcsDiff(originalSeq, modifiedSeq);
+        const diffResult = diff.ComputeDiff(false);
+        return {
+            metadataChanged: JSON.stringify(original.metadata) !== JSON.stringify(modified.metadata),
+            cellsDiff: diffResult,
+        };
+    }
+    $canPromptRecommendation(modelUrl) {
+        const model = this._getModel(modelUrl);
+        const cells = model.cells;
+        for (let i = 0; i < cells.length; i++) {
+            const cell = cells[i];
+            if (cell.cellKind === CellKind.Markup) {
+                continue;
+            }
+            if (cell.language !== 'python') {
+                continue;
+            }
+            const searchParams = new SearchParams('import\\s*pandas|from\\s*pandas', true, false, null);
+            const searchData = searchParams.parseSearchRequest();
+            if (!searchData) {
+                continue;
+            }
+            const builder = new PieceTreeTextBufferBuilder();
+            builder.acceptChunk(cell.getValue());
+            const bufferFactory = builder.finish(true);
+            const textBuffer = bufferFactory.create(cell.eol).textBuffer;
+            const lineCount = textBuffer.getLineCount();
+            const maxLineCount = Math.min(lineCount, 20);
+            const range = new Range(1, 1, maxLineCount, textBuffer.getLineLength(maxLineCount) + 1);
+            const cellMatches = textBuffer.findMatchesLineByLine(range, searchData, true, 1);
+            if (cellMatches.length > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+    _getModel(uri) {
+        return this._models[uri];
+    }
+}
+export function create(workerServer) {
+    return new NotebookEditorSimpleWorker();
+}

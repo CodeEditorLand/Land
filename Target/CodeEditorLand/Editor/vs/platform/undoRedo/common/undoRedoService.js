@@ -1,3 +1,1089 @@
-var P=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var S=(c,t,e,s)=>{for(var o=s>1?void 0:s?w(t,e):t,r=c.length-1,i;r>=0;r--)(i=c[r])&&(o=(s?i(t,e,o):i(o))||o);return s&&o&&P(t,e,o),o},b=(c,t)=>(e,s)=>t(e,s,c);import{onUnexpectedError as L}from"../../../base/common/errors.js";import{Disposable as k,isDisposable as V}from"../../../base/common/lifecycle.js";import{Schemas as D}from"../../../base/common/network.js";import F from"../../../base/common/severity.js";import"../../../base/common/uri.js";import*as l from"../../../nls.js";import{IDialogService as A}from"../../dialogs/common/dialogs.js";import{InstantiationType as T,registerSingleton as K}from"../../instantiation/common/extensions.js";import{INotificationService as z}from"../../notification/common/notification.js";import{IUndoRedoService as x,ResourceEditStackSnapshot as E,UndoRedoElementType as u,UndoRedoGroup as G,UndoRedoSource as f}from"./undoRedo.js";const h=!1;function R(c){return c.scheme===D.file?c.fsPath:c.path}let y=0;class g{id=++y;type=u.Resource;actual;label;confirmBeforeUndo;resourceLabel;strResource;resourceLabels;strResources;groupId;groupOrder;sourceId;sourceOrder;isValid;constructor(t,e,s,o,r,i,n){this.actual=t,this.label=t.label,this.confirmBeforeUndo=t.confirmBeforeUndo||!1,this.resourceLabel=e,this.strResource=s,this.resourceLabels=[this.resourceLabel],this.strResources=[this.strResource],this.groupId=o,this.groupOrder=r,this.sourceId=i,this.sourceOrder=n,this.isValid=!0}setValid(t){this.isValid=t}toString(){return`[id:${this.id}] [group:${this.groupId}] [${this.isValid?"  VALID":"INVALID"}] ${this.actual.constructor.name} - ${this.actual}`}}var B=(e=>(e[e.ExternalRemoval=0]="ExternalRemoval",e[e.NoParallelUniverses=1]="NoParallelUniverses",e))(B||{});class U{constructor(t,e){this.resourceLabel=t;this.reason=e}}class I{elements=new Map;createMessage(){const t=[],e=[];for(const[,o]of this.elements)(o.reason===0?t:e).push(o.resourceLabel);const s=[];return t.length>0&&s.push(l.localize({key:"externalRemoval",comment:["{0} is a list of filenames"]},"The following files have been closed and modified on disk: {0}.",t.join(", "))),e.length>0&&s.push(l.localize({key:"noParallelUniverses",comment:["{0} is a list of filenames"]},"The following files have been modified in an incompatible way: {0}.",e.join(", "))),s.join(`
-`)}get size(){return this.elements.size}has(t){return this.elements.has(t)}set(t,e){this.elements.set(t,e)}delete(t){return this.elements.delete(t)}}class M{id=++y;type=u.Workspace;actual;label;confirmBeforeUndo;resourceLabels;strResources;groupId;groupOrder;sourceId;sourceOrder;removedResources;invalidatedResources;constructor(t,e,s,o,r,i,n){this.actual=t,this.label=t.label,this.confirmBeforeUndo=t.confirmBeforeUndo||!1,this.resourceLabels=e,this.strResources=s,this.groupId=o,this.groupOrder=r,this.sourceId=i,this.sourceOrder=n,this.removedResources=null,this.invalidatedResources=null}canSplit(){return typeof this.actual.split=="function"}removeResource(t,e,s){this.removedResources||(this.removedResources=new I),this.removedResources.has(e)||this.removedResources.set(e,new U(t,s))}setValid(t,e,s){s?this.invalidatedResources&&(this.invalidatedResources.delete(e),this.invalidatedResources.size===0&&(this.invalidatedResources=null)):(this.invalidatedResources||(this.invalidatedResources=new I),this.invalidatedResources.has(e)||this.invalidatedResources.set(e,new U(t,0)))}toString(){return`[id:${this.id}] [group:${this.groupId}] [${this.invalidatedResources?"INVALID":"  VALID"}] ${this.actual.constructor.name} - ${this.actual}`}}class W{resourceLabel;strResource;_past;_future;locked;versionId;constructor(t,e){this.resourceLabel=t,this.strResource=e,this._past=[],this._future=[],this.locked=!1,this.versionId=1}dispose(){for(const t of this._past)t.type===u.Workspace&&t.removeResource(this.resourceLabel,this.strResource,0);for(const t of this._future)t.type===u.Workspace&&t.removeResource(this.resourceLabel,this.strResource,0);this.versionId++}toString(){const t=[];t.push(`* ${this.strResource}:`);for(let e=0;e<this._past.length;e++)t.push(`   * [UNDO] ${this._past[e]}`);for(let e=this._future.length-1;e>=0;e--)t.push(`   * [REDO] ${this._future[e]}`);return t.join(`
-`)}flushAllElements(){this._past=[],this._future=[],this.versionId++}setElementsIsValid(t){for(const e of this._past)e.type===u.Workspace?e.setValid(this.resourceLabel,this.strResource,t):e.setValid(t);for(const e of this._future)e.type===u.Workspace?e.setValid(this.resourceLabel,this.strResource,t):e.setValid(t)}_setElementValidFlag(t,e){t.type===u.Workspace?t.setValid(this.resourceLabel,this.strResource,e):t.setValid(e)}setElementsValidFlag(t,e){for(const s of this._past)e(s.actual)&&this._setElementValidFlag(s,t);for(const s of this._future)e(s.actual)&&this._setElementValidFlag(s,t)}pushElement(t){for(const e of this._future)e.type===u.Workspace&&e.removeResource(this.resourceLabel,this.strResource,1);this._future=[],this._past.push(t),this.versionId++}createSnapshot(t){const e=[];for(let s=0,o=this._past.length;s<o;s++)e.push(this._past[s].id);for(let s=this._future.length-1;s>=0;s--)e.push(this._future[s].id);return new E(t,e)}restoreSnapshot(t){const e=t.elements.length;let s=!0,o=0,r=-1;for(let n=0,a=this._past.length;n<a;n++,o++){const d=this._past[n];s&&(o>=e||d.id!==t.elements[o])&&(s=!1,r=0),!s&&d.type===u.Workspace&&d.removeResource(this.resourceLabel,this.strResource,0)}let i=-1;for(let n=this._future.length-1;n>=0;n--,o++){const a=this._future[n];s&&(o>=e||a.id!==t.elements[o])&&(s=!1,i=n),!s&&a.type===u.Workspace&&a.removeResource(this.resourceLabel,this.strResource,0)}r!==-1&&(this._past=this._past.slice(0,r)),i!==-1&&(this._future=this._future.slice(i+1)),this.versionId++}getElements(){const t=[],e=[];for(const s of this._past)t.push(s.actual);for(const s of this._future)e.push(s.actual);return{past:t,future:e}}getClosestPastElement(){return this._past.length===0?null:this._past[this._past.length-1]}getSecondClosestPastElement(){return this._past.length<2?null:this._past[this._past.length-2]}getClosestFutureElement(){return this._future.length===0?null:this._future[this._future.length-1]}hasPastElements(){return this._past.length>0}hasFutureElements(){return this._future.length>0}splitPastWorkspaceElement(t,e){for(let s=this._past.length-1;s>=0;s--)if(this._past[s]===t){e.has(this.strResource)?this._past[s]=e.get(this.strResource):this._past.splice(s,1);break}this.versionId++}splitFutureWorkspaceElement(t,e){for(let s=this._future.length-1;s>=0;s--)if(this._future[s]===t){e.has(this.strResource)?this._future[s]=e.get(this.strResource):this._future.splice(s,1);break}this.versionId++}moveBackward(t){this._past.pop(),this._future.push(t),this.versionId++}moveForward(t){this._future.pop(),this._past.push(t),this.versionId++}}class v{editStacks;_versionIds;constructor(t){this.editStacks=t,this._versionIds=[];for(let e=0,s=this.editStacks.length;e<s;e++)this._versionIds[e]=this.editStacks[e].versionId}isValid(){for(let t=0,e=this.editStacks.length;t<e;t++)if(this._versionIds[t]!==this.editStacks[t].versionId)return!1;return!0}}const C=new W("","");C.locked=!0;let m=class{constructor(t,e){this._dialogService=t;this._notificationService=e;this._editStacks=new Map,this._uriComparisonKeyComputers=[]}_editStacks;_uriComparisonKeyComputers;registerUriComparisonKeyComputer(t,e){return this._uriComparisonKeyComputers.push([t,e]),{dispose:()=>{for(let s=0,o=this._uriComparisonKeyComputers.length;s<o;s++)if(this._uriComparisonKeyComputers[s][1]===e){this._uriComparisonKeyComputers.splice(s,1);return}}}}getUriComparisonKey(t){for(const e of this._uriComparisonKeyComputers)if(e[0]===t.scheme)return e[1].getComparisonKey(t);return t.toString()}_print(t){const e=[];for(const s of this._editStacks)e.push(s[1].toString())}pushElement(t,e=G.None,s=f.None){if(t.type===u.Resource){const o=R(t.resource),r=this.getUriComparisonKey(t.resource);this._pushElement(new g(t,o,r,e.id,e.nextOrder(),s.id,s.nextOrder()))}else{const o=new Set,r=[],i=[];for(const n of t.resources){const a=R(n),d=this.getUriComparisonKey(n);o.has(d)||(o.add(d),r.push(a),i.push(d))}r.length===1?this._pushElement(new g(t,r[0],i[0],e.id,e.nextOrder(),s.id,s.nextOrder())):this._pushElement(new M(t,r,i,e.id,e.nextOrder(),s.id,s.nextOrder()))}h&&this._print("pushElement")}_pushElement(t){for(let e=0,s=t.strResources.length;e<s;e++){const o=t.resourceLabels[e],r=t.strResources[e];let i;this._editStacks.has(r)?i=this._editStacks.get(r):(i=new W(o,r),this._editStacks.set(r,i)),i.pushElement(t)}}getLastElement(t){const e=this.getUriComparisonKey(t);if(this._editStacks.has(e)){const s=this._editStacks.get(e);if(s.hasFutureElements())return null;const o=s.getClosestPastElement();return o?o.actual:null}return null}_splitPastWorkspaceElement(t,e){const s=t.actual.split(),o=new Map;for(const r of s){const i=R(r.resource),n=this.getUriComparisonKey(r.resource),a=new g(r,i,n,0,0,0,0);o.set(a.strResource,a)}for(const r of t.strResources){if(e&&e.has(r))continue;this._editStacks.get(r).splitPastWorkspaceElement(t,o)}}_splitFutureWorkspaceElement(t,e){const s=t.actual.split(),o=new Map;for(const r of s){const i=R(r.resource),n=this.getUriComparisonKey(r.resource),a=new g(r,i,n,0,0,0,0);o.set(a.strResource,a)}for(const r of t.strResources){if(e&&e.has(r))continue;this._editStacks.get(r).splitFutureWorkspaceElement(t,o)}}removeElements(t){const e=typeof t=="string"?t:this.getUriComparisonKey(t);this._editStacks.has(e)&&(this._editStacks.get(e).dispose(),this._editStacks.delete(e)),h&&this._print("removeElements")}setElementsValidFlag(t,e,s){const o=this.getUriComparisonKey(t);this._editStacks.has(o)&&this._editStacks.get(o).setElementsValidFlag(e,s),h&&this._print("setElementsValidFlag")}hasElements(t){const e=this.getUriComparisonKey(t);if(this._editStacks.has(e)){const s=this._editStacks.get(e);return s.hasPastElements()||s.hasFutureElements()}return!1}createSnapshot(t){const e=this.getUriComparisonKey(t);return this._editStacks.has(e)?this._editStacks.get(e).createSnapshot(t):new E(t,[])}restoreSnapshot(t){const e=this.getUriComparisonKey(t.resource);if(this._editStacks.has(e)){const s=this._editStacks.get(e);s.restoreSnapshot(t),!s.hasPastElements()&&!s.hasFutureElements()&&(s.dispose(),this._editStacks.delete(e))}h&&this._print("restoreSnapshot")}getElements(t){const e=this.getUriComparisonKey(t);return this._editStacks.has(e)?this._editStacks.get(e).getElements():{past:[],future:[]}}_findClosestUndoElementWithSource(t){if(!t)return[null,null];let e=null,s=null;for(const[o,r]of this._editStacks){const i=r.getClosestPastElement();i&&i.sourceId===t&&(!e||i.sourceOrder>e.sourceOrder)&&(e=i,s=o)}return[e,s]}canUndo(t){if(t instanceof f){const[,s]=this._findClosestUndoElementWithSource(t.id);return!!s}const e=this.getUriComparisonKey(t);return this._editStacks.has(e)?this._editStacks.get(e).hasPastElements():!1}_onError(t,e){L(t);for(const s of e.strResources)this.removeElements(s);this._notificationService.error(t)}_acquireLocks(t){for(const e of t.editStacks)if(e.locked)throw new Error("Cannot acquire edit stack lock");for(const e of t.editStacks)e.locked=!0;return()=>{for(const e of t.editStacks)e.locked=!1}}_safeInvokeWithLocks(t,e,s,o,r){const i=this._acquireLocks(s);let n;try{n=e()}catch(a){return i(),o.dispose(),this._onError(a,t)}return n?n.then(()=>(i(),o.dispose(),r()),a=>(i(),o.dispose(),this._onError(a,t))):(i(),o.dispose(),r())}async _invokeWorkspacePrepare(t){if(typeof t.actual.prepareUndoRedo>"u")return k.None;const e=t.actual.prepareUndoRedo();return typeof e>"u"?k.None:e}_invokeResourcePrepare(t,e){if(t.actual.type!==u.Workspace||typeof t.actual.prepareUndoRedo>"u")return e(k.None);const s=t.actual.prepareUndoRedo();return s?V(s)?e(s):s.then(o=>e(o)):e(k.None)}_getAffectedEditStacks(t){const e=[];for(const s of t.strResources)e.push(this._editStacks.get(s)||C);return new v(e)}_tryToSplitAndUndo(t,e,s,o){if(e.canSplit())return this._splitPastWorkspaceElement(e,s),this._notificationService.warn(o),new _(this._undo(t,0,!0));for(const r of e.strResources)this.removeElements(r);return this._notificationService.warn(o),new _}_checkWorkspaceUndo(t,e,s,o){if(e.removedResources)return this._tryToSplitAndUndo(t,e,e.removedResources,l.localize({key:"cannotWorkspaceUndo",comment:["{0} is a label for an operation. {1} is another message."]},"Could not undo '{0}' across all files. {1}",e.label,e.removedResources.createMessage()));if(o&&e.invalidatedResources)return this._tryToSplitAndUndo(t,e,e.invalidatedResources,l.localize({key:"cannotWorkspaceUndo",comment:["{0} is a label for an operation. {1} is another message."]},"Could not undo '{0}' across all files. {1}",e.label,e.invalidatedResources.createMessage()));const r=[];for(const n of s.editStacks)n.getClosestPastElement()!==e&&r.push(n.resourceLabel);if(r.length>0)return this._tryToSplitAndUndo(t,e,null,l.localize({key:"cannotWorkspaceUndoDueToChanges",comment:["{0} is a label for an operation. {1} is a list of filenames."]},"Could not undo '{0}' across all files because changes were made to {1}",e.label,r.join(", ")));const i=[];for(const n of s.editStacks)n.locked&&i.push(n.resourceLabel);return i.length>0?this._tryToSplitAndUndo(t,e,null,l.localize({key:"cannotWorkspaceUndoDueToInProgressUndoRedo",comment:["{0} is a label for an operation. {1} is a list of filenames."]},"Could not undo '{0}' across all files because there is already an undo or redo operation running on {1}",e.label,i.join(", "))):s.isValid()?null:this._tryToSplitAndUndo(t,e,null,l.localize({key:"cannotWorkspaceUndoDueToInMeantimeUndoRedo",comment:["{0} is a label for an operation. {1} is a list of filenames."]},"Could not undo '{0}' across all files because an undo or redo operation occurred in the meantime",e.label))}_workspaceUndo(t,e,s){const o=this._getAffectedEditStacks(e),r=this._checkWorkspaceUndo(t,e,o,!1);return r?r.returnValue:this._confirmAndExecuteWorkspaceUndo(t,e,o,s)}_isPartOfUndoGroup(t){if(!t.groupId)return!1;for(const[,e]of this._editStacks){const s=e.getClosestPastElement();if(s){if(s===t){const o=e.getSecondClosestPastElement();if(o&&o.groupId===t.groupId)return!0}if(s.groupId===t.groupId)return!0}}return!1}async _confirmAndExecuteWorkspaceUndo(t,e,s,o){if(e.canSplit()&&!this._isPartOfUndoGroup(e)){let n;(p=>(p[p.All=0]="All",p[p.This=1]="This",p[p.Cancel=2]="Cancel"))(n||={});const{result:a}=await this._dialogService.prompt({type:F.Info,message:l.localize("confirmWorkspace","Would you like to undo '{0}' across all files?",e.label),buttons:[{label:l.localize({key:"ok",comment:["{0} denotes a number that is > 1, && denotes a mnemonic"]},"&&Undo in {0} Files",s.editStacks.length),run:()=>0},{label:l.localize({key:"nok",comment:["&& denotes a mnemonic"]},"Undo this &&File"),run:()=>1}],cancelButton:{run:()=>2}});if(a===2)return;if(a===1)return this._splitPastWorkspaceElement(e,null),this._undo(t,0,!0);const d=this._checkWorkspaceUndo(t,e,s,!1);if(d)return d.returnValue;o=!0}let r;try{r=await this._invokeWorkspacePrepare(e)}catch(n){return this._onError(n,e)}const i=this._checkWorkspaceUndo(t,e,s,!0);if(i)return r.dispose(),i.returnValue;for(const n of s.editStacks)n.moveBackward(e);return this._safeInvokeWithLocks(e,()=>e.actual.undo(),s,r,()=>this._continueUndoInGroup(e.groupId,o))}_resourceUndo(t,e,s){if(!e.isValid){t.flushAllElements();return}if(t.locked){const o=l.localize({key:"cannotResourceUndoDueToInProgressUndoRedo",comment:["{0} is a label for an operation."]},"Could not undo '{0}' because there is already an undo or redo operation running.",e.label);this._notificationService.warn(o);return}return this._invokeResourcePrepare(e,o=>(t.moveBackward(e),this._safeInvokeWithLocks(e,()=>e.actual.undo(),new v([t]),o,()=>this._continueUndoInGroup(e.groupId,s))))}_findClosestUndoElementInGroup(t){if(!t)return[null,null];let e=null,s=null;for(const[o,r]of this._editStacks){const i=r.getClosestPastElement();i&&i.groupId===t&&(!e||i.groupOrder>e.groupOrder)&&(e=i,s=o)}return[e,s]}_continueUndoInGroup(t,e){if(!t)return;const[,s]=this._findClosestUndoElementInGroup(t);if(s)return this._undo(s,0,e)}undo(t){if(t instanceof f){const[,e]=this._findClosestUndoElementWithSource(t.id);return e?this._undo(e,t.id,!1):void 0}return typeof t=="string"?this._undo(t,0,!1):this._undo(this.getUriComparisonKey(t),0,!1)}_undo(t,e=0,s){if(!this._editStacks.has(t))return;const o=this._editStacks.get(t),r=o.getClosestPastElement();if(!r)return;if(r.groupId){const[n,a]=this._findClosestUndoElementInGroup(r.groupId);if(r!==n&&a)return this._undo(a,e,s)}if((r.sourceId!==e||r.confirmBeforeUndo)&&!s)return this._confirmAndContinueUndo(t,e,r);try{return r.type===u.Workspace?this._workspaceUndo(t,r,s):this._resourceUndo(o,r,s)}finally{h&&this._print("undo")}}async _confirmAndContinueUndo(t,e,s){if((await this._dialogService.confirm({message:l.localize("confirmDifferentSource","Would you like to undo '{0}'?",s.label),primaryButton:l.localize({key:"confirmDifferentSource.yes",comment:["&& denotes a mnemonic"]},"&&Yes"),cancelButton:l.localize("confirmDifferentSource.no","No")})).confirmed)return this._undo(t,e,!0)}_findClosestRedoElementWithSource(t){if(!t)return[null,null];let e=null,s=null;for(const[o,r]of this._editStacks){const i=r.getClosestFutureElement();i&&i.sourceId===t&&(!e||i.sourceOrder<e.sourceOrder)&&(e=i,s=o)}return[e,s]}canRedo(t){if(t instanceof f){const[,s]=this._findClosestRedoElementWithSource(t.id);return!!s}const e=this.getUriComparisonKey(t);return this._editStacks.has(e)?this._editStacks.get(e).hasFutureElements():!1}_tryToSplitAndRedo(t,e,s,o){if(e.canSplit())return this._splitFutureWorkspaceElement(e,s),this._notificationService.warn(o),new _(this._redo(t));for(const r of e.strResources)this.removeElements(r);return this._notificationService.warn(o),new _}_checkWorkspaceRedo(t,e,s,o){if(e.removedResources)return this._tryToSplitAndRedo(t,e,e.removedResources,l.localize({key:"cannotWorkspaceRedo",comment:["{0} is a label for an operation. {1} is another message."]},"Could not redo '{0}' across all files. {1}",e.label,e.removedResources.createMessage()));if(o&&e.invalidatedResources)return this._tryToSplitAndRedo(t,e,e.invalidatedResources,l.localize({key:"cannotWorkspaceRedo",comment:["{0} is a label for an operation. {1} is another message."]},"Could not redo '{0}' across all files. {1}",e.label,e.invalidatedResources.createMessage()));const r=[];for(const n of s.editStacks)n.getClosestFutureElement()!==e&&r.push(n.resourceLabel);if(r.length>0)return this._tryToSplitAndRedo(t,e,null,l.localize({key:"cannotWorkspaceRedoDueToChanges",comment:["{0} is a label for an operation. {1} is a list of filenames."]},"Could not redo '{0}' across all files because changes were made to {1}",e.label,r.join(", ")));const i=[];for(const n of s.editStacks)n.locked&&i.push(n.resourceLabel);return i.length>0?this._tryToSplitAndRedo(t,e,null,l.localize({key:"cannotWorkspaceRedoDueToInProgressUndoRedo",comment:["{0} is a label for an operation. {1} is a list of filenames."]},"Could not redo '{0}' across all files because there is already an undo or redo operation running on {1}",e.label,i.join(", "))):s.isValid()?null:this._tryToSplitAndRedo(t,e,null,l.localize({key:"cannotWorkspaceRedoDueToInMeantimeUndoRedo",comment:["{0} is a label for an operation. {1} is a list of filenames."]},"Could not redo '{0}' across all files because an undo or redo operation occurred in the meantime",e.label))}_workspaceRedo(t,e){const s=this._getAffectedEditStacks(e),o=this._checkWorkspaceRedo(t,e,s,!1);return o?o.returnValue:this._executeWorkspaceRedo(t,e,s)}async _executeWorkspaceRedo(t,e,s){let o;try{o=await this._invokeWorkspacePrepare(e)}catch(i){return this._onError(i,e)}const r=this._checkWorkspaceRedo(t,e,s,!0);if(r)return o.dispose(),r.returnValue;for(const i of s.editStacks)i.moveForward(e);return this._safeInvokeWithLocks(e,()=>e.actual.redo(),s,o,()=>this._continueRedoInGroup(e.groupId))}_resourceRedo(t,e){if(!e.isValid){t.flushAllElements();return}if(t.locked){const s=l.localize({key:"cannotResourceRedoDueToInProgressUndoRedo",comment:["{0} is a label for an operation."]},"Could not redo '{0}' because there is already an undo or redo operation running.",e.label);this._notificationService.warn(s);return}return this._invokeResourcePrepare(e,s=>(t.moveForward(e),this._safeInvokeWithLocks(e,()=>e.actual.redo(),new v([t]),s,()=>this._continueRedoInGroup(e.groupId))))}_findClosestRedoElementInGroup(t){if(!t)return[null,null];let e=null,s=null;for(const[o,r]of this._editStacks){const i=r.getClosestFutureElement();i&&i.groupId===t&&(!e||i.groupOrder<e.groupOrder)&&(e=i,s=o)}return[e,s]}_continueRedoInGroup(t){if(!t)return;const[,e]=this._findClosestRedoElementInGroup(t);if(e)return this._redo(e)}redo(t){if(t instanceof f){const[,e]=this._findClosestRedoElementWithSource(t.id);return e?this._redo(e):void 0}return typeof t=="string"?this._redo(t):this._redo(this.getUriComparisonKey(t))}_redo(t){if(!this._editStacks.has(t))return;const e=this._editStacks.get(t),s=e.getClosestFutureElement();if(s){if(s.groupId){const[o,r]=this._findClosestRedoElementInGroup(s.groupId);if(s!==o&&r)return this._redo(r)}try{return s.type===u.Workspace?this._workspaceRedo(t,s):this._resourceRedo(e,s)}finally{h&&this._print("redo")}}}};m=S([b(0,A),b(1,z)],m);class _{constructor(t){this.returnValue=t}}K(x,m,T.Delayed);export{m as UndoRedoService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { onUnexpectedError } from '../../../base/common/errors.js';
+import { Disposable, isDisposable } from '../../../base/common/lifecycle.js';
+import { Schemas } from '../../../base/common/network.js';
+import Severity from '../../../base/common/severity.js';
+import * as nls from '../../../nls.js';
+import { IDialogService } from '../../dialogs/common/dialogs.js';
+import { registerSingleton } from '../../instantiation/common/extensions.js';
+import { INotificationService } from '../../notification/common/notification.js';
+import { IUndoRedoService, ResourceEditStackSnapshot, UndoRedoGroup, UndoRedoSource } from './undoRedo.js';
+const DEBUG = false;
+function getResourceLabel(resource) {
+    return resource.scheme === Schemas.file ? resource.fsPath : resource.path;
+}
+let stackElementCounter = 0;
+class ResourceStackElement {
+    constructor(actual, resourceLabel, strResource, groupId, groupOrder, sourceId, sourceOrder) {
+        this.id = (++stackElementCounter);
+        this.type = 0;
+        this.actual = actual;
+        this.label = actual.label;
+        this.confirmBeforeUndo = actual.confirmBeforeUndo || false;
+        this.resourceLabel = resourceLabel;
+        this.strResource = strResource;
+        this.resourceLabels = [this.resourceLabel];
+        this.strResources = [this.strResource];
+        this.groupId = groupId;
+        this.groupOrder = groupOrder;
+        this.sourceId = sourceId;
+        this.sourceOrder = sourceOrder;
+        this.isValid = true;
+    }
+    setValid(isValid) {
+        this.isValid = isValid;
+    }
+    toString() {
+        return `[id:${this.id}] [group:${this.groupId}] [${this.isValid ? '  VALID' : 'INVALID'}] ${this.actual.constructor.name} - ${this.actual}`;
+    }
+}
+class ResourceReasonPair {
+    constructor(resourceLabel, reason) {
+        this.resourceLabel = resourceLabel;
+        this.reason = reason;
+    }
+}
+class RemovedResources {
+    constructor() {
+        this.elements = new Map();
+    }
+    createMessage() {
+        const externalRemoval = [];
+        const noParallelUniverses = [];
+        for (const [, element] of this.elements) {
+            const dest = (element.reason === 0
+                ? externalRemoval
+                : noParallelUniverses);
+            dest.push(element.resourceLabel);
+        }
+        const messages = [];
+        if (externalRemoval.length > 0) {
+            messages.push(nls.localize({ key: 'externalRemoval', comment: ['{0} is a list of filenames'] }, "The following files have been closed and modified on disk: {0}.", externalRemoval.join(', ')));
+        }
+        if (noParallelUniverses.length > 0) {
+            messages.push(nls.localize({ key: 'noParallelUniverses', comment: ['{0} is a list of filenames'] }, "The following files have been modified in an incompatible way: {0}.", noParallelUniverses.join(', ')));
+        }
+        return messages.join('\n');
+    }
+    get size() {
+        return this.elements.size;
+    }
+    has(strResource) {
+        return this.elements.has(strResource);
+    }
+    set(strResource, value) {
+        this.elements.set(strResource, value);
+    }
+    delete(strResource) {
+        return this.elements.delete(strResource);
+    }
+}
+class WorkspaceStackElement {
+    constructor(actual, resourceLabels, strResources, groupId, groupOrder, sourceId, sourceOrder) {
+        this.id = (++stackElementCounter);
+        this.type = 1;
+        this.actual = actual;
+        this.label = actual.label;
+        this.confirmBeforeUndo = actual.confirmBeforeUndo || false;
+        this.resourceLabels = resourceLabels;
+        this.strResources = strResources;
+        this.groupId = groupId;
+        this.groupOrder = groupOrder;
+        this.sourceId = sourceId;
+        this.sourceOrder = sourceOrder;
+        this.removedResources = null;
+        this.invalidatedResources = null;
+    }
+    canSplit() {
+        return (typeof this.actual.split === 'function');
+    }
+    removeResource(resourceLabel, strResource, reason) {
+        if (!this.removedResources) {
+            this.removedResources = new RemovedResources();
+        }
+        if (!this.removedResources.has(strResource)) {
+            this.removedResources.set(strResource, new ResourceReasonPair(resourceLabel, reason));
+        }
+    }
+    setValid(resourceLabel, strResource, isValid) {
+        if (isValid) {
+            if (this.invalidatedResources) {
+                this.invalidatedResources.delete(strResource);
+                if (this.invalidatedResources.size === 0) {
+                    this.invalidatedResources = null;
+                }
+            }
+        }
+        else {
+            if (!this.invalidatedResources) {
+                this.invalidatedResources = new RemovedResources();
+            }
+            if (!this.invalidatedResources.has(strResource)) {
+                this.invalidatedResources.set(strResource, new ResourceReasonPair(resourceLabel, 0));
+            }
+        }
+    }
+    toString() {
+        return `[id:${this.id}] [group:${this.groupId}] [${this.invalidatedResources ? 'INVALID' : '  VALID'}] ${this.actual.constructor.name} - ${this.actual}`;
+    }
+}
+class ResourceEditStack {
+    constructor(resourceLabel, strResource) {
+        this.resourceLabel = resourceLabel;
+        this.strResource = strResource;
+        this._past = [];
+        this._future = [];
+        this.locked = false;
+        this.versionId = 1;
+    }
+    dispose() {
+        for (const element of this._past) {
+            if (element.type === 1) {
+                element.removeResource(this.resourceLabel, this.strResource, 0);
+            }
+        }
+        for (const element of this._future) {
+            if (element.type === 1) {
+                element.removeResource(this.resourceLabel, this.strResource, 0);
+            }
+        }
+        this.versionId++;
+    }
+    toString() {
+        const result = [];
+        result.push(`* ${this.strResource}:`);
+        for (let i = 0; i < this._past.length; i++) {
+            result.push(`   * [UNDO] ${this._past[i]}`);
+        }
+        for (let i = this._future.length - 1; i >= 0; i--) {
+            result.push(`   * [REDO] ${this._future[i]}`);
+        }
+        return result.join('\n');
+    }
+    flushAllElements() {
+        this._past = [];
+        this._future = [];
+        this.versionId++;
+    }
+    setElementsIsValid(isValid) {
+        for (const element of this._past) {
+            if (element.type === 1) {
+                element.setValid(this.resourceLabel, this.strResource, isValid);
+            }
+            else {
+                element.setValid(isValid);
+            }
+        }
+        for (const element of this._future) {
+            if (element.type === 1) {
+                element.setValid(this.resourceLabel, this.strResource, isValid);
+            }
+            else {
+                element.setValid(isValid);
+            }
+        }
+    }
+    _setElementValidFlag(element, isValid) {
+        if (element.type === 1) {
+            element.setValid(this.resourceLabel, this.strResource, isValid);
+        }
+        else {
+            element.setValid(isValid);
+        }
+    }
+    setElementsValidFlag(isValid, filter) {
+        for (const element of this._past) {
+            if (filter(element.actual)) {
+                this._setElementValidFlag(element, isValid);
+            }
+        }
+        for (const element of this._future) {
+            if (filter(element.actual)) {
+                this._setElementValidFlag(element, isValid);
+            }
+        }
+    }
+    pushElement(element) {
+        for (const futureElement of this._future) {
+            if (futureElement.type === 1) {
+                futureElement.removeResource(this.resourceLabel, this.strResource, 1);
+            }
+        }
+        this._future = [];
+        this._past.push(element);
+        this.versionId++;
+    }
+    createSnapshot(resource) {
+        const elements = [];
+        for (let i = 0, len = this._past.length; i < len; i++) {
+            elements.push(this._past[i].id);
+        }
+        for (let i = this._future.length - 1; i >= 0; i--) {
+            elements.push(this._future[i].id);
+        }
+        return new ResourceEditStackSnapshot(resource, elements);
+    }
+    restoreSnapshot(snapshot) {
+        const snapshotLength = snapshot.elements.length;
+        let isOK = true;
+        let snapshotIndex = 0;
+        let removePastAfter = -1;
+        for (let i = 0, len = this._past.length; i < len; i++, snapshotIndex++) {
+            const element = this._past[i];
+            if (isOK && (snapshotIndex >= snapshotLength || element.id !== snapshot.elements[snapshotIndex])) {
+                isOK = false;
+                removePastAfter = 0;
+            }
+            if (!isOK && element.type === 1) {
+                element.removeResource(this.resourceLabel, this.strResource, 0);
+            }
+        }
+        let removeFutureBefore = -1;
+        for (let i = this._future.length - 1; i >= 0; i--, snapshotIndex++) {
+            const element = this._future[i];
+            if (isOK && (snapshotIndex >= snapshotLength || element.id !== snapshot.elements[snapshotIndex])) {
+                isOK = false;
+                removeFutureBefore = i;
+            }
+            if (!isOK && element.type === 1) {
+                element.removeResource(this.resourceLabel, this.strResource, 0);
+            }
+        }
+        if (removePastAfter !== -1) {
+            this._past = this._past.slice(0, removePastAfter);
+        }
+        if (removeFutureBefore !== -1) {
+            this._future = this._future.slice(removeFutureBefore + 1);
+        }
+        this.versionId++;
+    }
+    getElements() {
+        const past = [];
+        const future = [];
+        for (const element of this._past) {
+            past.push(element.actual);
+        }
+        for (const element of this._future) {
+            future.push(element.actual);
+        }
+        return { past, future };
+    }
+    getClosestPastElement() {
+        if (this._past.length === 0) {
+            return null;
+        }
+        return this._past[this._past.length - 1];
+    }
+    getSecondClosestPastElement() {
+        if (this._past.length < 2) {
+            return null;
+        }
+        return this._past[this._past.length - 2];
+    }
+    getClosestFutureElement() {
+        if (this._future.length === 0) {
+            return null;
+        }
+        return this._future[this._future.length - 1];
+    }
+    hasPastElements() {
+        return (this._past.length > 0);
+    }
+    hasFutureElements() {
+        return (this._future.length > 0);
+    }
+    splitPastWorkspaceElement(toRemove, individualMap) {
+        for (let j = this._past.length - 1; j >= 0; j--) {
+            if (this._past[j] === toRemove) {
+                if (individualMap.has(this.strResource)) {
+                    this._past[j] = individualMap.get(this.strResource);
+                }
+                else {
+                    this._past.splice(j, 1);
+                }
+                break;
+            }
+        }
+        this.versionId++;
+    }
+    splitFutureWorkspaceElement(toRemove, individualMap) {
+        for (let j = this._future.length - 1; j >= 0; j--) {
+            if (this._future[j] === toRemove) {
+                if (individualMap.has(this.strResource)) {
+                    this._future[j] = individualMap.get(this.strResource);
+                }
+                else {
+                    this._future.splice(j, 1);
+                }
+                break;
+            }
+        }
+        this.versionId++;
+    }
+    moveBackward(element) {
+        this._past.pop();
+        this._future.push(element);
+        this.versionId++;
+    }
+    moveForward(element) {
+        this._future.pop();
+        this._past.push(element);
+        this.versionId++;
+    }
+}
+class EditStackSnapshot {
+    constructor(editStacks) {
+        this.editStacks = editStacks;
+        this._versionIds = [];
+        for (let i = 0, len = this.editStacks.length; i < len; i++) {
+            this._versionIds[i] = this.editStacks[i].versionId;
+        }
+    }
+    isValid() {
+        for (let i = 0, len = this.editStacks.length; i < len; i++) {
+            if (this._versionIds[i] !== this.editStacks[i].versionId) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+const missingEditStack = new ResourceEditStack('', '');
+missingEditStack.locked = true;
+let UndoRedoService = class UndoRedoService {
+    constructor(_dialogService, _notificationService) {
+        this._dialogService = _dialogService;
+        this._notificationService = _notificationService;
+        this._editStacks = new Map();
+        this._uriComparisonKeyComputers = [];
+    }
+    registerUriComparisonKeyComputer(scheme, uriComparisonKeyComputer) {
+        this._uriComparisonKeyComputers.push([scheme, uriComparisonKeyComputer]);
+        return {
+            dispose: () => {
+                for (let i = 0, len = this._uriComparisonKeyComputers.length; i < len; i++) {
+                    if (this._uriComparisonKeyComputers[i][1] === uriComparisonKeyComputer) {
+                        this._uriComparisonKeyComputers.splice(i, 1);
+                        return;
+                    }
+                }
+            }
+        };
+    }
+    getUriComparisonKey(resource) {
+        for (const uriComparisonKeyComputer of this._uriComparisonKeyComputers) {
+            if (uriComparisonKeyComputer[0] === resource.scheme) {
+                return uriComparisonKeyComputer[1].getComparisonKey(resource);
+            }
+        }
+        return resource.toString();
+    }
+    _print(label) {
+        console.log(`------------------------------------`);
+        console.log(`AFTER ${label}: `);
+        const str = [];
+        for (const element of this._editStacks) {
+            str.push(element[1].toString());
+        }
+        console.log(str.join('\n'));
+    }
+    pushElement(element, group = UndoRedoGroup.None, source = UndoRedoSource.None) {
+        if (element.type === 0) {
+            const resourceLabel = getResourceLabel(element.resource);
+            const strResource = this.getUriComparisonKey(element.resource);
+            this._pushElement(new ResourceStackElement(element, resourceLabel, strResource, group.id, group.nextOrder(), source.id, source.nextOrder()));
+        }
+        else {
+            const seen = new Set();
+            const resourceLabels = [];
+            const strResources = [];
+            for (const resource of element.resources) {
+                const resourceLabel = getResourceLabel(resource);
+                const strResource = this.getUriComparisonKey(resource);
+                if (seen.has(strResource)) {
+                    continue;
+                }
+                seen.add(strResource);
+                resourceLabels.push(resourceLabel);
+                strResources.push(strResource);
+            }
+            if (resourceLabels.length === 1) {
+                this._pushElement(new ResourceStackElement(element, resourceLabels[0], strResources[0], group.id, group.nextOrder(), source.id, source.nextOrder()));
+            }
+            else {
+                this._pushElement(new WorkspaceStackElement(element, resourceLabels, strResources, group.id, group.nextOrder(), source.id, source.nextOrder()));
+            }
+        }
+        if (DEBUG) {
+            this._print('pushElement');
+        }
+    }
+    _pushElement(element) {
+        for (let i = 0, len = element.strResources.length; i < len; i++) {
+            const resourceLabel = element.resourceLabels[i];
+            const strResource = element.strResources[i];
+            let editStack;
+            if (this._editStacks.has(strResource)) {
+                editStack = this._editStacks.get(strResource);
+            }
+            else {
+                editStack = new ResourceEditStack(resourceLabel, strResource);
+                this._editStacks.set(strResource, editStack);
+            }
+            editStack.pushElement(element);
+        }
+    }
+    getLastElement(resource) {
+        const strResource = this.getUriComparisonKey(resource);
+        if (this._editStacks.has(strResource)) {
+            const editStack = this._editStacks.get(strResource);
+            if (editStack.hasFutureElements()) {
+                return null;
+            }
+            const closestPastElement = editStack.getClosestPastElement();
+            return closestPastElement ? closestPastElement.actual : null;
+        }
+        return null;
+    }
+    _splitPastWorkspaceElement(toRemove, ignoreResources) {
+        const individualArr = toRemove.actual.split();
+        const individualMap = new Map();
+        for (const _element of individualArr) {
+            const resourceLabel = getResourceLabel(_element.resource);
+            const strResource = this.getUriComparisonKey(_element.resource);
+            const element = new ResourceStackElement(_element, resourceLabel, strResource, 0, 0, 0, 0);
+            individualMap.set(element.strResource, element);
+        }
+        for (const strResource of toRemove.strResources) {
+            if (ignoreResources && ignoreResources.has(strResource)) {
+                continue;
+            }
+            const editStack = this._editStacks.get(strResource);
+            editStack.splitPastWorkspaceElement(toRemove, individualMap);
+        }
+    }
+    _splitFutureWorkspaceElement(toRemove, ignoreResources) {
+        const individualArr = toRemove.actual.split();
+        const individualMap = new Map();
+        for (const _element of individualArr) {
+            const resourceLabel = getResourceLabel(_element.resource);
+            const strResource = this.getUriComparisonKey(_element.resource);
+            const element = new ResourceStackElement(_element, resourceLabel, strResource, 0, 0, 0, 0);
+            individualMap.set(element.strResource, element);
+        }
+        for (const strResource of toRemove.strResources) {
+            if (ignoreResources && ignoreResources.has(strResource)) {
+                continue;
+            }
+            const editStack = this._editStacks.get(strResource);
+            editStack.splitFutureWorkspaceElement(toRemove, individualMap);
+        }
+    }
+    removeElements(resource) {
+        const strResource = typeof resource === 'string' ? resource : this.getUriComparisonKey(resource);
+        if (this._editStacks.has(strResource)) {
+            const editStack = this._editStacks.get(strResource);
+            editStack.dispose();
+            this._editStacks.delete(strResource);
+        }
+        if (DEBUG) {
+            this._print('removeElements');
+        }
+    }
+    setElementsValidFlag(resource, isValid, filter) {
+        const strResource = this.getUriComparisonKey(resource);
+        if (this._editStacks.has(strResource)) {
+            const editStack = this._editStacks.get(strResource);
+            editStack.setElementsValidFlag(isValid, filter);
+        }
+        if (DEBUG) {
+            this._print('setElementsValidFlag');
+        }
+    }
+    hasElements(resource) {
+        const strResource = this.getUriComparisonKey(resource);
+        if (this._editStacks.has(strResource)) {
+            const editStack = this._editStacks.get(strResource);
+            return (editStack.hasPastElements() || editStack.hasFutureElements());
+        }
+        return false;
+    }
+    createSnapshot(resource) {
+        const strResource = this.getUriComparisonKey(resource);
+        if (this._editStacks.has(strResource)) {
+            const editStack = this._editStacks.get(strResource);
+            return editStack.createSnapshot(resource);
+        }
+        return new ResourceEditStackSnapshot(resource, []);
+    }
+    restoreSnapshot(snapshot) {
+        const strResource = this.getUriComparisonKey(snapshot.resource);
+        if (this._editStacks.has(strResource)) {
+            const editStack = this._editStacks.get(strResource);
+            editStack.restoreSnapshot(snapshot);
+            if (!editStack.hasPastElements() && !editStack.hasFutureElements()) {
+                editStack.dispose();
+                this._editStacks.delete(strResource);
+            }
+        }
+        if (DEBUG) {
+            this._print('restoreSnapshot');
+        }
+    }
+    getElements(resource) {
+        const strResource = this.getUriComparisonKey(resource);
+        if (this._editStacks.has(strResource)) {
+            const editStack = this._editStacks.get(strResource);
+            return editStack.getElements();
+        }
+        return { past: [], future: [] };
+    }
+    _findClosestUndoElementWithSource(sourceId) {
+        if (!sourceId) {
+            return [null, null];
+        }
+        let matchedElement = null;
+        let matchedStrResource = null;
+        for (const [strResource, editStack] of this._editStacks) {
+            const candidate = editStack.getClosestPastElement();
+            if (!candidate) {
+                continue;
+            }
+            if (candidate.sourceId === sourceId) {
+                if (!matchedElement || candidate.sourceOrder > matchedElement.sourceOrder) {
+                    matchedElement = candidate;
+                    matchedStrResource = strResource;
+                }
+            }
+        }
+        return [matchedElement, matchedStrResource];
+    }
+    canUndo(resourceOrSource) {
+        if (resourceOrSource instanceof UndoRedoSource) {
+            const [, matchedStrResource] = this._findClosestUndoElementWithSource(resourceOrSource.id);
+            return matchedStrResource ? true : false;
+        }
+        const strResource = this.getUriComparisonKey(resourceOrSource);
+        if (this._editStacks.has(strResource)) {
+            const editStack = this._editStacks.get(strResource);
+            return editStack.hasPastElements();
+        }
+        return false;
+    }
+    _onError(err, element) {
+        onUnexpectedError(err);
+        for (const strResource of element.strResources) {
+            this.removeElements(strResource);
+        }
+        this._notificationService.error(err);
+    }
+    _acquireLocks(editStackSnapshot) {
+        for (const editStack of editStackSnapshot.editStacks) {
+            if (editStack.locked) {
+                throw new Error('Cannot acquire edit stack lock');
+            }
+        }
+        for (const editStack of editStackSnapshot.editStacks) {
+            editStack.locked = true;
+        }
+        return () => {
+            for (const editStack of editStackSnapshot.editStacks) {
+                editStack.locked = false;
+            }
+        };
+    }
+    _safeInvokeWithLocks(element, invoke, editStackSnapshot, cleanup, continuation) {
+        const releaseLocks = this._acquireLocks(editStackSnapshot);
+        let result;
+        try {
+            result = invoke();
+        }
+        catch (err) {
+            releaseLocks();
+            cleanup.dispose();
+            return this._onError(err, element);
+        }
+        if (result) {
+            return result.then(() => {
+                releaseLocks();
+                cleanup.dispose();
+                return continuation();
+            }, (err) => {
+                releaseLocks();
+                cleanup.dispose();
+                return this._onError(err, element);
+            });
+        }
+        else {
+            releaseLocks();
+            cleanup.dispose();
+            return continuation();
+        }
+    }
+    async _invokeWorkspacePrepare(element) {
+        if (typeof element.actual.prepareUndoRedo === 'undefined') {
+            return Disposable.None;
+        }
+        const result = element.actual.prepareUndoRedo();
+        if (typeof result === 'undefined') {
+            return Disposable.None;
+        }
+        return result;
+    }
+    _invokeResourcePrepare(element, callback) {
+        if (element.actual.type !== 1 || typeof element.actual.prepareUndoRedo === 'undefined') {
+            return callback(Disposable.None);
+        }
+        const r = element.actual.prepareUndoRedo();
+        if (!r) {
+            return callback(Disposable.None);
+        }
+        if (isDisposable(r)) {
+            return callback(r);
+        }
+        return r.then((disposable) => {
+            return callback(disposable);
+        });
+    }
+    _getAffectedEditStacks(element) {
+        const affectedEditStacks = [];
+        for (const strResource of element.strResources) {
+            affectedEditStacks.push(this._editStacks.get(strResource) || missingEditStack);
+        }
+        return new EditStackSnapshot(affectedEditStacks);
+    }
+    _tryToSplitAndUndo(strResource, element, ignoreResources, message) {
+        if (element.canSplit()) {
+            this._splitPastWorkspaceElement(element, ignoreResources);
+            this._notificationService.warn(message);
+            return new WorkspaceVerificationError(this._undo(strResource, 0, true));
+        }
+        else {
+            for (const strResource of element.strResources) {
+                this.removeElements(strResource);
+            }
+            this._notificationService.warn(message);
+            return new WorkspaceVerificationError();
+        }
+    }
+    _checkWorkspaceUndo(strResource, element, editStackSnapshot, checkInvalidatedResources) {
+        if (element.removedResources) {
+            return this._tryToSplitAndUndo(strResource, element, element.removedResources, nls.localize({ key: 'cannotWorkspaceUndo', comment: ['{0} is a label for an operation. {1} is another message.'] }, "Could not undo '{0}' across all files. {1}", element.label, element.removedResources.createMessage()));
+        }
+        if (checkInvalidatedResources && element.invalidatedResources) {
+            return this._tryToSplitAndUndo(strResource, element, element.invalidatedResources, nls.localize({ key: 'cannotWorkspaceUndo', comment: ['{0} is a label for an operation. {1} is another message.'] }, "Could not undo '{0}' across all files. {1}", element.label, element.invalidatedResources.createMessage()));
+        }
+        const cannotUndoDueToResources = [];
+        for (const editStack of editStackSnapshot.editStacks) {
+            if (editStack.getClosestPastElement() !== element) {
+                cannotUndoDueToResources.push(editStack.resourceLabel);
+            }
+        }
+        if (cannotUndoDueToResources.length > 0) {
+            return this._tryToSplitAndUndo(strResource, element, null, nls.localize({ key: 'cannotWorkspaceUndoDueToChanges', comment: ['{0} is a label for an operation. {1} is a list of filenames.'] }, "Could not undo '{0}' across all files because changes were made to {1}", element.label, cannotUndoDueToResources.join(', ')));
+        }
+        const cannotLockDueToResources = [];
+        for (const editStack of editStackSnapshot.editStacks) {
+            if (editStack.locked) {
+                cannotLockDueToResources.push(editStack.resourceLabel);
+            }
+        }
+        if (cannotLockDueToResources.length > 0) {
+            return this._tryToSplitAndUndo(strResource, element, null, nls.localize({ key: 'cannotWorkspaceUndoDueToInProgressUndoRedo', comment: ['{0} is a label for an operation. {1} is a list of filenames.'] }, "Could not undo '{0}' across all files because there is already an undo or redo operation running on {1}", element.label, cannotLockDueToResources.join(', ')));
+        }
+        if (!editStackSnapshot.isValid()) {
+            return this._tryToSplitAndUndo(strResource, element, null, nls.localize({ key: 'cannotWorkspaceUndoDueToInMeantimeUndoRedo', comment: ['{0} is a label for an operation. {1} is a list of filenames.'] }, "Could not undo '{0}' across all files because an undo or redo operation occurred in the meantime", element.label));
+        }
+        return null;
+    }
+    _workspaceUndo(strResource, element, undoConfirmed) {
+        const affectedEditStacks = this._getAffectedEditStacks(element);
+        const verificationError = this._checkWorkspaceUndo(strResource, element, affectedEditStacks, false);
+        if (verificationError) {
+            return verificationError.returnValue;
+        }
+        return this._confirmAndExecuteWorkspaceUndo(strResource, element, affectedEditStacks, undoConfirmed);
+    }
+    _isPartOfUndoGroup(element) {
+        if (!element.groupId) {
+            return false;
+        }
+        for (const [, editStack] of this._editStacks) {
+            const pastElement = editStack.getClosestPastElement();
+            if (!pastElement) {
+                continue;
+            }
+            if (pastElement === element) {
+                const secondPastElement = editStack.getSecondClosestPastElement();
+                if (secondPastElement && secondPastElement.groupId === element.groupId) {
+                    return true;
+                }
+            }
+            if (pastElement.groupId === element.groupId) {
+                return true;
+            }
+        }
+        return false;
+    }
+    async _confirmAndExecuteWorkspaceUndo(strResource, element, editStackSnapshot, undoConfirmed) {
+        if (element.canSplit() && !this._isPartOfUndoGroup(element)) {
+            let UndoChoice;
+            (function (UndoChoice) {
+                UndoChoice[UndoChoice["All"] = 0] = "All";
+                UndoChoice[UndoChoice["This"] = 1] = "This";
+                UndoChoice[UndoChoice["Cancel"] = 2] = "Cancel";
+            })(UndoChoice || (UndoChoice = {}));
+            const { result } = await this._dialogService.prompt({
+                type: Severity.Info,
+                message: nls.localize('confirmWorkspace', "Would you like to undo '{0}' across all files?", element.label),
+                buttons: [
+                    {
+                        label: nls.localize({ key: 'ok', comment: ['{0} denotes a number that is > 1, && denotes a mnemonic'] }, "&&Undo in {0} Files", editStackSnapshot.editStacks.length),
+                        run: () => UndoChoice.All
+                    },
+                    {
+                        label: nls.localize({ key: 'nok', comment: ['&& denotes a mnemonic'] }, "Undo this &&File"),
+                        run: () => UndoChoice.This
+                    }
+                ],
+                cancelButton: {
+                    run: () => UndoChoice.Cancel
+                }
+            });
+            if (result === UndoChoice.Cancel) {
+                return;
+            }
+            if (result === UndoChoice.This) {
+                this._splitPastWorkspaceElement(element, null);
+                return this._undo(strResource, 0, true);
+            }
+            const verificationError1 = this._checkWorkspaceUndo(strResource, element, editStackSnapshot, false);
+            if (verificationError1) {
+                return verificationError1.returnValue;
+            }
+            undoConfirmed = true;
+        }
+        let cleanup;
+        try {
+            cleanup = await this._invokeWorkspacePrepare(element);
+        }
+        catch (err) {
+            return this._onError(err, element);
+        }
+        const verificationError2 = this._checkWorkspaceUndo(strResource, element, editStackSnapshot, true);
+        if (verificationError2) {
+            cleanup.dispose();
+            return verificationError2.returnValue;
+        }
+        for (const editStack of editStackSnapshot.editStacks) {
+            editStack.moveBackward(element);
+        }
+        return this._safeInvokeWithLocks(element, () => element.actual.undo(), editStackSnapshot, cleanup, () => this._continueUndoInGroup(element.groupId, undoConfirmed));
+    }
+    _resourceUndo(editStack, element, undoConfirmed) {
+        if (!element.isValid) {
+            editStack.flushAllElements();
+            return;
+        }
+        if (editStack.locked) {
+            const message = nls.localize({ key: 'cannotResourceUndoDueToInProgressUndoRedo', comment: ['{0} is a label for an operation.'] }, "Could not undo '{0}' because there is already an undo or redo operation running.", element.label);
+            this._notificationService.warn(message);
+            return;
+        }
+        return this._invokeResourcePrepare(element, (cleanup) => {
+            editStack.moveBackward(element);
+            return this._safeInvokeWithLocks(element, () => element.actual.undo(), new EditStackSnapshot([editStack]), cleanup, () => this._continueUndoInGroup(element.groupId, undoConfirmed));
+        });
+    }
+    _findClosestUndoElementInGroup(groupId) {
+        if (!groupId) {
+            return [null, null];
+        }
+        let matchedElement = null;
+        let matchedStrResource = null;
+        for (const [strResource, editStack] of this._editStacks) {
+            const candidate = editStack.getClosestPastElement();
+            if (!candidate) {
+                continue;
+            }
+            if (candidate.groupId === groupId) {
+                if (!matchedElement || candidate.groupOrder > matchedElement.groupOrder) {
+                    matchedElement = candidate;
+                    matchedStrResource = strResource;
+                }
+            }
+        }
+        return [matchedElement, matchedStrResource];
+    }
+    _continueUndoInGroup(groupId, undoConfirmed) {
+        if (!groupId) {
+            return;
+        }
+        const [, matchedStrResource] = this._findClosestUndoElementInGroup(groupId);
+        if (matchedStrResource) {
+            return this._undo(matchedStrResource, 0, undoConfirmed);
+        }
+    }
+    undo(resourceOrSource) {
+        if (resourceOrSource instanceof UndoRedoSource) {
+            const [, matchedStrResource] = this._findClosestUndoElementWithSource(resourceOrSource.id);
+            return matchedStrResource ? this._undo(matchedStrResource, resourceOrSource.id, false) : undefined;
+        }
+        if (typeof resourceOrSource === 'string') {
+            return this._undo(resourceOrSource, 0, false);
+        }
+        return this._undo(this.getUriComparisonKey(resourceOrSource), 0, false);
+    }
+    _undo(strResource, sourceId = 0, undoConfirmed) {
+        if (!this._editStacks.has(strResource)) {
+            return;
+        }
+        const editStack = this._editStacks.get(strResource);
+        const element = editStack.getClosestPastElement();
+        if (!element) {
+            return;
+        }
+        if (element.groupId) {
+            const [matchedElement, matchedStrResource] = this._findClosestUndoElementInGroup(element.groupId);
+            if (element !== matchedElement && matchedStrResource) {
+                return this._undo(matchedStrResource, sourceId, undoConfirmed);
+            }
+        }
+        const shouldPromptForConfirmation = (element.sourceId !== sourceId || element.confirmBeforeUndo);
+        if (shouldPromptForConfirmation && !undoConfirmed) {
+            return this._confirmAndContinueUndo(strResource, sourceId, element);
+        }
+        try {
+            if (element.type === 1) {
+                return this._workspaceUndo(strResource, element, undoConfirmed);
+            }
+            else {
+                return this._resourceUndo(editStack, element, undoConfirmed);
+            }
+        }
+        finally {
+            if (DEBUG) {
+                this._print('undo');
+            }
+        }
+    }
+    async _confirmAndContinueUndo(strResource, sourceId, element) {
+        const result = await this._dialogService.confirm({
+            message: nls.localize('confirmDifferentSource', "Would you like to undo '{0}'?", element.label),
+            primaryButton: nls.localize({ key: 'confirmDifferentSource.yes', comment: ['&& denotes a mnemonic'] }, "&&Yes"),
+            cancelButton: nls.localize('confirmDifferentSource.no', "No")
+        });
+        if (!result.confirmed) {
+            return;
+        }
+        return this._undo(strResource, sourceId, true);
+    }
+    _findClosestRedoElementWithSource(sourceId) {
+        if (!sourceId) {
+            return [null, null];
+        }
+        let matchedElement = null;
+        let matchedStrResource = null;
+        for (const [strResource, editStack] of this._editStacks) {
+            const candidate = editStack.getClosestFutureElement();
+            if (!candidate) {
+                continue;
+            }
+            if (candidate.sourceId === sourceId) {
+                if (!matchedElement || candidate.sourceOrder < matchedElement.sourceOrder) {
+                    matchedElement = candidate;
+                    matchedStrResource = strResource;
+                }
+            }
+        }
+        return [matchedElement, matchedStrResource];
+    }
+    canRedo(resourceOrSource) {
+        if (resourceOrSource instanceof UndoRedoSource) {
+            const [, matchedStrResource] = this._findClosestRedoElementWithSource(resourceOrSource.id);
+            return matchedStrResource ? true : false;
+        }
+        const strResource = this.getUriComparisonKey(resourceOrSource);
+        if (this._editStacks.has(strResource)) {
+            const editStack = this._editStacks.get(strResource);
+            return editStack.hasFutureElements();
+        }
+        return false;
+    }
+    _tryToSplitAndRedo(strResource, element, ignoreResources, message) {
+        if (element.canSplit()) {
+            this._splitFutureWorkspaceElement(element, ignoreResources);
+            this._notificationService.warn(message);
+            return new WorkspaceVerificationError(this._redo(strResource));
+        }
+        else {
+            for (const strResource of element.strResources) {
+                this.removeElements(strResource);
+            }
+            this._notificationService.warn(message);
+            return new WorkspaceVerificationError();
+        }
+    }
+    _checkWorkspaceRedo(strResource, element, editStackSnapshot, checkInvalidatedResources) {
+        if (element.removedResources) {
+            return this._tryToSplitAndRedo(strResource, element, element.removedResources, nls.localize({ key: 'cannotWorkspaceRedo', comment: ['{0} is a label for an operation. {1} is another message.'] }, "Could not redo '{0}' across all files. {1}", element.label, element.removedResources.createMessage()));
+        }
+        if (checkInvalidatedResources && element.invalidatedResources) {
+            return this._tryToSplitAndRedo(strResource, element, element.invalidatedResources, nls.localize({ key: 'cannotWorkspaceRedo', comment: ['{0} is a label for an operation. {1} is another message.'] }, "Could not redo '{0}' across all files. {1}", element.label, element.invalidatedResources.createMessage()));
+        }
+        const cannotRedoDueToResources = [];
+        for (const editStack of editStackSnapshot.editStacks) {
+            if (editStack.getClosestFutureElement() !== element) {
+                cannotRedoDueToResources.push(editStack.resourceLabel);
+            }
+        }
+        if (cannotRedoDueToResources.length > 0) {
+            return this._tryToSplitAndRedo(strResource, element, null, nls.localize({ key: 'cannotWorkspaceRedoDueToChanges', comment: ['{0} is a label for an operation. {1} is a list of filenames.'] }, "Could not redo '{0}' across all files because changes were made to {1}", element.label, cannotRedoDueToResources.join(', ')));
+        }
+        const cannotLockDueToResources = [];
+        for (const editStack of editStackSnapshot.editStacks) {
+            if (editStack.locked) {
+                cannotLockDueToResources.push(editStack.resourceLabel);
+            }
+        }
+        if (cannotLockDueToResources.length > 0) {
+            return this._tryToSplitAndRedo(strResource, element, null, nls.localize({ key: 'cannotWorkspaceRedoDueToInProgressUndoRedo', comment: ['{0} is a label for an operation. {1} is a list of filenames.'] }, "Could not redo '{0}' across all files because there is already an undo or redo operation running on {1}", element.label, cannotLockDueToResources.join(', ')));
+        }
+        if (!editStackSnapshot.isValid()) {
+            return this._tryToSplitAndRedo(strResource, element, null, nls.localize({ key: 'cannotWorkspaceRedoDueToInMeantimeUndoRedo', comment: ['{0} is a label for an operation. {1} is a list of filenames.'] }, "Could not redo '{0}' across all files because an undo or redo operation occurred in the meantime", element.label));
+        }
+        return null;
+    }
+    _workspaceRedo(strResource, element) {
+        const affectedEditStacks = this._getAffectedEditStacks(element);
+        const verificationError = this._checkWorkspaceRedo(strResource, element, affectedEditStacks, false);
+        if (verificationError) {
+            return verificationError.returnValue;
+        }
+        return this._executeWorkspaceRedo(strResource, element, affectedEditStacks);
+    }
+    async _executeWorkspaceRedo(strResource, element, editStackSnapshot) {
+        let cleanup;
+        try {
+            cleanup = await this._invokeWorkspacePrepare(element);
+        }
+        catch (err) {
+            return this._onError(err, element);
+        }
+        const verificationError = this._checkWorkspaceRedo(strResource, element, editStackSnapshot, true);
+        if (verificationError) {
+            cleanup.dispose();
+            return verificationError.returnValue;
+        }
+        for (const editStack of editStackSnapshot.editStacks) {
+            editStack.moveForward(element);
+        }
+        return this._safeInvokeWithLocks(element, () => element.actual.redo(), editStackSnapshot, cleanup, () => this._continueRedoInGroup(element.groupId));
+    }
+    _resourceRedo(editStack, element) {
+        if (!element.isValid) {
+            editStack.flushAllElements();
+            return;
+        }
+        if (editStack.locked) {
+            const message = nls.localize({ key: 'cannotResourceRedoDueToInProgressUndoRedo', comment: ['{0} is a label for an operation.'] }, "Could not redo '{0}' because there is already an undo or redo operation running.", element.label);
+            this._notificationService.warn(message);
+            return;
+        }
+        return this._invokeResourcePrepare(element, (cleanup) => {
+            editStack.moveForward(element);
+            return this._safeInvokeWithLocks(element, () => element.actual.redo(), new EditStackSnapshot([editStack]), cleanup, () => this._continueRedoInGroup(element.groupId));
+        });
+    }
+    _findClosestRedoElementInGroup(groupId) {
+        if (!groupId) {
+            return [null, null];
+        }
+        let matchedElement = null;
+        let matchedStrResource = null;
+        for (const [strResource, editStack] of this._editStacks) {
+            const candidate = editStack.getClosestFutureElement();
+            if (!candidate) {
+                continue;
+            }
+            if (candidate.groupId === groupId) {
+                if (!matchedElement || candidate.groupOrder < matchedElement.groupOrder) {
+                    matchedElement = candidate;
+                    matchedStrResource = strResource;
+                }
+            }
+        }
+        return [matchedElement, matchedStrResource];
+    }
+    _continueRedoInGroup(groupId) {
+        if (!groupId) {
+            return;
+        }
+        const [, matchedStrResource] = this._findClosestRedoElementInGroup(groupId);
+        if (matchedStrResource) {
+            return this._redo(matchedStrResource);
+        }
+    }
+    redo(resourceOrSource) {
+        if (resourceOrSource instanceof UndoRedoSource) {
+            const [, matchedStrResource] = this._findClosestRedoElementWithSource(resourceOrSource.id);
+            return matchedStrResource ? this._redo(matchedStrResource) : undefined;
+        }
+        if (typeof resourceOrSource === 'string') {
+            return this._redo(resourceOrSource);
+        }
+        return this._redo(this.getUriComparisonKey(resourceOrSource));
+    }
+    _redo(strResource) {
+        if (!this._editStacks.has(strResource)) {
+            return;
+        }
+        const editStack = this._editStacks.get(strResource);
+        const element = editStack.getClosestFutureElement();
+        if (!element) {
+            return;
+        }
+        if (element.groupId) {
+            const [matchedElement, matchedStrResource] = this._findClosestRedoElementInGroup(element.groupId);
+            if (element !== matchedElement && matchedStrResource) {
+                return this._redo(matchedStrResource);
+            }
+        }
+        try {
+            if (element.type === 1) {
+                return this._workspaceRedo(strResource, element);
+            }
+            else {
+                return this._resourceRedo(editStack, element);
+            }
+        }
+        finally {
+            if (DEBUG) {
+                this._print('redo');
+            }
+        }
+    }
+};
+UndoRedoService = __decorate([
+    __param(0, IDialogService),
+    __param(1, INotificationService),
+    __metadata("design:paramtypes", [Object, Object])
+], UndoRedoService);
+export { UndoRedoService };
+class WorkspaceVerificationError {
+    constructor(returnValue) {
+        this.returnValue = returnValue;
+    }
+}
+registerSingleton(IUndoRedoService, UndoRedoService, 1);

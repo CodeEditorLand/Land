@@ -1,10 +1,201 @@
-var x=Object.defineProperty;var E=Object.getOwnPropertyDescriptor;var I=(e,r,t,i)=>{for(var o=i>1?void 0:i?E(r,t):r,u=e.length-1,a;u>=0;u--)(a=e[u])&&(o=(i?a(r,t,o):a(o))||o);return i&&o&&x(r,t,o),o},c=(e,r)=>(t,i)=>r(t,i,e);import{getZoomLevel as y}from"../../../../base/browser/browser.js";import*as b from"../../../../base/browser/dom.js";import{mainWindow as k}from"../../../../base/browser/window.js";import{userAgent as U}from"../../../../base/common/platform.js";import{IConfigurationService as w}from"../../../../platform/configuration/common/configuration.js";import{IExtensionManagementService as B}from"../../../../platform/extensionManagement/common/extensionManagement.js";import{ExtensionType as C}from"../../../../platform/extensions/common/extensions.js";import{InstantiationType as R,registerSingleton as D}from"../../../../platform/instantiation/common/extensions.js";import{normalizeGitHubUrl as g}from"../../../../platform/issue/common/issueReporterUtil.js";import{IProductService as T}from"../../../../platform/product/common/productService.js";import{buttonBackground as A,buttonForeground as F,buttonHoverBackground as $,foreground as W,inputActiveOptionBorder as L,inputBackground as H,inputBorder as M,inputForeground as N,inputValidationErrorBackground as O,inputValidationErrorBorder as P,inputValidationErrorForeground as G,scrollbarSliderActiveBackground as V,scrollbarSliderBackground as j,scrollbarSliderHoverBackground as _,textLinkActiveForeground as z,textLinkForeground as K}from"../../../../platform/theme/common/colorRegistry.js";import{IThemeService as Z}from"../../../../platform/theme/common/themeService.js";import{IWorkspaceTrustManagementService as q}from"../../../../platform/workspace/common/workspaceTrust.js";import{SIDE_BAR_BACKGROUND as J}from"../../../common/theme.js";import{IIssueFormService as Q,IWorkbenchIssueService as X}from"../common/issue.js";import{IWorkbenchAssignmentService as Y}from"../../../services/assignment/common/assignmentService.js";import{IAuthenticationService as ee}from"../../../services/authentication/common/authentication.js";import{IWorkbenchExtensionEnablementService as re}from"../../../services/extensionManagement/common/extensionManagement.js";import{IExtensionService as te}from"../../../services/extensions/common/extensions.js";import{IIntegrityService as ie}from"../../../services/integrity/common/integrity.js";let l=class{constructor(r,t,i,o,u,a,v,d,m,p,s){this.extensionService=r;this.productService=t;this.issueFormService=i;this.themeService=o;this.experimentService=u;this.workspaceTrustManagementService=a;this.integrityService=v;this.extensionManagementService=d;this.extensionEnablementService=m;this.authenticationService=p;this.configurationService=s}async openReporter(r){if(!this.configurationService.getValue("issueReporter.experimental.webReporter")){const t=r.extensionId;if(!t){if(this.productService.reportIssueUrl){const a=this.getIssueUriFromStaticContent(this.productService.reportIssueUrl);b.windowOpenNoOpener(a);return}throw new Error(`No issue reporting URL configured for ${this.productService.nameLong}.`)}const i=this.extensionService.extensions.filter(a=>a.identifier.value===r.extensionId)[0],o=this.getExtensionGitHubUrl(i);if(!o)throw new Error(`Unable to find issue reporting url for ${t}`);const u=this.getIssueUriFromStaticContent(`${o}/issues/new`,i);b.windowOpenNoOpener(u)}if(this.productService.reportIssueUrl){const t=this.themeService.getColorTheme(),i=await this.experimentService.getCurrentExperiments();let o="";try{o=(await this.authenticationService.getSessions("github")).filter(p=>p.scopes.includes("repo"))[0]?.accessToken}catch{}let u=!1;try{u=!(await this.integrityService.isPure()).isPure}catch{}const a=[];try{const m=(await this.extensionManagementService.getInstalled()).filter(p=>this.extensionEnablementService.isEnabled(p)||r.extensionId&&p.identifier.id===r.extensionId);a.push(...m.map(p=>{const{manifest:s}=p,S=s.contributes?Object.keys(s.contributes):[],f=!s.main&&!s.browser&&S.length===1&&S[0]==="themes",h=p.type===C.System;return{name:s.name,publisher:s.publisher,version:s.version,repositoryUrl:s.repository&&s.repository.url,bugsUrl:s.bugs&&s.bugs.url,displayName:s.displayName,id:p.identifier.id,data:r.data,uri:r.uri,isTheme:f,isBuiltin:h,extensionData:"Extensions data loading"}}))}catch(d){a.push({name:"Workbench Issue Service",publisher:"Unknown",version:"Unknown",repositoryUrl:void 0,bugsUrl:void 0,extensionData:`Extensions not loaded: ${d}`,displayName:`Extensions not loaded: ${d}`,id:"workbench.issue",isTheme:!1,isBuiltin:!0})}const v=Object.assign({styles:oe(t),zoomLevel:y(k),enabledExtensions:a,experiments:i?.join(`
-`),restrictedMode:!this.workspaceTrustManagementService.isWorkspaceTrusted(),isUnsupported:u,githubAccessToken:o},r);return this.issueFormService.openReporter(v)}throw new Error(`No issue reporting URL configured for ${this.productService.nameLong}.`)}getExtensionGitHubUrl(r){if(r.isBuiltin&&this.productService.reportIssueUrl)return g(this.productService.reportIssueUrl);let t="";const i=r?.bugs?.url,o=r?.repository?.url;return i&&i.match(/^https?:\/\/github\.com\/(.*)/)?t=g(i):o&&o.match(/^https?:\/\/github\.com\/(.*)/)&&(t=g(o)),t}getIssueUriFromStaticContent(r,t){const i=`ADD ISSUE DESCRIPTION HERE
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { getZoomLevel } from '../../../../base/browser/browser.js';
+import * as dom from '../../../../base/browser/dom.js';
+import { mainWindow } from '../../../../base/browser/window.js';
+import { userAgent } from '../../../../base/common/platform.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IExtensionManagementService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { normalizeGitHubUrl } from '../../../../platform/issue/common/issueReporterUtil.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { buttonBackground, buttonForeground, buttonHoverBackground, foreground, inputActiveOptionBorder, inputBackground, inputBorder, inputForeground, inputValidationErrorBackground, inputValidationErrorBorder, inputValidationErrorForeground, scrollbarSliderActiveBackground, scrollbarSliderBackground, scrollbarSliderHoverBackground, textLinkActiveForeground, textLinkForeground } from '../../../../platform/theme/common/colorRegistry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
+import { SIDE_BAR_BACKGROUND } from '../../../common/theme.js';
+import { IIssueFormService, IWorkbenchIssueService } from '../common/issue.js';
+import { IWorkbenchAssignmentService } from '../../../services/assignment/common/assignmentService.js';
+import { IAuthenticationService } from '../../../services/authentication/common/authentication.js';
+import { IWorkbenchExtensionEnablementService } from '../../../services/extensionManagement/common/extensionManagement.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { IIntegrityService } from '../../../services/integrity/common/integrity.js';
+let BrowserIssueService = class BrowserIssueService {
+    constructor(extensionService, productService, issueFormService, themeService, experimentService, workspaceTrustManagementService, integrityService, extensionManagementService, extensionEnablementService, authenticationService, configurationService) {
+        this.extensionService = extensionService;
+        this.productService = productService;
+        this.issueFormService = issueFormService;
+        this.themeService = themeService;
+        this.experimentService = experimentService;
+        this.workspaceTrustManagementService = workspaceTrustManagementService;
+        this.integrityService = integrityService;
+        this.extensionManagementService = extensionManagementService;
+        this.extensionEnablementService = extensionEnablementService;
+        this.authenticationService = authenticationService;
+        this.configurationService = configurationService;
+    }
+    async openReporter(options) {
+        if (!this.configurationService.getValue('issueReporter.experimental.webReporter')) {
+            const extensionId = options.extensionId;
+            if (!extensionId) {
+                if (this.productService.reportIssueUrl) {
+                    const uri = this.getIssueUriFromStaticContent(this.productService.reportIssueUrl);
+                    dom.windowOpenNoOpener(uri);
+                    return;
+                }
+                throw new Error(`No issue reporting URL configured for ${this.productService.nameLong}.`);
+            }
+            const selectedExtension = this.extensionService.extensions.filter(ext => ext.identifier.value === options.extensionId)[0];
+            const extensionGitHubUrl = this.getExtensionGitHubUrl(selectedExtension);
+            if (!extensionGitHubUrl) {
+                throw new Error(`Unable to find issue reporting url for ${extensionId}`);
+            }
+            const uri = this.getIssueUriFromStaticContent(`${extensionGitHubUrl}/issues/new`, selectedExtension);
+            dom.windowOpenNoOpener(uri);
+        }
+        if (this.productService.reportIssueUrl) {
+            const theme = this.themeService.getColorTheme();
+            const experiments = await this.experimentService.getCurrentExperiments();
+            let githubAccessToken = '';
+            try {
+                const githubSessions = await this.authenticationService.getSessions('github');
+                const potentialSessions = githubSessions.filter(session => session.scopes.includes('repo'));
+                githubAccessToken = potentialSessions[0]?.accessToken;
+            }
+            catch (e) {
+            }
+            let isUnsupported = false;
+            try {
+                isUnsupported = !(await this.integrityService.isPure()).isPure;
+            }
+            catch (e) {
+            }
+            const extensionData = [];
+            try {
+                const extensions = await this.extensionManagementService.getInstalled();
+                const enabledExtensions = extensions.filter(extension => this.extensionEnablementService.isEnabled(extension) || (options.extensionId && extension.identifier.id === options.extensionId));
+                extensionData.push(...enabledExtensions.map((extension) => {
+                    const { manifest } = extension;
+                    const manifestKeys = manifest.contributes ? Object.keys(manifest.contributes) : [];
+                    const isTheme = !manifest.main && !manifest.browser && manifestKeys.length === 1 && manifestKeys[0] === 'themes';
+                    const isBuiltin = extension.type === 0;
+                    return {
+                        name: manifest.name,
+                        publisher: manifest.publisher,
+                        version: manifest.version,
+                        repositoryUrl: manifest.repository && manifest.repository.url,
+                        bugsUrl: manifest.bugs && manifest.bugs.url,
+                        displayName: manifest.displayName,
+                        id: extension.identifier.id,
+                        data: options.data,
+                        uri: options.uri,
+                        isTheme,
+                        isBuiltin,
+                        extensionData: 'Extensions data loading',
+                    };
+                }));
+            }
+            catch (e) {
+                extensionData.push({
+                    name: 'Workbench Issue Service',
+                    publisher: 'Unknown',
+                    version: 'Unknown',
+                    repositoryUrl: undefined,
+                    bugsUrl: undefined,
+                    extensionData: `Extensions not loaded: ${e}`,
+                    displayName: `Extensions not loaded: ${e}`,
+                    id: 'workbench.issue',
+                    isTheme: false,
+                    isBuiltin: true
+                });
+            }
+            const issueReporterData = Object.assign({
+                styles: getIssueReporterStyles(theme),
+                zoomLevel: getZoomLevel(mainWindow),
+                enabledExtensions: extensionData,
+                experiments: experiments?.join('\n'),
+                restrictedMode: !this.workspaceTrustManagementService.isWorkspaceTrusted(),
+                isUnsupported,
+                githubAccessToken
+            }, options);
+            return this.issueFormService.openReporter(issueReporterData);
+        }
+        throw new Error(`No issue reporting URL configured for ${this.productService.nameLong}.`);
+    }
+    getExtensionGitHubUrl(extension) {
+        if (extension.isBuiltin && this.productService.reportIssueUrl) {
+            return normalizeGitHubUrl(this.productService.reportIssueUrl);
+        }
+        let repositoryUrl = '';
+        const bugsUrl = extension?.bugs?.url;
+        const extensionUrl = extension?.repository?.url;
+        if (bugsUrl && bugsUrl.match(/^https?:\/\/github\.com\/(.*)/)) {
+            repositoryUrl = normalizeGitHubUrl(bugsUrl);
+        }
+        else if (extensionUrl && extensionUrl.match(/^https?:\/\/github\.com\/(.*)/)) {
+            repositoryUrl = normalizeGitHubUrl(extensionUrl);
+        }
+        return repositoryUrl;
+    }
+    getIssueUriFromStaticContent(baseUri, extension) {
+        const issueDescription = `ADD ISSUE DESCRIPTION HERE
 
 Version: ${this.productService.version}
-Commit: ${this.productService.commit??"unknown"}
-User Agent: ${U??"unknown"}
-Embedder: ${this.productService.embedderIdentifier??"unknown"}
-${t?.version?`
-Extension version: ${t.version}`:""}
-<!-- generated by web issue reporter -->`;return`${r}?body=${encodeURIComponent(i)}&labels=web`}};l=I([c(0,te),c(1,T),c(2,Q),c(3,Z),c(4,Y),c(5,q),c(6,ie),c(7,B),c(8,re),c(9,ee),c(10,w)],l);function oe(e){return{backgroundColor:n(e,J),color:n(e,W),textLinkColor:n(e,K),textLinkActiveForeground:n(e,z),inputBackground:n(e,H),inputForeground:n(e,N),inputBorder:n(e,M),inputActiveBorder:n(e,L),inputErrorBorder:n(e,P),inputErrorBackground:n(e,O),inputErrorForeground:n(e,G),buttonBackground:n(e,A),buttonForeground:n(e,F),buttonHoverBackground:n(e,$),sliderActiveColor:n(e,V),sliderBackgroundColor:n(e,j),sliderHoverColor:n(e,_)}}function n(e,r){const t=e.getColor(r);return t?t.toString():void 0}D(X,l,R.Delayed);export{l as BrowserIssueService,oe as getIssueReporterStyles};
+Commit: ${this.productService.commit ?? 'unknown'}
+User Agent: ${userAgent ?? 'unknown'}
+Embedder: ${this.productService.embedderIdentifier ?? 'unknown'}
+${extension?.version ? `\nExtension version: ${extension.version}` : ''}
+<!-- generated by web issue reporter -->`;
+        return `${baseUri}?body=${encodeURIComponent(issueDescription)}&labels=web`;
+    }
+};
+BrowserIssueService = __decorate([
+    __param(0, IExtensionService),
+    __param(1, IProductService),
+    __param(2, IIssueFormService),
+    __param(3, IThemeService),
+    __param(4, IWorkbenchAssignmentService),
+    __param(5, IWorkspaceTrustManagementService),
+    __param(6, IIntegrityService),
+    __param(7, IExtensionManagementService),
+    __param(8, IWorkbenchExtensionEnablementService),
+    __param(9, IAuthenticationService),
+    __param(10, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], BrowserIssueService);
+export { BrowserIssueService };
+export function getIssueReporterStyles(theme) {
+    return {
+        backgroundColor: getColor(theme, SIDE_BAR_BACKGROUND),
+        color: getColor(theme, foreground),
+        textLinkColor: getColor(theme, textLinkForeground),
+        textLinkActiveForeground: getColor(theme, textLinkActiveForeground),
+        inputBackground: getColor(theme, inputBackground),
+        inputForeground: getColor(theme, inputForeground),
+        inputBorder: getColor(theme, inputBorder),
+        inputActiveBorder: getColor(theme, inputActiveOptionBorder),
+        inputErrorBorder: getColor(theme, inputValidationErrorBorder),
+        inputErrorBackground: getColor(theme, inputValidationErrorBackground),
+        inputErrorForeground: getColor(theme, inputValidationErrorForeground),
+        buttonBackground: getColor(theme, buttonBackground),
+        buttonForeground: getColor(theme, buttonForeground),
+        buttonHoverBackground: getColor(theme, buttonHoverBackground),
+        sliderActiveColor: getColor(theme, scrollbarSliderActiveBackground),
+        sliderBackgroundColor: getColor(theme, scrollbarSliderBackground),
+        sliderHoverColor: getColor(theme, scrollbarSliderHoverBackground),
+    };
+}
+function getColor(theme, key) {
+    const color = theme.getColor(key);
+    return color ? color.toString() : undefined;
+}
+registerSingleton(IWorkbenchIssueService, BrowserIssueService, 1);

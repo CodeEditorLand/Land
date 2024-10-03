@@ -1,1 +1,14 @@
-import{AbstractSignService as t}from"../common/abstractSignService.js";import"../common/sign.js";class d extends t{getValidator(){return this.vsda().then(r=>new r.validator)}signValue(r){return this.vsda().then(e=>new e.signer().sign(r))}async vsda(){const r="vsda",{default:e}=await import(r);return e}}export{d as SignService};
+import { AbstractSignService } from '../common/abstractSignService.js';
+export class SignService extends AbstractSignService {
+    getValidator() {
+        return this.vsda().then(vsda => new vsda.validator());
+    }
+    signValue(arg) {
+        return this.vsda().then(vsda => new vsda.signer().sign(arg));
+    }
+    async vsda() {
+        const mod = 'vsda';
+        const { default: vsda } = await import(mod);
+        return vsda;
+    }
+}

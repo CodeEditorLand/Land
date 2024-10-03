@@ -1,1 +1,86 @@
-var l=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var c=(t,r,i,o)=>{for(var e=o>1?void 0:o?D(r,i):r,f=t.length-1,n;f>=0;f--)(n=t[f])&&(e=(o?n(r,i,e):n(e))||e);return o&&e&&l(r,i,e),e},d=(t,r)=>(i,o)=>r(i,o,t);import"../../../../base/common/uri.js";import{Disposable as P}from"../../../../base/common/lifecycle.js";import"./quickDiff.js";import{isEqualOrParent as u}from"../../../../base/common/resources.js";import{score as m}from"../../../../editor/common/languageSelector.js";import{Emitter as v}from"../../../../base/common/event.js";import{IUriIdentityService as k}from"../../../../platform/uriIdentity/common/uriIdentity.js";function U(t){return(r,i)=>{if(r.rootUri&&!i.rootUri)return-1;if(!r.rootUri&&i.rootUri)return 1;if(!r.rootUri&&!i.rootUri)return 0;const o=u(t,r.rootUri),e=u(t,i.rootUri);return o&&e?r.rootUri.fsPath.length-i.rootUri.fsPath.length:o?-1:e?1:0}}let a=class extends P{constructor(i){super();this.uriIdentityService=i}quickDiffProviders=new Set;_onDidChangeQuickDiffProviders=this._register(new v);onDidChangeQuickDiffProviders=this._onDidChangeQuickDiffProviders.event;addQuickDiffProvider(i){return this.quickDiffProviders.add(i),this._onDidChangeQuickDiffProviders.fire(),{dispose:()=>{this.quickDiffProviders.delete(i),this._onDidChangeQuickDiffProviders.fire()}}}isQuickDiff(i){return!!i.originalResource&&typeof i.label=="string"&&typeof i.isSCM=="boolean"}async getQuickDiffs(i,o="",e=!1){const f=Array.from(this.quickDiffProviders).filter(s=>!s.rootUri||this.uriIdentityService.extUri.isEqualOrParent(i,s.rootUri)).sort(U(i));return(await Promise.all(f.map(async s=>({originalResource:(s.selector?m(s.selector,i,o,e,void 0,void 0):10)>0?await s.getOriginalResource(i)??void 0:void 0,label:s.label,isSCM:s.isSCM})))).filter(this.isQuickDiff)}};a=c([d(0,k)],a);export{a as QuickDiffService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { isEqualOrParent } from '../../../../base/common/resources.js';
+import { score } from '../../../../editor/common/languageSelector.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+function createProviderComparer(uri) {
+    return (a, b) => {
+        if (a.rootUri && !b.rootUri) {
+            return -1;
+        }
+        else if (!a.rootUri && b.rootUri) {
+            return 1;
+        }
+        else if (!a.rootUri && !b.rootUri) {
+            return 0;
+        }
+        const aIsParent = isEqualOrParent(uri, a.rootUri);
+        const bIsParent = isEqualOrParent(uri, b.rootUri);
+        if (aIsParent && bIsParent) {
+            return a.rootUri.fsPath.length - b.rootUri.fsPath.length;
+        }
+        else if (aIsParent) {
+            return -1;
+        }
+        else if (bIsParent) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    };
+}
+let QuickDiffService = class QuickDiffService extends Disposable {
+    constructor(uriIdentityService) {
+        super();
+        this.uriIdentityService = uriIdentityService;
+        this.quickDiffProviders = new Set();
+        this._onDidChangeQuickDiffProviders = this._register(new Emitter());
+        this.onDidChangeQuickDiffProviders = this._onDidChangeQuickDiffProviders.event;
+    }
+    addQuickDiffProvider(quickDiff) {
+        this.quickDiffProviders.add(quickDiff);
+        this._onDidChangeQuickDiffProviders.fire();
+        return {
+            dispose: () => {
+                this.quickDiffProviders.delete(quickDiff);
+                this._onDidChangeQuickDiffProviders.fire();
+            }
+        };
+    }
+    isQuickDiff(diff) {
+        return !!diff.originalResource && (typeof diff.label === 'string') && (typeof diff.isSCM === 'boolean');
+    }
+    async getQuickDiffs(uri, language = '', isSynchronized = false) {
+        const providers = Array.from(this.quickDiffProviders)
+            .filter(provider => !provider.rootUri || this.uriIdentityService.extUri.isEqualOrParent(uri, provider.rootUri))
+            .sort(createProviderComparer(uri));
+        const diffs = await Promise.all(providers.map(async (provider) => {
+            const scoreValue = provider.selector ? score(provider.selector, uri, language, isSynchronized, undefined, undefined) : 10;
+            const diff = {
+                originalResource: scoreValue > 0 ? await provider.getOriginalResource(uri) ?? undefined : undefined,
+                label: provider.label,
+                isSCM: provider.isSCM
+            };
+            return diff;
+        }));
+        return diffs.filter(this.isQuickDiff);
+    }
+};
+QuickDiffService = __decorate([
+    __param(0, IUriIdentityService),
+    __metadata("design:paramtypes", [Object])
+], QuickDiffService);
+export { QuickDiffService };

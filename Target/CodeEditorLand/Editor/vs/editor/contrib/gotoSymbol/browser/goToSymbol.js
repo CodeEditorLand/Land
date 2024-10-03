@@ -1,1 +1,117 @@
-import{coalesce as F}from"../../../../base/common/arrays.js";import{CancellationToken as c}from"../../../../base/common/cancellation.js";import{onUnexpectedExternalError as I}from"../../../../base/common/errors.js";import{matchesSomeScheme as R,Schemas as P}from"../../../../base/common/network.js";import{registerModelAndPositionCommand as u}from"../../../browser/editorExtensions.js";import"../../../common/core/position.js";import"../../../common/languageFeatureRegistry.js";import"../../../common/languages.js";import"../../../common/model.js";import{ILanguageFeaturesService as l}from"../../../common/services/languageFeatures.js";import{ReferencesModel as _}from"./referencesModel.js";function L(e,o){return o.uri.scheme===e.uri.scheme?!0:!R(o.uri,P.walkThroughSnippet,P.vscodeChatCodeBlock,P.vscodeChatCodeCompareBlock)}async function g(e,o,r,n,i){const a=r.ordered(e,n).map(m=>Promise.resolve(i(m,e,o)).then(void 0,f=>{I(f)})),t=await Promise.all(a);return F(t.flat()).filter(m=>L(e,m))}function k(e,o,r,n,i){return g(o,r,e,n,(s,a,t)=>s.provideDefinition(a,t,i))}function x(e,o,r,n,i){return g(o,r,e,n,(s,a,t)=>s.provideDeclaration(a,t,i))}function T(e,o,r,n,i){return g(o,r,e,n,(s,a,t)=>s.provideImplementation(a,t,i))}function D(e,o,r,n,i){return g(o,r,e,n,(s,a,t)=>s.provideTypeDefinition(a,t,i))}function y(e,o,r,n,i,s){return g(o,r,e,i,async(a,t,m)=>{const f=(await a.provideReferences(t,m,{includeDeclaration:!0},s))?.filter(p=>L(t,p));if(!n||!f||f.length!==2)return f;const v=(await a.provideReferences(t,m,{includeDeclaration:!1},s))?.filter(p=>L(t,p));return v&&v.length===1?v:f})}async function d(e){const o=await e(),r=new _(o,""),n=r.references.map(i=>i.link);return r.dispose(),n}u("_executeDefinitionProvider",(e,o,r)=>{const n=e.get(l),i=k(n.definitionProvider,o,r,!1,c.None);return d(()=>i)}),u("_executeDefinitionProvider_recursive",(e,o,r)=>{const n=e.get(l),i=k(n.definitionProvider,o,r,!0,c.None);return d(()=>i)}),u("_executeTypeDefinitionProvider",(e,o,r)=>{const n=e.get(l),i=D(n.typeDefinitionProvider,o,r,!1,c.None);return d(()=>i)}),u("_executeTypeDefinitionProvider_recursive",(e,o,r)=>{const n=e.get(l),i=D(n.typeDefinitionProvider,o,r,!0,c.None);return d(()=>i)}),u("_executeDeclarationProvider",(e,o,r)=>{const n=e.get(l),i=x(n.declarationProvider,o,r,!1,c.None);return d(()=>i)}),u("_executeDeclarationProvider_recursive",(e,o,r)=>{const n=e.get(l),i=x(n.declarationProvider,o,r,!0,c.None);return d(()=>i)}),u("_executeReferenceProvider",(e,o,r)=>{const n=e.get(l),i=y(n.referenceProvider,o,r,!1,!1,c.None);return d(()=>i)}),u("_executeReferenceProvider_recursive",(e,o,r)=>{const n=e.get(l),i=y(n.referenceProvider,o,r,!1,!0,c.None);return d(()=>i)}),u("_executeImplementationProvider",(e,o,r)=>{const n=e.get(l),i=T(n.implementationProvider,o,r,!1,c.None);return d(()=>i)}),u("_executeImplementationProvider_recursive",(e,o,r)=>{const n=e.get(l),i=T(n.implementationProvider,o,r,!0,c.None);return d(()=>i)});export{x as getDeclarationsAtPosition,k as getDefinitionsAtPosition,T as getImplementationsAtPosition,y as getReferencesAtPosition,D as getTypeDefinitionsAtPosition};
+import { coalesce } from '../../../../base/common/arrays.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { onUnexpectedExternalError } from '../../../../base/common/errors.js';
+import { matchesSomeScheme, Schemas } from '../../../../base/common/network.js';
+import { registerModelAndPositionCommand } from '../../../browser/editorExtensions.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { ReferencesModel } from './referencesModel.js';
+function shouldIncludeLocationLink(sourceModel, loc) {
+    if (loc.uri.scheme === sourceModel.uri.scheme) {
+        return true;
+    }
+    if (matchesSomeScheme(loc.uri, Schemas.walkThroughSnippet, Schemas.vscodeChatCodeBlock, Schemas.vscodeChatCodeCompareBlock)) {
+        return false;
+    }
+    return true;
+}
+async function getLocationLinks(model, position, registry, recursive, provide) {
+    const provider = registry.ordered(model, recursive);
+    const promises = provider.map((provider) => {
+        return Promise.resolve(provide(provider, model, position)).then(undefined, err => {
+            onUnexpectedExternalError(err);
+            return undefined;
+        });
+    });
+    const values = await Promise.all(promises);
+    return coalesce(values.flat()).filter(loc => shouldIncludeLocationLink(model, loc));
+}
+export function getDefinitionsAtPosition(registry, model, position, recursive, token) {
+    return getLocationLinks(model, position, registry, recursive, (provider, model, position) => {
+        return provider.provideDefinition(model, position, token);
+    });
+}
+export function getDeclarationsAtPosition(registry, model, position, recursive, token) {
+    return getLocationLinks(model, position, registry, recursive, (provider, model, position) => {
+        return provider.provideDeclaration(model, position, token);
+    });
+}
+export function getImplementationsAtPosition(registry, model, position, recursive, token) {
+    return getLocationLinks(model, position, registry, recursive, (provider, model, position) => {
+        return provider.provideImplementation(model, position, token);
+    });
+}
+export function getTypeDefinitionsAtPosition(registry, model, position, recursive, token) {
+    return getLocationLinks(model, position, registry, recursive, (provider, model, position) => {
+        return provider.provideTypeDefinition(model, position, token);
+    });
+}
+export function getReferencesAtPosition(registry, model, position, compact, recursive, token) {
+    return getLocationLinks(model, position, registry, recursive, async (provider, model, position) => {
+        const result = (await provider.provideReferences(model, position, { includeDeclaration: true }, token))?.filter(ref => shouldIncludeLocationLink(model, ref));
+        if (!compact || !result || result.length !== 2) {
+            return result;
+        }
+        const resultWithoutDeclaration = (await provider.provideReferences(model, position, { includeDeclaration: false }, token))?.filter(ref => shouldIncludeLocationLink(model, ref));
+        if (resultWithoutDeclaration && resultWithoutDeclaration.length === 1) {
+            return resultWithoutDeclaration;
+        }
+        return result;
+    });
+}
+async function _sortedAndDeduped(callback) {
+    const rawLinks = await callback();
+    const model = new ReferencesModel(rawLinks, '');
+    const modelLinks = model.references.map(ref => ref.link);
+    model.dispose();
+    return modelLinks;
+}
+registerModelAndPositionCommand('_executeDefinitionProvider', (accessor, model, position) => {
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const promise = getDefinitionsAtPosition(languageFeaturesService.definitionProvider, model, position, false, CancellationToken.None);
+    return _sortedAndDeduped(() => promise);
+});
+registerModelAndPositionCommand('_executeDefinitionProvider_recursive', (accessor, model, position) => {
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const promise = getDefinitionsAtPosition(languageFeaturesService.definitionProvider, model, position, true, CancellationToken.None);
+    return _sortedAndDeduped(() => promise);
+});
+registerModelAndPositionCommand('_executeTypeDefinitionProvider', (accessor, model, position) => {
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const promise = getTypeDefinitionsAtPosition(languageFeaturesService.typeDefinitionProvider, model, position, false, CancellationToken.None);
+    return _sortedAndDeduped(() => promise);
+});
+registerModelAndPositionCommand('_executeTypeDefinitionProvider_recursive', (accessor, model, position) => {
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const promise = getTypeDefinitionsAtPosition(languageFeaturesService.typeDefinitionProvider, model, position, true, CancellationToken.None);
+    return _sortedAndDeduped(() => promise);
+});
+registerModelAndPositionCommand('_executeDeclarationProvider', (accessor, model, position) => {
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const promise = getDeclarationsAtPosition(languageFeaturesService.declarationProvider, model, position, false, CancellationToken.None);
+    return _sortedAndDeduped(() => promise);
+});
+registerModelAndPositionCommand('_executeDeclarationProvider_recursive', (accessor, model, position) => {
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const promise = getDeclarationsAtPosition(languageFeaturesService.declarationProvider, model, position, true, CancellationToken.None);
+    return _sortedAndDeduped(() => promise);
+});
+registerModelAndPositionCommand('_executeReferenceProvider', (accessor, model, position) => {
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const promise = getReferencesAtPosition(languageFeaturesService.referenceProvider, model, position, false, false, CancellationToken.None);
+    return _sortedAndDeduped(() => promise);
+});
+registerModelAndPositionCommand('_executeReferenceProvider_recursive', (accessor, model, position) => {
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const promise = getReferencesAtPosition(languageFeaturesService.referenceProvider, model, position, false, true, CancellationToken.None);
+    return _sortedAndDeduped(() => promise);
+});
+registerModelAndPositionCommand('_executeImplementationProvider', (accessor, model, position) => {
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const promise = getImplementationsAtPosition(languageFeaturesService.implementationProvider, model, position, false, CancellationToken.None);
+    return _sortedAndDeduped(() => promise);
+});
+registerModelAndPositionCommand('_executeImplementationProvider_recursive', (accessor, model, position) => {
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const promise = getImplementationsAtPosition(languageFeaturesService.implementationProvider, model, position, true, CancellationToken.None);
+    return _sortedAndDeduped(() => promise);
+});

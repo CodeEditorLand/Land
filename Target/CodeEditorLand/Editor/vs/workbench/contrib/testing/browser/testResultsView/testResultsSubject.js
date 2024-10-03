@@ -1,1 +1,85 @@
-import{MarshalledId as T}from"../../../../../base/common/marshallingIds.js";import"../../../../../base/common/uri.js";import{Range as b}from"../../../../../editor/common/core/range.js";import{TestId as p}from"../../common/testId.js";import"../../common/testResult.js";import{ITestMessage as I,InternalTestItem as f,TestMessageType as l}from"../../common/testTypes.js";import{TestUriType as i,buildTestUri as a}from"../../common/testingUri.js";const x=(e,t)=>({$mid:T.TestMessageMenuArgs,test:f.serialize(e),message:I.serialize(t)}),D=e=>e instanceof o&&!!e.stack?.length;class o{constructor(t,s,n,r){this.result=t;this.taskIndex=n;this.messageIndex=r;this.test=s.item;const u=s.tasks[n].messages;this.messageIndex=r;const c={messageIndex:r,resultId:t.id,taskIndex:n,testExtId:s.item.extId};this.expectedUri=a({...c,type:i.ResultExpectedOutput}),this.actualUri=a({...c,type:i.ResultActualOutput}),this.messageUri=a({...c,type:i.ResultMessage});const m=this.message=u[this.messageIndex];this.context=x(s,m),this.revealLocation=m.location??(s.item.uri&&s.item.range?{uri:s.item.uri,range:b.lift(s.item.range)}:void 0)}test;message;expectedUri;actualUri;messageUri;revealLocation;context;get controllerId(){return p.root(this.test.extId)}get isDiffable(){return this.message.type===l.Error&&I.isDiffable(this.message)}get contextValue(){return this.message.type===l.Error?this.message.contextValue:void 0}get stack(){return this.message.type===l.Error&&this.message.stackTrace?.length?this.message.stackTrace:void 0}}class d{constructor(t,s){this.result=t;this.taskIndex=s;this.outputUri=a({resultId:t.id,taskIndex:s,type:i.TaskOutput})}outputUri;revealLocation;get controllerId(){return this.result.tasks[this.taskIndex].ctrlId}}class g{constructor(t,s,n){this.result=t;this.taskIndex=s;this.test=n;this.outputUri=a({resultId:this.result.id,taskIndex:this.taskIndex,testExtId:this.test.item.extId,type:i.TestOutput}),this.task=t.tasks[this.taskIndex]}outputUri;revealLocation;task;get controllerId(){return p.root(this.test.item.extId)}}const V=(e,t)=>e instanceof o&&t instanceof o&&e.message===t.message||e instanceof d&&t instanceof d&&e.result===t.result&&e.taskIndex===t.taskIndex||e instanceof g&&t instanceof g&&e.test===t.test&&e.taskIndex===t.taskIndex,q=(e,t)=>{for(let s=0;s<e.tasks.length;s++){const n=e.tasks[s];for(let r=0;r<n.messages.length;r++){const u=t(n,n.messages[r],r,s);if(u!==void 0)return u}}},F=e=>{if(e instanceof o)return e.test;if(!(e instanceof d))return e.test.item};export{o as MessageSubject,d as TaskSubject,g as TestOutputSubject,V as equalsSubject,x as getMessageArgs,F as getSubjectTestItem,D as inspectSubjectHasStack,q as mapFindTestMessage};
+import { Range } from '../../../../../editor/common/core/range.js';
+import { TestId } from '../../common/testId.js';
+import { ITestMessage, InternalTestItem } from '../../common/testTypes.js';
+import { buildTestUri } from '../../common/testingUri.js';
+export const getMessageArgs = (test, message) => ({
+    $mid: 18,
+    test: InternalTestItem.serialize(test),
+    message: ITestMessage.serialize(message),
+});
+export const inspectSubjectHasStack = (subject) => subject instanceof MessageSubject && !!subject.stack?.length;
+export class MessageSubject {
+    get controllerId() {
+        return TestId.root(this.test.extId);
+    }
+    get isDiffable() {
+        return this.message.type === 0 && ITestMessage.isDiffable(this.message);
+    }
+    get contextValue() {
+        return this.message.type === 0 ? this.message.contextValue : undefined;
+    }
+    get stack() {
+        return this.message.type === 0 && this.message.stackTrace?.length ? this.message.stackTrace : undefined;
+    }
+    constructor(result, test, taskIndex, messageIndex) {
+        this.result = result;
+        this.taskIndex = taskIndex;
+        this.messageIndex = messageIndex;
+        this.test = test.item;
+        const messages = test.tasks[taskIndex].messages;
+        this.messageIndex = messageIndex;
+        const parts = { messageIndex, resultId: result.id, taskIndex, testExtId: test.item.extId };
+        this.expectedUri = buildTestUri({ ...parts, type: 4 });
+        this.actualUri = buildTestUri({ ...parts, type: 3 });
+        this.messageUri = buildTestUri({ ...parts, type: 2 });
+        const message = this.message = messages[this.messageIndex];
+        this.context = getMessageArgs(test, message);
+        this.revealLocation = message.location ?? (test.item.uri && test.item.range ? { uri: test.item.uri, range: Range.lift(test.item.range) } : undefined);
+    }
+}
+export class TaskSubject {
+    get controllerId() {
+        return this.result.tasks[this.taskIndex].ctrlId;
+    }
+    constructor(result, taskIndex) {
+        this.result = result;
+        this.taskIndex = taskIndex;
+        this.outputUri = buildTestUri({ resultId: result.id, taskIndex, type: 0 });
+    }
+}
+export class TestOutputSubject {
+    get controllerId() {
+        return TestId.root(this.test.item.extId);
+    }
+    constructor(result, taskIndex, test) {
+        this.result = result;
+        this.taskIndex = taskIndex;
+        this.test = test;
+        this.outputUri = buildTestUri({ resultId: this.result.id, taskIndex: this.taskIndex, testExtId: this.test.item.extId, type: 1 });
+        this.task = result.tasks[this.taskIndex];
+    }
+}
+export const equalsSubject = (a, b) => ((a instanceof MessageSubject && b instanceof MessageSubject && a.message === b.message) ||
+    (a instanceof TaskSubject && b instanceof TaskSubject && a.result === b.result && a.taskIndex === b.taskIndex) ||
+    (a instanceof TestOutputSubject && b instanceof TestOutputSubject && a.test === b.test && a.taskIndex === b.taskIndex));
+export const mapFindTestMessage = (test, fn) => {
+    for (let taskIndex = 0; taskIndex < test.tasks.length; taskIndex++) {
+        const task = test.tasks[taskIndex];
+        for (let messageIndex = 0; messageIndex < task.messages.length; messageIndex++) {
+            const r = fn(task, task.messages[messageIndex], messageIndex, taskIndex);
+            if (r !== undefined) {
+                return r;
+            }
+        }
+    }
+    return undefined;
+};
+export const getSubjectTestItem = (subject) => {
+    if (subject instanceof MessageSubject) {
+        return subject.test;
+    }
+    if (subject instanceof TaskSubject) {
+        return undefined;
+    }
+    return subject.test.item;
+};

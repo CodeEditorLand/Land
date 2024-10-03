@@ -1,1 +1,1550 @@
-import{distinct as Ee}from"../../../../base/common/arrays.js";import"../../../../base/common/cancellation.js";import{Codicon as O}from"../../../../base/common/codicons.js";import{Iterable as Pe}from"../../../../base/common/iterator.js";import{KeyChord as A,KeyCode as d,KeyMod as p}from"../../../../base/common/keyCodes.js";import{DisposableStore as ke}from"../../../../base/common/lifecycle.js";import{isDefined as W}from"../../../../base/common/types.js";import"../../../../base/common/uri.js";import"../../../../editor/browser/editorBrowser.js";import{ICodeEditorService as oe}from"../../../../editor/browser/services/codeEditorService.js";import{EmbeddedCodeEditorWidget as se}from"../../../../editor/browser/widget/codeEditor/embeddedCodeEditorWidget.js";import{EditorOption as re}from"../../../../editor/common/config/editorOptions.js";import{Position as Ve}from"../../../../editor/common/core/position.js";import{Range as N}from"../../../../editor/common/core/range.js";import{EditorContextKeys as k}from"../../../../editor/common/editorContextKeys.js";import"../../../../editor/common/model.js";import{SymbolNavigationAction as De}from"../../../../editor/contrib/gotoSymbol/browser/goToCommands.js";import{ReferencesModel as ie}from"../../../../editor/contrib/gotoSymbol/browser/referencesModel.js";import{MessageController as ne}from"../../../../editor/contrib/message/browser/messageController.js";import{PeekContext as ue}from"../../../../editor/contrib/peekView/browser/peekView.js";import{localize as E,localize2 as c}from"../../../../nls.js";import{Categories as qe}from"../../../../platform/action/common/actionCommonCategories.js";import{Action2 as R,MenuId as a}from"../../../../platform/actions/common/actions.js";import{ICommandService as G}from"../../../../platform/commands/common/commands.js";import{IConfigurationService as Fe}from"../../../../platform/configuration/common/configuration.js";import{ContextKeyExpr as f,ContextKeyGreaterExpr as Me}from"../../../../platform/contextkey/common/contextkey.js";import"../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as S}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{INotificationService as M,Severity as Be}from"../../../../platform/notification/common/notification.js";import{IProgressService as L,ProgressLocation as Oe}from"../../../../platform/progress/common/progress.js";import{IQuickInputService as le}from"../../../../platform/quickinput/common/quickInput.js";import{widgetClose as Ge}from"../../../../platform/theme/common/iconRegistry.js";import{IUriIdentityService as _}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{ViewAction as P}from"../../../browser/parts/views/viewPane.js";import{FocusedViewContext as Le}from"../../../common/contextkeys.js";import{IExtensionsWorkbenchService as Ue}from"../../extensions/common/extensions.js";import{TestItemTreeElement as ce}from"./explorerProjections/index.js";import*as b from"./icons.js";import"./testingExplorerView.js";import"./testingOutputPeek.js";import{TestingConfigKeys as Ke,getTestingConfiguration as We}from"../common/configuration.js";import{TestCommandId as u,TestExplorerViewMode as U,TestExplorerViewSorting as D,Testing as I,testConfigurationGroupNames as Ne}from"../common/constants.js";import{ITestCoverageService as ae}from"../common/testCoverageService.js";import{TestId as de}from"../common/testId.js";import{ITestProfileService as V,canUseProfileWithTest as _e}from"../common/testProfileService.js";import"../common/testResult.js";import{ITestResultService as q}from"../common/testResultService.js";import{ITestService as y,expandAndGetTestById as He,testsInFile as Qe,testsUnderUri as ze}from"../common/testService.js";import{ExtTestRunProfileKind as H,TestItemExpandState as ge,TestRunProfileBitset as T}from"../common/testTypes.js";import{TestingContextKeys as l}from"../common/testingContextKeys.js";import{ITestingContinuousRunService as K}from"../common/testingContinuousRunService.js";import{ITestingPeekOpener as Ye}from"../common/testingPeekOpener.js";import{isFailedState as Xe}from"../common/testingStates.js";import{IEditorService as je}from"../../../services/editor/common/editorService.js";import{IViewsService as pe}from"../../../services/views/common/viewsService.js";const m=qe.Test;var Je=(v=>(v[v.Refresh=10]="Refresh",v[v.Run=11]="Run",v[v.Debug=12]="Debug",v[v.Coverage=13]="Coverage",v[v.RunContinuous=14]="RunContinuous",v[v.RunUsing=15]="RunUsing",v[v.Collapse=16]="Collapse",v[v.ClearResults=17]="ClearResults",v[v.DisplayMode=18]="DisplayMode",v[v.Sort=19]="Sort",v[v.GoToTest=20]="GoToTest",v[v.HideTest=21]="HideTest",v[v.ContinuousRunTest=2147483647]="ContinuousRunTest",v))(Je||{});const Q=Me.create(l.providerCount.key,0),Te=c("runSelectedTests","Run Tests"),me=c("debugSelectedTests","Debug Tests"),fe=c("coverageSelectedTests","Run Tests with Coverage");class Ze extends R{constructor(){super({id:u.HideTestAction,title:c("hideTest","Hide Test"),menu:{id:a.TestItem,group:"builtin@2",when:l.testItemIsHidden.isEqualTo(!1)}})}run(t,...e){const o=t.get(y);for(const n of e)o.excluded.toggle(n.test,!0);return Promise.resolve()}}class $e extends R{constructor(){super({id:u.UnhideTestAction,title:c("unhideTest","Unhide Test"),menu:{id:a.TestItem,order:21,when:l.testItemIsHidden.isEqualTo(!0)}})}run(t,...e){const o=t.get(y);for(const n of e)n instanceof ce&&o.excluded.toggle(n.test,!1);return Promise.resolve()}}class et extends R{constructor(){super({id:u.UnhideAllTestsAction,title:c("unhideAllTests","Unhide All Tests")})}run(t){return t.get(y).excluded.clear(),Promise.resolve()}}const B=(s,t)=>[{id:a.TestItem,group:"inline",order:s,when:t},{id:a.TestItem,group:"builtin@1",order:s,when:t}];class z extends P{constructor(e,o){super({...o,viewId:I.ExplorerViewId});this.bitset=e}runInView(e,o,...n){const{include:r,exclude:i}=o.getTreeIncludeExclude(n.map(h=>h.test));return e.get(y).runTests({tests:r,exclude:i,group:this.bitset})}}class tt extends z{constructor(){super(T.Debug,{id:u.DebugAction,title:c("debug test","Debug Test"),icon:b.testingDebugIcon,menu:B(12,l.hasDebuggableTests.isEqualTo(!0))})}}class ot extends z{constructor(){super(T.Coverage,{id:u.RunWithCoverageAction,title:c("run with cover test","Run Test with Coverage"),icon:b.testingCoverageIcon,menu:B(13,l.hasCoverableTests.isEqualTo(!0))})}}class st extends R{constructor(){super({id:u.RunUsingProfileAction,title:c("testing.runUsing","Execute Using Profile..."),icon:b.testingDebugIcon,menu:{id:a.TestItem,order:15,group:"builtin@2",when:l.hasNonDefaultProfile.isEqualTo(!0)}})}async run(t,...e){const o=t.get(G),n=t.get(y),r=await o.executeCommand("vscode.pickTestProfile",{onlyForTest:e[0].test});r&&n.runResolvedTests({group:r.group,targets:[{profileId:r.profileId,controllerId:r.controllerId,testIds:e.filter(i=>_e(r,i.test)).map(i=>i.test.item.extId)}]})}}class rt extends z{constructor(){super(T.Run,{id:u.RunAction,title:c("run test","Run Test"),icon:b.testingRunIcon,menu:B(11,l.hasRunnableTests.isEqualTo(!0))})}}class it extends R{constructor(){super({id:u.SelectDefaultTestProfiles,title:c("testing.selectDefaultTestProfiles","Select Default Profile"),icon:b.testingUpdateProfiles,category:m})}async run(t,e){const o=t.get(G),n=t.get(V),r=await o.executeCommand("vscode.pickMultipleTestProfiles",{showConfigureButtons:!1,selected:n.getGroupDefaultProfiles(e),onlyGroup:e});r?.length&&n.setGroupDefaultProfiles(e,r)}}class nt extends R{constructor(){super({id:u.ToggleContinousRunForTest,title:c("testing.toggleContinuousRunOn","Turn on Continuous Run"),icon:b.testingTurnContinuousRunOn,precondition:f.or(l.isContinuousModeOn.isEqualTo(!0),l.isParentRunningContinuously.isEqualTo(!1)),toggled:{condition:l.isContinuousModeOn.isEqualTo(!0),icon:b.testingContinuousIsOn,title:E("testing.toggleContinuousRunOff","Turn off Continuous Run")},menu:B(2147483647,l.supportsContinuousRun.isEqualTo(!0))})}async run(t,...e){const o=t.get(K);for(const n of e){const r=n.test.item.extId;if(o.isSpecificallyEnabledFor(r)){o.stop(r);continue}o.start(T.Run,r)}}}class ut extends R{constructor(){super({id:u.ContinousRunUsingForTest,title:c("testing.startContinuousRunUsing","Start Continous Run Using..."),icon:b.testingDebugIcon,menu:[{id:a.TestItem,order:14,group:"builtin@2",when:f.and(l.supportsContinuousRun.isEqualTo(!0),l.isContinuousModeOn.isEqualTo(!1))}]})}async run(t,...e){const o=t.get(K),n=t.get(V),r=t.get(M),i=t.get(le);for(const h of e){const w=await ve(o,r,i,[{profiles:n.getControllerProfiles(h.test.controllerId)}]);w.length&&o.start(w,h.test.item.extId)}}}class lt extends R{constructor(){super({id:u.ConfigureTestProfilesAction,title:c("testing.configureProfile","Configure Test Profiles"),icon:b.testingUpdateProfiles,f1:!0,category:m,menu:{id:a.CommandPalette,when:l.hasConfigurableProfile.isEqualTo(!0)}})}async run(t,e){const o=t.get(G),n=t.get(V),r=await o.executeCommand("vscode.pickTestProfile",{placeholder:E("configureProfile","Select a profile to update"),showConfigureButtons:!1,onlyConfigurable:!0,onlyGroup:e});r&&n.configure(r.controllerId,r.profileId)}}const Ce=s=>[{id:a.ViewTitle,group:"navigation",order:15,when:f.and(f.equals("view",I.ExplorerViewId),l.supportsContinuousRun.isEqualTo(!0),l.isContinuousModeOn.isEqualTo(s))},{id:a.CommandPalette,when:l.supportsContinuousRun.isEqualTo(!0)}];class ct extends R{constructor(){super({id:u.StopContinousRun,title:c("testing.stopContinuous","Stop Continuous Run"),category:m,icon:b.testingTurnContinuousRunOff,menu:Ce(!0)})}run(t){t.get(K).stop()}}function ve(s,t,e,o){const n=[];for(const{controller:C,profiles:x}of o)for(const F of x)F.supportsContinuousRun&&n.push({label:F.label||C?.label.get()||"",description:C?.label.get(),profile:F});if(n.length===0)return t.info(E("testing.noProfiles","No test continuous run-enabled profiles were found")),Promise.resolve([]);if(n.length===1)return Promise.resolve([n[0].profile]);const r=[],i=[],h=s.lastRunProfileIds;n.sort((C,x)=>C.profile.group-x.profile.group||C.profile.controllerId.localeCompare(x.profile.controllerId)||C.label.localeCompare(x.label));for(let C=0;C<n.length;C++){const x=n[C];(C===0||n[C-1].profile.group!==x.profile.group)&&r.push({type:"separator",label:Ne[x.profile.group]}),r.push(x),h.has(x.profile.profileId)&&i.push(x)}const w=new ke,g=w.add(e.createQuickPick({useSeparators:!0}));return g.title=E("testing.selectContinuousProfiles","Select profiles to run when files change:"),g.canSelectMany=!0,g.items=r,g.selectedItems=i,g.show(),new Promise(C=>{w.add(g.onDidAccept(()=>{C(g.selectedItems.map(x=>x.profile)),w.dispose()})),w.add(g.onDidHide(()=>{C([]),w.dispose()}))})}class at extends R{constructor(){super({id:u.StartContinousRun,title:c("testing.startContinuous","Start Continuous Run"),category:m,icon:b.testingTurnContinuousRunOn,menu:Ce(!1)})}async run(t,...e){const o=t.get(K),n=await ve(o,t.get(M),t.get(le),t.get(V).all());n.length&&o.start(n)}}class Y extends P{constructor(e,o){super({...e,menu:[{id:a.ViewTitle,order:o===T.Run?11:o===T.Debug?12:13,group:"navigation",when:f.and(f.equals("view",I.ExplorerViewId),l.isRunning.isEqualTo(!1),l.capabilityToContextKey[o].isEqualTo(!0))}],category:m,viewId:I.ExplorerViewId});this.group=o}runInView(e,o){const{include:n,exclude:r}=o.getTreeIncludeExclude();return e.get(y).runTests({tests:n,exclude:r,group:this.group})}}class dt extends R{constructor(){super({id:u.GetSelectedProfiles,title:c("getSelectedProfiles","Get Selected Profiles")})}run(t){const e=t.get(V);return[...e.getGroupDefaultProfiles(T.Run),...e.getGroupDefaultProfiles(T.Debug),...e.getGroupDefaultProfiles(T.Coverage)].map(o=>({controllerId:o.controllerId,label:o.label,kind:o.group&T.Coverage?H.Coverage:o.group&T.Debug?H.Debug:H.Run}))}}class gt extends P{constructor(){super({id:u.GetExplorerSelection,title:c("getExplorerSelection","Get Explorer Selection"),viewId:I.ExplorerViewId})}runInView(t,e){const{include:o,exclude:n}=e.getTreeIncludeExclude(void 0,void 0,"selected"),r=i=>i.item.extId;return{include:o.map(r),exclude:n.map(r)}}}class pt extends Y{constructor(){super({id:u.RunSelectedAction,title:Te,icon:b.testingRunAllIcon},T.Run)}}class Tt extends Y{constructor(){super({id:u.DebugSelectedAction,title:me,icon:b.testingDebugAllIcon},T.Debug)}}class mt extends Y{constructor(){super({id:u.CoverageSelectedAction,title:fe,icon:b.testingCoverageAllIcon},T.Coverage)}}const Re=(s,t)=>s.withProgress({location:Oe.Window,title:E("discoveringTests","Discovering Tests")},()=>t);class X extends R{constructor(e,o,n){super({...e,category:m,menu:[{id:a.CommandPalette,when:l.capabilityToContextKey[o].isEqualTo(!0)}]});this.group=o;this.noTestsFoundError=n}async run(e){const o=e.get(y),n=e.get(M),r=[...o.collection.rootItems].filter(i=>i.children.size||i.expand===ge.Expandable||i.expand===ge.BusyExpanding);if(!r.length){n.info(this.noTestsFoundError);return}await o.runTests({tests:r,group:this.group})}}class ft extends X{constructor(){super({id:u.RunAllAction,title:c("runAllTests","Run All Tests"),icon:b.testingRunAllIcon,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,d.KeyA)}},T.Run,E("noTestProvider","No tests found in this workspace. You may need to install a test provider extension"))}}class Ct extends X{constructor(){super({id:u.DebugAllAction,title:c("debugAllTests","Debug All Tests"),icon:b.testingDebugIcon,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|d.KeyA)}},T.Debug,E("noDebugTestProvider","No debuggable tests found in this workspace. You may need to install a test provider extension"))}}class vt extends X{constructor(){super({id:u.RunAllWithCoverageAction,title:c("runAllWithCoverage","Run All Tests with Coverage"),icon:b.testingCoverageIcon,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|p.Shift|d.KeyA)}},T.Coverage,E("noCoverageTestProvider","No tests with coverage runners found in this workspace. You may need to install a test provider extension"))}}class Rt extends R{constructor(){super({id:u.CancelTestRunAction,title:c("testing.cancelRun","Cancel Test Run"),icon:b.testingCancelIcon,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|d.KeyX)},menu:[{id:a.ViewTitle,order:11,group:"navigation",when:f.and(f.equals("view",I.ExplorerViewId),f.equals(l.isRunning.serialize(),!0))}]})}async run(t,e,o){const n=t.get(q),r=t.get(y);if(e)r.cancelTestRun(e,o);else for(const i of n.results)i.completedAt||r.cancelTestRun(i.id)}}class It extends P{constructor(){super({id:u.TestingViewAsListAction,viewId:I.ExplorerViewId,title:c("testing.viewAsList","View as List"),toggled:l.viewMode.isEqualTo(U.List),menu:{id:a.ViewTitle,order:18,group:"viewAs",when:f.equals("view",I.ExplorerViewId)}})}runInView(t,e){e.viewModel.viewMode=U.List}}class wt extends P{constructor(){super({id:u.TestingViewAsTreeAction,viewId:I.ExplorerViewId,title:c("testing.viewAsTree","View as Tree"),toggled:l.viewMode.isEqualTo(U.Tree),menu:{id:a.ViewTitle,order:18,group:"viewAs",when:f.equals("view",I.ExplorerViewId)}})}runInView(t,e){e.viewModel.viewMode=U.Tree}}class xt extends P{constructor(){super({id:u.TestingSortByStatusAction,viewId:I.ExplorerViewId,title:c("testing.sortByStatus","Sort by Status"),toggled:l.viewSorting.isEqualTo(D.ByStatus),menu:{id:a.ViewTitle,order:19,group:"sortBy",when:f.equals("view",I.ExplorerViewId)}})}runInView(t,e){e.viewModel.viewSorting=D.ByStatus}}class ht extends P{constructor(){super({id:u.TestingSortByLocationAction,viewId:I.ExplorerViewId,title:c("testing.sortByLocation","Sort by Location"),toggled:l.viewSorting.isEqualTo(D.ByLocation),menu:{id:a.ViewTitle,order:19,group:"sortBy",when:f.equals("view",I.ExplorerViewId)}})}runInView(t,e){e.viewModel.viewSorting=D.ByLocation}}class St extends P{constructor(){super({id:u.TestingSortByDurationAction,viewId:I.ExplorerViewId,title:c("testing.sortByDuration","Sort by Duration"),toggled:l.viewSorting.isEqualTo(D.ByDuration),menu:{id:a.ViewTitle,order:19,group:"sortBy",when:f.equals("view",I.ExplorerViewId)}})}runInView(t,e){e.viewModel.viewSorting=D.ByDuration}}class bt extends R{constructor(){super({id:u.ShowMostRecentOutputAction,title:c("testing.showMostRecentOutput","Show Output"),category:m,icon:O.terminal,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|d.KeyO)},precondition:l.hasAnyResults.isEqualTo(!0),menu:[{id:a.ViewTitle,order:16,group:"navigation",when:f.equals("view",I.ExplorerViewId)},{id:a.CommandPalette,when:l.hasAnyResults.isEqualTo(!0)}]})}async run(t){(await t.get(pe).openView(I.ResultsViewId,!0))?.showLatestRun()}}class At extends P{constructor(){super({id:u.CollapseAllAction,viewId:I.ExplorerViewId,title:c("testing.collapseAll","Collapse All Tests"),icon:O.collapseAll,menu:{id:a.ViewTitle,order:16,group:"displayAction",when:f.equals("view",I.ExplorerViewId)}})}runInView(t,e){e.viewModel.collapseAll()}}class yt extends R{constructor(){super({id:u.ClearTestResultsAction,title:c("testing.clearResults","Clear All Results"),category:m,icon:O.clearAll,menu:[{id:a.TestPeekTitle},{id:a.CommandPalette,when:l.hasAnyResults.isEqualTo(!0)},{id:a.ViewTitle,order:17,group:"displayAction",when:f.equals("view",I.ExplorerViewId)},{id:a.ViewTitle,order:17,group:"navigation",when:f.equals("view",I.ResultsViewId)}]})}run(t){t.get(q).clear()}}class Et extends R{constructor(){super({id:u.GoToTest,title:c("testing.editFocusedTest","Go to Test"),icon:O.goToFile,menu:B(20,l.testItemHasUri.isEqualTo(!0)),keybinding:{weight:S.EditorContrib-10,when:Le.isEqualTo(I.ExplorerViewId),primary:d.Enter|p.Alt}})}async run(t,e,o){e||(e=t.get(pe).getActiveViewWithId(I.ExplorerViewId)?.focusedTreeElements[0]),e&&e instanceof ce&&t.get(G).executeCommand("vscode.revealTest",e.test.item.extId,o)}}async function Ie(s,t,e,o,n){let r=[],i,h=[],w;for await(const g of Qe(s,t,e)){if(!g.item.range||n?.(g)===!1)continue;const C=N.lift(g.item.range);C.containsPosition(o)?i&&N.equalsRange(g.item.range,i)?r.some(x=>de.isChild(x.item.extId,g.item.extId))||r.push(g):(i=C,r=[g]):Ve.isBefore(C.getStartPosition(),o)&&(!w||w.getStartPosition().isBefore(C.getStartPosition())?(w=C,h=[g]):C.equalsRange(w)&&!h.some(x=>de.isChild(x.item.extId,g.item.extId))&&h.push(g))}return r.length?r:h}var Pt=(i=>(i[i.RunAtCursor=0]="RunAtCursor",i[i.DebugAtCursor=1]="DebugAtCursor",i[i.RunInFile=2]="RunInFile",i[i.DebugInFile=3]="DebugInFile",i[i.GoToRelated=4]="GoToRelated",i[i.PeekRelated=5]="PeekRelated",i))(Pt||{});class j extends R{constructor(e,o){super({...e,menu:[{id:a.CommandPalette,when:Q},{id:a.EditorContext,group:"testing",order:o===T.Run?0:1,when:f.and(l.activeEditorHasTests,l.capabilityToContextKey[o])}]});this.group=o}async run(e){const o=e.get(oe),n=e.get(je),r=n.activeEditorPane;let i=o.getActiveCodeEditor();if(!r||!i)return;i instanceof se&&(i=i.getParentEditor());const h=i?.getPosition(),w=i?.getModel();if(!h||!w||!("uri"in w))return;const g=e.get(y),C=e.get(V),x=e.get(_),F=e.get(L),v=e.get(Fe);We(v,Ke.SaveBeforeTest)&&(await n.save({editor:r.input,groupId:r.group.id}),await g.syncTests());const ee=await Re(F,Ie(g,x,w.uri,h,ye=>!!(C.capabilitiesForTest(ye.item)&this.group)));if(ee.length){await g.runTests({group:this.group,tests:ee});return}const te=await g.getTestsRelatedToCode(w.uri,h);if(te.length){await g.runTests({group:this.group,tests:te});return}i&&ne.get(i)?.showMessage(E("noTestsAtCursor","No tests found here"),h)}}class kt extends j{constructor(){super({id:u.RunAtCursor,title:c("testing.runAtCursor","Run Test at Cursor"),category:m,keybinding:{weight:S.WorkbenchContrib,when:k.editorTextFocus,primary:A(p.CtrlCmd|d.Semicolon,d.KeyC)}},T.Run)}}class Vt extends j{constructor(){super({id:u.DebugAtCursor,title:c("testing.debugAtCursor","Debug Test at Cursor"),category:m,keybinding:{weight:S.WorkbenchContrib,when:k.editorTextFocus,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|d.KeyC)}},T.Debug)}}class Dt extends j{constructor(){super({id:u.CoverageAtCursor,title:c("testing.coverageAtCursor","Run Test at Cursor with Coverage"),category:m,keybinding:{weight:S.WorkbenchContrib,when:k.editorTextFocus,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|p.Shift|d.KeyC)}},T.Coverage)}}class J extends R{constructor(e,o){super({...e,menu:[{id:a.ExplorerContext,when:l.capabilityToContextKey[o].isEqualTo(!0),group:"6.5_testing",order:(o===T.Run?11:12)+.1}]});this.group=o}async run(e,o){const n=e.get(y),r=e.get(M),i=await Pe.asyncToArray(ze(n,e.get(_),o));if(!i.length){r.notify({message:E("noTests","No tests found in the selected file or folder"),severity:Be.Info});return}return n.runTests({tests:i,group:this.group})}}class qt extends J{constructor(){super({id:u.RunByUri,title:Te,category:m},T.Run)}}class Ft extends J{constructor(){super({id:u.DebugByUri,title:me,category:m},T.Debug)}}class Mt extends J{constructor(){super({id:u.CoverageByUri,title:fe,category:m},T.Coverage)}}class Z extends R{constructor(e,o){super({...e,menu:[{id:a.CommandPalette,when:l.capabilityToContextKey[o].isEqualTo(!0)},{id:a.EditorContext,group:"testing",order:o===T.Run?2:3,when:f.and(l.activeEditorHasTests,l.capabilityToContextKey[o])}]});this.group=o}run(e){let o=e.get(oe).getActiveCodeEditor();if(!o)return;o instanceof se&&(o=o.getParentEditor());const n=o?.getPosition(),r=o?.getModel();if(!n||!r||!("uri"in r))return;const i=e.get(y),h=r.uri.toString(),w=[i.collection.rootIds],g=[];for(;w.length;)for(const C of w.pop()){const x=i.collection.getNodeById(C);x.item.uri?.toString()===h?g.push(x):w.push(x.children)}if(g.length)return i.runTests({tests:g,group:this.group});o&&ne.get(o)?.showMessage(E("noTestsInFile","No tests found in this file"),n)}}class Bt extends Z{constructor(){super({id:u.RunCurrentFile,title:c("testing.runCurrentFile","Run Tests in Current File"),category:m,keybinding:{weight:S.WorkbenchContrib,when:k.editorTextFocus,primary:A(p.CtrlCmd|d.Semicolon,d.KeyF)}},T.Run)}}class Ot extends Z{constructor(){super({id:u.DebugCurrentFile,title:c("testing.debugCurrentFile","Debug Tests in Current File"),category:m,keybinding:{weight:S.WorkbenchContrib,when:k.editorTextFocus,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|d.KeyF)}},T.Debug)}}class Gt extends Z{constructor(){super({id:u.CoverageCurrentFile,title:c("testing.coverageCurrentFile","Run Tests with Coverage in Current File"),category:m,keybinding:{weight:S.WorkbenchContrib,when:k.editorTextFocus,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|p.Shift|d.KeyF)}},T.Coverage)}}const we=async(s,t,e,o)=>{const n=Promise.all(e.map(i=>He(s,i))),r=(await Re(t,n)).filter(W);return r.length?await o(r):void 0};class Lt extends R{async run(t,...e){const o=t.get(y);await we(t.get(y).collection,t.get(L),[...this.getTestExtIdsToRun(t,...e)],n=>this.runTest(o,n))}}class xe extends Lt{constructor(t){super({...t,menu:{id:a.CommandPalette,when:Q}})}getTestExtIdsToRun(t){const{results:e}=t.get(q),o=new Set;for(let n=e.length-1;n>=0;n--){const r=e[n];for(const i of r.tests)Xe(i.ownComputedState)?o.add(i.item.extId):o.delete(i.item.extId)}return o}}class $ extends R{constructor(t){super({...t,menu:{id:a.CommandPalette,when:f.and(Q,l.hasAnyResults.isEqualTo(!0))}})}getLastTestRunRequest(t,e){const o=t.get(q);return(e?o.results.find(r=>r.id===e):o.results[0])?.request}async run(t,e){const o=t.get(q),n=e?o.results.find(g=>g.id===e):o.results[0];if(!n)return;const r=n.request,i=t.get(y),h=t.get(V),w=g=>h.getControllerProfiles(g.controllerId).some(C=>C.profileId===g.profileId);await we(i.collection,t.get(L),r.targets.flatMap(g=>g.testIds),g=>this.getGroup()&r.group&&r.targets.every(w)?i.runResolvedTests({targets:r.targets,group:r.group,exclude:r.exclude}):i.runTests({tests:g,group:this.getGroup()}))}}class Ut extends xe{constructor(){super({id:u.ReRunFailedTests,title:c("testing.reRunFailTests","Rerun Failed Tests"),category:m,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,d.KeyE)}})}runTest(t,e){return t.runTests({group:T.Run,tests:e})}}class Kt extends xe{constructor(){super({id:u.DebugFailedTests,title:c("testing.debugFailTests","Debug Failed Tests"),category:m,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|d.KeyE)}})}runTest(t,e){return t.runTests({group:T.Debug,tests:e})}}class Wt extends ${constructor(){super({id:u.ReRunLastRun,title:c("testing.reRunLastRun","Rerun Last Run"),category:m,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,d.KeyL)}})}getGroup(){return T.Run}}class Nt extends ${constructor(){super({id:u.DebugLastRun,title:c("testing.debugLastRun","Debug Last Run"),category:m,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|d.KeyL)}})}getGroup(){return T.Debug}}class _t extends ${constructor(){super({id:u.CoverageLastRun,title:c("testing.coverageLastRun","Rerun Last Run with Coverage"),category:m,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|p.Shift|d.KeyL)}})}getGroup(){return T.Coverage}}class Ht extends R{constructor(){super({id:u.SearchForTestExtension,title:c("testing.searchForTestExtension","Search for Test Extension")})}async run(t){t.get(Ue).openSearch('@category:"testing"')}}class Qt extends R{constructor(){super({id:u.OpenOutputPeek,title:c("testing.openOutputPeek","Peek Output"),category:m,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|d.KeyM)},menu:{id:a.CommandPalette,when:l.hasAnyResults.isEqualTo(!0)}})}async run(t){t.get(Ye).open()}}class zt extends R{constructor(){super({id:u.ToggleInlineTestOutput,title:c("testing.toggleInlineTestOutput","Toggle Inline Test Output"),category:m,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|d.KeyI)},menu:{id:a.CommandPalette,when:l.hasAnyResults.isEqualTo(!0)}})}async run(t){const e=t.get(y);e.showInlineOutput.value=!e.showInlineOutput.value}}const he=s=>[{id:a.TestItem,group:"inline",order:10,when:f.and(l.canRefreshTests.isEqualTo(!0),l.isRefreshingTests.isEqualTo(s))},{id:a.ViewTitle,group:"navigation",order:10,when:f.and(f.equals("view",I.ExplorerViewId),l.canRefreshTests.isEqualTo(!0),l.isRefreshingTests.isEqualTo(s))},{id:a.CommandPalette,when:l.canRefreshTests.isEqualTo(!0)}];class Yt extends R{constructor(){super({id:u.RefreshTestsAction,title:c("testing.refreshTests","Refresh Tests"),category:m,icon:b.testingRefreshTests,keybinding:{weight:S.WorkbenchContrib,primary:A(p.CtrlCmd|d.Semicolon,p.CtrlCmd|d.KeyR),when:l.canRefreshTests.isEqualTo(!0)},menu:he(!1)})}async run(t,...e){const o=t.get(y),n=t.get(L),r=Ee(e.filter(W).map(i=>i.test.controllerId));return n.withProgress({location:I.ViewletId},async()=>{r.length?await Promise.all(r.map(i=>o.refreshTests(i))):await o.refreshTests()})}}class Xt extends R{constructor(){super({id:u.CancelTestRefreshAction,title:c("testing.cancelTestRefresh","Cancel Test Refresh"),category:m,icon:b.testingCancelRefreshTests,menu:he(!0)})}async run(t){t.get(y).cancelRefreshTests()}}class jt extends R{constructor(){super({id:u.CoverageClear,title:c("testing.clearCoverage","Clear Coverage"),icon:Ge,category:m,menu:[{id:a.ViewTitle,group:"navigation",order:10,when:f.equals("view",I.CoverageViewId)},{id:a.CommandPalette,when:l.isTestCoverageOpen.isEqualTo(!0)}]})}run(t){t.get(ae).closeCoverage()}}class Jt extends R{constructor(){super({id:u.OpenCoverage,title:c("testing.openCoverage","Open Coverage"),category:m,menu:[{id:a.CommandPalette,when:l.hasAnyResults.isEqualTo(!0)}]})}run(t){const e=t.get(q).results,o=e.length&&e[0].tasks.find(n=>n.coverage);if(!o){t.get(M).info(E("testing.noCoverage","No coverage information available on the last test run."));return}t.get(ae).openCoverage(o,!0)}}class Se extends De{testService;uriIdentityService;runEditorCommand(t,e,...o){return this.testService=t.get(y),this.uriIdentityService=t.get(_),super.runEditorCommand(t,e,...o)}_getAlternativeCommand(t){return t.getOption(re.gotoLocation).alternativeTestsCommand}_getGoToPreference(t){return t.getOption(re.gotoLocation).multipleTests||"peek"}}class be extends Se{async _getLocationModel(t,e,o,n){const r=await this.testService.getTestsRelatedToCode(e.uri,o,n);return new ie(r.map(i=>i.item.uri&&{uri:i.item.uri,range:i.item.range||new N(1,1,1,1)}).filter(W),E("relatedTests","Related Tests"))}_getNoResultFoundMessage(){return E("noTestFound","No related tests found.")}}class Zt extends be{constructor(){super({openToSide:!1,openInPeek:!1,muteMessage:!1},{id:u.GoToRelatedTest,title:c("testing.goToRelatedTest","Go to Related Test"),category:m,precondition:f.and(f.not(l.activeEditorHasTests.key),l.canGoToRelatedTest),menu:[{id:a.EditorContext,group:"testing",order:4}]})}}class $t extends be{constructor(){super({openToSide:!1,openInPeek:!0,muteMessage:!1},{id:u.PeekRelatedTest,title:c("testing.peekToRelatedTest","Peek Related Test"),category:m,precondition:f.and(l.canGoToRelatedTest,f.not(l.activeEditorHasTests.key),ue.notInPeekEditor,k.isInEmbeddedEditor.toNegated()),menu:[{id:a.EditorContext,group:"testing",order:5}]})}}class Ae extends Se{async _getLocationModel(t,e,o,n){const r=await Ie(this.testService,this.uriIdentityService,e.uri,o),i=await Promise.all(r.map(h=>this.testService.getCodeRelatedToTest(h)));return new ie(i.flat(),E("relatedCode","Related Code"))}_getNoResultFoundMessage(){return E("noRelatedCode","No related code found.")}}class eo extends Ae{constructor(){super({openToSide:!1,openInPeek:!1,muteMessage:!1},{id:u.GoToRelatedCode,title:c("testing.goToRelatedCode","Go to Related Code"),category:m,precondition:f.and(l.activeEditorHasTests,l.canGoToRelatedCode),menu:[{id:a.EditorContext,group:"testing",order:4}]})}}class to extends Ae{constructor(){super({openToSide:!1,openInPeek:!0,muteMessage:!1},{id:u.PeekRelatedCode,title:c("testing.peekToRelatedCode","Peek Related Code"),category:m,precondition:f.and(l.activeEditorHasTests,l.canGoToRelatedCode,ue.notInPeekEditor,k.isInEmbeddedEditor.toNegated()),menu:[{id:a.EditorContext,group:"testing",order:5}]})}}const hs=[Xt,Rt,jt,yt,At,lt,nt,ut,ot,vt,Dt,Gt,_t,mt,Mt,tt,Ct,Vt,Ot,Kt,Nt,Tt,Ft,gt,dt,eo,Zt,Et,Ze,Jt,Qt,to,$t,Yt,Ut,Wt,rt,ft,kt,Bt,pt,qt,st,Ht,it,bt,at,ct,St,ht,xt,It,wt,zt,et,$e];export{Xt as CancelTestRefreshAction,Rt as CancelTestRunAction,yt as ClearTestResultsAction,jt as CleareCoverage,At as CollapseAllAction,lt as ConfigureTestProfilesAction,nt as ContinuousRunTestAction,ut as ContinuousRunUsingProfileTestAction,ot as CoverageAction,vt as CoverageAllAction,Dt as CoverageAtCursor,Gt as CoverageCurrentFile,_t as CoverageLastRun,mt as CoverageSelectedAction,tt as DebugAction,Ct as DebugAllAction,Vt as DebugAtCursor,Ot as DebugCurrentFile,Kt as DebugFailedTests,Nt as DebugLastRun,Tt as DebugSelectedAction,gt as GetExplorerSelection,dt as GetSelectedProfiles,Et as GoToTest,Ze as HideTestAction,Jt as OpenCoverage,Qt as OpenOutputPeek,Ut as ReRunFailedTests,Wt as ReRunLastRun,Yt as RefreshTestsAction,rt as RunAction,ft as RunAllAction,kt as RunAtCursor,Bt as RunCurrentFile,pt as RunSelectedAction,st as RunUsingProfileAction,Ht as SearchForTestExtension,it as SelectDefaultTestProfiles,bt as ShowMostRecentOutputAction,St as TestingSortByDurationAction,ht as TestingSortByLocationAction,xt as TestingSortByStatusAction,It as TestingViewAsListAction,wt as TestingViewAsTreeAction,zt as ToggleInlineTestOutput,et as UnhideAllTestsAction,$e as UnhideTestAction,hs as allTestActions,we as discoverAndRunTests};
+import { distinct } from '../../../../base/common/arrays.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { KeyChord } from '../../../../base/common/keyCodes.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { isDefined } from '../../../../base/common/types.js';
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { EmbeddedCodeEditorWidget } from '../../../../editor/browser/widget/codeEditor/embeddedCodeEditorWidget.js';
+import { Position } from '../../../../editor/common/core/position.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
+import { SymbolNavigationAction } from '../../../../editor/contrib/gotoSymbol/browser/goToCommands.js';
+import { ReferencesModel } from '../../../../editor/contrib/gotoSymbol/browser/referencesModel.js';
+import { MessageController } from '../../../../editor/contrib/message/browser/messageController.js';
+import { PeekContext } from '../../../../editor/contrib/peekView/browser/peekView.js';
+import { localize, localize2 } from '../../../../nls.js';
+import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
+import { Action2, MenuId } from '../../../../platform/actions/common/actions.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ContextKeyExpr, ContextKeyGreaterExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
+import { IProgressService } from '../../../../platform/progress/common/progress.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { widgetClose } from '../../../../platform/theme/common/iconRegistry.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { ViewAction } from '../../../browser/parts/views/viewPane.js';
+import { FocusedViewContext } from '../../../common/contextkeys.js';
+import { IExtensionsWorkbenchService } from '../../extensions/common/extensions.js';
+import { TestItemTreeElement } from './explorerProjections/index.js';
+import * as icons from './icons.js';
+import { getTestingConfiguration } from '../common/configuration.js';
+import { testConfigurationGroupNames } from '../common/constants.js';
+import { ITestCoverageService } from '../common/testCoverageService.js';
+import { TestId } from '../common/testId.js';
+import { ITestProfileService, canUseProfileWithTest } from '../common/testProfileService.js';
+import { ITestResultService } from '../common/testResultService.js';
+import { ITestService, expandAndGetTestById, testsInFile, testsUnderUri } from '../common/testService.js';
+import { TestingContextKeys } from '../common/testingContextKeys.js';
+import { ITestingContinuousRunService } from '../common/testingContinuousRunService.js';
+import { ITestingPeekOpener } from '../common/testingPeekOpener.js';
+import { isFailedState } from '../common/testingStates.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+const category = Categories.Test;
+const hasAnyTestProvider = ContextKeyGreaterExpr.create(TestingContextKeys.providerCount.key, 0);
+const LABEL_RUN_TESTS = localize2('runSelectedTests', "Run Tests");
+const LABEL_DEBUG_TESTS = localize2('debugSelectedTests', "Debug Tests");
+const LABEL_COVERAGE_TESTS = localize2('coverageSelectedTests', "Run Tests with Coverage");
+export class HideTestAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.hideTest",
+            title: localize2('hideTest', 'Hide Test'),
+            menu: {
+                id: MenuId.TestItem,
+                group: 'builtin@2',
+                when: TestingContextKeys.testItemIsHidden.isEqualTo(false)
+            },
+        });
+    }
+    run(accessor, ...elements) {
+        const service = accessor.get(ITestService);
+        for (const element of elements) {
+            service.excluded.toggle(element.test, true);
+        }
+        return Promise.resolve();
+    }
+}
+export class UnhideTestAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.unhideTest",
+            title: localize2('unhideTest', 'Unhide Test'),
+            menu: {
+                id: MenuId.TestItem,
+                order: 21,
+                when: TestingContextKeys.testItemIsHidden.isEqualTo(true)
+            },
+        });
+    }
+    run(accessor, ...elements) {
+        const service = accessor.get(ITestService);
+        for (const element of elements) {
+            if (element instanceof TestItemTreeElement) {
+                service.excluded.toggle(element.test, false);
+            }
+        }
+        return Promise.resolve();
+    }
+}
+export class UnhideAllTestsAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.unhideAllTests",
+            title: localize2('unhideAllTests', 'Unhide All Tests'),
+        });
+    }
+    run(accessor) {
+        const service = accessor.get(ITestService);
+        service.excluded.clear();
+        return Promise.resolve();
+    }
+}
+const testItemInlineAndInContext = (order, when) => [
+    {
+        id: MenuId.TestItem,
+        group: 'inline',
+        order,
+        when,
+    }, {
+        id: MenuId.TestItem,
+        group: 'builtin@1',
+        order,
+        when,
+    }
+];
+class RunVisibleAction extends ViewAction {
+    constructor(bitset, desc) {
+        super({
+            ...desc,
+            viewId: "workbench.view.testing",
+        });
+        this.bitset = bitset;
+    }
+    runInView(accessor, view, ...elements) {
+        const { include, exclude } = view.getTreeIncludeExclude(elements.map(e => e.test));
+        return accessor.get(ITestService).runTests({
+            tests: include,
+            exclude,
+            group: this.bitset,
+        });
+    }
+}
+export class DebugAction extends RunVisibleAction {
+    constructor() {
+        super(4, {
+            id: "testing.debug",
+            title: localize2('debug test', 'Debug Test'),
+            icon: icons.testingDebugIcon,
+            menu: testItemInlineAndInContext(12, TestingContextKeys.hasDebuggableTests.isEqualTo(true)),
+        });
+    }
+}
+export class CoverageAction extends RunVisibleAction {
+    constructor() {
+        super(8, {
+            id: "testing.coverage",
+            title: localize2('run with cover test', 'Run Test with Coverage'),
+            icon: icons.testingCoverageIcon,
+            menu: testItemInlineAndInContext(13, TestingContextKeys.hasCoverableTests.isEqualTo(true)),
+        });
+    }
+}
+export class RunUsingProfileAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.runUsing",
+            title: localize2('testing.runUsing', 'Execute Using Profile...'),
+            icon: icons.testingDebugIcon,
+            menu: {
+                id: MenuId.TestItem,
+                order: 15,
+                group: 'builtin@2',
+                when: TestingContextKeys.hasNonDefaultProfile.isEqualTo(true),
+            },
+        });
+    }
+    async run(acessor, ...elements) {
+        const commandService = acessor.get(ICommandService);
+        const testService = acessor.get(ITestService);
+        const profile = await commandService.executeCommand('vscode.pickTestProfile', {
+            onlyForTest: elements[0].test,
+        });
+        if (!profile) {
+            return;
+        }
+        testService.runResolvedTests({
+            group: profile.group,
+            targets: [{
+                    profileId: profile.profileId,
+                    controllerId: profile.controllerId,
+                    testIds: elements.filter(t => canUseProfileWithTest(profile, t.test)).map(t => t.test.item.extId)
+                }]
+        });
+    }
+}
+export class RunAction extends RunVisibleAction {
+    constructor() {
+        super(2, {
+            id: "testing.run",
+            title: localize2('run test', 'Run Test'),
+            icon: icons.testingRunIcon,
+            menu: testItemInlineAndInContext(11, TestingContextKeys.hasRunnableTests.isEqualTo(true)),
+        });
+    }
+}
+export class SelectDefaultTestProfiles extends Action2 {
+    constructor() {
+        super({
+            id: "testing.selectDefaultTestProfiles",
+            title: localize2('testing.selectDefaultTestProfiles', 'Select Default Profile'),
+            icon: icons.testingUpdateProfiles,
+            category,
+        });
+    }
+    async run(acessor, onlyGroup) {
+        const commands = acessor.get(ICommandService);
+        const testProfileService = acessor.get(ITestProfileService);
+        const profiles = await commands.executeCommand('vscode.pickMultipleTestProfiles', {
+            showConfigureButtons: false,
+            selected: testProfileService.getGroupDefaultProfiles(onlyGroup),
+            onlyGroup,
+        });
+        if (profiles?.length) {
+            testProfileService.setGroupDefaultProfiles(onlyGroup, profiles);
+        }
+    }
+}
+export class ContinuousRunTestAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.toggleContinuousRunForTest",
+            title: localize2('testing.toggleContinuousRunOn', 'Turn on Continuous Run'),
+            icon: icons.testingTurnContinuousRunOn,
+            precondition: ContextKeyExpr.or(TestingContextKeys.isContinuousModeOn.isEqualTo(true), TestingContextKeys.isParentRunningContinuously.isEqualTo(false)),
+            toggled: {
+                condition: TestingContextKeys.isContinuousModeOn.isEqualTo(true),
+                icon: icons.testingContinuousIsOn,
+                title: localize('testing.toggleContinuousRunOff', 'Turn off Continuous Run'),
+            },
+            menu: testItemInlineAndInContext(2147483647, TestingContextKeys.supportsContinuousRun.isEqualTo(true)),
+        });
+    }
+    async run(accessor, ...elements) {
+        const crService = accessor.get(ITestingContinuousRunService);
+        for (const element of elements) {
+            const id = element.test.item.extId;
+            if (crService.isSpecificallyEnabledFor(id)) {
+                crService.stop(id);
+                continue;
+            }
+            crService.start(2, id);
+        }
+    }
+}
+export class ContinuousRunUsingProfileTestAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.continuousRunUsingForTest",
+            title: localize2('testing.startContinuousRunUsing', 'Start Continous Run Using...'),
+            icon: icons.testingDebugIcon,
+            menu: [
+                {
+                    id: MenuId.TestItem,
+                    order: 14,
+                    group: 'builtin@2',
+                    when: ContextKeyExpr.and(TestingContextKeys.supportsContinuousRun.isEqualTo(true), TestingContextKeys.isContinuousModeOn.isEqualTo(false))
+                }
+            ],
+        });
+    }
+    async run(accessor, ...elements) {
+        const crService = accessor.get(ITestingContinuousRunService);
+        const profileService = accessor.get(ITestProfileService);
+        const notificationService = accessor.get(INotificationService);
+        const quickInputService = accessor.get(IQuickInputService);
+        for (const element of elements) {
+            const selected = await selectContinuousRunProfiles(crService, notificationService, quickInputService, [{ profiles: profileService.getControllerProfiles(element.test.controllerId) }]);
+            if (selected.length) {
+                crService.start(selected, element.test.item.extId);
+            }
+        }
+    }
+}
+export class ConfigureTestProfilesAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.configureProfile",
+            title: localize2('testing.configureProfile', "Configure Test Profiles"),
+            icon: icons.testingUpdateProfiles,
+            f1: true,
+            category,
+            menu: {
+                id: MenuId.CommandPalette,
+                when: TestingContextKeys.hasConfigurableProfile.isEqualTo(true),
+            },
+        });
+    }
+    async run(acessor, onlyGroup) {
+        const commands = acessor.get(ICommandService);
+        const testProfileService = acessor.get(ITestProfileService);
+        const profile = await commands.executeCommand('vscode.pickTestProfile', {
+            placeholder: localize('configureProfile', 'Select a profile to update'),
+            showConfigureButtons: false,
+            onlyConfigurable: true,
+            onlyGroup,
+        });
+        if (profile) {
+            testProfileService.configure(profile.controllerId, profile.profileId);
+        }
+    }
+}
+const continuousMenus = (whenIsContinuousOn) => [
+    {
+        id: MenuId.ViewTitle,
+        group: 'navigation',
+        order: 15,
+        when: ContextKeyExpr.and(ContextKeyExpr.equals('view', "workbench.view.testing"), TestingContextKeys.supportsContinuousRun.isEqualTo(true), TestingContextKeys.isContinuousModeOn.isEqualTo(whenIsContinuousOn)),
+    },
+    {
+        id: MenuId.CommandPalette,
+        when: TestingContextKeys.supportsContinuousRun.isEqualTo(true),
+    },
+];
+class StopContinuousRunAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.stopContinuousRun",
+            title: localize2('testing.stopContinuous', 'Stop Continuous Run'),
+            category,
+            icon: icons.testingTurnContinuousRunOff,
+            menu: continuousMenus(true),
+        });
+    }
+    run(accessor) {
+        accessor.get(ITestingContinuousRunService).stop();
+    }
+}
+function selectContinuousRunProfiles(crs, notificationService, quickInputService, profilesToPickFrom) {
+    const items = [];
+    for (const { controller, profiles } of profilesToPickFrom) {
+        for (const profile of profiles) {
+            if (profile.supportsContinuousRun) {
+                items.push({
+                    label: profile.label || controller?.label.get() || '',
+                    description: controller?.label.get(),
+                    profile,
+                });
+            }
+        }
+    }
+    if (items.length === 0) {
+        notificationService.info(localize('testing.noProfiles', 'No test continuous run-enabled profiles were found'));
+        return Promise.resolve([]);
+    }
+    if (items.length === 1) {
+        return Promise.resolve([items[0].profile]);
+    }
+    const qpItems = [];
+    const selectedItems = [];
+    const lastRun = crs.lastRunProfileIds;
+    items.sort((a, b) => a.profile.group - b.profile.group
+        || a.profile.controllerId.localeCompare(b.profile.controllerId)
+        || a.label.localeCompare(b.label));
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (i === 0 || items[i - 1].profile.group !== item.profile.group) {
+            qpItems.push({ type: 'separator', label: testConfigurationGroupNames[item.profile.group] });
+        }
+        qpItems.push(item);
+        if (lastRun.has(item.profile.profileId)) {
+            selectedItems.push(item);
+        }
+    }
+    const disposables = new DisposableStore();
+    const quickpick = disposables.add(quickInputService.createQuickPick({ useSeparators: true }));
+    quickpick.title = localize('testing.selectContinuousProfiles', 'Select profiles to run when files change:');
+    quickpick.canSelectMany = true;
+    quickpick.items = qpItems;
+    quickpick.selectedItems = selectedItems;
+    quickpick.show();
+    return new Promise(resolve => {
+        disposables.add(quickpick.onDidAccept(() => {
+            resolve(quickpick.selectedItems.map(i => i.profile));
+            disposables.dispose();
+        }));
+        disposables.add(quickpick.onDidHide(() => {
+            resolve([]);
+            disposables.dispose();
+        }));
+    });
+}
+class StartContinuousRunAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.startContinuousRun",
+            title: localize2('testing.startContinuous', "Start Continuous Run"),
+            category,
+            icon: icons.testingTurnContinuousRunOn,
+            menu: continuousMenus(false),
+        });
+    }
+    async run(accessor, ...args) {
+        const crs = accessor.get(ITestingContinuousRunService);
+        const selected = await selectContinuousRunProfiles(crs, accessor.get(INotificationService), accessor.get(IQuickInputService), accessor.get(ITestProfileService).all());
+        if (selected.length) {
+            crs.start(selected);
+        }
+    }
+}
+class ExecuteSelectedAction extends ViewAction {
+    constructor(options, group) {
+        super({
+            ...options,
+            menu: [{
+                    id: MenuId.ViewTitle,
+                    order: group === 2
+                        ? 11
+                        : group === 4
+                            ? 12
+                            : 13,
+                    group: 'navigation',
+                    when: ContextKeyExpr.and(ContextKeyExpr.equals('view', "workbench.view.testing"), TestingContextKeys.isRunning.isEqualTo(false), TestingContextKeys.capabilityToContextKey[group].isEqualTo(true))
+                }],
+            category,
+            viewId: "workbench.view.testing",
+        });
+        this.group = group;
+    }
+    runInView(accessor, view) {
+        const { include, exclude } = view.getTreeIncludeExclude();
+        return accessor.get(ITestService).runTests({ tests: include, exclude, group: this.group });
+    }
+}
+export class GetSelectedProfiles extends Action2 {
+    constructor() {
+        super({ id: "testing.getSelectedProfiles", title: localize2('getSelectedProfiles', 'Get Selected Profiles') });
+    }
+    run(accessor) {
+        const profiles = accessor.get(ITestProfileService);
+        return [
+            ...profiles.getGroupDefaultProfiles(2),
+            ...profiles.getGroupDefaultProfiles(4),
+            ...profiles.getGroupDefaultProfiles(8),
+        ].map(p => ({
+            controllerId: p.controllerId,
+            label: p.label,
+            kind: p.group & 8
+                ? 3
+                : p.group & 4
+                    ? 2
+                    : 1,
+        }));
+    }
+}
+export class GetExplorerSelection extends ViewAction {
+    constructor() {
+        super({ id: "_testing.getExplorerSelection", title: localize2('getExplorerSelection', 'Get Explorer Selection'), viewId: "workbench.view.testing" });
+    }
+    runInView(_accessor, view) {
+        const { include, exclude } = view.getTreeIncludeExclude(undefined, undefined, 'selected');
+        const mapper = (i) => i.item.extId;
+        return { include: include.map(mapper), exclude: exclude.map(mapper) };
+    }
+}
+export class RunSelectedAction extends ExecuteSelectedAction {
+    constructor() {
+        super({
+            id: "testing.runSelected",
+            title: LABEL_RUN_TESTS,
+            icon: icons.testingRunAllIcon,
+        }, 2);
+    }
+}
+export class DebugSelectedAction extends ExecuteSelectedAction {
+    constructor() {
+        super({
+            id: "testing.debugSelected",
+            title: LABEL_DEBUG_TESTS,
+            icon: icons.testingDebugAllIcon,
+        }, 4);
+    }
+}
+export class CoverageSelectedAction extends ExecuteSelectedAction {
+    constructor() {
+        super({
+            id: "testing.coverageSelected",
+            title: LABEL_COVERAGE_TESTS,
+            icon: icons.testingCoverageAllIcon,
+        }, 8);
+    }
+}
+const showDiscoveringWhile = (progress, task) => {
+    return progress.withProgress({
+        location: 10,
+        title: localize('discoveringTests', 'Discovering Tests'),
+    }, () => task);
+};
+class RunOrDebugAllTestsAction extends Action2 {
+    constructor(options, group, noTestsFoundError) {
+        super({
+            ...options,
+            category,
+            menu: [{
+                    id: MenuId.CommandPalette,
+                    when: TestingContextKeys.capabilityToContextKey[group].isEqualTo(true),
+                }]
+        });
+        this.group = group;
+        this.noTestsFoundError = noTestsFoundError;
+    }
+    async run(accessor) {
+        const testService = accessor.get(ITestService);
+        const notifications = accessor.get(INotificationService);
+        const roots = [...testService.collection.rootItems].filter(r => r.children.size
+            || r.expand === 1 || r.expand === 2);
+        if (!roots.length) {
+            notifications.info(this.noTestsFoundError);
+            return;
+        }
+        await testService.runTests({ tests: roots, group: this.group });
+    }
+}
+export class RunAllAction extends RunOrDebugAllTestsAction {
+    constructor() {
+        super({
+            id: "testing.runAll",
+            title: localize2('runAllTests', 'Run All Tests'),
+            icon: icons.testingRunAllIcon,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 31),
+            },
+        }, 2, localize('noTestProvider', 'No tests found in this workspace. You may need to install a test provider extension'));
+    }
+}
+export class DebugAllAction extends RunOrDebugAllTestsAction {
+    constructor() {
+        super({
+            id: "testing.debugAll",
+            title: localize2('debugAllTests', 'Debug All Tests'),
+            icon: icons.testingDebugIcon,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 2048 | 31),
+            },
+        }, 4, localize('noDebugTestProvider', 'No debuggable tests found in this workspace. You may need to install a test provider extension'));
+    }
+}
+export class CoverageAllAction extends RunOrDebugAllTestsAction {
+    constructor() {
+        super({
+            id: "testing.coverageAll",
+            title: localize2('runAllWithCoverage', 'Run All Tests with Coverage'),
+            icon: icons.testingCoverageIcon,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 2048 | 1024 | 31),
+            },
+        }, 8, localize('noCoverageTestProvider', 'No tests with coverage runners found in this workspace. You may need to install a test provider extension'));
+    }
+}
+export class CancelTestRunAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.cancelRun",
+            title: localize2('testing.cancelRun', 'Cancel Test Run'),
+            icon: icons.testingCancelIcon,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 2048 | 54),
+            },
+            menu: [{
+                    id: MenuId.ViewTitle,
+                    order: 11,
+                    group: 'navigation',
+                    when: ContextKeyExpr.and(ContextKeyExpr.equals('view', "workbench.view.testing"), ContextKeyExpr.equals(TestingContextKeys.isRunning.serialize(), true))
+                }]
+        });
+    }
+    async run(accessor, resultId, taskId) {
+        const resultService = accessor.get(ITestResultService);
+        const testService = accessor.get(ITestService);
+        if (resultId) {
+            testService.cancelTestRun(resultId, taskId);
+        }
+        else {
+            for (const run of resultService.results) {
+                if (!run.completedAt) {
+                    testService.cancelTestRun(run.id);
+                }
+            }
+        }
+    }
+}
+export class TestingViewAsListAction extends ViewAction {
+    constructor() {
+        super({
+            id: "testing.viewAsList",
+            viewId: "workbench.view.testing",
+            title: localize2('testing.viewAsList', 'View as List'),
+            toggled: TestingContextKeys.viewMode.isEqualTo("list"),
+            menu: {
+                id: MenuId.ViewTitle,
+                order: 18,
+                group: 'viewAs',
+                when: ContextKeyExpr.equals('view', "workbench.view.testing")
+            }
+        });
+    }
+    runInView(_accessor, view) {
+        view.viewModel.viewMode = "list";
+    }
+}
+export class TestingViewAsTreeAction extends ViewAction {
+    constructor() {
+        super({
+            id: "testing.viewAsTree",
+            viewId: "workbench.view.testing",
+            title: localize2('testing.viewAsTree', 'View as Tree'),
+            toggled: TestingContextKeys.viewMode.isEqualTo("true"),
+            menu: {
+                id: MenuId.ViewTitle,
+                order: 18,
+                group: 'viewAs',
+                when: ContextKeyExpr.equals('view', "workbench.view.testing")
+            }
+        });
+    }
+    runInView(_accessor, view) {
+        view.viewModel.viewMode = "true";
+    }
+}
+export class TestingSortByStatusAction extends ViewAction {
+    constructor() {
+        super({
+            id: "testing.sortByStatus",
+            viewId: "workbench.view.testing",
+            title: localize2('testing.sortByStatus', 'Sort by Status'),
+            toggled: TestingContextKeys.viewSorting.isEqualTo("status"),
+            menu: {
+                id: MenuId.ViewTitle,
+                order: 19,
+                group: 'sortBy',
+                when: ContextKeyExpr.equals('view', "workbench.view.testing")
+            }
+        });
+    }
+    runInView(_accessor, view) {
+        view.viewModel.viewSorting = "status";
+    }
+}
+export class TestingSortByLocationAction extends ViewAction {
+    constructor() {
+        super({
+            id: "testing.sortByLocation",
+            viewId: "workbench.view.testing",
+            title: localize2('testing.sortByLocation', 'Sort by Location'),
+            toggled: TestingContextKeys.viewSorting.isEqualTo("location"),
+            menu: {
+                id: MenuId.ViewTitle,
+                order: 19,
+                group: 'sortBy',
+                when: ContextKeyExpr.equals('view', "workbench.view.testing")
+            }
+        });
+    }
+    runInView(_accessor, view) {
+        view.viewModel.viewSorting = "location";
+    }
+}
+export class TestingSortByDurationAction extends ViewAction {
+    constructor() {
+        super({
+            id: "testing.sortByDuration",
+            viewId: "workbench.view.testing",
+            title: localize2('testing.sortByDuration', 'Sort by Duration'),
+            toggled: TestingContextKeys.viewSorting.isEqualTo("duration"),
+            menu: {
+                id: MenuId.ViewTitle,
+                order: 19,
+                group: 'sortBy',
+                when: ContextKeyExpr.equals('view', "workbench.view.testing")
+            }
+        });
+    }
+    runInView(_accessor, view) {
+        view.viewModel.viewSorting = "duration";
+    }
+}
+export class ShowMostRecentOutputAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.showMostRecentOutput",
+            title: localize2('testing.showMostRecentOutput', 'Show Output'),
+            category,
+            icon: Codicon.terminal,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 2048 | 45),
+            },
+            precondition: TestingContextKeys.hasAnyResults.isEqualTo(true),
+            menu: [{
+                    id: MenuId.ViewTitle,
+                    order: 16,
+                    group: 'navigation',
+                    when: ContextKeyExpr.equals('view', "workbench.view.testing"),
+                }, {
+                    id: MenuId.CommandPalette,
+                    when: TestingContextKeys.hasAnyResults.isEqualTo(true)
+                }]
+        });
+    }
+    async run(accessor) {
+        const viewService = accessor.get(IViewsService);
+        const testView = await viewService.openView("workbench.panel.testResults.view", true);
+        testView?.showLatestRun();
+    }
+}
+export class CollapseAllAction extends ViewAction {
+    constructor() {
+        super({
+            id: "testing.collapseAll",
+            viewId: "workbench.view.testing",
+            title: localize2('testing.collapseAll', 'Collapse All Tests'),
+            icon: Codicon.collapseAll,
+            menu: {
+                id: MenuId.ViewTitle,
+                order: 16,
+                group: 'displayAction',
+                when: ContextKeyExpr.equals('view', "workbench.view.testing")
+            }
+        });
+    }
+    runInView(_accessor, view) {
+        view.viewModel.collapseAll();
+    }
+}
+export class ClearTestResultsAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.clearTestResults",
+            title: localize2('testing.clearResults', 'Clear All Results'),
+            category,
+            icon: Codicon.clearAll,
+            menu: [{
+                    id: MenuId.TestPeekTitle,
+                }, {
+                    id: MenuId.CommandPalette,
+                    when: TestingContextKeys.hasAnyResults.isEqualTo(true),
+                }, {
+                    id: MenuId.ViewTitle,
+                    order: 17,
+                    group: 'displayAction',
+                    when: ContextKeyExpr.equals('view', "workbench.view.testing")
+                }, {
+                    id: MenuId.ViewTitle,
+                    order: 17,
+                    group: 'navigation',
+                    when: ContextKeyExpr.equals('view', "workbench.panel.testResults.view")
+                }],
+        });
+    }
+    run(accessor) {
+        accessor.get(ITestResultService).clear();
+    }
+}
+export class GoToTest extends Action2 {
+    constructor() {
+        super({
+            id: "testing.editFocusedTest",
+            title: localize2('testing.editFocusedTest', 'Go to Test'),
+            icon: Codicon.goToFile,
+            menu: testItemInlineAndInContext(20, TestingContextKeys.testItemHasUri.isEqualTo(true)),
+            keybinding: {
+                weight: 100 - 10,
+                when: FocusedViewContext.isEqualTo("workbench.view.testing"),
+                primary: 3 | 512,
+            },
+        });
+    }
+    async run(accessor, element, preserveFocus) {
+        if (!element) {
+            const view = accessor.get(IViewsService).getActiveViewWithId("workbench.view.testing");
+            element = view?.focusedTreeElements[0];
+        }
+        if (element && element instanceof TestItemTreeElement) {
+            accessor.get(ICommandService).executeCommand('vscode.revealTest', element.test.item.extId, preserveFocus);
+        }
+    }
+}
+async function getTestsAtCursor(testService, uriIdentityService, uri, position, filter) {
+    let bestNodes = [];
+    let bestRange;
+    let bestNodesBefore = [];
+    let bestRangeBefore;
+    for await (const test of testsInFile(testService, uriIdentityService, uri)) {
+        if (!test.item.range || filter?.(test) === false) {
+            continue;
+        }
+        const irange = Range.lift(test.item.range);
+        if (irange.containsPosition(position)) {
+            if (bestRange && Range.equalsRange(test.item.range, bestRange)) {
+                if (!bestNodes.some(b => TestId.isChild(b.item.extId, test.item.extId))) {
+                    bestNodes.push(test);
+                }
+            }
+            else {
+                bestRange = irange;
+                bestNodes = [test];
+            }
+        }
+        else if (Position.isBefore(irange.getStartPosition(), position)) {
+            if (!bestRangeBefore || bestRangeBefore.getStartPosition().isBefore(irange.getStartPosition())) {
+                bestRangeBefore = irange;
+                bestNodesBefore = [test];
+            }
+            else if (irange.equalsRange(bestRangeBefore) && !bestNodesBefore.some(b => TestId.isChild(b.item.extId, test.item.extId))) {
+                bestNodesBefore.push(test);
+            }
+        }
+    }
+    return bestNodes.length ? bestNodes : bestNodesBefore;
+}
+class ExecuteTestAtCursor extends Action2 {
+    constructor(options, group) {
+        super({
+            ...options,
+            menu: [{
+                    id: MenuId.CommandPalette,
+                    when: hasAnyTestProvider,
+                }, {
+                    id: MenuId.EditorContext,
+                    group: 'testing',
+                    order: group === 2 ? 0 : 1,
+                    when: ContextKeyExpr.and(TestingContextKeys.activeEditorHasTests, TestingContextKeys.capabilityToContextKey[group]),
+                }]
+        });
+        this.group = group;
+    }
+    async run(accessor) {
+        const codeEditorService = accessor.get(ICodeEditorService);
+        const editorService = accessor.get(IEditorService);
+        const activeEditorPane = editorService.activeEditorPane;
+        let editor = codeEditorService.getActiveCodeEditor();
+        if (!activeEditorPane || !editor) {
+            return;
+        }
+        if (editor instanceof EmbeddedCodeEditorWidget) {
+            editor = editor.getParentEditor();
+        }
+        const position = editor?.getPosition();
+        const model = editor?.getModel();
+        if (!position || !model || !('uri' in model)) {
+            return;
+        }
+        const testService = accessor.get(ITestService);
+        const profileService = accessor.get(ITestProfileService);
+        const uriIdentityService = accessor.get(IUriIdentityService);
+        const progressService = accessor.get(IProgressService);
+        const configurationService = accessor.get(IConfigurationService);
+        const saveBeforeTest = getTestingConfiguration(configurationService, "testing.saveBeforeTest");
+        if (saveBeforeTest) {
+            await editorService.save({ editor: activeEditorPane.input, groupId: activeEditorPane.group.id });
+            await testService.syncTests();
+        }
+        const testsToRun = await showDiscoveringWhile(progressService, getTestsAtCursor(testService, uriIdentityService, model.uri, position, test => !!(profileService.capabilitiesForTest(test.item) & this.group)));
+        if (testsToRun.length) {
+            await testService.runTests({ group: this.group, tests: testsToRun });
+            return;
+        }
+        const relatedTests = await testService.getTestsRelatedToCode(model.uri, position);
+        if (relatedTests.length) {
+            await testService.runTests({ group: this.group, tests: relatedTests });
+            return;
+        }
+        if (editor) {
+            MessageController.get(editor)?.showMessage(localize('noTestsAtCursor', "No tests found here"), position);
+        }
+    }
+}
+export class RunAtCursor extends ExecuteTestAtCursor {
+    constructor() {
+        super({
+            id: "testing.runAtCursor",
+            title: localize2('testing.runAtCursor', 'Run Test at Cursor'),
+            category,
+            keybinding: {
+                weight: 200,
+                when: EditorContextKeys.editorTextFocus,
+                primary: KeyChord(2048 | 85, 33),
+            },
+        }, 2);
+    }
+}
+export class DebugAtCursor extends ExecuteTestAtCursor {
+    constructor() {
+        super({
+            id: "testing.debugAtCursor",
+            title: localize2('testing.debugAtCursor', 'Debug Test at Cursor'),
+            category,
+            keybinding: {
+                weight: 200,
+                when: EditorContextKeys.editorTextFocus,
+                primary: KeyChord(2048 | 85, 2048 | 33),
+            },
+        }, 4);
+    }
+}
+export class CoverageAtCursor extends ExecuteTestAtCursor {
+    constructor() {
+        super({
+            id: "testing.coverageAtCursor",
+            title: localize2('testing.coverageAtCursor', 'Run Test at Cursor with Coverage'),
+            category,
+            keybinding: {
+                weight: 200,
+                when: EditorContextKeys.editorTextFocus,
+                primary: KeyChord(2048 | 85, 2048 | 1024 | 33),
+            },
+        }, 8);
+    }
+}
+class ExecuteTestsUnderUriAction extends Action2 {
+    constructor(options, group) {
+        super({
+            ...options,
+            menu: [{
+                    id: MenuId.ExplorerContext,
+                    when: TestingContextKeys.capabilityToContextKey[group].isEqualTo(true),
+                    group: '6.5_testing',
+                    order: (group === 2 ? 11 : 12) + 0.1,
+                }],
+        });
+        this.group = group;
+    }
+    async run(accessor, uri) {
+        const testService = accessor.get(ITestService);
+        const notificationService = accessor.get(INotificationService);
+        const tests = await Iterable.asyncToArray(testsUnderUri(testService, accessor.get(IUriIdentityService), uri));
+        if (!tests.length) {
+            notificationService.notify({ message: localize('noTests', 'No tests found in the selected file or folder'), severity: Severity.Info });
+            return;
+        }
+        return testService.runTests({ tests, group: this.group });
+    }
+}
+class RunTestsUnderUri extends ExecuteTestsUnderUriAction {
+    constructor() {
+        super({
+            id: "testing.run.uri",
+            title: LABEL_RUN_TESTS,
+            category,
+        }, 2);
+    }
+}
+class DebugTestsUnderUri extends ExecuteTestsUnderUriAction {
+    constructor() {
+        super({
+            id: "testing.debug.uri",
+            title: LABEL_DEBUG_TESTS,
+            category,
+        }, 4);
+    }
+}
+class CoverageTestsUnderUri extends ExecuteTestsUnderUriAction {
+    constructor() {
+        super({
+            id: "testing.coverage.uri",
+            title: LABEL_COVERAGE_TESTS,
+            category,
+        }, 8);
+    }
+}
+class ExecuteTestsInCurrentFile extends Action2 {
+    constructor(options, group) {
+        super({
+            ...options,
+            menu: [{
+                    id: MenuId.CommandPalette,
+                    when: TestingContextKeys.capabilityToContextKey[group].isEqualTo(true),
+                }, {
+                    id: MenuId.EditorContext,
+                    group: 'testing',
+                    order: group === 2 ? 2 : 3,
+                    when: ContextKeyExpr.and(TestingContextKeys.activeEditorHasTests, TestingContextKeys.capabilityToContextKey[group]),
+                }],
+        });
+        this.group = group;
+    }
+    run(accessor) {
+        let editor = accessor.get(ICodeEditorService).getActiveCodeEditor();
+        if (!editor) {
+            return;
+        }
+        if (editor instanceof EmbeddedCodeEditorWidget) {
+            editor = editor.getParentEditor();
+        }
+        const position = editor?.getPosition();
+        const model = editor?.getModel();
+        if (!position || !model || !('uri' in model)) {
+            return;
+        }
+        const testService = accessor.get(ITestService);
+        const demandedUri = model.uri.toString();
+        const queue = [testService.collection.rootIds];
+        const discovered = [];
+        while (queue.length) {
+            for (const id of queue.pop()) {
+                const node = testService.collection.getNodeById(id);
+                if (node.item.uri?.toString() === demandedUri) {
+                    discovered.push(node);
+                }
+                else {
+                    queue.push(node.children);
+                }
+            }
+        }
+        if (discovered.length) {
+            return testService.runTests({
+                tests: discovered,
+                group: this.group,
+            });
+        }
+        if (editor) {
+            MessageController.get(editor)?.showMessage(localize('noTestsInFile', "No tests found in this file"), position);
+        }
+        return undefined;
+    }
+}
+export class RunCurrentFile extends ExecuteTestsInCurrentFile {
+    constructor() {
+        super({
+            id: "testing.runCurrentFile",
+            title: localize2('testing.runCurrentFile', 'Run Tests in Current File'),
+            category,
+            keybinding: {
+                weight: 200,
+                when: EditorContextKeys.editorTextFocus,
+                primary: KeyChord(2048 | 85, 36),
+            },
+        }, 2);
+    }
+}
+export class DebugCurrentFile extends ExecuteTestsInCurrentFile {
+    constructor() {
+        super({
+            id: "testing.debugCurrentFile",
+            title: localize2('testing.debugCurrentFile', 'Debug Tests in Current File'),
+            category,
+            keybinding: {
+                weight: 200,
+                when: EditorContextKeys.editorTextFocus,
+                primary: KeyChord(2048 | 85, 2048 | 36),
+            },
+        }, 4);
+    }
+}
+export class CoverageCurrentFile extends ExecuteTestsInCurrentFile {
+    constructor() {
+        super({
+            id: "testing.coverageCurrentFile",
+            title: localize2('testing.coverageCurrentFile', 'Run Tests with Coverage in Current File'),
+            category,
+            keybinding: {
+                weight: 200,
+                when: EditorContextKeys.editorTextFocus,
+                primary: KeyChord(2048 | 85, 2048 | 1024 | 36),
+            },
+        }, 8);
+    }
+}
+export const discoverAndRunTests = async (collection, progress, ids, runTests) => {
+    const todo = Promise.all(ids.map(p => expandAndGetTestById(collection, p)));
+    const tests = (await showDiscoveringWhile(progress, todo)).filter(isDefined);
+    return tests.length ? await runTests(tests) : undefined;
+};
+class RunOrDebugExtsByPath extends Action2 {
+    async run(accessor, ...args) {
+        const testService = accessor.get(ITestService);
+        await discoverAndRunTests(accessor.get(ITestService).collection, accessor.get(IProgressService), [...this.getTestExtIdsToRun(accessor, ...args)], tests => this.runTest(testService, tests));
+    }
+}
+class RunOrDebugFailedTests extends RunOrDebugExtsByPath {
+    constructor(options) {
+        super({
+            ...options,
+            menu: {
+                id: MenuId.CommandPalette,
+                when: hasAnyTestProvider,
+            },
+        });
+    }
+    getTestExtIdsToRun(accessor) {
+        const { results } = accessor.get(ITestResultService);
+        const ids = new Set();
+        for (let i = results.length - 1; i >= 0; i--) {
+            const resultSet = results[i];
+            for (const test of resultSet.tests) {
+                if (isFailedState(test.ownComputedState)) {
+                    ids.add(test.item.extId);
+                }
+                else {
+                    ids.delete(test.item.extId);
+                }
+            }
+        }
+        return ids;
+    }
+}
+class RunOrDebugLastRun extends Action2 {
+    constructor(options) {
+        super({
+            ...options,
+            menu: {
+                id: MenuId.CommandPalette,
+                when: ContextKeyExpr.and(hasAnyTestProvider, TestingContextKeys.hasAnyResults.isEqualTo(true)),
+            },
+        });
+    }
+    getLastTestRunRequest(accessor, runId) {
+        const resultService = accessor.get(ITestResultService);
+        const lastResult = runId ? resultService.results.find(r => r.id === runId) : resultService.results[0];
+        return lastResult?.request;
+    }
+    async run(accessor, runId) {
+        const resultService = accessor.get(ITestResultService);
+        const lastResult = runId ? resultService.results.find(r => r.id === runId) : resultService.results[0];
+        if (!lastResult) {
+            return;
+        }
+        const req = lastResult.request;
+        const testService = accessor.get(ITestService);
+        const profileService = accessor.get(ITestProfileService);
+        const profileExists = (t) => profileService.getControllerProfiles(t.controllerId).some(p => p.profileId === t.profileId);
+        await discoverAndRunTests(testService.collection, accessor.get(IProgressService), req.targets.flatMap(t => t.testIds), tests => {
+            if (this.getGroup() & req.group && req.targets.every(profileExists)) {
+                return testService.runResolvedTests({
+                    targets: req.targets,
+                    group: req.group,
+                    exclude: req.exclude,
+                });
+            }
+            else {
+                return testService.runTests({ tests, group: this.getGroup() });
+            }
+        });
+    }
+}
+export class ReRunFailedTests extends RunOrDebugFailedTests {
+    constructor() {
+        super({
+            id: "testing.reRunFailTests",
+            title: localize2('testing.reRunFailTests', 'Rerun Failed Tests'),
+            category,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 35),
+            },
+        });
+    }
+    runTest(service, internalTests) {
+        return service.runTests({
+            group: 2,
+            tests: internalTests,
+        });
+    }
+}
+export class DebugFailedTests extends RunOrDebugFailedTests {
+    constructor() {
+        super({
+            id: "testing.debugFailTests",
+            title: localize2('testing.debugFailTests', 'Debug Failed Tests'),
+            category,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 2048 | 35),
+            },
+        });
+    }
+    runTest(service, internalTests) {
+        return service.runTests({
+            group: 4,
+            tests: internalTests,
+        });
+    }
+}
+export class ReRunLastRun extends RunOrDebugLastRun {
+    constructor() {
+        super({
+            id: "testing.reRunLastRun",
+            title: localize2('testing.reRunLastRun', 'Rerun Last Run'),
+            category,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 42),
+            },
+        });
+    }
+    getGroup() {
+        return 2;
+    }
+}
+export class DebugLastRun extends RunOrDebugLastRun {
+    constructor() {
+        super({
+            id: "testing.debugLastRun",
+            title: localize2('testing.debugLastRun', 'Debug Last Run'),
+            category,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 2048 | 42),
+            },
+        });
+    }
+    getGroup() {
+        return 4;
+    }
+}
+export class CoverageLastRun extends RunOrDebugLastRun {
+    constructor() {
+        super({
+            id: "testing.coverageLastRun",
+            title: localize2('testing.coverageLastRun', 'Rerun Last Run with Coverage'),
+            category,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 2048 | 1024 | 42),
+            },
+        });
+    }
+    getGroup() {
+        return 8;
+    }
+}
+export class SearchForTestExtension extends Action2 {
+    constructor() {
+        super({
+            id: "testing.searchForTestExtension",
+            title: localize2('testing.searchForTestExtension', 'Search for Test Extension'),
+        });
+    }
+    async run(accessor) {
+        accessor.get(IExtensionsWorkbenchService).openSearch('@category:"testing"');
+    }
+}
+export class OpenOutputPeek extends Action2 {
+    constructor() {
+        super({
+            id: "testing.openOutputPeek",
+            title: localize2('testing.openOutputPeek', 'Peek Output'),
+            category,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 2048 | 43),
+            },
+            menu: {
+                id: MenuId.CommandPalette,
+                when: TestingContextKeys.hasAnyResults.isEqualTo(true),
+            },
+        });
+    }
+    async run(accessor) {
+        accessor.get(ITestingPeekOpener).open();
+    }
+}
+export class ToggleInlineTestOutput extends Action2 {
+    constructor() {
+        super({
+            id: "testing.toggleInlineTestOutput",
+            title: localize2('testing.toggleInlineTestOutput', 'Toggle Inline Test Output'),
+            category,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 2048 | 39),
+            },
+            menu: {
+                id: MenuId.CommandPalette,
+                when: TestingContextKeys.hasAnyResults.isEqualTo(true),
+            },
+        });
+    }
+    async run(accessor) {
+        const testService = accessor.get(ITestService);
+        testService.showInlineOutput.value = !testService.showInlineOutput.value;
+    }
+}
+const refreshMenus = (whenIsRefreshing) => [
+    {
+        id: MenuId.TestItem,
+        group: 'inline',
+        order: 10,
+        when: ContextKeyExpr.and(TestingContextKeys.canRefreshTests.isEqualTo(true), TestingContextKeys.isRefreshingTests.isEqualTo(whenIsRefreshing)),
+    },
+    {
+        id: MenuId.ViewTitle,
+        group: 'navigation',
+        order: 10,
+        when: ContextKeyExpr.and(ContextKeyExpr.equals('view', "workbench.view.testing"), TestingContextKeys.canRefreshTests.isEqualTo(true), TestingContextKeys.isRefreshingTests.isEqualTo(whenIsRefreshing)),
+    },
+    {
+        id: MenuId.CommandPalette,
+        when: TestingContextKeys.canRefreshTests.isEqualTo(true),
+    },
+];
+export class RefreshTestsAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.refreshTests",
+            title: localize2('testing.refreshTests', 'Refresh Tests'),
+            category,
+            icon: icons.testingRefreshTests,
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 85, 2048 | 48),
+                when: TestingContextKeys.canRefreshTests.isEqualTo(true),
+            },
+            menu: refreshMenus(false),
+        });
+    }
+    async run(accessor, ...elements) {
+        const testService = accessor.get(ITestService);
+        const progressService = accessor.get(IProgressService);
+        const controllerIds = distinct(elements.filter(isDefined).map(e => e.test.controllerId));
+        return progressService.withProgress({ location: "workbench.view.extension.test" }, async () => {
+            if (controllerIds.length) {
+                await Promise.all(controllerIds.map(id => testService.refreshTests(id)));
+            }
+            else {
+                await testService.refreshTests();
+            }
+        });
+    }
+}
+export class CancelTestRefreshAction extends Action2 {
+    constructor() {
+        super({
+            id: "testing.cancelTestRefresh",
+            title: localize2('testing.cancelTestRefresh', 'Cancel Test Refresh'),
+            category,
+            icon: icons.testingCancelRefreshTests,
+            menu: refreshMenus(true),
+        });
+    }
+    async run(accessor) {
+        accessor.get(ITestService).cancelRefreshTests();
+    }
+}
+export class CleareCoverage extends Action2 {
+    constructor() {
+        super({
+            id: "testing.coverage.close",
+            title: localize2('testing.clearCoverage', 'Clear Coverage'),
+            icon: widgetClose,
+            category,
+            menu: [{
+                    id: MenuId.ViewTitle,
+                    group: 'navigation',
+                    order: 10,
+                    when: ContextKeyExpr.equals('view', "workbench.view.testCoverage")
+                }, {
+                    id: MenuId.CommandPalette,
+                    when: TestingContextKeys.isTestCoverageOpen.isEqualTo(true),
+                }]
+        });
+    }
+    run(accessor) {
+        accessor.get(ITestCoverageService).closeCoverage();
+    }
+}
+export class OpenCoverage extends Action2 {
+    constructor() {
+        super({
+            id: "testing.openCoverage",
+            title: localize2('testing.openCoverage', 'Open Coverage'),
+            category,
+            menu: [{
+                    id: MenuId.CommandPalette,
+                    when: TestingContextKeys.hasAnyResults.isEqualTo(true),
+                }]
+        });
+    }
+    run(accessor) {
+        const results = accessor.get(ITestResultService).results;
+        const task = results.length && results[0].tasks.find(r => r.coverage);
+        if (!task) {
+            const notificationService = accessor.get(INotificationService);
+            notificationService.info(localize('testing.noCoverage', 'No coverage information available on the last test run.'));
+            return;
+        }
+        accessor.get(ITestCoverageService).openCoverage(task, true);
+    }
+}
+class TestNavigationAction extends SymbolNavigationAction {
+    runEditorCommand(accessor, editor, ...args) {
+        this.testService = accessor.get(ITestService);
+        this.uriIdentityService = accessor.get(IUriIdentityService);
+        return super.runEditorCommand(accessor, editor, ...args);
+    }
+    _getAlternativeCommand(editor) {
+        return editor.getOption(60).alternativeTestsCommand;
+    }
+    _getGoToPreference(editor) {
+        return editor.getOption(60).multipleTests || 'peek';
+    }
+}
+class GoToRelatedTestAction extends TestNavigationAction {
+    async _getLocationModel(_languageFeaturesService, model, position, token) {
+        const tests = await this.testService.getTestsRelatedToCode(model.uri, position, token);
+        return new ReferencesModel(tests.map(t => t.item.uri && ({ uri: t.item.uri, range: t.item.range || new Range(1, 1, 1, 1) })).filter(isDefined), localize('relatedTests', 'Related Tests'));
+    }
+    _getNoResultFoundMessage() {
+        return localize('noTestFound', 'No related tests found.');
+    }
+}
+class GoToRelatedTest extends GoToRelatedTestAction {
+    constructor() {
+        super({
+            openToSide: false,
+            openInPeek: false,
+            muteMessage: false
+        }, {
+            id: "testing.goToRelatedTest",
+            title: localize2('testing.goToRelatedTest', 'Go to Related Test'),
+            category,
+            precondition: ContextKeyExpr.and(ContextKeyExpr.not(TestingContextKeys.activeEditorHasTests.key), TestingContextKeys.canGoToRelatedTest),
+            menu: [{
+                    id: MenuId.EditorContext,
+                    group: 'testing',
+                    order: 4,
+                }]
+        });
+    }
+}
+class PeekRelatedTest extends GoToRelatedTestAction {
+    constructor() {
+        super({
+            openToSide: false,
+            openInPeek: true,
+            muteMessage: false
+        }, {
+            id: "testing.peekRelatedTest",
+            title: localize2('testing.peekToRelatedTest', 'Peek Related Test'),
+            category,
+            precondition: ContextKeyExpr.and(TestingContextKeys.canGoToRelatedTest, ContextKeyExpr.not(TestingContextKeys.activeEditorHasTests.key), PeekContext.notInPeekEditor, EditorContextKeys.isInEmbeddedEditor.toNegated()),
+            menu: [{
+                    id: MenuId.EditorContext,
+                    group: 'testing',
+                    order: 5,
+                }]
+        });
+    }
+}
+class GoToRelatedCodeAction extends TestNavigationAction {
+    async _getLocationModel(_languageFeaturesService, model, position, token) {
+        const testsAtCursor = await getTestsAtCursor(this.testService, this.uriIdentityService, model.uri, position);
+        const code = await Promise.all(testsAtCursor.map(t => this.testService.getCodeRelatedToTest(t)));
+        return new ReferencesModel(code.flat(), localize('relatedCode', 'Related Code'));
+    }
+    _getNoResultFoundMessage() {
+        return localize('noRelatedCode', 'No related code found.');
+    }
+}
+class GoToRelatedCode extends GoToRelatedCodeAction {
+    constructor() {
+        super({
+            openToSide: false,
+            openInPeek: false,
+            muteMessage: false
+        }, {
+            id: "testing.goToRelatedCode",
+            title: localize2('testing.goToRelatedCode', 'Go to Related Code'),
+            category,
+            precondition: ContextKeyExpr.and(TestingContextKeys.activeEditorHasTests, TestingContextKeys.canGoToRelatedCode),
+            menu: [{
+                    id: MenuId.EditorContext,
+                    group: 'testing',
+                    order: 4,
+                }]
+        });
+    }
+}
+class PeekRelatedCode extends GoToRelatedCodeAction {
+    constructor() {
+        super({
+            openToSide: false,
+            openInPeek: true,
+            muteMessage: false
+        }, {
+            id: "testing.peekRelatedCode",
+            title: localize2('testing.peekToRelatedCode', 'Peek Related Code'),
+            category,
+            precondition: ContextKeyExpr.and(TestingContextKeys.activeEditorHasTests, TestingContextKeys.canGoToRelatedCode, PeekContext.notInPeekEditor, EditorContextKeys.isInEmbeddedEditor.toNegated()),
+            menu: [{
+                    id: MenuId.EditorContext,
+                    group: 'testing',
+                    order: 5,
+                }]
+        });
+    }
+}
+export const allTestActions = [
+    CancelTestRefreshAction,
+    CancelTestRunAction,
+    CleareCoverage,
+    ClearTestResultsAction,
+    CollapseAllAction,
+    ConfigureTestProfilesAction,
+    ContinuousRunTestAction,
+    ContinuousRunUsingProfileTestAction,
+    CoverageAction,
+    CoverageAllAction,
+    CoverageAtCursor,
+    CoverageCurrentFile,
+    CoverageLastRun,
+    CoverageSelectedAction,
+    CoverageTestsUnderUri,
+    DebugAction,
+    DebugAllAction,
+    DebugAtCursor,
+    DebugCurrentFile,
+    DebugFailedTests,
+    DebugLastRun,
+    DebugSelectedAction,
+    DebugTestsUnderUri,
+    GetExplorerSelection,
+    GetSelectedProfiles,
+    GoToRelatedCode,
+    GoToRelatedTest,
+    GoToTest,
+    HideTestAction,
+    OpenCoverage,
+    OpenOutputPeek,
+    PeekRelatedCode,
+    PeekRelatedTest,
+    RefreshTestsAction,
+    ReRunFailedTests,
+    ReRunLastRun,
+    RunAction,
+    RunAllAction,
+    RunAtCursor,
+    RunCurrentFile,
+    RunSelectedAction,
+    RunTestsUnderUri,
+    RunUsingProfileAction,
+    SearchForTestExtension,
+    SelectDefaultTestProfiles,
+    ShowMostRecentOutputAction,
+    StartContinuousRunAction,
+    StopContinuousRunAction,
+    TestingSortByDurationAction,
+    TestingSortByLocationAction,
+    TestingSortByStatusAction,
+    TestingViewAsListAction,
+    TestingViewAsTreeAction,
+    ToggleInlineTestOutput,
+    UnhideAllTestsAction,
+    UnhideTestAction,
+];

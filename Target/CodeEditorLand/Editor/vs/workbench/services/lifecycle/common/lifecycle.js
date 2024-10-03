@@ -1,1 +1,22 @@
-import"../../../../base/common/cancellation.js";import"../../../../base/common/event.js";import{createDecorator as t}from"../../../../platform/instantiation/common/instantiation.js";const w=t("lifecycleService");var i=(n=>(n[n.Default=1]="Default",n[n.Last=2]="Last",n))(i||{}),d=(e=>(e[e.CLOSE=1]="CLOSE",e[e.QUIT=2]="QUIT",e[e.RELOAD=3]="RELOAD",e[e.LOAD=4]="LOAD",e))(d||{}),a=(o=>(o[o.NewWindow=1]="NewWindow",o[o.ReloadedWindow=3]="ReloadedWindow",o[o.ReopenedWindow=4]="ReopenedWindow",o))(a||{});function E(r){switch(r){case 1:return"NewWindow";case 3:return"ReloadedWindow";case 4:return"ReopenedWindow"}}var l=(e=>(e[e.Starting=1]="Starting",e[e.Ready=2]="Ready",e[e.Restored=3]="Restored",e[e.Eventually=4]="Eventually",e))(l||{});function y(r){switch(r){case 1:return"Starting";case 2:return"Ready";case 3:return"Restored";case 4:return"Eventually"}}export{w as ILifecycleService,l as LifecyclePhase,y as LifecyclePhaseToString,d as ShutdownReason,a as StartupKind,E as StartupKindToString,i as WillShutdownJoinerOrder};
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export const ILifecycleService = createDecorator('lifecycleService');
+export var WillShutdownJoinerOrder;
+(function (WillShutdownJoinerOrder) {
+    WillShutdownJoinerOrder[WillShutdownJoinerOrder["Default"] = 1] = "Default";
+    WillShutdownJoinerOrder[WillShutdownJoinerOrder["Last"] = 2] = "Last";
+})(WillShutdownJoinerOrder || (WillShutdownJoinerOrder = {}));
+export function StartupKindToString(startupKind) {
+    switch (startupKind) {
+        case 1: return 'NewWindow';
+        case 3: return 'ReloadedWindow';
+        case 4: return 'ReopenedWindow';
+    }
+}
+export function LifecyclePhaseToString(phase) {
+    switch (phase) {
+        case 1: return 'Starting';
+        case 2: return 'Ready';
+        case 3: return 'Restored';
+        case 4: return 'Eventually';
+    }
+}

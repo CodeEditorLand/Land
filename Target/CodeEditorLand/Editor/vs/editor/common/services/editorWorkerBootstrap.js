@@ -1,1 +1,28 @@
-import{SimpleWorkerServer as a}from"../../../base/common/worker/simpleWorker.js";import{EditorSimpleWorker as n}from"./editorSimpleWorker.js";import{EditorWorkerHost as i}from"./editorWorkerHost.js";let t=!1;function s(o){if(t)return;t=!0;const r=new a(e=>{globalThis.postMessage(e)},e=>new n(i.getChannel(e),null));globalThis.onmessage=e=>{r.onmessage(e.data)}}globalThis.onmessage=o=>{t||s(null)};function c(o){globalThis.onmessage=()=>{s((r,e)=>o.call(self,r,e))}}export{c as bootstrapSimpleEditorWorker,s as initialize};
+import { SimpleWorkerServer } from '../../../base/common/worker/simpleWorker.js';
+import { EditorSimpleWorker } from './editorSimpleWorker.js';
+import { EditorWorkerHost } from './editorWorkerHost.js';
+let initialized = false;
+export function initialize(factory) {
+    if (initialized) {
+        return;
+    }
+    initialized = true;
+    const simpleWorker = new SimpleWorkerServer((msg) => {
+        globalThis.postMessage(msg);
+    }, (workerServer) => new EditorSimpleWorker(EditorWorkerHost.getChannel(workerServer), null));
+    globalThis.onmessage = (e) => {
+        simpleWorker.onmessage(e.data);
+    };
+}
+globalThis.onmessage = (e) => {
+    if (!initialized) {
+        initialize(null);
+    }
+};
+export function bootstrapSimpleEditorWorker(createFn) {
+    globalThis.onmessage = () => {
+        initialize((ctx, createData) => {
+            return createFn.call(self, ctx, createData);
+        });
+    };
+}

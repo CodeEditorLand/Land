@@ -1,1 +1,363 @@
-var W=Object.defineProperty;var U=Object.getOwnPropertyDescriptor;var D=(p,i,e,r)=>{for(var t=r>1?void 0:r?U(i,e):i,n=p.length-1,a;n>=0;n--)(a=p[n])&&(t=(r?a(i,e,t):a(t))||t);return r&&t&&W(i,e,t),t},M=(p,i)=>(e,r)=>i(e,r,p);import{addDisposableListener as j,EventType as z,h as k,reset as S}from"../../../../../../base/browser/dom.js";import{renderLabelWithIcons as y}from"../../../../../../base/browser/ui/iconLabel/iconLabels.js";import{Toggle as F}from"../../../../../../base/browser/ui/toggle/toggle.js";import{Action as A,Separator as q}from"../../../../../../base/common/actions.js";import{Codicon as v}from"../../../../../../base/common/codicons.js";import{Disposable as J}from"../../../../../../base/common/lifecycle.js";import{clamp as T}from"../../../../../../base/common/numbers.js";import{autorun as O,autorunOpts as K,derived as G,derivedOpts as H,observableValue as V,transaction as g}from"../../../../../../base/common/observable.js";import{noBreakWhitespace as Q}from"../../../../../../base/common/strings.js";import"../../../../../../base/common/themables.js";import{isDefined as X}from"../../../../../../base/common/types.js";import{MinimapPosition as Y,OverviewRulerLane as Z}from"../../../../../../editor/common/model.js";import{localize as c}from"../../../../../../nls.js";import{MenuId as L}from"../../../../../../platform/actions/common/actions.js";import{IConfigurationService as ee}from"../../../../../../platform/configuration/common/configuration.js";import{IContextMenuService as te}from"../../../../../../platform/contextview/browser/contextView.js";import{IInstantiationService as ie}from"../../../../../../platform/instantiation/common/instantiation.js";import{defaultToggleStyles as ne}from"../../../../../../platform/theme/browser/defaultStyles.js";import{InputState as f}from"../../model/modifiedBaseRange.js";import{applyObservableDecorations as oe,setFields as E}from"../../utils.js";import{handledConflictMinimapOverViewRulerColor as _,unhandledConflictMinimapOverViewRulerColor as $}from"../colors.js";import"../viewModel.js";import{EditorGutter as se}from"../editorGutter.js";import{CodeEditorView as re,createSelectionsAutorun as ae,TitleMenu as de}from"./codeEditorView.js";let R=class extends re{constructor(e,r,t,n,a){super(t,r,a);this.inputNumber=e;this.htmlElements.root.classList.add("input"),this._register(new se(this.editor,this.htmlElements.gutterDiv,{getIntersectingGutterItems:(s,o)=>this.checkboxesVisible.read(o)?this.modifiedBaseRangeGutterItemInfos.read(o):[],createView:(s,o)=>new ce(s,o,n)})),this._register(ae(this,(s,o)=>o.model.translateBaseRangeToInput(this.inputNumber,s))),this._register(t.createInstance(de,e===1?L.MergeInput1Toolbar:L.MergeInput2Toolbar,this.htmlElements.toolbar)),this._register(K({debugName:`input${this.inputNumber}: update labels & text model`},s=>{const o=this.viewModel.read(s);if(!o)return;this.editor.setModel(this.inputNumber===1?o.model.input1.textModel:o.model.input2.textModel);const d=this.inputNumber===1?o.model.input1.title||c("input1","Input 1"):o.model.input2.title||c("input2","Input 2"),l=this.inputNumber===1?o.model.input1.description:o.model.input2.description,m=this.inputNumber===1?o.model.input1.detail:o.model.input2.detail;S(this.htmlElements.title,...y(d)),S(this.htmlElements.description,...l?y(l):[]),S(this.htmlElements.detail,...m?y(m):[])})),this._register(oe(this.editor,this.decorations))}otherInputNumber=this.inputNumber===1?2:1;modifiedBaseRangeGutterItemInfos=H({debugName:`input${this.inputNumber}.modifiedBaseRangeGutterItemInfos`},e=>{const r=this.viewModel.read(e);if(!r)return[];const t=r.model,n=this.inputNumber,a=r.showNonConflictingChanges.read(e);return t.modifiedBaseRanges.read(e).filter(s=>s.getInputDiffs(this.inputNumber).length>0&&(a||s.isConflicting||!t.isHandled(s).read(e))).map((s,o)=>new le(o.toString(),s,n,r))});decorations=H({debugName:`input${this.inputNumber}.decorations`},e=>{const r=this.viewModel.read(e);if(!r)return[];const t=r.model,n=(this.inputNumber===1?t.input1:t.input2).textModel,a=r.activeModifiedBaseRange.read(e),s=new Array,o=r.showNonConflictingChanges.read(e),d=this.showDeletionMarkers.read(e),m=!(r.baseCodeEditorView.read(e)!==void 0&&r.baseShowDiffAgainst.read(e)===this.inputNumber)&&this.useSimplifiedDecorations.read(e);for(const u of t.modifiedBaseRanges.read(e)){const w=u.getInputRange(this.inputNumber);if(!w)continue;const h=["merge-editor-block"];let x=[0,0,0,0];const b=t.isInputHandled(u,this.inputNumber).read(e);b&&h.push("handled"),u===a&&(h.push("focused"),x=[0,2,0,2]),u.isConflicting&&h.push("conflicting");const I=this.inputNumber===1?"input i1":"input i2";if(h.push(I),!(!u.isConflicting&&!o&&b)&&(m&&!b&&h.push("use-simplified-decorations"),s.push({range:w.toInclusiveRangeOrEmpty(),options:{showIfCollapsed:!0,blockClassName:h.join(" "),blockPadding:x,blockIsAfterEnd:w.startLineNumber>n.getLineCount(),description:"Merge Editor",minimap:{position:Y.Gutter,color:{id:b?_:$}},overviewRuler:u.isConflicting?{position:Z.Center,color:{id:b?_:$}}:void 0}}),!m&&(u.isConflicting||!t.isHandled(u).read(e)))){const P=u.getInputDiffs(this.inputNumber);for(const N of P){const B=N.outputRange.toInclusiveRange();if(B&&s.push({range:B,options:{className:`merge-editor-diff ${I}`,description:"Merge Editor",isWholeLine:!0}}),N.rangeMappings)for(const C of N.rangeMappings)(d||!C.outputRange.isEmpty())&&s.push({range:C.outputRange,options:{className:C.outputRange.isEmpty()?`merge-editor-diff-empty-word ${I}`:`merge-editor-diff-word ${I}`,description:"Merge Editor",showIfCollapsed:!0}})}}}return s})};R=D([M(2,ie),M(3,te),M(4,ee)],R);class le{constructor(i,e,r,t){this.id=i;this.baseRange=e;this.inputNumber=r;this.viewModel=t}model=this.viewModel.model;range=this.baseRange.getInputRange(this.inputNumber);enabled=this.model.isUpToDate;toggleState=G(this,i=>{const e=this.model.getState(this.baseRange).read(i).getInput(this.inputNumber);return e===f.second&&!this.baseRange.isOrderRelevant?f.first:e});state=G(this,i=>{const e=this.viewModel.activeModifiedBaseRange.read(i);return this.model.hasBaseRange(this.baseRange)?{handled:this.model.isHandled(this.baseRange).read(i),focused:this.baseRange===e}:{handled:!1,focused:!1}});setState(i,e){this.viewModel.setState(this.baseRange,this.model.getState(this.baseRange).get().withInputValue(this.inputNumber,i),e,this.inputNumber)}toggleBothSides(){g(i=>{const e=this.model.getState(this.baseRange).get();this.model.setState(this.baseRange,e.toggle(this.inputNumber).toggle(this.inputNumber===1?2:1),!0,i)})}getContextMenuActions(){const i=this.model.getState(this.baseRange).get(),e=this.model.isHandled(this.baseRange).get(),r=a=>{g(s=>this.viewModel.setState(this.baseRange,a,s,this.inputNumber))};function t(a,s,o,d){const l=new A(a,s,void 0,!0,()=>{r(o)});return l.checked=d,l}const n=i.includesInput1&&i.includesInput2;return[this.baseRange.input1Diffs.length>0?t("mergeEditor.acceptInput1",c("mergeEditor.accept","Accept {0}",this.model.input1.title),i.toggle(1),i.includesInput1):void 0,this.baseRange.input2Diffs.length>0?t("mergeEditor.acceptInput2",c("mergeEditor.accept","Accept {0}",this.model.input2.title),i.toggle(2),i.includesInput2):void 0,this.baseRange.isConflicting?E(t("mergeEditor.acceptBoth",c("mergeEditor.acceptBoth","Accept Both"),i.withInputValue(1,!n).withInputValue(2,!n),n),{enabled:this.baseRange.canBeCombined}):void 0,new q,this.baseRange.isConflicting?E(t("mergeEditor.swap",c("mergeEditor.swap","Swap"),i.swap(),!1),{enabled:!i.kind&&(!n||this.baseRange.isOrderRelevant)}):void 0,E(new A("mergeEditor.markAsHandled",c("mergeEditor.markAsHandled","Mark as Handled"),void 0,!0,()=>{g(a=>{this.model.setHandled(this.baseRange,!e,a)})}),{checked:e})].filter(X)}}class ce extends J{item;checkboxDiv;isMultiLine=V(this,!1);constructor(i,e,r){super(),this.item=V(this,i);const t=new F({isChecked:!1,title:"",icon:v.check,...ne});t.domNode.classList.add("accept-conflict-group"),this._register(j(t.domNode,z.MOUSE_DOWN,n=>{const a=this.item.get();a&&(n.button===2?(n.stopPropagation(),n.preventDefault(),r.showContextMenu({getAnchor:()=>t.domNode,getActions:()=>a.getContextMenuActions()})):n.button===1&&(n.stopPropagation(),n.preventDefault(),a.toggleBothSides()))})),this._register(O(n=>{const a=this.item.read(n),s=a.toggleState.read(n),d={[f.excluded]:{icon:void 0,checked:!1,title:c("accept.excluded","Accept")},[f.unrecognized]:{icon:v.circleFilled,checked:!1,title:c("accept.conflicting","Accept (result is dirty)")},[f.first]:{icon:v.check,checked:!0,title:c("accept.first","Undo accept")},[f.second]:{icon:v.checkAll,checked:!0,title:c("accept.second","Undo accept (currently second)")}}[s];t.setIcon(d.icon),t.checked=d.checked,t.setTitle(d.title),a.enabled.read(n)?t.enable():t.disable()})),this._register(O(n=>{const a=this.item.read(n).state.read(n),s=["merge-accept-gutter-marker",a.handled&&"handled",a.focused&&"focused",this.isMultiLine.read(n)?"multi-line":"single-line"];e.className=s.filter(o=>typeof o=="string").join(" ")})),this._register(t.onChange(()=>{g(n=>{this.item.get().setState(t.checked,n)})})),e.appendChild(k("div.background",[Q]).root),e.appendChild(this.checkboxDiv=k("div.checkbox",[k("div.checkbox-background",[t.domNode])]).root)}layout(i,e,r,t){const n=this.checkboxDiv.clientHeight,a=e/2-n/2,s=n;let o=i+a;const d=[s,r+t-s-n],l=[i+s,i+e-n-s];l[0]<l[1]&&(o=T(o,d[0],d[1]),o=T(o,l[0],l[1])),this.checkboxDiv.style.top=`${o-i}px`,g(m=>{this.isMultiLine.set(e>30,m)})}update(i){g(e=>{this.item.set(i,e)})}}export{R as InputCodeEditorView,ce as MergeConflictGutterItemView,le as ModifiedBaseRangeGutterItemModel};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { addDisposableListener, EventType, h, reset } from '../../../../../../base/browser/dom.js';
+import { renderLabelWithIcons } from '../../../../../../base/browser/ui/iconLabel/iconLabels.js';
+import { Toggle } from '../../../../../../base/browser/ui/toggle/toggle.js';
+import { Action, Separator } from '../../../../../../base/common/actions.js';
+import { Codicon } from '../../../../../../base/common/codicons.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+import { clamp } from '../../../../../../base/common/numbers.js';
+import { autorun, autorunOpts, derived, derivedOpts, observableValue, transaction } from '../../../../../../base/common/observable.js';
+import { noBreakWhitespace } from '../../../../../../base/common/strings.js';
+import { isDefined } from '../../../../../../base/common/types.js';
+import { OverviewRulerLane } from '../../../../../../editor/common/model.js';
+import { localize } from '../../../../../../nls.js';
+import { MenuId } from '../../../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
+import { IContextMenuService } from '../../../../../../platform/contextview/browser/contextView.js';
+import { IInstantiationService } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { defaultToggleStyles } from '../../../../../../platform/theme/browser/defaultStyles.js';
+import { applyObservableDecorations, setFields } from '../../utils.js';
+import { handledConflictMinimapOverViewRulerColor, unhandledConflictMinimapOverViewRulerColor } from '../colors.js';
+import { EditorGutter } from '../editorGutter.js';
+import { CodeEditorView, createSelectionsAutorun, TitleMenu } from './codeEditorView.js';
+let InputCodeEditorView = class InputCodeEditorView extends CodeEditorView {
+    constructor(inputNumber, viewModel, instantiationService, contextMenuService, configurationService) {
+        super(instantiationService, viewModel, configurationService);
+        this.inputNumber = inputNumber;
+        this.otherInputNumber = this.inputNumber === 1 ? 2 : 1;
+        this.modifiedBaseRangeGutterItemInfos = derivedOpts({ debugName: `input${this.inputNumber}.modifiedBaseRangeGutterItemInfos` }, reader => {
+            const viewModel = this.viewModel.read(reader);
+            if (!viewModel) {
+                return [];
+            }
+            const model = viewModel.model;
+            const inputNumber = this.inputNumber;
+            const showNonConflictingChanges = viewModel.showNonConflictingChanges.read(reader);
+            return model.modifiedBaseRanges.read(reader)
+                .filter((r) => r.getInputDiffs(this.inputNumber).length > 0 && (showNonConflictingChanges || r.isConflicting || !model.isHandled(r).read(reader)))
+                .map((baseRange, idx) => new ModifiedBaseRangeGutterItemModel(idx.toString(), baseRange, inputNumber, viewModel));
+        });
+        this.decorations = derivedOpts({ debugName: `input${this.inputNumber}.decorations` }, reader => {
+            const viewModel = this.viewModel.read(reader);
+            if (!viewModel) {
+                return [];
+            }
+            const model = viewModel.model;
+            const textModel = (this.inputNumber === 1 ? model.input1 : model.input2).textModel;
+            const activeModifiedBaseRange = viewModel.activeModifiedBaseRange.read(reader);
+            const result = new Array();
+            const showNonConflictingChanges = viewModel.showNonConflictingChanges.read(reader);
+            const showDeletionMarkers = this.showDeletionMarkers.read(reader);
+            const diffWithThis = viewModel.baseCodeEditorView.read(reader) !== undefined && viewModel.baseShowDiffAgainst.read(reader) === this.inputNumber;
+            const useSimplifiedDecorations = !diffWithThis && this.useSimplifiedDecorations.read(reader);
+            for (const modifiedBaseRange of model.modifiedBaseRanges.read(reader)) {
+                const range = modifiedBaseRange.getInputRange(this.inputNumber);
+                if (!range) {
+                    continue;
+                }
+                const blockClassNames = ['merge-editor-block'];
+                let blockPadding = [0, 0, 0, 0];
+                const isHandled = model.isInputHandled(modifiedBaseRange, this.inputNumber).read(reader);
+                if (isHandled) {
+                    blockClassNames.push('handled');
+                }
+                if (modifiedBaseRange === activeModifiedBaseRange) {
+                    blockClassNames.push('focused');
+                    blockPadding = [0, 2, 0, 2];
+                }
+                if (modifiedBaseRange.isConflicting) {
+                    blockClassNames.push('conflicting');
+                }
+                const inputClassName = this.inputNumber === 1 ? 'input i1' : 'input i2';
+                blockClassNames.push(inputClassName);
+                if (!modifiedBaseRange.isConflicting && !showNonConflictingChanges && isHandled) {
+                    continue;
+                }
+                if (useSimplifiedDecorations && !isHandled) {
+                    blockClassNames.push('use-simplified-decorations');
+                }
+                result.push({
+                    range: range.toInclusiveRangeOrEmpty(),
+                    options: {
+                        showIfCollapsed: true,
+                        blockClassName: blockClassNames.join(' '),
+                        blockPadding,
+                        blockIsAfterEnd: range.startLineNumber > textModel.getLineCount(),
+                        description: 'Merge Editor',
+                        minimap: {
+                            position: 2,
+                            color: { id: isHandled ? handledConflictMinimapOverViewRulerColor : unhandledConflictMinimapOverViewRulerColor },
+                        },
+                        overviewRuler: modifiedBaseRange.isConflicting ? {
+                            position: OverviewRulerLane.Center,
+                            color: { id: isHandled ? handledConflictMinimapOverViewRulerColor : unhandledConflictMinimapOverViewRulerColor },
+                        } : undefined
+                    }
+                });
+                if (!useSimplifiedDecorations && (modifiedBaseRange.isConflicting || !model.isHandled(modifiedBaseRange).read(reader))) {
+                    const inputDiffs = modifiedBaseRange.getInputDiffs(this.inputNumber);
+                    for (const diff of inputDiffs) {
+                        const range = diff.outputRange.toInclusiveRange();
+                        if (range) {
+                            result.push({
+                                range,
+                                options: {
+                                    className: `merge-editor-diff ${inputClassName}`,
+                                    description: 'Merge Editor',
+                                    isWholeLine: true,
+                                }
+                            });
+                        }
+                        if (diff.rangeMappings) {
+                            for (const d of diff.rangeMappings) {
+                                if (showDeletionMarkers || !d.outputRange.isEmpty()) {
+                                    result.push({
+                                        range: d.outputRange,
+                                        options: {
+                                            className: d.outputRange.isEmpty() ? `merge-editor-diff-empty-word ${inputClassName}` : `merge-editor-diff-word ${inputClassName}`,
+                                            description: 'Merge Editor',
+                                            showIfCollapsed: true,
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
+        });
+        this.htmlElements.root.classList.add(`input`);
+        this._register(new EditorGutter(this.editor, this.htmlElements.gutterDiv, {
+            getIntersectingGutterItems: (range, reader) => {
+                if (this.checkboxesVisible.read(reader)) {
+                    return this.modifiedBaseRangeGutterItemInfos.read(reader);
+                }
+                else {
+                    return [];
+                }
+            },
+            createView: (item, target) => new MergeConflictGutterItemView(item, target, contextMenuService),
+        }));
+        this._register(createSelectionsAutorun(this, (baseRange, viewModel) => viewModel.model.translateBaseRangeToInput(this.inputNumber, baseRange)));
+        this._register(instantiationService.createInstance(TitleMenu, inputNumber === 1 ? MenuId.MergeInput1Toolbar : MenuId.MergeInput2Toolbar, this.htmlElements.toolbar));
+        this._register(autorunOpts({ debugName: `input${this.inputNumber}: update labels & text model` }, reader => {
+            const vm = this.viewModel.read(reader);
+            if (!vm) {
+                return;
+            }
+            this.editor.setModel(this.inputNumber === 1 ? vm.model.input1.textModel : vm.model.input2.textModel);
+            const title = this.inputNumber === 1
+                ? vm.model.input1.title || localize('input1', 'Input 1')
+                : vm.model.input2.title || localize('input2', 'Input 2');
+            const description = this.inputNumber === 1
+                ? vm.model.input1.description
+                : vm.model.input2.description;
+            const detail = this.inputNumber === 1
+                ? vm.model.input1.detail
+                : vm.model.input2.detail;
+            reset(this.htmlElements.title, ...renderLabelWithIcons(title));
+            reset(this.htmlElements.description, ...(description ? renderLabelWithIcons(description) : []));
+            reset(this.htmlElements.detail, ...(detail ? renderLabelWithIcons(detail) : []));
+        }));
+        this._register(applyObservableDecorations(this.editor, this.decorations));
+    }
+};
+InputCodeEditorView = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, IContextMenuService),
+    __param(4, IConfigurationService),
+    __metadata("design:paramtypes", [Number, Object, Object, Object, Object])
+], InputCodeEditorView);
+export { InputCodeEditorView };
+export class ModifiedBaseRangeGutterItemModel {
+    constructor(id, baseRange, inputNumber, viewModel) {
+        this.id = id;
+        this.baseRange = baseRange;
+        this.inputNumber = inputNumber;
+        this.viewModel = viewModel;
+        this.model = this.viewModel.model;
+        this.range = this.baseRange.getInputRange(this.inputNumber);
+        this.enabled = this.model.isUpToDate;
+        this.toggleState = derived(this, reader => {
+            const input = this.model
+                .getState(this.baseRange)
+                .read(reader)
+                .getInput(this.inputNumber);
+            return input === 2 && !this.baseRange.isOrderRelevant
+                ? 1
+                : input;
+        });
+        this.state = derived(this, reader => {
+            const active = this.viewModel.activeModifiedBaseRange.read(reader);
+            if (!this.model.hasBaseRange(this.baseRange)) {
+                return { handled: false, focused: false };
+            }
+            return {
+                handled: this.model.isHandled(this.baseRange).read(reader),
+                focused: this.baseRange === active,
+            };
+        });
+    }
+    setState(value, tx) {
+        this.viewModel.setState(this.baseRange, this.model
+            .getState(this.baseRange)
+            .get()
+            .withInputValue(this.inputNumber, value), tx, this.inputNumber);
+    }
+    toggleBothSides() {
+        transaction(tx => {
+            const state = this.model
+                .getState(this.baseRange)
+                .get();
+            this.model.setState(this.baseRange, state
+                .toggle(this.inputNumber)
+                .toggle(this.inputNumber === 1 ? 2 : 1), true, tx);
+        });
+    }
+    getContextMenuActions() {
+        const state = this.model.getState(this.baseRange).get();
+        const handled = this.model.isHandled(this.baseRange).get();
+        const update = (newState) => {
+            transaction(tx => {
+                return this.viewModel.setState(this.baseRange, newState, tx, this.inputNumber);
+            });
+        };
+        function action(id, label, targetState, checked) {
+            const action = new Action(id, label, undefined, true, () => {
+                update(targetState);
+            });
+            action.checked = checked;
+            return action;
+        }
+        const both = state.includesInput1 && state.includesInput2;
+        return [
+            this.baseRange.input1Diffs.length > 0
+                ? action('mergeEditor.acceptInput1', localize('mergeEditor.accept', 'Accept {0}', this.model.input1.title), state.toggle(1), state.includesInput1)
+                : undefined,
+            this.baseRange.input2Diffs.length > 0
+                ? action('mergeEditor.acceptInput2', localize('mergeEditor.accept', 'Accept {0}', this.model.input2.title), state.toggle(2), state.includesInput2)
+                : undefined,
+            this.baseRange.isConflicting
+                ? setFields(action('mergeEditor.acceptBoth', localize('mergeEditor.acceptBoth', 'Accept Both'), state.withInputValue(1, !both).withInputValue(2, !both), both), { enabled: this.baseRange.canBeCombined })
+                : undefined,
+            new Separator(),
+            this.baseRange.isConflicting
+                ? setFields(action('mergeEditor.swap', localize('mergeEditor.swap', 'Swap'), state.swap(), false), { enabled: !state.kind && (!both || this.baseRange.isOrderRelevant) })
+                : undefined,
+            setFields(new Action('mergeEditor.markAsHandled', localize('mergeEditor.markAsHandled', 'Mark as Handled'), undefined, true, () => {
+                transaction((tx) => {
+                    this.model.setHandled(this.baseRange, !handled, tx);
+                });
+            }), { checked: handled }),
+        ].filter(isDefined);
+    }
+}
+export class MergeConflictGutterItemView extends Disposable {
+    constructor(item, target, contextMenuService) {
+        super();
+        this.isMultiLine = observableValue(this, false);
+        this.item = observableValue(this, item);
+        const checkBox = new Toggle({
+            isChecked: false,
+            title: '',
+            icon: Codicon.check,
+            ...defaultToggleStyles
+        });
+        checkBox.domNode.classList.add('accept-conflict-group');
+        this._register(addDisposableListener(checkBox.domNode, EventType.MOUSE_DOWN, (e) => {
+            const item = this.item.get();
+            if (!item) {
+                return;
+            }
+            if (e.button === 2) {
+                e.stopPropagation();
+                e.preventDefault();
+                contextMenuService.showContextMenu({
+                    getAnchor: () => checkBox.domNode,
+                    getActions: () => item.getContextMenuActions(),
+                });
+            }
+            else if (e.button === 1) {
+                e.stopPropagation();
+                e.preventDefault();
+                item.toggleBothSides();
+            }
+        }));
+        this._register(autorun(reader => {
+            const item = this.item.read(reader);
+            const value = item.toggleState.read(reader);
+            const iconMap = {
+                [0]: { icon: undefined, checked: false, title: localize('accept.excluded', "Accept") },
+                [3]: { icon: Codicon.circleFilled, checked: false, title: localize('accept.conflicting', "Accept (result is dirty)") },
+                [1]: { icon: Codicon.check, checked: true, title: localize('accept.first', "Undo accept") },
+                [2]: { icon: Codicon.checkAll, checked: true, title: localize('accept.second', "Undo accept (currently second)") },
+            };
+            const state = iconMap[value];
+            checkBox.setIcon(state.icon);
+            checkBox.checked = state.checked;
+            checkBox.setTitle(state.title);
+            if (!item.enabled.read(reader)) {
+                checkBox.disable();
+            }
+            else {
+                checkBox.enable();
+            }
+        }));
+        this._register(autorun(reader => {
+            const state = this.item.read(reader).state.read(reader);
+            const classNames = [
+                'merge-accept-gutter-marker',
+                state.handled && 'handled',
+                state.focused && 'focused',
+                this.isMultiLine.read(reader) ? 'multi-line' : 'single-line',
+            ];
+            target.className = classNames.filter(c => typeof c === 'string').join(' ');
+        }));
+        this._register(checkBox.onChange(() => {
+            transaction(tx => {
+                this.item.get().setState(checkBox.checked, tx);
+            });
+        }));
+        target.appendChild(h('div.background', [noBreakWhitespace]).root);
+        target.appendChild(this.checkboxDiv = h('div.checkbox', [h('div.checkbox-background', [checkBox.domNode])]).root);
+    }
+    layout(top, height, viewTop, viewHeight) {
+        const checkboxHeight = this.checkboxDiv.clientHeight;
+        const middleHeight = height / 2 - checkboxHeight / 2;
+        const margin = checkboxHeight;
+        let effectiveCheckboxTop = top + middleHeight;
+        const preferredViewPortRange = [
+            margin,
+            viewTop + viewHeight - margin - checkboxHeight
+        ];
+        const preferredParentRange = [
+            top + margin,
+            top + height - checkboxHeight - margin
+        ];
+        if (preferredParentRange[0] < preferredParentRange[1]) {
+            effectiveCheckboxTop = clamp(effectiveCheckboxTop, preferredViewPortRange[0], preferredViewPortRange[1]);
+            effectiveCheckboxTop = clamp(effectiveCheckboxTop, preferredParentRange[0], preferredParentRange[1]);
+        }
+        this.checkboxDiv.style.top = `${effectiveCheckboxTop - top}px`;
+        transaction((tx) => {
+            this.isMultiLine.set(height > 30, tx);
+        });
+    }
+    update(baseRange) {
+        transaction(tx => {
+            this.item.set(baseRange, tx);
+        });
+    }
+}

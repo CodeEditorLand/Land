@@ -1,1 +1,36 @@
-import{$ as c}from"../../../../../base/browser/dom.js";import{alert as I}from"../../../../../base/browser/ui/aria/aria.js";import{Codicon as m}from"../../../../../base/common/codicons.js";import{MarkdownString as f}from"../../../../../base/common/htmlContent.js";import{Disposable as g}from"../../../../../base/common/lifecycle.js";import{ThemeIcon as u}from"../../../../../base/common/themables.js";import"../../../../../editor/browser/widget/markdownRenderer/browser/markdownRenderer.js";import"../chat.js";import"./chatContentParts.js";import"../../common/chatService.js";import{isResponseVM as w}from"../../common/chatViewModel.js";class q extends g{domNode;showSpinner;constructor(e,o,t,n,d,s){super();const a=t.content.slice(t.contentIndex+1);if(this.showSpinner=n??h(a,t.element),d!==!0&&a.some(l=>l.kind!=="progressMessage")){this.domNode=c("");return}this.showSpinner&&I(e.content.value);const p=s?s.id:this.showSpinner?u.modify(m.loading,"spin").id:m.check.id,C=new f(`$(${p}) ${e.content.value}`,{supportThemeIcons:!0}),i=this._register(o.render(C));i.element.classList.add("progress-step"),this.domNode=i.element}hasSameContent(e,o,t){const n=h(o,t);return e.kind==="progressMessage"&&this.showSpinner===n}}function h(r,e){return w(e)&&!e.isComplete&&r.length===0}export{q as ChatProgressContentPart};
+import { $ } from '../../../../../base/browser/dom.js';
+import { alert } from '../../../../../base/browser/ui/aria/aria.js';
+import { Codicon } from '../../../../../base/common/codicons.js';
+import { MarkdownString } from '../../../../../base/common/htmlContent.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { ThemeIcon } from '../../../../../base/common/themables.js';
+import { isResponseVM } from '../../common/chatViewModel.js';
+export class ChatProgressContentPart extends Disposable {
+    constructor(progress, renderer, context, forceShowSpinner, forceShowMessage, icon) {
+        super();
+        const followingContent = context.content.slice(context.contentIndex + 1);
+        this.showSpinner = forceShowSpinner ?? shouldShowSpinner(followingContent, context.element);
+        const hideMessage = forceShowMessage !== true && followingContent.some(part => part.kind !== 'progressMessage');
+        if (hideMessage) {
+            this.domNode = $('');
+            return;
+        }
+        if (this.showSpinner) {
+            alert(progress.content.value);
+        }
+        const codicon = icon ? icon.id : this.showSpinner ? ThemeIcon.modify(Codicon.loading, 'spin').id : Codicon.check.id;
+        const markdown = new MarkdownString(`$(${codicon}) ${progress.content.value}`, {
+            supportThemeIcons: true
+        });
+        const result = this._register(renderer.render(markdown));
+        result.element.classList.add('progress-step');
+        this.domNode = result.element;
+    }
+    hasSameContent(other, followingContent, element) {
+        const showSpinner = shouldShowSpinner(followingContent, element);
+        return other.kind === 'progressMessage' && this.showSpinner === showSpinner;
+    }
+}
+function shouldShowSpinner(followingContent, element) {
+    return isResponseVM(element) && !element.isComplete && followingContent.length === 0;
+}

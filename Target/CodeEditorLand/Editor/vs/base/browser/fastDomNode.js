@@ -1,1 +1,273 @@
-class o{constructor(t){this.domNode=t}_maxWidth="";_width="";_height="";_top="";_left="";_bottom="";_right="";_paddingTop="";_paddingLeft="";_paddingBottom="";_paddingRight="";_fontFamily="";_fontWeight="";_fontSize="";_fontStyle="";_fontFeatureSettings="";_fontVariationSettings="";_textDecoration="";_lineHeight="";_letterSpacing="";_className="";_display="";_position="";_visibility="";_color="";_backgroundColor="";_layerHint=!1;_contain="none";_boxShadow="";setMaxWidth(t){const i=e(t);this._maxWidth!==i&&(this._maxWidth=i,this.domNode.style.maxWidth=this._maxWidth)}setWidth(t){const i=e(t);this._width!==i&&(this._width=i,this.domNode.style.width=this._width)}setHeight(t){const i=e(t);this._height!==i&&(this._height=i,this.domNode.style.height=this._height)}setTop(t){const i=e(t);this._top!==i&&(this._top=i,this.domNode.style.top=this._top)}setLeft(t){const i=e(t);this._left!==i&&(this._left=i,this.domNode.style.left=this._left)}setBottom(t){const i=e(t);this._bottom!==i&&(this._bottom=i,this.domNode.style.bottom=this._bottom)}setRight(t){const i=e(t);this._right!==i&&(this._right=i,this.domNode.style.right=this._right)}setPaddingTop(t){const i=e(t);this._paddingTop!==i&&(this._paddingTop=i,this.domNode.style.paddingTop=this._paddingTop)}setPaddingLeft(t){const i=e(t);this._paddingLeft!==i&&(this._paddingLeft=i,this.domNode.style.paddingLeft=this._paddingLeft)}setPaddingBottom(t){const i=e(t);this._paddingBottom!==i&&(this._paddingBottom=i,this.domNode.style.paddingBottom=this._paddingBottom)}setPaddingRight(t){const i=e(t);this._paddingRight!==i&&(this._paddingRight=i,this.domNode.style.paddingRight=this._paddingRight)}setFontFamily(t){this._fontFamily!==t&&(this._fontFamily=t,this.domNode.style.fontFamily=this._fontFamily)}setFontWeight(t){this._fontWeight!==t&&(this._fontWeight=t,this.domNode.style.fontWeight=this._fontWeight)}setFontSize(t){const i=e(t);this._fontSize!==i&&(this._fontSize=i,this.domNode.style.fontSize=this._fontSize)}setFontStyle(t){this._fontStyle!==t&&(this._fontStyle=t,this.domNode.style.fontStyle=this._fontStyle)}setFontFeatureSettings(t){this._fontFeatureSettings!==t&&(this._fontFeatureSettings=t,this.domNode.style.fontFeatureSettings=this._fontFeatureSettings)}setFontVariationSettings(t){this._fontVariationSettings!==t&&(this._fontVariationSettings=t,this.domNode.style.fontVariationSettings=this._fontVariationSettings)}setTextDecoration(t){this._textDecoration!==t&&(this._textDecoration=t,this.domNode.style.textDecoration=this._textDecoration)}setLineHeight(t){const i=e(t);this._lineHeight!==i&&(this._lineHeight=i,this.domNode.style.lineHeight=this._lineHeight)}setLetterSpacing(t){const i=e(t);this._letterSpacing!==i&&(this._letterSpacing=i,this.domNode.style.letterSpacing=this._letterSpacing)}setClassName(t){this._className!==t&&(this._className=t,this.domNode.className=this._className)}toggleClassName(t,i){this.domNode.classList.toggle(t,i),this._className=this.domNode.className}setDisplay(t){this._display!==t&&(this._display=t,this.domNode.style.display=this._display)}setPosition(t){this._position!==t&&(this._position=t,this.domNode.style.position=this._position)}setVisibility(t){this._visibility!==t&&(this._visibility=t,this.domNode.style.visibility=this._visibility)}setColor(t){this._color!==t&&(this._color=t,this.domNode.style.color=this._color)}setBackgroundColor(t){this._backgroundColor!==t&&(this._backgroundColor=t,this.domNode.style.backgroundColor=this._backgroundColor)}setLayerHinting(t){this._layerHint!==t&&(this._layerHint=t,this.domNode.style.transform=this._layerHint?"translate3d(0px, 0px, 0px)":"")}setBoxShadow(t){this._boxShadow!==t&&(this._boxShadow=t,this.domNode.style.boxShadow=t)}setContain(t){this._contain!==t&&(this._contain=t,this.domNode.style.contain=this._contain)}setAttribute(t,i){this.domNode.setAttribute(t,i)}removeAttribute(t){this.domNode.removeAttribute(t)}appendChild(t){this.domNode.appendChild(t.domNode)}removeChild(t){this.domNode.removeChild(t.domNode)}}function e(s){return typeof s=="number"?`${s}px`:s}function n(s){return new o(s)}export{o as FastDomNode,n as createFastDomNode};
+export class FastDomNode {
+    constructor(domNode) {
+        this.domNode = domNode;
+        this._maxWidth = '';
+        this._width = '';
+        this._height = '';
+        this._top = '';
+        this._left = '';
+        this._bottom = '';
+        this._right = '';
+        this._paddingTop = '';
+        this._paddingLeft = '';
+        this._paddingBottom = '';
+        this._paddingRight = '';
+        this._fontFamily = '';
+        this._fontWeight = '';
+        this._fontSize = '';
+        this._fontStyle = '';
+        this._fontFeatureSettings = '';
+        this._fontVariationSettings = '';
+        this._textDecoration = '';
+        this._lineHeight = '';
+        this._letterSpacing = '';
+        this._className = '';
+        this._display = '';
+        this._position = '';
+        this._visibility = '';
+        this._color = '';
+        this._backgroundColor = '';
+        this._layerHint = false;
+        this._contain = 'none';
+        this._boxShadow = '';
+    }
+    setMaxWidth(_maxWidth) {
+        const maxWidth = numberAsPixels(_maxWidth);
+        if (this._maxWidth === maxWidth) {
+            return;
+        }
+        this._maxWidth = maxWidth;
+        this.domNode.style.maxWidth = this._maxWidth;
+    }
+    setWidth(_width) {
+        const width = numberAsPixels(_width);
+        if (this._width === width) {
+            return;
+        }
+        this._width = width;
+        this.domNode.style.width = this._width;
+    }
+    setHeight(_height) {
+        const height = numberAsPixels(_height);
+        if (this._height === height) {
+            return;
+        }
+        this._height = height;
+        this.domNode.style.height = this._height;
+    }
+    setTop(_top) {
+        const top = numberAsPixels(_top);
+        if (this._top === top) {
+            return;
+        }
+        this._top = top;
+        this.domNode.style.top = this._top;
+    }
+    setLeft(_left) {
+        const left = numberAsPixels(_left);
+        if (this._left === left) {
+            return;
+        }
+        this._left = left;
+        this.domNode.style.left = this._left;
+    }
+    setBottom(_bottom) {
+        const bottom = numberAsPixels(_bottom);
+        if (this._bottom === bottom) {
+            return;
+        }
+        this._bottom = bottom;
+        this.domNode.style.bottom = this._bottom;
+    }
+    setRight(_right) {
+        const right = numberAsPixels(_right);
+        if (this._right === right) {
+            return;
+        }
+        this._right = right;
+        this.domNode.style.right = this._right;
+    }
+    setPaddingTop(_paddingTop) {
+        const paddingTop = numberAsPixels(_paddingTop);
+        if (this._paddingTop === paddingTop) {
+            return;
+        }
+        this._paddingTop = paddingTop;
+        this.domNode.style.paddingTop = this._paddingTop;
+    }
+    setPaddingLeft(_paddingLeft) {
+        const paddingLeft = numberAsPixels(_paddingLeft);
+        if (this._paddingLeft === paddingLeft) {
+            return;
+        }
+        this._paddingLeft = paddingLeft;
+        this.domNode.style.paddingLeft = this._paddingLeft;
+    }
+    setPaddingBottom(_paddingBottom) {
+        const paddingBottom = numberAsPixels(_paddingBottom);
+        if (this._paddingBottom === paddingBottom) {
+            return;
+        }
+        this._paddingBottom = paddingBottom;
+        this.domNode.style.paddingBottom = this._paddingBottom;
+    }
+    setPaddingRight(_paddingRight) {
+        const paddingRight = numberAsPixels(_paddingRight);
+        if (this._paddingRight === paddingRight) {
+            return;
+        }
+        this._paddingRight = paddingRight;
+        this.domNode.style.paddingRight = this._paddingRight;
+    }
+    setFontFamily(fontFamily) {
+        if (this._fontFamily === fontFamily) {
+            return;
+        }
+        this._fontFamily = fontFamily;
+        this.domNode.style.fontFamily = this._fontFamily;
+    }
+    setFontWeight(fontWeight) {
+        if (this._fontWeight === fontWeight) {
+            return;
+        }
+        this._fontWeight = fontWeight;
+        this.domNode.style.fontWeight = this._fontWeight;
+    }
+    setFontSize(_fontSize) {
+        const fontSize = numberAsPixels(_fontSize);
+        if (this._fontSize === fontSize) {
+            return;
+        }
+        this._fontSize = fontSize;
+        this.domNode.style.fontSize = this._fontSize;
+    }
+    setFontStyle(fontStyle) {
+        if (this._fontStyle === fontStyle) {
+            return;
+        }
+        this._fontStyle = fontStyle;
+        this.domNode.style.fontStyle = this._fontStyle;
+    }
+    setFontFeatureSettings(fontFeatureSettings) {
+        if (this._fontFeatureSettings === fontFeatureSettings) {
+            return;
+        }
+        this._fontFeatureSettings = fontFeatureSettings;
+        this.domNode.style.fontFeatureSettings = this._fontFeatureSettings;
+    }
+    setFontVariationSettings(fontVariationSettings) {
+        if (this._fontVariationSettings === fontVariationSettings) {
+            return;
+        }
+        this._fontVariationSettings = fontVariationSettings;
+        this.domNode.style.fontVariationSettings = this._fontVariationSettings;
+    }
+    setTextDecoration(textDecoration) {
+        if (this._textDecoration === textDecoration) {
+            return;
+        }
+        this._textDecoration = textDecoration;
+        this.domNode.style.textDecoration = this._textDecoration;
+    }
+    setLineHeight(_lineHeight) {
+        const lineHeight = numberAsPixels(_lineHeight);
+        if (this._lineHeight === lineHeight) {
+            return;
+        }
+        this._lineHeight = lineHeight;
+        this.domNode.style.lineHeight = this._lineHeight;
+    }
+    setLetterSpacing(_letterSpacing) {
+        const letterSpacing = numberAsPixels(_letterSpacing);
+        if (this._letterSpacing === letterSpacing) {
+            return;
+        }
+        this._letterSpacing = letterSpacing;
+        this.domNode.style.letterSpacing = this._letterSpacing;
+    }
+    setClassName(className) {
+        if (this._className === className) {
+            return;
+        }
+        this._className = className;
+        this.domNode.className = this._className;
+    }
+    toggleClassName(className, shouldHaveIt) {
+        this.domNode.classList.toggle(className, shouldHaveIt);
+        this._className = this.domNode.className;
+    }
+    setDisplay(display) {
+        if (this._display === display) {
+            return;
+        }
+        this._display = display;
+        this.domNode.style.display = this._display;
+    }
+    setPosition(position) {
+        if (this._position === position) {
+            return;
+        }
+        this._position = position;
+        this.domNode.style.position = this._position;
+    }
+    setVisibility(visibility) {
+        if (this._visibility === visibility) {
+            return;
+        }
+        this._visibility = visibility;
+        this.domNode.style.visibility = this._visibility;
+    }
+    setColor(color) {
+        if (this._color === color) {
+            return;
+        }
+        this._color = color;
+        this.domNode.style.color = this._color;
+    }
+    setBackgroundColor(backgroundColor) {
+        if (this._backgroundColor === backgroundColor) {
+            return;
+        }
+        this._backgroundColor = backgroundColor;
+        this.domNode.style.backgroundColor = this._backgroundColor;
+    }
+    setLayerHinting(layerHint) {
+        if (this._layerHint === layerHint) {
+            return;
+        }
+        this._layerHint = layerHint;
+        this.domNode.style.transform = this._layerHint ? 'translate3d(0px, 0px, 0px)' : '';
+    }
+    setBoxShadow(boxShadow) {
+        if (this._boxShadow === boxShadow) {
+            return;
+        }
+        this._boxShadow = boxShadow;
+        this.domNode.style.boxShadow = boxShadow;
+    }
+    setContain(contain) {
+        if (this._contain === contain) {
+            return;
+        }
+        this._contain = contain;
+        this.domNode.style.contain = this._contain;
+    }
+    setAttribute(name, value) {
+        this.domNode.setAttribute(name, value);
+    }
+    removeAttribute(name) {
+        this.domNode.removeAttribute(name);
+    }
+    appendChild(child) {
+        this.domNode.appendChild(child.domNode);
+    }
+    removeChild(child) {
+        this.domNode.removeChild(child.domNode);
+    }
+}
+function numberAsPixels(value) {
+    return (typeof value === 'number' ? `${value}px` : value);
+}
+export function createFastDomNode(domNode) {
+    return new FastDomNode(domNode);
+}

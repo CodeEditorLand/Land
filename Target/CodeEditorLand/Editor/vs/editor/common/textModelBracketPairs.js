@@ -1,1 +1,30 @@
-import"../../base/common/arrays.js";import"../../base/common/event.js";import"./core/position.js";import"./core/range.js";import"./languages/supports/languageBracketsConfiguration.js";import"./model/bracketPairsTextModelPart/bracketPairsTree/ast.js";class C{constructor(i,n,e,a){this.range=i;this.nestingLevel=n;this.nestingLevelOfEqualBracketType=e;this.isInvalid=a}}class l{constructor(i,n,e,a,t,o){this.range=i;this.openingBracketRange=n;this.closingBracketRange=e;this.nestingLevel=a;this.nestingLevelOfEqualBracketType=t;this.bracketPairNode=o}get openingBracketInfo(){return this.bracketPairNode.openingBracket.bracketInfo}get closingBracketInfo(){return this.bracketPairNode.closingBracket?.bracketInfo}}class v extends l{constructor(n,e,a,t,o,c,g){super(n,e,a,t,o,c);this.minVisibleColumnIndentation=g}}export{C as BracketInfo,l as BracketPairInfo,v as BracketPairWithMinIndentationInfo};
+export class BracketInfo {
+    constructor(range, nestingLevel, nestingLevelOfEqualBracketType, isInvalid) {
+        this.range = range;
+        this.nestingLevel = nestingLevel;
+        this.nestingLevelOfEqualBracketType = nestingLevelOfEqualBracketType;
+        this.isInvalid = isInvalid;
+    }
+}
+export class BracketPairInfo {
+    constructor(range, openingBracketRange, closingBracketRange, nestingLevel, nestingLevelOfEqualBracketType, bracketPairNode) {
+        this.range = range;
+        this.openingBracketRange = openingBracketRange;
+        this.closingBracketRange = closingBracketRange;
+        this.nestingLevel = nestingLevel;
+        this.nestingLevelOfEqualBracketType = nestingLevelOfEqualBracketType;
+        this.bracketPairNode = bracketPairNode;
+    }
+    get openingBracketInfo() {
+        return this.bracketPairNode.openingBracket.bracketInfo;
+    }
+    get closingBracketInfo() {
+        return this.bracketPairNode.closingBracket?.bracketInfo;
+    }
+}
+export class BracketPairWithMinIndentationInfo extends BracketPairInfo {
+    constructor(range, openingBracketRange, closingBracketRange, nestingLevel, nestingLevelOfEqualBracketType, bracketPairNode, minVisibleColumnIndentation) {
+        super(range, openingBracketRange, closingBracketRange, nestingLevel, nestingLevelOfEqualBracketType, bracketPairNode);
+        this.minVisibleColumnIndentation = minVisibleColumnIndentation;
+    }
+}

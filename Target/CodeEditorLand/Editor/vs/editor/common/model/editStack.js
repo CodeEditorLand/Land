@@ -1,2 +1,363 @@
-import*as k from"../../../nls.js";import{onUnexpectedError as v}from"../../../base/common/errors.js";import{Selection as R}from"../core/selection.js";import{EndOfLineSequence as b}from"../model.js";import"./textModel.js";import{UndoRedoElementType as g}from"../../../platform/undoRedo/common/undoRedo.js";import{URI as m}from"../../../base/common/uri.js";import{TextChange as M,compressConsecutiveTextChanges as C}from"../core/textChange.js";import*as o from"../../../base/common/buffer.js";import"../../../base/common/lifecycle.js";import{basename as x}from"../../../base/common/resources.js";import"../core/editOperation.js";function h(a){return a.toString()}class r{constructor(e,t,i,n,s,d,c){this.beforeVersionId=e;this.afterVersionId=t;this.beforeEOL=i;this.afterEOL=n;this.beforeCursorState=s;this.afterCursorState=d;this.changes=c}static create(e,t){const i=e.getAlternativeVersionId(),n=E(e);return new r(i,i,n,n,t,t,[])}append(e,t,i,n,s){t.length>0&&(this.changes=C(this.changes,t)),this.afterEOL=i,this.afterVersionId=n,this.afterCursorState=s}static _writeSelectionsSize(e){return 4+4*4*(e?e.length:0)}static _writeSelections(e,t,i){if(o.writeUInt32BE(e,t?t.length:0,i),i+=4,t)for(const n of t)o.writeUInt32BE(e,n.selectionStartLineNumber,i),i+=4,o.writeUInt32BE(e,n.selectionStartColumn,i),i+=4,o.writeUInt32BE(e,n.positionLineNumber,i),i+=4,o.writeUInt32BE(e,n.positionColumn,i),i+=4;return i}static _readSelections(e,t,i){const n=o.readUInt32BE(e,t);t+=4;for(let s=0;s<n;s++){const d=o.readUInt32BE(e,t);t+=4;const c=o.readUInt32BE(e,t);t+=4;const u=o.readUInt32BE(e,t);t+=4;const l=o.readUInt32BE(e,t);t+=4,i.push(new R(d,c,u,l))}return t}serialize(){let e=10+r._writeSelectionsSize(this.beforeCursorState)+r._writeSelectionsSize(this.afterCursorState)+4;for(const n of this.changes)e+=n.writeSize();const t=new Uint8Array(e);let i=0;o.writeUInt32BE(t,this.beforeVersionId,i),i+=4,o.writeUInt32BE(t,this.afterVersionId,i),i+=4,o.writeUInt8(t,this.beforeEOL,i),i+=1,o.writeUInt8(t,this.afterEOL,i),i+=1,i=r._writeSelections(t,this.beforeCursorState,i),i=r._writeSelections(t,this.afterCursorState,i),o.writeUInt32BE(t,this.changes.length,i),i+=4;for(const n of this.changes)i=n.write(t,i);return t.buffer}static deserialize(e){const t=new Uint8Array(e);let i=0;const n=o.readUInt32BE(t,i);i+=4;const s=o.readUInt32BE(t,i);i+=4;const d=o.readUInt8(t,i);i+=1;const c=o.readUInt8(t,i);i+=1;const u=[];i=r._readSelections(t,i,u);const l=[];i=r._readSelections(t,i,l);const p=o.readUInt32BE(t,i);i+=4;const f=[];for(let _=0;_<p;_++)i=M.read(t,i,f);return new r(n,s,d,c,u,l,f)}}class I{constructor(e,t,i,n){this.label=e;this.code=t;this.model=i,this._data=r.create(i,n)}model;_data;get type(){return g.Resource}get resource(){return m.isUri(this.model)?this.model:this.model.uri}toString(){return(this._data instanceof r?this._data:r.deserialize(this._data)).changes.map(t=>t.toString()).join(", ")}matchesResource(e){return(m.isUri(this.model)?this.model:this.model.uri).toString()===e.toString()}setModel(e){this.model=e}canAppend(e){return this.model===e&&this._data instanceof r}append(e,t,i,n,s){this._data instanceof r&&this._data.append(e,t,i,n,s)}close(){this._data instanceof r&&(this._data=this._data.serialize())}open(){this._data instanceof r||(this._data=r.deserialize(this._data))}undo(){if(m.isUri(this.model))throw new Error("Invalid SingleModelEditStackElement");this._data instanceof r&&(this._data=this._data.serialize());const e=r.deserialize(this._data);this.model._applyUndo(e.changes,e.beforeEOL,e.beforeVersionId,e.beforeCursorState)}redo(){if(m.isUri(this.model))throw new Error("Invalid SingleModelEditStackElement");this._data instanceof r&&(this._data=this._data.serialize());const e=r.deserialize(this._data);this.model._applyRedo(e.changes,e.afterEOL,e.afterVersionId,e.afterCursorState)}heapSize(){return this._data instanceof r&&(this._data=this._data.serialize()),this._data.byteLength+168}}class y{constructor(e,t,i){this.label=e;this.code=t;this._isOpen=!0,this._editStackElementsArr=i.slice(0),this._editStackElementsMap=new Map;for(const n of this._editStackElementsArr){const s=h(n.resource);this._editStackElementsMap.set(s,n)}this._delegate=null}type=g.Workspace;_isOpen;_editStackElementsArr;_editStackElementsMap;_delegate;get resources(){return this._editStackElementsArr.map(e=>e.resource)}setDelegate(e){this._delegate=e}prepareUndoRedo(){if(this._delegate)return this._delegate.prepareUndoRedo(this)}getMissingModels(){const e=[];for(const t of this._editStackElementsArr)m.isUri(t.model)&&e.push(t.model);return e}matchesResource(e){const t=h(e);return this._editStackElementsMap.has(t)}setModel(e){const t=h(m.isUri(e)?e:e.uri);this._editStackElementsMap.has(t)&&this._editStackElementsMap.get(t).setModel(e)}canAppend(e){if(!this._isOpen)return!1;const t=h(e.uri);return this._editStackElementsMap.has(t)?this._editStackElementsMap.get(t).canAppend(e):!1}append(e,t,i,n,s){const d=h(e.uri);this._editStackElementsMap.get(d).append(e,t,i,n,s)}close(){this._isOpen=!1}open(){}undo(){this._isOpen=!1;for(const e of this._editStackElementsArr)e.undo()}redo(){for(const e of this._editStackElementsArr)e.redo()}heapSize(e){const t=h(e);return this._editStackElementsMap.has(t)?this._editStackElementsMap.get(t).heapSize():0}split(){return this._editStackElementsArr}toString(){const e=[];for(const t of this._editStackElementsArr)e.push(`${x(t.resource)}: ${t}`);return`{${e.join(", ")}}`}}function E(a){return a.getEOL()===`
-`?b.LF:b.CRLF}function S(a){return a?a instanceof I||a instanceof y:!1}class U{_model;_undoRedoService;constructor(e,t){this._model=e,this._undoRedoService=t}pushStackElement(){const e=this._undoRedoService.getLastElement(this._model.uri);S(e)&&e.close()}popStackElement(){const e=this._undoRedoService.getLastElement(this._model.uri);S(e)&&e.open()}clear(){this._undoRedoService.removeElements(this._model.uri)}_getOrCreateEditStackElement(e,t){const i=this._undoRedoService.getLastElement(this._model.uri);if(S(i)&&i.canAppend(this._model))return i;const n=new I(k.localize("edit","Typing"),"undoredo.textBufferEdit",this._model,e);return this._undoRedoService.pushElement(n,t),n}pushEOL(e){const t=this._getOrCreateEditStackElement(null,void 0);this._model.setEOL(e),t.append(this._model,[],E(this._model),this._model.getAlternativeVersionId(),null)}pushEditOperation(e,t,i,n){const s=this._getOrCreateEditStackElement(e,n),d=this._model.applyEdits(t,!0),c=U._computeCursorState(i,d),u=d.map((l,p)=>({index:p,textChange:l.textChange}));return u.sort((l,p)=>l.textChange.oldPosition===p.textChange.oldPosition?l.index-p.index:l.textChange.oldPosition-p.textChange.oldPosition),s.append(this._model,u.map(l=>l.textChange),E(this._model),this._model.getAlternativeVersionId(),c),c}static _computeCursorState(e,t){try{return e?e(t):null}catch(i){return v(i),null}}}export{U as EditStack,y as MultiModelEditStackElement,r as SingleModelEditStackData,I as SingleModelEditStackElement,S as isEditStackElement};
+import * as nls from '../../../nls.js';
+import { onUnexpectedError } from '../../../base/common/errors.js';
+import { Selection } from '../core/selection.js';
+import { URI } from '../../../base/common/uri.js';
+import { TextChange, compressConsecutiveTextChanges } from '../core/textChange.js';
+import * as buffer from '../../../base/common/buffer.js';
+import { basename } from '../../../base/common/resources.js';
+function uriGetComparisonKey(resource) {
+    return resource.toString();
+}
+export class SingleModelEditStackData {
+    static create(model, beforeCursorState) {
+        const alternativeVersionId = model.getAlternativeVersionId();
+        const eol = getModelEOL(model);
+        return new SingleModelEditStackData(alternativeVersionId, alternativeVersionId, eol, eol, beforeCursorState, beforeCursorState, []);
+    }
+    constructor(beforeVersionId, afterVersionId, beforeEOL, afterEOL, beforeCursorState, afterCursorState, changes) {
+        this.beforeVersionId = beforeVersionId;
+        this.afterVersionId = afterVersionId;
+        this.beforeEOL = beforeEOL;
+        this.afterEOL = afterEOL;
+        this.beforeCursorState = beforeCursorState;
+        this.afterCursorState = afterCursorState;
+        this.changes = changes;
+    }
+    append(model, textChanges, afterEOL, afterVersionId, afterCursorState) {
+        if (textChanges.length > 0) {
+            this.changes = compressConsecutiveTextChanges(this.changes, textChanges);
+        }
+        this.afterEOL = afterEOL;
+        this.afterVersionId = afterVersionId;
+        this.afterCursorState = afterCursorState;
+    }
+    static _writeSelectionsSize(selections) {
+        return 4 + 4 * 4 * (selections ? selections.length : 0);
+    }
+    static _writeSelections(b, selections, offset) {
+        buffer.writeUInt32BE(b, (selections ? selections.length : 0), offset);
+        offset += 4;
+        if (selections) {
+            for (const selection of selections) {
+                buffer.writeUInt32BE(b, selection.selectionStartLineNumber, offset);
+                offset += 4;
+                buffer.writeUInt32BE(b, selection.selectionStartColumn, offset);
+                offset += 4;
+                buffer.writeUInt32BE(b, selection.positionLineNumber, offset);
+                offset += 4;
+                buffer.writeUInt32BE(b, selection.positionColumn, offset);
+                offset += 4;
+            }
+        }
+        return offset;
+    }
+    static _readSelections(b, offset, dest) {
+        const count = buffer.readUInt32BE(b, offset);
+        offset += 4;
+        for (let i = 0; i < count; i++) {
+            const selectionStartLineNumber = buffer.readUInt32BE(b, offset);
+            offset += 4;
+            const selectionStartColumn = buffer.readUInt32BE(b, offset);
+            offset += 4;
+            const positionLineNumber = buffer.readUInt32BE(b, offset);
+            offset += 4;
+            const positionColumn = buffer.readUInt32BE(b, offset);
+            offset += 4;
+            dest.push(new Selection(selectionStartLineNumber, selectionStartColumn, positionLineNumber, positionColumn));
+        }
+        return offset;
+    }
+    serialize() {
+        let necessarySize = (+4
+            + 4
+            + 1
+            + 1
+            + SingleModelEditStackData._writeSelectionsSize(this.beforeCursorState)
+            + SingleModelEditStackData._writeSelectionsSize(this.afterCursorState)
+            + 4);
+        for (const change of this.changes) {
+            necessarySize += change.writeSize();
+        }
+        const b = new Uint8Array(necessarySize);
+        let offset = 0;
+        buffer.writeUInt32BE(b, this.beforeVersionId, offset);
+        offset += 4;
+        buffer.writeUInt32BE(b, this.afterVersionId, offset);
+        offset += 4;
+        buffer.writeUInt8(b, this.beforeEOL, offset);
+        offset += 1;
+        buffer.writeUInt8(b, this.afterEOL, offset);
+        offset += 1;
+        offset = SingleModelEditStackData._writeSelections(b, this.beforeCursorState, offset);
+        offset = SingleModelEditStackData._writeSelections(b, this.afterCursorState, offset);
+        buffer.writeUInt32BE(b, this.changes.length, offset);
+        offset += 4;
+        for (const change of this.changes) {
+            offset = change.write(b, offset);
+        }
+        return b.buffer;
+    }
+    static deserialize(source) {
+        const b = new Uint8Array(source);
+        let offset = 0;
+        const beforeVersionId = buffer.readUInt32BE(b, offset);
+        offset += 4;
+        const afterVersionId = buffer.readUInt32BE(b, offset);
+        offset += 4;
+        const beforeEOL = buffer.readUInt8(b, offset);
+        offset += 1;
+        const afterEOL = buffer.readUInt8(b, offset);
+        offset += 1;
+        const beforeCursorState = [];
+        offset = SingleModelEditStackData._readSelections(b, offset, beforeCursorState);
+        const afterCursorState = [];
+        offset = SingleModelEditStackData._readSelections(b, offset, afterCursorState);
+        const changeCount = buffer.readUInt32BE(b, offset);
+        offset += 4;
+        const changes = [];
+        for (let i = 0; i < changeCount; i++) {
+            offset = TextChange.read(b, offset, changes);
+        }
+        return new SingleModelEditStackData(beforeVersionId, afterVersionId, beforeEOL, afterEOL, beforeCursorState, afterCursorState, changes);
+    }
+}
+export class SingleModelEditStackElement {
+    get type() {
+        return 0;
+    }
+    get resource() {
+        if (URI.isUri(this.model)) {
+            return this.model;
+        }
+        return this.model.uri;
+    }
+    constructor(label, code, model, beforeCursorState) {
+        this.label = label;
+        this.code = code;
+        this.model = model;
+        this._data = SingleModelEditStackData.create(model, beforeCursorState);
+    }
+    toString() {
+        const data = (this._data instanceof SingleModelEditStackData ? this._data : SingleModelEditStackData.deserialize(this._data));
+        return data.changes.map(change => change.toString()).join(', ');
+    }
+    matchesResource(resource) {
+        const uri = (URI.isUri(this.model) ? this.model : this.model.uri);
+        return (uri.toString() === resource.toString());
+    }
+    setModel(model) {
+        this.model = model;
+    }
+    canAppend(model) {
+        return (this.model === model && this._data instanceof SingleModelEditStackData);
+    }
+    append(model, textChanges, afterEOL, afterVersionId, afterCursorState) {
+        if (this._data instanceof SingleModelEditStackData) {
+            this._data.append(model, textChanges, afterEOL, afterVersionId, afterCursorState);
+        }
+    }
+    close() {
+        if (this._data instanceof SingleModelEditStackData) {
+            this._data = this._data.serialize();
+        }
+    }
+    open() {
+        if (!(this._data instanceof SingleModelEditStackData)) {
+            this._data = SingleModelEditStackData.deserialize(this._data);
+        }
+    }
+    undo() {
+        if (URI.isUri(this.model)) {
+            throw new Error(`Invalid SingleModelEditStackElement`);
+        }
+        if (this._data instanceof SingleModelEditStackData) {
+            this._data = this._data.serialize();
+        }
+        const data = SingleModelEditStackData.deserialize(this._data);
+        this.model._applyUndo(data.changes, data.beforeEOL, data.beforeVersionId, data.beforeCursorState);
+    }
+    redo() {
+        if (URI.isUri(this.model)) {
+            throw new Error(`Invalid SingleModelEditStackElement`);
+        }
+        if (this._data instanceof SingleModelEditStackData) {
+            this._data = this._data.serialize();
+        }
+        const data = SingleModelEditStackData.deserialize(this._data);
+        this.model._applyRedo(data.changes, data.afterEOL, data.afterVersionId, data.afterCursorState);
+    }
+    heapSize() {
+        if (this._data instanceof SingleModelEditStackData) {
+            this._data = this._data.serialize();
+        }
+        return this._data.byteLength + 168;
+    }
+}
+export class MultiModelEditStackElement {
+    get resources() {
+        return this._editStackElementsArr.map(editStackElement => editStackElement.resource);
+    }
+    constructor(label, code, editStackElements) {
+        this.label = label;
+        this.code = code;
+        this.type = 1;
+        this._isOpen = true;
+        this._editStackElementsArr = editStackElements.slice(0);
+        this._editStackElementsMap = new Map();
+        for (const editStackElement of this._editStackElementsArr) {
+            const key = uriGetComparisonKey(editStackElement.resource);
+            this._editStackElementsMap.set(key, editStackElement);
+        }
+        this._delegate = null;
+    }
+    setDelegate(delegate) {
+        this._delegate = delegate;
+    }
+    prepareUndoRedo() {
+        if (this._delegate) {
+            return this._delegate.prepareUndoRedo(this);
+        }
+    }
+    getMissingModels() {
+        const result = [];
+        for (const editStackElement of this._editStackElementsArr) {
+            if (URI.isUri(editStackElement.model)) {
+                result.push(editStackElement.model);
+            }
+        }
+        return result;
+    }
+    matchesResource(resource) {
+        const key = uriGetComparisonKey(resource);
+        return (this._editStackElementsMap.has(key));
+    }
+    setModel(model) {
+        const key = uriGetComparisonKey(URI.isUri(model) ? model : model.uri);
+        if (this._editStackElementsMap.has(key)) {
+            this._editStackElementsMap.get(key).setModel(model);
+        }
+    }
+    canAppend(model) {
+        if (!this._isOpen) {
+            return false;
+        }
+        const key = uriGetComparisonKey(model.uri);
+        if (this._editStackElementsMap.has(key)) {
+            const editStackElement = this._editStackElementsMap.get(key);
+            return editStackElement.canAppend(model);
+        }
+        return false;
+    }
+    append(model, textChanges, afterEOL, afterVersionId, afterCursorState) {
+        const key = uriGetComparisonKey(model.uri);
+        const editStackElement = this._editStackElementsMap.get(key);
+        editStackElement.append(model, textChanges, afterEOL, afterVersionId, afterCursorState);
+    }
+    close() {
+        this._isOpen = false;
+    }
+    open() {
+    }
+    undo() {
+        this._isOpen = false;
+        for (const editStackElement of this._editStackElementsArr) {
+            editStackElement.undo();
+        }
+    }
+    redo() {
+        for (const editStackElement of this._editStackElementsArr) {
+            editStackElement.redo();
+        }
+    }
+    heapSize(resource) {
+        const key = uriGetComparisonKey(resource);
+        if (this._editStackElementsMap.has(key)) {
+            const editStackElement = this._editStackElementsMap.get(key);
+            return editStackElement.heapSize();
+        }
+        return 0;
+    }
+    split() {
+        return this._editStackElementsArr;
+    }
+    toString() {
+        const result = [];
+        for (const editStackElement of this._editStackElementsArr) {
+            result.push(`${basename(editStackElement.resource)}: ${editStackElement}`);
+        }
+        return `{${result.join(', ')}}`;
+    }
+}
+function getModelEOL(model) {
+    const eol = model.getEOL();
+    if (eol === '\n') {
+        return 0;
+    }
+    else {
+        return 1;
+    }
+}
+export function isEditStackElement(element) {
+    if (!element) {
+        return false;
+    }
+    return ((element instanceof SingleModelEditStackElement) || (element instanceof MultiModelEditStackElement));
+}
+export class EditStack {
+    constructor(model, undoRedoService) {
+        this._model = model;
+        this._undoRedoService = undoRedoService;
+    }
+    pushStackElement() {
+        const lastElement = this._undoRedoService.getLastElement(this._model.uri);
+        if (isEditStackElement(lastElement)) {
+            lastElement.close();
+        }
+    }
+    popStackElement() {
+        const lastElement = this._undoRedoService.getLastElement(this._model.uri);
+        if (isEditStackElement(lastElement)) {
+            lastElement.open();
+        }
+    }
+    clear() {
+        this._undoRedoService.removeElements(this._model.uri);
+    }
+    _getOrCreateEditStackElement(beforeCursorState, group) {
+        const lastElement = this._undoRedoService.getLastElement(this._model.uri);
+        if (isEditStackElement(lastElement) && lastElement.canAppend(this._model)) {
+            return lastElement;
+        }
+        const newElement = new SingleModelEditStackElement(nls.localize('edit', "Typing"), 'undoredo.textBufferEdit', this._model, beforeCursorState);
+        this._undoRedoService.pushElement(newElement, group);
+        return newElement;
+    }
+    pushEOL(eol) {
+        const editStackElement = this._getOrCreateEditStackElement(null, undefined);
+        this._model.setEOL(eol);
+        editStackElement.append(this._model, [], getModelEOL(this._model), this._model.getAlternativeVersionId(), null);
+    }
+    pushEditOperation(beforeCursorState, editOperations, cursorStateComputer, group) {
+        const editStackElement = this._getOrCreateEditStackElement(beforeCursorState, group);
+        const inverseEditOperations = this._model.applyEdits(editOperations, true);
+        const afterCursorState = EditStack._computeCursorState(cursorStateComputer, inverseEditOperations);
+        const textChanges = inverseEditOperations.map((op, index) => ({ index: index, textChange: op.textChange }));
+        textChanges.sort((a, b) => {
+            if (a.textChange.oldPosition === b.textChange.oldPosition) {
+                return a.index - b.index;
+            }
+            return a.textChange.oldPosition - b.textChange.oldPosition;
+        });
+        editStackElement.append(this._model, textChanges.map(op => op.textChange), getModelEOL(this._model), this._model.getAlternativeVersionId(), afterCursorState);
+        return afterCursorState;
+    }
+    static _computeCursorState(cursorStateComputer, inverseEditOperations) {
+        try {
+            return cursorStateComputer ? cursorStateComputer(inverseEditOperations) : null;
+        }
+        catch (e) {
+            onUnexpectedError(e);
+            return null;
+        }
+    }
+}

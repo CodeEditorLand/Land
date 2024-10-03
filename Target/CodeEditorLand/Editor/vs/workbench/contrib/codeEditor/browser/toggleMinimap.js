@@ -1,1 +1,31 @@
-import{localize as t,localize2 as n}from"../../../../nls.js";import{Action2 as m,MenuId as a,registerAction2 as c}from"../../../../platform/actions/common/actions.js";import{IConfigurationService as p}from"../../../../platform/configuration/common/configuration.js";import{ContextKeyExpr as s}from"../../../../platform/contextkey/common/contextkey.js";import{Categories as d}from"../../../../platform/action/common/actionCommonCategories.js";import"../../../../platform/instantiation/common/instantiation.js";class e extends m{static ID="editor.action.toggleMinimap";constructor(){super({id:e.ID,title:{...n("toggleMinimap","Toggle Minimap"),mnemonicTitle:t({key:"miMinimap",comment:["&& denotes a mnemonic"]},"&&Minimap")},category:d.View,f1:!0,toggled:s.equals("config.editor.minimap.enabled",!0),menu:{id:a.MenubarAppearanceMenu,group:"4_editor",order:1}})}async run(o){const i=o.get(p),r=!i.getValue("editor.minimap.enabled");return i.updateValue("editor.minimap.enabled",r)}}c(e);export{e as ToggleMinimapAction};
+import { localize, localize2 } from '../../../../nls.js';
+import { Action2, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
+export class ToggleMinimapAction extends Action2 {
+    static { this.ID = 'editor.action.toggleMinimap'; }
+    constructor() {
+        super({
+            id: ToggleMinimapAction.ID,
+            title: {
+                ...localize2('toggleMinimap', "Toggle Minimap"),
+                mnemonicTitle: localize({ key: 'miMinimap', comment: ['&& denotes a mnemonic'] }, "&&Minimap"),
+            },
+            category: Categories.View,
+            f1: true,
+            toggled: ContextKeyExpr.equals('config.editor.minimap.enabled', true),
+            menu: {
+                id: MenuId.MenubarAppearanceMenu,
+                group: '4_editor',
+                order: 1
+            }
+        });
+    }
+    async run(accessor) {
+        const configurationService = accessor.get(IConfigurationService);
+        const newValue = !configurationService.getValue('editor.minimap.enabled');
+        return configurationService.updateValue('editor.minimap.enabled', newValue);
+    }
+}
+registerAction2(ToggleMinimapAction);

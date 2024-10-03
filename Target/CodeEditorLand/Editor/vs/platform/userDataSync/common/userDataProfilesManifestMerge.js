@@ -1,1 +1,89 @@
-import{equals as D}from"../../../base/common/objects.js";import"../../userDataProfile/common/userDataProfile.js";import"./userDataSync.js";function R(r,o,u,s){const n={added:[],removed:[],updated:[]};let a={added:[],removed:[],updated:[]};if(!o){const i=r.filter(({id:e})=>!s.includes(e));return i.length?a.added=i:a=null,{local:n,remote:a}}const l=p(r,o,s);if(l.added.length>0||l.removed.length>0||l.updated.length>0){const i=p(u,r,s),e=p(u,o,s);for(const d of e.removed){const t=r.find(f=>f.id===d);t&&n.removed.push(t)}for(const d of e.added){const t=o.find(f=>f.id===d);i.added.includes(d)?l.updated.includes(d)&&n.updated.push(t):n.added.push(t)}for(const d of e.updated)n.updated.push(o.find(t=>t.id===d));for(const d of i.added)e.added.includes(d)||a.added.push(r.find(t=>t.id===d));for(const d of i.updated)e.removed.includes(d)||e.updated.includes(d)||a.updated.push(r.find(t=>t.id===d));for(const d of i.removed){const t=o.find(f=>f.id===d);t&&a.removed.push(t)}}return a.added.length===0&&a.removed.length===0&&a.updated.length===0&&(a=null),{local:n,remote:a}}function p(r,o,u){r=r?r.filter(({id:e})=>!u.includes(e)):[],o=o.filter(({id:e})=>!u.includes(e));const s=r.map(({id:e})=>e),n=o.map(({id:e})=>e),a=n.filter(e=>!s.includes(e)),l=s.filter(e=>!n.includes(e)),i=[];for(const{id:e,name:d,shortName:t,icon:f,useDefaultFlags:m}of r){if(l.includes(e))continue;const c=o.find(I=>I.id===e);(!c||c.name!==d||c.shortName!==t||c.icon!==f||!D(c.useDefaultFlags,m))&&i.push(e)}return{added:a,removed:l,updated:i}}export{R as merge};
+import { equals } from '../../../base/common/objects.js';
+export function merge(local, remote, lastSync, ignored) {
+    const localResult = { added: [], removed: [], updated: [] };
+    let remoteResult = { added: [], removed: [], updated: [] };
+    if (!remote) {
+        const added = local.filter(({ id }) => !ignored.includes(id));
+        if (added.length) {
+            remoteResult.added = added;
+        }
+        else {
+            remoteResult = null;
+        }
+        return {
+            local: localResult,
+            remote: remoteResult
+        };
+    }
+    const localToRemote = compare(local, remote, ignored);
+    if (localToRemote.added.length > 0 || localToRemote.removed.length > 0 || localToRemote.updated.length > 0) {
+        const baseToLocal = compare(lastSync, local, ignored);
+        const baseToRemote = compare(lastSync, remote, ignored);
+        for (const id of baseToRemote.removed) {
+            const e = local.find(profile => profile.id === id);
+            if (e) {
+                localResult.removed.push(e);
+            }
+        }
+        for (const id of baseToRemote.added) {
+            const remoteProfile = remote.find(profile => profile.id === id);
+            if (baseToLocal.added.includes(id)) {
+                if (localToRemote.updated.includes(id)) {
+                    localResult.updated.push(remoteProfile);
+                }
+            }
+            else {
+                localResult.added.push(remoteProfile);
+            }
+        }
+        for (const id of baseToRemote.updated) {
+            localResult.updated.push(remote.find(profile => profile.id === id));
+        }
+        for (const id of baseToLocal.added) {
+            if (!baseToRemote.added.includes(id)) {
+                remoteResult.added.push(local.find(profile => profile.id === id));
+            }
+        }
+        for (const id of baseToLocal.updated) {
+            if (baseToRemote.removed.includes(id)) {
+                continue;
+            }
+            if (!baseToRemote.updated.includes(id)) {
+                remoteResult.updated.push(local.find(profile => profile.id === id));
+            }
+        }
+        for (const id of baseToLocal.removed) {
+            const removedProfile = remote.find(profile => profile.id === id);
+            if (removedProfile) {
+                remoteResult.removed.push(removedProfile);
+            }
+        }
+    }
+    if (remoteResult.added.length === 0 && remoteResult.removed.length === 0 && remoteResult.updated.length === 0) {
+        remoteResult = null;
+    }
+    return { local: localResult, remote: remoteResult };
+}
+function compare(from, to, ignoredProfiles) {
+    from = from ? from.filter(({ id }) => !ignoredProfiles.includes(id)) : [];
+    to = to.filter(({ id }) => !ignoredProfiles.includes(id));
+    const fromKeys = from.map(({ id }) => id);
+    const toKeys = to.map(({ id }) => id);
+    const added = toKeys.filter(key => !fromKeys.includes(key));
+    const removed = fromKeys.filter(key => !toKeys.includes(key));
+    const updated = [];
+    for (const { id, name, shortName, icon, useDefaultFlags } of from) {
+        if (removed.includes(id)) {
+            continue;
+        }
+        const toProfile = to.find(p => p.id === id);
+        if (!toProfile
+            || toProfile.name !== name
+            || toProfile.shortName !== shortName
+            || toProfile.icon !== icon
+            || !equals(toProfile.useDefaultFlags, useDefaultFlags)) {
+            updated.push(id);
+        }
+    }
+    return { added, removed, updated };
+}

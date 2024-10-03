@@ -1,1 +1,3 @@
-import"../../../../../base/common/uri.js";import{createDecorator as o}from"../../../../../platform/instantiation/common/instantiation.js";import"../notebookCommon.js";const e="notebookEditorWorkerService",f=o(e);export{e as ID_NOTEBOOK_EDITOR_WORKER_SERVICE,f as INotebookEditorWorkerService};
+import { createDecorator } from '../../../../../platform/instantiation/common/instantiation.js';
+export const ID_NOTEBOOK_EDITOR_WORKER_SERVICE = 'notebookEditorWorkerService';
+export const INotebookEditorWorkerService = createDecorator(ID_NOTEBOOK_EDITOR_WORKER_SERVICE);

@@ -1,1 +1,669 @@
-var T=Object.defineProperty;var I=Object.getOwnPropertyDescriptor;var _=(a,t,e,i)=>{for(var o=i>1?void 0:i?I(t,e):t,r=a.length-1,n;r>=0;r--)(n=a[r])&&(o=(i?n(t,e,o):n(o))||o);return i&&o&&T(t,e,o),o},v=(a,t)=>(e,i)=>t(e,i,a);import*as c from"../../../base/browser/dom.js";import{Emitter as u}from"../../../base/common/event.js";import{DisposableStore as D,Disposable as E,toDisposable as R}from"../../../base/common/lifecycle.js";import{LinkedList as N}from"../../../base/common/linkedList.js";import*as p from"../../../base/common/strings.js";import{URI as b}from"../../../base/common/uri.js";import"../editorBrowser.js";import"./codeEditorService.js";import{isThemeColor as x}from"../../common/editorCommon.js";import{OverviewRulerLane as M}from"../../common/model.js";import"../../../platform/editor/common/editor.js";import{IThemeService as O}from"../../../platform/theme/common/themeService.js";import"../../../base/common/themables.js";let f=class extends E{constructor(e){super();this._themeService=e;this._codeEditors=Object.create(null),this._diffEditors=Object.create(null),this._globalStyleSheet=null}_onWillCreateCodeEditor=this._register(new u);onWillCreateCodeEditor=this._onWillCreateCodeEditor.event;_onCodeEditorAdd=this._register(new u);onCodeEditorAdd=this._onCodeEditorAdd.event;_onCodeEditorRemove=this._register(new u);onCodeEditorRemove=this._onCodeEditorRemove.event;_onWillCreateDiffEditor=this._register(new u);onWillCreateDiffEditor=this._onWillCreateDiffEditor.event;_onDiffEditorAdd=this._register(new u);onDiffEditorAdd=this._onDiffEditorAdd.event;_onDiffEditorRemove=this._register(new u);onDiffEditorRemove=this._onDiffEditorRemove.event;_onDidChangeTransientModelProperty=this._register(new u);onDidChangeTransientModelProperty=this._onDidChangeTransientModelProperty.event;_onDecorationTypeRegistered=this._register(new u);onDecorationTypeRegistered=this._onDecorationTypeRegistered.event;_codeEditors;_diffEditors;_globalStyleSheet;_decorationOptionProviders=new Map;_editorStyleSheets=new Map;_codeEditorOpenHandlers=new N;willCreateCodeEditor(){this._onWillCreateCodeEditor.fire()}addCodeEditor(e){this._codeEditors[e.getId()]=e,this._onCodeEditorAdd.fire(e)}removeCodeEditor(e){delete this._codeEditors[e.getId()]&&this._onCodeEditorRemove.fire(e)}listCodeEditors(){return Object.keys(this._codeEditors).map(e=>this._codeEditors[e])}willCreateDiffEditor(){this._onWillCreateDiffEditor.fire()}addDiffEditor(e){this._diffEditors[e.getId()]=e,this._onDiffEditorAdd.fire(e)}removeDiffEditor(e){delete this._diffEditors[e.getId()]&&this._onDiffEditorRemove.fire(e)}listDiffEditors(){return Object.keys(this._diffEditors).map(e=>this._diffEditors[e])}getFocusedCodeEditor(){let e=null;const i=this.listCodeEditors();for(const o of i){if(o.hasTextFocus())return o;o.hasWidgetFocus()&&(e=o)}return e}_getOrCreateGlobalStyleSheet(){return this._globalStyleSheet||(this._globalStyleSheet=this._createGlobalStyleSheet()),this._globalStyleSheet}_createGlobalStyleSheet(){return new P(c.createStyleSheet())}_getOrCreateStyleSheet(e){if(!e)return this._getOrCreateGlobalStyleSheet();const i=e.getContainerDomNode();if(!c.isInShadowDOM(i))return this._getOrCreateGlobalStyleSheet();const o=e.getId();if(!this._editorStyleSheets.has(o)){const r=new k(this,o,c.createStyleSheet(i));this._editorStyleSheets.set(o,r)}return this._editorStyleSheets.get(o)}_removeEditorStyleSheets(e){this._editorStyleSheets.delete(e)}registerDecorationType(e,i,o,r,n){let s=this._decorationOptionProviders.get(i);if(!s){const l=this._getOrCreateStyleSheet(n),S={styleSheet:l,key:i,parentTypeKey:r,options:o||Object.create(null)};r?s=new W(this._themeService,l,S):s=new j(e,this._themeService,l,S),this._decorationOptionProviders.set(i,s),this._onDecorationTypeRegistered.fire(i)}return s.refCount++,{dispose:()=>{this.removeDecorationType(i)}}}listDecorationTypes(){return Array.from(this._decorationOptionProviders.keys())}removeDecorationType(e){const i=this._decorationOptionProviders.get(e);i&&(i.refCount--,i.refCount<=0&&(this._decorationOptionProviders.delete(e),i.dispose(),this.listCodeEditors().forEach(o=>o.removeDecorationsByType(e))))}resolveDecorationOptions(e,i){const o=this._decorationOptionProviders.get(e);if(!o)throw new Error("Unknown decoration type key: "+e);return o.getOptions(this,i)}resolveDecorationCSSRules(e){const i=this._decorationOptionProviders.get(e);return i?i.resolveDecorationCSSRules():null}_transientWatchers={};_modelProperties=new Map;setModelProperty(e,i,o){const r=e.toString();let n;this._modelProperties.has(r)?n=this._modelProperties.get(r):(n=new Map,this._modelProperties.set(r,n)),n.set(i,o)}getModelProperty(e,i){const o=e.toString();if(this._modelProperties.has(o))return this._modelProperties.get(o).get(i)}setTransientModelProperty(e,i,o){const r=e.uri.toString();let n;this._transientWatchers.hasOwnProperty(r)?n=this._transientWatchers[r]:(n=new w(r,e,this),this._transientWatchers[r]=n),n.get(i)!==o&&(n.set(i,o),this._onDidChangeTransientModelProperty.fire(e))}getTransientModelProperty(e,i){const o=e.uri.toString();if(this._transientWatchers.hasOwnProperty(o))return this._transientWatchers[o].get(i)}getTransientModelProperties(e){const i=e.uri.toString();if(this._transientWatchers.hasOwnProperty(i))return this._transientWatchers[i].keys().map(o=>[o,this._transientWatchers[i].get(o)])}_removeWatcher(e){delete this._transientWatchers[e.uri]}async openCodeEditor(e,i,o){for(const r of this._codeEditorOpenHandlers){const n=await r(e,i,o);if(n!==null)return n}return null}registerCodeEditorOpenHandler(e){const i=this._codeEditorOpenHandlers.unshift(e);return R(i)}};f=_([v(0,O)],f);class w{uri;_values;constructor(t,e,i){this.uri=t,this._values={},e.onWillDispose(()=>i._removeWatcher(this))}set(t,e){this._values[t]=e}get(t){return this._values[t]}keys(){return Object.keys(this._values)}}class k{_parent;_editorId;_styleSheet;_refCount;get sheet(){return this._styleSheet.sheet}constructor(t,e,i){this._parent=t,this._editorId=e,this._styleSheet=i,this._refCount=0}ref(){this._refCount++}unref(){this._refCount--,this._refCount===0&&(this._styleSheet.remove(),this._parent._removeEditorStyleSheets(this._editorId))}insertRule(t,e){c.createCSSRule(t,e,this._styleSheet)}removeRulesContainingSelector(t){c.removeCSSRulesContainingSelector(t,this._styleSheet)}}class P{_styleSheet;get sheet(){return this._styleSheet.sheet}constructor(t){this._styleSheet=t}ref(){}unref(){}insertRule(t,e){c.createCSSRule(t,e,this._styleSheet)}removeRulesContainingSelector(t){c.removeCSSRulesContainingSelector(t,this._styleSheet)}}class W{_styleSheet;refCount;_parentTypeKey;_beforeContentRules;_afterContentRules;constructor(t,e,i){this._styleSheet=e,this._styleSheet.ref(),this._parentTypeKey=i.parentTypeKey,this.refCount=0,this._beforeContentRules=new g(3,i,t),this._afterContentRules=new g(4,i,t)}getOptions(t,e){const i=t.resolveDecorationOptions(this._parentTypeKey,!0);return this._beforeContentRules&&(i.beforeContentClassName=this._beforeContentRules.className),this._afterContentRules&&(i.afterContentClassName=this._afterContentRules.className),i}resolveDecorationCSSRules(){return this._styleSheet.sheet.cssRules}dispose(){this._beforeContentRules&&(this._beforeContentRules.dispose(),this._beforeContentRules=null),this._afterContentRules&&(this._afterContentRules.dispose(),this._afterContentRules=null),this._styleSheet.unref()}}class j{_disposables=new D;_styleSheet;refCount;description;className;inlineClassName;inlineClassNameAffectsLetterSpacing;beforeContentClassName;afterContentClassName;glyphMarginClassName;isWholeLine;overviewRuler;stickiness;beforeInjectedText;afterInjectedText;constructor(t,e,i,o){this.description=t,this._styleSheet=i,this._styleSheet.ref(),this.refCount=0;const r=d=>{const h=new g(d,o,e);if(this._disposables.add(h),h.hasContent)return h.className},n=d=>{const h=new g(d,o,e);return this._disposables.add(h),h.hasContent?{className:h.className,hasLetterSpacing:h.hasLetterSpacing}:null};this.className=r(0);const s=n(1);if(s&&(this.inlineClassName=s.className,this.inlineClassNameAffectsLetterSpacing=s.hasLetterSpacing),this.beforeContentClassName=r(3),this.afterContentClassName=r(4),o.options.beforeInjectedText&&o.options.beforeInjectedText.contentText){const d=n(5);this.beforeInjectedText={content:o.options.beforeInjectedText.contentText,inlineClassName:d?.className,inlineClassNameAffectsLetterSpacing:d?.hasLetterSpacing||o.options.beforeInjectedText.affectsLetterSpacing}}if(o.options.afterInjectedText&&o.options.afterInjectedText.contentText){const d=n(6);this.afterInjectedText={content:o.options.afterInjectedText.contentText,inlineClassName:d?.className,inlineClassNameAffectsLetterSpacing:d?.hasLetterSpacing||o.options.afterInjectedText.affectsLetterSpacing}}this.glyphMarginClassName=r(2);const l=o.options;this.isWholeLine=!!l.isWholeLine,this.stickiness=l.rangeBehavior;const S=l.light&&l.light.overviewRulerColor||l.overviewRulerColor,m=l.dark&&l.dark.overviewRulerColor||l.overviewRulerColor;(typeof S<"u"||typeof m<"u")&&(this.overviewRuler={color:S||m,darkColor:m||S,position:l.overviewRulerLane||M.Center})}getOptions(t,e){return e?{description:this.description,inlineClassName:this.inlineClassName,beforeContentClassName:this.beforeContentClassName,afterContentClassName:this.afterContentClassName,className:this.className,glyphMarginClassName:this.glyphMarginClassName,isWholeLine:this.isWholeLine,overviewRuler:this.overviewRuler,stickiness:this.stickiness,before:this.beforeInjectedText,after:this.afterInjectedText}:this}resolveDecorationCSSRules(){return this._styleSheet.sheet.rules}dispose(){this._disposables.dispose(),this._styleSheet.unref()}}const C={color:"color:{0} !important;",opacity:"opacity:{0};",backgroundColor:"background-color:{0};",outline:"outline:{0};",outlineColor:"outline-color:{0};",outlineStyle:"outline-style:{0};",outlineWidth:"outline-width:{0};",border:"border:{0};",borderColor:"border-color:{0};",borderRadius:"border-radius:{0};",borderSpacing:"border-spacing:{0};",borderStyle:"border-style:{0};",borderWidth:"border-width:{0};",fontStyle:"font-style:{0};",fontWeight:"font-weight:{0};",fontSize:"font-size:{0};",fontFamily:"font-family:{0};",textDecoration:"text-decoration:{0};",cursor:"cursor:{0};",letterSpacing:"letter-spacing:{0};",gutterIconPath:"background:{0} center center no-repeat;",gutterIconSize:"background-size:{0};",contentText:"content:'{0}';",contentIconPath:"content:{0};",margin:"margin:{0};",padding:"padding:{0};",width:"width:{0};",height:"height:{0};",verticalAlign:"vertical-align:{0};"};class g{_theme;_className;_unThemedSelector;_hasContent;_hasLetterSpacing;_ruleType;_themeListener;_providerArgs;_usesThemeColors;constructor(t,e,i){this._theme=i.getColorTheme(),this._ruleType=t,this._providerArgs=e,this._usesThemeColors=!1,this._hasContent=!1,this._hasLetterSpacing=!1;let o=y.getClassName(this._providerArgs.key,t);this._providerArgs.parentTypeKey&&(o=o+" "+y.getClassName(this._providerArgs.parentTypeKey,t)),this._className=o,this._unThemedSelector=y.getSelector(this._providerArgs.key,this._providerArgs.parentTypeKey,t),this._buildCSS(),this._usesThemeColors?this._themeListener=i.onDidColorThemeChange(r=>{this._theme=i.getColorTheme(),this._removeCSS(),this._buildCSS()}):this._themeListener=null}dispose(){this._hasContent&&(this._removeCSS(),this._hasContent=!1),this._themeListener&&(this._themeListener.dispose(),this._themeListener=null)}get hasContent(){return this._hasContent}get hasLetterSpacing(){return this._hasLetterSpacing}get className(){return this._className}_buildCSS(){const t=this._providerArgs.options;let e,i,o;switch(this._ruleType){case 0:e=this.getCSSTextForModelDecorationClassName(t),i=this.getCSSTextForModelDecorationClassName(t.light),o=this.getCSSTextForModelDecorationClassName(t.dark);break;case 1:e=this.getCSSTextForModelDecorationInlineClassName(t),i=this.getCSSTextForModelDecorationInlineClassName(t.light),o=this.getCSSTextForModelDecorationInlineClassName(t.dark);break;case 2:e=this.getCSSTextForModelDecorationGlyphMarginClassName(t),i=this.getCSSTextForModelDecorationGlyphMarginClassName(t.light),o=this.getCSSTextForModelDecorationGlyphMarginClassName(t.dark);break;case 3:e=this.getCSSTextForModelDecorationContentClassName(t.before),i=this.getCSSTextForModelDecorationContentClassName(t.light&&t.light.before),o=this.getCSSTextForModelDecorationContentClassName(t.dark&&t.dark.before);break;case 4:e=this.getCSSTextForModelDecorationContentClassName(t.after),i=this.getCSSTextForModelDecorationContentClassName(t.light&&t.light.after),o=this.getCSSTextForModelDecorationContentClassName(t.dark&&t.dark.after);break;case 5:e=this.getCSSTextForModelDecorationContentClassName(t.beforeInjectedText),i=this.getCSSTextForModelDecorationContentClassName(t.light&&t.light.beforeInjectedText),o=this.getCSSTextForModelDecorationContentClassName(t.dark&&t.dark.beforeInjectedText);break;case 6:e=this.getCSSTextForModelDecorationContentClassName(t.afterInjectedText),i=this.getCSSTextForModelDecorationContentClassName(t.light&&t.light.afterInjectedText),o=this.getCSSTextForModelDecorationContentClassName(t.dark&&t.dark.afterInjectedText);break;default:throw new Error("Unknown rule type: "+this._ruleType)}const r=this._providerArgs.styleSheet;let n=!1;e.length>0&&(r.insertRule(this._unThemedSelector,e),n=!0),i.length>0&&(r.insertRule(`.vs${this._unThemedSelector}, .hc-light${this._unThemedSelector}`,i),n=!0),o.length>0&&(r.insertRule(`.vs-dark${this._unThemedSelector}, .hc-black${this._unThemedSelector}`,o),n=!0),this._hasContent=n}_removeCSS(){this._providerArgs.styleSheet.removeRulesContainingSelector(this._unThemedSelector)}getCSSTextForModelDecorationClassName(t){if(!t)return"";const e=[];return this.collectCSSText(t,["backgroundColor"],e),this.collectCSSText(t,["outline","outlineColor","outlineStyle","outlineWidth"],e),this.collectBorderSettingsCSSText(t,e),e.join("")}getCSSTextForModelDecorationInlineClassName(t){if(!t)return"";const e=[];return this.collectCSSText(t,["fontStyle","fontWeight","textDecoration","cursor","color","opacity","letterSpacing"],e),t.letterSpacing&&(this._hasLetterSpacing=!0),e.join("")}getCSSTextForModelDecorationContentClassName(t){if(!t)return"";const e=[];if(typeof t<"u"){if(this.collectBorderSettingsCSSText(t,e),typeof t.contentIconPath<"u"&&e.push(p.format(C.contentIconPath,c.asCSSUrl(b.revive(t.contentIconPath)))),typeof t.contentText=="string"){const o=t.contentText.match(/^.*$/m)[0].replace(/['\\]/g,"\\$&");e.push(p.format(C.contentText,o))}this.collectCSSText(t,["verticalAlign","fontStyle","fontWeight","fontSize","fontFamily","textDecoration","color","opacity","backgroundColor","margin","padding"],e),this.collectCSSText(t,["width","height"],e)&&e.push("display:inline-block;")}return e.join("")}getCSSTextForModelDecorationGlyphMarginClassName(t){if(!t)return"";const e=[];return typeof t.gutterIconPath<"u"&&(e.push(p.format(C.gutterIconPath,c.asCSSUrl(b.revive(t.gutterIconPath)))),typeof t.gutterIconSize<"u"&&e.push(p.format(C.gutterIconSize,t.gutterIconSize))),e.join("")}collectBorderSettingsCSSText(t,e){return this.collectCSSText(t,["border","borderColor","borderRadius","borderSpacing","borderStyle","borderWidth"],e)?(e.push(p.format("box-sizing: border-box;")),!0):!1}collectCSSText(t,e,i){const o=i.length;for(const r of e){const n=this.resolveValue(t[r]);typeof n=="string"&&i.push(p.format(C[r],n))}return i.length!==o}resolveValue(t){if(x(t)){this._usesThemeColors=!0;const e=this._theme.getColor(t.id);return e?e.toString():"transparent"}return t}}var L=(s=>(s[s.ClassName=0]="ClassName",s[s.InlineClassName=1]="InlineClassName",s[s.GlyphMarginClassName=2]="GlyphMarginClassName",s[s.BeforeContentClassName=3]="BeforeContentClassName",s[s.AfterContentClassName=4]="AfterContentClassName",s[s.BeforeInjectedTextClassName=5]="BeforeInjectedTextClassName",s[s.AfterInjectedTextClassName=6]="AfterInjectedTextClassName",s))(L||{});class y{static getClassName(t,e){return"ced-"+t+"-"+e}static getSelector(t,e,i){let o=".monaco-editor ."+this.getClassName(t,i);return e&&(o=o+"."+this.getClassName(e,i)),i===3?o+="::before":i===4&&(o+="::after"),o}}export{f as AbstractCodeEditorService,P as GlobalStyleSheet,w as ModelTransientSettingWatcher,C as _CSS_MAP};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../base/browser/dom.js';
+import { Emitter } from '../../../base/common/event.js';
+import { DisposableStore, Disposable, toDisposable } from '../../../base/common/lifecycle.js';
+import { LinkedList } from '../../../base/common/linkedList.js';
+import * as strings from '../../../base/common/strings.js';
+import { URI } from '../../../base/common/uri.js';
+import { isThemeColor } from '../../common/editorCommon.js';
+import { OverviewRulerLane } from '../../common/model.js';
+import { IThemeService } from '../../../platform/theme/common/themeService.js';
+let AbstractCodeEditorService = class AbstractCodeEditorService extends Disposable {
+    constructor(_themeService) {
+        super();
+        this._themeService = _themeService;
+        this._onWillCreateCodeEditor = this._register(new Emitter());
+        this.onWillCreateCodeEditor = this._onWillCreateCodeEditor.event;
+        this._onCodeEditorAdd = this._register(new Emitter());
+        this.onCodeEditorAdd = this._onCodeEditorAdd.event;
+        this._onCodeEditorRemove = this._register(new Emitter());
+        this.onCodeEditorRemove = this._onCodeEditorRemove.event;
+        this._onWillCreateDiffEditor = this._register(new Emitter());
+        this.onWillCreateDiffEditor = this._onWillCreateDiffEditor.event;
+        this._onDiffEditorAdd = this._register(new Emitter());
+        this.onDiffEditorAdd = this._onDiffEditorAdd.event;
+        this._onDiffEditorRemove = this._register(new Emitter());
+        this.onDiffEditorRemove = this._onDiffEditorRemove.event;
+        this._onDidChangeTransientModelProperty = this._register(new Emitter());
+        this.onDidChangeTransientModelProperty = this._onDidChangeTransientModelProperty.event;
+        this._onDecorationTypeRegistered = this._register(new Emitter());
+        this.onDecorationTypeRegistered = this._onDecorationTypeRegistered.event;
+        this._decorationOptionProviders = new Map();
+        this._editorStyleSheets = new Map();
+        this._codeEditorOpenHandlers = new LinkedList();
+        this._transientWatchers = {};
+        this._modelProperties = new Map();
+        this._codeEditors = Object.create(null);
+        this._diffEditors = Object.create(null);
+        this._globalStyleSheet = null;
+    }
+    willCreateCodeEditor() {
+        this._onWillCreateCodeEditor.fire();
+    }
+    addCodeEditor(editor) {
+        this._codeEditors[editor.getId()] = editor;
+        this._onCodeEditorAdd.fire(editor);
+    }
+    removeCodeEditor(editor) {
+        if (delete this._codeEditors[editor.getId()]) {
+            this._onCodeEditorRemove.fire(editor);
+        }
+    }
+    listCodeEditors() {
+        return Object.keys(this._codeEditors).map(id => this._codeEditors[id]);
+    }
+    willCreateDiffEditor() {
+        this._onWillCreateDiffEditor.fire();
+    }
+    addDiffEditor(editor) {
+        this._diffEditors[editor.getId()] = editor;
+        this._onDiffEditorAdd.fire(editor);
+    }
+    removeDiffEditor(editor) {
+        if (delete this._diffEditors[editor.getId()]) {
+            this._onDiffEditorRemove.fire(editor);
+        }
+    }
+    listDiffEditors() {
+        return Object.keys(this._diffEditors).map(id => this._diffEditors[id]);
+    }
+    getFocusedCodeEditor() {
+        let editorWithWidgetFocus = null;
+        const editors = this.listCodeEditors();
+        for (const editor of editors) {
+            if (editor.hasTextFocus()) {
+                return editor;
+            }
+            if (editor.hasWidgetFocus()) {
+                editorWithWidgetFocus = editor;
+            }
+        }
+        return editorWithWidgetFocus;
+    }
+    _getOrCreateGlobalStyleSheet() {
+        if (!this._globalStyleSheet) {
+            this._globalStyleSheet = this._createGlobalStyleSheet();
+        }
+        return this._globalStyleSheet;
+    }
+    _createGlobalStyleSheet() {
+        return new GlobalStyleSheet(dom.createStyleSheet());
+    }
+    _getOrCreateStyleSheet(editor) {
+        if (!editor) {
+            return this._getOrCreateGlobalStyleSheet();
+        }
+        const domNode = editor.getContainerDomNode();
+        if (!dom.isInShadowDOM(domNode)) {
+            return this._getOrCreateGlobalStyleSheet();
+        }
+        const editorId = editor.getId();
+        if (!this._editorStyleSheets.has(editorId)) {
+            const refCountedStyleSheet = new RefCountedStyleSheet(this, editorId, dom.createStyleSheet(domNode));
+            this._editorStyleSheets.set(editorId, refCountedStyleSheet);
+        }
+        return this._editorStyleSheets.get(editorId);
+    }
+    _removeEditorStyleSheets(editorId) {
+        this._editorStyleSheets.delete(editorId);
+    }
+    registerDecorationType(description, key, options, parentTypeKey, editor) {
+        let provider = this._decorationOptionProviders.get(key);
+        if (!provider) {
+            const styleSheet = this._getOrCreateStyleSheet(editor);
+            const providerArgs = {
+                styleSheet: styleSheet,
+                key: key,
+                parentTypeKey: parentTypeKey,
+                options: options || Object.create(null)
+            };
+            if (!parentTypeKey) {
+                provider = new DecorationTypeOptionsProvider(description, this._themeService, styleSheet, providerArgs);
+            }
+            else {
+                provider = new DecorationSubTypeOptionsProvider(this._themeService, styleSheet, providerArgs);
+            }
+            this._decorationOptionProviders.set(key, provider);
+            this._onDecorationTypeRegistered.fire(key);
+        }
+        provider.refCount++;
+        return {
+            dispose: () => {
+                this.removeDecorationType(key);
+            }
+        };
+    }
+    listDecorationTypes() {
+        return Array.from(this._decorationOptionProviders.keys());
+    }
+    removeDecorationType(key) {
+        const provider = this._decorationOptionProviders.get(key);
+        if (provider) {
+            provider.refCount--;
+            if (provider.refCount <= 0) {
+                this._decorationOptionProviders.delete(key);
+                provider.dispose();
+                this.listCodeEditors().forEach((ed) => ed.removeDecorationsByType(key));
+            }
+        }
+    }
+    resolveDecorationOptions(decorationTypeKey, writable) {
+        const provider = this._decorationOptionProviders.get(decorationTypeKey);
+        if (!provider) {
+            throw new Error('Unknown decoration type key: ' + decorationTypeKey);
+        }
+        return provider.getOptions(this, writable);
+    }
+    resolveDecorationCSSRules(decorationTypeKey) {
+        const provider = this._decorationOptionProviders.get(decorationTypeKey);
+        if (!provider) {
+            return null;
+        }
+        return provider.resolveDecorationCSSRules();
+    }
+    setModelProperty(resource, key, value) {
+        const key1 = resource.toString();
+        let dest;
+        if (this._modelProperties.has(key1)) {
+            dest = this._modelProperties.get(key1);
+        }
+        else {
+            dest = new Map();
+            this._modelProperties.set(key1, dest);
+        }
+        dest.set(key, value);
+    }
+    getModelProperty(resource, key) {
+        const key1 = resource.toString();
+        if (this._modelProperties.has(key1)) {
+            const innerMap = this._modelProperties.get(key1);
+            return innerMap.get(key);
+        }
+        return undefined;
+    }
+    setTransientModelProperty(model, key, value) {
+        const uri = model.uri.toString();
+        let w;
+        if (this._transientWatchers.hasOwnProperty(uri)) {
+            w = this._transientWatchers[uri];
+        }
+        else {
+            w = new ModelTransientSettingWatcher(uri, model, this);
+            this._transientWatchers[uri] = w;
+        }
+        const previousValue = w.get(key);
+        if (previousValue !== value) {
+            w.set(key, value);
+            this._onDidChangeTransientModelProperty.fire(model);
+        }
+    }
+    getTransientModelProperty(model, key) {
+        const uri = model.uri.toString();
+        if (!this._transientWatchers.hasOwnProperty(uri)) {
+            return undefined;
+        }
+        return this._transientWatchers[uri].get(key);
+    }
+    getTransientModelProperties(model) {
+        const uri = model.uri.toString();
+        if (!this._transientWatchers.hasOwnProperty(uri)) {
+            return undefined;
+        }
+        return this._transientWatchers[uri].keys().map(key => [key, this._transientWatchers[uri].get(key)]);
+    }
+    _removeWatcher(w) {
+        delete this._transientWatchers[w.uri];
+    }
+    async openCodeEditor(input, source, sideBySide) {
+        for (const handler of this._codeEditorOpenHandlers) {
+            const candidate = await handler(input, source, sideBySide);
+            if (candidate !== null) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+    registerCodeEditorOpenHandler(handler) {
+        const rm = this._codeEditorOpenHandlers.unshift(handler);
+        return toDisposable(rm);
+    }
+};
+AbstractCodeEditorService = __decorate([
+    __param(0, IThemeService),
+    __metadata("design:paramtypes", [Object])
+], AbstractCodeEditorService);
+export { AbstractCodeEditorService };
+export class ModelTransientSettingWatcher {
+    constructor(uri, model, owner) {
+        this.uri = uri;
+        this._values = {};
+        model.onWillDispose(() => owner._removeWatcher(this));
+    }
+    set(key, value) {
+        this._values[key] = value;
+    }
+    get(key) {
+        return this._values[key];
+    }
+    keys() {
+        return Object.keys(this._values);
+    }
+}
+class RefCountedStyleSheet {
+    get sheet() {
+        return this._styleSheet.sheet;
+    }
+    constructor(parent, editorId, styleSheet) {
+        this._parent = parent;
+        this._editorId = editorId;
+        this._styleSheet = styleSheet;
+        this._refCount = 0;
+    }
+    ref() {
+        this._refCount++;
+    }
+    unref() {
+        this._refCount--;
+        if (this._refCount === 0) {
+            this._styleSheet.remove();
+            this._parent._removeEditorStyleSheets(this._editorId);
+        }
+    }
+    insertRule(selector, rule) {
+        dom.createCSSRule(selector, rule, this._styleSheet);
+    }
+    removeRulesContainingSelector(ruleName) {
+        dom.removeCSSRulesContainingSelector(ruleName, this._styleSheet);
+    }
+}
+export class GlobalStyleSheet {
+    get sheet() {
+        return this._styleSheet.sheet;
+    }
+    constructor(styleSheet) {
+        this._styleSheet = styleSheet;
+    }
+    ref() {
+    }
+    unref() {
+    }
+    insertRule(selector, rule) {
+        dom.createCSSRule(selector, rule, this._styleSheet);
+    }
+    removeRulesContainingSelector(ruleName) {
+        dom.removeCSSRulesContainingSelector(ruleName, this._styleSheet);
+    }
+}
+class DecorationSubTypeOptionsProvider {
+    constructor(themeService, styleSheet, providerArgs) {
+        this._styleSheet = styleSheet;
+        this._styleSheet.ref();
+        this._parentTypeKey = providerArgs.parentTypeKey;
+        this.refCount = 0;
+        this._beforeContentRules = new DecorationCSSRules(3, providerArgs, themeService);
+        this._afterContentRules = new DecorationCSSRules(4, providerArgs, themeService);
+    }
+    getOptions(codeEditorService, writable) {
+        const options = codeEditorService.resolveDecorationOptions(this._parentTypeKey, true);
+        if (this._beforeContentRules) {
+            options.beforeContentClassName = this._beforeContentRules.className;
+        }
+        if (this._afterContentRules) {
+            options.afterContentClassName = this._afterContentRules.className;
+        }
+        return options;
+    }
+    resolveDecorationCSSRules() {
+        return this._styleSheet.sheet.cssRules;
+    }
+    dispose() {
+        if (this._beforeContentRules) {
+            this._beforeContentRules.dispose();
+            this._beforeContentRules = null;
+        }
+        if (this._afterContentRules) {
+            this._afterContentRules.dispose();
+            this._afterContentRules = null;
+        }
+        this._styleSheet.unref();
+    }
+}
+class DecorationTypeOptionsProvider {
+    constructor(description, themeService, styleSheet, providerArgs) {
+        this._disposables = new DisposableStore();
+        this.description = description;
+        this._styleSheet = styleSheet;
+        this._styleSheet.ref();
+        this.refCount = 0;
+        const createCSSRules = (type) => {
+            const rules = new DecorationCSSRules(type, providerArgs, themeService);
+            this._disposables.add(rules);
+            if (rules.hasContent) {
+                return rules.className;
+            }
+            return undefined;
+        };
+        const createInlineCSSRules = (type) => {
+            const rules = new DecorationCSSRules(type, providerArgs, themeService);
+            this._disposables.add(rules);
+            if (rules.hasContent) {
+                return { className: rules.className, hasLetterSpacing: rules.hasLetterSpacing };
+            }
+            return null;
+        };
+        this.className = createCSSRules(0);
+        const inlineData = createInlineCSSRules(1);
+        if (inlineData) {
+            this.inlineClassName = inlineData.className;
+            this.inlineClassNameAffectsLetterSpacing = inlineData.hasLetterSpacing;
+        }
+        this.beforeContentClassName = createCSSRules(3);
+        this.afterContentClassName = createCSSRules(4);
+        if (providerArgs.options.beforeInjectedText && providerArgs.options.beforeInjectedText.contentText) {
+            const beforeInlineData = createInlineCSSRules(5);
+            this.beforeInjectedText = {
+                content: providerArgs.options.beforeInjectedText.contentText,
+                inlineClassName: beforeInlineData?.className,
+                inlineClassNameAffectsLetterSpacing: beforeInlineData?.hasLetterSpacing || providerArgs.options.beforeInjectedText.affectsLetterSpacing
+            };
+        }
+        if (providerArgs.options.afterInjectedText && providerArgs.options.afterInjectedText.contentText) {
+            const afterInlineData = createInlineCSSRules(6);
+            this.afterInjectedText = {
+                content: providerArgs.options.afterInjectedText.contentText,
+                inlineClassName: afterInlineData?.className,
+                inlineClassNameAffectsLetterSpacing: afterInlineData?.hasLetterSpacing || providerArgs.options.afterInjectedText.affectsLetterSpacing
+            };
+        }
+        this.glyphMarginClassName = createCSSRules(2);
+        const options = providerArgs.options;
+        this.isWholeLine = Boolean(options.isWholeLine);
+        this.stickiness = options.rangeBehavior;
+        const lightOverviewRulerColor = options.light && options.light.overviewRulerColor || options.overviewRulerColor;
+        const darkOverviewRulerColor = options.dark && options.dark.overviewRulerColor || options.overviewRulerColor;
+        if (typeof lightOverviewRulerColor !== 'undefined'
+            || typeof darkOverviewRulerColor !== 'undefined') {
+            this.overviewRuler = {
+                color: lightOverviewRulerColor || darkOverviewRulerColor,
+                darkColor: darkOverviewRulerColor || lightOverviewRulerColor,
+                position: options.overviewRulerLane || OverviewRulerLane.Center
+            };
+        }
+    }
+    getOptions(codeEditorService, writable) {
+        if (!writable) {
+            return this;
+        }
+        return {
+            description: this.description,
+            inlineClassName: this.inlineClassName,
+            beforeContentClassName: this.beforeContentClassName,
+            afterContentClassName: this.afterContentClassName,
+            className: this.className,
+            glyphMarginClassName: this.glyphMarginClassName,
+            isWholeLine: this.isWholeLine,
+            overviewRuler: this.overviewRuler,
+            stickiness: this.stickiness,
+            before: this.beforeInjectedText,
+            after: this.afterInjectedText
+        };
+    }
+    resolveDecorationCSSRules() {
+        return this._styleSheet.sheet.rules;
+    }
+    dispose() {
+        this._disposables.dispose();
+        this._styleSheet.unref();
+    }
+}
+export const _CSS_MAP = {
+    color: 'color:{0} !important;',
+    opacity: 'opacity:{0};',
+    backgroundColor: 'background-color:{0};',
+    outline: 'outline:{0};',
+    outlineColor: 'outline-color:{0};',
+    outlineStyle: 'outline-style:{0};',
+    outlineWidth: 'outline-width:{0};',
+    border: 'border:{0};',
+    borderColor: 'border-color:{0};',
+    borderRadius: 'border-radius:{0};',
+    borderSpacing: 'border-spacing:{0};',
+    borderStyle: 'border-style:{0};',
+    borderWidth: 'border-width:{0};',
+    fontStyle: 'font-style:{0};',
+    fontWeight: 'font-weight:{0};',
+    fontSize: 'font-size:{0};',
+    fontFamily: 'font-family:{0};',
+    textDecoration: 'text-decoration:{0};',
+    cursor: 'cursor:{0};',
+    letterSpacing: 'letter-spacing:{0};',
+    gutterIconPath: 'background:{0} center center no-repeat;',
+    gutterIconSize: 'background-size:{0};',
+    contentText: 'content:\'{0}\';',
+    contentIconPath: 'content:{0};',
+    margin: 'margin:{0};',
+    padding: 'padding:{0};',
+    width: 'width:{0};',
+    height: 'height:{0};',
+    verticalAlign: 'vertical-align:{0};',
+};
+class DecorationCSSRules {
+    constructor(ruleType, providerArgs, themeService) {
+        this._theme = themeService.getColorTheme();
+        this._ruleType = ruleType;
+        this._providerArgs = providerArgs;
+        this._usesThemeColors = false;
+        this._hasContent = false;
+        this._hasLetterSpacing = false;
+        let className = CSSNameHelper.getClassName(this._providerArgs.key, ruleType);
+        if (this._providerArgs.parentTypeKey) {
+            className = className + ' ' + CSSNameHelper.getClassName(this._providerArgs.parentTypeKey, ruleType);
+        }
+        this._className = className;
+        this._unThemedSelector = CSSNameHelper.getSelector(this._providerArgs.key, this._providerArgs.parentTypeKey, ruleType);
+        this._buildCSS();
+        if (this._usesThemeColors) {
+            this._themeListener = themeService.onDidColorThemeChange(theme => {
+                this._theme = themeService.getColorTheme();
+                this._removeCSS();
+                this._buildCSS();
+            });
+        }
+        else {
+            this._themeListener = null;
+        }
+    }
+    dispose() {
+        if (this._hasContent) {
+            this._removeCSS();
+            this._hasContent = false;
+        }
+        if (this._themeListener) {
+            this._themeListener.dispose();
+            this._themeListener = null;
+        }
+    }
+    get hasContent() {
+        return this._hasContent;
+    }
+    get hasLetterSpacing() {
+        return this._hasLetterSpacing;
+    }
+    get className() {
+        return this._className;
+    }
+    _buildCSS() {
+        const options = this._providerArgs.options;
+        let unthemedCSS, lightCSS, darkCSS;
+        switch (this._ruleType) {
+            case 0:
+                unthemedCSS = this.getCSSTextForModelDecorationClassName(options);
+                lightCSS = this.getCSSTextForModelDecorationClassName(options.light);
+                darkCSS = this.getCSSTextForModelDecorationClassName(options.dark);
+                break;
+            case 1:
+                unthemedCSS = this.getCSSTextForModelDecorationInlineClassName(options);
+                lightCSS = this.getCSSTextForModelDecorationInlineClassName(options.light);
+                darkCSS = this.getCSSTextForModelDecorationInlineClassName(options.dark);
+                break;
+            case 2:
+                unthemedCSS = this.getCSSTextForModelDecorationGlyphMarginClassName(options);
+                lightCSS = this.getCSSTextForModelDecorationGlyphMarginClassName(options.light);
+                darkCSS = this.getCSSTextForModelDecorationGlyphMarginClassName(options.dark);
+                break;
+            case 3:
+                unthemedCSS = this.getCSSTextForModelDecorationContentClassName(options.before);
+                lightCSS = this.getCSSTextForModelDecorationContentClassName(options.light && options.light.before);
+                darkCSS = this.getCSSTextForModelDecorationContentClassName(options.dark && options.dark.before);
+                break;
+            case 4:
+                unthemedCSS = this.getCSSTextForModelDecorationContentClassName(options.after);
+                lightCSS = this.getCSSTextForModelDecorationContentClassName(options.light && options.light.after);
+                darkCSS = this.getCSSTextForModelDecorationContentClassName(options.dark && options.dark.after);
+                break;
+            case 5:
+                unthemedCSS = this.getCSSTextForModelDecorationContentClassName(options.beforeInjectedText);
+                lightCSS = this.getCSSTextForModelDecorationContentClassName(options.light && options.light.beforeInjectedText);
+                darkCSS = this.getCSSTextForModelDecorationContentClassName(options.dark && options.dark.beforeInjectedText);
+                break;
+            case 6:
+                unthemedCSS = this.getCSSTextForModelDecorationContentClassName(options.afterInjectedText);
+                lightCSS = this.getCSSTextForModelDecorationContentClassName(options.light && options.light.afterInjectedText);
+                darkCSS = this.getCSSTextForModelDecorationContentClassName(options.dark && options.dark.afterInjectedText);
+                break;
+            default:
+                throw new Error('Unknown rule type: ' + this._ruleType);
+        }
+        const sheet = this._providerArgs.styleSheet;
+        let hasContent = false;
+        if (unthemedCSS.length > 0) {
+            sheet.insertRule(this._unThemedSelector, unthemedCSS);
+            hasContent = true;
+        }
+        if (lightCSS.length > 0) {
+            sheet.insertRule(`.vs${this._unThemedSelector}, .hc-light${this._unThemedSelector}`, lightCSS);
+            hasContent = true;
+        }
+        if (darkCSS.length > 0) {
+            sheet.insertRule(`.vs-dark${this._unThemedSelector}, .hc-black${this._unThemedSelector}`, darkCSS);
+            hasContent = true;
+        }
+        this._hasContent = hasContent;
+    }
+    _removeCSS() {
+        this._providerArgs.styleSheet.removeRulesContainingSelector(this._unThemedSelector);
+    }
+    getCSSTextForModelDecorationClassName(opts) {
+        if (!opts) {
+            return '';
+        }
+        const cssTextArr = [];
+        this.collectCSSText(opts, ['backgroundColor'], cssTextArr);
+        this.collectCSSText(opts, ['outline', 'outlineColor', 'outlineStyle', 'outlineWidth'], cssTextArr);
+        this.collectBorderSettingsCSSText(opts, cssTextArr);
+        return cssTextArr.join('');
+    }
+    getCSSTextForModelDecorationInlineClassName(opts) {
+        if (!opts) {
+            return '';
+        }
+        const cssTextArr = [];
+        this.collectCSSText(opts, ['fontStyle', 'fontWeight', 'textDecoration', 'cursor', 'color', 'opacity', 'letterSpacing'], cssTextArr);
+        if (opts.letterSpacing) {
+            this._hasLetterSpacing = true;
+        }
+        return cssTextArr.join('');
+    }
+    getCSSTextForModelDecorationContentClassName(opts) {
+        if (!opts) {
+            return '';
+        }
+        const cssTextArr = [];
+        if (typeof opts !== 'undefined') {
+            this.collectBorderSettingsCSSText(opts, cssTextArr);
+            if (typeof opts.contentIconPath !== 'undefined') {
+                cssTextArr.push(strings.format(_CSS_MAP.contentIconPath, dom.asCSSUrl(URI.revive(opts.contentIconPath))));
+            }
+            if (typeof opts.contentText === 'string') {
+                const truncated = opts.contentText.match(/^.*$/m)[0];
+                const escaped = truncated.replace(/['\\]/g, '\\$&');
+                cssTextArr.push(strings.format(_CSS_MAP.contentText, escaped));
+            }
+            this.collectCSSText(opts, ['verticalAlign', 'fontStyle', 'fontWeight', 'fontSize', 'fontFamily', 'textDecoration', 'color', 'opacity', 'backgroundColor', 'margin', 'padding'], cssTextArr);
+            if (this.collectCSSText(opts, ['width', 'height'], cssTextArr)) {
+                cssTextArr.push('display:inline-block;');
+            }
+        }
+        return cssTextArr.join('');
+    }
+    getCSSTextForModelDecorationGlyphMarginClassName(opts) {
+        if (!opts) {
+            return '';
+        }
+        const cssTextArr = [];
+        if (typeof opts.gutterIconPath !== 'undefined') {
+            cssTextArr.push(strings.format(_CSS_MAP.gutterIconPath, dom.asCSSUrl(URI.revive(opts.gutterIconPath))));
+            if (typeof opts.gutterIconSize !== 'undefined') {
+                cssTextArr.push(strings.format(_CSS_MAP.gutterIconSize, opts.gutterIconSize));
+            }
+        }
+        return cssTextArr.join('');
+    }
+    collectBorderSettingsCSSText(opts, cssTextArr) {
+        if (this.collectCSSText(opts, ['border', 'borderColor', 'borderRadius', 'borderSpacing', 'borderStyle', 'borderWidth'], cssTextArr)) {
+            cssTextArr.push(strings.format('box-sizing: border-box;'));
+            return true;
+        }
+        return false;
+    }
+    collectCSSText(opts, properties, cssTextArr) {
+        const lenBefore = cssTextArr.length;
+        for (const property of properties) {
+            const value = this.resolveValue(opts[property]);
+            if (typeof value === 'string') {
+                cssTextArr.push(strings.format(_CSS_MAP[property], value));
+            }
+        }
+        return cssTextArr.length !== lenBefore;
+    }
+    resolveValue(value) {
+        if (isThemeColor(value)) {
+            this._usesThemeColors = true;
+            const color = this._theme.getColor(value.id);
+            if (color) {
+                return color.toString();
+            }
+            return 'transparent';
+        }
+        return value;
+    }
+}
+class CSSNameHelper {
+    static getClassName(key, type) {
+        return 'ced-' + key + '-' + type;
+    }
+    static getSelector(key, parentKey, ruleType) {
+        let selector = '.monaco-editor .' + this.getClassName(key, ruleType);
+        if (parentKey) {
+            selector = selector + '.' + this.getClassName(parentKey, ruleType);
+        }
+        if (ruleType === 3) {
+            selector += '::before';
+        }
+        else if (ruleType === 4) {
+            selector += '::after';
+        }
+        return selector;
+    }
+}

@@ -1,1 +1,710 @@
-var A=Object.defineProperty;var j=Object.getOwnPropertyDescriptor;var D=(c,s,o,t)=>{for(var e=t>1?void 0:t?j(s,o):s,n=c.length-1,i;n>=0;n--)(i=c[n])&&(e=(t?i(s,o,e):i(e))||e);return t&&e&&A(s,o,e),e},d=(c,s)=>(o,t)=>s(o,t,c);import{URI as G}from"../../../base/common/uri.js";import{asPromise as B}from"../../../base/common/async.js";import{Emitter as x}from"../../../base/common/event.js";import{MainContext as N}from"./extHost.protocol.js";import*as u from"./extHostTypes.js";import{IExtHostWorkspace as P}from"./extHostWorkspace.js";import"./shared/tasks.js";import{IExtHostDocumentsAndEditors as _}from"./extHostDocumentsAndEditors.js";import{IExtHostConfiguration as S}from"./extHostConfiguration.js";import{CancellationToken as y}from"../../../base/common/cancellation.js";import"../../../platform/extensions/common/extensions.js";import{IExtHostTerminalService as O}from"./extHostTerminalService.js";import{IExtHostRpcService as b}from"./extHostRpcService.js";import{IExtHostInitDataService as w}from"./extHostInitDataService.js";import{createDecorator as K}from"../../../platform/instantiation/common/instantiation.js";import{Schemas as C}from"../../../base/common/network.js";import*as H from"../../../base/common/platform.js";import{ILogService as $}from"../../../platform/log/common/log.js";import{IExtHostApiDeprecationService as M}from"./extHostApiDeprecationService.js";import{USER_TASKS_GROUP_KEY as V}from"../../contrib/tasks/common/tasks.js";import{ErrorNoTelemetry as U,NotSupportedError as Y}from"../../../base/common/errors.js";import{asArray as q}from"../../../base/common/arrays.js";var I;(o=>{function c(t){if(t!=null)return t}o.from=c;function s(t){if(t!=null)return t}o.to=s})(I||={});var v;(o=>{function c(t){if(t!=null)return t}o.from=c;function s(t){if(t!=null)return t}o.to=s})(v||={});var R;(o=>{function c(t){if(t!=null)return t}o.from=c;function s(t){if(t!=null)return t}o.to=s})(R||={});var E;(t=>{function c(e){if(e){const n=e;return n&&!!n.process}else return!1}t.is=c;function s(e){if(e==null)return;const n={process:e.process,args:e.args};return e.options&&(n.options=R.from(e.options)),n}t.from=s;function o(e){if(e!=null)return new u.ProcessExecution(e.process,e.args,e.options)}t.to=o})(E||={});var F;(o=>{function c(t){if(t!=null)return t}o.from=c;function s(t){if(t!=null)return t}o.to=s})(F||={});var l;(t=>{function c(e){if(e){const n=e;return n&&(!!n.commandLine||!!n.command)}else return!1}t.is=c;function s(e){if(e==null)return;const n={};return e.commandLine!==void 0?n.commandLine=e.commandLine:(n.command=e.command,n.args=e.args),e.options&&(n.options=F.from(e.options)),n}t.from=s;function o(e){if(!(e==null||e.command===void 0&&e.commandLine===void 0))return e.commandLine?new u.ShellExecution(e.commandLine,e.options):new u.ShellExecution(e.command,e.args?e.args:[],e.options)}t.to=o})(l||={});var k;(t=>{function c(e){if(e){const n=e;return n&&n.customExecution==="customExecution"}else return!1}t.is=c;function s(e){return{customExecution:"customExecution"}}t.from=s;function o(e,n){return n.get(e)}t.to=o})(k||={});var z;(s=>{function c(o,t){let e;return o.scope!==void 0&&typeof o.scope!="number"?e=o.scope.uri:o.scope!==void 0&&typeof o.scope=="number"&&(o.scope===u.TaskScope.Workspace&&t&&t.workspaceFile?e=t.workspaceFile:e=V),{id:o._id,workspaceFolder:e}}s.from=c})(z||={});var L;(s=>{function c(o){if(o!=null)return{_id:o.id,isDefault:o.isDefault}}s.from=c})(L||={});var f;(t=>{function c(e,n){if(e==null)return[];const i=[];for(const r of e){const a=s(r,n);a&&i.push(a)}return i}t.fromMany=c;function s(e,n){if(e==null)return;let i;e.execution instanceof u.ProcessExecution?i=E.from(e.execution):e.execution instanceof u.ShellExecution?i=l.from(e.execution):e.execution&&e.execution instanceof u.CustomExecution&&(i=k.from(e.execution));const r=I.from(e.definition);let a;return e.scope?typeof e.scope=="number"?a=e.scope:a=e.scope.uri:a=u.TaskScope.Workspace,!r||!a?void 0:{_id:e._id,definition:r,name:e.name,source:{extensionId:n.identifier.value,label:e.source,scope:a},execution:i,isBackground:e.isBackground,group:L.from(e.group),presentationOptions:v.from(e.presentationOptions),problemMatchers:q(e.problemMatchers),hasDefinedMatchers:e.hasDefinedMatchers,runOptions:e.runOptions?e.runOptions:{reevaluateOnRerun:!0},detail:e.detail}}t.from=s;async function o(e,n,i){if(e==null)return;let r;E.is(e.execution)?r=E.to(e.execution):l.is(e.execution)?r=l.to(e.execution):k.is(e.execution)&&(r=k.to(e._id,i));const a=I.to(e.definition);let m;if(e.source&&(e.source.scope!==void 0?typeof e.source.scope=="number"?m=e.source.scope:m=await n.resolveWorkspaceFolder(G.revive(e.source.scope)):m=u.TaskScope.Workspace),!a||!m)return;const p=new u.Task(a,m,e.name,e.source.label,r,e.problemMatchers);return e.isBackground!==void 0&&(p.isBackground=e.isBackground),e.group!==void 0&&(p.group=u.TaskGroup.from(e.group._id),p.group&&e.group.isDefault&&(p.group=new u.TaskGroup(p.group.id,p.group.label),e.group.isDefault===!0&&(p.group.isDefault=e.group.isDefault))),e.presentationOptions&&(p.presentationOptions=v.to(e.presentationOptions)),e._id&&(p._id=e._id),e.detail&&(p.detail=e.detail),p}t.to=o})(f||={});var W;(o=>{function c(t){return t}o.from=c;function s(t){if(t)return Object.assign(Object.create(null),t)}o.to=s})(W||={});class g{constructor(s,o,t){this._id=o;this._task=t;this.#e=s}#e;get task(){return this._task}terminate(){this.#e.terminateTask(this)}fireDidStartProcess(s){}fireDidEndProcess(s){}}let T=class{_serviceBrand;_proxy;_workspaceProvider;_editorService;_configurationService;_terminalService;_logService;_deprecationService;_handleCounter;_handlers;_taskExecutions;_taskExecutionPromises;_providedCustomExecutions2;_notProvidedCustomExecutions;_activeCustomExecutions2;_lastStartedTask;_onDidExecuteTask=new x;_onDidTerminateTask=new x;_onDidTaskProcessStarted=new x;_onDidTaskProcessEnded=new x;constructor(s,o,t,e,n,i,r,a){this._proxy=s.getProxy(N.MainThreadTask),this._workspaceProvider=t,this._editorService=e,this._configurationService=n,this._terminalService=i,this._handleCounter=0,this._handlers=new Map,this._taskExecutions=new Map,this._taskExecutionPromises=new Map,this._providedCustomExecutions2=new Map,this._notProvidedCustomExecutions=new Set,this._activeCustomExecutions2=new Map,this._logService=r,this._deprecationService=a,this._proxy.$registerSupportedExecutions(!0)}registerTaskProvider(s,o,t){if(!t)return new u.Disposable(()=>{});const e=this.nextHandle();return this._handlers.set(e,{type:o,provider:t,extension:s}),this._proxy.$registerTaskProvider(e,o),new u.Disposable(()=>{this._handlers.delete(e),this._proxy.$unregisterTaskProvider(e)})}registerTaskSystem(s,o){this._proxy.$registerTaskSystem(s,o)}fetchTasks(s){return this._proxy.$fetchTasks(W.from(s)).then(async o=>{const t=[];for(const e of o){const n=await f.to(e,this._workspaceProvider,this._providedCustomExecutions2);n&&t.push(n)}return t})}get taskExecutions(){const s=[];return this._taskExecutions.forEach(o=>s.push(o)),s}terminateTask(s){if(!(s instanceof g))throw new Error("No valid task execution provided");return this._proxy.$terminateTask(s._id)}get onDidStartTask(){return this._onDidExecuteTask.event}async $onDidStartTask(s,o,t){const e=this._providedCustomExecutions2.get(s.id);e&&(this._activeCustomExecutions2.set(s.id,e),this._terminalService.attachPtyToTerminal(o,await e.callback(t))),this._lastStartedTask=s.id,this._onDidExecuteTask.fire({execution:await this.getTaskExecution(s)})}get onDidEndTask(){return this._onDidTerminateTask.event}async $OnDidEndTask(s){if(!this._taskExecutionPromises.has(s.id))return;const o=await this.getTaskExecution(s);this._taskExecutionPromises.delete(s.id),this._taskExecutions.delete(s.id),this.customExecutionComplete(s),this._onDidTerminateTask.fire({execution:o})}get onDidStartTaskProcess(){return this._onDidTaskProcessStarted.event}async $onDidStartTaskProcess(s){const o=await this.getTaskExecution(s.id);this._onDidTaskProcessStarted.fire({execution:o,processId:s.processId})}get onDidEndTaskProcess(){return this._onDidTaskProcessEnded.event}async $onDidEndTaskProcess(s){const o=await this.getTaskExecution(s.id);this._onDidTaskProcessEnded.fire({execution:o,exitCode:s.exitCode})}$provideTasks(s,o){const t=this._handlers.get(s);if(!t)return Promise.reject(new Error("no handler found"));const e=[],n=B(()=>t.provider.provideTasks(y.None)).then(i=>this.provideTasksInternal(o,e,t,i));return new Promise(i=>{n.then(r=>{Promise.all(e).then(()=>{i(r)})})})}async $resolveTask(s,o){const t=this._handlers.get(s);if(!t)return Promise.reject(new Error("no handler found"));if(o.definition.type!==t.type)throw new Error(`Unexpected: Task of type [${o.definition.type}] cannot be resolved by provider of type [${t.type}].`);const e=await f.to(o,this._workspaceProvider,this._providedCustomExecutions2);if(!e)throw new Error("Unexpected: Task cannot be resolved.");const n=await t.provider.resolveTask(e,y.None);if(!n)return;this.checkDeprecation(n,t);const i=f.from(n,t.extension);if(!i)throw new Error("Unexpected: Task cannot be resolved.");if(n.definition!==e.definition)throw new Error("Unexpected: The resolved task definition must be the same object as the original task definition. The task definition cannot be changed.");return k.is(i.execution)&&await this.addCustomExecution(i,n,!0),await this.resolveTaskInternal(i)}nextHandle(){return this._handleCounter++}async addCustomExecution(s,o,t){const e=await this._proxy.$createTaskId(s);!t&&!this._providedCustomExecutions2.has(e)&&(this._notProvidedCustomExecutions.add(e),this._activeCustomExecutions2.set(e,o.execution)),this._providedCustomExecutions2.set(e,o.execution)}async getTaskExecution(s,o){if(typeof s=="string"){const n=this._taskExecutionPromises.get(s);if(!n)throw new U("Unexpected: The specified task is missing an execution");return n}const t=this._taskExecutionPromises.get(s.id);if(t)return t;let e;return o?e=Promise.resolve(new g(this,s.id,o)):e=f.to(s.task,this._workspaceProvider,this._providedCustomExecutions2).then(n=>{if(!n)throw new U("Unexpected: Task does not exist.");return new g(this,s.id,n)}),this._taskExecutionPromises.set(s.id,e),e.then(n=>(this._taskExecutions.set(s.id,n),n))}checkDeprecation(s,o){s._deprecated&&this._deprecationService.report("Task.constructor",o.extension,"Use the Task constructor that takes a `scope` instead.")}customExecutionComplete(s){this._activeCustomExecutions2.get(s.id)&&this._activeCustomExecutions2.delete(s.id),this._notProvidedCustomExecutions.has(s.id)&&this._lastStartedTask!==s.id&&(this._providedCustomExecutions2.delete(s.id),this._notProvidedCustomExecutions.delete(s.id));const t=this._notProvidedCustomExecutions.values();let e=t.next();for(;!e.done;)!this._activeCustomExecutions2.has(e.value)&&this._lastStartedTask!==e.value&&(this._providedCustomExecutions2.delete(e.value),this._notProvidedCustomExecutions.delete(e.value)),e=t.next()}};T=D([d(0,b),d(1,w),d(2,P),d(3,_),d(4,S),d(5,O),d(6,$),d(7,M)],T);let h=class extends T{constructor(s,o,t,e,n,i,r,a){super(s,o,t,e,n,i,r,a),this.registerTaskSystem(C.vscodeRemote,{scheme:C.vscodeRemote,authority:"",platform:H.PlatformToString(H.Platform.Web)})}async executeTask(s,o){if(!o.execution)throw new Error("Tasks to execute must include an execution");const t=f.from(o,s);if(t===void 0)throw new Error("Task is not valid");if(k.is(t.execution))await this.addCustomExecution(t,o,!1);else throw new Y;const e=await this.getTaskExecution(await this._proxy.$getTaskExecution(t),o);return this._proxy.$executeTask(t).catch(n=>{throw new Error(n)}),e}provideTasksInternal(s,o,t,e){const n=[];if(e)for(const i of e){if(this.checkDeprecation(i,t),!i.definition||!s[i.definition.type]){const a=i.source?i.source:"No task source";this._logService.warn(`The task [${a}, ${i.name}] uses an undefined task type. The task will be ignored in the future.`)}const r=f.from(i,t.extension);r&&k.is(r.execution)?(n.push(r),o.push(this.addCustomExecution(r,i,!0))):this._logService.warn("Only custom execution tasks supported.")}return{tasks:n,extension:t.extension}}async resolveTaskInternal(s){if(k.is(s.execution))return s;this._logService.warn("Only custom execution tasks supported.")}async $resolveVariables(s,o){return{process:void 0,variables:Object.create(null)}}async $jsonTasksSupported(){return!1}async $findExecutable(s,o,t){}};h=D([d(0,b),d(1,w),d(2,P),d(3,_),d(4,S),d(5,O),d(6,$),d(7,M)],h);const ge=K("IExtHostTask");export{k as CustomExecutionDTO,T as ExtHostTaskBase,ge as IExtHostTask,f as TaskDTO,z as TaskHandleDTO,h as WorkerExtHostTask};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { URI } from '../../../base/common/uri.js';
+import { asPromise } from '../../../base/common/async.js';
+import { Emitter } from '../../../base/common/event.js';
+import { MainContext } from './extHost.protocol.js';
+import * as types from './extHostTypes.js';
+import { IExtHostWorkspace } from './extHostWorkspace.js';
+import { IExtHostDocumentsAndEditors } from './extHostDocumentsAndEditors.js';
+import { IExtHostConfiguration } from './extHostConfiguration.js';
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { IExtHostTerminalService } from './extHostTerminalService.js';
+import { IExtHostRpcService } from './extHostRpcService.js';
+import { IExtHostInitDataService } from './extHostInitDataService.js';
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+import { Schemas } from '../../../base/common/network.js';
+import * as Platform from '../../../base/common/platform.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { IExtHostApiDeprecationService } from './extHostApiDeprecationService.js';
+import { USER_TASKS_GROUP_KEY } from '../../contrib/tasks/common/tasks.js';
+import { ErrorNoTelemetry, NotSupportedError } from '../../../base/common/errors.js';
+import { asArray } from '../../../base/common/arrays.js';
+var TaskDefinitionDTO;
+(function (TaskDefinitionDTO) {
+    function from(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        return value;
+    }
+    TaskDefinitionDTO.from = from;
+    function to(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        return value;
+    }
+    TaskDefinitionDTO.to = to;
+})(TaskDefinitionDTO || (TaskDefinitionDTO = {}));
+var TaskPresentationOptionsDTO;
+(function (TaskPresentationOptionsDTO) {
+    function from(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        return value;
+    }
+    TaskPresentationOptionsDTO.from = from;
+    function to(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        return value;
+    }
+    TaskPresentationOptionsDTO.to = to;
+})(TaskPresentationOptionsDTO || (TaskPresentationOptionsDTO = {}));
+var ProcessExecutionOptionsDTO;
+(function (ProcessExecutionOptionsDTO) {
+    function from(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        return value;
+    }
+    ProcessExecutionOptionsDTO.from = from;
+    function to(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        return value;
+    }
+    ProcessExecutionOptionsDTO.to = to;
+})(ProcessExecutionOptionsDTO || (ProcessExecutionOptionsDTO = {}));
+var ProcessExecutionDTO;
+(function (ProcessExecutionDTO) {
+    function is(value) {
+        if (value) {
+            const candidate = value;
+            return candidate && !!candidate.process;
+        }
+        else {
+            return false;
+        }
+    }
+    ProcessExecutionDTO.is = is;
+    function from(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        const result = {
+            process: value.process,
+            args: value.args
+        };
+        if (value.options) {
+            result.options = ProcessExecutionOptionsDTO.from(value.options);
+        }
+        return result;
+    }
+    ProcessExecutionDTO.from = from;
+    function to(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        return new types.ProcessExecution(value.process, value.args, value.options);
+    }
+    ProcessExecutionDTO.to = to;
+})(ProcessExecutionDTO || (ProcessExecutionDTO = {}));
+var ShellExecutionOptionsDTO;
+(function (ShellExecutionOptionsDTO) {
+    function from(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        return value;
+    }
+    ShellExecutionOptionsDTO.from = from;
+    function to(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        return value;
+    }
+    ShellExecutionOptionsDTO.to = to;
+})(ShellExecutionOptionsDTO || (ShellExecutionOptionsDTO = {}));
+var ShellExecutionDTO;
+(function (ShellExecutionDTO) {
+    function is(value) {
+        if (value) {
+            const candidate = value;
+            return candidate && (!!candidate.commandLine || !!candidate.command);
+        }
+        else {
+            return false;
+        }
+    }
+    ShellExecutionDTO.is = is;
+    function from(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        const result = {};
+        if (value.commandLine !== undefined) {
+            result.commandLine = value.commandLine;
+        }
+        else {
+            result.command = value.command;
+            result.args = value.args;
+        }
+        if (value.options) {
+            result.options = ShellExecutionOptionsDTO.from(value.options);
+        }
+        return result;
+    }
+    ShellExecutionDTO.from = from;
+    function to(value) {
+        if (value === undefined || value === null || (value.command === undefined && value.commandLine === undefined)) {
+            return undefined;
+        }
+        if (value.commandLine) {
+            return new types.ShellExecution(value.commandLine, value.options);
+        }
+        else {
+            return new types.ShellExecution(value.command, value.args ? value.args : [], value.options);
+        }
+    }
+    ShellExecutionDTO.to = to;
+})(ShellExecutionDTO || (ShellExecutionDTO = {}));
+export var CustomExecutionDTO;
+(function (CustomExecutionDTO) {
+    function is(value) {
+        if (value) {
+            const candidate = value;
+            return candidate && candidate.customExecution === 'customExecution';
+        }
+        else {
+            return false;
+        }
+    }
+    CustomExecutionDTO.is = is;
+    function from(value) {
+        return {
+            customExecution: 'customExecution'
+        };
+    }
+    CustomExecutionDTO.from = from;
+    function to(taskId, providedCustomExeutions) {
+        return providedCustomExeutions.get(taskId);
+    }
+    CustomExecutionDTO.to = to;
+})(CustomExecutionDTO || (CustomExecutionDTO = {}));
+export var TaskHandleDTO;
+(function (TaskHandleDTO) {
+    function from(value, workspaceService) {
+        let folder;
+        if (value.scope !== undefined && typeof value.scope !== 'number') {
+            folder = value.scope.uri;
+        }
+        else if (value.scope !== undefined && typeof value.scope === 'number') {
+            if ((value.scope === types.TaskScope.Workspace) && workspaceService && workspaceService.workspaceFile) {
+                folder = workspaceService.workspaceFile;
+            }
+            else {
+                folder = USER_TASKS_GROUP_KEY;
+            }
+        }
+        return {
+            id: value._id,
+            workspaceFolder: folder
+        };
+    }
+    TaskHandleDTO.from = from;
+})(TaskHandleDTO || (TaskHandleDTO = {}));
+var TaskGroupDTO;
+(function (TaskGroupDTO) {
+    function from(value) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        return { _id: value.id, isDefault: value.isDefault };
+    }
+    TaskGroupDTO.from = from;
+})(TaskGroupDTO || (TaskGroupDTO = {}));
+export var TaskDTO;
+(function (TaskDTO) {
+    function fromMany(tasks, extension) {
+        if (tasks === undefined || tasks === null) {
+            return [];
+        }
+        const result = [];
+        for (const task of tasks) {
+            const converted = from(task, extension);
+            if (converted) {
+                result.push(converted);
+            }
+        }
+        return result;
+    }
+    TaskDTO.fromMany = fromMany;
+    function from(value, extension) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        let execution;
+        if (value.execution instanceof types.ProcessExecution) {
+            execution = ProcessExecutionDTO.from(value.execution);
+        }
+        else if (value.execution instanceof types.ShellExecution) {
+            execution = ShellExecutionDTO.from(value.execution);
+        }
+        else if (value.execution && value.execution instanceof types.CustomExecution) {
+            execution = CustomExecutionDTO.from(value.execution);
+        }
+        const definition = TaskDefinitionDTO.from(value.definition);
+        let scope;
+        if (value.scope) {
+            if (typeof value.scope === 'number') {
+                scope = value.scope;
+            }
+            else {
+                scope = value.scope.uri;
+            }
+        }
+        else {
+            scope = types.TaskScope.Workspace;
+        }
+        if (!definition || !scope) {
+            return undefined;
+        }
+        const result = {
+            _id: value._id,
+            definition,
+            name: value.name,
+            source: {
+                extensionId: extension.identifier.value,
+                label: value.source,
+                scope: scope
+            },
+            execution: execution,
+            isBackground: value.isBackground,
+            group: TaskGroupDTO.from(value.group),
+            presentationOptions: TaskPresentationOptionsDTO.from(value.presentationOptions),
+            problemMatchers: asArray(value.problemMatchers),
+            hasDefinedMatchers: value.hasDefinedMatchers,
+            runOptions: value.runOptions ? value.runOptions : { reevaluateOnRerun: true },
+            detail: value.detail
+        };
+        return result;
+    }
+    TaskDTO.from = from;
+    async function to(value, workspace, providedCustomExeutions) {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        let execution;
+        if (ProcessExecutionDTO.is(value.execution)) {
+            execution = ProcessExecutionDTO.to(value.execution);
+        }
+        else if (ShellExecutionDTO.is(value.execution)) {
+            execution = ShellExecutionDTO.to(value.execution);
+        }
+        else if (CustomExecutionDTO.is(value.execution)) {
+            execution = CustomExecutionDTO.to(value._id, providedCustomExeutions);
+        }
+        const definition = TaskDefinitionDTO.to(value.definition);
+        let scope;
+        if (value.source) {
+            if (value.source.scope !== undefined) {
+                if (typeof value.source.scope === 'number') {
+                    scope = value.source.scope;
+                }
+                else {
+                    scope = await workspace.resolveWorkspaceFolder(URI.revive(value.source.scope));
+                }
+            }
+            else {
+                scope = types.TaskScope.Workspace;
+            }
+        }
+        if (!definition || !scope) {
+            return undefined;
+        }
+        const result = new types.Task(definition, scope, value.name, value.source.label, execution, value.problemMatchers);
+        if (value.isBackground !== undefined) {
+            result.isBackground = value.isBackground;
+        }
+        if (value.group !== undefined) {
+            result.group = types.TaskGroup.from(value.group._id);
+            if (result.group && value.group.isDefault) {
+                result.group = new types.TaskGroup(result.group.id, result.group.label);
+                if (value.group.isDefault === true) {
+                    result.group.isDefault = value.group.isDefault;
+                }
+            }
+        }
+        if (value.presentationOptions) {
+            result.presentationOptions = TaskPresentationOptionsDTO.to(value.presentationOptions);
+        }
+        if (value._id) {
+            result._id = value._id;
+        }
+        if (value.detail) {
+            result.detail = value.detail;
+        }
+        return result;
+    }
+    TaskDTO.to = to;
+})(TaskDTO || (TaskDTO = {}));
+var TaskFilterDTO;
+(function (TaskFilterDTO) {
+    function from(value) {
+        return value;
+    }
+    TaskFilterDTO.from = from;
+    function to(value) {
+        if (!value) {
+            return undefined;
+        }
+        return Object.assign(Object.create(null), value);
+    }
+    TaskFilterDTO.to = to;
+})(TaskFilterDTO || (TaskFilterDTO = {}));
+class TaskExecutionImpl {
+    #tasks;
+    constructor(tasks, _id, _task) {
+        this._id = _id;
+        this._task = _task;
+        this.#tasks = tasks;
+    }
+    get task() {
+        return this._task;
+    }
+    terminate() {
+        this.#tasks.terminateTask(this);
+    }
+    fireDidStartProcess(value) {
+    }
+    fireDidEndProcess(value) {
+    }
+}
+let ExtHostTaskBase = class ExtHostTaskBase {
+    constructor(extHostRpc, initData, workspaceService, editorService, configurationService, extHostTerminalService, logService, deprecationService) {
+        this._onDidExecuteTask = new Emitter();
+        this._onDidTerminateTask = new Emitter();
+        this._onDidTaskProcessStarted = new Emitter();
+        this._onDidTaskProcessEnded = new Emitter();
+        this._proxy = extHostRpc.getProxy(MainContext.MainThreadTask);
+        this._workspaceProvider = workspaceService;
+        this._editorService = editorService;
+        this._configurationService = configurationService;
+        this._terminalService = extHostTerminalService;
+        this._handleCounter = 0;
+        this._handlers = new Map();
+        this._taskExecutions = new Map();
+        this._taskExecutionPromises = new Map();
+        this._providedCustomExecutions2 = new Map();
+        this._notProvidedCustomExecutions = new Set();
+        this._activeCustomExecutions2 = new Map();
+        this._logService = logService;
+        this._deprecationService = deprecationService;
+        this._proxy.$registerSupportedExecutions(true);
+    }
+    registerTaskProvider(extension, type, provider) {
+        if (!provider) {
+            return new types.Disposable(() => { });
+        }
+        const handle = this.nextHandle();
+        this._handlers.set(handle, { type, provider, extension });
+        this._proxy.$registerTaskProvider(handle, type);
+        return new types.Disposable(() => {
+            this._handlers.delete(handle);
+            this._proxy.$unregisterTaskProvider(handle);
+        });
+    }
+    registerTaskSystem(scheme, info) {
+        this._proxy.$registerTaskSystem(scheme, info);
+    }
+    fetchTasks(filter) {
+        return this._proxy.$fetchTasks(TaskFilterDTO.from(filter)).then(async (values) => {
+            const result = [];
+            for (const value of values) {
+                const task = await TaskDTO.to(value, this._workspaceProvider, this._providedCustomExecutions2);
+                if (task) {
+                    result.push(task);
+                }
+            }
+            return result;
+        });
+    }
+    get taskExecutions() {
+        const result = [];
+        this._taskExecutions.forEach(value => result.push(value));
+        return result;
+    }
+    terminateTask(execution) {
+        if (!(execution instanceof TaskExecutionImpl)) {
+            throw new Error('No valid task execution provided');
+        }
+        return this._proxy.$terminateTask(execution._id);
+    }
+    get onDidStartTask() {
+        return this._onDidExecuteTask.event;
+    }
+    async $onDidStartTask(execution, terminalId, resolvedDefinition) {
+        const customExecution = this._providedCustomExecutions2.get(execution.id);
+        if (customExecution) {
+            this._activeCustomExecutions2.set(execution.id, customExecution);
+            this._terminalService.attachPtyToTerminal(terminalId, await customExecution.callback(resolvedDefinition));
+        }
+        this._lastStartedTask = execution.id;
+        this._onDidExecuteTask.fire({
+            execution: await this.getTaskExecution(execution)
+        });
+    }
+    get onDidEndTask() {
+        return this._onDidTerminateTask.event;
+    }
+    async $OnDidEndTask(execution) {
+        if (!this._taskExecutionPromises.has(execution.id)) {
+            return;
+        }
+        const _execution = await this.getTaskExecution(execution);
+        this._taskExecutionPromises.delete(execution.id);
+        this._taskExecutions.delete(execution.id);
+        this.customExecutionComplete(execution);
+        this._onDidTerminateTask.fire({
+            execution: _execution
+        });
+    }
+    get onDidStartTaskProcess() {
+        return this._onDidTaskProcessStarted.event;
+    }
+    async $onDidStartTaskProcess(value) {
+        const execution = await this.getTaskExecution(value.id);
+        this._onDidTaskProcessStarted.fire({
+            execution: execution,
+            processId: value.processId
+        });
+    }
+    get onDidEndTaskProcess() {
+        return this._onDidTaskProcessEnded.event;
+    }
+    async $onDidEndTaskProcess(value) {
+        const execution = await this.getTaskExecution(value.id);
+        this._onDidTaskProcessEnded.fire({
+            execution: execution,
+            exitCode: value.exitCode
+        });
+    }
+    $provideTasks(handle, validTypes) {
+        const handler = this._handlers.get(handle);
+        if (!handler) {
+            return Promise.reject(new Error('no handler found'));
+        }
+        const taskIdPromises = [];
+        const fetchPromise = asPromise(() => handler.provider.provideTasks(CancellationToken.None)).then(value => {
+            return this.provideTasksInternal(validTypes, taskIdPromises, handler, value);
+        });
+        return new Promise((resolve) => {
+            fetchPromise.then((result) => {
+                Promise.all(taskIdPromises).then(() => {
+                    resolve(result);
+                });
+            });
+        });
+    }
+    async $resolveTask(handle, taskDTO) {
+        const handler = this._handlers.get(handle);
+        if (!handler) {
+            return Promise.reject(new Error('no handler found'));
+        }
+        if (taskDTO.definition.type !== handler.type) {
+            throw new Error(`Unexpected: Task of type [${taskDTO.definition.type}] cannot be resolved by provider of type [${handler.type}].`);
+        }
+        const task = await TaskDTO.to(taskDTO, this._workspaceProvider, this._providedCustomExecutions2);
+        if (!task) {
+            throw new Error('Unexpected: Task cannot be resolved.');
+        }
+        const resolvedTask = await handler.provider.resolveTask(task, CancellationToken.None);
+        if (!resolvedTask) {
+            return;
+        }
+        this.checkDeprecation(resolvedTask, handler);
+        const resolvedTaskDTO = TaskDTO.from(resolvedTask, handler.extension);
+        if (!resolvedTaskDTO) {
+            throw new Error('Unexpected: Task cannot be resolved.');
+        }
+        if (resolvedTask.definition !== task.definition) {
+            throw new Error('Unexpected: The resolved task definition must be the same object as the original task definition. The task definition cannot be changed.');
+        }
+        if (CustomExecutionDTO.is(resolvedTaskDTO.execution)) {
+            await this.addCustomExecution(resolvedTaskDTO, resolvedTask, true);
+        }
+        return await this.resolveTaskInternal(resolvedTaskDTO);
+    }
+    nextHandle() {
+        return this._handleCounter++;
+    }
+    async addCustomExecution(taskDTO, task, isProvided) {
+        const taskId = await this._proxy.$createTaskId(taskDTO);
+        if (!isProvided && !this._providedCustomExecutions2.has(taskId)) {
+            this._notProvidedCustomExecutions.add(taskId);
+            this._activeCustomExecutions2.set(taskId, task.execution);
+        }
+        this._providedCustomExecutions2.set(taskId, task.execution);
+    }
+    async getTaskExecution(execution, task) {
+        if (typeof execution === 'string') {
+            const taskExecution = this._taskExecutionPromises.get(execution);
+            if (!taskExecution) {
+                throw new ErrorNoTelemetry('Unexpected: The specified task is missing an execution');
+            }
+            return taskExecution;
+        }
+        const result = this._taskExecutionPromises.get(execution.id);
+        if (result) {
+            return result;
+        }
+        let executionPromise;
+        if (!task) {
+            executionPromise = TaskDTO.to(execution.task, this._workspaceProvider, this._providedCustomExecutions2).then(t => {
+                if (!t) {
+                    throw new ErrorNoTelemetry('Unexpected: Task does not exist.');
+                }
+                return new TaskExecutionImpl(this, execution.id, t);
+            });
+        }
+        else {
+            executionPromise = Promise.resolve(new TaskExecutionImpl(this, execution.id, task));
+        }
+        this._taskExecutionPromises.set(execution.id, executionPromise);
+        return executionPromise.then(taskExecution => {
+            this._taskExecutions.set(execution.id, taskExecution);
+            return taskExecution;
+        });
+    }
+    checkDeprecation(task, handler) {
+        const tTask = task;
+        if (tTask._deprecated) {
+            this._deprecationService.report('Task.constructor', handler.extension, 'Use the Task constructor that takes a `scope` instead.');
+        }
+    }
+    customExecutionComplete(execution) {
+        const extensionCallback2 = this._activeCustomExecutions2.get(execution.id);
+        if (extensionCallback2) {
+            this._activeCustomExecutions2.delete(execution.id);
+        }
+        if (this._notProvidedCustomExecutions.has(execution.id) && (this._lastStartedTask !== execution.id)) {
+            this._providedCustomExecutions2.delete(execution.id);
+            this._notProvidedCustomExecutions.delete(execution.id);
+        }
+        const iterator = this._notProvidedCustomExecutions.values();
+        let iteratorResult = iterator.next();
+        while (!iteratorResult.done) {
+            if (!this._activeCustomExecutions2.has(iteratorResult.value) && (this._lastStartedTask !== iteratorResult.value)) {
+                this._providedCustomExecutions2.delete(iteratorResult.value);
+                this._notProvidedCustomExecutions.delete(iteratorResult.value);
+            }
+            iteratorResult = iterator.next();
+        }
+    }
+};
+ExtHostTaskBase = __decorate([
+    __param(0, IExtHostRpcService),
+    __param(1, IExtHostInitDataService),
+    __param(2, IExtHostWorkspace),
+    __param(3, IExtHostDocumentsAndEditors),
+    __param(4, IExtHostConfiguration),
+    __param(5, IExtHostTerminalService),
+    __param(6, ILogService),
+    __param(7, IExtHostApiDeprecationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], ExtHostTaskBase);
+export { ExtHostTaskBase };
+let WorkerExtHostTask = class WorkerExtHostTask extends ExtHostTaskBase {
+    constructor(extHostRpc, initData, workspaceService, editorService, configurationService, extHostTerminalService, logService, deprecationService) {
+        super(extHostRpc, initData, workspaceService, editorService, configurationService, extHostTerminalService, logService, deprecationService);
+        this.registerTaskSystem(Schemas.vscodeRemote, {
+            scheme: Schemas.vscodeRemote,
+            authority: '',
+            platform: Platform.PlatformToString(0)
+        });
+    }
+    async executeTask(extension, task) {
+        if (!task.execution) {
+            throw new Error('Tasks to execute must include an execution');
+        }
+        const dto = TaskDTO.from(task, extension);
+        if (dto === undefined) {
+            throw new Error('Task is not valid');
+        }
+        if (CustomExecutionDTO.is(dto.execution)) {
+            await this.addCustomExecution(dto, task, false);
+        }
+        else {
+            throw new NotSupportedError();
+        }
+        const execution = await this.getTaskExecution(await this._proxy.$getTaskExecution(dto), task);
+        this._proxy.$executeTask(dto).catch(error => { throw new Error(error); });
+        return execution;
+    }
+    provideTasksInternal(validTypes, taskIdPromises, handler, value) {
+        const taskDTOs = [];
+        if (value) {
+            for (const task of value) {
+                this.checkDeprecation(task, handler);
+                if (!task.definition || !validTypes[task.definition.type]) {
+                    const source = task.source ? task.source : 'No task source';
+                    this._logService.warn(`The task [${source}, ${task.name}] uses an undefined task type. The task will be ignored in the future.`);
+                }
+                const taskDTO = TaskDTO.from(task, handler.extension);
+                if (taskDTO && CustomExecutionDTO.is(taskDTO.execution)) {
+                    taskDTOs.push(taskDTO);
+                    taskIdPromises.push(this.addCustomExecution(taskDTO, task, true));
+                }
+                else {
+                    this._logService.warn('Only custom execution tasks supported.');
+                }
+            }
+        }
+        return {
+            tasks: taskDTOs,
+            extension: handler.extension
+        };
+    }
+    async resolveTaskInternal(resolvedTaskDTO) {
+        if (CustomExecutionDTO.is(resolvedTaskDTO.execution)) {
+            return resolvedTaskDTO;
+        }
+        else {
+            this._logService.warn('Only custom execution tasks supported.');
+        }
+        return undefined;
+    }
+    async $resolveVariables(uriComponents, toResolve) {
+        const result = {
+            process: undefined,
+            variables: Object.create(null)
+        };
+        return result;
+    }
+    async $jsonTasksSupported() {
+        return false;
+    }
+    async $findExecutable(command, cwd, paths) {
+        return undefined;
+    }
+};
+WorkerExtHostTask = __decorate([
+    __param(0, IExtHostRpcService),
+    __param(1, IExtHostInitDataService),
+    __param(2, IExtHostWorkspace),
+    __param(3, IExtHostDocumentsAndEditors),
+    __param(4, IExtHostConfiguration),
+    __param(5, IExtHostTerminalService),
+    __param(6, ILogService),
+    __param(7, IExtHostApiDeprecationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], WorkerExtHostTask);
+export { WorkerExtHostTask };
+export const IExtHostTask = createDecorator('IExtHostTask');

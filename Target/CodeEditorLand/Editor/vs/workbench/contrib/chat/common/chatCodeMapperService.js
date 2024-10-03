@@ -1,1 +1,142 @@
-import"../../../../base/common/cancellation.js";import{CharCode as u}from"../../../../base/common/charCode.js";import"../../../../base/common/lifecycle.js";import{ResourceMap as C}from"../../../../base/common/map.js";import{splitLinesIncludeSeparators as m}from"../../../../base/common/strings.js";import{isString as I}from"../../../../base/common/types.js";import{URI as R}from"../../../../base/common/uri.js";import{isLocation as g}from"../../../../editor/common/languages.js";import{createDecorator as M}from"../../../../platform/instantiation/common/instantiation.js";import"./chatAgents.js";import"./chatModel.js";import"./chatService.js";const z=M("codeMapperService");class G{_serviceBrand;providers=[];registerCodeMapperProvider(r,o){return this.providers.push(o),{dispose:()=>{const e=this.providers.indexOf(o);e>=0&&this.providers.splice(e,1)}}}async mapCode(r,o,e){for(const n of this.providers){const s=await n.mapCode(r,o,e);if(s)return s}}async mapCodeFromResponse(r,o,e){const n=/^`{3,}/,s=[],c=[],l=[];let d,p;for(const i of v(r))if(I(i)){const t=i.match(n);t?p!==void 0&&t[0]===p?(p=void 0,d&&(s.push({code:c.join(""),resource:d,markdownBeforeBlock:l.join("")}),c.length=0,l.length=0,d=void 0)):p=t[0]:p!==void 0?c.push(i):l.push(i)}else d=i;const f=[];for(const i of r.session.getRequests()){const t=i.response;if(!t||t===r)break;f.push({type:"request",message:i.message.text}),f.push({type:"response",message:t.response.toMarkdown(),result:t.result,references:k(t.contentReferences)})}return this.mapCode({codeBlocks:s,conversation:f},o,e)}}function v(a){return{*[Symbol.iterator](){let r;for(const o of a.response.value)if(o.kind==="markdownContent"||o.kind==="markdownVuln"){const e=m(o.content.value);if(e.length>0){r!==void 0&&(e[0]=r+e[0]),r=h(e[e.length-1])?e.pop():void 0;for(const n of e)yield n}}else o.kind==="codeblockUri"&&(yield o.uri)}}}function h(a){const r=a.charCodeAt(a.length-1);return r!==u.LineFeed&&r!==u.CarriageReturn}function k(a){const r=new C;for(const o of a){let e,n;if(R.isUri(o.reference)?e=o.reference:g(o.reference)&&(e=o.reference.uri,n=o.reference.range),e){const s=r.get(e);s?n&&s.ranges.push(n):r.set(e,{uri:e,version:-1,ranges:n?[n]:[]})}}return[...r.values()]}export{G as CodeMapperService,z as ICodeMapperService,k as getReferencesAsDocumentContext};
+import { ResourceMap } from '../../../../base/common/map.js';
+import { splitLinesIncludeSeparators } from '../../../../base/common/strings.js';
+import { isString } from '../../../../base/common/types.js';
+import { URI } from '../../../../base/common/uri.js';
+import { isLocation } from '../../../../editor/common/languages.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export const ICodeMapperService = createDecorator('codeMapperService');
+export class CodeMapperService {
+    constructor() {
+        this.providers = [];
+    }
+    registerCodeMapperProvider(handle, provider) {
+        this.providers.push(provider);
+        return {
+            dispose: () => {
+                const index = this.providers.indexOf(provider);
+                if (index >= 0) {
+                    this.providers.splice(index, 1);
+                }
+            }
+        };
+    }
+    async mapCode(request, response, token) {
+        for (const provider of this.providers) {
+            const result = await provider.mapCode(request, response, token);
+            if (result) {
+                return result;
+            }
+        }
+        return undefined;
+    }
+    async mapCodeFromResponse(responseModel, response, token) {
+        const fenceLanguageRegex = /^`{3,}/;
+        const codeBlocks = [];
+        const currentBlock = [];
+        const markdownBeforeBlock = [];
+        let currentBlockUri = undefined;
+        let fence = undefined;
+        for (const lineOrUri of iterateLinesOrUris(responseModel)) {
+            if (isString(lineOrUri)) {
+                const fenceLanguageIdMatch = lineOrUri.match(fenceLanguageRegex);
+                if (fenceLanguageIdMatch) {
+                    if (fence !== undefined && fenceLanguageIdMatch[0] === fence) {
+                        fence = undefined;
+                        if (currentBlockUri) {
+                            codeBlocks.push({ code: currentBlock.join(''), resource: currentBlockUri, markdownBeforeBlock: markdownBeforeBlock.join('') });
+                            currentBlock.length = 0;
+                            markdownBeforeBlock.length = 0;
+                            currentBlockUri = undefined;
+                        }
+                    }
+                    else {
+                        fence = fenceLanguageIdMatch[0];
+                    }
+                }
+                else {
+                    if (fence !== undefined) {
+                        currentBlock.push(lineOrUri);
+                    }
+                    else {
+                        markdownBeforeBlock.push(lineOrUri);
+                    }
+                }
+            }
+            else {
+                currentBlockUri = lineOrUri;
+            }
+        }
+        const conversation = [];
+        for (const request of responseModel.session.getRequests()) {
+            const response = request.response;
+            if (!response || response === responseModel) {
+                break;
+            }
+            conversation.push({
+                type: 'request',
+                message: request.message.text
+            });
+            conversation.push({
+                type: 'response',
+                message: response.response.toMarkdown(),
+                result: response.result,
+                references: getReferencesAsDocumentContext(response.contentReferences)
+            });
+        }
+        return this.mapCode({ codeBlocks, conversation }, response, token);
+    }
+}
+function iterateLinesOrUris(responseModel) {
+    return {
+        *[Symbol.iterator]() {
+            let lastIncompleteLine = undefined;
+            for (const part of responseModel.response.value) {
+                if (part.kind === 'markdownContent' || part.kind === 'markdownVuln') {
+                    const lines = splitLinesIncludeSeparators(part.content.value);
+                    if (lines.length > 0) {
+                        if (lastIncompleteLine !== undefined) {
+                            lines[0] = lastIncompleteLine + lines[0];
+                        }
+                        lastIncompleteLine = isLineIncomplete(lines[lines.length - 1]) ? lines.pop() : undefined;
+                        for (const line of lines) {
+                            yield line;
+                        }
+                    }
+                }
+                else if (part.kind === 'codeblockUri') {
+                    yield part.uri;
+                }
+            }
+        }
+    };
+}
+function isLineIncomplete(line) {
+    const lastChar = line.charCodeAt(line.length - 1);
+    return lastChar !== 10 && lastChar !== 13;
+}
+export function getReferencesAsDocumentContext(res) {
+    const map = new ResourceMap();
+    for (const r of res) {
+        let uri;
+        let range;
+        if (URI.isUri(r.reference)) {
+            uri = r.reference;
+        }
+        else if (isLocation(r.reference)) {
+            uri = r.reference.uri;
+            range = r.reference.range;
+        }
+        if (uri) {
+            const item = map.get(uri);
+            if (item) {
+                if (range) {
+                    item.ranges.push(range);
+                }
+            }
+            else {
+                map.set(uri, { uri, version: -1, ranges: range ? [range] : [] });
+            }
+        }
+    }
+    return [...map.values()];
+}

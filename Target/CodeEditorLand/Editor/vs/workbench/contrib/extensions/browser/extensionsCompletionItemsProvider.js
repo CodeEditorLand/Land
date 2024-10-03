@@ -1,7 +1,66 @@
-var h=Object.defineProperty;var k=Object.getOwnPropertyDescriptor;var f=(a,r,i,t)=>{for(var e=t>1?void 0:t?k(r,i):r,o=a.length-1,s;o>=0;o--)(s=a[o])&&(e=(t?s(r,i,e):s(e))||e);return t&&e&&h(r,i,e),e},d=(a,r)=>(i,t)=>r(i,t,a);import{localize as I}from"../../../../nls.js";import"../../../../base/common/cancellation.js";import{getLocation as b,parse as P}from"../../../../base/common/json.js";import{Disposable as y}from"../../../../base/common/lifecycle.js";import"../../../../editor/common/core/position.js";import"../../../../editor/common/model.js";import{CompletionItemKind as x}from"../../../../editor/common/languages.js";import{IExtensionManagementService as T}from"../../../../platform/extensionManagement/common/extensionManagement.js";import"../../../common/contributions.js";import{Range as C}from"../../../../editor/common/core/range.js";import{ILanguageFeaturesService as S}from"../../../../editor/common/services/languageFeatures.js";let u=class extends y{constructor(i,t){super();this.extensionManagementService=i;this._register(t.completionProvider.register({language:"jsonc",pattern:"**/settings.json"},{_debugDisplayName:"extensionsCompletionProvider",provideCompletionItems:async(e,o,s,n)=>{const l=(p,m)=>{const g=p.getWordAtPosition(m);return g?new C(m.lineNumber,g.startColumn,m.lineNumber,g.endColumn):null},c=b(e.getValue(),e.getOffsetAt(o)),v=l(e,o)??C.fromPositions(o,o);if(c.path[0]==="extensions.supportUntrustedWorkspaces"&&c.path.length===2&&c.isAtPropertyKey){let p=[];try{p=Object.keys(P(e.getValue())["extensions.supportUntrustedWorkspaces"])}catch{}return{suggestions:await this.provideSupportUntrustedWorkspacesExtensionProposals(p,v)}}return{suggestions:[]}}}))}async provideSupportUntrustedWorkspacesExtensionProposals(i,t){const e=[],s=(await this.extensionManagementService.getInstalled()).filter(n=>n.manifest.main).filter(n=>i.indexOf(n.identifier.id)===-1);if(s.length)e.push(...s.map(n=>{const l=`"${n.identifier.id}": {
-	"supported": true,
-	"version": "${n.manifest.version}"
-},`;return{label:n.identifier.id,kind:x.Value,insertText:l,filterText:l,range:t}}));else{const n=`"vscode.csharp": {
-	"supported": true,
-	"version": "0.0.0"
-},`;e.push({label:I("exampleExtension","Example"),kind:x.Value,insertText:n,filterText:n,range:t})}return e}};u=f([d(0,T),d(1,S)],u);export{u as ExtensionsCompletionItemsProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { localize } from '../../../../nls.js';
+import { getLocation, parse } from '../../../../base/common/json.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IExtensionManagementService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
+let ExtensionsCompletionItemsProvider = class ExtensionsCompletionItemsProvider extends Disposable {
+    constructor(extensionManagementService, languageFeaturesService) {
+        super();
+        this.extensionManagementService = extensionManagementService;
+        this._register(languageFeaturesService.completionProvider.register({ language: 'jsonc', pattern: '**/settings.json' }, {
+            _debugDisplayName: 'extensionsCompletionProvider',
+            provideCompletionItems: async (model, position, _context, token) => {
+                const getWordRangeAtPosition = (model, position) => {
+                    const wordAtPosition = model.getWordAtPosition(position);
+                    return wordAtPosition ? new Range(position.lineNumber, wordAtPosition.startColumn, position.lineNumber, wordAtPosition.endColumn) : null;
+                };
+                const location = getLocation(model.getValue(), model.getOffsetAt(position));
+                const range = getWordRangeAtPosition(model, position) ?? Range.fromPositions(position, position);
+                if (location.path[0] === 'extensions.supportUntrustedWorkspaces' && location.path.length === 2 && location.isAtPropertyKey) {
+                    let alreadyConfigured = [];
+                    try {
+                        alreadyConfigured = Object.keys(parse(model.getValue())['extensions.supportUntrustedWorkspaces']);
+                    }
+                    catch (e) { }
+                    return { suggestions: await this.provideSupportUntrustedWorkspacesExtensionProposals(alreadyConfigured, range) };
+                }
+                return { suggestions: [] };
+            }
+        }));
+    }
+    async provideSupportUntrustedWorkspacesExtensionProposals(alreadyConfigured, range) {
+        const suggestions = [];
+        const installedExtensions = (await this.extensionManagementService.getInstalled()).filter(e => e.manifest.main);
+        const proposedExtensions = installedExtensions.filter(e => alreadyConfigured.indexOf(e.identifier.id) === -1);
+        if (proposedExtensions.length) {
+            suggestions.push(...proposedExtensions.map(e => {
+                const text = `"${e.identifier.id}": {\n\t"supported": true,\n\t"version": "${e.manifest.version}"\n},`;
+                return { label: e.identifier.id, kind: 13, insertText: text, filterText: text, range };
+            }));
+        }
+        else {
+            const text = '"vscode.csharp": {\n\t"supported": true,\n\t"version": "0.0.0"\n},';
+            suggestions.push({ label: localize('exampleExtension', "Example"), kind: 13, insertText: text, filterText: text, range });
+        }
+        return suggestions;
+    }
+};
+ExtensionsCompletionItemsProvider = __decorate([
+    __param(0, IExtensionManagementService),
+    __param(1, ILanguageFeaturesService),
+    __metadata("design:paramtypes", [Object, Object])
+], ExtensionsCompletionItemsProvider);
+export { ExtensionsCompletionItemsProvider };

@@ -1,1 +1,218 @@
-import"../list/list.js";import{IndexTreeModel as p}from"./indexTreeModel.js";import{ObjectTreeElementCollapseState as d,TreeError as c}from"./tree.js";import"../../../common/event.js";import{Iterable as T}from"../../../common/iterator.js";class P{constructor(t,e={}){this.user=t;this.model=new p(t,null,e),this.onDidSpliceModel=this.model.onDidSpliceModel,this.onDidSpliceRenderedNodes=this.model.onDidSpliceRenderedNodes,this.onDidChangeCollapseState=this.model.onDidChangeCollapseState,this.onDidChangeRenderNodeCount=this.model.onDidChangeRenderNodeCount,e.sorter&&(this.sorter={compare(l,o){return e.sorter.compare(l.element,o.element)}}),this.identityProvider=e.identityProvider}rootRef=null;model;nodes=new Map;nodesByIdentity=new Map;identityProvider;sorter;onDidSpliceModel;onDidSpliceRenderedNodes;onDidChangeCollapseState;onDidChangeRenderNodeCount;get size(){return this.nodes.size}setChildren(t,e=T.empty(),l={}){const o=this.getElementLocation(t);this._setChildren(o,this.preserveCollapseState(e),l)}_setChildren(t,e=T.empty(),l){const o=new Set,n=new Set,r=s=>{if(s.element===null)return;const i=s;if(o.add(i.element),this.nodes.set(i.element,i),this.identityProvider){const a=this.identityProvider.getId(i.element).toString();n.add(a),this.nodesByIdentity.set(a,i)}l.onDidCreateNode?.(i)},h=s=>{if(s.element===null)return;const i=s;if(o.has(i.element)||this.nodes.delete(i.element),this.identityProvider){const a=this.identityProvider.getId(i.element).toString();n.has(a)||this.nodesByIdentity.delete(a)}l.onDidDeleteNode?.(i)};this.model.splice([...t,0],Number.MAX_VALUE,e,{...l,onDidCreateNode:r,onDidDeleteNode:h})}preserveCollapseState(t=T.empty()){return this.sorter&&(t=[...t].sort(this.sorter.compare.bind(this.sorter))),T.map(t,e=>{let l=this.nodes.get(e.element);if(!l&&this.identityProvider){const r=this.identityProvider.getId(e.element).toString();l=this.nodesByIdentity.get(r)}if(!l){let r;return typeof e.collapsed>"u"?r=void 0:e.collapsed===d.Collapsed||e.collapsed===d.PreserveOrCollapsed?r=!0:e.collapsed===d.Expanded||e.collapsed===d.PreserveOrExpanded?r=!1:r=!!e.collapsed,{...e,children:this.preserveCollapseState(e.children),collapsed:r}}const o=typeof e.collapsible=="boolean"?e.collapsible:l.collapsible;let n;return typeof e.collapsed>"u"||e.collapsed===d.PreserveOrCollapsed||e.collapsed===d.PreserveOrExpanded?n=l.collapsed:e.collapsed===d.Collapsed?n=!0:e.collapsed===d.Expanded?n=!1:n=!!e.collapsed,{...e,collapsible:o,collapsed:n,children:this.preserveCollapseState(e.children)}})}rerender(t){const e=this.getElementLocation(t);this.model.rerender(e)}resort(t=null,e=!0){if(!this.sorter)return;const l=this.getElementLocation(t),o=this.model.getNode(l);this._setChildren(l,this.resortChildren(o,e),{})}resortChildren(t,e,l=!0){let o=[...t.children];return(e||l)&&(o=o.sort(this.sorter.compare.bind(this.sorter))),T.map(o,n=>({element:n.element,collapsible:n.collapsible,collapsed:n.collapsed,children:this.resortChildren(n,e,!1)}))}getFirstElementChild(t=null){const e=this.getElementLocation(t);return this.model.getFirstElementChild(e)}getLastElementAncestor(t=null){const e=this.getElementLocation(t);return this.model.getLastElementAncestor(e)}has(t){return this.nodes.has(t)}getListIndex(t){const e=this.getElementLocation(t);return this.model.getListIndex(e)}getListRenderCount(t){const e=this.getElementLocation(t);return this.model.getListRenderCount(e)}isCollapsible(t){const e=this.getElementLocation(t);return this.model.isCollapsible(e)}setCollapsible(t,e){const l=this.getElementLocation(t);return this.model.setCollapsible(l,e)}isCollapsed(t){const e=this.getElementLocation(t);return this.model.isCollapsed(e)}setCollapsed(t,e,l){const o=this.getElementLocation(t);return this.model.setCollapsed(o,e,l)}expandTo(t){const e=this.getElementLocation(t);this.model.expandTo(e)}refilter(){this.model.refilter()}getNode(t=null){if(t===null)return this.model.getNode(this.model.rootRef);const e=this.nodes.get(t);if(!e)throw new c(this.user,`Tree element not found: ${t}`);return e}getNodeLocation(t){return t.element}getParentNodeLocation(t){if(t===null)throw new c(this.user,"Invalid getParentNodeLocation call");const e=this.nodes.get(t);if(!e)throw new c(this.user,`Tree element not found: ${t}`);const l=this.model.getNodeLocation(e),o=this.model.getParentNodeLocation(l);return this.model.getNode(o).element}getElementLocation(t){if(t===null)return[];const e=this.nodes.get(t);if(!e)throw new c(this.user,`Tree element not found: ${t}`);return this.model.getNodeLocation(e)}}export{P as ObjectTreeModel};
+import { IndexTreeModel } from './indexTreeModel.js';
+import { ObjectTreeElementCollapseState, TreeError } from './tree.js';
+import { Iterable } from '../../../common/iterator.js';
+export class ObjectTreeModel {
+    get size() { return this.nodes.size; }
+    constructor(user, options = {}) {
+        this.user = user;
+        this.rootRef = null;
+        this.nodes = new Map();
+        this.nodesByIdentity = new Map();
+        this.model = new IndexTreeModel(user, null, options);
+        this.onDidSpliceModel = this.model.onDidSpliceModel;
+        this.onDidSpliceRenderedNodes = this.model.onDidSpliceRenderedNodes;
+        this.onDidChangeCollapseState = this.model.onDidChangeCollapseState;
+        this.onDidChangeRenderNodeCount = this.model.onDidChangeRenderNodeCount;
+        if (options.sorter) {
+            this.sorter = {
+                compare(a, b) {
+                    return options.sorter.compare(a.element, b.element);
+                }
+            };
+        }
+        this.identityProvider = options.identityProvider;
+    }
+    setChildren(element, children = Iterable.empty(), options = {}) {
+        const location = this.getElementLocation(element);
+        this._setChildren(location, this.preserveCollapseState(children), options);
+    }
+    _setChildren(location, children = Iterable.empty(), options) {
+        const insertedElements = new Set();
+        const insertedElementIds = new Set();
+        const onDidCreateNode = (node) => {
+            if (node.element === null) {
+                return;
+            }
+            const tnode = node;
+            insertedElements.add(tnode.element);
+            this.nodes.set(tnode.element, tnode);
+            if (this.identityProvider) {
+                const id = this.identityProvider.getId(tnode.element).toString();
+                insertedElementIds.add(id);
+                this.nodesByIdentity.set(id, tnode);
+            }
+            options.onDidCreateNode?.(tnode);
+        };
+        const onDidDeleteNode = (node) => {
+            if (node.element === null) {
+                return;
+            }
+            const tnode = node;
+            if (!insertedElements.has(tnode.element)) {
+                this.nodes.delete(tnode.element);
+            }
+            if (this.identityProvider) {
+                const id = this.identityProvider.getId(tnode.element).toString();
+                if (!insertedElementIds.has(id)) {
+                    this.nodesByIdentity.delete(id);
+                }
+            }
+            options.onDidDeleteNode?.(tnode);
+        };
+        this.model.splice([...location, 0], Number.MAX_VALUE, children, { ...options, onDidCreateNode, onDidDeleteNode });
+    }
+    preserveCollapseState(elements = Iterable.empty()) {
+        if (this.sorter) {
+            elements = [...elements].sort(this.sorter.compare.bind(this.sorter));
+        }
+        return Iterable.map(elements, treeElement => {
+            let node = this.nodes.get(treeElement.element);
+            if (!node && this.identityProvider) {
+                const id = this.identityProvider.getId(treeElement.element).toString();
+                node = this.nodesByIdentity.get(id);
+            }
+            if (!node) {
+                let collapsed;
+                if (typeof treeElement.collapsed === 'undefined') {
+                    collapsed = undefined;
+                }
+                else if (treeElement.collapsed === ObjectTreeElementCollapseState.Collapsed || treeElement.collapsed === ObjectTreeElementCollapseState.PreserveOrCollapsed) {
+                    collapsed = true;
+                }
+                else if (treeElement.collapsed === ObjectTreeElementCollapseState.Expanded || treeElement.collapsed === ObjectTreeElementCollapseState.PreserveOrExpanded) {
+                    collapsed = false;
+                }
+                else {
+                    collapsed = Boolean(treeElement.collapsed);
+                }
+                return {
+                    ...treeElement,
+                    children: this.preserveCollapseState(treeElement.children),
+                    collapsed
+                };
+            }
+            const collapsible = typeof treeElement.collapsible === 'boolean' ? treeElement.collapsible : node.collapsible;
+            let collapsed;
+            if (typeof treeElement.collapsed === 'undefined' || treeElement.collapsed === ObjectTreeElementCollapseState.PreserveOrCollapsed || treeElement.collapsed === ObjectTreeElementCollapseState.PreserveOrExpanded) {
+                collapsed = node.collapsed;
+            }
+            else if (treeElement.collapsed === ObjectTreeElementCollapseState.Collapsed) {
+                collapsed = true;
+            }
+            else if (treeElement.collapsed === ObjectTreeElementCollapseState.Expanded) {
+                collapsed = false;
+            }
+            else {
+                collapsed = Boolean(treeElement.collapsed);
+            }
+            return {
+                ...treeElement,
+                collapsible,
+                collapsed,
+                children: this.preserveCollapseState(treeElement.children)
+            };
+        });
+    }
+    rerender(element) {
+        const location = this.getElementLocation(element);
+        this.model.rerender(location);
+    }
+    resort(element = null, recursive = true) {
+        if (!this.sorter) {
+            return;
+        }
+        const location = this.getElementLocation(element);
+        const node = this.model.getNode(location);
+        this._setChildren(location, this.resortChildren(node, recursive), {});
+    }
+    resortChildren(node, recursive, first = true) {
+        let childrenNodes = [...node.children];
+        if (recursive || first) {
+            childrenNodes = childrenNodes.sort(this.sorter.compare.bind(this.sorter));
+        }
+        return Iterable.map(childrenNodes, node => ({
+            element: node.element,
+            collapsible: node.collapsible,
+            collapsed: node.collapsed,
+            children: this.resortChildren(node, recursive, false)
+        }));
+    }
+    getFirstElementChild(ref = null) {
+        const location = this.getElementLocation(ref);
+        return this.model.getFirstElementChild(location);
+    }
+    getLastElementAncestor(ref = null) {
+        const location = this.getElementLocation(ref);
+        return this.model.getLastElementAncestor(location);
+    }
+    has(element) {
+        return this.nodes.has(element);
+    }
+    getListIndex(element) {
+        const location = this.getElementLocation(element);
+        return this.model.getListIndex(location);
+    }
+    getListRenderCount(element) {
+        const location = this.getElementLocation(element);
+        return this.model.getListRenderCount(location);
+    }
+    isCollapsible(element) {
+        const location = this.getElementLocation(element);
+        return this.model.isCollapsible(location);
+    }
+    setCollapsible(element, collapsible) {
+        const location = this.getElementLocation(element);
+        return this.model.setCollapsible(location, collapsible);
+    }
+    isCollapsed(element) {
+        const location = this.getElementLocation(element);
+        return this.model.isCollapsed(location);
+    }
+    setCollapsed(element, collapsed, recursive) {
+        const location = this.getElementLocation(element);
+        return this.model.setCollapsed(location, collapsed, recursive);
+    }
+    expandTo(element) {
+        const location = this.getElementLocation(element);
+        this.model.expandTo(location);
+    }
+    refilter() {
+        this.model.refilter();
+    }
+    getNode(element = null) {
+        if (element === null) {
+            return this.model.getNode(this.model.rootRef);
+        }
+        const node = this.nodes.get(element);
+        if (!node) {
+            throw new TreeError(this.user, `Tree element not found: ${element}`);
+        }
+        return node;
+    }
+    getNodeLocation(node) {
+        return node.element;
+    }
+    getParentNodeLocation(element) {
+        if (element === null) {
+            throw new TreeError(this.user, `Invalid getParentNodeLocation call`);
+        }
+        const node = this.nodes.get(element);
+        if (!node) {
+            throw new TreeError(this.user, `Tree element not found: ${element}`);
+        }
+        const location = this.model.getNodeLocation(node);
+        const parentLocation = this.model.getParentNodeLocation(location);
+        const parent = this.model.getNode(parentLocation);
+        return parent.element;
+    }
+    getElementLocation(element) {
+        if (element === null) {
+            return [];
+        }
+        const node = this.nodes.get(element);
+        if (!node) {
+            throw new TreeError(this.user, `Tree element not found: ${element}`);
+        }
+        return this.model.getNodeLocation(node);
+    }
+}

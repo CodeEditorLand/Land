@@ -1,1 +1,46 @@
-import*as t from"../../../../nls.js";import"../../../../platform/configuration/common/configurationRegistry.js";import{languagesExtPoint as o}from"../../../services/language/common/languageService.js";var e=(n=>(n.when="when",n.title="title",n.command="command",n))(e||{});const i=Object.freeze({type:"object",description:t.localize("contributes.documentation","Contributed documentation."),properties:{refactoring:{type:"array",description:t.localize("contributes.documentation.refactorings","Contributed documentation for refactorings."),items:{type:"object",description:t.localize("contributes.documentation.refactoring","Contributed documentation for refactoring."),required:["title","when","command"],properties:{title:{type:"string",description:t.localize("contributes.documentation.refactoring.title","Label for the documentation used in the UI.")},when:{type:"string",description:t.localize("contributes.documentation.refactoring.when","When clause.")},command:{type:"string",description:t.localize("contributes.documentation.refactoring.command","Command executed.")}}}}}}),s={extensionPoint:"documentation",deps:[o],jsonSchema:i};export{s as documentationExtensionPointDescriptor};
+import * as nls from '../../../../nls.js';
+import { languagesExtPoint } from '../../../services/language/common/languageService.js';
+var DocumentationExtensionPointFields;
+(function (DocumentationExtensionPointFields) {
+    DocumentationExtensionPointFields["when"] = "when";
+    DocumentationExtensionPointFields["title"] = "title";
+    DocumentationExtensionPointFields["command"] = "command";
+})(DocumentationExtensionPointFields || (DocumentationExtensionPointFields = {}));
+const documentationExtensionPointSchema = Object.freeze({
+    type: 'object',
+    description: nls.localize('contributes.documentation', "Contributed documentation."),
+    properties: {
+        'refactoring': {
+            type: 'array',
+            description: nls.localize('contributes.documentation.refactorings', "Contributed documentation for refactorings."),
+            items: {
+                type: 'object',
+                description: nls.localize('contributes.documentation.refactoring', "Contributed documentation for refactoring."),
+                required: [
+                    DocumentationExtensionPointFields.title,
+                    DocumentationExtensionPointFields.when,
+                    DocumentationExtensionPointFields.command
+                ],
+                properties: {
+                    [DocumentationExtensionPointFields.title]: {
+                        type: 'string',
+                        description: nls.localize('contributes.documentation.refactoring.title', "Label for the documentation used in the UI."),
+                    },
+                    [DocumentationExtensionPointFields.when]: {
+                        type: 'string',
+                        description: nls.localize('contributes.documentation.refactoring.when', "When clause."),
+                    },
+                    [DocumentationExtensionPointFields.command]: {
+                        type: 'string',
+                        description: nls.localize('contributes.documentation.refactoring.command', "Command executed."),
+                    },
+                },
+            }
+        }
+    }
+});
+export const documentationExtensionPointDescriptor = {
+    extensionPoint: 'documentation',
+    deps: [languagesExtPoint],
+    jsonSchema: documentationExtensionPointSchema
+};

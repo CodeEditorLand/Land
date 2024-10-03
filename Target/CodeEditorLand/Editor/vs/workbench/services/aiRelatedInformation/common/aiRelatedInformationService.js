@@ -1,1 +1,96 @@
-var v=Object.defineProperty;var I=Object.getOwnPropertyDescriptor;var f=(m,r,t,o)=>{for(var e=o>1?void 0:o?I(r,t):r,i=m.length-1,s;i>=0;i--)(s=m[i])&&(e=(o?s(r,t,e):s(e))||e);return o&&e&&v(r,t,e),e},p=(m,r)=>(t,o)=>r(t,o,m);import"../../../../base/common/cancellation.js";import{createCancelablePromise as u,raceTimeout as R}from"../../../../base/common/async.js";import"../../../../base/common/lifecycle.js";import{InstantiationType as h,registerSingleton as g}from"../../../../platform/instantiation/common/extensions.js";import{StopWatch as y}from"../../../../base/common/stopwatch.js";import{ILogService as T}from"../../../../platform/log/common/log.js";import{IAiRelatedInformationService as P}from"./aiRelatedInformation.js";let a=class{constructor(r){this.logService=r}_serviceBrand;static DEFAULT_TIMEOUT=1e3*10;_providers=new Map;isEnabled(){return this._providers.size>0}registerAiRelatedInformationProvider(r,t){const o=this._providers.get(r)??[];return o.push(t),this._providers.set(r,o),{dispose:()=>{const e=this._providers.get(r)??[],i=e.indexOf(t);i!==-1&&e.splice(i,1),e.length===0&&this._providers.delete(r)}}}async getRelatedInformation(r,t,o){if(this._providers.size===0)throw new Error("No related information providers registered");const e=[];for(const l of t){const d=this._providers.get(l);d&&e.push(...d)}if(e.length===0)throw new Error("No related information providers registered for the given types");const i=y.create(),s=e.map(l=>u(async d=>{try{return(await l.provideAiRelatedInformation(r,d)).filter(c=>t.includes(c.type))}catch{}return[]}));try{const l=await R(Promise.allSettled(s),a.DEFAULT_TIMEOUT,()=>{s.forEach(n=>n.cancel()),this.logService.warn("[AiRelatedInformationService]: Related information provider timed out")});return l?l.filter(n=>n.status==="fulfilled").flatMap(n=>n.value):[]}finally{i.stop(),this.logService.trace(`[AiRelatedInformationService]: getRelatedInformation took ${i.elapsed()}ms`)}}};a=f([p(0,T)],a),g(P,a,h.Delayed);export{a as AiRelatedInformationService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var AiRelatedInformationService_1;
+import { createCancelablePromise, raceTimeout } from '../../../../base/common/async.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { StopWatch } from '../../../../base/common/stopwatch.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IAiRelatedInformationService } from './aiRelatedInformation.js';
+let AiRelatedInformationService = class AiRelatedInformationService {
+    static { AiRelatedInformationService_1 = this; }
+    static { this.DEFAULT_TIMEOUT = 1000 * 10; }
+    constructor(logService) {
+        this.logService = logService;
+        this._providers = new Map();
+    }
+    isEnabled() {
+        return this._providers.size > 0;
+    }
+    registerAiRelatedInformationProvider(type, provider) {
+        const providers = this._providers.get(type) ?? [];
+        providers.push(provider);
+        this._providers.set(type, providers);
+        return {
+            dispose: () => {
+                const providers = this._providers.get(type) ?? [];
+                const index = providers.indexOf(provider);
+                if (index !== -1) {
+                    providers.splice(index, 1);
+                }
+                if (providers.length === 0) {
+                    this._providers.delete(type);
+                }
+            }
+        };
+    }
+    async getRelatedInformation(query, types, token) {
+        if (this._providers.size === 0) {
+            throw new Error('No related information providers registered');
+        }
+        const providers = [];
+        for (const type of types) {
+            const typeProviders = this._providers.get(type);
+            if (typeProviders) {
+                providers.push(...typeProviders);
+            }
+        }
+        if (providers.length === 0) {
+            throw new Error('No related information providers registered for the given types');
+        }
+        const stopwatch = StopWatch.create();
+        const cancellablePromises = providers.map((provider) => {
+            return createCancelablePromise(async (t) => {
+                try {
+                    const result = await provider.provideAiRelatedInformation(query, t);
+                    return result.filter(r => types.includes(r.type));
+                }
+                catch (e) {
+                }
+                return [];
+            });
+        });
+        try {
+            const results = await raceTimeout(Promise.allSettled(cancellablePromises), AiRelatedInformationService_1.DEFAULT_TIMEOUT, () => {
+                cancellablePromises.forEach(p => p.cancel());
+                this.logService.warn('[AiRelatedInformationService]: Related information provider timed out');
+            });
+            if (!results) {
+                return [];
+            }
+            const result = results
+                .filter(r => r.status === 'fulfilled')
+                .flatMap(r => r.value);
+            return result;
+        }
+        finally {
+            stopwatch.stop();
+            this.logService.trace(`[AiRelatedInformationService]: getRelatedInformation took ${stopwatch.elapsed()}ms`);
+        }
+    }
+};
+AiRelatedInformationService = AiRelatedInformationService_1 = __decorate([
+    __param(0, ILogService),
+    __metadata("design:paramtypes", [Object])
+], AiRelatedInformationService);
+export { AiRelatedInformationService };
+registerSingleton(IAiRelatedInformationService, AiRelatedInformationService, 1);

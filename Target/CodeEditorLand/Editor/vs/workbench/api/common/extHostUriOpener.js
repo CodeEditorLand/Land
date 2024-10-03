@@ -1,1 +1,43 @@
-import"../../../base/common/cancellation.js";import{toDisposable as h}from"../../../base/common/lifecycle.js";import{Schemas as s}from"../../../base/common/network.js";import{URI as i}from"../../../base/common/uri.js";import"../../../editor/common/languages.js";import"../../../platform/extensions/common/extensions.js";import{MainContext as c}from"./extHost.protocol.js";class p{static supportedSchemes=new Set([s.http,s.https]);_proxy;_openers=new Map;constructor(r){this._proxy=r.getProxy(c.MainThreadUriOpeners)}registerExternalUriOpener(r,e,o,n){if(this._openers.has(e))throw new Error(`Opener with id '${e}' already registered`);const t=n.schemes.find(a=>!p.supportedSchemes.has(a));if(t)throw new Error(`Scheme '${t}' is not supported. Only http and https are currently supported.`);return this._openers.set(e,o),this._proxy.$registerUriOpener(e,n.schemes,r,n.label),h(()=>{this._openers.delete(e),this._proxy.$unregisterUriOpener(e)})}async $canOpenUri(r,e,o){const n=this._openers.get(r);if(!n)throw new Error(`Unknown opener with id: ${r}`);const t=i.revive(e);return n.canOpenExternalUri(t,o)}async $openUri(r,e,o){const n=this._openers.get(r);if(!n)throw new Error(`Unknown opener id: '${r}'`);return n.openExternalUri(i.revive(e.resolvedUri),{sourceUri:i.revive(e.sourceUri)},o)}}export{p as ExtHostUriOpeners};
+import { toDisposable } from '../../../base/common/lifecycle.js';
+import { Schemas } from '../../../base/common/network.js';
+import { URI } from '../../../base/common/uri.js';
+import { MainContext } from './extHost.protocol.js';
+export class ExtHostUriOpeners {
+    static { this.supportedSchemes = new Set([Schemas.http, Schemas.https]); }
+    constructor(mainContext) {
+        this._openers = new Map();
+        this._proxy = mainContext.getProxy(MainContext.MainThreadUriOpeners);
+    }
+    registerExternalUriOpener(extensionId, id, opener, metadata) {
+        if (this._openers.has(id)) {
+            throw new Error(`Opener with id '${id}' already registered`);
+        }
+        const invalidScheme = metadata.schemes.find(scheme => !ExtHostUriOpeners.supportedSchemes.has(scheme));
+        if (invalidScheme) {
+            throw new Error(`Scheme '${invalidScheme}' is not supported. Only http and https are currently supported.`);
+        }
+        this._openers.set(id, opener);
+        this._proxy.$registerUriOpener(id, metadata.schemes, extensionId, metadata.label);
+        return toDisposable(() => {
+            this._openers.delete(id);
+            this._proxy.$unregisterUriOpener(id);
+        });
+    }
+    async $canOpenUri(id, uriComponents, token) {
+        const opener = this._openers.get(id);
+        if (!opener) {
+            throw new Error(`Unknown opener with id: ${id}`);
+        }
+        const uri = URI.revive(uriComponents);
+        return opener.canOpenExternalUri(uri, token);
+    }
+    async $openUri(id, context, token) {
+        const opener = this._openers.get(id);
+        if (!opener) {
+            throw new Error(`Unknown opener id: '${id}'`);
+        }
+        return opener.openExternalUri(URI.revive(context.resolvedUri), {
+            sourceUri: URI.revive(context.sourceUri)
+        }, token);
+    }
+}

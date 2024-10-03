@@ -1,1 +1,1052 @@
-var F=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var S=(y,c,e,i)=>{for(var t=i>1?void 0:i?w(c,e):c,r=y.length-1,o;r>=0;r--)(o=y[r])&&(t=(i?o(c,e,t):o(t))||t);return i&&t&&F(c,e,t),t},D=(y,c)=>(e,i)=>c(e,i,y);import"../../../base/common/buffer.js";import"../../../base/common/cancellation.js";import{createStringDataTransferItem as H,VSDataTransfer as W}from"../../../base/common/dataTransfer.js";import{CancellationError as O}from"../../../base/common/errors.js";import{Emitter as v}from"../../../base/common/event.js";import{HierarchicalKind as f}from"../../../base/common/hierarchicalKind.js";import{combinedDisposable as k,Disposable as A,DisposableMap as M,toDisposable as T}from"../../../base/common/lifecycle.js";import{ResourceMap as N}from"../../../base/common/map.js";import{revive as $}from"../../../base/common/marshalling.js";import{mixin as V}from"../../../base/common/objects.js";import{URI as h}from"../../../base/common/uri.js";import"../../../editor/common/core/editOperation.js";import"../../../editor/common/core/position.js";import"../../../editor/common/core/range.js";import"../../../editor/common/core/selection.js";import*as K from"../../../editor/common/languages.js";import{ILanguageService as q}from"../../../editor/common/languages/language.js";import"../../../editor/common/languages/languageConfiguration.js";import{ILanguageConfigurationService as U}from"../../../editor/common/languages/languageConfigurationRegistry.js";import"../../../editor/common/model.js";import{ILanguageFeaturesService as j}from"../../../editor/common/services/languageFeatures.js";import{decodeSemanticTokensDto as R}from"../../../editor/common/services/semanticTokensDto.js";import"../../../platform/extensions/common/extensions.js";import{IUriIdentityService as C}from"../../../platform/uriIdentity/common/uriIdentity.js";import{reviveWorkspaceEditDto as I}from"./mainThreadBulkEdits.js";import*as b from"../common/extHostTypeConverters.js";import{DataTransferFileCache as L}from"../common/shared/dataTransferCache.js";import*as B from"../../contrib/callHierarchy/common/callHierarchy.js";import*as z from"../../contrib/search/common/search.js";import*as G from"../../contrib/typeHierarchy/common/typeHierarchy.js";import{extHostNamedCustomer as J}from"../../services/extensions/common/extHostCustomers.js";import{ExtHostContext as Q,ISuggestDataDtoField as m,ISuggestResultDtoField as x,MainContext as X}from"../common/extHost.protocol.js";let l=class extends A{constructor(e,i,t,r,o){super();this._languageService=i;this._languageConfigurationService=t;this._languageFeaturesService=r;this._uriIdentService=o;if(this._proxy=e.getProxy(Q.ExtHostLanguageFeatures),this._languageService){const s=()=>{const n=[];for(const a of i.getRegisteredLanguageIds()){const d=this._languageConfigurationService.getLanguageConfiguration(a).getWordDefinition();n.push({languageId:a,regexSource:d.source,regexFlags:d.flags})}this._proxy.$setWordDefinitions(n)};this._register(this._languageConfigurationService.onDidChange(n=>{if(!n.languageId)s();else{const a=this._languageConfigurationService.getLanguageConfiguration(n.languageId).getWordDefinition();this._proxy.$setWordDefinitions([{languageId:n.languageId,regexSource:a.source,regexFlags:a.flags}])}})),s()}}_proxy;_registrations=this._register(new M);$unregister(e){this._registrations.deleteAndDispose(e)}static _reviveLocationDto(e){return e&&(Array.isArray(e)?(e.forEach(i=>l._reviveLocationDto(i)),e):(e.uri=h.revive(e.uri),e))}static _reviveLocationLinkDto(e){return e&&(Array.isArray(e)?(e.forEach(i=>l._reviveLocationLinkDto(i)),e):(e.uri=h.revive(e.uri),e))}static _reviveWorkspaceSymbolDto(e){return e&&(Array.isArray(e)?(e.forEach(l._reviveWorkspaceSymbolDto),e):(e.location=l._reviveLocationDto(e.location),e))}static _reviveCodeActionDto(e,i){return e?.forEach(t=>I(t.edit,i)),e}static _reviveLinkDTO(e){return e.url&&typeof e.url!="string"&&(e.url=h.revive(e.url)),e}static _reviveCallHierarchyItemDto(e){return e&&(e.uri=h.revive(e.uri)),e}static _reviveTypeHierarchyItemDto(e){return e&&(e.uri=h.revive(e.uri)),e}$registerDocumentSymbolProvider(e,i,t){this._registrations.set(e,this._languageFeaturesService.documentSymbolProvider.register(i,{displayName:t,provideDocumentSymbols:(r,o)=>this._proxy.$provideDocumentSymbols(e,r.uri,o)}))}$registerCodeLensSupport(e,i,t){const r={provideCodeLenses:async(o,s)=>{const n=await this._proxy.$provideCodeLenses(e,o.uri,s);if(n)return{lenses:n.lenses,dispose:()=>n.cacheId&&this._proxy.$releaseCodeLenses(e,n.cacheId)}},resolveCodeLens:async(o,s,n)=>{const a=await this._proxy.$resolveCodeLens(e,s,n);if(a)return{...a,range:o.validateRange(a.range)}}};if(typeof t=="number"){const o=new v;this._registrations.set(t,o),r.onDidChange=o.event}this._registrations.set(e,this._languageFeaturesService.codeLensProvider.register(i,r))}$emitCodeLensEvent(e,i){const t=this._registrations.get(e);t instanceof v&&t.fire(i)}$registerDefinitionSupport(e,i){this._registrations.set(e,this._languageFeaturesService.definitionProvider.register(i,{provideDefinition:(t,r,o)=>this._proxy.$provideDefinition(e,t.uri,r,o).then(l._reviveLocationLinkDto)}))}$registerDeclarationSupport(e,i){this._registrations.set(e,this._languageFeaturesService.declarationProvider.register(i,{provideDeclaration:(t,r,o)=>this._proxy.$provideDeclaration(e,t.uri,r,o).then(l._reviveLocationLinkDto)}))}$registerImplementationSupport(e,i){this._registrations.set(e,this._languageFeaturesService.implementationProvider.register(i,{provideImplementation:(t,r,o)=>this._proxy.$provideImplementation(e,t.uri,r,o).then(l._reviveLocationLinkDto)}))}$registerTypeDefinitionSupport(e,i){this._registrations.set(e,this._languageFeaturesService.typeDefinitionProvider.register(i,{provideTypeDefinition:(t,r,o)=>this._proxy.$provideTypeDefinition(e,t.uri,r,o).then(l._reviveLocationLinkDto)}))}$registerHoverProvider(e,i){this._registrations.set(e,this._languageFeaturesService.hoverProvider.register(i,{provideHover:async(t,r,o,s)=>{const n={verbosityRequest:s?.verbosityRequest?{verbosityDelta:s.verbosityRequest.verbosityDelta,previousHover:{id:s.verbosityRequest.previousHover.id}}:void 0};return await this._proxy.$provideHover(e,t.uri,r,n,o)}}))}$registerEvaluatableExpressionProvider(e,i){this._registrations.set(e,this._languageFeaturesService.evaluatableExpressionProvider.register(i,{provideEvaluatableExpression:(t,r,o)=>this._proxy.$provideEvaluatableExpression(e,t.uri,r,o)}))}$registerInlineValuesProvider(e,i,t){const r={provideInlineValues:(o,s,n,a)=>this._proxy.$provideInlineValues(e,o.uri,s,n,a)};if(typeof t=="number"){const o=new v;this._registrations.set(t,o),r.onDidChangeInlineValues=o.event}this._registrations.set(e,this._languageFeaturesService.inlineValuesProvider.register(i,r))}$emitInlineValuesEvent(e,i){const t=this._registrations.get(e);t instanceof v&&t.fire(i)}$registerDocumentHighlightProvider(e,i){this._registrations.set(e,this._languageFeaturesService.documentHighlightProvider.register(i,{provideDocumentHighlights:(t,r,o)=>this._proxy.$provideDocumentHighlights(e,t.uri,r,o)}))}$registerMultiDocumentHighlightProvider(e,i){this._registrations.set(e,this._languageFeaturesService.multiDocumentHighlightProvider.register(i,{selector:i,provideMultiDocumentHighlights:(t,r,o,s)=>this._proxy.$provideMultiDocumentHighlights(e,t.uri,r,o.map(n=>n.uri),s).then(n=>{if(n==null)return;const a=new N;return n?.forEach(d=>{const u=h.revive(d.uri);a.has(u)?a.get(u).push(...d.highlights):a.set(u,d.highlights)}),a})}))}$registerLinkedEditingRangeProvider(e,i){this._registrations.set(e,this._languageFeaturesService.linkedEditingRangeProvider.register(i,{provideLinkedEditingRanges:async(t,r,o)=>{const s=await this._proxy.$provideLinkedEditingRanges(e,t.uri,r,o);if(s)return{ranges:s.ranges,wordPattern:s.wordPattern?l._reviveRegExp(s.wordPattern):void 0}}}))}$registerReferenceSupport(e,i){this._registrations.set(e,this._languageFeaturesService.referenceProvider.register(i,{provideReferences:(t,r,o,s)=>this._proxy.$provideReferences(e,t.uri,r,o,s).then(l._reviveLocationDto)}))}$registerCodeActionSupport(e,i,t,r,o,s){const n={provideCodeActions:async(a,d,u,g)=>{const p=await this._proxy.$provideCodeActions(e,a.uri,d,u,g);if(p)return{actions:l._reviveCodeActionDto(p.actions,this._uriIdentService),dispose:()=>{typeof p.cacheId=="number"&&this._proxy.$releaseCodeActions(e,p.cacheId)}}},providedCodeActionKinds:t.providedKinds,documentation:t.documentation,displayName:r,extensionId:o};s&&(n.resolveCodeAction=async(a,d)=>{const u=await this._proxy.$resolveCodeAction(e,a.cacheId,d);return u.edit&&(a.edit=I(u.edit,this._uriIdentService)),u.command&&(a.command=u.command),a}),this._registrations.set(e,this._languageFeaturesService.codeActionProvider.register(i,n))}_pasteEditProviders=new Map;$registerPasteEditProvider(e,i,t){const r=new _(e,this._proxy,t,this._uriIdentService);this._pasteEditProviders.set(e,r),this._registrations.set(e,k(this._languageFeaturesService.documentPasteEditProvider.register(i,r),T(()=>this._pasteEditProviders.delete(e))))}$resolvePasteFileData(e,i,t){const r=this._pasteEditProviders.get(e);if(!r)throw new Error("Could not find provider");return r.resolveFileData(i,t)}$registerDocumentFormattingSupport(e,i,t,r){this._registrations.set(e,this._languageFeaturesService.documentFormattingEditProvider.register(i,{extensionId:t,displayName:r,provideDocumentFormattingEdits:(o,s,n)=>this._proxy.$provideDocumentFormattingEdits(e,o.uri,s,n)}))}$registerRangeFormattingSupport(e,i,t,r,o){this._registrations.set(e,this._languageFeaturesService.documentRangeFormattingEditProvider.register(i,{extensionId:t,displayName:r,provideDocumentRangeFormattingEdits:(s,n,a,d)=>this._proxy.$provideDocumentRangeFormattingEdits(e,s.uri,n,a,d),provideDocumentRangesFormattingEdits:o?(s,n,a,d)=>this._proxy.$provideDocumentRangesFormattingEdits(e,s.uri,n,a,d):void 0}))}$registerOnTypeFormattingSupport(e,i,t,r){this._registrations.set(e,this._languageFeaturesService.onTypeFormattingEditProvider.register(i,{extensionId:r,autoFormatTriggerCharacters:t,provideOnTypeFormattingEdits:(o,s,n,a,d)=>this._proxy.$provideOnTypeFormattingEdits(e,o.uri,s,n,a,d)}))}$registerNavigateTypeSupport(e,i){let t;const r={provideWorkspaceSymbols:async(o,s)=>{const n=await this._proxy.$provideWorkspaceSymbols(e,o,s);return t!==void 0&&this._proxy.$releaseWorkspaceSymbols(e,t),t=n.cacheId,l._reviveWorkspaceSymbolDto(n.symbols)}};i&&(r.resolveWorkspaceSymbol=async(o,s)=>{const n=await this._proxy.$resolveWorkspaceSymbol(e,o,s);return n&&l._reviveWorkspaceSymbolDto(n)}),this._registrations.set(e,z.WorkspaceSymbolProviderRegistry.register(r))}$registerRenameSupport(e,i,t){this._registrations.set(e,this._languageFeaturesService.renameProvider.register(i,{provideRenameEdits:(r,o,s,n)=>this._proxy.$provideRenameEdits(e,r.uri,o,s,n).then(a=>I(a,this._uriIdentService)),resolveRenameLocation:t?(r,o,s)=>this._proxy.$resolveRenameLocation(e,r.uri,o,s):void 0}))}$registerNewSymbolNamesProvider(e,i){this._registrations.set(e,this._languageFeaturesService.newSymbolNamesProvider.register(i,{supportsAutomaticNewSymbolNamesTriggerKind:this._proxy.$supportsAutomaticNewSymbolNamesTriggerKind(e),provideNewSymbolNames:(t,r,o,s)=>this._proxy.$provideNewSymbolNames(e,t.uri,r,o,s)}))}$registerDocumentSemanticTokensProvider(e,i,t,r){let o;if(typeof r=="number"){const s=new v;this._registrations.set(r,s),o=s.event}this._registrations.set(e,this._languageFeaturesService.documentSemanticTokensProvider.register(i,new Y(this._proxy,e,t,o)))}$emitDocumentSemanticTokensEvent(e){const i=this._registrations.get(e);i instanceof v&&i.fire(void 0)}$registerDocumentRangeSemanticTokensProvider(e,i,t){this._registrations.set(e,this._languageFeaturesService.documentRangeSemanticTokensProvider.register(i,new Z(this._proxy,e,t)))}static _inflateSuggestDto(e,i,t){const r=i[m.label],o=i[m.commandId],s=i[m.commandIdent],n=i[m.commitCharacters];return{label:r,extensionId:t,kind:i[m.kind]??K.CompletionItemKind.Property,tags:i[m.kindModifier],detail:i[m.detail],documentation:i[m.documentation],sortText:i[m.sortText],filterText:i[m.filterText],preselect:i[m.preselect],insertText:i[m.insertText]??(typeof r=="string"?r:r.label),range:i[m.range]??e,insertTextRules:i[m.insertTextRules],commitCharacters:n?Array.from(n):void 0,additionalTextEdits:i[m.additionalTextEdits],command:o?{$ident:s,id:o,title:"",arguments:s?[s]:i[m.commandArguments]}:void 0,_id:i.x}}$registerCompletionsProvider(e,i,t,r,o){const s={triggerCharacters:t,_debugDisplayName:`${o.value}(${t.join("")})`,provideCompletionItems:async(n,a,d,u)=>{const g=await this._proxy.$provideCompletionItems(e,n.uri,a,d,u);return g&&{suggestions:g[x.completions].map(p=>l._inflateSuggestDto(g[x.defaultRanges],p,o)),incomplete:g[x.isIncomplete]||!1,duration:g[x.duration],dispose:()=>{typeof g.x=="number"&&this._proxy.$releaseCompletionItems(e,g.x)}}}};r&&(s.resolveCompletionItem=(n,a)=>this._proxy.$resolveCompletionItem(e,n._id,a).then(d=>{if(!d)return n;const u=l._inflateSuggestDto(n.range,d,o);return V(n,u,!0)})),this._registrations.set(e,this._languageFeaturesService.completionProvider.register(i,s))}$registerInlineCompletionsSupport(e,i,t,r,o){const s={provideInlineCompletions:async(n,a,d,u)=>this._proxy.$provideInlineCompletions(e,n.uri,a,d,u),provideInlineEditsForRange:async(n,a,d,u)=>this._proxy.$provideInlineEditsForRange(e,n.uri,a,d,u),handleItemDidShow:async(n,a,d)=>{t&&await this._proxy.$handleInlineCompletionDidShow(e,n.pid,a.idx,d)},handlePartialAccept:async(n,a,d,u)=>{t&&await this._proxy.$handleInlineCompletionPartialAccept(e,n.pid,a.idx,d,u)},freeInlineCompletions:n=>{this._proxy.$freeInlineCompletionsList(e,n.pid)},groupId:r,yieldsToGroupIds:o,toString(){return`InlineCompletionsProvider(${r})`}};this._registrations.set(e,this._languageFeaturesService.inlineCompletionsProvider.register(i,s))}$registerInlineEditProvider(e,i,t){const r={provideInlineEdit:async(o,s,n)=>this._proxy.$provideInlineEdit(e,o.uri,s,n),freeInlineEdit:o=>{this._proxy.$freeInlineEdit(e,o.pid)}};this._registrations.set(e,this._languageFeaturesService.inlineEditProvider.register(i,r))}$registerSignatureHelpProvider(e,i,t){this._registrations.set(e,this._languageFeaturesService.signatureHelpProvider.register(i,{signatureHelpTriggerCharacters:t.triggerCharacters,signatureHelpRetriggerCharacters:t.retriggerCharacters,provideSignatureHelp:async(r,o,s,n)=>{const a=await this._proxy.$provideSignatureHelp(e,r.uri,o,n,s);if(a)return{value:a,dispose:()=>{this._proxy.$releaseSignatureHelp(e,a.id)}}}}))}$registerInlayHintsProvider(e,i,t,r,o){const s={displayName:o,provideInlayHints:async(n,a,d)=>{const u=await this._proxy.$provideInlayHints(e,n.uri,a,d);if(u)return{hints:$(u.hints),dispose:()=>{u.cacheId&&this._proxy.$releaseInlayHints(e,u.cacheId)}}}};if(t&&(s.resolveInlayHint=async(n,a)=>{const d=n;if(!d.cacheId)return n;const u=await this._proxy.$resolveInlayHint(e,d.cacheId,a);if(a.isCancellationRequested)throw new O;return u?{...n,tooltip:u.tooltip,label:$(u.label),textEdits:u.textEdits}:n}),typeof r=="number"){const n=new v;this._registrations.set(r,n),s.onDidChangeInlayHints=n.event}this._registrations.set(e,this._languageFeaturesService.inlayHintsProvider.register(i,s))}$emitInlayHintsEvent(e){const i=this._registrations.get(e);i instanceof v&&i.fire(void 0)}$registerDocumentLinkProvider(e,i,t){const r={provideLinks:(o,s)=>this._proxy.$provideDocumentLinks(e,o.uri,s).then(n=>{if(n)return{links:n.links.map(l._reviveLinkDTO),dispose:()=>{typeof n.cacheId=="number"&&this._proxy.$releaseDocumentLinks(e,n.cacheId)}}})};t&&(r.resolveLink=(o,s)=>{const n=o;return n.cacheId?this._proxy.$resolveDocumentLink(e,n.cacheId,s).then(a=>a&&l._reviveLinkDTO(a)):o}),this._registrations.set(e,this._languageFeaturesService.linkProvider.register(i,r))}$registerDocumentColorProvider(e,i){const t=this._proxy;this._registrations.set(e,this._languageFeaturesService.colorProvider.register(i,{provideDocumentColors:(r,o)=>t.$provideDocumentColors(e,r.uri,o).then(s=>s.map(n=>{const[a,d,u,g]=n.color;return{color:{red:a,green:d,blue:u,alpha:g},range:n.range}})),provideColorPresentations:(r,o,s)=>t.$provideColorPresentations(e,r.uri,{color:[o.color.red,o.color.green,o.color.blue,o.color.alpha],range:o.range},s)}))}$registerFoldingRangeProvider(e,i,t,r){const o={id:t.value,provideFoldingRanges:(s,n,a)=>this._proxy.$provideFoldingRanges(e,s.uri,n,a)};if(typeof r=="number"){const s=new v;this._registrations.set(r,s),o.onDidChange=s.event}this._registrations.set(e,this._languageFeaturesService.foldingRangeProvider.register(i,o))}$emitFoldingRangeEvent(e,i){const t=this._registrations.get(e);t instanceof v&&t.fire(i)}$registerSelectionRangeProvider(e,i){this._registrations.set(e,this._languageFeaturesService.selectionRangeProvider.register(i,{provideSelectionRanges:(t,r,o)=>this._proxy.$provideSelectionRanges(e,t.uri,r,o)}))}$registerCallHierarchyProvider(e,i){this._registrations.set(e,B.CallHierarchyProviderRegistry.register(i,{prepareCallHierarchy:async(t,r,o)=>{const s=await this._proxy.$prepareCallHierarchy(e,t.uri,r,o);if(!(!s||s.length===0))return{dispose:()=>{for(const n of s)this._proxy.$releaseCallHierarchy(e,n._sessionId)},roots:s.map(l._reviveCallHierarchyItemDto)}},provideOutgoingCalls:async(t,r)=>{const o=await this._proxy.$provideCallHierarchyOutgoingCalls(e,t._sessionId,t._itemId,r);return o&&(o.forEach(s=>{s.to=l._reviveCallHierarchyItemDto(s.to)}),o)},provideIncomingCalls:async(t,r)=>{const o=await this._proxy.$provideCallHierarchyIncomingCalls(e,t._sessionId,t._itemId,r);return o&&(o.forEach(s=>{s.from=l._reviveCallHierarchyItemDto(s.from)}),o)}}))}static _reviveRegExp(e){return new RegExp(e.pattern,e.flags)}static _reviveIndentationRule(e){return{decreaseIndentPattern:l._reviveRegExp(e.decreaseIndentPattern),increaseIndentPattern:l._reviveRegExp(e.increaseIndentPattern),indentNextLinePattern:e.indentNextLinePattern?l._reviveRegExp(e.indentNextLinePattern):void 0,unIndentedLinePattern:e.unIndentedLinePattern?l._reviveRegExp(e.unIndentedLinePattern):void 0}}static _reviveOnEnterRule(e){return{beforeText:l._reviveRegExp(e.beforeText),afterText:e.afterText?l._reviveRegExp(e.afterText):void 0,previousLineText:e.previousLineText?l._reviveRegExp(e.previousLineText):void 0,action:e.action}}static _reviveOnEnterRules(e){return e.map(l._reviveOnEnterRule)}$setLanguageConfiguration(e,i,t){const r={comments:t.comments,brackets:t.brackets,wordPattern:t.wordPattern?l._reviveRegExp(t.wordPattern):void 0,indentationRules:t.indentationRules?l._reviveIndentationRule(t.indentationRules):void 0,onEnterRules:t.onEnterRules?l._reviveOnEnterRules(t.onEnterRules):void 0,autoClosingPairs:void 0,surroundingPairs:void 0,__electricCharacterSupport:void 0};t.autoClosingPairs?r.autoClosingPairs=t.autoClosingPairs:t.__characterPairSupport&&(r.autoClosingPairs=t.__characterPairSupport.autoClosingPairs),t.__electricCharacterSupport&&t.__electricCharacterSupport.docComment&&(r.__electricCharacterSupport={docComment:{open:t.__electricCharacterSupport.docComment.open,close:t.__electricCharacterSupport.docComment.close}}),this._languageService.isRegisteredLanguageId(i)&&this._registrations.set(e,this._languageConfigurationService.register(i,r,100))}$registerTypeHierarchyProvider(e,i){this._registrations.set(e,G.TypeHierarchyProviderRegistry.register(i,{prepareTypeHierarchy:async(t,r,o)=>{const s=await this._proxy.$prepareTypeHierarchy(e,t.uri,r,o);if(s)return{dispose:()=>{for(const n of s)this._proxy.$releaseTypeHierarchy(e,n._sessionId)},roots:s.map(l._reviveTypeHierarchyItemDto)}},provideSupertypes:async(t,r)=>{const o=await this._proxy.$provideTypeHierarchySupertypes(e,t._sessionId,t._itemId,r);return o&&o.map(l._reviveTypeHierarchyItemDto)},provideSubtypes:async(t,r)=>{const o=await this._proxy.$provideTypeHierarchySubtypes(e,t._sessionId,t._itemId,r);return o&&o.map(l._reviveTypeHierarchyItemDto)}}))}_documentOnDropEditProviders=new Map;$registerDocumentOnDropEditProvider(e,i,t){const r=new P(e,this._proxy,t,this._uriIdentService);this._documentOnDropEditProviders.set(e,r),this._registrations.set(e,k(this._languageFeaturesService.documentDropEditProvider.register(i,r),T(()=>this._documentOnDropEditProviders.delete(e))))}async $resolveDocumentOnDropFileData(e,i,t){const r=this._documentOnDropEditProviders.get(e);if(!r)throw new Error("Could not find provider");return r.resolveDocumentOnDropFileData(i,t)}$registerMappedEditsProvider(e,i,t){const r=new ee(t,e,this._proxy,this._uriIdentService);this._registrations.set(e,this._languageFeaturesService.mappedEditsProvider.register(i,r))}};l=S([J(X.MainThreadLanguageFeatures),D(1,q),D(2,U),D(3,j),D(4,C)],l);let _=class{constructor(c,e,i,t){this._handle=c;this._proxy=e;this._uriIdentService=t;this.copyMimeTypes=i.copyMimeTypes,this.pasteMimeTypes=i.pasteMimeTypes,this.providedPasteEditKinds=i.providedPasteEditKinds?.map(r=>new f(r)),i.supportsCopy&&(this.prepareDocumentPaste=async(r,o,s,n)=>{const a=await b.DataTransfer.from(s);if(n.isCancellationRequested)return;const d=await this._proxy.$prepareDocumentPaste(c,r.uri,o,a,n);if(!d)return;const u=new W;for(const[g,p]of d.items)u.replace(g,H(p.asString));return u}),i.supportsPaste&&(this.provideDocumentPasteEdits=async(r,o,s,n,a)=>{const d=this.dataTransfers.add(s);try{const u=await b.DataTransfer.from(s);if(a.isCancellationRequested)return;const g=await this._proxy.$providePasteEdits(this._handle,d.id,r.uri,o,u,{only:n.only?.value,triggerKind:n.triggerKind},a);return g?{edits:g.map(p=>({...p,kind:p.kind?new f(p.kind.value):new f(""),yieldTo:p.yieldTo?.map(E=>({kind:new f(E)})),additionalEdit:p.additionalEdit?I(p.additionalEdit,this._uriIdentService,E=>this.resolveFileData(d.id,E)):void 0})),dispose:()=>{this._proxy.$releasePasteEdits(this._handle,d.id)}}:void 0}finally{d.dispose()}}),i.supportsResolve&&(this.resolveDocumentPasteEdit=async(r,o)=>{const s=await this._proxy.$resolvePasteEdit(this._handle,r._cacheId,o);return s.additionalEdit&&(r.additionalEdit=I(s.additionalEdit,this._uriIdentService)),r})}dataTransfers=new L;copyMimeTypes;pasteMimeTypes;providedPasteEditKinds;prepareDocumentPaste;provideDocumentPasteEdits;resolveDocumentPasteEdit;resolveFileData(c,e){return this.dataTransfers.resolveFileData(c,e)}};_=S([D(3,C)],_);let P=class{constructor(c,e,i,t){this._handle=c;this._proxy=e;this._uriIdentService=t;this.dropMimeTypes=i?.dropMimeTypes??["*/*"],i?.supportsResolve&&(this.resolveDocumentDropEdit=async(r,o)=>{const s=await this._proxy.$resolvePasteEdit(this._handle,r._cacheId,o);return s.additionalEdit&&(r.additionalEdit=I(s.additionalEdit,this._uriIdentService)),r})}dataTransfers=new L;dropMimeTypes;resolveDocumentDropEdit;async provideDocumentDropEdits(c,e,i,t){const r=this.dataTransfers.add(i);try{const o=await b.DataTransfer.from(i);if(t.isCancellationRequested)return;const s=await this._proxy.$provideDocumentOnDropEdits(this._handle,r.id,c.uri,e,o,t);return s?{edits:s.map(n=>({...n,yieldTo:n.yieldTo?.map(a=>({kind:new f(a)})),kind:n.kind?new f(n.kind):void 0,additionalEdit:I(n.additionalEdit,this._uriIdentService,a=>this.resolveDocumentOnDropFileData(r.id,a))})),dispose:()=>{this._proxy.$releaseDocumentOnDropEdits(this._handle,r.id)}}:void 0}finally{r.dispose()}}resolveDocumentOnDropFileData(c,e){return this.dataTransfers.resolveFileData(c,e)}};P=S([D(3,C)],P);class Y{constructor(c,e,i,t){this._proxy=c;this._handle=e;this._legend=i;this.onDidChange=t}releaseDocumentSemanticTokens(c){c&&this._proxy.$releaseDocumentSemanticTokens(this._handle,parseInt(c,10))}getLegend(){return this._legend}async provideDocumentSemanticTokens(c,e,i){const t=e?parseInt(e,10):0,r=await this._proxy.$provideDocumentSemanticTokens(this._handle,c.uri,t,i);if(!r||i.isCancellationRequested)return null;const o=R(r);return o.type==="full"?{resultId:String(o.id),data:o.data}:{resultId:String(o.id),edits:o.deltas}}}class Z{constructor(c,e,i){this._proxy=c;this._handle=e;this._legend=i}getLegend(){return this._legend}async provideDocumentRangeSemanticTokens(c,e,i){const t=await this._proxy.$provideDocumentRangeSemanticTokens(this._handle,c.uri,e,i);if(!t||i.isCancellationRequested)return null;const r=R(t);if(r.type==="full")return{resultId:String(r.id),data:r.data};throw new Error("Unexpected")}}class ee{constructor(c,e,i,t){this.displayName=c;this._handle=e;this._proxy=i;this._uriService=t}async provideMappedEdits(c,e,i,t){const r=await this._proxy.$provideMappedEdits(this._handle,c.uri,e,i,t);return r?I(r,this._uriService):null}}export{Z as MainThreadDocumentRangeSemanticTokensProvider,Y as MainThreadDocumentSemanticTokensProvider,l as MainThreadLanguageFeatures,ee as MainThreadMappedEditsProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var MainThreadLanguageFeatures_1;
+import { createStringDataTransferItem, VSDataTransfer } from '../../../base/common/dataTransfer.js';
+import { CancellationError } from '../../../base/common/errors.js';
+import { Emitter } from '../../../base/common/event.js';
+import { HierarchicalKind } from '../../../base/common/hierarchicalKind.js';
+import { combinedDisposable, Disposable, DisposableMap, toDisposable } from '../../../base/common/lifecycle.js';
+import { ResourceMap } from '../../../base/common/map.js';
+import { revive } from '../../../base/common/marshalling.js';
+import { mixin } from '../../../base/common/objects.js';
+import { URI } from '../../../base/common/uri.js';
+import { ILanguageService } from '../../../editor/common/languages/language.js';
+import { ILanguageConfigurationService } from '../../../editor/common/languages/languageConfigurationRegistry.js';
+import { ILanguageFeaturesService } from '../../../editor/common/services/languageFeatures.js';
+import { decodeSemanticTokensDto } from '../../../editor/common/services/semanticTokensDto.js';
+import { IUriIdentityService } from '../../../platform/uriIdentity/common/uriIdentity.js';
+import { reviveWorkspaceEditDto } from './mainThreadBulkEdits.js';
+import * as typeConvert from '../common/extHostTypeConverters.js';
+import { DataTransferFileCache } from '../common/shared/dataTransferCache.js';
+import * as callh from '../../contrib/callHierarchy/common/callHierarchy.js';
+import * as search from '../../contrib/search/common/search.js';
+import * as typeh from '../../contrib/typeHierarchy/common/typeHierarchy.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+import { ExtHostContext, MainContext } from '../common/extHost.protocol.js';
+let MainThreadLanguageFeatures = MainThreadLanguageFeatures_1 = class MainThreadLanguageFeatures extends Disposable {
+    constructor(extHostContext, _languageService, _languageConfigurationService, _languageFeaturesService, _uriIdentService) {
+        super();
+        this._languageService = _languageService;
+        this._languageConfigurationService = _languageConfigurationService;
+        this._languageFeaturesService = _languageFeaturesService;
+        this._uriIdentService = _uriIdentService;
+        this._registrations = this._register(new DisposableMap());
+        this._pasteEditProviders = new Map();
+        this._documentOnDropEditProviders = new Map();
+        this._proxy = extHostContext.getProxy(ExtHostContext.ExtHostLanguageFeatures);
+        if (this._languageService) {
+            const updateAllWordDefinitions = () => {
+                const wordDefinitionDtos = [];
+                for (const languageId of _languageService.getRegisteredLanguageIds()) {
+                    const wordDefinition = this._languageConfigurationService.getLanguageConfiguration(languageId).getWordDefinition();
+                    wordDefinitionDtos.push({
+                        languageId: languageId,
+                        regexSource: wordDefinition.source,
+                        regexFlags: wordDefinition.flags
+                    });
+                }
+                this._proxy.$setWordDefinitions(wordDefinitionDtos);
+            };
+            this._register(this._languageConfigurationService.onDidChange((e) => {
+                if (!e.languageId) {
+                    updateAllWordDefinitions();
+                }
+                else {
+                    const wordDefinition = this._languageConfigurationService.getLanguageConfiguration(e.languageId).getWordDefinition();
+                    this._proxy.$setWordDefinitions([{
+                            languageId: e.languageId,
+                            regexSource: wordDefinition.source,
+                            regexFlags: wordDefinition.flags
+                        }]);
+                }
+            }));
+            updateAllWordDefinitions();
+        }
+    }
+    $unregister(handle) {
+        this._registrations.deleteAndDispose(handle);
+    }
+    static _reviveLocationDto(data) {
+        if (!data) {
+            return data;
+        }
+        else if (Array.isArray(data)) {
+            data.forEach(l => MainThreadLanguageFeatures_1._reviveLocationDto(l));
+            return data;
+        }
+        else {
+            data.uri = URI.revive(data.uri);
+            return data;
+        }
+    }
+    static _reviveLocationLinkDto(data) {
+        if (!data) {
+            return data;
+        }
+        else if (Array.isArray(data)) {
+            data.forEach(l => MainThreadLanguageFeatures_1._reviveLocationLinkDto(l));
+            return data;
+        }
+        else {
+            data.uri = URI.revive(data.uri);
+            return data;
+        }
+    }
+    static _reviveWorkspaceSymbolDto(data) {
+        if (!data) {
+            return data;
+        }
+        else if (Array.isArray(data)) {
+            data.forEach(MainThreadLanguageFeatures_1._reviveWorkspaceSymbolDto);
+            return data;
+        }
+        else {
+            data.location = MainThreadLanguageFeatures_1._reviveLocationDto(data.location);
+            return data;
+        }
+    }
+    static _reviveCodeActionDto(data, uriIdentService) {
+        data?.forEach(code => reviveWorkspaceEditDto(code.edit, uriIdentService));
+        return data;
+    }
+    static _reviveLinkDTO(data) {
+        if (data.url && typeof data.url !== 'string') {
+            data.url = URI.revive(data.url);
+        }
+        return data;
+    }
+    static _reviveCallHierarchyItemDto(data) {
+        if (data) {
+            data.uri = URI.revive(data.uri);
+        }
+        return data;
+    }
+    static _reviveTypeHierarchyItemDto(data) {
+        if (data) {
+            data.uri = URI.revive(data.uri);
+        }
+        return data;
+    }
+    $registerDocumentSymbolProvider(handle, selector, displayName) {
+        this._registrations.set(handle, this._languageFeaturesService.documentSymbolProvider.register(selector, {
+            displayName,
+            provideDocumentSymbols: (model, token) => {
+                return this._proxy.$provideDocumentSymbols(handle, model.uri, token);
+            }
+        }));
+    }
+    $registerCodeLensSupport(handle, selector, eventHandle) {
+        const provider = {
+            provideCodeLenses: async (model, token) => {
+                const listDto = await this._proxy.$provideCodeLenses(handle, model.uri, token);
+                if (!listDto) {
+                    return undefined;
+                }
+                return {
+                    lenses: listDto.lenses,
+                    dispose: () => listDto.cacheId && this._proxy.$releaseCodeLenses(handle, listDto.cacheId)
+                };
+            },
+            resolveCodeLens: async (model, codeLens, token) => {
+                const result = await this._proxy.$resolveCodeLens(handle, codeLens, token);
+                if (!result) {
+                    return undefined;
+                }
+                return {
+                    ...result,
+                    range: model.validateRange(result.range),
+                };
+            }
+        };
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter();
+            this._registrations.set(eventHandle, emitter);
+            provider.onDidChange = emitter.event;
+        }
+        this._registrations.set(handle, this._languageFeaturesService.codeLensProvider.register(selector, provider));
+    }
+    $emitCodeLensEvent(eventHandle, event) {
+        const obj = this._registrations.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(event);
+        }
+    }
+    $registerDefinitionSupport(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.definitionProvider.register(selector, {
+            provideDefinition: (model, position, token) => {
+                return this._proxy.$provideDefinition(handle, model.uri, position, token).then(MainThreadLanguageFeatures_1._reviveLocationLinkDto);
+            }
+        }));
+    }
+    $registerDeclarationSupport(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.declarationProvider.register(selector, {
+            provideDeclaration: (model, position, token) => {
+                return this._proxy.$provideDeclaration(handle, model.uri, position, token).then(MainThreadLanguageFeatures_1._reviveLocationLinkDto);
+            }
+        }));
+    }
+    $registerImplementationSupport(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.implementationProvider.register(selector, {
+            provideImplementation: (model, position, token) => {
+                return this._proxy.$provideImplementation(handle, model.uri, position, token).then(MainThreadLanguageFeatures_1._reviveLocationLinkDto);
+            }
+        }));
+    }
+    $registerTypeDefinitionSupport(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.typeDefinitionProvider.register(selector, {
+            provideTypeDefinition: (model, position, token) => {
+                return this._proxy.$provideTypeDefinition(handle, model.uri, position, token).then(MainThreadLanguageFeatures_1._reviveLocationLinkDto);
+            }
+        }));
+    }
+    $registerHoverProvider(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.hoverProvider.register(selector, {
+            provideHover: async (model, position, token, context) => {
+                const serializedContext = {
+                    verbosityRequest: context?.verbosityRequest ? {
+                        verbosityDelta: context.verbosityRequest.verbosityDelta,
+                        previousHover: { id: context.verbosityRequest.previousHover.id }
+                    } : undefined,
+                };
+                const hover = await this._proxy.$provideHover(handle, model.uri, position, serializedContext, token);
+                return hover;
+            }
+        }));
+    }
+    $registerEvaluatableExpressionProvider(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.evaluatableExpressionProvider.register(selector, {
+            provideEvaluatableExpression: (model, position, token) => {
+                return this._proxy.$provideEvaluatableExpression(handle, model.uri, position, token);
+            }
+        }));
+    }
+    $registerInlineValuesProvider(handle, selector, eventHandle) {
+        const provider = {
+            provideInlineValues: (model, viewPort, context, token) => {
+                return this._proxy.$provideInlineValues(handle, model.uri, viewPort, context, token);
+            }
+        };
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter();
+            this._registrations.set(eventHandle, emitter);
+            provider.onDidChangeInlineValues = emitter.event;
+        }
+        this._registrations.set(handle, this._languageFeaturesService.inlineValuesProvider.register(selector, provider));
+    }
+    $emitInlineValuesEvent(eventHandle, event) {
+        const obj = this._registrations.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(event);
+        }
+    }
+    $registerDocumentHighlightProvider(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.documentHighlightProvider.register(selector, {
+            provideDocumentHighlights: (model, position, token) => {
+                return this._proxy.$provideDocumentHighlights(handle, model.uri, position, token);
+            }
+        }));
+    }
+    $registerMultiDocumentHighlightProvider(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.multiDocumentHighlightProvider.register(selector, {
+            selector: selector,
+            provideMultiDocumentHighlights: (model, position, otherModels, token) => {
+                return this._proxy.$provideMultiDocumentHighlights(handle, model.uri, position, otherModels.map(model => model.uri), token).then(dto => {
+                    if (dto === undefined || dto === null) {
+                        return undefined;
+                    }
+                    const result = new ResourceMap();
+                    dto?.forEach(value => {
+                        const uri = URI.revive(value.uri);
+                        if (result.has(uri)) {
+                            result.get(uri).push(...value.highlights);
+                        }
+                        else {
+                            result.set(uri, value.highlights);
+                        }
+                    });
+                    return result;
+                });
+            }
+        }));
+    }
+    $registerLinkedEditingRangeProvider(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.linkedEditingRangeProvider.register(selector, {
+            provideLinkedEditingRanges: async (model, position, token) => {
+                const res = await this._proxy.$provideLinkedEditingRanges(handle, model.uri, position, token);
+                if (res) {
+                    return {
+                        ranges: res.ranges,
+                        wordPattern: res.wordPattern ? MainThreadLanguageFeatures_1._reviveRegExp(res.wordPattern) : undefined
+                    };
+                }
+                return undefined;
+            }
+        }));
+    }
+    $registerReferenceSupport(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.referenceProvider.register(selector, {
+            provideReferences: (model, position, context, token) => {
+                return this._proxy.$provideReferences(handle, model.uri, position, context, token).then(MainThreadLanguageFeatures_1._reviveLocationDto);
+            }
+        }));
+    }
+    $registerCodeActionSupport(handle, selector, metadata, displayName, extensionId, supportsResolve) {
+        const provider = {
+            provideCodeActions: async (model, rangeOrSelection, context, token) => {
+                const listDto = await this._proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, context, token);
+                if (!listDto) {
+                    return undefined;
+                }
+                return {
+                    actions: MainThreadLanguageFeatures_1._reviveCodeActionDto(listDto.actions, this._uriIdentService),
+                    dispose: () => {
+                        if (typeof listDto.cacheId === 'number') {
+                            this._proxy.$releaseCodeActions(handle, listDto.cacheId);
+                        }
+                    }
+                };
+            },
+            providedCodeActionKinds: metadata.providedKinds,
+            documentation: metadata.documentation,
+            displayName,
+            extensionId,
+        };
+        if (supportsResolve) {
+            provider.resolveCodeAction = async (codeAction, token) => {
+                const resolved = await this._proxy.$resolveCodeAction(handle, codeAction.cacheId, token);
+                if (resolved.edit) {
+                    codeAction.edit = reviveWorkspaceEditDto(resolved.edit, this._uriIdentService);
+                }
+                if (resolved.command) {
+                    codeAction.command = resolved.command;
+                }
+                return codeAction;
+            };
+        }
+        this._registrations.set(handle, this._languageFeaturesService.codeActionProvider.register(selector, provider));
+    }
+    $registerPasteEditProvider(handle, selector, metadata) {
+        const provider = new MainThreadPasteEditProvider(handle, this._proxy, metadata, this._uriIdentService);
+        this._pasteEditProviders.set(handle, provider);
+        this._registrations.set(handle, combinedDisposable(this._languageFeaturesService.documentPasteEditProvider.register(selector, provider), toDisposable(() => this._pasteEditProviders.delete(handle))));
+    }
+    $resolvePasteFileData(handle, requestId, dataId) {
+        const provider = this._pasteEditProviders.get(handle);
+        if (!provider) {
+            throw new Error('Could not find provider');
+        }
+        return provider.resolveFileData(requestId, dataId);
+    }
+    $registerDocumentFormattingSupport(handle, selector, extensionId, displayName) {
+        this._registrations.set(handle, this._languageFeaturesService.documentFormattingEditProvider.register(selector, {
+            extensionId,
+            displayName,
+            provideDocumentFormattingEdits: (model, options, token) => {
+                return this._proxy.$provideDocumentFormattingEdits(handle, model.uri, options, token);
+            }
+        }));
+    }
+    $registerRangeFormattingSupport(handle, selector, extensionId, displayName, supportsRanges) {
+        this._registrations.set(handle, this._languageFeaturesService.documentRangeFormattingEditProvider.register(selector, {
+            extensionId,
+            displayName,
+            provideDocumentRangeFormattingEdits: (model, range, options, token) => {
+                return this._proxy.$provideDocumentRangeFormattingEdits(handle, model.uri, range, options, token);
+            },
+            provideDocumentRangesFormattingEdits: !supportsRanges
+                ? undefined
+                : (model, ranges, options, token) => {
+                    return this._proxy.$provideDocumentRangesFormattingEdits(handle, model.uri, ranges, options, token);
+                },
+        }));
+    }
+    $registerOnTypeFormattingSupport(handle, selector, autoFormatTriggerCharacters, extensionId) {
+        this._registrations.set(handle, this._languageFeaturesService.onTypeFormattingEditProvider.register(selector, {
+            extensionId,
+            autoFormatTriggerCharacters,
+            provideOnTypeFormattingEdits: (model, position, ch, options, token) => {
+                return this._proxy.$provideOnTypeFormattingEdits(handle, model.uri, position, ch, options, token);
+            }
+        }));
+    }
+    $registerNavigateTypeSupport(handle, supportsResolve) {
+        let lastResultId;
+        const provider = {
+            provideWorkspaceSymbols: async (search, token) => {
+                const result = await this._proxy.$provideWorkspaceSymbols(handle, search, token);
+                if (lastResultId !== undefined) {
+                    this._proxy.$releaseWorkspaceSymbols(handle, lastResultId);
+                }
+                lastResultId = result.cacheId;
+                return MainThreadLanguageFeatures_1._reviveWorkspaceSymbolDto(result.symbols);
+            }
+        };
+        if (supportsResolve) {
+            provider.resolveWorkspaceSymbol = async (item, token) => {
+                const resolvedItem = await this._proxy.$resolveWorkspaceSymbol(handle, item, token);
+                return resolvedItem && MainThreadLanguageFeatures_1._reviveWorkspaceSymbolDto(resolvedItem);
+            };
+        }
+        this._registrations.set(handle, search.WorkspaceSymbolProviderRegistry.register(provider));
+    }
+    $registerRenameSupport(handle, selector, supportResolveLocation) {
+        this._registrations.set(handle, this._languageFeaturesService.renameProvider.register(selector, {
+            provideRenameEdits: (model, position, newName, token) => {
+                return this._proxy.$provideRenameEdits(handle, model.uri, position, newName, token).then(data => reviveWorkspaceEditDto(data, this._uriIdentService));
+            },
+            resolveRenameLocation: supportResolveLocation
+                ? (model, position, token) => this._proxy.$resolveRenameLocation(handle, model.uri, position, token)
+                : undefined
+        }));
+    }
+    $registerNewSymbolNamesProvider(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.newSymbolNamesProvider.register(selector, {
+            supportsAutomaticNewSymbolNamesTriggerKind: this._proxy.$supportsAutomaticNewSymbolNamesTriggerKind(handle),
+            provideNewSymbolNames: (model, range, triggerKind, token) => {
+                return this._proxy.$provideNewSymbolNames(handle, model.uri, range, triggerKind, token);
+            }
+        }));
+    }
+    $registerDocumentSemanticTokensProvider(handle, selector, legend, eventHandle) {
+        let event = undefined;
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter();
+            this._registrations.set(eventHandle, emitter);
+            event = emitter.event;
+        }
+        this._registrations.set(handle, this._languageFeaturesService.documentSemanticTokensProvider.register(selector, new MainThreadDocumentSemanticTokensProvider(this._proxy, handle, legend, event)));
+    }
+    $emitDocumentSemanticTokensEvent(eventHandle) {
+        const obj = this._registrations.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(undefined);
+        }
+    }
+    $registerDocumentRangeSemanticTokensProvider(handle, selector, legend) {
+        this._registrations.set(handle, this._languageFeaturesService.documentRangeSemanticTokensProvider.register(selector, new MainThreadDocumentRangeSemanticTokensProvider(this._proxy, handle, legend)));
+    }
+    static _inflateSuggestDto(defaultRange, data, extensionId) {
+        const label = data["a"];
+        const commandId = data["o"];
+        const commandIdent = data["n"];
+        const commitChars = data["k"];
+        return {
+            label,
+            extensionId,
+            kind: data["b"] ?? 9,
+            tags: data["m"],
+            detail: data["c"],
+            documentation: data["d"],
+            sortText: data["e"],
+            filterText: data["f"],
+            preselect: data["g"],
+            insertText: data["h"] ?? (typeof label === 'string' ? label : label.label),
+            range: data["j"] ?? defaultRange,
+            insertTextRules: data["i"],
+            commitCharacters: commitChars ? Array.from(commitChars) : undefined,
+            additionalTextEdits: data["l"],
+            command: commandId ? {
+                $ident: commandIdent,
+                id: commandId,
+                title: '',
+                arguments: commandIdent ? [commandIdent] : data["p"],
+            } : undefined,
+            _id: data.x,
+        };
+    }
+    $registerCompletionsProvider(handle, selector, triggerCharacters, supportsResolveDetails, extensionId) {
+        const provider = {
+            triggerCharacters,
+            _debugDisplayName: `${extensionId.value}(${triggerCharacters.join('')})`,
+            provideCompletionItems: async (model, position, context, token) => {
+                const result = await this._proxy.$provideCompletionItems(handle, model.uri, position, context, token);
+                if (!result) {
+                    return result;
+                }
+                return {
+                    suggestions: result["b"].map(d => MainThreadLanguageFeatures_1._inflateSuggestDto(result["a"], d, extensionId)),
+                    incomplete: result["c"] || false,
+                    duration: result["d"],
+                    dispose: () => {
+                        if (typeof result.x === 'number') {
+                            this._proxy.$releaseCompletionItems(handle, result.x);
+                        }
+                    }
+                };
+            }
+        };
+        if (supportsResolveDetails) {
+            provider.resolveCompletionItem = (suggestion, token) => {
+                return this._proxy.$resolveCompletionItem(handle, suggestion._id, token).then(result => {
+                    if (!result) {
+                        return suggestion;
+                    }
+                    const newSuggestion = MainThreadLanguageFeatures_1._inflateSuggestDto(suggestion.range, result, extensionId);
+                    return mixin(suggestion, newSuggestion, true);
+                });
+            };
+        }
+        this._registrations.set(handle, this._languageFeaturesService.completionProvider.register(selector, provider));
+    }
+    $registerInlineCompletionsSupport(handle, selector, supportsHandleEvents, extensionId, yieldsToExtensionIds) {
+        const provider = {
+            provideInlineCompletions: async (model, position, context, token) => {
+                return this._proxy.$provideInlineCompletions(handle, model.uri, position, context, token);
+            },
+            provideInlineEditsForRange: async (model, range, context, token) => {
+                return this._proxy.$provideInlineEditsForRange(handle, model.uri, range, context, token);
+            },
+            handleItemDidShow: async (completions, item, updatedInsertText) => {
+                if (supportsHandleEvents) {
+                    await this._proxy.$handleInlineCompletionDidShow(handle, completions.pid, item.idx, updatedInsertText);
+                }
+            },
+            handlePartialAccept: async (completions, item, acceptedCharacters, info) => {
+                if (supportsHandleEvents) {
+                    await this._proxy.$handleInlineCompletionPartialAccept(handle, completions.pid, item.idx, acceptedCharacters, info);
+                }
+            },
+            freeInlineCompletions: (completions) => {
+                this._proxy.$freeInlineCompletionsList(handle, completions.pid);
+            },
+            groupId: extensionId,
+            yieldsToGroupIds: yieldsToExtensionIds,
+            toString() {
+                return `InlineCompletionsProvider(${extensionId})`;
+            }
+        };
+        this._registrations.set(handle, this._languageFeaturesService.inlineCompletionsProvider.register(selector, provider));
+    }
+    $registerInlineEditProvider(handle, selector, extensionId) {
+        const provider = {
+            provideInlineEdit: async (model, context, token) => {
+                return this._proxy.$provideInlineEdit(handle, model.uri, context, token);
+            },
+            freeInlineEdit: (edit) => {
+                this._proxy.$freeInlineEdit(handle, edit.pid);
+            }
+        };
+        this._registrations.set(handle, this._languageFeaturesService.inlineEditProvider.register(selector, provider));
+    }
+    $registerSignatureHelpProvider(handle, selector, metadata) {
+        this._registrations.set(handle, this._languageFeaturesService.signatureHelpProvider.register(selector, {
+            signatureHelpTriggerCharacters: metadata.triggerCharacters,
+            signatureHelpRetriggerCharacters: metadata.retriggerCharacters,
+            provideSignatureHelp: async (model, position, token, context) => {
+                const result = await this._proxy.$provideSignatureHelp(handle, model.uri, position, context, token);
+                if (!result) {
+                    return undefined;
+                }
+                return {
+                    value: result,
+                    dispose: () => {
+                        this._proxy.$releaseSignatureHelp(handle, result.id);
+                    }
+                };
+            }
+        }));
+    }
+    $registerInlayHintsProvider(handle, selector, supportsResolve, eventHandle, displayName) {
+        const provider = {
+            displayName,
+            provideInlayHints: async (model, range, token) => {
+                const result = await this._proxy.$provideInlayHints(handle, model.uri, range, token);
+                if (!result) {
+                    return;
+                }
+                return {
+                    hints: revive(result.hints),
+                    dispose: () => {
+                        if (result.cacheId) {
+                            this._proxy.$releaseInlayHints(handle, result.cacheId);
+                        }
+                    }
+                };
+            }
+        };
+        if (supportsResolve) {
+            provider.resolveInlayHint = async (hint, token) => {
+                const dto = hint;
+                if (!dto.cacheId) {
+                    return hint;
+                }
+                const result = await this._proxy.$resolveInlayHint(handle, dto.cacheId, token);
+                if (token.isCancellationRequested) {
+                    throw new CancellationError();
+                }
+                if (!result) {
+                    return hint;
+                }
+                return {
+                    ...hint,
+                    tooltip: result.tooltip,
+                    label: revive(result.label),
+                    textEdits: result.textEdits
+                };
+            };
+        }
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter();
+            this._registrations.set(eventHandle, emitter);
+            provider.onDidChangeInlayHints = emitter.event;
+        }
+        this._registrations.set(handle, this._languageFeaturesService.inlayHintsProvider.register(selector, provider));
+    }
+    $emitInlayHintsEvent(eventHandle) {
+        const obj = this._registrations.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(undefined);
+        }
+    }
+    $registerDocumentLinkProvider(handle, selector, supportsResolve) {
+        const provider = {
+            provideLinks: (model, token) => {
+                return this._proxy.$provideDocumentLinks(handle, model.uri, token).then(dto => {
+                    if (!dto) {
+                        return undefined;
+                    }
+                    return {
+                        links: dto.links.map(MainThreadLanguageFeatures_1._reviveLinkDTO),
+                        dispose: () => {
+                            if (typeof dto.cacheId === 'number') {
+                                this._proxy.$releaseDocumentLinks(handle, dto.cacheId);
+                            }
+                        }
+                    };
+                });
+            }
+        };
+        if (supportsResolve) {
+            provider.resolveLink = (link, token) => {
+                const dto = link;
+                if (!dto.cacheId) {
+                    return link;
+                }
+                return this._proxy.$resolveDocumentLink(handle, dto.cacheId, token).then(obj => {
+                    return obj && MainThreadLanguageFeatures_1._reviveLinkDTO(obj);
+                });
+            };
+        }
+        this._registrations.set(handle, this._languageFeaturesService.linkProvider.register(selector, provider));
+    }
+    $registerDocumentColorProvider(handle, selector) {
+        const proxy = this._proxy;
+        this._registrations.set(handle, this._languageFeaturesService.colorProvider.register(selector, {
+            provideDocumentColors: (model, token) => {
+                return proxy.$provideDocumentColors(handle, model.uri, token)
+                    .then(documentColors => {
+                    return documentColors.map(documentColor => {
+                        const [red, green, blue, alpha] = documentColor.color;
+                        const color = {
+                            red: red,
+                            green: green,
+                            blue: blue,
+                            alpha
+                        };
+                        return {
+                            color,
+                            range: documentColor.range
+                        };
+                    });
+                });
+            },
+            provideColorPresentations: (model, colorInfo, token) => {
+                return proxy.$provideColorPresentations(handle, model.uri, {
+                    color: [colorInfo.color.red, colorInfo.color.green, colorInfo.color.blue, colorInfo.color.alpha],
+                    range: colorInfo.range
+                }, token);
+            }
+        }));
+    }
+    $registerFoldingRangeProvider(handle, selector, extensionId, eventHandle) {
+        const provider = {
+            id: extensionId.value,
+            provideFoldingRanges: (model, context, token) => {
+                return this._proxy.$provideFoldingRanges(handle, model.uri, context, token);
+            }
+        };
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter();
+            this._registrations.set(eventHandle, emitter);
+            provider.onDidChange = emitter.event;
+        }
+        this._registrations.set(handle, this._languageFeaturesService.foldingRangeProvider.register(selector, provider));
+    }
+    $emitFoldingRangeEvent(eventHandle, event) {
+        const obj = this._registrations.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(event);
+        }
+    }
+    $registerSelectionRangeProvider(handle, selector) {
+        this._registrations.set(handle, this._languageFeaturesService.selectionRangeProvider.register(selector, {
+            provideSelectionRanges: (model, positions, token) => {
+                return this._proxy.$provideSelectionRanges(handle, model.uri, positions, token);
+            }
+        }));
+    }
+    $registerCallHierarchyProvider(handle, selector) {
+        this._registrations.set(handle, callh.CallHierarchyProviderRegistry.register(selector, {
+            prepareCallHierarchy: async (document, position, token) => {
+                const items = await this._proxy.$prepareCallHierarchy(handle, document.uri, position, token);
+                if (!items || items.length === 0) {
+                    return undefined;
+                }
+                return {
+                    dispose: () => {
+                        for (const item of items) {
+                            this._proxy.$releaseCallHierarchy(handle, item._sessionId);
+                        }
+                    },
+                    roots: items.map(MainThreadLanguageFeatures_1._reviveCallHierarchyItemDto)
+                };
+            },
+            provideOutgoingCalls: async (item, token) => {
+                const outgoing = await this._proxy.$provideCallHierarchyOutgoingCalls(handle, item._sessionId, item._itemId, token);
+                if (!outgoing) {
+                    return outgoing;
+                }
+                outgoing.forEach(value => {
+                    value.to = MainThreadLanguageFeatures_1._reviveCallHierarchyItemDto(value.to);
+                });
+                return outgoing;
+            },
+            provideIncomingCalls: async (item, token) => {
+                const incoming = await this._proxy.$provideCallHierarchyIncomingCalls(handle, item._sessionId, item._itemId, token);
+                if (!incoming) {
+                    return incoming;
+                }
+                incoming.forEach(value => {
+                    value.from = MainThreadLanguageFeatures_1._reviveCallHierarchyItemDto(value.from);
+                });
+                return incoming;
+            }
+        }));
+    }
+    static _reviveRegExp(regExp) {
+        return new RegExp(regExp.pattern, regExp.flags);
+    }
+    static _reviveIndentationRule(indentationRule) {
+        return {
+            decreaseIndentPattern: MainThreadLanguageFeatures_1._reviveRegExp(indentationRule.decreaseIndentPattern),
+            increaseIndentPattern: MainThreadLanguageFeatures_1._reviveRegExp(indentationRule.increaseIndentPattern),
+            indentNextLinePattern: indentationRule.indentNextLinePattern ? MainThreadLanguageFeatures_1._reviveRegExp(indentationRule.indentNextLinePattern) : undefined,
+            unIndentedLinePattern: indentationRule.unIndentedLinePattern ? MainThreadLanguageFeatures_1._reviveRegExp(indentationRule.unIndentedLinePattern) : undefined,
+        };
+    }
+    static _reviveOnEnterRule(onEnterRule) {
+        return {
+            beforeText: MainThreadLanguageFeatures_1._reviveRegExp(onEnterRule.beforeText),
+            afterText: onEnterRule.afterText ? MainThreadLanguageFeatures_1._reviveRegExp(onEnterRule.afterText) : undefined,
+            previousLineText: onEnterRule.previousLineText ? MainThreadLanguageFeatures_1._reviveRegExp(onEnterRule.previousLineText) : undefined,
+            action: onEnterRule.action
+        };
+    }
+    static _reviveOnEnterRules(onEnterRules) {
+        return onEnterRules.map(MainThreadLanguageFeatures_1._reviveOnEnterRule);
+    }
+    $setLanguageConfiguration(handle, languageId, _configuration) {
+        const configuration = {
+            comments: _configuration.comments,
+            brackets: _configuration.brackets,
+            wordPattern: _configuration.wordPattern ? MainThreadLanguageFeatures_1._reviveRegExp(_configuration.wordPattern) : undefined,
+            indentationRules: _configuration.indentationRules ? MainThreadLanguageFeatures_1._reviveIndentationRule(_configuration.indentationRules) : undefined,
+            onEnterRules: _configuration.onEnterRules ? MainThreadLanguageFeatures_1._reviveOnEnterRules(_configuration.onEnterRules) : undefined,
+            autoClosingPairs: undefined,
+            surroundingPairs: undefined,
+            __electricCharacterSupport: undefined
+        };
+        if (_configuration.autoClosingPairs) {
+            configuration.autoClosingPairs = _configuration.autoClosingPairs;
+        }
+        else if (_configuration.__characterPairSupport) {
+            configuration.autoClosingPairs = _configuration.__characterPairSupport.autoClosingPairs;
+        }
+        if (_configuration.__electricCharacterSupport && _configuration.__electricCharacterSupport.docComment) {
+            configuration.__electricCharacterSupport = {
+                docComment: {
+                    open: _configuration.__electricCharacterSupport.docComment.open,
+                    close: _configuration.__electricCharacterSupport.docComment.close
+                }
+            };
+        }
+        if (this._languageService.isRegisteredLanguageId(languageId)) {
+            this._registrations.set(handle, this._languageConfigurationService.register(languageId, configuration, 100));
+        }
+    }
+    $registerTypeHierarchyProvider(handle, selector) {
+        this._registrations.set(handle, typeh.TypeHierarchyProviderRegistry.register(selector, {
+            prepareTypeHierarchy: async (document, position, token) => {
+                const items = await this._proxy.$prepareTypeHierarchy(handle, document.uri, position, token);
+                if (!items) {
+                    return undefined;
+                }
+                return {
+                    dispose: () => {
+                        for (const item of items) {
+                            this._proxy.$releaseTypeHierarchy(handle, item._sessionId);
+                        }
+                    },
+                    roots: items.map(MainThreadLanguageFeatures_1._reviveTypeHierarchyItemDto)
+                };
+            },
+            provideSupertypes: async (item, token) => {
+                const supertypes = await this._proxy.$provideTypeHierarchySupertypes(handle, item._sessionId, item._itemId, token);
+                if (!supertypes) {
+                    return supertypes;
+                }
+                return supertypes.map(MainThreadLanguageFeatures_1._reviveTypeHierarchyItemDto);
+            },
+            provideSubtypes: async (item, token) => {
+                const subtypes = await this._proxy.$provideTypeHierarchySubtypes(handle, item._sessionId, item._itemId, token);
+                if (!subtypes) {
+                    return subtypes;
+                }
+                return subtypes.map(MainThreadLanguageFeatures_1._reviveTypeHierarchyItemDto);
+            }
+        }));
+    }
+    $registerDocumentOnDropEditProvider(handle, selector, metadata) {
+        const provider = new MainThreadDocumentOnDropEditProvider(handle, this._proxy, metadata, this._uriIdentService);
+        this._documentOnDropEditProviders.set(handle, provider);
+        this._registrations.set(handle, combinedDisposable(this._languageFeaturesService.documentDropEditProvider.register(selector, provider), toDisposable(() => this._documentOnDropEditProviders.delete(handle))));
+    }
+    async $resolveDocumentOnDropFileData(handle, requestId, dataId) {
+        const provider = this._documentOnDropEditProviders.get(handle);
+        if (!provider) {
+            throw new Error('Could not find provider');
+        }
+        return provider.resolveDocumentOnDropFileData(requestId, dataId);
+    }
+    $registerMappedEditsProvider(handle, selector, displayName) {
+        const provider = new MainThreadMappedEditsProvider(displayName, handle, this._proxy, this._uriIdentService);
+        this._registrations.set(handle, this._languageFeaturesService.mappedEditsProvider.register(selector, provider));
+    }
+};
+MainThreadLanguageFeatures = MainThreadLanguageFeatures_1 = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadLanguageFeatures),
+    __param(1, ILanguageService),
+    __param(2, ILanguageConfigurationService),
+    __param(3, ILanguageFeaturesService),
+    __param(4, IUriIdentityService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], MainThreadLanguageFeatures);
+export { MainThreadLanguageFeatures };
+let MainThreadPasteEditProvider = class MainThreadPasteEditProvider {
+    constructor(_handle, _proxy, metadata, _uriIdentService) {
+        this._handle = _handle;
+        this._proxy = _proxy;
+        this._uriIdentService = _uriIdentService;
+        this.dataTransfers = new DataTransferFileCache();
+        this.copyMimeTypes = metadata.copyMimeTypes;
+        this.pasteMimeTypes = metadata.pasteMimeTypes;
+        this.providedPasteEditKinds = metadata.providedPasteEditKinds?.map(kind => new HierarchicalKind(kind));
+        if (metadata.supportsCopy) {
+            this.prepareDocumentPaste = async (model, selections, dataTransfer, token) => {
+                const dataTransferDto = await typeConvert.DataTransfer.from(dataTransfer);
+                if (token.isCancellationRequested) {
+                    return undefined;
+                }
+                const newDataTransfer = await this._proxy.$prepareDocumentPaste(_handle, model.uri, selections, dataTransferDto, token);
+                if (!newDataTransfer) {
+                    return undefined;
+                }
+                const dataTransferOut = new VSDataTransfer();
+                for (const [type, item] of newDataTransfer.items) {
+                    dataTransferOut.replace(type, createStringDataTransferItem(item.asString));
+                }
+                return dataTransferOut;
+            };
+        }
+        if (metadata.supportsPaste) {
+            this.provideDocumentPasteEdits = async (model, selections, dataTransfer, context, token) => {
+                const request = this.dataTransfers.add(dataTransfer);
+                try {
+                    const dataTransferDto = await typeConvert.DataTransfer.from(dataTransfer);
+                    if (token.isCancellationRequested) {
+                        return;
+                    }
+                    const edits = await this._proxy.$providePasteEdits(this._handle, request.id, model.uri, selections, dataTransferDto, {
+                        only: context.only?.value,
+                        triggerKind: context.triggerKind,
+                    }, token);
+                    if (!edits) {
+                        return;
+                    }
+                    return {
+                        edits: edits.map((edit) => {
+                            return {
+                                ...edit,
+                                kind: edit.kind ? new HierarchicalKind(edit.kind.value) : new HierarchicalKind(''),
+                                yieldTo: edit.yieldTo?.map(x => ({ kind: new HierarchicalKind(x) })),
+                                additionalEdit: edit.additionalEdit ? reviveWorkspaceEditDto(edit.additionalEdit, this._uriIdentService, dataId => this.resolveFileData(request.id, dataId)) : undefined,
+                            };
+                        }),
+                        dispose: () => {
+                            this._proxy.$releasePasteEdits(this._handle, request.id);
+                        },
+                    };
+                }
+                finally {
+                    request.dispose();
+                }
+            };
+        }
+        if (metadata.supportsResolve) {
+            this.resolveDocumentPasteEdit = async (edit, token) => {
+                const resolved = await this._proxy.$resolvePasteEdit(this._handle, edit._cacheId, token);
+                if (resolved.additionalEdit) {
+                    edit.additionalEdit = reviveWorkspaceEditDto(resolved.additionalEdit, this._uriIdentService);
+                }
+                return edit;
+            };
+        }
+    }
+    resolveFileData(requestId, dataId) {
+        return this.dataTransfers.resolveFileData(requestId, dataId);
+    }
+};
+MainThreadPasteEditProvider = __decorate([
+    __param(3, IUriIdentityService),
+    __metadata("design:paramtypes", [Number, Object, Object, Object])
+], MainThreadPasteEditProvider);
+let MainThreadDocumentOnDropEditProvider = class MainThreadDocumentOnDropEditProvider {
+    constructor(_handle, _proxy, metadata, _uriIdentService) {
+        this._handle = _handle;
+        this._proxy = _proxy;
+        this._uriIdentService = _uriIdentService;
+        this.dataTransfers = new DataTransferFileCache();
+        this.dropMimeTypes = metadata?.dropMimeTypes ?? ['*/*'];
+        if (metadata?.supportsResolve) {
+            this.resolveDocumentDropEdit = async (edit, token) => {
+                const resolved = await this._proxy.$resolvePasteEdit(this._handle, edit._cacheId, token);
+                if (resolved.additionalEdit) {
+                    edit.additionalEdit = reviveWorkspaceEditDto(resolved.additionalEdit, this._uriIdentService);
+                }
+                return edit;
+            };
+        }
+    }
+    async provideDocumentDropEdits(model, position, dataTransfer, token) {
+        const request = this.dataTransfers.add(dataTransfer);
+        try {
+            const dataTransferDto = await typeConvert.DataTransfer.from(dataTransfer);
+            if (token.isCancellationRequested) {
+                return;
+            }
+            const edits = await this._proxy.$provideDocumentOnDropEdits(this._handle, request.id, model.uri, position, dataTransferDto, token);
+            if (!edits) {
+                return;
+            }
+            return {
+                edits: edits.map(edit => {
+                    return {
+                        ...edit,
+                        yieldTo: edit.yieldTo?.map(x => ({ kind: new HierarchicalKind(x) })),
+                        kind: edit.kind ? new HierarchicalKind(edit.kind) : undefined,
+                        additionalEdit: reviveWorkspaceEditDto(edit.additionalEdit, this._uriIdentService, dataId => this.resolveDocumentOnDropFileData(request.id, dataId)),
+                    };
+                }),
+                dispose: () => {
+                    this._proxy.$releaseDocumentOnDropEdits(this._handle, request.id);
+                },
+            };
+        }
+        finally {
+            request.dispose();
+        }
+    }
+    resolveDocumentOnDropFileData(requestId, dataId) {
+        return this.dataTransfers.resolveFileData(requestId, dataId);
+    }
+};
+MainThreadDocumentOnDropEditProvider = __decorate([
+    __param(3, IUriIdentityService),
+    __metadata("design:paramtypes", [Number, Object, Object, Object])
+], MainThreadDocumentOnDropEditProvider);
+export class MainThreadDocumentSemanticTokensProvider {
+    constructor(_proxy, _handle, _legend, onDidChange) {
+        this._proxy = _proxy;
+        this._handle = _handle;
+        this._legend = _legend;
+        this.onDidChange = onDidChange;
+    }
+    releaseDocumentSemanticTokens(resultId) {
+        if (resultId) {
+            this._proxy.$releaseDocumentSemanticTokens(this._handle, parseInt(resultId, 10));
+        }
+    }
+    getLegend() {
+        return this._legend;
+    }
+    async provideDocumentSemanticTokens(model, lastResultId, token) {
+        const nLastResultId = lastResultId ? parseInt(lastResultId, 10) : 0;
+        const encodedDto = await this._proxy.$provideDocumentSemanticTokens(this._handle, model.uri, nLastResultId, token);
+        if (!encodedDto) {
+            return null;
+        }
+        if (token.isCancellationRequested) {
+            return null;
+        }
+        const dto = decodeSemanticTokensDto(encodedDto);
+        if (dto.type === 'full') {
+            return {
+                resultId: String(dto.id),
+                data: dto.data
+            };
+        }
+        return {
+            resultId: String(dto.id),
+            edits: dto.deltas
+        };
+    }
+}
+export class MainThreadDocumentRangeSemanticTokensProvider {
+    constructor(_proxy, _handle, _legend) {
+        this._proxy = _proxy;
+        this._handle = _handle;
+        this._legend = _legend;
+    }
+    getLegend() {
+        return this._legend;
+    }
+    async provideDocumentRangeSemanticTokens(model, range, token) {
+        const encodedDto = await this._proxy.$provideDocumentRangeSemanticTokens(this._handle, model.uri, range, token);
+        if (!encodedDto) {
+            return null;
+        }
+        if (token.isCancellationRequested) {
+            return null;
+        }
+        const dto = decodeSemanticTokensDto(encodedDto);
+        if (dto.type === 'full') {
+            return {
+                resultId: String(dto.id),
+                data: dto.data
+            };
+        }
+        throw new Error(`Unexpected`);
+    }
+}
+export class MainThreadMappedEditsProvider {
+    constructor(displayName, _handle, _proxy, _uriService) {
+        this.displayName = displayName;
+        this._handle = _handle;
+        this._proxy = _proxy;
+        this._uriService = _uriService;
+    }
+    async provideMappedEdits(document, codeBlocks, context, token) {
+        const res = await this._proxy.$provideMappedEdits(this._handle, document.uri, codeBlocks, context, token);
+        return res ? reviveWorkspaceEditDto(res, this._uriService) : null;
+    }
+}

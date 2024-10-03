@@ -1,1 +1,19 @@
-import"../../../base/common/lifecycle.js";import"./accessibleView.js";import"../../contextkey/common/contextkey.js";import"../../instantiation/common/instantiation.js";const d=new class{_implementations=[];register(e){return this._implementations.push(e),{dispose:()=>{const i=this._implementations.indexOf(e);i!==-1&&this._implementations.splice(i,1)}}}getImplementations(){return this._implementations}};export{d as AccessibleViewRegistry};
+export const AccessibleViewRegistry = new class AccessibleViewRegistry {
+    constructor() {
+        this._implementations = [];
+    }
+    register(implementation) {
+        this._implementations.push(implementation);
+        return {
+            dispose: () => {
+                const idx = this._implementations.indexOf(implementation);
+                if (idx !== -1) {
+                    this._implementations.splice(idx, 1);
+                }
+            }
+        };
+    }
+    getImplementations() {
+        return this._implementations;
+    }
+};

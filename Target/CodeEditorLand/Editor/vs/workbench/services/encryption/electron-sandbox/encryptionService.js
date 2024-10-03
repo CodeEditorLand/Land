@@ -1,1 +1,3 @@
-import{registerMainProcessRemoteService as r}from"../../../../platform/ipc/electron-sandbox/services.js";import{IEncryptionService as e}from"../../../../platform/encryption/common/encryptionService.js";r(e,"encryption");
+import { registerMainProcessRemoteService } from '../../../../platform/ipc/electron-sandbox/services.js';
+import { IEncryptionService } from '../../../../platform/encryption/common/encryptionService.js';
+registerMainProcessRemoteService(IEncryptionService, 'encryption');

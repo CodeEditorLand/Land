@@ -1,1 +1,40 @@
-var c=Object.defineProperty;var I=Object.getOwnPropertyDescriptor;var s=(n,i,e,t)=>{for(var r=t>1?void 0:t?I(i,e):i,p=n.length-1,m;p>=0;p--)(m=n[p])&&(r=(t?m(i,e,r):m(r))||r);return t&&r&&c(i,e,r),r},o=(n,i)=>(e,t)=>i(e,t,n);import"../../../../base/common/uri.js";import{IModelService as d}from"../../../../editor/common/services/model.js";import{ModelService as S}from"../../../../editor/common/services/modelService.js";import{ITextResourcePropertiesService as v}from"../../../../editor/common/services/textResourceConfiguration.js";import{IConfigurationService as f}from"../../../../platform/configuration/common/configuration.js";import{InstantiationType as u,registerSingleton as h}from"../../../../platform/instantiation/common/extensions.js";import{IUndoRedoService as l}from"../../../../platform/undoRedo/common/undoRedo.js";import{IPathService as R}from"../../path/common/pathService.js";import{IInstantiationService as U}from"../../../../platform/instantiation/common/instantiation.js";let a=class extends S{constructor(e,t,r,p,m){super(e,t,r,m);this._pathService=p}_schemaShouldMaintainUndoRedoElements(e){return super._schemaShouldMaintainUndoRedoElements(e)||e.scheme===this._pathService.defaultUriScheme}};a=s([o(0,f),o(1,v),o(2,l),o(3,R),o(4,U)],a),h(d,a,u.Delayed);export{a as WorkbenchModelService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IModelService } from '../../../../editor/common/services/model.js';
+import { ModelService } from '../../../../editor/common/services/modelService.js';
+import { ITextResourcePropertiesService } from '../../../../editor/common/services/textResourceConfiguration.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IUndoRedoService } from '../../../../platform/undoRedo/common/undoRedo.js';
+import { IPathService } from '../../path/common/pathService.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+let WorkbenchModelService = class WorkbenchModelService extends ModelService {
+    constructor(configurationService, resourcePropertiesService, undoRedoService, _pathService, instantiationService) {
+        super(configurationService, resourcePropertiesService, undoRedoService, instantiationService);
+        this._pathService = _pathService;
+    }
+    _schemaShouldMaintainUndoRedoElements(resource) {
+        return (super._schemaShouldMaintainUndoRedoElements(resource)
+            || resource.scheme === this._pathService.defaultUriScheme);
+    }
+};
+WorkbenchModelService = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, ITextResourcePropertiesService),
+    __param(2, IUndoRedoService),
+    __param(3, IPathService),
+    __param(4, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], WorkbenchModelService);
+export { WorkbenchModelService };
+registerSingleton(IModelService, WorkbenchModelService, 1);

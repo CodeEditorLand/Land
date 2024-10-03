@@ -1,1 +1,16 @@
-import"../../../../platform/contextkey/common/contextkey.js";import{KeybindingWeight as i,KeybindingsRegistry as r}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{TerminalCommandId as o}from"../common/terminal.js";import{TerminalContextKeys as m}from"../common/terminalContextKey.js";import{terminalSendSequenceCommand as t}from"./terminalActions.js";function b(e,n){r.registerCommandAndKeybindingRule({id:o.SendSequence,weight:i.WorkbenchContrib,when:n.when||m.focus,primary:n.primary,mac:n.mac,linux:n.linux,win:n.win,handler:t,args:{text:e}})}export{b as registerSendSequenceKeybinding};
+import { KeybindingsRegistry } from '../../../../platform/keybinding/common/keybindingsRegistry.js';
+import { TerminalContextKeys } from '../common/terminalContextKey.js';
+import { terminalSendSequenceCommand } from './terminalActions.js';
+export function registerSendSequenceKeybinding(text, rule) {
+    KeybindingsRegistry.registerCommandAndKeybindingRule({
+        id: "workbench.action.terminal.sendSequence",
+        weight: 200,
+        when: rule.when || TerminalContextKeys.focus,
+        primary: rule.primary,
+        mac: rule.mac,
+        linux: rule.linux,
+        win: rule.win,
+        handler: terminalSendSequenceCommand,
+        args: { text }
+    });
+}

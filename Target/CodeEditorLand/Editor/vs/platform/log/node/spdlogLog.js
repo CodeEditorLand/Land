@@ -1,1 +1,131 @@
-import{ByteSize as d}from"../../files/common/files.js";import{AbstractMessageLogger as u,LogLevel as t}from"../common/log.js";var L=(e=>(e[e.Trace=0]="Trace",e[e.Debug=1]="Debug",e[e.Info=2]="Info",e[e.Warning=3]="Warning",e[e.Error=4]="Error",e[e.Critical=5]="Critical",e[e.Off=6]="Off",e))(L||{});async function b(r,o,s,n,a){try{const i=await import("@vscode/spdlog");i.setFlushOn(0);const g=await i.createAsyncRotatingLogger(r,o,s,n);return a?g.clearFormatters():g.setPattern("%Y-%m-%d %H:%M:%S.%e [%l] %v"),g}catch{}return null}function l(r,o,s){switch(o){case t.Trace:r.trace(s);break;case t.Debug:r.debug(s);break;case t.Info:r.info(s);break;case t.Warning:r.warn(s);break;case t.Error:r.error(s);break;case t.Off:break;default:throw new Error(`Invalid log level ${o}`)}}function c(r,o){switch(o){case t.Trace:r.setLevel(0);break;case t.Debug:r.setLevel(1);break;case t.Info:r.setLevel(2);break;case t.Warning:r.setLevel(3);break;case t.Error:r.setLevel(4);break;case t.Off:r.setLevel(6);break;default:throw new Error(`Invalid log level ${o}`)}}class m extends u{buffer=[];_loggerCreationPromise;_logger;constructor(o,s,n,a,i){super(),this.setLevel(i),this._loggerCreationPromise=this._createSpdLogLogger(o,s,n,a),this._register(this.onDidChangeLogLevel(g=>{this._logger&&c(this._logger,g)}))}async _createSpdLogLogger(o,s,n,a){const i=n?6:1,g=30/i*d.MB,e=await b(o,s,g,i,a);if(e){this._logger=e,c(this._logger,this.getLevel());for(const{level:f,message:h}of this.buffer)l(this._logger,f,h);this.buffer=[]}}log(o,s){this._logger?l(this._logger,o,s):this.getLevel()<=o&&this.buffer.push({level:o,message:s})}flush(){this._logger?this._logger.flush():this._loggerCreationPromise.then(()=>this.flush())}dispose(){this._logger?this.disposeLogger():this._loggerCreationPromise.then(()=>this.disposeLogger()),super.dispose()}disposeLogger(){this._logger&&(this._logger.drop(),this._logger=void 0)}}export{m as SpdLogLogger};
+import { ByteSize } from '../../files/common/files.js';
+import { AbstractMessageLogger, LogLevel } from '../common/log.js';
+var SpdLogLevel;
+(function (SpdLogLevel) {
+    SpdLogLevel[SpdLogLevel["Trace"] = 0] = "Trace";
+    SpdLogLevel[SpdLogLevel["Debug"] = 1] = "Debug";
+    SpdLogLevel[SpdLogLevel["Info"] = 2] = "Info";
+    SpdLogLevel[SpdLogLevel["Warning"] = 3] = "Warning";
+    SpdLogLevel[SpdLogLevel["Error"] = 4] = "Error";
+    SpdLogLevel[SpdLogLevel["Critical"] = 5] = "Critical";
+    SpdLogLevel[SpdLogLevel["Off"] = 6] = "Off";
+})(SpdLogLevel || (SpdLogLevel = {}));
+async function createSpdLogLogger(name, logfilePath, filesize, filecount, donotUseFormatters) {
+    try {
+        const _spdlog = await import('@vscode/spdlog');
+        _spdlog.setFlushOn(SpdLogLevel.Trace);
+        const logger = await _spdlog.createAsyncRotatingLogger(name, logfilePath, filesize, filecount);
+        if (donotUseFormatters) {
+            logger.clearFormatters();
+        }
+        else {
+            logger.setPattern('%Y-%m-%d %H:%M:%S.%e [%l] %v');
+        }
+        return logger;
+    }
+    catch (e) {
+        console.error(e);
+    }
+    return null;
+}
+function log(logger, level, message) {
+    switch (level) {
+        case LogLevel.Trace:
+            logger.trace(message);
+            break;
+        case LogLevel.Debug:
+            logger.debug(message);
+            break;
+        case LogLevel.Info:
+            logger.info(message);
+            break;
+        case LogLevel.Warning:
+            logger.warn(message);
+            break;
+        case LogLevel.Error:
+            logger.error(message);
+            break;
+        case LogLevel.Off: break;
+        default: throw new Error(`Invalid log level ${level}`);
+    }
+}
+function setLogLevel(logger, level) {
+    switch (level) {
+        case LogLevel.Trace:
+            logger.setLevel(SpdLogLevel.Trace);
+            break;
+        case LogLevel.Debug:
+            logger.setLevel(SpdLogLevel.Debug);
+            break;
+        case LogLevel.Info:
+            logger.setLevel(SpdLogLevel.Info);
+            break;
+        case LogLevel.Warning:
+            logger.setLevel(SpdLogLevel.Warning);
+            break;
+        case LogLevel.Error:
+            logger.setLevel(SpdLogLevel.Error);
+            break;
+        case LogLevel.Off:
+            logger.setLevel(SpdLogLevel.Off);
+            break;
+        default: throw new Error(`Invalid log level ${level}`);
+    }
+}
+export class SpdLogLogger extends AbstractMessageLogger {
+    constructor(name, filepath, rotating, donotUseFormatters, level) {
+        super();
+        this.buffer = [];
+        this.setLevel(level);
+        this._loggerCreationPromise = this._createSpdLogLogger(name, filepath, rotating, donotUseFormatters);
+        this._register(this.onDidChangeLogLevel(level => {
+            if (this._logger) {
+                setLogLevel(this._logger, level);
+            }
+        }));
+    }
+    async _createSpdLogLogger(name, filepath, rotating, donotUseFormatters) {
+        const filecount = rotating ? 6 : 1;
+        const filesize = (30 / filecount) * ByteSize.MB;
+        const logger = await createSpdLogLogger(name, filepath, filesize, filecount, donotUseFormatters);
+        if (logger) {
+            this._logger = logger;
+            setLogLevel(this._logger, this.getLevel());
+            for (const { level, message } of this.buffer) {
+                log(this._logger, level, message);
+            }
+            this.buffer = [];
+        }
+    }
+    log(level, message) {
+        if (this._logger) {
+            log(this._logger, level, message);
+        }
+        else if (this.getLevel() <= level) {
+            this.buffer.push({ level, message });
+        }
+    }
+    flush() {
+        if (this._logger) {
+            this._logger.flush();
+        }
+        else {
+            this._loggerCreationPromise.then(() => this.flush());
+        }
+    }
+    dispose() {
+        if (this._logger) {
+            this.disposeLogger();
+        }
+        else {
+            this._loggerCreationPromise.then(() => this.disposeLogger());
+        }
+        super.dispose();
+    }
+    disposeLogger() {
+        if (this._logger) {
+            this._logger.drop();
+            this._logger = undefined;
+        }
+    }
+}

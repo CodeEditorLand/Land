@@ -1,1 +1,42 @@
-import{ExtensionHostKind as i}from"./extensionHostKind.js";class r{constructor(n){this.affinity=n}kind=i.LocalProcess;equals(n){return this.kind===n.kind&&this.affinity===n.affinity}asString(){return this.affinity===0?"LocalProcess":`LocalProcess${this.affinity}`}}class e{constructor(n){this.affinity=n}kind=i.LocalWebWorker;equals(n){return this.kind===n.kind&&this.affinity===n.affinity}asString(){return this.affinity===0?"LocalWebWorker":`LocalWebWorker${this.affinity}`}}class a{kind=i.Remote;affinity=0;equals(n){return this.kind===n.kind}asString(){return"Remote"}}export{r as LocalProcessRunningLocation,e as LocalWebWorkerRunningLocation,a as RemoteRunningLocation};
+export class LocalProcessRunningLocation {
+    constructor(affinity) {
+        this.affinity = affinity;
+        this.kind = 1;
+    }
+    equals(other) {
+        return (this.kind === other.kind && this.affinity === other.affinity);
+    }
+    asString() {
+        if (this.affinity === 0) {
+            return 'LocalProcess';
+        }
+        return `LocalProcess${this.affinity}`;
+    }
+}
+export class LocalWebWorkerRunningLocation {
+    constructor(affinity) {
+        this.affinity = affinity;
+        this.kind = 2;
+    }
+    equals(other) {
+        return (this.kind === other.kind && this.affinity === other.affinity);
+    }
+    asString() {
+        if (this.affinity === 0) {
+            return 'LocalWebWorker';
+        }
+        return `LocalWebWorker${this.affinity}`;
+    }
+}
+export class RemoteRunningLocation {
+    constructor() {
+        this.kind = 3;
+        this.affinity = 0;
+    }
+    equals(other) {
+        return (this.kind === other.kind);
+    }
+    asString() {
+        return 'Remote';
+    }
+}

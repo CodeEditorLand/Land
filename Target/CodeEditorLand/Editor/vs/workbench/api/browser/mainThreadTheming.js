@@ -1,1 +1,34 @@
-var a=Object.defineProperty;var x=Object.getOwnPropertyDescriptor;var n=(h,e,t,o)=>{for(var r=o>1?void 0:o?x(e,t):e,s=h.length-1,m;s>=0;s--)(m=h[s])&&(r=(o?m(e,t,r):m(r))||r);return o&&r&&a(e,t,r),r},p=(h,e)=>(t,o)=>e(t,o,h);import{MainContext as C,ExtHostContext as g}from"../common/extHost.protocol.js";import{extHostNamedCustomer as l}from"../../services/extensions/common/extHostCustomers.js";import"../../../base/common/lifecycle.js";import{IThemeService as v}from"../../../platform/theme/common/themeService.js";let i=class{_themeService;_proxy;_themeChangeListener;constructor(e,t){this._themeService=t,this._proxy=e.getProxy(g.ExtHostTheming),this._themeChangeListener=this._themeService.onDidColorThemeChange(o=>{this._proxy.$onColorThemeChange(this._themeService.getColorTheme().type)}),this._proxy.$onColorThemeChange(this._themeService.getColorTheme().type)}dispose(){this._themeChangeListener.dispose()}};i=n([l(C.MainThreadTheming),p(1,v)],i);export{i as MainThreadTheming};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { MainContext, ExtHostContext } from '../common/extHost.protocol.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+import { IThemeService } from '../../../platform/theme/common/themeService.js';
+let MainThreadTheming = class MainThreadTheming {
+    constructor(extHostContext, themeService) {
+        this._themeService = themeService;
+        this._proxy = extHostContext.getProxy(ExtHostContext.ExtHostTheming);
+        this._themeChangeListener = this._themeService.onDidColorThemeChange(e => {
+            this._proxy.$onColorThemeChange(this._themeService.getColorTheme().type);
+        });
+        this._proxy.$onColorThemeChange(this._themeService.getColorTheme().type);
+    }
+    dispose() {
+        this._themeChangeListener.dispose();
+    }
+};
+MainThreadTheming = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadTheming),
+    __param(1, IThemeService),
+    __metadata("design:paramtypes", [Object, Object])
+], MainThreadTheming);
+export { MainThreadTheming };

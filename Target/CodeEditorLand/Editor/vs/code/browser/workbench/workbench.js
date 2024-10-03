@@ -1,1 +1,415 @@
-import{isStandalone as S}from"../../../base/browser/browser.js";import{mainWindow as n}from"../../../base/browser/window.js";import{VSBuffer as E,decodeBase64 as k,encodeBase64 as w}from"../../../base/common/buffer.js";import{Emitter as A}from"../../../base/common/event.js";import{Disposable as U}from"../../../base/common/lifecycle.js";import{parse as C}from"../../../base/common/marshalling.js";import{Schemas as p}from"../../../base/common/network.js";import{posix as h}from"../../../base/common/path.js";import{isEqual as g}from"../../../base/common/resources.js";import{ltrim as I}from"../../../base/common/strings.js";import{URI as l}from"../../../base/common/uri.js";import b from"../../../platform/product/common/product.js";import"../../../platform/secrets/common/secrets.js";import{isFolderToOpen as m,isWorkspaceToOpen as y}from"../../../platform/window/common/window.js";import"../../../workbench/services/authentication/browser/authenticationService.js";import{create as R}from"../../../workbench/workbench.web.main.internal.js";class P{async seal(e){return e}async unseal(e){return e}}var _=(r=>(r.ALGORITHM="AES-GCM",r[r.KEY_LENGTH=256]="KEY_LENGTH",r[r.IV_LENGTH=12]="IV_LENGTH",r))(_||{});class v{constructor(e){this.authEndpoint=e}_serverKey;static supported(){return!!crypto.subtle}async seal(e){const t=n.crypto.getRandomValues(new Uint8Array(12)),r=await n.crypto.subtle.generateKey({name:"AES-GCM",length:256},!0,["encrypt","decrypt"]),o=new Uint8Array(await n.crypto.subtle.exportKey("raw",r)),i=await this.getKey(o),s=new TextEncoder().encode(e),d=await n.crypto.subtle.encrypt({name:"AES-GCM",iv:t},i,s),u=new Uint8Array([...o,...t,...new Uint8Array(d)]);return w(E.wrap(u))}async unseal(e){const t=k(e);if(t.byteLength<60)throw Error("Invalid length for the value for credentials.crypto");const r=256/8,o=t.slice(0,r),i=t.slice(r,r+12),s=t.slice(r+12),d=await this.getKey(o.buffer),u=await n.crypto.subtle.decrypt({name:"AES-GCM",iv:i.buffer},d,s.buffer);return new TextDecoder().decode(new Uint8Array(u))}async getKey(e){if(!e||e.byteLength!==256/8)throw Error("Invalid length for clientKey");const t=await this.getServerKeyPart(),r=new Uint8Array(256/8);for(let o=0;o<r.byteLength;o++)r[o]=e[o]^t[o];return n.crypto.subtle.importKey("raw",r,{name:"AES-GCM",length:256},!0,["encrypt","decrypt"])}async getServerKeyPart(){if(this._serverKey)return this._serverKey;let e=0,t;for(;e<=3;)try{const r=await fetch(this.authEndpoint,{credentials:"include",method:"POST"});if(!r.ok)throw new Error(r.statusText);const o=new Uint8Array(await await r.arrayBuffer());if(o.byteLength!==256/8)throw Error("The key retrieved by the server is not 256 bit long.");return this._serverKey=o,this._serverKey}catch(r){t=r,e++,await new Promise(o=>setTimeout(o,e*e*100))}throw t}}class T{constructor(e){this.crypto=e}_storageKey="secrets.provider";_secretsPromise=this.load();type="persisted";async load(){const e=this.loadAuthSessionFromElement(),t=localStorage.getItem(this._storageKey);if(t)try{const r=JSON.parse(await this.crypto.unseal(t));return{...e,...r}}catch{localStorage.removeItem(this._storageKey)}return e}loadAuthSessionFromElement(){let e;const t=n.document.getElementById("vscode-workbench-auth-session"),r=t?t.getAttribute("data-settings"):void 0;if(r)try{e=JSON.parse(r)}catch{}if(!e)return{};const o={};if(o[`${b.urlProtocol}.loginAccount`]=JSON.stringify(e),e.providerId!=="github")return o;const i=JSON.stringify({extensionId:"vscode.github-authentication",key:"github.auth"});return o[i]=JSON.stringify(e.scopes.map(s=>({id:e.id,scopes:s,accessToken:e.accessToken}))),o}async get(e){return(await this._secretsPromise)[e]}async set(e,t){const r=await this._secretsPromise;r[e]=t,this._secretsPromise=Promise.resolve(r),this.save()}async delete(e){const t=await this._secretsPromise;delete t[e],this._secretsPromise=Promise.resolve(t),this.save()}async save(){try{const e=await this.crypto.seal(JSON.stringify(await this._secretsPromise));localStorage.setItem(this._storageKey,e)}catch{}}}class f extends U{constructor(t){super();this._callbackRoute=t}static REQUEST_ID=0;static QUERY_KEYS=["scheme","authority","path","query","fragment"];_onCallback=this._register(new A);onCallback=this._onCallback.event;pendingCallbacks=new Set;lastTimeChecked=Date.now();checkCallbacksTimeout=void 0;onDidChangeLocalStorageDisposable;create(t={}){const r=++f.REQUEST_ID,o=[`vscode-reqid=${r}`];for(const i of f.QUERY_KEYS){const s=t[i];s&&o.push(`vscode-${i}=${encodeURIComponent(s)}`)}if(!(t.authority==="vscode.github-authentication"&&t.path==="/dummy")){const i=`vscode-web.url-callbacks[${r}]`;localStorage.removeItem(i),this.pendingCallbacks.add(r),this.startListening()}return l.parse(n.location.href).with({path:this._callbackRoute,query:o.join("&")})}startListening(){if(this.onDidChangeLocalStorageDisposable)return;const t=()=>this.onDidChangeLocalStorage();n.addEventListener("storage",t),this.onDidChangeLocalStorageDisposable={dispose:()=>n.removeEventListener("storage",t)}}stopListening(){this.onDidChangeLocalStorageDisposable?.dispose(),this.onDidChangeLocalStorageDisposable=void 0}async onDidChangeLocalStorage(){const t=Date.now()-this.lastTimeChecked;t>1e3?this.checkCallbacks():this.checkCallbacksTimeout===void 0&&(this.checkCallbacksTimeout=setTimeout(()=>{this.checkCallbacksTimeout=void 0,this.checkCallbacks()},1e3-t))}checkCallbacks(){let t;for(const r of this.pendingCallbacks){const o=`vscode-web.url-callbacks[${r}]`,i=localStorage.getItem(o);if(i!==null){try{this._onCallback.fire(l.revive(JSON.parse(i)))}catch{}t=t??new Set(this.pendingCallbacks),t.delete(r),localStorage.removeItem(o)}}t&&(this.pendingCallbacks=t,this.pendingCallbacks.size===0&&this.stopListening()),this.lastTimeChecked=Date.now()}}class a{constructor(e,t,r){this.workspace=e;this.payload=t;this.config=r}static QUERY_PARAM_EMPTY_WINDOW="ew";static QUERY_PARAM_FOLDER="folder";static QUERY_PARAM_WORKSPACE="workspace";static QUERY_PARAM_PAYLOAD="payload";static create(e){let t=!1,r,o=Object.create(null);return new URL(document.location.href).searchParams.forEach((s,d)=>{switch(d){case a.QUERY_PARAM_FOLDER:e.remoteAuthority&&s.startsWith(h.sep)?r={folderUri:l.from({scheme:p.vscodeRemote,path:s,authority:e.remoteAuthority})}:r={folderUri:l.parse(s)},t=!0;break;case a.QUERY_PARAM_WORKSPACE:e.remoteAuthority&&s.startsWith(h.sep)?r={workspaceUri:l.from({scheme:p.vscodeRemote,path:s,authority:e.remoteAuthority})}:r={workspaceUri:l.parse(s)},t=!0;break;case a.QUERY_PARAM_EMPTY_WINDOW:r=void 0,t=!0;break;case a.QUERY_PARAM_PAYLOAD:try{o=C(s)}catch{}break}}),t||(e.folderUri?r={folderUri:l.revive(e.folderUri)}:e.workspaceUri&&(r={workspaceUri:l.revive(e.workspaceUri)})),new a(r,o,e)}trusted=!0;async open(e,t){if(t?.reuse&&!t.payload&&this.isSame(this.workspace,e))return!0;const r=this.createTargetUrl(e,t);if(r){if(t?.reuse)return n.location.href=r,!0;{let o;return S()?o=n.open(r,"_blank","toolbar=no"):o=n.open(r),!!o}}return!1}createTargetUrl(e,t){let r;if(!e)r=`${document.location.origin}${document.location.pathname}?${a.QUERY_PARAM_EMPTY_WINDOW}=true`;else if(m(e)){const o=this.encodeWorkspacePath(e.folderUri);r=`${document.location.origin}${document.location.pathname}?${a.QUERY_PARAM_FOLDER}=${o}`}else if(y(e)){const o=this.encodeWorkspacePath(e.workspaceUri);r=`${document.location.origin}${document.location.pathname}?${a.QUERY_PARAM_WORKSPACE}=${o}`}return t?.payload&&(r+=`&${a.QUERY_PARAM_PAYLOAD}=${encodeURIComponent(JSON.stringify(t.payload))}`),r}encodeWorkspacePath(e){return this.config.remoteAuthority&&e.scheme===p.vscodeRemote?encodeURIComponent(`${h.sep}${I(e.path,h.sep)}`).replaceAll("%2F","/"):encodeURIComponent(e.toString(!0))}isSame(e,t){return!e||!t?e===t:m(e)&&m(t)?g(e.folderUri,t.folderUri):y(e)&&y(t)?g(e.workspaceUri,t.workspaceUri):!1}hasRemote(){if(this.workspace){if(m(this.workspace))return this.workspace.folderUri.scheme===p.vscodeRemote;if(y(this.workspace))return this.workspace.workspaceUri.scheme===p.vscodeRemote}return!0}}function L(c){const e=document.cookie.split("; ");for(const t of e)if(t.startsWith(c+"="))return t.substring(c.length+1)}(function(){const c=n.document.getElementById("vscode-workbench-web-configuration"),e=c?c.getAttribute("data-settings"):void 0;if(!c||!e)throw new Error("Missing web configuration element");const t=JSON.parse(e),r=L("vscode-secret-key-path"),o=r&&v.supported()?new v(r):new P;R(n.document.body,{...t,windowIndicator:t.windowIndicator??{label:"$(remote)",tooltip:`${b.nameShort} Web`},settingsSyncOptions:t.settingsSyncOptions?{enabled:t.settingsSyncOptions.enabled}:void 0,workspaceProvider:a.create(t),urlCallbackProvider:new f(t.callbackRoute),secretStorageProvider:t.remoteAuthority&&!r?void 0:new T(o)})})();export{T as LocalStorageSecretStorageProvider};
+import { isStandalone } from '../../../base/browser/browser.js';
+import { mainWindow } from '../../../base/browser/window.js';
+import { VSBuffer, decodeBase64, encodeBase64 } from '../../../base/common/buffer.js';
+import { Emitter } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { parse } from '../../../base/common/marshalling.js';
+import { Schemas } from '../../../base/common/network.js';
+import { posix } from '../../../base/common/path.js';
+import { isEqual } from '../../../base/common/resources.js';
+import { ltrim } from '../../../base/common/strings.js';
+import { URI } from '../../../base/common/uri.js';
+import product from '../../../platform/product/common/product.js';
+import { isFolderToOpen, isWorkspaceToOpen } from '../../../platform/window/common/window.js';
+import { create } from '../../../workbench/workbench.web.main.internal.js';
+class TransparentCrypto {
+    async seal(data) {
+        return data;
+    }
+    async unseal(data) {
+        return data;
+    }
+}
+class ServerKeyedAESCrypto {
+    static supported() {
+        return !!crypto.subtle;
+    }
+    constructor(authEndpoint) {
+        this.authEndpoint = authEndpoint;
+    }
+    async seal(data) {
+        const iv = mainWindow.crypto.getRandomValues(new Uint8Array(12));
+        const clientKeyObj = await mainWindow.crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ['encrypt', 'decrypt']);
+        const clientKey = new Uint8Array(await mainWindow.crypto.subtle.exportKey('raw', clientKeyObj));
+        const key = await this.getKey(clientKey);
+        const dataUint8Array = new TextEncoder().encode(data);
+        const cipherText = await mainWindow.crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, dataUint8Array);
+        const result = new Uint8Array([...clientKey, ...iv, ...new Uint8Array(cipherText)]);
+        return encodeBase64(VSBuffer.wrap(result));
+    }
+    async unseal(data) {
+        const dataUint8Array = decodeBase64(data);
+        if (dataUint8Array.byteLength < 60) {
+            throw Error('Invalid length for the value for credentials.crypto');
+        }
+        const keyLength = 256 / 8;
+        const clientKey = dataUint8Array.slice(0, keyLength);
+        const iv = dataUint8Array.slice(keyLength, keyLength + 12);
+        const cipherText = dataUint8Array.slice(keyLength + 12);
+        const key = await this.getKey(clientKey.buffer);
+        const decrypted = await mainWindow.crypto.subtle.decrypt({ name: "AES-GCM", iv: iv.buffer }, key, cipherText.buffer);
+        return new TextDecoder().decode(new Uint8Array(decrypted));
+    }
+    async getKey(clientKey) {
+        if (!clientKey || clientKey.byteLength !== 256 / 8) {
+            throw Error('Invalid length for clientKey');
+        }
+        const serverKey = await this.getServerKeyPart();
+        const keyData = new Uint8Array(256 / 8);
+        for (let i = 0; i < keyData.byteLength; i++) {
+            keyData[i] = clientKey[i] ^ serverKey[i];
+        }
+        return mainWindow.crypto.subtle.importKey('raw', keyData, {
+            name: "AES-GCM",
+            length: 256,
+        }, true, ['encrypt', 'decrypt']);
+    }
+    async getServerKeyPart() {
+        if (this._serverKey) {
+            return this._serverKey;
+        }
+        let attempt = 0;
+        let lastError;
+        while (attempt <= 3) {
+            try {
+                const res = await fetch(this.authEndpoint, { credentials: 'include', method: 'POST' });
+                if (!res.ok) {
+                    throw new Error(res.statusText);
+                }
+                const serverKey = new Uint8Array(await await res.arrayBuffer());
+                if (serverKey.byteLength !== 256 / 8) {
+                    throw Error(`The key retrieved by the server is not ${256} bit long.`);
+                }
+                this._serverKey = serverKey;
+                return this._serverKey;
+            }
+            catch (e) {
+                lastError = e;
+                attempt++;
+                await new Promise(resolve => setTimeout(resolve, attempt * attempt * 100));
+            }
+        }
+        throw lastError;
+    }
+}
+export class LocalStorageSecretStorageProvider {
+    constructor(crypto) {
+        this.crypto = crypto;
+        this._storageKey = 'secrets.provider';
+        this._secretsPromise = this.load();
+        this.type = 'persisted';
+    }
+    async load() {
+        const record = this.loadAuthSessionFromElement();
+        const encrypted = localStorage.getItem(this._storageKey);
+        if (encrypted) {
+            try {
+                const decrypted = JSON.parse(await this.crypto.unseal(encrypted));
+                return { ...record, ...decrypted };
+            }
+            catch (err) {
+                console.error('Failed to decrypt secrets from localStorage', err);
+                localStorage.removeItem(this._storageKey);
+            }
+        }
+        return record;
+    }
+    loadAuthSessionFromElement() {
+        let authSessionInfo;
+        const authSessionElement = mainWindow.document.getElementById('vscode-workbench-auth-session');
+        const authSessionElementAttribute = authSessionElement ? authSessionElement.getAttribute('data-settings') : undefined;
+        if (authSessionElementAttribute) {
+            try {
+                authSessionInfo = JSON.parse(authSessionElementAttribute);
+            }
+            catch (error) { }
+        }
+        if (!authSessionInfo) {
+            return {};
+        }
+        const record = {};
+        record[`${product.urlProtocol}.loginAccount`] = JSON.stringify(authSessionInfo);
+        if (authSessionInfo.providerId !== 'github') {
+            console.error(`Unexpected auth provider: ${authSessionInfo.providerId}. Expected 'github'.`);
+            return record;
+        }
+        const authAccount = JSON.stringify({ extensionId: 'vscode.github-authentication', key: 'github.auth' });
+        record[authAccount] = JSON.stringify(authSessionInfo.scopes.map(scopes => ({
+            id: authSessionInfo.id,
+            scopes,
+            accessToken: authSessionInfo.accessToken
+        })));
+        return record;
+    }
+    async get(key) {
+        const secrets = await this._secretsPromise;
+        return secrets[key];
+    }
+    async set(key, value) {
+        const secrets = await this._secretsPromise;
+        secrets[key] = value;
+        this._secretsPromise = Promise.resolve(secrets);
+        this.save();
+    }
+    async delete(key) {
+        const secrets = await this._secretsPromise;
+        delete secrets[key];
+        this._secretsPromise = Promise.resolve(secrets);
+        this.save();
+    }
+    async save() {
+        try {
+            const encrypted = await this.crypto.seal(JSON.stringify(await this._secretsPromise));
+            localStorage.setItem(this._storageKey, encrypted);
+        }
+        catch (err) {
+            console.error(err);
+        }
+    }
+}
+class LocalStorageURLCallbackProvider extends Disposable {
+    static { this.REQUEST_ID = 0; }
+    static { this.QUERY_KEYS = [
+        'scheme',
+        'authority',
+        'path',
+        'query',
+        'fragment'
+    ]; }
+    constructor(_callbackRoute) {
+        super();
+        this._callbackRoute = _callbackRoute;
+        this._onCallback = this._register(new Emitter());
+        this.onCallback = this._onCallback.event;
+        this.pendingCallbacks = new Set();
+        this.lastTimeChecked = Date.now();
+        this.checkCallbacksTimeout = undefined;
+    }
+    create(options = {}) {
+        const id = ++LocalStorageURLCallbackProvider.REQUEST_ID;
+        const queryParams = [`vscode-reqid=${id}`];
+        for (const key of LocalStorageURLCallbackProvider.QUERY_KEYS) {
+            const value = options[key];
+            if (value) {
+                queryParams.push(`vscode-${key}=${encodeURIComponent(value)}`);
+            }
+        }
+        if (!(options.authority === 'vscode.github-authentication' && options.path === '/dummy')) {
+            const key = `vscode-web.url-callbacks[${id}]`;
+            localStorage.removeItem(key);
+            this.pendingCallbacks.add(id);
+            this.startListening();
+        }
+        return URI.parse(mainWindow.location.href).with({ path: this._callbackRoute, query: queryParams.join('&') });
+    }
+    startListening() {
+        if (this.onDidChangeLocalStorageDisposable) {
+            return;
+        }
+        const fn = () => this.onDidChangeLocalStorage();
+        mainWindow.addEventListener('storage', fn);
+        this.onDidChangeLocalStorageDisposable = { dispose: () => mainWindow.removeEventListener('storage', fn) };
+    }
+    stopListening() {
+        this.onDidChangeLocalStorageDisposable?.dispose();
+        this.onDidChangeLocalStorageDisposable = undefined;
+    }
+    async onDidChangeLocalStorage() {
+        const ellapsed = Date.now() - this.lastTimeChecked;
+        if (ellapsed > 1000) {
+            this.checkCallbacks();
+        }
+        else if (this.checkCallbacksTimeout === undefined) {
+            this.checkCallbacksTimeout = setTimeout(() => {
+                this.checkCallbacksTimeout = undefined;
+                this.checkCallbacks();
+            }, 1000 - ellapsed);
+        }
+    }
+    checkCallbacks() {
+        let pendingCallbacks;
+        for (const id of this.pendingCallbacks) {
+            const key = `vscode-web.url-callbacks[${id}]`;
+            const result = localStorage.getItem(key);
+            if (result !== null) {
+                try {
+                    this._onCallback.fire(URI.revive(JSON.parse(result)));
+                }
+                catch (error) {
+                    console.error(error);
+                }
+                pendingCallbacks = pendingCallbacks ?? new Set(this.pendingCallbacks);
+                pendingCallbacks.delete(id);
+                localStorage.removeItem(key);
+            }
+        }
+        if (pendingCallbacks) {
+            this.pendingCallbacks = pendingCallbacks;
+            if (this.pendingCallbacks.size === 0) {
+                this.stopListening();
+            }
+        }
+        this.lastTimeChecked = Date.now();
+    }
+}
+class WorkspaceProvider {
+    static { this.QUERY_PARAM_EMPTY_WINDOW = 'ew'; }
+    static { this.QUERY_PARAM_FOLDER = 'folder'; }
+    static { this.QUERY_PARAM_WORKSPACE = 'workspace'; }
+    static { this.QUERY_PARAM_PAYLOAD = 'payload'; }
+    static create(config) {
+        let foundWorkspace = false;
+        let workspace;
+        let payload = Object.create(null);
+        const query = new URL(document.location.href).searchParams;
+        query.forEach((value, key) => {
+            switch (key) {
+                case WorkspaceProvider.QUERY_PARAM_FOLDER:
+                    if (config.remoteAuthority && value.startsWith(posix.sep)) {
+                        workspace = { folderUri: URI.from({ scheme: Schemas.vscodeRemote, path: value, authority: config.remoteAuthority }) };
+                    }
+                    else {
+                        workspace = { folderUri: URI.parse(value) };
+                    }
+                    foundWorkspace = true;
+                    break;
+                case WorkspaceProvider.QUERY_PARAM_WORKSPACE:
+                    if (config.remoteAuthority && value.startsWith(posix.sep)) {
+                        workspace = { workspaceUri: URI.from({ scheme: Schemas.vscodeRemote, path: value, authority: config.remoteAuthority }) };
+                    }
+                    else {
+                        workspace = { workspaceUri: URI.parse(value) };
+                    }
+                    foundWorkspace = true;
+                    break;
+                case WorkspaceProvider.QUERY_PARAM_EMPTY_WINDOW:
+                    workspace = undefined;
+                    foundWorkspace = true;
+                    break;
+                case WorkspaceProvider.QUERY_PARAM_PAYLOAD:
+                    try {
+                        payload = parse(value);
+                    }
+                    catch (error) {
+                        console.error(error);
+                    }
+                    break;
+            }
+        });
+        if (!foundWorkspace) {
+            if (config.folderUri) {
+                workspace = { folderUri: URI.revive(config.folderUri) };
+            }
+            else if (config.workspaceUri) {
+                workspace = { workspaceUri: URI.revive(config.workspaceUri) };
+            }
+        }
+        return new WorkspaceProvider(workspace, payload, config);
+    }
+    constructor(workspace, payload, config) {
+        this.workspace = workspace;
+        this.payload = payload;
+        this.config = config;
+        this.trusted = true;
+    }
+    async open(workspace, options) {
+        if (options?.reuse && !options.payload && this.isSame(this.workspace, workspace)) {
+            return true;
+        }
+        const targetHref = this.createTargetUrl(workspace, options);
+        if (targetHref) {
+            if (options?.reuse) {
+                mainWindow.location.href = targetHref;
+                return true;
+            }
+            else {
+                let result;
+                if (isStandalone()) {
+                    result = mainWindow.open(targetHref, '_blank', 'toolbar=no');
+                }
+                else {
+                    result = mainWindow.open(targetHref);
+                }
+                return !!result;
+            }
+        }
+        return false;
+    }
+    createTargetUrl(workspace, options) {
+        let targetHref = undefined;
+        if (!workspace) {
+            targetHref = `${document.location.origin}${document.location.pathname}?${WorkspaceProvider.QUERY_PARAM_EMPTY_WINDOW}=true`;
+        }
+        else if (isFolderToOpen(workspace)) {
+            const queryParamFolder = this.encodeWorkspacePath(workspace.folderUri);
+            targetHref = `${document.location.origin}${document.location.pathname}?${WorkspaceProvider.QUERY_PARAM_FOLDER}=${queryParamFolder}`;
+        }
+        else if (isWorkspaceToOpen(workspace)) {
+            const queryParamWorkspace = this.encodeWorkspacePath(workspace.workspaceUri);
+            targetHref = `${document.location.origin}${document.location.pathname}?${WorkspaceProvider.QUERY_PARAM_WORKSPACE}=${queryParamWorkspace}`;
+        }
+        if (options?.payload) {
+            targetHref += `&${WorkspaceProvider.QUERY_PARAM_PAYLOAD}=${encodeURIComponent(JSON.stringify(options.payload))}`;
+        }
+        return targetHref;
+    }
+    encodeWorkspacePath(uri) {
+        if (this.config.remoteAuthority && uri.scheme === Schemas.vscodeRemote) {
+            return encodeURIComponent(`${posix.sep}${ltrim(uri.path, posix.sep)}`).replaceAll('%2F', '/');
+        }
+        return encodeURIComponent(uri.toString(true));
+    }
+    isSame(workspaceA, workspaceB) {
+        if (!workspaceA || !workspaceB) {
+            return workspaceA === workspaceB;
+        }
+        if (isFolderToOpen(workspaceA) && isFolderToOpen(workspaceB)) {
+            return isEqual(workspaceA.folderUri, workspaceB.folderUri);
+        }
+        if (isWorkspaceToOpen(workspaceA) && isWorkspaceToOpen(workspaceB)) {
+            return isEqual(workspaceA.workspaceUri, workspaceB.workspaceUri);
+        }
+        return false;
+    }
+    hasRemote() {
+        if (this.workspace) {
+            if (isFolderToOpen(this.workspace)) {
+                return this.workspace.folderUri.scheme === Schemas.vscodeRemote;
+            }
+            if (isWorkspaceToOpen(this.workspace)) {
+                return this.workspace.workspaceUri.scheme === Schemas.vscodeRemote;
+            }
+        }
+        return true;
+    }
+}
+function readCookie(name) {
+    const cookies = document.cookie.split('; ');
+    for (const cookie of cookies) {
+        if (cookie.startsWith(name + '=')) {
+            return cookie.substring(name.length + 1);
+        }
+    }
+    return undefined;
+}
+(function () {
+    const configElement = mainWindow.document.getElementById('vscode-workbench-web-configuration');
+    const configElementAttribute = configElement ? configElement.getAttribute('data-settings') : undefined;
+    if (!configElement || !configElementAttribute) {
+        throw new Error('Missing web configuration element');
+    }
+    const config = JSON.parse(configElementAttribute);
+    const secretStorageKeyPath = readCookie('vscode-secret-key-path');
+    const secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
+        ? new ServerKeyedAESCrypto(secretStorageKeyPath) : new TransparentCrypto();
+    create(mainWindow.document.body, {
+        ...config,
+        windowIndicator: config.windowIndicator ?? { label: '$(remote)', tooltip: `${product.nameShort} Web` },
+        settingsSyncOptions: config.settingsSyncOptions ? { enabled: config.settingsSyncOptions.enabled, } : undefined,
+        workspaceProvider: WorkspaceProvider.create(config),
+        urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
+        secretStorageProvider: config.remoteAuthority && !secretStorageKeyPath
+            ? undefined
+            : new LocalStorageSecretStorageProvider(secretStorageCrypto),
+    });
+})();

@@ -1,3 +1,1093 @@
-import"./cancellation.js";import{diffSets as J}from"./collections.js";import{onUnexpectedError as L}from"./errors.js";import{createSingleCallFunction as X}from"./functional.js";import{combinedDisposable as Z,Disposable as C,DisposableMap as U,DisposableStore as S,toDisposable as z}from"./lifecycle.js";import{LinkedList as N}from"./linkedList.js";import"./observable.js";import{StopWatch as ee}from"./stopwatch.js";import"./symbols.js";const te=!1,q=!1,ne=!1;var W;(_=>{_.None=()=>C.None;function e(s){if(ne){const{onDidAddListener:t}=s,r=k.create();let n=0;s.onDidAddListener=()=>{++n===2&&r.print(),t?.()}}}function i(s,t){return V(s,()=>{},0,void 0,!0,void 0,t)}_.defer=i;function a(s){return(t,r=null,n)=>{let o=!1,l;return l=s(h=>{if(!o)return l?l.dispose():o=!0,t.call(r,h)},null,n),o&&l.dispose(),l}}_.once=a;function u(s,t){return _.once(_.filter(s,t))}_.onceIf=u;function c(s,t,r){return w((n,o=null,l)=>s(h=>n.call(o,t(h)),null,l),r)}_.map=c;function p(s,t,r){return w((n,o=null,l)=>s(h=>{t(h),n.call(o,h)},null,l),r)}_.forEach=p;function f(s,t,r){return w((n,o=null,l)=>s(h=>t(h)&&n.call(o,h),null,l),r)}_.filter=f;function d(s){return s}_.signal=d;function m(...s){return(t,r=null,n)=>{const o=Z(...s.map(l=>l(h=>t.call(r,h))));return j(o,n)}}_.any=m;function A(s,t,r,n){let o=r;return c(s,l=>(o=t(o,l),o),n)}_.reduce=A;function w(s,t){let r;const n={onWillAddFirstListener(){r=s(o.fire,o)},onDidRemoveLastListener(){r?.dispose()}};t||e(n);const o=new b(n);return t?.add(o),o.event}function j(s,t){return t instanceof Array?t.push(s):t&&t.add(s),s}function V(s,t,r=100,n=!1,o=!1,l,h){let T,E,y,O=0,g;const P={leakWarningThreshold:l,onWillAddFirstListener(){T=s(B=>{O++,E=t(E,B),n&&!y&&(x.fire(E),E=void 0),g=()=>{const Y=E;E=void 0,y=void 0,(!n||O>1)&&x.fire(Y),O=0},typeof r=="number"?(clearTimeout(y),y=setTimeout(g,r)):y===void 0&&(y=0,queueMicrotask(g))})},onWillRemoveListener(){o&&O>0&&g?.()},onDidRemoveLastListener(){g=void 0,T.dispose()}};h||e(P);const x=new b(P);return h?.add(x),x.event}_.debounce=V;function de(s,t=0,r){return _.debounce(s,(n,o)=>n?(n.push(o),n):[o],t,void 0,!0,void 0,r)}_.accumulate=de;function he(s,t=(n,o)=>n===o,r){let n=!0,o;return f(s,l=>{const h=n||!t(l,o);return n=!1,o=l,h},r)}_.latch=he;function ve(s,t,r){return[_.filter(s,t,r),_.filter(s,n=>!t(n),r)]}_.split=ve;function ce(s,t=!1,r=[],n){let o=r.slice(),l=s(E=>{o?o.push(E):T.fire(E)});n&&n.add(l);const h=()=>{o?.forEach(E=>T.fire(E)),o=null},T=new b({onWillAddFirstListener(){l||(l=s(E=>T.fire(E)),n&&n.add(l))},onDidAddFirstListener(){o&&(t?setTimeout(h):h())},onDidRemoveLastListener(){l&&l.dispose(),l=null}});return n&&n.add(T),T.event}_.buffer=ce;function pe(s,t){return(n,o,l)=>{const h=t(new G);return s(function(T){const E=h.evaluate(T);E!==I&&n.call(o,E)},void 0,l)}}_.chain=pe;const I=Symbol("HaltChainable");class G{steps=[];map(t){return this.steps.push(t),this}forEach(t){return this.steps.push(r=>(t(r),r)),this}filter(t){return this.steps.push(r=>t(r)?r:I),this}reduce(t,r){let n=r;return this.steps.push(o=>(n=t(n,o),n)),this}latch(t=(r,n)=>r===n){let r=!0,n;return this.steps.push(o=>{const l=r||!t(o,n);return r=!1,n=o,l?o:I}),this}evaluate(t){for(const r of this.steps)if(t=r(t),t===I)break;return t}}function fe(s,t,r=n=>n){const n=(...T)=>h.fire(r(...T)),o=()=>s.on(t,n),l=()=>s.removeListener(t,n),h=new b({onWillAddFirstListener:o,onDidRemoveLastListener:l});return h.event}_.fromNodeEventEmitter=fe;function Te(s,t,r=n=>n){const n=(...T)=>h.fire(r(...T)),o=()=>s.addEventListener(t,n),l=()=>s.removeEventListener(t,n),h=new b({onWillAddFirstListener:o,onDidRemoveLastListener:l});return h.event}_.fromDOMEventEmitter=Te;function me(s){return new Promise(t=>a(s)(t))}_.toPromise=me;function Ee(s){const t=new b;return s.then(r=>{t.fire(r)},()=>{t.fire(void 0)}).finally(()=>{t.dispose()}),t.event}_.fromPromise=Ee;function be(s,t){return s(r=>t.fire(r))}_.forward=be;function _e(s,t,r){return t(r),s(n=>t(n))}_.runAndSubscribe=_e;class K{constructor(t,r){this._observable=t;const n={onWillAddFirstListener:()=>{t.addObserver(this),this._observable.reportChanges()},onDidRemoveLastListener:()=>{t.removeObserver(this)}};r||e(n),this.emitter=new b(n),r&&r.add(this.emitter)}emitter;_counter=0;_hasChanged=!1;beginUpdate(t){this._counter++}handlePossibleChange(t){}handleChange(t,r){this._hasChanged=!0}endUpdate(t){this._counter--,this._counter===0&&(this._observable.reportChanges(),this._hasChanged&&(this._hasChanged=!1,this.emitter.fire(this._observable.get())))}}function ye(s,t){return new K(s,t).emitter.event}_.fromObservable=ye;function ge(s){return(t,r,n)=>{let o=0,l=!1;const h={beginUpdate(){o++},endUpdate(){o--,o===0&&(s.reportChanges(),l&&(l=!1,t.call(r)))},handlePossibleChange(){},handleChange(){l=!0}};s.addObserver(h),s.reportChanges();const T={dispose(){s.removeObserver(h)}};return n instanceof S?n.add(T):Array.isArray(n)&&n.push(T),T}}_.fromObservableLight=ge})(W||={});class Q{static all=new Set;static _idPool=0;name;listenerCount=0;invocationCount=0;elapsedOverall=0;durations=[];_stopWatch;constructor(e){this.name=`${e}_${Q._idPool++}`,Q.all.add(this)}start(e){this._stopWatch=new ee,this.listenerCount=e}stop(){if(this._stopWatch){const e=this._stopWatch.elapsed();this.durations.push(e),this.elapsedOverall+=e,this.invocationCount+=1,this._stopWatch=void 0}}}let D=-1;function Ae(v){const e=D;return D=v,{dispose(){D=e}}}class M{constructor(e,i,a=(M._idPool++).toString(16).padStart(3,"0")){this._errorHandler=e;this.threshold=i;this.name=a}static _idPool=1;_stacks;_warnCountdown=0;dispose(){this._stacks?.clear()}check(e,i){const a=this.threshold;if(a<=0||i<a)return;this._stacks||(this._stacks=new Map);const u=this._stacks.get(e.value)||0;if(this._stacks.set(e.value,u+1),this._warnCountdown-=1,this._warnCountdown<=0){this._warnCountdown=a*.5;const[c,p]=this.getMostFrequentStack(),f=`[${this.name}] potential listener LEAK detected, having ${i} listeners already. MOST frequent listener (${p}):`,d=new ie(f,c);this._errorHandler(d)}return()=>{const c=this._stacks.get(e.value)||0;this._stacks.set(e.value,c-1)}}getMostFrequentStack(){if(!this._stacks)return;let e,i=0;for(const[a,u]of this._stacks)(!e||i<u)&&(e=[a,u],i=u);return e}}class k{constructor(e){this.value=e}static create(){const e=new Error;return new k(e.stack??"")}print(){}}class ie extends Error{constructor(e,i){super(e),this.name="ListenerLeakError",this.stack=i}}class se extends Error{constructor(e,i){super(e),this.name="ListenerRefusalError",this.stack=i}}let re=0;class R{constructor(e){this.value=e}stack;id=re++}const oe=2,$=(v,e)=>{if(v instanceof R)e(v);else for(let i=0;i<v.length;i++){const a=v[i];a&&e(a)}};let F;if(te){const v=[];setInterval(()=>{v.length!==0&&(v.length=0)},3e3),F=new FinalizationRegistry(e=>{typeof e=="string"&&v.push(e)})}class b{_options;_leakageMon;_perfMon;_disposed;_event;_listeners;_deliveryQueue;_size=0;constructor(e){this._options=e,this._leakageMon=D>0||this._options?.leakWarningThreshold?new M(e?.onListenerError??L,this._options?.leakWarningThreshold??D):void 0,this._perfMon=this._options?._profName?new Q(this._options._profName):void 0,this._deliveryQueue=this._options?.deliveryQueue}dispose(){if(!this._disposed){if(this._disposed=!0,this._deliveryQueue?.current===this&&this._deliveryQueue.reset(),this._listeners){if(q){const e=this._listeners;queueMicrotask(()=>{$(e,i=>i.stack?.print())})}this._listeners=void 0,this._size=0}this._options?.onDidRemoveLastListener?.(),this._leakageMon?.dispose()}}get event(){return this._event??=(e,i,a)=>{if(this._leakageMon&&this._size>this._leakageMon.threshold**2){const d=`[${this._leakageMon.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this._size} vs ${this._leakageMon.threshold})`,m=this._leakageMon.getMostFrequentStack()??["UNKNOWN stack",-1],A=new se(`${d}. HINT: Stack shows most frequent listener (${m[1]}-times)`,m[0]);return(this._options?.onListenerError||L)(A),C.None}if(this._disposed)return C.None;i&&(e=e.bind(i));const u=new R(e);let c,p;this._leakageMon&&this._size>=Math.ceil(this._leakageMon.threshold*.2)&&(u.stack=k.create(),c=this._leakageMon.check(u.stack,this._size+1)),q&&(u.stack=p??k.create()),this._listeners?this._listeners instanceof R?(this._deliveryQueue??=new H,this._listeners=[this._listeners,u]):this._listeners.push(u):(this._options?.onWillAddFirstListener?.(this),this._listeners=u,this._options?.onDidAddFirstListener?.(this)),this._size++;const f=z(()=>{F?.unregister(f),c?.(),this._removeListener(u)});if(a instanceof S?a.add(f):Array.isArray(a)&&a.push(f),F){const d=new Error().stack.split(`
-`).slice(2,3).join(`
-`).trim(),m=/(file:|vscode-file:\/\/vscode-app)?(\/[^:]*:\d+:\d+)/.exec(d);F.register(f,m?.[2]??d,f)}return f},this._event}_removeListener(e){if(this._options?.onWillRemoveListener?.(this),!this._listeners)return;if(this._size===1){this._listeners=void 0,this._options?.onDidRemoveLastListener?.(this),this._size=0;return}const i=this._listeners,a=i.indexOf(e);if(a===-1)throw new Error("Attempted to dispose unknown listener");this._size--,i[a]=void 0;const u=this._deliveryQueue.current===this;if(this._size*oe<=i.length){let c=0;for(let p=0;p<i.length;p++)i[p]?i[c++]=i[p]:u&&(this._deliveryQueue.end--,c<this._deliveryQueue.i&&this._deliveryQueue.i--);i.length=c}}_deliver(e,i){if(!e)return;const a=this._options?.onListenerError||L;if(!a){e.value(i);return}try{e.value(i)}catch(u){a(u)}}_deliverQueue(e){const i=e.current._listeners;for(;e.i<e.end;)this._deliver(i[e.i++],e.value);e.reset()}fire(e){if(this._deliveryQueue?.current&&(this._deliverQueue(this._deliveryQueue),this._perfMon?.stop()),this._perfMon?.start(this._size),this._listeners)if(this._listeners instanceof R)this._deliver(this._listeners,e);else{const i=this._deliveryQueue;i.enqueue(this,e,this._listeners.length),this._deliverQueue(i)}this._perfMon?.stop()}hasListeners(){return this._size>0}}const Pe=()=>new H;class H{i=-1;end=0;current;value;enqueue(e,i,a){this.i=0,this.end=a,this.current=e,this.value=i}reset(){this.i=this.end,this.current=void 0,this.value=void 0}}class Ue extends b{_asyncDeliveryQueue;async fireAsync(e,i,a){if(this._listeners)for(this._asyncDeliveryQueue||(this._asyncDeliveryQueue=new N),$(this._listeners,u=>this._asyncDeliveryQueue.push([u.value,e]));this._asyncDeliveryQueue.size>0&&!i.isCancellationRequested;){const[u,c]=this._asyncDeliveryQueue.shift(),p=[],f={...c,token:i,waitUntil:d=>{if(Object.isFrozen(p))throw new Error("waitUntil can NOT be called asynchronous");a&&(d=a(d,u)),p.push(d)}};try{u(f)}catch(d){L(d);continue}Object.freeze(p),await Promise.allSettled(p).then(d=>{for(const m of d)m.status==="rejected"&&L(m.reason)})}}}class ae extends b{_isPaused=0;_eventQueue=new N;_mergeFn;get isPaused(){return this._isPaused!==0}constructor(e){super(e),this._mergeFn=e?.merge}pause(){this._isPaused++}resume(){if(this._isPaused!==0&&--this._isPaused===0)if(this._mergeFn){if(this._eventQueue.size>0){const e=Array.from(this._eventQueue);this._eventQueue.clear(),super.fire(this._mergeFn(e))}}else for(;!this._isPaused&&this._eventQueue.size!==0;)super.fire(this._eventQueue.shift())}fire(e){this._size&&(this._isPaused!==0?this._eventQueue.push(e):super.fire(e))}}class ze extends ae{_delay;_handle;constructor(e){super(e),this._delay=e.delay??100}fire(e){this._handle||(this.pause(),this._handle=setTimeout(()=>{this._handle=void 0,this.resume()},this._delay)),super.fire(e)}}class Ne extends b{_queuedEvents=[];_mergeFn;constructor(e){super(e),this._mergeFn=e?.merge}fire(e){this.hasListeners()&&(this._queuedEvents.push(e),this._queuedEvents.length===1&&queueMicrotask(()=>{this._mergeFn?super.fire(this._mergeFn(this._queuedEvents)):this._queuedEvents.forEach(i=>super.fire(i)),this._queuedEvents=[]}))}}class le{emitter;hasListeners=!1;events=[];constructor(){this.emitter=new b({onWillAddFirstListener:()=>this.onFirstListenerAdd(),onDidRemoveLastListener:()=>this.onLastListenerRemove()})}get event(){return this.emitter.event}add(e){const i={event:e,listener:null};return this.events.push(i),this.hasListeners&&this.hook(i),z(X(()=>{this.hasListeners&&this.unhook(i);const u=this.events.indexOf(i);this.events.splice(u,1)}))}onFirstListenerAdd(){this.hasListeners=!0,this.events.forEach(e=>this.hook(e))}onLastListenerRemove(){this.hasListeners=!1,this.events.forEach(e=>this.unhook(e))}hook(e){e.listener=e.event(i=>this.emitter.fire(i))}unhook(e){e.listener?.dispose(),e.listener=null}dispose(){this.emitter.dispose();for(const e of this.events)e.listener?.dispose();this.events=[]}}class qe{_store=new S;event;constructor(e,i,a,u){const c=this._store.add(new le),p=this._store.add(new U);function f(d){p.set(d,c.add(u(d)))}for(const d of e)f(d);this._store.add(i(d=>{f(d)})),this._store.add(a(d=>{p.deleteAndDispose(d)})),this.event=c.event}dispose(){this._store.dispose()}}class $e{data=[];wrapEvent(e,i,a){return(u,c,p)=>e(f=>{const d=this.data[this.data.length-1];if(!i){d?d.buffers.push(()=>u.call(c,f)):u.call(c,f);return}const m=d;if(!m){u.call(c,i(a,f));return}m.items??=[],m.items.push(f),m.buffers.length===0&&d.buffers.push(()=>{m.reducedResult??=a?m.items.reduce(i,a):m.items.reduce(i),u.call(c,m.reducedResult)})},void 0,p)}bufferEvents(e){const i={buffers:new Array};this.data.push(i);const a=e();return this.data.pop(),i.buffers.forEach(u=>u()),a}}class He{listening=!1;inputEvent=W.None;inputEventListener=C.None;emitter=new b({onDidAddFirstListener:()=>{this.listening=!0,this.inputEventListener=this.inputEvent(this.emitter.fire,this.emitter)},onDidRemoveLastListener:()=>{this.listening=!1,this.inputEventListener.dispose()}});event=this.emitter.event;set input(e){this.inputEvent=e,this.listening&&(this.inputEventListener.dispose(),this.inputEventListener=e(this.emitter.fire,this.emitter))}dispose(){this.inputEventListener.dispose(),this.emitter.dispose()}}class je{constructor(e){this._value=e}static const(e){return new ue(e)}_onDidChange=new b;onDidChange=this._onDidChange.event;get value(){return this._value}set value(e){e!==this._value&&(this._value=e,this._onDidChange.fire(void 0))}}class ue{constructor(e){this.value=e}onDidChange=W.None}function Ve(v,e,i){const a=new U;let u=new Set(v());for(const p of u)a.set(p,i(p));const c=new S;return c.add(e(()=>{const p=v(),f=J(u,p);for(const d of f.removed)a.deleteAndDispose(d);for(const d of f.added)a.set(d,i(d));u=new Set(p)})),c.add(a),c}export{Ue as AsyncEmitter,ze as DebounceEmitter,qe as DynamicListEventMultiplexer,b as Emitter,W as Event,$e as EventBufferer,le as EventMultiplexer,Q as EventProfiling,ie as ListenerLeakError,se as ListenerRefusalError,Ne as MicrotaskEmitter,ae as PauseableEmitter,He as Relay,je as ValueWithChangeEvent,Pe as createEventDeliveryQueue,Ae as setGlobalLeakWarningThreshold,Ve as trackSetChanges};
+import { diffSets } from './collections.js';
+import { onUnexpectedError } from './errors.js';
+import { createSingleCallFunction } from './functional.js';
+import { combinedDisposable, Disposable, DisposableMap, DisposableStore, toDisposable } from './lifecycle.js';
+import { LinkedList } from './linkedList.js';
+import { StopWatch } from './stopwatch.js';
+const _enableListenerGCedWarning = false;
+const _enableDisposeWithListenerWarning = false;
+const _enableSnapshotPotentialLeakWarning = false;
+export var Event;
+(function (Event) {
+    Event.None = () => Disposable.None;
+    function _addLeakageTraceLogic(options) {
+        if (_enableSnapshotPotentialLeakWarning) {
+            const { onDidAddListener: origListenerDidAdd } = options;
+            const stack = Stacktrace.create();
+            let count = 0;
+            options.onDidAddListener = () => {
+                if (++count === 2) {
+                    console.warn('snapshotted emitter LIKELY used public and SHOULD HAVE BEEN created with DisposableStore. snapshotted here');
+                    stack.print();
+                }
+                origListenerDidAdd?.();
+            };
+        }
+    }
+    function defer(event, disposable) {
+        return debounce(event, () => void 0, 0, undefined, true, undefined, disposable);
+    }
+    Event.defer = defer;
+    function once(event) {
+        return (listener, thisArgs = null, disposables) => {
+            let didFire = false;
+            let result = undefined;
+            result = event(e => {
+                if (didFire) {
+                    return;
+                }
+                else if (result) {
+                    result.dispose();
+                }
+                else {
+                    didFire = true;
+                }
+                return listener.call(thisArgs, e);
+            }, null, disposables);
+            if (didFire) {
+                result.dispose();
+            }
+            return result;
+        };
+    }
+    Event.once = once;
+    function onceIf(event, condition) {
+        return Event.once(Event.filter(event, condition));
+    }
+    Event.onceIf = onceIf;
+    function map(event, map, disposable) {
+        return snapshot((listener, thisArgs = null, disposables) => event(i => listener.call(thisArgs, map(i)), null, disposables), disposable);
+    }
+    Event.map = map;
+    function forEach(event, each, disposable) {
+        return snapshot((listener, thisArgs = null, disposables) => event(i => { each(i); listener.call(thisArgs, i); }, null, disposables), disposable);
+    }
+    Event.forEach = forEach;
+    function filter(event, filter, disposable) {
+        return snapshot((listener, thisArgs = null, disposables) => event(e => filter(e) && listener.call(thisArgs, e), null, disposables), disposable);
+    }
+    Event.filter = filter;
+    function signal(event) {
+        return event;
+    }
+    Event.signal = signal;
+    function any(...events) {
+        return (listener, thisArgs = null, disposables) => {
+            const disposable = combinedDisposable(...events.map(event => event(e => listener.call(thisArgs, e))));
+            return addAndReturnDisposable(disposable, disposables);
+        };
+    }
+    Event.any = any;
+    function reduce(event, merge, initial, disposable) {
+        let output = initial;
+        return map(event, e => {
+            output = merge(output, e);
+            return output;
+        }, disposable);
+    }
+    Event.reduce = reduce;
+    function snapshot(event, disposable) {
+        let listener;
+        const options = {
+            onWillAddFirstListener() {
+                listener = event(emitter.fire, emitter);
+            },
+            onDidRemoveLastListener() {
+                listener?.dispose();
+            }
+        };
+        if (!disposable) {
+            _addLeakageTraceLogic(options);
+        }
+        const emitter = new Emitter(options);
+        disposable?.add(emitter);
+        return emitter.event;
+    }
+    function addAndReturnDisposable(d, store) {
+        if (store instanceof Array) {
+            store.push(d);
+        }
+        else if (store) {
+            store.add(d);
+        }
+        return d;
+    }
+    function debounce(event, merge, delay = 100, leading = false, flushOnListenerRemove = false, leakWarningThreshold, disposable) {
+        let subscription;
+        let output = undefined;
+        let handle = undefined;
+        let numDebouncedCalls = 0;
+        let doFire;
+        const options = {
+            leakWarningThreshold,
+            onWillAddFirstListener() {
+                subscription = event(cur => {
+                    numDebouncedCalls++;
+                    output = merge(output, cur);
+                    if (leading && !handle) {
+                        emitter.fire(output);
+                        output = undefined;
+                    }
+                    doFire = () => {
+                        const _output = output;
+                        output = undefined;
+                        handle = undefined;
+                        if (!leading || numDebouncedCalls > 1) {
+                            emitter.fire(_output);
+                        }
+                        numDebouncedCalls = 0;
+                    };
+                    if (typeof delay === 'number') {
+                        clearTimeout(handle);
+                        handle = setTimeout(doFire, delay);
+                    }
+                    else {
+                        if (handle === undefined) {
+                            handle = 0;
+                            queueMicrotask(doFire);
+                        }
+                    }
+                });
+            },
+            onWillRemoveListener() {
+                if (flushOnListenerRemove && numDebouncedCalls > 0) {
+                    doFire?.();
+                }
+            },
+            onDidRemoveLastListener() {
+                doFire = undefined;
+                subscription.dispose();
+            }
+        };
+        if (!disposable) {
+            _addLeakageTraceLogic(options);
+        }
+        const emitter = new Emitter(options);
+        disposable?.add(emitter);
+        return emitter.event;
+    }
+    Event.debounce = debounce;
+    function accumulate(event, delay = 0, disposable) {
+        return Event.debounce(event, (last, e) => {
+            if (!last) {
+                return [e];
+            }
+            last.push(e);
+            return last;
+        }, delay, undefined, true, undefined, disposable);
+    }
+    Event.accumulate = accumulate;
+    function latch(event, equals = (a, b) => a === b, disposable) {
+        let firstCall = true;
+        let cache;
+        return filter(event, value => {
+            const shouldEmit = firstCall || !equals(value, cache);
+            firstCall = false;
+            cache = value;
+            return shouldEmit;
+        }, disposable);
+    }
+    Event.latch = latch;
+    function split(event, isT, disposable) {
+        return [
+            Event.filter(event, isT, disposable),
+            Event.filter(event, e => !isT(e), disposable),
+        ];
+    }
+    Event.split = split;
+    function buffer(event, flushAfterTimeout = false, _buffer = [], disposable) {
+        let buffer = _buffer.slice();
+        let listener = event(e => {
+            if (buffer) {
+                buffer.push(e);
+            }
+            else {
+                emitter.fire(e);
+            }
+        });
+        if (disposable) {
+            disposable.add(listener);
+        }
+        const flush = () => {
+            buffer?.forEach(e => emitter.fire(e));
+            buffer = null;
+        };
+        const emitter = new Emitter({
+            onWillAddFirstListener() {
+                if (!listener) {
+                    listener = event(e => emitter.fire(e));
+                    if (disposable) {
+                        disposable.add(listener);
+                    }
+                }
+            },
+            onDidAddFirstListener() {
+                if (buffer) {
+                    if (flushAfterTimeout) {
+                        setTimeout(flush);
+                    }
+                    else {
+                        flush();
+                    }
+                }
+            },
+            onDidRemoveLastListener() {
+                if (listener) {
+                    listener.dispose();
+                }
+                listener = null;
+            }
+        });
+        if (disposable) {
+            disposable.add(emitter);
+        }
+        return emitter.event;
+    }
+    Event.buffer = buffer;
+    function chain(event, sythensize) {
+        const fn = (listener, thisArgs, disposables) => {
+            const cs = sythensize(new ChainableSynthesis());
+            return event(function (value) {
+                const result = cs.evaluate(value);
+                if (result !== HaltChainable) {
+                    listener.call(thisArgs, result);
+                }
+            }, undefined, disposables);
+        };
+        return fn;
+    }
+    Event.chain = chain;
+    const HaltChainable = Symbol('HaltChainable');
+    class ChainableSynthesis {
+        constructor() {
+            this.steps = [];
+        }
+        map(fn) {
+            this.steps.push(fn);
+            return this;
+        }
+        forEach(fn) {
+            this.steps.push(v => {
+                fn(v);
+                return v;
+            });
+            return this;
+        }
+        filter(fn) {
+            this.steps.push(v => fn(v) ? v : HaltChainable);
+            return this;
+        }
+        reduce(merge, initial) {
+            let last = initial;
+            this.steps.push(v => {
+                last = merge(last, v);
+                return last;
+            });
+            return this;
+        }
+        latch(equals = (a, b) => a === b) {
+            let firstCall = true;
+            let cache;
+            this.steps.push(value => {
+                const shouldEmit = firstCall || !equals(value, cache);
+                firstCall = false;
+                cache = value;
+                return shouldEmit ? value : HaltChainable;
+            });
+            return this;
+        }
+        evaluate(value) {
+            for (const step of this.steps) {
+                value = step(value);
+                if (value === HaltChainable) {
+                    break;
+                }
+            }
+            return value;
+        }
+    }
+    function fromNodeEventEmitter(emitter, eventName, map = id => id) {
+        const fn = (...args) => result.fire(map(...args));
+        const onFirstListenerAdd = () => emitter.on(eventName, fn);
+        const onLastListenerRemove = () => emitter.removeListener(eventName, fn);
+        const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+        return result.event;
+    }
+    Event.fromNodeEventEmitter = fromNodeEventEmitter;
+    function fromDOMEventEmitter(emitter, eventName, map = id => id) {
+        const fn = (...args) => result.fire(map(...args));
+        const onFirstListenerAdd = () => emitter.addEventListener(eventName, fn);
+        const onLastListenerRemove = () => emitter.removeEventListener(eventName, fn);
+        const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+        return result.event;
+    }
+    Event.fromDOMEventEmitter = fromDOMEventEmitter;
+    function toPromise(event) {
+        return new Promise(resolve => once(event)(resolve));
+    }
+    Event.toPromise = toPromise;
+    function fromPromise(promise) {
+        const result = new Emitter();
+        promise.then(res => {
+            result.fire(res);
+        }, () => {
+            result.fire(undefined);
+        }).finally(() => {
+            result.dispose();
+        });
+        return result.event;
+    }
+    Event.fromPromise = fromPromise;
+    function forward(from, to) {
+        return from(e => to.fire(e));
+    }
+    Event.forward = forward;
+    function runAndSubscribe(event, handler, initial) {
+        handler(initial);
+        return event(e => handler(e));
+    }
+    Event.runAndSubscribe = runAndSubscribe;
+    class EmitterObserver {
+        constructor(_observable, store) {
+            this._observable = _observable;
+            this._counter = 0;
+            this._hasChanged = false;
+            const options = {
+                onWillAddFirstListener: () => {
+                    _observable.addObserver(this);
+                    this._observable.reportChanges();
+                },
+                onDidRemoveLastListener: () => {
+                    _observable.removeObserver(this);
+                }
+            };
+            if (!store) {
+                _addLeakageTraceLogic(options);
+            }
+            this.emitter = new Emitter(options);
+            if (store) {
+                store.add(this.emitter);
+            }
+        }
+        beginUpdate(_observable) {
+            this._counter++;
+        }
+        handlePossibleChange(_observable) {
+        }
+        handleChange(_observable, _change) {
+            this._hasChanged = true;
+        }
+        endUpdate(_observable) {
+            this._counter--;
+            if (this._counter === 0) {
+                this._observable.reportChanges();
+                if (this._hasChanged) {
+                    this._hasChanged = false;
+                    this.emitter.fire(this._observable.get());
+                }
+            }
+        }
+    }
+    function fromObservable(obs, store) {
+        const observer = new EmitterObserver(obs, store);
+        return observer.emitter.event;
+    }
+    Event.fromObservable = fromObservable;
+    function fromObservableLight(observable) {
+        return (listener, thisArgs, disposables) => {
+            let count = 0;
+            let didChange = false;
+            const observer = {
+                beginUpdate() {
+                    count++;
+                },
+                endUpdate() {
+                    count--;
+                    if (count === 0) {
+                        observable.reportChanges();
+                        if (didChange) {
+                            didChange = false;
+                            listener.call(thisArgs);
+                        }
+                    }
+                },
+                handlePossibleChange() {
+                },
+                handleChange() {
+                    didChange = true;
+                }
+            };
+            observable.addObserver(observer);
+            observable.reportChanges();
+            const disposable = {
+                dispose() {
+                    observable.removeObserver(observer);
+                }
+            };
+            if (disposables instanceof DisposableStore) {
+                disposables.add(disposable);
+            }
+            else if (Array.isArray(disposables)) {
+                disposables.push(disposable);
+            }
+            return disposable;
+        };
+    }
+    Event.fromObservableLight = fromObservableLight;
+})(Event || (Event = {}));
+export class EventProfiling {
+    static { this.all = new Set(); }
+    static { this._idPool = 0; }
+    constructor(name) {
+        this.listenerCount = 0;
+        this.invocationCount = 0;
+        this.elapsedOverall = 0;
+        this.durations = [];
+        this.name = `${name}_${EventProfiling._idPool++}`;
+        EventProfiling.all.add(this);
+    }
+    start(listenerCount) {
+        this._stopWatch = new StopWatch();
+        this.listenerCount = listenerCount;
+    }
+    stop() {
+        if (this._stopWatch) {
+            const elapsed = this._stopWatch.elapsed();
+            this.durations.push(elapsed);
+            this.elapsedOverall += elapsed;
+            this.invocationCount += 1;
+            this._stopWatch = undefined;
+        }
+    }
+}
+let _globalLeakWarningThreshold = -1;
+export function setGlobalLeakWarningThreshold(n) {
+    const oldValue = _globalLeakWarningThreshold;
+    _globalLeakWarningThreshold = n;
+    return {
+        dispose() {
+            _globalLeakWarningThreshold = oldValue;
+        }
+    };
+}
+class LeakageMonitor {
+    static { this._idPool = 1; }
+    constructor(_errorHandler, threshold, name = (LeakageMonitor._idPool++).toString(16).padStart(3, '0')) {
+        this._errorHandler = _errorHandler;
+        this.threshold = threshold;
+        this.name = name;
+        this._warnCountdown = 0;
+    }
+    dispose() {
+        this._stacks?.clear();
+    }
+    check(stack, listenerCount) {
+        const threshold = this.threshold;
+        if (threshold <= 0 || listenerCount < threshold) {
+            return undefined;
+        }
+        if (!this._stacks) {
+            this._stacks = new Map();
+        }
+        const count = (this._stacks.get(stack.value) || 0);
+        this._stacks.set(stack.value, count + 1);
+        this._warnCountdown -= 1;
+        if (this._warnCountdown <= 0) {
+            this._warnCountdown = threshold * 0.5;
+            const [topStack, topCount] = this.getMostFrequentStack();
+            const message = `[${this.name}] potential listener LEAK detected, having ${listenerCount} listeners already. MOST frequent listener (${topCount}):`;
+            console.warn(message);
+            console.warn(topStack);
+            const error = new ListenerLeakError(message, topStack);
+            this._errorHandler(error);
+        }
+        return () => {
+            const count = (this._stacks.get(stack.value) || 0);
+            this._stacks.set(stack.value, count - 1);
+        };
+    }
+    getMostFrequentStack() {
+        if (!this._stacks) {
+            return undefined;
+        }
+        let topStack;
+        let topCount = 0;
+        for (const [stack, count] of this._stacks) {
+            if (!topStack || topCount < count) {
+                topStack = [stack, count];
+                topCount = count;
+            }
+        }
+        return topStack;
+    }
+}
+class Stacktrace {
+    static create() {
+        const err = new Error();
+        return new Stacktrace(err.stack ?? '');
+    }
+    constructor(value) {
+        this.value = value;
+    }
+    print() {
+        console.warn(this.value.split('\n').slice(2).join('\n'));
+    }
+}
+export class ListenerLeakError extends Error {
+    constructor(message, stack) {
+        super(message);
+        this.name = 'ListenerLeakError';
+        this.stack = stack;
+    }
+}
+export class ListenerRefusalError extends Error {
+    constructor(message, stack) {
+        super(message);
+        this.name = 'ListenerRefusalError';
+        this.stack = stack;
+    }
+}
+let id = 0;
+class UniqueContainer {
+    constructor(value) {
+        this.value = value;
+        this.id = id++;
+    }
+}
+const compactionThreshold = 2;
+const forEachListener = (listeners, fn) => {
+    if (listeners instanceof UniqueContainer) {
+        fn(listeners);
+    }
+    else {
+        for (let i = 0; i < listeners.length; i++) {
+            const l = listeners[i];
+            if (l) {
+                fn(l);
+            }
+        }
+    }
+};
+let _listenerFinalizers;
+if (_enableListenerGCedWarning) {
+    const leaks = [];
+    setInterval(() => {
+        if (leaks.length === 0) {
+            return;
+        }
+        console.warn('[LEAKING LISTENERS] GC\'ed these listeners that were NOT yet disposed:');
+        console.warn(leaks.join('\n'));
+        leaks.length = 0;
+    }, 3000);
+    _listenerFinalizers = new FinalizationRegistry(heldValue => {
+        if (typeof heldValue === 'string') {
+            leaks.push(heldValue);
+        }
+    });
+}
+export class Emitter {
+    constructor(options) {
+        this._size = 0;
+        this._options = options;
+        this._leakageMon = (_globalLeakWarningThreshold > 0 || this._options?.leakWarningThreshold)
+            ? new LeakageMonitor(options?.onListenerError ?? onUnexpectedError, this._options?.leakWarningThreshold ?? _globalLeakWarningThreshold) :
+            undefined;
+        this._perfMon = this._options?._profName ? new EventProfiling(this._options._profName) : undefined;
+        this._deliveryQueue = this._options?.deliveryQueue;
+    }
+    dispose() {
+        if (!this._disposed) {
+            this._disposed = true;
+            if (this._deliveryQueue?.current === this) {
+                this._deliveryQueue.reset();
+            }
+            if (this._listeners) {
+                if (_enableDisposeWithListenerWarning) {
+                    const listeners = this._listeners;
+                    queueMicrotask(() => {
+                        forEachListener(listeners, l => l.stack?.print());
+                    });
+                }
+                this._listeners = undefined;
+                this._size = 0;
+            }
+            this._options?.onDidRemoveLastListener?.();
+            this._leakageMon?.dispose();
+        }
+    }
+    get event() {
+        this._event ??= (callback, thisArgs, disposables) => {
+            if (this._leakageMon && this._size > this._leakageMon.threshold ** 2) {
+                const message = `[${this._leakageMon.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this._size} vs ${this._leakageMon.threshold})`;
+                console.warn(message);
+                const tuple = this._leakageMon.getMostFrequentStack() ?? ['UNKNOWN stack', -1];
+                const error = new ListenerRefusalError(`${message}. HINT: Stack shows most frequent listener (${tuple[1]}-times)`, tuple[0]);
+                const errorHandler = this._options?.onListenerError || onUnexpectedError;
+                errorHandler(error);
+                return Disposable.None;
+            }
+            if (this._disposed) {
+                return Disposable.None;
+            }
+            if (thisArgs) {
+                callback = callback.bind(thisArgs);
+            }
+            const contained = new UniqueContainer(callback);
+            let removeMonitor;
+            let stack;
+            if (this._leakageMon && this._size >= Math.ceil(this._leakageMon.threshold * 0.2)) {
+                contained.stack = Stacktrace.create();
+                removeMonitor = this._leakageMon.check(contained.stack, this._size + 1);
+            }
+            if (_enableDisposeWithListenerWarning) {
+                contained.stack = stack ?? Stacktrace.create();
+            }
+            if (!this._listeners) {
+                this._options?.onWillAddFirstListener?.(this);
+                this._listeners = contained;
+                this._options?.onDidAddFirstListener?.(this);
+            }
+            else if (this._listeners instanceof UniqueContainer) {
+                this._deliveryQueue ??= new EventDeliveryQueuePrivate();
+                this._listeners = [this._listeners, contained];
+            }
+            else {
+                this._listeners.push(contained);
+            }
+            this._size++;
+            const result = toDisposable(() => {
+                _listenerFinalizers?.unregister(result);
+                removeMonitor?.();
+                this._removeListener(contained);
+            });
+            if (disposables instanceof DisposableStore) {
+                disposables.add(result);
+            }
+            else if (Array.isArray(disposables)) {
+                disposables.push(result);
+            }
+            if (_listenerFinalizers) {
+                const stack = new Error().stack.split('\n').slice(2, 3).join('\n').trim();
+                const match = /(file:|vscode-file:\/\/vscode-app)?(\/[^:]*:\d+:\d+)/.exec(stack);
+                _listenerFinalizers.register(result, match?.[2] ?? stack, result);
+            }
+            return result;
+        };
+        return this._event;
+    }
+    _removeListener(listener) {
+        this._options?.onWillRemoveListener?.(this);
+        if (!this._listeners) {
+            return;
+        }
+        if (this._size === 1) {
+            this._listeners = undefined;
+            this._options?.onDidRemoveLastListener?.(this);
+            this._size = 0;
+            return;
+        }
+        const listeners = this._listeners;
+        const index = listeners.indexOf(listener);
+        if (index === -1) {
+            console.log('disposed?', this._disposed);
+            console.log('size?', this._size);
+            console.log('arr?', JSON.stringify(this._listeners));
+            throw new Error('Attempted to dispose unknown listener');
+        }
+        this._size--;
+        listeners[index] = undefined;
+        const adjustDeliveryQueue = this._deliveryQueue.current === this;
+        if (this._size * compactionThreshold <= listeners.length) {
+            let n = 0;
+            for (let i = 0; i < listeners.length; i++) {
+                if (listeners[i]) {
+                    listeners[n++] = listeners[i];
+                }
+                else if (adjustDeliveryQueue) {
+                    this._deliveryQueue.end--;
+                    if (n < this._deliveryQueue.i) {
+                        this._deliveryQueue.i--;
+                    }
+                }
+            }
+            listeners.length = n;
+        }
+    }
+    _deliver(listener, value) {
+        if (!listener) {
+            return;
+        }
+        const errorHandler = this._options?.onListenerError || onUnexpectedError;
+        if (!errorHandler) {
+            listener.value(value);
+            return;
+        }
+        try {
+            listener.value(value);
+        }
+        catch (e) {
+            errorHandler(e);
+        }
+    }
+    _deliverQueue(dq) {
+        const listeners = dq.current._listeners;
+        while (dq.i < dq.end) {
+            this._deliver(listeners[dq.i++], dq.value);
+        }
+        dq.reset();
+    }
+    fire(event) {
+        if (this._deliveryQueue?.current) {
+            this._deliverQueue(this._deliveryQueue);
+            this._perfMon?.stop();
+        }
+        this._perfMon?.start(this._size);
+        if (!this._listeners) {
+        }
+        else if (this._listeners instanceof UniqueContainer) {
+            this._deliver(this._listeners, event);
+        }
+        else {
+            const dq = this._deliveryQueue;
+            dq.enqueue(this, event, this._listeners.length);
+            this._deliverQueue(dq);
+        }
+        this._perfMon?.stop();
+    }
+    hasListeners() {
+        return this._size > 0;
+    }
+}
+export const createEventDeliveryQueue = () => new EventDeliveryQueuePrivate();
+class EventDeliveryQueuePrivate {
+    constructor() {
+        this.i = -1;
+        this.end = 0;
+    }
+    enqueue(emitter, value, end) {
+        this.i = 0;
+        this.end = end;
+        this.current = emitter;
+        this.value = value;
+    }
+    reset() {
+        this.i = this.end;
+        this.current = undefined;
+        this.value = undefined;
+    }
+}
+export class AsyncEmitter extends Emitter {
+    async fireAsync(data, token, promiseJoin) {
+        if (!this._listeners) {
+            return;
+        }
+        if (!this._asyncDeliveryQueue) {
+            this._asyncDeliveryQueue = new LinkedList();
+        }
+        forEachListener(this._listeners, listener => this._asyncDeliveryQueue.push([listener.value, data]));
+        while (this._asyncDeliveryQueue.size > 0 && !token.isCancellationRequested) {
+            const [listener, data] = this._asyncDeliveryQueue.shift();
+            const thenables = [];
+            const event = {
+                ...data,
+                token,
+                waitUntil: (p) => {
+                    if (Object.isFrozen(thenables)) {
+                        throw new Error('waitUntil can NOT be called asynchronous');
+                    }
+                    if (promiseJoin) {
+                        p = promiseJoin(p, listener);
+                    }
+                    thenables.push(p);
+                }
+            };
+            try {
+                listener(event);
+            }
+            catch (e) {
+                onUnexpectedError(e);
+                continue;
+            }
+            Object.freeze(thenables);
+            await Promise.allSettled(thenables).then(values => {
+                for (const value of values) {
+                    if (value.status === 'rejected') {
+                        onUnexpectedError(value.reason);
+                    }
+                }
+            });
+        }
+    }
+}
+export class PauseableEmitter extends Emitter {
+    get isPaused() {
+        return this._isPaused !== 0;
+    }
+    constructor(options) {
+        super(options);
+        this._isPaused = 0;
+        this._eventQueue = new LinkedList();
+        this._mergeFn = options?.merge;
+    }
+    pause() {
+        this._isPaused++;
+    }
+    resume() {
+        if (this._isPaused !== 0 && --this._isPaused === 0) {
+            if (this._mergeFn) {
+                if (this._eventQueue.size > 0) {
+                    const events = Array.from(this._eventQueue);
+                    this._eventQueue.clear();
+                    super.fire(this._mergeFn(events));
+                }
+            }
+            else {
+                while (!this._isPaused && this._eventQueue.size !== 0) {
+                    super.fire(this._eventQueue.shift());
+                }
+            }
+        }
+    }
+    fire(event) {
+        if (this._size) {
+            if (this._isPaused !== 0) {
+                this._eventQueue.push(event);
+            }
+            else {
+                super.fire(event);
+            }
+        }
+    }
+}
+export class DebounceEmitter extends PauseableEmitter {
+    constructor(options) {
+        super(options);
+        this._delay = options.delay ?? 100;
+    }
+    fire(event) {
+        if (!this._handle) {
+            this.pause();
+            this._handle = setTimeout(() => {
+                this._handle = undefined;
+                this.resume();
+            }, this._delay);
+        }
+        super.fire(event);
+    }
+}
+export class MicrotaskEmitter extends Emitter {
+    constructor(options) {
+        super(options);
+        this._queuedEvents = [];
+        this._mergeFn = options?.merge;
+    }
+    fire(event) {
+        if (!this.hasListeners()) {
+            return;
+        }
+        this._queuedEvents.push(event);
+        if (this._queuedEvents.length === 1) {
+            queueMicrotask(() => {
+                if (this._mergeFn) {
+                    super.fire(this._mergeFn(this._queuedEvents));
+                }
+                else {
+                    this._queuedEvents.forEach(e => super.fire(e));
+                }
+                this._queuedEvents = [];
+            });
+        }
+    }
+}
+export class EventMultiplexer {
+    constructor() {
+        this.hasListeners = false;
+        this.events = [];
+        this.emitter = new Emitter({
+            onWillAddFirstListener: () => this.onFirstListenerAdd(),
+            onDidRemoveLastListener: () => this.onLastListenerRemove()
+        });
+    }
+    get event() {
+        return this.emitter.event;
+    }
+    add(event) {
+        const e = { event: event, listener: null };
+        this.events.push(e);
+        if (this.hasListeners) {
+            this.hook(e);
+        }
+        const dispose = () => {
+            if (this.hasListeners) {
+                this.unhook(e);
+            }
+            const idx = this.events.indexOf(e);
+            this.events.splice(idx, 1);
+        };
+        return toDisposable(createSingleCallFunction(dispose));
+    }
+    onFirstListenerAdd() {
+        this.hasListeners = true;
+        this.events.forEach(e => this.hook(e));
+    }
+    onLastListenerRemove() {
+        this.hasListeners = false;
+        this.events.forEach(e => this.unhook(e));
+    }
+    hook(e) {
+        e.listener = e.event(r => this.emitter.fire(r));
+    }
+    unhook(e) {
+        e.listener?.dispose();
+        e.listener = null;
+    }
+    dispose() {
+        this.emitter.dispose();
+        for (const e of this.events) {
+            e.listener?.dispose();
+        }
+        this.events = [];
+    }
+}
+export class DynamicListEventMultiplexer {
+    constructor(items, onAddItem, onRemoveItem, getEvent) {
+        this._store = new DisposableStore();
+        const multiplexer = this._store.add(new EventMultiplexer());
+        const itemListeners = this._store.add(new DisposableMap());
+        function addItem(instance) {
+            itemListeners.set(instance, multiplexer.add(getEvent(instance)));
+        }
+        for (const instance of items) {
+            addItem(instance);
+        }
+        this._store.add(onAddItem(instance => {
+            addItem(instance);
+        }));
+        this._store.add(onRemoveItem(instance => {
+            itemListeners.deleteAndDispose(instance);
+        }));
+        this.event = multiplexer.event;
+    }
+    dispose() {
+        this._store.dispose();
+    }
+}
+export class EventBufferer {
+    constructor() {
+        this.data = [];
+    }
+    wrapEvent(event, reduce, initial) {
+        return (listener, thisArgs, disposables) => {
+            return event(i => {
+                const data = this.data[this.data.length - 1];
+                if (!reduce) {
+                    if (data) {
+                        data.buffers.push(() => listener.call(thisArgs, i));
+                    }
+                    else {
+                        listener.call(thisArgs, i);
+                    }
+                    return;
+                }
+                const reduceData = data;
+                if (!reduceData) {
+                    listener.call(thisArgs, reduce(initial, i));
+                    return;
+                }
+                reduceData.items ??= [];
+                reduceData.items.push(i);
+                if (reduceData.buffers.length === 0) {
+                    data.buffers.push(() => {
+                        reduceData.reducedResult ??= initial
+                            ? reduceData.items.reduce(reduce, initial)
+                            : reduceData.items.reduce(reduce);
+                        listener.call(thisArgs, reduceData.reducedResult);
+                    });
+                }
+            }, undefined, disposables);
+        };
+    }
+    bufferEvents(fn) {
+        const data = { buffers: new Array() };
+        this.data.push(data);
+        const r = fn();
+        this.data.pop();
+        data.buffers.forEach(flush => flush());
+        return r;
+    }
+}
+export class Relay {
+    constructor() {
+        this.listening = false;
+        this.inputEvent = Event.None;
+        this.inputEventListener = Disposable.None;
+        this.emitter = new Emitter({
+            onDidAddFirstListener: () => {
+                this.listening = true;
+                this.inputEventListener = this.inputEvent(this.emitter.fire, this.emitter);
+            },
+            onDidRemoveLastListener: () => {
+                this.listening = false;
+                this.inputEventListener.dispose();
+            }
+        });
+        this.event = this.emitter.event;
+    }
+    set input(event) {
+        this.inputEvent = event;
+        if (this.listening) {
+            this.inputEventListener.dispose();
+            this.inputEventListener = event(this.emitter.fire, this.emitter);
+        }
+    }
+    dispose() {
+        this.inputEventListener.dispose();
+        this.emitter.dispose();
+    }
+}
+export class ValueWithChangeEvent {
+    static const(value) {
+        return new ConstValueWithChangeEvent(value);
+    }
+    constructor(_value) {
+        this._value = _value;
+        this._onDidChange = new Emitter();
+        this.onDidChange = this._onDidChange.event;
+    }
+    get value() {
+        return this._value;
+    }
+    set value(value) {
+        if (value !== this._value) {
+            this._value = value;
+            this._onDidChange.fire(undefined);
+        }
+    }
+}
+class ConstValueWithChangeEvent {
+    constructor(value) {
+        this.value = value;
+        this.onDidChange = Event.None;
+    }
+}
+export function trackSetChanges(getData, onDidChangeData, handleItem) {
+    const map = new DisposableMap();
+    let oldData = new Set(getData());
+    for (const d of oldData) {
+        map.set(d, handleItem(d));
+    }
+    const store = new DisposableStore();
+    store.add(onDidChangeData(() => {
+        const newData = getData();
+        const diff = diffSets(oldData, newData);
+        for (const r of diff.removed) {
+            map.deleteAndDispose(r);
+        }
+        for (const a of diff.added) {
+            map.set(a, handleItem(a));
+        }
+        oldData = new Set(newData);
+    }));
+    store.add(map);
+    return store;
+}

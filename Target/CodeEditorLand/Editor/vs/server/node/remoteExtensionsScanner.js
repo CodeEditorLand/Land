@@ -1,1 +1,259 @@
-import{isAbsolute as I,join as v,resolve as S}from"../../base/common/path.js";import*as d from"../../base/common/platform.js";import{cwd as _}from"../../base/common/process.js";import{URI as p}from"../../base/common/uri.js";import*as E from"../../base/common/performance.js";import"../../base/common/event.js";import{transformOutgoingURIs as w}from"../../base/common/uriIpc.js";import"../../base/parts/ipc/common/ipc.js";import{ContextKeyDefinedExpr as R,ContextKeyEqualsExpr as u,ContextKeyExpr as C,ContextKeyGreaterEqualsExpr as U,ContextKeyGreaterExpr as P,ContextKeyInExpr as K,ContextKeyNotEqualsExpr as g,ContextKeyNotExpr as b,ContextKeyNotInExpr as D,ContextKeyRegexExpr as h,ContextKeySmallerEqualsExpr as W,ContextKeySmallerExpr as L}from"../../platform/contextkey/common/contextkey.js";import"../../platform/extensionManagement/common/extensionManagement.js";import"../../platform/extensionManagement/common/extensionManagementCLI.js";import{toExtensionDescription as m}from"../../platform/extensionManagement/common/extensionsScannerService.js";import{ExtensionType as f}from"../../platform/extensions/common/extensions.js";import"../../platform/log/common/log.js";import"../../platform/userDataProfile/common/userDataProfile.js";import"./serverEnvironmentService.js";import{dedupExtensions as k}from"../../workbench/services/extensions/common/extensionsUtil.js";import{Schemas as A}from"../../base/common/network.js";import"../../platform/remote/common/remoteExtensionsScanner.js";import"../../platform/languagePacks/common/languagePacks.js";class ue{constructor(r,n,t,o,i,c,a){this._extensionManagementCLI=r;this._userDataProfilesService=t;this._extensionsScannerService=o;this._logService=i;this._extensionGalleryService=c;this._languagePackService=a;const e=n.args["install-builtin-extension"];if(e){i.trace("Installing builtin extensions passed via args...");const x={isMachineScoped:!!n.args["do-not-sync"],installPreReleaseVersion:!!n.args["pre-release"]};E.mark("code/server/willInstallBuiltinExtensions"),this._whenExtensionsReady=this._whenBuiltinExtensionsReady=r.installExtensions([],this._asExtensionIdOrVSIX(e),x,!!n.args.force).then(()=>{E.mark("code/server/didInstallBuiltinExtensions"),i.trace("Finished installing builtin extensions")},l=>{i.error(l)})}const s=n.args["install-extension"];s&&(i.trace("Installing extensions passed via args..."),this._whenExtensionsReady=this._whenBuiltinExtensionsReady.then(()=>r.installExtensions(this._asExtensionIdOrVSIX(s),[],{isMachineScoped:!!n.args["do-not-sync"],installPreReleaseVersion:!!n.args["pre-release"],isApplicationScoped:!0},!!n.args.force)).then(()=>{i.trace("Finished installing extensions")},x=>{i.error(x)}))}_serviceBrand;_whenBuiltinExtensionsReady=Promise.resolve();_whenExtensionsReady=Promise.resolve();_asExtensionIdOrVSIX(r){return r.map(n=>/\.vsix$/i.test(n)?p.file(I(n)?n:v(_(),n)):n)}whenExtensionsReady(){return this._whenExtensionsReady}async scanExtensions(r,n,t,o,i){E.mark("code/server/willScanExtensions"),this._logService.trace(`Scanning extensions using UI language: ${r}`),await this._whenBuiltinExtensionsReady;const c=o?o.filter(e=>e.scheme===A.file).map(e=>e.fsPath):void 0;n=n??this._userDataProfilesService.defaultProfile.extensionsResource;const a=await this._scanExtensions(n,r??d.language,t,c,i);return this._logService.trace("Scanned Extensions",a),this._massageWhenConditions(a),E.mark("code/server/didScanExtensions"),a}async _scanExtensions(r,n,t,o,i){await this._ensureLanguagePackIsInstalled(n,i);const[c,a,e,s]=await Promise.all([this._scanBuiltinExtensions(n),this._scanInstalledExtensions(r,n),this._scanWorkspaceInstalledExtensions(n,t),this._scanDevelopedExtensions(n,o)]);return k(c,a,e,s,this._logService)}async _scanDevelopedExtensions(r,n){return n?(await Promise.all(n.map(t=>this._extensionsScannerService.scanOneOrMultipleExtensions(p.file(S(t)),f.User,{language:r})))).flat().map(t=>m(t,!0)):[]}async _scanWorkspaceInstalledExtensions(r,n){const t=[];if(n?.length){const o=await Promise.all(n.map(i=>this._extensionsScannerService.scanExistingExtension(i,f.User,{language:r})));for(const i of o)i&&t.push(m(i,!1))}return t}async _scanBuiltinExtensions(r){return(await this._extensionsScannerService.scanSystemExtensions({language:r,useCache:!0})).map(t=>m(t,!1))}async _scanInstalledExtensions(r,n){return(await this._extensionsScannerService.scanUserExtensions({profileLocation:r,language:n,useCache:!0})).map(o=>m(o,!1))}async _ensureLanguagePackIsInstalled(r,n){if(!(r===d.LANGUAGE_DEFAULT||!this._extensionGalleryService.isEnabled())){try{if((await this._languagePackService.getInstalledLanguages()).find(o=>o.id===r)){this._logService.trace(`Language Pack ${r} is already installed. Skipping language pack installation.`);return}}catch(t){this._logService.error(t)}if(!n){this._logService.trace(`No language pack id provided for language ${r}. Skipping language pack installation.`);return}this._logService.trace(`Language Pack ${n} for language ${r} is not installed. It will be installed now.`);try{await this._extensionManagementCLI.installExtensions([n],[],{isMachineScoped:!0},!0)}catch(t){this._logService.error(t)}}}_massageWhenConditions(r){const n=(e,s)=>e.replace(/file/g,"vscode-remote"),t=e=>{let s="";return s+=e.global?"g":"",s+=e.ignoreCase?"i":"",s+=e.multiline?"m":"",new RegExp(n(e.source,!0),s)},o=new class{mapDefined(e){return R.create(e)}mapNot(e){return b.create(e)}mapEquals(e,s){return e==="resourceScheme"&&typeof s=="string"?u.create(e,n(s,!1)):u.create(e,s)}mapNotEquals(e,s){return e==="resourceScheme"&&typeof s=="string"?g.create(e,n(s,!1)):g.create(e,s)}mapGreater(e,s){return P.create(e,s)}mapGreaterEquals(e,s){return U.create(e,s)}mapSmaller(e,s){return L.create(e,s)}mapSmallerEquals(e,s){return W.create(e,s)}mapRegex(e,s){return e==="resourceScheme"&&s?h.create(e,t(s)):h.create(e,s)}mapIn(e,s){return K.create(e,s)}mapNotIn(e,s){return D.create(e,s)}},i=e=>{if(!e||!e.when||!/resourceScheme/.test(e.when))return;const s=C.deserialize(e.when);if(!s)return;const x=s.map(o);e.when=x.serialize()},c=e=>{if(Array.isArray(e))for(const s of e)i(s);else i(e)},a=e=>{for(const s in e)c(e[s])};r.forEach(e=>{e.contributes&&(e.contributes.menus&&a(e.contributes.menus),e.contributes.keybindings&&c(e.contributes.keybindings),e.contributes.views&&a(e.contributes.views))})}}class ge{constructor(r,n){this.service=r;this.getUriTransformer=n}listen(r,n){throw new Error("Invalid listen")}async call(r,n,t){const o=this.getUriTransformer(r);switch(n){case"whenExtensionsReady":return this.service.whenExtensionsReady();case"scanExtensions":{const i=t[0],c=t[1]?p.revive(o.transformIncoming(t[1])):void 0,a=Array.isArray(t[2])?t[2].map(l=>p.revive(o.transformIncoming(l))):void 0,e=Array.isArray(t[3])?t[3].map(l=>p.revive(o.transformIncoming(l))):void 0,s=t[4];return(await this.service.scanExtensions(i,c,a,e,s)).map(l=>w(l,o))}}throw new Error("Invalid call")}}export{ge as RemoteExtensionsScannerChannel,ue as RemoteExtensionsScannerService};
+import { isAbsolute, join, resolve } from '../../base/common/path.js';
+import * as platform from '../../base/common/platform.js';
+import { cwd } from '../../base/common/process.js';
+import { URI } from '../../base/common/uri.js';
+import * as performance from '../../base/common/performance.js';
+import { transformOutgoingURIs } from '../../base/common/uriIpc.js';
+import { ContextKeyDefinedExpr, ContextKeyEqualsExpr, ContextKeyExpr, ContextKeyGreaterEqualsExpr, ContextKeyGreaterExpr, ContextKeyInExpr, ContextKeyNotEqualsExpr, ContextKeyNotExpr, ContextKeyNotInExpr, ContextKeyRegexExpr, ContextKeySmallerEqualsExpr, ContextKeySmallerExpr } from '../../platform/contextkey/common/contextkey.js';
+import { toExtensionDescription } from '../../platform/extensionManagement/common/extensionsScannerService.js';
+import { dedupExtensions } from '../../workbench/services/extensions/common/extensionsUtil.js';
+import { Schemas } from '../../base/common/network.js';
+export class RemoteExtensionsScannerService {
+    constructor(_extensionManagementCLI, environmentService, _userDataProfilesService, _extensionsScannerService, _logService, _extensionGalleryService, _languagePackService) {
+        this._extensionManagementCLI = _extensionManagementCLI;
+        this._userDataProfilesService = _userDataProfilesService;
+        this._extensionsScannerService = _extensionsScannerService;
+        this._logService = _logService;
+        this._extensionGalleryService = _extensionGalleryService;
+        this._languagePackService = _languagePackService;
+        this._whenBuiltinExtensionsReady = Promise.resolve();
+        this._whenExtensionsReady = Promise.resolve();
+        const builtinExtensionsToInstall = environmentService.args['install-builtin-extension'];
+        if (builtinExtensionsToInstall) {
+            _logService.trace('Installing builtin extensions passed via args...');
+            const installOptions = { isMachineScoped: !!environmentService.args['do-not-sync'], installPreReleaseVersion: !!environmentService.args['pre-release'] };
+            performance.mark('code/server/willInstallBuiltinExtensions');
+            this._whenExtensionsReady = this._whenBuiltinExtensionsReady = _extensionManagementCLI.installExtensions([], this._asExtensionIdOrVSIX(builtinExtensionsToInstall), installOptions, !!environmentService.args['force'])
+                .then(() => {
+                performance.mark('code/server/didInstallBuiltinExtensions');
+                _logService.trace('Finished installing builtin extensions');
+            }, error => {
+                _logService.error(error);
+            });
+        }
+        const extensionsToInstall = environmentService.args['install-extension'];
+        if (extensionsToInstall) {
+            _logService.trace('Installing extensions passed via args...');
+            this._whenExtensionsReady = this._whenBuiltinExtensionsReady
+                .then(() => _extensionManagementCLI.installExtensions(this._asExtensionIdOrVSIX(extensionsToInstall), [], {
+                isMachineScoped: !!environmentService.args['do-not-sync'],
+                installPreReleaseVersion: !!environmentService.args['pre-release'],
+                isApplicationScoped: true
+            }, !!environmentService.args['force']))
+                .then(() => {
+                _logService.trace('Finished installing extensions');
+            }, error => {
+                _logService.error(error);
+            });
+        }
+    }
+    _asExtensionIdOrVSIX(inputs) {
+        return inputs.map(input => /\.vsix$/i.test(input) ? URI.file(isAbsolute(input) ? input : join(cwd(), input)) : input);
+    }
+    whenExtensionsReady() {
+        return this._whenExtensionsReady;
+    }
+    async scanExtensions(language, profileLocation, workspaceExtensionLocations, extensionDevelopmentLocations, languagePackId) {
+        performance.mark('code/server/willScanExtensions');
+        this._logService.trace(`Scanning extensions using UI language: ${language}`);
+        await this._whenBuiltinExtensionsReady;
+        const extensionDevelopmentPaths = extensionDevelopmentLocations ? extensionDevelopmentLocations.filter(url => url.scheme === Schemas.file).map(url => url.fsPath) : undefined;
+        profileLocation = profileLocation ?? this._userDataProfilesService.defaultProfile.extensionsResource;
+        const extensions = await this._scanExtensions(profileLocation, language ?? platform.language, workspaceExtensionLocations, extensionDevelopmentPaths, languagePackId);
+        this._logService.trace('Scanned Extensions', extensions);
+        this._massageWhenConditions(extensions);
+        performance.mark('code/server/didScanExtensions');
+        return extensions;
+    }
+    async _scanExtensions(profileLocation, language, workspaceInstalledExtensionLocations, extensionDevelopmentPath, languagePackId) {
+        await this._ensureLanguagePackIsInstalled(language, languagePackId);
+        const [builtinExtensions, installedExtensions, workspaceInstalledExtensions, developedExtensions] = await Promise.all([
+            this._scanBuiltinExtensions(language),
+            this._scanInstalledExtensions(profileLocation, language),
+            this._scanWorkspaceInstalledExtensions(language, workspaceInstalledExtensionLocations),
+            this._scanDevelopedExtensions(language, extensionDevelopmentPath)
+        ]);
+        return dedupExtensions(builtinExtensions, installedExtensions, workspaceInstalledExtensions, developedExtensions, this._logService);
+    }
+    async _scanDevelopedExtensions(language, extensionDevelopmentPaths) {
+        if (extensionDevelopmentPaths) {
+            return (await Promise.all(extensionDevelopmentPaths.map(extensionDevelopmentPath => this._extensionsScannerService.scanOneOrMultipleExtensions(URI.file(resolve(extensionDevelopmentPath)), 1, { language }))))
+                .flat()
+                .map(e => toExtensionDescription(e, true));
+        }
+        return [];
+    }
+    async _scanWorkspaceInstalledExtensions(language, workspaceInstalledExtensions) {
+        const result = [];
+        if (workspaceInstalledExtensions?.length) {
+            const scannedExtensions = await Promise.all(workspaceInstalledExtensions.map(location => this._extensionsScannerService.scanExistingExtension(location, 1, { language })));
+            for (const scannedExtension of scannedExtensions) {
+                if (scannedExtension) {
+                    result.push(toExtensionDescription(scannedExtension, false));
+                }
+            }
+        }
+        return result;
+    }
+    async _scanBuiltinExtensions(language) {
+        const scannedExtensions = await this._extensionsScannerService.scanSystemExtensions({ language, useCache: true });
+        return scannedExtensions.map(e => toExtensionDescription(e, false));
+    }
+    async _scanInstalledExtensions(profileLocation, language) {
+        const scannedExtensions = await this._extensionsScannerService.scanUserExtensions({ profileLocation, language, useCache: true });
+        return scannedExtensions.map(e => toExtensionDescription(e, false));
+    }
+    async _ensureLanguagePackIsInstalled(language, languagePackId) {
+        if (language === platform.LANGUAGE_DEFAULT ||
+            !this._extensionGalleryService.isEnabled()) {
+            return;
+        }
+        try {
+            const installed = await this._languagePackService.getInstalledLanguages();
+            if (installed.find(p => p.id === language)) {
+                this._logService.trace(`Language Pack ${language} is already installed. Skipping language pack installation.`);
+                return;
+            }
+        }
+        catch (err) {
+            this._logService.error(err);
+        }
+        if (!languagePackId) {
+            this._logService.trace(`No language pack id provided for language ${language}. Skipping language pack installation.`);
+            return;
+        }
+        this._logService.trace(`Language Pack ${languagePackId} for language ${language} is not installed. It will be installed now.`);
+        try {
+            await this._extensionManagementCLI.installExtensions([languagePackId], [], { isMachineScoped: true }, true);
+        }
+        catch (err) {
+            this._logService.error(err);
+        }
+    }
+    _massageWhenConditions(extensions) {
+        const _mapResourceSchemeValue = (value, isRegex) => {
+            return value.replace(/file/g, 'vscode-remote');
+        };
+        const _mapResourceRegExpValue = (value) => {
+            let flags = '';
+            flags += value.global ? 'g' : '';
+            flags += value.ignoreCase ? 'i' : '';
+            flags += value.multiline ? 'm' : '';
+            return new RegExp(_mapResourceSchemeValue(value.source, true), flags);
+        };
+        const _exprKeyMapper = new class {
+            mapDefined(key) {
+                return ContextKeyDefinedExpr.create(key);
+            }
+            mapNot(key) {
+                return ContextKeyNotExpr.create(key);
+            }
+            mapEquals(key, value) {
+                if (key === 'resourceScheme' && typeof value === 'string') {
+                    return ContextKeyEqualsExpr.create(key, _mapResourceSchemeValue(value, false));
+                }
+                else {
+                    return ContextKeyEqualsExpr.create(key, value);
+                }
+            }
+            mapNotEquals(key, value) {
+                if (key === 'resourceScheme' && typeof value === 'string') {
+                    return ContextKeyNotEqualsExpr.create(key, _mapResourceSchemeValue(value, false));
+                }
+                else {
+                    return ContextKeyNotEqualsExpr.create(key, value);
+                }
+            }
+            mapGreater(key, value) {
+                return ContextKeyGreaterExpr.create(key, value);
+            }
+            mapGreaterEquals(key, value) {
+                return ContextKeyGreaterEqualsExpr.create(key, value);
+            }
+            mapSmaller(key, value) {
+                return ContextKeySmallerExpr.create(key, value);
+            }
+            mapSmallerEquals(key, value) {
+                return ContextKeySmallerEqualsExpr.create(key, value);
+            }
+            mapRegex(key, regexp) {
+                if (key === 'resourceScheme' && regexp) {
+                    return ContextKeyRegexExpr.create(key, _mapResourceRegExpValue(regexp));
+                }
+                else {
+                    return ContextKeyRegexExpr.create(key, regexp);
+                }
+            }
+            mapIn(key, valueKey) {
+                return ContextKeyInExpr.create(key, valueKey);
+            }
+            mapNotIn(key, valueKey) {
+                return ContextKeyNotInExpr.create(key, valueKey);
+            }
+        };
+        const _massageWhenUser = (element) => {
+            if (!element || !element.when || !/resourceScheme/.test(element.when)) {
+                return;
+            }
+            const expr = ContextKeyExpr.deserialize(element.when);
+            if (!expr) {
+                return;
+            }
+            const massaged = expr.map(_exprKeyMapper);
+            element.when = massaged.serialize();
+        };
+        const _massageWhenUserArr = (elements) => {
+            if (Array.isArray(elements)) {
+                for (const element of elements) {
+                    _massageWhenUser(element);
+                }
+            }
+            else {
+                _massageWhenUser(elements);
+            }
+        };
+        const _massageLocWhenUser = (target) => {
+            for (const loc in target) {
+                _massageWhenUserArr(target[loc]);
+            }
+        };
+        extensions.forEach((extension) => {
+            if (extension.contributes) {
+                if (extension.contributes.menus) {
+                    _massageLocWhenUser(extension.contributes.menus);
+                }
+                if (extension.contributes.keybindings) {
+                    _massageWhenUserArr(extension.contributes.keybindings);
+                }
+                if (extension.contributes.views) {
+                    _massageLocWhenUser(extension.contributes.views);
+                }
+            }
+        });
+    }
+}
+export class RemoteExtensionsScannerChannel {
+    constructor(service, getUriTransformer) {
+        this.service = service;
+        this.getUriTransformer = getUriTransformer;
+    }
+    listen(context, event) {
+        throw new Error('Invalid listen');
+    }
+    async call(context, command, args) {
+        const uriTransformer = this.getUriTransformer(context);
+        switch (command) {
+            case 'whenExtensionsReady': return this.service.whenExtensionsReady();
+            case 'scanExtensions': {
+                const language = args[0];
+                const profileLocation = args[1] ? URI.revive(uriTransformer.transformIncoming(args[1])) : undefined;
+                const workspaceExtensionLocations = Array.isArray(args[2]) ? args[2].map(u => URI.revive(uriTransformer.transformIncoming(u))) : undefined;
+                const extensionDevelopmentPath = Array.isArray(args[3]) ? args[3].map(u => URI.revive(uriTransformer.transformIncoming(u))) : undefined;
+                const languagePackId = args[4];
+                const extensions = await this.service.scanExtensions(language, profileLocation, workspaceExtensionLocations, extensionDevelopmentPath, languagePackId);
+                return extensions.map(extension => transformOutgoingURIs(extension, uriTransformer));
+            }
+        }
+        throw new Error('Invalid call');
+    }
+}

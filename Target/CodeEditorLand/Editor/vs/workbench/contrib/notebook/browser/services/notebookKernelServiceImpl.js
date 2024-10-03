@@ -1,1 +1,351 @@
-var K=Object.defineProperty;var C=Object.getOwnPropertyDescriptor;var v=(u,s,e,o)=>{for(var t=o>1?void 0:o?C(s,e):s,n=u.length-1,i;n>=0;n--)(i=u[n])&&(t=(o?i(s,e,t):i(t))||t);return o&&t&&K(s,e,t),t},g=(u,s)=>(e,o)=>s(e,o,u);import{Emitter as l}from"../../../../../base/common/event.js";import{Disposable as N,toDisposable as b}from"../../../../../base/common/lifecycle.js";import"../../common/notebookCommon.js";import"../../common/notebookKernelService.js";import{LRUCache as T,ResourceMap as x}from"../../../../../base/common/map.js";import{IStorageService as M,StorageScope as S,StorageTarget as w}from"../../../../../platform/storage/common/storage.js";import{URI as E}from"../../../../../base/common/uri.js";import{INotebookService as B}from"../../common/notebookService.js";import{IMenuService as P,MenuId as R}from"../../../../../platform/actions/common/actions.js";import{IContextKeyService as L}from"../../../../../platform/contextkey/common/contextkey.js";import"../../../../../base/common/actions.js";import{MarshalledId as O}from"../../../../../base/common/marshallingIds.js";import{Schemas as U}from"../../../../../base/common/network.js";import{getActiveWindow as W,runWhenWindowIdle as $}from"../../../../../base/browser/dom.js";class p{static _logicClock=0;kernel;score;time;notebookPriorities=new x;constructor(s){this.kernel=s,this.score=-1,this.time=p._logicClock++}}class h{static str(s){return`${s.notebookType}/${s.uri.toString()}`}static obj(s){const e=s.indexOf("/");return{notebookType:s.substring(0,e),uri:E.parse(s.substring(e+1))}}}class F extends N{constructor(e,o,t){super();this.action=e;this.model=o;this.isPrimary=t}execution;_onDidChangeState=this._register(new l);onDidChangeState=this._onDidChangeState.event;async runAction(){if(this.execution)return this.execution;this.execution=this._runAction(),this._onDidChangeState.fire(),await this.execution,this.execution=void 0,this._onDidChangeState.fire()}async _runAction(){try{await this.action.run({uri:this.model.uri,$mid:O.NotebookActionContext})}catch{}}}let a=class extends N{constructor(e,o,t,n){super();this._notebookService=e;this._storageService=o;this._menuService=t;this._contextKeyService=n;this._register(e.onDidAddNotebookDocument(this._tryAutoBindNotebook,this)),this._register(e.onWillRemoveNotebookDocument(i=>{const c=h.str(i);this._notebookBindings.get(c)&&i.uri.scheme===U.untitled&&this.selectKernelForNotebook(void 0,i),this._kernelSourceActionsUpdates.get(c)?.dispose(),this._kernelSourceActionsUpdates.delete(c)}));try{const i=JSON.parse(this._storageService.get(a._storageNotebookBinding,S.WORKSPACE,"[]"));this._notebookBindings.fromJSON(i)}catch{}}_kernels=new Map;_notebookBindings=new T(1e3,.7);_onDidChangeNotebookKernelBinding=this._register(new l);_onDidAddKernel=this._register(new l);_onDidRemoveKernel=this._register(new l);_onDidChangeNotebookAffinity=this._register(new l);_onDidChangeSourceActions=this._register(new l);_onDidNotebookVariablesChange=this._register(new l);_kernelSources=new Map;_kernelSourceActionsUpdates=new Map;_kernelDetectionTasks=new Map;_onDidChangeKernelDetectionTasks=this._register(new l);_kernelSourceActionProviders=new Map;onDidChangeSelectedNotebooks=this._onDidChangeNotebookKernelBinding.event;onDidAddKernel=this._onDidAddKernel.event;onDidRemoveKernel=this._onDidRemoveKernel.event;onDidChangeNotebookAffinity=this._onDidChangeNotebookAffinity.event;onDidChangeSourceActions=this._onDidChangeSourceActions.event;onDidChangeKernelDetectionTasks=this._onDidChangeKernelDetectionTasks.event;onDidNotebookVariablesUpdate=this._onDidNotebookVariablesChange.event;static _storageNotebookBinding="notebook.controller2NotebookBindings";dispose(){this._kernels.clear(),this._kernelSources.forEach(e=>{e.menu.dispose(),e.actions.forEach(o=>o[1].dispose())}),this._kernelSourceActionsUpdates.forEach(e=>{e.dispose()}),this._kernelSourceActionsUpdates.clear(),super.dispose()}_persistSoonHandle;_persistMementos(){this._persistSoonHandle?.dispose(),this._persistSoonHandle=$(W(),()=>{this._storageService.store(a._storageNotebookBinding,JSON.stringify(this._notebookBindings),S.WORKSPACE,w.MACHINE)},100)}static _score(e,o){return e.viewType==="*"?5:e.viewType===o.notebookType?10:0}_tryAutoBindNotebook(e,o){const t=this._notebookBindings.get(h.str(e));if(!t)return;const n=this._kernels.get(t);!n||!a._score(n.kernel,e)||(!o||n.kernel===o)&&this._onDidChangeNotebookKernelBinding.fire({notebook:e.uri,oldKernel:void 0,newKernel:n.kernel.id})}notifyVariablesChange(e){this._onDidNotebookVariablesChange.fire(e)}registerKernel(e){if(this._kernels.has(e.id))throw new Error(`NOTEBOOK CONTROLLER with id '${e.id}' already exists`);this._kernels.set(e.id,new p(e)),this._onDidAddKernel.fire(e);for(const o of this._notebookService.getNotebookTextModels())this._tryAutoBindNotebook(o,e);return b(()=>{this._kernels.delete(e.id)&&this._onDidRemoveKernel.fire(e);for(const[o,t]of Array.from(this._notebookBindings))t===e.id&&this._onDidChangeNotebookKernelBinding.fire({notebook:h.obj(o).uri,oldKernel:e.id,newKernel:void 0})})}getMatchingKernel(e){const o=[];for(const r of this._kernels.values()){const d=a._score(r.kernel,e);d&&o.push({score:d,kernel:r.kernel,instanceAffinity:r.notebookPriorities.get(e.uri)??1})}o.sort((r,d)=>d.instanceAffinity-r.instanceAffinity||r.score-d.score||r.kernel.label.localeCompare(d.kernel.label));const t=o.map(r=>r.kernel),n=this._notebookBindings.get(h.str(e)),i=n?this._kernels.get(n)?.kernel:void 0,c=o.filter(r=>r.instanceAffinity>1).map(r=>r.kernel),k=o.filter(r=>r.instanceAffinity<0).map(r=>r.kernel);return{all:t,selected:i,suggestions:c,hidden:k}}getSelectedOrSuggestedKernel(e){const o=this.getMatchingKernel(e);if(o.selected)return o.selected;const t=o.all.filter(n=>this._kernels.get(n.id)?.notebookPriorities.get(e.uri)===2);return t.length===1?t[0]:o.all.length===1?o.all[0]:void 0}selectKernelForNotebook(e,o){const t=h.str(o),n=this._notebookBindings.get(t);n!==e?.id&&(e?this._notebookBindings.set(t,e.id):this._notebookBindings.delete(t),this._onDidChangeNotebookKernelBinding.fire({notebook:o.uri,oldKernel:n,newKernel:e?.id}),this._persistMementos())}preselectKernelForNotebook(e,o){const t=h.str(o);this._notebookBindings.get(t)!==e?.id&&(this._notebookBindings.set(t,e.id),this._persistMementos())}updateKernelNotebookAffinity(e,o,t){const n=this._kernels.get(e.id);if(!n)throw new Error(`UNKNOWN kernel '${e.id}'`);t===void 0?n.notebookPriorities.delete(o):n.notebookPriorities.set(o,t),this._onDidChangeNotebookAffinity.fire()}getRunningSourceActions(e){const o=h.str(e),t=this._kernelSources.get(o);return t?t.actions.filter(n=>n[0].execution).map(n=>n[0]):[]}getSourceActions(e,o){o=o??this._contextKeyService;const t=h.str(e),n=this._kernelSources.get(t);if(n)return n.actions.map(r=>r[0]);const i=this._register(this._menuService.createMenu(R.NotebookKernelSource,o)),c={menu:i,actions:[]},k=(r,d)=>{const m=r.getActions({shouldForwardArgs:!0}),f=[];m.forEach(_=>{const A=/^primary/.test(_[0]);_[1].forEach(y=>{const I=new F(y,d,A),D=I.onDidChangeState(()=>{this._onDidChangeSourceActions.fire({notebook:d.uri,viewType:d.notebookType})});f.push([I,D])})}),c.actions=f,this._kernelSources.set(t,c),this._onDidChangeSourceActions.fire({notebook:d.uri,viewType:d.notebookType})};return this._kernelSourceActionsUpdates.get(t)?.dispose(),this._kernelSourceActionsUpdates.set(t,i.onDidChange(()=>{k(i,e)})),k(i,e),c.actions.map(r=>r[0])}registerNotebookKernelDetectionTask(e){const o=e.notebookType,t=this._kernelDetectionTasks.get(o)??[];return t.push(e),this._kernelDetectionTasks.set(o,t),this._onDidChangeKernelDetectionTasks.fire(o),b(()=>{const n=this._kernelDetectionTasks.get(o)??[],i=n.indexOf(e);i>=0&&(n.splice(i,1),this._kernelDetectionTasks.set(o,n),this._onDidChangeKernelDetectionTasks.fire(o))})}getKernelDetectionTasks(e){return this._kernelDetectionTasks.get(e.notebookType)??[]}registerKernelSourceActionProvider(e,o){const t=this._kernelSourceActionProviders.get(e)??[];t.push(o),this._kernelSourceActionProviders.set(e,t),this._onDidChangeSourceActions.fire({viewType:e});const n=o.onDidChangeSourceActions?.(()=>{this._onDidChangeSourceActions.fire({viewType:e})});return b(()=>{const i=this._kernelSourceActionProviders.get(e)??[],c=i.indexOf(o);c>=0&&(i.splice(c,1),this._kernelSourceActionProviders.set(e,i)),n?.dispose()})}getKernelSourceActions2(e){const o=e.notebookType,n=(this._kernelSourceActionProviders.get(o)??[]).map(i=>i.provideKernelSourceActions());return Promise.all(n).then(i=>i.reduce((c,k)=>c.concat(k),[]))}};a=v([g(0,B),g(1,M),g(2,P),g(3,L)],a);export{a as NotebookKernelService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var NotebookKernelService_1;
+import { Emitter } from '../../../../../base/common/event.js';
+import { Disposable, toDisposable } from '../../../../../base/common/lifecycle.js';
+import { LRUCache, ResourceMap } from '../../../../../base/common/map.js';
+import { IStorageService } from '../../../../../platform/storage/common/storage.js';
+import { URI } from '../../../../../base/common/uri.js';
+import { INotebookService } from '../../common/notebookService.js';
+import { IMenuService, MenuId } from '../../../../../platform/actions/common/actions.js';
+import { IContextKeyService } from '../../../../../platform/contextkey/common/contextkey.js';
+import { Schemas } from '../../../../../base/common/network.js';
+import { getActiveWindow, runWhenWindowIdle } from '../../../../../base/browser/dom.js';
+class KernelInfo {
+    static { this._logicClock = 0; }
+    constructor(kernel) {
+        this.notebookPriorities = new ResourceMap();
+        this.kernel = kernel;
+        this.score = -1;
+        this.time = KernelInfo._logicClock++;
+    }
+}
+class NotebookTextModelLikeId {
+    static str(k) {
+        return `${k.notebookType}/${k.uri.toString()}`;
+    }
+    static obj(s) {
+        const idx = s.indexOf('/');
+        return {
+            notebookType: s.substring(0, idx),
+            uri: URI.parse(s.substring(idx + 1))
+        };
+    }
+}
+class SourceAction extends Disposable {
+    constructor(action, model, isPrimary) {
+        super();
+        this.action = action;
+        this.model = model;
+        this.isPrimary = isPrimary;
+        this._onDidChangeState = this._register(new Emitter());
+        this.onDidChangeState = this._onDidChangeState.event;
+    }
+    async runAction() {
+        if (this.execution) {
+            return this.execution;
+        }
+        this.execution = this._runAction();
+        this._onDidChangeState.fire();
+        await this.execution;
+        this.execution = undefined;
+        this._onDidChangeState.fire();
+    }
+    async _runAction() {
+        try {
+            await this.action.run({
+                uri: this.model.uri,
+                $mid: 14
+            });
+        }
+        catch (error) {
+            console.warn(`Kernel source command failed: ${error}`);
+        }
+    }
+}
+let NotebookKernelService = class NotebookKernelService extends Disposable {
+    static { NotebookKernelService_1 = this; }
+    static { this._storageNotebookBinding = 'notebook.controller2NotebookBindings'; }
+    constructor(_notebookService, _storageService, _menuService, _contextKeyService) {
+        super();
+        this._notebookService = _notebookService;
+        this._storageService = _storageService;
+        this._menuService = _menuService;
+        this._contextKeyService = _contextKeyService;
+        this._kernels = new Map();
+        this._notebookBindings = new LRUCache(1000, 0.7);
+        this._onDidChangeNotebookKernelBinding = this._register(new Emitter());
+        this._onDidAddKernel = this._register(new Emitter());
+        this._onDidRemoveKernel = this._register(new Emitter());
+        this._onDidChangeNotebookAffinity = this._register(new Emitter());
+        this._onDidChangeSourceActions = this._register(new Emitter());
+        this._onDidNotebookVariablesChange = this._register(new Emitter());
+        this._kernelSources = new Map();
+        this._kernelSourceActionsUpdates = new Map();
+        this._kernelDetectionTasks = new Map();
+        this._onDidChangeKernelDetectionTasks = this._register(new Emitter());
+        this._kernelSourceActionProviders = new Map();
+        this.onDidChangeSelectedNotebooks = this._onDidChangeNotebookKernelBinding.event;
+        this.onDidAddKernel = this._onDidAddKernel.event;
+        this.onDidRemoveKernel = this._onDidRemoveKernel.event;
+        this.onDidChangeNotebookAffinity = this._onDidChangeNotebookAffinity.event;
+        this.onDidChangeSourceActions = this._onDidChangeSourceActions.event;
+        this.onDidChangeKernelDetectionTasks = this._onDidChangeKernelDetectionTasks.event;
+        this.onDidNotebookVariablesUpdate = this._onDidNotebookVariablesChange.event;
+        this._register(_notebookService.onDidAddNotebookDocument(this._tryAutoBindNotebook, this));
+        this._register(_notebookService.onWillRemoveNotebookDocument(notebook => {
+            const id = NotebookTextModelLikeId.str(notebook);
+            const kernelId = this._notebookBindings.get(id);
+            if (kernelId && notebook.uri.scheme === Schemas.untitled) {
+                this.selectKernelForNotebook(undefined, notebook);
+            }
+            this._kernelSourceActionsUpdates.get(id)?.dispose();
+            this._kernelSourceActionsUpdates.delete(id);
+        }));
+        try {
+            const data = JSON.parse(this._storageService.get(NotebookKernelService_1._storageNotebookBinding, 1, '[]'));
+            this._notebookBindings.fromJSON(data);
+        }
+        catch {
+        }
+    }
+    dispose() {
+        this._kernels.clear();
+        this._kernelSources.forEach(v => {
+            v.menu.dispose();
+            v.actions.forEach(a => a[1].dispose());
+        });
+        this._kernelSourceActionsUpdates.forEach(v => {
+            v.dispose();
+        });
+        this._kernelSourceActionsUpdates.clear();
+        super.dispose();
+    }
+    _persistMementos() {
+        this._persistSoonHandle?.dispose();
+        this._persistSoonHandle = runWhenWindowIdle(getActiveWindow(), () => {
+            this._storageService.store(NotebookKernelService_1._storageNotebookBinding, JSON.stringify(this._notebookBindings), 1, 1);
+        }, 100);
+    }
+    static _score(kernel, notebook) {
+        if (kernel.viewType === '*') {
+            return 5;
+        }
+        else if (kernel.viewType === notebook.notebookType) {
+            return 10;
+        }
+        else {
+            return 0;
+        }
+    }
+    _tryAutoBindNotebook(notebook, onlyThisKernel) {
+        const id = this._notebookBindings.get(NotebookTextModelLikeId.str(notebook));
+        if (!id) {
+            return;
+        }
+        const existingKernel = this._kernels.get(id);
+        if (!existingKernel || !NotebookKernelService_1._score(existingKernel.kernel, notebook)) {
+            return;
+        }
+        if (!onlyThisKernel || existingKernel.kernel === onlyThisKernel) {
+            this._onDidChangeNotebookKernelBinding.fire({ notebook: notebook.uri, oldKernel: undefined, newKernel: existingKernel.kernel.id });
+        }
+    }
+    notifyVariablesChange(notebookUri) {
+        this._onDidNotebookVariablesChange.fire(notebookUri);
+    }
+    registerKernel(kernel) {
+        if (this._kernels.has(kernel.id)) {
+            throw new Error(`NOTEBOOK CONTROLLER with id '${kernel.id}' already exists`);
+        }
+        this._kernels.set(kernel.id, new KernelInfo(kernel));
+        this._onDidAddKernel.fire(kernel);
+        for (const notebook of this._notebookService.getNotebookTextModels()) {
+            this._tryAutoBindNotebook(notebook, kernel);
+        }
+        return toDisposable(() => {
+            if (this._kernels.delete(kernel.id)) {
+                this._onDidRemoveKernel.fire(kernel);
+            }
+            for (const [key, candidate] of Array.from(this._notebookBindings)) {
+                if (candidate === kernel.id) {
+                    this._onDidChangeNotebookKernelBinding.fire({ notebook: NotebookTextModelLikeId.obj(key).uri, oldKernel: kernel.id, newKernel: undefined });
+                }
+            }
+        });
+    }
+    getMatchingKernel(notebook) {
+        const kernels = [];
+        for (const info of this._kernels.values()) {
+            const score = NotebookKernelService_1._score(info.kernel, notebook);
+            if (score) {
+                kernels.push({
+                    score,
+                    kernel: info.kernel,
+                    instanceAffinity: info.notebookPriorities.get(notebook.uri) ?? 1,
+                });
+            }
+        }
+        kernels
+            .sort((a, b) => b.instanceAffinity - a.instanceAffinity || a.score - b.score || a.kernel.label.localeCompare(b.kernel.label));
+        const all = kernels.map(obj => obj.kernel);
+        const selectedId = this._notebookBindings.get(NotebookTextModelLikeId.str(notebook));
+        const selected = selectedId ? this._kernels.get(selectedId)?.kernel : undefined;
+        const suggestions = kernels.filter(item => item.instanceAffinity > 1).map(item => item.kernel);
+        const hidden = kernels.filter(item => item.instanceAffinity < 0).map(item => item.kernel);
+        return { all, selected, suggestions, hidden };
+    }
+    getSelectedOrSuggestedKernel(notebook) {
+        const info = this.getMatchingKernel(notebook);
+        if (info.selected) {
+            return info.selected;
+        }
+        const preferred = info.all.filter(kernel => this._kernels.get(kernel.id)?.notebookPriorities.get(notebook.uri) === 2);
+        if (preferred.length === 1) {
+            return preferred[0];
+        }
+        return info.all.length === 1 ? info.all[0] : undefined;
+    }
+    selectKernelForNotebook(kernel, notebook) {
+        const key = NotebookTextModelLikeId.str(notebook);
+        const oldKernel = this._notebookBindings.get(key);
+        if (oldKernel !== kernel?.id) {
+            if (kernel) {
+                this._notebookBindings.set(key, kernel.id);
+            }
+            else {
+                this._notebookBindings.delete(key);
+            }
+            this._onDidChangeNotebookKernelBinding.fire({ notebook: notebook.uri, oldKernel, newKernel: kernel?.id });
+            this._persistMementos();
+        }
+    }
+    preselectKernelForNotebook(kernel, notebook) {
+        const key = NotebookTextModelLikeId.str(notebook);
+        const oldKernel = this._notebookBindings.get(key);
+        if (oldKernel !== kernel?.id) {
+            this._notebookBindings.set(key, kernel.id);
+            this._persistMementos();
+        }
+    }
+    updateKernelNotebookAffinity(kernel, notebook, preference) {
+        const info = this._kernels.get(kernel.id);
+        if (!info) {
+            throw new Error(`UNKNOWN kernel '${kernel.id}'`);
+        }
+        if (preference === undefined) {
+            info.notebookPriorities.delete(notebook);
+        }
+        else {
+            info.notebookPriorities.set(notebook, preference);
+        }
+        this._onDidChangeNotebookAffinity.fire();
+    }
+    getRunningSourceActions(notebook) {
+        const id = NotebookTextModelLikeId.str(notebook);
+        const existingInfo = this._kernelSources.get(id);
+        if (existingInfo) {
+            return existingInfo.actions.filter(action => action[0].execution).map(action => action[0]);
+        }
+        return [];
+    }
+    getSourceActions(notebook, contextKeyService) {
+        contextKeyService = contextKeyService ?? this._contextKeyService;
+        const id = NotebookTextModelLikeId.str(notebook);
+        const existingInfo = this._kernelSources.get(id);
+        if (existingInfo) {
+            return existingInfo.actions.map(a => a[0]);
+        }
+        const sourceMenu = this._register(this._menuService.createMenu(MenuId.NotebookKernelSource, contextKeyService));
+        const info = { menu: sourceMenu, actions: [] };
+        const loadActionsFromMenu = (menu, document) => {
+            const groups = menu.getActions({ shouldForwardArgs: true });
+            const sourceActions = [];
+            groups.forEach(group => {
+                const isPrimary = /^primary/.test(group[0]);
+                group[1].forEach(action => {
+                    const sourceAction = new SourceAction(action, document, isPrimary);
+                    const stateChangeListener = sourceAction.onDidChangeState(() => {
+                        this._onDidChangeSourceActions.fire({
+                            notebook: document.uri,
+                            viewType: document.notebookType,
+                        });
+                    });
+                    sourceActions.push([sourceAction, stateChangeListener]);
+                });
+            });
+            info.actions = sourceActions;
+            this._kernelSources.set(id, info);
+            this._onDidChangeSourceActions.fire({ notebook: document.uri, viewType: document.notebookType });
+        };
+        this._kernelSourceActionsUpdates.get(id)?.dispose();
+        this._kernelSourceActionsUpdates.set(id, sourceMenu.onDidChange(() => {
+            loadActionsFromMenu(sourceMenu, notebook);
+        }));
+        loadActionsFromMenu(sourceMenu, notebook);
+        return info.actions.map(a => a[0]);
+    }
+    registerNotebookKernelDetectionTask(task) {
+        const notebookType = task.notebookType;
+        const all = this._kernelDetectionTasks.get(notebookType) ?? [];
+        all.push(task);
+        this._kernelDetectionTasks.set(notebookType, all);
+        this._onDidChangeKernelDetectionTasks.fire(notebookType);
+        return toDisposable(() => {
+            const all = this._kernelDetectionTasks.get(notebookType) ?? [];
+            const idx = all.indexOf(task);
+            if (idx >= 0) {
+                all.splice(idx, 1);
+                this._kernelDetectionTasks.set(notebookType, all);
+                this._onDidChangeKernelDetectionTasks.fire(notebookType);
+            }
+        });
+    }
+    getKernelDetectionTasks(notebook) {
+        return this._kernelDetectionTasks.get(notebook.notebookType) ?? [];
+    }
+    registerKernelSourceActionProvider(viewType, provider) {
+        const providers = this._kernelSourceActionProviders.get(viewType) ?? [];
+        providers.push(provider);
+        this._kernelSourceActionProviders.set(viewType, providers);
+        this._onDidChangeSourceActions.fire({ viewType: viewType });
+        const eventEmitterDisposable = provider.onDidChangeSourceActions?.(() => {
+            this._onDidChangeSourceActions.fire({ viewType: viewType });
+        });
+        return toDisposable(() => {
+            const providers = this._kernelSourceActionProviders.get(viewType) ?? [];
+            const idx = providers.indexOf(provider);
+            if (idx >= 0) {
+                providers.splice(idx, 1);
+                this._kernelSourceActionProviders.set(viewType, providers);
+            }
+            eventEmitterDisposable?.dispose();
+        });
+    }
+    getKernelSourceActions2(notebook) {
+        const viewType = notebook.notebookType;
+        const providers = this._kernelSourceActionProviders.get(viewType) ?? [];
+        const promises = providers.map(provider => provider.provideKernelSourceActions());
+        return Promise.all(promises).then(actions => {
+            return actions.reduce((a, b) => a.concat(b), []);
+        });
+    }
+};
+NotebookKernelService = NotebookKernelService_1 = __decorate([
+    __param(0, INotebookService),
+    __param(1, IStorageService),
+    __param(2, IMenuService),
+    __param(3, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], NotebookKernelService);
+export { NotebookKernelService };

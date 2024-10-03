@@ -1,1 +1,30 @@
-import{getActiveWindow as t,isHTMLInputElement as C,isHTMLTextAreaElement as f}from"../../../../../base/browser/dom.js";import{StandardMouseEvent as x}from"../../../../../base/browser/mouseEvent.js";import{Action as o,Separator as a}from"../../../../../base/common/actions.js";import{isNative as A}from"../../../../../base/common/platform.js";import{localize as n}from"../../../../../nls.js";import"../../../../../platform/clipboard/common/clipboardService.js";import"../../../../../platform/contextview/browser/contextView.js";function T(s,c,u,l){const m=new x(s,c),i=[];i.push(new o("undo",n("undo","Undo"),void 0,!0,async()=>t().document.execCommand("undo")),new o("redo",n("redo","Redo"),void 0,!0,async()=>t().document.execCommand("redo")),new a,new o("editor.action.clipboardCutAction",n("cut","Cut"),void 0,!0,async()=>t().document.execCommand("cut")),new o("editor.action.clipboardCopyAction",n("copy","Copy"),void 0,!0,async()=>t().document.execCommand("copy")),new o("editor.action.clipboardPasteAction",n("paste","Paste"),void 0,!0,async e=>{if(A)t().document.execCommand("paste");else{const d=await u.readText();if(f(e)||C(e)){const r=e.selectionStart||0,p=e.selectionEnd||0;e.value=`${e.value.substring(0,r)}${d}${e.value.substring(p,e.value.length)}`,e.selectionStart=r+d.length,e.selectionEnd=e.selectionStart}}}),new a,new o("editor.action.selectAll",n("selectAll","Select All"),void 0,!0,async()=>t().document.execCommand("selectAll"))),l.showContextMenu({getAnchor:()=>m,getActions:()=>i,getActionsContext:()=>c.target})}export{T as openContextMenu};
+import { getActiveWindow, isHTMLInputElement, isHTMLTextAreaElement } from '../../../../../base/browser/dom.js';
+import { StandardMouseEvent } from '../../../../../base/browser/mouseEvent.js';
+import { Action, Separator } from '../../../../../base/common/actions.js';
+import { isNative } from '../../../../../base/common/platform.js';
+import { localize } from '../../../../../nls.js';
+export function openContextMenu(targetWindow, event, clipboardService, contextMenuService) {
+    const standardEvent = new StandardMouseEvent(targetWindow, event);
+    const actions = [];
+    actions.push(new Action('undo', localize('undo', "Undo"), undefined, true, async () => getActiveWindow().document.execCommand('undo')), new Action('redo', localize('redo', "Redo"), undefined, true, async () => getActiveWindow().document.execCommand('redo')), new Separator(), new Action('editor.action.clipboardCutAction', localize('cut', "Cut"), undefined, true, async () => getActiveWindow().document.execCommand('cut')), new Action('editor.action.clipboardCopyAction', localize('copy', "Copy"), undefined, true, async () => getActiveWindow().document.execCommand('copy')), new Action('editor.action.clipboardPasteAction', localize('paste', "Paste"), undefined, true, async (element) => {
+        if (isNative) {
+            getActiveWindow().document.execCommand('paste');
+        }
+        else {
+            const clipboardText = await clipboardService.readText();
+            if (isHTMLTextAreaElement(element) ||
+                isHTMLInputElement(element)) {
+                const selectionStart = element.selectionStart || 0;
+                const selectionEnd = element.selectionEnd || 0;
+                element.value = `${element.value.substring(0, selectionStart)}${clipboardText}${element.value.substring(selectionEnd, element.value.length)}`;
+                element.selectionStart = selectionStart + clipboardText.length;
+                element.selectionEnd = element.selectionStart;
+            }
+        }
+    }), new Separator(), new Action('editor.action.selectAll', localize('selectAll', "Select All"), undefined, true, async () => getActiveWindow().document.execCommand('selectAll')));
+    contextMenuService.showContextMenu({
+        getAnchor: () => standardEvent,
+        getActions: () => actions,
+        getActionsContext: () => event.target,
+    });
+}

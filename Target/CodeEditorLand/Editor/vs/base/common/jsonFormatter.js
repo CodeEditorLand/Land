@@ -1,7 +1,193 @@
-import{createScanner as w,ScanError as F,SyntaxKind as e}from"./json.js";function K(t,o,r){let l,f,s,u,T;if(o){for(u=o.offset,T=u+o.length,s=u;s>0&&!L(t,s-1);)s--;let i=T;for(;i<t.length&&!L(t,i);)i++;f=t.substring(s,i),l=y(f,r)}else f=t,l=0,s=0,u=0,T=t.length;const v=z(r,t);let g=!1,b=0,h;r.insertSpaces?h=C(" ",r.tabSize||4):h="	";const c=w(f,!1);let d=!1;function k(){return v+C(h,l+b)}function S(){let i=c.scan();for(g=!1;i===e.Trivia||i===e.LineBreakTrivia;)g=g||i===e.LineBreakTrivia,i=c.scan();return d=i===e.Unknown||c.getTokenError()!==F.None,i}const O=[];function p(i,n,a){!d&&n<T&&a>u&&t.substring(n,a)!==i&&O.push({offset:n,length:a-n,content:i})}let m=S();if(m!==e.EOF){const i=c.getTokenOffset()+s,n=C(h,l);p(n,s,i)}for(;m!==e.EOF;){let i=c.getTokenOffset()+c.getTokenLength()+s,n=S(),a="";for(;!g&&(n===e.LineCommentTrivia||n===e.BlockCommentTrivia);){const E=c.getTokenOffset()+s;p(" ",i,E),i=c.getTokenOffset()+c.getTokenLength()+s,a=n===e.LineCommentTrivia?k():"",n=S()}if(n===e.CloseBraceToken)m!==e.OpenBraceToken&&(b--,a=k());else if(n===e.CloseBracketToken)m!==e.OpenBracketToken&&(b--,a=k());else{switch(m){case e.OpenBracketToken:case e.OpenBraceToken:b++,a=k();break;case e.CommaToken:case e.LineCommentTrivia:a=k();break;case e.BlockCommentTrivia:g?a=k():a=" ";break;case e.ColonToken:a=" ";break;case e.StringLiteral:if(n===e.ColonToken){a="";break}case e.NullKeyword:case e.TrueKeyword:case e.FalseKeyword:case e.NumericLiteral:case e.CloseBraceToken:case e.CloseBracketToken:n===e.LineCommentTrivia||n===e.BlockCommentTrivia?a=" ":n!==e.CommaToken&&n!==e.EOF&&(d=!0);break;case e.Unknown:d=!0;break}g&&(n===e.LineCommentTrivia||n===e.BlockCommentTrivia)&&(a=k())}const B=c.getTokenOffset()+s;p(a,i,B),m=n}return O}function N(t,o){const r=JSON.stringify(t,void 0,o.insertSpaces?o.tabSize||4:"	");return o.eol!==void 0?r.replace(/\r\n|\r|\n/g,o.eol):r}function C(t,o){let r="";for(let l=0;l<o;l++)r+=t;return r}function y(t,o){let r=0,l=0;const f=o.tabSize||4;for(;r<t.length;){const s=t.charAt(r);if(s===" ")l++;else if(s==="	")l+=f;else break;r++}return Math.floor(l/f)}function z(t,o){for(let r=0;r<o.length;r++){const l=o.charAt(r);if(l==="\r")return r+1<o.length&&o.charAt(r+1)===`
-`?`\r
-`:"\r";if(l===`
-`)return`
-`}return t&&t.eol||`
-`}function L(t,o){return`\r
-`.indexOf(t.charAt(o))!==-1}export{K as format,z as getEOL,L as isEOL,N as toFormattedString};
+import { createScanner } from './json.js';
+export function format(documentText, range, options) {
+    let initialIndentLevel;
+    let formatText;
+    let formatTextStart;
+    let rangeStart;
+    let rangeEnd;
+    if (range) {
+        rangeStart = range.offset;
+        rangeEnd = rangeStart + range.length;
+        formatTextStart = rangeStart;
+        while (formatTextStart > 0 && !isEOL(documentText, formatTextStart - 1)) {
+            formatTextStart--;
+        }
+        let endOffset = rangeEnd;
+        while (endOffset < documentText.length && !isEOL(documentText, endOffset)) {
+            endOffset++;
+        }
+        formatText = documentText.substring(formatTextStart, endOffset);
+        initialIndentLevel = computeIndentLevel(formatText, options);
+    }
+    else {
+        formatText = documentText;
+        initialIndentLevel = 0;
+        formatTextStart = 0;
+        rangeStart = 0;
+        rangeEnd = documentText.length;
+    }
+    const eol = getEOL(options, documentText);
+    let lineBreak = false;
+    let indentLevel = 0;
+    let indentValue;
+    if (options.insertSpaces) {
+        indentValue = repeat(' ', options.tabSize || 4);
+    }
+    else {
+        indentValue = '\t';
+    }
+    const scanner = createScanner(formatText, false);
+    let hasError = false;
+    function newLineAndIndent() {
+        return eol + repeat(indentValue, initialIndentLevel + indentLevel);
+    }
+    function scanNext() {
+        let token = scanner.scan();
+        lineBreak = false;
+        while (token === 15 || token === 14) {
+            lineBreak = lineBreak || (token === 14);
+            token = scanner.scan();
+        }
+        hasError = token === 16 || scanner.getTokenError() !== 0;
+        return token;
+    }
+    const editOperations = [];
+    function addEdit(text, startOffset, endOffset) {
+        if (!hasError && startOffset < rangeEnd && endOffset > rangeStart && documentText.substring(startOffset, endOffset) !== text) {
+            editOperations.push({ offset: startOffset, length: endOffset - startOffset, content: text });
+        }
+    }
+    let firstToken = scanNext();
+    if (firstToken !== 17) {
+        const firstTokenStart = scanner.getTokenOffset() + formatTextStart;
+        const initialIndent = repeat(indentValue, initialIndentLevel);
+        addEdit(initialIndent, formatTextStart, firstTokenStart);
+    }
+    while (firstToken !== 17) {
+        let firstTokenEnd = scanner.getTokenOffset() + scanner.getTokenLength() + formatTextStart;
+        let secondToken = scanNext();
+        let replaceContent = '';
+        while (!lineBreak && (secondToken === 12 || secondToken === 13)) {
+            const commentTokenStart = scanner.getTokenOffset() + formatTextStart;
+            addEdit(' ', firstTokenEnd, commentTokenStart);
+            firstTokenEnd = scanner.getTokenOffset() + scanner.getTokenLength() + formatTextStart;
+            replaceContent = secondToken === 12 ? newLineAndIndent() : '';
+            secondToken = scanNext();
+        }
+        if (secondToken === 2) {
+            if (firstToken !== 1) {
+                indentLevel--;
+                replaceContent = newLineAndIndent();
+            }
+        }
+        else if (secondToken === 4) {
+            if (firstToken !== 3) {
+                indentLevel--;
+                replaceContent = newLineAndIndent();
+            }
+        }
+        else {
+            switch (firstToken) {
+                case 3:
+                case 1:
+                    indentLevel++;
+                    replaceContent = newLineAndIndent();
+                    break;
+                case 5:
+                case 12:
+                    replaceContent = newLineAndIndent();
+                    break;
+                case 13:
+                    if (lineBreak) {
+                        replaceContent = newLineAndIndent();
+                    }
+                    else {
+                        replaceContent = ' ';
+                    }
+                    break;
+                case 6:
+                    replaceContent = ' ';
+                    break;
+                case 10:
+                    if (secondToken === 6) {
+                        replaceContent = '';
+                        break;
+                    }
+                case 7:
+                case 8:
+                case 9:
+                case 11:
+                case 2:
+                case 4:
+                    if (secondToken === 12 || secondToken === 13) {
+                        replaceContent = ' ';
+                    }
+                    else if (secondToken !== 5 && secondToken !== 17) {
+                        hasError = true;
+                    }
+                    break;
+                case 16:
+                    hasError = true;
+                    break;
+            }
+            if (lineBreak && (secondToken === 12 || secondToken === 13)) {
+                replaceContent = newLineAndIndent();
+            }
+        }
+        const secondTokenStart = scanner.getTokenOffset() + formatTextStart;
+        addEdit(replaceContent, firstTokenEnd, secondTokenStart);
+        firstToken = secondToken;
+    }
+    return editOperations;
+}
+export function toFormattedString(obj, options) {
+    const content = JSON.stringify(obj, undefined, options.insertSpaces ? options.tabSize || 4 : '\t');
+    if (options.eol !== undefined) {
+        return content.replace(/\r\n|\r|\n/g, options.eol);
+    }
+    return content;
+}
+function repeat(s, count) {
+    let result = '';
+    for (let i = 0; i < count; i++) {
+        result += s;
+    }
+    return result;
+}
+function computeIndentLevel(content, options) {
+    let i = 0;
+    let nChars = 0;
+    const tabSize = options.tabSize || 4;
+    while (i < content.length) {
+        const ch = content.charAt(i);
+        if (ch === ' ') {
+            nChars++;
+        }
+        else if (ch === '\t') {
+            nChars += tabSize;
+        }
+        else {
+            break;
+        }
+        i++;
+    }
+    return Math.floor(nChars / tabSize);
+}
+export function getEOL(options, text) {
+    for (let i = 0; i < text.length; i++) {
+        const ch = text.charAt(i);
+        if (ch === '\r') {
+            if (i + 1 < text.length && text.charAt(i + 1) === '\n') {
+                return '\r\n';
+            }
+            return '\r';
+        }
+        else if (ch === '\n') {
+            return '\n';
+        }
+    }
+    return (options && options.eol) || '\n';
+}
+export function isEOL(text, offset) {
+    return '\r\n'.indexOf(text.charAt(offset)) !== -1;
+}

@@ -1,1 +1,53 @@
-var f=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var I=(m,e,o,t)=>{for(var i=t>1?void 0:t?u(e,o):e,c=m.length-1,n;c>=0;c--)(n=m[c])&&(i=(t?n(e,o,i):n(i))||i);return t&&i&&f(e,o,i),i},r=(m,e)=>(o,t)=>e(o,t,m);import{localize as l}from"../../../../nls.js";import{IConfigurationService as g}from"../../../../platform/configuration/common/configuration.js";import{IContextMenuService as d}from"../../../../platform/contextview/browser/contextView.js";import{IInstantiationService as x}from"../../../../platform/instantiation/common/instantiation.js";import{IStorageService as h}from"../../../../platform/storage/common/storage.js";import{ITelemetryService as W}from"../../../../platform/telemetry/common/telemetry.js";import{IThemeService as C}from"../../../../platform/theme/common/themeService.js";import{IWorkspaceContextService as T}from"../../../../platform/workspace/common/workspace.js";import{ViewPaneContainer as k}from"../../../browser/parts/views/viewPaneContainer.js";import{IViewDescriptorService as w}from"../../../common/views.js";import{Testing as y}from"../common/constants.js";import{IExtensionService as L}from"../../../services/extensions/common/extensions.js";import{IWorkbenchLayoutService as b}from"../../../services/layout/browser/layoutService.js";let v=class extends k{constructor(e,o,t,i,c,n,S,p,s,a){super(y.ViewletId,{mergeViewWithContainerWhenSingleView:!0},t,S,e,i,o,p,c,n,s,a)}create(e){super.create(e),e.classList.add("testing-view-pane")}getOptimalWidth(){return 400}getTitle(){return l("testing","Testing")}};v=I([r(0,b),r(1,W),r(2,x),r(3,d),r(4,C),r(5,h),r(6,g),r(7,L),r(8,T),r(9,w)],v);export{v as TestingViewPaneContainer};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { localize } from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { ViewPaneContainer } from '../../../browser/parts/views/viewPaneContainer.js';
+import { IViewDescriptorService } from '../../../common/views.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
+let TestingViewPaneContainer = class TestingViewPaneContainer extends ViewPaneContainer {
+    constructor(layoutService, telemetryService, instantiationService, contextMenuService, themeService, storageService, configurationService, extensionService, contextService, viewDescriptorService) {
+        super("workbench.view.extension.test", { mergeViewWithContainerWhenSingleView: true }, instantiationService, configurationService, layoutService, contextMenuService, telemetryService, extensionService, themeService, storageService, contextService, viewDescriptorService);
+    }
+    create(parent) {
+        super.create(parent);
+        parent.classList.add('testing-view-pane');
+    }
+    getOptimalWidth() {
+        return 400;
+    }
+    getTitle() {
+        return localize('testing', "Testing");
+    }
+};
+TestingViewPaneContainer = __decorate([
+    __param(0, IWorkbenchLayoutService),
+    __param(1, ITelemetryService),
+    __param(2, IInstantiationService),
+    __param(3, IContextMenuService),
+    __param(4, IThemeService),
+    __param(5, IStorageService),
+    __param(6, IConfigurationService),
+    __param(7, IExtensionService),
+    __param(8, IWorkspaceContextService),
+    __param(9, IViewDescriptorService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], TestingViewPaneContainer);
+export { TestingViewPaneContainer };

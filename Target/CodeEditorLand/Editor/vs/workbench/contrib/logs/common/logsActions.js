@@ -1,1 +1,219 @@
-var D=Object.defineProperty;var Q=Object.getOwnPropertyDescriptor;var h=(m,d,e,i)=>{for(var o=i>1?void 0:i?Q(d,e):d,t=m.length-1,n;t>=0;t--)(n=m[t])&&(o=(i?n(d,e,o):n(o))||o);return i&&o&&D(d,e,o),o},g=(m,d)=>(e,i)=>d(e,i,m);import*as a from"../../../../nls.js";import{Action as f}from"../../../../base/common/actions.js";import{ILoggerService as y,LogLevel as r,LogLevelToLocalizedString as C,isLogLevel as w}from"../../../../platform/log/common/log.js";import{IQuickInputService as k}from"../../../../platform/quickinput/common/quickInput.js";import{URI as S}from"../../../../base/common/uri.js";import{IFileService as x}from"../../../../platform/files/common/files.js";import{IWorkbenchEnvironmentService as E}from"../../../services/environment/common/environmentService.js";import{dirname as z,basename as b,isEqual as T}from"../../../../base/common/resources.js";import{IEditorService as q}from"../../../services/editor/common/editorService.js";import{IOutputService as F}from"../../../services/output/common/output.js";import{extensionTelemetryLogChannelId as O,telemetryLogId as R}from"../../../../platform/telemetry/common/telemetryUtils.js";import{IDefaultLogLevelsService as U}from"./defaultLogLevels.js";import{Codicon as H}from"../../../../base/common/codicons.js";import{ThemeIcon as B}from"../../../../base/common/themables.js";import{DisposableStore as P}from"../../../../base/common/lifecycle.js";let L=class extends f{constructor(e,i,o,t,n,l){super(e,i);this.quickInputService=o;this.loggerService=t;this.outputService=n;this.defaultLogLevelsService=l}static ID="workbench.action.setLogLevel";static TITLE=a.localize2("setLogLevel","Set Log Level...");async run(){const e=await this.selectLogLevelOrChannel();e!==null&&(w(e)?this.loggerService.setLogLevel(e):await this.setLogLevelForChannel(e))}async selectLogLevelOrChannel(){const e=await this.defaultLogLevelsService.getDefaultLogLevels(),i=[],o=[],t=this.loggerService.getLogLevel();for(const l of this.outputService.getChannelDescriptors()){if(!L.isLevelSettable(l)||!l.file)continue;const v=this.loggerService.getLogLevel(l.file)??t,c={id:l.id,resource:l.file,label:l.label,description:v!==t?this.getLabel(v):void 0,extensionId:l.extensionId};l.extensionId?i.push(c):o.push(c)}const n=[];return n.push({type:"separator",label:a.localize("all","All")}),n.push(...this.getLogLevelEntries(e.default,this.loggerService.getLogLevel(),!0)),i.length&&(n.push({type:"separator",label:a.localize("extensionLogs","Extension Logs")}),n.push(...i.sort((l,v)=>l.label.localeCompare(v.label)))),n.push({type:"separator",label:a.localize("loggers","Logs")}),n.push(...o.sort((l,v)=>l.label.localeCompare(v.label))),new Promise((l,v)=>{const c=new P,s=c.add(this.quickInputService.createQuickPick({useSeparators:!0}));s.placeholder=a.localize("selectlog","Set Log Level"),s.items=n;let p;c.add(s.onDidTriggerItemButton(u=>{s.hide(),this.defaultLogLevelsService.setDefaultLogLevel(u.item.level)})),c.add(s.onDidAccept(u=>{p=s.selectedItems[0],s.hide()})),c.add(s.onDidHide(()=>{const u=p?p.level??p:null;c.dispose(),l(u)})),s.show()})}static isLevelSettable(e){return e.log&&e.file!==void 0&&e.id!==R&&e.id!==O}async setLogLevelForChannel(e){const i=await this.defaultLogLevelsService.getDefaultLogLevels(),o=i.extensions.find(l=>l[0]===e.extensionId?.toLowerCase())?.[1]??i.default,t=this.loggerService.getLogLevel(e.resource)??o,n=this.getLogLevelEntries(o,t,!!e.extensionId);return new Promise((l,v)=>{const c=new P,s=c.add(this.quickInputService.createQuickPick());s.placeholder=e?a.localize("selectLogLevelFor"," {0}: Select log level",e?.label):a.localize("selectLogLevel","Select log level"),s.items=n,s.activeItems=n.filter(u=>u.level===this.loggerService.getLogLevel());let p;c.add(s.onDidTriggerItemButton(u=>{s.hide(),this.defaultLogLevelsService.setDefaultLogLevel(u.item.level,e.extensionId)})),c.add(s.onDidAccept(u=>{p=s.selectedItems[0],s.hide()})),c.add(s.onDidHide(()=>{p&&this.loggerService.setLogLevel(e.resource,p.level),c.dispose(),l()})),s.show()})}getLogLevelEntries(e,i,o){const t=o?{iconClass:B.asClassName(H.checkAll),tooltip:a.localize("resetLogLevel","Set as Default Log Level")}:void 0;return[{label:this.getLabel(r.Trace,i),level:r.Trace,description:this.getDescription(r.Trace,e),buttons:t&&e!==r.Trace?[t]:void 0},{label:this.getLabel(r.Debug,i),level:r.Debug,description:this.getDescription(r.Debug,e),buttons:t&&e!==r.Debug?[t]:void 0},{label:this.getLabel(r.Info,i),level:r.Info,description:this.getDescription(r.Info,e),buttons:t&&e!==r.Info?[t]:void 0},{label:this.getLabel(r.Warning,i),level:r.Warning,description:this.getDescription(r.Warning,e),buttons:t&&e!==r.Warning?[t]:void 0},{label:this.getLabel(r.Error,i),level:r.Error,description:this.getDescription(r.Error,e),buttons:t&&e!==r.Error?[t]:void 0},{label:this.getLabel(r.Off,i),level:r.Off,description:this.getDescription(r.Off,e),buttons:t&&e!==r.Off?[t]:void 0}]}getLabel(e,i){const o=C(e).value;return e===i?`$(check) ${o}`:o}getDescription(e,i){return i===e?a.localize("default","Default"):void 0}};L=h([g(2,k),g(3,y),g(4,F),g(5,U)],L);let I=class extends f{constructor(e,i,o,t,n,l){super(e,i);this.environmentService=o;this.fileService=t;this.quickInputService=n;this.editorService=l}static ID="workbench.action.openSessionLogFile";static TITLE=a.localize2("openSessionLogFile","Open Window Log File (Session)...");async run(){const e=await this.quickInputService.pick(this.getSessions().then(i=>i.map((o,t)=>({id:o.toString(),label:b(o),description:t===0?a.localize("current","Current"):void 0}))),{canPickMany:!1,placeHolder:a.localize("sessions placeholder","Select Session")});if(e){const i=await this.quickInputService.pick(this.getLogFiles(S.parse(e.id)).then(o=>o.map(t=>({id:t.toString(),label:b(t)}))),{canPickMany:!1,placeHolder:a.localize("log placeholder","Select Log file")});if(i)return this.editorService.openEditor({resource:S.parse(i.id),options:{pinned:!0}}).then(()=>{})}}async getSessions(){const e=this.environmentService.logsHome.with({scheme:this.environmentService.logFile.scheme}),i=[e],o=await this.fileService.resolve(z(e));return o.children&&i.push(...o.children.filter(t=>!T(t.resource,e)&&t.isDirectory&&/^\d{8}T\d{6}$/.test(t.name)).sort().reverse().map(t=>t.resource)),i}async getLogFiles(e){const i=await this.fileService.resolve(e);return i.children?i.children.filter(o=>!o.isDirectory).map(o=>o.resource):[]}};I=h([g(2,E),g(3,x),g(4,k),g(5,q)],I);export{I as OpenWindowSessionLogFileAction,L as SetLogLevelAction};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SetLogLevelAction_1;
+import * as nls from '../../../../nls.js';
+import { Action } from '../../../../base/common/actions.js';
+import { ILoggerService, LogLevel, LogLevelToLocalizedString, isLogLevel } from '../../../../platform/log/common/log.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
+import { dirname, basename, isEqual } from '../../../../base/common/resources.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IOutputService } from '../../../services/output/common/output.js';
+import { extensionTelemetryLogChannelId, telemetryLogId } from '../../../../platform/telemetry/common/telemetryUtils.js';
+import { IDefaultLogLevelsService } from './defaultLogLevels.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+let SetLogLevelAction = class SetLogLevelAction extends Action {
+    static { SetLogLevelAction_1 = this; }
+    static { this.ID = 'workbench.action.setLogLevel'; }
+    static { this.TITLE = nls.localize2('setLogLevel', "Set Log Level..."); }
+    constructor(id, label, quickInputService, loggerService, outputService, defaultLogLevelsService) {
+        super(id, label);
+        this.quickInputService = quickInputService;
+        this.loggerService = loggerService;
+        this.outputService = outputService;
+        this.defaultLogLevelsService = defaultLogLevelsService;
+    }
+    async run() {
+        const logLevelOrChannel = await this.selectLogLevelOrChannel();
+        if (logLevelOrChannel !== null) {
+            if (isLogLevel(logLevelOrChannel)) {
+                this.loggerService.setLogLevel(logLevelOrChannel);
+            }
+            else {
+                await this.setLogLevelForChannel(logLevelOrChannel);
+            }
+        }
+    }
+    async selectLogLevelOrChannel() {
+        const defaultLogLevels = await this.defaultLogLevelsService.getDefaultLogLevels();
+        const extensionLogs = [], logs = [];
+        const logLevel = this.loggerService.getLogLevel();
+        for (const channel of this.outputService.getChannelDescriptors()) {
+            if (!SetLogLevelAction_1.isLevelSettable(channel) || !channel.file) {
+                continue;
+            }
+            const channelLogLevel = this.loggerService.getLogLevel(channel.file) ?? logLevel;
+            const item = { id: channel.id, resource: channel.file, label: channel.label, description: channelLogLevel !== logLevel ? this.getLabel(channelLogLevel) : undefined, extensionId: channel.extensionId };
+            if (channel.extensionId) {
+                extensionLogs.push(item);
+            }
+            else {
+                logs.push(item);
+            }
+        }
+        const entries = [];
+        entries.push({ type: 'separator', label: nls.localize('all', "All") });
+        entries.push(...this.getLogLevelEntries(defaultLogLevels.default, this.loggerService.getLogLevel(), true));
+        if (extensionLogs.length) {
+            entries.push({ type: 'separator', label: nls.localize('extensionLogs', "Extension Logs") });
+            entries.push(...extensionLogs.sort((a, b) => a.label.localeCompare(b.label)));
+        }
+        entries.push({ type: 'separator', label: nls.localize('loggers', "Logs") });
+        entries.push(...logs.sort((a, b) => a.label.localeCompare(b.label)));
+        return new Promise((resolve, reject) => {
+            const disposables = new DisposableStore();
+            const quickPick = disposables.add(this.quickInputService.createQuickPick({ useSeparators: true }));
+            quickPick.placeholder = nls.localize('selectlog', "Set Log Level");
+            quickPick.items = entries;
+            let selectedItem;
+            disposables.add(quickPick.onDidTriggerItemButton(e => {
+                quickPick.hide();
+                this.defaultLogLevelsService.setDefaultLogLevel(e.item.level);
+            }));
+            disposables.add(quickPick.onDidAccept(e => {
+                selectedItem = quickPick.selectedItems[0];
+                quickPick.hide();
+            }));
+            disposables.add(quickPick.onDidHide(() => {
+                const result = selectedItem ? selectedItem.level ?? selectedItem : null;
+                disposables.dispose();
+                resolve(result);
+            }));
+            quickPick.show();
+        });
+    }
+    static isLevelSettable(channel) {
+        return channel.log && channel.file !== undefined && channel.id !== telemetryLogId && channel.id !== extensionTelemetryLogChannelId;
+    }
+    async setLogLevelForChannel(logChannel) {
+        const defaultLogLevels = await this.defaultLogLevelsService.getDefaultLogLevels();
+        const defaultLogLevel = defaultLogLevels.extensions.find(e => e[0] === logChannel.extensionId?.toLowerCase())?.[1] ?? defaultLogLevels.default;
+        const currentLogLevel = this.loggerService.getLogLevel(logChannel.resource) ?? defaultLogLevel;
+        const entries = this.getLogLevelEntries(defaultLogLevel, currentLogLevel, !!logChannel.extensionId);
+        return new Promise((resolve, reject) => {
+            const disposables = new DisposableStore();
+            const quickPick = disposables.add(this.quickInputService.createQuickPick());
+            quickPick.placeholder = logChannel ? nls.localize('selectLogLevelFor', " {0}: Select log level", logChannel?.label) : nls.localize('selectLogLevel', "Select log level");
+            quickPick.items = entries;
+            quickPick.activeItems = entries.filter((entry) => entry.level === this.loggerService.getLogLevel());
+            let selectedItem;
+            disposables.add(quickPick.onDidTriggerItemButton(e => {
+                quickPick.hide();
+                this.defaultLogLevelsService.setDefaultLogLevel(e.item.level, logChannel.extensionId);
+            }));
+            disposables.add(quickPick.onDidAccept(e => {
+                selectedItem = quickPick.selectedItems[0];
+                quickPick.hide();
+            }));
+            disposables.add(quickPick.onDidHide(() => {
+                if (selectedItem) {
+                    this.loggerService.setLogLevel(logChannel.resource, selectedItem.level);
+                }
+                disposables.dispose();
+                resolve();
+            }));
+            quickPick.show();
+        });
+    }
+    getLogLevelEntries(defaultLogLevel, currentLogLevel, canSetDefaultLogLevel) {
+        const button = canSetDefaultLogLevel ? { iconClass: ThemeIcon.asClassName(Codicon.checkAll), tooltip: nls.localize('resetLogLevel', "Set as Default Log Level") } : undefined;
+        return [
+            { label: this.getLabel(LogLevel.Trace, currentLogLevel), level: LogLevel.Trace, description: this.getDescription(LogLevel.Trace, defaultLogLevel), buttons: button && defaultLogLevel !== LogLevel.Trace ? [button] : undefined },
+            { label: this.getLabel(LogLevel.Debug, currentLogLevel), level: LogLevel.Debug, description: this.getDescription(LogLevel.Debug, defaultLogLevel), buttons: button && defaultLogLevel !== LogLevel.Debug ? [button] : undefined },
+            { label: this.getLabel(LogLevel.Info, currentLogLevel), level: LogLevel.Info, description: this.getDescription(LogLevel.Info, defaultLogLevel), buttons: button && defaultLogLevel !== LogLevel.Info ? [button] : undefined },
+            { label: this.getLabel(LogLevel.Warning, currentLogLevel), level: LogLevel.Warning, description: this.getDescription(LogLevel.Warning, defaultLogLevel), buttons: button && defaultLogLevel !== LogLevel.Warning ? [button] : undefined },
+            { label: this.getLabel(LogLevel.Error, currentLogLevel), level: LogLevel.Error, description: this.getDescription(LogLevel.Error, defaultLogLevel), buttons: button && defaultLogLevel !== LogLevel.Error ? [button] : undefined },
+            { label: this.getLabel(LogLevel.Off, currentLogLevel), level: LogLevel.Off, description: this.getDescription(LogLevel.Off, defaultLogLevel), buttons: button && defaultLogLevel !== LogLevel.Off ? [button] : undefined },
+        ];
+    }
+    getLabel(level, current) {
+        const label = LogLevelToLocalizedString(level).value;
+        return level === current ? `$(check) ${label}` : label;
+    }
+    getDescription(level, defaultLogLevel) {
+        return defaultLogLevel === level ? nls.localize('default', "Default") : undefined;
+    }
+};
+SetLogLevelAction = SetLogLevelAction_1 = __decorate([
+    __param(2, IQuickInputService),
+    __param(3, ILoggerService),
+    __param(4, IOutputService),
+    __param(5, IDefaultLogLevelsService),
+    __metadata("design:paramtypes", [String, String, Object, Object, Object, Object])
+], SetLogLevelAction);
+export { SetLogLevelAction };
+let OpenWindowSessionLogFileAction = class OpenWindowSessionLogFileAction extends Action {
+    static { this.ID = 'workbench.action.openSessionLogFile'; }
+    static { this.TITLE = nls.localize2('openSessionLogFile', "Open Window Log File (Session)..."); }
+    constructor(id, label, environmentService, fileService, quickInputService, editorService) {
+        super(id, label);
+        this.environmentService = environmentService;
+        this.fileService = fileService;
+        this.quickInputService = quickInputService;
+        this.editorService = editorService;
+    }
+    async run() {
+        const sessionResult = await this.quickInputService.pick(this.getSessions().then(sessions => sessions.map((s, index) => ({
+            id: s.toString(),
+            label: basename(s),
+            description: index === 0 ? nls.localize('current', "Current") : undefined
+        }))), {
+            canPickMany: false,
+            placeHolder: nls.localize('sessions placeholder', "Select Session")
+        });
+        if (sessionResult) {
+            const logFileResult = await this.quickInputService.pick(this.getLogFiles(URI.parse(sessionResult.id)).then(logFiles => logFiles.map((s) => ({
+                id: s.toString(),
+                label: basename(s)
+            }))), {
+                canPickMany: false,
+                placeHolder: nls.localize('log placeholder', "Select Log file")
+            });
+            if (logFileResult) {
+                return this.editorService.openEditor({ resource: URI.parse(logFileResult.id), options: { pinned: true } }).then(() => undefined);
+            }
+        }
+    }
+    async getSessions() {
+        const logsPath = this.environmentService.logsHome.with({ scheme: this.environmentService.logFile.scheme });
+        const result = [logsPath];
+        const stat = await this.fileService.resolve(dirname(logsPath));
+        if (stat.children) {
+            result.push(...stat.children
+                .filter(stat => !isEqual(stat.resource, logsPath) && stat.isDirectory && /^\d{8}T\d{6}$/.test(stat.name))
+                .sort()
+                .reverse()
+                .map(d => d.resource));
+        }
+        return result;
+    }
+    async getLogFiles(session) {
+        const stat = await this.fileService.resolve(session);
+        if (stat.children) {
+            return stat.children.filter(stat => !stat.isDirectory).map(stat => stat.resource);
+        }
+        return [];
+    }
+};
+OpenWindowSessionLogFileAction = __decorate([
+    __param(2, IWorkbenchEnvironmentService),
+    __param(3, IFileService),
+    __param(4, IQuickInputService),
+    __param(5, IEditorService),
+    __metadata("design:paramtypes", [String, String, Object, Object, Object, Object])
+], OpenWindowSessionLogFileAction);
+export { OpenWindowSessionLogFileAction };

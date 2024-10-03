@@ -1,1 +1,180 @@
-var h=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var p=(a,e,t,i)=>{for(var r=i>1?void 0:i?f(e,t):e,d=a.length-1,c;d>=0;d--)(c=a[d])&&(r=(i?c(e,t,r):c(r))||r);return i&&r&&h(e,t,r),r},o=(a,e)=>(t,i)=>e(t,i,a);import{timeout as v}from"../../../base/common/async.js";import{CancellationToken as m}from"../../../base/common/cancellation.js";import{Emitter as S}from"../../../base/common/event.js";import{IConfigurationService as y}from"../../configuration/common/configuration.js";import{IEnvironmentMainService as g}from"../../environment/electron-main/environmentMainService.js";import{ILifecycleMainService as U,LifecycleMainPhase as b}from"../../lifecycle/electron-main/lifecycleMainService.js";import{ILogService as I}from"../../log/common/log.js";import{IProductService as w}from"../../product/common/productService.js";import{IRequestService as P}from"../../request/common/request.js";import{DisablementReason as n,State as s,StateType as l,UpdateType as C}from"../common/update.js";function B(a,e,t){return`${t.updateUrl}/api/update/${a}/${e}/${t.commit}`}let u=class{constructor(e,t,i,r,d,c){this.lifecycleMainService=e;this.configurationService=t;this.environmentMainService=i;this.requestService=r;this.logService=d;this.productService=c;e.when(b.AfterWindowOpen).finally(()=>this.initialize())}url;_state=s.Uninitialized;_onStateChange=new S;onStateChange=this._onStateChange.event;get state(){return this._state}setState(e){this.logService.info("update#setState",e.type),this._state=e,this._onStateChange.fire(e)}async initialize(){if(!this.environmentMainService.isBuilt){this.setState(s.Disabled(n.NotBuilt));return}if(this.environmentMainService.disableUpdates){this.setState(s.Disabled(n.DisabledByEnvironment)),this.logService.info("update#ctor - updates are disabled by the environment");return}if(!this.productService.updateUrl||!this.productService.commit){this.setState(s.Disabled(n.MissingConfiguration)),this.logService.info("update#ctor - updates are disabled as there is no update URL");return}const e=this.configurationService.getValue("update.mode"),t=this.getProductQuality(e);if(!t){this.setState(s.Disabled(n.ManuallyDisabled)),this.logService.info("update#ctor - updates are disabled by user preference");return}if(this.url=this.buildUpdateFeedUrl(t),!this.url){this.setState(s.Disabled(n.InvalidConfiguration)),this.logService.info("update#ctor - updates are disabled as the update URL is badly formed");return}if(this.configurationService.getValue("_update.prss")){const i=new URL(this.url);i.searchParams.set("prss","true"),this.url=i.toString()}if(this.setState(s.Idle(this.getUpdateType())),e==="manual"){this.logService.info("update#ctor - manual checks only; automatic updates are disabled by user preference");return}e==="start"?(this.logService.info("update#ctor - startup checks only; automatic updates are disabled by user preference"),setTimeout(()=>this.checkForUpdates(!1),30*1e3)):this.scheduleCheckForUpdates(30*1e3).then(void 0,i=>this.logService.error(i))}getProductQuality(e){return e==="none"?void 0:this.productService.quality}scheduleCheckForUpdates(e=60*60*1e3){return v(e).then(()=>this.checkForUpdates(!1)).then(()=>this.scheduleCheckForUpdates(60*60*1e3))}async checkForUpdates(e){this.logService.trace("update#checkForUpdates, state = ",this.state.type),this.state.type===l.Idle&&this.doCheckForUpdates(e)}async downloadUpdate(){this.logService.trace("update#downloadUpdate, state = ",this.state.type),this.state.type===l.AvailableForDownload&&await this.doDownloadUpdate(this.state)}async doDownloadUpdate(e){}async applyUpdate(){this.logService.trace("update#applyUpdate, state = ",this.state.type),this.state.type===l.Downloaded&&await this.doApplyUpdate()}async doApplyUpdate(){}quitAndInstall(){return this.logService.trace("update#quitAndInstall, state = ",this.state.type),this.state.type!==l.Ready||(this.logService.trace("update#quitAndInstall(): before lifecycle quit()"),this.lifecycleMainService.quit(!0).then(e=>{this.logService.trace(`update#quitAndInstall(): after lifecycle quit() with veto: ${e}`),!e&&(this.logService.trace("update#quitAndInstall(): running raw#quitAndInstall()"),this.doQuitAndInstall())})),Promise.resolve(void 0)}async isLatestVersion(){if(!this.url)return;if(this.configurationService.getValue("update.mode")==="none")return!1;try{return(await this.requestService.request({url:this.url},m.None)).res.statusCode===204}catch(t){this.logService.error("update#isLatestVersion(): failed to check for updates"),this.logService.error(t);return}}async _applySpecificUpdate(e){}getUpdateType(){return C.Archive}doQuitAndInstall(){}};u=p([o(0,U),o(1,y),o(2,g),o(3,P),o(4,I),o(5,w)],u);export{u as AbstractUpdateService,B as createUpdateURL};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { timeout } from '../../../base/common/async.js';
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { Emitter } from '../../../base/common/event.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { IEnvironmentMainService } from '../../environment/electron-main/environmentMainService.js';
+import { ILifecycleMainService } from '../../lifecycle/electron-main/lifecycleMainService.js';
+import { ILogService } from '../../log/common/log.js';
+import { IProductService } from '../../product/common/productService.js';
+import { IRequestService } from '../../request/common/request.js';
+import { State } from '../common/update.js';
+export function createUpdateURL(platform, quality, productService) {
+    return `${productService.updateUrl}/api/update/${platform}/${quality}/${productService.commit}`;
+}
+let AbstractUpdateService = class AbstractUpdateService {
+    get state() {
+        return this._state;
+    }
+    setState(state) {
+        this.logService.info('update#setState', state.type);
+        this._state = state;
+        this._onStateChange.fire(state);
+    }
+    constructor(lifecycleMainService, configurationService, environmentMainService, requestService, logService, productService) {
+        this.lifecycleMainService = lifecycleMainService;
+        this.configurationService = configurationService;
+        this.environmentMainService = environmentMainService;
+        this.requestService = requestService;
+        this.logService = logService;
+        this.productService = productService;
+        this._state = State.Uninitialized;
+        this._onStateChange = new Emitter();
+        this.onStateChange = this._onStateChange.event;
+        lifecycleMainService.when(3)
+            .finally(() => this.initialize());
+    }
+    async initialize() {
+        if (!this.environmentMainService.isBuilt) {
+            this.setState(State.Disabled(0));
+            return;
+        }
+        if (this.environmentMainService.disableUpdates) {
+            this.setState(State.Disabled(1));
+            this.logService.info('update#ctor - updates are disabled by the environment');
+            return;
+        }
+        if (!this.productService.updateUrl || !this.productService.commit) {
+            this.setState(State.Disabled(3));
+            this.logService.info('update#ctor - updates are disabled as there is no update URL');
+            return;
+        }
+        const updateMode = this.configurationService.getValue('update.mode');
+        const quality = this.getProductQuality(updateMode);
+        if (!quality) {
+            this.setState(State.Disabled(2));
+            this.logService.info('update#ctor - updates are disabled by user preference');
+            return;
+        }
+        this.url = this.buildUpdateFeedUrl(quality);
+        if (!this.url) {
+            this.setState(State.Disabled(4));
+            this.logService.info('update#ctor - updates are disabled as the update URL is badly formed');
+            return;
+        }
+        if (this.configurationService.getValue('_update.prss')) {
+            const url = new URL(this.url);
+            url.searchParams.set('prss', 'true');
+            this.url = url.toString();
+        }
+        this.setState(State.Idle(this.getUpdateType()));
+        if (updateMode === 'manual') {
+            this.logService.info('update#ctor - manual checks only; automatic updates are disabled by user preference');
+            return;
+        }
+        if (updateMode === 'start') {
+            this.logService.info('update#ctor - startup checks only; automatic updates are disabled by user preference');
+            setTimeout(() => this.checkForUpdates(false), 30 * 1000);
+        }
+        else {
+            this.scheduleCheckForUpdates(30 * 1000).then(undefined, err => this.logService.error(err));
+        }
+    }
+    getProductQuality(updateMode) {
+        return updateMode === 'none' ? undefined : this.productService.quality;
+    }
+    scheduleCheckForUpdates(delay = 60 * 60 * 1000) {
+        return timeout(delay)
+            .then(() => this.checkForUpdates(false))
+            .then(() => {
+            return this.scheduleCheckForUpdates(60 * 60 * 1000);
+        });
+    }
+    async checkForUpdates(explicit) {
+        this.logService.trace('update#checkForUpdates, state = ', this.state.type);
+        if (this.state.type !== "idle") {
+            return;
+        }
+        this.doCheckForUpdates(explicit);
+    }
+    async downloadUpdate() {
+        this.logService.trace('update#downloadUpdate, state = ', this.state.type);
+        if (this.state.type !== "available for download") {
+            return;
+        }
+        await this.doDownloadUpdate(this.state);
+    }
+    async doDownloadUpdate(state) {
+    }
+    async applyUpdate() {
+        this.logService.trace('update#applyUpdate, state = ', this.state.type);
+        if (this.state.type !== "downloaded") {
+            return;
+        }
+        await this.doApplyUpdate();
+    }
+    async doApplyUpdate() {
+    }
+    quitAndInstall() {
+        this.logService.trace('update#quitAndInstall, state = ', this.state.type);
+        if (this.state.type !== "ready") {
+            return Promise.resolve(undefined);
+        }
+        this.logService.trace('update#quitAndInstall(): before lifecycle quit()');
+        this.lifecycleMainService.quit(true).then(vetod => {
+            this.logService.trace(`update#quitAndInstall(): after lifecycle quit() with veto: ${vetod}`);
+            if (vetod) {
+                return;
+            }
+            this.logService.trace('update#quitAndInstall(): running raw#quitAndInstall()');
+            this.doQuitAndInstall();
+        });
+        return Promise.resolve(undefined);
+    }
+    async isLatestVersion() {
+        if (!this.url) {
+            return undefined;
+        }
+        const mode = this.configurationService.getValue('update.mode');
+        if (mode === 'none') {
+            return false;
+        }
+        try {
+            const context = await this.requestService.request({ url: this.url }, CancellationToken.None);
+            return context.res.statusCode === 204;
+        }
+        catch (error) {
+            this.logService.error('update#isLatestVersion(): failed to check for updates');
+            this.logService.error(error);
+            return undefined;
+        }
+    }
+    async _applySpecificUpdate(packagePath) {
+    }
+    getUpdateType() {
+        return 1;
+    }
+    doQuitAndInstall() {
+    }
+};
+AbstractUpdateService = __decorate([
+    __param(0, ILifecycleMainService),
+    __param(1, IConfigurationService),
+    __param(2, IEnvironmentMainService),
+    __param(3, IRequestService),
+    __param(4, ILogService),
+    __param(5, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], AbstractUpdateService);
+export { AbstractUpdateService };

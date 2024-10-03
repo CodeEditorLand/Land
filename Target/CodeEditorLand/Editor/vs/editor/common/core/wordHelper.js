@@ -1,1 +1,109 @@
-import{Iterable as d}from"../../../base/common/iterator.js";import{toDisposable as p}from"../../../base/common/lifecycle.js";import{LinkedList as c}from"../../../base/common/linkedList.js";const E="`~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?";function R(e=""){let t="(-?\\d*\\.\\d\\w*)|([^";for(const n of E)e.indexOf(n)>=0||(t+="\\"+n);return t+="\\s]+)",new RegExp(t,"g")}const b=R();function f(e){let t=b;if(e&&e instanceof RegExp)if(e.global)t=e;else{let n="g";e.ignoreCase&&(n+="i"),e.multiline&&(n+="m"),e.unicode&&(n+="u"),t=new RegExp(e.source,n)}return t.lastIndex=0,t}const o=new c;o.unshift({maxLen:1e3,windowSize:15,timeBudget:150});function L(e){const t=o.unshift(e);return p(t)}function A(e,t,n,u,r){if(t=f(t),r||(r=d.first(o)),n.length>r.maxLen){let l=e-r.maxLen/2;return l<0?l=0:u+=l,n=n.substring(l,e+r.maxLen/2),A(e,t,n,u,r)}const a=Date.now(),g=e-1-u;let i=-1,s=null;for(let l=1;!(Date.now()-a>=r.timeBudget);l++){const x=g-r.windowSize*l;t.lastIndex=Math.max(0,x);const m=I(t,n,g,i);if(!m&&s||(s=m,x<=0))break;i=x}if(s){const l={word:s[0],startColumn:u+1+s.index,endColumn:u+1+s.index+s[0].length};return t.lastIndex=0,l}return null}function I(e,t,n,u){let r;for(;r=e.exec(t);){const a=r.index||0;if(a<=n&&e.lastIndex>=n)return r;if(u>0&&a>u)return null}return null}export{b as DEFAULT_WORD_REGEXP,E as USUAL_WORD_SEPARATORS,f as ensureValidWordDefinition,A as getWordAtText,L as setDefaultGetWordAtTextConfig};
+import { Iterable } from '../../../base/common/iterator.js';
+import { toDisposable } from '../../../base/common/lifecycle.js';
+import { LinkedList } from '../../../base/common/linkedList.js';
+export const USUAL_WORD_SEPARATORS = '`~!@#$%^&*()-=+[{]}\\|;:\'",.<>/?';
+function createWordRegExp(allowInWords = '') {
+    let source = '(-?\\d*\\.\\d\\w*)|([^';
+    for (const sep of USUAL_WORD_SEPARATORS) {
+        if (allowInWords.indexOf(sep) >= 0) {
+            continue;
+        }
+        source += '\\' + sep;
+    }
+    source += '\\s]+)';
+    return new RegExp(source, 'g');
+}
+export const DEFAULT_WORD_REGEXP = createWordRegExp();
+export function ensureValidWordDefinition(wordDefinition) {
+    let result = DEFAULT_WORD_REGEXP;
+    if (wordDefinition && (wordDefinition instanceof RegExp)) {
+        if (!wordDefinition.global) {
+            let flags = 'g';
+            if (wordDefinition.ignoreCase) {
+                flags += 'i';
+            }
+            if (wordDefinition.multiline) {
+                flags += 'm';
+            }
+            if (wordDefinition.unicode) {
+                flags += 'u';
+            }
+            result = new RegExp(wordDefinition.source, flags);
+        }
+        else {
+            result = wordDefinition;
+        }
+    }
+    result.lastIndex = 0;
+    return result;
+}
+const _defaultConfig = new LinkedList();
+_defaultConfig.unshift({
+    maxLen: 1000,
+    windowSize: 15,
+    timeBudget: 150
+});
+export function setDefaultGetWordAtTextConfig(value) {
+    const rm = _defaultConfig.unshift(value);
+    return toDisposable(rm);
+}
+export function getWordAtText(column, wordDefinition, text, textOffset, config) {
+    wordDefinition = ensureValidWordDefinition(wordDefinition);
+    if (!config) {
+        config = Iterable.first(_defaultConfig);
+    }
+    if (text.length > config.maxLen) {
+        let start = column - config.maxLen / 2;
+        if (start < 0) {
+            start = 0;
+        }
+        else {
+            textOffset += start;
+        }
+        text = text.substring(start, column + config.maxLen / 2);
+        return getWordAtText(column, wordDefinition, text, textOffset, config);
+    }
+    const t1 = Date.now();
+    const pos = column - 1 - textOffset;
+    let prevRegexIndex = -1;
+    let match = null;
+    for (let i = 1;; i++) {
+        if (Date.now() - t1 >= config.timeBudget) {
+            break;
+        }
+        const regexIndex = pos - config.windowSize * i;
+        wordDefinition.lastIndex = Math.max(0, regexIndex);
+        const thisMatch = _findRegexMatchEnclosingPosition(wordDefinition, text, pos, prevRegexIndex);
+        if (!thisMatch && match) {
+            break;
+        }
+        match = thisMatch;
+        if (regexIndex <= 0) {
+            break;
+        }
+        prevRegexIndex = regexIndex;
+    }
+    if (match) {
+        const result = {
+            word: match[0],
+            startColumn: textOffset + 1 + match.index,
+            endColumn: textOffset + 1 + match.index + match[0].length
+        };
+        wordDefinition.lastIndex = 0;
+        return result;
+    }
+    return null;
+}
+function _findRegexMatchEnclosingPosition(wordDefinition, text, pos, stopPos) {
+    let match;
+    while (match = wordDefinition.exec(text)) {
+        const matchIndex = match.index || 0;
+        if (matchIndex <= pos && wordDefinition.lastIndex >= pos) {
+            return match;
+        }
+        else if (stopPos > 0 && matchIndex > stopPos) {
+            return null;
+        }
+    }
+    return null;
+}

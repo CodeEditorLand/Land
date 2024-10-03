@@ -1,1 +1,57 @@
-import{KeyCode as l,KeyMod as o}from"../../../../base/common/keyCodes.js";import"../../../../editor/browser/editorBrowser.js";import{EditorAction as v,registerEditorAction as S}from"../../../../editor/browser/editorExtensions.js";import{EditorContextKeys as i}from"../../../../editor/common/editorContextKeys.js";import*as t from"../../../../nls.js";import{ContextKeyExpr as y}from"../../../../platform/contextkey/common/contextkey.js";import{KeybindingWeight as h}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{ICommandService as C}from"../../../../platform/commands/common/commands.js";import{INotificationService as b}from"../../../../platform/notification/common/notification.js";import{IExtensionsWorkbenchService as x}from"../../extensions/common/extensions.js";import{IDialogService as F}from"../../../../platform/dialogs/common/dialogs.js";import{ILanguageFeaturesService as E}from"../../../../editor/common/services/languageFeatures.js";S(class extends v{constructor(){super({id:"editor.action.formatDocument.none",label:t.localize("formatDocument.label.multiple","Format Document"),alias:"Format Document",precondition:y.and(i.writable,i.hasDocumentFormattingProvider.toNegated()),kbOpts:{kbExpr:i.editorTextFocus,primary:o.Shift|o.Alt|l.KeyF,linux:{primary:o.CtrlCmd|o.Shift|l.KeyI},weight:h.EditorContrib}})}async run(e,n){if(!n.hasModel())return;const m=e.get(C),s=e.get(x),d=e.get(b),f=e.get(F),g=e.get(E),r=n.getModel(),a=g.documentFormattingEditProvider.all(r).length;if(a>1)return m.executeCommand("editor.action.formatDocument.multiple");if(a===1)return m.executeCommand("editor.action.formatDocument");if(r.isTooLargeForSyncing())d.warn(t.localize("too.large","This file cannot be formatted because it is too large"));else{const c=r.getLanguageId(),u=t.localize("no.provider","There is no formatter for '{0}' files installed.",c),{confirmed:p}=await f.confirm({message:u,primaryButton:t.localize({key:"install.formatter",comment:["&& denotes a mnemonic"]},"&&Install Formatter...")});p&&s.openSearch(`category:formatters ${c}`)}}});
+import { EditorAction, registerEditorAction } from '../../../../editor/browser/editorExtensions.js';
+import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
+import * as nls from '../../../../nls.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { IExtensionsWorkbenchService } from '../../extensions/common/extensions.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
+registerEditorAction(class FormatDocumentMultipleAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.formatDocument.none',
+            label: nls.localize('formatDocument.label.multiple', "Format Document"),
+            alias: 'Format Document',
+            precondition: ContextKeyExpr.and(EditorContextKeys.writable, EditorContextKeys.hasDocumentFormattingProvider.toNegated()),
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 1024 | 512 | 36,
+                linux: { primary: 2048 | 1024 | 39 },
+                weight: 100,
+            }
+        });
+    }
+    async run(accessor, editor) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const commandService = accessor.get(ICommandService);
+        const extensionsWorkbenchService = accessor.get(IExtensionsWorkbenchService);
+        const notificationService = accessor.get(INotificationService);
+        const dialogService = accessor.get(IDialogService);
+        const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+        const model = editor.getModel();
+        const formatterCount = languageFeaturesService.documentFormattingEditProvider.all(model).length;
+        if (formatterCount > 1) {
+            return commandService.executeCommand('editor.action.formatDocument.multiple');
+        }
+        else if (formatterCount === 1) {
+            return commandService.executeCommand('editor.action.formatDocument');
+        }
+        else if (model.isTooLargeForSyncing()) {
+            notificationService.warn(nls.localize('too.large', "This file cannot be formatted because it is too large"));
+        }
+        else {
+            const langName = model.getLanguageId();
+            const message = nls.localize('no.provider', "There is no formatter for '{0}' files installed.", langName);
+            const { confirmed } = await dialogService.confirm({
+                message,
+                primaryButton: nls.localize({ key: 'install.formatter', comment: ['&& denotes a mnemonic'] }, "&&Install Formatter...")
+            });
+            if (confirmed) {
+                extensionsWorkbenchService.openSearch(`category:formatters ${langName}`);
+            }
+        }
+    }
+});

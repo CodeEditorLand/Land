@@ -1,4 +1,124 @@
-var _=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var a=(r,n,t,i)=>{for(var e=i>1?void 0:i?w(n,t):n,o=r.length-1,s;o>=0;o--)(s=r[o])&&(e=(i?s(n,t,e):s(e))||e);return i&&e&&_(n,t,e),e},h=(r,n)=>(t,i)=>n(t,i,r);import{AccessibleViewProviderId as b,AccessibleViewType as m,IAccessibleViewService as u}from"../../../../platform/accessibility/browser/accessibleView.js";import{AccessibilityVerbositySettingId as C}from"../../accessibility/browser/accessibilityConfiguration.js";import"../common/debug.js";import"../../../../platform/accessibility/browser/accessibleViewRegistry.js";import"../../../../platform/instantiation/common/instantiation.js";import{getReplView as V}from"./repl.js";import{IViewsService as y}from"../../../services/views/common/viewsService.js";import{ContextKeyExpr as I}from"../../../../platform/contextkey/common/contextkey.js";import{Emitter as v}from"../../../../base/common/event.js";import{Disposable as S}from"../../../../base/common/lifecycle.js";import{Position as g}from"../../../../editor/common/core/position.js";class J{priority=70;name="debugConsole";when=I.equals("focusedView","workbench.panel.repl.view");type=m.View;getProvider(n){const t=n.get(y),i=n.get(u),e=V(t);if(!e)return;const o=e.getFocusedElement();return new l(e,o,i)}}let l=class extends S{constructor(t,i,e){super();this._replView=t;this._focusedElement=i;this._accessibleViewService=e;this._treeHadFocus=!!i}id=b.Repl;_content;_onDidChangeContent=this._register(new v);onDidChangeContent=this._onDidChangeContent.event;_onDidResolveChildren=this._register(new v);onDidResolveChildren=this._onDidResolveChildren.event;verbositySettingKey=C.Debug;options={type:m.View};_elementPositionMap=new Map;_treeHadFocus=!1;provideContent(){const t=this._replView.getDebugSession();if(!t)return"No debug session available.";const i=t.getReplElements();return i.length?(this._content||this._updateContent(i),this._content??i.map(e=>e.toString(!0)).join(`
-`)):"No output in the debug console."}onClose(){if(this._content=void 0,this._elementPositionMap.clear(),this._treeHadFocus)return this._replView.focusTree();this._replView.getReplInput().focus()}onOpen(){this._register(this.onDidResolveChildren(()=>{this._onDidChangeContent.fire(),queueMicrotask(()=>{if(this._focusedElement){const t=this._elementPositionMap.get(this._focusedElement.getId());t&&this._accessibleViewService.setPosition(t,!0)}})}))}async _updateContent(t){const i=this._replView.getReplDataSource();if(!i)return;let e=1;const o=[];for(const s of t)if(o.push(s.toString().replace(/\n/g,"")),this._elementPositionMap.set(s.getId(),new g(e,1)),e++,i.hasChildren(s)){const c=[],f=await i.getChildren(s);for(const p of f){const d=p.getId();this._elementPositionMap.has(d)||this._elementPositionMap.set(d,new g(e,1)),c.push("  "+p.toString()),e++}o.push(c.join(`
-`))}this._content=o.join(`
-`),this._onDidResolveChildren.fire()}};l=a([h(2,u)],l);export{J as ReplAccessibleView};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IAccessibleViewService } from '../../../../platform/accessibility/browser/accessibleView.js';
+import { getReplView, Repl } from './repl.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { Position } from '../../../../editor/common/core/position.js';
+export class ReplAccessibleView {
+    constructor() {
+        this.priority = 70;
+        this.name = 'debugConsole';
+        this.when = ContextKeyExpr.equals('focusedView', 'workbench.panel.repl.view');
+        this.type = "view";
+    }
+    getProvider(accessor) {
+        const viewsService = accessor.get(IViewsService);
+        const accessibleViewService = accessor.get(IAccessibleViewService);
+        const replView = getReplView(viewsService);
+        if (!replView) {
+            return undefined;
+        }
+        const focusedElement = replView.getFocusedElement();
+        return new ReplOutputAccessibleViewProvider(replView, focusedElement, accessibleViewService);
+    }
+}
+let ReplOutputAccessibleViewProvider = class ReplOutputAccessibleViewProvider extends Disposable {
+    constructor(_replView, _focusedElement, _accessibleViewService) {
+        super();
+        this._replView = _replView;
+        this._focusedElement = _focusedElement;
+        this._accessibleViewService = _accessibleViewService;
+        this.id = "repl";
+        this._onDidChangeContent = this._register(new Emitter());
+        this.onDidChangeContent = this._onDidChangeContent.event;
+        this._onDidResolveChildren = this._register(new Emitter());
+        this.onDidResolveChildren = this._onDidResolveChildren.event;
+        this.verbositySettingKey = "accessibility.verbosity.debug";
+        this.options = {
+            type: "view"
+        };
+        this._elementPositionMap = new Map();
+        this._treeHadFocus = false;
+        this._treeHadFocus = !!_focusedElement;
+    }
+    provideContent() {
+        const debugSession = this._replView.getDebugSession();
+        if (!debugSession) {
+            return 'No debug session available.';
+        }
+        const elements = debugSession.getReplElements();
+        if (!elements.length) {
+            return 'No output in the debug console.';
+        }
+        if (!this._content) {
+            this._updateContent(elements);
+        }
+        return this._content ?? elements.map(e => e.toString(true)).join('\n');
+    }
+    onClose() {
+        this._content = undefined;
+        this._elementPositionMap.clear();
+        if (this._treeHadFocus) {
+            return this._replView.focusTree();
+        }
+        this._replView.getReplInput().focus();
+    }
+    onOpen() {
+        this._register(this.onDidResolveChildren(() => {
+            this._onDidChangeContent.fire();
+            queueMicrotask(() => {
+                if (this._focusedElement) {
+                    const position = this._elementPositionMap.get(this._focusedElement.getId());
+                    if (position) {
+                        this._accessibleViewService.setPosition(position, true);
+                    }
+                }
+            });
+        }));
+    }
+    async _updateContent(elements) {
+        const dataSource = this._replView.getReplDataSource();
+        if (!dataSource) {
+            return;
+        }
+        let line = 1;
+        const content = [];
+        for (const e of elements) {
+            content.push(e.toString().replace(/\n/g, ''));
+            this._elementPositionMap.set(e.getId(), new Position(line, 1));
+            line++;
+            if (dataSource.hasChildren(e)) {
+                const childContent = [];
+                const children = await dataSource.getChildren(e);
+                for (const child of children) {
+                    const id = child.getId();
+                    if (!this._elementPositionMap.has(id)) {
+                        this._elementPositionMap.set(id, new Position(line, 1));
+                    }
+                    childContent.push('  ' + child.toString());
+                    line++;
+                }
+                content.push(childContent.join('\n'));
+            }
+        }
+        this._content = content.join('\n');
+        this._onDidResolveChildren.fire();
+    }
+};
+ReplOutputAccessibleViewProvider = __decorate([
+    __param(2, IAccessibleViewService),
+    __metadata("design:paramtypes", [Repl, Object, Object])
+], ReplOutputAccessibleViewProvider);

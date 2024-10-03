@@ -1,1 +1,40 @@
-import"../../base/browser/keyboardEvent.js";import"../../base/browser/mouseEvent.js";import"../../base/browser/ui/sash/sash.js";import"../../base/common/event.js";import"./config/editorConfiguration.js";import"../common/config/editorOptions.js";import"../common/core/dimension.js";import"../common/core/position.js";import"../common/core/range.js";import"../common/core/selection.js";import"../common/core/wordHelper.js";import"../common/cursorEvents.js";import"../common/diff/legacyLinesDiffComputer.js";import*as i from"../common/editorCommon.js";import"../common/model.js";import"../common/modelLineProjectionData.js";import"../common/textModelEvents.js";import"../common/viewModel.js";import"../common/viewModel/overviewZoneManager.js";import"../../platform/actions/common/actions.js";import"../../platform/contextkey/common/contextkey.js";import"../../platform/instantiation/common/instantiation.js";var d=(n=>(n[n.EXACT=0]="EXACT",n[n.ABOVE=1]="ABOVE",n[n.BELOW=2]="BELOW",n))(d||{}),a=(n=>(n[n.TOP_RIGHT_CORNER=0]="TOP_RIGHT_CORNER",n[n.BOTTOM_RIGHT_CORNER=1]="BOTTOM_RIGHT_CORNER",n[n.TOP_CENTER=2]="TOP_CENTER",n))(a||{}),l=(e=>(e[e.UNKNOWN=0]="UNKNOWN",e[e.TEXTAREA=1]="TEXTAREA",e[e.GUTTER_GLYPH_MARGIN=2]="GUTTER_GLYPH_MARGIN",e[e.GUTTER_LINE_NUMBERS=3]="GUTTER_LINE_NUMBERS",e[e.GUTTER_LINE_DECORATIONS=4]="GUTTER_LINE_DECORATIONS",e[e.GUTTER_VIEW_ZONE=5]="GUTTER_VIEW_ZONE",e[e.CONTENT_TEXT=6]="CONTENT_TEXT",e[e.CONTENT_EMPTY=7]="CONTENT_EMPTY",e[e.CONTENT_VIEW_ZONE=8]="CONTENT_VIEW_ZONE",e[e.CONTENT_WIDGET=9]="CONTENT_WIDGET",e[e.OVERVIEW_RULER=10]="OVERVIEW_RULER",e[e.SCROLLBAR=11]="SCROLLBAR",e[e.OVERLAY_WIDGET=12]="OVERLAY_WIDGET",e[e.OUTSIDE_EDITOR=13]="OUTSIDE_EDITOR",e))(l||{}),s=(n=>(n[n.Idle=0]="Idle",n[n.ComputingDiff=1]="ComputingDiff",n[n.DiffComputed=2]="DiffComputed",n))(s||{});function t(o){return o&&typeof o.getEditorType=="function"?o.getEditorType()===i.EditorType.ICodeEditor:!1}function r(o){return o&&typeof o.getEditorType=="function"?o.getEditorType()===i.EditorType.IDiffEditor:!1}function g(o){return!!o&&typeof o=="object"&&typeof o.onDidChangeActiveEditor=="function"}function De(o){return t(o)?o:r(o)?o.getModifiedEditor():g(o)&&t(o.activeCodeEditor)?o.activeCodeEditor:null}function be(o){return t(o)||r(o)?o:null}export{d as ContentWidgetPositionPreference,s as DiffEditorState,l as MouseTargetType,a as OverlayWidgetPositionPreference,De as getCodeEditor,be as getIEditor,t as isCodeEditor,g as isCompositeEditor,r as isDiffEditor};
+import * as editorCommon from '../common/editorCommon.js';
+export function isCodeEditor(thing) {
+    if (thing && typeof thing.getEditorType === 'function') {
+        return thing.getEditorType() === editorCommon.EditorType.ICodeEditor;
+    }
+    else {
+        return false;
+    }
+}
+export function isDiffEditor(thing) {
+    if (thing && typeof thing.getEditorType === 'function') {
+        return thing.getEditorType() === editorCommon.EditorType.IDiffEditor;
+    }
+    else {
+        return false;
+    }
+}
+export function isCompositeEditor(thing) {
+    return !!thing
+        && typeof thing === 'object'
+        && typeof thing.onDidChangeActiveEditor === 'function';
+}
+export function getCodeEditor(thing) {
+    if (isCodeEditor(thing)) {
+        return thing;
+    }
+    if (isDiffEditor(thing)) {
+        return thing.getModifiedEditor();
+    }
+    if (isCompositeEditor(thing) && isCodeEditor(thing.activeCodeEditor)) {
+        return thing.activeCodeEditor;
+    }
+    return null;
+}
+export function getIEditor(thing) {
+    if (isCodeEditor(thing) || isDiffEditor(thing)) {
+        return thing;
+    }
+    return null;
+}

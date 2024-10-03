@@ -1,1 +1,123 @@
-import{range as m}from"./arrays.js";import{CancellationTokenSource as p}from"./cancellation.js";import{CancellationError as i}from"./errors.js";function g(r){return{isResolved:!!r,promise:null,cts:null,promiseIndexes:new Set,elements:r||[]}}function u(r){return{firstPage:r,total:r.length,pageSize:r.length,getPage:(e,n)=>Promise.resolve(r)}}class h{pager;pages=[];get length(){return this.pager.total}constructor(e){this.pager=Array.isArray(e)?u(e):e;const n=Math.ceil(this.pager.total/this.pager.pageSize);this.pages=[g(this.pager.firstPage.slice()),...m(n-1).map(()=>g())]}isResolved(e){const n=Math.floor(e/this.pager.pageSize);return!!this.pages[n].isResolved}get(e){const n=Math.floor(e/this.pager.pageSize),s=e%this.pager.pageSize;return this.pages[n].elements[s]}resolve(e,n){if(n.isCancellationRequested)return Promise.reject(new i);const s=Math.floor(e/this.pager.pageSize),o=e%this.pager.pageSize,t=this.pages[s];if(t.isResolved)return Promise.resolve(t.elements[o]);t.promise||(t.cts=new p,t.promise=this.pager.getPage(s,t.cts.token).then(l=>{t.elements=l,t.isResolved=!0,t.promise=null,t.cts=null},l=>(t.isResolved=!1,t.promise=null,t.cts=null,Promise.reject(l))));const a=n.onCancellationRequested(()=>{t.cts&&(t.promiseIndexes.delete(e),t.promiseIndexes.size===0&&t.cts.cancel())});return t.promiseIndexes.add(e),t.promise.then(()=>t.elements[o]).finally(()=>a.dispose())}}class f{constructor(e,n=500){this.model=e;this.timeout=n}get length(){return this.model.length}isResolved(e){return this.model.isResolved(e)}get(e){return this.model.get(e)}resolve(e,n){return new Promise((s,o)=>{if(n.isCancellationRequested)return o(new i);const t=setTimeout(()=>{if(n.isCancellationRequested)return o(new i);a.dispose(),this.model.resolve(e,n).then(s,o)},this.timeout),a=n.onCancellationRequested(()=>{clearTimeout(t),a.dispose(),o(new i)})})}}function I(r,e){return{firstPage:r.firstPage.map(e),total:r.total,pageSize:r.pageSize,getPage:(n,s)=>r.getPage(n,s).then(o=>o.map(e))}}export{f as DelayedPagedModel,h as PagedModel,I as mapPager,u as singlePagePager};
+import { range } from './arrays.js';
+import { CancellationTokenSource } from './cancellation.js';
+import { CancellationError } from './errors.js';
+function createPage(elements) {
+    return {
+        isResolved: !!elements,
+        promise: null,
+        cts: null,
+        promiseIndexes: new Set(),
+        elements: elements || []
+    };
+}
+export function singlePagePager(elements) {
+    return {
+        firstPage: elements,
+        total: elements.length,
+        pageSize: elements.length,
+        getPage: (pageIndex, cancellationToken) => {
+            return Promise.resolve(elements);
+        }
+    };
+}
+export class PagedModel {
+    get length() { return this.pager.total; }
+    constructor(arg) {
+        this.pages = [];
+        this.pager = Array.isArray(arg) ? singlePagePager(arg) : arg;
+        const totalPages = Math.ceil(this.pager.total / this.pager.pageSize);
+        this.pages = [
+            createPage(this.pager.firstPage.slice()),
+            ...range(totalPages - 1).map(() => createPage())
+        ];
+    }
+    isResolved(index) {
+        const pageIndex = Math.floor(index / this.pager.pageSize);
+        const page = this.pages[pageIndex];
+        return !!page.isResolved;
+    }
+    get(index) {
+        const pageIndex = Math.floor(index / this.pager.pageSize);
+        const indexInPage = index % this.pager.pageSize;
+        const page = this.pages[pageIndex];
+        return page.elements[indexInPage];
+    }
+    resolve(index, cancellationToken) {
+        if (cancellationToken.isCancellationRequested) {
+            return Promise.reject(new CancellationError());
+        }
+        const pageIndex = Math.floor(index / this.pager.pageSize);
+        const indexInPage = index % this.pager.pageSize;
+        const page = this.pages[pageIndex];
+        if (page.isResolved) {
+            return Promise.resolve(page.elements[indexInPage]);
+        }
+        if (!page.promise) {
+            page.cts = new CancellationTokenSource();
+            page.promise = this.pager.getPage(pageIndex, page.cts.token)
+                .then(elements => {
+                page.elements = elements;
+                page.isResolved = true;
+                page.promise = null;
+                page.cts = null;
+            }, err => {
+                page.isResolved = false;
+                page.promise = null;
+                page.cts = null;
+                return Promise.reject(err);
+            });
+        }
+        const listener = cancellationToken.onCancellationRequested(() => {
+            if (!page.cts) {
+                return;
+            }
+            page.promiseIndexes.delete(index);
+            if (page.promiseIndexes.size === 0) {
+                page.cts.cancel();
+            }
+        });
+        page.promiseIndexes.add(index);
+        return page.promise.then(() => page.elements[indexInPage])
+            .finally(() => listener.dispose());
+    }
+}
+export class DelayedPagedModel {
+    get length() { return this.model.length; }
+    constructor(model, timeout = 500) {
+        this.model = model;
+        this.timeout = timeout;
+    }
+    isResolved(index) {
+        return this.model.isResolved(index);
+    }
+    get(index) {
+        return this.model.get(index);
+    }
+    resolve(index, cancellationToken) {
+        return new Promise((c, e) => {
+            if (cancellationToken.isCancellationRequested) {
+                return e(new CancellationError());
+            }
+            const timer = setTimeout(() => {
+                if (cancellationToken.isCancellationRequested) {
+                    return e(new CancellationError());
+                }
+                timeoutCancellation.dispose();
+                this.model.resolve(index, cancellationToken).then(c, e);
+            }, this.timeout);
+            const timeoutCancellation = cancellationToken.onCancellationRequested(() => {
+                clearTimeout(timer);
+                timeoutCancellation.dispose();
+                e(new CancellationError());
+            });
+        });
+    }
+}
+export function mapPager(pager, fn) {
+    return {
+        firstPage: pager.firstPage.map(fn),
+        total: pager.total,
+        pageSize: pager.pageSize,
+        getPage: (pageIndex, token) => pager.getPage(pageIndex, token).then(r => r.map(fn))
+    };
+}

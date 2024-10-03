@@ -1,1 +1,2 @@
-import"../../../base/common/color.js";import"../../common/languages/supports/tokenization.js";import{createDecorator as e}from"../../../platform/instantiation/common/instantiation.js";import"../../../platform/theme/common/themeService.js";const T=e("themeService");export{T as IStandaloneThemeService};
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+export const IStandaloneThemeService = createDecorator('themeService');

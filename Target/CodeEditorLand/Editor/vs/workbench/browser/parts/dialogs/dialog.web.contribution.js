@@ -1,1 +1,78 @@
-var p=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var c=(s,t,r,i)=>{for(var e=i>1?void 0:i?u(t,r):t,l=s.length-1,n;l>=0;l--)(n=s[l])&&(e=(i?n(t,r,e):n(e))||e);return i&&e&&p(t,r,e),e},o=(s,t)=>(r,i)=>t(r,i,s);import{IClipboardService as d}from"../../../../platform/clipboard/common/clipboardService.js";import{IDialogService as h}from"../../../../platform/dialogs/common/dialogs.js";import{IKeybindingService as I}from"../../../../platform/keybinding/common/keybinding.js";import{ILayoutService as v}from"../../../../platform/layout/browser/layoutService.js";import{ILogService as D}from"../../../../platform/log/common/log.js";import{IProductService as f}from"../../../../platform/product/common/productService.js";import{WorkbenchPhase as S,registerWorkbenchContribution2 as b}from"../../../common/contributions.js";import"../../../common/dialogs.js";import{BrowserDialogHandler as w}from"./dialogHandler.js";import"../../../services/dialogs/common/dialogService.js";import{Disposable as y}from"../../../../base/common/lifecycle.js";import{IInstantiationService as k}from"../../../../platform/instantiation/common/instantiation.js";import{Lazy as A}from"../../../../base/common/lazy.js";let a=class extends y{constructor(r,i,e,l,n,g,m){super();this.dialogService=r;this.impl=new A(()=>new w(i,e,l,n,g,m)),this.model=this.dialogService.model,this._register(this.model.onWillShowDialog(()=>{this.currentDialog||this.processDialogs()})),this.processDialogs()}static ID="workbench.contrib.dialogHandler";model;impl;currentDialog;async processDialogs(){for(;this.model.dialogs.length;){this.currentDialog=this.model.dialogs[0];let r;try{if(this.currentDialog.args.confirmArgs){const i=this.currentDialog.args.confirmArgs;r=await this.impl.value.confirm(i.confirmation)}else if(this.currentDialog.args.inputArgs){const i=this.currentDialog.args.inputArgs;r=await this.impl.value.input(i.input)}else if(this.currentDialog.args.promptArgs){const i=this.currentDialog.args.promptArgs;r=await this.impl.value.prompt(i.prompt)}else await this.impl.value.about()}catch(i){r=i}this.currentDialog.close(r),this.currentDialog=void 0}}};a=c([o(0,h),o(1,D),o(2,v),o(3,I),o(4,k),o(5,f),o(6,d)],a),b(a.ID,a,S.BlockStartup);export{a as DialogHandlerContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IClipboardService } from '../../../../platform/clipboard/common/clipboardService.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { ILayoutService } from '../../../../platform/layout/browser/layoutService.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { registerWorkbenchContribution2 } from '../../../common/contributions.js';
+import { BrowserDialogHandler } from './dialogHandler.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { Lazy } from '../../../../base/common/lazy.js';
+let DialogHandlerContribution = class DialogHandlerContribution extends Disposable {
+    static { this.ID = 'workbench.contrib.dialogHandler'; }
+    constructor(dialogService, logService, layoutService, keybindingService, instantiationService, productService, clipboardService) {
+        super();
+        this.dialogService = dialogService;
+        this.impl = new Lazy(() => new BrowserDialogHandler(logService, layoutService, keybindingService, instantiationService, productService, clipboardService));
+        this.model = this.dialogService.model;
+        this._register(this.model.onWillShowDialog(() => {
+            if (!this.currentDialog) {
+                this.processDialogs();
+            }
+        }));
+        this.processDialogs();
+    }
+    async processDialogs() {
+        while (this.model.dialogs.length) {
+            this.currentDialog = this.model.dialogs[0];
+            let result = undefined;
+            try {
+                if (this.currentDialog.args.confirmArgs) {
+                    const args = this.currentDialog.args.confirmArgs;
+                    result = await this.impl.value.confirm(args.confirmation);
+                }
+                else if (this.currentDialog.args.inputArgs) {
+                    const args = this.currentDialog.args.inputArgs;
+                    result = await this.impl.value.input(args.input);
+                }
+                else if (this.currentDialog.args.promptArgs) {
+                    const args = this.currentDialog.args.promptArgs;
+                    result = await this.impl.value.prompt(args.prompt);
+                }
+                else {
+                    await this.impl.value.about();
+                }
+            }
+            catch (error) {
+                result = error;
+            }
+            this.currentDialog.close(result);
+            this.currentDialog = undefined;
+        }
+    }
+};
+DialogHandlerContribution = __decorate([
+    __param(0, IDialogService),
+    __param(1, ILogService),
+    __param(2, ILayoutService),
+    __param(3, IKeybindingService),
+    __param(4, IInstantiationService),
+    __param(5, IProductService),
+    __param(6, IClipboardService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], DialogHandlerContribution);
+export { DialogHandlerContribution };
+registerWorkbenchContribution2(DialogHandlerContribution.ID, DialogHandlerContribution, 1);

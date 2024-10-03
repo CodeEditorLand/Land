@@ -1,1 +1,3 @@
-function s(e){return!!e.parentPort}export{s as isUtilityProcess};
+export function isUtilityProcess(process) {
+    return !!process.parentPort;
+}

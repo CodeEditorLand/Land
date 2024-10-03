@@ -1,1 +1,57 @@
-var l=Object.defineProperty;var d=Object.getOwnPropertyDescriptor;var c=(n,e,t,r)=>{for(var i=r>1?void 0:r?d(e,t):e,a=n.length-1,o;a>=0;a--)(o=n[a])&&(i=(r?o(e,t,i):o(i))||i);return r&&i&&l(e,t,i),i},v=(n,e)=>(t,r)=>e(t,r,n);import{disposableTimeout as m,RunOnceScheduler as p,runWhenGlobalIdle as h}from"../../../../base/common/async.js";import{Emitter as I}from"../../../../base/common/event.js";import{Disposable as f,DisposableStore as u,toDisposable as A}from"../../../../base/common/lifecycle.js";import{InstantiationType as b,registerSingleton as g}from"../../../../platform/instantiation/common/extensions.js";import{IInstantiationService as y,createDecorator as D}from"../../../../platform/instantiation/common/instantiation.js";import{userActivityRegistry as E}from"./userActivityRegistry.js";const k=1e4,_=D("IUserActivityService");let s=class extends f{markInactive=this._register(new p(()=>{this.isActive=!1,this.changeEmitter.fire(!1)},k));changeEmitter=this._register(new I);active=0;isActive=!0;onDidChangeIsActive=this.changeEmitter.event;constructor(e){super(),this._register(h(()=>E.take(this,e)))}markActive(e){if(e?.whenHeldFor){const t=new u;return t.add(m(()=>t.add(this.markActive()),e.whenHeldFor)),t}return++this.active===1&&(this.isActive=!0,this.changeEmitter.fire(!0),this.markInactive.cancel()),A(()=>{--this.active===0&&this.markInactive.schedule()})}};s=c([v(0,y)],s),g(_,s,b.Delayed);export{_ as IUserActivityService,s as UserActivityService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { disposableTimeout, RunOnceScheduler, runWhenGlobalIdle } from '../../../../base/common/async.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IInstantiationService, createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { userActivityRegistry } from './userActivityRegistry.js';
+const MARK_INACTIVE_DEBOUNCE = 10_000;
+export const IUserActivityService = createDecorator('IUserActivityService');
+let UserActivityService = class UserActivityService extends Disposable {
+    constructor(instantiationService) {
+        super();
+        this.markInactive = this._register(new RunOnceScheduler(() => {
+            this.isActive = false;
+            this.changeEmitter.fire(false);
+        }, MARK_INACTIVE_DEBOUNCE));
+        this.changeEmitter = this._register(new Emitter);
+        this.active = 0;
+        this.isActive = true;
+        this.onDidChangeIsActive = this.changeEmitter.event;
+        this._register(runWhenGlobalIdle(() => userActivityRegistry.take(this, instantiationService)));
+    }
+    markActive(opts) {
+        if (opts?.whenHeldFor) {
+            const store = new DisposableStore();
+            store.add(disposableTimeout(() => store.add(this.markActive()), opts.whenHeldFor));
+            return store;
+        }
+        if (++this.active === 1) {
+            this.isActive = true;
+            this.changeEmitter.fire(true);
+            this.markInactive.cancel();
+        }
+        return toDisposable(() => {
+            if (--this.active === 0) {
+                this.markInactive.schedule();
+            }
+        });
+    }
+};
+UserActivityService = __decorate([
+    __param(0, IInstantiationService),
+    __metadata("design:paramtypes", [Object])
+], UserActivityService);
+export { UserActivityService };
+registerSingleton(IUserActivityService, UserActivityService, 1);

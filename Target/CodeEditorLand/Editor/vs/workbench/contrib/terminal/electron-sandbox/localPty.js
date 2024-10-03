@@ -1,1 +1,63 @@
-import"../../../../platform/terminal/common/terminal.js";import{BasePty as s}from"../common/basePty.js";class P extends s{constructor(r,e,o){super(r,e);this._proxy=o}start(){return this._proxy.start(this.id)}detach(r){return this._proxy.detachFromProcess(this.id,r)}shutdown(r){this._proxy.shutdown(this.id,r)}async processBinary(r){if(!this._inReplay)return this._proxy.processBinary(this.id,r)}input(r){this._inReplay||this._proxy.input(this.id,r)}resize(r,e){this._inReplay||this._lastDimensions.cols===r&&this._lastDimensions.rows===e||(this._lastDimensions.cols=r,this._lastDimensions.rows=e,this._proxy.resize(this.id,r,e))}async clearBuffer(){this._proxy.clearBuffer?.(this.id)}freePortKillProcess(r){if(!this._proxy.freePortKillProcess)throw new Error("freePortKillProcess does not exist on the local pty service");return this._proxy.freePortKillProcess(r)}async refreshProperty(r){return this._proxy.refreshProperty(this.id,r)}async updateProperty(r,e){return this._proxy.updateProperty(this.id,r,e)}acknowledgeDataEvent(r){this._inReplay||this._proxy.acknowledgeDataEvent(this.id,r)}setUnicodeVersion(r){return this._proxy.setUnicodeVersion(this.id,r)}handleOrphanQuestion(){this._proxy.orphanQuestionReply(this.id)}}export{P as LocalPty};
+import { BasePty } from '../common/basePty.js';
+export class LocalPty extends BasePty {
+    constructor(id, shouldPersist, _proxy) {
+        super(id, shouldPersist);
+        this._proxy = _proxy;
+    }
+    start() {
+        return this._proxy.start(this.id);
+    }
+    detach(forcePersist) {
+        return this._proxy.detachFromProcess(this.id, forcePersist);
+    }
+    shutdown(immediate) {
+        this._proxy.shutdown(this.id, immediate);
+    }
+    async processBinary(data) {
+        if (this._inReplay) {
+            return;
+        }
+        return this._proxy.processBinary(this.id, data);
+    }
+    input(data) {
+        if (this._inReplay) {
+            return;
+        }
+        this._proxy.input(this.id, data);
+    }
+    resize(cols, rows) {
+        if (this._inReplay || this._lastDimensions.cols === cols && this._lastDimensions.rows === rows) {
+            return;
+        }
+        this._lastDimensions.cols = cols;
+        this._lastDimensions.rows = rows;
+        this._proxy.resize(this.id, cols, rows);
+    }
+    async clearBuffer() {
+        this._proxy.clearBuffer?.(this.id);
+    }
+    freePortKillProcess(port) {
+        if (!this._proxy.freePortKillProcess) {
+            throw new Error('freePortKillProcess does not exist on the local pty service');
+        }
+        return this._proxy.freePortKillProcess(port);
+    }
+    async refreshProperty(type) {
+        return this._proxy.refreshProperty(this.id, type);
+    }
+    async updateProperty(type, value) {
+        return this._proxy.updateProperty(this.id, type, value);
+    }
+    acknowledgeDataEvent(charCount) {
+        if (this._inReplay) {
+            return;
+        }
+        this._proxy.acknowledgeDataEvent(this.id, charCount);
+    }
+    setUnicodeVersion(version) {
+        return this._proxy.setUnicodeVersion(this.id, version);
+    }
+    handleOrphanQuestion() {
+        this._proxy.orphanQuestionReply(this.id);
+    }
+}

@@ -1,1 +1,303 @@
-import*as u from"../../../../base/common/path.js";import{CancellationTokenSource as S}from"../../../../base/common/cancellation.js";import{toErrorMessage as g}from"../../../../base/common/errorMessage.js";import*as v from"../../../../base/common/glob.js";import*as y from"../../../../base/common/resources.js";import{StopWatch as P}from"../../../../base/common/stopwatch.js";import"../../../../base/common/uri.js";import{QueryGlobTester as T,resolvePatternsForProvider as I,hasSiblingFn as C,excludeToGlobPattern as E,DEFAULT_MAX_SEARCH_RESULTS as x}from"./search.js";import"./searchExtTypes.js";import{TernarySearchTree as k}from"../../../../base/common/ternarySearchTree.js";import{OldFileSearchProviderConverter as M}from"./searchExtConversionTypes.js";class R{constructor(e,t,r){this.config=e;this.provider=t;this.sessionLifecycle=r;this.filePattern=e.filePattern,this.includePattern=e.includePattern&&v.parse(e.includePattern),this.maxResults=e.maxResults||void 0,this.exists=e.exists,this.activeCancellationTokens=new Set,this.globalExcludePattern=e.excludePattern&&v.parse(e.excludePattern)}filePattern;includePattern;maxResults;exists;isLimitHit=!1;resultCount=0;isCanceled=!1;activeCancellationTokens;globalExcludePattern;cancel(){this.isCanceled=!0,this.activeCancellationTokens.forEach(e=>e.cancel()),this.activeCancellationTokens=new Set}search(e){const t=this.config.folderQueries||[];return new Promise((r,l)=>{const o=i=>{this.resultCount++,e(i)};if(this.isCanceled)return r({limitHit:this.isLimitHit});this.config.extraFileResources&&this.config.extraFileResources.forEach(i=>{const s=i.toString(),n=u.basename(s);this.globalExcludePattern&&this.globalExcludePattern(s,n)||this.matchFile(o,{base:i,basename:n})}),this.doSearch(t,o).then(i=>{r({limitHit:this.isLimitHit,stats:i||void 0})},i=>{l(new Error(g(i)))})})}async doSearch(e,t){const r=new S,l=e.map(a=>this.getSearchOptionsForFolder(a)),o=this.provider instanceof M?this.sessionLifecycle?.tokenSource.token:this.sessionLifecycle?.obj,i={folderOptions:l,maxResults:this.config.maxResults??x,session:o},s=k.forUris();e.forEach(a=>{const c=new T(this.config,a),f=!c.hasSiblingExcludeClauses();s.set(a.folder,{queryTester:c,noSiblingsClauses:f,folder:a.folder,tree:this.initDirectoryTree()})});let n;try{this.activeCancellationTokens.add(r),n=P.create();const a=await this.provider.provideFileSearchResults(this.config.filePattern||"",i,r.token),c=n.elapsed(),f=P.create();return this.isCanceled&&!this.isLimitHit||(a&&a.forEach(h=>{const d=s.findSubstr(h),m=u.posix.relative(d.folder.path,h.path);if(d.noSiblingsClauses){const p=u.basename(h.path);this.matchFile(t,{base:d.folder,relativePath:m,basename:p});return}this.addDirectoryEntries(d.tree,d.folder,m,t)}),this.isCanceled&&!this.isLimitHit)?null:(s.forEach(h=>{this.matchDirectoryTree(h.tree,h.queryTester,t)}),{providerTime:c,postProcessTime:f.elapsed()})}finally{r.dispose(),this.activeCancellationTokens.delete(r)}}getSearchOptionsForFolder(e){const t=I(this.config.includePattern,e.includePattern);let r=e.excludePattern?.map(o=>({folder:o.folder,patterns:I(this.config.excludePattern,o.pattern)}));r?.length||(r=[{folder:void 0,patterns:I(this.config.excludePattern,void 0)}]);const l=E(r);return{folder:e.folder,excludes:l,includes:t,useIgnoreFiles:{local:!e.disregardIgnoreFiles,parent:!e.disregardParentIgnoreFiles,global:!e.disregardGlobalIgnoreFiles},followSymlinks:!e.ignoreSymlinks}}initDirectoryTree(){const e={rootEntries:[],pathToEntries:Object.create(null)};return e.pathToEntries["."]=e.rootEntries,e}addDirectoryEntries({pathToEntries:e},t,r,l){if(r===this.filePattern){const i=u.basename(this.filePattern);this.matchFile(l,{base:t,relativePath:this.filePattern,basename:i})}function o(i){const s=u.basename(i),n=u.dirname(i);let a=e[n];a||(a=e[n]=[],o(n)),a.push({base:t,relativePath:i,basename:s})}o(r)}matchDirectoryTree({rootEntries:e,pathToEntries:t},r,l){const o=this,i=this.filePattern;function s(n){const a=C(()=>n.map(c=>c.basename));for(let c=0,f=n.length;c<f;c++){const h=n[c],{relativePath:d,basename:m}=h;if(r.matchesExcludesSync(d,m,i!==m?a:void 0))continue;const p=t[d];if(p)s(p);else{if(d===i)continue;o.matchFile(l,h)}if(o.isLimitHit)break}}s(e)}matchFile(e,t){(!this.includePattern||t.relativePath&&this.includePattern(t.relativePath,t.basename))&&((this.exists||this.maxResults&&this.resultCount>=this.maxResults)&&(this.isLimitHit=!0,this.cancel()),this.isLimitHit||e(t))}}class w{_obj;tokenSource;constructor(){this._obj=new Object,this.tokenSource=new S}get obj(){if(this._obj)return this._obj;throw new Error("Session object has been dereferenced.")}cancel(){this.tokenSource.cancel(),this._obj=void 0}}class b{static BATCH_SIZE=512;sessions=new Map;fileSearch(e,t,r,l){const o=this.getSessionTokenSource(e.cacheKey),i=new R(e,t,o);let s=0;const n=a=>{s+=a.length,r(a.map(c=>this.rawMatchToSearchItem(c)))};return this.doSearch(i,b.BATCH_SIZE,n,l).then(a=>({limitHit:a.limitHit,stats:a.stats?{fromCache:!1,type:"fileSearchProvider",resultCount:s,detailStats:a.stats}:void 0,messages:[]}))}clearCache(e){this.sessions.get(e)?.cancel(),this.sessions.delete(e)}getSessionTokenSource(e){if(e)return this.sessions.has(e)||this.sessions.set(e,new w),this.sessions.get(e)}rawMatchToSearchItem(e){return e.relativePath?{resource:y.joinPath(e.base,e.relativePath)}:{resource:e.base}}doSearch(e,t,r,l){const o=l.onCancellationRequested(()=>{e.cancel()}),i=n=>{n&&(s.push(n),t>0&&s.length>=t&&(r(s),s=[]))};let s=[];return e.search(i).then(n=>(s.length&&r(s),o.dispose(),n),n=>(s.length&&r(s),o.dispose(),Promise.reject(n)))}}export{b as FileSearchManager};
+import * as path from '../../../../base/common/path.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { toErrorMessage } from '../../../../base/common/errorMessage.js';
+import * as glob from '../../../../base/common/glob.js';
+import * as resources from '../../../../base/common/resources.js';
+import { StopWatch } from '../../../../base/common/stopwatch.js';
+import { QueryGlobTester, resolvePatternsForProvider, hasSiblingFn, excludeToGlobPattern, DEFAULT_MAX_SEARCH_RESULTS } from './search.js';
+import { TernarySearchTree } from '../../../../base/common/ternarySearchTree.js';
+import { OldFileSearchProviderConverter } from './searchExtConversionTypes.js';
+class FileSearchEngine {
+    constructor(config, provider, sessionLifecycle) {
+        this.config = config;
+        this.provider = provider;
+        this.sessionLifecycle = sessionLifecycle;
+        this.isLimitHit = false;
+        this.resultCount = 0;
+        this.isCanceled = false;
+        this.filePattern = config.filePattern;
+        this.includePattern = config.includePattern && glob.parse(config.includePattern);
+        this.maxResults = config.maxResults || undefined;
+        this.exists = config.exists;
+        this.activeCancellationTokens = new Set();
+        this.globalExcludePattern = config.excludePattern && glob.parse(config.excludePattern);
+    }
+    cancel() {
+        this.isCanceled = true;
+        this.activeCancellationTokens.forEach(t => t.cancel());
+        this.activeCancellationTokens = new Set();
+    }
+    search(_onResult) {
+        const folderQueries = this.config.folderQueries || [];
+        return new Promise((resolve, reject) => {
+            const onResult = (match) => {
+                this.resultCount++;
+                _onResult(match);
+            };
+            if (this.isCanceled) {
+                return resolve({ limitHit: this.isLimitHit });
+            }
+            if (this.config.extraFileResources) {
+                this.config.extraFileResources
+                    .forEach(extraFile => {
+                    const extraFileStr = extraFile.toString();
+                    const basename = path.basename(extraFileStr);
+                    if (this.globalExcludePattern && this.globalExcludePattern(extraFileStr, basename)) {
+                        return;
+                    }
+                    this.matchFile(onResult, { base: extraFile, basename });
+                });
+            }
+            this.doSearch(folderQueries, onResult).then(stats => {
+                resolve({
+                    limitHit: this.isLimitHit,
+                    stats: stats || undefined
+                });
+            }, (err) => {
+                reject(new Error(toErrorMessage(err)));
+            });
+        });
+    }
+    async doSearch(fqs, onResult) {
+        const cancellation = new CancellationTokenSource();
+        const folderOptions = fqs.map(fq => this.getSearchOptionsForFolder(fq));
+        const session = this.provider instanceof OldFileSearchProviderConverter ? this.sessionLifecycle?.tokenSource.token : this.sessionLifecycle?.obj;
+        const options = {
+            folderOptions,
+            maxResults: this.config.maxResults ?? DEFAULT_MAX_SEARCH_RESULTS,
+            session
+        };
+        const folderMappings = TernarySearchTree.forUris();
+        fqs.forEach(fq => {
+            const queryTester = new QueryGlobTester(this.config, fq);
+            const noSiblingsClauses = !queryTester.hasSiblingExcludeClauses();
+            folderMappings.set(fq.folder, { queryTester, noSiblingsClauses, folder: fq.folder, tree: this.initDirectoryTree() });
+        });
+        let providerSW;
+        try {
+            this.activeCancellationTokens.add(cancellation);
+            providerSW = StopWatch.create();
+            const results = await this.provider.provideFileSearchResults(this.config.filePattern || '', options, cancellation.token);
+            const providerTime = providerSW.elapsed();
+            const postProcessSW = StopWatch.create();
+            if (this.isCanceled && !this.isLimitHit) {
+                return null;
+            }
+            if (results) {
+                results.forEach(result => {
+                    const fqFolderInfo = folderMappings.findSubstr(result);
+                    const relativePath = path.posix.relative(fqFolderInfo.folder.path, result.path);
+                    if (fqFolderInfo.noSiblingsClauses) {
+                        const basename = path.basename(result.path);
+                        this.matchFile(onResult, { base: fqFolderInfo.folder, relativePath, basename });
+                        return;
+                    }
+                    this.addDirectoryEntries(fqFolderInfo.tree, fqFolderInfo.folder, relativePath, onResult);
+                });
+            }
+            if (this.isCanceled && !this.isLimitHit) {
+                return null;
+            }
+            folderMappings.forEach(e => {
+                this.matchDirectoryTree(e.tree, e.queryTester, onResult);
+            });
+            return {
+                providerTime,
+                postProcessTime: postProcessSW.elapsed()
+            };
+        }
+        finally {
+            cancellation.dispose();
+            this.activeCancellationTokens.delete(cancellation);
+        }
+    }
+    getSearchOptionsForFolder(fq) {
+        const includes = resolvePatternsForProvider(this.config.includePattern, fq.includePattern);
+        let excludePattern = fq.excludePattern?.map(e => ({
+            folder: e.folder,
+            patterns: resolvePatternsForProvider(this.config.excludePattern, e.pattern)
+        }));
+        if (!excludePattern?.length) {
+            excludePattern = [{
+                    folder: undefined,
+                    patterns: resolvePatternsForProvider(this.config.excludePattern, undefined)
+                }];
+        }
+        const excludes = excludeToGlobPattern(excludePattern);
+        return {
+            folder: fq.folder,
+            excludes,
+            includes,
+            useIgnoreFiles: {
+                local: !fq.disregardIgnoreFiles,
+                parent: !fq.disregardParentIgnoreFiles,
+                global: !fq.disregardGlobalIgnoreFiles
+            },
+            followSymlinks: !fq.ignoreSymlinks,
+        };
+    }
+    initDirectoryTree() {
+        const tree = {
+            rootEntries: [],
+            pathToEntries: Object.create(null)
+        };
+        tree.pathToEntries['.'] = tree.rootEntries;
+        return tree;
+    }
+    addDirectoryEntries({ pathToEntries }, base, relativeFile, onResult) {
+        if (relativeFile === this.filePattern) {
+            const basename = path.basename(this.filePattern);
+            this.matchFile(onResult, { base: base, relativePath: this.filePattern, basename });
+        }
+        function add(relativePath) {
+            const basename = path.basename(relativePath);
+            const dirname = path.dirname(relativePath);
+            let entries = pathToEntries[dirname];
+            if (!entries) {
+                entries = pathToEntries[dirname] = [];
+                add(dirname);
+            }
+            entries.push({
+                base,
+                relativePath,
+                basename
+            });
+        }
+        add(relativeFile);
+    }
+    matchDirectoryTree({ rootEntries, pathToEntries }, queryTester, onResult) {
+        const self = this;
+        const filePattern = this.filePattern;
+        function matchDirectory(entries) {
+            const hasSibling = hasSiblingFn(() => entries.map(entry => entry.basename));
+            for (let i = 0, n = entries.length; i < n; i++) {
+                const entry = entries[i];
+                const { relativePath, basename } = entry;
+                if (queryTester.matchesExcludesSync(relativePath, basename, filePattern !== basename ? hasSibling : undefined)) {
+                    continue;
+                }
+                const sub = pathToEntries[relativePath];
+                if (sub) {
+                    matchDirectory(sub);
+                }
+                else {
+                    if (relativePath === filePattern) {
+                        continue;
+                    }
+                    self.matchFile(onResult, entry);
+                }
+                if (self.isLimitHit) {
+                    break;
+                }
+            }
+        }
+        matchDirectory(rootEntries);
+    }
+    matchFile(onResult, candidate) {
+        if (!this.includePattern || (candidate.relativePath && this.includePattern(candidate.relativePath, candidate.basename))) {
+            if (this.exists || (this.maxResults && this.resultCount >= this.maxResults)) {
+                this.isLimitHit = true;
+                this.cancel();
+            }
+            if (!this.isLimitHit) {
+                onResult(candidate);
+            }
+        }
+    }
+}
+class SessionLifecycle {
+    constructor() {
+        this._obj = new Object();
+        this.tokenSource = new CancellationTokenSource();
+    }
+    get obj() {
+        if (this._obj) {
+            return this._obj;
+        }
+        throw new Error('Session object has been dereferenced.');
+    }
+    cancel() {
+        this.tokenSource.cancel();
+        this._obj = undefined;
+    }
+}
+export class FileSearchManager {
+    constructor() {
+        this.sessions = new Map();
+    }
+    static { this.BATCH_SIZE = 512; }
+    fileSearch(config, provider, onBatch, token) {
+        const sessionTokenSource = this.getSessionTokenSource(config.cacheKey);
+        const engine = new FileSearchEngine(config, provider, sessionTokenSource);
+        let resultCount = 0;
+        const onInternalResult = (batch) => {
+            resultCount += batch.length;
+            onBatch(batch.map(m => this.rawMatchToSearchItem(m)));
+        };
+        return this.doSearch(engine, FileSearchManager.BATCH_SIZE, onInternalResult, token).then(result => {
+            return {
+                limitHit: result.limitHit,
+                stats: result.stats ? {
+                    fromCache: false,
+                    type: 'fileSearchProvider',
+                    resultCount,
+                    detailStats: result.stats
+                } : undefined,
+                messages: []
+            };
+        });
+    }
+    clearCache(cacheKey) {
+        this.sessions.get(cacheKey)?.cancel();
+        this.sessions.delete(cacheKey);
+    }
+    getSessionTokenSource(cacheKey) {
+        if (!cacheKey) {
+            return undefined;
+        }
+        if (!this.sessions.has(cacheKey)) {
+            this.sessions.set(cacheKey, new SessionLifecycle());
+        }
+        return this.sessions.get(cacheKey);
+    }
+    rawMatchToSearchItem(match) {
+        if (match.relativePath) {
+            return {
+                resource: resources.joinPath(match.base, match.relativePath)
+            };
+        }
+        else {
+            return {
+                resource: match.base
+            };
+        }
+    }
+    doSearch(engine, batchSize, onResultBatch, token) {
+        const listener = token.onCancellationRequested(() => {
+            engine.cancel();
+        });
+        const _onResult = (match) => {
+            if (match) {
+                batch.push(match);
+                if (batchSize > 0 && batch.length >= batchSize) {
+                    onResultBatch(batch);
+                    batch = [];
+                }
+            }
+        };
+        let batch = [];
+        return engine.search(_onResult).then(result => {
+            if (batch.length) {
+                onResultBatch(batch);
+            }
+            listener.dispose();
+            return result;
+        }, error => {
+            if (batch.length) {
+                onResultBatch(batch);
+            }
+            listener.dispose();
+            return Promise.reject(error);
+        });
+    }
+}

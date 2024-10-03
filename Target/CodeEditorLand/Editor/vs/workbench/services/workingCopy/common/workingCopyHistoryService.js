@@ -1,1 +1,632 @@
-var P=Object.defineProperty;var U=Object.getOwnPropertyDescriptor;var C=(f,i,e,t)=>{for(var r=t>1?void 0:t?U(i,e):i,o=f.length-1,n;o>=0;o--)(n=f[o])&&(r=(t?n(i,e,r):n(r))||r);return t&&r&&P(i,e,r),r},c=(f,i)=>(e,t)=>i(e,t,f);import{localize as S}from"../../../../nls.js";import{Event as b,Emitter as v}from"../../../../base/common/event.js";import{assertIsDefined as d}from"../../../../base/common/types.js";import{Registry as T}from"../../../../platform/registry/common/platform.js";import{Extensions as N}from"../../../common/contributions.js";import{ILifecycleService as x,LifecyclePhase as q}from"../../lifecycle/common/lifecycle.js";import{WorkingCopyHistoryTracker as V}from"./workingCopyHistoryTracker.js";import{Disposable as z}from"../../../../base/common/lifecycle.js";import{MAX_PARALLEL_HISTORY_IO_OPS as R}from"./workingCopyHistory.js";import{FileOperationError as G,FileOperationResult as j,IFileService as k}from"../../../../platform/files/common/files.js";import{IRemoteAgentService as F}from"../../remote/common/remoteAgentService.js";import{URI as X}from"../../../../base/common/uri.js";import{DeferredPromise as B,Limiter as I,RunOnceScheduler as J}from"../../../../base/common/async.js";import{dirname as H,extname as D,isEqual as $,joinPath as p}from"../../../../base/common/resources.js";import{IWorkbenchEnvironmentService as M}from"../../environment/common/environmentService.js";import{hash as K}from"../../../../base/common/hash.js";import{indexOfPath as Y,randomPath as Z}from"../../../../base/common/extpath.js";import{CancellationToken as Q,CancellationTokenSource as ee}from"../../../../base/common/cancellation.js";import{ResourceMap as W}from"../../../../base/common/map.js";import{IUriIdentityService as _}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{ILabelService as L}from"../../../../platform/label/common/label.js";import{VSBuffer as ie}from"../../../../base/common/buffer.js";import{ILogService as O}from"../../../../platform/log/common/log.js";import{SaveSourceRegistry as w}from"../../../common/editor.js";import{IConfigurationService as A}from"../../../../platform/configuration/common/configuration.js";import{distinct as te}from"../../../../base/common/arrays.js";import{escapeRegExpCharacters as re}from"../../../../base/common/strings.js";class u{constructor(i,e,t,r,o,n,s,y,a,h,l){this.historyHome=e;this.entryAddedEmitter=t;this.entryChangedEmitter=r;this.entryReplacedEmitter=o;this.entryRemovedEmitter=n;this.options=s;this.fileService=y;this.labelService=a;this.logService=h;this.configurationService=l;this.setWorkingCopy(i)}static ENTRIES_FILE="entries.json";static FILE_SAVED_SOURCE=w.registerSource("default.source",S("default.source","File Saved"));static SETTINGS={MAX_ENTRIES:"workbench.localHistory.maxFileEntries",MERGE_PERIOD:"workbench.localHistory.mergeWindow"};entries=[];whenResolved=void 0;workingCopyResource=void 0;workingCopyName=void 0;historyEntriesFolder=void 0;historyEntriesListingFile=void 0;historyEntriesNameMatcher=void 0;versionId=0;storedVersionId=this.versionId;storeLimiter=new I(1);setWorkingCopy(i){this.workingCopyResource=i,this.workingCopyName=this.labelService.getUriBasenameLabel(i),this.historyEntriesNameMatcher=new RegExp(`[A-Za-z0-9]{4}${re(D(i))}`),this.historyEntriesFolder=this.toHistoryEntriesFolder(this.historyHome,i),this.historyEntriesListingFile=p(this.historyEntriesFolder,u.ENTRIES_FILE),this.entries=[],this.whenResolved=void 0}toHistoryEntriesFolder(i,e){return p(i,K(e.toString()).toString(16))}async addEntry(i=u.FILE_SAVED_SOURCE,e=void 0,t=Date.now(),r){let o;const n=this.entries.at(-1);if(n&&n.source===i){const y=this.configurationService.getValue(u.SETTINGS.MERGE_PERIOD,{resource:this.workingCopyResource});t-n.timestamp<=y*1e3&&(o=n)}let s;return o?s=await this.doReplaceEntry(o,i,e,t,r):s=await this.doAddEntry(i,e,t,r),this.options.flushOnChange&&!r.isCancellationRequested&&await this.store(r),s}async doAddEntry(i,e=void 0,t,r){const o=d(this.workingCopyResource),n=d(this.workingCopyName),s=d(this.historyEntriesFolder),y=`${Z(void 0,void 0,4)}${D(o)}`,a=p(s,y);await this.fileService.cloneFile(o,a);const h={id:y,workingCopy:{resource:o,name:n},location:a,timestamp:t,source:i,sourceDescription:e};return this.entries.push(h),this.versionId++,this.entryAddedEmitter.fire({entry:h}),h}async doReplaceEntry(i,e,t=void 0,r,o){const n=d(this.workingCopyResource);return await this.fileService.cloneFile(n,i.location),i.source=e,i.sourceDescription=t,i.timestamp=r,this.versionId++,this.entryReplacedEmitter.fire({entry:i}),i}async removeEntry(i,e){if(await this.resolveEntriesOnce(),e.isCancellationRequested)return!1;const t=this.entries.indexOf(i);return t===-1?!1:(await this.deleteEntry(i),this.entries.splice(t,1),this.versionId++,this.entryRemovedEmitter.fire({entry:i}),this.options.flushOnChange&&!e.isCancellationRequested&&await this.store(e),!0)}async updateEntry(i,e,t){await this.resolveEntriesOnce(),!(t.isCancellationRequested||this.entries.indexOf(i)===-1)&&(i.source=e.source,this.versionId++,this.entryChangedEmitter.fire({entry:i}),this.options.flushOnChange&&!t.isCancellationRequested&&await this.store(t))}async getEntries(){await this.resolveEntriesOnce();const i=this.configurationService.getValue(u.SETTINGS.MAX_ENTRIES,{resource:this.workingCopyResource});return this.entries.length>i?this.entries.slice(this.entries.length-i):this.entries}async hasEntries(i){return i||await this.resolveEntriesOnce(),this.entries.length>0}resolveEntriesOnce(){return this.whenResolved||(this.whenResolved=this.doResolveEntries()),this.whenResolved}async doResolveEntries(){const i=await this.resolveEntriesFromDisk();for(const e of this.entries)i.set(e.id,e);this.entries=Array.from(i.values()).sort((e,t)=>e.timestamp-t.timestamp)}async resolveEntriesFromDisk(){const i=d(this.workingCopyResource),e=d(this.workingCopyName),[t,r]=await Promise.all([this.readEntriesFile(),this.readEntriesFolder()]),o=new Map;if(r)for(const n of r)o.set(n.name,{id:n.name,workingCopy:{resource:i,name:e},location:n.resource,timestamp:n.mtime,source:u.FILE_SAVED_SOURCE,sourceDescription:void 0});if(t)for(const n of t.entries){const s=o.get(n.id);s&&o.set(n.id,{...s,timestamp:n.timestamp,source:n.source??s.source,sourceDescription:n.sourceDescription??s.sourceDescription})}return o}async moveEntries(i,e,t){const r=Date.now(),o=this.labelService.getUriLabel(d(this.workingCopyResource)),n=d(this.historyEntriesFolder),s=d(i.historyEntriesFolder);try{for(const l of this.entries)await this.fileService.move(l.location,p(s,l.id),!0);await this.fileService.del(n,{recursive:!0})}catch(l){if(!this.isFileNotFound(l))try{await this.fileService.move(n,s,!0)}catch(g){this.isFileNotFound(g)||this.traceError(g)}}const y=te([...this.entries,...i.entries],l=>l.id).sort((l,g)=>l.timestamp-g.timestamp),a=d(i.workingCopyResource);this.setWorkingCopy(a);const h=d(i.workingCopyName);for(const l of y)this.entries.push({id:l.id,location:p(s,l.id),source:l.source,sourceDescription:l.sourceDescription,timestamp:l.timestamp,workingCopy:{resource:a,name:h}});await this.addEntry(e,o,r,t),await this.store(t)}async store(i){this.shouldStore()&&await this.storeLimiter.queue(async()=>{if(!(i.isCancellationRequested||!this.shouldStore()))return this.doStore(i)})}shouldStore(){return this.storedVersionId!==this.versionId}async doStore(i){const e=d(this.historyEntriesFolder);if(await this.resolveEntriesOnce(),i.isCancellationRequested)return;await this.cleanUpEntries();const t=this.versionId;if(this.entries.length===0)try{await this.fileService.del(e,{recursive:!0})}catch(r){this.traceError(r)}else await this.writeEntriesFile();this.storedVersionId=t}async cleanUpEntries(){const i=this.configurationService.getValue(u.SETTINGS.MAX_ENTRIES,{resource:this.workingCopyResource});if(this.entries.length<=i)return;const e=this.entries.slice(0,this.entries.length-i),t=this.entries.slice(this.entries.length-i);for(const r of e)await this.deleteEntry(r);this.entries=t;for(const r of e)this.entryRemovedEmitter.fire({entry:r})}async deleteEntry(i){try{await this.fileService.del(i.location)}catch(e){this.traceError(e)}}async writeEntriesFile(){const i=d(this.workingCopyResource),e=d(this.historyEntriesListingFile),t={version:1,resource:i.toString(),entries:this.entries.map(r=>({id:r.id,source:r.source!==u.FILE_SAVED_SOURCE?r.source:void 0,sourceDescription:r.sourceDescription,timestamp:r.timestamp}))};await this.fileService.writeFile(e,ie.fromString(JSON.stringify(t)))}async readEntriesFile(){const i=d(this.historyEntriesListingFile);let e;try{e=JSON.parse((await this.fileService.readFile(i)).value.toString())}catch(t){this.isFileNotFound(t)||this.traceError(t)}return e}async readEntriesFolder(){const i=d(this.historyEntriesFolder),e=d(this.historyEntriesNameMatcher);let t;try{t=(await this.fileService.resolve(i,{resolveMetadata:!0})).children}catch(r){this.isFileNotFound(r)||this.traceError(r)}if(t)return t.filter(r=>!$(r.resource,this.historyEntriesListingFile)&&e.test(r.name))}isFileNotFound(i){return i instanceof G&&i.fileOperationResult===j.FILE_NOT_FOUND}traceError(i){this.logService.trace("[Working Copy History Service]",i)}}let m=class extends z{constructor(e,t,r,o,n,s,y){super();this.fileService=e;this.remoteAgentService=t;this.environmentService=r;this.uriIdentityService=o;this.labelService=n;this.logService=s;this.configurationService=y;this.resolveLocalHistoryHome()}static FILE_MOVED_SOURCE=w.registerSource("moved.source",S("moved.source","File Moved"));static FILE_RENAMED_SOURCE=w.registerSource("renamed.source",S("renamed.source","File Renamed"));_onDidAddEntry=this._register(new v);onDidAddEntry=this._onDidAddEntry.event;_onDidChangeEntry=this._register(new v);onDidChangeEntry=this._onDidChangeEntry.event;_onDidReplaceEntry=this._register(new v);onDidReplaceEntry=this._onDidReplaceEntry.event;_onDidMoveEntries=this._register(new v);onDidMoveEntries=this._onDidMoveEntries.event;_onDidRemoveEntry=this._register(new v);onDidRemoveEntry=this._onDidRemoveEntry.event;_onDidRemoveEntries=this._register(new v);onDidRemoveEntries=this._onDidRemoveEntries.event;localHistoryHome=new B;models=new W(e=>this.uriIdentityService.extUri.getComparisonKey(e));async resolveLocalHistoryHome(){let e;try{const t=await this.remoteAgentService.getEnvironment();t&&(e=t.localHistoryHome)}catch(t){this.logService.trace(t)}e||(e=this.environmentService.localHistoryHome),this.localHistoryHome.complete(e)}async moveEntries(e,t){const r=new I(R),o=[];for(const[s,y]of this.models){if(!this.uriIdentityService.extUri.isEqualOrParent(s,e))continue;let a;if(this.uriIdentityService.extUri.isEqual(e,s))a=t;else{const l=Y(s.path,e.path);a=p(t,s.path.substr(l+e.path.length+1))}let h;this.uriIdentityService.extUri.isEqual(H(s),H(a))?h=m.FILE_RENAMED_SOURCE:h=m.FILE_MOVED_SOURCE,o.push(r.queue(()=>this.doMoveEntries(y,h,s,a)))}if(!o.length)return[];const n=await Promise.all(o);return this._onDidMoveEntries.fire(),n}async doMoveEntries(e,t,r,o){const n=await this.getModel(o);return await e.moveEntries(n,t,Q.None),this.models.delete(r),this.models.set(o,e),o}async addEntry({resource:e,source:t,timestamp:r},o){if(!this.fileService.hasProvider(e))return;const n=await this.getModel(e);if(!o.isCancellationRequested)return n.addEntry(t,void 0,r,o)}async updateEntry(e,t,r){const o=await this.getModel(e.workingCopy.resource);if(!r.isCancellationRequested)return o.updateEntry(e,t,r)}async removeEntry(e,t){const r=await this.getModel(e.workingCopy.resource);return t.isCancellationRequested?!1:r.removeEntry(e,t)}async removeAll(e){const t=await this.localHistoryHome.p;e.isCancellationRequested||(this.models.clear(),await this.fileService.del(t,{recursive:!0}),this._onDidRemoveEntries.fire())}async getEntries(e,t){const r=await this.getModel(e);return t.isCancellationRequested?[]:await r.getEntries()??[]}async getAll(e){const t=await this.localHistoryHome.p;if(e.isCancellationRequested)return[];const r=new W;for(const[o,n]of this.models)await n.hasEntries(!0)&&r.set(o,!0);try{const o=await this.fileService.resolve(t);if(o.children){const n=new I(R),s=[];for(const y of o.children)s.push(n.queue(async()=>{if(!e.isCancellationRequested)try{const a=JSON.parse((await this.fileService.readFile(p(y.resource,u.ENTRIES_FILE))).value.toString());a.entries.length>0&&r.set(X.parse(a.resource),!0)}catch{}}));await Promise.all(s)}}catch{}return Array.from(r.keys())}async getModel(e){const t=await this.localHistoryHome.p;let r=this.models.get(e);return r||(r=new u(e,t,this._onDidAddEntry,this._onDidChangeEntry,this._onDidReplaceEntry,this._onDidRemoveEntry,this.getModelOptions(),this.fileService,this.labelService,this.logService,this.configurationService),this.models.set(e,r)),r}};m=C([c(0,k),c(1,F),c(2,M),c(3,_),c(4,L),c(5,O),c(6,A)],m);let E=class extends m{constructor(e,t,r,o,n,s,y,a){super(e,t,r,o,n,y,a);this.lifecycleService=s;this.registerListeners()}static STORE_ALL_INTERVAL=5*60*1e3;isRemotelyStored=typeof this.environmentService.remoteAuthority=="string";storeAllCts=this._register(new ee);storeAllScheduler=this._register(new J(()=>this.storeAll(this.storeAllCts.token),E.STORE_ALL_INTERVAL));registerListeners(){this.isRemotelyStored||(this._register(this.lifecycleService.onWillShutdown(e=>this.onWillShutdown(e))),this._register(b.any(this.onDidAddEntry,this.onDidChangeEntry,this.onDidReplaceEntry,this.onDidRemoveEntry)(()=>this.onDidChangeModels())))}getModelOptions(){return{flushOnChange:this.isRemotelyStored}}onWillShutdown(e){this.storeAllScheduler.dispose(),this.storeAllCts.dispose(!0),e.join(this.storeAll(e.token),{id:"join.workingCopyHistory",label:S("join.workingCopyHistory","Saving local history")})}onDidChangeModels(){this.storeAllScheduler.isScheduled()||this.storeAllScheduler.schedule()}async storeAll(e){const t=new I(R),r=[],o=Array.from(this.models.values());for(const n of o)r.push(t.queue(async()=>{if(!e.isCancellationRequested)try{await n.store(e)}catch(s){this.logService.trace(s)}}));await Promise.all(r)}};E=C([c(0,k),c(1,F),c(2,M),c(3,_),c(4,L),c(5,x),c(6,O),c(7,A)],E),T.as(N.Workbench).registerWorkbenchContribution(V,q.Restored);export{E as NativeWorkingCopyHistoryService,u as WorkingCopyHistoryModel,m as WorkingCopyHistoryService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var WorkingCopyHistoryService_1, NativeWorkingCopyHistoryService_1;
+import { localize } from '../../../../nls.js';
+import { Event, Emitter } from '../../../../base/common/event.js';
+import { assertIsDefined } from '../../../../base/common/types.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+import { ILifecycleService } from '../../lifecycle/common/lifecycle.js';
+import { WorkingCopyHistoryTracker } from './workingCopyHistoryTracker.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { MAX_PARALLEL_HISTORY_IO_OPS } from './workingCopyHistory.js';
+import { FileOperationError, IFileService } from '../../../../platform/files/common/files.js';
+import { IRemoteAgentService } from '../../remote/common/remoteAgentService.js';
+import { URI } from '../../../../base/common/uri.js';
+import { DeferredPromise, Limiter, RunOnceScheduler } from '../../../../base/common/async.js';
+import { dirname, extname, isEqual, joinPath } from '../../../../base/common/resources.js';
+import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
+import { hash } from '../../../../base/common/hash.js';
+import { indexOfPath, randomPath } from '../../../../base/common/extpath.js';
+import { CancellationToken, CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { ResourceMap } from '../../../../base/common/map.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { VSBuffer } from '../../../../base/common/buffer.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { SaveSourceRegistry } from '../../../common/editor.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { distinct } from '../../../../base/common/arrays.js';
+import { escapeRegExpCharacters } from '../../../../base/common/strings.js';
+export class WorkingCopyHistoryModel {
+    static { this.ENTRIES_FILE = 'entries.json'; }
+    static { this.FILE_SAVED_SOURCE = SaveSourceRegistry.registerSource('default.source', localize('default.source', "File Saved")); }
+    static { this.SETTINGS = {
+        MAX_ENTRIES: 'workbench.localHistory.maxFileEntries',
+        MERGE_PERIOD: 'workbench.localHistory.mergeWindow'
+    }; }
+    constructor(workingCopyResource, historyHome, entryAddedEmitter, entryChangedEmitter, entryReplacedEmitter, entryRemovedEmitter, options, fileService, labelService, logService, configurationService) {
+        this.historyHome = historyHome;
+        this.entryAddedEmitter = entryAddedEmitter;
+        this.entryChangedEmitter = entryChangedEmitter;
+        this.entryReplacedEmitter = entryReplacedEmitter;
+        this.entryRemovedEmitter = entryRemovedEmitter;
+        this.options = options;
+        this.fileService = fileService;
+        this.labelService = labelService;
+        this.logService = logService;
+        this.configurationService = configurationService;
+        this.entries = [];
+        this.whenResolved = undefined;
+        this.workingCopyResource = undefined;
+        this.workingCopyName = undefined;
+        this.historyEntriesFolder = undefined;
+        this.historyEntriesListingFile = undefined;
+        this.historyEntriesNameMatcher = undefined;
+        this.versionId = 0;
+        this.storedVersionId = this.versionId;
+        this.storeLimiter = new Limiter(1);
+        this.setWorkingCopy(workingCopyResource);
+    }
+    setWorkingCopy(workingCopyResource) {
+        this.workingCopyResource = workingCopyResource;
+        this.workingCopyName = this.labelService.getUriBasenameLabel(workingCopyResource);
+        this.historyEntriesNameMatcher = new RegExp(`[A-Za-z0-9]{4}${escapeRegExpCharacters(extname(workingCopyResource))}`);
+        this.historyEntriesFolder = this.toHistoryEntriesFolder(this.historyHome, workingCopyResource);
+        this.historyEntriesListingFile = joinPath(this.historyEntriesFolder, WorkingCopyHistoryModel.ENTRIES_FILE);
+        this.entries = [];
+        this.whenResolved = undefined;
+    }
+    toHistoryEntriesFolder(historyHome, workingCopyResource) {
+        return joinPath(historyHome, hash(workingCopyResource.toString()).toString(16));
+    }
+    async addEntry(source = WorkingCopyHistoryModel.FILE_SAVED_SOURCE, sourceDescription = undefined, timestamp = Date.now(), token) {
+        let entryToReplace = undefined;
+        const lastEntry = this.entries.at(-1);
+        if (lastEntry && lastEntry.source === source) {
+            const configuredReplaceInterval = this.configurationService.getValue(WorkingCopyHistoryModel.SETTINGS.MERGE_PERIOD, { resource: this.workingCopyResource });
+            if (timestamp - lastEntry.timestamp <= (configuredReplaceInterval * 1000)) {
+                entryToReplace = lastEntry;
+            }
+        }
+        let entry;
+        if (entryToReplace) {
+            entry = await this.doReplaceEntry(entryToReplace, source, sourceDescription, timestamp, token);
+        }
+        else {
+            entry = await this.doAddEntry(source, sourceDescription, timestamp, token);
+        }
+        if (this.options.flushOnChange && !token.isCancellationRequested) {
+            await this.store(token);
+        }
+        return entry;
+    }
+    async doAddEntry(source, sourceDescription = undefined, timestamp, token) {
+        const workingCopyResource = assertIsDefined(this.workingCopyResource);
+        const workingCopyName = assertIsDefined(this.workingCopyName);
+        const historyEntriesFolder = assertIsDefined(this.historyEntriesFolder);
+        const id = `${randomPath(undefined, undefined, 4)}${extname(workingCopyResource)}`;
+        const location = joinPath(historyEntriesFolder, id);
+        await this.fileService.cloneFile(workingCopyResource, location);
+        const entry = {
+            id,
+            workingCopy: { resource: workingCopyResource, name: workingCopyName },
+            location,
+            timestamp,
+            source,
+            sourceDescription
+        };
+        this.entries.push(entry);
+        this.versionId++;
+        this.entryAddedEmitter.fire({ entry });
+        return entry;
+    }
+    async doReplaceEntry(entry, source, sourceDescription = undefined, timestamp, token) {
+        const workingCopyResource = assertIsDefined(this.workingCopyResource);
+        await this.fileService.cloneFile(workingCopyResource, entry.location);
+        entry.source = source;
+        entry.sourceDescription = sourceDescription;
+        entry.timestamp = timestamp;
+        this.versionId++;
+        this.entryReplacedEmitter.fire({ entry });
+        return entry;
+    }
+    async removeEntry(entry, token) {
+        await this.resolveEntriesOnce();
+        if (token.isCancellationRequested) {
+            return false;
+        }
+        const index = this.entries.indexOf(entry);
+        if (index === -1) {
+            return false;
+        }
+        await this.deleteEntry(entry);
+        this.entries.splice(index, 1);
+        this.versionId++;
+        this.entryRemovedEmitter.fire({ entry });
+        if (this.options.flushOnChange && !token.isCancellationRequested) {
+            await this.store(token);
+        }
+        return true;
+    }
+    async updateEntry(entry, properties, token) {
+        await this.resolveEntriesOnce();
+        if (token.isCancellationRequested) {
+            return;
+        }
+        const index = this.entries.indexOf(entry);
+        if (index === -1) {
+            return;
+        }
+        entry.source = properties.source;
+        this.versionId++;
+        this.entryChangedEmitter.fire({ entry });
+        if (this.options.flushOnChange && !token.isCancellationRequested) {
+            await this.store(token);
+        }
+    }
+    async getEntries() {
+        await this.resolveEntriesOnce();
+        const configuredMaxEntries = this.configurationService.getValue(WorkingCopyHistoryModel.SETTINGS.MAX_ENTRIES, { resource: this.workingCopyResource });
+        if (this.entries.length > configuredMaxEntries) {
+            return this.entries.slice(this.entries.length - configuredMaxEntries);
+        }
+        return this.entries;
+    }
+    async hasEntries(skipResolve) {
+        if (!skipResolve) {
+            await this.resolveEntriesOnce();
+        }
+        return this.entries.length > 0;
+    }
+    resolveEntriesOnce() {
+        if (!this.whenResolved) {
+            this.whenResolved = this.doResolveEntries();
+        }
+        return this.whenResolved;
+    }
+    async doResolveEntries() {
+        const entries = await this.resolveEntriesFromDisk();
+        for (const entry of this.entries) {
+            entries.set(entry.id, entry);
+        }
+        this.entries = Array.from(entries.values()).sort((entryA, entryB) => entryA.timestamp - entryB.timestamp);
+    }
+    async resolveEntriesFromDisk() {
+        const workingCopyResource = assertIsDefined(this.workingCopyResource);
+        const workingCopyName = assertIsDefined(this.workingCopyName);
+        const [entryListing, entryStats] = await Promise.all([
+            this.readEntriesFile(),
+            this.readEntriesFolder()
+        ]);
+        const entries = new Map();
+        if (entryStats) {
+            for (const entryStat of entryStats) {
+                entries.set(entryStat.name, {
+                    id: entryStat.name,
+                    workingCopy: { resource: workingCopyResource, name: workingCopyName },
+                    location: entryStat.resource,
+                    timestamp: entryStat.mtime,
+                    source: WorkingCopyHistoryModel.FILE_SAVED_SOURCE,
+                    sourceDescription: undefined
+                });
+            }
+        }
+        if (entryListing) {
+            for (const entry of entryListing.entries) {
+                const existingEntry = entries.get(entry.id);
+                if (existingEntry) {
+                    entries.set(entry.id, {
+                        ...existingEntry,
+                        timestamp: entry.timestamp,
+                        source: entry.source ?? existingEntry.source,
+                        sourceDescription: entry.sourceDescription ?? existingEntry.sourceDescription
+                    });
+                }
+            }
+        }
+        return entries;
+    }
+    async moveEntries(target, source, token) {
+        const timestamp = Date.now();
+        const sourceDescription = this.labelService.getUriLabel(assertIsDefined(this.workingCopyResource));
+        const sourceHistoryEntriesFolder = assertIsDefined(this.historyEntriesFolder);
+        const targetHistoryEntriesFolder = assertIsDefined(target.historyEntriesFolder);
+        try {
+            for (const entry of this.entries) {
+                await this.fileService.move(entry.location, joinPath(targetHistoryEntriesFolder, entry.id), true);
+            }
+            await this.fileService.del(sourceHistoryEntriesFolder, { recursive: true });
+        }
+        catch (error) {
+            if (!this.isFileNotFound(error)) {
+                try {
+                    await this.fileService.move(sourceHistoryEntriesFolder, targetHistoryEntriesFolder, true);
+                }
+                catch (error) {
+                    if (!this.isFileNotFound(error)) {
+                        this.traceError(error);
+                    }
+                }
+            }
+        }
+        const allEntries = distinct([...this.entries, ...target.entries], entry => entry.id).sort((entryA, entryB) => entryA.timestamp - entryB.timestamp);
+        const targetWorkingCopyResource = assertIsDefined(target.workingCopyResource);
+        this.setWorkingCopy(targetWorkingCopyResource);
+        const targetWorkingCopyName = assertIsDefined(target.workingCopyName);
+        for (const entry of allEntries) {
+            this.entries.push({
+                id: entry.id,
+                location: joinPath(targetHistoryEntriesFolder, entry.id),
+                source: entry.source,
+                sourceDescription: entry.sourceDescription,
+                timestamp: entry.timestamp,
+                workingCopy: {
+                    resource: targetWorkingCopyResource,
+                    name: targetWorkingCopyName
+                }
+            });
+        }
+        await this.addEntry(source, sourceDescription, timestamp, token);
+        await this.store(token);
+    }
+    async store(token) {
+        if (!this.shouldStore()) {
+            return;
+        }
+        await this.storeLimiter.queue(async () => {
+            if (token.isCancellationRequested || !this.shouldStore()) {
+                return;
+            }
+            return this.doStore(token);
+        });
+    }
+    shouldStore() {
+        return this.storedVersionId !== this.versionId;
+    }
+    async doStore(token) {
+        const historyEntriesFolder = assertIsDefined(this.historyEntriesFolder);
+        await this.resolveEntriesOnce();
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
+        await this.cleanUpEntries();
+        const storedVersion = this.versionId;
+        if (this.entries.length === 0) {
+            try {
+                await this.fileService.del(historyEntriesFolder, { recursive: true });
+            }
+            catch (error) {
+                this.traceError(error);
+            }
+        }
+        else {
+            await this.writeEntriesFile();
+        }
+        this.storedVersionId = storedVersion;
+    }
+    async cleanUpEntries() {
+        const configuredMaxEntries = this.configurationService.getValue(WorkingCopyHistoryModel.SETTINGS.MAX_ENTRIES, { resource: this.workingCopyResource });
+        if (this.entries.length <= configuredMaxEntries) {
+            return;
+        }
+        const entriesToDelete = this.entries.slice(0, this.entries.length - configuredMaxEntries);
+        const entriesToKeep = this.entries.slice(this.entries.length - configuredMaxEntries);
+        for (const entryToDelete of entriesToDelete) {
+            await this.deleteEntry(entryToDelete);
+        }
+        this.entries = entriesToKeep;
+        for (const entry of entriesToDelete) {
+            this.entryRemovedEmitter.fire({ entry });
+        }
+    }
+    async deleteEntry(entry) {
+        try {
+            await this.fileService.del(entry.location);
+        }
+        catch (error) {
+            this.traceError(error);
+        }
+    }
+    async writeEntriesFile() {
+        const workingCopyResource = assertIsDefined(this.workingCopyResource);
+        const historyEntriesListingFile = assertIsDefined(this.historyEntriesListingFile);
+        const serializedModel = {
+            version: 1,
+            resource: workingCopyResource.toString(),
+            entries: this.entries.map(entry => {
+                return {
+                    id: entry.id,
+                    source: entry.source !== WorkingCopyHistoryModel.FILE_SAVED_SOURCE ? entry.source : undefined,
+                    sourceDescription: entry.sourceDescription,
+                    timestamp: entry.timestamp
+                };
+            })
+        };
+        await this.fileService.writeFile(historyEntriesListingFile, VSBuffer.fromString(JSON.stringify(serializedModel)));
+    }
+    async readEntriesFile() {
+        const historyEntriesListingFile = assertIsDefined(this.historyEntriesListingFile);
+        let serializedModel = undefined;
+        try {
+            serializedModel = JSON.parse((await this.fileService.readFile(historyEntriesListingFile)).value.toString());
+        }
+        catch (error) {
+            if (!this.isFileNotFound(error)) {
+                this.traceError(error);
+            }
+        }
+        return serializedModel;
+    }
+    async readEntriesFolder() {
+        const historyEntriesFolder = assertIsDefined(this.historyEntriesFolder);
+        const historyEntriesNameMatcher = assertIsDefined(this.historyEntriesNameMatcher);
+        let rawEntries = undefined;
+        try {
+            rawEntries = (await this.fileService.resolve(historyEntriesFolder, { resolveMetadata: true })).children;
+        }
+        catch (error) {
+            if (!this.isFileNotFound(error)) {
+                this.traceError(error);
+            }
+        }
+        if (!rawEntries) {
+            return undefined;
+        }
+        return rawEntries.filter(entry => !isEqual(entry.resource, this.historyEntriesListingFile) &&
+            historyEntriesNameMatcher.test(entry.name));
+    }
+    isFileNotFound(error) {
+        return error instanceof FileOperationError && error.fileOperationResult === 1;
+    }
+    traceError(error) {
+        this.logService.trace('[Working Copy History Service]', error);
+    }
+}
+let WorkingCopyHistoryService = class WorkingCopyHistoryService extends Disposable {
+    static { WorkingCopyHistoryService_1 = this; }
+    static { this.FILE_MOVED_SOURCE = SaveSourceRegistry.registerSource('moved.source', localize('moved.source', "File Moved")); }
+    static { this.FILE_RENAMED_SOURCE = SaveSourceRegistry.registerSource('renamed.source', localize('renamed.source', "File Renamed")); }
+    constructor(fileService, remoteAgentService, environmentService, uriIdentityService, labelService, logService, configurationService) {
+        super();
+        this.fileService = fileService;
+        this.remoteAgentService = remoteAgentService;
+        this.environmentService = environmentService;
+        this.uriIdentityService = uriIdentityService;
+        this.labelService = labelService;
+        this.logService = logService;
+        this.configurationService = configurationService;
+        this._onDidAddEntry = this._register(new Emitter());
+        this.onDidAddEntry = this._onDidAddEntry.event;
+        this._onDidChangeEntry = this._register(new Emitter());
+        this.onDidChangeEntry = this._onDidChangeEntry.event;
+        this._onDidReplaceEntry = this._register(new Emitter());
+        this.onDidReplaceEntry = this._onDidReplaceEntry.event;
+        this._onDidMoveEntries = this._register(new Emitter());
+        this.onDidMoveEntries = this._onDidMoveEntries.event;
+        this._onDidRemoveEntry = this._register(new Emitter());
+        this.onDidRemoveEntry = this._onDidRemoveEntry.event;
+        this._onDidRemoveEntries = this._register(new Emitter());
+        this.onDidRemoveEntries = this._onDidRemoveEntries.event;
+        this.localHistoryHome = new DeferredPromise();
+        this.models = new ResourceMap(resource => this.uriIdentityService.extUri.getComparisonKey(resource));
+        this.resolveLocalHistoryHome();
+    }
+    async resolveLocalHistoryHome() {
+        let historyHome = undefined;
+        try {
+            const remoteEnv = await this.remoteAgentService.getEnvironment();
+            if (remoteEnv) {
+                historyHome = remoteEnv.localHistoryHome;
+            }
+        }
+        catch (error) {
+            this.logService.trace(error);
+        }
+        if (!historyHome) {
+            historyHome = this.environmentService.localHistoryHome;
+        }
+        this.localHistoryHome.complete(historyHome);
+    }
+    async moveEntries(source, target) {
+        const limiter = new Limiter(MAX_PARALLEL_HISTORY_IO_OPS);
+        const promises = [];
+        for (const [resource, model] of this.models) {
+            if (!this.uriIdentityService.extUri.isEqualOrParent(resource, source)) {
+                continue;
+            }
+            let targetResource;
+            if (this.uriIdentityService.extUri.isEqual(source, resource)) {
+                targetResource = target;
+            }
+            else {
+                const index = indexOfPath(resource.path, source.path);
+                targetResource = joinPath(target, resource.path.substr(index + source.path.length + 1));
+            }
+            let saveSource;
+            if (this.uriIdentityService.extUri.isEqual(dirname(resource), dirname(targetResource))) {
+                saveSource = WorkingCopyHistoryService_1.FILE_RENAMED_SOURCE;
+            }
+            else {
+                saveSource = WorkingCopyHistoryService_1.FILE_MOVED_SOURCE;
+            }
+            promises.push(limiter.queue(() => this.doMoveEntries(model, saveSource, resource, targetResource)));
+        }
+        if (!promises.length) {
+            return [];
+        }
+        const resources = await Promise.all(promises);
+        this._onDidMoveEntries.fire();
+        return resources;
+    }
+    async doMoveEntries(source, saveSource, sourceWorkingCopyResource, targetWorkingCopyResource) {
+        const target = await this.getModel(targetWorkingCopyResource);
+        await source.moveEntries(target, saveSource, CancellationToken.None);
+        this.models.delete(sourceWorkingCopyResource);
+        this.models.set(targetWorkingCopyResource, source);
+        return targetWorkingCopyResource;
+    }
+    async addEntry({ resource, source, timestamp }, token) {
+        if (!this.fileService.hasProvider(resource)) {
+            return undefined;
+        }
+        const model = await this.getModel(resource);
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
+        return model.addEntry(source, undefined, timestamp, token);
+    }
+    async updateEntry(entry, properties, token) {
+        const model = await this.getModel(entry.workingCopy.resource);
+        if (token.isCancellationRequested) {
+            return;
+        }
+        return model.updateEntry(entry, properties, token);
+    }
+    async removeEntry(entry, token) {
+        const model = await this.getModel(entry.workingCopy.resource);
+        if (token.isCancellationRequested) {
+            return false;
+        }
+        return model.removeEntry(entry, token);
+    }
+    async removeAll(token) {
+        const historyHome = await this.localHistoryHome.p;
+        if (token.isCancellationRequested) {
+            return;
+        }
+        this.models.clear();
+        await this.fileService.del(historyHome, { recursive: true });
+        this._onDidRemoveEntries.fire();
+    }
+    async getEntries(resource, token) {
+        const model = await this.getModel(resource);
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        const entries = await model.getEntries();
+        return entries ?? [];
+    }
+    async getAll(token) {
+        const historyHome = await this.localHistoryHome.p;
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        const all = new ResourceMap();
+        for (const [resource, model] of this.models) {
+            const hasInMemoryEntries = await model.hasEntries(true);
+            if (hasInMemoryEntries) {
+                all.set(resource, true);
+            }
+        }
+        try {
+            const resolvedHistoryHome = await this.fileService.resolve(historyHome);
+            if (resolvedHistoryHome.children) {
+                const limiter = new Limiter(MAX_PARALLEL_HISTORY_IO_OPS);
+                const promises = [];
+                for (const child of resolvedHistoryHome.children) {
+                    promises.push(limiter.queue(async () => {
+                        if (token.isCancellationRequested) {
+                            return;
+                        }
+                        try {
+                            const serializedModel = JSON.parse((await this.fileService.readFile(joinPath(child.resource, WorkingCopyHistoryModel.ENTRIES_FILE))).value.toString());
+                            if (serializedModel.entries.length > 0) {
+                                all.set(URI.parse(serializedModel.resource), true);
+                            }
+                        }
+                        catch (error) {
+                        }
+                    }));
+                }
+                await Promise.all(promises);
+            }
+        }
+        catch (error) {
+        }
+        return Array.from(all.keys());
+    }
+    async getModel(resource) {
+        const historyHome = await this.localHistoryHome.p;
+        let model = this.models.get(resource);
+        if (!model) {
+            model = new WorkingCopyHistoryModel(resource, historyHome, this._onDidAddEntry, this._onDidChangeEntry, this._onDidReplaceEntry, this._onDidRemoveEntry, this.getModelOptions(), this.fileService, this.labelService, this.logService, this.configurationService);
+            this.models.set(resource, model);
+        }
+        return model;
+    }
+};
+WorkingCopyHistoryService = WorkingCopyHistoryService_1 = __decorate([
+    __param(0, IFileService),
+    __param(1, IRemoteAgentService),
+    __param(2, IWorkbenchEnvironmentService),
+    __param(3, IUriIdentityService),
+    __param(4, ILabelService),
+    __param(5, ILogService),
+    __param(6, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], WorkingCopyHistoryService);
+export { WorkingCopyHistoryService };
+let NativeWorkingCopyHistoryService = class NativeWorkingCopyHistoryService extends WorkingCopyHistoryService {
+    static { NativeWorkingCopyHistoryService_1 = this; }
+    static { this.STORE_ALL_INTERVAL = 5 * 60 * 1000; }
+    constructor(fileService, remoteAgentService, environmentService, uriIdentityService, labelService, lifecycleService, logService, configurationService) {
+        super(fileService, remoteAgentService, environmentService, uriIdentityService, labelService, logService, configurationService);
+        this.lifecycleService = lifecycleService;
+        this.isRemotelyStored = typeof this.environmentService.remoteAuthority === 'string';
+        this.storeAllCts = this._register(new CancellationTokenSource());
+        this.storeAllScheduler = this._register(new RunOnceScheduler(() => this.storeAll(this.storeAllCts.token), NativeWorkingCopyHistoryService_1.STORE_ALL_INTERVAL));
+        this.registerListeners();
+    }
+    registerListeners() {
+        if (!this.isRemotelyStored) {
+            this._register(this.lifecycleService.onWillShutdown(e => this.onWillShutdown(e)));
+            this._register(Event.any(this.onDidAddEntry, this.onDidChangeEntry, this.onDidReplaceEntry, this.onDidRemoveEntry)(() => this.onDidChangeModels()));
+        }
+    }
+    getModelOptions() {
+        return { flushOnChange: this.isRemotelyStored };
+    }
+    onWillShutdown(e) {
+        this.storeAllScheduler.dispose();
+        this.storeAllCts.dispose(true);
+        e.join(this.storeAll(e.token), { id: 'join.workingCopyHistory', label: localize('join.workingCopyHistory', "Saving local history") });
+    }
+    onDidChangeModels() {
+        if (!this.storeAllScheduler.isScheduled()) {
+            this.storeAllScheduler.schedule();
+        }
+    }
+    async storeAll(token) {
+        const limiter = new Limiter(MAX_PARALLEL_HISTORY_IO_OPS);
+        const promises = [];
+        const models = Array.from(this.models.values());
+        for (const model of models) {
+            promises.push(limiter.queue(async () => {
+                if (token.isCancellationRequested) {
+                    return;
+                }
+                try {
+                    await model.store(token);
+                }
+                catch (error) {
+                    this.logService.trace(error);
+                }
+            }));
+        }
+        await Promise.all(promises);
+    }
+};
+NativeWorkingCopyHistoryService = NativeWorkingCopyHistoryService_1 = __decorate([
+    __param(0, IFileService),
+    __param(1, IRemoteAgentService),
+    __param(2, IWorkbenchEnvironmentService),
+    __param(3, IUriIdentityService),
+    __param(4, ILabelService),
+    __param(5, ILifecycleService),
+    __param(6, ILogService),
+    __param(7, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], NativeWorkingCopyHistoryService);
+export { NativeWorkingCopyHistoryService };
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(WorkingCopyHistoryTracker, 3);

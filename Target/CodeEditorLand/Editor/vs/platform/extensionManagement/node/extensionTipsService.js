@@ -1,1 +1,38 @@
-var f=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var a=(m,i,t,o)=>{for(var e=o>1?void 0:o?p(i,t):i,c=m.length-1,n;c>=0;c--)(n=m[c])&&(e=(o?n(i,t,e):n(e))||e);return o&&e&&f(i,t,e),e},r=(m,i)=>(t,o)=>i(t,o,m);import{IExtensionManagementService as s}from"../common/extensionManagement.js";import{IFileService as N}from"../../files/common/files.js";import{IProductService as d}from"../../product/common/productService.js";import{INativeEnvironmentService as l}from"../../environment/common/environment.js";import{IExtensionRecommendationNotificationService as u}from"../../extensionRecommendations/common/extensionRecommendations.js";import{INativeHostService as g}from"../../native/common/native.js";import{IStorageService as x}from"../../storage/common/storage.js";import{ITelemetryService as E}from"../../telemetry/common/telemetry.js";import{AbstractNativeExtensionTipsService as H}from"../common/extensionTipsService.js";let v=class extends H{constructor(i,t,o,e,c,n,I,S){super(i.userHome,c,t,o,e,n,I,S)}};v=a([r(0,l),r(1,E),r(2,s),r(3,x),r(4,g),r(5,u),r(6,N),r(7,d)],v);export{v as ExtensionTipsService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IExtensionManagementService } from '../common/extensionManagement.js';
+import { IFileService } from '../../files/common/files.js';
+import { IProductService } from '../../product/common/productService.js';
+import { INativeEnvironmentService } from '../../environment/common/environment.js';
+import { IExtensionRecommendationNotificationService } from '../../extensionRecommendations/common/extensionRecommendations.js';
+import { INativeHostService } from '../../native/common/native.js';
+import { IStorageService } from '../../storage/common/storage.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+import { AbstractNativeExtensionTipsService } from '../common/extensionTipsService.js';
+let ExtensionTipsService = class ExtensionTipsService extends AbstractNativeExtensionTipsService {
+    constructor(environmentService, telemetryService, extensionManagementService, storageService, nativeHostService, extensionRecommendationNotificationService, fileService, productService) {
+        super(environmentService.userHome, nativeHostService, telemetryService, extensionManagementService, storageService, extensionRecommendationNotificationService, fileService, productService);
+    }
+};
+ExtensionTipsService = __decorate([
+    __param(0, INativeEnvironmentService),
+    __param(1, ITelemetryService),
+    __param(2, IExtensionManagementService),
+    __param(3, IStorageService),
+    __param(4, INativeHostService),
+    __param(5, IExtensionRecommendationNotificationService),
+    __param(6, IFileService),
+    __param(7, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], ExtensionTipsService);
+export { ExtensionTipsService };

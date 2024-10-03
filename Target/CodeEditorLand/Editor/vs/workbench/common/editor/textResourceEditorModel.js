@@ -1,1 +1,37 @@
-var p=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var d=(t,i,o,r)=>{for(var e=r>1?void 0:r?v(i,o):i,s=t.length-1,a;s>=0;s--)(a=t[s])&&(e=(r?a(i,o,e):a(e))||e);return r&&e&&p(i,o,e),e},c=(t,i)=>(o,r)=>i(o,r,t);import{BaseTextEditorModel as n}from"./textEditorModel.js";import"../../../base/common/uri.js";import{ILanguageService as I}from"../../../editor/common/languages/language.js";import{IModelService as l}from"../../../editor/common/services/model.js";import{ILanguageDetectionService as S}from"../../services/languageDetection/common/languageDetectionWorkerService.js";import{IAccessibilityService as g}from"../../../platform/accessibility/common/accessibility.js";let m=class extends n{constructor(i,o,r,e,s){super(r,o,e,s,i)}dispose(){this.textEditorModelHandle&&this.modelService.destroyModel(this.textEditorModelHandle),super.dispose()}};m=d([c(1,I),c(2,l),c(3,S),c(4,g)],m);export{m as TextResourceEditorModel};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { BaseTextEditorModel } from './textEditorModel.js';
+import { URI } from '../../../base/common/uri.js';
+import { ILanguageService } from '../../../editor/common/languages/language.js';
+import { IModelService } from '../../../editor/common/services/model.js';
+import { ILanguageDetectionService } from '../../services/languageDetection/common/languageDetectionWorkerService.js';
+import { IAccessibilityService } from '../../../platform/accessibility/common/accessibility.js';
+let TextResourceEditorModel = class TextResourceEditorModel extends BaseTextEditorModel {
+    constructor(resource, languageService, modelService, languageDetectionService, accessibilityService) {
+        super(modelService, languageService, languageDetectionService, accessibilityService, resource);
+    }
+    dispose() {
+        if (this.textEditorModelHandle) {
+            this.modelService.destroyModel(this.textEditorModelHandle);
+        }
+        super.dispose();
+    }
+};
+TextResourceEditorModel = __decorate([
+    __param(1, ILanguageService),
+    __param(2, IModelService),
+    __param(3, ILanguageDetectionService),
+    __param(4, IAccessibilityService),
+    __metadata("design:paramtypes", [URI, Object, Object, Object, Object])
+], TextResourceEditorModel);
+export { TextResourceEditorModel };

@@ -1,1 +1,94 @@
-import{Codicon as o}from"../../../../../base/common/codicons.js";import{ThemeIcon as s}from"../../../../../base/common/themables.js";import{MarkerSeverity as t}from"../../../../../platform/markers/common/markers.js";import"../notebookBrowser.js";import{executingStateIcon as l}from"../notebookIcons.js";import{CellKind as d}from"../../common/notebookCommon.js";import"../../../../../editor/common/core/range.js";import{SymbolKinds as a}from"../../../../../editor/common/languages.js";class C{constructor(r,e,n,i,f,h,c,m){this.index=r;this.level=e;this.cell=n;this.label=i;this.isExecuting=f;this.isPaused=h;this.range=c;this.symbolKind=m}_children=[];_parent;_markerInfo;get icon(){return this.symbolKind?a.toIcon(this.symbolKind):this.isExecuting&&this.isPaused?l:this.isExecuting?s.modify(l,"spin"):this.cell.cellKind===d.Markup?o.markdown:o.code}addChild(r){this._children.push(r),r._parent=this}get parent(){return this._parent}get children(){return this._children}get markerInfo(){return this._markerInfo}get position(){if(this.range)return{startLineNumber:this.range.startLineNumber,startColumn:this.range.startColumn}}updateMarkers(r){if(this.cell.cellKind===d.Code){const e=r.read({resource:this.cell.uri,severities:t.Error|t.Warning});if(e.length===0)this._markerInfo=void 0;else{const n=e.find(i=>i.severity===t.Error)?.severity??t.Warning;this._markerInfo={topSev:n,count:e.length}}}else{let e;for(const n of this.children)n.updateMarkers(r),n.markerInfo&&(e=e?Math.max(n.markerInfo.topSev,e):n.markerInfo.topSev);this._markerInfo=e&&{topSev:e,count:0}}}clearMarkers(){this._markerInfo=void 0;for(const r of this.children)r.clearMarkers()}find(r,e){if(r.id===this.cell.id)return this;e.push(this);for(const n of this.children){const i=n.find(r,e);if(i)return i}e.pop()}asFlatList(r){r.push(this);for(const e of this.children)e.asFlatList(r)}}export{C as OutlineEntry};
+import { Codicon } from '../../../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../../../base/common/themables.js';
+import { MarkerSeverity } from '../../../../../platform/markers/common/markers.js';
+import { executingStateIcon } from '../notebookIcons.js';
+import { CellKind } from '../../common/notebookCommon.js';
+import { SymbolKinds } from '../../../../../editor/common/languages.js';
+export class OutlineEntry {
+    get icon() {
+        if (this.symbolKind) {
+            return SymbolKinds.toIcon(this.symbolKind);
+        }
+        return this.isExecuting && this.isPaused ? executingStateIcon :
+            this.isExecuting ? ThemeIcon.modify(executingStateIcon, 'spin') :
+                this.cell.cellKind === CellKind.Markup ? Codicon.markdown : Codicon.code;
+    }
+    constructor(index, level, cell, label, isExecuting, isPaused, range, symbolKind) {
+        this.index = index;
+        this.level = level;
+        this.cell = cell;
+        this.label = label;
+        this.isExecuting = isExecuting;
+        this.isPaused = isPaused;
+        this.range = range;
+        this.symbolKind = symbolKind;
+        this._children = [];
+    }
+    addChild(entry) {
+        this._children.push(entry);
+        entry._parent = this;
+    }
+    get parent() {
+        return this._parent;
+    }
+    get children() {
+        return this._children;
+    }
+    get markerInfo() {
+        return this._markerInfo;
+    }
+    get position() {
+        if (this.range) {
+            return { startLineNumber: this.range.startLineNumber, startColumn: this.range.startColumn };
+        }
+        return undefined;
+    }
+    updateMarkers(markerService) {
+        if (this.cell.cellKind === CellKind.Code) {
+            const marker = markerService.read({ resource: this.cell.uri, severities: MarkerSeverity.Error | MarkerSeverity.Warning });
+            if (marker.length === 0) {
+                this._markerInfo = undefined;
+            }
+            else {
+                const topSev = marker.find(a => a.severity === MarkerSeverity.Error)?.severity ?? MarkerSeverity.Warning;
+                this._markerInfo = { topSev, count: marker.length };
+            }
+        }
+        else {
+            let topChild;
+            for (const child of this.children) {
+                child.updateMarkers(markerService);
+                if (child.markerInfo) {
+                    topChild = !topChild ? child.markerInfo.topSev : Math.max(child.markerInfo.topSev, topChild);
+                }
+            }
+            this._markerInfo = topChild && { topSev: topChild, count: 0 };
+        }
+    }
+    clearMarkers() {
+        this._markerInfo = undefined;
+        for (const child of this.children) {
+            child.clearMarkers();
+        }
+    }
+    find(cell, parents) {
+        if (cell.id === this.cell.id) {
+            return this;
+        }
+        parents.push(this);
+        for (const child of this.children) {
+            const result = child.find(cell, parents);
+            if (result) {
+                return result;
+            }
+        }
+        parents.pop();
+        return undefined;
+    }
+    asFlatList(bucket) {
+        bucket.push(this);
+        for (const child of this.children) {
+            child.asFlatList(bucket);
+        }
+    }
+}

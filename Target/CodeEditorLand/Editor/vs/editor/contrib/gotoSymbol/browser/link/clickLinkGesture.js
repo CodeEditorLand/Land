@@ -1,1 +1,133 @@
-import"../../../../../base/browser/keyboardEvent.js";import{Emitter as l}from"../../../../../base/common/event.js";import{KeyCode as o}from"../../../../../base/common/keyCodes.js";import{Disposable as M}from"../../../../../base/common/lifecycle.js";import*as g from"../../../../../base/common/platform.js";import"../../../../browser/editorBrowser.js";import{EditorOption as d}from"../../../../common/config/editorOptions.js";import"../../../../common/cursorEvents.js";function a(r,e){return!!r[e]}class u{target;hasTriggerModifier;hasSideBySideModifier;isNoneOrSingleMouseDown;isLeftClick;isMiddleClick;isRightClick;constructor(e,t){this.target=e.target,this.isLeftClick=e.event.leftButton,this.isMiddleClick=e.event.middleButton,this.isRightClick=e.event.rightButton,this.hasTriggerModifier=a(e.event,t.triggerModifier),this.hasSideBySideModifier=a(e.event,t.triggerSideBySideModifier),this.isNoneOrSingleMouseDown=e.event.detail<=1}}class h{keyCodeIsTriggerKey;keyCodeIsSideBySideKey;hasTriggerModifier;constructor(e,t){this.keyCodeIsTriggerKey=e.keyCode===t.triggerKey,this.keyCodeIsSideBySideKey=e.keyCode===t.triggerSideBySideKey,this.hasTriggerModifier=a(e,t.triggerModifier)}}class s{triggerKey;triggerModifier;triggerSideBySideKey;triggerSideBySideModifier;constructor(e,t,i,n){this.triggerKey=e,this.triggerModifier=t,this.triggerSideBySideKey=i,this.triggerSideBySideModifier=n}equals(e){return this.triggerKey===e.triggerKey&&this.triggerModifier===e.triggerModifier&&this.triggerSideBySideKey===e.triggerSideBySideKey&&this.triggerSideBySideModifier===e.triggerSideBySideModifier}}function y(r){return r==="altKey"?g.isMacintosh?new s(o.Meta,"metaKey",o.Alt,"altKey"):new s(o.Ctrl,"ctrlKey",o.Alt,"altKey"):g.isMacintosh?new s(o.Alt,"altKey",o.Meta,"metaKey"):new s(o.Alt,"altKey",o.Ctrl,"ctrlKey")}class S extends M{_onMouseMoveOrRelevantKeyDown=this._register(new l);onMouseMoveOrRelevantKeyDown=this._onMouseMoveOrRelevantKeyDown.event;_onExecute=this._register(new l);onExecute=this._onExecute.event;_onCancel=this._register(new l);onCancel=this._onCancel.event;_editor;_extractLineNumberFromMouseEvent;_opts;_lastMouseMoveEvent;_hasTriggerKeyOnMouseDown;_lineNumberOnMouseDown;constructor(e,t){super(),this._editor=e,this._extractLineNumberFromMouseEvent=t?.extractLineNumberFromMouseEvent??(i=>i.target.position?i.target.position.lineNumber:0),this._opts=y(this._editor.getOption(d.multiCursorModifier)),this._lastMouseMoveEvent=null,this._hasTriggerKeyOnMouseDown=!1,this._lineNumberOnMouseDown=0,this._register(this._editor.onDidChangeConfiguration(i=>{if(i.hasChanged(d.multiCursorModifier)){const n=y(this._editor.getOption(d.multiCursorModifier));if(this._opts.equals(n))return;this._opts=n,this._lastMouseMoveEvent=null,this._hasTriggerKeyOnMouseDown=!1,this._lineNumberOnMouseDown=0,this._onCancel.fire()}})),this._register(this._editor.onMouseMove(i=>this._onEditorMouseMove(new u(i,this._opts)))),this._register(this._editor.onMouseDown(i=>this._onEditorMouseDown(new u(i,this._opts)))),this._register(this._editor.onMouseUp(i=>this._onEditorMouseUp(new u(i,this._opts)))),this._register(this._editor.onKeyDown(i=>this._onEditorKeyDown(new h(i,this._opts)))),this._register(this._editor.onKeyUp(i=>this._onEditorKeyUp(new h(i,this._opts)))),this._register(this._editor.onMouseDrag(()=>this._resetHandler())),this._register(this._editor.onDidChangeCursorSelection(i=>this._onDidChangeCursorSelection(i))),this._register(this._editor.onDidChangeModel(i=>this._resetHandler())),this._register(this._editor.onDidChangeModelContent(()=>this._resetHandler())),this._register(this._editor.onDidScrollChange(i=>{(i.scrollTopChanged||i.scrollLeftChanged)&&this._resetHandler()}))}_onDidChangeCursorSelection(e){e.selection&&e.selection.startColumn!==e.selection.endColumn&&this._resetHandler()}_onEditorMouseMove(e){this._lastMouseMoveEvent=e,this._onMouseMoveOrRelevantKeyDown.fire([e,null])}_onEditorMouseDown(e){this._hasTriggerKeyOnMouseDown=e.hasTriggerModifier,this._lineNumberOnMouseDown=this._extractLineNumberFromMouseEvent(e)}_onEditorMouseUp(e){const t=this._extractLineNumberFromMouseEvent(e);this._hasTriggerKeyOnMouseDown&&this._lineNumberOnMouseDown&&this._lineNumberOnMouseDown===t&&this._onExecute.fire(e)}_onEditorKeyDown(e){this._lastMouseMoveEvent&&(e.keyCodeIsTriggerKey||e.keyCodeIsSideBySideKey&&e.hasTriggerModifier)?this._onMouseMoveOrRelevantKeyDown.fire([this._lastMouseMoveEvent,e]):e.hasTriggerModifier&&this._onCancel.fire()}_onEditorKeyUp(e){e.keyCodeIsTriggerKey&&this._onCancel.fire()}_resetHandler(){this._lastMouseMoveEvent=null,this._hasTriggerKeyOnMouseDown=!1,this._onCancel.fire()}}export{S as ClickLinkGesture,h as ClickLinkKeyboardEvent,u as ClickLinkMouseEvent,s as ClickLinkOptions};
+import { Emitter } from '../../../../../base/common/event.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import * as platform from '../../../../../base/common/platform.js';
+function hasModifier(e, modifier) {
+    return !!e[modifier];
+}
+export class ClickLinkMouseEvent {
+    constructor(source, opts) {
+        this.target = source.target;
+        this.isLeftClick = source.event.leftButton;
+        this.isMiddleClick = source.event.middleButton;
+        this.isRightClick = source.event.rightButton;
+        this.hasTriggerModifier = hasModifier(source.event, opts.triggerModifier);
+        this.hasSideBySideModifier = hasModifier(source.event, opts.triggerSideBySideModifier);
+        this.isNoneOrSingleMouseDown = (source.event.detail <= 1);
+    }
+}
+export class ClickLinkKeyboardEvent {
+    constructor(source, opts) {
+        this.keyCodeIsTriggerKey = (source.keyCode === opts.triggerKey);
+        this.keyCodeIsSideBySideKey = (source.keyCode === opts.triggerSideBySideKey);
+        this.hasTriggerModifier = hasModifier(source, opts.triggerModifier);
+    }
+}
+export class ClickLinkOptions {
+    constructor(triggerKey, triggerModifier, triggerSideBySideKey, triggerSideBySideModifier) {
+        this.triggerKey = triggerKey;
+        this.triggerModifier = triggerModifier;
+        this.triggerSideBySideKey = triggerSideBySideKey;
+        this.triggerSideBySideModifier = triggerSideBySideModifier;
+    }
+    equals(other) {
+        return (this.triggerKey === other.triggerKey
+            && this.triggerModifier === other.triggerModifier
+            && this.triggerSideBySideKey === other.triggerSideBySideKey
+            && this.triggerSideBySideModifier === other.triggerSideBySideModifier);
+    }
+}
+function createOptions(multiCursorModifier) {
+    if (multiCursorModifier === 'altKey') {
+        if (platform.isMacintosh) {
+            return new ClickLinkOptions(57, 'metaKey', 6, 'altKey');
+        }
+        return new ClickLinkOptions(5, 'ctrlKey', 6, 'altKey');
+    }
+    if (platform.isMacintosh) {
+        return new ClickLinkOptions(6, 'altKey', 57, 'metaKey');
+    }
+    return new ClickLinkOptions(6, 'altKey', 5, 'ctrlKey');
+}
+export class ClickLinkGesture extends Disposable {
+    constructor(editor, opts) {
+        super();
+        this._onMouseMoveOrRelevantKeyDown = this._register(new Emitter());
+        this.onMouseMoveOrRelevantKeyDown = this._onMouseMoveOrRelevantKeyDown.event;
+        this._onExecute = this._register(new Emitter());
+        this.onExecute = this._onExecute.event;
+        this._onCancel = this._register(new Emitter());
+        this.onCancel = this._onCancel.event;
+        this._editor = editor;
+        this._extractLineNumberFromMouseEvent = opts?.extractLineNumberFromMouseEvent ?? ((e) => e.target.position ? e.target.position.lineNumber : 0);
+        this._opts = createOptions(this._editor.getOption(80));
+        this._lastMouseMoveEvent = null;
+        this._hasTriggerKeyOnMouseDown = false;
+        this._lineNumberOnMouseDown = 0;
+        this._register(this._editor.onDidChangeConfiguration((e) => {
+            if (e.hasChanged(80)) {
+                const newOpts = createOptions(this._editor.getOption(80));
+                if (this._opts.equals(newOpts)) {
+                    return;
+                }
+                this._opts = newOpts;
+                this._lastMouseMoveEvent = null;
+                this._hasTriggerKeyOnMouseDown = false;
+                this._lineNumberOnMouseDown = 0;
+                this._onCancel.fire();
+            }
+        }));
+        this._register(this._editor.onMouseMove((e) => this._onEditorMouseMove(new ClickLinkMouseEvent(e, this._opts))));
+        this._register(this._editor.onMouseDown((e) => this._onEditorMouseDown(new ClickLinkMouseEvent(e, this._opts))));
+        this._register(this._editor.onMouseUp((e) => this._onEditorMouseUp(new ClickLinkMouseEvent(e, this._opts))));
+        this._register(this._editor.onKeyDown((e) => this._onEditorKeyDown(new ClickLinkKeyboardEvent(e, this._opts))));
+        this._register(this._editor.onKeyUp((e) => this._onEditorKeyUp(new ClickLinkKeyboardEvent(e, this._opts))));
+        this._register(this._editor.onMouseDrag(() => this._resetHandler()));
+        this._register(this._editor.onDidChangeCursorSelection((e) => this._onDidChangeCursorSelection(e)));
+        this._register(this._editor.onDidChangeModel((e) => this._resetHandler()));
+        this._register(this._editor.onDidChangeModelContent(() => this._resetHandler()));
+        this._register(this._editor.onDidScrollChange((e) => {
+            if (e.scrollTopChanged || e.scrollLeftChanged) {
+                this._resetHandler();
+            }
+        }));
+    }
+    _onDidChangeCursorSelection(e) {
+        if (e.selection && e.selection.startColumn !== e.selection.endColumn) {
+            this._resetHandler();
+        }
+    }
+    _onEditorMouseMove(mouseEvent) {
+        this._lastMouseMoveEvent = mouseEvent;
+        this._onMouseMoveOrRelevantKeyDown.fire([mouseEvent, null]);
+    }
+    _onEditorMouseDown(mouseEvent) {
+        this._hasTriggerKeyOnMouseDown = mouseEvent.hasTriggerModifier;
+        this._lineNumberOnMouseDown = this._extractLineNumberFromMouseEvent(mouseEvent);
+    }
+    _onEditorMouseUp(mouseEvent) {
+        const currentLineNumber = this._extractLineNumberFromMouseEvent(mouseEvent);
+        if (this._hasTriggerKeyOnMouseDown && this._lineNumberOnMouseDown && this._lineNumberOnMouseDown === currentLineNumber) {
+            this._onExecute.fire(mouseEvent);
+        }
+    }
+    _onEditorKeyDown(e) {
+        if (this._lastMouseMoveEvent
+            && (e.keyCodeIsTriggerKey
+                || (e.keyCodeIsSideBySideKey && e.hasTriggerModifier))) {
+            this._onMouseMoveOrRelevantKeyDown.fire([this._lastMouseMoveEvent, e]);
+        }
+        else if (e.hasTriggerModifier) {
+            this._onCancel.fire();
+        }
+    }
+    _onEditorKeyUp(e) {
+        if (e.keyCodeIsTriggerKey) {
+            this._onCancel.fire();
+        }
+    }
+    _resetHandler() {
+        this._lastMouseMoveEvent = null;
+        this._hasTriggerKeyOnMouseDown = false;
+        this._onCancel.fire();
+    }
+}

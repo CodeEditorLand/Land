@@ -1,1 +1,69 @@
-function f(e){return!e||typeof e!="object"?!1:typeof e.start=="number"&&typeof e.end=="number"}function a(e){e.sort((t,l)=>t-l);const n=e.shift();return n===void 0?[]:e.reduce(function(t,l){return l<=t[0][1]?t[0][1]=l+1:t.unshift([l,l+1]),t},[[n,n+1]]).reverse().map(t=>({start:t[0],end:t[1]}))}function i(e){return e.reduce((t,l)=>{for(let r=l.start;r<l.end;r++)t.push(r);return t},[])}function o(e){const n=e.sort((r,s)=>r.start-s.start),t=n[0];if(!t)return[];const l=n.reduce((r,s)=>{const u=r[r.length-1];return u.end>=s.start?u.end=Math.max(u.end,s.end):r.push(s),r},[t]);return l.length>1?l.filter(r=>!(r.start===r.end&&r.start===0)):l}function c(e,n){if(e=o(e),n=o(n),e.length!==n.length)return!1;for(let t=0;t<e.length;t++)if(e[t].start!==n[t].start||e[t].end!==n[t].end)return!1;return!0}function d(e,n){return n.start>=e.start&&n.end<=e.end}export{a as cellIndexesToRanges,d as cellRangeContains,c as cellRangesEqual,i as cellRangesToIndexes,f as isICellRange,o as reduceCellRanges};
+export function isICellRange(candidate) {
+    if (!candidate || typeof candidate !== 'object') {
+        return false;
+    }
+    return typeof candidate.start === 'number'
+        && typeof candidate.end === 'number';
+}
+export function cellIndexesToRanges(indexes) {
+    indexes.sort((a, b) => a - b);
+    const first = indexes.shift();
+    if (first === undefined) {
+        return [];
+    }
+    return indexes.reduce(function (ranges, num) {
+        if (num <= ranges[0][1]) {
+            ranges[0][1] = num + 1;
+        }
+        else {
+            ranges.unshift([num, num + 1]);
+        }
+        return ranges;
+    }, [[first, first + 1]]).reverse().map(val => ({ start: val[0], end: val[1] }));
+}
+export function cellRangesToIndexes(ranges) {
+    const indexes = ranges.reduce((a, b) => {
+        for (let i = b.start; i < b.end; i++) {
+            a.push(i);
+        }
+        return a;
+    }, []);
+    return indexes;
+}
+export function reduceCellRanges(ranges) {
+    const sorted = ranges.sort((a, b) => a.start - b.start);
+    const first = sorted[0];
+    if (!first) {
+        return [];
+    }
+    const reduced = sorted.reduce((prev, curr) => {
+        const last = prev[prev.length - 1];
+        if (last.end >= curr.start) {
+            last.end = Math.max(last.end, curr.end);
+        }
+        else {
+            prev.push(curr);
+        }
+        return prev;
+    }, [first]);
+    if (reduced.length > 1) {
+        return reduced.filter(range => !(range.start === range.end && range.start === 0));
+    }
+    return reduced;
+}
+export function cellRangesEqual(a, b) {
+    a = reduceCellRanges(a);
+    b = reduceCellRanges(b);
+    if (a.length !== b.length) {
+        return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+        if (a[i].start !== b[i].start || a[i].end !== b[i].end) {
+            return false;
+        }
+    }
+    return true;
+}
+export function cellRangeContains(range, other) {
+    return other.start >= range.start && other.end <= range.end;
+}

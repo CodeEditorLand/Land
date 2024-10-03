@@ -1,1 +1,577 @@
-var S=Object.defineProperty;var P=Object.getOwnPropertyDescriptor;var v=(g,s,e,t)=>{for(var i=t>1?void 0:t?P(s,e):s,r=g.length-1,o;r>=0;r--)(o=g[r])&&(i=(t?o(s,e,i):o(i))||i);return t&&i&&S(s,e,i),i},p=(g,s)=>(e,t)=>s(e,t,g);import{localize as x}from"../../../../nls.js";import{GroupLocation as u,GroupsOrder as h,IEditorGroupsService as w}from"../../../services/editor/common/editorGroupsService.js";import{Emitter as a}from"../../../../base/common/event.js";import{DisposableMap as C,DisposableStore as _,toDisposable as y}from"../../../../base/common/lifecycle.js";import"../../../common/editor.js";import{MainEditorPart as A}from"./editorPart.js";import"./editor.js";import{InstantiationType as K,registerSingleton as D}from"../../../../platform/instantiation/common/extensions.js";import{IInstantiationService as R}from"../../../../platform/instantiation/common/instantiation.js";import{distinct as T}from"../../../../base/common/arrays.js";import{AuxiliaryEditorPart as V}from"./auxiliaryEditorPart.js";import{MultiWindowParts as k}from"../../part.js";import{DeferredPromise as E}from"../../../../base/common/async.js";import{IStorageService as O,StorageScope as l,StorageTarget as m}from"../../../../platform/storage/common/storage.js";import{IThemeService as b}from"../../../../platform/theme/common/themeService.js";import{IAuxiliaryWindowService as M}from"../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js";import{generateUuid as W}from"../../../../base/common/uuid.js";import{IContextKeyService as L}from"../../../../platform/contextkey/common/contextkey.js";import{isHTMLElement as U}from"../../../../base/browser/dom.js";import{ServiceCollection as z}from"../../../../platform/instantiation/common/serviceCollection.js";import{IEditorService as f}from"../../../services/editor/common/editorService.js";let n=class extends k{constructor(e,t,i,r,o){super("workbench.editorParts",i,t);this.instantiationService=e;this.storageService=t;this.auxiliaryWindowService=r;this.contextKeyService=o;this._register(this.registerPart(this.mainPart)),this.restoreParts(),this.registerListeners()}mainPart=this._register(this.createMainEditorPart());mostRecentActiveParts=[this.mainPart];registerListeners(){this._register(this.onDidChangeMementoValue(l.WORKSPACE,this._store)(e=>this.onDidChangeMementoState(e))),this.whenReady.then(()=>this.registerGroupsContextKeyListeners())}createMainEditorPart(){return this.instantiationService.createInstance(A,this)}mapPartToInstantiationService=new Map;getScopedInstantiationService(e){return e===this.mainPart&&(this.mapPartToInstantiationService.has(e.windowId)||this.instantiationService.invokeFunction(t=>{const i=t.get(f);this.mapPartToInstantiationService.set(e.windowId,this._register(this.instantiationService.createChild(new z([f,i.createScoped("main",this._store)]))))})),this.mapPartToInstantiationService.get(e.windowId)??this.instantiationService}_onDidCreateAuxiliaryEditorPart=this._register(new a);onDidCreateAuxiliaryEditorPart=this._onDidCreateAuxiliaryEditorPart.event;async createAuxiliaryEditorPart(e){const{part:t,instantiationService:i,disposables:r}=await this.instantiationService.createInstance(V,this).create(this.getGroupsLabel(this._parts.size),e);return this.mapPartToInstantiationService.set(t.windowId,i),r.add(y(()=>this.mapPartToInstantiationService.delete(t.windowId))),this._onDidAddGroup.fire(t.activeGroup),this._onDidCreateAuxiliaryEditorPart.fire(t),t}registerPart(e){const t=this._register(new _);return t.add(super.registerPart(e)),this.registerEditorPartListeners(e,t),t}unregisterPart(e){super.unregisterPart(e),this.parts.forEach((t,i)=>{t!==this.mainPart&&t.notifyGroupsLabelChange(this.getGroupsLabel(i))})}registerEditorPartListeners(e,t){t.add(e.onDidFocus(()=>{this.doUpdateMostRecentActive(e,!0),this._parts.size>1&&this._onDidActiveGroupChange.fire(this.activeGroup)})),t.add(y(()=>this.doUpdateMostRecentActive(e))),t.add(e.onDidChangeActiveGroup(i=>this._onDidActiveGroupChange.fire(i))),t.add(e.onDidAddGroup(i=>this._onDidAddGroup.fire(i))),t.add(e.onDidRemoveGroup(i=>this._onDidRemoveGroup.fire(i))),t.add(e.onDidMoveGroup(i=>this._onDidMoveGroup.fire(i))),t.add(e.onDidActivateGroup(i=>this._onDidActivateGroup.fire(i))),t.add(e.onDidChangeGroupMaximized(i=>this._onDidChangeGroupMaximized.fire(i))),t.add(e.onDidChangeGroupIndex(i=>this._onDidChangeGroupIndex.fire(i))),t.add(e.onDidChangeGroupLocked(i=>this._onDidChangeGroupLocked.fire(i)))}doUpdateMostRecentActive(e,t){const i=this.mostRecentActiveParts.indexOf(e);i!==-1&&this.mostRecentActiveParts.splice(i,1),t&&this.mostRecentActiveParts.unshift(e)}getGroupsLabel(e){return x("groupLabel","Window {0}",e+1)}getPart(e){if(this._parts.size>1)if(U(e)){const t=e;return this.getPartByDocument(t.ownerDocument)}else{const t=e;let i;typeof t=="number"?i=t:i=t.id;for(const r of this._parts)if(r.hasGroup(i))return r}return this.mainPart}static EDITOR_PARTS_UI_STATE_STORAGE_KEY="editorparts.state";workspaceMemento=this.getMemento(l.WORKSPACE,m.USER);_isReady=!1;get isReady(){return this._isReady}whenReadyPromise=new E;whenReady=this.whenReadyPromise.p;whenRestoredPromise=new E;whenRestored=this.whenRestoredPromise.p;async restoreParts(){if(await this.mainPart.whenReady,this.mainPart.willRestoreState){const t=this.loadState();t&&await this.restoreState(t)}this.mostRecentActiveParts.at(0)?.activeGroup.focus(),this._isReady=!0,this.whenReadyPromise.complete(),await Promise.allSettled(this.parts.map(t=>t.whenRestored)),this.whenRestoredPromise.complete()}loadState(){return this.workspaceMemento[n.EDITOR_PARTS_UI_STATE_STORAGE_KEY]}saveState(){const e=this.createState();e.auxiliary.length===0?delete this.workspaceMemento[n.EDITOR_PARTS_UI_STATE_STORAGE_KEY]:this.workspaceMemento[n.EDITOR_PARTS_UI_STATE_STORAGE_KEY]=e}createState(){return{auxiliary:this.parts.filter(e=>e!==this.mainPart).map(e=>{const t=this.auxiliaryWindowService.getWindow(e.windowId);return{state:e.createState(),...t?.createState()}}),mru:this.mostRecentActiveParts.map(e=>this.parts.indexOf(e))}}async restoreState(e){if(e.auxiliary.length){const t=[];for(const i of e.auxiliary)t.push(this.createAuxiliaryEditorPart(i));await Promise.allSettled(t),e.mru.length===this.parts.length?this.mostRecentActiveParts=e.mru.map(i=>this.parts[i]):this.mostRecentActiveParts=[...this.parts],await Promise.allSettled(this.parts.map(i=>i.whenReady))}}get hasRestorableState(){return this.parts.some(e=>e.hasRestorableState)}onDidChangeMementoState(e){if(e.external&&e.scope===l.WORKSPACE){this.reloadMemento(e.scope);const t=this.loadState();t&&this.applyState(t)}}async applyState(e){for(const t of this.parts){if(t===this.mainPart)continue;for(const r of t.getGroups(h.MOST_RECENTLY_ACTIVE))await r.closeAllEditors({excludeConfirming:!0});if(!t.close())return!1}return e!=="empty"&&await this.restoreState(e),!0}static EDITOR_WORKING_SETS_STORAGE_KEY="editor.workingSets";editorWorkingSets=(()=>{const e=this.storageService.get(n.EDITOR_WORKING_SETS_STORAGE_KEY,l.WORKSPACE);return e?JSON.parse(e):[]})();saveWorkingSet(e){const t={id:W(),name:e,main:this.mainPart.createState(),auxiliary:this.createState()};return this.editorWorkingSets.push(t),this.saveWorkingSets(),{id:t.id,name:t.name}}getWorkingSets(){return this.editorWorkingSets.map(e=>({id:e.id,name:e.name}))}deleteWorkingSet(e){const t=this.indexOfWorkingSet(e);typeof t=="number"&&(this.editorWorkingSets.splice(t,1),this.saveWorkingSets())}async applyWorkingSet(e,t){let i;if(e==="empty"?i="empty":i=this.editorWorkingSets[this.indexOfWorkingSet(e)??-1],!i||!await this.applyState(i==="empty"?i:i.auxiliary))return!1;if(await this.mainPart.applyState(i==="empty"?i:i.main,t),!t?.preserveFocus){const o=this.mostRecentActiveParts.at(0);o&&(await o.whenReady,o.activeGroup.focus())}return!0}indexOfWorkingSet(e){for(let t=0;t<this.editorWorkingSets.length;t++)if(this.editorWorkingSets[t].id===e.id)return t}saveWorkingSets(){this.storageService.store(n.EDITOR_WORKING_SETS_STORAGE_KEY,JSON.stringify(this.editorWorkingSets),l.WORKSPACE,m.MACHINE)}_onDidActiveGroupChange=this._register(new a);onDidChangeActiveGroup=this._onDidActiveGroupChange.event;_onDidAddGroup=this._register(new a);onDidAddGroup=this._onDidAddGroup.event;_onDidRemoveGroup=this._register(new a);onDidRemoveGroup=this._onDidRemoveGroup.event;_onDidMoveGroup=this._register(new a);onDidMoveGroup=this._onDidMoveGroup.event;_onDidActivateGroup=this._register(new a);onDidActivateGroup=this._onDidActivateGroup.event;_onDidChangeGroupIndex=this._register(new a);onDidChangeGroupIndex=this._onDidChangeGroupIndex.event;_onDidChangeGroupLocked=this._register(new a);onDidChangeGroupLocked=this._onDidChangeGroupLocked.event;_onDidChangeGroupMaximized=this._register(new a);onDidChangeGroupMaximized=this._onDidChangeGroupMaximized.event;get activeGroup(){return this.activePart.activeGroup}get sideGroup(){return this.activePart.sideGroup}get groups(){return this.getGroups()}get count(){return this.groups.length}getGroups(e=h.CREATION_TIME){if(this._parts.size>1){let t;switch(e){case h.GRID_APPEARANCE:case h.CREATION_TIME:t=this.parts;break;case h.MOST_RECENTLY_ACTIVE:t=T([...this.mostRecentActiveParts,...this.parts]);break}return t.map(i=>i.getGroups(e)).flat()}return this.mainPart.getGroups(e)}getGroup(e){if(this._parts.size>1)for(const t of this._parts){const i=t.getGroup(e);if(i)return i}return this.mainPart.getGroup(e)}assertGroupView(e){let t;if(typeof e=="number"?t=this.getGroup(e):t=e,!t)throw new Error("Invalid editor group provided!");return t}activateGroup(e){return this.getPart(e).activateGroup(e)}getSize(e){return this.getPart(e).getSize(e)}setSize(e,t){this.getPart(e).setSize(e,t)}arrangeGroups(e,t=this.activePart.activeGroup){this.getPart(t).arrangeGroups(e,t)}toggleMaximizeGroup(e=this.activePart.activeGroup){this.getPart(e).toggleMaximizeGroup(e)}toggleExpandGroup(e=this.activePart.activeGroup){this.getPart(e).toggleExpandGroup(e)}restoreGroup(e){return this.getPart(e).restoreGroup(e)}applyLayout(e){this.activePart.applyLayout(e)}getLayout(){return this.activePart.getLayout()}get orientation(){return this.activePart.orientation}setGroupOrientation(e){this.activePart.setGroupOrientation(e)}findGroup(e,t=this.activeGroup,i){const r=this.getPart(t);if(this._parts.size>1){const o=this.getGroups(h.GRID_APPEARANCE);if(e.location===u.FIRST||e.location===u.LAST)return e.location===u.FIRST?o[0]:o[o.length-1];const c=r.findGroup(e,t,!1);if(c)return c;if(e.location===u.NEXT||e.location===u.PREVIOUS){const G=this.assertGroupView(t),I=o.indexOf(G);if(e.location===u.NEXT){let d=o[I+1];return!d&&i&&(d=o[0]),d}else{let d=o[I-1];return!d&&i&&(d=o[o.length-1]),d}}}return r.findGroup(e,t,i)}addGroup(e,t){return this.getPart(e).addGroup(e,t)}removeGroup(e){this.getPart(e).removeGroup(e)}moveGroup(e,t,i){return this.getPart(e).moveGroup(e,t,i)}mergeGroup(e,t,i){return this.getPart(e).mergeGroup(e,t,i)}mergeAllGroups(e){return this.activePart.mergeAllGroups(e)}copyGroup(e,t,i){return this.getPart(e).copyGroup(e,t,i)}createEditorDropTarget(e,t){return this.getPart(e).createEditorDropTarget(e,t)}globalContextKeys=new Map;scopedContextKeys=new Map;registerGroupsContextKeyListeners(){this._register(this.onDidChangeActiveGroup(()=>this.updateGlobalContextKeys())),this.groups.forEach(e=>this.registerGroupContextKeyProvidersListeners(e)),this._register(this.onDidAddGroup(e=>this.registerGroupContextKeyProvidersListeners(e))),this._register(this.onDidRemoveGroup(e=>{this.scopedContextKeys.delete(e.id),this.registeredContextKeys.delete(e.id),this.contextKeyProviderDisposables.deleteAndDispose(e.id)}))}updateGlobalContextKeys(){const e=this.scopedContextKeys.get(this.activeGroup.id);if(e)for(const[t,i]of this.globalContextKeys){const r=e.get(t);r?i.set(r.get()):i.reset()}}bind(e,t){let i=this.globalContextKeys.get(e.key);i||(i=e.bindTo(this.contextKeyService),this.globalContextKeys.set(e.key,i));let r=this.scopedContextKeys.get(t.id);r||(r=new Map,this.scopedContextKeys.set(t.id,r));let o=r.get(e.key);o||(o=e.bindTo(t.scopedContextKeyService),r.set(e.key,o));const c=this;return{get(){return o.get()},set(G){c.activeGroup===t&&i.set(G),o.set(G)},reset(){c.activeGroup===t&&i.reset(),o.reset()}}}contextKeyProviders=new Map;registeredContextKeys=new Map;registerContextKeyProvider(e){if(this.contextKeyProviders.has(e.contextKey.key)||this.globalContextKeys.has(e.contextKey.key))throw new Error(`A context key provider for key ${e.contextKey.key} already exists.`);this.contextKeyProviders.set(e.contextKey.key,e);const t=()=>{for(const r of this.groups)this.updateRegisteredContextKey(r,e)};t();const i=e.onDidChange?.(()=>t());return y(()=>{i?.dispose(),this.globalContextKeys.delete(e.contextKey.key),this.scopedContextKeys.forEach(r=>r.delete(e.contextKey.key)),this.contextKeyProviders.delete(e.contextKey.key),this.registeredContextKeys.forEach(r=>r.delete(e.contextKey.key))})}contextKeyProviderDisposables=this._register(new C);registerGroupContextKeyProvidersListeners(e){const t=e.onDidActiveEditorChange(()=>{for(const i of this.contextKeyProviders.values())this.updateRegisteredContextKey(e,i)});this.contextKeyProviderDisposables.set(e.id,t)}updateRegisteredContextKey(e,t){let i=this.registeredContextKeys.get(e.id);i||(i=new Map,this.registeredContextKeys.set(e.id,i));let r=i.get(t.contextKey.key);r||(r=this.bind(t.contextKey,e),i.set(t.contextKey.key,r)),r.set(t.getGroupContextKeyValue(e))}get partOptions(){return this.mainPart.partOptions}get onDidChangeEditorPartOptions(){return this.mainPart.onDidChangeEditorPartOptions}};n=v([p(0,R),p(1,O),p(2,b),p(3,M),p(4,L)],n),D(w,n,K.Eager);export{n as EditorParts};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var EditorParts_1;
+import { localize } from '../../../../nls.js';
+import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { DisposableMap, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { MainEditorPart } from './editorPart.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { distinct } from '../../../../base/common/arrays.js';
+import { AuxiliaryEditorPart } from './auxiliaryEditorPart.js';
+import { MultiWindowParts } from '../../part.js';
+import { DeferredPromise } from '../../../../base/common/async.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { isHTMLElement } from '../../../../base/browser/dom.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+let EditorParts = class EditorParts extends MultiWindowParts {
+    static { EditorParts_1 = this; }
+    constructor(instantiationService, storageService, themeService, auxiliaryWindowService, contextKeyService) {
+        super('workbench.editorParts', themeService, storageService);
+        this.instantiationService = instantiationService;
+        this.storageService = storageService;
+        this.auxiliaryWindowService = auxiliaryWindowService;
+        this.contextKeyService = contextKeyService;
+        this.mainPart = this._register(this.createMainEditorPart());
+        this.mostRecentActiveParts = [this.mainPart];
+        this.mapPartToInstantiationService = new Map();
+        this._onDidCreateAuxiliaryEditorPart = this._register(new Emitter());
+        this.onDidCreateAuxiliaryEditorPart = this._onDidCreateAuxiliaryEditorPart.event;
+        this.workspaceMemento = this.getMemento(1, 0);
+        this._isReady = false;
+        this.whenReadyPromise = new DeferredPromise();
+        this.whenReady = this.whenReadyPromise.p;
+        this.whenRestoredPromise = new DeferredPromise();
+        this.whenRestored = this.whenRestoredPromise.p;
+        this.editorWorkingSets = (() => {
+            const workingSetsRaw = this.storageService.get(EditorParts_1.EDITOR_WORKING_SETS_STORAGE_KEY, 1);
+            if (workingSetsRaw) {
+                return JSON.parse(workingSetsRaw);
+            }
+            return [];
+        })();
+        this._onDidActiveGroupChange = this._register(new Emitter());
+        this.onDidChangeActiveGroup = this._onDidActiveGroupChange.event;
+        this._onDidAddGroup = this._register(new Emitter());
+        this.onDidAddGroup = this._onDidAddGroup.event;
+        this._onDidRemoveGroup = this._register(new Emitter());
+        this.onDidRemoveGroup = this._onDidRemoveGroup.event;
+        this._onDidMoveGroup = this._register(new Emitter());
+        this.onDidMoveGroup = this._onDidMoveGroup.event;
+        this._onDidActivateGroup = this._register(new Emitter());
+        this.onDidActivateGroup = this._onDidActivateGroup.event;
+        this._onDidChangeGroupIndex = this._register(new Emitter());
+        this.onDidChangeGroupIndex = this._onDidChangeGroupIndex.event;
+        this._onDidChangeGroupLocked = this._register(new Emitter());
+        this.onDidChangeGroupLocked = this._onDidChangeGroupLocked.event;
+        this._onDidChangeGroupMaximized = this._register(new Emitter());
+        this.onDidChangeGroupMaximized = this._onDidChangeGroupMaximized.event;
+        this.globalContextKeys = new Map();
+        this.scopedContextKeys = new Map();
+        this.contextKeyProviders = new Map();
+        this.registeredContextKeys = new Map();
+        this.contextKeyProviderDisposables = this._register(new DisposableMap());
+        this._register(this.registerPart(this.mainPart));
+        this.restoreParts();
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.onDidChangeMementoValue(1, this._store)(e => this.onDidChangeMementoState(e)));
+        this.whenReady.then(() => this.registerGroupsContextKeyListeners());
+    }
+    createMainEditorPart() {
+        return this.instantiationService.createInstance(MainEditorPart, this);
+    }
+    getScopedInstantiationService(part) {
+        if (part === this.mainPart) {
+            if (!this.mapPartToInstantiationService.has(part.windowId)) {
+                this.instantiationService.invokeFunction(accessor => {
+                    const editorService = accessor.get(IEditorService);
+                    this.mapPartToInstantiationService.set(part.windowId, this._register(this.instantiationService.createChild(new ServiceCollection([IEditorService, editorService.createScoped('main', this._store)]))));
+                });
+            }
+        }
+        return this.mapPartToInstantiationService.get(part.windowId) ?? this.instantiationService;
+    }
+    async createAuxiliaryEditorPart(options) {
+        const { part, instantiationService, disposables } = await this.instantiationService.createInstance(AuxiliaryEditorPart, this).create(this.getGroupsLabel(this._parts.size), options);
+        this.mapPartToInstantiationService.set(part.windowId, instantiationService);
+        disposables.add(toDisposable(() => this.mapPartToInstantiationService.delete(part.windowId)));
+        this._onDidAddGroup.fire(part.activeGroup);
+        this._onDidCreateAuxiliaryEditorPart.fire(part);
+        return part;
+    }
+    registerPart(part) {
+        const disposables = this._register(new DisposableStore());
+        disposables.add(super.registerPart(part));
+        this.registerEditorPartListeners(part, disposables);
+        return disposables;
+    }
+    unregisterPart(part) {
+        super.unregisterPart(part);
+        this.parts.forEach((part, index) => {
+            if (part === this.mainPart) {
+                return;
+            }
+            part.notifyGroupsLabelChange(this.getGroupsLabel(index));
+        });
+    }
+    registerEditorPartListeners(part, disposables) {
+        disposables.add(part.onDidFocus(() => {
+            this.doUpdateMostRecentActive(part, true);
+            if (this._parts.size > 1) {
+                this._onDidActiveGroupChange.fire(this.activeGroup);
+            }
+        }));
+        disposables.add(toDisposable(() => this.doUpdateMostRecentActive(part)));
+        disposables.add(part.onDidChangeActiveGroup(group => this._onDidActiveGroupChange.fire(group)));
+        disposables.add(part.onDidAddGroup(group => this._onDidAddGroup.fire(group)));
+        disposables.add(part.onDidRemoveGroup(group => this._onDidRemoveGroup.fire(group)));
+        disposables.add(part.onDidMoveGroup(group => this._onDidMoveGroup.fire(group)));
+        disposables.add(part.onDidActivateGroup(group => this._onDidActivateGroup.fire(group)));
+        disposables.add(part.onDidChangeGroupMaximized(maximized => this._onDidChangeGroupMaximized.fire(maximized)));
+        disposables.add(part.onDidChangeGroupIndex(group => this._onDidChangeGroupIndex.fire(group)));
+        disposables.add(part.onDidChangeGroupLocked(group => this._onDidChangeGroupLocked.fire(group)));
+    }
+    doUpdateMostRecentActive(part, makeMostRecentlyActive) {
+        const index = this.mostRecentActiveParts.indexOf(part);
+        if (index !== -1) {
+            this.mostRecentActiveParts.splice(index, 1);
+        }
+        if (makeMostRecentlyActive) {
+            this.mostRecentActiveParts.unshift(part);
+        }
+    }
+    getGroupsLabel(index) {
+        return localize('groupLabel', "Window {0}", index + 1);
+    }
+    getPart(groupOrElement) {
+        if (this._parts.size > 1) {
+            if (isHTMLElement(groupOrElement)) {
+                const element = groupOrElement;
+                return this.getPartByDocument(element.ownerDocument);
+            }
+            else {
+                const group = groupOrElement;
+                let id;
+                if (typeof group === 'number') {
+                    id = group;
+                }
+                else {
+                    id = group.id;
+                }
+                for (const part of this._parts) {
+                    if (part.hasGroup(id)) {
+                        return part;
+                    }
+                }
+            }
+        }
+        return this.mainPart;
+    }
+    static { this.EDITOR_PARTS_UI_STATE_STORAGE_KEY = 'editorparts.state'; }
+    get isReady() { return this._isReady; }
+    async restoreParts() {
+        await this.mainPart.whenReady;
+        if (this.mainPart.willRestoreState) {
+            const state = this.loadState();
+            if (state) {
+                await this.restoreState(state);
+            }
+        }
+        const mostRecentActivePart = this.mostRecentActiveParts.at(0);
+        mostRecentActivePart?.activeGroup.focus();
+        this._isReady = true;
+        this.whenReadyPromise.complete();
+        await Promise.allSettled(this.parts.map(part => part.whenRestored));
+        this.whenRestoredPromise.complete();
+    }
+    loadState() {
+        return this.workspaceMemento[EditorParts_1.EDITOR_PARTS_UI_STATE_STORAGE_KEY];
+    }
+    saveState() {
+        const state = this.createState();
+        if (state.auxiliary.length === 0) {
+            delete this.workspaceMemento[EditorParts_1.EDITOR_PARTS_UI_STATE_STORAGE_KEY];
+        }
+        else {
+            this.workspaceMemento[EditorParts_1.EDITOR_PARTS_UI_STATE_STORAGE_KEY] = state;
+        }
+    }
+    createState() {
+        return {
+            auxiliary: this.parts.filter(part => part !== this.mainPart).map(part => {
+                const auxiliaryWindow = this.auxiliaryWindowService.getWindow(part.windowId);
+                return {
+                    state: part.createState(),
+                    ...auxiliaryWindow?.createState()
+                };
+            }),
+            mru: this.mostRecentActiveParts.map(part => this.parts.indexOf(part))
+        };
+    }
+    async restoreState(state) {
+        if (state.auxiliary.length) {
+            const auxiliaryEditorPartPromises = [];
+            for (const auxiliaryEditorPartState of state.auxiliary) {
+                auxiliaryEditorPartPromises.push(this.createAuxiliaryEditorPart(auxiliaryEditorPartState));
+            }
+            await Promise.allSettled(auxiliaryEditorPartPromises);
+            if (state.mru.length === this.parts.length) {
+                this.mostRecentActiveParts = state.mru.map(index => this.parts[index]);
+            }
+            else {
+                this.mostRecentActiveParts = [...this.parts];
+            }
+            await Promise.allSettled(this.parts.map(part => part.whenReady));
+        }
+    }
+    get hasRestorableState() {
+        return this.parts.some(part => part.hasRestorableState);
+    }
+    onDidChangeMementoState(e) {
+        if (e.external && e.scope === 1) {
+            this.reloadMemento(e.scope);
+            const state = this.loadState();
+            if (state) {
+                this.applyState(state);
+            }
+        }
+    }
+    async applyState(state) {
+        for (const part of this.parts) {
+            if (part === this.mainPart) {
+                continue;
+            }
+            for (const group of part.getGroups(1)) {
+                await group.closeAllEditors({ excludeConfirming: true });
+            }
+            const closed = part.close();
+            if (!closed) {
+                return false;
+            }
+        }
+        if (state !== 'empty') {
+            await this.restoreState(state);
+        }
+        return true;
+    }
+    static { this.EDITOR_WORKING_SETS_STORAGE_KEY = 'editor.workingSets'; }
+    saveWorkingSet(name) {
+        const workingSet = {
+            id: generateUuid(),
+            name,
+            main: this.mainPart.createState(),
+            auxiliary: this.createState()
+        };
+        this.editorWorkingSets.push(workingSet);
+        this.saveWorkingSets();
+        return {
+            id: workingSet.id,
+            name: workingSet.name
+        };
+    }
+    getWorkingSets() {
+        return this.editorWorkingSets.map(workingSet => ({ id: workingSet.id, name: workingSet.name }));
+    }
+    deleteWorkingSet(workingSet) {
+        const index = this.indexOfWorkingSet(workingSet);
+        if (typeof index === 'number') {
+            this.editorWorkingSets.splice(index, 1);
+            this.saveWorkingSets();
+        }
+    }
+    async applyWorkingSet(workingSet, options) {
+        let workingSetState;
+        if (workingSet === 'empty') {
+            workingSetState = 'empty';
+        }
+        else {
+            workingSetState = this.editorWorkingSets[this.indexOfWorkingSet(workingSet) ?? -1];
+        }
+        if (!workingSetState) {
+            return false;
+        }
+        const applied = await this.applyState(workingSetState === 'empty' ? workingSetState : workingSetState.auxiliary);
+        if (!applied) {
+            return false;
+        }
+        await this.mainPart.applyState(workingSetState === 'empty' ? workingSetState : workingSetState.main, options);
+        if (!options?.preserveFocus) {
+            const mostRecentActivePart = this.mostRecentActiveParts.at(0);
+            if (mostRecentActivePart) {
+                await mostRecentActivePart.whenReady;
+                mostRecentActivePart.activeGroup.focus();
+            }
+        }
+        return true;
+    }
+    indexOfWorkingSet(workingSet) {
+        for (let i = 0; i < this.editorWorkingSets.length; i++) {
+            if (this.editorWorkingSets[i].id === workingSet.id) {
+                return i;
+            }
+        }
+        return undefined;
+    }
+    saveWorkingSets() {
+        this.storageService.store(EditorParts_1.EDITOR_WORKING_SETS_STORAGE_KEY, JSON.stringify(this.editorWorkingSets), 1, 1);
+    }
+    get activeGroup() {
+        return this.activePart.activeGroup;
+    }
+    get sideGroup() {
+        return this.activePart.sideGroup;
+    }
+    get groups() {
+        return this.getGroups();
+    }
+    get count() {
+        return this.groups.length;
+    }
+    getGroups(order = 0) {
+        if (this._parts.size > 1) {
+            let parts;
+            switch (order) {
+                case 2:
+                case 0:
+                    parts = this.parts;
+                    break;
+                case 1:
+                    parts = distinct([...this.mostRecentActiveParts, ...this.parts]);
+                    break;
+            }
+            return parts.map(part => part.getGroups(order)).flat();
+        }
+        return this.mainPart.getGroups(order);
+    }
+    getGroup(identifier) {
+        if (this._parts.size > 1) {
+            for (const part of this._parts) {
+                const group = part.getGroup(identifier);
+                if (group) {
+                    return group;
+                }
+            }
+        }
+        return this.mainPart.getGroup(identifier);
+    }
+    assertGroupView(group) {
+        let groupView;
+        if (typeof group === 'number') {
+            groupView = this.getGroup(group);
+        }
+        else {
+            groupView = group;
+        }
+        if (!groupView) {
+            throw new Error('Invalid editor group provided!');
+        }
+        return groupView;
+    }
+    activateGroup(group) {
+        return this.getPart(group).activateGroup(group);
+    }
+    getSize(group) {
+        return this.getPart(group).getSize(group);
+    }
+    setSize(group, size) {
+        this.getPart(group).setSize(group, size);
+    }
+    arrangeGroups(arrangement, group = this.activePart.activeGroup) {
+        this.getPart(group).arrangeGroups(arrangement, group);
+    }
+    toggleMaximizeGroup(group = this.activePart.activeGroup) {
+        this.getPart(group).toggleMaximizeGroup(group);
+    }
+    toggleExpandGroup(group = this.activePart.activeGroup) {
+        this.getPart(group).toggleExpandGroup(group);
+    }
+    restoreGroup(group) {
+        return this.getPart(group).restoreGroup(group);
+    }
+    applyLayout(layout) {
+        this.activePart.applyLayout(layout);
+    }
+    getLayout() {
+        return this.activePart.getLayout();
+    }
+    get orientation() {
+        return this.activePart.orientation;
+    }
+    setGroupOrientation(orientation) {
+        this.activePart.setGroupOrientation(orientation);
+    }
+    findGroup(scope, source = this.activeGroup, wrap) {
+        const sourcePart = this.getPart(source);
+        if (this._parts.size > 1) {
+            const groups = this.getGroups(2);
+            if (scope.location === 0 || scope.location === 1) {
+                return scope.location === 0 ? groups[0] : groups[groups.length - 1];
+            }
+            const group = sourcePart.findGroup(scope, source, false);
+            if (group) {
+                return group;
+            }
+            if (scope.location === 2 || scope.location === 3) {
+                const sourceGroup = this.assertGroupView(source);
+                const index = groups.indexOf(sourceGroup);
+                if (scope.location === 2) {
+                    let nextGroup = groups[index + 1];
+                    if (!nextGroup && wrap) {
+                        nextGroup = groups[0];
+                    }
+                    return nextGroup;
+                }
+                else {
+                    let previousGroup = groups[index - 1];
+                    if (!previousGroup && wrap) {
+                        previousGroup = groups[groups.length - 1];
+                    }
+                    return previousGroup;
+                }
+            }
+        }
+        return sourcePart.findGroup(scope, source, wrap);
+    }
+    addGroup(location, direction) {
+        return this.getPart(location).addGroup(location, direction);
+    }
+    removeGroup(group) {
+        this.getPart(group).removeGroup(group);
+    }
+    moveGroup(group, location, direction) {
+        return this.getPart(group).moveGroup(group, location, direction);
+    }
+    mergeGroup(group, target, options) {
+        return this.getPart(group).mergeGroup(group, target, options);
+    }
+    mergeAllGroups(target) {
+        return this.activePart.mergeAllGroups(target);
+    }
+    copyGroup(group, location, direction) {
+        return this.getPart(group).copyGroup(group, location, direction);
+    }
+    createEditorDropTarget(container, delegate) {
+        return this.getPart(container).createEditorDropTarget(container, delegate);
+    }
+    registerGroupsContextKeyListeners() {
+        this._register(this.onDidChangeActiveGroup(() => this.updateGlobalContextKeys()));
+        this.groups.forEach(group => this.registerGroupContextKeyProvidersListeners(group));
+        this._register(this.onDidAddGroup(group => this.registerGroupContextKeyProvidersListeners(group)));
+        this._register(this.onDidRemoveGroup(group => {
+            this.scopedContextKeys.delete(group.id);
+            this.registeredContextKeys.delete(group.id);
+            this.contextKeyProviderDisposables.deleteAndDispose(group.id);
+        }));
+    }
+    updateGlobalContextKeys() {
+        const activeGroupScopedContextKeys = this.scopedContextKeys.get(this.activeGroup.id);
+        if (!activeGroupScopedContextKeys) {
+            return;
+        }
+        for (const [key, globalContextKey] of this.globalContextKeys) {
+            const scopedContextKey = activeGroupScopedContextKeys.get(key);
+            if (scopedContextKey) {
+                globalContextKey.set(scopedContextKey.get());
+            }
+            else {
+                globalContextKey.reset();
+            }
+        }
+    }
+    bind(contextKey, group) {
+        let globalContextKey = this.globalContextKeys.get(contextKey.key);
+        if (!globalContextKey) {
+            globalContextKey = contextKey.bindTo(this.contextKeyService);
+            this.globalContextKeys.set(contextKey.key, globalContextKey);
+        }
+        let groupScopedContextKeys = this.scopedContextKeys.get(group.id);
+        if (!groupScopedContextKeys) {
+            groupScopedContextKeys = new Map();
+            this.scopedContextKeys.set(group.id, groupScopedContextKeys);
+        }
+        let scopedContextKey = groupScopedContextKeys.get(contextKey.key);
+        if (!scopedContextKey) {
+            scopedContextKey = contextKey.bindTo(group.scopedContextKeyService);
+            groupScopedContextKeys.set(contextKey.key, scopedContextKey);
+        }
+        const that = this;
+        return {
+            get() {
+                return scopedContextKey.get();
+            },
+            set(value) {
+                if (that.activeGroup === group) {
+                    globalContextKey.set(value);
+                }
+                scopedContextKey.set(value);
+            },
+            reset() {
+                if (that.activeGroup === group) {
+                    globalContextKey.reset();
+                }
+                scopedContextKey.reset();
+            },
+        };
+    }
+    registerContextKeyProvider(provider) {
+        if (this.contextKeyProviders.has(provider.contextKey.key) || this.globalContextKeys.has(provider.contextKey.key)) {
+            throw new Error(`A context key provider for key ${provider.contextKey.key} already exists.`);
+        }
+        this.contextKeyProviders.set(provider.contextKey.key, provider);
+        const setContextKeyForGroups = () => {
+            for (const group of this.groups) {
+                this.updateRegisteredContextKey(group, provider);
+            }
+        };
+        setContextKeyForGroups();
+        const onDidChange = provider.onDidChange?.(() => setContextKeyForGroups());
+        return toDisposable(() => {
+            onDidChange?.dispose();
+            this.globalContextKeys.delete(provider.contextKey.key);
+            this.scopedContextKeys.forEach(scopedContextKeys => scopedContextKeys.delete(provider.contextKey.key));
+            this.contextKeyProviders.delete(provider.contextKey.key);
+            this.registeredContextKeys.forEach(registeredContextKeys => registeredContextKeys.delete(provider.contextKey.key));
+        });
+    }
+    registerGroupContextKeyProvidersListeners(group) {
+        const disposable = group.onDidActiveEditorChange(() => {
+            for (const contextKeyProvider of this.contextKeyProviders.values()) {
+                this.updateRegisteredContextKey(group, contextKeyProvider);
+            }
+        });
+        this.contextKeyProviderDisposables.set(group.id, disposable);
+    }
+    updateRegisteredContextKey(group, provider) {
+        let groupRegisteredContextKeys = this.registeredContextKeys.get(group.id);
+        if (!groupRegisteredContextKeys) {
+            groupRegisteredContextKeys = new Map();
+            this.registeredContextKeys.set(group.id, groupRegisteredContextKeys);
+        }
+        let scopedRegisteredContextKey = groupRegisteredContextKeys.get(provider.contextKey.key);
+        if (!scopedRegisteredContextKey) {
+            scopedRegisteredContextKey = this.bind(provider.contextKey, group);
+            groupRegisteredContextKeys.set(provider.contextKey.key, scopedRegisteredContextKey);
+        }
+        scopedRegisteredContextKey.set(provider.getGroupContextKeyValue(group));
+    }
+    get partOptions() { return this.mainPart.partOptions; }
+    get onDidChangeEditorPartOptions() { return this.mainPart.onDidChangeEditorPartOptions; }
+};
+EditorParts = EditorParts_1 = __decorate([
+    __param(0, IInstantiationService),
+    __param(1, IStorageService),
+    __param(2, IThemeService),
+    __param(3, IAuxiliaryWindowService),
+    __param(4, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], EditorParts);
+export { EditorParts };
+registerSingleton(IEditorGroupsService, EditorParts, 0);

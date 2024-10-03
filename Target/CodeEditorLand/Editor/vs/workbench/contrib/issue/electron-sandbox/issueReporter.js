@@ -1,1 +1,13 @@
-(async function(){const o=window.MonacoBootstrapWindow,{result:e,configuration:n}=await o.load("vs/workbench/contrib/issue/electron-sandbox/issueReporterMain",{configureDeveloperSettings:function(){return{forceEnableDeveloperKeybindings:!0,disallowReloadKeybinding:!0}}});e.startup(n)})();
+"use strict";
+(async function () {
+    const bootstrapWindow = window.MonacoBootstrapWindow;
+    const { result, configuration } = await bootstrapWindow.load('vs/workbench/contrib/issue/electron-sandbox/issueReporterMain', {
+        configureDeveloperSettings: function () {
+            return {
+                forceEnableDeveloperKeybindings: true,
+                disallowReloadKeybinding: true
+            };
+        }
+    });
+    result.startup(configuration);
+}());

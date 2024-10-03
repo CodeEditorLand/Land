@@ -1,1 +1,58 @@
-import{Emitter as s}from"../../../../../base/common/event.js";import{Disposable as u}from"../../../../../base/common/lifecycle.js";import{observableValue as d}from"../../../../../base/common/observable.js";import"../notebookBrowser.js";import"../../common/model/notebookTextModel.js";import{RENDERER_NOT_AVAILABLE as l}from"../../common/notebookCommon.js";import"../../common/notebookService.js";let n=0;class O extends u{constructor(e,t,i){super();this.cellViewModel=e;this._outputRawData=t;this._notebookService=i}_onDidResetRendererEmitter=this._register(new s);onDidResetRenderer=this._onDidResetRendererEmitter.event;alwaysShow=!1;visible=d("outputVisible",!1);setVisible(e=!0,t=!1){!e&&this.alwaysShow||(t&&e&&(this.alwaysShow=!0),this.visible.set(e,void 0))}outputHandle=n++;get model(){return this._outputRawData}_pickedMimeType;get pickedMimeType(){return this._pickedMimeType}set pickedMimeType(e){this._pickedMimeType=e}hasMultiMimeType(){if(this._outputRawData.outputs.length<2)return!1;const e=this._outputRawData.outputs[0].mime;return this._outputRawData.outputs.some(t=>t.mime!==e)}resolveMimeTypes(e,t){const i=this._notebookService.getOutputMimeTypeInfo(e,t,this.model),r=i.findIndex(o=>o.rendererId!==l&&o.isTrusted);return[i,Math.max(r,0)]}resetRenderer(){this._pickedMimeType=void 0,this.model.bumpVersion(),this._onDidResetRendererEmitter.fire()}toRawJSON(){return{outputs:this._outputRawData.outputs}}}export{O as CellOutputViewModel};
+import { Emitter } from '../../../../../base/common/event.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { observableValue } from '../../../../../base/common/observable.js';
+import { RENDERER_NOT_AVAILABLE } from '../../common/notebookCommon.js';
+let handle = 0;
+export class CellOutputViewModel extends Disposable {
+    setVisible(visible = true, force = false) {
+        if (!visible && this.alwaysShow) {
+            return;
+        }
+        if (force && visible) {
+            this.alwaysShow = true;
+        }
+        this.visible.set(visible, undefined);
+    }
+    get model() {
+        return this._outputRawData;
+    }
+    get pickedMimeType() {
+        return this._pickedMimeType;
+    }
+    set pickedMimeType(value) {
+        this._pickedMimeType = value;
+    }
+    constructor(cellViewModel, _outputRawData, _notebookService) {
+        super();
+        this.cellViewModel = cellViewModel;
+        this._outputRawData = _outputRawData;
+        this._notebookService = _notebookService;
+        this._onDidResetRendererEmitter = this._register(new Emitter());
+        this.onDidResetRenderer = this._onDidResetRendererEmitter.event;
+        this.alwaysShow = false;
+        this.visible = observableValue('outputVisible', false);
+        this.outputHandle = handle++;
+    }
+    hasMultiMimeType() {
+        if (this._outputRawData.outputs.length < 2) {
+            return false;
+        }
+        const firstMimeType = this._outputRawData.outputs[0].mime;
+        return this._outputRawData.outputs.some(output => output.mime !== firstMimeType);
+    }
+    resolveMimeTypes(textModel, kernelProvides) {
+        const mimeTypes = this._notebookService.getOutputMimeTypeInfo(textModel, kernelProvides, this.model);
+        const index = mimeTypes.findIndex(mimeType => mimeType.rendererId !== RENDERER_NOT_AVAILABLE && mimeType.isTrusted);
+        return [mimeTypes, Math.max(index, 0)];
+    }
+    resetRenderer() {
+        this._pickedMimeType = undefined;
+        this.model.bumpVersion();
+        this._onDidResetRendererEmitter.fire();
+    }
+    toRawJSON() {
+        return {
+            outputs: this._outputRawData.outputs,
+        };
+    }
+}

@@ -1,1 +1,1154 @@
-var oe=Object.defineProperty;var re=Object.getOwnPropertyDescriptor;var j=(P,T,e,i)=>{for(var t=i>1?void 0:i?re(T,e):T,n=P.length-1,s;n>=0;n--)(s=P[n])&&(t=(i?s(T,e,t):s(t))||t);return i&&t&&oe(T,e,t),t},m=(P,T)=>(e,i)=>T(e,i,P);import*as ne from"fs";import{app as se,BrowserWindow as N,shell as ae}from"electron";import{addUNCHostToAllowlist as de}from"../../../base/node/unc.js";import{hostname as le,release as ce,arch as fe}from"os";import{coalesce as S,distinct as L}from"../../../base/common/arrays.js";import{CancellationToken as x}from"../../../base/common/cancellation.js";import{CharCode as z}from"../../../base/common/charCode.js";import{Emitter as O,Event as E}from"../../../base/common/event.js";import{isWindowsDriveLetter as ue,parseLineAndColumnAware as q,sanitizeFilePath as he,toSlashes as pe}from"../../../base/common/extpath.js";import{getPathLabel as K}from"../../../base/common/labels.js";import{Disposable as we,DisposableStore as V}from"../../../base/common/lifecycle.js";import{Schemas as g}from"../../../base/common/network.js";import{basename as Z,join as me,normalize as ve,posix as We}from"../../../base/common/path.js";import{getMarks as Ie,mark as J}from"../../../base/common/performance.js";import{isMacintosh as ye,isWindows as ge,OS as Q}from"../../../base/common/platform.js";import{cwd as Pe}from"../../../base/common/process.js";import{extUriBiasedIgnorePathCase as X,isEqualAuthority as v,normalizePath as Se,originalFSPath as Oe,removeTrailingPathSeparator as ke}from"../../../base/common/resources.js";import{assertIsDefined as Te}from"../../../base/common/types.js";import{URI as I}from"../../../base/common/uri.js";import{getNLSLanguage as Me,getNLSMessages as be,localize as y}from"../../../nls.js";import{IBackupMainService as Ae}from"../../backup/electron-main/backup.js";import"../../backup/node/backup.js";import{IConfigurationService as De}from"../../configuration/common/configuration.js";import{IDialogMainService as Fe}from"../../dialogs/electron-main/dialogMainService.js";import"../../environment/common/argv.js";import{IEnvironmentMainService as xe}from"../../environment/electron-main/environmentMainService.js";import{FileType as C,IFileService as Ee}from"../../files/common/files.js";import{IInstantiationService as Ce}from"../../instantiation/common/instantiation.js";import{ILifecycleMainService as Re}from"../../lifecycle/electron-main/lifecycleMainService.js";import{ILogService as Ue}from"../../log/common/log.js";import Ne from"../../product/common/product.js";import{IProtocolMainService as Le}from"../../protocol/electron-main/protocol.js";import{getRemoteAuthority as R}from"../../remote/common/remoteHosts.js";import{IStateService as _e}from"../../state/node/state.js";import{isFileToOpen as Y,isFolderToOpen as Be,isWorkspaceToOpen as ee}from"../../window/common/window.js";import{CodeWindow as He}from"./windowImpl.js";import{OpenContext as k,getLastFocused as ze}from"./windows.js";import{findWindowOnExtensionDevelopmentPath as qe,findWindowOnFile as Ge,findWindowOnWorkspaceOrFolder as U}from"./windowsFinder.js";import{WindowsStateHandler as $e}from"./windowsStateHandler.js";import"../../workspaces/common/workspaces.js";import{hasWorkspaceFileExtension as ie,isSingleFolderWorkspaceIdentifier as _,isWorkspaceIdentifier as G,toWorkspaceIdentifier as je}from"../../workspace/common/workspace.js";import{createEmptyWorkspaceIdentifier as Ke,getSingleFolderWorkspaceIdentifier as $,getWorkspaceIdentifier as te}from"../../workspaces/node/workspaces.js";import{IWorkspacesHistoryMainService as Ve}from"../../workspaces/electron-main/workspacesHistoryMainService.js";import{IWorkspacesManagementMainService as Ze}from"../../workspaces/electron-main/workspacesManagementMainService.js";import{UnloadReason as Je}from"../../window/electron-main/window.js";import{IThemeMainService as Qe}from"../../theme/electron-main/themeMainService.js";import"../../editor/common/editor.js";import"../../userDataProfile/common/userDataProfile.js";import{IPolicyService as Xe}from"../../policy/common/policy.js";import{IUserDataProfilesMainService as Ye}from"../../userDataProfile/electron-main/userDataProfile.js";import{ILoggerMainService as ei}from"../../log/electron-main/loggerService.js";import{IAuxiliaryWindowsMainService as ii}from"../../auxiliaryWindow/electron-main/auxiliaryWindows.js";import"../../auxiliaryWindow/electron-main/auxiliaryWindow.js";import{ICSSDevelopmentService as ti}from"../../cssDev/node/cssDevService.js";function B(P){return G(P?.workspace)}function F(P){return _(P?.workspace)}let H=class extends we{constructor(e,i,t,n,s,o,r,c,d,a,w,M,A,h,p,b,f,l,u,W,D,oi){super();this.machineId=e;this.sqmId=i;this.devDeviceId=t;this.initialUserEnv=n;this.logService=s;this.loggerService=o;this.stateService=r;this.policyService=c;this.environmentMainService=d;this.userDataProfilesMainService=a;this.lifecycleMainService=w;this.backupMainService=M;this.configurationService=A;this.workspacesHistoryMainService=h;this.workspacesManagementMainService=p;this.instantiationService=b;this.dialogMainService=f;this.fileService=l;this.protocolMainService=u;this.themeMainService=W;this.auxiliaryWindowsMainService=D;this.cssDevelopmentService=oi;this.registerListeners()}_onDidOpenWindow=this._register(new O);onDidOpenWindow=this._onDidOpenWindow.event;_onDidSignalReadyWindow=this._register(new O);onDidSignalReadyWindow=this._onDidSignalReadyWindow.event;_onDidDestroyWindow=this._register(new O);onDidDestroyWindow=this._onDidDestroyWindow.event;_onDidChangeWindowsCount=this._register(new O);onDidChangeWindowsCount=this._onDidChangeWindowsCount.event;_onDidMaximizeWindow=this._register(new O);onDidMaximizeWindow=this._onDidMaximizeWindow.event;_onDidUnmaximizeWindow=this._register(new O);onDidUnmaximizeWindow=this._onDidUnmaximizeWindow.event;_onDidChangeFullScreen=this._register(new O);onDidChangeFullScreen=this._onDidChangeFullScreen.event;_onDidTriggerSystemContextMenu=this._register(new O);onDidTriggerSystemContextMenu=this._onDidTriggerSystemContextMenu.event;windows=new Map;windowsStateHandler=this._register(new $e(this,this.stateService,this.lifecycleMainService,this.logService,this.configurationService));registerListeners(){this._register(this.workspacesManagementMainService.onDidEnterWorkspace(e=>this._onDidSignalReadyWindow.fire(e.window))),this._register(this.onDidSignalReadyWindow(e=>{if(e.config?.extensionDevelopmentPath||e.config?.extensionTestsPath){const i=new V;if(i.add(E.any(e.onDidClose,e.onDidDestroy)(()=>i.dispose())),e.config.extensionDevelopmentPath)for(const t of e.config.extensionDevelopmentPath)i.add(this.protocolMainService.addValidFileRoot(t));e.config.extensionTestsPath&&i.add(this.protocolMainService.addValidFileRoot(e.config.extensionTestsPath))}}))}openEmptyWindow(e,i){const t=this.environmentMainService.args,n=i?.remoteAuthority||void 0,s=!0,o=i?.forceReuseWindow,r=!o;return this.open({...e,cli:t,forceEmpty:s,forceNewWindow:r,forceReuseWindow:o,remoteAuthority:n,forceTempProfile:i?.forceTempProfile,forceProfile:i?.forceProfile})}openExistingWindow(e,i){e.focus(),this.handleWaitMarkerFile(i,[e])}async open(e){this.logService.trace("windowsManager#open"),e.addMode&&(e.initialStartup||!this.getLastActiveWindow())&&(e.addMode=!1);const i=[],t=[],n=[],s=[],o=[];let r,c=!1;const d=await this.getPathsToOpen(e);this.logService.trace("windowsManager#open pathsToOpen",d);for(const h of d)F(h)?e.addMode?i.push(h):t.push(h):B(h)?n.push(h):h.fileUri?(r||(r={filesToOpenOrCreate:[],filesToDiff:[],filesToMerge:[],remoteAuthority:h.remoteAuthority}),r.filesToOpenOrCreate.push(h)):h.backupPath?o.push({backupFolder:Z(h.backupPath),remoteAuthority:h.remoteAuthority}):c=!0;e.diffMode&&r&&r.filesToOpenOrCreate.length>=2&&(r.filesToDiff=r.filesToOpenOrCreate.slice(0,2),r.filesToOpenOrCreate=[]),e.mergeMode&&r&&r.filesToOpenOrCreate.length===4&&(r.filesToMerge=r.filesToOpenOrCreate.slice(0,4),r.filesToOpenOrCreate=[],r.filesToDiff=[]),r&&e.waitMarkerFileURI&&(r.filesToWait={paths:S([...r.filesToDiff,r.filesToMerge[3],...r.filesToOpenOrCreate]),waitMarkerFileUri:e.waitMarkerFileURI}),e.initialStartup?(s.push(...this.workspacesManagementMainService.getUntitledWorkspaces()),n.push(...s),o.push(...this.backupMainService.getEmptyWindowBackups())):o.length=0;const{windows:a,filesOpenedInWindow:w}=await this.doOpen(e,n,t,o,c,r,i);if(this.logService.trace(`windowsManager#open used window count ${a.length} (workspacesToOpen: ${n.length}, foldersToOpen: ${t.length}, emptyToRestore: ${o.length}, openOneEmptyWindow: ${c})`),a.length>1)if(w)w.focus();else{const h=this.windowsStateHandler.state.lastActiveWindow&&!e.forceEmpty&&!e.cli._.length&&!e.cli["file-uri"]&&!e.cli["folder-uri"]&&!(e.urisToOpen&&e.urisToOpen.length);let p=!0,b=!0;if(h){const f=a.filter(l=>this.windowsStateHandler.state.lastActiveWindow&&l.backupPath===this.windowsStateHandler.state.lastActiveWindow.backupPath);f.length&&(f[0].focus(),p=!1,b=!1)}if(p)for(let f=a.length-1;f>=0;f--){const l=a[f];if(!(l.openedWorkspace&&s.some(u=>l.openedWorkspace&&u.workspace.id===l.openedWorkspace.id)||l.backupPath&&o.some(u=>l.backupPath&&u.backupFolder===Z(l.backupPath)))){l.focus(),b=!1;break}}b&&a[a.length-1].focus()}const M=r&&r.filesToDiff.length>0,A=r&&r.filesToMerge.length>0;if(!a.some(h=>h.isExtensionDevelopmentHost)&&!M&&!A&&!e.noRecentEntry){const h=[];for(const p of d)B(p)&&!p.transient?h.push({label:p.label,workspace:p.workspace,remoteAuthority:p.remoteAuthority}):F(p)?h.push({label:p.label,folderUri:p.workspace.uri,remoteAuthority:p.remoteAuthority}):p.fileUri&&h.push({label:p.label,fileUri:p.fileUri,remoteAuthority:p.remoteAuthority});this.workspacesHistoryMainService.addRecentlyOpened(h)}return this.handleWaitMarkerFile(e,a),a}handleWaitMarkerFile(e,i){const t=e.waitMarkerFileURI;e.context===k.CLI&&t&&i.length===1&&i[0]&&(async()=>{await i[0].whenClosedOrLoaded;try{await this.fileService.del(t)}catch{}})()}async doOpen(e,i,t,n,s,o,r){const c=[];let d;function a(f,l){c.push(f),l&&(d=f,o=void 0)}let{openFolderInNewWindow:w,openFilesInNewWindow:M}=this.shouldOpenNewWindow(e);if(!e.initialStartup&&r.length>0){const f=r[0].remoteAuthority,l=this.getLastActiveWindowForAuthority(f);l&&a(this.doAddFoldersToExistingWindow(l,r.map(u=>u.workspace.uri)))}const A=t.length+i.length+n.length;if(o&&A===0){const f=o.filesToOpenOrCreate[0]||o.filesToDiff[0]||o.filesToMerge[3],l=this.getWindows().filter(W=>o&&v(W.remoteAuthority,o.remoteAuthority));let u;f?.fileUri&&!M&&((e.context===k.DESKTOP||e.context===k.CLI||e.context===k.DOCK||e.context===k.LINK)&&(u=await Ge(l,f.fileUri,async W=>W.configPath.scheme===g.file?this.workspacesManagementMainService.resolveLocalWorkspace(W.configPath):void 0)),u||(u=this.doGetLastActiveWindow(l))),u?G(u.openedWorkspace)?i.push({workspace:u.openedWorkspace,remoteAuthority:u.remoteAuthority}):_(u.openedWorkspace)?t.push({workspace:u.openedWorkspace,remoteAuthority:u.remoteAuthority}):a(this.doOpenFilesInExistingWindow(e,u,o),!0):a(await this.openInBrowserWindow({userEnv:e.userEnv,cli:e.cli,initialStartup:e.initialStartup,filesToOpen:o,forceNewWindow:!0,remoteAuthority:o.remoteAuthority,forceNewTabbedWindow:e.forceNewTabbedWindow,forceProfile:e.forceProfile,forceTempProfile:e.forceTempProfile}),!0)}const h=L(i,f=>f.workspace.id);if(h.length>0){const f=S(h.map(l=>U(this.getWindows(),l.workspace.configPath)));if(f.length>0){const l=f[0],u=v(o?.remoteAuthority,l.remoteAuthority)?o:void 0;a(this.doOpenFilesInExistingWindow(e,l,u),!!u),w=!0}for(const l of h){if(f.some(D=>D.openedWorkspace&&D.openedWorkspace.id===l.workspace.id))continue;const u=l.remoteAuthority,W=v(o?.remoteAuthority,u)?o:void 0;a(await this.doOpenFolderOrWorkspace(e,l,w,W),!!W),w=!0}}const p=L(t,f=>X.getComparisonKey(f.workspace.uri));if(p.length>0){const f=S(p.map(l=>U(this.getWindows(),l.workspace.uri)));if(f.length>0){const l=f[0],u=v(o?.remoteAuthority,l.remoteAuthority)?o:void 0;a(this.doOpenFilesInExistingWindow(e,l,u),!!u),w=!0}for(const l of p){if(f.some(D=>_(D.openedWorkspace)&&X.isEqual(D.openedWorkspace.uri,l.workspace.uri)))continue;const u=l.remoteAuthority,W=v(o?.remoteAuthority,u)?o:void 0;a(await this.doOpenFolderOrWorkspace(e,l,w,W),!!W),w=!0}}const b=L(n,f=>f.backupFolder);if(b.length>0)for(const f of b){const l=f.remoteAuthority,u=v(o?.remoteAuthority,l)?o:void 0;a(await this.doOpenEmpty(e,!0,l,u,f),!!u),w=!0}if(o||s){const f=o?o.remoteAuthority:e.remoteAuthority;a(await this.doOpenEmpty(e,w,f,o),!!o)}return{windows:L(c),filesOpenedInWindow:d}}doOpenFilesInExistingWindow(e,i,t){this.logService.trace("windowsManager#doOpenFilesInExistingWindow",{filesToOpen:t}),this.focusMainOrChildWindow(i);const n={filesToOpenOrCreate:t?.filesToOpenOrCreate,filesToDiff:t?.filesToDiff,filesToMerge:t?.filesToMerge,filesToWait:t?.filesToWait,termProgram:e?.userEnv?.TERM_PROGRAM};return i.sendWhenReady("vscode:openFiles",x.None,n),i}focusMainOrChildWindow(e){let i=e;const t=N.getFocusedWindow();if(t&&t.id!==e.id){const n=this.auxiliaryWindowsMainService.getWindowByWebContents(t.webContents);n&&n.parentId===e.id&&(i=n)}i.focus()}doAddFoldersToExistingWindow(e,i){this.logService.trace("windowsManager#doAddFoldersToExistingWindow",{foldersToAdd:i}),e.focus();const t={foldersToAdd:i};return e.sendWhenReady("vscode:addFolders",x.None,t),e}doOpenEmpty(e,i,t,n,s){this.logService.trace("windowsManager#doOpenEmpty",{restore:!!s,remoteAuthority:t,filesToOpen:n,forceNewWindow:i});let o;return!i&&typeof e.contextWindowId=="number"&&(o=this.getWindowById(e.contextWindowId)),this.openInBrowserWindow({userEnv:e.userEnv,cli:e.cli,initialStartup:e.initialStartup,remoteAuthority:t,forceNewWindow:i,forceNewTabbedWindow:e.forceNewTabbedWindow,filesToOpen:n,windowToUse:o,emptyWindowBackupInfo:s,forceProfile:e.forceProfile,forceTempProfile:e.forceTempProfile})}doOpenFolderOrWorkspace(e,i,t,n,s){return this.logService.trace("windowsManager#doOpenFolderOrWorkspace",{folderOrWorkspace:i,filesToOpen:n}),!t&&!s&&typeof e.contextWindowId=="number"&&(s=this.getWindowById(e.contextWindowId)),this.openInBrowserWindow({workspace:i.workspace,userEnv:e.userEnv,cli:e.cli,initialStartup:e.initialStartup,remoteAuthority:i.remoteAuthority,forceNewWindow:t,forceNewTabbedWindow:e.forceNewTabbedWindow,filesToOpen:n,windowToUse:s,forceProfile:e.forceProfile,forceTempProfile:e.forceTempProfile})}async getPathsToOpen(e){let i,t=!1,n=!1;if(e.urisToOpen&&e.urisToOpen.length>0?(i=await this.doExtractPathsFromAPI(e),t=!0):e.forceEmpty?i=[Object.create(null)]:e.cli._.length||e.cli["folder-uri"]||e.cli["file-uri"]?(i=await this.doExtractPathsFromCLI(e.cli),i.length===0&&i.push(Object.create(null)),t=!0):(i=await this.doGetPathsFromLastSession(),i.length===0&&i.push(Object.create(null)),n=!0),!e.addMode&&t){const s=i.filter(o=>F(o));if(s.length>1){const o=s[0].remoteAuthority;if(s.every(r=>v(r.remoteAuthority,o))){const r=await this.workspacesManagementMainService.createUntitledWorkspace(s.map(c=>({uri:c.workspace.uri})));i.push({workspace:r,remoteAuthority:o}),i=i.filter(c=>!F(c))}}}if(e.initialStartup&&!n&&this.configurationService.getValue("window")?.restoreWindows==="preserve"){const s=await this.doGetPathsFromLastSession();i.unshift(...s.filter(o=>B(o)||F(o)||o.backupPath))}return i}async doExtractPathsFromAPI(e){const i={gotoLineMode:e.gotoLineMode,remoteAuthority:e.remoteAuthority},t=await Promise.all(S(e.urisToOpen||[]).map(async n=>{const s=await this.resolveOpenable(n,i);if(s)return s.label=n.label,s;const o=this.resourceFromOpenable(n);this.dialogMainService.showMessageBox({type:"info",buttons:[y({key:"ok",comment:["&& denotes a mnemonic"]},"&&OK")],message:o.scheme===g.file?y("pathNotExistTitle","Path does not exist"):y("uriInvalidTitle","URI can not be opened"),detail:o.scheme===g.file?y("pathNotExistDetail","The path '{0}' does not exist on this computer.",K(o,{os:Q,tildify:this.environmentMainService})):y("uriInvalidDetail","The URI '{0}' is not valid and can not be opened.",o.toString(!0))},N.getFocusedWindow()??void 0)}));return S(t)}async doExtractPathsFromCLI(e){const i=[],t={ignoreFileNotFound:!0,gotoLineMode:e.goto,remoteAuthority:e.remote||void 0,forceOpenWorkspaceAsFile:e.diff&&e._.length===2||e.merge&&e._.length===4},n=e["folder-uri"];if(n){const r=await Promise.all(n.map(c=>{const d=this.cliArgToUri(c);if(d)return this.resolveOpenable({folderUri:d},t)}));i.push(...S(r))}const s=e["file-uri"];if(s){const r=await Promise.all(s.map(c=>{const d=this.cliArgToUri(c);if(d)return this.resolveOpenable(ie(c)?{workspaceUri:d}:{fileUri:d},t)}));i.push(...S(r))}const o=await Promise.all(e._.map(r=>t.remoteAuthority?this.doResolveRemotePath(r,t):this.doResolveFilePath(r,t)));return i.push(...S(o)),i}cliArgToUri(e){try{const i=I.parse(e);if(!i.scheme){this.logService.error(`Invalid URI input string, scheme missing: ${e}`);return}return i.path?i:i.with({path:"/"})}catch(i){this.logService.error(`Invalid URI input string: ${e}, ${i.message}`)}}async doGetPathsFromLastSession(){const e=this.getRestoreWindowsSetting();switch(e){case"none":return[];case"one":case"all":case"preserve":case"folders":{const i=[];e!=="one"&&i.push(...this.windowsStateHandler.state.openedWindows),this.windowsStateHandler.state.lastActiveWindow&&i.push(this.windowsStateHandler.state.lastActiveWindow);const t=await Promise.all(i.map(async n=>{if(n.workspace){const s=await this.resolveOpenable({workspaceUri:n.workspace.configPath},{remoteAuthority:n.remoteAuthority,rejectTransientWorkspaces:!0});if(B(s))return s}else if(n.folderUri){const s=await this.resolveOpenable({folderUri:n.folderUri},{remoteAuthority:n.remoteAuthority});if(F(s))return s}else if(e!=="folders"&&n.backupPath)return{backupPath:n.backupPath,remoteAuthority:n.remoteAuthority}}));return S(t)}}}getRestoreWindowsSetting(){let e;return this.lifecycleMainService.wasRestarted?e="all":(e=this.configurationService.getValue("window")?.restoreWindows||"all",["preserve","all","folders","one","none"].includes(e)||(e="all")),e}async resolveOpenable(e,i=Object.create(null)){const t=this.resourceFromOpenable(e);return t.scheme===g.file?(Y(e)&&(i={...i,forceOpenWorkspaceAsFile:!0}),this.doResolveFilePath(t.fsPath,i)):this.doResolveRemoteOpenable(e,i)}doResolveRemoteOpenable(e,i){let t=this.resourceFromOpenable(e);const n=R(t)||i.remoteAuthority;if(t=ke(Se(t)),Y(e)){if(i.gotoLineMode){const{path:s,line:o,column:r}=q(t.path);return{fileUri:t.with({path:s}),options:{selection:o?{startLineNumber:o,startColumn:r||1}:void 0},remoteAuthority:n}}return{fileUri:t,remoteAuthority:n}}else if(ee(e))return{workspace:te(t),remoteAuthority:n};return{workspace:$(t),remoteAuthority:n}}resourceFromOpenable(e){return ee(e)?e.workspaceUri:Be(e)?e.folderUri:e.fileUri}async doResolveFilePath(e,i,t){let n,s;i.gotoLineMode&&({path:e,line:n,column:s}=q(e)),e=he(ve(e),Pe());try{const o=await ne.promises.stat(e);if(o.isFile()){if(!i.forceOpenWorkspaceAsFile){const r=await this.workspacesManagementMainService.resolveLocalWorkspace(I.file(e));if(r)return r.transient&&i.rejectTransientWorkspaces?void 0:{workspace:{id:r.id,configPath:r.configPath},type:C.File,exists:!0,remoteAuthority:r.remoteAuthority,transient:r.transient}}return{fileUri:I.file(e),type:C.File,exists:!0,options:{selection:n?{startLineNumber:n,startColumn:s||1}:void 0}}}else{if(o.isDirectory())return{workspace:$(I.file(e),o),type:C.Directory,exists:!0};if(!ge&&e==="/dev/null")return{fileUri:I.file(e),type:C.File,exists:!0}}}catch(o){if(o.code==="ERR_UNC_HOST_NOT_ALLOWED"&&!t)return this.onUNCHostNotAllowed(e,i);const r=I.file(e);if(this.workspacesHistoryMainService.removeRecentlyOpened([r]),i.ignoreFileNotFound)return{fileUri:r,type:C.File,exists:!1}}}async onUNCHostNotAllowed(e,i){const t=I.file(e),{response:n,checkboxChecked:s}=await this.dialogMainService.showMessageBox({type:"warning",buttons:[y({key:"allow",comment:["&& denotes a mnemonic"]},"&&Allow"),y({key:"cancel",comment:["&& denotes a mnemonic"]},"&&Cancel"),y({key:"learnMore",comment:["&& denotes a mnemonic"]},"&&Learn More")],message:y("confirmOpenMessage","The host '{0}' was not found in the list of allowed hosts. Do you want to allow it anyway?",t.authority),detail:y("confirmOpenDetail","The path '{0}' uses a host that is not allowed. Unless you trust the host, you should press 'Cancel'",K(t,{os:Q,tildify:this.environmentMainService})),checkboxLabel:y("doNotAskAgain","Permanently allow host '{0}'",t.authority),cancelId:1});if(n===0){if(de(t.authority),s){const o={channel:"vscode:configureAllowedUNCHost",args:t.authority};this.sendToFocused(o.channel,o.args),this.sendToOpeningWindow(o.channel,o.args)}return this.doResolveFilePath(e,i,!0)}if(n===2)return ae.openExternal("https://aka.ms/vscode-windows-unc"),this.onUNCHostNotAllowed(e,i)}doResolveRemotePath(e,i){const t=e.charCodeAt(0),n=i.remoteAuthority;let s,o;i.gotoLineMode&&({path:e,line:s,column:o}=q(e)),t!==z.Slash&&(ue(t)&&e.charCodeAt(e.charCodeAt(1))===z.Colon&&(e=pe(e)),e=`/${e}`);const r=I.from({scheme:g.vscodeRemote,authority:n,path:e});if(e.charCodeAt(e.length-1)!==z.Slash){if(ie(e))return i.forceOpenWorkspaceAsFile?{fileUri:r,options:{selection:s?{startLineNumber:s,startColumn:o||1}:void 0},remoteAuthority:i.remoteAuthority}:{workspace:te(r),remoteAuthority:n};if(i.gotoLineMode||We.basename(e).indexOf(".")!==-1)return{fileUri:r,options:{selection:s?{startLineNumber:s,startColumn:o||1}:void 0},remoteAuthority:n}}return{workspace:$(r),remoteAuthority:n}}shouldOpenNewWindow(e){const i=this.configurationService.getValue("window"),t=i?.openFoldersInNewWindow||"default",n=i?.openFilesInNewWindow||"off";let s=(e.preferNewWindow||e.forceNewWindow)&&!e.forceReuseWindow;!e.forceNewWindow&&!e.forceReuseWindow&&(t==="on"||t==="off")&&(s=t==="on");let o=!1;return e.forceNewWindow||e.forceReuseWindow?o=!!e.forceNewWindow&&!e.forceReuseWindow:(ye?e.context===k.DOCK&&(o=!0):e.context!==k.DIALOG&&e.context!==k.MENU&&!(e.userEnv&&e.userEnv.TERM_PROGRAM==="vscode")&&(o=!0),!e.cli.extensionDevelopmentPath&&(n==="on"||n==="off")&&(o=n==="on")),{openFolderInNewWindow:!!s,openFilesInNewWindow:o}}async openExtensionDevelopmentHostWindow(e,i){const t=qe(this.getWindows(),e);if(t)return this.lifecycleMainService.reload(t,i.cli),t.focus(),[t];let n=i.cli["folder-uri"]||[],s=i.cli["file-uri"]||[],o=i.cli._;if(!o.length&&!n.length&&!s.length&&!i.cli.extensionTestsPath){const d=this.windowsStateHandler.state.lastPluginDevelopmentHostWindow,a=d?.workspace??d?.folderUri;a&&(I.isUri(a)?a.scheme===g.file?o=[a.fsPath]:n=[a.toString()]:a.configPath.scheme===g.file?o=[Oe(a.configPath)]:s=[a.configPath.toString()])}let r=i.remoteAuthority;for(const d of e)if(d.match(/^[a-zA-Z][a-zA-Z0-9\+\-\.]+:/)){const a=I.parse(d),w=R(a);w&&(r?v(w,r)||this.logService.error("more than one extension development path authority"):r=w)}o=o.filter(d=>{const a=I.file(d);return U(this.getWindows(),a)?!1:v(R(a),r)}),n=n.filter(d=>{const a=this.cliArgToUri(d);return a&&U(this.getWindows(),a)?!1:a?v(R(a),r):!1}),s=s.filter(d=>{const a=this.cliArgToUri(d);return a&&U(this.getWindows(),a)?!1:a?v(R(a),r):!1}),i.cli._=o,i.cli["folder-uri"]=n,i.cli["file-uri"]=s;const c={context:i.context,cli:i.cli,forceNewWindow:!0,forceEmpty:!o.length&&!n.length&&!s.length,userEnv:i.userEnv,noRecentEntry:!0,waitMarkerFileURI:i.waitMarkerFileURI,remoteAuthority:r,forceProfile:i.forceProfile,forceTempProfile:i.forceTempProfile};return this.open(c)}async openInBrowserWindow(e){const i=this.configurationService.getValue("window"),t=this.getLastActiveWindow(),s=(i?.newWindowProfile?this.userDataProfilesMainService.profiles.find(c=>c.name===i.newWindowProfile):void 0)??t?.profile??this.userDataProfilesMainService.defaultProfile;let o;!e.forceNewWindow&&!e.forceNewTabbedWindow&&(o=e.windowToUse||t,o&&o.focus());const r={...this.environmentMainService.args,...e.cli,machineId:this.machineId,sqmId:this.sqmId,devDeviceId:this.devDeviceId,windowId:-1,mainPid:process.pid,appRoot:this.environmentMainService.appRoot,execPath:process.execPath,codeCachePath:this.environmentMainService.codeCachePath,backupPath:e.emptyWindowBackupInfo?me(this.environmentMainService.backupHome,e.emptyWindowBackupInfo.backupFolder):void 0,profiles:{home:this.userDataProfilesMainService.profilesHome,all:this.userDataProfilesMainService.profiles,profile:s},homeDir:this.environmentMainService.userHome.with({scheme:g.file}).fsPath,tmpDir:this.environmentMainService.tmpDir.with({scheme:g.file}).fsPath,userDataDir:this.environmentMainService.userDataPath,remoteAuthority:e.remoteAuthority,workspace:e.workspace,userEnv:{...this.initialUserEnv,...e.userEnv},nls:{messages:be(),language:Me()},filesToOpenOrCreate:e.filesToOpen?.filesToOpenOrCreate,filesToDiff:e.filesToOpen?.filesToDiff,filesToMerge:e.filesToOpen?.filesToMerge,filesToWait:e.filesToOpen?.filesToWait,logLevel:this.loggerService.getLogLevel(),loggers:{window:[],global:this.loggerService.getRegisteredLoggers()},logsPath:this.environmentMainService.logsHome.with({scheme:g.file}).fsPath,product:Ne,isInitialStartup:e.initialStartup,perfMarks:Ie(),os:{release:ce(),hostname:le(),arch:fe()},autoDetectHighContrast:i?.autoDetectHighContrast??!0,autoDetectColorScheme:i?.autoDetectColorScheme??!1,accessibilitySupport:se.accessibilitySupportEnabled,colorScheme:this.themeMainService.getColorScheme(),policiesData:this.policyService.serialize(),continueOn:this.environmentMainService.continueOn,cssModules:this.cssDevelopmentService.isEnabled?await this.cssDevelopmentService.getCssModules():void 0};if(o){const c=o.config;!r.extensionDevelopmentPath&&c?.extensionDevelopmentPath&&(r.extensionDevelopmentPath=c.extensionDevelopmentPath,r.extensionDevelopmentKind=c.extensionDevelopmentKind,r["enable-proposed-api"]=c["enable-proposed-api"],r.verbose=c.verbose,r["inspect-extensions"]=c["inspect-extensions"],r["inspect-brk-extensions"]=c["inspect-brk-extensions"],r.debugId=c.debugId,r.extensionEnvironment=c.extensionEnvironment,r["extensions-dir"]=c["extensions-dir"],r["disable-extensions"]=c["disable-extensions"]),r.loggers={global:r.loggers.global,window:c?.loggers.window??r.loggers.window}}else{const c=this.windowsStateHandler.getNewWindowState(r);J("code/willCreateCodeWindow");const d=o=this.instantiationService.createInstance(He,{state:c,extensionDevelopmentPath:r.extensionDevelopmentPath,isExtensionTestHost:!!r.extensionTestsPath});J("code/didCreateCodeWindow"),e.forceNewTabbedWindow&&this.getLastActiveWindow()?.addTabbedWindow(d),this.windows.set(d.id,d),this._onDidOpenWindow.fire(d),this._onDidChangeWindowsCount.fire({oldCount:this.getWindowCount()-1,newCount:this.getWindowCount()});const a=new V;a.add(d.onDidSignalReady(()=>this._onDidSignalReadyWindow.fire(d))),a.add(E.once(d.onDidClose)(()=>this.onWindowClosed(d,a))),a.add(E.once(d.onDidDestroy)(()=>this.onWindowDestroyed(d))),a.add(d.onDidMaximize(()=>this._onDidMaximizeWindow.fire(d))),a.add(d.onDidUnmaximize(()=>this._onDidUnmaximizeWindow.fire(d))),a.add(d.onDidEnterFullScreen(()=>this._onDidChangeFullScreen.fire({window:d,fullscreen:!0}))),a.add(d.onDidLeaveFullScreen(()=>this._onDidChangeFullScreen.fire({window:d,fullscreen:!1}))),a.add(d.onDidTriggerSystemContextMenu(({x:M,y:A})=>this._onDidTriggerSystemContextMenu.fire({window:d,x:M,y:A})));const w=Te(d.win?.webContents);w.removeAllListeners("devtools-reload-page"),a.add(E.fromNodeEventEmitter(w,"devtools-reload-page")(()=>this.lifecycleMainService.reload(d))),this.lifecycleMainService.registerWindow(d)}return r.windowId=o.id,o.isReady?this.lifecycleMainService.unload(o,Je.LOAD).then(async c=>{c||await this.doOpenInBrowserWindow(o,r,e,s)}):await this.doOpenInBrowserWindow(o,r,e,s),o}async doOpenInBrowserWindow(e,i,t,n){if(i.extensionDevelopmentPath||(G(i.workspace)?i.backupPath=this.backupMainService.registerWorkspaceBackup({workspace:i.workspace,remoteAuthority:i.remoteAuthority}):_(i.workspace)?i.backupPath=this.backupMainService.registerFolderBackup({folderUri:i.workspace.uri,remoteAuthority:i.remoteAuthority}):i.backupPath=this.backupMainService.registerEmptyWindowBackup({backupFolder:t.emptyWindowBackupInfo?.backupFolder??Ke().id,remoteAuthority:i.remoteAuthority})),this.userDataProfilesMainService.isEnabled()){const s=i.workspace??je(i.backupPath,!1),o=this.resolveProfileForBrowserWindow(t,s,n),r=o instanceof Promise?await o:o;i.profiles.profile=r,i.extensionDevelopmentPath||await this.userDataProfilesMainService.setProfileForWorkspace(s,r)}e.load(i)}resolveProfileForBrowserWindow(e,i,t){return e.forceProfile?this.userDataProfilesMainService.profiles.find(n=>n.name===e.forceProfile)??this.userDataProfilesMainService.createNamedProfile(e.forceProfile):e.forceTempProfile?this.userDataProfilesMainService.createTransientProfile():this.userDataProfilesMainService.getProfileForWorkspace(i)??t}onWindowClosed(e,i){this.windows.delete(e.id),this._onDidChangeWindowsCount.fire({oldCount:this.getWindowCount()+1,newCount:this.getWindowCount()}),i.dispose()}onWindowDestroyed(e){this.windows.delete(e.id),this._onDidDestroyWindow.fire(e)}getFocusedWindow(){const e=N.getFocusedWindow();if(e)return this.getWindowById(e.id)}getLastActiveWindow(){return this.doGetLastActiveWindow(this.getWindows())}getLastActiveWindowForAuthority(e){return this.doGetLastActiveWindow(this.getWindows().filter(i=>v(i.remoteAuthority,e)))}doGetLastActiveWindow(e){return ze(e)}sendToFocused(e,...i){(this.getFocusedWindow()||this.getLastActiveWindow())?.sendWhenReady(e,x.None,...i)}sendToOpeningWindow(e,...i){this._register(E.once(this.onDidSignalReadyWindow)(t=>{t.sendWhenReady(e,x.None,...i)}))}sendToAll(e,i,t){for(const n of this.getWindows())t&&t.indexOf(n.id)>=0||n.sendWhenReady(e,x.None,i)}getWindows(){return Array.from(this.windows.values())}getWindowCount(){return this.windows.size}getWindowById(e){return this.windows.get(e)}getWindowByWebContents(e){const i=N.fromWebContents(e);if(!i)return;const t=this.getWindowById(i.id);return t?.matches(e)?t:void 0}};H=j([m(4,Ue),m(5,ei),m(6,_e),m(7,Xe),m(8,xe),m(9,Ye),m(10,Re),m(11,Ae),m(12,De),m(13,Ve),m(14,Ze),m(15,Ce),m(16,Fe),m(17,Ee),m(18,Le),m(19,Qe),m(20,ii),m(21,ti)],H);export{H as WindowsMainService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as fs from 'fs';
+import { app, BrowserWindow, shell } from 'electron';
+import { addUNCHostToAllowlist } from '../../../base/node/unc.js';
+import { hostname, release, arch } from 'os';
+import { coalesce, distinct } from '../../../base/common/arrays.js';
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { Emitter, Event } from '../../../base/common/event.js';
+import { isWindowsDriveLetter, parseLineAndColumnAware, sanitizeFilePath, toSlashes } from '../../../base/common/extpath.js';
+import { getPathLabel } from '../../../base/common/labels.js';
+import { Disposable, DisposableStore } from '../../../base/common/lifecycle.js';
+import { Schemas } from '../../../base/common/network.js';
+import { basename, join, normalize, posix } from '../../../base/common/path.js';
+import { getMarks, mark } from '../../../base/common/performance.js';
+import { isMacintosh, isWindows, OS } from '../../../base/common/platform.js';
+import { cwd } from '../../../base/common/process.js';
+import { extUriBiasedIgnorePathCase, isEqualAuthority, normalizePath, originalFSPath, removeTrailingPathSeparator } from '../../../base/common/resources.js';
+import { assertIsDefined } from '../../../base/common/types.js';
+import { URI } from '../../../base/common/uri.js';
+import { getNLSLanguage, getNLSMessages, localize } from '../../../nls.js';
+import { IBackupMainService } from '../../backup/electron-main/backup.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { IDialogMainService } from '../../dialogs/electron-main/dialogMainService.js';
+import { IEnvironmentMainService } from '../../environment/electron-main/environmentMainService.js';
+import { FileType, IFileService } from '../../files/common/files.js';
+import { IInstantiationService } from '../../instantiation/common/instantiation.js';
+import { ILifecycleMainService } from '../../lifecycle/electron-main/lifecycleMainService.js';
+import { ILogService } from '../../log/common/log.js';
+import product from '../../product/common/product.js';
+import { IProtocolMainService } from '../../protocol/electron-main/protocol.js';
+import { getRemoteAuthority } from '../../remote/common/remoteHosts.js';
+import { IStateService } from '../../state/node/state.js';
+import { isFileToOpen, isFolderToOpen, isWorkspaceToOpen } from '../../window/common/window.js';
+import { CodeWindow } from './windowImpl.js';
+import { getLastFocused } from './windows.js';
+import { findWindowOnExtensionDevelopmentPath, findWindowOnFile, findWindowOnWorkspaceOrFolder } from './windowsFinder.js';
+import { WindowsStateHandler } from './windowsStateHandler.js';
+import { hasWorkspaceFileExtension, isSingleFolderWorkspaceIdentifier, isWorkspaceIdentifier, toWorkspaceIdentifier } from '../../workspace/common/workspace.js';
+import { createEmptyWorkspaceIdentifier, getSingleFolderWorkspaceIdentifier, getWorkspaceIdentifier } from '../../workspaces/node/workspaces.js';
+import { IWorkspacesHistoryMainService } from '../../workspaces/electron-main/workspacesHistoryMainService.js';
+import { IWorkspacesManagementMainService } from '../../workspaces/electron-main/workspacesManagementMainService.js';
+import { IThemeMainService } from '../../theme/electron-main/themeMainService.js';
+import { IPolicyService } from '../../policy/common/policy.js';
+import { IUserDataProfilesMainService } from '../../userDataProfile/electron-main/userDataProfile.js';
+import { ILoggerMainService } from '../../log/electron-main/loggerService.js';
+import { IAuxiliaryWindowsMainService } from '../../auxiliaryWindow/electron-main/auxiliaryWindows.js';
+import { ICSSDevelopmentService } from '../../cssDev/node/cssDevService.js';
+function isWorkspacePathToOpen(path) {
+    return isWorkspaceIdentifier(path?.workspace);
+}
+function isSingleFolderWorkspacePathToOpen(path) {
+    return isSingleFolderWorkspaceIdentifier(path?.workspace);
+}
+let WindowsMainService = class WindowsMainService extends Disposable {
+    constructor(machineId, sqmId, devDeviceId, initialUserEnv, logService, loggerService, stateService, policyService, environmentMainService, userDataProfilesMainService, lifecycleMainService, backupMainService, configurationService, workspacesHistoryMainService, workspacesManagementMainService, instantiationService, dialogMainService, fileService, protocolMainService, themeMainService, auxiliaryWindowsMainService, cssDevelopmentService) {
+        super();
+        this.machineId = machineId;
+        this.sqmId = sqmId;
+        this.devDeviceId = devDeviceId;
+        this.initialUserEnv = initialUserEnv;
+        this.logService = logService;
+        this.loggerService = loggerService;
+        this.stateService = stateService;
+        this.policyService = policyService;
+        this.environmentMainService = environmentMainService;
+        this.userDataProfilesMainService = userDataProfilesMainService;
+        this.lifecycleMainService = lifecycleMainService;
+        this.backupMainService = backupMainService;
+        this.configurationService = configurationService;
+        this.workspacesHistoryMainService = workspacesHistoryMainService;
+        this.workspacesManagementMainService = workspacesManagementMainService;
+        this.instantiationService = instantiationService;
+        this.dialogMainService = dialogMainService;
+        this.fileService = fileService;
+        this.protocolMainService = protocolMainService;
+        this.themeMainService = themeMainService;
+        this.auxiliaryWindowsMainService = auxiliaryWindowsMainService;
+        this.cssDevelopmentService = cssDevelopmentService;
+        this._onDidOpenWindow = this._register(new Emitter());
+        this.onDidOpenWindow = this._onDidOpenWindow.event;
+        this._onDidSignalReadyWindow = this._register(new Emitter());
+        this.onDidSignalReadyWindow = this._onDidSignalReadyWindow.event;
+        this._onDidDestroyWindow = this._register(new Emitter());
+        this.onDidDestroyWindow = this._onDidDestroyWindow.event;
+        this._onDidChangeWindowsCount = this._register(new Emitter());
+        this.onDidChangeWindowsCount = this._onDidChangeWindowsCount.event;
+        this._onDidMaximizeWindow = this._register(new Emitter());
+        this.onDidMaximizeWindow = this._onDidMaximizeWindow.event;
+        this._onDidUnmaximizeWindow = this._register(new Emitter());
+        this.onDidUnmaximizeWindow = this._onDidUnmaximizeWindow.event;
+        this._onDidChangeFullScreen = this._register(new Emitter());
+        this.onDidChangeFullScreen = this._onDidChangeFullScreen.event;
+        this._onDidTriggerSystemContextMenu = this._register(new Emitter());
+        this.onDidTriggerSystemContextMenu = this._onDidTriggerSystemContextMenu.event;
+        this.windows = new Map();
+        this.windowsStateHandler = this._register(new WindowsStateHandler(this, this.stateService, this.lifecycleMainService, this.logService, this.configurationService));
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.workspacesManagementMainService.onDidEnterWorkspace(event => this._onDidSignalReadyWindow.fire(event.window)));
+        this._register(this.onDidSignalReadyWindow(window => {
+            if (window.config?.extensionDevelopmentPath || window.config?.extensionTestsPath) {
+                const disposables = new DisposableStore();
+                disposables.add(Event.any(window.onDidClose, window.onDidDestroy)(() => disposables.dispose()));
+                if (window.config.extensionDevelopmentPath) {
+                    for (const extensionDevelopmentPath of window.config.extensionDevelopmentPath) {
+                        disposables.add(this.protocolMainService.addValidFileRoot(extensionDevelopmentPath));
+                    }
+                }
+                if (window.config.extensionTestsPath) {
+                    disposables.add(this.protocolMainService.addValidFileRoot(window.config.extensionTestsPath));
+                }
+            }
+        }));
+    }
+    openEmptyWindow(openConfig, options) {
+        const cli = this.environmentMainService.args;
+        const remoteAuthority = options?.remoteAuthority || undefined;
+        const forceEmpty = true;
+        const forceReuseWindow = options?.forceReuseWindow;
+        const forceNewWindow = !forceReuseWindow;
+        return this.open({ ...openConfig, cli, forceEmpty, forceNewWindow, forceReuseWindow, remoteAuthority, forceTempProfile: options?.forceTempProfile, forceProfile: options?.forceProfile });
+    }
+    openExistingWindow(window, openConfig) {
+        window.focus();
+        this.handleWaitMarkerFile(openConfig, [window]);
+    }
+    async open(openConfig) {
+        this.logService.trace('windowsManager#open');
+        if (openConfig.addMode && (openConfig.initialStartup || !this.getLastActiveWindow())) {
+            openConfig.addMode = false;
+        }
+        const foldersToAdd = [];
+        const foldersToOpen = [];
+        const workspacesToOpen = [];
+        const untitledWorkspacesToRestore = [];
+        const emptyWindowsWithBackupsToRestore = [];
+        let filesToOpen;
+        let openOneEmptyWindow = false;
+        const pathsToOpen = await this.getPathsToOpen(openConfig);
+        this.logService.trace('windowsManager#open pathsToOpen', pathsToOpen);
+        for (const path of pathsToOpen) {
+            if (isSingleFolderWorkspacePathToOpen(path)) {
+                if (openConfig.addMode) {
+                    foldersToAdd.push(path);
+                }
+                else {
+                    foldersToOpen.push(path);
+                }
+            }
+            else if (isWorkspacePathToOpen(path)) {
+                workspacesToOpen.push(path);
+            }
+            else if (path.fileUri) {
+                if (!filesToOpen) {
+                    filesToOpen = { filesToOpenOrCreate: [], filesToDiff: [], filesToMerge: [], remoteAuthority: path.remoteAuthority };
+                }
+                filesToOpen.filesToOpenOrCreate.push(path);
+            }
+            else if (path.backupPath) {
+                emptyWindowsWithBackupsToRestore.push({ backupFolder: basename(path.backupPath), remoteAuthority: path.remoteAuthority });
+            }
+            else {
+                openOneEmptyWindow = true;
+            }
+        }
+        if (openConfig.diffMode && filesToOpen && filesToOpen.filesToOpenOrCreate.length >= 2) {
+            filesToOpen.filesToDiff = filesToOpen.filesToOpenOrCreate.slice(0, 2);
+            filesToOpen.filesToOpenOrCreate = [];
+        }
+        if (openConfig.mergeMode && filesToOpen && filesToOpen.filesToOpenOrCreate.length === 4) {
+            filesToOpen.filesToMerge = filesToOpen.filesToOpenOrCreate.slice(0, 4);
+            filesToOpen.filesToOpenOrCreate = [];
+            filesToOpen.filesToDiff = [];
+        }
+        if (filesToOpen && openConfig.waitMarkerFileURI) {
+            filesToOpen.filesToWait = { paths: coalesce([...filesToOpen.filesToDiff, filesToOpen.filesToMerge[3], ...filesToOpen.filesToOpenOrCreate]), waitMarkerFileUri: openConfig.waitMarkerFileURI };
+        }
+        if (openConfig.initialStartup) {
+            untitledWorkspacesToRestore.push(...this.workspacesManagementMainService.getUntitledWorkspaces());
+            workspacesToOpen.push(...untitledWorkspacesToRestore);
+            emptyWindowsWithBackupsToRestore.push(...this.backupMainService.getEmptyWindowBackups());
+        }
+        else {
+            emptyWindowsWithBackupsToRestore.length = 0;
+        }
+        const { windows: usedWindows, filesOpenedInWindow } = await this.doOpen(openConfig, workspacesToOpen, foldersToOpen, emptyWindowsWithBackupsToRestore, openOneEmptyWindow, filesToOpen, foldersToAdd);
+        this.logService.trace(`windowsManager#open used window count ${usedWindows.length} (workspacesToOpen: ${workspacesToOpen.length}, foldersToOpen: ${foldersToOpen.length}, emptyToRestore: ${emptyWindowsWithBackupsToRestore.length}, openOneEmptyWindow: ${openOneEmptyWindow})`);
+        if (usedWindows.length > 1) {
+            if (filesOpenedInWindow) {
+                filesOpenedInWindow.focus();
+            }
+            else {
+                const focusLastActive = this.windowsStateHandler.state.lastActiveWindow && !openConfig.forceEmpty && !openConfig.cli._.length && !openConfig.cli['file-uri'] && !openConfig.cli['folder-uri'] && !(openConfig.urisToOpen && openConfig.urisToOpen.length);
+                let focusLastOpened = true;
+                let focusLastWindow = true;
+                if (focusLastActive) {
+                    const lastActiveWindow = usedWindows.filter(window => this.windowsStateHandler.state.lastActiveWindow && window.backupPath === this.windowsStateHandler.state.lastActiveWindow.backupPath);
+                    if (lastActiveWindow.length) {
+                        lastActiveWindow[0].focus();
+                        focusLastOpened = false;
+                        focusLastWindow = false;
+                    }
+                }
+                if (focusLastOpened) {
+                    for (let i = usedWindows.length - 1; i >= 0; i--) {
+                        const usedWindow = usedWindows[i];
+                        if ((usedWindow.openedWorkspace && untitledWorkspacesToRestore.some(workspace => usedWindow.openedWorkspace && workspace.workspace.id === usedWindow.openedWorkspace.id)) ||
+                            (usedWindow.backupPath && emptyWindowsWithBackupsToRestore.some(empty => usedWindow.backupPath && empty.backupFolder === basename(usedWindow.backupPath)))) {
+                            continue;
+                        }
+                        usedWindow.focus();
+                        focusLastWindow = false;
+                        break;
+                    }
+                }
+                if (focusLastWindow) {
+                    usedWindows[usedWindows.length - 1].focus();
+                }
+            }
+        }
+        const isDiff = filesToOpen && filesToOpen.filesToDiff.length > 0;
+        const isMerge = filesToOpen && filesToOpen.filesToMerge.length > 0;
+        if (!usedWindows.some(window => window.isExtensionDevelopmentHost) && !isDiff && !isMerge && !openConfig.noRecentEntry) {
+            const recents = [];
+            for (const pathToOpen of pathsToOpen) {
+                if (isWorkspacePathToOpen(pathToOpen) && !pathToOpen.transient) {
+                    recents.push({ label: pathToOpen.label, workspace: pathToOpen.workspace, remoteAuthority: pathToOpen.remoteAuthority });
+                }
+                else if (isSingleFolderWorkspacePathToOpen(pathToOpen)) {
+                    recents.push({ label: pathToOpen.label, folderUri: pathToOpen.workspace.uri, remoteAuthority: pathToOpen.remoteAuthority });
+                }
+                else if (pathToOpen.fileUri) {
+                    recents.push({ label: pathToOpen.label, fileUri: pathToOpen.fileUri, remoteAuthority: pathToOpen.remoteAuthority });
+                }
+            }
+            this.workspacesHistoryMainService.addRecentlyOpened(recents);
+        }
+        this.handleWaitMarkerFile(openConfig, usedWindows);
+        return usedWindows;
+    }
+    handleWaitMarkerFile(openConfig, usedWindows) {
+        const waitMarkerFileURI = openConfig.waitMarkerFileURI;
+        if (openConfig.context === 0 && waitMarkerFileURI && usedWindows.length === 1 && usedWindows[0]) {
+            (async () => {
+                await usedWindows[0].whenClosedOrLoaded;
+                try {
+                    await this.fileService.del(waitMarkerFileURI);
+                }
+                catch (error) {
+                }
+            })();
+        }
+    }
+    async doOpen(openConfig, workspacesToOpen, foldersToOpen, emptyToRestore, openOneEmptyWindow, filesToOpen, foldersToAdd) {
+        const usedWindows = [];
+        let filesOpenedInWindow = undefined;
+        function addUsedWindow(window, openedFiles) {
+            usedWindows.push(window);
+            if (openedFiles) {
+                filesOpenedInWindow = window;
+                filesToOpen = undefined;
+            }
+        }
+        let { openFolderInNewWindow, openFilesInNewWindow } = this.shouldOpenNewWindow(openConfig);
+        if (!openConfig.initialStartup && foldersToAdd.length > 0) {
+            const authority = foldersToAdd[0].remoteAuthority;
+            const lastActiveWindow = this.getLastActiveWindowForAuthority(authority);
+            if (lastActiveWindow) {
+                addUsedWindow(this.doAddFoldersToExistingWindow(lastActiveWindow, foldersToAdd.map(folderToAdd => folderToAdd.workspace.uri)));
+            }
+        }
+        const potentialNewWindowsCount = foldersToOpen.length + workspacesToOpen.length + emptyToRestore.length;
+        if (filesToOpen && potentialNewWindowsCount === 0) {
+            const fileToCheck = filesToOpen.filesToOpenOrCreate[0] || filesToOpen.filesToDiff[0] || filesToOpen.filesToMerge[3];
+            const windows = this.getWindows().filter(window => filesToOpen && isEqualAuthority(window.remoteAuthority, filesToOpen.remoteAuthority));
+            let windowToUseForFiles = undefined;
+            if (fileToCheck?.fileUri && !openFilesInNewWindow) {
+                if (openConfig.context === 4 || openConfig.context === 0 || openConfig.context === 1 || openConfig.context === 6) {
+                    windowToUseForFiles = await findWindowOnFile(windows, fileToCheck.fileUri, async (workspace) => workspace.configPath.scheme === Schemas.file ? this.workspacesManagementMainService.resolveLocalWorkspace(workspace.configPath) : undefined);
+                }
+                if (!windowToUseForFiles) {
+                    windowToUseForFiles = this.doGetLastActiveWindow(windows);
+                }
+            }
+            if (windowToUseForFiles) {
+                if (isWorkspaceIdentifier(windowToUseForFiles.openedWorkspace)) {
+                    workspacesToOpen.push({ workspace: windowToUseForFiles.openedWorkspace, remoteAuthority: windowToUseForFiles.remoteAuthority });
+                }
+                else if (isSingleFolderWorkspaceIdentifier(windowToUseForFiles.openedWorkspace)) {
+                    foldersToOpen.push({ workspace: windowToUseForFiles.openedWorkspace, remoteAuthority: windowToUseForFiles.remoteAuthority });
+                }
+                else {
+                    addUsedWindow(this.doOpenFilesInExistingWindow(openConfig, windowToUseForFiles, filesToOpen), true);
+                }
+            }
+            else {
+                addUsedWindow(await this.openInBrowserWindow({
+                    userEnv: openConfig.userEnv,
+                    cli: openConfig.cli,
+                    initialStartup: openConfig.initialStartup,
+                    filesToOpen,
+                    forceNewWindow: true,
+                    remoteAuthority: filesToOpen.remoteAuthority,
+                    forceNewTabbedWindow: openConfig.forceNewTabbedWindow,
+                    forceProfile: openConfig.forceProfile,
+                    forceTempProfile: openConfig.forceTempProfile
+                }), true);
+            }
+        }
+        const allWorkspacesToOpen = distinct(workspacesToOpen, workspace => workspace.workspace.id);
+        if (allWorkspacesToOpen.length > 0) {
+            const windowsOnWorkspace = coalesce(allWorkspacesToOpen.map(workspaceToOpen => findWindowOnWorkspaceOrFolder(this.getWindows(), workspaceToOpen.workspace.configPath)));
+            if (windowsOnWorkspace.length > 0) {
+                const windowOnWorkspace = windowsOnWorkspace[0];
+                const filesToOpenInWindow = isEqualAuthority(filesToOpen?.remoteAuthority, windowOnWorkspace.remoteAuthority) ? filesToOpen : undefined;
+                addUsedWindow(this.doOpenFilesInExistingWindow(openConfig, windowOnWorkspace, filesToOpenInWindow), !!filesToOpenInWindow);
+                openFolderInNewWindow = true;
+            }
+            for (const workspaceToOpen of allWorkspacesToOpen) {
+                if (windowsOnWorkspace.some(window => window.openedWorkspace && window.openedWorkspace.id === workspaceToOpen.workspace.id)) {
+                    continue;
+                }
+                const remoteAuthority = workspaceToOpen.remoteAuthority;
+                const filesToOpenInWindow = isEqualAuthority(filesToOpen?.remoteAuthority, remoteAuthority) ? filesToOpen : undefined;
+                addUsedWindow(await this.doOpenFolderOrWorkspace(openConfig, workspaceToOpen, openFolderInNewWindow, filesToOpenInWindow), !!filesToOpenInWindow);
+                openFolderInNewWindow = true;
+            }
+        }
+        const allFoldersToOpen = distinct(foldersToOpen, folder => extUriBiasedIgnorePathCase.getComparisonKey(folder.workspace.uri));
+        if (allFoldersToOpen.length > 0) {
+            const windowsOnFolderPath = coalesce(allFoldersToOpen.map(folderToOpen => findWindowOnWorkspaceOrFolder(this.getWindows(), folderToOpen.workspace.uri)));
+            if (windowsOnFolderPath.length > 0) {
+                const windowOnFolderPath = windowsOnFolderPath[0];
+                const filesToOpenInWindow = isEqualAuthority(filesToOpen?.remoteAuthority, windowOnFolderPath.remoteAuthority) ? filesToOpen : undefined;
+                addUsedWindow(this.doOpenFilesInExistingWindow(openConfig, windowOnFolderPath, filesToOpenInWindow), !!filesToOpenInWindow);
+                openFolderInNewWindow = true;
+            }
+            for (const folderToOpen of allFoldersToOpen) {
+                if (windowsOnFolderPath.some(window => isSingleFolderWorkspaceIdentifier(window.openedWorkspace) && extUriBiasedIgnorePathCase.isEqual(window.openedWorkspace.uri, folderToOpen.workspace.uri))) {
+                    continue;
+                }
+                const remoteAuthority = folderToOpen.remoteAuthority;
+                const filesToOpenInWindow = isEqualAuthority(filesToOpen?.remoteAuthority, remoteAuthority) ? filesToOpen : undefined;
+                addUsedWindow(await this.doOpenFolderOrWorkspace(openConfig, folderToOpen, openFolderInNewWindow, filesToOpenInWindow), !!filesToOpenInWindow);
+                openFolderInNewWindow = true;
+            }
+        }
+        const allEmptyToRestore = distinct(emptyToRestore, info => info.backupFolder);
+        if (allEmptyToRestore.length > 0) {
+            for (const emptyWindowBackupInfo of allEmptyToRestore) {
+                const remoteAuthority = emptyWindowBackupInfo.remoteAuthority;
+                const filesToOpenInWindow = isEqualAuthority(filesToOpen?.remoteAuthority, remoteAuthority) ? filesToOpen : undefined;
+                addUsedWindow(await this.doOpenEmpty(openConfig, true, remoteAuthority, filesToOpenInWindow, emptyWindowBackupInfo), !!filesToOpenInWindow);
+                openFolderInNewWindow = true;
+            }
+        }
+        if (filesToOpen || openOneEmptyWindow) {
+            const remoteAuthority = filesToOpen ? filesToOpen.remoteAuthority : openConfig.remoteAuthority;
+            addUsedWindow(await this.doOpenEmpty(openConfig, openFolderInNewWindow, remoteAuthority, filesToOpen), !!filesToOpen);
+        }
+        return { windows: distinct(usedWindows), filesOpenedInWindow };
+    }
+    doOpenFilesInExistingWindow(configuration, window, filesToOpen) {
+        this.logService.trace('windowsManager#doOpenFilesInExistingWindow', { filesToOpen });
+        this.focusMainOrChildWindow(window);
+        const params = {
+            filesToOpenOrCreate: filesToOpen?.filesToOpenOrCreate,
+            filesToDiff: filesToOpen?.filesToDiff,
+            filesToMerge: filesToOpen?.filesToMerge,
+            filesToWait: filesToOpen?.filesToWait,
+            termProgram: configuration?.userEnv?.['TERM_PROGRAM']
+        };
+        window.sendWhenReady('vscode:openFiles', CancellationToken.None, params);
+        return window;
+    }
+    focusMainOrChildWindow(mainWindow) {
+        let windowToFocus = mainWindow;
+        const focusedWindow = BrowserWindow.getFocusedWindow();
+        if (focusedWindow && focusedWindow.id !== mainWindow.id) {
+            const auxiliaryWindowCandidate = this.auxiliaryWindowsMainService.getWindowByWebContents(focusedWindow.webContents);
+            if (auxiliaryWindowCandidate && auxiliaryWindowCandidate.parentId === mainWindow.id) {
+                windowToFocus = auxiliaryWindowCandidate;
+            }
+        }
+        windowToFocus.focus();
+    }
+    doAddFoldersToExistingWindow(window, foldersToAdd) {
+        this.logService.trace('windowsManager#doAddFoldersToExistingWindow', { foldersToAdd });
+        window.focus();
+        const request = { foldersToAdd };
+        window.sendWhenReady('vscode:addFolders', CancellationToken.None, request);
+        return window;
+    }
+    doOpenEmpty(openConfig, forceNewWindow, remoteAuthority, filesToOpen, emptyWindowBackupInfo) {
+        this.logService.trace('windowsManager#doOpenEmpty', { restore: !!emptyWindowBackupInfo, remoteAuthority, filesToOpen, forceNewWindow });
+        let windowToUse;
+        if (!forceNewWindow && typeof openConfig.contextWindowId === 'number') {
+            windowToUse = this.getWindowById(openConfig.contextWindowId);
+        }
+        return this.openInBrowserWindow({
+            userEnv: openConfig.userEnv,
+            cli: openConfig.cli,
+            initialStartup: openConfig.initialStartup,
+            remoteAuthority,
+            forceNewWindow,
+            forceNewTabbedWindow: openConfig.forceNewTabbedWindow,
+            filesToOpen,
+            windowToUse,
+            emptyWindowBackupInfo,
+            forceProfile: openConfig.forceProfile,
+            forceTempProfile: openConfig.forceTempProfile
+        });
+    }
+    doOpenFolderOrWorkspace(openConfig, folderOrWorkspace, forceNewWindow, filesToOpen, windowToUse) {
+        this.logService.trace('windowsManager#doOpenFolderOrWorkspace', { folderOrWorkspace, filesToOpen });
+        if (!forceNewWindow && !windowToUse && typeof openConfig.contextWindowId === 'number') {
+            windowToUse = this.getWindowById(openConfig.contextWindowId);
+        }
+        return this.openInBrowserWindow({
+            workspace: folderOrWorkspace.workspace,
+            userEnv: openConfig.userEnv,
+            cli: openConfig.cli,
+            initialStartup: openConfig.initialStartup,
+            remoteAuthority: folderOrWorkspace.remoteAuthority,
+            forceNewWindow,
+            forceNewTabbedWindow: openConfig.forceNewTabbedWindow,
+            filesToOpen,
+            windowToUse,
+            forceProfile: openConfig.forceProfile,
+            forceTempProfile: openConfig.forceTempProfile
+        });
+    }
+    async getPathsToOpen(openConfig) {
+        let pathsToOpen;
+        let isCommandLineOrAPICall = false;
+        let restoredWindows = false;
+        if (openConfig.urisToOpen && openConfig.urisToOpen.length > 0) {
+            pathsToOpen = await this.doExtractPathsFromAPI(openConfig);
+            isCommandLineOrAPICall = true;
+        }
+        else if (openConfig.forceEmpty) {
+            pathsToOpen = [Object.create(null)];
+        }
+        else if (openConfig.cli._.length || openConfig.cli['folder-uri'] || openConfig.cli['file-uri']) {
+            pathsToOpen = await this.doExtractPathsFromCLI(openConfig.cli);
+            if (pathsToOpen.length === 0) {
+                pathsToOpen.push(Object.create(null));
+            }
+            isCommandLineOrAPICall = true;
+        }
+        else {
+            pathsToOpen = await this.doGetPathsFromLastSession();
+            if (pathsToOpen.length === 0) {
+                pathsToOpen.push(Object.create(null));
+            }
+            restoredWindows = true;
+        }
+        if (!openConfig.addMode && isCommandLineOrAPICall) {
+            const foldersToOpen = pathsToOpen.filter(path => isSingleFolderWorkspacePathToOpen(path));
+            if (foldersToOpen.length > 1) {
+                const remoteAuthority = foldersToOpen[0].remoteAuthority;
+                if (foldersToOpen.every(folderToOpen => isEqualAuthority(folderToOpen.remoteAuthority, remoteAuthority))) {
+                    const workspace = await this.workspacesManagementMainService.createUntitledWorkspace(foldersToOpen.map(folder => ({ uri: folder.workspace.uri })));
+                    pathsToOpen.push({ workspace, remoteAuthority });
+                    pathsToOpen = pathsToOpen.filter(path => !isSingleFolderWorkspacePathToOpen(path));
+                }
+            }
+        }
+        if (openConfig.initialStartup && !restoredWindows && this.configurationService.getValue('window')?.restoreWindows === 'preserve') {
+            const lastSessionPaths = await this.doGetPathsFromLastSession();
+            pathsToOpen.unshift(...lastSessionPaths.filter(path => isWorkspacePathToOpen(path) || isSingleFolderWorkspacePathToOpen(path) || path.backupPath));
+        }
+        return pathsToOpen;
+    }
+    async doExtractPathsFromAPI(openConfig) {
+        const pathResolveOptions = {
+            gotoLineMode: openConfig.gotoLineMode,
+            remoteAuthority: openConfig.remoteAuthority
+        };
+        const pathsToOpen = await Promise.all(coalesce(openConfig.urisToOpen || []).map(async (pathToOpen) => {
+            const path = await this.resolveOpenable(pathToOpen, pathResolveOptions);
+            if (path) {
+                path.label = pathToOpen.label;
+                return path;
+            }
+            const uri = this.resourceFromOpenable(pathToOpen);
+            this.dialogMainService.showMessageBox({
+                type: 'info',
+                buttons: [localize({ key: 'ok', comment: ['&& denotes a mnemonic'] }, "&&OK")],
+                message: uri.scheme === Schemas.file ? localize('pathNotExistTitle', "Path does not exist") : localize('uriInvalidTitle', "URI can not be opened"),
+                detail: uri.scheme === Schemas.file ?
+                    localize('pathNotExistDetail', "The path '{0}' does not exist on this computer.", getPathLabel(uri, { os: OS, tildify: this.environmentMainService })) :
+                    localize('uriInvalidDetail', "The URI '{0}' is not valid and can not be opened.", uri.toString(true))
+            }, BrowserWindow.getFocusedWindow() ?? undefined);
+            return undefined;
+        }));
+        return coalesce(pathsToOpen);
+    }
+    async doExtractPathsFromCLI(cli) {
+        const pathsToOpen = [];
+        const pathResolveOptions = {
+            ignoreFileNotFound: true,
+            gotoLineMode: cli.goto,
+            remoteAuthority: cli.remote || undefined,
+            forceOpenWorkspaceAsFile: cli.diff && cli._.length === 2 ||
+                cli.merge && cli._.length === 4
+        };
+        const folderUris = cli['folder-uri'];
+        if (folderUris) {
+            const resolvedFolderUris = await Promise.all(folderUris.map(rawFolderUri => {
+                const folderUri = this.cliArgToUri(rawFolderUri);
+                if (!folderUri) {
+                    return undefined;
+                }
+                return this.resolveOpenable({ folderUri }, pathResolveOptions);
+            }));
+            pathsToOpen.push(...coalesce(resolvedFolderUris));
+        }
+        const fileUris = cli['file-uri'];
+        if (fileUris) {
+            const resolvedFileUris = await Promise.all(fileUris.map(rawFileUri => {
+                const fileUri = this.cliArgToUri(rawFileUri);
+                if (!fileUri) {
+                    return undefined;
+                }
+                return this.resolveOpenable(hasWorkspaceFileExtension(rawFileUri) ? { workspaceUri: fileUri } : { fileUri }, pathResolveOptions);
+            }));
+            pathsToOpen.push(...coalesce(resolvedFileUris));
+        }
+        const resolvedCliPaths = await Promise.all(cli._.map(cliPath => {
+            return pathResolveOptions.remoteAuthority ? this.doResolveRemotePath(cliPath, pathResolveOptions) : this.doResolveFilePath(cliPath, pathResolveOptions);
+        }));
+        pathsToOpen.push(...coalesce(resolvedCliPaths));
+        return pathsToOpen;
+    }
+    cliArgToUri(arg) {
+        try {
+            const uri = URI.parse(arg);
+            if (!uri.scheme) {
+                this.logService.error(`Invalid URI input string, scheme missing: ${arg}`);
+                return undefined;
+            }
+            if (!uri.path) {
+                return uri.with({ path: '/' });
+            }
+            return uri;
+        }
+        catch (e) {
+            this.logService.error(`Invalid URI input string: ${arg}, ${e.message}`);
+        }
+        return undefined;
+    }
+    async doGetPathsFromLastSession() {
+        const restoreWindowsSetting = this.getRestoreWindowsSetting();
+        switch (restoreWindowsSetting) {
+            case 'none':
+                return [];
+            case 'one':
+            case 'all':
+            case 'preserve':
+            case 'folders': {
+                const lastSessionWindows = [];
+                if (restoreWindowsSetting !== 'one') {
+                    lastSessionWindows.push(...this.windowsStateHandler.state.openedWindows);
+                }
+                if (this.windowsStateHandler.state.lastActiveWindow) {
+                    lastSessionWindows.push(this.windowsStateHandler.state.lastActiveWindow);
+                }
+                const pathsToOpen = await Promise.all(lastSessionWindows.map(async (lastSessionWindow) => {
+                    if (lastSessionWindow.workspace) {
+                        const pathToOpen = await this.resolveOpenable({ workspaceUri: lastSessionWindow.workspace.configPath }, { remoteAuthority: lastSessionWindow.remoteAuthority, rejectTransientWorkspaces: true });
+                        if (isWorkspacePathToOpen(pathToOpen)) {
+                            return pathToOpen;
+                        }
+                    }
+                    else if (lastSessionWindow.folderUri) {
+                        const pathToOpen = await this.resolveOpenable({ folderUri: lastSessionWindow.folderUri }, { remoteAuthority: lastSessionWindow.remoteAuthority });
+                        if (isSingleFolderWorkspacePathToOpen(pathToOpen)) {
+                            return pathToOpen;
+                        }
+                    }
+                    else if (restoreWindowsSetting !== 'folders' && lastSessionWindow.backupPath) {
+                        return { backupPath: lastSessionWindow.backupPath, remoteAuthority: lastSessionWindow.remoteAuthority };
+                    }
+                    return undefined;
+                }));
+                return coalesce(pathsToOpen);
+            }
+        }
+    }
+    getRestoreWindowsSetting() {
+        let restoreWindows;
+        if (this.lifecycleMainService.wasRestarted) {
+            restoreWindows = 'all';
+        }
+        else {
+            const windowConfig = this.configurationService.getValue('window');
+            restoreWindows = windowConfig?.restoreWindows || 'all';
+            if (!['preserve', 'all', 'folders', 'one', 'none'].includes(restoreWindows)) {
+                restoreWindows = 'all';
+            }
+        }
+        return restoreWindows;
+    }
+    async resolveOpenable(openable, options = Object.create(null)) {
+        const uri = this.resourceFromOpenable(openable);
+        if (uri.scheme === Schemas.file) {
+            if (isFileToOpen(openable)) {
+                options = { ...options, forceOpenWorkspaceAsFile: true };
+            }
+            return this.doResolveFilePath(uri.fsPath, options);
+        }
+        return this.doResolveRemoteOpenable(openable, options);
+    }
+    doResolveRemoteOpenable(openable, options) {
+        let uri = this.resourceFromOpenable(openable);
+        const remoteAuthority = getRemoteAuthority(uri) || options.remoteAuthority;
+        uri = removeTrailingPathSeparator(normalizePath(uri));
+        if (isFileToOpen(openable)) {
+            if (options.gotoLineMode) {
+                const { path, line, column } = parseLineAndColumnAware(uri.path);
+                return {
+                    fileUri: uri.with({ path }),
+                    options: {
+                        selection: line ? { startLineNumber: line, startColumn: column || 1 } : undefined
+                    },
+                    remoteAuthority
+                };
+            }
+            return { fileUri: uri, remoteAuthority };
+        }
+        else if (isWorkspaceToOpen(openable)) {
+            return { workspace: getWorkspaceIdentifier(uri), remoteAuthority };
+        }
+        return { workspace: getSingleFolderWorkspaceIdentifier(uri), remoteAuthority };
+    }
+    resourceFromOpenable(openable) {
+        if (isWorkspaceToOpen(openable)) {
+            return openable.workspaceUri;
+        }
+        if (isFolderToOpen(openable)) {
+            return openable.folderUri;
+        }
+        return openable.fileUri;
+    }
+    async doResolveFilePath(path, options, skipHandleUNCError) {
+        let lineNumber;
+        let columnNumber;
+        if (options.gotoLineMode) {
+            ({ path, line: lineNumber, column: columnNumber } = parseLineAndColumnAware(path));
+        }
+        path = sanitizeFilePath(normalize(path), cwd());
+        try {
+            const pathStat = await fs.promises.stat(path);
+            if (pathStat.isFile()) {
+                if (!options.forceOpenWorkspaceAsFile) {
+                    const workspace = await this.workspacesManagementMainService.resolveLocalWorkspace(URI.file(path));
+                    if (workspace) {
+                        if (workspace.transient && options.rejectTransientWorkspaces) {
+                            return undefined;
+                        }
+                        return {
+                            workspace: { id: workspace.id, configPath: workspace.configPath },
+                            type: FileType.File,
+                            exists: true,
+                            remoteAuthority: workspace.remoteAuthority,
+                            transient: workspace.transient
+                        };
+                    }
+                }
+                return {
+                    fileUri: URI.file(path),
+                    type: FileType.File,
+                    exists: true,
+                    options: {
+                        selection: lineNumber ? { startLineNumber: lineNumber, startColumn: columnNumber || 1 } : undefined
+                    }
+                };
+            }
+            else if (pathStat.isDirectory()) {
+                return {
+                    workspace: getSingleFolderWorkspaceIdentifier(URI.file(path), pathStat),
+                    type: FileType.Directory,
+                    exists: true
+                };
+            }
+            else if (!isWindows && path === '/dev/null') {
+                return {
+                    fileUri: URI.file(path),
+                    type: FileType.File,
+                    exists: true
+                };
+            }
+        }
+        catch (error) {
+            if (error.code === 'ERR_UNC_HOST_NOT_ALLOWED' && !skipHandleUNCError) {
+                return this.onUNCHostNotAllowed(path, options);
+            }
+            const fileUri = URI.file(path);
+            this.workspacesHistoryMainService.removeRecentlyOpened([fileUri]);
+            if (options.ignoreFileNotFound) {
+                return {
+                    fileUri,
+                    type: FileType.File,
+                    exists: false
+                };
+            }
+        }
+        return undefined;
+    }
+    async onUNCHostNotAllowed(path, options) {
+        const uri = URI.file(path);
+        const { response, checkboxChecked } = await this.dialogMainService.showMessageBox({
+            type: 'warning',
+            buttons: [
+                localize({ key: 'allow', comment: ['&& denotes a mnemonic'] }, "&&Allow"),
+                localize({ key: 'cancel', comment: ['&& denotes a mnemonic'] }, "&&Cancel"),
+                localize({ key: 'learnMore', comment: ['&& denotes a mnemonic'] }, "&&Learn More"),
+            ],
+            message: localize('confirmOpenMessage', "The host '{0}' was not found in the list of allowed hosts. Do you want to allow it anyway?", uri.authority),
+            detail: localize('confirmOpenDetail', "The path '{0}' uses a host that is not allowed. Unless you trust the host, you should press 'Cancel'", getPathLabel(uri, { os: OS, tildify: this.environmentMainService })),
+            checkboxLabel: localize('doNotAskAgain', "Permanently allow host '{0}'", uri.authority),
+            cancelId: 1
+        });
+        if (response === 0) {
+            addUNCHostToAllowlist(uri.authority);
+            if (checkboxChecked) {
+                const request = { channel: 'vscode:configureAllowedUNCHost', args: uri.authority };
+                this.sendToFocused(request.channel, request.args);
+                this.sendToOpeningWindow(request.channel, request.args);
+            }
+            return this.doResolveFilePath(path, options, true);
+        }
+        if (response === 2) {
+            shell.openExternal('https://aka.ms/vscode-windows-unc');
+            return this.onUNCHostNotAllowed(path, options);
+        }
+        return undefined;
+    }
+    doResolveRemotePath(path, options) {
+        const first = path.charCodeAt(0);
+        const remoteAuthority = options.remoteAuthority;
+        let lineNumber;
+        let columnNumber;
+        if (options.gotoLineMode) {
+            ({ path, line: lineNumber, column: columnNumber } = parseLineAndColumnAware(path));
+        }
+        if (first !== 47) {
+            if (isWindowsDriveLetter(first) && path.charCodeAt(path.charCodeAt(1)) === 58) {
+                path = toSlashes(path);
+            }
+            path = `/${path}`;
+        }
+        const uri = URI.from({ scheme: Schemas.vscodeRemote, authority: remoteAuthority, path: path });
+        if (path.charCodeAt(path.length - 1) !== 47) {
+            if (hasWorkspaceFileExtension(path)) {
+                if (options.forceOpenWorkspaceAsFile) {
+                    return {
+                        fileUri: uri,
+                        options: {
+                            selection: lineNumber ? { startLineNumber: lineNumber, startColumn: columnNumber || 1 } : undefined
+                        },
+                        remoteAuthority: options.remoteAuthority
+                    };
+                }
+                return { workspace: getWorkspaceIdentifier(uri), remoteAuthority };
+            }
+            else if (options.gotoLineMode || posix.basename(path).indexOf('.') !== -1) {
+                return {
+                    fileUri: uri,
+                    options: {
+                        selection: lineNumber ? { startLineNumber: lineNumber, startColumn: columnNumber || 1 } : undefined
+                    },
+                    remoteAuthority
+                };
+            }
+        }
+        return { workspace: getSingleFolderWorkspaceIdentifier(uri), remoteAuthority };
+    }
+    shouldOpenNewWindow(openConfig) {
+        const windowConfig = this.configurationService.getValue('window');
+        const openFolderInNewWindowConfig = windowConfig?.openFoldersInNewWindow || 'default';
+        const openFilesInNewWindowConfig = windowConfig?.openFilesInNewWindow || 'off';
+        let openFolderInNewWindow = (openConfig.preferNewWindow || openConfig.forceNewWindow) && !openConfig.forceReuseWindow;
+        if (!openConfig.forceNewWindow && !openConfig.forceReuseWindow && (openFolderInNewWindowConfig === 'on' || openFolderInNewWindowConfig === 'off')) {
+            openFolderInNewWindow = (openFolderInNewWindowConfig === 'on');
+        }
+        let openFilesInNewWindow = false;
+        if (openConfig.forceNewWindow || openConfig.forceReuseWindow) {
+            openFilesInNewWindow = !!openConfig.forceNewWindow && !openConfig.forceReuseWindow;
+        }
+        else {
+            if (isMacintosh) {
+                if (openConfig.context === 1) {
+                    openFilesInNewWindow = true;
+                }
+            }
+            else {
+                if (openConfig.context !== 3 && openConfig.context !== 2 && !(openConfig.userEnv && openConfig.userEnv['TERM_PROGRAM'] === 'vscode')) {
+                    openFilesInNewWindow = true;
+                }
+            }
+            if (!openConfig.cli.extensionDevelopmentPath && (openFilesInNewWindowConfig === 'on' || openFilesInNewWindowConfig === 'off')) {
+                openFilesInNewWindow = (openFilesInNewWindowConfig === 'on');
+            }
+        }
+        return { openFolderInNewWindow: !!openFolderInNewWindow, openFilesInNewWindow };
+    }
+    async openExtensionDevelopmentHostWindow(extensionDevelopmentPaths, openConfig) {
+        const existingWindow = findWindowOnExtensionDevelopmentPath(this.getWindows(), extensionDevelopmentPaths);
+        if (existingWindow) {
+            this.lifecycleMainService.reload(existingWindow, openConfig.cli);
+            existingWindow.focus();
+            return [existingWindow];
+        }
+        let folderUris = openConfig.cli['folder-uri'] || [];
+        let fileUris = openConfig.cli['file-uri'] || [];
+        let cliArgs = openConfig.cli._;
+        if (!cliArgs.length && !folderUris.length && !fileUris.length && !openConfig.cli.extensionTestsPath) {
+            const extensionDevelopmentWindowState = this.windowsStateHandler.state.lastPluginDevelopmentHostWindow;
+            const workspaceToOpen = extensionDevelopmentWindowState?.workspace ?? extensionDevelopmentWindowState?.folderUri;
+            if (workspaceToOpen) {
+                if (URI.isUri(workspaceToOpen)) {
+                    if (workspaceToOpen.scheme === Schemas.file) {
+                        cliArgs = [workspaceToOpen.fsPath];
+                    }
+                    else {
+                        folderUris = [workspaceToOpen.toString()];
+                    }
+                }
+                else {
+                    if (workspaceToOpen.configPath.scheme === Schemas.file) {
+                        cliArgs = [originalFSPath(workspaceToOpen.configPath)];
+                    }
+                    else {
+                        fileUris = [workspaceToOpen.configPath.toString()];
+                    }
+                }
+            }
+        }
+        let remoteAuthority = openConfig.remoteAuthority;
+        for (const extensionDevelopmentPath of extensionDevelopmentPaths) {
+            if (extensionDevelopmentPath.match(/^[a-zA-Z][a-zA-Z0-9\+\-\.]+:/)) {
+                const url = URI.parse(extensionDevelopmentPath);
+                const extensionDevelopmentPathRemoteAuthority = getRemoteAuthority(url);
+                if (extensionDevelopmentPathRemoteAuthority) {
+                    if (remoteAuthority) {
+                        if (!isEqualAuthority(extensionDevelopmentPathRemoteAuthority, remoteAuthority)) {
+                            this.logService.error('more than one extension development path authority');
+                        }
+                    }
+                    else {
+                        remoteAuthority = extensionDevelopmentPathRemoteAuthority;
+                    }
+                }
+            }
+        }
+        cliArgs = cliArgs.filter(path => {
+            const uri = URI.file(path);
+            if (!!findWindowOnWorkspaceOrFolder(this.getWindows(), uri)) {
+                return false;
+            }
+            return isEqualAuthority(getRemoteAuthority(uri), remoteAuthority);
+        });
+        folderUris = folderUris.filter(folderUriStr => {
+            const folderUri = this.cliArgToUri(folderUriStr);
+            if (folderUri && !!findWindowOnWorkspaceOrFolder(this.getWindows(), folderUri)) {
+                return false;
+            }
+            return folderUri ? isEqualAuthority(getRemoteAuthority(folderUri), remoteAuthority) : false;
+        });
+        fileUris = fileUris.filter(fileUriStr => {
+            const fileUri = this.cliArgToUri(fileUriStr);
+            if (fileUri && !!findWindowOnWorkspaceOrFolder(this.getWindows(), fileUri)) {
+                return false;
+            }
+            return fileUri ? isEqualAuthority(getRemoteAuthority(fileUri), remoteAuthority) : false;
+        });
+        openConfig.cli._ = cliArgs;
+        openConfig.cli['folder-uri'] = folderUris;
+        openConfig.cli['file-uri'] = fileUris;
+        const openArgs = {
+            context: openConfig.context,
+            cli: openConfig.cli,
+            forceNewWindow: true,
+            forceEmpty: !cliArgs.length && !folderUris.length && !fileUris.length,
+            userEnv: openConfig.userEnv,
+            noRecentEntry: true,
+            waitMarkerFileURI: openConfig.waitMarkerFileURI,
+            remoteAuthority,
+            forceProfile: openConfig.forceProfile,
+            forceTempProfile: openConfig.forceTempProfile
+        };
+        return this.open(openArgs);
+    }
+    async openInBrowserWindow(options) {
+        const windowConfig = this.configurationService.getValue('window');
+        const lastActiveWindow = this.getLastActiveWindow();
+        const newWindowProfile = windowConfig?.newWindowProfile
+            ? this.userDataProfilesMainService.profiles.find(profile => profile.name === windowConfig.newWindowProfile) : undefined;
+        const defaultProfile = newWindowProfile ?? lastActiveWindow?.profile ?? this.userDataProfilesMainService.defaultProfile;
+        let window;
+        if (!options.forceNewWindow && !options.forceNewTabbedWindow) {
+            window = options.windowToUse || lastActiveWindow;
+            if (window) {
+                window.focus();
+            }
+        }
+        const configuration = {
+            ...this.environmentMainService.args,
+            ...options.cli,
+            machineId: this.machineId,
+            sqmId: this.sqmId,
+            devDeviceId: this.devDeviceId,
+            windowId: -1,
+            mainPid: process.pid,
+            appRoot: this.environmentMainService.appRoot,
+            execPath: process.execPath,
+            codeCachePath: this.environmentMainService.codeCachePath,
+            backupPath: options.emptyWindowBackupInfo ? join(this.environmentMainService.backupHome, options.emptyWindowBackupInfo.backupFolder) : undefined,
+            profiles: {
+                home: this.userDataProfilesMainService.profilesHome,
+                all: this.userDataProfilesMainService.profiles,
+                profile: defaultProfile
+            },
+            homeDir: this.environmentMainService.userHome.with({ scheme: Schemas.file }).fsPath,
+            tmpDir: this.environmentMainService.tmpDir.with({ scheme: Schemas.file }).fsPath,
+            userDataDir: this.environmentMainService.userDataPath,
+            remoteAuthority: options.remoteAuthority,
+            workspace: options.workspace,
+            userEnv: { ...this.initialUserEnv, ...options.userEnv },
+            nls: {
+                messages: getNLSMessages(),
+                language: getNLSLanguage()
+            },
+            filesToOpenOrCreate: options.filesToOpen?.filesToOpenOrCreate,
+            filesToDiff: options.filesToOpen?.filesToDiff,
+            filesToMerge: options.filesToOpen?.filesToMerge,
+            filesToWait: options.filesToOpen?.filesToWait,
+            logLevel: this.loggerService.getLogLevel(),
+            loggers: {
+                window: [],
+                global: this.loggerService.getRegisteredLoggers()
+            },
+            logsPath: this.environmentMainService.logsHome.with({ scheme: Schemas.file }).fsPath,
+            product,
+            isInitialStartup: options.initialStartup,
+            perfMarks: getMarks(),
+            os: { release: release(), hostname: hostname(), arch: arch() },
+            autoDetectHighContrast: windowConfig?.autoDetectHighContrast ?? true,
+            autoDetectColorScheme: windowConfig?.autoDetectColorScheme ?? false,
+            accessibilitySupport: app.accessibilitySupportEnabled,
+            colorScheme: this.themeMainService.getColorScheme(),
+            policiesData: this.policyService.serialize(),
+            continueOn: this.environmentMainService.continueOn,
+            cssModules: this.cssDevelopmentService.isEnabled ? await this.cssDevelopmentService.getCssModules() : undefined
+        };
+        if (!window) {
+            const state = this.windowsStateHandler.getNewWindowState(configuration);
+            mark('code/willCreateCodeWindow');
+            const createdWindow = window = this.instantiationService.createInstance(CodeWindow, {
+                state,
+                extensionDevelopmentPath: configuration.extensionDevelopmentPath,
+                isExtensionTestHost: !!configuration.extensionTestsPath
+            });
+            mark('code/didCreateCodeWindow');
+            if (options.forceNewTabbedWindow) {
+                const activeWindow = this.getLastActiveWindow();
+                activeWindow?.addTabbedWindow(createdWindow);
+            }
+            this.windows.set(createdWindow.id, createdWindow);
+            this._onDidOpenWindow.fire(createdWindow);
+            this._onDidChangeWindowsCount.fire({ oldCount: this.getWindowCount() - 1, newCount: this.getWindowCount() });
+            const disposables = new DisposableStore();
+            disposables.add(createdWindow.onDidSignalReady(() => this._onDidSignalReadyWindow.fire(createdWindow)));
+            disposables.add(Event.once(createdWindow.onDidClose)(() => this.onWindowClosed(createdWindow, disposables)));
+            disposables.add(Event.once(createdWindow.onDidDestroy)(() => this.onWindowDestroyed(createdWindow)));
+            disposables.add(createdWindow.onDidMaximize(() => this._onDidMaximizeWindow.fire(createdWindow)));
+            disposables.add(createdWindow.onDidUnmaximize(() => this._onDidUnmaximizeWindow.fire(createdWindow)));
+            disposables.add(createdWindow.onDidEnterFullScreen(() => this._onDidChangeFullScreen.fire({ window: createdWindow, fullscreen: true })));
+            disposables.add(createdWindow.onDidLeaveFullScreen(() => this._onDidChangeFullScreen.fire({ window: createdWindow, fullscreen: false })));
+            disposables.add(createdWindow.onDidTriggerSystemContextMenu(({ x, y }) => this._onDidTriggerSystemContextMenu.fire({ window: createdWindow, x, y })));
+            const webContents = assertIsDefined(createdWindow.win?.webContents);
+            webContents.removeAllListeners('devtools-reload-page');
+            disposables.add(Event.fromNodeEventEmitter(webContents, 'devtools-reload-page')(() => this.lifecycleMainService.reload(createdWindow)));
+            this.lifecycleMainService.registerWindow(createdWindow);
+        }
+        else {
+            const currentWindowConfig = window.config;
+            if (!configuration.extensionDevelopmentPath && currentWindowConfig?.extensionDevelopmentPath) {
+                configuration.extensionDevelopmentPath = currentWindowConfig.extensionDevelopmentPath;
+                configuration.extensionDevelopmentKind = currentWindowConfig.extensionDevelopmentKind;
+                configuration['enable-proposed-api'] = currentWindowConfig['enable-proposed-api'];
+                configuration.verbose = currentWindowConfig.verbose;
+                configuration['inspect-extensions'] = currentWindowConfig['inspect-extensions'];
+                configuration['inspect-brk-extensions'] = currentWindowConfig['inspect-brk-extensions'];
+                configuration.debugId = currentWindowConfig.debugId;
+                configuration.extensionEnvironment = currentWindowConfig.extensionEnvironment;
+                configuration['extensions-dir'] = currentWindowConfig['extensions-dir'];
+                configuration['disable-extensions'] = currentWindowConfig['disable-extensions'];
+            }
+            configuration.loggers = {
+                global: configuration.loggers.global,
+                window: currentWindowConfig?.loggers.window ?? configuration.loggers.window
+            };
+        }
+        configuration.windowId = window.id;
+        if (window.isReady) {
+            this.lifecycleMainService.unload(window, 4).then(async (veto) => {
+                if (!veto) {
+                    await this.doOpenInBrowserWindow(window, configuration, options, defaultProfile);
+                }
+            });
+        }
+        else {
+            await this.doOpenInBrowserWindow(window, configuration, options, defaultProfile);
+        }
+        return window;
+    }
+    async doOpenInBrowserWindow(window, configuration, options, defaultProfile) {
+        if (!configuration.extensionDevelopmentPath) {
+            if (isWorkspaceIdentifier(configuration.workspace)) {
+                configuration.backupPath = this.backupMainService.registerWorkspaceBackup({
+                    workspace: configuration.workspace,
+                    remoteAuthority: configuration.remoteAuthority
+                });
+            }
+            else if (isSingleFolderWorkspaceIdentifier(configuration.workspace)) {
+                configuration.backupPath = this.backupMainService.registerFolderBackup({
+                    folderUri: configuration.workspace.uri,
+                    remoteAuthority: configuration.remoteAuthority
+                });
+            }
+            else {
+                configuration.backupPath = this.backupMainService.registerEmptyWindowBackup({
+                    backupFolder: options.emptyWindowBackupInfo?.backupFolder ?? createEmptyWorkspaceIdentifier().id,
+                    remoteAuthority: configuration.remoteAuthority
+                });
+            }
+        }
+        if (this.userDataProfilesMainService.isEnabled()) {
+            const workspace = configuration.workspace ?? toWorkspaceIdentifier(configuration.backupPath, false);
+            const profilePromise = this.resolveProfileForBrowserWindow(options, workspace, defaultProfile);
+            const profile = profilePromise instanceof Promise ? await profilePromise : profilePromise;
+            configuration.profiles.profile = profile;
+            if (!configuration.extensionDevelopmentPath) {
+                await this.userDataProfilesMainService.setProfileForWorkspace(workspace, profile);
+            }
+        }
+        window.load(configuration);
+    }
+    resolveProfileForBrowserWindow(options, workspace, defaultProfile) {
+        if (options.forceProfile) {
+            return this.userDataProfilesMainService.profiles.find(p => p.name === options.forceProfile) ?? this.userDataProfilesMainService.createNamedProfile(options.forceProfile);
+        }
+        if (options.forceTempProfile) {
+            return this.userDataProfilesMainService.createTransientProfile();
+        }
+        return this.userDataProfilesMainService.getProfileForWorkspace(workspace) ?? defaultProfile;
+    }
+    onWindowClosed(window, disposables) {
+        this.windows.delete(window.id);
+        this._onDidChangeWindowsCount.fire({ oldCount: this.getWindowCount() + 1, newCount: this.getWindowCount() });
+        disposables.dispose();
+    }
+    onWindowDestroyed(window) {
+        this.windows.delete(window.id);
+        this._onDidDestroyWindow.fire(window);
+    }
+    getFocusedWindow() {
+        const window = BrowserWindow.getFocusedWindow();
+        if (window) {
+            return this.getWindowById(window.id);
+        }
+        return undefined;
+    }
+    getLastActiveWindow() {
+        return this.doGetLastActiveWindow(this.getWindows());
+    }
+    getLastActiveWindowForAuthority(remoteAuthority) {
+        return this.doGetLastActiveWindow(this.getWindows().filter(window => isEqualAuthority(window.remoteAuthority, remoteAuthority)));
+    }
+    doGetLastActiveWindow(windows) {
+        return getLastFocused(windows);
+    }
+    sendToFocused(channel, ...args) {
+        const focusedWindow = this.getFocusedWindow() || this.getLastActiveWindow();
+        focusedWindow?.sendWhenReady(channel, CancellationToken.None, ...args);
+    }
+    sendToOpeningWindow(channel, ...args) {
+        this._register(Event.once(this.onDidSignalReadyWindow)(window => {
+            window.sendWhenReady(channel, CancellationToken.None, ...args);
+        }));
+    }
+    sendToAll(channel, payload, windowIdsToIgnore) {
+        for (const window of this.getWindows()) {
+            if (windowIdsToIgnore && windowIdsToIgnore.indexOf(window.id) >= 0) {
+                continue;
+            }
+            window.sendWhenReady(channel, CancellationToken.None, payload);
+        }
+    }
+    getWindows() {
+        return Array.from(this.windows.values());
+    }
+    getWindowCount() {
+        return this.windows.size;
+    }
+    getWindowById(windowId) {
+        return this.windows.get(windowId);
+    }
+    getWindowByWebContents(webContents) {
+        const browserWindow = BrowserWindow.fromWebContents(webContents);
+        if (!browserWindow) {
+            return undefined;
+        }
+        const window = this.getWindowById(browserWindow.id);
+        return window?.matches(webContents) ? window : undefined;
+    }
+};
+WindowsMainService = __decorate([
+    __param(4, ILogService),
+    __param(5, ILoggerMainService),
+    __param(6, IStateService),
+    __param(7, IPolicyService),
+    __param(8, IEnvironmentMainService),
+    __param(9, IUserDataProfilesMainService),
+    __param(10, ILifecycleMainService),
+    __param(11, IBackupMainService),
+    __param(12, IConfigurationService),
+    __param(13, IWorkspacesHistoryMainService),
+    __param(14, IWorkspacesManagementMainService),
+    __param(15, IInstantiationService),
+    __param(16, IDialogMainService),
+    __param(17, IFileService),
+    __param(18, IProtocolMainService),
+    __param(19, IThemeMainService),
+    __param(20, IAuxiliaryWindowsMainService),
+    __param(21, ICSSDevelopmentService),
+    __metadata("design:paramtypes", [String, String, String, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], WindowsMainService);
+export { WindowsMainService };

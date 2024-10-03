@@ -1,1 +1,77 @@
-import*as a from"../../../../base/common/glob.js";import{Iterable as s}from"../../../../base/common/iterator.js";import{joinPath as i}from"../../../../base/common/resources.js";import"../../../../base/common/uri.js";import"../../../../platform/extensions/common/extensions.js";import{NotebookRendererMatch as t,RendererMessagingSpec as d}from"./notebookCommon.js";class r{value;defined;constructor(e){this.value=new Set(e),this.defined=this.value.size>0}matches(e){return e.some(n=>this.value.has(n))}}class I{id;entrypoint;displayName;extensionLocation;extensionId;hardDependencies;optionalDependencies;messaging;mimeTypes;mimeTypeGlobs;isBuiltin;constructor(e){this.id=e.id,this.extensionId=e.extension.identifier,this.extensionLocation=e.extension.extensionLocation,this.isBuiltin=e.extension.isBuiltin,typeof e.entrypoint=="string"?this.entrypoint={extends:void 0,path:i(this.extensionLocation,e.entrypoint)}:this.entrypoint={extends:e.entrypoint.extends,path:i(this.extensionLocation,e.entrypoint.path)},this.displayName=e.displayName,this.mimeTypes=e.mimeTypes,this.mimeTypeGlobs=this.mimeTypes.map(n=>a.parse(n)),this.hardDependencies=new r(e.dependencies??s.empty()),this.optionalDependencies=new r(e.optionalDependencies??s.empty()),this.messaging=e.requiresMessaging??d.Never}matchesWithoutKernel(e){return this.matchesMimeTypeOnly(e)?this.hardDependencies.defined?t.WithHardKernelDependency:this.optionalDependencies.defined?t.WithOptionalKernelDependency:t.Pure:t.Never}matches(e,n){return this.matchesMimeTypeOnly(e)?this.hardDependencies.defined?this.hardDependencies.matches(n)?t.WithHardKernelDependency:t.Never:this.optionalDependencies.matches(n)?t.WithOptionalKernelDependency:t.Pure:t.Never}matchesMimeTypeOnly(e){return this.entrypoint.extends?!1:this.mimeTypeGlobs.some(n=>n(e))||this.mimeTypes.some(n=>n===e)}}class D{type;entrypoint;extensionLocation;localResourceRoots;constructor(e){this.type=e.type,this.entrypoint=i(e.extension.extensionLocation,e.entrypoint),this.extensionLocation=e.extension.extensionLocation,this.localResourceRoots=e.localResourceRoots.map(n=>i(e.extension.extensionLocation,n))}}export{I as NotebookOutputRendererInfo,D as NotebookStaticPreloadInfo};
+import * as glob from '../../../../base/common/glob.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { joinPath } from '../../../../base/common/resources.js';
+class DependencyList {
+    constructor(value) {
+        this.value = new Set(value);
+        this.defined = this.value.size > 0;
+    }
+    matches(available) {
+        return available.some(v => this.value.has(v));
+    }
+}
+export class NotebookOutputRendererInfo {
+    constructor(descriptor) {
+        this.id = descriptor.id;
+        this.extensionId = descriptor.extension.identifier;
+        this.extensionLocation = descriptor.extension.extensionLocation;
+        this.isBuiltin = descriptor.extension.isBuiltin;
+        if (typeof descriptor.entrypoint === 'string') {
+            this.entrypoint = {
+                extends: undefined,
+                path: joinPath(this.extensionLocation, descriptor.entrypoint)
+            };
+        }
+        else {
+            this.entrypoint = {
+                extends: descriptor.entrypoint.extends,
+                path: joinPath(this.extensionLocation, descriptor.entrypoint.path)
+            };
+        }
+        this.displayName = descriptor.displayName;
+        this.mimeTypes = descriptor.mimeTypes;
+        this.mimeTypeGlobs = this.mimeTypes.map(pattern => glob.parse(pattern));
+        this.hardDependencies = new DependencyList(descriptor.dependencies ?? Iterable.empty());
+        this.optionalDependencies = new DependencyList(descriptor.optionalDependencies ?? Iterable.empty());
+        this.messaging = descriptor.requiresMessaging ?? "never";
+    }
+    matchesWithoutKernel(mimeType) {
+        if (!this.matchesMimeTypeOnly(mimeType)) {
+            return 3;
+        }
+        if (this.hardDependencies.defined) {
+            return 0;
+        }
+        if (this.optionalDependencies.defined) {
+            return 1;
+        }
+        return 2;
+    }
+    matches(mimeType, kernelProvides) {
+        if (!this.matchesMimeTypeOnly(mimeType)) {
+            return 3;
+        }
+        if (this.hardDependencies.defined) {
+            return this.hardDependencies.matches(kernelProvides)
+                ? 0
+                : 3;
+        }
+        return this.optionalDependencies.matches(kernelProvides)
+            ? 1
+            : 2;
+    }
+    matchesMimeTypeOnly(mimeType) {
+        if (this.entrypoint.extends) {
+            return false;
+        }
+        return this.mimeTypeGlobs.some(pattern => pattern(mimeType)) || this.mimeTypes.some(pattern => pattern === mimeType);
+    }
+}
+export class NotebookStaticPreloadInfo {
+    constructor(descriptor) {
+        this.type = descriptor.type;
+        this.entrypoint = joinPath(descriptor.extension.extensionLocation, descriptor.entrypoint);
+        this.extensionLocation = descriptor.extension.extensionLocation;
+        this.localResourceRoots = descriptor.localResourceRoots.map(root => joinPath(descriptor.extension.extensionLocation, root));
+    }
+}

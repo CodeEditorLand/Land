@@ -1,1 +1,96 @@
-import{Codicon as f}from"../../../base/common/codicons.js";import{localize as u}from"../../../nls.js";import"../common/quickInput.js";import{StorageScope as Q,StorageTarget as k}from"../../storage/common/storage.js";import{ThemeIcon as C}from"../../../base/common/themables.js";import{DisposableStore as B}from"../../../base/common/lifecycle.js";const S=C.asClassName(f.pin),l=C.asClassName(f.pinned),P=[S,l];function R(e,n,t,o){const s=t.items;let i=b(n,t,e,void 0,o);const r=new B;return r.add(t.onDidTriggerItemButton(async m=>{m.button.iconClass&&P.includes(m.button.iconClass)&&(t.items=s,i=b(n,t,e,m.item,o),t.items=t.value?s:i)})),r.add(t.onDidChangeValue(async m=>{t.items===i&&m?t.items=s:t.items===s&&!m&&(t.items=i)})),t.items=t.value?s:i,t.show(),r}function b(e,n,t,o,s){const i=[];let r;o?r=N(e,o,t):r=h(e,t),r.length&&i.push({type:"separator",label:u("terminal.commands.pinned","pinned")});const m=new Set;for(const a of r){const I=n.items.find(d=>w(d,a));if(I){const d=c(I),p={...I};(!s||!m.has(d))&&(m.add(d),g(p,!1),i.push(p))}}for(const a of n.items)g(a,!0),i.push(a);return i}function c(e){return e.type==="separator"?"":e.id||`${e.label}${e.description}${e.detail}}`}function g(e,n){if(e.type==="separator")return;const t=e.buttons?.filter(o=>o.iconClass&&!P.includes(o.iconClass))??[];t.unshift({iconClass:n?S:l,tooltip:n?u("pinCommand","Pin command"):u("pinnedCommand","Pinned command"),alwaysVisible:!1}),e.buttons=t}function w(e,n){return c(e)===c(n)}function N(e,n,t){const o=n.buttons?.find(i=>i.iconClass===l);let s=h(e,t);return o?s=s.filter(i=>c(i)!==c(n)):s.push(n),t.store(e,JSON.stringify(s),Q.WORKSPACE,k.MACHINE),s}function h(e,n){const t=n.get(e,Q.WORKSPACE);return t?JSON.parse(t):[]}export{R as showWithPinnedItems};
+import { Codicon } from '../../../base/common/codicons.js';
+import { localize } from '../../../nls.js';
+import { ThemeIcon } from '../../../base/common/themables.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+const pinButtonClass = ThemeIcon.asClassName(Codicon.pin);
+const pinnedButtonClass = ThemeIcon.asClassName(Codicon.pinned);
+const buttonClasses = [pinButtonClass, pinnedButtonClass];
+export function showWithPinnedItems(storageService, storageKey, quickPick, filterDuplicates) {
+    const itemsWithoutPinned = quickPick.items;
+    let itemsWithPinned = _formatPinnedItems(storageKey, quickPick, storageService, undefined, filterDuplicates);
+    const disposables = new DisposableStore();
+    disposables.add(quickPick.onDidTriggerItemButton(async (buttonEvent) => {
+        const expectedButton = buttonEvent.button.iconClass && buttonClasses.includes(buttonEvent.button.iconClass);
+        if (expectedButton) {
+            quickPick.items = itemsWithoutPinned;
+            itemsWithPinned = _formatPinnedItems(storageKey, quickPick, storageService, buttonEvent.item, filterDuplicates);
+            quickPick.items = quickPick.value ? itemsWithoutPinned : itemsWithPinned;
+        }
+    }));
+    disposables.add(quickPick.onDidChangeValue(async (value) => {
+        if (quickPick.items === itemsWithPinned && value) {
+            quickPick.items = itemsWithoutPinned;
+        }
+        else if (quickPick.items === itemsWithoutPinned && !value) {
+            quickPick.items = itemsWithPinned;
+        }
+    }));
+    quickPick.items = quickPick.value ? itemsWithoutPinned : itemsWithPinned;
+    quickPick.show();
+    return disposables;
+}
+function _formatPinnedItems(storageKey, quickPick, storageService, changedItem, filterDuplicates) {
+    const formattedItems = [];
+    let pinnedItems;
+    if (changedItem) {
+        pinnedItems = updatePinnedItems(storageKey, changedItem, storageService);
+    }
+    else {
+        pinnedItems = getPinnedItems(storageKey, storageService);
+    }
+    if (pinnedItems.length) {
+        formattedItems.push({ type: 'separator', label: localize("terminal.commands.pinned", 'pinned') });
+    }
+    const pinnedIds = new Set();
+    for (const itemToFind of pinnedItems) {
+        const itemToPin = quickPick.items.find(item => itemsMatch(item, itemToFind));
+        if (itemToPin) {
+            const pinnedItemId = getItemIdentifier(itemToPin);
+            const pinnedItem = { ...itemToPin };
+            if (!filterDuplicates || !pinnedIds.has(pinnedItemId)) {
+                pinnedIds.add(pinnedItemId);
+                updateButtons(pinnedItem, false);
+                formattedItems.push(pinnedItem);
+            }
+        }
+    }
+    for (const item of quickPick.items) {
+        updateButtons(item, true);
+        formattedItems.push(item);
+    }
+    return formattedItems;
+}
+function getItemIdentifier(item) {
+    return item.type === 'separator' ? '' : item.id || `${item.label}${item.description}${item.detail}}`;
+}
+function updateButtons(item, removePin) {
+    if (item.type === 'separator') {
+        return;
+    }
+    const newButtons = item.buttons?.filter(button => button.iconClass && !buttonClasses.includes(button.iconClass)) ?? [];
+    newButtons.unshift({
+        iconClass: removePin ? pinButtonClass : pinnedButtonClass,
+        tooltip: removePin ? localize('pinCommand', "Pin command") : localize('pinnedCommand', "Pinned command"),
+        alwaysVisible: false
+    });
+    item.buttons = newButtons;
+}
+function itemsMatch(itemA, itemB) {
+    return getItemIdentifier(itemA) === getItemIdentifier(itemB);
+}
+function updatePinnedItems(storageKey, changedItem, storageService) {
+    const removePin = changedItem.buttons?.find(b => b.iconClass === pinnedButtonClass);
+    let items = getPinnedItems(storageKey, storageService);
+    if (removePin) {
+        items = items.filter(item => getItemIdentifier(item) !== getItemIdentifier(changedItem));
+    }
+    else {
+        items.push(changedItem);
+    }
+    storageService.store(storageKey, JSON.stringify(items), 1, 1);
+    return items;
+}
+function getPinnedItems(storageKey, storageService) {
+    const items = storageService.get(storageKey, 1);
+    return items ? JSON.parse(items) : [];
+}

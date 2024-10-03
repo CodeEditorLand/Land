@@ -1,1 +1,189 @@
-import"../../common/config/editorOptions.js";class a{constructor(n,e){this.key=n;this.migrate=e}static items=[];apply(n){const e=a._read(n,this.key),i=s=>a._read(n,s),o=(s,f)=>a._write(n,s,f);this.migrate(e,i,o)}static _read(n,e){if(typeof n>"u")return;const i=e.indexOf(".");if(i>=0){const o=e.substring(0,i);return this._read(n[o],e.substring(i+1))}return n[e]}static _write(n,e,i){const o=e.indexOf(".");if(o>=0){const s=e.substring(0,o);n[s]=n[s]||{},this._write(n[s],e.substring(o+1),i);return}n[e]=i}}function d(t,n){a.items.push(new a(t,n))}function r(t,n){d(t,(e,i,o)=>{if(typeof e<"u"){for(const[s,f]of n)if(e===s){o(t,f);return}}})}function g(t){a.items.forEach(n=>n.apply(t))}r("wordWrap",[[!0,"on"],[!1,"off"]]),r("lineNumbers",[[!0,"on"],[!1,"off"]]),r("cursorBlinking",[["visible","solid"]]),r("renderWhitespace",[[!0,"boundary"],[!1,"none"]]),r("renderLineHighlight",[[!0,"line"],[!1,"none"]]),r("acceptSuggestionOnEnter",[[!0,"on"],[!1,"off"]]),r("tabCompletion",[[!1,"off"],[!0,"onlySnippets"]]),r("hover",[[!0,{enabled:!0}],[!1,{enabled:!1}]]),r("parameterHints",[[!0,{enabled:!0}],[!1,{enabled:!1}]]),r("autoIndent",[[!1,"advanced"],[!0,"full"]]),r("matchBrackets",[[!0,"always"],[!1,"never"]]),r("renderFinalNewline",[[!0,"on"],[!1,"off"]]),r("cursorSmoothCaretAnimation",[[!0,"on"],[!1,"off"]]),r("occurrencesHighlight",[[!0,"singleFile"],[!1,"off"]]),r("wordBasedSuggestions",[[!0,"matchingDocuments"],[!1,"off"]]),d("autoClosingBrackets",(t,n,e)=>{t===!1&&(e("autoClosingBrackets","never"),typeof n("autoClosingQuotes")>"u"&&e("autoClosingQuotes","never"),typeof n("autoSurround")>"u"&&e("autoSurround","never"))}),d("renderIndentGuides",(t,n,e)=>{typeof t<"u"&&(e("renderIndentGuides",void 0),typeof n("guides.indentation")>"u"&&e("guides.indentation",!!t))}),d("highlightActiveIndentGuide",(t,n,e)=>{typeof t<"u"&&(e("highlightActiveIndentGuide",void 0),typeof n("guides.highlightActiveIndentation")>"u"&&e("guides.highlightActiveIndentation",!!t))});const u={method:"showMethods",function:"showFunctions",constructor:"showConstructors",deprecated:"showDeprecated",field:"showFields",variable:"showVariables",class:"showClasses",struct:"showStructs",interface:"showInterfaces",module:"showModules",property:"showProperties",event:"showEvents",operator:"showOperators",unit:"showUnits",value:"showValues",constant:"showConstants",enum:"showEnums",enumMember:"showEnumMembers",keyword:"showKeywords",text:"showWords",color:"showColors",file:"showFiles",reference:"showReferences",folder:"showFolders",typeParameter:"showTypeParameters",snippet:"showSnippets"};d("suggest.filteredTypes",(t,n,e)=>{if(t&&typeof t=="object"){for(const i of Object.entries(u))t[i[0]]===!1&&typeof n(`suggest.${i[1]}`)>"u"&&e(`suggest.${i[1]}`,!1);e("suggest.filteredTypes",void 0)}}),d("quickSuggestions",(t,n,e)=>{if(typeof t=="boolean"){const i=t?"on":"off";e("quickSuggestions",{comments:i,strings:i,other:i})}}),d("experimental.stickyScroll.enabled",(t,n,e)=>{typeof t=="boolean"&&(e("experimental.stickyScroll.enabled",void 0),typeof n("stickyScroll.enabled")>"u"&&e("stickyScroll.enabled",t))}),d("experimental.stickyScroll.maxLineCount",(t,n,e)=>{typeof t=="number"&&(e("experimental.stickyScroll.maxLineCount",void 0),typeof n("stickyScroll.maxLineCount")>"u"&&e("stickyScroll.maxLineCount",t))}),d("codeActionsOnSave",(t,n,e)=>{if(t&&typeof t=="object"){let i=!1;const o={};for(const s of Object.entries(t))typeof s[1]=="boolean"?(i=!0,o[s[0]]=s[1]?"explicit":"never"):o[s[0]]=s[1];i&&e("codeActionsOnSave",o)}}),d("codeActionWidget.includeNearbyQuickfixes",(t,n,e)=>{typeof t=="boolean"&&(e("codeActionWidget.includeNearbyQuickfixes",void 0),typeof n("codeActionWidget.includeNearbyQuickFixes")>"u"&&e("codeActionWidget.includeNearbyQuickFixes",t))}),d("lightbulb.enabled",(t,n,e)=>{typeof t=="boolean"&&e("lightbulb.enabled",t?void 0:"off")});export{a as EditorSettingMigration,g as migrateOptions};
+export class EditorSettingMigration {
+    static { this.items = []; }
+    constructor(key, migrate) {
+        this.key = key;
+        this.migrate = migrate;
+    }
+    apply(options) {
+        const value = EditorSettingMigration._read(options, this.key);
+        const read = (key) => EditorSettingMigration._read(options, key);
+        const write = (key, value) => EditorSettingMigration._write(options, key, value);
+        this.migrate(value, read, write);
+    }
+    static _read(source, key) {
+        if (typeof source === 'undefined') {
+            return undefined;
+        }
+        const firstDotIndex = key.indexOf('.');
+        if (firstDotIndex >= 0) {
+            const firstSegment = key.substring(0, firstDotIndex);
+            return this._read(source[firstSegment], key.substring(firstDotIndex + 1));
+        }
+        return source[key];
+    }
+    static _write(target, key, value) {
+        const firstDotIndex = key.indexOf('.');
+        if (firstDotIndex >= 0) {
+            const firstSegment = key.substring(0, firstDotIndex);
+            target[firstSegment] = target[firstSegment] || {};
+            this._write(target[firstSegment], key.substring(firstDotIndex + 1), value);
+            return;
+        }
+        target[key] = value;
+    }
+}
+function registerEditorSettingMigration(key, migrate) {
+    EditorSettingMigration.items.push(new EditorSettingMigration(key, migrate));
+}
+function registerSimpleEditorSettingMigration(key, values) {
+    registerEditorSettingMigration(key, (value, read, write) => {
+        if (typeof value !== 'undefined') {
+            for (const [oldValue, newValue] of values) {
+                if (value === oldValue) {
+                    write(key, newValue);
+                    return;
+                }
+            }
+        }
+    });
+}
+export function migrateOptions(options) {
+    EditorSettingMigration.items.forEach(migration => migration.apply(options));
+}
+registerSimpleEditorSettingMigration('wordWrap', [[true, 'on'], [false, 'off']]);
+registerSimpleEditorSettingMigration('lineNumbers', [[true, 'on'], [false, 'off']]);
+registerSimpleEditorSettingMigration('cursorBlinking', [['visible', 'solid']]);
+registerSimpleEditorSettingMigration('renderWhitespace', [[true, 'boundary'], [false, 'none']]);
+registerSimpleEditorSettingMigration('renderLineHighlight', [[true, 'line'], [false, 'none']]);
+registerSimpleEditorSettingMigration('acceptSuggestionOnEnter', [[true, 'on'], [false, 'off']]);
+registerSimpleEditorSettingMigration('tabCompletion', [[false, 'off'], [true, 'onlySnippets']]);
+registerSimpleEditorSettingMigration('hover', [[true, { enabled: true }], [false, { enabled: false }]]);
+registerSimpleEditorSettingMigration('parameterHints', [[true, { enabled: true }], [false, { enabled: false }]]);
+registerSimpleEditorSettingMigration('autoIndent', [[false, 'advanced'], [true, 'full']]);
+registerSimpleEditorSettingMigration('matchBrackets', [[true, 'always'], [false, 'never']]);
+registerSimpleEditorSettingMigration('renderFinalNewline', [[true, 'on'], [false, 'off']]);
+registerSimpleEditorSettingMigration('cursorSmoothCaretAnimation', [[true, 'on'], [false, 'off']]);
+registerSimpleEditorSettingMigration('occurrencesHighlight', [[true, 'singleFile'], [false, 'off']]);
+registerSimpleEditorSettingMigration('wordBasedSuggestions', [[true, 'matchingDocuments'], [false, 'off']]);
+registerEditorSettingMigration('autoClosingBrackets', (value, read, write) => {
+    if (value === false) {
+        write('autoClosingBrackets', 'never');
+        if (typeof read('autoClosingQuotes') === 'undefined') {
+            write('autoClosingQuotes', 'never');
+        }
+        if (typeof read('autoSurround') === 'undefined') {
+            write('autoSurround', 'never');
+        }
+    }
+});
+registerEditorSettingMigration('renderIndentGuides', (value, read, write) => {
+    if (typeof value !== 'undefined') {
+        write('renderIndentGuides', undefined);
+        if (typeof read('guides.indentation') === 'undefined') {
+            write('guides.indentation', !!value);
+        }
+    }
+});
+registerEditorSettingMigration('highlightActiveIndentGuide', (value, read, write) => {
+    if (typeof value !== 'undefined') {
+        write('highlightActiveIndentGuide', undefined);
+        if (typeof read('guides.highlightActiveIndentation') === 'undefined') {
+            write('guides.highlightActiveIndentation', !!value);
+        }
+    }
+});
+const suggestFilteredTypesMapping = {
+    method: 'showMethods',
+    function: 'showFunctions',
+    constructor: 'showConstructors',
+    deprecated: 'showDeprecated',
+    field: 'showFields',
+    variable: 'showVariables',
+    class: 'showClasses',
+    struct: 'showStructs',
+    interface: 'showInterfaces',
+    module: 'showModules',
+    property: 'showProperties',
+    event: 'showEvents',
+    operator: 'showOperators',
+    unit: 'showUnits',
+    value: 'showValues',
+    constant: 'showConstants',
+    enum: 'showEnums',
+    enumMember: 'showEnumMembers',
+    keyword: 'showKeywords',
+    text: 'showWords',
+    color: 'showColors',
+    file: 'showFiles',
+    reference: 'showReferences',
+    folder: 'showFolders',
+    typeParameter: 'showTypeParameters',
+    snippet: 'showSnippets',
+};
+registerEditorSettingMigration('suggest.filteredTypes', (value, read, write) => {
+    if (value && typeof value === 'object') {
+        for (const entry of Object.entries(suggestFilteredTypesMapping)) {
+            const v = value[entry[0]];
+            if (v === false) {
+                if (typeof read(`suggest.${entry[1]}`) === 'undefined') {
+                    write(`suggest.${entry[1]}`, false);
+                }
+            }
+        }
+        write('suggest.filteredTypes', undefined);
+    }
+});
+registerEditorSettingMigration('quickSuggestions', (input, read, write) => {
+    if (typeof input === 'boolean') {
+        const value = input ? 'on' : 'off';
+        const newValue = { comments: value, strings: value, other: value };
+        write('quickSuggestions', newValue);
+    }
+});
+registerEditorSettingMigration('experimental.stickyScroll.enabled', (value, read, write) => {
+    if (typeof value === 'boolean') {
+        write('experimental.stickyScroll.enabled', undefined);
+        if (typeof read('stickyScroll.enabled') === 'undefined') {
+            write('stickyScroll.enabled', value);
+        }
+    }
+});
+registerEditorSettingMigration('experimental.stickyScroll.maxLineCount', (value, read, write) => {
+    if (typeof value === 'number') {
+        write('experimental.stickyScroll.maxLineCount', undefined);
+        if (typeof read('stickyScroll.maxLineCount') === 'undefined') {
+            write('stickyScroll.maxLineCount', value);
+        }
+    }
+});
+registerEditorSettingMigration('codeActionsOnSave', (value, read, write) => {
+    if (value && typeof value === 'object') {
+        let toBeModified = false;
+        const newValue = {};
+        for (const entry of Object.entries(value)) {
+            if (typeof entry[1] === 'boolean') {
+                toBeModified = true;
+                newValue[entry[0]] = entry[1] ? 'explicit' : 'never';
+            }
+            else {
+                newValue[entry[0]] = entry[1];
+            }
+        }
+        if (toBeModified) {
+            write(`codeActionsOnSave`, newValue);
+        }
+    }
+});
+registerEditorSettingMigration('codeActionWidget.includeNearbyQuickfixes', (value, read, write) => {
+    if (typeof value === 'boolean') {
+        write('codeActionWidget.includeNearbyQuickfixes', undefined);
+        if (typeof read('codeActionWidget.includeNearbyQuickFixes') === 'undefined') {
+            write('codeActionWidget.includeNearbyQuickFixes', value);
+        }
+    }
+});
+registerEditorSettingMigration('lightbulb.enabled', (value, read, write) => {
+    if (typeof value === 'boolean') {
+        write('lightbulb.enabled', value ? undefined : 'off');
+    }
+});

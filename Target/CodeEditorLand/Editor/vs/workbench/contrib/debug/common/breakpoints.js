@@ -1,1 +1,31 @@
-var x=Object.defineProperty;var c=Object.getOwnPropertyDescriptor;var p=(i,e,n,r)=>{for(var t=r>1?void 0:r?c(e,n):e,s=i.length-1,a;s>=0;s--)(a=i[s])&&(t=(r?a(e,n,t):a(t))||t);return r&&t&&x(e,n,t),t},h=(i,e)=>(n,r)=>e(n,r,i);import{ContextKeyExpr as u,IContextKeyService as y}from"../../../../platform/contextkey/common/contextkey.js";import"./debug.js";let o=class{constructor(e,n){this.breakpointContribution=e;this.contextKeyService=n;this.breakpointsWhen=typeof e.when=="string"?u.deserialize(e.when):void 0}breakpointsWhen;get language(){return this.breakpointContribution.language}get enabled(){return!this.breakpointsWhen||this.contextKeyService.contextMatchesRules(this.breakpointsWhen)}};o=p([h(1,y)],o);export{o as Breakpoints};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ContextKeyExpr, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+let Breakpoints = class Breakpoints {
+    constructor(breakpointContribution, contextKeyService) {
+        this.breakpointContribution = breakpointContribution;
+        this.contextKeyService = contextKeyService;
+        this.breakpointsWhen = typeof breakpointContribution.when === 'string' ? ContextKeyExpr.deserialize(breakpointContribution.when) : undefined;
+    }
+    get language() {
+        return this.breakpointContribution.language;
+    }
+    get enabled() {
+        return !this.breakpointsWhen || this.contextKeyService.contextMatchesRules(this.breakpointsWhen);
+    }
+};
+Breakpoints = __decorate([
+    __param(1, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object])
+], Breakpoints);
+export { Breakpoints };

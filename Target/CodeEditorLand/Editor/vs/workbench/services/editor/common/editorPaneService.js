@@ -1,1 +1,2 @@
-import{createDecorator as e}from"../../../../platform/instantiation/common/instantiation.js";import"../../../common/editor.js";import"../../../../base/common/event.js";const a=e("editorPaneService");export{a as IEditorPaneService};
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export const IEditorPaneService = createDecorator('editorPaneService');

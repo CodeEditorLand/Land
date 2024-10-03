@@ -1,1 +1,1 @@
-import"../../../../base/common/observable.js";import"../../../../base/common/themables.js";import"../../../../base/common/uri.js";import"../../../../platform/actions/common/actions.js";import"../../../../platform/theme/common/colorUtils.js";import"./scm.js";
+export {};

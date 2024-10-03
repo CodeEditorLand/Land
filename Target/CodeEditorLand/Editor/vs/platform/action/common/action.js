@@ -1,1 +1,9 @@
-import"../../../base/common/uri.js";import"../../contextkey/common/contextkey.js";import"../../../base/common/themables.js";import"./actionCommonCategories.js";import"../../commands/common/commands.js";function I(o){return o&&typeof o=="object"&&typeof o.original=="string"&&typeof o.value=="string"}function l(o){return o?o.condition!==void 0:!1}export{l as isICommandActionToggleInfo,I as isLocalizedString};
+export function isLocalizedString(thing) {
+    return thing
+        && typeof thing === 'object'
+        && typeof thing.original === 'string'
+        && typeof thing.value === 'string';
+}
+export function isICommandActionToggleInfo(thing) {
+    return thing ? thing.condition !== undefined : false;
+}

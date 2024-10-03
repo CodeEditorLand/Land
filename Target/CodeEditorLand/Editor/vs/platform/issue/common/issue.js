@@ -1,1 +1,9 @@
-import"../../../base/common/uri.js";import"../../../base/parts/sandbox/common/sandboxTypes.js";import"../../diagnostics/common/diagnostics.js";import{createDecorator as r}from"../../instantiation/common/instantiation.js";var o=(e=>(e[e.Bug=0]="Bug",e[e.PerformanceIssue=1]="PerformanceIssue",e[e.FeatureRequest=2]="FeatureRequest",e))(o||{}),t=(e=>(e.VSCode="vscode",e.Extension="extension",e.Marketplace="marketplace",e))(t||{});const u=r("issueService"),p=r("processService");export{u as IIssueMainService,p as IProcessMainService,t as IssueSource,o as OldIssueType};
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export var IssueSource;
+(function (IssueSource) {
+    IssueSource["VSCode"] = "vscode";
+    IssueSource["Extension"] = "extension";
+    IssueSource["Marketplace"] = "marketplace";
+})(IssueSource || (IssueSource = {}));
+export const IIssueMainService = createDecorator('issueService');
+export const IProcessMainService = createDecorator('processService');

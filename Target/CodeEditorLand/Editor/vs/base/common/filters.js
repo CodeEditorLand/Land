@@ -1,3 +1,675 @@
-import{CharCode as a}from"./charCode.js";import{LRUCache as oe}from"./map.js";import{getKoreanAltChars as ae}from"./naturalLanguage/korean.js";import*as R from"./strings.js";function Z(...e){return function(n,t){for(let r=0,u=e.length;r<u;r++){const i=e[r](n,t);if(i)return i}return null}}const Ne=J.bind(void 0,!1),H=J.bind(void 0,!0);function J(e,n,t){if(!t||t.length<n.length)return null;let r;return e?r=R.startsWithIgnoreCase(t,n):r=t.indexOf(n)===0,r?n.length>0?[{start:0,end:n.length}]:[]:null}function he(e,n){const t=n.toLowerCase().indexOf(e.toLowerCase());return t===-1?null:[{start:t,end:t+e.length}]}function ge(e,n){return P(e.toLowerCase(),n.toLowerCase(),0,0)}function P(e,n,t,r){if(t===e.length)return[];if(r===n.length)return null;if(e[t]===n[r]){let u=null;return(u=P(e,n,t+1,r+1))?W({start:r,end:r+1},u):null}return P(e,n,t,r+1)}function G(e){return a.a<=e&&e<=a.z}function I(e){return a.A<=e&&e<=a.Z}function T(e){return a.Digit0<=e&&e<=a.Digit9}function V(e){return e===a.Space||e===a.Tab||e===a.LineFeed||e===a.CarriageReturn}const Y=new Set;"()[]{}<>`'\"-/;:,.?!".split("").forEach(e=>Y.add(e.charCodeAt(0)));function S(e){return V(e)||Y.has(e)}function j(e,n){return e===n||S(e)&&S(n)}const U=new Map;function d(e){if(U.has(e))return U.get(e);let n;const t=ae(e);return t&&(n=t),U.set(e,n),n}function w(e){return G(e)||I(e)||T(e)}function W(e,n){return n.length===0?n=[e]:e.end===n[0].start?n[0].start=e.start:n.unshift(e),n}function ee(e,n){for(let t=n;t<e.length;t++){const r=e.charCodeAt(t);if(I(r)||T(r)||t>0&&!w(e.charCodeAt(t-1)))return t}return e.length}function q(e,n,t,r){if(t===e.length)return[];if(r===n.length)return null;if(e[t]!==n[r].toLowerCase())return null;{let u=null,i=r+1;for(u=q(e,n,t+1,r+1);!u&&(i=ee(n,i))<n.length;)u=q(e,n,t+1,i),i++;return u===null?null:W({start:r,end:r+1},u)}}function be(e){let n=0,t=0,r=0,u=0,i=0;for(let f=0;f<e.length;f++)i=e.charCodeAt(f),I(i)&&n++,G(i)&&t++,w(i)&&r++,T(i)&&u++;const l=n/e.length,c=t/e.length,o=r/e.length,s=u/e.length;return{upperPercent:l,lowerPercent:c,alphaPercent:o,numericPercent:s}}function me(e){const{upperPercent:n,lowerPercent:t}=e;return t===0&&n>.6}function pe(e){const{upperPercent:n,lowerPercent:t,alphaPercent:r,numericPercent:u}=e;return t>.2&&n<.8&&r>.6&&u<.2}function Ce(e){let n=0,t=0,r=0,u=0;for(let i=0;i<e.length;i++)r=e.charCodeAt(i),I(r)&&n++,G(r)&&t++,V(r)&&u++;return(n===0||t===0)&&u===0?e.length<=30:n<=5}function ne(e,n){if(!n||(n=n.trim(),n.length===0)||!Ce(e))return null;n.length>60&&(n=n.substring(0,60));const t=be(n);if(!pe(t)){if(!me(t))return null;n=n.toLowerCase()}let r=null,u=0;for(e=e.toLowerCase();u<n.length&&(r=q(e,n,0,u))===null;)u=ee(n,u+1);return r}function Re(e,n,t=!1){if(!n||n.length===0)return null;let r=null,u=0;for(e=e.toLowerCase(),n=n.toLowerCase();u<n.length&&(r=v(e,n,0,u,t),r===null);)u=te(n,u+1);return r}function v(e,n,t,r,u){let i=0;if(t===e.length)return[];if(r===n.length)return null;if(!j(e.charCodeAt(t),n.charCodeAt(r))){const o=d(e.charCodeAt(t));if(!o)return null;for(let s=0;s<o.length;s++)if(!j(o[s],n.charCodeAt(r+s)))return null;i+=o.length-1}let l=null,c=r+i+1;if(l=v(e,n,t+1,c,u),!u)for(;!l&&(c=te(n,c))<n.length;)l=v(e,n,t+1,c,u),c++;if(!l)return null;if(e.charCodeAt(t)!==n.charCodeAt(r)){const o=d(e.charCodeAt(t));if(!o)return l;for(let s=0;s<o.length;s++)if(o[s]!==n.charCodeAt(r+s))return l}return W({start:r,end:r+i+1},l)}function te(e,n){for(let t=n;t<e.length;t++)if(S(e.charCodeAt(t))||t>0&&S(e.charCodeAt(t-1)))return t;return e.length}const ze=Z(H,ne,he),ye=Z(H,ne,ge),re=new oe(1e4);function Pe(e,n,t=!1){if(typeof e!="string"||typeof n!="string")return null;let r=re.get(e);r||(r=new RegExp(R.convertSimple2RegExpPattern(e),"i"),re.set(e,r));const u=r.exec(n);return u?[{start:u.index,end:u.index+u[0].length}]:t?ye(e,n):ze(e,n)}function Ge(e,n){const t=k(e,e.toLowerCase(),0,n,n.toLowerCase(),0,{firstMatchCanBeWeak:!0,boostFullMatch:!0});return t?Me(t):null}function Te(e,n,t,r,u,i){const l=Math.min(13,e.length);for(;t<l;t++){const c=k(e,n,t,r,u,i,{firstMatchCanBeWeak:!0,boostFullMatch:!0});if(c)return c}return[0,i]}function Me(e){if(typeof e>"u")return[];const n=[],t=e[1];for(let r=e.length-1;r>1;r--){const u=e[r]+t,i=n[n.length-1];i&&i.end===u?i.end=u+1:n.push({start:u,end:u+1})}return n}const p=128;function Q(){const e=[],n=[];for(let t=0;t<=p;t++)n[t]=0;for(let t=0;t<=p;t++)e.push(n.slice(0));return e}function ue(e){const n=[];for(let t=0;t<=e;t++)n[t]=0;return n}const ie=ue(2*p),$=ue(2*p),m=Q(),C=Q(),A=Q(),xe=!1;function Ue(e,n,t,r,u){function i(c,o,s=" "){for(;c.length<o;)c=s+c;return c}let l=` |   |${r.split("").map(c=>i(c,3)).join("|")}
-`;for(let c=0;c<=t;c++)c===0?l+=" |":l+=`${n[c-1]}|`,l+=e[c].slice(0,u+1).map(o=>i(o.toString(),3)).join("|")+`
-`;return l}function Fe(e,n,t,r){e=e.substr(n),t=t.substr(r)}function _(e,n){if(n<0||n>=e.length)return!1;const t=e.codePointAt(n);switch(t){case a.Underline:case a.Dash:case a.Period:case a.Space:case a.Slash:case a.Backslash:case a.SingleQuote:case a.DoubleQuote:case a.Colon:case a.DollarSign:case a.LessThan:case a.GreaterThan:case a.OpenParen:case a.CloseParen:case a.OpenSquareBracket:case a.CloseSquareBracket:case a.OpenCurlyBrace:case a.CloseCurlyBrace:return!0;case void 0:return!1;default:return!!R.isEmojiImprecise(t)}}function le(e,n){if(n<0||n>=e.length)return!1;switch(e.charCodeAt(n)){case a.Space:case a.Tab:return!0;default:return!1}}function L(e,n,t){return n[e]!==t[e]}function Ie(e,n,t,r,u,i,l=!1){for(;n<t&&u<i;)e[n]===r[u]&&(l&&(ie[n]=u),n+=1),u+=1;return n===t}var Se=(r=>(r[r.Diag=1]="Diag",r[r.Left=2]="Left",r[r.LeftLeft=3]="LeftLeft",r))(Se||{}),Ae;(t=>{t.Default=[-100,0];function n(r){return!r||r.length===2&&r[0]===-100&&r[1]===0}t.isDefault=n})(Ae||={});class _e{constructor(n,t){this.firstMatchCanBeWeak=n;this.boostFullMatch=t}static default={boostFullMatch:!0,firstMatchCanBeWeak:!1}}function k(e,n,t,r,u,i,l=_e.default){const c=e.length>p?p:e.length,o=r.length>p?p:r.length;if(t>=c||i>=o||c-t>o-i||!Ie(n,t,c,u,i,o,!0))return;Le(c,o,t,i,n,u);let s=1,f=1,h=t,g=i;const K=[!1];for(s=1,h=t;h<c;s++,h++){const b=ie[h],M=$[h],fe=h+1<c?$[h+1]:o;for(f=b-i+1,g=b;g<fe;f++,g++){let O=Number.MIN_SAFE_INTEGER,x=!1;g<=M&&(O=ke(e,n,h,t,r,u,g,o,i,m[s-1][f-1]===0,K));let F=0;O!==Number.MAX_SAFE_INTEGER&&(x=!0,F=O+C[s-1][f-1]);const D=g>b,B=D?C[s][f-1]+(m[s][f-1]>0?-5:0):0,X=g>b+1&&m[s][f-1]>0,N=X?C[s][f-2]+(m[s][f-2]>0?-5:0):0;if(X&&(!D||N>=B)&&(!x||N>=F))C[s][f]=N,A[s][f]=3,m[s][f]=0;else if(D&&(!x||B>=F))C[s][f]=B,A[s][f]=2,m[s][f]=0;else if(x)C[s][f]=F,A[s][f]=1,m[s][f]=m[s-1][f-1]+1;else throw new Error("not possible")}}if(xe&&Fe(e,t,r,i),!K[0]&&!l.firstMatchCanBeWeak)return;s--,f--;const z=[C[s][f],i];let y=0,E=0;for(;s>=1;){let b=f;do{const M=A[s][b];if(M===3)b=b-2;else if(M===2)b=b-1;else break}while(b>=1);y>1&&n[t+s-1]===u[i+f-1]&&!L(b+i-1,r,u)&&y+1>m[s][b]&&(b=f),b===f?y++:y=1,E||(E=b),s--,f=b-1,z.push(f)}o-i===c&&l.boostFullMatch&&(z[0]+=2);const ce=E-c;return z[0]-=ce,z}function Le(e,n,t,r,u,i){let l=e-1,c=n-1;for(;l>=t&&c>=r;)u[l]===i[c]&&($[l]=c,l--),c--}function ke(e,n,t,r,u,i,l,c,o,s,f){if(n[t]!==i[l])return Number.MIN_SAFE_INTEGER;let h=1,g=!1;return l===t-r?h=e[t]===u[l]?7:5:L(l,u,i)&&(l===0||!L(l-1,u,i))?(h=e[t]===u[l]?7:5,g=!0):_(i,l)&&(l===0||!_(i,l-1))?h=5:(_(i,l-1)||le(i,l-1))&&(h=5,g=!0),h>1&&t===r&&(f[0]=!0),g||(g=L(l,u,i)||_(i,l-1)||le(i,l-1)),t===r?l>o&&(h-=g?3:5):s?h+=g?2:0:h+=g?0:1,l+1===c&&(h-=g?3:5),h}function We(e,n,t,r,u,i,l){return se(e,n,t,r,u,i,!0,l)}function qe(e,n,t,r,u,i,l){return se(e,n,t,r,u,i,!1,l)}function se(e,n,t,r,u,i,l,c){let o=k(e,n,t,r,u,i,c);if(o&&!l)return o;if(e.length>=3){const s=Math.min(7,e.length-1);for(let f=t+1;f<s;f++){const h=Ee(e,f);if(h){const g=k(h,h.toLowerCase(),t,r,u,i,c);g&&(g[0]-=3,(!o||g[0]>o[0])&&(o=g))}}}return o}function Ee(e,n){if(n+1>=e.length)return;const t=e[n],r=e[n+1];if(t!==r)return e.slice(0,n)+r+t+e.slice(n+2)}export{Ae as FuzzyScore,_e as FuzzyScoreOptions,Te as anyScore,Me as createMatches,k as fuzzyScore,qe as fuzzyScoreGraceful,We as fuzzyScoreGracefulAggressive,Ie as isPatternInWord,I as isUpper,ne as matchesCamelCase,he as matchesContiguousSubString,Pe as matchesFuzzy,Ge as matchesFuzzy2,H as matchesPrefix,Ne as matchesStrictPrefix,ge as matchesSubString,Re as matchesWords,Z as or};
+import { LRUCache } from './map.js';
+import { getKoreanAltChars } from './naturalLanguage/korean.js';
+import * as strings from './strings.js';
+export function or(...filter) {
+    return function (word, wordToMatchAgainst) {
+        for (let i = 0, len = filter.length; i < len; i++) {
+            const match = filter[i](word, wordToMatchAgainst);
+            if (match) {
+                return match;
+            }
+        }
+        return null;
+    };
+}
+export const matchesStrictPrefix = _matchesPrefix.bind(undefined, false);
+export const matchesPrefix = _matchesPrefix.bind(undefined, true);
+function _matchesPrefix(ignoreCase, word, wordToMatchAgainst) {
+    if (!wordToMatchAgainst || wordToMatchAgainst.length < word.length) {
+        return null;
+    }
+    let matches;
+    if (ignoreCase) {
+        matches = strings.startsWithIgnoreCase(wordToMatchAgainst, word);
+    }
+    else {
+        matches = wordToMatchAgainst.indexOf(word) === 0;
+    }
+    if (!matches) {
+        return null;
+    }
+    return word.length > 0 ? [{ start: 0, end: word.length }] : [];
+}
+export function matchesContiguousSubString(word, wordToMatchAgainst) {
+    const index = wordToMatchAgainst.toLowerCase().indexOf(word.toLowerCase());
+    if (index === -1) {
+        return null;
+    }
+    return [{ start: index, end: index + word.length }];
+}
+export function matchesSubString(word, wordToMatchAgainst) {
+    return _matchesSubString(word.toLowerCase(), wordToMatchAgainst.toLowerCase(), 0, 0);
+}
+function _matchesSubString(word, wordToMatchAgainst, i, j) {
+    if (i === word.length) {
+        return [];
+    }
+    else if (j === wordToMatchAgainst.length) {
+        return null;
+    }
+    else {
+        if (word[i] === wordToMatchAgainst[j]) {
+            let result = null;
+            if (result = _matchesSubString(word, wordToMatchAgainst, i + 1, j + 1)) {
+                return join({ start: j, end: j + 1 }, result);
+            }
+            return null;
+        }
+        return _matchesSubString(word, wordToMatchAgainst, i, j + 1);
+    }
+}
+function isLower(code) {
+    return 97 <= code && code <= 122;
+}
+export function isUpper(code) {
+    return 65 <= code && code <= 90;
+}
+function isNumber(code) {
+    return 48 <= code && code <= 57;
+}
+function isWhitespace(code) {
+    return (code === 32
+        || code === 9
+        || code === 10
+        || code === 13);
+}
+const wordSeparators = new Set();
+'()[]{}<>`\'"-/;:,.?!'
+    .split('')
+    .forEach(s => wordSeparators.add(s.charCodeAt(0)));
+function isWordSeparator(code) {
+    return isWhitespace(code) || wordSeparators.has(code);
+}
+function charactersMatch(codeA, codeB) {
+    return (codeA === codeB) || (isWordSeparator(codeA) && isWordSeparator(codeB));
+}
+const alternateCharsCache = new Map();
+function getAlternateCodes(code) {
+    if (alternateCharsCache.has(code)) {
+        return alternateCharsCache.get(code);
+    }
+    let result;
+    const codes = getKoreanAltChars(code);
+    if (codes) {
+        result = codes;
+    }
+    alternateCharsCache.set(code, result);
+    return result;
+}
+function isAlphanumeric(code) {
+    return isLower(code) || isUpper(code) || isNumber(code);
+}
+function join(head, tail) {
+    if (tail.length === 0) {
+        tail = [head];
+    }
+    else if (head.end === tail[0].start) {
+        tail[0].start = head.start;
+    }
+    else {
+        tail.unshift(head);
+    }
+    return tail;
+}
+function nextAnchor(camelCaseWord, start) {
+    for (let i = start; i < camelCaseWord.length; i++) {
+        const c = camelCaseWord.charCodeAt(i);
+        if (isUpper(c) || isNumber(c) || (i > 0 && !isAlphanumeric(camelCaseWord.charCodeAt(i - 1)))) {
+            return i;
+        }
+    }
+    return camelCaseWord.length;
+}
+function _matchesCamelCase(word, camelCaseWord, i, j) {
+    if (i === word.length) {
+        return [];
+    }
+    else if (j === camelCaseWord.length) {
+        return null;
+    }
+    else if (word[i] !== camelCaseWord[j].toLowerCase()) {
+        return null;
+    }
+    else {
+        let result = null;
+        let nextUpperIndex = j + 1;
+        result = _matchesCamelCase(word, camelCaseWord, i + 1, j + 1);
+        while (!result && (nextUpperIndex = nextAnchor(camelCaseWord, nextUpperIndex)) < camelCaseWord.length) {
+            result = _matchesCamelCase(word, camelCaseWord, i + 1, nextUpperIndex);
+            nextUpperIndex++;
+        }
+        return result === null ? null : join({ start: j, end: j + 1 }, result);
+    }
+}
+function analyzeCamelCaseWord(word) {
+    let upper = 0, lower = 0, alpha = 0, numeric = 0, code = 0;
+    for (let i = 0; i < word.length; i++) {
+        code = word.charCodeAt(i);
+        if (isUpper(code)) {
+            upper++;
+        }
+        if (isLower(code)) {
+            lower++;
+        }
+        if (isAlphanumeric(code)) {
+            alpha++;
+        }
+        if (isNumber(code)) {
+            numeric++;
+        }
+    }
+    const upperPercent = upper / word.length;
+    const lowerPercent = lower / word.length;
+    const alphaPercent = alpha / word.length;
+    const numericPercent = numeric / word.length;
+    return { upperPercent, lowerPercent, alphaPercent, numericPercent };
+}
+function isUpperCaseWord(analysis) {
+    const { upperPercent, lowerPercent } = analysis;
+    return lowerPercent === 0 && upperPercent > 0.6;
+}
+function isCamelCaseWord(analysis) {
+    const { upperPercent, lowerPercent, alphaPercent, numericPercent } = analysis;
+    return lowerPercent > 0.2 && upperPercent < 0.8 && alphaPercent > 0.6 && numericPercent < 0.2;
+}
+function isCamelCasePattern(word) {
+    let upper = 0, lower = 0, code = 0, whitespace = 0;
+    for (let i = 0; i < word.length; i++) {
+        code = word.charCodeAt(i);
+        if (isUpper(code)) {
+            upper++;
+        }
+        if (isLower(code)) {
+            lower++;
+        }
+        if (isWhitespace(code)) {
+            whitespace++;
+        }
+    }
+    if ((upper === 0 || lower === 0) && whitespace === 0) {
+        return word.length <= 30;
+    }
+    else {
+        return upper <= 5;
+    }
+}
+export function matchesCamelCase(word, camelCaseWord) {
+    if (!camelCaseWord) {
+        return null;
+    }
+    camelCaseWord = camelCaseWord.trim();
+    if (camelCaseWord.length === 0) {
+        return null;
+    }
+    if (!isCamelCasePattern(word)) {
+        return null;
+    }
+    if (camelCaseWord.length > 60) {
+        camelCaseWord = camelCaseWord.substring(0, 60);
+    }
+    const analysis = analyzeCamelCaseWord(camelCaseWord);
+    if (!isCamelCaseWord(analysis)) {
+        if (!isUpperCaseWord(analysis)) {
+            return null;
+        }
+        camelCaseWord = camelCaseWord.toLowerCase();
+    }
+    let result = null;
+    let i = 0;
+    word = word.toLowerCase();
+    while (i < camelCaseWord.length && (result = _matchesCamelCase(word, camelCaseWord, 0, i)) === null) {
+        i = nextAnchor(camelCaseWord, i + 1);
+    }
+    return result;
+}
+export function matchesWords(word, target, contiguous = false) {
+    if (!target || target.length === 0) {
+        return null;
+    }
+    let result = null;
+    let targetIndex = 0;
+    word = word.toLowerCase();
+    target = target.toLowerCase();
+    while (targetIndex < target.length) {
+        result = _matchesWords(word, target, 0, targetIndex, contiguous);
+        if (result !== null) {
+            break;
+        }
+        targetIndex = nextWord(target, targetIndex + 1);
+    }
+    return result;
+}
+function _matchesWords(word, target, wordIndex, targetIndex, contiguous) {
+    let targetIndexOffset = 0;
+    if (wordIndex === word.length) {
+        return [];
+    }
+    else if (targetIndex === target.length) {
+        return null;
+    }
+    else if (!charactersMatch(word.charCodeAt(wordIndex), target.charCodeAt(targetIndex))) {
+        const altChars = getAlternateCodes(word.charCodeAt(wordIndex));
+        if (!altChars) {
+            return null;
+        }
+        for (let k = 0; k < altChars.length; k++) {
+            if (!charactersMatch(altChars[k], target.charCodeAt(targetIndex + k))) {
+                return null;
+            }
+        }
+        targetIndexOffset += altChars.length - 1;
+    }
+    let result = null;
+    let nextWordIndex = targetIndex + targetIndexOffset + 1;
+    result = _matchesWords(word, target, wordIndex + 1, nextWordIndex, contiguous);
+    if (!contiguous) {
+        while (!result && (nextWordIndex = nextWord(target, nextWordIndex)) < target.length) {
+            result = _matchesWords(word, target, wordIndex + 1, nextWordIndex, contiguous);
+            nextWordIndex++;
+        }
+    }
+    if (!result) {
+        return null;
+    }
+    if (word.charCodeAt(wordIndex) !== target.charCodeAt(targetIndex)) {
+        const altChars = getAlternateCodes(word.charCodeAt(wordIndex));
+        if (!altChars) {
+            return result;
+        }
+        for (let k = 0; k < altChars.length; k++) {
+            if (altChars[k] !== target.charCodeAt(targetIndex + k)) {
+                return result;
+            }
+        }
+    }
+    return join({ start: targetIndex, end: targetIndex + targetIndexOffset + 1 }, result);
+}
+function nextWord(word, start) {
+    for (let i = start; i < word.length; i++) {
+        if (isWordSeparator(word.charCodeAt(i)) ||
+            (i > 0 && isWordSeparator(word.charCodeAt(i - 1)))) {
+            return i;
+        }
+    }
+    return word.length;
+}
+const fuzzyContiguousFilter = or(matchesPrefix, matchesCamelCase, matchesContiguousSubString);
+const fuzzySeparateFilter = or(matchesPrefix, matchesCamelCase, matchesSubString);
+const fuzzyRegExpCache = new LRUCache(10000);
+export function matchesFuzzy(word, wordToMatchAgainst, enableSeparateSubstringMatching = false) {
+    if (typeof word !== 'string' || typeof wordToMatchAgainst !== 'string') {
+        return null;
+    }
+    let regexp = fuzzyRegExpCache.get(word);
+    if (!regexp) {
+        regexp = new RegExp(strings.convertSimple2RegExpPattern(word), 'i');
+        fuzzyRegExpCache.set(word, regexp);
+    }
+    const match = regexp.exec(wordToMatchAgainst);
+    if (match) {
+        return [{ start: match.index, end: match.index + match[0].length }];
+    }
+    return enableSeparateSubstringMatching ? fuzzySeparateFilter(word, wordToMatchAgainst) : fuzzyContiguousFilter(word, wordToMatchAgainst);
+}
+export function matchesFuzzy2(pattern, word) {
+    const score = fuzzyScore(pattern, pattern.toLowerCase(), 0, word, word.toLowerCase(), 0, { firstMatchCanBeWeak: true, boostFullMatch: true });
+    return score ? createMatches(score) : null;
+}
+export function anyScore(pattern, lowPattern, patternPos, word, lowWord, wordPos) {
+    const max = Math.min(13, pattern.length);
+    for (; patternPos < max; patternPos++) {
+        const result = fuzzyScore(pattern, lowPattern, patternPos, word, lowWord, wordPos, { firstMatchCanBeWeak: true, boostFullMatch: true });
+        if (result) {
+            return result;
+        }
+    }
+    return [0, wordPos];
+}
+export function createMatches(score) {
+    if (typeof score === 'undefined') {
+        return [];
+    }
+    const res = [];
+    const wordPos = score[1];
+    for (let i = score.length - 1; i > 1; i--) {
+        const pos = score[i] + wordPos;
+        const last = res[res.length - 1];
+        if (last && last.end === pos) {
+            last.end = pos + 1;
+        }
+        else {
+            res.push({ start: pos, end: pos + 1 });
+        }
+    }
+    return res;
+}
+const _maxLen = 128;
+function initTable() {
+    const table = [];
+    const row = [];
+    for (let i = 0; i <= _maxLen; i++) {
+        row[i] = 0;
+    }
+    for (let i = 0; i <= _maxLen; i++) {
+        table.push(row.slice(0));
+    }
+    return table;
+}
+function initArr(maxLen) {
+    const row = [];
+    for (let i = 0; i <= maxLen; i++) {
+        row[i] = 0;
+    }
+    return row;
+}
+const _minWordMatchPos = initArr(2 * _maxLen);
+const _maxWordMatchPos = initArr(2 * _maxLen);
+const _diag = initTable();
+const _table = initTable();
+const _arrows = initTable();
+const _debug = false;
+function printTable(table, pattern, patternLen, word, wordLen) {
+    function pad(s, n, pad = ' ') {
+        while (s.length < n) {
+            s = pad + s;
+        }
+        return s;
+    }
+    let ret = ` |   |${word.split('').map(c => pad(c, 3)).join('|')}\n`;
+    for (let i = 0; i <= patternLen; i++) {
+        if (i === 0) {
+            ret += ' |';
+        }
+        else {
+            ret += `${pattern[i - 1]}|`;
+        }
+        ret += table[i].slice(0, wordLen + 1).map(n => pad(n.toString(), 3)).join('|') + '\n';
+    }
+    return ret;
+}
+function printTables(pattern, patternStart, word, wordStart) {
+    pattern = pattern.substr(patternStart);
+    word = word.substr(wordStart);
+    console.log(printTable(_table, pattern, pattern.length, word, word.length));
+    console.log(printTable(_arrows, pattern, pattern.length, word, word.length));
+    console.log(printTable(_diag, pattern, pattern.length, word, word.length));
+}
+function isSeparatorAtPos(value, index) {
+    if (index < 0 || index >= value.length) {
+        return false;
+    }
+    const code = value.codePointAt(index);
+    switch (code) {
+        case 95:
+        case 45:
+        case 46:
+        case 32:
+        case 47:
+        case 92:
+        case 39:
+        case 34:
+        case 58:
+        case 36:
+        case 60:
+        case 62:
+        case 40:
+        case 41:
+        case 91:
+        case 93:
+        case 123:
+        case 125:
+            return true;
+        case undefined:
+            return false;
+        default:
+            if (strings.isEmojiImprecise(code)) {
+                return true;
+            }
+            return false;
+    }
+}
+function isWhitespaceAtPos(value, index) {
+    if (index < 0 || index >= value.length) {
+        return false;
+    }
+    const code = value.charCodeAt(index);
+    switch (code) {
+        case 32:
+        case 9:
+            return true;
+        default:
+            return false;
+    }
+}
+function isUpperCaseAtPos(pos, word, wordLow) {
+    return word[pos] !== wordLow[pos];
+}
+export function isPatternInWord(patternLow, patternPos, patternLen, wordLow, wordPos, wordLen, fillMinWordPosArr = false) {
+    while (patternPos < patternLen && wordPos < wordLen) {
+        if (patternLow[patternPos] === wordLow[wordPos]) {
+            if (fillMinWordPosArr) {
+                _minWordMatchPos[patternPos] = wordPos;
+            }
+            patternPos += 1;
+        }
+        wordPos += 1;
+    }
+    return patternPos === patternLen;
+}
+export var FuzzyScore;
+(function (FuzzyScore) {
+    FuzzyScore.Default = ([-100, 0]);
+    function isDefault(score) {
+        return !score || (score.length === 2 && score[0] === -100 && score[1] === 0);
+    }
+    FuzzyScore.isDefault = isDefault;
+})(FuzzyScore || (FuzzyScore = {}));
+export class FuzzyScoreOptions {
+    static { this.default = { boostFullMatch: true, firstMatchCanBeWeak: false }; }
+    constructor(firstMatchCanBeWeak, boostFullMatch) {
+        this.firstMatchCanBeWeak = firstMatchCanBeWeak;
+        this.boostFullMatch = boostFullMatch;
+    }
+}
+export function fuzzyScore(pattern, patternLow, patternStart, word, wordLow, wordStart, options = FuzzyScoreOptions.default) {
+    const patternLen = pattern.length > _maxLen ? _maxLen : pattern.length;
+    const wordLen = word.length > _maxLen ? _maxLen : word.length;
+    if (patternStart >= patternLen || wordStart >= wordLen || (patternLen - patternStart) > (wordLen - wordStart)) {
+        return undefined;
+    }
+    if (!isPatternInWord(patternLow, patternStart, patternLen, wordLow, wordStart, wordLen, true)) {
+        return undefined;
+    }
+    _fillInMaxWordMatchPos(patternLen, wordLen, patternStart, wordStart, patternLow, wordLow);
+    let row = 1;
+    let column = 1;
+    let patternPos = patternStart;
+    let wordPos = wordStart;
+    const hasStrongFirstMatch = [false];
+    for (row = 1, patternPos = patternStart; patternPos < patternLen; row++, patternPos++) {
+        const minWordMatchPos = _minWordMatchPos[patternPos];
+        const maxWordMatchPos = _maxWordMatchPos[patternPos];
+        const nextMaxWordMatchPos = (patternPos + 1 < patternLen ? _maxWordMatchPos[patternPos + 1] : wordLen);
+        for (column = minWordMatchPos - wordStart + 1, wordPos = minWordMatchPos; wordPos < nextMaxWordMatchPos; column++, wordPos++) {
+            let score = Number.MIN_SAFE_INTEGER;
+            let canComeDiag = false;
+            if (wordPos <= maxWordMatchPos) {
+                score = _doScore(pattern, patternLow, patternPos, patternStart, word, wordLow, wordPos, wordLen, wordStart, _diag[row - 1][column - 1] === 0, hasStrongFirstMatch);
+            }
+            let diagScore = 0;
+            if (score !== Number.MAX_SAFE_INTEGER) {
+                canComeDiag = true;
+                diagScore = score + _table[row - 1][column - 1];
+            }
+            const canComeLeft = wordPos > minWordMatchPos;
+            const leftScore = canComeLeft ? _table[row][column - 1] + (_diag[row][column - 1] > 0 ? -5 : 0) : 0;
+            const canComeLeftLeft = wordPos > minWordMatchPos + 1 && _diag[row][column - 1] > 0;
+            const leftLeftScore = canComeLeftLeft ? _table[row][column - 2] + (_diag[row][column - 2] > 0 ? -5 : 0) : 0;
+            if (canComeLeftLeft && (!canComeLeft || leftLeftScore >= leftScore) && (!canComeDiag || leftLeftScore >= diagScore)) {
+                _table[row][column] = leftLeftScore;
+                _arrows[row][column] = 3;
+                _diag[row][column] = 0;
+            }
+            else if (canComeLeft && (!canComeDiag || leftScore >= diagScore)) {
+                _table[row][column] = leftScore;
+                _arrows[row][column] = 2;
+                _diag[row][column] = 0;
+            }
+            else if (canComeDiag) {
+                _table[row][column] = diagScore;
+                _arrows[row][column] = 1;
+                _diag[row][column] = _diag[row - 1][column - 1] + 1;
+            }
+            else {
+                throw new Error(`not possible`);
+            }
+        }
+    }
+    if (_debug) {
+        printTables(pattern, patternStart, word, wordStart);
+    }
+    if (!hasStrongFirstMatch[0] && !options.firstMatchCanBeWeak) {
+        return undefined;
+    }
+    row--;
+    column--;
+    const result = [_table[row][column], wordStart];
+    let backwardsDiagLength = 0;
+    let maxMatchColumn = 0;
+    while (row >= 1) {
+        let diagColumn = column;
+        do {
+            const arrow = _arrows[row][diagColumn];
+            if (arrow === 3) {
+                diagColumn = diagColumn - 2;
+            }
+            else if (arrow === 2) {
+                diagColumn = diagColumn - 1;
+            }
+            else {
+                break;
+            }
+        } while (diagColumn >= 1);
+        if (backwardsDiagLength > 1
+            && patternLow[patternStart + row - 1] === wordLow[wordStart + column - 1]
+            && !isUpperCaseAtPos(diagColumn + wordStart - 1, word, wordLow)
+            && backwardsDiagLength + 1 > _diag[row][diagColumn]) {
+            diagColumn = column;
+        }
+        if (diagColumn === column) {
+            backwardsDiagLength++;
+        }
+        else {
+            backwardsDiagLength = 1;
+        }
+        if (!maxMatchColumn) {
+            maxMatchColumn = diagColumn;
+        }
+        row--;
+        column = diagColumn - 1;
+        result.push(column);
+    }
+    if (wordLen - wordStart === patternLen && options.boostFullMatch) {
+        result[0] += 2;
+    }
+    const skippedCharsCount = maxMatchColumn - patternLen;
+    result[0] -= skippedCharsCount;
+    return result;
+}
+function _fillInMaxWordMatchPos(patternLen, wordLen, patternStart, wordStart, patternLow, wordLow) {
+    let patternPos = patternLen - 1;
+    let wordPos = wordLen - 1;
+    while (patternPos >= patternStart && wordPos >= wordStart) {
+        if (patternLow[patternPos] === wordLow[wordPos]) {
+            _maxWordMatchPos[patternPos] = wordPos;
+            patternPos--;
+        }
+        wordPos--;
+    }
+}
+function _doScore(pattern, patternLow, patternPos, patternStart, word, wordLow, wordPos, wordLen, wordStart, newMatchStart, outFirstMatchStrong) {
+    if (patternLow[patternPos] !== wordLow[wordPos]) {
+        return Number.MIN_SAFE_INTEGER;
+    }
+    let score = 1;
+    let isGapLocation = false;
+    if (wordPos === (patternPos - patternStart)) {
+        score = pattern[patternPos] === word[wordPos] ? 7 : 5;
+    }
+    else if (isUpperCaseAtPos(wordPos, word, wordLow) && (wordPos === 0 || !isUpperCaseAtPos(wordPos - 1, word, wordLow))) {
+        score = pattern[patternPos] === word[wordPos] ? 7 : 5;
+        isGapLocation = true;
+    }
+    else if (isSeparatorAtPos(wordLow, wordPos) && (wordPos === 0 || !isSeparatorAtPos(wordLow, wordPos - 1))) {
+        score = 5;
+    }
+    else if (isSeparatorAtPos(wordLow, wordPos - 1) || isWhitespaceAtPos(wordLow, wordPos - 1)) {
+        score = 5;
+        isGapLocation = true;
+    }
+    if (score > 1 && patternPos === patternStart) {
+        outFirstMatchStrong[0] = true;
+    }
+    if (!isGapLocation) {
+        isGapLocation = isUpperCaseAtPos(wordPos, word, wordLow) || isSeparatorAtPos(wordLow, wordPos - 1) || isWhitespaceAtPos(wordLow, wordPos - 1);
+    }
+    if (patternPos === patternStart) {
+        if (wordPos > wordStart) {
+            score -= isGapLocation ? 3 : 5;
+        }
+    }
+    else {
+        if (newMatchStart) {
+            score += isGapLocation ? 2 : 0;
+        }
+        else {
+            score += isGapLocation ? 0 : 1;
+        }
+    }
+    if (wordPos + 1 === wordLen) {
+        score -= isGapLocation ? 3 : 5;
+    }
+    return score;
+}
+export function fuzzyScoreGracefulAggressive(pattern, lowPattern, patternPos, word, lowWord, wordPos, options) {
+    return fuzzyScoreWithPermutations(pattern, lowPattern, patternPos, word, lowWord, wordPos, true, options);
+}
+export function fuzzyScoreGraceful(pattern, lowPattern, patternPos, word, lowWord, wordPos, options) {
+    return fuzzyScoreWithPermutations(pattern, lowPattern, patternPos, word, lowWord, wordPos, false, options);
+}
+function fuzzyScoreWithPermutations(pattern, lowPattern, patternPos, word, lowWord, wordPos, aggressive, options) {
+    let top = fuzzyScore(pattern, lowPattern, patternPos, word, lowWord, wordPos, options);
+    if (top && !aggressive) {
+        return top;
+    }
+    if (pattern.length >= 3) {
+        const tries = Math.min(7, pattern.length - 1);
+        for (let movingPatternPos = patternPos + 1; movingPatternPos < tries; movingPatternPos++) {
+            const newPattern = nextTypoPermutation(pattern, movingPatternPos);
+            if (newPattern) {
+                const candidate = fuzzyScore(newPattern, newPattern.toLowerCase(), patternPos, word, lowWord, wordPos, options);
+                if (candidate) {
+                    candidate[0] -= 3;
+                    if (!top || candidate[0] > top[0]) {
+                        top = candidate;
+                    }
+                }
+            }
+        }
+    }
+    return top;
+}
+function nextTypoPermutation(pattern, patternPos) {
+    if (patternPos + 1 >= pattern.length) {
+        return undefined;
+    }
+    const swap1 = pattern[patternPos];
+    const swap2 = pattern[patternPos + 1];
+    if (swap1 === swap2) {
+        return undefined;
+    }
+    return pattern.slice(0, patternPos)
+        + swap2
+        + swap1
+        + pattern.slice(patternPos + 2);
+}

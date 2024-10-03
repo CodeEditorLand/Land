@@ -1,1 +1,143 @@
-import{Emitter as s}from"../../../base/common/event.js";import{DisposableStore as a}from"../../../base/common/lifecycle.js";import{URI as d}from"../../../base/common/uri.js";import"../../../editor/common/model/mirrorTextModel.js";import{MainContext as u}from"./extHost.protocol.js";import{setWordDefinitionFor as D}from"./extHostDocumentData.js";import"./extHostDocumentsAndEditors.js";import*as p from"./extHostTypeConverters.js";import{assertIsDefined as h}from"../../../base/common/types.js";import{deepFreeze as v}from"../../../base/common/objects.js";import{TextDocumentChangeReason as m}from"./extHostTypes.js";class ${_onDidAddDocument=new s;_onDidRemoveDocument=new s;_onDidChangeDocument=new s;_onDidSaveDocument=new s;onDidAddDocument=this._onDidAddDocument.event;onDidRemoveDocument=this._onDidRemoveDocument.event;onDidChangeDocument=this._onDidChangeDocument.event;onDidSaveDocument=this._onDidSaveDocument.event;_toDispose=new a;_proxy;_documentsAndEditors;_documentLoader=new Map;constructor(e,t){this._proxy=e.getProxy(u.MainThreadDocuments),this._documentsAndEditors=t,this._documentsAndEditors.onDidRemoveDocuments(n=>{for(const o of n)this._onDidRemoveDocument.fire(o.document)},void 0,this._toDispose),this._documentsAndEditors.onDidAddDocuments(n=>{for(const o of n)this._onDidAddDocument.fire(o.document)},void 0,this._toDispose)}dispose(){this._toDispose.dispose()}getAllDocumentData(){return[...this._documentsAndEditors.allDocuments()]}getDocumentData(e){if(!e)return;const t=this._documentsAndEditors.getDocument(e);if(t)return t}getDocument(e){const t=this.getDocumentData(e);if(!t?.document)throw new Error(`Unable to retrieve document from URI '${e}'`);return t.document}ensureDocumentData(e){const t=this._documentsAndEditors.getDocument(e);if(t)return Promise.resolve(t);let n=this._documentLoader.get(e.toString());return n||(n=this._proxy.$tryOpenDocument(e).then(o=>{this._documentLoader.delete(e.toString());const i=d.revive(o);return h(this._documentsAndEditors.getDocument(i))},o=>(this._documentLoader.delete(e.toString()),Promise.reject(o))),this._documentLoader.set(e.toString(),n)),n}createDocumentData(e){return this._proxy.$tryCreateDocument(e).then(t=>d.revive(t))}$acceptModelLanguageChanged(e,t){const n=d.revive(e),o=this._documentsAndEditors.getDocument(n);if(!o)throw new Error("unknown document");this._onDidRemoveDocument.fire(o.document),o._acceptLanguageId(t),this._onDidAddDocument.fire(o.document)}$acceptModelSaved(e){const t=d.revive(e),n=this._documentsAndEditors.getDocument(t);if(!n)throw new Error("unknown document");this.$acceptDirtyStateChanged(e,!1),this._onDidSaveDocument.fire(n.document)}$acceptDirtyStateChanged(e,t){const n=d.revive(e),o=this._documentsAndEditors.getDocument(n);if(!o)throw new Error("unknown document");o._acceptIsDirty(t),this._onDidChangeDocument.fire({document:o.document,contentChanges:[],reason:void 0})}$acceptModelChanged(e,t,n){const o=d.revive(e),i=this._documentsAndEditors.getDocument(o);if(!i)throw new Error("unknown document");i._acceptIsDirty(n),i.onEvents(t);let c;t.isUndoing?c=m.Undo:t.isRedoing&&(c=m.Redo),this._onDidChangeDocument.fire(v({document:i.document,contentChanges:t.changes.map(r=>({range:p.Range.to(r.range),rangeOffset:r.rangeOffset,rangeLength:r.rangeLength,text:r.text})),reason:c}))}setWordDefinitionFor(e,t){D(e,t)}}export{$ as ExtHostDocuments};
+import { Emitter } from '../../../base/common/event.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { URI } from '../../../base/common/uri.js';
+import { MainContext } from './extHost.protocol.js';
+import { setWordDefinitionFor } from './extHostDocumentData.js';
+import * as TypeConverters from './extHostTypeConverters.js';
+import { assertIsDefined } from '../../../base/common/types.js';
+import { deepFreeze } from '../../../base/common/objects.js';
+import { TextDocumentChangeReason } from './extHostTypes.js';
+export class ExtHostDocuments {
+    constructor(mainContext, documentsAndEditors) {
+        this._onDidAddDocument = new Emitter();
+        this._onDidRemoveDocument = new Emitter();
+        this._onDidChangeDocument = new Emitter();
+        this._onDidSaveDocument = new Emitter();
+        this.onDidAddDocument = this._onDidAddDocument.event;
+        this.onDidRemoveDocument = this._onDidRemoveDocument.event;
+        this.onDidChangeDocument = this._onDidChangeDocument.event;
+        this.onDidSaveDocument = this._onDidSaveDocument.event;
+        this._toDispose = new DisposableStore();
+        this._documentLoader = new Map();
+        this._proxy = mainContext.getProxy(MainContext.MainThreadDocuments);
+        this._documentsAndEditors = documentsAndEditors;
+        this._documentsAndEditors.onDidRemoveDocuments(documents => {
+            for (const data of documents) {
+                this._onDidRemoveDocument.fire(data.document);
+            }
+        }, undefined, this._toDispose);
+        this._documentsAndEditors.onDidAddDocuments(documents => {
+            for (const data of documents) {
+                this._onDidAddDocument.fire(data.document);
+            }
+        }, undefined, this._toDispose);
+    }
+    dispose() {
+        this._toDispose.dispose();
+    }
+    getAllDocumentData() {
+        return [...this._documentsAndEditors.allDocuments()];
+    }
+    getDocumentData(resource) {
+        if (!resource) {
+            return undefined;
+        }
+        const data = this._documentsAndEditors.getDocument(resource);
+        if (data) {
+            return data;
+        }
+        return undefined;
+    }
+    getDocument(resource) {
+        const data = this.getDocumentData(resource);
+        if (!data?.document) {
+            throw new Error(`Unable to retrieve document from URI '${resource}'`);
+        }
+        return data.document;
+    }
+    ensureDocumentData(uri) {
+        const cached = this._documentsAndEditors.getDocument(uri);
+        if (cached) {
+            return Promise.resolve(cached);
+        }
+        let promise = this._documentLoader.get(uri.toString());
+        if (!promise) {
+            promise = this._proxy.$tryOpenDocument(uri).then(uriData => {
+                this._documentLoader.delete(uri.toString());
+                const canonicalUri = URI.revive(uriData);
+                return assertIsDefined(this._documentsAndEditors.getDocument(canonicalUri));
+            }, err => {
+                this._documentLoader.delete(uri.toString());
+                return Promise.reject(err);
+            });
+            this._documentLoader.set(uri.toString(), promise);
+        }
+        return promise;
+    }
+    createDocumentData(options) {
+        return this._proxy.$tryCreateDocument(options).then(data => URI.revive(data));
+    }
+    $acceptModelLanguageChanged(uriComponents, newLanguageId) {
+        const uri = URI.revive(uriComponents);
+        const data = this._documentsAndEditors.getDocument(uri);
+        if (!data) {
+            throw new Error('unknown document');
+        }
+        this._onDidRemoveDocument.fire(data.document);
+        data._acceptLanguageId(newLanguageId);
+        this._onDidAddDocument.fire(data.document);
+    }
+    $acceptModelSaved(uriComponents) {
+        const uri = URI.revive(uriComponents);
+        const data = this._documentsAndEditors.getDocument(uri);
+        if (!data) {
+            throw new Error('unknown document');
+        }
+        this.$acceptDirtyStateChanged(uriComponents, false);
+        this._onDidSaveDocument.fire(data.document);
+    }
+    $acceptDirtyStateChanged(uriComponents, isDirty) {
+        const uri = URI.revive(uriComponents);
+        const data = this._documentsAndEditors.getDocument(uri);
+        if (!data) {
+            throw new Error('unknown document');
+        }
+        data._acceptIsDirty(isDirty);
+        this._onDidChangeDocument.fire({
+            document: data.document,
+            contentChanges: [],
+            reason: undefined
+        });
+    }
+    $acceptModelChanged(uriComponents, events, isDirty) {
+        const uri = URI.revive(uriComponents);
+        const data = this._documentsAndEditors.getDocument(uri);
+        if (!data) {
+            throw new Error('unknown document');
+        }
+        data._acceptIsDirty(isDirty);
+        data.onEvents(events);
+        let reason = undefined;
+        if (events.isUndoing) {
+            reason = TextDocumentChangeReason.Undo;
+        }
+        else if (events.isRedoing) {
+            reason = TextDocumentChangeReason.Redo;
+        }
+        this._onDidChangeDocument.fire(deepFreeze({
+            document: data.document,
+            contentChanges: events.changes.map((change) => {
+                return {
+                    range: TypeConverters.Range.to(change.range),
+                    rangeOffset: change.rangeOffset,
+                    rangeLength: change.rangeLength,
+                    text: change.text
+                };
+            }),
+            reason
+        }));
+    }
+    setWordDefinitionFor(languageId, wordDefinition) {
+        setWordDefinitionFor(languageId, wordDefinition);
+    }
+}

@@ -1,1 +1,59 @@
-import"../../../../base/common/uri.js";const y=(p,i)=>{let n=p.with({query:null,fragment:null}).toString(!0);const a=t=>t.replace(/\/+$/,"");i=a(i),n=a(n);const h=Array.from({length:n.length+1}).map(()=>Array.from({length:i.length+1}).map(()=>{}));if(/^[^./:]*:\/\//.test(i))return e(h,n,i,0,0);const c=/^(https?):\/\//.exec(n)?.[1];return c?e(h,n,`${c}://${i}`,0,0):!1},e=(p,i,n,a,h)=>{if(p[a]?.[h]!==void 0)return p[a][h];const c=[];if(a===i.length)return h===n.length;if(h===n.length)return i.slice(a)[0]==="/";if(i[a]===n[h]&&c.push(e(p,i,n,a+1,h+1)),n[h]+n[h+1]==="*."&&(["/",":"].includes(i[a])||c.push(e(p,i,n,a+1,h)),c.push(e(p,i,n,a,h+2))),n[h]==="*"&&(a+1===i.length?c.push(e(p,i,n,a+1,h+1)):c.push(e(p,i,n,a+1,h)),c.push(e(p,i,n,a,h+1))),n[h]+n[h+1]===":*")if(i[a]===":"){let t=a+1;do t++;while(/[0-9]/.test(i[t]));c.push(e(p,i,n,t,h+2))}else c.push(e(p,i,n,a,h+2));return p[a][h]=c.some(t=>t===!0)};export{y as testUrlMatchesGlob};
+export const testUrlMatchesGlob = (uri, globUrl) => {
+    let url = uri.with({ query: null, fragment: null }).toString(true);
+    const normalize = (url) => url.replace(/\/+$/, '');
+    globUrl = normalize(globUrl);
+    url = normalize(url);
+    const memo = Array.from({ length: url.length + 1 }).map(() => Array.from({ length: globUrl.length + 1 }).map(() => undefined));
+    if (/^[^./:]*:\/\//.test(globUrl)) {
+        return doUrlMatch(memo, url, globUrl, 0, 0);
+    }
+    const scheme = /^(https?):\/\//.exec(url)?.[1];
+    if (scheme) {
+        return doUrlMatch(memo, url, `${scheme}://${globUrl}`, 0, 0);
+    }
+    return false;
+};
+const doUrlMatch = (memo, url, globUrl, urlOffset, globUrlOffset) => {
+    if (memo[urlOffset]?.[globUrlOffset] !== undefined) {
+        return memo[urlOffset][globUrlOffset];
+    }
+    const options = [];
+    if (urlOffset === url.length) {
+        return globUrlOffset === globUrl.length;
+    }
+    if (globUrlOffset === globUrl.length) {
+        const remaining = url.slice(urlOffset);
+        return remaining[0] === '/';
+    }
+    if (url[urlOffset] === globUrl[globUrlOffset]) {
+        options.push(doUrlMatch(memo, url, globUrl, urlOffset + 1, globUrlOffset + 1));
+    }
+    if (globUrl[globUrlOffset] + globUrl[globUrlOffset + 1] === '*.') {
+        if (!['/', ':'].includes(url[urlOffset])) {
+            options.push(doUrlMatch(memo, url, globUrl, urlOffset + 1, globUrlOffset));
+        }
+        options.push(doUrlMatch(memo, url, globUrl, urlOffset, globUrlOffset + 2));
+    }
+    if (globUrl[globUrlOffset] === '*') {
+        if (urlOffset + 1 === url.length) {
+            options.push(doUrlMatch(memo, url, globUrl, urlOffset + 1, globUrlOffset + 1));
+        }
+        else {
+            options.push(doUrlMatch(memo, url, globUrl, urlOffset + 1, globUrlOffset));
+        }
+        options.push(doUrlMatch(memo, url, globUrl, urlOffset, globUrlOffset + 1));
+    }
+    if (globUrl[globUrlOffset] + globUrl[globUrlOffset + 1] === ':*') {
+        if (url[urlOffset] === ':') {
+            let endPortIndex = urlOffset + 1;
+            do {
+                endPortIndex++;
+            } while (/[0-9]/.test(url[endPortIndex]));
+            options.push(doUrlMatch(memo, url, globUrl, endPortIndex, globUrlOffset + 2));
+        }
+        else {
+            options.push(doUrlMatch(memo, url, globUrl, urlOffset, globUrlOffset + 2));
+        }
+    }
+    return (memo[urlOffset][globUrlOffset] = options.some(a => a === true));
+};

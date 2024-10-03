@@ -1,1 +1,298 @@
-import"../common/extHostWorkspace.js";import"../common/extHostConfiguration.js";import"../common/extHost.protocol.js";import"../../services/extensions/common/extensionHostProtocol.js";import"./extHostExtensionService.js";import{URI as B}from"../../../base/common/uri.js";import{LogLevel as A}from"../../../platform/log/common/log.js";import"../../../platform/extensions/common/extensions.js";import{LogLevel as P,createHttpPatch as E,createProxyResolver as W,createTlsPatch as H,createNetPatch as N,loadSystemCertificates as V}from"@vscode/proxy-agent";import"../../../platform/request/common/request.js";import"../../../base/common/lifecycle.js";import{createRequire as _}from"node:module";const R=_(import.meta.url),k=R("http"),v=R("https"),T=R("tls"),S=R("net"),w=!1,$=!1;function xe(o,e,c,r,u,h,l){j(e,u,h,l);const y=h.environment.useHostProxy,t=typeof y=="boolean"?y:!h.remote.isRemote,n={resolveProxy:s=>o.resolveProxy(s),lookupProxyAuthorization:J.bind(void 0,o,r,u,e,{},{},h.remote.isRemote,t),getProxyURL:()=>e.getConfiguration("http").get("proxy"),getProxySupport:()=>e.getConfiguration("http").get("proxySupport")||"off",getNoProxyConfig:()=>e.getConfiguration("http").get("noProxy")||[],addCertificatesV1:()=>q(e),addCertificatesV2:()=>L(e),log:r,getLogLevel:()=>{const s=r.getLevel();switch(s){case A.Trace:return P.Trace;case A.Debug:return P.Debug;case A.Info:return P.Info;case A.Warning:return P.Warning;case A.Error:return P.Error;case A.Off:return P.Off;default:return d(s)}function d(g){return r.error("Unknown log level",g),P.Debug}},proxyResolveTelemetry:()=>{},useHostProxy:t,loadAdditionalCertificates:async()=>{const s=[];if(h.remote.isRemote&&s.push(V({log:r})),t){r.trace("ProxyResolver#loadAdditionalCertificates: Loading certificates from main process");const d=o.loadCertificates();d.then(g=>r.trace("ProxyResolver#loadAdditionalCertificates: Loaded certificates from main process",g.length)),s.push(d)}return h.environment.extensionTestsLocationURI&&v.globalAgent.testCertificates?.length&&(r.trace("ProxyResolver#loadAdditionalCertificates: Loading test certificates"),s.push(Promise.resolve(v.globalAgent.testCertificates))),(await Promise.all(s)).flat()},env:process.env},i=W(n),p=O(n,i);return G(c,p)}const K=["content-length","host","trailer","te","upgrade","cookie2","keep-alive","transfer-encoding","set-cookie"];function j(o,e,c,r){if(!c.remote.isRemote&&!globalThis.__originalFetch){const u=globalThis.fetch;globalThis.__originalFetch=u;let h=o.getConfiguration("http").get("electronFetch",$);r.add(o.onDidChangeConfiguration(y=>{y.affectsConfiguration("http.electronFetch")&&(h=o.getConfiguration("http").get("electronFetch",$))}));const l=R("electron");globalThis.fetch=async function(t,n){function i(f){return n&&f in n?n[f]:typeof t=="object"&&"cache"in t?t[f]:void 0}const p=typeof t=="string"?t:"cache"in t?t.url:t.toString(),s=p.startsWith("data:");s&&C(e,"data");const d=p.startsWith("blob:");d&&C(e,"blob");const g=i("redirect")==="manual";g&&C(e,"manualRedirect");const a=i("integrity");if(a&&C(e,"integrity"),!h||s||d||g||a){const f=await u(t,n);return M(e,f,p),f}if(n?.headers){const f=new Headers(n.headers);for(const x of K)f.delete(x);n={...n,headers:f}}const m=t instanceof URL?t.toString():t,b=await l.net.fetch(m,n);return M(e,b,p),b}}}function M(o,e,c){const r=e.url;Object.defineProperty(e,"url",{get(){return C(o,"url"),r||c}});const u=e.type;Object.defineProperty(e,"type",{get(){return C(o,"typeProperty"),u!=="default"?u:"basic"}})}const D={url:0,typeProperty:0,data:0,blob:0,integrity:0,manualRedirect:0};let I;function C(o,e){D[e]++||(I&&clearTimeout(I),I=setTimeout(()=>{o.$publicLog2("fetchFeatureUse",D)},1e4),I.unref())}function O(o,e){function c(r,u){return Object.assign(r.default||r,u)}return{http:c(k,E(o,k,e)),https:c(v,E(o,v,e)),net:c(S,N(o,S)),tls:c(T,H(o,T))}}function q(o){const e=o.getConfiguration("http");return!e.get("experimental.systemCertificatesV2",w)&&!!e.get("systemCertificates")}function L(o){const e=o.getConfiguration("http");return!!e.get("experimental.systemCertificatesV2",w)&&!!e.get("systemCertificates")}const U=new Map;function G(o,e){return o.getExtensionPathIndex().then(c=>{const r=R("module"),u=r._load;r._load=function(l,y,t){if(l==="net")return e.net;if(l==="tls")return e.tls;if(l!=="http"&&l!=="https")return u.apply(this,arguments);const n=c.findSubstr(B.file(y.filename));let i=U.get(n);if(i||U.set(n,i={}),!i[l]){const p=e[l];i[l]={...p}}return i[l]}})}async function J(o,e,c,r,u,h,l,y,t,n,i){const p=u[t];n&&(u[t]=n),e.trace("ProxyResolver#lookupProxyAuthorization callback",`proxyURL:${t}`,`proxyAuthenticate:${n}`,`proxyAuthenticateCache:${p}`);const s=n||p,d=Array.isArray(s)?s:typeof s=="string"?[s]:[];if(Q(c,d,l),d.some(a=>/^(Negotiate|Kerberos)( |$)/i.test(a))&&!i.kerberosRequested){i.kerberosRequested=!0;try{const a=await import("kerberos"),m=new URL(t),b=r.getConfiguration("http").get("proxyKerberosServicePrincipal")||(process.platform==="win32"?`HTTP/${m.hostname}`:`HTTP@${m.hostname}`);return e.debug("ProxyResolver#lookupProxyAuthorization Kerberos authentication lookup",`proxyURL:${t}`,`spn:${b}`),"Negotiate "+await(await a.initializeClient(b)).step("")}catch(a){e.debug("ProxyResolver#lookupProxyAuthorization Kerberos authentication failed",a)}if(l&&y){e.debug("ProxyResolver#lookupProxyAuthorization Kerberos authentication lookup on host",`proxyURL:${t}`);const a=await o.lookupKerberosAuthorization(t);if(a)return"Negotiate "+a}}const g=d.find(a=>/^Basic( |$)/i.test(a));if(g)try{const a=h[t];if(a)if(i.basicAuthCacheUsed)e.debug("ProxyResolver#lookupProxyAuthorization Basic authentication deleting cached credentials",`proxyURL:${t}`),delete h[t];else return e.debug("ProxyResolver#lookupProxyAuthorization Basic authentication using cached credentials",`proxyURL:${t}`),i.basicAuthCacheUsed=!0,a;i.basicAuthAttempt=(i.basicAuthAttempt||0)+1;const m=/ realm="([^"]+)"/i.exec(g)?.[1];e.debug("ProxyResolver#lookupProxyAuthorization Basic authentication lookup",`proxyURL:${t}`,`realm:${m}`);const b=new URL(t),f={scheme:"basic",host:b.hostname,port:Number(b.port),realm:m||"",isProxy:!0,attempt:i.basicAuthAttempt},x=await o.lookupAuthorization(f);if(x){e.debug("ProxyResolver#lookupProxyAuthorization Basic authentication received credentials",`proxyURL:${t}`,`realm:${m}`);const F="Basic "+Buffer.from(`${x.username}:${x.password}`).toString("base64");return h[t]=F,F}else e.debug("ProxyResolver#lookupProxyAuthorization Basic authentication received no credentials",`proxyURL:${t}`,`realm:${m}`)}catch(a){e.error("ProxyResolver#lookupProxyAuthorization Basic authentication failed",a)}}let z=!1;function Q(o,e,c){z||!e.length||(z=!0,o.$publicLog2("proxyAuthenticationRequest",{authenticationType:e.map(r=>r.split(" ")[0]).join(","),extensionHostType:c?"remote":"local"}))}export{xe as connectProxyResolver};
+import { URI } from '../../../base/common/uri.js';
+import { LogLevel as LogServiceLevel } from '../../../platform/log/common/log.js';
+import { LogLevel, createHttpPatch, createProxyResolver, createTlsPatch, createNetPatch, loadSystemCertificates } from '@vscode/proxy-agent';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const http = require('http');
+const https = require('https');
+const tls = require('tls');
+const net = require('net');
+const systemCertificatesV2Default = false;
+const useElectronFetchDefault = false;
+export function connectProxyResolver(extHostWorkspace, configProvider, extensionService, extHostLogService, mainThreadTelemetry, initData, disposables) {
+    patchGlobalFetch(configProvider, mainThreadTelemetry, initData, disposables);
+    const useHostProxy = initData.environment.useHostProxy;
+    const doUseHostProxy = typeof useHostProxy === 'boolean' ? useHostProxy : !initData.remote.isRemote;
+    const params = {
+        resolveProxy: url => extHostWorkspace.resolveProxy(url),
+        lookupProxyAuthorization: lookupProxyAuthorization.bind(undefined, extHostWorkspace, extHostLogService, mainThreadTelemetry, configProvider, {}, {}, initData.remote.isRemote, doUseHostProxy),
+        getProxyURL: () => configProvider.getConfiguration('http').get('proxy'),
+        getProxySupport: () => configProvider.getConfiguration('http').get('proxySupport') || 'off',
+        getNoProxyConfig: () => configProvider.getConfiguration('http').get('noProxy') || [],
+        addCertificatesV1: () => certSettingV1(configProvider),
+        addCertificatesV2: () => certSettingV2(configProvider),
+        log: extHostLogService,
+        getLogLevel: () => {
+            const level = extHostLogService.getLevel();
+            switch (level) {
+                case LogServiceLevel.Trace: return LogLevel.Trace;
+                case LogServiceLevel.Debug: return LogLevel.Debug;
+                case LogServiceLevel.Info: return LogLevel.Info;
+                case LogServiceLevel.Warning: return LogLevel.Warning;
+                case LogServiceLevel.Error: return LogLevel.Error;
+                case LogServiceLevel.Off: return LogLevel.Off;
+                default: return never(level);
+            }
+            function never(level) {
+                extHostLogService.error('Unknown log level', level);
+                return LogLevel.Debug;
+            }
+        },
+        proxyResolveTelemetry: () => { },
+        useHostProxy: doUseHostProxy,
+        loadAdditionalCertificates: async () => {
+            const promises = [];
+            if (initData.remote.isRemote) {
+                promises.push(loadSystemCertificates({ log: extHostLogService }));
+            }
+            if (doUseHostProxy) {
+                extHostLogService.trace('ProxyResolver#loadAdditionalCertificates: Loading certificates from main process');
+                const certs = extHostWorkspace.loadCertificates();
+                certs.then(certs => extHostLogService.trace('ProxyResolver#loadAdditionalCertificates: Loaded certificates from main process', certs.length));
+                promises.push(certs);
+            }
+            if (initData.environment.extensionTestsLocationURI && https.globalAgent.testCertificates?.length) {
+                extHostLogService.trace('ProxyResolver#loadAdditionalCertificates: Loading test certificates');
+                promises.push(Promise.resolve(https.globalAgent.testCertificates));
+            }
+            return (await Promise.all(promises)).flat();
+        },
+        env: process.env,
+    };
+    const resolveProxy = createProxyResolver(params);
+    const lookup = createPatchedModules(params, resolveProxy);
+    return configureModuleLoading(extensionService, lookup);
+}
+const unsafeHeaders = [
+    'content-length',
+    'host',
+    'trailer',
+    'te',
+    'upgrade',
+    'cookie2',
+    'keep-alive',
+    'transfer-encoding',
+    'set-cookie',
+];
+function patchGlobalFetch(configProvider, mainThreadTelemetry, initData, disposables) {
+    if (!initData.remote.isRemote && !globalThis.__originalFetch) {
+        const originalFetch = globalThis.fetch;
+        globalThis.__originalFetch = originalFetch;
+        let useElectronFetch = configProvider.getConfiguration('http').get('electronFetch', useElectronFetchDefault);
+        disposables.add(configProvider.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('http.electronFetch')) {
+                useElectronFetch = configProvider.getConfiguration('http').get('electronFetch', useElectronFetchDefault);
+            }
+        }));
+        const electron = require('electron');
+        globalThis.fetch = async function fetch(input, init) {
+            function getRequestProperty(name) {
+                return init && name in init ? init[name] : typeof input === 'object' && 'cache' in input ? input[name] : undefined;
+            }
+            const urlString = typeof input === 'string' ? input : 'cache' in input ? input.url : input.toString();
+            const isDataUrl = urlString.startsWith('data:');
+            if (isDataUrl) {
+                recordFetchFeatureUse(mainThreadTelemetry, 'data');
+            }
+            const isBlobUrl = urlString.startsWith('blob:');
+            if (isBlobUrl) {
+                recordFetchFeatureUse(mainThreadTelemetry, 'blob');
+            }
+            const isManualRedirect = getRequestProperty('redirect') === 'manual';
+            if (isManualRedirect) {
+                recordFetchFeatureUse(mainThreadTelemetry, 'manualRedirect');
+            }
+            const integrity = getRequestProperty('integrity');
+            if (integrity) {
+                recordFetchFeatureUse(mainThreadTelemetry, 'integrity');
+            }
+            if (!useElectronFetch || isDataUrl || isBlobUrl || isManualRedirect || integrity) {
+                const response = await originalFetch(input, init);
+                monitorResponseProperties(mainThreadTelemetry, response, urlString);
+                return response;
+            }
+            if (init?.headers) {
+                const headers = new Headers(init.headers);
+                for (const header of unsafeHeaders) {
+                    headers.delete(header);
+                }
+                init = { ...init, headers };
+            }
+            const electronInput = input instanceof URL ? input.toString() : input;
+            const response = await electron.net.fetch(electronInput, init);
+            monitorResponseProperties(mainThreadTelemetry, response, urlString);
+            return response;
+        };
+    }
+}
+function monitorResponseProperties(mainThreadTelemetry, response, urlString) {
+    const originalUrl = response.url;
+    Object.defineProperty(response, 'url', {
+        get() {
+            recordFetchFeatureUse(mainThreadTelemetry, 'url');
+            return originalUrl || urlString;
+        }
+    });
+    const originalType = response.type;
+    Object.defineProperty(response, 'type', {
+        get() {
+            recordFetchFeatureUse(mainThreadTelemetry, 'typeProperty');
+            return originalType !== 'default' ? originalType : 'basic';
+        }
+    });
+}
+const fetchFeatureUse = {
+    url: 0,
+    typeProperty: 0,
+    data: 0,
+    blob: 0,
+    integrity: 0,
+    manualRedirect: 0,
+};
+let timer;
+function recordFetchFeatureUse(mainThreadTelemetry, feature) {
+    if (!fetchFeatureUse[feature]++) {
+        if (timer) {
+            clearTimeout(timer);
+        }
+        timer = setTimeout(() => {
+            mainThreadTelemetry.$publicLog2('fetchFeatureUse', fetchFeatureUse);
+        }, 10000);
+        timer.unref();
+    }
+}
+function createPatchedModules(params, resolveProxy) {
+    function mergeModules(module, patch) {
+        return Object.assign(module.default || module, patch);
+    }
+    return {
+        http: mergeModules(http, createHttpPatch(params, http, resolveProxy)),
+        https: mergeModules(https, createHttpPatch(params, https, resolveProxy)),
+        net: mergeModules(net, createNetPatch(params, net)),
+        tls: mergeModules(tls, createTlsPatch(params, tls))
+    };
+}
+function certSettingV1(configProvider) {
+    const http = configProvider.getConfiguration('http');
+    return !http.get('experimental.systemCertificatesV2', systemCertificatesV2Default) && !!http.get('systemCertificates');
+}
+function certSettingV2(configProvider) {
+    const http = configProvider.getConfiguration('http');
+    return !!http.get('experimental.systemCertificatesV2', systemCertificatesV2Default) && !!http.get('systemCertificates');
+}
+const modulesCache = new Map();
+function configureModuleLoading(extensionService, lookup) {
+    return extensionService.getExtensionPathIndex()
+        .then(extensionPaths => {
+        const node_module = require('module');
+        const original = node_module._load;
+        node_module._load = function load(request, parent, isMain) {
+            if (request === 'net') {
+                return lookup.net;
+            }
+            if (request === 'tls') {
+                return lookup.tls;
+            }
+            if (request !== 'http' && request !== 'https') {
+                return original.apply(this, arguments);
+            }
+            const ext = extensionPaths.findSubstr(URI.file(parent.filename));
+            let cache = modulesCache.get(ext);
+            if (!cache) {
+                modulesCache.set(ext, cache = {});
+            }
+            if (!cache[request]) {
+                const mod = lookup[request];
+                cache[request] = { ...mod };
+            }
+            return cache[request];
+        };
+    });
+}
+async function lookupProxyAuthorization(extHostWorkspace, extHostLogService, mainThreadTelemetry, configProvider, proxyAuthenticateCache, basicAuthCache, isRemote, useHostProxy, proxyURL, proxyAuthenticate, state) {
+    const cached = proxyAuthenticateCache[proxyURL];
+    if (proxyAuthenticate) {
+        proxyAuthenticateCache[proxyURL] = proxyAuthenticate;
+    }
+    extHostLogService.trace('ProxyResolver#lookupProxyAuthorization callback', `proxyURL:${proxyURL}`, `proxyAuthenticate:${proxyAuthenticate}`, `proxyAuthenticateCache:${cached}`);
+    const header = proxyAuthenticate || cached;
+    const authenticate = Array.isArray(header) ? header : typeof header === 'string' ? [header] : [];
+    sendTelemetry(mainThreadTelemetry, authenticate, isRemote);
+    if (authenticate.some(a => /^(Negotiate|Kerberos)( |$)/i.test(a)) && !state.kerberosRequested) {
+        state.kerberosRequested = true;
+        try {
+            const kerberos = await import('kerberos');
+            const url = new URL(proxyURL);
+            const spn = configProvider.getConfiguration('http').get('proxyKerberosServicePrincipal')
+                || (process.platform === 'win32' ? `HTTP/${url.hostname}` : `HTTP@${url.hostname}`);
+            extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Kerberos authentication lookup', `proxyURL:${proxyURL}`, `spn:${spn}`);
+            const client = await kerberos.initializeClient(spn);
+            const response = await client.step('');
+            return 'Negotiate ' + response;
+        }
+        catch (err) {
+            extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Kerberos authentication failed', err);
+        }
+        if (isRemote && useHostProxy) {
+            extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Kerberos authentication lookup on host', `proxyURL:${proxyURL}`);
+            const auth = await extHostWorkspace.lookupKerberosAuthorization(proxyURL);
+            if (auth) {
+                return 'Negotiate ' + auth;
+            }
+        }
+    }
+    const basicAuthHeader = authenticate.find(a => /^Basic( |$)/i.test(a));
+    if (basicAuthHeader) {
+        try {
+            const cachedAuth = basicAuthCache[proxyURL];
+            if (cachedAuth) {
+                if (state.basicAuthCacheUsed) {
+                    extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Basic authentication deleting cached credentials', `proxyURL:${proxyURL}`);
+                    delete basicAuthCache[proxyURL];
+                }
+                else {
+                    extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Basic authentication using cached credentials', `proxyURL:${proxyURL}`);
+                    state.basicAuthCacheUsed = true;
+                    return cachedAuth;
+                }
+            }
+            state.basicAuthAttempt = (state.basicAuthAttempt || 0) + 1;
+            const realm = / realm="([^"]+)"/i.exec(basicAuthHeader)?.[1];
+            extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Basic authentication lookup', `proxyURL:${proxyURL}`, `realm:${realm}`);
+            const url = new URL(proxyURL);
+            const authInfo = {
+                scheme: 'basic',
+                host: url.hostname,
+                port: Number(url.port),
+                realm: realm || '',
+                isProxy: true,
+                attempt: state.basicAuthAttempt,
+            };
+            const credentials = await extHostWorkspace.lookupAuthorization(authInfo);
+            if (credentials) {
+                extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Basic authentication received credentials', `proxyURL:${proxyURL}`, `realm:${realm}`);
+                const auth = 'Basic ' + Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64');
+                basicAuthCache[proxyURL] = auth;
+                return auth;
+            }
+            else {
+                extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Basic authentication received no credentials', `proxyURL:${proxyURL}`, `realm:${realm}`);
+            }
+        }
+        catch (err) {
+            extHostLogService.error('ProxyResolver#lookupProxyAuthorization Basic authentication failed', err);
+        }
+    }
+    return undefined;
+}
+let telemetrySent = false;
+function sendTelemetry(mainThreadTelemetry, authenticate, isRemote) {
+    if (telemetrySent || !authenticate.length) {
+        return;
+    }
+    telemetrySent = true;
+    mainThreadTelemetry.$publicLog2('proxyAuthenticationRequest', {
+        authenticationType: authenticate.map(a => a.split(' ')[0]).join(','),
+        extensionHostType: isRemote ? 'remote' : 'local',
+    });
+}

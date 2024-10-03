@@ -1,1 +1,72 @@
-var c=Object.defineProperty;var l=Object.getOwnPropertyDescriptor;var s=(o,n,e,i)=>{for(var r=i>1?void 0:i?l(n,e):n,a=o.length-1,m;a>=0;a--)(m=o[a])&&(r=(i?m(n,e,r):m(r))||r);return i&&r&&c(n,e,r),r},d=(o,n)=>(e,i)=>n(e,i,o);import"./media/terminalQuickFix.css";import{KeyCode as p,KeyMod as u}from"../../../../../base/common/keyCodes.js";import{DisposableStore as g}from"../../../../../base/common/lifecycle.js";import{localize2 as h}from"../../../../../nls.js";import{InstantiationType as f,registerSingleton as I}from"../../../../../platform/instantiation/common/extensions.js";import{IInstantiationService as T}from"../../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as w}from"../../../../../platform/keybinding/common/keybindingsRegistry.js";import"../../../terminal/browser/terminal.js";import{registerActiveInstanceAction as x}from"../../../terminal/browser/terminalActions.js";import{registerTerminalContribution as k}from"../../../terminal/browser/terminalExtensions.js";import"../../../terminal/browser/widgets/widgetManager.js";import"../../../terminal/common/terminal.js";import{TerminalContextKeys as y}from"../../../terminal/common/terminalContextKey.js";import{ITerminalQuickFixService as F}from"./quickFix.js";import{TerminalQuickFixAddon as S}from"./quickFixAddon.js";import{freePort as C,gitCreatePr as v,gitFastForwardPull as _,gitPushSetUpstream as b,gitSimilar as P,gitTwoDashes as M,pwshGeneralError as Q,pwshUnixCommandNotFoundError as D}from"./terminalQuickFixBuiltinActions.js";import{TerminalQuickFixService as A}from"./terminalQuickFixService.js";I(F,A,f.Delayed);let t=class extends g{constructor(e,i,r,a){super();this._instance=e;this._instantiationService=a}static ID="quickFix";static get(e){return e.getContribution(t.ID)}_addon;get addon(){return this._addon}xtermReady(e){this._addon=this._instantiationService.createInstance(S,void 0,this._instance.capabilities),e.raw.loadAddon(this._addon),this.add(this._addon.onDidRequestRerunCommand(i=>this._instance.runCommand(i.command,i.shouldExecute||!1)));for(const i of[M(),_(),C((r,a)=>this._instance.freePortKillProcess(r,a)),P(),b(),v(),D(),Q()])this._addon.registerCommandFinishedListener(i)}};t=s([d(3,T)],t),k(t.ID,t);var K=(n=>(n.ShowQuickFixes="workbench.action.terminal.showQuickFixes",n))(K||{});x({id:"workbench.action.terminal.showQuickFixes",title:h("workbench.action.terminal.showQuickFixes","Show Terminal Quick Fixes"),precondition:y.focus,keybinding:{primary:u.CtrlCmd|p.Period,weight:w.WorkbenchContrib},run:o=>t.get(o)?.addon?.showMenu()});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var TerminalQuickFixContribution_1;
+import './media/terminalQuickFix.css';
+import { DisposableStore } from '../../../../../base/common/lifecycle.js';
+import { localize2 } from '../../../../../nls.js';
+import { registerSingleton } from '../../../../../platform/instantiation/common/extensions.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { registerActiveInstanceAction } from '../../../terminal/browser/terminalActions.js';
+import { registerTerminalContribution } from '../../../terminal/browser/terminalExtensions.js';
+import { TerminalWidgetManager } from '../../../terminal/browser/widgets/widgetManager.js';
+import { TerminalContextKeys } from '../../../terminal/common/terminalContextKey.js';
+import { ITerminalQuickFixService } from './quickFix.js';
+import { TerminalQuickFixAddon } from './quickFixAddon.js';
+import { freePort, gitCreatePr, gitFastForwardPull, gitPushSetUpstream, gitSimilar, gitTwoDashes, pwshGeneralError, pwshUnixCommandNotFoundError } from './terminalQuickFixBuiltinActions.js';
+import { TerminalQuickFixService } from './terminalQuickFixService.js';
+registerSingleton(ITerminalQuickFixService, TerminalQuickFixService, 1);
+let TerminalQuickFixContribution = class TerminalQuickFixContribution extends DisposableStore {
+    static { TerminalQuickFixContribution_1 = this; }
+    static { this.ID = 'quickFix'; }
+    static get(instance) {
+        return instance.getContribution(TerminalQuickFixContribution_1.ID);
+    }
+    get addon() { return this._addon; }
+    constructor(_instance, processManager, widgetManager, _instantiationService) {
+        super();
+        this._instance = _instance;
+        this._instantiationService = _instantiationService;
+    }
+    xtermReady(xterm) {
+        this._addon = this._instantiationService.createInstance(TerminalQuickFixAddon, undefined, this._instance.capabilities);
+        xterm.raw.loadAddon(this._addon);
+        this.add(this._addon.onDidRequestRerunCommand((e) => this._instance.runCommand(e.command, e.shouldExecute || false)));
+        for (const actionOption of [
+            gitTwoDashes(),
+            gitFastForwardPull(),
+            freePort((port, command) => this._instance.freePortKillProcess(port, command)),
+            gitSimilar(),
+            gitPushSetUpstream(),
+            gitCreatePr(),
+            pwshUnixCommandNotFoundError(),
+            pwshGeneralError()
+        ]) {
+            this._addon.registerCommandFinishedListener(actionOption);
+        }
+    }
+};
+TerminalQuickFixContribution = TerminalQuickFixContribution_1 = __decorate([
+    __param(3, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, TerminalWidgetManager, Object])
+], TerminalQuickFixContribution);
+registerTerminalContribution(TerminalQuickFixContribution.ID, TerminalQuickFixContribution);
+registerActiveInstanceAction({
+    id: "workbench.action.terminal.showQuickFixes",
+    title: localize2('workbench.action.terminal.showQuickFixes', 'Show Terminal Quick Fixes'),
+    precondition: TerminalContextKeys.focus,
+    keybinding: {
+        primary: 2048 | 89,
+        weight: 200
+    },
+    run: (activeInstance) => TerminalQuickFixContribution.get(activeInstance)?.addon?.showMenu()
+});

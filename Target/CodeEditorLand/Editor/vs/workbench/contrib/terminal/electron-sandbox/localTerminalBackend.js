@@ -1,1 +1,325 @@
-var C=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var g=(y,a,t,e)=>{for(var i=e>1?void 0:e?b(a,t):a,n=y.length-1,r;n>=0;n--)(r=y[n])&&(i=(e?r(a,t,i):r(i))||i);return e&&i&&C(a,t,i),i},o=(y,a)=>(t,e)=>a(t,e,y);import{Emitter as k}from"../../../../base/common/event.js";import{isMacintosh as D,isWindows as L}from"../../../../base/common/platform.js";import"../../../../base/common/uri.js";import{IConfigurationService as A}from"../../../../platform/configuration/common/configuration.js";import{IInstantiationService as W}from"../../../../platform/instantiation/common/instantiation.js";import{ILabelService as H}from"../../../../platform/label/common/label.js";import{Registry as M}from"../../../../platform/registry/common/platform.js";import{IStorageService as O,StorageScope as p,StorageTarget as f}from"../../../../platform/storage/common/storage.js";import{ILocalPtyService as q,ITerminalLogService as V,TerminalExtensions as B,TerminalIpcChannels as N,TerminalSettingId as K}from"../../../../platform/terminal/common/terminal.js";import"../../../../platform/terminal/common/terminalProcess.js";import{IWorkspaceContextService as F}from"../../../../platform/workspace/common/workspace.js";import"../../../common/contributions.js";import{ITerminalInstanceService as G}from"../browser/terminal.js";import{ITerminalProfileResolverService as U}from"../common/terminal.js";import{TerminalStorageKeys as d}from"../common/terminalStorageKeys.js";import{LocalPty as _}from"./localPty.js";import{IConfigurationResolverService as z}from"../../../services/configurationResolver/common/configurationResolver.js";import{IShellEnvironmentService as $}from"../../../services/environment/electron-sandbox/shellEnvironmentService.js";import{IHistoryService as w}from"../../../services/history/common/history.js";import*as I from"../common/terminalEnvironment.js";import{IProductService as J}from"../../../../platform/product/common/productService.js";import{IEnvironmentVariableService as Q}from"../common/environmentVariable.js";import{BaseTerminalBackend as j}from"../browser/baseTerminalBackend.js";import{INativeHostService as X}from"../../../../platform/native/common/native.js";import{Client as Y}from"../../../../base/parts/ipc/common/ipc.mp.js";import{acquirePort as Z}from"../../../../base/parts/ipc/electron-sandbox/ipc.mp.js";import{getDelayedChannel as ee,ProxyChannel as te}from"../../../../base/parts/ipc/common/ipc.js";import{mark as c}from"../../../../base/common/performance.js";import{ILifecycleService as re,LifecyclePhase as ie}from"../../../services/lifecycle/common/lifecycle.js";import{DeferredPromise as T}from"../../../../base/common/async.js";import{IStatusbarService as oe}from"../../../services/statusbar/browser/statusbar.js";import{memoize as x}from"../../../../base/common/decorators.js";import{StopWatch as ne}from"../../../../base/common/stopwatch.js";import{IRemoteAgentService as se}from"../../../services/remote/common/remoteAgentService.js";import{shouldUseEnvironmentVariableCollection as ae}from"../../../../platform/terminal/common/terminalEnvironment.js";let S=class{static ID="workbench.contrib.localTerminalBackend";constructor(a,t){const e=a.createInstance(m);M.as(B.Backend).registerTerminalBackend(e),t.didRegisterBackend(e)}};S=g([o(0,W),o(1,G)],S);let m=class extends j{constructor(t,e,i,n,r,s,v,l,h,u,P,ce,le,R,me,E,ye){super(n,i,R,l,E,t);this._lifecycleService=e;this._localPtyService=n;this._labelService=r;this._shellEnvironmentService=s;this._storageService=v;this._configurationResolverService=l;this._configurationService=h;this._productService=u;this._historyService=P;this._terminalProfileResolverService=ce;this._environmentVariableService=le;this._nativeHostService=me;this._remoteAgentService=ye;this._register(this.onPtyHostRestart(()=>{this._directProxy=void 0,this._directProxyClientEventually=void 0,this._connectToDirectProxy()}))}remoteAuthority=void 0;_ptys=new Map;_directProxyClientEventually;_directProxy;get _proxy(){return this._directProxy||this._localPtyService}_whenReady=new T;get whenReady(){return this._whenReady.p}setReady(){this._whenReady.complete()}_onDidRequestDetach=this._register(new k);onDidRequestDetach=this._onDidRequestDetach.event;async _connectToDirectProxy(){if(this._directProxyClientEventually){await this._directProxyClientEventually.p;return}this._logService.debug("Starting pty host");const t=new T;this._directProxyClientEventually=t;const e=te.toService(ee(this._directProxyClientEventually.p.then(i=>i.getChannel(N.PtyHostWindow))));this._directProxy=e,this._remoteAgentService.getConnection()?.remoteAuthority||await this._lifecycleService.when(ie.Restored),c("code/terminal/willConnectPtyHost"),this._logService.trace("Renderer->PtyHost#connect: before acquirePort"),Z("vscode:createPtyHostMessageChannel","vscode:createPtyHostMessageChannelResult").then(i=>{c("code/terminal/didConnectPtyHost"),this._logService.trace("Renderer->PtyHost#connect: connection established");const n=new Y(i,`window:${this._nativeHostService.windowId}`);t.complete(n),this._onPtyHostConnected.fire(),e.onProcessData(r=>this._ptys.get(r.id)?.handleData(r.event)),e.onDidChangeProperty(r=>this._ptys.get(r.id)?.handleDidChangeProperty(r.property)),e.onProcessExit(r=>{const s=this._ptys.get(r.id);s&&(s.handleExit(r.event),this._ptys.delete(r.id))}),e.onProcessReady(r=>this._ptys.get(r.id)?.handleReady(r.event)),e.onProcessReplay(r=>this._ptys.get(r.id)?.handleReplay(r.event)),e.onProcessOrphanQuestion(r=>this._ptys.get(r.id)?.handleOrphanQuestion()),e.onDidRequestDetach(r=>this._onDidRequestDetach.fire(r)),this.getEnvironment()})}async requestDetachInstance(t,e){return this._proxy.requestDetachInstance(t,e)}async acceptDetachInstanceReply(t,e){if(!e){this._logService.warn("Cannot attach to feature terminals, custom pty terminals, or those without a persistentProcessId");return}return this._proxy.acceptDetachInstanceReply(t,e)}async persistTerminalState(){const t=Array.from(this._ptys.keys()),e=await this._proxy.serializeTerminalState(t);this._storageService.store(d.TerminalBufferState,e,p.WORKSPACE,f.MACHINE)}async updateTitle(t,e,i){await this._proxy.updateTitle(t,e,i)}async updateIcon(t,e,i,n){await this._proxy.updateIcon(t,e,i,n)}async updateProperty(t,e,i){return this._proxy.updateProperty(t,e,i)}async createProcess(t,e,i,n,r,s,v,l){await this._connectToDirectProxy();const h=await this._shellEnvironmentService.getShellEnv(),u=await this._proxy.createProcess(t,e,i,n,r,s,h,v,l,this._getWorkspaceId(),this._getWorkspaceName()),P=new _(u,l,this._proxy);return this._ptys.set(u,P),P}async attachToProcess(t){await this._connectToDirectProxy();try{await this._proxy.attachToProcess(t);const e=new _(t,!0,this._proxy);return this._ptys.set(t,e),e}catch(e){this._logService.warn(`Couldn't attach to process ${e.message}`)}}async attachToRevivedProcess(t){await this._connectToDirectProxy();try{const e=await this._proxy.getRevivedPtyNewId(this._getWorkspaceId(),t)??t;return await this.attachToProcess(e)}catch(e){this._logService.warn(`Couldn't attach to process ${e.message}`)}}async listProcesses(){return await this._connectToDirectProxy(),this._proxy.listProcesses()}async getLatency(){const t=[],e=new ne;this._directProxy&&(await this._directProxy.getLatency(),e.stop(),t.push({label:"window<->ptyhost (message port)",latency:e.elapsed()}),e.reset());const i=await this._localPtyService.getLatency();return e.stop(),t.push({label:"window<->ptyhostservice<->ptyhost",latency:e.elapsed()}),[...t,...i]}async getPerformanceMarks(){return this._proxy.getPerformanceMarks()}async reduceConnectionGraceTime(){this._proxy.reduceConnectionGraceTime()}async getDefaultSystemShell(t){return this._proxy.getDefaultSystemShell(t)}async getProfiles(t,e,i){return this._localPtyService.getProfiles(this._workspaceContextService.getWorkspace().id,t,e,i)||[]}async getEnvironment(){return this._proxy.getEnvironment()}async getShellEnvironment(){return this._shellEnvironmentService.getShellEnv()}async getWslPath(t,e){return this._proxy.getWslPath(t,e)}async setTerminalLayoutInfo(t){const e={workspaceId:this._getWorkspaceId(),tabs:t?t.tabs:[]};await this._proxy.setTerminalLayoutInfo(e),this._storageService.store(d.TerminalLayoutInfo,JSON.stringify(e),p.WORKSPACE,f.MACHINE)}async getTerminalLayoutInfo(){const t=this._getWorkspaceId(),e={workspaceId:t},i=this._storageService.get(d.TerminalBufferState,p.WORKSPACE),n=this._deserializeTerminalState(i);if(n&&n.length>0)try{const r=this._historyService.getLastActiveWorkspaceRoot(),s=r?this._workspaceContextService.getWorkspaceFolder(r)??void 0:void 0,v=I.createVariableResolver(s,await this._terminalProfileResolverService.getEnvironment(this.remoteAuthority),this._configurationResolverService);c("code/terminal/willGetReviveEnvironments"),await Promise.all(n.map(h=>new Promise(u=>{this._resolveEnvironmentForRevive(v,h.shellLaunchConfig).then(P=>{h.processLaunchConfig.env=P,u()})}))),c("code/terminal/didGetReviveEnvironments"),c("code/terminal/willReviveTerminalProcesses"),await this._proxy.reviveTerminalProcesses(t,n,Intl.DateTimeFormat().resolvedOptions().locale),c("code/terminal/didReviveTerminalProcesses"),this._storageService.remove(d.TerminalBufferState,p.WORKSPACE);const l=this._storageService.get(d.TerminalLayoutInfo,p.WORKSPACE);l&&(c("code/terminal/willSetTerminalLayoutInfo"),await this._proxy.setTerminalLayoutInfo(JSON.parse(l)),c("code/terminal/didSetTerminalLayoutInfo"),this._storageService.remove(d.TerminalLayoutInfo,p.WORKSPACE))}catch(r){this._logService.warn("LocalTerminalBackend#getTerminalLayoutInfo Error",r&&typeof r=="object"&&"message"in r?r.message:r)}return this._proxy.getTerminalLayoutInfo(e)}async _resolveEnvironmentForRevive(t,e){const i=L?"windows":D?"osx":"linux",n=this._configurationService.getValue(`terminal.integrated.env.${i}`),r=await(e.useShellEnvironment?this.getShellEnvironment():this.getEnvironment()),s=await I.createTerminalEnvironment(e,n,t,this._productService.version,this._configurationService.getValue(K.DetectLocale),r);if(ae(e)){const v=I.getWorkspaceForTerminal(e.cwd,this._workspaceContextService,this._historyService);await this._environmentVariableService.mergedCollection.applyToProcessEnvironment(s,{workspaceFolder:v},t)}return s}_getWorkspaceName(){return this._labelService.getWorkspaceLabel(this._workspaceContextService.getWorkspace())}installAutoReply(t,e){return this._proxy.installAutoReply(t,e)}uninstallAllAutoReplies(){return this._proxy.uninstallAllAutoReplies()}};g([x],m.prototype,"getEnvironment",1),g([x],m.prototype,"getShellEnvironment",1),m=g([o(0,F),o(1,re),o(2,V),o(3,q),o(4,H),o(5,$),o(6,O),o(7,z),o(8,A),o(9,J),o(10,w),o(11,U),o(12,Q),o(13,w),o(14,X),o(15,oe),o(16,se)],m);export{S as LocalTerminalBackendContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter } from '../../../../base/common/event.js';
+import { isMacintosh, isWindows } from '../../../../base/common/platform.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { ILocalPtyService, ITerminalLogService, TerminalExtensions, TerminalIpcChannels } from '../../../../platform/terminal/common/terminal.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { ITerminalInstanceService } from '../browser/terminal.js';
+import { ITerminalProfileResolverService } from '../common/terminal.js';
+import { LocalPty } from './localPty.js';
+import { IConfigurationResolverService } from '../../../services/configurationResolver/common/configurationResolver.js';
+import { IShellEnvironmentService } from '../../../services/environment/electron-sandbox/shellEnvironmentService.js';
+import { IHistoryService } from '../../../services/history/common/history.js';
+import * as terminalEnvironment from '../common/terminalEnvironment.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { IEnvironmentVariableService } from '../common/environmentVariable.js';
+import { BaseTerminalBackend } from '../browser/baseTerminalBackend.js';
+import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { Client as MessagePortClient } from '../../../../base/parts/ipc/common/ipc.mp.js';
+import { acquirePort } from '../../../../base/parts/ipc/electron-sandbox/ipc.mp.js';
+import { getDelayedChannel, ProxyChannel } from '../../../../base/parts/ipc/common/ipc.js';
+import { mark } from '../../../../base/common/performance.js';
+import { ILifecycleService } from '../../../services/lifecycle/common/lifecycle.js';
+import { DeferredPromise } from '../../../../base/common/async.js';
+import { IStatusbarService } from '../../../services/statusbar/browser/statusbar.js';
+import { memoize } from '../../../../base/common/decorators.js';
+import { StopWatch } from '../../../../base/common/stopwatch.js';
+import { IRemoteAgentService } from '../../../services/remote/common/remoteAgentService.js';
+import { shouldUseEnvironmentVariableCollection } from '../../../../platform/terminal/common/terminalEnvironment.js';
+let LocalTerminalBackendContribution = class LocalTerminalBackendContribution {
+    static { this.ID = 'workbench.contrib.localTerminalBackend'; }
+    constructor(instantiationService, terminalInstanceService) {
+        const backend = instantiationService.createInstance(LocalTerminalBackend);
+        Registry.as(TerminalExtensions.Backend).registerTerminalBackend(backend);
+        terminalInstanceService.didRegisterBackend(backend);
+    }
+};
+LocalTerminalBackendContribution = __decorate([
+    __param(0, IInstantiationService),
+    __param(1, ITerminalInstanceService),
+    __metadata("design:paramtypes", [Object, Object])
+], LocalTerminalBackendContribution);
+export { LocalTerminalBackendContribution };
+let LocalTerminalBackend = class LocalTerminalBackend extends BaseTerminalBackend {
+    get _proxy() { return this._directProxy || this._localPtyService; }
+    get whenReady() { return this._whenReady.p; }
+    setReady() { this._whenReady.complete(); }
+    constructor(workspaceContextService, _lifecycleService, logService, _localPtyService, _labelService, _shellEnvironmentService, _storageService, _configurationResolverService, _configurationService, _productService, _historyService, _terminalProfileResolverService, _environmentVariableService, historyService, _nativeHostService, statusBarService, _remoteAgentService) {
+        super(_localPtyService, logService, historyService, _configurationResolverService, statusBarService, workspaceContextService);
+        this._lifecycleService = _lifecycleService;
+        this._localPtyService = _localPtyService;
+        this._labelService = _labelService;
+        this._shellEnvironmentService = _shellEnvironmentService;
+        this._storageService = _storageService;
+        this._configurationResolverService = _configurationResolverService;
+        this._configurationService = _configurationService;
+        this._productService = _productService;
+        this._historyService = _historyService;
+        this._terminalProfileResolverService = _terminalProfileResolverService;
+        this._environmentVariableService = _environmentVariableService;
+        this._nativeHostService = _nativeHostService;
+        this._remoteAgentService = _remoteAgentService;
+        this.remoteAuthority = undefined;
+        this._ptys = new Map();
+        this._whenReady = new DeferredPromise();
+        this._onDidRequestDetach = this._register(new Emitter());
+        this.onDidRequestDetach = this._onDidRequestDetach.event;
+        this._register(this.onPtyHostRestart(() => {
+            this._directProxy = undefined;
+            this._directProxyClientEventually = undefined;
+            this._connectToDirectProxy();
+        }));
+    }
+    async _connectToDirectProxy() {
+        if (this._directProxyClientEventually) {
+            await this._directProxyClientEventually.p;
+            return;
+        }
+        this._logService.debug('Starting pty host');
+        const directProxyClientEventually = new DeferredPromise();
+        this._directProxyClientEventually = directProxyClientEventually;
+        const directProxy = ProxyChannel.toService(getDelayedChannel(this._directProxyClientEventually.p.then(client => client.getChannel(TerminalIpcChannels.PtyHostWindow))));
+        this._directProxy = directProxy;
+        if (!this._remoteAgentService.getConnection()?.remoteAuthority) {
+            await this._lifecycleService.when(3);
+        }
+        mark('code/terminal/willConnectPtyHost');
+        this._logService.trace('Renderer->PtyHost#connect: before acquirePort');
+        acquirePort('vscode:createPtyHostMessageChannel', 'vscode:createPtyHostMessageChannelResult').then(port => {
+            mark('code/terminal/didConnectPtyHost');
+            this._logService.trace('Renderer->PtyHost#connect: connection established');
+            const client = new MessagePortClient(port, `window:${this._nativeHostService.windowId}`);
+            directProxyClientEventually.complete(client);
+            this._onPtyHostConnected.fire();
+            directProxy.onProcessData(e => this._ptys.get(e.id)?.handleData(e.event));
+            directProxy.onDidChangeProperty(e => this._ptys.get(e.id)?.handleDidChangeProperty(e.property));
+            directProxy.onProcessExit(e => {
+                const pty = this._ptys.get(e.id);
+                if (pty) {
+                    pty.handleExit(e.event);
+                    this._ptys.delete(e.id);
+                }
+            });
+            directProxy.onProcessReady(e => this._ptys.get(e.id)?.handleReady(e.event));
+            directProxy.onProcessReplay(e => this._ptys.get(e.id)?.handleReplay(e.event));
+            directProxy.onProcessOrphanQuestion(e => this._ptys.get(e.id)?.handleOrphanQuestion());
+            directProxy.onDidRequestDetach(e => this._onDidRequestDetach.fire(e));
+            this.getEnvironment();
+        });
+    }
+    async requestDetachInstance(workspaceId, instanceId) {
+        return this._proxy.requestDetachInstance(workspaceId, instanceId);
+    }
+    async acceptDetachInstanceReply(requestId, persistentProcessId) {
+        if (!persistentProcessId) {
+            this._logService.warn('Cannot attach to feature terminals, custom pty terminals, or those without a persistentProcessId');
+            return;
+        }
+        return this._proxy.acceptDetachInstanceReply(requestId, persistentProcessId);
+    }
+    async persistTerminalState() {
+        const ids = Array.from(this._ptys.keys());
+        const serialized = await this._proxy.serializeTerminalState(ids);
+        this._storageService.store("terminal.integrated.bufferState", serialized, 1, 1);
+    }
+    async updateTitle(id, title, titleSource) {
+        await this._proxy.updateTitle(id, title, titleSource);
+    }
+    async updateIcon(id, userInitiated, icon, color) {
+        await this._proxy.updateIcon(id, userInitiated, icon, color);
+    }
+    async updateProperty(id, property, value) {
+        return this._proxy.updateProperty(id, property, value);
+    }
+    async createProcess(shellLaunchConfig, cwd, cols, rows, unicodeVersion, env, options, shouldPersist) {
+        await this._connectToDirectProxy();
+        const executableEnv = await this._shellEnvironmentService.getShellEnv();
+        const id = await this._proxy.createProcess(shellLaunchConfig, cwd, cols, rows, unicodeVersion, env, executableEnv, options, shouldPersist, this._getWorkspaceId(), this._getWorkspaceName());
+        const pty = new LocalPty(id, shouldPersist, this._proxy);
+        this._ptys.set(id, pty);
+        return pty;
+    }
+    async attachToProcess(id) {
+        await this._connectToDirectProxy();
+        try {
+            await this._proxy.attachToProcess(id);
+            const pty = new LocalPty(id, true, this._proxy);
+            this._ptys.set(id, pty);
+            return pty;
+        }
+        catch (e) {
+            this._logService.warn(`Couldn't attach to process ${e.message}`);
+        }
+        return undefined;
+    }
+    async attachToRevivedProcess(id) {
+        await this._connectToDirectProxy();
+        try {
+            const newId = await this._proxy.getRevivedPtyNewId(this._getWorkspaceId(), id) ?? id;
+            return await this.attachToProcess(newId);
+        }
+        catch (e) {
+            this._logService.warn(`Couldn't attach to process ${e.message}`);
+        }
+        return undefined;
+    }
+    async listProcesses() {
+        await this._connectToDirectProxy();
+        return this._proxy.listProcesses();
+    }
+    async getLatency() {
+        const measurements = [];
+        const sw = new StopWatch();
+        if (this._directProxy) {
+            await this._directProxy.getLatency();
+            sw.stop();
+            measurements.push({
+                label: 'window<->ptyhost (message port)',
+                latency: sw.elapsed()
+            });
+            sw.reset();
+        }
+        const results = await this._localPtyService.getLatency();
+        sw.stop();
+        measurements.push({
+            label: 'window<->ptyhostservice<->ptyhost',
+            latency: sw.elapsed()
+        });
+        return [
+            ...measurements,
+            ...results
+        ];
+    }
+    async getPerformanceMarks() {
+        return this._proxy.getPerformanceMarks();
+    }
+    async reduceConnectionGraceTime() {
+        this._proxy.reduceConnectionGraceTime();
+    }
+    async getDefaultSystemShell(osOverride) {
+        return this._proxy.getDefaultSystemShell(osOverride);
+    }
+    async getProfiles(profiles, defaultProfile, includeDetectedProfiles) {
+        return this._localPtyService.getProfiles(this._workspaceContextService.getWorkspace().id, profiles, defaultProfile, includeDetectedProfiles) || [];
+    }
+    async getEnvironment() {
+        return this._proxy.getEnvironment();
+    }
+    async getShellEnvironment() {
+        return this._shellEnvironmentService.getShellEnv();
+    }
+    async getWslPath(original, direction) {
+        return this._proxy.getWslPath(original, direction);
+    }
+    async setTerminalLayoutInfo(layoutInfo) {
+        const args = {
+            workspaceId: this._getWorkspaceId(),
+            tabs: layoutInfo ? layoutInfo.tabs : []
+        };
+        await this._proxy.setTerminalLayoutInfo(args);
+        this._storageService.store("terminal.integrated.layoutInfo", JSON.stringify(args), 1, 1);
+    }
+    async getTerminalLayoutInfo() {
+        const workspaceId = this._getWorkspaceId();
+        const layoutArgs = { workspaceId };
+        const serializedState = this._storageService.get("terminal.integrated.bufferState", 1);
+        const reviveBufferState = this._deserializeTerminalState(serializedState);
+        if (reviveBufferState && reviveBufferState.length > 0) {
+            try {
+                const activeWorkspaceRootUri = this._historyService.getLastActiveWorkspaceRoot();
+                const lastActiveWorkspace = activeWorkspaceRootUri ? this._workspaceContextService.getWorkspaceFolder(activeWorkspaceRootUri) ?? undefined : undefined;
+                const variableResolver = terminalEnvironment.createVariableResolver(lastActiveWorkspace, await this._terminalProfileResolverService.getEnvironment(this.remoteAuthority), this._configurationResolverService);
+                mark('code/terminal/willGetReviveEnvironments');
+                await Promise.all(reviveBufferState.map(state => new Promise(r => {
+                    this._resolveEnvironmentForRevive(variableResolver, state.shellLaunchConfig).then(freshEnv => {
+                        state.processLaunchConfig.env = freshEnv;
+                        r();
+                    });
+                })));
+                mark('code/terminal/didGetReviveEnvironments');
+                mark('code/terminal/willReviveTerminalProcesses');
+                await this._proxy.reviveTerminalProcesses(workspaceId, reviveBufferState, Intl.DateTimeFormat().resolvedOptions().locale);
+                mark('code/terminal/didReviveTerminalProcesses');
+                this._storageService.remove("terminal.integrated.bufferState", 1);
+                const layoutInfo = this._storageService.get("terminal.integrated.layoutInfo", 1);
+                if (layoutInfo) {
+                    mark('code/terminal/willSetTerminalLayoutInfo');
+                    await this._proxy.setTerminalLayoutInfo(JSON.parse(layoutInfo));
+                    mark('code/terminal/didSetTerminalLayoutInfo');
+                    this._storageService.remove("terminal.integrated.layoutInfo", 1);
+                }
+            }
+            catch (e) {
+                this._logService.warn('LocalTerminalBackend#getTerminalLayoutInfo Error', e && typeof e === 'object' && 'message' in e ? e.message : e);
+            }
+        }
+        return this._proxy.getTerminalLayoutInfo(layoutArgs);
+    }
+    async _resolveEnvironmentForRevive(variableResolver, shellLaunchConfig) {
+        const platformKey = isWindows ? 'windows' : (isMacintosh ? 'osx' : 'linux');
+        const envFromConfigValue = this._configurationService.getValue(`terminal.integrated.env.${platformKey}`);
+        const baseEnv = await (shellLaunchConfig.useShellEnvironment ? this.getShellEnvironment() : this.getEnvironment());
+        const env = await terminalEnvironment.createTerminalEnvironment(shellLaunchConfig, envFromConfigValue, variableResolver, this._productService.version, this._configurationService.getValue("terminal.integrated.detectLocale"), baseEnv);
+        if (shouldUseEnvironmentVariableCollection(shellLaunchConfig)) {
+            const workspaceFolder = terminalEnvironment.getWorkspaceForTerminal(shellLaunchConfig.cwd, this._workspaceContextService, this._historyService);
+            await this._environmentVariableService.mergedCollection.applyToProcessEnvironment(env, { workspaceFolder }, variableResolver);
+        }
+        return env;
+    }
+    _getWorkspaceName() {
+        return this._labelService.getWorkspaceLabel(this._workspaceContextService.getWorkspace());
+    }
+    installAutoReply(match, reply) {
+        return this._proxy.installAutoReply(match, reply);
+    }
+    uninstallAllAutoReplies() {
+        return this._proxy.uninstallAllAutoReplies();
+    }
+};
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], LocalTerminalBackend.prototype, "getEnvironment", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], LocalTerminalBackend.prototype, "getShellEnvironment", null);
+LocalTerminalBackend = __decorate([
+    __param(0, IWorkspaceContextService),
+    __param(1, ILifecycleService),
+    __param(2, ITerminalLogService),
+    __param(3, ILocalPtyService),
+    __param(4, ILabelService),
+    __param(5, IShellEnvironmentService),
+    __param(6, IStorageService),
+    __param(7, IConfigurationResolverService),
+    __param(8, IConfigurationService),
+    __param(9, IProductService),
+    __param(10, IHistoryService),
+    __param(11, ITerminalProfileResolverService),
+    __param(12, IEnvironmentVariableService),
+    __param(13, IHistoryService),
+    __param(14, INativeHostService),
+    __param(15, IStatusbarService),
+    __param(16, IRemoteAgentService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], LocalTerminalBackend);

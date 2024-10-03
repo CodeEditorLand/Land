@@ -1,1 +1,374 @@
-import"./cancellation.js";import{onUnexpectedError as c}from"./errors.js";import{DisposableStore as T,toDisposable as d}from"./lifecycle.js";function g(r){const e=r;return e?typeof e.read=="function":!1}function m(r){const e=r;return e?[e.on,e.pause,e.resume,e.destroy].every(t=>typeof t=="function"):!1}function S(r){const e=r;return e?m(e.stream)&&Array.isArray(e.buffer)&&typeof e.ended=="boolean":!1}function o(r,e){return new p(r,e)}class p{constructor(e,t){this.reducer=e;this.options=t}state={flowing:!1,ended:!1,destroyed:!1};buffer={data:[],error:[]};listeners={data:[],error:[],end:[]};pendingWritePromises=[];pause(){this.state.destroyed||(this.state.flowing=!1)}resume(){this.state.destroyed||this.state.flowing||(this.state.flowing=!0,this.flowData(),this.flowErrors(),this.flowEnd())}write(e){if(!this.state.destroyed){if(this.state.flowing)this.emitData(e);else if(this.buffer.data.push(e),typeof this.options?.highWaterMark=="number"&&this.buffer.data.length>this.options.highWaterMark)return new Promise(t=>this.pendingWritePromises.push(t))}}error(e){this.state.destroyed||(this.state.flowing?this.emitError(e):this.buffer.error.push(e))}end(e){this.state.destroyed||(typeof e<"u"&&this.write(e),this.state.flowing?(this.emitEnd(),this.destroy()):this.state.ended=!0)}emitData(e){this.listeners.data.slice(0).forEach(t=>t(e))}emitError(e){this.listeners.error.length===0?c(e):this.listeners.error.slice(0).forEach(t=>t(e))}emitEnd(){this.listeners.end.slice(0).forEach(e=>e())}on(e,t){if(!this.state.destroyed)switch(e){case"data":this.listeners.data.push(t),this.resume();break;case"end":this.listeners.end.push(t),this.state.flowing&&this.flowEnd()&&this.destroy();break;case"error":this.listeners.error.push(t),this.state.flowing&&this.flowErrors();break}}removeListener(e,t){if(this.state.destroyed)return;let n;switch(e){case"data":n=this.listeners.data;break;case"end":n=this.listeners.end;break;case"error":n=this.listeners.error;break}if(n){const a=n.indexOf(t);a>=0&&n.splice(a,1)}}flowData(){if(this.buffer.data.length>0){const e=this.reducer(this.buffer.data);this.emitData(e),this.buffer.data.length=0;const t=[...this.pendingWritePromises];this.pendingWritePromises.length=0,t.forEach(n=>n())}}flowErrors(){if(this.listeners.error.length>0){for(const e of this.buffer.error)this.emitError(e);this.buffer.error.length=0}}flowEnd(){return this.state.ended?(this.emitEnd(),this.listeners.end.length>0):!1}destroy(){this.state.destroyed||(this.state.destroyed=!0,this.state.ended=!0,this.buffer.data.length=0,this.buffer.error.length=0,this.listeners.data.length=0,this.listeners.error.length=0,this.listeners.end.length=0,this.pendingWritePromises.length=0)}}function w(r,e){const t=[];let n;for(;(n=r.read())!==null;)t.push(n);return e(t)}function x(r,e,t){const n=[];let a;for(;(a=r.read())!==null&&n.length<t;)n.push(a);return a===null&&n.length>0?e(n):{read:()=>{if(n.length>0)return n.shift();if(typeof a<"u"){const i=a;return a=void 0,i}return r.read()}}}function y(r,e){return new Promise((t,n)=>{const a=[];f(r,{onData:i=>{e&&a.push(i)},onError:i=>{e?n(i):t(void 0)},onEnd:()=>{t(e?e(a):void 0)}})})}function f(r,e,t){r.on("error",n=>{t?.isCancellationRequested||e.onError(n)}),r.on("end",()=>{t?.isCancellationRequested||e.onEnd()}),r.on("data",n=>{t?.isCancellationRequested||e.onData(n)})}function k(r,e){return new Promise((t,n)=>{const a=new T,i=[],l=s=>{if(i.push(s),i.length>e)return a.dispose(),r.pause(),t({stream:r,buffer:i,ended:!1})},u=s=>(a.dispose(),n(s)),h=()=>(a.dispose(),t({stream:r,buffer:i,ended:!0}));a.add(d(()=>r.removeListener("error",u))),r.on("error",u),a.add(d(()=>r.removeListener("end",h))),r.on("end",h),a.add(d(()=>r.removeListener("data",l))),r.on("data",l)})}function I(r,e){const t=o(e);return t.end(r),t}function W(){const r=o(()=>{throw new Error("not supported")});return r.end(),r}function P(r){let e=!1;return{read:()=>e?null:(e=!0,r)}}function D(r,e,t){const n=o(t);return f(r,{onData:a=>n.write(e.data(a)),onError:a=>n.error(e.error?e.error(a):a),onEnd:()=>n.end()}),n}function L(r,e,t){let n=!1;return{read:()=>{const a=e.read();return n?a:(n=!0,a!==null?t([r,a]):r)}}}function O(r,e,t){let n=!1;const a=o(t);return f(e,{onData:i=>n?a.write(i):(n=!0,a.write(t([r,i]))),onError:i=>a.error(i),onEnd:()=>{n||(n=!0,a.write(r)),a.end()}}),a}export{w as consumeReadable,y as consumeStream,W as emptyStream,g as isReadable,S as isReadableBufferedStream,m as isReadableStream,f as listenStream,o as newWriteableStream,x as peekReadable,k as peekStream,L as prefixedReadable,O as prefixedStream,P as toReadable,I as toStream,D as transform};
+import { onUnexpectedError } from './errors.js';
+import { DisposableStore, toDisposable } from './lifecycle.js';
+export function isReadable(obj) {
+    const candidate = obj;
+    if (!candidate) {
+        return false;
+    }
+    return typeof candidate.read === 'function';
+}
+export function isReadableStream(obj) {
+    const candidate = obj;
+    if (!candidate) {
+        return false;
+    }
+    return [candidate.on, candidate.pause, candidate.resume, candidate.destroy].every(fn => typeof fn === 'function');
+}
+export function isReadableBufferedStream(obj) {
+    const candidate = obj;
+    if (!candidate) {
+        return false;
+    }
+    return isReadableStream(candidate.stream) && Array.isArray(candidate.buffer) && typeof candidate.ended === 'boolean';
+}
+export function newWriteableStream(reducer, options) {
+    return new WriteableStreamImpl(reducer, options);
+}
+class WriteableStreamImpl {
+    constructor(reducer, options) {
+        this.reducer = reducer;
+        this.options = options;
+        this.state = {
+            flowing: false,
+            ended: false,
+            destroyed: false
+        };
+        this.buffer = {
+            data: [],
+            error: []
+        };
+        this.listeners = {
+            data: [],
+            error: [],
+            end: []
+        };
+        this.pendingWritePromises = [];
+    }
+    pause() {
+        if (this.state.destroyed) {
+            return;
+        }
+        this.state.flowing = false;
+    }
+    resume() {
+        if (this.state.destroyed) {
+            return;
+        }
+        if (!this.state.flowing) {
+            this.state.flowing = true;
+            this.flowData();
+            this.flowErrors();
+            this.flowEnd();
+        }
+    }
+    write(data) {
+        if (this.state.destroyed) {
+            return;
+        }
+        if (this.state.flowing) {
+            this.emitData(data);
+        }
+        else {
+            this.buffer.data.push(data);
+            if (typeof this.options?.highWaterMark === 'number' && this.buffer.data.length > this.options.highWaterMark) {
+                return new Promise(resolve => this.pendingWritePromises.push(resolve));
+            }
+        }
+    }
+    error(error) {
+        if (this.state.destroyed) {
+            return;
+        }
+        if (this.state.flowing) {
+            this.emitError(error);
+        }
+        else {
+            this.buffer.error.push(error);
+        }
+    }
+    end(result) {
+        if (this.state.destroyed) {
+            return;
+        }
+        if (typeof result !== 'undefined') {
+            this.write(result);
+        }
+        if (this.state.flowing) {
+            this.emitEnd();
+            this.destroy();
+        }
+        else {
+            this.state.ended = true;
+        }
+    }
+    emitData(data) {
+        this.listeners.data.slice(0).forEach(listener => listener(data));
+    }
+    emitError(error) {
+        if (this.listeners.error.length === 0) {
+            onUnexpectedError(error);
+        }
+        else {
+            this.listeners.error.slice(0).forEach(listener => listener(error));
+        }
+    }
+    emitEnd() {
+        this.listeners.end.slice(0).forEach(listener => listener());
+    }
+    on(event, callback) {
+        if (this.state.destroyed) {
+            return;
+        }
+        switch (event) {
+            case 'data':
+                this.listeners.data.push(callback);
+                this.resume();
+                break;
+            case 'end':
+                this.listeners.end.push(callback);
+                if (this.state.flowing && this.flowEnd()) {
+                    this.destroy();
+                }
+                break;
+            case 'error':
+                this.listeners.error.push(callback);
+                if (this.state.flowing) {
+                    this.flowErrors();
+                }
+                break;
+        }
+    }
+    removeListener(event, callback) {
+        if (this.state.destroyed) {
+            return;
+        }
+        let listeners = undefined;
+        switch (event) {
+            case 'data':
+                listeners = this.listeners.data;
+                break;
+            case 'end':
+                listeners = this.listeners.end;
+                break;
+            case 'error':
+                listeners = this.listeners.error;
+                break;
+        }
+        if (listeners) {
+            const index = listeners.indexOf(callback);
+            if (index >= 0) {
+                listeners.splice(index, 1);
+            }
+        }
+    }
+    flowData() {
+        if (this.buffer.data.length > 0) {
+            const fullDataBuffer = this.reducer(this.buffer.data);
+            this.emitData(fullDataBuffer);
+            this.buffer.data.length = 0;
+            const pendingWritePromises = [...this.pendingWritePromises];
+            this.pendingWritePromises.length = 0;
+            pendingWritePromises.forEach(pendingWritePromise => pendingWritePromise());
+        }
+    }
+    flowErrors() {
+        if (this.listeners.error.length > 0) {
+            for (const error of this.buffer.error) {
+                this.emitError(error);
+            }
+            this.buffer.error.length = 0;
+        }
+    }
+    flowEnd() {
+        if (this.state.ended) {
+            this.emitEnd();
+            return this.listeners.end.length > 0;
+        }
+        return false;
+    }
+    destroy() {
+        if (!this.state.destroyed) {
+            this.state.destroyed = true;
+            this.state.ended = true;
+            this.buffer.data.length = 0;
+            this.buffer.error.length = 0;
+            this.listeners.data.length = 0;
+            this.listeners.error.length = 0;
+            this.listeners.end.length = 0;
+            this.pendingWritePromises.length = 0;
+        }
+    }
+}
+export function consumeReadable(readable, reducer) {
+    const chunks = [];
+    let chunk;
+    while ((chunk = readable.read()) !== null) {
+        chunks.push(chunk);
+    }
+    return reducer(chunks);
+}
+export function peekReadable(readable, reducer, maxChunks) {
+    const chunks = [];
+    let chunk = undefined;
+    while ((chunk = readable.read()) !== null && chunks.length < maxChunks) {
+        chunks.push(chunk);
+    }
+    if (chunk === null && chunks.length > 0) {
+        return reducer(chunks);
+    }
+    return {
+        read: () => {
+            if (chunks.length > 0) {
+                return chunks.shift();
+            }
+            if (typeof chunk !== 'undefined') {
+                const lastReadChunk = chunk;
+                chunk = undefined;
+                return lastReadChunk;
+            }
+            return readable.read();
+        }
+    };
+}
+export function consumeStream(stream, reducer) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        listenStream(stream, {
+            onData: chunk => {
+                if (reducer) {
+                    chunks.push(chunk);
+                }
+            },
+            onError: error => {
+                if (reducer) {
+                    reject(error);
+                }
+                else {
+                    resolve(undefined);
+                }
+            },
+            onEnd: () => {
+                if (reducer) {
+                    resolve(reducer(chunks));
+                }
+                else {
+                    resolve(undefined);
+                }
+            }
+        });
+    });
+}
+export function listenStream(stream, listener, token) {
+    stream.on('error', error => {
+        if (!token?.isCancellationRequested) {
+            listener.onError(error);
+        }
+    });
+    stream.on('end', () => {
+        if (!token?.isCancellationRequested) {
+            listener.onEnd();
+        }
+    });
+    stream.on('data', data => {
+        if (!token?.isCancellationRequested) {
+            listener.onData(data);
+        }
+    });
+}
+export function peekStream(stream, maxChunks) {
+    return new Promise((resolve, reject) => {
+        const streamListeners = new DisposableStore();
+        const buffer = [];
+        const dataListener = (chunk) => {
+            buffer.push(chunk);
+            if (buffer.length > maxChunks) {
+                streamListeners.dispose();
+                stream.pause();
+                return resolve({ stream, buffer, ended: false });
+            }
+        };
+        const errorListener = (error) => {
+            streamListeners.dispose();
+            return reject(error);
+        };
+        const endListener = () => {
+            streamListeners.dispose();
+            return resolve({ stream, buffer, ended: true });
+        };
+        streamListeners.add(toDisposable(() => stream.removeListener('error', errorListener)));
+        stream.on('error', errorListener);
+        streamListeners.add(toDisposable(() => stream.removeListener('end', endListener)));
+        stream.on('end', endListener);
+        streamListeners.add(toDisposable(() => stream.removeListener('data', dataListener)));
+        stream.on('data', dataListener);
+    });
+}
+export function toStream(t, reducer) {
+    const stream = newWriteableStream(reducer);
+    stream.end(t);
+    return stream;
+}
+export function emptyStream() {
+    const stream = newWriteableStream(() => { throw new Error('not supported'); });
+    stream.end();
+    return stream;
+}
+export function toReadable(t) {
+    let consumed = false;
+    return {
+        read: () => {
+            if (consumed) {
+                return null;
+            }
+            consumed = true;
+            return t;
+        }
+    };
+}
+export function transform(stream, transformer, reducer) {
+    const target = newWriteableStream(reducer);
+    listenStream(stream, {
+        onData: data => target.write(transformer.data(data)),
+        onError: error => target.error(transformer.error ? transformer.error(error) : error),
+        onEnd: () => target.end()
+    });
+    return target;
+}
+export function prefixedReadable(prefix, readable, reducer) {
+    let prefixHandled = false;
+    return {
+        read: () => {
+            const chunk = readable.read();
+            if (!prefixHandled) {
+                prefixHandled = true;
+                if (chunk !== null) {
+                    return reducer([prefix, chunk]);
+                }
+                return prefix;
+            }
+            return chunk;
+        }
+    };
+}
+export function prefixedStream(prefix, stream, reducer) {
+    let prefixHandled = false;
+    const target = newWriteableStream(reducer);
+    listenStream(stream, {
+        onData: data => {
+            if (!prefixHandled) {
+                prefixHandled = true;
+                return target.write(reducer([prefix, data]));
+            }
+            return target.write(data);
+        },
+        onError: error => target.error(error),
+        onEnd: () => {
+            if (!prefixHandled) {
+                prefixHandled = true;
+                target.write(prefix);
+            }
+            target.end();
+        }
+    });
+    return target;
+}

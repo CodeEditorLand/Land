@@ -1,1 +1,69 @@
-import"../../../../base/common/uri.js";import"../../../../editor/common/core/range.js";import"../../../../editor/common/languages.js";class s{constructor(e,r,n,a,t){this.uniqueOwner=e;this.owner=r;this.resource=n;this.comment=a;this.thread=t;this.threadId=t.threadId,this.range=t.range,this.threadState=t.state,this.threadRelevance=t.applicability,this.contextValue=t.contextValue,this.controllerHandle=t.controllerHandle,this.threadHandle=t.commentThreadHandle}isRoot=!1;replies=[];threadId;range;threadState;threadRelevance;contextValue;controllerHandle;threadHandle;hasReply(){return this.replies&&this.replies.length!==0}_lastUpdatedAt;get lastUpdatedAt(){if(this._lastUpdatedAt===void 0){let e=this.comment.timestamp||"";if(this.replies.length){const n=this.replies[this.replies.length-1].lastUpdatedAt;n>e&&(e=n)}this._lastUpdatedAt=e}return this._lastUpdatedAt}}class d{id;uniqueOwner;owner;ownerLabel;commentThreads;resource;constructor(e,r,n,a){this.uniqueOwner=e,this.owner=r,this.id=n.toString(),this.resource=n,this.commentThreads=a.filter(t=>t.comments&&t.comments.length).map(t=>d.createCommentNode(e,r,n,t))}static createCommentNode(e,r,n,a){const{comments:t}=a,i=t.map(o=>new s(e,r,n,o,a));return i.length>1&&(i[0].replies=i.slice(1,i.length)),i[0].isRoot=!0,i[0]}_lastUpdatedAt;get lastUpdatedAt(){if(this._lastUpdatedAt===void 0){let e="";if(!this.commentThreads.length)return e;for(const r of this.commentThreads){const n=r.lastUpdatedAt;n&&n>e&&(e=n)}this._lastUpdatedAt=e}return this._lastUpdatedAt}}export{s as CommentNode,d as ResourceWithCommentThreads};
+export class CommentNode {
+    constructor(uniqueOwner, owner, resource, comment, thread) {
+        this.uniqueOwner = uniqueOwner;
+        this.owner = owner;
+        this.resource = resource;
+        this.comment = comment;
+        this.thread = thread;
+        this.isRoot = false;
+        this.replies = [];
+        this.threadId = thread.threadId;
+        this.range = thread.range;
+        this.threadState = thread.state;
+        this.threadRelevance = thread.applicability;
+        this.contextValue = thread.contextValue;
+        this.controllerHandle = thread.controllerHandle;
+        this.threadHandle = thread.commentThreadHandle;
+    }
+    hasReply() {
+        return this.replies && this.replies.length !== 0;
+    }
+    get lastUpdatedAt() {
+        if (this._lastUpdatedAt === undefined) {
+            let updatedAt = this.comment.timestamp || '';
+            if (this.replies.length) {
+                const reply = this.replies[this.replies.length - 1];
+                const replyUpdatedAt = reply.lastUpdatedAt;
+                if (replyUpdatedAt > updatedAt) {
+                    updatedAt = replyUpdatedAt;
+                }
+            }
+            this._lastUpdatedAt = updatedAt;
+        }
+        return this._lastUpdatedAt;
+    }
+}
+export class ResourceWithCommentThreads {
+    constructor(uniqueOwner, owner, resource, commentThreads) {
+        this.uniqueOwner = uniqueOwner;
+        this.owner = owner;
+        this.id = resource.toString();
+        this.resource = resource;
+        this.commentThreads = commentThreads.filter(thread => thread.comments && thread.comments.length).map(thread => ResourceWithCommentThreads.createCommentNode(uniqueOwner, owner, resource, thread));
+    }
+    static createCommentNode(uniqueOwner, owner, resource, commentThread) {
+        const { comments } = commentThread;
+        const commentNodes = comments.map(comment => new CommentNode(uniqueOwner, owner, resource, comment, commentThread));
+        if (commentNodes.length > 1) {
+            commentNodes[0].replies = commentNodes.slice(1, commentNodes.length);
+        }
+        commentNodes[0].isRoot = true;
+        return commentNodes[0];
+    }
+    get lastUpdatedAt() {
+        if (this._lastUpdatedAt === undefined) {
+            let updatedAt = '';
+            if (!this.commentThreads.length) {
+                return updatedAt;
+            }
+            for (const thread of this.commentThreads) {
+                const threadUpdatedAt = thread.lastUpdatedAt;
+                if (threadUpdatedAt && threadUpdatedAt > updatedAt) {
+                    updatedAt = threadUpdatedAt;
+                }
+            }
+            this._lastUpdatedAt = updatedAt;
+        }
+        return this._lastUpdatedAt;
+    }
+}

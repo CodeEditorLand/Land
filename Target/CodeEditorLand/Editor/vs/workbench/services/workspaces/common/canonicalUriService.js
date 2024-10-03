@@ -1,1 +1,21 @@
-import"../../../../base/common/cancellation.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import{InstantiationType as o,registerSingleton as a}from"../../../../platform/instantiation/common/extensions.js";import{ICanonicalUriService as s}from"../../../../platform/workspace/common/canonicalUri.js";class t{_providers=new Map;registerCanonicalUriProvider(e){return this._providers.set(e.scheme,e),{dispose:()=>this._providers.delete(e.scheme)}}async provideCanonicalUri(e,r,n){const i=this._providers.get(e.scheme);if(i)return i.provideCanonicalUri(e,r,n)}}a(s,t,o.Delayed);export{t as CanonicalUriService};
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { ICanonicalUriService } from '../../../../platform/workspace/common/canonicalUri.js';
+export class CanonicalUriService {
+    constructor() {
+        this._providers = new Map();
+    }
+    registerCanonicalUriProvider(provider) {
+        this._providers.set(provider.scheme, provider);
+        return {
+            dispose: () => this._providers.delete(provider.scheme)
+        };
+    }
+    async provideCanonicalUri(uri, targetScheme, token) {
+        const provider = this._providers.get(uri.scheme);
+        if (provider) {
+            return provider.provideCanonicalUri(uri, targetScheme, token);
+        }
+        return undefined;
+    }
+}
+registerSingleton(ICanonicalUriService, CanonicalUriService, 1);

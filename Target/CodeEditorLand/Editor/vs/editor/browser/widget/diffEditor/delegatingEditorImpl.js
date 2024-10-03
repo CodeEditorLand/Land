@@ -1,1 +1,105 @@
-import{Emitter as l}from"../../../../base/common/event.js";import{Disposable as a}from"../../../../base/common/lifecycle.js";import"../codeEditor/codeEditorWidget.js";import"../../../common/config/editorOptions.js";import"../../../common/core/dimension.js";import"../../../common/core/position.js";import"../../../common/core/range.js";import"../../../common/core/selection.js";import{ScrollType as i}from"../../../common/editorCommon.js";import"../../../common/model.js";class r extends a{static idCounter=0;_id=++r.idCounter;_onDidDispose=this._register(new l);onDidDispose=this._onDidDispose.event;getId(){return this.getEditorType()+":v2:"+this._id}getVisibleColumnFromPosition(e){return this._targetEditor.getVisibleColumnFromPosition(e)}getStatusbarColumn(e){return this._targetEditor.getStatusbarColumn(e)}getPosition(){return this._targetEditor.getPosition()}setPosition(e,t="api"){this._targetEditor.setPosition(e,t)}revealLine(e,t=i.Smooth){this._targetEditor.revealLine(e,t)}revealLineInCenter(e,t=i.Smooth){this._targetEditor.revealLineInCenter(e,t)}revealLineInCenterIfOutsideViewport(e,t=i.Smooth){this._targetEditor.revealLineInCenterIfOutsideViewport(e,t)}revealLineNearTop(e,t=i.Smooth){this._targetEditor.revealLineNearTop(e,t)}revealPosition(e,t=i.Smooth){this._targetEditor.revealPosition(e,t)}revealPositionInCenter(e,t=i.Smooth){this._targetEditor.revealPositionInCenter(e,t)}revealPositionInCenterIfOutsideViewport(e,t=i.Smooth){this._targetEditor.revealPositionInCenterIfOutsideViewport(e,t)}revealPositionNearTop(e,t=i.Smooth){this._targetEditor.revealPositionNearTop(e,t)}getSelection(){return this._targetEditor.getSelection()}getSelections(){return this._targetEditor.getSelections()}setSelection(e,t="api"){this._targetEditor.setSelection(e,t)}setSelections(e,t="api"){this._targetEditor.setSelections(e,t)}revealLines(e,t,o=i.Smooth){this._targetEditor.revealLines(e,t,o)}revealLinesInCenter(e,t,o=i.Smooth){this._targetEditor.revealLinesInCenter(e,t,o)}revealLinesInCenterIfOutsideViewport(e,t,o=i.Smooth){this._targetEditor.revealLinesInCenterIfOutsideViewport(e,t,o)}revealLinesNearTop(e,t,o=i.Smooth){this._targetEditor.revealLinesNearTop(e,t,o)}revealRange(e,t=i.Smooth,o=!1,n=!0){this._targetEditor.revealRange(e,t,o,n)}revealRangeInCenter(e,t=i.Smooth){this._targetEditor.revealRangeInCenter(e,t)}revealRangeInCenterIfOutsideViewport(e,t=i.Smooth){this._targetEditor.revealRangeInCenterIfOutsideViewport(e,t)}revealRangeNearTop(e,t=i.Smooth){this._targetEditor.revealRangeNearTop(e,t)}revealRangeNearTopIfOutsideViewport(e,t=i.Smooth){this._targetEditor.revealRangeNearTopIfOutsideViewport(e,t)}revealRangeAtTop(e,t=i.Smooth){this._targetEditor.revealRangeAtTop(e,t)}getSupportedActions(){return this._targetEditor.getSupportedActions()}focus(){this._targetEditor.focus()}trigger(e,t,o){this._targetEditor.trigger(e,t,o)}createDecorationsCollection(e){return this._targetEditor.createDecorationsCollection(e)}changeDecorations(e){return this._targetEditor.changeDecorations(e)}}export{r as DelegatingEditor};
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+export class DelegatingEditor extends Disposable {
+    constructor() {
+        super(...arguments);
+        this._id = ++DelegatingEditor.idCounter;
+        this._onDidDispose = this._register(new Emitter());
+        this.onDidDispose = this._onDidDispose.event;
+    }
+    static { this.idCounter = 0; }
+    getId() { return this.getEditorType() + ':v2:' + this._id; }
+    getVisibleColumnFromPosition(position) {
+        return this._targetEditor.getVisibleColumnFromPosition(position);
+    }
+    getStatusbarColumn(position) {
+        return this._targetEditor.getStatusbarColumn(position);
+    }
+    getPosition() {
+        return this._targetEditor.getPosition();
+    }
+    setPosition(position, source = 'api') {
+        this._targetEditor.setPosition(position, source);
+    }
+    revealLine(lineNumber, scrollType = 0) {
+        this._targetEditor.revealLine(lineNumber, scrollType);
+    }
+    revealLineInCenter(lineNumber, scrollType = 0) {
+        this._targetEditor.revealLineInCenter(lineNumber, scrollType);
+    }
+    revealLineInCenterIfOutsideViewport(lineNumber, scrollType = 0) {
+        this._targetEditor.revealLineInCenterIfOutsideViewport(lineNumber, scrollType);
+    }
+    revealLineNearTop(lineNumber, scrollType = 0) {
+        this._targetEditor.revealLineNearTop(lineNumber, scrollType);
+    }
+    revealPosition(position, scrollType = 0) {
+        this._targetEditor.revealPosition(position, scrollType);
+    }
+    revealPositionInCenter(position, scrollType = 0) {
+        this._targetEditor.revealPositionInCenter(position, scrollType);
+    }
+    revealPositionInCenterIfOutsideViewport(position, scrollType = 0) {
+        this._targetEditor.revealPositionInCenterIfOutsideViewport(position, scrollType);
+    }
+    revealPositionNearTop(position, scrollType = 0) {
+        this._targetEditor.revealPositionNearTop(position, scrollType);
+    }
+    getSelection() {
+        return this._targetEditor.getSelection();
+    }
+    getSelections() {
+        return this._targetEditor.getSelections();
+    }
+    setSelection(something, source = 'api') {
+        this._targetEditor.setSelection(something, source);
+    }
+    setSelections(ranges, source = 'api') {
+        this._targetEditor.setSelections(ranges, source);
+    }
+    revealLines(startLineNumber, endLineNumber, scrollType = 0) {
+        this._targetEditor.revealLines(startLineNumber, endLineNumber, scrollType);
+    }
+    revealLinesInCenter(startLineNumber, endLineNumber, scrollType = 0) {
+        this._targetEditor.revealLinesInCenter(startLineNumber, endLineNumber, scrollType);
+    }
+    revealLinesInCenterIfOutsideViewport(startLineNumber, endLineNumber, scrollType = 0) {
+        this._targetEditor.revealLinesInCenterIfOutsideViewport(startLineNumber, endLineNumber, scrollType);
+    }
+    revealLinesNearTop(startLineNumber, endLineNumber, scrollType = 0) {
+        this._targetEditor.revealLinesNearTop(startLineNumber, endLineNumber, scrollType);
+    }
+    revealRange(range, scrollType = 0, revealVerticalInCenter = false, revealHorizontal = true) {
+        this._targetEditor.revealRange(range, scrollType, revealVerticalInCenter, revealHorizontal);
+    }
+    revealRangeInCenter(range, scrollType = 0) {
+        this._targetEditor.revealRangeInCenter(range, scrollType);
+    }
+    revealRangeInCenterIfOutsideViewport(range, scrollType = 0) {
+        this._targetEditor.revealRangeInCenterIfOutsideViewport(range, scrollType);
+    }
+    revealRangeNearTop(range, scrollType = 0) {
+        this._targetEditor.revealRangeNearTop(range, scrollType);
+    }
+    revealRangeNearTopIfOutsideViewport(range, scrollType = 0) {
+        this._targetEditor.revealRangeNearTopIfOutsideViewport(range, scrollType);
+    }
+    revealRangeAtTop(range, scrollType = 0) {
+        this._targetEditor.revealRangeAtTop(range, scrollType);
+    }
+    getSupportedActions() {
+        return this._targetEditor.getSupportedActions();
+    }
+    focus() {
+        this._targetEditor.focus();
+    }
+    trigger(source, handlerId, payload) {
+        this._targetEditor.trigger(source, handlerId, payload);
+    }
+    createDecorationsCollection(decorations) {
+        return this._targetEditor.createDecorationsCollection(decorations);
+    }
+    changeDecorations(callback) {
+        return this._targetEditor.changeDecorations(callback);
+    }
+}

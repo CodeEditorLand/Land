@@ -1,1 +1,103 @@
-import*as l from"../../../base/common/strings.js";import*as d from"../../../base/common/platform.js";import*as _ from"../../../base/common/buffer.js";let n;function o(){return n||(n=new TextDecoder("UTF-16LE")),n}let f;function a(){return f||(f=new TextDecoder("UTF-16BE")),f}let u;function g(){return u||(u=d.isLittleEndian()?o():a()),u}function b(i,e,t){const r=new Uint16Array(i.buffer,e,t);return t>0&&(r[0]===65279||r[0]===65534)?p(i,e,t):o().decode(r)}function p(i,e,t){const r=[];let c=0;for(let s=0;s<t;s++){const h=_.readUInt16LE(i,e);e+=2,r[c++]=String.fromCharCode(h)}return r.join("")}class m{_capacity;_buffer;_completedStrings;_bufferLength;constructor(e){this._capacity=e|0,this._buffer=new Uint16Array(this._capacity),this._completedStrings=null,this._bufferLength=0}reset(){this._completedStrings=null,this._bufferLength=0}build(){return this._completedStrings!==null?(this._flushBuffer(),this._completedStrings.join("")):this._buildBuffer()}_buildBuffer(){if(this._bufferLength===0)return"";const e=new Uint16Array(this._buffer.buffer,0,this._bufferLength);return g().decode(e)}_flushBuffer(){const e=this._buildBuffer();this._bufferLength=0,this._completedStrings===null?this._completedStrings=[e]:this._completedStrings[this._completedStrings.length]=e}appendCharCode(e){const t=this._capacity-this._bufferLength;t<=1&&(t===0||l.isHighSurrogate(e))&&this._flushBuffer(),this._buffer[this._bufferLength++]=e}appendASCIICharCode(e){this._bufferLength===this._capacity&&this._flushBuffer(),this._buffer[this._bufferLength++]=e}appendString(e){const t=e.length;if(this._bufferLength+t>=this._capacity){this._flushBuffer(),this._completedStrings[this._completedStrings.length]=e;return}for(let r=0;r<t;r++)this._buffer[this._bufferLength++]=e.charCodeAt(r)}}export{m as StringBuilder,b as decodeUTF16LE,g as getPlatformTextDecoder};
+import * as strings from '../../../base/common/strings.js';
+import * as platform from '../../../base/common/platform.js';
+import * as buffer from '../../../base/common/buffer.js';
+let _utf16LE_TextDecoder;
+function getUTF16LE_TextDecoder() {
+    if (!_utf16LE_TextDecoder) {
+        _utf16LE_TextDecoder = new TextDecoder('UTF-16LE');
+    }
+    return _utf16LE_TextDecoder;
+}
+let _utf16BE_TextDecoder;
+function getUTF16BE_TextDecoder() {
+    if (!_utf16BE_TextDecoder) {
+        _utf16BE_TextDecoder = new TextDecoder('UTF-16BE');
+    }
+    return _utf16BE_TextDecoder;
+}
+let _platformTextDecoder;
+export function getPlatformTextDecoder() {
+    if (!_platformTextDecoder) {
+        _platformTextDecoder = platform.isLittleEndian() ? getUTF16LE_TextDecoder() : getUTF16BE_TextDecoder();
+    }
+    return _platformTextDecoder;
+}
+export function decodeUTF16LE(source, offset, len) {
+    const view = new Uint16Array(source.buffer, offset, len);
+    if (len > 0 && (view[0] === 0xFEFF || view[0] === 0xFFFE)) {
+        return compatDecodeUTF16LE(source, offset, len);
+    }
+    return getUTF16LE_TextDecoder().decode(view);
+}
+function compatDecodeUTF16LE(source, offset, len) {
+    const result = [];
+    let resultLen = 0;
+    for (let i = 0; i < len; i++) {
+        const charCode = buffer.readUInt16LE(source, offset);
+        offset += 2;
+        result[resultLen++] = String.fromCharCode(charCode);
+    }
+    return result.join('');
+}
+export class StringBuilder {
+    constructor(capacity) {
+        this._capacity = capacity | 0;
+        this._buffer = new Uint16Array(this._capacity);
+        this._completedStrings = null;
+        this._bufferLength = 0;
+    }
+    reset() {
+        this._completedStrings = null;
+        this._bufferLength = 0;
+    }
+    build() {
+        if (this._completedStrings !== null) {
+            this._flushBuffer();
+            return this._completedStrings.join('');
+        }
+        return this._buildBuffer();
+    }
+    _buildBuffer() {
+        if (this._bufferLength === 0) {
+            return '';
+        }
+        const view = new Uint16Array(this._buffer.buffer, 0, this._bufferLength);
+        return getPlatformTextDecoder().decode(view);
+    }
+    _flushBuffer() {
+        const bufferString = this._buildBuffer();
+        this._bufferLength = 0;
+        if (this._completedStrings === null) {
+            this._completedStrings = [bufferString];
+        }
+        else {
+            this._completedStrings[this._completedStrings.length] = bufferString;
+        }
+    }
+    appendCharCode(charCode) {
+        const remainingSpace = this._capacity - this._bufferLength;
+        if (remainingSpace <= 1) {
+            if (remainingSpace === 0 || strings.isHighSurrogate(charCode)) {
+                this._flushBuffer();
+            }
+        }
+        this._buffer[this._bufferLength++] = charCode;
+    }
+    appendASCIICharCode(charCode) {
+        if (this._bufferLength === this._capacity) {
+            this._flushBuffer();
+        }
+        this._buffer[this._bufferLength++] = charCode;
+    }
+    appendString(str) {
+        const strLen = str.length;
+        if (this._bufferLength + strLen >= this._capacity) {
+            this._flushBuffer();
+            this._completedStrings[this._completedStrings.length] = str;
+            return;
+        }
+        for (let i = 0; i < strLen; i++) {
+            this._buffer[this._bufferLength++] = str.charCodeAt(i);
+        }
+    }
+}

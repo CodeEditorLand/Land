@@ -1,1 +1,262 @@
-import*as f from"../../../base/common/strings.js";import{Constants as d}from"../../../base/common/uint.js";import{CursorColumns as g}from"../core/cursorColumns.js";import{Position as a}from"../core/position.js";import{Range as p}from"../core/range.js";import{AtomicTabMoveOperations as L,Direction as P}from"./cursorAtomicMoveOperations.js";import{SelectionStartKind as h,SingleCursorState as w}from"../cursorCommon.js";import{PositionAffinity as b}from"../model.js";class S{_cursorPositionBrand=void 0;lineNumber;column;leftoverVisibleColumns;constructor(i,n,e){this.lineNumber=i,this.column=n,this.leftoverVisibleColumns=e}}class s{static leftPosition(i,n){if(n.column>i.getLineMinColumn(n.lineNumber))return n.delta(void 0,-f.prevCharLength(i.getLineContent(n.lineNumber),n.column-1));if(n.lineNumber>1){const e=n.lineNumber-1;return new a(e,i.getLineMaxColumn(e))}else return n}static leftPositionAtomicSoftTabs(i,n,e){if(n.column<=i.getLineIndentColumn(n.lineNumber)){const t=i.getLineMinColumn(n.lineNumber),r=i.getLineContent(n.lineNumber),o=L.atomicPosition(r,n.column-1,e,P.Left);if(o!==-1&&o+1>=t)return new a(n.lineNumber,o+1)}return this.leftPosition(i,n)}static left(i,n,e){const t=i.stickyTabStops?s.leftPositionAtomicSoftTabs(n,e,i.tabSize):s.leftPosition(n,e);return new S(t.lineNumber,t.column,0)}static moveLeft(i,n,e,t,r){let o,u;if(e.hasSelection()&&!t)o=e.selection.startLineNumber,u=e.selection.startColumn;else{const l=e.position.delta(void 0,-(r-1)),m=n.normalizePosition(s.clipPositionColumn(l,n),b.Left),C=s.left(i,n,m);o=C.lineNumber,u=C.column}return e.move(t,o,u,0)}static clipPositionColumn(i,n){return new a(i.lineNumber,s.clipRange(i.column,n.getLineMinColumn(i.lineNumber),n.getLineMaxColumn(i.lineNumber)))}static clipRange(i,n,e){return i<n?n:i>e?e:i}static rightPosition(i,n,e){return e<i.getLineMaxColumn(n)?e=e+f.nextCharLength(i.getLineContent(n),e-1):n<i.getLineCount()&&(n=n+1,e=i.getLineMinColumn(n)),new a(n,e)}static rightPositionAtomicSoftTabs(i,n,e,t,r){if(e<i.getLineIndentColumn(n)){const o=i.getLineContent(n),u=L.atomicPosition(o,e-1,t,P.Right);if(u!==-1)return new a(n,u+1)}return this.rightPosition(i,n,e)}static right(i,n,e){const t=i.stickyTabStops?s.rightPositionAtomicSoftTabs(n,e.lineNumber,e.column,i.tabSize,i.indentSize):s.rightPosition(n,e.lineNumber,e.column);return new S(t.lineNumber,t.column,0)}static moveRight(i,n,e,t,r){let o,u;if(e.hasSelection()&&!t)o=e.selection.endLineNumber,u=e.selection.endColumn;else{const l=e.position.delta(void 0,r-1),m=n.normalizePosition(s.clipPositionColumn(l,n),b.Right),C=s.right(i,n,m);o=C.lineNumber,u=C.column}return e.move(t,o,u,0)}static vertical(i,n,e,t,r,o,u,l){const m=g.visibleColumnFromColumn(n.getLineContent(e),t,i.tabSize)+r,C=n.getLineCount(),N=e===1&&t===1,I=e===C&&t===n.getLineMaxColumn(e),v=o<e?N:I;if(e=o,e<1?(e=1,u?t=n.getLineMinColumn(e):t=Math.min(n.getLineMaxColumn(e),t)):e>C?(e=C,u?t=n.getLineMaxColumn(e):t=Math.min(n.getLineMaxColumn(e),t)):t=i.columnFromVisibleColumn(n,e,m),v?r=0:r=m-g.visibleColumnFromColumn(n.getLineContent(e),t,i.tabSize),l!==void 0){const M=new a(e,t),c=n.normalizePosition(M,l);r=r+(t-c.column),e=c.lineNumber,t=c.column}return new S(e,t,r)}static down(i,n,e,t,r,o,u){return this.vertical(i,n,e,t,r,e+o,u,b.RightOfInjectedText)}static moveDown(i,n,e,t,r){let o,u;e.hasSelection()&&!t?(o=e.selection.endLineNumber,u=e.selection.endColumn):(o=e.position.lineNumber,u=e.position.column);let l=0,m;do if(m=s.down(i,n,o+l,u,e.leftoverVisibleColumns,r,!0),n.normalizePosition(new a(m.lineNumber,m.column),b.None).lineNumber>o)break;while(l++<10&&o+l<n.getLineCount());return e.move(t,m.lineNumber,m.column,m.leftoverVisibleColumns)}static translateDown(i,n,e){const t=e.selection,r=s.down(i,n,t.selectionStartLineNumber,t.selectionStartColumn,e.selectionStartLeftoverVisibleColumns,1,!1),o=s.down(i,n,t.positionLineNumber,t.positionColumn,e.leftoverVisibleColumns,1,!1);return new w(new p(r.lineNumber,r.column,r.lineNumber,r.column),h.Simple,r.leftoverVisibleColumns,new a(o.lineNumber,o.column),o.leftoverVisibleColumns)}static up(i,n,e,t,r,o,u){return this.vertical(i,n,e,t,r,e-o,u,b.LeftOfInjectedText)}static moveUp(i,n,e,t,r){let o,u;e.hasSelection()&&!t?(o=e.selection.startLineNumber,u=e.selection.startColumn):(o=e.position.lineNumber,u=e.position.column);const l=s.up(i,n,o,u,e.leftoverVisibleColumns,r,!0);return e.move(t,l.lineNumber,l.column,l.leftoverVisibleColumns)}static translateUp(i,n,e){const t=e.selection,r=s.up(i,n,t.selectionStartLineNumber,t.selectionStartColumn,e.selectionStartLeftoverVisibleColumns,1,!1),o=s.up(i,n,t.positionLineNumber,t.positionColumn,e.leftoverVisibleColumns,1,!1);return new w(new p(r.lineNumber,r.column,r.lineNumber,r.column),h.Simple,r.leftoverVisibleColumns,new a(o.lineNumber,o.column),o.leftoverVisibleColumns)}static _isBlankLine(i,n){return i.getLineFirstNonWhitespaceColumn(n)===0}static moveToPrevBlankLine(i,n,e,t){let r=e.position.lineNumber;for(;r>1&&this._isBlankLine(n,r);)r--;for(;r>1&&!this._isBlankLine(n,r);)r--;return e.move(t,r,n.getLineMinColumn(r),0)}static moveToNextBlankLine(i,n,e,t){const r=n.getLineCount();let o=e.position.lineNumber;for(;o<r&&this._isBlankLine(n,o);)o++;for(;o<r&&!this._isBlankLine(n,o);)o++;return e.move(t,o,n.getLineMinColumn(o),0)}static moveToBeginningOfLine(i,n,e,t){const r=e.position.lineNumber,o=n.getLineMinColumn(r),u=n.getLineFirstNonWhitespaceColumn(r)||o;let l;return e.position.column===u?l=o:l=u,e.move(t,r,l,0)}static moveToEndOfLine(i,n,e,t,r){const o=e.position.lineNumber,u=n.getLineMaxColumn(o);return e.move(t,o,u,r?d.MAX_SAFE_SMALL_INTEGER-u:0)}static moveToBeginningOfBuffer(i,n,e,t){return e.move(t,1,1,0)}static moveToEndOfBuffer(i,n,e,t){const r=n.getLineCount(),o=n.getLineMaxColumn(r);return e.move(t,r,o,0)}}export{S as CursorPosition,s as MoveOperations};
+import * as strings from '../../../base/common/strings.js';
+import { CursorColumns } from '../core/cursorColumns.js';
+import { Position } from '../core/position.js';
+import { Range } from '../core/range.js';
+import { AtomicTabMoveOperations } from './cursorAtomicMoveOperations.js';
+import { SingleCursorState } from '../cursorCommon.js';
+export class CursorPosition {
+    constructor(lineNumber, column, leftoverVisibleColumns) {
+        this._cursorPositionBrand = undefined;
+        this.lineNumber = lineNumber;
+        this.column = column;
+        this.leftoverVisibleColumns = leftoverVisibleColumns;
+    }
+}
+export class MoveOperations {
+    static leftPosition(model, position) {
+        if (position.column > model.getLineMinColumn(position.lineNumber)) {
+            return position.delta(undefined, -strings.prevCharLength(model.getLineContent(position.lineNumber), position.column - 1));
+        }
+        else if (position.lineNumber > 1) {
+            const newLineNumber = position.lineNumber - 1;
+            return new Position(newLineNumber, model.getLineMaxColumn(newLineNumber));
+        }
+        else {
+            return position;
+        }
+    }
+    static leftPositionAtomicSoftTabs(model, position, tabSize) {
+        if (position.column <= model.getLineIndentColumn(position.lineNumber)) {
+            const minColumn = model.getLineMinColumn(position.lineNumber);
+            const lineContent = model.getLineContent(position.lineNumber);
+            const newPosition = AtomicTabMoveOperations.atomicPosition(lineContent, position.column - 1, tabSize, 0);
+            if (newPosition !== -1 && newPosition + 1 >= minColumn) {
+                return new Position(position.lineNumber, newPosition + 1);
+            }
+        }
+        return this.leftPosition(model, position);
+    }
+    static left(config, model, position) {
+        const pos = config.stickyTabStops
+            ? MoveOperations.leftPositionAtomicSoftTabs(model, position, config.tabSize)
+            : MoveOperations.leftPosition(model, position);
+        return new CursorPosition(pos.lineNumber, pos.column, 0);
+    }
+    static moveLeft(config, model, cursor, inSelectionMode, noOfColumns) {
+        let lineNumber, column;
+        if (cursor.hasSelection() && !inSelectionMode) {
+            lineNumber = cursor.selection.startLineNumber;
+            column = cursor.selection.startColumn;
+        }
+        else {
+            const pos = cursor.position.delta(undefined, -(noOfColumns - 1));
+            const normalizedPos = model.normalizePosition(MoveOperations.clipPositionColumn(pos, model), 0);
+            const p = MoveOperations.left(config, model, normalizedPos);
+            lineNumber = p.lineNumber;
+            column = p.column;
+        }
+        return cursor.move(inSelectionMode, lineNumber, column, 0);
+    }
+    static clipPositionColumn(position, model) {
+        return new Position(position.lineNumber, MoveOperations.clipRange(position.column, model.getLineMinColumn(position.lineNumber), model.getLineMaxColumn(position.lineNumber)));
+    }
+    static clipRange(value, min, max) {
+        if (value < min) {
+            return min;
+        }
+        if (value > max) {
+            return max;
+        }
+        return value;
+    }
+    static rightPosition(model, lineNumber, column) {
+        if (column < model.getLineMaxColumn(lineNumber)) {
+            column = column + strings.nextCharLength(model.getLineContent(lineNumber), column - 1);
+        }
+        else if (lineNumber < model.getLineCount()) {
+            lineNumber = lineNumber + 1;
+            column = model.getLineMinColumn(lineNumber);
+        }
+        return new Position(lineNumber, column);
+    }
+    static rightPositionAtomicSoftTabs(model, lineNumber, column, tabSize, indentSize) {
+        if (column < model.getLineIndentColumn(lineNumber)) {
+            const lineContent = model.getLineContent(lineNumber);
+            const newPosition = AtomicTabMoveOperations.atomicPosition(lineContent, column - 1, tabSize, 1);
+            if (newPosition !== -1) {
+                return new Position(lineNumber, newPosition + 1);
+            }
+        }
+        return this.rightPosition(model, lineNumber, column);
+    }
+    static right(config, model, position) {
+        const pos = config.stickyTabStops
+            ? MoveOperations.rightPositionAtomicSoftTabs(model, position.lineNumber, position.column, config.tabSize, config.indentSize)
+            : MoveOperations.rightPosition(model, position.lineNumber, position.column);
+        return new CursorPosition(pos.lineNumber, pos.column, 0);
+    }
+    static moveRight(config, model, cursor, inSelectionMode, noOfColumns) {
+        let lineNumber, column;
+        if (cursor.hasSelection() && !inSelectionMode) {
+            lineNumber = cursor.selection.endLineNumber;
+            column = cursor.selection.endColumn;
+        }
+        else {
+            const pos = cursor.position.delta(undefined, noOfColumns - 1);
+            const normalizedPos = model.normalizePosition(MoveOperations.clipPositionColumn(pos, model), 1);
+            const r = MoveOperations.right(config, model, normalizedPos);
+            lineNumber = r.lineNumber;
+            column = r.column;
+        }
+        return cursor.move(inSelectionMode, lineNumber, column, 0);
+    }
+    static vertical(config, model, lineNumber, column, leftoverVisibleColumns, newLineNumber, allowMoveOnEdgeLine, normalizationAffinity) {
+        const currentVisibleColumn = CursorColumns.visibleColumnFromColumn(model.getLineContent(lineNumber), column, config.tabSize) + leftoverVisibleColumns;
+        const lineCount = model.getLineCount();
+        const wasOnFirstPosition = (lineNumber === 1 && column === 1);
+        const wasOnLastPosition = (lineNumber === lineCount && column === model.getLineMaxColumn(lineNumber));
+        const wasAtEdgePosition = (newLineNumber < lineNumber ? wasOnFirstPosition : wasOnLastPosition);
+        lineNumber = newLineNumber;
+        if (lineNumber < 1) {
+            lineNumber = 1;
+            if (allowMoveOnEdgeLine) {
+                column = model.getLineMinColumn(lineNumber);
+            }
+            else {
+                column = Math.min(model.getLineMaxColumn(lineNumber), column);
+            }
+        }
+        else if (lineNumber > lineCount) {
+            lineNumber = lineCount;
+            if (allowMoveOnEdgeLine) {
+                column = model.getLineMaxColumn(lineNumber);
+            }
+            else {
+                column = Math.min(model.getLineMaxColumn(lineNumber), column);
+            }
+        }
+        else {
+            column = config.columnFromVisibleColumn(model, lineNumber, currentVisibleColumn);
+        }
+        if (wasAtEdgePosition) {
+            leftoverVisibleColumns = 0;
+        }
+        else {
+            leftoverVisibleColumns = currentVisibleColumn - CursorColumns.visibleColumnFromColumn(model.getLineContent(lineNumber), column, config.tabSize);
+        }
+        if (normalizationAffinity !== undefined) {
+            const position = new Position(lineNumber, column);
+            const newPosition = model.normalizePosition(position, normalizationAffinity);
+            leftoverVisibleColumns = leftoverVisibleColumns + (column - newPosition.column);
+            lineNumber = newPosition.lineNumber;
+            column = newPosition.column;
+        }
+        return new CursorPosition(lineNumber, column, leftoverVisibleColumns);
+    }
+    static down(config, model, lineNumber, column, leftoverVisibleColumns, count, allowMoveOnLastLine) {
+        return this.vertical(config, model, lineNumber, column, leftoverVisibleColumns, lineNumber + count, allowMoveOnLastLine, 4);
+    }
+    static moveDown(config, model, cursor, inSelectionMode, linesCount) {
+        let lineNumber, column;
+        if (cursor.hasSelection() && !inSelectionMode) {
+            lineNumber = cursor.selection.endLineNumber;
+            column = cursor.selection.endColumn;
+        }
+        else {
+            lineNumber = cursor.position.lineNumber;
+            column = cursor.position.column;
+        }
+        let i = 0;
+        let r;
+        do {
+            r = MoveOperations.down(config, model, lineNumber + i, column, cursor.leftoverVisibleColumns, linesCount, true);
+            const np = model.normalizePosition(new Position(r.lineNumber, r.column), 2);
+            if (np.lineNumber > lineNumber) {
+                break;
+            }
+        } while (i++ < 10 && lineNumber + i < model.getLineCount());
+        return cursor.move(inSelectionMode, r.lineNumber, r.column, r.leftoverVisibleColumns);
+    }
+    static translateDown(config, model, cursor) {
+        const selection = cursor.selection;
+        const selectionStart = MoveOperations.down(config, model, selection.selectionStartLineNumber, selection.selectionStartColumn, cursor.selectionStartLeftoverVisibleColumns, 1, false);
+        const position = MoveOperations.down(config, model, selection.positionLineNumber, selection.positionColumn, cursor.leftoverVisibleColumns, 1, false);
+        return new SingleCursorState(new Range(selectionStart.lineNumber, selectionStart.column, selectionStart.lineNumber, selectionStart.column), 0, selectionStart.leftoverVisibleColumns, new Position(position.lineNumber, position.column), position.leftoverVisibleColumns);
+    }
+    static up(config, model, lineNumber, column, leftoverVisibleColumns, count, allowMoveOnFirstLine) {
+        return this.vertical(config, model, lineNumber, column, leftoverVisibleColumns, lineNumber - count, allowMoveOnFirstLine, 3);
+    }
+    static moveUp(config, model, cursor, inSelectionMode, linesCount) {
+        let lineNumber, column;
+        if (cursor.hasSelection() && !inSelectionMode) {
+            lineNumber = cursor.selection.startLineNumber;
+            column = cursor.selection.startColumn;
+        }
+        else {
+            lineNumber = cursor.position.lineNumber;
+            column = cursor.position.column;
+        }
+        const r = MoveOperations.up(config, model, lineNumber, column, cursor.leftoverVisibleColumns, linesCount, true);
+        return cursor.move(inSelectionMode, r.lineNumber, r.column, r.leftoverVisibleColumns);
+    }
+    static translateUp(config, model, cursor) {
+        const selection = cursor.selection;
+        const selectionStart = MoveOperations.up(config, model, selection.selectionStartLineNumber, selection.selectionStartColumn, cursor.selectionStartLeftoverVisibleColumns, 1, false);
+        const position = MoveOperations.up(config, model, selection.positionLineNumber, selection.positionColumn, cursor.leftoverVisibleColumns, 1, false);
+        return new SingleCursorState(new Range(selectionStart.lineNumber, selectionStart.column, selectionStart.lineNumber, selectionStart.column), 0, selectionStart.leftoverVisibleColumns, new Position(position.lineNumber, position.column), position.leftoverVisibleColumns);
+    }
+    static _isBlankLine(model, lineNumber) {
+        if (model.getLineFirstNonWhitespaceColumn(lineNumber) === 0) {
+            return true;
+        }
+        return false;
+    }
+    static moveToPrevBlankLine(config, model, cursor, inSelectionMode) {
+        let lineNumber = cursor.position.lineNumber;
+        while (lineNumber > 1 && this._isBlankLine(model, lineNumber)) {
+            lineNumber--;
+        }
+        while (lineNumber > 1 && !this._isBlankLine(model, lineNumber)) {
+            lineNumber--;
+        }
+        return cursor.move(inSelectionMode, lineNumber, model.getLineMinColumn(lineNumber), 0);
+    }
+    static moveToNextBlankLine(config, model, cursor, inSelectionMode) {
+        const lineCount = model.getLineCount();
+        let lineNumber = cursor.position.lineNumber;
+        while (lineNumber < lineCount && this._isBlankLine(model, lineNumber)) {
+            lineNumber++;
+        }
+        while (lineNumber < lineCount && !this._isBlankLine(model, lineNumber)) {
+            lineNumber++;
+        }
+        return cursor.move(inSelectionMode, lineNumber, model.getLineMinColumn(lineNumber), 0);
+    }
+    static moveToBeginningOfLine(config, model, cursor, inSelectionMode) {
+        const lineNumber = cursor.position.lineNumber;
+        const minColumn = model.getLineMinColumn(lineNumber);
+        const firstNonBlankColumn = model.getLineFirstNonWhitespaceColumn(lineNumber) || minColumn;
+        let column;
+        const relevantColumnNumber = cursor.position.column;
+        if (relevantColumnNumber === firstNonBlankColumn) {
+            column = minColumn;
+        }
+        else {
+            column = firstNonBlankColumn;
+        }
+        return cursor.move(inSelectionMode, lineNumber, column, 0);
+    }
+    static moveToEndOfLine(config, model, cursor, inSelectionMode, sticky) {
+        const lineNumber = cursor.position.lineNumber;
+        const maxColumn = model.getLineMaxColumn(lineNumber);
+        return cursor.move(inSelectionMode, lineNumber, maxColumn, sticky ? 1073741824 - maxColumn : 0);
+    }
+    static moveToBeginningOfBuffer(config, model, cursor, inSelectionMode) {
+        return cursor.move(inSelectionMode, 1, 1, 0);
+    }
+    static moveToEndOfBuffer(config, model, cursor, inSelectionMode) {
+        const lastLineNumber = model.getLineCount();
+        const lastColumn = model.getLineMaxColumn(lastLineNumber);
+        return cursor.move(inSelectionMode, lastLineNumber, lastColumn, 0);
+    }
+}

@@ -1,1 +1,116 @@
-import"../../../base/browser/contextmenu.js";import{$ as v,addDisposableListener as a,EventType as h,getActiveElement as m,getWindow as b,isAncestor as f,isHTMLElement as x}from"../../../base/browser/dom.js";import{StandardMouseEvent as w}from"../../../base/browser/mouseEvent.js";import{Menu as k}from"../../../base/browser/ui/menu/menu.js";import{ActionRunner as C}from"../../../base/common/actions.js";import{isCancellationError as S}from"../../../base/common/errors.js";import{combinedDisposable as M,DisposableStore as E}from"../../../base/common/lifecycle.js";import"./contextView.js";import"../../keybinding/common/keybinding.js";import"../../notification/common/notification.js";import"../../telemetry/common/telemetry.js";import{defaultMenuStyles as A}from"../../theme/browser/defaultStyles.js";class G{constructor(e,r,o,c){this.contextViewService=e;this.telemetryService=r;this.notificationService=o;this.keybindingService=c}focusToReturn=null;lastContainer=null;block=null;blockDisposable=null;options={blockMouse:!0};configure(e){this.options=e}showContextMenu(e){const r=e.getActions();if(!r.length)return;this.focusToReturn=m();let o;const c=x(e.domForShadowRoot)?e.domForShadowRoot:void 0;this.contextViewService.showContextView({getAnchor:()=>e.getAnchor(),canRelayout:!1,anchorAlignment:e.anchorAlignment,anchorAxisAlignment:e.anchorAxisAlignment,render:t=>{this.lastContainer=t;const p=e.getMenuClassName?e.getMenuClassName():"";p&&(t.className+=" "+p),this.options.blockMouse&&(this.block=t.appendChild(v(".context-view-block")),this.block.style.position="fixed",this.block.style.cursor="initial",this.block.style.left="0",this.block.style.top="0",this.block.style.width="100%",this.block.style.height="100%",this.block.style.zIndex="-1",this.blockDisposable?.dispose(),this.blockDisposable=a(this.block,h.MOUSE_DOWN,i=>i.stopPropagation()));const n=new E,l=e.actionRunner||new C;l.onWillRun(i=>this.onActionRun(i,!e.skipTelemetry),this,n),l.onDidRun(this.onDidActionRun,this,n),o=new k(t,r,{actionViewItemProvider:e.getActionViewItem,context:e.getActionsContext?e.getActionsContext():null,actionRunner:l,getKeyBinding:e.getKeyBinding?e.getKeyBinding:i=>this.keybindingService.lookupKeybinding(i.id)},A),o.onDidCancel(()=>this.contextViewService.hideContextView(!0),null,n),o.onDidBlur(()=>this.contextViewService.hideContextView(!0),null,n);const u=b(t);return n.add(a(u,h.BLUR,()=>this.contextViewService.hideContextView(!0))),n.add(a(u,h.MOUSE_DOWN,i=>{if(i.defaultPrevented)return;const d=new w(u,i);let s=d.target;if(!d.rightButton){for(;s;){if(s===t)return;s=s.parentElement}this.contextViewService.hideContextView(!0)}})),M(n,o)},focus:()=>{o?.focus(!!e.autoSelectFirstItem)},onHide:t=>{e.onHide?.(!!t),this.block&&(this.block.remove(),this.block=null),this.blockDisposable?.dispose(),this.blockDisposable=null,this.lastContainer&&(m()===this.lastContainer||f(m(),this.lastContainer))&&this.focusToReturn?.focus(),this.lastContainer=null}},c,!!c)}onActionRun(e,r){r&&this.telemetryService.publicLog2("workbenchActionExecuted",{id:e.action.id,from:"contextMenu"}),this.contextViewService.hideContextView(!1)}onDidActionRun(e){e.error&&!S(e.error)&&this.notificationService.error(e.error)}}export{G as ContextMenuHandler};
+import { $, addDisposableListener, EventType, getActiveElement, getWindow, isAncestor, isHTMLElement } from '../../../base/browser/dom.js';
+import { StandardMouseEvent } from '../../../base/browser/mouseEvent.js';
+import { Menu } from '../../../base/browser/ui/menu/menu.js';
+import { ActionRunner } from '../../../base/common/actions.js';
+import { isCancellationError } from '../../../base/common/errors.js';
+import { combinedDisposable, DisposableStore } from '../../../base/common/lifecycle.js';
+import { defaultMenuStyles } from '../../theme/browser/defaultStyles.js';
+export class ContextMenuHandler {
+    constructor(contextViewService, telemetryService, notificationService, keybindingService) {
+        this.contextViewService = contextViewService;
+        this.telemetryService = telemetryService;
+        this.notificationService = notificationService;
+        this.keybindingService = keybindingService;
+        this.focusToReturn = null;
+        this.lastContainer = null;
+        this.block = null;
+        this.blockDisposable = null;
+        this.options = { blockMouse: true };
+    }
+    configure(options) {
+        this.options = options;
+    }
+    showContextMenu(delegate) {
+        const actions = delegate.getActions();
+        if (!actions.length) {
+            return;
+        }
+        this.focusToReturn = getActiveElement();
+        let menu;
+        const shadowRootElement = isHTMLElement(delegate.domForShadowRoot) ? delegate.domForShadowRoot : undefined;
+        this.contextViewService.showContextView({
+            getAnchor: () => delegate.getAnchor(),
+            canRelayout: false,
+            anchorAlignment: delegate.anchorAlignment,
+            anchorAxisAlignment: delegate.anchorAxisAlignment,
+            render: (container) => {
+                this.lastContainer = container;
+                const className = delegate.getMenuClassName ? delegate.getMenuClassName() : '';
+                if (className) {
+                    container.className += ' ' + className;
+                }
+                if (this.options.blockMouse) {
+                    this.block = container.appendChild($('.context-view-block'));
+                    this.block.style.position = 'fixed';
+                    this.block.style.cursor = 'initial';
+                    this.block.style.left = '0';
+                    this.block.style.top = '0';
+                    this.block.style.width = '100%';
+                    this.block.style.height = '100%';
+                    this.block.style.zIndex = '-1';
+                    this.blockDisposable?.dispose();
+                    this.blockDisposable = addDisposableListener(this.block, EventType.MOUSE_DOWN, e => e.stopPropagation());
+                }
+                const menuDisposables = new DisposableStore();
+                const actionRunner = delegate.actionRunner || new ActionRunner();
+                actionRunner.onWillRun(evt => this.onActionRun(evt, !delegate.skipTelemetry), this, menuDisposables);
+                actionRunner.onDidRun(this.onDidActionRun, this, menuDisposables);
+                menu = new Menu(container, actions, {
+                    actionViewItemProvider: delegate.getActionViewItem,
+                    context: delegate.getActionsContext ? delegate.getActionsContext() : null,
+                    actionRunner,
+                    getKeyBinding: delegate.getKeyBinding ? delegate.getKeyBinding : action => this.keybindingService.lookupKeybinding(action.id)
+                }, defaultMenuStyles);
+                menu.onDidCancel(() => this.contextViewService.hideContextView(true), null, menuDisposables);
+                menu.onDidBlur(() => this.contextViewService.hideContextView(true), null, menuDisposables);
+                const targetWindow = getWindow(container);
+                menuDisposables.add(addDisposableListener(targetWindow, EventType.BLUR, () => this.contextViewService.hideContextView(true)));
+                menuDisposables.add(addDisposableListener(targetWindow, EventType.MOUSE_DOWN, (e) => {
+                    if (e.defaultPrevented) {
+                        return;
+                    }
+                    const event = new StandardMouseEvent(targetWindow, e);
+                    let element = event.target;
+                    if (event.rightButton) {
+                        return;
+                    }
+                    while (element) {
+                        if (element === container) {
+                            return;
+                        }
+                        element = element.parentElement;
+                    }
+                    this.contextViewService.hideContextView(true);
+                }));
+                return combinedDisposable(menuDisposables, menu);
+            },
+            focus: () => {
+                menu?.focus(!!delegate.autoSelectFirstItem);
+            },
+            onHide: (didCancel) => {
+                delegate.onHide?.(!!didCancel);
+                if (this.block) {
+                    this.block.remove();
+                    this.block = null;
+                }
+                this.blockDisposable?.dispose();
+                this.blockDisposable = null;
+                if (!!this.lastContainer && (getActiveElement() === this.lastContainer || isAncestor(getActiveElement(), this.lastContainer))) {
+                    this.focusToReturn?.focus();
+                }
+                this.lastContainer = null;
+            }
+        }, shadowRootElement, !!shadowRootElement);
+    }
+    onActionRun(e, logTelemetry) {
+        if (logTelemetry) {
+            this.telemetryService.publicLog2('workbenchActionExecuted', { id: e.action.id, from: 'contextMenu' });
+        }
+        this.contextViewService.hideContextView(false);
+    }
+    onDidActionRun(e) {
+        if (e.error && !isCancellationError(e.error)) {
+            this.notificationService.error(e.error);
+        }
+    }
+}

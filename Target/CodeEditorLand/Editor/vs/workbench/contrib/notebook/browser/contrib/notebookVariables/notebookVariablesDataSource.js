@@ -1,1 +1,111 @@
-import"../../../../../../base/browser/ui/tree/tree.js";import{CancellationTokenSource as s}from"../../../../../../base/common/cancellation.js";import{localize as c}from"../../../../../../nls.js";import"../../../common/model/notebookTextModel.js";import{variablePageSize as d}from"../../../common/notebookKernelService.js";class V{constructor(e){this.notebookKernelService=e;this.cancellationTokenSource=new s}cancellationTokenSource;hasChildren(e){return e.kind==="root"||e.hasNamedChildren||e.indexedChildrenCount>0}cancel(){this.cancellationTokenSource.cancel(),this.cancellationTokenSource.dispose(),this.cancellationTokenSource=new s}async getChildren(e){return e.kind==="root"?this.getRootVariables(e.notebook):this.getVariables(e)}async getVariables(e){const o=this.notebookKernelService.getMatchingKernel(e.notebook).selected;if(o&&o.hasVariableProvider){let t=[];if(e.hasNamedChildren){const a=await o.provideVariables(e.notebook.uri,e.extHostId,"named",0,this.cancellationTokenSource.token).map(i=>this.createVariableElement(i,e.notebook)).toPromise();t=t.concat(a)}if(e.indexedChildrenCount>0){const n=await this.getIndexedChildren(e,o);t=t.concat(n)}return t}return[]}async getIndexedChildren(e,o){const t=[];if(e.indexedChildrenCount>d){const n=Math.floor(Math.max(e.indexedChildrenCount/d,100)),a=1e6;let i=e.indexStart??0;const r=i+Math.min(e.indexedChildrenCount,a);for(;i<r;i+=n){let l=i+n;l>r&&(l=r),t.push({kind:"variable",notebook:e.notebook,id:e.id+`${i}`,extHostId:e.extHostId,name:`[${i}..${l-1}]`,value:"",indexedChildrenCount:l-i,indexStart:i,hasNamedChildren:!1})}e.indexedChildrenCount>a&&t.push({kind:"variable",notebook:e.notebook,id:e.id+`${r+1}`,extHostId:e.extHostId,name:c("notebook.indexedChildrenLimitReached","Display limit reached"),value:"",indexedChildrenCount:0,hasNamedChildren:!1})}else if(e.indexedChildrenCount>0){const n=o.provideVariables(e.notebook.uri,e.extHostId,"indexed",e.indexStart??0,this.cancellationTokenSource.token);for await(const a of n)if(t.push(this.createVariableElement(a,e.notebook)),t.length>=d)break}return t}async getRootVariables(e){const o=this.notebookKernelService.getMatchingKernel(e).selected;return o&&o.hasVariableProvider?await o.provideVariables(e.uri,void 0,"named",0,this.cancellationTokenSource.token).map(n=>this.createVariableElement(n,e)).toPromise():[]}createVariableElement(e,o){return{...e,kind:"variable",notebook:o,extHostId:e.id,id:`${e.id}`}}}export{V as NotebookVariableDataSource};
+import { CancellationTokenSource } from '../../../../../../base/common/cancellation.js';
+import { localize } from '../../../../../../nls.js';
+import { variablePageSize } from '../../../common/notebookKernelService.js';
+export class NotebookVariableDataSource {
+    constructor(notebookKernelService) {
+        this.notebookKernelService = notebookKernelService;
+        this.cancellationTokenSource = new CancellationTokenSource();
+    }
+    hasChildren(element) {
+        return element.kind === 'root' || element.hasNamedChildren || element.indexedChildrenCount > 0;
+    }
+    cancel() {
+        this.cancellationTokenSource.cancel();
+        this.cancellationTokenSource.dispose();
+        this.cancellationTokenSource = new CancellationTokenSource();
+    }
+    async getChildren(element) {
+        if (element.kind === 'root') {
+            return this.getRootVariables(element.notebook);
+        }
+        else {
+            return this.getVariables(element);
+        }
+    }
+    async getVariables(parent) {
+        const selectedKernel = this.notebookKernelService.getMatchingKernel(parent.notebook).selected;
+        if (selectedKernel && selectedKernel.hasVariableProvider) {
+            let children = [];
+            if (parent.hasNamedChildren) {
+                const variables = selectedKernel.provideVariables(parent.notebook.uri, parent.extHostId, 'named', 0, this.cancellationTokenSource.token);
+                const childNodes = await variables
+                    .map(variable => { return this.createVariableElement(variable, parent.notebook); })
+                    .toPromise();
+                children = children.concat(childNodes);
+            }
+            if (parent.indexedChildrenCount > 0) {
+                const childNodes = await this.getIndexedChildren(parent, selectedKernel);
+                children = children.concat(childNodes);
+            }
+            return children;
+        }
+        return [];
+    }
+    async getIndexedChildren(parent, kernel) {
+        const childNodes = [];
+        if (parent.indexedChildrenCount > variablePageSize) {
+            const nestedPageSize = Math.floor(Math.max(parent.indexedChildrenCount / variablePageSize, 100));
+            const indexedChildCountLimit = 1_000_000;
+            let start = parent.indexStart ?? 0;
+            const last = start + Math.min(parent.indexedChildrenCount, indexedChildCountLimit);
+            for (; start < last; start += nestedPageSize) {
+                let end = start + nestedPageSize;
+                if (end > last) {
+                    end = last;
+                }
+                childNodes.push({
+                    kind: 'variable',
+                    notebook: parent.notebook,
+                    id: parent.id + `${start}`,
+                    extHostId: parent.extHostId,
+                    name: `[${start}..${end - 1}]`,
+                    value: '',
+                    indexedChildrenCount: end - start,
+                    indexStart: start,
+                    hasNamedChildren: false
+                });
+            }
+            if (parent.indexedChildrenCount > indexedChildCountLimit) {
+                childNodes.push({
+                    kind: 'variable',
+                    notebook: parent.notebook,
+                    id: parent.id + `${last + 1}`,
+                    extHostId: parent.extHostId,
+                    name: localize('notebook.indexedChildrenLimitReached', "Display limit reached"),
+                    value: '',
+                    indexedChildrenCount: 0,
+                    hasNamedChildren: false
+                });
+            }
+        }
+        else if (parent.indexedChildrenCount > 0) {
+            const variables = kernel.provideVariables(parent.notebook.uri, parent.extHostId, 'indexed', parent.indexStart ?? 0, this.cancellationTokenSource.token);
+            for await (const variable of variables) {
+                childNodes.push(this.createVariableElement(variable, parent.notebook));
+                if (childNodes.length >= variablePageSize) {
+                    break;
+                }
+            }
+        }
+        return childNodes;
+    }
+    async getRootVariables(notebook) {
+        const selectedKernel = this.notebookKernelService.getMatchingKernel(notebook).selected;
+        if (selectedKernel && selectedKernel.hasVariableProvider) {
+            const variables = selectedKernel.provideVariables(notebook.uri, undefined, 'named', 0, this.cancellationTokenSource.token);
+            return await variables
+                .map(variable => { return this.createVariableElement(variable, notebook); })
+                .toPromise();
+        }
+        return [];
+    }
+    createVariableElement(variable, notebook) {
+        return {
+            ...variable,
+            kind: 'variable',
+            notebook,
+            extHostId: variable.id,
+            id: `${variable.id}`
+        };
+    }
+}

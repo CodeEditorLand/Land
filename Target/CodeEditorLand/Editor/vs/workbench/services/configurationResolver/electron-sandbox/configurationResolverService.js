@@ -1,1 +1,54 @@
-var u=Object.defineProperty;var d=Object.getOwnPropertyDescriptor;var S=(n,i,o,t)=>{for(var r=t>1?void 0:t?d(i,o):i,m=n.length-1,c;m>=0;m--)(c=n[m])&&(r=(t?c(i,o,r):c(r))||r);return t&&r&&u(i,o,r),r},e=(n,i)=>(o,t)=>i(o,t,n);import{INativeWorkbenchEnvironmentService as g}from"../../environment/electron-sandbox/environmentService.js";import{IConfigurationService as l}from"../../../../platform/configuration/common/configuration.js";import{ICommandService as E}from"../../../../platform/commands/common/commands.js";import{IWorkspaceContextService as h}from"../../../../platform/workspace/common/workspace.js";import{IEditorService as x}from"../../editor/common/editorService.js";import{IQuickInputService as k}from"../../../../platform/quickinput/common/quickInput.js";import{IConfigurationResolverService as C}from"../common/configurationResolver.js";import{InstantiationType as b,registerSingleton as P}from"../../../../platform/instantiation/common/extensions.js";import{BaseConfigurationResolverService as W}from"../browser/baseConfigurationResolverService.js";import{ILabelService as y}from"../../../../platform/label/common/label.js";import{IShellEnvironmentService as L}from"../../environment/electron-sandbox/shellEnvironmentService.js";import{IPathService as N}from"../../path/common/pathService.js";import{IExtensionService as Q}from"../../extensions/common/extensions.js";import{IStorageService as A}from"../../../../platform/storage/common/storage.js";let I=class extends W{constructor(i,o,t,r,m,c,p,v,a,f,s){super({getAppRoot:()=>o.appRoot,getExecPath:()=>o.execPath},v.getShellEnv(),i,t,r,m,c,p,a,f,s)}};I=S([e(0,x),e(1,g),e(2,l),e(3,E),e(4,h),e(5,k),e(6,y),e(7,L),e(8,N),e(9,Q),e(10,A)],I),P(C,I,b.Delayed);export{I as ConfigurationResolverService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { INativeWorkbenchEnvironmentService } from '../../environment/electron-sandbox/environmentService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { IEditorService } from '../../editor/common/editorService.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { IConfigurationResolverService } from '../common/configurationResolver.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { BaseConfigurationResolverService } from '../browser/baseConfigurationResolverService.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { IShellEnvironmentService } from '../../environment/electron-sandbox/shellEnvironmentService.js';
+import { IPathService } from '../../path/common/pathService.js';
+import { IExtensionService } from '../../extensions/common/extensions.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+let ConfigurationResolverService = class ConfigurationResolverService extends BaseConfigurationResolverService {
+    constructor(editorService, environmentService, configurationService, commandService, workspaceContextService, quickInputService, labelService, shellEnvironmentService, pathService, extensionService, storageService) {
+        super({
+            getAppRoot: () => {
+                return environmentService.appRoot;
+            },
+            getExecPath: () => {
+                return environmentService.execPath;
+            },
+        }, shellEnvironmentService.getShellEnv(), editorService, configurationService, commandService, workspaceContextService, quickInputService, labelService, pathService, extensionService, storageService);
+    }
+};
+ConfigurationResolverService = __decorate([
+    __param(0, IEditorService),
+    __param(1, INativeWorkbenchEnvironmentService),
+    __param(2, IConfigurationService),
+    __param(3, ICommandService),
+    __param(4, IWorkspaceContextService),
+    __param(5, IQuickInputService),
+    __param(6, ILabelService),
+    __param(7, IShellEnvironmentService),
+    __param(8, IPathService),
+    __param(9, IExtensionService),
+    __param(10, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], ConfigurationResolverService);
+export { ConfigurationResolverService };
+registerSingleton(IConfigurationResolverService, ConfigurationResolverService, 1);

@@ -1,1 +1,187 @@
-import*as k from"../../../base/common/arrays.js";import{Position as L}from"../core/position.js";import"../core/range.js";import{ContiguousTokensEditing as u,EMPTY_LINE_TOKENS as _,toUint32Array as f}from"./contiguousTokensEditing.js";import{LineTokens as d}from"./lineTokens.js";import"../languages.js";import{FontStyle as I,ColorId as T,StandardTokenType as p,MetadataConsts as a,TokenMetadata as N}from"../encodedTokenAttributes.js";import"../model.js";import"./contiguousMultilineTokens.js";class g{_lineTokens;_len;_languageIdCodec;constructor(e){this._lineTokens=[],this._len=0,this._languageIdCodec=e}flush(){this._lineTokens=[],this._len=0}get hasTokens(){return this._lineTokens.length>0}getTokens(e,n,r){let t=null;if(n<this._len&&(t=this._lineTokens[n]),t!==null&&t!==_)return new d(f(t),r,this._languageIdCodec);const i=new Uint32Array(2);return i[0]=r.length,i[1]=c(this._languageIdCodec.encodeLanguageId(e)),new d(i,r,this._languageIdCodec)}static _massageTokens(e,n,r){const t=r?f(r):null;if(n===0){let i=!1;if(t&&t.length>1&&(i=N.getLanguageId(t[1])!==e),!i)return _}if(!t||t.length===0){const i=new Uint32Array(2);return i[0]=n,i[1]=c(e),i.buffer}return t[t.length-2]=n,t.byteOffset===0&&t.byteLength===t.buffer.byteLength?t.buffer:t}_ensureLine(e){for(;e>=this._len;)this._lineTokens[this._len]=null,this._len++}_deleteLines(e,n){n!==0&&(e+n>this._len&&(n=this._len-e),this._lineTokens.splice(e,n),this._len-=n)}_insertLines(e,n){if(n===0)return;const r=[];for(let t=0;t<n;t++)r[t]=null;this._lineTokens=k.arrayInsert(this._lineTokens,e,r),this._len+=n}setTokens(e,n,r,t,i){const l=g._massageTokens(this._languageIdCodec.encodeLanguageId(e),r,t);this._ensureLine(n);const o=this._lineTokens[n];return this._lineTokens[n]=l,i?!g._equals(o,l):!1}static _equals(e,n){if(!e||!n)return!e&&!n;const r=f(e),t=f(n);if(r.length!==t.length)return!1;for(let i=0,l=r.length;i<l;i++)if(r[i]!==t[i])return!1;return!0}acceptEdit(e,n,r){this._acceptDeleteRange(e),this._acceptInsertText(new L(e.startLineNumber,e.startColumn),n,r)}_acceptDeleteRange(e){const n=e.startLineNumber-1;if(n>=this._len)return;if(e.startLineNumber===e.endLineNumber){if(e.startColumn===e.endColumn)return;this._lineTokens[n]=u.delete(this._lineTokens[n],e.startColumn-1,e.endColumn-1);return}this._lineTokens[n]=u.deleteEnding(this._lineTokens[n],e.startColumn-1);const r=e.endLineNumber-1;let t=null;r<this._len&&(t=u.deleteBeginning(this._lineTokens[r],e.endColumn-1)),this._lineTokens[n]=u.append(this._lineTokens[n],t),this._deleteLines(e.startLineNumber,e.endLineNumber-e.startLineNumber)}_acceptInsertText(e,n,r){if(n===0&&r===0)return;const t=e.lineNumber-1;if(!(t>=this._len)){if(n===0){this._lineTokens[t]=u.insert(this._lineTokens[t],e.column-1,r);return}this._lineTokens[t]=u.deleteEnding(this._lineTokens[t],e.column-1),this._lineTokens[t]=u.insert(this._lineTokens[t],e.column-1,r),this._insertLines(e.lineNumber,n)}}setMultilineTokens(e,n){if(e.length===0)return{changes:[]};const r=[];for(let t=0,i=e.length;t<i;t++){const l=e[t];let o=0,m=0,h=!1;for(let s=l.startLineNumber;s<=l.endLineNumber;s++)h?(this.setTokens(n.getLanguageId(),s-1,n.getLineLength(s),l.getLineTokens(s),!1),m=s):this.setTokens(n.getLanguageId(),s-1,n.getLineLength(s),l.getLineTokens(s),!0)&&(h=!0,o=s,m=s);h&&r.push({fromLineNumber:o,toLineNumber:m})}return{changes:r}}}function c(b){return(b<<a.LANGUAGEID_OFFSET|p.Other<<a.TOKEN_TYPE_OFFSET|I.None<<a.FONT_STYLE_OFFSET|T.DefaultForeground<<a.FOREGROUND_OFFSET|T.DefaultBackground<<a.BACKGROUND_OFFSET|a.BALANCED_BRACKETS_MASK)>>>0}export{g as ContiguousTokensStore};
+import * as arrays from '../../../base/common/arrays.js';
+import { Position } from '../core/position.js';
+import { ContiguousTokensEditing, EMPTY_LINE_TOKENS, toUint32Array } from './contiguousTokensEditing.js';
+import { LineTokens } from './lineTokens.js';
+import { TokenMetadata } from '../encodedTokenAttributes.js';
+export class ContiguousTokensStore {
+    constructor(languageIdCodec) {
+        this._lineTokens = [];
+        this._len = 0;
+        this._languageIdCodec = languageIdCodec;
+    }
+    flush() {
+        this._lineTokens = [];
+        this._len = 0;
+    }
+    get hasTokens() {
+        return this._lineTokens.length > 0;
+    }
+    getTokens(topLevelLanguageId, lineIndex, lineText) {
+        let rawLineTokens = null;
+        if (lineIndex < this._len) {
+            rawLineTokens = this._lineTokens[lineIndex];
+        }
+        if (rawLineTokens !== null && rawLineTokens !== EMPTY_LINE_TOKENS) {
+            return new LineTokens(toUint32Array(rawLineTokens), lineText, this._languageIdCodec);
+        }
+        const lineTokens = new Uint32Array(2);
+        lineTokens[0] = lineText.length;
+        lineTokens[1] = getDefaultMetadata(this._languageIdCodec.encodeLanguageId(topLevelLanguageId));
+        return new LineTokens(lineTokens, lineText, this._languageIdCodec);
+    }
+    static _massageTokens(topLevelLanguageId, lineTextLength, _tokens) {
+        const tokens = _tokens ? toUint32Array(_tokens) : null;
+        if (lineTextLength === 0) {
+            let hasDifferentLanguageId = false;
+            if (tokens && tokens.length > 1) {
+                hasDifferentLanguageId = (TokenMetadata.getLanguageId(tokens[1]) !== topLevelLanguageId);
+            }
+            if (!hasDifferentLanguageId) {
+                return EMPTY_LINE_TOKENS;
+            }
+        }
+        if (!tokens || tokens.length === 0) {
+            const tokens = new Uint32Array(2);
+            tokens[0] = lineTextLength;
+            tokens[1] = getDefaultMetadata(topLevelLanguageId);
+            return tokens.buffer;
+        }
+        tokens[tokens.length - 2] = lineTextLength;
+        if (tokens.byteOffset === 0 && tokens.byteLength === tokens.buffer.byteLength) {
+            return tokens.buffer;
+        }
+        return tokens;
+    }
+    _ensureLine(lineIndex) {
+        while (lineIndex >= this._len) {
+            this._lineTokens[this._len] = null;
+            this._len++;
+        }
+    }
+    _deleteLines(start, deleteCount) {
+        if (deleteCount === 0) {
+            return;
+        }
+        if (start + deleteCount > this._len) {
+            deleteCount = this._len - start;
+        }
+        this._lineTokens.splice(start, deleteCount);
+        this._len -= deleteCount;
+    }
+    _insertLines(insertIndex, insertCount) {
+        if (insertCount === 0) {
+            return;
+        }
+        const lineTokens = [];
+        for (let i = 0; i < insertCount; i++) {
+            lineTokens[i] = null;
+        }
+        this._lineTokens = arrays.arrayInsert(this._lineTokens, insertIndex, lineTokens);
+        this._len += insertCount;
+    }
+    setTokens(topLevelLanguageId, lineIndex, lineTextLength, _tokens, checkEquality) {
+        const tokens = ContiguousTokensStore._massageTokens(this._languageIdCodec.encodeLanguageId(topLevelLanguageId), lineTextLength, _tokens);
+        this._ensureLine(lineIndex);
+        const oldTokens = this._lineTokens[lineIndex];
+        this._lineTokens[lineIndex] = tokens;
+        if (checkEquality) {
+            return !ContiguousTokensStore._equals(oldTokens, tokens);
+        }
+        return false;
+    }
+    static _equals(_a, _b) {
+        if (!_a || !_b) {
+            return !_a && !_b;
+        }
+        const a = toUint32Array(_a);
+        const b = toUint32Array(_b);
+        if (a.length !== b.length) {
+            return false;
+        }
+        for (let i = 0, len = a.length; i < len; i++) {
+            if (a[i] !== b[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    acceptEdit(range, eolCount, firstLineLength) {
+        this._acceptDeleteRange(range);
+        this._acceptInsertText(new Position(range.startLineNumber, range.startColumn), eolCount, firstLineLength);
+    }
+    _acceptDeleteRange(range) {
+        const firstLineIndex = range.startLineNumber - 1;
+        if (firstLineIndex >= this._len) {
+            return;
+        }
+        if (range.startLineNumber === range.endLineNumber) {
+            if (range.startColumn === range.endColumn) {
+                return;
+            }
+            this._lineTokens[firstLineIndex] = ContiguousTokensEditing.delete(this._lineTokens[firstLineIndex], range.startColumn - 1, range.endColumn - 1);
+            return;
+        }
+        this._lineTokens[firstLineIndex] = ContiguousTokensEditing.deleteEnding(this._lineTokens[firstLineIndex], range.startColumn - 1);
+        const lastLineIndex = range.endLineNumber - 1;
+        let lastLineTokens = null;
+        if (lastLineIndex < this._len) {
+            lastLineTokens = ContiguousTokensEditing.deleteBeginning(this._lineTokens[lastLineIndex], range.endColumn - 1);
+        }
+        this._lineTokens[firstLineIndex] = ContiguousTokensEditing.append(this._lineTokens[firstLineIndex], lastLineTokens);
+        this._deleteLines(range.startLineNumber, range.endLineNumber - range.startLineNumber);
+    }
+    _acceptInsertText(position, eolCount, firstLineLength) {
+        if (eolCount === 0 && firstLineLength === 0) {
+            return;
+        }
+        const lineIndex = position.lineNumber - 1;
+        if (lineIndex >= this._len) {
+            return;
+        }
+        if (eolCount === 0) {
+            this._lineTokens[lineIndex] = ContiguousTokensEditing.insert(this._lineTokens[lineIndex], position.column - 1, firstLineLength);
+            return;
+        }
+        this._lineTokens[lineIndex] = ContiguousTokensEditing.deleteEnding(this._lineTokens[lineIndex], position.column - 1);
+        this._lineTokens[lineIndex] = ContiguousTokensEditing.insert(this._lineTokens[lineIndex], position.column - 1, firstLineLength);
+        this._insertLines(position.lineNumber, eolCount);
+    }
+    setMultilineTokens(tokens, textModel) {
+        if (tokens.length === 0) {
+            return { changes: [] };
+        }
+        const ranges = [];
+        for (let i = 0, len = tokens.length; i < len; i++) {
+            const element = tokens[i];
+            let minChangedLineNumber = 0;
+            let maxChangedLineNumber = 0;
+            let hasChange = false;
+            for (let lineNumber = element.startLineNumber; lineNumber <= element.endLineNumber; lineNumber++) {
+                if (hasChange) {
+                    this.setTokens(textModel.getLanguageId(), lineNumber - 1, textModel.getLineLength(lineNumber), element.getLineTokens(lineNumber), false);
+                    maxChangedLineNumber = lineNumber;
+                }
+                else {
+                    const lineHasChange = this.setTokens(textModel.getLanguageId(), lineNumber - 1, textModel.getLineLength(lineNumber), element.getLineTokens(lineNumber), true);
+                    if (lineHasChange) {
+                        hasChange = true;
+                        minChangedLineNumber = lineNumber;
+                        maxChangedLineNumber = lineNumber;
+                    }
+                }
+            }
+            if (hasChange) {
+                ranges.push({ fromLineNumber: minChangedLineNumber, toLineNumber: maxChangedLineNumber, });
+            }
+        }
+        return { changes: ranges };
+    }
+}
+function getDefaultMetadata(topLevelLanguageId) {
+    return ((topLevelLanguageId << 0)
+        | (0 << 8)
+        | (0 << 11)
+        | (1 << 15)
+        | (2 << 24)
+        | (1024)) >>> 0;
+}

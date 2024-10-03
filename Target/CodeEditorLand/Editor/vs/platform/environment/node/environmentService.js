@@ -1,1 +1,18 @@
-import{homedir as s,tmpdir as i}from"os";import"../common/argv.js";import"../common/environment.js";import{AbstractNativeEnvironmentService as n,parseDebugParams as o}from"../common/environmentService.js";import{getUserDataPath as a}from"./userDataPath.js";import"../../product/common/productService.js";class h extends n{constructor(r,t){super(r,{homeDir:s(),tmpDir:i(),userDataDir:a(r,t.nameShort)},t)}}function f(e,r){return o(e["inspect-ptyhost"],e["inspect-brk-ptyhost"],5877,r,e.extensionEnvironment)}function g(e,r){return o(e["inspect-sharedprocess"],e["inspect-brk-sharedprocess"],5879,r,e.extensionEnvironment)}export{h as NativeEnvironmentService,f as parsePtyHostDebugPort,g as parseSharedProcessDebugPort};
+import { homedir, tmpdir } from 'os';
+import { AbstractNativeEnvironmentService, parseDebugParams } from '../common/environmentService.js';
+import { getUserDataPath } from './userDataPath.js';
+export class NativeEnvironmentService extends AbstractNativeEnvironmentService {
+    constructor(args, productService) {
+        super(args, {
+            homeDir: homedir(),
+            tmpDir: tmpdir(),
+            userDataDir: getUserDataPath(args, productService.nameShort)
+        }, productService);
+    }
+}
+export function parsePtyHostDebugPort(args, isBuilt) {
+    return parseDebugParams(args['inspect-ptyhost'], args['inspect-brk-ptyhost'], 5877, isBuilt, args.extensionEnvironment);
+}
+export function parseSharedProcessDebugPort(args, isBuilt) {
+    return parseDebugParams(args['inspect-sharedprocess'], args['inspect-brk-sharedprocess'], 5879, isBuilt, args.extensionEnvironment);
+}

@@ -1,1 +1,18 @@
-var r=(_=>(_[_.START_CH_CODE=32]="START_CH_CODE",_[_.END_CH_CODE=126]="END_CH_CODE",_[_.UNKNOWN_CODE=65533]="UNKNOWN_CODE",_[_.CHAR_COUNT=96]="CHAR_COUNT",_[_.SAMPLED_CHAR_HEIGHT=16]="SAMPLED_CHAR_HEIGHT",_[_.SAMPLED_CHAR_WIDTH=10]="SAMPLED_CHAR_WIDTH",_[_.BASE_CHAR_HEIGHT=2]="BASE_CHAR_HEIGHT",_[_.BASE_CHAR_WIDTH=1]="BASE_CHAR_WIDTH",_[_.RGBA_CHANNELS_CNT=4]="RGBA_CHANNELS_CNT",_[_.RGBA_SAMPLED_ROW_WIDTH=3840]="RGBA_SAMPLED_ROW_WIDTH",_))(r||{});const R=(()=>{const H=[];for(let A=32;A<=126;A++)H.push(A);return H.push(65533),H})(),C=(H,A)=>(H-=32,H<0||H>96?A<=2?(H+96)%96:95:H);export{r as Constants,R as allCharCodes,C as getCharIndex};
+export const allCharCodes = (() => {
+    const v = [];
+    for (let i = 32; i <= 126; i++) {
+        v.push(i);
+    }
+    v.push(65533);
+    return v;
+})();
+export const getCharIndex = (chCode, fontScale) => {
+    chCode -= 32;
+    if (chCode < 0 || chCode > 96) {
+        if (fontScale <= 2) {
+            return (chCode + 96) % 96;
+        }
+        return 96 - 1;
+    }
+    return chCode;
+};

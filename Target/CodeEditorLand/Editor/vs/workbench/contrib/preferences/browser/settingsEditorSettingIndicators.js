@@ -1,5 +1,507 @@
-var T=Object.defineProperty;var k=Object.getOwnPropertyDescriptor;var b=(a,e,t,n)=>{for(var i=n>1?void 0:n?k(e,t):e,r=a.length-1,o;r>=0;r--)(o=a[r])&&(i=(n?o(e,t,i):o(i))||i);return n&&i&&T(e,t,i),i},f=(a,e)=>(t,n)=>e(t,n,a);import*as c from"../../../../base/browser/dom.js";import{StandardKeyboardEvent as S}from"../../../../base/browser/keyboardEvent.js";import{HoverPosition as L}from"../../../../base/browser/ui/hover/hoverWidget.js";import{SimpleIconLabel as m}from"../../../../base/browser/ui/iconLabel/simpleIconLabel.js";import{RunOnceScheduler as H}from"../../../../base/common/async.js";import"../../../../base/common/event.js";import{MarkdownString as x}from"../../../../base/common/htmlContent.js";import{KeyCode as v}from"../../../../base/common/keyCodes.js";import{DisposableStore as h}from"../../../../base/common/lifecycle.js";import{ILanguageService as C}from"../../../../editor/common/languages/language.js";import{localize as s}from"../../../../nls.js";import{ICommandService as A}from"../../../../platform/commands/common/commands.js";import{ConfigurationTarget as O}from"../../../../platform/configuration/common/configuration.js";import{IUserDataProfilesService as M}from"../../../../platform/userDataProfile/common/userDataProfile.js";import{IUserDataSyncEnablementService as U}from"../../../../platform/userDataSync/common/userDataSync.js";import"./settingsTreeModels.js";import{POLICY_SETTING_TAG as P}from"../common/preferences.js";import{IWorkbenchConfigurationService as W}from"../../../services/configuration/common/configuration.js";import{IHoverService as $}from"../../../../platform/hover/browser/hover.js";const g=c.$;let w=new Set,y=[],I=class{constructor(e,t,n,i,r,o,p){this.configurationService=t;this.hoverService=n;this.userDataSyncEnablementService=i;this.languageService=r;this.userDataProfilesService=o;this.commandService=p;this.indicatorsContainerElement=c.append(e,g(".setting-indicators-container")),this.indicatorsContainerElement.style.display="inline",this.profilesEnabled=this.userDataProfilesService.isEnabled(),this.workspaceTrustIndicator=this.createWorkspaceTrustIndicator(),this.scopeOverridesIndicator=this.createScopeOverridesIndicator(),this.syncIgnoredIndicator=this.createSyncIgnoredIndicator(),this.defaultOverrideIndicator=this.createDefaultOverrideIndicator(),this.allIndicators=[this.workspaceTrustIndicator,this.scopeOverridesIndicator,this.syncIgnoredIndicator,this.defaultOverrideIndicator]}indicatorsContainerElement;workspaceTrustIndicator;scopeOverridesIndicator;syncIgnoredIndicator;defaultOverrideIndicator;allIndicators;profilesEnabled;keybindingListeners=new h;focusedIndex=0;defaultHoverOptions={trapFocus:!0,position:{hoverPosition:L.BELOW},appearance:{showPointer:!0,compact:!1}};addHoverDisposables(e,t,n){e.clear();const i=e.add(new H(()=>{const r=n(!1);r&&e.add(r)},this.configurationService.getValue("workbench.hover.delay")));e.add(c.addDisposableListener(t,c.EventType.MOUSE_OVER,()=>{i.isScheduled()||i.schedule()})),e.add(c.addDisposableListener(t,c.EventType.MOUSE_LEAVE,()=>{i.cancel()})),e.add(c.addDisposableListener(t,c.EventType.KEY_DOWN,r=>{const o=new S(r);if(o.equals(v.Space)||o.equals(v.Enter)){const p=n(!0);p&&e.add(p),r.preventDefault()}}))}createWorkspaceTrustIndicator(){const e=new h,t=g("span.setting-indicator.setting-item-workspace-trust"),n=e.add(new m(t));n.text="$(warning) "+s("workspaceUntrustedLabel","Setting value not applied");const i=s("trustLabel","The setting value can only be applied in a trusted workspace."),r=o=>this.hoverService.showHover({...this.defaultHoverOptions,content:i,target:t,actions:[{label:s("manageWorkspaceTrust","Manage Workspace Trust"),commandId:"workbench.trust.manage",run:p=>{this.commandService.executeCommand("workbench.trust.manage")}}]},o);return this.addHoverDisposables(e,t,r),{element:t,label:n,disposables:e}}createScopeOverridesIndicator(){const e=new h,t=g("span.setting-item-overrides"),n=e.add(new m(t));return{element:t,label:n,disposables:e}}createSyncIgnoredIndicator(){const e=new h,t=g("span.setting-indicator.setting-item-ignored"),n=e.add(new m(t));n.text=s("extensionSyncIgnoredLabel","Not synced");const i=s("syncIgnoredTitle","This setting is ignored during sync"),r=o=>this.hoverService.showHover({...this.defaultHoverOptions,content:i,target:t},o);return this.addHoverDisposables(e,t,r),{element:t,label:n,disposables:e}}createDefaultOverrideIndicator(){const e=new h,t=g("span.setting-indicator.setting-item-default-overridden"),n=e.add(new m(t));return n.text=s("defaultOverriddenLabel","Default value changed"),{element:t,label:n,disposables:e}}render(){const e=this.allIndicators.filter(t=>t.element.style.display!=="none");if(this.indicatorsContainerElement.innerText="",this.indicatorsContainerElement.style.display="none",e.length){this.indicatorsContainerElement.style.display="inline",c.append(this.indicatorsContainerElement,g("span",void 0,"("));for(let t=0;t<e.length-1;t++)c.append(this.indicatorsContainerElement,e[t].element),c.append(this.indicatorsContainerElement,g("span.comma",void 0," \u2022 "));c.append(this.indicatorsContainerElement,e[e.length-1].element),c.append(this.indicatorsContainerElement,g("span",void 0,")")),this.resetIndicatorNavigationKeyBindings(e)}}resetIndicatorNavigationKeyBindings(e){if(this.keybindingListeners.clear(),this.indicatorsContainerElement.role=e.length>=1?"toolbar":"button",!e.length)return;const t=e[0].focusElement??e[0].element;t.tabIndex=0,this.keybindingListeners.add(c.addDisposableListener(this.indicatorsContainerElement,"keydown",n=>{const i=new S(n);let r=!0;if(i.equals(v.Home))this.focusIndicatorAt(e,0);else if(i.equals(v.End))this.focusIndicatorAt(e,e.length-1);else if(i.equals(v.RightArrow)){const o=(this.focusedIndex+1)%e.length;this.focusIndicatorAt(e,o)}else if(i.equals(v.LeftArrow)){const o=this.focusedIndex?this.focusedIndex-1:e.length-1;this.focusIndicatorAt(e,o)}else r=!1;r&&(n.preventDefault(),n.stopPropagation())}))}focusIndicatorAt(e,t){if(t===this.focusedIndex)return;const n=e[t],i=n.focusElement??n.element;i.tabIndex=0,i.focus();const r=e[this.focusedIndex],o=r.focusElement??r.element;o.tabIndex=-1,this.focusedIndex=t}updateWorkspaceTrust(e){this.workspaceTrustIndicator.element.style.display=e.isUntrusted?"inline":"none",this.render()}updateSyncIgnored(e,t){this.syncIgnoredIndicator.element.style.display=this.userDataSyncEnablementService.isEnabled()&&t.includes(e.setting.key)?"inline":"none",this.render(),y!==t&&(y=t,w=new Set(y))}getInlineScopeDisplayText(e){const[t,n]=e.split(":"),i=t==="user"?s("user","User"):t==="workspace"?s("workspace","Workspace"):s("remote","Remote");return n?`${this.languageService.getLanguageName(n)} > ${i}`:i}dispose(){this.keybindingListeners.dispose();for(const e of this.allIndicators)e.disposables.dispose()}updateScopeOverrides(e,t,n){if(this.scopeOverridesIndicator.element.innerText="",this.scopeOverridesIndicator.element.style.display="none",this.scopeOverridesIndicator.focusElement=this.scopeOverridesIndicator.element,e.hasPolicyValue){this.scopeOverridesIndicator.element.style.display="inline",this.scopeOverridesIndicator.element.classList.add("setting-indicator"),this.scopeOverridesIndicator.label.text="$(warning) "+s("policyLabelText","Setting value not applied");const i=s("policyDescription","This setting is managed by your organization and its applied value cannot be changed."),r=o=>this.hoverService.showHover({...this.defaultHoverOptions,content:i,actions:[{label:s("policyFilterLink","View policy settings"),commandId:"_settings.action.viewPolicySettings",run:p=>{n.fire(`@${P}`)}}],target:this.scopeOverridesIndicator.element},o);this.addHoverDisposables(this.scopeOverridesIndicator.disposables,this.scopeOverridesIndicator.element,r)}else if(this.profilesEnabled&&e.settingsTarget===O.USER_LOCAL&&this.configurationService.isSettingAppliedForAllProfiles(e.setting.key)){this.scopeOverridesIndicator.element.style.display="inline",this.scopeOverridesIndicator.element.classList.add("setting-indicator"),this.scopeOverridesIndicator.label.text=s("applicationSetting","Applies to all profiles");const i=s("applicationSettingDescription","The setting is not specific to the current profile, and will retain its value when switching profiles."),r=o=>this.hoverService.showHover({...this.defaultHoverOptions,content:i,target:this.scopeOverridesIndicator.element},o);this.addHoverDisposables(this.scopeOverridesIndicator.disposables,this.scopeOverridesIndicator.element,r)}else if(e.overriddenScopeList.length||e.overriddenDefaultsLanguageList.length)if(e.overriddenScopeList.length===1&&!e.overriddenDefaultsLanguageList.length){this.scopeOverridesIndicator.element.style.display="inline",this.scopeOverridesIndicator.element.classList.remove("setting-indicator"),this.scopeOverridesIndicator.disposables.clear();const i=e.isConfigured?s("alsoConfiguredIn","Also modified in"):s("configuredIn","Modified in");this.scopeOverridesIndicator.label.text=`${i} `;const r=e.overriddenScopeList[0],o=c.append(this.scopeOverridesIndicator.element,g("a.modified-scope",void 0,this.getInlineScopeDisplayText(r)));o.tabIndex=-1,this.scopeOverridesIndicator.focusElement=o;const p=d=>{const[l,u]=r.split(":");t.fire({settingKey:e.setting.key,scope:l,language:u}),d.preventDefault(),d.stopPropagation()};this.scopeOverridesIndicator.disposables.add(c.addDisposableListener(o,c.EventType.CLICK,d=>{p(d)})),this.scopeOverridesIndicator.disposables.add(c.addDisposableListener(o,c.EventType.KEY_DOWN,d=>{const l=new S(d);(l.equals(v.Space)||l.equals(v.Enter))&&p(d)}))}else{this.scopeOverridesIndicator.element.style.display="inline",this.scopeOverridesIndicator.element.classList.add("setting-indicator");const i=e.isConfigured?s("alsoConfiguredElsewhere","Also modified elsewhere"):s("configuredElsewhere","Modified elsewhere");this.scopeOverridesIndicator.label.text=i;let r="";if(e.overriddenScopeList.length){r=e.isConfigured?s("alsoModifiedInScopes","The setting has also been modified in the following scopes:"):s("modifiedInScopes","The setting has been modified in the following scopes:");for(const l of e.overriddenScopeList){const u=this.getInlineScopeDisplayText(l);r+=`
-- [${u}](${encodeURIComponent(l)} "${N(l,this.languageService)}")`}}if(e.overriddenDefaultsLanguageList.length){r&&(r+=`
-
-`);const d=s("hasDefaultOverridesForLanguages","The following languages have default overrides:");r+=d;for(const l of e.overriddenDefaultsLanguageList){const u=this.languageService.getLanguageName(l);r+=`
-- [${u}](${encodeURIComponent(`default:${l}`)} "${u}")`}}const o={value:r,isTrusted:!1,supportHtml:!1},p=d=>this.hoverService.showHover({...this.defaultHoverOptions,content:o,linkHandler:l=>{const[u,D]=decodeURIComponent(l).split(":");t.fire({settingKey:e.setting.key,scope:u,language:D})},target:this.scopeOverridesIndicator.element},d);this.addHoverDisposables(this.scopeOverridesIndicator.disposables,this.scopeOverridesIndicator.element,p)}this.render()}updateDefaultOverrideIndicator(e){this.defaultOverrideIndicator.element.style.display="none";let t=E(e);if(t!==void 0){this.defaultOverrideIndicator.element.style.display="inline",this.defaultOverrideIndicator.disposables.clear(),Array.isArray(t)&&t.length===1&&(t=t[0]);let n;Array.isArray(t)?(t=t.map(r=>`\`${r}\``),n=s("multipledefaultOverriddenDetails","A default values has been set by {0}",t.slice(0,-1).join(", ")+" & "+t.slice(-1))):n=s("defaultOverriddenDetails","Default setting value overridden by `{0}`",t);const i=r=>this.hoverService.showHover({content:new x().appendMarkdown(n),target:this.defaultOverrideIndicator.element,position:{hoverPosition:L.BELOW},appearance:{showPointer:!0,compact:!1}},r);this.addHoverDisposables(this.defaultOverrideIndicator.disposables,this.defaultOverrideIndicator.element,i)}this.render()}};I=b([f(1,W),f(2,$),f(3,U),f(4,C),f(5,M),f(6,A)],I);function E(a){let e;const t=a.defaultValueSource;if(t)if(t instanceof Map){e=[];for(const[,n]of t){const i=typeof n!="string"?n.displayName??n.id:n;e.includes(i)||e.push(i)}}else typeof t=="string"?e=t:e=t.displayName??t.id;return e}function N(a,e){const[t,n]=a.split(":"),i=t==="user"?s("user","User"):t==="workspace"?s("workspace","Workspace"):s("remote","Remote");return n?s("modifiedInScopeForLanguage","The {0} scope for {1}",i,e.getLanguageName(n)):i}function F(a,e){const[t,n]=a.split(":"),i=t==="user"?s("user","User"):t==="workspace"?s("workspace","Workspace"):s("remote","Remote");return n?s("modifiedInScopeForLanguageMidSentence","the {0} scope for {1}",i.toLowerCase(),e.getLanguageName(n)):i}function ce(a,e,t,n){const i=[];if(a.isUntrusted&&i.push(s("workspaceUntrustedAriaLabel","Workspace untrusted; setting value not applied")),a.hasPolicyValue)i.push(s("policyDescriptionAccessible","Managed by organization policy; setting value not applied"));else if(t.isEnabled()&&a.settingsTarget===O.USER_LOCAL&&e.isSettingAppliedForAllProfiles(a.setting.key))i.push(s("applicationSettingDescriptionAccessible","Setting value retained when switching profiles"));else{const d=a.isConfigured?s("alsoConfiguredIn","Also modified in"):s("configuredIn","Modified in"),l=a.overriddenScopeList.map(u=>F(u,n)).join(", ");a.overriddenScopeList.length&&i.push(`${d} ${l}`)}w.has(a.setting.key)&&i.push(s("syncIgnoredAriaLabel","Setting ignored during sync"));let r=E(a);if(r!==void 0){Array.isArray(r)&&r.length===1&&(r=r[0]);let d;Array.isArray(r)?d=s("multipleDefaultOverriddenDetailsAriaLabel","{0} override the default value",r.slice(0,-1).join(", ")+" & "+r.slice(-1)):d=s("defaultOverriddenDetailsAriaLabel","{0} overrides the default value",r),i.push(d)}const o=a.overriddenDefaultsLanguageList.map(d=>n.getLanguageName(d)).join(", ");if(a.overriddenDefaultsLanguageList.length){const d=s("defaultOverriddenLanguagesList","Language-specific default values exist for {0}",o);i.push(d)}return i.join(". ")}export{I as SettingsTreeIndicatorsLabel,ce as getIndicatorsLabelAriaLabel};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as DOM from '../../../../base/browser/dom.js';
+import { StandardKeyboardEvent } from '../../../../base/browser/keyboardEvent.js';
+import { SimpleIconLabel } from '../../../../base/browser/ui/iconLabel/simpleIconLabel.js';
+import { RunOnceScheduler } from '../../../../base/common/async.js';
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+import { localize } from '../../../../nls.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
+import { IUserDataSyncEnablementService } from '../../../../platform/userDataSync/common/userDataSync.js';
+import { POLICY_SETTING_TAG } from '../common/preferences.js';
+import { IWorkbenchConfigurationService } from '../../../services/configuration/common/configuration.js';
+import { IHoverService } from '../../../../platform/hover/browser/hover.js';
+const $ = DOM.$;
+let cachedSyncIgnoredSettingsSet = new Set();
+let cachedSyncIgnoredSettings = [];
+let SettingsTreeIndicatorsLabel = class SettingsTreeIndicatorsLabel {
+    constructor(container, configurationService, hoverService, userDataSyncEnablementService, languageService, userDataProfilesService, commandService) {
+        this.configurationService = configurationService;
+        this.hoverService = hoverService;
+        this.userDataSyncEnablementService = userDataSyncEnablementService;
+        this.languageService = languageService;
+        this.userDataProfilesService = userDataProfilesService;
+        this.commandService = commandService;
+        this.keybindingListeners = new DisposableStore();
+        this.focusedIndex = 0;
+        this.defaultHoverOptions = {
+            trapFocus: true,
+            position: {
+                hoverPosition: 2,
+            },
+            appearance: {
+                showPointer: true,
+                compact: false,
+            }
+        };
+        this.indicatorsContainerElement = DOM.append(container, $('.setting-indicators-container'));
+        this.indicatorsContainerElement.style.display = 'inline';
+        this.profilesEnabled = this.userDataProfilesService.isEnabled();
+        this.workspaceTrustIndicator = this.createWorkspaceTrustIndicator();
+        this.scopeOverridesIndicator = this.createScopeOverridesIndicator();
+        this.syncIgnoredIndicator = this.createSyncIgnoredIndicator();
+        this.defaultOverrideIndicator = this.createDefaultOverrideIndicator();
+        this.allIndicators = [this.workspaceTrustIndicator, this.scopeOverridesIndicator, this.syncIgnoredIndicator, this.defaultOverrideIndicator];
+    }
+    addHoverDisposables(disposables, element, showHover) {
+        disposables.clear();
+        const scheduler = disposables.add(new RunOnceScheduler(() => {
+            const hover = showHover(false);
+            if (hover) {
+                disposables.add(hover);
+            }
+        }, this.configurationService.getValue('workbench.hover.delay')));
+        disposables.add(DOM.addDisposableListener(element, DOM.EventType.MOUSE_OVER, () => {
+            if (!scheduler.isScheduled()) {
+                scheduler.schedule();
+            }
+        }));
+        disposables.add(DOM.addDisposableListener(element, DOM.EventType.MOUSE_LEAVE, () => {
+            scheduler.cancel();
+        }));
+        disposables.add(DOM.addDisposableListener(element, DOM.EventType.KEY_DOWN, (e) => {
+            const evt = new StandardKeyboardEvent(e);
+            if (evt.equals(10) || evt.equals(3)) {
+                const hover = showHover(true);
+                if (hover) {
+                    disposables.add(hover);
+                }
+                e.preventDefault();
+            }
+        }));
+    }
+    createWorkspaceTrustIndicator() {
+        const disposables = new DisposableStore();
+        const workspaceTrustElement = $('span.setting-indicator.setting-item-workspace-trust');
+        const workspaceTrustLabel = disposables.add(new SimpleIconLabel(workspaceTrustElement));
+        workspaceTrustLabel.text = '$(warning) ' + localize('workspaceUntrustedLabel', "Setting value not applied");
+        const content = localize('trustLabel', "The setting value can only be applied in a trusted workspace.");
+        const showHover = (focus) => {
+            return this.hoverService.showHover({
+                ...this.defaultHoverOptions,
+                content,
+                target: workspaceTrustElement,
+                actions: [{
+                        label: localize('manageWorkspaceTrust', "Manage Workspace Trust"),
+                        commandId: 'workbench.trust.manage',
+                        run: (target) => {
+                            this.commandService.executeCommand('workbench.trust.manage');
+                        }
+                    }],
+            }, focus);
+        };
+        this.addHoverDisposables(disposables, workspaceTrustElement, showHover);
+        return {
+            element: workspaceTrustElement,
+            label: workspaceTrustLabel,
+            disposables
+        };
+    }
+    createScopeOverridesIndicator() {
+        const disposables = new DisposableStore();
+        const otherOverridesElement = $('span.setting-item-overrides');
+        const otherOverridesLabel = disposables.add(new SimpleIconLabel(otherOverridesElement));
+        return {
+            element: otherOverridesElement,
+            label: otherOverridesLabel,
+            disposables
+        };
+    }
+    createSyncIgnoredIndicator() {
+        const disposables = new DisposableStore();
+        const syncIgnoredElement = $('span.setting-indicator.setting-item-ignored');
+        const syncIgnoredLabel = disposables.add(new SimpleIconLabel(syncIgnoredElement));
+        syncIgnoredLabel.text = localize('extensionSyncIgnoredLabel', 'Not synced');
+        const syncIgnoredHoverContent = localize('syncIgnoredTitle', "This setting is ignored during sync");
+        const showHover = (focus) => {
+            return this.hoverService.showHover({
+                ...this.defaultHoverOptions,
+                content: syncIgnoredHoverContent,
+                target: syncIgnoredElement
+            }, focus);
+        };
+        this.addHoverDisposables(disposables, syncIgnoredElement, showHover);
+        return {
+            element: syncIgnoredElement,
+            label: syncIgnoredLabel,
+            disposables
+        };
+    }
+    createDefaultOverrideIndicator() {
+        const disposables = new DisposableStore();
+        const defaultOverrideIndicator = $('span.setting-indicator.setting-item-default-overridden');
+        const defaultOverrideLabel = disposables.add(new SimpleIconLabel(defaultOverrideIndicator));
+        defaultOverrideLabel.text = localize('defaultOverriddenLabel', "Default value changed");
+        return {
+            element: defaultOverrideIndicator,
+            label: defaultOverrideLabel,
+            disposables
+        };
+    }
+    render() {
+        const indicatorsToShow = this.allIndicators.filter(indicator => {
+            return indicator.element.style.display !== 'none';
+        });
+        this.indicatorsContainerElement.innerText = '';
+        this.indicatorsContainerElement.style.display = 'none';
+        if (indicatorsToShow.length) {
+            this.indicatorsContainerElement.style.display = 'inline';
+            DOM.append(this.indicatorsContainerElement, $('span', undefined, '('));
+            for (let i = 0; i < indicatorsToShow.length - 1; i++) {
+                DOM.append(this.indicatorsContainerElement, indicatorsToShow[i].element);
+                DOM.append(this.indicatorsContainerElement, $('span.comma', undefined, ' • '));
+            }
+            DOM.append(this.indicatorsContainerElement, indicatorsToShow[indicatorsToShow.length - 1].element);
+            DOM.append(this.indicatorsContainerElement, $('span', undefined, ')'));
+            this.resetIndicatorNavigationKeyBindings(indicatorsToShow);
+        }
+    }
+    resetIndicatorNavigationKeyBindings(indicators) {
+        this.keybindingListeners.clear();
+        this.indicatorsContainerElement.role = indicators.length >= 1 ? 'toolbar' : 'button';
+        if (!indicators.length) {
+            return;
+        }
+        const firstElement = indicators[0].focusElement ?? indicators[0].element;
+        firstElement.tabIndex = 0;
+        this.keybindingListeners.add(DOM.addDisposableListener(this.indicatorsContainerElement, 'keydown', (e) => {
+            const ev = new StandardKeyboardEvent(e);
+            let handled = true;
+            if (ev.equals(14)) {
+                this.focusIndicatorAt(indicators, 0);
+            }
+            else if (ev.equals(13)) {
+                this.focusIndicatorAt(indicators, indicators.length - 1);
+            }
+            else if (ev.equals(17)) {
+                const indexToFocus = (this.focusedIndex + 1) % indicators.length;
+                this.focusIndicatorAt(indicators, indexToFocus);
+            }
+            else if (ev.equals(15)) {
+                const indexToFocus = this.focusedIndex ? this.focusedIndex - 1 : indicators.length - 1;
+                this.focusIndicatorAt(indicators, indexToFocus);
+            }
+            else {
+                handled = false;
+            }
+            if (handled) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }));
+    }
+    focusIndicatorAt(indicators, index) {
+        if (index === this.focusedIndex) {
+            return;
+        }
+        const indicator = indicators[index];
+        const elementToFocus = indicator.focusElement ?? indicator.element;
+        elementToFocus.tabIndex = 0;
+        elementToFocus.focus();
+        const currentlyFocusedIndicator = indicators[this.focusedIndex];
+        const previousFocusedElement = currentlyFocusedIndicator.focusElement ?? currentlyFocusedIndicator.element;
+        previousFocusedElement.tabIndex = -1;
+        this.focusedIndex = index;
+    }
+    updateWorkspaceTrust(element) {
+        this.workspaceTrustIndicator.element.style.display = element.isUntrusted ? 'inline' : 'none';
+        this.render();
+    }
+    updateSyncIgnored(element, ignoredSettings) {
+        this.syncIgnoredIndicator.element.style.display = this.userDataSyncEnablementService.isEnabled()
+            && ignoredSettings.includes(element.setting.key) ? 'inline' : 'none';
+        this.render();
+        if (cachedSyncIgnoredSettings !== ignoredSettings) {
+            cachedSyncIgnoredSettings = ignoredSettings;
+            cachedSyncIgnoredSettingsSet = new Set(cachedSyncIgnoredSettings);
+        }
+    }
+    getInlineScopeDisplayText(completeScope) {
+        const [scope, language] = completeScope.split(':');
+        const localizedScope = scope === 'user' ?
+            localize('user', "User") : scope === 'workspace' ?
+            localize('workspace', "Workspace") : localize('remote', "Remote");
+        if (language) {
+            return `${this.languageService.getLanguageName(language)} > ${localizedScope}`;
+        }
+        return localizedScope;
+    }
+    dispose() {
+        this.keybindingListeners.dispose();
+        for (const indicator of this.allIndicators) {
+            indicator.disposables.dispose();
+        }
+    }
+    updateScopeOverrides(element, onDidClickOverrideElement, onApplyFilter) {
+        this.scopeOverridesIndicator.element.innerText = '';
+        this.scopeOverridesIndicator.element.style.display = 'none';
+        this.scopeOverridesIndicator.focusElement = this.scopeOverridesIndicator.element;
+        if (element.hasPolicyValue) {
+            this.scopeOverridesIndicator.element.style.display = 'inline';
+            this.scopeOverridesIndicator.element.classList.add('setting-indicator');
+            this.scopeOverridesIndicator.label.text = '$(warning) ' + localize('policyLabelText', "Setting value not applied");
+            const content = localize('policyDescription', "This setting is managed by your organization and its applied value cannot be changed.");
+            const showHover = (focus) => {
+                return this.hoverService.showHover({
+                    ...this.defaultHoverOptions,
+                    content,
+                    actions: [{
+                            label: localize('policyFilterLink', "View policy settings"),
+                            commandId: '_settings.action.viewPolicySettings',
+                            run: (_) => {
+                                onApplyFilter.fire(`@${POLICY_SETTING_TAG}`);
+                            }
+                        }],
+                    target: this.scopeOverridesIndicator.element
+                }, focus);
+            };
+            this.addHoverDisposables(this.scopeOverridesIndicator.disposables, this.scopeOverridesIndicator.element, showHover);
+        }
+        else if (this.profilesEnabled && element.settingsTarget === 3 && this.configurationService.isSettingAppliedForAllProfiles(element.setting.key)) {
+            this.scopeOverridesIndicator.element.style.display = 'inline';
+            this.scopeOverridesIndicator.element.classList.add('setting-indicator');
+            this.scopeOverridesIndicator.label.text = localize('applicationSetting', "Applies to all profiles");
+            const content = localize('applicationSettingDescription', "The setting is not specific to the current profile, and will retain its value when switching profiles.");
+            const showHover = (focus) => {
+                return this.hoverService.showHover({
+                    ...this.defaultHoverOptions,
+                    content,
+                    target: this.scopeOverridesIndicator.element
+                }, focus);
+            };
+            this.addHoverDisposables(this.scopeOverridesIndicator.disposables, this.scopeOverridesIndicator.element, showHover);
+        }
+        else if (element.overriddenScopeList.length || element.overriddenDefaultsLanguageList.length) {
+            if (element.overriddenScopeList.length === 1 && !element.overriddenDefaultsLanguageList.length) {
+                this.scopeOverridesIndicator.element.style.display = 'inline';
+                this.scopeOverridesIndicator.element.classList.remove('setting-indicator');
+                this.scopeOverridesIndicator.disposables.clear();
+                const prefaceText = element.isConfigured ?
+                    localize('alsoConfiguredIn', "Also modified in") :
+                    localize('configuredIn', "Modified in");
+                this.scopeOverridesIndicator.label.text = `${prefaceText} `;
+                const overriddenScope = element.overriddenScopeList[0];
+                const view = DOM.append(this.scopeOverridesIndicator.element, $('a.modified-scope', undefined, this.getInlineScopeDisplayText(overriddenScope)));
+                view.tabIndex = -1;
+                this.scopeOverridesIndicator.focusElement = view;
+                const onClickOrKeydown = (e) => {
+                    const [scope, language] = overriddenScope.split(':');
+                    onDidClickOverrideElement.fire({
+                        settingKey: element.setting.key,
+                        scope: scope,
+                        language
+                    });
+                    e.preventDefault();
+                    e.stopPropagation();
+                };
+                this.scopeOverridesIndicator.disposables.add(DOM.addDisposableListener(view, DOM.EventType.CLICK, (e) => {
+                    onClickOrKeydown(e);
+                }));
+                this.scopeOverridesIndicator.disposables.add(DOM.addDisposableListener(view, DOM.EventType.KEY_DOWN, (e) => {
+                    const ev = new StandardKeyboardEvent(e);
+                    if (ev.equals(10) || ev.equals(3)) {
+                        onClickOrKeydown(e);
+                    }
+                }));
+            }
+            else {
+                this.scopeOverridesIndicator.element.style.display = 'inline';
+                this.scopeOverridesIndicator.element.classList.add('setting-indicator');
+                const scopeOverridesLabelText = element.isConfigured ?
+                    localize('alsoConfiguredElsewhere', "Also modified elsewhere") :
+                    localize('configuredElsewhere', "Modified elsewhere");
+                this.scopeOverridesIndicator.label.text = scopeOverridesLabelText;
+                let contentMarkdownString = '';
+                if (element.overriddenScopeList.length) {
+                    const prefaceText = element.isConfigured ?
+                        localize('alsoModifiedInScopes', "The setting has also been modified in the following scopes:") :
+                        localize('modifiedInScopes', "The setting has been modified in the following scopes:");
+                    contentMarkdownString = prefaceText;
+                    for (const scope of element.overriddenScopeList) {
+                        const scopeDisplayText = this.getInlineScopeDisplayText(scope);
+                        contentMarkdownString += `\n- [${scopeDisplayText}](${encodeURIComponent(scope)} "${getAccessibleScopeDisplayText(scope, this.languageService)}")`;
+                    }
+                }
+                if (element.overriddenDefaultsLanguageList.length) {
+                    if (contentMarkdownString) {
+                        contentMarkdownString += `\n\n`;
+                    }
+                    const prefaceText = localize('hasDefaultOverridesForLanguages', "The following languages have default overrides:");
+                    contentMarkdownString += prefaceText;
+                    for (const language of element.overriddenDefaultsLanguageList) {
+                        const scopeDisplayText = this.languageService.getLanguageName(language);
+                        contentMarkdownString += `\n- [${scopeDisplayText}](${encodeURIComponent(`default:${language}`)} "${scopeDisplayText}")`;
+                    }
+                }
+                const content = {
+                    value: contentMarkdownString,
+                    isTrusted: false,
+                    supportHtml: false
+                };
+                const showHover = (focus) => {
+                    return this.hoverService.showHover({
+                        ...this.defaultHoverOptions,
+                        content,
+                        linkHandler: (url) => {
+                            const [scope, language] = decodeURIComponent(url).split(':');
+                            onDidClickOverrideElement.fire({
+                                settingKey: element.setting.key,
+                                scope: scope,
+                                language
+                            });
+                        },
+                        target: this.scopeOverridesIndicator.element
+                    }, focus);
+                };
+                this.addHoverDisposables(this.scopeOverridesIndicator.disposables, this.scopeOverridesIndicator.element, showHover);
+            }
+        }
+        this.render();
+    }
+    updateDefaultOverrideIndicator(element) {
+        this.defaultOverrideIndicator.element.style.display = 'none';
+        let sourceToDisplay = getDefaultValueSourceToDisplay(element);
+        if (sourceToDisplay !== undefined) {
+            this.defaultOverrideIndicator.element.style.display = 'inline';
+            this.defaultOverrideIndicator.disposables.clear();
+            if (Array.isArray(sourceToDisplay) && sourceToDisplay.length === 1) {
+                sourceToDisplay = sourceToDisplay[0];
+            }
+            let defaultOverrideHoverContent;
+            if (!Array.isArray(sourceToDisplay)) {
+                defaultOverrideHoverContent = localize('defaultOverriddenDetails', "Default setting value overridden by `{0}`", sourceToDisplay);
+            }
+            else {
+                sourceToDisplay = sourceToDisplay.map(source => `\`${source}\``);
+                defaultOverrideHoverContent = localize('multipledefaultOverriddenDetails', "A default values has been set by {0}", sourceToDisplay.slice(0, -1).join(', ') + ' & ' + sourceToDisplay.slice(-1));
+            }
+            const showHover = (focus) => {
+                return this.hoverService.showHover({
+                    content: new MarkdownString().appendMarkdown(defaultOverrideHoverContent),
+                    target: this.defaultOverrideIndicator.element,
+                    position: {
+                        hoverPosition: 2,
+                    },
+                    appearance: {
+                        showPointer: true,
+                        compact: false
+                    }
+                }, focus);
+            };
+            this.addHoverDisposables(this.defaultOverrideIndicator.disposables, this.defaultOverrideIndicator.element, showHover);
+        }
+        this.render();
+    }
+};
+SettingsTreeIndicatorsLabel = __decorate([
+    __param(1, IWorkbenchConfigurationService),
+    __param(2, IHoverService),
+    __param(3, IUserDataSyncEnablementService),
+    __param(4, ILanguageService),
+    __param(5, IUserDataProfilesService),
+    __param(6, ICommandService),
+    __metadata("design:paramtypes", [HTMLElement, Object, Object, Object, Object, Object, Object])
+], SettingsTreeIndicatorsLabel);
+export { SettingsTreeIndicatorsLabel };
+function getDefaultValueSourceToDisplay(element) {
+    let sourceToDisplay;
+    const defaultValueSource = element.defaultValueSource;
+    if (defaultValueSource) {
+        if (defaultValueSource instanceof Map) {
+            sourceToDisplay = [];
+            for (const [, value] of defaultValueSource) {
+                const newValue = typeof value !== 'string' ? value.displayName ?? value.id : value;
+                if (!sourceToDisplay.includes(newValue)) {
+                    sourceToDisplay.push(newValue);
+                }
+            }
+        }
+        else if (typeof defaultValueSource === 'string') {
+            sourceToDisplay = defaultValueSource;
+        }
+        else {
+            sourceToDisplay = defaultValueSource.displayName ?? defaultValueSource.id;
+        }
+    }
+    return sourceToDisplay;
+}
+function getAccessibleScopeDisplayText(completeScope, languageService) {
+    const [scope, language] = completeScope.split(':');
+    const localizedScope = scope === 'user' ?
+        localize('user', "User") : scope === 'workspace' ?
+        localize('workspace', "Workspace") : localize('remote', "Remote");
+    if (language) {
+        return localize('modifiedInScopeForLanguage', "The {0} scope for {1}", localizedScope, languageService.getLanguageName(language));
+    }
+    return localizedScope;
+}
+function getAccessibleScopeDisplayMidSentenceText(completeScope, languageService) {
+    const [scope, language] = completeScope.split(':');
+    const localizedScope = scope === 'user' ?
+        localize('user', "User") : scope === 'workspace' ?
+        localize('workspace', "Workspace") : localize('remote', "Remote");
+    if (language) {
+        return localize('modifiedInScopeForLanguageMidSentence', "the {0} scope for {1}", localizedScope.toLowerCase(), languageService.getLanguageName(language));
+    }
+    return localizedScope;
+}
+export function getIndicatorsLabelAriaLabel(element, configurationService, userDataProfilesService, languageService) {
+    const ariaLabelSections = [];
+    if (element.isUntrusted) {
+        ariaLabelSections.push(localize('workspaceUntrustedAriaLabel', "Workspace untrusted; setting value not applied"));
+    }
+    if (element.hasPolicyValue) {
+        ariaLabelSections.push(localize('policyDescriptionAccessible', "Managed by organization policy; setting value not applied"));
+    }
+    else if (userDataProfilesService.isEnabled() && element.settingsTarget === 3 && configurationService.isSettingAppliedForAllProfiles(element.setting.key)) {
+        ariaLabelSections.push(localize('applicationSettingDescriptionAccessible', "Setting value retained when switching profiles"));
+    }
+    else {
+        const otherOverridesStart = element.isConfigured ?
+            localize('alsoConfiguredIn', "Also modified in") :
+            localize('configuredIn', "Modified in");
+        const otherOverridesList = element.overriddenScopeList
+            .map(scope => getAccessibleScopeDisplayMidSentenceText(scope, languageService)).join(', ');
+        if (element.overriddenScopeList.length) {
+            ariaLabelSections.push(`${otherOverridesStart} ${otherOverridesList}`);
+        }
+    }
+    if (cachedSyncIgnoredSettingsSet.has(element.setting.key)) {
+        ariaLabelSections.push(localize('syncIgnoredAriaLabel', "Setting ignored during sync"));
+    }
+    let sourceToDisplay = getDefaultValueSourceToDisplay(element);
+    if (sourceToDisplay !== undefined) {
+        if (Array.isArray(sourceToDisplay) && sourceToDisplay.length === 1) {
+            sourceToDisplay = sourceToDisplay[0];
+        }
+        let overriddenDetailsText;
+        if (!Array.isArray(sourceToDisplay)) {
+            overriddenDetailsText = localize('defaultOverriddenDetailsAriaLabel', "{0} overrides the default value", sourceToDisplay);
+        }
+        else {
+            overriddenDetailsText = localize('multipleDefaultOverriddenDetailsAriaLabel', "{0} override the default value", sourceToDisplay.slice(0, -1).join(', ') + ' & ' + sourceToDisplay.slice(-1));
+        }
+        ariaLabelSections.push(overriddenDetailsText);
+    }
+    const otherLanguageOverridesList = element.overriddenDefaultsLanguageList
+        .map(language => languageService.getLanguageName(language)).join(', ');
+    if (element.overriddenDefaultsLanguageList.length) {
+        const otherLanguageOverridesText = localize('defaultOverriddenLanguagesList', "Language-specific default values exist for {0}", otherLanguageOverridesList);
+        ariaLabelSections.push(otherLanguageOverridesText);
+    }
+    const ariaLabel = ariaLabelSections.join('. ');
+    return ariaLabel;
+}

@@ -1,1 +1,120 @@
-import"../../../../editor/common/core/range.js";import"../../../../editor/common/languages.js";import"../../../../editor/common/model.js";import{CancellationToken as g}from"../../../../base/common/cancellation.js";import{LanguageFeatureRegistry as v}from"../../../../editor/common/languageFeatureRegistry.js";import{URI as h}from"../../../../base/common/uri.js";import{Position as x}from"../../../../editor/common/core/position.js";import{isNonEmptyArray as C}from"../../../../base/common/arrays.js";import{onUnexpectedExternalError as p}from"../../../../base/common/errors.js";import{RefCountedDisposable as H}from"../../../../base/common/lifecycle.js";import{CommandsRegistry as u}from"../../../../platform/commands/common/commands.js";import{assertType as d}from"../../../../base/common/types.js";import{IModelService as R}from"../../../../editor/common/services/model.js";import{ITextModelService as P}from"../../../../editor/common/services/resolverService.js";var M=(e=>(e.CallsTo="incomingCalls",e.CallsFrom="outgoingCalls",e))(M||{});const T=new v;class m{constructor(o,e,r,a){this.id=o;this.provider=e;this.roots=r;this.ref=a;this.root=r[0]}static async create(o,e,r){const[a]=T.ordered(o);if(!a)return;const t=await a.prepareCallHierarchy(o,e,r);if(t)return new m(t.roots.reduce((s,i)=>s+i._sessionId,""),a,t.roots,new H(t))}root;dispose(){this.ref.release()}fork(o){const e=this;return new class extends m{constructor(){super(e.id,e.provider,[o],e.ref.acquire())}}}async resolveIncomingCalls(o,e){try{const r=await this.provider.provideIncomingCalls(o,e);if(C(r))return r}catch(r){p(r)}return[]}async resolveOutgoingCalls(o,e){try{const r=await this.provider.provideOutgoingCalls(o,e);if(C(r))return r}catch(r){p(r)}return[]}}const l=new Map;u.registerCommand("_executePrepareCallHierarchy",async(n,...o)=>{const[e,r]=o;d(h.isUri(e)),d(x.isIPosition(r));let t=n.get(R).getModel(e),s;if(!t){const c=await n.get(P).createModelReference(e);t=c.object.textEditorModel,s=c}try{const i=await m.create(t,r,g.None);return i?(l.set(i.id,i),l.forEach((c,y,I)=>{I.size>10&&(c.dispose(),l.delete(y))}),[i.root]):[]}finally{s?.dispose()}});function f(n){return!0}u.registerCommand("_executeProvideIncomingCalls",async(n,...o)=>{const[e]=o;d(f(e));const r=l.get(e._sessionId);if(r)return r.resolveIncomingCalls(e,g.None)}),u.registerCommand("_executeProvideOutgoingCalls",async(n,...o)=>{const[e]=o;d(f(e));const r=l.get(e._sessionId);if(r)return r.resolveOutgoingCalls(e,g.None)});export{M as CallHierarchyDirection,m as CallHierarchyModel,T as CallHierarchyProviderRegistry};
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { LanguageFeatureRegistry } from '../../../../editor/common/languageFeatureRegistry.js';
+import { URI } from '../../../../base/common/uri.js';
+import { Position } from '../../../../editor/common/core/position.js';
+import { isNonEmptyArray } from '../../../../base/common/arrays.js';
+import { onUnexpectedExternalError } from '../../../../base/common/errors.js';
+import { RefCountedDisposable } from '../../../../base/common/lifecycle.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { assertType } from '../../../../base/common/types.js';
+import { IModelService } from '../../../../editor/common/services/model.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+export const CallHierarchyProviderRegistry = new LanguageFeatureRegistry();
+export class CallHierarchyModel {
+    static async create(model, position, token) {
+        const [provider] = CallHierarchyProviderRegistry.ordered(model);
+        if (!provider) {
+            return undefined;
+        }
+        const session = await provider.prepareCallHierarchy(model, position, token);
+        if (!session) {
+            return undefined;
+        }
+        return new CallHierarchyModel(session.roots.reduce((p, c) => p + c._sessionId, ''), provider, session.roots, new RefCountedDisposable(session));
+    }
+    constructor(id, provider, roots, ref) {
+        this.id = id;
+        this.provider = provider;
+        this.roots = roots;
+        this.ref = ref;
+        this.root = roots[0];
+    }
+    dispose() {
+        this.ref.release();
+    }
+    fork(item) {
+        const that = this;
+        return new class extends CallHierarchyModel {
+            constructor() {
+                super(that.id, that.provider, [item], that.ref.acquire());
+            }
+        };
+    }
+    async resolveIncomingCalls(item, token) {
+        try {
+            const result = await this.provider.provideIncomingCalls(item, token);
+            if (isNonEmptyArray(result)) {
+                return result;
+            }
+        }
+        catch (e) {
+            onUnexpectedExternalError(e);
+        }
+        return [];
+    }
+    async resolveOutgoingCalls(item, token) {
+        try {
+            const result = await this.provider.provideOutgoingCalls(item, token);
+            if (isNonEmptyArray(result)) {
+                return result;
+            }
+        }
+        catch (e) {
+            onUnexpectedExternalError(e);
+        }
+        return [];
+    }
+}
+const _models = new Map();
+CommandsRegistry.registerCommand('_executePrepareCallHierarchy', async (accessor, ...args) => {
+    const [resource, position] = args;
+    assertType(URI.isUri(resource));
+    assertType(Position.isIPosition(position));
+    const modelService = accessor.get(IModelService);
+    let textModel = modelService.getModel(resource);
+    let textModelReference;
+    if (!textModel) {
+        const textModelService = accessor.get(ITextModelService);
+        const result = await textModelService.createModelReference(resource);
+        textModel = result.object.textEditorModel;
+        textModelReference = result;
+    }
+    try {
+        const model = await CallHierarchyModel.create(textModel, position, CancellationToken.None);
+        if (!model) {
+            return [];
+        }
+        _models.set(model.id, model);
+        _models.forEach((value, key, map) => {
+            if (map.size > 10) {
+                value.dispose();
+                _models.delete(key);
+            }
+        });
+        return [model.root];
+    }
+    finally {
+        textModelReference?.dispose();
+    }
+});
+function isCallHierarchyItemDto(obj) {
+    return true;
+}
+CommandsRegistry.registerCommand('_executeProvideIncomingCalls', async (_accessor, ...args) => {
+    const [item] = args;
+    assertType(isCallHierarchyItemDto(item));
+    const model = _models.get(item._sessionId);
+    if (!model) {
+        return undefined;
+    }
+    return model.resolveIncomingCalls(item, CancellationToken.None);
+});
+CommandsRegistry.registerCommand('_executeProvideOutgoingCalls', async (_accessor, ...args) => {
+    const [item] = args;
+    assertType(isCallHierarchyItemDto(item));
+    const model = _models.get(item._sessionId);
+    if (!model) {
+        return undefined;
+    }
+    return model.resolveOutgoingCalls(item, CancellationToken.None);
+});

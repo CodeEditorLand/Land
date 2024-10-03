@@ -1,1 +1,10 @@
-import{RawContextKey as o}from"../../../../platform/contextkey/common/contextkey.js";const e=new o("inSearchEditor",!1),r="search-editor",n="search/editor",c="searchEditorFindMatch",d="workbench.editor.searchEditor",i="search.action.openNewEditor",a="search.action.openEditor",s="toggleSearchEditorContextLines",h="workbench.editorinputs.searchEditorInput";export{e as InSearchEditor,a as OpenEditorCommandId,i as OpenNewEditorCommandId,c as SearchEditorFindMatchClass,d as SearchEditorID,h as SearchEditorInputTypeId,r as SearchEditorScheme,n as SearchEditorWorkingCopyTypeId,s as ToggleSearchEditorContextLinesCommandId};
+import { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+export const InSearchEditor = new RawContextKey('inSearchEditor', false);
+export const SearchEditorScheme = 'search-editor';
+export const SearchEditorWorkingCopyTypeId = 'search/editor';
+export const SearchEditorFindMatchClass = 'searchEditorFindMatch';
+export const SearchEditorID = 'workbench.editor.searchEditor';
+export const OpenNewEditorCommandId = 'search.action.openNewEditor';
+export const OpenEditorCommandId = 'search.action.openEditor';
+export const ToggleSearchEditorContextLinesCommandId = 'toggleSearchEditorContextLines';
+export const SearchEditorInputTypeId = 'workbench.editorinputs.searchEditorInput';

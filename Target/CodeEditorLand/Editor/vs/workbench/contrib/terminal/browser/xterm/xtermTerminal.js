@@ -1,1 +1,691 @@
-var E=Object.defineProperty;var W=Object.getOwnPropertyDescriptor;var I=(n,a,e,t)=>{for(var i=t>1?void 0:t?W(a,e):a,r=n.length-1,o;r>=0;r--)(o=n[r])&&(i=(t?o(a,e,i):o(i))||i);return t&&i&&E(a,e,i),i},g=(n,a)=>(e,t)=>a(e,t,n);import*as m from"../../../../../base/browser/dom.js";import"../xterm-private.js";import{IConfigurationService as k}from"../../../../../platform/configuration/common/configuration.js";import{Disposable as B,DisposableStore as N}from"../../../../../base/common/lifecycle.js";import"../../../../../editor/common/config/editorOptions.js";import{ITerminalLogService as F,TerminalSettingId as b}from"../../../../../platform/terminal/common/terminal.js";import"../../common/terminal.js";import{XtermTerminalConstants as P,ITerminalConfigurationService as H}from"../terminal.js";import{LogLevel as v}from"../../../../../platform/log/common/log.js";import{INotificationService as G}from"../../../../../platform/notification/common/notification.js";import{MarkNavigationAddon as U,ScrollPosition as z}from"./markNavigationAddon.js";import{localize as X}from"../../../../../nls.js";import{IThemeService as V}from"../../../../../platform/theme/common/themeService.js";import{PANEL_BACKGROUND as K}from"../../../../common/theme.js";import{TERMINAL_FOREGROUND_COLOR as q,TERMINAL_BACKGROUND_COLOR as $,TERMINAL_CURSOR_FOREGROUND_COLOR as Y,TERMINAL_CURSOR_BACKGROUND_COLOR as j,ansiColorIdentifiers as d,TERMINAL_SELECTION_BACKGROUND_COLOR as J,TERMINAL_FIND_MATCH_BACKGROUND_COLOR as Q,TERMINAL_FIND_MATCH_HIGHLIGHT_BACKGROUND_COLOR as Z,TERMINAL_FIND_MATCH_BORDER_COLOR as ee,TERMINAL_OVERVIEW_RULER_FIND_MATCH_FOREGROUND_COLOR as te,TERMINAL_FIND_MATCH_HIGHLIGHT_BORDER_COLOR as ie,TERMINAL_OVERVIEW_RULER_CURSOR_FOREGROUND_COLOR as re,TERMINAL_SELECTION_FOREGROUND_COLOR as oe,TERMINAL_INACTIVE_SELECTION_BACKGROUND_COLOR as ne,TERMINAL_OVERVIEW_RULER_BORDER_COLOR as ae}from"../../common/terminalColorRegistry.js";import{ShellIntegrationAddon as se}from"../../../../../platform/terminal/common/xterm/shellIntegrationAddon.js";import{IInstantiationService as le}from"../../../../../platform/instantiation/common/instantiation.js";import{DecorationAddon as de}from"./decorationAddon.js";import{TerminalCapability as y}from"../../../../../platform/terminal/common/capabilities/capabilities.js";import{Emitter as f}from"../../../../../base/common/event.js";import{ITelemetryService as ce}from"../../../../../platform/telemetry/common/telemetry.js";import{IContextKeyService as he}from"../../../../../platform/contextkey/common/contextkey.js";import{TerminalContextKeys as R}from"../../common/terminalContextKey.js";import{IClipboardService as ge}from"../../../../../platform/clipboard/common/clipboardService.js";import{debounce as ue}from"../../../../../base/common/decorators.js";import{MouseWheelClassifier as L}from"../../../../../base/browser/ui/scrollbar/scrollableElement.js";import{StandardWheelEvent as me}from"../../../../../base/browser/mouseEvent.js";import{ILayoutService as pe}from"../../../../../platform/layout/browser/layoutService.js";import{AccessibilitySignal as fe,IAccessibilitySignalService as _e}from"../../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";import{scrollbarSliderActiveBackground as ve,scrollbarSliderBackground as Se,scrollbarSliderHoverBackground as Ce}from"../../../../../platform/theme/common/colorRegistry.js";import{XtermAddonImporter as we}from"./xtermAddonImporter.js";var Ae=(a=>(a[a.SmoothScrollDuration=125]="SmoothScrollDuration",a))(Ae||{});function Ie(n,a){let e=a.getLine(n);if(!e)return{lineData:void 0,lineIndex:n};let t=e.translateToString(!0);for(;n>0&&e.isWrapped&&(e=a.getLine(--n),!!e);)t=e.translateToString(!1)+t;return{lineData:t,lineIndex:n}}let u=class extends B{constructor(e,t,i,r,o,s,h,p,_,S,T,be,O){super();this._configurationService=i;this._instantiationService=r;this._logService=o;this._notificationService=s;this._themeService=h;this._telemetryService=p;this._terminalConfigurationService=_;this._clipboardService=S;this._accessibilitySignalService=be;this._xtermAddonLoader=t.xtermAddonImpoter??new we,this._xtermColorProvider=t.xtermColorProvider,this._capabilities=t.capabilities;const C=this._terminalConfigurationService.getFont(m.getActiveWindow(),void 0,!0),l=this._terminalConfigurationService.config,M=this._configurationService.getValue("editor");this.raw=this._register(new e({allowProposedApi:!0,cols:t.cols,rows:t.rows,documentOverride:O.mainContainer.ownerDocument,altClickMovesCursor:l.altClickMovesCursor&&M.multiCursorModifier==="alt",scrollback:l.scrollback,theme:this.getXtermTheme(),drawBoldTextInBrightColors:l.drawBoldTextInBrightColors,fontFamily:C.fontFamily,fontWeight:l.fontWeight,fontWeightBold:l.fontWeightBold,fontSize:C.fontSize,letterSpacing:C.letterSpacing,lineHeight:C.lineHeight,logLevel:D(this._logService.getLevel()),logger:this._logService,minimumContrastRatio:l.minimumContrastRatio,tabStopWidth:l.tabStopWidth,cursorBlink:l.cursorBlinking,cursorStyle:w(l.cursorStyle),cursorInactiveStyle:w(l.cursorStyleInactive),cursorWidth:l.cursorWidth,macOptionIsMeta:l.macOptionIsMeta,macOptionClickForcesSelection:l.macOptionClickForcesSelection,rightClickSelectsWord:l.rightClickBehavior==="selectWord",fastScrollModifier:"alt",fastScrollSensitivity:l.fastScrollSensitivity,scrollSensitivity:l.mouseWheelScrollSensitivity,wordSeparator:l.wordSeparators,overviewRuler:{width:14,showTopBorder:!0},ignoreBracketedPasteMode:l.ignoreBracketedPasteMode,rescaleOverlappingGlyphs:l.rescaleOverlappingGlyphs,windowOptions:{getWinSizePixels:!0,getCellSizePixels:!0,getWinSizeChars:!0}})),this._updateSmoothScrolling(),this._core=this.raw._core,this._register(this._configurationService.onDidChangeConfiguration(async c=>{c.affectsConfiguration(b.GpuAcceleration)&&(u._suggestedRendererType=void 0),(c.affectsConfiguration("terminal.integrated")||c.affectsConfiguration("editor.fastScrollSensitivity")||c.affectsConfiguration("editor.mouseWheelScrollSensitivity")||c.affectsConfiguration("editor.multiCursorModifier"))&&this.updateConfig(),c.affectsConfiguration(b.UnicodeVersion)&&this._updateUnicodeVersion(),c.affectsConfiguration(b.ShellIntegrationDecorationsEnabled)&&this._updateTheme()})),this._register(this._themeService.onDidColorThemeChange(c=>this._updateTheme(c))),this._register(this._logService.onDidChangeLogLevel(c=>this.raw.options.logLevel=D(c))),this._register(this.raw.onSelectionChange(()=>{this._onDidChangeSelection.fire(),this.isFocused&&this._anyFocusedTerminalHasSelection.set(this.raw.hasSelection())})),this._updateUnicodeVersion(),this._markNavigationAddon=this._instantiationService.createInstance(U,t.capabilities),this.raw.loadAddon(this._markNavigationAddon),this._decorationAddon=this._instantiationService.createInstance(de,this._capabilities),this._register(this._decorationAddon.onDidRequestRunCommand(c=>this._onDidRequestRunCommand.fire(c))),this.raw.loadAddon(this._decorationAddon),this._shellIntegrationAddon=new se(t.shellIntegrationNonce??"",t.disableShellIntegrationReporting,this._telemetryService,this._logService),this.raw.loadAddon(this._shellIntegrationAddon),this._xtermAddonLoader.importAddon("clipboard").then(c=>{this._clipboardAddon=this._instantiationService.createInstance(c,void 0,{async readText(A){return S.readText(A==="p"?"selection":"clipboard")},async writeText(A,x){return S.writeText(x,A==="p"?"selection":"clipboard")}}),this.raw.loadAddon(this._clipboardAddon)}),this._anyTerminalFocusContextKey=R.focusInAny.bindTo(T),this._anyFocusedTerminalHasSelection=R.textSelectedInFocused.bindTo(T)}raw;_core;_xtermAddonLoader;_xtermColorProvider;_capabilities;static _suggestedRendererType=void 0;static _checkedWebglCompatible=!1;_attached;_isPhysicalMouseWheel=L.INSTANCE.isPhysicalMouseWheel();_markNavigationAddon;_shellIntegrationAddon;_decorationAddon;_clipboardAddon;_searchAddon;_unicode11Addon;_webglAddon;_serializeAddon;_imageAddon;_attachedDisposables=this._register(new N);_anyTerminalFocusContextKey;_anyFocusedTerminalHasSelection;_lastFindResult;get findResult(){return this._lastFindResult}get isStdinDisabled(){return!!this.raw.options.disableStdin}get isGpuAccelerated(){return!!this._webglAddon}_onDidRequestRunCommand=this._register(new f);onDidRequestRunCommand=this._onDidRequestRunCommand.event;_onDidRequestRefreshDimensions=this._register(new f);onDidRequestRefreshDimensions=this._onDidRequestRefreshDimensions.event;_onDidChangeFindResults=this._register(new f);onDidChangeFindResults=this._onDidChangeFindResults.event;_onDidChangeSelection=this._register(new f);onDidChangeSelection=this._onDidChangeSelection.event;_onDidChangeFocus=this._register(new f);onDidChangeFocus=this._onDidChangeFocus.event;_onDidDispose=this._register(new f);onDidDispose=this._onDidDispose.event;get markTracker(){return this._markNavigationAddon}get shellIntegration(){return this._shellIntegrationAddon}get textureAtlas(){const e=this._webglAddon?.textureAtlas;if(e)return createImageBitmap(e)}get isFocused(){return this.raw.element?m.isAncestorOfActiveElement(this.raw.element):!1}*getBufferReverseIterator(){for(let e=this.raw.buffer.active.length;e>=0;e--){const{lineData:t,lineIndex:i}=Ie(e,this.raw.buffer.active);t&&(e=i,yield t)}}async getContentsAsHtml(){if(!this._serializeAddon){const e=await this._xtermAddonLoader.importAddon("serialize");this._serializeAddon=new e,this.raw.loadAddon(this._serializeAddon)}return this._serializeAddon.serializeAsHTML()}async getSelectionAsHtml(e){if(!this._serializeAddon){const i=await this._xtermAddonLoader.importAddon("serialize");this._serializeAddon=new i,this.raw.loadAddon(this._serializeAddon)}if(e){const i=e.getOutput()?.length,r=e.marker?.line;if(!i||!r)throw new Error(`No row ${r} or output length ${i} for command ${e}`);this.raw.select(0,r+1,i-Math.floor(i/this.raw.cols))}const t=this._serializeAddon.serializeAsHTML({onlySelection:!0});return e&&this.raw.clearSelection(),t}attachToElement(e,t){const i={enableGpu:!0,...t};if(this._attached||this.raw.open(e),i.enableGpu&&this._shouldLoadWebgl()&&this._enableWebglRenderer(),!this.raw.element||!this.raw.textarea)throw new Error("xterm elements not set after open");const r=this._attachedDisposables;return r.clear(),r.add(m.addDisposableListener(this.raw.textarea,"focus",()=>this._setFocused(!0))),r.add(m.addDisposableListener(this.raw.textarea,"blur",()=>this._setFocused(!1))),r.add(m.addDisposableListener(this.raw.textarea,"focusout",()=>this._setFocused(!1))),r.add(m.addDisposableListener(this.raw.element,m.EventType.MOUSE_WHEEL,o=>{const s=L.INSTANCE;s.acceptStandardWheelEvent(new me(o));const h=s.isPhysicalMouseWheel();h!==this._isPhysicalMouseWheel&&(this._isPhysicalMouseWheel=h,this._updateSmoothScrolling())},{passive:!0})),this._attached={container:e,options:i},this._attached?.container.querySelector(".xterm-screen")}_setFocused(e){this._onDidChangeFocus.fire(e),this._anyTerminalFocusContextKey.set(e),this._anyFocusedTerminalHasSelection.set(e&&this.raw.hasSelection())}write(e,t){this.raw.write(e,t)}resize(e,t){this.raw.resize(e,t)}updateConfig(){const e=this._terminalConfigurationService.config;this.raw.options.altClickMovesCursor=e.altClickMovesCursor,this._setCursorBlink(e.cursorBlinking),this._setCursorStyle(e.cursorStyle),this._setCursorStyleInactive(e.cursorStyleInactive),this._setCursorWidth(e.cursorWidth),this.raw.options.scrollback=e.scrollback,this.raw.options.drawBoldTextInBrightColors=e.drawBoldTextInBrightColors,this.raw.options.minimumContrastRatio=e.minimumContrastRatio,this.raw.options.tabStopWidth=e.tabStopWidth,this.raw.options.fastScrollSensitivity=e.fastScrollSensitivity,this.raw.options.scrollSensitivity=e.mouseWheelScrollSensitivity,this.raw.options.macOptionIsMeta=e.macOptionIsMeta;const t=this._configurationService.getValue("editor");this.raw.options.altClickMovesCursor=e.altClickMovesCursor&&t.multiCursorModifier==="alt",this.raw.options.macOptionClickForcesSelection=e.macOptionClickForcesSelection,this.raw.options.rightClickSelectsWord=e.rightClickBehavior==="selectWord",this.raw.options.wordSeparator=e.wordSeparators,this.raw.options.customGlyphs=e.customGlyphs,this.raw.options.ignoreBracketedPasteMode=e.ignoreBracketedPasteMode,this.raw.options.rescaleOverlappingGlyphs=e.rescaleOverlappingGlyphs,this.raw.options.overviewRuler={width:14,showTopBorder:!0},this._updateSmoothScrolling(),this._attached?.options.enableGpu&&(this._shouldLoadWebgl()?this._enableWebglRenderer():this._disposeOfWebglRenderer())}_updateSmoothScrolling(){this.raw.options.smoothScrollDuration=this._terminalConfigurationService.config.smoothScrolling&&this._isPhysicalMouseWheel?125:0}_shouldLoadWebgl(){return this._terminalConfigurationService.config.gpuAcceleration==="auto"&&u._suggestedRendererType===void 0||this._terminalConfigurationService.config.gpuAcceleration==="on"}forceRedraw(){this.raw.clearTextureAtlas()}clearDecorations(){this._decorationAddon?.clearDecorations()}forceRefresh(){this._core.viewport?._innerRefresh()}async findNext(e,t){return this._updateFindColors(t),(await this._getSearchAddon()).findNext(e,t)}async findPrevious(e,t){return this._updateFindColors(t),(await this._getSearchAddon()).findPrevious(e,t)}_updateFindColors(e){const t=this._themeService.getColorTheme(),i=t.getColor($)||t.getColor(K),r=t.getColor(Q),o=t.getColor(ee),s=t.getColor(re),h=t.getColor(Z),p=t.getColor(ie),_=t.getColor(te);e.decorations={activeMatchBackground:r?.toString(),activeMatchBorder:o?.toString()||"transparent",activeMatchColorOverviewRuler:s?.toString()||"transparent",matchBackground:i?h?.blend(i).toString():void 0,matchBorder:p?.toString()||"transparent",matchOverviewRuler:_?.toString()||"transparent"}}_searchAddonPromise;_getSearchAddon(){return this._searchAddonPromise||(this._searchAddonPromise=this._xtermAddonLoader.importAddon("search").then(e=>(this._searchAddon=new e({highlightLimit:P.SearchHighlightLimit}),this.raw.loadAddon(this._searchAddon),this._searchAddon.onDidChangeResults(t=>{this._lastFindResult=t,this._onDidChangeFindResults.fire(t)}),this._searchAddon))),this._searchAddonPromise}clearSearchDecorations(){this._searchAddon?.clearDecorations()}clearActiveSearchDecoration(){this._searchAddon?.clearActiveDecoration()}getFont(){return this._terminalConfigurationService.getFont(m.getWindow(this.raw.element),this._core)}getLongestViewportWrappedLineLength(){let e=0;for(let t=this.raw.buffer.active.length-1;t>=this.raw.buffer.active.viewportY;t--){const i=this._getWrappedLineCount(t,this.raw.buffer.active);e=Math.max(e,i.lineCount*this.raw.cols-i.endSpaces||0),t=i.currentIndex}return e}_getWrappedLineCount(e,t){let i=t.getLine(e);if(!i)throw new Error("Could not get line");let r=e,o=0;for(let s=Math.min(i.length,this.raw.cols)-1;s>=0&&!i?.getCell(s)?.getChars();s--)o++;for(;i?.isWrapped&&r>0;)r--,i=t.getLine(r);return{lineCount:e-r+1,currentIndex:r,endSpaces:o}}scrollDownLine(){this.raw.scrollLines(1)}scrollDownPage(){this.raw.scrollPages(1)}scrollToBottom(){this.raw.scrollToBottom()}scrollUpLine(){this.raw.scrollLines(-1)}scrollUpPage(){this.raw.scrollPages(-1)}scrollToTop(){this.raw.scrollToTop()}scrollToLine(e,t=z.Top){this.markTracker.scrollToLine(e,t)}clearBuffer(){this.raw.clear(),this._capabilities.get(y.CommandDetection)?.handlePromptStart(),this._capabilities.get(y.CommandDetection)?.handleCommandStart(),this._accessibilitySignalService.playSignal(fe.clear)}hasSelection(){return this.raw.hasSelection()}clearSelection(){this.raw.clearSelection()}selectMarkedRange(e,t,i=!1){const r=this.shellIntegration.capabilities.get(y.BufferMarkDetection);if(!r)return;const o=r.getMark(e),s=r.getMark(t);o===void 0||s===void 0||(this.raw.selectLines(o.line,s.line),i&&this.raw.scrollToLine(o.line))}selectAll(){this.raw.focus(),this.raw.selectAll()}focus(){this.raw.focus()}async copySelection(e,t){if(this.hasSelection()||e&&t)if(e){let o=function(h){h.clipboardData.types.includes("text/plain")||h.clipboardData.setData("text/plain",t?.getOutput()??""),h.clipboardData.setData("text/html",r),h.preventDefault()};var i=o;const r=await this.getSelectionAsHtml(t),s=m.getDocument(this.raw.element);s.addEventListener("copy",o),s.execCommand("copy"),s.removeEventListener("copy",o)}else await this._clipboardService.writeText(this.raw.getSelection());else this._notificationService.warn(X("terminal.integrated.copySelection.noSelection","The terminal has no selection to copy"))}_setCursorBlink(e){this.raw.options.cursorBlink!==e&&(this.raw.options.cursorBlink=e,this.raw.refresh(0,this.raw.rows-1))}_setCursorStyle(e){const t=w(e);this.raw.options.cursorStyle!==t&&(this.raw.options.cursorStyle=t)}_setCursorStyleInactive(e){const t=w(e);this.raw.options.cursorInactiveStyle!==t&&(this.raw.options.cursorInactiveStyle=t)}_setCursorWidth(e){this.raw.options.cursorWidth!==e&&(this.raw.options.cursorWidth=e)}async _enableWebglRenderer(){if(!this.raw.element||this._webglAddon)return;if(!u._checkedWebglCompatible){u._checkedWebglCompatible=!0;const i=document.createElement("canvas").getContext("webgl2"),r=i?.getExtension("WEBGL_debug_renderer_info");if(i&&r&&i.getParameter(r.UNMASKED_RENDERER_WEBGL).startsWith("ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)")){this._disableWebglForThisSession();return}}const e=await this._xtermAddonLoader.importAddon("webgl");this._webglAddon=new e;try{this.raw.loadAddon(this._webglAddon),this._logService.trace("Webgl was loaded"),this._webglAddon.onContextLoss(()=>{this._logService.info("Webgl lost context, disposing of webgl renderer"),this._disposeOfWebglRenderer()}),this._refreshImageAddon(),this._onDidRequestRefreshDimensions.fire()}catch(t){this._logService.warn("Webgl could not be loaded. Falling back to the DOM renderer",t),this._disableWebglForThisSession()}}_disableWebglForThisSession(){u._suggestedRendererType="dom",this._disposeOfWebglRenderer()}async _refreshImageAddon(){if(this._terminalConfigurationService.config.enableImages&&this._webglAddon){if(!this._imageAddon){const e=await this._xtermAddonLoader.importAddon("image");this._imageAddon=new e,this.raw.loadAddon(this._imageAddon)}}else{try{this._imageAddon?.dispose()}catch{}this._imageAddon=void 0}}_disposeOfWebglRenderer(){try{this._webglAddon?.dispose()}catch{}this._webglAddon=void 0,this._refreshImageAddon(),this._onDidRequestRefreshDimensions.fire()}getXtermTheme(e){e||(e=this._themeService.getColorTheme());const t=this._terminalConfigurationService.config,i=["never","gutter"].includes(t.shellIntegration?.decorationsEnabled??""),r=e.getColor(q),o=this._xtermColorProvider.getBackgroundColor(e),s=e.getColor(Y)||r,h=e.getColor(j)||o,p=e.getColor(J),_=e.getColor(ne),S=e.getColor(oe)||void 0;return{background:o?.toString(),foreground:r?.toString(),cursor:s?.toString(),cursorAccent:h?.toString(),selectionBackground:p?.toString(),selectionInactiveBackground:_?.toString(),selectionForeground:S?.toString(),overviewRulerBorder:i?"#0000":e.getColor(ae)?.toString(),scrollbarSliderActiveBackground:e.getColor(ve)?.toString(),scrollbarSliderBackground:e.getColor(Se)?.toString(),scrollbarSliderHoverBackground:e.getColor(Ce)?.toString(),black:e.getColor(d[0])?.toString(),red:e.getColor(d[1])?.toString(),green:e.getColor(d[2])?.toString(),yellow:e.getColor(d[3])?.toString(),blue:e.getColor(d[4])?.toString(),magenta:e.getColor(d[5])?.toString(),cyan:e.getColor(d[6])?.toString(),white:e.getColor(d[7])?.toString(),brightBlack:e.getColor(d[8])?.toString(),brightRed:e.getColor(d[9])?.toString(),brightGreen:e.getColor(d[10])?.toString(),brightYellow:e.getColor(d[11])?.toString(),brightBlue:e.getColor(d[12])?.toString(),brightMagenta:e.getColor(d[13])?.toString(),brightCyan:e.getColor(d[14])?.toString(),brightWhite:e.getColor(d[15])?.toString()}}_updateTheme(e){this.raw.options.theme=this.getXtermTheme(e)}refresh(){this._updateTheme(),this._decorationAddon.refreshLayouts()}async _updateUnicodeVersion(){if(!this._unicode11Addon&&this._terminalConfigurationService.config.unicodeVersion==="11"){const e=await this._xtermAddonLoader.importAddon("unicode11");this._unicode11Addon=new e,this.raw.loadAddon(this._unicode11Addon)}this.raw.unicode.activeVersion!==this._terminalConfigurationService.config.unicodeVersion&&(this.raw.unicode.activeVersion=this._terminalConfigurationService.config.unicodeVersion)}_writeText(e){this.raw.write(e)}dispose(){this._anyTerminalFocusContextKey.reset(),this._anyFocusedTerminalHasSelection.reset(),this._onDidDispose.fire(),super.dispose()}};I([ue(100)],u.prototype,"_refreshImageAddon",1),u=I([g(2,k),g(3,le),g(4,F),g(5,G),g(6,V),g(7,ce),g(8,H),g(9,ge),g(10,he),g(11,_e),g(12,pe)],u);function vt(n,a,e,t){if(!a.charWidth||!a.charHeight)return null;const i=e*n.devicePixelRatio,r=a.charWidth*n.devicePixelRatio+a.letterSpacing,o=Math.max(Math.floor(i/r),1),s=t*n.devicePixelRatio,h=Math.ceil(a.charHeight*n.devicePixelRatio),p=Math.floor(h*a.lineHeight);return{rows:Math.max(Math.floor(s/p),1),cols:o}}function D(n){switch(n){case v.Trace:return"trace";case v.Debug:return"debug";case v.Info:return"info";case v.Warning:return"warn";case v.Error:return"error";default:return"off"}}function w(n){return n==="line"?"bar":n}export{u as XtermTerminal,vt as getXtermScaledDimensions};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var XtermTerminal_1;
+import * as dom from '../../../../../base/browser/dom.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { Disposable, DisposableStore } from '../../../../../base/common/lifecycle.js';
+import { ITerminalLogService } from '../../../../../platform/terminal/common/terminal.js';
+import { ITerminalConfigurationService } from '../terminal.js';
+import { LogLevel } from '../../../../../platform/log/common/log.js';
+import { INotificationService } from '../../../../../platform/notification/common/notification.js';
+import { MarkNavigationAddon } from './markNavigationAddon.js';
+import { localize } from '../../../../../nls.js';
+import { IThemeService } from '../../../../../platform/theme/common/themeService.js';
+import { PANEL_BACKGROUND } from '../../../../common/theme.js';
+import { TERMINAL_FOREGROUND_COLOR, TERMINAL_BACKGROUND_COLOR, TERMINAL_CURSOR_FOREGROUND_COLOR, TERMINAL_CURSOR_BACKGROUND_COLOR, ansiColorIdentifiers, TERMINAL_SELECTION_BACKGROUND_COLOR, TERMINAL_FIND_MATCH_BACKGROUND_COLOR, TERMINAL_FIND_MATCH_HIGHLIGHT_BACKGROUND_COLOR, TERMINAL_FIND_MATCH_BORDER_COLOR, TERMINAL_OVERVIEW_RULER_FIND_MATCH_FOREGROUND_COLOR, TERMINAL_FIND_MATCH_HIGHLIGHT_BORDER_COLOR, TERMINAL_OVERVIEW_RULER_CURSOR_FOREGROUND_COLOR, TERMINAL_SELECTION_FOREGROUND_COLOR, TERMINAL_INACTIVE_SELECTION_BACKGROUND_COLOR, TERMINAL_OVERVIEW_RULER_BORDER_COLOR } from '../../common/terminalColorRegistry.js';
+import { ShellIntegrationAddon } from '../../../../../platform/terminal/common/xterm/shellIntegrationAddon.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { DecorationAddon } from './decorationAddon.js';
+import { Emitter } from '../../../../../base/common/event.js';
+import { ITelemetryService } from '../../../../../platform/telemetry/common/telemetry.js';
+import { IContextKeyService } from '../../../../../platform/contextkey/common/contextkey.js';
+import { TerminalContextKeys } from '../../common/terminalContextKey.js';
+import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
+import { debounce } from '../../../../../base/common/decorators.js';
+import { MouseWheelClassifier } from '../../../../../base/browser/ui/scrollbar/scrollableElement.js';
+import { StandardWheelEvent } from '../../../../../base/browser/mouseEvent.js';
+import { ILayoutService } from '../../../../../platform/layout/browser/layoutService.js';
+import { AccessibilitySignal, IAccessibilitySignalService } from '../../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+import { scrollbarSliderActiveBackground, scrollbarSliderBackground, scrollbarSliderHoverBackground } from '../../../../../platform/theme/common/colorRegistry.js';
+import { XtermAddonImporter } from './xtermAddonImporter.js';
+function getFullBufferLineAsString(lineIndex, buffer) {
+    let line = buffer.getLine(lineIndex);
+    if (!line) {
+        return { lineData: undefined, lineIndex };
+    }
+    let lineData = line.translateToString(true);
+    while (lineIndex > 0 && line.isWrapped) {
+        line = buffer.getLine(--lineIndex);
+        if (!line) {
+            break;
+        }
+        lineData = line.translateToString(false) + lineData;
+    }
+    return { lineData, lineIndex };
+}
+let XtermTerminal = class XtermTerminal extends Disposable {
+    static { XtermTerminal_1 = this; }
+    static { this._suggestedRendererType = undefined; }
+    static { this._checkedWebglCompatible = false; }
+    get findResult() { return this._lastFindResult; }
+    get isStdinDisabled() { return !!this.raw.options.disableStdin; }
+    get isGpuAccelerated() { return !!this._webglAddon; }
+    get markTracker() { return this._markNavigationAddon; }
+    get shellIntegration() { return this._shellIntegrationAddon; }
+    get textureAtlas() {
+        const canvas = this._webglAddon?.textureAtlas;
+        if (!canvas) {
+            return undefined;
+        }
+        return createImageBitmap(canvas);
+    }
+    get isFocused() {
+        if (!this.raw.element) {
+            return false;
+        }
+        return dom.isAncestorOfActiveElement(this.raw.element);
+    }
+    constructor(xtermCtor, options, _configurationService, _instantiationService, _logService, _notificationService, _themeService, _telemetryService, _terminalConfigurationService, _clipboardService, contextKeyService, _accessibilitySignalService, layoutService) {
+        super();
+        this._configurationService = _configurationService;
+        this._instantiationService = _instantiationService;
+        this._logService = _logService;
+        this._notificationService = _notificationService;
+        this._themeService = _themeService;
+        this._telemetryService = _telemetryService;
+        this._terminalConfigurationService = _terminalConfigurationService;
+        this._clipboardService = _clipboardService;
+        this._accessibilitySignalService = _accessibilitySignalService;
+        this._isPhysicalMouseWheel = MouseWheelClassifier.INSTANCE.isPhysicalMouseWheel();
+        this._attachedDisposables = this._register(new DisposableStore());
+        this._onDidRequestRunCommand = this._register(new Emitter());
+        this.onDidRequestRunCommand = this._onDidRequestRunCommand.event;
+        this._onDidRequestRefreshDimensions = this._register(new Emitter());
+        this.onDidRequestRefreshDimensions = this._onDidRequestRefreshDimensions.event;
+        this._onDidChangeFindResults = this._register(new Emitter());
+        this.onDidChangeFindResults = this._onDidChangeFindResults.event;
+        this._onDidChangeSelection = this._register(new Emitter());
+        this.onDidChangeSelection = this._onDidChangeSelection.event;
+        this._onDidChangeFocus = this._register(new Emitter());
+        this.onDidChangeFocus = this._onDidChangeFocus.event;
+        this._onDidDispose = this._register(new Emitter());
+        this.onDidDispose = this._onDidDispose.event;
+        this._xtermAddonLoader = options.xtermAddonImpoter ?? new XtermAddonImporter();
+        this._xtermColorProvider = options.xtermColorProvider;
+        this._capabilities = options.capabilities;
+        const font = this._terminalConfigurationService.getFont(dom.getActiveWindow(), undefined, true);
+        const config = this._terminalConfigurationService.config;
+        const editorOptions = this._configurationService.getValue('editor');
+        this.raw = this._register(new xtermCtor({
+            allowProposedApi: true,
+            cols: options.cols,
+            rows: options.rows,
+            documentOverride: layoutService.mainContainer.ownerDocument,
+            altClickMovesCursor: config.altClickMovesCursor && editorOptions.multiCursorModifier === 'alt',
+            scrollback: config.scrollback,
+            theme: this.getXtermTheme(),
+            drawBoldTextInBrightColors: config.drawBoldTextInBrightColors,
+            fontFamily: font.fontFamily,
+            fontWeight: config.fontWeight,
+            fontWeightBold: config.fontWeightBold,
+            fontSize: font.fontSize,
+            letterSpacing: font.letterSpacing,
+            lineHeight: font.lineHeight,
+            logLevel: vscodeToXtermLogLevel(this._logService.getLevel()),
+            logger: this._logService,
+            minimumContrastRatio: config.minimumContrastRatio,
+            tabStopWidth: config.tabStopWidth,
+            cursorBlink: config.cursorBlinking,
+            cursorStyle: vscodeToXtermCursorStyle(config.cursorStyle),
+            cursorInactiveStyle: vscodeToXtermCursorStyle(config.cursorStyleInactive),
+            cursorWidth: config.cursorWidth,
+            macOptionIsMeta: config.macOptionIsMeta,
+            macOptionClickForcesSelection: config.macOptionClickForcesSelection,
+            rightClickSelectsWord: config.rightClickBehavior === 'selectWord',
+            fastScrollModifier: 'alt',
+            fastScrollSensitivity: config.fastScrollSensitivity,
+            scrollSensitivity: config.mouseWheelScrollSensitivity,
+            wordSeparator: config.wordSeparators,
+            overviewRuler: {
+                width: 14,
+                showTopBorder: true,
+            },
+            ignoreBracketedPasteMode: config.ignoreBracketedPasteMode,
+            rescaleOverlappingGlyphs: config.rescaleOverlappingGlyphs,
+            windowOptions: {
+                getWinSizePixels: true,
+                getCellSizePixels: true,
+                getWinSizeChars: true,
+            },
+        }));
+        this._updateSmoothScrolling();
+        this._core = this.raw._core;
+        this._register(this._configurationService.onDidChangeConfiguration(async (e) => {
+            if (e.affectsConfiguration("terminal.integrated.gpuAcceleration")) {
+                XtermTerminal_1._suggestedRendererType = undefined;
+            }
+            if (e.affectsConfiguration('terminal.integrated') || e.affectsConfiguration('editor.fastScrollSensitivity') || e.affectsConfiguration('editor.mouseWheelScrollSensitivity') || e.affectsConfiguration('editor.multiCursorModifier')) {
+                this.updateConfig();
+            }
+            if (e.affectsConfiguration("terminal.integrated.unicodeVersion")) {
+                this._updateUnicodeVersion();
+            }
+            if (e.affectsConfiguration("terminal.integrated.shellIntegration.decorationsEnabled")) {
+                this._updateTheme();
+            }
+        }));
+        this._register(this._themeService.onDidColorThemeChange(theme => this._updateTheme(theme)));
+        this._register(this._logService.onDidChangeLogLevel(e => this.raw.options.logLevel = vscodeToXtermLogLevel(e)));
+        this._register(this.raw.onSelectionChange(() => {
+            this._onDidChangeSelection.fire();
+            if (this.isFocused) {
+                this._anyFocusedTerminalHasSelection.set(this.raw.hasSelection());
+            }
+        }));
+        this._updateUnicodeVersion();
+        this._markNavigationAddon = this._instantiationService.createInstance(MarkNavigationAddon, options.capabilities);
+        this.raw.loadAddon(this._markNavigationAddon);
+        this._decorationAddon = this._instantiationService.createInstance(DecorationAddon, this._capabilities);
+        this._register(this._decorationAddon.onDidRequestRunCommand(e => this._onDidRequestRunCommand.fire(e)));
+        this.raw.loadAddon(this._decorationAddon);
+        this._shellIntegrationAddon = new ShellIntegrationAddon(options.shellIntegrationNonce ?? '', options.disableShellIntegrationReporting, this._telemetryService, this._logService);
+        this.raw.loadAddon(this._shellIntegrationAddon);
+        this._xtermAddonLoader.importAddon('clipboard').then(ClipboardAddon => {
+            this._clipboardAddon = this._instantiationService.createInstance(ClipboardAddon, undefined, {
+                async readText(type) {
+                    return _clipboardService.readText(type === 'p' ? 'selection' : 'clipboard');
+                },
+                async writeText(type, text) {
+                    return _clipboardService.writeText(text, type === 'p' ? 'selection' : 'clipboard');
+                }
+            });
+            this.raw.loadAddon(this._clipboardAddon);
+        });
+        this._anyTerminalFocusContextKey = TerminalContextKeys.focusInAny.bindTo(contextKeyService);
+        this._anyFocusedTerminalHasSelection = TerminalContextKeys.textSelectedInFocused.bindTo(contextKeyService);
+    }
+    *getBufferReverseIterator() {
+        for (let i = this.raw.buffer.active.length; i >= 0; i--) {
+            const { lineData, lineIndex } = getFullBufferLineAsString(i, this.raw.buffer.active);
+            if (lineData) {
+                i = lineIndex;
+                yield lineData;
+            }
+        }
+    }
+    async getContentsAsHtml() {
+        if (!this._serializeAddon) {
+            const Addon = await this._xtermAddonLoader.importAddon('serialize');
+            this._serializeAddon = new Addon();
+            this.raw.loadAddon(this._serializeAddon);
+        }
+        return this._serializeAddon.serializeAsHTML();
+    }
+    async getSelectionAsHtml(command) {
+        if (!this._serializeAddon) {
+            const Addon = await this._xtermAddonLoader.importAddon('serialize');
+            this._serializeAddon = new Addon();
+            this.raw.loadAddon(this._serializeAddon);
+        }
+        if (command) {
+            const length = command.getOutput()?.length;
+            const row = command.marker?.line;
+            if (!length || !row) {
+                throw new Error(`No row ${row} or output length ${length} for command ${command}`);
+            }
+            this.raw.select(0, row + 1, length - Math.floor(length / this.raw.cols));
+        }
+        const result = this._serializeAddon.serializeAsHTML({ onlySelection: true });
+        if (command) {
+            this.raw.clearSelection();
+        }
+        return result;
+    }
+    attachToElement(container, partialOptions) {
+        const options = { enableGpu: true, ...partialOptions };
+        if (!this._attached) {
+            this.raw.open(container);
+        }
+        if (options.enableGpu) {
+            if (this._shouldLoadWebgl()) {
+                this._enableWebglRenderer();
+            }
+        }
+        if (!this.raw.element || !this.raw.textarea) {
+            throw new Error('xterm elements not set after open');
+        }
+        const ad = this._attachedDisposables;
+        ad.clear();
+        ad.add(dom.addDisposableListener(this.raw.textarea, 'focus', () => this._setFocused(true)));
+        ad.add(dom.addDisposableListener(this.raw.textarea, 'blur', () => this._setFocused(false)));
+        ad.add(dom.addDisposableListener(this.raw.textarea, 'focusout', () => this._setFocused(false)));
+        ad.add(dom.addDisposableListener(this.raw.element, dom.EventType.MOUSE_WHEEL, (e) => {
+            const classifier = MouseWheelClassifier.INSTANCE;
+            classifier.acceptStandardWheelEvent(new StandardWheelEvent(e));
+            const value = classifier.isPhysicalMouseWheel();
+            if (value !== this._isPhysicalMouseWheel) {
+                this._isPhysicalMouseWheel = value;
+                this._updateSmoothScrolling();
+            }
+        }, { passive: true }));
+        this._attached = { container, options };
+        return this._attached?.container.querySelector('.xterm-screen');
+    }
+    _setFocused(isFocused) {
+        this._onDidChangeFocus.fire(isFocused);
+        this._anyTerminalFocusContextKey.set(isFocused);
+        this._anyFocusedTerminalHasSelection.set(isFocused && this.raw.hasSelection());
+    }
+    write(data, callback) {
+        this.raw.write(data, callback);
+    }
+    resize(columns, rows) {
+        this.raw.resize(columns, rows);
+    }
+    updateConfig() {
+        const config = this._terminalConfigurationService.config;
+        this.raw.options.altClickMovesCursor = config.altClickMovesCursor;
+        this._setCursorBlink(config.cursorBlinking);
+        this._setCursorStyle(config.cursorStyle);
+        this._setCursorStyleInactive(config.cursorStyleInactive);
+        this._setCursorWidth(config.cursorWidth);
+        this.raw.options.scrollback = config.scrollback;
+        this.raw.options.drawBoldTextInBrightColors = config.drawBoldTextInBrightColors;
+        this.raw.options.minimumContrastRatio = config.minimumContrastRatio;
+        this.raw.options.tabStopWidth = config.tabStopWidth;
+        this.raw.options.fastScrollSensitivity = config.fastScrollSensitivity;
+        this.raw.options.scrollSensitivity = config.mouseWheelScrollSensitivity;
+        this.raw.options.macOptionIsMeta = config.macOptionIsMeta;
+        const editorOptions = this._configurationService.getValue('editor');
+        this.raw.options.altClickMovesCursor = config.altClickMovesCursor && editorOptions.multiCursorModifier === 'alt';
+        this.raw.options.macOptionClickForcesSelection = config.macOptionClickForcesSelection;
+        this.raw.options.rightClickSelectsWord = config.rightClickBehavior === 'selectWord';
+        this.raw.options.wordSeparator = config.wordSeparators;
+        this.raw.options.customGlyphs = config.customGlyphs;
+        this.raw.options.ignoreBracketedPasteMode = config.ignoreBracketedPasteMode;
+        this.raw.options.rescaleOverlappingGlyphs = config.rescaleOverlappingGlyphs;
+        this.raw.options.overviewRuler = {
+            width: 14,
+            showTopBorder: true,
+        };
+        this._updateSmoothScrolling();
+        if (this._attached?.options.enableGpu) {
+            if (this._shouldLoadWebgl()) {
+                this._enableWebglRenderer();
+            }
+            else {
+                this._disposeOfWebglRenderer();
+            }
+        }
+    }
+    _updateSmoothScrolling() {
+        this.raw.options.smoothScrollDuration = this._terminalConfigurationService.config.smoothScrolling && this._isPhysicalMouseWheel ? 125 : 0;
+    }
+    _shouldLoadWebgl() {
+        return (this._terminalConfigurationService.config.gpuAcceleration === 'auto' && XtermTerminal_1._suggestedRendererType === undefined) || this._terminalConfigurationService.config.gpuAcceleration === 'on';
+    }
+    forceRedraw() {
+        this.raw.clearTextureAtlas();
+    }
+    clearDecorations() {
+        this._decorationAddon?.clearDecorations();
+    }
+    forceRefresh() {
+        this._core.viewport?._innerRefresh();
+    }
+    async findNext(term, searchOptions) {
+        this._updateFindColors(searchOptions);
+        return (await this._getSearchAddon()).findNext(term, searchOptions);
+    }
+    async findPrevious(term, searchOptions) {
+        this._updateFindColors(searchOptions);
+        return (await this._getSearchAddon()).findPrevious(term, searchOptions);
+    }
+    _updateFindColors(searchOptions) {
+        const theme = this._themeService.getColorTheme();
+        const terminalBackground = theme.getColor(TERMINAL_BACKGROUND_COLOR) || theme.getColor(PANEL_BACKGROUND);
+        const findMatchBackground = theme.getColor(TERMINAL_FIND_MATCH_BACKGROUND_COLOR);
+        const findMatchBorder = theme.getColor(TERMINAL_FIND_MATCH_BORDER_COLOR);
+        const findMatchOverviewRuler = theme.getColor(TERMINAL_OVERVIEW_RULER_CURSOR_FOREGROUND_COLOR);
+        const findMatchHighlightBackground = theme.getColor(TERMINAL_FIND_MATCH_HIGHLIGHT_BACKGROUND_COLOR);
+        const findMatchHighlightBorder = theme.getColor(TERMINAL_FIND_MATCH_HIGHLIGHT_BORDER_COLOR);
+        const findMatchHighlightOverviewRuler = theme.getColor(TERMINAL_OVERVIEW_RULER_FIND_MATCH_FOREGROUND_COLOR);
+        searchOptions.decorations = {
+            activeMatchBackground: findMatchBackground?.toString(),
+            activeMatchBorder: findMatchBorder?.toString() || 'transparent',
+            activeMatchColorOverviewRuler: findMatchOverviewRuler?.toString() || 'transparent',
+            matchBackground: terminalBackground ? findMatchHighlightBackground?.blend(terminalBackground).toString() : undefined,
+            matchBorder: findMatchHighlightBorder?.toString() || 'transparent',
+            matchOverviewRuler: findMatchHighlightOverviewRuler?.toString() || 'transparent'
+        };
+    }
+    _getSearchAddon() {
+        if (!this._searchAddonPromise) {
+            this._searchAddonPromise = this._xtermAddonLoader.importAddon('search').then((AddonCtor) => {
+                this._searchAddon = new AddonCtor({ highlightLimit: 1000 });
+                this.raw.loadAddon(this._searchAddon);
+                this._searchAddon.onDidChangeResults((results) => {
+                    this._lastFindResult = results;
+                    this._onDidChangeFindResults.fire(results);
+                });
+                return this._searchAddon;
+            });
+        }
+        return this._searchAddonPromise;
+    }
+    clearSearchDecorations() {
+        this._searchAddon?.clearDecorations();
+    }
+    clearActiveSearchDecoration() {
+        this._searchAddon?.clearActiveDecoration();
+    }
+    getFont() {
+        return this._terminalConfigurationService.getFont(dom.getWindow(this.raw.element), this._core);
+    }
+    getLongestViewportWrappedLineLength() {
+        let maxLineLength = 0;
+        for (let i = this.raw.buffer.active.length - 1; i >= this.raw.buffer.active.viewportY; i--) {
+            const lineInfo = this._getWrappedLineCount(i, this.raw.buffer.active);
+            maxLineLength = Math.max(maxLineLength, ((lineInfo.lineCount * this.raw.cols) - lineInfo.endSpaces) || 0);
+            i = lineInfo.currentIndex;
+        }
+        return maxLineLength;
+    }
+    _getWrappedLineCount(index, buffer) {
+        let line = buffer.getLine(index);
+        if (!line) {
+            throw new Error('Could not get line');
+        }
+        let currentIndex = index;
+        let endSpaces = 0;
+        for (let i = Math.min(line.length, this.raw.cols) - 1; i >= 0; i--) {
+            if (!line?.getCell(i)?.getChars()) {
+                endSpaces++;
+            }
+            else {
+                break;
+            }
+        }
+        while (line?.isWrapped && currentIndex > 0) {
+            currentIndex--;
+            line = buffer.getLine(currentIndex);
+        }
+        return { lineCount: index - currentIndex + 1, currentIndex, endSpaces };
+    }
+    scrollDownLine() {
+        this.raw.scrollLines(1);
+    }
+    scrollDownPage() {
+        this.raw.scrollPages(1);
+    }
+    scrollToBottom() {
+        this.raw.scrollToBottom();
+    }
+    scrollUpLine() {
+        this.raw.scrollLines(-1);
+    }
+    scrollUpPage() {
+        this.raw.scrollPages(-1);
+    }
+    scrollToTop() {
+        this.raw.scrollToTop();
+    }
+    scrollToLine(line, position = 0) {
+        this.markTracker.scrollToLine(line, position);
+    }
+    clearBuffer() {
+        this.raw.clear();
+        this._capabilities.get(2)?.handlePromptStart();
+        this._capabilities.get(2)?.handleCommandStart();
+        this._accessibilitySignalService.playSignal(AccessibilitySignal.clear);
+    }
+    hasSelection() {
+        return this.raw.hasSelection();
+    }
+    clearSelection() {
+        this.raw.clearSelection();
+    }
+    selectMarkedRange(fromMarkerId, toMarkerId, scrollIntoView = false) {
+        const detectionCapability = this.shellIntegration.capabilities.get(4);
+        if (!detectionCapability) {
+            return;
+        }
+        const start = detectionCapability.getMark(fromMarkerId);
+        const end = detectionCapability.getMark(toMarkerId);
+        if (start === undefined || end === undefined) {
+            return;
+        }
+        this.raw.selectLines(start.line, end.line);
+        if (scrollIntoView) {
+            this.raw.scrollToLine(start.line);
+        }
+    }
+    selectAll() {
+        this.raw.focus();
+        this.raw.selectAll();
+    }
+    focus() {
+        this.raw.focus();
+    }
+    async copySelection(asHtml, command) {
+        if (this.hasSelection() || (asHtml && command)) {
+            if (asHtml) {
+                const textAsHtml = await this.getSelectionAsHtml(command);
+                function listener(e) {
+                    if (!e.clipboardData.types.includes('text/plain')) {
+                        e.clipboardData.setData('text/plain', command?.getOutput() ?? '');
+                    }
+                    e.clipboardData.setData('text/html', textAsHtml);
+                    e.preventDefault();
+                }
+                const doc = dom.getDocument(this.raw.element);
+                doc.addEventListener('copy', listener);
+                doc.execCommand('copy');
+                doc.removeEventListener('copy', listener);
+            }
+            else {
+                await this._clipboardService.writeText(this.raw.getSelection());
+            }
+        }
+        else {
+            this._notificationService.warn(localize('terminal.integrated.copySelection.noSelection', 'The terminal has no selection to copy'));
+        }
+    }
+    _setCursorBlink(blink) {
+        if (this.raw.options.cursorBlink !== blink) {
+            this.raw.options.cursorBlink = blink;
+            this.raw.refresh(0, this.raw.rows - 1);
+        }
+    }
+    _setCursorStyle(style) {
+        const mapped = vscodeToXtermCursorStyle(style);
+        if (this.raw.options.cursorStyle !== mapped) {
+            this.raw.options.cursorStyle = mapped;
+        }
+    }
+    _setCursorStyleInactive(style) {
+        const mapped = vscodeToXtermCursorStyle(style);
+        if (this.raw.options.cursorInactiveStyle !== mapped) {
+            this.raw.options.cursorInactiveStyle = mapped;
+        }
+    }
+    _setCursorWidth(width) {
+        if (this.raw.options.cursorWidth !== width) {
+            this.raw.options.cursorWidth = width;
+        }
+    }
+    async _enableWebglRenderer() {
+        if (!this.raw.element || this._webglAddon) {
+            return;
+        }
+        if (!XtermTerminal_1._checkedWebglCompatible) {
+            XtermTerminal_1._checkedWebglCompatible = true;
+            const checkCanvas = document.createElement('canvas');
+            const checkGl = checkCanvas.getContext('webgl2');
+            const debugInfo = checkGl?.getExtension('WEBGL_debug_renderer_info');
+            if (checkGl && debugInfo) {
+                const renderer = checkGl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                if (renderer.startsWith('ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)')) {
+                    this._disableWebglForThisSession();
+                    return;
+                }
+            }
+        }
+        const Addon = await this._xtermAddonLoader.importAddon('webgl');
+        this._webglAddon = new Addon();
+        try {
+            this.raw.loadAddon(this._webglAddon);
+            this._logService.trace('Webgl was loaded');
+            this._webglAddon.onContextLoss(() => {
+                this._logService.info(`Webgl lost context, disposing of webgl renderer`);
+                this._disposeOfWebglRenderer();
+            });
+            this._refreshImageAddon();
+            this._onDidRequestRefreshDimensions.fire();
+        }
+        catch (e) {
+            this._logService.warn(`Webgl could not be loaded. Falling back to the DOM renderer`, e);
+            this._disableWebglForThisSession();
+        }
+    }
+    _disableWebglForThisSession() {
+        XtermTerminal_1._suggestedRendererType = 'dom';
+        this._disposeOfWebglRenderer();
+    }
+    async _refreshImageAddon() {
+        if (this._terminalConfigurationService.config.enableImages && this._webglAddon) {
+            if (!this._imageAddon) {
+                const AddonCtor = await this._xtermAddonLoader.importAddon('image');
+                this._imageAddon = new AddonCtor();
+                this.raw.loadAddon(this._imageAddon);
+            }
+        }
+        else {
+            try {
+                this._imageAddon?.dispose();
+            }
+            catch {
+            }
+            this._imageAddon = undefined;
+        }
+    }
+    _disposeOfWebglRenderer() {
+        try {
+            this._webglAddon?.dispose();
+        }
+        catch {
+        }
+        this._webglAddon = undefined;
+        this._refreshImageAddon();
+        this._onDidRequestRefreshDimensions.fire();
+    }
+    getXtermTheme(theme) {
+        if (!theme) {
+            theme = this._themeService.getColorTheme();
+        }
+        const config = this._terminalConfigurationService.config;
+        const hideOverviewRuler = ['never', 'gutter'].includes(config.shellIntegration?.decorationsEnabled ?? '');
+        const foregroundColor = theme.getColor(TERMINAL_FOREGROUND_COLOR);
+        const backgroundColor = this._xtermColorProvider.getBackgroundColor(theme);
+        const cursorColor = theme.getColor(TERMINAL_CURSOR_FOREGROUND_COLOR) || foregroundColor;
+        const cursorAccentColor = theme.getColor(TERMINAL_CURSOR_BACKGROUND_COLOR) || backgroundColor;
+        const selectionBackgroundColor = theme.getColor(TERMINAL_SELECTION_BACKGROUND_COLOR);
+        const selectionInactiveBackgroundColor = theme.getColor(TERMINAL_INACTIVE_SELECTION_BACKGROUND_COLOR);
+        const selectionForegroundColor = theme.getColor(TERMINAL_SELECTION_FOREGROUND_COLOR) || undefined;
+        return {
+            background: backgroundColor?.toString(),
+            foreground: foregroundColor?.toString(),
+            cursor: cursorColor?.toString(),
+            cursorAccent: cursorAccentColor?.toString(),
+            selectionBackground: selectionBackgroundColor?.toString(),
+            selectionInactiveBackground: selectionInactiveBackgroundColor?.toString(),
+            selectionForeground: selectionForegroundColor?.toString(),
+            overviewRulerBorder: hideOverviewRuler ? '#0000' : theme.getColor(TERMINAL_OVERVIEW_RULER_BORDER_COLOR)?.toString(),
+            scrollbarSliderActiveBackground: theme.getColor(scrollbarSliderActiveBackground)?.toString(),
+            scrollbarSliderBackground: theme.getColor(scrollbarSliderBackground)?.toString(),
+            scrollbarSliderHoverBackground: theme.getColor(scrollbarSliderHoverBackground)?.toString(),
+            black: theme.getColor(ansiColorIdentifiers[0])?.toString(),
+            red: theme.getColor(ansiColorIdentifiers[1])?.toString(),
+            green: theme.getColor(ansiColorIdentifiers[2])?.toString(),
+            yellow: theme.getColor(ansiColorIdentifiers[3])?.toString(),
+            blue: theme.getColor(ansiColorIdentifiers[4])?.toString(),
+            magenta: theme.getColor(ansiColorIdentifiers[5])?.toString(),
+            cyan: theme.getColor(ansiColorIdentifiers[6])?.toString(),
+            white: theme.getColor(ansiColorIdentifiers[7])?.toString(),
+            brightBlack: theme.getColor(ansiColorIdentifiers[8])?.toString(),
+            brightRed: theme.getColor(ansiColorIdentifiers[9])?.toString(),
+            brightGreen: theme.getColor(ansiColorIdentifiers[10])?.toString(),
+            brightYellow: theme.getColor(ansiColorIdentifiers[11])?.toString(),
+            brightBlue: theme.getColor(ansiColorIdentifiers[12])?.toString(),
+            brightMagenta: theme.getColor(ansiColorIdentifiers[13])?.toString(),
+            brightCyan: theme.getColor(ansiColorIdentifiers[14])?.toString(),
+            brightWhite: theme.getColor(ansiColorIdentifiers[15])?.toString()
+        };
+    }
+    _updateTheme(theme) {
+        this.raw.options.theme = this.getXtermTheme(theme);
+    }
+    refresh() {
+        this._updateTheme();
+        this._decorationAddon.refreshLayouts();
+    }
+    async _updateUnicodeVersion() {
+        if (!this._unicode11Addon && this._terminalConfigurationService.config.unicodeVersion === '11') {
+            const Addon = await this._xtermAddonLoader.importAddon('unicode11');
+            this._unicode11Addon = new Addon();
+            this.raw.loadAddon(this._unicode11Addon);
+        }
+        if (this.raw.unicode.activeVersion !== this._terminalConfigurationService.config.unicodeVersion) {
+            this.raw.unicode.activeVersion = this._terminalConfigurationService.config.unicodeVersion;
+        }
+    }
+    _writeText(data) {
+        this.raw.write(data);
+    }
+    dispose() {
+        this._anyTerminalFocusContextKey.reset();
+        this._anyFocusedTerminalHasSelection.reset();
+        this._onDidDispose.fire();
+        super.dispose();
+    }
+};
+__decorate([
+    debounce(100),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], XtermTerminal.prototype, "_refreshImageAddon", null);
+XtermTerminal = XtermTerminal_1 = __decorate([
+    __param(2, IConfigurationService),
+    __param(3, IInstantiationService),
+    __param(4, ITerminalLogService),
+    __param(5, INotificationService),
+    __param(6, IThemeService),
+    __param(7, ITelemetryService),
+    __param(8, ITerminalConfigurationService),
+    __param(9, IClipboardService),
+    __param(10, IContextKeyService),
+    __param(11, IAccessibilitySignalService),
+    __param(12, ILayoutService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], XtermTerminal);
+export { XtermTerminal };
+export function getXtermScaledDimensions(w, font, width, height) {
+    if (!font.charWidth || !font.charHeight) {
+        return null;
+    }
+    const scaledWidthAvailable = width * w.devicePixelRatio;
+    const scaledCharWidth = font.charWidth * w.devicePixelRatio + font.letterSpacing;
+    const cols = Math.max(Math.floor(scaledWidthAvailable / scaledCharWidth), 1);
+    const scaledHeightAvailable = height * w.devicePixelRatio;
+    const scaledCharHeight = Math.ceil(font.charHeight * w.devicePixelRatio);
+    const scaledLineHeight = Math.floor(scaledCharHeight * font.lineHeight);
+    const rows = Math.max(Math.floor(scaledHeightAvailable / scaledLineHeight), 1);
+    return { rows, cols };
+}
+function vscodeToXtermLogLevel(logLevel) {
+    switch (logLevel) {
+        case LogLevel.Trace: return 'trace';
+        case LogLevel.Debug: return 'debug';
+        case LogLevel.Info: return 'info';
+        case LogLevel.Warning: return 'warn';
+        case LogLevel.Error: return 'error';
+        default: return 'off';
+    }
+}
+function vscodeToXtermCursorStyle(style) {
+    if (style === 'line') {
+        return 'bar';
+    }
+    return style;
+}

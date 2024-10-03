@@ -1,1 +1,51 @@
-var m=Object.defineProperty;var I=Object.getOwnPropertyDescriptor;var a=(n,t,r,e)=>{for(var i=e>1?void 0:e?I(t,r):t,c=n.length-1,s;c>=0;c--)(s=n[c])&&(i=(e?s(t,r,i):s(i))||i);return e&&i&&m(t,r,i),i},o=(n,t)=>(r,e)=>t(r,e,n);import{ILayoutService as v}from"../../../../platform/layout/browser/layoutService.js";import{IInstantiationService as l}from"../../../../platform/instantiation/common/instantiation.js";import{IThemeService as S}from"../../../../platform/theme/common/themeService.js";import{IConfigurationService as g}from"../../../../platform/configuration/common/configuration.js";import{IContextKeyService as d}from"../../../../platform/contextkey/common/contextkey.js";import{IKeybindingService as y}from"../../../../platform/keybinding/common/keybinding.js";import"../../../../platform/quickinput/browser/quickInputController.js";import{QuickInputService as f}from"../../../../platform/quickinput/browser/quickInputService.js";import{InstantiationType as h,registerSingleton as k}from"../../../../platform/instantiation/common/extensions.js";import{IQuickInputService as b}from"../../../../platform/quickinput/common/quickInput.js";import{InQuickPickContextKey as C}from"../../../browser/quickaccess.js";let u=class extends f{constructor(r,e,i,c,s,p){super(e,c,s,p,r);this.keybindingService=i;this.registerListeners()}inQuickInputContext=C.bindTo(this.contextKeyService);registerListeners(){this._register(this.onShow(()=>this.inQuickInputContext.set(!0))),this._register(this.onHide(()=>this.inQuickInputContext.set(!1)))}createController(){return super.createController(this.layoutService,{ignoreFocusOut:()=>!this.configurationService.getValue("workbench.quickOpen.closeOnFocusLost"),backKeybindingLabel:()=>this.keybindingService.lookupKeybinding("workbench.action.quickInputBack")?.getLabel()||void 0})}};u=a([o(0,g),o(1,l),o(2,y),o(3,d),o(4,S),o(5,v)],u),k(b,u,h.Delayed);export{u as QuickInputService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ILayoutService } from '../../../../platform/layout/browser/layoutService.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { QuickInputService as BaseQuickInputService } from '../../../../platform/quickinput/browser/quickInputService.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { InQuickPickContextKey } from '../../../browser/quickaccess.js';
+let QuickInputService = class QuickInputService extends BaseQuickInputService {
+    constructor(configurationService, instantiationService, keybindingService, contextKeyService, themeService, layoutService) {
+        super(instantiationService, contextKeyService, themeService, layoutService, configurationService);
+        this.keybindingService = keybindingService;
+        this.inQuickInputContext = InQuickPickContextKey.bindTo(this.contextKeyService);
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.onShow(() => this.inQuickInputContext.set(true)));
+        this._register(this.onHide(() => this.inQuickInputContext.set(false)));
+    }
+    createController() {
+        return super.createController(this.layoutService, {
+            ignoreFocusOut: () => !this.configurationService.getValue('workbench.quickOpen.closeOnFocusLost'),
+            backKeybindingLabel: () => this.keybindingService.lookupKeybinding('workbench.action.quickInputBack')?.getLabel() || undefined,
+        });
+    }
+};
+QuickInputService = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, IInstantiationService),
+    __param(2, IKeybindingService),
+    __param(3, IContextKeyService),
+    __param(4, IThemeService),
+    __param(5, ILayoutService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], QuickInputService);
+export { QuickInputService };
+registerSingleton(IQuickInputService, QuickInputService, 1);

@@ -1,1 +1,522 @@
-import{distinct as z}from"../../../base/common/arrays.js";import"../../../base/common/collections.js";import{parse as g,visit as U}from"../../../base/common/json.js";import{applyEdits as D,setProperty as J,withFormatting as G}from"../../../base/common/jsonEdit.js";import{getEOL as H}from"../../../base/common/jsonFormatter.js";import*as B from"../../../base/common/objects.js";import"../../configuration/common/configuration.js";import*as h from"./content.js";import{getDisallowedIgnoredSettings as Q}from"./userDataSync.js";function ae(n,t,e){let r=[];e?r=X(e):r=R(t);const c=[],u=[...Q()];if(Array.isArray(r))for(const i of r)i.startsWith("-")?u.push(i.substring(1)):c.push(i);return z([...n,...c].filter(i=>!u.includes(i)))}function R(n){let t=n.inspect("settingsSync.ignoredSettings").userValue;return t!==void 0||(t=n.inspect("sync.ignoredSettings").userValue,t!==void 0)?t:n.getValue("settingsSync.ignoredSettings")||[]}function X(n){const t=g(n);return t?t["settingsSync.ignoredSettings"]||t["sync.ignoredSettings"]||[]:[]}function ge(n,t){const e=g(n)||{};let r="{}";for(const c of Object.keys(e)){const u=J(r,[c],e[c],t);r=D(r,u)}return r}function C(n,t,e,r){if(e.length){const c=I(t),u=g(t)||{},i=g(n);if(!i)return n;const d=[];for(const s of e){const o=u[s],l=i[s];o===void 0?n=h.edit(n,[s],void 0,r):l!==void 0?n=h.edit(n,[s],o,r):d.push(O(s,c))}d.sort((s,o)=>s.startOffset-o.startOffset),d.forEach(s=>n=L(s.setting.key,t,n,r))}return n}function me(n,t,e,r,c,u){const i=C(n,t,r,u),d=e!==i,s=e!==t;if(!d&&!s)return{conflictsSettings:[],localContent:null,remoteContent:null,hasConflicts:!1};if(d&&!s)return{conflictsSettings:[],localContent:null,remoteContent:i,hasConflicts:!1};if(s&&!d)return{conflictsSettings:[],localContent:C(t,n,r,u),remoteContent:null,hasConflicts:!1};if(e===null&&Y(n)){const f=A(n,t,r)?null:C(t,n,r,u);return{conflictsSettings:[],localContent:f,remoteContent:null,hasConflicts:!1}}let o=n,l=t;const a=g(n),m=g(t),b=e?g(e):null,E=r.reduce((f,v)=>(f.add(v),f),new Set),k=j(a,m,E),y=j(b,a,E),S=j(b,m,E),V=new Map,N=new Set,p=f=>{N.add(f);const v=c.filter(({key:$})=>$===f)[0];v?(o=h.edit(o,[f],v.value,u),l=h.edit(l,[f],v.value,u)):V.set(f,{key:f,localValue:a[f],remoteValue:m[f]})};for(const f of y.removed.values())S.updated.has(f)?p(f):l=h.edit(l,[f],void 0,u);for(const f of S.removed.values())N.has(f)||(y.updated.has(f)?p(f):o=h.edit(o,[f],void 0,u));for(const f of y.updated.values())N.has(f)||(S.updated.has(f)?k.updated.has(f)&&p(f):l=h.edit(l,[f],a[f],u));for(const f of S.updated.values())N.has(f)||(y.updated.has(f)?k.updated.has(f)&&p(f):o=h.edit(o,[f],m[f],u));for(const f of y.added.values())N.has(f)||(S.added.has(f)?k.updated.has(f)&&p(f):l=L(f,o,l,u));for(const f of S.added.values())N.has(f)||(y.added.has(f)?k.updated.has(f)&&p(f):o=L(f,l,o,u));const P=V.size>0||!A(o,l,r),q=P||!A(o,n,[]),W=P||!A(l,t,[]);return{localContent:q?o:null,remoteContent:W?l:null,conflictsSettings:[...V.values()],hasConflicts:P}}function A(n,t,e){if(n===t)return!0;const r=g(n),c=g(t),u=e.reduce((s,o)=>(s.add(o),s),new Set),i=I(n).filter(s=>!(s.setting&&u.has(s.setting.key))),d=I(t).filter(s=>!(s.setting&&u.has(s.setting.key)));if(i.length!==d.length)return!1;for(let s=0;s<i.length;s++){const o=i[s],l=d[s];if(o.setting&&l.setting){if(o.setting.key!==l.setting.key||!B.equals(r[o.setting.key],c[o.setting.key]))return!1}else if(!o.setting&&!l.setting){if(o.value!==l.value)return!1}else return!1}return!0}function Y(n){return n?I(n).length===0:!0}function j(n,t,e){const r=n?Object.keys(n).filter(s=>!e.has(s)):[],c=Object.keys(t).filter(s=>!e.has(s)),u=c.filter(s=>!r.includes(s)).reduce((s,o)=>(s.add(o),s),new Set),i=r.filter(s=>!c.includes(s)).reduce((s,o)=>(s.add(o),s),new Set),d=new Set;if(n)for(const s of r){if(i.has(s))continue;const o=n[s],l=t[s];B.equals(o,l)||d.add(s)}return{added:u,removed:i,updated:d}}function L(n,t,e,r){const c=g(t),u=I(t),i=I(e),d=Z(n,u,i);return _(e,n,c[n],d,i,r)}function Z(n,t,e){const r=t.findIndex(u=>u.setting?.key===n),c=t[r-1];if(c){if(c.setting){const i=O(c.setting.key,e);if(i)return{index:e.indexOf(i),insertAfter:!0}}else{const i=M(r,t);if(i){const d=O(i.setting.key,e);if(d){const s=w(e.indexOf(d),e),o=x(t,i,t[r]);if(s){const l=x(e,d,s),a=F(o,l);return a?{index:e.indexOf(a),insertAfter:!0}:{index:e.indexOf(s),insertAfter:!1}}else{const l=x(e,d,e[e.length-1]),a=F(o,l);return a?{index:e.indexOf(a),insertAfter:!0}:{index:e.length-1,insertAfter:!0}}}}}const u=t[r+1];if(u)if(u.setting){const i=O(u.setting.key,e);if(i)return{index:e.indexOf(i),insertAfter:!1}}else{const i=w(r,t);if(i){const d=O(i.setting.key,e);if(d){const s=M(e.indexOf(d),e),o=x(t,t[r],i);if(s){const l=x(e,s,d),a=F(o.reverse(),l.reverse());return a?{index:e.indexOf(a),insertAfter:!1}:{index:e.indexOf(s),insertAfter:!0}}else{const l=x(e,e[0],d),a=F(o.reverse(),l.reverse());return a?{index:e.indexOf(a),insertAfter:!1}:{index:0,insertAfter:!1}}}}}}return{index:e.length-1,insertAfter:!0}}function _(n,t,e,r,c,u){let i;return r.index===-1?i=J(n,[t],e,u):i=K(n,t,e,r,c,u).map(d=>G(n,d,u)[0]),D(n,i)}function K(n,t,e,r,c,u){const i=`${JSON.stringify(t)}: ${JSON.stringify(e)}`,d=H(u,n),s=c[r.index];if(r.insertAfter){const o=[];if(s.setting)o.push({offset:s.endOffset,length:0,content:","+i});else{const l=w(r.index,c),a=M(r.index,c),m=a?.setting?.commaOffset;a&&m===void 0&&o.push({offset:a.endOffset,length:0,content:","});const b=m!==void 0&&m>s.endOffset;o.push({offset:b?m+1:s.endOffset,length:0,content:l?d+i+",":d+i})}return o}else{if(s.setting)return[{offset:s.startOffset,length:0,content:i+","}];const o=(c[r.index-1]&&!c[r.index-1].setting?d:"")+i+(w(r.index,c)?",":"")+d;return[{offset:s.startOffset,length:0,content:o}]}}function O(n,t){return t.filter(e=>e.setting?.key===n)[0]}function M(n,t){for(let e=n-1;e>=0;e--)if(t[e].setting)return t[e]}function w(n,t){for(let e=n+1;e<t.length;e++)if(t[e].setting)return t[e]}function x(n,t,e){const r=n.indexOf(t),c=n.indexOf(e);return n.filter((u,i)=>r<i&&i<c)}function F(n,t){if(n.length&&t.length){let e=0;for(;e<t.length&&e<n.length;e++)if(n[e].value!==t[e].value)return t[e-1];return t[e-1]}}function I(n){const t=[];let e=-1,r,c;return U(n,{onObjectBegin:i=>{e++},onObjectProperty:(i,d,s)=>{e===0&&(r=d,c=i)},onObjectEnd:(i,d)=>{e--,e===0&&t.push({startOffset:r,endOffset:i+d,value:n.substring(r,i+d),setting:{key:c,commaOffset:void 0}})},onArrayBegin:(i,d)=>{e++},onArrayEnd:(i,d)=>{e--,e===0&&t.push({startOffset:r,endOffset:i+d,value:n.substring(r,i+d),setting:{key:c,commaOffset:void 0}})},onLiteralValue:(i,d,s)=>{e===0&&t.push({startOffset:r,endOffset:d+s,value:n.substring(r,d+s),setting:{key:c,commaOffset:void 0}})},onSeparator:(i,d,s)=>{if(e===0&&i===","){let o=t.length-1;for(;o>=0&&!t[o].setting;o--);const l=t[o];l&&t.splice(o,1,{startOffset:l.startOffset,endOffset:l.endOffset,value:l.value,setting:{key:l.setting.key,commaOffset:d}})}},onComment:(i,d)=>{e===0&&t.push({startOffset:i,endOffset:i+d,value:n.substring(i,i+d)})}}),t}export{L as addSetting,ae as getIgnoredSettings,Y as isEmpty,me as merge,ge as removeComments,C as updateIgnoredSettings};
+import { distinct } from '../../../base/common/arrays.js';
+import { parse, visit } from '../../../base/common/json.js';
+import { applyEdits, setProperty, withFormatting } from '../../../base/common/jsonEdit.js';
+import { getEOL } from '../../../base/common/jsonFormatter.js';
+import * as objects from '../../../base/common/objects.js';
+import * as contentUtil from './content.js';
+import { getDisallowedIgnoredSettings } from './userDataSync.js';
+export function getIgnoredSettings(defaultIgnoredSettings, configurationService, settingsContent) {
+    let value = [];
+    if (settingsContent) {
+        value = getIgnoredSettingsFromContent(settingsContent);
+    }
+    else {
+        value = getIgnoredSettingsFromConfig(configurationService);
+    }
+    const added = [], removed = [...getDisallowedIgnoredSettings()];
+    if (Array.isArray(value)) {
+        for (const key of value) {
+            if (key.startsWith('-')) {
+                removed.push(key.substring(1));
+            }
+            else {
+                added.push(key);
+            }
+        }
+    }
+    return distinct([...defaultIgnoredSettings, ...added,].filter(setting => !removed.includes(setting)));
+}
+function getIgnoredSettingsFromConfig(configurationService) {
+    let userValue = configurationService.inspect('settingsSync.ignoredSettings').userValue;
+    if (userValue !== undefined) {
+        return userValue;
+    }
+    userValue = configurationService.inspect('sync.ignoredSettings').userValue;
+    if (userValue !== undefined) {
+        return userValue;
+    }
+    return configurationService.getValue('settingsSync.ignoredSettings') || [];
+}
+function getIgnoredSettingsFromContent(settingsContent) {
+    const parsed = parse(settingsContent);
+    return parsed ? parsed['settingsSync.ignoredSettings'] || parsed['sync.ignoredSettings'] || [] : [];
+}
+export function removeComments(content, formattingOptions) {
+    const source = parse(content) || {};
+    let result = '{}';
+    for (const key of Object.keys(source)) {
+        const edits = setProperty(result, [key], source[key], formattingOptions);
+        result = applyEdits(result, edits);
+    }
+    return result;
+}
+export function updateIgnoredSettings(targetContent, sourceContent, ignoredSettings, formattingOptions) {
+    if (ignoredSettings.length) {
+        const sourceTree = parseSettings(sourceContent);
+        const source = parse(sourceContent) || {};
+        const target = parse(targetContent);
+        if (!target) {
+            return targetContent;
+        }
+        const settingsToAdd = [];
+        for (const key of ignoredSettings) {
+            const sourceValue = source[key];
+            const targetValue = target[key];
+            if (sourceValue === undefined) {
+                targetContent = contentUtil.edit(targetContent, [key], undefined, formattingOptions);
+            }
+            else if (targetValue !== undefined) {
+                targetContent = contentUtil.edit(targetContent, [key], sourceValue, formattingOptions);
+            }
+            else {
+                settingsToAdd.push(findSettingNode(key, sourceTree));
+            }
+        }
+        settingsToAdd.sort((a, b) => a.startOffset - b.startOffset);
+        settingsToAdd.forEach(s => targetContent = addSetting(s.setting.key, sourceContent, targetContent, formattingOptions));
+    }
+    return targetContent;
+}
+export function merge(originalLocalContent, originalRemoteContent, baseContent, ignoredSettings, resolvedConflicts, formattingOptions) {
+    const localContentWithoutIgnoredSettings = updateIgnoredSettings(originalLocalContent, originalRemoteContent, ignoredSettings, formattingOptions);
+    const localForwarded = baseContent !== localContentWithoutIgnoredSettings;
+    const remoteForwarded = baseContent !== originalRemoteContent;
+    if (!localForwarded && !remoteForwarded) {
+        return { conflictsSettings: [], localContent: null, remoteContent: null, hasConflicts: false };
+    }
+    if (localForwarded && !remoteForwarded) {
+        return { conflictsSettings: [], localContent: null, remoteContent: localContentWithoutIgnoredSettings, hasConflicts: false };
+    }
+    if (remoteForwarded && !localForwarded) {
+        return { conflictsSettings: [], localContent: updateIgnoredSettings(originalRemoteContent, originalLocalContent, ignoredSettings, formattingOptions), remoteContent: null, hasConflicts: false };
+    }
+    if (baseContent === null && isEmpty(originalLocalContent)) {
+        const localContent = areSame(originalLocalContent, originalRemoteContent, ignoredSettings) ? null : updateIgnoredSettings(originalRemoteContent, originalLocalContent, ignoredSettings, formattingOptions);
+        return { conflictsSettings: [], localContent, remoteContent: null, hasConflicts: false };
+    }
+    let localContent = originalLocalContent;
+    let remoteContent = originalRemoteContent;
+    const local = parse(originalLocalContent);
+    const remote = parse(originalRemoteContent);
+    const base = baseContent ? parse(baseContent) : null;
+    const ignored = ignoredSettings.reduce((set, key) => { set.add(key); return set; }, new Set());
+    const localToRemote = compare(local, remote, ignored);
+    const baseToLocal = compare(base, local, ignored);
+    const baseToRemote = compare(base, remote, ignored);
+    const conflicts = new Map();
+    const handledConflicts = new Set();
+    const handleConflict = (conflictKey) => {
+        handledConflicts.add(conflictKey);
+        const resolvedConflict = resolvedConflicts.filter(({ key }) => key === conflictKey)[0];
+        if (resolvedConflict) {
+            localContent = contentUtil.edit(localContent, [conflictKey], resolvedConflict.value, formattingOptions);
+            remoteContent = contentUtil.edit(remoteContent, [conflictKey], resolvedConflict.value, formattingOptions);
+        }
+        else {
+            conflicts.set(conflictKey, { key: conflictKey, localValue: local[conflictKey], remoteValue: remote[conflictKey] });
+        }
+    };
+    for (const key of baseToLocal.removed.values()) {
+        if (baseToRemote.updated.has(key)) {
+            handleConflict(key);
+        }
+        else {
+            remoteContent = contentUtil.edit(remoteContent, [key], undefined, formattingOptions);
+        }
+    }
+    for (const key of baseToRemote.removed.values()) {
+        if (handledConflicts.has(key)) {
+            continue;
+        }
+        if (baseToLocal.updated.has(key)) {
+            handleConflict(key);
+        }
+        else {
+            localContent = contentUtil.edit(localContent, [key], undefined, formattingOptions);
+        }
+    }
+    for (const key of baseToLocal.updated.values()) {
+        if (handledConflicts.has(key)) {
+            continue;
+        }
+        if (baseToRemote.updated.has(key)) {
+            if (localToRemote.updated.has(key)) {
+                handleConflict(key);
+            }
+        }
+        else {
+            remoteContent = contentUtil.edit(remoteContent, [key], local[key], formattingOptions);
+        }
+    }
+    for (const key of baseToRemote.updated.values()) {
+        if (handledConflicts.has(key)) {
+            continue;
+        }
+        if (baseToLocal.updated.has(key)) {
+            if (localToRemote.updated.has(key)) {
+                handleConflict(key);
+            }
+        }
+        else {
+            localContent = contentUtil.edit(localContent, [key], remote[key], formattingOptions);
+        }
+    }
+    for (const key of baseToLocal.added.values()) {
+        if (handledConflicts.has(key)) {
+            continue;
+        }
+        if (baseToRemote.added.has(key)) {
+            if (localToRemote.updated.has(key)) {
+                handleConflict(key);
+            }
+        }
+        else {
+            remoteContent = addSetting(key, localContent, remoteContent, formattingOptions);
+        }
+    }
+    for (const key of baseToRemote.added.values()) {
+        if (handledConflicts.has(key)) {
+            continue;
+        }
+        if (baseToLocal.added.has(key)) {
+            if (localToRemote.updated.has(key)) {
+                handleConflict(key);
+            }
+        }
+        else {
+            localContent = addSetting(key, remoteContent, localContent, formattingOptions);
+        }
+    }
+    const hasConflicts = conflicts.size > 0 || !areSame(localContent, remoteContent, ignoredSettings);
+    const hasLocalChanged = hasConflicts || !areSame(localContent, originalLocalContent, []);
+    const hasRemoteChanged = hasConflicts || !areSame(remoteContent, originalRemoteContent, []);
+    return { localContent: hasLocalChanged ? localContent : null, remoteContent: hasRemoteChanged ? remoteContent : null, conflictsSettings: [...conflicts.values()], hasConflicts };
+}
+function areSame(localContent, remoteContent, ignoredSettings) {
+    if (localContent === remoteContent) {
+        return true;
+    }
+    const local = parse(localContent);
+    const remote = parse(remoteContent);
+    const ignored = ignoredSettings.reduce((set, key) => { set.add(key); return set; }, new Set());
+    const localTree = parseSettings(localContent).filter(node => !(node.setting && ignored.has(node.setting.key)));
+    const remoteTree = parseSettings(remoteContent).filter(node => !(node.setting && ignored.has(node.setting.key)));
+    if (localTree.length !== remoteTree.length) {
+        return false;
+    }
+    for (let index = 0; index < localTree.length; index++) {
+        const localNode = localTree[index];
+        const remoteNode = remoteTree[index];
+        if (localNode.setting && remoteNode.setting) {
+            if (localNode.setting.key !== remoteNode.setting.key) {
+                return false;
+            }
+            if (!objects.equals(local[localNode.setting.key], remote[localNode.setting.key])) {
+                return false;
+            }
+        }
+        else if (!localNode.setting && !remoteNode.setting) {
+            if (localNode.value !== remoteNode.value) {
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+    return true;
+}
+export function isEmpty(content) {
+    if (content) {
+        const nodes = parseSettings(content);
+        return nodes.length === 0;
+    }
+    return true;
+}
+function compare(from, to, ignored) {
+    const fromKeys = from ? Object.keys(from).filter(key => !ignored.has(key)) : [];
+    const toKeys = Object.keys(to).filter(key => !ignored.has(key));
+    const added = toKeys.filter(key => !fromKeys.includes(key)).reduce((r, key) => { r.add(key); return r; }, new Set());
+    const removed = fromKeys.filter(key => !toKeys.includes(key)).reduce((r, key) => { r.add(key); return r; }, new Set());
+    const updated = new Set();
+    if (from) {
+        for (const key of fromKeys) {
+            if (removed.has(key)) {
+                continue;
+            }
+            const value1 = from[key];
+            const value2 = to[key];
+            if (!objects.equals(value1, value2)) {
+                updated.add(key);
+            }
+        }
+    }
+    return { added, removed, updated };
+}
+export function addSetting(key, sourceContent, targetContent, formattingOptions) {
+    const source = parse(sourceContent);
+    const sourceTree = parseSettings(sourceContent);
+    const targetTree = parseSettings(targetContent);
+    const insertLocation = getInsertLocation(key, sourceTree, targetTree);
+    return insertAtLocation(targetContent, key, source[key], insertLocation, targetTree, formattingOptions);
+}
+function getInsertLocation(key, sourceTree, targetTree) {
+    const sourceNodeIndex = sourceTree.findIndex(node => node.setting?.key === key);
+    const sourcePreviousNode = sourceTree[sourceNodeIndex - 1];
+    if (sourcePreviousNode) {
+        if (sourcePreviousNode.setting) {
+            const targetPreviousSetting = findSettingNode(sourcePreviousNode.setting.key, targetTree);
+            if (targetPreviousSetting) {
+                return { index: targetTree.indexOf(targetPreviousSetting), insertAfter: true };
+            }
+        }
+        else {
+            const sourcePreviousSettingNode = findPreviousSettingNode(sourceNodeIndex, sourceTree);
+            if (sourcePreviousSettingNode) {
+                const targetPreviousSetting = findSettingNode(sourcePreviousSettingNode.setting.key, targetTree);
+                if (targetPreviousSetting) {
+                    const targetNextSetting = findNextSettingNode(targetTree.indexOf(targetPreviousSetting), targetTree);
+                    const sourceCommentNodes = findNodesBetween(sourceTree, sourcePreviousSettingNode, sourceTree[sourceNodeIndex]);
+                    if (targetNextSetting) {
+                        const targetCommentNodes = findNodesBetween(targetTree, targetPreviousSetting, targetNextSetting);
+                        const targetCommentNode = findLastMatchingTargetCommentNode(sourceCommentNodes, targetCommentNodes);
+                        if (targetCommentNode) {
+                            return { index: targetTree.indexOf(targetCommentNode), insertAfter: true };
+                        }
+                        else {
+                            return { index: targetTree.indexOf(targetNextSetting), insertAfter: false };
+                        }
+                    }
+                    else {
+                        const targetCommentNodes = findNodesBetween(targetTree, targetPreviousSetting, targetTree[targetTree.length - 1]);
+                        const targetCommentNode = findLastMatchingTargetCommentNode(sourceCommentNodes, targetCommentNodes);
+                        if (targetCommentNode) {
+                            return { index: targetTree.indexOf(targetCommentNode), insertAfter: true };
+                        }
+                        else {
+                            return { index: targetTree.length - 1, insertAfter: true };
+                        }
+                    }
+                }
+            }
+        }
+        const sourceNextNode = sourceTree[sourceNodeIndex + 1];
+        if (sourceNextNode) {
+            if (sourceNextNode.setting) {
+                const targetNextSetting = findSettingNode(sourceNextNode.setting.key, targetTree);
+                if (targetNextSetting) {
+                    return { index: targetTree.indexOf(targetNextSetting), insertAfter: false };
+                }
+            }
+            else {
+                const sourceNextSettingNode = findNextSettingNode(sourceNodeIndex, sourceTree);
+                if (sourceNextSettingNode) {
+                    const targetNextSetting = findSettingNode(sourceNextSettingNode.setting.key, targetTree);
+                    if (targetNextSetting) {
+                        const targetPreviousSetting = findPreviousSettingNode(targetTree.indexOf(targetNextSetting), targetTree);
+                        const sourceCommentNodes = findNodesBetween(sourceTree, sourceTree[sourceNodeIndex], sourceNextSettingNode);
+                        if (targetPreviousSetting) {
+                            const targetCommentNodes = findNodesBetween(targetTree, targetPreviousSetting, targetNextSetting);
+                            const targetCommentNode = findLastMatchingTargetCommentNode(sourceCommentNodes.reverse(), targetCommentNodes.reverse());
+                            if (targetCommentNode) {
+                                return { index: targetTree.indexOf(targetCommentNode), insertAfter: false };
+                            }
+                            else {
+                                return { index: targetTree.indexOf(targetPreviousSetting), insertAfter: true };
+                            }
+                        }
+                        else {
+                            const targetCommentNodes = findNodesBetween(targetTree, targetTree[0], targetNextSetting);
+                            const targetCommentNode = findLastMatchingTargetCommentNode(sourceCommentNodes.reverse(), targetCommentNodes.reverse());
+                            if (targetCommentNode) {
+                                return { index: targetTree.indexOf(targetCommentNode), insertAfter: false };
+                            }
+                            else {
+                                return { index: 0, insertAfter: false };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return { index: targetTree.length - 1, insertAfter: true };
+}
+function insertAtLocation(content, key, value, location, tree, formattingOptions) {
+    let edits;
+    if (location.index === -1) {
+        edits = setProperty(content, [key], value, formattingOptions);
+    }
+    else {
+        edits = getEditToInsertAtLocation(content, key, value, location, tree, formattingOptions).map(edit => withFormatting(content, edit, formattingOptions)[0]);
+    }
+    return applyEdits(content, edits);
+}
+function getEditToInsertAtLocation(content, key, value, location, tree, formattingOptions) {
+    const newProperty = `${JSON.stringify(key)}: ${JSON.stringify(value)}`;
+    const eol = getEOL(formattingOptions, content);
+    const node = tree[location.index];
+    if (location.insertAfter) {
+        const edits = [];
+        if (node.setting) {
+            edits.push({ offset: node.endOffset, length: 0, content: ',' + newProperty });
+        }
+        else {
+            const nextSettingNode = findNextSettingNode(location.index, tree);
+            const previousSettingNode = findPreviousSettingNode(location.index, tree);
+            const previousSettingCommaOffset = previousSettingNode?.setting?.commaOffset;
+            if (previousSettingNode && previousSettingCommaOffset === undefined) {
+                edits.push({ offset: previousSettingNode.endOffset, length: 0, content: ',' });
+            }
+            const isPreviouisSettingIncludesComment = previousSettingCommaOffset !== undefined && previousSettingCommaOffset > node.endOffset;
+            edits.push({
+                offset: isPreviouisSettingIncludesComment ? previousSettingCommaOffset + 1 : node.endOffset,
+                length: 0,
+                content: nextSettingNode ? eol + newProperty + ',' : eol + newProperty
+            });
+        }
+        return edits;
+    }
+    else {
+        if (node.setting) {
+            return [{ offset: node.startOffset, length: 0, content: newProperty + ',' }];
+        }
+        const content = (tree[location.index - 1] && !tree[location.index - 1].setting ? eol : '')
+            + newProperty
+            + (findNextSettingNode(location.index, tree) ? ',' : '')
+            + eol;
+        return [{ offset: node.startOffset, length: 0, content }];
+    }
+}
+function findSettingNode(key, tree) {
+    return tree.filter(node => node.setting?.key === key)[0];
+}
+function findPreviousSettingNode(index, tree) {
+    for (let i = index - 1; i >= 0; i--) {
+        if (tree[i].setting) {
+            return tree[i];
+        }
+    }
+    return undefined;
+}
+function findNextSettingNode(index, tree) {
+    for (let i = index + 1; i < tree.length; i++) {
+        if (tree[i].setting) {
+            return tree[i];
+        }
+    }
+    return undefined;
+}
+function findNodesBetween(nodes, from, till) {
+    const fromIndex = nodes.indexOf(from);
+    const tillIndex = nodes.indexOf(till);
+    return nodes.filter((node, index) => fromIndex < index && index < tillIndex);
+}
+function findLastMatchingTargetCommentNode(sourceComments, targetComments) {
+    if (sourceComments.length && targetComments.length) {
+        let index = 0;
+        for (; index < targetComments.length && index < sourceComments.length; index++) {
+            if (sourceComments[index].value !== targetComments[index].value) {
+                return targetComments[index - 1];
+            }
+        }
+        return targetComments[index - 1];
+    }
+    return undefined;
+}
+function parseSettings(content) {
+    const nodes = [];
+    let hierarchyLevel = -1;
+    let startOffset;
+    let key;
+    const visitor = {
+        onObjectBegin: (offset) => {
+            hierarchyLevel++;
+        },
+        onObjectProperty: (name, offset, length) => {
+            if (hierarchyLevel === 0) {
+                startOffset = offset;
+                key = name;
+            }
+        },
+        onObjectEnd: (offset, length) => {
+            hierarchyLevel--;
+            if (hierarchyLevel === 0) {
+                nodes.push({
+                    startOffset,
+                    endOffset: offset + length,
+                    value: content.substring(startOffset, offset + length),
+                    setting: {
+                        key,
+                        commaOffset: undefined
+                    }
+                });
+            }
+        },
+        onArrayBegin: (offset, length) => {
+            hierarchyLevel++;
+        },
+        onArrayEnd: (offset, length) => {
+            hierarchyLevel--;
+            if (hierarchyLevel === 0) {
+                nodes.push({
+                    startOffset,
+                    endOffset: offset + length,
+                    value: content.substring(startOffset, offset + length),
+                    setting: {
+                        key,
+                        commaOffset: undefined
+                    }
+                });
+            }
+        },
+        onLiteralValue: (value, offset, length) => {
+            if (hierarchyLevel === 0) {
+                nodes.push({
+                    startOffset,
+                    endOffset: offset + length,
+                    value: content.substring(startOffset, offset + length),
+                    setting: {
+                        key,
+                        commaOffset: undefined
+                    }
+                });
+            }
+        },
+        onSeparator: (sep, offset, length) => {
+            if (hierarchyLevel === 0) {
+                if (sep === ',') {
+                    let index = nodes.length - 1;
+                    for (; index >= 0; index--) {
+                        if (nodes[index].setting) {
+                            break;
+                        }
+                    }
+                    const node = nodes[index];
+                    if (node) {
+                        nodes.splice(index, 1, {
+                            startOffset: node.startOffset,
+                            endOffset: node.endOffset,
+                            value: node.value,
+                            setting: {
+                                key: node.setting.key,
+                                commaOffset: offset
+                            }
+                        });
+                    }
+                }
+            }
+        },
+        onComment: (offset, length) => {
+            if (hierarchyLevel === 0) {
+                nodes.push({
+                    startOffset: offset,
+                    endOffset: offset + length,
+                    value: content.substring(offset, offset + length),
+                });
+            }
+        }
+    };
+    visit(content, visitor);
+    return nodes;
+}

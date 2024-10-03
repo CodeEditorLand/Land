@@ -1,8 +1,140 @@
-var m=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var d=(r,n,e,t)=>{for(var o=t>1?void 0:t?b(n,e):n,i=r.length-1,s;i>=0;i--)(s=r[i])&&(o=(t?s(n,e,o):s(o))||o);return t&&o&&m(n,e,o),o},c=(r,n)=>(e,t)=>n(e,t,r);import"../../../base/common/buffer.js";import{Disposable as u,DisposableStore as w}from"../../../base/common/lifecycle.js";import{Schemas as p}from"../../../base/common/network.js";import{isWeb as f}from"../../../base/common/platform.js";import{escape as W}from"../../../base/common/strings.js";import{URI as v}from"../../../base/common/uri.js";import{localize as h}from"../../../nls.js";import"../../../platform/extensions/common/extensions.js";import{IOpenerService as x}from"../../../platform/opener/common/opener.js";import{IProductService as y}from"../../../platform/product/common/productService.js";import*as g from"../common/extHost.protocol.js";import{deserializeWebviewMessage as H,serializeWebviewMessage as C}from"../common/extHostWebviewMessaging.js";import"../../contrib/webview/browser/webview.js";import"../../services/extensions/common/extHostCustomers.js";import{SerializableObjectWithBuffers as S}from"../../services/extensions/common/proxyIdentifier.js";let a=class extends u{constructor(e,t,o){super();this._openerService=t;this._productService=o;this._proxy=e.getProxy(g.ExtHostContext.ExtHostWebviews)}static standardSupportedLinkSchemes=new Set([p.http,p.https,p.mailto,p.vscode,"vscode-insider"]);_proxy;_webviews=new Map;addWebview(e,t,o){if(this._webviews.has(e))throw new Error("Webview already registered");this._webviews.set(e,t),this.hookupWebviewEventDelegate(e,t,o)}$setHtml(e,t){this.tryGetWebview(e)?.setHtml(t)}$setOptions(e,t){const o=this.tryGetWebview(e);o&&(o.contentOptions=P(t))}async $postMessage(e,t,...o){const i=this.tryGetWebview(e);if(!i)return!1;const{message:s,arrayBuffers:l}=H(t,o);return i.postMessage(s,l)}hookupWebviewEventDelegate(e,t,o){const i=new w;i.add(t.onDidClickLink(s=>this.onDidClickLink(e,s))),i.add(t.onMessage(s=>{const l=C(s.message,o);this._proxy.$onMessage(e,l.message,new S(l.buffers))})),i.add(t.onMissingCsp(s=>this._proxy.$onMissingCsp(e,s.value))),i.add(t.onDidDispose(()=>{i.dispose(),this._webviews.delete(e)}))}onDidClickLink(e,t){const o=this.getWebview(e);this.isSupportedLink(o,v.parse(t))&&this._openerService.open(t,{fromUserGesture:!0,allowContributedOpeners:!0,allowCommands:Array.isArray(o.contentOptions.enableCommandUris)||o.contentOptions.enableCommandUris===!0,fromWorkspace:!0})}isSupportedLink(e,t){return a.standardSupportedLinkSchemes.has(t.scheme)||!f&&this._productService.urlProtocol===t.scheme?!0:t.scheme===p.command?Array.isArray(e.contentOptions.enableCommandUris)?e.contentOptions.enableCommandUris.includes(t.path):e.contentOptions.enableCommandUris===!0:!1}tryGetWebview(e){return this._webviews.get(e)}getWebview(e){const t=this.tryGetWebview(e);if(!t)throw new Error(`Unknown webview handle:${e}`);return t}getWebviewResolvedFailedContent(e){return`<!DOCTYPE html>
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var MainThreadWebviews_1;
+import { Disposable, DisposableStore } from '../../../base/common/lifecycle.js';
+import { Schemas } from '../../../base/common/network.js';
+import { isWeb } from '../../../base/common/platform.js';
+import { escape } from '../../../base/common/strings.js';
+import { URI } from '../../../base/common/uri.js';
+import { localize } from '../../../nls.js';
+import { IOpenerService } from '../../../platform/opener/common/opener.js';
+import { IProductService } from '../../../platform/product/common/productService.js';
+import * as extHostProtocol from '../common/extHost.protocol.js';
+import { deserializeWebviewMessage, serializeWebviewMessage } from '../common/extHostWebviewMessaging.js';
+import { SerializableObjectWithBuffers } from '../../services/extensions/common/proxyIdentifier.js';
+let MainThreadWebviews = class MainThreadWebviews extends Disposable {
+    static { MainThreadWebviews_1 = this; }
+    static { this.standardSupportedLinkSchemes = new Set([
+        Schemas.http,
+        Schemas.https,
+        Schemas.mailto,
+        Schemas.vscode,
+        'vscode-insider',
+    ]); }
+    constructor(context, _openerService, _productService) {
+        super();
+        this._openerService = _openerService;
+        this._productService = _productService;
+        this._webviews = new Map();
+        this._proxy = context.getProxy(extHostProtocol.ExtHostContext.ExtHostWebviews);
+    }
+    addWebview(handle, webview, options) {
+        if (this._webviews.has(handle)) {
+            throw new Error('Webview already registered');
+        }
+        this._webviews.set(handle, webview);
+        this.hookupWebviewEventDelegate(handle, webview, options);
+    }
+    $setHtml(handle, value) {
+        this.tryGetWebview(handle)?.setHtml(value);
+    }
+    $setOptions(handle, options) {
+        const webview = this.tryGetWebview(handle);
+        if (webview) {
+            webview.contentOptions = reviveWebviewContentOptions(options);
+        }
+    }
+    async $postMessage(handle, jsonMessage, ...buffers) {
+        const webview = this.tryGetWebview(handle);
+        if (!webview) {
+            return false;
+        }
+        const { message, arrayBuffers } = deserializeWebviewMessage(jsonMessage, buffers);
+        return webview.postMessage(message, arrayBuffers);
+    }
+    hookupWebviewEventDelegate(handle, webview, options) {
+        const disposables = new DisposableStore();
+        disposables.add(webview.onDidClickLink((uri) => this.onDidClickLink(handle, uri)));
+        disposables.add(webview.onMessage((message) => {
+            const serialized = serializeWebviewMessage(message.message, options);
+            this._proxy.$onMessage(handle, serialized.message, new SerializableObjectWithBuffers(serialized.buffers));
+        }));
+        disposables.add(webview.onMissingCsp((extension) => this._proxy.$onMissingCsp(handle, extension.value)));
+        disposables.add(webview.onDidDispose(() => {
+            disposables.dispose();
+            this._webviews.delete(handle);
+        }));
+    }
+    onDidClickLink(handle, link) {
+        const webview = this.getWebview(handle);
+        if (this.isSupportedLink(webview, URI.parse(link))) {
+            this._openerService.open(link, { fromUserGesture: true, allowContributedOpeners: true, allowCommands: Array.isArray(webview.contentOptions.enableCommandUris) || webview.contentOptions.enableCommandUris === true, fromWorkspace: true });
+        }
+    }
+    isSupportedLink(webview, link) {
+        if (MainThreadWebviews_1.standardSupportedLinkSchemes.has(link.scheme)) {
+            return true;
+        }
+        if (!isWeb && this._productService.urlProtocol === link.scheme) {
+            return true;
+        }
+        if (link.scheme === Schemas.command) {
+            if (Array.isArray(webview.contentOptions.enableCommandUris)) {
+                return webview.contentOptions.enableCommandUris.includes(link.path);
+            }
+            return webview.contentOptions.enableCommandUris === true;
+        }
+        return false;
+    }
+    tryGetWebview(handle) {
+        return this._webviews.get(handle);
+    }
+    getWebview(handle) {
+        const webview = this.tryGetWebview(handle);
+        if (!webview) {
+            throw new Error(`Unknown webview handle:${handle}`);
+        }
+        return webview;
+    }
+    getWebviewResolvedFailedContent(viewType) {
+        return `<!DOCTYPE html>
 		<html>
 			<head>
 				<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none';">
 			</head>
-			<body>${h("errorMessage","An error occurred while loading view: {0}",W(e))}</body>
-		</html>`}};a=d([c(1,x),c(2,y)],a);function N(r){return{id:r.id,location:v.revive(r.location)}}function P(r){return{allowScripts:r.enableScripts,allowForms:r.enableForms,enableCommandUris:r.enableCommandUris,localResourceRoots:Array.isArray(r.localResourceRoots)?r.localResourceRoots.map(n=>v.revive(n)):void 0,portMapping:r.portMapping}}export{a as MainThreadWebviews,P as reviveWebviewContentOptions,N as reviveWebviewExtension};
+			<body>${localize('errorMessage', "An error occurred while loading view: {0}", escape(viewType))}</body>
+		</html>`;
+    }
+};
+MainThreadWebviews = MainThreadWebviews_1 = __decorate([
+    __param(1, IOpenerService),
+    __param(2, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], MainThreadWebviews);
+export { MainThreadWebviews };
+export function reviveWebviewExtension(extensionData) {
+    return {
+        id: extensionData.id,
+        location: URI.revive(extensionData.location),
+    };
+}
+export function reviveWebviewContentOptions(webviewOptions) {
+    return {
+        allowScripts: webviewOptions.enableScripts,
+        allowForms: webviewOptions.enableForms,
+        enableCommandUris: webviewOptions.enableCommandUris,
+        localResourceRoots: Array.isArray(webviewOptions.localResourceRoots) ? webviewOptions.localResourceRoots.map(r => URI.revive(r)) : undefined,
+        portMapping: webviewOptions.portMapping,
+    };
+}

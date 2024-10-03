@@ -1,1 +1,118 @@
-import"../../../../base/browser/ui/tree/tree.js";import{CallHierarchyDirection as c,CallHierarchyModel as p}from"../common/callHierarchy.js";import{CancellationToken as m}from"../../../../base/common/cancellation.js";import"../../../../base/browser/ui/list/list.js";import{createMatches as u}from"../../../../base/common/filters.js";import{IconLabel as g}from"../../../../base/browser/ui/iconLabel/iconLabel.js";import{SymbolKinds as C,SymbolTag as y}from"../../../../editor/common/languages.js";import{compare as f}from"../../../../base/common/strings.js";import{Range as h}from"../../../../editor/common/core/range.js";import"../../../../base/browser/ui/list/listWidget.js";import{localize as n}from"../../../../nls.js";import{ThemeIcon as I}from"../../../../base/common/themables.js";class o{constructor(e,r,t,i){this.item=e;this.locations=r;this.model=t;this.parent=i}static compare(e,r){let t=f(e.item.uri.toString(),r.item.uri.toString());return t===0&&(t=h.compareRangesUsingStarts(e.item.range,r.item.range)),t}}class U{constructor(e){this.getDirection=e}hasChildren(){return!0}async getChildren(e){if(e instanceof p)return e.roots.map(i=>new o(i,void 0,e,void 0));const{model:r,item:t}=e;return this.getDirection()===c.CallsFrom?(await r.resolveOutgoingCalls(t,m.None)).map(i=>new o(i.to,i.fromRanges.map(a=>({range:a,uri:t.uri})),r,e)):(await r.resolveIncomingCalls(t,m.None)).map(i=>new o(i.from,i.fromRanges.map(a=>({range:a,uri:i.from.uri})),r,e))}}class W{compare(e,r){return o.compare(e,r)}}class j{constructor(e){this.getDirection=e}getId(e){let r=this.getDirection()+JSON.stringify(e.item.uri)+JSON.stringify(e.item.range);return e.parent&&(r+=this.getId(e.parent)),r}}class b{constructor(e,r){this.icon=e;this.label=r}}class s{static id="CallRenderer";templateId=s.id;renderTemplate(e){e.classList.add("callhierarchy-element");const r=document.createElement("div");e.appendChild(r);const t=new g(e,{supportHighlights:!0});return new b(r,t)}renderElement(e,r,t){const{element:i,filterData:a}=e,d=i.item.tags?.includes(y.Deprecated);t.icon.className="",t.icon.classList.add("inline",...I.asClassNameArray(C.toIcon(i.item.kind))),t.label.setLabel(i.item.name,i.item.detail,{labelEscapeNewLines:!0,matches:u(a),strikethrough:d})}disposeTemplate(e){e.label.dispose()}}class q{getHeight(e){return 22}getTemplateId(e){return s.id}}class B{constructor(e){this.getDirection=e}getWidgetAriaLabel(){return n("tree.aria","Call Hierarchy")}getAriaLabel(e){return this.getDirection()===c.CallsFrom?n("from","calls from {0}",e.item.name):n("to","callers of {0}",e.item.name)}}export{B as AccessibilityProvider,o as Call,s as CallRenderer,U as DataSource,j as IdentityProvider,W as Sorter,q as VirtualDelegate};
+import { CallHierarchyModel, } from '../common/callHierarchy.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { createMatches } from '../../../../base/common/filters.js';
+import { IconLabel } from '../../../../base/browser/ui/iconLabel/iconLabel.js';
+import { SymbolKinds } from '../../../../editor/common/languages.js';
+import { compare } from '../../../../base/common/strings.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { localize } from '../../../../nls.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+export class Call {
+    constructor(item, locations, model, parent) {
+        this.item = item;
+        this.locations = locations;
+        this.model = model;
+        this.parent = parent;
+    }
+    static compare(a, b) {
+        let res = compare(a.item.uri.toString(), b.item.uri.toString());
+        if (res === 0) {
+            res = Range.compareRangesUsingStarts(a.item.range, b.item.range);
+        }
+        return res;
+    }
+}
+export class DataSource {
+    constructor(getDirection) {
+        this.getDirection = getDirection;
+    }
+    hasChildren() {
+        return true;
+    }
+    async getChildren(element) {
+        if (element instanceof CallHierarchyModel) {
+            return element.roots.map(root => new Call(root, undefined, element, undefined));
+        }
+        const { model, item } = element;
+        if (this.getDirection() === "outgoingCalls") {
+            return (await model.resolveOutgoingCalls(item, CancellationToken.None)).map(call => {
+                return new Call(call.to, call.fromRanges.map(range => ({ range, uri: item.uri })), model, element);
+            });
+        }
+        else {
+            return (await model.resolveIncomingCalls(item, CancellationToken.None)).map(call => {
+                return new Call(call.from, call.fromRanges.map(range => ({ range, uri: call.from.uri })), model, element);
+            });
+        }
+    }
+}
+export class Sorter {
+    compare(element, otherElement) {
+        return Call.compare(element, otherElement);
+    }
+}
+export class IdentityProvider {
+    constructor(getDirection) {
+        this.getDirection = getDirection;
+    }
+    getId(element) {
+        let res = this.getDirection() + JSON.stringify(element.item.uri) + JSON.stringify(element.item.range);
+        if (element.parent) {
+            res += this.getId(element.parent);
+        }
+        return res;
+    }
+}
+class CallRenderingTemplate {
+    constructor(icon, label) {
+        this.icon = icon;
+        this.label = label;
+    }
+}
+export class CallRenderer {
+    constructor() {
+        this.templateId = CallRenderer.id;
+    }
+    static { this.id = 'CallRenderer'; }
+    renderTemplate(container) {
+        container.classList.add('callhierarchy-element');
+        const icon = document.createElement('div');
+        container.appendChild(icon);
+        const label = new IconLabel(container, { supportHighlights: true });
+        return new CallRenderingTemplate(icon, label);
+    }
+    renderElement(node, _index, template) {
+        const { element, filterData } = node;
+        const deprecated = element.item.tags?.includes(1);
+        template.icon.className = '';
+        template.icon.classList.add('inline', ...ThemeIcon.asClassNameArray(SymbolKinds.toIcon(element.item.kind)));
+        template.label.setLabel(element.item.name, element.item.detail, { labelEscapeNewLines: true, matches: createMatches(filterData), strikethrough: deprecated });
+    }
+    disposeTemplate(template) {
+        template.label.dispose();
+    }
+}
+export class VirtualDelegate {
+    getHeight(_element) {
+        return 22;
+    }
+    getTemplateId(_element) {
+        return CallRenderer.id;
+    }
+}
+export class AccessibilityProvider {
+    constructor(getDirection) {
+        this.getDirection = getDirection;
+    }
+    getWidgetAriaLabel() {
+        return localize('tree.aria', "Call Hierarchy");
+    }
+    getAriaLabel(element) {
+        if (this.getDirection() === "outgoingCalls") {
+            return localize('from', "calls from {0}", element.item.name);
+        }
+        else {
+            return localize('to', "callers of {0}", element.item.name);
+        }
+    }
+}

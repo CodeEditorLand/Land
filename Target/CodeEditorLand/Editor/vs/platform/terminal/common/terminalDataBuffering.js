@@ -1,1 +1,44 @@
-import"../../../base/common/event.js";import"../../../base/common/lifecycle.js";import"./terminal.js";class d{constructor(e){this._callback=e}_terminalBufferMap=new Map;dispose(){for(const e of this._terminalBufferMap.values())e.dispose()}startBuffering(e,t,n=5){const s=t(a=>{const f=typeof a=="string"?a:a.data;let r=this._terminalBufferMap.get(e);if(r){r.data.push(f);return}const i=setTimeout(()=>this.flushBuffer(e),n);r={data:[f],timeoutId:i,dispose:()=>{clearTimeout(i),this.flushBuffer(e),s.dispose()}},this._terminalBufferMap.set(e,r)});return s}stopBuffering(e){this._terminalBufferMap.get(e)?.dispose()}flushBuffer(e){const t=this._terminalBufferMap.get(e);t&&(this._terminalBufferMap.delete(e),this._callback(e,t.data.join("")))}}export{d as TerminalDataBufferer};
+export class TerminalDataBufferer {
+    constructor(_callback) {
+        this._callback = _callback;
+        this._terminalBufferMap = new Map();
+    }
+    dispose() {
+        for (const buffer of this._terminalBufferMap.values()) {
+            buffer.dispose();
+        }
+    }
+    startBuffering(id, event, throttleBy = 5) {
+        const disposable = event((e) => {
+            const data = (typeof e === 'string' ? e : e.data);
+            let buffer = this._terminalBufferMap.get(id);
+            if (buffer) {
+                buffer.data.push(data);
+                return;
+            }
+            const timeoutId = setTimeout(() => this.flushBuffer(id), throttleBy);
+            buffer = {
+                data: [data],
+                timeoutId: timeoutId,
+                dispose: () => {
+                    clearTimeout(timeoutId);
+                    this.flushBuffer(id);
+                    disposable.dispose();
+                }
+            };
+            this._terminalBufferMap.set(id, buffer);
+        });
+        return disposable;
+    }
+    stopBuffering(id) {
+        const buffer = this._terminalBufferMap.get(id);
+        buffer?.dispose();
+    }
+    flushBuffer(id) {
+        const buffer = this._terminalBufferMap.get(id);
+        if (buffer) {
+            this._terminalBufferMap.delete(id);
+            this._callback(id, buffer.data.join(''));
+        }
+    }
+}

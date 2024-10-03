@@ -1,3 +1,539 @@
-var j=Object.defineProperty;var J=Object.getOwnPropertyDescriptor;var A=(d,r,e,a)=>{for(var o=a>1?void 0:a?J(r,e):r,t=d.length-1,s;t>=0;t--)(s=d[t])&&(o=(a?s(r,e,o):s(o))||o);return a&&o&&j(r,e,o),o},c=(d,r)=>(e,a)=>r(e,a,d);import{DataTransfers as E}from"../../base/browser/dnd.js";import{DragAndDropObserver as W,EventType as U,addDisposableListener as F,onDidRegisterWindow as q}from"../../base/browser/dom.js";import"../../base/browser/mouseEvent.js";import"../../base/browser/ui/list/list.js";import"../../base/browser/ui/list/listView.js";import"../../base/browser/ui/tree/tree.js";import{coalesce as S}from"../../base/common/arrays.js";import{UriList as T}from"../../base/common/dataTransfer.js";import{Emitter as k,Event as z}from"../../base/common/event.js";import{Disposable as V,DisposableStore as M,markAsSingleton as K}from"../../base/common/lifecycle.js";import{stringify as X}from"../../base/common/marshalling.js";import{Mimes as O}from"../../base/common/mime.js";import{FileAccess as Q,Schemas as b}from"../../base/common/network.js";import{isWindows as Y}from"../../base/common/platform.js";import{basename as N,isEqual as Z}from"../../base/common/resources.js";import{URI as x}from"../../base/common/uri.js";import{CodeDataTransfers as $,Extensions as ee,LocalSelectionTransfer as re,createDraggedEditorInputFromRawResourcesData as te,extractEditorsAndFilesDropData as ae}from"../../platform/dnd/browser/dnd.js";import{IFileService as G}from"../../platform/files/common/files.js";import{IInstantiationService as _}from"../../platform/instantiation/common/instantiation.js";import{ILabelService as oe}from"../../platform/label/common/label.js";import{extractSelection as ie}from"../../platform/opener/common/opener.js";import{Registry as ne}from"../../platform/registry/common/platform.js";import"../../platform/window/common/window.js";import{IWorkspaceContextService as se,hasWorkspaceFileExtension as de,isTemporaryWorkspace as ge}from"../../platform/workspace/common/workspace.js";import{IWorkspacesService as De}from"../../platform/workspaces/common/workspaces.js";import{EditorResourceAccessor as pe,isEditorIdentifier as P,isResourceDiffEditorInput as ce,isResourceMergeEditorInput as fe,isResourceSideBySideEditorInput as ve}from"../common/editor.js";import"../services/editor/common/editorGroupsService.js";import{IEditorService as B}from"../services/editor/common/editorService.js";import{IHostService as ue}from"../services/host/browser/host.js";import{ITextFileService as le}from"../services/textfile/common/textfiles.js";import{IWorkspaceEditingService as me}from"../services/workspaces/common/workspaceEditing.js";import"../../platform/editor/common/editor.js";import{mainWindow as he}from"../../base/browser/window.js";import{BroadcastDataChannel as Ie}from"../../base/browser/broadcast.js";class wr{constructor(r){this.identifier=r}}class yr{constructor(r){this.identifier=r}}async function Ar(d){const r=[],e=O.uriList.toLowerCase();if(d.has(e))try{const a=await d.get(e)?.asString(),o=JSON.stringify(T.parse(a??""));r.push(...te(o))}catch{}return r}let w=class{constructor(r,e,a,o,t,s,p,u){this.options=r;this.fileService=e;this.workspacesService=a;this.editorService=o;this.workspaceEditingService=t;this.hostService=s;this.contextService=p;this.instantiationService=u}async handleDrop(r,e,a,o,t){const s=await this.instantiationService.invokeFunction(g=>ae(g,r));if(!s.length)return;if(await this.hostService.focus(e),this.options.allowWorkspaceOpen){const g=S(s.filter(f=>f.allowWorkspaceOpen&&f.resource?.scheme===b.file).map(f=>f.resource));if(g.length>0&&await this.handleWorkspaceDrop(g))return}const p=S(s.filter(g=>g.isExternal&&g.resource?.scheme===b.file).map(g=>g.resource));p.length&&this.workspacesService.addRecentlyOpened(p.map(g=>({fileUri:g})));const u=a?.();await this.editorService.openEditors(s.map(g=>({...g,resource:g.resource,options:{...g.options,...t,pinned:!0}})),u,{validateTrust:!0}),o?.(u)}async handleWorkspaceDrop(r){const e=[],a=[];return await Promise.all(r.map(async o=>{if(de(o)){e.push({workspaceUri:o});return}try{const t=await this.fileService.stat(o);t.isDirectory&&(e.push({folderUri:t.resource}),a.push({uri:t.resource}))}catch{}})),e.length===0?!1:(e.length>a.length||a.length===1?await this.hostService.openWindow(e):ge(this.contextService.getWorkspace())?await this.workspaceEditingService.addFolders(a):await this.workspaceEditingService.createAndEnterWorkspace(a),!0)}};w=A([c(1,G),c(2,De),c(3,B),c(4,me),c(5,ue),c(6,se),c(7,_)],w);function Ee(d,r,e,a){if(r.length===0||!e.dataTransfer)return;const o=d.get(le),t=d.get(B),s=d.get(G),p=d.get(oe),u=S(r.map(i=>x.isUri(i)?{resource:i}:P(i)?x.isUri(i.editor.resource)?{resource:i.editor.resource}:void 0:i)),g=u.filter(({resource:i})=>s.hasProvider(i));if(!a?.disableStandardTransfer){const i=Y?`\r
-`:`
-`;e.dataTransfer.setData(E.TEXT,g.map(({resource:D})=>p.getUriLabel(D,{noPrefix:!0})).join(i));const n=g.find(({isDirectory:D})=>!D);if(n){const D=Q.uriToFileUri(n.resource);D.scheme===b.file&&e.dataTransfer.setData(E.DOWNLOAD_URL,[O.binary,N(n.resource),D.toString()].join(":"))}}const f=g.filter(({isDirectory:i})=>!i);f.length&&e.dataTransfer.setData(E.RESOURCES,JSON.stringify(f.map(({resource:i})=>i.toString())));const H=ne.as(ee.DragAndDropContribution).getAll();for(const i of H)i.setData(u,e);const I=[];for(const i of r){let n;if(P(i)){const D=i.editor.toUntyped({preserveViewState:i.groupId});D&&(n={...D,resource:pe.getCanonicalUri(D)})}else if(x.isUri(i)){const{selection:D,uri:v}=ie(i);n={resource:v,options:D?{selection:D}:void 0}}else i.isDirectory||(n={resource:i.resource});if(n){{const D=n.resource;if(D){const v=o.files.get(D);v&&(typeof n.languageId!="string"&&(n.languageId=v.getLanguageId()),typeof n.encoding!="string"&&(n.encoding=v.getEncoding()),typeof n.contents!="string"&&v.isDirty()&&!v.textEditorModel.isTooLargeForHeapOperation()&&(n.contents=v.textEditorModel.getValue())),n.options?.viewState||(n.options={...n.options,viewState:(()=>{for(const C of t.visibleEditorPanes)if(Z(C.input.resource,D)){const L=C.getViewState();if(L)return L}})()})}}I.push(n)}}if(I.length){e.dataTransfer.setData($.EDITORS,X(I));const i=[];for(const n of I)n.resource?i.push(n.resource):ce(n)?n.modified.resource&&i.push(n.modified.resource):ve(n)?n.primary.resource&&i.push(n.primary.resource):fe(n)&&i.push(n.result.resource);a?.disableStandardTransfer||e.dataTransfer.setData(O.uriList,T.create(i.slice(0,1))),e.dataTransfer.setData(E.INTERNAL_URI_LIST,T.create(i))}}class Se{constructor(r,e){this.type=r;this.id=e}update(r){}getData(){return{type:this.type,id:this.id}}}class m{constructor(r){this.compositeId=r}get id(){return this.compositeId}}class h{constructor(r){this.viewId=r}get id(){return this.viewId}}class l extends V{static instance;static get INSTANCE(){return l.instance||(l.instance=new l,K(l.instance)),l.instance}transferData=re.getInstance();onDragStart=this._register(new k);onDragEnd=this._register(new k);constructor(){super(),this._register(this.onDragEnd.event(r=>{const e=r.dragAndDropData.getData().id,a=r.dragAndDropData.getData().type;this.readDragData(a)?.getData().id===e&&this.transferData.clearData(a==="view"?h.prototype:m.prototype)}))}readDragData(r){if(this.transferData.hasData(r==="view"?h.prototype:m.prototype)){const e=this.transferData.getData(r==="view"?h.prototype:m.prototype);if(e&&e[0])return new Se(r,e[0].id)}}writeDragData(r,e){this.transferData.setData([e==="view"?new h(r):new m(r)],e==="view"?h.prototype:m.prototype)}registerTarget(r,e){const a=new M;return a.add(new W(r,{onDragEnter:o=>{if(o.preventDefault(),e.onDragEnter){const t=this.readDragData("composite")||this.readDragData("view");t&&e.onDragEnter({eventData:o,dragAndDropData:t})}},onDragLeave:o=>{const t=this.readDragData("composite")||this.readDragData("view");e.onDragLeave&&t&&e.onDragLeave({eventData:o,dragAndDropData:t})},onDrop:o=>{if(e.onDrop){const t=this.readDragData("composite")||this.readDragData("view");if(!t)return;e.onDrop({eventData:o,dragAndDropData:t}),this.onDragEnd.fire({eventData:o,dragAndDropData:t})}},onDragOver:o=>{if(o.preventDefault(),e.onDragOver){const t=this.readDragData("composite")||this.readDragData("view");if(!t)return;e.onDragOver({eventData:o,dragAndDropData:t})}}})),e.onDragStart&&this.onDragStart.event(o=>{e.onDragStart(o)},this,a),e.onDragEnd&&this.onDragEnd.event(o=>{e.onDragEnd(o)},this,a),this._register(a)}registerDraggable(r,e,a){r.draggable=!0;const o=new M;return o.add(new W(r,{onDragStart:t=>{const{id:s,type:p}=e();this.writeDragData(s,p),t.dataTransfer?.setDragImage(r,0,0),this.onDragStart.fire({eventData:t,dragAndDropData:this.readDragData(p)})},onDragEnd:t=>{const{type:s}=e(),p=this.readDragData(s);p&&this.onDragEnd.fire({eventData:t,dragAndDropData:p})},onDragEnter:t=>{if(a.onDragEnter){const s=this.readDragData("composite")||this.readDragData("view");if(!s)return;s&&a.onDragEnter({eventData:t,dragAndDropData:s})}},onDragLeave:t=>{const s=this.readDragData("composite")||this.readDragData("view");s&&a.onDragLeave?.({eventData:t,dragAndDropData:s})},onDrop:t=>{if(a.onDrop){const s=this.readDragData("composite")||this.readDragData("view");if(!s)return;a.onDrop({eventData:t,dragAndDropData:s}),this.onDragEnd.fire({eventData:t,dragAndDropData:s})}},onDragOver:t=>{if(a.onDragOver){const s=this.readDragData("composite")||this.readDragData("view");if(!s)return;a.onDragOver({eventData:t,dragAndDropData:s})}}})),a.onDragStart&&this.onDragStart.event(t=>{a.onDragStart(t)},this,o),a.onDragEnd&&this.onDragEnd.event(t=>{a.onDragEnd(t)},this,o),this._register(o)}}function Tr(d,r,e){d&&(d.dropEffect=e?r:"none")}let y=class{constructor(r,e){this.toResource=r;this.instantiationService=e}getDragURI(r){const e=this.toResource(r);return e?e.toString():null}getDragLabel(r){const e=S(r.map(this.toResource));return e.length===1?N(e[0]):e.length>1?String(e.length):void 0}onDragStart(r,e){const a=[];for(const o of r.elements){const t=this.toResource(o);t&&a.push(t)}a.length&&this.instantiationService.invokeFunction(o=>Ee(o,a,e))}onDragOver(r,e,a,o,t){return!1}drop(r,e,a,o,t){}dispose(){}};y=A([c(1,_)],y);class R extends V{static CHANNEL_NAME="monaco-workbench-global-dragged-over";broadcaster=this._register(new Ie(R.CHANNEL_NAME));constructor(){super(),this.registerListeners()}registerListeners(){this._register(z.runAndSubscribe(q,({window:r,disposables:e})=>{e.add(F(r,U.DRAG_OVER,()=>this.markDraggedOver(!1),!0)),e.add(F(r,U.DRAG_LEAVE,()=>this.clearDraggedOver(!1),!0))},{window:he,disposables:this._store})),this._register(this.broadcaster.onDidReceiveData(r=>{r===!0?this.markDraggedOver(!0):this.clearDraggedOver(!0)}))}draggedOver=!1;get isDraggedOver(){return this.draggedOver}markDraggedOver(r){this.draggedOver!==!0&&(this.draggedOver=!0,r||this.broadcaster.postData(!0))}clearDraggedOver(r){this.draggedOver!==!1&&(this.draggedOver=!1,r||this.broadcaster.postData(!1))}}const we=new R;function Or(){return we.isDraggedOver}export{Se as CompositeDragAndDropData,l as CompositeDragAndDropObserver,m as DraggedCompositeIdentifier,yr as DraggedEditorGroupIdentifier,wr as DraggedEditorIdentifier,h as DraggedViewIdentifier,y as ResourceListDnDHandler,w as ResourcesDropHandler,Ar as extractTreeDropData,Ee as fillEditorsDragData,Or as isWindowDraggedOver,Tr as toggleDropEffect};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { DataTransfers } from '../../base/browser/dnd.js';
+import { DragAndDropObserver, EventType, addDisposableListener, onDidRegisterWindow } from '../../base/browser/dom.js';
+import { coalesce } from '../../base/common/arrays.js';
+import { UriList } from '../../base/common/dataTransfer.js';
+import { Emitter, Event } from '../../base/common/event.js';
+import { Disposable, DisposableStore, markAsSingleton } from '../../base/common/lifecycle.js';
+import { stringify } from '../../base/common/marshalling.js';
+import { Mimes } from '../../base/common/mime.js';
+import { FileAccess, Schemas } from '../../base/common/network.js';
+import { isWindows } from '../../base/common/platform.js';
+import { basename, isEqual } from '../../base/common/resources.js';
+import { URI } from '../../base/common/uri.js';
+import { CodeDataTransfers, Extensions, LocalSelectionTransfer, createDraggedEditorInputFromRawResourcesData, extractEditorsAndFilesDropData } from '../../platform/dnd/browser/dnd.js';
+import { IFileService } from '../../platform/files/common/files.js';
+import { IInstantiationService } from '../../platform/instantiation/common/instantiation.js';
+import { ILabelService } from '../../platform/label/common/label.js';
+import { extractSelection } from '../../platform/opener/common/opener.js';
+import { Registry } from '../../platform/registry/common/platform.js';
+import { IWorkspaceContextService, hasWorkspaceFileExtension, isTemporaryWorkspace } from '../../platform/workspace/common/workspace.js';
+import { IWorkspacesService } from '../../platform/workspaces/common/workspaces.js';
+import { EditorResourceAccessor, isEditorIdentifier, isResourceDiffEditorInput, isResourceMergeEditorInput, isResourceSideBySideEditorInput } from '../common/editor.js';
+import { IEditorService } from '../services/editor/common/editorService.js';
+import { IHostService } from '../services/host/browser/host.js';
+import { ITextFileService } from '../services/textfile/common/textfiles.js';
+import { IWorkspaceEditingService } from '../services/workspaces/common/workspaceEditing.js';
+import { mainWindow } from '../../base/browser/window.js';
+import { BroadcastDataChannel } from '../../base/browser/broadcast.js';
+export class DraggedEditorIdentifier {
+    constructor(identifier) {
+        this.identifier = identifier;
+    }
+}
+export class DraggedEditorGroupIdentifier {
+    constructor(identifier) {
+        this.identifier = identifier;
+    }
+}
+export async function extractTreeDropData(dataTransfer) {
+    const editors = [];
+    const resourcesKey = Mimes.uriList.toLowerCase();
+    if (dataTransfer.has(resourcesKey)) {
+        try {
+            const asString = await dataTransfer.get(resourcesKey)?.asString();
+            const rawResourcesData = JSON.stringify(UriList.parse(asString ?? ''));
+            editors.push(...createDraggedEditorInputFromRawResourcesData(rawResourcesData));
+        }
+        catch (error) {
+        }
+    }
+    return editors;
+}
+let ResourcesDropHandler = class ResourcesDropHandler {
+    constructor(options, fileService, workspacesService, editorService, workspaceEditingService, hostService, contextService, instantiationService) {
+        this.options = options;
+        this.fileService = fileService;
+        this.workspacesService = workspacesService;
+        this.editorService = editorService;
+        this.workspaceEditingService = workspaceEditingService;
+        this.hostService = hostService;
+        this.contextService = contextService;
+        this.instantiationService = instantiationService;
+    }
+    async handleDrop(event, targetWindow, resolveTargetGroup, afterDrop, options) {
+        const editors = await this.instantiationService.invokeFunction(accessor => extractEditorsAndFilesDropData(accessor, event));
+        if (!editors.length) {
+            return;
+        }
+        await this.hostService.focus(targetWindow);
+        if (this.options.allowWorkspaceOpen) {
+            const localFilesAllowedToOpenAsWorkspace = coalesce(editors.filter(editor => editor.allowWorkspaceOpen && editor.resource?.scheme === Schemas.file).map(editor => editor.resource));
+            if (localFilesAllowedToOpenAsWorkspace.length > 0) {
+                const isWorkspaceOpening = await this.handleWorkspaceDrop(localFilesAllowedToOpenAsWorkspace);
+                if (isWorkspaceOpening) {
+                    return;
+                }
+            }
+        }
+        const externalLocalFiles = coalesce(editors.filter(editor => editor.isExternal && editor.resource?.scheme === Schemas.file).map(editor => editor.resource));
+        if (externalLocalFiles.length) {
+            this.workspacesService.addRecentlyOpened(externalLocalFiles.map(resource => ({ fileUri: resource })));
+        }
+        const targetGroup = resolveTargetGroup?.();
+        await this.editorService.openEditors(editors.map(editor => ({
+            ...editor,
+            resource: editor.resource,
+            options: {
+                ...editor.options,
+                ...options,
+                pinned: true
+            }
+        })), targetGroup, { validateTrust: true });
+        afterDrop?.(targetGroup);
+    }
+    async handleWorkspaceDrop(resources) {
+        const toOpen = [];
+        const folderURIs = [];
+        await Promise.all(resources.map(async (resource) => {
+            if (hasWorkspaceFileExtension(resource)) {
+                toOpen.push({ workspaceUri: resource });
+                return;
+            }
+            try {
+                const stat = await this.fileService.stat(resource);
+                if (stat.isDirectory) {
+                    toOpen.push({ folderUri: stat.resource });
+                    folderURIs.push({ uri: stat.resource });
+                }
+            }
+            catch (error) {
+            }
+        }));
+        if (toOpen.length === 0) {
+            return false;
+        }
+        if (toOpen.length > folderURIs.length || folderURIs.length === 1) {
+            await this.hostService.openWindow(toOpen);
+        }
+        else if (isTemporaryWorkspace(this.contextService.getWorkspace())) {
+            await this.workspaceEditingService.addFolders(folderURIs);
+        }
+        else {
+            await this.workspaceEditingService.createAndEnterWorkspace(folderURIs);
+        }
+        return true;
+    }
+};
+ResourcesDropHandler = __decorate([
+    __param(1, IFileService),
+    __param(2, IWorkspacesService),
+    __param(3, IEditorService),
+    __param(4, IWorkspaceEditingService),
+    __param(5, IHostService),
+    __param(6, IWorkspaceContextService),
+    __param(7, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], ResourcesDropHandler);
+export { ResourcesDropHandler };
+export function fillEditorsDragData(accessor, resourcesOrEditors, event, options) {
+    if (resourcesOrEditors.length === 0 || !event.dataTransfer) {
+        return;
+    }
+    const textFileService = accessor.get(ITextFileService);
+    const editorService = accessor.get(IEditorService);
+    const fileService = accessor.get(IFileService);
+    const labelService = accessor.get(ILabelService);
+    const resources = coalesce(resourcesOrEditors.map(resourceOrEditor => {
+        if (URI.isUri(resourceOrEditor)) {
+            return { resource: resourceOrEditor };
+        }
+        if (isEditorIdentifier(resourceOrEditor)) {
+            if (URI.isUri(resourceOrEditor.editor.resource)) {
+                return { resource: resourceOrEditor.editor.resource };
+            }
+            return undefined;
+        }
+        return resourceOrEditor;
+    }));
+    const fileSystemResources = resources.filter(({ resource }) => fileService.hasProvider(resource));
+    if (!options?.disableStandardTransfer) {
+        const lineDelimiter = isWindows ? '\r\n' : '\n';
+        event.dataTransfer.setData(DataTransfers.TEXT, fileSystemResources.map(({ resource }) => labelService.getUriLabel(resource, { noPrefix: true })).join(lineDelimiter));
+        const firstFile = fileSystemResources.find(({ isDirectory }) => !isDirectory);
+        if (firstFile) {
+            const firstFileUri = FileAccess.uriToFileUri(firstFile.resource);
+            if (firstFileUri.scheme === Schemas.file) {
+                event.dataTransfer.setData(DataTransfers.DOWNLOAD_URL, [Mimes.binary, basename(firstFile.resource), firstFileUri.toString()].join(':'));
+            }
+        }
+    }
+    const files = fileSystemResources.filter(({ isDirectory }) => !isDirectory);
+    if (files.length) {
+        event.dataTransfer.setData(DataTransfers.RESOURCES, JSON.stringify(files.map(({ resource }) => resource.toString())));
+    }
+    const contributions = Registry.as(Extensions.DragAndDropContribution).getAll();
+    for (const contribution of contributions) {
+        contribution.setData(resources, event);
+    }
+    const draggedEditors = [];
+    for (const resourceOrEditor of resourcesOrEditors) {
+        let editor = undefined;
+        if (isEditorIdentifier(resourceOrEditor)) {
+            const untypedEditor = resourceOrEditor.editor.toUntyped({ preserveViewState: resourceOrEditor.groupId });
+            if (untypedEditor) {
+                editor = { ...untypedEditor, resource: EditorResourceAccessor.getCanonicalUri(untypedEditor) };
+            }
+        }
+        else if (URI.isUri(resourceOrEditor)) {
+            const { selection, uri } = extractSelection(resourceOrEditor);
+            editor = { resource: uri, options: selection ? { selection } : undefined };
+        }
+        else if (!resourceOrEditor.isDirectory) {
+            editor = { resource: resourceOrEditor.resource };
+        }
+        if (!editor) {
+            continue;
+        }
+        {
+            const resource = editor.resource;
+            if (resource) {
+                const textFileModel = textFileService.files.get(resource);
+                if (textFileModel) {
+                    if (typeof editor.languageId !== 'string') {
+                        editor.languageId = textFileModel.getLanguageId();
+                    }
+                    if (typeof editor.encoding !== 'string') {
+                        editor.encoding = textFileModel.getEncoding();
+                    }
+                    if (typeof editor.contents !== 'string' && textFileModel.isDirty() && !textFileModel.textEditorModel.isTooLargeForHeapOperation()) {
+                        editor.contents = textFileModel.textEditorModel.getValue();
+                    }
+                }
+                if (!editor.options?.viewState) {
+                    editor.options = {
+                        ...editor.options,
+                        viewState: (() => {
+                            for (const visibleEditorPane of editorService.visibleEditorPanes) {
+                                if (isEqual(visibleEditorPane.input.resource, resource)) {
+                                    const viewState = visibleEditorPane.getViewState();
+                                    if (viewState) {
+                                        return viewState;
+                                    }
+                                }
+                            }
+                            return undefined;
+                        })()
+                    };
+                }
+            }
+        }
+        draggedEditors.push(editor);
+    }
+    if (draggedEditors.length) {
+        event.dataTransfer.setData(CodeDataTransfers.EDITORS, stringify(draggedEditors));
+        const uriListEntries = [];
+        for (const editor of draggedEditors) {
+            if (editor.resource) {
+                uriListEntries.push(editor.resource);
+            }
+            else if (isResourceDiffEditorInput(editor)) {
+                if (editor.modified.resource) {
+                    uriListEntries.push(editor.modified.resource);
+                }
+            }
+            else if (isResourceSideBySideEditorInput(editor)) {
+                if (editor.primary.resource) {
+                    uriListEntries.push(editor.primary.resource);
+                }
+            }
+            else if (isResourceMergeEditorInput(editor)) {
+                uriListEntries.push(editor.result.resource);
+            }
+        }
+        if (!options?.disableStandardTransfer) {
+            event.dataTransfer.setData(Mimes.uriList, UriList.create(uriListEntries.slice(0, 1)));
+        }
+        event.dataTransfer.setData(DataTransfers.INTERNAL_URI_LIST, UriList.create(uriListEntries));
+    }
+}
+export class CompositeDragAndDropData {
+    constructor(type, id) {
+        this.type = type;
+        this.id = id;
+    }
+    update(dataTransfer) {
+    }
+    getData() {
+        return { type: this.type, id: this.id };
+    }
+}
+export class DraggedCompositeIdentifier {
+    constructor(compositeId) {
+        this.compositeId = compositeId;
+    }
+    get id() {
+        return this.compositeId;
+    }
+}
+export class DraggedViewIdentifier {
+    constructor(viewId) {
+        this.viewId = viewId;
+    }
+    get id() {
+        return this.viewId;
+    }
+}
+export class CompositeDragAndDropObserver extends Disposable {
+    static get INSTANCE() {
+        if (!CompositeDragAndDropObserver.instance) {
+            CompositeDragAndDropObserver.instance = new CompositeDragAndDropObserver();
+            markAsSingleton(CompositeDragAndDropObserver.instance);
+        }
+        return CompositeDragAndDropObserver.instance;
+    }
+    constructor() {
+        super();
+        this.transferData = LocalSelectionTransfer.getInstance();
+        this.onDragStart = this._register(new Emitter());
+        this.onDragEnd = this._register(new Emitter());
+        this._register(this.onDragEnd.event(e => {
+            const id = e.dragAndDropData.getData().id;
+            const type = e.dragAndDropData.getData().type;
+            const data = this.readDragData(type);
+            if (data?.getData().id === id) {
+                this.transferData.clearData(type === 'view' ? DraggedViewIdentifier.prototype : DraggedCompositeIdentifier.prototype);
+            }
+        }));
+    }
+    readDragData(type) {
+        if (this.transferData.hasData(type === 'view' ? DraggedViewIdentifier.prototype : DraggedCompositeIdentifier.prototype)) {
+            const data = this.transferData.getData(type === 'view' ? DraggedViewIdentifier.prototype : DraggedCompositeIdentifier.prototype);
+            if (data && data[0]) {
+                return new CompositeDragAndDropData(type, data[0].id);
+            }
+        }
+        return undefined;
+    }
+    writeDragData(id, type) {
+        this.transferData.setData([type === 'view' ? new DraggedViewIdentifier(id) : new DraggedCompositeIdentifier(id)], type === 'view' ? DraggedViewIdentifier.prototype : DraggedCompositeIdentifier.prototype);
+    }
+    registerTarget(element, callbacks) {
+        const disposableStore = new DisposableStore();
+        disposableStore.add(new DragAndDropObserver(element, {
+            onDragEnter: e => {
+                e.preventDefault();
+                if (callbacks.onDragEnter) {
+                    const data = this.readDragData('composite') || this.readDragData('view');
+                    if (data) {
+                        callbacks.onDragEnter({ eventData: e, dragAndDropData: data });
+                    }
+                }
+            },
+            onDragLeave: e => {
+                const data = this.readDragData('composite') || this.readDragData('view');
+                if (callbacks.onDragLeave && data) {
+                    callbacks.onDragLeave({ eventData: e, dragAndDropData: data });
+                }
+            },
+            onDrop: e => {
+                if (callbacks.onDrop) {
+                    const data = this.readDragData('composite') || this.readDragData('view');
+                    if (!data) {
+                        return;
+                    }
+                    callbacks.onDrop({ eventData: e, dragAndDropData: data });
+                    this.onDragEnd.fire({ eventData: e, dragAndDropData: data });
+                }
+            },
+            onDragOver: e => {
+                e.preventDefault();
+                if (callbacks.onDragOver) {
+                    const data = this.readDragData('composite') || this.readDragData('view');
+                    if (!data) {
+                        return;
+                    }
+                    callbacks.onDragOver({ eventData: e, dragAndDropData: data });
+                }
+            }
+        }));
+        if (callbacks.onDragStart) {
+            this.onDragStart.event(e => {
+                callbacks.onDragStart(e);
+            }, this, disposableStore);
+        }
+        if (callbacks.onDragEnd) {
+            this.onDragEnd.event(e => {
+                callbacks.onDragEnd(e);
+            }, this, disposableStore);
+        }
+        return this._register(disposableStore);
+    }
+    registerDraggable(element, draggedItemProvider, callbacks) {
+        element.draggable = true;
+        const disposableStore = new DisposableStore();
+        disposableStore.add(new DragAndDropObserver(element, {
+            onDragStart: e => {
+                const { id, type } = draggedItemProvider();
+                this.writeDragData(id, type);
+                e.dataTransfer?.setDragImage(element, 0, 0);
+                this.onDragStart.fire({ eventData: e, dragAndDropData: this.readDragData(type) });
+            },
+            onDragEnd: e => {
+                const { type } = draggedItemProvider();
+                const data = this.readDragData(type);
+                if (!data) {
+                    return;
+                }
+                this.onDragEnd.fire({ eventData: e, dragAndDropData: data });
+            },
+            onDragEnter: e => {
+                if (callbacks.onDragEnter) {
+                    const data = this.readDragData('composite') || this.readDragData('view');
+                    if (!data) {
+                        return;
+                    }
+                    if (data) {
+                        callbacks.onDragEnter({ eventData: e, dragAndDropData: data });
+                    }
+                }
+            },
+            onDragLeave: e => {
+                const data = this.readDragData('composite') || this.readDragData('view');
+                if (!data) {
+                    return;
+                }
+                callbacks.onDragLeave?.({ eventData: e, dragAndDropData: data });
+            },
+            onDrop: e => {
+                if (callbacks.onDrop) {
+                    const data = this.readDragData('composite') || this.readDragData('view');
+                    if (!data) {
+                        return;
+                    }
+                    callbacks.onDrop({ eventData: e, dragAndDropData: data });
+                    this.onDragEnd.fire({ eventData: e, dragAndDropData: data });
+                }
+            },
+            onDragOver: e => {
+                if (callbacks.onDragOver) {
+                    const data = this.readDragData('composite') || this.readDragData('view');
+                    if (!data) {
+                        return;
+                    }
+                    callbacks.onDragOver({ eventData: e, dragAndDropData: data });
+                }
+            }
+        }));
+        if (callbacks.onDragStart) {
+            this.onDragStart.event(e => {
+                callbacks.onDragStart(e);
+            }, this, disposableStore);
+        }
+        if (callbacks.onDragEnd) {
+            this.onDragEnd.event(e => {
+                callbacks.onDragEnd(e);
+            }, this, disposableStore);
+        }
+        return this._register(disposableStore);
+    }
+}
+export function toggleDropEffect(dataTransfer, dropEffect, shouldHaveIt) {
+    if (!dataTransfer) {
+        return;
+    }
+    dataTransfer.dropEffect = shouldHaveIt ? dropEffect : 'none';
+}
+let ResourceListDnDHandler = class ResourceListDnDHandler {
+    constructor(toResource, instantiationService) {
+        this.toResource = toResource;
+        this.instantiationService = instantiationService;
+    }
+    getDragURI(element) {
+        const resource = this.toResource(element);
+        return resource ? resource.toString() : null;
+    }
+    getDragLabel(elements) {
+        const resources = coalesce(elements.map(this.toResource));
+        return resources.length === 1 ? basename(resources[0]) : resources.length > 1 ? String(resources.length) : undefined;
+    }
+    onDragStart(data, originalEvent) {
+        const resources = [];
+        for (const element of data.elements) {
+            const resource = this.toResource(element);
+            if (resource) {
+                resources.push(resource);
+            }
+        }
+        if (resources.length) {
+            this.instantiationService.invokeFunction(accessor => fillEditorsDragData(accessor, resources, originalEvent));
+        }
+    }
+    onDragOver(data, targetElement, targetIndex, targetSector, originalEvent) {
+        return false;
+    }
+    drop(data, targetElement, targetIndex, targetSector, originalEvent) { }
+    dispose() { }
+};
+ResourceListDnDHandler = __decorate([
+    __param(1, IInstantiationService),
+    __metadata("design:paramtypes", [Function, Object])
+], ResourceListDnDHandler);
+export { ResourceListDnDHandler };
+class GlobalWindowDraggedOverTracker extends Disposable {
+    static { this.CHANNEL_NAME = 'monaco-workbench-global-dragged-over'; }
+    constructor() {
+        super();
+        this.broadcaster = this._register(new BroadcastDataChannel(GlobalWindowDraggedOverTracker.CHANNEL_NAME));
+        this.draggedOver = false;
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(Event.runAndSubscribe(onDidRegisterWindow, ({ window, disposables }) => {
+            disposables.add(addDisposableListener(window, EventType.DRAG_OVER, () => this.markDraggedOver(false), true));
+            disposables.add(addDisposableListener(window, EventType.DRAG_LEAVE, () => this.clearDraggedOver(false), true));
+        }, { window: mainWindow, disposables: this._store }));
+        this._register(this.broadcaster.onDidReceiveData(data => {
+            if (data === true) {
+                this.markDraggedOver(true);
+            }
+            else {
+                this.clearDraggedOver(true);
+            }
+        }));
+    }
+    get isDraggedOver() { return this.draggedOver; }
+    markDraggedOver(fromBroadcast) {
+        if (this.draggedOver === true) {
+            return;
+        }
+        this.draggedOver = true;
+        if (!fromBroadcast) {
+            this.broadcaster.postData(true);
+        }
+    }
+    clearDraggedOver(fromBroadcast) {
+        if (this.draggedOver === false) {
+            return;
+        }
+        this.draggedOver = false;
+        if (!fromBroadcast) {
+            this.broadcaster.postData(false);
+        }
+    }
+}
+const globalDraggedOverTracker = new GlobalWindowDraggedOverTracker();
+export function isWindowDraggedOver() {
+    return globalDraggedOverTracker.isDraggedOver;
+}

@@ -1,1 +1,23 @@
-import"./contentHoverComputer.js";import"./hoverTypes.js";class s{constructor(o,e,t){this.hoverParts=o;this.isComplete=e;this.options=t}filter(o){const e=this.hoverParts.filter(t=>t.isValidForHoverAnchor(o));return e.length===this.hoverParts.length?this:new l(this,e,this.isComplete,this.options)}}class l extends s{constructor(e,t,n,i){super(t,n,i);this.original=e}filter(e){return this.original.filter(e)}}export{s as ContentHoverResult,l as FilteredContentHoverResult};
+export class ContentHoverResult {
+    constructor(hoverParts, isComplete, options) {
+        this.hoverParts = hoverParts;
+        this.isComplete = isComplete;
+        this.options = options;
+    }
+    filter(anchor) {
+        const filteredHoverParts = this.hoverParts.filter((m) => m.isValidForHoverAnchor(anchor));
+        if (filteredHoverParts.length === this.hoverParts.length) {
+            return this;
+        }
+        return new FilteredContentHoverResult(this, filteredHoverParts, this.isComplete, this.options);
+    }
+}
+export class FilteredContentHoverResult extends ContentHoverResult {
+    constructor(original, messages, isComplete, options) {
+        super(messages, isComplete, options);
+        this.original = original;
+    }
+    filter(anchor) {
+        return this.original.filter(anchor);
+    }
+}

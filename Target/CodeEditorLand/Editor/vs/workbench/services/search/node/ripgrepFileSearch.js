@@ -1,1 +1,135 @@
-import*as d from"child_process";import*as u from"../../../../base/common/path.js";import"../../../../base/common/glob.js";import{normalizeNFD as c}from"../../../../base/common/normalization.js";import*as I from"../../../../base/common/extpath.js";import{isMacintosh as f}from"../../../../base/common/platform.js";import*as b from"../../../../base/common/strings.js";import"../common/search.js";import{anchorGlob as p}from"./ripgrepSearchUtils.js";import{rgPath as x}from"@vscode/ripgrep";const h=x.replace(/\bnode_modules\.asar\b/,"node_modules.asar.unpacked");function q(r,o,l,t,n){const s=E(r,o,l,t,n),i=o.folder.fsPath;return{cmd:d.spawn(h,s.args,{cwd:i}),rgDiskPath:h,siblingClauses:s.siblingClauses,rgArgs:s,cwd:i}}function E(r,o,l,t,n){const s=["--files","--hidden","--case-sensitive","--no-require-git"];F([o],l,!1).forEach(g=>{const e=p(g);if(s.push("-g",e),f){const a=c(e);a!==e&&s.push("-g",a)}});const i=C([o],t,void 0,!1);return i.globArgs.forEach(g=>{const e=`!${p(g)}`;if(s.push("-g",e),f){const a=c(e);a!==e&&s.push("-g",a)}}),o.disregardIgnoreFiles!==!1?s.push("--no-ignore"):o.disregardParentIgnoreFiles!==!1&&s.push("--no-ignore-parent"),o.ignoreSymlinks||s.push("--follow"),r.exists&&s.push("--quiet"),n&&s.push("--threads",`${n}`),s.push("--no-config"),o.disregardGlobalIgnoreFiles&&s.push("--no-ignore-global"),{args:s,siblingClauses:i.siblingClauses}}function C(r,o,l,t=!0){const n=[];let s={};return r.forEach(i=>{const g=Object.assign({},i.excludePattern||{},o||{}),e=m(g,t?i.folder.fsPath:void 0,l);n.push(...e.globArgs),e.siblingClauses&&(s=Object.assign(s,e.siblingClauses))}),{globArgs:n,siblingClauses:s}}function F(r,o,l=!0){const t=[];return r.forEach(n=>{const s=Object.assign({},o||{},n.includePattern||{}),i=m(s,l?n.folder.fsPath:void 0);t.push(...i.globArgs)}),t}function m(r,o,l){const t=[],n={};return Object.keys(r).forEach(s=>{if(l&&l.has(s)||!s)return;const i=r[s];s=R(o?A(o,s):s),s.startsWith("\\\\")?s="\\\\"+s.substr(2).replace(/\\/g,"/"):s=s.replace(/\\/g,"/"),typeof i=="boolean"&&i?(s.startsWith("\\\\")&&(s+="**"),t.push(G(s))):i&&i.when&&(n[s]=i)}),{globArgs:t,siblingClauses:n}}function A(r,o){return u.isAbsolute(o)?o:u.join(r,o)}function R(r){return r=b.rtrim(r,"\\"),b.rtrim(r,"/")}function G(r){return I.getRoot(r).toLowerCase()==="c:/"?r.replace(/^c:[/\\]/i,"/"):r}export{G as fixDriveC,A as getAbsoluteGlob,q as spawnRipgrepCmd};
+import * as cp from 'child_process';
+import * as path from '../../../../base/common/path.js';
+import { normalizeNFD } from '../../../../base/common/normalization.js';
+import * as extpath from '../../../../base/common/extpath.js';
+import { isMacintosh as isMac } from '../../../../base/common/platform.js';
+import * as strings from '../../../../base/common/strings.js';
+import { anchorGlob } from './ripgrepSearchUtils.js';
+import { rgPath } from '@vscode/ripgrep';
+const rgDiskPath = rgPath.replace(/\bnode_modules\.asar\b/, 'node_modules.asar.unpacked');
+export function spawnRipgrepCmd(config, folderQuery, includePattern, excludePattern, numThreads) {
+    const rgArgs = getRgArgs(config, folderQuery, includePattern, excludePattern, numThreads);
+    const cwd = folderQuery.folder.fsPath;
+    return {
+        cmd: cp.spawn(rgDiskPath, rgArgs.args, { cwd }),
+        rgDiskPath,
+        siblingClauses: rgArgs.siblingClauses,
+        rgArgs,
+        cwd
+    };
+}
+function getRgArgs(config, folderQuery, includePattern, excludePattern, numThreads) {
+    const args = ['--files', '--hidden', '--case-sensitive', '--no-require-git'];
+    foldersToIncludeGlobs([folderQuery], includePattern, false).forEach(globArg => {
+        const inclusion = anchorGlob(globArg);
+        args.push('-g', inclusion);
+        if (isMac) {
+            const normalized = normalizeNFD(inclusion);
+            if (normalized !== inclusion) {
+                args.push('-g', normalized);
+            }
+        }
+    });
+    const rgGlobs = foldersToRgExcludeGlobs([folderQuery], excludePattern, undefined, false);
+    rgGlobs.globArgs.forEach(globArg => {
+        const exclusion = `!${anchorGlob(globArg)}`;
+        args.push('-g', exclusion);
+        if (isMac) {
+            const normalized = normalizeNFD(exclusion);
+            if (normalized !== exclusion) {
+                args.push('-g', normalized);
+            }
+        }
+    });
+    if (folderQuery.disregardIgnoreFiles !== false) {
+        args.push('--no-ignore');
+    }
+    else if (folderQuery.disregardParentIgnoreFiles !== false) {
+        args.push('--no-ignore-parent');
+    }
+    if (!folderQuery.ignoreSymlinks) {
+        args.push('--follow');
+    }
+    if (config.exists) {
+        args.push('--quiet');
+    }
+    if (numThreads) {
+        args.push('--threads', `${numThreads}`);
+    }
+    args.push('--no-config');
+    if (folderQuery.disregardGlobalIgnoreFiles) {
+        args.push('--no-ignore-global');
+    }
+    return {
+        args,
+        siblingClauses: rgGlobs.siblingClauses
+    };
+}
+function foldersToRgExcludeGlobs(folderQueries, globalExclude, excludesToSkip, absoluteGlobs = true) {
+    const globArgs = [];
+    let siblingClauses = {};
+    folderQueries.forEach(folderQuery => {
+        const totalExcludePattern = Object.assign({}, folderQuery.excludePattern || {}, globalExclude || {});
+        const result = globExprsToRgGlobs(totalExcludePattern, absoluteGlobs ? folderQuery.folder.fsPath : undefined, excludesToSkip);
+        globArgs.push(...result.globArgs);
+        if (result.siblingClauses) {
+            siblingClauses = Object.assign(siblingClauses, result.siblingClauses);
+        }
+    });
+    return { globArgs, siblingClauses };
+}
+function foldersToIncludeGlobs(folderQueries, globalInclude, absoluteGlobs = true) {
+    const globArgs = [];
+    folderQueries.forEach(folderQuery => {
+        const totalIncludePattern = Object.assign({}, globalInclude || {}, folderQuery.includePattern || {});
+        const result = globExprsToRgGlobs(totalIncludePattern, absoluteGlobs ? folderQuery.folder.fsPath : undefined);
+        globArgs.push(...result.globArgs);
+    });
+    return globArgs;
+}
+function globExprsToRgGlobs(patterns, folder, excludesToSkip) {
+    const globArgs = [];
+    const siblingClauses = {};
+    Object.keys(patterns)
+        .forEach(key => {
+        if (excludesToSkip && excludesToSkip.has(key)) {
+            return;
+        }
+        if (!key) {
+            return;
+        }
+        const value = patterns[key];
+        key = trimTrailingSlash(folder ? getAbsoluteGlob(folder, key) : key);
+        if (key.startsWith('\\\\')) {
+            key = '\\\\' + key.substr(2).replace(/\\/g, '/');
+        }
+        else {
+            key = key.replace(/\\/g, '/');
+        }
+        if (typeof value === 'boolean' && value) {
+            if (key.startsWith('\\\\')) {
+                key += '**';
+            }
+            globArgs.push(fixDriveC(key));
+        }
+        else if (value && value.when) {
+            siblingClauses[key] = value;
+        }
+    });
+    return { globArgs, siblingClauses };
+}
+export function getAbsoluteGlob(folder, key) {
+    return path.isAbsolute(key) ?
+        key :
+        path.join(folder, key);
+}
+function trimTrailingSlash(str) {
+    str = strings.rtrim(str, '\\');
+    return strings.rtrim(str, '/');
+}
+export function fixDriveC(path) {
+    const root = extpath.getRoot(path);
+    return root.toLowerCase() === 'c:/' ?
+        path.replace(/^c:[/\\]/i, '/') :
+        path;
+}

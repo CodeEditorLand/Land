@@ -1,1 +1,46 @@
-import"../../../base/common/actions.js";import{Event as n}from"../../../base/common/event.js";import"../../../base/common/lifecycle.js";import r from"../../../base/common/severity.js";import{createDecorator as a}from"../../instantiation/common/instantiation.js";const g=r,N=a("notificationService");var s=(e=>(e[e.DEFAULT=0]="DEFAULT",e[e.SILENT=1]="SILENT",e[e.URGENT=2]="URGENT",e))(s||{}),c=(e=>(e[e.WORKSPACE=0]="WORKSPACE",e[e.PROFILE=1]="PROFILE",e[e.APPLICATION=2]="APPLICATION",e))(c||{});function x(i){if(i){const o=i;return typeof o.id=="string"&&typeof o.label=="string"}return!1}var d=(t=>(t[t.OFF=0]="OFF",t[t.ERROR=1]="ERROR",t))(d||{});class S{progress=new l;onDidClose=n.None;onDidChangeVisibility=n.None;updateSeverity(o){}updateMessage(o){}updateActions(o){}close(){}}class l{infinite(){}done(){}total(o){}worked(o){}}export{N as INotificationService,c as NeverShowAgainScope,S as NoOpNotification,l as NoOpProgress,s as NotificationPriority,d as NotificationsFilter,g as Severity,x as isNotificationSource};
+import { Event } from '../../../base/common/event.js';
+import BaseSeverity from '../../../base/common/severity.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export var Severity = BaseSeverity;
+export const INotificationService = createDecorator('notificationService');
+export var NotificationPriority;
+(function (NotificationPriority) {
+    NotificationPriority[NotificationPriority["DEFAULT"] = 0] = "DEFAULT";
+    NotificationPriority[NotificationPriority["SILENT"] = 1] = "SILENT";
+    NotificationPriority[NotificationPriority["URGENT"] = 2] = "URGENT";
+})(NotificationPriority || (NotificationPriority = {}));
+export var NeverShowAgainScope;
+(function (NeverShowAgainScope) {
+    NeverShowAgainScope[NeverShowAgainScope["WORKSPACE"] = 0] = "WORKSPACE";
+    NeverShowAgainScope[NeverShowAgainScope["PROFILE"] = 1] = "PROFILE";
+    NeverShowAgainScope[NeverShowAgainScope["APPLICATION"] = 2] = "APPLICATION";
+})(NeverShowAgainScope || (NeverShowAgainScope = {}));
+export function isNotificationSource(thing) {
+    if (thing) {
+        const candidate = thing;
+        return typeof candidate.id === 'string' && typeof candidate.label === 'string';
+    }
+    return false;
+}
+export var NotificationsFilter;
+(function (NotificationsFilter) {
+    NotificationsFilter[NotificationsFilter["OFF"] = 0] = "OFF";
+    NotificationsFilter[NotificationsFilter["ERROR"] = 1] = "ERROR";
+})(NotificationsFilter || (NotificationsFilter = {}));
+export class NoOpNotification {
+    constructor() {
+        this.progress = new NoOpProgress();
+        this.onDidClose = Event.None;
+        this.onDidChangeVisibility = Event.None;
+    }
+    updateSeverity(severity) { }
+    updateMessage(message) { }
+    updateActions(actions) { }
+    close() { }
+}
+export class NoOpProgress {
+    infinite() { }
+    done() { }
+    total(value) { }
+    worked(value) { }
+}

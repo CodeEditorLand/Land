@@ -1,1 +1,65 @@
-var p=Object.defineProperty;var c=Object.getOwnPropertyDescriptor;var m=(s,i,e,t)=>{for(var o=t>1?void 0:t?c(i,e):i,n=s.length-1,r;n>=0;n--)(r=s[n])&&(o=(t?r(i,e,o):r(o))||o);return t&&o&&p(i,e,o),o},d=(s,i)=>(e,t)=>i(e,t,s);import{IExtensionTipsService as x}from"../../../../platform/extensionManagement/common/extensionManagement.js";import{ExtensionRecommendations as E}from"./extensionRecommendations.js";import{localize as h}from"../../../../nls.js";import{ExtensionRecommendationReason as R}from"../../../services/extensionRecommendations/common/extensionRecommendations.js";let a=class extends E{constructor(e){super();this.extensionTipsService=e}_otherTips=[];_importantTips=[];get otherRecommendations(){return this._otherTips.map(e=>this.toExtensionRecommendation(e))}get importantRecommendations(){return this._importantTips.map(e=>this.toExtensionRecommendation(e))}get recommendations(){return[...this.importantRecommendations,...this.otherRecommendations]}getRecommendations(e){const t=this._importantTips.filter(n=>n.exeName.toLowerCase()===e.toLowerCase()).map(n=>this.toExtensionRecommendation(n)),o=this._otherTips.filter(n=>n.exeName.toLowerCase()===e.toLowerCase()).map(n=>this.toExtensionRecommendation(n));return{important:t,others:o}}async doActivate(){this._otherTips=await this.extensionTipsService.getOtherExecutableBasedTips(),await this.fetchImportantExeBasedRecommendations()}_importantExeBasedRecommendations;async fetchImportantExeBasedRecommendations(){return this._importantExeBasedRecommendations||(this._importantExeBasedRecommendations=this.doFetchImportantExeBasedRecommendations()),this._importantExeBasedRecommendations}async doFetchImportantExeBasedRecommendations(){const e=new Map;return this._importantTips=await this.extensionTipsService.getImportantExecutableBasedTips(),this._importantTips.forEach(t=>e.set(t.extensionId.toLowerCase(),t)),e}toExtensionRecommendation(e){return{extension:e.extensionId.toLowerCase(),reason:{reasonId:R.Executable,reasonText:h("exeBasedRecommendation","This extension is recommended because you have {0} installed.",e.exeFriendlyName)}}}};a=m([d(0,x)],a);export{a as ExeBasedRecommendations};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IExtensionTipsService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { ExtensionRecommendations } from './extensionRecommendations.js';
+import { localize } from '../../../../nls.js';
+let ExeBasedRecommendations = class ExeBasedRecommendations extends ExtensionRecommendations {
+    get otherRecommendations() { return this._otherTips.map(tip => this.toExtensionRecommendation(tip)); }
+    get importantRecommendations() { return this._importantTips.map(tip => this.toExtensionRecommendation(tip)); }
+    get recommendations() { return [...this.importantRecommendations, ...this.otherRecommendations]; }
+    constructor(extensionTipsService) {
+        super();
+        this.extensionTipsService = extensionTipsService;
+        this._otherTips = [];
+        this._importantTips = [];
+    }
+    getRecommendations(exe) {
+        const important = this._importantTips
+            .filter(tip => tip.exeName.toLowerCase() === exe.toLowerCase())
+            .map(tip => this.toExtensionRecommendation(tip));
+        const others = this._otherTips
+            .filter(tip => tip.exeName.toLowerCase() === exe.toLowerCase())
+            .map(tip => this.toExtensionRecommendation(tip));
+        return { important, others };
+    }
+    async doActivate() {
+        this._otherTips = await this.extensionTipsService.getOtherExecutableBasedTips();
+        await this.fetchImportantExeBasedRecommendations();
+    }
+    async fetchImportantExeBasedRecommendations() {
+        if (!this._importantExeBasedRecommendations) {
+            this._importantExeBasedRecommendations = this.doFetchImportantExeBasedRecommendations();
+        }
+        return this._importantExeBasedRecommendations;
+    }
+    async doFetchImportantExeBasedRecommendations() {
+        const importantExeBasedRecommendations = new Map();
+        this._importantTips = await this.extensionTipsService.getImportantExecutableBasedTips();
+        this._importantTips.forEach(tip => importantExeBasedRecommendations.set(tip.extensionId.toLowerCase(), tip));
+        return importantExeBasedRecommendations;
+    }
+    toExtensionRecommendation(tip) {
+        return {
+            extension: tip.extensionId.toLowerCase(),
+            reason: {
+                reasonId: 2,
+                reasonText: localize('exeBasedRecommendation', "This extension is recommended because you have {0} installed.", tip.exeFriendlyName)
+            }
+        };
+    }
+};
+ExeBasedRecommendations = __decorate([
+    __param(0, IExtensionTipsService),
+    __metadata("design:paramtypes", [Object])
+], ExeBasedRecommendations);
+export { ExeBasedRecommendations };

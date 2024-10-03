@@ -1,1 +1,40 @@
-import{Emitter as t}from"../../../../base/common/event.js";import{addMatchMediaChangeListener as r}from"../../../../base/browser/browser.js";import{InstantiationType as o,registerSingleton as i}from"../../../../platform/instantiation/common/extensions.js";import{Disposable as n}from"../../../../base/common/lifecycle.js";import{IHostColorSchemeService as s}from"../common/hostColorSchemeService.js";import{mainWindow as e}from"../../../../base/browser/window.js";class a extends n{_onDidSchemeChangeEvent=this._register(new t);constructor(){super(),this.registerListeners()}registerListeners(){r(e,"(prefers-color-scheme: dark)",()=>{this._onDidSchemeChangeEvent.fire()}),r(e,"(forced-colors: active)",()=>{this._onDidSchemeChangeEvent.fire()})}get onDidChangeColorScheme(){return this._onDidSchemeChangeEvent.event}get dark(){return e.matchMedia("(prefers-color-scheme: light)").matches?!1:!!e.matchMedia("(prefers-color-scheme: dark)").matches}get highContrast(){return!!e.matchMedia("(forced-colors: active)").matches}}i(s,a,o.Delayed);export{a as BrowserHostColorSchemeService};
+import { Emitter } from '../../../../base/common/event.js';
+import { addMatchMediaChangeListener } from '../../../../base/browser/browser.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IHostColorSchemeService } from '../common/hostColorSchemeService.js';
+import { mainWindow } from '../../../../base/browser/window.js';
+export class BrowserHostColorSchemeService extends Disposable {
+    constructor() {
+        super();
+        this._onDidSchemeChangeEvent = this._register(new Emitter());
+        this.registerListeners();
+    }
+    registerListeners() {
+        addMatchMediaChangeListener(mainWindow, '(prefers-color-scheme: dark)', () => {
+            this._onDidSchemeChangeEvent.fire();
+        });
+        addMatchMediaChangeListener(mainWindow, '(forced-colors: active)', () => {
+            this._onDidSchemeChangeEvent.fire();
+        });
+    }
+    get onDidChangeColorScheme() {
+        return this._onDidSchemeChangeEvent.event;
+    }
+    get dark() {
+        if (mainWindow.matchMedia(`(prefers-color-scheme: light)`).matches) {
+            return false;
+        }
+        else if (mainWindow.matchMedia(`(prefers-color-scheme: dark)`).matches) {
+            return true;
+        }
+        return false;
+    }
+    get highContrast() {
+        if (mainWindow.matchMedia(`(forced-colors: active)`).matches) {
+            return true;
+        }
+        return false;
+    }
+}
+registerSingleton(IHostColorSchemeService, BrowserHostColorSchemeService, 1);

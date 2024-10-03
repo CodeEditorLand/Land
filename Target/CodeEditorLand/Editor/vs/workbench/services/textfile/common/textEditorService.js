@@ -1,1 +1,160 @@
-var m=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var p=(a,d,t,i)=>{for(var e=i>1?void 0:i?v(d,t):d,r=a.length-1,o;r>=0;r--)(o=a[r])&&(e=(i?o(d,t,e):o(e))||e);return i&&e&&m(d,t,e),e},s=(a,d)=>(t,i)=>d(t,i,a);import{Event as y}from"../../../../base/common/event.js";import{Registry as x}from"../../../../platform/registry/common/platform.js";import{ResourceMap as T}from"../../../../base/common/map.js";import{createDecorator as g,IInstantiationService as S}from"../../../../platform/instantiation/common/instantiation.js";import{EditorExtensions as U,isResourceDiffEditorInput as F,isResourceSideBySideEditorInput as h,DEFAULT_EDITOR_ASSOCIATION as I,isResourceMergeEditorInput as R}from"../../../common/editor.js";import"../../../common/editor/editorInput.js";import{IUntitledTextEditorService as P}from"../../untitled/common/untitledTextEditorService.js";import{Schemas as u}from"../../../../base/common/network.js";import{DiffEditorInput as b}from"../../../common/editor/diffEditorInput.js";import{SideBySideEditorInput as D}from"../../../common/editor/sideBySideEditorInput.js";import{TextResourceEditorInput as E}from"../../../common/editor/textResourceEditorInput.js";import{UntitledTextEditorInput as f}from"../../untitled/common/untitledTextEditorInput.js";import"../../untitled/common/untitledTextEditorModel.js";import{basename as C}from"../../../../base/common/resources.js";import{URI as O}from"../../../../base/common/uri.js";import{IUriIdentityService as N}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{IFileService as w}from"../../../../platform/files/common/files.js";import{IEditorResolverService as M,RegisteredEditorPriority as _}from"../../editor/common/editorResolverService.js";import{Disposable as B}from"../../../../base/common/lifecycle.js";import{InstantiationType as A,registerSingleton as G}from"../../../../platform/instantiation/common/extensions.js";const L=g("textEditorService");let c=class extends B{constructor(t,i,e,r,o){super();this.untitledTextEditorService=t;this.instantiationService=i;this.uriIdentityService=e;this.fileService=r;this.editorResolverService=o;this.registerDefaultEditor()}editorInputCache=new T;fileEditorFactory=x.as(U.EditorFactory).getFileEditorFactory();registerDefaultEditor(){this._register(this.editorResolverService.registerEditor("*",{id:I.id,label:I.displayName,detail:I.providerDisplayName,priority:_.builtin},{},{createEditorInput:t=>({editor:this.createTextEditor(t)}),createUntitledEditorInput:t=>({editor:this.createTextEditor(t)}),createDiffEditorInput:t=>({editor:this.createTextEditor(t)})}))}async resolveTextEditor(t){return this.createTextEditor(t)}createTextEditor(t){if(R(t))return this.createTextEditor(t.result);if(F(t)){const r=this.createTextEditor(t.original),o=this.createTextEditor(t.modified);return this.instantiationService.createInstance(b,t.label,t.description,r,o,void 0)}if(h(t)){const r=this.createTextEditor(t.primary),o=this.createTextEditor(t.secondary);return this.instantiationService.createInstance(D,t.label,t.description,o,r)}const i=t;if(i.forceUntitled||!i.resource||i.resource.scheme===u.untitled){const r={languageId:i.languageId,initialValue:i.contents,encoding:i.encoding};let o;return i.resource?.scheme===u.untitled?o=this.untitledTextEditorService.create({untitledResource:i.resource,...r}):o=this.untitledTextEditorService.create({associatedResource:i.resource,...r}),this.createOrGetCached(o.resource,()=>this.instantiationService.createInstance(f,o))}const e=t;if(e.resource instanceof O){const r=e.label||C(e.resource),o=e.resource,l=this.uriIdentityService.asCanonicalUri(o);return this.createOrGetCached(l,()=>e.forceFile||this.fileService.hasProvider(l)?this.fileEditorFactory.createFileEditor(l,o,e.label,e.description,e.encoding,e.languageId,e.contents,this.instantiationService):this.instantiationService.createInstance(E,l,e.label,e.description,e.languageId,e.contents),n=>{n instanceof f||(n instanceof E?(r&&n.setName(r),e.description&&n.setDescription(e.description),e.languageId&&n.setPreferredLanguageId(e.languageId),typeof e.contents=="string"&&n.setPreferredContents(e.contents)):(n.setPreferredResource(o),e.label&&n.setPreferredName(e.label),e.description&&n.setPreferredDescription(e.description),e.encoding&&n.setPreferredEncoding(e.encoding),e.languageId&&n.setPreferredLanguageId(e.languageId),typeof e.contents=="string"&&n.setPreferredContents(e.contents)))})}throw new Error(`ITextEditorService: Unable to create texteditor from ${JSON.stringify(t)}`)}createOrGetCached(t,i,e){let r=this.editorInputCache.get(t);return r?(e?.(r),r):(r=i(),this.editorInputCache.set(t,r),y.once(r.onWillDispose)(()=>this.editorInputCache.delete(t)),r)}};c=p([s(0,P),s(1,S),s(2,N),s(3,w),s(4,M)],c),G(L,c,A.Eager);export{L as ITextEditorService,c as TextEditorService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Event } from '../../../../base/common/event.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { ResourceMap } from '../../../../base/common/map.js';
+import { createDecorator, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { EditorExtensions, isResourceDiffEditorInput, isResourceSideBySideEditorInput, DEFAULT_EDITOR_ASSOCIATION, isResourceMergeEditorInput } from '../../../common/editor.js';
+import { IUntitledTextEditorService } from '../../untitled/common/untitledTextEditorService.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { DiffEditorInput } from '../../../common/editor/diffEditorInput.js';
+import { SideBySideEditorInput } from '../../../common/editor/sideBySideEditorInput.js';
+import { TextResourceEditorInput } from '../../../common/editor/textResourceEditorInput.js';
+import { UntitledTextEditorInput } from '../../untitled/common/untitledTextEditorInput.js';
+import { basename } from '../../../../base/common/resources.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IEditorResolverService, RegisteredEditorPriority } from '../../editor/common/editorResolverService.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+export const ITextEditorService = createDecorator('textEditorService');
+let TextEditorService = class TextEditorService extends Disposable {
+    constructor(untitledTextEditorService, instantiationService, uriIdentityService, fileService, editorResolverService) {
+        super();
+        this.untitledTextEditorService = untitledTextEditorService;
+        this.instantiationService = instantiationService;
+        this.uriIdentityService = uriIdentityService;
+        this.fileService = fileService;
+        this.editorResolverService = editorResolverService;
+        this.editorInputCache = new ResourceMap();
+        this.fileEditorFactory = Registry.as(EditorExtensions.EditorFactory).getFileEditorFactory();
+        this.registerDefaultEditor();
+    }
+    registerDefaultEditor() {
+        this._register(this.editorResolverService.registerEditor('*', {
+            id: DEFAULT_EDITOR_ASSOCIATION.id,
+            label: DEFAULT_EDITOR_ASSOCIATION.displayName,
+            detail: DEFAULT_EDITOR_ASSOCIATION.providerDisplayName,
+            priority: RegisteredEditorPriority.builtin
+        }, {}, {
+            createEditorInput: editor => ({ editor: this.createTextEditor(editor) }),
+            createUntitledEditorInput: untitledEditor => ({ editor: this.createTextEditor(untitledEditor) }),
+            createDiffEditorInput: diffEditor => ({ editor: this.createTextEditor(diffEditor) })
+        }));
+    }
+    async resolveTextEditor(input) {
+        return this.createTextEditor(input);
+    }
+    createTextEditor(input) {
+        if (isResourceMergeEditorInput(input)) {
+            return this.createTextEditor(input.result);
+        }
+        if (isResourceDiffEditorInput(input)) {
+            const original = this.createTextEditor(input.original);
+            const modified = this.createTextEditor(input.modified);
+            return this.instantiationService.createInstance(DiffEditorInput, input.label, input.description, original, modified, undefined);
+        }
+        if (isResourceSideBySideEditorInput(input)) {
+            const primary = this.createTextEditor(input.primary);
+            const secondary = this.createTextEditor(input.secondary);
+            return this.instantiationService.createInstance(SideBySideEditorInput, input.label, input.description, secondary, primary);
+        }
+        const untitledInput = input;
+        if (untitledInput.forceUntitled || !untitledInput.resource || (untitledInput.resource.scheme === Schemas.untitled)) {
+            const untitledOptions = {
+                languageId: untitledInput.languageId,
+                initialValue: untitledInput.contents,
+                encoding: untitledInput.encoding
+            };
+            let untitledModel;
+            if (untitledInput.resource?.scheme === Schemas.untitled) {
+                untitledModel = this.untitledTextEditorService.create({ untitledResource: untitledInput.resource, ...untitledOptions });
+            }
+            else {
+                untitledModel = this.untitledTextEditorService.create({ associatedResource: untitledInput.resource, ...untitledOptions });
+            }
+            return this.createOrGetCached(untitledModel.resource, () => this.instantiationService.createInstance(UntitledTextEditorInput, untitledModel));
+        }
+        const textResourceEditorInput = input;
+        if (textResourceEditorInput.resource instanceof URI) {
+            const label = textResourceEditorInput.label || basename(textResourceEditorInput.resource);
+            const preferredResource = textResourceEditorInput.resource;
+            const canonicalResource = this.uriIdentityService.asCanonicalUri(preferredResource);
+            return this.createOrGetCached(canonicalResource, () => {
+                if (textResourceEditorInput.forceFile || this.fileService.hasProvider(canonicalResource)) {
+                    return this.fileEditorFactory.createFileEditor(canonicalResource, preferredResource, textResourceEditorInput.label, textResourceEditorInput.description, textResourceEditorInput.encoding, textResourceEditorInput.languageId, textResourceEditorInput.contents, this.instantiationService);
+                }
+                return this.instantiationService.createInstance(TextResourceEditorInput, canonicalResource, textResourceEditorInput.label, textResourceEditorInput.description, textResourceEditorInput.languageId, textResourceEditorInput.contents);
+            }, cachedInput => {
+                if (cachedInput instanceof UntitledTextEditorInput) {
+                    return;
+                }
+                else if (!(cachedInput instanceof TextResourceEditorInput)) {
+                    cachedInput.setPreferredResource(preferredResource);
+                    if (textResourceEditorInput.label) {
+                        cachedInput.setPreferredName(textResourceEditorInput.label);
+                    }
+                    if (textResourceEditorInput.description) {
+                        cachedInput.setPreferredDescription(textResourceEditorInput.description);
+                    }
+                    if (textResourceEditorInput.encoding) {
+                        cachedInput.setPreferredEncoding(textResourceEditorInput.encoding);
+                    }
+                    if (textResourceEditorInput.languageId) {
+                        cachedInput.setPreferredLanguageId(textResourceEditorInput.languageId);
+                    }
+                    if (typeof textResourceEditorInput.contents === 'string') {
+                        cachedInput.setPreferredContents(textResourceEditorInput.contents);
+                    }
+                }
+                else {
+                    if (label) {
+                        cachedInput.setName(label);
+                    }
+                    if (textResourceEditorInput.description) {
+                        cachedInput.setDescription(textResourceEditorInput.description);
+                    }
+                    if (textResourceEditorInput.languageId) {
+                        cachedInput.setPreferredLanguageId(textResourceEditorInput.languageId);
+                    }
+                    if (typeof textResourceEditorInput.contents === 'string') {
+                        cachedInput.setPreferredContents(textResourceEditorInput.contents);
+                    }
+                }
+            });
+        }
+        throw new Error(`ITextEditorService: Unable to create texteditor from ${JSON.stringify(input)}`);
+    }
+    createOrGetCached(resource, factoryFn, cachedFn) {
+        let input = this.editorInputCache.get(resource);
+        if (input) {
+            cachedFn?.(input);
+            return input;
+        }
+        input = factoryFn();
+        this.editorInputCache.set(resource, input);
+        Event.once(input.onWillDispose)(() => this.editorInputCache.delete(resource));
+        return input;
+    }
+};
+TextEditorService = __decorate([
+    __param(0, IUntitledTextEditorService),
+    __param(1, IInstantiationService),
+    __param(2, IUriIdentityService),
+    __param(3, IFileService),
+    __param(4, IEditorResolverService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], TextEditorService);
+export { TextEditorService };
+registerSingleton(ITextEditorService, TextEditorService, 0);

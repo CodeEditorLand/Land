@@ -1,1 +1,86 @@
-import*as w from"../../../../base/browser/dom.js";import{Action as g,Separator as x}from"../../../../base/common/actions.js";import{CancellationToken as C}from"../../../../base/common/cancellation.js";import{generateUuid as A}from"../../../../base/common/uuid.js";import"../../../browser/editorBrowser.js";import{EditorOption as v}from"../../../common/config/editorOptions.js";import{Range as u}from"../../../common/core/range.js";import"../../../common/languages.js";import{ITextModelService as S}from"../../../common/services/resolverService.js";import{DefinitionAction as k,SymbolNavigationAction as E,SymbolNavigationAnchor as I}from"../../gotoSymbol/browser/goToCommands.js";import"../../gotoSymbol/browser/link/clickLinkGesture.js";import"./inlayHintsController.js";import{PeekContext as P}from"../../peekView/browser/peekView.js";import{isIMenuItem as b,MenuId as L,MenuItemAction as N,MenuRegistry as R}from"../../../../platform/actions/common/actions.js";import{ICommandService as T}from"../../../../platform/commands/common/commands.js";import{IContextKeyService as D}from"../../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as O}from"../../../../platform/contextview/browser/contextView.js";import{IInstantiationService as H}from"../../../../platform/instantiation/common/instantiation.js";import{INotificationService as F,Severity as j}from"../../../../platform/notification/common/notification.js";async function de(o,n,r,t){const l=o.get(S),c=o.get(O),a=o.get(T),m=o.get(H),f=o.get(F);if(await t.item.resolve(C.None),!t.part.location)return;const s=t.part.location,i=[],p=new Set(R.getMenuItems(L.EditorContext).map(e=>b(e)?e.command.id:A()));for(const e of E.all())p.has(e.desc.id)&&i.push(new g(e.desc.id,N.label(e.desc,{renderShortTitle:!0}),void 0,!0,async()=>{const d=await l.createModelReference(s.uri);try{const M=new I(d.object.textEditorModel,u.getStartPosition(s.range)),h=t.item.anchor.range;await m.invokeFunction(e.runEditorCommand.bind(e),n,M,h)}finally{d.dispose()}}));if(t.part.command){const{command:e}=t.part;i.push(new x),i.push(new g(e.id,e.title,void 0,!0,async()=>{try{await a.executeCommand(e.id,...e.arguments??[])}catch(d){f.notify({severity:j.Error,source:t.item.provider.displayName,message:d})}}))}const y=n.getOption(v.useShadowDOM);c.showContextMenu({domForShadowRoot:y?n.getDomNode()??void 0:void 0,getAnchor:()=>{const e=w.getDomNodePagePosition(r);return{x:e.left,y:e.top+e.height+8}},getActions:()=>i,onHide:()=>{n.focus()},autoSelectFirstItem:!0})}async function fe(o,n,r,t){const c=await o.get(S).createModelReference(t.uri);await r.invokeWithinContext(async a=>{const m=n.hasSideBySideModifier,f=a.get(D),s=P.inPeekEditor.getValue(f),i=!m&&r.getOption(v.definitionLinkOpensInPeek)&&!s;return new k({openToSide:m,openInPeek:i,muteMessage:!0},{title:{value:"",original:""},id:"",precondition:void 0}).run(a,new I(c.object.textEditorModel,u.getStartPosition(t.range)),u.lift(t.range))}),c.dispose()}export{fe as goToDefinitionWithLocation,de as showGoToContextMenu};
+import * as dom from '../../../../base/browser/dom.js';
+import { Action, Separator } from '../../../../base/common/actions.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
+import { Range } from '../../../common/core/range.js';
+import { ITextModelService } from '../../../common/services/resolverService.js';
+import { DefinitionAction, SymbolNavigationAction, SymbolNavigationAnchor } from '../../gotoSymbol/browser/goToCommands.js';
+import { PeekContext } from '../../peekView/browser/peekView.js';
+import { isIMenuItem, MenuId, MenuItemAction, MenuRegistry } from '../../../../platform/actions/common/actions.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
+export async function showGoToContextMenu(accessor, editor, anchor, part) {
+    const resolverService = accessor.get(ITextModelService);
+    const contextMenuService = accessor.get(IContextMenuService);
+    const commandService = accessor.get(ICommandService);
+    const instaService = accessor.get(IInstantiationService);
+    const notificationService = accessor.get(INotificationService);
+    await part.item.resolve(CancellationToken.None);
+    if (!part.part.location) {
+        return;
+    }
+    const location = part.part.location;
+    const menuActions = [];
+    const filter = new Set(MenuRegistry.getMenuItems(MenuId.EditorContext)
+        .map(item => isIMenuItem(item) ? item.command.id : generateUuid()));
+    for (const delegate of SymbolNavigationAction.all()) {
+        if (filter.has(delegate.desc.id)) {
+            menuActions.push(new Action(delegate.desc.id, MenuItemAction.label(delegate.desc, { renderShortTitle: true }), undefined, true, async () => {
+                const ref = await resolverService.createModelReference(location.uri);
+                try {
+                    const symbolAnchor = new SymbolNavigationAnchor(ref.object.textEditorModel, Range.getStartPosition(location.range));
+                    const range = part.item.anchor.range;
+                    await instaService.invokeFunction(delegate.runEditorCommand.bind(delegate), editor, symbolAnchor, range);
+                }
+                finally {
+                    ref.dispose();
+                }
+            }));
+        }
+    }
+    if (part.part.command) {
+        const { command } = part.part;
+        menuActions.push(new Separator());
+        menuActions.push(new Action(command.id, command.title, undefined, true, async () => {
+            try {
+                await commandService.executeCommand(command.id, ...(command.arguments ?? []));
+            }
+            catch (err) {
+                notificationService.notify({
+                    severity: Severity.Error,
+                    source: part.item.provider.displayName,
+                    message: err
+                });
+            }
+        }));
+    }
+    const useShadowDOM = editor.getOption(130);
+    contextMenuService.showContextMenu({
+        domForShadowRoot: useShadowDOM ? editor.getDomNode() ?? undefined : undefined,
+        getAnchor: () => {
+            const box = dom.getDomNodePagePosition(anchor);
+            return { x: box.left, y: box.top + box.height + 8 };
+        },
+        getActions: () => menuActions,
+        onHide: () => {
+            editor.focus();
+        },
+        autoSelectFirstItem: true,
+    });
+}
+export async function goToDefinitionWithLocation(accessor, event, editor, location) {
+    const resolverService = accessor.get(ITextModelService);
+    const ref = await resolverService.createModelReference(location.uri);
+    await editor.invokeWithinContext(async (accessor) => {
+        const openToSide = event.hasSideBySideModifier;
+        const contextKeyService = accessor.get(IContextKeyService);
+        const isInPeek = PeekContext.inPeekEditor.getValue(contextKeyService);
+        const canPeek = !openToSide && editor.getOption(91) && !isInPeek;
+        const action = new DefinitionAction({ openToSide, openInPeek: canPeek, muteMessage: true }, { title: { value: '', original: '' }, id: '', precondition: undefined });
+        return action.run(accessor, new SymbolNavigationAnchor(ref.object.textEditorModel, Range.getStartPosition(location.range)), Range.lift(location.range));
+    });
+    ref.dispose();
+}

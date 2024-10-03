@@ -1,1 +1,95 @@
-import"./ast.js";import{lengthAdd as f,lengthZero as l,lengthLessThan as r}from"./length.js";class g{nextNodes;offsets;idxs;lastOffset=l;constructor(e){this.nextNodes=[e],this.offsets=[l],this.idxs=[]}readLongestNodeAt(e,h){if(r(e,this.lastOffset))throw new Error("Invalid offset");for(this.lastOffset=e;;){const t=d(this.nextNodes);if(!t)return;const s=d(this.offsets);if(r(e,s))return;if(r(s,e))if(f(s,t.length)<=e)this.nextNodeAfterCurrent();else{const i=o(t);i!==-1?(this.nextNodes.push(t.getChild(i)),this.offsets.push(s),this.idxs.push(i)):this.nextNodeAfterCurrent()}else{if(h(t))return this.nextNodeAfterCurrent(),t;{const i=o(t);if(i===-1){this.nextNodeAfterCurrent();return}else this.nextNodes.push(t.getChild(i)),this.offsets.push(s),this.idxs.push(i)}}}}nextNodeAfterCurrent(){for(;;){const e=d(this.offsets),h=d(this.nextNodes);if(this.nextNodes.pop(),this.offsets.pop(),this.idxs.length===0)break;const t=d(this.nextNodes),s=o(t,this.idxs[this.idxs.length-1]);if(s!==-1){this.nextNodes.push(t.getChild(s)),this.offsets.push(f(e,h.length)),this.idxs[this.idxs.length-1]=s;break}else this.idxs.pop()}}}function o(n,e=-1){for(;;){if(e++,e>=n.childrenLength)return-1;if(n.getChild(e))return e}}function d(n){return n.length>0?n[n.length-1]:void 0}export{g as NodeReader};
+import { lengthAdd, lengthZero, lengthLessThan } from './length.js';
+export class NodeReader {
+    constructor(node) {
+        this.lastOffset = lengthZero;
+        this.nextNodes = [node];
+        this.offsets = [lengthZero];
+        this.idxs = [];
+    }
+    readLongestNodeAt(offset, predicate) {
+        if (lengthLessThan(offset, this.lastOffset)) {
+            throw new Error('Invalid offset');
+        }
+        this.lastOffset = offset;
+        while (true) {
+            const curNode = lastOrUndefined(this.nextNodes);
+            if (!curNode) {
+                return undefined;
+            }
+            const curNodeOffset = lastOrUndefined(this.offsets);
+            if (lengthLessThan(offset, curNodeOffset)) {
+                return undefined;
+            }
+            if (lengthLessThan(curNodeOffset, offset)) {
+                if (lengthAdd(curNodeOffset, curNode.length) <= offset) {
+                    this.nextNodeAfterCurrent();
+                }
+                else {
+                    const nextChildIdx = getNextChildIdx(curNode);
+                    if (nextChildIdx !== -1) {
+                        this.nextNodes.push(curNode.getChild(nextChildIdx));
+                        this.offsets.push(curNodeOffset);
+                        this.idxs.push(nextChildIdx);
+                    }
+                    else {
+                        this.nextNodeAfterCurrent();
+                    }
+                }
+            }
+            else {
+                if (predicate(curNode)) {
+                    this.nextNodeAfterCurrent();
+                    return curNode;
+                }
+                else {
+                    const nextChildIdx = getNextChildIdx(curNode);
+                    if (nextChildIdx === -1) {
+                        this.nextNodeAfterCurrent();
+                        return undefined;
+                    }
+                    else {
+                        this.nextNodes.push(curNode.getChild(nextChildIdx));
+                        this.offsets.push(curNodeOffset);
+                        this.idxs.push(nextChildIdx);
+                    }
+                }
+            }
+        }
+    }
+    nextNodeAfterCurrent() {
+        while (true) {
+            const currentOffset = lastOrUndefined(this.offsets);
+            const currentNode = lastOrUndefined(this.nextNodes);
+            this.nextNodes.pop();
+            this.offsets.pop();
+            if (this.idxs.length === 0) {
+                break;
+            }
+            const parent = lastOrUndefined(this.nextNodes);
+            const nextChildIdx = getNextChildIdx(parent, this.idxs[this.idxs.length - 1]);
+            if (nextChildIdx !== -1) {
+                this.nextNodes.push(parent.getChild(nextChildIdx));
+                this.offsets.push(lengthAdd(currentOffset, currentNode.length));
+                this.idxs[this.idxs.length - 1] = nextChildIdx;
+                break;
+            }
+            else {
+                this.idxs.pop();
+            }
+        }
+    }
+}
+function getNextChildIdx(node, curIdx = -1) {
+    while (true) {
+        curIdx++;
+        if (curIdx >= node.childrenLength) {
+            return -1;
+        }
+        if (node.getChild(curIdx)) {
+            return curIdx;
+        }
+    }
+}
+function lastOrUndefined(arr) {
+    return arr.length > 0 ? arr[arr.length - 1] : undefined;
+}

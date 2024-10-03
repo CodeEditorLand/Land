@@ -1,1 +1,177 @@
-var _=Object.defineProperty;var I=Object.getOwnPropertyDescriptor;var h=(l,a,t,o)=>{for(var e=o>1?void 0:o?I(a,t):a,r=l.length-1,i;r>=0;r--)(i=l[r])&&(e=(o?i(a,t,e):i(e))||e);return o&&e&&_(a,t,e),e},u=(l,a)=>(t,o)=>a(t,o,l);import{Delayer as E}from"../../../../../../base/common/async.js";import{Disposable as D}from"../../../../../../base/common/lifecycle.js";import{Range as b}from"../../../../../../editor/common/core/range.js";import{IConfigurationService as x}from"../../../../../../platform/configuration/common/configuration.js";import{debugIconBreakpointForeground as S}from"../../../../debug/browser/breakpointEditorContribution.js";import{focusedStackFrameColor as R,topStackFrameColor as N}from"../../../../debug/browser/callStackEditorContribution.js";import{IDebugService as f}from"../../../../debug/common/debug.js";import{NotebookOverviewRulerLane as g}from"../../notebookBrowser.js";import{registerNotebookContribution as k}from"../../notebookEditorExtensions.js";import{runningCellRulerDecorationColor as F}from"../../notebookEditorWidget.js";import{CellUri as v,NotebookCellExecutionState as w}from"../../../common/notebookCommon.js";import{INotebookExecutionStateService as O,NotebookExecutionType as y}from"../../../common/notebookExecutionStateService.js";let c=class extends D{constructor(t,o,e){super();this._notebookEditor=t;this._debugService=o;this._notebookExecutionStateService=e;const r=this._register(new E(200));this._register(o.getModel().onDidChangeCallStack(()=>this.updateExecutionDecorations())),this._register(o.getViewModel().onDidFocusStackFrame(()=>this.updateExecutionDecorations())),this._register(e.onDidChangeExecution(i=>{i.type===y.cell&&this._notebookEditor.textModel&&i.affectsNotebook(this._notebookEditor.textModel.uri)&&r.trigger(()=>this.updateExecutionDecorations())}))}static id="workbench.notebook.debug.pausedCellDecorations";_currentTopDecorations=[];_currentOtherDecorations=[];_executingCellDecorations=[];updateExecutionDecorations(){const t=this._notebookEditor.textModel?this._notebookExecutionStateService.getCellExecutionsByHandleForNotebook(this._notebookEditor.textModel.uri):void 0,o=[];let e;const r=n=>{const s=v.parse(n.source.uri);if(s&&s.notebook.toString()===this._notebookEditor.textModel?.uri.toString())return{handle:s.handle,range:n.range}};for(const n of this._debugService.getModel().getSessions())for(const s of n.getAllThreads()){const m=s.getTopStackFrame();if(m){const p=r(m);p&&(o.push(p),t?.delete(p.handle))}}const i=this._debugService.getViewModel().focusedStackFrame;if(i&&i.thread.stopped){const n=r(i);n&&!o.some(s=>s.handle===n?.handle&&b.equalsRange(s.range,n?.range))&&(e=n,t?.delete(e.handle))}this.setTopFrameDecoration(o),this.setFocusedFrameDecoration(e);const C=t?Array.from(t.entries()).filter(([n,s])=>s.state===w.Executing).map(([n])=>n):[];this.setExecutingCellDecorations(C)}setTopFrameDecoration(t){const o=t.map(({handle:e,range:r})=>{const i={overviewRuler:{color:N,includeOutput:!1,modelRanges:[r],position:g.Full}};return{handle:e,options:i}});this._currentTopDecorations=this._notebookEditor.deltaCellDecorations(this._currentTopDecorations,o)}setFocusedFrameDecoration(t){let o=[];if(t){const e={overviewRuler:{color:R,includeOutput:!1,modelRanges:[t.range],position:g.Full}};o=[{handle:t.handle,options:e}]}this._currentOtherDecorations=this._notebookEditor.deltaCellDecorations(this._currentOtherDecorations,o)}setExecutingCellDecorations(t){const o=t.map(e=>{const r={overviewRuler:{color:F,includeOutput:!1,modelRanges:[new b(0,0,0,0)],position:g.Left}};return{handle:e,options:r}});this._executingCellDecorations=this._notebookEditor.deltaCellDecorations(this._executingCellDecorations,o)}};c=h([u(1,f),u(2,O)],c),k(c.id,c);let d=class extends D{constructor(t,o,e){super();this._notebookEditor=t;this._debugService=o;this._configService=e;this._register(o.getModel().onDidChangeBreakpoints(()=>this.updateDecorations())),this._register(e.onDidChangeConfiguration(r=>r.affectsConfiguration("debug.showBreakpointsInOverviewRuler")&&this.updateDecorations()))}static id="workbench.notebook.debug.notebookBreakpointDecorations";_currentDecorations=[];updateDecorations(){const o=this._configService.getValue("debug.showBreakpointsInOverviewRuler")?this._debugService.getModel().getBreakpoints().map(e=>{const r=v.parse(e.uri);if(!r||r.notebook.toString()!==this._notebookEditor.textModel.uri.toString())return null;const i={overviewRuler:{color:S,includeOutput:!1,modelRanges:[new b(e.lineNumber,0,e.lineNumber,0)],position:g.Left}};return{handle:r.handle,options:i}}).filter(e=>!!e):[];this._currentDecorations=this._notebookEditor.deltaCellDecorations(this._currentDecorations,o)}};d=h([u(1,f),u(2,x)],d),k(d.id,d);export{d as NotebookBreakpointDecorations,c as PausedCellDecorationContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Delayer } from '../../../../../../base/common/async.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+import { Range } from '../../../../../../editor/common/core/range.js';
+import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
+import { debugIconBreakpointForeground } from '../../../../debug/browser/breakpointEditorContribution.js';
+import { focusedStackFrameColor, topStackFrameColor } from '../../../../debug/browser/callStackEditorContribution.js';
+import { IDebugService } from '../../../../debug/common/debug.js';
+import { NotebookOverviewRulerLane } from '../../notebookBrowser.js';
+import { registerNotebookContribution } from '../../notebookEditorExtensions.js';
+import { runningCellRulerDecorationColor } from '../../notebookEditorWidget.js';
+import { CellUri, NotebookCellExecutionState } from '../../../common/notebookCommon.js';
+import { INotebookExecutionStateService, NotebookExecutionType } from '../../../common/notebookExecutionStateService.js';
+let PausedCellDecorationContribution = class PausedCellDecorationContribution extends Disposable {
+    static { this.id = 'workbench.notebook.debug.pausedCellDecorations'; }
+    constructor(_notebookEditor, _debugService, _notebookExecutionStateService) {
+        super();
+        this._notebookEditor = _notebookEditor;
+        this._debugService = _debugService;
+        this._notebookExecutionStateService = _notebookExecutionStateService;
+        this._currentTopDecorations = [];
+        this._currentOtherDecorations = [];
+        this._executingCellDecorations = [];
+        const delayer = this._register(new Delayer(200));
+        this._register(_debugService.getModel().onDidChangeCallStack(() => this.updateExecutionDecorations()));
+        this._register(_debugService.getViewModel().onDidFocusStackFrame(() => this.updateExecutionDecorations()));
+        this._register(_notebookExecutionStateService.onDidChangeExecution(e => {
+            if (e.type === NotebookExecutionType.cell && this._notebookEditor.textModel && e.affectsNotebook(this._notebookEditor.textModel.uri)) {
+                delayer.trigger(() => this.updateExecutionDecorations());
+            }
+        }));
+    }
+    updateExecutionDecorations() {
+        const exes = this._notebookEditor.textModel ?
+            this._notebookExecutionStateService.getCellExecutionsByHandleForNotebook(this._notebookEditor.textModel.uri)
+            : undefined;
+        const topFrameCellsAndRanges = [];
+        let focusedFrameCellAndRange = undefined;
+        const getNotebookCellAndRange = (sf) => {
+            const parsed = CellUri.parse(sf.source.uri);
+            if (parsed && parsed.notebook.toString() === this._notebookEditor.textModel?.uri.toString()) {
+                return { handle: parsed.handle, range: sf.range };
+            }
+            return undefined;
+        };
+        for (const session of this._debugService.getModel().getSessions()) {
+            for (const thread of session.getAllThreads()) {
+                const topFrame = thread.getTopStackFrame();
+                if (topFrame) {
+                    const notebookCellAndRange = getNotebookCellAndRange(topFrame);
+                    if (notebookCellAndRange) {
+                        topFrameCellsAndRanges.push(notebookCellAndRange);
+                        exes?.delete(notebookCellAndRange.handle);
+                    }
+                }
+            }
+        }
+        const focusedFrame = this._debugService.getViewModel().focusedStackFrame;
+        if (focusedFrame && focusedFrame.thread.stopped) {
+            const thisFocusedFrameCellAndRange = getNotebookCellAndRange(focusedFrame);
+            if (thisFocusedFrameCellAndRange &&
+                !topFrameCellsAndRanges.some(topFrame => topFrame.handle === thisFocusedFrameCellAndRange?.handle && Range.equalsRange(topFrame.range, thisFocusedFrameCellAndRange?.range))) {
+                focusedFrameCellAndRange = thisFocusedFrameCellAndRange;
+                exes?.delete(focusedFrameCellAndRange.handle);
+            }
+        }
+        this.setTopFrameDecoration(topFrameCellsAndRanges);
+        this.setFocusedFrameDecoration(focusedFrameCellAndRange);
+        const exeHandles = exes ?
+            Array.from(exes.entries())
+                .filter(([_, exe]) => exe.state === NotebookCellExecutionState.Executing)
+                .map(([handle]) => handle)
+            : [];
+        this.setExecutingCellDecorations(exeHandles);
+    }
+    setTopFrameDecoration(handlesAndRanges) {
+        const newDecorations = handlesAndRanges.map(({ handle, range }) => {
+            const options = {
+                overviewRuler: {
+                    color: topStackFrameColor,
+                    includeOutput: false,
+                    modelRanges: [range],
+                    position: NotebookOverviewRulerLane.Full
+                }
+            };
+            return { handle, options };
+        });
+        this._currentTopDecorations = this._notebookEditor.deltaCellDecorations(this._currentTopDecorations, newDecorations);
+    }
+    setFocusedFrameDecoration(focusedFrameCellAndRange) {
+        let newDecorations = [];
+        if (focusedFrameCellAndRange) {
+            const options = {
+                overviewRuler: {
+                    color: focusedStackFrameColor,
+                    includeOutput: false,
+                    modelRanges: [focusedFrameCellAndRange.range],
+                    position: NotebookOverviewRulerLane.Full
+                }
+            };
+            newDecorations = [{ handle: focusedFrameCellAndRange.handle, options }];
+        }
+        this._currentOtherDecorations = this._notebookEditor.deltaCellDecorations(this._currentOtherDecorations, newDecorations);
+    }
+    setExecutingCellDecorations(handles) {
+        const newDecorations = handles.map(handle => {
+            const options = {
+                overviewRuler: {
+                    color: runningCellRulerDecorationColor,
+                    includeOutput: false,
+                    modelRanges: [new Range(0, 0, 0, 0)],
+                    position: NotebookOverviewRulerLane.Left
+                }
+            };
+            return { handle, options };
+        });
+        this._executingCellDecorations = this._notebookEditor.deltaCellDecorations(this._executingCellDecorations, newDecorations);
+    }
+};
+PausedCellDecorationContribution = __decorate([
+    __param(1, IDebugService),
+    __param(2, INotebookExecutionStateService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], PausedCellDecorationContribution);
+export { PausedCellDecorationContribution };
+registerNotebookContribution(PausedCellDecorationContribution.id, PausedCellDecorationContribution);
+let NotebookBreakpointDecorations = class NotebookBreakpointDecorations extends Disposable {
+    static { this.id = 'workbench.notebook.debug.notebookBreakpointDecorations'; }
+    constructor(_notebookEditor, _debugService, _configService) {
+        super();
+        this._notebookEditor = _notebookEditor;
+        this._debugService = _debugService;
+        this._configService = _configService;
+        this._currentDecorations = [];
+        this._register(_debugService.getModel().onDidChangeBreakpoints(() => this.updateDecorations()));
+        this._register(_configService.onDidChangeConfiguration(e => e.affectsConfiguration('debug.showBreakpointsInOverviewRuler') && this.updateDecorations()));
+    }
+    updateDecorations() {
+        const enabled = this._configService.getValue('debug.showBreakpointsInOverviewRuler');
+        const newDecorations = enabled ?
+            this._debugService.getModel().getBreakpoints().map(breakpoint => {
+                const parsed = CellUri.parse(breakpoint.uri);
+                if (!parsed || parsed.notebook.toString() !== this._notebookEditor.textModel.uri.toString()) {
+                    return null;
+                }
+                const options = {
+                    overviewRuler: {
+                        color: debugIconBreakpointForeground,
+                        includeOutput: false,
+                        modelRanges: [new Range(breakpoint.lineNumber, 0, breakpoint.lineNumber, 0)],
+                        position: NotebookOverviewRulerLane.Left
+                    }
+                };
+                return { handle: parsed.handle, options };
+            }).filter(x => !!x)
+            : [];
+        this._currentDecorations = this._notebookEditor.deltaCellDecorations(this._currentDecorations, newDecorations);
+    }
+};
+NotebookBreakpointDecorations = __decorate([
+    __param(1, IDebugService),
+    __param(2, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], NotebookBreakpointDecorations);
+export { NotebookBreakpointDecorations };
+registerNotebookContribution(NotebookBreakpointDecorations.id, NotebookBreakpointDecorations);

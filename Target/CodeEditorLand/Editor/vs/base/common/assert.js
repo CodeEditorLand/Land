@@ -1,1 +1,38 @@
-import{BugIndicatingError as r,onUnexpectedError as t}from"./errors.js";function l(e,n){if(!e)throw new Error(n?`Assertion failed (${n})`:"Assertion Failed")}function f(e,n="Unreachable"){throw new Error(n)}function c(e,n="unexpected state"){if(!e)throw new r(`Assertion Failed: ${n}`)}function u(e){e||t(new r("Soft Assertion Failed"))}function d(e){e()||(e(),t(new r("Assertion Failed")))}function w(e,n){let o=0;for(;o<e.length-1;){const i=e[o],s=e[o+1];if(!n(i,s))return!1;o++}return!0}export{c as assert,d as assertFn,f as assertNever,w as checkAdjacentItems,l as ok,u as softAssert};
+import { BugIndicatingError, onUnexpectedError } from './errors.js';
+export function ok(value, message) {
+    if (!value) {
+        throw new Error(message ? `Assertion failed (${message})` : 'Assertion Failed');
+    }
+}
+export function assertNever(value, message = 'Unreachable') {
+    throw new Error(message);
+}
+export function assert(condition, message = 'unexpected state') {
+    if (!condition) {
+        throw new BugIndicatingError(`Assertion Failed: ${message}`);
+    }
+}
+export function softAssert(condition) {
+    if (!condition) {
+        onUnexpectedError(new BugIndicatingError('Soft Assertion Failed'));
+    }
+}
+export function assertFn(condition) {
+    if (!condition()) {
+        debugger;
+        condition();
+        onUnexpectedError(new BugIndicatingError('Assertion Failed'));
+    }
+}
+export function checkAdjacentItems(items, predicate) {
+    let i = 0;
+    while (i < items.length - 1) {
+        const a = items[i];
+        const b = items[i + 1];
+        if (!predicate(a, b)) {
+            return false;
+        }
+        i++;
+    }
+    return true;
+}

@@ -1,1 +1,736 @@
-import{VSBuffer as g}from"../../../common/buffer.js";import{Emitter as p}from"../../../common/event.js";import{Disposable as T,DisposableStore as I}from"../../../common/lifecycle.js";import{IPCClient as D}from"./ipc.js";var A=(s=>(s.Created="created",s.Read="read",s.Write="write",s.Open="open",s.Error="error",s.Close="close",s.BrowserWebSocketBlobReceived="browserWebSocketBlobReceived",s.NodeEndReceived="nodeEndReceived",s.NodeEndSent="nodeEndSent",s.NodeDrainBegin="nodeDrainBegin",s.NodeDrainEnd="nodeDrainEnd",s.zlibInflateError="zlibInflateError",s.zlibInflateData="zlibInflateData",s.zlibInflateInitialWrite="zlibInflateInitialWrite",s.zlibInflateInitialFlushFired="zlibInflateInitialFlushFired",s.zlibInflateWrite="zlibInflateWrite",s.zlibInflateFlushFired="zlibInflateFlushFired",s.zlibDeflateError="zlibDeflateError",s.zlibDeflateData="zlibDeflateData",s.zlibDeflateWrite="zlibDeflateWrite",s.zlibDeflateFlushFired="zlibDeflateFlushFired",s.WebSocketNodeSocketWrite="webSocketNodeSocketWrite",s.WebSocketNodeSocketPeekedHeader="webSocketNodeSocketPeekedHeader",s.WebSocketNodeSocketReadHeader="webSocketNodeSocketReadHeader",s.WebSocketNodeSocketReadData="webSocketNodeSocketReadData",s.WebSocketNodeSocketUnmaskedData="webSocketNodeSocketUnmaskedData",s.WebSocketNodeSocketDrainBegin="webSocketNodeSocketDrainBegin",s.WebSocketNodeSocketDrainEnd="webSocketNodeSocketDrainEnd",s.ProtocolHeaderRead="protocolHeaderRead",s.ProtocolMessageRead="protocolMessageRead",s.ProtocolHeaderWrite="protocolHeaderWrite",s.ProtocolMessageWrite="protocolMessageWrite",s.ProtocolWrite="protocolWrite",s))(A||{}),y;(o=>{o.enableDiagnostics=!1,o.records=[];const t=new WeakMap;let i=0;function n(d,f){if(!t.has(d)){const r=String(++i);t.set(d,r)}return t.get(d)}function h(d,f,r,_){}o.traceSocketEvent=h})(y||={});var P=(t=>(t[t.NodeSocketCloseEvent=0]="NodeSocketCloseEvent",t[t.WebSocketCloseEvent=1]="WebSocketCloseEvent",t))(P||{});let m=null;function u(){return m||(m=g.alloc(0)),m}class L{_chunks;_totalLength;get byteLength(){return this._totalLength}constructor(){this._chunks=[],this._totalLength=0}acceptChunk(e){this._chunks.push(e),this._totalLength+=e.byteLength}read(e){return this._read(e,!0)}peek(e){return this._read(e,!1)}_read(e,t){if(e===0)return u();if(e>this._totalLength)throw new Error("Cannot read so many bytes!");if(this._chunks[0].byteLength===e){const o=this._chunks[0];return t&&(this._chunks.shift(),this._totalLength-=e),o}if(this._chunks[0].byteLength>e){const o=this._chunks[0].slice(0,e);return t&&(this._chunks[0]=this._chunks[0].slice(e),this._totalLength-=e),o}const i=g.alloc(e);let n=0,h=0;for(;e>0;){const o=this._chunks[h];if(o.byteLength>e){const d=o.slice(0,e);i.set(d,n),n+=e,t&&(this._chunks[h]=o.slice(e),this._totalLength-=e),e-=e}else i.set(o,n),n+=o.byteLength,t?(this._chunks.shift(),this._totalLength-=o.byteLength):h++,e-=o.byteLength}return i}}var W=(r=>(r[r.None=0]="None",r[r.Regular=1]="Regular",r[r.Control=2]="Control",r[r.Ack=3]="Ack",r[r.Disconnect=5]="Disconnect",r[r.ReplayRequest=6]="ReplayRequest",r[r.Pause=7]="Pause",r[r.Resume=8]="Resume",r[r.KeepAlive=9]="KeepAlive",r))(W||{});function M(a){switch(a){case 0:return"None";case 1:return"Regular";case 2:return"Control";case 3:return"Ack";case 5:return"Disconnect";case 6:return"ReplayRequest";case 7:return"PauseWriting";case 8:return"ResumeWriting";case 9:return"KeepAlive"}}var B=(o=>(o[o.HeaderLength=13]="HeaderLength",o[o.AcknowledgeTime=2e3]="AcknowledgeTime",o[o.TimeoutTime=2e4]="TimeoutTime",o[o.ReconnectionGraceTime=108e5]="ReconnectionGraceTime",o[o.ReconnectionShortGraceTime=3e5]="ReconnectionShortGraceTime",o[o.KeepAliveSendTime=5e3]="KeepAliveSendTime",o))(B||{});class c{constructor(e,t,i,n){this.type=e;this.id=t;this.ack=i;this.data=n;this.writtenTime=0}writtenTime;get size(){return this.data.byteLength}}class v extends T{_socket;_isDisposed;_incomingData;lastReadTime;_onMessage=this._register(new p);onMessage=this._onMessage.event;_state={readHead:!0,readLen:13,messageType:0,id:0,ack:0};constructor(e){super(),this._socket=e,this._isDisposed=!1,this._incomingData=new L,this._register(this._socket.onData(t=>this.acceptChunk(t))),this.lastReadTime=Date.now()}acceptChunk(e){if(!(!e||e.byteLength===0))for(this.lastReadTime=Date.now(),this._incomingData.acceptChunk(e);this._incomingData.byteLength>=this._state.readLen;){const t=this._incomingData.read(this._state.readLen);if(this._state.readHead)this._state.readHead=!1,this._state.readLen=t.readUInt32BE(9),this._state.messageType=t.readUInt8(0),this._state.id=t.readUInt32BE(1),this._state.ack=t.readUInt32BE(5),this._socket.traceSocketEvent("protocolHeaderRead",{messageType:M(this._state.messageType),id:this._state.id,ack:this._state.ack,messageSize:this._state.readLen});else{const i=this._state.messageType,n=this._state.id,h=this._state.ack;if(this._state.readHead=!0,this._state.readLen=13,this._state.messageType=0,this._state.id=0,this._state.ack=0,this._socket.traceSocketEvent("protocolMessageRead",t),this._onMessage.fire(new c(i,n,h,t)),this._isDisposed)break}}}readEntireBuffer(){return this._incomingData.read(this._incomingData.byteLength)}dispose(){this._isDisposed=!0,super.dispose()}}class b{_isDisposed;_isPaused;_socket;_data;_totalLength;lastWriteTime;constructor(e){this._isDisposed=!1,this._isPaused=!1,this._socket=e,this._data=[],this._totalLength=0,this.lastWriteTime=0}dispose(){try{this.flush()}catch{}this._isDisposed=!0}drain(){return this.flush(),this._socket.drain()}flush(){this._writeNow()}pause(){this._isPaused=!0}resume(){this._isPaused=!1,this._scheduleWriting()}write(e){if(this._isDisposed)return;e.writtenTime=Date.now(),this.lastWriteTime=Date.now();const t=g.alloc(13);t.writeUInt8(e.type,0),t.writeUInt32BE(e.id,1),t.writeUInt32BE(e.ack,5),t.writeUInt32BE(e.data.byteLength,9),this._socket.traceSocketEvent("protocolHeaderWrite",{messageType:M(e.type),id:e.id,ack:e.ack,messageSize:e.data.byteLength}),this._socket.traceSocketEvent("protocolMessageWrite",e.data),this._writeSoon(t,e.data)}_bufferAdd(e,t){const i=this._totalLength===0;return this._data.push(e,t),this._totalLength+=e.byteLength+t.byteLength,i}_bufferTake(){const e=g.concat(this._data,this._totalLength);return this._data.length=0,this._totalLength=0,e}_writeSoon(e,t){this._bufferAdd(e,t)&&this._scheduleWriting()}_writeNowTimeout=null;_scheduleWriting(){this._writeNowTimeout||(this._writeNowTimeout=setTimeout(()=>{this._writeNowTimeout=null,this._writeNow()}))}_writeNow(){if(this._totalLength===0||this._isPaused)return;const e=this._bufferTake();this._socket.traceSocketEvent("protocolWrite",{byteLength:e.byteLength}),this._socket.write(e)}}class C extends T{_socket;_socketWriter;_socketReader;_onMessage=new p;onMessage=this._onMessage.event;_onDidDispose=new p;onDidDispose=this._onDidDispose.event;constructor(e){super(),this._socket=e,this._socketWriter=this._register(new b(this._socket)),this._socketReader=this._register(new v(this._socket)),this._register(this._socketReader.onMessage(t=>{t.type===1&&this._onMessage.fire(t.data)})),this._register(this._socket.onClose(()=>this._onDidDispose.fire()))}drain(){return this._socketWriter.drain()}getSocket(){return this._socket}sendDisconnect(){}send(e){this._socketWriter.write(new c(1,0,0,e))}}class R extends D{constructor(t,i,n=null){super(t,i,n);this.protocol=t}static fromSocket(t,i){return new R(new C(t),i)}get onDidDispose(){return this.protocol.onDidDispose}dispose(){super.dispose();const t=this.protocol.getSocket();this.protocol.sendDisconnect(),this.protocol.dispose(),t.end()}}class k{_emitter;event;_hasListeners=!1;_isDeliveringMessages=!1;_bufferedMessages=[];constructor(){this._emitter=new p({onWillAddFirstListener:()=>{this._hasListeners=!0,queueMicrotask(()=>this._deliverMessages())},onDidRemoveLastListener:()=>{this._hasListeners=!1}}),this.event=this._emitter.event}_deliverMessages(){if(!this._isDeliveringMessages){for(this._isDeliveringMessages=!0;this._hasListeners&&this._bufferedMessages.length>0;)this._emitter.fire(this._bufferedMessages.shift());this._isDeliveringMessages=!1}}fire(e){this._hasListeners?this._bufferedMessages.length>0?this._bufferedMessages.push(e):this._emitter.fire(e):this._bufferedMessages.push(e)}flushBuffer(){this._bufferedMessages=[]}}class E{data;next;constructor(e){this.data=e,this.next=null}}class N{_first;_last;constructor(){this._first=null,this._last=null}length(){let e=0,t=this._first;for(;t;)t=t.next,e++;return e}peek(){return this._first?this._first.data:null}toArray(){const e=[];let t=0,i=this._first;for(;i;)e[t++]=i.data,i=i.next;return e}pop(){if(this._first){if(this._first===this._last){this._first=null,this._last=null;return}this._first=this._first.next}}push(e){const t=new E(e);if(!this._first){this._first=t,this._last=t;return}this._last.next=t,this._last=t}}class l{static _HISTORY_LENGTH=10;static _INSTANCE=null;static getInstance(){return l._INSTANCE||(l._INSTANCE=new l),l._INSTANCE}lastRuns;constructor(){this.lastRuns=[];const e=Date.now();for(let t=0;t<l._HISTORY_LENGTH;t++)this.lastRuns[t]=e-1e3*t;setInterval(()=>{for(let t=l._HISTORY_LENGTH;t>=1;t--)this.lastRuns[t]=this.lastRuns[t-1];this.lastRuns[0]=Date.now()},1e3)}load(){const e=Date.now(),t=(1+l._HISTORY_LENGTH)*1e3;let i=0;for(let n=0;n<l._HISTORY_LENGTH;n++)e-this.lastRuns[n]<=t&&i++;return 1-i/l._HISTORY_LENGTH}hasHighLoad(){return this.load()>=.5}}class O{_isReconnecting;_didSendDisconnect;_outgoingUnackMsg;_outgoingMsgId;_outgoingAckId;_outgoingAckTimeout;_incomingMsgId;_incomingAckId;_incomingMsgLastTime;_incomingAckTimeout;_keepAliveInterval;_lastReplayRequestTime;_lastSocketTimeoutTime;_socket;_socketWriter;_socketReader;_socketDisposables;_loadEstimator;_shouldSendKeepAlive;_onControlMessage=new k;onControlMessage=this._onControlMessage.event;_onMessage=new k;onMessage=this._onMessage.event;_onDidDispose=new k;onDidDispose=this._onDidDispose.event;_onSocketClose=new k;onSocketClose=this._onSocketClose.event;_onSocketTimeout=new k;onSocketTimeout=this._onSocketTimeout.event;get unacknowledgedCount(){return this._outgoingMsgId-this._outgoingAckId}constructor(e){this._loadEstimator=e.loadEstimator??l.getInstance(),this._shouldSendKeepAlive=e.sendKeepAlive??!0,this._isReconnecting=!1,this._outgoingUnackMsg=new N,this._outgoingMsgId=0,this._outgoingAckId=0,this._outgoingAckTimeout=null,this._incomingMsgId=0,this._incomingAckId=0,this._incomingMsgLastTime=0,this._incomingAckTimeout=null,this._lastReplayRequestTime=0,this._lastSocketTimeoutTime=Date.now(),this._socketDisposables=new I,this._socket=e.socket,this._socketWriter=this._socketDisposables.add(new b(this._socket)),this._socketReader=this._socketDisposables.add(new v(this._socket)),this._socketDisposables.add(this._socketReader.onMessage(t=>this._receiveMessage(t))),this._socketDisposables.add(this._socket.onClose(t=>this._onSocketClose.fire(t))),e.initialChunk&&this._socketReader.acceptChunk(e.initialChunk),this._shouldSendKeepAlive?this._keepAliveInterval=setInterval(()=>{this._sendKeepAlive()},5e3):this._keepAliveInterval=null}dispose(){this._outgoingAckTimeout&&(clearTimeout(this._outgoingAckTimeout),this._outgoingAckTimeout=null),this._incomingAckTimeout&&(clearTimeout(this._incomingAckTimeout),this._incomingAckTimeout=null),this._keepAliveInterval&&(clearInterval(this._keepAliveInterval),this._keepAliveInterval=null),this._socketDisposables.dispose()}drain(){return this._socketWriter.drain()}sendDisconnect(){if(!this._didSendDisconnect){this._didSendDisconnect=!0;const e=new c(5,0,0,u());this._socketWriter.write(e),this._socketWriter.flush()}}sendPause(){const e=new c(7,0,0,u());this._socketWriter.write(e)}sendResume(){const e=new c(8,0,0,u());this._socketWriter.write(e)}pauseSocketWriting(){this._socketWriter.pause()}getSocket(){return this._socket}getMillisSinceLastIncomingData(){return Date.now()-this._socketReader.lastReadTime}beginAcceptReconnection(e,t){this._isReconnecting=!0,this._socketDisposables.dispose(),this._socketDisposables=new I,this._onControlMessage.flushBuffer(),this._onSocketClose.flushBuffer(),this._onSocketTimeout.flushBuffer(),this._socket.dispose(),this._lastReplayRequestTime=0,this._lastSocketTimeoutTime=Date.now(),this._socket=e,this._socketWriter=this._socketDisposables.add(new b(this._socket)),this._socketReader=this._socketDisposables.add(new v(this._socket)),this._socketDisposables.add(this._socketReader.onMessage(i=>this._receiveMessage(i))),this._socketDisposables.add(this._socket.onClose(i=>this._onSocketClose.fire(i))),this._socketReader.acceptChunk(t)}endAcceptReconnection(){this._isReconnecting=!1,this._incomingAckId=this._incomingMsgId;const e=new c(3,0,this._incomingAckId,u());this._socketWriter.write(e);const t=this._outgoingUnackMsg.toArray();for(let i=0,n=t.length;i<n;i++)this._socketWriter.write(t[i]);this._recvAckCheck()}acceptDisconnect(){this._onDidDispose.fire()}_receiveMessage(e){if(e.ack>this._outgoingAckId){this._outgoingAckId=e.ack;do{const t=this._outgoingUnackMsg.peek();if(t&&t.id<=e.ack)this._outgoingUnackMsg.pop();else break}while(!0)}switch(e.type){case 0:break;case 1:{if(e.id>this._incomingMsgId)if(e.id!==this._incomingMsgId+1){const t=Date.now();t-this._lastReplayRequestTime>1e4&&(this._lastReplayRequestTime=t,this._socketWriter.write(new c(6,0,0,u())))}else this._incomingMsgId=e.id,this._incomingMsgLastTime=Date.now(),this._sendAckCheck(),this._onMessage.fire(e.data);break}case 2:{this._onControlMessage.fire(e.data);break}case 3:break;case 5:{this._onDidDispose.fire();break}case 6:{const t=this._outgoingUnackMsg.toArray();for(let i=0,n=t.length;i<n;i++)this._socketWriter.write(t[i]);this._recvAckCheck();break}case 7:{this._socketWriter.pause();break}case 8:{this._socketWriter.resume();break}case 9:break}}readEntireBuffer(){return this._socketReader.readEntireBuffer()}flush(){this._socketWriter.flush()}send(e){const t=++this._outgoingMsgId;this._incomingAckId=this._incomingMsgId;const i=new c(1,t,this._incomingAckId,e);this._outgoingUnackMsg.push(i),this._isReconnecting||(this._socketWriter.write(i),this._recvAckCheck())}sendControl(e){const t=new c(2,0,0,e);this._socketWriter.write(t)}_sendAckCheck(){if(this._incomingMsgId<=this._incomingAckId||this._incomingAckTimeout)return;const e=Date.now()-this._incomingMsgLastTime;if(e>=2e3){this._sendAck();return}this._incomingAckTimeout=setTimeout(()=>{this._incomingAckTimeout=null,this._sendAckCheck()},2e3-e+5)}_recvAckCheck(){if(this._outgoingMsgId<=this._outgoingAckId||this._outgoingAckTimeout||this._isReconnecting)return;const e=this._outgoingUnackMsg.peek(),t=Date.now()-e.writtenTime,i=Date.now()-this._socketReader.lastReadTime,n=Date.now()-this._lastSocketTimeoutTime;if(t>=2e4&&i>=2e4&&n>=2e4&&!this._loadEstimator.hasHighLoad()){this._lastSocketTimeoutTime=Date.now(),this._onSocketTimeout.fire({unacknowledgedMsgCount:this._outgoingUnackMsg.length(),timeSinceOldestUnacknowledgedMsg:t,timeSinceLastReceivedSomeData:i});return}const h=Math.max(2e4-t,2e4-i,2e4-n,500);this._outgoingAckTimeout=setTimeout(()=>{this._outgoingAckTimeout=null,this._recvAckCheck()},h)}_sendAck(){if(this._incomingMsgId<=this._incomingAckId)return;this._incomingAckId=this._incomingMsgId;const e=new c(3,0,this._incomingAckId,u());this._socketWriter.write(e)}_sendKeepAlive(){this._incomingAckId=this._incomingMsgId;const e=new c(9,0,this._incomingAckId,u());this._socketWriter.write(e)}}export{k as BufferedEmitter,L as ChunkStream,R as Client,O as PersistentProtocol,C as Protocol,B as ProtocolConstants,P as SocketCloseEventType,y as SocketDiagnostics,A as SocketDiagnosticsEventType};
+import { VSBuffer } from '../../../common/buffer.js';
+import { Emitter } from '../../../common/event.js';
+import { Disposable, DisposableStore } from '../../../common/lifecycle.js';
+import { IPCClient } from './ipc.js';
+export var SocketDiagnostics;
+(function (SocketDiagnostics) {
+    SocketDiagnostics.enableDiagnostics = false;
+    SocketDiagnostics.records = [];
+    const socketIds = new WeakMap();
+    let lastUsedSocketId = 0;
+    function getSocketId(nativeObject, label) {
+        if (!socketIds.has(nativeObject)) {
+            const id = String(++lastUsedSocketId);
+            socketIds.set(nativeObject, id);
+        }
+        return socketIds.get(nativeObject);
+    }
+    function traceSocketEvent(nativeObject, socketDebugLabel, type, data) {
+        if (!SocketDiagnostics.enableDiagnostics) {
+            return;
+        }
+        const id = getSocketId(nativeObject, socketDebugLabel);
+        if (data instanceof VSBuffer || data instanceof Uint8Array || data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
+            const copiedData = VSBuffer.alloc(data.byteLength);
+            copiedData.set(data);
+            SocketDiagnostics.records.push({ timestamp: Date.now(), id, label: socketDebugLabel, type, buff: copiedData });
+        }
+        else {
+            SocketDiagnostics.records.push({ timestamp: Date.now(), id, label: socketDebugLabel, type, data: data });
+        }
+    }
+    SocketDiagnostics.traceSocketEvent = traceSocketEvent;
+})(SocketDiagnostics || (SocketDiagnostics = {}));
+let emptyBuffer = null;
+function getEmptyBuffer() {
+    if (!emptyBuffer) {
+        emptyBuffer = VSBuffer.alloc(0);
+    }
+    return emptyBuffer;
+}
+export class ChunkStream {
+    get byteLength() {
+        return this._totalLength;
+    }
+    constructor() {
+        this._chunks = [];
+        this._totalLength = 0;
+    }
+    acceptChunk(buff) {
+        this._chunks.push(buff);
+        this._totalLength += buff.byteLength;
+    }
+    read(byteCount) {
+        return this._read(byteCount, true);
+    }
+    peek(byteCount) {
+        return this._read(byteCount, false);
+    }
+    _read(byteCount, advance) {
+        if (byteCount === 0) {
+            return getEmptyBuffer();
+        }
+        if (byteCount > this._totalLength) {
+            throw new Error(`Cannot read so many bytes!`);
+        }
+        if (this._chunks[0].byteLength === byteCount) {
+            const result = this._chunks[0];
+            if (advance) {
+                this._chunks.shift();
+                this._totalLength -= byteCount;
+            }
+            return result;
+        }
+        if (this._chunks[0].byteLength > byteCount) {
+            const result = this._chunks[0].slice(0, byteCount);
+            if (advance) {
+                this._chunks[0] = this._chunks[0].slice(byteCount);
+                this._totalLength -= byteCount;
+            }
+            return result;
+        }
+        const result = VSBuffer.alloc(byteCount);
+        let resultOffset = 0;
+        let chunkIndex = 0;
+        while (byteCount > 0) {
+            const chunk = this._chunks[chunkIndex];
+            if (chunk.byteLength > byteCount) {
+                const chunkPart = chunk.slice(0, byteCount);
+                result.set(chunkPart, resultOffset);
+                resultOffset += byteCount;
+                if (advance) {
+                    this._chunks[chunkIndex] = chunk.slice(byteCount);
+                    this._totalLength -= byteCount;
+                }
+                byteCount -= byteCount;
+            }
+            else {
+                result.set(chunk, resultOffset);
+                resultOffset += chunk.byteLength;
+                if (advance) {
+                    this._chunks.shift();
+                    this._totalLength -= chunk.byteLength;
+                }
+                else {
+                    chunkIndex++;
+                }
+                byteCount -= chunk.byteLength;
+            }
+        }
+        return result;
+    }
+}
+function protocolMessageTypeToString(messageType) {
+    switch (messageType) {
+        case 0: return 'None';
+        case 1: return 'Regular';
+        case 2: return 'Control';
+        case 3: return 'Ack';
+        case 5: return 'Disconnect';
+        case 6: return 'ReplayRequest';
+        case 7: return 'PauseWriting';
+        case 8: return 'ResumeWriting';
+        case 9: return 'KeepAlive';
+    }
+}
+class ProtocolMessage {
+    constructor(type, id, ack, data) {
+        this.type = type;
+        this.id = id;
+        this.ack = ack;
+        this.data = data;
+        this.writtenTime = 0;
+    }
+    get size() {
+        return this.data.byteLength;
+    }
+}
+class ProtocolReader extends Disposable {
+    constructor(socket) {
+        super();
+        this._onMessage = this._register(new Emitter());
+        this.onMessage = this._onMessage.event;
+        this._state = {
+            readHead: true,
+            readLen: 13,
+            messageType: 0,
+            id: 0,
+            ack: 0
+        };
+        this._socket = socket;
+        this._isDisposed = false;
+        this._incomingData = new ChunkStream();
+        this._register(this._socket.onData(data => this.acceptChunk(data)));
+        this.lastReadTime = Date.now();
+    }
+    acceptChunk(data) {
+        if (!data || data.byteLength === 0) {
+            return;
+        }
+        this.lastReadTime = Date.now();
+        this._incomingData.acceptChunk(data);
+        while (this._incomingData.byteLength >= this._state.readLen) {
+            const buff = this._incomingData.read(this._state.readLen);
+            if (this._state.readHead) {
+                this._state.readHead = false;
+                this._state.readLen = buff.readUInt32BE(9);
+                this._state.messageType = buff.readUInt8(0);
+                this._state.id = buff.readUInt32BE(1);
+                this._state.ack = buff.readUInt32BE(5);
+                this._socket.traceSocketEvent("protocolHeaderRead", { messageType: protocolMessageTypeToString(this._state.messageType), id: this._state.id, ack: this._state.ack, messageSize: this._state.readLen });
+            }
+            else {
+                const messageType = this._state.messageType;
+                const id = this._state.id;
+                const ack = this._state.ack;
+                this._state.readHead = true;
+                this._state.readLen = 13;
+                this._state.messageType = 0;
+                this._state.id = 0;
+                this._state.ack = 0;
+                this._socket.traceSocketEvent("protocolMessageRead", buff);
+                this._onMessage.fire(new ProtocolMessage(messageType, id, ack, buff));
+                if (this._isDisposed) {
+                    break;
+                }
+            }
+        }
+    }
+    readEntireBuffer() {
+        return this._incomingData.read(this._incomingData.byteLength);
+    }
+    dispose() {
+        this._isDisposed = true;
+        super.dispose();
+    }
+}
+class ProtocolWriter {
+    constructor(socket) {
+        this._writeNowTimeout = null;
+        this._isDisposed = false;
+        this._isPaused = false;
+        this._socket = socket;
+        this._data = [];
+        this._totalLength = 0;
+        this.lastWriteTime = 0;
+    }
+    dispose() {
+        try {
+            this.flush();
+        }
+        catch (err) {
+        }
+        this._isDisposed = true;
+    }
+    drain() {
+        this.flush();
+        return this._socket.drain();
+    }
+    flush() {
+        this._writeNow();
+    }
+    pause() {
+        this._isPaused = true;
+    }
+    resume() {
+        this._isPaused = false;
+        this._scheduleWriting();
+    }
+    write(msg) {
+        if (this._isDisposed) {
+            return;
+        }
+        msg.writtenTime = Date.now();
+        this.lastWriteTime = Date.now();
+        const header = VSBuffer.alloc(13);
+        header.writeUInt8(msg.type, 0);
+        header.writeUInt32BE(msg.id, 1);
+        header.writeUInt32BE(msg.ack, 5);
+        header.writeUInt32BE(msg.data.byteLength, 9);
+        this._socket.traceSocketEvent("protocolHeaderWrite", { messageType: protocolMessageTypeToString(msg.type), id: msg.id, ack: msg.ack, messageSize: msg.data.byteLength });
+        this._socket.traceSocketEvent("protocolMessageWrite", msg.data);
+        this._writeSoon(header, msg.data);
+    }
+    _bufferAdd(head, body) {
+        const wasEmpty = this._totalLength === 0;
+        this._data.push(head, body);
+        this._totalLength += head.byteLength + body.byteLength;
+        return wasEmpty;
+    }
+    _bufferTake() {
+        const ret = VSBuffer.concat(this._data, this._totalLength);
+        this._data.length = 0;
+        this._totalLength = 0;
+        return ret;
+    }
+    _writeSoon(header, data) {
+        if (this._bufferAdd(header, data)) {
+            this._scheduleWriting();
+        }
+    }
+    _scheduleWriting() {
+        if (this._writeNowTimeout) {
+            return;
+        }
+        this._writeNowTimeout = setTimeout(() => {
+            this._writeNowTimeout = null;
+            this._writeNow();
+        });
+    }
+    _writeNow() {
+        if (this._totalLength === 0) {
+            return;
+        }
+        if (this._isPaused) {
+            return;
+        }
+        const data = this._bufferTake();
+        this._socket.traceSocketEvent("protocolWrite", { byteLength: data.byteLength });
+        this._socket.write(data);
+    }
+}
+export class Protocol extends Disposable {
+    constructor(socket) {
+        super();
+        this._onMessage = new Emitter();
+        this.onMessage = this._onMessage.event;
+        this._onDidDispose = new Emitter();
+        this.onDidDispose = this._onDidDispose.event;
+        this._socket = socket;
+        this._socketWriter = this._register(new ProtocolWriter(this._socket));
+        this._socketReader = this._register(new ProtocolReader(this._socket));
+        this._register(this._socketReader.onMessage((msg) => {
+            if (msg.type === 1) {
+                this._onMessage.fire(msg.data);
+            }
+        }));
+        this._register(this._socket.onClose(() => this._onDidDispose.fire()));
+    }
+    drain() {
+        return this._socketWriter.drain();
+    }
+    getSocket() {
+        return this._socket;
+    }
+    sendDisconnect() {
+    }
+    send(buffer) {
+        this._socketWriter.write(new ProtocolMessage(1, 0, 0, buffer));
+    }
+}
+export class Client extends IPCClient {
+    static fromSocket(socket, id) {
+        return new Client(new Protocol(socket), id);
+    }
+    get onDidDispose() { return this.protocol.onDidDispose; }
+    constructor(protocol, id, ipcLogger = null) {
+        super(protocol, id, ipcLogger);
+        this.protocol = protocol;
+    }
+    dispose() {
+        super.dispose();
+        const socket = this.protocol.getSocket();
+        this.protocol.sendDisconnect();
+        this.protocol.dispose();
+        socket.end();
+    }
+}
+export class BufferedEmitter {
+    constructor() {
+        this._hasListeners = false;
+        this._isDeliveringMessages = false;
+        this._bufferedMessages = [];
+        this._emitter = new Emitter({
+            onWillAddFirstListener: () => {
+                this._hasListeners = true;
+                queueMicrotask(() => this._deliverMessages());
+            },
+            onDidRemoveLastListener: () => {
+                this._hasListeners = false;
+            }
+        });
+        this.event = this._emitter.event;
+    }
+    _deliverMessages() {
+        if (this._isDeliveringMessages) {
+            return;
+        }
+        this._isDeliveringMessages = true;
+        while (this._hasListeners && this._bufferedMessages.length > 0) {
+            this._emitter.fire(this._bufferedMessages.shift());
+        }
+        this._isDeliveringMessages = false;
+    }
+    fire(event) {
+        if (this._hasListeners) {
+            if (this._bufferedMessages.length > 0) {
+                this._bufferedMessages.push(event);
+            }
+            else {
+                this._emitter.fire(event);
+            }
+        }
+        else {
+            this._bufferedMessages.push(event);
+        }
+    }
+    flushBuffer() {
+        this._bufferedMessages = [];
+    }
+}
+class QueueElement {
+    constructor(data) {
+        this.data = data;
+        this.next = null;
+    }
+}
+class Queue {
+    constructor() {
+        this._first = null;
+        this._last = null;
+    }
+    length() {
+        let result = 0;
+        let current = this._first;
+        while (current) {
+            current = current.next;
+            result++;
+        }
+        return result;
+    }
+    peek() {
+        if (!this._first) {
+            return null;
+        }
+        return this._first.data;
+    }
+    toArray() {
+        const result = [];
+        let resultLen = 0;
+        let it = this._first;
+        while (it) {
+            result[resultLen++] = it.data;
+            it = it.next;
+        }
+        return result;
+    }
+    pop() {
+        if (!this._first) {
+            return;
+        }
+        if (this._first === this._last) {
+            this._first = null;
+            this._last = null;
+            return;
+        }
+        this._first = this._first.next;
+    }
+    push(item) {
+        const element = new QueueElement(item);
+        if (!this._first) {
+            this._first = element;
+            this._last = element;
+            return;
+        }
+        this._last.next = element;
+        this._last = element;
+    }
+}
+class LoadEstimator {
+    static { this._HISTORY_LENGTH = 10; }
+    static { this._INSTANCE = null; }
+    static getInstance() {
+        if (!LoadEstimator._INSTANCE) {
+            LoadEstimator._INSTANCE = new LoadEstimator();
+        }
+        return LoadEstimator._INSTANCE;
+    }
+    constructor() {
+        this.lastRuns = [];
+        const now = Date.now();
+        for (let i = 0; i < LoadEstimator._HISTORY_LENGTH; i++) {
+            this.lastRuns[i] = now - 1000 * i;
+        }
+        setInterval(() => {
+            for (let i = LoadEstimator._HISTORY_LENGTH; i >= 1; i--) {
+                this.lastRuns[i] = this.lastRuns[i - 1];
+            }
+            this.lastRuns[0] = Date.now();
+        }, 1000);
+    }
+    load() {
+        const now = Date.now();
+        const historyLimit = (1 + LoadEstimator._HISTORY_LENGTH) * 1000;
+        let score = 0;
+        for (let i = 0; i < LoadEstimator._HISTORY_LENGTH; i++) {
+            if (now - this.lastRuns[i] <= historyLimit) {
+                score++;
+            }
+        }
+        return 1 - score / LoadEstimator._HISTORY_LENGTH;
+    }
+    hasHighLoad() {
+        return this.load() >= 0.5;
+    }
+}
+export class PersistentProtocol {
+    get unacknowledgedCount() {
+        return this._outgoingMsgId - this._outgoingAckId;
+    }
+    constructor(opts) {
+        this._onControlMessage = new BufferedEmitter();
+        this.onControlMessage = this._onControlMessage.event;
+        this._onMessage = new BufferedEmitter();
+        this.onMessage = this._onMessage.event;
+        this._onDidDispose = new BufferedEmitter();
+        this.onDidDispose = this._onDidDispose.event;
+        this._onSocketClose = new BufferedEmitter();
+        this.onSocketClose = this._onSocketClose.event;
+        this._onSocketTimeout = new BufferedEmitter();
+        this.onSocketTimeout = this._onSocketTimeout.event;
+        this._loadEstimator = opts.loadEstimator ?? LoadEstimator.getInstance();
+        this._shouldSendKeepAlive = opts.sendKeepAlive ?? true;
+        this._isReconnecting = false;
+        this._outgoingUnackMsg = new Queue();
+        this._outgoingMsgId = 0;
+        this._outgoingAckId = 0;
+        this._outgoingAckTimeout = null;
+        this._incomingMsgId = 0;
+        this._incomingAckId = 0;
+        this._incomingMsgLastTime = 0;
+        this._incomingAckTimeout = null;
+        this._lastReplayRequestTime = 0;
+        this._lastSocketTimeoutTime = Date.now();
+        this._socketDisposables = new DisposableStore();
+        this._socket = opts.socket;
+        this._socketWriter = this._socketDisposables.add(new ProtocolWriter(this._socket));
+        this._socketReader = this._socketDisposables.add(new ProtocolReader(this._socket));
+        this._socketDisposables.add(this._socketReader.onMessage(msg => this._receiveMessage(msg)));
+        this._socketDisposables.add(this._socket.onClose(e => this._onSocketClose.fire(e)));
+        if (opts.initialChunk) {
+            this._socketReader.acceptChunk(opts.initialChunk);
+        }
+        if (this._shouldSendKeepAlive) {
+            this._keepAliveInterval = setInterval(() => {
+                this._sendKeepAlive();
+            }, 5000);
+        }
+        else {
+            this._keepAliveInterval = null;
+        }
+    }
+    dispose() {
+        if (this._outgoingAckTimeout) {
+            clearTimeout(this._outgoingAckTimeout);
+            this._outgoingAckTimeout = null;
+        }
+        if (this._incomingAckTimeout) {
+            clearTimeout(this._incomingAckTimeout);
+            this._incomingAckTimeout = null;
+        }
+        if (this._keepAliveInterval) {
+            clearInterval(this._keepAliveInterval);
+            this._keepAliveInterval = null;
+        }
+        this._socketDisposables.dispose();
+    }
+    drain() {
+        return this._socketWriter.drain();
+    }
+    sendDisconnect() {
+        if (!this._didSendDisconnect) {
+            this._didSendDisconnect = true;
+            const msg = new ProtocolMessage(5, 0, 0, getEmptyBuffer());
+            this._socketWriter.write(msg);
+            this._socketWriter.flush();
+        }
+    }
+    sendPause() {
+        const msg = new ProtocolMessage(7, 0, 0, getEmptyBuffer());
+        this._socketWriter.write(msg);
+    }
+    sendResume() {
+        const msg = new ProtocolMessage(8, 0, 0, getEmptyBuffer());
+        this._socketWriter.write(msg);
+    }
+    pauseSocketWriting() {
+        this._socketWriter.pause();
+    }
+    getSocket() {
+        return this._socket;
+    }
+    getMillisSinceLastIncomingData() {
+        return Date.now() - this._socketReader.lastReadTime;
+    }
+    beginAcceptReconnection(socket, initialDataChunk) {
+        this._isReconnecting = true;
+        this._socketDisposables.dispose();
+        this._socketDisposables = new DisposableStore();
+        this._onControlMessage.flushBuffer();
+        this._onSocketClose.flushBuffer();
+        this._onSocketTimeout.flushBuffer();
+        this._socket.dispose();
+        this._lastReplayRequestTime = 0;
+        this._lastSocketTimeoutTime = Date.now();
+        this._socket = socket;
+        this._socketWriter = this._socketDisposables.add(new ProtocolWriter(this._socket));
+        this._socketReader = this._socketDisposables.add(new ProtocolReader(this._socket));
+        this._socketDisposables.add(this._socketReader.onMessage(msg => this._receiveMessage(msg)));
+        this._socketDisposables.add(this._socket.onClose(e => this._onSocketClose.fire(e)));
+        this._socketReader.acceptChunk(initialDataChunk);
+    }
+    endAcceptReconnection() {
+        this._isReconnecting = false;
+        this._incomingAckId = this._incomingMsgId;
+        const msg = new ProtocolMessage(3, 0, this._incomingAckId, getEmptyBuffer());
+        this._socketWriter.write(msg);
+        const toSend = this._outgoingUnackMsg.toArray();
+        for (let i = 0, len = toSend.length; i < len; i++) {
+            this._socketWriter.write(toSend[i]);
+        }
+        this._recvAckCheck();
+    }
+    acceptDisconnect() {
+        this._onDidDispose.fire();
+    }
+    _receiveMessage(msg) {
+        if (msg.ack > this._outgoingAckId) {
+            this._outgoingAckId = msg.ack;
+            do {
+                const first = this._outgoingUnackMsg.peek();
+                if (first && first.id <= msg.ack) {
+                    this._outgoingUnackMsg.pop();
+                }
+                else {
+                    break;
+                }
+            } while (true);
+        }
+        switch (msg.type) {
+            case 0: {
+                break;
+            }
+            case 1: {
+                if (msg.id > this._incomingMsgId) {
+                    if (msg.id !== this._incomingMsgId + 1) {
+                        const now = Date.now();
+                        if (now - this._lastReplayRequestTime > 10000) {
+                            this._lastReplayRequestTime = now;
+                            this._socketWriter.write(new ProtocolMessage(6, 0, 0, getEmptyBuffer()));
+                        }
+                    }
+                    else {
+                        this._incomingMsgId = msg.id;
+                        this._incomingMsgLastTime = Date.now();
+                        this._sendAckCheck();
+                        this._onMessage.fire(msg.data);
+                    }
+                }
+                break;
+            }
+            case 2: {
+                this._onControlMessage.fire(msg.data);
+                break;
+            }
+            case 3: {
+                break;
+            }
+            case 5: {
+                this._onDidDispose.fire();
+                break;
+            }
+            case 6: {
+                const toSend = this._outgoingUnackMsg.toArray();
+                for (let i = 0, len = toSend.length; i < len; i++) {
+                    this._socketWriter.write(toSend[i]);
+                }
+                this._recvAckCheck();
+                break;
+            }
+            case 7: {
+                this._socketWriter.pause();
+                break;
+            }
+            case 8: {
+                this._socketWriter.resume();
+                break;
+            }
+            case 9: {
+                break;
+            }
+        }
+    }
+    readEntireBuffer() {
+        return this._socketReader.readEntireBuffer();
+    }
+    flush() {
+        this._socketWriter.flush();
+    }
+    send(buffer) {
+        const myId = ++this._outgoingMsgId;
+        this._incomingAckId = this._incomingMsgId;
+        const msg = new ProtocolMessage(1, myId, this._incomingAckId, buffer);
+        this._outgoingUnackMsg.push(msg);
+        if (!this._isReconnecting) {
+            this._socketWriter.write(msg);
+            this._recvAckCheck();
+        }
+    }
+    sendControl(buffer) {
+        const msg = new ProtocolMessage(2, 0, 0, buffer);
+        this._socketWriter.write(msg);
+    }
+    _sendAckCheck() {
+        if (this._incomingMsgId <= this._incomingAckId) {
+            return;
+        }
+        if (this._incomingAckTimeout) {
+            return;
+        }
+        const timeSinceLastIncomingMsg = Date.now() - this._incomingMsgLastTime;
+        if (timeSinceLastIncomingMsg >= 2000) {
+            this._sendAck();
+            return;
+        }
+        this._incomingAckTimeout = setTimeout(() => {
+            this._incomingAckTimeout = null;
+            this._sendAckCheck();
+        }, 2000 - timeSinceLastIncomingMsg + 5);
+    }
+    _recvAckCheck() {
+        if (this._outgoingMsgId <= this._outgoingAckId) {
+            return;
+        }
+        if (this._outgoingAckTimeout) {
+            return;
+        }
+        if (this._isReconnecting) {
+            return;
+        }
+        const oldestUnacknowledgedMsg = this._outgoingUnackMsg.peek();
+        const timeSinceOldestUnacknowledgedMsg = Date.now() - oldestUnacknowledgedMsg.writtenTime;
+        const timeSinceLastReceivedSomeData = Date.now() - this._socketReader.lastReadTime;
+        const timeSinceLastTimeout = Date.now() - this._lastSocketTimeoutTime;
+        if (timeSinceOldestUnacknowledgedMsg >= 20000
+            && timeSinceLastReceivedSomeData >= 20000
+            && timeSinceLastTimeout >= 20000) {
+            if (!this._loadEstimator.hasHighLoad()) {
+                this._lastSocketTimeoutTime = Date.now();
+                this._onSocketTimeout.fire({
+                    unacknowledgedMsgCount: this._outgoingUnackMsg.length(),
+                    timeSinceOldestUnacknowledgedMsg,
+                    timeSinceLastReceivedSomeData
+                });
+                return;
+            }
+        }
+        const minimumTimeUntilTimeout = Math.max(20000 - timeSinceOldestUnacknowledgedMsg, 20000 - timeSinceLastReceivedSomeData, 20000 - timeSinceLastTimeout, 500);
+        this._outgoingAckTimeout = setTimeout(() => {
+            this._outgoingAckTimeout = null;
+            this._recvAckCheck();
+        }, minimumTimeUntilTimeout);
+    }
+    _sendAck() {
+        if (this._incomingMsgId <= this._incomingAckId) {
+            return;
+        }
+        this._incomingAckId = this._incomingMsgId;
+        const msg = new ProtocolMessage(3, 0, this._incomingAckId, getEmptyBuffer());
+        this._socketWriter.write(msg);
+    }
+    _sendKeepAlive() {
+        this._incomingAckId = this._incomingMsgId;
+        const msg = new ProtocolMessage(9, 0, this._incomingAckId, getEmptyBuffer());
+        this._socketWriter.write(msg);
+    }
+}

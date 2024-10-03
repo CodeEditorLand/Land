@@ -1,1 +1,49 @@
-import"../../../../../editor/common/core/range.js";import"../../../../../editor/common/core/selection.js";import{SelectionStateType as t}from"../../common/notebookCommon.js";import{UndoRedoElementType as i}from"../../../../../platform/undoRedo/common/undoRedo.js";import"../../../../../base/common/uri.js";import"./baseCellViewModel.js";import{CellFocusMode as l}from"../notebookBrowser.js";import"../../common/model/notebookCellTextModel.js";import"../../common/model/cellEdit.js";class N{constructor(e,d,n,r,s,a,c,m,p){this.resource=e;this.index=d;this.direction=n;this.cell=r;this.selections=s;this.inverseRange=a;this.insertContent=c;this.removedCell=m;this.editingDelegate=p;this._deletedRawCell=this.removedCell.model}type=i.Resource;label="Join Cell";code="undoredo.textBufferEdit";_deletedRawCell;async undo(){if(!this.editingDelegate.insertCell||!this.editingDelegate.createCellViewModel)throw new Error("Notebook Insert Cell not implemented for Undo/Redo");await this.cell.resolveTextModel(),this.cell.textModel?.applyEdits([{range:this.inverseRange,text:""}]),this.cell.setSelections(this.selections);const e=this.editingDelegate.createCellViewModel(this._deletedRawCell);this.direction==="above"?(this.editingDelegate.insertCell(this.index,this._deletedRawCell,{kind:t.Handle,primary:e.handle,selections:[e.handle]}),e.focusMode=l.Editor):(this.editingDelegate.insertCell(this.index,e.model,{kind:t.Handle,primary:this.cell.handle,selections:[this.cell.handle]}),this.cell.focusMode=l.Editor)}async redo(){if(!this.editingDelegate.deleteCell)throw new Error("Notebook Delete Cell not implemented for Undo/Redo");await this.cell.resolveTextModel(),this.cell.textModel?.applyEdits([{range:this.inverseRange,text:this.insertContent}]),this.editingDelegate.deleteCell(this.index,{kind:t.Handle,primary:this.cell.handle,selections:[this.cell.handle]}),this.cell.focusMode=l.Editor}}export{N as JoinCellEdit};
+import { SelectionStateType } from '../../common/notebookCommon.js';
+import { CellFocusMode } from '../notebookBrowser.js';
+export class JoinCellEdit {
+    constructor(resource, index, direction, cell, selections, inverseRange, insertContent, removedCell, editingDelegate) {
+        this.resource = resource;
+        this.index = index;
+        this.direction = direction;
+        this.cell = cell;
+        this.selections = selections;
+        this.inverseRange = inverseRange;
+        this.insertContent = insertContent;
+        this.removedCell = removedCell;
+        this.editingDelegate = editingDelegate;
+        this.type = 0;
+        this.label = 'Join Cell';
+        this.code = 'undoredo.textBufferEdit';
+        this._deletedRawCell = this.removedCell.model;
+    }
+    async undo() {
+        if (!this.editingDelegate.insertCell || !this.editingDelegate.createCellViewModel) {
+            throw new Error('Notebook Insert Cell not implemented for Undo/Redo');
+        }
+        await this.cell.resolveTextModel();
+        this.cell.textModel?.applyEdits([
+            { range: this.inverseRange, text: '' }
+        ]);
+        this.cell.setSelections(this.selections);
+        const cell = this.editingDelegate.createCellViewModel(this._deletedRawCell);
+        if (this.direction === 'above') {
+            this.editingDelegate.insertCell(this.index, this._deletedRawCell, { kind: SelectionStateType.Handle, primary: cell.handle, selections: [cell.handle] });
+            cell.focusMode = CellFocusMode.Editor;
+        }
+        else {
+            this.editingDelegate.insertCell(this.index, cell.model, { kind: SelectionStateType.Handle, primary: this.cell.handle, selections: [this.cell.handle] });
+            this.cell.focusMode = CellFocusMode.Editor;
+        }
+    }
+    async redo() {
+        if (!this.editingDelegate.deleteCell) {
+            throw new Error('Notebook Delete Cell not implemented for Undo/Redo');
+        }
+        await this.cell.resolveTextModel();
+        this.cell.textModel?.applyEdits([
+            { range: this.inverseRange, text: this.insertContent }
+        ]);
+        this.editingDelegate.deleteCell(this.index, { kind: SelectionStateType.Handle, primary: this.cell.handle, selections: [this.cell.handle] });
+        this.cell.focusMode = CellFocusMode.Editor;
+    }
+}

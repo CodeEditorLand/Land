@@ -1,1 +1,344 @@
-import{findLast as N}from"../../../base/common/arraysFind.js";import*as T from"../../../base/common/strings.js";import{CursorColumns as A}from"../core/cursorColumns.js";import"../core/position.js";import{Range as G}from"../core/range.js";import{TextModelPart as y}from"./textModelPart.js";import{computeIndentLevel as E}from"./utils.js";import"../languages/languageConfigurationRegistry.js";import{HorizontalGuidesState as z,IndentGuide as S,IndentGuideHorizontalLine as R}from"../textModelGuides.js";import{BugIndicatingError as F}from"../../../base/common/errors.js";class ie extends y{constructor(e,l){super();this.textModel=e;this.languageConfigurationService=l}getLanguageConfiguration(e){return this.languageConfigurationService.getLanguageConfiguration(e)}_computeIndentLevel(e){return E(this.textModel.getLineContent(e+1),this.textModel.getOptions().tabSize)}getActiveIndentGuide(e,l,s){this.assertNotDisposed();const a=this.textModel.getLineCount();if(e<1||e>a)throw new F("Illegal value for lineNumber");const g=this.getLanguageConfiguration(this.textModel.getLanguageId()).foldingRules,k=!!(g&&g.offSide);let f=-2,h=-1,b=-2,m=-1;const n=u=>{if(f!==-1&&(f===-2||f>u-1)){f=-1,h=-1;for(let t=u-2;t>=0;t--){const o=this._computeIndentLevel(t);if(o>=0){f=t,h=o;break}}}if(b===-2){b=-1,m=-1;for(let t=u;t<a;t++){const o=this._computeIndentLevel(t);if(o>=0){b=t,m=o;break}}}};let i=-2,c=-1,d=-2,r=-1;const C=u=>{if(i===-2){i=-1,c=-1;for(let t=u-2;t>=0;t--){const o=this._computeIndentLevel(t);if(o>=0){i=t,c=o;break}}}if(d!==-1&&(d===-2||d<u-1)){d=-1,r=-1;for(let t=u;t<a;t++){const o=this._computeIndentLevel(t);if(o>=0){d=t,r=o;break}}}};let L=0,x=!0,I=0,v=!0,M=0,B=0;for(let u=0;x||v;u++){const t=e-u,o=e+u;u>1&&(t<1||t<l)&&(x=!1),u>1&&(o>a||o>s)&&(v=!1),u>5e4&&(x=!1,v=!1);let p=-1;if(x&&t>=1){const P=this._computeIndentLevel(t-1);P>=0?(b=t-1,m=P,p=Math.ceil(P/this.textModel.getOptions().indentSize)):(n(t),p=this._getIndentLevelForWhitespaceLine(k,h,m))}let w=-1;if(v&&o<=a){const P=this._computeIndentLevel(o-1);P>=0?(i=o-1,c=P,w=Math.ceil(P/this.textModel.getOptions().indentSize)):(C(o),w=this._getIndentLevelForWhitespaceLine(k,c,r))}if(u===0){B=p;continue}if(u===1){if(o<=a&&w>=0&&B+1===w){x=!1,L=o,I=o,M=w;continue}if(t>=1&&p>=0&&p-1===B){v=!1,L=t,I=t,M=p;continue}if(L=e,I=e,M=B,M===0)return{startLineNumber:L,endLineNumber:I,indent:M}}x&&(p>=M?L=t:x=!1),v&&(w>=M?I=o:v=!1)}return{startLineNumber:L,endLineNumber:I,indent:M}}getLinesBracketGuides(e,l,s,a){const g=[];for(let n=e;n<=l;n++)g.push([]);const k=!0,f=this.textModel.bracketPairs.getBracketPairsInRangeWithMinIndentation(new G(e,1,l,this.textModel.getLineMaxColumn(l))).toArray();let h;if(s&&f.length>0){const n=(e<=s.lineNumber&&s.lineNumber<=l?f:this.textModel.bracketPairs.getBracketPairsInRange(G.fromPositions(s)).toArray()).filter(i=>G.strictContainsPosition(i.range,s));h=N(n,i=>k||i.range.startLineNumber!==i.range.endLineNumber)?.range}const b=this.textModel.getOptions().bracketPairColorizationOptions.independentColorPoolPerBracketType,m=new W;for(const n of f){if(!n.closingBracketRange)continue;const i=h&&n.range.equalsRange(h);if(!i&&!a.includeInactive)continue;const c=m.getInlineClassName(n.nestingLevel,n.nestingLevelOfEqualBracketType,b)+(a.highlightActive&&i?" "+m.activeClassName:""),d=n.openingBracketRange.getStartPosition(),r=n.closingBracketRange.getStartPosition(),C=a.horizontalGuides===z.Enabled||a.horizontalGuides===z.EnabledForActive&&i;if(n.range.startLineNumber===n.range.endLineNumber){k&&C&&g[n.range.startLineNumber-e].push(new S(-1,n.openingBracketRange.getEndPosition().column,c,new R(!1,r.column),-1,-1));continue}const L=this.getVisibleColumnFromPosition(r),x=this.getVisibleColumnFromPosition(n.openingBracketRange.getStartPosition()),I=Math.min(x,L,n.minVisibleColumnIndentation+1);let v=!1;T.firstNonWhitespaceIndex(this.textModel.getLineContent(n.closingBracketRange.startLineNumber))<n.closingBracketRange.startColumn-1&&(v=!0);const u=Math.max(d.lineNumber,e),t=Math.min(r.lineNumber,l),o=v?1:0;for(let p=u;p<t+o;p++)g[p-e].push(new S(I,-1,c,null,p===d.lineNumber?d.column:-1,p===r.lineNumber?r.column:-1));C&&(d.lineNumber>=e&&x>I&&g[d.lineNumber-e].push(new S(I,-1,c,new R(!1,d.column),-1,-1)),r.lineNumber<=l&&L>I&&g[r.lineNumber-e].push(new S(I,-1,c,new R(!v,r.column),-1,-1)))}for(const n of g)n.sort((i,c)=>i.visibleColumn-c.visibleColumn);return g}getVisibleColumnFromPosition(e){return A.visibleColumnFromColumn(this.textModel.getLineContent(e.lineNumber),e.column,this.textModel.getOptions().tabSize)+1}getLinesIndentGuides(e,l){this.assertNotDisposed();const s=this.textModel.getLineCount();if(e<1||e>s)throw new Error("Illegal value for startLineNumber");if(l<1||l>s)throw new Error("Illegal value for endLineNumber");const a=this.textModel.getOptions(),g=this.getLanguageConfiguration(this.textModel.getLanguageId()).foldingRules,k=!!(g&&g.offSide),f=new Array(l-e+1);let h=-2,b=-1,m=-2,n=-1;for(let i=e;i<=l;i++){const c=i-e,d=this._computeIndentLevel(i-1);if(d>=0){h=i-1,b=d,f[c]=Math.ceil(d/a.indentSize);continue}if(h===-2){h=-1,b=-1;for(let r=i-2;r>=0;r--){const C=this._computeIndentLevel(r);if(C>=0){h=r,b=C;break}}}if(m!==-1&&(m===-2||m<i-1)){m=-1,n=-1;for(let r=i;r<s;r++){const C=this._computeIndentLevel(r);if(C>=0){m=r,n=C;break}}}f[c]=this._getIndentLevelForWhitespaceLine(k,b,n)}return f}_getIndentLevelForWhitespaceLine(e,l,s){const a=this.textModel.getOptions();return l===-1||s===-1?0:l<s?1+Math.floor(l/a.indentSize):l===s||e?Math.ceil(s/a.indentSize):1+Math.floor(s/a.indentSize)}}class W{activeClassName="indent-active";getInlineClassName(_,e,l){return this.getInlineClassNameOfLevel(l?e:_)}getInlineClassNameOfLevel(_){return`bracket-indent-guide lvl-${_%30}`}}export{W as BracketPairGuidesClassNames,ie as GuidesTextModelPart};
+import { findLast } from '../../../base/common/arraysFind.js';
+import * as strings from '../../../base/common/strings.js';
+import { CursorColumns } from '../core/cursorColumns.js';
+import { Range } from '../core/range.js';
+import { TextModelPart } from './textModelPart.js';
+import { computeIndentLevel } from './utils.js';
+import { HorizontalGuidesState, IndentGuide, IndentGuideHorizontalLine } from '../textModelGuides.js';
+import { BugIndicatingError } from '../../../base/common/errors.js';
+export class GuidesTextModelPart extends TextModelPart {
+    constructor(textModel, languageConfigurationService) {
+        super();
+        this.textModel = textModel;
+        this.languageConfigurationService = languageConfigurationService;
+    }
+    getLanguageConfiguration(languageId) {
+        return this.languageConfigurationService.getLanguageConfiguration(languageId);
+    }
+    _computeIndentLevel(lineIndex) {
+        return computeIndentLevel(this.textModel.getLineContent(lineIndex + 1), this.textModel.getOptions().tabSize);
+    }
+    getActiveIndentGuide(lineNumber, minLineNumber, maxLineNumber) {
+        this.assertNotDisposed();
+        const lineCount = this.textModel.getLineCount();
+        if (lineNumber < 1 || lineNumber > lineCount) {
+            throw new BugIndicatingError('Illegal value for lineNumber');
+        }
+        const foldingRules = this.getLanguageConfiguration(this.textModel.getLanguageId()).foldingRules;
+        const offSide = Boolean(foldingRules && foldingRules.offSide);
+        let up_aboveContentLineIndex = -2;
+        let up_aboveContentLineIndent = -1;
+        let up_belowContentLineIndex = -2;
+        let up_belowContentLineIndent = -1;
+        const up_resolveIndents = (lineNumber) => {
+            if (up_aboveContentLineIndex !== -1 &&
+                (up_aboveContentLineIndex === -2 ||
+                    up_aboveContentLineIndex > lineNumber - 1)) {
+                up_aboveContentLineIndex = -1;
+                up_aboveContentLineIndent = -1;
+                for (let lineIndex = lineNumber - 2; lineIndex >= 0; lineIndex--) {
+                    const indent = this._computeIndentLevel(lineIndex);
+                    if (indent >= 0) {
+                        up_aboveContentLineIndex = lineIndex;
+                        up_aboveContentLineIndent = indent;
+                        break;
+                    }
+                }
+            }
+            if (up_belowContentLineIndex === -2) {
+                up_belowContentLineIndex = -1;
+                up_belowContentLineIndent = -1;
+                for (let lineIndex = lineNumber; lineIndex < lineCount; lineIndex++) {
+                    const indent = this._computeIndentLevel(lineIndex);
+                    if (indent >= 0) {
+                        up_belowContentLineIndex = lineIndex;
+                        up_belowContentLineIndent = indent;
+                        break;
+                    }
+                }
+            }
+        };
+        let down_aboveContentLineIndex = -2;
+        let down_aboveContentLineIndent = -1;
+        let down_belowContentLineIndex = -2;
+        let down_belowContentLineIndent = -1;
+        const down_resolveIndents = (lineNumber) => {
+            if (down_aboveContentLineIndex === -2) {
+                down_aboveContentLineIndex = -1;
+                down_aboveContentLineIndent = -1;
+                for (let lineIndex = lineNumber - 2; lineIndex >= 0; lineIndex--) {
+                    const indent = this._computeIndentLevel(lineIndex);
+                    if (indent >= 0) {
+                        down_aboveContentLineIndex = lineIndex;
+                        down_aboveContentLineIndent = indent;
+                        break;
+                    }
+                }
+            }
+            if (down_belowContentLineIndex !== -1 &&
+                (down_belowContentLineIndex === -2 ||
+                    down_belowContentLineIndex < lineNumber - 1)) {
+                down_belowContentLineIndex = -1;
+                down_belowContentLineIndent = -1;
+                for (let lineIndex = lineNumber; lineIndex < lineCount; lineIndex++) {
+                    const indent = this._computeIndentLevel(lineIndex);
+                    if (indent >= 0) {
+                        down_belowContentLineIndex = lineIndex;
+                        down_belowContentLineIndent = indent;
+                        break;
+                    }
+                }
+            }
+        };
+        let startLineNumber = 0;
+        let goUp = true;
+        let endLineNumber = 0;
+        let goDown = true;
+        let indent = 0;
+        let initialIndent = 0;
+        for (let distance = 0; goUp || goDown; distance++) {
+            const upLineNumber = lineNumber - distance;
+            const downLineNumber = lineNumber + distance;
+            if (distance > 1 && (upLineNumber < 1 || upLineNumber < minLineNumber)) {
+                goUp = false;
+            }
+            if (distance > 1 &&
+                (downLineNumber > lineCount || downLineNumber > maxLineNumber)) {
+                goDown = false;
+            }
+            if (distance > 50000) {
+                goUp = false;
+                goDown = false;
+            }
+            let upLineIndentLevel = -1;
+            if (goUp && upLineNumber >= 1) {
+                const currentIndent = this._computeIndentLevel(upLineNumber - 1);
+                if (currentIndent >= 0) {
+                    up_belowContentLineIndex = upLineNumber - 1;
+                    up_belowContentLineIndent = currentIndent;
+                    upLineIndentLevel = Math.ceil(currentIndent / this.textModel.getOptions().indentSize);
+                }
+                else {
+                    up_resolveIndents(upLineNumber);
+                    upLineIndentLevel = this._getIndentLevelForWhitespaceLine(offSide, up_aboveContentLineIndent, up_belowContentLineIndent);
+                }
+            }
+            let downLineIndentLevel = -1;
+            if (goDown && downLineNumber <= lineCount) {
+                const currentIndent = this._computeIndentLevel(downLineNumber - 1);
+                if (currentIndent >= 0) {
+                    down_aboveContentLineIndex = downLineNumber - 1;
+                    down_aboveContentLineIndent = currentIndent;
+                    downLineIndentLevel = Math.ceil(currentIndent / this.textModel.getOptions().indentSize);
+                }
+                else {
+                    down_resolveIndents(downLineNumber);
+                    downLineIndentLevel = this._getIndentLevelForWhitespaceLine(offSide, down_aboveContentLineIndent, down_belowContentLineIndent);
+                }
+            }
+            if (distance === 0) {
+                initialIndent = upLineIndentLevel;
+                continue;
+            }
+            if (distance === 1) {
+                if (downLineNumber <= lineCount &&
+                    downLineIndentLevel >= 0 &&
+                    initialIndent + 1 === downLineIndentLevel) {
+                    goUp = false;
+                    startLineNumber = downLineNumber;
+                    endLineNumber = downLineNumber;
+                    indent = downLineIndentLevel;
+                    continue;
+                }
+                if (upLineNumber >= 1 &&
+                    upLineIndentLevel >= 0 &&
+                    upLineIndentLevel - 1 === initialIndent) {
+                    goDown = false;
+                    startLineNumber = upLineNumber;
+                    endLineNumber = upLineNumber;
+                    indent = upLineIndentLevel;
+                    continue;
+                }
+                startLineNumber = lineNumber;
+                endLineNumber = lineNumber;
+                indent = initialIndent;
+                if (indent === 0) {
+                    return { startLineNumber, endLineNumber, indent };
+                }
+            }
+            if (goUp) {
+                if (upLineIndentLevel >= indent) {
+                    startLineNumber = upLineNumber;
+                }
+                else {
+                    goUp = false;
+                }
+            }
+            if (goDown) {
+                if (downLineIndentLevel >= indent) {
+                    endLineNumber = downLineNumber;
+                }
+                else {
+                    goDown = false;
+                }
+            }
+        }
+        return { startLineNumber, endLineNumber, indent };
+    }
+    getLinesBracketGuides(startLineNumber, endLineNumber, activePosition, options) {
+        const result = [];
+        for (let lineNumber = startLineNumber; lineNumber <= endLineNumber; lineNumber++) {
+            result.push([]);
+        }
+        const includeSingleLinePairs = true;
+        const bracketPairs = this.textModel.bracketPairs.getBracketPairsInRangeWithMinIndentation(new Range(startLineNumber, 1, endLineNumber, this.textModel.getLineMaxColumn(endLineNumber))).toArray();
+        let activeBracketPairRange = undefined;
+        if (activePosition && bracketPairs.length > 0) {
+            const bracketsContainingActivePosition = (startLineNumber <= activePosition.lineNumber &&
+                activePosition.lineNumber <= endLineNumber
+                ? bracketPairs
+                : this.textModel.bracketPairs.getBracketPairsInRange(Range.fromPositions(activePosition)).toArray()).filter((bp) => Range.strictContainsPosition(bp.range, activePosition));
+            activeBracketPairRange = findLast(bracketsContainingActivePosition, (i) => includeSingleLinePairs || i.range.startLineNumber !== i.range.endLineNumber)?.range;
+        }
+        const independentColorPoolPerBracketType = this.textModel.getOptions().bracketPairColorizationOptions.independentColorPoolPerBracketType;
+        const colorProvider = new BracketPairGuidesClassNames();
+        for (const pair of bracketPairs) {
+            if (!pair.closingBracketRange) {
+                continue;
+            }
+            const isActive = activeBracketPairRange && pair.range.equalsRange(activeBracketPairRange);
+            if (!isActive && !options.includeInactive) {
+                continue;
+            }
+            const className = colorProvider.getInlineClassName(pair.nestingLevel, pair.nestingLevelOfEqualBracketType, independentColorPoolPerBracketType) +
+                (options.highlightActive && isActive
+                    ? ' ' + colorProvider.activeClassName
+                    : '');
+            const start = pair.openingBracketRange.getStartPosition();
+            const end = pair.closingBracketRange.getStartPosition();
+            const horizontalGuides = options.horizontalGuides === HorizontalGuidesState.Enabled || (options.horizontalGuides === HorizontalGuidesState.EnabledForActive && isActive);
+            if (pair.range.startLineNumber === pair.range.endLineNumber) {
+                if (includeSingleLinePairs && horizontalGuides) {
+                    result[pair.range.startLineNumber - startLineNumber].push(new IndentGuide(-1, pair.openingBracketRange.getEndPosition().column, className, new IndentGuideHorizontalLine(false, end.column), -1, -1));
+                }
+                continue;
+            }
+            const endVisibleColumn = this.getVisibleColumnFromPosition(end);
+            const startVisibleColumn = this.getVisibleColumnFromPosition(pair.openingBracketRange.getStartPosition());
+            const guideVisibleColumn = Math.min(startVisibleColumn, endVisibleColumn, pair.minVisibleColumnIndentation + 1);
+            let renderHorizontalEndLineAtTheBottom = false;
+            const firstNonWsIndex = strings.firstNonWhitespaceIndex(this.textModel.getLineContent(pair.closingBracketRange.startLineNumber));
+            const hasTextBeforeClosingBracket = firstNonWsIndex < pair.closingBracketRange.startColumn - 1;
+            if (hasTextBeforeClosingBracket) {
+                renderHorizontalEndLineAtTheBottom = true;
+            }
+            const visibleGuideStartLineNumber = Math.max(start.lineNumber, startLineNumber);
+            const visibleGuideEndLineNumber = Math.min(end.lineNumber, endLineNumber);
+            const offset = renderHorizontalEndLineAtTheBottom ? 1 : 0;
+            for (let l = visibleGuideStartLineNumber; l < visibleGuideEndLineNumber + offset; l++) {
+                result[l - startLineNumber].push(new IndentGuide(guideVisibleColumn, -1, className, null, l === start.lineNumber ? start.column : -1, l === end.lineNumber ? end.column : -1));
+            }
+            if (horizontalGuides) {
+                if (start.lineNumber >= startLineNumber && startVisibleColumn > guideVisibleColumn) {
+                    result[start.lineNumber - startLineNumber].push(new IndentGuide(guideVisibleColumn, -1, className, new IndentGuideHorizontalLine(false, start.column), -1, -1));
+                }
+                if (end.lineNumber <= endLineNumber && endVisibleColumn > guideVisibleColumn) {
+                    result[end.lineNumber - startLineNumber].push(new IndentGuide(guideVisibleColumn, -1, className, new IndentGuideHorizontalLine(!renderHorizontalEndLineAtTheBottom, end.column), -1, -1));
+                }
+            }
+        }
+        for (const guides of result) {
+            guides.sort((a, b) => a.visibleColumn - b.visibleColumn);
+        }
+        return result;
+    }
+    getVisibleColumnFromPosition(position) {
+        return (CursorColumns.visibleColumnFromColumn(this.textModel.getLineContent(position.lineNumber), position.column, this.textModel.getOptions().tabSize) + 1);
+    }
+    getLinesIndentGuides(startLineNumber, endLineNumber) {
+        this.assertNotDisposed();
+        const lineCount = this.textModel.getLineCount();
+        if (startLineNumber < 1 || startLineNumber > lineCount) {
+            throw new Error('Illegal value for startLineNumber');
+        }
+        if (endLineNumber < 1 || endLineNumber > lineCount) {
+            throw new Error('Illegal value for endLineNumber');
+        }
+        const options = this.textModel.getOptions();
+        const foldingRules = this.getLanguageConfiguration(this.textModel.getLanguageId()).foldingRules;
+        const offSide = Boolean(foldingRules && foldingRules.offSide);
+        const result = new Array(endLineNumber - startLineNumber + 1);
+        let aboveContentLineIndex = -2;
+        let aboveContentLineIndent = -1;
+        let belowContentLineIndex = -2;
+        let belowContentLineIndent = -1;
+        for (let lineNumber = startLineNumber; lineNumber <= endLineNumber; lineNumber++) {
+            const resultIndex = lineNumber - startLineNumber;
+            const currentIndent = this._computeIndentLevel(lineNumber - 1);
+            if (currentIndent >= 0) {
+                aboveContentLineIndex = lineNumber - 1;
+                aboveContentLineIndent = currentIndent;
+                result[resultIndex] = Math.ceil(currentIndent / options.indentSize);
+                continue;
+            }
+            if (aboveContentLineIndex === -2) {
+                aboveContentLineIndex = -1;
+                aboveContentLineIndent = -1;
+                for (let lineIndex = lineNumber - 2; lineIndex >= 0; lineIndex--) {
+                    const indent = this._computeIndentLevel(lineIndex);
+                    if (indent >= 0) {
+                        aboveContentLineIndex = lineIndex;
+                        aboveContentLineIndent = indent;
+                        break;
+                    }
+                }
+            }
+            if (belowContentLineIndex !== -1 &&
+                (belowContentLineIndex === -2 || belowContentLineIndex < lineNumber - 1)) {
+                belowContentLineIndex = -1;
+                belowContentLineIndent = -1;
+                for (let lineIndex = lineNumber; lineIndex < lineCount; lineIndex++) {
+                    const indent = this._computeIndentLevel(lineIndex);
+                    if (indent >= 0) {
+                        belowContentLineIndex = lineIndex;
+                        belowContentLineIndent = indent;
+                        break;
+                    }
+                }
+            }
+            result[resultIndex] = this._getIndentLevelForWhitespaceLine(offSide, aboveContentLineIndent, belowContentLineIndent);
+        }
+        return result;
+    }
+    _getIndentLevelForWhitespaceLine(offSide, aboveContentLineIndent, belowContentLineIndent) {
+        const options = this.textModel.getOptions();
+        if (aboveContentLineIndent === -1 || belowContentLineIndent === -1) {
+            return 0;
+        }
+        else if (aboveContentLineIndent < belowContentLineIndent) {
+            return 1 + Math.floor(aboveContentLineIndent / options.indentSize);
+        }
+        else if (aboveContentLineIndent === belowContentLineIndent) {
+            return Math.ceil(belowContentLineIndent / options.indentSize);
+        }
+        else {
+            if (offSide) {
+                return Math.ceil(belowContentLineIndent / options.indentSize);
+            }
+            else {
+                return 1 + Math.floor(belowContentLineIndent / options.indentSize);
+            }
+        }
+    }
+}
+export class BracketPairGuidesClassNames {
+    constructor() {
+        this.activeClassName = 'indent-active';
+    }
+    getInlineClassName(nestingLevel, nestingLevelOfEqualBracketType, independentColorPoolPerBracketType) {
+        return this.getInlineClassNameOfLevel(independentColorPoolPerBracketType ? nestingLevelOfEqualBracketType : nestingLevel);
+    }
+    getInlineClassNameOfLevel(level) {
+        return `bracket-indent-guide lvl-${level % 30}`;
+    }
+}

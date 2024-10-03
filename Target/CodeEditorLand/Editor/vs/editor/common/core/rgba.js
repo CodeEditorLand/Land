@@ -1,1 +1,25 @@
-class n{_rgba8Brand=void 0;static Empty=new n(0,0,0,0);r;g;b;a;constructor(r,u,b,e){this.r=n._clamp(r),this.g=n._clamp(u),this.b=n._clamp(b),this.a=n._clamp(e)}equals(r){return this.r===r.r&&this.g===r.g&&this.b===r.b&&this.a===r.a}static _clamp(r){return r<0?0:r>255?255:r|0}}export{n as RGBA8};
+export class RGBA8 {
+    static { this.Empty = new RGBA8(0, 0, 0, 0); }
+    constructor(r, g, b, a) {
+        this._rgba8Brand = undefined;
+        this.r = RGBA8._clamp(r);
+        this.g = RGBA8._clamp(g);
+        this.b = RGBA8._clamp(b);
+        this.a = RGBA8._clamp(a);
+    }
+    equals(other) {
+        return (this.r === other.r
+            && this.g === other.g
+            && this.b === other.b
+            && this.a === other.a);
+    }
+    static _clamp(c) {
+        if (c < 0) {
+            return 0;
+        }
+        if (c > 255) {
+            return 255;
+        }
+        return c | 0;
+    }
+}

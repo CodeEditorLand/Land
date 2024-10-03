@@ -1,1 +1,59 @@
-async function i(o){const r=navigator.usb;if(!r)return;const e=await r.requestDevice({filters:o?.filters??[]});if(e)return{deviceClass:e.deviceClass,deviceProtocol:e.deviceProtocol,deviceSubclass:e.deviceSubclass,deviceVersionMajor:e.deviceVersionMajor,deviceVersionMinor:e.deviceVersionMinor,deviceVersionSubminor:e.deviceVersionSubminor,manufacturerName:e.manufacturerName,productId:e.productId,productName:e.productName,serialNumber:e.serialNumber,usbVersionMajor:e.usbVersionMajor,usbVersionMinor:e.usbVersionMinor,usbVersionSubminor:e.usbVersionSubminor,vendorId:e.vendorId}}async function d(o){const r=navigator.serial;if(!r)return;const e=await r.requestPort({filters:o?.filters??[]});if(!e)return;const n=e.getInfo();return{usbVendorId:n.usbVendorId,usbProductId:n.usbProductId}}async function u(o){const r=navigator.hid;if(!r)return;const e=await r.requestDevice({filters:o?.filters??[]});if(!e.length)return;const n=e[0];return{opened:n.opened,vendorId:n.vendorId,productId:n.productId,productName:n.productName,collections:n.collections}}export{u as requestHidDevice,d as requestSerialPort,i as requestUsbDevice};
+export async function requestUsbDevice(options) {
+    const usb = navigator.usb;
+    if (!usb) {
+        return undefined;
+    }
+    const device = await usb.requestDevice({ filters: options?.filters ?? [] });
+    if (!device) {
+        return undefined;
+    }
+    return {
+        deviceClass: device.deviceClass,
+        deviceProtocol: device.deviceProtocol,
+        deviceSubclass: device.deviceSubclass,
+        deviceVersionMajor: device.deviceVersionMajor,
+        deviceVersionMinor: device.deviceVersionMinor,
+        deviceVersionSubminor: device.deviceVersionSubminor,
+        manufacturerName: device.manufacturerName,
+        productId: device.productId,
+        productName: device.productName,
+        serialNumber: device.serialNumber,
+        usbVersionMajor: device.usbVersionMajor,
+        usbVersionMinor: device.usbVersionMinor,
+        usbVersionSubminor: device.usbVersionSubminor,
+        vendorId: device.vendorId,
+    };
+}
+export async function requestSerialPort(options) {
+    const serial = navigator.serial;
+    if (!serial) {
+        return undefined;
+    }
+    const port = await serial.requestPort({ filters: options?.filters ?? [] });
+    if (!port) {
+        return undefined;
+    }
+    const info = port.getInfo();
+    return {
+        usbVendorId: info.usbVendorId,
+        usbProductId: info.usbProductId
+    };
+}
+export async function requestHidDevice(options) {
+    const hid = navigator.hid;
+    if (!hid) {
+        return undefined;
+    }
+    const devices = await hid.requestDevice({ filters: options?.filters ?? [] });
+    if (!devices.length) {
+        return undefined;
+    }
+    const device = devices[0];
+    return {
+        opened: device.opened,
+        vendorId: device.vendorId,
+        productId: device.productId,
+        productName: device.productName,
+        collections: device.collections
+    };
+}

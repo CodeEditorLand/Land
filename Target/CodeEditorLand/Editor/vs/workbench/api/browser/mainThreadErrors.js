@@ -1,1 +1,23 @@
-var s=Object.defineProperty;var d=Object.getOwnPropertyDescriptor;var p=(t,o,m,e)=>{for(var r=e>1?void 0:e?d(o,m):o,a=t.length-1,n;a>=0;a--)(n=t[a])&&(r=(e?n(o,m,r):n(r))||r);return e&&r&&s(o,m,r),r};import{onUnexpectedError as E,transformErrorFromSerialization as f}from"../../../base/common/errors.js";import{extHostNamedCustomer as l}from"../../services/extensions/common/extHostCustomers.js";import{MainContext as x}from"../common/extHost.protocol.js";let i=class{dispose(){}$onUnexpectedError(o){o&&o.$isError&&(o=f(o)),E(o)}};i=p([l(x.MainThreadErrors)],i);export{i as MainThreadErrors};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+import { onUnexpectedError, transformErrorFromSerialization } from '../../../base/common/errors.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+import { MainContext } from '../common/extHost.protocol.js';
+let MainThreadErrors = class MainThreadErrors {
+    dispose() {
+    }
+    $onUnexpectedError(err) {
+        if (err && err.$isError) {
+            err = transformErrorFromSerialization(err);
+        }
+        onUnexpectedError(err);
+    }
+};
+MainThreadErrors = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadErrors)
+], MainThreadErrors);
+export { MainThreadErrors };

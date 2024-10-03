@@ -1,1 +1,16 @@
-import{Disposable as s}from"../../../base/common/lifecycle.js";class o extends s{_isDisposed=!1;dispose(){super.dispose(),this._isDisposed=!0}assertNotDisposed(){if(this._isDisposed)throw new Error("TextModelPart is disposed!")}}export{o as TextModelPart};
+import { Disposable } from '../../../base/common/lifecycle.js';
+export class TextModelPart extends Disposable {
+    constructor() {
+        super(...arguments);
+        this._isDisposed = false;
+    }
+    dispose() {
+        super.dispose();
+        this._isDisposed = true;
+    }
+    assertNotDisposed() {
+        if (this._isDisposed) {
+            throw new Error('TextModelPart is disposed!');
+        }
+    }
+}

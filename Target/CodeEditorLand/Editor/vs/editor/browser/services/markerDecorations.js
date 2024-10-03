@@ -1,1 +1,27 @@
-var I=Object.defineProperty;var a=Object.getOwnPropertyDescriptor;var s=(d,r,i,t)=>{for(var o=t>1?void 0:t?a(r,i):r,m=d.length-1,n;m>=0;m--)(n=d[m])&&(o=(t?n(r,i,o):n(o))||o);return t&&o&&I(r,i,o),o},c=(d,r)=>(i,t)=>r(i,t,d);import{IMarkerDecorationsService as p}from"../../common/services/markerDecorations.js";import{EditorContributionInstantiation as E,registerEditorContribution as f}from"../editorExtensions.js";import"../editorBrowser.js";import"../../common/editorCommon.js";let e=class{static ID="editor.contrib.markerDecorations";constructor(r,i){}dispose(){}};e=s([c(1,p)],e),f(e.ID,e,E.Eager);export{e as MarkerDecorationsContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IMarkerDecorationsService } from '../../common/services/markerDecorations.js';
+import { registerEditorContribution } from '../editorExtensions.js';
+let MarkerDecorationsContribution = class MarkerDecorationsContribution {
+    static { this.ID = 'editor.contrib.markerDecorations'; }
+    constructor(_editor, _markerDecorationsService) {
+    }
+    dispose() {
+    }
+};
+MarkerDecorationsContribution = __decorate([
+    __param(1, IMarkerDecorationsService),
+    __metadata("design:paramtypes", [Object, Object])
+], MarkerDecorationsContribution);
+export { MarkerDecorationsContribution };
+registerEditorContribution(MarkerDecorationsContribution.ID, MarkerDecorationsContribution, 0);

@@ -1,1 +1,29 @@
-import{toDisposable as c}from"../../../base/common/lifecycle.js";import"../../../base/parts/ipc/common/ipc.net.js";import{createDecorator as i}from"../../instantiation/common/instantiation.js";import"./remoteAuthorityResolver.js";const R=i("remoteSocketFactoryService");class u{factories={};register(e,t){return this.factories[e]??=[],this.factories[e].push(t),c(()=>{const o=this.factories[e]?.indexOf(t);typeof o=="number"&&o>=0&&this.factories[e]?.splice(o,1)})}getSocketFactory(e){return(this.factories[e.type]||[]).find(o=>o.supports(e))}connect(e,t,o,n){const r=this.getSocketFactory(e);if(!r)throw new Error(`No socket factory found for ${e}`);return r.connect(e,t,o,n)}}export{R as IRemoteSocketFactoryService,u as RemoteSocketFactoryService};
+import { toDisposable } from '../../../base/common/lifecycle.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const IRemoteSocketFactoryService = createDecorator('remoteSocketFactoryService');
+export class RemoteSocketFactoryService {
+    constructor() {
+        this.factories = {};
+    }
+    register(type, factory) {
+        this.factories[type] ??= [];
+        this.factories[type].push(factory);
+        return toDisposable(() => {
+            const idx = this.factories[type]?.indexOf(factory);
+            if (typeof idx === 'number' && idx >= 0) {
+                this.factories[type]?.splice(idx, 1);
+            }
+        });
+    }
+    getSocketFactory(messagePassing) {
+        const factories = (this.factories[messagePassing.type] || []);
+        return factories.find(factory => factory.supports(messagePassing));
+    }
+    connect(connectTo, path, query, debugLabel) {
+        const socketFactory = this.getSocketFactory(connectTo);
+        if (!socketFactory) {
+            throw new Error(`No socket factory found for ${connectTo}`);
+        }
+        return socketFactory.connect(connectTo, path, query, debugLabel);
+    }
+}

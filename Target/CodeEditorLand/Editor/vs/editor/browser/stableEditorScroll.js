@@ -1,1 +1,74 @@
-import"./editorBrowser.js";import"../common/core/position.js";import{ScrollType as r}from"../common/editorCommon.js";class n{constructor(i,o,t,l,e){this._initialScrollTop=i;this._initialContentHeight=o;this._visiblePosition=t;this._visiblePositionScrollDelta=l;this._cursorPosition=e}static capture(i){if(i.getScrollTop()===0||i.hasPendingScrollAnimation())return new n(i.getScrollTop(),i.getContentHeight(),null,0,null);let o=null,t=0;const l=i.getVisibleRanges();if(l.length>0){o=l[0].getStartPosition();const e=i.getTopForPosition(o.lineNumber,o.column);t=i.getScrollTop()-e}return new n(i.getScrollTop(),i.getContentHeight(),o,t,i.getPosition())}restore(i){if(!(this._initialContentHeight===i.getContentHeight()&&this._initialScrollTop===i.getScrollTop())&&this._visiblePosition){const o=i.getTopForPosition(this._visiblePosition.lineNumber,this._visiblePosition.column);i.setScrollTop(o+this._visiblePositionScrollDelta)}}restoreRelativeVerticalPositionOfCursor(i){if(this._initialContentHeight===i.getContentHeight()&&this._initialScrollTop===i.getScrollTop())return;const o=i.getPosition();if(!this._cursorPosition||!o)return;const t=i.getTopForLineNumber(o.lineNumber)-i.getTopForLineNumber(this._cursorPosition.lineNumber);i.setScrollTop(i.getScrollTop()+t,r.Immediate)}}class s{constructor(i,o,t,l){this._initialScrollTop=i;this._initialContentHeight=o;this._visiblePosition=t;this._visiblePositionScrollDelta=l}static capture(i){if(i.hasPendingScrollAnimation())return new s(i.getScrollTop(),i.getContentHeight(),null,0);let o=null,t=0;const l=i.getVisibleRanges();return l.length>0&&(o=l.at(-1).getEndPosition(),t=i.getBottomForLineNumber(o.lineNumber)-i.getScrollTop()),new s(i.getScrollTop(),i.getContentHeight(),o,t)}restore(i){if(!(this._initialContentHeight===i.getContentHeight()&&this._initialScrollTop===i.getScrollTop())&&this._visiblePosition){const o=i.getBottomForLineNumber(this._visiblePosition.lineNumber);i.setScrollTop(o-this._visiblePositionScrollDelta,r.Immediate)}}}export{s as StableEditorBottomScrollState,n as StableEditorScrollState};
+export class StableEditorScrollState {
+    static capture(editor) {
+        if (editor.getScrollTop() === 0 || editor.hasPendingScrollAnimation()) {
+            return new StableEditorScrollState(editor.getScrollTop(), editor.getContentHeight(), null, 0, null);
+        }
+        let visiblePosition = null;
+        let visiblePositionScrollDelta = 0;
+        const visibleRanges = editor.getVisibleRanges();
+        if (visibleRanges.length > 0) {
+            visiblePosition = visibleRanges[0].getStartPosition();
+            const visiblePositionScrollTop = editor.getTopForPosition(visiblePosition.lineNumber, visiblePosition.column);
+            visiblePositionScrollDelta = editor.getScrollTop() - visiblePositionScrollTop;
+        }
+        return new StableEditorScrollState(editor.getScrollTop(), editor.getContentHeight(), visiblePosition, visiblePositionScrollDelta, editor.getPosition());
+    }
+    constructor(_initialScrollTop, _initialContentHeight, _visiblePosition, _visiblePositionScrollDelta, _cursorPosition) {
+        this._initialScrollTop = _initialScrollTop;
+        this._initialContentHeight = _initialContentHeight;
+        this._visiblePosition = _visiblePosition;
+        this._visiblePositionScrollDelta = _visiblePositionScrollDelta;
+        this._cursorPosition = _cursorPosition;
+    }
+    restore(editor) {
+        if (this._initialContentHeight === editor.getContentHeight() && this._initialScrollTop === editor.getScrollTop()) {
+            return;
+        }
+        if (this._visiblePosition) {
+            const visiblePositionScrollTop = editor.getTopForPosition(this._visiblePosition.lineNumber, this._visiblePosition.column);
+            editor.setScrollTop(visiblePositionScrollTop + this._visiblePositionScrollDelta);
+        }
+    }
+    restoreRelativeVerticalPositionOfCursor(editor) {
+        if (this._initialContentHeight === editor.getContentHeight() && this._initialScrollTop === editor.getScrollTop()) {
+            return;
+        }
+        const currentCursorPosition = editor.getPosition();
+        if (!this._cursorPosition || !currentCursorPosition) {
+            return;
+        }
+        const offset = editor.getTopForLineNumber(currentCursorPosition.lineNumber) - editor.getTopForLineNumber(this._cursorPosition.lineNumber);
+        editor.setScrollTop(editor.getScrollTop() + offset, 1);
+    }
+}
+export class StableEditorBottomScrollState {
+    static capture(editor) {
+        if (editor.hasPendingScrollAnimation()) {
+            return new StableEditorBottomScrollState(editor.getScrollTop(), editor.getContentHeight(), null, 0);
+        }
+        let visiblePosition = null;
+        let visiblePositionScrollDelta = 0;
+        const visibleRanges = editor.getVisibleRanges();
+        if (visibleRanges.length > 0) {
+            visiblePosition = visibleRanges.at(-1).getEndPosition();
+            const visiblePositionScrollBottom = editor.getBottomForLineNumber(visiblePosition.lineNumber);
+            visiblePositionScrollDelta = visiblePositionScrollBottom - editor.getScrollTop();
+        }
+        return new StableEditorBottomScrollState(editor.getScrollTop(), editor.getContentHeight(), visiblePosition, visiblePositionScrollDelta);
+    }
+    constructor(_initialScrollTop, _initialContentHeight, _visiblePosition, _visiblePositionScrollDelta) {
+        this._initialScrollTop = _initialScrollTop;
+        this._initialContentHeight = _initialContentHeight;
+        this._visiblePosition = _visiblePosition;
+        this._visiblePositionScrollDelta = _visiblePositionScrollDelta;
+    }
+    restore(editor) {
+        if (this._initialContentHeight === editor.getContentHeight() && this._initialScrollTop === editor.getScrollTop()) {
+            return;
+        }
+        if (this._visiblePosition) {
+            const visiblePositionScrollBottom = editor.getBottomForLineNumber(this._visiblePosition.lineNumber);
+            editor.setScrollTop(visiblePositionScrollBottom - this._visiblePositionScrollDelta, 1);
+        }
+    }
+}

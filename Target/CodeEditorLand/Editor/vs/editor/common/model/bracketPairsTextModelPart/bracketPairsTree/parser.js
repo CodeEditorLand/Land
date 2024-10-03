@@ -1,1 +1,108 @@
-import{AstNodeKind as c,InvalidBracketAstNode as h,ListAstNode as m,PairAstNode as d,TextAstNode as l}from"./ast.js";import{BeforeEditPositionMapper as u}from"./beforeEditPositionMapper.js";import{SmallImmutableSet as p}from"./smallImmutableSet.js";import{lengthIsZero as f,lengthLessThan as k}from"./length.js";import{concat23Trees as N,concat23TreesOfSameHeight as g}from"./concat23Trees.js";import{NodeReader as b}from"./nodeReader.js";import{TokenKind as i}from"./tokenizer.js";function y(a,t,r,e){return new C(a,t,r,e).parseDocument()}class C{constructor(t,r,e,o){this.tokenizer=t;this.createImmutableLists=o;if(e&&o)throw new Error("Not supported");this.oldNodeReader=e?new b(e):void 0,this.positionMapper=new u(r)}oldNodeReader;positionMapper;_itemsConstructed=0;_itemsFromCache=0;get nodesConstructed(){return this._itemsConstructed}get nodesReused(){return this._itemsFromCache}parseDocument(){this._itemsConstructed=0,this._itemsFromCache=0;let t=this.parseList(p.getEmpty(),0);return t||(t=m.getEmpty()),t}parseList(t,r){const e=[];for(;;){let s=this.tryReadChildFromCache(t);if(!s){const n=this.tokenizer.peek();if(!n||n.kind===i.ClosingBracket&&n.bracketIds.intersects(t))break;s=this.parseChild(t,r+1)}s.kind===c.List&&s.childrenLength===0||e.push(s)}return this.oldNodeReader?N(e):g(e,this.createImmutableLists)}tryReadChildFromCache(t){if(this.oldNodeReader){const r=this.positionMapper.getDistanceToNextChange(this.tokenizer.offset);if(r===null||!f(r)){const e=this.oldNodeReader.readLongestNodeAt(this.positionMapper.getOffsetBeforeChange(this.tokenizer.offset),o=>r!==null&&!k(o.length,r)?!1:o.canBeReused(t));if(e)return this._itemsFromCache++,this.tokenizer.skip(e.length),e}}}parseChild(t,r){this._itemsConstructed++;const e=this.tokenizer.read();switch(e.kind){case i.ClosingBracket:return new h(e.bracketIds,e.length);case i.Text:return e.astNode;case i.OpeningBracket:{if(r>300)return new l(e.length);const o=t.merge(e.bracketIds),s=this.parseList(o,r+1),n=this.tokenizer.peek();return n&&n.kind===i.ClosingBracket&&(n.bracketId===e.bracketId||n.bracketIds.intersects(e.bracketIds))?(this.tokenizer.read(),d.create(e.astNode,s,n.astNode)):d.create(e.astNode,s,null)}default:throw new Error("unexpected")}}}export{y as parseDocument};
+import { InvalidBracketAstNode, ListAstNode, PairAstNode, TextAstNode } from './ast.js';
+import { BeforeEditPositionMapper } from './beforeEditPositionMapper.js';
+import { SmallImmutableSet } from './smallImmutableSet.js';
+import { lengthIsZero, lengthLessThan } from './length.js';
+import { concat23Trees, concat23TreesOfSameHeight } from './concat23Trees.js';
+import { NodeReader } from './nodeReader.js';
+export function parseDocument(tokenizer, edits, oldNode, createImmutableLists) {
+    const parser = new Parser(tokenizer, edits, oldNode, createImmutableLists);
+    return parser.parseDocument();
+}
+class Parser {
+    get nodesConstructed() {
+        return this._itemsConstructed;
+    }
+    get nodesReused() {
+        return this._itemsFromCache;
+    }
+    constructor(tokenizer, edits, oldNode, createImmutableLists) {
+        this.tokenizer = tokenizer;
+        this.createImmutableLists = createImmutableLists;
+        this._itemsConstructed = 0;
+        this._itemsFromCache = 0;
+        if (oldNode && createImmutableLists) {
+            throw new Error('Not supported');
+        }
+        this.oldNodeReader = oldNode ? new NodeReader(oldNode) : undefined;
+        this.positionMapper = new BeforeEditPositionMapper(edits);
+    }
+    parseDocument() {
+        this._itemsConstructed = 0;
+        this._itemsFromCache = 0;
+        let result = this.parseList(SmallImmutableSet.getEmpty(), 0);
+        if (!result) {
+            result = ListAstNode.getEmpty();
+        }
+        return result;
+    }
+    parseList(openedBracketIds, level) {
+        const items = [];
+        while (true) {
+            let child = this.tryReadChildFromCache(openedBracketIds);
+            if (!child) {
+                const token = this.tokenizer.peek();
+                if (!token ||
+                    (token.kind === 2 &&
+                        token.bracketIds.intersects(openedBracketIds))) {
+                    break;
+                }
+                child = this.parseChild(openedBracketIds, level + 1);
+            }
+            if (child.kind === 4 && child.childrenLength === 0) {
+                continue;
+            }
+            items.push(child);
+        }
+        const result = this.oldNodeReader ? concat23Trees(items) : concat23TreesOfSameHeight(items, this.createImmutableLists);
+        return result;
+    }
+    tryReadChildFromCache(openedBracketIds) {
+        if (this.oldNodeReader) {
+            const maxCacheableLength = this.positionMapper.getDistanceToNextChange(this.tokenizer.offset);
+            if (maxCacheableLength === null || !lengthIsZero(maxCacheableLength)) {
+                const cachedNode = this.oldNodeReader.readLongestNodeAt(this.positionMapper.getOffsetBeforeChange(this.tokenizer.offset), curNode => {
+                    if (maxCacheableLength !== null && !lengthLessThan(curNode.length, maxCacheableLength)) {
+                        return false;
+                    }
+                    const canBeReused = curNode.canBeReused(openedBracketIds);
+                    return canBeReused;
+                });
+                if (cachedNode) {
+                    this._itemsFromCache++;
+                    this.tokenizer.skip(cachedNode.length);
+                    return cachedNode;
+                }
+            }
+        }
+        return undefined;
+    }
+    parseChild(openedBracketIds, level) {
+        this._itemsConstructed++;
+        const token = this.tokenizer.read();
+        switch (token.kind) {
+            case 2:
+                return new InvalidBracketAstNode(token.bracketIds, token.length);
+            case 0:
+                return token.astNode;
+            case 1: {
+                if (level > 300) {
+                    return new TextAstNode(token.length);
+                }
+                const set = openedBracketIds.merge(token.bracketIds);
+                const child = this.parseList(set, level + 1);
+                const nextToken = this.tokenizer.peek();
+                if (nextToken &&
+                    nextToken.kind === 2 &&
+                    (nextToken.bracketId === token.bracketId || nextToken.bracketIds.intersects(token.bracketIds))) {
+                    this.tokenizer.read();
+                    return PairAstNode.create(token.astNode, child, nextToken.astNode);
+                }
+                else {
+                    return PairAstNode.create(token.astNode, child, null);
+                }
+            }
+            default:
+                throw new Error('unexpected');
+        }
+    }
+}

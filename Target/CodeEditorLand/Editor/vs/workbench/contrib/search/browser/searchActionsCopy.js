@@ -1,4 +1,194 @@
-import*as f from"../../../../nls.js";import{IClipboardService as g}from"../../../../platform/clipboard/common/clipboardService.js";import"../../../../platform/instantiation/common/instantiation.js";import{ILabelService as S}from"../../../../platform/label/common/label.js";import{IViewsService as F}from"../../../services/views/common/viewsService.js";import*as c from"../common/constants.js";import{FileMatch as p,FolderMatch as W,FolderMatchWithResource as K,Match as T,searchMatchComparer as C}from"./searchModel.js";import{Action2 as y,MenuId as M,registerAction2 as x}from"../../../../platform/actions/common/actions.js";import{KeybindingWeight as A}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{KeyCode as b,KeyMod as d}from"../../../../base/common/keyCodes.js";import{category as v,getSearchView as L}from"./searchActionsBase.js";import{isWindows as $}from"../../../../base/common/platform.js";x(class extends y{constructor(){super({id:c.SearchCommandIds.CopyMatchCommandId,title:f.localize2("copyMatchLabel","Copy"),category:v,keybinding:{weight:A.WorkbenchContrib,when:c.SearchContext.FileMatchOrMatchFocusKey,primary:d.CtrlCmd|b.KeyC},menu:[{id:M.SearchContext,when:c.SearchContext.FileMatchOrMatchFocusKey,group:"search_2",order:1}]})}async run(t,r){await O(t,r)}}),x(class extends y{constructor(){super({id:c.SearchCommandIds.CopyPathCommandId,title:f.localize2("copyPathLabel","Copy Path"),category:v,keybinding:{weight:A.WorkbenchContrib,when:c.SearchContext.FileMatchOrFolderMatchWithResourceFocusKey,primary:d.CtrlCmd|d.Alt|b.KeyC,win:{primary:d.Shift|d.Alt|b.KeyC}},menu:[{id:M.SearchContext,when:c.SearchContext.FileMatchOrFolderMatchWithResourceFocusKey,group:"search_2",order:2}]})}async run(t,r){await z(t,r)}}),x(class extends y{constructor(){super({id:c.SearchCommandIds.CopyAllCommandId,title:f.localize2("copyAllLabel","Copy All"),category:v,menu:[{id:M.SearchContext,when:c.SearchContext.HasSearchResults,group:"search_2",order:3}]})}async run(t){await V(t)}});const s=$?`\r
-`:`
-`;async function z(e,t){if(!t){const i=P(e);if(!(i instanceof p||i instanceof K))return;t=i}const r=e.get(g),n=e.get(S).getUriLabel(t.resource,{noPrefix:!0});await r.writeText(n)}async function O(e,t){if(!t){const i=P(e);if(!i)return;t=i}const r=e.get(g),o=e.get(S);let n;t instanceof T?n=R(t):t instanceof p?n=I(t,o).text:t instanceof W&&(n=w(t,o).text),n&&await r.writeText(n)}async function V(e){const t=e.get(F),r=e.get(g),o=e.get(S),n=L(t);if(n){const i=n.searchResult,a=k(i.folderMatches(),o);await r.writeText(a)}}function R(e,t=0){const r=()=>`${e.range().startLineNumber},${e.range().startColumn}`,o=l=>e.range().startLineNumber+l+"",n=e.fullPreviewLines(),i=n.reduce((l,h,u)=>{const m=u===0?r().length:o(u).length;return Math.max(m,l)},0);return n.map((l,h)=>{const u=h===0?r():o(h),m=" ".repeat(i-u.length);return`${" ".repeat(t)}${u}: ${m}${l}`}).join(`
-`)}function j(e,t){return e instanceof p?I(e,t):w(e,t)}function I(e,t){const r=e.matches().sort(C).map(n=>R(n,2));return{text:`${t.getUriLabel(e.resource,{noPrefix:!0})}${s}${r.join(s)}`,count:r.length}}function w(e,t){const r=[];let o=0;return e.matches().sort(C).forEach(i=>{const a=j(i,t);o+=a.count,r.push(a.text)}),{text:r.join(s+s),count:o}}function k(e,t){const r=[];e=e.sort(C);for(let o=0;o<e.length;o++){const n=w(e[o],t);n.count&&r.push(n.text)}return r.join(s+s)}function P(e){const t=e.get(F);return L(t)?.getControl().getSelection()[0]}export{s as lineDelimiter};
+import * as nls from '../../../../nls.js';
+import { IClipboardService } from '../../../../platform/clipboard/common/clipboardService.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+import * as Constants from '../common/constants.js';
+import { FileMatch, FolderMatch, FolderMatchWithResource, Match, searchMatchComparer } from './searchModel.js';
+import { Action2, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { category, getSearchView } from './searchActionsBase.js';
+import { isWindows } from '../../../../base/common/platform.js';
+registerAction2(class CopyMatchCommandAction extends Action2 {
+    constructor() {
+        super({
+            id: "search.action.copyMatch",
+            title: nls.localize2('copyMatchLabel', "Copy"),
+            category,
+            keybinding: {
+                weight: 200,
+                when: Constants.SearchContext.FileMatchOrMatchFocusKey,
+                primary: 2048 | 33,
+            },
+            menu: [{
+                    id: MenuId.SearchContext,
+                    when: Constants.SearchContext.FileMatchOrMatchFocusKey,
+                    group: 'search_2',
+                    order: 1
+                }]
+        });
+    }
+    async run(accessor, match) {
+        await copyMatchCommand(accessor, match);
+    }
+});
+registerAction2(class CopyPathCommandAction extends Action2 {
+    constructor() {
+        super({
+            id: "search.action.copyPath",
+            title: nls.localize2('copyPathLabel', "Copy Path"),
+            category,
+            keybinding: {
+                weight: 200,
+                when: Constants.SearchContext.FileMatchOrFolderMatchWithResourceFocusKey,
+                primary: 2048 | 512 | 33,
+                win: {
+                    primary: 1024 | 512 | 33
+                },
+            },
+            menu: [{
+                    id: MenuId.SearchContext,
+                    when: Constants.SearchContext.FileMatchOrFolderMatchWithResourceFocusKey,
+                    group: 'search_2',
+                    order: 2
+                }]
+        });
+    }
+    async run(accessor, fileMatch) {
+        await copyPathCommand(accessor, fileMatch);
+    }
+});
+registerAction2(class CopyAllCommandAction extends Action2 {
+    constructor() {
+        super({
+            id: "search.action.copyAll",
+            title: nls.localize2('copyAllLabel', "Copy All"),
+            category,
+            menu: [{
+                    id: MenuId.SearchContext,
+                    when: Constants.SearchContext.HasSearchResults,
+                    group: 'search_2',
+                    order: 3
+                }]
+        });
+    }
+    async run(accessor) {
+        await copyAllCommand(accessor);
+    }
+});
+export const lineDelimiter = isWindows ? '\r\n' : '\n';
+async function copyPathCommand(accessor, fileMatch) {
+    if (!fileMatch) {
+        const selection = getSelectedRow(accessor);
+        if (!(selection instanceof FileMatch || selection instanceof FolderMatchWithResource)) {
+            return;
+        }
+        fileMatch = selection;
+    }
+    const clipboardService = accessor.get(IClipboardService);
+    const labelService = accessor.get(ILabelService);
+    const text = labelService.getUriLabel(fileMatch.resource, { noPrefix: true });
+    await clipboardService.writeText(text);
+}
+async function copyMatchCommand(accessor, match) {
+    if (!match) {
+        const selection = getSelectedRow(accessor);
+        if (!selection) {
+            return;
+        }
+        match = selection;
+    }
+    const clipboardService = accessor.get(IClipboardService);
+    const labelService = accessor.get(ILabelService);
+    let text;
+    if (match instanceof Match) {
+        text = matchToString(match);
+    }
+    else if (match instanceof FileMatch) {
+        text = fileMatchToString(match, labelService).text;
+    }
+    else if (match instanceof FolderMatch) {
+        text = folderMatchToString(match, labelService).text;
+    }
+    if (text) {
+        await clipboardService.writeText(text);
+    }
+}
+async function copyAllCommand(accessor) {
+    const viewsService = accessor.get(IViewsService);
+    const clipboardService = accessor.get(IClipboardService);
+    const labelService = accessor.get(ILabelService);
+    const searchView = getSearchView(viewsService);
+    if (searchView) {
+        const root = searchView.searchResult;
+        const text = allFolderMatchesToString(root.folderMatches(), labelService);
+        await clipboardService.writeText(text);
+    }
+}
+function matchToString(match, indent = 0) {
+    const getFirstLinePrefix = () => `${match.range().startLineNumber},${match.range().startColumn}`;
+    const getOtherLinePrefix = (i) => match.range().startLineNumber + i + '';
+    const fullMatchLines = match.fullPreviewLines();
+    const largestPrefixSize = fullMatchLines.reduce((largest, _, i) => {
+        const thisSize = i === 0 ?
+            getFirstLinePrefix().length :
+            getOtherLinePrefix(i).length;
+        return Math.max(thisSize, largest);
+    }, 0);
+    const formattedLines = fullMatchLines
+        .map((line, i) => {
+        const prefix = i === 0 ?
+            getFirstLinePrefix() :
+            getOtherLinePrefix(i);
+        const paddingStr = ' '.repeat(largestPrefixSize - prefix.length);
+        const indentStr = ' '.repeat(indent);
+        return `${indentStr}${prefix}: ${paddingStr}${line}`;
+    });
+    return formattedLines.join('\n');
+}
+function fileFolderMatchToString(match, labelService) {
+    if (match instanceof FileMatch) {
+        return fileMatchToString(match, labelService);
+    }
+    else {
+        return folderMatchToString(match, labelService);
+    }
+}
+function fileMatchToString(fileMatch, labelService) {
+    const matchTextRows = fileMatch.matches()
+        .sort(searchMatchComparer)
+        .map(match => matchToString(match, 2));
+    const uriString = labelService.getUriLabel(fileMatch.resource, { noPrefix: true });
+    return {
+        text: `${uriString}${lineDelimiter}${matchTextRows.join(lineDelimiter)}`,
+        count: matchTextRows.length
+    };
+}
+function folderMatchToString(folderMatch, labelService) {
+    const results = [];
+    let numMatches = 0;
+    const matches = folderMatch.matches().sort(searchMatchComparer);
+    matches.forEach(match => {
+        const result = fileFolderMatchToString(match, labelService);
+        numMatches += result.count;
+        results.push(result.text);
+    });
+    return {
+        text: results.join(lineDelimiter + lineDelimiter),
+        count: numMatches
+    };
+}
+function allFolderMatchesToString(folderMatches, labelService) {
+    const folderResults = [];
+    folderMatches = folderMatches.sort(searchMatchComparer);
+    for (let i = 0; i < folderMatches.length; i++) {
+        const folderResult = folderMatchToString(folderMatches[i], labelService);
+        if (folderResult.count) {
+            folderResults.push(folderResult.text);
+        }
+    }
+    return folderResults.join(lineDelimiter + lineDelimiter);
+}
+function getSelectedRow(accessor) {
+    const viewsService = accessor.get(IViewsService);
+    const searchView = getSearchView(viewsService);
+    return searchView?.getControl().getSelection()[0];
+}

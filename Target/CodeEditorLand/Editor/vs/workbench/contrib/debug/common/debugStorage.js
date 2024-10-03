@@ -1,1 +1,166 @@
-var f=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var v=(p,s,t,e)=>{for(var r=e>1?void 0:e?m(s,t):s,o=p.length-1,n;o>=0;o--)(n=p[o])&&(r=(e?n(s,t,r):n(r))||r);return e&&r&&f(s,t,r),r},c=(p,s)=>(t,e)=>s(t,e,p);import{Disposable as A}from"../../../../base/common/lifecycle.js";import{observableValue as S}from"../../../../base/common/observable.js";import{URI as I}from"../../../../base/common/uri.js";import{ILogService as N}from"../../../../platform/log/common/log.js";import{IStorageService as C,StorageScope as i,StorageTarget as a}from"../../../../platform/storage/common/storage.js";import{IUriIdentityService as x}from"../../../../platform/uriIdentity/common/uriIdentity.js";import"./debug.js";import{Breakpoint as y,DataBreakpoint as K,ExceptionBreakpoint as R,Expression as P,FunctionBreakpoint as W}from"./debugModel.js";import{ITextFileService as _}from"../../../services/textfile/common/textfiles.js";const d="debug.breakpoint",E="debug.functionbreakpoint",u="debug.databreakpoint",l="debug.exceptionbreakpoint",h="debug.watchexpressions",B="debug.chosenenvironment",k="debug.uxstate";let g=class extends A{constructor(t,e,r,o){super();this.storageService=t;this.textFileService=e;this.uriIdentityService=r;this.logService=o;this._register(t.onDidChangeValue(i.WORKSPACE,void 0,this._store)(n=>{if(n.external)switch(n.key){case d:return this.breakpoints.set(this.loadBreakpoints(),void 0);case E:return this.functionBreakpoints.set(this.loadFunctionBreakpoints(),void 0);case l:return this.exceptionBreakpoints.set(this.loadExceptionBreakpoints(),void 0);case u:return this.dataBreakpoints.set(this.loadDataBreakpoints(),void 0);case h:return this.watchExpressions.set(this.loadWatchExpressions(),void 0)}}))}breakpoints=S(this,this.loadBreakpoints());functionBreakpoints=S(this,this.loadFunctionBreakpoints());exceptionBreakpoints=S(this,this.loadExceptionBreakpoints());dataBreakpoints=S(this,this.loadDataBreakpoints());watchExpressions=S(this,this.loadWatchExpressions());loadDebugUxState(){return this.storageService.get(k,i.WORKSPACE,"default")}storeDebugUxState(t){this.storageService.store(k,t,i.WORKSPACE,a.MACHINE)}loadBreakpoints(){let t;try{t=JSON.parse(this.storageService.get(d,i.WORKSPACE,"[]")).map(e=>(e.uri=I.revive(e.uri),new y(e,this.textFileService,this.uriIdentityService,this.logService,e.id)))}catch{}return t||[]}loadFunctionBreakpoints(){let t;try{t=JSON.parse(this.storageService.get(E,i.WORKSPACE,"[]")).map(e=>new W(e,e.id))}catch{}return t||[]}loadExceptionBreakpoints(){let t;try{t=JSON.parse(this.storageService.get(l,i.WORKSPACE,"[]")).map(e=>new R(e,e.id))}catch{}return t||[]}loadDataBreakpoints(){let t;try{t=JSON.parse(this.storageService.get(u,i.WORKSPACE,"[]")).map(e=>new K(e,e.id))}catch{}return t||[]}loadWatchExpressions(){let t;try{t=JSON.parse(this.storageService.get(h,i.WORKSPACE,"[]")).map(e=>new P(e.name,e.id))}catch{}return t||[]}loadChosenEnvironments(){return JSON.parse(this.storageService.get(B,i.WORKSPACE,"{}"))}storeChosenEnvironments(t){this.storageService.store(B,JSON.stringify(t),i.WORKSPACE,a.MACHINE)}storeWatchExpressions(t){t.length?this.storageService.store(h,JSON.stringify(t.map(e=>({name:e.name,id:e.getId()}))),i.WORKSPACE,a.MACHINE):this.storageService.remove(h,i.WORKSPACE)}storeBreakpoints(t){const e=t.getBreakpoints();e.length?this.storageService.store(d,JSON.stringify(e),i.WORKSPACE,a.MACHINE):this.storageService.remove(d,i.WORKSPACE);const r=t.getFunctionBreakpoints();r.length?this.storageService.store(E,JSON.stringify(r),i.WORKSPACE,a.MACHINE):this.storageService.remove(E,i.WORKSPACE);const o=t.getDataBreakpoints().filter(O=>O.canPersist);o.length?this.storageService.store(u,JSON.stringify(o),i.WORKSPACE,a.MACHINE):this.storageService.remove(u,i.WORKSPACE);const n=t.getExceptionBreakpoints();n.length?this.storageService.store(l,JSON.stringify(n),i.WORKSPACE,a.MACHINE):this.storageService.remove(l,i.WORKSPACE)}};g=v([c(0,C),c(1,_),c(2,x),c(3,N)],g);export{g as DebugStorage};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { observableValue } from '../../../../base/common/observable.js';
+import { URI } from '../../../../base/common/uri.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { Breakpoint, DataBreakpoint, ExceptionBreakpoint, Expression, FunctionBreakpoint } from './debugModel.js';
+import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
+const DEBUG_BREAKPOINTS_KEY = 'debug.breakpoint';
+const DEBUG_FUNCTION_BREAKPOINTS_KEY = 'debug.functionbreakpoint';
+const DEBUG_DATA_BREAKPOINTS_KEY = 'debug.databreakpoint';
+const DEBUG_EXCEPTION_BREAKPOINTS_KEY = 'debug.exceptionbreakpoint';
+const DEBUG_WATCH_EXPRESSIONS_KEY = 'debug.watchexpressions';
+const DEBUG_CHOSEN_ENVIRONMENTS_KEY = 'debug.chosenenvironment';
+const DEBUG_UX_STATE_KEY = 'debug.uxstate';
+let DebugStorage = class DebugStorage extends Disposable {
+    constructor(storageService, textFileService, uriIdentityService, logService) {
+        super();
+        this.storageService = storageService;
+        this.textFileService = textFileService;
+        this.uriIdentityService = uriIdentityService;
+        this.logService = logService;
+        this.breakpoints = observableValue(this, this.loadBreakpoints());
+        this.functionBreakpoints = observableValue(this, this.loadFunctionBreakpoints());
+        this.exceptionBreakpoints = observableValue(this, this.loadExceptionBreakpoints());
+        this.dataBreakpoints = observableValue(this, this.loadDataBreakpoints());
+        this.watchExpressions = observableValue(this, this.loadWatchExpressions());
+        this._register(storageService.onDidChangeValue(1, undefined, this._store)(e => {
+            if (e.external) {
+                switch (e.key) {
+                    case DEBUG_BREAKPOINTS_KEY:
+                        return this.breakpoints.set(this.loadBreakpoints(), undefined);
+                    case DEBUG_FUNCTION_BREAKPOINTS_KEY:
+                        return this.functionBreakpoints.set(this.loadFunctionBreakpoints(), undefined);
+                    case DEBUG_EXCEPTION_BREAKPOINTS_KEY:
+                        return this.exceptionBreakpoints.set(this.loadExceptionBreakpoints(), undefined);
+                    case DEBUG_DATA_BREAKPOINTS_KEY:
+                        return this.dataBreakpoints.set(this.loadDataBreakpoints(), undefined);
+                    case DEBUG_WATCH_EXPRESSIONS_KEY:
+                        return this.watchExpressions.set(this.loadWatchExpressions(), undefined);
+                }
+            }
+        }));
+    }
+    loadDebugUxState() {
+        return this.storageService.get(DEBUG_UX_STATE_KEY, 1, 'default');
+    }
+    storeDebugUxState(value) {
+        this.storageService.store(DEBUG_UX_STATE_KEY, value, 1, 1);
+    }
+    loadBreakpoints() {
+        let result;
+        try {
+            result = JSON.parse(this.storageService.get(DEBUG_BREAKPOINTS_KEY, 1, '[]')).map((breakpoint) => {
+                breakpoint.uri = URI.revive(breakpoint.uri);
+                return new Breakpoint(breakpoint, this.textFileService, this.uriIdentityService, this.logService, breakpoint.id);
+            });
+        }
+        catch (e) { }
+        return result || [];
+    }
+    loadFunctionBreakpoints() {
+        let result;
+        try {
+            result = JSON.parse(this.storageService.get(DEBUG_FUNCTION_BREAKPOINTS_KEY, 1, '[]')).map((fb) => {
+                return new FunctionBreakpoint(fb, fb.id);
+            });
+        }
+        catch (e) { }
+        return result || [];
+    }
+    loadExceptionBreakpoints() {
+        let result;
+        try {
+            result = JSON.parse(this.storageService.get(DEBUG_EXCEPTION_BREAKPOINTS_KEY, 1, '[]')).map((exBreakpoint) => {
+                return new ExceptionBreakpoint(exBreakpoint, exBreakpoint.id);
+            });
+        }
+        catch (e) { }
+        return result || [];
+    }
+    loadDataBreakpoints() {
+        let result;
+        try {
+            result = JSON.parse(this.storageService.get(DEBUG_DATA_BREAKPOINTS_KEY, 1, '[]')).map((dbp) => {
+                return new DataBreakpoint(dbp, dbp.id);
+            });
+        }
+        catch (e) { }
+        return result || [];
+    }
+    loadWatchExpressions() {
+        let result;
+        try {
+            result = JSON.parse(this.storageService.get(DEBUG_WATCH_EXPRESSIONS_KEY, 1, '[]')).map((watchStoredData) => {
+                return new Expression(watchStoredData.name, watchStoredData.id);
+            });
+        }
+        catch (e) { }
+        return result || [];
+    }
+    loadChosenEnvironments() {
+        return JSON.parse(this.storageService.get(DEBUG_CHOSEN_ENVIRONMENTS_KEY, 1, '{}'));
+    }
+    storeChosenEnvironments(environments) {
+        this.storageService.store(DEBUG_CHOSEN_ENVIRONMENTS_KEY, JSON.stringify(environments), 1, 1);
+    }
+    storeWatchExpressions(watchExpressions) {
+        if (watchExpressions.length) {
+            this.storageService.store(DEBUG_WATCH_EXPRESSIONS_KEY, JSON.stringify(watchExpressions.map(we => ({ name: we.name, id: we.getId() }))), 1, 1);
+        }
+        else {
+            this.storageService.remove(DEBUG_WATCH_EXPRESSIONS_KEY, 1);
+        }
+    }
+    storeBreakpoints(debugModel) {
+        const breakpoints = debugModel.getBreakpoints();
+        if (breakpoints.length) {
+            this.storageService.store(DEBUG_BREAKPOINTS_KEY, JSON.stringify(breakpoints), 1, 1);
+        }
+        else {
+            this.storageService.remove(DEBUG_BREAKPOINTS_KEY, 1);
+        }
+        const functionBreakpoints = debugModel.getFunctionBreakpoints();
+        if (functionBreakpoints.length) {
+            this.storageService.store(DEBUG_FUNCTION_BREAKPOINTS_KEY, JSON.stringify(functionBreakpoints), 1, 1);
+        }
+        else {
+            this.storageService.remove(DEBUG_FUNCTION_BREAKPOINTS_KEY, 1);
+        }
+        const dataBreakpoints = debugModel.getDataBreakpoints().filter(dbp => dbp.canPersist);
+        if (dataBreakpoints.length) {
+            this.storageService.store(DEBUG_DATA_BREAKPOINTS_KEY, JSON.stringify(dataBreakpoints), 1, 1);
+        }
+        else {
+            this.storageService.remove(DEBUG_DATA_BREAKPOINTS_KEY, 1);
+        }
+        const exceptionBreakpoints = debugModel.getExceptionBreakpoints();
+        if (exceptionBreakpoints.length) {
+            this.storageService.store(DEBUG_EXCEPTION_BREAKPOINTS_KEY, JSON.stringify(exceptionBreakpoints), 1, 1);
+        }
+        else {
+            this.storageService.remove(DEBUG_EXCEPTION_BREAKPOINTS_KEY, 1);
+        }
+    }
+};
+DebugStorage = __decorate([
+    __param(0, IStorageService),
+    __param(1, ITextFileService),
+    __param(2, IUriIdentityService),
+    __param(3, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], DebugStorage);
+export { DebugStorage };

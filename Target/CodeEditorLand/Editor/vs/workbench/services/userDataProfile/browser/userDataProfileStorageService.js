@@ -1,1 +1,49 @@
-var S=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var l=(n,t,e,a)=>{for(var r=a>1?void 0:a?p(t,e):t,i=n.length-1,o;i>=0;i--)(o=n[i])&&(r=(a?o(t,e,r):o(r))||r);return a&&r&&S(t,e,r),r},s=(n,t)=>(e,a)=>t(e,a,n);import{Emitter as D,Event as c}from"../../../../base/common/event.js";import"../../../../base/parts/storage/common/storage.js";import{InstantiationType as d,registerSingleton as I}from"../../../../platform/instantiation/common/extensions.js";import{ILogService as m}from"../../../../platform/log/common/log.js";import{AbstractUserDataProfileStorageService as v,IUserDataProfileStorageService as C}from"../../../../platform/userDataProfile/common/userDataProfileStorageService.js";import{isProfileUsingDefaultStorage as P,IStorageService as u,StorageScope as f}from"../../../../platform/storage/common/storage.js";import"../../../../platform/userDataProfile/common/userDataProfile.js";import{IndexedDBStorageDatabase as h}from"../../storage/browser/storageService.js";import{IUserDataProfileService as _}from"../common/userDataProfile.js";import{DisposableStore as b}from"../../../../base/common/lifecycle.js";let g=class extends v{constructor(e,a,r){super(!0,e);this.userDataProfileService=a;this.logService=r;const i=this._register(new b);this._register(c.filter(e.onDidChangeTarget,o=>o.scope===f.PROFILE,i)(()=>this.onDidChangeStorageTargetInCurrentProfile())),this._register(e.onDidChangeValue(f.PROFILE,void 0,i)(o=>this.onDidChangeStorageValueInCurrentProfile(o)))}_onDidChange=this._register(new D);onDidChange=this._onDidChange.event;onDidChangeStorageTargetInCurrentProfile(){this._onDidChange.fire({targetChanges:[this.userDataProfileService.currentProfile],valueChanges:[]})}onDidChangeStorageValueInCurrentProfile(e){this._onDidChange.fire({targetChanges:[],valueChanges:[{profile:this.userDataProfileService.currentProfile,changes:[e]}]})}createStorageDatabase(e){return P(e)?h.createApplicationStorage(this.logService):h.createProfileStorage(e,this.logService)}};g=l([s(0,u),s(1,_),s(2,m)],g),I(C,g,d.Delayed);export{g as UserDataProfileStorageService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { AbstractUserDataProfileStorageService, IUserDataProfileStorageService } from '../../../../platform/userDataProfile/common/userDataProfileStorageService.js';
+import { isProfileUsingDefaultStorage, IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IndexedDBStorageDatabase } from '../../storage/browser/storageService.js';
+import { IUserDataProfileService } from '../common/userDataProfile.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+let UserDataProfileStorageService = class UserDataProfileStorageService extends AbstractUserDataProfileStorageService {
+    constructor(storageService, userDataProfileService, logService) {
+        super(true, storageService);
+        this.userDataProfileService = userDataProfileService;
+        this.logService = logService;
+        this._onDidChange = this._register(new Emitter());
+        this.onDidChange = this._onDidChange.event;
+        const disposables = this._register(new DisposableStore());
+        this._register(Event.filter(storageService.onDidChangeTarget, e => e.scope === 0, disposables)(() => this.onDidChangeStorageTargetInCurrentProfile()));
+        this._register(storageService.onDidChangeValue(0, undefined, disposables)(e => this.onDidChangeStorageValueInCurrentProfile(e)));
+    }
+    onDidChangeStorageTargetInCurrentProfile() {
+        this._onDidChange.fire({ targetChanges: [this.userDataProfileService.currentProfile], valueChanges: [] });
+    }
+    onDidChangeStorageValueInCurrentProfile(e) {
+        this._onDidChange.fire({ targetChanges: [], valueChanges: [{ profile: this.userDataProfileService.currentProfile, changes: [e] }] });
+    }
+    createStorageDatabase(profile) {
+        return isProfileUsingDefaultStorage(profile) ? IndexedDBStorageDatabase.createApplicationStorage(this.logService) : IndexedDBStorageDatabase.createProfileStorage(profile, this.logService);
+    }
+};
+UserDataProfileStorageService = __decorate([
+    __param(0, IStorageService),
+    __param(1, IUserDataProfileService),
+    __param(2, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], UserDataProfileStorageService);
+export { UserDataProfileStorageService };
+registerSingleton(IUserDataProfileStorageService, UserDataProfileStorageService, 1);

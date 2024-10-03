@@ -1,2 +1,47 @@
-import{mainWindow as a}from"../../../base/browser/window.js";import{ErrorNoTelemetry as u}from"../../../base/common/errors.js";import{toDisposable as E}from"../../../base/common/lifecycle.js";import l from"../common/errorTelemetry.js";class d extends l{installErrorListeners(){let t;const i=this;typeof a.onerror=="function"&&(t=a.onerror),a.onerror=function(n,e,r,o,s){i._onUncaughtError(n,e,r,o,s),t?.apply(this,[n,e,r,o,s])},this._disposables.add(E(()=>{t&&(a.onerror=t)}))}_onUncaughtError(t,i,n,e,r){const o={callstack:t,msg:t,file:i,line:n,column:e};if(r){if(u.isErrorNoTelemetry(r))return;const{name:s,message:c,stack:m}=r;o.uncaught_error_name=s,c&&(o.uncaught_error_msg=c),m&&(o.callstack=Array.isArray(r.stack)?r.stack=r.stack.join(`
-`):r.stack)}this._enqueue(o)}}export{d as default};
+import { mainWindow } from '../../../base/browser/window.js';
+import { ErrorNoTelemetry } from '../../../base/common/errors.js';
+import { toDisposable } from '../../../base/common/lifecycle.js';
+import BaseErrorTelemetry from '../common/errorTelemetry.js';
+export default class ErrorTelemetry extends BaseErrorTelemetry {
+    installErrorListeners() {
+        let oldOnError;
+        const that = this;
+        if (typeof mainWindow.onerror === 'function') {
+            oldOnError = mainWindow.onerror;
+        }
+        mainWindow.onerror = function (message, filename, line, column, error) {
+            that._onUncaughtError(message, filename, line, column, error);
+            oldOnError?.apply(this, [message, filename, line, column, error]);
+        };
+        this._disposables.add(toDisposable(() => {
+            if (oldOnError) {
+                mainWindow.onerror = oldOnError;
+            }
+        }));
+    }
+    _onUncaughtError(msg, file, line, column, err) {
+        const data = {
+            callstack: msg,
+            msg,
+            file,
+            line,
+            column
+        };
+        if (err) {
+            if (ErrorNoTelemetry.isErrorNoTelemetry(err)) {
+                return;
+            }
+            const { name, message, stack } = err;
+            data.uncaught_error_name = name;
+            if (message) {
+                data.uncaught_error_msg = message;
+            }
+            if (stack) {
+                data.callstack = Array.isArray(err.stack)
+                    ? err.stack = err.stack.join('\n')
+                    : err.stack;
+            }
+        }
+        this._enqueue(data);
+    }
+}

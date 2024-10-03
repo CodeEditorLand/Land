@@ -1,1 +1,51 @@
-import{mainWindow as m}from"../../../base/browser/window.js";import{relativePath as u}from"../../../base/common/resources.js";import"../../../base/common/uri.js";import"../../environment/common/environment.js";import"../../files/common/files.js";import{AdapterLogger as L,DEFAULT_LOG_LEVEL as d,LogLevel as n}from"../common/log.js";async function P(e,o){const t=[];return await g(e,t,o.logsHome,o.logsHome),t}async function g(e,o,t,r){const a=await e.resolve(t);for(const{resource:i,isDirectory:l}of a.children||[])if(l)await g(e,o,i,r);else{const s=(await e.readFile(i)).value.toString();if(s){const c=u(r,i);c&&o.push({relativePath:c,contents:s})}}}function f(e){switch(e){case n.Trace:return"trace";case n.Debug:return"debug";case n.Info:return"info";case n.Warning:return"warn";case n.Error:return"error"}return"info"}class W extends L{constructor(o=d){super({log:(t,r)=>this.consoleLog(f(t),r)},o)}consoleLog(o,t){const r=m;if(typeof r.codeAutomationLog=="function")try{r.codeAutomationLog(o,t)}catch{}}}export{W as ConsoleLogInAutomationLogger,P as getLogs};
+import { mainWindow } from '../../../base/browser/window.js';
+import { relativePath } from '../../../base/common/resources.js';
+import { AdapterLogger, DEFAULT_LOG_LEVEL, LogLevel } from '../common/log.js';
+export async function getLogs(fileService, environmentService) {
+    const result = [];
+    await doGetLogs(fileService, result, environmentService.logsHome, environmentService.logsHome);
+    return result;
+}
+async function doGetLogs(fileService, logs, curFolder, logsHome) {
+    const stat = await fileService.resolve(curFolder);
+    for (const { resource, isDirectory } of stat.children || []) {
+        if (isDirectory) {
+            await doGetLogs(fileService, logs, resource, logsHome);
+        }
+        else {
+            const contents = (await fileService.readFile(resource)).value.toString();
+            if (contents) {
+                const path = relativePath(logsHome, resource);
+                if (path) {
+                    logs.push({ relativePath: path, contents });
+                }
+            }
+        }
+    }
+}
+function logLevelToString(level) {
+    switch (level) {
+        case LogLevel.Trace: return 'trace';
+        case LogLevel.Debug: return 'debug';
+        case LogLevel.Info: return 'info';
+        case LogLevel.Warning: return 'warn';
+        case LogLevel.Error: return 'error';
+    }
+    return 'info';
+}
+export class ConsoleLogInAutomationLogger extends AdapterLogger {
+    constructor(logLevel = DEFAULT_LOG_LEVEL) {
+        super({ log: (level, args) => this.consoleLog(logLevelToString(level), args) }, logLevel);
+    }
+    consoleLog(type, args) {
+        const automatedWindow = mainWindow;
+        if (typeof automatedWindow.codeAutomationLog === 'function') {
+            try {
+                automatedWindow.codeAutomationLog(type, args);
+            }
+            catch (err) {
+                console.error('Problems writing to codeAutomationLog', err);
+            }
+        }
+    }
+}

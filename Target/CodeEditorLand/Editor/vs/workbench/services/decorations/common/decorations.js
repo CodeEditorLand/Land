@@ -1,1 +1,2 @@
-import{createDecorator as e}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../base/common/uri.js";import"../../../../base/common/event.js";import"../../../../platform/theme/common/colorRegistry.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/cancellation.js";import"../../../../base/common/themables.js";const f=e("IFileDecorationsService");export{f as IDecorationsService};
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export const IDecorationsService = createDecorator('IFileDecorationsService');

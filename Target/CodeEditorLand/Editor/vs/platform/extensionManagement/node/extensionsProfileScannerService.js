@@ -1,1 +1,35 @@
-var f=Object.defineProperty;var s=Object.getOwnPropertyDescriptor;var p=(m,r,t,i)=>{for(var e=i>1?void 0:i?s(r,t):r,I=m.length-1,v;I>=0;I--)(v=m[I])&&(e=(i?v(r,t,e):v(e))||e);return i&&e&&f(r,t,e),e},o=(m,r)=>(t,i)=>r(t,i,m);import{ILogService as S}from"../../log/common/log.js";import{IUserDataProfilesService as a}from"../../userDataProfile/common/userDataProfile.js";import{IUriIdentityService as l}from"../../uriIdentity/common/uriIdentity.js";import{ITelemetryService as U}from"../../telemetry/common/telemetry.js";import{AbstractExtensionsProfileScannerService as n}from"../common/extensionsProfileScannerService.js";import{IFileService as y}from"../../files/common/files.js";import{INativeEnvironmentService as d}from"../../environment/common/environment.js";import{URI as g}from"../../../base/common/uri.js";let c=class extends n{constructor(r,t,i,e,I,v){super(g.file(r.extensionsPath),t,i,e,I,v)}};c=p([o(0,d),o(1,y),o(2,a),o(3,l),o(4,U),o(5,S)],c);export{c as ExtensionsProfileScannerService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ILogService } from '../../log/common/log.js';
+import { IUserDataProfilesService } from '../../userDataProfile/common/userDataProfile.js';
+import { IUriIdentityService } from '../../uriIdentity/common/uriIdentity.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+import { AbstractExtensionsProfileScannerService } from '../common/extensionsProfileScannerService.js';
+import { IFileService } from '../../files/common/files.js';
+import { INativeEnvironmentService } from '../../environment/common/environment.js';
+import { URI } from '../../../base/common/uri.js';
+let ExtensionsProfileScannerService = class ExtensionsProfileScannerService extends AbstractExtensionsProfileScannerService {
+    constructor(environmentService, fileService, userDataProfilesService, uriIdentityService, telemetryService, logService) {
+        super(URI.file(environmentService.extensionsPath), fileService, userDataProfilesService, uriIdentityService, telemetryService, logService);
+    }
+};
+ExtensionsProfileScannerService = __decorate([
+    __param(0, INativeEnvironmentService),
+    __param(1, IFileService),
+    __param(2, IUserDataProfilesService),
+    __param(3, IUriIdentityService),
+    __param(4, ITelemetryService),
+    __param(5, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], ExtensionsProfileScannerService);
+export { ExtensionsProfileScannerService };

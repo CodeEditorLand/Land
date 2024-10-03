@@ -1,1 +1,73 @@
-import{localize as f,localize2 as v}from"../../../../nls.js";import{Action2 as p,MenuId as w,registerAction2 as V}from"../../../../platform/actions/common/actions.js";import{IConfigurationService as P}from"../../../../platform/configuration/common/configuration.js";import{ContextKeyExpr as b}from"../../../../platform/contextkey/common/contextkey.js";import{ICodeEditorService as E}from"../../../../editor/browser/services/codeEditorService.js";import{EditorOption as M}from"../../../../editor/common/config/editorOptions.js";import"../../../../editor/browser/editorBrowser.js";import{CoreNavigationCommands as g}from"../../../../editor/browser/coreCommands.js";import{Position as s}from"../../../../editor/common/core/position.js";import{Selection as N}from"../../../../editor/common/core/selection.js";import"../../../../platform/instantiation/common/instantiation.js";class d extends p{static ID="editor.action.toggleColumnSelection";constructor(){super({id:d.ID,title:{...v("toggleColumnSelection","Toggle Column Selection Mode"),mnemonicTitle:f({key:"miColumnSelection",comment:["&& denotes a mnemonic"]},"Column &&Selection Mode")},f1:!0,toggled:b.equals("config.editor.columnSelection",!0),menu:{id:w.MenubarSelectionMenu,group:"4_config",order:2}})}async run(n){const t=n.get(P),C=n.get(E),u=t.getValue("editor.columnSelection"),i=this._getCodeEditor(C);await t.updateValue("editor.columnSelection",!u);const a=t.getValue("editor.columnSelection");if(!i||i!==this._getCodeEditor(C)||u===a||!i.hasModel()||typeof u!="boolean"||typeof a!="boolean")return;const o=i._getViewModel();if(i.getOption(M.columnSelection)){const e=i.getSelection(),l=new s(e.selectionStartLineNumber,e.selectionStartColumn),c=o.coordinatesConverter.convertModelPositionToViewPosition(l),m=new s(e.positionLineNumber,e.positionColumn),r=o.coordinatesConverter.convertModelPositionToViewPosition(m);g.MoveTo.runCoreEditorCommand(o,{position:l,viewPosition:c});const S=o.cursorConfig.visibleColumnFromColumn(o,r);g.ColumnSelect.runCoreEditorCommand(o,{position:m,viewPosition:r,doColumnSelect:!0,mouseColumn:S+1})}else{const e=o.getCursorColumnSelectData(),l=o.cursorConfig.columnFromVisibleColumn(o,e.fromViewLineNumber,e.fromViewVisualColumn),c=o.coordinatesConverter.convertViewPositionToModelPosition(new s(e.fromViewLineNumber,l)),m=o.cursorConfig.columnFromVisibleColumn(o,e.toViewLineNumber,e.toViewVisualColumn),r=o.coordinatesConverter.convertViewPositionToModelPosition(new s(e.toViewLineNumber,m));i.setSelection(new N(c.lineNumber,c.column,r.lineNumber,r.column))}}_getCodeEditor(n){const t=n.getFocusedCodeEditor();return t||n.getActiveCodeEditor()}}V(d);export{d as ToggleColumnSelectionAction};
+import { localize, localize2 } from '../../../../nls.js';
+import { Action2, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { CoreNavigationCommands } from '../../../../editor/browser/coreCommands.js';
+import { Position } from '../../../../editor/common/core/position.js';
+import { Selection } from '../../../../editor/common/core/selection.js';
+export class ToggleColumnSelectionAction extends Action2 {
+    static { this.ID = 'editor.action.toggleColumnSelection'; }
+    constructor() {
+        super({
+            id: ToggleColumnSelectionAction.ID,
+            title: {
+                ...localize2('toggleColumnSelection', "Toggle Column Selection Mode"),
+                mnemonicTitle: localize({ key: 'miColumnSelection', comment: ['&& denotes a mnemonic'] }, "Column &&Selection Mode"),
+            },
+            f1: true,
+            toggled: ContextKeyExpr.equals('config.editor.columnSelection', true),
+            menu: {
+                id: MenuId.MenubarSelectionMenu,
+                group: '4_config',
+                order: 2
+            }
+        });
+    }
+    async run(accessor) {
+        const configurationService = accessor.get(IConfigurationService);
+        const codeEditorService = accessor.get(ICodeEditorService);
+        const oldValue = configurationService.getValue('editor.columnSelection');
+        const codeEditor = this._getCodeEditor(codeEditorService);
+        await configurationService.updateValue('editor.columnSelection', !oldValue);
+        const newValue = configurationService.getValue('editor.columnSelection');
+        if (!codeEditor || codeEditor !== this._getCodeEditor(codeEditorService) || oldValue === newValue || !codeEditor.hasModel() || typeof oldValue !== 'boolean' || typeof newValue !== 'boolean') {
+            return;
+        }
+        const viewModel = codeEditor._getViewModel();
+        if (codeEditor.getOption(22)) {
+            const selection = codeEditor.getSelection();
+            const modelSelectionStart = new Position(selection.selectionStartLineNumber, selection.selectionStartColumn);
+            const viewSelectionStart = viewModel.coordinatesConverter.convertModelPositionToViewPosition(modelSelectionStart);
+            const modelPosition = new Position(selection.positionLineNumber, selection.positionColumn);
+            const viewPosition = viewModel.coordinatesConverter.convertModelPositionToViewPosition(modelPosition);
+            CoreNavigationCommands.MoveTo.runCoreEditorCommand(viewModel, {
+                position: modelSelectionStart,
+                viewPosition: viewSelectionStart
+            });
+            const visibleColumn = viewModel.cursorConfig.visibleColumnFromColumn(viewModel, viewPosition);
+            CoreNavigationCommands.ColumnSelect.runCoreEditorCommand(viewModel, {
+                position: modelPosition,
+                viewPosition: viewPosition,
+                doColumnSelect: true,
+                mouseColumn: visibleColumn + 1
+            });
+        }
+        else {
+            const columnSelectData = viewModel.getCursorColumnSelectData();
+            const fromViewColumn = viewModel.cursorConfig.columnFromVisibleColumn(viewModel, columnSelectData.fromViewLineNumber, columnSelectData.fromViewVisualColumn);
+            const fromPosition = viewModel.coordinatesConverter.convertViewPositionToModelPosition(new Position(columnSelectData.fromViewLineNumber, fromViewColumn));
+            const toViewColumn = viewModel.cursorConfig.columnFromVisibleColumn(viewModel, columnSelectData.toViewLineNumber, columnSelectData.toViewVisualColumn);
+            const toPosition = viewModel.coordinatesConverter.convertViewPositionToModelPosition(new Position(columnSelectData.toViewLineNumber, toViewColumn));
+            codeEditor.setSelection(new Selection(fromPosition.lineNumber, fromPosition.column, toPosition.lineNumber, toPosition.column));
+        }
+    }
+    _getCodeEditor(codeEditorService) {
+        const codeEditor = codeEditorService.getFocusedCodeEditor();
+        if (codeEditor) {
+            return codeEditor;
+        }
+        return codeEditorService.getActiveCodeEditor();
+    }
+}
+registerAction2(ToggleColumnSelectionAction);

@@ -1,1 +1,73 @@
-var h=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var v=(d,e,i,t)=>{for(var r=t>1?void 0:t?m(e,i):e,a=d.length-1,o;a>=0;a--)(o=d[a])&&(r=(t?o(e,i,r):o(r))||r);return t&&r&&h(e,i,r),r},s=(d,e)=>(i,t)=>e(i,t,d);import"../../../../base/common/cancellation.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import{ICodeEditorService as u}from"../../../../editor/browser/services/codeEditorService.js";import{score as I}from"../../../../editor/common/languageSelector.js";import{localize as p}from"../../../../nls.js";import"../../../../platform/actions/common/actions.js";import{IContextKeyService as S,RawContextKey as f}from"../../../../platform/contextkey/common/contextkey.js";import{ILabelService as y}from"../../../../platform/label/common/label.js";import{IQuickInputService as C}from"../../../../platform/quickinput/common/quickInput.js";import{ITelemetryService as b}from"../../../../platform/telemetry/common/telemetry.js";import"../common/share.js";const g=new f("shareProviderCount",0,p("shareProviderCount","The number of available share providers"));let c=class{constructor(e,i,t,r,a){this.contextKeyService=e;this.labelService=i;this.quickInputService=t;this.codeEditorService=r;this.telemetryService=a;this.providerCount=g.bindTo(this.contextKeyService)}_serviceBrand;providerCount;_providers=new Set;registerShareProvider(e){return this._providers.add(e),this.providerCount.set(this._providers.size),{dispose:()=>{this._providers.delete(e),this.providerCount.set(this._providers.size)}}}getShareActions(){return[]}async provideShare(e,i){const t=this.codeEditorService.getActiveCodeEditor()?.getModel()?.getLanguageId()??"",r=[...this._providers.values()].filter(n=>I(n.selector,e.resourceUri,t,!0,void 0,void 0)>0).sort((n,l)=>n.priority-l.priority);if(r.length===0)return;if(r.length===1)return this.telemetryService.publicLog2("shareService.share",{providerId:r[0].id}),r[0].provideShare(e,i);const a=r.map(n=>({label:n.label,provider:n})),o=await this.quickInputService.pick(a,{canPickMany:!1,placeHolder:p("type to filter","Choose how to share {0}",this.labelService.getUriLabel(e.resourceUri))},i);if(o!==void 0)return this.telemetryService.publicLog2("shareService.share",{providerId:o.provider.id}),o.provider.provideShare(e,i)}};c=v([s(0,S),s(1,y),s(2,C),s(3,u),s(4,b)],c);export{g as ShareProviderCountContext,c as ShareService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { score } from '../../../../editor/common/languageSelector.js';
+import { localize } from '../../../../nls.js';
+import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+export const ShareProviderCountContext = new RawContextKey('shareProviderCount', 0, localize('shareProviderCount', "The number of available share providers"));
+let ShareService = class ShareService {
+    constructor(contextKeyService, labelService, quickInputService, codeEditorService, telemetryService) {
+        this.contextKeyService = contextKeyService;
+        this.labelService = labelService;
+        this.quickInputService = quickInputService;
+        this.codeEditorService = codeEditorService;
+        this.telemetryService = telemetryService;
+        this._providers = new Set();
+        this.providerCount = ShareProviderCountContext.bindTo(this.contextKeyService);
+    }
+    registerShareProvider(provider) {
+        this._providers.add(provider);
+        this.providerCount.set(this._providers.size);
+        return {
+            dispose: () => {
+                this._providers.delete(provider);
+                this.providerCount.set(this._providers.size);
+            }
+        };
+    }
+    getShareActions() {
+        return [];
+    }
+    async provideShare(item, token) {
+        const language = this.codeEditorService.getActiveCodeEditor()?.getModel()?.getLanguageId() ?? '';
+        const providers = [...this._providers.values()]
+            .filter((p) => score(p.selector, item.resourceUri, language, true, undefined, undefined) > 0)
+            .sort((a, b) => a.priority - b.priority);
+        if (providers.length === 0) {
+            return undefined;
+        }
+        if (providers.length === 1) {
+            this.telemetryService.publicLog2('shareService.share', { providerId: providers[0].id });
+            return providers[0].provideShare(item, token);
+        }
+        const items = providers.map((p) => ({ label: p.label, provider: p }));
+        const selected = await this.quickInputService.pick(items, { canPickMany: false, placeHolder: localize('type to filter', 'Choose how to share {0}', this.labelService.getUriLabel(item.resourceUri)) }, token);
+        if (selected !== undefined) {
+            this.telemetryService.publicLog2('shareService.share', { providerId: selected.provider.id });
+            return selected.provider.provideShare(item, token);
+        }
+        return;
+    }
+};
+ShareService = __decorate([
+    __param(0, IContextKeyService),
+    __param(1, ILabelService),
+    __param(2, IQuickInputService),
+    __param(3, ICodeEditorService),
+    __param(4, ITelemetryService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], ShareService);
+export { ShareService };

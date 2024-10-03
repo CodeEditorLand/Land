@@ -1,1 +1,20 @@
-import{IEncryptionService as r,KnownStorageProvider as i}from"../../../../platform/encryption/common/encryptionService.js";import{InstantiationType as o,registerSingleton as n}from"../../../../platform/instantiation/common/extensions.js";class t{encrypt(e){return Promise.resolve(e)}decrypt(e){return Promise.resolve(e)}isEncryptionAvailable(){return Promise.resolve(!1)}getKeyStorageProvider(){return Promise.resolve(i.basicText)}setUsePlainTextEncryption(){return Promise.resolve(void 0)}}n(r,t,o.Delayed);export{t as EncryptionService};
+import { IEncryptionService } from '../../../../platform/encryption/common/encryptionService.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+export class EncryptionService {
+    encrypt(value) {
+        return Promise.resolve(value);
+    }
+    decrypt(value) {
+        return Promise.resolve(value);
+    }
+    isEncryptionAvailable() {
+        return Promise.resolve(false);
+    }
+    getKeyStorageProvider() {
+        return Promise.resolve("basic_text");
+    }
+    setUsePlainTextEncryption() {
+        return Promise.resolve(undefined);
+    }
+}
+registerSingleton(IEncryptionService, EncryptionService, 1);

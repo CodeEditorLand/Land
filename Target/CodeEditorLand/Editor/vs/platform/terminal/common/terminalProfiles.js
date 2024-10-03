@@ -1,8 +1,106 @@
-import{Codicon as a}from"../../../base/common/codicons.js";import{URI as r}from"../../../base/common/uri.js";import{localize as c}from"../../../nls.js";import"./terminal.js";import{ThemeIcon as s}from"../../../base/common/themables.js";function T(n,e){const i=[{name:null,description:c("terminalAutomaticProfile","Automatically detect the default")}];return i.push(...n.map(t=>({name:t.profileName,description:m(t)}))),e&&i.push(...e.map(t=>({name:t.title,description:l(t)}))),{values:i.map(t=>t.name),markdownDescriptions:i.map(t=>t.description)}}function m(n){let e=`$(${s.isThemeIcon(n.icon)?n.icon.id:n.icon?n.icon:a.terminal.id}) ${n.profileName}
-- path: ${n.path}`;return n.args&&(typeof n.args=="string"?e+=`
-- args: "${n.args}"`:e+=`
-- args: [${n.args.length===0?"":`'${n.args.join("','")}'`}]`),n.overrideName!==void 0&&(e+=`
-- overrideName: ${n.overrideName}`),n.color&&(e+=`
-- color: ${n.color}`),n.env&&(e+=`
-- env: ${JSON.stringify(n.env)}`),e}function l(n){return`$(${s.isThemeIcon(n.icon)?n.icon.id:n.icon?n.icon:a.terminal.id}) ${n.title}
-- extensionIdentifier: ${n.extensionIdentifier}`}function $(n,e){if(!n&&!e)return!0;if(typeof n=="string"&&typeof e=="string")return n===e;if(Array.isArray(n)&&Array.isArray(e)){if(n.length!==e.length)return!1;for(let i=0;i<n.length;i++)if(n[i]!==e[i])return!1;return!0}return!1}function w(n,e){if(!n&&!e)return!0;if(!n||!e)return!1;if(s.isThemeIcon(n)&&s.isThemeIcon(e))return n.id===e.id&&n.color===e.color;if(typeof n=="object"&&"light"in n&&"dark"in n&&typeof e=="object"&&"light"in e&&"dark"in e){const i=n,t=e;if((r.isUri(i.light)||o(i.light))&&(r.isUri(i.dark)||o(i.dark))&&(r.isUri(t.light)||o(t.light))&&(r.isUri(t.dark)||o(t.dark)))return i.light.path===t.light.path&&i.dark.path===t.dark.path}if(r.isUri(n)&&r.isUri(e)||o(n)||o(e)){const i=n,t=e;return i.path===t.path&&i.scheme===t.scheme}return!1}function o(n){return n?typeof n.path=="string"&&typeof n.scheme=="string":!1}export{T as createProfileSchemaEnums,o as isUriComponents,w as terminalIconsEqual,$ as terminalProfileArgsMatch};
+import { Codicon } from '../../../base/common/codicons.js';
+import { URI } from '../../../base/common/uri.js';
+import { localize } from '../../../nls.js';
+import { ThemeIcon } from '../../../base/common/themables.js';
+export function createProfileSchemaEnums(detectedProfiles, extensionProfiles) {
+    const result = [{
+            name: null,
+            description: localize('terminalAutomaticProfile', 'Automatically detect the default')
+        }];
+    result.push(...detectedProfiles.map(e => {
+        return {
+            name: e.profileName,
+            description: createProfileDescription(e)
+        };
+    }));
+    if (extensionProfiles) {
+        result.push(...extensionProfiles.map(extensionProfile => {
+            return {
+                name: extensionProfile.title,
+                description: createExtensionProfileDescription(extensionProfile)
+            };
+        }));
+    }
+    return {
+        values: result.map(e => e.name),
+        markdownDescriptions: result.map(e => e.description)
+    };
+}
+function createProfileDescription(profile) {
+    let description = `$(${ThemeIcon.isThemeIcon(profile.icon) ? profile.icon.id : profile.icon ? profile.icon : Codicon.terminal.id}) ${profile.profileName}\n- path: ${profile.path}`;
+    if (profile.args) {
+        if (typeof profile.args === 'string') {
+            description += `\n- args: "${profile.args}"`;
+        }
+        else {
+            description += `\n- args: [${profile.args.length === 0 ? '' : `'${profile.args.join(`','`)}'`}]`;
+        }
+    }
+    if (profile.overrideName !== undefined) {
+        description += `\n- overrideName: ${profile.overrideName}`;
+    }
+    if (profile.color) {
+        description += `\n- color: ${profile.color}`;
+    }
+    if (profile.env) {
+        description += `\n- env: ${JSON.stringify(profile.env)}`;
+    }
+    return description;
+}
+function createExtensionProfileDescription(profile) {
+    const description = `$(${ThemeIcon.isThemeIcon(profile.icon) ? profile.icon.id : profile.icon ? profile.icon : Codicon.terminal.id}) ${profile.title}\n- extensionIdentifier: ${profile.extensionIdentifier}`;
+    return description;
+}
+export function terminalProfileArgsMatch(args1, args2) {
+    if (!args1 && !args2) {
+        return true;
+    }
+    else if (typeof args1 === 'string' && typeof args2 === 'string') {
+        return args1 === args2;
+    }
+    else if (Array.isArray(args1) && Array.isArray(args2)) {
+        if (args1.length !== args2.length) {
+            return false;
+        }
+        for (let i = 0; i < args1.length; i++) {
+            if (args1[i] !== args2[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+export function terminalIconsEqual(a, b) {
+    if (!a && !b) {
+        return true;
+    }
+    else if (!a || !b) {
+        return false;
+    }
+    if (ThemeIcon.isThemeIcon(a) && ThemeIcon.isThemeIcon(b)) {
+        return a.id === b.id && a.color === b.color;
+    }
+    if (typeof a === 'object' && 'light' in a && 'dark' in a
+        && typeof b === 'object' && 'light' in b && 'dark' in b) {
+        const castedA = a;
+        const castedB = b;
+        if ((URI.isUri(castedA.light) || isUriComponents(castedA.light)) && (URI.isUri(castedA.dark) || isUriComponents(castedA.dark))
+            && (URI.isUri(castedB.light) || isUriComponents(castedB.light)) && (URI.isUri(castedB.dark) || isUriComponents(castedB.dark))) {
+            return castedA.light.path === castedB.light.path && castedA.dark.path === castedB.dark.path;
+        }
+    }
+    if ((URI.isUri(a) && URI.isUri(b)) || (isUriComponents(a) || isUriComponents(b))) {
+        const castedA = a;
+        const castedB = b;
+        return castedA.path === castedB.path && castedA.scheme === castedB.scheme;
+    }
+    return false;
+}
+export function isUriComponents(thing) {
+    if (!thing) {
+        return false;
+    }
+    return typeof thing.path === 'string' &&
+        typeof thing.scheme === 'string';
+}

@@ -1,1 +1,168 @@
-import{Emitter as c}from"../../base/common/event.js";import{toDisposable as f}from"../../base/common/lifecycle.js";import{shouldSynchronizeModel as _}from"./model.js";import{score as g}from"./languageSelector.js";import"../../base/common/uri.js";function a(i){return typeof i=="string"?!1:Array.isArray(i)?i.every(a):!!i.exclusive}class d{constructor(e,r,t,o,n){this.uri=e;this.languageId=r;this.notebookUri=t;this.notebookType=o;this.recursive=n}equals(e){return this.notebookType===e.notebookType&&this.languageId===e.languageId&&this.uri.toString()===e.uri.toString()&&this.notebookUri?.toString()===e.notebookUri?.toString()&&this.recursive===e.recursive}}class l{constructor(e){this._notebookInfoResolver=e}_clock=0;_entries=[];_onDidChange=new c;onDidChange=this._onDidChange.event;register(e,r){let t={selector:e,provider:r,_score:-1,_time:this._clock++};return this._entries.push(t),this._lastCandidate=void 0,this._onDidChange.fire(this._entries.length),f(()=>{if(t){const o=this._entries.indexOf(t);o>=0&&(this._entries.splice(o,1),this._lastCandidate=void 0,this._onDidChange.fire(this._entries.length),t=void 0)}})}has(e){return this.all(e).length>0}all(e){if(!e)return[];this._updateScores(e,!1);const r=[];for(const t of this._entries)t._score>0&&r.push(t.provider);return r}allNoModel(){return this._entries.map(e=>e.provider)}ordered(e,r=!1){const t=[];return this._orderedForEach(e,r,o=>t.push(o.provider)),t}orderedGroups(e){const r=[];let t,o;return this._orderedForEach(e,!1,n=>{t&&o===n._score?t.push(n.provider):(o=n._score,t=[n.provider],r.push(t))}),r}_orderedForEach(e,r,t){this._updateScores(e,r);for(const o of this._entries)o._score>0&&t(o)}_lastCandidate;_updateScores(e,r){const t=this._notebookInfoResolver?.(e.uri),o=t?new d(e.uri,e.getLanguageId(),t.uri,t.type,r):new d(e.uri,e.getLanguageId(),void 0,void 0,r);if(!this._lastCandidate?.equals(o)){this._lastCandidate=o;for(const n of this._entries)if(n._score=g(n.selector,o.uri,o.languageId,_(e),o.notebookUri,o.notebookType),a(n.selector)&&n._score>0)if(r)n._score=0;else{for(const u of this._entries)u._score=0;n._score=1e3;break}this._entries.sort(l._compareByScoreAndTime)}}static _compareByScoreAndTime(e,r){return e._score<r._score?1:e._score>r._score?-1:s(e.selector)&&!s(r.selector)?1:!s(e.selector)&&s(r.selector)?-1:e._time<r._time?1:e._time>r._time?-1:0}}function s(i){return typeof i=="string"?!1:Array.isArray(i)?i.some(s):!!i.isBuiltin}export{l as LanguageFeatureRegistry};
+import { Emitter } from '../../base/common/event.js';
+import { toDisposable } from '../../base/common/lifecycle.js';
+import { shouldSynchronizeModel } from './model.js';
+import { score } from './languageSelector.js';
+function isExclusive(selector) {
+    if (typeof selector === 'string') {
+        return false;
+    }
+    else if (Array.isArray(selector)) {
+        return selector.every(isExclusive);
+    }
+    else {
+        return !!selector.exclusive;
+    }
+}
+class MatchCandidate {
+    constructor(uri, languageId, notebookUri, notebookType, recursive) {
+        this.uri = uri;
+        this.languageId = languageId;
+        this.notebookUri = notebookUri;
+        this.notebookType = notebookType;
+        this.recursive = recursive;
+    }
+    equals(other) {
+        return this.notebookType === other.notebookType
+            && this.languageId === other.languageId
+            && this.uri.toString() === other.uri.toString()
+            && this.notebookUri?.toString() === other.notebookUri?.toString()
+            && this.recursive === other.recursive;
+    }
+}
+export class LanguageFeatureRegistry {
+    constructor(_notebookInfoResolver) {
+        this._notebookInfoResolver = _notebookInfoResolver;
+        this._clock = 0;
+        this._entries = [];
+        this._onDidChange = new Emitter();
+        this.onDidChange = this._onDidChange.event;
+    }
+    register(selector, provider) {
+        let entry = {
+            selector,
+            provider,
+            _score: -1,
+            _time: this._clock++
+        };
+        this._entries.push(entry);
+        this._lastCandidate = undefined;
+        this._onDidChange.fire(this._entries.length);
+        return toDisposable(() => {
+            if (entry) {
+                const idx = this._entries.indexOf(entry);
+                if (idx >= 0) {
+                    this._entries.splice(idx, 1);
+                    this._lastCandidate = undefined;
+                    this._onDidChange.fire(this._entries.length);
+                    entry = undefined;
+                }
+            }
+        });
+    }
+    has(model) {
+        return this.all(model).length > 0;
+    }
+    all(model) {
+        if (!model) {
+            return [];
+        }
+        this._updateScores(model, false);
+        const result = [];
+        for (const entry of this._entries) {
+            if (entry._score > 0) {
+                result.push(entry.provider);
+            }
+        }
+        return result;
+    }
+    allNoModel() {
+        return this._entries.map(entry => entry.provider);
+    }
+    ordered(model, recursive = false) {
+        const result = [];
+        this._orderedForEach(model, recursive, entry => result.push(entry.provider));
+        return result;
+    }
+    orderedGroups(model) {
+        const result = [];
+        let lastBucket;
+        let lastBucketScore;
+        this._orderedForEach(model, false, entry => {
+            if (lastBucket && lastBucketScore === entry._score) {
+                lastBucket.push(entry.provider);
+            }
+            else {
+                lastBucketScore = entry._score;
+                lastBucket = [entry.provider];
+                result.push(lastBucket);
+            }
+        });
+        return result;
+    }
+    _orderedForEach(model, recursive, callback) {
+        this._updateScores(model, recursive);
+        for (const entry of this._entries) {
+            if (entry._score > 0) {
+                callback(entry);
+            }
+        }
+    }
+    _updateScores(model, recursive) {
+        const notebookInfo = this._notebookInfoResolver?.(model.uri);
+        const candidate = notebookInfo
+            ? new MatchCandidate(model.uri, model.getLanguageId(), notebookInfo.uri, notebookInfo.type, recursive)
+            : new MatchCandidate(model.uri, model.getLanguageId(), undefined, undefined, recursive);
+        if (this._lastCandidate?.equals(candidate)) {
+            return;
+        }
+        this._lastCandidate = candidate;
+        for (const entry of this._entries) {
+            entry._score = score(entry.selector, candidate.uri, candidate.languageId, shouldSynchronizeModel(model), candidate.notebookUri, candidate.notebookType);
+            if (isExclusive(entry.selector) && entry._score > 0) {
+                if (recursive) {
+                    entry._score = 0;
+                }
+                else {
+                    for (const entry of this._entries) {
+                        entry._score = 0;
+                    }
+                    entry._score = 1000;
+                    break;
+                }
+            }
+        }
+        this._entries.sort(LanguageFeatureRegistry._compareByScoreAndTime);
+    }
+    static _compareByScoreAndTime(a, b) {
+        if (a._score < b._score) {
+            return 1;
+        }
+        else if (a._score > b._score) {
+            return -1;
+        }
+        if (isBuiltinSelector(a.selector) && !isBuiltinSelector(b.selector)) {
+            return 1;
+        }
+        else if (!isBuiltinSelector(a.selector) && isBuiltinSelector(b.selector)) {
+            return -1;
+        }
+        if (a._time < b._time) {
+            return 1;
+        }
+        else if (a._time > b._time) {
+            return -1;
+        }
+        else {
+            return 0;
+        }
+    }
+}
+function isBuiltinSelector(selector) {
+    if (typeof selector === 'string') {
+        return false;
+    }
+    if (Array.isArray(selector)) {
+        return selector.some(isBuiltinSelector);
+    }
+    return Boolean(selector.isBuiltin);
+}

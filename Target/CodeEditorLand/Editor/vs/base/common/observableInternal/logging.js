@@ -1,1 +1,254 @@
-import"./autorun.js";import"./base.js";import"./derived.js";import"./utils.js";let g;function w(r){g=r}function V(){return g}class S{indentation=0;textToConsoleArgs(e){return b([i(f("|  ",this.indentation)),e])}formatInfo(e){return e.hadValue?e.didChange?[i(" "),l(d(e.oldValue,70),{color:"red",strikeThrough:!0}),i(" "),l(d(e.newValue,60),{color:"green"})]:[i(" (unchanged)")]:[i(" "),l(d(e.newValue,60),{color:"green"}),i(" (initial)")]}handleObservableChanged(e,n){}changedObservablesSets=new WeakMap;formatChanges(e){if(e.size!==0)return l(" (changed deps: "+[...e].map(n=>n.debugName).join(", ")+")",{color:"gray"})}handleDerivedCreated(e){const n=e.handleChange;this.changedObservablesSets.set(e,new Set),e.handleChange=(t,o)=>(this.changedObservablesSets.get(e).add(t),n.apply(e,[t,o]))}handleDerivedRecomputed(e,n){this.changedObservablesSets.get(e).clear()}handleFromEventObservableTriggered(e,n){}handleAutorunCreated(e){const n=e.handleChange;this.changedObservablesSets.set(e,new Set),e.handleChange=(t,o)=>(this.changedObservablesSets.get(e).add(t),n.apply(e,[t,o]))}handleAutorunTriggered(e){this.changedObservablesSets.get(e).clear(),this.indentation++}handleAutorunFinished(e){this.indentation--}handleBeginTransaction(e){let n=e.getDebugName();n===void 0&&(n=""),this.indentation++}handleEndTransaction(){this.indentation--}}function b(r){const e=new Array,n=[];let t="";function o(a){if("length"in a)for(const u of a)u&&o(u);else"text"in a?(t+=`%c${a.text}`,e.push(a.style),a.data&&n.push(...a.data)):"data"in a&&n.push(...a.data)}o(r);const s=[t,...e];return s.push(...n),s}function i(r){return l(r,{color:"black"})}function D(r){return l(v(`${r}: `,10),{color:"black",bold:!0})}function l(r,e={color:"black"}){function n(o){return Object.entries(o).reduce((s,[a,u])=>`${s}${a}:${u};`,"")}const t={color:e.color};return e.strikeThrough&&(t["text-decoration"]="line-through"),e.bold&&(t["font-weight"]="bold"),{text:r,style:n(t)}}function d(r,e){switch(typeof r){case"number":return""+r;case"string":return r.length+2<=e?`"${r}"`:`"${r.substr(0,e-7)}"+...`;case"boolean":return r?"true":"false";case"undefined":return"undefined";case"object":return r===null?"null":Array.isArray(r)?c(r,e):h(r,e);case"symbol":return r.toString();case"function":return`[[Function${r.name?" "+r.name:""}]]`;default:return""+r}}function c(r,e){let n="[ ",t=!0;for(const o of r){if(t||(n+=", "),n.length-5>e){n+="...";break}t=!1,n+=`${d(o,e-n.length)}`}return n+=" ]",n}function h(r,e){let n="{ ",t=!0;for(const[o,s]of Object.entries(r)){if(t||(n+=", "),n.length-5>e){n+="...";break}t=!1,n+=`${o}: ${d(s,e-n.length)}`}return n+=" }",n}function f(r,e){let n="";for(let t=1;t<=e;t++)n+=r;return n}function v(r,e){for(;r.length<e;)r+=" ";return r}export{S as ConsoleObservableLogger,V as getLogger,w as setLogger};
+let globalObservableLogger;
+export function setLogger(logger) {
+    globalObservableLogger = logger;
+}
+export function getLogger() {
+    return globalObservableLogger;
+}
+export class ConsoleObservableLogger {
+    constructor() {
+        this.indentation = 0;
+        this.changedObservablesSets = new WeakMap();
+    }
+    textToConsoleArgs(text) {
+        return consoleTextToArgs([
+            normalText(repeat('|  ', this.indentation)),
+            text,
+        ]);
+    }
+    formatInfo(info) {
+        if (!info.hadValue) {
+            return [
+                normalText(` `),
+                styled(formatValue(info.newValue, 60), {
+                    color: 'green',
+                }),
+                normalText(` (initial)`),
+            ];
+        }
+        return info.didChange
+            ? [
+                normalText(` `),
+                styled(formatValue(info.oldValue, 70), {
+                    color: 'red',
+                    strikeThrough: true,
+                }),
+                normalText(` `),
+                styled(formatValue(info.newValue, 60), {
+                    color: 'green',
+                }),
+            ]
+            : [normalText(` (unchanged)`)];
+    }
+    handleObservableChanged(observable, info) {
+        console.log(...this.textToConsoleArgs([
+            formatKind('observable value changed'),
+            styled(observable.debugName, { color: 'BlueViolet' }),
+            ...this.formatInfo(info),
+        ]));
+    }
+    formatChanges(changes) {
+        if (changes.size === 0) {
+            return undefined;
+        }
+        return styled(' (changed deps: ' +
+            [...changes].map((o) => o.debugName).join(', ') +
+            ')', { color: 'gray' });
+    }
+    handleDerivedCreated(derived) {
+        const existingHandleChange = derived.handleChange;
+        this.changedObservablesSets.set(derived, new Set());
+        derived.handleChange = (observable, change) => {
+            this.changedObservablesSets.get(derived).add(observable);
+            return existingHandleChange.apply(derived, [observable, change]);
+        };
+    }
+    handleDerivedRecomputed(derived, info) {
+        const changedObservables = this.changedObservablesSets.get(derived);
+        console.log(...this.textToConsoleArgs([
+            formatKind('derived recomputed'),
+            styled(derived.debugName, { color: 'BlueViolet' }),
+            ...this.formatInfo(info),
+            this.formatChanges(changedObservables),
+            { data: [{ fn: derived._debugNameData.referenceFn ?? derived._computeFn }] }
+        ]));
+        changedObservables.clear();
+    }
+    handleFromEventObservableTriggered(observable, info) {
+        console.log(...this.textToConsoleArgs([
+            formatKind('observable from event triggered'),
+            styled(observable.debugName, { color: 'BlueViolet' }),
+            ...this.formatInfo(info),
+            { data: [{ fn: observable._getValue }] }
+        ]));
+    }
+    handleAutorunCreated(autorun) {
+        const existingHandleChange = autorun.handleChange;
+        this.changedObservablesSets.set(autorun, new Set());
+        autorun.handleChange = (observable, change) => {
+            this.changedObservablesSets.get(autorun).add(observable);
+            return existingHandleChange.apply(autorun, [observable, change]);
+        };
+    }
+    handleAutorunTriggered(autorun) {
+        const changedObservables = this.changedObservablesSets.get(autorun);
+        console.log(...this.textToConsoleArgs([
+            formatKind('autorun'),
+            styled(autorun.debugName, { color: 'BlueViolet' }),
+            this.formatChanges(changedObservables),
+            { data: [{ fn: autorun._debugNameData.referenceFn ?? autorun._runFn }] }
+        ]));
+        changedObservables.clear();
+        this.indentation++;
+    }
+    handleAutorunFinished(autorun) {
+        this.indentation--;
+    }
+    handleBeginTransaction(transaction) {
+        let transactionName = transaction.getDebugName();
+        if (transactionName === undefined) {
+            transactionName = '';
+        }
+        console.log(...this.textToConsoleArgs([
+            formatKind('transaction'),
+            styled(transactionName, { color: 'BlueViolet' }),
+            { data: [{ fn: transaction._fn }] }
+        ]));
+        this.indentation++;
+    }
+    handleEndTransaction() {
+        this.indentation--;
+    }
+}
+function consoleTextToArgs(text) {
+    const styles = new Array();
+    const data = [];
+    let firstArg = '';
+    function process(t) {
+        if ('length' in t) {
+            for (const item of t) {
+                if (item) {
+                    process(item);
+                }
+            }
+        }
+        else if ('text' in t) {
+            firstArg += `%c${t.text}`;
+            styles.push(t.style);
+            if (t.data) {
+                data.push(...t.data);
+            }
+        }
+        else if ('data' in t) {
+            data.push(...t.data);
+        }
+    }
+    process(text);
+    const result = [firstArg, ...styles];
+    result.push(...data);
+    return result;
+}
+function normalText(text) {
+    return styled(text, { color: 'black' });
+}
+function formatKind(kind) {
+    return styled(padStr(`${kind}: `, 10), { color: 'black', bold: true });
+}
+function styled(text, options = {
+    color: 'black',
+}) {
+    function objToCss(styleObj) {
+        return Object.entries(styleObj).reduce((styleString, [propName, propValue]) => {
+            return `${styleString}${propName}:${propValue};`;
+        }, '');
+    }
+    const style = {
+        color: options.color,
+    };
+    if (options.strikeThrough) {
+        style['text-decoration'] = 'line-through';
+    }
+    if (options.bold) {
+        style['font-weight'] = 'bold';
+    }
+    return {
+        text,
+        style: objToCss(style),
+    };
+}
+function formatValue(value, availableLen) {
+    switch (typeof value) {
+        case 'number':
+            return '' + value;
+        case 'string':
+            if (value.length + 2 <= availableLen) {
+                return `"${value}"`;
+            }
+            return `"${value.substr(0, availableLen - 7)}"+...`;
+        case 'boolean':
+            return value ? 'true' : 'false';
+        case 'undefined':
+            return 'undefined';
+        case 'object':
+            if (value === null) {
+                return 'null';
+            }
+            if (Array.isArray(value)) {
+                return formatArray(value, availableLen);
+            }
+            return formatObject(value, availableLen);
+        case 'symbol':
+            return value.toString();
+        case 'function':
+            return `[[Function${value.name ? ' ' + value.name : ''}]]`;
+        default:
+            return '' + value;
+    }
+}
+function formatArray(value, availableLen) {
+    let result = '[ ';
+    let first = true;
+    for (const val of value) {
+        if (!first) {
+            result += ', ';
+        }
+        if (result.length - 5 > availableLen) {
+            result += '...';
+            break;
+        }
+        first = false;
+        result += `${formatValue(val, availableLen - result.length)}`;
+    }
+    result += ' ]';
+    return result;
+}
+function formatObject(value, availableLen) {
+    let result = '{ ';
+    let first = true;
+    for (const [key, val] of Object.entries(value)) {
+        if (!first) {
+            result += ', ';
+        }
+        if (result.length - 5 > availableLen) {
+            result += '...';
+            break;
+        }
+        first = false;
+        result += `${key}: ${formatValue(val, availableLen - result.length)}`;
+    }
+    result += ' }';
+    return result;
+}
+function repeat(str, count) {
+    let result = '';
+    for (let i = 1; i <= count; i++) {
+        result += str;
+    }
+    return result;
+}
+function padStr(str, length) {
+    while (str.length < length) {
+        str += ' ';
+    }
+    return str;
+}

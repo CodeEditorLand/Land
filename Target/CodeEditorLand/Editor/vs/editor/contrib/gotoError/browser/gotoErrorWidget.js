@@ -1,1 +1,338 @@
-var x=Object.defineProperty;var z=Object.getOwnPropertyDescriptor;var M=(k,o,e,t)=>{for(var i=t>1?void 0:t?z(o,e):o,r=k.length-1,a;r>=0;r--)(a=k[r])&&(i=(t?a(o,e,i):a(i))||i);return t&&i&&x(o,e,i),i},g=(k,o)=>(e,t)=>o(e,t,k);import*as h from"../../../../base/browser/dom.js";import{ScrollableElement as $}from"../../../../base/browser/ui/scrollbar/scrollableElement.js";import"../../../../base/common/actions.js";import{isNonEmptyArray as R}from"../../../../base/common/arrays.js";import{Color as F}from"../../../../base/common/color.js";import{Emitter as O}from"../../../../base/common/event.js";import{DisposableStore as B,dispose as P}from"../../../../base/common/lifecycle.js";import{basename as K}from"../../../../base/common/resources.js";import{ScrollbarVisibility as T}from"../../../../base/common/scrollable.js";import{splitLines as V}from"../../../../base/common/strings.js";import"./media/gotoErrorWidget.css";import"../../../browser/editorBrowser.js";import{EditorOption as w}from"../../../common/config/editorOptions.js";import{Range as q}from"../../../common/core/range.js";import{ScrollType as U}from"../../../common/editorCommon.js";import{peekViewTitleForeground as j,peekViewTitleInfoForeground as G,PeekViewWidget as J}from"../../peekView/browser/peekView.js";import*as s from"../../../../nls.js";import{createAndFillInActionBarActions as Q}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import{IMenuService as X,MenuId as Y}from"../../../../platform/actions/common/actions.js";import{IContextKeyService as Z}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as ee}from"../../../../platform/instantiation/common/instantiation.js";import{ILabelService as te}from"../../../../platform/label/common/label.js";import{MarkerSeverity as p}from"../../../../platform/markers/common/markers.js";import{IOpenerService as ie}from"../../../../platform/opener/common/opener.js";import{SeverityIcon as re}from"../../../../platform/severityIcon/browser/severityIcon.js";import{contrastBorder as _,editorBackground as oe,editorErrorBorder as ae,editorErrorForeground as ne,editorInfoBorder as se,editorInfoForeground as le,editorWarningBorder as de,editorWarningForeground as ce,oneOf as L,registerColor as m,transparent as u}from"../../../../platform/theme/common/colorRegistry.js";import{IThemeService as he}from"../../../../platform/theme/common/themeService.js";class pe{constructor(o,e,t,i,r){this._openerService=i;this._labelService=r;this._editor=e;const a=document.createElement("div");a.className="descriptioncontainer",this._messageBlock=document.createElement("div"),this._messageBlock.classList.add("message"),this._messageBlock.setAttribute("aria-live","assertive"),this._messageBlock.setAttribute("role","alert"),a.appendChild(this._messageBlock),this._relatedBlock=document.createElement("div"),a.appendChild(this._relatedBlock),this._disposables.add(h.addStandardDisposableListener(this._relatedBlock,"click",l=>{l.preventDefault();const c=this._relatedDiagnostics.get(l.target);c&&t(c)})),this._scrollable=new $(a,{horizontal:T.Auto,vertical:T.Auto,useShadows:!1,horizontalScrollbarSize:6,verticalScrollbarSize:6}),o.appendChild(this._scrollable.getDomNode()),this._disposables.add(this._scrollable.onScroll(l=>{a.style.left=`-${l.scrollLeft}px`,a.style.top=`-${l.scrollTop}px`})),this._disposables.add(this._scrollable)}_lines=0;_longestLineLength=0;_editor;_messageBlock;_relatedBlock;_scrollable;_relatedDiagnostics=new WeakMap;_disposables=new B;_codeLink;dispose(){P(this._disposables)}update(o){const{source:e,message:t,relatedInformation:i,code:r}=o;let a=(e?.length||0)+2;r&&(typeof r=="string"?a+=r.length:a+=r.value.length);const l=V(t);this._lines=l.length,this._longestLineLength=0;for(const d of l)this._longestLineLength=Math.max(d.length+a,this._longestLineLength);h.clearNode(this._messageBlock),this._messageBlock.setAttribute("aria-label",this.getAriaLabel(o)),this._editor.applyFontInfo(this._messageBlock);let c=this._messageBlock;for(const d of l)c=document.createElement("div"),c.innerText=d,d===""&&(c.style.height=this._messageBlock.style.lineHeight),this._messageBlock.appendChild(c);if(e||r){const d=document.createElement("span");if(d.classList.add("details"),c.appendChild(d),e){const n=document.createElement("span");n.innerText=e,n.classList.add("source"),d.appendChild(n)}if(r)if(typeof r=="string"){const n=document.createElement("span");n.innerText=`(${r})`,n.classList.add("code"),d.appendChild(n)}else{this._codeLink=h.$("a.code-link"),this._codeLink.setAttribute("href",`${r.target.toString()}`),this._codeLink.onclick=v=>{this._openerService.open(r.target,{allowCommands:!0}),v.preventDefault(),v.stopPropagation()};const n=h.append(this._codeLink,h.$("span"));n.innerText=r.value,d.appendChild(this._codeLink)}}if(h.clearNode(this._relatedBlock),this._editor.applyFontInfo(this._relatedBlock),R(i)){const d=this._relatedBlock.appendChild(document.createElement("div"));d.style.paddingTop=`${Math.floor(this._editor.getOption(w.lineHeight)*.66)}px`,this._lines+=1;for(const n of i){const v=document.createElement("div"),b=document.createElement("a");b.classList.add("filename"),b.innerText=`${this._labelService.getUriBasenameLabel(n.resource)}(${n.startLineNumber}, ${n.startColumn}): `,b.title=this._labelService.getUriLabel(n.resource),this._relatedDiagnostics.set(b,n);const S=document.createElement("span");S.innerText=n.message,v.appendChild(b),v.appendChild(S),this._lines+=1,d.appendChild(v)}}const y=this._editor.getOption(w.fontInfo),A=Math.ceil(y.typicalFullwidthCharacterWidth*this._longestLineLength*.75),W=y.lineHeight*this._lines;this._scrollable.setScrollDimensions({scrollWidth:A,scrollHeight:W})}layout(o,e){this._scrollable.getDomNode().style.height=`${o}px`,this._scrollable.getDomNode().style.width=`${e}px`,this._scrollable.setScrollDimensions({width:e,height:o})}getHeightInLines(){return Math.min(17,this._lines)}getAriaLabel(o){let e="";switch(o.severity){case p.Error:e=s.localize("Error","Error");break;case p.Warning:e=s.localize("Warning","Warning");break;case p.Info:e=s.localize("Info","Info");break;case p.Hint:e=s.localize("Hint","Hint");break}let t=s.localize("marker aria","{0} at {1}. ",e,o.startLineNumber+":"+o.startColumn);const i=this._editor.getModel();return i&&o.startLineNumber<=i.getLineCount()&&o.startLineNumber>=1&&(t=`${i.getLineContent(o.startLineNumber)}, ${t}`),t}}let f=class extends J{constructor(e,t,i,r,a,l,c){super(e,{showArrow:!0,showFrame:!0,isAccessible:!0,frameWidth:1},a);this._themeService=t;this._openerService=i;this._menuService=r;this._contextKeyService=l;this._labelService=c;this._severity=p.Warning,this._backgroundColor=F.white,this._applyTheme(t.getColorTheme()),this._callOnDispose.add(t.onDidColorThemeChange(this._applyTheme.bind(this))),this.create()}static TitleMenu=new Y("gotoErrorTitleMenu");_parentContainer;_container;_icon;_message;_callOnDispose=new B;_severity;_backgroundColor;_onDidSelectRelatedInformation=new O;_heightInPixel;onDidSelectRelatedInformation=this._onDidSelectRelatedInformation.event;_applyTheme(e){this._backgroundColor=e.getColor(ve);let t=C,i=ge;this._severity===p.Warning?(t=I,i=me):this._severity===p.Info&&(t=E,i=ue);const r=e.getColor(t),a=e.getColor(i);this.style({arrowColor:r,frameColor:r,headerBackgroundColor:a,primaryHeadingColor:e.getColor(j),secondaryHeadingColor:e.getColor(G)})}_applyStyles(){this._parentContainer&&(this._parentContainer.style.backgroundColor=this._backgroundColor?this._backgroundColor.toString():""),super._applyStyles()}dispose(){this._callOnDispose.dispose(),super.dispose()}focus(){this._parentContainer.focus()}_fillHead(e){super._fillHead(e),this._disposables.add(this._actionbarWidget.actionRunner.onWillRun(r=>this.editor.focus()));const t=[],i=this._menuService.getMenuActions(f.TitleMenu,this._contextKeyService);Q(i,t),this._actionbarWidget.push(t,{label:!1,icon:!0,index:0})}_fillTitleIcon(e){this._icon=h.append(e,h.$(""))}_fillBody(e){this._parentContainer=e,e.classList.add("marker-widget"),this._parentContainer.tabIndex=0,this._parentContainer.setAttribute("role","tooltip"),this._container=document.createElement("div"),e.appendChild(this._container),this._message=new pe(this._container,this.editor,t=>this._onDidSelectRelatedInformation.fire(t),this._openerService,this._labelService),this._disposables.add(this._message)}show(){throw new Error("call showAtMarker")}showAtMarker(e,t,i){this._container.classList.remove("stale"),this._message.update(e),this._severity=e.severity,this._applyTheme(this._themeService.getColorTheme());const r=q.lift(e),a=this.editor.getPosition(),l=a&&r.containsPosition(a)?a:r.getStartPosition();super.show(l,this.computeRequiredHeight());const c=this.editor.getModel();if(c){const y=i>1?s.localize("problems","{0} of {1} problems",t,i):s.localize("change","{0} of {1} problem",t,i);this.setTitle(K(c.uri),y)}this._icon.className=`codicon ${re.className(p.toSeverity(this._severity))}`,this.editor.revealPositionNearTop(l,U.Smooth),this.editor.focus()}updateMarker(e){this._container.classList.remove("stale"),this._message.update(e)}showStale(){this._container.classList.add("stale"),this._relayout()}_doLayoutBody(e,t){super._doLayoutBody(e,t),this._heightInPixel=e,this._message.layout(e,t),this._container.style.height=`${e}px`}_onWidth(e){this._message.layout(this._heightInPixel,e)}_relayout(){super._relayout(this.computeRequiredHeight())}computeRequiredHeight(){return 3+this._message.getHeightInLines()}};f=M([g(1,he),g(2,ie),g(3,X),g(4,ee),g(5,Z),g(6,te)],f);const N=L(ne,ae),D=L(ce,de),H=L(le,se),C=m("editorMarkerNavigationError.background",{dark:N,light:N,hcDark:_,hcLight:_},s.localize("editorMarkerNavigationError","Editor marker navigation widget error color.")),ge=m("editorMarkerNavigationError.headerBackground",{dark:u(C,.1),light:u(C,.1),hcDark:null,hcLight:null},s.localize("editorMarkerNavigationErrorHeaderBackground","Editor marker navigation widget error heading background.")),I=m("editorMarkerNavigationWarning.background",{dark:D,light:D,hcDark:_,hcLight:_},s.localize("editorMarkerNavigationWarning","Editor marker navigation widget warning color.")),me=m("editorMarkerNavigationWarning.headerBackground",{dark:u(I,.1),light:u(I,.1),hcDark:"#0C141F",hcLight:u(I,.2)},s.localize("editorMarkerNavigationWarningBackground","Editor marker navigation widget warning heading background.")),E=m("editorMarkerNavigationInfo.background",{dark:H,light:H,hcDark:_,hcLight:_},s.localize("editorMarkerNavigationInfo","Editor marker navigation widget info color.")),ue=m("editorMarkerNavigationInfo.headerBackground",{dark:u(E,.1),light:u(E,.1),hcDark:null,hcLight:null},s.localize("editorMarkerNavigationInfoHeaderBackground","Editor marker navigation widget info heading background.")),ve=m("editorMarkerNavigation.background",oe,s.localize("editorMarkerNavigationBackground","Editor marker navigation widget background."));export{f as MarkerNavigationWidget};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var MarkerNavigationWidget_1;
+import * as dom from '../../../../base/browser/dom.js';
+import { ScrollableElement } from '../../../../base/browser/ui/scrollbar/scrollableElement.js';
+import { isNonEmptyArray } from '../../../../base/common/arrays.js';
+import { Color } from '../../../../base/common/color.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { DisposableStore, dispose } from '../../../../base/common/lifecycle.js';
+import { basename } from '../../../../base/common/resources.js';
+import { splitLines } from '../../../../base/common/strings.js';
+import './media/gotoErrorWidget.css';
+import { Range } from '../../../common/core/range.js';
+import { peekViewTitleForeground, peekViewTitleInfoForeground, PeekViewWidget } from '../../peekView/browser/peekView.js';
+import * as nls from '../../../../nls.js';
+import { createAndFillInActionBarActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { IMenuService, MenuId } from '../../../../platform/actions/common/actions.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { MarkerSeverity } from '../../../../platform/markers/common/markers.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { SeverityIcon } from '../../../../platform/severityIcon/browser/severityIcon.js';
+import { contrastBorder, editorBackground, editorErrorBorder, editorErrorForeground, editorInfoBorder, editorInfoForeground, editorWarningBorder, editorWarningForeground, oneOf, registerColor, transparent } from '../../../../platform/theme/common/colorRegistry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+class MessageWidget {
+    constructor(parent, editor, onRelatedInformation, _openerService, _labelService) {
+        this._openerService = _openerService;
+        this._labelService = _labelService;
+        this._lines = 0;
+        this._longestLineLength = 0;
+        this._relatedDiagnostics = new WeakMap();
+        this._disposables = new DisposableStore();
+        this._editor = editor;
+        const domNode = document.createElement('div');
+        domNode.className = 'descriptioncontainer';
+        this._messageBlock = document.createElement('div');
+        this._messageBlock.classList.add('message');
+        this._messageBlock.setAttribute('aria-live', 'assertive');
+        this._messageBlock.setAttribute('role', 'alert');
+        domNode.appendChild(this._messageBlock);
+        this._relatedBlock = document.createElement('div');
+        domNode.appendChild(this._relatedBlock);
+        this._disposables.add(dom.addStandardDisposableListener(this._relatedBlock, 'click', event => {
+            event.preventDefault();
+            const related = this._relatedDiagnostics.get(event.target);
+            if (related) {
+                onRelatedInformation(related);
+            }
+        }));
+        this._scrollable = new ScrollableElement(domNode, {
+            horizontal: 1,
+            vertical: 1,
+            useShadows: false,
+            horizontalScrollbarSize: 6,
+            verticalScrollbarSize: 6
+        });
+        parent.appendChild(this._scrollable.getDomNode());
+        this._disposables.add(this._scrollable.onScroll(e => {
+            domNode.style.left = `-${e.scrollLeft}px`;
+            domNode.style.top = `-${e.scrollTop}px`;
+        }));
+        this._disposables.add(this._scrollable);
+    }
+    dispose() {
+        dispose(this._disposables);
+    }
+    update(marker) {
+        const { source, message, relatedInformation, code } = marker;
+        let sourceAndCodeLength = (source?.length || 0) + '()'.length;
+        if (code) {
+            if (typeof code === 'string') {
+                sourceAndCodeLength += code.length;
+            }
+            else {
+                sourceAndCodeLength += code.value.length;
+            }
+        }
+        const lines = splitLines(message);
+        this._lines = lines.length;
+        this._longestLineLength = 0;
+        for (const line of lines) {
+            this._longestLineLength = Math.max(line.length + sourceAndCodeLength, this._longestLineLength);
+        }
+        dom.clearNode(this._messageBlock);
+        this._messageBlock.setAttribute('aria-label', this.getAriaLabel(marker));
+        this._editor.applyFontInfo(this._messageBlock);
+        let lastLineElement = this._messageBlock;
+        for (const line of lines) {
+            lastLineElement = document.createElement('div');
+            lastLineElement.innerText = line;
+            if (line === '') {
+                lastLineElement.style.height = this._messageBlock.style.lineHeight;
+            }
+            this._messageBlock.appendChild(lastLineElement);
+        }
+        if (source || code) {
+            const detailsElement = document.createElement('span');
+            detailsElement.classList.add('details');
+            lastLineElement.appendChild(detailsElement);
+            if (source) {
+                const sourceElement = document.createElement('span');
+                sourceElement.innerText = source;
+                sourceElement.classList.add('source');
+                detailsElement.appendChild(sourceElement);
+            }
+            if (code) {
+                if (typeof code === 'string') {
+                    const codeElement = document.createElement('span');
+                    codeElement.innerText = `(${code})`;
+                    codeElement.classList.add('code');
+                    detailsElement.appendChild(codeElement);
+                }
+                else {
+                    this._codeLink = dom.$('a.code-link');
+                    this._codeLink.setAttribute('href', `${code.target.toString()}`);
+                    this._codeLink.onclick = (e) => {
+                        this._openerService.open(code.target, { allowCommands: true });
+                        e.preventDefault();
+                        e.stopPropagation();
+                    };
+                    const codeElement = dom.append(this._codeLink, dom.$('span'));
+                    codeElement.innerText = code.value;
+                    detailsElement.appendChild(this._codeLink);
+                }
+            }
+        }
+        dom.clearNode(this._relatedBlock);
+        this._editor.applyFontInfo(this._relatedBlock);
+        if (isNonEmptyArray(relatedInformation)) {
+            const relatedInformationNode = this._relatedBlock.appendChild(document.createElement('div'));
+            relatedInformationNode.style.paddingTop = `${Math.floor(this._editor.getOption(69) * 0.66)}px`;
+            this._lines += 1;
+            for (const related of relatedInformation) {
+                const container = document.createElement('div');
+                const relatedResource = document.createElement('a');
+                relatedResource.classList.add('filename');
+                relatedResource.innerText = `${this._labelService.getUriBasenameLabel(related.resource)}(${related.startLineNumber}, ${related.startColumn}): `;
+                relatedResource.title = this._labelService.getUriLabel(related.resource);
+                this._relatedDiagnostics.set(relatedResource, related);
+                const relatedMessage = document.createElement('span');
+                relatedMessage.innerText = related.message;
+                container.appendChild(relatedResource);
+                container.appendChild(relatedMessage);
+                this._lines += 1;
+                relatedInformationNode.appendChild(container);
+            }
+        }
+        const fontInfo = this._editor.getOption(52);
+        const scrollWidth = Math.ceil(fontInfo.typicalFullwidthCharacterWidth * this._longestLineLength * 0.75);
+        const scrollHeight = fontInfo.lineHeight * this._lines;
+        this._scrollable.setScrollDimensions({ scrollWidth, scrollHeight });
+    }
+    layout(height, width) {
+        this._scrollable.getDomNode().style.height = `${height}px`;
+        this._scrollable.getDomNode().style.width = `${width}px`;
+        this._scrollable.setScrollDimensions({ width, height });
+    }
+    getHeightInLines() {
+        return Math.min(17, this._lines);
+    }
+    getAriaLabel(marker) {
+        let severityLabel = '';
+        switch (marker.severity) {
+            case MarkerSeverity.Error:
+                severityLabel = nls.localize('Error', "Error");
+                break;
+            case MarkerSeverity.Warning:
+                severityLabel = nls.localize('Warning', "Warning");
+                break;
+            case MarkerSeverity.Info:
+                severityLabel = nls.localize('Info', "Info");
+                break;
+            case MarkerSeverity.Hint:
+                severityLabel = nls.localize('Hint', "Hint");
+                break;
+        }
+        let ariaLabel = nls.localize('marker aria', "{0} at {1}. ", severityLabel, marker.startLineNumber + ':' + marker.startColumn);
+        const model = this._editor.getModel();
+        if (model && (marker.startLineNumber <= model.getLineCount()) && (marker.startLineNumber >= 1)) {
+            const lineContent = model.getLineContent(marker.startLineNumber);
+            ariaLabel = `${lineContent}, ${ariaLabel}`;
+        }
+        return ariaLabel;
+    }
+}
+let MarkerNavigationWidget = class MarkerNavigationWidget extends PeekViewWidget {
+    static { MarkerNavigationWidget_1 = this; }
+    static { this.TitleMenu = new MenuId('gotoErrorTitleMenu'); }
+    constructor(editor, _themeService, _openerService, _menuService, instantiationService, _contextKeyService, _labelService) {
+        super(editor, { showArrow: true, showFrame: true, isAccessible: true, frameWidth: 1 }, instantiationService);
+        this._themeService = _themeService;
+        this._openerService = _openerService;
+        this._menuService = _menuService;
+        this._contextKeyService = _contextKeyService;
+        this._labelService = _labelService;
+        this._callOnDispose = new DisposableStore();
+        this._onDidSelectRelatedInformation = new Emitter();
+        this.onDidSelectRelatedInformation = this._onDidSelectRelatedInformation.event;
+        this._severity = MarkerSeverity.Warning;
+        this._backgroundColor = Color.white;
+        this._applyTheme(_themeService.getColorTheme());
+        this._callOnDispose.add(_themeService.onDidColorThemeChange(this._applyTheme.bind(this)));
+        this.create();
+    }
+    _applyTheme(theme) {
+        this._backgroundColor = theme.getColor(editorMarkerNavigationBackground);
+        let colorId = editorMarkerNavigationError;
+        let headerBackground = editorMarkerNavigationErrorHeader;
+        if (this._severity === MarkerSeverity.Warning) {
+            colorId = editorMarkerNavigationWarning;
+            headerBackground = editorMarkerNavigationWarningHeader;
+        }
+        else if (this._severity === MarkerSeverity.Info) {
+            colorId = editorMarkerNavigationInfo;
+            headerBackground = editorMarkerNavigationInfoHeader;
+        }
+        const frameColor = theme.getColor(colorId);
+        const headerBg = theme.getColor(headerBackground);
+        this.style({
+            arrowColor: frameColor,
+            frameColor: frameColor,
+            headerBackgroundColor: headerBg,
+            primaryHeadingColor: theme.getColor(peekViewTitleForeground),
+            secondaryHeadingColor: theme.getColor(peekViewTitleInfoForeground)
+        });
+    }
+    _applyStyles() {
+        if (this._parentContainer) {
+            this._parentContainer.style.backgroundColor = this._backgroundColor ? this._backgroundColor.toString() : '';
+        }
+        super._applyStyles();
+    }
+    dispose() {
+        this._callOnDispose.dispose();
+        super.dispose();
+    }
+    focus() {
+        this._parentContainer.focus();
+    }
+    _fillHead(container) {
+        super._fillHead(container);
+        this._disposables.add(this._actionbarWidget.actionRunner.onWillRun(e => this.editor.focus()));
+        const actions = [];
+        const menu = this._menuService.getMenuActions(MarkerNavigationWidget_1.TitleMenu, this._contextKeyService);
+        createAndFillInActionBarActions(menu, actions);
+        this._actionbarWidget.push(actions, { label: false, icon: true, index: 0 });
+    }
+    _fillTitleIcon(container) {
+        this._icon = dom.append(container, dom.$(''));
+    }
+    _fillBody(container) {
+        this._parentContainer = container;
+        container.classList.add('marker-widget');
+        this._parentContainer.tabIndex = 0;
+        this._parentContainer.setAttribute('role', 'tooltip');
+        this._container = document.createElement('div');
+        container.appendChild(this._container);
+        this._message = new MessageWidget(this._container, this.editor, related => this._onDidSelectRelatedInformation.fire(related), this._openerService, this._labelService);
+        this._disposables.add(this._message);
+    }
+    show() {
+        throw new Error('call showAtMarker');
+    }
+    showAtMarker(marker, markerIdx, markerCount) {
+        this._container.classList.remove('stale');
+        this._message.update(marker);
+        this._severity = marker.severity;
+        this._applyTheme(this._themeService.getColorTheme());
+        const range = Range.lift(marker);
+        const editorPosition = this.editor.getPosition();
+        const position = editorPosition && range.containsPosition(editorPosition) ? editorPosition : range.getStartPosition();
+        super.show(position, this.computeRequiredHeight());
+        const model = this.editor.getModel();
+        if (model) {
+            const detail = markerCount > 1
+                ? nls.localize('problems', "{0} of {1} problems", markerIdx, markerCount)
+                : nls.localize('change', "{0} of {1} problem", markerIdx, markerCount);
+            this.setTitle(basename(model.uri), detail);
+        }
+        this._icon.className = `codicon ${SeverityIcon.className(MarkerSeverity.toSeverity(this._severity))}`;
+        this.editor.revealPositionNearTop(position, 0);
+        this.editor.focus();
+    }
+    updateMarker(marker) {
+        this._container.classList.remove('stale');
+        this._message.update(marker);
+    }
+    showStale() {
+        this._container.classList.add('stale');
+        this._relayout();
+    }
+    _doLayoutBody(heightInPixel, widthInPixel) {
+        super._doLayoutBody(heightInPixel, widthInPixel);
+        this._heightInPixel = heightInPixel;
+        this._message.layout(heightInPixel, widthInPixel);
+        this._container.style.height = `${heightInPixel}px`;
+    }
+    _onWidth(widthInPixel) {
+        this._message.layout(this._heightInPixel, widthInPixel);
+    }
+    _relayout() {
+        super._relayout(this.computeRequiredHeight());
+    }
+    computeRequiredHeight() {
+        return 3 + this._message.getHeightInLines();
+    }
+};
+MarkerNavigationWidget = MarkerNavigationWidget_1 = __decorate([
+    __param(1, IThemeService),
+    __param(2, IOpenerService),
+    __param(3, IMenuService),
+    __param(4, IInstantiationService),
+    __param(5, IContextKeyService),
+    __param(6, ILabelService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], MarkerNavigationWidget);
+export { MarkerNavigationWidget };
+const errorDefault = oneOf(editorErrorForeground, editorErrorBorder);
+const warningDefault = oneOf(editorWarningForeground, editorWarningBorder);
+const infoDefault = oneOf(editorInfoForeground, editorInfoBorder);
+const editorMarkerNavigationError = registerColor('editorMarkerNavigationError.background', { dark: errorDefault, light: errorDefault, hcDark: contrastBorder, hcLight: contrastBorder }, nls.localize('editorMarkerNavigationError', 'Editor marker navigation widget error color.'));
+const editorMarkerNavigationErrorHeader = registerColor('editorMarkerNavigationError.headerBackground', { dark: transparent(editorMarkerNavigationError, .1), light: transparent(editorMarkerNavigationError, .1), hcDark: null, hcLight: null }, nls.localize('editorMarkerNavigationErrorHeaderBackground', 'Editor marker navigation widget error heading background.'));
+const editorMarkerNavigationWarning = registerColor('editorMarkerNavigationWarning.background', { dark: warningDefault, light: warningDefault, hcDark: contrastBorder, hcLight: contrastBorder }, nls.localize('editorMarkerNavigationWarning', 'Editor marker navigation widget warning color.'));
+const editorMarkerNavigationWarningHeader = registerColor('editorMarkerNavigationWarning.headerBackground', { dark: transparent(editorMarkerNavigationWarning, .1), light: transparent(editorMarkerNavigationWarning, .1), hcDark: '#0C141F', hcLight: transparent(editorMarkerNavigationWarning, .2) }, nls.localize('editorMarkerNavigationWarningBackground', 'Editor marker navigation widget warning heading background.'));
+const editorMarkerNavigationInfo = registerColor('editorMarkerNavigationInfo.background', { dark: infoDefault, light: infoDefault, hcDark: contrastBorder, hcLight: contrastBorder }, nls.localize('editorMarkerNavigationInfo', 'Editor marker navigation widget info color.'));
+const editorMarkerNavigationInfoHeader = registerColor('editorMarkerNavigationInfo.headerBackground', { dark: transparent(editorMarkerNavigationInfo, .1), light: transparent(editorMarkerNavigationInfo, .1), hcDark: null, hcLight: null }, nls.localize('editorMarkerNavigationInfoHeaderBackground', 'Editor marker navigation widget info heading background.'));
+const editorMarkerNavigationBackground = registerColor('editorMarkerNavigation.background', editorBackground, nls.localize('editorMarkerNavigationBackground', 'Editor marker navigation widget background.'));

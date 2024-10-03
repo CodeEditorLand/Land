@@ -1,1 +1,34 @@
-var a=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var c=(n,e,o,i)=>{for(var r=i>1?void 0:i?v(e,o):e,l=n.length-1,d;l>=0;l--)(d=n[l])&&(r=(i?d(e,o,r):d(r))||r);return i&&r&&a(e,o,r),r},s=(n,e)=>(o,i)=>e(o,i,n);import{Emitter as S}from"../../../base/common/event.js";import{Disposable as f}from"../../../base/common/lifecycle.js";import{createDecorator as h}from"../../instantiation/common/instantiation.js";import{ILogService as p}from"../../log/common/log.js";const _=h("sharedProcessLifecycleService");let t=class extends f{constructor(o){super();this.logService=o}_onWillShutdown=this._register(new S);onWillShutdown=this._onWillShutdown.event;fireOnWillShutdown(){this.logService.trace("Lifecycle#onWillShutdown.fire()"),this._onWillShutdown.fire()}};t=c([s(0,p)],t);export{_ as ISharedProcessLifecycleService,t as SharedProcessLifecycleService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { ILogService } from '../../log/common/log.js';
+export const ISharedProcessLifecycleService = createDecorator('sharedProcessLifecycleService');
+let SharedProcessLifecycleService = class SharedProcessLifecycleService extends Disposable {
+    constructor(logService) {
+        super();
+        this.logService = logService;
+        this._onWillShutdown = this._register(new Emitter());
+        this.onWillShutdown = this._onWillShutdown.event;
+    }
+    fireOnWillShutdown() {
+        this.logService.trace('Lifecycle#onWillShutdown.fire()');
+        this._onWillShutdown.fire();
+    }
+};
+SharedProcessLifecycleService = __decorate([
+    __param(0, ILogService),
+    __metadata("design:paramtypes", [Object])
+], SharedProcessLifecycleService);
+export { SharedProcessLifecycleService };

@@ -1,1 +1,267 @@
-var M=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var v=(h,a,e,r)=>{for(var i=r>1?void 0:r?S(a,e):a,o=h.length-1,s;o>=0;o--)(s=h[o])&&(i=(r?s(a,e,i):s(i))||i);return r&&i&&M(a,e,i),i},p=(h,a)=>(e,r)=>a(e,r,h);import{h as d}from"../../../../base/browser/dom.js";import{Button as D}from"../../../../base/browser/ui/button/button.js";import{Codicon as y}from"../../../../base/common/codicons.js";import{Disposable as I,DisposableStore as C}from"../../../../base/common/lifecycle.js";import{autorun as _,derived as f,globalTransaction as u,observableValue as m}from"../../../../base/common/observable.js";import{createActionViewItem as W}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import{MenuWorkbenchToolBar as E}from"../../../../platform/actions/browser/toolbar.js";import{MenuId as O}from"../../../../platform/actions/common/actions.js";import{IContextKeyService as b}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as L}from"../../../../platform/instantiation/common/instantiation.js";import{ServiceCollection as x}from"../../../../platform/instantiation/common/serviceCollection.js";import"../../../common/config/editorOptions.js";import"../../../common/core/offsetRange.js";import{observableCodeEditor as w}from"../../observableCodeEditor.js";import{DiffEditorWidget as U}from"../diffEditor/diffEditorWidget.js";import"./multiDiffEditorViewModel.js";import"./objectPool.js";import{ActionRunnerWithContext as T}from"./utils.js";import"./workbenchUIElementFactory.js";class ne{constructor(a,e){this.viewModel=a;this.deltaScrollVertical=e}getId(){return this.viewModel}}let g=class extends I{constructor(e,r,i,o,s){super();this._container=e;this._overflowWidgetsDomNode=r;this._workbenchUIElementFactory=i;this._instantiationService=o;const l=new D(this._elements.collapseButton,{});this._register(_(t=>{l.element.className="",l.icon=this._collapsed.read(t)?y.chevronRight:y.chevronDown})),this._register(l.onDidClick(()=>{this._viewModel.get()?.collapsed.set(!this._collapsed.get(),void 0)})),this._register(_(t=>{this._elements.editor.style.display=this._collapsed.read(t)?"none":"block"})),this._register(this.editor.getModifiedEditor().onDidLayoutChange(t=>{const n=this.editor.getModifiedEditor().getLayoutInfo().contentWidth;this._modifiedWidth.set(n,void 0)})),this._register(this.editor.getOriginalEditor().onDidLayoutChange(t=>{const n=this.editor.getOriginalEditor().getLayoutInfo().contentWidth;this._originalWidth.set(n,void 0)})),this._register(this.editor.onDidContentSizeChange(t=>{u(n=>{this._editorContentHeight.set(t.contentHeight,n),this._modifiedContentWidth.set(this.editor.getModifiedEditor().getContentWidth(),n),this._originalContentWidth.set(this.editor.getOriginalEditor().getContentWidth(),n)})})),this._register(this.editor.getOriginalEditor().onDidScrollChange(t=>{if(this._isSettingScrollTop||!t.scrollTopChanged||!this._data)return;const n=t.scrollTop-this._lastScrollTop;this._data.deltaScrollVertical(n)})),this._register(_(t=>{const n=this._viewModel.read(t)?.isActive.read(t);this._elements.root.classList.toggle("active",n)})),this._container.appendChild(this._elements.root),this._outerEditorHeight=this._headerHeight,this._contextKeyService=this._register(s.createScoped(this._elements.actions));const c=this._register(this._instantiationService.createChild(new x([b,this._contextKeyService])));this._register(c.createInstance(E,this._elements.actions,O.MultiDiffEditorFileToolbar,{actionRunner:this._register(new T(()=>this._viewModel.get()?.modifiedUri)),menuOptions:{shouldForwardArgs:!0},toolbarOptions:{primaryGroup:t=>t.startsWith("navigation")},actionViewItemProvider:(t,n)=>W(c,t,n)}))}_viewModel=m(this,void 0);_collapsed=f(this,e=>this._viewModel.read(e)?.collapsed.read(e));_editorContentHeight=m(this,500);contentHeight=f(this,e=>(this._collapsed.read(e)?0:this._editorContentHeight.read(e))+this._outerEditorHeight);_modifiedContentWidth=m(this,0);_modifiedWidth=m(this,0);_originalContentWidth=m(this,0);_originalWidth=m(this,0);maxScroll=f(this,e=>{const r=this._modifiedContentWidth.read(e)-this._modifiedWidth.read(e),i=this._originalContentWidth.read(e)-this._originalWidth.read(e);return r>i?{maxScroll:r,width:this._modifiedWidth.read(e)}:{maxScroll:i,width:this._originalWidth.read(e)}});_elements=d("div.multiDiffEntry",[d("div.header@header",[d("div.header-content",[d("div.collapse-button@collapseButton"),d("div.file-path",[d("div.title.modified.show-file-icons@primaryPath",[]),d("div.status.deleted@status",["R"]),d("div.title.original.show-file-icons@secondaryPath",[])]),d("div.actions@actions")])]),d("div.editorParent",[d("div.editorContainer@editor")])]);editor=this._register(this._instantiationService.createInstance(U,this._elements.editor,{overflowWidgetsDomNode:this._overflowWidgetsDomNode},{}));isModifedFocused=w(this.editor.getModifiedEditor()).isFocused;isOriginalFocused=w(this.editor.getOriginalEditor()).isFocused;isFocused=f(this,e=>this.isModifedFocused.read(e)||this.isOriginalFocused.read(e));_resourceLabel=this._workbenchUIElementFactory.createResourceLabel?this._register(this._workbenchUIElementFactory.createResourceLabel(this._elements.primaryPath)):void 0;_resourceLabel2=this._workbenchUIElementFactory.createResourceLabel?this._register(this._workbenchUIElementFactory.createResourceLabel(this._elements.secondaryPath)):void 0;_outerEditorHeight;_contextKeyService;setScrollLeft(e){this._modifiedContentWidth.get()-this._modifiedWidth.get()>this._originalContentWidth.get()-this._originalWidth.get()?this.editor.getModifiedEditor().setScrollLeft(e):this.editor.getOriginalEditor().setScrollLeft(e)}_dataStore=this._register(new C);_data;setData(e){this._data=e;function r(o){return{...o,scrollBeyondLastLine:!1,hideUnchangedRegions:{enabled:!0},scrollbar:{vertical:"hidden",horizontal:"hidden",handleMouseWheel:!1,useShadows:!1},renderOverviewRuler:!1,fixedOverflowWidgets:!0,overviewRulerBorder:!1}}if(!e){u(o=>{this._viewModel.set(void 0,o),this.editor.setDiffModel(null,o),this._dataStore.clear()});return}const i=e.viewModel.documentDiffItem;if(u(o=>{this._resourceLabel?.setUri(e.viewModel.modifiedUri??e.viewModel.originalUri,{strikethrough:e.viewModel.modifiedUri===void 0});let s=!1,l=!1,c=!1,t="";e.viewModel.modifiedUri&&e.viewModel.originalUri&&e.viewModel.modifiedUri.path!==e.viewModel.originalUri.path?(t="R",s=!0):e.viewModel.modifiedUri?e.viewModel.originalUri||(t="A",c=!0):(t="D",l=!0),this._elements.status.classList.toggle("renamed",s),this._elements.status.classList.toggle("deleted",l),this._elements.status.classList.toggle("added",c),this._elements.status.innerText=t,this._resourceLabel2?.setUri(s?e.viewModel.originalUri:void 0,{strikethrough:!0}),this._dataStore.clear(),this._viewModel.set(e.viewModel,o),this.editor.setDiffModel(e.viewModel.diffEditorViewModelRef,o),this.editor.updateOptions(r(i.options??{}))}),i.onOptionsDidChange&&this._dataStore.add(i.onOptionsDidChange(()=>{this.editor.updateOptions(r(i.options??{}))})),e.viewModel.isAlive.recomputeInitiallyAndOnChange(this._dataStore,o=>{o||this.setData(void 0)}),e.viewModel.documentDiffItem.contextKeys)for(const[o,s]of Object.entries(e.viewModel.documentDiffItem.contextKeys))this._contextKeyService.createKey(o,s)}_headerHeight=40;_lastScrollTop=-1;_isSettingScrollTop=!1;render(e,r,i,o){this._elements.root.style.visibility="visible",this._elements.root.style.top=`${e.start}px`,this._elements.root.style.height=`${e.length}px`,this._elements.root.style.width=`${r}px`,this._elements.root.style.position="absolute";const s=e.length-this._headerHeight,l=Math.max(0,Math.min(o.start-e.start,s));this._elements.header.style.transform=`translateY(${l}px)`,u(c=>{this.editor.layout({width:r-2*8-2*1,height:e.length-this._outerEditorHeight})});try{this._isSettingScrollTop=!0,this._lastScrollTop=i,this.editor.getOriginalEditor().setScrollTop(i)}finally{this._isSettingScrollTop=!1}this._elements.header.classList.toggle("shadow",l>0||i>0),this._elements.header.classList.toggle("collapsed",l===s)}hide(){this._elements.root.style.top="-100000px",this._elements.root.style.visibility="hidden"}};g=v([p(3,L),p(4,b)],g);export{g as DiffEditorItemTemplate,ne as TemplateData};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { h } from '../../../../base/browser/dom.js';
+import { Button } from '../../../../base/browser/ui/button/button.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { autorun, derived, globalTransaction, observableValue } from '../../../../base/common/observable.js';
+import { createActionViewItem } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { MenuWorkbenchToolBar } from '../../../../platform/actions/browser/toolbar.js';
+import { MenuId } from '../../../../platform/actions/common/actions.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { observableCodeEditor } from '../../observableCodeEditor.js';
+import { DiffEditorWidget } from '../diffEditor/diffEditorWidget.js';
+import { ActionRunnerWithContext } from './utils.js';
+export class TemplateData {
+    constructor(viewModel, deltaScrollVertical) {
+        this.viewModel = viewModel;
+        this.deltaScrollVertical = deltaScrollVertical;
+    }
+    getId() {
+        return this.viewModel;
+    }
+}
+let DiffEditorItemTemplate = class DiffEditorItemTemplate extends Disposable {
+    constructor(_container, _overflowWidgetsDomNode, _workbenchUIElementFactory, _instantiationService, _parentContextKeyService) {
+        super();
+        this._container = _container;
+        this._overflowWidgetsDomNode = _overflowWidgetsDomNode;
+        this._workbenchUIElementFactory = _workbenchUIElementFactory;
+        this._instantiationService = _instantiationService;
+        this._viewModel = observableValue(this, undefined);
+        this._collapsed = derived(this, reader => this._viewModel.read(reader)?.collapsed.read(reader));
+        this._editorContentHeight = observableValue(this, 500);
+        this.contentHeight = derived(this, reader => {
+            const h = this._collapsed.read(reader) ? 0 : this._editorContentHeight.read(reader);
+            return h + this._outerEditorHeight;
+        });
+        this._modifiedContentWidth = observableValue(this, 0);
+        this._modifiedWidth = observableValue(this, 0);
+        this._originalContentWidth = observableValue(this, 0);
+        this._originalWidth = observableValue(this, 0);
+        this.maxScroll = derived(this, reader => {
+            const scroll1 = this._modifiedContentWidth.read(reader) - this._modifiedWidth.read(reader);
+            const scroll2 = this._originalContentWidth.read(reader) - this._originalWidth.read(reader);
+            if (scroll1 > scroll2) {
+                return { maxScroll: scroll1, width: this._modifiedWidth.read(reader) };
+            }
+            else {
+                return { maxScroll: scroll2, width: this._originalWidth.read(reader) };
+            }
+        });
+        this._elements = h('div.multiDiffEntry', [
+            h('div.header@header', [
+                h('div.header-content', [
+                    h('div.collapse-button@collapseButton'),
+                    h('div.file-path', [
+                        h('div.title.modified.show-file-icons@primaryPath', []),
+                        h('div.status.deleted@status', ['R']),
+                        h('div.title.original.show-file-icons@secondaryPath', []),
+                    ]),
+                    h('div.actions@actions'),
+                ]),
+            ]),
+            h('div.editorParent', [
+                h('div.editorContainer@editor'),
+            ])
+        ]);
+        this.editor = this._register(this._instantiationService.createInstance(DiffEditorWidget, this._elements.editor, {
+            overflowWidgetsDomNode: this._overflowWidgetsDomNode,
+        }, {}));
+        this.isModifedFocused = observableCodeEditor(this.editor.getModifiedEditor()).isFocused;
+        this.isOriginalFocused = observableCodeEditor(this.editor.getOriginalEditor()).isFocused;
+        this.isFocused = derived(this, reader => this.isModifedFocused.read(reader) || this.isOriginalFocused.read(reader));
+        this._resourceLabel = this._workbenchUIElementFactory.createResourceLabel
+            ? this._register(this._workbenchUIElementFactory.createResourceLabel(this._elements.primaryPath))
+            : undefined;
+        this._resourceLabel2 = this._workbenchUIElementFactory.createResourceLabel
+            ? this._register(this._workbenchUIElementFactory.createResourceLabel(this._elements.secondaryPath))
+            : undefined;
+        this._dataStore = this._register(new DisposableStore());
+        this._headerHeight = 40;
+        this._lastScrollTop = -1;
+        this._isSettingScrollTop = false;
+        const btn = new Button(this._elements.collapseButton, {});
+        this._register(autorun(reader => {
+            btn.element.className = '';
+            btn.icon = this._collapsed.read(reader) ? Codicon.chevronRight : Codicon.chevronDown;
+        }));
+        this._register(btn.onDidClick(() => {
+            this._viewModel.get()?.collapsed.set(!this._collapsed.get(), undefined);
+        }));
+        this._register(autorun(reader => {
+            this._elements.editor.style.display = this._collapsed.read(reader) ? 'none' : 'block';
+        }));
+        this._register(this.editor.getModifiedEditor().onDidLayoutChange(e => {
+            const width = this.editor.getModifiedEditor().getLayoutInfo().contentWidth;
+            this._modifiedWidth.set(width, undefined);
+        }));
+        this._register(this.editor.getOriginalEditor().onDidLayoutChange(e => {
+            const width = this.editor.getOriginalEditor().getLayoutInfo().contentWidth;
+            this._originalWidth.set(width, undefined);
+        }));
+        this._register(this.editor.onDidContentSizeChange(e => {
+            globalTransaction(tx => {
+                this._editorContentHeight.set(e.contentHeight, tx);
+                this._modifiedContentWidth.set(this.editor.getModifiedEditor().getContentWidth(), tx);
+                this._originalContentWidth.set(this.editor.getOriginalEditor().getContentWidth(), tx);
+            });
+        }));
+        this._register(this.editor.getOriginalEditor().onDidScrollChange(e => {
+            if (this._isSettingScrollTop) {
+                return;
+            }
+            if (!e.scrollTopChanged || !this._data) {
+                return;
+            }
+            const delta = e.scrollTop - this._lastScrollTop;
+            this._data.deltaScrollVertical(delta);
+        }));
+        this._register(autorun(reader => {
+            const isActive = this._viewModel.read(reader)?.isActive.read(reader);
+            this._elements.root.classList.toggle('active', isActive);
+        }));
+        this._container.appendChild(this._elements.root);
+        this._outerEditorHeight = this._headerHeight;
+        this._contextKeyService = this._register(_parentContextKeyService.createScoped(this._elements.actions));
+        const instantiationService = this._register(this._instantiationService.createChild(new ServiceCollection([IContextKeyService, this._contextKeyService])));
+        this._register(instantiationService.createInstance(MenuWorkbenchToolBar, this._elements.actions, MenuId.MultiDiffEditorFileToolbar, {
+            actionRunner: this._register(new ActionRunnerWithContext(() => (this._viewModel.get()?.modifiedUri))),
+            menuOptions: {
+                shouldForwardArgs: true,
+            },
+            toolbarOptions: { primaryGroup: g => g.startsWith('navigation') },
+            actionViewItemProvider: (action, options) => createActionViewItem(instantiationService, action, options),
+        }));
+    }
+    setScrollLeft(left) {
+        if (this._modifiedContentWidth.get() - this._modifiedWidth.get() > this._originalContentWidth.get() - this._originalWidth.get()) {
+            this.editor.getModifiedEditor().setScrollLeft(left);
+        }
+        else {
+            this.editor.getOriginalEditor().setScrollLeft(left);
+        }
+    }
+    setData(data) {
+        this._data = data;
+        function updateOptions(options) {
+            return {
+                ...options,
+                scrollBeyondLastLine: false,
+                hideUnchangedRegions: {
+                    enabled: true,
+                },
+                scrollbar: {
+                    vertical: 'hidden',
+                    horizontal: 'hidden',
+                    handleMouseWheel: false,
+                    useShadows: false,
+                },
+                renderOverviewRuler: false,
+                fixedOverflowWidgets: true,
+                overviewRulerBorder: false,
+            };
+        }
+        if (!data) {
+            globalTransaction(tx => {
+                this._viewModel.set(undefined, tx);
+                this.editor.setDiffModel(null, tx);
+                this._dataStore.clear();
+            });
+            return;
+        }
+        const value = data.viewModel.documentDiffItem;
+        globalTransaction(tx => {
+            this._resourceLabel?.setUri(data.viewModel.modifiedUri ?? data.viewModel.originalUri, { strikethrough: data.viewModel.modifiedUri === undefined });
+            let isRenamed = false;
+            let isDeleted = false;
+            let isAdded = false;
+            let flag = '';
+            if (data.viewModel.modifiedUri && data.viewModel.originalUri && data.viewModel.modifiedUri.path !== data.viewModel.originalUri.path) {
+                flag = 'R';
+                isRenamed = true;
+            }
+            else if (!data.viewModel.modifiedUri) {
+                flag = 'D';
+                isDeleted = true;
+            }
+            else if (!data.viewModel.originalUri) {
+                flag = 'A';
+                isAdded = true;
+            }
+            this._elements.status.classList.toggle('renamed', isRenamed);
+            this._elements.status.classList.toggle('deleted', isDeleted);
+            this._elements.status.classList.toggle('added', isAdded);
+            this._elements.status.innerText = flag;
+            this._resourceLabel2?.setUri(isRenamed ? data.viewModel.originalUri : undefined, { strikethrough: true });
+            this._dataStore.clear();
+            this._viewModel.set(data.viewModel, tx);
+            this.editor.setDiffModel(data.viewModel.diffEditorViewModelRef, tx);
+            this.editor.updateOptions(updateOptions(value.options ?? {}));
+        });
+        if (value.onOptionsDidChange) {
+            this._dataStore.add(value.onOptionsDidChange(() => {
+                this.editor.updateOptions(updateOptions(value.options ?? {}));
+            }));
+        }
+        data.viewModel.isAlive.recomputeInitiallyAndOnChange(this._dataStore, value => {
+            if (!value) {
+                this.setData(undefined);
+            }
+        });
+        if (data.viewModel.documentDiffItem.contextKeys) {
+            for (const [key, value] of Object.entries(data.viewModel.documentDiffItem.contextKeys)) {
+                this._contextKeyService.createKey(key, value);
+            }
+        }
+    }
+    render(verticalRange, width, editorScroll, viewPort) {
+        this._elements.root.style.visibility = 'visible';
+        this._elements.root.style.top = `${verticalRange.start}px`;
+        this._elements.root.style.height = `${verticalRange.length}px`;
+        this._elements.root.style.width = `${width}px`;
+        this._elements.root.style.position = 'absolute';
+        const maxDelta = verticalRange.length - this._headerHeight;
+        const delta = Math.max(0, Math.min(viewPort.start - verticalRange.start, maxDelta));
+        this._elements.header.style.transform = `translateY(${delta}px)`;
+        globalTransaction(tx => {
+            this.editor.layout({
+                width: width - 2 * 8 - 2 * 1,
+                height: verticalRange.length - this._outerEditorHeight,
+            });
+        });
+        try {
+            this._isSettingScrollTop = true;
+            this._lastScrollTop = editorScroll;
+            this.editor.getOriginalEditor().setScrollTop(editorScroll);
+        }
+        finally {
+            this._isSettingScrollTop = false;
+        }
+        this._elements.header.classList.toggle('shadow', delta > 0 || editorScroll > 0);
+        this._elements.header.classList.toggle('collapsed', delta === maxDelta);
+    }
+    hide() {
+        this._elements.root.style.top = `-100000px`;
+        this._elements.root.style.visibility = 'hidden';
+    }
+};
+DiffEditorItemTemplate = __decorate([
+    __param(3, IInstantiationService),
+    __param(4, IContextKeyService),
+    __metadata("design:paramtypes", [HTMLElement,
+        HTMLElement, Object, Object, Object])
+], DiffEditorItemTemplate);
+export { DiffEditorItemTemplate };

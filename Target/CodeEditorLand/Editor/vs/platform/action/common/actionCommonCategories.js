@@ -1,1 +1,9 @@
-import{localize2 as e}from"../../../nls.js";const r=Object.freeze({View:e("view","View"),Help:e("help","Help"),Test:e("test","Test"),File:e("file","File"),Preferences:e("preferences","Preferences"),Developer:e({key:"developer",comment:["A developer on Code itself or someone diagnosing issues in Code"]},"Developer")});export{r as Categories};
+import { localize2 } from '../../../nls.js';
+export const Categories = Object.freeze({
+    View: localize2('view', 'View'),
+    Help: localize2('help', 'Help'),
+    Test: localize2('test', 'Test'),
+    File: localize2('file', 'File'),
+    Preferences: localize2('preferences', 'Preferences'),
+    Developer: localize2({ key: 'developer', comment: ['A developer on Code itself or someone diagnosing issues in Code'] }, "Developer"),
+});

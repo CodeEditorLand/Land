@@ -1,1 +1,42 @@
-import{URI as e}from"../../../base/common/uri.js";import"../../../platform/log/common/log.js";import"./extHost.protocol.js";import{ApiCommand as a,ApiCommandArgument as n,ApiCommandResult as u}from"./extHostCommands.js";import"./extHostDocumentsAndEditors.js";import"./extHostNotebook.js";import"vscode";class h{constructor(t,i,s,m,r){this._extHostNotebooks=i;this._textDocumentsAndEditors=s;this._commands=m;const p=new a("interactive.open","_interactive.open","Open interactive window and return notebook editor and input URI",[new n("showOptions","Show Options",o=>!0,o=>o),new n("resource","Interactive resource Uri",o=>!0,o=>o),new n("controllerId","Notebook controller Id",o=>!0,o=>o),new n("title","Interactive editor title",o=>!0,o=>o)],new u("Notebook and input URI",o=>{if(r.debug("[ExtHostInteractive] open iw with notebook editor id",o.notebookEditorId),o.notebookEditorId!==void 0){const d=this._extHostNotebooks.getEditorById(o.notebookEditorId);return r.debug("[ExtHostInteractive] notebook editor found",d.id),{notebookUri:e.revive(o.notebookUri),inputUri:e.revive(o.inputUri),notebookEditor:d.apiEditor}}return r.debug("[ExtHostInteractive] notebook editor not found, uris for the interactive document",o.notebookUri,o.inputUri),{notebookUri:e.revive(o.notebookUri),inputUri:e.revive(o.inputUri)}}));this._commands.registerApiCommand(p)}$willAddInteractiveDocument(t,i,s,m){this._textDocumentsAndEditors.acceptDocumentsAndEditorsDelta({addedDocuments:[{EOL:i,lines:[""],languageId:s,uri:t,isDirty:!1,versionId:1}]})}$willRemoveInteractiveDocument(t,i){this._textDocumentsAndEditors.acceptDocumentsAndEditorsDelta({removedDocuments:[t]})}}export{h as ExtHostInteractive};
+import { URI } from '../../../base/common/uri.js';
+import { ApiCommand, ApiCommandArgument, ApiCommandResult } from './extHostCommands.js';
+export class ExtHostInteractive {
+    constructor(mainContext, _extHostNotebooks, _textDocumentsAndEditors, _commands, _logService) {
+        this._extHostNotebooks = _extHostNotebooks;
+        this._textDocumentsAndEditors = _textDocumentsAndEditors;
+        this._commands = _commands;
+        const openApiCommand = new ApiCommand('interactive.open', '_interactive.open', 'Open interactive window and return notebook editor and input URI', [
+            new ApiCommandArgument('showOptions', 'Show Options', v => true, v => v),
+            new ApiCommandArgument('resource', 'Interactive resource Uri', v => true, v => v),
+            new ApiCommandArgument('controllerId', 'Notebook controller Id', v => true, v => v),
+            new ApiCommandArgument('title', 'Interactive editor title', v => true, v => v)
+        ], new ApiCommandResult('Notebook and input URI', (v) => {
+            _logService.debug('[ExtHostInteractive] open iw with notebook editor id', v.notebookEditorId);
+            if (v.notebookEditorId !== undefined) {
+                const editor = this._extHostNotebooks.getEditorById(v.notebookEditorId);
+                _logService.debug('[ExtHostInteractive] notebook editor found', editor.id);
+                return { notebookUri: URI.revive(v.notebookUri), inputUri: URI.revive(v.inputUri), notebookEditor: editor.apiEditor };
+            }
+            _logService.debug('[ExtHostInteractive] notebook editor not found, uris for the interactive document', v.notebookUri, v.inputUri);
+            return { notebookUri: URI.revive(v.notebookUri), inputUri: URI.revive(v.inputUri) };
+        }));
+        this._commands.registerApiCommand(openApiCommand);
+    }
+    $willAddInteractiveDocument(uri, eol, languageId, notebookUri) {
+        this._textDocumentsAndEditors.acceptDocumentsAndEditorsDelta({
+            addedDocuments: [{
+                    EOL: eol,
+                    lines: [''],
+                    languageId: languageId,
+                    uri: uri,
+                    isDirty: false,
+                    versionId: 1,
+                }]
+        });
+    }
+    $willRemoveInteractiveDocument(uri, notebookUri) {
+        this._textDocumentsAndEditors.acceptDocumentsAndEditorsDelta({
+            removedDocuments: [uri]
+        });
+    }
+}

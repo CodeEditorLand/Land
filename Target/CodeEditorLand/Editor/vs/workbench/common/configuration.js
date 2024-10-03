@@ -1,1 +1,271 @@
-var W=Object.defineProperty;var A=Object.getOwnPropertyDescriptor;var C=(u,t,e,i)=>{for(var o=i>1?void 0:i?A(t,e):t,f=u.length-1,r;f>=0;f--)(r=u[f])&&(o=(i?r(t,e,o):r(o))||o);return i&&o&&W(t,e,o),o},l=(u,t)=>(e,i)=>t(e,i,u);import{localize as a}from"../../nls.js";import{ConfigurationScope as m,Extensions as k}from"../../platform/configuration/common/configurationRegistry.js";import{Registry as N}from"../../platform/registry/common/platform.js";import"./contributions.js";import{IWorkspaceContextService as M,WorkbenchState as E}from"../../platform/workspace/common/workspace.js";import{ConfigurationTarget as s,IConfigurationService as b}from"../../platform/configuration/common/configuration.js";import{Disposable as S}from"../../base/common/lifecycle.js";import{Emitter as D}from"../../base/common/event.js";import{IRemoteAgentService as F}from"../services/remote/common/remoteAgentService.js";import{OperatingSystem as V,isWindows as x}from"../../base/common/platform.js";import"../../base/common/uri.js";import{equals as U}from"../../base/common/objects.js";import{DeferredPromise as O}from"../../base/common/async.js";import{IUserDataProfilesService as _}from"../../platform/userDataProfile/common/userDataProfile.js";const ge=Object.freeze({id:"application",order:100,title:a("applicationConfigurationTitle","Application"),type:"object"}),le=Object.freeze({id:"workbench",order:7,title:a("workbenchConfigurationTitle","Workbench"),type:"object"}),L=Object.freeze({id:"security",scope:m.APPLICATION,title:a("securityConfigurationTitle","Security"),type:"object",order:7}),pe=Object.freeze({id:"problems",title:a("problemsConfigurationTitle","Problems"),type:"object",order:101}),T=Object.freeze({id:"window",order:8,title:a("windowConfigurationTitle","Window"),type:"object"}),j={ConfigurationMigration:"base.contributions.configuration.migration"};class K{migrations=[];_onDidRegisterConfigurationMigrations=new D;onDidRegisterConfigurationMigration=this._onDidRegisterConfigurationMigrations.event;registerConfigurationMigrations(t){this.migrations.push(...t)}}const h=new K;N.add(j.ConfigurationMigration,h);let v=class extends S{constructor(e,i){super();this.configurationService=e;this.workspaceService=i;this._register(this.workspaceService.onDidChangeWorkspaceFolders(async o=>{for(const f of o.added)await this.migrateConfigurationsForFolder(f,h.migrations)})),this.migrateConfigurations(h.migrations),this._register(h.onDidRegisterConfigurationMigration(o=>this.migrateConfigurations(o)))}static ID="workbench.contrib.configurationMigration";async migrateConfigurations(e){await this.migrateConfigurationsForFolder(void 0,e);for(const i of this.workspaceService.getWorkspace().folders)await this.migrateConfigurationsForFolder(i,e)}async migrateConfigurationsForFolder(e,i){await Promise.all([i.map(o=>this.migrateConfigurationsForFolderAndOverride(o,e?.uri))])}async migrateConfigurationsForFolderAndOverride(e,i){const o=this.configurationService.inspect(e.key,{resource:i}),f=this.workspaceService.getWorkbenchState()===E.WORKSPACE?[["user",s.USER],["userLocal",s.USER_LOCAL],["userRemote",s.USER_REMOTE],["workspace",s.WORKSPACE],["workspaceFolder",s.WORKSPACE_FOLDER]]:[["user",s.USER],["userLocal",s.USER_LOCAL],["userRemote",s.USER_REMOTE],["workspace",s.WORKSPACE]];for(const[r,I]of f){const c=o[r];if(!c)continue;const g=[];if(c.value!==void 0){const d=await this.runMigration(e,r,c.value,i,void 0);for(const n of d??[])g.push([n,[]])}for(const{identifiers:d,value:n}of c.overrides??[])if(n!==void 0){const p=await this.runMigration(e,r,n,i,d);for(const R of p??[])g.push([R,d])}g.length&&await Promise.allSettled(g.map(async([[d,n],p])=>this.configurationService.updateValue(d,n.value,{resource:i,overrideIdentifiers:p},I)))}}async runMigration(e,i,o,f,r){const I=g=>{const n=this.configurationService.inspect(g,{resource:f})[i];if(n)return r?n.overrides?.find(({identifiers:p})=>U(p,r))?.value:n.value},c=await e.migrateFn(o,I);return Array.isArray(c)?c:[[e.key,c]]}};v=C([l(0,b),l(1,M)],v);let y=class extends S{constructor(e){super();this.remoteAgentService=e;this.create()}static ID="workbench.contrib.dynamicWorkbenchSecurityConfiguration";_ready=new O;ready=this._ready.p;async create(){try{await this.doCreate()}finally{this._ready.complete()}}async doCreate(){if(!x&&(await this.remoteAgentService.getEnvironment())?.os!==V.Windows)return;N.as(k.Configuration).registerConfiguration({...L,properties:{"security.allowedUNCHosts":{type:"array",items:{type:"string",pattern:"^[^\\\\]+$",patternErrorMessage:a("security.allowedUNCHosts.patternErrorMessage","UNC host names must not contain backslashes.")},default:[],markdownDescription:a("security.allowedUNCHosts","A set of UNC host names (without leading or trailing backslash, for example `192.168.0.1` or `my-server`) to allow without user confirmation. If a UNC host is being accessed that is not allowed via this setting or has not been acknowledged via user confirmation, an error will occur and the operation stopped. A restart is required when changing this setting. Find out more about this setting at https://aka.ms/vscode-windows-unc."),scope:m.MACHINE},"security.restrictUNCAccess":{type:"boolean",default:!0,markdownDescription:a("security.restrictUNCAccess","If enabled, only allows access to UNC host names that are allowed by the `#security.allowedUNCHosts#` setting or after user confirmation. Find out more about this setting at https://aka.ms/vscode-windows-unc."),scope:m.MACHINE}}})}};y=C([l(0,F)],y);const w="window.newWindowProfile";let P=class extends S{constructor(e,i){super();this.userDataProfilesService=e;this.configurationService=i;this.registerNewWindowProfileConfiguration(),this._register(this.userDataProfilesService.onDidChangeProfiles(o=>this.registerNewWindowProfileConfiguration())),this.setNewWindowProfile(),this.checkAndResetNewWindowProfileConfig(),this._register(i.onDidChangeConfiguration(o=>{o.source!==s.DEFAULT&&o.affectsConfiguration(w)&&this.setNewWindowProfile()})),this._register(this.userDataProfilesService.onDidChangeProfiles(()=>this.checkAndResetNewWindowProfileConfig()))}static ID="workbench.contrib.dynamicWindowConfiguration";configurationNode;newWindowProfile;registerNewWindowProfileConfiguration(){const e=N.as(k.Configuration),i={...T,properties:{[w]:{type:["string","null"],default:null,enum:[...this.userDataProfilesService.profiles.map(o=>o.name),null],enumItemLabels:[...this.userDataProfilesService.profiles.map(o=>""),a("active window","Active Window")],description:a("newWindowProfile","Specifies the profile to use when opening a new window. If a profile name is provided, the new window will use that profile. If no profile name is provided, the new window will use the profile of the active window or the Default profile if no active window exists."),scope:m.APPLICATION}}};this.configurationNode?e.updateConfigurations({add:[i],remove:[this.configurationNode]}):e.registerConfiguration(i),this.configurationNode=i}setNewWindowProfile(){const e=this.configurationService.getValue(w);this.newWindowProfile=e?this.userDataProfilesService.profiles.find(i=>i.name===e):void 0}checkAndResetNewWindowProfileConfig(){const e=this.configurationService.getValue(w);if(!e)return;const i=this.newWindowProfile?this.userDataProfilesService.profiles.find(o=>o.id===this.newWindowProfile.id):void 0;e!==i?.name&&this.configurationService.updateValue(w,i?.name)}};P=C([l(0,_),l(1,b)],P);export{w as CONFIG_NEW_WINDOW_PROFILE,v as ConfigurationMigrationWorkbenchContribution,P as DynamicWindowConfiguration,y as DynamicWorkbenchSecurityConfiguration,j as Extensions,ge as applicationConfigurationNodeBase,pe as problemsConfigurationNodeBase,L as securityConfigurationNodeBase,T as windowConfigurationNodeBase,le as workbenchConfigurationNodeBase};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { localize } from '../../nls.js';
+import { Extensions as ConfigurationExtensions } from '../../platform/configuration/common/configurationRegistry.js';
+import { Registry } from '../../platform/registry/common/platform.js';
+import { IWorkspaceContextService } from '../../platform/workspace/common/workspace.js';
+import { IConfigurationService } from '../../platform/configuration/common/configuration.js';
+import { Disposable } from '../../base/common/lifecycle.js';
+import { Emitter } from '../../base/common/event.js';
+import { IRemoteAgentService } from '../services/remote/common/remoteAgentService.js';
+import { isWindows } from '../../base/common/platform.js';
+import { equals } from '../../base/common/objects.js';
+import { DeferredPromise } from '../../base/common/async.js';
+import { IUserDataProfilesService } from '../../platform/userDataProfile/common/userDataProfile.js';
+export const applicationConfigurationNodeBase = Object.freeze({
+    'id': 'application',
+    'order': 100,
+    'title': localize('applicationConfigurationTitle', "Application"),
+    'type': 'object'
+});
+export const workbenchConfigurationNodeBase = Object.freeze({
+    'id': 'workbench',
+    'order': 7,
+    'title': localize('workbenchConfigurationTitle', "Workbench"),
+    'type': 'object',
+});
+export const securityConfigurationNodeBase = Object.freeze({
+    'id': 'security',
+    'scope': 1,
+    'title': localize('securityConfigurationTitle', "Security"),
+    'type': 'object',
+    'order': 7
+});
+export const problemsConfigurationNodeBase = Object.freeze({
+    'id': 'problems',
+    'title': localize('problemsConfigurationTitle', "Problems"),
+    'type': 'object',
+    'order': 101
+});
+export const windowConfigurationNodeBase = Object.freeze({
+    'id': 'window',
+    'order': 8,
+    'title': localize('windowConfigurationTitle', "Window"),
+    'type': 'object',
+});
+export const Extensions = {
+    ConfigurationMigration: 'base.contributions.configuration.migration'
+};
+class ConfigurationMigrationRegistry {
+    constructor() {
+        this.migrations = [];
+        this._onDidRegisterConfigurationMigrations = new Emitter();
+        this.onDidRegisterConfigurationMigration = this._onDidRegisterConfigurationMigrations.event;
+    }
+    registerConfigurationMigrations(configurationMigrations) {
+        this.migrations.push(...configurationMigrations);
+    }
+}
+const configurationMigrationRegistry = new ConfigurationMigrationRegistry();
+Registry.add(Extensions.ConfigurationMigration, configurationMigrationRegistry);
+let ConfigurationMigrationWorkbenchContribution = class ConfigurationMigrationWorkbenchContribution extends Disposable {
+    static { this.ID = 'workbench.contrib.configurationMigration'; }
+    constructor(configurationService, workspaceService) {
+        super();
+        this.configurationService = configurationService;
+        this.workspaceService = workspaceService;
+        this._register(this.workspaceService.onDidChangeWorkspaceFolders(async (e) => {
+            for (const folder of e.added) {
+                await this.migrateConfigurationsForFolder(folder, configurationMigrationRegistry.migrations);
+            }
+        }));
+        this.migrateConfigurations(configurationMigrationRegistry.migrations);
+        this._register(configurationMigrationRegistry.onDidRegisterConfigurationMigration(migration => this.migrateConfigurations(migration)));
+    }
+    async migrateConfigurations(migrations) {
+        await this.migrateConfigurationsForFolder(undefined, migrations);
+        for (const folder of this.workspaceService.getWorkspace().folders) {
+            await this.migrateConfigurationsForFolder(folder, migrations);
+        }
+    }
+    async migrateConfigurationsForFolder(folder, migrations) {
+        await Promise.all([migrations.map(migration => this.migrateConfigurationsForFolderAndOverride(migration, folder?.uri))]);
+    }
+    async migrateConfigurationsForFolderAndOverride(migration, resource) {
+        const inspectData = this.configurationService.inspect(migration.key, { resource });
+        const targetPairs = this.workspaceService.getWorkbenchState() === 3 ? [
+            ['user', 2],
+            ['userLocal', 3],
+            ['userRemote', 4],
+            ['workspace', 5],
+            ['workspaceFolder', 6],
+        ] : [
+            ['user', 2],
+            ['userLocal', 3],
+            ['userRemote', 4],
+            ['workspace', 5],
+        ];
+        for (const [dataKey, target] of targetPairs) {
+            const inspectValue = inspectData[dataKey];
+            if (!inspectValue) {
+                continue;
+            }
+            const migrationValues = [];
+            if (inspectValue.value !== undefined) {
+                const keyValuePairs = await this.runMigration(migration, dataKey, inspectValue.value, resource, undefined);
+                for (const keyValuePair of keyValuePairs ?? []) {
+                    migrationValues.push([keyValuePair, []]);
+                }
+            }
+            for (const { identifiers, value } of inspectValue.overrides ?? []) {
+                if (value !== undefined) {
+                    const keyValuePairs = await this.runMigration(migration, dataKey, value, resource, identifiers);
+                    for (const keyValuePair of keyValuePairs ?? []) {
+                        migrationValues.push([keyValuePair, identifiers]);
+                    }
+                }
+            }
+            if (migrationValues.length) {
+                await Promise.allSettled(migrationValues.map(async ([[key, value], overrideIdentifiers]) => this.configurationService.updateValue(key, value.value, { resource, overrideIdentifiers }, target)));
+            }
+        }
+    }
+    async runMigration(migration, dataKey, value, resource, overrideIdentifiers) {
+        const valueAccessor = (key) => {
+            const inspectData = this.configurationService.inspect(key, { resource });
+            const inspectValue = inspectData[dataKey];
+            if (!inspectValue) {
+                return undefined;
+            }
+            if (!overrideIdentifiers) {
+                return inspectValue.value;
+            }
+            return inspectValue.overrides?.find(({ identifiers }) => equals(identifiers, overrideIdentifiers))?.value;
+        };
+        const result = await migration.migrateFn(value, valueAccessor);
+        return Array.isArray(result) ? result : [[migration.key, result]];
+    }
+};
+ConfigurationMigrationWorkbenchContribution = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, IWorkspaceContextService),
+    __metadata("design:paramtypes", [Object, Object])
+], ConfigurationMigrationWorkbenchContribution);
+export { ConfigurationMigrationWorkbenchContribution };
+let DynamicWorkbenchSecurityConfiguration = class DynamicWorkbenchSecurityConfiguration extends Disposable {
+    static { this.ID = 'workbench.contrib.dynamicWorkbenchSecurityConfiguration'; }
+    constructor(remoteAgentService) {
+        super();
+        this.remoteAgentService = remoteAgentService;
+        this._ready = new DeferredPromise();
+        this.ready = this._ready.p;
+        this.create();
+    }
+    async create() {
+        try {
+            await this.doCreate();
+        }
+        finally {
+            this._ready.complete();
+        }
+    }
+    async doCreate() {
+        if (!isWindows) {
+            const remoteEnvironment = await this.remoteAgentService.getEnvironment();
+            if (remoteEnvironment?.os !== 1) {
+                return;
+            }
+        }
+        const registry = Registry.as(ConfigurationExtensions.Configuration);
+        registry.registerConfiguration({
+            ...securityConfigurationNodeBase,
+            'properties': {
+                'security.allowedUNCHosts': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'string',
+                        'pattern': '^[^\\\\]+$',
+                        'patternErrorMessage': localize('security.allowedUNCHosts.patternErrorMessage', 'UNC host names must not contain backslashes.')
+                    },
+                    'default': [],
+                    'markdownDescription': localize('security.allowedUNCHosts', 'A set of UNC host names (without leading or trailing backslash, for example `192.168.0.1` or `my-server`) to allow without user confirmation. If a UNC host is being accessed that is not allowed via this setting or has not been acknowledged via user confirmation, an error will occur and the operation stopped. A restart is required when changing this setting. Find out more about this setting at https://aka.ms/vscode-windows-unc.'),
+                    'scope': 2
+                },
+                'security.restrictUNCAccess': {
+                    'type': 'boolean',
+                    'default': true,
+                    'markdownDescription': localize('security.restrictUNCAccess', 'If enabled, only allows access to UNC host names that are allowed by the `#security.allowedUNCHosts#` setting or after user confirmation. Find out more about this setting at https://aka.ms/vscode-windows-unc.'),
+                    'scope': 2
+                }
+            }
+        });
+    }
+};
+DynamicWorkbenchSecurityConfiguration = __decorate([
+    __param(0, IRemoteAgentService),
+    __metadata("design:paramtypes", [Object])
+], DynamicWorkbenchSecurityConfiguration);
+export { DynamicWorkbenchSecurityConfiguration };
+export const CONFIG_NEW_WINDOW_PROFILE = 'window.newWindowProfile';
+let DynamicWindowConfiguration = class DynamicWindowConfiguration extends Disposable {
+    static { this.ID = 'workbench.contrib.dynamicWindowConfiguration'; }
+    constructor(userDataProfilesService, configurationService) {
+        super();
+        this.userDataProfilesService = userDataProfilesService;
+        this.configurationService = configurationService;
+        this.registerNewWindowProfileConfiguration();
+        this._register(this.userDataProfilesService.onDidChangeProfiles((e) => this.registerNewWindowProfileConfiguration()));
+        this.setNewWindowProfile();
+        this.checkAndResetNewWindowProfileConfig();
+        this._register(configurationService.onDidChangeConfiguration(e => {
+            if (e.source !== 7 && e.affectsConfiguration(CONFIG_NEW_WINDOW_PROFILE)) {
+                this.setNewWindowProfile();
+            }
+        }));
+        this._register(this.userDataProfilesService.onDidChangeProfiles(() => this.checkAndResetNewWindowProfileConfig()));
+    }
+    registerNewWindowProfileConfiguration() {
+        const registry = Registry.as(ConfigurationExtensions.Configuration);
+        const configurationNode = {
+            ...windowConfigurationNodeBase,
+            'properties': {
+                [CONFIG_NEW_WINDOW_PROFILE]: {
+                    'type': ['string', 'null'],
+                    'default': null,
+                    'enum': [...this.userDataProfilesService.profiles.map(profile => profile.name), null],
+                    'enumItemLabels': [...this.userDataProfilesService.profiles.map(p => ''), localize('active window', "Active Window")],
+                    'description': localize('newWindowProfile', "Specifies the profile to use when opening a new window. If a profile name is provided, the new window will use that profile. If no profile name is provided, the new window will use the profile of the active window or the Default profile if no active window exists."),
+                    'scope': 1,
+                }
+            }
+        };
+        if (this.configurationNode) {
+            registry.updateConfigurations({ add: [configurationNode], remove: [this.configurationNode] });
+        }
+        else {
+            registry.registerConfiguration(configurationNode);
+        }
+        this.configurationNode = configurationNode;
+    }
+    setNewWindowProfile() {
+        const newWindowProfileName = this.configurationService.getValue(CONFIG_NEW_WINDOW_PROFILE);
+        this.newWindowProfile = newWindowProfileName ? this.userDataProfilesService.profiles.find(profile => profile.name === newWindowProfileName) : undefined;
+    }
+    checkAndResetNewWindowProfileConfig() {
+        const newWindowProfileName = this.configurationService.getValue(CONFIG_NEW_WINDOW_PROFILE);
+        if (!newWindowProfileName) {
+            return;
+        }
+        const profile = this.newWindowProfile ? this.userDataProfilesService.profiles.find(profile => profile.id === this.newWindowProfile.id) : undefined;
+        if (newWindowProfileName === profile?.name) {
+            return;
+        }
+        this.configurationService.updateValue(CONFIG_NEW_WINDOW_PROFILE, profile?.name);
+    }
+};
+DynamicWindowConfiguration = __decorate([
+    __param(0, IUserDataProfilesService),
+    __param(1, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object])
+], DynamicWindowConfiguration);
+export { DynamicWindowConfiguration };

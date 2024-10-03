@@ -1,1 +1,463 @@
-import{findFirstIdxMonotonousOrArrLen as R}from"../../../../base/common/arraysFind.js";import{RunOnceScheduler as P,TimeoutTimer as x}from"../../../../base/common/async.js";import{KeyCode as g,KeyMod as l}from"../../../../base/common/keyCodes.js";import{DisposableStore as A,dispose as F}from"../../../../base/common/lifecycle.js";import{Constants as C}from"../../../../base/common/uint.js";import"../../../browser/editorBrowser.js";import{ReplaceCommand as T,ReplaceCommandThatPreservesSelection as y}from"../../../common/commands/replaceCommand.js";import{EditorOption as _}from"../../../common/config/editorOptions.js";import{CursorChangeReason as S}from"../../../common/cursorEvents.js";import{Position as p}from"../../../common/core/position.js";import{Range as M}from"../../../common/core/range.js";import{Selection as E}from"../../../common/core/selection.js";import{ScrollType as v}from"../../../common/editorCommon.js";import{EndOfLinePreference as b}from"../../../common/model.js";import{SearchParams as I}from"../../../common/model/textModelSearch.js";import{FindDecorations as N}from"./findDecorations.js";import"./findState.js";import{ReplaceAllCommand as w}from"./replaceAllCommand.js";import{parseReplaceString as D,ReplacePattern as L}from"./replacePattern.js";import{RawContextKey as f}from"../../../../platform/contextkey/common/contextkey.js";import"../../../../platform/keybinding/common/keybindingsRegistry.js";const O=new f("findWidgetVisible",!1),_e=O.toNegated(),pe=new f("findInputFocussed",!1),me=new f("replaceInputFocussed",!1),ue={primary:l.Alt|g.KeyC,mac:{primary:l.CtrlCmd|l.Alt|g.KeyC}},Se={primary:l.Alt|g.KeyW,mac:{primary:l.CtrlCmd|l.Alt|g.KeyW}},fe={primary:l.Alt|g.KeyR,mac:{primary:l.CtrlCmd|l.Alt|g.KeyR}},Ce={primary:l.Alt|g.KeyL,mac:{primary:l.CtrlCmd|l.Alt|g.KeyL}},Me={primary:l.Alt|g.KeyP,mac:{primary:l.CtrlCmd|l.Alt|g.KeyP}},ve={StartFindAction:"actions.find",StartFindWithSelection:"actions.findWithSelection",StartFindWithArgs:"editor.actions.findWithArgs",NextMatchFindAction:"editor.action.nextMatchFindAction",PreviousMatchFindAction:"editor.action.previousMatchFindAction",GoToMatchFindAction:"editor.action.goToMatchFindAction",NextSelectionMatchFindAction:"editor.action.nextSelectionMatchFindAction",PreviousSelectionMatchFindAction:"editor.action.previousSelectionMatchFindAction",StartFindReplaceAction:"editor.action.startFindReplaceAction",CloseFindWidgetCommand:"closeFindWidget",ToggleCaseSensitiveCommand:"toggleFindCaseSensitive",ToggleWholeWordCommand:"toggleFindWholeWord",ToggleRegexCommand:"toggleFindRegex",ToggleSearchScopeCommand:"toggleFindInSelection",TogglePreserveCaseCommand:"togglePreserveCase",ReplaceOneAction:"editor.action.replaceOne",ReplaceAllAction:"editor.action.replaceAll",SelectAllMatchesAction:"editor.action.selectAllMatches"},m=19999,K=240;class u{_editor;_state;_toDispose=new A;_decorations;_ignoreModelContentChanged;_startSearchingTimer;_updateDecorationsScheduler;_isDisposed;constructor(e,i){this._editor=e,this._state=i,this._isDisposed=!1,this._startSearchingTimer=new x,this._decorations=new N(e),this._toDispose.add(this._decorations),this._updateDecorationsScheduler=new P(()=>{if(this._editor.hasModel())return this.research(!1)},100),this._toDispose.add(this._updateDecorationsScheduler),this._toDispose.add(this._editor.onDidChangeCursorPosition(t=>{(t.reason===S.Explicit||t.reason===S.Undo||t.reason===S.Redo)&&this._decorations.setStartPosition(this._editor.getPosition())})),this._ignoreModelContentChanged=!1,this._toDispose.add(this._editor.onDidChangeModelContent(t=>{this._ignoreModelContentChanged||(t.isFlush&&this._decorations.reset(),this._decorations.setStartPosition(this._editor.getPosition()),this._updateDecorationsScheduler.schedule())})),this._toDispose.add(this._state.onFindReplaceStateChange(t=>this._onStateChanged(t))),this.research(!1,this._state.searchScope)}dispose(){this._isDisposed=!0,F(this._startSearchingTimer),this._toDispose.dispose()}_onStateChanged(e){this._isDisposed||this._editor.hasModel()&&(e.searchString||e.isReplaceRevealed||e.isRegex||e.wholeWord||e.matchCase||e.searchScope)&&(this._editor.getModel().isTooLargeForSyncing()?(this._startSearchingTimer.cancel(),this._startSearchingTimer.setIfNotSet(()=>{e.searchScope?this.research(e.moveCursor,this._state.searchScope):this.research(e.moveCursor)},K)):e.searchScope?this.research(e.moveCursor,this._state.searchScope):this.research(e.moveCursor))}static _getSearchRange(e,i){return i||e.getFullModelRange()}research(e,i){let t=null;typeof i<"u"?i!==null&&(Array.isArray(i)?t=i:t=[i]):t=this._decorations.getFindScopes(),t!==null&&(t=t.map(r=>{if(r.startLineNumber!==r.endLineNumber){let a=r.endLineNumber;return r.endColumn===1&&(a=a-1),new M(r.startLineNumber,1,a,this._editor.getModel().getLineMaxColumn(a))}return r}));const o=this._findMatches(t,!1,m);this._decorations.set(o,t);const s=this._editor.getSelection();let n=this._decorations.getCurrentMatchesPosition(s);if(n===0&&o.length>0){const r=R(o.map(a=>a.range),a=>M.compareRangesUsingStarts(a,s)>=0);n=r>0?r-1+1:n}this._state.changeMatchInfo(n,this._decorations.getCount(),void 0),e&&this._editor.getOption(_.find).cursorMoveOnType&&this._moveToNextMatch(this._decorations.getStartPosition())}_hasMatches(){return this._state.matchesCount>0}_cannotFind(){if(!this._hasMatches()){const e=this._decorations.getFindScope();return e&&this._editor.revealRangeInCenterIfOutsideViewport(e,v.Smooth),!0}return!1}_setCurrentFindMatch(e){const i=this._decorations.setCurrentFindMatch(e);this._state.changeMatchInfo(i,this._decorations.getCount(),e),this._editor.setSelection(e),this._editor.revealRangeInCenterIfOutsideViewport(e,v.Smooth)}_prevSearchPosition(e){const i=this._state.isRegex&&(this._state.searchString.indexOf("^")>=0||this._state.searchString.indexOf("$")>=0);let{lineNumber:t,column:o}=e;const s=this._editor.getModel();return i||o===1?(t===1?t=s.getLineCount():t--,o=s.getLineMaxColumn(t)):o--,new p(t,o)}_moveToPrevMatch(e,i=!1){if(!this._state.canNavigateBack()){const c=this._decorations.matchAfterPosition(e);c&&this._setCurrentFindMatch(c);return}if(this._decorations.getCount()<m){let c=this._decorations.matchBeforePosition(e);c&&c.isEmpty()&&c.getStartPosition().equals(e)&&(e=this._prevSearchPosition(e),c=this._decorations.matchBeforePosition(e)),c&&this._setCurrentFindMatch(c);return}if(this._cannotFind())return;const t=this._decorations.getFindScope(),o=u._getSearchRange(this._editor.getModel(),t);o.getEndPosition().isBefore(e)&&(e=o.getEndPosition()),e.isBefore(o.getStartPosition())&&(e=o.getEndPosition());const{lineNumber:s,column:n}=e,r=this._editor.getModel();let a=new p(s,n),h=r.findPreviousMatch(this._state.searchString,a,this._state.isRegex,this._state.matchCase,this._state.wholeWord?this._editor.getOption(_.wordSeparators):null,!1);if(h&&h.range.isEmpty()&&h.range.getStartPosition().equals(a)&&(a=this._prevSearchPosition(a),h=r.findPreviousMatch(this._state.searchString,a,this._state.isRegex,this._state.matchCase,this._state.wholeWord?this._editor.getOption(_.wordSeparators):null,!1)),!!h){if(!i&&!o.containsRange(h.range))return this._moveToPrevMatch(h.range.getStartPosition(),!0);this._setCurrentFindMatch(h.range)}}moveToPrevMatch(){this._moveToPrevMatch(this._editor.getSelection().getStartPosition())}_nextSearchPosition(e){const i=this._state.isRegex&&(this._state.searchString.indexOf("^")>=0||this._state.searchString.indexOf("$")>=0);let{lineNumber:t,column:o}=e;const s=this._editor.getModel();return i||o===s.getLineMaxColumn(t)?(t===s.getLineCount()?t=1:t++,o=1):o++,new p(t,o)}_moveToNextMatch(e){if(!this._state.canNavigateForward()){const t=this._decorations.matchBeforePosition(e);t&&this._setCurrentFindMatch(t);return}if(this._decorations.getCount()<m){let t=this._decorations.matchAfterPosition(e);t&&t.isEmpty()&&t.getStartPosition().equals(e)&&(e=this._nextSearchPosition(e),t=this._decorations.matchAfterPosition(e)),t&&this._setCurrentFindMatch(t);return}const i=this._getNextMatch(e,!1,!0);i&&this._setCurrentFindMatch(i.range)}_getNextMatch(e,i,t,o=!1){if(this._cannotFind())return null;const s=this._decorations.getFindScope(),n=u._getSearchRange(this._editor.getModel(),s);n.getEndPosition().isBefore(e)&&(e=n.getStartPosition()),e.isBefore(n.getStartPosition())&&(e=n.getStartPosition());const{lineNumber:r,column:a}=e,h=this._editor.getModel();let c=new p(r,a),d=h.findNextMatch(this._state.searchString,c,this._state.isRegex,this._state.matchCase,this._state.wholeWord?this._editor.getOption(_.wordSeparators):null,i);return t&&d&&d.range.isEmpty()&&d.range.getStartPosition().equals(c)&&(c=this._nextSearchPosition(c),d=h.findNextMatch(this._state.searchString,c,this._state.isRegex,this._state.matchCase,this._state.wholeWord?this._editor.getOption(_.wordSeparators):null,i)),d?!o&&!n.containsRange(d.range)?this._getNextMatch(d.range.getEndPosition(),i,t,!0):d:null}moveToNextMatch(){this._moveToNextMatch(this._editor.getSelection().getEndPosition())}_moveToMatch(e){const i=this._decorations.getDecorationRangeAt(e);i&&this._setCurrentFindMatch(i)}moveToMatch(e){this._moveToMatch(e)}_getReplacePattern(){return this._state.isRegex?D(this._state.replaceString):L.fromStaticValue(this._state.replaceString)}replace(){if(!this._hasMatches())return;const e=this._getReplacePattern(),i=this._editor.getSelection(),t=this._getNextMatch(i.getStartPosition(),!0,!1);if(t)if(i.equalsRange(t.range)){const o=e.buildReplaceString(t.matches,this._state.preserveCase),s=new T(i,o);this._executeEditorCommand("replace",s),this._decorations.setStartPosition(new p(i.startLineNumber,i.startColumn+o.length)),this.research(!0)}else this._decorations.setStartPosition(this._editor.getPosition()),this._setCurrentFindMatch(t.range)}_findMatches(e,i,t){const o=(e||[null]).map(s=>u._getSearchRange(this._editor.getModel(),s));return this._editor.getModel().findMatches(this._state.searchString,o,this._state.isRegex,this._state.matchCase,this._state.wholeWord?this._editor.getOption(_.wordSeparators):null,i,t)}replaceAll(){if(!this._hasMatches())return;const e=this._decorations.getFindScopes();e===null&&this._state.matchesCount>=m?this._largeReplaceAll():this._regularReplaceAll(e),this.research(!1)}_largeReplaceAll(){const i=new I(this._state.searchString,this._state.isRegex,this._state.matchCase,this._state.wholeWord?this._editor.getOption(_.wordSeparators):null).parseSearchRequest();if(!i)return;let t=i.regex;if(!t.multiline){let d="mu";t.ignoreCase&&(d+="i"),t.global&&(d+="g"),t=new RegExp(t.source,d)}const o=this._editor.getModel(),s=o.getValue(b.LF),n=o.getFullModelRange(),r=this._getReplacePattern();let a;const h=this._state.preserveCase;r.hasReplacementPatterns||h?a=s.replace(t,function(){return r.buildReplaceString(arguments,h)}):a=s.replace(t,r.buildReplaceString(null,h));const c=new y(n,a,this._editor.getSelection());this._executeEditorCommand("replaceAll",c)}_regularReplaceAll(e){const i=this._getReplacePattern(),t=this._findMatches(e,i.hasReplacementPatterns||this._state.preserveCase,C.MAX_SAFE_SMALL_INTEGER),o=[];for(let n=0,r=t.length;n<r;n++)o[n]=i.buildReplaceString(t[n].matches,this._state.preserveCase);const s=new w(this._editor.getSelection(),t.map(n=>n.range),o);this._executeEditorCommand("replaceAll",s)}selectAllMatches(){if(!this._hasMatches())return;const e=this._decorations.getFindScopes();let t=this._findMatches(e,!1,C.MAX_SAFE_SMALL_INTEGER).map(s=>new E(s.range.startLineNumber,s.range.startColumn,s.range.endLineNumber,s.range.endColumn));const o=this._editor.getSelection();for(let s=0,n=t.length;s<n;s++)if(t[s].equalsRange(o)){t=[o].concat(t.slice(0,s)).concat(t.slice(s+1));break}this._editor.setSelections(t)}_executeEditorCommand(e,i){try{this._ignoreModelContentChanged=!0,this._editor.pushUndoStop(),this._editor.executeCommand(e,i),this._editor.pushUndoStop()}finally{this._ignoreModelContentChanged=!1}}}export{pe as CONTEXT_FIND_INPUT_FOCUSED,_e as CONTEXT_FIND_WIDGET_NOT_VISIBLE,O as CONTEXT_FIND_WIDGET_VISIBLE,me as CONTEXT_REPLACE_INPUT_FOCUSED,ve as FIND_IDS,u as FindModelBoundToEditorModel,m as MATCHES_LIMIT,ue as ToggleCaseSensitiveKeybinding,Me as TogglePreserveCaseKeybinding,fe as ToggleRegexKeybinding,Ce as ToggleSearchScopeKeybinding,Se as ToggleWholeWordKeybinding};
+import { findFirstIdxMonotonousOrArrLen } from '../../../../base/common/arraysFind.js';
+import { RunOnceScheduler, TimeoutTimer } from '../../../../base/common/async.js';
+import { DisposableStore, dispose } from '../../../../base/common/lifecycle.js';
+import { ReplaceCommand, ReplaceCommandThatPreservesSelection } from '../../../common/commands/replaceCommand.js';
+import { Position } from '../../../common/core/position.js';
+import { Range } from '../../../common/core/range.js';
+import { Selection } from '../../../common/core/selection.js';
+import { SearchParams } from '../../../common/model/textModelSearch.js';
+import { FindDecorations } from './findDecorations.js';
+import { ReplaceAllCommand } from './replaceAllCommand.js';
+import { parseReplaceString, ReplacePattern } from './replacePattern.js';
+import { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+export const CONTEXT_FIND_WIDGET_VISIBLE = new RawContextKey('findWidgetVisible', false);
+export const CONTEXT_FIND_WIDGET_NOT_VISIBLE = CONTEXT_FIND_WIDGET_VISIBLE.toNegated();
+export const CONTEXT_FIND_INPUT_FOCUSED = new RawContextKey('findInputFocussed', false);
+export const CONTEXT_REPLACE_INPUT_FOCUSED = new RawContextKey('replaceInputFocussed', false);
+export const ToggleCaseSensitiveKeybinding = {
+    primary: 512 | 33,
+    mac: { primary: 2048 | 512 | 33 }
+};
+export const ToggleWholeWordKeybinding = {
+    primary: 512 | 53,
+    mac: { primary: 2048 | 512 | 53 }
+};
+export const ToggleRegexKeybinding = {
+    primary: 512 | 48,
+    mac: { primary: 2048 | 512 | 48 }
+};
+export const ToggleSearchScopeKeybinding = {
+    primary: 512 | 42,
+    mac: { primary: 2048 | 512 | 42 }
+};
+export const TogglePreserveCaseKeybinding = {
+    primary: 512 | 46,
+    mac: { primary: 2048 | 512 | 46 }
+};
+export const FIND_IDS = {
+    StartFindAction: 'actions.find',
+    StartFindWithSelection: 'actions.findWithSelection',
+    StartFindWithArgs: 'editor.actions.findWithArgs',
+    NextMatchFindAction: 'editor.action.nextMatchFindAction',
+    PreviousMatchFindAction: 'editor.action.previousMatchFindAction',
+    GoToMatchFindAction: 'editor.action.goToMatchFindAction',
+    NextSelectionMatchFindAction: 'editor.action.nextSelectionMatchFindAction',
+    PreviousSelectionMatchFindAction: 'editor.action.previousSelectionMatchFindAction',
+    StartFindReplaceAction: 'editor.action.startFindReplaceAction',
+    CloseFindWidgetCommand: 'closeFindWidget',
+    ToggleCaseSensitiveCommand: 'toggleFindCaseSensitive',
+    ToggleWholeWordCommand: 'toggleFindWholeWord',
+    ToggleRegexCommand: 'toggleFindRegex',
+    ToggleSearchScopeCommand: 'toggleFindInSelection',
+    TogglePreserveCaseCommand: 'togglePreserveCase',
+    ReplaceOneAction: 'editor.action.replaceOne',
+    ReplaceAllAction: 'editor.action.replaceAll',
+    SelectAllMatchesAction: 'editor.action.selectAllMatches'
+};
+export const MATCHES_LIMIT = 19999;
+const RESEARCH_DELAY = 240;
+export class FindModelBoundToEditorModel {
+    constructor(editor, state) {
+        this._toDispose = new DisposableStore();
+        this._editor = editor;
+        this._state = state;
+        this._isDisposed = false;
+        this._startSearchingTimer = new TimeoutTimer();
+        this._decorations = new FindDecorations(editor);
+        this._toDispose.add(this._decorations);
+        this._updateDecorationsScheduler = new RunOnceScheduler(() => {
+            if (!this._editor.hasModel()) {
+                return;
+            }
+            return this.research(false);
+        }, 100);
+        this._toDispose.add(this._updateDecorationsScheduler);
+        this._toDispose.add(this._editor.onDidChangeCursorPosition((e) => {
+            if (e.reason === 3
+                || e.reason === 5
+                || e.reason === 6) {
+                this._decorations.setStartPosition(this._editor.getPosition());
+            }
+        }));
+        this._ignoreModelContentChanged = false;
+        this._toDispose.add(this._editor.onDidChangeModelContent((e) => {
+            if (this._ignoreModelContentChanged) {
+                return;
+            }
+            if (e.isFlush) {
+                this._decorations.reset();
+            }
+            this._decorations.setStartPosition(this._editor.getPosition());
+            this._updateDecorationsScheduler.schedule();
+        }));
+        this._toDispose.add(this._state.onFindReplaceStateChange((e) => this._onStateChanged(e)));
+        this.research(false, this._state.searchScope);
+    }
+    dispose() {
+        this._isDisposed = true;
+        dispose(this._startSearchingTimer);
+        this._toDispose.dispose();
+    }
+    _onStateChanged(e) {
+        if (this._isDisposed) {
+            return;
+        }
+        if (!this._editor.hasModel()) {
+            return;
+        }
+        if (e.searchString || e.isReplaceRevealed || e.isRegex || e.wholeWord || e.matchCase || e.searchScope) {
+            const model = this._editor.getModel();
+            if (model.isTooLargeForSyncing()) {
+                this._startSearchingTimer.cancel();
+                this._startSearchingTimer.setIfNotSet(() => {
+                    if (e.searchScope) {
+                        this.research(e.moveCursor, this._state.searchScope);
+                    }
+                    else {
+                        this.research(e.moveCursor);
+                    }
+                }, RESEARCH_DELAY);
+            }
+            else {
+                if (e.searchScope) {
+                    this.research(e.moveCursor, this._state.searchScope);
+                }
+                else {
+                    this.research(e.moveCursor);
+                }
+            }
+        }
+    }
+    static _getSearchRange(model, findScope) {
+        if (findScope) {
+            return findScope;
+        }
+        return model.getFullModelRange();
+    }
+    research(moveCursor, newFindScope) {
+        let findScopes = null;
+        if (typeof newFindScope !== 'undefined') {
+            if (newFindScope !== null) {
+                if (!Array.isArray(newFindScope)) {
+                    findScopes = [newFindScope];
+                }
+                else {
+                    findScopes = newFindScope;
+                }
+            }
+        }
+        else {
+            findScopes = this._decorations.getFindScopes();
+        }
+        if (findScopes !== null) {
+            findScopes = findScopes.map(findScope => {
+                if (findScope.startLineNumber !== findScope.endLineNumber) {
+                    let endLineNumber = findScope.endLineNumber;
+                    if (findScope.endColumn === 1) {
+                        endLineNumber = endLineNumber - 1;
+                    }
+                    return new Range(findScope.startLineNumber, 1, endLineNumber, this._editor.getModel().getLineMaxColumn(endLineNumber));
+                }
+                return findScope;
+            });
+        }
+        const findMatches = this._findMatches(findScopes, false, MATCHES_LIMIT);
+        this._decorations.set(findMatches, findScopes);
+        const editorSelection = this._editor.getSelection();
+        let currentMatchesPosition = this._decorations.getCurrentMatchesPosition(editorSelection);
+        if (currentMatchesPosition === 0 && findMatches.length > 0) {
+            const matchAfterSelection = findFirstIdxMonotonousOrArrLen(findMatches.map(match => match.range), range => Range.compareRangesUsingStarts(range, editorSelection) >= 0);
+            currentMatchesPosition = matchAfterSelection > 0 ? matchAfterSelection - 1 + 1 : currentMatchesPosition;
+        }
+        this._state.changeMatchInfo(currentMatchesPosition, this._decorations.getCount(), undefined);
+        if (moveCursor && this._editor.getOption(43).cursorMoveOnType) {
+            this._moveToNextMatch(this._decorations.getStartPosition());
+        }
+    }
+    _hasMatches() {
+        return (this._state.matchesCount > 0);
+    }
+    _cannotFind() {
+        if (!this._hasMatches()) {
+            const findScope = this._decorations.getFindScope();
+            if (findScope) {
+                this._editor.revealRangeInCenterIfOutsideViewport(findScope, 0);
+            }
+            return true;
+        }
+        return false;
+    }
+    _setCurrentFindMatch(match) {
+        const matchesPosition = this._decorations.setCurrentFindMatch(match);
+        this._state.changeMatchInfo(matchesPosition, this._decorations.getCount(), match);
+        this._editor.setSelection(match);
+        this._editor.revealRangeInCenterIfOutsideViewport(match, 0);
+    }
+    _prevSearchPosition(before) {
+        const isUsingLineStops = this._state.isRegex && (this._state.searchString.indexOf('^') >= 0
+            || this._state.searchString.indexOf('$') >= 0);
+        let { lineNumber, column } = before;
+        const model = this._editor.getModel();
+        if (isUsingLineStops || column === 1) {
+            if (lineNumber === 1) {
+                lineNumber = model.getLineCount();
+            }
+            else {
+                lineNumber--;
+            }
+            column = model.getLineMaxColumn(lineNumber);
+        }
+        else {
+            column--;
+        }
+        return new Position(lineNumber, column);
+    }
+    _moveToPrevMatch(before, isRecursed = false) {
+        if (!this._state.canNavigateBack()) {
+            const nextMatchRange = this._decorations.matchAfterPosition(before);
+            if (nextMatchRange) {
+                this._setCurrentFindMatch(nextMatchRange);
+            }
+            return;
+        }
+        if (this._decorations.getCount() < MATCHES_LIMIT) {
+            let prevMatchRange = this._decorations.matchBeforePosition(before);
+            if (prevMatchRange && prevMatchRange.isEmpty() && prevMatchRange.getStartPosition().equals(before)) {
+                before = this._prevSearchPosition(before);
+                prevMatchRange = this._decorations.matchBeforePosition(before);
+            }
+            if (prevMatchRange) {
+                this._setCurrentFindMatch(prevMatchRange);
+            }
+            return;
+        }
+        if (this._cannotFind()) {
+            return;
+        }
+        const findScope = this._decorations.getFindScope();
+        const searchRange = FindModelBoundToEditorModel._getSearchRange(this._editor.getModel(), findScope);
+        if (searchRange.getEndPosition().isBefore(before)) {
+            before = searchRange.getEndPosition();
+        }
+        if (before.isBefore(searchRange.getStartPosition())) {
+            before = searchRange.getEndPosition();
+        }
+        const { lineNumber, column } = before;
+        const model = this._editor.getModel();
+        let position = new Position(lineNumber, column);
+        let prevMatch = model.findPreviousMatch(this._state.searchString, position, this._state.isRegex, this._state.matchCase, this._state.wholeWord ? this._editor.getOption(134) : null, false);
+        if (prevMatch && prevMatch.range.isEmpty() && prevMatch.range.getStartPosition().equals(position)) {
+            position = this._prevSearchPosition(position);
+            prevMatch = model.findPreviousMatch(this._state.searchString, position, this._state.isRegex, this._state.matchCase, this._state.wholeWord ? this._editor.getOption(134) : null, false);
+        }
+        if (!prevMatch) {
+            return;
+        }
+        if (!isRecursed && !searchRange.containsRange(prevMatch.range)) {
+            return this._moveToPrevMatch(prevMatch.range.getStartPosition(), true);
+        }
+        this._setCurrentFindMatch(prevMatch.range);
+    }
+    moveToPrevMatch() {
+        this._moveToPrevMatch(this._editor.getSelection().getStartPosition());
+    }
+    _nextSearchPosition(after) {
+        const isUsingLineStops = this._state.isRegex && (this._state.searchString.indexOf('^') >= 0
+            || this._state.searchString.indexOf('$') >= 0);
+        let { lineNumber, column } = after;
+        const model = this._editor.getModel();
+        if (isUsingLineStops || column === model.getLineMaxColumn(lineNumber)) {
+            if (lineNumber === model.getLineCount()) {
+                lineNumber = 1;
+            }
+            else {
+                lineNumber++;
+            }
+            column = 1;
+        }
+        else {
+            column++;
+        }
+        return new Position(lineNumber, column);
+    }
+    _moveToNextMatch(after) {
+        if (!this._state.canNavigateForward()) {
+            const prevMatchRange = this._decorations.matchBeforePosition(after);
+            if (prevMatchRange) {
+                this._setCurrentFindMatch(prevMatchRange);
+            }
+            return;
+        }
+        if (this._decorations.getCount() < MATCHES_LIMIT) {
+            let nextMatchRange = this._decorations.matchAfterPosition(after);
+            if (nextMatchRange && nextMatchRange.isEmpty() && nextMatchRange.getStartPosition().equals(after)) {
+                after = this._nextSearchPosition(after);
+                nextMatchRange = this._decorations.matchAfterPosition(after);
+            }
+            if (nextMatchRange) {
+                this._setCurrentFindMatch(nextMatchRange);
+            }
+            return;
+        }
+        const nextMatch = this._getNextMatch(after, false, true);
+        if (nextMatch) {
+            this._setCurrentFindMatch(nextMatch.range);
+        }
+    }
+    _getNextMatch(after, captureMatches, forceMove, isRecursed = false) {
+        if (this._cannotFind()) {
+            return null;
+        }
+        const findScope = this._decorations.getFindScope();
+        const searchRange = FindModelBoundToEditorModel._getSearchRange(this._editor.getModel(), findScope);
+        if (searchRange.getEndPosition().isBefore(after)) {
+            after = searchRange.getStartPosition();
+        }
+        if (after.isBefore(searchRange.getStartPosition())) {
+            after = searchRange.getStartPosition();
+        }
+        const { lineNumber, column } = after;
+        const model = this._editor.getModel();
+        let position = new Position(lineNumber, column);
+        let nextMatch = model.findNextMatch(this._state.searchString, position, this._state.isRegex, this._state.matchCase, this._state.wholeWord ? this._editor.getOption(134) : null, captureMatches);
+        if (forceMove && nextMatch && nextMatch.range.isEmpty() && nextMatch.range.getStartPosition().equals(position)) {
+            position = this._nextSearchPosition(position);
+            nextMatch = model.findNextMatch(this._state.searchString, position, this._state.isRegex, this._state.matchCase, this._state.wholeWord ? this._editor.getOption(134) : null, captureMatches);
+        }
+        if (!nextMatch) {
+            return null;
+        }
+        if (!isRecursed && !searchRange.containsRange(nextMatch.range)) {
+            return this._getNextMatch(nextMatch.range.getEndPosition(), captureMatches, forceMove, true);
+        }
+        return nextMatch;
+    }
+    moveToNextMatch() {
+        this._moveToNextMatch(this._editor.getSelection().getEndPosition());
+    }
+    _moveToMatch(index) {
+        const decorationRange = this._decorations.getDecorationRangeAt(index);
+        if (decorationRange) {
+            this._setCurrentFindMatch(decorationRange);
+        }
+    }
+    moveToMatch(index) {
+        this._moveToMatch(index);
+    }
+    _getReplacePattern() {
+        if (this._state.isRegex) {
+            return parseReplaceString(this._state.replaceString);
+        }
+        return ReplacePattern.fromStaticValue(this._state.replaceString);
+    }
+    replace() {
+        if (!this._hasMatches()) {
+            return;
+        }
+        const replacePattern = this._getReplacePattern();
+        const selection = this._editor.getSelection();
+        const nextMatch = this._getNextMatch(selection.getStartPosition(), true, false);
+        if (nextMatch) {
+            if (selection.equalsRange(nextMatch.range)) {
+                const replaceString = replacePattern.buildReplaceString(nextMatch.matches, this._state.preserveCase);
+                const command = new ReplaceCommand(selection, replaceString);
+                this._executeEditorCommand('replace', command);
+                this._decorations.setStartPosition(new Position(selection.startLineNumber, selection.startColumn + replaceString.length));
+                this.research(true);
+            }
+            else {
+                this._decorations.setStartPosition(this._editor.getPosition());
+                this._setCurrentFindMatch(nextMatch.range);
+            }
+        }
+    }
+    _findMatches(findScopes, captureMatches, limitResultCount) {
+        const searchRanges = (findScopes || [null]).map((scope) => FindModelBoundToEditorModel._getSearchRange(this._editor.getModel(), scope));
+        return this._editor.getModel().findMatches(this._state.searchString, searchRanges, this._state.isRegex, this._state.matchCase, this._state.wholeWord ? this._editor.getOption(134) : null, captureMatches, limitResultCount);
+    }
+    replaceAll() {
+        if (!this._hasMatches()) {
+            return;
+        }
+        const findScopes = this._decorations.getFindScopes();
+        if (findScopes === null && this._state.matchesCount >= MATCHES_LIMIT) {
+            this._largeReplaceAll();
+        }
+        else {
+            this._regularReplaceAll(findScopes);
+        }
+        this.research(false);
+    }
+    _largeReplaceAll() {
+        const searchParams = new SearchParams(this._state.searchString, this._state.isRegex, this._state.matchCase, this._state.wholeWord ? this._editor.getOption(134) : null);
+        const searchData = searchParams.parseSearchRequest();
+        if (!searchData) {
+            return;
+        }
+        let searchRegex = searchData.regex;
+        if (!searchRegex.multiline) {
+            let mod = 'mu';
+            if (searchRegex.ignoreCase) {
+                mod += 'i';
+            }
+            if (searchRegex.global) {
+                mod += 'g';
+            }
+            searchRegex = new RegExp(searchRegex.source, mod);
+        }
+        const model = this._editor.getModel();
+        const modelText = model.getValue(1);
+        const fullModelRange = model.getFullModelRange();
+        const replacePattern = this._getReplacePattern();
+        let resultText;
+        const preserveCase = this._state.preserveCase;
+        if (replacePattern.hasReplacementPatterns || preserveCase) {
+            resultText = modelText.replace(searchRegex, function () {
+                return replacePattern.buildReplaceString(arguments, preserveCase);
+            });
+        }
+        else {
+            resultText = modelText.replace(searchRegex, replacePattern.buildReplaceString(null, preserveCase));
+        }
+        const command = new ReplaceCommandThatPreservesSelection(fullModelRange, resultText, this._editor.getSelection());
+        this._executeEditorCommand('replaceAll', command);
+    }
+    _regularReplaceAll(findScopes) {
+        const replacePattern = this._getReplacePattern();
+        const matches = this._findMatches(findScopes, replacePattern.hasReplacementPatterns || this._state.preserveCase, 1073741824);
+        const replaceStrings = [];
+        for (let i = 0, len = matches.length; i < len; i++) {
+            replaceStrings[i] = replacePattern.buildReplaceString(matches[i].matches, this._state.preserveCase);
+        }
+        const command = new ReplaceAllCommand(this._editor.getSelection(), matches.map(m => m.range), replaceStrings);
+        this._executeEditorCommand('replaceAll', command);
+    }
+    selectAllMatches() {
+        if (!this._hasMatches()) {
+            return;
+        }
+        const findScopes = this._decorations.getFindScopes();
+        const matches = this._findMatches(findScopes, false, 1073741824);
+        let selections = matches.map(m => new Selection(m.range.startLineNumber, m.range.startColumn, m.range.endLineNumber, m.range.endColumn));
+        const editorSelection = this._editor.getSelection();
+        for (let i = 0, len = selections.length; i < len; i++) {
+            const sel = selections[i];
+            if (sel.equalsRange(editorSelection)) {
+                selections = [editorSelection].concat(selections.slice(0, i)).concat(selections.slice(i + 1));
+                break;
+            }
+        }
+        this._editor.setSelections(selections);
+    }
+    _executeEditorCommand(source, command) {
+        try {
+            this._ignoreModelContentChanged = true;
+            this._editor.pushUndoStop();
+            this._editor.executeCommand(source, command);
+            this._editor.pushUndoStop();
+        }
+        finally {
+            this._ignoreModelContentChanged = false;
+        }
+    }
+}

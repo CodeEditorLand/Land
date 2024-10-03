@@ -1,1 +1,29 @@
-import{MarkdownString as i}from"../../../../base/common/htmlContent.js";import{Disposable as n}from"../../../../base/common/lifecycle.js";import"../../../browser/editorBrowser.js";import{EditorContributionInstantiation as d,registerEditorContribution as s}from"../../../browser/editorExtensions.js";import{EditorOption as a}from"../../../common/config/editorOptions.js";import"../../../common/editorCommon.js";import{MessageController as l}from"../../message/browser/messageController.js";import*as e from"../../../../nls.js";class r extends n{constructor(o){super();this.editor=o;this._register(this.editor.onDidAttemptReadOnlyEdit(()=>this._onDidAttemptReadOnlyEdit()))}static ID="editor.contrib.readOnlyMessageController";_onDidAttemptReadOnlyEdit(){const o=l.get(this.editor);if(o&&this.editor.hasModel()){let t=this.editor.getOptions().get(a.readOnlyMessage);t||(this.editor.isSimpleWidget?t=new i(e.localize("editor.simple.readonly","Cannot edit in read-only input")):t=new i(e.localize("editor.readonly","Cannot edit in read-only editor"))),o.showMessage(t,this.editor.getPosition())}}}s(r.ID,r,d.BeforeFirstInteraction);export{r as ReadOnlyMessageController};
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { registerEditorContribution } from '../../../browser/editorExtensions.js';
+import { MessageController } from '../../message/browser/messageController.js';
+import * as nls from '../../../../nls.js';
+export class ReadOnlyMessageController extends Disposable {
+    static { this.ID = 'editor.contrib.readOnlyMessageController'; }
+    constructor(editor) {
+        super();
+        this.editor = editor;
+        this._register(this.editor.onDidAttemptReadOnlyEdit(() => this._onDidAttemptReadOnlyEdit()));
+    }
+    _onDidAttemptReadOnlyEdit() {
+        const messageController = MessageController.get(this.editor);
+        if (messageController && this.editor.hasModel()) {
+            let message = this.editor.getOptions().get(95);
+            if (!message) {
+                if (this.editor.isSimpleWidget) {
+                    message = new MarkdownString(nls.localize('editor.simple.readonly', "Cannot edit in read-only input"));
+                }
+                else {
+                    message = new MarkdownString(nls.localize('editor.readonly', "Cannot edit in read-only editor"));
+                }
+            }
+            messageController.showMessage(message, this.editor.getPosition());
+        }
+    }
+}
+registerEditorContribution(ReadOnlyMessageController.ID, ReadOnlyMessageController, 2);

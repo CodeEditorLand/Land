@@ -1,1 +1,244 @@
-var D=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var l=(w,a,e,i)=>{for(var s=i>1?void 0:i?T(a,e):a,r=w.length-1,o;r>=0;r--)(o=w[r])&&(s=(i?o(a,e,s):o(s))||s);return i&&s&&D(a,e,s),s},t=(w,a)=>(e,i)=>a(e,i,w);import{addDisposableListener as V,Dimension as E,EventType as d,findParentWithClass as C,getWindow as h}from"../../../../base/browser/dom.js";import{CancellationTokenSource as O}from"../../../../base/common/cancellation.js";import{Emitter as c}from"../../../../base/common/event.js";import{DisposableStore as W,MutableDisposable as m,toDisposable as b}from"../../../../base/common/lifecycle.js";import{MenuId as x}from"../../../../platform/actions/common/actions.js";import{IConfigurationService as M}from"../../../../platform/configuration/common/configuration.js";import{IContextKeyService as B}from"../../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as R}from"../../../../platform/contextview/browser/contextView.js";import"../../../../platform/extensions/common/extensions.js";import{IInstantiationService as A}from"../../../../platform/instantiation/common/instantiation.js";import{IKeybindingService as L}from"../../../../platform/keybinding/common/keybinding.js";import{IOpenerService as K}from"../../../../platform/opener/common/opener.js";import{IProgressService as P}from"../../../../platform/progress/common/progress.js";import{IStorageService as H,StorageScope as z,StorageTarget as G}from"../../../../platform/storage/common/storage.js";import{ITelemetryService as N}from"../../../../platform/telemetry/common/telemetry.js";import{IThemeService as j}from"../../../../platform/theme/common/themeService.js";import{ViewPane as k,ViewPaneShowActions as $}from"../../../browser/parts/views/viewPane.js";import"../../../browser/parts/views/viewsViewlet.js";import{Memento as U}from"../../../common/memento.js";import{IViewDescriptorService as q}from"../../../common/views.js";import{IViewsService as F}from"../../../services/views/common/viewsService.js";import{ExtensionKeyedWebviewOriginStore as J,IWebviewService as Q,WebviewContentPurpose as X}from"../../webview/browser/webview.js";import{WebviewWindowDragMonitor as Y}from"../../webview/browser/webviewWindowDragMonitor.js";import{IWebviewViewService as Z}from"./webviewViewService.js";import{IActivityService as ee,NumberBadge as ie}from"../../../services/activity/common/activity.js";import{IExtensionService as te}from"../../../services/extensions/common/extensions.js";import{IHoverService as re}from"../../../../platform/hover/browser/hover.js";const p={webviewState:"webviewState"};let v=class extends k{constructor(e,i,s,r,o,n,u,S,y,f,g,oe,se,ne,_,ae,ve,de){super({...e,titleMenuId:x.ViewTitle,showActions:$.WhenExpanded},n,r,i,s,g,o,u,f,S,y);this.activityService=oe;this.extensionService=se;this.progressService=ne;this.storageService=_;this.viewService=ae;this.webviewService=ve;this.webviewViewService=de;this.extensionId=e.fromExtensionId,this.defaultTitle=this.title,this.memento=new U(`webviewView.${this.id}`,_),this.viewState=this.memento.getMemento(z.WORKSPACE,G.MACHINE),this._register(this.onDidChangeBodyVisibility(()=>this.updateTreeVisibility())),this._register(this.webviewViewService.onNewResolverRegistered(I=>{I.viewType===this.id&&this.updateTreeVisibility()})),this.updateTreeVisibility()}static _originStore;static getOriginStore(e){return this._originStore??=new J("webviewViews.origins",e),this._originStore}_webview=this._register(new m);_webviewDisposables=this._register(new W);_activated=!1;_container;_rootContainer;_resizeObserver;defaultTitle;setTitle;badge;activity=this._register(new m);memento;viewState;extensionId;_repositionTimeout;_onDidChangeVisibility=this._register(new c);onDidChangeVisibility=this._onDidChangeVisibility.event;_onDispose=this._register(new c);onDispose=this._onDispose.event;dispose(){this._onDispose.fire(),clearTimeout(this._repositionTimeout),super.dispose()}focus(){super.focus(),this._webview.value?.focus()}renderBody(e){super.renderBody(e),this._container=e,this._rootContainer=void 0,this._resizeObserver||(this._resizeObserver=new ResizeObserver(()=>{setTimeout(()=>{this.layoutWebview()},0)}),this._register(b(()=>{this._resizeObserver.disconnect()})),this._resizeObserver.observe(e))}saveState(){this._webview.value&&(this.viewState[p.webviewState]=this._webview.value.state),this.memento.saveMemento(),super.saveState()}layoutBody(e,i){super.layoutBody(e,i),this.layoutWebview(new E(i,e))}updateTreeVisibility(){this.isBodyVisible()?(this.activate(),this._webview.value?.claim(this,h(this.element),void 0)):this._webview.value?.release(this)}activate(){if(this._activated)return;this._activated=!0;const e=this.extensionId?v.getOriginStore(this.storageService).getOrigin(this.id,this.extensionId):void 0,i=this.webviewService.createWebviewOverlay({origin:e,providedViewType:this.id,title:this.title,options:{purpose:X.WebviewView},contentOptions:{},extension:this.extensionId?{id:this.extensionId}:void 0});i.state=this.viewState[p.webviewState],this._webview.value=i,this._container&&this.layoutWebview(),this._webviewDisposables.add(b(()=>{this._webview.value?.release(this)})),this._webviewDisposables.add(i.onDidUpdateState(()=>{this.viewState[p.webviewState]=i.state}));for(const r of[d.DRAG,d.DRAG_END,d.DRAG_ENTER,d.DRAG_LEAVE,d.DRAG_START])this._webviewDisposables.add(V(this._webview.value.container,r,o=>{o.preventDefault(),o.stopImmediatePropagation(),this.dropTargetElement.dispatchEvent(new DragEvent(o.type,o))}));this._webviewDisposables.add(new Y(h(this.element),()=>this._webview.value));const s=this._webviewDisposables.add(new O);this.withProgress(async()=>{await this.extensionService.activateByEvent(`onView:${this.id}`);const r=this,o={webview:i,onDidChangeVisibility:this.onDidChangeBodyVisibility,onDispose:this.onDispose,get title(){return r.setTitle},set title(n){r.updateTitle(n)},get description(){return r.titleDescription},set description(n){r.updateTitleDescription(n)},get badge(){return r.badge},set badge(n){r.updateBadge(n)},dispose:()=>{this._activated=!1,this._webview.clear(),this._webviewDisposables.clear()},show:n=>{this.viewService.openView(this.id,!n)}};await this.webviewViewService.resolve(this.id,o,s.token)})}updateTitle(e){this.setTitle=e,super.updateTitle(typeof e=="string"?e:this.defaultTitle)}updateBadge(e){if(!(this.badge?.value===e?.value&&this.badge?.tooltip===e?.tooltip)&&(this.badge=e,e)){const i={badge:new ie(e.value,()=>e.tooltip),priority:150};this.activity.value=this.activityService.showViewActivity(this.id,i)}}async withProgress(e){return this.progressService.withProgress({location:this.id,delay:500},e)}onDidScrollRoot(){this.layoutWebview()}doLayoutWebview(e){const i=this._webview.value;!this._container||!i||((!this._rootContainer||!this._rootContainer.isConnected)&&(this._rootContainer=this.findRootContainer(this._container)),i.layoutWebviewOverElement(this._container,e,this._rootContainer))}layoutWebview(e){this.doLayoutWebview(e),clearTimeout(this._repositionTimeout),this._repositionTimeout=setTimeout(()=>this.doLayoutWebview(e),200)}findRootContainer(e){return C(e,"monaco-scrollable-element")??void 0}};v=l([t(1,M),t(2,B),t(3,R),t(4,A),t(5,L),t(6,K),t(7,N),t(8,re),t(9,j),t(10,q),t(11,ee),t(12,te),t(13,P),t(14,H),t(15,F),t(16,Q),t(17,Z)],v);export{v as WebviewViewPane};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var WebviewViewPane_1;
+import { addDisposableListener, Dimension, EventType, findParentWithClass, getWindow } from '../../../../base/browser/dom.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { DisposableStore, MutableDisposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { MenuId } from '../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { IProgressService } from '../../../../platform/progress/common/progress.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { ViewPane, ViewPaneShowActions } from '../../../browser/parts/views/viewPane.js';
+import { Memento } from '../../../common/memento.js';
+import { IViewDescriptorService } from '../../../common/views.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+import { ExtensionKeyedWebviewOriginStore, IWebviewService } from '../../webview/browser/webview.js';
+import { WebviewWindowDragMonitor } from '../../webview/browser/webviewWindowDragMonitor.js';
+import { IWebviewViewService } from './webviewViewService.js';
+import { IActivityService, NumberBadge } from '../../../services/activity/common/activity.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { IHoverService } from '../../../../platform/hover/browser/hover.js';
+const storageKeys = {
+    webviewState: 'webviewState',
+};
+let WebviewViewPane = class WebviewViewPane extends ViewPane {
+    static { WebviewViewPane_1 = this; }
+    static getOriginStore(storageService) {
+        this._originStore ??= new ExtensionKeyedWebviewOriginStore('webviewViews.origins', storageService);
+        return this._originStore;
+    }
+    constructor(options, configurationService, contextKeyService, contextMenuService, instantiationService, keybindingService, openerService, telemetryService, hoverService, themeService, viewDescriptorService, activityService, extensionService, progressService, storageService, viewService, webviewService, webviewViewService) {
+        super({ ...options, titleMenuId: MenuId.ViewTitle, showActions: ViewPaneShowActions.WhenExpanded }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService, hoverService);
+        this.activityService = activityService;
+        this.extensionService = extensionService;
+        this.progressService = progressService;
+        this.storageService = storageService;
+        this.viewService = viewService;
+        this.webviewService = webviewService;
+        this.webviewViewService = webviewViewService;
+        this._webview = this._register(new MutableDisposable());
+        this._webviewDisposables = this._register(new DisposableStore());
+        this._activated = false;
+        this.activity = this._register(new MutableDisposable());
+        this._onDidChangeVisibility = this._register(new Emitter());
+        this.onDidChangeVisibility = this._onDidChangeVisibility.event;
+        this._onDispose = this._register(new Emitter());
+        this.onDispose = this._onDispose.event;
+        this.extensionId = options.fromExtensionId;
+        this.defaultTitle = this.title;
+        this.memento = new Memento(`webviewView.${this.id}`, storageService);
+        this.viewState = this.memento.getMemento(1, 1);
+        this._register(this.onDidChangeBodyVisibility(() => this.updateTreeVisibility()));
+        this._register(this.webviewViewService.onNewResolverRegistered(e => {
+            if (e.viewType === this.id) {
+                this.updateTreeVisibility();
+            }
+        }));
+        this.updateTreeVisibility();
+    }
+    dispose() {
+        this._onDispose.fire();
+        clearTimeout(this._repositionTimeout);
+        super.dispose();
+    }
+    focus() {
+        super.focus();
+        this._webview.value?.focus();
+    }
+    renderBody(container) {
+        super.renderBody(container);
+        this._container = container;
+        this._rootContainer = undefined;
+        if (!this._resizeObserver) {
+            this._resizeObserver = new ResizeObserver(() => {
+                setTimeout(() => {
+                    this.layoutWebview();
+                }, 0);
+            });
+            this._register(toDisposable(() => {
+                this._resizeObserver.disconnect();
+            }));
+            this._resizeObserver.observe(container);
+        }
+    }
+    saveState() {
+        if (this._webview.value) {
+            this.viewState[storageKeys.webviewState] = this._webview.value.state;
+        }
+        this.memento.saveMemento();
+        super.saveState();
+    }
+    layoutBody(height, width) {
+        super.layoutBody(height, width);
+        this.layoutWebview(new Dimension(width, height));
+    }
+    updateTreeVisibility() {
+        if (this.isBodyVisible()) {
+            this.activate();
+            this._webview.value?.claim(this, getWindow(this.element), undefined);
+        }
+        else {
+            this._webview.value?.release(this);
+        }
+    }
+    activate() {
+        if (this._activated) {
+            return;
+        }
+        this._activated = true;
+        const origin = this.extensionId ? WebviewViewPane_1.getOriginStore(this.storageService).getOrigin(this.id, this.extensionId) : undefined;
+        const webview = this.webviewService.createWebviewOverlay({
+            origin,
+            providedViewType: this.id,
+            title: this.title,
+            options: { purpose: "webviewView" },
+            contentOptions: {},
+            extension: this.extensionId ? { id: this.extensionId } : undefined
+        });
+        webview.state = this.viewState[storageKeys.webviewState];
+        this._webview.value = webview;
+        if (this._container) {
+            this.layoutWebview();
+        }
+        this._webviewDisposables.add(toDisposable(() => {
+            this._webview.value?.release(this);
+        }));
+        this._webviewDisposables.add(webview.onDidUpdateState(() => {
+            this.viewState[storageKeys.webviewState] = webview.state;
+        }));
+        for (const event of [EventType.DRAG, EventType.DRAG_END, EventType.DRAG_ENTER, EventType.DRAG_LEAVE, EventType.DRAG_START]) {
+            this._webviewDisposables.add(addDisposableListener(this._webview.value.container, event, e => {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.dropTargetElement.dispatchEvent(new DragEvent(e.type, e));
+            }));
+        }
+        this._webviewDisposables.add(new WebviewWindowDragMonitor(getWindow(this.element), () => this._webview.value));
+        const source = this._webviewDisposables.add(new CancellationTokenSource());
+        this.withProgress(async () => {
+            await this.extensionService.activateByEvent(`onView:${this.id}`);
+            const self = this;
+            const webviewView = {
+                webview,
+                onDidChangeVisibility: this.onDidChangeBodyVisibility,
+                onDispose: this.onDispose,
+                get title() { return self.setTitle; },
+                set title(value) { self.updateTitle(value); },
+                get description() { return self.titleDescription; },
+                set description(value) { self.updateTitleDescription(value); },
+                get badge() { return self.badge; },
+                set badge(badge) { self.updateBadge(badge); },
+                dispose: () => {
+                    this._activated = false;
+                    this._webview.clear();
+                    this._webviewDisposables.clear();
+                },
+                show: (preserveFocus) => {
+                    this.viewService.openView(this.id, !preserveFocus);
+                }
+            };
+            await this.webviewViewService.resolve(this.id, webviewView, source.token);
+        });
+    }
+    updateTitle(value) {
+        this.setTitle = value;
+        super.updateTitle(typeof value === 'string' ? value : this.defaultTitle);
+    }
+    updateBadge(badge) {
+        if (this.badge?.value === badge?.value &&
+            this.badge?.tooltip === badge?.tooltip) {
+            return;
+        }
+        this.badge = badge;
+        if (badge) {
+            const activity = {
+                badge: new NumberBadge(badge.value, () => badge.tooltip),
+                priority: 150
+            };
+            this.activity.value = this.activityService.showViewActivity(this.id, activity);
+        }
+    }
+    async withProgress(task) {
+        return this.progressService.withProgress({ location: this.id, delay: 500 }, task);
+    }
+    onDidScrollRoot() {
+        this.layoutWebview();
+    }
+    doLayoutWebview(dimension) {
+        const webviewEntry = this._webview.value;
+        if (!this._container || !webviewEntry) {
+            return;
+        }
+        if (!this._rootContainer || !this._rootContainer.isConnected) {
+            this._rootContainer = this.findRootContainer(this._container);
+        }
+        webviewEntry.layoutWebviewOverElement(this._container, dimension, this._rootContainer);
+    }
+    layoutWebview(dimension) {
+        this.doLayoutWebview(dimension);
+        clearTimeout(this._repositionTimeout);
+        this._repositionTimeout = setTimeout(() => this.doLayoutWebview(dimension), 200);
+    }
+    findRootContainer(container) {
+        return findParentWithClass(container, 'monaco-scrollable-element') ?? undefined;
+    }
+};
+WebviewViewPane = WebviewViewPane_1 = __decorate([
+    __param(1, IConfigurationService),
+    __param(2, IContextKeyService),
+    __param(3, IContextMenuService),
+    __param(4, IInstantiationService),
+    __param(5, IKeybindingService),
+    __param(6, IOpenerService),
+    __param(7, ITelemetryService),
+    __param(8, IHoverService),
+    __param(9, IThemeService),
+    __param(10, IViewDescriptorService),
+    __param(11, IActivityService),
+    __param(12, IExtensionService),
+    __param(13, IProgressService),
+    __param(14, IStorageService),
+    __param(15, IViewsService),
+    __param(16, IWebviewService),
+    __param(17, IWebviewViewService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], WebviewViewPane);
+export { WebviewViewPane };

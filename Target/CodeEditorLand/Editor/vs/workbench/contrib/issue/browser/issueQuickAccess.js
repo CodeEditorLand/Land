@@ -1,1 +1,142 @@
-var g=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var P=(d,n,r,e)=>{for(var i=e>1?void 0:e?b(n,r):n,o=d.length-1,t;o>=0;o--)(t=d[o])&&(i=(e?t(n,r,i):t(i))||i);return e&&i&&g(n,r,i),i},u=(d,n)=>(r,e)=>n(r,e,d);import{PickerQuickAccessProvider as x,TriggerAction as h}from"../../../../platform/quickinput/browser/pickerQuickAccess.js";import{IContextKeyService as A}from"../../../../platform/contextkey/common/contextkey.js";import{IMenuService as C,MenuId as E}from"../../../../platform/actions/common/actions.js";import{matchesFuzzy as k}from"../../../../base/common/filters.js";import"../../../../platform/quickinput/common/quickInput.js";import{localize as S}from"../../../../nls.js";import{ICommandService as y}from"../../../../platform/commands/common/commands.js";import{IExtensionService as M}from"../../../services/extensions/common/extensions.js";import"../../../../platform/extensions/common/extensions.js";import{ThemeIcon as w}from"../../../../base/common/themables.js";import{Codicon as L}from"../../../../base/common/codicons.js";import{IssueSource as v}from"../common/issue.js";import{IProductService as Q}from"../../../../platform/product/common/productService.js";let l=class extends x{constructor(r,e,i,o,t){super(l.PREFIX,{canAcceptInBackground:!0});this.menuService=r;this.contextKeyService=e;this.commandService=i;this.extensionService=o;this.productService=t}static PREFIX="issue ";_getPicks(r){const e=new Array,i=new Array,o=new Set,t=this.productService.nameLong,s=S("reportExtensionMarketplace","Extension Marketplace"),m=k(r,t,!0),p=k(r,s,!0);return m&&e.push({label:t,ariaLabel:t,highlights:{label:m},accept:()=>this.commandService.executeCommand("workbench.action.openIssueReporter",{issueSource:v.VSCode})}),p&&e.push({label:s,ariaLabel:s,highlights:{label:p},accept:()=>this.commandService.executeCommand("workbench.action.openIssueReporter",{issueSource:v.Marketplace})}),e.push({type:"separator",label:S("extensions","Extensions")}),this.menuService.getMenuActions(E.IssueReporter,this.contextKeyService,{renderShortTitle:!0}).flatMap(c=>c[1]).forEach(c=>{"source"in c.item&&c.item.source&&o.add(c.item.source.id);const a=this._createPick(r,c);a&&i.push(a)}),this.extensionService.extensions.forEach(c=>{if(!c.isBuiltin){const a=this._createPick(r,void 0,c),I=c.identifier.value;a&&!o.has(I)&&i.push(a),o.add(I)}}),i.sort((c,a)=>{const I=c.label??"",f=a.label??"";return I.localeCompare(f)}),[...e,...i]}_createPick(r,e,i){const o=[{iconClass:w.asClassName(L.info),tooltip:S("contributedIssuePage","Open Extension Page")}];let t,s,m;if(e&&"source"in e.item&&e.item.source)t=e.item.source?.title,s=()=>("source"in e.item&&e.item.source&&this.commandService.executeCommand("extension.open",e.item.source.id),h.CLOSE_PICKER),m=()=>{e.run()};else if(i)t=i.displayName??i.name,s=()=>(this.commandService.executeCommand("extension.open",i.identifier.value),h.CLOSE_PICKER),m=()=>{this.commandService.executeCommand("workbench.action.openIssueReporter",i.identifier.value)};else return;const p=k(r,t,!0);if(p)return{label:t,highlights:{label:p},buttons:o,trigger:s,accept:m}}};l=P([u(0,C),u(1,A),u(2,y),u(3,M),u(4,Q)],l);export{l as IssueQuickAccess};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var IssueQuickAccess_1;
+import { PickerQuickAccessProvider, TriggerAction } from '../../../../platform/quickinput/browser/pickerQuickAccess.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IMenuService, MenuId } from '../../../../platform/actions/common/actions.js';
+import { matchesFuzzy } from '../../../../base/common/filters.js';
+import { localize } from '../../../../nls.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { IssueSource } from '../common/issue.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+let IssueQuickAccess = class IssueQuickAccess extends PickerQuickAccessProvider {
+    static { IssueQuickAccess_1 = this; }
+    static { this.PREFIX = 'issue '; }
+    constructor(menuService, contextKeyService, commandService, extensionService, productService) {
+        super(IssueQuickAccess_1.PREFIX, { canAcceptInBackground: true });
+        this.menuService = menuService;
+        this.contextKeyService = contextKeyService;
+        this.commandService = commandService;
+        this.extensionService = extensionService;
+        this.productService = productService;
+    }
+    _getPicks(filter) {
+        const issuePicksConst = new Array();
+        const issuePicksParts = new Array();
+        const extensionIdSet = new Set();
+        const productLabel = this.productService.nameLong;
+        const marketPlaceLabel = localize("reportExtensionMarketplace", "Extension Marketplace");
+        const productFilter = matchesFuzzy(filter, productLabel, true);
+        const marketPlaceFilter = matchesFuzzy(filter, marketPlaceLabel, true);
+        if (productFilter) {
+            issuePicksConst.push({
+                label: productLabel,
+                ariaLabel: productLabel,
+                highlights: { label: productFilter },
+                accept: () => this.commandService.executeCommand('workbench.action.openIssueReporter', { issueSource: IssueSource.VSCode })
+            });
+        }
+        if (marketPlaceFilter) {
+            issuePicksConst.push({
+                label: marketPlaceLabel,
+                ariaLabel: marketPlaceLabel,
+                highlights: { label: marketPlaceFilter },
+                accept: () => this.commandService.executeCommand('workbench.action.openIssueReporter', { issueSource: IssueSource.Marketplace })
+            });
+        }
+        issuePicksConst.push({ type: 'separator', label: localize('extensions', "Extensions") });
+        const actions = this.menuService.getMenuActions(MenuId.IssueReporter, this.contextKeyService, { renderShortTitle: true }).flatMap(entry => entry[1]);
+        actions.forEach(action => {
+            if ('source' in action.item && action.item.source) {
+                extensionIdSet.add(action.item.source.id);
+            }
+            const pick = this._createPick(filter, action);
+            if (pick) {
+                issuePicksParts.push(pick);
+            }
+        });
+        this.extensionService.extensions.forEach(extension => {
+            if (!extension.isBuiltin) {
+                const pick = this._createPick(filter, undefined, extension);
+                const id = extension.identifier.value;
+                if (pick && !extensionIdSet.has(id)) {
+                    issuePicksParts.push(pick);
+                }
+                extensionIdSet.add(id);
+            }
+        });
+        issuePicksParts.sort((a, b) => {
+            const aLabel = a.label ?? '';
+            const bLabel = b.label ?? '';
+            return aLabel.localeCompare(bLabel);
+        });
+        return [...issuePicksConst, ...issuePicksParts];
+    }
+    _createPick(filter, action, extension) {
+        const buttons = [{
+                iconClass: ThemeIcon.asClassName(Codicon.info),
+                tooltip: localize('contributedIssuePage', "Open Extension Page")
+            }];
+        let label;
+        let trigger;
+        let accept;
+        if (action && 'source' in action.item && action.item.source) {
+            label = action.item.source?.title;
+            trigger = () => {
+                if ('source' in action.item && action.item.source) {
+                    this.commandService.executeCommand('extension.open', action.item.source.id);
+                }
+                return TriggerAction.CLOSE_PICKER;
+            };
+            accept = () => {
+                action.run();
+            };
+        }
+        else if (extension) {
+            label = extension.displayName ?? extension.name;
+            trigger = () => {
+                this.commandService.executeCommand('extension.open', extension.identifier.value);
+                return TriggerAction.CLOSE_PICKER;
+            };
+            accept = () => {
+                this.commandService.executeCommand('workbench.action.openIssueReporter', extension.identifier.value);
+            };
+        }
+        else {
+            return undefined;
+        }
+        const highlights = matchesFuzzy(filter, label, true);
+        if (highlights) {
+            return {
+                label,
+                highlights: { label: highlights },
+                buttons,
+                trigger,
+                accept
+            };
+        }
+        return undefined;
+    }
+};
+IssueQuickAccess = IssueQuickAccess_1 = __decorate([
+    __param(0, IMenuService),
+    __param(1, IContextKeyService),
+    __param(2, ICommandService),
+    __param(3, IExtensionService),
+    __param(4, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], IssueQuickAccess);
+export { IssueQuickAccess };

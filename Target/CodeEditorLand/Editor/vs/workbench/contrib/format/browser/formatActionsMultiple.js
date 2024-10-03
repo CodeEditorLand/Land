@@ -1,1 +1,347 @@
-var Q=Object.defineProperty;var K=Object.getOwnPropertyDescriptor;var k=(u,s,t,e)=>{for(var i=e>1?void 0:e?K(s,t):s,r=u.length-1,n;r>=0;r--)(n=u[r])&&(i=(e?n(s,t,i):n(i))||i);return e&&i&&Q(s,t,i),i},m=(u,s)=>(t,e)=>s(t,e,u);import{getCodeEditor as V}from"../../../../editor/browser/editorBrowser.js";import{EditorAction as F,registerEditorAction as E}from"../../../../editor/browser/editorExtensions.js";import{EditorContextKeys as I}from"../../../../editor/common/editorContextKeys.js";import"../../../../editor/common/languages.js";import*as d from"../../../../nls.js";import{ContextKeyExpr as x}from"../../../../platform/contextkey/common/contextkey.js";import{IQuickInputService as P}from"../../../../platform/quickinput/common/quickInput.js";import{CancellationToken as C,CancellationTokenSource as q}from"../../../../base/common/cancellation.js";import{IInstantiationService as _}from"../../../../platform/instantiation/common/instantiation.js";import{formatDocumentRangesWithProvider as O,formatDocumentWithProvider as H,getRealAndSyntheticDocumentFormattersOrdered as L,FormattingConflicts as B,FormattingMode as N,FormattingKind as T}from"../../../../editor/contrib/format/browser/format.js";import{Range as $}from"../../../../editor/common/core/range.js";import{ITelemetryService as w}from"../../../../platform/telemetry/common/telemetry.js";import{ExtensionIdentifier as y}from"../../../../platform/extensions/common/extensions.js";import{Registry as D}from"../../../../platform/registry/common/platform.js";import{Extensions as U}from"../../../../platform/configuration/common/configurationRegistry.js";import{Extensions as j}from"../../../common/contributions.js";import{LifecyclePhase as G}from"../../../services/lifecycle/common/lifecycle.js";import{IExtensionService as J,toExtension as X}from"../../../services/extensions/common/extensions.js";import{Disposable as Y,DisposableStore as Z,toDisposable as ee}from"../../../../base/common/lifecycle.js";import{IConfigurationService as M}from"../../../../platform/configuration/common/configuration.js";import"../../../../editor/common/model.js";import{INotificationService as te,NotificationPriority as ie,Severity as z}from"../../../../platform/notification/common/notification.js";import{ILanguageService as R}from"../../../../editor/common/languages/language.js";import{IWorkbenchExtensionEnablementService as ne}from"../../../services/extensionManagement/common/extensionManagement.js";import{editorConfigurationBaseNode as oe}from"../../../../editor/common/config/editorConfigurationSchema.js";import{IDialogService as re}from"../../../../platform/dialogs/common/dialogs.js";import{ILanguageFeaturesService as b}from"../../../../editor/common/services/languageFeatures.js";import{ILanguageStatusService as ae}from"../../../services/languageStatus/common/languageStatusService.js";import{IEditorService as se}from"../../../services/editor/common/editorService.js";import{CommandsRegistry as ce}from"../../../../platform/commands/common/commands.js";import{generateUuid as de}from"../../../../base/common/uuid.js";let a=class extends Y{constructor(t,e,i,r,n,o,l,c,g,v){super();this._extensionService=t;this._extensionEnablementService=e;this._configService=i;this._notificationService=r;this._dialogService=n;this._quickInputService=o;this._languageService=l;this._languageFeaturesService=c;this._languageStatusService=g;this._editorService=v;this._store.add(this._extensionService.onDidChangeExtensions(this._updateConfigValues,this)),this._store.add(B.setFormatterSelector((f,p,h,S)=>this._selectFormatter(f,p,h,S))),this._store.add(v.onDidActiveEditorChange(this._updateStatus,this)),this._store.add(c.documentFormattingEditProvider.onDidChange(this._updateStatus,this)),this._store.add(c.documentRangeFormattingEditProvider.onDidChange(this._updateStatus,this)),this._store.add(i.onDidChangeConfiguration(f=>f.affectsConfiguration(a.configName)&&this._updateStatus())),this._updateConfigValues()}static configName="editor.defaultFormatter";static extensionIds=[];static extensionItemLabels=[];static extensionDescriptions=[];_languageStatusStore=this._store.add(new Z);async _updateConfigValues(){await this._extensionService.whenInstalledExtensionsRegistered();let t=[...this._extensionService.extensions];t=t.sort((e,i)=>{const r=e.categories?.find(o=>o==="Formatters"||o==="Programming Languages"),n=i.categories?.find(o=>o==="Formatters"||o==="Programming Languages");return r&&!n?-1:!r&&n?1:e.name.localeCompare(i.name)}),a.extensionIds.length=0,a.extensionItemLabels.length=0,a.extensionDescriptions.length=0,a.extensionIds.push(null),a.extensionItemLabels.push(d.localize("null","None")),a.extensionDescriptions.push(d.localize("nullFormatterDescription","None"));for(const e of t)(e.main||e.browser)&&(a.extensionIds.push(e.identifier.value),a.extensionItemLabels.push(e.displayName??""),a.extensionDescriptions.push(e.description??""))}static _maybeQuotes(t){return t.match(/\s/)?`'${t}'`:t}async _analyzeFormatter(t,e,i){const r=this._configService.getValue(a.configName,{resource:i.uri,overrideIdentifier:i.getLanguageId()});if(r){const l=e.find(g=>y.equals(g.extensionId,r));if(l)return l;const c=await this._extensionService.getExtension(r);if(c&&this._extensionEnablementService.isEnabled(X(c))){const g=this._languageService.getLanguageName(i.getLanguageId())||i.getLanguageId();return t===T.File?d.localize("miss.1","Extension '{0}' is configured as formatter but it cannot format '{1}'-files",c.displayName||c.name,g):d.localize("miss.2","Extension '{0}' is configured as formatter but it can only format '{1}'-files as a whole, not selections or parts of it.",c.displayName||c.name,g)}}else if(e.length===1)return e[0];const n=this._languageService.getLanguageName(i.getLanguageId())||i.getLanguageId();return r?d.localize("config.bad","Extension '{0}' is configured as formatter but not available. Select a different default formatter to continue.",r):d.localize("config.needed","There are multiple formatters for '{0}' files. One of them should be configured as default formatter.",a._maybeQuotes(n))}async _selectFormatter(t,e,i,r){const n=await this._analyzeFormatter(r,t,e);if(typeof n!="string")return n;if(i!==N.Silent){const{confirmed:o}=await this._dialogService.confirm({message:d.localize("miss","Configure Default Formatter"),detail:n,primaryButton:d.localize({key:"do.config",comment:["&& denotes a mnemonic"]},"&&Configure...")});if(o)return this._pickAndPersistDefaultFormatter(t,e)}else this._notificationService.prompt(z.Info,n,[{label:d.localize("do.config.notification","Configure..."),run:()=>this._pickAndPersistDefaultFormatter(t,e)}],{priority:ie.SILENT})}async _pickAndPersistDefaultFormatter(t,e){const i=t.map((o,l)=>({index:l,label:o.displayName||(o.extensionId?o.extensionId.value:"?"),description:o.extensionId&&o.extensionId.value})),r=this._languageService.getLanguageName(e.getLanguageId())||e.getLanguageId(),n=await this._quickInputService.pick(i,{placeHolder:d.localize("select","Select a default formatter for '{0}' files",a._maybeQuotes(r))});if(!(!n||!t[n.index].extensionId))return this._configService.updateValue(a.configName,t[n.index].extensionId.value,{resource:e.uri,overrideIdentifier:e.getLanguageId()}),t[n.index]}_updateStatus(){this._languageStatusStore.clear();const t=V(this._editorService.activeTextEditorControl);if(!t||!t.hasModel())return;const e=t.getModel(),i=L(this._languageFeaturesService.documentFormattingEditProvider,this._languageFeaturesService.documentRangeFormattingEditProvider,e);if(i.length===0)return;const r=new q;this._languageStatusStore.add(ee(()=>r.dispose(!0))),this._analyzeFormatter(T.File,i,e).then(n=>{if(r.token.isCancellationRequested||typeof n!="string")return;const o={id:`formatter/configure/dfl/${de()}`,title:d.localize("do.config.command","Configure...")};this._languageStatusStore.add(ce.registerCommand(o.id,()=>this._pickAndPersistDefaultFormatter(i,e))),this._languageStatusStore.add(this._languageStatusService.addStatus({id:"formatter.conflict",name:d.localize("summary","Formatter Conflicts"),selector:{language:e.getLanguageId(),pattern:e.uri.fsPath},severity:z.Error,label:d.localize("formatter","Formatting"),detail:n,busy:!1,source:"",command:o,accessibilityInfo:void 0}))})}};a=k([m(0,J),m(1,ne),m(2,M),m(3,te),m(4,re),m(5,P),m(6,R),m(7,b),m(8,ae),m(9,se)],a),D.as(j.Workbench).registerWorkbenchContribution(a,G.Restored),D.as(U.Configuration).registerConfiguration({...oe,properties:{[a.configName]:{description:d.localize("formatter.default","Defines a default formatter which takes precedence over all other formatter settings. Must be the identifier of an extension contributing a formatter."),type:["string","null"],default:null,enum:a.extensionIds,enumItemLabels:a.extensionItemLabels,markdownEnumDescriptions:a.extensionDescriptions}}});function A(u,s,t,e){function i(r){return r.extensionId?y.toKey(r.extensionId):"unknown"}u.publicLog2("formatterpick",{mode:s,extensions:t.map(i),pick:e?i(e):"none"})}async function W(u,s,t){const e=u.get(P),i=u.get(M),r=u.get(R),n={resource:s.uri,overrideIdentifier:s.getLanguageId()},o=i.getValue(a.configName,n);let l;const c=t.map((f,p)=>{const h=y.equals(f.extensionId,o),S={index:p,label:f.displayName||"",description:h?d.localize("def","(default)"):void 0};return h&&(l=S),S}),g={label:d.localize("config","Configure Default Formatter...")},v=await e.pick([...c,{type:"separator"},g],{placeHolder:d.localize("format.placeHolder","Select a formatter"),activeItem:l});if(v)if(v===g){const f=r.getLanguageName(s.getLanguageId())||s.getLanguageId(),p=await e.pick(c,{placeHolder:d.localize("select","Select a default formatter for '{0}' files",a._maybeQuotes(f))});p&&t[p.index].extensionId&&i.updateValue(a.configName,t[p.index].extensionId.value,n);return}else return v.index;else return}E(class extends F{constructor(){super({id:"editor.action.formatDocument.multiple",label:d.localize("formatDocument.label.multiple","Format Document With..."),alias:"Format Document...",precondition:x.and(I.writable,I.hasMultipleDocumentFormattingProvider),contextMenuOpts:{group:"1_modification",order:1.3}})}async run(s,t,e){if(!t.hasModel())return;const i=s.get(_),r=s.get(w),n=s.get(b),o=t.getModel(),l=L(n.documentFormattingEditProvider,n.documentRangeFormattingEditProvider,o),c=await i.invokeFunction(W,o,l);typeof c=="number"&&await i.invokeFunction(H,l[c],t,N.Explicit,C.None),A(r,"document",l,typeof c=="number"&&l[c]||void 0)}}),E(class extends F{constructor(){super({id:"editor.action.formatSelection.multiple",label:d.localize("formatSelection.label.multiple","Format Selection With..."),alias:"Format Code...",precondition:x.and(x.and(I.writable),I.hasMultipleDocumentSelectionFormattingProvider),contextMenuOpts:{when:x.and(I.hasNonEmptySelection),group:"1_modification",order:1.31}})}async run(s,t){if(!t.hasModel())return;const e=s.get(_),i=s.get(b),r=s.get(w),n=t.getModel();let o=t.getSelection();o.isEmpty()&&(o=new $(o.startLineNumber,1,o.startLineNumber,n.getLineMaxColumn(o.startLineNumber)));const l=i.documentRangeFormattingEditProvider.ordered(n),c=await e.invokeFunction(W,n,l);typeof c=="number"&&await e.invokeFunction(O,l[c],t,o,C.None,!0),A(r,"range",l,typeof c=="number"&&l[c]||void 0)}});export{a as DefaultFormatter};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var DefaultFormatter_1;
+import { getCodeEditor } from '../../../../editor/browser/editorBrowser.js';
+import { EditorAction, registerEditorAction } from '../../../../editor/browser/editorExtensions.js';
+import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
+import * as nls from '../../../../nls.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { CancellationToken, CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { formatDocumentRangesWithProvider, formatDocumentWithProvider, getRealAndSyntheticDocumentFormattersOrdered, FormattingConflicts } from '../../../../editor/contrib/format/browser/format.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { ExtensionIdentifier } from '../../../../platform/extensions/common/extensions.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Extensions as ConfigurationExtensions } from '../../../../platform/configuration/common/configurationRegistry.js';
+import { Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+import { IExtensionService, toExtension } from '../../../services/extensions/common/extensions.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { INotificationService, NotificationPriority, Severity } from '../../../../platform/notification/common/notification.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+import { IWorkbenchExtensionEnablementService } from '../../../services/extensionManagement/common/extensionManagement.js';
+import { editorConfigurationBaseNode } from '../../../../editor/common/config/editorConfigurationSchema.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
+import { ILanguageStatusService } from '../../../services/languageStatus/common/languageStatusService.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
+let DefaultFormatter = class DefaultFormatter extends Disposable {
+    static { DefaultFormatter_1 = this; }
+    static { this.configName = 'editor.defaultFormatter'; }
+    static { this.extensionIds = []; }
+    static { this.extensionItemLabels = []; }
+    static { this.extensionDescriptions = []; }
+    constructor(_extensionService, _extensionEnablementService, _configService, _notificationService, _dialogService, _quickInputService, _languageService, _languageFeaturesService, _languageStatusService, _editorService) {
+        super();
+        this._extensionService = _extensionService;
+        this._extensionEnablementService = _extensionEnablementService;
+        this._configService = _configService;
+        this._notificationService = _notificationService;
+        this._dialogService = _dialogService;
+        this._quickInputService = _quickInputService;
+        this._languageService = _languageService;
+        this._languageFeaturesService = _languageFeaturesService;
+        this._languageStatusService = _languageStatusService;
+        this._editorService = _editorService;
+        this._languageStatusStore = this._store.add(new DisposableStore());
+        this._store.add(this._extensionService.onDidChangeExtensions(this._updateConfigValues, this));
+        this._store.add(FormattingConflicts.setFormatterSelector((formatter, document, mode, kind) => this._selectFormatter(formatter, document, mode, kind)));
+        this._store.add(_editorService.onDidActiveEditorChange(this._updateStatus, this));
+        this._store.add(_languageFeaturesService.documentFormattingEditProvider.onDidChange(this._updateStatus, this));
+        this._store.add(_languageFeaturesService.documentRangeFormattingEditProvider.onDidChange(this._updateStatus, this));
+        this._store.add(_configService.onDidChangeConfiguration(e => e.affectsConfiguration(DefaultFormatter_1.configName) && this._updateStatus()));
+        this._updateConfigValues();
+    }
+    async _updateConfigValues() {
+        await this._extensionService.whenInstalledExtensionsRegistered();
+        let extensions = [...this._extensionService.extensions];
+        extensions = extensions.sort((a, b) => {
+            const boostA = a.categories?.find(cat => cat === 'Formatters' || cat === 'Programming Languages');
+            const boostB = b.categories?.find(cat => cat === 'Formatters' || cat === 'Programming Languages');
+            if (boostA && !boostB) {
+                return -1;
+            }
+            else if (!boostA && boostB) {
+                return 1;
+            }
+            else {
+                return a.name.localeCompare(b.name);
+            }
+        });
+        DefaultFormatter_1.extensionIds.length = 0;
+        DefaultFormatter_1.extensionItemLabels.length = 0;
+        DefaultFormatter_1.extensionDescriptions.length = 0;
+        DefaultFormatter_1.extensionIds.push(null);
+        DefaultFormatter_1.extensionItemLabels.push(nls.localize('null', 'None'));
+        DefaultFormatter_1.extensionDescriptions.push(nls.localize('nullFormatterDescription', "None"));
+        for (const extension of extensions) {
+            if (extension.main || extension.browser) {
+                DefaultFormatter_1.extensionIds.push(extension.identifier.value);
+                DefaultFormatter_1.extensionItemLabels.push(extension.displayName ?? '');
+                DefaultFormatter_1.extensionDescriptions.push(extension.description ?? '');
+            }
+        }
+    }
+    static _maybeQuotes(s) {
+        return s.match(/\s/) ? `'${s}'` : s;
+    }
+    async _analyzeFormatter(kind, formatter, document) {
+        const defaultFormatterId = this._configService.getValue(DefaultFormatter_1.configName, {
+            resource: document.uri,
+            overrideIdentifier: document.getLanguageId()
+        });
+        if (defaultFormatterId) {
+            const defaultFormatter = formatter.find(formatter => ExtensionIdentifier.equals(formatter.extensionId, defaultFormatterId));
+            if (defaultFormatter) {
+                return defaultFormatter;
+            }
+            const extension = await this._extensionService.getExtension(defaultFormatterId);
+            if (extension && this._extensionEnablementService.isEnabled(toExtension(extension))) {
+                const langName = this._languageService.getLanguageName(document.getLanguageId()) || document.getLanguageId();
+                const detail = kind === 1
+                    ? nls.localize('miss.1', "Extension '{0}' is configured as formatter but it cannot format '{1}'-files", extension.displayName || extension.name, langName)
+                    : nls.localize('miss.2', "Extension '{0}' is configured as formatter but it can only format '{1}'-files as a whole, not selections or parts of it.", extension.displayName || extension.name, langName);
+                return detail;
+            }
+        }
+        else if (formatter.length === 1) {
+            return formatter[0];
+        }
+        const langName = this._languageService.getLanguageName(document.getLanguageId()) || document.getLanguageId();
+        const message = !defaultFormatterId
+            ? nls.localize('config.needed', "There are multiple formatters for '{0}' files. One of them should be configured as default formatter.", DefaultFormatter_1._maybeQuotes(langName))
+            : nls.localize('config.bad', "Extension '{0}' is configured as formatter but not available. Select a different default formatter to continue.", defaultFormatterId);
+        return message;
+    }
+    async _selectFormatter(formatter, document, mode, kind) {
+        const formatterOrMessage = await this._analyzeFormatter(kind, formatter, document);
+        if (typeof formatterOrMessage !== 'string') {
+            return formatterOrMessage;
+        }
+        if (mode !== 2) {
+            const { confirmed } = await this._dialogService.confirm({
+                message: nls.localize('miss', "Configure Default Formatter"),
+                detail: formatterOrMessage,
+                primaryButton: nls.localize({ key: 'do.config', comment: ['&& denotes a mnemonic'] }, "&&Configure...")
+            });
+            if (confirmed) {
+                return this._pickAndPersistDefaultFormatter(formatter, document);
+            }
+        }
+        else {
+            this._notificationService.prompt(Severity.Info, formatterOrMessage, [{ label: nls.localize('do.config.notification', "Configure..."), run: () => this._pickAndPersistDefaultFormatter(formatter, document) }], { priority: NotificationPriority.SILENT });
+        }
+        return undefined;
+    }
+    async _pickAndPersistDefaultFormatter(formatter, document) {
+        const picks = formatter.map((formatter, index) => {
+            return {
+                index,
+                label: formatter.displayName || (formatter.extensionId ? formatter.extensionId.value : '?'),
+                description: formatter.extensionId && formatter.extensionId.value
+            };
+        });
+        const langName = this._languageService.getLanguageName(document.getLanguageId()) || document.getLanguageId();
+        const pick = await this._quickInputService.pick(picks, { placeHolder: nls.localize('select', "Select a default formatter for '{0}' files", DefaultFormatter_1._maybeQuotes(langName)) });
+        if (!pick || !formatter[pick.index].extensionId) {
+            return undefined;
+        }
+        this._configService.updateValue(DefaultFormatter_1.configName, formatter[pick.index].extensionId.value, {
+            resource: document.uri,
+            overrideIdentifier: document.getLanguageId()
+        });
+        return formatter[pick.index];
+    }
+    _updateStatus() {
+        this._languageStatusStore.clear();
+        const editor = getCodeEditor(this._editorService.activeTextEditorControl);
+        if (!editor || !editor.hasModel()) {
+            return;
+        }
+        const document = editor.getModel();
+        const formatter = getRealAndSyntheticDocumentFormattersOrdered(this._languageFeaturesService.documentFormattingEditProvider, this._languageFeaturesService.documentRangeFormattingEditProvider, document);
+        if (formatter.length === 0) {
+            return;
+        }
+        const cts = new CancellationTokenSource();
+        this._languageStatusStore.add(toDisposable(() => cts.dispose(true)));
+        this._analyzeFormatter(1, formatter, document).then(result => {
+            if (cts.token.isCancellationRequested) {
+                return;
+            }
+            if (typeof result !== 'string') {
+                return;
+            }
+            const command = { id: `formatter/configure/dfl/${generateUuid()}`, title: nls.localize('do.config.command', "Configure...") };
+            this._languageStatusStore.add(CommandsRegistry.registerCommand(command.id, () => this._pickAndPersistDefaultFormatter(formatter, document)));
+            this._languageStatusStore.add(this._languageStatusService.addStatus({
+                id: 'formatter.conflict',
+                name: nls.localize('summary', "Formatter Conflicts"),
+                selector: { language: document.getLanguageId(), pattern: document.uri.fsPath },
+                severity: Severity.Error,
+                label: nls.localize('formatter', "Formatting"),
+                detail: result,
+                busy: false,
+                source: '',
+                command,
+                accessibilityInfo: undefined
+            }));
+        });
+    }
+};
+DefaultFormatter = DefaultFormatter_1 = __decorate([
+    __param(0, IExtensionService),
+    __param(1, IWorkbenchExtensionEnablementService),
+    __param(2, IConfigurationService),
+    __param(3, INotificationService),
+    __param(4, IDialogService),
+    __param(5, IQuickInputService),
+    __param(6, ILanguageService),
+    __param(7, ILanguageFeaturesService),
+    __param(8, ILanguageStatusService),
+    __param(9, IEditorService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], DefaultFormatter);
+export { DefaultFormatter };
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(DefaultFormatter, 3);
+Registry.as(ConfigurationExtensions.Configuration).registerConfiguration({
+    ...editorConfigurationBaseNode,
+    properties: {
+        [DefaultFormatter.configName]: {
+            description: nls.localize('formatter.default', "Defines a default formatter which takes precedence over all other formatter settings. Must be the identifier of an extension contributing a formatter."),
+            type: ['string', 'null'],
+            default: null,
+            enum: DefaultFormatter.extensionIds,
+            enumItemLabels: DefaultFormatter.extensionItemLabels,
+            markdownEnumDescriptions: DefaultFormatter.extensionDescriptions
+        }
+    }
+});
+function logFormatterTelemetry(telemetryService, mode, options, pick) {
+    function extKey(obj) {
+        return obj.extensionId ? ExtensionIdentifier.toKey(obj.extensionId) : 'unknown';
+    }
+    telemetryService.publicLog2('formatterpick', {
+        mode,
+        extensions: options.map(extKey),
+        pick: pick ? extKey(pick) : 'none'
+    });
+}
+async function showFormatterPick(accessor, model, formatters) {
+    const quickPickService = accessor.get(IQuickInputService);
+    const configService = accessor.get(IConfigurationService);
+    const languageService = accessor.get(ILanguageService);
+    const overrides = { resource: model.uri, overrideIdentifier: model.getLanguageId() };
+    const defaultFormatter = configService.getValue(DefaultFormatter.configName, overrides);
+    let defaultFormatterPick;
+    const picks = formatters.map((provider, index) => {
+        const isDefault = ExtensionIdentifier.equals(provider.extensionId, defaultFormatter);
+        const pick = {
+            index,
+            label: provider.displayName || '',
+            description: isDefault ? nls.localize('def', "(default)") : undefined,
+        };
+        if (isDefault) {
+            defaultFormatterPick = pick;
+        }
+        return pick;
+    });
+    const configurePick = {
+        label: nls.localize('config', "Configure Default Formatter...")
+    };
+    const pick = await quickPickService.pick([...picks, { type: 'separator' }, configurePick], {
+        placeHolder: nls.localize('format.placeHolder', "Select a formatter"),
+        activeItem: defaultFormatterPick
+    });
+    if (!pick) {
+        return undefined;
+    }
+    else if (pick === configurePick) {
+        const langName = languageService.getLanguageName(model.getLanguageId()) || model.getLanguageId();
+        const pick = await quickPickService.pick(picks, { placeHolder: nls.localize('select', "Select a default formatter for '{0}' files", DefaultFormatter._maybeQuotes(langName)) });
+        if (pick && formatters[pick.index].extensionId) {
+            configService.updateValue(DefaultFormatter.configName, formatters[pick.index].extensionId.value, overrides);
+        }
+        return undefined;
+    }
+    else {
+        return pick.index;
+    }
+}
+registerEditorAction(class FormatDocumentMultipleAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.formatDocument.multiple',
+            label: nls.localize('formatDocument.label.multiple', "Format Document With..."),
+            alias: 'Format Document...',
+            precondition: ContextKeyExpr.and(EditorContextKeys.writable, EditorContextKeys.hasMultipleDocumentFormattingProvider),
+            contextMenuOpts: {
+                group: '1_modification',
+                order: 1.3
+            }
+        });
+    }
+    async run(accessor, editor, args) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const instaService = accessor.get(IInstantiationService);
+        const telemetryService = accessor.get(ITelemetryService);
+        const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+        const model = editor.getModel();
+        const provider = getRealAndSyntheticDocumentFormattersOrdered(languageFeaturesService.documentFormattingEditProvider, languageFeaturesService.documentRangeFormattingEditProvider, model);
+        const pick = await instaService.invokeFunction(showFormatterPick, model, provider);
+        if (typeof pick === 'number') {
+            await instaService.invokeFunction(formatDocumentWithProvider, provider[pick], editor, 1, CancellationToken.None);
+        }
+        logFormatterTelemetry(telemetryService, 'document', provider, typeof pick === 'number' && provider[pick] || undefined);
+    }
+});
+registerEditorAction(class FormatSelectionMultipleAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.formatSelection.multiple',
+            label: nls.localize('formatSelection.label.multiple', "Format Selection With..."),
+            alias: 'Format Code...',
+            precondition: ContextKeyExpr.and(ContextKeyExpr.and(EditorContextKeys.writable), EditorContextKeys.hasMultipleDocumentSelectionFormattingProvider),
+            contextMenuOpts: {
+                when: ContextKeyExpr.and(EditorContextKeys.hasNonEmptySelection),
+                group: '1_modification',
+                order: 1.31
+            }
+        });
+    }
+    async run(accessor, editor) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const instaService = accessor.get(IInstantiationService);
+        const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+        const telemetryService = accessor.get(ITelemetryService);
+        const model = editor.getModel();
+        let range = editor.getSelection();
+        if (range.isEmpty()) {
+            range = new Range(range.startLineNumber, 1, range.startLineNumber, model.getLineMaxColumn(range.startLineNumber));
+        }
+        const provider = languageFeaturesService.documentRangeFormattingEditProvider.ordered(model);
+        const pick = await instaService.invokeFunction(showFormatterPick, model, provider);
+        if (typeof pick === 'number') {
+            await instaService.invokeFunction(formatDocumentRangesWithProvider, provider[pick], editor, range, CancellationToken.None, true);
+        }
+        logFormatterTelemetry(telemetryService, 'range', provider, typeof pick === 'number' && provider[pick] || undefined);
+    }
+});

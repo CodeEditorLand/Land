@@ -1,1 +1,35 @@
-import{createDecorator as m}from"../../instantiation/common/instantiation.js";import"../../keybinding/common/keybinding.js";import"../../quickinput/browser/pickerQuickAccess.js";import"../../../base/common/event.js";import"../../../base/common/actions.js";import"../../quickinput/common/quickInput.js";import{Disposable as o}from"../../../base/common/lifecycle.js";const L=m("accessibleViewService");var b=(e=>(e.Terminal="terminal",e.TerminalChat="terminal-chat",e.TerminalHelp="terminal-help",e.DiffEditor="diffEditor",e.Chat="panelChat",e.InlineChat="inlineChat",e.InlineCompletions="inlineCompletions",e.KeybindingsEditor="keybindingsEditor",e.Notebook="notebook",e.ReplEditor="replEditor",e.Editor="editor",e.Hover="hover",e.Notification="notification",e.EmptyEditorHint="emptyEditorHint",e.Comments="comments",e.CommentThread="commentThread",e.Repl="repl",e.ReplHelp="replHelp",e.RunAndDebug="runAndDebug",e.Walkthrough="walkthrough",e))(b||{}),v=(i=>(i.Help="help",i.View="view",i))(v||{}),g=(i=>(i.Previous="previous",i.Next="next",i))(g||{});class N extends o{constructor(i,r,s,p,c,l,d,u,a,C,I,f,x){super();this.id=i;this.options=r;this.provideContent=s;this.onClose=p;this.verbositySettingKey=c;this.onOpen=l;this.actions=d;this.provideNextContent=u;this.providePreviousContent=a;this.onDidChangeContent=C;this.onKeyDown=I;this.getSymbols=f;this.onDidRequestClearLastProvider=x}}class R extends o{constructor(i,r,s,p,c,l,d,u,a){super();this.id=i;this.options=r;this.provideContent=s;this.onClose=p;this.onOpen=c;this.provideNextContent=l;this.providePreviousContent=d;this.actions=u;this.onDidChangeContent=a}}export{N as AccessibleContentProvider,b as AccessibleViewProviderId,v as AccessibleViewType,R as ExtensionContentProvider,L as IAccessibleViewService,g as NavigationType};
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+export const IAccessibleViewService = createDecorator('accessibleViewService');
+export class AccessibleContentProvider extends Disposable {
+    constructor(id, options, provideContent, onClose, verbositySettingKey, onOpen, actions, provideNextContent, providePreviousContent, onDidChangeContent, onKeyDown, getSymbols, onDidRequestClearLastProvider) {
+        super();
+        this.id = id;
+        this.options = options;
+        this.provideContent = provideContent;
+        this.onClose = onClose;
+        this.verbositySettingKey = verbositySettingKey;
+        this.onOpen = onOpen;
+        this.actions = actions;
+        this.provideNextContent = provideNextContent;
+        this.providePreviousContent = providePreviousContent;
+        this.onDidChangeContent = onDidChangeContent;
+        this.onKeyDown = onKeyDown;
+        this.getSymbols = getSymbols;
+        this.onDidRequestClearLastProvider = onDidRequestClearLastProvider;
+    }
+}
+export class ExtensionContentProvider extends Disposable {
+    constructor(id, options, provideContent, onClose, onOpen, provideNextContent, providePreviousContent, actions, onDidChangeContent) {
+        super();
+        this.id = id;
+        this.options = options;
+        this.provideContent = provideContent;
+        this.onClose = onClose;
+        this.onOpen = onOpen;
+        this.provideNextContent = provideNextContent;
+        this.providePreviousContent = providePreviousContent;
+        this.actions = actions;
+        this.onDidChangeContent = onDidChangeContent;
+    }
+}

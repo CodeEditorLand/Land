@@ -1,1 +1,34 @@
-import{createCancelablePromise as s}from"../../../base/common/async.js";import{Event as t}from"../../../base/common/event.js";import{Disposable as o,DisposableStore as r}from"../../../base/common/lifecycle.js";class W extends o{disposables=this._register(new r);firstActiveWindowIdPromise;activeWindowId;constructor({onDidOpenMainWindow:i,onDidFocusMainWindow:n,getActiveWindowId:d}){super(),t.latch(t.any(i,n))(this.setActiveWindow,this,this.disposables),this.firstActiveWindowIdPromise=s(()=>d()),(async()=>{try{const e=await this.firstActiveWindowIdPromise;this.activeWindowId=typeof this.activeWindowId=="number"?this.activeWindowId:e}catch{}finally{this.firstActiveWindowIdPromise=void 0}})()}setActiveWindow(i){this.firstActiveWindowIdPromise&&(this.firstActiveWindowIdPromise.cancel(),this.firstActiveWindowIdPromise=void 0),this.activeWindowId=i}async getActiveClientId(){return`window:${this.firstActiveWindowIdPromise?await this.firstActiveWindowIdPromise:this.activeWindowId}`}}export{W as ActiveWindowManager};
+import { createCancelablePromise } from '../../../base/common/async.js';
+import { Event } from '../../../base/common/event.js';
+import { Disposable, DisposableStore } from '../../../base/common/lifecycle.js';
+export class ActiveWindowManager extends Disposable {
+    constructor({ onDidOpenMainWindow, onDidFocusMainWindow, getActiveWindowId }) {
+        super();
+        this.disposables = this._register(new DisposableStore());
+        const onActiveWindowChange = Event.latch(Event.any(onDidOpenMainWindow, onDidFocusMainWindow));
+        onActiveWindowChange(this.setActiveWindow, this, this.disposables);
+        this.firstActiveWindowIdPromise = createCancelablePromise(() => getActiveWindowId());
+        (async () => {
+            try {
+                const windowId = await this.firstActiveWindowIdPromise;
+                this.activeWindowId = (typeof this.activeWindowId === 'number') ? this.activeWindowId : windowId;
+            }
+            catch (error) {
+            }
+            finally {
+                this.firstActiveWindowIdPromise = undefined;
+            }
+        })();
+    }
+    setActiveWindow(windowId) {
+        if (this.firstActiveWindowIdPromise) {
+            this.firstActiveWindowIdPromise.cancel();
+            this.firstActiveWindowIdPromise = undefined;
+        }
+        this.activeWindowId = windowId;
+    }
+    async getActiveClientId() {
+        const id = this.firstActiveWindowIdPromise ? (await this.firstActiveWindowIdPromise) : this.activeWindowId;
+        return `window:${id}`;
+    }
+}

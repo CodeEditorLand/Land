@@ -1,1 +1,32 @@
-var m=Object.defineProperty;var l=Object.getOwnPropertyDescriptor;var a=(t,e,n,r)=>{for(var o=r>1?void 0:r?l(e,n):e,s=t.length-1,c;s>=0;s--)(c=t[s])&&(o=(r?c(e,n,o):c(o))||o);return r&&o&&m(e,n,o),o},p=(t,e)=>(n,r)=>e(n,r,t);import{ProxyChannel as d}from"../../../base/parts/ipc/common/ipc.js";import{IMainProcessService as u}from"../../ipc/common/mainProcessService.js";import"./native.js";let i=class{constructor(e,n){this.windowId=e;return d.toService(n.getChannel("nativeHost"),{context:e,properties:(()=>{const r=new Map;return r.set("windowId",e),r})()})}};i=a([p(1,u)],i);export{i as NativeHostService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ProxyChannel } from '../../../base/parts/ipc/common/ipc.js';
+import { IMainProcessService } from '../../ipc/common/mainProcessService.js';
+let NativeHostService = class NativeHostService {
+    constructor(windowId, mainProcessService) {
+        this.windowId = windowId;
+        return ProxyChannel.toService(mainProcessService.getChannel('nativeHost'), {
+            context: windowId,
+            properties: (() => {
+                const properties = new Map();
+                properties.set('windowId', windowId);
+                return properties;
+            })()
+        });
+    }
+};
+NativeHostService = __decorate([
+    __param(1, IMainProcessService),
+    __metadata("design:paramtypes", [Number, Object])
+], NativeHostService);
+export { NativeHostService };

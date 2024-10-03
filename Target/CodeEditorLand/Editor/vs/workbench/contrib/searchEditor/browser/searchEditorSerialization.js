@@ -1,4 +1,253 @@
-import{coalesce as F}from"../../../../base/common/arrays.js";import"../../../../base/common/uri.js";import"./media/searchEditor.css";import"../../../../editor/browser/editorExtensions.js";import{Range as x}from"../../../../editor/common/core/range.js";import{localize as m}from"../../../../nls.js";import{searchMatchComparer as S}from"../../search/browser/searchModel.js";import"../../../services/search/common/search.js";import{ITextFileService as M}from"../../../services/textfile/common/textfiles.js";const b=`
-`,I=e=>n=>new x(n.startLineNumber+e,n.startColumn,n.endLineNumber+e,n.endColumn),y=(e,n)=>{const i=o=>`${e.range().startLineNumber+o}`,s=e.fullPreviewLines(),t=[];return s.forEach((o,l)=>{const a=i(l),c=`  ${" ".repeat(n-a.length)}${a}: `,d=c.length,h=c+(o.split(/\r?\n?$/,1)[0]||""),u=({start:C,end:N})=>new x(1,(C??1)+d,1,(N??o.length+1)+d),r=e.rangeInPreview(),f=r.startLineNumber===r.endLineNumber;let g;f?g=u({start:r.startColumn,end:r.endColumn}):l===0?g=u({start:r.startColumn}):l===s.length-1?g=u({end:r.endColumn}):g=u({}),t.push({lineNumber:a,line:h,ranges:[g]})}),t};function T(e,n){const i=e.textMatches().length>0?R(e.resource,e.textMatches().sort(S),e.context,n):void 0,s=e.cellMatches().sort((t,o)=>t.cellIndex-o.cellIndex).sort().filter(t=>t.contentMatches.length>0).map((t,o)=>w(t,n,o===0));return[i,...s].filter(t=>!!t)}function R(e,n,i,s,t=!0){const o=n[n.length-1].range().endLineNumber.toString().length,l=t?[`${s(e)}:`]:[],a=[],p={},c=[];i.forEach((u,r)=>c.push({line:u,lineNumber:r})),c.sort((u,r)=>u.lineNumber-r.lineNumber);let d;const h=new Set;for(n.forEach(u=>{y(u,o).forEach(r=>{if(!h.has(r.lineNumber)){for(;c.length&&c[0].lineNumber<+r.lineNumber;){const{line:f,lineNumber:g}=c.shift();d!==void 0&&g!==d+1&&l.push(""),l.push(`  ${" ".repeat(o-`${g}`.length)}${g}  ${f}`),d=g}p[r.lineNumber]=l.length,h.add(r.lineNumber),l.push(r.line),d=+r.lineNumber}a.push(...r.ranges.map(I(p[r.lineNumber])))})});c.length;){const{line:u,lineNumber:r}=c.shift();l.push(`  ${r}  ${u}`)}return{text:l,matchRanges:a}}function w(e,n,i){return R(e.cell?.uri??e.parent.resource,e.contentMatches.sort(S),e.context,n,i)}const v=(e,n,i,s)=>({query:e.contentPattern.pattern,isRegexp:!!e.contentPattern.isRegExp,isCaseSensitive:!!e.contentPattern.isCaseSensitive,matchWholeWord:!!e.contentPattern.isWordMatch,filesToExclude:i,filesToInclude:n,showIncludesExcludes:!!(n||i||e?.userDisabledExcludesAndIgnoreFiles),useExcludeSettingsAndIgnoreFiles:e?.userDisabledExcludesAndIgnoreFiles===void 0?!0:!e.userDisabledExcludesAndIgnoreFiles,contextLines:s,onlyOpenEditors:!!e.onlyOpenEditors,notebookSearchConfig:{includeMarkupInput:!!e.contentPattern.notebookInfo?.isInNotebookMarkdownInput,includeMarkupPreview:!!e.contentPattern.notebookInfo?.isInNotebookMarkdownPreview,includeCodeInput:!!e.contentPattern.notebookInfo?.isInNotebookCellInput,includeOutput:!!e.contentPattern.notebookInfo?.isInNotebookCellOutput}}),Z=e=>(s=>s.filter(t=>t!==!1&&t!==null&&t!==void 0))([`# Query: ${(s=>s.replace(/\\/g,"\\\\").replace(/\n/g,"\\n"))(e.query??"")}`,(e.isCaseSensitive||e.matchWholeWord||e.isRegexp||e.useExcludeSettingsAndIgnoreFiles===!1)&&`# Flags: ${F([e.isCaseSensitive&&"CaseSensitive",e.matchWholeWord&&"WordMatch",e.isRegexp&&"RegExp",e.onlyOpenEditors&&"OpenEditors",e.useExcludeSettingsAndIgnoreFiles===!1&&"IgnoreExcludeSettings"]).join(" ")}`,e.filesToInclude?`# Including: ${e.filesToInclude}`:void 0,e.filesToExclude?`# Excluding: ${e.filesToExclude}`:void 0,e.contextLines?`# ContextLines: ${e.contextLines}`:void 0,""]).join(b),_=e=>E(e.getValueInRange(new x(1,1,6,1)).split(b)),L=()=>({query:"",filesToInclude:"",filesToExclude:"",isRegexp:!1,isCaseSensitive:!1,useExcludeSettingsAndIgnoreFiles:!0,matchWholeWord:!1,contextLines:0,showIncludesExcludes:!1,onlyOpenEditors:!1,notebookSearchConfig:{includeMarkupInput:!0,includeMarkupPreview:!1,includeCodeInput:!0,includeOutput:!0}}),E=e=>{const n=L(),i=t=>{let o="";for(let l=0;l<t.length;l++)if(t[l]==="\\"){l++;const a=t[l];if(a==="n")o+=`
-`;else if(a==="\\")o+="\\";else throw Error(m("invalidQueryStringError","All backslashes in Query string must be escaped (\\\\)"))}else o+=t[l];return o},s=/^# ([^:]*): (.*)$/;for(const t of e){const o=s.exec(t);if(!o)continue;const[,l,a]=o;switch(l){case"Query":n.query=i(a);break;case"Including":n.filesToInclude=a;break;case"Excluding":n.filesToExclude=a;break;case"ContextLines":n.contextLines=+a;break;case"Flags":n.isRegexp=a.indexOf("RegExp")!==-1,n.isCaseSensitive=a.indexOf("CaseSensitive")!==-1,n.useExcludeSettingsAndIgnoreFiles=a.indexOf("IgnoreExcludeSettings")===-1,n.matchWholeWord=a.indexOf("WordMatch")!==-1,n.onlyOpenEditors=a.indexOf("OpenEditors")!==-1}}return n.showIncludesExcludes=!!(n.filesToInclude||n.filesToExclude||!n.useExcludeSettingsAndIgnoreFiles),n},ee=(e,n,i,s,t,o,l)=>{if(!e.query)throw Error("Internal Error: Expected query, got null");const a=v(e.query,n,i,s),p=e.fileCount()>1?m("numFiles","{0} files",e.fileCount()):m("oneFile","1 file"),c=e.count()>1?m("numResults","{0} results",e.count()):m("oneResult","1 result"),d=[e.count()?`${c} - ${p}`:m("noResults","No Results")];l&&d.push(m("searchMaxResultsWarning","The result set only contains a subset of all matches. Be more specific in your search to narrow down the results.")),d.push("");const h=(r,f)=>S(r,f,o),u=k(e.folderMatches().sort(h).map(r=>r.allDownstreamFileMatches().sort(h).flatMap(f=>T(f,t))).flat());return{matchRanges:u.matchRanges.map(I(d.length)),text:d.concat(u.text).join(b),config:a}},k=e=>{const n=[],i=[];return e.forEach(s=>{s.matchRanges.map(I(n.length)).forEach(t=>i.push(t)),s.text.forEach(t=>n.push(t)),n.push("")}),{text:n,matchRanges:i}},ne=async(e,n)=>{const s=(await e.get(M).read(n)).value;return O(s)},O=e=>{const n=[],i=[];let s=!0;for(const t of e.split(/\r?\n/g))s?(n.push(t),t===""&&(s=!1)):i.push(t);return{config:E(n),text:i.join(`
-`)}};export{L as defaultSearchConfig,E as extractSearchQueryFromLines,_ as extractSearchQueryFromModel,ne as parseSavedSearchEditor,O as parseSerializedSearchEditor,Z as serializeSearchConfiguration,ee as serializeSearchResultForEditor};
+import { coalesce } from '../../../../base/common/arrays.js';
+import './media/searchEditor.css';
+import { Range } from '../../../../editor/common/core/range.js';
+import { localize } from '../../../../nls.js';
+import { searchMatchComparer } from '../../search/browser/searchModel.js';
+import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
+const lineDelimiter = '\n';
+const translateRangeLines = (n) => (range) => new Range(range.startLineNumber + n, range.startColumn, range.endLineNumber + n, range.endColumn);
+const matchToSearchResultFormat = (match, longestLineNumber) => {
+    const getLinePrefix = (i) => `${match.range().startLineNumber + i}`;
+    const fullMatchLines = match.fullPreviewLines();
+    const results = [];
+    fullMatchLines
+        .forEach((sourceLine, i) => {
+        const lineNumber = getLinePrefix(i);
+        const paddingStr = ' '.repeat(longestLineNumber - lineNumber.length);
+        const prefix = `  ${paddingStr}${lineNumber}: `;
+        const prefixOffset = prefix.length;
+        const line = prefix + (sourceLine.split(/\r?\n?$/, 1)[0] || '');
+        const rangeOnThisLine = ({ start, end }) => new Range(1, (start ?? 1) + prefixOffset, 1, (end ?? sourceLine.length + 1) + prefixOffset);
+        const matchRange = match.rangeInPreview();
+        const matchIsSingleLine = matchRange.startLineNumber === matchRange.endLineNumber;
+        let lineRange;
+        if (matchIsSingleLine) {
+            lineRange = (rangeOnThisLine({ start: matchRange.startColumn, end: matchRange.endColumn }));
+        }
+        else if (i === 0) {
+            lineRange = (rangeOnThisLine({ start: matchRange.startColumn }));
+        }
+        else if (i === fullMatchLines.length - 1) {
+            lineRange = (rangeOnThisLine({ end: matchRange.endColumn }));
+        }
+        else {
+            lineRange = (rangeOnThisLine({}));
+        }
+        results.push({ lineNumber: lineNumber, line, ranges: [lineRange] });
+    });
+    return results;
+};
+function fileMatchToSearchResultFormat(fileMatch, labelFormatter) {
+    const textSerializations = fileMatch.textMatches().length > 0 ? matchesToSearchResultFormat(fileMatch.resource, fileMatch.textMatches().sort(searchMatchComparer), fileMatch.context, labelFormatter) : undefined;
+    const cellSerializations = fileMatch.cellMatches().sort((a, b) => a.cellIndex - b.cellIndex).sort().filter(cellMatch => cellMatch.contentMatches.length > 0).map((cellMatch, index) => cellMatchToSearchResultFormat(cellMatch, labelFormatter, index === 0));
+    return [textSerializations, ...cellSerializations].filter(x => !!x);
+}
+function matchesToSearchResultFormat(resource, sortedMatches, matchContext, labelFormatter, shouldUseHeader = true) {
+    const longestLineNumber = sortedMatches[sortedMatches.length - 1].range().endLineNumber.toString().length;
+    const text = shouldUseHeader ? [`${labelFormatter(resource)}:`] : [];
+    const matchRanges = [];
+    const targetLineNumberToOffset = {};
+    const context = [];
+    matchContext.forEach((line, lineNumber) => context.push({ line, lineNumber }));
+    context.sort((a, b) => a.lineNumber - b.lineNumber);
+    let lastLine = undefined;
+    const seenLines = new Set();
+    sortedMatches.forEach(match => {
+        matchToSearchResultFormat(match, longestLineNumber).forEach(match => {
+            if (!seenLines.has(match.lineNumber)) {
+                while (context.length && context[0].lineNumber < +match.lineNumber) {
+                    const { line, lineNumber } = context.shift();
+                    if (lastLine !== undefined && lineNumber !== lastLine + 1) {
+                        text.push('');
+                    }
+                    text.push(`  ${' '.repeat(longestLineNumber - `${lineNumber}`.length)}${lineNumber}  ${line}`);
+                    lastLine = lineNumber;
+                }
+                targetLineNumberToOffset[match.lineNumber] = text.length;
+                seenLines.add(match.lineNumber);
+                text.push(match.line);
+                lastLine = +match.lineNumber;
+            }
+            matchRanges.push(...match.ranges.map(translateRangeLines(targetLineNumberToOffset[match.lineNumber])));
+        });
+    });
+    while (context.length) {
+        const { line, lineNumber } = context.shift();
+        text.push(`  ${lineNumber}  ${line}`);
+    }
+    return { text, matchRanges };
+}
+function cellMatchToSearchResultFormat(cellMatch, labelFormatter, shouldUseHeader) {
+    return matchesToSearchResultFormat(cellMatch.cell?.uri ?? cellMatch.parent.resource, cellMatch.contentMatches.sort(searchMatchComparer), cellMatch.context, labelFormatter, shouldUseHeader);
+}
+const contentPatternToSearchConfiguration = (pattern, includes, excludes, contextLines) => {
+    return {
+        query: pattern.contentPattern.pattern,
+        isRegexp: !!pattern.contentPattern.isRegExp,
+        isCaseSensitive: !!pattern.contentPattern.isCaseSensitive,
+        matchWholeWord: !!pattern.contentPattern.isWordMatch,
+        filesToExclude: excludes, filesToInclude: includes,
+        showIncludesExcludes: !!(includes || excludes || pattern?.userDisabledExcludesAndIgnoreFiles),
+        useExcludeSettingsAndIgnoreFiles: (pattern?.userDisabledExcludesAndIgnoreFiles === undefined ? true : !pattern.userDisabledExcludesAndIgnoreFiles),
+        contextLines,
+        onlyOpenEditors: !!pattern.onlyOpenEditors,
+        notebookSearchConfig: {
+            includeMarkupInput: !!pattern.contentPattern.notebookInfo?.isInNotebookMarkdownInput,
+            includeMarkupPreview: !!pattern.contentPattern.notebookInfo?.isInNotebookMarkdownPreview,
+            includeCodeInput: !!pattern.contentPattern.notebookInfo?.isInNotebookCellInput,
+            includeOutput: !!pattern.contentPattern.notebookInfo?.isInNotebookCellOutput,
+        }
+    };
+};
+export const serializeSearchConfiguration = (config) => {
+    const removeNullFalseAndUndefined = (a) => a.filter(a => a !== false && a !== null && a !== undefined);
+    const escapeNewlines = (str) => str.replace(/\\/g, '\\\\').replace(/\n/g, '\\n');
+    return removeNullFalseAndUndefined([
+        `# Query: ${escapeNewlines(config.query ?? '')}`,
+        (config.isCaseSensitive || config.matchWholeWord || config.isRegexp || config.useExcludeSettingsAndIgnoreFiles === false)
+            && `# Flags: ${coalesce([
+                config.isCaseSensitive && 'CaseSensitive',
+                config.matchWholeWord && 'WordMatch',
+                config.isRegexp && 'RegExp',
+                config.onlyOpenEditors && 'OpenEditors',
+                (config.useExcludeSettingsAndIgnoreFiles === false) && 'IgnoreExcludeSettings'
+            ]).join(' ')}`,
+        config.filesToInclude ? `# Including: ${config.filesToInclude}` : undefined,
+        config.filesToExclude ? `# Excluding: ${config.filesToExclude}` : undefined,
+        config.contextLines ? `# ContextLines: ${config.contextLines}` : undefined,
+        ''
+    ]).join(lineDelimiter);
+};
+export const extractSearchQueryFromModel = (model) => extractSearchQueryFromLines(model.getValueInRange(new Range(1, 1, 6, 1)).split(lineDelimiter));
+export const defaultSearchConfig = () => ({
+    query: '',
+    filesToInclude: '',
+    filesToExclude: '',
+    isRegexp: false,
+    isCaseSensitive: false,
+    useExcludeSettingsAndIgnoreFiles: true,
+    matchWholeWord: false,
+    contextLines: 0,
+    showIncludesExcludes: false,
+    onlyOpenEditors: false,
+    notebookSearchConfig: {
+        includeMarkupInput: true,
+        includeMarkupPreview: false,
+        includeCodeInput: true,
+        includeOutput: true,
+    }
+});
+export const extractSearchQueryFromLines = (lines) => {
+    const query = defaultSearchConfig();
+    const unescapeNewlines = (str) => {
+        let out = '';
+        for (let i = 0; i < str.length; i++) {
+            if (str[i] === '\\') {
+                i++;
+                const escaped = str[i];
+                if (escaped === 'n') {
+                    out += '\n';
+                }
+                else if (escaped === '\\') {
+                    out += '\\';
+                }
+                else {
+                    throw Error(localize('invalidQueryStringError', "All backslashes in Query string must be escaped (\\\\)"));
+                }
+            }
+            else {
+                out += str[i];
+            }
+        }
+        return out;
+    };
+    const parseYML = /^# ([^:]*): (.*)$/;
+    for (const line of lines) {
+        const parsed = parseYML.exec(line);
+        if (!parsed) {
+            continue;
+        }
+        const [, key, value] = parsed;
+        switch (key) {
+            case 'Query':
+                query.query = unescapeNewlines(value);
+                break;
+            case 'Including':
+                query.filesToInclude = value;
+                break;
+            case 'Excluding':
+                query.filesToExclude = value;
+                break;
+            case 'ContextLines':
+                query.contextLines = +value;
+                break;
+            case 'Flags': {
+                query.isRegexp = value.indexOf('RegExp') !== -1;
+                query.isCaseSensitive = value.indexOf('CaseSensitive') !== -1;
+                query.useExcludeSettingsAndIgnoreFiles = value.indexOf('IgnoreExcludeSettings') === -1;
+                query.matchWholeWord = value.indexOf('WordMatch') !== -1;
+                query.onlyOpenEditors = value.indexOf('OpenEditors') !== -1;
+            }
+        }
+    }
+    query.showIncludesExcludes = !!(query.filesToInclude || query.filesToExclude || !query.useExcludeSettingsAndIgnoreFiles);
+    return query;
+};
+export const serializeSearchResultForEditor = (searchResult, rawIncludePattern, rawExcludePattern, contextLines, labelFormatter, sortOrder, limitHit) => {
+    if (!searchResult.query) {
+        throw Error('Internal Error: Expected query, got null');
+    }
+    const config = contentPatternToSearchConfiguration(searchResult.query, rawIncludePattern, rawExcludePattern, contextLines);
+    const filecount = searchResult.fileCount() > 1 ? localize('numFiles', "{0} files", searchResult.fileCount()) : localize('oneFile', "1 file");
+    const resultcount = searchResult.count() > 1 ? localize('numResults', "{0} results", searchResult.count()) : localize('oneResult', "1 result");
+    const info = [
+        searchResult.count()
+            ? `${resultcount} - ${filecount}`
+            : localize('noResults', "No Results"),
+    ];
+    if (limitHit) {
+        info.push(localize('searchMaxResultsWarning', "The result set only contains a subset of all matches. Be more specific in your search to narrow down the results."));
+    }
+    info.push('');
+    const matchComparer = (a, b) => searchMatchComparer(a, b, sortOrder);
+    const allResults = flattenSearchResultSerializations(searchResult.folderMatches().sort(matchComparer)
+        .map(folderMatch => folderMatch.allDownstreamFileMatches().sort(matchComparer)
+        .flatMap(fileMatch => fileMatchToSearchResultFormat(fileMatch, labelFormatter))).flat());
+    return {
+        matchRanges: allResults.matchRanges.map(translateRangeLines(info.length)),
+        text: info.concat(allResults.text).join(lineDelimiter),
+        config
+    };
+};
+const flattenSearchResultSerializations = (serializations) => {
+    const text = [];
+    const matchRanges = [];
+    serializations.forEach(serialized => {
+        serialized.matchRanges.map(translateRangeLines(text.length)).forEach(range => matchRanges.push(range));
+        serialized.text.forEach(line => text.push(line));
+        text.push('');
+    });
+    return { text, matchRanges };
+};
+export const parseSavedSearchEditor = async (accessor, resource) => {
+    const textFileService = accessor.get(ITextFileService);
+    const text = (await textFileService.read(resource)).value;
+    return parseSerializedSearchEditor(text);
+};
+export const parseSerializedSearchEditor = (text) => {
+    const headerlines = [];
+    const bodylines = [];
+    let inHeader = true;
+    for (const line of text.split(/\r?\n/g)) {
+        if (inHeader) {
+            headerlines.push(line);
+            if (line === '') {
+                inHeader = false;
+            }
+        }
+        else {
+            bodylines.push(line);
+        }
+    }
+    return { config: extractSearchQueryFromLines(headerlines), text: bodylines.join('\n') };
+};

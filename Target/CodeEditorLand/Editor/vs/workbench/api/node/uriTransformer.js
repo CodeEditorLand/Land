@@ -1,1 +1,35 @@
-import{URITransformer as t}from"../../../base/common/uriIpc.js";function n(r){return{transformIncoming:e=>e.scheme==="vscode-remote"?{scheme:"file",path:e.path,query:e.query,fragment:e.fragment}:e.scheme==="file"?{scheme:"vscode-local",path:e.path,query:e.query,fragment:e.fragment}:e,transformOutgoing:e=>e.scheme==="file"?{scheme:"vscode-remote",authority:r,path:e.path,query:e.query,fragment:e.fragment}:e.scheme==="vscode-local"?{scheme:"file",path:e.path,query:e.query,fragment:e.fragment}:e,transformOutgoingScheme:e=>e==="file"?"vscode-remote":e==="vscode-local"?"file":e}}function o(r){return new t(n(r))}export{o as createURITransformer};
+import { URITransformer } from '../../../base/common/uriIpc.js';
+function createRawURITransformer(remoteAuthority) {
+    return {
+        transformIncoming: (uri) => {
+            if (uri.scheme === 'vscode-remote') {
+                return { scheme: 'file', path: uri.path, query: uri.query, fragment: uri.fragment };
+            }
+            if (uri.scheme === 'file') {
+                return { scheme: 'vscode-local', path: uri.path, query: uri.query, fragment: uri.fragment };
+            }
+            return uri;
+        },
+        transformOutgoing: (uri) => {
+            if (uri.scheme === 'file') {
+                return { scheme: 'vscode-remote', authority: remoteAuthority, path: uri.path, query: uri.query, fragment: uri.fragment };
+            }
+            if (uri.scheme === 'vscode-local') {
+                return { scheme: 'file', path: uri.path, query: uri.query, fragment: uri.fragment };
+            }
+            return uri;
+        },
+        transformOutgoingScheme: (scheme) => {
+            if (scheme === 'file') {
+                return 'vscode-remote';
+            }
+            else if (scheme === 'vscode-local') {
+                return 'file';
+            }
+            return scheme;
+        }
+    };
+}
+export function createURITransformer(remoteAuthority) {
+    return new URITransformer(createRawURITransformer(remoteAuthority));
+}

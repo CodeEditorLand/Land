@@ -1,1 +1,39 @@
-import*as c from"../../../../nls.js";import"../../../../platform/instantiation/common/instantiation.js";import*as n from"../common/constants.js";import"./searchModel.js";import{Action2 as s,registerAction2 as a}from"../../../../platform/actions/common/actions.js";import{category as m}from"./searchActionsBase.js";import{IQuickInputService as u}from"../../../../platform/quickinput/common/quickInput.js";import{TEXT_SEARCH_QUICK_ACCESS_PREFIX as S}from"./quickTextSearch/textSearchQuickAccess.js";import{IEditorService as l}from"../../../services/editor/common/editorService.js";import"../../../../editor/common/editorCommon.js";import{IConfigurationService as d}from"../../../../platform/configuration/common/configuration.js";import{getSelectionTextFromEditor as f}from"./searchView.js";a(class extends s{constructor(){super({id:n.SearchCommandIds.QuickTextSearchActionId,title:c.localize2("quickTextSearch","Quick Search"),category:m,f1:!0})}async run(r,i){const e=r.get(u),o=p(r)??"";e.quickAccess.show(S+o,{preserveValue:!!o})}});function p(t){const r=t.get(l),i=t.get(d),e=r.activeTextEditorControl;return!e||!e.hasTextFocus()||!i.getValue("editor.find.seedSearchStringFromSelection")?null:f(!1,e)}
+import * as nls from '../../../../nls.js';
+import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { category } from './searchActionsBase.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { TEXT_SEARCH_QUICK_ACCESS_PREFIX } from './quickTextSearch/textSearchQuickAccess.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { getSelectionTextFromEditor } from './searchView.js';
+registerAction2(class TextSearchQuickAccessAction extends Action2 {
+    constructor() {
+        super({
+            id: "workbench.action.quickTextSearch",
+            title: nls.localize2('quickTextSearch', "Quick Search"),
+            category,
+            f1: true
+        });
+    }
+    async run(accessor, match) {
+        const quickInputService = accessor.get(IQuickInputService);
+        const searchText = getSearchText(accessor) ?? '';
+        quickInputService.quickAccess.show(TEXT_SEARCH_QUICK_ACCESS_PREFIX + searchText, { preserveValue: !!searchText });
+    }
+});
+function getSearchText(accessor) {
+    const editorService = accessor.get(IEditorService);
+    const configurationService = accessor.get(IConfigurationService);
+    const activeEditor = editorService.activeTextEditorControl;
+    if (!activeEditor) {
+        return null;
+    }
+    if (!activeEditor.hasTextFocus()) {
+        return null;
+    }
+    const seedSearchStringFromSelection = configurationService.getValue('editor.find.seedSearchStringFromSelection');
+    if (!seedSearchStringFromSelection) {
+        return null;
+    }
+    return getSelectionTextFromEditor(false, activeEditor);
+}

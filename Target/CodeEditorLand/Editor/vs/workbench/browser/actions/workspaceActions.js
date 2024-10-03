@@ -1,1 +1,350 @@
-import{localize as s,localize2 as n}from"../../../nls.js";import"../../../platform/telemetry/common/telemetry.js";import{IWorkspaceContextService as E,WorkbenchState as x,hasWorkspaceFileExtension as Y}from"../../../platform/workspace/common/workspace.js";import{IWorkspaceEditingService as T}from"../../services/workspaces/common/workspaceEditing.js";import{IEditorService as j}from"../../services/editor/common/editorService.js";import{ICommandService as K}from"../../../platform/commands/common/commands.js";import{ADD_ROOT_FOLDER_COMMAND_ID as B,ADD_ROOT_FOLDER_LABEL as G,PICK_WORKSPACE_FOLDER_COMMAND_ID as J,SET_ROOT_FOLDER_COMMAND_ID as Q}from"./workspaceCommands.js";import{IFileDialogService as I}from"../../../platform/dialogs/common/dialogs.js";import{MenuRegistry as d,MenuId as p,Action2 as i,registerAction2 as c}from"../../../platform/actions/common/actions.js";import{EmptyWorkspaceSupportContext as P,EnterMultiRootWorkspaceSupportContext as l,OpenFolderWorkspaceSupportContext as g,WorkbenchStateContext as m,WorkspaceFolderCountContext as X}from"../../common/contextkeys.js";import"../../../platform/instantiation/common/instantiation.js";import{IHostService as U}from"../../services/host/browser/host.js";import{KeyChord as R,KeyCode as u,KeyMod as k}from"../../../base/common/keyCodes.js";import{ContextKeyExpr as a}from"../../../platform/contextkey/common/contextkey.js";import{IWorkbenchEnvironmentService as H}from"../../services/environment/common/environmentService.js";import{IWorkspacesService as Z}from"../../../platform/workspaces/common/workspaces.js";import{KeybindingWeight as v}from"../../../platform/keybinding/common/keybindingsRegistry.js";import{IsMacNativeContext as D}from"../../../platform/contextkey/common/contextkeys.js";import"../../../platform/action/common/action.js";import{Categories as w}from"../../../platform/action/common/actionCommonCategories.js";const y=n("workspaces","Workspaces");class F extends i{static ID="workbench.action.files.openFile";constructor(){super({id:F.ID,title:n("openFile","Open File..."),category:w.File,f1:!0,keybinding:{when:D.toNegated(),weight:v.WorkbenchContrib,primary:k.CtrlCmd|u.KeyO}})}async run(e,o){return e.get(I).pickFileAndOpen({forceNewWindow:!1,telemetryExtraData:o})}}class S extends i{static ID="workbench.action.files.openFolder";constructor(){super({id:S.ID,title:n("openFolder","Open Folder..."),category:w.File,f1:!0,precondition:g,keybinding:{weight:v.WorkbenchContrib,primary:void 0,linux:{primary:R(k.CtrlCmd|u.KeyK,k.CtrlCmd|u.KeyO)},win:{primary:R(k.CtrlCmd|u.KeyK,k.CtrlCmd|u.KeyO)}}})}async run(e,o){return e.get(I).pickFolderAndOpen({forceNewWindow:!1,telemetryExtraData:o})}}class C extends i{static ID="workbench.action.files.openFolderViaWorkspace";constructor(){super({id:C.ID,title:n("openFolder","Open Folder..."),category:w.File,f1:!0,precondition:a.and(g.toNegated(),m.isEqualTo("workspace")),keybinding:{weight:v.WorkbenchContrib,primary:k.CtrlCmd|u.KeyO}})}run(e){return e.get(K).executeCommand(Q)}}class W extends i{static ID="workbench.action.files.openFileFolder";static LABEL=n("openFileFolder","Open...");constructor(){super({id:W.ID,title:W.LABEL,category:w.File,f1:!0,precondition:a.and(D,g),keybinding:{weight:v.WorkbenchContrib,primary:k.CtrlCmd|u.KeyO}})}async run(e,o){return e.get(I).pickFileFolderAndOpen({forceNewWindow:!1,telemetryExtraData:o})}}class h extends i{static ID="workbench.action.openWorkspace";constructor(){super({id:h.ID,title:n("openWorkspaceAction","Open Workspace from File..."),category:w.File,f1:!0,precondition:l})}async run(e,o){return e.get(I).pickWorkspaceAndOpen({telemetryExtraData:o})}}class f extends i{static ID="workbench.action.closeFolder";constructor(){super({id:f.ID,title:n("closeWorkspace","Close Workspace"),category:y,f1:!0,precondition:a.and(m.notEqualsTo("empty"),P),keybinding:{weight:v.WorkbenchContrib,primary:R(k.CtrlCmd|u.KeyK,u.KeyF)}})}async run(e){const o=e.get(U),r=e.get(H);return o.openWindow({forceReuseWindow:!0,remoteAuthority:r.remoteAuthority})}}class N extends i{static ID="workbench.action.openWorkspaceConfigFile";constructor(){super({id:N.ID,title:n("openWorkspaceConfigFile","Open Workspace Configuration File"),category:y,f1:!0,precondition:m.isEqualTo("workspace")})}async run(e){const o=e.get(E),r=e.get(j),t=o.getWorkspace().configuration;t&&await r.openEditor({resource:t,options:{pinned:!0}})}}class L extends i{static ID="workbench.action.addRootFolder";constructor(){super({id:L.ID,title:G,category:y,f1:!0,precondition:a.or(l,m.isEqualTo("workspace"))})}run(e){return e.get(K).executeCommand(B)}}class _ extends i{static ID="workbench.action.removeRootFolder";constructor(){super({id:_.ID,title:n("globalRemoveFolderFromWorkspace","Remove Folder from Workspace..."),category:y,f1:!0,precondition:a.and(X.notEqualsTo("0"),a.or(l,m.isEqualTo("workspace")))})}async run(e){const o=e.get(K),r=e.get(T),t=await o.executeCommand(J);t&&await r.removeFolders([t.uri])}}class A extends i{static ID="workbench.action.saveWorkspaceAs";constructor(){super({id:A.ID,title:n("saveWorkspaceAsAction","Save Workspace As..."),category:y,f1:!0,precondition:l})}async run(e){const o=e.get(T),r=e.get(E),t=await o.pickNewWorkspacePath();if(t&&Y(t))switch(r.getWorkbenchState()){case x.EMPTY:case x.FOLDER:{const M=r.getWorkspace().folders.map(O=>({uri:O.uri}));return o.createAndEnterWorkspace(M,t)}case x.WORKSPACE:return o.saveAndEnterWorkspace(t)}}}class b extends i{static ID="workbench.action.duplicateWorkspaceInNewWindow";constructor(){super({id:b.ID,title:n("duplicateWorkspaceInNewWindow","Duplicate As Workspace in New Window"),category:y,f1:!0,precondition:l})}async run(e){const o=e.get(E),r=e.get(T),t=e.get(U),M=e.get(Z),O=e.get(H),V=o.getWorkspace().folders,q=O.remoteAuthority,z=await M.createUntitledWorkspace(V,q);return await r.copyWorkspaceSettings(z),t.openWindow([{workspaceUri:z.configPath}],{forceNewWindow:!0,remoteAuthority:q})}}c(L),c(_),c(F),c(S),c(C),c(W),c(h),c(N),c(f),c(A),c(b),d.appendMenuItem(p.MenubarFileMenu,{group:"2_open",command:{id:F.ID,title:s({key:"miOpenFile",comment:["&& denotes a mnemonic"]},"&&Open File...")},order:1,when:D.toNegated()}),d.appendMenuItem(p.MenubarFileMenu,{group:"2_open",command:{id:S.ID,title:s({key:"miOpenFolder",comment:["&& denotes a mnemonic"]},"Open &&Folder...")},order:2,when:g}),d.appendMenuItem(p.MenubarFileMenu,{group:"2_open",command:{id:C.ID,title:s({key:"miOpenFolder",comment:["&& denotes a mnemonic"]},"Open &&Folder...")},order:2,when:a.and(g.toNegated(),m.isEqualTo("workspace"))}),d.appendMenuItem(p.MenubarFileMenu,{group:"2_open",command:{id:W.ID,title:s({key:"miOpen",comment:["&& denotes a mnemonic"]},"&&Open...")},order:1,when:a.and(D,g)}),d.appendMenuItem(p.MenubarFileMenu,{group:"2_open",command:{id:h.ID,title:s({key:"miOpenWorkspace",comment:["&& denotes a mnemonic"]},"Open Wor&&kspace from File...")},order:3,when:l}),d.appendMenuItem(p.MenubarFileMenu,{group:"3_workspace",command:{id:B,title:s({key:"miAddFolderToWorkspace",comment:["&& denotes a mnemonic"]},"A&&dd Folder to Workspace...")},when:a.or(l,m.isEqualTo("workspace")),order:1}),d.appendMenuItem(p.MenubarFileMenu,{group:"3_workspace",command:{id:A.ID,title:s("miSaveWorkspaceAs","Save Workspace As...")},order:2,when:l}),d.appendMenuItem(p.MenubarFileMenu,{group:"3_workspace",command:{id:b.ID,title:s("duplicateWorkspace","Duplicate Workspace")},order:3,when:l}),d.appendMenuItem(p.MenubarFileMenu,{group:"6_close",command:{id:f.ID,title:s({key:"miCloseFolder",comment:["&& denotes a mnemonic"]},"Close &&Folder")},order:3,when:a.and(m.isEqualTo("folder"),P)}),d.appendMenuItem(p.MenubarFileMenu,{group:"6_close",command:{id:f.ID,title:s({key:"miCloseWorkspace",comment:["&& denotes a mnemonic"]},"Close &&Workspace")},order:3,when:a.and(m.isEqualTo("workspace"),P)});export{L as AddRootFolderAction,F as OpenFileAction,W as OpenFileFolderAction,S as OpenFolderAction,C as OpenFolderViaWorkspaceAction,_ as RemoveRootFolderAction};
+import { localize, localize2 } from '../../../nls.js';
+import { IWorkspaceContextService, hasWorkspaceFileExtension } from '../../../platform/workspace/common/workspace.js';
+import { IWorkspaceEditingService } from '../../services/workspaces/common/workspaceEditing.js';
+import { IEditorService } from '../../services/editor/common/editorService.js';
+import { ICommandService } from '../../../platform/commands/common/commands.js';
+import { ADD_ROOT_FOLDER_COMMAND_ID, ADD_ROOT_FOLDER_LABEL, PICK_WORKSPACE_FOLDER_COMMAND_ID, SET_ROOT_FOLDER_COMMAND_ID } from './workspaceCommands.js';
+import { IFileDialogService } from '../../../platform/dialogs/common/dialogs.js';
+import { MenuRegistry, MenuId, Action2, registerAction2 } from '../../../platform/actions/common/actions.js';
+import { EmptyWorkspaceSupportContext, EnterMultiRootWorkspaceSupportContext, OpenFolderWorkspaceSupportContext, WorkbenchStateContext, WorkspaceFolderCountContext } from '../../common/contextkeys.js';
+import { IHostService } from '../../services/host/browser/host.js';
+import { KeyChord } from '../../../base/common/keyCodes.js';
+import { ContextKeyExpr } from '../../../platform/contextkey/common/contextkey.js';
+import { IWorkbenchEnvironmentService } from '../../services/environment/common/environmentService.js';
+import { IWorkspacesService } from '../../../platform/workspaces/common/workspaces.js';
+import { IsMacNativeContext } from '../../../platform/contextkey/common/contextkeys.js';
+import { Categories } from '../../../platform/action/common/actionCommonCategories.js';
+const workspacesCategory = localize2('workspaces', 'Workspaces');
+export class OpenFileAction extends Action2 {
+    static { this.ID = 'workbench.action.files.openFile'; }
+    constructor() {
+        super({
+            id: OpenFileAction.ID,
+            title: localize2('openFile', 'Open File...'),
+            category: Categories.File,
+            f1: true,
+            keybinding: {
+                when: IsMacNativeContext.toNegated(),
+                weight: 200,
+                primary: 2048 | 45
+            }
+        });
+    }
+    async run(accessor, data) {
+        const fileDialogService = accessor.get(IFileDialogService);
+        return fileDialogService.pickFileAndOpen({ forceNewWindow: false, telemetryExtraData: data });
+    }
+}
+export class OpenFolderAction extends Action2 {
+    static { this.ID = 'workbench.action.files.openFolder'; }
+    constructor() {
+        super({
+            id: OpenFolderAction.ID,
+            title: localize2('openFolder', 'Open Folder...'),
+            category: Categories.File,
+            f1: true,
+            precondition: OpenFolderWorkspaceSupportContext,
+            keybinding: {
+                weight: 200,
+                primary: undefined,
+                linux: {
+                    primary: KeyChord(2048 | 41, 2048 | 45)
+                },
+                win: {
+                    primary: KeyChord(2048 | 41, 2048 | 45)
+                }
+            }
+        });
+    }
+    async run(accessor, data) {
+        const fileDialogService = accessor.get(IFileDialogService);
+        return fileDialogService.pickFolderAndOpen({ forceNewWindow: false, telemetryExtraData: data });
+    }
+}
+export class OpenFolderViaWorkspaceAction extends Action2 {
+    static { this.ID = 'workbench.action.files.openFolderViaWorkspace'; }
+    constructor() {
+        super({
+            id: OpenFolderViaWorkspaceAction.ID,
+            title: localize2('openFolder', 'Open Folder...'),
+            category: Categories.File,
+            f1: true,
+            precondition: ContextKeyExpr.and(OpenFolderWorkspaceSupportContext.toNegated(), WorkbenchStateContext.isEqualTo('workspace')),
+            keybinding: {
+                weight: 200,
+                primary: 2048 | 45
+            }
+        });
+    }
+    run(accessor) {
+        const commandService = accessor.get(ICommandService);
+        return commandService.executeCommand(SET_ROOT_FOLDER_COMMAND_ID);
+    }
+}
+export class OpenFileFolderAction extends Action2 {
+    static { this.ID = 'workbench.action.files.openFileFolder'; }
+    static { this.LABEL = localize2('openFileFolder', 'Open...'); }
+    constructor() {
+        super({
+            id: OpenFileFolderAction.ID,
+            title: OpenFileFolderAction.LABEL,
+            category: Categories.File,
+            f1: true,
+            precondition: ContextKeyExpr.and(IsMacNativeContext, OpenFolderWorkspaceSupportContext),
+            keybinding: {
+                weight: 200,
+                primary: 2048 | 45
+            }
+        });
+    }
+    async run(accessor, data) {
+        const fileDialogService = accessor.get(IFileDialogService);
+        return fileDialogService.pickFileFolderAndOpen({ forceNewWindow: false, telemetryExtraData: data });
+    }
+}
+class OpenWorkspaceAction extends Action2 {
+    static { this.ID = 'workbench.action.openWorkspace'; }
+    constructor() {
+        super({
+            id: OpenWorkspaceAction.ID,
+            title: localize2('openWorkspaceAction', 'Open Workspace from File...'),
+            category: Categories.File,
+            f1: true,
+            precondition: EnterMultiRootWorkspaceSupportContext
+        });
+    }
+    async run(accessor, data) {
+        const fileDialogService = accessor.get(IFileDialogService);
+        return fileDialogService.pickWorkspaceAndOpen({ telemetryExtraData: data });
+    }
+}
+class CloseWorkspaceAction extends Action2 {
+    static { this.ID = 'workbench.action.closeFolder'; }
+    constructor() {
+        super({
+            id: CloseWorkspaceAction.ID,
+            title: localize2('closeWorkspace', 'Close Workspace'),
+            category: workspacesCategory,
+            f1: true,
+            precondition: ContextKeyExpr.and(WorkbenchStateContext.notEqualsTo('empty'), EmptyWorkspaceSupportContext),
+            keybinding: {
+                weight: 200,
+                primary: KeyChord(2048 | 41, 36)
+            }
+        });
+    }
+    async run(accessor) {
+        const hostService = accessor.get(IHostService);
+        const environmentService = accessor.get(IWorkbenchEnvironmentService);
+        return hostService.openWindow({ forceReuseWindow: true, remoteAuthority: environmentService.remoteAuthority });
+    }
+}
+class OpenWorkspaceConfigFileAction extends Action2 {
+    static { this.ID = 'workbench.action.openWorkspaceConfigFile'; }
+    constructor() {
+        super({
+            id: OpenWorkspaceConfigFileAction.ID,
+            title: localize2('openWorkspaceConfigFile', 'Open Workspace Configuration File'),
+            category: workspacesCategory,
+            f1: true,
+            precondition: WorkbenchStateContext.isEqualTo('workspace')
+        });
+    }
+    async run(accessor) {
+        const contextService = accessor.get(IWorkspaceContextService);
+        const editorService = accessor.get(IEditorService);
+        const configuration = contextService.getWorkspace().configuration;
+        if (configuration) {
+            await editorService.openEditor({ resource: configuration, options: { pinned: true } });
+        }
+    }
+}
+export class AddRootFolderAction extends Action2 {
+    static { this.ID = 'workbench.action.addRootFolder'; }
+    constructor() {
+        super({
+            id: AddRootFolderAction.ID,
+            title: ADD_ROOT_FOLDER_LABEL,
+            category: workspacesCategory,
+            f1: true,
+            precondition: ContextKeyExpr.or(EnterMultiRootWorkspaceSupportContext, WorkbenchStateContext.isEqualTo('workspace'))
+        });
+    }
+    run(accessor) {
+        const commandService = accessor.get(ICommandService);
+        return commandService.executeCommand(ADD_ROOT_FOLDER_COMMAND_ID);
+    }
+}
+export class RemoveRootFolderAction extends Action2 {
+    static { this.ID = 'workbench.action.removeRootFolder'; }
+    constructor() {
+        super({
+            id: RemoveRootFolderAction.ID,
+            title: localize2('globalRemoveFolderFromWorkspace', 'Remove Folder from Workspace...'),
+            category: workspacesCategory,
+            f1: true,
+            precondition: ContextKeyExpr.and(WorkspaceFolderCountContext.notEqualsTo('0'), ContextKeyExpr.or(EnterMultiRootWorkspaceSupportContext, WorkbenchStateContext.isEqualTo('workspace')))
+        });
+    }
+    async run(accessor) {
+        const commandService = accessor.get(ICommandService);
+        const workspaceEditingService = accessor.get(IWorkspaceEditingService);
+        const folder = await commandService.executeCommand(PICK_WORKSPACE_FOLDER_COMMAND_ID);
+        if (folder) {
+            await workspaceEditingService.removeFolders([folder.uri]);
+        }
+    }
+}
+class SaveWorkspaceAsAction extends Action2 {
+    static { this.ID = 'workbench.action.saveWorkspaceAs'; }
+    constructor() {
+        super({
+            id: SaveWorkspaceAsAction.ID,
+            title: localize2('saveWorkspaceAsAction', 'Save Workspace As...'),
+            category: workspacesCategory,
+            f1: true,
+            precondition: EnterMultiRootWorkspaceSupportContext
+        });
+    }
+    async run(accessor) {
+        const workspaceEditingService = accessor.get(IWorkspaceEditingService);
+        const contextService = accessor.get(IWorkspaceContextService);
+        const configPathUri = await workspaceEditingService.pickNewWorkspacePath();
+        if (configPathUri && hasWorkspaceFileExtension(configPathUri)) {
+            switch (contextService.getWorkbenchState()) {
+                case 1:
+                case 2: {
+                    const folders = contextService.getWorkspace().folders.map(folder => ({ uri: folder.uri }));
+                    return workspaceEditingService.createAndEnterWorkspace(folders, configPathUri);
+                }
+                case 3:
+                    return workspaceEditingService.saveAndEnterWorkspace(configPathUri);
+            }
+        }
+    }
+}
+class DuplicateWorkspaceInNewWindowAction extends Action2 {
+    static { this.ID = 'workbench.action.duplicateWorkspaceInNewWindow'; }
+    constructor() {
+        super({
+            id: DuplicateWorkspaceInNewWindowAction.ID,
+            title: localize2('duplicateWorkspaceInNewWindow', 'Duplicate As Workspace in New Window'),
+            category: workspacesCategory,
+            f1: true,
+            precondition: EnterMultiRootWorkspaceSupportContext
+        });
+    }
+    async run(accessor) {
+        const workspaceContextService = accessor.get(IWorkspaceContextService);
+        const workspaceEditingService = accessor.get(IWorkspaceEditingService);
+        const hostService = accessor.get(IHostService);
+        const workspacesService = accessor.get(IWorkspacesService);
+        const environmentService = accessor.get(IWorkbenchEnvironmentService);
+        const folders = workspaceContextService.getWorkspace().folders;
+        const remoteAuthority = environmentService.remoteAuthority;
+        const newWorkspace = await workspacesService.createUntitledWorkspace(folders, remoteAuthority);
+        await workspaceEditingService.copyWorkspaceSettings(newWorkspace);
+        return hostService.openWindow([{ workspaceUri: newWorkspace.configPath }], { forceNewWindow: true, remoteAuthority });
+    }
+}
+registerAction2(AddRootFolderAction);
+registerAction2(RemoveRootFolderAction);
+registerAction2(OpenFileAction);
+registerAction2(OpenFolderAction);
+registerAction2(OpenFolderViaWorkspaceAction);
+registerAction2(OpenFileFolderAction);
+registerAction2(OpenWorkspaceAction);
+registerAction2(OpenWorkspaceConfigFileAction);
+registerAction2(CloseWorkspaceAction);
+registerAction2(SaveWorkspaceAsAction);
+registerAction2(DuplicateWorkspaceInNewWindowAction);
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+    group: '2_open',
+    command: {
+        id: OpenFileAction.ID,
+        title: localize({ key: 'miOpenFile', comment: ['&& denotes a mnemonic'] }, "&&Open File...")
+    },
+    order: 1,
+    when: IsMacNativeContext.toNegated()
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+    group: '2_open',
+    command: {
+        id: OpenFolderAction.ID,
+        title: localize({ key: 'miOpenFolder', comment: ['&& denotes a mnemonic'] }, "Open &&Folder...")
+    },
+    order: 2,
+    when: OpenFolderWorkspaceSupportContext
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+    group: '2_open',
+    command: {
+        id: OpenFolderViaWorkspaceAction.ID,
+        title: localize({ key: 'miOpenFolder', comment: ['&& denotes a mnemonic'] }, "Open &&Folder...")
+    },
+    order: 2,
+    when: ContextKeyExpr.and(OpenFolderWorkspaceSupportContext.toNegated(), WorkbenchStateContext.isEqualTo('workspace'))
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+    group: '2_open',
+    command: {
+        id: OpenFileFolderAction.ID,
+        title: localize({ key: 'miOpen', comment: ['&& denotes a mnemonic'] }, "&&Open...")
+    },
+    order: 1,
+    when: ContextKeyExpr.and(IsMacNativeContext, OpenFolderWorkspaceSupportContext)
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+    group: '2_open',
+    command: {
+        id: OpenWorkspaceAction.ID,
+        title: localize({ key: 'miOpenWorkspace', comment: ['&& denotes a mnemonic'] }, "Open Wor&&kspace from File...")
+    },
+    order: 3,
+    when: EnterMultiRootWorkspaceSupportContext
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+    group: '3_workspace',
+    command: {
+        id: ADD_ROOT_FOLDER_COMMAND_ID,
+        title: localize({ key: 'miAddFolderToWorkspace', comment: ['&& denotes a mnemonic'] }, "A&&dd Folder to Workspace...")
+    },
+    when: ContextKeyExpr.or(EnterMultiRootWorkspaceSupportContext, WorkbenchStateContext.isEqualTo('workspace')),
+    order: 1
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+    group: '3_workspace',
+    command: {
+        id: SaveWorkspaceAsAction.ID,
+        title: localize('miSaveWorkspaceAs', "Save Workspace As...")
+    },
+    order: 2,
+    when: EnterMultiRootWorkspaceSupportContext
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+    group: '3_workspace',
+    command: {
+        id: DuplicateWorkspaceInNewWindowAction.ID,
+        title: localize('duplicateWorkspace', "Duplicate Workspace")
+    },
+    order: 3,
+    when: EnterMultiRootWorkspaceSupportContext
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+    group: '6_close',
+    command: {
+        id: CloseWorkspaceAction.ID,
+        title: localize({ key: 'miCloseFolder', comment: ['&& denotes a mnemonic'] }, "Close &&Folder")
+    },
+    order: 3,
+    when: ContextKeyExpr.and(WorkbenchStateContext.isEqualTo('folder'), EmptyWorkspaceSupportContext)
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+    group: '6_close',
+    command: {
+        id: CloseWorkspaceAction.ID,
+        title: localize({ key: 'miCloseWorkspace', comment: ['&& denotes a mnemonic'] }, "Close &&Workspace")
+    },
+    order: 3,
+    when: ContextKeyExpr.and(WorkbenchStateContext.isEqualTo('workspace'), EmptyWorkspaceSupportContext)
+});

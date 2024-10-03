@@ -1,1 +1,1321 @@
-var M=Object.defineProperty;var F=Object.getOwnPropertyDescriptor;var R=(g,t,i,e)=>{for(var r=e>1?void 0:e?F(t,i):t,o=g.length-1,s;o>=0;o--)(s=g[o])&&(r=(e?s(t,i,r):s(r))||r);return e&&r&&M(t,i,r),r},u=(g,t)=>(i,e)=>t(i,e,g);import*as T from"../../../../base/browser/ui/aria/aria.js";import{distinct as x}from"../../../../base/common/arrays.js";import{Queue as O,RunOnceScheduler as B,raceTimeout as V}from"../../../../base/common/async.js";import{CancellationTokenSource as C}from"../../../../base/common/cancellation.js";import{canceled as U}from"../../../../base/common/errors.js";import{Emitter as p}from"../../../../base/common/event.js";import{normalizeDriveLetter as W}from"../../../../base/common/labels.js";import{Disposable as q,DisposableMap as z,DisposableStore as A,MutableDisposable as G,dispose as j}from"../../../../base/common/lifecycle.js";import{mixin as Q}from"../../../../base/common/objects.js";import*as H from"../../../../base/common/platform.js";import*as $ from"../../../../base/common/resources.js";import D from"../../../../base/common/severity.js";import{URI as K}from"../../../../base/common/uri.js";import{generateUuid as X}from"../../../../base/common/uuid.js";import"../../../../editor/common/core/position.js";import{localize as n}from"../../../../nls.js";import{IConfigurationService as Y}from"../../../../platform/configuration/common/configuration.js";import{IInstantiationService as J}from"../../../../platform/instantiation/common/instantiation.js";import{ILogService as Z}from"../../../../platform/log/common/log.js";import{INotificationService as ee}from"../../../../platform/notification/common/notification.js";import{IProductService as te}from"../../../../platform/product/common/productService.js";import{ICustomEndpointTelemetryService as ie,ITelemetryService as re,TelemetryLevel as oe}from"../../../../platform/telemetry/common/telemetry.js";import{IUriIdentityService as se}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{IWorkspaceContextService as ne}from"../../../../platform/workspace/common/workspace.js";import{ViewContainerLocation as ae}from"../../../common/views.js";import{RawDebugSession as de}from"./rawDebugSession.js";import{IDebugService as ue,State as h,VIEWLET_ID as ce,isFrameDeemphasized as le}from"../common/debug.js";import"../common/debugCompoundRoot.js";import{ExpressionContainer as _,MemoryRegion as pe,Thread as he}from"../common/debugModel.js";import{Source as y}from"../common/debugSource.js";import{filterExceptionsFromTelemetry as ge}from"../common/debugUtils.js";import{ReplModel as be}from"../common/replModel.js";import{IWorkbenchEnvironmentService as fe}from"../../../services/environment/common/environmentService.js";import{IHostService as me}from"../../../services/host/browser/host.js";import{ILifecycleService as we}from"../../../services/lifecycle/common/lifecycle.js";import{IPaneCompositePartService as Se}from"../../../services/panecomposite/browser/panecomposite.js";import{getActiveWindow as De}from"../../../../base/browser/dom.js";import{mainWindow as ye}from"../../../../base/browser/window.js";import{isDefined as ve}from"../../../../base/common/types.js";import{ITestService as Ie}from"../../testing/common/testService.js";import{ITestResultService as ke}from"../../testing/common/testResultService.js";import"../../testing/common/testResult.js";import{IAccessibilityService as Ee}from"../../../../platform/accessibility/common/accessibility.js";const Pe=1500;let w=class{constructor(t,i,e,r,o,s,a,l,d,b,m,S,Te,v,Be,Ce,Ae,_e,Ne,Le,N,Me){this.id=t;this._configuration=i;this.root=e;this.model=r;this.debugService=s;this.telemetryService=a;this.hostService=l;this.configurationService=d;this.paneCompositeService=b;this.workspaceContextService=m;this.productService=S;this.notificationService=Te;this.uriIdentityService=Be;this.instantiationService=Ce;this.customEndpointTelemetryService=Ae;this.workbenchEnvironmentService=_e;this.logService=Ne;this.testService=Le;this.accessibilityService=Me;this._options=o||{},this.parentSession=this._options.parentSession,this.hasSeparateRepl()?this.repl=new be(this.configurationService):this.repl=this.parentSession.repl;const f=this.globalDisposables,I=f.add(new G);I.value=this.repl.onDidChangeElements(c=>this._onDidChangeREPLElements.fire(c)),v&&f.add(v.onWillShutdown(()=>{this.shutdown(),j(f)})),this.correlatedTestRun=o?.testRun?N.getResult(o.testRun.runId):this.parentSession?.correlatedTestRun,this.correlatedTestRun&&f.add(this.correlatedTestRun.onComplete(()=>this.terminate()));const k=this._options.compoundRoot;k&&f.add(k.onDidSessionStop(()=>this.terminate())),this.passFocusScheduler=new B(()=>{if(this.debugService.getModel().getSessions().some(c=>c.state===h.Stopped)||this.getAllThreads().some(c=>c.stopped))if(typeof this.lastContinuedThreadId=="number"){const c=this.debugService.getViewModel().focusedThread;if(c&&c.threadId===this.lastContinuedThreadId&&!c.stopped){const P=this.getStoppedDetails()?.threadId,L=typeof P=="number"?this.getThread(P):void 0;this.debugService.focusStackFrame(void 0,L)}}else{const c=this.debugService.getViewModel().focusedSession;c&&c.getId()===this.getId()&&c.state!==h.Stopped&&this.debugService.focusStackFrame(void 0)}},800);const E=this._options.parentSession;E&&f.add(E.onDidEndAdapter(()=>{!this.hasSeparateRepl()&&this.raw?.isInShutdown===!1&&(this.repl=this.repl.clone(),I.value=this.repl.onDidChangeElements(c=>this._onDidChangeREPLElements.fire(c)),this.parentSession=void 0)}))}parentSession;rememberedCapabilities;_subId;raw;initialized=!1;_options;sources=new Map;threads=new Map;threadIds=[];cancellationMap=new Map;rawListeners=new A;globalDisposables=new A;fetchThreadsScheduler;passFocusScheduler;lastContinuedThreadId;repl;stoppedDetails=[];statusQueue=this.rawListeners.add(new Re);correlatedTestRun;didTerminateTestRun;_onDidChangeState=new p;_onDidEndAdapter=new p;_onDidLoadedSource=new p;_onDidCustomEvent=new p;_onDidProgressStart=new p;_onDidProgressUpdate=new p;_onDidProgressEnd=new p;_onDidInvalidMemory=new p;_onDidChangeREPLElements=new p;_name;_onDidChangeName=new p;_waitToResume;getId(){return this.id}setSubId(t){this._subId=t}getMemory(t){return new pe(t,this)}get subId(){return this._subId}get configuration(){return this._configuration.resolved}get unresolvedConfiguration(){return this._configuration.unresolved}get lifecycleManagedByParent(){return!!this._options.lifecycleManagedByParent}get compact(){return!!this._options.compact}get saveBeforeRestart(){return this._options.saveBeforeRestart??!this._options?.parentSession}get compoundRoot(){return this._options.compoundRoot}get suppressDebugStatusbar(){return this._options.suppressDebugStatusbar??!1}get suppressDebugToolbar(){return this._options.suppressDebugToolbar??!1}get suppressDebugView(){return this._options.suppressDebugView??!1}get autoExpandLazyVariables(){const t=this.accessibilityService.isScreenReaderOptimized(),i=this.configurationService.getValue("debug").autoExpandLazyVariables;return i==="auto"&&t||i==="on"}setConfiguration(t){this._configuration=t}getLabel(){return this.workspaceContextService.getWorkspace().folders.length>1&&this.root?`${this.name} (${$.basenameOrAuthority(this.root.uri)})`:this.name}setName(t){this._name=t,this._onDidChangeName.fire(t)}get name(){return this._name||this.configuration.name}get state(){if(!this.initialized)return h.Initializing;if(!this.raw)return h.Inactive;const t=this.debugService.getViewModel().focusedThread;return t&&t.session===this?t.stopped?h.Stopped:h.Running:this.getAllThreads().some(i=>i.stopped)?h.Stopped:h.Running}get capabilities(){return this.raw?this.raw.capabilities:Object.create(null)}get onDidChangeState(){return this._onDidChangeState.event}get onDidEndAdapter(){return this._onDidEndAdapter.event}get onDidChangeReplElements(){return this._onDidChangeREPLElements.event}get onDidChangeName(){return this._onDidChangeName.event}get onDidCustomEvent(){return this._onDidCustomEvent.event}get onDidLoadedSource(){return this._onDidLoadedSource.event}get onDidProgressStart(){return this._onDidProgressStart.event}get onDidProgressUpdate(){return this._onDidProgressUpdate.event}get onDidProgressEnd(){return this._onDidProgressEnd.event}get onDidInvalidateMemory(){return this._onDidInvalidMemory.event}async initialize(t){this.raw&&await this.shutdown();try{const i=await t.createDebugAdapter(this);this.raw=this.instantiationService.createInstance(de,i,t,this.id,this.configuration.name),await this.raw.start(),this.registerListeners(),await this.raw.initialize({clientID:"vscode",clientName:this.productService.nameLong,adapterID:this.configuration.type,pathFormat:"path",linesStartAt1:!0,columnsStartAt1:!0,supportsVariableType:!0,supportsVariablePaging:!0,supportsRunInTerminalRequest:!0,locale:H.language,supportsProgressReporting:!0,supportsInvalidatedEvent:!0,supportsMemoryReferences:!0,supportsArgsCanBeInterpretedByShell:!0,supportsMemoryEvent:!0,supportsStartDebuggingRequest:!0,supportsANSIStyling:!0}),this.initialized=!0,this._onDidChangeState.fire(),this.rememberedCapabilities=this.raw.capabilities,this.debugService.setExceptionBreakpointsForSession(this,this.raw&&this.raw.capabilities.exceptionBreakpointFilters||[]),this.debugService.getModel().registerBreakpointModes(this.configuration.type,this.raw.capabilities.breakpointModes||[])}catch(i){throw this.initialized=!0,this._onDidChangeState.fire(),await this.shutdown(),i}}async launchOrAttach(t){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","launch or attach"));if(this.parentSession&&this.parentSession.state===h.Inactive)throw U();t.__sessionId=this.getId();try{await this.raw.launchOrAttach(t)}catch(i){throw this.shutdown(),i}}async terminate(t=!1){this.raw||this.onDidExitAdapter(),this.cancelAllRequests(),this._options.lifecycleManagedByParent&&this.parentSession?await this.parentSession.terminate(t):this.correlatedTestRun&&!this.correlatedTestRun.completedAt&&!this.didTerminateTestRun?(this.didTerminateTestRun=!0,this.testService.cancelTestRun(this.correlatedTestRun.id)):this.raw&&(this.raw.capabilities.supportsTerminateRequest&&this._configuration.resolved.request==="launch"?await this.raw.terminate(t):await this.raw.disconnect({restart:t,terminateDebuggee:!0})),t||this._options.compoundRoot?.sessionStopped()}async disconnect(t=!1,i=!1){this.raw||this.onDidExitAdapter(),this.cancelAllRequests(),this._options.lifecycleManagedByParent&&this.parentSession?await this.parentSession.disconnect(t,i):this.raw&&await this.raw.disconnect({restart:t,terminateDebuggee:!1,suspendDebuggee:i}),t||this._options.compoundRoot?.sessionStopped()}async restart(){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","restart"));this.cancelAllRequests(),this._options.lifecycleManagedByParent&&this.parentSession?await this.parentSession.restart():await this.raw.restart({arguments:this.configuration})}async sendBreakpoints(t,i,e){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","breakpoints"));if(!this.raw.readyForBreakpoints)return Promise.resolve(void 0);const r=this.getRawSource(t);i.length&&!r.adapterData&&(r.adapterData=i[0].adapterData),r.path&&(r.path=W(r.path));const o=await this.raw.setBreakpoints({source:r,lines:i.map(s=>s.sessionAgnosticData.lineNumber),breakpoints:i.map(s=>s.toDAP()),sourceModified:e});if(o?.body){const s=new Map;for(let a=0;a<i.length;a++)s.set(i[a].getId(),o.body.breakpoints[a]);this.model.setBreakpointSessionData(this.getId(),this.capabilities,s)}}async sendFunctionBreakpoints(t){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","function breakpoints"));if(this.raw.readyForBreakpoints){const i=await this.raw.setFunctionBreakpoints({breakpoints:t.map(e=>e.toDAP())});if(i?.body){const e=new Map;for(let r=0;r<t.length;r++)e.set(t[r].getId(),i.body.breakpoints[r]);this.model.setBreakpointSessionData(this.getId(),this.capabilities,e)}}}async sendExceptionBreakpoints(t){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","exception breakpoints"));if(this.raw.readyForBreakpoints){const i=this.capabilities.supportsExceptionFilterOptions?{filters:[],filterOptions:t.map(r=>r.condition?{filterId:r.filter,condition:r.condition}:{filterId:r.filter})}:{filters:t.map(r=>r.filter)},e=await this.raw.setExceptionBreakpoints(i);if(e?.body&&e.body.breakpoints){const r=new Map;for(let o=0;o<t.length;o++)r.set(t[o].getId(),e.body.breakpoints[o]);this.model.setBreakpointSessionData(this.getId(),this.capabilities,r)}}}dataBytesBreakpointInfo(t,i){if(this.raw?.capabilities.supportsDataBreakpointBytes===!1)throw new Error(n("sessionDoesNotSupporBytesBreakpoints","Session does not support breakpoints with bytes"));return this._dataBreakpointInfo({name:t,bytes:i,asAddress:!0})}dataBreakpointInfo(t,i){return this._dataBreakpointInfo({name:t,variablesReference:i})}async _dataBreakpointInfo(t){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","data breakpoints info"));if(!this.raw.readyForBreakpoints)throw new Error(n("sessionNotReadyForBreakpoints","Session is not ready for breakpoints"));return(await this.raw.dataBreakpointInfo(t))?.body}async sendDataBreakpoints(t){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","data breakpoints"));if(this.raw.readyForBreakpoints){const i=await Promise.all(t.map(async r=>{try{return{dap:await r.toDAP(this),bp:r}}catch(o){return{bp:r,message:o.message}}})),e=await this.raw.setDataBreakpoints({breakpoints:i.map(r=>r.dap).filter(ve)});if(e?.body){const r=new Map;let o=0;for(const s of i)s.dap?o<e.body.breakpoints.length&&r.set(s.bp.getId(),e.body.breakpoints[o++]):r.set(s.bp.getId(),s.message);this.model.setBreakpointSessionData(this.getId(),this.capabilities,r)}}}async sendInstructionBreakpoints(t){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","instruction breakpoints"));if(this.raw.readyForBreakpoints){const i=await this.raw.setInstructionBreakpoints({breakpoints:t.map(e=>e.toDAP())});if(i?.body){const e=new Map;for(let r=0;r<t.length;r++)e.set(t[r].getId(),i.body.breakpoints[r]);this.model.setBreakpointSessionData(this.getId(),this.capabilities,e)}}}async breakpointsLocations(t,i){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","breakpoints locations"));const e=this.getRawSource(t),r=await this.raw.breakpointLocations({source:e,line:i});if(!r||!r.body||!r.body.breakpoints)return[];const o=r.body.breakpoints.map(s=>({lineNumber:s.line,column:s.column||1}));return x(o,s=>`${s.lineNumber}:${s.column}`)}getDebugProtocolBreakpoint(t){return this.model.getDebugProtocolBreakpoint(t,this.getId())}customRequest(t,i){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'",t));return this.raw.custom(t,i)}stackTrace(t,i,e,r){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","stackTrace"));const o=this.getNewCancellationToken(t,r);return this.raw.stackTrace({threadId:t,startFrame:i,levels:e},o)}async exceptionInfo(t){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","exceptionInfo"));const i=await this.raw.exceptionInfo({threadId:t});if(i)return{id:i.body.exceptionId,description:i.body.description,breakMode:i.body.breakMode,details:i.body.details}}scopes(t,i){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","scopes"));const e=this.getNewCancellationToken(i);return this.raw.scopes({frameId:t},e)}variables(t,i,e,r,o){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","variables"));const s=i?this.getNewCancellationToken(i):void 0;return this.raw.variables({variablesReference:t,filter:e,start:r,count:o},s)}evaluate(t,i,e,r){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","evaluate"));return this.raw.evaluate({expression:t,frameId:i,context:e,line:r?.line,column:r?.column,source:r?.source})}async restartFrame(t,i){if(await this.waitForTriggeredBreakpoints(),!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","restartFrame"));await this.raw.restartFrame({frameId:t},i)}setLastSteppingGranularity(t,i){const e=this.getThread(t);e&&(e.lastSteppingGranularity=i)}async next(t,i){if(await this.waitForTriggeredBreakpoints(),!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","next"));this.setLastSteppingGranularity(t,i),await this.raw.next({threadId:t,granularity:i})}async stepIn(t,i,e){if(await this.waitForTriggeredBreakpoints(),!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","stepIn"));this.setLastSteppingGranularity(t,e),await this.raw.stepIn({threadId:t,targetId:i,granularity:e})}async stepOut(t,i){if(await this.waitForTriggeredBreakpoints(),!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","stepOut"));this.setLastSteppingGranularity(t,i),await this.raw.stepOut({threadId:t,granularity:i})}async stepBack(t,i){if(await this.waitForTriggeredBreakpoints(),!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","stepBack"));this.setLastSteppingGranularity(t,i),await this.raw.stepBack({threadId:t,granularity:i})}async continue(t){if(await this.waitForTriggeredBreakpoints(),!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","continue"));await this.raw.continue({threadId:t})}async reverseContinue(t){if(await this.waitForTriggeredBreakpoints(),!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","reverse continue"));await this.raw.reverseContinue({threadId:t})}async pause(t){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","pause"));await this.raw.pause({threadId:t})}async terminateThreads(t){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","terminateThreads"));await this.raw.terminateThreads({threadIds:t})}setVariable(t,i,e){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","setVariable"));return this.raw.setVariable({variablesReference:t,name:i,value:e})}setExpression(t,i,e){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","setExpression"));return this.raw.setExpression({expression:i,value:e,frameId:t})}gotoTargets(t,i,e){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","gotoTargets"));return this.raw.gotoTargets({source:t,line:i,column:e})}goto(t,i){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","goto"));return this.raw.goto({threadId:t,targetId:i})}loadSource(t){if(!this.raw)return Promise.reject(new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","loadSource")));const i=this.getSourceForUri(t);let e;if(i)e=i.raw;else{const r=y.getEncodedDebugData(t);e={path:r.path,sourceReference:r.sourceReference}}return this.raw.source({sourceReference:e.sourceReference||0,source:e})}async getLoadedSources(){if(!this.raw)return Promise.reject(new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","getLoadedSources")));const t=await this.raw.loadedSources({});return t?.body&&t.body.sources?t.body.sources.map(i=>this.getSource(i)):[]}async completions(t,i,e,r,o,s){if(!this.raw)return Promise.reject(new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","completions")));const a=this.getNewCancellationToken(i,s);return this.raw.completions({frameId:t,text:e,column:r.column,line:r.lineNumber},a)}async stepInTargets(t){return this.raw?(await this.raw.stepInTargets({frameId:t}))?.body.targets:Promise.reject(new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","stepInTargets")))}async cancel(t){return this.raw?this.raw.cancel({progressId:t}):Promise.reject(new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","cancel")))}async disassemble(t,i,e,r){return this.raw?(await this.raw.disassemble({memoryReference:t,offset:i,instructionOffset:e,instructionCount:r,resolveSymbols:!0}))?.body?.instructions:Promise.reject(new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","disassemble")))}readMemory(t,i,e){return this.raw?this.raw.readMemory({count:e,memoryReference:t,offset:i}):Promise.reject(new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","readMemory")))}writeMemory(t,i,e,r){return this.raw?this.raw.writeMemory({memoryReference:t,offset:i,allowPartial:r,data:e}):Promise.reject(new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","disassemble")))}async resolveLocationReference(t){if(!this.raw)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","locations"));const i=await this.raw.locations({locationReference:t});if(!i?.body)throw new Error(n("noDebugAdapter","No debugger available, can not send '{0}'","locations"));const e=this.getSource(i.body.source);return{column:1,...i.body,source:e}}getThread(t){return this.threads.get(t)}getAllThreads(){const t=[];return this.threadIds.forEach(i=>{const e=this.threads.get(i);e&&t.push(e)}),t}clearThreads(t,i=void 0){if(i!=null){const e=this.threads.get(i);e&&(e.clearCallStack(),e.stoppedDetails=void 0,e.stopped=!1,t&&this.threads.delete(i))}else this.threads.forEach(e=>{e.clearCallStack(),e.stoppedDetails=void 0,e.stopped=!1}),t&&(this.threads.clear(),this.threadIds=[],_.allValues.clear())}getStoppedDetails(){return this.stoppedDetails.length>=1?this.stoppedDetails[0]:void 0}rawUpdate(t){this.threadIds=[],t.threads.forEach(e=>{if(this.threadIds.push(e.id),!this.threads.has(e.id))this.threads.set(e.id,new he(this,e.name,e.id));else if(e.name){const r=this.threads.get(e.id);r&&(r.name=e.name)}}),this.threads.forEach(e=>{this.threadIds.indexOf(e.threadId)===-1&&this.threads.delete(e.threadId)});const i=t.stoppedDetails;if(i)if(i.allThreadsStopped)this.threads.forEach(e=>{e.stoppedDetails=e.threadId===i.threadId?i:{reason:e.stoppedDetails?.reason},e.stopped=!0,e.clearCallStack()});else{const e=typeof i.threadId=="number"?this.threads.get(i.threadId):void 0;e&&(e.stoppedDetails=i,e.clearCallStack(),e.stopped=!0)}}waitForTriggeredBreakpoints(){if(this._waitToResume)return V(this._waitToResume,Pe)}async fetchThreads(t){if(this.raw){const i=await this.raw.threads();i?.body&&i.body.threads&&this.model.rawUpdate({sessionId:this.getId(),threads:i.body.threads,stoppedDetails:t})}}initializeForTest(t){this.raw=t,this.registerListeners()}registerListeners(){if(!this.raw)return;this.rawListeners.add(this.raw.onDidInitialize(async()=>{T.status(this.configuration.noDebug?n("debuggingStartedNoDebug","Started running without debugging."):n("debuggingStarted","Debugging started."));const e=async()=>{if(this.raw&&this.raw.capabilities.supportsConfigurationDoneRequest)try{await this.raw.configurationDone()}catch(r){this.notificationService.error(r),this.raw?.disconnect({})}};try{await this.debugService.sendAllBreakpoints(this)}finally{await e(),await this.fetchThreads()}}));const t=this.statusQueue;this.rawListeners.add(this.raw.onDidStop(e=>this.handleStop(e.body))),this.rawListeners.add(this.raw.onDidThread(e=>{if(t.cancel([e.body.threadId]),e.body.reason==="started")this.fetchThreadsScheduler||(this.fetchThreadsScheduler=new B(()=>{this.fetchThreads()},100),this.rawListeners.add(this.fetchThreadsScheduler)),this.fetchThreadsScheduler.isScheduled()||this.fetchThreadsScheduler.schedule();else if(e.body.reason==="exited"){this.model.clearThreads(this.getId(),!0,e.body.threadId);const r=this.debugService.getViewModel(),o=r.focusedThread;this.passFocusScheduler.cancel(),o&&e.body.threadId===o.threadId&&this.debugService.focusStackFrame(void 0,void 0,r.focusedSession,{explicit:!1})}})),this.rawListeners.add(this.raw.onDidTerminateDebugee(async e=>{T.status(n("debuggingStopped","Debugging stopped.")),e.body&&e.body.restart?await this.debugService.restartSession(this,e.body.restart):this.raw&&await this.raw.disconnect({terminateDebuggee:!1})})),this.rawListeners.add(this.raw.onDidContinued(e=>{const r=e.body.allThreadsContinued!==!1;t.cancel(r?void 0:[e.body.threadId]);const o=r?void 0:e.body.threadId;if(typeof o=="number"){this.stoppedDetails=this.stoppedDetails.filter(a=>a.threadId!==o);const s=this.cancellationMap.get(o);this.cancellationMap.delete(o),s?.forEach(a=>a.dispose(!0))}else this.stoppedDetails=[],this.cancelAllRequests();this.lastContinuedThreadId=o,this.passFocusScheduler.schedule(),this.model.clearThreads(this.getId(),!1,o),this._onDidChangeState.fire()}));const i=new O;this.rawListeners.add(this.raw.onDidOutput(async e=>{const r=e.body.category==="stderr"?D.Error:e.body.category==="console"?D.Warning:D.Info;if(e.body.variablesReference){const o=e.body.source&&e.body.line?{lineNumber:e.body.line,column:e.body.column?e.body.column:1,source:this.getSource(e.body.source)}:void 0,a=new _(this,void 0,e.body.variablesReference,X()).getChildren();i.queue(async()=>{const l=await a;if(l.length===1){this.appendToRepl({output:e.body.output,expression:l[0],sev:r,source:o},e.body.category==="important");return}l.forEach(d=>{d.name=null,this.appendToRepl({output:"",expression:d,sev:r,source:o},e.body.category==="important")})});return}i.queue(async()=>{if(!e.body||!this.raw)return;if(e.body.category==="telemetry"){const s=this.raw.dbgr.getCustomTelemetryEndpoint();if(s&&this.telemetryService.telemetryLevel!==oe.NONE){let a=e.body.data;!s.sendErrorTelemetry&&e.body.data&&(a=ge(e.body.data)),this.customEndpointTelemetryService.publicLog(s,e.body.output,a)}return}const o=e.body.source&&e.body.line?{lineNumber:e.body.line,column:e.body.column?e.body.column:1,source:this.getSource(e.body.source)}:void 0;if(e.body.group==="start"||e.body.group==="startCollapsed"){const s=e.body.group==="start";this.repl.startGroup(this,e.body.output||"",s,o);return}e.body.group==="end"&&(this.repl.endGroup(),!e.body.output)||typeof e.body.output=="string"&&this.appendToRepl({output:e.body.output,sev:r,source:o},e.body.category==="important")})})),this.rawListeners.add(this.raw.onDidBreakpoint(e=>{const r=e.body&&e.body.breakpoint?e.body.breakpoint.id:void 0,o=this.model.getBreakpoints().find(d=>d.getIdFromAdapter(this.getId())===r),s=this.model.getFunctionBreakpoints().find(d=>d.getIdFromAdapter(this.getId())===r),a=this.model.getDataBreakpoints().find(d=>d.getIdFromAdapter(this.getId())===r),l=this.model.getExceptionBreakpoints().find(d=>d.getIdFromAdapter(this.getId())===r);if(e.body.reason==="new"&&e.body.breakpoint.source&&e.body.breakpoint.line){const d=this.getSource(e.body.breakpoint.source),b=this.model.addBreakpoints(d.uri,[{column:e.body.breakpoint.column,enabled:!0,lineNumber:e.body.breakpoint.line}],!1);if(b.length===1){const m=new Map([[b[0].getId(),e.body.breakpoint]]);this.model.setBreakpointSessionData(this.getId(),this.capabilities,m)}}if(e.body.reason==="removed"&&(o&&this.model.removeBreakpoints([o]),s&&this.model.removeFunctionBreakpoints(s.getId()),a&&this.model.removeDataBreakpoints(a.getId())),e.body.reason==="changed"){if(o){o.column||(e.body.breakpoint.column=void 0);const d=new Map([[o.getId(),e.body.breakpoint]]);this.model.setBreakpointSessionData(this.getId(),this.capabilities,d)}if(s){const d=new Map([[s.getId(),e.body.breakpoint]]);this.model.setBreakpointSessionData(this.getId(),this.capabilities,d)}if(a){const d=new Map([[a.getId(),e.body.breakpoint]]);this.model.setBreakpointSessionData(this.getId(),this.capabilities,d)}if(l){const d=new Map([[l.getId(),e.body.breakpoint]]);this.model.setBreakpointSessionData(this.getId(),this.capabilities,d)}}})),this.rawListeners.add(this.raw.onDidLoadedSource(e=>{this._onDidLoadedSource.fire({reason:e.body.reason,source:this.getSource(e.body.source)})})),this.rawListeners.add(this.raw.onDidCustomEvent(e=>{this._onDidCustomEvent.fire(e)})),this.rawListeners.add(this.raw.onDidProgressStart(e=>{this._onDidProgressStart.fire(e)})),this.rawListeners.add(this.raw.onDidProgressUpdate(e=>{this._onDidProgressUpdate.fire(e)})),this.rawListeners.add(this.raw.onDidProgressEnd(e=>{this._onDidProgressEnd.fire(e)})),this.rawListeners.add(this.raw.onDidInvalidateMemory(e=>{this._onDidInvalidMemory.fire(e)})),this.rawListeners.add(this.raw.onDidInvalidated(async e=>{const r=e.body.areas||["all"];if(r.includes("threads")||r.includes("stacks")||r.includes("all")){this.cancelAllRequests(),this.model.clearThreads(this.getId(),!0);const s=this.stoppedDetails;this.stoppedDetails.length=1,await Promise.all(s.map(a=>this.handleStop(a)))}const o=this.debugService.getViewModel();o.focusedSession===this&&o.updateViews()})),this.rawListeners.add(this.raw.onDidExitAdapter(e=>this.onDidExitAdapter(e)))}async handleStop(t){this.passFocusScheduler.cancel(),this.stoppedDetails.push(t),t.hitBreakpointIds&&(this._waitToResume=this.enableDependentBreakpoints(t.hitBreakpointIds)),this.statusQueue.run(this.fetchThreads(t).then(()=>t.threadId===void 0?this.threadIds:[t.threadId]),async(i,e)=>{const r=t.threadId===void 0&&this.threadIds.length>10,o=this.debugService.getViewModel().focusedThread,s=o!==void 0&&o.session===this&&!this.threads.has(o.threadId);s&&this.debugService.focusStackFrame(void 0,void 0);const a=typeof i=="number"?this.getThread(i):void 0;if(a){const l=this.model.refreshTopOfCallstack(a,!r),d=async()=>{if(s||!t.preserveFocusHint&&a.getCallStack().length){const m=this.debugService.getViewModel().focusedStackFrame;if(!m||m.thread.session===this){const S=!this.configurationService.getValue("debug").focusEditorOnBreak;await this.debugService.focusStackFrame(void 0,a,void 0,{preserveFocus:S})}a.stoppedDetails&&!e.isCancellationRequested&&(a.stoppedDetails.reason==="breakpoint"&&this.configurationService.getValue("debug").openDebug==="openOnDebugBreak"&&!this.suppressDebugView&&await this.paneCompositeService.openPaneComposite(ce,ae.Sidebar),this.configurationService.getValue("debug").focusWindowOnBreak&&!this.workbenchEnvironmentService.extensionTestsLocationURI&&(De().document.hasFocus()||await this.hostService.focus(ye,{force:!0})))}};if(await l.topCallStack,t.hitBreakpointIds||(this._waitToResume=this.enableDependentBreakpoints(a)),e.isCancellationRequested||(d(),await l.wholeCallStack,e.isCancellationRequested))return;const b=this.debugService.getViewModel().focusedStackFrame;(!b||le(b))&&d()}this._onDidChangeState.fire()})}async enableDependentBreakpoints(t){let i;if(Array.isArray(t))i=this.model.getBreakpoints().filter(o=>t.includes(o.getIdFromAdapter(this.id)));else{const o=t.getTopStackFrame();if(o===void 0||t.stoppedDetails&&t.stoppedDetails.reason!=="breakpoint")return;i=this.getBreakpointsAtPosition(o.source.uri,o.range.startLineNumber,o.range.endLineNumber,o.range.startColumn,o.range.endColumn)}const e=new Set;this.model.getBreakpoints({triggeredOnly:!0,enabledOnly:!0}).forEach(o=>{i.forEach(s=>{o.enabled&&o.triggeredBy===s.getId()&&(o.setSessionDidTrigger(this.getId()),e.add(o.uri.toString()))})});const r=[];return e.forEach(o=>r.push(this.debugService.sendBreakpoints(K.parse(o),void 0,this))),Promise.all(r)}getBreakpointsAtPosition(t,i,e,r,o){return this.model.getBreakpoints({uri:t}).filter(s=>!(s.lineNumber<i||s.lineNumber>e||s.column&&(s.column<r||s.column>o)))}onDidExitAdapter(t){this.initialized=!0,this.model.setBreakpointSessionData(this.getId(),this.capabilities,void 0),this.shutdown(),this._onDidEndAdapter.fire(t)}shutdown(){this.rawListeners.clear(),this.raw&&(this.raw.disconnect({}),this.raw.dispose(),this.raw=void 0),this.fetchThreadsScheduler?.dispose(),this.fetchThreadsScheduler=void 0,this.passFocusScheduler.cancel(),this.passFocusScheduler.dispose(),this.model.clearThreads(this.getId(),!0),this._onDidChangeState.fire()}dispose(){this.cancelAllRequests(),this.rawListeners.dispose(),this.globalDisposables.dispose()}getSourceForUri(t){return this.sources.get(this.uriIdentityService.asCanonicalUri(t).toString())}getSource(t){let i=new y(t,this.getId(),this.uriIdentityService,this.logService);const e=i.uri.toString(),r=this.sources.get(e);return r?(i=r,i.raw=Q(i.raw,t),i.raw&&t&&(i.raw.presentationHint=t.presentationHint)):this.sources.set(e,i),i}getRawSource(t){const i=this.getSourceForUri(t);if(i)return i.raw;{const e=y.getEncodedDebugData(t);return{name:e.name,path:e.path,sourceReference:e.sourceReference}}}getNewCancellationToken(t,i){const e=new C(i),r=this.cancellationMap.get(t)||[];return r.push(e),this.cancellationMap.set(t,r),e.token}cancelAllRequests(){this.cancellationMap.forEach(t=>t.forEach(i=>i.dispose(!0))),this.cancellationMap.clear()}getReplElements(){return this.repl.getReplElements()}hasSeparateRepl(){return!this.parentSession||this._options.repl!=="mergeWithParent"}removeReplExpressions(){this.repl.removeReplExpressions()}async addReplExpression(t,i){await this.repl.addReplExpression(this,t,i),this.debugService.getViewModel().updateViews()}appendToRepl(t,i){this.repl.appendToRepl(this,t),i&&this.notificationService.notify({message:t.output.toString(),severity:t.sev,source:this.name})}};w=R([u(5,ue),u(6,re),u(7,me),u(8,Y),u(9,Se),u(10,ne),u(11,te),u(12,ee),u(13,we),u(14,se),u(15,J),u(16,ie),u(17,fe),u(18,Z),u(19,Ie),u(20,ke),u(21,Ee)],w);class Re extends q{pendingCancellations=[];threadOps=this._register(new z);async run(t,i){const e=new Set;this.pendingCancellations.push(e);const r=await t;for(let o=0;o<this.pendingCancellations.length;o++){const s=this.pendingCancellations[o];if(s===e){this.pendingCancellations.splice(o,1);break}else for(const a of r)s.add(a)}e.has(void 0)||await Promise.all(r.map(o=>{if(e.has(o))return;this.threadOps.get(o)?.cancel();const s=new C;return this.threadOps.set(o,s),i(o,s.token)}))}cancel(t){if(t)for(const i of t){this.threadOps.get(i)?.cancel(),this.threadOps.deleteAndDispose(i);for(const e of this.pendingCancellations)e.add(i)}else{for(const[i,e]of this.threadOps)e.cancel();this.threadOps.clearAndDisposeAll();for(const i of this.pendingCancellations)i.add(void 0)}}}export{w as DebugSession,Re as ThreadStatusScheduler};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as aria from '../../../../base/browser/ui/aria/aria.js';
+import { distinct } from '../../../../base/common/arrays.js';
+import { Queue, RunOnceScheduler, raceTimeout } from '../../../../base/common/async.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { canceled } from '../../../../base/common/errors.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { normalizeDriveLetter } from '../../../../base/common/labels.js';
+import { Disposable, DisposableMap, DisposableStore, MutableDisposable, dispose } from '../../../../base/common/lifecycle.js';
+import { mixin } from '../../../../base/common/objects.js';
+import * as platform from '../../../../base/common/platform.js';
+import * as resources from '../../../../base/common/resources.js';
+import Severity from '../../../../base/common/severity.js';
+import { URI } from '../../../../base/common/uri.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
+import { localize } from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { ICustomEndpointTelemetryService, ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { RawDebugSession } from './rawDebugSession.js';
+import { IDebugService, VIEWLET_ID, isFrameDeemphasized } from '../common/debug.js';
+import { DebugModel, ExpressionContainer, MemoryRegion, Thread } from '../common/debugModel.js';
+import { Source } from '../common/debugSource.js';
+import { filterExceptionsFromTelemetry } from '../common/debugUtils.js';
+import { ReplModel } from '../common/replModel.js';
+import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+import { ILifecycleService } from '../../../services/lifecycle/common/lifecycle.js';
+import { IPaneCompositePartService } from '../../../services/panecomposite/browser/panecomposite.js';
+import { getActiveWindow } from '../../../../base/browser/dom.js';
+import { mainWindow } from '../../../../base/browser/window.js';
+import { isDefined } from '../../../../base/common/types.js';
+import { ITestService } from '../../testing/common/testService.js';
+import { ITestResultService } from '../../testing/common/testResultService.js';
+import { IAccessibilityService } from '../../../../platform/accessibility/common/accessibility.js';
+const TRIGGERED_BREAKPOINT_MAX_DELAY = 1500;
+let DebugSession = class DebugSession {
+    constructor(id, _configuration, root, model, options, debugService, telemetryService, hostService, configurationService, paneCompositeService, workspaceContextService, productService, notificationService, lifecycleService, uriIdentityService, instantiationService, customEndpointTelemetryService, workbenchEnvironmentService, logService, testService, testResultService, accessibilityService) {
+        this.id = id;
+        this._configuration = _configuration;
+        this.root = root;
+        this.model = model;
+        this.debugService = debugService;
+        this.telemetryService = telemetryService;
+        this.hostService = hostService;
+        this.configurationService = configurationService;
+        this.paneCompositeService = paneCompositeService;
+        this.workspaceContextService = workspaceContextService;
+        this.productService = productService;
+        this.notificationService = notificationService;
+        this.uriIdentityService = uriIdentityService;
+        this.instantiationService = instantiationService;
+        this.customEndpointTelemetryService = customEndpointTelemetryService;
+        this.workbenchEnvironmentService = workbenchEnvironmentService;
+        this.logService = logService;
+        this.testService = testService;
+        this.accessibilityService = accessibilityService;
+        this.initialized = false;
+        this.sources = new Map();
+        this.threads = new Map();
+        this.threadIds = [];
+        this.cancellationMap = new Map();
+        this.rawListeners = new DisposableStore();
+        this.globalDisposables = new DisposableStore();
+        this.stoppedDetails = [];
+        this.statusQueue = this.rawListeners.add(new ThreadStatusScheduler());
+        this._onDidChangeState = new Emitter();
+        this._onDidEndAdapter = new Emitter();
+        this._onDidLoadedSource = new Emitter();
+        this._onDidCustomEvent = new Emitter();
+        this._onDidProgressStart = new Emitter();
+        this._onDidProgressUpdate = new Emitter();
+        this._onDidProgressEnd = new Emitter();
+        this._onDidInvalidMemory = new Emitter();
+        this._onDidChangeREPLElements = new Emitter();
+        this._onDidChangeName = new Emitter();
+        this._options = options || {};
+        this.parentSession = this._options.parentSession;
+        if (this.hasSeparateRepl()) {
+            this.repl = new ReplModel(this.configurationService);
+        }
+        else {
+            this.repl = this.parentSession.repl;
+        }
+        const toDispose = this.globalDisposables;
+        const replListener = toDispose.add(new MutableDisposable());
+        replListener.value = this.repl.onDidChangeElements((e) => this._onDidChangeREPLElements.fire(e));
+        if (lifecycleService) {
+            toDispose.add(lifecycleService.onWillShutdown(() => {
+                this.shutdown();
+                dispose(toDispose);
+            }));
+        }
+        this.correlatedTestRun = options?.testRun
+            ? testResultService.getResult(options.testRun.runId)
+            : this.parentSession?.correlatedTestRun;
+        if (this.correlatedTestRun) {
+            toDispose.add(this.correlatedTestRun.onComplete(() => this.terminate()));
+        }
+        const compoundRoot = this._options.compoundRoot;
+        if (compoundRoot) {
+            toDispose.add(compoundRoot.onDidSessionStop(() => this.terminate()));
+        }
+        this.passFocusScheduler = new RunOnceScheduler(() => {
+            if (this.debugService.getModel().getSessions().some(s => s.state === 2) || this.getAllThreads().some(t => t.stopped)) {
+                if (typeof this.lastContinuedThreadId === 'number') {
+                    const thread = this.debugService.getViewModel().focusedThread;
+                    if (thread && thread.threadId === this.lastContinuedThreadId && !thread.stopped) {
+                        const toFocusThreadId = this.getStoppedDetails()?.threadId;
+                        const toFocusThread = typeof toFocusThreadId === 'number' ? this.getThread(toFocusThreadId) : undefined;
+                        this.debugService.focusStackFrame(undefined, toFocusThread);
+                    }
+                }
+                else {
+                    const session = this.debugService.getViewModel().focusedSession;
+                    if (session && session.getId() === this.getId() && session.state !== 2) {
+                        this.debugService.focusStackFrame(undefined);
+                    }
+                }
+            }
+        }, 800);
+        const parent = this._options.parentSession;
+        if (parent) {
+            toDispose.add(parent.onDidEndAdapter(() => {
+                if (!this.hasSeparateRepl() && this.raw?.isInShutdown === false) {
+                    this.repl = this.repl.clone();
+                    replListener.value = this.repl.onDidChangeElements((e) => this._onDidChangeREPLElements.fire(e));
+                    this.parentSession = undefined;
+                }
+            }));
+        }
+    }
+    getId() {
+        return this.id;
+    }
+    setSubId(subId) {
+        this._subId = subId;
+    }
+    getMemory(memoryReference) {
+        return new MemoryRegion(memoryReference, this);
+    }
+    get subId() {
+        return this._subId;
+    }
+    get configuration() {
+        return this._configuration.resolved;
+    }
+    get unresolvedConfiguration() {
+        return this._configuration.unresolved;
+    }
+    get lifecycleManagedByParent() {
+        return !!this._options.lifecycleManagedByParent;
+    }
+    get compact() {
+        return !!this._options.compact;
+    }
+    get saveBeforeRestart() {
+        return this._options.saveBeforeRestart ?? !this._options?.parentSession;
+    }
+    get compoundRoot() {
+        return this._options.compoundRoot;
+    }
+    get suppressDebugStatusbar() {
+        return this._options.suppressDebugStatusbar ?? false;
+    }
+    get suppressDebugToolbar() {
+        return this._options.suppressDebugToolbar ?? false;
+    }
+    get suppressDebugView() {
+        return this._options.suppressDebugView ?? false;
+    }
+    get autoExpandLazyVariables() {
+        const screenReaderOptimized = this.accessibilityService.isScreenReaderOptimized();
+        const value = this.configurationService.getValue('debug').autoExpandLazyVariables;
+        return value === 'auto' && screenReaderOptimized || value === 'on';
+    }
+    setConfiguration(configuration) {
+        this._configuration = configuration;
+    }
+    getLabel() {
+        const includeRoot = this.workspaceContextService.getWorkspace().folders.length > 1;
+        return includeRoot && this.root ? `${this.name} (${resources.basenameOrAuthority(this.root.uri)})` : this.name;
+    }
+    setName(name) {
+        this._name = name;
+        this._onDidChangeName.fire(name);
+    }
+    get name() {
+        return this._name || this.configuration.name;
+    }
+    get state() {
+        if (!this.initialized) {
+            return 1;
+        }
+        if (!this.raw) {
+            return 0;
+        }
+        const focusedThread = this.debugService.getViewModel().focusedThread;
+        if (focusedThread && focusedThread.session === this) {
+            return focusedThread.stopped ? 2 : 3;
+        }
+        if (this.getAllThreads().some(t => t.stopped)) {
+            return 2;
+        }
+        return 3;
+    }
+    get capabilities() {
+        return this.raw ? this.raw.capabilities : Object.create(null);
+    }
+    get onDidChangeState() {
+        return this._onDidChangeState.event;
+    }
+    get onDidEndAdapter() {
+        return this._onDidEndAdapter.event;
+    }
+    get onDidChangeReplElements() {
+        return this._onDidChangeREPLElements.event;
+    }
+    get onDidChangeName() {
+        return this._onDidChangeName.event;
+    }
+    get onDidCustomEvent() {
+        return this._onDidCustomEvent.event;
+    }
+    get onDidLoadedSource() {
+        return this._onDidLoadedSource.event;
+    }
+    get onDidProgressStart() {
+        return this._onDidProgressStart.event;
+    }
+    get onDidProgressUpdate() {
+        return this._onDidProgressUpdate.event;
+    }
+    get onDidProgressEnd() {
+        return this._onDidProgressEnd.event;
+    }
+    get onDidInvalidateMemory() {
+        return this._onDidInvalidMemory.event;
+    }
+    async initialize(dbgr) {
+        if (this.raw) {
+            await this.shutdown();
+        }
+        try {
+            const debugAdapter = await dbgr.createDebugAdapter(this);
+            this.raw = this.instantiationService.createInstance(RawDebugSession, debugAdapter, dbgr, this.id, this.configuration.name);
+            await this.raw.start();
+            this.registerListeners();
+            await this.raw.initialize({
+                clientID: 'vscode',
+                clientName: this.productService.nameLong,
+                adapterID: this.configuration.type,
+                pathFormat: 'path',
+                linesStartAt1: true,
+                columnsStartAt1: true,
+                supportsVariableType: true,
+                supportsVariablePaging: true,
+                supportsRunInTerminalRequest: true,
+                locale: platform.language,
+                supportsProgressReporting: true,
+                supportsInvalidatedEvent: true,
+                supportsMemoryReferences: true,
+                supportsArgsCanBeInterpretedByShell: true,
+                supportsMemoryEvent: true,
+                supportsStartDebuggingRequest: true,
+                supportsANSIStyling: true,
+            });
+            this.initialized = true;
+            this._onDidChangeState.fire();
+            this.rememberedCapabilities = this.raw.capabilities;
+            this.debugService.setExceptionBreakpointsForSession(this, (this.raw && this.raw.capabilities.exceptionBreakpointFilters) || []);
+            this.debugService.getModel().registerBreakpointModes(this.configuration.type, this.raw.capabilities.breakpointModes || []);
+        }
+        catch (err) {
+            this.initialized = true;
+            this._onDidChangeState.fire();
+            await this.shutdown();
+            throw err;
+        }
+    }
+    async launchOrAttach(config) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'launch or attach'));
+        }
+        if (this.parentSession && this.parentSession.state === 0) {
+            throw canceled();
+        }
+        config.__sessionId = this.getId();
+        try {
+            await this.raw.launchOrAttach(config);
+        }
+        catch (err) {
+            this.shutdown();
+            throw err;
+        }
+    }
+    async terminate(restart = false) {
+        if (!this.raw) {
+            this.onDidExitAdapter();
+        }
+        this.cancelAllRequests();
+        if (this._options.lifecycleManagedByParent && this.parentSession) {
+            await this.parentSession.terminate(restart);
+        }
+        else if (this.correlatedTestRun && !this.correlatedTestRun.completedAt && !this.didTerminateTestRun) {
+            this.didTerminateTestRun = true;
+            this.testService.cancelTestRun(this.correlatedTestRun.id);
+        }
+        else if (this.raw) {
+            if (this.raw.capabilities.supportsTerminateRequest && this._configuration.resolved.request === 'launch') {
+                await this.raw.terminate(restart);
+            }
+            else {
+                await this.raw.disconnect({ restart, terminateDebuggee: true });
+            }
+        }
+        if (!restart) {
+            this._options.compoundRoot?.sessionStopped();
+        }
+    }
+    async disconnect(restart = false, suspend = false) {
+        if (!this.raw) {
+            this.onDidExitAdapter();
+        }
+        this.cancelAllRequests();
+        if (this._options.lifecycleManagedByParent && this.parentSession) {
+            await this.parentSession.disconnect(restart, suspend);
+        }
+        else if (this.raw) {
+            await this.raw.disconnect({ restart, terminateDebuggee: false, suspendDebuggee: suspend });
+        }
+        if (!restart) {
+            this._options.compoundRoot?.sessionStopped();
+        }
+    }
+    async restart() {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'restart'));
+        }
+        this.cancelAllRequests();
+        if (this._options.lifecycleManagedByParent && this.parentSession) {
+            await this.parentSession.restart();
+        }
+        else {
+            await this.raw.restart({ arguments: this.configuration });
+        }
+    }
+    async sendBreakpoints(modelUri, breakpointsToSend, sourceModified) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'breakpoints'));
+        }
+        if (!this.raw.readyForBreakpoints) {
+            return Promise.resolve(undefined);
+        }
+        const rawSource = this.getRawSource(modelUri);
+        if (breakpointsToSend.length && !rawSource.adapterData) {
+            rawSource.adapterData = breakpointsToSend[0].adapterData;
+        }
+        if (rawSource.path) {
+            rawSource.path = normalizeDriveLetter(rawSource.path);
+        }
+        const response = await this.raw.setBreakpoints({
+            source: rawSource,
+            lines: breakpointsToSend.map(bp => bp.sessionAgnosticData.lineNumber),
+            breakpoints: breakpointsToSend.map(bp => bp.toDAP()),
+            sourceModified
+        });
+        if (response?.body) {
+            const data = new Map();
+            for (let i = 0; i < breakpointsToSend.length; i++) {
+                data.set(breakpointsToSend[i].getId(), response.body.breakpoints[i]);
+            }
+            this.model.setBreakpointSessionData(this.getId(), this.capabilities, data);
+        }
+    }
+    async sendFunctionBreakpoints(fbpts) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'function breakpoints'));
+        }
+        if (this.raw.readyForBreakpoints) {
+            const response = await this.raw.setFunctionBreakpoints({ breakpoints: fbpts.map(bp => bp.toDAP()) });
+            if (response?.body) {
+                const data = new Map();
+                for (let i = 0; i < fbpts.length; i++) {
+                    data.set(fbpts[i].getId(), response.body.breakpoints[i]);
+                }
+                this.model.setBreakpointSessionData(this.getId(), this.capabilities, data);
+            }
+        }
+    }
+    async sendExceptionBreakpoints(exbpts) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'exception breakpoints'));
+        }
+        if (this.raw.readyForBreakpoints) {
+            const args = this.capabilities.supportsExceptionFilterOptions ? {
+                filters: [],
+                filterOptions: exbpts.map(exb => {
+                    if (exb.condition) {
+                        return { filterId: exb.filter, condition: exb.condition };
+                    }
+                    return { filterId: exb.filter };
+                })
+            } : { filters: exbpts.map(exb => exb.filter) };
+            const response = await this.raw.setExceptionBreakpoints(args);
+            if (response?.body && response.body.breakpoints) {
+                const data = new Map();
+                for (let i = 0; i < exbpts.length; i++) {
+                    data.set(exbpts[i].getId(), response.body.breakpoints[i]);
+                }
+                this.model.setBreakpointSessionData(this.getId(), this.capabilities, data);
+            }
+        }
+    }
+    dataBytesBreakpointInfo(address, bytes) {
+        if (this.raw?.capabilities.supportsDataBreakpointBytes === false) {
+            throw new Error(localize('sessionDoesNotSupporBytesBreakpoints', "Session does not support breakpoints with bytes"));
+        }
+        return this._dataBreakpointInfo({ name: address, bytes, asAddress: true });
+    }
+    dataBreakpointInfo(name, variablesReference) {
+        return this._dataBreakpointInfo({ name, variablesReference });
+    }
+    async _dataBreakpointInfo(args) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'data breakpoints info'));
+        }
+        if (!this.raw.readyForBreakpoints) {
+            throw new Error(localize('sessionNotReadyForBreakpoints', "Session is not ready for breakpoints"));
+        }
+        const response = await this.raw.dataBreakpointInfo(args);
+        return response?.body;
+    }
+    async sendDataBreakpoints(dataBreakpoints) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'data breakpoints'));
+        }
+        if (this.raw.readyForBreakpoints) {
+            const converted = await Promise.all(dataBreakpoints.map(async (bp) => {
+                try {
+                    const dap = await bp.toDAP(this);
+                    return { dap, bp };
+                }
+                catch (e) {
+                    return { bp, message: e.message };
+                }
+            }));
+            const response = await this.raw.setDataBreakpoints({ breakpoints: converted.map(d => d.dap).filter(isDefined) });
+            if (response?.body) {
+                const data = new Map();
+                let i = 0;
+                for (const dap of converted) {
+                    if (!dap.dap) {
+                        data.set(dap.bp.getId(), dap.message);
+                    }
+                    else if (i < response.body.breakpoints.length) {
+                        data.set(dap.bp.getId(), response.body.breakpoints[i++]);
+                    }
+                }
+                this.model.setBreakpointSessionData(this.getId(), this.capabilities, data);
+            }
+        }
+    }
+    async sendInstructionBreakpoints(instructionBreakpoints) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'instruction breakpoints'));
+        }
+        if (this.raw.readyForBreakpoints) {
+            const response = await this.raw.setInstructionBreakpoints({ breakpoints: instructionBreakpoints.map(ib => ib.toDAP()) });
+            if (response?.body) {
+                const data = new Map();
+                for (let i = 0; i < instructionBreakpoints.length; i++) {
+                    data.set(instructionBreakpoints[i].getId(), response.body.breakpoints[i]);
+                }
+                this.model.setBreakpointSessionData(this.getId(), this.capabilities, data);
+            }
+        }
+    }
+    async breakpointsLocations(uri, lineNumber) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'breakpoints locations'));
+        }
+        const source = this.getRawSource(uri);
+        const response = await this.raw.breakpointLocations({ source, line: lineNumber });
+        if (!response || !response.body || !response.body.breakpoints) {
+            return [];
+        }
+        const positions = response.body.breakpoints.map(bp => ({ lineNumber: bp.line, column: bp.column || 1 }));
+        return distinct(positions, p => `${p.lineNumber}:${p.column}`);
+    }
+    getDebugProtocolBreakpoint(breakpointId) {
+        return this.model.getDebugProtocolBreakpoint(breakpointId, this.getId());
+    }
+    customRequest(request, args) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", request));
+        }
+        return this.raw.custom(request, args);
+    }
+    stackTrace(threadId, startFrame, levels, token) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'stackTrace'));
+        }
+        const sessionToken = this.getNewCancellationToken(threadId, token);
+        return this.raw.stackTrace({ threadId, startFrame, levels }, sessionToken);
+    }
+    async exceptionInfo(threadId) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'exceptionInfo'));
+        }
+        const response = await this.raw.exceptionInfo({ threadId });
+        if (response) {
+            return {
+                id: response.body.exceptionId,
+                description: response.body.description,
+                breakMode: response.body.breakMode,
+                details: response.body.details
+            };
+        }
+        return undefined;
+    }
+    scopes(frameId, threadId) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'scopes'));
+        }
+        const token = this.getNewCancellationToken(threadId);
+        return this.raw.scopes({ frameId }, token);
+    }
+    variables(variablesReference, threadId, filter, start, count) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'variables'));
+        }
+        const token = threadId ? this.getNewCancellationToken(threadId) : undefined;
+        return this.raw.variables({ variablesReference, filter, start, count }, token);
+    }
+    evaluate(expression, frameId, context, location) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'evaluate'));
+        }
+        return this.raw.evaluate({ expression, frameId, context, line: location?.line, column: location?.column, source: location?.source });
+    }
+    async restartFrame(frameId, threadId) {
+        await this.waitForTriggeredBreakpoints();
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'restartFrame'));
+        }
+        await this.raw.restartFrame({ frameId }, threadId);
+    }
+    setLastSteppingGranularity(threadId, granularity) {
+        const thread = this.getThread(threadId);
+        if (thread) {
+            thread.lastSteppingGranularity = granularity;
+        }
+    }
+    async next(threadId, granularity) {
+        await this.waitForTriggeredBreakpoints();
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'next'));
+        }
+        this.setLastSteppingGranularity(threadId, granularity);
+        await this.raw.next({ threadId, granularity });
+    }
+    async stepIn(threadId, targetId, granularity) {
+        await this.waitForTriggeredBreakpoints();
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'stepIn'));
+        }
+        this.setLastSteppingGranularity(threadId, granularity);
+        await this.raw.stepIn({ threadId, targetId, granularity });
+    }
+    async stepOut(threadId, granularity) {
+        await this.waitForTriggeredBreakpoints();
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'stepOut'));
+        }
+        this.setLastSteppingGranularity(threadId, granularity);
+        await this.raw.stepOut({ threadId, granularity });
+    }
+    async stepBack(threadId, granularity) {
+        await this.waitForTriggeredBreakpoints();
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'stepBack'));
+        }
+        this.setLastSteppingGranularity(threadId, granularity);
+        await this.raw.stepBack({ threadId, granularity });
+    }
+    async continue(threadId) {
+        await this.waitForTriggeredBreakpoints();
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'continue'));
+        }
+        await this.raw.continue({ threadId });
+    }
+    async reverseContinue(threadId) {
+        await this.waitForTriggeredBreakpoints();
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'reverse continue'));
+        }
+        await this.raw.reverseContinue({ threadId });
+    }
+    async pause(threadId) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'pause'));
+        }
+        await this.raw.pause({ threadId });
+    }
+    async terminateThreads(threadIds) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'terminateThreads'));
+        }
+        await this.raw.terminateThreads({ threadIds });
+    }
+    setVariable(variablesReference, name, value) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'setVariable'));
+        }
+        return this.raw.setVariable({ variablesReference, name, value });
+    }
+    setExpression(frameId, expression, value) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'setExpression'));
+        }
+        return this.raw.setExpression({ expression, value, frameId });
+    }
+    gotoTargets(source, line, column) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'gotoTargets'));
+        }
+        return this.raw.gotoTargets({ source, line, column });
+    }
+    goto(threadId, targetId) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'goto'));
+        }
+        return this.raw.goto({ threadId, targetId });
+    }
+    loadSource(resource) {
+        if (!this.raw) {
+            return Promise.reject(new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'loadSource')));
+        }
+        const source = this.getSourceForUri(resource);
+        let rawSource;
+        if (source) {
+            rawSource = source.raw;
+        }
+        else {
+            const data = Source.getEncodedDebugData(resource);
+            rawSource = { path: data.path, sourceReference: data.sourceReference };
+        }
+        return this.raw.source({ sourceReference: rawSource.sourceReference || 0, source: rawSource });
+    }
+    async getLoadedSources() {
+        if (!this.raw) {
+            return Promise.reject(new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'getLoadedSources')));
+        }
+        const response = await this.raw.loadedSources({});
+        if (response?.body && response.body.sources) {
+            return response.body.sources.map(src => this.getSource(src));
+        }
+        else {
+            return [];
+        }
+    }
+    async completions(frameId, threadId, text, position, overwriteBefore, token) {
+        if (!this.raw) {
+            return Promise.reject(new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'completions')));
+        }
+        const sessionCancelationToken = this.getNewCancellationToken(threadId, token);
+        return this.raw.completions({
+            frameId,
+            text,
+            column: position.column,
+            line: position.lineNumber,
+        }, sessionCancelationToken);
+    }
+    async stepInTargets(frameId) {
+        if (!this.raw) {
+            return Promise.reject(new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'stepInTargets')));
+        }
+        const response = await this.raw.stepInTargets({ frameId });
+        return response?.body.targets;
+    }
+    async cancel(progressId) {
+        if (!this.raw) {
+            return Promise.reject(new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'cancel')));
+        }
+        return this.raw.cancel({ progressId });
+    }
+    async disassemble(memoryReference, offset, instructionOffset, instructionCount) {
+        if (!this.raw) {
+            return Promise.reject(new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'disassemble')));
+        }
+        const response = await this.raw.disassemble({ memoryReference, offset, instructionOffset, instructionCount, resolveSymbols: true });
+        return response?.body?.instructions;
+    }
+    readMemory(memoryReference, offset, count) {
+        if (!this.raw) {
+            return Promise.reject(new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'readMemory')));
+        }
+        return this.raw.readMemory({ count, memoryReference, offset });
+    }
+    writeMemory(memoryReference, offset, data, allowPartial) {
+        if (!this.raw) {
+            return Promise.reject(new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'disassemble')));
+        }
+        return this.raw.writeMemory({ memoryReference, offset, allowPartial, data });
+    }
+    async resolveLocationReference(locationReference) {
+        if (!this.raw) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'locations'));
+        }
+        const location = await this.raw.locations({ locationReference });
+        if (!location?.body) {
+            throw new Error(localize('noDebugAdapter', "No debugger available, can not send '{0}'", 'locations'));
+        }
+        const source = this.getSource(location.body.source);
+        return { column: 1, ...location.body, source };
+    }
+    getThread(threadId) {
+        return this.threads.get(threadId);
+    }
+    getAllThreads() {
+        const result = [];
+        this.threadIds.forEach((threadId) => {
+            const thread = this.threads.get(threadId);
+            if (thread) {
+                result.push(thread);
+            }
+        });
+        return result;
+    }
+    clearThreads(removeThreads, reference = undefined) {
+        if (reference !== undefined && reference !== null) {
+            const thread = this.threads.get(reference);
+            if (thread) {
+                thread.clearCallStack();
+                thread.stoppedDetails = undefined;
+                thread.stopped = false;
+                if (removeThreads) {
+                    this.threads.delete(reference);
+                }
+            }
+        }
+        else {
+            this.threads.forEach(thread => {
+                thread.clearCallStack();
+                thread.stoppedDetails = undefined;
+                thread.stopped = false;
+            });
+            if (removeThreads) {
+                this.threads.clear();
+                this.threadIds = [];
+                ExpressionContainer.allValues.clear();
+            }
+        }
+    }
+    getStoppedDetails() {
+        return this.stoppedDetails.length >= 1 ? this.stoppedDetails[0] : undefined;
+    }
+    rawUpdate(data) {
+        this.threadIds = [];
+        data.threads.forEach(thread => {
+            this.threadIds.push(thread.id);
+            if (!this.threads.has(thread.id)) {
+                this.threads.set(thread.id, new Thread(this, thread.name, thread.id));
+            }
+            else if (thread.name) {
+                const oldThread = this.threads.get(thread.id);
+                if (oldThread) {
+                    oldThread.name = thread.name;
+                }
+            }
+        });
+        this.threads.forEach(t => {
+            if (this.threadIds.indexOf(t.threadId) === -1) {
+                this.threads.delete(t.threadId);
+            }
+        });
+        const stoppedDetails = data.stoppedDetails;
+        if (stoppedDetails) {
+            if (stoppedDetails.allThreadsStopped) {
+                this.threads.forEach(thread => {
+                    thread.stoppedDetails = thread.threadId === stoppedDetails.threadId ? stoppedDetails : { reason: thread.stoppedDetails?.reason };
+                    thread.stopped = true;
+                    thread.clearCallStack();
+                });
+            }
+            else {
+                const thread = typeof stoppedDetails.threadId === 'number' ? this.threads.get(stoppedDetails.threadId) : undefined;
+                if (thread) {
+                    thread.stoppedDetails = stoppedDetails;
+                    thread.clearCallStack();
+                    thread.stopped = true;
+                }
+            }
+        }
+    }
+    waitForTriggeredBreakpoints() {
+        if (!this._waitToResume) {
+            return;
+        }
+        return raceTimeout(this._waitToResume, TRIGGERED_BREAKPOINT_MAX_DELAY);
+    }
+    async fetchThreads(stoppedDetails) {
+        if (this.raw) {
+            const response = await this.raw.threads();
+            if (response?.body && response.body.threads) {
+                this.model.rawUpdate({
+                    sessionId: this.getId(),
+                    threads: response.body.threads,
+                    stoppedDetails
+                });
+            }
+        }
+    }
+    initializeForTest(raw) {
+        this.raw = raw;
+        this.registerListeners();
+    }
+    registerListeners() {
+        if (!this.raw) {
+            return;
+        }
+        this.rawListeners.add(this.raw.onDidInitialize(async () => {
+            aria.status(this.configuration.noDebug
+                ? localize('debuggingStartedNoDebug', "Started running without debugging.")
+                : localize('debuggingStarted', "Debugging started."));
+            const sendConfigurationDone = async () => {
+                if (this.raw && this.raw.capabilities.supportsConfigurationDoneRequest) {
+                    try {
+                        await this.raw.configurationDone();
+                    }
+                    catch (e) {
+                        this.notificationService.error(e);
+                        this.raw?.disconnect({});
+                    }
+                }
+                return undefined;
+            };
+            try {
+                await this.debugService.sendAllBreakpoints(this);
+            }
+            finally {
+                await sendConfigurationDone();
+                await this.fetchThreads();
+            }
+        }));
+        const statusQueue = this.statusQueue;
+        this.rawListeners.add(this.raw.onDidStop(event => this.handleStop(event.body)));
+        this.rawListeners.add(this.raw.onDidThread(event => {
+            statusQueue.cancel([event.body.threadId]);
+            if (event.body.reason === 'started') {
+                if (!this.fetchThreadsScheduler) {
+                    this.fetchThreadsScheduler = new RunOnceScheduler(() => {
+                        this.fetchThreads();
+                    }, 100);
+                    this.rawListeners.add(this.fetchThreadsScheduler);
+                }
+                if (!this.fetchThreadsScheduler.isScheduled()) {
+                    this.fetchThreadsScheduler.schedule();
+                }
+            }
+            else if (event.body.reason === 'exited') {
+                this.model.clearThreads(this.getId(), true, event.body.threadId);
+                const viewModel = this.debugService.getViewModel();
+                const focusedThread = viewModel.focusedThread;
+                this.passFocusScheduler.cancel();
+                if (focusedThread && event.body.threadId === focusedThread.threadId) {
+                    this.debugService.focusStackFrame(undefined, undefined, viewModel.focusedSession, { explicit: false });
+                }
+            }
+        }));
+        this.rawListeners.add(this.raw.onDidTerminateDebugee(async (event) => {
+            aria.status(localize('debuggingStopped', "Debugging stopped."));
+            if (event.body && event.body.restart) {
+                await this.debugService.restartSession(this, event.body.restart);
+            }
+            else if (this.raw) {
+                await this.raw.disconnect({ terminateDebuggee: false });
+            }
+        }));
+        this.rawListeners.add(this.raw.onDidContinued(event => {
+            const allThreads = event.body.allThreadsContinued !== false;
+            statusQueue.cancel(allThreads ? undefined : [event.body.threadId]);
+            const threadId = allThreads ? undefined : event.body.threadId;
+            if (typeof threadId === 'number') {
+                this.stoppedDetails = this.stoppedDetails.filter(sd => sd.threadId !== threadId);
+                const tokens = this.cancellationMap.get(threadId);
+                this.cancellationMap.delete(threadId);
+                tokens?.forEach(t => t.dispose(true));
+            }
+            else {
+                this.stoppedDetails = [];
+                this.cancelAllRequests();
+            }
+            this.lastContinuedThreadId = threadId;
+            this.passFocusScheduler.schedule();
+            this.model.clearThreads(this.getId(), false, threadId);
+            this._onDidChangeState.fire();
+        }));
+        const outputQueue = new Queue();
+        this.rawListeners.add(this.raw.onDidOutput(async (event) => {
+            const outputSeverity = event.body.category === 'stderr' ? Severity.Error : event.body.category === 'console' ? Severity.Warning : Severity.Info;
+            if (event.body.variablesReference) {
+                const source = event.body.source && event.body.line ? {
+                    lineNumber: event.body.line,
+                    column: event.body.column ? event.body.column : 1,
+                    source: this.getSource(event.body.source)
+                } : undefined;
+                const container = new ExpressionContainer(this, undefined, event.body.variablesReference, generateUuid());
+                const children = container.getChildren();
+                outputQueue.queue(async () => {
+                    const resolved = await children;
+                    if (resolved.length === 1) {
+                        this.appendToRepl({ output: event.body.output, expression: resolved[0], sev: outputSeverity, source }, event.body.category === 'important');
+                        return;
+                    }
+                    resolved.forEach((child) => {
+                        child.name = null;
+                        this.appendToRepl({ output: '', expression: child, sev: outputSeverity, source }, event.body.category === 'important');
+                    });
+                });
+                return;
+            }
+            outputQueue.queue(async () => {
+                if (!event.body || !this.raw) {
+                    return;
+                }
+                if (event.body.category === 'telemetry') {
+                    const telemetryEndpoint = this.raw.dbgr.getCustomTelemetryEndpoint();
+                    if (telemetryEndpoint && this.telemetryService.telemetryLevel !== 0) {
+                        let data = event.body.data;
+                        if (!telemetryEndpoint.sendErrorTelemetry && event.body.data) {
+                            data = filterExceptionsFromTelemetry(event.body.data);
+                        }
+                        this.customEndpointTelemetryService.publicLog(telemetryEndpoint, event.body.output, data);
+                    }
+                    return;
+                }
+                const source = event.body.source && event.body.line ? {
+                    lineNumber: event.body.line,
+                    column: event.body.column ? event.body.column : 1,
+                    source: this.getSource(event.body.source)
+                } : undefined;
+                if (event.body.group === 'start' || event.body.group === 'startCollapsed') {
+                    const expanded = event.body.group === 'start';
+                    this.repl.startGroup(this, event.body.output || '', expanded, source);
+                    return;
+                }
+                if (event.body.group === 'end') {
+                    this.repl.endGroup();
+                    if (!event.body.output) {
+                        return;
+                    }
+                }
+                if (typeof event.body.output === 'string') {
+                    this.appendToRepl({ output: event.body.output, sev: outputSeverity, source }, event.body.category === 'important');
+                }
+            });
+        }));
+        this.rawListeners.add(this.raw.onDidBreakpoint(event => {
+            const id = event.body && event.body.breakpoint ? event.body.breakpoint.id : undefined;
+            const breakpoint = this.model.getBreakpoints().find(bp => bp.getIdFromAdapter(this.getId()) === id);
+            const functionBreakpoint = this.model.getFunctionBreakpoints().find(bp => bp.getIdFromAdapter(this.getId()) === id);
+            const dataBreakpoint = this.model.getDataBreakpoints().find(dbp => dbp.getIdFromAdapter(this.getId()) === id);
+            const exceptionBreakpoint = this.model.getExceptionBreakpoints().find(excbp => excbp.getIdFromAdapter(this.getId()) === id);
+            if (event.body.reason === 'new' && event.body.breakpoint.source && event.body.breakpoint.line) {
+                const source = this.getSource(event.body.breakpoint.source);
+                const bps = this.model.addBreakpoints(source.uri, [{
+                        column: event.body.breakpoint.column,
+                        enabled: true,
+                        lineNumber: event.body.breakpoint.line,
+                    }], false);
+                if (bps.length === 1) {
+                    const data = new Map([[bps[0].getId(), event.body.breakpoint]]);
+                    this.model.setBreakpointSessionData(this.getId(), this.capabilities, data);
+                }
+            }
+            if (event.body.reason === 'removed') {
+                if (breakpoint) {
+                    this.model.removeBreakpoints([breakpoint]);
+                }
+                if (functionBreakpoint) {
+                    this.model.removeFunctionBreakpoints(functionBreakpoint.getId());
+                }
+                if (dataBreakpoint) {
+                    this.model.removeDataBreakpoints(dataBreakpoint.getId());
+                }
+            }
+            if (event.body.reason === 'changed') {
+                if (breakpoint) {
+                    if (!breakpoint.column) {
+                        event.body.breakpoint.column = undefined;
+                    }
+                    const data = new Map([[breakpoint.getId(), event.body.breakpoint]]);
+                    this.model.setBreakpointSessionData(this.getId(), this.capabilities, data);
+                }
+                if (functionBreakpoint) {
+                    const data = new Map([[functionBreakpoint.getId(), event.body.breakpoint]]);
+                    this.model.setBreakpointSessionData(this.getId(), this.capabilities, data);
+                }
+                if (dataBreakpoint) {
+                    const data = new Map([[dataBreakpoint.getId(), event.body.breakpoint]]);
+                    this.model.setBreakpointSessionData(this.getId(), this.capabilities, data);
+                }
+                if (exceptionBreakpoint) {
+                    const data = new Map([[exceptionBreakpoint.getId(), event.body.breakpoint]]);
+                    this.model.setBreakpointSessionData(this.getId(), this.capabilities, data);
+                }
+            }
+        }));
+        this.rawListeners.add(this.raw.onDidLoadedSource(event => {
+            this._onDidLoadedSource.fire({
+                reason: event.body.reason,
+                source: this.getSource(event.body.source)
+            });
+        }));
+        this.rawListeners.add(this.raw.onDidCustomEvent(event => {
+            this._onDidCustomEvent.fire(event);
+        }));
+        this.rawListeners.add(this.raw.onDidProgressStart(event => {
+            this._onDidProgressStart.fire(event);
+        }));
+        this.rawListeners.add(this.raw.onDidProgressUpdate(event => {
+            this._onDidProgressUpdate.fire(event);
+        }));
+        this.rawListeners.add(this.raw.onDidProgressEnd(event => {
+            this._onDidProgressEnd.fire(event);
+        }));
+        this.rawListeners.add(this.raw.onDidInvalidateMemory(event => {
+            this._onDidInvalidMemory.fire(event);
+        }));
+        this.rawListeners.add(this.raw.onDidInvalidated(async (event) => {
+            const areas = event.body.areas || ['all'];
+            if (areas.includes('threads') || areas.includes('stacks') || areas.includes('all')) {
+                this.cancelAllRequests();
+                this.model.clearThreads(this.getId(), true);
+                const details = this.stoppedDetails;
+                this.stoppedDetails.length = 1;
+                await Promise.all(details.map(d => this.handleStop(d)));
+            }
+            const viewModel = this.debugService.getViewModel();
+            if (viewModel.focusedSession === this) {
+                viewModel.updateViews();
+            }
+        }));
+        this.rawListeners.add(this.raw.onDidExitAdapter(event => this.onDidExitAdapter(event)));
+    }
+    async handleStop(event) {
+        this.passFocusScheduler.cancel();
+        this.stoppedDetails.push(event);
+        if (event.hitBreakpointIds) {
+            this._waitToResume = this.enableDependentBreakpoints(event.hitBreakpointIds);
+        }
+        this.statusQueue.run(this.fetchThreads(event).then(() => event.threadId === undefined ? this.threadIds : [event.threadId]), async (threadId, token) => {
+            const hasLotsOfThreads = event.threadId === undefined && this.threadIds.length > 10;
+            const focusedThread = this.debugService.getViewModel().focusedThread;
+            const focusedThreadDoesNotExist = focusedThread !== undefined && focusedThread.session === this && !this.threads.has(focusedThread.threadId);
+            if (focusedThreadDoesNotExist) {
+                this.debugService.focusStackFrame(undefined, undefined);
+            }
+            const thread = typeof threadId === 'number' ? this.getThread(threadId) : undefined;
+            if (thread) {
+                const promises = this.model.refreshTopOfCallstack(thread, !hasLotsOfThreads);
+                const focus = async () => {
+                    if (focusedThreadDoesNotExist || (!event.preserveFocusHint && thread.getCallStack().length)) {
+                        const focusedStackFrame = this.debugService.getViewModel().focusedStackFrame;
+                        if (!focusedStackFrame || focusedStackFrame.thread.session === this) {
+                            const preserveFocus = !this.configurationService.getValue('debug').focusEditorOnBreak;
+                            await this.debugService.focusStackFrame(undefined, thread, undefined, { preserveFocus });
+                        }
+                        if (thread.stoppedDetails && !token.isCancellationRequested) {
+                            if (thread.stoppedDetails.reason === 'breakpoint' && this.configurationService.getValue('debug').openDebug === 'openOnDebugBreak' && !this.suppressDebugView) {
+                                await this.paneCompositeService.openPaneComposite(VIEWLET_ID, 0);
+                            }
+                            if (this.configurationService.getValue('debug').focusWindowOnBreak && !this.workbenchEnvironmentService.extensionTestsLocationURI) {
+                                const activeWindow = getActiveWindow();
+                                if (!activeWindow.document.hasFocus()) {
+                                    await this.hostService.focus(mainWindow, { force: true });
+                                }
+                            }
+                        }
+                    }
+                };
+                await promises.topCallStack;
+                if (!event.hitBreakpointIds) {
+                    this._waitToResume = this.enableDependentBreakpoints(thread);
+                }
+                if (token.isCancellationRequested) {
+                    return;
+                }
+                focus();
+                await promises.wholeCallStack;
+                if (token.isCancellationRequested) {
+                    return;
+                }
+                const focusedStackFrame = this.debugService.getViewModel().focusedStackFrame;
+                if (!focusedStackFrame || isFrameDeemphasized(focusedStackFrame)) {
+                    focus();
+                }
+            }
+            this._onDidChangeState.fire();
+        });
+    }
+    async enableDependentBreakpoints(hitBreakpointIdsOrThread) {
+        let breakpoints;
+        if (Array.isArray(hitBreakpointIdsOrThread)) {
+            breakpoints = this.model.getBreakpoints().filter(bp => hitBreakpointIdsOrThread.includes(bp.getIdFromAdapter(this.id)));
+        }
+        else {
+            const frame = hitBreakpointIdsOrThread.getTopStackFrame();
+            if (frame === undefined) {
+                return;
+            }
+            if (hitBreakpointIdsOrThread.stoppedDetails && hitBreakpointIdsOrThread.stoppedDetails.reason !== 'breakpoint') {
+                return;
+            }
+            breakpoints = this.getBreakpointsAtPosition(frame.source.uri, frame.range.startLineNumber, frame.range.endLineNumber, frame.range.startColumn, frame.range.endColumn);
+        }
+        const urisToResend = new Set();
+        this.model.getBreakpoints({ triggeredOnly: true, enabledOnly: true }).forEach(bp => {
+            breakpoints.forEach(cbp => {
+                if (bp.enabled && bp.triggeredBy === cbp.getId()) {
+                    bp.setSessionDidTrigger(this.getId());
+                    urisToResend.add(bp.uri.toString());
+                }
+            });
+        });
+        const results = [];
+        urisToResend.forEach((uri) => results.push(this.debugService.sendBreakpoints(URI.parse(uri), undefined, this)));
+        return Promise.all(results);
+    }
+    getBreakpointsAtPosition(uri, startLineNumber, endLineNumber, startColumn, endColumn) {
+        return this.model.getBreakpoints({ uri: uri }).filter(bp => {
+            if (bp.lineNumber < startLineNumber || bp.lineNumber > endLineNumber) {
+                return false;
+            }
+            if (bp.column && (bp.column < startColumn || bp.column > endColumn)) {
+                return false;
+            }
+            return true;
+        });
+    }
+    onDidExitAdapter(event) {
+        this.initialized = true;
+        this.model.setBreakpointSessionData(this.getId(), this.capabilities, undefined);
+        this.shutdown();
+        this._onDidEndAdapter.fire(event);
+    }
+    shutdown() {
+        this.rawListeners.clear();
+        if (this.raw) {
+            this.raw.disconnect({});
+            this.raw.dispose();
+            this.raw = undefined;
+        }
+        this.fetchThreadsScheduler?.dispose();
+        this.fetchThreadsScheduler = undefined;
+        this.passFocusScheduler.cancel();
+        this.passFocusScheduler.dispose();
+        this.model.clearThreads(this.getId(), true);
+        this._onDidChangeState.fire();
+    }
+    dispose() {
+        this.cancelAllRequests();
+        this.rawListeners.dispose();
+        this.globalDisposables.dispose();
+    }
+    getSourceForUri(uri) {
+        return this.sources.get(this.uriIdentityService.asCanonicalUri(uri).toString());
+    }
+    getSource(raw) {
+        let source = new Source(raw, this.getId(), this.uriIdentityService, this.logService);
+        const uriKey = source.uri.toString();
+        const found = this.sources.get(uriKey);
+        if (found) {
+            source = found;
+            source.raw = mixin(source.raw, raw);
+            if (source.raw && raw) {
+                source.raw.presentationHint = raw.presentationHint;
+            }
+        }
+        else {
+            this.sources.set(uriKey, source);
+        }
+        return source;
+    }
+    getRawSource(uri) {
+        const source = this.getSourceForUri(uri);
+        if (source) {
+            return source.raw;
+        }
+        else {
+            const data = Source.getEncodedDebugData(uri);
+            return { name: data.name, path: data.path, sourceReference: data.sourceReference };
+        }
+    }
+    getNewCancellationToken(threadId, token) {
+        const tokenSource = new CancellationTokenSource(token);
+        const tokens = this.cancellationMap.get(threadId) || [];
+        tokens.push(tokenSource);
+        this.cancellationMap.set(threadId, tokens);
+        return tokenSource.token;
+    }
+    cancelAllRequests() {
+        this.cancellationMap.forEach(tokens => tokens.forEach(t => t.dispose(true)));
+        this.cancellationMap.clear();
+    }
+    getReplElements() {
+        return this.repl.getReplElements();
+    }
+    hasSeparateRepl() {
+        return !this.parentSession || this._options.repl !== 'mergeWithParent';
+    }
+    removeReplExpressions() {
+        this.repl.removeReplExpressions();
+    }
+    async addReplExpression(stackFrame, expression) {
+        await this.repl.addReplExpression(this, stackFrame, expression);
+        this.debugService.getViewModel().updateViews();
+    }
+    appendToRepl(data, isImportant) {
+        this.repl.appendToRepl(this, data);
+        if (isImportant) {
+            this.notificationService.notify({ message: data.output.toString(), severity: data.sev, source: this.name });
+        }
+    }
+};
+DebugSession = __decorate([
+    __param(5, IDebugService),
+    __param(6, ITelemetryService),
+    __param(7, IHostService),
+    __param(8, IConfigurationService),
+    __param(9, IPaneCompositePartService),
+    __param(10, IWorkspaceContextService),
+    __param(11, IProductService),
+    __param(12, INotificationService),
+    __param(13, ILifecycleService),
+    __param(14, IUriIdentityService),
+    __param(15, IInstantiationService),
+    __param(16, ICustomEndpointTelemetryService),
+    __param(17, IWorkbenchEnvironmentService),
+    __param(18, ILogService),
+    __param(19, ITestService),
+    __param(20, ITestResultService),
+    __param(21, IAccessibilityService),
+    __metadata("design:paramtypes", [String, Object, Object, DebugModel, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], DebugSession);
+export { DebugSession };
+export class ThreadStatusScheduler extends Disposable {
+    constructor() {
+        super(...arguments);
+        this.pendingCancellations = [];
+        this.threadOps = this._register(new DisposableMap());
+    }
+    async run(threadIdsP, operation) {
+        const cancelledWhileLookingUpThreads = new Set();
+        this.pendingCancellations.push(cancelledWhileLookingUpThreads);
+        const threadIds = await threadIdsP;
+        for (let i = 0; i < this.pendingCancellations.length; i++) {
+            const s = this.pendingCancellations[i];
+            if (s === cancelledWhileLookingUpThreads) {
+                this.pendingCancellations.splice(i, 1);
+                break;
+            }
+            else {
+                for (const threadId of threadIds) {
+                    s.add(threadId);
+                }
+            }
+        }
+        if (cancelledWhileLookingUpThreads.has(undefined)) {
+            return;
+        }
+        await Promise.all(threadIds.map(threadId => {
+            if (cancelledWhileLookingUpThreads.has(threadId)) {
+                return;
+            }
+            this.threadOps.get(threadId)?.cancel();
+            const cts = new CancellationTokenSource();
+            this.threadOps.set(threadId, cts);
+            return operation(threadId, cts.token);
+        }));
+    }
+    cancel(threadIds) {
+        if (!threadIds) {
+            for (const [_, op] of this.threadOps) {
+                op.cancel();
+            }
+            this.threadOps.clearAndDisposeAll();
+            for (const s of this.pendingCancellations) {
+                s.add(undefined);
+            }
+        }
+        else {
+            for (const threadId of threadIds) {
+                this.threadOps.get(threadId)?.cancel();
+                this.threadOps.deleteAndDispose(threadId);
+                for (const s of this.pendingCancellations) {
+                    s.add(threadId);
+                }
+            }
+        }
+    }
+}

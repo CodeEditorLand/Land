@@ -1,5 +1,138 @@
-import{VSBuffer as w}from"../../../../base/common/buffer.js";import{Codicon as M}from"../../../../base/common/codicons.js";import{randomPath as P}from"../../../../base/common/extpath.js";import{URI as o}from"../../../../base/common/uri.js";import{ILanguageService as j}from"../../../../editor/common/languages/language.js";import{localize as A,localize2 as I}from"../../../../nls.js";import"../../../../platform/action/common/action.js";import{Action2 as R}from"../../../../platform/actions/common/actions.js";import{IClipboardService as T}from"../../../../platform/clipboard/common/clipboardService.js";import{INativeEnvironmentService as x}from"../../../../platform/environment/common/environment.js";import{IFileService as J}from"../../../../platform/files/common/files.js";import"../../../../platform/instantiation/common/instantiation.js";import{IQuickInputService as N}from"../../../../platform/quickinput/common/quickInput.js";import"../../../common/editor.js";import{MergeEditor as B}from"../browser/view/mergeEditor.js";import"../browser/view/viewModel.js";import"../common/mergeEditor.js";import{IEditorService as O}from"../../../services/editor/common/editorService.js";const b=I("mergeEditor","Merge Editor (Dev)");class U extends R{constructor(){super({id:"merge.dev.openContentsJson",category:b,title:I("merge.dev.openState","Open Merge Editor State from JSON"),icon:M.layoutCentered,f1:!0})}async run(e,r){const t=e.get(N),p=e.get(T),d=e.get(O),m=e.get(j),g=e.get(x),i=e.get(J);r||(r={});let n;if(r.data)n=r.data;else{const c=await t.input({prompt:A("mergeEditor.enterJSON","Enter JSON"),value:await p.readText()});if(c===void 0)return;n=c!==""?JSON.parse(c):{base:"",input1:"",input2:"",result:"",languageId:"plaintext"}}const a=o.joinPath(g.tmpDir,P()),s=m.getExtensions(n.languageId)[0]||"",f=o.joinPath(a,`/base${s}`),S=o.joinPath(a,`/input1${s}`),E=o.joinPath(a,`/input2${s}`),v=o.joinPath(a,`/result${s}`),V=o.joinPath(a,`/initialResult${s}`);async function u(c,h){await i.writeFile(c,w.fromString(h))}const y=await k(t,r.resultState);await Promise.all([u(f,n.base),u(S,n.input1),u(E,n.input2),u(v,y?n.initialResult||"":n.result),u(V,n.initialResult||"")]);const C={base:{resource:f},input1:{resource:S,label:"Input 1",description:"Input 1",detail:"(from JSON)"},input2:{resource:E,label:"Input 2",description:"Input 2",detail:"(from JSON)"},result:{resource:v}};d.openEditor(C)}}async function k(l,e){return e?e==="initial":(await l.pick([{label:"result",result:!1},{label:"initial result",result:!0}],{canPickMany:!1}))?.result}class $ extends R{constructor(e){super(e)}run(e){const{activeEditorPane:r}=e.get(O);if(r instanceof B){const t=r.viewModel.get();if(!t)return;this.runWithViewModel(t,e)}}}class le extends ${constructor(){super({id:"merge.dev.openSelectionInTemporaryMergeEditor",category:b,title:I("merge.dev.openSelectionInTemporaryMergeEditor","Open Selection In Temporary Merge Editor"),icon:M.layoutCentered,f1:!0})}async runWithViewModel(e,r){const t=e.selectionInBase.get()?.rangesInBase;if(!t||t.length===0)return;const p=t.map(i=>e.model.base.getValueInRange(i)).join(`
-`),d=t.map(i=>e.inputCodeEditorView1.editor.getModel().getValueInRange(e.model.translateBaseRangeToInput(1,i))).join(`
-`),m=t.map(i=>e.inputCodeEditorView2.editor.getModel().getValueInRange(e.model.translateBaseRangeToInput(2,i))).join(`
-`),g=t.map(i=>e.resultCodeEditorView.editor.getModel().getValueInRange(e.model.translateBaseRangeToResult(i))).join(`
-`);new U().run(r,{data:{base:p,input1:d,input2:m,result:g,languageId:e.resultCodeEditorView.editor.getModel().getLanguageId()}})}}export{U as MergeEditorOpenContentsFromJSON,le as OpenSelectionInTemporaryMergeEditor};
+import { VSBuffer } from '../../../../base/common/buffer.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { randomPath } from '../../../../base/common/extpath.js';
+import { URI } from '../../../../base/common/uri.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+import { localize, localize2 } from '../../../../nls.js';
+import { Action2 } from '../../../../platform/actions/common/actions.js';
+import { IClipboardService } from '../../../../platform/clipboard/common/clipboardService.js';
+import { INativeEnvironmentService } from '../../../../platform/environment/common/environment.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { MergeEditor } from '../browser/view/mergeEditor.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+const MERGE_EDITOR_CATEGORY = localize2('mergeEditor', 'Merge Editor (Dev)');
+export class MergeEditorOpenContentsFromJSON extends Action2 {
+    constructor() {
+        super({
+            id: 'merge.dev.openContentsJson',
+            category: MERGE_EDITOR_CATEGORY,
+            title: localize2('merge.dev.openState', "Open Merge Editor State from JSON"),
+            icon: Codicon.layoutCentered,
+            f1: true,
+        });
+    }
+    async run(accessor, args) {
+        const quickInputService = accessor.get(IQuickInputService);
+        const clipboardService = accessor.get(IClipboardService);
+        const editorService = accessor.get(IEditorService);
+        const languageService = accessor.get(ILanguageService);
+        const env = accessor.get(INativeEnvironmentService);
+        const fileService = accessor.get(IFileService);
+        if (!args) {
+            args = {};
+        }
+        let content;
+        if (!args.data) {
+            const result = await quickInputService.input({
+                prompt: localize('mergeEditor.enterJSON', 'Enter JSON'),
+                value: await clipboardService.readText(),
+            });
+            if (result === undefined) {
+                return;
+            }
+            content =
+                result !== ''
+                    ? JSON.parse(result)
+                    : { base: '', input1: '', input2: '', result: '', languageId: 'plaintext' };
+        }
+        else {
+            content = args.data;
+        }
+        const targetDir = URI.joinPath(env.tmpDir, randomPath());
+        const extension = languageService.getExtensions(content.languageId)[0] || '';
+        const baseUri = URI.joinPath(targetDir, `/base${extension}`);
+        const input1Uri = URI.joinPath(targetDir, `/input1${extension}`);
+        const input2Uri = URI.joinPath(targetDir, `/input2${extension}`);
+        const resultUri = URI.joinPath(targetDir, `/result${extension}`);
+        const initialResultUri = URI.joinPath(targetDir, `/initialResult${extension}`);
+        async function writeFile(uri, content) {
+            await fileService.writeFile(uri, VSBuffer.fromString(content));
+        }
+        const shouldOpenInitial = await promptOpenInitial(quickInputService, args.resultState);
+        await Promise.all([
+            writeFile(baseUri, content.base),
+            writeFile(input1Uri, content.input1),
+            writeFile(input2Uri, content.input2),
+            writeFile(resultUri, shouldOpenInitial ? (content.initialResult || '') : content.result),
+            writeFile(initialResultUri, content.initialResult || ''),
+        ]);
+        const input = {
+            base: { resource: baseUri },
+            input1: { resource: input1Uri, label: 'Input 1', description: 'Input 1', detail: '(from JSON)' },
+            input2: { resource: input2Uri, label: 'Input 2', description: 'Input 2', detail: '(from JSON)' },
+            result: { resource: resultUri },
+        };
+        editorService.openEditor(input);
+    }
+}
+async function promptOpenInitial(quickInputService, resultStateOverride) {
+    if (resultStateOverride) {
+        return resultStateOverride === 'initial';
+    }
+    const result = await quickInputService.pick([{ label: 'result', result: false }, { label: 'initial result', result: true }], { canPickMany: false });
+    return result?.result;
+}
+class MergeEditorAction extends Action2 {
+    constructor(desc) {
+        super(desc);
+    }
+    run(accessor) {
+        const { activeEditorPane } = accessor.get(IEditorService);
+        if (activeEditorPane instanceof MergeEditor) {
+            const vm = activeEditorPane.viewModel.get();
+            if (!vm) {
+                return;
+            }
+            this.runWithViewModel(vm, accessor);
+        }
+    }
+}
+export class OpenSelectionInTemporaryMergeEditor extends MergeEditorAction {
+    constructor() {
+        super({
+            id: 'merge.dev.openSelectionInTemporaryMergeEditor',
+            category: MERGE_EDITOR_CATEGORY,
+            title: localize2('merge.dev.openSelectionInTemporaryMergeEditor', "Open Selection In Temporary Merge Editor"),
+            icon: Codicon.layoutCentered,
+            f1: true,
+        });
+    }
+    async runWithViewModel(viewModel, accessor) {
+        const rangesInBase = viewModel.selectionInBase.get()?.rangesInBase;
+        if (!rangesInBase || rangesInBase.length === 0) {
+            return;
+        }
+        const base = rangesInBase
+            .map((r) => viewModel.model.base.getValueInRange(r))
+            .join('\n');
+        const input1 = rangesInBase
+            .map((r) => viewModel.inputCodeEditorView1.editor.getModel().getValueInRange(viewModel.model.translateBaseRangeToInput(1, r)))
+            .join('\n');
+        const input2 = rangesInBase
+            .map((r) => viewModel.inputCodeEditorView2.editor.getModel().getValueInRange(viewModel.model.translateBaseRangeToInput(2, r)))
+            .join('\n');
+        const result = rangesInBase
+            .map((r) => viewModel.resultCodeEditorView.editor.getModel().getValueInRange(viewModel.model.translateBaseRangeToResult(r)))
+            .join('\n');
+        new MergeEditorOpenContentsFromJSON().run(accessor, {
+            data: {
+                base,
+                input1,
+                input2,
+                result,
+                languageId: viewModel.resultCodeEditorView.editor.getModel().getLanguageId()
+            }
+        });
+    }
+}

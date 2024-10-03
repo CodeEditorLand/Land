@@ -1,2 +1,1074 @@
-import{KeyChord as te,KeyCode as h,KeyMod as p}from"../../../../base/common/keyCodes.js";import{CoreEditingCommands as ne}from"../../../browser/coreCommands.js";import"../../../browser/editorBrowser.js";import{EditorAction as x,registerEditorAction as g}from"../../../browser/editorExtensions.js";import{ReplaceCommand as oe,ReplaceCommandThatPreservesSelection as re,ReplaceCommandThatSelectsText as ie}from"../../../common/commands/replaceCommand.js";import{TrimTrailingWhitespaceCommand as se}from"../../../common/commands/trimTrailingWhitespaceCommand.js";import{EditorOption as J}from"../../../common/config/editorOptions.js";import{TypeOperations as le}from"../../../common/cursor/cursorTypeOperations.js";import{EnterOperation as q}from"../../../common/cursor/cursorTypeEditOperations.js";import{EditOperation as v}from"../../../common/core/editOperation.js";import{Position as ae}from"../../../common/core/position.js";import{Range as w}from"../../../common/core/range.js";import{Selection as S}from"../../../common/core/selection.js";import"../../../common/editorCommon.js";import{EditorContextKeys as c}from"../../../common/editorContextKeys.js";import"../../../common/model.js";import{CopyLinesCommand as X}from"./copyLinesCommand.js";import{MoveLinesCommand as ce}from"./moveLinesCommand.js";import{SortLinesCommand as G}from"./sortLinesCommand.js";import*as d from"../../../../nls.js";import{MenuId as k}from"../../../../platform/actions/common/actions.js";import{KeybindingWeight as A}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{ILanguageConfigurationService as ue}from"../../../common/languages/languageConfigurationRegistry.js";import{IConfigurationService as de}from"../../../../platform/configuration/common/configuration.js";class H extends x{down;constructor(s,e){super(e),this.down=s}run(s,e){if(!e.hasModel())return;const o=e.getSelections().map((r,i)=>({selection:r,index:i,ignore:!1}));o.sort((r,i)=>w.compareRangesUsingStarts(r.selection,i.selection));let n=o[0];for(let r=1;r<o.length;r++){const i=o[r];n.selection.endLineNumber===i.selection.startLineNumber&&(n.index<i.index?i.ignore=!0:(n.ignore=!0,n=i))}const t=[];for(const r of o)t.push(new X(r.selection,this.down,r.ignore));e.pushUndoStop(),e.executeCommands(this.id,t),e.pushUndoStop()}}class pe extends H{constructor(){super(!1,{id:"editor.action.copyLinesUpAction",label:d.localize("lines.copyUp","Copy Line Up"),alias:"Copy Line Up",precondition:c.writable,kbOpts:{kbExpr:c.editorTextFocus,primary:p.Alt|p.Shift|h.UpArrow,linux:{primary:p.CtrlCmd|p.Alt|p.Shift|h.UpArrow},weight:A.EditorContrib},menuOpts:{menuId:k.MenubarSelectionMenu,group:"2_line",title:d.localize({key:"miCopyLinesUp",comment:["&& denotes a mnemonic"]},"&&Copy Line Up"),order:1}})}}class me extends H{constructor(){super(!0,{id:"editor.action.copyLinesDownAction",label:d.localize("lines.copyDown","Copy Line Down"),alias:"Copy Line Down",precondition:c.writable,kbOpts:{kbExpr:c.editorTextFocus,primary:p.Alt|p.Shift|h.DownArrow,linux:{primary:p.CtrlCmd|p.Alt|p.Shift|h.DownArrow},weight:A.EditorContrib},menuOpts:{menuId:k.MenubarSelectionMenu,group:"2_line",title:d.localize({key:"miCopyLinesDown",comment:["&& denotes a mnemonic"]},"Co&&py Line Down"),order:2}})}}class ge extends x{constructor(){super({id:"editor.action.duplicateSelection",label:d.localize("duplicateSelection","Duplicate Selection"),alias:"Duplicate Selection",precondition:c.writable,menuOpts:{menuId:k.MenubarSelectionMenu,group:"2_line",title:d.localize({key:"miDuplicateSelection",comment:["&& denotes a mnemonic"]},"&&Duplicate Selection"),order:5}})}run(s,e,o){if(!e.hasModel())return;const n=[],t=e.getSelections(),r=e.getModel();for(const i of t)if(i.isEmpty())n.push(new X(i,!0));else{const l=new S(i.endLineNumber,i.endColumn,i.endLineNumber,i.endColumn);n.push(new ie(l,r.getValueInRange(i)))}e.pushUndoStop(),e.executeCommands(this.id,n),e.pushUndoStop()}}class Q extends x{down;constructor(s,e){super(e),this.down=s}run(s,e){const o=s.get(ue),n=[],t=e.getSelections()||[],r=e.getOption(J.autoIndent);for(const i of t)n.push(new ce(i,this.down,r,o));e.pushUndoStop(),e.executeCommands(this.id,n),e.pushUndoStop()}}class be extends Q{constructor(){super(!1,{id:"editor.action.moveLinesUpAction",label:d.localize("lines.moveUp","Move Line Up"),alias:"Move Line Up",precondition:c.writable,kbOpts:{kbExpr:c.editorTextFocus,primary:p.Alt|h.UpArrow,linux:{primary:p.Alt|h.UpArrow},weight:A.EditorContrib},menuOpts:{menuId:k.MenubarSelectionMenu,group:"2_line",title:d.localize({key:"miMoveLinesUp",comment:["&& denotes a mnemonic"]},"Mo&&ve Line Up"),order:3}})}}class Le extends Q{constructor(){super(!0,{id:"editor.action.moveLinesDownAction",label:d.localize("lines.moveDown","Move Line Down"),alias:"Move Line Down",precondition:c.writable,kbOpts:{kbExpr:c.editorTextFocus,primary:p.Alt|h.DownArrow,linux:{primary:p.Alt|h.DownArrow},weight:A.EditorContrib},menuOpts:{menuId:k.MenubarSelectionMenu,group:"2_line",title:d.localize({key:"miMoveLinesDown",comment:["&& denotes a mnemonic"]},"Move &&Line Down"),order:4}})}}class Y extends x{descending;constructor(s,e){super(e),this.descending=s}run(s,e){if(!e.hasModel())return;const o=e.getModel();let n=e.getSelections();n.length===1&&n[0].isEmpty()&&(n=[new S(1,1,o.getLineCount(),o.getLineMaxColumn(o.getLineCount()))]);for(const r of n)if(!G.canRun(e.getModel(),r,this.descending))return;const t=[];for(let r=0,i=n.length;r<i;r++)t[r]=new G(n[r],this.descending);e.pushUndoStop(),e.executeCommands(this.id,t),e.pushUndoStop()}}class fe extends Y{constructor(){super(!1,{id:"editor.action.sortLinesAscending",label:d.localize("lines.sortAscending","Sort Lines Ascending"),alias:"Sort Lines Ascending",precondition:c.writable})}}class Ce extends Y{constructor(){super(!0,{id:"editor.action.sortLinesDescending",label:d.localize("lines.sortDescending","Sort Lines Descending"),alias:"Sort Lines Descending",precondition:c.writable})}}class he extends x{constructor(){super({id:"editor.action.removeDuplicateLines",label:d.localize("lines.deleteDuplicates","Delete Duplicate Lines"),alias:"Delete Duplicate Lines",precondition:c.writable})}run(s,e){if(!e.hasModel())return;const o=e.getModel();if(o.getLineCount()===1&&o.getLineMaxColumn(1)===1)return;const n=[],t=[];let r=0,i=!0,l=e.getSelections();l.length===1&&l[0].isEmpty()&&(l=[new S(1,1,o.getLineCount(),o.getLineMaxColumn(o.getLineCount()))],i=!1);for(const a of l){const L=new Set,u=[];for(let E=a.startLineNumber;E<=a.endLineNumber;E++){const O=o.getLineContent(E);L.has(O)||(u.push(O),L.add(O))}const m=new S(a.startLineNumber,1,a.endLineNumber,o.getLineMaxColumn(a.endLineNumber)),C=a.startLineNumber-r,f=new S(C,1,C+u.length-1,u[u.length-1].length);n.push(v.replace(m,u.join(`
-`))),t.push(f),r+=a.endLineNumber-a.startLineNumber+1-u.length}e.pushUndoStop(),e.executeEdits(this.id,n,i?t:void 0),e.pushUndoStop()}}class $ extends x{static ID="editor.action.trimTrailingWhitespace";constructor(){super({id:$.ID,label:d.localize("lines.trimTrailingWhitespace","Trim Trailing Whitespace"),alias:"Trim Trailing Whitespace",precondition:c.writable,kbOpts:{kbExpr:c.editorTextFocus,primary:te(p.CtrlCmd|h.KeyK,p.CtrlCmd|h.KeyX),weight:A.EditorContrib}})}run(s,e,o){let n=[];o.reason==="auto-save"&&(n=(e.getSelections()||[]).map(L=>new ae(L.positionLineNumber,L.positionColumn)));const t=e.getSelection();if(t===null)return;const r=s.get(de),i=e.getModel(),l=r.getValue("files.trimTrailingWhitespaceInRegexAndStrings",{overrideIdentifier:i?.getLanguageId(),resource:i?.uri}),a=new se(t,n,l);e.pushUndoStop(),e.executeCommands(this.id,[a]),e.pushUndoStop()}}class Se extends x{constructor(){super({id:"editor.action.deleteLines",label:d.localize("lines.delete","Delete Line"),alias:"Delete Line",precondition:c.writable,kbOpts:{kbExpr:c.textInputFocus,primary:p.CtrlCmd|p.Shift|h.KeyK,weight:A.EditorContrib}})}run(s,e){if(!e.hasModel())return;const o=this._getLinesToRemove(e),n=e.getModel();if(n.getLineCount()===1&&n.getLineMaxColumn(1)===1)return;let t=0;const r=[],i=[];for(let l=0,a=o.length;l<a;l++){const L=o[l];let u=L.startLineNumber,m=L.endLineNumber,C=1,f=n.getLineMaxColumn(m);m<n.getLineCount()?(m+=1,f=1):u>1&&(u-=1,C=n.getLineMaxColumn(u)),r.push(v.replace(new S(u,C,m,f),"")),i.push(new S(u-t,L.positionColumn,u-t,L.positionColumn)),t+=L.endLineNumber-L.startLineNumber+1}e.pushUndoStop(),e.executeEdits(this.id,r,i),e.pushUndoStop()}_getLinesToRemove(s){const e=s.getSelections().map(t=>{let r=t.endLineNumber;return t.startLineNumber<t.endLineNumber&&t.endColumn===1&&(r-=1),{startLineNumber:t.startLineNumber,selectionStartColumn:t.selectionStartColumn,endLineNumber:r,positionColumn:t.positionColumn}});e.sort((t,r)=>t.startLineNumber===r.startLineNumber?t.endLineNumber-r.endLineNumber:t.startLineNumber-r.startLineNumber);const o=[];let n=e[0];for(let t=1;t<e.length;t++)n.endLineNumber+1>=e[t].startLineNumber?n.endLineNumber=e[t].endLineNumber:(o.push(n),n=e[t]);return o.push(n),o}}class we extends x{constructor(){super({id:"editor.action.indentLines",label:d.localize("lines.indent","Indent Line"),alias:"Indent Line",precondition:c.writable,kbOpts:{kbExpr:c.editorTextFocus,primary:p.CtrlCmd|h.BracketRight,weight:A.EditorContrib}})}run(s,e){const o=e._getViewModel();o&&(e.pushUndoStop(),e.executeCommands(this.id,le.indent(o.cursorConfig,e.getModel(),e.getSelections())),e.pushUndoStop())}}class xe extends x{constructor(){super({id:"editor.action.outdentLines",label:d.localize("lines.outdent","Outdent Line"),alias:"Outdent Line",precondition:c.writable,kbOpts:{kbExpr:c.editorTextFocus,primary:p.CtrlCmd|h.BracketLeft,weight:A.EditorContrib}})}run(s,e){ne.Outdent.runEditorCommand(s,e,null)}}class ye extends x{constructor(){super({id:"editor.action.insertLineBefore",label:d.localize("lines.insertBefore","Insert Line Above"),alias:"Insert Line Above",precondition:c.writable,kbOpts:{kbExpr:c.editorTextFocus,primary:p.CtrlCmd|p.Shift|h.Enter,weight:A.EditorContrib}})}run(s,e){const o=e._getViewModel();o&&(e.pushUndoStop(),e.executeCommands(this.id,q.lineInsertBefore(o.cursorConfig,e.getModel(),e.getSelections())))}}class Ne extends x{constructor(){super({id:"editor.action.insertLineAfter",label:d.localize("lines.insertAfter","Insert Line Below"),alias:"Insert Line Below",precondition:c.writable,kbOpts:{kbExpr:c.editorTextFocus,primary:p.CtrlCmd|h.Enter,weight:A.EditorContrib}})}run(s,e){const o=e._getViewModel();o&&(e.pushUndoStop(),e.executeCommands(this.id,q.lineInsertAfter(o.cursorConfig,e.getModel(),e.getSelections())))}}class Z extends x{run(s,e){if(!e.hasModel())return;const o=e.getSelection(),n=this._getRangesToDelete(e),t=[];for(let l=0,a=n.length-1;l<a;l++){const L=n[l],u=n[l+1];w.intersectRanges(L,u)===null?t.push(L):n[l+1]=w.plusRange(L,u)}t.push(n[n.length-1]);const r=this._getEndCursorState(o,t),i=t.map(l=>v.replace(l,""));e.pushUndoStop(),e.executeEdits(this.id,i,r),e.pushUndoStop()}}class Ae extends Z{constructor(){super({id:"deleteAllLeft",label:d.localize("lines.deleteAllLeft","Delete All Left"),alias:"Delete All Left",precondition:c.writable,kbOpts:{kbExpr:c.textInputFocus,primary:0,mac:{primary:p.CtrlCmd|h.Backspace},weight:A.EditorContrib}})}_getEndCursorState(s,e){let o=null;const n=[];let t=0;return e.forEach(r=>{let i;if(r.endColumn===1&&t>0){const l=r.startLineNumber-t;i=new S(l,r.startColumn,l,r.startColumn)}else i=new S(r.startLineNumber,r.startColumn,r.startLineNumber,r.startColumn);t+=r.endLineNumber-r.startLineNumber,r.intersectRanges(s)?o=i:n.push(i)}),o&&n.unshift(o),n}_getRangesToDelete(s){const e=s.getSelections();if(e===null)return[];let o=e;const n=s.getModel();return n===null?[]:(o.sort(w.compareRangesUsingStarts),o=o.map(t=>{if(t.isEmpty())if(t.startColumn===1){const r=Math.max(1,t.startLineNumber-1),i=t.startLineNumber===1?1:n.getLineLength(r)+1;return new w(r,i,t.startLineNumber,1)}else return new w(t.startLineNumber,1,t.startLineNumber,t.startColumn);else return new w(t.startLineNumber,1,t.endLineNumber,t.endColumn)}),o)}}class Ee extends Z{constructor(){super({id:"deleteAllRight",label:d.localize("lines.deleteAllRight","Delete All Right"),alias:"Delete All Right",precondition:c.writable,kbOpts:{kbExpr:c.textInputFocus,primary:0,mac:{primary:p.WinCtrl|h.KeyK,secondary:[p.CtrlCmd|h.Delete]},weight:A.EditorContrib}})}_getEndCursorState(s,e){let o=null;const n=[];for(let t=0,r=e.length,i=0;t<r;t++){const l=e[t],a=new S(l.startLineNumber-i,l.startColumn,l.startLineNumber-i,l.startColumn);l.intersectRanges(s)?o=a:n.push(a)}return o&&n.unshift(o),n}_getRangesToDelete(s){const e=s.getModel();if(e===null)return[];const o=s.getSelections();if(o===null)return[];const n=o.map(t=>{if(t.isEmpty()){const r=e.getLineMaxColumn(t.startLineNumber);return t.startColumn===r?new w(t.startLineNumber,t.startColumn,t.startLineNumber+1,1):new w(t.startLineNumber,t.startColumn,t.startLineNumber,r)}return t});return n.sort(w.compareRangesUsingStarts),n}}class Te extends x{constructor(){super({id:"editor.action.joinLines",label:d.localize("lines.joinLines","Join Lines"),alias:"Join Lines",precondition:c.writable,kbOpts:{kbExpr:c.editorTextFocus,primary:0,mac:{primary:p.WinCtrl|h.KeyJ},weight:A.EditorContrib}})}run(s,e){const o=e.getSelections();if(o===null)return;let n=e.getSelection();if(n===null)return;o.sort(w.compareRangesUsingStarts);const t=[],r=o.reduce((m,C)=>m.isEmpty()?m.endLineNumber===C.startLineNumber?(n.equalsSelection(m)&&(n=C),C):C.startLineNumber>m.endLineNumber+1?(t.push(m),C):new S(m.startLineNumber,m.startColumn,C.endLineNumber,C.endColumn):C.startLineNumber>m.endLineNumber?(t.push(m),C):new S(m.startLineNumber,m.startColumn,C.endLineNumber,C.endColumn));t.push(r);const i=e.getModel();if(i===null)return;const l=[],a=[];let L=n,u=0;for(let m=0,C=t.length;m<C;m++){const f=t[m],E=f.startLineNumber,O=1;let _=0,M,F;const V=i.getLineLength(f.endLineNumber)-f.endColumn;if(f.isEmpty()||f.startLineNumber===f.endLineNumber){const N=f.getStartPosition();N.lineNumber<i.getLineCount()?(M=E+1,F=i.getLineMaxColumn(M)):(M=N.lineNumber,F=i.getLineMaxColumn(N.lineNumber))}else M=f.endLineNumber,F=i.getLineMaxColumn(M);let y=i.getLineContent(E);for(let N=E+1;N<=M;N++){const ee=i.getLineContent(N),j=i.getLineFirstNonWhitespaceColumn(N);if(j>=1){let B=!0;y===""&&(B=!1),B&&(y.charAt(y.length-1)===" "||y.charAt(y.length-1)==="	")&&(B=!1,y=y.replace(/[\s\uFEFF\xA0]+$/g," "));const P=ee.substr(j-1);y+=(B?" ":"")+P,B?_=P.length+1:_=P.length}else _=0}const I=new w(E,O,M,F);if(!I.isEmpty()){let N;f.isEmpty()?(l.push(v.replace(I,y)),N=new S(I.startLineNumber-u,y.length-_+1,E-u,y.length-_+1)):f.startLineNumber===f.endLineNumber?(l.push(v.replace(I,y)),N=new S(f.startLineNumber-u,f.startColumn,f.endLineNumber-u,f.endColumn)):(l.push(v.replace(I,y)),N=new S(f.startLineNumber-u,f.startColumn,f.startLineNumber-u,y.length-V)),w.intersectRanges(I,n)!==null?L=N:a.push(N)}u+=I.endLineNumber-I.startLineNumber}a.unshift(L),e.pushUndoStop(),e.executeEdits(this.id,l,a),e.pushUndoStop()}}class Ie extends x{constructor(){super({id:"editor.action.transpose",label:d.localize("editor.transpose","Transpose Characters around the Cursor"),alias:"Transpose Characters around the Cursor",precondition:c.writable})}run(s,e){const o=e.getSelections();if(o===null)return;const n=e.getModel();if(n===null)return;const t=[];for(let r=0,i=o.length;r<i;r++){const l=o[r];if(!l.isEmpty())continue;const a=l.getStartPosition(),L=n.getLineMaxColumn(a.lineNumber);if(a.column>=L){if(a.lineNumber===n.getLineCount())continue;const u=new w(a.lineNumber,Math.max(1,a.column-1),a.lineNumber+1,1),m=n.getValueInRange(u).split("").reverse().join("");t.push(new oe(new S(a.lineNumber,Math.max(1,a.column-1),a.lineNumber+1,1),m))}else{const u=new w(a.lineNumber,Math.max(1,a.column-1),a.lineNumber,a.column+1),m=n.getValueInRange(u).split("").reverse().join("");t.push(new re(u,m,new S(a.lineNumber,a.column+1,a.lineNumber,a.column+1)))}}e.pushUndoStop(),e.executeCommands(this.id,t),e.pushUndoStop()}}class D extends x{run(s,e){const o=e.getSelections();if(o===null)return;const n=e.getModel();if(n===null)return;const t=e.getOption(J.wordSeparators),r=[];for(const i of o)if(i.isEmpty()){const l=i.getStartPosition(),a=e.getConfiguredWordAtPosition(l);if(!a)continue;const L=new w(l.lineNumber,a.startColumn,l.lineNumber,a.endColumn),u=n.getValueInRange(L);r.push(v.replace(L,this._modifyText(u,t)))}else{const l=n.getValueInRange(i);r.push(v.replace(i,this._modifyText(l,t)))}e.pushUndoStop(),e.executeEdits(this.id,r),e.pushUndoStop()}}class ve extends D{constructor(){super({id:"editor.action.transformToUppercase",label:d.localize("editor.transformToUppercase","Transform to Uppercase"),alias:"Transform to Uppercase",precondition:c.writable})}_modifyText(s,e){return s.toLocaleUpperCase()}}class Me extends D{constructor(){super({id:"editor.action.transformToLowercase",label:d.localize("editor.transformToLowercase","Transform to Lowercase"),alias:"Transform to Lowercase",precondition:c.writable})}_modifyText(s,e){return s.toLocaleLowerCase()}}class T{constructor(s,e){this._pattern=s;this._flags=e;this._actual=null,this._evaluated=!1}_actual;_evaluated;get(){if(!this._evaluated){this._evaluated=!0;try{this._actual=new RegExp(this._pattern,this._flags)}catch{}}return this._actual}isSupported(){return this.get()!==null}}class W extends D{static titleBoundary=new T("(^|[^\\p{L}\\p{N}']|((^|\\P{L})'))\\p{L}","gmu");constructor(){super({id:"editor.action.transformToTitlecase",label:d.localize("editor.transformToTitlecase","Transform to Title Case"),alias:"Transform to Title Case",precondition:c.writable})}_modifyText(s,e){const o=W.titleBoundary.get();return o?s.toLocaleLowerCase().replace(o,n=>n.toLocaleUpperCase()):s}}class U extends D{static caseBoundary=new T("(\\p{Ll})(\\p{Lu})","gmu");static singleLetters=new T("(\\p{Lu}|\\p{N})(\\p{Lu})(\\p{Ll})","gmu");constructor(){super({id:"editor.action.transformToSnakecase",label:d.localize("editor.transformToSnakecase","Transform to Snake Case"),alias:"Transform to Snake Case",precondition:c.writable})}_modifyText(s,e){const o=U.caseBoundary.get(),n=U.singleLetters.get();return!o||!n?s:s.replace(o,"$1_$2").replace(n,"$1_$2$3").toLocaleLowerCase()}}class K extends D{static wordBoundary=new T("[_\\s-]","gm");constructor(){super({id:"editor.action.transformToCamelcase",label:d.localize("editor.transformToCamelcase","Transform to Camel Case"),alias:"Transform to Camel Case",precondition:c.writable})}_modifyText(s,e){const o=K.wordBoundary.get();if(!o)return s;const n=s.split(o);return n.shift()+n.map(r=>r.substring(0,1).toLocaleUpperCase()+r.substring(1)).join("")}}class z extends D{static wordBoundary=new T("[_\\s-]","gm");static wordBoundaryToMaintain=new T("(?<=\\.)","gm");constructor(){super({id:"editor.action.transformToPascalcase",label:d.localize("editor.transformToPascalcase","Transform to Pascal Case"),alias:"Transform to Pascal Case",precondition:c.writable})}_modifyText(s,e){const o=z.wordBoundary.get(),n=z.wordBoundaryToMaintain.get();return!o||!n?s:s.split(n).map(i=>i.split(o)).flat().map(i=>i.substring(0,1).toLocaleUpperCase()+i.substring(1)).join("")}}class R extends D{static isSupported(){return[this.caseBoundary,this.singleLetters,this.underscoreBoundary].every(e=>e.isSupported())}static caseBoundary=new T("(\\p{Ll})(\\p{Lu})","gmu");static singleLetters=new T("(\\p{Lu}|\\p{N})(\\p{Lu}\\p{Ll})","gmu");static underscoreBoundary=new T("(\\S)(_)(\\S)","gm");constructor(){super({id:"editor.action.transformToKebabcase",label:d.localize("editor.transformToKebabcase","Transform to Kebab Case"),alias:"Transform to Kebab Case",precondition:c.writable})}_modifyText(s,e){const o=R.caseBoundary.get(),n=R.singleLetters.get(),t=R.underscoreBoundary.get();return!o||!n||!t?s:s.replace(t,"$1-$3").replace(o,"$1-$2").replace(n,"$1-$2").toLocaleLowerCase()}}g(pe),g(me),g(ge),g(be),g(Le),g(fe),g(Ce),g(he),g($),g(Se),g(we),g(xe),g(ye),g(Ne),g(Ae),g(Ee),g(Te),g(Ie),g(ve),g(Me),U.caseBoundary.isSupported()&&U.singleLetters.isSupported()&&g(U),K.wordBoundary.isSupported()&&g(K),z.wordBoundary.isSupported()&&g(z),W.titleBoundary.isSupported()&&g(W),R.isSupported()&&g(R);export{D as AbstractCaseAction,Z as AbstractDeleteAllToBoundaryAction,Y as AbstractSortLinesAction,K as CamelCaseAction,Ae as DeleteAllLeftAction,Ee as DeleteAllRightAction,he as DeleteDuplicateLinesAction,Se as DeleteLinesAction,ge as DuplicateSelectionAction,we as IndentLinesAction,Ne as InsertLineAfterAction,ye as InsertLineBeforeAction,Te as JoinLinesAction,R as KebabCaseAction,Me as LowerCaseAction,z as PascalCaseAction,U as SnakeCaseAction,fe as SortLinesAscendingAction,Ce as SortLinesDescendingAction,W as TitleCaseAction,Ie as TransposeAction,$ as TrimTrailingWhitespaceAction,ve as UpperCaseAction};
+import { KeyChord } from '../../../../base/common/keyCodes.js';
+import { CoreEditingCommands } from '../../../browser/coreCommands.js';
+import { EditorAction, registerEditorAction } from '../../../browser/editorExtensions.js';
+import { ReplaceCommand, ReplaceCommandThatPreservesSelection, ReplaceCommandThatSelectsText } from '../../../common/commands/replaceCommand.js';
+import { TrimTrailingWhitespaceCommand } from '../../../common/commands/trimTrailingWhitespaceCommand.js';
+import { TypeOperations } from '../../../common/cursor/cursorTypeOperations.js';
+import { EnterOperation } from '../../../common/cursor/cursorTypeEditOperations.js';
+import { EditOperation } from '../../../common/core/editOperation.js';
+import { Position } from '../../../common/core/position.js';
+import { Range } from '../../../common/core/range.js';
+import { Selection } from '../../../common/core/selection.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import { CopyLinesCommand } from './copyLinesCommand.js';
+import { MoveLinesCommand } from './moveLinesCommand.js';
+import { SortLinesCommand } from './sortLinesCommand.js';
+import * as nls from '../../../../nls.js';
+import { MenuId } from '../../../../platform/actions/common/actions.js';
+import { ILanguageConfigurationService } from '../../../common/languages/languageConfigurationRegistry.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+class AbstractCopyLinesAction extends EditorAction {
+    constructor(down, opts) {
+        super(opts);
+        this.down = down;
+    }
+    run(_accessor, editor) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const selections = editor.getSelections().map((selection, index) => ({ selection, index, ignore: false }));
+        selections.sort((a, b) => Range.compareRangesUsingStarts(a.selection, b.selection));
+        let prev = selections[0];
+        for (let i = 1; i < selections.length; i++) {
+            const curr = selections[i];
+            if (prev.selection.endLineNumber === curr.selection.startLineNumber) {
+                if (prev.index < curr.index) {
+                    curr.ignore = true;
+                }
+                else {
+                    prev.ignore = true;
+                    prev = curr;
+                }
+            }
+        }
+        const commands = [];
+        for (const selection of selections) {
+            commands.push(new CopyLinesCommand(selection.selection, this.down, selection.ignore));
+        }
+        editor.pushUndoStop();
+        editor.executeCommands(this.id, commands);
+        editor.pushUndoStop();
+    }
+}
+class CopyLinesUpAction extends AbstractCopyLinesAction {
+    constructor() {
+        super(false, {
+            id: 'editor.action.copyLinesUpAction',
+            label: nls.localize('lines.copyUp', "Copy Line Up"),
+            alias: 'Copy Line Up',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 512 | 1024 | 16,
+                linux: { primary: 2048 | 512 | 1024 | 16 },
+                weight: 100
+            },
+            menuOpts: {
+                menuId: MenuId.MenubarSelectionMenu,
+                group: '2_line',
+                title: nls.localize({ key: 'miCopyLinesUp', comment: ['&& denotes a mnemonic'] }, "&&Copy Line Up"),
+                order: 1
+            }
+        });
+    }
+}
+class CopyLinesDownAction extends AbstractCopyLinesAction {
+    constructor() {
+        super(true, {
+            id: 'editor.action.copyLinesDownAction',
+            label: nls.localize('lines.copyDown', "Copy Line Down"),
+            alias: 'Copy Line Down',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 512 | 1024 | 18,
+                linux: { primary: 2048 | 512 | 1024 | 18 },
+                weight: 100
+            },
+            menuOpts: {
+                menuId: MenuId.MenubarSelectionMenu,
+                group: '2_line',
+                title: nls.localize({ key: 'miCopyLinesDown', comment: ['&& denotes a mnemonic'] }, "Co&&py Line Down"),
+                order: 2
+            }
+        });
+    }
+}
+export class DuplicateSelectionAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.duplicateSelection',
+            label: nls.localize('duplicateSelection', "Duplicate Selection"),
+            alias: 'Duplicate Selection',
+            precondition: EditorContextKeys.writable,
+            menuOpts: {
+                menuId: MenuId.MenubarSelectionMenu,
+                group: '2_line',
+                title: nls.localize({ key: 'miDuplicateSelection', comment: ['&& denotes a mnemonic'] }, "&&Duplicate Selection"),
+                order: 5
+            }
+        });
+    }
+    run(accessor, editor, args) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const commands = [];
+        const selections = editor.getSelections();
+        const model = editor.getModel();
+        for (const selection of selections) {
+            if (selection.isEmpty()) {
+                commands.push(new CopyLinesCommand(selection, true));
+            }
+            else {
+                const insertSelection = new Selection(selection.endLineNumber, selection.endColumn, selection.endLineNumber, selection.endColumn);
+                commands.push(new ReplaceCommandThatSelectsText(insertSelection, model.getValueInRange(selection)));
+            }
+        }
+        editor.pushUndoStop();
+        editor.executeCommands(this.id, commands);
+        editor.pushUndoStop();
+    }
+}
+class AbstractMoveLinesAction extends EditorAction {
+    constructor(down, opts) {
+        super(opts);
+        this.down = down;
+    }
+    run(accessor, editor) {
+        const languageConfigurationService = accessor.get(ILanguageConfigurationService);
+        const commands = [];
+        const selections = editor.getSelections() || [];
+        const autoIndent = editor.getOption(12);
+        for (const selection of selections) {
+            commands.push(new MoveLinesCommand(selection, this.down, autoIndent, languageConfigurationService));
+        }
+        editor.pushUndoStop();
+        editor.executeCommands(this.id, commands);
+        editor.pushUndoStop();
+    }
+}
+class MoveLinesUpAction extends AbstractMoveLinesAction {
+    constructor() {
+        super(false, {
+            id: 'editor.action.moveLinesUpAction',
+            label: nls.localize('lines.moveUp', "Move Line Up"),
+            alias: 'Move Line Up',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 512 | 16,
+                linux: { primary: 512 | 16 },
+                weight: 100
+            },
+            menuOpts: {
+                menuId: MenuId.MenubarSelectionMenu,
+                group: '2_line',
+                title: nls.localize({ key: 'miMoveLinesUp', comment: ['&& denotes a mnemonic'] }, "Mo&&ve Line Up"),
+                order: 3
+            }
+        });
+    }
+}
+class MoveLinesDownAction extends AbstractMoveLinesAction {
+    constructor() {
+        super(true, {
+            id: 'editor.action.moveLinesDownAction',
+            label: nls.localize('lines.moveDown', "Move Line Down"),
+            alias: 'Move Line Down',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 512 | 18,
+                linux: { primary: 512 | 18 },
+                weight: 100
+            },
+            menuOpts: {
+                menuId: MenuId.MenubarSelectionMenu,
+                group: '2_line',
+                title: nls.localize({ key: 'miMoveLinesDown', comment: ['&& denotes a mnemonic'] }, "Move &&Line Down"),
+                order: 4
+            }
+        });
+    }
+}
+export class AbstractSortLinesAction extends EditorAction {
+    constructor(descending, opts) {
+        super(opts);
+        this.descending = descending;
+    }
+    run(_accessor, editor) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const model = editor.getModel();
+        let selections = editor.getSelections();
+        if (selections.length === 1 && selections[0].isEmpty()) {
+            selections = [new Selection(1, 1, model.getLineCount(), model.getLineMaxColumn(model.getLineCount()))];
+        }
+        for (const selection of selections) {
+            if (!SortLinesCommand.canRun(editor.getModel(), selection, this.descending)) {
+                return;
+            }
+        }
+        const commands = [];
+        for (let i = 0, len = selections.length; i < len; i++) {
+            commands[i] = new SortLinesCommand(selections[i], this.descending);
+        }
+        editor.pushUndoStop();
+        editor.executeCommands(this.id, commands);
+        editor.pushUndoStop();
+    }
+}
+export class SortLinesAscendingAction extends AbstractSortLinesAction {
+    constructor() {
+        super(false, {
+            id: 'editor.action.sortLinesAscending',
+            label: nls.localize('lines.sortAscending', "Sort Lines Ascending"),
+            alias: 'Sort Lines Ascending',
+            precondition: EditorContextKeys.writable
+        });
+    }
+}
+export class SortLinesDescendingAction extends AbstractSortLinesAction {
+    constructor() {
+        super(true, {
+            id: 'editor.action.sortLinesDescending',
+            label: nls.localize('lines.sortDescending', "Sort Lines Descending"),
+            alias: 'Sort Lines Descending',
+            precondition: EditorContextKeys.writable
+        });
+    }
+}
+export class DeleteDuplicateLinesAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.removeDuplicateLines',
+            label: nls.localize('lines.deleteDuplicates', "Delete Duplicate Lines"),
+            alias: 'Delete Duplicate Lines',
+            precondition: EditorContextKeys.writable
+        });
+    }
+    run(_accessor, editor) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const model = editor.getModel();
+        if (model.getLineCount() === 1 && model.getLineMaxColumn(1) === 1) {
+            return;
+        }
+        const edits = [];
+        const endCursorState = [];
+        let linesDeleted = 0;
+        let updateSelection = true;
+        let selections = editor.getSelections();
+        if (selections.length === 1 && selections[0].isEmpty()) {
+            selections = [new Selection(1, 1, model.getLineCount(), model.getLineMaxColumn(model.getLineCount()))];
+            updateSelection = false;
+        }
+        for (const selection of selections) {
+            const uniqueLines = new Set();
+            const lines = [];
+            for (let i = selection.startLineNumber; i <= selection.endLineNumber; i++) {
+                const line = model.getLineContent(i);
+                if (uniqueLines.has(line)) {
+                    continue;
+                }
+                lines.push(line);
+                uniqueLines.add(line);
+            }
+            const selectionToReplace = new Selection(selection.startLineNumber, 1, selection.endLineNumber, model.getLineMaxColumn(selection.endLineNumber));
+            const adjustedSelectionStart = selection.startLineNumber - linesDeleted;
+            const finalSelection = new Selection(adjustedSelectionStart, 1, adjustedSelectionStart + lines.length - 1, lines[lines.length - 1].length);
+            edits.push(EditOperation.replace(selectionToReplace, lines.join('\n')));
+            endCursorState.push(finalSelection);
+            linesDeleted += (selection.endLineNumber - selection.startLineNumber + 1) - lines.length;
+        }
+        editor.pushUndoStop();
+        editor.executeEdits(this.id, edits, updateSelection ? endCursorState : undefined);
+        editor.pushUndoStop();
+    }
+}
+export class TrimTrailingWhitespaceAction extends EditorAction {
+    static { this.ID = 'editor.action.trimTrailingWhitespace'; }
+    constructor() {
+        super({
+            id: TrimTrailingWhitespaceAction.ID,
+            label: nls.localize('lines.trimTrailingWhitespace', "Trim Trailing Whitespace"),
+            alias: 'Trim Trailing Whitespace',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: KeyChord(2048 | 41, 2048 | 54),
+                weight: 100
+            }
+        });
+    }
+    run(_accessor, editor, args) {
+        let cursors = [];
+        if (args.reason === 'auto-save') {
+            cursors = (editor.getSelections() || []).map(s => new Position(s.positionLineNumber, s.positionColumn));
+        }
+        const selection = editor.getSelection();
+        if (selection === null) {
+            return;
+        }
+        const config = _accessor.get(IConfigurationService);
+        const model = editor.getModel();
+        const trimInRegexAndStrings = config.getValue('files.trimTrailingWhitespaceInRegexAndStrings', { overrideIdentifier: model?.getLanguageId(), resource: model?.uri });
+        const command = new TrimTrailingWhitespaceCommand(selection, cursors, trimInRegexAndStrings);
+        editor.pushUndoStop();
+        editor.executeCommands(this.id, [command]);
+        editor.pushUndoStop();
+    }
+}
+export class DeleteLinesAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.deleteLines',
+            label: nls.localize('lines.delete', "Delete Line"),
+            alias: 'Delete Line',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.textInputFocus,
+                primary: 2048 | 1024 | 41,
+                weight: 100
+            }
+        });
+    }
+    run(_accessor, editor) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const ops = this._getLinesToRemove(editor);
+        const model = editor.getModel();
+        if (model.getLineCount() === 1 && model.getLineMaxColumn(1) === 1) {
+            return;
+        }
+        let linesDeleted = 0;
+        const edits = [];
+        const cursorState = [];
+        for (let i = 0, len = ops.length; i < len; i++) {
+            const op = ops[i];
+            let startLineNumber = op.startLineNumber;
+            let endLineNumber = op.endLineNumber;
+            let startColumn = 1;
+            let endColumn = model.getLineMaxColumn(endLineNumber);
+            if (endLineNumber < model.getLineCount()) {
+                endLineNumber += 1;
+                endColumn = 1;
+            }
+            else if (startLineNumber > 1) {
+                startLineNumber -= 1;
+                startColumn = model.getLineMaxColumn(startLineNumber);
+            }
+            edits.push(EditOperation.replace(new Selection(startLineNumber, startColumn, endLineNumber, endColumn), ''));
+            cursorState.push(new Selection(startLineNumber - linesDeleted, op.positionColumn, startLineNumber - linesDeleted, op.positionColumn));
+            linesDeleted += (op.endLineNumber - op.startLineNumber + 1);
+        }
+        editor.pushUndoStop();
+        editor.executeEdits(this.id, edits, cursorState);
+        editor.pushUndoStop();
+    }
+    _getLinesToRemove(editor) {
+        const operations = editor.getSelections().map((s) => {
+            let endLineNumber = s.endLineNumber;
+            if (s.startLineNumber < s.endLineNumber && s.endColumn === 1) {
+                endLineNumber -= 1;
+            }
+            return {
+                startLineNumber: s.startLineNumber,
+                selectionStartColumn: s.selectionStartColumn,
+                endLineNumber: endLineNumber,
+                positionColumn: s.positionColumn
+            };
+        });
+        operations.sort((a, b) => {
+            if (a.startLineNumber === b.startLineNumber) {
+                return a.endLineNumber - b.endLineNumber;
+            }
+            return a.startLineNumber - b.startLineNumber;
+        });
+        const mergedOperations = [];
+        let previousOperation = operations[0];
+        for (let i = 1; i < operations.length; i++) {
+            if (previousOperation.endLineNumber + 1 >= operations[i].startLineNumber) {
+                previousOperation.endLineNumber = operations[i].endLineNumber;
+            }
+            else {
+                mergedOperations.push(previousOperation);
+                previousOperation = operations[i];
+            }
+        }
+        mergedOperations.push(previousOperation);
+        return mergedOperations;
+    }
+}
+export class IndentLinesAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.indentLines',
+            label: nls.localize('lines.indent', "Indent Line"),
+            alias: 'Indent Line',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 2048 | 94,
+                weight: 100
+            }
+        });
+    }
+    run(_accessor, editor) {
+        const viewModel = editor._getViewModel();
+        if (!viewModel) {
+            return;
+        }
+        editor.pushUndoStop();
+        editor.executeCommands(this.id, TypeOperations.indent(viewModel.cursorConfig, editor.getModel(), editor.getSelections()));
+        editor.pushUndoStop();
+    }
+}
+class OutdentLinesAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.outdentLines',
+            label: nls.localize('lines.outdent', "Outdent Line"),
+            alias: 'Outdent Line',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 2048 | 92,
+                weight: 100
+            }
+        });
+    }
+    run(_accessor, editor) {
+        CoreEditingCommands.Outdent.runEditorCommand(_accessor, editor, null);
+    }
+}
+export class InsertLineBeforeAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.insertLineBefore',
+            label: nls.localize('lines.insertBefore', "Insert Line Above"),
+            alias: 'Insert Line Above',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 2048 | 1024 | 3,
+                weight: 100
+            }
+        });
+    }
+    run(_accessor, editor) {
+        const viewModel = editor._getViewModel();
+        if (!viewModel) {
+            return;
+        }
+        editor.pushUndoStop();
+        editor.executeCommands(this.id, EnterOperation.lineInsertBefore(viewModel.cursorConfig, editor.getModel(), editor.getSelections()));
+    }
+}
+export class InsertLineAfterAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.insertLineAfter',
+            label: nls.localize('lines.insertAfter', "Insert Line Below"),
+            alias: 'Insert Line Below',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 2048 | 3,
+                weight: 100
+            }
+        });
+    }
+    run(_accessor, editor) {
+        const viewModel = editor._getViewModel();
+        if (!viewModel) {
+            return;
+        }
+        editor.pushUndoStop();
+        editor.executeCommands(this.id, EnterOperation.lineInsertAfter(viewModel.cursorConfig, editor.getModel(), editor.getSelections()));
+    }
+}
+export class AbstractDeleteAllToBoundaryAction extends EditorAction {
+    run(_accessor, editor) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const primaryCursor = editor.getSelection();
+        const rangesToDelete = this._getRangesToDelete(editor);
+        const effectiveRanges = [];
+        for (let i = 0, count = rangesToDelete.length - 1; i < count; i++) {
+            const range = rangesToDelete[i];
+            const nextRange = rangesToDelete[i + 1];
+            if (Range.intersectRanges(range, nextRange) === null) {
+                effectiveRanges.push(range);
+            }
+            else {
+                rangesToDelete[i + 1] = Range.plusRange(range, nextRange);
+            }
+        }
+        effectiveRanges.push(rangesToDelete[rangesToDelete.length - 1]);
+        const endCursorState = this._getEndCursorState(primaryCursor, effectiveRanges);
+        const edits = effectiveRanges.map(range => {
+            return EditOperation.replace(range, '');
+        });
+        editor.pushUndoStop();
+        editor.executeEdits(this.id, edits, endCursorState);
+        editor.pushUndoStop();
+    }
+}
+export class DeleteAllLeftAction extends AbstractDeleteAllToBoundaryAction {
+    constructor() {
+        super({
+            id: 'deleteAllLeft',
+            label: nls.localize('lines.deleteAllLeft', "Delete All Left"),
+            alias: 'Delete All Left',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.textInputFocus,
+                primary: 0,
+                mac: { primary: 2048 | 1 },
+                weight: 100
+            }
+        });
+    }
+    _getEndCursorState(primaryCursor, rangesToDelete) {
+        let endPrimaryCursor = null;
+        const endCursorState = [];
+        let deletedLines = 0;
+        rangesToDelete.forEach(range => {
+            let endCursor;
+            if (range.endColumn === 1 && deletedLines > 0) {
+                const newStartLine = range.startLineNumber - deletedLines;
+                endCursor = new Selection(newStartLine, range.startColumn, newStartLine, range.startColumn);
+            }
+            else {
+                endCursor = new Selection(range.startLineNumber, range.startColumn, range.startLineNumber, range.startColumn);
+            }
+            deletedLines += range.endLineNumber - range.startLineNumber;
+            if (range.intersectRanges(primaryCursor)) {
+                endPrimaryCursor = endCursor;
+            }
+            else {
+                endCursorState.push(endCursor);
+            }
+        });
+        if (endPrimaryCursor) {
+            endCursorState.unshift(endPrimaryCursor);
+        }
+        return endCursorState;
+    }
+    _getRangesToDelete(editor) {
+        const selections = editor.getSelections();
+        if (selections === null) {
+            return [];
+        }
+        let rangesToDelete = selections;
+        const model = editor.getModel();
+        if (model === null) {
+            return [];
+        }
+        rangesToDelete.sort(Range.compareRangesUsingStarts);
+        rangesToDelete = rangesToDelete.map(selection => {
+            if (selection.isEmpty()) {
+                if (selection.startColumn === 1) {
+                    const deleteFromLine = Math.max(1, selection.startLineNumber - 1);
+                    const deleteFromColumn = selection.startLineNumber === 1 ? 1 : model.getLineLength(deleteFromLine) + 1;
+                    return new Range(deleteFromLine, deleteFromColumn, selection.startLineNumber, 1);
+                }
+                else {
+                    return new Range(selection.startLineNumber, 1, selection.startLineNumber, selection.startColumn);
+                }
+            }
+            else {
+                return new Range(selection.startLineNumber, 1, selection.endLineNumber, selection.endColumn);
+            }
+        });
+        return rangesToDelete;
+    }
+}
+export class DeleteAllRightAction extends AbstractDeleteAllToBoundaryAction {
+    constructor() {
+        super({
+            id: 'deleteAllRight',
+            label: nls.localize('lines.deleteAllRight', "Delete All Right"),
+            alias: 'Delete All Right',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.textInputFocus,
+                primary: 0,
+                mac: { primary: 256 | 41, secondary: [2048 | 20] },
+                weight: 100
+            }
+        });
+    }
+    _getEndCursorState(primaryCursor, rangesToDelete) {
+        let endPrimaryCursor = null;
+        const endCursorState = [];
+        for (let i = 0, len = rangesToDelete.length, offset = 0; i < len; i++) {
+            const range = rangesToDelete[i];
+            const endCursor = new Selection(range.startLineNumber - offset, range.startColumn, range.startLineNumber - offset, range.startColumn);
+            if (range.intersectRanges(primaryCursor)) {
+                endPrimaryCursor = endCursor;
+            }
+            else {
+                endCursorState.push(endCursor);
+            }
+        }
+        if (endPrimaryCursor) {
+            endCursorState.unshift(endPrimaryCursor);
+        }
+        return endCursorState;
+    }
+    _getRangesToDelete(editor) {
+        const model = editor.getModel();
+        if (model === null) {
+            return [];
+        }
+        const selections = editor.getSelections();
+        if (selections === null) {
+            return [];
+        }
+        const rangesToDelete = selections.map((sel) => {
+            if (sel.isEmpty()) {
+                const maxColumn = model.getLineMaxColumn(sel.startLineNumber);
+                if (sel.startColumn === maxColumn) {
+                    return new Range(sel.startLineNumber, sel.startColumn, sel.startLineNumber + 1, 1);
+                }
+                else {
+                    return new Range(sel.startLineNumber, sel.startColumn, sel.startLineNumber, maxColumn);
+                }
+            }
+            return sel;
+        });
+        rangesToDelete.sort(Range.compareRangesUsingStarts);
+        return rangesToDelete;
+    }
+}
+export class JoinLinesAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.joinLines',
+            label: nls.localize('lines.joinLines', "Join Lines"),
+            alias: 'Join Lines',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 0,
+                mac: { primary: 256 | 40 },
+                weight: 100
+            }
+        });
+    }
+    run(_accessor, editor) {
+        const selections = editor.getSelections();
+        if (selections === null) {
+            return;
+        }
+        let primaryCursor = editor.getSelection();
+        if (primaryCursor === null) {
+            return;
+        }
+        selections.sort(Range.compareRangesUsingStarts);
+        const reducedSelections = [];
+        const lastSelection = selections.reduce((previousValue, currentValue) => {
+            if (previousValue.isEmpty()) {
+                if (previousValue.endLineNumber === currentValue.startLineNumber) {
+                    if (primaryCursor.equalsSelection(previousValue)) {
+                        primaryCursor = currentValue;
+                    }
+                    return currentValue;
+                }
+                if (currentValue.startLineNumber > previousValue.endLineNumber + 1) {
+                    reducedSelections.push(previousValue);
+                    return currentValue;
+                }
+                else {
+                    return new Selection(previousValue.startLineNumber, previousValue.startColumn, currentValue.endLineNumber, currentValue.endColumn);
+                }
+            }
+            else {
+                if (currentValue.startLineNumber > previousValue.endLineNumber) {
+                    reducedSelections.push(previousValue);
+                    return currentValue;
+                }
+                else {
+                    return new Selection(previousValue.startLineNumber, previousValue.startColumn, currentValue.endLineNumber, currentValue.endColumn);
+                }
+            }
+        });
+        reducedSelections.push(lastSelection);
+        const model = editor.getModel();
+        if (model === null) {
+            return;
+        }
+        const edits = [];
+        const endCursorState = [];
+        let endPrimaryCursor = primaryCursor;
+        let lineOffset = 0;
+        for (let i = 0, len = reducedSelections.length; i < len; i++) {
+            const selection = reducedSelections[i];
+            const startLineNumber = selection.startLineNumber;
+            const startColumn = 1;
+            let columnDeltaOffset = 0;
+            let endLineNumber, endColumn;
+            const selectionEndPositionOffset = model.getLineLength(selection.endLineNumber) - selection.endColumn;
+            if (selection.isEmpty() || selection.startLineNumber === selection.endLineNumber) {
+                const position = selection.getStartPosition();
+                if (position.lineNumber < model.getLineCount()) {
+                    endLineNumber = startLineNumber + 1;
+                    endColumn = model.getLineMaxColumn(endLineNumber);
+                }
+                else {
+                    endLineNumber = position.lineNumber;
+                    endColumn = model.getLineMaxColumn(position.lineNumber);
+                }
+            }
+            else {
+                endLineNumber = selection.endLineNumber;
+                endColumn = model.getLineMaxColumn(endLineNumber);
+            }
+            let trimmedLinesContent = model.getLineContent(startLineNumber);
+            for (let i = startLineNumber + 1; i <= endLineNumber; i++) {
+                const lineText = model.getLineContent(i);
+                const firstNonWhitespaceIdx = model.getLineFirstNonWhitespaceColumn(i);
+                if (firstNonWhitespaceIdx >= 1) {
+                    let insertSpace = true;
+                    if (trimmedLinesContent === '') {
+                        insertSpace = false;
+                    }
+                    if (insertSpace && (trimmedLinesContent.charAt(trimmedLinesContent.length - 1) === ' ' ||
+                        trimmedLinesContent.charAt(trimmedLinesContent.length - 1) === '\t')) {
+                        insertSpace = false;
+                        trimmedLinesContent = trimmedLinesContent.replace(/[\s\uFEFF\xA0]+$/g, ' ');
+                    }
+                    const lineTextWithoutIndent = lineText.substr(firstNonWhitespaceIdx - 1);
+                    trimmedLinesContent += (insertSpace ? ' ' : '') + lineTextWithoutIndent;
+                    if (insertSpace) {
+                        columnDeltaOffset = lineTextWithoutIndent.length + 1;
+                    }
+                    else {
+                        columnDeltaOffset = lineTextWithoutIndent.length;
+                    }
+                }
+                else {
+                    columnDeltaOffset = 0;
+                }
+            }
+            const deleteSelection = new Range(startLineNumber, startColumn, endLineNumber, endColumn);
+            if (!deleteSelection.isEmpty()) {
+                let resultSelection;
+                if (selection.isEmpty()) {
+                    edits.push(EditOperation.replace(deleteSelection, trimmedLinesContent));
+                    resultSelection = new Selection(deleteSelection.startLineNumber - lineOffset, trimmedLinesContent.length - columnDeltaOffset + 1, startLineNumber - lineOffset, trimmedLinesContent.length - columnDeltaOffset + 1);
+                }
+                else {
+                    if (selection.startLineNumber === selection.endLineNumber) {
+                        edits.push(EditOperation.replace(deleteSelection, trimmedLinesContent));
+                        resultSelection = new Selection(selection.startLineNumber - lineOffset, selection.startColumn, selection.endLineNumber - lineOffset, selection.endColumn);
+                    }
+                    else {
+                        edits.push(EditOperation.replace(deleteSelection, trimmedLinesContent));
+                        resultSelection = new Selection(selection.startLineNumber - lineOffset, selection.startColumn, selection.startLineNumber - lineOffset, trimmedLinesContent.length - selectionEndPositionOffset);
+                    }
+                }
+                if (Range.intersectRanges(deleteSelection, primaryCursor) !== null) {
+                    endPrimaryCursor = resultSelection;
+                }
+                else {
+                    endCursorState.push(resultSelection);
+                }
+            }
+            lineOffset += deleteSelection.endLineNumber - deleteSelection.startLineNumber;
+        }
+        endCursorState.unshift(endPrimaryCursor);
+        editor.pushUndoStop();
+        editor.executeEdits(this.id, edits, endCursorState);
+        editor.pushUndoStop();
+    }
+}
+export class TransposeAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.transpose',
+            label: nls.localize('editor.transpose', "Transpose Characters around the Cursor"),
+            alias: 'Transpose Characters around the Cursor',
+            precondition: EditorContextKeys.writable
+        });
+    }
+    run(_accessor, editor) {
+        const selections = editor.getSelections();
+        if (selections === null) {
+            return;
+        }
+        const model = editor.getModel();
+        if (model === null) {
+            return;
+        }
+        const commands = [];
+        for (let i = 0, len = selections.length; i < len; i++) {
+            const selection = selections[i];
+            if (!selection.isEmpty()) {
+                continue;
+            }
+            const cursor = selection.getStartPosition();
+            const maxColumn = model.getLineMaxColumn(cursor.lineNumber);
+            if (cursor.column >= maxColumn) {
+                if (cursor.lineNumber === model.getLineCount()) {
+                    continue;
+                }
+                const deleteSelection = new Range(cursor.lineNumber, Math.max(1, cursor.column - 1), cursor.lineNumber + 1, 1);
+                const chars = model.getValueInRange(deleteSelection).split('').reverse().join('');
+                commands.push(new ReplaceCommand(new Selection(cursor.lineNumber, Math.max(1, cursor.column - 1), cursor.lineNumber + 1, 1), chars));
+            }
+            else {
+                const deleteSelection = new Range(cursor.lineNumber, Math.max(1, cursor.column - 1), cursor.lineNumber, cursor.column + 1);
+                const chars = model.getValueInRange(deleteSelection).split('').reverse().join('');
+                commands.push(new ReplaceCommandThatPreservesSelection(deleteSelection, chars, new Selection(cursor.lineNumber, cursor.column + 1, cursor.lineNumber, cursor.column + 1)));
+            }
+        }
+        editor.pushUndoStop();
+        editor.executeCommands(this.id, commands);
+        editor.pushUndoStop();
+    }
+}
+export class AbstractCaseAction extends EditorAction {
+    run(_accessor, editor) {
+        const selections = editor.getSelections();
+        if (selections === null) {
+            return;
+        }
+        const model = editor.getModel();
+        if (model === null) {
+            return;
+        }
+        const wordSeparators = editor.getOption(134);
+        const textEdits = [];
+        for (const selection of selections) {
+            if (selection.isEmpty()) {
+                const cursor = selection.getStartPosition();
+                const word = editor.getConfiguredWordAtPosition(cursor);
+                if (!word) {
+                    continue;
+                }
+                const wordRange = new Range(cursor.lineNumber, word.startColumn, cursor.lineNumber, word.endColumn);
+                const text = model.getValueInRange(wordRange);
+                textEdits.push(EditOperation.replace(wordRange, this._modifyText(text, wordSeparators)));
+            }
+            else {
+                const text = model.getValueInRange(selection);
+                textEdits.push(EditOperation.replace(selection, this._modifyText(text, wordSeparators)));
+            }
+        }
+        editor.pushUndoStop();
+        editor.executeEdits(this.id, textEdits);
+        editor.pushUndoStop();
+    }
+}
+export class UpperCaseAction extends AbstractCaseAction {
+    constructor() {
+        super({
+            id: 'editor.action.transformToUppercase',
+            label: nls.localize('editor.transformToUppercase', "Transform to Uppercase"),
+            alias: 'Transform to Uppercase',
+            precondition: EditorContextKeys.writable
+        });
+    }
+    _modifyText(text, wordSeparators) {
+        return text.toLocaleUpperCase();
+    }
+}
+export class LowerCaseAction extends AbstractCaseAction {
+    constructor() {
+        super({
+            id: 'editor.action.transformToLowercase',
+            label: nls.localize('editor.transformToLowercase', "Transform to Lowercase"),
+            alias: 'Transform to Lowercase',
+            precondition: EditorContextKeys.writable
+        });
+    }
+    _modifyText(text, wordSeparators) {
+        return text.toLocaleLowerCase();
+    }
+}
+class BackwardsCompatibleRegExp {
+    constructor(_pattern, _flags) {
+        this._pattern = _pattern;
+        this._flags = _flags;
+        this._actual = null;
+        this._evaluated = false;
+    }
+    get() {
+        if (!this._evaluated) {
+            this._evaluated = true;
+            try {
+                this._actual = new RegExp(this._pattern, this._flags);
+            }
+            catch (err) {
+            }
+        }
+        return this._actual;
+    }
+    isSupported() {
+        return (this.get() !== null);
+    }
+}
+export class TitleCaseAction extends AbstractCaseAction {
+    static { this.titleBoundary = new BackwardsCompatibleRegExp('(^|[^\\p{L}\\p{N}\']|((^|\\P{L})\'))\\p{L}', 'gmu'); }
+    constructor() {
+        super({
+            id: 'editor.action.transformToTitlecase',
+            label: nls.localize('editor.transformToTitlecase', "Transform to Title Case"),
+            alias: 'Transform to Title Case',
+            precondition: EditorContextKeys.writable
+        });
+    }
+    _modifyText(text, wordSeparators) {
+        const titleBoundary = TitleCaseAction.titleBoundary.get();
+        if (!titleBoundary) {
+            return text;
+        }
+        return text
+            .toLocaleLowerCase()
+            .replace(titleBoundary, (b) => b.toLocaleUpperCase());
+    }
+}
+export class SnakeCaseAction extends AbstractCaseAction {
+    static { this.caseBoundary = new BackwardsCompatibleRegExp('(\\p{Ll})(\\p{Lu})', 'gmu'); }
+    static { this.singleLetters = new BackwardsCompatibleRegExp('(\\p{Lu}|\\p{N})(\\p{Lu})(\\p{Ll})', 'gmu'); }
+    constructor() {
+        super({
+            id: 'editor.action.transformToSnakecase',
+            label: nls.localize('editor.transformToSnakecase', "Transform to Snake Case"),
+            alias: 'Transform to Snake Case',
+            precondition: EditorContextKeys.writable
+        });
+    }
+    _modifyText(text, wordSeparators) {
+        const caseBoundary = SnakeCaseAction.caseBoundary.get();
+        const singleLetters = SnakeCaseAction.singleLetters.get();
+        if (!caseBoundary || !singleLetters) {
+            return text;
+        }
+        return (text
+            .replace(caseBoundary, '$1_$2')
+            .replace(singleLetters, '$1_$2$3')
+            .toLocaleLowerCase());
+    }
+}
+export class CamelCaseAction extends AbstractCaseAction {
+    static { this.wordBoundary = new BackwardsCompatibleRegExp('[_\\s-]', 'gm'); }
+    constructor() {
+        super({
+            id: 'editor.action.transformToCamelcase',
+            label: nls.localize('editor.transformToCamelcase', "Transform to Camel Case"),
+            alias: 'Transform to Camel Case',
+            precondition: EditorContextKeys.writable
+        });
+    }
+    _modifyText(text, wordSeparators) {
+        const wordBoundary = CamelCaseAction.wordBoundary.get();
+        if (!wordBoundary) {
+            return text;
+        }
+        const words = text.split(wordBoundary);
+        const firstWord = words.shift();
+        return firstWord + words.map((word) => word.substring(0, 1).toLocaleUpperCase() + word.substring(1))
+            .join('');
+    }
+}
+export class PascalCaseAction extends AbstractCaseAction {
+    static { this.wordBoundary = new BackwardsCompatibleRegExp('[_\\s-]', 'gm'); }
+    static { this.wordBoundaryToMaintain = new BackwardsCompatibleRegExp('(?<=\\.)', 'gm'); }
+    constructor() {
+        super({
+            id: 'editor.action.transformToPascalcase',
+            label: nls.localize('editor.transformToPascalcase', "Transform to Pascal Case"),
+            alias: 'Transform to Pascal Case',
+            precondition: EditorContextKeys.writable
+        });
+    }
+    _modifyText(text, wordSeparators) {
+        const wordBoundary = PascalCaseAction.wordBoundary.get();
+        const wordBoundaryToMaintain = PascalCaseAction.wordBoundaryToMaintain.get();
+        if (!wordBoundary || !wordBoundaryToMaintain) {
+            return text;
+        }
+        const wordsWithMaintainBoundaries = text.split(wordBoundaryToMaintain);
+        const words = wordsWithMaintainBoundaries.map((word) => word.split(wordBoundary)).flat();
+        return words.map((word) => word.substring(0, 1).toLocaleUpperCase() + word.substring(1))
+            .join('');
+    }
+}
+export class KebabCaseAction extends AbstractCaseAction {
+    static isSupported() {
+        const areAllRegexpsSupported = [
+            this.caseBoundary,
+            this.singleLetters,
+            this.underscoreBoundary,
+        ].every((regexp) => regexp.isSupported());
+        return areAllRegexpsSupported;
+    }
+    static { this.caseBoundary = new BackwardsCompatibleRegExp('(\\p{Ll})(\\p{Lu})', 'gmu'); }
+    static { this.singleLetters = new BackwardsCompatibleRegExp('(\\p{Lu}|\\p{N})(\\p{Lu}\\p{Ll})', 'gmu'); }
+    static { this.underscoreBoundary = new BackwardsCompatibleRegExp('(\\S)(_)(\\S)', 'gm'); }
+    constructor() {
+        super({
+            id: 'editor.action.transformToKebabcase',
+            label: nls.localize('editor.transformToKebabcase', 'Transform to Kebab Case'),
+            alias: 'Transform to Kebab Case',
+            precondition: EditorContextKeys.writable
+        });
+    }
+    _modifyText(text, _) {
+        const caseBoundary = KebabCaseAction.caseBoundary.get();
+        const singleLetters = KebabCaseAction.singleLetters.get();
+        const underscoreBoundary = KebabCaseAction.underscoreBoundary.get();
+        if (!caseBoundary || !singleLetters || !underscoreBoundary) {
+            return text;
+        }
+        return text
+            .replace(underscoreBoundary, '$1-$3')
+            .replace(caseBoundary, '$1-$2')
+            .replace(singleLetters, '$1-$2')
+            .toLocaleLowerCase();
+    }
+}
+registerEditorAction(CopyLinesUpAction);
+registerEditorAction(CopyLinesDownAction);
+registerEditorAction(DuplicateSelectionAction);
+registerEditorAction(MoveLinesUpAction);
+registerEditorAction(MoveLinesDownAction);
+registerEditorAction(SortLinesAscendingAction);
+registerEditorAction(SortLinesDescendingAction);
+registerEditorAction(DeleteDuplicateLinesAction);
+registerEditorAction(TrimTrailingWhitespaceAction);
+registerEditorAction(DeleteLinesAction);
+registerEditorAction(IndentLinesAction);
+registerEditorAction(OutdentLinesAction);
+registerEditorAction(InsertLineBeforeAction);
+registerEditorAction(InsertLineAfterAction);
+registerEditorAction(DeleteAllLeftAction);
+registerEditorAction(DeleteAllRightAction);
+registerEditorAction(JoinLinesAction);
+registerEditorAction(TransposeAction);
+registerEditorAction(UpperCaseAction);
+registerEditorAction(LowerCaseAction);
+if (SnakeCaseAction.caseBoundary.isSupported() && SnakeCaseAction.singleLetters.isSupported()) {
+    registerEditorAction(SnakeCaseAction);
+}
+if (CamelCaseAction.wordBoundary.isSupported()) {
+    registerEditorAction(CamelCaseAction);
+}
+if (PascalCaseAction.wordBoundary.isSupported()) {
+    registerEditorAction(PascalCaseAction);
+}
+if (TitleCaseAction.titleBoundary.isSupported()) {
+    registerEditorAction(TitleCaseAction);
+}
+if (KebabCaseAction.isSupported()) {
+    registerEditorAction(KebabCaseAction);
+}

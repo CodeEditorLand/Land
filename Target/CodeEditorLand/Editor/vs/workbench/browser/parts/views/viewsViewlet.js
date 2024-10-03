@@ -1,1 +1,126 @@
-var I=Object.defineProperty;var g=Object.getOwnPropertyDescriptor;var p=(a,t,i,e)=>{for(var r=e>1?void 0:e?g(t,i):t,o=a.length-1,n;o>=0;o--)(n=a[o])&&(r=(e?n(t,i,r):n(r))||r);return e&&r&&I(t,i,r),r},s=(a,t)=>(i,e)=>t(i,e,a);import{IExtensionService as m}from"../../../services/extensions/common/extensions.js";import{IContextMenuService as u}from"../../../../platform/contextview/browser/contextView.js";import{IViewDescriptorService as D}from"../../../common/views.js";import{ITelemetryService as S}from"../../../../platform/telemetry/common/telemetry.js";import{IThemeService as x}from"../../../../platform/theme/common/themeService.js";import{IInstantiationService as C}from"../../../../platform/instantiation/common/instantiation.js";import{IStorageService as M}from"../../../../platform/storage/common/storage.js";import{IWorkspaceContextService as E}from"../../../../platform/workspace/common/workspace.js";import{ViewPaneContainer as b}from"./viewPaneContainer.js";import"./viewPane.js";import"../../../../base/common/event.js";import{IConfigurationService as A}from"../../../../platform/configuration/common/configuration.js";import{IWorkbenchLayoutService as y}from"../../../services/layout/browser/layoutService.js";import"../../../../platform/extensions/common/extensions.js";let c=class extends b{constantViewDescriptors=new Map;allViews=new Map;filterValue;constructor(t,i,e,r,o,n,w,V,f,h,d,v){super(t,{mergeViewWithContainerWhenSingleView:!1},w,e,r,f,o,h,V,n,d,v),this._register(i(l=>{this.filterValue=l,this.onFilterChanged(l)})),this._register(this.viewContainerModel.onDidChangeActiveViewDescriptors(()=>{this.updateAllViews(this.viewContainerModel.activeViewDescriptors)}))}updateAllViews(t){t.forEach(i=>{const e=this.getFilterOn(i);e&&(this.allViews.has(e)||this.allViews.set(e,new Map),this.allViews.get(e).set(i.id,i),this.filterValue&&!this.filterValue.includes(e)&&this.panes.find(r=>r.id===i.id)&&this.viewContainerModel.setVisible(i.id,!1))})}addConstantViewDescriptors(t){t.forEach(i=>this.constantViewDescriptors.set(i.id,i))}onFilterChanged(t){this.allViews.size===0&&this.updateAllViews(this.viewContainerModel.activeViewDescriptors),this.getViewsNotForTarget(t).forEach(i=>this.viewContainerModel.setVisible(i.id,!1)),this.getViewsForTarget(t).forEach(i=>this.viewContainerModel.setVisible(i.id,!0))}getViewsForTarget(t){const i=[];for(let e=0;e<t.length;e++)this.allViews.has(t[e])&&i.push(...Array.from(this.allViews.get(t[e]).values()));return i}getViewsNotForTarget(t){const i=this.allViews.keys();let e=i.next(),r=[];for(;!e.done;){let o=!1;t.forEach(n=>{e.value===n&&(o=!0)}),o||(r=r.concat(this.getViewsForTarget([e.value]))),e=i.next()}return r}onDidAddViewDescriptors(t){const i=super.onDidAddViewDescriptors(t);for(let e=0;e<t.length;e++)this.constantViewDescriptors.has(t[e].viewDescriptor.id)&&i[e].setExpanded(!1);return this.allViews.size===0&&this.updateAllViews(this.viewContainerModel.activeViewDescriptors),i}openView(t,i){const e=super.openView(t,i);if(e){const r=Array.from(this.allViews.entries()).find(o=>o[1].has(t));r&&!this.filterValue?.includes(r[0])&&this.setFilter(r[1].get(t))}return e}};c=p([s(2,A),s(3,y),s(4,S),s(5,M),s(6,C),s(7,x),s(8,u),s(9,m),s(10,E),s(11,D)],c);export{c as FilterViewPaneContainer};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { IViewDescriptorService } from '../../../common/views.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { ViewPaneContainer } from './viewPaneContainer.js';
+import { Event } from '../../../../base/common/event.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
+let FilterViewPaneContainer = class FilterViewPaneContainer extends ViewPaneContainer {
+    constructor(viewletId, onDidChangeFilterValue, configurationService, layoutService, telemetryService, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService, viewDescriptorService) {
+        super(viewletId, { mergeViewWithContainerWhenSingleView: false }, instantiationService, configurationService, layoutService, contextMenuService, telemetryService, extensionService, themeService, storageService, contextService, viewDescriptorService);
+        this.constantViewDescriptors = new Map();
+        this.allViews = new Map();
+        this._register(onDidChangeFilterValue(newFilterValue => {
+            this.filterValue = newFilterValue;
+            this.onFilterChanged(newFilterValue);
+        }));
+        this._register(this.viewContainerModel.onDidChangeActiveViewDescriptors(() => {
+            this.updateAllViews(this.viewContainerModel.activeViewDescriptors);
+        }));
+    }
+    updateAllViews(viewDescriptors) {
+        viewDescriptors.forEach(descriptor => {
+            const filterOnValue = this.getFilterOn(descriptor);
+            if (!filterOnValue) {
+                return;
+            }
+            if (!this.allViews.has(filterOnValue)) {
+                this.allViews.set(filterOnValue, new Map());
+            }
+            this.allViews.get(filterOnValue).set(descriptor.id, descriptor);
+            if (this.filterValue && !this.filterValue.includes(filterOnValue) && this.panes.find(pane => pane.id === descriptor.id)) {
+                this.viewContainerModel.setVisible(descriptor.id, false);
+            }
+        });
+    }
+    addConstantViewDescriptors(constantViewDescriptors) {
+        constantViewDescriptors.forEach(viewDescriptor => this.constantViewDescriptors.set(viewDescriptor.id, viewDescriptor));
+    }
+    onFilterChanged(newFilterValue) {
+        if (this.allViews.size === 0) {
+            this.updateAllViews(this.viewContainerModel.activeViewDescriptors);
+        }
+        this.getViewsNotForTarget(newFilterValue).forEach(item => this.viewContainerModel.setVisible(item.id, false));
+        this.getViewsForTarget(newFilterValue).forEach(item => this.viewContainerModel.setVisible(item.id, true));
+    }
+    getViewsForTarget(target) {
+        const views = [];
+        for (let i = 0; i < target.length; i++) {
+            if (this.allViews.has(target[i])) {
+                views.push(...Array.from(this.allViews.get(target[i]).values()));
+            }
+        }
+        return views;
+    }
+    getViewsNotForTarget(target) {
+        const iterable = this.allViews.keys();
+        let key = iterable.next();
+        let views = [];
+        while (!key.done) {
+            let isForTarget = false;
+            target.forEach(value => {
+                if (key.value === value) {
+                    isForTarget = true;
+                }
+            });
+            if (!isForTarget) {
+                views = views.concat(this.getViewsForTarget([key.value]));
+            }
+            key = iterable.next();
+        }
+        return views;
+    }
+    onDidAddViewDescriptors(added) {
+        const panes = super.onDidAddViewDescriptors(added);
+        for (let i = 0; i < added.length; i++) {
+            if (this.constantViewDescriptors.has(added[i].viewDescriptor.id)) {
+                panes[i].setExpanded(false);
+            }
+        }
+        if (this.allViews.size === 0) {
+            this.updateAllViews(this.viewContainerModel.activeViewDescriptors);
+        }
+        return panes;
+    }
+    openView(id, focus) {
+        const result = super.openView(id, focus);
+        if (result) {
+            const descriptorMap = Array.from(this.allViews.entries()).find(entry => entry[1].has(id));
+            if (descriptorMap && !this.filterValue?.includes(descriptorMap[0])) {
+                this.setFilter(descriptorMap[1].get(id));
+            }
+        }
+        return result;
+    }
+};
+FilterViewPaneContainer = __decorate([
+    __param(2, IConfigurationService),
+    __param(3, IWorkbenchLayoutService),
+    __param(4, ITelemetryService),
+    __param(5, IStorageService),
+    __param(6, IInstantiationService),
+    __param(7, IThemeService),
+    __param(8, IContextMenuService),
+    __param(9, IExtensionService),
+    __param(10, IWorkspaceContextService),
+    __param(11, IViewDescriptorService),
+    __metadata("design:paramtypes", [String, Function, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], FilterViewPaneContainer);
+export { FilterViewPaneContainer };

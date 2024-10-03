@@ -1,1 +1,928 @@
-import*as a from"../../../../nls.js";import{KeyCode as d,KeyMod as p}from"../../../../base/common/keyCodes.js";import{List as N}from"../../../../base/browser/ui/list/listWidget.js";import{KeybindingsRegistry as g,KeybindingWeight as u}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{IListService as T}from"../../../../platform/list/browser/listService.js";import{IDebugService as l,CONTEXT_BREAKPOINTS_FOCUSED as B,CONTEXT_WATCH_EXPRESSIONS_FOCUSED as q,CONTEXT_VARIABLES_FOCUSED as le,EDITOR_CONTRIBUTION_ID as ge,CONTEXT_IN_DEBUG_MODE as A,CONTEXT_EXPRESSION_SELECTED as ue,CONTEXT_DEBUG_STATE as _,CONTEXT_JUMP_TO_CURSOR_SUPPORTED as Se,REPL_VIEW_ID as R,CONTEXT_DEBUGGERS_AVAILABLE as F,State as P,getStateLabel as pe,CONTEXT_BREAKPOINT_INPUT_FOCUSED as Ce,CONTEXT_FOCUSED_SESSION_IS_ATTACH as H,VIEWLET_ID as me,CONTEXT_DISASSEMBLY_VIEW_FOCUS as D,CONTEXT_IN_DEBUG_REPL as Y,CONTEXT_STEP_INTO_TARGETS_SUPPORTED as fe,isFrameDeemphasized as be}from"../common/debug.js";import{Expression as w,Variable as Q,Breakpoint as J,FunctionBreakpoint as he,DataBreakpoint as Ee}from"../common/debugModel.js";import{IExtensionsWorkbenchService as _e}from"../../extensions/common/extensions.js";import{isCodeEditor as v}from"../../../../editor/browser/editorBrowser.js";import{MenuRegistry as j,MenuId as M,Action2 as Ie,registerAction2 as Te}from"../../../../platform/actions/common/actions.js";import{IEditorService as I}from"../../../services/editor/common/editorService.js";import{EditorContextKeys as x}from"../../../../editor/common/editorContextKeys.js";import{ContextKeyExpr as f,IContextKeyService as y}from"../../../../platform/contextkey/common/contextkey.js";import{openBreakpointSource as we}from"./breakpointsView.js";import{INotificationService as $}from"../../../../platform/notification/common/notification.js";import{InputFocusedContext as ke}from"../../../../platform/contextkey/common/contextkeys.js";import"../../../../editor/browser/editorExtensions.js";import{ActiveEditorContext as Ae,PanelFocusContext as De,ResourceContextKey as ve}from"../../../common/contextkeys.js";import{CommandsRegistry as C,ICommandService as xe}from"../../../../platform/commands/common/commands.js";import{ITextResourcePropertiesService as ye}from"../../../../editor/common/services/textResourceConfiguration.js";import{IClipboardService as Oe}from"../../../../platform/clipboard/common/clipboardService.js";import{IConfigurationService as U}from"../../../../platform/configuration/common/configuration.js";import{IQuickInputService as O}from"../../../../platform/quickinput/common/quickInput.js";import{ViewContainerLocation as Le}from"../../../common/views.js";import{IViewsService as Z}from"../../../services/views/common/viewsService.js";import{deepClone as Ne}from"../../../../base/common/objects.js";import{isWeb as Be,isWindows as Re}from"../../../../base/common/platform.js";import{saveAllBeforeDebugStart as Fe}from"../common/debugUtils.js";import{IPaneCompositePartService as Pe}from"../../../services/panecomposite/browser/panecomposite.js";import{showLoadedScriptMenu as Me}from"../common/loadedScriptsPicker.js";import{showDebugSessionMenu as Ue}from"./debugSessionPicker.js";import{TEXT_FILE_EDITOR_ID as Ve}from"../../files/common/files.js";import"../../../../platform/action/common/action.js";import{CONTEXT_IN_CHAT_SESSION as Ke}from"../../chat/common/chatContextKeys.js";import{DisposableStore as We}from"../../../../base/common/lifecycle.js";const ze="debug.addConfiguration",ee="editor.debug.action.toggleInlineBreakpoint",Ge="debug.copyStackTrace",Xe="workbench.action.debug.reverseContinue",qe="workbench.action.debug.stepBack",He="workbench.action.debug.restart",Ye="workbench.action.debug.terminateThread",Qe="workbench.action.debug.stepOver",Je="workbench.action.debug.stepInto",je="workbench.action.debug.stepIntoTarget",$e="workbench.action.debug.stepOut",Ze="workbench.action.debug.pause",et="workbench.action.debug.disconnect",tt="workbench.action.debug.disconnectAndSuspend",nt="workbench.action.debug.stop",ot="workbench.action.debug.restartFrame",it="workbench.action.debug.continue",rt="workbench.debug.action.focusRepl",te="debug.jumpToCursor",st="workbench.action.debug.focusProcess",ne="workbench.action.debug.selectandstart",at="workbench.action.debug.selectDebugConsole",ct="workbench.action.debug.selectDebugSession",bn="workbench.action.debug.configure",oe="workbench.action.debug.start",dt="workbench.action.debug.run",lt="debug.renameWatchExpression",gt="debug.setWatchExpression",ut="debug.removeWatchExpression",St="workbench.action.debug.nextConsole",pt="workbench.action.debug.prevConsole",Ct="workbench.action.debug.showLoadedScripts",mt="workbench.action.debug.callStackTop",ft="workbench.action.debug.callStackBottom",bt="workbench.action.debug.callStackUp",ht="workbench.action.debug.callStackDown",hn="debug.addToWatchExpressions",En="debug.copyEvaluatePath",_n="workbench.debug.viewlet.action.copyValue",V=a.localize2("debug","Debug"),In=a.localize2("restartDebug","Restart"),Tn=a.localize2("stepOverDebug","Step Over"),wn=a.localize2("stepIntoDebug","Step Into"),kn=a.localize2("stepIntoTargetDebug","Step Into Target"),An=a.localize2("stepOutDebug","Step Out"),Dn=a.localize2("pauseDebug","Pause"),vn=a.localize2("disconnect","Disconnect"),xn=a.localize2("disconnectSuspend","Disconnect and Suspend"),yn=a.localize2("stop","Stop"),On=a.localize2("continueDebug","Continue"),Ln=a.localize2("focusSession","Focus Session"),Nn=a.localize2("selectAndStartDebugging","Select and Start Debugging"),Bn=a.localize("openLaunchJson","Open '{0}'","launch.json"),Rn=a.localize2("startDebug","Start Debugging"),Fn=a.localize2("startWithoutDebugging","Start Without Debugging"),Pn=a.localize2("nextDebugConsole","Focus Next Debug Console"),Mn=a.localize2("prevDebugConsole","Focus Previous Debug Console"),Un=a.localize2("openLoadedScript","Open Loaded Script..."),Vn=a.localize2("callStackTop","Navigate to Top of Call Stack"),Kn=a.localize2("callStackBottom","Navigate to Bottom of Call Stack"),Wn=a.localize2("callStackUp","Navigate Up Call Stack"),zn=a.localize2("callStackDown","Navigate Down Call Stack"),Gn=a.localize2("copyAsExpression","Copy as Expression"),Xn=a.localize2("copyValue","Copy Value"),qn=a.localize2("addToWatchExpressions","Add to Watch"),Hn=a.localize2("selectDebugConsole","Select Debug Console"),Yn=a.localize2("selectDebugSession","Select Debug Session"),Et="debug ",_t="debug consoles ";function It(e){return e&&typeof e.sessionId=="string"&&typeof e.threadId=="string"}async function b(e,o,t){const n=e.get(l);let i;if(It(o)){const r=n.getModel().getSession(o.sessionId);r&&(i=r.getAllThreads().find(s=>s.getId()===o.threadId))}else if(K(o)){const r=n.getModel().getSession(o.sessionId);if(r){const s=r.getAllThreads();i=s.length>0?s[0]:void 0}}if(!i&&(i=n.getViewModel().focusedThread,!i)){const r=n.getViewModel().focusedSession,s=r?r.getAllThreads():void 0;i=s&&s.length?s[0]:void 0}i&&await t(i)}function Tt(e){return e&&typeof e.sessionId=="string"&&typeof e.threadId=="string"&&typeof e.frameId=="string"}function ie(e,o){if(Tt(o)){const t=e.getModel().getSession(o.sessionId);if(t){const n=t.getAllThreads().find(i=>i.getId()===o.threadId);if(n)return n.getCallStack().find(i=>i.getId()===o.frameId)}}else return e.getViewModel().focusedStackFrame}function K(e){return e&&typeof e.sessionId=="string"}async function re(e,o){const t=e.get(l),n=e.get(Z),i=t.getModel().getSessions(!0).filter(c=>c.hasSeparateRepl());let r=t.getViewModel().focusedSession,s=0;if(i.length>0&&r){for(;r&&!r.hasSeparateRepl();)r=r.parentSession;if(r){const c=i.indexOf(r);o?s=c===i.length-1?0:c+1:s=c===0?i.length-1:c-1}}await t.focusStackFrame(void 0,void 0,i[s],{explicit:!0}),n.isViewVisible(R)||await n.openView(R,!0)}async function se(e,o){const t=e.getViewModel().focusedStackFrame;if(t){let n=t.thread.getCallStack(),i=n.findIndex(s=>s.frameId===t.frameId),r;if(o){if(i>=n.length-1)if(t.thread.reachedEndOfCallStack){ce(e);return}else await e.getModel().fetchCallstack(t.thread,20),n=t.thread.getCallStack(),i=n.findIndex(s=>s.frameId===t.frameId);r=W(!0,n,i)}else{if(i<=0){ae(e);return}r=W(!1,n,i)}r&&e.focusStackFrame(r,void 0,void 0,{preserveFocus:!1})}}async function ae(e){const o=e.getViewModel().focusedThread;if(o){await e.getModel().fetchCallstack(o);const t=o.getCallStack();if(t.length>0){const n=W(!1,t,0);n&&e.focusStackFrame(n,void 0,void 0,{preserveFocus:!1})}}}function ce(e){const o=e.getViewModel().focusedThread;o&&e.focusStackFrame(o.getTopStackFrame(),void 0,void 0,{preserveFocus:!1})}function W(e,o,t){t>=o.length?t=o.length-1:t<0&&(t=0);let n=t,i;do if(e?n===o.length-1?n=0:n++:n===0?n=o.length-1:n--,i=o[n],!be(i))return i;while(n!==t)}C.registerCommand({id:Ge,handler:async(e,o,t)=>{const n=e.get(ye),i=e.get(Oe),r=e.get(l),s=ie(r,t);if(s){const c=n.getEOL(s.source.uri);await i.writeText(s.thread.getCallStack().map(m=>m.toString()).join(c))}}}),C.registerCommand({id:Xe,handler:async(e,o,t)=>{await b(e,t,n=>n.reverseContinue())}}),C.registerCommand({id:qe,handler:async(e,o,t)=>{const n=e.get(y);D.getValue(n)?await b(e,t,i=>i.stepBack("instruction")):await b(e,t,i=>i.stepBack())}}),C.registerCommand({id:Ye,handler:async(e,o,t)=>{await b(e,t,n=>n.terminate())}}),C.registerCommand({id:te,handler:async e=>{const t=e.get(l).getViewModel().focusedStackFrame,i=e.get(I).activeTextEditorControl,r=e.get($),s=e.get(O);if(t&&v(i)&&i.hasModel()){const c=i.getPosition(),m=i.getModel().uri,E=t.thread.session.getSourceForUri(m);if(E){const S=(await t.thread.session.gotoTargets(E.raw,c.lineNumber,c.column))?.body.targets;if(S&&S.length){let k=S[0].id;if(S.length>1){const L=S.map(X=>({label:X.label,_id:X.id})),G=await s.pick(L,{placeHolder:a.localize("chooseLocation","Choose the specific location")});if(!G)return;k=G._id}return await t.thread.session.goto(t.thread.threadId,k).catch(L=>r.warn(L))}}}return r.warn(a.localize("noExecutableCode","No executable code is associated at the current cursor position."))}}),C.registerCommand({id:mt,handler:async(e,o,t)=>{const n=e.get(l);ce(n)}}),C.registerCommand({id:ft,handler:async(e,o,t)=>{const n=e.get(l);await ae(n)}}),C.registerCommand({id:bt,handler:async(e,o,t)=>{const n=e.get(l);se(n,!1)}}),C.registerCommand({id:ht,handler:async(e,o,t)=>{const n=e.get(l);se(n,!0)}}),j.appendMenuItem(M.EditorContext,{command:{id:te,title:a.localize("jumpToCursor","Jump to Cursor"),category:V},when:f.and(Se,x.editorTextFocus),group:"debug",order:3}),g.registerCommandAndKeybindingRule({id:St,weight:u.WorkbenchContrib+1,when:Y,primary:p.CtrlCmd|d.PageDown,mac:{primary:p.Shift|p.CtrlCmd|d.BracketRight},handler:async(e,o,t)=>{re(e,!0)}}),g.registerCommandAndKeybindingRule({id:pt,weight:u.WorkbenchContrib+1,when:Y,primary:p.CtrlCmd|d.PageUp,mac:{primary:p.Shift|p.CtrlCmd|d.BracketLeft},handler:async(e,o,t)=>{re(e,!1)}}),g.registerCommandAndKeybindingRule({id:He,weight:u.WorkbenchContrib,primary:p.Shift|p.CtrlCmd|d.F5,when:A,handler:async(e,o,t)=>{const n=e.get(l),i=e.get(U);let r;if(K(t)?r=n.getModel().getSession(t.sessionId):r=n.getViewModel().focusedSession,r){const s=i.getValue("debug").showSubSessionsInToolBar;for(;!s&&r.lifecycleManagedByParent&&r.parentSession;)r=r.parentSession;r.removeReplExpressions(),await n.restartSession(r)}else{const{launch:s,name:c}=n.getConfigurationManager().selectedConfiguration;await n.startDebugging(s,c,{noDebug:!1,startedByUser:!0})}}}),g.registerCommandAndKeybindingRule({id:Qe,weight:u.WorkbenchContrib,primary:d.F10,when:_.isEqualTo("stopped"),handler:async(e,o,t)=>{const n=e.get(y);D.getValue(n)?await b(e,t,i=>i.next("instruction")):await b(e,t,i=>i.next())}});const de=Be&&Re?p.Alt|d.F11:d.F11;g.registerCommandAndKeybindingRule({id:Je,weight:u.WorkbenchContrib+10,primary:de,when:_.notEqualsTo("inactive"),handler:async(e,o,t)=>{const n=e.get(y);D.getValue(n)?await b(e,t,i=>i.stepIn("instruction")):await b(e,t,i=>i.stepIn())}}),g.registerCommandAndKeybindingRule({id:$e,weight:u.WorkbenchContrib,primary:p.Shift|d.F11,when:_.isEqualTo("stopped"),handler:async(e,o,t)=>{const n=e.get(y);D.getValue(n)?await b(e,t,i=>i.stepOut("instruction")):await b(e,t,i=>i.stepOut())}}),g.registerCommandAndKeybindingRule({id:Ze,weight:u.WorkbenchContrib+2,primary:d.F6,when:_.isEqualTo("running"),handler:async(e,o,t)=>{await b(e,t,n=>n.pause())}}),g.registerCommandAndKeybindingRule({id:je,primary:de|p.CtrlCmd,when:f.and(fe,A,_.isEqualTo("stopped")),weight:u.WorkbenchContrib,handler:async(e,o,t)=>{const n=e.get(O),i=e.get(l),r=i.getViewModel().focusedSession,s=i.getViewModel().focusedStackFrame;if(!s||!r)return;const c=await e.get(I).openEditor({resource:s.source.uri,options:{revealIfOpened:!0}});let m;if(c){const S=c?.getControl();v(S)&&(m=S)}const E=new We,h=E.add(n.createQuickPick());h.busy=!0,h.show(),E.add(h.onDidChangeActive(([S])=>{m&&S&&S.target.line!==void 0&&(m.revealLineInCenterIfOutsideViewport(S.target.line),m.setSelection({startLineNumber:S.target.line,startColumn:S.target.column||1,endLineNumber:S.target.endLine||S.target.line,endColumn:S.target.endColumn||S.target.column||1}))})),E.add(h.onDidAccept(()=>{h.activeItems.length&&r.stepIn(s.thread.threadId,h.activeItems[0].target.id)})),E.add(h.onDidHide(()=>E.dispose())),r.stepInTargets(s.frameId).then(S=>{h.busy=!1,S?.length?h.items=S?.map(k=>({target:k,label:k.label})):h.placeholder=a.localize("editor.debug.action.stepIntoTargets.none","No step targets available")})}});async function z(e,o,t,n,i){const r=e.get(l);let s;K(t)?s=r.getModel().getSession(t.sessionId):s=r.getViewModel().focusedSession;const m=e.get(U).getValue("debug").showSubSessionsInToolBar;for(;!m&&s&&s.lifecycleManagedByParent&&s.parentSession;)s=s.parentSession;await r.stopSession(s,n,i)}g.registerCommandAndKeybindingRule({id:et,weight:u.WorkbenchContrib,primary:p.Shift|d.F5,when:f.and(H,A),handler:(e,o,t)=>z(e,o,t,!0)}),C.registerCommand({id:tt,handler:(e,o,t)=>z(e,o,t,!0,!0)}),g.registerCommandAndKeybindingRule({id:nt,weight:u.WorkbenchContrib,primary:p.Shift|d.F5,when:f.and(H.toNegated(),A),handler:(e,o,t)=>z(e,o,t,!1)}),C.registerCommand({id:ot,handler:async(e,o,t)=>{const n=e.get(l),i=e.get($),r=ie(n,t);if(r)try{await r.restart()}catch(s){i.error(s)}}}),g.registerCommandAndKeybindingRule({id:it,weight:u.WorkbenchContrib+10,primary:d.F5,when:_.isEqualTo("stopped"),handler:async(e,o,t)=>{await b(e,t,n=>n.continue())}}),C.registerCommand({id:Ct,handler:async e=>{await Me(e)}}),C.registerCommand({id:rt,handler:async e=>{await e.get(Z).openView(R,!0)}}),C.registerCommand({id:"debug.startFromConfig",handler:async(e,o)=>{await e.get(l).startDebugging(void 0,o)}}),C.registerCommand({id:st,handler:async(e,o)=>{const t=e.get(l),n=e.get(I),i=t.getModel().getSessions().find(s=>s.parentSession===o&&s.state===P.Stopped);i&&o.state!==P.Stopped&&(o=i),await t.focusStackFrame(void 0,void 0,o,{explicit:!0});const r=t.getViewModel().focusedStackFrame;r&&await r.openInEditor(n,!0)}}),C.registerCommand({id:ne,handler:async(e,o,t)=>{const n=e.get(O),i=e.get(l);if(o){const r=i.getConfigurationManager(),s=await r.getDynamicProviders();for(const c of s)if(c.type===o){const m=await c.pick();if(m){await r.selectConfiguration(m.launch,m.config.name,m.config,{type:c.type}),i.startDebugging(m.launch,m.config,{noDebug:t?.noDebug,startedByUser:!0});return}}}n.quickAccess.show(Et)}}),C.registerCommand({id:at,handler:async e=>{e.get(O).quickAccess.show(_t)}}),C.registerCommand({id:ct,handler:async e=>{Ue(e,ne)}}),g.registerCommandAndKeybindingRule({id:oe,weight:u.WorkbenchContrib,primary:d.F5,when:f.and(F,_.isEqualTo("inactive")),handler:async(e,o)=>{const t=e.get(l);await Fe(e.get(U),e.get(I));const{launch:n,name:i,getConfig:r}=t.getConfigurationManager().selectedConfiguration,s=await r(),c=s?Object.assign(Ne(s),o?.config):i;await t.startDebugging(n,c,{noDebug:o?.noDebug,startedByUser:!0},!1)}}),g.registerCommandAndKeybindingRule({id:dt,weight:u.WorkbenchContrib,primary:p.CtrlCmd|d.F5,mac:{primary:p.WinCtrl|d.F5},when:f.and(F,_.notEqualsTo(pe(P.Initializing))),handler:async e=>{await e.get(xe).executeCommand(oe,{noDebug:!0})}}),g.registerCommandAndKeybindingRule({id:"debug.toggleBreakpoint",weight:u.WorkbenchContrib+5,when:f.and(B,ke.toNegated()),primary:d.Space,handler:e=>{const o=e.get(T),t=e.get(l),n=o.lastFocusedList;if(n instanceof N){const i=n.getFocusedElements();i&&i.length&&t.enableOrDisableBreakpoints(!i[0].enabled,i[0])}}}),g.registerCommandAndKeybindingRule({id:"debug.enableOrDisableBreakpoint",weight:u.WorkbenchContrib,primary:void 0,when:x.editorTextFocus,handler:e=>{const o=e.get(l),n=e.get(I).activeTextEditorControl;if(v(n)){const i=n.getModel();if(i){const r=n.getPosition();if(r){const s=o.getModel().getBreakpoints({uri:i.uri,lineNumber:r.lineNumber});s.length&&o.enableOrDisableBreakpoints(!s[0].enabled,s[0])}}}}}),g.registerCommandAndKeybindingRule({id:lt,weight:u.WorkbenchContrib+5,when:q,primary:d.F2,mac:{primary:d.Enter},handler:(e,o)=>{const t=e.get(l);if(!(o instanceof w)){const i=e.get(T).lastFocusedList;if(i){const r=i.getFocus();Array.isArray(r)&&r[0]instanceof w&&(o=r[0])}}o instanceof w&&t.getViewModel().setSelectedExpression(o,!1)}}),C.registerCommand({id:gt,handler:async(e,o)=>{const t=e.get(l);(o instanceof w||o instanceof Q)&&t.getViewModel().setSelectedExpression(o,!0)}}),g.registerCommandAndKeybindingRule({id:"debug.setVariable",weight:u.WorkbenchContrib+5,when:le,primary:d.F2,mac:{primary:d.Enter},handler:e=>{const o=e.get(T),t=e.get(l),n=o.lastFocusedList;if(n){const i=n.getFocus();Array.isArray(i)&&i[0]instanceof Q&&t.getViewModel().setSelectedExpression(i[0],!1)}}}),g.registerCommandAndKeybindingRule({id:ut,weight:u.WorkbenchContrib,when:f.and(q,ue.toNegated()),primary:d.Delete,mac:{primary:p.CtrlCmd|d.Backspace},handler:(e,o)=>{const t=e.get(l);if(o instanceof w){t.removeWatchExpressions(o.getId());return}const i=e.get(T).lastFocusedList;if(i){let r=i.getFocus();if(Array.isArray(r)&&r[0]instanceof w){const s=i.getSelection();s&&s.indexOf(r[0])>=0&&(r=s),r.forEach(c=>t.removeWatchExpressions(c.getId()))}}}}),g.registerCommandAndKeybindingRule({id:"debug.removeBreakpoint",weight:u.WorkbenchContrib,when:f.and(B,Ce.toNegated()),primary:d.Delete,mac:{primary:p.CtrlCmd|d.Backspace},handler:e=>{const o=e.get(T),t=e.get(l),n=o.lastFocusedList;if(n instanceof N){const i=n.getFocusedElements(),r=i.length?i[0]:void 0;r instanceof J?t.removeBreakpoints(r.getId()):r instanceof he?t.removeFunctionBreakpoints(r.getId()):r instanceof Ee&&t.removeDataBreakpoints(r.getId())}}}),g.registerCommandAndKeybindingRule({id:"debug.installAdditionalDebuggers",weight:u.WorkbenchContrib,when:void 0,primary:void 0,handler:async(e,o)=>{const t=e.get(_e);let n="@category:debuggers";return typeof o=="string"&&(n+=` ${o}`),t.openSearch(n)}}),Te(class extends Ie{constructor(){super({id:ze,title:a.localize2("addConfiguration","Add Configuration..."),category:V,f1:!0,menu:{id:M.EditorContent,when:f.and(f.regex(ve.Path.key,/\.vscode[/\\]launch\.json$/),Ae.isEqualTo(Ve))}})}async run(o,t){const n=o.get(l).getConfigurationManager(),i=n.getLaunches().find(r=>r.uri.toString()===t)||n.selectedConfiguration.launch;if(i){const{editor:r,created:s}=await i.openConfigFile({preserveFocus:!1});if(r&&!s){const c=r.getControl();c&&await c.getContribution(ge)?.addLaunchConfiguration()}}}});const wt=e=>{const o=e.get(l),n=e.get(I).activeTextEditorControl;if(v(n)){const i=n.getPosition();if(i&&n.hasModel()&&o.canSetBreakpointsIn(n.getModel())){const r=n.getModel().uri;o.getModel().getBreakpoints({lineNumber:i.lineNumber,uri:r}).some(c=>c.sessionAgnosticData.column===i.column||!c.column&&i.column<=1)||o.addBreakpoints(r,[{lineNumber:i.lineNumber,column:i.column>1?i.column:void 0}])}}};g.registerCommandAndKeybindingRule({weight:u.WorkbenchContrib,primary:p.Shift|d.F9,when:x.editorTextFocus,id:ee,handler:wt}),j.appendMenuItem(M.EditorContext,{command:{id:ee,title:a.localize("addInlineBreakpoint","Add Inline Breakpoint"),category:V},when:f.and(A,De.toNegated(),x.editorTextFocus,Ke.toNegated()),group:"debug",order:1}),g.registerCommandAndKeybindingRule({id:"debug.openBreakpointToSide",weight:u.WorkbenchContrib,when:B,primary:p.CtrlCmd|d.Enter,secondary:[p.Alt|d.Enter],handler:e=>{const t=e.get(T).lastFocusedList;if(t instanceof N){const n=t.getFocusedElements();if(n.length&&n[0]instanceof J)return we(n[0],!0,!1,!0,e.get(l),e.get(I))}}}),g.registerCommandAndKeybindingRule({id:"debug.openView",weight:u.WorkbenchContrib,when:F.toNegated(),primary:d.F5,secondary:[p.CtrlCmd|d.F5],handler:async e=>{await e.get(Pe).openPaneComposite(me,Le.Sidebar,!0)}});export{ze as ADD_CONFIGURATION_ID,hn as ADD_TO_WATCH_ID,qn as ADD_TO_WATCH_LABEL,ft as CALLSTACK_BOTTOM_ID,Kn as CALLSTACK_BOTTOM_LABEL,ht as CALLSTACK_DOWN_ID,zn as CALLSTACK_DOWN_LABEL,mt as CALLSTACK_TOP_ID,Vn as CALLSTACK_TOP_LABEL,bt as CALLSTACK_UP_ID,Wn as CALLSTACK_UP_LABEL,it as CONTINUE_ID,On as CONTINUE_LABEL,En as COPY_EVALUATE_PATH_ID,Gn as COPY_EVALUATE_PATH_LABEL,Ge as COPY_STACK_TRACE_ID,_n as COPY_VALUE_ID,Xn as COPY_VALUE_LABEL,V as DEBUG_COMMAND_CATEGORY,bn as DEBUG_CONFIGURE_COMMAND_ID,Bn as DEBUG_CONFIGURE_LABEL,_t as DEBUG_CONSOLE_QUICK_ACCESS_PREFIX,Et as DEBUG_QUICK_ACCESS_PREFIX,dt as DEBUG_RUN_COMMAND_ID,Fn as DEBUG_RUN_LABEL,oe as DEBUG_START_COMMAND_ID,Rn as DEBUG_START_LABEL,tt as DISCONNECT_AND_SUSPEND_ID,xn as DISCONNECT_AND_SUSPEND_LABEL,et as DISCONNECT_ID,vn as DISCONNECT_LABEL,lt as EDIT_EXPRESSION_COMMAND_ID,rt as FOCUS_REPL_ID,st as FOCUS_SESSION_ID,Ln as FOCUS_SESSION_LABEL,te as JUMP_TO_CURSOR_ID,St as NEXT_DEBUG_CONSOLE_ID,Pn as NEXT_DEBUG_CONSOLE_LABEL,Un as OPEN_LOADED_SCRIPTS_LABEL,Ze as PAUSE_ID,Dn as PAUSE_LABEL,pt as PREV_DEBUG_CONSOLE_ID,Mn as PREV_DEBUG_CONSOLE_LABEL,ut as REMOVE_EXPRESSION_COMMAND_ID,ot as RESTART_FRAME_ID,In as RESTART_LABEL,He as RESTART_SESSION_ID,Xe as REVERSE_CONTINUE_ID,ne as SELECT_AND_START_ID,Nn as SELECT_AND_START_LABEL,at as SELECT_DEBUG_CONSOLE_ID,Hn as SELECT_DEBUG_CONSOLE_LABEL,ct as SELECT_DEBUG_SESSION_ID,Yn as SELECT_DEBUG_SESSION_LABEL,gt as SET_EXPRESSION_COMMAND_ID,Ct as SHOW_LOADED_SCRIPTS_ID,qe as STEP_BACK_ID,Je as STEP_INTO_ID,wn as STEP_INTO_LABEL,je as STEP_INTO_TARGET_ID,kn as STEP_INTO_TARGET_LABEL,$e as STEP_OUT_ID,An as STEP_OUT_LABEL,Qe as STEP_OVER_ID,Tn as STEP_OVER_LABEL,nt as STOP_ID,yn as STOP_LABEL,Ye as TERMINATE_THREAD_ID,ee as TOGGLE_INLINE_BREAKPOINT_ID};
+import * as nls from '../../../../nls.js';
+import { List } from '../../../../base/browser/ui/list/listWidget.js';
+import { KeybindingsRegistry } from '../../../../platform/keybinding/common/keybindingsRegistry.js';
+import { IListService } from '../../../../platform/list/browser/listService.js';
+import { IDebugService, CONTEXT_BREAKPOINTS_FOCUSED, CONTEXT_WATCH_EXPRESSIONS_FOCUSED, CONTEXT_VARIABLES_FOCUSED, EDITOR_CONTRIBUTION_ID, CONTEXT_IN_DEBUG_MODE, CONTEXT_EXPRESSION_SELECTED, CONTEXT_DEBUG_STATE, CONTEXT_JUMP_TO_CURSOR_SUPPORTED, REPL_VIEW_ID, CONTEXT_DEBUGGERS_AVAILABLE, getStateLabel, CONTEXT_BREAKPOINT_INPUT_FOCUSED, CONTEXT_FOCUSED_SESSION_IS_ATTACH, VIEWLET_ID, CONTEXT_DISASSEMBLY_VIEW_FOCUS, CONTEXT_IN_DEBUG_REPL, CONTEXT_STEP_INTO_TARGETS_SUPPORTED, isFrameDeemphasized } from '../common/debug.js';
+import { Expression, Variable, Breakpoint, FunctionBreakpoint, DataBreakpoint } from '../common/debugModel.js';
+import { IExtensionsWorkbenchService } from '../../extensions/common/extensions.js';
+import { isCodeEditor } from '../../../../editor/browser/editorBrowser.js';
+import { MenuRegistry, MenuId, Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
+import { ContextKeyExpr, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { openBreakpointSource } from './breakpointsView.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { InputFocusedContext } from '../../../../platform/contextkey/common/contextkeys.js';
+import { ActiveEditorContext, PanelFocusContext, ResourceContextKey } from '../../../common/contextkeys.js';
+import { CommandsRegistry, ICommandService } from '../../../../platform/commands/common/commands.js';
+import { ITextResourcePropertiesService } from '../../../../editor/common/services/textResourceConfiguration.js';
+import { IClipboardService } from '../../../../platform/clipboard/common/clipboardService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+import { deepClone } from '../../../../base/common/objects.js';
+import { isWeb, isWindows } from '../../../../base/common/platform.js';
+import { saveAllBeforeDebugStart } from '../common/debugUtils.js';
+import { IPaneCompositePartService } from '../../../services/panecomposite/browser/panecomposite.js';
+import { showLoadedScriptMenu } from '../common/loadedScriptsPicker.js';
+import { showDebugSessionMenu } from './debugSessionPicker.js';
+import { TEXT_FILE_EDITOR_ID } from '../../files/common/files.js';
+import { CONTEXT_IN_CHAT_SESSION } from '../../chat/common/chatContextKeys.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+export const ADD_CONFIGURATION_ID = 'debug.addConfiguration';
+export const TOGGLE_INLINE_BREAKPOINT_ID = 'editor.debug.action.toggleInlineBreakpoint';
+export const COPY_STACK_TRACE_ID = 'debug.copyStackTrace';
+export const REVERSE_CONTINUE_ID = 'workbench.action.debug.reverseContinue';
+export const STEP_BACK_ID = 'workbench.action.debug.stepBack';
+export const RESTART_SESSION_ID = 'workbench.action.debug.restart';
+export const TERMINATE_THREAD_ID = 'workbench.action.debug.terminateThread';
+export const STEP_OVER_ID = 'workbench.action.debug.stepOver';
+export const STEP_INTO_ID = 'workbench.action.debug.stepInto';
+export const STEP_INTO_TARGET_ID = 'workbench.action.debug.stepIntoTarget';
+export const STEP_OUT_ID = 'workbench.action.debug.stepOut';
+export const PAUSE_ID = 'workbench.action.debug.pause';
+export const DISCONNECT_ID = 'workbench.action.debug.disconnect';
+export const DISCONNECT_AND_SUSPEND_ID = 'workbench.action.debug.disconnectAndSuspend';
+export const STOP_ID = 'workbench.action.debug.stop';
+export const RESTART_FRAME_ID = 'workbench.action.debug.restartFrame';
+export const CONTINUE_ID = 'workbench.action.debug.continue';
+export const FOCUS_REPL_ID = 'workbench.debug.action.focusRepl';
+export const JUMP_TO_CURSOR_ID = 'debug.jumpToCursor';
+export const FOCUS_SESSION_ID = 'workbench.action.debug.focusProcess';
+export const SELECT_AND_START_ID = 'workbench.action.debug.selectandstart';
+export const SELECT_DEBUG_CONSOLE_ID = 'workbench.action.debug.selectDebugConsole';
+export const SELECT_DEBUG_SESSION_ID = 'workbench.action.debug.selectDebugSession';
+export const DEBUG_CONFIGURE_COMMAND_ID = 'workbench.action.debug.configure';
+export const DEBUG_START_COMMAND_ID = 'workbench.action.debug.start';
+export const DEBUG_RUN_COMMAND_ID = 'workbench.action.debug.run';
+export const EDIT_EXPRESSION_COMMAND_ID = 'debug.renameWatchExpression';
+export const SET_EXPRESSION_COMMAND_ID = 'debug.setWatchExpression';
+export const REMOVE_EXPRESSION_COMMAND_ID = 'debug.removeWatchExpression';
+export const NEXT_DEBUG_CONSOLE_ID = 'workbench.action.debug.nextConsole';
+export const PREV_DEBUG_CONSOLE_ID = 'workbench.action.debug.prevConsole';
+export const SHOW_LOADED_SCRIPTS_ID = 'workbench.action.debug.showLoadedScripts';
+export const CALLSTACK_TOP_ID = 'workbench.action.debug.callStackTop';
+export const CALLSTACK_BOTTOM_ID = 'workbench.action.debug.callStackBottom';
+export const CALLSTACK_UP_ID = 'workbench.action.debug.callStackUp';
+export const CALLSTACK_DOWN_ID = 'workbench.action.debug.callStackDown';
+export const ADD_TO_WATCH_ID = 'debug.addToWatchExpressions';
+export const COPY_EVALUATE_PATH_ID = 'debug.copyEvaluatePath';
+export const COPY_VALUE_ID = 'workbench.debug.viewlet.action.copyValue';
+export const DEBUG_COMMAND_CATEGORY = nls.localize2('debug', 'Debug');
+export const RESTART_LABEL = nls.localize2('restartDebug', "Restart");
+export const STEP_OVER_LABEL = nls.localize2('stepOverDebug', "Step Over");
+export const STEP_INTO_LABEL = nls.localize2('stepIntoDebug', "Step Into");
+export const STEP_INTO_TARGET_LABEL = nls.localize2('stepIntoTargetDebug', "Step Into Target");
+export const STEP_OUT_LABEL = nls.localize2('stepOutDebug', "Step Out");
+export const PAUSE_LABEL = nls.localize2('pauseDebug', "Pause");
+export const DISCONNECT_LABEL = nls.localize2('disconnect', "Disconnect");
+export const DISCONNECT_AND_SUSPEND_LABEL = nls.localize2('disconnectSuspend', "Disconnect and Suspend");
+export const STOP_LABEL = nls.localize2('stop', "Stop");
+export const CONTINUE_LABEL = nls.localize2('continueDebug', "Continue");
+export const FOCUS_SESSION_LABEL = nls.localize2('focusSession', "Focus Session");
+export const SELECT_AND_START_LABEL = nls.localize2('selectAndStartDebugging', "Select and Start Debugging");
+export const DEBUG_CONFIGURE_LABEL = nls.localize('openLaunchJson', "Open '{0}'", 'launch.json');
+export const DEBUG_START_LABEL = nls.localize2('startDebug', "Start Debugging");
+export const DEBUG_RUN_LABEL = nls.localize2('startWithoutDebugging', "Start Without Debugging");
+export const NEXT_DEBUG_CONSOLE_LABEL = nls.localize2('nextDebugConsole', "Focus Next Debug Console");
+export const PREV_DEBUG_CONSOLE_LABEL = nls.localize2('prevDebugConsole', "Focus Previous Debug Console");
+export const OPEN_LOADED_SCRIPTS_LABEL = nls.localize2('openLoadedScript', "Open Loaded Script...");
+export const CALLSTACK_TOP_LABEL = nls.localize2('callStackTop', "Navigate to Top of Call Stack");
+export const CALLSTACK_BOTTOM_LABEL = nls.localize2('callStackBottom', "Navigate to Bottom of Call Stack");
+export const CALLSTACK_UP_LABEL = nls.localize2('callStackUp', "Navigate Up Call Stack");
+export const CALLSTACK_DOWN_LABEL = nls.localize2('callStackDown', "Navigate Down Call Stack");
+export const COPY_EVALUATE_PATH_LABEL = nls.localize2('copyAsExpression', "Copy as Expression");
+export const COPY_VALUE_LABEL = nls.localize2('copyValue', "Copy Value");
+export const ADD_TO_WATCH_LABEL = nls.localize2('addToWatchExpressions', "Add to Watch");
+export const SELECT_DEBUG_CONSOLE_LABEL = nls.localize2('selectDebugConsole', "Select Debug Console");
+export const SELECT_DEBUG_SESSION_LABEL = nls.localize2('selectDebugSession', "Select Debug Session");
+export const DEBUG_QUICK_ACCESS_PREFIX = 'debug ';
+export const DEBUG_CONSOLE_QUICK_ACCESS_PREFIX = 'debug consoles ';
+function isThreadContext(obj) {
+    return obj && typeof obj.sessionId === 'string' && typeof obj.threadId === 'string';
+}
+async function getThreadAndRun(accessor, sessionAndThreadId, run) {
+    const debugService = accessor.get(IDebugService);
+    let thread;
+    if (isThreadContext(sessionAndThreadId)) {
+        const session = debugService.getModel().getSession(sessionAndThreadId.sessionId);
+        if (session) {
+            thread = session.getAllThreads().find(t => t.getId() === sessionAndThreadId.threadId);
+        }
+    }
+    else if (isSessionContext(sessionAndThreadId)) {
+        const session = debugService.getModel().getSession(sessionAndThreadId.sessionId);
+        if (session) {
+            const threads = session.getAllThreads();
+            thread = threads.length > 0 ? threads[0] : undefined;
+        }
+    }
+    if (!thread) {
+        thread = debugService.getViewModel().focusedThread;
+        if (!thread) {
+            const focusedSession = debugService.getViewModel().focusedSession;
+            const threads = focusedSession ? focusedSession.getAllThreads() : undefined;
+            thread = threads && threads.length ? threads[0] : undefined;
+        }
+    }
+    if (thread) {
+        await run(thread);
+    }
+}
+function isStackFrameContext(obj) {
+    return obj && typeof obj.sessionId === 'string' && typeof obj.threadId === 'string' && typeof obj.frameId === 'string';
+}
+function getFrame(debugService, context) {
+    if (isStackFrameContext(context)) {
+        const session = debugService.getModel().getSession(context.sessionId);
+        if (session) {
+            const thread = session.getAllThreads().find(t => t.getId() === context.threadId);
+            if (thread) {
+                return thread.getCallStack().find(sf => sf.getId() === context.frameId);
+            }
+        }
+    }
+    else {
+        return debugService.getViewModel().focusedStackFrame;
+    }
+    return undefined;
+}
+function isSessionContext(obj) {
+    return obj && typeof obj.sessionId === 'string';
+}
+async function changeDebugConsoleFocus(accessor, next) {
+    const debugService = accessor.get(IDebugService);
+    const viewsService = accessor.get(IViewsService);
+    const sessions = debugService.getModel().getSessions(true).filter(s => s.hasSeparateRepl());
+    let currSession = debugService.getViewModel().focusedSession;
+    let nextIndex = 0;
+    if (sessions.length > 0 && currSession) {
+        while (currSession && !currSession.hasSeparateRepl()) {
+            currSession = currSession.parentSession;
+        }
+        if (currSession) {
+            const currIndex = sessions.indexOf(currSession);
+            if (next) {
+                nextIndex = (currIndex === (sessions.length - 1) ? 0 : (currIndex + 1));
+            }
+            else {
+                nextIndex = (currIndex === 0 ? (sessions.length - 1) : (currIndex - 1));
+            }
+        }
+    }
+    await debugService.focusStackFrame(undefined, undefined, sessions[nextIndex], { explicit: true });
+    if (!viewsService.isViewVisible(REPL_VIEW_ID)) {
+        await viewsService.openView(REPL_VIEW_ID, true);
+    }
+}
+async function navigateCallStack(debugService, down) {
+    const frame = debugService.getViewModel().focusedStackFrame;
+    if (frame) {
+        let callStack = frame.thread.getCallStack();
+        let index = callStack.findIndex(elem => elem.frameId === frame.frameId);
+        let nextVisibleFrame;
+        if (down) {
+            if (index >= callStack.length - 1) {
+                if (frame.thread.reachedEndOfCallStack) {
+                    goToTopOfCallStack(debugService);
+                    return;
+                }
+                else {
+                    await debugService.getModel().fetchCallstack(frame.thread, 20);
+                    callStack = frame.thread.getCallStack();
+                    index = callStack.findIndex(elem => elem.frameId === frame.frameId);
+                }
+            }
+            nextVisibleFrame = findNextVisibleFrame(true, callStack, index);
+        }
+        else {
+            if (index <= 0) {
+                goToBottomOfCallStack(debugService);
+                return;
+            }
+            nextVisibleFrame = findNextVisibleFrame(false, callStack, index);
+        }
+        if (nextVisibleFrame) {
+            debugService.focusStackFrame(nextVisibleFrame, undefined, undefined, { preserveFocus: false });
+        }
+    }
+}
+async function goToBottomOfCallStack(debugService) {
+    const thread = debugService.getViewModel().focusedThread;
+    if (thread) {
+        await debugService.getModel().fetchCallstack(thread);
+        const callStack = thread.getCallStack();
+        if (callStack.length > 0) {
+            const nextVisibleFrame = findNextVisibleFrame(false, callStack, 0);
+            if (nextVisibleFrame) {
+                debugService.focusStackFrame(nextVisibleFrame, undefined, undefined, { preserveFocus: false });
+            }
+        }
+    }
+}
+function goToTopOfCallStack(debugService) {
+    const thread = debugService.getViewModel().focusedThread;
+    if (thread) {
+        debugService.focusStackFrame(thread.getTopStackFrame(), undefined, undefined, { preserveFocus: false });
+    }
+}
+function findNextVisibleFrame(down, callStack, startIndex) {
+    if (startIndex >= callStack.length) {
+        startIndex = callStack.length - 1;
+    }
+    else if (startIndex < 0) {
+        startIndex = 0;
+    }
+    let index = startIndex;
+    let currFrame;
+    do {
+        if (down) {
+            if (index === callStack.length - 1) {
+                index = 0;
+            }
+            else {
+                index++;
+            }
+        }
+        else {
+            if (index === 0) {
+                index = callStack.length - 1;
+            }
+            else {
+                index--;
+            }
+        }
+        currFrame = callStack[index];
+        if (!isFrameDeemphasized(currFrame)) {
+            return currFrame;
+        }
+    } while (index !== startIndex);
+    return undefined;
+}
+CommandsRegistry.registerCommand({
+    id: COPY_STACK_TRACE_ID,
+    handler: async (accessor, _, context) => {
+        const textResourcePropertiesService = accessor.get(ITextResourcePropertiesService);
+        const clipboardService = accessor.get(IClipboardService);
+        const debugService = accessor.get(IDebugService);
+        const frame = getFrame(debugService, context);
+        if (frame) {
+            const eol = textResourcePropertiesService.getEOL(frame.source.uri);
+            await clipboardService.writeText(frame.thread.getCallStack().map(sf => sf.toString()).join(eol));
+        }
+    }
+});
+CommandsRegistry.registerCommand({
+    id: REVERSE_CONTINUE_ID,
+    handler: async (accessor, _, context) => {
+        await getThreadAndRun(accessor, context, thread => thread.reverseContinue());
+    }
+});
+CommandsRegistry.registerCommand({
+    id: STEP_BACK_ID,
+    handler: async (accessor, _, context) => {
+        const contextKeyService = accessor.get(IContextKeyService);
+        if (CONTEXT_DISASSEMBLY_VIEW_FOCUS.getValue(contextKeyService)) {
+            await getThreadAndRun(accessor, context, (thread) => thread.stepBack('instruction'));
+        }
+        else {
+            await getThreadAndRun(accessor, context, (thread) => thread.stepBack());
+        }
+    }
+});
+CommandsRegistry.registerCommand({
+    id: TERMINATE_THREAD_ID,
+    handler: async (accessor, _, context) => {
+        await getThreadAndRun(accessor, context, thread => thread.terminate());
+    }
+});
+CommandsRegistry.registerCommand({
+    id: JUMP_TO_CURSOR_ID,
+    handler: async (accessor) => {
+        const debugService = accessor.get(IDebugService);
+        const stackFrame = debugService.getViewModel().focusedStackFrame;
+        const editorService = accessor.get(IEditorService);
+        const activeEditorControl = editorService.activeTextEditorControl;
+        const notificationService = accessor.get(INotificationService);
+        const quickInputService = accessor.get(IQuickInputService);
+        if (stackFrame && isCodeEditor(activeEditorControl) && activeEditorControl.hasModel()) {
+            const position = activeEditorControl.getPosition();
+            const resource = activeEditorControl.getModel().uri;
+            const source = stackFrame.thread.session.getSourceForUri(resource);
+            if (source) {
+                const response = await stackFrame.thread.session.gotoTargets(source.raw, position.lineNumber, position.column);
+                const targets = response?.body.targets;
+                if (targets && targets.length) {
+                    let id = targets[0].id;
+                    if (targets.length > 1) {
+                        const picks = targets.map(t => ({ label: t.label, _id: t.id }));
+                        const pick = await quickInputService.pick(picks, { placeHolder: nls.localize('chooseLocation', "Choose the specific location") });
+                        if (!pick) {
+                            return;
+                        }
+                        id = pick._id;
+                    }
+                    return await stackFrame.thread.session.goto(stackFrame.thread.threadId, id).catch(e => notificationService.warn(e));
+                }
+            }
+        }
+        return notificationService.warn(nls.localize('noExecutableCode', "No executable code is associated at the current cursor position."));
+    }
+});
+CommandsRegistry.registerCommand({
+    id: CALLSTACK_TOP_ID,
+    handler: async (accessor, _, context) => {
+        const debugService = accessor.get(IDebugService);
+        goToTopOfCallStack(debugService);
+    }
+});
+CommandsRegistry.registerCommand({
+    id: CALLSTACK_BOTTOM_ID,
+    handler: async (accessor, _, context) => {
+        const debugService = accessor.get(IDebugService);
+        await goToBottomOfCallStack(debugService);
+    }
+});
+CommandsRegistry.registerCommand({
+    id: CALLSTACK_UP_ID,
+    handler: async (accessor, _, context) => {
+        const debugService = accessor.get(IDebugService);
+        navigateCallStack(debugService, false);
+    }
+});
+CommandsRegistry.registerCommand({
+    id: CALLSTACK_DOWN_ID,
+    handler: async (accessor, _, context) => {
+        const debugService = accessor.get(IDebugService);
+        navigateCallStack(debugService, true);
+    }
+});
+MenuRegistry.appendMenuItem(MenuId.EditorContext, {
+    command: {
+        id: JUMP_TO_CURSOR_ID,
+        title: nls.localize('jumpToCursor', "Jump to Cursor"),
+        category: DEBUG_COMMAND_CATEGORY
+    },
+    when: ContextKeyExpr.and(CONTEXT_JUMP_TO_CURSOR_SUPPORTED, EditorContextKeys.editorTextFocus),
+    group: 'debug',
+    order: 3
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: NEXT_DEBUG_CONSOLE_ID,
+    weight: 200 + 1,
+    when: CONTEXT_IN_DEBUG_REPL,
+    primary: 2048 | 12,
+    mac: { primary: 1024 | 2048 | 94 },
+    handler: async (accessor, _, context) => {
+        changeDebugConsoleFocus(accessor, true);
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: PREV_DEBUG_CONSOLE_ID,
+    weight: 200 + 1,
+    when: CONTEXT_IN_DEBUG_REPL,
+    primary: 2048 | 11,
+    mac: { primary: 1024 | 2048 | 92 },
+    handler: async (accessor, _, context) => {
+        changeDebugConsoleFocus(accessor, false);
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: RESTART_SESSION_ID,
+    weight: 200,
+    primary: 1024 | 2048 | 63,
+    when: CONTEXT_IN_DEBUG_MODE,
+    handler: async (accessor, _, context) => {
+        const debugService = accessor.get(IDebugService);
+        const configurationService = accessor.get(IConfigurationService);
+        let session;
+        if (isSessionContext(context)) {
+            session = debugService.getModel().getSession(context.sessionId);
+        }
+        else {
+            session = debugService.getViewModel().focusedSession;
+        }
+        if (!session) {
+            const { launch, name } = debugService.getConfigurationManager().selectedConfiguration;
+            await debugService.startDebugging(launch, name, { noDebug: false, startedByUser: true });
+        }
+        else {
+            const showSubSessions = configurationService.getValue('debug').showSubSessionsInToolBar;
+            while (!showSubSessions && session.lifecycleManagedByParent && session.parentSession) {
+                session = session.parentSession;
+            }
+            session.removeReplExpressions();
+            await debugService.restartSession(session);
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: STEP_OVER_ID,
+    weight: 200,
+    primary: 68,
+    when: CONTEXT_DEBUG_STATE.isEqualTo('stopped'),
+    handler: async (accessor, _, context) => {
+        const contextKeyService = accessor.get(IContextKeyService);
+        if (CONTEXT_DISASSEMBLY_VIEW_FOCUS.getValue(contextKeyService)) {
+            await getThreadAndRun(accessor, context, (thread) => thread.next('instruction'));
+        }
+        else {
+            await getThreadAndRun(accessor, context, (thread) => thread.next());
+        }
+    }
+});
+const STEP_INTO_KEYBINDING = (isWeb && isWindows) ? (512 | 69) : 69;
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: STEP_INTO_ID,
+    weight: 200 + 10,
+    primary: STEP_INTO_KEYBINDING,
+    when: CONTEXT_DEBUG_STATE.notEqualsTo('inactive'),
+    handler: async (accessor, _, context) => {
+        const contextKeyService = accessor.get(IContextKeyService);
+        if (CONTEXT_DISASSEMBLY_VIEW_FOCUS.getValue(contextKeyService)) {
+            await getThreadAndRun(accessor, context, (thread) => thread.stepIn('instruction'));
+        }
+        else {
+            await getThreadAndRun(accessor, context, (thread) => thread.stepIn());
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: STEP_OUT_ID,
+    weight: 200,
+    primary: 1024 | 69,
+    when: CONTEXT_DEBUG_STATE.isEqualTo('stopped'),
+    handler: async (accessor, _, context) => {
+        const contextKeyService = accessor.get(IContextKeyService);
+        if (CONTEXT_DISASSEMBLY_VIEW_FOCUS.getValue(contextKeyService)) {
+            await getThreadAndRun(accessor, context, (thread) => thread.stepOut('instruction'));
+        }
+        else {
+            await getThreadAndRun(accessor, context, (thread) => thread.stepOut());
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: PAUSE_ID,
+    weight: 200 + 2,
+    primary: 64,
+    when: CONTEXT_DEBUG_STATE.isEqualTo('running'),
+    handler: async (accessor, _, context) => {
+        await getThreadAndRun(accessor, context, thread => thread.pause());
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: STEP_INTO_TARGET_ID,
+    primary: STEP_INTO_KEYBINDING | 2048,
+    when: ContextKeyExpr.and(CONTEXT_STEP_INTO_TARGETS_SUPPORTED, CONTEXT_IN_DEBUG_MODE, CONTEXT_DEBUG_STATE.isEqualTo('stopped')),
+    weight: 200,
+    handler: async (accessor, _, context) => {
+        const quickInputService = accessor.get(IQuickInputService);
+        const debugService = accessor.get(IDebugService);
+        const session = debugService.getViewModel().focusedSession;
+        const frame = debugService.getViewModel().focusedStackFrame;
+        if (!frame || !session) {
+            return;
+        }
+        const editor = await accessor.get(IEditorService).openEditor({
+            resource: frame.source.uri,
+            options: { revealIfOpened: true }
+        });
+        let codeEditor;
+        if (editor) {
+            const ctrl = editor?.getControl();
+            if (isCodeEditor(ctrl)) {
+                codeEditor = ctrl;
+            }
+        }
+        const disposables = new DisposableStore();
+        const qp = disposables.add(quickInputService.createQuickPick());
+        qp.busy = true;
+        qp.show();
+        disposables.add(qp.onDidChangeActive(([item]) => {
+            if (codeEditor && item && item.target.line !== undefined) {
+                codeEditor.revealLineInCenterIfOutsideViewport(item.target.line);
+                codeEditor.setSelection({
+                    startLineNumber: item.target.line,
+                    startColumn: item.target.column || 1,
+                    endLineNumber: item.target.endLine || item.target.line,
+                    endColumn: item.target.endColumn || item.target.column || 1,
+                });
+            }
+        }));
+        disposables.add(qp.onDidAccept(() => {
+            if (qp.activeItems.length) {
+                session.stepIn(frame.thread.threadId, qp.activeItems[0].target.id);
+            }
+        }));
+        disposables.add(qp.onDidHide(() => disposables.dispose()));
+        session.stepInTargets(frame.frameId).then(targets => {
+            qp.busy = false;
+            if (targets?.length) {
+                qp.items = targets?.map(target => ({ target, label: target.label }));
+            }
+            else {
+                qp.placeholder = nls.localize('editor.debug.action.stepIntoTargets.none', "No step targets available");
+            }
+        });
+    }
+});
+async function stopHandler(accessor, _, context, disconnect, suspend) {
+    const debugService = accessor.get(IDebugService);
+    let session;
+    if (isSessionContext(context)) {
+        session = debugService.getModel().getSession(context.sessionId);
+    }
+    else {
+        session = debugService.getViewModel().focusedSession;
+    }
+    const configurationService = accessor.get(IConfigurationService);
+    const showSubSessions = configurationService.getValue('debug').showSubSessionsInToolBar;
+    while (!showSubSessions && session && session.lifecycleManagedByParent && session.parentSession) {
+        session = session.parentSession;
+    }
+    await debugService.stopSession(session, disconnect, suspend);
+}
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: DISCONNECT_ID,
+    weight: 200,
+    primary: 1024 | 63,
+    when: ContextKeyExpr.and(CONTEXT_FOCUSED_SESSION_IS_ATTACH, CONTEXT_IN_DEBUG_MODE),
+    handler: (accessor, _, context) => stopHandler(accessor, _, context, true)
+});
+CommandsRegistry.registerCommand({
+    id: DISCONNECT_AND_SUSPEND_ID,
+    handler: (accessor, _, context) => stopHandler(accessor, _, context, true, true)
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: STOP_ID,
+    weight: 200,
+    primary: 1024 | 63,
+    when: ContextKeyExpr.and(CONTEXT_FOCUSED_SESSION_IS_ATTACH.toNegated(), CONTEXT_IN_DEBUG_MODE),
+    handler: (accessor, _, context) => stopHandler(accessor, _, context, false)
+});
+CommandsRegistry.registerCommand({
+    id: RESTART_FRAME_ID,
+    handler: async (accessor, _, context) => {
+        const debugService = accessor.get(IDebugService);
+        const notificationService = accessor.get(INotificationService);
+        const frame = getFrame(debugService, context);
+        if (frame) {
+            try {
+                await frame.restart();
+            }
+            catch (e) {
+                notificationService.error(e);
+            }
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: CONTINUE_ID,
+    weight: 200 + 10,
+    primary: 63,
+    when: CONTEXT_DEBUG_STATE.isEqualTo('stopped'),
+    handler: async (accessor, _, context) => {
+        await getThreadAndRun(accessor, context, thread => thread.continue());
+    }
+});
+CommandsRegistry.registerCommand({
+    id: SHOW_LOADED_SCRIPTS_ID,
+    handler: async (accessor) => {
+        await showLoadedScriptMenu(accessor);
+    }
+});
+CommandsRegistry.registerCommand({
+    id: FOCUS_REPL_ID,
+    handler: async (accessor) => {
+        const viewsService = accessor.get(IViewsService);
+        await viewsService.openView(REPL_VIEW_ID, true);
+    }
+});
+CommandsRegistry.registerCommand({
+    id: 'debug.startFromConfig',
+    handler: async (accessor, config) => {
+        const debugService = accessor.get(IDebugService);
+        await debugService.startDebugging(undefined, config);
+    }
+});
+CommandsRegistry.registerCommand({
+    id: FOCUS_SESSION_ID,
+    handler: async (accessor, session) => {
+        const debugService = accessor.get(IDebugService);
+        const editorService = accessor.get(IEditorService);
+        const stoppedChildSession = debugService.getModel().getSessions().find(s => s.parentSession === session && s.state === 2);
+        if (stoppedChildSession && session.state !== 2) {
+            session = stoppedChildSession;
+        }
+        await debugService.focusStackFrame(undefined, undefined, session, { explicit: true });
+        const stackFrame = debugService.getViewModel().focusedStackFrame;
+        if (stackFrame) {
+            await stackFrame.openInEditor(editorService, true);
+        }
+    }
+});
+CommandsRegistry.registerCommand({
+    id: SELECT_AND_START_ID,
+    handler: async (accessor, debugType, debugStartOptions) => {
+        const quickInputService = accessor.get(IQuickInputService);
+        const debugService = accessor.get(IDebugService);
+        if (debugType) {
+            const configManager = debugService.getConfigurationManager();
+            const dynamicProviders = await configManager.getDynamicProviders();
+            for (const provider of dynamicProviders) {
+                if (provider.type === debugType) {
+                    const pick = await provider.pick();
+                    if (pick) {
+                        await configManager.selectConfiguration(pick.launch, pick.config.name, pick.config, { type: provider.type });
+                        debugService.startDebugging(pick.launch, pick.config, { noDebug: debugStartOptions?.noDebug, startedByUser: true });
+                        return;
+                    }
+                }
+            }
+        }
+        quickInputService.quickAccess.show(DEBUG_QUICK_ACCESS_PREFIX);
+    }
+});
+CommandsRegistry.registerCommand({
+    id: SELECT_DEBUG_CONSOLE_ID,
+    handler: async (accessor) => {
+        const quickInputService = accessor.get(IQuickInputService);
+        quickInputService.quickAccess.show(DEBUG_CONSOLE_QUICK_ACCESS_PREFIX);
+    }
+});
+CommandsRegistry.registerCommand({
+    id: SELECT_DEBUG_SESSION_ID,
+    handler: async (accessor) => {
+        showDebugSessionMenu(accessor, SELECT_AND_START_ID);
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: DEBUG_START_COMMAND_ID,
+    weight: 200,
+    primary: 63,
+    when: ContextKeyExpr.and(CONTEXT_DEBUGGERS_AVAILABLE, CONTEXT_DEBUG_STATE.isEqualTo('inactive')),
+    handler: async (accessor, debugStartOptions) => {
+        const debugService = accessor.get(IDebugService);
+        await saveAllBeforeDebugStart(accessor.get(IConfigurationService), accessor.get(IEditorService));
+        const { launch, name, getConfig } = debugService.getConfigurationManager().selectedConfiguration;
+        const config = await getConfig();
+        const configOrName = config ? Object.assign(deepClone(config), debugStartOptions?.config) : name;
+        await debugService.startDebugging(launch, configOrName, { noDebug: debugStartOptions?.noDebug, startedByUser: true }, false);
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: DEBUG_RUN_COMMAND_ID,
+    weight: 200,
+    primary: 2048 | 63,
+    mac: { primary: 256 | 63 },
+    when: ContextKeyExpr.and(CONTEXT_DEBUGGERS_AVAILABLE, CONTEXT_DEBUG_STATE.notEqualsTo(getStateLabel(1))),
+    handler: async (accessor) => {
+        const commandService = accessor.get(ICommandService);
+        await commandService.executeCommand(DEBUG_START_COMMAND_ID, { noDebug: true });
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'debug.toggleBreakpoint',
+    weight: 200 + 5,
+    when: ContextKeyExpr.and(CONTEXT_BREAKPOINTS_FOCUSED, InputFocusedContext.toNegated()),
+    primary: 10,
+    handler: (accessor) => {
+        const listService = accessor.get(IListService);
+        const debugService = accessor.get(IDebugService);
+        const list = listService.lastFocusedList;
+        if (list instanceof List) {
+            const focused = list.getFocusedElements();
+            if (focused && focused.length) {
+                debugService.enableOrDisableBreakpoints(!focused[0].enabled, focused[0]);
+            }
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'debug.enableOrDisableBreakpoint',
+    weight: 200,
+    primary: undefined,
+    when: EditorContextKeys.editorTextFocus,
+    handler: (accessor) => {
+        const debugService = accessor.get(IDebugService);
+        const editorService = accessor.get(IEditorService);
+        const control = editorService.activeTextEditorControl;
+        if (isCodeEditor(control)) {
+            const model = control.getModel();
+            if (model) {
+                const position = control.getPosition();
+                if (position) {
+                    const bps = debugService.getModel().getBreakpoints({ uri: model.uri, lineNumber: position.lineNumber });
+                    if (bps.length) {
+                        debugService.enableOrDisableBreakpoints(!bps[0].enabled, bps[0]);
+                    }
+                }
+            }
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: EDIT_EXPRESSION_COMMAND_ID,
+    weight: 200 + 5,
+    when: CONTEXT_WATCH_EXPRESSIONS_FOCUSED,
+    primary: 60,
+    mac: { primary: 3 },
+    handler: (accessor, expression) => {
+        const debugService = accessor.get(IDebugService);
+        if (!(expression instanceof Expression)) {
+            const listService = accessor.get(IListService);
+            const focused = listService.lastFocusedList;
+            if (focused) {
+                const elements = focused.getFocus();
+                if (Array.isArray(elements) && elements[0] instanceof Expression) {
+                    expression = elements[0];
+                }
+            }
+        }
+        if (expression instanceof Expression) {
+            debugService.getViewModel().setSelectedExpression(expression, false);
+        }
+    }
+});
+CommandsRegistry.registerCommand({
+    id: SET_EXPRESSION_COMMAND_ID,
+    handler: async (accessor, expression) => {
+        const debugService = accessor.get(IDebugService);
+        if (expression instanceof Expression || expression instanceof Variable) {
+            debugService.getViewModel().setSelectedExpression(expression, true);
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'debug.setVariable',
+    weight: 200 + 5,
+    when: CONTEXT_VARIABLES_FOCUSED,
+    primary: 60,
+    mac: { primary: 3 },
+    handler: (accessor) => {
+        const listService = accessor.get(IListService);
+        const debugService = accessor.get(IDebugService);
+        const focused = listService.lastFocusedList;
+        if (focused) {
+            const elements = focused.getFocus();
+            if (Array.isArray(elements) && elements[0] instanceof Variable) {
+                debugService.getViewModel().setSelectedExpression(elements[0], false);
+            }
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: REMOVE_EXPRESSION_COMMAND_ID,
+    weight: 200,
+    when: ContextKeyExpr.and(CONTEXT_WATCH_EXPRESSIONS_FOCUSED, CONTEXT_EXPRESSION_SELECTED.toNegated()),
+    primary: 20,
+    mac: { primary: 2048 | 1 },
+    handler: (accessor, expression) => {
+        const debugService = accessor.get(IDebugService);
+        if (expression instanceof Expression) {
+            debugService.removeWatchExpressions(expression.getId());
+            return;
+        }
+        const listService = accessor.get(IListService);
+        const focused = listService.lastFocusedList;
+        if (focused) {
+            let elements = focused.getFocus();
+            if (Array.isArray(elements) && elements[0] instanceof Expression) {
+                const selection = focused.getSelection();
+                if (selection && selection.indexOf(elements[0]) >= 0) {
+                    elements = selection;
+                }
+                elements.forEach((e) => debugService.removeWatchExpressions(e.getId()));
+            }
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'debug.removeBreakpoint',
+    weight: 200,
+    when: ContextKeyExpr.and(CONTEXT_BREAKPOINTS_FOCUSED, CONTEXT_BREAKPOINT_INPUT_FOCUSED.toNegated()),
+    primary: 20,
+    mac: { primary: 2048 | 1 },
+    handler: (accessor) => {
+        const listService = accessor.get(IListService);
+        const debugService = accessor.get(IDebugService);
+        const list = listService.lastFocusedList;
+        if (list instanceof List) {
+            const focused = list.getFocusedElements();
+            const element = focused.length ? focused[0] : undefined;
+            if (element instanceof Breakpoint) {
+                debugService.removeBreakpoints(element.getId());
+            }
+            else if (element instanceof FunctionBreakpoint) {
+                debugService.removeFunctionBreakpoints(element.getId());
+            }
+            else if (element instanceof DataBreakpoint) {
+                debugService.removeDataBreakpoints(element.getId());
+            }
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'debug.installAdditionalDebuggers',
+    weight: 200,
+    when: undefined,
+    primary: undefined,
+    handler: async (accessor, query) => {
+        const extensionsWorkbenchService = accessor.get(IExtensionsWorkbenchService);
+        let searchFor = `@category:debuggers`;
+        if (typeof query === 'string') {
+            searchFor += ` ${query}`;
+        }
+        return extensionsWorkbenchService.openSearch(searchFor);
+    }
+});
+registerAction2(class AddConfigurationAction extends Action2 {
+    constructor() {
+        super({
+            id: ADD_CONFIGURATION_ID,
+            title: nls.localize2('addConfiguration', "Add Configuration..."),
+            category: DEBUG_COMMAND_CATEGORY,
+            f1: true,
+            menu: {
+                id: MenuId.EditorContent,
+                when: ContextKeyExpr.and(ContextKeyExpr.regex(ResourceContextKey.Path.key, /\.vscode[/\\]launch\.json$/), ActiveEditorContext.isEqualTo(TEXT_FILE_EDITOR_ID))
+            }
+        });
+    }
+    async run(accessor, launchUri) {
+        const manager = accessor.get(IDebugService).getConfigurationManager();
+        const launch = manager.getLaunches().find(l => l.uri.toString() === launchUri) || manager.selectedConfiguration.launch;
+        if (launch) {
+            const { editor, created } = await launch.openConfigFile({ preserveFocus: false });
+            if (editor && !created) {
+                const codeEditor = editor.getControl();
+                if (codeEditor) {
+                    await codeEditor.getContribution(EDITOR_CONTRIBUTION_ID)?.addLaunchConfiguration();
+                }
+            }
+        }
+    }
+});
+const inlineBreakpointHandler = (accessor) => {
+    const debugService = accessor.get(IDebugService);
+    const editorService = accessor.get(IEditorService);
+    const control = editorService.activeTextEditorControl;
+    if (isCodeEditor(control)) {
+        const position = control.getPosition();
+        if (position && control.hasModel() && debugService.canSetBreakpointsIn(control.getModel())) {
+            const modelUri = control.getModel().uri;
+            const breakpointAlreadySet = debugService.getModel().getBreakpoints({ lineNumber: position.lineNumber, uri: modelUri })
+                .some(bp => (bp.sessionAgnosticData.column === position.column || (!bp.column && position.column <= 1)));
+            if (!breakpointAlreadySet) {
+                debugService.addBreakpoints(modelUri, [{ lineNumber: position.lineNumber, column: position.column > 1 ? position.column : undefined }]);
+            }
+        }
+    }
+};
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    weight: 200,
+    primary: 1024 | 67,
+    when: EditorContextKeys.editorTextFocus,
+    id: TOGGLE_INLINE_BREAKPOINT_ID,
+    handler: inlineBreakpointHandler
+});
+MenuRegistry.appendMenuItem(MenuId.EditorContext, {
+    command: {
+        id: TOGGLE_INLINE_BREAKPOINT_ID,
+        title: nls.localize('addInlineBreakpoint', "Add Inline Breakpoint"),
+        category: DEBUG_COMMAND_CATEGORY
+    },
+    when: ContextKeyExpr.and(CONTEXT_IN_DEBUG_MODE, PanelFocusContext.toNegated(), EditorContextKeys.editorTextFocus, CONTEXT_IN_CHAT_SESSION.toNegated()),
+    group: 'debug',
+    order: 1
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'debug.openBreakpointToSide',
+    weight: 200,
+    when: CONTEXT_BREAKPOINTS_FOCUSED,
+    primary: 2048 | 3,
+    secondary: [512 | 3],
+    handler: (accessor) => {
+        const listService = accessor.get(IListService);
+        const list = listService.lastFocusedList;
+        if (list instanceof List) {
+            const focus = list.getFocusedElements();
+            if (focus.length && focus[0] instanceof Breakpoint) {
+                return openBreakpointSource(focus[0], true, false, true, accessor.get(IDebugService), accessor.get(IEditorService));
+            }
+        }
+        return undefined;
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'debug.openView',
+    weight: 200,
+    when: CONTEXT_DEBUGGERS_AVAILABLE.toNegated(),
+    primary: 63,
+    secondary: [2048 | 63],
+    handler: async (accessor) => {
+        const paneCompositeService = accessor.get(IPaneCompositePartService);
+        await paneCompositeService.openPaneComposite(VIEWLET_ID, 0, true);
+    }
+});

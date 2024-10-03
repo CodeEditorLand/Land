@@ -1,1 +1,339 @@
-var g=Object.defineProperty;var M=Object.getOwnPropertyDescriptor;var p=(o,r,e,t)=>{for(var n=t>1?void 0:t?M(r,e):r,a=o.length-1,l;a>=0;a--)(l=o[a])&&(n=(t?l(r,e,n):l(n))||n);return t&&n&&g(r,e,n),n},h=(o,r)=>(e,t)=>r(e,t,o);import{normalizeDriveLetter as m}from"../../../../base/common/labels.js";import*as u from"../../../../base/common/path.js";import{dirname as C}from"../../../../base/common/resources.js";import{commonPrefixLength as v,getLeadingWhitespace as E,isFalsyOrWhitespace as b,splitLines as O}from"../../../../base/common/strings.js";import{generateUuid as I}from"../../../../base/common/uuid.js";import"../../../common/core/selection.js";import"../../../common/model.js";import{ILanguageConfigurationService as y}from"../../../common/languages/languageConfigurationRegistry.js";import{Text as L}from"./snippetParser.js";import"../../suggest/browser/suggestOvertypingCapturer.js";import*as i from"../../../../nls.js";import"../../../../platform/label/common/label.js";import{WORKSPACE_EXTENSION as R,isSingleFolderWorkspaceIdentifier as S,toWorkspaceIdentifier as A,isEmptyWorkspaceIdentifier as U}from"../../../../platform/workspace/common/workspace.js";const ee=Object.freeze({CURRENT_YEAR:!0,CURRENT_YEAR_SHORT:!0,CURRENT_MONTH:!0,CURRENT_DATE:!0,CURRENT_HOUR:!0,CURRENT_MINUTE:!0,CURRENT_SECOND:!0,CURRENT_DAY_NAME:!0,CURRENT_DAY_NAME_SHORT:!0,CURRENT_MONTH_NAME:!0,CURRENT_MONTH_NAME_SHORT:!0,CURRENT_SECONDS_UNIX:!0,CURRENT_TIMEZONE_OFFSET:!0,SELECTION:!0,CLIPBOARD:!0,TM_SELECTED_TEXT:!0,TM_CURRENT_LINE:!0,TM_CURRENT_WORD:!0,TM_LINE_INDEX:!0,TM_LINE_NUMBER:!0,TM_FILENAME:!0,TM_FILENAME_BASE:!0,TM_DIRECTORY:!0,TM_FILEPATH:!0,CURSOR_INDEX:!0,CURSOR_NUMBER:!0,RELATIVE_FILEPATH:!0,BLOCK_COMMENT_START:!0,BLOCK_COMMENT_END:!0,LINE_COMMENT:!0,WORKSPACE_NAME:!0,WORKSPACE_FOLDER:!0,RANDOM:!0,RANDOM_HEX:!0,UUID:!0});class te{constructor(r){this._delegates=r}resolve(r){for(const e of this._delegates){const t=e.resolve(r);if(t!==void 0)return t}}}class re{constructor(r,e,t,n){this._model=r;this._selection=e;this._selectionIdx=t;this._overtypingCapturer=n}resolve(r){const{name:e}=r;if(e==="SELECTION"||e==="TM_SELECTED_TEXT"){let t=this._model.getValueInRange(this._selection)||void 0,n=this._selection.startLineNumber!==this._selection.endLineNumber;if(!t&&this._overtypingCapturer){const a=this._overtypingCapturer.getLastOvertypedInfo(this._selectionIdx);a&&(t=a.value,n=a.multiline)}if(t&&n&&r.snippet){const a=this._model.getLineContent(this._selection.startLineNumber),l=E(a,0,this._selection.startColumn-1);let s=l;r.snippet.walk(c=>c===r?!1:(c instanceof L&&(s=E(O(c.value).pop())),!0));const f=v(s,l);t=t.replace(/(\r\n|\r|\n)(.*)/g,(c,N,T)=>`${N}${s.substr(f)}${T}`)}return t}else{if(e==="TM_CURRENT_LINE")return this._model.getLineContent(this._selection.positionLineNumber);if(e==="TM_CURRENT_WORD"){const t=this._model.getWordAtPosition({lineNumber:this._selection.positionLineNumber,column:this._selection.positionColumn});return t&&t.word||void 0}else{if(e==="TM_LINE_INDEX")return String(this._selection.positionLineNumber-1);if(e==="TM_LINE_NUMBER")return String(this._selection.positionLineNumber);if(e==="CURSOR_INDEX")return String(this._selectionIdx);if(e==="CURSOR_NUMBER")return String(this._selectionIdx+1)}}}}class ie{constructor(r,e){this._labelService=r;this._model=e}resolve(r){const{name:e}=r;if(e==="TM_FILENAME")return u.basename(this._model.uri.fsPath);if(e==="TM_FILENAME_BASE"){const t=u.basename(this._model.uri.fsPath),n=t.lastIndexOf(".");return n<=0?t:t.slice(0,n)}else{if(e==="TM_DIRECTORY")return u.dirname(this._model.uri.fsPath)==="."?"":this._labelService.getUriLabel(C(this._model.uri));if(e==="TM_FILEPATH")return this._labelService.getUriLabel(this._model.uri);if(e==="RELATIVE_FILEPATH")return this._labelService.getUriLabel(this._model.uri,{relative:!0,noPrefix:!0})}}}class ne{constructor(r,e,t,n){this._readClipboardText=r;this._selectionIdx=e;this._selectionCount=t;this._spread=n}resolve(r){if(r.name!=="CLIPBOARD")return;const e=this._readClipboardText();if(e){if(this._spread){const t=e.split(/\r\n|\n|\r/).filter(n=>!b(n));if(t.length===this._selectionCount)return t[this._selectionIdx]}return e}}}let _=class{constructor(r,e,t){this._model=r;this._selection=e;this._languageConfigurationService=t}resolve(r){const{name:e}=r,t=this._model.getLanguageIdAtPosition(this._selection.selectionStartLineNumber,this._selection.selectionStartColumn),n=this._languageConfigurationService.getLanguageConfiguration(t).comments;if(n){if(e==="LINE_COMMENT")return n.lineCommentToken||void 0;if(e==="BLOCK_COMMENT_START")return n.blockCommentStartToken||void 0;if(e==="BLOCK_COMMENT_END")return n.blockCommentEndToken||void 0}}};_=p([h(2,y)],_);class d{static dayNames=[i.localize("Sunday","Sunday"),i.localize("Monday","Monday"),i.localize("Tuesday","Tuesday"),i.localize("Wednesday","Wednesday"),i.localize("Thursday","Thursday"),i.localize("Friday","Friday"),i.localize("Saturday","Saturday")];static dayNamesShort=[i.localize("SundayShort","Sun"),i.localize("MondayShort","Mon"),i.localize("TuesdayShort","Tue"),i.localize("WednesdayShort","Wed"),i.localize("ThursdayShort","Thu"),i.localize("FridayShort","Fri"),i.localize("SaturdayShort","Sat")];static monthNames=[i.localize("January","January"),i.localize("February","February"),i.localize("March","March"),i.localize("April","April"),i.localize("May","May"),i.localize("June","June"),i.localize("July","July"),i.localize("August","August"),i.localize("September","September"),i.localize("October","October"),i.localize("November","November"),i.localize("December","December")];static monthNamesShort=[i.localize("JanuaryShort","Jan"),i.localize("FebruaryShort","Feb"),i.localize("MarchShort","Mar"),i.localize("AprilShort","Apr"),i.localize("MayShort","May"),i.localize("JuneShort","Jun"),i.localize("JulyShort","Jul"),i.localize("AugustShort","Aug"),i.localize("SeptemberShort","Sep"),i.localize("OctoberShort","Oct"),i.localize("NovemberShort","Nov"),i.localize("DecemberShort","Dec")];_date=new Date;resolve(r){const{name:e}=r;if(e==="CURRENT_YEAR")return String(this._date.getFullYear());if(e==="CURRENT_YEAR_SHORT")return String(this._date.getFullYear()).slice(-2);if(e==="CURRENT_MONTH")return String(this._date.getMonth().valueOf()+1).padStart(2,"0");if(e==="CURRENT_DATE")return String(this._date.getDate().valueOf()).padStart(2,"0");if(e==="CURRENT_HOUR")return String(this._date.getHours().valueOf()).padStart(2,"0");if(e==="CURRENT_MINUTE")return String(this._date.getMinutes().valueOf()).padStart(2,"0");if(e==="CURRENT_SECOND")return String(this._date.getSeconds().valueOf()).padStart(2,"0");if(e==="CURRENT_DAY_NAME")return d.dayNames[this._date.getDay()];if(e==="CURRENT_DAY_NAME_SHORT")return d.dayNamesShort[this._date.getDay()];if(e==="CURRENT_MONTH_NAME")return d.monthNames[this._date.getMonth()];if(e==="CURRENT_MONTH_NAME_SHORT")return d.monthNamesShort[this._date.getMonth()];if(e==="CURRENT_SECONDS_UNIX")return String(Math.floor(this._date.getTime()/1e3));if(e==="CURRENT_TIMEZONE_OFFSET"){const t=this._date.getTimezoneOffset(),n=t>0?"-":"+",a=Math.trunc(Math.abs(t/60)),l=a<10?"0"+a:a,s=Math.abs(t)-a*60,f=s<10?"0"+s:s;return n+l+":"+f}}}class ae{constructor(r){this._workspaceService=r}resolve(r){if(!this._workspaceService)return;const e=A(this._workspaceService.getWorkspace());if(!U(e)){if(r.name==="WORKSPACE_NAME")return this._resolveWorkspaceName(e);if(r.name==="WORKSPACE_FOLDER")return this._resoveWorkspacePath(e)}}_resolveWorkspaceName(r){if(S(r))return u.basename(r.uri.path);let e=u.basename(r.configPath.path);return e.endsWith(R)&&(e=e.substr(0,e.length-R.length-1)),e}_resoveWorkspacePath(r){if(S(r))return m(r.uri.fsPath);const e=u.basename(r.configPath.path);let t=r.configPath.fsPath;return t.endsWith(e)&&(t=t.substr(0,t.length-e.length-1)),t?m(t):"/"}}class oe{resolve(r){const{name:e}=r;if(e==="RANDOM")return Math.random().toString().slice(-6);if(e==="RANDOM_HEX")return Math.random().toString(16).slice(-6);if(e==="UUID")return I()}}export{ne as ClipboardBasedVariableResolver,_ as CommentBasedVariableResolver,te as CompositeSnippetVariableResolver,ee as KnownSnippetVariableNames,ie as ModelBasedVariableResolver,oe as RandomBasedVariableResolver,re as SelectionBasedVariableResolver,d as TimeBasedVariableResolver,ae as WorkspaceBasedVariableResolver};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { normalizeDriveLetter } from '../../../../base/common/labels.js';
+import * as path from '../../../../base/common/path.js';
+import { dirname } from '../../../../base/common/resources.js';
+import { commonPrefixLength, getLeadingWhitespace, isFalsyOrWhitespace, splitLines } from '../../../../base/common/strings.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
+import { Selection } from '../../../common/core/selection.js';
+import { ILanguageConfigurationService } from '../../../common/languages/languageConfigurationRegistry.js';
+import { Text } from './snippetParser.js';
+import * as nls from '../../../../nls.js';
+import { WORKSPACE_EXTENSION, isSingleFolderWorkspaceIdentifier, toWorkspaceIdentifier, isEmptyWorkspaceIdentifier } from '../../../../platform/workspace/common/workspace.js';
+export const KnownSnippetVariableNames = Object.freeze({
+    'CURRENT_YEAR': true,
+    'CURRENT_YEAR_SHORT': true,
+    'CURRENT_MONTH': true,
+    'CURRENT_DATE': true,
+    'CURRENT_HOUR': true,
+    'CURRENT_MINUTE': true,
+    'CURRENT_SECOND': true,
+    'CURRENT_DAY_NAME': true,
+    'CURRENT_DAY_NAME_SHORT': true,
+    'CURRENT_MONTH_NAME': true,
+    'CURRENT_MONTH_NAME_SHORT': true,
+    'CURRENT_SECONDS_UNIX': true,
+    'CURRENT_TIMEZONE_OFFSET': true,
+    'SELECTION': true,
+    'CLIPBOARD': true,
+    'TM_SELECTED_TEXT': true,
+    'TM_CURRENT_LINE': true,
+    'TM_CURRENT_WORD': true,
+    'TM_LINE_INDEX': true,
+    'TM_LINE_NUMBER': true,
+    'TM_FILENAME': true,
+    'TM_FILENAME_BASE': true,
+    'TM_DIRECTORY': true,
+    'TM_FILEPATH': true,
+    'CURSOR_INDEX': true,
+    'CURSOR_NUMBER': true,
+    'RELATIVE_FILEPATH': true,
+    'BLOCK_COMMENT_START': true,
+    'BLOCK_COMMENT_END': true,
+    'LINE_COMMENT': true,
+    'WORKSPACE_NAME': true,
+    'WORKSPACE_FOLDER': true,
+    'RANDOM': true,
+    'RANDOM_HEX': true,
+    'UUID': true
+});
+export class CompositeSnippetVariableResolver {
+    constructor(_delegates) {
+        this._delegates = _delegates;
+    }
+    resolve(variable) {
+        for (const delegate of this._delegates) {
+            const value = delegate.resolve(variable);
+            if (value !== undefined) {
+                return value;
+            }
+        }
+        return undefined;
+    }
+}
+export class SelectionBasedVariableResolver {
+    constructor(_model, _selection, _selectionIdx, _overtypingCapturer) {
+        this._model = _model;
+        this._selection = _selection;
+        this._selectionIdx = _selectionIdx;
+        this._overtypingCapturer = _overtypingCapturer;
+    }
+    resolve(variable) {
+        const { name } = variable;
+        if (name === 'SELECTION' || name === 'TM_SELECTED_TEXT') {
+            let value = this._model.getValueInRange(this._selection) || undefined;
+            let isMultiline = this._selection.startLineNumber !== this._selection.endLineNumber;
+            if (!value && this._overtypingCapturer) {
+                const info = this._overtypingCapturer.getLastOvertypedInfo(this._selectionIdx);
+                if (info) {
+                    value = info.value;
+                    isMultiline = info.multiline;
+                }
+            }
+            if (value && isMultiline && variable.snippet) {
+                const line = this._model.getLineContent(this._selection.startLineNumber);
+                const lineLeadingWhitespace = getLeadingWhitespace(line, 0, this._selection.startColumn - 1);
+                let varLeadingWhitespace = lineLeadingWhitespace;
+                variable.snippet.walk(marker => {
+                    if (marker === variable) {
+                        return false;
+                    }
+                    if (marker instanceof Text) {
+                        varLeadingWhitespace = getLeadingWhitespace(splitLines(marker.value).pop());
+                    }
+                    return true;
+                });
+                const whitespaceCommonLength = commonPrefixLength(varLeadingWhitespace, lineLeadingWhitespace);
+                value = value.replace(/(\r\n|\r|\n)(.*)/g, (m, newline, rest) => `${newline}${varLeadingWhitespace.substr(whitespaceCommonLength)}${rest}`);
+            }
+            return value;
+        }
+        else if (name === 'TM_CURRENT_LINE') {
+            return this._model.getLineContent(this._selection.positionLineNumber);
+        }
+        else if (name === 'TM_CURRENT_WORD') {
+            const info = this._model.getWordAtPosition({
+                lineNumber: this._selection.positionLineNumber,
+                column: this._selection.positionColumn
+            });
+            return info && info.word || undefined;
+        }
+        else if (name === 'TM_LINE_INDEX') {
+            return String(this._selection.positionLineNumber - 1);
+        }
+        else if (name === 'TM_LINE_NUMBER') {
+            return String(this._selection.positionLineNumber);
+        }
+        else if (name === 'CURSOR_INDEX') {
+            return String(this._selectionIdx);
+        }
+        else if (name === 'CURSOR_NUMBER') {
+            return String(this._selectionIdx + 1);
+        }
+        return undefined;
+    }
+}
+export class ModelBasedVariableResolver {
+    constructor(_labelService, _model) {
+        this._labelService = _labelService;
+        this._model = _model;
+    }
+    resolve(variable) {
+        const { name } = variable;
+        if (name === 'TM_FILENAME') {
+            return path.basename(this._model.uri.fsPath);
+        }
+        else if (name === 'TM_FILENAME_BASE') {
+            const name = path.basename(this._model.uri.fsPath);
+            const idx = name.lastIndexOf('.');
+            if (idx <= 0) {
+                return name;
+            }
+            else {
+                return name.slice(0, idx);
+            }
+        }
+        else if (name === 'TM_DIRECTORY') {
+            if (path.dirname(this._model.uri.fsPath) === '.') {
+                return '';
+            }
+            return this._labelService.getUriLabel(dirname(this._model.uri));
+        }
+        else if (name === 'TM_FILEPATH') {
+            return this._labelService.getUriLabel(this._model.uri);
+        }
+        else if (name === 'RELATIVE_FILEPATH') {
+            return this._labelService.getUriLabel(this._model.uri, { relative: true, noPrefix: true });
+        }
+        return undefined;
+    }
+}
+export class ClipboardBasedVariableResolver {
+    constructor(_readClipboardText, _selectionIdx, _selectionCount, _spread) {
+        this._readClipboardText = _readClipboardText;
+        this._selectionIdx = _selectionIdx;
+        this._selectionCount = _selectionCount;
+        this._spread = _spread;
+    }
+    resolve(variable) {
+        if (variable.name !== 'CLIPBOARD') {
+            return undefined;
+        }
+        const clipboardText = this._readClipboardText();
+        if (!clipboardText) {
+            return undefined;
+        }
+        if (this._spread) {
+            const lines = clipboardText.split(/\r\n|\n|\r/).filter(s => !isFalsyOrWhitespace(s));
+            if (lines.length === this._selectionCount) {
+                return lines[this._selectionIdx];
+            }
+        }
+        return clipboardText;
+    }
+}
+let CommentBasedVariableResolver = class CommentBasedVariableResolver {
+    constructor(_model, _selection, _languageConfigurationService) {
+        this._model = _model;
+        this._selection = _selection;
+        this._languageConfigurationService = _languageConfigurationService;
+    }
+    resolve(variable) {
+        const { name } = variable;
+        const langId = this._model.getLanguageIdAtPosition(this._selection.selectionStartLineNumber, this._selection.selectionStartColumn);
+        const config = this._languageConfigurationService.getLanguageConfiguration(langId).comments;
+        if (!config) {
+            return undefined;
+        }
+        if (name === 'LINE_COMMENT') {
+            return config.lineCommentToken || undefined;
+        }
+        else if (name === 'BLOCK_COMMENT_START') {
+            return config.blockCommentStartToken || undefined;
+        }
+        else if (name === 'BLOCK_COMMENT_END') {
+            return config.blockCommentEndToken || undefined;
+        }
+        return undefined;
+    }
+};
+CommentBasedVariableResolver = __decorate([
+    __param(2, ILanguageConfigurationService),
+    __metadata("design:paramtypes", [Object, Selection, Object])
+], CommentBasedVariableResolver);
+export { CommentBasedVariableResolver };
+export class TimeBasedVariableResolver {
+    constructor() {
+        this._date = new Date();
+    }
+    static { this.dayNames = [nls.localize('Sunday', "Sunday"), nls.localize('Monday', "Monday"), nls.localize('Tuesday', "Tuesday"), nls.localize('Wednesday', "Wednesday"), nls.localize('Thursday', "Thursday"), nls.localize('Friday', "Friday"), nls.localize('Saturday', "Saturday")]; }
+    static { this.dayNamesShort = [nls.localize('SundayShort', "Sun"), nls.localize('MondayShort', "Mon"), nls.localize('TuesdayShort', "Tue"), nls.localize('WednesdayShort', "Wed"), nls.localize('ThursdayShort', "Thu"), nls.localize('FridayShort', "Fri"), nls.localize('SaturdayShort', "Sat")]; }
+    static { this.monthNames = [nls.localize('January', "January"), nls.localize('February', "February"), nls.localize('March', "March"), nls.localize('April', "April"), nls.localize('May', "May"), nls.localize('June', "June"), nls.localize('July', "July"), nls.localize('August', "August"), nls.localize('September', "September"), nls.localize('October', "October"), nls.localize('November', "November"), nls.localize('December', "December")]; }
+    static { this.monthNamesShort = [nls.localize('JanuaryShort', "Jan"), nls.localize('FebruaryShort', "Feb"), nls.localize('MarchShort', "Mar"), nls.localize('AprilShort', "Apr"), nls.localize('MayShort', "May"), nls.localize('JuneShort', "Jun"), nls.localize('JulyShort', "Jul"), nls.localize('AugustShort', "Aug"), nls.localize('SeptemberShort', "Sep"), nls.localize('OctoberShort', "Oct"), nls.localize('NovemberShort', "Nov"), nls.localize('DecemberShort', "Dec")]; }
+    resolve(variable) {
+        const { name } = variable;
+        if (name === 'CURRENT_YEAR') {
+            return String(this._date.getFullYear());
+        }
+        else if (name === 'CURRENT_YEAR_SHORT') {
+            return String(this._date.getFullYear()).slice(-2);
+        }
+        else if (name === 'CURRENT_MONTH') {
+            return String(this._date.getMonth().valueOf() + 1).padStart(2, '0');
+        }
+        else if (name === 'CURRENT_DATE') {
+            return String(this._date.getDate().valueOf()).padStart(2, '0');
+        }
+        else if (name === 'CURRENT_HOUR') {
+            return String(this._date.getHours().valueOf()).padStart(2, '0');
+        }
+        else if (name === 'CURRENT_MINUTE') {
+            return String(this._date.getMinutes().valueOf()).padStart(2, '0');
+        }
+        else if (name === 'CURRENT_SECOND') {
+            return String(this._date.getSeconds().valueOf()).padStart(2, '0');
+        }
+        else if (name === 'CURRENT_DAY_NAME') {
+            return TimeBasedVariableResolver.dayNames[this._date.getDay()];
+        }
+        else if (name === 'CURRENT_DAY_NAME_SHORT') {
+            return TimeBasedVariableResolver.dayNamesShort[this._date.getDay()];
+        }
+        else if (name === 'CURRENT_MONTH_NAME') {
+            return TimeBasedVariableResolver.monthNames[this._date.getMonth()];
+        }
+        else if (name === 'CURRENT_MONTH_NAME_SHORT') {
+            return TimeBasedVariableResolver.monthNamesShort[this._date.getMonth()];
+        }
+        else if (name === 'CURRENT_SECONDS_UNIX') {
+            return String(Math.floor(this._date.getTime() / 1000));
+        }
+        else if (name === 'CURRENT_TIMEZONE_OFFSET') {
+            const rawTimeOffset = this._date.getTimezoneOffset();
+            const sign = rawTimeOffset > 0 ? '-' : '+';
+            const hours = Math.trunc(Math.abs(rawTimeOffset / 60));
+            const hoursString = (hours < 10 ? '0' + hours : hours);
+            const minutes = Math.abs(rawTimeOffset) - hours * 60;
+            const minutesString = (minutes < 10 ? '0' + minutes : minutes);
+            return sign + hoursString + ':' + minutesString;
+        }
+        return undefined;
+    }
+}
+export class WorkspaceBasedVariableResolver {
+    constructor(_workspaceService) {
+        this._workspaceService = _workspaceService;
+    }
+    resolve(variable) {
+        if (!this._workspaceService) {
+            return undefined;
+        }
+        const workspaceIdentifier = toWorkspaceIdentifier(this._workspaceService.getWorkspace());
+        if (isEmptyWorkspaceIdentifier(workspaceIdentifier)) {
+            return undefined;
+        }
+        if (variable.name === 'WORKSPACE_NAME') {
+            return this._resolveWorkspaceName(workspaceIdentifier);
+        }
+        else if (variable.name === 'WORKSPACE_FOLDER') {
+            return this._resoveWorkspacePath(workspaceIdentifier);
+        }
+        return undefined;
+    }
+    _resolveWorkspaceName(workspaceIdentifier) {
+        if (isSingleFolderWorkspaceIdentifier(workspaceIdentifier)) {
+            return path.basename(workspaceIdentifier.uri.path);
+        }
+        let filename = path.basename(workspaceIdentifier.configPath.path);
+        if (filename.endsWith(WORKSPACE_EXTENSION)) {
+            filename = filename.substr(0, filename.length - WORKSPACE_EXTENSION.length - 1);
+        }
+        return filename;
+    }
+    _resoveWorkspacePath(workspaceIdentifier) {
+        if (isSingleFolderWorkspaceIdentifier(workspaceIdentifier)) {
+            return normalizeDriveLetter(workspaceIdentifier.uri.fsPath);
+        }
+        const filename = path.basename(workspaceIdentifier.configPath.path);
+        let folderpath = workspaceIdentifier.configPath.fsPath;
+        if (folderpath.endsWith(filename)) {
+            folderpath = folderpath.substr(0, folderpath.length - filename.length - 1);
+        }
+        return (folderpath ? normalizeDriveLetter(folderpath) : '/');
+    }
+}
+export class RandomBasedVariableResolver {
+    resolve(variable) {
+        const { name } = variable;
+        if (name === 'RANDOM') {
+            return Math.random().toString().slice(-6);
+        }
+        else if (name === 'RANDOM_HEX') {
+            return Math.random().toString(16).slice(-6);
+        }
+        else if (name === 'UUID') {
+            return generateUuid();
+        }
+        return undefined;
+    }
+}

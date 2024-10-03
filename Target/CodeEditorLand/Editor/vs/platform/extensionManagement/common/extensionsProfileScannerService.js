@@ -1,1 +1,343 @@
-var D=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var g=(a,d,i,n)=>{for(var s=n>1?void 0:n?w(d,i):d,o=a.length-1,e;o>=0;o--)(e=a[o])&&(s=(n?e(d,i,s):e(s))||s);return n&&s&&D(d,i,s),s},x=(a,d)=>(i,n)=>d(i,n,a);import{Queue as O}from"../../../base/common/async.js";import{VSBuffer as P}from"../../../base/common/buffer.js";import{Disposable as U}from"../../../base/common/lifecycle.js";import{Emitter as u}from"../../../base/common/event.js";import{ResourceMap as F}from"../../../base/common/map.js";import{URI as N}from"../../../base/common/uri.js";import{isIExtensionIdentifier as A}from"./extensionManagement.js";import{areSameExtensions as m}from"./extensionManagementUtil.js";import"../../extensions/common/extensions.js";import{FileOperationResult as E,IFileService as L,toFileOperationResult as v}from"../../files/common/files.js";import{createDecorator as T}from"../../instantiation/common/instantiation.js";import{ILogService as M}from"../../log/common/log.js";import{IUserDataProfilesService as C}from"../../userDataProfile/common/userDataProfile.js";import{IUriIdentityService as b}from"../../uriIdentity/common/uriIdentity.js";import{isObject as Q,isString as c,isUndefined as y}from"../../../base/common/types.js";import{getErrorMessage as V}from"../../../base/common/errors.js";import{ITelemetryService as J}from"../../telemetry/common/telemetry.js";var j=(i=>(i.ERROR_PROFILE_NOT_FOUND="ERROR_PROFILE_NOT_FOUND",i.ERROR_INVALID_CONTENT="ERROR_INVALID_CONTENT",i))(j||{});class R extends Error{constructor(i,n){super(i);this.code=n}}const Ee=T("IExtensionsProfileScannerService");let h=class extends U{constructor(i,n,s,o,e,t){super();this.extensionsLocation=i;this.fileService=n;this.userDataProfilesService=s;this.uriIdentityService=o;this.telemetryService=e;this.logService=t}_serviceBrand;_onAddExtensions=this._register(new u);onAddExtensions=this._onAddExtensions.event;_onDidAddExtensions=this._register(new u);onDidAddExtensions=this._onDidAddExtensions.event;_onRemoveExtensions=this._register(new u);onRemoveExtensions=this._onRemoveExtensions.event;_onDidRemoveExtensions=this._register(new u);onDidRemoveExtensions=this._onDidRemoveExtensions.event;resourcesAccessQueueMap=new F;scanProfileExtensions(i,n){return this.withProfileExtensions(i,void 0,n)}async addExtensionsToProfile(i,n,s){const o=[],e=[];try{return await this.withProfileExtensions(n,t=>{const r=[];if(s)r.push(...t);else for(const l of t)i.some(([f])=>m(f.identifier,l.identifier)&&f.manifest.version!==l.version)?o.push(l):r.push(l);for(const[l,f]of i){const S=r.findIndex(p=>m(p.identifier,l.identifier)&&p.version===l.manifest.version),I={identifier:l.identifier,version:l.manifest.version,location:l.location,metadata:f};S===-1?(e.push(I),r.push(I)):r.splice(S,1,I)}return e.length&&this._onAddExtensions.fire({extensions:e,profileLocation:n}),o.length&&this._onRemoveExtensions.fire({extensions:o,profileLocation:n}),r}),e.length&&this._onDidAddExtensions.fire({extensions:e,profileLocation:n}),o.length&&this._onDidRemoveExtensions.fire({extensions:o,profileLocation:n}),e}catch(t){throw e.length&&this._onDidAddExtensions.fire({extensions:e,error:t,profileLocation:n}),o.length&&this._onDidRemoveExtensions.fire({extensions:o,error:t,profileLocation:n}),t}}async updateMetadata(i,n){const s=[];return await this.withProfileExtensions(n,o=>{const e=[];for(const t of o){const r=i.find(([l])=>m(l.identifier,t.identifier)&&l.manifest.version===t.version);r&&(t.metadata={...t.metadata,...r[1]},s.push(t)),e.push(t)}return e}),s}async removeExtensionFromProfile(i,n){const s=[];try{await this.withProfileExtensions(n,o=>{const e=[];for(const t of o)m(t.identifier,i.identifier)?s.push(t):e.push(t);return s.length&&this._onRemoveExtensions.fire({extensions:s,profileLocation:n}),e}),s.length&&this._onDidRemoveExtensions.fire({extensions:s,profileLocation:n})}catch(o){throw s.length&&this._onDidRemoveExtensions.fire({extensions:s,error:o,profileLocation:n}),o}}async withProfileExtensions(i,n,s){return this.getResourceAccessQueue(i).queue(async()=>{let o=[],e;try{const t=await this.fileService.readFile(i);e=JSON.parse(t.value.toString().trim()||"[]")}catch(t){if(v(t)!==E.FILE_NOT_FOUND)throw t;if(this.uriIdentityService.extUri.isEqual(i,this.userDataProfilesService.defaultProfile.extensionsResource)&&(e=await this.migrateFromOldDefaultProfileExtensionsLocation()),!e&&s?.bailOutWhenFileNotFound)throw new R(V(t),"ERROR_PROFILE_NOT_FOUND")}if(e){Array.isArray(e)||this.reportAndThrowInvalidConentError(i);let t=!1;for(const r of e){_(r)||this.reportAndThrowInvalidConentError(i);let l;if(c(r.relativeLocation)&&r.relativeLocation)l=this.resolveExtensionLocation(r.relativeLocation);else if(c(r.location)){this.logService.warn(`Extensions profile: Ignoring extension with invalid location: ${r.location}`);continue}else{l=N.revive(r.location);const f=this.toRelativePath(l);f&&(t=!0,r.relativeLocation=f)}y(r.metadata?.hasPreReleaseVersion)&&r.metadata?.preRelease&&(t=!0,r.metadata.hasPreReleaseVersion=!0),o.push({identifier:r.identifier,location:l,version:r.version,metadata:r.metadata})}t&&await this.fileService.writeFile(i,P.fromString(JSON.stringify(e)))}if(n){o=n(o);const t=o.map(r=>({identifier:r.identifier,version:r.version,location:r.location.toJSON(),relativeLocation:this.toRelativePath(r.location),metadata:r.metadata}));await this.fileService.writeFile(i,P.fromString(JSON.stringify(t)))}return o})}reportAndThrowInvalidConentError(i){const n=new R(`Invalid extensions content in ${i.toString()}`,"ERROR_INVALID_CONTENT");throw this.telemetryService.publicLogError2("extensionsProfileScanningError",{code:n.code}),n}toRelativePath(i){return this.uriIdentityService.extUri.isEqual(this.uriIdentityService.extUri.dirname(i),this.extensionsLocation)?this.uriIdentityService.extUri.basename(i):void 0}resolveExtensionLocation(i){return this.uriIdentityService.extUri.joinPath(this.extensionsLocation,i)}_migrationPromise;async migrateFromOldDefaultProfileExtensionsLocation(){return this._migrationPromise||(this._migrationPromise=(async()=>{const i=this.uriIdentityService.extUri.joinPath(this.userDataProfilesService.defaultProfile.location,"extensions.json"),n=this.uriIdentityService.extUri.joinPath(this.extensionsLocation,".init-default-profile-extensions");let s;try{s=(await this.fileService.readFile(i)).value.toString()}catch(e){if(v(e)===E.FILE_NOT_FOUND)return;throw e}this.logService.info("Migrating extensions from old default profile location",i.toString());let o;try{const e=JSON.parse(s);Array.isArray(e)&&e.every(t=>_(t))?o=e:this.logService.warn("Skipping migrating from old default profile locaiton: Found invalid data",e)}catch(e){this.logService.error(e)}if(o)try{await this.fileService.createFile(this.userDataProfilesService.defaultProfile.extensionsResource,P.fromString(JSON.stringify(o)),{overwrite:!1}),this.logService.info("Migrated extensions from old default profile location to new location",i.toString(),this.userDataProfilesService.defaultProfile.extensionsResource.toString())}catch(e){if(v(e)===E.FILE_MODIFIED_SINCE)this.logService.info("Migration from old default profile location to new location is done by another window",i.toString(),this.userDataProfilesService.defaultProfile.extensionsResource.toString());else throw e}try{await this.fileService.del(i)}catch(e){v(e)!==E.FILE_NOT_FOUND&&this.logService.error(e)}try{await this.fileService.del(n)}catch(e){v(e)!==E.FILE_NOT_FOUND&&this.logService.error(e)}return o})()),this._migrationPromise}getResourceAccessQueue(i){let n=this.resourcesAccessQueueMap.get(i);return n||(n=new O,this.resourcesAccessQueueMap.set(i,n)),n}};h=g([x(1,L),x(2,C),x(3,b),x(4,J),x(5,M)],h);function _(a){return Q(a)&&A(a.identifier)&&(k(a.location)||c(a.location)&&a.location)&&(y(a.relativeLocation)||c(a.relativeLocation))&&a.version&&c(a.version)}function k(a){return a?c(a.path)&&c(a.scheme):!1}export{h as AbstractExtensionsProfileScannerService,R as ExtensionsProfileScanningError,j as ExtensionsProfileScanningErrorCode,Ee as IExtensionsProfileScannerService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Queue } from '../../../base/common/async.js';
+import { VSBuffer } from '../../../base/common/buffer.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { Emitter } from '../../../base/common/event.js';
+import { ResourceMap } from '../../../base/common/map.js';
+import { URI } from '../../../base/common/uri.js';
+import { isIExtensionIdentifier } from './extensionManagement.js';
+import { areSameExtensions } from './extensionManagementUtil.js';
+import { IFileService, toFileOperationResult } from '../../files/common/files.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { ILogService } from '../../log/common/log.js';
+import { IUserDataProfilesService } from '../../userDataProfile/common/userDataProfile.js';
+import { IUriIdentityService } from '../../uriIdentity/common/uriIdentity.js';
+import { isObject, isString, isUndefined } from '../../../base/common/types.js';
+import { getErrorMessage } from '../../../base/common/errors.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+export class ExtensionsProfileScanningError extends Error {
+    constructor(message, code) {
+        super(message);
+        this.code = code;
+    }
+}
+export const IExtensionsProfileScannerService = createDecorator('IExtensionsProfileScannerService');
+let AbstractExtensionsProfileScannerService = class AbstractExtensionsProfileScannerService extends Disposable {
+    constructor(extensionsLocation, fileService, userDataProfilesService, uriIdentityService, telemetryService, logService) {
+        super();
+        this.extensionsLocation = extensionsLocation;
+        this.fileService = fileService;
+        this.userDataProfilesService = userDataProfilesService;
+        this.uriIdentityService = uriIdentityService;
+        this.telemetryService = telemetryService;
+        this.logService = logService;
+        this._onAddExtensions = this._register(new Emitter());
+        this.onAddExtensions = this._onAddExtensions.event;
+        this._onDidAddExtensions = this._register(new Emitter());
+        this.onDidAddExtensions = this._onDidAddExtensions.event;
+        this._onRemoveExtensions = this._register(new Emitter());
+        this.onRemoveExtensions = this._onRemoveExtensions.event;
+        this._onDidRemoveExtensions = this._register(new Emitter());
+        this.onDidRemoveExtensions = this._onDidRemoveExtensions.event;
+        this.resourcesAccessQueueMap = new ResourceMap();
+    }
+    scanProfileExtensions(profileLocation, options) {
+        return this.withProfileExtensions(profileLocation, undefined, options);
+    }
+    async addExtensionsToProfile(extensions, profileLocation, keepExistingVersions) {
+        const extensionsToRemove = [];
+        const extensionsToAdd = [];
+        try {
+            await this.withProfileExtensions(profileLocation, existingExtensions => {
+                const result = [];
+                if (keepExistingVersions) {
+                    result.push(...existingExtensions);
+                }
+                else {
+                    for (const existing of existingExtensions) {
+                        if (extensions.some(([e]) => areSameExtensions(e.identifier, existing.identifier) && e.manifest.version !== existing.version)) {
+                            extensionsToRemove.push(existing);
+                        }
+                        else {
+                            result.push(existing);
+                        }
+                    }
+                }
+                for (const [extension, metadata] of extensions) {
+                    const index = result.findIndex(e => areSameExtensions(e.identifier, extension.identifier) && e.version === extension.manifest.version);
+                    const extensionToAdd = { identifier: extension.identifier, version: extension.manifest.version, location: extension.location, metadata };
+                    if (index === -1) {
+                        extensionsToAdd.push(extensionToAdd);
+                        result.push(extensionToAdd);
+                    }
+                    else {
+                        result.splice(index, 1, extensionToAdd);
+                    }
+                }
+                if (extensionsToAdd.length) {
+                    this._onAddExtensions.fire({ extensions: extensionsToAdd, profileLocation });
+                }
+                if (extensionsToRemove.length) {
+                    this._onRemoveExtensions.fire({ extensions: extensionsToRemove, profileLocation });
+                }
+                return result;
+            });
+            if (extensionsToAdd.length) {
+                this._onDidAddExtensions.fire({ extensions: extensionsToAdd, profileLocation });
+            }
+            if (extensionsToRemove.length) {
+                this._onDidRemoveExtensions.fire({ extensions: extensionsToRemove, profileLocation });
+            }
+            return extensionsToAdd;
+        }
+        catch (error) {
+            if (extensionsToAdd.length) {
+                this._onDidAddExtensions.fire({ extensions: extensionsToAdd, error, profileLocation });
+            }
+            if (extensionsToRemove.length) {
+                this._onDidRemoveExtensions.fire({ extensions: extensionsToRemove, error, profileLocation });
+            }
+            throw error;
+        }
+    }
+    async updateMetadata(extensions, profileLocation) {
+        const updatedExtensions = [];
+        await this.withProfileExtensions(profileLocation, profileExtensions => {
+            const result = [];
+            for (const profileExtension of profileExtensions) {
+                const extension = extensions.find(([e]) => areSameExtensions(e.identifier, profileExtension.identifier) && e.manifest.version === profileExtension.version);
+                if (extension) {
+                    profileExtension.metadata = { ...profileExtension.metadata, ...extension[1] };
+                    updatedExtensions.push(profileExtension);
+                    result.push(profileExtension);
+                }
+                else {
+                    result.push(profileExtension);
+                }
+            }
+            return result;
+        });
+        return updatedExtensions;
+    }
+    async removeExtensionFromProfile(extension, profileLocation) {
+        const extensionsToRemove = [];
+        try {
+            await this.withProfileExtensions(profileLocation, profileExtensions => {
+                const result = [];
+                for (const e of profileExtensions) {
+                    if (areSameExtensions(e.identifier, extension.identifier)) {
+                        extensionsToRemove.push(e);
+                    }
+                    else {
+                        result.push(e);
+                    }
+                }
+                if (extensionsToRemove.length) {
+                    this._onRemoveExtensions.fire({ extensions: extensionsToRemove, profileLocation });
+                }
+                return result;
+            });
+            if (extensionsToRemove.length) {
+                this._onDidRemoveExtensions.fire({ extensions: extensionsToRemove, profileLocation });
+            }
+        }
+        catch (error) {
+            if (extensionsToRemove.length) {
+                this._onDidRemoveExtensions.fire({ extensions: extensionsToRemove, error, profileLocation });
+            }
+            throw error;
+        }
+    }
+    async withProfileExtensions(file, updateFn, options) {
+        return this.getResourceAccessQueue(file).queue(async () => {
+            let extensions = [];
+            let storedProfileExtensions;
+            try {
+                const content = await this.fileService.readFile(file);
+                storedProfileExtensions = JSON.parse(content.value.toString().trim() || '[]');
+            }
+            catch (error) {
+                if (toFileOperationResult(error) !== 1) {
+                    throw error;
+                }
+                if (this.uriIdentityService.extUri.isEqual(file, this.userDataProfilesService.defaultProfile.extensionsResource)) {
+                    storedProfileExtensions = await this.migrateFromOldDefaultProfileExtensionsLocation();
+                }
+                if (!storedProfileExtensions && options?.bailOutWhenFileNotFound) {
+                    throw new ExtensionsProfileScanningError(getErrorMessage(error), "ERROR_PROFILE_NOT_FOUND");
+                }
+            }
+            if (storedProfileExtensions) {
+                if (!Array.isArray(storedProfileExtensions)) {
+                    this.reportAndThrowInvalidConentError(file);
+                }
+                let migrate = false;
+                for (const e of storedProfileExtensions) {
+                    if (!isStoredProfileExtension(e)) {
+                        this.reportAndThrowInvalidConentError(file);
+                    }
+                    let location;
+                    if (isString(e.relativeLocation) && e.relativeLocation) {
+                        location = this.resolveExtensionLocation(e.relativeLocation);
+                    }
+                    else if (isString(e.location)) {
+                        this.logService.warn(`Extensions profile: Ignoring extension with invalid location: ${e.location}`);
+                        continue;
+                    }
+                    else {
+                        location = URI.revive(e.location);
+                        const relativePath = this.toRelativePath(location);
+                        if (relativePath) {
+                            migrate = true;
+                            e.relativeLocation = relativePath;
+                        }
+                    }
+                    if (isUndefined(e.metadata?.hasPreReleaseVersion) && e.metadata?.preRelease) {
+                        migrate = true;
+                        e.metadata.hasPreReleaseVersion = true;
+                    }
+                    extensions.push({
+                        identifier: e.identifier,
+                        location,
+                        version: e.version,
+                        metadata: e.metadata,
+                    });
+                }
+                if (migrate) {
+                    await this.fileService.writeFile(file, VSBuffer.fromString(JSON.stringify(storedProfileExtensions)));
+                }
+            }
+            if (updateFn) {
+                extensions = updateFn(extensions);
+                const storedProfileExtensions = extensions.map(e => ({
+                    identifier: e.identifier,
+                    version: e.version,
+                    location: e.location.toJSON(),
+                    relativeLocation: this.toRelativePath(e.location),
+                    metadata: e.metadata
+                }));
+                await this.fileService.writeFile(file, VSBuffer.fromString(JSON.stringify(storedProfileExtensions)));
+            }
+            return extensions;
+        });
+    }
+    reportAndThrowInvalidConentError(file) {
+        const error = new ExtensionsProfileScanningError(`Invalid extensions content in ${file.toString()}`, "ERROR_INVALID_CONTENT");
+        this.telemetryService.publicLogError2('extensionsProfileScanningError', { code: error.code });
+        throw error;
+    }
+    toRelativePath(extensionLocation) {
+        return this.uriIdentityService.extUri.isEqual(this.uriIdentityService.extUri.dirname(extensionLocation), this.extensionsLocation)
+            ? this.uriIdentityService.extUri.basename(extensionLocation)
+            : undefined;
+    }
+    resolveExtensionLocation(path) {
+        return this.uriIdentityService.extUri.joinPath(this.extensionsLocation, path);
+    }
+    async migrateFromOldDefaultProfileExtensionsLocation() {
+        if (!this._migrationPromise) {
+            this._migrationPromise = (async () => {
+                const oldDefaultProfileExtensionsLocation = this.uriIdentityService.extUri.joinPath(this.userDataProfilesService.defaultProfile.location, 'extensions.json');
+                const oldDefaultProfileExtensionsInitLocation = this.uriIdentityService.extUri.joinPath(this.extensionsLocation, '.init-default-profile-extensions');
+                let content;
+                try {
+                    content = (await this.fileService.readFile(oldDefaultProfileExtensionsLocation)).value.toString();
+                }
+                catch (error) {
+                    if (toFileOperationResult(error) === 1) {
+                        return undefined;
+                    }
+                    throw error;
+                }
+                this.logService.info('Migrating extensions from old default profile location', oldDefaultProfileExtensionsLocation.toString());
+                let storedProfileExtensions;
+                try {
+                    const parsedData = JSON.parse(content);
+                    if (Array.isArray(parsedData) && parsedData.every(candidate => isStoredProfileExtension(candidate))) {
+                        storedProfileExtensions = parsedData;
+                    }
+                    else {
+                        this.logService.warn('Skipping migrating from old default profile locaiton: Found invalid data', parsedData);
+                    }
+                }
+                catch (error) {
+                    this.logService.error(error);
+                }
+                if (storedProfileExtensions) {
+                    try {
+                        await this.fileService.createFile(this.userDataProfilesService.defaultProfile.extensionsResource, VSBuffer.fromString(JSON.stringify(storedProfileExtensions)), { overwrite: false });
+                        this.logService.info('Migrated extensions from old default profile location to new location', oldDefaultProfileExtensionsLocation.toString(), this.userDataProfilesService.defaultProfile.extensionsResource.toString());
+                    }
+                    catch (error) {
+                        if (toFileOperationResult(error) === 3) {
+                            this.logService.info('Migration from old default profile location to new location is done by another window', oldDefaultProfileExtensionsLocation.toString(), this.userDataProfilesService.defaultProfile.extensionsResource.toString());
+                        }
+                        else {
+                            throw error;
+                        }
+                    }
+                }
+                try {
+                    await this.fileService.del(oldDefaultProfileExtensionsLocation);
+                }
+                catch (error) {
+                    if (toFileOperationResult(error) !== 1) {
+                        this.logService.error(error);
+                    }
+                }
+                try {
+                    await this.fileService.del(oldDefaultProfileExtensionsInitLocation);
+                }
+                catch (error) {
+                    if (toFileOperationResult(error) !== 1) {
+                        this.logService.error(error);
+                    }
+                }
+                return storedProfileExtensions;
+            })();
+        }
+        return this._migrationPromise;
+    }
+    getResourceAccessQueue(file) {
+        let resourceQueue = this.resourcesAccessQueueMap.get(file);
+        if (!resourceQueue) {
+            resourceQueue = new Queue();
+            this.resourcesAccessQueueMap.set(file, resourceQueue);
+        }
+        return resourceQueue;
+    }
+};
+AbstractExtensionsProfileScannerService = __decorate([
+    __param(1, IFileService),
+    __param(2, IUserDataProfilesService),
+    __param(3, IUriIdentityService),
+    __param(4, ITelemetryService),
+    __param(5, ILogService),
+    __metadata("design:paramtypes", [URI, Object, Object, Object, Object, Object])
+], AbstractExtensionsProfileScannerService);
+export { AbstractExtensionsProfileScannerService };
+function isStoredProfileExtension(candidate) {
+    return isObject(candidate)
+        && isIExtensionIdentifier(candidate.identifier)
+        && (isUriComponents(candidate.location) || (isString(candidate.location) && candidate.location))
+        && (isUndefined(candidate.relativeLocation) || isString(candidate.relativeLocation))
+        && candidate.version && isString(candidate.version);
+}
+function isUriComponents(thing) {
+    if (!thing) {
+        return false;
+    }
+    return isString(thing.path) &&
+        isString(thing.scheme);
+}

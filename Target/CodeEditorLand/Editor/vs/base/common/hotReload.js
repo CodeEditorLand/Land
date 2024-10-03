@@ -1,1 +1,79 @@
-import"./lifecycle.js";import{env as a}from"./process.js";function u(){return!0}function c(){return!u()&&a&&!!a.VSCODE_DEV}function g(o){if(c()){const p=y();return p.add(o),{dispose(){p.delete(o)}}}else return{dispose(){}}}function y(){d||(d=new Set);const o=globalThis;return o.$hotReload_applyNewExports||(o.$hotReload_applyNewExports=p=>{const s={config:{mode:void 0},...p},t=[];for(const n of d){const e=n(s);e&&t.push(e)}if(t.length>0)return n=>{let e=!1;for(const r of t)r(n)&&(e=!0);return e}}),d}let d;c()&&g(({oldExports:o,newSrc:p,config:s})=>{if(s.mode==="patch-prototype")return t=>{for(const n in t){const e=t[n];if(typeof e=="function"&&e.prototype){const r=o[n];if(r){for(const i of Object.getOwnPropertyNames(e.prototype)){const l=Object.getOwnPropertyDescriptor(e.prototype,i),f=Object.getOwnPropertyDescriptor(r.prototype,i);l?.value?.toString(),f?.value?.toString(),Object.defineProperty(r.prototype,i,l)}t[n]=r}}}return!0}});export{c as isHotReloadEnabled,g as registerHotReloadHandler};
+import { env } from './process.js';
+function hotReloadDisabled() {
+    return true;
+}
+export function isHotReloadEnabled() {
+    return !hotReloadDisabled() && env && !!env['VSCODE_DEV'];
+}
+export function registerHotReloadHandler(handler) {
+    if (!isHotReloadEnabled()) {
+        return { dispose() { } };
+    }
+    else {
+        const handlers = registerGlobalHotReloadHandler();
+        handlers.add(handler);
+        return {
+            dispose() { handlers.delete(handler); }
+        };
+    }
+}
+function registerGlobalHotReloadHandler() {
+    if (!hotReloadHandlers) {
+        hotReloadHandlers = new Set();
+    }
+    const g = globalThis;
+    if (!g.$hotReload_applyNewExports) {
+        g.$hotReload_applyNewExports = args => {
+            const args2 = { config: { mode: undefined }, ...args };
+            const results = [];
+            for (const h of hotReloadHandlers) {
+                const result = h(args2);
+                if (result) {
+                    results.push(result);
+                }
+            }
+            if (results.length > 0) {
+                return newExports => {
+                    let result = false;
+                    for (const r of results) {
+                        if (r(newExports)) {
+                            result = true;
+                        }
+                    }
+                    return result;
+                };
+            }
+            return undefined;
+        };
+    }
+    return hotReloadHandlers;
+}
+let hotReloadHandlers = undefined;
+if (isHotReloadEnabled()) {
+    registerHotReloadHandler(({ oldExports, newSrc, config }) => {
+        if (config.mode !== 'patch-prototype') {
+            return undefined;
+        }
+        return newExports => {
+            for (const key in newExports) {
+                const exportedItem = newExports[key];
+                console.log(`[hot-reload] Patching prototype methods of '${key}'`, { exportedItem });
+                if (typeof exportedItem === 'function' && exportedItem.prototype) {
+                    const oldExportedItem = oldExports[key];
+                    if (oldExportedItem) {
+                        for (const prop of Object.getOwnPropertyNames(exportedItem.prototype)) {
+                            const descriptor = Object.getOwnPropertyDescriptor(exportedItem.prototype, prop);
+                            const oldDescriptor = Object.getOwnPropertyDescriptor(oldExportedItem.prototype, prop);
+                            if (descriptor?.value?.toString() !== oldDescriptor?.value?.toString()) {
+                                console.log(`[hot-reload] Patching prototype method '${key}.${prop}'`);
+                            }
+                            Object.defineProperty(oldExportedItem.prototype, prop, descriptor);
+                        }
+                        newExports[key] = oldExportedItem;
+                    }
+                }
+            }
+            return true;
+        };
+    });
+}

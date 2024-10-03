@@ -1,1 +1,2 @@
-import"../../../base/common/cancellation.js";import"../../../base/common/lifecycle.js";import"../../../base/common/uri.js";import{createDecorator as r}from"../../instantiation/common/instantiation.js";const d=r("canonicalUriIdentityService");export{d as ICanonicalUriService};
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const ICanonicalUriService = createDecorator('canonicalUriIdentityService');

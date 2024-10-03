@@ -1,1 +1,142 @@
-var p=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var u=(n,e,a,o)=>{for(var t=o>1?void 0:o?S(e,a):e,s=n.length-1,L;s>=0;s--)(L=n[s])&&(t=(o?L(e,a,t):L(t))||t);return o&&t&&p(e,a,t),t},l=(n,e)=>(a,o)=>e(a,o,n);import{localize as c}from"../../../../nls.js";import{Language as m,LANGUAGE_DEFAULT as I}from"../../../../base/common/platform.js";import{IDialogService as f}from"../../../../platform/dialogs/common/dialogs.js";import"../../../../platform/languagePacks/common/languagePacks.js";import{IActiveLanguagePackService as y,ILocaleService as h}from"../common/locale.js";import{IHostService as _}from"../../host/browser/host.js";import{IProductService as O}from"../../../../platform/product/common/productService.js";import{InstantiationType as v,registerSingleton as E}from"../../../../platform/instantiation/common/extensions.js";import{CancellationToken as A}from"../../../../base/common/cancellation.js";import{IExtensionGalleryService as C}from"../../../../platform/extensionManagement/common/extensionManagement.js";import{ILogService as T}from"../../../../platform/log/common/log.js";const r=new class i{static LOCAL_STORAGE_LOCALE_KEY="vscode.nls.locale";static LOCAL_STORAGE_EXTENSION_ID_KEY="vscode.nls.languagePackExtensionId";setLocale(e){localStorage.setItem(i.LOCAL_STORAGE_LOCALE_KEY,e),this.doSetLocaleToCookie(e)}doSetLocaleToCookie(e){document.cookie=`${i.LOCAL_STORAGE_LOCALE_KEY}=${e};path=/;max-age=3153600000`}clearLocale(){localStorage.removeItem(i.LOCAL_STORAGE_LOCALE_KEY),this.doClearLocaleToCookie()}doClearLocaleToCookie(){document.cookie=`${i.LOCAL_STORAGE_LOCALE_KEY}=;path=/;max-age=0`}setExtensionId(e){localStorage.setItem(i.LOCAL_STORAGE_EXTENSION_ID_KEY,e)}getExtensionId(){return localStorage.getItem(i.LOCAL_STORAGE_EXTENSION_ID_KEY)}clearExtensionId(){localStorage.removeItem(i.LOCAL_STORAGE_EXTENSION_ID_KEY)}};let d=class{constructor(e,a,o){this.dialogService=e;this.hostService=a;this.productService=o}async setLocale(e,a=!1){const o=e.id;if(o===m.value()||!o&&m.value()===navigator.language.toLowerCase())return;o?(r.setLocale(o),e.extensionId&&r.setExtensionId(e.extensionId)):(r.clearLocale(),r.clearExtensionId()),(await this.dialogService.confirm({type:"info",message:c("relaunchDisplayLanguageMessage","To change the display language, {0} needs to reload",this.productService.nameLong),detail:c("relaunchDisplayLanguageDetail","Press the reload button to refresh the page and set the display language to {0}.",e.label),primaryButton:c({key:"reload",comment:["&& denotes a mnemonic character"]},"&&Reload")})).confirmed&&this.hostService.restart()}async clearLocalePreference(){if(r.clearLocale(),r.clearExtensionId(),m.value()===navigator.language.toLowerCase())return;(await this.dialogService.confirm({type:"info",message:c("clearDisplayLanguageMessage","To change the display language, {0} needs to reload",this.productService.nameLong),detail:c("clearDisplayLanguageDetail","Press the reload button to refresh the page and use your browser's language."),primaryButton:c({key:"reload",comment:["&& denotes a mnemonic character"]},"&&Reload")})).confirmed&&this.hostService.restart()}};d=u([l(0,f),l(1,_),l(2,O)],d);let g=class{constructor(e,a){this.galleryService=e;this.logService=a}_serviceBrand;async getExtensionIdProvidingCurrentLocale(){const e=m.value();if(e===I)return;const a=r.getExtensionId();if(a)return a;if(this.galleryService.isEnabled())try{const t=(await this.galleryService.query({text:`tag:lp-${e}`},A.None)).firstPage.find(s=>s.publisher==="MS-CEINTL"&&s.name.startsWith("vscode-language-pack"));if(t)return r.setExtensionId(t.identifier.id),t.identifier.id}catch(o){this.logService.error(o)}}};g=u([l(0,C),l(1,T)],g),E(h,d,v.Delayed),E(y,g,v.Delayed);export{d as WebLocaleService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { localize } from '../../../../nls.js';
+import { Language, LANGUAGE_DEFAULT } from '../../../../base/common/platform.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { IActiveLanguagePackService, ILocaleService } from '../common/locale.js';
+import { IHostService } from '../../host/browser/host.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { IExtensionGalleryService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+const localeStorage = new class LocaleStorage {
+    static { this.LOCAL_STORAGE_LOCALE_KEY = 'vscode.nls.locale'; }
+    static { this.LOCAL_STORAGE_EXTENSION_ID_KEY = 'vscode.nls.languagePackExtensionId'; }
+    setLocale(locale) {
+        localStorage.setItem(LocaleStorage.LOCAL_STORAGE_LOCALE_KEY, locale);
+        this.doSetLocaleToCookie(locale);
+    }
+    doSetLocaleToCookie(locale) {
+        document.cookie = `${LocaleStorage.LOCAL_STORAGE_LOCALE_KEY}=${locale};path=/;max-age=3153600000`;
+    }
+    clearLocale() {
+        localStorage.removeItem(LocaleStorage.LOCAL_STORAGE_LOCALE_KEY);
+        this.doClearLocaleToCookie();
+    }
+    doClearLocaleToCookie() {
+        document.cookie = `${LocaleStorage.LOCAL_STORAGE_LOCALE_KEY}=;path=/;max-age=0`;
+    }
+    setExtensionId(extensionId) {
+        localStorage.setItem(LocaleStorage.LOCAL_STORAGE_EXTENSION_ID_KEY, extensionId);
+    }
+    getExtensionId() {
+        return localStorage.getItem(LocaleStorage.LOCAL_STORAGE_EXTENSION_ID_KEY);
+    }
+    clearExtensionId() {
+        localStorage.removeItem(LocaleStorage.LOCAL_STORAGE_EXTENSION_ID_KEY);
+    }
+};
+let WebLocaleService = class WebLocaleService {
+    constructor(dialogService, hostService, productService) {
+        this.dialogService = dialogService;
+        this.hostService = hostService;
+        this.productService = productService;
+    }
+    async setLocale(languagePackItem, _skipDialog = false) {
+        const locale = languagePackItem.id;
+        if (locale === Language.value() || (!locale && Language.value() === navigator.language.toLowerCase())) {
+            return;
+        }
+        if (locale) {
+            localeStorage.setLocale(locale);
+            if (languagePackItem.extensionId) {
+                localeStorage.setExtensionId(languagePackItem.extensionId);
+            }
+        }
+        else {
+            localeStorage.clearLocale();
+            localeStorage.clearExtensionId();
+        }
+        const restartDialog = await this.dialogService.confirm({
+            type: 'info',
+            message: localize('relaunchDisplayLanguageMessage', "To change the display language, {0} needs to reload", this.productService.nameLong),
+            detail: localize('relaunchDisplayLanguageDetail', "Press the reload button to refresh the page and set the display language to {0}.", languagePackItem.label),
+            primaryButton: localize({ key: 'reload', comment: ['&& denotes a mnemonic character'] }, "&&Reload"),
+        });
+        if (restartDialog.confirmed) {
+            this.hostService.restart();
+        }
+    }
+    async clearLocalePreference() {
+        localeStorage.clearLocale();
+        localeStorage.clearExtensionId();
+        if (Language.value() === navigator.language.toLowerCase()) {
+            return;
+        }
+        const restartDialog = await this.dialogService.confirm({
+            type: 'info',
+            message: localize('clearDisplayLanguageMessage', "To change the display language, {0} needs to reload", this.productService.nameLong),
+            detail: localize('clearDisplayLanguageDetail', "Press the reload button to refresh the page and use your browser's language."),
+            primaryButton: localize({ key: 'reload', comment: ['&& denotes a mnemonic character'] }, "&&Reload"),
+        });
+        if (restartDialog.confirmed) {
+            this.hostService.restart();
+        }
+    }
+};
+WebLocaleService = __decorate([
+    __param(0, IDialogService),
+    __param(1, IHostService),
+    __param(2, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], WebLocaleService);
+export { WebLocaleService };
+let WebActiveLanguagePackService = class WebActiveLanguagePackService {
+    constructor(galleryService, logService) {
+        this.galleryService = galleryService;
+        this.logService = logService;
+    }
+    async getExtensionIdProvidingCurrentLocale() {
+        const language = Language.value();
+        if (language === LANGUAGE_DEFAULT) {
+            return undefined;
+        }
+        const extensionId = localeStorage.getExtensionId();
+        if (extensionId) {
+            return extensionId;
+        }
+        if (!this.galleryService.isEnabled()) {
+            return undefined;
+        }
+        try {
+            const tagResult = await this.galleryService.query({ text: `tag:lp-${language}` }, CancellationToken.None);
+            const extensionToInstall = tagResult.firstPage.find(e => e.publisher === 'MS-CEINTL' && e.name.startsWith('vscode-language-pack'));
+            if (extensionToInstall) {
+                localeStorage.setExtensionId(extensionToInstall.identifier.id);
+                return extensionToInstall.identifier.id;
+            }
+        }
+        catch (e) {
+            this.logService.error(e);
+        }
+        return undefined;
+    }
+};
+WebActiveLanguagePackService = __decorate([
+    __param(0, IExtensionGalleryService),
+    __param(1, ILogService),
+    __metadata("design:paramtypes", [Object, Object])
+], WebActiveLanguagePackService);
+registerSingleton(ILocaleService, WebLocaleService, 1);
+registerSingleton(IActiveLanguagePackService, WebActiveLanguagePackService, 1);

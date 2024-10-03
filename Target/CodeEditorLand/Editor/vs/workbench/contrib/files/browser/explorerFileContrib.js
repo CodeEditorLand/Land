@@ -1,1 +1,22 @@
-import{Emitter as n}from"../../../../base/common/event.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import"../../../../platform/instantiation/common/instantiation.js";import{Registry as s}from"../../../../platform/registry/common/platform.js";var p=(r=>(r.FileContributionRegistry="workbench.registry.explorer.fileContributions",r))(p||{});class l{_onDidRegisterDescriptor=new n;onDidRegisterDescriptor=this._onDidRegisterDescriptor.event;descriptors=[];register(r){this.descriptors.push(r),this._onDidRegisterDescriptor.fire(r)}create(r,i,t){return this.descriptors.map(o=>{const e=o.create(r,i);return t.add(e),e})}}const c=new l;s.add("workbench.registry.explorer.fileContributions",c);export{p as ExplorerExtensions,c as explorerFileContribRegistry};
+import { Emitter } from '../../../../base/common/event.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+class ExplorerFileContributionRegistry {
+    constructor() {
+        this._onDidRegisterDescriptor = new Emitter();
+        this.onDidRegisterDescriptor = this._onDidRegisterDescriptor.event;
+        this.descriptors = [];
+    }
+    register(descriptor) {
+        this.descriptors.push(descriptor);
+        this._onDidRegisterDescriptor.fire(descriptor);
+    }
+    create(insta, container, store) {
+        return this.descriptors.map(d => {
+            const i = d.create(insta, container);
+            store.add(i);
+            return i;
+        });
+    }
+}
+export const explorerFileContribRegistry = new ExplorerFileContributionRegistry();
+Registry.add("workbench.registry.explorer.fileContributions", explorerFileContribRegistry);

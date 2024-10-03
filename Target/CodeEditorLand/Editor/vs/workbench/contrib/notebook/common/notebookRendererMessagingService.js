@@ -1,1 +1,2 @@
-import"../../../../base/common/event.js";import"../../../../base/common/lifecycle.js";import{createDecorator as e}from"../../../../platform/instantiation/common/instantiation.js";const d=e("INotebookRendererMessagingService");export{d as INotebookRendererMessagingService};
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export const INotebookRendererMessagingService = createDecorator('INotebookRendererMessagingService');

@@ -1,1 +1,200 @@
-var b=Object.defineProperty;var P=Object.getOwnPropertyDescriptor;var h=(u,i,e,t)=>{for(var r=t>1?void 0:t?P(i,e):i,s=u.length-1,a;s>=0;s--)(a=u[s])&&(r=(t?a(i,e,r):a(r))||r);return t&&r&&b(i,e,r),r},n=(u,i)=>(e,t)=>i(e,t,u);import{bufferToStream as w,newWriteableBufferStream as F,VSBuffer as l}from"../../../../base/common/buffer.js";import{Disposable as O}from"../../../../base/common/lifecycle.js";import{isDefined as T}from"../../../../base/common/types.js";import{URI as g}from"../../../../base/common/uri.js";import{IEnvironmentService as B}from"../../../../platform/environment/common/environment.js";import{IFileService as E}from"../../../../platform/files/common/files.js";import{createDecorator as A}from"../../../../platform/instantiation/common/instantiation.js";import{ILogService as R}from"../../../../platform/log/common/log.js";import{IStorageService as v,StorageScope as V,StorageTarget as x}from"../../../../platform/storage/common/storage.js";import{IUriIdentityService as y}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{IWorkspaceContextService as M}from"../../../../platform/workspace/common/workspace.js";import{StoredValue as N}from"./storedValue.js";import{HydratedTestResult as W}from"./testResult.js";import"./testTypes.js";const _=128,k=16,L=1024*128,z=.2,oe=A("ITestResultStorage"),p=1;let c=class extends O{constructor(e,t,r){super();this.uriIdentityService=e;this.storageService=t;this.logService=r}stored=this._register(new N({key:"storedTestResults",scope:V.WORKSPACE,target:x.MACHINE},this.storageService));async read(){return(await Promise.all(this.stored.get([]).map(async({id:t,rev:r})=>{if(r===p)try{const s=await this.readForResultId(t);return s?new W(this.uriIdentityService,s):void 0}catch(s){this.logService.warn(`Error deserializing stored test result ${t}`,s);return}}))).filter(T)}getResultOutputWriter(e){const t=F();return this.storeOutputForResultId(e,t),t}async persist(e){const t=new Map(this.stored.get([]).map(({id:o,bytes:d})=>[o,d])),r=[],s=[];let a=L;for(let o=0;o<e.length&&o<_&&(a>0||r.length<k);o++){const d=e[o],f=t.get(d.id);if(f!==void 0){t.delete(d.id),r.push({id:d.id,rev:p,bytes:f}),a-=f;continue}const S=d.toJSON();if(!S)continue;const I=l.fromString(JSON.stringify(S));s.push(this.storeForResultId(d.id,S)),r.push({id:d.id,rev:p,bytes:I.byteLength}),a-=I.byteLength}for(const o of t.keys())s.push(this.deleteForResultId(o).catch(()=>{}));this.stored.store(r),await Promise.all(s)}};c=h([n(0,y),n(1,v),n(2,R)],c);class ne extends c{cache=new Map;async readForResultId(i){return Promise.resolve(this.cache.get(i))}storeForResultId(i,e){return this.cache.set(i,e),Promise.resolve()}deleteForResultId(i){return this.cache.delete(i),Promise.resolve()}readOutputForResultId(i){throw new Error("Method not implemented.")}storeOutputForResultId(i,e){throw new Error("Method not implemented.")}readOutputRangeForResultId(i,e,t){throw new Error("Method not implemented.")}}let m=class extends c{constructor(e,t,r,s,a,o){super(e,t,r);this.fileService=a;this.directory=g.joinPath(o.workspaceStorageHome,s.getWorkspace().id,"testResults")}directory;async readForResultId(e){const t=await this.fileService.readFile(this.getResultJsonPath(e));return JSON.parse(t.value.toString())}storeForResultId(e,t){return this.fileService.writeFile(this.getResultJsonPath(e),l.fromString(JSON.stringify(t)))}deleteForResultId(e){return this.fileService.del(this.getResultJsonPath(e)).catch(()=>{})}async readOutputRangeForResultId(e,t,r){try{const{value:s}=await this.fileService.readFile(this.getResultOutputPath(e),{position:t,length:r});return s}catch{return l.alloc(0)}}async readOutputForResultId(e){try{const{value:t}=await this.fileService.readFileStream(this.getResultOutputPath(e));return t}catch{return w(l.alloc(0))}}async storeOutputForResultId(e,t){await this.fileService.createFile(this.getResultOutputPath(e),t)}async persist(e){await super.persist(e),Math.random()<z&&await this.cleanupDereferenced()}async cleanupDereferenced(){const{children:e}=await this.fileService.resolve(this.directory);if(!e)return;const t=new Set(this.stored.get([]).filter(r=>r.rev===p).map(r=>r.id));await Promise.all(e.filter(r=>!t.has(r.name.replace(/\.[a-z]+$/,""))).map(r=>this.fileService.del(r.resource).catch(()=>{})))}getResultJsonPath(e){return g.joinPath(this.directory,`${e}.json`)}getResultOutputPath(e){return g.joinPath(this.directory,`${e}.output`)}};m=h([n(0,y),n(1,v),n(2,R),n(3,M),n(4,E),n(5,B)],m);export{c as BaseTestResultStorage,oe as ITestResultStorage,ne as InMemoryResultStorage,_ as RETAIN_MAX_RESULTS,m as TestResultStorage};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { bufferToStream, newWriteableBufferStream, VSBuffer } from '../../../../base/common/buffer.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { isDefined } from '../../../../base/common/types.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IEnvironmentService } from '../../../../platform/environment/common/environment.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { StoredValue } from './storedValue.js';
+import { HydratedTestResult } from './testResult.js';
+export const RETAIN_MAX_RESULTS = 128;
+const RETAIN_MIN_RESULTS = 16;
+const RETAIN_MAX_BYTES = 1024 * 128;
+const CLEANUP_PROBABILITY = 0.2;
+export const ITestResultStorage = createDecorator('ITestResultStorage');
+const currentRevision = 1;
+let BaseTestResultStorage = class BaseTestResultStorage extends Disposable {
+    constructor(uriIdentityService, storageService, logService) {
+        super();
+        this.uriIdentityService = uriIdentityService;
+        this.storageService = storageService;
+        this.logService = logService;
+        this.stored = this._register(new StoredValue({
+            key: 'storedTestResults',
+            scope: 1,
+            target: 1
+        }, this.storageService));
+    }
+    async read() {
+        const results = await Promise.all(this.stored.get([]).map(async ({ id, rev }) => {
+            if (rev !== currentRevision) {
+                return undefined;
+            }
+            try {
+                const contents = await this.readForResultId(id);
+                if (!contents) {
+                    return undefined;
+                }
+                return new HydratedTestResult(this.uriIdentityService, contents);
+            }
+            catch (e) {
+                this.logService.warn(`Error deserializing stored test result ${id}`, e);
+                return undefined;
+            }
+        }));
+        return results.filter(isDefined);
+    }
+    getResultOutputWriter(resultId) {
+        const stream = newWriteableBufferStream();
+        this.storeOutputForResultId(resultId, stream);
+        return stream;
+    }
+    async persist(results) {
+        const toDelete = new Map(this.stored.get([]).map(({ id, bytes }) => [id, bytes]));
+        const toStore = [];
+        const todo = [];
+        let budget = RETAIN_MAX_BYTES;
+        for (let i = 0; i < results.length && i < RETAIN_MAX_RESULTS && (budget > 0 || toStore.length < RETAIN_MIN_RESULTS); i++) {
+            const result = results[i];
+            const existingBytes = toDelete.get(result.id);
+            if (existingBytes !== undefined) {
+                toDelete.delete(result.id);
+                toStore.push({ id: result.id, rev: currentRevision, bytes: existingBytes });
+                budget -= existingBytes;
+                continue;
+            }
+            const obj = result.toJSON();
+            if (!obj) {
+                continue;
+            }
+            const contents = VSBuffer.fromString(JSON.stringify(obj));
+            todo.push(this.storeForResultId(result.id, obj));
+            toStore.push({ id: result.id, rev: currentRevision, bytes: contents.byteLength });
+            budget -= contents.byteLength;
+        }
+        for (const id of toDelete.keys()) {
+            todo.push(this.deleteForResultId(id).catch(() => undefined));
+        }
+        this.stored.store(toStore);
+        await Promise.all(todo);
+    }
+};
+BaseTestResultStorage = __decorate([
+    __param(0, IUriIdentityService),
+    __param(1, IStorageService),
+    __param(2, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], BaseTestResultStorage);
+export { BaseTestResultStorage };
+export class InMemoryResultStorage extends BaseTestResultStorage {
+    constructor() {
+        super(...arguments);
+        this.cache = new Map();
+    }
+    async readForResultId(id) {
+        return Promise.resolve(this.cache.get(id));
+    }
+    storeForResultId(id, contents) {
+        this.cache.set(id, contents);
+        return Promise.resolve();
+    }
+    deleteForResultId(id) {
+        this.cache.delete(id);
+        return Promise.resolve();
+    }
+    readOutputForResultId(id) {
+        throw new Error('Method not implemented.');
+    }
+    storeOutputForResultId(id, input) {
+        throw new Error('Method not implemented.');
+    }
+    readOutputRangeForResultId(id, offset, length) {
+        throw new Error('Method not implemented.');
+    }
+}
+let TestResultStorage = class TestResultStorage extends BaseTestResultStorage {
+    constructor(uriIdentityService, storageService, logService, workspaceContext, fileService, environmentService) {
+        super(uriIdentityService, storageService, logService);
+        this.fileService = fileService;
+        this.directory = URI.joinPath(environmentService.workspaceStorageHome, workspaceContext.getWorkspace().id, 'testResults');
+    }
+    async readForResultId(id) {
+        const contents = await this.fileService.readFile(this.getResultJsonPath(id));
+        return JSON.parse(contents.value.toString());
+    }
+    storeForResultId(id, contents) {
+        return this.fileService.writeFile(this.getResultJsonPath(id), VSBuffer.fromString(JSON.stringify(contents)));
+    }
+    deleteForResultId(id) {
+        return this.fileService.del(this.getResultJsonPath(id)).catch(() => undefined);
+    }
+    async readOutputRangeForResultId(id, offset, length) {
+        try {
+            const { value } = await this.fileService.readFile(this.getResultOutputPath(id), { position: offset, length });
+            return value;
+        }
+        catch {
+            return VSBuffer.alloc(0);
+        }
+    }
+    async readOutputForResultId(id) {
+        try {
+            const { value } = await this.fileService.readFileStream(this.getResultOutputPath(id));
+            return value;
+        }
+        catch {
+            return bufferToStream(VSBuffer.alloc(0));
+        }
+    }
+    async storeOutputForResultId(id, input) {
+        await this.fileService.createFile(this.getResultOutputPath(id), input);
+    }
+    async persist(results) {
+        await super.persist(results);
+        if (Math.random() < CLEANUP_PROBABILITY) {
+            await this.cleanupDereferenced();
+        }
+    }
+    async cleanupDereferenced() {
+        const { children } = await this.fileService.resolve(this.directory);
+        if (!children) {
+            return;
+        }
+        const stored = new Set(this.stored.get([]).filter(s => s.rev === currentRevision).map(s => s.id));
+        await Promise.all(children
+            .filter(child => !stored.has(child.name.replace(/\.[a-z]+$/, '')))
+            .map(child => this.fileService.del(child.resource).catch(() => undefined)));
+    }
+    getResultJsonPath(id) {
+        return URI.joinPath(this.directory, `${id}.json`);
+    }
+    getResultOutputPath(id) {
+        return URI.joinPath(this.directory, `${id}.output`);
+    }
+};
+TestResultStorage = __decorate([
+    __param(0, IUriIdentityService),
+    __param(1, IStorageService),
+    __param(2, ILogService),
+    __param(3, IWorkspaceContextService),
+    __param(4, IFileService),
+    __param(5, IEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], TestResultStorage);
+export { TestResultStorage };

@@ -1,1 +1,33 @@
-import{stripIcons as a}from"../../../../base/common/iconLabels.js";import"../../../common/editorCommon.js";import"../../../../nls.js";import{isLocalizedString as m}from"../../../../platform/action/common/action.js";import"../../../../platform/commands/common/commands.js";import"../../../../platform/dialogs/common/dialogs.js";import"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/keybinding/common/keybinding.js";import{AbstractCommandsQuickAccessProvider as n}from"../../../../platform/quickinput/browser/commandsQuickAccess.js";import"../../../../platform/telemetry/common/telemetry.js";class z extends n{constructor(o,e,i,t,r,c){super(o,e,i,t,r,c)}getCodeEditorCommandPicks(){const o=this.activeTextEditorControl;if(!o)return[];const e=[];for(const i of o.getSupportedActions()){let t;i.metadata?.description&&(m(i.metadata.description)?t=i.metadata.description:t={original:i.metadata.description,value:i.metadata.description}),e.push({commandId:i.id,commandAlias:i.alias,commandDescription:t,label:a(i.label)||i.id})}return e}}export{z as AbstractEditorCommandsQuickAccessProvider};
+import { stripIcons } from '../../../../base/common/iconLabels.js';
+import { isLocalizedString } from '../../../../platform/action/common/action.js';
+import { AbstractCommandsQuickAccessProvider } from '../../../../platform/quickinput/browser/commandsQuickAccess.js';
+export class AbstractEditorCommandsQuickAccessProvider extends AbstractCommandsQuickAccessProvider {
+    constructor(options, instantiationService, keybindingService, commandService, telemetryService, dialogService) {
+        super(options, instantiationService, keybindingService, commandService, telemetryService, dialogService);
+    }
+    getCodeEditorCommandPicks() {
+        const activeTextEditorControl = this.activeTextEditorControl;
+        if (!activeTextEditorControl) {
+            return [];
+        }
+        const editorCommandPicks = [];
+        for (const editorAction of activeTextEditorControl.getSupportedActions()) {
+            let commandDescription;
+            if (editorAction.metadata?.description) {
+                if (isLocalizedString(editorAction.metadata.description)) {
+                    commandDescription = editorAction.metadata.description;
+                }
+                else {
+                    commandDescription = { original: editorAction.metadata.description, value: editorAction.metadata.description };
+                }
+            }
+            editorCommandPicks.push({
+                commandId: editorAction.id,
+                commandAlias: editorAction.alias,
+                commandDescription,
+                label: stripIcons(editorAction.label) || editorAction.id,
+            });
+        }
+        return editorCommandPicks;
+    }
+}

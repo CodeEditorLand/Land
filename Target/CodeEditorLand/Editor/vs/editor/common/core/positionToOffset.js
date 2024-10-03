@@ -1,2 +1,39 @@
-import{findLastIdxMonotonous as o}from"../../../base/common/arraysFind.js";import{OffsetRange as f}from"./offsetRange.js";import{Position as g}from"./position.js";import{Range as a}from"./range.js";import{TextLength as n}from"./textLength.js";class d{constructor(t){this.text=t;this.lineStartOffsetByLineIdx=[],this.lineStartOffsetByLineIdx.push(0);for(let e=0;e<t.length;e++)t.charAt(e)===`
-`&&this.lineStartOffsetByLineIdx.push(e+1)}lineStartOffsetByLineIdx;getOffset(t){return this.lineStartOffsetByLineIdx[t.lineNumber-1]+t.column-1}getOffsetRange(t){return new f(this.getOffset(t.getStartPosition()),this.getOffset(t.getEndPosition()))}getPosition(t){const e=o(this.lineStartOffsetByLineIdx,r=>r<=t),i=e+1,s=t-this.lineStartOffsetByLineIdx[e]+1;return new g(i,s)}getRange(t){return a.fromPositions(this.getPosition(t.start),this.getPosition(t.endExclusive))}getTextLength(t){return n.ofRange(this.getRange(t))}get textLength(){const t=this.lineStartOffsetByLineIdx.length-1;return new n(t,this.text.length-this.lineStartOffsetByLineIdx[t])}}export{d as PositionOffsetTransformer};
+import { findLastIdxMonotonous } from '../../../base/common/arraysFind.js';
+import { OffsetRange } from './offsetRange.js';
+import { Position } from './position.js';
+import { Range } from './range.js';
+import { TextLength } from './textLength.js';
+export class PositionOffsetTransformer {
+    constructor(text) {
+        this.text = text;
+        this.lineStartOffsetByLineIdx = [];
+        this.lineStartOffsetByLineIdx.push(0);
+        for (let i = 0; i < text.length; i++) {
+            if (text.charAt(i) === '\n') {
+                this.lineStartOffsetByLineIdx.push(i + 1);
+            }
+        }
+    }
+    getOffset(position) {
+        return this.lineStartOffsetByLineIdx[position.lineNumber - 1] + position.column - 1;
+    }
+    getOffsetRange(range) {
+        return new OffsetRange(this.getOffset(range.getStartPosition()), this.getOffset(range.getEndPosition()));
+    }
+    getPosition(offset) {
+        const idx = findLastIdxMonotonous(this.lineStartOffsetByLineIdx, i => i <= offset);
+        const lineNumber = idx + 1;
+        const column = offset - this.lineStartOffsetByLineIdx[idx] + 1;
+        return new Position(lineNumber, column);
+    }
+    getRange(offsetRange) {
+        return Range.fromPositions(this.getPosition(offsetRange.start), this.getPosition(offsetRange.endExclusive));
+    }
+    getTextLength(offsetRange) {
+        return TextLength.ofRange(this.getRange(offsetRange));
+    }
+    get textLength() {
+        const lineIdx = this.lineStartOffsetByLineIdx.length - 1;
+        return new TextLength(lineIdx, this.text.length - this.lineStartOffsetByLineIdx[lineIdx]);
+    }
+}

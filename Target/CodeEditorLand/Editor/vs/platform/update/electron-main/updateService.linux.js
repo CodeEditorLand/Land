@@ -1,1 +1,76 @@
-var S=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var v=(a,o,i,e)=>{for(var t=e>1?void 0:e?u(o,i):o,n=a.length-1,l;n>=0;n--)(l=a[n])&&(t=(e?l(o,i,t):l(t))||t);return e&&t&&S(o,i,t),t},r=(a,o)=>(i,e)=>o(i,e,a);import{CancellationToken as f}from"../../../base/common/cancellation.js";import{IConfigurationService as h}from"../../configuration/common/configuration.js";import{IEnvironmentMainService as I}from"../../environment/electron-main/environmentMainService.js";import{ILifecycleMainService as g}from"../../lifecycle/electron-main/lifecycleMainService.js";import{ILogService as U}from"../../log/common/log.js";import{INativeHostMainService as y}from"../../native/electron-main/nativeHostMainService.js";import{IProductService as b}from"../../product/common/productService.js";import{asJson as A,IRequestService as M}from"../../request/common/request.js";import{ITelemetryService as w}from"../../telemetry/common/telemetry.js";import{State as s,UpdateType as d}from"../common/update.js";import{AbstractUpdateService as C,createUpdateURL as F}from"./abstractUpdateService.js";let c=class extends C{constructor(i,e,t,n,l,p,H,m){super(i,e,n,l,p,m);this.telemetryService=t;this.nativeHostMainService=H}buildUpdateFeedUrl(i){return F(`linux-${process.arch}`,i,this.productService)}doCheckForUpdates(i){this.url&&(this.setState(s.CheckingForUpdates(i)),this.requestService.request({url:this.url},f.None).then(A).then(e=>{!e||!e.url||!e.version||!e.productVersion?(this.telemetryService.publicLog2("update:notAvailable",{explicit:!!i}),this.setState(s.Idle(d.Archive))):this.setState(s.AvailableForDownload(e))}).then(void 0,e=>{this.logService.error(e);const t=i?e.message||e:void 0;this.setState(s.Idle(d.Archive,t))}))}async doDownloadUpdate(i){this.productService.downloadUrl&&this.productService.downloadUrl.length>0?this.nativeHostMainService.openExternal(void 0,this.productService.downloadUrl):i.update.url&&this.nativeHostMainService.openExternal(void 0,i.update.url),this.setState(s.Idle(d.Archive))}};c=v([r(0,g),r(1,h),r(2,w),r(3,I),r(4,M),r(5,U),r(6,y),r(7,b)],c);export{c as LinuxUpdateService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { IEnvironmentMainService } from '../../environment/electron-main/environmentMainService.js';
+import { ILifecycleMainService } from '../../lifecycle/electron-main/lifecycleMainService.js';
+import { ILogService } from '../../log/common/log.js';
+import { INativeHostMainService } from '../../native/electron-main/nativeHostMainService.js';
+import { IProductService } from '../../product/common/productService.js';
+import { asJson, IRequestService } from '../../request/common/request.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+import { State } from '../common/update.js';
+import { AbstractUpdateService, createUpdateURL } from './abstractUpdateService.js';
+let LinuxUpdateService = class LinuxUpdateService extends AbstractUpdateService {
+    constructor(lifecycleMainService, configurationService, telemetryService, environmentMainService, requestService, logService, nativeHostMainService, productService) {
+        super(lifecycleMainService, configurationService, environmentMainService, requestService, logService, productService);
+        this.telemetryService = telemetryService;
+        this.nativeHostMainService = nativeHostMainService;
+    }
+    buildUpdateFeedUrl(quality) {
+        return createUpdateURL(`linux-${process.arch}`, quality, this.productService);
+    }
+    doCheckForUpdates(context) {
+        if (!this.url) {
+            return;
+        }
+        this.setState(State.CheckingForUpdates(context));
+        this.requestService.request({ url: this.url }, CancellationToken.None)
+            .then(asJson)
+            .then(update => {
+            if (!update || !update.url || !update.version || !update.productVersion) {
+                this.telemetryService.publicLog2('update:notAvailable', { explicit: !!context });
+                this.setState(State.Idle(1));
+            }
+            else {
+                this.setState(State.AvailableForDownload(update));
+            }
+        })
+            .then(undefined, err => {
+            this.logService.error(err);
+            const message = !!context ? (err.message || err) : undefined;
+            this.setState(State.Idle(1, message));
+        });
+    }
+    async doDownloadUpdate(state) {
+        if (this.productService.downloadUrl && this.productService.downloadUrl.length > 0) {
+            this.nativeHostMainService.openExternal(undefined, this.productService.downloadUrl);
+        }
+        else if (state.update.url) {
+            this.nativeHostMainService.openExternal(undefined, state.update.url);
+        }
+        this.setState(State.Idle(1));
+    }
+};
+LinuxUpdateService = __decorate([
+    __param(0, ILifecycleMainService),
+    __param(1, IConfigurationService),
+    __param(2, ITelemetryService),
+    __param(3, IEnvironmentMainService),
+    __param(4, IRequestService),
+    __param(5, ILogService),
+    __param(6, INativeHostMainService),
+    __param(7, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], LinuxUpdateService);
+export { LinuxUpdateService };

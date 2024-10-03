@@ -1,1 +1,316 @@
-var y=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var T=(o,s,e,r)=>{for(var t=r>1?void 0:r?w(s,e):s,i=o.length-1,a;i>=0;i--)(a=o[i])&&(t=(r?a(s,e,t):a(t))||t);return r&&t&&y(s,e,t),t},c=(o,s)=>(e,r)=>s(e,r,o);import{Disposable as D,DisposableMap as x,DisposableStore as S}from"../../../base/common/lifecycle.js";import{ExtHostContext as C,MainContext as M}from"../common/extHost.protocol.js";import{Extensions as V,ResolvableTreeItem as m,NoTreeViewError as P}from"../../common/views.js";import{extHostNamedCustomer as b}from"../../services/extensions/common/extHostCustomers.js";import{distinct as _}from"../../../base/common/arrays.js";import{INotificationService as $}from"../../../platform/notification/common/notification.js";import{isUndefinedOrNull as u,isNumber as E}from"../../../base/common/types.js";import{Registry as H}from"../../../platform/registry/common/platform.js";import{IExtensionService as R}from"../../services/extensions/common/extensions.js";import{ILogService as k}from"../../../platform/log/common/log.js";import"../../../base/common/cancellation.js";import{createStringDataTransferItem as A,VSDataTransfer as F}from"../../../base/common/dataTransfer.js";import"../../../base/common/buffer.js";import{DataTransferFileCache as N}from"../common/shared/dataTransferCache.js";import*as O from"../common/extHostTypeConverters.js";import"../../../base/common/htmlContent.js";import{IViewsService as B}from"../../services/views/common/viewsService.js";let v=class extends D{constructor(e,r,t,i,a){super();this.viewsService=r;this.notificationService=t;this.extensionService=i;this.logService=a;this._proxy=e.getProxy(C.ExtHostTreeViews)}_proxy;_dataProviders=this._register(new x);_dndControllers=new Map;async $registerTreeViewDataProvider(e,r){this.logService.trace("MainThreadTreeViews#$registerTreeViewDataProvider",e,r),this.extensionService.whenInstalledExtensionsRegistered().then(()=>{const t=new U(e,this._proxy,this.notificationService),i=new S;this._dataProviders.set(e,{dataProvider:t,dispose:()=>i.dispose()});const a=r.hasHandleDrag||r.hasHandleDrop?new L(e,r.dropMimeTypes,r.dragMimeTypes,r.hasHandleDrag,this._proxy):void 0,n=this.getTreeView(e);n?(n.showCollapseAllAction=r.showCollapseAll,n.canSelectMany=r.canSelectMany,n.manuallyManageCheckboxes=r.manuallyManageCheckboxes,n.dragAndDropController=a,a&&this._dndControllers.set(e,a),n.dataProvider=t,this.registerListeners(e,n,i),this._proxy.$setVisible(e,n.visible)):this.notificationService.error("No view is registered with id: "+e)})}$reveal(e,r,t){return this.logService.trace("MainThreadTreeViews#$reveal",e,r?.item,r?.parentChain,t),this.viewsService.openView(e,t.focus).then(()=>{const i=this.getTreeView(e);if(i&&r)return this.reveal(i,this._dataProviders.get(e).dataProvider,r.item,r.parentChain,t)})}$refresh(e,r){this.logService.trace("MainThreadTreeViews#$refresh",e,r);const t=this.getTreeView(e),i=this._dataProviders.get(e);if(t&&i){const a=i.dataProvider.getItemsToRefresh(r);return t.refresh(a.length?a:void 0)}return Promise.resolve()}$setMessage(e,r){this.logService.trace("MainThreadTreeViews#$setMessage",e,r.toString());const t=this.getTreeView(e);t&&(t.message=r)}$setTitle(e,r,t){this.logService.trace("MainThreadTreeViews#$setTitle",e,r,t);const i=this.getTreeView(e);i&&(i.title=r,i.description=t)}$setBadge(e,r){this.logService.trace("MainThreadTreeViews#$setBadge",e,r?.value,r?.tooltip);const t=this.getTreeView(e);t&&(t.badge=r)}$resolveDropFileData(e,r,t){const i=this._dndControllers.get(e);if(!i)throw new Error("Unknown tree");return i.resolveDropFileData(r,t)}async $disposeTree(e){const r=this.getTreeView(e);r&&(r.dataProvider=void 0),this._dataProviders.deleteAndDispose(e)}async reveal(e,r,t,i,a){a=a||{select:!1,focus:!1};const n=u(a.select)?!1:a.select,p=u(a.focus)?!1:a.focus;let g=Math.min(E(a.expand)?a.expand:a.expand===!0?1:0,3);r.isEmpty()&&await e.refresh();for(const d of i){const h=r.getItem(d.handle);h&&await e.expand(h)}const l=r.getItem(t.handle);if(l){await e.reveal(l),n&&e.setSelection([l]),p===!1?e.setFocus():p&&e.setFocus(l);let d=[l];for(;d.length>0&&g>0;g--)await e.expand(d),d=d.reduce((h,I)=>{const f=r.getItem(I.handle);return f&&f.children&&f.children.length&&h.push(...f.children),h},[])}}registerListeners(e,r,t){t.add(r.onDidExpandItem(i=>this._proxy.$setExpanded(e,i.handle,!0))),t.add(r.onDidCollapseItem(i=>this._proxy.$setExpanded(e,i.handle,!1))),t.add(r.onDidChangeSelectionAndFocus(i=>this._proxy.$setSelectionAndFocus(e,i.selection.map(({handle:a})=>a),i.focus.handle))),t.add(r.onDidChangeVisibility(i=>this._proxy.$setVisible(e,i))),t.add(r.onDidChangeCheckboxState(i=>{this._proxy.$changeCheckboxState(e,i.map(a=>({treeItemHandle:a.handle,newState:a.checkbox?.isChecked??!1})))}))}getTreeView(e){const r=H.as(V.ViewsRegistry).getView(e);return r?r.treeView:null}dispose(){for(const e of this._dataProviders){const r=this.getTreeView(e[0]);r&&(r.dataProvider=void 0)}this._dataProviders.dispose(),this._dndControllers.clear(),super.dispose()}};v=T([b(M.MainThreadTreeViews),c(1,B),c(2,$),c(3,R),c(4,k)],v);class L{constructor(s,e,r,t,i){this.treeViewId=s;this.dropMimeTypes=e;this.dragMimeTypes=r;this.hasWillDrop=t;this._proxy=i}dataTransfersCache=new N;async handleDrop(s,e,r,t,i,a){const n=this.dataTransfersCache.add(s);try{const p=await O.DataTransfer.from(s);return r.isCancellationRequested?void 0:await this._proxy.$handleDrop(this.treeViewId,n.id,p,e?.handle,r,t,i,a)}finally{n.dispose()}}async handleDrag(s,e,r){if(!this.hasWillDrop)return;const t=await this._proxy.$handleDrag(this.treeViewId,s,e,r);if(!t)return;const i=new F;return t.items.forEach(([a,n])=>{i.replace(a,A(n.asString))}),i}resolveDropFileData(s,e){return this.dataTransfersCache.resolveFileData(s,e)}}class U{constructor(s,e,r){this.treeViewId=s;this._proxy=e;this.notificationService=r;this.hasResolve=this._proxy.$hasResolve(this.treeViewId)}itemsMap=new Map;hasResolve;getChildren(s){return s||this.itemsMap.clear(),this._proxy.$getChildren(this.treeViewId,s?s.handle:void 0).then(e=>this.postGetChildren(e),e=>(P.is(e)||this.notificationService.error(e),[]))}getItemsToRefresh(s){const e=[];if(s)for(const r of Object.keys(s)){const t=this.getItem(r);if(t){const i=s[r];if(this.updateTreeItem(t,i),r===i.handle)e.push(t);else{this.itemsMap.delete(r),this.itemsMap.set(t.handle,t);const a=i.parentHandle?this.itemsMap.get(i.parentHandle):null;a&&e.push(a)}}}return e}getItem(s){return this.itemsMap.get(s)}isEmpty(){return this.itemsMap.size===0}async postGetChildren(s){if(s===void 0)return;const e=[],r=await this.hasResolve;if(s)for(const t of s){const i=new m(t,r?a=>this._proxy.$resolve(this.treeViewId,t.handle,a):void 0);this.itemsMap.set(t.handle,i),e.push(i)}return e}updateTreeItem(s,e){if(e.children=e.children?e.children:void 0,s){const r=_([...Object.keys(s instanceof m?s.asTreeItem():s),...Object.keys(e)]);for(const t of r)s[t]=e[t];s instanceof m&&s.resetResolve()}}}export{v as MainThreadTreeViews};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable, DisposableMap, DisposableStore } from '../../../base/common/lifecycle.js';
+import { ExtHostContext, MainContext } from '../common/extHost.protocol.js';
+import { Extensions, ResolvableTreeItem, NoTreeViewError } from '../../common/views.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+import { distinct } from '../../../base/common/arrays.js';
+import { INotificationService } from '../../../platform/notification/common/notification.js';
+import { isUndefinedOrNull, isNumber } from '../../../base/common/types.js';
+import { Registry } from '../../../platform/registry/common/platform.js';
+import { IExtensionService } from '../../services/extensions/common/extensions.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { createStringDataTransferItem, VSDataTransfer } from '../../../base/common/dataTransfer.js';
+import { DataTransferFileCache } from '../common/shared/dataTransferCache.js';
+import * as typeConvert from '../common/extHostTypeConverters.js';
+import { IViewsService } from '../../services/views/common/viewsService.js';
+let MainThreadTreeViews = class MainThreadTreeViews extends Disposable {
+    constructor(extHostContext, viewsService, notificationService, extensionService, logService) {
+        super();
+        this.viewsService = viewsService;
+        this.notificationService = notificationService;
+        this.extensionService = extensionService;
+        this.logService = logService;
+        this._dataProviders = this._register(new DisposableMap());
+        this._dndControllers = new Map();
+        this._proxy = extHostContext.getProxy(ExtHostContext.ExtHostTreeViews);
+    }
+    async $registerTreeViewDataProvider(treeViewId, options) {
+        this.logService.trace('MainThreadTreeViews#$registerTreeViewDataProvider', treeViewId, options);
+        this.extensionService.whenInstalledExtensionsRegistered().then(() => {
+            const dataProvider = new TreeViewDataProvider(treeViewId, this._proxy, this.notificationService);
+            const disposables = new DisposableStore();
+            this._dataProviders.set(treeViewId, { dataProvider, dispose: () => disposables.dispose() });
+            const dndController = (options.hasHandleDrag || options.hasHandleDrop)
+                ? new TreeViewDragAndDropController(treeViewId, options.dropMimeTypes, options.dragMimeTypes, options.hasHandleDrag, this._proxy) : undefined;
+            const viewer = this.getTreeView(treeViewId);
+            if (viewer) {
+                viewer.showCollapseAllAction = options.showCollapseAll;
+                viewer.canSelectMany = options.canSelectMany;
+                viewer.manuallyManageCheckboxes = options.manuallyManageCheckboxes;
+                viewer.dragAndDropController = dndController;
+                if (dndController) {
+                    this._dndControllers.set(treeViewId, dndController);
+                }
+                viewer.dataProvider = dataProvider;
+                this.registerListeners(treeViewId, viewer, disposables);
+                this._proxy.$setVisible(treeViewId, viewer.visible);
+            }
+            else {
+                this.notificationService.error('No view is registered with id: ' + treeViewId);
+            }
+        });
+    }
+    $reveal(treeViewId, itemInfo, options) {
+        this.logService.trace('MainThreadTreeViews#$reveal', treeViewId, itemInfo?.item, itemInfo?.parentChain, options);
+        return this.viewsService.openView(treeViewId, options.focus)
+            .then(() => {
+            const viewer = this.getTreeView(treeViewId);
+            if (viewer && itemInfo) {
+                return this.reveal(viewer, this._dataProviders.get(treeViewId).dataProvider, itemInfo.item, itemInfo.parentChain, options);
+            }
+            return undefined;
+        });
+    }
+    $refresh(treeViewId, itemsToRefreshByHandle) {
+        this.logService.trace('MainThreadTreeViews#$refresh', treeViewId, itemsToRefreshByHandle);
+        const viewer = this.getTreeView(treeViewId);
+        const dataProvider = this._dataProviders.get(treeViewId);
+        if (viewer && dataProvider) {
+            const itemsToRefresh = dataProvider.dataProvider.getItemsToRefresh(itemsToRefreshByHandle);
+            return viewer.refresh(itemsToRefresh.length ? itemsToRefresh : undefined);
+        }
+        return Promise.resolve();
+    }
+    $setMessage(treeViewId, message) {
+        this.logService.trace('MainThreadTreeViews#$setMessage', treeViewId, message.toString());
+        const viewer = this.getTreeView(treeViewId);
+        if (viewer) {
+            viewer.message = message;
+        }
+    }
+    $setTitle(treeViewId, title, description) {
+        this.logService.trace('MainThreadTreeViews#$setTitle', treeViewId, title, description);
+        const viewer = this.getTreeView(treeViewId);
+        if (viewer) {
+            viewer.title = title;
+            viewer.description = description;
+        }
+    }
+    $setBadge(treeViewId, badge) {
+        this.logService.trace('MainThreadTreeViews#$setBadge', treeViewId, badge?.value, badge?.tooltip);
+        const viewer = this.getTreeView(treeViewId);
+        if (viewer) {
+            viewer.badge = badge;
+        }
+    }
+    $resolveDropFileData(destinationViewId, requestId, dataItemId) {
+        const controller = this._dndControllers.get(destinationViewId);
+        if (!controller) {
+            throw new Error('Unknown tree');
+        }
+        return controller.resolveDropFileData(requestId, dataItemId);
+    }
+    async $disposeTree(treeViewId) {
+        const viewer = this.getTreeView(treeViewId);
+        if (viewer) {
+            viewer.dataProvider = undefined;
+        }
+        this._dataProviders.deleteAndDispose(treeViewId);
+    }
+    async reveal(treeView, dataProvider, itemIn, parentChain, options) {
+        options = options ? options : { select: false, focus: false };
+        const select = isUndefinedOrNull(options.select) ? false : options.select;
+        const focus = isUndefinedOrNull(options.focus) ? false : options.focus;
+        let expand = Math.min(isNumber(options.expand) ? options.expand : options.expand === true ? 1 : 0, 3);
+        if (dataProvider.isEmpty()) {
+            await treeView.refresh();
+        }
+        for (const parent of parentChain) {
+            const parentItem = dataProvider.getItem(parent.handle);
+            if (parentItem) {
+                await treeView.expand(parentItem);
+            }
+        }
+        const item = dataProvider.getItem(itemIn.handle);
+        if (item) {
+            await treeView.reveal(item);
+            if (select) {
+                treeView.setSelection([item]);
+            }
+            if (focus === false) {
+                treeView.setFocus();
+            }
+            else if (focus) {
+                treeView.setFocus(item);
+            }
+            let itemsToExpand = [item];
+            for (; itemsToExpand.length > 0 && expand > 0; expand--) {
+                await treeView.expand(itemsToExpand);
+                itemsToExpand = itemsToExpand.reduce((result, itemValue) => {
+                    const item = dataProvider.getItem(itemValue.handle);
+                    if (item && item.children && item.children.length) {
+                        result.push(...item.children);
+                    }
+                    return result;
+                }, []);
+            }
+        }
+    }
+    registerListeners(treeViewId, treeView, disposables) {
+        disposables.add(treeView.onDidExpandItem(item => this._proxy.$setExpanded(treeViewId, item.handle, true)));
+        disposables.add(treeView.onDidCollapseItem(item => this._proxy.$setExpanded(treeViewId, item.handle, false)));
+        disposables.add(treeView.onDidChangeSelectionAndFocus(items => this._proxy.$setSelectionAndFocus(treeViewId, items.selection.map(({ handle }) => handle), items.focus.handle)));
+        disposables.add(treeView.onDidChangeVisibility(isVisible => this._proxy.$setVisible(treeViewId, isVisible)));
+        disposables.add(treeView.onDidChangeCheckboxState(items => {
+            this._proxy.$changeCheckboxState(treeViewId, items.map(item => {
+                return { treeItemHandle: item.handle, newState: item.checkbox?.isChecked ?? false };
+            }));
+        }));
+    }
+    getTreeView(treeViewId) {
+        const viewDescriptor = Registry.as(Extensions.ViewsRegistry).getView(treeViewId);
+        return viewDescriptor ? viewDescriptor.treeView : null;
+    }
+    dispose() {
+        for (const dataprovider of this._dataProviders) {
+            const treeView = this.getTreeView(dataprovider[0]);
+            if (treeView) {
+                treeView.dataProvider = undefined;
+            }
+        }
+        this._dataProviders.dispose();
+        this._dndControllers.clear();
+        super.dispose();
+    }
+};
+MainThreadTreeViews = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadTreeViews),
+    __param(1, IViewsService),
+    __param(2, INotificationService),
+    __param(3, IExtensionService),
+    __param(4, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], MainThreadTreeViews);
+export { MainThreadTreeViews };
+class TreeViewDragAndDropController {
+    constructor(treeViewId, dropMimeTypes, dragMimeTypes, hasWillDrop, _proxy) {
+        this.treeViewId = treeViewId;
+        this.dropMimeTypes = dropMimeTypes;
+        this.dragMimeTypes = dragMimeTypes;
+        this.hasWillDrop = hasWillDrop;
+        this._proxy = _proxy;
+        this.dataTransfersCache = new DataTransferFileCache();
+    }
+    async handleDrop(dataTransfer, targetTreeItem, token, operationUuid, sourceTreeId, sourceTreeItemHandles) {
+        const request = this.dataTransfersCache.add(dataTransfer);
+        try {
+            const dataTransferDto = await typeConvert.DataTransfer.from(dataTransfer);
+            if (token.isCancellationRequested) {
+                return;
+            }
+            return await this._proxy.$handleDrop(this.treeViewId, request.id, dataTransferDto, targetTreeItem?.handle, token, operationUuid, sourceTreeId, sourceTreeItemHandles);
+        }
+        finally {
+            request.dispose();
+        }
+    }
+    async handleDrag(sourceTreeItemHandles, operationUuid, token) {
+        if (!this.hasWillDrop) {
+            return;
+        }
+        const additionalDataTransferDTO = await this._proxy.$handleDrag(this.treeViewId, sourceTreeItemHandles, operationUuid, token);
+        if (!additionalDataTransferDTO) {
+            return;
+        }
+        const additionalDataTransfer = new VSDataTransfer();
+        additionalDataTransferDTO.items.forEach(([type, item]) => {
+            additionalDataTransfer.replace(type, createStringDataTransferItem(item.asString));
+        });
+        return additionalDataTransfer;
+    }
+    resolveDropFileData(requestId, dataItemId) {
+        return this.dataTransfersCache.resolveFileData(requestId, dataItemId);
+    }
+}
+class TreeViewDataProvider {
+    constructor(treeViewId, _proxy, notificationService) {
+        this.treeViewId = treeViewId;
+        this._proxy = _proxy;
+        this.notificationService = notificationService;
+        this.itemsMap = new Map();
+        this.hasResolve = this._proxy.$hasResolve(this.treeViewId);
+    }
+    getChildren(treeItem) {
+        if (!treeItem) {
+            this.itemsMap.clear();
+        }
+        return this._proxy.$getChildren(this.treeViewId, treeItem ? treeItem.handle : undefined)
+            .then(children => this.postGetChildren(children), err => {
+            if (!NoTreeViewError.is(err)) {
+                this.notificationService.error(err);
+            }
+            return [];
+        });
+    }
+    getItemsToRefresh(itemsToRefreshByHandle) {
+        const itemsToRefresh = [];
+        if (itemsToRefreshByHandle) {
+            for (const treeItemHandle of Object.keys(itemsToRefreshByHandle)) {
+                const currentTreeItem = this.getItem(treeItemHandle);
+                if (currentTreeItem) {
+                    const treeItem = itemsToRefreshByHandle[treeItemHandle];
+                    this.updateTreeItem(currentTreeItem, treeItem);
+                    if (treeItemHandle === treeItem.handle) {
+                        itemsToRefresh.push(currentTreeItem);
+                    }
+                    else {
+                        this.itemsMap.delete(treeItemHandle);
+                        this.itemsMap.set(currentTreeItem.handle, currentTreeItem);
+                        const parent = treeItem.parentHandle ? this.itemsMap.get(treeItem.parentHandle) : null;
+                        if (parent) {
+                            itemsToRefresh.push(parent);
+                        }
+                    }
+                }
+            }
+        }
+        return itemsToRefresh;
+    }
+    getItem(treeItemHandle) {
+        return this.itemsMap.get(treeItemHandle);
+    }
+    isEmpty() {
+        return this.itemsMap.size === 0;
+    }
+    async postGetChildren(elements) {
+        if (elements === undefined) {
+            return undefined;
+        }
+        const result = [];
+        const hasResolve = await this.hasResolve;
+        if (elements) {
+            for (const element of elements) {
+                const resolvable = new ResolvableTreeItem(element, hasResolve ? (token) => {
+                    return this._proxy.$resolve(this.treeViewId, element.handle, token);
+                } : undefined);
+                this.itemsMap.set(element.handle, resolvable);
+                result.push(resolvable);
+            }
+        }
+        return result;
+    }
+    updateTreeItem(current, treeItem) {
+        treeItem.children = treeItem.children ? treeItem.children : undefined;
+        if (current) {
+            const properties = distinct([...Object.keys(current instanceof ResolvableTreeItem ? current.asTreeItem() : current),
+                ...Object.keys(treeItem)]);
+            for (const property of properties) {
+                current[property] = treeItem[property];
+            }
+            if (current instanceof ResolvableTreeItem) {
+                current.resetResolve();
+            }
+        }
+    }
+}

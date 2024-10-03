@@ -1,1 +1,50 @@
-import{coalesce as s}from"../../../base/common/arrays.js";import"../../../base/common/cancellation.js";import{toDisposable as o}from"../../../base/common/lifecycle.js";import"./quickInput.js";import{Registry as c}from"../../registry/common/platform.js";var t=(i=>(i[i.PRESERVE=0]="PRESERVE",i[i.LAST=1]="LAST",i))(t||{});const n={Quickaccess:"workbench.contributions.quickaccess"};class d{providers=[];defaultProvider=void 0;registerQuickAccessProvider(e){return e.prefix.length===0?this.defaultProvider=e:this.providers.push(e),this.providers.sort((i,r)=>r.prefix.length-i.prefix.length),o(()=>{this.providers.splice(this.providers.indexOf(e),1),this.defaultProvider===e&&(this.defaultProvider=void 0)})}getQuickAccessProviders(){return s([this.defaultProvider,...this.providers])}getQuickAccessProvider(e){return e&&this.providers.find(r=>e.startsWith(r.prefix))||void 0||this.defaultProvider}clear(){const e=[...this.providers],i=this.defaultProvider;return this.providers=[],this.defaultProvider=void 0,()=>{this.providers=e,this.defaultProvider=i}}}c.add(n.Quickaccess,new d);export{t as DefaultQuickAccessFilterValue,n as Extensions,d as QuickAccessRegistry};
+import { coalesce } from '../../../base/common/arrays.js';
+import { toDisposable } from '../../../base/common/lifecycle.js';
+import { Registry } from '../../registry/common/platform.js';
+export var DefaultQuickAccessFilterValue;
+(function (DefaultQuickAccessFilterValue) {
+    DefaultQuickAccessFilterValue[DefaultQuickAccessFilterValue["PRESERVE"] = 0] = "PRESERVE";
+    DefaultQuickAccessFilterValue[DefaultQuickAccessFilterValue["LAST"] = 1] = "LAST";
+})(DefaultQuickAccessFilterValue || (DefaultQuickAccessFilterValue = {}));
+export const Extensions = {
+    Quickaccess: 'workbench.contributions.quickaccess'
+};
+export class QuickAccessRegistry {
+    constructor() {
+        this.providers = [];
+        this.defaultProvider = undefined;
+    }
+    registerQuickAccessProvider(provider) {
+        if (provider.prefix.length === 0) {
+            this.defaultProvider = provider;
+        }
+        else {
+            this.providers.push(provider);
+        }
+        this.providers.sort((providerA, providerB) => providerB.prefix.length - providerA.prefix.length);
+        return toDisposable(() => {
+            this.providers.splice(this.providers.indexOf(provider), 1);
+            if (this.defaultProvider === provider) {
+                this.defaultProvider = undefined;
+            }
+        });
+    }
+    getQuickAccessProviders() {
+        return coalesce([this.defaultProvider, ...this.providers]);
+    }
+    getQuickAccessProvider(prefix) {
+        const result = prefix ? (this.providers.find(provider => prefix.startsWith(provider.prefix)) || undefined) : undefined;
+        return result || this.defaultProvider;
+    }
+    clear() {
+        const providers = [...this.providers];
+        const defaultProvider = this.defaultProvider;
+        this.providers = [];
+        this.defaultProvider = undefined;
+        return () => {
+            this.providers = providers;
+            this.defaultProvider = defaultProvider;
+        };
+    }
+}
+Registry.add(Extensions.Quickaccess, new QuickAccessRegistry());

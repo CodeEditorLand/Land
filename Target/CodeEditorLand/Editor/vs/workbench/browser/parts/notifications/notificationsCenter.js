@@ -1,1 +1,292 @@
-var V=Object.defineProperty;var M=Object.getOwnPropertyDescriptor;var I=(C,d,i,e)=>{for(var t=e>1?void 0:e?M(d,i):d,n=C.length-1,o;n>=0;n--)(o=C[n])&&(t=(e?o(d,i,t):o(t))||t);return e&&t&&V(d,i,t),t},s=(C,d)=>(i,e)=>d(i,e,C);import"./media/notificationsCenter.css";import"./media/notificationsActions.css";import{NOTIFICATIONS_CENTER_HEADER_FOREGROUND as k,NOTIFICATIONS_CENTER_HEADER_BACKGROUND as x,NOTIFICATIONS_CENTER_BORDER as H}from"../../../common/theme.js";import{IThemeService as K,Themable as B}from"../../../../platform/theme/common/themeService.js";import{NotificationChangeType as u,NotificationViewItemContentChangeKind as y}from"../../../common/notifications.js";import{IWorkbenchLayoutService as G,Parts as N}from"../../../services/layout/browser/layoutService.js";import{Emitter as P}from"../../../../base/common/event.js";import{IContextKeyService as X}from"../../../../platform/contextkey/common/contextkey.js";import{NotificationActionRunner as U}from"./notificationsCommands.js";import{NotificationsList as W}from"./notificationsList.js";import{IInstantiationService as $}from"../../../../platform/instantiation/common/instantiation.js";import{Dimension as D,isAncestorOfActiveElement as E}from"../../../../base/browser/dom.js";import{widgetShadow as z}from"../../../../platform/theme/common/colorRegistry.js";import{IEditorGroupsService as j}from"../../../services/editor/common/editorGroupsService.js";import{localize as h}from"../../../../nls.js";import{ActionBar as q}from"../../../../base/browser/ui/actionbar/actionbar.js";import{ClearAllNotificationsAction as v,ConfigureDoNotDisturbAction as m,ToggleDoNotDisturbBySourceAction as L,HideNotificationsCenterAction as b,ToggleDoNotDisturbAction as T}from"./notificationsActions.js";import{Separator as _,toAction as O}from"../../../../base/common/actions.js";import{IKeybindingService as J}from"../../../../platform/keybinding/common/keybinding.js";import{assertAllDefined as g,assertIsDefined as R}from"../../../../base/common/types.js";import{NotificationsCenterVisibleContext as w}from"../../../common/contextkeys.js";import{INotificationService as Q,NotificationsFilter as a}from"../../../../platform/notification/common/notification.js";import{mainWindow as F}from"../../../../base/browser/window.js";import{IContextMenuService as Y}from"../../../../platform/contextview/browser/contextView.js";import{DropdownMenuActionViewItem as Z}from"../../../../base/browser/ui/dropdown/dropdownActionViewItem.js";import{AccessibilitySignal as ii,IAccessibilitySignalService as ti}from"../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";let c=class extends B{constructor(i,e,t,n,o,f,S,r,p,l,A){super(t);this.container=i;this.model=e;this.instantiationService=n;this.layoutService=o;this.contextKeyService=f;this.editorGroupService=S;this.keybindingService=r;this.notificationService=p;this.accessibilitySignalService=l;this.contextMenuService=A;this.notificationsCenterVisibleContextKey=w.bindTo(f),this.registerListeners()}static MAX_DIMENSIONS=new D(450,400);static MAX_NOTIFICATION_SOURCES=10;_onDidChangeVisibility=this._register(new P);onDidChangeVisibility=this._onDidChangeVisibility.event;notificationsCenterContainer;notificationsCenterHeader;notificationsCenterTitle;notificationsList;_isVisible;workbenchDimensions;notificationsCenterVisibleContextKey=w.bindTo(this.contextKeyService);clearAllAction;configureDoNotDisturbAction;registerListeners(){this._register(this.model.onDidChangeNotification(i=>this.onDidChangeNotification(i))),this._register(this.layoutService.onDidLayoutMainContainer(i=>this.layout(D.lift(i)))),this._register(this.notificationService.onDidChangeFilter(()=>this.onDidChangeFilter()))}onDidChangeFilter(){this.notificationService.getFilter()===a.ERROR&&this.hide()}get isVisible(){return!!this._isVisible}show(){if(this._isVisible){const t=R(this.notificationsList);t.show(),t.focusFirst();return}this.notificationsCenterContainer||this.create(),this.updateTitle();const[i,e]=g(this.notificationsList,this.notificationsCenterContainer);this._isVisible=!0,e.classList.add("visible"),i.show(),this.layout(this.workbenchDimensions),i.updateNotificationsList(0,0,this.model.notifications),i.focusFirst(),this.updateStyles(),this.model.notifications.forEach(t=>t.updateVisibility(!0)),this.notificationsCenterVisibleContextKey.set(!0),this._onDidChangeVisibility.fire()}updateTitle(){const[i,e]=g(this.notificationsCenterTitle,this.clearAllAction);this.model.notifications.length===0?(i.textContent=h("notificationsEmpty","No new notifications"),e.enabled=!1):(i.textContent=h("notifications","Notifications"),e.enabled=this.model.notifications.some(t=>!t.hasProgress))}create(){this.notificationsCenterContainer=document.createElement("div"),this.notificationsCenterContainer.classList.add("notifications-center"),this.notificationsCenterHeader=document.createElement("div"),this.notificationsCenterHeader.classList.add("notifications-center-header"),this.notificationsCenterContainer.appendChild(this.notificationsCenterHeader),this.notificationsCenterTitle=document.createElement("span"),this.notificationsCenterTitle.classList.add("notifications-center-header-title"),this.notificationsCenterHeader.appendChild(this.notificationsCenterTitle);const i=document.createElement("div");i.classList.add("notifications-center-header-toolbar"),this.notificationsCenterHeader.appendChild(i);const e=this._register(this.instantiationService.createInstance(U)),t=this,n=this._register(new q(i,{ariaLabel:h("notificationsToolbar","Notification Center Actions"),actionRunner:e,actionViewItemProvider:(f,S)=>{if(f.id===m.ID)return this._register(this.instantiationService.createInstance(Z,f,{getActions(){const r=[O({id:T.ID,label:t.notificationService.getFilter()===a.OFF?h("turnOnNotifications","Enable Do Not Disturb Mode"):h("turnOffNotifications","Disable Do Not Disturb Mode"),run:()=>t.notificationService.setFilter(t.notificationService.getFilter()===a.OFF?a.ERROR:a.OFF)})],p=t.notificationService.getFilters().sort((l,A)=>l.label.localeCompare(A.label));for(const l of p.slice(0,c.MAX_NOTIFICATION_SOURCES))r.length===1&&r.push(new _),r.push(O({id:`${T.ID}.${l.id}`,label:l.label,checked:l.filter!==a.ERROR,run:()=>t.notificationService.setFilter({...l,filter:l.filter===a.ERROR?a.OFF:a.ERROR})}));return p.length>c.MAX_NOTIFICATION_SOURCES&&(r.push(new _),r.push(t._register(t.instantiationService.createInstance(L,L.ID,h("moreSources","More\u2026"))))),r}},this.contextMenuService,{...S,actionRunner:e,classNames:f.class,keybindingProvider:r=>this.keybindingService.lookupKeybinding(r.id)}))}}));this.clearAllAction=this._register(this.instantiationService.createInstance(v,v.ID,v.LABEL)),n.push(this.clearAllAction,{icon:!0,label:!1,keybinding:this.getKeybindingLabel(this.clearAllAction)}),this.configureDoNotDisturbAction=this._register(this.instantiationService.createInstance(m,m.ID,m.LABEL)),n.push(this.configureDoNotDisturbAction,{icon:!0,label:!1});const o=this._register(this.instantiationService.createInstance(b,b.ID,b.LABEL));n.push(o,{icon:!0,label:!1,keybinding:this.getKeybindingLabel(o)}),this.notificationsList=this.instantiationService.createInstance(W,this.notificationsCenterContainer,{widgetAriaLabel:h("notificationsCenterWidgetAriaLabel","Notifications Center")}),this.container.appendChild(this.notificationsCenterContainer)}getKeybindingLabel(i){const e=this.keybindingService.lookupKeybinding(i.id);return e?e.getLabel():null}onDidChangeNotification(i){if(!this._isVisible)return;let e=!1;const[t,n]=g(this.notificationsList,this.notificationsCenterContainer);switch(i.kind){case u.ADD:t.updateNotificationsList(i.index,0,[i.item]),i.item.updateVisibility(!0);break;case u.CHANGE:switch(i.detail){case y.ACTIONS:t.updateNotificationsList(i.index,1,[i.item]);break;case y.MESSAGE:i.item.expanded&&t.updateNotificationHeight(i.item);break}break;case u.EXPAND_COLLAPSE:t.updateNotificationsList(i.index,1,[i.item]);break;case u.REMOVE:e=E(n),t.updateNotificationsList(i.index,1),i.item.updateVisibility(!1);break}this.updateTitle(),this.model.notifications.length===0&&(this.hide(),e&&this.editorGroupService.activeGroup.focus())}hide(){if(!this._isVisible||!this.notificationsCenterContainer||!this.notificationsList)return;const i=E(this.notificationsCenterContainer);this._isVisible=!1,this.notificationsCenterContainer.classList.remove("visible"),this.notificationsList.hide(),this.model.notifications.forEach(e=>e.updateVisibility(!1)),this.notificationsCenterVisibleContextKey.set(!1),this._onDidChangeVisibility.fire(),i&&this.editorGroupService.activeGroup.focus()}updateStyles(){if(this.notificationsCenterContainer&&this.notificationsCenterHeader){const i=this.getColor(z);this.notificationsCenterContainer.style.boxShadow=i?`0 0 8px 2px ${i}`:"";const e=this.getColor(H);this.notificationsCenterContainer.style.border=e?`1px solid ${e}`:"";const t=this.getColor(k);this.notificationsCenterHeader.style.color=t??"";const n=this.getColor(x);this.notificationsCenterHeader.style.background=n??""}}layout(i){if(this.workbenchDimensions=i,this._isVisible&&this.notificationsCenterContainer){const e=c.MAX_DIMENSIONS.width,t=c.MAX_DIMENSIONS.height;let n=e,o=t;this.workbenchDimensions&&(n=this.workbenchDimensions.width,n-=2*8,o=this.workbenchDimensions.height-35,this.layoutService.isVisible(N.STATUSBAR_PART,F)&&(o-=22),this.layoutService.isVisible(N.TITLEBAR_PART,F)&&(o-=22),o-=2*12),R(this.notificationsList).layout(Math.min(e,n),Math.min(t,o))}}clearAll(){this.hide();for(const i of[...this.model.notifications])i.hasProgress||i.close(),this.accessibilitySignalService.playSignal(ii.clear)}};c=I([s(2,K),s(3,$),s(4,G),s(5,X),s(6,j),s(7,J),s(8,Q),s(9,ti),s(10,Y)],c);export{c as NotificationsCenter};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var NotificationsCenter_1;
+import './media/notificationsCenter.css';
+import './media/notificationsActions.css';
+import { NOTIFICATIONS_CENTER_HEADER_FOREGROUND, NOTIFICATIONS_CENTER_HEADER_BACKGROUND, NOTIFICATIONS_CENTER_BORDER } from '../../../common/theme.js';
+import { IThemeService, Themable } from '../../../../platform/theme/common/themeService.js';
+import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { NotificationActionRunner } from './notificationsCommands.js';
+import { NotificationsList } from './notificationsList.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { Dimension, isAncestorOfActiveElement } from '../../../../base/browser/dom.js';
+import { widgetShadow } from '../../../../platform/theme/common/colorRegistry.js';
+import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+import { localize } from '../../../../nls.js';
+import { ActionBar } from '../../../../base/browser/ui/actionbar/actionbar.js';
+import { ClearAllNotificationsAction, ConfigureDoNotDisturbAction, ToggleDoNotDisturbBySourceAction, HideNotificationsCenterAction, ToggleDoNotDisturbAction } from './notificationsActions.js';
+import { Separator, toAction } from '../../../../base/common/actions.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { assertAllDefined, assertIsDefined } from '../../../../base/common/types.js';
+import { NotificationsCenterVisibleContext } from '../../../common/contextkeys.js';
+import { INotificationService, NotificationsFilter } from '../../../../platform/notification/common/notification.js';
+import { mainWindow } from '../../../../base/browser/window.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { DropdownMenuActionViewItem } from '../../../../base/browser/ui/dropdown/dropdownActionViewItem.js';
+import { AccessibilitySignal, IAccessibilitySignalService } from '../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+let NotificationsCenter = class NotificationsCenter extends Themable {
+    static { NotificationsCenter_1 = this; }
+    static { this.MAX_DIMENSIONS = new Dimension(450, 400); }
+    static { this.MAX_NOTIFICATION_SOURCES = 10; }
+    constructor(container, model, themeService, instantiationService, layoutService, contextKeyService, editorGroupService, keybindingService, notificationService, accessibilitySignalService, contextMenuService) {
+        super(themeService);
+        this.container = container;
+        this.model = model;
+        this.instantiationService = instantiationService;
+        this.layoutService = layoutService;
+        this.contextKeyService = contextKeyService;
+        this.editorGroupService = editorGroupService;
+        this.keybindingService = keybindingService;
+        this.notificationService = notificationService;
+        this.accessibilitySignalService = accessibilitySignalService;
+        this.contextMenuService = contextMenuService;
+        this._onDidChangeVisibility = this._register(new Emitter());
+        this.onDidChangeVisibility = this._onDidChangeVisibility.event;
+        this.notificationsCenterVisibleContextKey = NotificationsCenterVisibleContext.bindTo(this.contextKeyService);
+        this.notificationsCenterVisibleContextKey = NotificationsCenterVisibleContext.bindTo(contextKeyService);
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.model.onDidChangeNotification(e => this.onDidChangeNotification(e)));
+        this._register(this.layoutService.onDidLayoutMainContainer(dimension => this.layout(Dimension.lift(dimension))));
+        this._register(this.notificationService.onDidChangeFilter(() => this.onDidChangeFilter()));
+    }
+    onDidChangeFilter() {
+        if (this.notificationService.getFilter() === NotificationsFilter.ERROR) {
+            this.hide();
+        }
+    }
+    get isVisible() {
+        return !!this._isVisible;
+    }
+    show() {
+        if (this._isVisible) {
+            const notificationsList = assertIsDefined(this.notificationsList);
+            notificationsList.show();
+            notificationsList.focusFirst();
+            return;
+        }
+        if (!this.notificationsCenterContainer) {
+            this.create();
+        }
+        this.updateTitle();
+        const [notificationsList, notificationsCenterContainer] = assertAllDefined(this.notificationsList, this.notificationsCenterContainer);
+        this._isVisible = true;
+        notificationsCenterContainer.classList.add('visible');
+        notificationsList.show();
+        this.layout(this.workbenchDimensions);
+        notificationsList.updateNotificationsList(0, 0, this.model.notifications);
+        notificationsList.focusFirst();
+        this.updateStyles();
+        this.model.notifications.forEach(notification => notification.updateVisibility(true));
+        this.notificationsCenterVisibleContextKey.set(true);
+        this._onDidChangeVisibility.fire();
+    }
+    updateTitle() {
+        const [notificationsCenterTitle, clearAllAction] = assertAllDefined(this.notificationsCenterTitle, this.clearAllAction);
+        if (this.model.notifications.length === 0) {
+            notificationsCenterTitle.textContent = localize('notificationsEmpty', "No new notifications");
+            clearAllAction.enabled = false;
+        }
+        else {
+            notificationsCenterTitle.textContent = localize('notifications', "Notifications");
+            clearAllAction.enabled = this.model.notifications.some(notification => !notification.hasProgress);
+        }
+    }
+    create() {
+        this.notificationsCenterContainer = document.createElement('div');
+        this.notificationsCenterContainer.classList.add('notifications-center');
+        this.notificationsCenterHeader = document.createElement('div');
+        this.notificationsCenterHeader.classList.add('notifications-center-header');
+        this.notificationsCenterContainer.appendChild(this.notificationsCenterHeader);
+        this.notificationsCenterTitle = document.createElement('span');
+        this.notificationsCenterTitle.classList.add('notifications-center-header-title');
+        this.notificationsCenterHeader.appendChild(this.notificationsCenterTitle);
+        const toolbarContainer = document.createElement('div');
+        toolbarContainer.classList.add('notifications-center-header-toolbar');
+        this.notificationsCenterHeader.appendChild(toolbarContainer);
+        const actionRunner = this._register(this.instantiationService.createInstance(NotificationActionRunner));
+        const that = this;
+        const notificationsToolBar = this._register(new ActionBar(toolbarContainer, {
+            ariaLabel: localize('notificationsToolbar', "Notification Center Actions"),
+            actionRunner,
+            actionViewItemProvider: (action, options) => {
+                if (action.id === ConfigureDoNotDisturbAction.ID) {
+                    return this._register(this.instantiationService.createInstance(DropdownMenuActionViewItem, action, {
+                        getActions() {
+                            const actions = [toAction({
+                                    id: ToggleDoNotDisturbAction.ID,
+                                    label: that.notificationService.getFilter() === NotificationsFilter.OFF ? localize('turnOnNotifications', "Enable Do Not Disturb Mode") : localize('turnOffNotifications', "Disable Do Not Disturb Mode"),
+                                    run: () => that.notificationService.setFilter(that.notificationService.getFilter() === NotificationsFilter.OFF ? NotificationsFilter.ERROR : NotificationsFilter.OFF)
+                                })];
+                            const sortedFilters = that.notificationService.getFilters().sort((a, b) => a.label.localeCompare(b.label));
+                            for (const source of sortedFilters.slice(0, NotificationsCenter_1.MAX_NOTIFICATION_SOURCES)) {
+                                if (actions.length === 1) {
+                                    actions.push(new Separator());
+                                }
+                                actions.push(toAction({
+                                    id: `${ToggleDoNotDisturbAction.ID}.${source.id}`,
+                                    label: source.label,
+                                    checked: source.filter !== NotificationsFilter.ERROR,
+                                    run: () => that.notificationService.setFilter({
+                                        ...source,
+                                        filter: source.filter === NotificationsFilter.ERROR ? NotificationsFilter.OFF : NotificationsFilter.ERROR
+                                    })
+                                }));
+                            }
+                            if (sortedFilters.length > NotificationsCenter_1.MAX_NOTIFICATION_SOURCES) {
+                                actions.push(new Separator());
+                                actions.push(that._register(that.instantiationService.createInstance(ToggleDoNotDisturbBySourceAction, ToggleDoNotDisturbBySourceAction.ID, localize('moreSources', "More…"))));
+                            }
+                            return actions;
+                        },
+                    }, this.contextMenuService, {
+                        ...options,
+                        actionRunner,
+                        classNames: action.class,
+                        keybindingProvider: action => this.keybindingService.lookupKeybinding(action.id)
+                    }));
+                }
+                return undefined;
+            }
+        }));
+        this.clearAllAction = this._register(this.instantiationService.createInstance(ClearAllNotificationsAction, ClearAllNotificationsAction.ID, ClearAllNotificationsAction.LABEL));
+        notificationsToolBar.push(this.clearAllAction, { icon: true, label: false, keybinding: this.getKeybindingLabel(this.clearAllAction) });
+        this.configureDoNotDisturbAction = this._register(this.instantiationService.createInstance(ConfigureDoNotDisturbAction, ConfigureDoNotDisturbAction.ID, ConfigureDoNotDisturbAction.LABEL));
+        notificationsToolBar.push(this.configureDoNotDisturbAction, { icon: true, label: false });
+        const hideAllAction = this._register(this.instantiationService.createInstance(HideNotificationsCenterAction, HideNotificationsCenterAction.ID, HideNotificationsCenterAction.LABEL));
+        notificationsToolBar.push(hideAllAction, { icon: true, label: false, keybinding: this.getKeybindingLabel(hideAllAction) });
+        this.notificationsList = this.instantiationService.createInstance(NotificationsList, this.notificationsCenterContainer, {
+            widgetAriaLabel: localize('notificationsCenterWidgetAriaLabel', "Notifications Center")
+        });
+        this.container.appendChild(this.notificationsCenterContainer);
+    }
+    getKeybindingLabel(action) {
+        const keybinding = this.keybindingService.lookupKeybinding(action.id);
+        return keybinding ? keybinding.getLabel() : null;
+    }
+    onDidChangeNotification(e) {
+        if (!this._isVisible) {
+            return;
+        }
+        let focusEditor = false;
+        const [notificationsList, notificationsCenterContainer] = assertAllDefined(this.notificationsList, this.notificationsCenterContainer);
+        switch (e.kind) {
+            case 0:
+                notificationsList.updateNotificationsList(e.index, 0, [e.item]);
+                e.item.updateVisibility(true);
+                break;
+            case 1:
+                switch (e.detail) {
+                    case 2:
+                        notificationsList.updateNotificationsList(e.index, 1, [e.item]);
+                        break;
+                    case 1:
+                        if (e.item.expanded) {
+                            notificationsList.updateNotificationHeight(e.item);
+                        }
+                        break;
+                }
+                break;
+            case 2:
+                notificationsList.updateNotificationsList(e.index, 1, [e.item]);
+                break;
+            case 3:
+                focusEditor = isAncestorOfActiveElement(notificationsCenterContainer);
+                notificationsList.updateNotificationsList(e.index, 1);
+                e.item.updateVisibility(false);
+                break;
+        }
+        this.updateTitle();
+        if (this.model.notifications.length === 0) {
+            this.hide();
+            if (focusEditor) {
+                this.editorGroupService.activeGroup.focus();
+            }
+        }
+    }
+    hide() {
+        if (!this._isVisible || !this.notificationsCenterContainer || !this.notificationsList) {
+            return;
+        }
+        const focusEditor = isAncestorOfActiveElement(this.notificationsCenterContainer);
+        this._isVisible = false;
+        this.notificationsCenterContainer.classList.remove('visible');
+        this.notificationsList.hide();
+        this.model.notifications.forEach(notification => notification.updateVisibility(false));
+        this.notificationsCenterVisibleContextKey.set(false);
+        this._onDidChangeVisibility.fire();
+        if (focusEditor) {
+            this.editorGroupService.activeGroup.focus();
+        }
+    }
+    updateStyles() {
+        if (this.notificationsCenterContainer && this.notificationsCenterHeader) {
+            const widgetShadowColor = this.getColor(widgetShadow);
+            this.notificationsCenterContainer.style.boxShadow = widgetShadowColor ? `0 0 8px 2px ${widgetShadowColor}` : '';
+            const borderColor = this.getColor(NOTIFICATIONS_CENTER_BORDER);
+            this.notificationsCenterContainer.style.border = borderColor ? `1px solid ${borderColor}` : '';
+            const headerForeground = this.getColor(NOTIFICATIONS_CENTER_HEADER_FOREGROUND);
+            this.notificationsCenterHeader.style.color = headerForeground ?? '';
+            const headerBackground = this.getColor(NOTIFICATIONS_CENTER_HEADER_BACKGROUND);
+            this.notificationsCenterHeader.style.background = headerBackground ?? '';
+        }
+    }
+    layout(dimension) {
+        this.workbenchDimensions = dimension;
+        if (this._isVisible && this.notificationsCenterContainer) {
+            const maxWidth = NotificationsCenter_1.MAX_DIMENSIONS.width;
+            const maxHeight = NotificationsCenter_1.MAX_DIMENSIONS.height;
+            let availableWidth = maxWidth;
+            let availableHeight = maxHeight;
+            if (this.workbenchDimensions) {
+                availableWidth = this.workbenchDimensions.width;
+                availableWidth -= (2 * 8);
+                availableHeight = this.workbenchDimensions.height - 35;
+                if (this.layoutService.isVisible("workbench.parts.statusbar", mainWindow)) {
+                    availableHeight -= 22;
+                }
+                if (this.layoutService.isVisible("workbench.parts.titlebar", mainWindow)) {
+                    availableHeight -= 22;
+                }
+                availableHeight -= (2 * 12);
+            }
+            const notificationsList = assertIsDefined(this.notificationsList);
+            notificationsList.layout(Math.min(maxWidth, availableWidth), Math.min(maxHeight, availableHeight));
+        }
+    }
+    clearAll() {
+        this.hide();
+        for (const notification of [...this.model.notifications]) {
+            if (!notification.hasProgress) {
+                notification.close();
+            }
+            this.accessibilitySignalService.playSignal(AccessibilitySignal.clear);
+        }
+    }
+};
+NotificationsCenter = NotificationsCenter_1 = __decorate([
+    __param(2, IThemeService),
+    __param(3, IInstantiationService),
+    __param(4, IWorkbenchLayoutService),
+    __param(5, IContextKeyService),
+    __param(6, IEditorGroupsService),
+    __param(7, IKeybindingService),
+    __param(8, INotificationService),
+    __param(9, IAccessibilitySignalService),
+    __param(10, IContextMenuService),
+    __metadata("design:paramtypes", [HTMLElement, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], NotificationsCenter);
+export { NotificationsCenter };

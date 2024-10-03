@@ -1,1 +1,107 @@
-import{refineServiceDecorator as E}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../base/common/event.js";import{ILayoutService as P}from"../../../../platform/layout/browser/layoutService.js";import"../../../browser/part.js";import"../../../../base/browser/dom.js";import"../../../../base/browser/ui/grid/grid.js";import{isMacintosh as p,isNative as T,isWeb as u}from"../../../../base/common/platform.js";import{isAuxiliaryWindow as m}from"../../../../base/browser/window.js";import{CustomTitleBarVisibility as A,TitleBarSetting as I,getMenuBarVisibility as c,hasCustomTitlebar as R,hasNativeTitlebar as O}from"../../../../platform/window/common/window.js";import{isFullscreen as b,isWCOEnabled as L}from"../../../../base/browser/browser.js";import"../../../../platform/configuration/common/configuration.js";import"../../../../base/common/lifecycle.js";const Z=E(P);var _=(n=>(n.TITLEBAR_PART="workbench.parts.titlebar",n.BANNER_PART="workbench.parts.banner",n.ACTIVITYBAR_PART="workbench.parts.activitybar",n.SIDEBAR_PART="workbench.parts.sidebar",n.PANEL_PART="workbench.parts.panel",n.AUXILIARYBAR_PART="workbench.parts.auxiliarybar",n.EDITOR_PART="workbench.parts.editor",n.STATUSBAR_PART="workbench.parts.statusbar",n))(_||{}),M=(n=>(n.SHOW_TABS="zenMode.showTabs",n.HIDE_LINENUMBERS="zenMode.hideLineNumbers",n.HIDE_STATUSBAR="zenMode.hideStatusBar",n.HIDE_ACTIVITYBAR="zenMode.hideActivityBar",n.CENTER_LAYOUT="zenMode.centerLayout",n.FULLSCREEN="zenMode.fullScreen",n.RESTORE="zenMode.restore",n.SILENT_NOTIFICATIONS="zenMode.silentNotifications",n))(M||{}),S=(o=>(o.ACTIVITY_BAR_LOCATION="workbench.activityBar.location",o.EDITOR_TABS_MODE="workbench.editor.showTabs",o.EDITOR_ACTIONS_LOCATION="workbench.editor.editorActionsLocation",o.COMMAND_CENTER="window.commandCenter",o.LAYOUT_ACTIONS="workbench.layoutControl.enabled",o))(S||{}),W=(t=>(t.DEFAULT="default",t.TOP="top",t.BOTTOM="bottom",t.HIDDEN="hidden",t))(W||{}),f=(i=>(i.MULTIPLE="multiple",i.SINGLE="single",i.NONE="none",i))(f||{}),g=(i=>(i.DEFAULT="default",i.TITLEBAR="titleBar",i.HIDDEN="hidden",i))(g||{}),B=(t=>(t[t.LEFT=0]="LEFT",t[t.RIGHT=1]="RIGHT",t[t.BOTTOM=2]="BOTTOM",t[t.TOP=3]="TOP",t))(B||{});function ee(e){return e===2||e===3}var N=(i=>(i[i.ALWAYS=0]="ALWAYS",i[i.NEVER=1]="NEVER",i[i.REMEMBER_LAST=2]="REMEMBER_LAST",i))(N||{});function s(e){switch(e){case 0:return"left";case 1:return"right";case 2:return"bottom";case 3:return"top";default:return"bottom"}}const h={[s(0)]:0,[s(1)]:1,[s(2)]:2,[s(3)]:3};function te(e){return h[e]}function d(e){switch(e){case 0:return"always";case 1:return"never";case 2:return"preserve";default:return"preserve"}}const w={[d(0)]:0,[d(1)]:1,[d(2)]:2};function ie(e){return w[e]}function ne(e,a,r,i){if(!R(e))return!1;if(i)return!e.getValue("zenMode.fullScreen");const t=b(a),o=O(e);if(!u){const l=e.getValue(I.CUSTOM_TITLE_BAR_VISIBILITY);if(l===A.NEVER&&o||l===A.WINDOWED&&t)return!1}if(!D(e))return!0;if(o)return!1;if(p&&T)return!t;if(T&&!t||L()&&!t)return!0;switch(m(a)?"hidden":c(e)){case"classic":return!t||!!r;case"compact":case"hidden":return!1;case"toggle":return!!r;case"visible":return!0;default:return u?!1:!t||!!r}}function D(e){if(e.getValue("window.commandCenter"))return!1;const a=e.getValue("workbench.activityBar.location");if(a==="top"||a==="bottom")return!1;const r=e.getValue("workbench.editor.editorActionsLocation"),i=e.getValue("workbench.editor.showTabs");return!(r==="titleBar"||r==="default"&&i==="none"||e.getValue("workbench.layoutControl.enabled"))}export{W as ActivityBarPosition,g as EditorActionsLocation,f as EditorTabsMode,Z as IWorkbenchLayoutService,S as LayoutSettings,N as PanelOpensMaximizedOptions,_ as Parts,B as Position,M as ZenModeSettings,ee as isHorizontal,ie as panelOpensMaximizedFromString,te as positionFromString,s as positionToString,ne as shouldShowCustomTitleBar};
+import { refineServiceDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILayoutService } from '../../../../platform/layout/browser/layoutService.js';
+import { isMacintosh, isNative, isWeb } from '../../../../base/common/platform.js';
+import { isAuxiliaryWindow } from '../../../../base/browser/window.js';
+import { getMenuBarVisibility, hasCustomTitlebar, hasNativeTitlebar } from '../../../../platform/window/common/window.js';
+import { isFullscreen, isWCOEnabled } from '../../../../base/browser/browser.js';
+export const IWorkbenchLayoutService = refineServiceDecorator(ILayoutService);
+export function isHorizontal(position) {
+    return position === 2 || position === 3;
+}
+export function positionToString(position) {
+    switch (position) {
+        case 0: return 'left';
+        case 1: return 'right';
+        case 2: return 'bottom';
+        case 3: return 'top';
+        default: return 'bottom';
+    }
+}
+const positionsByString = {
+    [positionToString(0)]: 0,
+    [positionToString(1)]: 1,
+    [positionToString(2)]: 2,
+    [positionToString(3)]: 3
+};
+export function positionFromString(str) {
+    return positionsByString[str];
+}
+function panelOpensMaximizedSettingToString(setting) {
+    switch (setting) {
+        case 0: return 'always';
+        case 1: return 'never';
+        case 2: return 'preserve';
+        default: return 'preserve';
+    }
+}
+const panelOpensMaximizedByString = {
+    [panelOpensMaximizedSettingToString(0)]: 0,
+    [panelOpensMaximizedSettingToString(1)]: 1,
+    [panelOpensMaximizedSettingToString(2)]: 2
+};
+export function panelOpensMaximizedFromString(str) {
+    return panelOpensMaximizedByString[str];
+}
+export function shouldShowCustomTitleBar(configurationService, window, menuBarToggled, zenModeActive) {
+    if (!hasCustomTitlebar(configurationService)) {
+        return false;
+    }
+    if (zenModeActive) {
+        return !configurationService.getValue("zenMode.fullScreen");
+    }
+    const inFullscreen = isFullscreen(window);
+    const nativeTitleBarEnabled = hasNativeTitlebar(configurationService);
+    if (!isWeb) {
+        const showCustomTitleBar = configurationService.getValue("window.customTitleBarVisibility");
+        if (showCustomTitleBar === "never" && nativeTitleBarEnabled || showCustomTitleBar === "windowed" && inFullscreen) {
+            return false;
+        }
+    }
+    if (!isTitleBarEmpty(configurationService)) {
+        return true;
+    }
+    if (nativeTitleBarEnabled) {
+        return false;
+    }
+    if (isMacintosh && isNative) {
+        return !inFullscreen;
+    }
+    if (isNative && !inFullscreen) {
+        return true;
+    }
+    if (isWCOEnabled() && !inFullscreen) {
+        return true;
+    }
+    const menuBarVisibility = !isAuxiliaryWindow(window) ? getMenuBarVisibility(configurationService) : 'hidden';
+    switch (menuBarVisibility) {
+        case 'classic':
+            return !inFullscreen || !!menuBarToggled;
+        case 'compact':
+        case 'hidden':
+            return false;
+        case 'toggle':
+            return !!menuBarToggled;
+        case 'visible':
+            return true;
+        default:
+            return isWeb ? false : !inFullscreen || !!menuBarToggled;
+    }
+}
+function isTitleBarEmpty(configurationService) {
+    if (configurationService.getValue("window.commandCenter")) {
+        return false;
+    }
+    const activityBarPosition = configurationService.getValue("workbench.activityBar.location");
+    if (activityBarPosition === "top" || activityBarPosition === "bottom") {
+        return false;
+    }
+    const editorActionsLocation = configurationService.getValue("workbench.editor.editorActionsLocation");
+    const editorTabsMode = configurationService.getValue("workbench.editor.showTabs");
+    if (editorActionsLocation === "titleBar" || editorActionsLocation === "default" && editorTabsMode === "none") {
+        return false;
+    }
+    if (configurationService.getValue("workbench.layoutControl.enabled")) {
+        return false;
+    }
+    return true;
+}

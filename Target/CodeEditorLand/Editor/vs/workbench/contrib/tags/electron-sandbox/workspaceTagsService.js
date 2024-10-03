@@ -1,1 +1,722 @@
-var H=Object.defineProperty;var N=Object.getOwnPropertyDescriptor;var I=(f,e,c,s)=>{for(var i=s>1?void 0:s?N(e,c):e,u=f.length-1,l;u>=0;u--)(l=f[u])&&(i=(s?l(e,c,i):l(i))||i);return s&&i&&H(e,c,i),i},v=(f,e)=>(c,s)=>e(c,s,f);import{IFileService as B}from"../../../../platform/files/common/files.js";import{IWorkspaceContextService as U,WorkbenchState as b}from"../../../../platform/workspace/common/workspace.js";import{IWorkbenchEnvironmentService as Y}from"../../../services/environment/common/environmentService.js";import{ITextFileService as K}from"../../../services/textfile/common/textfiles.js";import{URI as A}from"../../../../base/common/uri.js";import{Schemas as Q}from"../../../../base/common/network.js";import{InstantiationType as V,registerSingleton as X}from"../../../../platform/instantiation/common/extensions.js";import{IWorkspaceTagsService as Z}from"../common/workspaceTags.js";import{getHashedRemotesFromConfig as ee}from"./workspaceTags.js";import{splitLines as x}from"../../../../base/common/strings.js";import{MavenArtifactIdRegex as ae,MavenDependenciesRegex as re,MavenDependencyRegex as te,GradleDependencyCompactRegex as ie,GradleDependencyLooseRegex as se,MavenGroupIdRegex as oe,JavaLibrariesToLookFor as ne}from"../common/javaWorkspaceTags.js";import{hashAsync as ce}from"../../../../base/common/hash.js";const ue=["@azure","@azure/ai","@azure/core","@azure/cosmos","@azure/event","@azure/identity","@azure/keyvault","@azure/search","@azure/storage"],ge=["express","sails","koa","hapi","socket.io","restify","next","nuxt","@nestjs/core","strapi","gatsby","react","react-native","react-native-macos","react-native-windows","rnpm-plugin-windows","@angular/core","@ionic","vue","tns-core-modules","@nativescript/core","electron","aws-sdk","aws-amplify","azure","azure-storage","chroma","faiss","firebase","@google-cloud/common","heroku-cli","langchain","milvus","openai","pinecone","qdrant","@microsoft/teams-js","@microsoft/office-js","@microsoft/office-js-helpers","@types/office-js","@types/office-runtime","office-ui-fabric-react","@uifabric/icons","@uifabric/merge-styles","@uifabric/styling","@uifabric/experiments","@uifabric/utilities","@microsoft/rush","lerna","just-task","beachball","playwright","playwright-cli","@playwright/test","playwright-core","playwright-chromium","playwright-firefox","playwright-webkit","cypress","nightwatch","protractor","puppeteer","selenium-webdriver","webdriverio","gherkin","@azure/app-configuration","@azure/cosmos-sign","@azure/cosmos-language-service","@azure/synapse-spark","@azure/synapse-monitoring","@azure/synapse-managed-private-endpoints","@azure/synapse-artifacts","@azure/synapse-access-control","@azure/ai-metrics-advisor","@azure/service-bus","@azure/keyvault-secrets","@azure/keyvault-keys","@azure/keyvault-certificates","@azure/keyvault-admin","@azure/digital-twins-core","@azure/cognitiveservices-anomalydetector","@azure/ai-anomaly-detector","@azure/core-xml","@azure/core-tracing","@azure/core-paging","@azure/core-https","@azure/core-client","@azure/core-asynciterator-polyfill","@azure/core-arm","@azure/amqp-common","@azure/core-lro","@azure/logger","@azure/core-http","@azure/core-auth","@azure/core-amqp","@azure/abort-controller","@azure/eventgrid","@azure/storage-file-datalake","@azure/search-documents","@azure/storage-file","@azure/storage-datalake","@azure/storage-queue","@azure/storage-file-share","@azure/storage-blob-changefeed","@azure/storage-blob","@azure/cognitiveservices-formrecognizer","@azure/ai-form-recognizer","@azure/cognitiveservices-textanalytics","@azure/ai-text-analytics","@azure/event-processor-host","@azure/schema-registry-avro","@azure/schema-registry","@azure/eventhubs-checkpointstore-blob","@azure/event-hubs","@azure/communication-signaling","@azure/communication-calling","@azure/communication-sms","@azure/communication-common","@azure/communication-chat","@azure/communication-administration","@azure/attestation","@azure/data-tables","@azure/arm-appservice","@azure-rest/ai-inference","@azure-rest/arm-appservice","@azure/arm-appcontainers","@azure/arm-rediscache","@azure/arm-redisenterprisecache","@azure/arm-apimanagement","@azure/arm-logic","@azure/app-configuration","@azure/arm-appconfiguration","@azure/arm-dashboard","@azure/arm-signalr","@azure/arm-securitydevops","@azure/arm-labservices","@azure/web-pubsub","@azure/web-pubsub-client","@azure/web-pubsub-client-protobuf","@azure/web-pubsub-express","@azure/openai","@azure/arm-hybridkubernetes","@azure/arm-kubernetesconfiguration","@anthropic-ai/sdk","@anthropic-ai/tokenizer","@arizeai/openinference-instrumentation-langchain","@arizeai/openinference-instrumentation-openai","@aws-sdk-client-bedrock-runtime","@aws-sdk/client-bedrock","@datastax/astra-db-ts","fireworks-js","@google-cloud/aiplatform","@huggingface/inference","humanloop","@langchain/anthropic","langsmith","llamaindex","@mistralai/mistralai","mongodb","neo4j-driver","ollama","onnxruntime-node","onnxruntime-web","pg","postgresql","redis","@supabase/supabase-js","@tensorflow/tfjs","@xenova/transformers","tika","weaviate-client","@zilliz/milvus2-sdk-node","@azure-rest/ai-anomaly-detector","@azure-rest/ai-content-safety","@azure-rest/ai-document-intelligence","@azure-rest/ai-document-translator","@azure-rest/ai-personalizer","@azure-rest/ai-translation-text","@azure-rest/ai-vision-image-analysis","@azure/ai-anomaly-detector","@azure/ai-form-recognizer","@azure/ai-language-conversations","@azure/ai-language-text","@azure/ai-text-analytics","@azure/arm-botservice","@azure/arm-cognitiveservices","@azure/arm-machinelearning","@azure/cognitiveservices-contentmoderator","@azure/cognitiveservices-customvision-prediction","@azure/cognitiveservices-customvision-training","@azure/cognitiveservices-face","@azure/cognitiveservices-translatortext","microsoft-cognitiveservices-speech-sdk","@google/generative-ai"],le=["azure-ai","azure-cognitiveservices","azure-core","azure-cosmos","azure-event","azure-identity","azure-keyvault","azure-mgmt","azure-ml","azure-search","azure-storage"],pe=["azure","azure-ai-inference","azure-ai-language-conversations","azure-ai-language-questionanswering","azure-ai-ml","azure-ai-translation-document","azure-appconfiguration","azure-appconfiguration-provider","azure-loganalytics","azure-synapse-nspkg","azure-synapse-spark","azure-synapse-artifacts","azure-synapse-accesscontrol","azure-synapse","azure-cognitiveservices-vision-nspkg","azure-cognitiveservices-search-nspkg","azure-cognitiveservices-nspkg","azure-cognitiveservices-language-nspkg","azure-cognitiveservices-knowledge-nspkg","azure-containerregistry","azure-communication-identity","azure-communication-phonenumbers","azure-communication-email","azure-communication-rooms","azure-communication-callautomation","azure-confidentialledger","azure-containerregistry","azure-developer-loadtesting","azure-iot-deviceupdate","azure-messaging-webpubsubservice","azure-monitor","azure-monitor-query","azure-monitor-ingestion","azure-mgmt-appcontainers","azure-mgmt-apimanagement","azure-mgmt-web","azure-mgmt-redis","azure-mgmt-redisenterprise","azure-mgmt-logic","azure-appconfiguration","azure-appconfiguration-provider","azure-mgmt-appconfiguration","azure-mgmt-dashboard","azure-mgmt-signalr","azure-messaging-webpubsubservice","azure-mgmt-webpubsub","azure-mgmt-securitydevops","azure-mgmt-labservices","azure-ai-metricsadvisor","azure-servicebus","azureml-sdk","azure-keyvault-nspkg","azure-keyvault-secrets","azure-keyvault-keys","azure-keyvault-certificates","azure-keyvault-administration","azure-digitaltwins-nspkg","azure-digitaltwins-core","azure-cognitiveservices-anomalydetector","azure-ai-anomalydetector","azure-applicationinsights","azure-core-tracing-opentelemetry","azure-core-tracing-opencensus","azure-nspkg","azure-common","azure-eventgrid","azure-storage-file-datalake","azure-search-nspkg","azure-search-documents","azure-storage-nspkg","azure-storage-file","azure-storage-common","azure-storage-queue","azure-storage-file-share","azure-storage-blob-changefeed","azure-storage-blob","azure-cognitiveservices-formrecognizer","azure-ai-formrecognizer","azure-ai-nspkg","azure-cognitiveservices-language-textanalytics","azure-ai-textanalytics","azure-schemaregistry-avroencoder","azure-schemaregistry-avroserializer","azure-schemaregistry","azure-eventhub-checkpointstoreblob-aio","azure-eventhub-checkpointstoreblob","azure-eventhub","azure-servicefabric","azure-communication-nspkg","azure-communication-sms","azure-communication-chat","azure-communication-administration","azure-security-attestation","azure-data-nspkg","azure-data-tables","azure-devtools","azure-elasticluster","azure-functions","azure-graphrbac","azure-iothub-device-client","azure-shell","azure-translator","azure-mgmt-hybridkubernetes","azure-mgmt-kubernetesconfiguration","adal","pydocumentdb","botbuilder-core","botbuilder-schema","botframework-connector","playwright","transformers","langchain","llama-index","guidance","openai","semantic-kernel","sentence-transformers","anthropic","aporia","arize","deepchecks","fireworks-ai","langchain-fireworks","humanloop","pymongo","langchain-anthropic","langchain-huggingface","langchain-fireworks","ollama","onnxruntime","pgvector","sentence-transformers","tika","trulens","trulens-eval","wandb","azure-ai-contentsafety","azure-ai-documentintelligence","azure-ai-translation-text","azure-ai-vision","azure-cognitiveservices-language-luis","azure-cognitiveservices-speech","azure-cognitiveservices-vision-contentmoderator","azure-cognitiveservices-vision-face","azure-mgmt-cognitiveservices","azure-mgmt-search","google-generativeai"],me=["github.com/Azure/azure-sdk-for-go/sdk/storage/azblob","github.com/Azure/azure-sdk-for-go/sdk/storage/azfile","github.com/Azure/azure-sdk-for-go/sdk/storage/azqueue","github.com/Azure/azure-sdk-for-go/sdk/storage/azdatalake","github.com/Azure/azure-sdk-for-go/sdk/tracing/azotel","github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azadmin","github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azcertificates","github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azkeys","github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets","github.com/Azure/azure-sdk-for-go/sdk/monitor/azquery","github.com/Azure/azure-sdk-for-go/sdk/monitor/azingest","github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs","github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus","github.com/Azure/azure-sdk-for-go/sdk/data/azappconfig","github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos","github.com/Azure/azure-sdk-for-go/sdk/data/aztables","github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry","github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai","github.com/Azure/azure-sdk-for-go/sdk/azidentity","github.com/Azure/azure-sdk-for-go/sdk/azcore","github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/"];let k=class{constructor(e,c,s,i){this.fileService=e;this.contextService=c;this.environmentService=s;this.textFileService=i}_tags;async getTags(){return this._tags||(this._tags=await this.resolveWorkspaceTags()),this._tags}async getTelemetryWorkspaceId(e,c){function s(u){return ce(u.scheme===Q.file?u.fsPath:u.toString())}let i;switch(c){case b.EMPTY:i=void 0;break;case b.FOLDER:i=await s(e.folders[0].uri);break;case b.WORKSPACE:e.configuration&&(i=await s(e.configuration))}return i}getHashedRemotesFromUri(e,c=!1){const s=e.path,i=e.with({path:`${s!=="/"?s:""}/.git/config`});return this.fileService.exists(i).then(u=>u?this.textFileService.read(i,{acceptTextOnly:!0}).then(l=>ee(l.value,c),l=>[]):[])}async resolveWorkspaceTags(){const e=Object.create(null),c=this.contextService.getWorkbenchState(),s=this.contextService.getWorkspace();e["workspace.id"]=await this.getTelemetryWorkspaceId(s,c);const{filesToOpenOrCreate:i,filesToDiff:u,filesToMerge:l}=this.environmentService;e["workbench.filesToOpenOrCreate"]=i&&i.length||0,e["workbench.filesToDiff"]=u&&u.length||0,e["workbench.filesToMerge"]=l&&l.length||0;const w=c===b.EMPTY;e["workspace.roots"]=w?0:s.folders.length,e["workspace.empty"]=w;const h=w?void 0:s.folders.map(m=>m.uri);if(!h||!h.length)return Promise.resolve(e);const S=A.joinPath(this.environmentService.workspaceStorageHome,"aiGeneratedWorkspaces.json");return await this.fileService.exists(S).then(async m=>{if(m)try{const p=await this.fileService.readFile(S);JSON.parse(p.value.toString()).indexOf(s.folders[0].uri.toString())>-1&&(e.aiGenerated=!0)}catch{}}),this.fileService.resolveAll(h.map(m=>({resource:m}))).then(m=>{const p=[].concat(...m.map(r=>r.success?r.stat.children||[]:[])).map(r=>r.name),a=p.reduce((r,t)=>r.add(t.toLowerCase()),new Set);e["workspace.grunt"]=a.has("gruntfile.js"),e["workspace.gulp"]=a.has("gulpfile.js"),e["workspace.jake"]=a.has("jakefile.js"),e["workspace.tsconfig"]=a.has("tsconfig.json"),e["workspace.jsconfig"]=a.has("jsconfig.json"),e["workspace.config.xml"]=a.has("config.xml"),e["workspace.vsc.extension"]=a.has("vsc-extension-quickstart.md"),e["workspace.ASP5"]=a.has("project.json")&&this.searchArray(p,/^.+\.cs$/i),e["workspace.sln"]=this.searchArray(p,/^.+\.sln$|^.+\.csproj$/i),e["workspace.unity"]=a.has("assets")&&a.has("library")&&a.has("projectsettings"),e["workspace.npm"]=a.has("package.json")||a.has("node_modules"),e["workspace.bower"]=a.has("bower.json")||a.has("bower_components"),e["workspace.java.pom"]=a.has("pom.xml"),e["workspace.java.gradle"]=a.has("build.gradle")||a.has("settings.gradle")||a.has("build.gradle.kts")||a.has("settings.gradle.kts")||a.has("gradlew")||a.has("gradlew.bat"),e["workspace.yeoman.code.ext"]=a.has("vsc-extension-quickstart.md"),e["workspace.py.requirements"]=a.has("requirements.txt"),e["workspace.py.requirements.star"]=this.searchArray(p,/^(.*)requirements(.*)\.txt$/i),e["workspace.py.Pipfile"]=a.has("pipfile"),e["workspace.py.conda"]=this.searchArray(p,/^environment(\.yml$|\.yaml$)/i),e["workspace.py.setup"]=a.has("setup.py"),e["workspace.py.manage"]=a.has("manage.py"),e["workspace.py.setupcfg"]=a.has("setup.cfg"),e["workspace.py.app"]=a.has("app.py"),e["workspace.py.pyproject"]=a.has("pyproject.toml"),e["workspace.go.mod"]=a.has("go.mod");const F=a.has("mainactivity.cs")||a.has("mainactivity.fs"),P=a.has("appdelegate.cs")||a.has("appdelegate.fs"),W=a.has("androidmanifest.xml"),q=a.has("platforms"),M=a.has("plugins"),O=a.has("www"),R=a.has("properties"),j=a.has("resources"),C=a.has("jni");e["workspace.config.xml"]&&!e["workspace.language.cs"]&&!e["workspace.language.vb"]&&!e["workspace.language.aspx"]&&(q&&M&&O?e["workspace.cordova.high"]=!0:e["workspace.cordova.low"]=!0),e["workspace.config.xml"]&&!e["workspace.language.cs"]&&!e["workspace.language.vb"]&&!e["workspace.language.aspx"]&&a.has("ionic.config.json")&&(e["workspace.ionic"]=!0),F&&R&&j&&(e["workspace.xamarin.android"]=!0),P&&j&&(e["workspace.xamarin.ios"]=!0),W&&C&&(e["workspace.android.cpp"]=!0);function d(r,t,o,n){return a.has(r)?h.map(g=>{const z=g.with({path:`${g.path!=="/"?g.path:""}/${r}`});return t.exists(z).then(y=>{if(y)return o.read(z,{acceptTextOnly:!0}).then(n)},y=>{})}):[]}function T(r){pe.indexOf(r)>-1&&(e["workspace.py."+r]=!0);for(const t of le)r.startsWith(t)&&(e["workspace.py."+t]=!0);e["workspace.py.any-azure"]||(e["workspace.py.any-azure"]=/azure/i.test(r))}const D=d("requirements.txt",this.fileService,this.textFileService,r=>{const t=x(r.value);for(const o of t){const n=o.split("=="),g=o.split(">="),z=(n.length===2?n[0]:g[0]).trim();T(z)}}),L=d("pipfile",this.fileService,this.textFileService,r=>{let t=x(r.value);t=t.slice(t.indexOf("[packages]")+1);for(const o of t){if(o.trim().indexOf("[")>-1)break;if(o.indexOf("=")===-1)continue;const n=o.split("=")[0].trim();T(n)}}),G=d("package.json",this.fileService,this.textFileService,r=>{try{const t=JSON.parse(r.value),o=Object.keys(t.dependencies||{}).concat(Object.keys(t.devDependencies||{}));for(const n of o)if(n.startsWith("react-native"))e["workspace.reactNative"]=!0;else if(n==="tns-core-modules"||n==="@nativescript/core")e["workspace.nativescript"]=!0;else if(ge.indexOf(n)>-1)e["workspace.npm."+n]=!0;else for(const g of ue)n.startsWith(g)&&(e["workspace.npm."+g]=!0)}catch{}}),E=d("go.mod",this.fileService,this.textFileService,r=>{try{const t=x(r.value);let o=!1;for(let n=0;n<t.length;n++){const g=t[n].trim();if(g.startsWith("require (")){if(o)break;o=!0;continue}if(g.startsWith(")"))break;if(o&&g!==""){const z=g.split(" ")[0].trim();for(const y of me)z.startsWith(y)&&(e["workspace.go.mod."+z]=!0)}}}catch{}}),$=d("pom.xml",this.fileService,this.textFileService,r=>{try{let t;for(;t=re.exec(r.value);){let o;for(;o=te.exec(t[1]);){const n=oe.exec(o[1]),g=ae.exec(o[1]);n&&g&&this.tagJavaDependency(n[1],g[1],"workspace.pom.",e)}}}catch{}}),J=d("build.gradle",this.fileService,this.textFileService,r=>{try{this.processGradleDependencies(r.value,se,e),this.processGradleDependencies(r.value,ie,e)}catch{}}),_=h.map(r=>{const t=A.joinPath(r,"/app/src/main/AndroidManifest.xml");return this.fileService.exists(t).then(o=>{o&&(e["workspace.java.android"]=!0)},o=>{})});return Promise.all([...G,...D,...L,...$,...J,..._,...E]).then(()=>e)})}processGradleDependencies(e,c,s){let i;for(;i=c.exec(e);){const u=i[1],l=i[2];u&&l&&this.tagJavaDependency(u,l,"workspace.gradle.",s)}}tagJavaDependency(e,c,s,i){for(const u of ne)if(u.predicate(e,c)){i[s+u.tag]=!0;return}}searchArray(e,c){return e.some(s=>s.search(c)>-1)||void 0}};k=I([v(0,B),v(1,U),v(2,Y),v(3,K)],k),X(Z,k,V.Delayed);export{k as WorkspaceTagsService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
+import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
+import { URI } from '../../../../base/common/uri.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IWorkspaceTagsService } from '../common/workspaceTags.js';
+import { getHashedRemotesFromConfig } from './workspaceTags.js';
+import { splitLines } from '../../../../base/common/strings.js';
+import { MavenArtifactIdRegex, MavenDependenciesRegex, MavenDependencyRegex, GradleDependencyCompactRegex, GradleDependencyLooseRegex, MavenGroupIdRegex, JavaLibrariesToLookFor } from '../common/javaWorkspaceTags.js';
+import { hashAsync } from '../../../../base/common/hash.js';
+const MetaModulesToLookFor = [
+    '@azure',
+    '@azure/ai',
+    '@azure/core',
+    '@azure/cosmos',
+    '@azure/event',
+    '@azure/identity',
+    '@azure/keyvault',
+    '@azure/search',
+    '@azure/storage'
+];
+const ModulesToLookFor = [
+    'express',
+    'sails',
+    'koa',
+    'hapi',
+    'socket.io',
+    'restify',
+    'next',
+    'nuxt',
+    '@nestjs/core',
+    'strapi',
+    'gatsby',
+    'react',
+    'react-native',
+    'react-native-macos',
+    'react-native-windows',
+    'rnpm-plugin-windows',
+    '@angular/core',
+    '@ionic',
+    'vue',
+    'tns-core-modules',
+    '@nativescript/core',
+    'electron',
+    'aws-sdk',
+    'aws-amplify',
+    'azure',
+    'azure-storage',
+    'chroma',
+    'faiss',
+    'firebase',
+    '@google-cloud/common',
+    'heroku-cli',
+    'langchain',
+    'milvus',
+    'openai',
+    'pinecone',
+    'qdrant',
+    '@microsoft/teams-js',
+    '@microsoft/office-js',
+    '@microsoft/office-js-helpers',
+    '@types/office-js',
+    '@types/office-runtime',
+    'office-ui-fabric-react',
+    '@uifabric/icons',
+    '@uifabric/merge-styles',
+    '@uifabric/styling',
+    '@uifabric/experiments',
+    '@uifabric/utilities',
+    '@microsoft/rush',
+    'lerna',
+    'just-task',
+    'beachball',
+    'playwright',
+    'playwright-cli',
+    '@playwright/test',
+    'playwright-core',
+    'playwright-chromium',
+    'playwright-firefox',
+    'playwright-webkit',
+    'cypress',
+    'nightwatch',
+    'protractor',
+    'puppeteer',
+    'selenium-webdriver',
+    'webdriverio',
+    'gherkin',
+    '@azure/app-configuration',
+    '@azure/cosmos-sign',
+    '@azure/cosmos-language-service',
+    '@azure/synapse-spark',
+    '@azure/synapse-monitoring',
+    '@azure/synapse-managed-private-endpoints',
+    '@azure/synapse-artifacts',
+    '@azure/synapse-access-control',
+    '@azure/ai-metrics-advisor',
+    '@azure/service-bus',
+    '@azure/keyvault-secrets',
+    '@azure/keyvault-keys',
+    '@azure/keyvault-certificates',
+    '@azure/keyvault-admin',
+    '@azure/digital-twins-core',
+    '@azure/cognitiveservices-anomalydetector',
+    '@azure/ai-anomaly-detector',
+    '@azure/core-xml',
+    '@azure/core-tracing',
+    '@azure/core-paging',
+    '@azure/core-https',
+    '@azure/core-client',
+    '@azure/core-asynciterator-polyfill',
+    '@azure/core-arm',
+    '@azure/amqp-common',
+    '@azure/core-lro',
+    '@azure/logger',
+    '@azure/core-http',
+    '@azure/core-auth',
+    '@azure/core-amqp',
+    '@azure/abort-controller',
+    '@azure/eventgrid',
+    '@azure/storage-file-datalake',
+    '@azure/search-documents',
+    '@azure/storage-file',
+    '@azure/storage-datalake',
+    '@azure/storage-queue',
+    '@azure/storage-file-share',
+    '@azure/storage-blob-changefeed',
+    '@azure/storage-blob',
+    '@azure/cognitiveservices-formrecognizer',
+    '@azure/ai-form-recognizer',
+    '@azure/cognitiveservices-textanalytics',
+    '@azure/ai-text-analytics',
+    '@azure/event-processor-host',
+    '@azure/schema-registry-avro',
+    '@azure/schema-registry',
+    '@azure/eventhubs-checkpointstore-blob',
+    '@azure/event-hubs',
+    '@azure/communication-signaling',
+    '@azure/communication-calling',
+    '@azure/communication-sms',
+    '@azure/communication-common',
+    '@azure/communication-chat',
+    '@azure/communication-administration',
+    '@azure/attestation',
+    '@azure/data-tables',
+    '@azure/arm-appservice',
+    '@azure-rest/ai-inference',
+    '@azure-rest/arm-appservice',
+    '@azure/arm-appcontainers',
+    '@azure/arm-rediscache',
+    '@azure/arm-redisenterprisecache',
+    '@azure/arm-apimanagement',
+    '@azure/arm-logic',
+    '@azure/app-configuration',
+    '@azure/arm-appconfiguration',
+    '@azure/arm-dashboard',
+    '@azure/arm-signalr',
+    '@azure/arm-securitydevops',
+    '@azure/arm-labservices',
+    '@azure/web-pubsub',
+    '@azure/web-pubsub-client',
+    '@azure/web-pubsub-client-protobuf',
+    '@azure/web-pubsub-express',
+    '@azure/openai',
+    '@azure/arm-hybridkubernetes',
+    '@azure/arm-kubernetesconfiguration',
+    '@anthropic-ai/sdk',
+    '@anthropic-ai/tokenizer',
+    '@arizeai/openinference-instrumentation-langchain',
+    '@arizeai/openinference-instrumentation-openai',
+    '@aws-sdk-client-bedrock-runtime',
+    '@aws-sdk/client-bedrock',
+    '@datastax/astra-db-ts',
+    'fireworks-js',
+    '@google-cloud/aiplatform',
+    '@huggingface/inference',
+    'humanloop',
+    '@langchain/anthropic',
+    'langsmith',
+    'llamaindex',
+    '@mistralai/mistralai',
+    'mongodb',
+    'neo4j-driver',
+    'ollama',
+    'onnxruntime-node',
+    'onnxruntime-web',
+    'pg',
+    'postgresql',
+    'redis',
+    '@supabase/supabase-js',
+    '@tensorflow/tfjs',
+    '@xenova/transformers',
+    'tika',
+    'weaviate-client',
+    '@zilliz/milvus2-sdk-node',
+    '@azure-rest/ai-anomaly-detector',
+    '@azure-rest/ai-content-safety',
+    '@azure-rest/ai-document-intelligence',
+    '@azure-rest/ai-document-translator',
+    '@azure-rest/ai-personalizer',
+    '@azure-rest/ai-translation-text',
+    '@azure-rest/ai-vision-image-analysis',
+    '@azure/ai-anomaly-detector',
+    '@azure/ai-form-recognizer',
+    '@azure/ai-language-conversations',
+    '@azure/ai-language-text',
+    '@azure/ai-text-analytics',
+    '@azure/arm-botservice',
+    '@azure/arm-cognitiveservices',
+    '@azure/arm-machinelearning',
+    '@azure/cognitiveservices-contentmoderator',
+    '@azure/cognitiveservices-customvision-prediction',
+    '@azure/cognitiveservices-customvision-training',
+    '@azure/cognitiveservices-face',
+    '@azure/cognitiveservices-translatortext',
+    'microsoft-cognitiveservices-speech-sdk',
+    '@google/generative-ai'
+];
+const PyMetaModulesToLookFor = [
+    'azure-ai',
+    'azure-cognitiveservices',
+    'azure-core',
+    'azure-cosmos',
+    'azure-event',
+    'azure-identity',
+    'azure-keyvault',
+    'azure-mgmt',
+    'azure-ml',
+    'azure-search',
+    'azure-storage'
+];
+const PyModulesToLookFor = [
+    'azure',
+    'azure-ai-inference',
+    'azure-ai-language-conversations',
+    'azure-ai-language-questionanswering',
+    'azure-ai-ml',
+    'azure-ai-translation-document',
+    'azure-appconfiguration',
+    'azure-appconfiguration-provider',
+    'azure-loganalytics',
+    'azure-synapse-nspkg',
+    'azure-synapse-spark',
+    'azure-synapse-artifacts',
+    'azure-synapse-accesscontrol',
+    'azure-synapse',
+    'azure-cognitiveservices-vision-nspkg',
+    'azure-cognitiveservices-search-nspkg',
+    'azure-cognitiveservices-nspkg',
+    'azure-cognitiveservices-language-nspkg',
+    'azure-cognitiveservices-knowledge-nspkg',
+    'azure-containerregistry',
+    'azure-communication-identity',
+    'azure-communication-phonenumbers',
+    'azure-communication-email',
+    'azure-communication-rooms',
+    'azure-communication-callautomation',
+    'azure-confidentialledger',
+    'azure-containerregistry',
+    'azure-developer-loadtesting',
+    'azure-iot-deviceupdate',
+    'azure-messaging-webpubsubservice',
+    'azure-monitor',
+    'azure-monitor-query',
+    'azure-monitor-ingestion',
+    'azure-mgmt-appcontainers',
+    'azure-mgmt-apimanagement',
+    'azure-mgmt-web',
+    'azure-mgmt-redis',
+    'azure-mgmt-redisenterprise',
+    'azure-mgmt-logic',
+    'azure-appconfiguration',
+    'azure-appconfiguration-provider',
+    'azure-mgmt-appconfiguration',
+    'azure-mgmt-dashboard',
+    'azure-mgmt-signalr',
+    'azure-messaging-webpubsubservice',
+    'azure-mgmt-webpubsub',
+    'azure-mgmt-securitydevops',
+    'azure-mgmt-labservices',
+    'azure-ai-metricsadvisor',
+    'azure-servicebus',
+    'azureml-sdk',
+    'azure-keyvault-nspkg',
+    'azure-keyvault-secrets',
+    'azure-keyvault-keys',
+    'azure-keyvault-certificates',
+    'azure-keyvault-administration',
+    'azure-digitaltwins-nspkg',
+    'azure-digitaltwins-core',
+    'azure-cognitiveservices-anomalydetector',
+    'azure-ai-anomalydetector',
+    'azure-applicationinsights',
+    'azure-core-tracing-opentelemetry',
+    'azure-core-tracing-opencensus',
+    'azure-nspkg',
+    'azure-common',
+    'azure-eventgrid',
+    'azure-storage-file-datalake',
+    'azure-search-nspkg',
+    'azure-search-documents',
+    'azure-storage-nspkg',
+    'azure-storage-file',
+    'azure-storage-common',
+    'azure-storage-queue',
+    'azure-storage-file-share',
+    'azure-storage-blob-changefeed',
+    'azure-storage-blob',
+    'azure-cognitiveservices-formrecognizer',
+    'azure-ai-formrecognizer',
+    'azure-ai-nspkg',
+    'azure-cognitiveservices-language-textanalytics',
+    'azure-ai-textanalytics',
+    'azure-schemaregistry-avroencoder',
+    'azure-schemaregistry-avroserializer',
+    'azure-schemaregistry',
+    'azure-eventhub-checkpointstoreblob-aio',
+    'azure-eventhub-checkpointstoreblob',
+    'azure-eventhub',
+    'azure-servicefabric',
+    'azure-communication-nspkg',
+    'azure-communication-sms',
+    'azure-communication-chat',
+    'azure-communication-administration',
+    'azure-security-attestation',
+    'azure-data-nspkg',
+    'azure-data-tables',
+    'azure-devtools',
+    'azure-elasticluster',
+    'azure-functions',
+    'azure-graphrbac',
+    'azure-iothub-device-client',
+    'azure-shell',
+    'azure-translator',
+    'azure-mgmt-hybridkubernetes',
+    'azure-mgmt-kubernetesconfiguration',
+    'adal',
+    'pydocumentdb',
+    'botbuilder-core',
+    'botbuilder-schema',
+    'botframework-connector',
+    'playwright',
+    'transformers',
+    'langchain',
+    'llama-index',
+    'guidance',
+    'openai',
+    'semantic-kernel',
+    'sentence-transformers',
+    'anthropic',
+    'aporia',
+    'arize',
+    'deepchecks',
+    'fireworks-ai',
+    'langchain-fireworks',
+    'humanloop',
+    'pymongo',
+    'langchain-anthropic',
+    'langchain-huggingface',
+    'langchain-fireworks',
+    'ollama',
+    'onnxruntime',
+    'pgvector',
+    'sentence-transformers',
+    'tika',
+    'trulens',
+    'trulens-eval',
+    'wandb',
+    'azure-ai-contentsafety',
+    'azure-ai-documentintelligence',
+    'azure-ai-translation-text',
+    'azure-ai-vision',
+    'azure-cognitiveservices-language-luis',
+    'azure-cognitiveservices-speech',
+    'azure-cognitiveservices-vision-contentmoderator',
+    'azure-cognitiveservices-vision-face',
+    'azure-mgmt-cognitiveservices',
+    'azure-mgmt-search',
+    'google-generativeai'
+];
+const GoModulesToLookFor = [
+    'github.com/Azure/azure-sdk-for-go/sdk/storage/azblob',
+    'github.com/Azure/azure-sdk-for-go/sdk/storage/azfile',
+    'github.com/Azure/azure-sdk-for-go/sdk/storage/azqueue',
+    'github.com/Azure/azure-sdk-for-go/sdk/storage/azdatalake',
+    'github.com/Azure/azure-sdk-for-go/sdk/tracing/azotel',
+    'github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azadmin',
+    'github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azcertificates',
+    'github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azkeys',
+    'github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets',
+    'github.com/Azure/azure-sdk-for-go/sdk/monitor/azquery',
+    'github.com/Azure/azure-sdk-for-go/sdk/monitor/azingest',
+    'github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs',
+    'github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus',
+    'github.com/Azure/azure-sdk-for-go/sdk/data/azappconfig',
+    'github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos',
+    'github.com/Azure/azure-sdk-for-go/sdk/data/aztables',
+    'github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry',
+    'github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai',
+    'github.com/Azure/azure-sdk-for-go/sdk/azidentity',
+    'github.com/Azure/azure-sdk-for-go/sdk/azcore',
+    'github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/'
+];
+let WorkspaceTagsService = class WorkspaceTagsService {
+    constructor(fileService, contextService, environmentService, textFileService) {
+        this.fileService = fileService;
+        this.contextService = contextService;
+        this.environmentService = environmentService;
+        this.textFileService = textFileService;
+    }
+    async getTags() {
+        if (!this._tags) {
+            this._tags = await this.resolveWorkspaceTags();
+        }
+        return this._tags;
+    }
+    async getTelemetryWorkspaceId(workspace, state) {
+        function createHash(uri) {
+            return hashAsync(uri.scheme === Schemas.file ? uri.fsPath : uri.toString());
+        }
+        let workspaceId;
+        switch (state) {
+            case 1:
+                workspaceId = undefined;
+                break;
+            case 2:
+                workspaceId = await createHash(workspace.folders[0].uri);
+                break;
+            case 3:
+                if (workspace.configuration) {
+                    workspaceId = await createHash(workspace.configuration);
+                }
+        }
+        return workspaceId;
+    }
+    getHashedRemotesFromUri(workspaceUri, stripEndingDotGit = false) {
+        const path = workspaceUri.path;
+        const uri = workspaceUri.with({ path: `${path !== '/' ? path : ''}/.git/config` });
+        return this.fileService.exists(uri).then(exists => {
+            if (!exists) {
+                return [];
+            }
+            return this.textFileService.read(uri, { acceptTextOnly: true }).then(content => getHashedRemotesFromConfig(content.value, stripEndingDotGit), err => []);
+        });
+    }
+    async resolveWorkspaceTags() {
+        const tags = Object.create(null);
+        const state = this.contextService.getWorkbenchState();
+        const workspace = this.contextService.getWorkspace();
+        tags['workspace.id'] = await this.getTelemetryWorkspaceId(workspace, state);
+        const { filesToOpenOrCreate, filesToDiff, filesToMerge } = this.environmentService;
+        tags['workbench.filesToOpenOrCreate'] = filesToOpenOrCreate && filesToOpenOrCreate.length || 0;
+        tags['workbench.filesToDiff'] = filesToDiff && filesToDiff.length || 0;
+        tags['workbench.filesToMerge'] = filesToMerge && filesToMerge.length || 0;
+        const isEmpty = state === 1;
+        tags['workspace.roots'] = isEmpty ? 0 : workspace.folders.length;
+        tags['workspace.empty'] = isEmpty;
+        const folders = !isEmpty ? workspace.folders.map(folder => folder.uri) : undefined;
+        if (!folders || !folders.length) {
+            return Promise.resolve(tags);
+        }
+        const aiGeneratedWorkspaces = URI.joinPath(this.environmentService.workspaceStorageHome, 'aiGeneratedWorkspaces.json');
+        await this.fileService.exists(aiGeneratedWorkspaces).then(async (result) => {
+            if (result) {
+                try {
+                    const content = await this.fileService.readFile(aiGeneratedWorkspaces);
+                    const workspaces = JSON.parse(content.value.toString());
+                    if (workspaces.indexOf(workspace.folders[0].uri.toString()) > -1) {
+                        tags['aiGenerated'] = true;
+                    }
+                }
+                catch (e) {
+                }
+            }
+        });
+        return this.fileService.resolveAll(folders.map(resource => ({ resource }))).then((files) => {
+            const names = [].concat(...files.map(result => result.success ? (result.stat.children || []) : [])).map(c => c.name);
+            const nameSet = names.reduce((s, n) => s.add(n.toLowerCase()), new Set());
+            tags['workspace.grunt'] = nameSet.has('gruntfile.js');
+            tags['workspace.gulp'] = nameSet.has('gulpfile.js');
+            tags['workspace.jake'] = nameSet.has('jakefile.js');
+            tags['workspace.tsconfig'] = nameSet.has('tsconfig.json');
+            tags['workspace.jsconfig'] = nameSet.has('jsconfig.json');
+            tags['workspace.config.xml'] = nameSet.has('config.xml');
+            tags['workspace.vsc.extension'] = nameSet.has('vsc-extension-quickstart.md');
+            tags['workspace.ASP5'] = nameSet.has('project.json') && this.searchArray(names, /^.+\.cs$/i);
+            tags['workspace.sln'] = this.searchArray(names, /^.+\.sln$|^.+\.csproj$/i);
+            tags['workspace.unity'] = nameSet.has('assets') && nameSet.has('library') && nameSet.has('projectsettings');
+            tags['workspace.npm'] = nameSet.has('package.json') || nameSet.has('node_modules');
+            tags['workspace.bower'] = nameSet.has('bower.json') || nameSet.has('bower_components');
+            tags['workspace.java.pom'] = nameSet.has('pom.xml');
+            tags['workspace.java.gradle'] = nameSet.has('build.gradle') || nameSet.has('settings.gradle') || nameSet.has('build.gradle.kts') || nameSet.has('settings.gradle.kts') || nameSet.has('gradlew') || nameSet.has('gradlew.bat');
+            tags['workspace.yeoman.code.ext'] = nameSet.has('vsc-extension-quickstart.md');
+            tags['workspace.py.requirements'] = nameSet.has('requirements.txt');
+            tags['workspace.py.requirements.star'] = this.searchArray(names, /^(.*)requirements(.*)\.txt$/i);
+            tags['workspace.py.Pipfile'] = nameSet.has('pipfile');
+            tags['workspace.py.conda'] = this.searchArray(names, /^environment(\.yml$|\.yaml$)/i);
+            tags['workspace.py.setup'] = nameSet.has('setup.py');
+            tags['workspace.py.manage'] = nameSet.has('manage.py');
+            tags['workspace.py.setupcfg'] = nameSet.has('setup.cfg');
+            tags['workspace.py.app'] = nameSet.has('app.py');
+            tags['workspace.py.pyproject'] = nameSet.has('pyproject.toml');
+            tags['workspace.go.mod'] = nameSet.has('go.mod');
+            const mainActivity = nameSet.has('mainactivity.cs') || nameSet.has('mainactivity.fs');
+            const appDelegate = nameSet.has('appdelegate.cs') || nameSet.has('appdelegate.fs');
+            const androidManifest = nameSet.has('androidmanifest.xml');
+            const platforms = nameSet.has('platforms');
+            const plugins = nameSet.has('plugins');
+            const www = nameSet.has('www');
+            const properties = nameSet.has('properties');
+            const resources = nameSet.has('resources');
+            const jni = nameSet.has('jni');
+            if (tags['workspace.config.xml'] &&
+                !tags['workspace.language.cs'] && !tags['workspace.language.vb'] && !tags['workspace.language.aspx']) {
+                if (platforms && plugins && www) {
+                    tags['workspace.cordova.high'] = true;
+                }
+                else {
+                    tags['workspace.cordova.low'] = true;
+                }
+            }
+            if (tags['workspace.config.xml'] &&
+                !tags['workspace.language.cs'] && !tags['workspace.language.vb'] && !tags['workspace.language.aspx']) {
+                if (nameSet.has('ionic.config.json')) {
+                    tags['workspace.ionic'] = true;
+                }
+            }
+            if (mainActivity && properties && resources) {
+                tags['workspace.xamarin.android'] = true;
+            }
+            if (appDelegate && resources) {
+                tags['workspace.xamarin.ios'] = true;
+            }
+            if (androidManifest && jni) {
+                tags['workspace.android.cpp'] = true;
+            }
+            function getFilePromises(filename, fileService, textFileService, contentHandler) {
+                return !nameSet.has(filename) ? [] : folders.map(workspaceUri => {
+                    const uri = workspaceUri.with({ path: `${workspaceUri.path !== '/' ? workspaceUri.path : ''}/${filename}` });
+                    return fileService.exists(uri).then(exists => {
+                        if (!exists) {
+                            return undefined;
+                        }
+                        return textFileService.read(uri, { acceptTextOnly: true }).then(contentHandler);
+                    }, err => {
+                    });
+                });
+            }
+            function addPythonTags(packageName) {
+                if (PyModulesToLookFor.indexOf(packageName) > -1) {
+                    tags['workspace.py.' + packageName] = true;
+                }
+                for (const metaModule of PyMetaModulesToLookFor) {
+                    if (packageName.startsWith(metaModule)) {
+                        tags['workspace.py.' + metaModule] = true;
+                    }
+                }
+                if (!tags['workspace.py.any-azure']) {
+                    tags['workspace.py.any-azure'] = /azure/i.test(packageName);
+                }
+            }
+            const requirementsTxtPromises = getFilePromises('requirements.txt', this.fileService, this.textFileService, content => {
+                const dependencies = splitLines(content.value);
+                for (const dependency of dependencies) {
+                    const format1 = dependency.split('==');
+                    const format2 = dependency.split('>=');
+                    const packageName = (format1.length === 2 ? format1[0] : format2[0]).trim();
+                    addPythonTags(packageName);
+                }
+            });
+            const pipfilePromises = getFilePromises('pipfile', this.fileService, this.textFileService, content => {
+                let dependencies = splitLines(content.value);
+                dependencies = dependencies.slice(dependencies.indexOf('[packages]') + 1);
+                for (const dependency of dependencies) {
+                    if (dependency.trim().indexOf('[') > -1) {
+                        break;
+                    }
+                    if (dependency.indexOf('=') === -1) {
+                        continue;
+                    }
+                    const packageName = dependency.split('=')[0].trim();
+                    addPythonTags(packageName);
+                }
+            });
+            const packageJsonPromises = getFilePromises('package.json', this.fileService, this.textFileService, content => {
+                try {
+                    const packageJsonContents = JSON.parse(content.value);
+                    const dependencies = Object.keys(packageJsonContents['dependencies'] || {}).concat(Object.keys(packageJsonContents['devDependencies'] || {}));
+                    for (const dependency of dependencies) {
+                        if (dependency.startsWith('react-native')) {
+                            tags['workspace.reactNative'] = true;
+                        }
+                        else if ('tns-core-modules' === dependency || '@nativescript/core' === dependency) {
+                            tags['workspace.nativescript'] = true;
+                        }
+                        else if (ModulesToLookFor.indexOf(dependency) > -1) {
+                            tags['workspace.npm.' + dependency] = true;
+                        }
+                        else {
+                            for (const metaModule of MetaModulesToLookFor) {
+                                if (dependency.startsWith(metaModule)) {
+                                    tags['workspace.npm.' + metaModule] = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (e) {
+                }
+            });
+            const goModPromises = getFilePromises('go.mod', this.fileService, this.textFileService, content => {
+                try {
+                    const lines = splitLines(content.value);
+                    let firstRequireBlockFound = false;
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (line.startsWith('require (')) {
+                            if (!firstRequireBlockFound) {
+                                firstRequireBlockFound = true;
+                                continue;
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        if (line.startsWith(')')) {
+                            break;
+                        }
+                        if (firstRequireBlockFound && line !== '') {
+                            const packageName = line.split(' ')[0].trim();
+                            for (const module of GoModulesToLookFor) {
+                                if (packageName.startsWith(module)) {
+                                    tags['workspace.go.mod.' + packageName] = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (e) {
+                }
+            });
+            const pomPromises = getFilePromises('pom.xml', this.fileService, this.textFileService, content => {
+                try {
+                    let dependenciesContent;
+                    while (dependenciesContent = MavenDependenciesRegex.exec(content.value)) {
+                        let dependencyContent;
+                        while (dependencyContent = MavenDependencyRegex.exec(dependenciesContent[1])) {
+                            const groupIdContent = MavenGroupIdRegex.exec(dependencyContent[1]);
+                            const artifactIdContent = MavenArtifactIdRegex.exec(dependencyContent[1]);
+                            if (groupIdContent && artifactIdContent) {
+                                this.tagJavaDependency(groupIdContent[1], artifactIdContent[1], 'workspace.pom.', tags);
+                            }
+                        }
+                    }
+                }
+                catch (e) {
+                }
+            });
+            const gradlePromises = getFilePromises('build.gradle', this.fileService, this.textFileService, content => {
+                try {
+                    this.processGradleDependencies(content.value, GradleDependencyLooseRegex, tags);
+                    this.processGradleDependencies(content.value, GradleDependencyCompactRegex, tags);
+                }
+                catch (e) {
+                }
+            });
+            const androidPromises = folders.map(workspaceUri => {
+                const manifest = URI.joinPath(workspaceUri, '/app/src/main/AndroidManifest.xml');
+                return this.fileService.exists(manifest).then(result => {
+                    if (result) {
+                        tags['workspace.java.android'] = true;
+                    }
+                }, err => {
+                });
+            });
+            return Promise.all([...packageJsonPromises, ...requirementsTxtPromises, ...pipfilePromises, ...pomPromises, ...gradlePromises, ...androidPromises, ...goModPromises]).then(() => tags);
+        });
+    }
+    processGradleDependencies(content, regex, tags) {
+        let dependencyContent;
+        while (dependencyContent = regex.exec(content)) {
+            const groupId = dependencyContent[1];
+            const artifactId = dependencyContent[2];
+            if (groupId && artifactId) {
+                this.tagJavaDependency(groupId, artifactId, 'workspace.gradle.', tags);
+            }
+        }
+    }
+    tagJavaDependency(groupId, artifactId, prefix, tags) {
+        for (const javaLibrary of JavaLibrariesToLookFor) {
+            if (javaLibrary.predicate(groupId, artifactId)) {
+                tags[prefix + javaLibrary.tag] = true;
+                return;
+            }
+        }
+    }
+    searchArray(arr, regEx) {
+        return arr.some(v => v.search(regEx) > -1) || undefined;
+    }
+};
+WorkspaceTagsService = __decorate([
+    __param(0, IFileService),
+    __param(1, IWorkspaceContextService),
+    __param(2, IWorkbenchEnvironmentService),
+    __param(3, ITextFileService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], WorkspaceTagsService);
+export { WorkspaceTagsService };
+registerSingleton(IWorkspaceTagsService, WorkspaceTagsService, 1);

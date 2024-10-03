@@ -1,1 +1,37 @@
-import{CONTEXT_MENU_CHANNEL as b,CONTEXT_MENU_CLOSE_CHANNEL as p}from"../common/contextmenu.js";import{ipcRenderer as u}from"../../sandbox/electron-sandbox/globals.js";let s=0;function N(e,n,t){const o=[],l=s++,r=`vscode:onContextMenu${l}`,i=(a,c,C)=>{o[c].click?.(C)};u.once(r,i),u.once(p,(a,c)=>{c===l&&(u.removeListener(r,i),t?.())}),u.send(b,l,e.map(a=>I(a,o)),r,n)}function I(e,n){const t={id:n.length,label:e.label,type:e.type,accelerator:e.accelerator,checked:e.checked,enabled:typeof e.enabled=="boolean"?e.enabled:!0,visible:typeof e.visible=="boolean"?e.visible:!0};return n.push(e),Array.isArray(e.submenu)&&(t.submenu=e.submenu.map(o=>I(o,n))),t}export{N as popup};
+import { CONTEXT_MENU_CHANNEL, CONTEXT_MENU_CLOSE_CHANNEL } from '../common/contextmenu.js';
+import { ipcRenderer } from '../../sandbox/electron-sandbox/globals.js';
+let contextMenuIdPool = 0;
+export function popup(items, options, onHide) {
+    const processedItems = [];
+    const contextMenuId = contextMenuIdPool++;
+    const onClickChannel = `vscode:onContextMenu${contextMenuId}`;
+    const onClickChannelHandler = (event, itemId, context) => {
+        const item = processedItems[itemId];
+        item.click?.(context);
+    };
+    ipcRenderer.once(onClickChannel, onClickChannelHandler);
+    ipcRenderer.once(CONTEXT_MENU_CLOSE_CHANNEL, (event, closedContextMenuId) => {
+        if (closedContextMenuId !== contextMenuId) {
+            return;
+        }
+        ipcRenderer.removeListener(onClickChannel, onClickChannelHandler);
+        onHide?.();
+    });
+    ipcRenderer.send(CONTEXT_MENU_CHANNEL, contextMenuId, items.map(item => createItem(item, processedItems)), onClickChannel, options);
+}
+function createItem(item, processedItems) {
+    const serializableItem = {
+        id: processedItems.length,
+        label: item.label,
+        type: item.type,
+        accelerator: item.accelerator,
+        checked: item.checked,
+        enabled: typeof item.enabled === 'boolean' ? item.enabled : true,
+        visible: typeof item.visible === 'boolean' ? item.visible : true
+    };
+    processedItems.push(item);
+    if (Array.isArray(item.submenu)) {
+        serializableItem.submenu = item.submenu.map(submenuItem => createItem(submenuItem, processedItems));
+    }
+    return serializableItem;
+}

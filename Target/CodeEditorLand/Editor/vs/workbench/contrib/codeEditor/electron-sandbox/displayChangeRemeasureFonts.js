@@ -1,1 +1,30 @@
-var f=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var b=(i,o,e,t)=>{for(var r=t>1?void 0:t?h(o,e):o,s=i.length-1,c;s>=0;s--)(c=i[s])&&(r=(t?c(o,e,r):c(r))||r);return t&&r&&f(o,e,r),r},m=(i,o)=>(e,t)=>o(e,t,i);import{Disposable as k}from"../../../../base/common/lifecycle.js";import{FontMeasurements as l}from"../../../../editor/browser/config/fontMeasurements.js";import{INativeHostService as p}from"../../../../platform/native/common/native.js";import{Registry as I}from"../../../../platform/registry/common/platform.js";import{Extensions as W}from"../../../common/contributions.js";import{LifecyclePhase as u}from"../../../services/lifecycle/common/lifecycle.js";let n=class extends k{constructor(o){super(),this._register(o.onDidChangeDisplay(()=>{l.clearAllFontInfos()}))}};n=b([m(0,p)],n),I.as(W.Workbench).registerWorkbenchContribution(n,u.Eventually);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { FontMeasurements } from '../../../../editor/browser/config/fontMeasurements.js';
+import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+let DisplayChangeRemeasureFonts = class DisplayChangeRemeasureFonts extends Disposable {
+    constructor(nativeHostService) {
+        super();
+        this._register(nativeHostService.onDidChangeDisplay(() => {
+            FontMeasurements.clearAllFontInfos();
+        }));
+    }
+};
+DisplayChangeRemeasureFonts = __decorate([
+    __param(0, INativeHostService),
+    __metadata("design:paramtypes", [Object])
+], DisplayChangeRemeasureFonts);
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(DisplayChangeRemeasureFonts, 4);

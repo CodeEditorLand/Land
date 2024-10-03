@@ -1,2 +1,104 @@
-import{BugIndicatingError as u}from"../../../../base/common/errors.js";import{ensureNonNullable as h}from"../gpuUtils.js";import{UsagePreviewColors as l}from"./atlas.js";class d{constructor(e,s){this._canvas=e;this._textureIndex=s;this._ctx=h(this._canvas.getContext("2d",{willReadFrequently:!0}))}_ctx;_currentRow={x:0,y:0,h:0};_allocatedGlyphs=new Set;_nextIndex=0;allocate(e){const s=e.boundingBox.right-e.boundingBox.left+1,r=e.boundingBox.bottom-e.boundingBox.top+1;if(s>this._canvas.width||r>this._canvas.height)throw new u("Glyph is too large for the atlas page");if(e.boundingBox.right-e.boundingBox.left+1>this._canvas.width-this._currentRow.x&&(this._currentRow.x=0,this._currentRow.y+=this._currentRow.h,this._currentRow.h=1),this._currentRow.y+e.boundingBox.bottom-e.boundingBox.top+1>this._canvas.height)return;this._ctx.drawImage(e.source,e.boundingBox.left,e.boundingBox.top,s,r,this._currentRow.x,this._currentRow.y,s,r);const o={pageIndex:this._textureIndex,glyphIndex:this._nextIndex++,x:this._currentRow.x,y:this._currentRow.y,w:s,h:r,originOffsetX:e.originOffset.x,originOffsetY:e.originOffset.y};return this._currentRow.x+=s,this._currentRow.h=Math.max(this._currentRow.h,r),this._allocatedGlyphs.add(o),o}getUsagePreview(){const e=this._canvas.width,s=this._canvas.height,r=new OffscreenCanvas(e,s),o=h(r.getContext("2d"));o.fillStyle=l.Unused,o.fillRect(0,0,e,s);const i=new Map,a=new Map;for(const t of this._allocatedGlyphs)i.set(t.y,Math.max(i.get(t.y)??0,t.h)),a.set(t.y,Math.max(a.get(t.y)??0,t.x+t.w));for(const t of this._allocatedGlyphs)o.fillStyle=l.Used,o.fillRect(t.x,t.y,t.w,t.h),o.fillStyle=l.Wasted,o.fillRect(t.x,t.y+t.h,t.w,i.get(t.y)-t.h);for(const[t,n]of a.entries())t!==this._currentRow.y&&(o.fillStyle=l.Wasted,o.fillRect(n,t,e-n,i.get(t)));return r.convertToBlob()}getStats(){const e=this._canvas.width,s=this._canvas.height;let r=0,o=0;const i=e*s,a=new Map,t=new Map;for(const n of this._allocatedGlyphs)a.set(n.y,Math.max(a.get(n.y)??0,n.h)),t.set(n.y,Math.max(t.get(n.y)??0,n.x+n.w));for(const n of this._allocatedGlyphs)r+=n.w*n.h,o+=n.w*(a.get(n.y)-n.h);for(const[n,c]of t.entries())n!==this._currentRow.y&&(o+=(e-c)*a.get(n));return[`page${this._textureIndex}:`,`     Total: ${i} (${e}x${s})`,`      Used: ${r} (${(r/i*100).toPrecision(2)}%)`,`    Wasted: ${o} (${(o/i*100).toPrecision(2)}%)`,`Efficiency: ${(r/(r+o)*100).toPrecision(2)}%`].join(`
-`)}}export{d as TextureAtlasShelfAllocator};
+import { BugIndicatingError } from '../../../../base/common/errors.js';
+import { ensureNonNullable } from '../gpuUtils.js';
+export class TextureAtlasShelfAllocator {
+    constructor(_canvas, _textureIndex) {
+        this._canvas = _canvas;
+        this._textureIndex = _textureIndex;
+        this._currentRow = {
+            x: 0,
+            y: 0,
+            h: 0
+        };
+        this._allocatedGlyphs = new Set();
+        this._nextIndex = 0;
+        this._ctx = ensureNonNullable(this._canvas.getContext('2d', {
+            willReadFrequently: true
+        }));
+    }
+    allocate(rasterizedGlyph) {
+        const glyphWidth = rasterizedGlyph.boundingBox.right - rasterizedGlyph.boundingBox.left + 1;
+        const glyphHeight = rasterizedGlyph.boundingBox.bottom - rasterizedGlyph.boundingBox.top + 1;
+        if (glyphWidth > this._canvas.width || glyphHeight > this._canvas.height) {
+            throw new BugIndicatingError('Glyph is too large for the atlas page');
+        }
+        if (rasterizedGlyph.boundingBox.right - rasterizedGlyph.boundingBox.left + 1 > this._canvas.width - this._currentRow.x) {
+            this._currentRow.x = 0;
+            this._currentRow.y += this._currentRow.h;
+            this._currentRow.h = 1;
+        }
+        if (this._currentRow.y + rasterizedGlyph.boundingBox.bottom - rasterizedGlyph.boundingBox.top + 1 > this._canvas.height) {
+            return undefined;
+        }
+        this._ctx.drawImage(rasterizedGlyph.source, rasterizedGlyph.boundingBox.left, rasterizedGlyph.boundingBox.top, glyphWidth, glyphHeight, this._currentRow.x, this._currentRow.y, glyphWidth, glyphHeight);
+        const glyph = {
+            pageIndex: this._textureIndex,
+            glyphIndex: this._nextIndex++,
+            x: this._currentRow.x,
+            y: this._currentRow.y,
+            w: glyphWidth,
+            h: glyphHeight,
+            originOffsetX: rasterizedGlyph.originOffset.x,
+            originOffsetY: rasterizedGlyph.originOffset.y
+        };
+        this._currentRow.x += glyphWidth;
+        this._currentRow.h = Math.max(this._currentRow.h, glyphHeight);
+        this._allocatedGlyphs.add(glyph);
+        return glyph;
+    }
+    getUsagePreview() {
+        const w = this._canvas.width;
+        const h = this._canvas.height;
+        const canvas = new OffscreenCanvas(w, h);
+        const ctx = ensureNonNullable(canvas.getContext('2d'));
+        ctx.fillStyle = "#808080";
+        ctx.fillRect(0, 0, w, h);
+        const rowHeight = new Map();
+        const rowWidth = new Map();
+        for (const g of this._allocatedGlyphs) {
+            rowHeight.set(g.y, Math.max(rowHeight.get(g.y) ?? 0, g.h));
+            rowWidth.set(g.y, Math.max(rowWidth.get(g.y) ?? 0, g.x + g.w));
+        }
+        for (const g of this._allocatedGlyphs) {
+            ctx.fillStyle = "#4040FF";
+            ctx.fillRect(g.x, g.y, g.w, g.h);
+            ctx.fillStyle = "#FF0000";
+            ctx.fillRect(g.x, g.y + g.h, g.w, rowHeight.get(g.y) - g.h);
+        }
+        for (const [rowY, rowW] of rowWidth.entries()) {
+            if (rowY !== this._currentRow.y) {
+                ctx.fillStyle = "#FF0000";
+                ctx.fillRect(rowW, rowY, w - rowW, rowHeight.get(rowY));
+            }
+        }
+        return canvas.convertToBlob();
+    }
+    getStats() {
+        const w = this._canvas.width;
+        const h = this._canvas.height;
+        let usedPixels = 0;
+        let wastedPixels = 0;
+        const totalPixels = w * h;
+        const rowHeight = new Map();
+        const rowWidth = new Map();
+        for (const g of this._allocatedGlyphs) {
+            rowHeight.set(g.y, Math.max(rowHeight.get(g.y) ?? 0, g.h));
+            rowWidth.set(g.y, Math.max(rowWidth.get(g.y) ?? 0, g.x + g.w));
+        }
+        for (const g of this._allocatedGlyphs) {
+            usedPixels += g.w * g.h;
+            wastedPixels += g.w * (rowHeight.get(g.y) - g.h);
+        }
+        for (const [rowY, rowW] of rowWidth.entries()) {
+            if (rowY !== this._currentRow.y) {
+                wastedPixels += (w - rowW) * rowHeight.get(rowY);
+            }
+        }
+        return [
+            `page${this._textureIndex}:`,
+            `     Total: ${totalPixels} (${w}x${h})`,
+            `      Used: ${usedPixels} (${((usedPixels / totalPixels) * 100).toPrecision(2)}%)`,
+            `    Wasted: ${wastedPixels} (${((wastedPixels / totalPixels) * 100).toPrecision(2)}%)`,
+            `Efficiency: ${((usedPixels / (usedPixels + wastedPixels)) * 100).toPrecision(2)}%`,
+        ].join('\n');
+    }
+}

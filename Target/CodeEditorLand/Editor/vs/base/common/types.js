@@ -1,1 +1,108 @@
-function i(e){return typeof e=="string"}function T(e){return Array.isArray(e)&&e.every(n=>i(n))}function s(e){return typeof e=="object"&&e!==null&&!Array.isArray(e)&&!(e instanceof RegExp)&&!(e instanceof Date)}function d(e){const n=Object.getPrototypeOf(Uint8Array);return typeof e=="object"&&e instanceof n}function p(e){return typeof e=="number"&&!isNaN(e)}function c(e){return!!e&&typeof e[Symbol.iterator]=="function"}function y(e){return e===!0||e===!1}function a(e){return typeof e>"u"}function x(e){return!o(e)}function o(e){return a(e)||e===null}function w(e,n){if(!e)throw new Error(n?`Unexpected type, expected '${n}'`:"Unexpected type")}function k(e){if(o(e))throw new Error("Assertion Failed: argument is undefined or null");return e}function P(...e){const n=[];for(let r=0;r<e.length;r++){const t=e[r];if(o(t))throw new Error(`Assertion Failed: argument at index ${r} is undefined or null`);n.push(t)}return n}const f=Object.prototype.hasOwnProperty;function g(e){if(!s(e))return!1;for(const n in e)if(f.call(e,n))return!1;return!0}function u(e){return typeof e=="function"}function b(...e){return e.length>0&&e.every(u)}function m(e,n){const r=Math.min(e.length,n.length);for(let t=0;t<r;t++)l(e[t],n[t])}function l(e,n){if(i(n)){if(typeof e!==n)throw new Error(`argument does not match constraint: typeof ${n}`)}else if(u(n)){try{if(e instanceof n)return}catch{}if(!o(e)&&e.constructor===n||n.length===1&&n.call(void 0,e)===!0)return;throw new Error("argument does not match one of these constraints: arg instanceof constraint, arg.constructor === constraint, nor constraint(arg) === true")}}function A(e){return e}export{b as areFunctions,P as assertAllDefined,k as assertIsDefined,w as assertType,y as isBoolean,x as isDefined,g as isEmptyObject,u as isFunction,c as isIterable,p as isNumber,s as isObject,i as isString,T as isStringArray,d as isTypedArray,a as isUndefined,o as isUndefinedOrNull,A as upcast,l as validateConstraint,m as validateConstraints};
+export function isString(str) {
+    return (typeof str === 'string');
+}
+export function isStringArray(value) {
+    return Array.isArray(value) && value.every(elem => isString(elem));
+}
+export function isObject(obj) {
+    return typeof obj === 'object'
+        && obj !== null
+        && !Array.isArray(obj)
+        && !(obj instanceof RegExp)
+        && !(obj instanceof Date);
+}
+export function isTypedArray(obj) {
+    const TypedArray = Object.getPrototypeOf(Uint8Array);
+    return typeof obj === 'object'
+        && obj instanceof TypedArray;
+}
+export function isNumber(obj) {
+    return (typeof obj === 'number' && !isNaN(obj));
+}
+export function isIterable(obj) {
+    return !!obj && typeof obj[Symbol.iterator] === 'function';
+}
+export function isBoolean(obj) {
+    return (obj === true || obj === false);
+}
+export function isUndefined(obj) {
+    return (typeof obj === 'undefined');
+}
+export function isDefined(arg) {
+    return !isUndefinedOrNull(arg);
+}
+export function isUndefinedOrNull(obj) {
+    return (isUndefined(obj) || obj === null);
+}
+export function assertType(condition, type) {
+    if (!condition) {
+        throw new Error(type ? `Unexpected type, expected '${type}'` : 'Unexpected type');
+    }
+}
+export function assertIsDefined(arg) {
+    if (isUndefinedOrNull(arg)) {
+        throw new Error('Assertion Failed: argument is undefined or null');
+    }
+    return arg;
+}
+export function assertAllDefined(...args) {
+    const result = [];
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        if (isUndefinedOrNull(arg)) {
+            throw new Error(`Assertion Failed: argument at index ${i} is undefined or null`);
+        }
+        result.push(arg);
+    }
+    return result;
+}
+const hasOwnProperty = Object.prototype.hasOwnProperty;
+export function isEmptyObject(obj) {
+    if (!isObject(obj)) {
+        return false;
+    }
+    for (const key in obj) {
+        if (hasOwnProperty.call(obj, key)) {
+            return false;
+        }
+    }
+    return true;
+}
+export function isFunction(obj) {
+    return (typeof obj === 'function');
+}
+export function areFunctions(...objects) {
+    return objects.length > 0 && objects.every(isFunction);
+}
+export function validateConstraints(args, constraints) {
+    const len = Math.min(args.length, constraints.length);
+    for (let i = 0; i < len; i++) {
+        validateConstraint(args[i], constraints[i]);
+    }
+}
+export function validateConstraint(arg, constraint) {
+    if (isString(constraint)) {
+        if (typeof arg !== constraint) {
+            throw new Error(`argument does not match constraint: typeof ${constraint}`);
+        }
+    }
+    else if (isFunction(constraint)) {
+        try {
+            if (arg instanceof constraint) {
+                return;
+            }
+        }
+        catch {
+        }
+        if (!isUndefinedOrNull(arg) && arg.constructor === constraint) {
+            return;
+        }
+        if (constraint.length === 1 && constraint.call(undefined, arg) === true) {
+            return;
+        }
+        throw new Error(`argument does not match one of these constraints: arg instanceof constraint, arg.constructor === constraint, nor constraint(arg) === true`);
+    }
+}
+export function upcast(x) {
+    return x;
+}

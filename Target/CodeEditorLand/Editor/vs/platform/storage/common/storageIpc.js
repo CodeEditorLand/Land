@@ -1,1 +1,82 @@
-import{Emitter as s,Event as o}from"../../../base/common/event.js";import{Disposable as l}from"../../../base/common/lifecycle.js";import"../../../base/common/uri.js";import"../../../base/parts/ipc/common/ipc.js";import"../../../base/parts/storage/common/storage.js";import"../../userDataProfile/common/userDataProfile.js";import"../../workspace/common/workspace.js";class i extends l{constructor(t,a,d){super();this.channel=t;this.profile=a;this.workspace=d}async getItems(){const t={profile:this.profile,workspace:this.workspace},a=await this.channel.call("getItems",t);return new Map(a)}updateItems(t){const a={profile:this.profile,workspace:this.workspace};return t.insert&&(a.insert=Array.from(t.insert.entries())),t.delete&&(a.delete=Array.from(t.delete.values())),this.channel.call("updateItems",a)}optimize(){const t={profile:this.profile,workspace:this.workspace};return this.channel.call("optimize",t)}}class n extends i{_onDidChangeItemsExternal=this._register(new s);onDidChangeItemsExternal=this._onDidChangeItemsExternal.event;constructor(e,t){super(e,t,void 0),this.registerListeners()}registerListeners(){this._register(this.channel.listen("onDidChangeStorage",{profile:this.profile})(e=>this.onDidChangeStorage(e)))}onDidChangeStorage(e){(Array.isArray(e.changed)||Array.isArray(e.deleted))&&this._onDidChangeItemsExternal.fire({changed:e.changed?new Map(e.changed):void 0,deleted:e.deleted?new Set(e.deleted):void 0})}}class E extends n{constructor(e){super(e,void 0)}async close(){this.dispose()}}class U extends n{constructor(e,t){super(e,t)}async close(){this.dispose()}}class w extends i{onDidChangeItemsExternal=o.None;constructor(e,t){super(e,void 0,t)}async close(){this.dispose()}}class P{constructor(e){this.channel=e}isUsed(e){const t={payload:e,profile:void 0,workspace:void 0};return this.channel.call("isUsed",t)}}export{E as ApplicationStorageDatabaseClient,U as ProfileStorageDatabaseClient,P as StorageClient,w as WorkspaceStorageDatabaseClient};
+import { Emitter, Event } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+class BaseStorageDatabaseClient extends Disposable {
+    constructor(channel, profile, workspace) {
+        super();
+        this.channel = channel;
+        this.profile = profile;
+        this.workspace = workspace;
+    }
+    async getItems() {
+        const serializableRequest = { profile: this.profile, workspace: this.workspace };
+        const items = await this.channel.call('getItems', serializableRequest);
+        return new Map(items);
+    }
+    updateItems(request) {
+        const serializableRequest = { profile: this.profile, workspace: this.workspace };
+        if (request.insert) {
+            serializableRequest.insert = Array.from(request.insert.entries());
+        }
+        if (request.delete) {
+            serializableRequest.delete = Array.from(request.delete.values());
+        }
+        return this.channel.call('updateItems', serializableRequest);
+    }
+    optimize() {
+        const serializableRequest = { profile: this.profile, workspace: this.workspace };
+        return this.channel.call('optimize', serializableRequest);
+    }
+}
+class BaseProfileAwareStorageDatabaseClient extends BaseStorageDatabaseClient {
+    constructor(channel, profile) {
+        super(channel, profile, undefined);
+        this._onDidChangeItemsExternal = this._register(new Emitter());
+        this.onDidChangeItemsExternal = this._onDidChangeItemsExternal.event;
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.channel.listen('onDidChangeStorage', { profile: this.profile })((e) => this.onDidChangeStorage(e)));
+    }
+    onDidChangeStorage(e) {
+        if (Array.isArray(e.changed) || Array.isArray(e.deleted)) {
+            this._onDidChangeItemsExternal.fire({
+                changed: e.changed ? new Map(e.changed) : undefined,
+                deleted: e.deleted ? new Set(e.deleted) : undefined
+            });
+        }
+    }
+}
+export class ApplicationStorageDatabaseClient extends BaseProfileAwareStorageDatabaseClient {
+    constructor(channel) {
+        super(channel, undefined);
+    }
+    async close() {
+        this.dispose();
+    }
+}
+export class ProfileStorageDatabaseClient extends BaseProfileAwareStorageDatabaseClient {
+    constructor(channel, profile) {
+        super(channel, profile);
+    }
+    async close() {
+        this.dispose();
+    }
+}
+export class WorkspaceStorageDatabaseClient extends BaseStorageDatabaseClient {
+    constructor(channel, workspace) {
+        super(channel, undefined, workspace);
+        this.onDidChangeItemsExternal = Event.None;
+    }
+    async close() {
+        this.dispose();
+    }
+}
+export class StorageClient {
+    constructor(channel) {
+        this.channel = channel;
+    }
+    isUsed(path) {
+        const serializableRequest = { payload: path, profile: undefined, workspace: undefined };
+        return this.channel.call('isUsed', serializableRequest);
+    }
+}

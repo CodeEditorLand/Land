@@ -1,1 +1,80 @@
-import{illegalArgument as n}from"../../../base/common/errors.js";import"./extHost.protocol.js";import*as i from"./extHostTypeConverters.js";import*as s from"./extHostTypes.js";import"vscode";import"./extHostNotebookDocument.js";class r{constructor(e,o,t,a,d,l,c){this.id=e;this._proxy=o;this.notebookData=t;this._visibleRanges=a;this._selections=d;this._viewColumn=l;this.viewType=c}static apiEditorsToExtHost=new WeakMap;_visible=!1;_editor;get apiEditor(){if(!this._editor){const e=this;this._editor={get notebook(){return e.notebookData.apiNotebook},get selection(){return e._selections[0]},set selection(o){this.selections=[o]},get selections(){return e._selections},set selections(o){if(!Array.isArray(o)||!o.every(s.NotebookRange.isNotebookRange))throw n("selections");e._selections=o,e._trySetSelections(o)},get visibleRanges(){return e._visibleRanges},revealRange(o,t){e._proxy.$tryRevealRange(e.id,i.NotebookRange.from(o),t??s.NotebookEditorRevealType.Default)},get viewColumn(){return e._viewColumn},get replOptions(){if(e.viewType==="repl")return{appendIndex:this.notebook.cellCount-1}},[Symbol.for("debug.description")](){return`NotebookEditor(${this.notebook.uri.toString()})`}},r.apiEditorsToExtHost.set(this._editor,this)}return this._editor}get visible(){return this._visible}_acceptVisibility(e){this._visible=e}_acceptVisibleRanges(e){this._visibleRanges=e}_acceptSelections(e){this._selections=e}_trySetSelections(e){this._proxy.$trySetSelections(this.id,e.map(i.NotebookRange.from))}_acceptViewColumn(e){this._viewColumn=e}}export{r as ExtHostNotebookEditor};
+import { illegalArgument } from '../../../base/common/errors.js';
+import * as extHostConverter from './extHostTypeConverters.js';
+import * as extHostTypes from './extHostTypes.js';
+export class ExtHostNotebookEditor {
+    static { this.apiEditorsToExtHost = new WeakMap(); }
+    constructor(id, _proxy, notebookData, _visibleRanges, _selections, _viewColumn, viewType) {
+        this.id = id;
+        this._proxy = _proxy;
+        this.notebookData = notebookData;
+        this._visibleRanges = _visibleRanges;
+        this._selections = _selections;
+        this._viewColumn = _viewColumn;
+        this.viewType = viewType;
+        this._visible = false;
+    }
+    get apiEditor() {
+        if (!this._editor) {
+            const that = this;
+            this._editor = {
+                get notebook() {
+                    return that.notebookData.apiNotebook;
+                },
+                get selection() {
+                    return that._selections[0];
+                },
+                set selection(selection) {
+                    this.selections = [selection];
+                },
+                get selections() {
+                    return that._selections;
+                },
+                set selections(value) {
+                    if (!Array.isArray(value) || !value.every(extHostTypes.NotebookRange.isNotebookRange)) {
+                        throw illegalArgument('selections');
+                    }
+                    that._selections = value;
+                    that._trySetSelections(value);
+                },
+                get visibleRanges() {
+                    return that._visibleRanges;
+                },
+                revealRange(range, revealType) {
+                    that._proxy.$tryRevealRange(that.id, extHostConverter.NotebookRange.from(range), revealType ?? extHostTypes.NotebookEditorRevealType.Default);
+                },
+                get viewColumn() {
+                    return that._viewColumn;
+                },
+                get replOptions() {
+                    if (that.viewType === 'repl') {
+                        return { appendIndex: this.notebook.cellCount - 1 };
+                    }
+                    return undefined;
+                },
+                [Symbol.for('debug.description')]() {
+                    return `NotebookEditor(${this.notebook.uri.toString()})`;
+                }
+            };
+            ExtHostNotebookEditor.apiEditorsToExtHost.set(this._editor, this);
+        }
+        return this._editor;
+    }
+    get visible() {
+        return this._visible;
+    }
+    _acceptVisibility(value) {
+        this._visible = value;
+    }
+    _acceptVisibleRanges(value) {
+        this._visibleRanges = value;
+    }
+    _acceptSelections(selections) {
+        this._selections = selections;
+    }
+    _trySetSelections(value) {
+        this._proxy.$trySetSelections(this.id, value.map(extHostConverter.NotebookRange.from));
+    }
+    _acceptViewColumn(value) {
+        this._viewColumn = value;
+    }
+}

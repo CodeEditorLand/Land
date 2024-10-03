@@ -1,1 +1,144 @@
-var g=Object.defineProperty;var x=Object.getOwnPropertyDescriptor;var l=(s,n,e,i)=>{for(var o=i>1?void 0:i?x(n,e):n,t=s.length-1,d;t>=0;t--)(d=s[t])&&(o=(i?d(n,e,o):d(o))||o);return i&&o&&g(n,e,o),o},r=(s,n)=>(e,i)=>n(e,i,s);import{localize as C}from"../../../../nls.js";import{InstantiationType as b,registerSingleton as H}from"../../../../platform/instantiation/common/extensions.js";import{IWorkbenchLayoutService as z}from"../../layout/browser/layoutService.js";import{AuxiliaryWindow as k,AuxiliaryWindowMode as p,BrowserAuxiliaryWindowService as D,IAuxiliaryWindowService as E}from"../browser/auxiliaryWindowService.js";import"../../../../base/parts/sandbox/electron-sandbox/globals.js";import{IConfigurationService as S}from"../../../../platform/configuration/common/configuration.js";import"../../../../base/common/lifecycle.js";import{INativeHostService as f}from"../../../../platform/native/common/native.js";import{IDialogService as h}from"../../../../platform/dialogs/common/dialogs.js";import"../../../../base/browser/window.js";import{mark as u}from"../../../../base/common/performance.js";import{IInstantiationService as I}from"../../../../platform/instantiation/common/instantiation.js";import{ShutdownReason as U}from"../../lifecycle/common/lifecycle.js";import{ITelemetryService as B}from"../../../../platform/telemetry/common/telemetry.js";import"../../../../base/common/async.js";import{IHostService as W}from"../../host/browser/host.js";import{applyZoom as L}from"../../../../platform/window/electron-sandbox/window.js";import{getZoomLevel as M,isFullscreen as O,setFullscreen as F}from"../../../../base/browser/browser.js";import{getActiveWindow as T}from"../../../../base/browser/dom.js";import{IWorkbenchEnvironmentService as y}from"../../environment/common/environmentService.js";import{isMacintosh as A}from"../../../../base/common/platform.js";let a=class extends k{constructor(e,i,o,t,d,w,v,m,P){super(e,i,o,t,v,m);this.nativeHostService=d;this.instantiationService=w;this.dialogService=P;A||this.handleMaximizedState(),this.handleFullScreenState()}skipUnloadConfirmation=!1;maximized=!1;handleMaximizedState(){(async()=>this.maximized=await this.nativeHostService.isMaximized({targetWindowId:this.window.vscodeWindowId}))(),this._register(this.nativeHostService.onDidMaximizeWindow(e=>{e===this.window.vscodeWindowId&&(this.maximized=!0)})),this._register(this.nativeHostService.onDidUnmaximizeWindow(e=>{e===this.window.vscodeWindowId&&(this.maximized=!1)}))}async handleFullScreenState(){await this.nativeHostService.isFullScreen({targetWindowId:this.window.vscodeWindowId})&&F(!0,this.window)}async handleVetoBeforeClose(e,i){this.preventUnload(e),await this.dialogService.error(i,C("backupErrorDetails","Try saving or reverting the editors with unsaved changes first and then try again."))}async confirmBeforeClose(e){if(this.skipUnloadConfirmation)return;this.preventUnload(e),await this.instantiationService.invokeFunction(o=>a.confirmOnShutdown(o,U.CLOSE))&&(this.skipUnloadConfirmation=!0,this.nativeHostService.closeWindow({targetWindowId:this.window.vscodeWindowId}))}preventUnload(e){e.preventDefault(),e.returnValue=!0}createState(){const e=super.createState(),i=O(this.window);return{...e,bounds:e.bounds,mode:this.maximized?p.Maximized:i?p.Fullscreen:p.Normal}}};a=l([r(3,S),r(4,f),r(5,I),r(6,W),r(7,y),r(8,h)],a);let c=class extends D{constructor(e,i,o,t,d,w,v,m){super(e,t,i,w,v,m);this.nativeHostService=o;this.instantiationService=d}async resolveWindowId(e){u("code/auxiliaryWindow/willResolveWindowId");const i=await e.vscode.ipcRenderer.invoke("vscode:registerAuxiliaryWindow",this.nativeHostService.windowId);return u("code/auxiliaryWindow/didResolveWindowId"),i}createContainer(e,i,o){let t;return typeof o?.zoomLevel=="number"?t=o.zoomLevel:t=M(T()),L(t,e),super.createContainer(e,i)}createAuxiliaryWindow(e,i,o){return new a(e,i,o,this.configurationService,this.nativeHostService,this.instantiationService,this.hostService,this.environmentService,this.dialogService)}};c=l([r(0,z),r(1,S),r(2,f),r(3,h),r(4,I),r(5,B),r(6,W),r(7,y)],c),H(E,c,b.Delayed);export{a as NativeAuxiliaryWindow,c as NativeAuxiliaryWindowService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var NativeAuxiliaryWindow_1;
+import { localize } from '../../../../nls.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IWorkbenchLayoutService } from '../../layout/browser/layoutService.js';
+import { AuxiliaryWindow, AuxiliaryWindowMode, BrowserAuxiliaryWindowService, IAuxiliaryWindowService } from '../browser/auxiliaryWindowService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { mark } from '../../../../base/common/performance.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { Barrier } from '../../../../base/common/async.js';
+import { IHostService } from '../../host/browser/host.js';
+import { applyZoom } from '../../../../platform/window/electron-sandbox/window.js';
+import { getZoomLevel, isFullscreen, setFullscreen } from '../../../../base/browser/browser.js';
+import { getActiveWindow } from '../../../../base/browser/dom.js';
+import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
+import { isMacintosh } from '../../../../base/common/platform.js';
+let NativeAuxiliaryWindow = NativeAuxiliaryWindow_1 = class NativeAuxiliaryWindow extends AuxiliaryWindow {
+    constructor(window, container, stylesHaveLoaded, configurationService, nativeHostService, instantiationService, hostService, environmentService, dialogService) {
+        super(window, container, stylesHaveLoaded, configurationService, hostService, environmentService);
+        this.nativeHostService = nativeHostService;
+        this.instantiationService = instantiationService;
+        this.dialogService = dialogService;
+        this.skipUnloadConfirmation = false;
+        this.maximized = false;
+        if (!isMacintosh) {
+            this.handleMaximizedState();
+        }
+        this.handleFullScreenState();
+    }
+    handleMaximizedState() {
+        (async () => {
+            this.maximized = await this.nativeHostService.isMaximized({ targetWindowId: this.window.vscodeWindowId });
+        })();
+        this._register(this.nativeHostService.onDidMaximizeWindow(windowId => {
+            if (windowId === this.window.vscodeWindowId) {
+                this.maximized = true;
+            }
+        }));
+        this._register(this.nativeHostService.onDidUnmaximizeWindow(windowId => {
+            if (windowId === this.window.vscodeWindowId) {
+                this.maximized = false;
+            }
+        }));
+    }
+    async handleFullScreenState() {
+        const fullscreen = await this.nativeHostService.isFullScreen({ targetWindowId: this.window.vscodeWindowId });
+        if (fullscreen) {
+            setFullscreen(true, this.window);
+        }
+    }
+    async handleVetoBeforeClose(e, veto) {
+        this.preventUnload(e);
+        await this.dialogService.error(veto, localize('backupErrorDetails', "Try saving or reverting the editors with unsaved changes first and then try again."));
+    }
+    async confirmBeforeClose(e) {
+        if (this.skipUnloadConfirmation) {
+            return;
+        }
+        this.preventUnload(e);
+        const confirmed = await this.instantiationService.invokeFunction(accessor => NativeAuxiliaryWindow_1.confirmOnShutdown(accessor, 1));
+        if (confirmed) {
+            this.skipUnloadConfirmation = true;
+            this.nativeHostService.closeWindow({ targetWindowId: this.window.vscodeWindowId });
+        }
+    }
+    preventUnload(e) {
+        e.preventDefault();
+        e.returnValue = true;
+    }
+    createState() {
+        const state = super.createState();
+        const fullscreen = isFullscreen(this.window);
+        return {
+            ...state,
+            bounds: state.bounds,
+            mode: this.maximized ? AuxiliaryWindowMode.Maximized : fullscreen ? AuxiliaryWindowMode.Fullscreen : AuxiliaryWindowMode.Normal
+        };
+    }
+};
+NativeAuxiliaryWindow = NativeAuxiliaryWindow_1 = __decorate([
+    __param(3, IConfigurationService),
+    __param(4, INativeHostService),
+    __param(5, IInstantiationService),
+    __param(6, IHostService),
+    __param(7, IWorkbenchEnvironmentService),
+    __param(8, IDialogService),
+    __metadata("design:paramtypes", [Object, HTMLElement,
+        Barrier, Object, Object, Object, Object, Object, Object])
+], NativeAuxiliaryWindow);
+export { NativeAuxiliaryWindow };
+let NativeAuxiliaryWindowService = class NativeAuxiliaryWindowService extends BrowserAuxiliaryWindowService {
+    constructor(layoutService, configurationService, nativeHostService, dialogService, instantiationService, telemetryService, hostService, environmentService) {
+        super(layoutService, dialogService, configurationService, telemetryService, hostService, environmentService);
+        this.nativeHostService = nativeHostService;
+        this.instantiationService = instantiationService;
+    }
+    async resolveWindowId(auxiliaryWindow) {
+        mark('code/auxiliaryWindow/willResolveWindowId');
+        const windowId = await auxiliaryWindow.vscode.ipcRenderer.invoke('vscode:registerAuxiliaryWindow', this.nativeHostService.windowId);
+        mark('code/auxiliaryWindow/didResolveWindowId');
+        return windowId;
+    }
+    createContainer(auxiliaryWindow, disposables, options) {
+        let windowZoomLevel;
+        if (typeof options?.zoomLevel === 'number') {
+            windowZoomLevel = options.zoomLevel;
+        }
+        else {
+            windowZoomLevel = getZoomLevel(getActiveWindow());
+        }
+        applyZoom(windowZoomLevel, auxiliaryWindow);
+        return super.createContainer(auxiliaryWindow, disposables);
+    }
+    createAuxiliaryWindow(targetWindow, container, stylesHaveLoaded) {
+        return new NativeAuxiliaryWindow(targetWindow, container, stylesHaveLoaded, this.configurationService, this.nativeHostService, this.instantiationService, this.hostService, this.environmentService, this.dialogService);
+    }
+};
+NativeAuxiliaryWindowService = __decorate([
+    __param(0, IWorkbenchLayoutService),
+    __param(1, IConfigurationService),
+    __param(2, INativeHostService),
+    __param(3, IDialogService),
+    __param(4, IInstantiationService),
+    __param(5, ITelemetryService),
+    __param(6, IHostService),
+    __param(7, IWorkbenchEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], NativeAuxiliaryWindowService);
+export { NativeAuxiliaryWindowService };
+registerSingleton(IAuxiliaryWindowService, NativeAuxiliaryWindowService, 1);

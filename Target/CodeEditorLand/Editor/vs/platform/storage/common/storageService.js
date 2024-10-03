@@ -1,1 +1,119 @@
-import{Promises as n}from"../../../base/common/async.js";import{DisposableStore as l}from"../../../base/common/lifecycle.js";import{Schemas as o}from"../../../base/common/network.js";import{joinPath as p}from"../../../base/common/resources.js";import{Storage as s}from"../../../base/parts/storage/common/storage.js";import"../../environment/common/environment.js";import"../../ipc/common/services.js";import{AbstractStorageService as c,isProfileUsingDefaultStorage as g,StorageScope as i,WillSaveStateReason as S}from"./storage.js";import{ApplicationStorageDatabaseClient as h,ProfileStorageDatabaseClient as f,WorkspaceStorageDatabaseClient as d}from"./storageIpc.js";import{isUserDataProfile as m}from"../../userDataProfile/common/userDataProfile.js";import"../../workspace/common/workspace.js";class F extends c{constructor(e,t,r,a){super();this.initialWorkspace=e;this.initialProfiles=t;this.remoteService=r;this.environmentService=a}applicationStorageProfile=this.initialProfiles.defaultProfile;applicationStorage=this.createApplicationStorage();profileStorageProfile=this.initialProfiles.currentProfile;profileStorageDisposables=this._register(new l);profileStorage=this.createProfileStorage(this.profileStorageProfile);workspaceStorageId=this.initialWorkspace?.id;workspaceStorageDisposables=this._register(new l);workspaceStorage=this.createWorkspaceStorage(this.initialWorkspace);createApplicationStorage(){const e=this._register(new h(this.remoteService.getChannel("storage"))),t=this._register(new s(e));return this._register(t.onDidChangeStorage(r=>this.emitDidChangeValue(i.APPLICATION,r))),t}createProfileStorage(e){this.profileStorageDisposables.clear(),this.profileStorageProfile=e;let t;if(g(e))t=this.applicationStorage;else{const r=this.profileStorageDisposables.add(new f(this.remoteService.getChannel("storage"),e));t=this.profileStorageDisposables.add(new s(r))}return this.profileStorageDisposables.add(t.onDidChangeStorage(r=>this.emitDidChangeValue(i.PROFILE,r))),t}createWorkspaceStorage(e){this.workspaceStorageDisposables.clear(),this.workspaceStorageId=e?.id;let t;if(e){const r=this.workspaceStorageDisposables.add(new d(this.remoteService.getChannel("storage"),e));t=this.workspaceStorageDisposables.add(new s(r)),this.workspaceStorageDisposables.add(t.onDidChangeStorage(a=>this.emitDidChangeValue(i.WORKSPACE,a)))}return t}async doInitialize(){await n.settled([this.applicationStorage.init(),this.profileStorage.init(),this.workspaceStorage?.init()??Promise.resolve()])}getStorage(e){switch(e){case i.APPLICATION:return this.applicationStorage;case i.PROFILE:return this.profileStorage;default:return this.workspaceStorage}}getLogDetails(e){switch(e){case i.APPLICATION:return this.applicationStorageProfile.globalStorageHome.with({scheme:o.file}).fsPath;case i.PROFILE:return this.profileStorageProfile?.globalStorageHome.with({scheme:o.file}).fsPath;default:return this.workspaceStorageId?`${p(this.environmentService.workspaceStorageHome,this.workspaceStorageId,"state.vscdb").with({scheme:o.file}).fsPath}`:void 0}}async close(){this.stopFlushWhenIdle(),this.emitWillSaveState(S.SHUTDOWN),await n.settled([this.applicationStorage.close(),this.profileStorage.close(),this.workspaceStorage?.close()??Promise.resolve()])}async switchToProfile(e){if(!this.canSwitchProfile(this.profileStorageProfile,e))return;const t=this.profileStorage,r=t.items;t!==this.applicationStorage&&await t.close(),this.profileStorage=this.createProfileStorage(e),await this.profileStorage.init(),this.switchData(r,this.profileStorage,i.PROFILE)}async switchToWorkspace(e,t){const r=this.workspaceStorage,a=r?.items??new Map;await r?.close(),this.workspaceStorage=this.createWorkspaceStorage(e),await this.workspaceStorage.init(),this.switchData(a,this.workspaceStorage,i.WORKSPACE)}hasScope(e){return m(e)?this.profileStorageProfile.id===e.id:this.workspaceStorageId===e.id}}export{F as RemoteStorageService};
+import { Promises } from '../../../base/common/async.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { Schemas } from '../../../base/common/network.js';
+import { joinPath } from '../../../base/common/resources.js';
+import { Storage } from '../../../base/parts/storage/common/storage.js';
+import { AbstractStorageService, isProfileUsingDefaultStorage, WillSaveStateReason } from './storage.js';
+import { ApplicationStorageDatabaseClient, ProfileStorageDatabaseClient, WorkspaceStorageDatabaseClient } from './storageIpc.js';
+import { isUserDataProfile } from '../../userDataProfile/common/userDataProfile.js';
+export class RemoteStorageService extends AbstractStorageService {
+    constructor(initialWorkspace, initialProfiles, remoteService, environmentService) {
+        super();
+        this.initialWorkspace = initialWorkspace;
+        this.initialProfiles = initialProfiles;
+        this.remoteService = remoteService;
+        this.environmentService = environmentService;
+        this.applicationStorageProfile = this.initialProfiles.defaultProfile;
+        this.applicationStorage = this.createApplicationStorage();
+        this.profileStorageProfile = this.initialProfiles.currentProfile;
+        this.profileStorageDisposables = this._register(new DisposableStore());
+        this.profileStorage = this.createProfileStorage(this.profileStorageProfile);
+        this.workspaceStorageId = this.initialWorkspace?.id;
+        this.workspaceStorageDisposables = this._register(new DisposableStore());
+        this.workspaceStorage = this.createWorkspaceStorage(this.initialWorkspace);
+    }
+    createApplicationStorage() {
+        const storageDataBaseClient = this._register(new ApplicationStorageDatabaseClient(this.remoteService.getChannel('storage')));
+        const applicationStorage = this._register(new Storage(storageDataBaseClient));
+        this._register(applicationStorage.onDidChangeStorage(e => this.emitDidChangeValue(-1, e)));
+        return applicationStorage;
+    }
+    createProfileStorage(profile) {
+        this.profileStorageDisposables.clear();
+        this.profileStorageProfile = profile;
+        let profileStorage;
+        if (isProfileUsingDefaultStorage(profile)) {
+            profileStorage = this.applicationStorage;
+        }
+        else {
+            const storageDataBaseClient = this.profileStorageDisposables.add(new ProfileStorageDatabaseClient(this.remoteService.getChannel('storage'), profile));
+            profileStorage = this.profileStorageDisposables.add(new Storage(storageDataBaseClient));
+        }
+        this.profileStorageDisposables.add(profileStorage.onDidChangeStorage(e => this.emitDidChangeValue(0, e)));
+        return profileStorage;
+    }
+    createWorkspaceStorage(workspace) {
+        this.workspaceStorageDisposables.clear();
+        this.workspaceStorageId = workspace?.id;
+        let workspaceStorage = undefined;
+        if (workspace) {
+            const storageDataBaseClient = this.workspaceStorageDisposables.add(new WorkspaceStorageDatabaseClient(this.remoteService.getChannel('storage'), workspace));
+            workspaceStorage = this.workspaceStorageDisposables.add(new Storage(storageDataBaseClient));
+            this.workspaceStorageDisposables.add(workspaceStorage.onDidChangeStorage(e => this.emitDidChangeValue(1, e)));
+        }
+        return workspaceStorage;
+    }
+    async doInitialize() {
+        await Promises.settled([
+            this.applicationStorage.init(),
+            this.profileStorage.init(),
+            this.workspaceStorage?.init() ?? Promise.resolve()
+        ]);
+    }
+    getStorage(scope) {
+        switch (scope) {
+            case -1:
+                return this.applicationStorage;
+            case 0:
+                return this.profileStorage;
+            default:
+                return this.workspaceStorage;
+        }
+    }
+    getLogDetails(scope) {
+        switch (scope) {
+            case -1:
+                return this.applicationStorageProfile.globalStorageHome.with({ scheme: Schemas.file }).fsPath;
+            case 0:
+                return this.profileStorageProfile?.globalStorageHome.with({ scheme: Schemas.file }).fsPath;
+            default:
+                return this.workspaceStorageId ? `${joinPath(this.environmentService.workspaceStorageHome, this.workspaceStorageId, 'state.vscdb').with({ scheme: Schemas.file }).fsPath}` : undefined;
+        }
+    }
+    async close() {
+        this.stopFlushWhenIdle();
+        this.emitWillSaveState(WillSaveStateReason.SHUTDOWN);
+        await Promises.settled([
+            this.applicationStorage.close(),
+            this.profileStorage.close(),
+            this.workspaceStorage?.close() ?? Promise.resolve()
+        ]);
+    }
+    async switchToProfile(toProfile) {
+        if (!this.canSwitchProfile(this.profileStorageProfile, toProfile)) {
+            return;
+        }
+        const oldProfileStorage = this.profileStorage;
+        const oldItems = oldProfileStorage.items;
+        if (oldProfileStorage !== this.applicationStorage) {
+            await oldProfileStorage.close();
+        }
+        this.profileStorage = this.createProfileStorage(toProfile);
+        await this.profileStorage.init();
+        this.switchData(oldItems, this.profileStorage, 0);
+    }
+    async switchToWorkspace(toWorkspace, preserveData) {
+        const oldWorkspaceStorage = this.workspaceStorage;
+        const oldItems = oldWorkspaceStorage?.items ?? new Map();
+        await oldWorkspaceStorage?.close();
+        this.workspaceStorage = this.createWorkspaceStorage(toWorkspace);
+        await this.workspaceStorage.init();
+        this.switchData(oldItems, this.workspaceStorage, 1);
+    }
+    hasScope(scope) {
+        if (isUserDataProfile(scope)) {
+            return this.profileStorageProfile.id === scope.id;
+        }
+        return this.workspaceStorageId === scope.id;
+    }
+}

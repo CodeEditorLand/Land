@@ -1,1 +1,205 @@
-import*as p from"../../../../../nls.js";import{DisposableStore as A}from"../../../../../base/common/lifecycle.js";import"../../../../../editor/browser/editorExtensions.js";import{IBulkEditService as O,ResourceTextEdit as U}from"../../../../../editor/browser/services/bulkEditService.js";import{Range as V}from"../../../../../editor/common/core/range.js";import"../../../../../editor/common/model.js";import{ITextModelService as w}from"../../../../../editor/common/services/resolverService.js";import{Action2 as b,registerAction2 as v}from"../../../../../platform/actions/common/actions.js";import{IConfigurationService as C}from"../../../../../platform/configuration/common/configuration.js";import{ILogService as L}from"../../../../../platform/log/common/log.js";import{IQuickInputService as F}from"../../../../../platform/quickinput/common/quickInput.js";import{INotebookEditorService as D}from"../services/notebookEditorService.js";import{NotebookSetting as f}from"../../common/notebookCommon.js";import{isNotebookEditorInput as M}from"../../common/notebookEditorInput.js";import{IEditorService as h}from"../../../../services/editor/common/editorService.js";class z extends b{static ID="notebook.action.indentUsingTabs";constructor(){super({id:z.ID,title:p.localize("indentUsingTabs","Indent Using Tabs"),precondition:void 0})}run(t,...r){m(t,!1,!1)}}class x extends b{static ID="notebook.action.indentUsingSpaces";constructor(){super({id:x.ID,title:p.localize("indentUsingSpaces","Indent Using Spaces"),precondition:void 0})}run(t,...r){m(t,!0,!1)}}class k extends b{static ID="notebook.action.changeTabDisplaySize";constructor(){super({id:k.ID,title:p.localize("changeTabDisplaySize","Change Tab Display Size"),precondition:void 0})}run(t,...r){m(t,!0,!0)}}class E extends b{static ID="notebook.action.convertIndentationToSpaces";constructor(){super({id:E.ID,title:p.localize("convertIndentationToSpaces","Convert Indentation to Spaces"),precondition:void 0})}run(t,...r){N(t,!0)}}class T extends b{static ID="notebook.action.convertIndentationToTabs";constructor(){super({id:T.ID,title:p.localize("convertIndentationToTabs","Convert Indentation to Tabs"),precondition:void 0})}run(t,...r){N(t,!1)}}function m(e,t,r){const c=e.get(h),l=e.get(C),S=e.get(D),o=e.get(F),g=c.activeEditorPane?.input;if(!M(g)||!S.retrieveExistingWidgetFromURI(g.resource)?.value)return;const u=[1,2,3,4,5,6,7,8].map(s=>({id:s.toString(),label:s.toString()})),i=l.getValue(f.cellEditorOptionsCustomizations),n=i["editor.insertSpaces"];delete i["editor.indentSize"],delete i["editor.tabSize"],delete i["editor.insertSpaces"],setTimeout(()=>{o.pick(u,{placeHolder:p.localize({key:"selectTabWidth",comment:["Tab corresponds to the tab key"]},"Select Tab Size for Current File")}).then(s=>{if(s){const d=parseInt(s.label,10);r?l.updateValue(f.cellEditorOptionsCustomizations,{...i,"editor.tabSize":d,"editor.indentSize":d,"editor.insertSpaces":n}):l.updateValue(f.cellEditorOptionsCustomizations,{...i,"editor.tabSize":d,"editor.indentSize":d,"editor.insertSpaces":t})}})},50)}function N(e,t){const r=e.get(h),c=e.get(C),l=e.get(L),S=e.get(w),o=e.get(D),g=e.get(O),a=r.activeEditorPane?.input;if(!M(a))return;const u=o.retrieveExistingWidgetFromURI(a.resource)?.value?.textModel;if(!u)return;const i=new A;try{Promise.all(u.cells.map(async n=>{const s=await S.createModelReference(n.uri);i.add(s);const d=s.object.textEditorModel,y=n.textModel?.getOptions();if(!y)return;const R=W(d,y.tabSize,t);g.apply(R,{label:p.localize("convertIndentation","Convert Indentation"),code:"undoredo.convertIndentation"})})).then(()=>{const n=c.getValue(f.cellEditorOptionsCustomizations),s=n["editor.indentSize"],d=n["editor.tabSize"];delete n["editor.indentSize"],delete n["editor.tabSize"],delete n["editor.insertSpaces"],c.updateValue(f.cellEditorOptionsCustomizations,{...n,"editor.tabSize":d,"editor.indentSize":s,"editor.insertSpaces":t}),i.dispose()})}catch{l.error("Failed to convert indentation to spaces for notebook cells.")}}function W(e,t,r){if(e.getLineCount()===1&&e.getLineMaxColumn(1)===1)return[];let c="";for(let o=0;o<t;o++)c+=" ";const l=new RegExp(c,"gi"),S=[];for(let o=1,g=e.getLineCount();o<=g;o++){let a=e.getLineFirstNonWhitespaceColumn(o);if(a===0&&(a=e.getLineMaxColumn(o)),a===1)continue;const I=new V(o,1,o,a),u=e.getValueInRange(I),i=r?u.replace(/\t/ig,c):u.replace(l,"	");S.push(new U(e.uri,{range:I,text:i}))}return S}v(x),v(z),v(k),v(E),v(T);export{k as NotebookChangeTabDisplaySize,x as NotebookIndentUsingSpaces,z as NotebookIndentUsingTabs,E as NotebookIndentationToSpacesAction,T as NotebookIndentationToTabsAction};
+import * as nls from '../../../../../nls.js';
+import { DisposableStore } from '../../../../../base/common/lifecycle.js';
+import { IBulkEditService, ResourceTextEdit } from '../../../../../editor/browser/services/bulkEditService.js';
+import { Range } from '../../../../../editor/common/core/range.js';
+import { ITextModelService } from '../../../../../editor/common/services/resolverService.js';
+import { Action2, registerAction2 } from '../../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { ILogService } from '../../../../../platform/log/common/log.js';
+import { IQuickInputService } from '../../../../../platform/quickinput/common/quickInput.js';
+import { INotebookEditorService } from '../services/notebookEditorService.js';
+import { NotebookSetting } from '../../common/notebookCommon.js';
+import { isNotebookEditorInput } from '../../common/notebookEditorInput.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+export class NotebookIndentUsingTabs extends Action2 {
+    static { this.ID = 'notebook.action.indentUsingTabs'; }
+    constructor() {
+        super({
+            id: NotebookIndentUsingTabs.ID,
+            title: nls.localize('indentUsingTabs', "Indent Using Tabs"),
+            precondition: undefined,
+        });
+    }
+    run(accessor, ...args) {
+        changeNotebookIndentation(accessor, false, false);
+    }
+}
+export class NotebookIndentUsingSpaces extends Action2 {
+    static { this.ID = 'notebook.action.indentUsingSpaces'; }
+    constructor() {
+        super({
+            id: NotebookIndentUsingSpaces.ID,
+            title: nls.localize('indentUsingSpaces', "Indent Using Spaces"),
+            precondition: undefined,
+        });
+    }
+    run(accessor, ...args) {
+        changeNotebookIndentation(accessor, true, false);
+    }
+}
+export class NotebookChangeTabDisplaySize extends Action2 {
+    static { this.ID = 'notebook.action.changeTabDisplaySize'; }
+    constructor() {
+        super({
+            id: NotebookChangeTabDisplaySize.ID,
+            title: nls.localize('changeTabDisplaySize', "Change Tab Display Size"),
+            precondition: undefined,
+        });
+    }
+    run(accessor, ...args) {
+        changeNotebookIndentation(accessor, true, true);
+    }
+}
+export class NotebookIndentationToSpacesAction extends Action2 {
+    static { this.ID = 'notebook.action.convertIndentationToSpaces'; }
+    constructor() {
+        super({
+            id: NotebookIndentationToSpacesAction.ID,
+            title: nls.localize('convertIndentationToSpaces', "Convert Indentation to Spaces"),
+            precondition: undefined,
+        });
+    }
+    run(accessor, ...args) {
+        convertNotebookIndentation(accessor, true);
+    }
+}
+export class NotebookIndentationToTabsAction extends Action2 {
+    static { this.ID = 'notebook.action.convertIndentationToTabs'; }
+    constructor() {
+        super({
+            id: NotebookIndentationToTabsAction.ID,
+            title: nls.localize('convertIndentationToTabs', "Convert Indentation to Tabs"),
+            precondition: undefined,
+        });
+    }
+    run(accessor, ...args) {
+        convertNotebookIndentation(accessor, false);
+    }
+}
+function changeNotebookIndentation(accessor, insertSpaces, displaySizeOnly) {
+    const editorService = accessor.get(IEditorService);
+    const configurationService = accessor.get(IConfigurationService);
+    const notebookEditorService = accessor.get(INotebookEditorService);
+    const quickInputService = accessor.get(IQuickInputService);
+    const activeInput = editorService.activeEditorPane?.input;
+    const isNotebook = isNotebookEditorInput(activeInput);
+    if (!isNotebook) {
+        return;
+    }
+    const notebookEditor = notebookEditorService.retrieveExistingWidgetFromURI(activeInput.resource)?.value;
+    if (!notebookEditor) {
+        return;
+    }
+    const picks = [1, 2, 3, 4, 5, 6, 7, 8].map(n => ({
+        id: n.toString(),
+        label: n.toString(),
+    }));
+    const initialConfig = configurationService.getValue(NotebookSetting.cellEditorOptionsCustomizations);
+    const initialInsertSpaces = initialConfig['editor.insertSpaces'];
+    delete initialConfig['editor.indentSize'];
+    delete initialConfig['editor.tabSize'];
+    delete initialConfig['editor.insertSpaces'];
+    setTimeout(() => {
+        quickInputService.pick(picks, { placeHolder: nls.localize({ key: 'selectTabWidth', comment: ['Tab corresponds to the tab key'] }, "Select Tab Size for Current File") }).then(pick => {
+            if (pick) {
+                const pickedVal = parseInt(pick.label, 10);
+                if (displaySizeOnly) {
+                    configurationService.updateValue(NotebookSetting.cellEditorOptionsCustomizations, {
+                        ...initialConfig,
+                        'editor.tabSize': pickedVal,
+                        'editor.indentSize': pickedVal,
+                        'editor.insertSpaces': initialInsertSpaces
+                    });
+                }
+                else {
+                    configurationService.updateValue(NotebookSetting.cellEditorOptionsCustomizations, {
+                        ...initialConfig,
+                        'editor.tabSize': pickedVal,
+                        'editor.indentSize': pickedVal,
+                        'editor.insertSpaces': insertSpaces
+                    });
+                }
+            }
+        });
+    }, 50);
+}
+function convertNotebookIndentation(accessor, tabsToSpaces) {
+    const editorService = accessor.get(IEditorService);
+    const configurationService = accessor.get(IConfigurationService);
+    const logService = accessor.get(ILogService);
+    const textModelService = accessor.get(ITextModelService);
+    const notebookEditorService = accessor.get(INotebookEditorService);
+    const bulkEditService = accessor.get(IBulkEditService);
+    const activeInput = editorService.activeEditorPane?.input;
+    const isNotebook = isNotebookEditorInput(activeInput);
+    if (!isNotebook) {
+        return;
+    }
+    const notebookTextModel = notebookEditorService.retrieveExistingWidgetFromURI(activeInput.resource)?.value?.textModel;
+    if (!notebookTextModel) {
+        return;
+    }
+    const disposable = new DisposableStore();
+    try {
+        Promise.all(notebookTextModel.cells.map(async (cell) => {
+            const ref = await textModelService.createModelReference(cell.uri);
+            disposable.add(ref);
+            const textEditorModel = ref.object.textEditorModel;
+            const modelOpts = cell.textModel?.getOptions();
+            if (!modelOpts) {
+                return;
+            }
+            const edits = getIndentationEditOperations(textEditorModel, modelOpts.tabSize, tabsToSpaces);
+            bulkEditService.apply(edits, { label: nls.localize('convertIndentation', "Convert Indentation"), code: 'undoredo.convertIndentation', });
+        })).then(() => {
+            const initialConfig = configurationService.getValue(NotebookSetting.cellEditorOptionsCustomizations);
+            const initialIndentSize = initialConfig['editor.indentSize'];
+            const initialTabSize = initialConfig['editor.tabSize'];
+            delete initialConfig['editor.indentSize'];
+            delete initialConfig['editor.tabSize'];
+            delete initialConfig['editor.insertSpaces'];
+            configurationService.updateValue(NotebookSetting.cellEditorOptionsCustomizations, {
+                ...initialConfig,
+                'editor.tabSize': initialTabSize,
+                'editor.indentSize': initialIndentSize,
+                'editor.insertSpaces': tabsToSpaces
+            });
+            disposable.dispose();
+        });
+    }
+    catch {
+        logService.error('Failed to convert indentation to spaces for notebook cells.');
+    }
+}
+function getIndentationEditOperations(model, tabSize, tabsToSpaces) {
+    if (model.getLineCount() === 1 && model.getLineMaxColumn(1) === 1) {
+        return [];
+    }
+    let spaces = '';
+    for (let i = 0; i < tabSize; i++) {
+        spaces += ' ';
+    }
+    const spacesRegExp = new RegExp(spaces, 'gi');
+    const edits = [];
+    for (let lineNumber = 1, lineCount = model.getLineCount(); lineNumber <= lineCount; lineNumber++) {
+        let lastIndentationColumn = model.getLineFirstNonWhitespaceColumn(lineNumber);
+        if (lastIndentationColumn === 0) {
+            lastIndentationColumn = model.getLineMaxColumn(lineNumber);
+        }
+        if (lastIndentationColumn === 1) {
+            continue;
+        }
+        const originalIndentationRange = new Range(lineNumber, 1, lineNumber, lastIndentationColumn);
+        const originalIndentation = model.getValueInRange(originalIndentationRange);
+        const newIndentation = (tabsToSpaces
+            ? originalIndentation.replace(/\t/ig, spaces)
+            : originalIndentation.replace(spacesRegExp, '\t'));
+        edits.push(new ResourceTextEdit(model.uri, { range: originalIndentationRange, text: newIndentation }));
+    }
+    return edits;
+}
+registerAction2(NotebookIndentUsingSpaces);
+registerAction2(NotebookIndentUsingTabs);
+registerAction2(NotebookChangeTabDisplaySize);
+registerAction2(NotebookIndentationToSpacesAction);
+registerAction2(NotebookIndentationToTabsAction);

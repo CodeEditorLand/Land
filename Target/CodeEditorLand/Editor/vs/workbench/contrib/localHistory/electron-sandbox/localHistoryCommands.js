@@ -1,1 +1,32 @@
-import{localize2 as e}from"../../../../nls.js";import{IWorkingCopyHistoryService as s}from"../../../services/workingCopy/common/workingCopyHistory.js";import"../../../../editor/browser/editorExtensions.js";import{registerAction2 as c,Action2 as a,MenuId as l}from"../../../../platform/actions/common/actions.js";import{LOCAL_HISTORY_MENU_CONTEXT_KEY as p}from"../browser/localHistory.js";import{findLocalHistoryEntry as f}from"../browser/localHistoryCommands.js";import{isMacintosh as d,isWindows as v}from"../../../../base/common/platform.js";import{INativeHostService as I}from"../../../../platform/native/common/native.js";import{ContextKeyExpr as y}from"../../../../platform/contextkey/common/contextkey.js";import{Schemas as r}from"../../../../base/common/network.js";import{ResourceContextKey as C}from"../../../common/contextkeys.js";c(class extends a{constructor(){super({id:"workbench.action.localHistory.revealInOS",title:v?e("revealInWindows","Reveal in File Explorer"):d?e("revealInMac","Reveal in Finder"):e("openContainer","Open Containing Folder"),menu:{id:l.TimelineItemContext,group:"4_reveal",order:1,when:y.and(p,C.Scheme.isEqualTo(r.file))}})}async run(o,t){const n=o.get(s),m=o.get(I),{entry:i}=await f(n,t);i&&await m.showItemInFolder(i.location.with({scheme:r.file}).fsPath)}});
+import { localize2 } from '../../../../nls.js';
+import { IWorkingCopyHistoryService } from '../../../services/workingCopy/common/workingCopyHistory.js';
+import { registerAction2, Action2, MenuId } from '../../../../platform/actions/common/actions.js';
+import { LOCAL_HISTORY_MENU_CONTEXT_KEY } from '../browser/localHistory.js';
+import { findLocalHistoryEntry } from '../browser/localHistoryCommands.js';
+import { isMacintosh, isWindows } from '../../../../base/common/platform.js';
+import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { ResourceContextKey } from '../../../common/contextkeys.js';
+registerAction2(class extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.localHistory.revealInOS',
+            title: isWindows ? localize2('revealInWindows', "Reveal in File Explorer") : isMacintosh ? localize2('revealInMac', "Reveal in Finder") : localize2('openContainer', "Open Containing Folder"),
+            menu: {
+                id: MenuId.TimelineItemContext,
+                group: '4_reveal',
+                order: 1,
+                when: ContextKeyExpr.and(LOCAL_HISTORY_MENU_CONTEXT_KEY, ResourceContextKey.Scheme.isEqualTo(Schemas.file))
+            }
+        });
+    }
+    async run(accessor, item) {
+        const workingCopyHistoryService = accessor.get(IWorkingCopyHistoryService);
+        const nativeHostService = accessor.get(INativeHostService);
+        const { entry } = await findLocalHistoryEntry(workingCopyHistoryService, item);
+        if (entry) {
+            await nativeHostService.showItemInFolder(entry.location.with({ scheme: Schemas.file }).fsPath);
+        }
+    }
+});

@@ -1,1 +1,721 @@
-import{coalesce as k}from"../../../base/common/arrays.js";import{raceCancellation as M}from"../../../base/common/async.js";import"../../../base/common/cancellation.js";import{toErrorMessage as q}from"../../../base/common/errorMessage.js";import{Emitter as w}from"../../../base/common/event.js";import{Iterable as S}from"../../../base/common/iterator.js";import{Disposable as E,DisposableMap as b,DisposableStore as y,toDisposable as H}from"../../../base/common/lifecycle.js";import{revive as I}from"../../../base/common/marshalling.js";import{StopWatch as F}from"../../../base/common/stopwatch.js";import{ThemeIcon as $}from"../../../base/common/themables.js";import{assertType as V}from"../../../base/common/types.js";import{URI as W}from"../../../base/common/uri.js";import"../../../editor/common/languages.js";import{ExtensionIdentifier as U}from"../../../platform/extensions/common/extensions.js";import"../../../platform/log/common/log.js";import{ChatAgentLocation as _}from"../../contrib/chat/common/chatAgents.js";import{ChatAgentVoteDirection as D}from"../../contrib/chat/common/chatService.js";import{checkProposedApiEnabled as d,isProposedApiEnabled as m}from"../../services/extensions/common/extensions.js";import"../../services/extensions/common/proxyIdentifier.js";import{MainContext as L}from"./extHost.protocol.js";import"./extHostCommands.js";import"./extHostDocuments.js";import"./extHostLanguageModels.js";import*as a from"./extHostTypeConverters.js";import*as c from"./extHostTypes.js";class N{constructor(l,o,r,t,e){this._extension=l;this._request=o;this._proxy=r;this._commandsConverter=t;this._sessionDisposables=e}_stopWatch=F.create(!1);_isClosed=!1;_firstProgress;_apiObject;close(){this._isClosed=!0}get timings(){return{firstProgress:this._firstProgress,totalElapsed:this._stopWatch.elapsed()}}get apiObject(){if(!this._apiObject){let r=function(e){if(o._isClosed){const n=new Error("Response stream has been closed");throw Error.captureStackTrace(n,e),n}};var l=r;const o=this;this._stopWatch.reset();const t=(e,n)=>{if(typeof this._firstProgress>"u"&&(e.kind==="markdownContent"||e.kind==="markdownVuln")&&(this._firstProgress=this._stopWatch.elapsed()),n){const s=this._proxy.$handleProgressChunk(this._request.requestId,e),i={report:h=>{s?.then(p=>{p&&(c.MarkdownString.isMarkdownString(h.value)?this._proxy.$handleProgressChunk(this._request.requestId,a.ChatResponseWarningPart.from(h),p):this._proxy.$handleProgressChunk(this._request.requestId,a.ChatResponseReferencePart.from(h),p))})}};Promise.all([s,n?.(i)]).then(([h,p])=>{h!==void 0&&this._proxy.$handleProgressChunk(this._request.requestId,a.ChatTaskResult.from(p),h)})}else this._proxy.$handleProgressChunk(this._request.requestId,e)};this._apiObject={markdown(e){r(this.markdown);const n=new c.ChatResponseMarkdownPart(e),s=a.ChatResponseMarkdownPart.from(n);return t(s),this},markdownWithVulnerabilities(e,n){r(this.markdown),n&&d(o._extension,"chatParticipantAdditions");const s=new c.ChatResponseMarkdownWithVulnerabilitiesPart(e,n),i=a.ChatResponseMarkdownWithVulnerabilitiesPart.from(s);return t(i),this},codeblockUri(e){r(this.codeblockUri),d(o._extension,"chatParticipantAdditions");const n=new c.ChatResponseCodeblockUriPart(e),s=a.ChatResponseCodeblockUriPart.from(n);return t(s),this},filetree(e,n){r(this.filetree);const s=new c.ChatResponseFileTreePart(e,n),i=a.ChatResponseFilesPart.from(s);return t(i),this},anchor(e,n){r(this.anchor);const s=new c.ChatResponseAnchorPart(e,n),i=a.ChatResponseAnchorPart.from(s);return t(i),this},button(e){r(this.anchor);const n=new c.ChatResponseCommandButtonPart(e),s=a.ChatResponseCommandButtonPart.from(n,o._commandsConverter,o._sessionDisposables);return t(s),this},progress(e,n){r(this.progress);const s=new c.ChatResponseProgressPart2(e,n),i=n?a.ChatTask.from(s):a.ChatResponseProgressPart.from(s);return t(i,n),this},warning(e){r(this.progress),d(o._extension,"chatParticipantAdditions");const n=new c.ChatResponseWarningPart(e),s=a.ChatResponseWarningPart.from(n);return t(s),this},reference(e,n){return this.reference2(e,n)},reference2(e,n,s){if(r(this.reference),typeof e=="object"&&"variableName"in e&&d(o._extension,"chatParticipantAdditions"),typeof e=="object"&&"variableName"in e&&!e.value){const i=o._request.variables.variables.find(h=>h.name===e.variableName);if(i){let h;if(i.references?.length)h=i.references.map(p=>({kind:"reference",reference:{variableName:e.variableName,value:p.reference}}));else{const p=new c.ChatResponseReferencePart(e,n,s);h=[a.ChatResponseReferencePart.from(p)]}return h.forEach(p=>t(p)),this}}else{const i=new c.ChatResponseReferencePart(e,n,s),h=a.ChatResponseReferencePart.from(i);t(h)}return this},codeCitation(e,n,s){r(this.codeCitation),d(o._extension,"chatParticipantAdditions");const i=new c.ChatResponseCodeCitationPart(e,n,s),h=a.ChatResponseCodeCitationPart.from(i);t(h)},textEdit(e,n){r(this.textEdit),d(o._extension,"chatParticipantAdditions");const s=new c.ChatResponseTextEditPart(e,n),i=a.ChatResponseTextEditPart.from(s);return t(i),this},detectedParticipant(e,n){r(this.detectedParticipant),d(o._extension,"chatParticipantAdditions");const s=new c.ChatResponseDetectedParticipantPart(e,n),i=a.ChatResponseDetectedParticipantPart.from(s);return t(i),this},confirmation(e,n,s,i){r(this.confirmation),d(o._extension,"chatParticipantAdditions");const h=new c.ChatResponseConfirmationPart(e,n,s,i),p=a.ChatResponseConfirmationPart.from(h);return t(p),this},push(e){if(r(this.push),(e instanceof c.ChatResponseTextEditPart||e instanceof c.ChatResponseMarkdownWithVulnerabilitiesPart||e instanceof c.ChatResponseDetectedParticipantPart||e instanceof c.ChatResponseWarningPart||e instanceof c.ChatResponseConfirmationPart||e instanceof c.ChatResponseCodeCitationPart||e instanceof c.ChatResponseMovePart||e instanceof c.ChatResponseProgressPart2)&&d(o._extension,"chatParticipantAdditions"),e instanceof c.ChatResponseReferencePart)this.reference2(e.value,e.iconPath,e.options);else if(e instanceof c.ChatResponseProgressPart2){const n=e.task?a.ChatTask.from(e):a.ChatResponseProgressPart.from(e);t(n,e.task)}else{const n=a.ChatResponsePart.from(e,o._commandsConverter,o._sessionDisposables);t(n)}return this}}}return this._apiObject}}class P extends E{constructor(o,r,t,e,n){super();this._logService=r;this._commands=t;this._documents=e;this._languageModels=n;this._proxy=o.getProxy(L.MainThreadChatAgents2)}static _idPool=0;_agents=new Map;_proxy;static _participantDetectionProviderIdPool=0;_participantDetectionProviders=new Map;_sessionDisposables=this._register(new b);_completionDisposables=this._register(new b);transferActiveChat(o){this._proxy.$transferActiveChatSession(o)}createChatAgent(o,r,t){const e=P._idPool++,n=new A(o,r,this._proxy,e,t);return this._agents.set(e,n),this._proxy.$registerAgent(e,o.identifier,r,{},void 0),n.apiAgent}createDynamicChatAgent(o,r,t,e){const n=P._idPool++,s=new A(o,r,this._proxy,n,e);return this._agents.set(n,s),this._proxy.$registerAgent(n,o.identifier,r,{isSticky:!0},t),s.apiAgent}registerChatParticipantDetectionProvider(o,r){const t=P._participantDetectionProviderIdPool++;return this._participantDetectionProviders.set(t,new O(o,r)),this._proxy.$registerChatParticipantDetectionProvider(t),H(()=>{this._participantDetectionProviders.delete(t),this._proxy.$unregisterChatParticipantDetectionProvider(t)})}async $detectChatParticipant(o,r,t,e,n){const{request:s,location:i,history:h}=await this._createRequest(r,t),p=this._participantDetectionProviders.get(o);if(!p)return;const u=a.ChatAgentRequest.to(s,i);return s.userSelectedModelId&&m(p.extension,"chatParticipantAdditions")&&(u.userSelectedModel=await this._languageModels.getLanguageModelByIdentifier(p.extension,s.userSelectedModelId)),p.provider.provideParticipantDetection(u,{history:h},{participants:e.participants,location:a.ChatLocation.to(e.location)},n)}async _createRequest(o,r){const t=I(o),e=await this.prepareHistoryTurns(t.agentId,r);let n;if(t.locationData?.type===_.Editor){const s=this._documents.getDocument(t.locationData.document);n=new c.ChatRequestEditorData(s,a.Selection.to(t.locationData.selection),a.Range.to(t.locationData.wholeRange))}else if(t.locationData?.type===_.Notebook){const s=this._documents.getDocument(t.locationData.sessionInputUri);n=new c.ChatRequestNotebookData(s)}else t.locationData?.type,_.Terminal;return{request:t,location:n,history:e}}async $invokeAgent(o,r,t,e){const n=this._agents.get(o);if(!n)throw new Error(`[CHAT](${o}) CANNOT invoke agent because the agent is not registered`);let s;try{const{request:i,location:h,history:p}=await this._createRequest(r,t);let u=this._sessionDisposables.get(i.sessionId);u||(u=new y,this._sessionDisposables.set(i.sessionId,u)),s=new N(n.extension,i,this._proxy,this._commands.converter,u);const f=a.ChatAgentRequest.to(i,h);i.userSelectedModelId&&m(n.extension,"chatParticipantAdditions")&&(f.userSelectedModel=await this._languageModels.getLanguageModelByIdentifier(n.extension,i.userSelectedModelId));const C=n.invoke(f,{history:p},s.apiObject,e);return await M(Promise.resolve(C).then(g=>{if(g?.metadata)try{JSON.stringify(g.metadata)}catch(T){const R=`result.metadata MUST be JSON.stringify-able. Got error: ${T.message}`;return this._logService.error(`[${n.extension.identifier.value}] [@${n.id}] ${R}`,n.extension),{errorDetails:{message:R},timings:s?.timings,nextQuestion:g.nextQuestion}}let v;return g?.errorDetails&&(v={...g.errorDetails,responseIsIncomplete:!0}),v?.responseIsRedacted&&d(n.extension,"chatParticipantPrivate"),{errorDetails:v,timings:s?.timings,metadata:g?.metadata,nextQuestion:g?.nextQuestion}}),e)}catch(i){return this._logService.error(i,n.extension),i instanceof c.LanguageModelError&&i.cause&&(i=i.cause),{errorDetails:{message:q(i),responseIsIncomplete:!0}}}finally{s?.close()}}async prepareHistoryTurns(o,r){const t=[];for(const e of r.history){const n=a.ChatAgentResult.to(e.result),s=o===e.request.agentId?n:{...n,metadata:void 0},i=e.request.variables.variables.filter(f=>!f.isTool).map(a.ChatPromptReference.to),h=e.request.variables.variables.filter(f=>f.isTool).map(a.ChatLanguageModelToolReference.to),p=new c.ChatRequestTurn(e.request.message,e.request.command,i,e.request.agentId);p.toolReferences=h,t.push(p);const u=k(e.response.map(f=>a.ChatResponsePart.toContent(f,this._commands.converter)));t.push(new c.ChatResponseTurn(u,s,e.request.agentId,e.request.command))}return t}$releaseSession(o){this._sessionDisposables.deleteAndDispose(o)}async $provideFollowups(o,r,t,e,n){const s=this._agents.get(r);if(!s)return Promise.resolve([]);const i=I(o),h=await this.prepareHistoryTurns(s.id,e),p=a.ChatAgentResult.to(t);return(await s.provideFollowups(p,{history:h},n)).filter(u=>{const f=!u.participant||S.some(this._agents.values(),C=>C.id===u.participant&&U.equals(C.extension.identifier,s.extension.identifier));return f||this._logService.warn(`[@${s.id}] ChatFollowup refers to an unknown participant: ${u.participant}`),f}).map(u=>a.ChatFollowup.from(u,i))}$acceptFeedback(o,r,t){const e=this._agents.get(o);if(!e)return;const n=a.ChatAgentResult.to(r);let s;switch(t.direction){case D.Down:s=c.ChatResultFeedbackKind.Unhelpful;break;case D.Up:s=c.ChatResultFeedbackKind.Helpful;break}const i={result:n,kind:s,unhelpfulReason:m(e.extension,"chatParticipantAdditions")?t.reason:void 0};e.acceptFeedback(Object.freeze(i))}$acceptAction(o,r,t){const e=this._agents.get(o);if(!e||t.action.kind==="vote")return;const n=a.ChatAgentUserActionEvent.to(r,t,this._commands.converter);n&&e.acceptAction(Object.freeze(n))}async $invokeCompletionProvider(o,r,t){const e=this._agents.get(o);if(!e)return[];let n=this._completionDisposables.get(o);return n?n.clear():(n=new y,this._completionDisposables.set(o,n)),(await e.invokeCompletionProvider(r,t)).map(i=>a.ChatAgentCompletionItem.from(i,this._commands.converter,n))}async $provideWelcomeMessage(o,r){const t=this._agents.get(o);if(t)return await t.provideWelcomeMessage(r)}async $provideChatTitle(o,r,t){const e=this._agents.get(o);if(!e)return;const n=await this.prepareHistoryTurns(e.id,{history:r});return await e.provideTitle({history:n},t)}async $provideSampleQuestions(o,r,t){const e=this._agents.get(o);if(e)return(await e.provideSampleQuestions(a.ChatLocation.to(r),t)).map(n=>a.ChatFollowup.from(n,void 0))}}class O{constructor(l,o){this.extension=l;this.provider=o}}class A{constructor(l,o,r,t,e){this.extension=l;this.id=o;this._proxy=r;this._handle=t;this._requestHandler=e}_followupProvider;_iconPath;_helpTextPrefix;_helpTextVariablesPrefix;_helpTextPostfix;_isSecondary;_onDidReceiveFeedback=new w;_onDidPerformAction=new w;_supportIssueReporting;_agentVariableProvider;_welcomeMessageProvider;_titleProvider;_requester;_supportsSlowReferences;acceptFeedback(l){this._onDidReceiveFeedback.fire(l)}acceptAction(l){this._onDidPerformAction.fire(l)}async invokeCompletionProvider(l,o){return this._agentVariableProvider?await this._agentVariableProvider.provider.provideCompletionItems(l,o)??[]:[]}async provideFollowups(l,o,r){if(!this._followupProvider)return[];const t=await this._followupProvider.provideFollowups(l,o,r);return t?t.filter(e=>!(e&&"commandId"in e)).filter(e=>!(e&&"message"in e)):[]}async provideWelcomeMessage(l){if(!this._welcomeMessageProvider?.provideWelcomeMessage)return;const o=await this._welcomeMessageProvider.provideWelcomeMessage(l),r=o?.icon;if(!(!o||!$.isThemeIcon(r)))return{...o,icon:r,message:a.MarkdownString.from(o.message)}}async provideTitle(l,o){if(this._titleProvider)return await this._titleProvider.provideChatTitle(l,o)??void 0}async provideSampleQuestions(l,o){if(!this._welcomeMessageProvider||!this._welcomeMessageProvider.provideSampleQuestions)return[];const r=await this._welcomeMessageProvider.provideSampleQuestions(l,o);return r||[]}get apiAgent(){let l=!1,o=!1;const r=()=>{l||o||(o=!0,queueMicrotask(()=>{this._proxy.$updateAgent(this._handle,{icon:this._iconPath?this._iconPath instanceof W?this._iconPath:"light"in this._iconPath?this._iconPath.light:void 0:void 0,iconDark:this._iconPath&&"dark"in this._iconPath?this._iconPath.dark:void 0,themeIcon:this._iconPath instanceof c.ThemeIcon?this._iconPath:void 0,hasFollowups:this._followupProvider!==void 0,isSecondary:this._isSecondary,helpTextPrefix:!this._helpTextPrefix||typeof this._helpTextPrefix=="string"?this._helpTextPrefix:a.MarkdownString.from(this._helpTextPrefix),helpTextVariablesPrefix:!this._helpTextVariablesPrefix||typeof this._helpTextVariablesPrefix=="string"?this._helpTextVariablesPrefix:a.MarkdownString.from(this._helpTextVariablesPrefix),helpTextPostfix:!this._helpTextPostfix||typeof this._helpTextPostfix=="string"?this._helpTextPostfix:a.MarkdownString.from(this._helpTextPostfix),supportIssueReporting:this._supportIssueReporting,requester:this._requester,supportsSlowVariables:this._supportsSlowReferences}),o=!1}))},t=this;return{get id(){return t.id},get iconPath(){return t._iconPath},set iconPath(e){t._iconPath=e,r()},get requestHandler(){return t._requestHandler},set requestHandler(e){V(typeof e=="function","Invalid request handler"),t._requestHandler=e},get followupProvider(){return t._followupProvider},set followupProvider(e){t._followupProvider=e,r()},get helpTextPrefix(){return d(t.extension,"defaultChatParticipant"),t._helpTextPrefix},set helpTextPrefix(e){d(t.extension,"defaultChatParticipant"),t._helpTextPrefix=e,r()},get helpTextVariablesPrefix(){return d(t.extension,"defaultChatParticipant"),t._helpTextVariablesPrefix},set helpTextVariablesPrefix(e){d(t.extension,"defaultChatParticipant"),t._helpTextVariablesPrefix=e,r()},get helpTextPostfix(){return d(t.extension,"defaultChatParticipant"),t._helpTextPostfix},set helpTextPostfix(e){d(t.extension,"defaultChatParticipant"),t._helpTextPostfix=e,r()},get isSecondary(){return d(t.extension,"defaultChatParticipant"),t._isSecondary},set isSecondary(e){d(t.extension,"defaultChatParticipant"),t._isSecondary=e,r()},get supportIssueReporting(){return d(t.extension,"chatParticipantPrivate"),t._supportIssueReporting},set supportIssueReporting(e){d(t.extension,"chatParticipantPrivate"),t._supportIssueReporting=e,r()},get onDidReceiveFeedback(){return t._onDidReceiveFeedback.event},set participantVariableProvider(e){if(d(t.extension,"chatParticipantAdditions"),t._agentVariableProvider=e,e){if(!e.triggerCharacters.length)throw new Error("triggerCharacters are required");t._proxy.$registerAgentCompletionsProvider(t._handle,t.id,e.triggerCharacters)}else t._proxy.$unregisterAgentCompletionsProvider(t._handle,t.id)},get participantVariableProvider(){return d(t.extension,"chatParticipantAdditions"),t._agentVariableProvider},set welcomeMessageProvider(e){d(t.extension,"defaultChatParticipant"),t._welcomeMessageProvider=e,r()},get welcomeMessageProvider(){return d(t.extension,"defaultChatParticipant"),t._welcomeMessageProvider},set titleProvider(e){d(t.extension,"defaultChatParticipant"),t._titleProvider=e,r()},get titleProvider(){return d(t.extension,"defaultChatParticipant"),t._titleProvider},onDidPerformAction:m(this.extension,"chatParticipantAdditions")?this._onDidPerformAction.event:void 0,set requester(e){t._requester=e,r()},get requester(){return t._requester},set supportsSlowReferences(e){d(t.extension,"chatParticipantPrivate"),t._supportsSlowReferences=e,r()},get supportsSlowReferences(){return d(t.extension,"chatParticipantPrivate"),t._supportsSlowReferences},dispose(){l=!0,t._followupProvider=void 0,t._onDidReceiveFeedback.dispose(),t._proxy.$unregisterAgent(t._handle)}}}invoke(l,o,r,t){return this._requestHandler(l,o,r,t)}}export{P as ExtHostChatAgents2};
+import { coalesce } from '../../../base/common/arrays.js';
+import { raceCancellation } from '../../../base/common/async.js';
+import { toErrorMessage } from '../../../base/common/errorMessage.js';
+import { Emitter } from '../../../base/common/event.js';
+import { Iterable } from '../../../base/common/iterator.js';
+import { Disposable, DisposableMap, DisposableStore, toDisposable } from '../../../base/common/lifecycle.js';
+import { revive } from '../../../base/common/marshalling.js';
+import { StopWatch } from '../../../base/common/stopwatch.js';
+import { ThemeIcon } from '../../../base/common/themables.js';
+import { assertType } from '../../../base/common/types.js';
+import { URI } from '../../../base/common/uri.js';
+import { ExtensionIdentifier } from '../../../platform/extensions/common/extensions.js';
+import { ChatAgentLocation } from '../../contrib/chat/common/chatAgents.js';
+import { ChatAgentVoteDirection } from '../../contrib/chat/common/chatService.js';
+import { checkProposedApiEnabled, isProposedApiEnabled } from '../../services/extensions/common/extensions.js';
+import { MainContext } from './extHost.protocol.js';
+import * as typeConvert from './extHostTypeConverters.js';
+import * as extHostTypes from './extHostTypes.js';
+class ChatAgentResponseStream {
+    constructor(_extension, _request, _proxy, _commandsConverter, _sessionDisposables) {
+        this._extension = _extension;
+        this._request = _request;
+        this._proxy = _proxy;
+        this._commandsConverter = _commandsConverter;
+        this._sessionDisposables = _sessionDisposables;
+        this._stopWatch = StopWatch.create(false);
+        this._isClosed = false;
+    }
+    close() {
+        this._isClosed = true;
+    }
+    get timings() {
+        return {
+            firstProgress: this._firstProgress,
+            totalElapsed: this._stopWatch.elapsed()
+        };
+    }
+    get apiObject() {
+        if (!this._apiObject) {
+            const that = this;
+            this._stopWatch.reset();
+            function throwIfDone(source) {
+                if (that._isClosed) {
+                    const err = new Error('Response stream has been closed');
+                    Error.captureStackTrace(err, source);
+                    throw err;
+                }
+            }
+            const _report = (progress, task) => {
+                if (typeof this._firstProgress === 'undefined' && (progress.kind === 'markdownContent' || progress.kind === 'markdownVuln')) {
+                    this._firstProgress = this._stopWatch.elapsed();
+                }
+                if (task) {
+                    const progressReporterPromise = this._proxy.$handleProgressChunk(this._request.requestId, progress);
+                    const progressReporter = {
+                        report: (p) => {
+                            progressReporterPromise?.then((handle) => {
+                                if (handle) {
+                                    if (extHostTypes.MarkdownString.isMarkdownString(p.value)) {
+                                        this._proxy.$handleProgressChunk(this._request.requestId, typeConvert.ChatResponseWarningPart.from(p), handle);
+                                    }
+                                    else {
+                                        this._proxy.$handleProgressChunk(this._request.requestId, typeConvert.ChatResponseReferencePart.from(p), handle);
+                                    }
+                                }
+                            });
+                        }
+                    };
+                    Promise.all([progressReporterPromise, task?.(progressReporter)]).then(([handle, res]) => {
+                        if (handle !== undefined) {
+                            this._proxy.$handleProgressChunk(this._request.requestId, typeConvert.ChatTaskResult.from(res), handle);
+                        }
+                    });
+                }
+                else {
+                    this._proxy.$handleProgressChunk(this._request.requestId, progress);
+                }
+            };
+            this._apiObject = {
+                markdown(value) {
+                    throwIfDone(this.markdown);
+                    const part = new extHostTypes.ChatResponseMarkdownPart(value);
+                    const dto = typeConvert.ChatResponseMarkdownPart.from(part);
+                    _report(dto);
+                    return this;
+                },
+                markdownWithVulnerabilities(value, vulnerabilities) {
+                    throwIfDone(this.markdown);
+                    if (vulnerabilities) {
+                        checkProposedApiEnabled(that._extension, 'chatParticipantAdditions');
+                    }
+                    const part = new extHostTypes.ChatResponseMarkdownWithVulnerabilitiesPart(value, vulnerabilities);
+                    const dto = typeConvert.ChatResponseMarkdownWithVulnerabilitiesPart.from(part);
+                    _report(dto);
+                    return this;
+                },
+                codeblockUri(value) {
+                    throwIfDone(this.codeblockUri);
+                    checkProposedApiEnabled(that._extension, 'chatParticipantAdditions');
+                    const part = new extHostTypes.ChatResponseCodeblockUriPart(value);
+                    const dto = typeConvert.ChatResponseCodeblockUriPart.from(part);
+                    _report(dto);
+                    return this;
+                },
+                filetree(value, baseUri) {
+                    throwIfDone(this.filetree);
+                    const part = new extHostTypes.ChatResponseFileTreePart(value, baseUri);
+                    const dto = typeConvert.ChatResponseFilesPart.from(part);
+                    _report(dto);
+                    return this;
+                },
+                anchor(value, title) {
+                    throwIfDone(this.anchor);
+                    const part = new extHostTypes.ChatResponseAnchorPart(value, title);
+                    const dto = typeConvert.ChatResponseAnchorPart.from(part);
+                    _report(dto);
+                    return this;
+                },
+                button(value) {
+                    throwIfDone(this.anchor);
+                    const part = new extHostTypes.ChatResponseCommandButtonPart(value);
+                    const dto = typeConvert.ChatResponseCommandButtonPart.from(part, that._commandsConverter, that._sessionDisposables);
+                    _report(dto);
+                    return this;
+                },
+                progress(value, task) {
+                    throwIfDone(this.progress);
+                    const part = new extHostTypes.ChatResponseProgressPart2(value, task);
+                    const dto = task ? typeConvert.ChatTask.from(part) : typeConvert.ChatResponseProgressPart.from(part);
+                    _report(dto, task);
+                    return this;
+                },
+                warning(value) {
+                    throwIfDone(this.progress);
+                    checkProposedApiEnabled(that._extension, 'chatParticipantAdditions');
+                    const part = new extHostTypes.ChatResponseWarningPart(value);
+                    const dto = typeConvert.ChatResponseWarningPart.from(part);
+                    _report(dto);
+                    return this;
+                },
+                reference(value, iconPath) {
+                    return this.reference2(value, iconPath);
+                },
+                reference2(value, iconPath, options) {
+                    throwIfDone(this.reference);
+                    if (typeof value === 'object' && 'variableName' in value) {
+                        checkProposedApiEnabled(that._extension, 'chatParticipantAdditions');
+                    }
+                    if (typeof value === 'object' && 'variableName' in value && !value.value) {
+                        const matchingVarData = that._request.variables.variables.find(v => v.name === value.variableName);
+                        if (matchingVarData) {
+                            let references;
+                            if (matchingVarData.references?.length) {
+                                references = matchingVarData.references.map(r => ({
+                                    kind: 'reference',
+                                    reference: { variableName: value.variableName, value: r.reference }
+                                }));
+                            }
+                            else {
+                                const part = new extHostTypes.ChatResponseReferencePart(value, iconPath, options);
+                                const dto = typeConvert.ChatResponseReferencePart.from(part);
+                                references = [dto];
+                            }
+                            references.forEach(r => _report(r));
+                            return this;
+                        }
+                        else {
+                        }
+                    }
+                    else {
+                        const part = new extHostTypes.ChatResponseReferencePart(value, iconPath, options);
+                        const dto = typeConvert.ChatResponseReferencePart.from(part);
+                        _report(dto);
+                    }
+                    return this;
+                },
+                codeCitation(value, license, snippet) {
+                    throwIfDone(this.codeCitation);
+                    checkProposedApiEnabled(that._extension, 'chatParticipantAdditions');
+                    const part = new extHostTypes.ChatResponseCodeCitationPart(value, license, snippet);
+                    const dto = typeConvert.ChatResponseCodeCitationPart.from(part);
+                    _report(dto);
+                },
+                textEdit(target, edits) {
+                    throwIfDone(this.textEdit);
+                    checkProposedApiEnabled(that._extension, 'chatParticipantAdditions');
+                    const part = new extHostTypes.ChatResponseTextEditPart(target, edits);
+                    const dto = typeConvert.ChatResponseTextEditPart.from(part);
+                    _report(dto);
+                    return this;
+                },
+                detectedParticipant(participant, command) {
+                    throwIfDone(this.detectedParticipant);
+                    checkProposedApiEnabled(that._extension, 'chatParticipantAdditions');
+                    const part = new extHostTypes.ChatResponseDetectedParticipantPart(participant, command);
+                    const dto = typeConvert.ChatResponseDetectedParticipantPart.from(part);
+                    _report(dto);
+                    return this;
+                },
+                confirmation(title, message, data, buttons) {
+                    throwIfDone(this.confirmation);
+                    checkProposedApiEnabled(that._extension, 'chatParticipantAdditions');
+                    const part = new extHostTypes.ChatResponseConfirmationPart(title, message, data, buttons);
+                    const dto = typeConvert.ChatResponseConfirmationPart.from(part);
+                    _report(dto);
+                    return this;
+                },
+                push(part) {
+                    throwIfDone(this.push);
+                    if (part instanceof extHostTypes.ChatResponseTextEditPart ||
+                        part instanceof extHostTypes.ChatResponseMarkdownWithVulnerabilitiesPart ||
+                        part instanceof extHostTypes.ChatResponseDetectedParticipantPart ||
+                        part instanceof extHostTypes.ChatResponseWarningPart ||
+                        part instanceof extHostTypes.ChatResponseConfirmationPart ||
+                        part instanceof extHostTypes.ChatResponseCodeCitationPart ||
+                        part instanceof extHostTypes.ChatResponseMovePart ||
+                        part instanceof extHostTypes.ChatResponseProgressPart2) {
+                        checkProposedApiEnabled(that._extension, 'chatParticipantAdditions');
+                    }
+                    if (part instanceof extHostTypes.ChatResponseReferencePart) {
+                        this.reference2(part.value, part.iconPath, part.options);
+                    }
+                    else if (part instanceof extHostTypes.ChatResponseProgressPart2) {
+                        const dto = part.task ? typeConvert.ChatTask.from(part) : typeConvert.ChatResponseProgressPart.from(part);
+                        _report(dto, part.task);
+                    }
+                    else {
+                        const dto = typeConvert.ChatResponsePart.from(part, that._commandsConverter, that._sessionDisposables);
+                        _report(dto);
+                    }
+                    return this;
+                },
+            };
+        }
+        return this._apiObject;
+    }
+}
+export class ExtHostChatAgents2 extends Disposable {
+    static { this._idPool = 0; }
+    static { this._participantDetectionProviderIdPool = 0; }
+    constructor(mainContext, _logService, _commands, _documents, _languageModels) {
+        super();
+        this._logService = _logService;
+        this._commands = _commands;
+        this._documents = _documents;
+        this._languageModels = _languageModels;
+        this._agents = new Map();
+        this._participantDetectionProviders = new Map();
+        this._sessionDisposables = this._register(new DisposableMap());
+        this._completionDisposables = this._register(new DisposableMap());
+        this._proxy = mainContext.getProxy(MainContext.MainThreadChatAgents2);
+    }
+    transferActiveChat(newWorkspace) {
+        this._proxy.$transferActiveChatSession(newWorkspace);
+    }
+    createChatAgent(extension, id, handler) {
+        const handle = ExtHostChatAgents2._idPool++;
+        const agent = new ExtHostChatAgent(extension, id, this._proxy, handle, handler);
+        this._agents.set(handle, agent);
+        this._proxy.$registerAgent(handle, extension.identifier, id, {}, undefined);
+        return agent.apiAgent;
+    }
+    createDynamicChatAgent(extension, id, dynamicProps, handler) {
+        const handle = ExtHostChatAgents2._idPool++;
+        const agent = new ExtHostChatAgent(extension, id, this._proxy, handle, handler);
+        this._agents.set(handle, agent);
+        this._proxy.$registerAgent(handle, extension.identifier, id, { isSticky: true }, dynamicProps);
+        return agent.apiAgent;
+    }
+    registerChatParticipantDetectionProvider(extension, provider) {
+        const handle = ExtHostChatAgents2._participantDetectionProviderIdPool++;
+        this._participantDetectionProviders.set(handle, new ExtHostParticipantDetector(extension, provider));
+        this._proxy.$registerChatParticipantDetectionProvider(handle);
+        return toDisposable(() => {
+            this._participantDetectionProviders.delete(handle);
+            this._proxy.$unregisterChatParticipantDetectionProvider(handle);
+        });
+    }
+    async $detectChatParticipant(handle, requestDto, context, options, token) {
+        const { request, location, history } = await this._createRequest(requestDto, context);
+        const detector = this._participantDetectionProviders.get(handle);
+        if (!detector) {
+            return undefined;
+        }
+        const extRequest = typeConvert.ChatAgentRequest.to(request, location);
+        if (request.userSelectedModelId && isProposedApiEnabled(detector.extension, 'chatParticipantAdditions')) {
+            extRequest.userSelectedModel = await this._languageModels.getLanguageModelByIdentifier(detector.extension, request.userSelectedModelId);
+        }
+        return detector.provider.provideParticipantDetection(extRequest, { history }, { participants: options.participants, location: typeConvert.ChatLocation.to(options.location) }, token);
+    }
+    async _createRequest(requestDto, context) {
+        const request = revive(requestDto);
+        const convertedHistory = await this.prepareHistoryTurns(request.agentId, context);
+        let location;
+        if (request.locationData?.type === ChatAgentLocation.Editor) {
+            const document = this._documents.getDocument(request.locationData.document);
+            location = new extHostTypes.ChatRequestEditorData(document, typeConvert.Selection.to(request.locationData.selection), typeConvert.Range.to(request.locationData.wholeRange));
+        }
+        else if (request.locationData?.type === ChatAgentLocation.Notebook) {
+            const cell = this._documents.getDocument(request.locationData.sessionInputUri);
+            location = new extHostTypes.ChatRequestNotebookData(cell);
+        }
+        else if (request.locationData?.type === ChatAgentLocation.Terminal) {
+        }
+        return { request, location, history: convertedHistory };
+    }
+    async $invokeAgent(handle, requestDto, context, token) {
+        const agent = this._agents.get(handle);
+        if (!agent) {
+            throw new Error(`[CHAT](${handle}) CANNOT invoke agent because the agent is not registered`);
+        }
+        let stream;
+        try {
+            const { request, location, history } = await this._createRequest(requestDto, context);
+            let sessionDisposables = this._sessionDisposables.get(request.sessionId);
+            if (!sessionDisposables) {
+                sessionDisposables = new DisposableStore();
+                this._sessionDisposables.set(request.sessionId, sessionDisposables);
+            }
+            stream = new ChatAgentResponseStream(agent.extension, request, this._proxy, this._commands.converter, sessionDisposables);
+            const extRequest = typeConvert.ChatAgentRequest.to(request, location);
+            if (request.userSelectedModelId && isProposedApiEnabled(agent.extension, 'chatParticipantAdditions')) {
+                extRequest.userSelectedModel = await this._languageModels.getLanguageModelByIdentifier(agent.extension, request.userSelectedModelId);
+            }
+            const task = agent.invoke(extRequest, { history }, stream.apiObject, token);
+            return await raceCancellation(Promise.resolve(task).then((result) => {
+                if (result?.metadata) {
+                    try {
+                        JSON.stringify(result.metadata);
+                    }
+                    catch (err) {
+                        const msg = `result.metadata MUST be JSON.stringify-able. Got error: ${err.message}`;
+                        this._logService.error(`[${agent.extension.identifier.value}] [@${agent.id}] ${msg}`, agent.extension);
+                        return { errorDetails: { message: msg }, timings: stream?.timings, nextQuestion: result.nextQuestion };
+                    }
+                }
+                let errorDetails;
+                if (result?.errorDetails) {
+                    errorDetails = {
+                        ...result.errorDetails,
+                        responseIsIncomplete: true
+                    };
+                }
+                if (errorDetails?.responseIsRedacted) {
+                    checkProposedApiEnabled(agent.extension, 'chatParticipantPrivate');
+                }
+                return { errorDetails, timings: stream?.timings, metadata: result?.metadata, nextQuestion: result?.nextQuestion };
+            }), token);
+        }
+        catch (e) {
+            this._logService.error(e, agent.extension);
+            if (e instanceof extHostTypes.LanguageModelError && e.cause) {
+                e = e.cause;
+            }
+            return { errorDetails: { message: toErrorMessage(e), responseIsIncomplete: true } };
+        }
+        finally {
+            stream?.close();
+        }
+    }
+    async prepareHistoryTurns(agentId, context) {
+        const res = [];
+        for (const h of context.history) {
+            const ehResult = typeConvert.ChatAgentResult.to(h.result);
+            const result = agentId === h.request.agentId ?
+                ehResult :
+                { ...ehResult, metadata: undefined };
+            const varsWithoutTools = h.request.variables.variables
+                .filter(v => !v.isTool)
+                .map(typeConvert.ChatPromptReference.to);
+            const toolReferences = h.request.variables.variables
+                .filter(v => v.isTool)
+                .map(typeConvert.ChatLanguageModelToolReference.to);
+            const turn = new extHostTypes.ChatRequestTurn(h.request.message, h.request.command, varsWithoutTools, h.request.agentId);
+            turn.toolReferences = toolReferences;
+            res.push(turn);
+            const parts = coalesce(h.response.map(r => typeConvert.ChatResponsePart.toContent(r, this._commands.converter)));
+            res.push(new extHostTypes.ChatResponseTurn(parts, result, h.request.agentId, h.request.command));
+        }
+        return res;
+    }
+    $releaseSession(sessionId) {
+        this._sessionDisposables.deleteAndDispose(sessionId);
+    }
+    async $provideFollowups(requestDto, handle, result, context, token) {
+        const agent = this._agents.get(handle);
+        if (!agent) {
+            return Promise.resolve([]);
+        }
+        const request = revive(requestDto);
+        const convertedHistory = await this.prepareHistoryTurns(agent.id, context);
+        const ehResult = typeConvert.ChatAgentResult.to(result);
+        return (await agent.provideFollowups(ehResult, { history: convertedHistory }, token))
+            .filter(f => {
+            const isValid = !f.participant || Iterable.some(this._agents.values(), a => a.id === f.participant && ExtensionIdentifier.equals(a.extension.identifier, agent.extension.identifier));
+            if (!isValid) {
+                this._logService.warn(`[@${agent.id}] ChatFollowup refers to an unknown participant: ${f.participant}`);
+            }
+            return isValid;
+        })
+            .map(f => typeConvert.ChatFollowup.from(f, request));
+    }
+    $acceptFeedback(handle, result, voteAction) {
+        const agent = this._agents.get(handle);
+        if (!agent) {
+            return;
+        }
+        const ehResult = typeConvert.ChatAgentResult.to(result);
+        let kind;
+        switch (voteAction.direction) {
+            case ChatAgentVoteDirection.Down:
+                kind = extHostTypes.ChatResultFeedbackKind.Unhelpful;
+                break;
+            case ChatAgentVoteDirection.Up:
+                kind = extHostTypes.ChatResultFeedbackKind.Helpful;
+                break;
+        }
+        const feedback = {
+            result: ehResult,
+            kind,
+            unhelpfulReason: isProposedApiEnabled(agent.extension, 'chatParticipantAdditions') ? voteAction.reason : undefined,
+        };
+        agent.acceptFeedback(Object.freeze(feedback));
+    }
+    $acceptAction(handle, result, event) {
+        const agent = this._agents.get(handle);
+        if (!agent) {
+            return;
+        }
+        if (event.action.kind === 'vote') {
+            return;
+        }
+        const ehAction = typeConvert.ChatAgentUserActionEvent.to(result, event, this._commands.converter);
+        if (ehAction) {
+            agent.acceptAction(Object.freeze(ehAction));
+        }
+    }
+    async $invokeCompletionProvider(handle, query, token) {
+        const agent = this._agents.get(handle);
+        if (!agent) {
+            return [];
+        }
+        let disposables = this._completionDisposables.get(handle);
+        if (disposables) {
+            disposables.clear();
+        }
+        else {
+            disposables = new DisposableStore();
+            this._completionDisposables.set(handle, disposables);
+        }
+        const items = await agent.invokeCompletionProvider(query, token);
+        return items.map((i) => typeConvert.ChatAgentCompletionItem.from(i, this._commands.converter, disposables));
+    }
+    async $provideWelcomeMessage(handle, token) {
+        const agent = this._agents.get(handle);
+        if (!agent) {
+            return;
+        }
+        return await agent.provideWelcomeMessage(token);
+    }
+    async $provideChatTitle(handle, context, token) {
+        const agent = this._agents.get(handle);
+        if (!agent) {
+            return;
+        }
+        const history = await this.prepareHistoryTurns(agent.id, { history: context });
+        return await agent.provideTitle({ history }, token);
+    }
+    async $provideSampleQuestions(handle, location, token) {
+        const agent = this._agents.get(handle);
+        if (!agent) {
+            return;
+        }
+        return (await agent.provideSampleQuestions(typeConvert.ChatLocation.to(location), token))
+            .map(f => typeConvert.ChatFollowup.from(f, undefined));
+    }
+}
+class ExtHostParticipantDetector {
+    constructor(extension, provider) {
+        this.extension = extension;
+        this.provider = provider;
+    }
+}
+class ExtHostChatAgent {
+    constructor(extension, id, _proxy, _handle, _requestHandler) {
+        this.extension = extension;
+        this.id = id;
+        this._proxy = _proxy;
+        this._handle = _handle;
+        this._requestHandler = _requestHandler;
+        this._onDidReceiveFeedback = new Emitter();
+        this._onDidPerformAction = new Emitter();
+    }
+    acceptFeedback(feedback) {
+        this._onDidReceiveFeedback.fire(feedback);
+    }
+    acceptAction(event) {
+        this._onDidPerformAction.fire(event);
+    }
+    async invokeCompletionProvider(query, token) {
+        if (!this._agentVariableProvider) {
+            return [];
+        }
+        return await this._agentVariableProvider.provider.provideCompletionItems(query, token) ?? [];
+    }
+    async provideFollowups(result, context, token) {
+        if (!this._followupProvider) {
+            return [];
+        }
+        const followups = await this._followupProvider.provideFollowups(result, context, token);
+        if (!followups) {
+            return [];
+        }
+        return followups
+            .filter(f => !(f && 'commandId' in f))
+            .filter(f => !(f && 'message' in f));
+    }
+    async provideWelcomeMessage(token) {
+        if (!this._welcomeMessageProvider?.provideWelcomeMessage) {
+            return undefined;
+        }
+        const content = await this._welcomeMessageProvider.provideWelcomeMessage(token);
+        const icon = content?.icon;
+        if (!content || !ThemeIcon.isThemeIcon(icon)) {
+            return undefined;
+        }
+        return {
+            ...content,
+            icon,
+            message: typeConvert.MarkdownString.from(content.message),
+        };
+    }
+    async provideTitle(context, token) {
+        if (!this._titleProvider) {
+            return;
+        }
+        return await this._titleProvider.provideChatTitle(context, token) ?? undefined;
+    }
+    async provideSampleQuestions(location, token) {
+        if (!this._welcomeMessageProvider || !this._welcomeMessageProvider.provideSampleQuestions) {
+            return [];
+        }
+        const content = await this._welcomeMessageProvider.provideSampleQuestions(location, token);
+        if (!content) {
+            return [];
+        }
+        return content;
+    }
+    get apiAgent() {
+        let disposed = false;
+        let updateScheduled = false;
+        const updateMetadataSoon = () => {
+            if (disposed) {
+                return;
+            }
+            if (updateScheduled) {
+                return;
+            }
+            updateScheduled = true;
+            queueMicrotask(() => {
+                this._proxy.$updateAgent(this._handle, {
+                    icon: !this._iconPath ? undefined :
+                        this._iconPath instanceof URI ? this._iconPath :
+                            'light' in this._iconPath ? this._iconPath.light :
+                                undefined,
+                    iconDark: !this._iconPath ? undefined :
+                        'dark' in this._iconPath ? this._iconPath.dark :
+                            undefined,
+                    themeIcon: this._iconPath instanceof extHostTypes.ThemeIcon ? this._iconPath : undefined,
+                    hasFollowups: this._followupProvider !== undefined,
+                    isSecondary: this._isSecondary,
+                    helpTextPrefix: (!this._helpTextPrefix || typeof this._helpTextPrefix === 'string') ? this._helpTextPrefix : typeConvert.MarkdownString.from(this._helpTextPrefix),
+                    helpTextVariablesPrefix: (!this._helpTextVariablesPrefix || typeof this._helpTextVariablesPrefix === 'string') ? this._helpTextVariablesPrefix : typeConvert.MarkdownString.from(this._helpTextVariablesPrefix),
+                    helpTextPostfix: (!this._helpTextPostfix || typeof this._helpTextPostfix === 'string') ? this._helpTextPostfix : typeConvert.MarkdownString.from(this._helpTextPostfix),
+                    supportIssueReporting: this._supportIssueReporting,
+                    requester: this._requester,
+                    supportsSlowVariables: this._supportsSlowReferences,
+                });
+                updateScheduled = false;
+            });
+        };
+        const that = this;
+        return {
+            get id() {
+                return that.id;
+            },
+            get iconPath() {
+                return that._iconPath;
+            },
+            set iconPath(v) {
+                that._iconPath = v;
+                updateMetadataSoon();
+            },
+            get requestHandler() {
+                return that._requestHandler;
+            },
+            set requestHandler(v) {
+                assertType(typeof v === 'function', 'Invalid request handler');
+                that._requestHandler = v;
+            },
+            get followupProvider() {
+                return that._followupProvider;
+            },
+            set followupProvider(v) {
+                that._followupProvider = v;
+                updateMetadataSoon();
+            },
+            get helpTextPrefix() {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                return that._helpTextPrefix;
+            },
+            set helpTextPrefix(v) {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                that._helpTextPrefix = v;
+                updateMetadataSoon();
+            },
+            get helpTextVariablesPrefix() {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                return that._helpTextVariablesPrefix;
+            },
+            set helpTextVariablesPrefix(v) {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                that._helpTextVariablesPrefix = v;
+                updateMetadataSoon();
+            },
+            get helpTextPostfix() {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                return that._helpTextPostfix;
+            },
+            set helpTextPostfix(v) {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                that._helpTextPostfix = v;
+                updateMetadataSoon();
+            },
+            get isSecondary() {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                return that._isSecondary;
+            },
+            set isSecondary(v) {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                that._isSecondary = v;
+                updateMetadataSoon();
+            },
+            get supportIssueReporting() {
+                checkProposedApiEnabled(that.extension, 'chatParticipantPrivate');
+                return that._supportIssueReporting;
+            },
+            set supportIssueReporting(v) {
+                checkProposedApiEnabled(that.extension, 'chatParticipantPrivate');
+                that._supportIssueReporting = v;
+                updateMetadataSoon();
+            },
+            get onDidReceiveFeedback() {
+                return that._onDidReceiveFeedback.event;
+            },
+            set participantVariableProvider(v) {
+                checkProposedApiEnabled(that.extension, 'chatParticipantAdditions');
+                that._agentVariableProvider = v;
+                if (v) {
+                    if (!v.triggerCharacters.length) {
+                        throw new Error('triggerCharacters are required');
+                    }
+                    that._proxy.$registerAgentCompletionsProvider(that._handle, that.id, v.triggerCharacters);
+                }
+                else {
+                    that._proxy.$unregisterAgentCompletionsProvider(that._handle, that.id);
+                }
+            },
+            get participantVariableProvider() {
+                checkProposedApiEnabled(that.extension, 'chatParticipantAdditions');
+                return that._agentVariableProvider;
+            },
+            set welcomeMessageProvider(v) {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                that._welcomeMessageProvider = v;
+                updateMetadataSoon();
+            },
+            get welcomeMessageProvider() {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                return that._welcomeMessageProvider;
+            },
+            set titleProvider(v) {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                that._titleProvider = v;
+                updateMetadataSoon();
+            },
+            get titleProvider() {
+                checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
+                return that._titleProvider;
+            },
+            onDidPerformAction: !isProposedApiEnabled(this.extension, 'chatParticipantAdditions')
+                ? undefined
+                : this._onDidPerformAction.event,
+            set requester(v) {
+                that._requester = v;
+                updateMetadataSoon();
+            },
+            get requester() {
+                return that._requester;
+            },
+            set supportsSlowReferences(v) {
+                checkProposedApiEnabled(that.extension, 'chatParticipantPrivate');
+                that._supportsSlowReferences = v;
+                updateMetadataSoon();
+            },
+            get supportsSlowReferences() {
+                checkProposedApiEnabled(that.extension, 'chatParticipantPrivate');
+                return that._supportsSlowReferences;
+            },
+            dispose() {
+                disposed = true;
+                that._followupProvider = undefined;
+                that._onDidReceiveFeedback.dispose();
+                that._proxy.$unregisterAgent(that._handle);
+            },
+        };
+    }
+    invoke(request, context, response, token) {
+        return this._requestHandler(request, context, response, token);
+    }
+}

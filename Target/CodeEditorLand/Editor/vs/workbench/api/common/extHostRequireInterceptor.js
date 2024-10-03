@@ -1,3 +1,195 @@
-var u=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var m=(l,e,i,n)=>{for(var t=n>1?void 0:n?v(e,i):e,r=l.length-1,o;r>=0;r--)(o=l[r])&&(t=(n?o(e,i,t):o(t))||t);return n&&t&&u(e,i,t),t},s=(l,e)=>(i,n)=>e(i,n,l);import*as h from"../../../base/common/performance.js";import{URI as x}from"../../../base/common/uri.js";import{MainContext as f}from"./extHost.protocol.js";import{IExtHostConfiguration as _}from"./extHostConfiguration.js";import{nullExtensionDescription as y}from"../../services/extensions/common/extensions.js";import"vscode";import{ExtensionIdentifierMap as I}from"../../../platform/extensions/common/extensions.js";import"./extHost.api.impl.js";import{IExtHostRpcService as S}from"./extHostRpcService.js";import{IExtHostInitDataService as g}from"./extHostInitDataService.js";import{IInstantiationService as w}from"../../../platform/instantiation/common/instantiation.js";import{IExtHostExtensionService as E}from"./extHostExtensionService.js";import{ILogService as P}from"../../../platform/log/common/log.js";import{escapeRegExpCharacters as T}from"../../../base/common/strings.js";let c=class{constructor(e,i,n,t,r,o,d){this._apiFactory=e;this._extensionRegistry=i;this._instaService=n;this._extHostConfiguration=t;this._extHostExtensionService=r;this._initData=o;this._logService=d;this._factories=new Map,this._alternatives=[]}_factories;_alternatives;async install(){this._installInterceptor(),h.mark("code/extHost/willWaitForConfig");const e=await this._extHostConfiguration.getConfigProvider();h.mark("code/extHost/didWaitForConfig");const i=await this._extHostExtensionService.getExtensionPathIndex();this.register(new M(this._apiFactory,i,this._extensionRegistry,e,this._logService)),this.register(this._instaService.createInstance(a)),this._initData.remote.isRemote&&this.register(this._instaService.createInstance(p,i,this._initData.environment.appUriScheme))}register(e){if("nodeModuleName"in e)if(Array.isArray(e.nodeModuleName))for(const i of e.nodeModuleName)this._factories.set(i,e);else this._factories.set(e.nodeModuleName,e);typeof e.alternativeModuleName=="function"&&this._alternatives.push(i=>e.alternativeModuleName(i))}};c=m([s(2,w),s(3,_),s(4,E),s(5,g),s(6,P)],c);let a=class{static aliased=new Map([["vscode-ripgrep","@vscode/ripgrep"],["vscode-windows-registry","@vscode/windows-registry"]]);re;constructor(e){if(e.environment.appRoot&&a.aliased.size){const i=T(this.forceForwardSlashes(e.environment.appRoot.fsPath)),n="[a-z0-9_.-]",t=`@${n}+\\/${n}+|${n}+`,r="node_modules|node_modules\\.asar(?:\\.unpacked)?";this.re=new RegExp(`^(${i}/${r}\\/)(${t})(.*)$`,"i")}}alternativeModuleName(e){if(!this.re)return;const i=this.re.exec(this.forceForwardSlashes(e));if(!i)return;const[,n,t,r]=i,o=a.aliased.get(t);if(o!==void 0)return n+o+r}forceForwardSlashes(e){return e.replace(/\\/g,"/")}};a=m([s(0,g)],a);class M{constructor(e,i,n,t,r){this._apiFactory=e;this._extensionPaths=i;this._extensionRegistry=n;this._configProvider=t;this._logService=r}nodeModuleName="vscode";_extApiImpl=new I;_defaultApiImpl;load(e,i){const n=this._extensionPaths.findSubstr(i);if(n){let t=this._extApiImpl.get(n.identifier);return t||(t=this._apiFactory(n,this._extensionRegistry,this._configProvider),this._extApiImpl.set(n.identifier,t)),t}if(!this._defaultApiImpl){let t="";this._extensionPaths.forEach((r,o)=>t+=`	${o} -> ${r.identifier.value}
-`),this._logService.warn(`Could not identify extension for 'vscode' require call from ${i}. These are the extension path mappings: 
-${t}`),this._defaultApiImpl=this._apiFactory(y,this._extensionRegistry,this._configProvider)}return this._defaultApiImpl}}let p=class{constructor(e,i,n){this._extensionPaths=e;this._appUriScheme=i;this._mainThreadTelemetry=n.getProxy(f.MainThreadTelemetry);const t=n.getProxy(f.MainThreadWindow);this._impl=(r,o)=>{const d=x.parse(r);return o?this.callOriginal(r,o):d.scheme==="http"||d.scheme==="https"?t.$openUri(d,r,{allowTunneling:!0}):d.scheme==="mailto"||d.scheme===this._appUriScheme?t.$openUri(d,r,{}):this.callOriginal(r,o)}}nodeModuleName=["open","opn"];_extensionId;_original;_impl;_mainThreadTelemetry;load(e,i,n){const t=this._extensionPaths.findSubstr(i);return t&&(this._extensionId=t.identifier.value,this.sendShimmingTelemetry()),this._original=n(e),this._impl}callOriginal(e,i){return this.sendNoForwardTelemetry(),this._original(e,i)}sendShimmingTelemetry(){this._extensionId&&this._mainThreadTelemetry.$publicLog2("shimming.open",{extension:this._extensionId})}sendNoForwardTelemetry(){this._extensionId&&this._mainThreadTelemetry.$publicLog2("shimming.open.call.noForward",{extension:this._extensionId})}};p=m([s(2,S)],p);export{c as RequireInterceptor};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var NodeModuleAliasingModuleFactory_1;
+import * as performance from '../../../base/common/performance.js';
+import { URI } from '../../../base/common/uri.js';
+import { MainContext } from './extHost.protocol.js';
+import { IExtHostConfiguration } from './extHostConfiguration.js';
+import { nullExtensionDescription } from '../../services/extensions/common/extensions.js';
+import { ExtensionIdentifierMap } from '../../../platform/extensions/common/extensions.js';
+import { IExtHostRpcService } from './extHostRpcService.js';
+import { IExtHostInitDataService } from './extHostInitDataService.js';
+import { IInstantiationService } from '../../../platform/instantiation/common/instantiation.js';
+import { ExtensionPaths, IExtHostExtensionService } from './extHostExtensionService.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { escapeRegExpCharacters } from '../../../base/common/strings.js';
+let RequireInterceptor = class RequireInterceptor {
+    constructor(_apiFactory, _extensionRegistry, _instaService, _extHostConfiguration, _extHostExtensionService, _initData, _logService) {
+        this._apiFactory = _apiFactory;
+        this._extensionRegistry = _extensionRegistry;
+        this._instaService = _instaService;
+        this._extHostConfiguration = _extHostConfiguration;
+        this._extHostExtensionService = _extHostExtensionService;
+        this._initData = _initData;
+        this._logService = _logService;
+        this._factories = new Map();
+        this._alternatives = [];
+    }
+    async install() {
+        this._installInterceptor();
+        performance.mark('code/extHost/willWaitForConfig');
+        const configProvider = await this._extHostConfiguration.getConfigProvider();
+        performance.mark('code/extHost/didWaitForConfig');
+        const extensionPaths = await this._extHostExtensionService.getExtensionPathIndex();
+        this.register(new VSCodeNodeModuleFactory(this._apiFactory, extensionPaths, this._extensionRegistry, configProvider, this._logService));
+        this.register(this._instaService.createInstance(NodeModuleAliasingModuleFactory));
+        if (this._initData.remote.isRemote) {
+            this.register(this._instaService.createInstance(OpenNodeModuleFactory, extensionPaths, this._initData.environment.appUriScheme));
+        }
+    }
+    register(interceptor) {
+        if ('nodeModuleName' in interceptor) {
+            if (Array.isArray(interceptor.nodeModuleName)) {
+                for (const moduleName of interceptor.nodeModuleName) {
+                    this._factories.set(moduleName, interceptor);
+                }
+            }
+            else {
+                this._factories.set(interceptor.nodeModuleName, interceptor);
+            }
+        }
+        if (typeof interceptor.alternativeModuleName === 'function') {
+            this._alternatives.push((moduleName) => {
+                return interceptor.alternativeModuleName(moduleName);
+            });
+        }
+    }
+};
+RequireInterceptor = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, IExtHostConfiguration),
+    __param(4, IExtHostExtensionService),
+    __param(5, IExtHostInitDataService),
+    __param(6, ILogService),
+    __metadata("design:paramtypes", [Function, Object, Object, Object, Object, Object, Object])
+], RequireInterceptor);
+export { RequireInterceptor };
+let NodeModuleAliasingModuleFactory = class NodeModuleAliasingModuleFactory {
+    static { NodeModuleAliasingModuleFactory_1 = this; }
+    static { this.aliased = new Map([
+        ['vscode-ripgrep', '@vscode/ripgrep'],
+        ['vscode-windows-registry', '@vscode/windows-registry'],
+    ]); }
+    constructor(initData) {
+        if (initData.environment.appRoot && NodeModuleAliasingModuleFactory_1.aliased.size) {
+            const root = escapeRegExpCharacters(this.forceForwardSlashes(initData.environment.appRoot.fsPath));
+            const npmIdChrs = `[a-z0-9_.-]`;
+            const npmModuleName = `@${npmIdChrs}+\\/${npmIdChrs}+|${npmIdChrs}+`;
+            const moduleFolders = 'node_modules|node_modules\\.asar(?:\\.unpacked)?';
+            this.re = new RegExp(`^(${root}/${moduleFolders}\\/)(${npmModuleName})(.*)$`, 'i');
+        }
+    }
+    alternativeModuleName(name) {
+        if (!this.re) {
+            return;
+        }
+        const result = this.re.exec(this.forceForwardSlashes(name));
+        if (!result) {
+            return;
+        }
+        const [, prefix, moduleName, suffix] = result;
+        const dealiased = NodeModuleAliasingModuleFactory_1.aliased.get(moduleName);
+        if (dealiased === undefined) {
+            return;
+        }
+        console.warn(`${moduleName} as been renamed to ${dealiased}, please update your imports`);
+        return prefix + dealiased + suffix;
+    }
+    forceForwardSlashes(str) {
+        return str.replace(/\\/g, '/');
+    }
+};
+NodeModuleAliasingModuleFactory = NodeModuleAliasingModuleFactory_1 = __decorate([
+    __param(0, IExtHostInitDataService),
+    __metadata("design:paramtypes", [Object])
+], NodeModuleAliasingModuleFactory);
+class VSCodeNodeModuleFactory {
+    constructor(_apiFactory, _extensionPaths, _extensionRegistry, _configProvider, _logService) {
+        this._apiFactory = _apiFactory;
+        this._extensionPaths = _extensionPaths;
+        this._extensionRegistry = _extensionRegistry;
+        this._configProvider = _configProvider;
+        this._logService = _logService;
+        this.nodeModuleName = 'vscode';
+        this._extApiImpl = new ExtensionIdentifierMap();
+    }
+    load(_request, parent) {
+        const ext = this._extensionPaths.findSubstr(parent);
+        if (ext) {
+            let apiImpl = this._extApiImpl.get(ext.identifier);
+            if (!apiImpl) {
+                apiImpl = this._apiFactory(ext, this._extensionRegistry, this._configProvider);
+                this._extApiImpl.set(ext.identifier, apiImpl);
+            }
+            return apiImpl;
+        }
+        if (!this._defaultApiImpl) {
+            let extensionPathsPretty = '';
+            this._extensionPaths.forEach((value, index) => extensionPathsPretty += `\t${index} -> ${value.identifier.value}\n`);
+            this._logService.warn(`Could not identify extension for 'vscode' require call from ${parent}. These are the extension path mappings: \n${extensionPathsPretty}`);
+            this._defaultApiImpl = this._apiFactory(nullExtensionDescription, this._extensionRegistry, this._configProvider);
+        }
+        return this._defaultApiImpl;
+    }
+}
+let OpenNodeModuleFactory = class OpenNodeModuleFactory {
+    constructor(_extensionPaths, _appUriScheme, rpcService) {
+        this._extensionPaths = _extensionPaths;
+        this._appUriScheme = _appUriScheme;
+        this.nodeModuleName = ['open', 'opn'];
+        this._mainThreadTelemetry = rpcService.getProxy(MainContext.MainThreadTelemetry);
+        const mainThreadWindow = rpcService.getProxy(MainContext.MainThreadWindow);
+        this._impl = (target, options) => {
+            const uri = URI.parse(target);
+            if (options) {
+                return this.callOriginal(target, options);
+            }
+            if (uri.scheme === 'http' || uri.scheme === 'https') {
+                return mainThreadWindow.$openUri(uri, target, { allowTunneling: true });
+            }
+            else if (uri.scheme === 'mailto' || uri.scheme === this._appUriScheme) {
+                return mainThreadWindow.$openUri(uri, target, {});
+            }
+            return this.callOriginal(target, options);
+        };
+    }
+    load(request, parent, original) {
+        const extension = this._extensionPaths.findSubstr(parent);
+        if (extension) {
+            this._extensionId = extension.identifier.value;
+            this.sendShimmingTelemetry();
+        }
+        this._original = original(request);
+        return this._impl;
+    }
+    callOriginal(target, options) {
+        this.sendNoForwardTelemetry();
+        return this._original(target, options);
+    }
+    sendShimmingTelemetry() {
+        if (!this._extensionId) {
+            return;
+        }
+        this._mainThreadTelemetry.$publicLog2('shimming.open', { extension: this._extensionId });
+    }
+    sendNoForwardTelemetry() {
+        if (!this._extensionId) {
+            return;
+        }
+        this._mainThreadTelemetry.$publicLog2('shimming.open.call.noForward', { extension: this._extensionId });
+    }
+};
+OpenNodeModuleFactory = __decorate([
+    __param(2, IExtHostRpcService),
+    __metadata("design:paramtypes", [ExtensionPaths, String, Object])
+], OpenNodeModuleFactory);

@@ -1,1 +1,422 @@
-import"../../../base/common/cancellation.js";import{Color as h}from"../../../base/common/color.js";import"../../../base/common/lifecycle.js";import"../../common/core/position.js";import{Range as f}from"../../common/core/range.js";import{MetadataConsts as E}from"../../common/encodedTokenAttributes.js";import*as v from"../../common/languages.js";import{ILanguageService as m}from"../../common/languages/language.js";import"../../common/languages/languageConfiguration.js";import{ILanguageConfigurationService as R}from"../../common/languages/languageConfigurationRegistry.js";import{ModesRegistry as L}from"../../common/languages/modesRegistry.js";import"../../common/languageSelector.js";import"../../common/model.js";import{ILanguageFeaturesService as a}from"../../common/services/languageFeatures.js";import*as u from"../../common/standalone/standaloneEnums.js";import{StandaloneServices as t}from"./standaloneServices.js";import{compile as C}from"../common/monarch/monarchCompile.js";import{MonarchTokenizer as b}from"../common/monarch/monarchLexer.js";import"../common/monarch/monarchTypes.js";import{IStandaloneThemeService as P}from"../common/standaloneTheme.js";import{IConfigurationService as F}from"../../../platform/configuration/common/configuration.js";import{IMarkerService as A}from"../../../platform/markers/common/markers.js";function z(e){L.registerLanguage(e)}function w(){let e=[];return e=e.concat(L.getLanguages()),e}function H(e){return t.get(m).languageIdCodec.encodeLanguageId(e)}function K(e,r){return t.withServices(()=>{const o=t.get(m).onDidRequestRichLanguageFeatures(i=>{i===e&&(o.dispose(),r())});return o})}function M(e,r){return t.withServices(()=>{const o=t.get(m).onDidRequestBasicLanguageFeatures(i=>{i===e&&(o.dispose(),r())});return o})}function _(e,r){if(!t.get(m).isRegisteredLanguageId(e))throw new Error(`Cannot set configuration for unknown language ${e}`);return t.get(R).register(e,r,100)}class N{_languageId;_actual;constructor(r,n){this._languageId=r,this._actual=n}dispose(){}getInitialState(){return this._actual.getInitialState()}tokenize(r,n,o){if(typeof this._actual.tokenize=="function")return S.adaptTokenize(this._languageId,this._actual,r,o);throw new Error("Not supported!")}tokenizeEncoded(r,n,o){const i=this._actual.tokenizeEncoded(r,o);return new v.EncodedTokenizationResult(i.tokens,i.endState)}}class S{constructor(r,n,o,i){this._languageId=r;this._actual=n;this._languageService=o;this._standaloneThemeService=i}dispose(){}getInitialState(){return this._actual.getInitialState()}static _toClassicTokens(r,n){const o=[];let i=0;for(let g=0,s=r.length;g<s;g++){const l=r[g];let c=l.startIndex;g===0?c=0:c<i&&(c=i),o[g]=new v.Token(c,l.scopes,n),i=c}return o}static adaptTokenize(r,n,o,i){const g=n.tokenize(o,i),s=S._toClassicTokens(g.tokens,r);let l;return g.endState.equals(i)?l=i:l=g.endState,new v.TokenizationResult(s,l)}tokenize(r,n,o){return S.adaptTokenize(this._languageId,this._actual,r,o)}_toBinaryTokens(r,n){const o=r.encodeLanguageId(this._languageId),i=this._standaloneThemeService.getColorTheme().tokenTheme,g=[];let s=0,l=0;for(let d=0,I=n.length;d<I;d++){const k=n[d],y=i.match(o,k.scopes)|E.BALANCED_BRACKETS_MASK;if(s>0&&g[s-1]===y)continue;let p=k.startIndex;d===0?p=0:p<l&&(p=l),g[s++]=p,g[s++]=y,l=p}const c=new Uint32Array(s);for(let d=0;d<s;d++)c[d]=g[d];return c}tokenizeEncoded(r,n,o){const i=this._actual.tokenize(r,o),g=this._toBinaryTokens(this._languageService.languageIdCodec,i.tokens);let s;return i.endState.equals(o)?s=o:s=i.endState,new v.EncodedTokenizationResult(g,s)}}function O(e){return typeof e.getInitialState=="function"}function B(e){return"tokenizeEncoded"in e}function x(e){return e&&typeof e.then=="function"}function q(e){const r=t.get(P);if(e){const n=[null];for(let o=1,i=e.length;o<i;o++)n[o]=h.fromHex(e[o]);r.setColorMapOverride(n)}else r.setColorMapOverride(null)}function D(e,r){return B(r)?new N(e,r):new S(e,r,t.get(m),t.get(P))}function T(e,r){const n=new v.LazyTokenizationSupport(async()=>{const o=await Promise.resolve(r.create());return o?O(o)?D(e,o):new b(t.get(m),t.get(P),e,C(e,o),t.get(F)):null});return v.TokenizationRegistry.registerFactory(e,n)}function U(e,r){if(!t.get(m).isRegisteredLanguageId(e))throw new Error(`Cannot set tokens provider for unknown language ${e}`);return x(r)?T(e,{create:()=>r}):v.TokenizationRegistry.register(e,D(e,r))}function V(e,r){const n=o=>new b(t.get(m),t.get(P),e,C(e,o),t.get(F));return x(r)?T(e,{create:()=>r}):v.TokenizationRegistry.register(e,n(r))}function $(e,r){return t.get(a).referenceProvider.register(e,r)}function W(e,r){return t.get(a).renameProvider.register(e,r)}function j(e,r){return t.get(a).newSymbolNamesProvider.register(e,r)}function G(e,r){return t.get(a).signatureHelpProvider.register(e,r)}function J(e,r){return t.get(a).hoverProvider.register(e,{provideHover:async(o,i,g,s)=>{const l=o.getWordAtPosition(i);return Promise.resolve(r.provideHover(o,i,g,s)).then(c=>{if(c)return!c.range&&l&&(c.range=new f(i.lineNumber,l.startColumn,i.lineNumber,l.endColumn)),c.range||(c.range=new f(i.lineNumber,i.column,i.lineNumber,i.column)),c})}})}function Q(e,r){return t.get(a).documentSymbolProvider.register(e,r)}function X(e,r){return t.get(a).documentHighlightProvider.register(e,r)}function Y(e,r){return t.get(a).linkedEditingRangeProvider.register(e,r)}function Z(e,r){return t.get(a).definitionProvider.register(e,r)}function ee(e,r){return t.get(a).implementationProvider.register(e,r)}function re(e,r){return t.get(a).typeDefinitionProvider.register(e,r)}function ne(e,r){return t.get(a).codeLensProvider.register(e,r)}function te(e,r,n){return t.get(a).codeActionProvider.register(e,{providedCodeActionKinds:n?.providedCodeActionKinds,documentation:n?.documentation,provideCodeActions:(i,g,s,l)=>{const d=t.get(A).read({resource:i.uri}).filter(I=>f.areIntersectingOrTouching(I,g));return r.provideCodeActions(i,g,{markers:d,only:s.only,trigger:s.trigger},l)},resolveCodeAction:r.resolveCodeAction})}function oe(e,r){return t.get(a).documentFormattingEditProvider.register(e,r)}function ie(e,r){return t.get(a).documentRangeFormattingEditProvider.register(e,r)}function ae(e,r){return t.get(a).onTypeFormattingEditProvider.register(e,r)}function ge(e,r){return t.get(a).linkProvider.register(e,r)}function se(e,r){return t.get(a).completionProvider.register(e,r)}function ue(e,r){return t.get(a).colorProvider.register(e,r)}function le(e,r){return t.get(a).foldingRangeProvider.register(e,r)}function ce(e,r){return t.get(a).declarationProvider.register(e,r)}function de(e,r){return t.get(a).selectionRangeProvider.register(e,r)}function ve(e,r){return t.get(a).documentSemanticTokensProvider.register(e,r)}function me(e,r){return t.get(a).documentRangeSemanticTokensProvider.register(e,r)}function pe(e,r){return t.get(a).inlineCompletionsProvider.register(e,r)}function Se(e,r){return t.get(a).inlineEditProvider.register(e,r)}function Pe(e,r){return t.get(a).inlayHintsProvider.register(e,r)}function We(){return{register:z,getLanguages:w,onLanguage:K,onLanguageEncountered:M,getEncodedLanguageId:H,setLanguageConfiguration:_,setColorMap:q,registerTokensProviderFactory:T,setTokensProvider:U,setMonarchTokensProvider:V,registerReferenceProvider:$,registerRenameProvider:W,registerNewSymbolNameProvider:j,registerCompletionItemProvider:se,registerSignatureHelpProvider:G,registerHoverProvider:J,registerDocumentSymbolProvider:Q,registerDocumentHighlightProvider:X,registerLinkedEditingRangeProvider:Y,registerDefinitionProvider:Z,registerImplementationProvider:ee,registerTypeDefinitionProvider:re,registerCodeLensProvider:ne,registerCodeActionProvider:te,registerDocumentFormattingEditProvider:oe,registerDocumentRangeFormattingEditProvider:ie,registerOnTypeFormattingEditProvider:ae,registerLinkProvider:ge,registerColorProvider:ue,registerFoldingRangeProvider:le,registerDeclarationProvider:ce,registerSelectionRangeProvider:de,registerDocumentSemanticTokensProvider:ve,registerDocumentRangeSemanticTokensProvider:me,registerInlineCompletionsProvider:pe,registerInlineEditProvider:Se,registerInlayHintsProvider:Pe,DocumentHighlightKind:u.DocumentHighlightKind,CompletionItemKind:u.CompletionItemKind,CompletionItemTag:u.CompletionItemTag,CompletionItemInsertTextRule:u.CompletionItemInsertTextRule,SymbolKind:u.SymbolKind,SymbolTag:u.SymbolTag,IndentAction:u.IndentAction,CompletionTriggerKind:u.CompletionTriggerKind,SignatureHelpTriggerKind:u.SignatureHelpTriggerKind,InlayHintKind:u.InlayHintKind,InlineCompletionTriggerKind:u.InlineCompletionTriggerKind,InlineEditTriggerKind:u.InlineEditTriggerKind,CodeActionTriggerType:u.CodeActionTriggerType,NewSymbolNameTag:u.NewSymbolNameTag,NewSymbolNameTriggerKind:u.NewSymbolNameTriggerKind,PartialAcceptTriggerKind:u.PartialAcceptTriggerKind,HoverVerbosityAction:u.HoverVerbosityAction,FoldingRangeKind:v.FoldingRangeKind,SelectedSuggestionInfo:v.SelectedSuggestionInfo}}export{N as EncodedTokenizationSupportAdapter,S as TokenizationSupportAdapter,We as createMonacoLanguagesAPI,H as getEncodedLanguageId,w as getLanguages,K as onLanguage,M as onLanguageEncountered,z as register,te as registerCodeActionProvider,ne as registerCodeLensProvider,ue as registerColorProvider,se as registerCompletionItemProvider,ce as registerDeclarationProvider,Z as registerDefinitionProvider,oe as registerDocumentFormattingEditProvider,X as registerDocumentHighlightProvider,ie as registerDocumentRangeFormattingEditProvider,me as registerDocumentRangeSemanticTokensProvider,ve as registerDocumentSemanticTokensProvider,Q as registerDocumentSymbolProvider,le as registerFoldingRangeProvider,J as registerHoverProvider,ee as registerImplementationProvider,Pe as registerInlayHintsProvider,pe as registerInlineCompletionsProvider,Se as registerInlineEditProvider,ge as registerLinkProvider,Y as registerLinkedEditingRangeProvider,j as registerNewSymbolNameProvider,ae as registerOnTypeFormattingEditProvider,$ as registerReferenceProvider,W as registerRenameProvider,de as registerSelectionRangeProvider,G as registerSignatureHelpProvider,T as registerTokensProviderFactory,re as registerTypeDefinitionProvider,q as setColorMap,_ as setLanguageConfiguration,V as setMonarchTokensProvider,U as setTokensProvider};
+import { Color } from '../../../base/common/color.js';
+import { Range } from '../../common/core/range.js';
+import * as languages from '../../common/languages.js';
+import { ILanguageService } from '../../common/languages/language.js';
+import { ILanguageConfigurationService } from '../../common/languages/languageConfigurationRegistry.js';
+import { ModesRegistry } from '../../common/languages/modesRegistry.js';
+import { ILanguageFeaturesService } from '../../common/services/languageFeatures.js';
+import * as standaloneEnums from '../../common/standalone/standaloneEnums.js';
+import { StandaloneServices } from './standaloneServices.js';
+import { compile } from '../common/monarch/monarchCompile.js';
+import { MonarchTokenizer } from '../common/monarch/monarchLexer.js';
+import { IStandaloneThemeService } from '../common/standaloneTheme.js';
+import { IConfigurationService } from '../../../platform/configuration/common/configuration.js';
+import { IMarkerService } from '../../../platform/markers/common/markers.js';
+export function register(language) {
+    ModesRegistry.registerLanguage(language);
+}
+export function getLanguages() {
+    let result = [];
+    result = result.concat(ModesRegistry.getLanguages());
+    return result;
+}
+export function getEncodedLanguageId(languageId) {
+    const languageService = StandaloneServices.get(ILanguageService);
+    return languageService.languageIdCodec.encodeLanguageId(languageId);
+}
+export function onLanguage(languageId, callback) {
+    return StandaloneServices.withServices(() => {
+        const languageService = StandaloneServices.get(ILanguageService);
+        const disposable = languageService.onDidRequestRichLanguageFeatures((encounteredLanguageId) => {
+            if (encounteredLanguageId === languageId) {
+                disposable.dispose();
+                callback();
+            }
+        });
+        return disposable;
+    });
+}
+export function onLanguageEncountered(languageId, callback) {
+    return StandaloneServices.withServices(() => {
+        const languageService = StandaloneServices.get(ILanguageService);
+        const disposable = languageService.onDidRequestBasicLanguageFeatures((encounteredLanguageId) => {
+            if (encounteredLanguageId === languageId) {
+                disposable.dispose();
+                callback();
+            }
+        });
+        return disposable;
+    });
+}
+export function setLanguageConfiguration(languageId, configuration) {
+    const languageService = StandaloneServices.get(ILanguageService);
+    if (!languageService.isRegisteredLanguageId(languageId)) {
+        throw new Error(`Cannot set configuration for unknown language ${languageId}`);
+    }
+    const languageConfigurationService = StandaloneServices.get(ILanguageConfigurationService);
+    return languageConfigurationService.register(languageId, configuration, 100);
+}
+export class EncodedTokenizationSupportAdapter {
+    constructor(languageId, actual) {
+        this._languageId = languageId;
+        this._actual = actual;
+    }
+    dispose() {
+    }
+    getInitialState() {
+        return this._actual.getInitialState();
+    }
+    tokenize(line, hasEOL, state) {
+        if (typeof this._actual.tokenize === 'function') {
+            return TokenizationSupportAdapter.adaptTokenize(this._languageId, this._actual, line, state);
+        }
+        throw new Error('Not supported!');
+    }
+    tokenizeEncoded(line, hasEOL, state) {
+        const result = this._actual.tokenizeEncoded(line, state);
+        return new languages.EncodedTokenizationResult(result.tokens, result.endState);
+    }
+}
+export class TokenizationSupportAdapter {
+    constructor(_languageId, _actual, _languageService, _standaloneThemeService) {
+        this._languageId = _languageId;
+        this._actual = _actual;
+        this._languageService = _languageService;
+        this._standaloneThemeService = _standaloneThemeService;
+    }
+    dispose() {
+    }
+    getInitialState() {
+        return this._actual.getInitialState();
+    }
+    static _toClassicTokens(tokens, language) {
+        const result = [];
+        let previousStartIndex = 0;
+        for (let i = 0, len = tokens.length; i < len; i++) {
+            const t = tokens[i];
+            let startIndex = t.startIndex;
+            if (i === 0) {
+                startIndex = 0;
+            }
+            else if (startIndex < previousStartIndex) {
+                startIndex = previousStartIndex;
+            }
+            result[i] = new languages.Token(startIndex, t.scopes, language);
+            previousStartIndex = startIndex;
+        }
+        return result;
+    }
+    static adaptTokenize(language, actual, line, state) {
+        const actualResult = actual.tokenize(line, state);
+        const tokens = TokenizationSupportAdapter._toClassicTokens(actualResult.tokens, language);
+        let endState;
+        if (actualResult.endState.equals(state)) {
+            endState = state;
+        }
+        else {
+            endState = actualResult.endState;
+        }
+        return new languages.TokenizationResult(tokens, endState);
+    }
+    tokenize(line, hasEOL, state) {
+        return TokenizationSupportAdapter.adaptTokenize(this._languageId, this._actual, line, state);
+    }
+    _toBinaryTokens(languageIdCodec, tokens) {
+        const languageId = languageIdCodec.encodeLanguageId(this._languageId);
+        const tokenTheme = this._standaloneThemeService.getColorTheme().tokenTheme;
+        const result = [];
+        let resultLen = 0;
+        let previousStartIndex = 0;
+        for (let i = 0, len = tokens.length; i < len; i++) {
+            const t = tokens[i];
+            const metadata = tokenTheme.match(languageId, t.scopes) | 1024;
+            if (resultLen > 0 && result[resultLen - 1] === metadata) {
+                continue;
+            }
+            let startIndex = t.startIndex;
+            if (i === 0) {
+                startIndex = 0;
+            }
+            else if (startIndex < previousStartIndex) {
+                startIndex = previousStartIndex;
+            }
+            result[resultLen++] = startIndex;
+            result[resultLen++] = metadata;
+            previousStartIndex = startIndex;
+        }
+        const actualResult = new Uint32Array(resultLen);
+        for (let i = 0; i < resultLen; i++) {
+            actualResult[i] = result[i];
+        }
+        return actualResult;
+    }
+    tokenizeEncoded(line, hasEOL, state) {
+        const actualResult = this._actual.tokenize(line, state);
+        const tokens = this._toBinaryTokens(this._languageService.languageIdCodec, actualResult.tokens);
+        let endState;
+        if (actualResult.endState.equals(state)) {
+            endState = state;
+        }
+        else {
+            endState = actualResult.endState;
+        }
+        return new languages.EncodedTokenizationResult(tokens, endState);
+    }
+}
+function isATokensProvider(provider) {
+    return (typeof provider.getInitialState === 'function');
+}
+function isEncodedTokensProvider(provider) {
+    return 'tokenizeEncoded' in provider;
+}
+function isThenable(obj) {
+    return obj && typeof obj.then === 'function';
+}
+export function setColorMap(colorMap) {
+    const standaloneThemeService = StandaloneServices.get(IStandaloneThemeService);
+    if (colorMap) {
+        const result = [null];
+        for (let i = 1, len = colorMap.length; i < len; i++) {
+            result[i] = Color.fromHex(colorMap[i]);
+        }
+        standaloneThemeService.setColorMapOverride(result);
+    }
+    else {
+        standaloneThemeService.setColorMapOverride(null);
+    }
+}
+function createTokenizationSupportAdapter(languageId, provider) {
+    if (isEncodedTokensProvider(provider)) {
+        return new EncodedTokenizationSupportAdapter(languageId, provider);
+    }
+    else {
+        return new TokenizationSupportAdapter(languageId, provider, StandaloneServices.get(ILanguageService), StandaloneServices.get(IStandaloneThemeService));
+    }
+}
+export function registerTokensProviderFactory(languageId, factory) {
+    const adaptedFactory = new languages.LazyTokenizationSupport(async () => {
+        const result = await Promise.resolve(factory.create());
+        if (!result) {
+            return null;
+        }
+        if (isATokensProvider(result)) {
+            return createTokenizationSupportAdapter(languageId, result);
+        }
+        return new MonarchTokenizer(StandaloneServices.get(ILanguageService), StandaloneServices.get(IStandaloneThemeService), languageId, compile(languageId, result), StandaloneServices.get(IConfigurationService));
+    });
+    return languages.TokenizationRegistry.registerFactory(languageId, adaptedFactory);
+}
+export function setTokensProvider(languageId, provider) {
+    const languageService = StandaloneServices.get(ILanguageService);
+    if (!languageService.isRegisteredLanguageId(languageId)) {
+        throw new Error(`Cannot set tokens provider for unknown language ${languageId}`);
+    }
+    if (isThenable(provider)) {
+        return registerTokensProviderFactory(languageId, { create: () => provider });
+    }
+    return languages.TokenizationRegistry.register(languageId, createTokenizationSupportAdapter(languageId, provider));
+}
+export function setMonarchTokensProvider(languageId, languageDef) {
+    const create = (languageDef) => {
+        return new MonarchTokenizer(StandaloneServices.get(ILanguageService), StandaloneServices.get(IStandaloneThemeService), languageId, compile(languageId, languageDef), StandaloneServices.get(IConfigurationService));
+    };
+    if (isThenable(languageDef)) {
+        return registerTokensProviderFactory(languageId, { create: () => languageDef });
+    }
+    return languages.TokenizationRegistry.register(languageId, create(languageDef));
+}
+export function registerReferenceProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.referenceProvider.register(languageSelector, provider);
+}
+export function registerRenameProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.renameProvider.register(languageSelector, provider);
+}
+export function registerNewSymbolNameProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.newSymbolNamesProvider.register(languageSelector, provider);
+}
+export function registerSignatureHelpProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.signatureHelpProvider.register(languageSelector, provider);
+}
+export function registerHoverProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.hoverProvider.register(languageSelector, {
+        provideHover: async (model, position, token, context) => {
+            const word = model.getWordAtPosition(position);
+            return Promise.resolve(provider.provideHover(model, position, token, context)).then((value) => {
+                if (!value) {
+                    return undefined;
+                }
+                if (!value.range && word) {
+                    value.range = new Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn);
+                }
+                if (!value.range) {
+                    value.range = new Range(position.lineNumber, position.column, position.lineNumber, position.column);
+                }
+                return value;
+            });
+        }
+    });
+}
+export function registerDocumentSymbolProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.documentSymbolProvider.register(languageSelector, provider);
+}
+export function registerDocumentHighlightProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.documentHighlightProvider.register(languageSelector, provider);
+}
+export function registerLinkedEditingRangeProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.linkedEditingRangeProvider.register(languageSelector, provider);
+}
+export function registerDefinitionProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.definitionProvider.register(languageSelector, provider);
+}
+export function registerImplementationProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.implementationProvider.register(languageSelector, provider);
+}
+export function registerTypeDefinitionProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.typeDefinitionProvider.register(languageSelector, provider);
+}
+export function registerCodeLensProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.codeLensProvider.register(languageSelector, provider);
+}
+export function registerCodeActionProvider(languageSelector, provider, metadata) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.codeActionProvider.register(languageSelector, {
+        providedCodeActionKinds: metadata?.providedCodeActionKinds,
+        documentation: metadata?.documentation,
+        provideCodeActions: (model, range, context, token) => {
+            const markerService = StandaloneServices.get(IMarkerService);
+            const markers = markerService.read({ resource: model.uri }).filter(m => {
+                return Range.areIntersectingOrTouching(m, range);
+            });
+            return provider.provideCodeActions(model, range, { markers, only: context.only, trigger: context.trigger }, token);
+        },
+        resolveCodeAction: provider.resolveCodeAction
+    });
+}
+export function registerDocumentFormattingEditProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.documentFormattingEditProvider.register(languageSelector, provider);
+}
+export function registerDocumentRangeFormattingEditProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.documentRangeFormattingEditProvider.register(languageSelector, provider);
+}
+export function registerOnTypeFormattingEditProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.onTypeFormattingEditProvider.register(languageSelector, provider);
+}
+export function registerLinkProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.linkProvider.register(languageSelector, provider);
+}
+export function registerCompletionItemProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.completionProvider.register(languageSelector, provider);
+}
+export function registerColorProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.colorProvider.register(languageSelector, provider);
+}
+export function registerFoldingRangeProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.foldingRangeProvider.register(languageSelector, provider);
+}
+export function registerDeclarationProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.declarationProvider.register(languageSelector, provider);
+}
+export function registerSelectionRangeProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.selectionRangeProvider.register(languageSelector, provider);
+}
+export function registerDocumentSemanticTokensProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.documentSemanticTokensProvider.register(languageSelector, provider);
+}
+export function registerDocumentRangeSemanticTokensProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.documentRangeSemanticTokensProvider.register(languageSelector, provider);
+}
+export function registerInlineCompletionsProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.inlineCompletionsProvider.register(languageSelector, provider);
+}
+export function registerInlineEditProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.inlineEditProvider.register(languageSelector, provider);
+}
+export function registerInlayHintsProvider(languageSelector, provider) {
+    const languageFeaturesService = StandaloneServices.get(ILanguageFeaturesService);
+    return languageFeaturesService.inlayHintsProvider.register(languageSelector, provider);
+}
+export function createMonacoLanguagesAPI() {
+    return {
+        register: register,
+        getLanguages: getLanguages,
+        onLanguage: onLanguage,
+        onLanguageEncountered: onLanguageEncountered,
+        getEncodedLanguageId: getEncodedLanguageId,
+        setLanguageConfiguration: setLanguageConfiguration,
+        setColorMap: setColorMap,
+        registerTokensProviderFactory: registerTokensProviderFactory,
+        setTokensProvider: setTokensProvider,
+        setMonarchTokensProvider: setMonarchTokensProvider,
+        registerReferenceProvider: registerReferenceProvider,
+        registerRenameProvider: registerRenameProvider,
+        registerNewSymbolNameProvider: registerNewSymbolNameProvider,
+        registerCompletionItemProvider: registerCompletionItemProvider,
+        registerSignatureHelpProvider: registerSignatureHelpProvider,
+        registerHoverProvider: registerHoverProvider,
+        registerDocumentSymbolProvider: registerDocumentSymbolProvider,
+        registerDocumentHighlightProvider: registerDocumentHighlightProvider,
+        registerLinkedEditingRangeProvider: registerLinkedEditingRangeProvider,
+        registerDefinitionProvider: registerDefinitionProvider,
+        registerImplementationProvider: registerImplementationProvider,
+        registerTypeDefinitionProvider: registerTypeDefinitionProvider,
+        registerCodeLensProvider: registerCodeLensProvider,
+        registerCodeActionProvider: registerCodeActionProvider,
+        registerDocumentFormattingEditProvider: registerDocumentFormattingEditProvider,
+        registerDocumentRangeFormattingEditProvider: registerDocumentRangeFormattingEditProvider,
+        registerOnTypeFormattingEditProvider: registerOnTypeFormattingEditProvider,
+        registerLinkProvider: registerLinkProvider,
+        registerColorProvider: registerColorProvider,
+        registerFoldingRangeProvider: registerFoldingRangeProvider,
+        registerDeclarationProvider: registerDeclarationProvider,
+        registerSelectionRangeProvider: registerSelectionRangeProvider,
+        registerDocumentSemanticTokensProvider: registerDocumentSemanticTokensProvider,
+        registerDocumentRangeSemanticTokensProvider: registerDocumentRangeSemanticTokensProvider,
+        registerInlineCompletionsProvider: registerInlineCompletionsProvider,
+        registerInlineEditProvider: registerInlineEditProvider,
+        registerInlayHintsProvider: registerInlayHintsProvider,
+        DocumentHighlightKind: standaloneEnums.DocumentHighlightKind,
+        CompletionItemKind: standaloneEnums.CompletionItemKind,
+        CompletionItemTag: standaloneEnums.CompletionItemTag,
+        CompletionItemInsertTextRule: standaloneEnums.CompletionItemInsertTextRule,
+        SymbolKind: standaloneEnums.SymbolKind,
+        SymbolTag: standaloneEnums.SymbolTag,
+        IndentAction: standaloneEnums.IndentAction,
+        CompletionTriggerKind: standaloneEnums.CompletionTriggerKind,
+        SignatureHelpTriggerKind: standaloneEnums.SignatureHelpTriggerKind,
+        InlayHintKind: standaloneEnums.InlayHintKind,
+        InlineCompletionTriggerKind: standaloneEnums.InlineCompletionTriggerKind,
+        InlineEditTriggerKind: standaloneEnums.InlineEditTriggerKind,
+        CodeActionTriggerType: standaloneEnums.CodeActionTriggerType,
+        NewSymbolNameTag: standaloneEnums.NewSymbolNameTag,
+        NewSymbolNameTriggerKind: standaloneEnums.NewSymbolNameTriggerKind,
+        PartialAcceptTriggerKind: standaloneEnums.PartialAcceptTriggerKind,
+        HoverVerbosityAction: standaloneEnums.HoverVerbosityAction,
+        FoldingRangeKind: languages.FoldingRangeKind,
+        SelectedSuggestionInfo: languages.SelectedSuggestionInfo,
+    };
+}

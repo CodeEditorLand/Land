@@ -1,1 +1,23 @@
-import*as t from"./browser.js";import{mainWindow as o}from"./window.js";import*as r from"../common/platform.js";var i=(a=>(a[a.Always=0]="Always",a[a.FullScreen=1]="FullScreen",a[a.None=2]="None",a))(i||{});const e={clipboard:{writeText:r.isNative||document.queryCommandSupported&&document.queryCommandSupported("copy")||!!(navigator&&navigator.clipboard&&navigator.clipboard.writeText),readText:r.isNative||!!(navigator&&navigator.clipboard&&navigator.clipboard.readText)},keyboard:r.isNative||t.isStandalone()?0:navigator.keyboard||t.isSafari?1:2,touch:"ontouchstart"in o||navigator.maxTouchPoints>0,pointerEvents:o.PointerEvent&&("ontouchstart"in o||navigator.maxTouchPoints>0)};export{e as BrowserFeatures,i as KeyboardSupport};
+import * as browser from './browser.js';
+import { mainWindow } from './window.js';
+import * as platform from '../common/platform.js';
+export const BrowserFeatures = {
+    clipboard: {
+        writeText: (platform.isNative
+            || (document.queryCommandSupported && document.queryCommandSupported('copy'))
+            || !!(navigator && navigator.clipboard && navigator.clipboard.writeText)),
+        readText: (platform.isNative
+            || !!(navigator && navigator.clipboard && navigator.clipboard.readText))
+    },
+    keyboard: (() => {
+        if (platform.isNative || browser.isStandalone()) {
+            return 0;
+        }
+        if (navigator.keyboard || browser.isSafari) {
+            return 1;
+        }
+        return 2;
+    })(),
+    touch: 'ontouchstart' in mainWindow || navigator.maxTouchPoints > 0,
+    pointerEvents: mainWindow.PointerEvent && ('ontouchstart' in mainWindow || navigator.maxTouchPoints > 0)
+};

@@ -1,1 +1,79 @@
-import"../../../../../base/browser/ui/list/list.js";import"../../../../../base/browser/ui/tree/objectTree.js";import{ObjectTreeElementCollapseState as l}from"../../../../../base/browser/ui/tree/tree.js";import{Emitter as m}from"../../../../../base/common/event.js";import"../../../../../base/common/filters.js";import"../../../../../base/common/htmlContent.js";import{Iterable as c}from"../../../../../base/common/iterator.js";import"../../../../../base/common/lifecycle.js";import{MarshalledId as T}from"../../../../../base/common/marshallingIds.js";import{isCollapsedInSerializedTestTree as I}from"./testingViewState.js";import{InternalTestItem as o,TestItemExpandState as i,TestResultState as u}from"../../common/testTypes.js";let E=0;const a=()=>String(E++);class A{constructor(n,r=null){this.test=n;this.parent=r}changeEmitter=new m;onChange=this.changeEmitter.event;children=new Set;treeId=a();depth=this.parent?this.parent.depth+1:0;retired=!1;state=u.Unset;duration;toJSON(){if(this.depth===0)return{controllerId:this.test.controllerId};const n={$mid:T.TestItemContext,tests:[o.serialize(this.test)]};for(let r=this.parent;r&&r.depth>0;r=r.parent)n.tests.unshift(o.serialize(r.test));return n}}class p{constructor(n,r){this.message=n;this.parent=r}treeId=a();children=new Set;get description(){return typeof this.message=="string"?this.message:this.message.value}}const B={getId(t){const n=t instanceof p?"error":t.test.expand===i.NotExpandable?!!t.children.size:t.test.expand;return t.treeId+"\0"+n}},d=(t,n,r)=>{let s;if(r===null){const e=[...n];if(e.length===1)return d(t,e,e[0]);s=e}else s=r.children;return c.map(s,e=>e instanceof p?{element:e}:{element:e,collapsible:e.test.expand!==i.NotExpandable,collapsed:e.test.item.error?l.PreserveOrExpanded:I(t,e.test.item.extId)??e.depth>0?l.PreserveOrCollapsed:l.PreserveOrExpanded,children:d(t,n,e)})};export{A as TestItemTreeElement,p as TestTreeErrorMessage,d as getChildrenForParent,B as testIdentityProvider};
+import { ObjectTreeElementCollapseState } from '../../../../../base/browser/ui/tree/tree.js';
+import { Emitter } from '../../../../../base/common/event.js';
+import { Iterable } from '../../../../../base/common/iterator.js';
+import { isCollapsedInSerializedTestTree } from './testingViewState.js';
+import { InternalTestItem } from '../../common/testTypes.js';
+let idCounter = 0;
+const getId = () => String(idCounter++);
+export class TestItemTreeElement {
+    constructor(test, parent = null) {
+        this.test = test;
+        this.parent = parent;
+        this.changeEmitter = new Emitter();
+        this.onChange = this.changeEmitter.event;
+        this.children = new Set();
+        this.treeId = getId();
+        this.depth = this.parent ? this.parent.depth + 1 : 0;
+        this.retired = false;
+        this.state = 0;
+    }
+    toJSON() {
+        if (this.depth === 0) {
+            return { controllerId: this.test.controllerId };
+        }
+        const context = {
+            $mid: 16,
+            tests: [InternalTestItem.serialize(this.test)],
+        };
+        for (let p = this.parent; p && p.depth > 0; p = p.parent) {
+            context.tests.unshift(InternalTestItem.serialize(p.test));
+        }
+        return context;
+    }
+}
+export class TestTreeErrorMessage {
+    get description() {
+        return typeof this.message === 'string' ? this.message : this.message.value;
+    }
+    constructor(message, parent) {
+        this.message = message;
+        this.parent = parent;
+        this.treeId = getId();
+        this.children = new Set();
+    }
+}
+export const testIdentityProvider = {
+    getId(element) {
+        const expandComponent = element instanceof TestTreeErrorMessage
+            ? 'error'
+            : element.test.expand === 0
+                ? !!element.children.size
+                : element.test.expand;
+        return element.treeId + '\0' + expandComponent;
+    }
+};
+export const getChildrenForParent = (serialized, rootsWithChildren, node) => {
+    let it;
+    if (node === null) {
+        const rootsWithChildrenArr = [...rootsWithChildren];
+        if (rootsWithChildrenArr.length === 1) {
+            return getChildrenForParent(serialized, rootsWithChildrenArr, rootsWithChildrenArr[0]);
+        }
+        it = rootsWithChildrenArr;
+    }
+    else {
+        it = node.children;
+    }
+    return Iterable.map(it, element => (element instanceof TestTreeErrorMessage
+        ? { element }
+        : {
+            element,
+            collapsible: element.test.expand !== 0,
+            collapsed: element.test.item.error
+                ? ObjectTreeElementCollapseState.PreserveOrExpanded
+                : (isCollapsedInSerializedTestTree(serialized, element.test.item.extId) ?? element.depth > 0
+                    ? ObjectTreeElementCollapseState.PreserveOrCollapsed
+                    : ObjectTreeElementCollapseState.PreserveOrExpanded),
+            children: getChildrenForParent(serialized, rootsWithChildren, element),
+        }));
+};

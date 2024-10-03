@@ -1,1 +1,837 @@
-import{localize as V}from"../../../nls.js";import{basename as k}from"../../../base/common/resources.js";import{URI as C}from"../../../base/common/uri.js";import{Emitter as v,Event as _}from"../../../base/common/event.js";import{Disposable as P,DisposableStore as A}from"../../../base/common/lifecycle.js";import"./extHost.protocol.js";import{NoTreeViewError as g}from"../../common/views.js";import"./extHostCommands.js";import{asPromise as T}from"../../../base/common/async.js";import*as m from"./extHostTypes.js";import{isUndefinedOrNull as p,isString as N}from"../../../base/common/types.js";import{equals as H,coalesce as I}from"../../../base/common/arrays.js";import"../../../platform/log/common/log.js";import"../../../platform/extensions/common/extensions.js";import{MarkdownString as y,ViewBadge as R,DataTransfer as S}from"./extHostTypeConverters.js";import{isMarkdownString as $}from"../../../base/common/htmlContent.js";import{CancellationTokenSource as D}from"../../../base/common/cancellation.js";import{TreeViewsDnDService as M}from"../../../editor/common/services/treeViewsDnd.js";import"../../../platform/accessibility/common/accessibility.js";import{checkProposedApiEnabled as E}from"../../services/extensions/common/extensions.js";function x(f,b){if(N(f))return{label:f};if(f&&typeof f=="object"&&typeof f.label=="string"){let e;return Array.isArray(f.highlights)&&(e=f.highlights.filter(t=>t.length===2&&typeof t[0]=="number"&&typeof t[1]=="number"),e=e.length?e:void 0),{label:f.label,highlights:e}}}class Ee extends P{constructor(e,t,i){super();this._proxy=e;this.commands=t;this.logService=i;function r(n){return n&&n.$treeViewId&&(n.$treeItemHandle||n.$selectedTreeItems||n.$focusedTreeItem)}t.registerArgumentProcessor({processArgument:n=>r(n)?this.convertArgument(n):Array.isArray(n)&&n.length>0?n.map(s=>r(s)?this.convertArgument(s):s):n})}treeViews=new Map;treeDragAndDropService=new M;registerTreeDataProvider(e,t,i){const r=this.createTreeView(e,{treeDataProvider:t},i);return{dispose:()=>r.dispose()}}createTreeView(e,t,i){if(!t||!t.treeDataProvider)throw new Error("Options with treeDataProvider is mandatory");const r=t.dragAndDropController?.dropMimeTypes??[],n=t.dragAndDropController?.dragMimeTypes??[],s=!!t.dragAndDropController?.handleDrag,a=!!t.dragAndDropController?.handleDrop,o=this.createExtHostTreeView(e,t,i),c={showCollapseAll:!!t.showCollapseAll,canSelectMany:!!t.canSelectMany,dropMimeTypes:r,dragMimeTypes:n,hasHandleDrag:s,hasHandleDrop:a,manuallyManageCheckboxes:!!t.manageCheckboxStateManually},l=this._proxy.$registerTreeViewDataProvider(e,c),h={get onDidCollapseElement(){return o.onDidCollapseElement},get onDidExpandElement(){return o.onDidExpandElement},get selection(){return o.selectedElements},get onDidChangeSelection(){return o.onDidChangeSelection},get activeItem(){return E(i,"treeViewActiveItem"),o.focusedElement},get onDidChangeActiveItem(){return E(i,"treeViewActiveItem"),o.onDidChangeActiveItem},get visible(){return o.visible},get onDidChangeVisibility(){return o.onDidChangeVisibility},get onDidChangeCheckboxState(){return o.onDidChangeCheckboxState},get message(){return o.message},set message(d){$(d)&&E(i,"treeViewMarkdownMessage"),o.message=d},get title(){return o.title},set title(d){o.title=d},get description(){return o.description},set description(d){o.description=d},get badge(){return o.badge},set badge(d){d!==void 0&&m.ViewBadge.isViewBadge(d)?o.badge={value:Math.floor(Math.abs(d.value)),tooltip:d.tooltip}:d===void 0&&(o.badge=void 0)},reveal:(d,u)=>o.reveal(d,u),dispose:async()=>{await l,this.treeViews.delete(e),o.dispose()}};return this._register(h),h}$getChildren(e,t){const i=this.treeViews.get(e);return i?i.getChildren(t):Promise.reject(new g(e))}async $handleDrop(e,t,i,r,n,s,a,o){const c=this.treeViews.get(e);if(!c)return Promise.reject(new g(e));const l=S.toDataTransfer(i,async h=>(await this._proxy.$resolveDropFileData(e,t,h)).buffer);return a===e&&o&&await this.addAdditionalTransferItems(l,c,o,n,s),c.onDrop(l,r,n)}async addAdditionalTransferItems(e,t,i,r,n){const s=this.treeDragAndDropService.removeDragOperationTransfer(n);if(s)(await s)?.forEach((a,o)=>{a&&e.set(o,a)});else if(n&&t.handleDrag){const a=t.handleDrag(i,e,r);this.treeDragAndDropService.addDragOperationTransfer(n,a),await a}return e}async $handleDrag(e,t,i,r){const n=this.treeViews.get(e);if(!n)return Promise.reject(new g(e));const s=await this.addAdditionalTransferItems(new m.DataTransfer,n,t,r,i);if(!(!s||r.isCancellationRequested))return S.from(s)}async $hasResolve(e){const t=this.treeViews.get(e);if(!t)throw new g(e);return t.hasResolve}$resolve(e,t,i){const r=this.treeViews.get(e);if(!r)throw new g(e);return r.resolveTreeItem(t,i)}$setExpanded(e,t,i){const r=this.treeViews.get(e);if(!r)throw new g(e);r.setExpanded(t,i)}$setSelectionAndFocus(e,t,i){const r=this.treeViews.get(e);if(!r)throw new g(e);r.setSelectionAndFocus(t,i)}$setVisible(e,t){const i=this.treeViews.get(e);if(!i){if(!t)return;throw new g(e)}i.setVisible(t)}$changeCheckboxState(e,t){const i=this.treeViews.get(e);if(!i)throw new g(e);i.setCheckboxState(t)}createExtHostTreeView(e,t,i){const r=this._register(new w(e,t,this._proxy,this.commands.converter,this.logService,i));return this.treeViews.set(e,r),r}convertArgument(e){const t=this.treeViews.get(e.$treeViewId);return t&&"$treeItemHandle"in e?t.getExtensionElement(e.$treeItemHandle):t&&"$focusedTreeItem"in e&&e.$focusedTreeItem?t.focusedElement:null}}class w extends P{constructor(e,t,i,r,n,s){super();this.viewId=e;this.proxy=i;this.commands=r;this.logService=n;this.extension=s;if(s.contributes&&s.contributes.views)for(const l in s.contributes.views)for(const h of s.contributes.views[l])h.id===e&&(this._title=h.name);this.dataProvider=t.treeDataProvider,this.dndController=t.dragAndDropController,this.dataProvider.onDidChangeTreeData&&this._register(this.dataProvider.onDidChangeTreeData(l=>{Array.isArray(l)&&l.length===0||this._onDidChangeData.fire({message:!1,element:l})}));let a,o;const c=_.debounce(this._onDidChangeData.event,(l,h)=>(l||(l={message:!1,elements:[]}),h.element!==!1&&(a||(a=new Promise(d=>o=d),this.refreshPromise=this.refreshPromise.then(()=>a)),Array.isArray(h.element)?l.elements.push(...h.element):l.elements.push(h.element)),h.message&&(l.message=!0),l),200,!0);this._register(c(({message:l,elements:h})=>{h.length&&(this.refreshQueue=this.refreshQueue.then(()=>{const d=o;return a=null,this.refresh(h).then(()=>d())})),l&&this.proxy.$setMessage(this.viewId,y.fromStrict(this._message)??"")}))}static LABEL_HANDLE_PREFIX="0";static ID_HANDLE_PREFIX="1";dataProvider;dndController;roots=void 0;elements=new Map;nodes=new Map;_visible=!1;get visible(){return this._visible}_selectedHandles=[];get selectedElements(){return this._selectedHandles.map(e=>this.getExtensionElement(e)).filter(e=>!p(e))}_focusedHandle=void 0;get focusedElement(){return this._focusedHandle?this.getExtensionElement(this._focusedHandle):void 0}_onDidExpandElement=this._register(new v);onDidExpandElement=this._onDidExpandElement.event;_onDidCollapseElement=this._register(new v);onDidCollapseElement=this._onDidCollapseElement.event;_onDidChangeSelection=this._register(new v);onDidChangeSelection=this._onDidChangeSelection.event;_onDidChangeActiveItem=this._register(new v);onDidChangeActiveItem=this._onDidChangeActiveItem.event;_onDidChangeVisibility=this._register(new v);onDidChangeVisibility=this._onDidChangeVisibility.event;_onDidChangeCheckboxState=this._register(new v);onDidChangeCheckboxState=this._onDidChangeCheckboxState.event;_onDidChangeData=this._register(new v);refreshPromise=Promise.resolve();refreshQueue=Promise.resolve();async getChildren(e){const t=e?this.getExtensionElement(e):void 0;if(e&&!t)return this.logService.error(`No tree item with id '${e}' found.`),Promise.resolve([]);let i=this.getChildrenNodes(e);return i||(i=await this.fetchChildrenNodes(t)),i?i.map(r=>r.item):void 0}getExtensionElement(e){return this.elements.get(e)}reveal(e,t){t=t||{select:!0,focus:!1};const i=p(t.select)?!0:t.select,r=p(t.focus)?!1:t.focus,n=p(t.expand)?!1:t.expand;return typeof this.dataProvider.getParent!="function"?Promise.reject(new Error("Required registered TreeDataProvider to implement 'getParent' method to access 'reveal' method")):e?this.refreshPromise.then(()=>this.resolveUnknownParentChain(e)).then(s=>this.resolveTreeNode(e,s[s.length-1]).then(a=>this.proxy.$reveal(this.viewId,{item:a.item,parentChain:s.map(o=>o.item)},{select:i,focus:r,expand:n})),s=>this.logService.error(s)):this.proxy.$reveal(this.viewId,void 0,{select:i,focus:r,expand:n})}_message="";get message(){return this._message}set message(e){this._message=e,this._onDidChangeData.fire({message:!0,element:!1})}_title="";get title(){return this._title}set title(e){this._title=e,this.proxy.$setTitle(this.viewId,e,this._description)}_description;get description(){return this._description}set description(e){this._description=e,this.proxy.$setTitle(this.viewId,this._title,e)}_badge;get badge(){return this._badge}set badge(e){this._badge?.value===e?.value&&this._badge?.tooltip===e?.tooltip||(this._badge=R.from(e),this.proxy.$setBadge(this.viewId,e))}setExpanded(e,t){const i=this.getExtensionElement(e);i&&(t?this._onDidExpandElement.fire(Object.freeze({element:i})):this._onDidCollapseElement.fire(Object.freeze({element:i})))}setSelectionAndFocus(e,t){const i=!H(this._selectedHandles,e);this._selectedHandles=e;const r=this._focusedHandle!==t;this._focusedHandle=t,i&&this._onDidChangeSelection.fire(Object.freeze({selection:this.selectedElements})),r&&this._onDidChangeActiveItem.fire(Object.freeze({activeItem:this.focusedElement}))}setVisible(e){e!==this._visible&&(this._visible=e,this._onDidChangeVisibility.fire(Object.freeze({visible:this._visible})))}async setCheckboxState(e){const t=(await Promise.all(e.map(async i=>{const r=this.getExtensionElement(i.treeItemHandle);return r?{extensionItem:r,treeItem:await this.dataProvider.getTreeItem(r),newState:i.newState?m.TreeItemCheckboxState.Checked:m.TreeItemCheckboxState.Unchecked}:Promise.resolve(void 0)}))).filter(i=>i!==void 0);t.forEach(i=>{i.treeItem.checkboxState=i.newState?m.TreeItemCheckboxState.Checked:m.TreeItemCheckboxState.Unchecked}),this._onDidChangeCheckboxState.fire({items:t.map(i=>[i.extensionItem,i.newState])})}async handleDrag(e,t,i){const r=[];for(const n of e){const s=this.getExtensionElement(n);s&&r.push(s)}if(!(!this.dndController?.handleDrag||r.length===0))return await this.dndController.handleDrag(r,t,i),t}get hasHandleDrag(){return!!this.dndController?.handleDrag}async onDrop(e,t,i){const r=t?this.getExtensionElement(t):void 0;if(!(!r&&t||!this.dndController?.handleDrop))return T(()=>this.dndController?.handleDrop?this.dndController.handleDrop(r,e,i):void 0)}get hasResolve(){return!!this.dataProvider.resolveTreeItem}async resolveTreeItem(e,t){if(!this.dataProvider.resolveTreeItem)return;const i=this.elements.get(e);if(i){const r=this.nodes.get(i);if(r){const n=await this.dataProvider.resolveTreeItem(r.extensionItem,i,t)??r.extensionItem;return this.validateTreeItem(n),r.item.tooltip=this.getTooltip(n.tooltip),r.item.command=this.getCommand(r.disposableStore,n.command),r.item}}}resolveUnknownParentChain(e){return this.resolveParent(e).then(t=>t?this.resolveUnknownParentChain(t).then(i=>this.resolveTreeNode(t,i[i.length-1]).then(r=>(i.push(r),i))):Promise.resolve([]))}resolveParent(e){const t=this.nodes.get(e);return t?Promise.resolve(t.parent?this.elements.get(t.parent.item.handle):void 0):T(()=>this.dataProvider.getParent(e))}resolveTreeNode(e,t){const i=this.nodes.get(e);return i?Promise.resolve(i):T(()=>this.dataProvider.getTreeItem(e)).then(r=>this.createHandle(e,r,t,!0)).then(r=>this.getChildren(t?t.item.handle:void 0).then(()=>{const n=this.getExtensionElement(r);if(n){const s=this.nodes.get(n);if(s)return Promise.resolve(s)}throw new Error(`Cannot resolve tree item for element ${r} from extension ${this.extension.identifier.value}`)}))}getChildrenNodes(e){if(e){let t;if(typeof e=="string"){const i=this.getExtensionElement(e);t=i?this.nodes.get(i):void 0}else t=e;return t&&t.children||void 0}return this.roots}async fetchChildrenNodes(e){this.clearChildren(e);const t=new D(this._refreshCancellationSource.token);try{const i=e?this.nodes.get(e):void 0,r=await this.dataProvider.getChildren(e);if(t.token.isCancellationRequested)return;const n=I(r||[]),s=await Promise.all(I(n).map(o=>this.dataProvider.getTreeItem(o)));if(t.token.isCancellationRequested)return;const a=s.map((o,c)=>o?this.createAndRegisterTreeNode(n[c],o,i):null);return I(a)}finally{t.dispose()}}_refreshCancellationSource=new D;refresh(e){if(e.some(i=>!i))return this._refreshCancellationSource.dispose(!0),this._refreshCancellationSource=new D,this.clearAll(),this.proxy.$refresh(this.viewId);{const i=this.getHandlesToRefresh(e);if(i.length)return this.refreshHandles(i)}return Promise.resolve(void 0)}getHandlesToRefresh(e){const t=new Set,i=e.map(n=>this.nodes.get(n));for(const n of i)if(n&&!t.has(n.item.handle)){let s=n;for(;s&&s.parent&&i.findIndex(a=>s&&s.parent&&a&&a.item.handle===s.parent.item.handle)===-1;){const a=this.elements.get(s.parent.item.handle);s=a?this.nodes.get(a):void 0}s&&!s.parent&&t.add(n.item.handle)}const r=[];return t.forEach(n=>{const s=this.elements.get(n);if(s){const a=this.nodes.get(s);a&&(!a.parent||!t.has(a.parent.item.handle))&&r.push(n)}}),r}refreshHandles(e){const t={};return Promise.all(e.map(i=>this.refreshNode(i).then(r=>{r&&(t[i]=r.item)}))).then(()=>Object.keys(t).length?this.proxy.$refresh(this.viewId,t):void 0)}refreshNode(e){const t=this.getExtensionElement(e);if(t){const i=this.nodes.get(t);if(i)return this.clearChildren(t),T(()=>this.dataProvider.getTreeItem(t)).then(r=>{if(r){const n=this.createTreeNode(t,r,i.parent);return this.updateNodeCache(t,n,i,i.parent),i.dispose(),n}return null})}return Promise.resolve(null)}createAndRegisterTreeNode(e,t,i){const r=this.createTreeNode(e,t,i);if(t.id&&this.elements.has(r.item.handle))throw new Error(V("treeView.duplicateElement","Element with id {0} is already registered",t.id));return this.addNodeToCache(e,r),this.addNodeToParentCache(r,i),r}getTooltip(e){return m.MarkdownString.isMarkdownString(e)?y.from(e):e}getCommand(e,t){return t?{...this.commands.toInternal(t,e),originalId:t.command}:void 0}getCheckbox(e){if(e.checkboxState===void 0)return;let t,i,r;return typeof e.checkboxState=="number"?t=e.checkboxState:(t=e.checkboxState.state,i=e.checkboxState.tooltip,r=e.checkboxState.accessibilityInformation),{isChecked:t===m.TreeItemCheckboxState.Checked,tooltip:i,accessibilityInformation:r}}validateTreeItem(e){if(!m.TreeItem.isTreeItem(e,this.extension))throw new Error(`Extension ${this.extension.identifier.value} has provided an invalid tree item.`)}createTreeNode(e,t,i){this.validateTreeItem(t);const r=this._register(new A),n=this.createHandle(e,t,i),s=this.getLightIconPath(t);return{item:{handle:n,parentHandle:i?i.item.handle:void 0,label:x(t.label,this.extension),description:t.description,resourceUri:t.resourceUri,tooltip:this.getTooltip(t.tooltip),command:this.getCommand(r,t.command),contextValue:t.contextValue,icon:s,iconDark:this.getDarkIconPath(t)||s,themeIcon:this.getThemeIcon(t),collapsibleState:p(t.collapsibleState)?m.TreeItemCollapsibleState.None:t.collapsibleState,accessibilityInformation:t.accessibilityInformation,checkbox:this.getCheckbox(t)},extensionItem:t,parent:i,children:void 0,disposableStore:r,dispose(){r.dispose()}}}getThemeIcon(e){return e.iconPath instanceof m.ThemeIcon?e.iconPath:void 0}createHandle(e,{id:t,label:i,resourceUri:r},n,s){if(t)return`${w.ID_HANDLE_PREFIX}/${t}`;const a=x(i,this.extension),o=n?n.item.handle:w.LABEL_HANDLE_PREFIX;let c=a?a.label:r?k(r):"";c=c.indexOf("/")!==-1?c.replace("/","//"):c;const l=this.nodes.has(e)?this.nodes.get(e).item.handle:void 0,h=this.getChildrenNodes(n)||[];let d,u=0;do{if(d=`${o}/${u}:${c}`,s||!this.elements.has(d)||l===d)break;u++}while(u<=h.length);return d}getLightIconPath(e){if(e.iconPath&&!(e.iconPath instanceof m.ThemeIcon))return typeof e.iconPath=="string"||C.isUri(e.iconPath)?this.getIconPath(e.iconPath):this.getIconPath(e.iconPath.light)}getDarkIconPath(e){if(e.iconPath&&!(e.iconPath instanceof m.ThemeIcon)&&e.iconPath.dark)return this.getIconPath(e.iconPath.dark)}getIconPath(e){return C.isUri(e)?e:C.file(e)}addNodeToCache(e,t){this.elements.set(t.item.handle,e),this.nodes.set(e,t)}updateNodeCache(e,t,i,r){this.elements.delete(t.item.handle),this.nodes.delete(e),t.item.handle!==i.item.handle&&this.elements.delete(i.item.handle),this.addNodeToCache(e,t);const n=this.getChildrenNodes(r)||[],s=n.filter(a=>a.item.handle===i.item.handle)[0];s&&n.splice(n.indexOf(s),1,t)}addNodeToParentCache(e,t){t?(t.children||(t.children=[]),t.children.push(e)):(this.roots||(this.roots=[]),this.roots.push(e))}clearChildren(e){if(e){const t=this.nodes.get(e);if(t){if(t.children)for(const i of t.children){const r=this.elements.get(i.item.handle);r&&this.clear(r)}t.children=void 0}}else this.clearAll()}clear(e){const t=this.nodes.get(e);if(t){if(t.children)for(const i of t.children){const r=this.elements.get(i.item.handle);r&&this.clear(r)}this.nodes.delete(e),this.elements.delete(t.item.handle),t.dispose()}}clearAll(){this.roots=void 0,this.elements.clear(),this.nodes.forEach(e=>e.dispose()),this.nodes.clear()}dispose(){super.dispose(),this._refreshCancellationSource.dispose(),this.clearAll(),this.proxy.$disposeTree(this.viewId)}}export{Ee as ExtHostTreeViews};
+import { localize } from '../../../nls.js';
+import { basename } from '../../../base/common/resources.js';
+import { URI } from '../../../base/common/uri.js';
+import { Emitter, Event } from '../../../base/common/event.js';
+import { Disposable, DisposableStore } from '../../../base/common/lifecycle.js';
+import { NoTreeViewError } from '../../common/views.js';
+import { asPromise } from '../../../base/common/async.js';
+import * as extHostTypes from './extHostTypes.js';
+import { isUndefinedOrNull, isString } from '../../../base/common/types.js';
+import { equals, coalesce } from '../../../base/common/arrays.js';
+import { MarkdownString, ViewBadge, DataTransfer } from './extHostTypeConverters.js';
+import { isMarkdownString } from '../../../base/common/htmlContent.js';
+import { CancellationTokenSource } from '../../../base/common/cancellation.js';
+import { TreeViewsDnDService } from '../../../editor/common/services/treeViewsDnd.js';
+import { checkProposedApiEnabled } from '../../services/extensions/common/extensions.js';
+function toTreeItemLabel(label, extension) {
+    if (isString(label)) {
+        return { label };
+    }
+    if (label
+        && typeof label === 'object'
+        && typeof label.label === 'string') {
+        let highlights = undefined;
+        if (Array.isArray(label.highlights)) {
+            highlights = label.highlights.filter((highlight => highlight.length === 2 && typeof highlight[0] === 'number' && typeof highlight[1] === 'number'));
+            highlights = highlights.length ? highlights : undefined;
+        }
+        return { label: label.label, highlights };
+    }
+    return undefined;
+}
+export class ExtHostTreeViews extends Disposable {
+    constructor(_proxy, commands, logService) {
+        super();
+        this._proxy = _proxy;
+        this.commands = commands;
+        this.logService = logService;
+        this.treeViews = new Map();
+        this.treeDragAndDropService = new TreeViewsDnDService();
+        function isTreeViewConvertableItem(arg) {
+            return arg && arg.$treeViewId && (arg.$treeItemHandle || arg.$selectedTreeItems || arg.$focusedTreeItem);
+        }
+        commands.registerArgumentProcessor({
+            processArgument: arg => {
+                if (isTreeViewConvertableItem(arg)) {
+                    return this.convertArgument(arg);
+                }
+                else if (Array.isArray(arg) && (arg.length > 0)) {
+                    return arg.map(item => {
+                        if (isTreeViewConvertableItem(item)) {
+                            return this.convertArgument(item);
+                        }
+                        return item;
+                    });
+                }
+                return arg;
+            }
+        });
+    }
+    registerTreeDataProvider(id, treeDataProvider, extension) {
+        const treeView = this.createTreeView(id, { treeDataProvider }, extension);
+        return { dispose: () => treeView.dispose() };
+    }
+    createTreeView(viewId, options, extension) {
+        if (!options || !options.treeDataProvider) {
+            throw new Error('Options with treeDataProvider is mandatory');
+        }
+        const dropMimeTypes = options.dragAndDropController?.dropMimeTypes ?? [];
+        const dragMimeTypes = options.dragAndDropController?.dragMimeTypes ?? [];
+        const hasHandleDrag = !!options.dragAndDropController?.handleDrag;
+        const hasHandleDrop = !!options.dragAndDropController?.handleDrop;
+        const treeView = this.createExtHostTreeView(viewId, options, extension);
+        const proxyOptions = { showCollapseAll: !!options.showCollapseAll, canSelectMany: !!options.canSelectMany, dropMimeTypes, dragMimeTypes, hasHandleDrag, hasHandleDrop, manuallyManageCheckboxes: !!options.manageCheckboxStateManually };
+        const registerPromise = this._proxy.$registerTreeViewDataProvider(viewId, proxyOptions);
+        const view = {
+            get onDidCollapseElement() { return treeView.onDidCollapseElement; },
+            get onDidExpandElement() { return treeView.onDidExpandElement; },
+            get selection() { return treeView.selectedElements; },
+            get onDidChangeSelection() { return treeView.onDidChangeSelection; },
+            get activeItem() {
+                checkProposedApiEnabled(extension, 'treeViewActiveItem');
+                return treeView.focusedElement;
+            },
+            get onDidChangeActiveItem() {
+                checkProposedApiEnabled(extension, 'treeViewActiveItem');
+                return treeView.onDidChangeActiveItem;
+            },
+            get visible() { return treeView.visible; },
+            get onDidChangeVisibility() { return treeView.onDidChangeVisibility; },
+            get onDidChangeCheckboxState() {
+                return treeView.onDidChangeCheckboxState;
+            },
+            get message() { return treeView.message; },
+            set message(message) {
+                if (isMarkdownString(message)) {
+                    checkProposedApiEnabled(extension, 'treeViewMarkdownMessage');
+                }
+                treeView.message = message;
+            },
+            get title() { return treeView.title; },
+            set title(title) {
+                treeView.title = title;
+            },
+            get description() {
+                return treeView.description;
+            },
+            set description(description) {
+                treeView.description = description;
+            },
+            get badge() {
+                return treeView.badge;
+            },
+            set badge(badge) {
+                if ((badge !== undefined) && extHostTypes.ViewBadge.isViewBadge(badge)) {
+                    treeView.badge = {
+                        value: Math.floor(Math.abs(badge.value)),
+                        tooltip: badge.tooltip
+                    };
+                }
+                else if (badge === undefined) {
+                    treeView.badge = undefined;
+                }
+            },
+            reveal: (element, options) => {
+                return treeView.reveal(element, options);
+            },
+            dispose: async () => {
+                await registerPromise;
+                this.treeViews.delete(viewId);
+                treeView.dispose();
+            }
+        };
+        this._register(view);
+        return view;
+    }
+    $getChildren(treeViewId, treeItemHandle) {
+        const treeView = this.treeViews.get(treeViewId);
+        if (!treeView) {
+            return Promise.reject(new NoTreeViewError(treeViewId));
+        }
+        return treeView.getChildren(treeItemHandle);
+    }
+    async $handleDrop(destinationViewId, requestId, treeDataTransferDTO, targetItemHandle, token, operationUuid, sourceViewId, sourceTreeItemHandles) {
+        const treeView = this.treeViews.get(destinationViewId);
+        if (!treeView) {
+            return Promise.reject(new NoTreeViewError(destinationViewId));
+        }
+        const treeDataTransfer = DataTransfer.toDataTransfer(treeDataTransferDTO, async (dataItemIndex) => {
+            return (await this._proxy.$resolveDropFileData(destinationViewId, requestId, dataItemIndex)).buffer;
+        });
+        if ((sourceViewId === destinationViewId) && sourceTreeItemHandles) {
+            await this.addAdditionalTransferItems(treeDataTransfer, treeView, sourceTreeItemHandles, token, operationUuid);
+        }
+        return treeView.onDrop(treeDataTransfer, targetItemHandle, token);
+    }
+    async addAdditionalTransferItems(treeDataTransfer, treeView, sourceTreeItemHandles, token, operationUuid) {
+        const existingTransferOperation = this.treeDragAndDropService.removeDragOperationTransfer(operationUuid);
+        if (existingTransferOperation) {
+            (await existingTransferOperation)?.forEach((value, key) => {
+                if (value) {
+                    treeDataTransfer.set(key, value);
+                }
+            });
+        }
+        else if (operationUuid && treeView.handleDrag) {
+            const willDropPromise = treeView.handleDrag(sourceTreeItemHandles, treeDataTransfer, token);
+            this.treeDragAndDropService.addDragOperationTransfer(operationUuid, willDropPromise);
+            await willDropPromise;
+        }
+        return treeDataTransfer;
+    }
+    async $handleDrag(sourceViewId, sourceTreeItemHandles, operationUuid, token) {
+        const treeView = this.treeViews.get(sourceViewId);
+        if (!treeView) {
+            return Promise.reject(new NoTreeViewError(sourceViewId));
+        }
+        const treeDataTransfer = await this.addAdditionalTransferItems(new extHostTypes.DataTransfer(), treeView, sourceTreeItemHandles, token, operationUuid);
+        if (!treeDataTransfer || token.isCancellationRequested) {
+            return;
+        }
+        return DataTransfer.from(treeDataTransfer);
+    }
+    async $hasResolve(treeViewId) {
+        const treeView = this.treeViews.get(treeViewId);
+        if (!treeView) {
+            throw new NoTreeViewError(treeViewId);
+        }
+        return treeView.hasResolve;
+    }
+    $resolve(treeViewId, treeItemHandle, token) {
+        const treeView = this.treeViews.get(treeViewId);
+        if (!treeView) {
+            throw new NoTreeViewError(treeViewId);
+        }
+        return treeView.resolveTreeItem(treeItemHandle, token);
+    }
+    $setExpanded(treeViewId, treeItemHandle, expanded) {
+        const treeView = this.treeViews.get(treeViewId);
+        if (!treeView) {
+            throw new NoTreeViewError(treeViewId);
+        }
+        treeView.setExpanded(treeItemHandle, expanded);
+    }
+    $setSelectionAndFocus(treeViewId, selectedHandles, focusedHandle) {
+        const treeView = this.treeViews.get(treeViewId);
+        if (!treeView) {
+            throw new NoTreeViewError(treeViewId);
+        }
+        treeView.setSelectionAndFocus(selectedHandles, focusedHandle);
+    }
+    $setVisible(treeViewId, isVisible) {
+        const treeView = this.treeViews.get(treeViewId);
+        if (!treeView) {
+            if (!isVisible) {
+                return;
+            }
+            throw new NoTreeViewError(treeViewId);
+        }
+        treeView.setVisible(isVisible);
+    }
+    $changeCheckboxState(treeViewId, checkboxUpdate) {
+        const treeView = this.treeViews.get(treeViewId);
+        if (!treeView) {
+            throw new NoTreeViewError(treeViewId);
+        }
+        treeView.setCheckboxState(checkboxUpdate);
+    }
+    createExtHostTreeView(id, options, extension) {
+        const treeView = this._register(new ExtHostTreeView(id, options, this._proxy, this.commands.converter, this.logService, extension));
+        this.treeViews.set(id, treeView);
+        return treeView;
+    }
+    convertArgument(arg) {
+        const treeView = this.treeViews.get(arg.$treeViewId);
+        if (treeView && '$treeItemHandle' in arg) {
+            return treeView.getExtensionElement(arg.$treeItemHandle);
+        }
+        if (treeView && '$focusedTreeItem' in arg && arg.$focusedTreeItem) {
+            return treeView.focusedElement;
+        }
+        return null;
+    }
+}
+class ExtHostTreeView extends Disposable {
+    static { this.LABEL_HANDLE_PREFIX = '0'; }
+    static { this.ID_HANDLE_PREFIX = '1'; }
+    get visible() { return this._visible; }
+    get selectedElements() { return this._selectedHandles.map(handle => this.getExtensionElement(handle)).filter(element => !isUndefinedOrNull(element)); }
+    get focusedElement() { return (this._focusedHandle ? this.getExtensionElement(this._focusedHandle) : undefined); }
+    constructor(viewId, options, proxy, commands, logService, extension) {
+        super();
+        this.viewId = viewId;
+        this.proxy = proxy;
+        this.commands = commands;
+        this.logService = logService;
+        this.extension = extension;
+        this.roots = undefined;
+        this.elements = new Map();
+        this.nodes = new Map();
+        this._visible = false;
+        this._selectedHandles = [];
+        this._focusedHandle = undefined;
+        this._onDidExpandElement = this._register(new Emitter());
+        this.onDidExpandElement = this._onDidExpandElement.event;
+        this._onDidCollapseElement = this._register(new Emitter());
+        this.onDidCollapseElement = this._onDidCollapseElement.event;
+        this._onDidChangeSelection = this._register(new Emitter());
+        this.onDidChangeSelection = this._onDidChangeSelection.event;
+        this._onDidChangeActiveItem = this._register(new Emitter());
+        this.onDidChangeActiveItem = this._onDidChangeActiveItem.event;
+        this._onDidChangeVisibility = this._register(new Emitter());
+        this.onDidChangeVisibility = this._onDidChangeVisibility.event;
+        this._onDidChangeCheckboxState = this._register(new Emitter());
+        this.onDidChangeCheckboxState = this._onDidChangeCheckboxState.event;
+        this._onDidChangeData = this._register(new Emitter());
+        this.refreshPromise = Promise.resolve();
+        this.refreshQueue = Promise.resolve();
+        this._message = '';
+        this._title = '';
+        this._refreshCancellationSource = new CancellationTokenSource();
+        if (extension.contributes && extension.contributes.views) {
+            for (const location in extension.contributes.views) {
+                for (const view of extension.contributes.views[location]) {
+                    if (view.id === viewId) {
+                        this._title = view.name;
+                    }
+                }
+            }
+        }
+        this.dataProvider = options.treeDataProvider;
+        this.dndController = options.dragAndDropController;
+        if (this.dataProvider.onDidChangeTreeData) {
+            this._register(this.dataProvider.onDidChangeTreeData(elementOrElements => {
+                if (Array.isArray(elementOrElements) && elementOrElements.length === 0) {
+                    return;
+                }
+                this._onDidChangeData.fire({ message: false, element: elementOrElements });
+            }));
+        }
+        let refreshingPromise;
+        let promiseCallback;
+        const onDidChangeData = Event.debounce(this._onDidChangeData.event, (result, current) => {
+            if (!result) {
+                result = { message: false, elements: [] };
+            }
+            if (current.element !== false) {
+                if (!refreshingPromise) {
+                    refreshingPromise = new Promise(c => promiseCallback = c);
+                    this.refreshPromise = this.refreshPromise.then(() => refreshingPromise);
+                }
+                if (Array.isArray(current.element)) {
+                    result.elements.push(...current.element);
+                }
+                else {
+                    result.elements.push(current.element);
+                }
+            }
+            if (current.message) {
+                result.message = true;
+            }
+            return result;
+        }, 200, true);
+        this._register(onDidChangeData(({ message, elements }) => {
+            if (elements.length) {
+                this.refreshQueue = this.refreshQueue.then(() => {
+                    const _promiseCallback = promiseCallback;
+                    refreshingPromise = null;
+                    return this.refresh(elements).then(() => _promiseCallback());
+                });
+            }
+            if (message) {
+                this.proxy.$setMessage(this.viewId, MarkdownString.fromStrict(this._message) ?? '');
+            }
+        }));
+    }
+    async getChildren(parentHandle) {
+        const parentElement = parentHandle ? this.getExtensionElement(parentHandle) : undefined;
+        if (parentHandle && !parentElement) {
+            this.logService.error(`No tree item with id \'${parentHandle}\' found.`);
+            return Promise.resolve([]);
+        }
+        let childrenNodes = this.getChildrenNodes(parentHandle);
+        if (!childrenNodes) {
+            childrenNodes = await this.fetchChildrenNodes(parentElement);
+        }
+        return childrenNodes ? childrenNodes.map(n => n.item) : undefined;
+    }
+    getExtensionElement(treeItemHandle) {
+        return this.elements.get(treeItemHandle);
+    }
+    reveal(element, options) {
+        options = options ? options : { select: true, focus: false };
+        const select = isUndefinedOrNull(options.select) ? true : options.select;
+        const focus = isUndefinedOrNull(options.focus) ? false : options.focus;
+        const expand = isUndefinedOrNull(options.expand) ? false : options.expand;
+        if (typeof this.dataProvider.getParent !== 'function') {
+            return Promise.reject(new Error(`Required registered TreeDataProvider to implement 'getParent' method to access 'reveal' method`));
+        }
+        if (element) {
+            return this.refreshPromise
+                .then(() => this.resolveUnknownParentChain(element))
+                .then(parentChain => this.resolveTreeNode(element, parentChain[parentChain.length - 1])
+                .then(treeNode => this.proxy.$reveal(this.viewId, { item: treeNode.item, parentChain: parentChain.map(p => p.item) }, { select, focus, expand })), error => this.logService.error(error));
+        }
+        else {
+            return this.proxy.$reveal(this.viewId, undefined, { select, focus, expand });
+        }
+    }
+    get message() {
+        return this._message;
+    }
+    set message(message) {
+        this._message = message;
+        this._onDidChangeData.fire({ message: true, element: false });
+    }
+    get title() {
+        return this._title;
+    }
+    set title(title) {
+        this._title = title;
+        this.proxy.$setTitle(this.viewId, title, this._description);
+    }
+    get description() {
+        return this._description;
+    }
+    set description(description) {
+        this._description = description;
+        this.proxy.$setTitle(this.viewId, this._title, description);
+    }
+    get badge() {
+        return this._badge;
+    }
+    set badge(badge) {
+        if (this._badge?.value === badge?.value &&
+            this._badge?.tooltip === badge?.tooltip) {
+            return;
+        }
+        this._badge = ViewBadge.from(badge);
+        this.proxy.$setBadge(this.viewId, badge);
+    }
+    setExpanded(treeItemHandle, expanded) {
+        const element = this.getExtensionElement(treeItemHandle);
+        if (element) {
+            if (expanded) {
+                this._onDidExpandElement.fire(Object.freeze({ element }));
+            }
+            else {
+                this._onDidCollapseElement.fire(Object.freeze({ element }));
+            }
+        }
+    }
+    setSelectionAndFocus(selectedHandles, focusedHandle) {
+        const changedSelection = !equals(this._selectedHandles, selectedHandles);
+        this._selectedHandles = selectedHandles;
+        const changedFocus = this._focusedHandle !== focusedHandle;
+        this._focusedHandle = focusedHandle;
+        if (changedSelection) {
+            this._onDidChangeSelection.fire(Object.freeze({ selection: this.selectedElements }));
+        }
+        if (changedFocus) {
+            this._onDidChangeActiveItem.fire(Object.freeze({ activeItem: this.focusedElement }));
+        }
+    }
+    setVisible(visible) {
+        if (visible !== this._visible) {
+            this._visible = visible;
+            this._onDidChangeVisibility.fire(Object.freeze({ visible: this._visible }));
+        }
+    }
+    async setCheckboxState(checkboxUpdates) {
+        const items = (await Promise.all(checkboxUpdates.map(async (checkboxUpdate) => {
+            const extensionItem = this.getExtensionElement(checkboxUpdate.treeItemHandle);
+            if (extensionItem) {
+                return {
+                    extensionItem: extensionItem,
+                    treeItem: await this.dataProvider.getTreeItem(extensionItem),
+                    newState: checkboxUpdate.newState ? extHostTypes.TreeItemCheckboxState.Checked : extHostTypes.TreeItemCheckboxState.Unchecked
+                };
+            }
+            return Promise.resolve(undefined);
+        }))).filter((item) => item !== undefined);
+        items.forEach(item => {
+            item.treeItem.checkboxState = item.newState ? extHostTypes.TreeItemCheckboxState.Checked : extHostTypes.TreeItemCheckboxState.Unchecked;
+        });
+        this._onDidChangeCheckboxState.fire({ items: items.map(item => [item.extensionItem, item.newState]) });
+    }
+    async handleDrag(sourceTreeItemHandles, treeDataTransfer, token) {
+        const extensionTreeItems = [];
+        for (const sourceHandle of sourceTreeItemHandles) {
+            const extensionItem = this.getExtensionElement(sourceHandle);
+            if (extensionItem) {
+                extensionTreeItems.push(extensionItem);
+            }
+        }
+        if (!this.dndController?.handleDrag || (extensionTreeItems.length === 0)) {
+            return;
+        }
+        await this.dndController.handleDrag(extensionTreeItems, treeDataTransfer, token);
+        return treeDataTransfer;
+    }
+    get hasHandleDrag() {
+        return !!this.dndController?.handleDrag;
+    }
+    async onDrop(treeDataTransfer, targetHandleOrNode, token) {
+        const target = targetHandleOrNode ? this.getExtensionElement(targetHandleOrNode) : undefined;
+        if ((!target && targetHandleOrNode) || !this.dndController?.handleDrop) {
+            return;
+        }
+        return asPromise(() => this.dndController?.handleDrop
+            ? this.dndController.handleDrop(target, treeDataTransfer, token)
+            : undefined);
+    }
+    get hasResolve() {
+        return !!this.dataProvider.resolveTreeItem;
+    }
+    async resolveTreeItem(treeItemHandle, token) {
+        if (!this.dataProvider.resolveTreeItem) {
+            return;
+        }
+        const element = this.elements.get(treeItemHandle);
+        if (element) {
+            const node = this.nodes.get(element);
+            if (node) {
+                const resolve = await this.dataProvider.resolveTreeItem(node.extensionItem, element, token) ?? node.extensionItem;
+                this.validateTreeItem(resolve);
+                node.item.tooltip = this.getTooltip(resolve.tooltip);
+                node.item.command = this.getCommand(node.disposableStore, resolve.command);
+                return node.item;
+            }
+        }
+        return;
+    }
+    resolveUnknownParentChain(element) {
+        return this.resolveParent(element)
+            .then((parent) => {
+            if (!parent) {
+                return Promise.resolve([]);
+            }
+            return this.resolveUnknownParentChain(parent)
+                .then(result => this.resolveTreeNode(parent, result[result.length - 1])
+                .then(parentNode => {
+                result.push(parentNode);
+                return result;
+            }));
+        });
+    }
+    resolveParent(element) {
+        const node = this.nodes.get(element);
+        if (node) {
+            return Promise.resolve(node.parent ? this.elements.get(node.parent.item.handle) : undefined);
+        }
+        return asPromise(() => this.dataProvider.getParent(element));
+    }
+    resolveTreeNode(element, parent) {
+        const node = this.nodes.get(element);
+        if (node) {
+            return Promise.resolve(node);
+        }
+        return asPromise(() => this.dataProvider.getTreeItem(element))
+            .then(extTreeItem => this.createHandle(element, extTreeItem, parent, true))
+            .then(handle => this.getChildren(parent ? parent.item.handle : undefined)
+            .then(() => {
+            const cachedElement = this.getExtensionElement(handle);
+            if (cachedElement) {
+                const node = this.nodes.get(cachedElement);
+                if (node) {
+                    return Promise.resolve(node);
+                }
+            }
+            throw new Error(`Cannot resolve tree item for element ${handle} from extension ${this.extension.identifier.value}`);
+        }));
+    }
+    getChildrenNodes(parentNodeOrHandle) {
+        if (parentNodeOrHandle) {
+            let parentNode;
+            if (typeof parentNodeOrHandle === 'string') {
+                const parentElement = this.getExtensionElement(parentNodeOrHandle);
+                parentNode = parentElement ? this.nodes.get(parentElement) : undefined;
+            }
+            else {
+                parentNode = parentNodeOrHandle;
+            }
+            return parentNode ? parentNode.children || undefined : undefined;
+        }
+        return this.roots;
+    }
+    async fetchChildrenNodes(parentElement) {
+        this.clearChildren(parentElement);
+        const cts = new CancellationTokenSource(this._refreshCancellationSource.token);
+        try {
+            const parentNode = parentElement ? this.nodes.get(parentElement) : undefined;
+            const elements = await this.dataProvider.getChildren(parentElement);
+            if (cts.token.isCancellationRequested) {
+                return undefined;
+            }
+            const coalescedElements = coalesce(elements || []);
+            const treeItems = await Promise.all(coalesce(coalescedElements).map(element => {
+                return this.dataProvider.getTreeItem(element);
+            }));
+            if (cts.token.isCancellationRequested) {
+                return undefined;
+            }
+            const items = treeItems.map((item, index) => item ? this.createAndRegisterTreeNode(coalescedElements[index], item, parentNode) : null);
+            return coalesce(items);
+        }
+        finally {
+            cts.dispose();
+        }
+    }
+    refresh(elements) {
+        const hasRoot = elements.some(element => !element);
+        if (hasRoot) {
+            this._refreshCancellationSource.dispose(true);
+            this._refreshCancellationSource = new CancellationTokenSource();
+            this.clearAll();
+            return this.proxy.$refresh(this.viewId);
+        }
+        else {
+            const handlesToRefresh = this.getHandlesToRefresh(elements);
+            if (handlesToRefresh.length) {
+                return this.refreshHandles(handlesToRefresh);
+            }
+        }
+        return Promise.resolve(undefined);
+    }
+    getHandlesToRefresh(elements) {
+        const elementsToUpdate = new Set();
+        const elementNodes = elements.map(element => this.nodes.get(element));
+        for (const elementNode of elementNodes) {
+            if (elementNode && !elementsToUpdate.has(elementNode.item.handle)) {
+                let currentNode = elementNode;
+                while (currentNode && currentNode.parent && elementNodes.findIndex(node => currentNode && currentNode.parent && node && node.item.handle === currentNode.parent.item.handle) === -1) {
+                    const parentElement = this.elements.get(currentNode.parent.item.handle);
+                    currentNode = parentElement ? this.nodes.get(parentElement) : undefined;
+                }
+                if (currentNode && !currentNode.parent) {
+                    elementsToUpdate.add(elementNode.item.handle);
+                }
+            }
+        }
+        const handlesToUpdate = [];
+        elementsToUpdate.forEach((handle) => {
+            const element = this.elements.get(handle);
+            if (element) {
+                const node = this.nodes.get(element);
+                if (node && (!node.parent || !elementsToUpdate.has(node.parent.item.handle))) {
+                    handlesToUpdate.push(handle);
+                }
+            }
+        });
+        return handlesToUpdate;
+    }
+    refreshHandles(itemHandles) {
+        const itemsToRefresh = {};
+        return Promise.all(itemHandles.map(treeItemHandle => this.refreshNode(treeItemHandle)
+            .then(node => {
+            if (node) {
+                itemsToRefresh[treeItemHandle] = node.item;
+            }
+        })))
+            .then(() => Object.keys(itemsToRefresh).length ? this.proxy.$refresh(this.viewId, itemsToRefresh) : undefined);
+    }
+    refreshNode(treeItemHandle) {
+        const extElement = this.getExtensionElement(treeItemHandle);
+        if (extElement) {
+            const existing = this.nodes.get(extElement);
+            if (existing) {
+                this.clearChildren(extElement);
+                return asPromise(() => this.dataProvider.getTreeItem(extElement))
+                    .then(extTreeItem => {
+                    if (extTreeItem) {
+                        const newNode = this.createTreeNode(extElement, extTreeItem, existing.parent);
+                        this.updateNodeCache(extElement, newNode, existing, existing.parent);
+                        existing.dispose();
+                        return newNode;
+                    }
+                    return null;
+                });
+            }
+        }
+        return Promise.resolve(null);
+    }
+    createAndRegisterTreeNode(element, extTreeItem, parentNode) {
+        const node = this.createTreeNode(element, extTreeItem, parentNode);
+        if (extTreeItem.id && this.elements.has(node.item.handle)) {
+            throw new Error(localize('treeView.duplicateElement', 'Element with id {0} is already registered', extTreeItem.id));
+        }
+        this.addNodeToCache(element, node);
+        this.addNodeToParentCache(node, parentNode);
+        return node;
+    }
+    getTooltip(tooltip) {
+        if (extHostTypes.MarkdownString.isMarkdownString(tooltip)) {
+            return MarkdownString.from(tooltip);
+        }
+        return tooltip;
+    }
+    getCommand(disposable, command) {
+        return command ? { ...this.commands.toInternal(command, disposable), originalId: command.command } : undefined;
+    }
+    getCheckbox(extensionTreeItem) {
+        if (extensionTreeItem.checkboxState === undefined) {
+            return undefined;
+        }
+        let checkboxState;
+        let tooltip = undefined;
+        let accessibilityInformation = undefined;
+        if (typeof extensionTreeItem.checkboxState === 'number') {
+            checkboxState = extensionTreeItem.checkboxState;
+        }
+        else {
+            checkboxState = extensionTreeItem.checkboxState.state;
+            tooltip = extensionTreeItem.checkboxState.tooltip;
+            accessibilityInformation = extensionTreeItem.checkboxState.accessibilityInformation;
+        }
+        return { isChecked: checkboxState === extHostTypes.TreeItemCheckboxState.Checked, tooltip, accessibilityInformation };
+    }
+    validateTreeItem(extensionTreeItem) {
+        if (!extHostTypes.TreeItem.isTreeItem(extensionTreeItem, this.extension)) {
+            throw new Error(`Extension ${this.extension.identifier.value} has provided an invalid tree item.`);
+        }
+    }
+    createTreeNode(element, extensionTreeItem, parent) {
+        this.validateTreeItem(extensionTreeItem);
+        const disposableStore = this._register(new DisposableStore());
+        const handle = this.createHandle(element, extensionTreeItem, parent);
+        const icon = this.getLightIconPath(extensionTreeItem);
+        const item = {
+            handle,
+            parentHandle: parent ? parent.item.handle : undefined,
+            label: toTreeItemLabel(extensionTreeItem.label, this.extension),
+            description: extensionTreeItem.description,
+            resourceUri: extensionTreeItem.resourceUri,
+            tooltip: this.getTooltip(extensionTreeItem.tooltip),
+            command: this.getCommand(disposableStore, extensionTreeItem.command),
+            contextValue: extensionTreeItem.contextValue,
+            icon,
+            iconDark: this.getDarkIconPath(extensionTreeItem) || icon,
+            themeIcon: this.getThemeIcon(extensionTreeItem),
+            collapsibleState: isUndefinedOrNull(extensionTreeItem.collapsibleState) ? extHostTypes.TreeItemCollapsibleState.None : extensionTreeItem.collapsibleState,
+            accessibilityInformation: extensionTreeItem.accessibilityInformation,
+            checkbox: this.getCheckbox(extensionTreeItem),
+        };
+        return {
+            item,
+            extensionItem: extensionTreeItem,
+            parent,
+            children: undefined,
+            disposableStore,
+            dispose() { disposableStore.dispose(); }
+        };
+    }
+    getThemeIcon(extensionTreeItem) {
+        return extensionTreeItem.iconPath instanceof extHostTypes.ThemeIcon ? extensionTreeItem.iconPath : undefined;
+    }
+    createHandle(element, { id, label, resourceUri }, parent, returnFirst) {
+        if (id) {
+            return `${ExtHostTreeView.ID_HANDLE_PREFIX}/${id}`;
+        }
+        const treeItemLabel = toTreeItemLabel(label, this.extension);
+        const prefix = parent ? parent.item.handle : ExtHostTreeView.LABEL_HANDLE_PREFIX;
+        let elementId = treeItemLabel ? treeItemLabel.label : resourceUri ? basename(resourceUri) : '';
+        elementId = elementId.indexOf('/') !== -1 ? elementId.replace('/', '//') : elementId;
+        const existingHandle = this.nodes.has(element) ? this.nodes.get(element).item.handle : undefined;
+        const childrenNodes = (this.getChildrenNodes(parent) || []);
+        let handle;
+        let counter = 0;
+        do {
+            handle = `${prefix}/${counter}:${elementId}`;
+            if (returnFirst || !this.elements.has(handle) || existingHandle === handle) {
+                break;
+            }
+            counter++;
+        } while (counter <= childrenNodes.length);
+        return handle;
+    }
+    getLightIconPath(extensionTreeItem) {
+        if (extensionTreeItem.iconPath && !(extensionTreeItem.iconPath instanceof extHostTypes.ThemeIcon)) {
+            if (typeof extensionTreeItem.iconPath === 'string'
+                || URI.isUri(extensionTreeItem.iconPath)) {
+                return this.getIconPath(extensionTreeItem.iconPath);
+            }
+            return this.getIconPath(extensionTreeItem.iconPath.light);
+        }
+        return undefined;
+    }
+    getDarkIconPath(extensionTreeItem) {
+        if (extensionTreeItem.iconPath && !(extensionTreeItem.iconPath instanceof extHostTypes.ThemeIcon) && extensionTreeItem.iconPath.dark) {
+            return this.getIconPath(extensionTreeItem.iconPath.dark);
+        }
+        return undefined;
+    }
+    getIconPath(iconPath) {
+        if (URI.isUri(iconPath)) {
+            return iconPath;
+        }
+        return URI.file(iconPath);
+    }
+    addNodeToCache(element, node) {
+        this.elements.set(node.item.handle, element);
+        this.nodes.set(element, node);
+    }
+    updateNodeCache(element, newNode, existing, parentNode) {
+        this.elements.delete(newNode.item.handle);
+        this.nodes.delete(element);
+        if (newNode.item.handle !== existing.item.handle) {
+            this.elements.delete(existing.item.handle);
+        }
+        this.addNodeToCache(element, newNode);
+        const childrenNodes = (this.getChildrenNodes(parentNode) || []);
+        const childNode = childrenNodes.filter(c => c.item.handle === existing.item.handle)[0];
+        if (childNode) {
+            childrenNodes.splice(childrenNodes.indexOf(childNode), 1, newNode);
+        }
+    }
+    addNodeToParentCache(node, parentNode) {
+        if (parentNode) {
+            if (!parentNode.children) {
+                parentNode.children = [];
+            }
+            parentNode.children.push(node);
+        }
+        else {
+            if (!this.roots) {
+                this.roots = [];
+            }
+            this.roots.push(node);
+        }
+    }
+    clearChildren(parentElement) {
+        if (parentElement) {
+            const node = this.nodes.get(parentElement);
+            if (node) {
+                if (node.children) {
+                    for (const child of node.children) {
+                        const childElement = this.elements.get(child.item.handle);
+                        if (childElement) {
+                            this.clear(childElement);
+                        }
+                    }
+                }
+                node.children = undefined;
+            }
+        }
+        else {
+            this.clearAll();
+        }
+    }
+    clear(element) {
+        const node = this.nodes.get(element);
+        if (node) {
+            if (node.children) {
+                for (const child of node.children) {
+                    const childElement = this.elements.get(child.item.handle);
+                    if (childElement) {
+                        this.clear(childElement);
+                    }
+                }
+            }
+            this.nodes.delete(element);
+            this.elements.delete(node.item.handle);
+            node.dispose();
+        }
+    }
+    clearAll() {
+        this.roots = undefined;
+        this.elements.clear();
+        this.nodes.forEach(node => node.dispose());
+        this.nodes.clear();
+    }
+    dispose() {
+        super.dispose();
+        this._refreshCancellationSource.dispose();
+        this.clearAll();
+        this.proxy.$disposeTree(this.viewId);
+    }
+}

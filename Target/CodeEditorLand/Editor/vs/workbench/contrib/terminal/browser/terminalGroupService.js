@@ -1,1 +1,415 @@
-var C=Object.defineProperty;var y=Object.getOwnPropertyDescriptor;var f=(l,u,e,n)=>{for(var t=n>1?void 0:n?y(u,e):u,i=l.length-1,s;i>=0;i--)(s=l[i])&&(t=(n?s(u,e,t):s(t))||t);return n&&t&&C(u,e,t),t},I=(l,u)=>(e,n)=>u(e,n,l);import"../../../../base/browser/ui/sash/sash.js";import{timeout as T}from"../../../../base/common/async.js";import{Emitter as a,Event as d}from"../../../../base/common/event.js";import{Disposable as b}from"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import{IContextKeyService as A}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as S}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/terminal/common/terminal.js";import{IViewDescriptorService as V}from"../../../common/views.js";import{IViewsService as O}from"../../../services/views/common/viewsService.js";import"./terminal.js";import{IQuickInputService as F}from"../../../../platform/quickinput/common/quickInput.js";import{TerminalGroup as P}from"./terminalGroup.js";import{getInstanceFromResource as B}from"./terminalUri.js";import"./terminalView.js";import{TERMINAL_VIEW_ID as c}from"../common/terminal.js";import{TerminalContextKeys as m}from"../common/terminalContextKey.js";import{asArray as G}from"../../../../base/common/arrays.js";let g=class extends b{constructor(e,n,t,i,s){super();this._contextKeyService=e;this._instantiationService=n;this._viewsService=t;this._viewDescriptorService=i;this._quickInputService=s;this._terminalGroupCountContextKey=m.groupCount.bindTo(this._contextKeyService),this._register(this.onDidDisposeGroup(r=>this._removeGroup(r))),this._register(this.onDidChangeGroups(()=>this._terminalGroupCountContextKey.set(this.groups.length))),this._register(d.any(this.onDidChangeActiveGroup,this.onDidChangeInstances)(()=>this.updateVisibility())),this._register(this._quickInputService.onShow(()=>this._isQuickInputOpened=!0)),this._register(this._quickInputService.onHide(()=>this._isQuickInputOpened=!1))}groups=[];activeGroupIndex=-1;get instances(){return this.groups.reduce((e,n)=>e.concat(n.terminalInstances),[])}lastAccessedMenu="inline-tab";_terminalGroupCountContextKey;_container;_isQuickInputOpened=!1;_onDidChangeActiveGroup=this._register(new a);onDidChangeActiveGroup=this._onDidChangeActiveGroup.event;_onDidDisposeGroup=this._register(new a);onDidDisposeGroup=this._onDidDisposeGroup.event;_onDidChangeGroups=this._register(new a);onDidChangeGroups=this._onDidChangeGroups.event;_onDidShow=this._register(new a);onDidShow=this._onDidShow.event;_onDidDisposeInstance=this._register(new a);onDidDisposeInstance=this._onDidDisposeInstance.event;_onDidFocusInstance=this._register(new a);onDidFocusInstance=this._onDidFocusInstance.event;_onDidChangeActiveInstance=this._register(new a);onDidChangeActiveInstance=this._onDidChangeActiveInstance.event;_onDidChangeInstances=this._register(new a);onDidChangeInstances=this._onDidChangeInstances.event;_onDidChangeInstanceCapability=this._register(new a);onDidChangeInstanceCapability=this._onDidChangeInstanceCapability.event;_onDidChangePanelOrientation=this._register(new a);onDidChangePanelOrientation=this._onDidChangePanelOrientation.event;hidePanel(){const e=this._viewDescriptorService.getViewContainerByViewId(c);e&&this._viewDescriptorService.getViewContainerModel(e).activeViewDescriptors.length===1&&(this._viewsService.closeView(c),m.tabsMouse.bindTo(this._contextKeyService).set(!1))}get activeGroup(){if(!(this.activeGroupIndex<0||this.activeGroupIndex>=this.groups.length))return this.groups[this.activeGroupIndex]}set activeGroup(e){if(e===void 0)return;const n=this.groups.findIndex(t=>t===e);this.setActiveGroupByIndex(n)}get activeInstance(){return this.activeGroup?.activeInstance}setActiveInstance(e){this.setActiveInstanceByIndex(this._getIndexFromId(e.instanceId))}_getIndexFromId(e){const n=this.instances.findIndex(t=>t.instanceId===e);if(n===-1)throw new Error(`Terminal with ID ${e} does not exist (has it already been disposed?)`);return n}setContainer(e){this._container=e,this.groups.forEach(n=>n.attachToElement(e))}async focusTabs(){if(this.instances.length===0)return;await this.showPanel(!0),this._viewsService.getActiveViewWithId(c)?.terminalTabbedView?.focusTabs()}async focusHover(){if(this.instances.length===0)return;this._viewsService.getActiveViewWithId(c)?.terminalTabbedView?.focusHover()}async focusInstance(e){return this.showPanel(!0)}async focusActiveInstance(){return this.showPanel(!0)}createGroup(e){const n=this._instantiationService.createInstance(P,this._container,e);return this.groups.push(n),n.addDisposable(d.forward(n.onPanelOrientationChanged,this._onDidChangePanelOrientation)),n.addDisposable(d.forward(n.onDidDisposeInstance,this._onDidDisposeInstance)),n.addDisposable(d.forward(n.onDidFocusInstance,this._onDidFocusInstance)),n.addDisposable(d.forward(n.onDidChangeInstanceCapability,this._onDidChangeInstanceCapability)),n.addDisposable(d.forward(n.onInstancesChanged,this._onDidChangeInstances)),n.addDisposable(d.forward(n.onDisposed,this._onDidDisposeGroup)),n.addDisposable(n.onDidChangeActiveInstance(t=>{n===this.activeGroup&&this._onDidChangeActiveInstance.fire(t)})),n.terminalInstances.length>0&&this._onDidChangeInstances.fire(),this.instances.length===1&&this.setActiveInstanceByIndex(0),this._onDidChangeGroups.fire(),n}async showPanel(e){const n=this._viewsService.getActiveViewWithId(c)??await this._viewsService.openView(c,e);if(n?.setExpanded(!0),e){await T(0);const t=this.activeInstance;t&&(n&&!n.isVisible()&&await this._viewsService.openView(c,e),await t.focusWhenReady(!0))}this._onDidShow.fire()}getInstanceFromResource(e){return B(this.instances,e)}_removeGroup(e){const n=this.activeGroup,t=e===n,i=this.groups.indexOf(e);if(i!==-1&&(this.groups.splice(i,1),this._onDidChangeGroups.fire()),t){if(this.groups.length>0&&!this._isQuickInputOpened){const s=i<this.groups.length?i:this.groups.length-1;this.setActiveGroupByIndex(s,!0),this.activeInstance?.focus(!0)}}else this.activeGroupIndex>i&&this.setActiveGroupByIndex(this.activeGroupIndex-1);this.activeGroupIndex>=this.groups.length&&this.setActiveGroupByIndex(this.groups.length-1),this._onDidChangeInstances.fire(),this._onDidChangeGroups.fire(),t&&(this._onDidChangeActiveGroup.fire(this.activeGroup),this._onDidChangeActiveInstance.fire(this.activeInstance))}setActiveGroupByIndex(e,n){if(e===-1&&this.groups.length===0){this.activeGroupIndex!==-1&&(this.activeGroupIndex=-1,this._onDidChangeActiveGroup.fire(this.activeGroup),this._onDidChangeActiveInstance.fire(this.activeInstance));return}if(e<0||e>=this.groups.length)return;const t=this.activeGroup;this.activeGroupIndex=e,(n||t!==this.activeGroup)&&(this._onDidChangeActiveGroup.fire(this.activeGroup),this._onDidChangeActiveInstance.fire(this.activeInstance))}_getInstanceLocation(e){let n=0;for(;e>=0&&n<this.groups.length;){const t=this.groups[n],i=t.terminalInstances.length;if(e<i)return{group:t,groupIndex:n,instance:t.terminalInstances[e],instanceIndex:e};e-=i,n++}}setActiveInstanceByIndex(e){const n=this.activeInstance,t=this._getInstanceLocation(e),i=t?.group.terminalInstances[t.instanceIndex];if(!t||n===i)return;const s=t.instanceIndex;this.activeGroupIndex=t.groupIndex,this._onDidChangeActiveGroup.fire(this.activeGroup),t.group.setActiveInstanceByIndex(s,!0)}setActiveGroupToNext(){if(this.groups.length<=1)return;let e=this.activeGroupIndex+1;e>=this.groups.length&&(e=0),this.setActiveGroupByIndex(e)}setActiveGroupToPrevious(){if(this.groups.length<=1)return;let e=this.activeGroupIndex-1;e<0&&(e=this.groups.length-1),this.setActiveGroupByIndex(e)}_getValidTerminalGroups=e=>new Set(e.map(n=>this.getGroupForInstance(n)).filter(n=>n!==void 0));moveGroup(e,n){e=G(e);const t=this._getValidTerminalGroups(e),i=this.getGroupForInstance(n);if(!i||t.size===0)return;if(t.size===1&&t.has(i)){const h=i.terminalInstances.indexOf(n),p=e.sort((x,w)=>i.terminalInstances.indexOf(x)-i.terminalInstances.indexOf(w)),D=i.terminalInstances.indexOf(p[0])<h?"after":"before";i.moveInstance(p,h,D),this._onDidChangeInstances.fire();return}const s=this.groups.indexOf(i),r=Array.from(t).sort((h,p)=>this.groups.indexOf(h)-this.groups.indexOf(p)),v=this.groups.indexOf(r[0])<s?"after":"before",_=v==="after"?s+1:s;this.groups.splice(_,0,...r);for(const h of r){const p=v==="after"?this.groups.indexOf(h):this.groups.lastIndexOf(h);this.groups.splice(p,1)}this._onDidChangeInstances.fire()}moveGroupToEnd(e){e=G(e);const n=this._getValidTerminalGroups(e);if(n.size===0)return;const t=this.groups.length-1,i=Array.from(n).sort((s,r)=>this.groups.indexOf(s)-this.groups.indexOf(r));this.groups.splice(t+1,0,...i);for(const s of i){const r=this.groups.indexOf(s);this.groups.splice(r,1)}this._onDidChangeInstances.fire()}moveInstance(e,n,t){const i=this.getGroupForInstance(e),s=this.getGroupForInstance(n);if(!i||!s)return;i!==s&&(i.removeInstance(e),s.addInstance(e));const r=s.terminalInstances.indexOf(n)+(t==="after"?1:0);s.moveInstance(e,r,t)}unsplitInstance(e){const n=this.getGroupForInstance(e);!n||n.terminalInstances.length<2||(n.removeInstance(e),this.createGroup(e))}joinInstances(e){const n=this.getGroupForInstance(e[0]);if(n){let r=!0;for(let o=1;o<n.terminalInstances.length;o++)if(n.terminalInstances.includes(e[o])){r=!1;break}if(!r&&n.terminalInstances.length===e.length)return}let t,i;for(const r of e){const o=this.getGroupForInstance(r);if(o?.terminalInstances.length===1){t=r,i=o;break}}i||(i=this.createGroup());const s=this.activeGroup===i;for(const r of e){if(r===t)continue;const o=this.getGroupForInstance(r);o&&(o.removeInstance(r),i.addInstance(r))}this.setActiveInstance(e[0]),this._onDidChangeInstances.fire(),s||this._onDidChangeActiveGroup.fire(this.activeGroup)}instanceIsSplit(e){const n=this.getGroupForInstance(e);return n?n.terminalInstances.length>1:!1}getGroupForInstance(e){return this.groups.find(n=>n.terminalInstances.includes(e))}getGroupLabels(){return this.groups.filter(e=>e.terminalInstances.length>0).map((e,n)=>`${n+1}: ${e.title?e.title:""}`)}updateVisibility(){const e=this._viewsService.isViewVisible(c);this.groups.forEach((n,t)=>n.setVisible(e&&t===this.activeGroupIndex))}};g=f([I(0,A),I(1,S),I(2,O),I(3,V),I(4,F)],g);export{g as TerminalGroupService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { timeout } from '../../../../base/common/async.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IViewDescriptorService } from '../../../common/views.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { TerminalGroup } from './terminalGroup.js';
+import { getInstanceFromResource } from './terminalUri.js';
+import { TERMINAL_VIEW_ID } from '../common/terminal.js';
+import { TerminalContextKeys } from '../common/terminalContextKey.js';
+import { asArray } from '../../../../base/common/arrays.js';
+let TerminalGroupService = class TerminalGroupService extends Disposable {
+    get instances() {
+        return this.groups.reduce((p, c) => p.concat(c.terminalInstances), []);
+    }
+    constructor(_contextKeyService, _instantiationService, _viewsService, _viewDescriptorService, _quickInputService) {
+        super();
+        this._contextKeyService = _contextKeyService;
+        this._instantiationService = _instantiationService;
+        this._viewsService = _viewsService;
+        this._viewDescriptorService = _viewDescriptorService;
+        this._quickInputService = _quickInputService;
+        this.groups = [];
+        this.activeGroupIndex = -1;
+        this.lastAccessedMenu = 'inline-tab';
+        this._isQuickInputOpened = false;
+        this._onDidChangeActiveGroup = this._register(new Emitter());
+        this.onDidChangeActiveGroup = this._onDidChangeActiveGroup.event;
+        this._onDidDisposeGroup = this._register(new Emitter());
+        this.onDidDisposeGroup = this._onDidDisposeGroup.event;
+        this._onDidChangeGroups = this._register(new Emitter());
+        this.onDidChangeGroups = this._onDidChangeGroups.event;
+        this._onDidShow = this._register(new Emitter());
+        this.onDidShow = this._onDidShow.event;
+        this._onDidDisposeInstance = this._register(new Emitter());
+        this.onDidDisposeInstance = this._onDidDisposeInstance.event;
+        this._onDidFocusInstance = this._register(new Emitter());
+        this.onDidFocusInstance = this._onDidFocusInstance.event;
+        this._onDidChangeActiveInstance = this._register(new Emitter());
+        this.onDidChangeActiveInstance = this._onDidChangeActiveInstance.event;
+        this._onDidChangeInstances = this._register(new Emitter());
+        this.onDidChangeInstances = this._onDidChangeInstances.event;
+        this._onDidChangeInstanceCapability = this._register(new Emitter());
+        this.onDidChangeInstanceCapability = this._onDidChangeInstanceCapability.event;
+        this._onDidChangePanelOrientation = this._register(new Emitter());
+        this.onDidChangePanelOrientation = this._onDidChangePanelOrientation.event;
+        this._getValidTerminalGroups = (sources) => {
+            return new Set(sources
+                .map(source => this.getGroupForInstance(source))
+                .filter((group) => group !== undefined));
+        };
+        this._terminalGroupCountContextKey = TerminalContextKeys.groupCount.bindTo(this._contextKeyService);
+        this._register(this.onDidDisposeGroup(group => this._removeGroup(group)));
+        this._register(this.onDidChangeGroups(() => this._terminalGroupCountContextKey.set(this.groups.length)));
+        this._register(Event.any(this.onDidChangeActiveGroup, this.onDidChangeInstances)(() => this.updateVisibility()));
+        this._register(this._quickInputService.onShow(() => this._isQuickInputOpened = true));
+        this._register(this._quickInputService.onHide(() => this._isQuickInputOpened = false));
+    }
+    hidePanel() {
+        const panel = this._viewDescriptorService.getViewContainerByViewId(TERMINAL_VIEW_ID);
+        if (panel && this._viewDescriptorService.getViewContainerModel(panel).activeViewDescriptors.length === 1) {
+            this._viewsService.closeView(TERMINAL_VIEW_ID);
+            TerminalContextKeys.tabsMouse.bindTo(this._contextKeyService).set(false);
+        }
+    }
+    get activeGroup() {
+        if (this.activeGroupIndex < 0 || this.activeGroupIndex >= this.groups.length) {
+            return undefined;
+        }
+        return this.groups[this.activeGroupIndex];
+    }
+    set activeGroup(value) {
+        if (value === undefined) {
+            return;
+        }
+        const index = this.groups.findIndex(e => e === value);
+        this.setActiveGroupByIndex(index);
+    }
+    get activeInstance() {
+        return this.activeGroup?.activeInstance;
+    }
+    setActiveInstance(instance) {
+        this.setActiveInstanceByIndex(this._getIndexFromId(instance.instanceId));
+    }
+    _getIndexFromId(terminalId) {
+        const terminalIndex = this.instances.findIndex(e => e.instanceId === terminalId);
+        if (terminalIndex === -1) {
+            throw new Error(`Terminal with ID ${terminalId} does not exist (has it already been disposed?)`);
+        }
+        return terminalIndex;
+    }
+    setContainer(container) {
+        this._container = container;
+        this.groups.forEach(group => group.attachToElement(container));
+    }
+    async focusTabs() {
+        if (this.instances.length === 0) {
+            return;
+        }
+        await this.showPanel(true);
+        const pane = this._viewsService.getActiveViewWithId(TERMINAL_VIEW_ID);
+        pane?.terminalTabbedView?.focusTabs();
+    }
+    async focusHover() {
+        if (this.instances.length === 0) {
+            return;
+        }
+        const pane = this._viewsService.getActiveViewWithId(TERMINAL_VIEW_ID);
+        pane?.terminalTabbedView?.focusHover();
+    }
+    async focusInstance(_) {
+        return this.showPanel(true);
+    }
+    async focusActiveInstance() {
+        return this.showPanel(true);
+    }
+    createGroup(slcOrInstance) {
+        const group = this._instantiationService.createInstance(TerminalGroup, this._container, slcOrInstance);
+        this.groups.push(group);
+        group.addDisposable(Event.forward(group.onPanelOrientationChanged, this._onDidChangePanelOrientation));
+        group.addDisposable(Event.forward(group.onDidDisposeInstance, this._onDidDisposeInstance));
+        group.addDisposable(Event.forward(group.onDidFocusInstance, this._onDidFocusInstance));
+        group.addDisposable(Event.forward(group.onDidChangeInstanceCapability, this._onDidChangeInstanceCapability));
+        group.addDisposable(Event.forward(group.onInstancesChanged, this._onDidChangeInstances));
+        group.addDisposable(Event.forward(group.onDisposed, this._onDidDisposeGroup));
+        group.addDisposable(group.onDidChangeActiveInstance(e => {
+            if (group === this.activeGroup) {
+                this._onDidChangeActiveInstance.fire(e);
+            }
+        }));
+        if (group.terminalInstances.length > 0) {
+            this._onDidChangeInstances.fire();
+        }
+        if (this.instances.length === 1) {
+            this.setActiveInstanceByIndex(0);
+        }
+        this._onDidChangeGroups.fire();
+        return group;
+    }
+    async showPanel(focus) {
+        const pane = this._viewsService.getActiveViewWithId(TERMINAL_VIEW_ID)
+            ?? await this._viewsService.openView(TERMINAL_VIEW_ID, focus);
+        pane?.setExpanded(true);
+        if (focus) {
+            await timeout(0);
+            const instance = this.activeInstance;
+            if (instance) {
+                if (pane && !pane.isVisible()) {
+                    await this._viewsService.openView(TERMINAL_VIEW_ID, focus);
+                }
+                await instance.focusWhenReady(true);
+            }
+        }
+        this._onDidShow.fire();
+    }
+    getInstanceFromResource(resource) {
+        return getInstanceFromResource(this.instances, resource);
+    }
+    _removeGroup(group) {
+        const activeGroup = this.activeGroup;
+        const wasActiveGroup = group === activeGroup;
+        const index = this.groups.indexOf(group);
+        if (index !== -1) {
+            this.groups.splice(index, 1);
+            this._onDidChangeGroups.fire();
+        }
+        if (wasActiveGroup) {
+            if (this.groups.length > 0 && !this._isQuickInputOpened) {
+                const newIndex = index < this.groups.length ? index : this.groups.length - 1;
+                this.setActiveGroupByIndex(newIndex, true);
+                this.activeInstance?.focus(true);
+            }
+        }
+        else {
+            if (this.activeGroupIndex > index) {
+                this.setActiveGroupByIndex(this.activeGroupIndex - 1);
+            }
+        }
+        if (this.activeGroupIndex >= this.groups.length) {
+            this.setActiveGroupByIndex(this.groups.length - 1);
+        }
+        this._onDidChangeInstances.fire();
+        this._onDidChangeGroups.fire();
+        if (wasActiveGroup) {
+            this._onDidChangeActiveGroup.fire(this.activeGroup);
+            this._onDidChangeActiveInstance.fire(this.activeInstance);
+        }
+    }
+    setActiveGroupByIndex(index, force) {
+        if (index === -1 && this.groups.length === 0) {
+            if (this.activeGroupIndex !== -1) {
+                this.activeGroupIndex = -1;
+                this._onDidChangeActiveGroup.fire(this.activeGroup);
+                this._onDidChangeActiveInstance.fire(this.activeInstance);
+            }
+            return;
+        }
+        if (index < 0 || index >= this.groups.length) {
+            return;
+        }
+        const oldActiveGroup = this.activeGroup;
+        this.activeGroupIndex = index;
+        if (force || oldActiveGroup !== this.activeGroup) {
+            this._onDidChangeActiveGroup.fire(this.activeGroup);
+            this._onDidChangeActiveInstance.fire(this.activeInstance);
+        }
+    }
+    _getInstanceLocation(index) {
+        let currentGroupIndex = 0;
+        while (index >= 0 && currentGroupIndex < this.groups.length) {
+            const group = this.groups[currentGroupIndex];
+            const count = group.terminalInstances.length;
+            if (index < count) {
+                return {
+                    group,
+                    groupIndex: currentGroupIndex,
+                    instance: group.terminalInstances[index],
+                    instanceIndex: index
+                };
+            }
+            index -= count;
+            currentGroupIndex++;
+        }
+        return undefined;
+    }
+    setActiveInstanceByIndex(index) {
+        const activeInstance = this.activeInstance;
+        const instanceLocation = this._getInstanceLocation(index);
+        const newActiveInstance = instanceLocation?.group.terminalInstances[instanceLocation.instanceIndex];
+        if (!instanceLocation || activeInstance === newActiveInstance) {
+            return;
+        }
+        const activeInstanceIndex = instanceLocation.instanceIndex;
+        this.activeGroupIndex = instanceLocation.groupIndex;
+        this._onDidChangeActiveGroup.fire(this.activeGroup);
+        instanceLocation.group.setActiveInstanceByIndex(activeInstanceIndex, true);
+    }
+    setActiveGroupToNext() {
+        if (this.groups.length <= 1) {
+            return;
+        }
+        let newIndex = this.activeGroupIndex + 1;
+        if (newIndex >= this.groups.length) {
+            newIndex = 0;
+        }
+        this.setActiveGroupByIndex(newIndex);
+    }
+    setActiveGroupToPrevious() {
+        if (this.groups.length <= 1) {
+            return;
+        }
+        let newIndex = this.activeGroupIndex - 1;
+        if (newIndex < 0) {
+            newIndex = this.groups.length - 1;
+        }
+        this.setActiveGroupByIndex(newIndex);
+    }
+    moveGroup(source, target) {
+        source = asArray(source);
+        const sourceGroups = this._getValidTerminalGroups(source);
+        const targetGroup = this.getGroupForInstance(target);
+        if (!targetGroup || sourceGroups.size === 0) {
+            return;
+        }
+        if (sourceGroups.size === 1 && sourceGroups.has(targetGroup)) {
+            const targetIndex = targetGroup.terminalInstances.indexOf(target);
+            const sortedSources = source.sort((a, b) => {
+                return targetGroup.terminalInstances.indexOf(a) - targetGroup.terminalInstances.indexOf(b);
+            });
+            const firstTargetIndex = targetGroup.terminalInstances.indexOf(sortedSources[0]);
+            const position = firstTargetIndex < targetIndex ? 'after' : 'before';
+            targetGroup.moveInstance(sortedSources, targetIndex, position);
+            this._onDidChangeInstances.fire();
+            return;
+        }
+        const targetGroupIndex = this.groups.indexOf(targetGroup);
+        const sortedSourceGroups = Array.from(sourceGroups).sort((a, b) => {
+            return this.groups.indexOf(a) - this.groups.indexOf(b);
+        });
+        const firstSourceGroupIndex = this.groups.indexOf(sortedSourceGroups[0]);
+        const position = firstSourceGroupIndex < targetGroupIndex ? 'after' : 'before';
+        const insertIndex = position === 'after' ? targetGroupIndex + 1 : targetGroupIndex;
+        this.groups.splice(insertIndex, 0, ...sortedSourceGroups);
+        for (const sourceGroup of sortedSourceGroups) {
+            const originSourceGroupIndex = position === 'after' ? this.groups.indexOf(sourceGroup) : this.groups.lastIndexOf(sourceGroup);
+            this.groups.splice(originSourceGroupIndex, 1);
+        }
+        this._onDidChangeInstances.fire();
+    }
+    moveGroupToEnd(source) {
+        source = asArray(source);
+        const sourceGroups = this._getValidTerminalGroups(source);
+        if (sourceGroups.size === 0) {
+            return;
+        }
+        const lastInstanceIndex = this.groups.length - 1;
+        const sortedSourceGroups = Array.from(sourceGroups).sort((a, b) => {
+            return this.groups.indexOf(a) - this.groups.indexOf(b);
+        });
+        this.groups.splice(lastInstanceIndex + 1, 0, ...sortedSourceGroups);
+        for (const sourceGroup of sortedSourceGroups) {
+            const sourceGroupIndex = this.groups.indexOf(sourceGroup);
+            this.groups.splice(sourceGroupIndex, 1);
+        }
+        this._onDidChangeInstances.fire();
+    }
+    moveInstance(source, target, side) {
+        const sourceGroup = this.getGroupForInstance(source);
+        const targetGroup = this.getGroupForInstance(target);
+        if (!sourceGroup || !targetGroup) {
+            return;
+        }
+        if (sourceGroup !== targetGroup) {
+            sourceGroup.removeInstance(source);
+            targetGroup.addInstance(source);
+        }
+        const index = targetGroup.terminalInstances.indexOf(target) + (side === 'after' ? 1 : 0);
+        targetGroup.moveInstance(source, index, side);
+    }
+    unsplitInstance(instance) {
+        const oldGroup = this.getGroupForInstance(instance);
+        if (!oldGroup || oldGroup.terminalInstances.length < 2) {
+            return;
+        }
+        oldGroup.removeInstance(instance);
+        this.createGroup(instance);
+    }
+    joinInstances(instances) {
+        const group = this.getGroupForInstance(instances[0]);
+        if (group) {
+            let differentGroups = true;
+            for (let i = 1; i < group.terminalInstances.length; i++) {
+                if (group.terminalInstances.includes(instances[i])) {
+                    differentGroups = false;
+                    break;
+                }
+            }
+            if (!differentGroups && group.terminalInstances.length === instances.length) {
+                return;
+            }
+        }
+        let candidateInstance = undefined;
+        let candidateGroup = undefined;
+        for (const instance of instances) {
+            const group = this.getGroupForInstance(instance);
+            if (group?.terminalInstances.length === 1) {
+                candidateInstance = instance;
+                candidateGroup = group;
+                break;
+            }
+        }
+        if (!candidateGroup) {
+            candidateGroup = this.createGroup();
+        }
+        const wasActiveGroup = this.activeGroup === candidateGroup;
+        for (const instance of instances) {
+            if (instance === candidateInstance) {
+                continue;
+            }
+            const oldGroup = this.getGroupForInstance(instance);
+            if (!oldGroup) {
+                continue;
+            }
+            oldGroup.removeInstance(instance);
+            candidateGroup.addInstance(instance);
+        }
+        this.setActiveInstance(instances[0]);
+        this._onDidChangeInstances.fire();
+        if (!wasActiveGroup) {
+            this._onDidChangeActiveGroup.fire(this.activeGroup);
+        }
+    }
+    instanceIsSplit(instance) {
+        const group = this.getGroupForInstance(instance);
+        if (!group) {
+            return false;
+        }
+        return group.terminalInstances.length > 1;
+    }
+    getGroupForInstance(instance) {
+        return this.groups.find(group => group.terminalInstances.includes(instance));
+    }
+    getGroupLabels() {
+        return this.groups.filter(group => group.terminalInstances.length > 0).map((group, index) => {
+            return `${index + 1}: ${group.title ? group.title : ''}`;
+        });
+    }
+    updateVisibility() {
+        const visible = this._viewsService.isViewVisible(TERMINAL_VIEW_ID);
+        this.groups.forEach((g, i) => g.setVisible(visible && i === this.activeGroupIndex));
+    }
+};
+TerminalGroupService = __decorate([
+    __param(0, IContextKeyService),
+    __param(1, IInstantiationService),
+    __param(2, IViewsService),
+    __param(3, IViewDescriptorService),
+    __param(4, IQuickInputService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], TerminalGroupService);
+export { TerminalGroupService };

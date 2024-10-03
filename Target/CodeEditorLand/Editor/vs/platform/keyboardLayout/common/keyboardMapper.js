@@ -1,1 +1,22 @@
-import"../../../base/common/keybindings.js";import"../../keybinding/common/keybinding.js";class p{_actual;_cache;constructor(e){this._actual=e,this._cache=new Map}dumpDebugInfo(){return this._actual.dumpDebugInfo()}resolveKeyboardEvent(e){return this._actual.resolveKeyboardEvent(e)}resolveKeybinding(e){const n=e.getHashCode(),r=this._cache.get(n);if(!r){const i=this._actual.resolveKeybinding(e);return this._cache.set(n,i),i}return r}}export{p as CachedKeyboardMapper};
+export class CachedKeyboardMapper {
+    constructor(actual) {
+        this._actual = actual;
+        this._cache = new Map();
+    }
+    dumpDebugInfo() {
+        return this._actual.dumpDebugInfo();
+    }
+    resolveKeyboardEvent(keyboardEvent) {
+        return this._actual.resolveKeyboardEvent(keyboardEvent);
+    }
+    resolveKeybinding(keybinding) {
+        const hashCode = keybinding.getHashCode();
+        const resolved = this._cache.get(hashCode);
+        if (!resolved) {
+            const r = this._actual.resolveKeybinding(keybinding);
+            this._cache.set(hashCode, r);
+            return r;
+        }
+        return resolved;
+    }
+}

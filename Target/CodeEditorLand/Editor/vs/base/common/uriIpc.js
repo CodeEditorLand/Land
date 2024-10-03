@@ -1,1 +1,101 @@
-import{VSBuffer as u}from"./buffer.js";import"./marshalling.js";import{MarshalledId as g}from"./marshallingIds.js";import{URI as s}from"./uri.js";function f(r){return r.toJSON()}class T{_uriTransformer;constructor(n){this._uriTransformer=n}transformIncoming(n){const t=this._uriTransformer.transformIncoming(n);return t===n?n:f(s.from(t))}transformOutgoing(n){const t=this._uriTransformer.transformOutgoing(n);return t===n?n:f(s.from(t))}transformOutgoingURI(n){const t=this._uriTransformer.transformOutgoing(n);return t===n?n:s.from(t)}transformOutgoingScheme(n){return this._uriTransformer.transformOutgoingScheme(n)}}const O=new class{transformIncoming(r){return r}transformOutgoing(r){return r}transformOutgoingURI(r){return r}transformOutgoingScheme(r){return r}};function a(r,n,t){if(!r||t>200)return null;if(typeof r=="object"){if(r instanceof s)return n.transformOutgoing(r);for(const o in r)if(Object.hasOwnProperty.call(r,o)){const e=a(r[o],n,t+1);e!==null&&(r[o]=e)}}return null}function h(r,n){const t=a(r,n,0);return t===null?r:t}function i(r,n,t,o){if(!r||o>200)return null;if(typeof r=="object"){if(r.$mid===g.Uri)return t?s.revive(n.transformIncoming(r)):n.transformIncoming(r);if(r instanceof u)return null;for(const e in r)if(Object.hasOwnProperty.call(r,e)){const m=i(r[e],n,t,o+1);m!==null&&(r[e]=m)}}return null}function y(r,n){const t=i(r,n,!1,0);return t===null?r:t}function C(r,n){const t=i(r,n,!0,0);return t===null?r:t}export{O as DefaultURITransformer,T as URITransformer,C as transformAndReviveIncomingURIs,y as transformIncomingURIs,h as transformOutgoingURIs};
+import { VSBuffer } from './buffer.js';
+import { URI } from './uri.js';
+function toJSON(uri) {
+    return uri.toJSON();
+}
+export class URITransformer {
+    constructor(uriTransformer) {
+        this._uriTransformer = uriTransformer;
+    }
+    transformIncoming(uri) {
+        const result = this._uriTransformer.transformIncoming(uri);
+        return (result === uri ? uri : toJSON(URI.from(result)));
+    }
+    transformOutgoing(uri) {
+        const result = this._uriTransformer.transformOutgoing(uri);
+        return (result === uri ? uri : toJSON(URI.from(result)));
+    }
+    transformOutgoingURI(uri) {
+        const result = this._uriTransformer.transformOutgoing(uri);
+        return (result === uri ? uri : URI.from(result));
+    }
+    transformOutgoingScheme(scheme) {
+        return this._uriTransformer.transformOutgoingScheme(scheme);
+    }
+}
+export const DefaultURITransformer = new class {
+    transformIncoming(uri) {
+        return uri;
+    }
+    transformOutgoing(uri) {
+        return uri;
+    }
+    transformOutgoingURI(uri) {
+        return uri;
+    }
+    transformOutgoingScheme(scheme) {
+        return scheme;
+    }
+};
+function _transformOutgoingURIs(obj, transformer, depth) {
+    if (!obj || depth > 200) {
+        return null;
+    }
+    if (typeof obj === 'object') {
+        if (obj instanceof URI) {
+            return transformer.transformOutgoing(obj);
+        }
+        for (const key in obj) {
+            if (Object.hasOwnProperty.call(obj, key)) {
+                const r = _transformOutgoingURIs(obj[key], transformer, depth + 1);
+                if (r !== null) {
+                    obj[key] = r;
+                }
+            }
+        }
+    }
+    return null;
+}
+export function transformOutgoingURIs(obj, transformer) {
+    const result = _transformOutgoingURIs(obj, transformer, 0);
+    if (result === null) {
+        return obj;
+    }
+    return result;
+}
+function _transformIncomingURIs(obj, transformer, revive, depth) {
+    if (!obj || depth > 200) {
+        return null;
+    }
+    if (typeof obj === 'object') {
+        if (obj.$mid === 1) {
+            return revive ? URI.revive(transformer.transformIncoming(obj)) : transformer.transformIncoming(obj);
+        }
+        if (obj instanceof VSBuffer) {
+            return null;
+        }
+        for (const key in obj) {
+            if (Object.hasOwnProperty.call(obj, key)) {
+                const r = _transformIncomingURIs(obj[key], transformer, revive, depth + 1);
+                if (r !== null) {
+                    obj[key] = r;
+                }
+            }
+        }
+    }
+    return null;
+}
+export function transformIncomingURIs(obj, transformer) {
+    const result = _transformIncomingURIs(obj, transformer, false, 0);
+    if (result === null) {
+        return obj;
+    }
+    return result;
+}
+export function transformAndReviveIncomingURIs(obj, transformer) {
+    const result = _transformIncomingURIs(obj, transformer, true, 0);
+    if (result === null) {
+        return obj;
+    }
+    return result;
+}

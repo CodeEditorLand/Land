@@ -1,1 +1,55 @@
-import s from"./vs_code_editor_walkthrough.js";import{localize as l,localize2 as e}from"../../../../../nls.js";import{IEditorService as u}from"../../../../services/editor/common/editorService.js";import{IInstantiationService as d}from"../../../../../platform/instantiation/common/instantiation.js";import{WalkThroughInput as o}from"../walkThroughInput.js";import{FileAccess as h,Schemas as p}from"../../../../../base/common/network.js";import"../../../../common/editor.js";import"../../../../common/editor/editorInput.js";import{Action2 as m}from"../../../../../platform/actions/common/actions.js";import{Categories as g}from"../../../../../platform/action/common/actionCommonCategories.js";import{walkThroughContentRegistry as I}from"../../common/walkThroughContentProvider.js";I.registerProvider("vs/workbench/contrib/welcomeWalkthrough/browser/editor/vs_code_editor_walkthrough",s);const i="workbench.editors.walkThroughInput",n={typeId:i,name:l("editorWalkThrough.title","Editor Playground"),resource:h.asBrowserUri("vs/workbench/contrib/welcomeWalkthrough/browser/editor/vs_code_editor_walkthrough.md").with({scheme:p.walkThrough,query:JSON.stringify({moduleId:"vs/workbench/contrib/welcomeWalkthrough/browser/editor/vs_code_editor_walkthrough"})}),telemetryFrom:"walkThrough"};class t extends m{static ID="workbench.action.showInteractivePlayground";static LABEL=e("editorWalkThrough","Interactive Editor Playground");constructor(){super({id:t.ID,title:t.LABEL,category:g.Help,f1:!0,metadata:{description:e("editorWalkThroughMetadata","Opens an interactive playground for learning about the editor.")}})}run(r){const a=r.get(u),c=r.get(d).createInstance(o,n);return a.openEditor(c,{pinned:!0}).then(()=>{})}}class B{static ID=i;canSerialize(r){return!0}serialize(r){return""}deserialize(r){return r.createInstance(o,n)}}export{t as EditorWalkThroughAction,B as EditorWalkThroughInputSerializer};
+import content from './vs_code_editor_walkthrough.js';
+import { localize, localize2 } from '../../../../../nls.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { WalkThroughInput } from '../walkThroughInput.js';
+import { FileAccess, Schemas } from '../../../../../base/common/network.js';
+import { Action2 } from '../../../../../platform/actions/common/actions.js';
+import { Categories } from '../../../../../platform/action/common/actionCommonCategories.js';
+import { walkThroughContentRegistry } from '../../common/walkThroughContentProvider.js';
+walkThroughContentRegistry.registerProvider('vs/workbench/contrib/welcomeWalkthrough/browser/editor/vs_code_editor_walkthrough', content);
+const typeId = 'workbench.editors.walkThroughInput';
+const inputOptions = {
+    typeId,
+    name: localize('editorWalkThrough.title', "Editor Playground"),
+    resource: FileAccess.asBrowserUri('vs/workbench/contrib/welcomeWalkthrough/browser/editor/vs_code_editor_walkthrough.md')
+        .with({
+        scheme: Schemas.walkThrough,
+        query: JSON.stringify({ moduleId: 'vs/workbench/contrib/welcomeWalkthrough/browser/editor/vs_code_editor_walkthrough' })
+    }),
+    telemetryFrom: 'walkThrough'
+};
+export class EditorWalkThroughAction extends Action2 {
+    static { this.ID = 'workbench.action.showInteractivePlayground'; }
+    static { this.LABEL = localize2('editorWalkThrough', 'Interactive Editor Playground'); }
+    constructor() {
+        super({
+            id: EditorWalkThroughAction.ID,
+            title: EditorWalkThroughAction.LABEL,
+            category: Categories.Help,
+            f1: true,
+            metadata: {
+                description: localize2('editorWalkThroughMetadata', "Opens an interactive playground for learning about the editor.")
+            }
+        });
+    }
+    run(serviceAccessor) {
+        const editorService = serviceAccessor.get(IEditorService);
+        const instantiationService = serviceAccessor.get(IInstantiationService);
+        const input = instantiationService.createInstance(WalkThroughInput, inputOptions);
+        return editorService.openEditor(input, { pinned: true })
+            .then(() => void (0));
+    }
+}
+export class EditorWalkThroughInputSerializer {
+    static { this.ID = typeId; }
+    canSerialize(editorInput) {
+        return true;
+    }
+    serialize(editorInput) {
+        return '';
+    }
+    deserialize(instantiationService) {
+        return instantiationService.createInstance(WalkThroughInput, inputOptions);
+    }
+}

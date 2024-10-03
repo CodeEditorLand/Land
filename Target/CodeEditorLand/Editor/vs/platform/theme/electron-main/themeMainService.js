@@ -1,1 +1,159 @@
-var f=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var d=(i,a,t,e)=>{for(var o=e>1?void 0:e?T(a,t):a,h=i.length-1,c;h>=0;h--)(c=i[h])&&(o=(e?c(a,t,o):c(o))||o);return e&&o&&f(a,t,o),o},l=(i,a)=>(t,e)=>a(t,e,i);import r from"electron";import{Emitter as p,Event as k}from"../../../base/common/event.js";import{Disposable as E}from"../../../base/common/lifecycle.js";import{isLinux as m,isMacintosh as _,isWindows as I}from"../../../base/common/platform.js";import{IConfigurationService as b}from"../../configuration/common/configuration.js";import{createDecorator as w}from"../../instantiation/common/instantiation.js";import{IStateService as D}from"../../state/node/state.js";import"../common/themeService.js";import"../../window/common/window.js";const F="#FFFFFF",B="#1F1F1F",u="#000000",S="#FFFFFF",C="theme",g="themeBackground",v="windowSplash";var s;(t=>(t.DETECT_COLOR_SCHEME="window.autoDetectColorScheme",t.SYSTEM_COLOR_THEME="window.systemColorTheme"))(s||={});const Y=w("themeMainService");let n=class extends E{constructor(t,e){super();this.stateService=t;this.configurationService=e;m||this._register(this.configurationService.onDidChangeConfiguration(o=>{(o.affectsConfiguration(s.SYSTEM_COLOR_THEME)||o.affectsConfiguration(s.DETECT_COLOR_SCHEME))&&this.updateSystemColorTheme()})),this.updateSystemColorTheme(),this._register(k.fromNodeEventEmitter(r.nativeTheme,"updated")(()=>this._onDidChangeColorScheme.fire(this.getColorScheme())))}_onDidChangeColorScheme=this._register(new p);onDidChangeColorScheme=this._onDidChangeColorScheme.event;updateSystemColorTheme(){if(m||this.configurationService.getValue(s.DETECT_COLOR_SCHEME))r.nativeTheme.themeSource="system";else switch(this.configurationService.getValue(s.SYSTEM_COLOR_THEME)){case"dark":r.nativeTheme.themeSource="dark";break;case"light":r.nativeTheme.themeSource="light";break;case"auto":switch(this.getBaseTheme()){case"vs":r.nativeTheme.themeSource="light";break;case"vs-dark":r.nativeTheme.themeSource="dark";break;default:r.nativeTheme.themeSource="system"}break;default:r.nativeTheme.themeSource="system";break}}getColorScheme(){if(I){if(r.nativeTheme.shouldUseHighContrastColors)return{dark:r.nativeTheme.shouldUseInvertedColorScheme,highContrast:!0}}else if(_){if(r.nativeTheme.shouldUseInvertedColorScheme||r.nativeTheme.shouldUseHighContrastColors)return{dark:r.nativeTheme.shouldUseDarkColors,highContrast:!0}}else if(m&&r.nativeTheme.shouldUseHighContrastColors)return{dark:!0,highContrast:!0};return{dark:r.nativeTheme.shouldUseDarkColors,highContrast:!1}}getBackgroundColor(){const t=this.getColorScheme();if(t.highContrast&&this.configurationService.getValue("window.autoDetectHighContrast"))return t.dark?u:S;let e=this.stateService.getItem(g,null);if(!e)switch(this.getBaseTheme()){case"vs":e=F;break;case"hc-black":e=u;break;case"hc-light":e=S;break;default:e=B}return e}getBaseTheme(){switch(this.stateService.getItem(C,"vs-dark").split(" ")[0]){case"vs":return"vs";case"hc-black":return"hc-black";case"hc-light":return"hc-light";default:return"vs-dark"}}saveWindowSplash(t,e){this.stateService.setItems([{key:C,data:e.baseTheme},{key:g,data:e.colorInfo.background},{key:v,data:e}]),typeof t=="number"&&this.updateBackgroundColor(t,e),this.updateSystemColorTheme()}updateBackgroundColor(t,e){for(const o of r.BrowserWindow.getAllWindows())if(o.id===t){o.setBackgroundColor(e.colorInfo.background);break}}getWindowSplash(){return this.stateService.getItem(v)}};n=d([l(0,D),l(1,b)],n);export{Y as IThemeMainService,n as ThemeMainService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import electron from 'electron';
+import { Emitter, Event } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { isLinux, isMacintosh, isWindows } from '../../../base/common/platform.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { IStateService } from '../../state/node/state.js';
+const DEFAULT_BG_LIGHT = '#FFFFFF';
+const DEFAULT_BG_DARK = '#1F1F1F';
+const DEFAULT_BG_HC_BLACK = '#000000';
+const DEFAULT_BG_HC_LIGHT = '#FFFFFF';
+const THEME_STORAGE_KEY = 'theme';
+const THEME_BG_STORAGE_KEY = 'themeBackground';
+const THEME_WINDOW_SPLASH = 'windowSplash';
+var ThemeSettings;
+(function (ThemeSettings) {
+    ThemeSettings.DETECT_COLOR_SCHEME = 'window.autoDetectColorScheme';
+    ThemeSettings.SYSTEM_COLOR_THEME = 'window.systemColorTheme';
+})(ThemeSettings || (ThemeSettings = {}));
+export const IThemeMainService = createDecorator('themeMainService');
+let ThemeMainService = class ThemeMainService extends Disposable {
+    constructor(stateService, configurationService) {
+        super();
+        this.stateService = stateService;
+        this.configurationService = configurationService;
+        this._onDidChangeColorScheme = this._register(new Emitter());
+        this.onDidChangeColorScheme = this._onDidChangeColorScheme.event;
+        if (!isLinux) {
+            this._register(this.configurationService.onDidChangeConfiguration(e => {
+                if (e.affectsConfiguration(ThemeSettings.SYSTEM_COLOR_THEME) || e.affectsConfiguration(ThemeSettings.DETECT_COLOR_SCHEME)) {
+                    this.updateSystemColorTheme();
+                }
+            }));
+        }
+        this.updateSystemColorTheme();
+        this._register(Event.fromNodeEventEmitter(electron.nativeTheme, 'updated')(() => this._onDidChangeColorScheme.fire(this.getColorScheme())));
+    }
+    updateSystemColorTheme() {
+        if (isLinux || this.configurationService.getValue(ThemeSettings.DETECT_COLOR_SCHEME)) {
+            electron.nativeTheme.themeSource = 'system';
+        }
+        else {
+            switch (this.configurationService.getValue(ThemeSettings.SYSTEM_COLOR_THEME)) {
+                case 'dark':
+                    electron.nativeTheme.themeSource = 'dark';
+                    break;
+                case 'light':
+                    electron.nativeTheme.themeSource = 'light';
+                    break;
+                case 'auto':
+                    switch (this.getBaseTheme()) {
+                        case 'vs':
+                            electron.nativeTheme.themeSource = 'light';
+                            break;
+                        case 'vs-dark':
+                            electron.nativeTheme.themeSource = 'dark';
+                            break;
+                        default: electron.nativeTheme.themeSource = 'system';
+                    }
+                    break;
+                default:
+                    electron.nativeTheme.themeSource = 'system';
+                    break;
+            }
+        }
+    }
+    getColorScheme() {
+        if (isWindows) {
+            if (electron.nativeTheme.shouldUseHighContrastColors) {
+                return { dark: electron.nativeTheme.shouldUseInvertedColorScheme, highContrast: true };
+            }
+        }
+        else if (isMacintosh) {
+            if (electron.nativeTheme.shouldUseInvertedColorScheme || electron.nativeTheme.shouldUseHighContrastColors) {
+                return { dark: electron.nativeTheme.shouldUseDarkColors, highContrast: true };
+            }
+        }
+        else if (isLinux) {
+            if (electron.nativeTheme.shouldUseHighContrastColors) {
+                return { dark: true, highContrast: true };
+            }
+        }
+        return {
+            dark: electron.nativeTheme.shouldUseDarkColors,
+            highContrast: false
+        };
+    }
+    getBackgroundColor() {
+        const colorScheme = this.getColorScheme();
+        if (colorScheme.highContrast && this.configurationService.getValue('window.autoDetectHighContrast')) {
+            return colorScheme.dark ? DEFAULT_BG_HC_BLACK : DEFAULT_BG_HC_LIGHT;
+        }
+        let background = this.stateService.getItem(THEME_BG_STORAGE_KEY, null);
+        if (!background) {
+            switch (this.getBaseTheme()) {
+                case 'vs':
+                    background = DEFAULT_BG_LIGHT;
+                    break;
+                case 'hc-black':
+                    background = DEFAULT_BG_HC_BLACK;
+                    break;
+                case 'hc-light':
+                    background = DEFAULT_BG_HC_LIGHT;
+                    break;
+                default: background = DEFAULT_BG_DARK;
+            }
+        }
+        return background;
+    }
+    getBaseTheme() {
+        const baseTheme = this.stateService.getItem(THEME_STORAGE_KEY, 'vs-dark').split(' ')[0];
+        switch (baseTheme) {
+            case 'vs': return 'vs';
+            case 'hc-black': return 'hc-black';
+            case 'hc-light': return 'hc-light';
+            default: return 'vs-dark';
+        }
+    }
+    saveWindowSplash(windowId, splash) {
+        this.stateService.setItems([
+            { key: THEME_STORAGE_KEY, data: splash.baseTheme },
+            { key: THEME_BG_STORAGE_KEY, data: splash.colorInfo.background },
+            { key: THEME_WINDOW_SPLASH, data: splash }
+        ]);
+        if (typeof windowId === 'number') {
+            this.updateBackgroundColor(windowId, splash);
+        }
+        this.updateSystemColorTheme();
+    }
+    updateBackgroundColor(windowId, splash) {
+        for (const window of electron.BrowserWindow.getAllWindows()) {
+            if (window.id === windowId) {
+                window.setBackgroundColor(splash.colorInfo.background);
+                break;
+            }
+        }
+    }
+    getWindowSplash() {
+        return this.stateService.getItem(THEME_WINDOW_SPLASH);
+    }
+};
+ThemeMainService = __decorate([
+    __param(0, IStateService),
+    __param(1, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object])
+], ThemeMainService);
+export { ThemeMainService };

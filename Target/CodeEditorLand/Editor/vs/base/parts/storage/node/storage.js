@@ -1,1 +1,292 @@
-import*as l from"fs";import{timeout as p}from"../../../common/async.js";import{Event as E}from"../../../common/event.js";import{mapToString as I,setToString as f}from"../../../common/map.js";import{basename as T}from"../../../common/path.js";import{Promises as u}from"../../../node/pfs.js";import"../common/storage.js";class h{constructor(e,t=Object.create(null)){this.path=e;this.options=t}static IN_MEMORY_PATH=":memory:";get onDidChangeItemsExternal(){return E.None}static BUSY_OPEN_TIMEOUT=2e3;static MAX_HOST_PARAMETERS=256;name=T(this.path);logger=new c(this.options.logging);whenConnected=this.connect(this.path);async getItems(){const e=await this.whenConnected,t=new Map;return(await this.all(e,"SELECT * FROM ItemTable")).forEach(i=>t.set(i.key,i.value)),this.logger.isTracing&&this.logger.trace(`[storage ${this.name}] getItems(): ${t.size} rows`),t}async updateItems(e){const t=await this.whenConnected;return this.doUpdateItems(t,e)}doUpdateItems(e,t){return this.logger.isTracing&&this.logger.trace(`[storage ${this.name}] updateItems(): insert(${t.insert?I(t.insert):"0"}), delete(${t.delete?f(t.delete):"0"})`),this.transaction(e,()=>{const n=t.insert,i=t.delete;if(n&&n.size>0){const r=[];r.push([]);let o=0;n.forEach((s,a)=>{let g=r[o];g.length>h.MAX_HOST_PARAMETERS&&(o++,g=[],r.push(g)),g.push(a,s)}),r.forEach(s=>{this.prepare(e,`INSERT INTO ItemTable VALUES ${new Array(s.length/2).fill("(?,?)").join(",")}`,a=>a.run(s),()=>{const a=[];let g=0;return n.forEach((d,m)=>{a.push(m),g+=d.length}),`Keys: ${a.join(", ")} Length: ${g}`})})}if(i&&i.size){const r=[];r.push([]);let o=0;i.forEach(s=>{let a=r[o];a.length>h.MAX_HOST_PARAMETERS&&(o++,a=[],r.push(a)),a.push(s)}),r.forEach(s=>{this.prepare(e,`DELETE FROM ItemTable WHERE key IN (${new Array(s.length).fill("?").join(",")})`,a=>a.run(s),()=>{const a=[];return i.forEach(g=>{a.push(g)}),`Keys: ${a.join(", ")}`})})}})}async optimize(){this.logger.trace(`[storage ${this.name}] vacuum()`);const e=await this.whenConnected;return this.exec(e,"VACUUM")}async close(e){this.logger.trace(`[storage ${this.name}] close()`);const t=await this.whenConnected;return this.doClose(t,e)}doClose(e,t){return new Promise((n,i)=>{e.db.close(r=>(r&&this.handleSQLiteError(e,`[storage ${this.name}] close(): ${r}`),this.path===h.IN_MEMORY_PATH?n():!e.isErroneous&&!e.isInMemory?this.backup().then(n,o=>(this.logger.error(`[storage ${this.name}] backup(): ${o}`),n())):typeof t=="function"?l.promises.unlink(this.path).then(()=>this.doConnect(this.path).then(o=>{const s=()=>this.doClose(o,void 0);return this.doUpdateItems(o,{insert:t()}).then(()=>s(),a=>(s(),Promise.reject(a)))})).then(n,i):i(r||new Error("Database has errors or is in-memory without recovery option"))))})}backup(){const e=this.toBackupPath(this.path);return u.copy(this.path,e,{preserveSymlinks:!1})}toBackupPath(e){return`${e}.backup`}async checkIntegrity(e){this.logger.trace(`[storage ${this.name}] checkIntegrity(full: ${e})`);const t=await this.whenConnected,n=await this.get(t,e?"PRAGMA integrity_check":"PRAGMA quick_check"),i=e?n.integrity_check:n.quick_check;return t.isErroneous?`${i} (last error: ${t.lastError})`:t.isInMemory?`${i} (in-memory!)`:i}async connect(e,t=!0){this.logger.trace(`[storage ${this.name}] open(${e}, retryOnBusy: ${t})`);try{return await this.doConnect(e)}catch(n){if(this.logger.error(`[storage ${this.name}] open(): Unable to open DB due to ${n}`),n.code==="SQLITE_BUSY"&&t)return await p(h.BUSY_OPEN_TIMEOUT),this.connect(e,!1);try{await l.promises.unlink(e);try{await u.rename(this.toBackupPath(e),e,!1)}catch{}return await this.doConnect(e)}catch(i){return this.logger.error(`[storage ${this.name}] open(): Unable to use backup due to ${i}`),this.doConnect(h.IN_MEMORY_PATH)}}}handleSQLiteError(e,t){e.isErroneous=!0,e.lastError=t,this.logger.error(t)}doConnect(e){return new Promise((t,n)=>{import("@vscode/sqlite3").then(i=>{const r=this.logger.isTracing?i.default.verbose().Database:i.default.Database,o={db:new r(e,s=>s?o.db&&s.code!=="SQLITE_CANTOPEN"?o.db.close(()=>n(s)):n(s):this.exec(o,["PRAGMA user_version = 1;","CREATE TABLE IF NOT EXISTS ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)"].join("")).then(()=>t(o),a=>o.db.close(()=>n(a)))),isInMemory:e===h.IN_MEMORY_PATH};o.db.on("error",s=>this.handleSQLiteError(o,`[storage ${this.name}] Error (event): ${s}`)),this.logger.isTracing&&o.db.on("trace",s=>this.logger.trace(`[storage ${this.name}] Trace (event): ${s}`))},n)})}exec(e,t){return new Promise((n,i)=>{e.db.exec(t,r=>r?(this.handleSQLiteError(e,`[storage ${this.name}] exec(): ${r}`),i(r)):n())})}get(e,t){return new Promise((n,i)=>{e.db.get(t,(r,o)=>r?(this.handleSQLiteError(e,`[storage ${this.name}] get(): ${r}`),i(r)):n(o))})}all(e,t){return new Promise((n,i)=>{e.db.all(t,(r,o)=>r?(this.handleSQLiteError(e,`[storage ${this.name}] all(): ${r}`),i(r)):n(o))})}transaction(e,t){return new Promise((n,i)=>{e.db.serialize(()=>{e.db.run("BEGIN TRANSACTION"),t(),e.db.run("END TRANSACTION",r=>r?(this.handleSQLiteError(e,`[storage ${this.name}] transaction(): ${r}`),i(r)):n())})})}prepare(e,t,n,i){const r=e.db.prepare(t),o=s=>{this.handleSQLiteError(e,`[storage ${this.name}] prepare(): ${s} (${t}). Details: ${i()}`)};r.on("error",o),n(r),r.finalize(s=>{s&&o(s),r.removeListener("error",o)})}}class c{static VSCODE_TRACE_STORAGE="VSCODE_TRACE_STORAGE";logTrace;logError;constructor(e){e&&typeof e.logTrace=="function"&&process.env[c.VSCODE_TRACE_STORAGE]&&(this.logTrace=e.logTrace),e&&typeof e.logError=="function"&&(this.logError=e.logError)}get isTracing(){return!!this.logTrace}trace(e){this.logTrace?.(e)}error(e){this.logError?.(e)}}export{h as SQLiteStorageDatabase};
+import * as fs from 'fs';
+import { timeout } from '../../../common/async.js';
+import { Event } from '../../../common/event.js';
+import { mapToString, setToString } from '../../../common/map.js';
+import { basename } from '../../../common/path.js';
+import { Promises } from '../../../node/pfs.js';
+export class SQLiteStorageDatabase {
+    static { this.IN_MEMORY_PATH = ':memory:'; }
+    get onDidChangeItemsExternal() { return Event.None; }
+    static { this.BUSY_OPEN_TIMEOUT = 2000; }
+    static { this.MAX_HOST_PARAMETERS = 256; }
+    constructor(path, options = Object.create(null)) {
+        this.path = path;
+        this.options = options;
+        this.name = basename(this.path);
+        this.logger = new SQLiteStorageDatabaseLogger(this.options.logging);
+        this.whenConnected = this.connect(this.path);
+    }
+    async getItems() {
+        const connection = await this.whenConnected;
+        const items = new Map();
+        const rows = await this.all(connection, 'SELECT * FROM ItemTable');
+        rows.forEach(row => items.set(row.key, row.value));
+        if (this.logger.isTracing) {
+            this.logger.trace(`[storage ${this.name}] getItems(): ${items.size} rows`);
+        }
+        return items;
+    }
+    async updateItems(request) {
+        const connection = await this.whenConnected;
+        return this.doUpdateItems(connection, request);
+    }
+    doUpdateItems(connection, request) {
+        if (this.logger.isTracing) {
+            this.logger.trace(`[storage ${this.name}] updateItems(): insert(${request.insert ? mapToString(request.insert) : '0'}), delete(${request.delete ? setToString(request.delete) : '0'})`);
+        }
+        return this.transaction(connection, () => {
+            const toInsert = request.insert;
+            const toDelete = request.delete;
+            if (toInsert && toInsert.size > 0) {
+                const keysValuesChunks = [];
+                keysValuesChunks.push([]);
+                let currentChunkIndex = 0;
+                toInsert.forEach((value, key) => {
+                    let keyValueChunk = keysValuesChunks[currentChunkIndex];
+                    if (keyValueChunk.length > SQLiteStorageDatabase.MAX_HOST_PARAMETERS) {
+                        currentChunkIndex++;
+                        keyValueChunk = [];
+                        keysValuesChunks.push(keyValueChunk);
+                    }
+                    keyValueChunk.push(key, value);
+                });
+                keysValuesChunks.forEach(keysValuesChunk => {
+                    this.prepare(connection, `INSERT INTO ItemTable VALUES ${new Array(keysValuesChunk.length / 2).fill('(?,?)').join(',')}`, stmt => stmt.run(keysValuesChunk), () => {
+                        const keys = [];
+                        let length = 0;
+                        toInsert.forEach((value, key) => {
+                            keys.push(key);
+                            length += value.length;
+                        });
+                        return `Keys: ${keys.join(', ')} Length: ${length}`;
+                    });
+                });
+            }
+            if (toDelete && toDelete.size) {
+                const keysChunks = [];
+                keysChunks.push([]);
+                let currentChunkIndex = 0;
+                toDelete.forEach(key => {
+                    let keyChunk = keysChunks[currentChunkIndex];
+                    if (keyChunk.length > SQLiteStorageDatabase.MAX_HOST_PARAMETERS) {
+                        currentChunkIndex++;
+                        keyChunk = [];
+                        keysChunks.push(keyChunk);
+                    }
+                    keyChunk.push(key);
+                });
+                keysChunks.forEach(keysChunk => {
+                    this.prepare(connection, `DELETE FROM ItemTable WHERE key IN (${new Array(keysChunk.length).fill('?').join(',')})`, stmt => stmt.run(keysChunk), () => {
+                        const keys = [];
+                        toDelete.forEach(key => {
+                            keys.push(key);
+                        });
+                        return `Keys: ${keys.join(', ')}`;
+                    });
+                });
+            }
+        });
+    }
+    async optimize() {
+        this.logger.trace(`[storage ${this.name}] vacuum()`);
+        const connection = await this.whenConnected;
+        return this.exec(connection, 'VACUUM');
+    }
+    async close(recovery) {
+        this.logger.trace(`[storage ${this.name}] close()`);
+        const connection = await this.whenConnected;
+        return this.doClose(connection, recovery);
+    }
+    doClose(connection, recovery) {
+        return new Promise((resolve, reject) => {
+            connection.db.close(closeError => {
+                if (closeError) {
+                    this.handleSQLiteError(connection, `[storage ${this.name}] close(): ${closeError}`);
+                }
+                if (this.path === SQLiteStorageDatabase.IN_MEMORY_PATH) {
+                    return resolve();
+                }
+                if (!connection.isErroneous && !connection.isInMemory) {
+                    return this.backup().then(resolve, error => {
+                        this.logger.error(`[storage ${this.name}] backup(): ${error}`);
+                        return resolve();
+                    });
+                }
+                if (typeof recovery === 'function') {
+                    return fs.promises.unlink(this.path).then(() => {
+                        return this.doConnect(this.path).then(recoveryConnection => {
+                            const closeRecoveryConnection = () => {
+                                return this.doClose(recoveryConnection, undefined);
+                            };
+                            return this.doUpdateItems(recoveryConnection, { insert: recovery() }).then(() => closeRecoveryConnection(), error => {
+                                closeRecoveryConnection();
+                                return Promise.reject(error);
+                            });
+                        });
+                    }).then(resolve, reject);
+                }
+                return reject(closeError || new Error('Database has errors or is in-memory without recovery option'));
+            });
+        });
+    }
+    backup() {
+        const backupPath = this.toBackupPath(this.path);
+        return Promises.copy(this.path, backupPath, { preserveSymlinks: false });
+    }
+    toBackupPath(path) {
+        return `${path}.backup`;
+    }
+    async checkIntegrity(full) {
+        this.logger.trace(`[storage ${this.name}] checkIntegrity(full: ${full})`);
+        const connection = await this.whenConnected;
+        const row = await this.get(connection, full ? 'PRAGMA integrity_check' : 'PRAGMA quick_check');
+        const integrity = full ? row['integrity_check'] : row['quick_check'];
+        if (connection.isErroneous) {
+            return `${integrity} (last error: ${connection.lastError})`;
+        }
+        if (connection.isInMemory) {
+            return `${integrity} (in-memory!)`;
+        }
+        return integrity;
+    }
+    async connect(path, retryOnBusy = true) {
+        this.logger.trace(`[storage ${this.name}] open(${path}, retryOnBusy: ${retryOnBusy})`);
+        try {
+            return await this.doConnect(path);
+        }
+        catch (error) {
+            this.logger.error(`[storage ${this.name}] open(): Unable to open DB due to ${error}`);
+            if (error.code === 'SQLITE_BUSY' && retryOnBusy) {
+                await timeout(SQLiteStorageDatabase.BUSY_OPEN_TIMEOUT);
+                return this.connect(path, false);
+            }
+            try {
+                await fs.promises.unlink(path);
+                try {
+                    await Promises.rename(this.toBackupPath(path), path, false);
+                }
+                catch (error) {
+                }
+                return await this.doConnect(path);
+            }
+            catch (error) {
+                this.logger.error(`[storage ${this.name}] open(): Unable to use backup due to ${error}`);
+                return this.doConnect(SQLiteStorageDatabase.IN_MEMORY_PATH);
+            }
+        }
+    }
+    handleSQLiteError(connection, msg) {
+        connection.isErroneous = true;
+        connection.lastError = msg;
+        this.logger.error(msg);
+    }
+    doConnect(path) {
+        return new Promise((resolve, reject) => {
+            import('@vscode/sqlite3').then(sqlite3 => {
+                const ctor = (this.logger.isTracing ? sqlite3.default.verbose().Database : sqlite3.default.Database);
+                const connection = {
+                    db: new ctor(path, (error) => {
+                        if (error) {
+                            return (connection.db && error.code !== 'SQLITE_CANTOPEN') ? connection.db.close(() => reject(error)) : reject(error);
+                        }
+                        return this.exec(connection, [
+                            'PRAGMA user_version = 1;',
+                            'CREATE TABLE IF NOT EXISTS ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)'
+                        ].join('')).then(() => {
+                            return resolve(connection);
+                        }, error => {
+                            return connection.db.close(() => reject(error));
+                        });
+                    }),
+                    isInMemory: path === SQLiteStorageDatabase.IN_MEMORY_PATH
+                };
+                connection.db.on('error', error => this.handleSQLiteError(connection, `[storage ${this.name}] Error (event): ${error}`));
+                if (this.logger.isTracing) {
+                    connection.db.on('trace', sql => this.logger.trace(`[storage ${this.name}] Trace (event): ${sql}`));
+                }
+            }, reject);
+        });
+    }
+    exec(connection, sql) {
+        return new Promise((resolve, reject) => {
+            connection.db.exec(sql, error => {
+                if (error) {
+                    this.handleSQLiteError(connection, `[storage ${this.name}] exec(): ${error}`);
+                    return reject(error);
+                }
+                return resolve();
+            });
+        });
+    }
+    get(connection, sql) {
+        return new Promise((resolve, reject) => {
+            connection.db.get(sql, (error, row) => {
+                if (error) {
+                    this.handleSQLiteError(connection, `[storage ${this.name}] get(): ${error}`);
+                    return reject(error);
+                }
+                return resolve(row);
+            });
+        });
+    }
+    all(connection, sql) {
+        return new Promise((resolve, reject) => {
+            connection.db.all(sql, (error, rows) => {
+                if (error) {
+                    this.handleSQLiteError(connection, `[storage ${this.name}] all(): ${error}`);
+                    return reject(error);
+                }
+                return resolve(rows);
+            });
+        });
+    }
+    transaction(connection, transactions) {
+        return new Promise((resolve, reject) => {
+            connection.db.serialize(() => {
+                connection.db.run('BEGIN TRANSACTION');
+                transactions();
+                connection.db.run('END TRANSACTION', error => {
+                    if (error) {
+                        this.handleSQLiteError(connection, `[storage ${this.name}] transaction(): ${error}`);
+                        return reject(error);
+                    }
+                    return resolve();
+                });
+            });
+        });
+    }
+    prepare(connection, sql, runCallback, errorDetails) {
+        const stmt = connection.db.prepare(sql);
+        const statementErrorListener = (error) => {
+            this.handleSQLiteError(connection, `[storage ${this.name}] prepare(): ${error} (${sql}). Details: ${errorDetails()}`);
+        };
+        stmt.on('error', statementErrorListener);
+        runCallback(stmt);
+        stmt.finalize(error => {
+            if (error) {
+                statementErrorListener(error);
+            }
+            stmt.removeListener('error', statementErrorListener);
+        });
+    }
+}
+class SQLiteStorageDatabaseLogger {
+    static { this.VSCODE_TRACE_STORAGE = 'VSCODE_TRACE_STORAGE'; }
+    constructor(options) {
+        if (options && typeof options.logTrace === 'function' && process.env[SQLiteStorageDatabaseLogger.VSCODE_TRACE_STORAGE]) {
+            this.logTrace = options.logTrace;
+        }
+        if (options && typeof options.logError === 'function') {
+            this.logError = options.logError;
+        }
+    }
+    get isTracing() {
+        return !!this.logTrace;
+    }
+    trace(msg) {
+        this.logTrace?.(msg);
+    }
+    error(error) {
+        this.logError?.(error);
+    }
+}

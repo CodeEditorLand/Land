@@ -1,1 +1,193 @@
-import{FileAccess as u,nodeModulesAsarPath as p,nodeModulesPath as f,Schemas as m,VSCODE_AUTHORITY as _}from"./base/common/network.js";import*as h from"./base/common/platform.js";import"./base/common/product.js";import{URI as g}from"./base/common/uri.js";import{generateUuid as P}from"./base/common/uuid.js";const y=!1;class T{constructor(e,i,t){this.id=e;this.dependencies=i;this.callback=t}}var b=(t=>(t[t.Uninitialized=1]="Uninitialized",t[t.InitializedInternal=2]="InitializedInternal",t[t.InitializedExternal=3]="InitializedExternal",t))(b||{});class d{static INSTANCE=new d;_isWebWorker=typeof self=="object"&&self.constructor&&self.constructor.name==="DedicatedWorkerGlobalScope";_isRenderer=typeof document=="object";_defineCalls=[];_state=1;_amdPolicy;constructor(){}_initialize(){if(this._state===1){if(globalThis.define){this._state=3;return}}else return;this._state=2,globalThis.define=(e,i,t)=>{typeof e!="string"&&(t=i,i=e,e=null),(typeof i!="object"||!Array.isArray(i))&&(t=i,i=null),this._defineCalls.push(new T(e,i,t))},globalThis.define.amd=!0,this._isRenderer?this._amdPolicy=globalThis._VSCODE_WEB_PACKAGE_TTP??window.trustedTypes?.createPolicy("amdLoader",{createScriptURL(e){if(e.startsWith(window.location.origin)||e.startsWith(`${m.vscodeFileResource}://${_}`))return e;throw new Error(`[trusted_script_src] Invalid script url: ${e}`)}}):this._isWebWorker&&(this._amdPolicy=globalThis._VSCODE_WEB_PACKAGE_TTP??globalThis.trustedTypes?.createPolicy("amdLoader",{createScriptURL(e){return e}}))}async load(e){if(this._initialize(),this._state===3)return new Promise(o=>{const a=P();globalThis.define(a,[e],function(s){o(s)})});const i=await(this._isWebWorker?this._workerLoadScript(e):this._isRenderer?this._rendererLoadScript(e):this._nodeJSLoadScript(e));if(!i)return;const t={},n=[],r=[];if(Array.isArray(i.dependencies))for(const o of i.dependencies)o==="exports"?n.push(t):r.push(o);if(r.length>0)throw new Error(`Cannot resolve dependencies for script ${e}. The dependencies are: ${r.join(", ")}`);return typeof i.callback=="function"?i.callback(...n)??t:i.callback}_rendererLoadScript(e){return new Promise((i,t)=>{const n=document.createElement("script");n.setAttribute("async","async"),n.setAttribute("type","text/javascript");const r=()=>{n.removeEventListener("load",o),n.removeEventListener("error",a)},o=s=>{r(),i(this._defineCalls.pop())},a=s=>{r(),t(s)};n.addEventListener("load",o),n.addEventListener("error",a),this._amdPolicy&&(e=this._amdPolicy.createScriptURL(e)),n.setAttribute("src",e),window.document.getElementsByTagName("head")[0].appendChild(n)})}async _workerLoadScript(e){return this._amdPolicy&&(e=this._amdPolicy.createScriptURL(e)),await import(e),this._defineCalls.pop()}async _nodeJSLoadScript(e){try{const i=(await import("fs")).default,t=(await import("vm")).default,n=(await import("module")).default,r=g.parse(e).fsPath,o=i.readFileSync(r).toString(),a=n.wrap(o.replace(/^#!.*/,""));return new t.Script(a).runInThisContext().apply(),this._defineCalls.pop()}catch(i){throw i}}}const c=new Map;async function L(l,e,i){i===void 0&&(i=!!(globalThis._VSCODE_PRODUCT_JSON??globalThis.vscode?.context?.configuration()?.product)?.commit);const t=e?`${l}/${e}`:l;if(c.has(t))return c.get(t);let n;if(/^\w[\w\d+.-]*:\/\//.test(t))n=t;else{const s=`${y&&i&&!h.isWeb?p:f}/${t}`;n=u.asBrowserUri(s).toString(!0)}const r=d.INSTANCE.load(n);return c.set(t,r),r}function $(l,e){const t=!!(globalThis._VSCODE_PRODUCT_JSON??globalThis.vscode?.context?.configuration()?.product)?.commit,n=y&&t&&!h.isWeb,r=`${l}/${e}`,a=`${n?p:f}/${r}`;return u.asBrowserUri(a).toString(!0)}export{y as canASAR,L as importAMDNodeModule,$ as resolveAmdNodeModulePath};
+import { FileAccess, nodeModulesAsarPath, nodeModulesPath, Schemas, VSCODE_AUTHORITY } from './base/common/network.js';
+import * as platform from './base/common/platform.js';
+import { URI } from './base/common/uri.js';
+import { generateUuid } from './base/common/uuid.js';
+export const canASAR = false;
+class DefineCall {
+    constructor(id, dependencies, callback) {
+        this.id = id;
+        this.dependencies = dependencies;
+        this.callback = callback;
+    }
+}
+var AMDModuleImporterState;
+(function (AMDModuleImporterState) {
+    AMDModuleImporterState[AMDModuleImporterState["Uninitialized"] = 1] = "Uninitialized";
+    AMDModuleImporterState[AMDModuleImporterState["InitializedInternal"] = 2] = "InitializedInternal";
+    AMDModuleImporterState[AMDModuleImporterState["InitializedExternal"] = 3] = "InitializedExternal";
+})(AMDModuleImporterState || (AMDModuleImporterState = {}));
+class AMDModuleImporter {
+    static { this.INSTANCE = new AMDModuleImporter(); }
+    constructor() {
+        this._isWebWorker = (typeof self === 'object' && self.constructor && self.constructor.name === 'DedicatedWorkerGlobalScope');
+        this._isRenderer = typeof document === 'object';
+        this._defineCalls = [];
+        this._state = AMDModuleImporterState.Uninitialized;
+    }
+    _initialize() {
+        if (this._state === AMDModuleImporterState.Uninitialized) {
+            if (globalThis.define) {
+                this._state = AMDModuleImporterState.InitializedExternal;
+                return;
+            }
+        }
+        else {
+            return;
+        }
+        this._state = AMDModuleImporterState.InitializedInternal;
+        globalThis.define = (id, dependencies, callback) => {
+            if (typeof id !== 'string') {
+                callback = dependencies;
+                dependencies = id;
+                id = null;
+            }
+            if (typeof dependencies !== 'object' || !Array.isArray(dependencies)) {
+                callback = dependencies;
+                dependencies = null;
+            }
+            this._defineCalls.push(new DefineCall(id, dependencies, callback));
+        };
+        globalThis.define.amd = true;
+        if (this._isRenderer) {
+            this._amdPolicy = globalThis._VSCODE_WEB_PACKAGE_TTP ?? window.trustedTypes?.createPolicy('amdLoader', {
+                createScriptURL(value) {
+                    if (value.startsWith(window.location.origin)) {
+                        return value;
+                    }
+                    if (value.startsWith(`${Schemas.vscodeFileResource}://${VSCODE_AUTHORITY}`)) {
+                        return value;
+                    }
+                    throw new Error(`[trusted_script_src] Invalid script url: ${value}`);
+                }
+            });
+        }
+        else if (this._isWebWorker) {
+            this._amdPolicy = globalThis._VSCODE_WEB_PACKAGE_TTP ?? globalThis.trustedTypes?.createPolicy('amdLoader', {
+                createScriptURL(value) {
+                    return value;
+                }
+            });
+        }
+    }
+    async load(scriptSrc) {
+        this._initialize();
+        if (this._state === AMDModuleImporterState.InitializedExternal) {
+            return new Promise(resolve => {
+                const tmpModuleId = generateUuid();
+                globalThis.define(tmpModuleId, [scriptSrc], function (moduleResult) {
+                    resolve(moduleResult);
+                });
+            });
+        }
+        const defineCall = await (this._isWebWorker ? this._workerLoadScript(scriptSrc) : this._isRenderer ? this._rendererLoadScript(scriptSrc) : this._nodeJSLoadScript(scriptSrc));
+        if (!defineCall) {
+            console.warn(`Did not receive a define call from script ${scriptSrc}`);
+            return undefined;
+        }
+        const exports = {};
+        const dependencyObjs = [];
+        const dependencyModules = [];
+        if (Array.isArray(defineCall.dependencies)) {
+            for (const mod of defineCall.dependencies) {
+                if (mod === 'exports') {
+                    dependencyObjs.push(exports);
+                }
+                else {
+                    dependencyModules.push(mod);
+                }
+            }
+        }
+        if (dependencyModules.length > 0) {
+            throw new Error(`Cannot resolve dependencies for script ${scriptSrc}. The dependencies are: ${dependencyModules.join(', ')}`);
+        }
+        if (typeof defineCall.callback === 'function') {
+            return defineCall.callback(...dependencyObjs) ?? exports;
+        }
+        else {
+            return defineCall.callback;
+        }
+    }
+    _rendererLoadScript(scriptSrc) {
+        return new Promise((resolve, reject) => {
+            const scriptElement = document.createElement('script');
+            scriptElement.setAttribute('async', 'async');
+            scriptElement.setAttribute('type', 'text/javascript');
+            const unbind = () => {
+                scriptElement.removeEventListener('load', loadEventListener);
+                scriptElement.removeEventListener('error', errorEventListener);
+            };
+            const loadEventListener = (e) => {
+                unbind();
+                resolve(this._defineCalls.pop());
+            };
+            const errorEventListener = (e) => {
+                unbind();
+                reject(e);
+            };
+            scriptElement.addEventListener('load', loadEventListener);
+            scriptElement.addEventListener('error', errorEventListener);
+            if (this._amdPolicy) {
+                scriptSrc = this._amdPolicy.createScriptURL(scriptSrc);
+            }
+            scriptElement.setAttribute('src', scriptSrc);
+            window.document.getElementsByTagName('head')[0].appendChild(scriptElement);
+        });
+    }
+    async _workerLoadScript(scriptSrc) {
+        if (this._amdPolicy) {
+            scriptSrc = this._amdPolicy.createScriptURL(scriptSrc);
+        }
+        await import(scriptSrc);
+        return this._defineCalls.pop();
+    }
+    async _nodeJSLoadScript(scriptSrc) {
+        try {
+            const fs = (await import(`${'fs'}`)).default;
+            const vm = (await import(`${'vm'}`)).default;
+            const module = (await import(`${'module'}`)).default;
+            const filePath = URI.parse(scriptSrc).fsPath;
+            const content = fs.readFileSync(filePath).toString();
+            const scriptSource = module.wrap(content.replace(/^#!.*/, ''));
+            const script = new vm.Script(scriptSource);
+            const compileWrapper = script.runInThisContext();
+            compileWrapper.apply();
+            return this._defineCalls.pop();
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+}
+const cache = new Map();
+export async function importAMDNodeModule(nodeModuleName, pathInsideNodeModule, isBuilt) {
+    if (isBuilt === undefined) {
+        const product = globalThis._VSCODE_PRODUCT_JSON;
+        isBuilt = Boolean((product ?? globalThis.vscode?.context?.configuration()?.product)?.commit);
+    }
+    const nodeModulePath = pathInsideNodeModule ? `${nodeModuleName}/${pathInsideNodeModule}` : nodeModuleName;
+    if (cache.has(nodeModulePath)) {
+        return cache.get(nodeModulePath);
+    }
+    let scriptSrc;
+    if (/^\w[\w\d+.-]*:\/\//.test(nodeModulePath)) {
+        scriptSrc = nodeModulePath;
+    }
+    else {
+        const useASAR = (canASAR && isBuilt && !platform.isWeb);
+        const actualNodeModulesPath = (useASAR ? nodeModulesAsarPath : nodeModulesPath);
+        const resourcePath = `${actualNodeModulesPath}/${nodeModulePath}`;
+        scriptSrc = FileAccess.asBrowserUri(resourcePath).toString(true);
+    }
+    const result = AMDModuleImporter.INSTANCE.load(scriptSrc);
+    cache.set(nodeModulePath, result);
+    return result;
+}
+export function resolveAmdNodeModulePath(nodeModuleName, pathInsideNodeModule) {
+    const product = globalThis._VSCODE_PRODUCT_JSON;
+    const isBuilt = Boolean((product ?? globalThis.vscode?.context?.configuration()?.product)?.commit);
+    const useASAR = (canASAR && isBuilt && !platform.isWeb);
+    const nodeModulePath = `${nodeModuleName}/${pathInsideNodeModule}`;
+    const actualNodeModulesPath = (useASAR ? nodeModulesAsarPath : nodeModulesPath);
+    const resourcePath = `${actualNodeModulesPath}/${nodeModulePath}`;
+    return FileAccess.asBrowserUri(resourcePath).toString(true);
+}

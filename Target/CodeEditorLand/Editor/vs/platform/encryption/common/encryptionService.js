@@ -1,1 +1,13 @@
-import{createDecorator as t}from"../../instantiation/common/instantiation.js";const l=t("encryptionService"),a=t("encryptionMainService");var r=(i=>(i.kwallet="kwallet",i.kwallet5="kwallet5",i.gnomeLibsecret="gnome-libsecret",i.basic="basic",i))(r||{}),c=(e=>(e.unknown="unknown",e.basicText="basic_text",e.gnomeAny="gnome_any",e.gnomeLibsecret="gnome_libsecret",e.gnomeKeyring="gnome_keyring",e.kwallet="kwallet",e.kwallet5="kwallet5",e.kwallet6="kwallet6",e.dplib="dpapi",e.keychainAccess="keychain_access",e))(c||{});function s(n){return n==="kwallet"||n==="kwallet5"||n==="kwallet6"}function m(n){return n==="gnome_any"||n==="gnome_libsecret"||n==="gnome_keyring"}export{a as IEncryptionMainService,l as IEncryptionService,c as KnownStorageProvider,r as PasswordStoreCLIOption,m as isGnome,s as isKwallet};
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const IEncryptionService = createDecorator('encryptionService');
+export const IEncryptionMainService = createDecorator('encryptionMainService');
+export function isKwallet(backend) {
+    return backend === "kwallet"
+        || backend === "kwallet5"
+        || backend === "kwallet6";
+}
+export function isGnome(backend) {
+    return backend === "gnome_any"
+        || backend === "gnome_libsecret"
+        || backend === "gnome_keyring";
+}

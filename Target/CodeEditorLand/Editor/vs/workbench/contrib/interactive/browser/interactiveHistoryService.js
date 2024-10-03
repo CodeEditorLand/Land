@@ -1,1 +1,52 @@
-import{HistoryNavigator2 as i}from"../../../../base/common/history.js";import{Disposable as s}from"../../../../base/common/lifecycle.js";import{ResourceMap as o}from"../../../../base/common/map.js";import"../../../../base/common/uri.js";import{createDecorator as n}from"../../../../platform/instantiation/common/instantiation.js";const I=n("IInteractiveHistoryService");class v extends s{_history;constructor(){super(),this._history=new o}matchesCurrent(r,e){const t=this._history.get(r);return t?t.current()===e:!1}addToHistory(r,e){const t=this._history.get(r);if(!t){this._history.set(r,new i([e],50));return}t.resetCursor(),t.add(e)}getPreviousValue(r){return this._history.get(r)?.previous()??null}getNextValue(r){return this._history.get(r)?.next()??null}replaceLast(r,e){const t=this._history.get(r);if(t)t.replaceLast(e),t.resetCursor();else{this._history.set(r,new i([e],50));return}}clearHistory(r){this._history.delete(r)}has(r){return!!this._history.has(r)}}export{I as IInteractiveHistoryService,v as InteractiveHistoryService};
+import { HistoryNavigator2 } from '../../../../base/common/history.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { ResourceMap } from '../../../../base/common/map.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export const IInteractiveHistoryService = createDecorator('IInteractiveHistoryService');
+export class InteractiveHistoryService extends Disposable {
+    constructor() {
+        super();
+        this._history = new ResourceMap();
+    }
+    matchesCurrent(uri, value) {
+        const history = this._history.get(uri);
+        if (!history) {
+            return false;
+        }
+        return history.current() === value;
+    }
+    addToHistory(uri, value) {
+        const history = this._history.get(uri);
+        if (!history) {
+            this._history.set(uri, new HistoryNavigator2([value], 50));
+            return;
+        }
+        history.resetCursor();
+        history.add(value);
+    }
+    getPreviousValue(uri) {
+        const history = this._history.get(uri);
+        return history?.previous() ?? null;
+    }
+    getNextValue(uri) {
+        const history = this._history.get(uri);
+        return history?.next() ?? null;
+    }
+    replaceLast(uri, value) {
+        const history = this._history.get(uri);
+        if (!history) {
+            this._history.set(uri, new HistoryNavigator2([value], 50));
+            return;
+        }
+        else {
+            history.replaceLast(value);
+            history.resetCursor();
+        }
+    }
+    clearHistory(uri) {
+        this._history.delete(uri);
+    }
+    has(uri) {
+        return this._history.has(uri) ? true : false;
+    }
+}

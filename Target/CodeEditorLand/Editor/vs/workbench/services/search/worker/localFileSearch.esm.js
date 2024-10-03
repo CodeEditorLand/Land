@@ -1,1 +1,3 @@
-import{bootstrapSimpleWorker as r}from"../../../../base/common/worker/simpleWorkerBootstrap.js";import{create as o}from"./localFileSearch.js";r(o);
+import { bootstrapSimpleWorker } from '../../../../base/common/worker/simpleWorkerBootstrap.js';
+import { create } from './localFileSearch.js';
+bootstrapSimpleWorker(create);

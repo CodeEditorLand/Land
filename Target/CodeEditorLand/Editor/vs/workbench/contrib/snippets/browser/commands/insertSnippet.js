@@ -1,1 +1,112 @@
-import"../../../../../editor/browser/editorBrowser.js";import"../../../../../editor/browser/editorExtensions.js";import{EditorContextKeys as v}from"../../../../../editor/common/editorContextKeys.js";import{ILanguageService as C}from"../../../../../editor/common/languages/language.js";import{SnippetController2 as w}from"../../../../../editor/contrib/snippet/browser/snippetController2.js";import*as h from"../../../../../nls.js";import{IClipboardService as x}from"../../../../../platform/clipboard/common/clipboardService.js";import{IInstantiationService as E}from"../../../../../platform/instantiation/common/instantiation.js";import{SnippetEditorAction as L}from"./abstractSnippetsActions.js";import{pickSnippet as M}from"../snippetPicker.js";import{ISnippetsService as k}from"../snippets.js";import{Snippet as A,SnippetSource as P}from"../snippetsFile.js";class o{constructor(t,e,n){this.snippet=t;this.name=e;this.langId=n}static fromUser(t){if(!t||typeof t!="object")return o._empty;let{snippet:e,name:n,langId:i}=t;return typeof e!="string"&&(e=void 0),typeof n!="string"&&(n=void 0),typeof i!="string"&&(i=void 0),new o(e,n,i)}static _empty=new o(void 0,void 0,void 0)}class J extends L{constructor(){super({id:"editor.action.insertSnippet",title:h.localize2("snippet.suggestions.label","Insert Snippet"),f1:!0,precondition:v.writable,metadata:{description:"Insert Snippet",args:[{name:"args",schema:{type:"object",properties:{snippet:{type:"string"},langId:{type:"string"},name:{type:"string"}}}}]}})}async runEditorCommand(t,e,n){const i=t.get(C),d=t.get(k);if(!e.hasModel())return;const u=t.get(x),l=t.get(E),p=await new Promise((s,S)=>{const{lineNumber:m,column:I}=e.getPosition(),{snippet:c,name:g,langId:a}=o.fromUser(n);if(c)return s(new A(!1,[],"","","",c,"",P.User,`random/${Math.random()}`));let r;if(a){if(!i.isRegisteredLanguageId(a))return s(void 0);r=a}else e.getModel().tokenization.tokenizeIfCheap(m),r=e.getModel().getLanguageIdAtPosition(m,I),i.getLanguageName(r)||(r=e.getModel().getLanguageId());g?d.getSnippets(r,{includeNoPrefixSnippets:!0}).then(y=>y.find(b=>b.name===g)).then(s,S):s(l.invokeFunction(M,r))});if(!p)return;let f;p.needsClipboard&&(f=await u.readText()),e.focus(),w.get(e)?.insert(p.codeSnippet,{clipboardText:f}),d.updateUsageTimestamp(p)}}export{J as InsertSnippetAction};
+import { EditorContextKeys } from '../../../../../editor/common/editorContextKeys.js';
+import { ILanguageService } from '../../../../../editor/common/languages/language.js';
+import { SnippetController2 } from '../../../../../editor/contrib/snippet/browser/snippetController2.js';
+import * as nls from '../../../../../nls.js';
+import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { SnippetEditorAction } from './abstractSnippetsActions.js';
+import { pickSnippet } from '../snippetPicker.js';
+import { ISnippetsService } from '../snippets.js';
+import { Snippet } from '../snippetsFile.js';
+class Args {
+    static fromUser(arg) {
+        if (!arg || typeof arg !== 'object') {
+            return Args._empty;
+        }
+        let { snippet, name, langId } = arg;
+        if (typeof snippet !== 'string') {
+            snippet = undefined;
+        }
+        if (typeof name !== 'string') {
+            name = undefined;
+        }
+        if (typeof langId !== 'string') {
+            langId = undefined;
+        }
+        return new Args(snippet, name, langId);
+    }
+    static { this._empty = new Args(undefined, undefined, undefined); }
+    constructor(snippet, name, langId) {
+        this.snippet = snippet;
+        this.name = name;
+        this.langId = langId;
+    }
+}
+export class InsertSnippetAction extends SnippetEditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.insertSnippet',
+            title: nls.localize2('snippet.suggestions.label', "Insert Snippet"),
+            f1: true,
+            precondition: EditorContextKeys.writable,
+            metadata: {
+                description: `Insert Snippet`,
+                args: [{
+                        name: 'args',
+                        schema: {
+                            'type': 'object',
+                            'properties': {
+                                'snippet': {
+                                    'type': 'string'
+                                },
+                                'langId': {
+                                    'type': 'string',
+                                },
+                                'name': {
+                                    'type': 'string'
+                                }
+                            },
+                        }
+                    }]
+            }
+        });
+    }
+    async runEditorCommand(accessor, editor, arg) {
+        const languageService = accessor.get(ILanguageService);
+        const snippetService = accessor.get(ISnippetsService);
+        if (!editor.hasModel()) {
+            return;
+        }
+        const clipboardService = accessor.get(IClipboardService);
+        const instaService = accessor.get(IInstantiationService);
+        const snippet = await new Promise((resolve, reject) => {
+            const { lineNumber, column } = editor.getPosition();
+            const { snippet, name, langId } = Args.fromUser(arg);
+            if (snippet) {
+                return resolve(new Snippet(false, [], '', '', '', snippet, '', 1, `random/${Math.random()}`));
+            }
+            let languageId;
+            if (langId) {
+                if (!languageService.isRegisteredLanguageId(langId)) {
+                    return resolve(undefined);
+                }
+                languageId = langId;
+            }
+            else {
+                editor.getModel().tokenization.tokenizeIfCheap(lineNumber);
+                languageId = editor.getModel().getLanguageIdAtPosition(lineNumber, column);
+                if (!languageService.getLanguageName(languageId)) {
+                    languageId = editor.getModel().getLanguageId();
+                }
+            }
+            if (name) {
+                snippetService.getSnippets(languageId, { includeNoPrefixSnippets: true })
+                    .then(snippets => snippets.find(snippet => snippet.name === name))
+                    .then(resolve, reject);
+            }
+            else {
+                resolve(instaService.invokeFunction(pickSnippet, languageId));
+            }
+        });
+        if (!snippet) {
+            return;
+        }
+        let clipboardText;
+        if (snippet.needsClipboard) {
+            clipboardText = await clipboardService.readText();
+        }
+        editor.focus();
+        SnippetController2.get(editor)?.insert(snippet.codeSnippet, { clipboardText });
+        snippetService.updateUsageTimestamp(snippet);
+    }
+}

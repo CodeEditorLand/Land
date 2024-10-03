@@ -1,1 +1,96 @@
-import{Disposable as h}from"../../../base/common/lifecycle.js";import"../../common/core/dimension.js";import{Emitter as o}from"../../../base/common/event.js";import{getWindow as l,scheduleAtNextAnimationFrame as m}from"../../../base/browser/dom.js";class _ extends h{_onDidChange=this._register(new o);onDidChange=this._onDidChange.event;_referenceDomElement;_width;_height;_resizeObserver;constructor(e,r){super(),this._referenceDomElement=e,this._width=-1,this._height=-1,this._resizeObserver=null,this.measureReferenceDomElement(!1,r)}dispose(){this.stopObserving(),super.dispose()}getWidth(){return this._width}getHeight(){return this._height}startObserving(){if(!this._resizeObserver&&this._referenceDomElement){let e=null;const r=()=>{e?this.observe({width:e.width,height:e.height}):this.observe()};let i=!1,t=!1;const n=()=>{if(i&&!t)try{i=!1,t=!0,r()}finally{m(l(this._referenceDomElement),()=>{t=!1,n()})}};this._resizeObserver=new ResizeObserver(s=>{s&&s[0]&&s[0].contentRect?e={width:s[0].contentRect.width,height:s[0].contentRect.height}:e=null,i=!0,n()}),this._resizeObserver.observe(this._referenceDomElement)}}stopObserving(){this._resizeObserver&&(this._resizeObserver.disconnect(),this._resizeObserver=null)}observe(e){this.measureReferenceDomElement(!0,e)}measureReferenceDomElement(e,r){let i=0,t=0;r?(i=r.width,t=r.height):this._referenceDomElement&&(i=this._referenceDomElement.clientWidth,t=this._referenceDomElement.clientHeight),i=Math.max(5,i),t=Math.max(5,t),(this._width!==i||this._height!==t)&&(this._width=i,this._height=t,e&&this._onDidChange.fire())}}export{_ as ElementSizeObserver};
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { Emitter } from '../../../base/common/event.js';
+import { getWindow, scheduleAtNextAnimationFrame } from '../../../base/browser/dom.js';
+export class ElementSizeObserver extends Disposable {
+    constructor(referenceDomElement, dimension) {
+        super();
+        this._onDidChange = this._register(new Emitter());
+        this.onDidChange = this._onDidChange.event;
+        this._referenceDomElement = referenceDomElement;
+        this._width = -1;
+        this._height = -1;
+        this._resizeObserver = null;
+        this.measureReferenceDomElement(false, dimension);
+    }
+    dispose() {
+        this.stopObserving();
+        super.dispose();
+    }
+    getWidth() {
+        return this._width;
+    }
+    getHeight() {
+        return this._height;
+    }
+    startObserving() {
+        if (!this._resizeObserver && this._referenceDomElement) {
+            let observedDimenstion = null;
+            const observeNow = () => {
+                if (observedDimenstion) {
+                    this.observe({ width: observedDimenstion.width, height: observedDimenstion.height });
+                }
+                else {
+                    this.observe();
+                }
+            };
+            let shouldObserve = false;
+            let alreadyObservedThisAnimationFrame = false;
+            const update = () => {
+                if (shouldObserve && !alreadyObservedThisAnimationFrame) {
+                    try {
+                        shouldObserve = false;
+                        alreadyObservedThisAnimationFrame = true;
+                        observeNow();
+                    }
+                    finally {
+                        scheduleAtNextAnimationFrame(getWindow(this._referenceDomElement), () => {
+                            alreadyObservedThisAnimationFrame = false;
+                            update();
+                        });
+                    }
+                }
+            };
+            this._resizeObserver = new ResizeObserver((entries) => {
+                if (entries && entries[0] && entries[0].contentRect) {
+                    observedDimenstion = { width: entries[0].contentRect.width, height: entries[0].contentRect.height };
+                }
+                else {
+                    observedDimenstion = null;
+                }
+                shouldObserve = true;
+                update();
+            });
+            this._resizeObserver.observe(this._referenceDomElement);
+        }
+    }
+    stopObserving() {
+        if (this._resizeObserver) {
+            this._resizeObserver.disconnect();
+            this._resizeObserver = null;
+        }
+    }
+    observe(dimension) {
+        this.measureReferenceDomElement(true, dimension);
+    }
+    measureReferenceDomElement(emitEvent, dimension) {
+        let observedWidth = 0;
+        let observedHeight = 0;
+        if (dimension) {
+            observedWidth = dimension.width;
+            observedHeight = dimension.height;
+        }
+        else if (this._referenceDomElement) {
+            observedWidth = this._referenceDomElement.clientWidth;
+            observedHeight = this._referenceDomElement.clientHeight;
+        }
+        observedWidth = Math.max(5, observedWidth);
+        observedHeight = Math.max(5, observedHeight);
+        if (this._width !== observedWidth || this._height !== observedHeight) {
+            this._width = observedWidth;
+            this._height = observedHeight;
+            if (emitEvent) {
+                this._onDidChange.fire();
+            }
+        }
+    }
+}

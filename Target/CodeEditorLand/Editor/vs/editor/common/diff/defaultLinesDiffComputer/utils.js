@@ -1,2 +1,56 @@
-import{CharCode as m}from"../../../../base/common/charCode.js";import"../../core/lineRange.js";import"../rangeMapping.js";class f{constructor(t,e){this.width=t;this.height=e;this.array=new Array(t*e)}array=[];get(t,e){return this.array[t+e*this.width]}set(t,e,i){this.array[t+e*this.width]=i}}function v(n){return n===m.Space||n===m.Tab}class o{constructor(t,e,i){this.range=t;this.lines=e;this.source=i;let r=0;for(let a=t.startLineNumber-1;a<t.endLineNumberExclusive-1;a++){const u=e[a];for(let s=0;s<u.length;s++){r++;const c=u[s],l=o.getKey(c);this.histogram[l]=(this.histogram[l]||0)+1}r++;const h=o.getKey(`
-`);this.histogram[h]=(this.histogram[h]||0)+1}this.totalCount=r}static chrKeys=new Map;static getKey(t){let e=this.chrKeys.get(t);return e===void 0&&(e=this.chrKeys.size,this.chrKeys.set(t,e)),e}totalCount;histogram=[];computeSimilarity(t){let e=0;const i=Math.max(this.histogram.length,t.histogram.length);for(let r=0;r<i;r++)e+=Math.abs((this.histogram[r]??0)-(t.histogram[r]??0));return 1-e/(this.totalCount+t.totalCount)}}export{f as Array2D,o as LineRangeFragment,v as isSpace};
+export class Array2D {
+    constructor(width, height) {
+        this.width = width;
+        this.height = height;
+        this.array = [];
+        this.array = new Array(width * height);
+    }
+    get(x, y) {
+        return this.array[x + y * this.width];
+    }
+    set(x, y, value) {
+        this.array[x + y * this.width] = value;
+    }
+}
+export function isSpace(charCode) {
+    return charCode === 32 || charCode === 9;
+}
+export class LineRangeFragment {
+    static { this.chrKeys = new Map(); }
+    static getKey(chr) {
+        let key = this.chrKeys.get(chr);
+        if (key === undefined) {
+            key = this.chrKeys.size;
+            this.chrKeys.set(chr, key);
+        }
+        return key;
+    }
+    constructor(range, lines, source) {
+        this.range = range;
+        this.lines = lines;
+        this.source = source;
+        this.histogram = [];
+        let counter = 0;
+        for (let i = range.startLineNumber - 1; i < range.endLineNumberExclusive - 1; i++) {
+            const line = lines[i];
+            for (let j = 0; j < line.length; j++) {
+                counter++;
+                const chr = line[j];
+                const key = LineRangeFragment.getKey(chr);
+                this.histogram[key] = (this.histogram[key] || 0) + 1;
+            }
+            counter++;
+            const key = LineRangeFragment.getKey('\n');
+            this.histogram[key] = (this.histogram[key] || 0) + 1;
+        }
+        this.totalCount = counter;
+    }
+    computeSimilarity(other) {
+        let sumDifferences = 0;
+        const maxLength = Math.max(this.histogram.length, other.histogram.length);
+        for (let i = 0; i < maxLength; i++) {
+            sumDifferences += Math.abs((this.histogram[i] ?? 0) - (other.histogram[i] ?? 0));
+        }
+        return 1 - (sumDifferences / (this.totalCount + other.totalCount));
+    }
+}

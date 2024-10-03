@@ -1,1 +1,28 @@
-import{CharCode as u}from"../../../base/common/charCode.js";import"../../../base/common/keybindings.js";import"../../contextkey/common/contextkey.js";class y{_resolvedKeybindingItemBrand=void 0;resolvedKeybinding;chords;bubble;command;commandArgs;when;isDefault;extensionId;isBuiltinExtension;constructor(e,n,o,i,l,r,d){this.resolvedKeybinding=e,this.chords=e?s(e.getDispatchChords()):[],e&&this.chords.length===0&&(this.chords=s(e.getSingleModifierDispatchChords())),this.bubble=n?n.charCodeAt(0)===u.Caret:!1,this.command=this.bubble?n.substr(1):n,this.commandArgs=o,this.when=i,this.isDefault=l,this.extensionId=r,this.isBuiltinExtension=d}}function s(t){const e=[];for(let n=0,o=t.length;n<o;n++){const i=t[n];if(!i)return[];e.push(i)}return e}export{y as ResolvedKeybindingItem,s as toEmptyArrayIfContainsNull};
+export class ResolvedKeybindingItem {
+    constructor(resolvedKeybinding, command, commandArgs, when, isDefault, extensionId, isBuiltinExtension) {
+        this._resolvedKeybindingItemBrand = undefined;
+        this.resolvedKeybinding = resolvedKeybinding;
+        this.chords = resolvedKeybinding ? toEmptyArrayIfContainsNull(resolvedKeybinding.getDispatchChords()) : [];
+        if (resolvedKeybinding && this.chords.length === 0) {
+            this.chords = toEmptyArrayIfContainsNull(resolvedKeybinding.getSingleModifierDispatchChords());
+        }
+        this.bubble = (command ? command.charCodeAt(0) === 94 : false);
+        this.command = this.bubble ? command.substr(1) : command;
+        this.commandArgs = commandArgs;
+        this.when = when;
+        this.isDefault = isDefault;
+        this.extensionId = extensionId;
+        this.isBuiltinExtension = isBuiltinExtension;
+    }
+}
+export function toEmptyArrayIfContainsNull(arr) {
+    const result = [];
+    for (let i = 0, len = arr.length; i < len; i++) {
+        const element = arr[i];
+        if (!element) {
+            return [];
+        }
+        result.push(element);
+    }
+    return result;
+}

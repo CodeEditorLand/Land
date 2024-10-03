@@ -1,1 +1,46 @@
-import{mapValues as o}from"../../../../base/common/objects.js";import{TestResultState as e}from"./testTypes.js";const r={[e.Running]:6,[e.Errored]:5,[e.Failed]:4,[e.Queued]:3,[e.Passed]:2,[e.Unset]:0,[e.Skipped]:1},p=t=>t===e.Errored||t===e.Failed,S=t=>t===e.Errored||t===e.Failed||t===e.Passed,d=o(r,(t,s)=>({statusNode:!0,state:Number(s),priority:t})),n=(t,s)=>r[s]-r[t],m=(...t)=>{switch(t.length){case 0:return e.Unset;case 1:return t[0];case 2:return r[t[0]]>r[t[1]]?t[0]:t[1];default:{let s=t[0];for(let a=1;a<t.length;a++)r[s]<r[t[a]]&&(s=t[a]);return s}}},u=Object.keys(r).map(t=>Number(t)).sort(n),T={[e.Passed]:0,[e.Skipped]:1,[e.Failed]:2,[e.Errored]:3},c=()=>new Uint32Array(u.length);export{n as cmpPriority,p as isFailedState,S as isStateWithResult,c as makeEmptyCounts,m as maxPriority,d as stateNodes,r as statePriority,u as statesInOrder,T as terminalStatePriorities};
+import { mapValues } from '../../../../base/common/objects.js';
+export const statePriority = {
+    [2]: 6,
+    [6]: 5,
+    [4]: 4,
+    [1]: 3,
+    [3]: 2,
+    [0]: 0,
+    [5]: 1,
+};
+export const isFailedState = (s) => s === 6 || s === 4;
+export const isStateWithResult = (s) => s === 6 || s === 4 || s === 3;
+export const stateNodes = mapValues(statePriority, (priority, stateStr) => {
+    const state = Number(stateStr);
+    return { statusNode: true, state, priority };
+});
+export const cmpPriority = (a, b) => statePriority[b] - statePriority[a];
+export const maxPriority = (...states) => {
+    switch (states.length) {
+        case 0:
+            return 0;
+        case 1:
+            return states[0];
+        case 2:
+            return statePriority[states[0]] > statePriority[states[1]] ? states[0] : states[1];
+        default: {
+            let max = states[0];
+            for (let i = 1; i < states.length; i++) {
+                if (statePriority[max] < statePriority[states[i]]) {
+                    max = states[i];
+                }
+            }
+            return max;
+        }
+    }
+};
+export const statesInOrder = Object.keys(statePriority).map(s => Number(s)).sort(cmpPriority);
+export const terminalStatePriorities = {
+    [3]: 0,
+    [5]: 1,
+    [4]: 2,
+    [6]: 3,
+};
+export const makeEmptyCounts = () => {
+    return new Uint32Array(statesInOrder.length);
+};

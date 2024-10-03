@@ -1,1 +1,74 @@
-import{TreeSitterTokenizationRegistry as r}from"../languages.js";import{LineTokens as n}from"../tokens/lineTokens.js";import{StandardTokenType as a}from"../encodedTokenAttributes.js";import"./textModel.js";import"../services/treeSitterParserService.js";import"../textModelEvents.js";import{AbstractTokens as s}from"./tokens.js";import"../tokenizationTextModelPart.js";import{MutableDisposable as d}from"../../../base/common/lifecycle.js";class x extends s{constructor(e,t,i,o){super(t,i,o);this._treeSitterService=e;this._initialize()}_tokenizationSupport=null;_lastLanguageId;_tokensChangedListener=this._register(new d);_initialize(){const e=this.getLanguageId();(!this._tokenizationSupport||this._lastLanguageId!==e)&&(this._lastLanguageId=e,this._tokenizationSupport=r.get(e),this._tokensChangedListener.value=this._tokenizationSupport?.onDidChangeTokens(t=>{t.textModel===this._textModel&&this._onDidChangeTokens.fire(t.changes)}))}getLineTokens(e){const t=this._textModel.getLineContent(e);if(this._tokenizationSupport){const i=this._tokenizationSupport.tokenizeEncoded(e,this._textModel);if(i)return new n(i,t,this._languageIdCodec)}return n.createEmpty(t,this._languageIdCodec)}resetTokenization(e=!0){e&&this._onDidChangeTokens.fire({semanticTokensApplied:!1,ranges:[{fromLineNumber:1,toLineNumber:this._textModel.getLineCount()}]}),this._initialize()}handleDidChangeAttached(){}handleDidChangeContent(e){e.isFlush&&this.resetTokenization(!1)}forceTokenization(e){}hasAccurateTokensForLine(e){return!0}isCheapToTokenize(e){return!0}getTokenTypeIfInsertingCharacter(e,t,i){return a.Other}tokenizeLineWithEdit(e,t){return{mainLineTokens:null,additionalLines:null}}get hasTokens(){return this._treeSitterService.getParseResult(this._textModel)!==void 0}}export{x as TreeSitterTokens};
+import { TreeSitterTokenizationRegistry } from '../languages.js';
+import { LineTokens } from '../tokens/lineTokens.js';
+import { AbstractTokens } from './tokens.js';
+import { MutableDisposable } from '../../../base/common/lifecycle.js';
+export class TreeSitterTokens extends AbstractTokens {
+    constructor(_treeSitterService, languageIdCodec, textModel, languageId) {
+        super(languageIdCodec, textModel, languageId);
+        this._treeSitterService = _treeSitterService;
+        this._tokenizationSupport = null;
+        this._tokensChangedListener = this._register(new MutableDisposable());
+        this._initialize();
+    }
+    _initialize() {
+        const newLanguage = this.getLanguageId();
+        if (!this._tokenizationSupport || this._lastLanguageId !== newLanguage) {
+            this._lastLanguageId = newLanguage;
+            this._tokenizationSupport = TreeSitterTokenizationRegistry.get(newLanguage);
+            this._tokensChangedListener.value = this._tokenizationSupport?.onDidChangeTokens((e) => {
+                if (e.textModel === this._textModel) {
+                    this._onDidChangeTokens.fire(e.changes);
+                }
+            });
+        }
+    }
+    getLineTokens(lineNumber) {
+        const content = this._textModel.getLineContent(lineNumber);
+        if (this._tokenizationSupport) {
+            const rawTokens = this._tokenizationSupport.tokenizeEncoded(lineNumber, this._textModel);
+            if (rawTokens) {
+                return new LineTokens(rawTokens, content, this._languageIdCodec);
+            }
+        }
+        return LineTokens.createEmpty(content, this._languageIdCodec);
+    }
+    resetTokenization(fireTokenChangeEvent = true) {
+        if (fireTokenChangeEvent) {
+            this._onDidChangeTokens.fire({
+                semanticTokensApplied: false,
+                ranges: [
+                    {
+                        fromLineNumber: 1,
+                        toLineNumber: this._textModel.getLineCount(),
+                    },
+                ],
+            });
+        }
+        this._initialize();
+    }
+    handleDidChangeAttached() {
+    }
+    handleDidChangeContent(e) {
+        if (e.isFlush) {
+            this.resetTokenization(false);
+        }
+    }
+    forceTokenization(lineNumber) {
+    }
+    hasAccurateTokensForLine(lineNumber) {
+        return true;
+    }
+    isCheapToTokenize(lineNumber) {
+        return true;
+    }
+    getTokenTypeIfInsertingCharacter(lineNumber, column, character) {
+        return 0;
+    }
+    tokenizeLineWithEdit(lineNumber, edit) {
+        return { mainLineTokens: null, additionalLines: null };
+    }
+    get hasTokens() {
+        const hasTree = this._treeSitterService.getParseResult(this._textModel) !== undefined;
+        return hasTree;
+    }
+}

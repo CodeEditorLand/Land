@@ -1,1 +1,26 @@
-import*as c from"../../dom.js";import{ThemeIcon as o}from"../../../common/themables.js";const l=new RegExp(`(\\\\)?\\$\\((${o.iconNameExpression}(?:${o.iconModifierExpression})?)\\)`,"g");function d(n){const e=new Array;let r,s=0,t=0;for(;(r=l.exec(n))!==null;){t=r.index||0,s<t&&e.push(n.substring(s,t)),s=(r.index||0)+r[0].length;const[,a,i]=r;e.push(a?`$(${i})`:p({id:i}))}return s<n.length&&e.push(n.substring(s)),e}function p(n){const e=c.$("span");return e.classList.add(...o.asClassNameArray(n)),e}export{p as renderIcon,d as renderLabelWithIcons};
+import * as dom from '../../dom.js';
+import { ThemeIcon } from '../../../common/themables.js';
+const labelWithIconsRegex = new RegExp(`(\\\\)?\\$\\((${ThemeIcon.iconNameExpression}(?:${ThemeIcon.iconModifierExpression})?)\\)`, 'g');
+export function renderLabelWithIcons(text) {
+    const elements = new Array();
+    let match;
+    let textStart = 0, textStop = 0;
+    while ((match = labelWithIconsRegex.exec(text)) !== null) {
+        textStop = match.index || 0;
+        if (textStart < textStop) {
+            elements.push(text.substring(textStart, textStop));
+        }
+        textStart = (match.index || 0) + match[0].length;
+        const [, escaped, codicon] = match;
+        elements.push(escaped ? `$(${codicon})` : renderIcon({ id: codicon }));
+    }
+    if (textStart < text.length) {
+        elements.push(text.substring(textStart));
+    }
+    return elements;
+}
+export function renderIcon(icon) {
+    const node = dom.$(`span`);
+    node.classList.add(...ThemeIcon.asClassNameArray(icon));
+    return node;
+}

@@ -1,1 +1,147 @@
-import{AstNodeKind as u,ListAstNode as o}from"./ast.js";function p(e){if(e.length===0)return null;if(e.length===1)return e[0];let n=0;function l(){if(n>=e.length)return null;const r=n,f=e[r].listHeight;for(n++;n<e.length&&e[n].listHeight===f;)n++;return n-r>=2?a(r===0&&n===e.length?e:e.slice(r,n),!1):e[r]}let i=l(),t=l();if(!t)return i;for(let r=l();r;r=l())h(i,t)<=h(t,r)?(i=d(i,t),t=r):t=d(t,r);return d(i,t)}function a(e,n=!1){if(e.length===0)return null;if(e.length===1)return e[0];let l=e.length;for(;l>3;){const i=l>>1;for(let t=0;t<i;t++){const s=t<<1;e[t]=o.create23(e[s],e[s+1],s+3===l?e[s+2]:null,n)}l=i}return o.create23(e[0],e[1],l>=3?e[2]:null,n)}function h(e,n){return Math.abs(e.listHeight-n.listHeight)}function d(e,n){return e.listHeight===n.listHeight?o.create23(e,n,null,!1):e.listHeight>n.listHeight?c(e,n):g(n,e)}function c(e,n){e=e.toMutable();let l=e;const i=[];let t;for(;;){if(n.listHeight===l.listHeight){t=n;break}if(l.kind!==u.List)throw new Error("unexpected");i.push(l),l=l.makeLastElementMutable()}for(let s=i.length-1;s>=0;s--){const r=i[s];t?r.childrenLength>=3?t=o.create23(r.unappendChild(),t,null,!1):(r.appendChildOfSameHeight(t),t=void 0):r.handleChildrenChanged()}return t?o.create23(e,t,null,!1):e}function g(e,n){e=e.toMutable();let l=e;const i=[];for(;n.listHeight!==l.listHeight;){if(l.kind!==u.List)throw new Error("unexpected");i.push(l),l=l.makeFirstElementMutable()}let t=n;for(let s=i.length-1;s>=0;s--){const r=i[s];t?r.childrenLength>=3?t=o.create23(t,r.unprependChild(),null,!1):(r.prependChildOfSameHeight(t),t=void 0):r.handleChildrenChanged()}return t?o.create23(t,e,null,!1):e}export{p as concat23Trees,a as concat23TreesOfSameHeight};
+import { ListAstNode } from './ast.js';
+export function concat23Trees(items) {
+    if (items.length === 0) {
+        return null;
+    }
+    if (items.length === 1) {
+        return items[0];
+    }
+    let i = 0;
+    function readNode() {
+        if (i >= items.length) {
+            return null;
+        }
+        const start = i;
+        const height = items[start].listHeight;
+        i++;
+        while (i < items.length && items[i].listHeight === height) {
+            i++;
+        }
+        if (i - start >= 2) {
+            return concat23TreesOfSameHeight(start === 0 && i === items.length ? items : items.slice(start, i), false);
+        }
+        else {
+            return items[start];
+        }
+    }
+    let first = readNode();
+    let second = readNode();
+    if (!second) {
+        return first;
+    }
+    for (let item = readNode(); item; item = readNode()) {
+        if (heightDiff(first, second) <= heightDiff(second, item)) {
+            first = concat(first, second);
+            second = item;
+        }
+        else {
+            second = concat(second, item);
+        }
+    }
+    const result = concat(first, second);
+    return result;
+}
+export function concat23TreesOfSameHeight(items, createImmutableLists = false) {
+    if (items.length === 0) {
+        return null;
+    }
+    if (items.length === 1) {
+        return items[0];
+    }
+    let length = items.length;
+    while (length > 3) {
+        const newLength = length >> 1;
+        for (let i = 0; i < newLength; i++) {
+            const j = i << 1;
+            items[i] = ListAstNode.create23(items[j], items[j + 1], j + 3 === length ? items[j + 2] : null, createImmutableLists);
+        }
+        length = newLength;
+    }
+    return ListAstNode.create23(items[0], items[1], length >= 3 ? items[2] : null, createImmutableLists);
+}
+function heightDiff(node1, node2) {
+    return Math.abs(node1.listHeight - node2.listHeight);
+}
+function concat(node1, node2) {
+    if (node1.listHeight === node2.listHeight) {
+        return ListAstNode.create23(node1, node2, null, false);
+    }
+    else if (node1.listHeight > node2.listHeight) {
+        return append(node1, node2);
+    }
+    else {
+        return prepend(node2, node1);
+    }
+}
+function append(list, nodeToAppend) {
+    list = list.toMutable();
+    let curNode = list;
+    const parents = [];
+    let nodeToAppendOfCorrectHeight;
+    while (true) {
+        if (nodeToAppend.listHeight === curNode.listHeight) {
+            nodeToAppendOfCorrectHeight = nodeToAppend;
+            break;
+        }
+        if (curNode.kind !== 4) {
+            throw new Error('unexpected');
+        }
+        parents.push(curNode);
+        curNode = curNode.makeLastElementMutable();
+    }
+    for (let i = parents.length - 1; i >= 0; i--) {
+        const parent = parents[i];
+        if (nodeToAppendOfCorrectHeight) {
+            if (parent.childrenLength >= 3) {
+                nodeToAppendOfCorrectHeight = ListAstNode.create23(parent.unappendChild(), nodeToAppendOfCorrectHeight, null, false);
+            }
+            else {
+                parent.appendChildOfSameHeight(nodeToAppendOfCorrectHeight);
+                nodeToAppendOfCorrectHeight = undefined;
+            }
+        }
+        else {
+            parent.handleChildrenChanged();
+        }
+    }
+    if (nodeToAppendOfCorrectHeight) {
+        return ListAstNode.create23(list, nodeToAppendOfCorrectHeight, null, false);
+    }
+    else {
+        return list;
+    }
+}
+function prepend(list, nodeToAppend) {
+    list = list.toMutable();
+    let curNode = list;
+    const parents = [];
+    while (nodeToAppend.listHeight !== curNode.listHeight) {
+        if (curNode.kind !== 4) {
+            throw new Error('unexpected');
+        }
+        parents.push(curNode);
+        curNode = curNode.makeFirstElementMutable();
+    }
+    let nodeToPrependOfCorrectHeight = nodeToAppend;
+    for (let i = parents.length - 1; i >= 0; i--) {
+        const parent = parents[i];
+        if (nodeToPrependOfCorrectHeight) {
+            if (parent.childrenLength >= 3) {
+                nodeToPrependOfCorrectHeight = ListAstNode.create23(nodeToPrependOfCorrectHeight, parent.unprependChild(), null, false);
+            }
+            else {
+                parent.prependChildOfSameHeight(nodeToPrependOfCorrectHeight);
+                nodeToPrependOfCorrectHeight = undefined;
+            }
+        }
+        else {
+            parent.handleChildrenChanged();
+        }
+    }
+    if (nodeToPrependOfCorrectHeight) {
+        return ListAstNode.create23(nodeToPrependOfCorrectHeight, list, null, false);
+    }
+    else {
+        return list;
+    }
+}

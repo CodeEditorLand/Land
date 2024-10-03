@@ -1,1 +1,354 @@
-var w=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var h=(p,s,t,e)=>{for(var o=e>1?void 0:e?D(s,t):s,i=p.length-1,r;i>=0;i--)(r=p[i])&&(o=(e?r(s,t,o):r(o))||o);return e&&o&&w(s,t,o),o},n=(p,s)=>(t,e)=>s(t,e,p);import"./media/editortabscontrol.css";import{localize as m}from"../../../../nls.js";import{applyDragImage as M,DataTransfers as V}from"../../../../base/browser/dnd.js";import{getActiveWindow as K,getWindow as H,isMouseEvent as O}from"../../../../base/browser/dom.js";import{StandardMouseEvent as P}from"../../../../base/browser/mouseEvent.js";import{ActionsOrientation as k,prepareActions as I}from"../../../../base/browser/ui/actionbar/actionbar.js";import{ActionRunner as L}from"../../../../base/common/actions.js";import"../../../../base/common/keybindings.js";import{DisposableStore as g}from"../../../../base/common/lifecycle.js";import{createActionViewItem as G}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import{MenuId as E}from"../../../../platform/actions/common/actions.js";import{IContextKeyService as b}from"../../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as R}from"../../../../platform/contextview/browser/contextView.js";import{IInstantiationService as B}from"../../../../platform/instantiation/common/instantiation.js";import{IKeybindingService as F}from"../../../../platform/keybinding/common/keybinding.js";import{INotificationService as _}from"../../../../platform/notification/common/notification.js";import{IQuickInputService as N}from"../../../../platform/quickinput/common/quickInput.js";import{listActiveSelectionBackground as W,listActiveSelectionForeground as Y}from"../../../../platform/theme/common/colorRegistry.js";import{IThemeService as X,Themable as Q}from"../../../../platform/theme/common/themeService.js";import{DraggedEditorGroupIdentifier as l,fillEditorsDragData as U,isWindowDraggedOver as $}from"../../dnd.js";import{EditorPane as q}from"./editorPane.js";import"./editor.js";import{EditorResourceAccessor as z,SideBySideEditor as Z,EditorsOrder as j,EditorInputCapabilities as f,Verbosity as J}from"../../../common/editor.js";import"../../../common/editor/editorInput.js";import{ResourceContextKey as tt,ActiveEditorPinnedContext as et,ActiveEditorStickyContext as ot,ActiveEditorGroupLockedContext as it,ActiveEditorCanSplitInGroupContext as rt,SideBySideEditorActiveContext as nt,ActiveEditorFirstInGroupContext as st,ActiveEditorAvailableEditorIdsContext as dt,applyAvailableEditorIds as at,ActiveEditorLastInGroupContext as ct}from"../../../common/contextkeys.js";import{AnchorAlignment as pt}from"../../../../base/browser/ui/contextview/contextview.js";import{assertIsDefined as y}from"../../../../base/common/types.js";import{isFirefox as lt}from"../../../../base/browser/browser.js";import{isCancellationError as ut}from"../../../../base/common/errors.js";import{SideBySideEditorInput as vt}from"../../../common/editor/sideBySideEditorInput.js";import{WorkbenchToolBar as ht}from"../../../../platform/actions/browser/toolbar.js";import{LocalSelectionTransfer as u}from"../../../../platform/dnd/browser/dnd.js";import"../../../../editor/common/services/treeViewsDnd.js";import{IEditorResolverService as mt}from"../../../services/editor/common/editorResolverService.js";import"./editorTitleControl.js";import"../../../common/editor/editorGroupModel.js";import{EDITOR_CORE_NAVIGATION_COMMANDS as It}from"./editorCommands.js";import{MergeGroupMode as x}from"../../../services/editor/common/editorGroupsService.js";import{isMacintosh as A}from"../../../../base/common/platform.js";import{IHostService as gt}from"../../../services/host/browser/host.js";import{ServiceCollection as Et}from"../../../../platform/instantiation/common/serviceCollection.js";import"../../../../base/browser/ui/hover/hoverDelegate.js";import{getDefaultHoverDelegate as bt}from"../../../../base/browser/ui/hover/hoverDelegateFactory.js";import"../../../../base/browser/ui/actionbar/actionViewItems.js";import{MarkdownString as ft}from"../../../../base/common/htmlContent.js";import"../../../../base/browser/ui/hover/hover.js";class yt extends L{constructor(t){super();this.context=t}run(t,e){let o=this.context;return e?.preserveFocus&&(o={...this.context,preserveFocus:!0}),super.run(t,o)}}let d=class extends Q{constructor(t,e,o,i,r,a,v,c,xt,At,Ct,C,Tt,St){super(C);this.parent=t;this.editorPartsView=e;this.groupsView=o;this.groupView=i;this.tabsModel=r;this.contextMenuService=a;this.instantiationService=v;this.contextKeyService=c;this.keybindingService=xt;this.notificationService=At;this.quickInputService=Ct;this.editorResolverService=Tt;this.hostService=St;this.renderDropdownAsChildElement=!1,this.tabsHoverDelegate=bt("mouse");const T=this.create(t);this.contextMenuContextKeyService=this._register(this.contextKeyService.createScoped(T));const S=this._register(this.instantiationService.createChild(new Et([b,this.contextMenuContextKeyService])));this.resourceContext=this._register(S.createInstance(tt)),this.editorPinnedContext=et.bindTo(this.contextMenuContextKeyService),this.editorIsFirstContext=st.bindTo(this.contextMenuContextKeyService),this.editorIsLastContext=ct.bindTo(this.contextMenuContextKeyService),this.editorStickyContext=ot.bindTo(this.contextMenuContextKeyService),this.editorAvailableEditorIds=dt.bindTo(this.contextMenuContextKeyService),this.editorCanSplitInGroupContext=rt.bindTo(this.contextMenuContextKeyService),this.sideBySideEditorContext=nt.bindTo(this.contextMenuContextKeyService),this.groupLockedContext=it.bindTo(this.contextMenuContextKeyService)}editorTransfer=u.getInstance();groupTransfer=u.getInstance();treeItemsTransfer=u.getInstance();static EDITOR_TAB_HEIGHT={normal:35,compact:22};editorActionsToolbarContainer;editorActionsToolbar;editorActionsToolbarDisposables=this._register(new g);editorActionsDisposables=this._register(new g);contextMenuContextKeyService;resourceContext;editorPinnedContext;editorIsFirstContext;editorIsLastContext;editorStickyContext;editorAvailableEditorIds;editorCanSplitInGroupContext;sideBySideEditorContext;groupLockedContext;renderDropdownAsChildElement;tabsHoverDelegate;create(t){return this.updateTabHeight(),t}get editorActionsEnabled(){return this.groupsView.partOptions.editorActionsLocation==="default"&&this.groupsView.partOptions.showTabs!=="none"}createEditorActionsToolBar(t,e){this.editorActionsToolbarContainer=document.createElement("div"),this.editorActionsToolbarContainer.classList.add(...e),t.appendChild(this.editorActionsToolbarContainer),this.handleEditorActionToolBarVisibility(this.editorActionsToolbarContainer)}handleEditorActionToolBarVisibility(t){const e=this.editorActionsEnabled,o=!!this.editorActionsToolbar;e&&!o?this.doCreateEditorActionsToolBar(t):!e&&o&&(this.editorActionsToolbar?.getElement().remove(),this.editorActionsToolbar=void 0,this.editorActionsToolbarDisposables.clear(),this.editorActionsDisposables.clear()),t.classList.toggle("hidden",!e)}doCreateEditorActionsToolBar(t){const e={groupId:this.groupView.id};this.editorActionsToolbar=this.editorActionsToolbarDisposables.add(this.instantiationService.createInstance(ht,t,{actionViewItemProvider:(o,i)=>this.actionViewItemProvider(o,i),orientation:k.HORIZONTAL,ariaLabel:m("ariaLabelEditorActions","Editor actions"),getKeyBinding:o=>this.getKeybinding(o),actionRunner:this.editorActionsToolbarDisposables.add(new yt(e)),anchorAlignmentProvider:()=>pt.RIGHT,renderDropdownAsChildElement:this.renderDropdownAsChildElement,telemetrySource:"editorPart",resetMenu:E.EditorTitle,overflowBehavior:{maxItems:9,exempted:It},highlightToggledItems:!0})),this.editorActionsToolbar.context=e,this.editorActionsToolbarDisposables.add(this.editorActionsToolbar.actionRunner.onDidRun(o=>{o.error&&!ut(o.error)&&this.notificationService.error(o.error)}))}actionViewItemProvider(t,e){const o=this.groupView.activeEditorPane;if(o instanceof q){const i=o.getActionViewItem(t,e);if(i)return i}return G(this.instantiationService,t,{...e,menuAsChild:this.renderDropdownAsChildElement})}updateEditorActionsToolbar(){if(!this.editorActionsEnabled)return;this.editorActionsDisposables.clear();const t=this.groupView.createEditorActions(this.editorActionsDisposables);this.editorActionsDisposables.add(t.onDidChange(()=>this.updateEditorActionsToolbar()));const e=y(this.editorActionsToolbar),{primary:o,secondary:i}=this.prepareEditorActions(t.actions);e.setActions(I(o),I(i))}getEditorPaneAwareContextKeyService(){return this.groupView.activeEditorPane?.scopedContextKeyService??this.contextKeyService}clearEditorActionsToolbar(){if(!this.editorActionsEnabled)return;y(this.editorActionsToolbar).setActions([],[])}onGroupDragStart(t,e){if(t.target!==e)return!1;const o=this.isNewWindowOperation(t);this.groupTransfer.setData([new l(this.groupView.id)],l.prototype),t.dataTransfer&&(t.dataTransfer.effectAllowed="copyMove");let i=!1;if(this.groupsView.partOptions.showTabs==="multiple"?i=this.doFillResourceDataTransfers(this.groupView.getEditors(j.SEQUENTIAL),t,o):this.groupView.activeEditor&&(i=this.doFillResourceDataTransfers([this.groupView.activeEditor],t,o)),!i&&lt&&t.dataTransfer?.setData(V.TEXT,String(this.groupView.label)),this.groupView.activeEditor){let r=this.groupView.activeEditor.getName();this.groupsView.partOptions.showTabs==="multiple"&&this.groupView.count>1&&(r=m("draggedEditorGroup","{0} (+{1})",r,this.groupView.count-1)),M(t,r,"monaco-editor-group-drag-image",this.getColor(W),this.getColor(Y))}return o}async onGroupDragEnd(t,e,o,i){if(this.groupTransfer.clearData(l.prototype),t.target!==o||!i||$())return;const r=await this.maybeCreateAuxiliaryEditorPartAt(t,o);if(!r)return;const a=r.activeGroup;this.groupsView.mergeGroup(this.groupView,a.id,{mode:this.isMoveOperation(e??t,a.id)?x.MOVE_EDITORS:x.COPY_EDITORS}),a.focus()}async maybeCreateAuxiliaryEditorPartAt(t,e){const{point:o,display:i}=await this.hostService.getCursorScreenPoint()??{point:{x:t.screenX,y:t.screenY}},r=K();if(r.document.visibilityState==="visible"&&r.document.hasFocus()&&o.x>=r.screenX&&o.x<=r.screenX+r.outerWidth&&o.y>=r.screenY&&o.y<=r.screenY+r.outerHeight)return;const a=e.offsetWidth/2,v=30+e.offsetHeight/2,c={x:o.x-a,y:o.y-v};return i&&(c.x<i.x&&(c.x=i.x),c.y<i.y&&(c.y=i.y)),this.editorPartsView.createAuxiliaryEditorPart({bounds:c})}isNewWindowOperation(t){return this.groupsView.partOptions.dragToOpenWindow?!t.altKey:t.altKey}isMoveOperation(t,e,o){return o?.hasCapability(f.Singleton)?!0:!(t.ctrlKey&&!A||t.altKey&&A)||e===this.groupView.id}doFillResourceDataTransfers(t,e,o){return t.length?(this.instantiationService.invokeFunction(U,t.map(i=>({editor:i,groupId:this.groupView.id})),e,{disableStandardTransfer:o}),!0):!1}onTabContextMenu(t,e,o){this.resourceContext.set(z.getOriginalUri(t,{supportSideBySide:Z.PRIMARY})),this.editorPinnedContext.set(this.tabsModel.isPinned(t)),this.editorIsFirstContext.set(this.tabsModel.isFirst(t)),this.editorIsLastContext.set(this.tabsModel.isLast(t)),this.editorStickyContext.set(this.tabsModel.isSticky(t)),this.groupLockedContext.set(this.tabsModel.isLocked),this.editorCanSplitInGroupContext.set(t.hasCapability(f.CanSplitInGroup)),this.sideBySideEditorContext.set(t.typeId===vt.ID),at(this.editorAvailableEditorIds,t,this.editorResolverService);let i=o;O(e)&&(i=new P(H(o),e)),this.contextMenuService.showContextMenu({getAnchor:()=>i,menuId:E.EditorTitleContext,menuActionOptions:{shouldForwardArgs:!0,arg:this.resourceContext.get()},contextKeyService:this.contextMenuContextKeyService,getActionsContext:()=>({groupId:this.groupView.id,editorIndex:this.groupView.getIndexOfEditor(t)}),getKeyBinding:r=>this.keybindingService.lookupKeybinding(r.id,this.contextMenuContextKeyService),onHide:()=>this.groupsView.activeGroup.focus()})}getKeybinding(t){return this.keybindingService.lookupKeybinding(t.id,this.getEditorPaneAwareContextKeyService())}getKeybindingLabel(t){const e=this.getKeybinding(t);return e?e.getLabel()??void 0:void 0}get tabHeight(){return this.groupsView.partOptions.tabHeight!=="compact"?d.EDITOR_TAB_HEIGHT.normal:d.EDITOR_TAB_HEIGHT.compact}getHoverTitle(t){const e=t.getTitle(J.LONG);return this.tabsModel.isPinned(t)?e:{markdown:new ft("",{supportThemeIcons:!0,isTrusted:!0}).appendText(e).appendMarkdown(' (_preview_ [$(gear)](command:workbench.action.openSettings?%5B%22workbench.editor.enablePreview%22%5D "Configure Preview Mode"))'),markdownNotSupportedFallback:e+" (preview)"}}getHoverDelegate(){return this.tabsHoverDelegate}updateTabHeight(){this.parent.style.setProperty("--editor-group-tab-height",`${this.tabHeight}px`)}updateOptions(t,e){t.tabHeight!==e.tabHeight&&this.updateTabHeight(),(t.editorActionsLocation!==e.editorActionsLocation||t.showTabs!==e.showTabs)&&this.editorActionsToolbarContainer&&(this.handleEditorActionToolBarVisibility(this.editorActionsToolbarContainer),this.updateEditorActionsToolbar())}};d=h([n(5,R),n(6,B),n(7,b),n(8,F),n(9,_),n(10,N),n(11,X),n(12,mt),n(13,gt)],d);export{yt as EditorCommandsContextActionRunner,d as EditorTabsControl};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var EditorTabsControl_1;
+import './media/editortabscontrol.css';
+import { localize } from '../../../../nls.js';
+import { applyDragImage, DataTransfers } from '../../../../base/browser/dnd.js';
+import { getActiveWindow, getWindow, isMouseEvent } from '../../../../base/browser/dom.js';
+import { StandardMouseEvent } from '../../../../base/browser/mouseEvent.js';
+import { prepareActions } from '../../../../base/browser/ui/actionbar/actionbar.js';
+import { ActionRunner } from '../../../../base/common/actions.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { createActionViewItem } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { MenuId } from '../../../../platform/actions/common/actions.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { listActiveSelectionBackground, listActiveSelectionForeground } from '../../../../platform/theme/common/colorRegistry.js';
+import { IThemeService, Themable } from '../../../../platform/theme/common/themeService.js';
+import { DraggedEditorGroupIdentifier, fillEditorsDragData, isWindowDraggedOver } from '../../dnd.js';
+import { EditorPane } from './editorPane.js';
+import { EditorResourceAccessor, SideBySideEditor } from '../../../common/editor.js';
+import { ResourceContextKey, ActiveEditorPinnedContext, ActiveEditorStickyContext, ActiveEditorGroupLockedContext, ActiveEditorCanSplitInGroupContext, SideBySideEditorActiveContext, ActiveEditorFirstInGroupContext, ActiveEditorAvailableEditorIdsContext, applyAvailableEditorIds, ActiveEditorLastInGroupContext } from '../../../common/contextkeys.js';
+import { assertIsDefined } from '../../../../base/common/types.js';
+import { isFirefox } from '../../../../base/browser/browser.js';
+import { isCancellationError } from '../../../../base/common/errors.js';
+import { SideBySideEditorInput } from '../../../common/editor/sideBySideEditorInput.js';
+import { WorkbenchToolBar } from '../../../../platform/actions/browser/toolbar.js';
+import { LocalSelectionTransfer } from '../../../../platform/dnd/browser/dnd.js';
+import { IEditorResolverService } from '../../../services/editor/common/editorResolverService.js';
+import { EDITOR_CORE_NAVIGATION_COMMANDS } from './editorCommands.js';
+import { isMacintosh } from '../../../../base/common/platform.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { getDefaultHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
+export class EditorCommandsContextActionRunner extends ActionRunner {
+    constructor(context) {
+        super();
+        this.context = context;
+    }
+    run(action, context) {
+        let mergedContext = this.context;
+        if (context?.preserveFocus) {
+            mergedContext = {
+                ...this.context,
+                preserveFocus: true
+            };
+        }
+        return super.run(action, mergedContext);
+    }
+}
+let EditorTabsControl = class EditorTabsControl extends Themable {
+    static { EditorTabsControl_1 = this; }
+    static { this.EDITOR_TAB_HEIGHT = {
+        normal: 35,
+        compact: 22
+    }; }
+    constructor(parent, editorPartsView, groupsView, groupView, tabsModel, contextMenuService, instantiationService, contextKeyService, keybindingService, notificationService, quickInputService, themeService, editorResolverService, hostService) {
+        super(themeService);
+        this.parent = parent;
+        this.editorPartsView = editorPartsView;
+        this.groupsView = groupsView;
+        this.groupView = groupView;
+        this.tabsModel = tabsModel;
+        this.contextMenuService = contextMenuService;
+        this.instantiationService = instantiationService;
+        this.contextKeyService = contextKeyService;
+        this.keybindingService = keybindingService;
+        this.notificationService = notificationService;
+        this.quickInputService = quickInputService;
+        this.editorResolverService = editorResolverService;
+        this.hostService = hostService;
+        this.editorTransfer = LocalSelectionTransfer.getInstance();
+        this.groupTransfer = LocalSelectionTransfer.getInstance();
+        this.treeItemsTransfer = LocalSelectionTransfer.getInstance();
+        this.editorActionsToolbarDisposables = this._register(new DisposableStore());
+        this.editorActionsDisposables = this._register(new DisposableStore());
+        this.renderDropdownAsChildElement = false;
+        this.tabsHoverDelegate = getDefaultHoverDelegate('mouse');
+        const container = this.create(parent);
+        this.contextMenuContextKeyService = this._register(this.contextKeyService.createScoped(container));
+        const scopedInstantiationService = this._register(this.instantiationService.createChild(new ServiceCollection([IContextKeyService, this.contextMenuContextKeyService])));
+        this.resourceContext = this._register(scopedInstantiationService.createInstance(ResourceContextKey));
+        this.editorPinnedContext = ActiveEditorPinnedContext.bindTo(this.contextMenuContextKeyService);
+        this.editorIsFirstContext = ActiveEditorFirstInGroupContext.bindTo(this.contextMenuContextKeyService);
+        this.editorIsLastContext = ActiveEditorLastInGroupContext.bindTo(this.contextMenuContextKeyService);
+        this.editorStickyContext = ActiveEditorStickyContext.bindTo(this.contextMenuContextKeyService);
+        this.editorAvailableEditorIds = ActiveEditorAvailableEditorIdsContext.bindTo(this.contextMenuContextKeyService);
+        this.editorCanSplitInGroupContext = ActiveEditorCanSplitInGroupContext.bindTo(this.contextMenuContextKeyService);
+        this.sideBySideEditorContext = SideBySideEditorActiveContext.bindTo(this.contextMenuContextKeyService);
+        this.groupLockedContext = ActiveEditorGroupLockedContext.bindTo(this.contextMenuContextKeyService);
+    }
+    create(parent) {
+        this.updateTabHeight();
+        return parent;
+    }
+    get editorActionsEnabled() {
+        return this.groupsView.partOptions.editorActionsLocation === 'default' && this.groupsView.partOptions.showTabs !== 'none';
+    }
+    createEditorActionsToolBar(parent, classes) {
+        this.editorActionsToolbarContainer = document.createElement('div');
+        this.editorActionsToolbarContainer.classList.add(...classes);
+        parent.appendChild(this.editorActionsToolbarContainer);
+        this.handleEditorActionToolBarVisibility(this.editorActionsToolbarContainer);
+    }
+    handleEditorActionToolBarVisibility(container) {
+        const editorActionsEnabled = this.editorActionsEnabled;
+        const editorActionsVisible = !!this.editorActionsToolbar;
+        if (editorActionsEnabled && !editorActionsVisible) {
+            this.doCreateEditorActionsToolBar(container);
+        }
+        else if (!editorActionsEnabled && editorActionsVisible) {
+            this.editorActionsToolbar?.getElement().remove();
+            this.editorActionsToolbar = undefined;
+            this.editorActionsToolbarDisposables.clear();
+            this.editorActionsDisposables.clear();
+        }
+        container.classList.toggle('hidden', !editorActionsEnabled);
+    }
+    doCreateEditorActionsToolBar(container) {
+        const context = { groupId: this.groupView.id };
+        this.editorActionsToolbar = this.editorActionsToolbarDisposables.add(this.instantiationService.createInstance(WorkbenchToolBar, container, {
+            actionViewItemProvider: (action, options) => this.actionViewItemProvider(action, options),
+            orientation: 0,
+            ariaLabel: localize('ariaLabelEditorActions', "Editor actions"),
+            getKeyBinding: action => this.getKeybinding(action),
+            actionRunner: this.editorActionsToolbarDisposables.add(new EditorCommandsContextActionRunner(context)),
+            anchorAlignmentProvider: () => 1,
+            renderDropdownAsChildElement: this.renderDropdownAsChildElement,
+            telemetrySource: 'editorPart',
+            resetMenu: MenuId.EditorTitle,
+            overflowBehavior: { maxItems: 9, exempted: EDITOR_CORE_NAVIGATION_COMMANDS },
+            highlightToggledItems: true
+        }));
+        this.editorActionsToolbar.context = context;
+        this.editorActionsToolbarDisposables.add(this.editorActionsToolbar.actionRunner.onDidRun(e => {
+            if (e.error && !isCancellationError(e.error)) {
+                this.notificationService.error(e.error);
+            }
+        }));
+    }
+    actionViewItemProvider(action, options) {
+        const activeEditorPane = this.groupView.activeEditorPane;
+        if (activeEditorPane instanceof EditorPane) {
+            const result = activeEditorPane.getActionViewItem(action, options);
+            if (result) {
+                return result;
+            }
+        }
+        return createActionViewItem(this.instantiationService, action, { ...options, menuAsChild: this.renderDropdownAsChildElement });
+    }
+    updateEditorActionsToolbar() {
+        if (!this.editorActionsEnabled) {
+            return;
+        }
+        this.editorActionsDisposables.clear();
+        const editorActions = this.groupView.createEditorActions(this.editorActionsDisposables);
+        this.editorActionsDisposables.add(editorActions.onDidChange(() => this.updateEditorActionsToolbar()));
+        const editorActionsToolbar = assertIsDefined(this.editorActionsToolbar);
+        const { primary, secondary } = this.prepareEditorActions(editorActions.actions);
+        editorActionsToolbar.setActions(prepareActions(primary), prepareActions(secondary));
+    }
+    getEditorPaneAwareContextKeyService() {
+        return this.groupView.activeEditorPane?.scopedContextKeyService ?? this.contextKeyService;
+    }
+    clearEditorActionsToolbar() {
+        if (!this.editorActionsEnabled) {
+            return;
+        }
+        const editorActionsToolbar = assertIsDefined(this.editorActionsToolbar);
+        editorActionsToolbar.setActions([], []);
+    }
+    onGroupDragStart(e, element) {
+        if (e.target !== element) {
+            return false;
+        }
+        const isNewWindowOperation = this.isNewWindowOperation(e);
+        this.groupTransfer.setData([new DraggedEditorGroupIdentifier(this.groupView.id)], DraggedEditorGroupIdentifier.prototype);
+        if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = 'copyMove';
+        }
+        let hasDataTransfer = false;
+        if (this.groupsView.partOptions.showTabs === 'multiple') {
+            hasDataTransfer = this.doFillResourceDataTransfers(this.groupView.getEditors(1), e, isNewWindowOperation);
+        }
+        else {
+            if (this.groupView.activeEditor) {
+                hasDataTransfer = this.doFillResourceDataTransfers([this.groupView.activeEditor], e, isNewWindowOperation);
+            }
+        }
+        if (!hasDataTransfer && isFirefox) {
+            e.dataTransfer?.setData(DataTransfers.TEXT, String(this.groupView.label));
+        }
+        if (this.groupView.activeEditor) {
+            let label = this.groupView.activeEditor.getName();
+            if (this.groupsView.partOptions.showTabs === 'multiple' && this.groupView.count > 1) {
+                label = localize('draggedEditorGroup', "{0} (+{1})", label, this.groupView.count - 1);
+            }
+            applyDragImage(e, label, 'monaco-editor-group-drag-image', this.getColor(listActiveSelectionBackground), this.getColor(listActiveSelectionForeground));
+        }
+        return isNewWindowOperation;
+    }
+    async onGroupDragEnd(e, previousDragEvent, element, isNewWindowOperation) {
+        this.groupTransfer.clearData(DraggedEditorGroupIdentifier.prototype);
+        if (e.target !== element ||
+            !isNewWindowOperation ||
+            isWindowDraggedOver()) {
+            return;
+        }
+        const auxiliaryEditorPart = await this.maybeCreateAuxiliaryEditorPartAt(e, element);
+        if (!auxiliaryEditorPart) {
+            return;
+        }
+        const targetGroup = auxiliaryEditorPart.activeGroup;
+        this.groupsView.mergeGroup(this.groupView, targetGroup.id, {
+            mode: this.isMoveOperation(previousDragEvent ?? e, targetGroup.id) ? 1 : 0
+        });
+        targetGroup.focus();
+    }
+    async maybeCreateAuxiliaryEditorPartAt(e, offsetElement) {
+        const { point, display } = await this.hostService.getCursorScreenPoint() ?? { point: { x: e.screenX, y: e.screenY } };
+        const window = getActiveWindow();
+        if (window.document.visibilityState === 'visible' && window.document.hasFocus()) {
+            if (point.x >= window.screenX && point.x <= window.screenX + window.outerWidth && point.y >= window.screenY && point.y <= window.screenY + window.outerHeight) {
+                return;
+            }
+        }
+        const offsetX = offsetElement.offsetWidth / 2;
+        const offsetY = 30 + offsetElement.offsetHeight / 2;
+        const bounds = {
+            x: point.x - offsetX,
+            y: point.y - offsetY
+        };
+        if (display) {
+            if (bounds.x < display.x) {
+                bounds.x = display.x;
+            }
+            if (bounds.y < display.y) {
+                bounds.y = display.y;
+            }
+        }
+        return this.editorPartsView.createAuxiliaryEditorPart({ bounds });
+    }
+    isNewWindowOperation(e) {
+        if (this.groupsView.partOptions.dragToOpenWindow) {
+            return !e.altKey;
+        }
+        return e.altKey;
+    }
+    isMoveOperation(e, sourceGroup, sourceEditor) {
+        if (sourceEditor?.hasCapability(8)) {
+            return true;
+        }
+        const isCopy = (e.ctrlKey && !isMacintosh) || (e.altKey && isMacintosh);
+        return (!isCopy || sourceGroup === this.groupView.id);
+    }
+    doFillResourceDataTransfers(editors, e, disableStandardTransfer) {
+        if (editors.length) {
+            this.instantiationService.invokeFunction(fillEditorsDragData, editors.map(editor => ({ editor, groupId: this.groupView.id })), e, { disableStandardTransfer });
+            return true;
+        }
+        return false;
+    }
+    onTabContextMenu(editor, e, node) {
+        this.resourceContext.set(EditorResourceAccessor.getOriginalUri(editor, { supportSideBySide: SideBySideEditor.PRIMARY }));
+        this.editorPinnedContext.set(this.tabsModel.isPinned(editor));
+        this.editorIsFirstContext.set(this.tabsModel.isFirst(editor));
+        this.editorIsLastContext.set(this.tabsModel.isLast(editor));
+        this.editorStickyContext.set(this.tabsModel.isSticky(editor));
+        this.groupLockedContext.set(this.tabsModel.isLocked);
+        this.editorCanSplitInGroupContext.set(editor.hasCapability(32));
+        this.sideBySideEditorContext.set(editor.typeId === SideBySideEditorInput.ID);
+        applyAvailableEditorIds(this.editorAvailableEditorIds, editor, this.editorResolverService);
+        let anchor = node;
+        if (isMouseEvent(e)) {
+            anchor = new StandardMouseEvent(getWindow(node), e);
+        }
+        this.contextMenuService.showContextMenu({
+            getAnchor: () => anchor,
+            menuId: MenuId.EditorTitleContext,
+            menuActionOptions: { shouldForwardArgs: true, arg: this.resourceContext.get() },
+            contextKeyService: this.contextMenuContextKeyService,
+            getActionsContext: () => ({ groupId: this.groupView.id, editorIndex: this.groupView.getIndexOfEditor(editor) }),
+            getKeyBinding: action => this.keybindingService.lookupKeybinding(action.id, this.contextMenuContextKeyService),
+            onHide: () => this.groupsView.activeGroup.focus()
+        });
+    }
+    getKeybinding(action) {
+        return this.keybindingService.lookupKeybinding(action.id, this.getEditorPaneAwareContextKeyService());
+    }
+    getKeybindingLabel(action) {
+        const keybinding = this.getKeybinding(action);
+        return keybinding ? keybinding.getLabel() ?? undefined : undefined;
+    }
+    get tabHeight() {
+        return this.groupsView.partOptions.tabHeight !== 'compact' ? EditorTabsControl_1.EDITOR_TAB_HEIGHT.normal : EditorTabsControl_1.EDITOR_TAB_HEIGHT.compact;
+    }
+    getHoverTitle(editor) {
+        const title = editor.getTitle(2);
+        if (!this.tabsModel.isPinned(editor)) {
+            return {
+                markdown: new MarkdownString('', { supportThemeIcons: true, isTrusted: true }).
+                    appendText(title).
+                    appendMarkdown(' (_preview_ [$(gear)](command:workbench.action.openSettings?%5B%22workbench.editor.enablePreview%22%5D "Configure Preview Mode"))'),
+                markdownNotSupportedFallback: title + ' (preview)'
+            };
+        }
+        return title;
+    }
+    getHoverDelegate() {
+        return this.tabsHoverDelegate;
+    }
+    updateTabHeight() {
+        this.parent.style.setProperty('--editor-group-tab-height', `${this.tabHeight}px`);
+    }
+    updateOptions(oldOptions, newOptions) {
+        if (oldOptions.tabHeight !== newOptions.tabHeight) {
+            this.updateTabHeight();
+        }
+        if (oldOptions.editorActionsLocation !== newOptions.editorActionsLocation ||
+            oldOptions.showTabs !== newOptions.showTabs) {
+            if (this.editorActionsToolbarContainer) {
+                this.handleEditorActionToolBarVisibility(this.editorActionsToolbarContainer);
+                this.updateEditorActionsToolbar();
+            }
+        }
+    }
+};
+EditorTabsControl = EditorTabsControl_1 = __decorate([
+    __param(5, IContextMenuService),
+    __param(6, IInstantiationService),
+    __param(7, IContextKeyService),
+    __param(8, IKeybindingService),
+    __param(9, INotificationService),
+    __param(10, IQuickInputService),
+    __param(11, IThemeService),
+    __param(12, IEditorResolverService),
+    __param(13, IHostService),
+    __metadata("design:paramtypes", [HTMLElement, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], EditorTabsControl);
+export { EditorTabsControl };

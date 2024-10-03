@@ -1,1 +1,85 @@
-import"../../../../base/common/color.js";import{Emitter as g}from"../../../../base/common/event.js";import{Disposable as d}from"../../../../base/common/lifecycle.js";import{Range as c}from"../../core/range.js";import"../../model.js";import"../../textModelBracketPairs.js";import"../decorationProvider.js";import"../textModel.js";import{editorBracketHighlightingForeground1 as p,editorBracketHighlightingForeground2 as m,editorBracketHighlightingForeground3 as h,editorBracketHighlightingForeground4 as u,editorBracketHighlightingForeground5 as C,editorBracketHighlightingForeground6 as f,editorBracketHighlightingUnexpectedBracketForeground as v}from"../../core/editorColorRegistry.js";import{registerThemingParticipant as k}from"../../../../platform/theme/common/themeService.js";import"../../textModelEvents.js";class w extends d{constructor(e){super();this.textModel=e;this.colorizationOptions=e.getOptions().bracketPairColorizationOptions,this._register(e.bracketPairs.onDidChange(r=>{this.onDidChangeEmitter.fire()}))}colorizationOptions;colorProvider=new s;onDidChangeEmitter=new g;onDidChange=this.onDidChangeEmitter.event;handleDidChangeOptions(e){this.colorizationOptions=this.textModel.getOptions().bracketPairColorizationOptions}getDecorationsInRange(e,r,a,o){return o?[]:r===void 0?[]:this.colorizationOptions.enabled?this.textModel.bracketPairs.getBracketsInRange(e,!0).map(n=>({id:`bracket${n.range.toString()}-${n.nestingLevel}`,options:{description:"BracketPairColorization",inlineClassName:this.colorProvider.getInlineClassName(n,this.colorizationOptions.independentColorPoolPerBracketType)},ownerId:0,range:n.range})).toArray():[]}getAllDecorations(e,r){return e===void 0?[]:this.colorizationOptions.enabled?this.getDecorationsInRange(new c(1,1,this.textModel.getLineCount(),1),e,r):[]}}class s{unexpectedClosingBracketClassName="unexpected-closing-bracket";getInlineClassName(i,e){return i.isInvalid?this.unexpectedClosingBracketClassName:this.getInlineClassNameOfLevel(e?i.nestingLevelOfEqualBracketType:i.nestingLevel)}getInlineClassNameOfLevel(i){return`bracket-highlighting-${i%30}`}}k((t,i)=>{const e=[p,m,h,u,C,f],r=new s;i.addRule(`.monaco-editor .${r.unexpectedClosingBracketClassName} { color: ${t.getColor(v)}; }`);const a=e.map(o=>t.getColor(o)).filter(o=>!!o).filter(o=>!o.isTransparent());for(let o=0;o<30;o++){const l=a[o%a.length];i.addRule(`.monaco-editor .${r.getInlineClassNameOfLevel(o)} { color: ${l}; }`)}});export{w as ColorizedBracketPairsDecorationProvider};
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { Range } from '../../core/range.js';
+import { editorBracketHighlightingForeground1, editorBracketHighlightingForeground2, editorBracketHighlightingForeground3, editorBracketHighlightingForeground4, editorBracketHighlightingForeground5, editorBracketHighlightingForeground6, editorBracketHighlightingUnexpectedBracketForeground } from '../../core/editorColorRegistry.js';
+import { registerThemingParticipant } from '../../../../platform/theme/common/themeService.js';
+export class ColorizedBracketPairsDecorationProvider extends Disposable {
+    constructor(textModel) {
+        super();
+        this.textModel = textModel;
+        this.colorProvider = new ColorProvider();
+        this.onDidChangeEmitter = new Emitter();
+        this.onDidChange = this.onDidChangeEmitter.event;
+        this.colorizationOptions = textModel.getOptions().bracketPairColorizationOptions;
+        this._register(textModel.bracketPairs.onDidChange(e => {
+            this.onDidChangeEmitter.fire();
+        }));
+    }
+    handleDidChangeOptions(e) {
+        this.colorizationOptions = this.textModel.getOptions().bracketPairColorizationOptions;
+    }
+    getDecorationsInRange(range, ownerId, filterOutValidation, onlyMinimapDecorations) {
+        if (onlyMinimapDecorations) {
+            return [];
+        }
+        if (ownerId === undefined) {
+            return [];
+        }
+        if (!this.colorizationOptions.enabled) {
+            return [];
+        }
+        const result = this.textModel.bracketPairs.getBracketsInRange(range, true).map(bracket => ({
+            id: `bracket${bracket.range.toString()}-${bracket.nestingLevel}`,
+            options: {
+                description: 'BracketPairColorization',
+                inlineClassName: this.colorProvider.getInlineClassName(bracket, this.colorizationOptions.independentColorPoolPerBracketType),
+            },
+            ownerId: 0,
+            range: bracket.range,
+        })).toArray();
+        return result;
+    }
+    getAllDecorations(ownerId, filterOutValidation) {
+        if (ownerId === undefined) {
+            return [];
+        }
+        if (!this.colorizationOptions.enabled) {
+            return [];
+        }
+        return this.getDecorationsInRange(new Range(1, 1, this.textModel.getLineCount(), 1), ownerId, filterOutValidation);
+    }
+}
+class ColorProvider {
+    constructor() {
+        this.unexpectedClosingBracketClassName = 'unexpected-closing-bracket';
+    }
+    getInlineClassName(bracket, independentColorPoolPerBracketType) {
+        if (bracket.isInvalid) {
+            return this.unexpectedClosingBracketClassName;
+        }
+        return this.getInlineClassNameOfLevel(independentColorPoolPerBracketType ? bracket.nestingLevelOfEqualBracketType : bracket.nestingLevel);
+    }
+    getInlineClassNameOfLevel(level) {
+        return `bracket-highlighting-${level % 30}`;
+    }
+}
+registerThemingParticipant((theme, collector) => {
+    const colors = [
+        editorBracketHighlightingForeground1,
+        editorBracketHighlightingForeground2,
+        editorBracketHighlightingForeground3,
+        editorBracketHighlightingForeground4,
+        editorBracketHighlightingForeground5,
+        editorBracketHighlightingForeground6
+    ];
+    const colorProvider = new ColorProvider();
+    collector.addRule(`.monaco-editor .${colorProvider.unexpectedClosingBracketClassName} { color: ${theme.getColor(editorBracketHighlightingUnexpectedBracketForeground)}; }`);
+    const colorValues = colors
+        .map(c => theme.getColor(c))
+        .filter((c) => !!c)
+        .filter(c => !c.isTransparent());
+    for (let level = 0; level < 30; level++) {
+        const color = colorValues[level % colorValues.length];
+        collector.addRule(`.monaco-editor .${colorProvider.getInlineClassNameOfLevel(level)} { color: ${color}; }`);
+    }
+});

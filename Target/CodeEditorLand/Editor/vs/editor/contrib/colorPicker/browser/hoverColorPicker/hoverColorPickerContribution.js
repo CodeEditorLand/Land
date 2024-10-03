@@ -1,1 +1,43 @@
-import{Disposable as n}from"../../../../../base/common/lifecycle.js";import{MouseTargetType as s}from"../../../../browser/editorBrowser.js";import{EditorOption as a}from"../../../../common/config/editorOptions.js";import{Range as d}from"../../../../common/core/range.js";import"../../../../common/editorCommon.js";import{ColorDecorationInjectedTextMarker as c}from"../colorDetector.js";import{ContentHoverController as u}from"../../../hover/browser/contentHoverController.js";import{HoverStartMode as l,HoverStartSource as m}from"../../../hover/browser/hoverOperation.js";class O extends n{constructor(r){super();this._editor=r;this._register(r.onMouseDown(t=>this.onMouseDown(t)))}static ID="editor.contrib.colorContribution";static RECOMPUTE_TIME=1e3;dispose(){super.dispose()}onMouseDown(r){const t=this._editor.getOption(a.colorDecoratorsActivatedOn);if(t!=="click"&&t!=="clickAndHover")return;const o=r.target;if(o.type!==s.CONTENT_TEXT||!o.detail.injectedText||o.detail.injectedText.options.attachedData!==c||!o.range)return;const e=this._editor.getContribution(u.ID);if(e&&!e.isColorPickerVisible){const i=new d(o.range.startLineNumber,o.range.startColumn+1,o.range.endLineNumber,o.range.endColumn+1);e.showContentHover(i,l.Immediate,m.Mouse,!1,!0)}}}export{O as HoverColorPickerContribution};
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { Range } from '../../../../common/core/range.js';
+import { ColorDecorationInjectedTextMarker } from '../colorDetector.js';
+import { ContentHoverController } from '../../../hover/browser/contentHoverController.js';
+export class HoverColorPickerContribution extends Disposable {
+    static { this.ID = 'editor.contrib.colorContribution'; }
+    static { this.RECOMPUTE_TIME = 1000; }
+    constructor(_editor) {
+        super();
+        this._editor = _editor;
+        this._register(_editor.onMouseDown((e) => this.onMouseDown(e)));
+    }
+    dispose() {
+        super.dispose();
+    }
+    onMouseDown(mouseEvent) {
+        const colorDecoratorsActivatedOn = this._editor.getOption(151);
+        if (colorDecoratorsActivatedOn !== 'click' && colorDecoratorsActivatedOn !== 'clickAndHover') {
+            return;
+        }
+        const target = mouseEvent.target;
+        if (target.type !== 6) {
+            return;
+        }
+        if (!target.detail.injectedText) {
+            return;
+        }
+        if (target.detail.injectedText.options.attachedData !== ColorDecorationInjectedTextMarker) {
+            return;
+        }
+        if (!target.range) {
+            return;
+        }
+        const hoverController = this._editor.getContribution(ContentHoverController.ID);
+        if (!hoverController) {
+            return;
+        }
+        if (!hoverController.isColorPickerVisible) {
+            const range = new Range(target.range.startLineNumber, target.range.startColumn + 1, target.range.endLineNumber, target.range.endColumn + 1);
+            hoverController.showContentHover(range, 1, 0, false, true);
+        }
+    }
+}

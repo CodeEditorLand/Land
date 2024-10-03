@@ -1,1 +1,70 @@
-import"../../../../../../editor/browser/editorExtensions.js";import{localize as i}from"../../../../../../nls.js";import{Action2 as a,registerAction2 as n}from"../../../../../../platform/actions/common/actions.js";import{IConfigurationService as s}from"../../../../../../platform/configuration/common/configuration.js";import{NotebookSetting as o}from"../../../common/notebookCommon.js";var c=(t=>(t.default="default",t.jupyter="jupyter",t.colab="colab",t))(c||{});const u={default:{[o.focusIndicator]:"gutter",[o.insertToolbarLocation]:"both",[o.globalToolbar]:!0,[o.cellToolbarLocation]:{default:"right"},[o.compactView]:!0,[o.showCellStatusBar]:"visible",[o.consolidatedRunButton]:!0,[o.undoRedoPerCell]:!1},jupyter:{[o.focusIndicator]:"gutter",[o.insertToolbarLocation]:"notebookToolbar",[o.globalToolbar]:!0,[o.cellToolbarLocation]:{default:"left"},[o.compactView]:!0,[o.showCellStatusBar]:"visible",[o.consolidatedRunButton]:!1,[o.undoRedoPerCell]:!0},colab:{[o.focusIndicator]:"border",[o.insertToolbarLocation]:"betweenCells",[o.globalToolbar]:!1,[o.cellToolbarLocation]:{default:"right"},[o.compactView]:!1,[o.showCellStatusBar]:"hidden",[o.consolidatedRunButton]:!0,[o.undoRedoPerCell]:!1}};async function f(r,e){const l=[];for(const t in e)l.push(r.updateValue(t,e[t]));await Promise.all(l)}n(class extends a{constructor(){super({id:"notebook.setProfile",title:i("setProfileTitle","Set Profile")})}async run(r,e){if(!d(e))return;const l=r.get(s);return f(l,u[e.profile])}});function d(r){const e=r;return e.profile==="colab"||e.profile==="default"||e.profile==="jupyter"}export{c as NotebookProfileType};
+import { localize } from '../../../../../../nls.js';
+import { Action2, registerAction2 } from '../../../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
+import { NotebookSetting } from '../../../common/notebookCommon.js';
+export var NotebookProfileType;
+(function (NotebookProfileType) {
+    NotebookProfileType["default"] = "default";
+    NotebookProfileType["jupyter"] = "jupyter";
+    NotebookProfileType["colab"] = "colab";
+})(NotebookProfileType || (NotebookProfileType = {}));
+const profiles = {
+    [NotebookProfileType.default]: {
+        [NotebookSetting.focusIndicator]: 'gutter',
+        [NotebookSetting.insertToolbarLocation]: 'both',
+        [NotebookSetting.globalToolbar]: true,
+        [NotebookSetting.cellToolbarLocation]: { default: 'right' },
+        [NotebookSetting.compactView]: true,
+        [NotebookSetting.showCellStatusBar]: 'visible',
+        [NotebookSetting.consolidatedRunButton]: true,
+        [NotebookSetting.undoRedoPerCell]: false
+    },
+    [NotebookProfileType.jupyter]: {
+        [NotebookSetting.focusIndicator]: 'gutter',
+        [NotebookSetting.insertToolbarLocation]: 'notebookToolbar',
+        [NotebookSetting.globalToolbar]: true,
+        [NotebookSetting.cellToolbarLocation]: { default: 'left' },
+        [NotebookSetting.compactView]: true,
+        [NotebookSetting.showCellStatusBar]: 'visible',
+        [NotebookSetting.consolidatedRunButton]: false,
+        [NotebookSetting.undoRedoPerCell]: true
+    },
+    [NotebookProfileType.colab]: {
+        [NotebookSetting.focusIndicator]: 'border',
+        [NotebookSetting.insertToolbarLocation]: 'betweenCells',
+        [NotebookSetting.globalToolbar]: false,
+        [NotebookSetting.cellToolbarLocation]: { default: 'right' },
+        [NotebookSetting.compactView]: false,
+        [NotebookSetting.showCellStatusBar]: 'hidden',
+        [NotebookSetting.consolidatedRunButton]: true,
+        [NotebookSetting.undoRedoPerCell]: false
+    }
+};
+async function applyProfile(configService, profile) {
+    const promises = [];
+    for (const settingKey in profile) {
+        promises.push(configService.updateValue(settingKey, profile[settingKey]));
+    }
+    await Promise.all(promises);
+}
+registerAction2(class extends Action2 {
+    constructor() {
+        super({
+            id: 'notebook.setProfile',
+            title: localize('setProfileTitle', "Set Profile")
+        });
+    }
+    async run(accessor, args) {
+        if (!isSetProfileArgs(args)) {
+            return;
+        }
+        const configService = accessor.get(IConfigurationService);
+        return applyProfile(configService, profiles[args.profile]);
+    }
+});
+function isSetProfileArgs(args) {
+    const setProfileArgs = args;
+    return setProfileArgs.profile === NotebookProfileType.colab ||
+        setProfileArgs.profile === NotebookProfileType.default ||
+        setProfileArgs.profile === NotebookProfileType.jupyter;
+}

@@ -1,1 +1,232 @@
-var g=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var C=(c,a,t,i)=>{for(var e=i>1?void 0:i?b(a,t):a,r=c.length-1,o;r>=0;r--)(o=c[r])&&(e=(i?o(a,t,e):o(e))||e);return i&&e&&g(a,t,e),e},d=(c,a)=>(t,i)=>a(t,i,c);import"./media/customEditor.css";import{coalesce as y}from"../../../../base/common/arrays.js";import{Emitter as _}from"../../../../base/common/event.js";import{Disposable as S,DisposableStore as D,toDisposable as R}from"../../../../base/common/lifecycle.js";import{Schemas as P}from"../../../../base/common/network.js";import{extname as I,isEqual as T}from"../../../../base/common/resources.js";import{assertIsDefined as h}from"../../../../base/common/types.js";import{URI as F}from"../../../../base/common/uri.js";import{RedoCommand as O,UndoCommand as U}from"../../../../editor/browser/editorExtensions.js";import"../../../../platform/editor/common/editor.js";import{FileOperation as G,IFileService as x}from"../../../../platform/files/common/files.js";import{IInstantiationService as A}from"../../../../platform/instantiation/common/instantiation.js";import{Registry as w}from"../../../../platform/registry/common/platform.js";import{IStorageService as K}from"../../../../platform/storage/common/storage.js";import{IUriIdentityService as M}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{DEFAULT_EDITOR_ASSOCIATION as N,EditorExtensions as L}from"../../../common/editor.js";import{DiffEditorInput as V}from"../../../common/editor/diffEditorInput.js";import"../../../common/editor/editorInput.js";import{CONTEXT_ACTIVE_CUSTOM_EDITOR_ID as B,CONTEXT_FOCUSED_CUSTOM_EDITOR_IS_EDITABLE as X,CustomEditorInfoCollection as v}from"../common/customEditor.js";import{CustomEditorModelManager as $}from"../common/customEditorModelManager.js";import{IEditorGroupsService as q}from"../../../services/editor/common/editorGroupsService.js";import{IEditorResolverService as z,RegisteredEditorPriority as Y}from"../../../services/editor/common/editorResolverService.js";import{IEditorService as j}from"../../../services/editor/common/editorService.js";import{ContributedCustomEditors as k}from"../common/contributedCustomEditors.js";import{CustomEditorInput as n}from"./customEditorInput.js";let E=class extends S{constructor(t,i,e,r,o,u,p){super();this.editorService=e;this.editorGroupService=r;this.instantiationService=o;this.uriIdentityService=u;this.editorResolverService=p;this._contributedEditors=this._register(new k(i)),this.editorResolverService.bufferChangeEvents(this.registerContributionPoints.bind(this)),this._register(this._contributedEditors.onChange(()=>{this.editorResolverService.bufferChangeEvents(this.registerContributionPoints.bind(this)),this._onDidChangeEditorTypes.fire()}));const l={contextKey:B,getGroupContextKeyValue:s=>this.getActiveCustomEditorId(s),onDidChange:this.onDidChangeEditorTypes},m={contextKey:X,getGroupContextKeyValue:s=>this.getCustomEditorIsEditable(s),onDidChange:this.onDidChangeEditorTypes};this._register(this.editorGroupService.registerContextKeyProvider(l)),this._register(this.editorGroupService.registerContextKeyProvider(m)),this._register(t.onDidRunOperation(s=>{s.isOperation(G.MOVE)&&this.handleMovedFileInOpenedFileEditors(s.resource,this.uriIdentityService.asCanonicalUri(s.target.resource))}));const f=105;this._register(U.addImplementation(f,"custom-editor",()=>this.withActiveCustomEditor(s=>s.undo()))),this._register(O.addImplementation(f,"custom-editor",()=>this.withActiveCustomEditor(s=>s.redo())))}_serviceBrand;_contributedEditors;_untitledCounter=0;_editorResolverDisposables=this._register(new D);_editorCapabilities=new Map;_models=new $;_onDidChangeEditorTypes=this._register(new _);onDidChangeEditorTypes=this._onDidChangeEditorTypes.event;_fileEditorFactory=w.as(L.EditorFactory).getFileEditorFactory();getEditorTypes(){return[...this._contributedEditors]}withActiveCustomEditor(t){const i=this.editorService.activeEditor;if(i instanceof n){const e=t(i);return e||!0}return!1}registerContributionPoints(){this._editorResolverDisposables.clear();for(const t of this._contributedEditors)for(const i of t.selector)i.filenamePattern&&this._editorResolverDisposables.add(this.editorResolverService.registerEditor(i.filenamePattern,{id:t.id,label:t.displayName,detail:t.providerDisplayName,priority:t.priority},{singlePerResource:()=>!(this.getCustomEditorCapabilities(t.id)?.supportsMultipleEditorsPerDocument??!1)},{createEditorInput:({resource:e},r)=>({editor:n.create(this.instantiationService,e,t.id,r.id)}),createUntitledEditorInput:({resource:e},r)=>({editor:n.create(this.instantiationService,e??F.from({scheme:P.untitled,authority:`Untitled-${this._untitledCounter++}`}),t.id,r.id)}),createDiffEditorInput:(e,r)=>({editor:this.createDiffEditorInput(e,t.id,r)})}))}createDiffEditorInput(t,i,e){const r=n.create(this.instantiationService,h(t.modified.resource),i,e.id,{customClasses:"modified"}),o=n.create(this.instantiationService,h(t.original.resource),i,e.id,{customClasses:"original"});return this.instantiationService.createInstance(V,t.label,t.description,o,r,!0)}get models(){return this._models}getCustomEditor(t){return this._contributedEditors.get(t)}getContributedCustomEditors(t){return new v(this._contributedEditors.getContributedEditors(t))}getUserConfiguredCustomEditors(t){const i=this.editorResolverService.getAssociationsForResource(t);return new v(y(i.map(e=>this._contributedEditors.get(e.viewType))))}getAllCustomEditors(t){return new v([...this.getUserConfiguredCustomEditors(t).allEditors,...this.getContributedCustomEditors(t).allEditors])}registerCustomEditorCapabilities(t,i){if(this._editorCapabilities.has(t))throw new Error(`Capabilities for ${t} already set`);return this._editorCapabilities.set(t,i),R(()=>{this._editorCapabilities.delete(t)})}getCustomEditorCapabilities(t){return this._editorCapabilities.get(t)}getActiveCustomEditorId(t){const i=t.activeEditorPane;return i?.input?.resource&&i?.input instanceof n?i.input.viewType:""}getCustomEditorIsEditable(t){const i=t.activeEditorPane;return i?.input?.resource?i?.input instanceof n:!1}async handleMovedFileInOpenedFileEditors(t,i){if(I(t).toLowerCase()===I(i).toLowerCase())return;const e=this.getAllCustomEditors(i);if(!e.allEditors.some(o=>o.priority!==Y.option))return;const r=new Map;for(const o of this.editorGroupService.groups)for(const u of o.editors)if(this._fileEditorFactory.isFileEditor(u)&&!(u instanceof n)&&T(u.resource,i)){let p=r.get(o.id);p||(p=[],r.set(o.id,p)),p.push(u)}if(r.size)for(const[o,u]of r)this.editorService.replaceEditors(u.map(p=>{let l;if(e.defaultEditor){const m=e.defaultEditor.id;l=n.create(this.instantiationService,i,m,o)}else l={resource:i,options:{override:N.id}};return{editor:p,replacement:l,options:{preserveFocus:!0}}}),o)}};E=C([d(0,x),d(1,K),d(2,j),d(3,q),d(4,A),d(5,M),d(6,z)],E);export{E as CustomEditorService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import './media/customEditor.css';
+import { coalesce } from '../../../../base/common/arrays.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { extname, isEqual } from '../../../../base/common/resources.js';
+import { assertIsDefined } from '../../../../base/common/types.js';
+import { URI } from '../../../../base/common/uri.js';
+import { RedoCommand, UndoCommand } from '../../../../editor/browser/editorExtensions.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { DEFAULT_EDITOR_ASSOCIATION, EditorExtensions } from '../../../common/editor.js';
+import { DiffEditorInput } from '../../../common/editor/diffEditorInput.js';
+import { CONTEXT_ACTIVE_CUSTOM_EDITOR_ID, CONTEXT_FOCUSED_CUSTOM_EDITOR_IS_EDITABLE, CustomEditorInfoCollection } from '../common/customEditor.js';
+import { CustomEditorModelManager } from '../common/customEditorModelManager.js';
+import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+import { IEditorResolverService, RegisteredEditorPriority } from '../../../services/editor/common/editorResolverService.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { ContributedCustomEditors } from '../common/contributedCustomEditors.js';
+import { CustomEditorInput } from './customEditorInput.js';
+let CustomEditorService = class CustomEditorService extends Disposable {
+    constructor(fileService, storageService, editorService, editorGroupService, instantiationService, uriIdentityService, editorResolverService) {
+        super();
+        this.editorService = editorService;
+        this.editorGroupService = editorGroupService;
+        this.instantiationService = instantiationService;
+        this.uriIdentityService = uriIdentityService;
+        this.editorResolverService = editorResolverService;
+        this._untitledCounter = 0;
+        this._editorResolverDisposables = this._register(new DisposableStore());
+        this._editorCapabilities = new Map();
+        this._models = new CustomEditorModelManager();
+        this._onDidChangeEditorTypes = this._register(new Emitter());
+        this.onDidChangeEditorTypes = this._onDidChangeEditorTypes.event;
+        this._fileEditorFactory = Registry.as(EditorExtensions.EditorFactory).getFileEditorFactory();
+        this._contributedEditors = this._register(new ContributedCustomEditors(storageService));
+        this.editorResolverService.bufferChangeEvents(this.registerContributionPoints.bind(this));
+        this._register(this._contributedEditors.onChange(() => {
+            this.editorResolverService.bufferChangeEvents(this.registerContributionPoints.bind(this));
+            this._onDidChangeEditorTypes.fire();
+        }));
+        const activeCustomEditorContextKeyProvider = {
+            contextKey: CONTEXT_ACTIVE_CUSTOM_EDITOR_ID,
+            getGroupContextKeyValue: group => this.getActiveCustomEditorId(group),
+            onDidChange: this.onDidChangeEditorTypes
+        };
+        const customEditorIsEditableContextKeyProvider = {
+            contextKey: CONTEXT_FOCUSED_CUSTOM_EDITOR_IS_EDITABLE,
+            getGroupContextKeyValue: group => this.getCustomEditorIsEditable(group),
+            onDidChange: this.onDidChangeEditorTypes
+        };
+        this._register(this.editorGroupService.registerContextKeyProvider(activeCustomEditorContextKeyProvider));
+        this._register(this.editorGroupService.registerContextKeyProvider(customEditorIsEditableContextKeyProvider));
+        this._register(fileService.onDidRunOperation(e => {
+            if (e.isOperation(2)) {
+                this.handleMovedFileInOpenedFileEditors(e.resource, this.uriIdentityService.asCanonicalUri(e.target.resource));
+            }
+        }));
+        const PRIORITY = 105;
+        this._register(UndoCommand.addImplementation(PRIORITY, 'custom-editor', () => {
+            return this.withActiveCustomEditor(editor => editor.undo());
+        }));
+        this._register(RedoCommand.addImplementation(PRIORITY, 'custom-editor', () => {
+            return this.withActiveCustomEditor(editor => editor.redo());
+        }));
+    }
+    getEditorTypes() {
+        return [...this._contributedEditors];
+    }
+    withActiveCustomEditor(f) {
+        const activeEditor = this.editorService.activeEditor;
+        if (activeEditor instanceof CustomEditorInput) {
+            const result = f(activeEditor);
+            if (result) {
+                return result;
+            }
+            return true;
+        }
+        return false;
+    }
+    registerContributionPoints() {
+        this._editorResolverDisposables.clear();
+        for (const contributedEditor of this._contributedEditors) {
+            for (const globPattern of contributedEditor.selector) {
+                if (!globPattern.filenamePattern) {
+                    continue;
+                }
+                this._editorResolverDisposables.add(this.editorResolverService.registerEditor(globPattern.filenamePattern, {
+                    id: contributedEditor.id,
+                    label: contributedEditor.displayName,
+                    detail: contributedEditor.providerDisplayName,
+                    priority: contributedEditor.priority,
+                }, {
+                    singlePerResource: () => !(this.getCustomEditorCapabilities(contributedEditor.id)?.supportsMultipleEditorsPerDocument ?? false)
+                }, {
+                    createEditorInput: ({ resource }, group) => {
+                        return { editor: CustomEditorInput.create(this.instantiationService, resource, contributedEditor.id, group.id) };
+                    },
+                    createUntitledEditorInput: ({ resource }, group) => {
+                        return { editor: CustomEditorInput.create(this.instantiationService, resource ?? URI.from({ scheme: Schemas.untitled, authority: `Untitled-${this._untitledCounter++}` }), contributedEditor.id, group.id) };
+                    },
+                    createDiffEditorInput: (diffEditorInput, group) => {
+                        return { editor: this.createDiffEditorInput(diffEditorInput, contributedEditor.id, group) };
+                    },
+                }));
+            }
+        }
+    }
+    createDiffEditorInput(editor, editorID, group) {
+        const modifiedOverride = CustomEditorInput.create(this.instantiationService, assertIsDefined(editor.modified.resource), editorID, group.id, { customClasses: 'modified' });
+        const originalOverride = CustomEditorInput.create(this.instantiationService, assertIsDefined(editor.original.resource), editorID, group.id, { customClasses: 'original' });
+        return this.instantiationService.createInstance(DiffEditorInput, editor.label, editor.description, originalOverride, modifiedOverride, true);
+    }
+    get models() { return this._models; }
+    getCustomEditor(viewType) {
+        return this._contributedEditors.get(viewType);
+    }
+    getContributedCustomEditors(resource) {
+        return new CustomEditorInfoCollection(this._contributedEditors.getContributedEditors(resource));
+    }
+    getUserConfiguredCustomEditors(resource) {
+        const resourceAssocations = this.editorResolverService.getAssociationsForResource(resource);
+        return new CustomEditorInfoCollection(coalesce(resourceAssocations
+            .map(association => this._contributedEditors.get(association.viewType))));
+    }
+    getAllCustomEditors(resource) {
+        return new CustomEditorInfoCollection([
+            ...this.getUserConfiguredCustomEditors(resource).allEditors,
+            ...this.getContributedCustomEditors(resource).allEditors,
+        ]);
+    }
+    registerCustomEditorCapabilities(viewType, options) {
+        if (this._editorCapabilities.has(viewType)) {
+            throw new Error(`Capabilities for ${viewType} already set`);
+        }
+        this._editorCapabilities.set(viewType, options);
+        return toDisposable(() => {
+            this._editorCapabilities.delete(viewType);
+        });
+    }
+    getCustomEditorCapabilities(viewType) {
+        return this._editorCapabilities.get(viewType);
+    }
+    getActiveCustomEditorId(group) {
+        const activeEditorPane = group.activeEditorPane;
+        const resource = activeEditorPane?.input?.resource;
+        if (!resource) {
+            return '';
+        }
+        return activeEditorPane?.input instanceof CustomEditorInput ? activeEditorPane.input.viewType : '';
+    }
+    getCustomEditorIsEditable(group) {
+        const activeEditorPane = group.activeEditorPane;
+        const resource = activeEditorPane?.input?.resource;
+        if (!resource) {
+            return false;
+        }
+        return activeEditorPane?.input instanceof CustomEditorInput;
+    }
+    async handleMovedFileInOpenedFileEditors(oldResource, newResource) {
+        if (extname(oldResource).toLowerCase() === extname(newResource).toLowerCase()) {
+            return;
+        }
+        const possibleEditors = this.getAllCustomEditors(newResource);
+        if (!possibleEditors.allEditors.some(editor => editor.priority !== RegisteredEditorPriority.option)) {
+            return;
+        }
+        const editorsToReplace = new Map();
+        for (const group of this.editorGroupService.groups) {
+            for (const editor of group.editors) {
+                if (this._fileEditorFactory.isFileEditor(editor)
+                    && !(editor instanceof CustomEditorInput)
+                    && isEqual(editor.resource, newResource)) {
+                    let entry = editorsToReplace.get(group.id);
+                    if (!entry) {
+                        entry = [];
+                        editorsToReplace.set(group.id, entry);
+                    }
+                    entry.push(editor);
+                }
+            }
+        }
+        if (!editorsToReplace.size) {
+            return;
+        }
+        for (const [group, entries] of editorsToReplace) {
+            this.editorService.replaceEditors(entries.map(editor => {
+                let replacement;
+                if (possibleEditors.defaultEditor) {
+                    const viewType = possibleEditors.defaultEditor.id;
+                    replacement = CustomEditorInput.create(this.instantiationService, newResource, viewType, group);
+                }
+                else {
+                    replacement = { resource: newResource, options: { override: DEFAULT_EDITOR_ASSOCIATION.id } };
+                }
+                return {
+                    editor,
+                    replacement,
+                    options: {
+                        preserveFocus: true,
+                    }
+                };
+            }), group);
+        }
+    }
+};
+CustomEditorService = __decorate([
+    __param(0, IFileService),
+    __param(1, IStorageService),
+    __param(2, IEditorService),
+    __param(3, IEditorGroupsService),
+    __param(4, IInstantiationService),
+    __param(5, IUriIdentityService),
+    __param(6, IEditorResolverService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], CustomEditorService);
+export { CustomEditorService };

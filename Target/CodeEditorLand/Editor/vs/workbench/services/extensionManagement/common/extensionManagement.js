@@ -1,1 +1,16 @@
-import"../../../../base/common/event.js";import{createDecorator as o,refineServiceDecorator as t}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/extensions/common/extensions.js";import{IExtensionManagementService as i}from"../../../../platform/extensionManagement/common/extensionManagement.js";import"../../../../base/common/uri.js";import{FileAccess as a}from"../../../../base/common/network.js";import{localize as s}from"../../../../nls.js";const r=t(i);var l=(n=>(n[n.Local=1]="Local",n[n.Remote=2]="Remote",n[n.Web=3]="Web",n))(l||{});const k=o("extensionManagementServerService"),w=a.asBrowserUri("vs/workbench/services/extensionManagement/common/media/defaultIcon.png").toString(!0),A=t(r),B={id:"extensions",order:30,title:s("extensionsConfigurationTitle","Extensions"),type:"object"};var x=(e=>(e[e.DisabledByTrustRequirement=0]="DisabledByTrustRequirement",e[e.DisabledByExtensionKind=1]="DisabledByExtensionKind",e[e.DisabledByEnvironment=2]="DisabledByEnvironment",e[e.EnabledByEnvironment=3]="EnabledByEnvironment",e[e.DisabledByVirtualWorkspace=4]="DisabledByVirtualWorkspace",e[e.DisabledByInvalidExtension=5]="DisabledByInvalidExtension",e[e.DisabledByExtensionDependency=6]="DisabledByExtensionDependency",e[e.DisabledGlobally=7]="DisabledGlobally",e[e.DisabledWorkspace=8]="DisabledWorkspace",e[e.EnabledGlobally=9]="EnabledGlobally",e[e.EnabledWorkspace=10]="EnabledWorkspace",e))(x||{});const C=o("extensionEnablementService"),G=o("IWebExtensionsScannerService");export{w as DefaultIconPath,x as EnablementState,l as ExtensionInstallLocation,k as IExtensionManagementServerService,r as IProfileAwareExtensionManagementService,G as IWebExtensionsScannerService,C as IWorkbenchExtensionEnablementService,A as IWorkbenchExtensionManagementService,B as extensionsConfigurationNodeBase};
+import { createDecorator, refineServiceDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IExtensionManagementService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { FileAccess } from '../../../../base/common/network.js';
+import { localize } from '../../../../nls.js';
+export const IProfileAwareExtensionManagementService = refineServiceDecorator(IExtensionManagementService);
+export const IExtensionManagementServerService = createDecorator('extensionManagementServerService');
+export const DefaultIconPath = FileAccess.asBrowserUri('vs/workbench/services/extensionManagement/common/media/defaultIcon.png').toString(true);
+export const IWorkbenchExtensionManagementService = refineServiceDecorator(IProfileAwareExtensionManagementService);
+export const extensionsConfigurationNodeBase = {
+    id: 'extensions',
+    order: 30,
+    title: localize('extensionsConfigurationTitle', "Extensions"),
+    type: 'object'
+};
+export const IWorkbenchExtensionEnablementService = createDecorator('extensionEnablementService');
+export const IWebExtensionsScannerService = createDecorator('IWebExtensionsScannerService');

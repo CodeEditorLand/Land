@@ -1,1 +1,419 @@
-import{CharCode as v}from"../charCode.js";import{onUnexpectedError as b,transformErrorForSerialization as u}from"../errors.js";import{Emitter as _}from"../event.js";import{Disposable as M}from"../lifecycle.js";import{FileAccess as E}from"../network.js";import{isWeb as w}from"../platform.js";import*as h from"../strings.js";import"../uri.js";const a="default",p="$initialize";let y=!1;function F(i){w&&(y||(y=!0))}var m=(n=>(n[n.Request=0]="Request",n[n.Reply=1]="Reply",n[n.SubscribeEvent=2]="SubscribeEvent",n[n.Event=3]="Event",n[n.UnsubscribeEvent=4]="UnsubscribeEvent",n))(m||{});class k{constructor(e,r,s,t,n){this.vsWorker=e;this.req=r;this.channel=s;this.method=t;this.args=n}type=0}class g{constructor(e,r,s,t){this.vsWorker=e;this.seq=r;this.res=s;this.err=t}type=1}class q{constructor(e,r,s,t,n){this.vsWorker=e;this.req=r;this.channel=s;this.eventName=t;this.arg=n}type=2}class I{constructor(e,r,s){this.vsWorker=e;this.req=r;this.event=s}type=3}class R{constructor(e,r){this.vsWorker=e;this.req=r}type=4}class f{_workerId;_lastSentReq;_pendingReplies;_pendingEmitters;_pendingEvents;_handler;constructor(e){this._workerId=-1,this._handler=e,this._lastSentReq=0,this._pendingReplies=Object.create(null),this._pendingEmitters=new Map,this._pendingEvents=new Map}setWorkerId(e){this._workerId=e}sendMessage(e,r,s){const t=String(++this._lastSentReq);return new Promise((n,o)=>{this._pendingReplies[t]={resolve:n,reject:o},this._send(new k(this._workerId,t,e,r,s))})}listen(e,r,s){let t=null;const n=new _({onWillAddFirstListener:()=>{t=String(++this._lastSentReq),this._pendingEmitters.set(t,n),this._send(new q(this._workerId,t,e,r,s))},onDidRemoveLastListener:()=>{this._pendingEmitters.delete(t),this._send(new R(this._workerId,t)),t=null}});return n.event}handleMessage(e){!e||!e.vsWorker||this._workerId!==-1&&e.vsWorker!==this._workerId||this._handleMessage(e)}createProxyToRemoteChannel(e,r){const s={get:(t,n)=>(typeof n=="string"&&!t[n]&&(c(n)?t[n]=o=>this.listen(e,n,o):d(n)?t[n]=this.listen(e,n,void 0):n.charCodeAt(0)===v.DollarSign&&(t[n]=async(...o)=>(await r?.(),this.sendMessage(e,n,o)))),t[n])};return new Proxy(Object.create(null),s)}_handleMessage(e){switch(e.type){case 1:return this._handleReplyMessage(e);case 0:return this._handleRequestMessage(e);case 2:return this._handleSubscribeEventMessage(e);case 3:return this._handleEventMessage(e);case 4:return this._handleUnsubscribeEventMessage(e)}}_handleReplyMessage(e){if(!this._pendingReplies[e.seq])return;const r=this._pendingReplies[e.seq];if(delete this._pendingReplies[e.seq],e.err){let s=e.err;e.err.$isError&&(s=new Error,s.name=e.err.name,s.message=e.err.message,s.stack=e.err.stack),r.reject(s);return}r.resolve(e.res)}_handleRequestMessage(e){const r=e.req;this._handler.handleMessage(e.channel,e.method,e.args).then(t=>{this._send(new g(this._workerId,r,t,void 0))},t=>{t.detail instanceof Error&&(t.detail=u(t.detail)),this._send(new g(this._workerId,r,void 0,u(t)))})}_handleSubscribeEventMessage(e){const r=e.req,s=this._handler.handleEvent(e.channel,e.eventName,e.arg)(t=>{this._send(new I(this._workerId,r,t))});this._pendingEvents.set(r,s)}_handleEventMessage(e){this._pendingEmitters.has(e.req)&&this._pendingEmitters.get(e.req).fire(e.event)}_handleUnsubscribeEventMessage(e){this._pendingEvents.has(e.req)&&(this._pendingEvents.get(e.req).dispose(),this._pendingEvents.delete(e.req))}_send(e){const r=[];if(e.type===0)for(let s=0;s<e.args.length;s++)e.args[s]instanceof ArrayBuffer&&r.push(e.args[s]);else e.type===1&&e.res instanceof ArrayBuffer&&r.push(e.res);this._handler.sendMessage(e,r)}}class B extends M{_worker;_onModuleLoaded;_protocol;proxy;_localChannels=new Map;_remoteChannels=new Map;constructor(e,r){super(),this._worker=this._register(e.create({moduleId:"vs/base/common/worker/simpleWorker",esmModuleLocation:r.esmModuleLocation,label:r.label},n=>{this._protocol.handleMessage(n)},n=>{b(n)})),this._protocol=new f({sendMessage:(n,o)=>{this._worker.postMessage(n,o)},handleMessage:(n,o,l)=>this._handleMessage(n,o,l),handleEvent:(n,o,l)=>this._handleEvent(n,o,l)}),this._protocol.setWorkerId(this._worker.getId());let s=null;const t=globalThis.require;typeof t<"u"&&typeof t.getConfig=="function"?s=t.getConfig():typeof globalThis.requirejs<"u"&&(s=globalThis.requirejs.s.contexts._.config),this._onModuleLoaded=this._protocol.sendMessage(a,p,[this._worker.getId(),JSON.parse(JSON.stringify(s)),r.moduleId]),this.proxy=this._protocol.createProxyToRemoteChannel(a,async()=>{await this._onModuleLoaded}),this._onModuleLoaded.catch(n=>{this._onError("Worker failed to load "+r.moduleId,n)})}_handleMessage(e,r,s){const t=this._localChannels.get(e);if(!t)return Promise.reject(new Error(`Missing channel ${e} on main thread`));if(typeof t[r]!="function")return Promise.reject(new Error(`Missing method ${r} on main thread channel ${e}`));try{return Promise.resolve(t[r].apply(t,s))}catch(n){return Promise.reject(n)}}_handleEvent(e,r,s){const t=this._localChannels.get(e);if(!t)throw new Error(`Missing channel ${e} on main thread`);if(c(r)){const n=t[r].call(t,s);if(typeof n!="function")throw new Error(`Missing dynamic event ${r} on main thread channel ${e}.`);return n}if(d(r)){const n=t[r];if(typeof n!="function")throw new Error(`Missing event ${r} on main thread channel ${e}.`);return n}throw new Error(`Malformed event name ${r}`)}setChannel(e,r){this._localChannels.set(e,r)}getChannel(e){if(!this._remoteChannels.has(e)){const r=this._protocol.createProxyToRemoteChannel(e,async()=>{await this._onModuleLoaded});this._remoteChannels.set(e,r)}return this._remoteChannels.get(e)}_onError(e,r){}}function d(i){return i[0]==="o"&&i[1]==="n"&&h.isUpperAsciiLetter(i.charCodeAt(2))}function c(i){return/^onDynamic/.test(i)&&h.isUpperAsciiLetter(i.charCodeAt(9))}class x{_requestHandlerFactory;_requestHandler;_protocol;_localChannels=new Map;_remoteChannels=new Map;constructor(e,r){this._requestHandlerFactory=r,this._requestHandler=null,this._protocol=new f({sendMessage:(s,t)=>{e(s,t)},handleMessage:(s,t,n)=>this._handleMessage(s,t,n),handleEvent:(s,t,n)=>this._handleEvent(s,t,n)})}onmessage(e){this._protocol.handleMessage(e)}_handleMessage(e,r,s){if(e===a&&r===p)return this.initialize(s[0],s[1],s[2]);const t=e===a?this._requestHandler:this._localChannels.get(e);if(!t)return Promise.reject(new Error(`Missing channel ${e} on worker thread`));if(typeof t[r]!="function")return Promise.reject(new Error(`Missing method ${r} on worker thread channel ${e}`));try{return Promise.resolve(t[r].apply(t,s))}catch(n){return Promise.reject(n)}}_handleEvent(e,r,s){const t=e===a?this._requestHandler:this._localChannels.get(e);if(!t)throw new Error(`Missing channel ${e} on worker thread`);if(c(r)){const n=t[r].call(t,s);if(typeof n!="function")throw new Error(`Missing dynamic event ${r} on request handler.`);return n}if(d(r)){const n=t[r];if(typeof n!="function")throw new Error(`Missing event ${r} on request handler.`);return n}throw new Error(`Malformed event name ${r}`)}setChannel(e,r){this._localChannels.set(e,r)}getChannel(e){if(!this._remoteChannels.has(e)){const r=this._protocol.createProxyToRemoteChannel(e);this._remoteChannels.set(e,r)}return this._remoteChannels.get(e)}async initialize(e,r,s){if(this._protocol.setWorkerId(e),this._requestHandlerFactory){this._requestHandler=this._requestHandlerFactory(this);return}return r&&(typeof r.baseUrl<"u"&&delete r.baseUrl,typeof r.paths<"u"&&typeof r.paths.vs<"u"&&delete r.paths.vs,typeof r.trustedTypesPolicy<"u"&&delete r.trustedTypesPolicy,r.catchError=!0,globalThis.require.config(r)),import(`${E.asBrowserUri(`${s}.js`).toString(!0)}`).then(n=>{if(this._requestHandler=n.create(this),!this._requestHandler)throw new Error("No RequestHandler!")})}}function D(i){return new x(i,null)}export{B as SimpleWorkerClient,x as SimpleWorkerServer,D as create,F as logOnceWebWorkerWarning};
+import { onUnexpectedError, transformErrorForSerialization } from '../errors.js';
+import { Emitter } from '../event.js';
+import { Disposable } from '../lifecycle.js';
+import { FileAccess } from '../network.js';
+import { isWeb } from '../platform.js';
+import * as strings from '../strings.js';
+const DEFAULT_CHANNEL = 'default';
+const INITIALIZE = '$initialize';
+let webWorkerWarningLogged = false;
+export function logOnceWebWorkerWarning(err) {
+    if (!isWeb) {
+        return;
+    }
+    if (!webWorkerWarningLogged) {
+        webWorkerWarningLogged = true;
+        console.warn('Could not create web worker(s). Falling back to loading web worker code in main thread, which might cause UI freezes. Please see https://github.com/microsoft/monaco-editor#faq');
+    }
+    console.warn(err.message);
+}
+class RequestMessage {
+    constructor(vsWorker, req, channel, method, args) {
+        this.vsWorker = vsWorker;
+        this.req = req;
+        this.channel = channel;
+        this.method = method;
+        this.args = args;
+        this.type = 0;
+    }
+}
+class ReplyMessage {
+    constructor(vsWorker, seq, res, err) {
+        this.vsWorker = vsWorker;
+        this.seq = seq;
+        this.res = res;
+        this.err = err;
+        this.type = 1;
+    }
+}
+class SubscribeEventMessage {
+    constructor(vsWorker, req, channel, eventName, arg) {
+        this.vsWorker = vsWorker;
+        this.req = req;
+        this.channel = channel;
+        this.eventName = eventName;
+        this.arg = arg;
+        this.type = 2;
+    }
+}
+class EventMessage {
+    constructor(vsWorker, req, event) {
+        this.vsWorker = vsWorker;
+        this.req = req;
+        this.event = event;
+        this.type = 3;
+    }
+}
+class UnsubscribeEventMessage {
+    constructor(vsWorker, req) {
+        this.vsWorker = vsWorker;
+        this.req = req;
+        this.type = 4;
+    }
+}
+class SimpleWorkerProtocol {
+    constructor(handler) {
+        this._workerId = -1;
+        this._handler = handler;
+        this._lastSentReq = 0;
+        this._pendingReplies = Object.create(null);
+        this._pendingEmitters = new Map();
+        this._pendingEvents = new Map();
+    }
+    setWorkerId(workerId) {
+        this._workerId = workerId;
+    }
+    sendMessage(channel, method, args) {
+        const req = String(++this._lastSentReq);
+        return new Promise((resolve, reject) => {
+            this._pendingReplies[req] = {
+                resolve: resolve,
+                reject: reject
+            };
+            this._send(new RequestMessage(this._workerId, req, channel, method, args));
+        });
+    }
+    listen(channel, eventName, arg) {
+        let req = null;
+        const emitter = new Emitter({
+            onWillAddFirstListener: () => {
+                req = String(++this._lastSentReq);
+                this._pendingEmitters.set(req, emitter);
+                this._send(new SubscribeEventMessage(this._workerId, req, channel, eventName, arg));
+            },
+            onDidRemoveLastListener: () => {
+                this._pendingEmitters.delete(req);
+                this._send(new UnsubscribeEventMessage(this._workerId, req));
+                req = null;
+            }
+        });
+        return emitter.event;
+    }
+    handleMessage(message) {
+        if (!message || !message.vsWorker) {
+            return;
+        }
+        if (this._workerId !== -1 && message.vsWorker !== this._workerId) {
+            return;
+        }
+        this._handleMessage(message);
+    }
+    createProxyToRemoteChannel(channel, sendMessageBarrier) {
+        const handler = {
+            get: (target, name) => {
+                if (typeof name === 'string' && !target[name]) {
+                    if (propertyIsDynamicEvent(name)) {
+                        target[name] = (arg) => {
+                            return this.listen(channel, name, arg);
+                        };
+                    }
+                    else if (propertyIsEvent(name)) {
+                        target[name] = this.listen(channel, name, undefined);
+                    }
+                    else if (name.charCodeAt(0) === 36) {
+                        target[name] = async (...myArgs) => {
+                            await sendMessageBarrier?.();
+                            return this.sendMessage(channel, name, myArgs);
+                        };
+                    }
+                }
+                return target[name];
+            }
+        };
+        return new Proxy(Object.create(null), handler);
+    }
+    _handleMessage(msg) {
+        switch (msg.type) {
+            case 1:
+                return this._handleReplyMessage(msg);
+            case 0:
+                return this._handleRequestMessage(msg);
+            case 2:
+                return this._handleSubscribeEventMessage(msg);
+            case 3:
+                return this._handleEventMessage(msg);
+            case 4:
+                return this._handleUnsubscribeEventMessage(msg);
+        }
+    }
+    _handleReplyMessage(replyMessage) {
+        if (!this._pendingReplies[replyMessage.seq]) {
+            console.warn('Got reply to unknown seq');
+            return;
+        }
+        const reply = this._pendingReplies[replyMessage.seq];
+        delete this._pendingReplies[replyMessage.seq];
+        if (replyMessage.err) {
+            let err = replyMessage.err;
+            if (replyMessage.err.$isError) {
+                err = new Error();
+                err.name = replyMessage.err.name;
+                err.message = replyMessage.err.message;
+                err.stack = replyMessage.err.stack;
+            }
+            reply.reject(err);
+            return;
+        }
+        reply.resolve(replyMessage.res);
+    }
+    _handleRequestMessage(requestMessage) {
+        const req = requestMessage.req;
+        const result = this._handler.handleMessage(requestMessage.channel, requestMessage.method, requestMessage.args);
+        result.then((r) => {
+            this._send(new ReplyMessage(this._workerId, req, r, undefined));
+        }, (e) => {
+            if (e.detail instanceof Error) {
+                e.detail = transformErrorForSerialization(e.detail);
+            }
+            this._send(new ReplyMessage(this._workerId, req, undefined, transformErrorForSerialization(e)));
+        });
+    }
+    _handleSubscribeEventMessage(msg) {
+        const req = msg.req;
+        const disposable = this._handler.handleEvent(msg.channel, msg.eventName, msg.arg)((event) => {
+            this._send(new EventMessage(this._workerId, req, event));
+        });
+        this._pendingEvents.set(req, disposable);
+    }
+    _handleEventMessage(msg) {
+        if (!this._pendingEmitters.has(msg.req)) {
+            console.warn('Got event for unknown req');
+            return;
+        }
+        this._pendingEmitters.get(msg.req).fire(msg.event);
+    }
+    _handleUnsubscribeEventMessage(msg) {
+        if (!this._pendingEvents.has(msg.req)) {
+            console.warn('Got unsubscribe for unknown req');
+            return;
+        }
+        this._pendingEvents.get(msg.req).dispose();
+        this._pendingEvents.delete(msg.req);
+    }
+    _send(msg) {
+        const transfer = [];
+        if (msg.type === 0) {
+            for (let i = 0; i < msg.args.length; i++) {
+                if (msg.args[i] instanceof ArrayBuffer) {
+                    transfer.push(msg.args[i]);
+                }
+            }
+        }
+        else if (msg.type === 1) {
+            if (msg.res instanceof ArrayBuffer) {
+                transfer.push(msg.res);
+            }
+        }
+        this._handler.sendMessage(msg, transfer);
+    }
+}
+export class SimpleWorkerClient extends Disposable {
+    constructor(workerFactory, workerDescriptor) {
+        super();
+        this._localChannels = new Map();
+        this._remoteChannels = new Map();
+        this._worker = this._register(workerFactory.create({
+            moduleId: 'vs/base/common/worker/simpleWorker',
+            esmModuleLocation: workerDescriptor.esmModuleLocation,
+            label: workerDescriptor.label
+        }, (msg) => {
+            this._protocol.handleMessage(msg);
+        }, (err) => {
+            onUnexpectedError(err);
+        }));
+        this._protocol = new SimpleWorkerProtocol({
+            sendMessage: (msg, transfer) => {
+                this._worker.postMessage(msg, transfer);
+            },
+            handleMessage: (channel, method, args) => {
+                return this._handleMessage(channel, method, args);
+            },
+            handleEvent: (channel, eventName, arg) => {
+                return this._handleEvent(channel, eventName, arg);
+            }
+        });
+        this._protocol.setWorkerId(this._worker.getId());
+        let loaderConfiguration = null;
+        const globalRequire = globalThis.require;
+        if (typeof globalRequire !== 'undefined' && typeof globalRequire.getConfig === 'function') {
+            loaderConfiguration = globalRequire.getConfig();
+        }
+        else if (typeof globalThis.requirejs !== 'undefined') {
+            loaderConfiguration = globalThis.requirejs.s.contexts._.config;
+        }
+        this._onModuleLoaded = this._protocol.sendMessage(DEFAULT_CHANNEL, INITIALIZE, [
+            this._worker.getId(),
+            JSON.parse(JSON.stringify(loaderConfiguration)),
+            workerDescriptor.moduleId,
+        ]);
+        this.proxy = this._protocol.createProxyToRemoteChannel(DEFAULT_CHANNEL, async () => { await this._onModuleLoaded; });
+        this._onModuleLoaded.catch((e) => {
+            this._onError('Worker failed to load ' + workerDescriptor.moduleId, e);
+        });
+    }
+    _handleMessage(channelName, method, args) {
+        const channel = this._localChannels.get(channelName);
+        if (!channel) {
+            return Promise.reject(new Error(`Missing channel ${channelName} on main thread`));
+        }
+        if (typeof channel[method] !== 'function') {
+            return Promise.reject(new Error(`Missing method ${method} on main thread channel ${channelName}`));
+        }
+        try {
+            return Promise.resolve(channel[method].apply(channel, args));
+        }
+        catch (e) {
+            return Promise.reject(e);
+        }
+    }
+    _handleEvent(channelName, eventName, arg) {
+        const channel = this._localChannels.get(channelName);
+        if (!channel) {
+            throw new Error(`Missing channel ${channelName} on main thread`);
+        }
+        if (propertyIsDynamicEvent(eventName)) {
+            const event = channel[eventName].call(channel, arg);
+            if (typeof event !== 'function') {
+                throw new Error(`Missing dynamic event ${eventName} on main thread channel ${channelName}.`);
+            }
+            return event;
+        }
+        if (propertyIsEvent(eventName)) {
+            const event = channel[eventName];
+            if (typeof event !== 'function') {
+                throw new Error(`Missing event ${eventName} on main thread channel ${channelName}.`);
+            }
+            return event;
+        }
+        throw new Error(`Malformed event name ${eventName}`);
+    }
+    setChannel(channel, handler) {
+        this._localChannels.set(channel, handler);
+    }
+    getChannel(channel) {
+        if (!this._remoteChannels.has(channel)) {
+            const inst = this._protocol.createProxyToRemoteChannel(channel, async () => { await this._onModuleLoaded; });
+            this._remoteChannels.set(channel, inst);
+        }
+        return this._remoteChannels.get(channel);
+    }
+    _onError(message, error) {
+        console.error(message);
+        console.info(error);
+    }
+}
+function propertyIsEvent(name) {
+    return name[0] === 'o' && name[1] === 'n' && strings.isUpperAsciiLetter(name.charCodeAt(2));
+}
+function propertyIsDynamicEvent(name) {
+    return /^onDynamic/.test(name) && strings.isUpperAsciiLetter(name.charCodeAt(9));
+}
+export class SimpleWorkerServer {
+    constructor(postMessage, requestHandlerFactory) {
+        this._localChannels = new Map();
+        this._remoteChannels = new Map();
+        this._requestHandlerFactory = requestHandlerFactory;
+        this._requestHandler = null;
+        this._protocol = new SimpleWorkerProtocol({
+            sendMessage: (msg, transfer) => {
+                postMessage(msg, transfer);
+            },
+            handleMessage: (channel, method, args) => this._handleMessage(channel, method, args),
+            handleEvent: (channel, eventName, arg) => this._handleEvent(channel, eventName, arg)
+        });
+    }
+    onmessage(msg) {
+        this._protocol.handleMessage(msg);
+    }
+    _handleMessage(channel, method, args) {
+        if (channel === DEFAULT_CHANNEL && method === INITIALIZE) {
+            return this.initialize(args[0], args[1], args[2]);
+        }
+        const requestHandler = (channel === DEFAULT_CHANNEL ? this._requestHandler : this._localChannels.get(channel));
+        if (!requestHandler) {
+            return Promise.reject(new Error(`Missing channel ${channel} on worker thread`));
+        }
+        if (typeof requestHandler[method] !== 'function') {
+            return Promise.reject(new Error(`Missing method ${method} on worker thread channel ${channel}`));
+        }
+        try {
+            return Promise.resolve(requestHandler[method].apply(requestHandler, args));
+        }
+        catch (e) {
+            return Promise.reject(e);
+        }
+    }
+    _handleEvent(channel, eventName, arg) {
+        const requestHandler = (channel === DEFAULT_CHANNEL ? this._requestHandler : this._localChannels.get(channel));
+        if (!requestHandler) {
+            throw new Error(`Missing channel ${channel} on worker thread`);
+        }
+        if (propertyIsDynamicEvent(eventName)) {
+            const event = requestHandler[eventName].call(requestHandler, arg);
+            if (typeof event !== 'function') {
+                throw new Error(`Missing dynamic event ${eventName} on request handler.`);
+            }
+            return event;
+        }
+        if (propertyIsEvent(eventName)) {
+            const event = requestHandler[eventName];
+            if (typeof event !== 'function') {
+                throw new Error(`Missing event ${eventName} on request handler.`);
+            }
+            return event;
+        }
+        throw new Error(`Malformed event name ${eventName}`);
+    }
+    setChannel(channel, handler) {
+        this._localChannels.set(channel, handler);
+    }
+    getChannel(channel) {
+        if (!this._remoteChannels.has(channel)) {
+            const inst = this._protocol.createProxyToRemoteChannel(channel);
+            this._remoteChannels.set(channel, inst);
+        }
+        return this._remoteChannels.get(channel);
+    }
+    async initialize(workerId, loaderConfig, moduleId) {
+        this._protocol.setWorkerId(workerId);
+        if (this._requestHandlerFactory) {
+            this._requestHandler = this._requestHandlerFactory(this);
+            return;
+        }
+        if (loaderConfig) {
+            if (typeof loaderConfig.baseUrl !== 'undefined') {
+                delete loaderConfig['baseUrl'];
+            }
+            if (typeof loaderConfig.paths !== 'undefined') {
+                if (typeof loaderConfig.paths.vs !== 'undefined') {
+                    delete loaderConfig.paths['vs'];
+                }
+            }
+            if (typeof loaderConfig.trustedTypesPolicy !== 'undefined') {
+                delete loaderConfig['trustedTypesPolicy'];
+            }
+            loaderConfig.catchError = true;
+            globalThis.require.config(loaderConfig);
+        }
+        const url = FileAccess.asBrowserUri(`${moduleId}.js`).toString(true);
+        return import(`${url}`).then((module) => {
+            this._requestHandler = module.create(this);
+            if (!this._requestHandler) {
+                throw new Error(`No RequestHandler!`);
+            }
+        });
+    }
+}
+export function create(postMessage) {
+    return new SimpleWorkerServer(postMessage, null);
+}

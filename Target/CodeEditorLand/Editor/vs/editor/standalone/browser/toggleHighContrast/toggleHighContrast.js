@@ -1,1 +1,29 @@
-import"../../../browser/editorBrowser.js";import{EditorAction as r,registerEditorAction as n}from"../../../browser/editorExtensions.js";import{IStandaloneThemeService as s}from"../../common/standaloneTheme.js";import{ToggleHighContrastNLS as m}from"../../../common/standaloneStrings.js";import{isDark as i,isHighContrast as a}from"../../../../platform/theme/common/theme.js";import{HC_BLACK_THEME_NAME as g,HC_LIGHT_THEME_NAME as l,VS_DARK_THEME_NAME as h,VS_LIGHT_THEME_NAME as T}from"../standaloneThemeService.js";class c extends r{_originalThemeName;constructor(){super({id:"editor.action.toggleHighContrast",label:m.toggleHighContrast,alias:"Toggle High Contrast Theme",precondition:void 0}),this._originalThemeName=null}run(o,d){const t=o.get(s),e=t.getColorTheme();a(e.type)?(t.setTheme(this._originalThemeName||(i(e.type)?h:T)),this._originalThemeName=null):(t.setTheme(i(e.type)?g:l),this._originalThemeName=e.themeName)}}n(c);
+import { EditorAction, registerEditorAction } from '../../../browser/editorExtensions.js';
+import { IStandaloneThemeService } from '../../common/standaloneTheme.js';
+import { ToggleHighContrastNLS } from '../../../common/standaloneStrings.js';
+import { isDark, isHighContrast } from '../../../../platform/theme/common/theme.js';
+import { HC_BLACK_THEME_NAME, HC_LIGHT_THEME_NAME, VS_DARK_THEME_NAME, VS_LIGHT_THEME_NAME } from '../standaloneThemeService.js';
+class ToggleHighContrast extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.toggleHighContrast',
+            label: ToggleHighContrastNLS.toggleHighContrast,
+            alias: 'Toggle High Contrast Theme',
+            precondition: undefined
+        });
+        this._originalThemeName = null;
+    }
+    run(accessor, editor) {
+        const standaloneThemeService = accessor.get(IStandaloneThemeService);
+        const currentTheme = standaloneThemeService.getColorTheme();
+        if (isHighContrast(currentTheme.type)) {
+            standaloneThemeService.setTheme(this._originalThemeName || (isDark(currentTheme.type) ? VS_DARK_THEME_NAME : VS_LIGHT_THEME_NAME));
+            this._originalThemeName = null;
+        }
+        else {
+            standaloneThemeService.setTheme(isDark(currentTheme.type) ? HC_BLACK_THEME_NAME : HC_LIGHT_THEME_NAME);
+            this._originalThemeName = currentTheme.themeName;
+        }
+    }
+}
+registerEditorAction(ToggleHighContrast);

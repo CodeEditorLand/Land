@@ -1,1 +1,219 @@
-import{EditorOption as o}from"./config/editorOptions.js";import"./tokens/lineTokens.js";import{Position as m}from"./core/position.js";import{Range as h}from"./core/range.js";import{Selection as u}from"./core/selection.js";import"./editorCommon.js";import"./config/editorConfiguration.js";import"./model.js";import"./languages/languageConfiguration.js";import"./languages/languageConfigurationRegistry.js";import{createScopedLineTokens as b}from"./languages/supports.js";import"./languages/supports/electricCharacter.js";import{CursorColumns as d}from"./core/cursorColumns.js";import{normalizeIndentation as f}from"./core/indentation.js";var y=(a=>(a[a.Other=0]="Other",a[a.DeletingLeft=2]="DeletingLeft",a[a.DeletingRight=3]="DeletingRight",a[a.TypingOther=4]="TypingOther",a[a.TypingFirstSpace=5]="TypingFirstSpace",a[a.TypingConsecutiveSpace=6]="TypingConsecutiveSpace",a))(y||{});const v=()=>!0,P=()=>!1,L=s=>s===" "||s==="	";class te{constructor(e,t,i,r){this.languageConfigurationService=r;this._languageId=e;const n=i.options,a=n.get(o.layoutInfo),g=n.get(o.fontInfo);this.readOnly=n.get(o.readOnly),this.tabSize=t.tabSize,this.indentSize=t.indentSize,this.insertSpaces=t.insertSpaces,this.stickyTabStops=n.get(o.stickyTabStops),this.lineHeight=g.lineHeight,this.typicalHalfwidthCharacterWidth=g.typicalHalfwidthCharacterWidth,this.pageSize=Math.max(1,Math.floor(a.height/this.lineHeight)-2),this.useTabStops=n.get(o.useTabStops),this.wordSeparators=n.get(o.wordSeparators),this.emptySelectionClipboard=n.get(o.emptySelectionClipboard),this.copyWithSyntaxHighlighting=n.get(o.copyWithSyntaxHighlighting),this.multiCursorMergeOverlapping=n.get(o.multiCursorMergeOverlapping),this.multiCursorPaste=n.get(o.multiCursorPaste),this.multiCursorLimit=n.get(o.multiCursorLimit),this.autoClosingBrackets=n.get(o.autoClosingBrackets),this.autoClosingComments=n.get(o.autoClosingComments),this.autoClosingQuotes=n.get(o.autoClosingQuotes),this.autoClosingDelete=n.get(o.autoClosingDelete),this.autoClosingOvertype=n.get(o.autoClosingOvertype),this.autoSurround=n.get(o.autoSurround),this.autoIndent=n.get(o.autoIndent),this.wordSegmenterLocales=n.get(o.wordSegmenterLocales),this.surroundingPairs={},this._electricChars=null,this.shouldAutoCloseBefore={quote:this._getShouldAutoClose(e,this.autoClosingQuotes,!0),comment:this._getShouldAutoClose(e,this.autoClosingComments,!1),bracket:this._getShouldAutoClose(e,this.autoClosingBrackets,!1)},this.autoClosingPairs=this.languageConfigurationService.getLanguageConfiguration(e).getAutoClosingPairs();const c=this.languageConfigurationService.getLanguageConfiguration(e).getSurroundingPairs();if(c)for(const C of c)this.surroundingPairs[C.open]=C.close;const p=this.languageConfigurationService.getLanguageConfiguration(e).comments;this.blockCommentStartToken=p?.blockCommentStartToken??null}_cursorMoveConfigurationBrand=void 0;readOnly;tabSize;indentSize;insertSpaces;stickyTabStops;pageSize;lineHeight;typicalHalfwidthCharacterWidth;useTabStops;wordSeparators;emptySelectionClipboard;copyWithSyntaxHighlighting;multiCursorMergeOverlapping;multiCursorPaste;multiCursorLimit;autoClosingBrackets;autoClosingComments;autoClosingQuotes;autoClosingDelete;autoClosingOvertype;autoSurround;autoIndent;autoClosingPairs;surroundingPairs;blockCommentStartToken;shouldAutoCloseBefore;wordSegmenterLocales;_languageId;_electricChars;static shouldRecreate(e){return e.hasChanged(o.layoutInfo)||e.hasChanged(o.wordSeparators)||e.hasChanged(o.emptySelectionClipboard)||e.hasChanged(o.multiCursorMergeOverlapping)||e.hasChanged(o.multiCursorPaste)||e.hasChanged(o.multiCursorLimit)||e.hasChanged(o.autoClosingBrackets)||e.hasChanged(o.autoClosingComments)||e.hasChanged(o.autoClosingQuotes)||e.hasChanged(o.autoClosingDelete)||e.hasChanged(o.autoClosingOvertype)||e.hasChanged(o.autoSurround)||e.hasChanged(o.useTabStops)||e.hasChanged(o.fontInfo)||e.hasChanged(o.readOnly)||e.hasChanged(o.wordSegmenterLocales)}get electricChars(){if(!this._electricChars){this._electricChars={};const e=this.languageConfigurationService.getLanguageConfiguration(this._languageId).electricCharacter?.getElectricCharacters();if(e)for(const t of e)this._electricChars[t]=!0}return this._electricChars}onElectricCharacter(e,t,i){const r=b(t,i-1),n=this.languageConfigurationService.getLanguageConfiguration(r.languageId).electricCharacter;return n?n.onElectricCharacter(e,r,i-r.firstCharOffset):null}normalizeIndentation(e){return f(e,this.indentSize,this.insertSpaces)}_getShouldAutoClose(e,t,i){switch(t){case"beforeWhitespace":return L;case"languageDefined":return this._getLanguageDefinedShouldAutoClose(e,i);case"always":return v;case"never":return P}}_getLanguageDefinedShouldAutoClose(e,t){const i=this.languageConfigurationService.getLanguageConfiguration(e).getAutoCloseBeforeSet(t);return r=>i.indexOf(r)!==-1}visibleColumnFromColumn(e,t){return d.visibleColumnFromColumn(e.getLineContent(t.lineNumber),t.column,this.tabSize)}columnFromVisibleColumn(e,t,i){const r=d.columnFromVisibleColumn(e.getLineContent(t),i,this.tabSize),n=e.getLineMinColumn(t);if(r<n)return n;const a=e.getLineMaxColumn(t);return r>a?a:r}}class S{_cursorStateBrand=void 0;static fromModelState(e){return new w(e)}static fromViewState(e){return new A(e)}static fromModelSelection(e){const t=u.liftSelection(e),i=new l(h.fromPositions(t.getSelectionStart()),0,0,t.getPosition(),0);return S.fromModelState(i)}static fromModelSelections(e){const t=[];for(let i=0,r=e.length;i<r;i++)t[i]=this.fromModelSelection(e[i]);return t}modelState;viewState;constructor(e,t){this.modelState=e,this.viewState=t}equals(e){return this.viewState.equals(e.viewState)&&this.modelState.equals(e.modelState)}}class w{modelState;viewState;constructor(e){this.modelState=e,this.viewState=null}}class A{modelState;viewState;constructor(e){this.modelState=null,this.viewState=e}}var k=(i=>(i[i.Simple=0]="Simple",i[i.Word=1]="Word",i[i.Line=2]="Line",i))(k||{});class l{constructor(e,t,i,r,n){this.selectionStart=e;this.selectionStartKind=t;this.selectionStartLeftoverVisibleColumns=i;this.position=r;this.leftoverVisibleColumns=n;this.selection=l._computeSelection(this.selectionStart,this.position)}_singleCursorStateBrand=void 0;selection;equals(e){return this.selectionStartLeftoverVisibleColumns===e.selectionStartLeftoverVisibleColumns&&this.leftoverVisibleColumns===e.leftoverVisibleColumns&&this.selectionStartKind===e.selectionStartKind&&this.position.equals(e.position)&&this.selectionStart.equalsRange(e.selectionStart)}hasSelection(){return!this.selection.isEmpty()||!this.selectionStart.isEmpty()}move(e,t,i,r){return e?new l(this.selectionStart,this.selectionStartKind,this.selectionStartLeftoverVisibleColumns,new m(t,i),r):new l(new h(t,i,t,i),0,r,new m(t,i),r)}static _computeSelection(e,t){return e.isEmpty()||!t.isBeforeOrEqual(e.getStartPosition())?u.fromPositions(e.getStartPosition(),t):u.fromPositions(e.getEndPosition(),t)}}class oe{_editOperationResultBrand=void 0;type;commands;shouldPushStackElementBefore;shouldPushStackElementAfter;constructor(e,t,i){this.type=e,this.commands=t,this.shouldPushStackElementBefore=i.shouldPushStackElementBefore,this.shouldPushStackElementAfter=i.shouldPushStackElementAfter}}function ie(s){return s==="'"||s==='"'||s==="`"}export{te as CursorConfiguration,S as CursorState,oe as EditOperationResult,y as EditOperationType,w as PartialModelCursorState,A as PartialViewCursorState,k as SelectionStartKind,l as SingleCursorState,ie as isQuote};
+import { Position } from './core/position.js';
+import { Range } from './core/range.js';
+import { Selection } from './core/selection.js';
+import { createScopedLineTokens } from './languages/supports.js';
+import { CursorColumns } from './core/cursorColumns.js';
+import { normalizeIndentation } from './core/indentation.js';
+const autoCloseAlways = () => true;
+const autoCloseNever = () => false;
+const autoCloseBeforeWhitespace = (chr) => (chr === ' ' || chr === '\t');
+export class CursorConfiguration {
+    static shouldRecreate(e) {
+        return (e.hasChanged(148)
+            || e.hasChanged(134)
+            || e.hasChanged(38)
+            || e.hasChanged(79)
+            || e.hasChanged(81)
+            || e.hasChanged(82)
+            || e.hasChanged(6)
+            || e.hasChanged(7)
+            || e.hasChanged(11)
+            || e.hasChanged(9)
+            || e.hasChanged(10)
+            || e.hasChanged(14)
+            || e.hasChanged(131)
+            || e.hasChanged(52)
+            || e.hasChanged(94)
+            || e.hasChanged(133));
+    }
+    constructor(languageId, modelOptions, configuration, languageConfigurationService) {
+        this.languageConfigurationService = languageConfigurationService;
+        this._cursorMoveConfigurationBrand = undefined;
+        this._languageId = languageId;
+        const options = configuration.options;
+        const layoutInfo = options.get(148);
+        const fontInfo = options.get(52);
+        this.readOnly = options.get(94);
+        this.tabSize = modelOptions.tabSize;
+        this.indentSize = modelOptions.indentSize;
+        this.insertSpaces = modelOptions.insertSpaces;
+        this.stickyTabStops = options.get(119);
+        this.lineHeight = fontInfo.lineHeight;
+        this.typicalHalfwidthCharacterWidth = fontInfo.typicalHalfwidthCharacterWidth;
+        this.pageSize = Math.max(1, Math.floor(layoutInfo.height / this.lineHeight) - 2);
+        this.useTabStops = options.get(131);
+        this.wordSeparators = options.get(134);
+        this.emptySelectionClipboard = options.get(38);
+        this.copyWithSyntaxHighlighting = options.get(25);
+        this.multiCursorMergeOverlapping = options.get(79);
+        this.multiCursorPaste = options.get(81);
+        this.multiCursorLimit = options.get(82);
+        this.autoClosingBrackets = options.get(6);
+        this.autoClosingComments = options.get(7);
+        this.autoClosingQuotes = options.get(11);
+        this.autoClosingDelete = options.get(9);
+        this.autoClosingOvertype = options.get(10);
+        this.autoSurround = options.get(14);
+        this.autoIndent = options.get(12);
+        this.wordSegmenterLocales = options.get(133);
+        this.surroundingPairs = {};
+        this._electricChars = null;
+        this.shouldAutoCloseBefore = {
+            quote: this._getShouldAutoClose(languageId, this.autoClosingQuotes, true),
+            comment: this._getShouldAutoClose(languageId, this.autoClosingComments, false),
+            bracket: this._getShouldAutoClose(languageId, this.autoClosingBrackets, false),
+        };
+        this.autoClosingPairs = this.languageConfigurationService.getLanguageConfiguration(languageId).getAutoClosingPairs();
+        const surroundingPairs = this.languageConfigurationService.getLanguageConfiguration(languageId).getSurroundingPairs();
+        if (surroundingPairs) {
+            for (const pair of surroundingPairs) {
+                this.surroundingPairs[pair.open] = pair.close;
+            }
+        }
+        const commentsConfiguration = this.languageConfigurationService.getLanguageConfiguration(languageId).comments;
+        this.blockCommentStartToken = commentsConfiguration?.blockCommentStartToken ?? null;
+    }
+    get electricChars() {
+        if (!this._electricChars) {
+            this._electricChars = {};
+            const electricChars = this.languageConfigurationService.getLanguageConfiguration(this._languageId).electricCharacter?.getElectricCharacters();
+            if (electricChars) {
+                for (const char of electricChars) {
+                    this._electricChars[char] = true;
+                }
+            }
+        }
+        return this._electricChars;
+    }
+    onElectricCharacter(character, context, column) {
+        const scopedLineTokens = createScopedLineTokens(context, column - 1);
+        const electricCharacterSupport = this.languageConfigurationService.getLanguageConfiguration(scopedLineTokens.languageId).electricCharacter;
+        if (!electricCharacterSupport) {
+            return null;
+        }
+        return electricCharacterSupport.onElectricCharacter(character, scopedLineTokens, column - scopedLineTokens.firstCharOffset);
+    }
+    normalizeIndentation(str) {
+        return normalizeIndentation(str, this.indentSize, this.insertSpaces);
+    }
+    _getShouldAutoClose(languageId, autoCloseConfig, forQuotes) {
+        switch (autoCloseConfig) {
+            case 'beforeWhitespace':
+                return autoCloseBeforeWhitespace;
+            case 'languageDefined':
+                return this._getLanguageDefinedShouldAutoClose(languageId, forQuotes);
+            case 'always':
+                return autoCloseAlways;
+            case 'never':
+                return autoCloseNever;
+        }
+    }
+    _getLanguageDefinedShouldAutoClose(languageId, forQuotes) {
+        const autoCloseBeforeSet = this.languageConfigurationService.getLanguageConfiguration(languageId).getAutoCloseBeforeSet(forQuotes);
+        return c => autoCloseBeforeSet.indexOf(c) !== -1;
+    }
+    visibleColumnFromColumn(model, position) {
+        return CursorColumns.visibleColumnFromColumn(model.getLineContent(position.lineNumber), position.column, this.tabSize);
+    }
+    columnFromVisibleColumn(model, lineNumber, visibleColumn) {
+        const result = CursorColumns.columnFromVisibleColumn(model.getLineContent(lineNumber), visibleColumn, this.tabSize);
+        const minColumn = model.getLineMinColumn(lineNumber);
+        if (result < minColumn) {
+            return minColumn;
+        }
+        const maxColumn = model.getLineMaxColumn(lineNumber);
+        if (result > maxColumn) {
+            return maxColumn;
+        }
+        return result;
+    }
+}
+export class CursorState {
+    static fromModelState(modelState) {
+        return new PartialModelCursorState(modelState);
+    }
+    static fromViewState(viewState) {
+        return new PartialViewCursorState(viewState);
+    }
+    static fromModelSelection(modelSelection) {
+        const selection = Selection.liftSelection(modelSelection);
+        const modelState = new SingleCursorState(Range.fromPositions(selection.getSelectionStart()), 0, 0, selection.getPosition(), 0);
+        return CursorState.fromModelState(modelState);
+    }
+    static fromModelSelections(modelSelections) {
+        const states = [];
+        for (let i = 0, len = modelSelections.length; i < len; i++) {
+            states[i] = this.fromModelSelection(modelSelections[i]);
+        }
+        return states;
+    }
+    constructor(modelState, viewState) {
+        this._cursorStateBrand = undefined;
+        this.modelState = modelState;
+        this.viewState = viewState;
+    }
+    equals(other) {
+        return (this.viewState.equals(other.viewState) && this.modelState.equals(other.modelState));
+    }
+}
+export class PartialModelCursorState {
+    constructor(modelState) {
+        this.modelState = modelState;
+        this.viewState = null;
+    }
+}
+export class PartialViewCursorState {
+    constructor(viewState) {
+        this.modelState = null;
+        this.viewState = viewState;
+    }
+}
+export class SingleCursorState {
+    constructor(selectionStart, selectionStartKind, selectionStartLeftoverVisibleColumns, position, leftoverVisibleColumns) {
+        this.selectionStart = selectionStart;
+        this.selectionStartKind = selectionStartKind;
+        this.selectionStartLeftoverVisibleColumns = selectionStartLeftoverVisibleColumns;
+        this.position = position;
+        this.leftoverVisibleColumns = leftoverVisibleColumns;
+        this._singleCursorStateBrand = undefined;
+        this.selection = SingleCursorState._computeSelection(this.selectionStart, this.position);
+    }
+    equals(other) {
+        return (this.selectionStartLeftoverVisibleColumns === other.selectionStartLeftoverVisibleColumns
+            && this.leftoverVisibleColumns === other.leftoverVisibleColumns
+            && this.selectionStartKind === other.selectionStartKind
+            && this.position.equals(other.position)
+            && this.selectionStart.equalsRange(other.selectionStart));
+    }
+    hasSelection() {
+        return (!this.selection.isEmpty() || !this.selectionStart.isEmpty());
+    }
+    move(inSelectionMode, lineNumber, column, leftoverVisibleColumns) {
+        if (inSelectionMode) {
+            return new SingleCursorState(this.selectionStart, this.selectionStartKind, this.selectionStartLeftoverVisibleColumns, new Position(lineNumber, column), leftoverVisibleColumns);
+        }
+        else {
+            return new SingleCursorState(new Range(lineNumber, column, lineNumber, column), 0, leftoverVisibleColumns, new Position(lineNumber, column), leftoverVisibleColumns);
+        }
+    }
+    static _computeSelection(selectionStart, position) {
+        if (selectionStart.isEmpty() || !position.isBeforeOrEqual(selectionStart.getStartPosition())) {
+            return Selection.fromPositions(selectionStart.getStartPosition(), position);
+        }
+        else {
+            return Selection.fromPositions(selectionStart.getEndPosition(), position);
+        }
+    }
+}
+export class EditOperationResult {
+    constructor(type, commands, opts) {
+        this._editOperationResultBrand = undefined;
+        this.type = type;
+        this.commands = commands;
+        this.shouldPushStackElementBefore = opts.shouldPushStackElementBefore;
+        this.shouldPushStackElementAfter = opts.shouldPushStackElementAfter;
+    }
+}
+export function isQuote(ch) {
+    return (ch === '\'' || ch === '"' || ch === '`');
+}

@@ -1,1 +1,149 @@
-var D=Object.defineProperty;var N=Object.getOwnPropertyDescriptor;var x=(s,o,e,n)=>{for(var t=n>1?void 0:n?N(o,e):o,m=s.length-1,c;m>=0;m--)(c=s[m])&&(t=(n?c(o,e,t):c(t))||t);return n&&t&&D(o,e,t),t},S=(s,o)=>(e,n)=>o(e,n,s);import*as g from"../../../../nls.js";import{IConfigurationService as E}from"../../../../platform/configuration/common/configuration.js";import{URI as K}from"../../../../base/common/uri.js";import{MenuId as C,MenuRegistry as M}from"../../../../platform/actions/common/actions.js";import{ITerminalGroupService as k,ITerminalService as L}from"../../terminal/browser/terminal.js";import{ResourceContextKey as I}from"../../../common/contextkeys.js";import{IFileService as P}from"../../../../platform/files/common/files.js";import{getMultiSelectedResources as G,IExplorerService as z}from"../../files/browser/files.js";import{CommandsRegistry as U}from"../../../../platform/commands/common/commands.js";import{Schemas as d}from"../../../../base/common/network.js";import{distinct as _}from"../../../../base/common/arrays.js";import{IRemoteAgentService as V}from"../../../services/remote/common/remoteAgentService.js";import{ContextKeyExpr as a}from"../../../../platform/contextkey/common/contextkey.js";import{Extensions as F}from"../../../common/contributions.js";import{Disposable as j}from"../../../../base/common/lifecycle.js";import{isWindows as B}from"../../../../base/common/platform.js";import{dirname as h,basename as H}from"../../../../base/common/path.js";import{LifecyclePhase as J}from"../../../services/lifecycle/common/lifecycle.js";import{Registry as Q}from"../../../../platform/registry/common/platform.js";import{IExternalTerminalService as X}from"../../../../platform/externalTerminal/common/externalTerminal.js";import{TerminalLocation as Y}from"../../../../platform/terminal/common/terminal.js";import{IListService as Z}from"../../../../platform/list/browser/listService.js";import{IEditorService as $}from"../../../services/editor/common/editorService.js";import{IEditorGroupsService as ee}from"../../../services/editor/common/editorGroupsService.js";const w="openInTerminal",y="openInIntegratedTerminal";function b(s,o){U.registerCommand({id:s,handler:async(e,n)=>{const t=e.get(E),m=e.get(P),c=e.get(L),R=e.get(V),O=e.get(k);let f;try{f=e.get(X)}catch{}const T=G(n,e.get(Z),e.get($),e.get(ee),e.get(z));return m.resolveAll(T.map(u=>({resource:u}))).then(async u=>{const A=t.getValue(),W=R.getConnection()||o==="integrated",v=_(u.filter(r=>r.success));if(W){const r={},q=v.map(({stat:l})=>{const i=l.resource;return l.isDirectory?i:K.from({scheme:i.scheme,authority:i.authority,fragment:i.fragment,query:i.query,path:h(i.path)})});for(const l of q){if(r[l.path])return;r[l.path]=!0;const i=await c.createTerminal({config:{cwd:l}});i&&i.target!==Y.Editor&&(T.length===1||!n||l.path===n.path||l.path===h(n.path))&&(c.setActiveInstance(i),O.showPanel(!0))}}else f&&_(v.map(({stat:r})=>r.isDirectory?r.resource.fsPath:h(r.resource.fsPath))).forEach(r=>{f.openTerminal(A.terminal.external,r)})})}})}b(w,"external"),b(y,"integrated");let p=class extends j{constructor(e){super();this._configurationService=e;const n=a.and(I.Scheme.isEqualTo(d.file),a.or(a.equals("config.terminal.explorerKind","integrated"),a.equals("config.terminal.explorerKind","both"))),t=a.and(I.Scheme.isEqualTo(d.file),a.or(a.equals("config.terminal.explorerKind","external"),a.equals("config.terminal.explorerKind","both")));this._openInIntegratedTerminalMenuItem={group:"navigation",order:30,command:{id:y,title:g.localize("scopedConsoleAction.Integrated","Open in Integrated Terminal")},when:a.or(n,I.Scheme.isEqualTo(d.vscodeRemote))},this._openInTerminalMenuItem={group:"navigation",order:31,command:{id:w,title:g.localize("scopedConsoleAction.external","Open in External Terminal")},when:t},M.appendMenuItem(C.ExplorerContext,this._openInTerminalMenuItem),M.appendMenuItem(C.ExplorerContext,this._openInIntegratedTerminalMenuItem),this._register(this._configurationService.onDidChangeConfiguration(m=>{(m.affectsConfiguration("terminal.explorerKind")||m.affectsConfiguration("terminal.external"))&&this._refreshOpenInTerminalMenuItemTitle()})),this._refreshOpenInTerminalMenuItemTitle()}_openInIntegratedTerminalMenuItem;_openInTerminalMenuItem;isWindows(){const e=this._configurationService.getValue().terminal;if(B&&e.external?.windowsExec){const n=H(e.external.windowsExec);if(n==="wt"||n==="wt.exe")return!0}return!1}_refreshOpenInTerminalMenuItemTitle(){this.isWindows()&&(this._openInTerminalMenuItem.command.title=g.localize("scopedConsoleAction.wt","Open in Windows Terminal"))}};p=x([S(0,E)],p),Q.as(F.Workbench).registerWorkbenchContribution(p,J.Restored);export{p as ExternalTerminalContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as nls from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { URI } from '../../../../base/common/uri.js';
+import { MenuId, MenuRegistry } from '../../../../platform/actions/common/actions.js';
+import { ITerminalGroupService, ITerminalService as IIntegratedTerminalService } from '../../terminal/browser/terminal.js';
+import { ResourceContextKey } from '../../../common/contextkeys.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { getMultiSelectedResources, IExplorerService } from '../../files/browser/files.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { distinct } from '../../../../base/common/arrays.js';
+import { IRemoteAgentService } from '../../../services/remote/common/remoteAgentService.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { isWindows } from '../../../../base/common/platform.js';
+import { dirname, basename } from '../../../../base/common/path.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { IExternalTerminalService } from '../../../../platform/externalTerminal/common/externalTerminal.js';
+import { TerminalLocation } from '../../../../platform/terminal/common/terminal.js';
+import { IListService } from '../../../../platform/list/browser/listService.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+const OPEN_IN_TERMINAL_COMMAND_ID = 'openInTerminal';
+const OPEN_IN_INTEGRATED_TERMINAL_COMMAND_ID = 'openInIntegratedTerminal';
+function registerOpenTerminalCommand(id, explorerKind) {
+    CommandsRegistry.registerCommand({
+        id: id,
+        handler: async (accessor, resource) => {
+            const configurationService = accessor.get(IConfigurationService);
+            const fileService = accessor.get(IFileService);
+            const integratedTerminalService = accessor.get(IIntegratedTerminalService);
+            const remoteAgentService = accessor.get(IRemoteAgentService);
+            const terminalGroupService = accessor.get(ITerminalGroupService);
+            let externalTerminalService = undefined;
+            try {
+                externalTerminalService = accessor.get(IExternalTerminalService);
+            }
+            catch { }
+            const resources = getMultiSelectedResources(resource, accessor.get(IListService), accessor.get(IEditorService), accessor.get(IEditorGroupsService), accessor.get(IExplorerService));
+            return fileService.resolveAll(resources.map(r => ({ resource: r }))).then(async (stats) => {
+                const config = configurationService.getValue();
+                const useIntegratedTerminal = remoteAgentService.getConnection() || explorerKind === 'integrated';
+                const targets = distinct(stats.filter(data => data.success));
+                if (useIntegratedTerminal) {
+                    const opened = {};
+                    const cwds = targets.map(({ stat }) => {
+                        const resource = stat.resource;
+                        if (stat.isDirectory) {
+                            return resource;
+                        }
+                        return URI.from({
+                            scheme: resource.scheme,
+                            authority: resource.authority,
+                            fragment: resource.fragment,
+                            query: resource.query,
+                            path: dirname(resource.path)
+                        });
+                    });
+                    for (const cwd of cwds) {
+                        if (opened[cwd.path]) {
+                            return;
+                        }
+                        opened[cwd.path] = true;
+                        const instance = await integratedTerminalService.createTerminal({ config: { cwd } });
+                        if (instance && instance.target !== TerminalLocation.Editor && (resources.length === 1 || !resource || cwd.path === resource.path || cwd.path === dirname(resource.path))) {
+                            integratedTerminalService.setActiveInstance(instance);
+                            terminalGroupService.showPanel(true);
+                        }
+                    }
+                }
+                else if (externalTerminalService) {
+                    distinct(targets.map(({ stat }) => stat.isDirectory ? stat.resource.fsPath : dirname(stat.resource.fsPath))).forEach(cwd => {
+                        externalTerminalService.openTerminal(config.terminal.external, cwd);
+                    });
+                }
+            });
+        }
+    });
+}
+registerOpenTerminalCommand(OPEN_IN_TERMINAL_COMMAND_ID, 'external');
+registerOpenTerminalCommand(OPEN_IN_INTEGRATED_TERMINAL_COMMAND_ID, 'integrated');
+let ExternalTerminalContribution = class ExternalTerminalContribution extends Disposable {
+    constructor(_configurationService) {
+        super();
+        this._configurationService = _configurationService;
+        const shouldShowIntegratedOnLocal = ContextKeyExpr.and(ResourceContextKey.Scheme.isEqualTo(Schemas.file), ContextKeyExpr.or(ContextKeyExpr.equals('config.terminal.explorerKind', 'integrated'), ContextKeyExpr.equals('config.terminal.explorerKind', 'both')));
+        const shouldShowExternalKindOnLocal = ContextKeyExpr.and(ResourceContextKey.Scheme.isEqualTo(Schemas.file), ContextKeyExpr.or(ContextKeyExpr.equals('config.terminal.explorerKind', 'external'), ContextKeyExpr.equals('config.terminal.explorerKind', 'both')));
+        this._openInIntegratedTerminalMenuItem = {
+            group: 'navigation',
+            order: 30,
+            command: {
+                id: OPEN_IN_INTEGRATED_TERMINAL_COMMAND_ID,
+                title: nls.localize('scopedConsoleAction.Integrated', "Open in Integrated Terminal")
+            },
+            when: ContextKeyExpr.or(shouldShowIntegratedOnLocal, ResourceContextKey.Scheme.isEqualTo(Schemas.vscodeRemote))
+        };
+        this._openInTerminalMenuItem = {
+            group: 'navigation',
+            order: 31,
+            command: {
+                id: OPEN_IN_TERMINAL_COMMAND_ID,
+                title: nls.localize('scopedConsoleAction.external', "Open in External Terminal")
+            },
+            when: shouldShowExternalKindOnLocal
+        };
+        MenuRegistry.appendMenuItem(MenuId.ExplorerContext, this._openInTerminalMenuItem);
+        MenuRegistry.appendMenuItem(MenuId.ExplorerContext, this._openInIntegratedTerminalMenuItem);
+        this._register(this._configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('terminal.explorerKind') || e.affectsConfiguration('terminal.external')) {
+                this._refreshOpenInTerminalMenuItemTitle();
+            }
+        }));
+        this._refreshOpenInTerminalMenuItemTitle();
+    }
+    isWindows() {
+        const config = this._configurationService.getValue().terminal;
+        if (isWindows && config.external?.windowsExec) {
+            const file = basename(config.external.windowsExec);
+            if (file === 'wt' || file === 'wt.exe') {
+                return true;
+            }
+        }
+        return false;
+    }
+    _refreshOpenInTerminalMenuItemTitle() {
+        if (this.isWindows()) {
+            this._openInTerminalMenuItem.command.title = nls.localize('scopedConsoleAction.wt', "Open in Windows Terminal");
+        }
+    }
+};
+ExternalTerminalContribution = __decorate([
+    __param(0, IConfigurationService),
+    __metadata("design:paramtypes", [Object])
+], ExternalTerminalContribution);
+export { ExternalTerminalContribution };
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(ExternalTerminalContribution, 3);

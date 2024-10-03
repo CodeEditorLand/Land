@@ -1,1 +1,202 @@
-function w(i){const r=A(i);if(r&&r.length>0)return new Uint32Array(r)}let o=0;const l=new Uint32Array(10);function A(i){if(o=0,e(i,g,4352),o>0||(e(i,m,4449),o>0)||(e(i,d,4520),o>0)||(e(i,f,12593),o))return l.subarray(0,o);if(i>=44032&&i<=55203){const r=i-44032,s=r%588,u=Math.floor(r/588),a=Math.floor(s/28),C=s%28-1;if(u<g.length?e(u,g,0):4352+u-12593<f.length&&e(4352+u,f,12593),a<m.length?e(a,m,0):4449+a-12593<f.length&&e(4449+a-12593,f,12593),C>=0&&(C<d.length?e(C,d,0):4520+C-12593<f.length&&e(4520+C-12593,f,12593)),o>0)return l.subarray(0,o)}}function e(i,r,s){i>=s&&i<s+r.length&&h(r[i-s])}function h(i){i!==0&&(l[o++]=i&255,i>>8&&(l[o++]=i>>8&255),i>>16&&(l[o++]=i>>16&255))}var b=(a=>(a[a.InitialConsonant=4352]="InitialConsonant",a[a.Vowel=4449]="Vowel",a[a.FinalConsonant=4520]="FinalConsonant",a[a.CompatibilityJamo=12593]="CompatibilityJamo",a))(b||{}),c=(n=>(n[n.NUL=0]="NUL",n[n.A=65]="A",n[n.B=66]="B",n[n.C=67]="C",n[n.D=68]="D",n[n.E=69]="E",n[n.F=70]="F",n[n.G=71]="G",n[n.H=72]="H",n[n.I=73]="I",n[n.J=74]="J",n[n.K=75]="K",n[n.L=76]="L",n[n.M=77]="M",n[n.N=78]="N",n[n.O=79]="O",n[n.P=80]="P",n[n.Q=81]="Q",n[n.R=82]="R",n[n.S=83]="S",n[n.T=84]="T",n[n.U=85]="U",n[n.V=86]="V",n[n.W=87]="W",n[n.X=88]="X",n[n.Y=89]="Y",n[n.Z=90]="Z",n[n.a=97]="a",n[n.b=98]="b",n[n.c=99]="c",n[n.d=100]="d",n[n.e=101]="e",n[n.f=102]="f",n[n.g=103]="g",n[n.h=104]="h",n[n.i=105]="i",n[n.j=106]="j",n[n.k=107]="k",n[n.l=108]="l",n[n.m=109]="m",n[n.n=110]="n",n[n.o=111]="o",n[n.p=112]="p",n[n.q=113]="q",n[n.r=114]="r",n[n.s=115]="s",n[n.t=116]="t",n[n.u=117]="u",n[n.v=118]="v",n[n.w=119]="w",n[n.x=120]="x",n[n.y=121]="y",n[n.z=122]="z",n))(c||{}),y=(t=>(t[t.fa=24934]="fa",t[t.fg=26470]="fg",t[t.fq=29030]="fq",t[t.fr=29286]="fr",t[t.ft=29798]="ft",t[t.fv=30310]="fv",t[t.fx=30822]="fx",t[t.hk=27496]="hk",t[t.hl=27752]="hl",t[t.ho=28520]="ho",t[t.ml=27757]="ml",t[t.nj=27246]="nj",t[t.nl=27758]="nl",t[t.np=28782]="np",t[t.qt=29809]="qt",t[t.rt=29810]="rt",t[t.sg=26483]="sg",t[t.sw=30579]="sw",t))(y||{});const g=new Uint8Array([114,82,115,101,69,102,97,113,81,116,84,100,119,87,99,122,120,118,103]),m=new Uint16Array([107,111,105,79,106,112,117,80,104,27496,28520,27752,121,110,27246,28782,27758,98,109,27757,108]),d=new Uint16Array([114,82,29810,115,30579,26483,101,102,29286,24934,29030,29798,30822,30310,26470,97,113,29809,116,84,100,119,99,122,120,118,103]),f=new Uint16Array([114,82,29810,115,30579,26483,101,69,102,29286,24934,29030,29798,30822,30310,26470,97,113,81,29809,116,84,100,119,87,99,122,120,118,103,107,111,105,79,106,112,117,80,104,27496,28520,27752,121,110,27246,28782,27758,98,109,27757,108]);export{w as getKoreanAltChars};
+export function getKoreanAltChars(code) {
+    const result = disassembleKorean(code);
+    if (result && result.length > 0) {
+        return new Uint32Array(result);
+    }
+    return undefined;
+}
+let codeBufferLength = 0;
+const codeBuffer = new Uint32Array(10);
+function disassembleKorean(code) {
+    codeBufferLength = 0;
+    getCodesFromArray(code, modernConsonants, 4352);
+    if (codeBufferLength > 0) {
+        return codeBuffer.subarray(0, codeBufferLength);
+    }
+    getCodesFromArray(code, modernVowels, 4449);
+    if (codeBufferLength > 0) {
+        return codeBuffer.subarray(0, codeBufferLength);
+    }
+    getCodesFromArray(code, modernFinalConsonants, 4520);
+    if (codeBufferLength > 0) {
+        return codeBuffer.subarray(0, codeBufferLength);
+    }
+    getCodesFromArray(code, compatibilityJamo, 12593);
+    if (codeBufferLength) {
+        return codeBuffer.subarray(0, codeBufferLength);
+    }
+    if (code >= 0xAC00 && code <= 0xD7A3) {
+        const hangulIndex = code - 0xAC00;
+        const vowelAndFinalConsonantProduct = hangulIndex % 588;
+        const initialConsonantIndex = Math.floor(hangulIndex / 588);
+        const vowelIndex = Math.floor(vowelAndFinalConsonantProduct / 28);
+        const finalConsonantIndex = vowelAndFinalConsonantProduct % 28 - 1;
+        if (initialConsonantIndex < modernConsonants.length) {
+            getCodesFromArray(initialConsonantIndex, modernConsonants, 0);
+        }
+        else if (4352 + initialConsonantIndex - 12593 < compatibilityJamo.length) {
+            getCodesFromArray(4352 + initialConsonantIndex, compatibilityJamo, 12593);
+        }
+        if (vowelIndex < modernVowels.length) {
+            getCodesFromArray(vowelIndex, modernVowels, 0);
+        }
+        else if (4449 + vowelIndex - 12593 < compatibilityJamo.length) {
+            getCodesFromArray(4449 + vowelIndex - 12593, compatibilityJamo, 12593);
+        }
+        if (finalConsonantIndex >= 0) {
+            if (finalConsonantIndex < modernFinalConsonants.length) {
+                getCodesFromArray(finalConsonantIndex, modernFinalConsonants, 0);
+            }
+            else if (4520 + finalConsonantIndex - 12593 < compatibilityJamo.length) {
+                getCodesFromArray(4520 + finalConsonantIndex - 12593, compatibilityJamo, 12593);
+            }
+        }
+        if (codeBufferLength > 0) {
+            return codeBuffer.subarray(0, codeBufferLength);
+        }
+    }
+    return undefined;
+}
+function getCodesFromArray(code, array, arrayStartIndex) {
+    if (code >= arrayStartIndex && code < arrayStartIndex + array.length) {
+        addCodesToBuffer(array[code - arrayStartIndex]);
+    }
+}
+function addCodesToBuffer(codes) {
+    if (codes === 0) {
+        return;
+    }
+    codeBuffer[codeBufferLength++] = codes & 0xFF;
+    if (codes >> 8) {
+        codeBuffer[codeBufferLength++] = (codes >> 8) & 0xFF;
+    }
+    if (codes >> 16) {
+        codeBuffer[codeBufferLength++] = (codes >> 16) & 0xFF;
+    }
+}
+const modernConsonants = new Uint8Array([
+    114,
+    82,
+    115,
+    101,
+    69,
+    102,
+    97,
+    113,
+    81,
+    116,
+    84,
+    100,
+    119,
+    87,
+    99,
+    122,
+    120,
+    118,
+    103,
+]);
+const modernVowels = new Uint16Array([
+    107,
+    111,
+    105,
+    79,
+    106,
+    112,
+    117,
+    80,
+    104,
+    27496,
+    28520,
+    27752,
+    121,
+    110,
+    27246,
+    28782,
+    27758,
+    98,
+    109,
+    27757,
+    108,
+]);
+const modernFinalConsonants = new Uint16Array([
+    114,
+    82,
+    29810,
+    115,
+    30579,
+    26483,
+    101,
+    102,
+    29286,
+    24934,
+    29030,
+    29798,
+    30822,
+    30310,
+    26470,
+    97,
+    113,
+    29809,
+    116,
+    84,
+    100,
+    119,
+    99,
+    122,
+    120,
+    118,
+    103,
+]);
+const compatibilityJamo = new Uint16Array([
+    114,
+    82,
+    29810,
+    115,
+    30579,
+    26483,
+    101,
+    69,
+    102,
+    29286,
+    24934,
+    29030,
+    29798,
+    30822,
+    30310,
+    26470,
+    97,
+    113,
+    81,
+    29809,
+    116,
+    84,
+    100,
+    119,
+    87,
+    99,
+    122,
+    120,
+    118,
+    103,
+    107,
+    111,
+    105,
+    79,
+    106,
+    112,
+    117,
+    80,
+    104,
+    27496,
+    28520,
+    27752,
+    121,
+    110,
+    27246,
+    28782,
+    27758,
+    98,
+    109,
+    27757,
+    108,
+]);

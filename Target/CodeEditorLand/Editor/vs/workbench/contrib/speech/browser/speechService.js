@@ -1,1 +1,320 @@
-var I=Object.defineProperty;var R=Object.getOwnPropertyDescriptor;var w=(v,h,e,i)=>{for(var s=i>1?void 0:i?R(h,e):h,t=v.length-1,o;t>=0;t--)(o=v[t])&&(s=(i?o(h,e,s):o(s))||s);return i&&s&&I(h,e,s),s},p=(v,h)=>(e,i)=>h(e,i,v);import{localize as f}from"../../../../nls.js";import{CancellationTokenSource as E}from"../../../../base/common/cancellation.js";import{Emitter as S,Event as b}from"../../../../base/common/event.js";import{Disposable as K,DisposableStore as g,toDisposable as D}from"../../../../base/common/lifecycle.js";import{IContextKeyService as _}from"../../../../platform/contextkey/common/contextkey.js";import{ILogService as z}from"../../../../platform/log/common/log.js";import{IHostService as L}from"../../../services/host/browser/host.js";import{DeferredPromise as k}from"../../../../base/common/async.js";import{HasSpeechProvider as M,SpeechToTextInProgress as H,KeywordRecognitionStatus as m,SpeechToTextStatus as l,speechLanguageConfigToLanguage as P,SPEECH_LANGUAGE_CONFIG as C,TextToSpeechInProgress as A,TextToSpeechStatus as x}from"../common/speechService.js";import{ITelemetryService as F}from"../../../../platform/telemetry/common/telemetry.js";import{IConfigurationService as q}from"../../../../platform/configuration/common/configuration.js";import{ExtensionsRegistry as N}from"../../../services/extensions/common/extensionsRegistry.js";import{IExtensionService as O}from"../../../services/extensions/common/extensions.js";const $=N.registerExtensionPoint({extensionPoint:"speechProviders",jsonSchema:{description:f("vscode.extension.contributes.speechProvider","Contributes a Speech Provider"),type:"array",items:{additionalProperties:!1,type:"object",defaultSnippets:[{body:{name:"",description:""}}],required:["name"],properties:{name:{description:f("speechProviderName","Unique name for this Speech Provider."),type:"string"},description:{description:f("speechProviderDescription","A description of this Speech Provider, shown in the UI."),type:"string"}}}}});let u=class extends K{constructor(e,i,s,t,o,a){super();this.logService=e;this.contextKeyService=i;this.hostService=s;this.telemetryService=t;this.configurationService=o;this.extensionService=a;this.handleAndRegisterSpeechExtensions()}_serviceBrand;_onDidChangeHasSpeechProvider=this._register(new S);onDidChangeHasSpeechProvider=this._onDidChangeHasSpeechProvider.event;get hasSpeechProvider(){return this.providerDescriptors.size>0||this.providers.size>0}providers=new Map;providerDescriptors=new Map;hasSpeechProviderContext=M.bindTo(this.contextKeyService);handleAndRegisterSpeechExtensions(){$.setHandler((e,i)=>{const s=this.hasSpeechProvider;for(const t of i.removed)for(const o of t.value)this.providerDescriptors.delete(o.name);for(const t of i.added)for(const o of t.value)this.providerDescriptors.set(o.name,o);s!==this.hasSpeechProvider&&this.handleHasSpeechProviderChange()})}registerSpeechProvider(e,i){if(this.providers.has(e))throw new Error(`Speech provider with identifier ${e} is already registered.`);const s=this.hasSpeechProvider;return this.providers.set(e,i),s!==this.hasSpeechProvider&&this.handleHasSpeechProviderChange(),D(()=>{const t=this.hasSpeechProvider;this.providers.delete(e),t!==this.hasSpeechProvider&&this.handleHasSpeechProviderChange()})}handleHasSpeechProviderChange(){this.hasSpeechProviderContext.set(this.hasSpeechProvider),this._onDidChangeHasSpeechProvider.fire()}_onDidStartSpeechToTextSession=this._register(new S);onDidStartSpeechToTextSession=this._onDidStartSpeechToTextSession.event;_onDidEndSpeechToTextSession=this._register(new S);onDidEndSpeechToTextSession=this._onDidEndSpeechToTextSession.event;activeSpeechToTextSessions=0;get hasActiveSpeechToTextSession(){return this.activeSpeechToTextSessions>0}speechToTextInProgress=H.bindTo(this.contextKeyService);async createSpeechToTextSession(e,i="speech"){const s=await this.getProvider(),t=P(this.configurationService.getValue(C)),o=s.createSpeechToTextSession(e,typeof t=="string"?{language:t}:void 0),a=Date.now();let c=!1,r=!1,d=0;const n=new g,y=()=>{this.activeSpeechToTextSessions=Math.max(0,this.activeSpeechToTextSessions-1),this.hasActiveSpeechToTextSession||this.speechToTextInProgress.reset(),this._onDidEndSpeechToTextSession.fire(),this.telemetryService.publicLog2("speechToTextSession",{context:i,sessionDuration:Date.now()-a,sessionRecognized:c,sessionError:r,sessionContentLength:d,sessionLanguage:t}),n.dispose()};return n.add(e.onCancellationRequested(()=>y())),e.isCancellationRequested&&y(),n.add(o.onDidChange(T=>{switch(T.status){case l.Started:this.activeSpeechToTextSessions++,this.speechToTextInProgress.set(!0),this._onDidStartSpeechToTextSession.fire();break;case l.Recognizing:c=!0;break;case l.Recognized:typeof T.text=="string"&&(d+=T.text.length);break;case l.Stopped:y();break;case l.Error:this.logService.error(`Speech provider error in speech to text session: ${T.text}`),r=!0;break}})),o}async getProvider(){await this.extensionService.activateByEvent("onSpeech");const e=Array.from(this.providers.values()).at(0);if(e)this.providers.size>1&&this.logService.warn(`Multiple speech providers registered. Picking first one: ${e.metadata.displayName}`);else throw new Error("No Speech provider is registered.");return e}_onDidStartTextToSpeechSession=this._register(new S);onDidStartTextToSpeechSession=this._onDidStartTextToSpeechSession.event;_onDidEndTextToSpeechSession=this._register(new S);onDidEndTextToSpeechSession=this._onDidEndTextToSpeechSession.event;activeTextToSpeechSessions=0;get hasActiveTextToSpeechSession(){return this.activeTextToSpeechSessions>0}textToSpeechInProgress=A.bindTo(this.contextKeyService);async createTextToSpeechSession(e,i="speech"){const s=await this.getProvider(),t=P(this.configurationService.getValue(C)),o=s.createTextToSpeechSession(e,typeof t=="string"?{language:t}:void 0),a=Date.now();let c=!1;const r=new g,d=n=>{this.activeTextToSpeechSessions=Math.max(0,this.activeTextToSpeechSessions-1),this.hasActiveTextToSpeechSession||this.textToSpeechInProgress.reset(),this._onDidEndTextToSpeechSession.fire(),this.telemetryService.publicLog2("textToSpeechSession",{context:i,sessionDuration:Date.now()-a,sessionError:c,sessionLanguage:t}),n&&r.dispose()};return r.add(e.onCancellationRequested(()=>d(!0))),e.isCancellationRequested&&d(!0),r.add(o.onDidChange(n=>{switch(n.status){case x.Started:this.activeTextToSpeechSessions++,this.textToSpeechInProgress.set(!0),this._onDidStartTextToSpeechSession.fire();break;case x.Stopped:d(!1);break;case x.Error:this.logService.error(`Speech provider error in text to speech session: ${n.text}`),c=!0;break}})),o}_onDidStartKeywordRecognition=this._register(new S);onDidStartKeywordRecognition=this._onDidStartKeywordRecognition.event;_onDidEndKeywordRecognition=this._register(new S);onDidEndKeywordRecognition=this._onDidEndKeywordRecognition.event;activeKeywordRecognitionSessions=0;get hasActiveKeywordRecognition(){return this.activeKeywordRecognitionSessions>0}async recognizeKeyword(e){const i=new k,s=new g;s.add(e.onCancellationRequested(()=>{s.dispose(),i.complete(m.Canceled)}));const t=s.add(new g);let o;const a=()=>{t.clear();const r=new E(e);t.add(D(()=>r.dispose(!0)));const d=o=this.doRecognizeKeyword(r.token).then(n=>{d===o&&i.complete(n)},n=>{d===o&&i.error(n)})};s.add(this.hostService.onDidChangeFocus(r=>{!r&&o?(t.clear(),o=void 0):o||a()})),this.hostService.hasFocus&&a();let c;try{c=await i.p}finally{s.dispose()}return this.telemetryService.publicLog2("keywordRecognition",{keywordRecognized:c===m.Recognized}),c}async doRecognizeKeyword(e){const s=(await this.getProvider()).createKeywordRecognitionSession(e);this.activeKeywordRecognitionSessions++,this._onDidStartKeywordRecognition.fire();const t=new g,o=()=>{this.activeKeywordRecognitionSessions=Math.max(0,this.activeKeywordRecognitionSessions-1),this._onDidEndKeywordRecognition.fire(),t.dispose()};t.add(e.onCancellationRequested(()=>o())),e.isCancellationRequested&&o(),t.add(s.onDidChange(a=>{a.status===m.Stopped&&o()}));try{return(await b.toPromise(s.onDidChange)).status}finally{o()}}};u=w([p(0,z),p(1,_),p(2,L),p(3,F),p(4,q),p(5,O)],u);export{u as SpeechService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { localize } from '../../../../nls.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+import { DeferredPromise } from '../../../../base/common/async.js';
+import { HasSpeechProvider, SpeechToTextInProgress, KeywordRecognitionStatus, SpeechToTextStatus, speechLanguageConfigToLanguage, SPEECH_LANGUAGE_CONFIG, TextToSpeechInProgress, TextToSpeechStatus } from '../common/speechService.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ExtensionsRegistry } from '../../../services/extensions/common/extensionsRegistry.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+const speechProvidersExtensionPoint = ExtensionsRegistry.registerExtensionPoint({
+    extensionPoint: 'speechProviders',
+    jsonSchema: {
+        description: localize('vscode.extension.contributes.speechProvider', 'Contributes a Speech Provider'),
+        type: 'array',
+        items: {
+            additionalProperties: false,
+            type: 'object',
+            defaultSnippets: [{ body: { name: '', description: '' } }],
+            required: ['name'],
+            properties: {
+                name: {
+                    description: localize('speechProviderName', "Unique name for this Speech Provider."),
+                    type: 'string'
+                },
+                description: {
+                    description: localize('speechProviderDescription', "A description of this Speech Provider, shown in the UI."),
+                    type: 'string'
+                }
+            }
+        }
+    }
+});
+let SpeechService = class SpeechService extends Disposable {
+    get hasSpeechProvider() { return this.providerDescriptors.size > 0 || this.providers.size > 0; }
+    constructor(logService, contextKeyService, hostService, telemetryService, configurationService, extensionService) {
+        super();
+        this.logService = logService;
+        this.contextKeyService = contextKeyService;
+        this.hostService = hostService;
+        this.telemetryService = telemetryService;
+        this.configurationService = configurationService;
+        this.extensionService = extensionService;
+        this._onDidChangeHasSpeechProvider = this._register(new Emitter());
+        this.onDidChangeHasSpeechProvider = this._onDidChangeHasSpeechProvider.event;
+        this.providers = new Map();
+        this.providerDescriptors = new Map();
+        this.hasSpeechProviderContext = HasSpeechProvider.bindTo(this.contextKeyService);
+        this._onDidStartSpeechToTextSession = this._register(new Emitter());
+        this.onDidStartSpeechToTextSession = this._onDidStartSpeechToTextSession.event;
+        this._onDidEndSpeechToTextSession = this._register(new Emitter());
+        this.onDidEndSpeechToTextSession = this._onDidEndSpeechToTextSession.event;
+        this.activeSpeechToTextSessions = 0;
+        this.speechToTextInProgress = SpeechToTextInProgress.bindTo(this.contextKeyService);
+        this._onDidStartTextToSpeechSession = this._register(new Emitter());
+        this.onDidStartTextToSpeechSession = this._onDidStartTextToSpeechSession.event;
+        this._onDidEndTextToSpeechSession = this._register(new Emitter());
+        this.onDidEndTextToSpeechSession = this._onDidEndTextToSpeechSession.event;
+        this.activeTextToSpeechSessions = 0;
+        this.textToSpeechInProgress = TextToSpeechInProgress.bindTo(this.contextKeyService);
+        this._onDidStartKeywordRecognition = this._register(new Emitter());
+        this.onDidStartKeywordRecognition = this._onDidStartKeywordRecognition.event;
+        this._onDidEndKeywordRecognition = this._register(new Emitter());
+        this.onDidEndKeywordRecognition = this._onDidEndKeywordRecognition.event;
+        this.activeKeywordRecognitionSessions = 0;
+        this.handleAndRegisterSpeechExtensions();
+    }
+    handleAndRegisterSpeechExtensions() {
+        speechProvidersExtensionPoint.setHandler((extensions, delta) => {
+            const oldHasSpeechProvider = this.hasSpeechProvider;
+            for (const extension of delta.removed) {
+                for (const descriptor of extension.value) {
+                    this.providerDescriptors.delete(descriptor.name);
+                }
+            }
+            for (const extension of delta.added) {
+                for (const descriptor of extension.value) {
+                    this.providerDescriptors.set(descriptor.name, descriptor);
+                }
+            }
+            if (oldHasSpeechProvider !== this.hasSpeechProvider) {
+                this.handleHasSpeechProviderChange();
+            }
+        });
+    }
+    registerSpeechProvider(identifier, provider) {
+        if (this.providers.has(identifier)) {
+            throw new Error(`Speech provider with identifier ${identifier} is already registered.`);
+        }
+        const oldHasSpeechProvider = this.hasSpeechProvider;
+        this.providers.set(identifier, provider);
+        if (oldHasSpeechProvider !== this.hasSpeechProvider) {
+            this.handleHasSpeechProviderChange();
+        }
+        return toDisposable(() => {
+            const oldHasSpeechProvider = this.hasSpeechProvider;
+            this.providers.delete(identifier);
+            if (oldHasSpeechProvider !== this.hasSpeechProvider) {
+                this.handleHasSpeechProviderChange();
+            }
+        });
+    }
+    handleHasSpeechProviderChange() {
+        this.hasSpeechProviderContext.set(this.hasSpeechProvider);
+        this._onDidChangeHasSpeechProvider.fire();
+    }
+    get hasActiveSpeechToTextSession() { return this.activeSpeechToTextSessions > 0; }
+    async createSpeechToTextSession(token, context = 'speech') {
+        const provider = await this.getProvider();
+        const language = speechLanguageConfigToLanguage(this.configurationService.getValue(SPEECH_LANGUAGE_CONFIG));
+        const session = provider.createSpeechToTextSession(token, typeof language === 'string' ? { language } : undefined);
+        const sessionStart = Date.now();
+        let sessionRecognized = false;
+        let sessionError = false;
+        let sessionContentLength = 0;
+        const disposables = new DisposableStore();
+        const onSessionStoppedOrCanceled = () => {
+            this.activeSpeechToTextSessions = Math.max(0, this.activeSpeechToTextSessions - 1);
+            if (!this.hasActiveSpeechToTextSession) {
+                this.speechToTextInProgress.reset();
+            }
+            this._onDidEndSpeechToTextSession.fire();
+            this.telemetryService.publicLog2('speechToTextSession', {
+                context,
+                sessionDuration: Date.now() - sessionStart,
+                sessionRecognized,
+                sessionError,
+                sessionContentLength,
+                sessionLanguage: language
+            });
+            disposables.dispose();
+        };
+        disposables.add(token.onCancellationRequested(() => onSessionStoppedOrCanceled()));
+        if (token.isCancellationRequested) {
+            onSessionStoppedOrCanceled();
+        }
+        disposables.add(session.onDidChange(e => {
+            switch (e.status) {
+                case SpeechToTextStatus.Started:
+                    this.activeSpeechToTextSessions++;
+                    this.speechToTextInProgress.set(true);
+                    this._onDidStartSpeechToTextSession.fire();
+                    break;
+                case SpeechToTextStatus.Recognizing:
+                    sessionRecognized = true;
+                    break;
+                case SpeechToTextStatus.Recognized:
+                    if (typeof e.text === 'string') {
+                        sessionContentLength += e.text.length;
+                    }
+                    break;
+                case SpeechToTextStatus.Stopped:
+                    onSessionStoppedOrCanceled();
+                    break;
+                case SpeechToTextStatus.Error:
+                    this.logService.error(`Speech provider error in speech to text session: ${e.text}`);
+                    sessionError = true;
+                    break;
+            }
+        }));
+        return session;
+    }
+    async getProvider() {
+        await this.extensionService.activateByEvent('onSpeech');
+        const provider = Array.from(this.providers.values()).at(0);
+        if (!provider) {
+            throw new Error(`No Speech provider is registered.`);
+        }
+        else if (this.providers.size > 1) {
+            this.logService.warn(`Multiple speech providers registered. Picking first one: ${provider.metadata.displayName}`);
+        }
+        return provider;
+    }
+    get hasActiveTextToSpeechSession() { return this.activeTextToSpeechSessions > 0; }
+    async createTextToSpeechSession(token, context = 'speech') {
+        const provider = await this.getProvider();
+        const language = speechLanguageConfigToLanguage(this.configurationService.getValue(SPEECH_LANGUAGE_CONFIG));
+        const session = provider.createTextToSpeechSession(token, typeof language === 'string' ? { language } : undefined);
+        const sessionStart = Date.now();
+        let sessionError = false;
+        const disposables = new DisposableStore();
+        const onSessionStoppedOrCanceled = (dispose) => {
+            this.activeTextToSpeechSessions = Math.max(0, this.activeTextToSpeechSessions - 1);
+            if (!this.hasActiveTextToSpeechSession) {
+                this.textToSpeechInProgress.reset();
+            }
+            this._onDidEndTextToSpeechSession.fire();
+            this.telemetryService.publicLog2('textToSpeechSession', {
+                context,
+                sessionDuration: Date.now() - sessionStart,
+                sessionError,
+                sessionLanguage: language
+            });
+            if (dispose) {
+                disposables.dispose();
+            }
+        };
+        disposables.add(token.onCancellationRequested(() => onSessionStoppedOrCanceled(true)));
+        if (token.isCancellationRequested) {
+            onSessionStoppedOrCanceled(true);
+        }
+        disposables.add(session.onDidChange(e => {
+            switch (e.status) {
+                case TextToSpeechStatus.Started:
+                    this.activeTextToSpeechSessions++;
+                    this.textToSpeechInProgress.set(true);
+                    this._onDidStartTextToSpeechSession.fire();
+                    break;
+                case TextToSpeechStatus.Stopped:
+                    onSessionStoppedOrCanceled(false);
+                    break;
+                case TextToSpeechStatus.Error:
+                    this.logService.error(`Speech provider error in text to speech session: ${e.text}`);
+                    sessionError = true;
+                    break;
+            }
+        }));
+        return session;
+    }
+    get hasActiveKeywordRecognition() { return this.activeKeywordRecognitionSessions > 0; }
+    async recognizeKeyword(token) {
+        const result = new DeferredPromise();
+        const disposables = new DisposableStore();
+        disposables.add(token.onCancellationRequested(() => {
+            disposables.dispose();
+            result.complete(KeywordRecognitionStatus.Canceled);
+        }));
+        const recognizeKeywordDisposables = disposables.add(new DisposableStore());
+        let activeRecognizeKeywordSession = undefined;
+        const recognizeKeyword = () => {
+            recognizeKeywordDisposables.clear();
+            const cts = new CancellationTokenSource(token);
+            recognizeKeywordDisposables.add(toDisposable(() => cts.dispose(true)));
+            const currentRecognizeKeywordSession = activeRecognizeKeywordSession = this.doRecognizeKeyword(cts.token).then(status => {
+                if (currentRecognizeKeywordSession === activeRecognizeKeywordSession) {
+                    result.complete(status);
+                }
+            }, error => {
+                if (currentRecognizeKeywordSession === activeRecognizeKeywordSession) {
+                    result.error(error);
+                }
+            });
+        };
+        disposables.add(this.hostService.onDidChangeFocus(focused => {
+            if (!focused && activeRecognizeKeywordSession) {
+                recognizeKeywordDisposables.clear();
+                activeRecognizeKeywordSession = undefined;
+            }
+            else if (!activeRecognizeKeywordSession) {
+                recognizeKeyword();
+            }
+        }));
+        if (this.hostService.hasFocus) {
+            recognizeKeyword();
+        }
+        let status;
+        try {
+            status = await result.p;
+        }
+        finally {
+            disposables.dispose();
+        }
+        this.telemetryService.publicLog2('keywordRecognition', {
+            keywordRecognized: status === KeywordRecognitionStatus.Recognized
+        });
+        return status;
+    }
+    async doRecognizeKeyword(token) {
+        const provider = await this.getProvider();
+        const session = provider.createKeywordRecognitionSession(token);
+        this.activeKeywordRecognitionSessions++;
+        this._onDidStartKeywordRecognition.fire();
+        const disposables = new DisposableStore();
+        const onSessionStoppedOrCanceled = () => {
+            this.activeKeywordRecognitionSessions = Math.max(0, this.activeKeywordRecognitionSessions - 1);
+            this._onDidEndKeywordRecognition.fire();
+            disposables.dispose();
+        };
+        disposables.add(token.onCancellationRequested(() => onSessionStoppedOrCanceled()));
+        if (token.isCancellationRequested) {
+            onSessionStoppedOrCanceled();
+        }
+        disposables.add(session.onDidChange(e => {
+            if (e.status === KeywordRecognitionStatus.Stopped) {
+                onSessionStoppedOrCanceled();
+            }
+        }));
+        try {
+            return (await Event.toPromise(session.onDidChange)).status;
+        }
+        finally {
+            onSessionStoppedOrCanceled();
+        }
+    }
+};
+SpeechService = __decorate([
+    __param(0, ILogService),
+    __param(1, IContextKeyService),
+    __param(2, IHostService),
+    __param(3, ITelemetryService),
+    __param(4, IConfigurationService),
+    __param(5, IExtensionService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], SpeechService);
+export { SpeechService };

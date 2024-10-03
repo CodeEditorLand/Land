@@ -1,1 +1,1140 @@
-import*as v from"./process.js";const k=65,D=97,N=90,y=122,w=46,m=47,b=92,P=58,H=63;class L extends Error{code;constructor(t,r,s){let l;typeof r=="string"&&r.indexOf("not ")===0?(l="must not be",r=r.replace(/^not /,"")):l="must be";const n=t.indexOf(".")!==-1?"property":"argument";let o=`The "${t}" ${n} ${l} of type ${r}`;o+=`. Received type ${typeof s}`,super(o),this.code="ERR_INVALID_ARG_TYPE"}}function j(e,t){if(e===null||typeof e!="object")throw new L(t,"Object",e)}function A(e,t){if(typeof e!="string")throw new L(t,"string",e)}const $=v.platform==="win32";function a(e){return e===m||e===b}function E(e){return e===m}function S(e){return e>=k&&e<=N||e>=D&&e<=y}function R(e,t,r,s){let l="",n=0,o=-1,i=0,f=0;for(let c=0;c<=e.length;++c){if(c<e.length)f=e.charCodeAt(c);else{if(s(f))break;f=m}if(s(f)){if(!(o===c-1||i===1))if(i===2){if(l.length<2||n!==2||l.charCodeAt(l.length-1)!==w||l.charCodeAt(l.length-2)!==w){if(l.length>2){const u=l.lastIndexOf(r);u===-1?(l="",n=0):(l=l.slice(0,u),n=l.length-1-l.lastIndexOf(r)),o=c,i=0;continue}else if(l.length!==0){l="",n=0,o=c,i=0;continue}}t&&(l+=l.length>0?`${r}..`:"..",n=2)}else l.length>0?l+=`${r}${e.slice(o+1,c)}`:l=e.slice(o+1,c),n=c-o-1;o=c,i=0}else f===w&&i!==-1?++i:i=-1}return l}function O(e){return e?`${e[0]==="."?"":"."}${e}`:""}function I(e,t){j(t,"pathObject");const r=t.dir||t.root,s=t.base||`${t.name||""}${O(t.ext)}`;return r?r===t.root?`${r}${s}`:`${r}${e}${s}`:s}const h={resolve(...e){let t="",r="",s=!1;for(let l=e.length-1;l>=-1;l--){let n;if(l>=0){if(n=e[l],A(n,`paths[${l}]`),n.length===0)continue}else t.length===0?n=v.cwd():(n=v.env[`=${t}`]||v.cwd(),(n===void 0||n.slice(0,2).toLowerCase()!==t.toLowerCase()&&n.charCodeAt(2)===b)&&(n=`${t}\\`));const o=n.length;let i=0,f="",c=!1;const u=n.charCodeAt(0);if(o===1)a(u)&&(i=1,c=!0);else if(a(u))if(c=!0,a(n.charCodeAt(1))){let d=2,g=d;for(;d<o&&!a(n.charCodeAt(d));)d++;if(d<o&&d!==g){const x=n.slice(g,d);for(g=d;d<o&&a(n.charCodeAt(d));)d++;if(d<o&&d!==g){for(g=d;d<o&&!a(n.charCodeAt(d));)d++;(d===o||d!==g)&&(f=`\\\\${x}\\${n.slice(g,d)}`,i=d)}}}else i=1;else S(u)&&n.charCodeAt(1)===P&&(f=n.slice(0,2),i=2,o>2&&a(n.charCodeAt(2))&&(c=!0,i=3));if(f.length>0)if(t.length>0){if(f.toLowerCase()!==t.toLowerCase())continue}else t=f;if(s){if(t.length>0)break}else if(r=`${n.slice(i)}\\${r}`,s=c,c&&t.length>0)break}return r=R(r,!s,"\\",a),s?`${t}\\${r}`:`${t}${r}`||"."},normalize(e){A(e,"path");const t=e.length;if(t===0)return".";let r=0,s,l=!1;const n=e.charCodeAt(0);if(t===1)return E(n)?"\\":e;if(a(n))if(l=!0,a(e.charCodeAt(1))){let i=2,f=i;for(;i<t&&!a(e.charCodeAt(i));)i++;if(i<t&&i!==f){const c=e.slice(f,i);for(f=i;i<t&&a(e.charCodeAt(i));)i++;if(i<t&&i!==f){for(f=i;i<t&&!a(e.charCodeAt(i));)i++;if(i===t)return`\\\\${c}\\${e.slice(f)}\\`;i!==f&&(s=`\\\\${c}\\${e.slice(f,i)}`,r=i)}}}else r=1;else S(n)&&e.charCodeAt(1)===P&&(s=e.slice(0,2),r=2,t>2&&a(e.charCodeAt(2))&&(l=!0,r=3));let o=r<t?R(e.slice(r),!l,"\\",a):"";return o.length===0&&!l&&(o="."),o.length>0&&a(e.charCodeAt(t-1))&&(o+="\\"),s===void 0?l?`\\${o}`:o:l?`${s}\\${o}`:`${s}${o}`},isAbsolute(e){A(e,"path");const t=e.length;if(t===0)return!1;const r=e.charCodeAt(0);return a(r)||t>2&&S(r)&&e.charCodeAt(1)===P&&a(e.charCodeAt(2))},join(...e){if(e.length===0)return".";let t,r;for(let n=0;n<e.length;++n){const o=e[n];A(o,"path"),o.length>0&&(t===void 0?t=r=o:t+=`\\${o}`)}if(t===void 0)return".";let s=!0,l=0;if(typeof r=="string"&&a(r.charCodeAt(0))){++l;const n=r.length;n>1&&a(r.charCodeAt(1))&&(++l,n>2&&(a(r.charCodeAt(2))?++l:s=!1))}if(s){for(;l<t.length&&a(t.charCodeAt(l));)l++;l>=2&&(t=`\\${t.slice(l)}`)}return h.normalize(t)},relative(e,t){if(A(e,"from"),A(t,"to"),e===t)return"";const r=h.resolve(e),s=h.resolve(t);if(r===s||(e=r.toLowerCase(),t=s.toLowerCase(),e===t))return"";let l=0;for(;l<e.length&&e.charCodeAt(l)===b;)l++;let n=e.length;for(;n-1>l&&e.charCodeAt(n-1)===b;)n--;const o=n-l;let i=0;for(;i<t.length&&t.charCodeAt(i)===b;)i++;let f=t.length;for(;f-1>i&&t.charCodeAt(f-1)===b;)f--;const c=f-i,u=o<c?o:c;let d=-1,g=0;for(;g<u;g++){const _=e.charCodeAt(l+g);if(_!==t.charCodeAt(i+g))break;_===b&&(d=g)}if(g!==u){if(d===-1)return s}else{if(c>u){if(t.charCodeAt(i+g)===b)return s.slice(i+g+1);if(g===2)return s.slice(i+g)}o>u&&(e.charCodeAt(l+g)===b?d=g:g===2&&(d=3)),d===-1&&(d=0)}let x="";for(g=l+d+1;g<=n;++g)(g===n||e.charCodeAt(g)===b)&&(x+=x.length===0?"..":"\\..");return i+=d,x.length>0?`${x}${s.slice(i,f)}`:(s.charCodeAt(i)===b&&++i,s.slice(i,f))},toNamespacedPath(e){if(typeof e!="string"||e.length===0)return e;const t=h.resolve(e);if(t.length<=2)return e;if(t.charCodeAt(0)===b){if(t.charCodeAt(1)===b){const r=t.charCodeAt(2);if(r!==H&&r!==w)return`\\\\?\\UNC\\${t.slice(2)}`}}else if(S(t.charCodeAt(0))&&t.charCodeAt(1)===P&&t.charCodeAt(2)===b)return`\\\\?\\${t}`;return e},dirname(e){A(e,"path");const t=e.length;if(t===0)return".";let r=-1,s=0;const l=e.charCodeAt(0);if(t===1)return a(l)?e:".";if(a(l)){if(r=s=1,a(e.charCodeAt(1))){let i=2,f=i;for(;i<t&&!a(e.charCodeAt(i));)i++;if(i<t&&i!==f){for(f=i;i<t&&a(e.charCodeAt(i));)i++;if(i<t&&i!==f){for(f=i;i<t&&!a(e.charCodeAt(i));)i++;if(i===t)return e;i!==f&&(r=s=i+1)}}}}else S(l)&&e.charCodeAt(1)===P&&(r=t>2&&a(e.charCodeAt(2))?3:2,s=r);let n=-1,o=!0;for(let i=t-1;i>=s;--i)if(a(e.charCodeAt(i))){if(!o){n=i;break}}else o=!1;if(n===-1){if(r===-1)return".";n=r}return e.slice(0,n)},basename(e,t){t!==void 0&&A(t,"suffix"),A(e,"path");let r=0,s=-1,l=!0,n;if(e.length>=2&&S(e.charCodeAt(0))&&e.charCodeAt(1)===P&&(r=2),t!==void 0&&t.length>0&&t.length<=e.length){if(t===e)return"";let o=t.length-1,i=-1;for(n=e.length-1;n>=r;--n){const f=e.charCodeAt(n);if(a(f)){if(!l){r=n+1;break}}else i===-1&&(l=!1,i=n+1),o>=0&&(f===t.charCodeAt(o)?--o===-1&&(s=n):(o=-1,s=i))}return r===s?s=i:s===-1&&(s=e.length),e.slice(r,s)}for(n=e.length-1;n>=r;--n)if(a(e.charCodeAt(n))){if(!l){r=n+1;break}}else s===-1&&(l=!1,s=n+1);return s===-1?"":e.slice(r,s)},extname(e){A(e,"path");let t=0,r=-1,s=0,l=-1,n=!0,o=0;e.length>=2&&e.charCodeAt(1)===P&&S(e.charCodeAt(0))&&(t=s=2);for(let i=e.length-1;i>=t;--i){const f=e.charCodeAt(i);if(a(f)){if(!n){s=i+1;break}continue}l===-1&&(n=!1,l=i+1),f===w?r===-1?r=i:o!==1&&(o=1):r!==-1&&(o=-1)}return r===-1||l===-1||o===0||o===1&&r===l-1&&r===s+1?"":e.slice(r,l)},format:I.bind(null,"\\"),parse(e){A(e,"path");const t={root:"",dir:"",base:"",ext:"",name:""};if(e.length===0)return t;const r=e.length;let s=0,l=e.charCodeAt(0);if(r===1)return a(l)?(t.root=t.dir=e,t):(t.base=t.name=e,t);if(a(l)){if(s=1,a(e.charCodeAt(1))){let d=2,g=d;for(;d<r&&!a(e.charCodeAt(d));)d++;if(d<r&&d!==g){for(g=d;d<r&&a(e.charCodeAt(d));)d++;if(d<r&&d!==g){for(g=d;d<r&&!a(e.charCodeAt(d));)d++;d===r?s=d:d!==g&&(s=d+1)}}}}else if(S(l)&&e.charCodeAt(1)===P){if(r<=2)return t.root=t.dir=e,t;if(s=2,a(e.charCodeAt(2))){if(r===3)return t.root=t.dir=e,t;s=3}}s>0&&(t.root=e.slice(0,s));let n=-1,o=s,i=-1,f=!0,c=e.length-1,u=0;for(;c>=s;--c){if(l=e.charCodeAt(c),a(l)){if(!f){o=c+1;break}continue}i===-1&&(f=!1,i=c+1),l===w?n===-1?n=c:u!==1&&(u=1):n!==-1&&(u=-1)}return i!==-1&&(n===-1||u===0||u===1&&n===i-1&&n===o+1?t.base=t.name=e.slice(o,i):(t.name=e.slice(o,n),t.base=e.slice(o,i),t.ext=e.slice(n,i))),o>0&&o!==s?t.dir=e.slice(0,o-1):t.dir=t.root,t},sep:"\\",delimiter:";",win32:null,posix:null},z=(()=>{if($){const e=/\\/g;return()=>{const t=v.cwd().replace(e,"/");return t.slice(t.indexOf("/"))}}return()=>v.cwd()})(),C={resolve(...e){let t="",r=!1;for(let s=e.length-1;s>=-1&&!r;s--){const l=s>=0?e[s]:z();A(l,`paths[${s}]`),l.length!==0&&(t=`${l}/${t}`,r=l.charCodeAt(0)===m)}return t=R(t,!r,"/",E),r?`/${t}`:t.length>0?t:"."},normalize(e){if(A(e,"path"),e.length===0)return".";const t=e.charCodeAt(0)===m,r=e.charCodeAt(e.length-1)===m;return e=R(e,!t,"/",E),e.length===0?t?"/":r?"./":".":(r&&(e+="/"),t?`/${e}`:e)},isAbsolute(e){return A(e,"path"),e.length>0&&e.charCodeAt(0)===m},join(...e){if(e.length===0)return".";let t;for(let r=0;r<e.length;++r){const s=e[r];A(s,"path"),s.length>0&&(t===void 0?t=s:t+=`/${s}`)}return t===void 0?".":C.normalize(t)},relative(e,t){if(A(e,"from"),A(t,"to"),e===t||(e=C.resolve(e),t=C.resolve(t),e===t))return"";const r=1,s=e.length,l=s-r,n=1,o=t.length-n,i=l<o?l:o;let f=-1,c=0;for(;c<i;c++){const d=e.charCodeAt(r+c);if(d!==t.charCodeAt(n+c))break;d===m&&(f=c)}if(c===i)if(o>i){if(t.charCodeAt(n+c)===m)return t.slice(n+c+1);if(c===0)return t.slice(n+c)}else l>i&&(e.charCodeAt(r+c)===m?f=c:c===0&&(f=0));let u="";for(c=r+f+1;c<=s;++c)(c===s||e.charCodeAt(c)===m)&&(u+=u.length===0?"..":"/..");return`${u}${t.slice(n+f)}`},toNamespacedPath(e){return e},dirname(e){if(A(e,"path"),e.length===0)return".";const t=e.charCodeAt(0)===m;let r=-1,s=!0;for(let l=e.length-1;l>=1;--l)if(e.charCodeAt(l)===m){if(!s){r=l;break}}else s=!1;return r===-1?t?"/":".":t&&r===1?"//":e.slice(0,r)},basename(e,t){t!==void 0&&A(t,"ext"),A(e,"path");let r=0,s=-1,l=!0,n;if(t!==void 0&&t.length>0&&t.length<=e.length){if(t===e)return"";let o=t.length-1,i=-1;for(n=e.length-1;n>=0;--n){const f=e.charCodeAt(n);if(f===m){if(!l){r=n+1;break}}else i===-1&&(l=!1,i=n+1),o>=0&&(f===t.charCodeAt(o)?--o===-1&&(s=n):(o=-1,s=i))}return r===s?s=i:s===-1&&(s=e.length),e.slice(r,s)}for(n=e.length-1;n>=0;--n)if(e.charCodeAt(n)===m){if(!l){r=n+1;break}}else s===-1&&(l=!1,s=n+1);return s===-1?"":e.slice(r,s)},extname(e){A(e,"path");let t=-1,r=0,s=-1,l=!0,n=0;for(let o=e.length-1;o>=0;--o){const i=e.charCodeAt(o);if(i===m){if(!l){r=o+1;break}continue}s===-1&&(l=!1,s=o+1),i===w?t===-1?t=o:n!==1&&(n=1):t!==-1&&(n=-1)}return t===-1||s===-1||n===0||n===1&&t===s-1&&t===r+1?"":e.slice(t,s)},format:I.bind(null,"/"),parse(e){A(e,"path");const t={root:"",dir:"",base:"",ext:"",name:""};if(e.length===0)return t;const r=e.charCodeAt(0)===m;let s;r?(t.root="/",s=1):s=0;let l=-1,n=0,o=-1,i=!0,f=e.length-1,c=0;for(;f>=s;--f){const u=e.charCodeAt(f);if(u===m){if(!i){n=f+1;break}continue}o===-1&&(i=!1,o=f+1),u===w?l===-1?l=f:c!==1&&(c=1):l!==-1&&(c=-1)}if(o!==-1){const u=n===0&&r?1:n;l===-1||c===0||c===1&&l===o-1&&l===n+1?t.base=t.name=e.slice(u,o):(t.name=e.slice(u,l),t.base=e.slice(u,o),t.ext=e.slice(l,o))}return n>0?t.dir=e.slice(0,n-1):r&&(t.dir="/"),t},sep:"/",delimiter:":",win32:null,posix:null};C.win32=h.win32=h,C.posix=h.posix=C;const T=$?h.normalize:C.normalize,W=$?h.isAbsolute:C.isAbsolute,U=$?h.join:C.join,G=$?h.resolve:C.resolve,K=$?h.relative:C.relative,V=$?h.dirname:C.dirname,Y=$?h.basename:C.basename,Z=$?h.extname:C.extname,B=$?h.format:C.format,F=$?h.parse:C.parse,M=$?h.toNamespacedPath:C.toNamespacedPath,Q=$?h.sep:C.sep,q=$?h.delimiter:C.delimiter;export{Y as basename,q as delimiter,V as dirname,Z as extname,B as format,W as isAbsolute,U as join,T as normalize,F as parse,C as posix,K as relative,G as resolve,Q as sep,M as toNamespacedPath,h as win32};
+import * as process from './process.js';
+const CHAR_UPPERCASE_A = 65;
+const CHAR_LOWERCASE_A = 97;
+const CHAR_UPPERCASE_Z = 90;
+const CHAR_LOWERCASE_Z = 122;
+const CHAR_DOT = 46;
+const CHAR_FORWARD_SLASH = 47;
+const CHAR_BACKWARD_SLASH = 92;
+const CHAR_COLON = 58;
+const CHAR_QUESTION_MARK = 63;
+class ErrorInvalidArgType extends Error {
+    constructor(name, expected, actual) {
+        let determiner;
+        if (typeof expected === 'string' && expected.indexOf('not ') === 0) {
+            determiner = 'must not be';
+            expected = expected.replace(/^not /, '');
+        }
+        else {
+            determiner = 'must be';
+        }
+        const type = name.indexOf('.') !== -1 ? 'property' : 'argument';
+        let msg = `The "${name}" ${type} ${determiner} of type ${expected}`;
+        msg += `. Received type ${typeof actual}`;
+        super(msg);
+        this.code = 'ERR_INVALID_ARG_TYPE';
+    }
+}
+function validateObject(pathObject, name) {
+    if (pathObject === null || typeof pathObject !== 'object') {
+        throw new ErrorInvalidArgType(name, 'Object', pathObject);
+    }
+}
+function validateString(value, name) {
+    if (typeof value !== 'string') {
+        throw new ErrorInvalidArgType(name, 'string', value);
+    }
+}
+const platformIsWin32 = (process.platform === 'win32');
+function isPathSeparator(code) {
+    return code === CHAR_FORWARD_SLASH || code === CHAR_BACKWARD_SLASH;
+}
+function isPosixPathSeparator(code) {
+    return code === CHAR_FORWARD_SLASH;
+}
+function isWindowsDeviceRoot(code) {
+    return (code >= CHAR_UPPERCASE_A && code <= CHAR_UPPERCASE_Z) ||
+        (code >= CHAR_LOWERCASE_A && code <= CHAR_LOWERCASE_Z);
+}
+function normalizeString(path, allowAboveRoot, separator, isPathSeparator) {
+    let res = '';
+    let lastSegmentLength = 0;
+    let lastSlash = -1;
+    let dots = 0;
+    let code = 0;
+    for (let i = 0; i <= path.length; ++i) {
+        if (i < path.length) {
+            code = path.charCodeAt(i);
+        }
+        else if (isPathSeparator(code)) {
+            break;
+        }
+        else {
+            code = CHAR_FORWARD_SLASH;
+        }
+        if (isPathSeparator(code)) {
+            if (lastSlash === i - 1 || dots === 1) {
+            }
+            else if (dots === 2) {
+                if (res.length < 2 || lastSegmentLength !== 2 ||
+                    res.charCodeAt(res.length - 1) !== CHAR_DOT ||
+                    res.charCodeAt(res.length - 2) !== CHAR_DOT) {
+                    if (res.length > 2) {
+                        const lastSlashIndex = res.lastIndexOf(separator);
+                        if (lastSlashIndex === -1) {
+                            res = '';
+                            lastSegmentLength = 0;
+                        }
+                        else {
+                            res = res.slice(0, lastSlashIndex);
+                            lastSegmentLength = res.length - 1 - res.lastIndexOf(separator);
+                        }
+                        lastSlash = i;
+                        dots = 0;
+                        continue;
+                    }
+                    else if (res.length !== 0) {
+                        res = '';
+                        lastSegmentLength = 0;
+                        lastSlash = i;
+                        dots = 0;
+                        continue;
+                    }
+                }
+                if (allowAboveRoot) {
+                    res += res.length > 0 ? `${separator}..` : '..';
+                    lastSegmentLength = 2;
+                }
+            }
+            else {
+                if (res.length > 0) {
+                    res += `${separator}${path.slice(lastSlash + 1, i)}`;
+                }
+                else {
+                    res = path.slice(lastSlash + 1, i);
+                }
+                lastSegmentLength = i - lastSlash - 1;
+            }
+            lastSlash = i;
+            dots = 0;
+        }
+        else if (code === CHAR_DOT && dots !== -1) {
+            ++dots;
+        }
+        else {
+            dots = -1;
+        }
+    }
+    return res;
+}
+function formatExt(ext) {
+    return ext ? `${ext[0] === '.' ? '' : '.'}${ext}` : '';
+}
+function _format(sep, pathObject) {
+    validateObject(pathObject, 'pathObject');
+    const dir = pathObject.dir || pathObject.root;
+    const base = pathObject.base ||
+        `${pathObject.name || ''}${formatExt(pathObject.ext)}`;
+    if (!dir) {
+        return base;
+    }
+    return dir === pathObject.root ? `${dir}${base}` : `${dir}${sep}${base}`;
+}
+export const win32 = {
+    resolve(...pathSegments) {
+        let resolvedDevice = '';
+        let resolvedTail = '';
+        let resolvedAbsolute = false;
+        for (let i = pathSegments.length - 1; i >= -1; i--) {
+            let path;
+            if (i >= 0) {
+                path = pathSegments[i];
+                validateString(path, `paths[${i}]`);
+                if (path.length === 0) {
+                    continue;
+                }
+            }
+            else if (resolvedDevice.length === 0) {
+                path = process.cwd();
+            }
+            else {
+                path = process.env[`=${resolvedDevice}`] || process.cwd();
+                if (path === undefined ||
+                    (path.slice(0, 2).toLowerCase() !== resolvedDevice.toLowerCase() &&
+                        path.charCodeAt(2) === CHAR_BACKWARD_SLASH)) {
+                    path = `${resolvedDevice}\\`;
+                }
+            }
+            const len = path.length;
+            let rootEnd = 0;
+            let device = '';
+            let isAbsolute = false;
+            const code = path.charCodeAt(0);
+            if (len === 1) {
+                if (isPathSeparator(code)) {
+                    rootEnd = 1;
+                    isAbsolute = true;
+                }
+            }
+            else if (isPathSeparator(code)) {
+                isAbsolute = true;
+                if (isPathSeparator(path.charCodeAt(1))) {
+                    let j = 2;
+                    let last = j;
+                    while (j < len && !isPathSeparator(path.charCodeAt(j))) {
+                        j++;
+                    }
+                    if (j < len && j !== last) {
+                        const firstPart = path.slice(last, j);
+                        last = j;
+                        while (j < len && isPathSeparator(path.charCodeAt(j))) {
+                            j++;
+                        }
+                        if (j < len && j !== last) {
+                            last = j;
+                            while (j < len && !isPathSeparator(path.charCodeAt(j))) {
+                                j++;
+                            }
+                            if (j === len || j !== last) {
+                                device = `\\\\${firstPart}\\${path.slice(last, j)}`;
+                                rootEnd = j;
+                            }
+                        }
+                    }
+                }
+                else {
+                    rootEnd = 1;
+                }
+            }
+            else if (isWindowsDeviceRoot(code) &&
+                path.charCodeAt(1) === CHAR_COLON) {
+                device = path.slice(0, 2);
+                rootEnd = 2;
+                if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
+                    isAbsolute = true;
+                    rootEnd = 3;
+                }
+            }
+            if (device.length > 0) {
+                if (resolvedDevice.length > 0) {
+                    if (device.toLowerCase() !== resolvedDevice.toLowerCase()) {
+                        continue;
+                    }
+                }
+                else {
+                    resolvedDevice = device;
+                }
+            }
+            if (resolvedAbsolute) {
+                if (resolvedDevice.length > 0) {
+                    break;
+                }
+            }
+            else {
+                resolvedTail = `${path.slice(rootEnd)}\\${resolvedTail}`;
+                resolvedAbsolute = isAbsolute;
+                if (isAbsolute && resolvedDevice.length > 0) {
+                    break;
+                }
+            }
+        }
+        resolvedTail = normalizeString(resolvedTail, !resolvedAbsolute, '\\', isPathSeparator);
+        return resolvedAbsolute ?
+            `${resolvedDevice}\\${resolvedTail}` :
+            `${resolvedDevice}${resolvedTail}` || '.';
+    },
+    normalize(path) {
+        validateString(path, 'path');
+        const len = path.length;
+        if (len === 0) {
+            return '.';
+        }
+        let rootEnd = 0;
+        let device;
+        let isAbsolute = false;
+        const code = path.charCodeAt(0);
+        if (len === 1) {
+            return isPosixPathSeparator(code) ? '\\' : path;
+        }
+        if (isPathSeparator(code)) {
+            isAbsolute = true;
+            if (isPathSeparator(path.charCodeAt(1))) {
+                let j = 2;
+                let last = j;
+                while (j < len && !isPathSeparator(path.charCodeAt(j))) {
+                    j++;
+                }
+                if (j < len && j !== last) {
+                    const firstPart = path.slice(last, j);
+                    last = j;
+                    while (j < len && isPathSeparator(path.charCodeAt(j))) {
+                        j++;
+                    }
+                    if (j < len && j !== last) {
+                        last = j;
+                        while (j < len && !isPathSeparator(path.charCodeAt(j))) {
+                            j++;
+                        }
+                        if (j === len) {
+                            return `\\\\${firstPart}\\${path.slice(last)}\\`;
+                        }
+                        if (j !== last) {
+                            device = `\\\\${firstPart}\\${path.slice(last, j)}`;
+                            rootEnd = j;
+                        }
+                    }
+                }
+            }
+            else {
+                rootEnd = 1;
+            }
+        }
+        else if (isWindowsDeviceRoot(code) && path.charCodeAt(1) === CHAR_COLON) {
+            device = path.slice(0, 2);
+            rootEnd = 2;
+            if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
+                isAbsolute = true;
+                rootEnd = 3;
+            }
+        }
+        let tail = rootEnd < len ?
+            normalizeString(path.slice(rootEnd), !isAbsolute, '\\', isPathSeparator) :
+            '';
+        if (tail.length === 0 && !isAbsolute) {
+            tail = '.';
+        }
+        if (tail.length > 0 && isPathSeparator(path.charCodeAt(len - 1))) {
+            tail += '\\';
+        }
+        if (device === undefined) {
+            return isAbsolute ? `\\${tail}` : tail;
+        }
+        return isAbsolute ? `${device}\\${tail}` : `${device}${tail}`;
+    },
+    isAbsolute(path) {
+        validateString(path, 'path');
+        const len = path.length;
+        if (len === 0) {
+            return false;
+        }
+        const code = path.charCodeAt(0);
+        return isPathSeparator(code) ||
+            (len > 2 &&
+                isWindowsDeviceRoot(code) &&
+                path.charCodeAt(1) === CHAR_COLON &&
+                isPathSeparator(path.charCodeAt(2)));
+    },
+    join(...paths) {
+        if (paths.length === 0) {
+            return '.';
+        }
+        let joined;
+        let firstPart;
+        for (let i = 0; i < paths.length; ++i) {
+            const arg = paths[i];
+            validateString(arg, 'path');
+            if (arg.length > 0) {
+                if (joined === undefined) {
+                    joined = firstPart = arg;
+                }
+                else {
+                    joined += `\\${arg}`;
+                }
+            }
+        }
+        if (joined === undefined) {
+            return '.';
+        }
+        let needsReplace = true;
+        let slashCount = 0;
+        if (typeof firstPart === 'string' && isPathSeparator(firstPart.charCodeAt(0))) {
+            ++slashCount;
+            const firstLen = firstPart.length;
+            if (firstLen > 1 && isPathSeparator(firstPart.charCodeAt(1))) {
+                ++slashCount;
+                if (firstLen > 2) {
+                    if (isPathSeparator(firstPart.charCodeAt(2))) {
+                        ++slashCount;
+                    }
+                    else {
+                        needsReplace = false;
+                    }
+                }
+            }
+        }
+        if (needsReplace) {
+            while (slashCount < joined.length &&
+                isPathSeparator(joined.charCodeAt(slashCount))) {
+                slashCount++;
+            }
+            if (slashCount >= 2) {
+                joined = `\\${joined.slice(slashCount)}`;
+            }
+        }
+        return win32.normalize(joined);
+    },
+    relative(from, to) {
+        validateString(from, 'from');
+        validateString(to, 'to');
+        if (from === to) {
+            return '';
+        }
+        const fromOrig = win32.resolve(from);
+        const toOrig = win32.resolve(to);
+        if (fromOrig === toOrig) {
+            return '';
+        }
+        from = fromOrig.toLowerCase();
+        to = toOrig.toLowerCase();
+        if (from === to) {
+            return '';
+        }
+        let fromStart = 0;
+        while (fromStart < from.length &&
+            from.charCodeAt(fromStart) === CHAR_BACKWARD_SLASH) {
+            fromStart++;
+        }
+        let fromEnd = from.length;
+        while (fromEnd - 1 > fromStart &&
+            from.charCodeAt(fromEnd - 1) === CHAR_BACKWARD_SLASH) {
+            fromEnd--;
+        }
+        const fromLen = fromEnd - fromStart;
+        let toStart = 0;
+        while (toStart < to.length &&
+            to.charCodeAt(toStart) === CHAR_BACKWARD_SLASH) {
+            toStart++;
+        }
+        let toEnd = to.length;
+        while (toEnd - 1 > toStart &&
+            to.charCodeAt(toEnd - 1) === CHAR_BACKWARD_SLASH) {
+            toEnd--;
+        }
+        const toLen = toEnd - toStart;
+        const length = fromLen < toLen ? fromLen : toLen;
+        let lastCommonSep = -1;
+        let i = 0;
+        for (; i < length; i++) {
+            const fromCode = from.charCodeAt(fromStart + i);
+            if (fromCode !== to.charCodeAt(toStart + i)) {
+                break;
+            }
+            else if (fromCode === CHAR_BACKWARD_SLASH) {
+                lastCommonSep = i;
+            }
+        }
+        if (i !== length) {
+            if (lastCommonSep === -1) {
+                return toOrig;
+            }
+        }
+        else {
+            if (toLen > length) {
+                if (to.charCodeAt(toStart + i) === CHAR_BACKWARD_SLASH) {
+                    return toOrig.slice(toStart + i + 1);
+                }
+                if (i === 2) {
+                    return toOrig.slice(toStart + i);
+                }
+            }
+            if (fromLen > length) {
+                if (from.charCodeAt(fromStart + i) === CHAR_BACKWARD_SLASH) {
+                    lastCommonSep = i;
+                }
+                else if (i === 2) {
+                    lastCommonSep = 3;
+                }
+            }
+            if (lastCommonSep === -1) {
+                lastCommonSep = 0;
+            }
+        }
+        let out = '';
+        for (i = fromStart + lastCommonSep + 1; i <= fromEnd; ++i) {
+            if (i === fromEnd || from.charCodeAt(i) === CHAR_BACKWARD_SLASH) {
+                out += out.length === 0 ? '..' : '\\..';
+            }
+        }
+        toStart += lastCommonSep;
+        if (out.length > 0) {
+            return `${out}${toOrig.slice(toStart, toEnd)}`;
+        }
+        if (toOrig.charCodeAt(toStart) === CHAR_BACKWARD_SLASH) {
+            ++toStart;
+        }
+        return toOrig.slice(toStart, toEnd);
+    },
+    toNamespacedPath(path) {
+        if (typeof path !== 'string' || path.length === 0) {
+            return path;
+        }
+        const resolvedPath = win32.resolve(path);
+        if (resolvedPath.length <= 2) {
+            return path;
+        }
+        if (resolvedPath.charCodeAt(0) === CHAR_BACKWARD_SLASH) {
+            if (resolvedPath.charCodeAt(1) === CHAR_BACKWARD_SLASH) {
+                const code = resolvedPath.charCodeAt(2);
+                if (code !== CHAR_QUESTION_MARK && code !== CHAR_DOT) {
+                    return `\\\\?\\UNC\\${resolvedPath.slice(2)}`;
+                }
+            }
+        }
+        else if (isWindowsDeviceRoot(resolvedPath.charCodeAt(0)) &&
+            resolvedPath.charCodeAt(1) === CHAR_COLON &&
+            resolvedPath.charCodeAt(2) === CHAR_BACKWARD_SLASH) {
+            return `\\\\?\\${resolvedPath}`;
+        }
+        return path;
+    },
+    dirname(path) {
+        validateString(path, 'path');
+        const len = path.length;
+        if (len === 0) {
+            return '.';
+        }
+        let rootEnd = -1;
+        let offset = 0;
+        const code = path.charCodeAt(0);
+        if (len === 1) {
+            return isPathSeparator(code) ? path : '.';
+        }
+        if (isPathSeparator(code)) {
+            rootEnd = offset = 1;
+            if (isPathSeparator(path.charCodeAt(1))) {
+                let j = 2;
+                let last = j;
+                while (j < len && !isPathSeparator(path.charCodeAt(j))) {
+                    j++;
+                }
+                if (j < len && j !== last) {
+                    last = j;
+                    while (j < len && isPathSeparator(path.charCodeAt(j))) {
+                        j++;
+                    }
+                    if (j < len && j !== last) {
+                        last = j;
+                        while (j < len && !isPathSeparator(path.charCodeAt(j))) {
+                            j++;
+                        }
+                        if (j === len) {
+                            return path;
+                        }
+                        if (j !== last) {
+                            rootEnd = offset = j + 1;
+                        }
+                    }
+                }
+            }
+        }
+        else if (isWindowsDeviceRoot(code) && path.charCodeAt(1) === CHAR_COLON) {
+            rootEnd = len > 2 && isPathSeparator(path.charCodeAt(2)) ? 3 : 2;
+            offset = rootEnd;
+        }
+        let end = -1;
+        let matchedSlash = true;
+        for (let i = len - 1; i >= offset; --i) {
+            if (isPathSeparator(path.charCodeAt(i))) {
+                if (!matchedSlash) {
+                    end = i;
+                    break;
+                }
+            }
+            else {
+                matchedSlash = false;
+            }
+        }
+        if (end === -1) {
+            if (rootEnd === -1) {
+                return '.';
+            }
+            end = rootEnd;
+        }
+        return path.slice(0, end);
+    },
+    basename(path, suffix) {
+        if (suffix !== undefined) {
+            validateString(suffix, 'suffix');
+        }
+        validateString(path, 'path');
+        let start = 0;
+        let end = -1;
+        let matchedSlash = true;
+        let i;
+        if (path.length >= 2 &&
+            isWindowsDeviceRoot(path.charCodeAt(0)) &&
+            path.charCodeAt(1) === CHAR_COLON) {
+            start = 2;
+        }
+        if (suffix !== undefined && suffix.length > 0 && suffix.length <= path.length) {
+            if (suffix === path) {
+                return '';
+            }
+            let extIdx = suffix.length - 1;
+            let firstNonSlashEnd = -1;
+            for (i = path.length - 1; i >= start; --i) {
+                const code = path.charCodeAt(i);
+                if (isPathSeparator(code)) {
+                    if (!matchedSlash) {
+                        start = i + 1;
+                        break;
+                    }
+                }
+                else {
+                    if (firstNonSlashEnd === -1) {
+                        matchedSlash = false;
+                        firstNonSlashEnd = i + 1;
+                    }
+                    if (extIdx >= 0) {
+                        if (code === suffix.charCodeAt(extIdx)) {
+                            if (--extIdx === -1) {
+                                end = i;
+                            }
+                        }
+                        else {
+                            extIdx = -1;
+                            end = firstNonSlashEnd;
+                        }
+                    }
+                }
+            }
+            if (start === end) {
+                end = firstNonSlashEnd;
+            }
+            else if (end === -1) {
+                end = path.length;
+            }
+            return path.slice(start, end);
+        }
+        for (i = path.length - 1; i >= start; --i) {
+            if (isPathSeparator(path.charCodeAt(i))) {
+                if (!matchedSlash) {
+                    start = i + 1;
+                    break;
+                }
+            }
+            else if (end === -1) {
+                matchedSlash = false;
+                end = i + 1;
+            }
+        }
+        if (end === -1) {
+            return '';
+        }
+        return path.slice(start, end);
+    },
+    extname(path) {
+        validateString(path, 'path');
+        let start = 0;
+        let startDot = -1;
+        let startPart = 0;
+        let end = -1;
+        let matchedSlash = true;
+        let preDotState = 0;
+        if (path.length >= 2 &&
+            path.charCodeAt(1) === CHAR_COLON &&
+            isWindowsDeviceRoot(path.charCodeAt(0))) {
+            start = startPart = 2;
+        }
+        for (let i = path.length - 1; i >= start; --i) {
+            const code = path.charCodeAt(i);
+            if (isPathSeparator(code)) {
+                if (!matchedSlash) {
+                    startPart = i + 1;
+                    break;
+                }
+                continue;
+            }
+            if (end === -1) {
+                matchedSlash = false;
+                end = i + 1;
+            }
+            if (code === CHAR_DOT) {
+                if (startDot === -1) {
+                    startDot = i;
+                }
+                else if (preDotState !== 1) {
+                    preDotState = 1;
+                }
+            }
+            else if (startDot !== -1) {
+                preDotState = -1;
+            }
+        }
+        if (startDot === -1 ||
+            end === -1 ||
+            preDotState === 0 ||
+            (preDotState === 1 &&
+                startDot === end - 1 &&
+                startDot === startPart + 1)) {
+            return '';
+        }
+        return path.slice(startDot, end);
+    },
+    format: _format.bind(null, '\\'),
+    parse(path) {
+        validateString(path, 'path');
+        const ret = { root: '', dir: '', base: '', ext: '', name: '' };
+        if (path.length === 0) {
+            return ret;
+        }
+        const len = path.length;
+        let rootEnd = 0;
+        let code = path.charCodeAt(0);
+        if (len === 1) {
+            if (isPathSeparator(code)) {
+                ret.root = ret.dir = path;
+                return ret;
+            }
+            ret.base = ret.name = path;
+            return ret;
+        }
+        if (isPathSeparator(code)) {
+            rootEnd = 1;
+            if (isPathSeparator(path.charCodeAt(1))) {
+                let j = 2;
+                let last = j;
+                while (j < len && !isPathSeparator(path.charCodeAt(j))) {
+                    j++;
+                }
+                if (j < len && j !== last) {
+                    last = j;
+                    while (j < len && isPathSeparator(path.charCodeAt(j))) {
+                        j++;
+                    }
+                    if (j < len && j !== last) {
+                        last = j;
+                        while (j < len && !isPathSeparator(path.charCodeAt(j))) {
+                            j++;
+                        }
+                        if (j === len) {
+                            rootEnd = j;
+                        }
+                        else if (j !== last) {
+                            rootEnd = j + 1;
+                        }
+                    }
+                }
+            }
+        }
+        else if (isWindowsDeviceRoot(code) && path.charCodeAt(1) === CHAR_COLON) {
+            if (len <= 2) {
+                ret.root = ret.dir = path;
+                return ret;
+            }
+            rootEnd = 2;
+            if (isPathSeparator(path.charCodeAt(2))) {
+                if (len === 3) {
+                    ret.root = ret.dir = path;
+                    return ret;
+                }
+                rootEnd = 3;
+            }
+        }
+        if (rootEnd > 0) {
+            ret.root = path.slice(0, rootEnd);
+        }
+        let startDot = -1;
+        let startPart = rootEnd;
+        let end = -1;
+        let matchedSlash = true;
+        let i = path.length - 1;
+        let preDotState = 0;
+        for (; i >= rootEnd; --i) {
+            code = path.charCodeAt(i);
+            if (isPathSeparator(code)) {
+                if (!matchedSlash) {
+                    startPart = i + 1;
+                    break;
+                }
+                continue;
+            }
+            if (end === -1) {
+                matchedSlash = false;
+                end = i + 1;
+            }
+            if (code === CHAR_DOT) {
+                if (startDot === -1) {
+                    startDot = i;
+                }
+                else if (preDotState !== 1) {
+                    preDotState = 1;
+                }
+            }
+            else if (startDot !== -1) {
+                preDotState = -1;
+            }
+        }
+        if (end !== -1) {
+            if (startDot === -1 ||
+                preDotState === 0 ||
+                (preDotState === 1 &&
+                    startDot === end - 1 &&
+                    startDot === startPart + 1)) {
+                ret.base = ret.name = path.slice(startPart, end);
+            }
+            else {
+                ret.name = path.slice(startPart, startDot);
+                ret.base = path.slice(startPart, end);
+                ret.ext = path.slice(startDot, end);
+            }
+        }
+        if (startPart > 0 && startPart !== rootEnd) {
+            ret.dir = path.slice(0, startPart - 1);
+        }
+        else {
+            ret.dir = ret.root;
+        }
+        return ret;
+    },
+    sep: '\\',
+    delimiter: ';',
+    win32: null,
+    posix: null
+};
+const posixCwd = (() => {
+    if (platformIsWin32) {
+        const regexp = /\\/g;
+        return () => {
+            const cwd = process.cwd().replace(regexp, '/');
+            return cwd.slice(cwd.indexOf('/'));
+        };
+    }
+    return () => process.cwd();
+})();
+export const posix = {
+    resolve(...pathSegments) {
+        let resolvedPath = '';
+        let resolvedAbsolute = false;
+        for (let i = pathSegments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+            const path = i >= 0 ? pathSegments[i] : posixCwd();
+            validateString(path, `paths[${i}]`);
+            if (path.length === 0) {
+                continue;
+            }
+            resolvedPath = `${path}/${resolvedPath}`;
+            resolvedAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+        }
+        resolvedPath = normalizeString(resolvedPath, !resolvedAbsolute, '/', isPosixPathSeparator);
+        if (resolvedAbsolute) {
+            return `/${resolvedPath}`;
+        }
+        return resolvedPath.length > 0 ? resolvedPath : '.';
+    },
+    normalize(path) {
+        validateString(path, 'path');
+        if (path.length === 0) {
+            return '.';
+        }
+        const isAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+        const trailingSeparator = path.charCodeAt(path.length - 1) === CHAR_FORWARD_SLASH;
+        path = normalizeString(path, !isAbsolute, '/', isPosixPathSeparator);
+        if (path.length === 0) {
+            if (isAbsolute) {
+                return '/';
+            }
+            return trailingSeparator ? './' : '.';
+        }
+        if (trailingSeparator) {
+            path += '/';
+        }
+        return isAbsolute ? `/${path}` : path;
+    },
+    isAbsolute(path) {
+        validateString(path, 'path');
+        return path.length > 0 && path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+    },
+    join(...paths) {
+        if (paths.length === 0) {
+            return '.';
+        }
+        let joined;
+        for (let i = 0; i < paths.length; ++i) {
+            const arg = paths[i];
+            validateString(arg, 'path');
+            if (arg.length > 0) {
+                if (joined === undefined) {
+                    joined = arg;
+                }
+                else {
+                    joined += `/${arg}`;
+                }
+            }
+        }
+        if (joined === undefined) {
+            return '.';
+        }
+        return posix.normalize(joined);
+    },
+    relative(from, to) {
+        validateString(from, 'from');
+        validateString(to, 'to');
+        if (from === to) {
+            return '';
+        }
+        from = posix.resolve(from);
+        to = posix.resolve(to);
+        if (from === to) {
+            return '';
+        }
+        const fromStart = 1;
+        const fromEnd = from.length;
+        const fromLen = fromEnd - fromStart;
+        const toStart = 1;
+        const toLen = to.length - toStart;
+        const length = (fromLen < toLen ? fromLen : toLen);
+        let lastCommonSep = -1;
+        let i = 0;
+        for (; i < length; i++) {
+            const fromCode = from.charCodeAt(fromStart + i);
+            if (fromCode !== to.charCodeAt(toStart + i)) {
+                break;
+            }
+            else if (fromCode === CHAR_FORWARD_SLASH) {
+                lastCommonSep = i;
+            }
+        }
+        if (i === length) {
+            if (toLen > length) {
+                if (to.charCodeAt(toStart + i) === CHAR_FORWARD_SLASH) {
+                    return to.slice(toStart + i + 1);
+                }
+                if (i === 0) {
+                    return to.slice(toStart + i);
+                }
+            }
+            else if (fromLen > length) {
+                if (from.charCodeAt(fromStart + i) === CHAR_FORWARD_SLASH) {
+                    lastCommonSep = i;
+                }
+                else if (i === 0) {
+                    lastCommonSep = 0;
+                }
+            }
+        }
+        let out = '';
+        for (i = fromStart + lastCommonSep + 1; i <= fromEnd; ++i) {
+            if (i === fromEnd || from.charCodeAt(i) === CHAR_FORWARD_SLASH) {
+                out += out.length === 0 ? '..' : '/..';
+            }
+        }
+        return `${out}${to.slice(toStart + lastCommonSep)}`;
+    },
+    toNamespacedPath(path) {
+        return path;
+    },
+    dirname(path) {
+        validateString(path, 'path');
+        if (path.length === 0) {
+            return '.';
+        }
+        const hasRoot = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+        let end = -1;
+        let matchedSlash = true;
+        for (let i = path.length - 1; i >= 1; --i) {
+            if (path.charCodeAt(i) === CHAR_FORWARD_SLASH) {
+                if (!matchedSlash) {
+                    end = i;
+                    break;
+                }
+            }
+            else {
+                matchedSlash = false;
+            }
+        }
+        if (end === -1) {
+            return hasRoot ? '/' : '.';
+        }
+        if (hasRoot && end === 1) {
+            return '//';
+        }
+        return path.slice(0, end);
+    },
+    basename(path, suffix) {
+        if (suffix !== undefined) {
+            validateString(suffix, 'ext');
+        }
+        validateString(path, 'path');
+        let start = 0;
+        let end = -1;
+        let matchedSlash = true;
+        let i;
+        if (suffix !== undefined && suffix.length > 0 && suffix.length <= path.length) {
+            if (suffix === path) {
+                return '';
+            }
+            let extIdx = suffix.length - 1;
+            let firstNonSlashEnd = -1;
+            for (i = path.length - 1; i >= 0; --i) {
+                const code = path.charCodeAt(i);
+                if (code === CHAR_FORWARD_SLASH) {
+                    if (!matchedSlash) {
+                        start = i + 1;
+                        break;
+                    }
+                }
+                else {
+                    if (firstNonSlashEnd === -1) {
+                        matchedSlash = false;
+                        firstNonSlashEnd = i + 1;
+                    }
+                    if (extIdx >= 0) {
+                        if (code === suffix.charCodeAt(extIdx)) {
+                            if (--extIdx === -1) {
+                                end = i;
+                            }
+                        }
+                        else {
+                            extIdx = -1;
+                            end = firstNonSlashEnd;
+                        }
+                    }
+                }
+            }
+            if (start === end) {
+                end = firstNonSlashEnd;
+            }
+            else if (end === -1) {
+                end = path.length;
+            }
+            return path.slice(start, end);
+        }
+        for (i = path.length - 1; i >= 0; --i) {
+            if (path.charCodeAt(i) === CHAR_FORWARD_SLASH) {
+                if (!matchedSlash) {
+                    start = i + 1;
+                    break;
+                }
+            }
+            else if (end === -1) {
+                matchedSlash = false;
+                end = i + 1;
+            }
+        }
+        if (end === -1) {
+            return '';
+        }
+        return path.slice(start, end);
+    },
+    extname(path) {
+        validateString(path, 'path');
+        let startDot = -1;
+        let startPart = 0;
+        let end = -1;
+        let matchedSlash = true;
+        let preDotState = 0;
+        for (let i = path.length - 1; i >= 0; --i) {
+            const code = path.charCodeAt(i);
+            if (code === CHAR_FORWARD_SLASH) {
+                if (!matchedSlash) {
+                    startPart = i + 1;
+                    break;
+                }
+                continue;
+            }
+            if (end === -1) {
+                matchedSlash = false;
+                end = i + 1;
+            }
+            if (code === CHAR_DOT) {
+                if (startDot === -1) {
+                    startDot = i;
+                }
+                else if (preDotState !== 1) {
+                    preDotState = 1;
+                }
+            }
+            else if (startDot !== -1) {
+                preDotState = -1;
+            }
+        }
+        if (startDot === -1 ||
+            end === -1 ||
+            preDotState === 0 ||
+            (preDotState === 1 &&
+                startDot === end - 1 &&
+                startDot === startPart + 1)) {
+            return '';
+        }
+        return path.slice(startDot, end);
+    },
+    format: _format.bind(null, '/'),
+    parse(path) {
+        validateString(path, 'path');
+        const ret = { root: '', dir: '', base: '', ext: '', name: '' };
+        if (path.length === 0) {
+            return ret;
+        }
+        const isAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+        let start;
+        if (isAbsolute) {
+            ret.root = '/';
+            start = 1;
+        }
+        else {
+            start = 0;
+        }
+        let startDot = -1;
+        let startPart = 0;
+        let end = -1;
+        let matchedSlash = true;
+        let i = path.length - 1;
+        let preDotState = 0;
+        for (; i >= start; --i) {
+            const code = path.charCodeAt(i);
+            if (code === CHAR_FORWARD_SLASH) {
+                if (!matchedSlash) {
+                    startPart = i + 1;
+                    break;
+                }
+                continue;
+            }
+            if (end === -1) {
+                matchedSlash = false;
+                end = i + 1;
+            }
+            if (code === CHAR_DOT) {
+                if (startDot === -1) {
+                    startDot = i;
+                }
+                else if (preDotState !== 1) {
+                    preDotState = 1;
+                }
+            }
+            else if (startDot !== -1) {
+                preDotState = -1;
+            }
+        }
+        if (end !== -1) {
+            const start = startPart === 0 && isAbsolute ? 1 : startPart;
+            if (startDot === -1 ||
+                preDotState === 0 ||
+                (preDotState === 1 &&
+                    startDot === end - 1 &&
+                    startDot === startPart + 1)) {
+                ret.base = ret.name = path.slice(start, end);
+            }
+            else {
+                ret.name = path.slice(start, startDot);
+                ret.base = path.slice(start, end);
+                ret.ext = path.slice(startDot, end);
+            }
+        }
+        if (startPart > 0) {
+            ret.dir = path.slice(0, startPart - 1);
+        }
+        else if (isAbsolute) {
+            ret.dir = '/';
+        }
+        return ret;
+    },
+    sep: '/',
+    delimiter: ':',
+    win32: null,
+    posix: null
+};
+posix.win32 = win32.win32 = win32;
+posix.posix = win32.posix = posix;
+export const normalize = (platformIsWin32 ? win32.normalize : posix.normalize);
+export const isAbsolute = (platformIsWin32 ? win32.isAbsolute : posix.isAbsolute);
+export const join = (platformIsWin32 ? win32.join : posix.join);
+export const resolve = (platformIsWin32 ? win32.resolve : posix.resolve);
+export const relative = (platformIsWin32 ? win32.relative : posix.relative);
+export const dirname = (platformIsWin32 ? win32.dirname : posix.dirname);
+export const basename = (platformIsWin32 ? win32.basename : posix.basename);
+export const extname = (platformIsWin32 ? win32.extname : posix.extname);
+export const format = (platformIsWin32 ? win32.format : posix.format);
+export const parse = (platformIsWin32 ? win32.parse : posix.parse);
+export const toNamespacedPath = (platformIsWin32 ? win32.toNamespacedPath : posix.toNamespacedPath);
+export const sep = (platformIsWin32 ? win32.sep : posix.sep);
+export const delimiter = (platformIsWin32 ? win32.delimiter : posix.delimiter);

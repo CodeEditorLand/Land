@@ -1,1 +1,45 @@
-var p=Object.defineProperty;var s=Object.getOwnPropertyDescriptor;var c=(r,i,n,t)=>{for(var e=t>1?void 0:t?s(i,n):i,u=r.length-1,l;u>=0;u--)(l=r[u])&&(e=(t?l(i,n,e):l(e))||e);return t&&e&&p(i,n,e),e},a=(r,i)=>(n,t)=>i(n,t,r);import{InstantiationType as I,registerSingleton as d}from"../../../../platform/instantiation/common/extensions.js";import{IWorkbenchEnvironmentService as h}from"../../../services/environment/common/environmentService.js";import{createDecorator as m,IInstantiationService as v}from"../../../../platform/instantiation/common/instantiation.js";import{IFileService as S}from"../../../../platform/files/common/files.js";import{toLocalISOString as f}from"../../../../base/common/date.js";import{joinPath as g}from"../../../../base/common/resources.js";import{DelegatedOutputChannelModel as D,FileOutputChannelModel as L}from"./outputChannelModel.js";import"../../../../base/common/uri.js";import"../../../../editor/common/languages/language.js";const C=m("outputChannelModelService");let o=class{constructor(i,n,t){this.fileService=i;this.instantiationService=n;this.outputLocation=g(t.windowLogsPath,`output_${f(new Date).replace(/-|:|\.\d+Z$/g,"")}`)}outputLocation;createOutputChannelModel(i,n,t,e){return e?this.instantiationService.createInstance(L,n,t,e):this.instantiationService.createInstance(D,i,n,t,this.outputDir)}_outputDir=null;get outputDir(){return this._outputDir||(this._outputDir=this.fileService.createFolder(this.outputLocation).then(()=>this.outputLocation)),this._outputDir}};o=c([a(0,S),a(1,v),a(2,h)],o),d(C,o,I.Delayed);export{C as IOutputChannelModelService,o as OutputChannelModelService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
+import { createDecorator, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { toLocalISOString } from '../../../../base/common/date.js';
+import { joinPath } from '../../../../base/common/resources.js';
+import { DelegatedOutputChannelModel, FileOutputChannelModel } from './outputChannelModel.js';
+export const IOutputChannelModelService = createDecorator('outputChannelModelService');
+let OutputChannelModelService = class OutputChannelModelService {
+    constructor(fileService, instantiationService, environmentService) {
+        this.fileService = fileService;
+        this.instantiationService = instantiationService;
+        this._outputDir = null;
+        this.outputLocation = joinPath(environmentService.windowLogsPath, `output_${toLocalISOString(new Date()).replace(/-|:|\.\d+Z$/g, '')}`);
+    }
+    createOutputChannelModel(id, modelUri, language, file) {
+        return file ? this.instantiationService.createInstance(FileOutputChannelModel, modelUri, language, file) : this.instantiationService.createInstance(DelegatedOutputChannelModel, id, modelUri, language, this.outputDir);
+    }
+    get outputDir() {
+        if (!this._outputDir) {
+            this._outputDir = this.fileService.createFolder(this.outputLocation).then(() => this.outputLocation);
+        }
+        return this._outputDir;
+    }
+};
+OutputChannelModelService = __decorate([
+    __param(0, IFileService),
+    __param(1, IInstantiationService),
+    __param(2, IWorkbenchEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], OutputChannelModelService);
+export { OutputChannelModelService };
+registerSingleton(IOutputChannelModelService, OutputChannelModelService, 1);

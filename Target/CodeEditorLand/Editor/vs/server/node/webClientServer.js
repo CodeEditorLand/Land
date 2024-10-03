@@ -1,2 +1,369 @@
-var j=Object.defineProperty;var F=Object.getOwnPropertyDescriptor;var H=(l,e,t,r)=>{for(var i=r>1?void 0:r?F(e,t):e,s=l.length-1,n;s>=0;s--)(n=l[s])&&(i=(r?n(e,t,i):n(i))||i);return r&&i&&j(e,t,i),i},g=(l,e)=>(t,r)=>e(t,r,l);import{createReadStream as M,promises as _}from"fs";import*as G from"path";import"http";import*as D from"url";import*as I from"cookie";import*as J from"crypto";import{isEqualOrParent as Q}from"../../base/common/extpath.js";import{getMediaMime as K}from"../../base/common/mime.js";import{isLinux as X}from"../../base/common/platform.js";import{ILogService as z}from"../../platform/log/common/log.js";import{IServerEnvironmentService as q}from"./serverEnvironmentService.js";import{extname as Y,dirname as V,join as A,normalize as Z}from"../../base/common/path.js";import{FileAccess as R,connectionTokenCookieName as B,connectionTokenQueryName as L,Schemas as ee,builtinExtensionsPath as te}from"../../base/common/network.js";import{generateUuid as re}from"../../base/common/uuid.js";import{IProductService as ie}from"../../platform/product/common/productService.js";import{ServerConnectionTokenType as se}from"./serverConnectionToken.js";import{asTextOrError as ne,IRequestService as oe}from"../../platform/request/common/request.js";import"../../base/parts/request/common/request.js";import{CancellationToken as ae}from"../../base/common/cancellation.js";import{URI as O}from"../../base/common/uri.js";import{streamToBuffer as ce}from"../../base/common/buffer.js";import"../../base/common/product.js";import{isString as W}from"../../base/common/types.js";import{CharCode as $}from"../../base/common/charCode.js";import"../../platform/extensions/common/extensions.js";import{ICSSDevelopmentService as le}from"../../platform/cssDev/node/cssDevService.js";const ue={".html":"text/html",".js":"text/javascript",".json":"application/json",".css":"text/css",".svg":"image/svg+xml"};async function m(l,e,t,r){e.writeHead(t,{"Content-Type":"text/plain"}),e.end(r)}var he=(r=>(r[r.NO_CACHING=0]="NO_CACHING",r[r.ETAG=1]="ETAG",r[r.NO_EXPIRY=2]="NO_EXPIRY",r))(he||{});async function pe(l,e,t,r,i,s){try{const n=await _.stat(l);if(e===1){const a=`W/"${[n.ino,n.size,n.mtime.getTime()].join("-")}"`;if(r.headers["if-none-match"]===a)return i.writeHead(304),void i.end();s.Etag=a}else e===2?s["Cache-Control"]="public, max-age=31536000":e===0&&(s["Cache-Control"]="no-store");s["Content-Type"]=ue[Y(l)]||K(l)||"text/plain",i.writeHead(200,s),M(l).pipe(i)}catch(n){return n.code!=="ENOENT"&&t.error(n),i.writeHead(404,{"Content-Type":"text/plain"}),void i.end("Not found")}}const N=V(R.asFileUri("").fsPath);let x=class{constructor(e,t,r,i,s,n,a,h){this._connectionToken=e;this._basePath=t;this.serverRootPath=r;this._environmentService=i;this._logService=s;this._requestService=n;this._productService=a;this._cssDevService=h;this._webExtensionResourceUrlTemplate=this._productService.extensionsGallery?.resourceUrlTemplate?O.parse(this._productService.extensionsGallery.resourceUrlTemplate):void 0,this._staticRoute=`${r}/static`,this._callbackRoute=`${r}/callback`,this._webExtensionRoute=`${r}/web-extension-resource`}_webExtensionResourceUrlTemplate;_staticRoute;_callbackRoute;_webExtensionRoute;async handle(e,t,r){try{const i=r.pathname;return i.startsWith(this._staticRoute)&&i.charCodeAt(this._staticRoute.length)===$.Slash?this._handleStatic(e,t,r):i===this._basePath?this._handleRoot(e,t,r):i===this._callbackRoute?this._handleCallback(t):i.startsWith(this._webExtensionRoute)&&i.charCodeAt(this._webExtensionRoute.length)===$.Slash?this._handleWebExtensionResource(e,t,r):m(e,t,404,"Not found.")}catch(i){return this._logService.error(i),m(e,t,500,"Internal Server Error.")}}async _handleStatic(e,t,r){const i=Object.create(null),n=decodeURIComponent(r.pathname).substring(this._staticRoute.length+1),a=A(N,n);return Q(a,N,!X)?pe(a,this._environmentService.isBuilt?2:1,this._logService,e,t,i):m(e,t,400,"Bad request.")}_getResourceURLTemplateAuthority(e){const t=e.authority.indexOf(".");return t!==-1?e.authority.substring(t+1):void 0}async _handleWebExtensionResource(e,t,r){if(!this._webExtensionResourceUrlTemplate)return m(e,t,500,"No extension gallery service configured.");const i=decodeURIComponent(r.pathname),s=Z(i.substring(this._webExtensionRoute.length+1)),n=O.parse(s).with({scheme:this._webExtensionResourceUrlTemplate.scheme,authority:s.substring(0,s.indexOf("/")),path:s.substring(s.indexOf("/")+1)});if(this._getResourceURLTemplateAuthority(this._webExtensionResourceUrlTemplate)!==this._getResourceURLTemplateAuthority(n))return m(e,t,403,"Request Forbidden");const a={},h=c=>{const u=e.headers[c];u&&(W(u)||u[0])?a[c]=W(u)?u:u[0]:c!==c.toLowerCase()&&h(c.toLowerCase())};h("X-Client-Name"),h("X-Client-Version"),h("X-Machine-Id"),h("X-Client-Commit");const d=await this._requestService.request({type:"GET",url:n.toString(!0),headers:a},ae.None),v=d.res.statusCode||500;if(v!==200){let c=null;try{c=await ne(d)}catch{}return m(e,t,v,c||`Request failed with status ${v}`)}const b=Object.create(null),f=c=>{const u=d.res.headers[c];u?b[c]=u:c!==c.toLowerCase()&&f(c.toLowerCase())};f("Cache-Control"),f("Content-Type"),t.writeHead(200,b);const y=await ce(d.stream);return void t.end(y.buffer)}async _handleRoot(e,t,r){const i=r.query[L];if(typeof i=="string"){const o=Object.create(null);o["Set-Cookie"]=I.serialize(B,i,{sameSite:"lax",maxAge:60*60*24*7});const p=Object.create(null);for(const k in r.query)k!==L&&(p[k]=r.query[k]);const S=D.format({pathname:r.pathname,query:p});return o.Location=S,t.writeHead(302,o),void t.end()}const s=o=>{const p=e.headers[o];return Array.isArray(p)?p[0]:p},n=!this._environmentService.isBuilt&&this._environmentService.args["use-test-resolver"],a=n?"test+test":s("x-original-host")||s("x-forwarded-host")||e.headers.host;if(!a)return m(e,t,400,"Bad request.");function h(o){return JSON.stringify(o).replace(/"/g,"&quot;")}let d;this._environmentService.args["enable-smoke-test-driver"]&&(d=!1);const v=o=>o&&O.file(G.resolve(o)).with({scheme:ee.vscodeRemote,authority:a}),b=R.asFileUri(`vs/code/browser/workbench/workbench${this._environmentService.isBuilt?"":"-dev"}.html`).fsPath,f=!this._environmentService.isBuilt&&this._environmentService.args["github-auth"]?{id:re(),providerId:"github",accessToken:this._environmentService.args["github-auth"],scopes:[["user:email"],["repo"]]}:void 0,y={embedderIdentifier:"server-distro",extensionsGallery:this._webExtensionResourceUrlTemplate&&this._productService.extensionsGallery?{...this._productService.extensionsGallery,resourceUrlTemplate:this._webExtensionResourceUrlTemplate.with({scheme:"http",authority:a,path:`${this._webExtensionRoute}/${this._webExtensionResourceUrlTemplate.authority}${this._webExtensionResourceUrlTemplate.path}`}).toString(!0)}:void 0};if(!this._environmentService.isBuilt)try{const o=JSON.parse((await _.readFile(A(N,"product.overrides.json"))).toString());Object.assign(y,o)}catch{}const c={remoteAuthority:a,serverBasePath:this._basePath,_wrapWebWorkerExtHostInIframe:d,developmentOptions:{enableSmokeTestDriver:this._environmentService.args["enable-smoke-test-driver"]?!0:void 0,logLevel:this._logService.getLevel()},settingsSyncOptions:!this._environmentService.isBuilt&&this._environmentService.args["enable-sync"]?{enabled:!0}:void 0,enableWorkspaceTrust:!this._environmentService.args["disable-workspace-trust"],folderUri:v(this._environmentService.args["default-folder"]),workspaceUri:v(this._environmentService.args["default-workspace"]),productConfiguration:y,callbackRoute:this._callbackRoute},P=I.parse(e.headers.cookie||"")["vscode.nls.locale"]||e.headers["accept-language"]?.split(",")[0]?.toLowerCase()||"en";let w,C;!P.startsWith("en")&&this._productService.nlsCoreBaseUrl?(w=this._productService.nlsCoreBaseUrl,C=`${w}${this._productService.commit}/${this._productService.version}/${P}/nls.messages.js`):C="";const E={WORKBENCH_WEB_CONFIGURATION:h(c),WORKBENCH_AUTH_SESSION:f?h(f):"",WORKBENCH_WEB_BASE_URL:this._staticRoute,WORKBENCH_NLS_URL:C,WORKBENCH_NLS_FALLBACK_URL:`${this._staticRoute}/out/nls.messages.js`};if(this._cssDevService.isEnabled){const o=await this._cssDevService.getCssModules();E.WORKBENCH_DEV_CSS_MODULES=JSON.stringify(o)}if(n){const o=[];for(const p of["vscode-test-resolver","github-authentication"]){const S=JSON.parse((await _.readFile(R.asFileUri(`${te}/${p}/package.json`).fsPath)).toString());o.push({extensionPath:p,packageJSON:S})}E.WORKBENCH_BUILTIN_EXTENSIONS=h(o)}let T;try{T=(await _.readFile(b)).toString().replace(/\{\{([^}]+)\}\}/g,(p,S)=>E[S]??"undefined")}catch{return t.writeHead(404,{"Content-Type":"text/plain"}),void t.end("Not found")}const U={"Content-Type":"text/html","Content-Security-Policy":["default-src 'self';","img-src 'self' https: data: blob:;","media-src 'self';",`script-src 'self' 'unsafe-eval' ${w??""} blob: 'nonce-1nline-m4p' ${this._getScriptCspHashes(T).join(" ")} 'sha256-2Q+j4hfT09+1+imS46J2YlkCtHWQt0/BE79PXjJ0ZJ8=' 'sha256-/r7rqQ+yrxt57sxLuQ6AMYcy/lUpvAIzHjIJt/OeLWU=' ${n?"":`http://${a}`};`,"child-src 'self';","frame-src 'self' https://*.vscode-cdn.net data:;","worker-src 'self' data: blob:;","style-src 'self' 'unsafe-inline';","connect-src 'self' ws: wss: https:;","font-src 'self' blob:;","manifest-src 'self';"].join(" ")};return this._connectionToken.type!==se.None&&(U["Set-Cookie"]=I.serialize(B,this._connectionToken.value,{sameSite:"lax",maxAge:60*60*24*7})),t.writeHead(200,U),void t.end(T)}_getScriptCspHashes(e){const t=/<script>([\s\S]+?)<\/script>/img,r=[];let i;for(;i=t.exec(e);){const s=J.createHash("sha256"),n=i[1].replace(/\r\n/g,`
-`),a=s.update(Buffer.from(n)).digest().toString("base64");r.push(`'sha256-${a}'`)}return r}async _handleCallback(e){const t=R.asFileUri("vs/code/browser/workbench/callback.html").fsPath,r=(await _.readFile(t)).toString(),i=["default-src 'self';","img-src 'self' https: data: blob:;","media-src 'none';",`script-src 'self' ${this._getScriptCspHashes(r).join(" ")};`,"style-src 'self' 'unsafe-inline';","font-src 'self' blob:;"].join(" ");return e.writeHead(200,{"Content-Type":"text/html","Content-Security-Policy":i}),void e.end(r)}};x=H([g(3,q),g(4,z),g(5,oe),g(6,ie),g(7,le)],x);export{he as CacheControl,x as WebClientServer,m as serveError,pe as serveFile};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { createReadStream, promises } from 'fs';
+import * as path from 'path';
+import * as url from 'url';
+import * as cookie from 'cookie';
+import * as crypto from 'crypto';
+import { isEqualOrParent } from '../../base/common/extpath.js';
+import { getMediaMime } from '../../base/common/mime.js';
+import { isLinux } from '../../base/common/platform.js';
+import { ILogService } from '../../platform/log/common/log.js';
+import { IServerEnvironmentService } from './serverEnvironmentService.js';
+import { extname, dirname, join, normalize } from '../../base/common/path.js';
+import { FileAccess, connectionTokenCookieName, connectionTokenQueryName, Schemas, builtinExtensionsPath } from '../../base/common/network.js';
+import { generateUuid } from '../../base/common/uuid.js';
+import { IProductService } from '../../platform/product/common/productService.js';
+import { asTextOrError, IRequestService } from '../../platform/request/common/request.js';
+import { CancellationToken } from '../../base/common/cancellation.js';
+import { URI } from '../../base/common/uri.js';
+import { streamToBuffer } from '../../base/common/buffer.js';
+import { isString } from '../../base/common/types.js';
+import { ICSSDevelopmentService } from '../../platform/cssDev/node/cssDevService.js';
+const textMimeType = {
+    '.html': 'text/html',
+    '.js': 'text/javascript',
+    '.json': 'application/json',
+    '.css': 'text/css',
+    '.svg': 'image/svg+xml',
+};
+export async function serveError(req, res, errorCode, errorMessage) {
+    res.writeHead(errorCode, { 'Content-Type': 'text/plain' });
+    res.end(errorMessage);
+}
+export async function serveFile(filePath, cacheControl, logService, req, res, responseHeaders) {
+    try {
+        const stat = await promises.stat(filePath);
+        if (cacheControl === 1) {
+            const etag = `W/"${[stat.ino, stat.size, stat.mtime.getTime()].join('-')}"`;
+            if (req.headers['if-none-match'] === etag) {
+                res.writeHead(304);
+                return void res.end();
+            }
+            responseHeaders['Etag'] = etag;
+        }
+        else if (cacheControl === 2) {
+            responseHeaders['Cache-Control'] = 'public, max-age=31536000';
+        }
+        else if (cacheControl === 0) {
+            responseHeaders['Cache-Control'] = 'no-store';
+        }
+        responseHeaders['Content-Type'] = textMimeType[extname(filePath)] || getMediaMime(filePath) || 'text/plain';
+        res.writeHead(200, responseHeaders);
+        createReadStream(filePath).pipe(res);
+    }
+    catch (error) {
+        if (error.code !== 'ENOENT') {
+            logService.error(error);
+            console.error(error.toString());
+        }
+        else {
+            console.error(`File not found: ${filePath}`);
+        }
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        return void res.end('Not found');
+    }
+}
+const APP_ROOT = dirname(FileAccess.asFileUri('').fsPath);
+let WebClientServer = class WebClientServer {
+    constructor(_connectionToken, _basePath, serverRootPath, _environmentService, _logService, _requestService, _productService, _cssDevService) {
+        this._connectionToken = _connectionToken;
+        this._basePath = _basePath;
+        this.serverRootPath = serverRootPath;
+        this._environmentService = _environmentService;
+        this._logService = _logService;
+        this._requestService = _requestService;
+        this._productService = _productService;
+        this._cssDevService = _cssDevService;
+        this._webExtensionResourceUrlTemplate = this._productService.extensionsGallery?.resourceUrlTemplate ? URI.parse(this._productService.extensionsGallery.resourceUrlTemplate) : undefined;
+        this._staticRoute = `${serverRootPath}/static`;
+        this._callbackRoute = `${serverRootPath}/callback`;
+        this._webExtensionRoute = `${serverRootPath}/web-extension-resource`;
+    }
+    async handle(req, res, parsedUrl) {
+        try {
+            const pathname = parsedUrl.pathname;
+            if (pathname.startsWith(this._staticRoute) && pathname.charCodeAt(this._staticRoute.length) === 47) {
+                return this._handleStatic(req, res, parsedUrl);
+            }
+            if (pathname === this._basePath) {
+                return this._handleRoot(req, res, parsedUrl);
+            }
+            if (pathname === this._callbackRoute) {
+                return this._handleCallback(res);
+            }
+            if (pathname.startsWith(this._webExtensionRoute) && pathname.charCodeAt(this._webExtensionRoute.length) === 47) {
+                return this._handleWebExtensionResource(req, res, parsedUrl);
+            }
+            return serveError(req, res, 404, 'Not found.');
+        }
+        catch (error) {
+            this._logService.error(error);
+            console.error(error.toString());
+            return serveError(req, res, 500, 'Internal Server Error.');
+        }
+    }
+    async _handleStatic(req, res, parsedUrl) {
+        const headers = Object.create(null);
+        const normalizedPathname = decodeURIComponent(parsedUrl.pathname);
+        const relativeFilePath = normalizedPathname.substring(this._staticRoute.length + 1);
+        const filePath = join(APP_ROOT, relativeFilePath);
+        if (!isEqualOrParent(filePath, APP_ROOT, !isLinux)) {
+            return serveError(req, res, 400, `Bad request.`);
+        }
+        return serveFile(filePath, this._environmentService.isBuilt ? 2 : 1, this._logService, req, res, headers);
+    }
+    _getResourceURLTemplateAuthority(uri) {
+        const index = uri.authority.indexOf('.');
+        return index !== -1 ? uri.authority.substring(index + 1) : undefined;
+    }
+    async _handleWebExtensionResource(req, res, parsedUrl) {
+        if (!this._webExtensionResourceUrlTemplate) {
+            return serveError(req, res, 500, 'No extension gallery service configured.');
+        }
+        const normalizedPathname = decodeURIComponent(parsedUrl.pathname);
+        const path = normalize(normalizedPathname.substring(this._webExtensionRoute.length + 1));
+        const uri = URI.parse(path).with({
+            scheme: this._webExtensionResourceUrlTemplate.scheme,
+            authority: path.substring(0, path.indexOf('/')),
+            path: path.substring(path.indexOf('/') + 1)
+        });
+        if (this._getResourceURLTemplateAuthority(this._webExtensionResourceUrlTemplate) !== this._getResourceURLTemplateAuthority(uri)) {
+            return serveError(req, res, 403, 'Request Forbidden');
+        }
+        const headers = {};
+        const setRequestHeader = (header) => {
+            const value = req.headers[header];
+            if (value && (isString(value) || value[0])) {
+                headers[header] = isString(value) ? value : value[0];
+            }
+            else if (header !== header.toLowerCase()) {
+                setRequestHeader(header.toLowerCase());
+            }
+        };
+        setRequestHeader('X-Client-Name');
+        setRequestHeader('X-Client-Version');
+        setRequestHeader('X-Machine-Id');
+        setRequestHeader('X-Client-Commit');
+        const context = await this._requestService.request({
+            type: 'GET',
+            url: uri.toString(true),
+            headers
+        }, CancellationToken.None);
+        const status = context.res.statusCode || 500;
+        if (status !== 200) {
+            let text = null;
+            try {
+                text = await asTextOrError(context);
+            }
+            catch (error) { }
+            return serveError(req, res, status, text || `Request failed with status ${status}`);
+        }
+        const responseHeaders = Object.create(null);
+        const setResponseHeader = (header) => {
+            const value = context.res.headers[header];
+            if (value) {
+                responseHeaders[header] = value;
+            }
+            else if (header !== header.toLowerCase()) {
+                setResponseHeader(header.toLowerCase());
+            }
+        };
+        setResponseHeader('Cache-Control');
+        setResponseHeader('Content-Type');
+        res.writeHead(200, responseHeaders);
+        const buffer = await streamToBuffer(context.stream);
+        return void res.end(buffer.buffer);
+    }
+    async _handleRoot(req, res, parsedUrl) {
+        const queryConnectionToken = parsedUrl.query[connectionTokenQueryName];
+        if (typeof queryConnectionToken === 'string') {
+            const responseHeaders = Object.create(null);
+            responseHeaders['Set-Cookie'] = cookie.serialize(connectionTokenCookieName, queryConnectionToken, {
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24 * 7
+            });
+            const newQuery = Object.create(null);
+            for (const key in parsedUrl.query) {
+                if (key !== connectionTokenQueryName) {
+                    newQuery[key] = parsedUrl.query[key];
+                }
+            }
+            const newLocation = url.format({ pathname: parsedUrl.pathname, query: newQuery });
+            responseHeaders['Location'] = newLocation;
+            res.writeHead(302, responseHeaders);
+            return void res.end();
+        }
+        const getFirstHeader = (headerName) => {
+            const val = req.headers[headerName];
+            return Array.isArray(val) ? val[0] : val;
+        };
+        const useTestResolver = (!this._environmentService.isBuilt && this._environmentService.args['use-test-resolver']);
+        const remoteAuthority = (useTestResolver
+            ? 'test+test'
+            : (getFirstHeader('x-original-host') || getFirstHeader('x-forwarded-host') || req.headers.host));
+        if (!remoteAuthority) {
+            return serveError(req, res, 400, `Bad request.`);
+        }
+        function asJSON(value) {
+            return JSON.stringify(value).replace(/"/g, '&quot;');
+        }
+        let _wrapWebWorkerExtHostInIframe = undefined;
+        if (this._environmentService.args['enable-smoke-test-driver']) {
+            _wrapWebWorkerExtHostInIframe = false;
+        }
+        const resolveWorkspaceURI = (defaultLocation) => defaultLocation && URI.file(path.resolve(defaultLocation)).with({ scheme: Schemas.vscodeRemote, authority: remoteAuthority });
+        const filePath = FileAccess.asFileUri(`vs/code/browser/workbench/workbench${this._environmentService.isBuilt ? '' : '-dev'}.html`).fsPath;
+        const authSessionInfo = !this._environmentService.isBuilt && this._environmentService.args['github-auth'] ? {
+            id: generateUuid(),
+            providerId: 'github',
+            accessToken: this._environmentService.args['github-auth'],
+            scopes: [['user:email'], ['repo']]
+        } : undefined;
+        const productConfiguration = {
+            embedderIdentifier: 'server-distro',
+            extensionsGallery: this._webExtensionResourceUrlTemplate && this._productService.extensionsGallery ? {
+                ...this._productService.extensionsGallery,
+                resourceUrlTemplate: this._webExtensionResourceUrlTemplate.with({
+                    scheme: 'http',
+                    authority: remoteAuthority,
+                    path: `${this._webExtensionRoute}/${this._webExtensionResourceUrlTemplate.authority}${this._webExtensionResourceUrlTemplate.path}`
+                }).toString(true)
+            } : undefined
+        };
+        if (!this._environmentService.isBuilt) {
+            try {
+                const productOverrides = JSON.parse((await promises.readFile(join(APP_ROOT, 'product.overrides.json'))).toString());
+                Object.assign(productConfiguration, productOverrides);
+            }
+            catch (err) { }
+        }
+        const workbenchWebConfiguration = {
+            remoteAuthority,
+            serverBasePath: this._basePath,
+            _wrapWebWorkerExtHostInIframe,
+            developmentOptions: { enableSmokeTestDriver: this._environmentService.args['enable-smoke-test-driver'] ? true : undefined, logLevel: this._logService.getLevel() },
+            settingsSyncOptions: !this._environmentService.isBuilt && this._environmentService.args['enable-sync'] ? { enabled: true } : undefined,
+            enableWorkspaceTrust: !this._environmentService.args['disable-workspace-trust'],
+            folderUri: resolveWorkspaceURI(this._environmentService.args['default-folder']),
+            workspaceUri: resolveWorkspaceURI(this._environmentService.args['default-workspace']),
+            productConfiguration,
+            callbackRoute: this._callbackRoute
+        };
+        const cookies = cookie.parse(req.headers.cookie || '');
+        const locale = cookies['vscode.nls.locale'] || req.headers['accept-language']?.split(',')[0]?.toLowerCase() || 'en';
+        let WORKBENCH_NLS_BASE_URL;
+        let WORKBENCH_NLS_URL;
+        if (!locale.startsWith('en') && this._productService.nlsCoreBaseUrl) {
+            WORKBENCH_NLS_BASE_URL = this._productService.nlsCoreBaseUrl;
+            WORKBENCH_NLS_URL = `${WORKBENCH_NLS_BASE_URL}${this._productService.commit}/${this._productService.version}/${locale}/nls.messages.js`;
+        }
+        else {
+            WORKBENCH_NLS_URL = '';
+        }
+        const values = {
+            WORKBENCH_WEB_CONFIGURATION: asJSON(workbenchWebConfiguration),
+            WORKBENCH_AUTH_SESSION: authSessionInfo ? asJSON(authSessionInfo) : '',
+            WORKBENCH_WEB_BASE_URL: this._staticRoute,
+            WORKBENCH_NLS_URL,
+            WORKBENCH_NLS_FALLBACK_URL: `${this._staticRoute}/out/nls.messages.js`
+        };
+        if (this._cssDevService.isEnabled) {
+            const cssModules = await this._cssDevService.getCssModules();
+            values['WORKBENCH_DEV_CSS_MODULES'] = JSON.stringify(cssModules);
+        }
+        if (useTestResolver) {
+            const bundledExtensions = [];
+            for (const extensionPath of ['vscode-test-resolver', 'github-authentication']) {
+                const packageJSON = JSON.parse((await promises.readFile(FileAccess.asFileUri(`${builtinExtensionsPath}/${extensionPath}/package.json`).fsPath)).toString());
+                bundledExtensions.push({ extensionPath, packageJSON });
+            }
+            values['WORKBENCH_BUILTIN_EXTENSIONS'] = asJSON(bundledExtensions);
+        }
+        let data;
+        try {
+            const workbenchTemplate = (await promises.readFile(filePath)).toString();
+            data = workbenchTemplate.replace(/\{\{([^}]+)\}\}/g, (_, key) => values[key] ?? 'undefined');
+        }
+        catch (e) {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            return void res.end('Not found');
+        }
+        const webWorkerExtensionHostIframeScriptSHA = 'sha256-2Q+j4hfT09+1+imS46J2YlkCtHWQt0/BE79PXjJ0ZJ8=';
+        const cspDirectives = [
+            'default-src \'self\';',
+            'img-src \'self\' https: data: blob:;',
+            'media-src \'self\';',
+            `script-src 'self' 'unsafe-eval' ${WORKBENCH_NLS_BASE_URL ?? ''} blob: 'nonce-1nline-m4p' ${this._getScriptCspHashes(data).join(' ')} '${webWorkerExtensionHostIframeScriptSHA}' 'sha256-/r7rqQ+yrxt57sxLuQ6AMYcy/lUpvAIzHjIJt/OeLWU=' ${useTestResolver ? '' : `http://${remoteAuthority}`};`,
+            'child-src \'self\';',
+            `frame-src 'self' https://*.vscode-cdn.net data:;`,
+            'worker-src \'self\' data: blob:;',
+            'style-src \'self\' \'unsafe-inline\';',
+            'connect-src \'self\' ws: wss: https:;',
+            'font-src \'self\' blob:;',
+            'manifest-src \'self\';'
+        ].join(' ');
+        const headers = {
+            'Content-Type': 'text/html',
+            'Content-Security-Policy': cspDirectives
+        };
+        if (this._connectionToken.type !== 0) {
+            headers['Set-Cookie'] = cookie.serialize(connectionTokenCookieName, this._connectionToken.value, {
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24 * 7
+            });
+        }
+        res.writeHead(200, headers);
+        return void res.end(data);
+    }
+    _getScriptCspHashes(content) {
+        const regex = /<script>([\s\S]+?)<\/script>/img;
+        const result = [];
+        let match;
+        while (match = regex.exec(content)) {
+            const hasher = crypto.createHash('sha256');
+            const script = match[1].replace(/\r\n/g, '\n');
+            const hash = hasher
+                .update(Buffer.from(script))
+                .digest().toString('base64');
+            result.push(`'sha256-${hash}'`);
+        }
+        return result;
+    }
+    async _handleCallback(res) {
+        const filePath = FileAccess.asFileUri('vs/code/browser/workbench/callback.html').fsPath;
+        const data = (await promises.readFile(filePath)).toString();
+        const cspDirectives = [
+            'default-src \'self\';',
+            'img-src \'self\' https: data: blob:;',
+            'media-src \'none\';',
+            `script-src 'self' ${this._getScriptCspHashes(data).join(' ')};`,
+            'style-src \'self\' \'unsafe-inline\';',
+            'font-src \'self\' blob:;'
+        ].join(' ');
+        res.writeHead(200, {
+            'Content-Type': 'text/html',
+            'Content-Security-Policy': cspDirectives
+        });
+        return void res.end(data);
+    }
+};
+WebClientServer = __decorate([
+    __param(3, IServerEnvironmentService),
+    __param(4, ILogService),
+    __param(5, IRequestService),
+    __param(6, IProductService),
+    __param(7, ICSSDevelopmentService),
+    __metadata("design:paramtypes", [Object, String, String, Object, Object, Object, Object, Object])
+], WebClientServer);
+export { WebClientServer };

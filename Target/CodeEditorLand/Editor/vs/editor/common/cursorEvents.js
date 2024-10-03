@@ -1,1 +1,1 @@
-import"./core/position.js";import"./core/selection.js";var e=(o=>(o[o.NotSet=0]="NotSet",o[o.ContentFlush=1]="ContentFlush",o[o.RecoverFromMarkers=2]="RecoverFromMarkers",o[o.Explicit=3]="Explicit",o[o.Paste=4]="Paste",o[o.Undo=5]="Undo",o[o.Redo=6]="Redo",o))(e||{});export{e as CursorChangeReason};
+export {};

@@ -1,1 +1,208 @@
-var C=Object.defineProperty;var F=Object.getOwnPropertyDescriptor;var y=(p,u,i,s)=>{for(var n=s>1?void 0:s?F(u,i):u,r=p.length-1,e;r>=0;r--)(e=p[r])&&(n=(s?e(u,i,n):e(n))||n);return s&&n&&C(u,i,n),n},d=(p,u)=>(i,s)=>u(i,s,p);import{promiseWithResolvers as N}from"../../../../base/common/async.js";import{KeyMod as h,KeyCode as D}from"../../../../base/common/keyCodes.js";import{Disposable as P,DisposableStore as x}from"../../../../base/common/lifecycle.js";import{assertIsDefined as E}from"../../../../base/common/types.js";import{localize as a,localize2 as k}from"../../../../nls.js";import"../../../../platform/action/common/action.js";import{Action2 as K,IMenuService as A,MenuId as b,registerAction2 as Q,MenuRegistry as W,MenuItemAction as R}from"../../../../platform/actions/common/actions.js";import{ICommandService as M}from"../../../../platform/commands/common/commands.js";import{IContextKeyService as z}from"../../../../platform/contextkey/common/contextkey.js";import"../../../../platform/instantiation/common/instantiation.js";import{IKeybindingService as B}from"../../../../platform/keybinding/common/keybinding.js";import{KeybindingWeight as L}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{IQuickInputService as q}from"../../../../platform/quickinput/common/quickInput.js";import{Registry as O}from"../../../../platform/registry/common/platform.js";import{Extensions as T}from"../../../common/contributions.js";import{LifecyclePhase as U}from"../../../services/lifecycle/common/lifecycle.js";const I=a("Built-In","Built-In"),G=k("Create","Create");Q(class extends K{constructor(){super({id:"welcome.showNewFileEntries",title:k("welcome.newFile","New File..."),category:G,f1:!0,keybinding:{primary:h.Alt+h.CtrlCmd+h.WinCtrl+D.KeyN,weight:L.WorkbenchContrib},menu:{id:b.MenubarFileMenu,group:"1_new",order:2}})}async run(p){return E(l.Instance).run()}});let l=class extends P{constructor(i,s,n,r,e){super();this.quickInputService=i;this.contextKeyService=s;this.commandService=n;this.keybindingService=r;l.Instance=this,this._register({dispose(){l.Instance===this&&(l.Instance=void 0)}}),this.menu=e.createMenu(b.NewFile,s)}static Instance;menu;allEntries(){const i=[];for(const[s,n]of this.menu.getActions({renderShortTitle:!0}))for(const r of n)r instanceof R&&i.push({commandID:r.item.id,from:r.item.source?.title??I,title:r.label,group:s});return i}async run(){const i=this.allEntries();if(i.length===0)throw Error("Unexpected empty new items list");return i.length===1?(this.commandService.executeCommand(i[0].commandID),!0):this.selectNewEntry(i)}async selectNewEntry(i){const{promise:s,resolve:n}=N(),r=new x,e=this.quickInputService.createQuickPick({useSeparators:!0});e.title=a("newFileTitle","New File..."),e.placeholder=a("newFilePlaceholder","Select File Type or Enter File Name..."),e.sortByLabel=!1,e.matchOnDetail=!0,e.matchOnDescription=!0;const w=(o,t)=>{const c={file:1,notebook:2};if(c[o.group]&&c[t.group]){if(c[o.group]!==c[t.group])return c[t.group]-c[o.group]}else{if(c[o.group])return 1;if(c[t.group])return-1}return o.from===I?1:t.from===I?-1:o.from.localeCompare(t.from)},S={file:a("file","File"),notebook:a("notebook","Notebook")},f=o=>{const t=[];let c;o.sort((m,g)=>-w(m,g)).forEach(m=>{const g=m.commandID,v=this.keybindingService.lookupKeybinding(g||"",this.contextKeyService);c!==m.group&&(t.push({type:"separator",label:S[m.group]??m.group}),c=m.group),t.push({...m,label:m.title,type:"item",keybinding:v,buttons:g?[{iconClass:"codicon codicon-gear",tooltip:a("change keybinding","Configure Keybinding")}]:[],detail:"",description:m.from})}),e.items=t};return f(i),r.add(this.menu.onDidChange(()=>f(this.allEntries()))),r.add(e.onDidChangeValue(o=>{if(o===""){f(i);return}const t={commandID:"workbench.action.files.newFile",commandArgs:{languageId:void 0,viewType:void 0,fileName:o},title:a("miNewFileWithName","Create New File ({0})",o),group:"file",from:I};f([t,...i])})),r.add(e.onDidAccept(async o=>{const t=e.selectedItems[0];n(!!t),e.hide(),t&&await this.commandService.executeCommand(t.commandID,t.commandArgs)})),r.add(e.onDidHide(()=>{e.dispose(),r.dispose(),n(!1)})),r.add(e.onDidTriggerItemButton(o=>{e.hide(),this.commandService.executeCommand("workbench.action.openGlobalKeybindings",o.item.commandID),n(!1)})),e.show(),s}};l=y([d(0,q),d(1,z),d(2,M),d(3,B),d(4,A)],l),O.as(T.Workbench).registerWorkbenchContribution(l,U.Restored),W.appendMenuItem(b.NewFile,{group:"file",command:{id:"workbench.action.files.newUntitledFile",title:a("miNewFile2","Text File")},order:1});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var NewFileTemplatesManager_1;
+import { promiseWithResolvers } from '../../../../base/common/async.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { assertIsDefined } from '../../../../base/common/types.js';
+import { localize, localize2 } from '../../../../nls.js';
+import { Action2, IMenuService, MenuId, registerAction2, MenuRegistry, MenuItemAction } from '../../../../platform/actions/common/actions.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+const builtInSource = localize('Built-In', "Built-In");
+const category = localize2('Create', 'Create');
+registerAction2(class extends Action2 {
+    constructor() {
+        super({
+            id: 'welcome.showNewFileEntries',
+            title: localize2('welcome.newFile', 'New File...'),
+            category,
+            f1: true,
+            keybinding: {
+                primary: 512 + 2048 + 256 + 44,
+                weight: 200,
+            },
+            menu: {
+                id: MenuId.MenubarFileMenu,
+                group: '1_new',
+                order: 2
+            }
+        });
+    }
+    async run(accessor) {
+        return assertIsDefined(NewFileTemplatesManager.Instance).run();
+    }
+});
+let NewFileTemplatesManager = class NewFileTemplatesManager extends Disposable {
+    static { NewFileTemplatesManager_1 = this; }
+    constructor(quickInputService, contextKeyService, commandService, keybindingService, menuService) {
+        super();
+        this.quickInputService = quickInputService;
+        this.contextKeyService = contextKeyService;
+        this.commandService = commandService;
+        this.keybindingService = keybindingService;
+        NewFileTemplatesManager_1.Instance = this;
+        this._register({ dispose() { if (NewFileTemplatesManager_1.Instance === this) {
+                NewFileTemplatesManager_1.Instance = undefined;
+            } } });
+        this.menu = menuService.createMenu(MenuId.NewFile, contextKeyService);
+    }
+    allEntries() {
+        const items = [];
+        for (const [groupName, group] of this.menu.getActions({ renderShortTitle: true })) {
+            for (const action of group) {
+                if (action instanceof MenuItemAction) {
+                    items.push({ commandID: action.item.id, from: action.item.source?.title ?? builtInSource, title: action.label, group: groupName });
+                }
+            }
+        }
+        return items;
+    }
+    async run() {
+        const entries = this.allEntries();
+        if (entries.length === 0) {
+            throw Error('Unexpected empty new items list');
+        }
+        else if (entries.length === 1) {
+            this.commandService.executeCommand(entries[0].commandID);
+            return true;
+        }
+        else {
+            return this.selectNewEntry(entries);
+        }
+    }
+    async selectNewEntry(entries) {
+        const { promise: resultPromise, resolve: resolveResult } = promiseWithResolvers();
+        const disposables = new DisposableStore();
+        const qp = this.quickInputService.createQuickPick({ useSeparators: true });
+        qp.title = localize('newFileTitle', "New File...");
+        qp.placeholder = localize('newFilePlaceholder', "Select File Type or Enter File Name...");
+        qp.sortByLabel = false;
+        qp.matchOnDetail = true;
+        qp.matchOnDescription = true;
+        const sortCategories = (a, b) => {
+            const categoryPriority = { 'file': 1, 'notebook': 2 };
+            if (categoryPriority[a.group] && categoryPriority[b.group]) {
+                if (categoryPriority[a.group] !== categoryPriority[b.group]) {
+                    return categoryPriority[b.group] - categoryPriority[a.group];
+                }
+            }
+            else if (categoryPriority[a.group]) {
+                return 1;
+            }
+            else if (categoryPriority[b.group]) {
+                return -1;
+            }
+            if (a.from === builtInSource) {
+                return 1;
+            }
+            if (b.from === builtInSource) {
+                return -1;
+            }
+            return a.from.localeCompare(b.from);
+        };
+        const displayCategory = {
+            'file': localize('file', "File"),
+            'notebook': localize('notebook', "Notebook"),
+        };
+        const refreshQp = (entries) => {
+            const items = [];
+            let lastSeparator;
+            entries
+                .sort((a, b) => -sortCategories(a, b))
+                .forEach((entry) => {
+                const command = entry.commandID;
+                const keybinding = this.keybindingService.lookupKeybinding(command || '', this.contextKeyService);
+                if (lastSeparator !== entry.group) {
+                    items.push({
+                        type: 'separator',
+                        label: displayCategory[entry.group] ?? entry.group
+                    });
+                    lastSeparator = entry.group;
+                }
+                items.push({
+                    ...entry,
+                    label: entry.title,
+                    type: 'item',
+                    keybinding,
+                    buttons: command ? [
+                        {
+                            iconClass: 'codicon codicon-gear',
+                            tooltip: localize('change keybinding', "Configure Keybinding")
+                        }
+                    ] : [],
+                    detail: '',
+                    description: entry.from,
+                });
+            });
+            qp.items = items;
+        };
+        refreshQp(entries);
+        disposables.add(this.menu.onDidChange(() => refreshQp(this.allEntries())));
+        disposables.add(qp.onDidChangeValue((val) => {
+            if (val === '') {
+                refreshQp(entries);
+                return;
+            }
+            const currentTextEntry = {
+                commandID: 'workbench.action.files.newFile',
+                commandArgs: { languageId: undefined, viewType: undefined, fileName: val },
+                title: localize('miNewFileWithName', "Create New File ({0})", val),
+                group: 'file',
+                from: builtInSource,
+            };
+            refreshQp([currentTextEntry, ...entries]);
+        }));
+        disposables.add(qp.onDidAccept(async (e) => {
+            const selected = qp.selectedItems[0];
+            resolveResult(!!selected);
+            qp.hide();
+            if (selected) {
+                await this.commandService.executeCommand(selected.commandID, selected.commandArgs);
+            }
+        }));
+        disposables.add(qp.onDidHide(() => {
+            qp.dispose();
+            disposables.dispose();
+            resolveResult(false);
+        }));
+        disposables.add(qp.onDidTriggerItemButton(e => {
+            qp.hide();
+            this.commandService.executeCommand('workbench.action.openGlobalKeybindings', e.item.commandID);
+            resolveResult(false);
+        }));
+        qp.show();
+        return resultPromise;
+    }
+};
+NewFileTemplatesManager = NewFileTemplatesManager_1 = __decorate([
+    __param(0, IQuickInputService),
+    __param(1, IContextKeyService),
+    __param(2, ICommandService),
+    __param(3, IKeybindingService),
+    __param(4, IMenuService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], NewFileTemplatesManager);
+Registry.as(WorkbenchExtensions.Workbench)
+    .registerWorkbenchContribution(NewFileTemplatesManager, 3);
+MenuRegistry.appendMenuItem(MenuId.NewFile, {
+    group: 'file',
+    command: {
+        id: 'workbench.action.files.newUntitledFile',
+        title: localize('miNewFile2', "Text File")
+    },
+    order: 1
+});

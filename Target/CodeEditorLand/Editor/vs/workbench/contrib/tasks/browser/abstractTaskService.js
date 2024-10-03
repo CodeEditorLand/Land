@@ -1,14 +1,3449 @@
-var We=Object.defineProperty;var xe=Object.getOwnPropertyDescriptor;var me=(H,_,e,t)=>{for(var s=t>1?void 0:t?xe(_,e):_,i=H.length-1,r;i>=0;i--)(r=H[i])&&(s=(t?r(_,e,s):r(s))||s);return t&&s&&We(_,e,s),s},T=(H,_)=>(e,t)=>_(e,t,H);import{Action as Me}from"../../../../base/common/actions.js";import"../../../../base/common/collections.js";import{Emitter as B,Event as ue}from"../../../../base/common/event.js";import*as ze from"../../../../base/common/glob.js";import*as De from"../../../../base/common/json.js";import{Disposable as Oe,dispose as Ue}from"../../../../base/common/lifecycle.js";import{LRUCache as le,Touch as _e}from"../../../../base/common/map.js";import*as se from"../../../../base/common/objects.js";import{ValidationState as $,ValidationStatus as Ve}from"../../../../base/common/parsers.js";import*as Y from"../../../../base/common/platform.js";import{TerminateResponseCode as Ae}from"../../../../base/common/processes.js";import*as te from"../../../../base/common/resources.js";import z from"../../../../base/common/severity.js";import*as E from"../../../../base/common/types.js";import{URI as Ke}from"../../../../base/common/uri.js";import*as Qe from"../../../../base/common/uuid.js";import*as l from"../../../../nls.js";import{CommandsRegistry as P,ICommandService as Ne}from"../../../../platform/commands/common/commands.js";import{ConfigurationTarget as J,IConfigurationService as Le}from"../../../../platform/configuration/common/configuration.js";import{IFileService as Ge}from"../../../../platform/files/common/files.js";import{IMarkerService as je}from"../../../../platform/markers/common/markers.js";import{IProgressService as Be,ProgressLocation as Je}from"../../../../platform/progress/common/progress.js";import{IStorageService as qe,StorageScope as D,StorageTarget as de}from"../../../../platform/storage/common/storage.js";import{ITelemetryService as He}from"../../../../platform/telemetry/common/telemetry.js";import{ProblemMatcherRegistry as X}from"../common/problemMatcher.js";import{IExtensionService as $e}from"../../../services/extensions/common/extensions.js";import{IDialogService as Ye}from"../../../../platform/dialogs/common/dialogs.js";import{INotificationService as Xe}from"../../../../platform/notification/common/notification.js";import{IOpenerService as Ze}from"../../../../platform/opener/common/opener.js";import{IModelService as et}from"../../../../editor/common/services/model.js";import{IWorkspaceContextService as tt,WorkbenchState as W,WorkspaceFolder as st}from"../../../../platform/workspace/common/workspace.js";import{Markers as it}from"../../markers/common/markers.js";import{IConfigurationResolverService as rt}from"../../../services/configurationResolver/common/configurationResolver.js";import{IEditorService as nt}from"../../../services/editor/common/editorService.js";import{IOutputService as ot}from"../../../services/output/common/output.js";import{ITextFileService as at}from"../../../services/textfile/common/textfiles.js";import{ITerminalGroupService as ct,ITerminalService as ut}from"../../terminal/browser/terminal.js";import{ITerminalProfileResolverService as lt}from"../../terminal/common/terminal.js";import{ConfiguringTask as L,ContributedTask as F,CustomTask as C,ExecutionEngine as O,InMemoryTask as x,JsonSchemaVersion as M,KeyedTaskIdentifier as dt,RuntimeType as fe,TASK_RUNNING_STATE as ft,TaskDefinition as ie,TaskEventKind as ke,TaskGroup as R,TaskRunSource as S,TaskSettingId as G,TaskSorter as kt,TaskSourceKind as y,TasksSchemaProperties as U,USER_TASKS_GROUP_KEY as Z}from"../common/tasks.js";import{CustomExecutionSupportedContext as pt,ProcessExecutionSupportedContext as ve,ServerlessWebContext as Se,ShellExecutionSupportedContext as ye,TaskCommandsRegistered as gt,TaskExecutionSupportedContext as ht}from"../common/taskService.js";import{TaskError as q,TaskErrors as V,TaskExecuteKind as Tt}from"../common/taskSystem.js";import{getTemplates as mt}from"../common/taskTemplates.js";import*as b from"../common/taskConfiguration.js";import{TerminalTaskSystem as pe}from"./terminalTaskSystem.js";import{IQuickInputService as _t}from"../../../../platform/quickinput/common/quickInput.js";import{IContextKeyService as vt}from"../../../../platform/contextkey/common/contextkey.js";import{TaskDefinitionRegistry as re}from"../common/taskDefinitionRegistry.js";import{raceTimeout as ne}from"../../../../base/common/async.js";import{CancellationTokenSource as Ie}from"../../../../base/common/cancellation.js";import{toFormattedString as St}from"../../../../base/common/jsonFormatter.js";import{Schemas as yt}from"../../../../base/common/network.js";import{ThemeIcon as It}from"../../../../base/common/themables.js";import{ITextModelService as bt}from"../../../../editor/common/services/resolverService.js";import{TextEditorSelectionRevealType as Ct}from"../../../../platform/editor/common/editor.js";import{IInstantiationService as wt}from"../../../../platform/instantiation/common/instantiation.js";import{ILogService as Pt}from"../../../../platform/log/common/log.js";import{TerminalExitReason as Rt}from"../../../../platform/terminal/common/terminal.js";import{IThemeService as Et}from"../../../../platform/theme/common/themeService.js";import{IWorkspaceTrustManagementService as Ft,IWorkspaceTrustRequestService as Wt}from"../../../../platform/workspace/common/workspaceTrust.js";import{VirtualWorkspaceContext as be}from"../../../common/contextkeys.js";import{EditorResourceAccessor as xt,SaveReason as Ce}from"../../../common/editor.js";import{IViewDescriptorService as Mt}from"../../../common/views.js";import{IViewsService as zt}from"../../../services/views/common/viewsService.js";import{configureTaskIcon as Dt,isWorkspaceFolder as we,QUICKOPEN_DETAIL_CONFIG as Ot,QUICKOPEN_SKIP_CONFIG as Pe,TaskQuickPick as Q}from"./taskQuickPick.js";import{IWorkbenchEnvironmentService as Ut}from"../../../services/environment/common/environmentService.js";import{ILifecycleService as Vt,ShutdownReason as At,StartupKind as Kt}from"../../../services/lifecycle/common/lifecycle.js";import{IPaneCompositePartService as Qt}from"../../../services/panecomposite/browser/panecomposite.js";import{IPathService as Nt}from"../../../services/path/common/pathService.js";import{IPreferencesService as Lt}from"../../../services/preferences/common/preferences.js";import{IRemoteAgentService as Gt}from"../../../services/remote/common/remoteAgentService.js";const oe="task.quickOpen.history",ge="task.problemMatchers.neverPrompt",jt="task.quickOpen.showAll";var ae;(e=>(e.ID="workbench.action.tasks.configureTaskRunner",e.TEXT=l.localize2("ConfigureTaskRunnerAction.label","Configure Task")))(ae||={});class Re{constructor(_){this._outputChannel=_;this._validationStatus=new Ve}_validationStatus;info(_){this._validationStatus.state=$.Info,this._outputChannel.append(_+`
-`)}warn(_){this._validationStatus.state=$.Warning,this._outputChannel.append(_+`
-`)}error(_){this._validationStatus.state=$.Error,this._outputChannel.append(_+`
-`)}fatal(_){this._validationStatus.state=$.Fatal,this._outputChannel.append(_+`
-`)}get status(){return this._validationStatus}}class A{_store=new Map;forEach(_){this._store.forEach(_)}static getKey(_){let e;if(E.isString(_))e=_;else{const t=we(_)?_.uri:_.configuration;e=t?t.toString():""}return e}get(_){const e=A.getKey(_);let t=this._store.get(e);return t||(t=[],this._store.set(e,t)),t}add(_,...e){const t=A.getKey(_);let s=this._store.get(t);s||(s=[],this._store.set(t,s)),s.push(...e)}all(){const _=[];return this._store.forEach(e=>_.push(...e)),_}}let w=class extends Oe{constructor(e,t,s,i,r,n,a,d,u,o,c,f,g,h,p,k,m,I,N,K,ee,Bt,Ee,Jt,qt,Ht,$t,Yt,Xt,Zt,es,ts,ss,is,Fe,rs){super();this._configurationService=e;this._markerService=t;this._outputService=s;this._paneCompositeService=i;this._viewsService=r;this._commandService=n;this._editorService=a;this._fileService=d;this._contextService=u;this._telemetryService=o;this._textFileService=c;this._modelService=f;this._extensionService=g;this._quickInputService=h;this._configurationResolverService=p;this._terminalService=k;this._terminalGroupService=m;this._storageService=I;this._progressService=N;this._openerService=K;this._dialogService=ee;this._notificationService=Bt;this._contextKeyService=Ee;this._environmentService=Jt;this._terminalProfileResolverService=qt;this._pathService=Ht;this._textModelResolverService=$t;this._preferencesService=Yt;this._viewDescriptorService=Xt;this._workspaceTrustRequestService=Zt;this._workspaceTrustManagementService=es;this._logService=ts;this._themeService=ss;this._lifecycleService=is;this._instantiationService=rs;this._whenTaskSystemReady=ue.toPromise(this.onDidChangeTaskSystemInfo),this._workspaceTasksPromise=void 0,this._taskSystem=void 0,this._taskSystemListeners=void 0,this._outputChannel=this._outputService.getChannel(w.OutputChannelId),this._providers=new Map,this._providerTypes=new Map,this._taskSystemInfos=new Map,this._register(this._contextService.onDidChangeWorkspaceFolders(()=>{const v=this._computeWorkspaceFolderSetup();return this.executionEngine!==v[2]&&(this._disposeTaskSystemListeners(),this._taskSystem=void 0),this._updateSetup(v),this._updateWorkspaceTasks(S.FolderOpen)})),this._register(this._configurationService.onDidChangeConfiguration(async v=>{!v.affectsConfiguration("tasks")||!this._taskSystem&&!this._workspaceTasksPromise||((!this._taskSystem||this._taskSystem instanceof pe)&&this._outputChannel.clear(),v.affectsConfiguration(G.Reconnection)&&(this._configurationService.getValue(G.Reconnection)||(this._persistentTasks?.clear(),this._storageService.remove(w.PersistentTasks_Key,D.WORKSPACE))),this._setTaskLRUCacheLimit(),await this._updateWorkspaceTasks(S.ConfigurationChange),this._onDidChangeTaskConfig.fire())})),this._taskRunningState=ft.bindTo(Ee),this._onDidStateChange=this._register(new B),this._registerCommands().then(()=>gt.bindTo(this._contextKeyService).set(!0)),Se.bindTo(this._contextKeyService).set(Y.isWeb&&!Fe.getConnection()?.remoteAuthority),this._configurationResolverService.contributeVariable("defaultBuildTask",async()=>{let v=await this._getTasksForGroup(R.Build,!0);if(v.length>0){const Te=this._getDefaultTasks(v);if(Te.length===1)return Te[0]._label}v=await this._getTasksForGroup(R.Build);const j=this._getDefaultTasks(v);if(j.length===1)return j[0]._label;j.length&&(v=j);let ce;v&&v.length>0&&(ce=await this._showQuickPick(v,l.localize("TaskService.pickBuildTaskForLabel","Select the build task (there is no default build task defined)")));const he=ce?ce.task:void 0;if(he)return he._label}),this._register(this._lifecycleService.onBeforeShutdown(v=>{this._willRestart=v.reason!==At.RELOAD})),this._register(this.onDidStateChange(v=>{if(this._log(l.localize("taskEvent","Task Event kind: {0}",v.kind),!0),v.kind!==ke.Changed)if((this._willRestart||v.kind===ke.Terminated&&v.exitReason===Rt.User)&&v.taskId){const j=v.__task.getKey();j&&this.removePersistentTask(j)}else v.kind===ke.Start&&v.__task&&v.__task.getWorkspaceFolder()&&this._setPersistentTask(v.__task)})),this._waitForAllSupportedExecutions=new Promise(v=>{ue.once(this._onDidRegisterAllSupportedExecutions.event)(()=>v())}),this._terminalService.getReconnectedTerminals("Task")?.length?this._attemptTaskReconnection():this._terminalService.whenConnected.then(()=>{this._terminalService.getReconnectedTerminals("Task")?.length?this._attemptTaskReconnection():(this._tasksReconnected=!0,this._onDidReconnectToTasks.fire())}),this._upgrade()}static RecentlyUsedTasks_Key="workbench.tasks.recentlyUsedTasks";static RecentlyUsedTasks_KeyV2="workbench.tasks.recentlyUsedTasks2";static PersistentTasks_Key="workbench.tasks.persistentTasks";static IgnoreTask010DonotShowAgain_key="workbench.tasks.ignoreTask010Shown";_serviceBrand;static OutputChannelId="tasks";static OutputChannelLabel=l.localize("tasks","Tasks");static _nextHandle=0;_tasksReconnected=!1;_schemaVersion;_executionEngine;_workspaceFolders;_workspace;_ignoredWorkspaceFolders;_showIgnoreMessage;_providers;_providerTypes;_taskSystemInfos;_workspaceTasksPromise;_whenTaskSystemReady;_taskSystem;_taskSystemListeners=[];_recentlyUsedTasksV1;_recentlyUsedTasks;_persistentTasks;_taskRunningState;_outputChannel;_onDidStateChange;_waitForAllSupportedExecutions;_onDidRegisterSupportedExecutions=new B;_onDidRegisterAllSupportedExecutions=new B;_onDidChangeTaskSystemInfo=new B;_willRestart=!1;onDidChangeTaskSystemInfo=this._onDidChangeTaskSystemInfo.event;_onDidReconnectToTasks=new B;onDidReconnectToTasks=this._onDidReconnectToTasks.event;_onDidChangeTaskConfig=new B;onDidChangeTaskConfig=this._onDidChangeTaskConfig.event;get isReconnected(){return this._tasksReconnected}_onDidChangeTaskProviders=this._register(new B);onDidChangeTaskProviders=this._onDidChangeTaskProviders.event;registerSupportedExecutions(e,t,s){e!==void 0&&pt.bindTo(this._contextKeyService).set(e);const i=!!be.getValue(this._contextKeyService);t!==void 0&&ye.bindTo(this._contextKeyService).set(t&&!i),s!==void 0&&ve.bindTo(this._contextKeyService).set(s&&!i),this._workspaceTasksPromise=void 0,this._onDidRegisterSupportedExecutions.fire(),(Y.isWeb||e&&t&&s)&&this._onDidRegisterAllSupportedExecutions.fire()}_attemptTaskReconnection(){if(this._lifecycleService.startupKind!==Kt.ReloadedWindow&&(this._log(l.localize("TaskService.skippingReconnection","Startup kind not window reload, setting connected and removing persistent tasks"),!0),this._tasksReconnected=!0,this._storageService.remove(w.PersistentTasks_Key,D.WORKSPACE)),!this._configurationService.getValue(G.Reconnection)||this._tasksReconnected){this._log(l.localize("TaskService.notConnecting","Setting tasks connected configured value {0}, tasks were already reconnected {1}",this._configurationService.getValue(G.Reconnection),this._tasksReconnected),!0),this._tasksReconnected=!0;return}this._log(l.localize("TaskService.reconnecting","Reconnecting to running tasks..."),!0),this.getWorkspaceTasks(S.Reconnect).then(async()=>{this._tasksReconnected=await this._reconnectTasks(),this._log(l.localize("TaskService.reconnected","Reconnected to running tasks."),!0),this._onDidReconnectToTasks.fire()})}async _reconnectTasks(){const e=await this.getSavedTasks("persistent");if(!e.length)return this._log(l.localize("TaskService.noTasks","No persistent tasks to reconnect."),!0),!0;const t=e.map(s=>s._label).join(", ");this._log(l.localize("TaskService.reconnectingTasks","Reconnecting to {0} tasks...",t),!0);for(const s of e)if(L.is(s)){const i=await this.tryResolveTask(s);i&&this.run(i,void 0,S.Reconnect)}else this.run(s,void 0,S.Reconnect);return!0}get onDidStateChange(){return this._onDidStateChange.event}get supportsMultipleTaskExecutions(){return this.inTerminal()}async _registerCommands(){P.registerCommand({id:"workbench.action.tasks.runTask",handler:async(e,t)=>{await this._trust()&&await this._runTaskCommand(t)},metadata:{description:"Run Task",args:[{name:"args",isOptional:!0,description:l.localize("runTask.arg","Filters the tasks shown in the quickpick"),schema:{anyOf:[{type:"string",description:l.localize("runTask.label","The task's label or a term to filter by")},{type:"object",properties:{type:{type:"string",description:l.localize("runTask.type","The contributed task type")},task:{type:"string",description:l.localize("runTask.task","The task's label or a term to filter by")}}}]}}]}}),P.registerCommand("workbench.action.tasks.reRunTask",async(e,t)=>{await this._trust()&&this._reRunTaskCommand()}),P.registerCommand("workbench.action.tasks.restartTask",async(e,t)=>{await this._trust()&&this._runRestartTaskCommand(t)}),P.registerCommand("workbench.action.tasks.terminate",async(e,t)=>{await this._trust()&&this._runTerminateCommand(t)}),P.registerCommand("workbench.action.tasks.showLog",()=>{this._showOutput(void 0,!0)}),P.registerCommand("workbench.action.tasks.build",async()=>{await this._trust()&&this._runBuildCommand()}),P.registerCommand("workbench.action.tasks.test",async()=>{await this._trust()&&this._runTestCommand()}),P.registerCommand("workbench.action.tasks.configureTaskRunner",async()=>{await this._trust()&&this._runConfigureTasks()}),P.registerCommand("workbench.action.tasks.configureDefaultBuildTask",async()=>{await this._trust()&&this._runConfigureDefaultBuildTask()}),P.registerCommand("workbench.action.tasks.configureDefaultTestTask",async()=>{await this._trust()&&this._runConfigureDefaultTestTask()}),P.registerCommand("workbench.action.tasks.showTasks",async()=>{if(await this._trust())return this.runShowTasks()}),P.registerCommand("workbench.action.tasks.toggleProblems",()=>this._commandService.executeCommand(it.TOGGLE_MARKERS_VIEW_ACTION_ID)),P.registerCommand("workbench.action.tasks.openUserTasks",async()=>{const e=this._getResourceForKind(y.User);e&&this._openTaskFile(e,y.User)}),P.registerCommand("workbench.action.tasks.openWorkspaceFileTasks",async()=>{const e=this._getResourceForKind(y.WorkspaceFile);e&&this._openTaskFile(e,y.WorkspaceFile)})}get workspaceFolders(){return this._workspaceFolders||this._updateSetup(),this._workspaceFolders}get ignoredWorkspaceFolders(){return this._ignoredWorkspaceFolders||this._updateSetup(),this._ignoredWorkspaceFolders}get executionEngine(){return this._executionEngine===void 0&&this._updateSetup(),this._executionEngine}get schemaVersion(){return this._schemaVersion===void 0&&this._updateSetup(),this._schemaVersion}get showIgnoreMessage(){return this._showIgnoreMessage===void 0&&(this._showIgnoreMessage=!this._storageService.getBoolean(w.IgnoreTask010DonotShowAgain_key,D.WORKSPACE,!1)),this._showIgnoreMessage}_getActivationEvents(e){const t=[];if(t.push("onCommand:workbench.action.tasks.runTask"),e)t.push(`onTaskType:${e}`);else for(const s of re.all())t.push(`onTaskType:${s.taskType}`);return t}async _activateTaskProviders(e){await this._extensionService.whenInstalledExtensionsRegistered(),this._log("Activating task providers "+(e??"all")),await ne(Promise.all(this._getActivationEvents(e).map(t=>this._extensionService.activateByEvent(t))),5e3,()=>{})}_updateSetup(e){if(e||(e=this._computeWorkspaceFolderSetup()),this._workspaceFolders=e[0],this._ignoredWorkspaceFolders)if(this._ignoredWorkspaceFolders.length!==e[1].length)this._showIgnoreMessage=void 0;else{const t=new Set;this._ignoredWorkspaceFolders.forEach(s=>t.add(s.uri.toString()));for(const s of e[1])if(!t.has(s.uri.toString())){this._showIgnoreMessage=void 0;break}}this._ignoredWorkspaceFolders=e[1],this._executionEngine=e[2],this._schemaVersion=e[3],this._workspace=e[4]}_showOutput(e=S.User,t){!be.getValue(this._contextKeyService)&&(e===S.User||e===S.ConfigurationChange)&&(t?this._outputService.showChannel(this._outputChannel.id,!0):this._notificationService.prompt(z.Warning,l.localize("taskServiceOutputPrompt","There are task errors. See the output for details."),[{label:l.localize("showOutput","Show output"),run:()=>{this._outputService.showChannel(this._outputChannel.id,!0)}}]))}_disposeTaskSystemListeners(){this._taskSystemListeners&&(Ue(this._taskSystemListeners),this._taskSystemListeners=void 0)}registerTaskProvider(e,t){if(!e)return{dispose:()=>{}};const s=w._nextHandle++;return this._providers.set(s,e),this._providerTypes.set(s,t),this._onDidChangeTaskProviders.fire(),{dispose:()=>{this._providers.delete(s),this._providerTypes.delete(s),this._onDidChangeTaskProviders.fire()}}}get hasTaskSystemInfo(){const e=Array.from(this._taskSystemInfos.values()).flat().length;return this._environmentService.remoteAuthority?e>1:e>0}registerTaskSystem(e,t){if(t.platform===Y.Platform.Web&&(e=this.workspaceFolders.length?this.workspaceFolders[0].uri.scheme:e),!this._taskSystemInfos.has(e))this._taskSystemInfos.set(e,[t]);else{const s=this._taskSystemInfos.get(e);t.platform===Y.Platform.Web?s.push(t):s.unshift(t)}this.hasTaskSystemInfo&&this._onDidChangeTaskSystemInfo.fire()}_getTaskSystemInfo(e){const t=this._taskSystemInfos.get(e);return t&&t.length?t[0]:void 0}extensionCallbackTaskComplete(e,t){return this._taskSystem?this._taskSystem.customExecutionComplete(e,t):Promise.resolve()}async _findWorkspaceTasks(e){const t=[],s=await this.getWorkspaceTasks();for(const[,i]of s){if(i.configurations)for(const r in i.configurations.byIdentifier){const n=i.configurations.byIdentifier[r];e(n,i.workspaceFolder)&&t.push(n)}if(i.set)for(const r of i.set.tasks)e(r,i.workspaceFolder)&&t.push(r)}return t}async _findWorkspaceTasksInGroup(e,t){return this._findWorkspaceTasks(s=>{const i=s.configurationProperties.group;return i&&typeof i!="string"?i._id===e._id&&(!t||!!i.isDefault):!1})}async getTask(e,t,s=!1,i=void 0){if(!await this._trust())return;const r=E.isString(e)?e:we(e)?e.name:e.configuration?te.basename(e.configuration):void 0;if(this.ignoredWorkspaceFolders.some(c=>c.name===r))return Promise.reject(new Error(l.localize("TaskServer.folderIgnored","The folder {0} is ignored since it uses task version 0.1.0",r)));const n=E.isString(t)?t:ie.createTaskIdentifier(t,console);if(n===void 0)return Promise.resolve(void 0);const a=A.getKey(e),d=await this._findWorkspaceTasks((c,f)=>{const g=A.getKey(f);return g!==a&&g!==Z?!1:c.matches(n,s)});if(d.sort(c=>c._source.kind===y.Extension?1:-1),d.length>0){const c=d[0];return L.is(c)?this.tryResolveTask(c):c}const u=await this._getGroupedTasks({type:i});let o=u.get(e);if(o=o.concat(u.get(Z)),!!o)return o=o.filter(c=>c.matches(n,s)).sort(c=>c._source.kind===y.Extension?1:-1),o.length>0?o[0]:void 0}async tryResolveTask(e){if(!await this._trust())return;await this._activateTaskProviders(e.type);let t,s=!1;for(const[r,n]of this._providers){const a=this._providerTypes.get(r);if(e.type===a){if(a&&!this._isTaskProviderEnabled(a)){s=!0;continue}t=n;break}}if(!t){s&&this._log(l.localize("TaskService.providerUnavailable","Warning: {0} tasks are unavailable in the current environment.",e.configures.type));return}try{const r=await t.resolveTask(e);if(r&&r._id===e._id)return b.createCustomTask(r,e)}catch{}const i=await this.tasks({type:e.type});for(const r of i)if(r._id===e._id)return b.createCustomTask(r,e)}async tasks(e){return await this._trust()?this._versionAndEngineCompatible(e)?this._getGroupedTasks(e).then(t=>this.applyFilterToTaskMap(e,t)):Promise.resolve([]):[]}async getKnownTasks(e){return this._versionAndEngineCompatible(e)?this._getGroupedTasks(e,!0,!0).then(t=>this.applyFilterToTaskMap(e,t)):Promise.resolve([])}taskTypes(){const e=[];if(this._isProvideTasksEnabled())for(const t of re.all())this._isTaskProviderEnabled(t.taskType)&&e.push(t.taskType);return e}createSorter(){return new kt(this._contextService.getWorkspace()?this._contextService.getWorkspace().folders:[])}_isActive(){return this._taskSystem?this._taskSystem.isActive():Promise.resolve(!1)}async getActiveTasks(){return this._taskSystem?this._taskSystem.getActiveTasks():[]}async getBusyTasks(){return this._taskSystem?this._taskSystem.getBusyTasks():[]}getRecentlyUsedTasksV1(){if(this._recentlyUsedTasksV1)return this._recentlyUsedTasksV1;const e=this._configurationService.getValue(oe);this._recentlyUsedTasksV1=new le(e);const t=this._storageService.get(w.RecentlyUsedTasks_Key,D.WORKSPACE);if(t)try{const s=JSON.parse(t);if(Array.isArray(s))for(const i of s)this._recentlyUsedTasksV1.set(i,i)}catch{}return this._recentlyUsedTasksV1}applyFilterToTaskMap(e,t){if(!e||!e.type)return t.all();const s=[];return t.forEach(i=>{for(const r of i)if(F.is(r)&&(r.defines.type===e.type||r._source.label===e.type))s.push(r);else if(C.is(r))if(r.type===e.type)s.push(r);else{const n=r.customizes();n&&n.type===e.type&&s.push(r)}}),s}_getTasksFromStorage(e){return e==="persistent"?this._getPersistentTasks():this._getRecentTasks()}_getRecentTasks(){if(this._recentlyUsedTasks)return this._recentlyUsedTasks;const e=this._configurationService.getValue(oe);this._recentlyUsedTasks=new le(e);const t=this._storageService.get(w.RecentlyUsedTasks_KeyV2,D.WORKSPACE);if(t)try{const s=JSON.parse(t);if(Array.isArray(s))for(const i of s)this._recentlyUsedTasks.set(i[0],i[1])}catch{}return this._recentlyUsedTasks}_getPersistentTasks(){if(this._persistentTasks)return this._log(l.localize("taskService.gettingCachedTasks","Returning cached tasks {0}",this._persistentTasks.size),!0),this._persistentTasks;this._persistentTasks=new le(10);const e=this._storageService.get(w.PersistentTasks_Key,D.WORKSPACE);if(e)try{const t=JSON.parse(e);if(Array.isArray(t))for(const s of t)this._persistentTasks.set(s[0],s[1])}catch{}return this._persistentTasks}_getFolderFromTaskKey(e){const t=JSON.parse(e);return{folder:t.folder,isWorkspaceFile:t.id?.endsWith(y.WorkspaceFile)}}async getSavedTasks(e){const t=Object.create(null);this.workspaceFolders.forEach(o=>{t[o.uri.toString()]=o});const s=new Map,i=new Map,r=this._getTasksFromStorage(e),n=[];this._log(l.localize("taskService.getSavedTasks","Fetching tasks from task storage."),!0);function a(o,c,f){c&&!o.has(c)&&o.set(c,[]),c&&(t[c]||c===Z)&&f&&o.get(c).push(f)}for(const o of r.entries())try{const c=o[0],f=JSON.parse(o[1]),g=this._getFolderFromTaskKey(c);this._log(l.localize("taskService.getSavedTasks.reading","Reading tasks from task storage, {0}, {1}, {2}",c,f,g.folder),!0),a(g.isWorkspaceFile?i:s,g.folder,f)}catch(c){this._log(l.localize("taskService.getSavedTasks.error","Fetching a task from task storage failed: {0}.",c),!0)}const d=new Map;async function u(o,c,f){for(const g of c.keys()){const h=[],p=Object.create(null),k=t[g]?f?b.TaskConfigSource.WorkspaceFile:b.TaskConfigSource.TasksJson:b.TaskConfigSource.User;await o._computeTasksForSingleConfig(t[g]??await o._getAFolder(),{version:"2.0.0",tasks:c.get(g)},S.System,h,p,k,!0),h.forEach(m=>{const I=m.getKey();I&&d.set(I,m)});for(const m in p){const I=p[m].getKey();I&&d.set(I,p[m])}}}await u(this,s,!1),await u(this,i,!0);for(const o of r.keys())d.has(o)?(n.push(d.get(o)),this._log(l.localize("taskService.getSavedTasks.resolved","Resolved task {0}",o),!0)):this._log(l.localize("taskService.getSavedTasks.unresolved","Unable to resolve task {0} ",o),!0);return n}removeRecentlyUsedTask(e){this._getTasksFromStorage("historical").has(e)&&(this._getTasksFromStorage("historical").delete(e),this._saveRecentlyUsedTasks())}removePersistentTask(e){this._log(l.localize("taskService.removePersistentTask","Removing persistent task {0}",e),!0),this._getTasksFromStorage("persistent").has(e)&&(this._getTasksFromStorage("persistent").delete(e),this._savePersistentTasks())}_setTaskLRUCacheLimit(){const e=this._configurationService.getValue(oe);this._recentlyUsedTasks&&(this._recentlyUsedTasks.limit=e)}async _setRecentlyUsedTask(e){let t=e.getKey();if(!x.is(e)&&t){const s=this._createCustomizableTask(e);if(F.is(e)&&s){const i=[],r=Object.create(null);await this._computeTasksForSingleConfig(e._source.workspaceFolder??this.workspaceFolders[0],{version:"2.0.0",tasks:[s]},S.System,i,r,b.TaskConfigSource.TasksJson,!0);for(const n in r)t=r[n].getKey()}this._getTasksFromStorage("historical").set(t,JSON.stringify(s)),this._saveRecentlyUsedTasks()}}_saveRecentlyUsedTasks(){if(!this._recentlyUsedTasks)return;const e=this._configurationService.getValue(oe);if(e===0)return;let t=[...this._recentlyUsedTasks.keys()];t.length>e&&(t=t.slice(0,e));const s=[];for(const i of t)s.push([i,this._recentlyUsedTasks.get(i,_e.None)]);this._storageService.store(w.RecentlyUsedTasks_KeyV2,JSON.stringify(s),D.WORKSPACE,de.MACHINE)}async _setPersistentTask(e){if(!this._configurationService.getValue(G.Reconnection))return;let t=e.getKey();if(!x.is(e)&&t){const s=this._createCustomizableTask(e);if(F.is(e)&&s){const i=[],r=Object.create(null);await this._computeTasksForSingleConfig(e._source.workspaceFolder??this.workspaceFolders[0],{version:"2.0.0",tasks:[s]},S.System,i,r,b.TaskConfigSource.TasksJson,!0);for(const n in r)t=r[n].getKey()}if(!e.configurationProperties.isBackground)return;this._log(l.localize("taskService.setPersistentTask","Setting persistent task {0}",t),!0),this._getTasksFromStorage("persistent").set(t,JSON.stringify(s)),this._savePersistentTasks()}}_savePersistentTasks(){this._persistentTasks=this._getTasksFromStorage("persistent");const e=[...this._persistentTasks.keys()],t=[];for(const s of e)t.push([s,this._persistentTasks.get(s,_e.None)]);this._log(l.localize("savePersistentTask","Saving persistent tasks: {0}",e.join(", ")),!0),this._storageService.store(w.PersistentTasks_Key,JSON.stringify(t),D.WORKSPACE,de.MACHINE)}_openDocumentation(){this._openerService.open(Ke.parse("https://code.visualstudio.com/docs/editor/tasks#_defining-a-problem-matcher"))}async _findSingleWorkspaceTaskOfGroup(e){const t=await this._findWorkspaceTasksInGroup(e,!0);if(t.length===1&&typeof t[0].configurationProperties.group!="string"&&t[0].configurationProperties.group?.isDefault){let s;if(L.is(t[0])?s=await this.tryResolveTask(t[0]):s=t[0],s)return this.run(s,void 0,S.User)}}async _build(){const e=await this._findSingleWorkspaceTaskOfGroup(R.Build);return e||this._getGroupedTasksAndExecute()}async _runTest(){const e=await this._findSingleWorkspaceTaskOfGroup(R.Test);return e||this._getGroupedTasksAndExecute(!0)}async _getGroupedTasksAndExecute(e){const t=await this._getGroupedTasks(),s=this._createRunnableTask(t,e?R.Test:R.Build);if(!s||!s.task)throw e?this.schemaVersion===M.V0_1_0?new q(z.Info,l.localize("TaskService.noTestTask1","No test task defined. Mark a task with 'isTestCommand' in the tasks.json file."),V.NoTestTask):new q(z.Info,l.localize("TaskService.noTestTask2","No test task defined. Mark a task with as a 'test' group in the tasks.json file."),V.NoTestTask):this.schemaVersion===M.V0_1_0?new q(z.Info,l.localize("TaskService.noBuildTask1","No build task defined. Mark a task with 'isBuildCommand' in the tasks.json file."),V.NoBuildTask):new q(z.Info,l.localize("TaskService.noBuildTask2","No build task defined. Mark a task with as a 'build' group in the tasks.json file."),V.NoBuildTask);let i;try{i=await this._executeTask(s.task,s.resolver,S.User)}catch(r){return this._handleError(r),Promise.reject(r)}return i}async run(e,t,s=S.System){if(!await this._trust())return;if(!e)throw new q(z.Info,l.localize("TaskServer.noTask","Task to execute is undefined"),V.TaskNotFound);const i=this._createResolver();let r;try{if(t&&t.attachProblemMatcher&&this._shouldAttachProblemMatcher(e)&&!x.is(e)){const n=await this._attachProblemMatcher(e);n&&(r=await this._executeTask(n,i,s))}else r=await this._executeTask(e,i,s);return r}catch(n){return this._handleError(n),Promise.reject(n)}}_isProvideTasksEnabled(){return this._configurationService.getValue(G.AutoDetect)==="on"}_isProblemMatcherPromptEnabled(e){const t=this._configurationService.getValue(ge);return E.isBoolean(t)?!t:e===void 0?!0:!t[e]}_getTypeForTask(e){let t;return C.is(e)?t=e._source.config.element.type:t=e.getDefinition().type,t}_shouldAttachProblemMatcher(e){return this._isProblemMatcherPromptEnabled(this._getTypeForTask(e))===!1||!this._canCustomize(e)||e.configurationProperties.group!==void 0&&e.configurationProperties.group!==R.Build||e.configurationProperties.problemMatchers!==void 0&&e.configurationProperties.problemMatchers.length>0?!1:F.is(e)?!e.hasDefinedMatchers&&!!e.configurationProperties.problemMatchers&&e.configurationProperties.problemMatchers.length===0:C.is(e)?e._source.config.element.problemMatcher===void 0&&!e.hasDefinedMatchers:!1}async _updateNeverProblemMatcherSetting(e){const t=this._configurationService.getValue(ge);if(t===!0)return;let s;return t!==!1?s=t:s=Object.create(null),s[e]=!0,this._configurationService.updateValue(ge,s)}async _attachProblemMatcher(e){let t=[];for(const r of X.keys()){const n=X.get(r);n.deprecated||(n.name===n.label?t.push({label:n.name,matcher:n}):t.push({label:n.label,description:`$${n.name}`,matcher:n}))}if(t.length===0)return;t=t.sort((r,n)=>r.label&&n.label?r.label.localeCompare(n.label):0),t.unshift({type:"separator",label:l.localize("TaskService.associate","associate")});let s;C.is(e)?s=e._source.config.element.type:s=e.getDefinition().type,t.unshift({label:l.localize("TaskService.attachProblemMatcher.continueWithout","Continue without scanning the task output"),matcher:void 0},{label:l.localize("TaskService.attachProblemMatcher.never","Never scan the task output for this task"),matcher:void 0,never:!0},{label:l.localize("TaskService.attachProblemMatcher.neverType","Never scan the task output for {0} tasks",s),matcher:void 0,setting:s},{label:l.localize("TaskService.attachProblemMatcher.learnMoreAbout","Learn more about scanning the task output"),matcher:void 0,learnMore:!0});const i=await this._quickInputService.pick(t,{placeHolder:l.localize("selectProblemMatcher","Select for which kind of errors and warnings to scan the task output")});if(!i)return e;if(i.learnMore){this._openDocumentation();return}if(i.never)return this.customize(e,{problemMatcher:[]},!0),e;if(i.matcher){const r=e.clone(),n=`$${i.matcher.name}`,a={problemMatcher:[n]};r.configurationProperties.problemMatchers=[n];const d=X.get(i.matcher.name);return d&&d.watching!==void 0&&(a.isBackground=!0,r.configurationProperties.isBackground=!0),this.customize(e,a,!0),r}return i.setting&&await this._updateNeverProblemMatcherSetting(i.setting),e}async _getTasksForGroup(e,t){const s=await this._getGroupedTasks(void 0,t),i=[];return s.forEach(r=>{for(const n of r)R.from(n.configurationProperties.group)?._id===e._id&&i.push(n)}),i}needsFolderQualification(){return this._contextService.getWorkbenchState()===W.WORKSPACE}_canCustomize(e){return this.schemaVersion!==M.V2_0_0?!1:C.is(e)?!0:F.is(e)?!!e.getWorkspaceFolder():!1}async _formatTaskForJson(e,t){let s,i="";try{s=await this._textModelResolverService.createModelReference(e);const r=s.object.textEditorModel,{tabSize:n,insertSpaces:a}=r.getOptions(),d=r.getEOL();let u=St(t,{eol:d,tabSize:n,insertSpaces:a});const o=new RegExp(d+(a?" ".repeat(n):"\\t"),"g");u=u.replace(o,d+(a?" ".repeat(n*3):"			"));const c=a?" ".repeat(n*2):"		";i=c+u.slice(0,u.length-1)+c+u.slice(u.length-1)}finally{s?.dispose()}return i}async _openEditorAtTask(e,t,s=-1){if(e===void 0)return Promise.resolve(!1);const r=(await this._fileService.readFile(e)).value;if(!r||!t)return!1;const n=r.toString();let a;if(s!==-1){const f=this._configurationService.getValue("tasks",{resource:e});f.tasks&&f.tasks.length>s&&(a=await this._formatTaskForJson(e,f.tasks[s]))}a||(typeof t=="string"?a=t:a=await this._formatTaskForJson(e,t));const d=n.indexOf(a);let u=1;for(let f=0;f<d;f++)n.charAt(f)===`
-`&&u++;let o=u;for(let f=0;f<a.length;f++)a.charAt(f)===`
-`&&o++;const c=u>1?{startLineNumber:u,startColumn:u===o?4:3,endLineNumber:o,endColumn:u===o?void 0:4}:void 0;return await this._editorService.openEditor({resource:e,options:{pinned:!1,forceReload:!0,selection:c,selectionRevealType:Ct.CenterIfOutsideViewport}}),!!c}_createCustomizableTask(e){let t;const s=C.is(e)||L.is(e)?e._source.config:void 0;if(s&&s.element)t={...s.element};else if(F.is(e)){t={};const i=Object.assign(Object.create(null),e.defines);delete i._key,Object.keys(i).forEach(r=>t[r]=i[r]),e.configurationProperties.problemMatchers&&e.configurationProperties.problemMatchers.length>0&&E.isStringArray(e.configurationProperties.problemMatchers)&&(t.problemMatcher=e.configurationProperties.problemMatchers),e.configurationProperties.group&&(t.group=b.GroupKind.to(e.configurationProperties.group))}if(t)return(t.problemMatcher===void 0&&e.configurationProperties.problemMatchers===void 0||e.configurationProperties.problemMatchers&&e.configurationProperties.problemMatchers.length===0)&&(t.problemMatcher=[]),e._source.label!=="Workspace"?t.label=e.configurationProperties.identifier:t.label=e._label,t.detail=e.configurationProperties.detail,t}async customize(e,t,s){if(!await this._trust())return;const i=e.getWorkspaceFolder();if(!i)return Promise.resolve(void 0);const r=this._getConfiguration(i,e._source.kind);if(r.hasParseErrors)return this._notificationService.warn(l.localize("customizeParseErrors","The current task configuration has errors. Please fix the errors first before customizing a task.")),Promise.resolve(void 0);const n=r.config,a=this._createCustomizableTask(e);if(!a)return Promise.resolve(void 0);const d=C.is(e)?e._source.config.index:void 0;if(t)for(const u of Object.getOwnPropertyNames(t)){const o=t[u];o!=null&&(a[u]=o)}if(n)d===-1&&t?t.problemMatcher!==void 0?(n.problemMatcher=t.problemMatcher,await this._writeConfiguration(i,"tasks.problemMatchers",n.problemMatcher,e._source.kind)):t.group!==void 0&&(n.group=t.group,await this._writeConfiguration(i,"tasks.group",n.group,e._source.kind)):(Array.isArray(n.tasks)||(n.tasks=[]),d===void 0?n.tasks.push(a):n.tasks[d]=a,await this._writeConfiguration(i,"tasks.tasks",n.tasks,e._source.kind));else{const u={version:"2.0.0",tasks:[a]};let o=["{",l.localize("tasksJsonComment",`	// See https://go.microsoft.com/fwlink/?LinkId=733558 
-	// for the documentation about the tasks.json format`)].join(`
-`)+JSON.stringify(u,null,"	").substr(1);const c=this._configurationService.getValue();c.editor.insertSpaces&&(o=o.replace(/(\n)(\t+)/g,(f,g,h)=>g+" ".repeat(h.length*c.editor.tabSize))),await this._textFileService.create([{resource:i.toResource(".vscode/tasks.json"),value:o}])}s&&this._openEditorAtTask(this._getResourceForTask(e),a)}_writeConfiguration(e,t,s,i){let r;switch(i){case y.User:r=J.USER;break;case y.WorkspaceFile:r=J.WORKSPACE;break;default:this._contextService.getWorkbenchState()===W.FOLDER?r=J.WORKSPACE:this._contextService.getWorkbenchState()===W.WORKSPACE&&(r=J.WORKSPACE_FOLDER)}if(r)return this._configurationService.updateValue(t,s,{resource:e.uri},r)}_getResourceForKind(e){switch(this._updateSetup(),e){case y.User:return te.joinPath(te.dirname(this._preferencesService.userSettingsResource),"tasks.json");case y.WorkspaceFile:if(this._workspace&&this._workspace.configuration)return this._workspace.configuration;default:return}}_getResourceForTask(e){if(C.is(e)){let t=this._getResourceForKind(e._source.kind);if(!t){const s=e.getWorkspaceFolder();s?t=s.toResource(e._source.config.file):t=this.workspaceFolders[0].uri}return t}else return e.getWorkspaceFolder().toResource(".vscode/tasks.json")}async openConfig(e){let t;return e?t=this._getResourceForTask(e):t=this._workspaceFolders&&this._workspaceFolders.length>0?this._workspaceFolders[0].toResource(".vscode/tasks.json"):void 0,this._openEditorAtTask(t,e?e._label:void 0,e?e._source.config.index:-1)}_createRunnableTask(e,t){const s=new Map,i=[],r=[];e.forEach((a,d)=>{let u=s.get(d);u||(u={id:new Map,label:new Map,identifier:new Map},s.set(d,u));for(const o of a)u.id.set(o._id,o),u.label.set(o._label,o),o.configurationProperties.identifier&&u.identifier.set(o.configurationProperties.identifier,o),t&&o.configurationProperties.group===t&&(o._source.kind===y.Workspace?i.push(o):r.push(o))});const n={resolve:async(a,d)=>{const u=s.get(typeof a=="string"?a:a.toString());if(u)return u.id.get(d)||u.label.get(d)||u.identifier.get(d)}};if(i.length>0)return i.length>1&&this._log(l.localize("moreThanOneBuildTask","There are many build tasks defined in the tasks.json. Executing the first one.")),{task:i[0],resolver:n};if(r.length!==0){if(r.length===1)return{task:r[0],resolver:n};{const a=Qe.generateUuid();return{task:new x(a,{kind:y.InMemory,label:"inMemory"},a,"inMemory",{reevaluateOnRerun:!0},{identifier:a,dependsOn:r.map(u=>({uri:u.getWorkspaceFolder().uri,task:u._id})),name:a}),resolver:n}}}}_createResolver(e){let t;async function s(n,a,d){const u=await n._findWorkspaceTasks(c=>{const f=L.is(c)||C.is(c)?c._source.config.workspaceFolder?.uri:void 0,g=typeof a=="string"?a:a.toString();if(f?.toString()!==g)return!1;if(E.isString(d))return c._label===d||c.configurationProperties.identifier===d;{const h=c.getDefinition(!0),p=ie.createTaskIdentifier(d,console);return p&&h?p._key===h._key:!1}});if(u.length===0)return;const o=u[0];return L.is(o)?n.tryResolveTask(o):o}async function i(n){return t===void 0&&(t=new Map,(e||await n._getGroupedTasks()).forEach((a,d)=>{let u=t.get(d);u||(u={label:new Map,identifier:new Map,taskIdentifier:new Map},t.set(d,u));for(const o of a){u.label.set(o._label,o),o.configurationProperties.identifier&&u.identifier.set(o.configurationProperties.identifier,o);const c=o.getDefinition(!0);c!==void 0&&u.taskIdentifier.set(c._key,o)}})),t}async function r(n,a,d){const o=(await i(n)).get(typeof a=="string"?a:a.toString());if(o){if(E.isString(d))return o.label.get(d)||o.identifier.get(d);{const c=ie.createTaskIdentifier(d,console);return c!==void 0?o.taskIdentifier.get(c._key):void 0}}}return{resolve:async(n,a)=>{if(a)return t===void 0&&e===void 0?await s(this,n,a)??r(this,n,a):r(this,n,a)}}}async _saveBeforeRun(){let e;(n=>(n.Always="always",n.Never="never",n.Prompt="prompt"))(e||={});const t=this._configurationService.getValue(G.SaveBeforeRun);if(t==="never")return!1;if(t==="prompt"&&this._editorService.editors.some(s=>s.isDirty())){const{confirmed:s}=await this._dialogService.confirm({message:l.localize("TaskSystem.saveBeforeRun.prompt.title","Save all editors?"),detail:l.localize("detail","Do you want to save all editors before running the task?"),primaryButton:l.localize({key:"saveBeforeRun.save",comment:["&& denotes a mnemonic"]},"&&Save"),cancelButton:l.localize({key:"saveBeforeRun.dontSave",comment:["&& denotes a mnemonic"]},"Do&&n't Save")});if(!s)return!1}return await this._editorService.saveAll({reason:Ce.AUTO}),!0}async _executeTask(e,t,s){let i=e;if(await this._saveBeforeRun()){await this._configurationService.reloadConfiguration(),await this._updateWorkspaceTasks();const n=e.getWorkspaceFolder(),a=e.configurationProperties.identifier,d=C.is(e)?e.customizes()?.type:F.is(e)?e.type:void 0;i=(n&&a&&s===S.User?await this.getTask(n,a,!1,d):e)??e}await X.onReady();const r=s===S.Reconnect?this._getTaskSystem().reconnect(i,t):this._getTaskSystem().run(i,t);return r?this._handleExecuteResult(r,s):{exitCode:0}}async _handleExecuteResult(e,t){if(t===S.User&&await this._setRecentlyUsedTask(e.task),e.kind===Tt.Active){const s=e.active;if(s&&s.same&&t===S.FolderOpen||t===S.Reconnect)return this._logService.debug("Ignoring task that is already active",e.task),e.promise;if(s&&s.same)if(this._taskSystem?.isTaskVisible(e.task)){const i=l.localize("TaskSystem.activeSame.noBackground","The task '{0}' is already active.",e.task.getQualifiedLabel()),r=this._getTaskSystem().getLastInstance(e.task)??e.task;this._notificationService.prompt(z.Warning,i,[{label:l.localize("terminateTask","Terminate Task"),run:()=>this.terminate(r)},{label:l.localize("restartTask","Restart Task"),run:()=>this._restart(r)}],{sticky:!0})}else this._taskSystem?.revealTask(e.task);else throw new q(z.Warning,l.localize("TaskSystem.active","There is already a task running. Terminate it first before executing another task."),V.RunningTask)}return this._setRecentlyUsedTask(e.task),e.promise}async _restart(e){if(!this._taskSystem)return;if((await this._taskSystem.terminate(e)).success)try{await this.run(e)}catch{}else this._notificationService.warn(l.localize("TaskSystem.restartFailed","Failed to terminate and restart task {0}",E.isString(e)?e:e.configurationProperties.name))}async terminate(e){return await this._trust()?this._taskSystem?this._taskSystem.terminate(e):{success:!0,task:void 0}:{success:!0,task:void 0}}_terminateAll(){return this._taskSystem?this._taskSystem.terminateAll():Promise.resolve([])}_createTerminalTaskSystem(){return new pe(this._terminalService,this._terminalGroupService,this._outputService,this._paneCompositeService,this._viewsService,this._markerService,this._modelService,this._configurationResolverService,this._contextService,this._environmentService,w.OutputChannelId,this._fileService,this._terminalProfileResolverService,this._pathService,this._viewDescriptorService,this._logService,this._notificationService,this._instantiationService,e=>{if(e)return this._getTaskSystemInfo(e.uri.scheme);if(this._taskSystemInfos.size>0){const t=Array.from(this._taskSystemInfos.entries()),s=t.filter(i=>i[0]!==yt.file);return s.length>0?s[0][1][0]:t[0][1][0]}else return})}_isTaskProviderEnabled(e){const t=re.get(e);return!t||!t.when||this._contextKeyService.contextMatchesRules(t.when)}async _getGroupedTasks(e,t,s){await this._waitForAllSupportedExecutions;const i=e?.type,r=this._needsRecentTasksMigration();t||await this._activateTaskProviders(e?.type);const n=Object.create(null);re.all().forEach(o=>n[o.taskType]=!0),n.shell=!0,n.process=!0;const a=await new Promise(o=>{const c=[];let f=0;const g=p=>{p&&c.push(p),--f===0&&o(c)},h=p=>{try{p&&E.isString(p.message)?(this._log(`Error: ${p.message}
-`),this._showOutput()):(this._log("Unknown error received while collecting tasks from providers."),this._showOutput())}finally{--f===0&&o(c)}};if(this._isProvideTasksEnabled()&&this.schemaVersion===M.V2_0_0&&this._providers.size>0){let p=!1;for(const[k,m]of this._providers){const I=this._providerTypes.get(k);if(i===void 0||i===I){if(I&&!this._isTaskProviderEnabled(I))continue;p=!0,f++,ne(m.provideTasks(n).then(N=>{for(const K of N.tasks)if(K.type!==this._providerTypes.get(k)){this._log(l.localize("unexpectedTaskType",`The task provider for "{0}" tasks unexpectedly provided a task of type "{1}".
-`,this._providerTypes.get(k),K.type)),K.type!=="shell"&&K.type!=="process"&&this._showOutput();break}return g(N)},h),5e3,()=>{g(void 0)})}}p||o(c)}else o(c)}),d=new A,u=new A;for(const o of a)for(const c of o.tasks){const f=c.getWorkspaceFolder();f&&u.add(f,c)}try{let o=[];return(!s||this._workspaceTrustManagementService.isWorkspaceTrusted())&&(o=Array.from(await this.getWorkspaceTasks())),await Promise.all(this._getCustomTaskPromises(o,e,d,u,t)),r&&await this._migrateRecentTasks(d.all()),d}catch{const o=new A;for(const c of a)for(const f of c.tasks){const g=f.getWorkspaceFolder();g&&o.add(g,f)}return o}}_getCustomTaskPromises(e,t,s,i,r){return e.map(async([n,a])=>{const d=i.get(n);if(!a.set){d&&s.add(n,...d);return}if(this._contextService.getWorkbenchState()===W.EMPTY)s.add(n,...a.set.tasks);else{const u=a.configurations,o=a.set?this._getLegacyTaskConfigurations(a.set):void 0,c=[];if(u||o){const f=new Set;u&&Object.keys(u.byIdentifier).forEach(p=>f.add(p));for(const p of d)if(F.is(p))if(u){const k=u.byIdentifier[p.defines._key];k?(f.delete(p.defines._key),s.add(n,b.createCustomTask(p,k))):s.add(n,p)}else if(o){const k=o[p.defines._key];k?(s.add(n,b.createCustomTask(p,k)),c.push(k)):s.add(n,p)}else s.add(n,p);if(c.length>0){const p=c.reduce((k,m)=>(k[m._id]=!0,k),Object.create(null));for(const k of a.set.tasks)p[k._id]||s.add(n,k)}else s.add(n,...a.set.tasks);const h=Array.from(f).map(async p=>{const k=u.byIdentifier[p];if(t?.type&&t.type!==k.configures.type)return;let m=!1;for(const[I,N]of this._providers){const K=this._providerTypes.get(I);if(k.type===K){if(K&&!this._isTaskProviderEnabled(K)){m=!0;continue}try{const ee=await N.resolveTask(k);if(ee&&ee._id===k._id){s.add(n,b.createCustomTask(ee,k));return}}catch{}}}m?this._log(l.localize("TaskService.providerUnavailable","Warning: {0} tasks are unavailable in the current environment.",k.configures.type)):r||(this._log(l.localize("TaskService.noConfiguration",`Error: The {0} task detection didn't contribute a task for the following configuration:
-{1}
-The task will be ignored.`,k.configures.type,JSON.stringify(k._source.config.element,void 0,4))),this._showOutput())});await Promise.all(h)}else s.add(n,...a.set.tasks),s.add(n,...d)}})}_getLegacyTaskConfigurations(e){let t;function s(){return t||(t=Object.create(null),t)}for(const i of e.tasks)if(C.is(i)){const r=i.command&&i.command.name;if(r==="gulp"||r==="grunt"||r==="jake"){const n=dt.create({type:r,task:i.configurationProperties.name});s()[n._key]=i}}return t}async getWorkspaceTasks(e=S.User){return await this._trust()?(await ne(this._waitForAllSupportedExecutions,2e3,()=>{this._logService.warn("Timed out waiting for all supported executions")}),await this._whenTaskSystemReady,this._workspaceTasksPromise?this._workspaceTasksPromise:this._updateWorkspaceTasks(e)):new Map}_updateWorkspaceTasks(e=S.User){return this._workspaceTasksPromise=this._computeWorkspaceTasks(e),this._workspaceTasksPromise}async _getAFolder(){let e=this.workspaceFolders.length>0?this.workspaceFolders[0]:void 0;if(!e){const t=await this._pathService.userHome();e=new st({uri:t,name:te.basename(t),index:0})}return e}async _computeWorkspaceTasks(e=S.User){const t=[];for(const a of this.workspaceFolders)t.push(this._computeWorkspaceFolderTasks(a,e));const s=await Promise.all(t),i=new Map;for(const a of s)a&&i.set(a.workspaceFolder.uri.toString(),a);const r=await this._getAFolder();if(this._contextService.getWorkbenchState()!==W.EMPTY){const a=await this._computeWorkspaceFileTasks(r,e);a&&this._workspace&&this._workspace.configuration&&i.set(this._workspace.configuration.toString(),a)}const n=await this._computeUserTasks(r,e);return n&&i.set(Z,n),i}get _jsonTasksSupported(){return ye.getValue(this._contextKeyService)===!0&&ve.getValue(this._contextKeyService)===!0}async _computeWorkspaceFolderTasks(e,t=S.User){const s=this._executionEngine===O.Process?await this._computeLegacyConfiguration(e):await this._computeConfiguration(e);if(!s||!s.config||s.hasErrors)return Promise.resolve({workspaceFolder:e,set:void 0,configurations:void 0,hasErrors:s?s.hasErrors:!1});await X.onReady();const i=this._getTaskSystemInfo(e.uri.scheme),r=new Re(this._outputChannel),n=b.parse(e,void 0,i?i.platform:Y.platform,s.config,r,b.TaskConfigSource.TasksJson,this._contextKeyService);let a=!1;if(!n.validationStatus.isOK()&&n.validationStatus.state!==$.Info&&(a=!0,this._showOutput(t)),r.status.isFatal())return r.fatal(l.localize("TaskSystem.configurationErrors","Error: the provided task configuration has validation errors and can't not be used. Please correct the errors first.")),{workspaceFolder:e,set:void 0,configurations:void 0,hasErrors:a};let d;if(n.configured&&n.configured.length>0){d={byIdentifier:Object.create(null)};for(const u of n.configured)d.byIdentifier[u.configures._key]=u}return!this._jsonTasksSupported&&n.custom.length>0,{workspaceFolder:e,set:{tasks:this._jsonTasksSupported?n.custom:[]},configurations:d,hasErrors:a}}_testParseExternalConfig(e,t){if(!e)return{config:void 0,hasParseErrors:!1};const s=e.$parseErrors;if(s){let i=!1;for(const r of s)if(/tasks\.json$/.test(r)){i=!0;break}if(i)return this._log(l.localize({key:"TaskSystem.invalidTaskJsonOther",comment:["Message notifies of an error in one of several places there is tasks related json, not necessarily in a file named tasks.json"]},"Error: The content of the tasks json in {0} has syntax errors. Please correct them before executing a task.",t)),this._showOutput(),{config:e,hasParseErrors:!0}}return{config:e,hasParseErrors:!1}}_log(e,t){(!t||this._configurationService.getValue(G.VerboseLogging))&&this._outputChannel.append(e+`
-`)}async _computeWorkspaceFileTasks(e,t=S.User){if(this._executionEngine===O.Process)return this._emptyWorkspaceTaskResults(e);const s=this._getConfiguration(e,y.WorkspaceFile),i=this._testParseExternalConfig(s.config,l.localize("TasksSystem.locationWorkspaceConfig","workspace file")),r={byIdentifier:Object.create(null)},n=[];return await this._computeTasksForSingleConfig(e,i.config,t,n,r.byIdentifier,b.TaskConfigSource.WorkspaceFile),(i.config?b.ExecutionEngine.from(i.config):O.Terminal)===O.Process?(this._notificationService.warn(l.localize("TaskSystem.versionWorkspaceFile","Only tasks version 2.0.0 permitted in workspace configuration files.")),this._emptyWorkspaceTaskResults(e)):{workspaceFolder:e,set:{tasks:n},configurations:r,hasErrors:i.hasParseErrors}}async _computeUserTasks(e,t=S.User){if(this._executionEngine===O.Process)return this._emptyWorkspaceTaskResults(e);const s=this._getConfiguration(e,y.User),i=this._testParseExternalConfig(s.config,l.localize("TasksSystem.locationUserConfig","user settings")),r={byIdentifier:Object.create(null)},n=[];return await this._computeTasksForSingleConfig(e,i.config,t,n,r.byIdentifier,b.TaskConfigSource.User),(i.config?b.ExecutionEngine.from(i.config):O.Terminal)===O.Process?(this._notificationService.warn(l.localize("TaskSystem.versionSettings","Only tasks version 2.0.0 permitted in user settings.")),this._emptyWorkspaceTaskResults(e)):{workspaceFolder:e,set:{tasks:n},configurations:r,hasErrors:i.hasParseErrors}}_emptyWorkspaceTaskResults(e){return{workspaceFolder:e,set:void 0,configurations:void 0,hasErrors:!1}}async _computeTasksForSingleConfig(e,t,s,i,r,n,a=!1){if(t){if(!e)return this._logService.trace("TaskService.computeTasksForSingleConfig: no workspace folder for worskspace",this._workspace?.id),!1}else return!1;const d=this._getTaskSystemInfo(e.uri.scheme),u=new Re(this._outputChannel),o=b.parse(e,this._workspace,d?d.platform:Y.platform,t,u,n,this._contextKeyService,a);let c=!1;if(!o.validationStatus.isOK()&&o.validationStatus.state!==$.Info&&(this._showOutput(s),c=!0),u.status.isFatal())return u.fatal(l.localize("TaskSystem.configurationErrors","Error: the provided task configuration has validation errors and can't not be used. Please correct the errors first.")),c;if(o.configured&&o.configured.length>0)for(const f of o.configured)r[f.configures._key]=f;if(!(!this._jsonTasksSupported&&o.custom.length>0))for(const f of o.custom)i.push(f);return c}_computeConfiguration(e){const{config:t,hasParseErrors:s}=this._getConfiguration(e);return Promise.resolve({workspaceFolder:e,config:t,hasErrors:s})}_computeWorkspaceFolderSetup(){const e=[],t=[];let s=O.Terminal,i=M.V2_0_0,r;if(this._contextService.getWorkbenchState()===W.FOLDER){const n=this._contextService.getWorkspace().folders[0];e.push(n),s=this._computeExecutionEngine(n);const a={executionEngineVersion:s};this._telemetryService.publicLog("taskService.engineVersion",a),i=this._computeJsonSchemaVersion(n)}else if(this._contextService.getWorkbenchState()===W.WORKSPACE){r=this._contextService.getWorkspace();for(const n of this._contextService.getWorkspace().folders)i===this._computeJsonSchemaVersion(n)?e.push(n):(t.push(n),this._log(l.localize("taskService.ignoreingFolder","Ignoring task configurations for workspace folder {0}. Multi folder workspace task support requires that all folders use task version 2.0.0",n.uri.fsPath)))}return[e,t,s,i,r]}_computeExecutionEngine(e){const{config:t}=this._getConfiguration(e);return t?b.ExecutionEngine.from(t):O._default}_computeJsonSchemaVersion(e){const{config:t}=this._getConfiguration(e);return t?b.JsonSchemaVersion.from(t):M.V2_0_0}_getConfiguration(e,t){let s;if(t!==y.User&&this._contextService.getWorkbenchState()===W.EMPTY)s=void 0;else{const r=this._configurationService.inspect("tasks",{resource:e.uri});switch(t){case y.User:{r.userValue!==r.workspaceFolderValue&&(s=se.deepClone(r.userValue));break}case y.Workspace:s=se.deepClone(r.workspaceFolderValue);break;case y.WorkspaceFile:{this._contextService.getWorkbenchState()===W.WORKSPACE&&r.workspaceFolderValue!==r.workspaceValue&&(s=se.deepClone(r.workspaceValue));break}default:s=se.deepClone(r.workspaceFolderValue)}}if(!s)return{config:void 0,hasParseErrors:!1};const i=s.$parseErrors;if(i){let r=!1;for(const n of i)if(/tasks\.json$/.test(n)){r=!0;break}if(r)return this._log(l.localize("TaskSystem.invalidTaskJson","Error: The content of the tasks.json file has syntax errors. Please correct them before executing a task.")),this._showOutput(),{config:void 0,hasParseErrors:!0}}return{config:s,hasParseErrors:!1}}inTerminal(){return this._taskSystem?this._taskSystem instanceof pe:this._executionEngine===O.Terminal}configureAction(){const e=this;return new class extends Me{constructor(){super(ae.ID,ae.TEXT.value,void 0,!0,()=>(e._runConfigureTasks(),Promise.resolve(void 0)))}}}_handleError(e){let t=!0;if(e instanceof q){const s=e,i=s.code===V.NotConfigured||s.code===V.NoBuildTask||s.code===V.NoTestTask,r=s.code===V.RunningTask;i||r?this._notificationService.prompt(s.severity,s.message,[{label:i?ae.TEXT.value:l.localize("TerminateAction.label","Terminate Task"),run:()=>{i?this._runConfigureTasks():this._runTerminateCommand()}}]):this._notificationService.notify({severity:s.severity,message:s.message})}else if(e instanceof Error){const s=e;this._notificationService.error(s.message),t=!1}else E.isString(e)?this._notificationService.error(e):this._notificationService.error(l.localize("TaskSystem.unknownError","An error has occurred while running a task. See task log for details."));t&&this._showOutput()}_showDetail(){return this._configurationService.getValue(Ot)}async _createTaskQuickPickEntries(e,t=!1,s=!1,i,r=!0){let n={};if(e==null||e.length===0)return[];const a=o=>{const c={label:o._label,description:this.getTaskDescription(o),task:o,detail:this._showDetail()?o.configurationProperties.detail:void 0};return n[o._id]?(n[o._id].length===1&&(n[o._id][0].label+=" (1)"),c.label=c.label+" ("+(n[o._id].length+1).toString()+")"):n[o._id]=[],n[o._id].push(c),c};function d(o,c,f){c.length&&o.push({type:"separator",label:f});for(const g of c){const h=a(g);h.buttons=[{iconClass:It.asClassName(Dt),tooltip:l.localize("configureTask","Configure Task")}],i&&g===i.task?o.unshift(i):o.push(h)}}let u;if(t)if(u=[],e.length===1)u.push(a(e[0]));else{const o=await this.getSavedTasks("historical"),c=[],f=new Set;let g=[],h=[];const p=Object.create(null);e.forEach(m=>{const I=m.getCommonTaskId();I&&(p[I]=m)}),o.reverse().forEach(m=>{const I=m.getCommonTaskId();if(I){f.add(I);const N=p[I];N&&c.push(N)}});for(const m of e){const I=m.getCommonTaskId();(!I||!f.has(I))&&(m._source.kind===y.Workspace||m._source.kind===y.User?g.push(m):h.push(m))}const k=this.createSorter();r&&d(u,c,l.localize("recentlyUsed","recently used tasks")),g=g.sort((m,I)=>k.compare(m,I)),d(u,g,l.localize("configured","configured tasks")),h=h.sort((m,I)=>k.compare(m,I)),d(u,h,l.localize("detected","detected tasks"))}else{if(s){const o=this.createSorter();e=e.sort((c,f)=>o.compare(c,f))}u=e.map(o=>a(o))}return n={},u}async _showTwoLevelQuickPick(e,t,s,i){return this._instantiationService.createInstance(Q).show(e,t,s,i)}async _showQuickPick(e,t,s,i=!1,r=!1,n,a,d){const u=await e,o=await ne(this._createTaskQuickPickEntries(u,i,r,n),200,()=>{});if(o)return o.length===1&&this._configurationService.getValue(Pe)?o[0]:(o.length===0&&s?o.push(s):o.length>1&&a&&a.length>0&&(o.push({type:"separator",label:""}),o.push(a[0])),this._quickInputService.pick(o,{value:d,placeHolder:t,matchOnDescription:!0,onDidTriggerItemButton:c=>{const f=c.item.task;this._quickInputService.cancel(),F.is(f)?this.customize(f,void 0,!0):C.is(f)&&this.openConfig(f)}}))}_needsRecentTasksMigration(){return this.getRecentlyUsedTasksV1().size>0&&this._getTasksFromStorage("historical").size===0}async _migrateRecentTasks(e){if(!this._needsRecentTasksMigration())return;const t=this.getRecentlyUsedTasksV1(),s=Object.create(null);e.forEach(r=>{const n=r.getKey();n&&(s[n]=r)});const i=[...t.keys()].reverse();for(const r in i){const n=s[r];n&&await this._setRecentlyUsedTask(n)}this._storageService.remove(w.RecentlyUsedTasks_Key,D.WORKSPACE)}_showIgnoredFoldersMessage(){return this.ignoredWorkspaceFolders.length===0||!this.showIgnoreMessage||this._notificationService.prompt(z.Info,l.localize("TaskService.ignoredFolder","The following workspace folders are ignored since they use task version 0.1.0: {0}",this.ignoredWorkspaceFolders.map(e=>e.name).join(", ")),[{label:l.localize("TaskService.notAgain","Don't Show Again"),isSecondary:!0,run:()=>{this._storageService.store(w.IgnoreTask010DonotShowAgain_key,!0,D.WORKSPACE,de.MACHINE),this._showIgnoreMessage=!1}}]),Promise.resolve(void 0)}async _trust(){return Se&&!ht?!1:(await this._workspaceTrustManagementService.workspaceTrustInitialized,this._workspaceTrustManagementService.isWorkspaceTrusted()?!0:await this._workspaceTrustRequestService.requestWorkspaceTrust({message:l.localize("TaskService.requestTrust","Listing and running tasks requires that some of the files in this workspace be executed as code.")})===!0)}async _runTaskCommand(e){if(!this._tasksReconnected)return;if(!e)return this._doRunTaskCommand();const t=typeof e=="string"?void 0:e.type,s=typeof e=="string"?e:e.task,i=await this._getGroupedTasks({type:t}),r=this._getTaskIdentifier(e),n=i.all(),a=this._createResolver(i),d=this._contextService.getWorkspace().folders.map(o=>o.uri);if(this._contextService.getWorkbenchState()===W.WORKSPACE&&d.push(this._contextService.getWorkspace().configuration),d.push(Z),r)for(const o of d){const c=await a.resolve(o,r);if(c){this.run(c);return}}if(!(s?n.find(o=>o.configurationProperties.identifier===s||o.getDefinition(!0)?.configurationProperties?.identifier===s):void 0))return this._doRunTaskCommand(n,t,s);for(const o of d){const c=await a.resolve(o,s);if(c){await this.run(c,{attachProblemMatcher:!0},S.User);return}}}_tasksAndGroupedTasks(e){if(!this._versionAndEngineCompatible(e))return{tasks:Promise.resolve([]),grouped:Promise.resolve(new A)};const t=this._getGroupedTasks(e);return{tasks:t.then(i=>{if(!e||!e.type)return i.all();const r=[];return i.forEach(n=>{for(const a of n)if(F.is(a)&&a.defines.type===e.type)r.push(a);else if(C.is(a))if(a.type===e.type)r.push(a);else{const d=a.customizes();d&&d.type===e.type&&r.push(a)}}),r}),grouped:t}}_doRunTaskCommand(e,t,s){const i=n=>{n!==void 0&&(n===null?this._runConfigureTasks():this.run(n,{attachProblemMatcher:!0},S.User).then(void 0,a=>{}))},r=l.localize("TaskService.pickRunTask","Select the task to run");this._showIgnoredFoldersMessage().then(()=>{if(this._configurationService.getValue(jt)){let n;e||(n=this._tasksAndGroupedTasks()),this._showQuickPick(e||n.tasks,r,{label:"$(plus) "+l.localize("TaskService.noEntryToRun","Configure a Task"),task:null},!0,void 0,void 0,void 0,s).then(a=>i(a?a.task:void 0))}else this._showTwoLevelQuickPick(r,{label:"$(plus) "+l.localize("TaskService.noEntryToRun","Configure a Task"),task:null},t,s).then(i)})}_reRunTaskCommand(){X.onReady().then(()=>this._editorService.saveAll({reason:Ce.AUTO}).then(()=>{const e=this._getTaskSystem().rerun();return e?this._handleExecuteResult(e):(this._taskRunningState.get()||this._doRunTaskCommand(),Promise.resolve(void 0))}))}_getDefaultTasks(e,t=!1){const s=[];for(const i of e.filter(r=>!!r.configurationProperties.group))(t&&typeof i.configurationProperties.group.isDefault=="string"||!t&&i.configurationProperties.group.isDefault===!0)&&s.push(i);return s}_runTaskGroupCommand(e,t,s,i){if(this.schemaVersion===M.V0_1_0){i();return}const r={location:Je.Window,title:t.fetching},n=(async()=>{async function a(h,p,k){k.run(h,p,S.User).then(void 0,m=>{})}const d=h=>{this._showIgnoredFoldersMessage().then(()=>{this._showQuickPick(h,t.select,{label:t.notFoundConfigure,task:null},!0).then(p=>{const k=p?p.task:void 0;if(k!==void 0){if(k===null){s.apply(this);return}a(k,{attachProblemMatcher:!0},this)}})})};let u=[];const{globGroupTasks:o,globTasksDetected:c}=await this._getGlobTasks(e._id);u=[...o],!c&&u.length===0&&(u=await this._findWorkspaceTasksInGroup(e,!0));const f=h=>this._getTasksForGroup(e).then(p=>{if(p.length>0){const k=this._getDefaultTasks(p,h);if(k.length===1){a(k[0],void 0,this);return}else k.length>0&&(p=k)}d(p)}),g=h=>{L.is(h)?this.tryResolveTask(h).then(p=>{a(p,void 0,this)}):a(h,void 0,this)};return u.length===1?g(u[0]):c&&u.length>1?f(!0):(u.length||(u=await this._findWorkspaceTasksInGroup(e,!0)),u.length===1?g(u[0]):f(!1))})();this._progressService.withProgress(r,()=>n)}async _getGlobTasks(e){let t=!1;const s=xt.getOriginalUri(this._editorService.activeEditor);if(s){const i=this._contextService.getWorkspaceFolder(s);if(i){const r=this._getConfiguration(i)?.config?.tasks;if(r&&(t=r.filter(n=>n.group&&typeof n.group!="string"&&typeof n.group.isDefault=="string").length>0,t)){const n=i?.uri?te.relativePath(i.uri,s)??s.path:s.path;return{globGroupTasks:await this._findWorkspaceTasks(d=>{const u=d.configurationProperties.group;return u&&typeof u!="string"&&typeof u.isDefault=="string"?u._id===e&&ze.match(u.isDefault,n):(t=!1,!1)}),globTasksDetected:t}}}}return{globGroupTasks:[],globTasksDetected:t}}_runBuildCommand(){if(this._tasksReconnected)return this._runTaskGroupCommand(R.Build,{fetching:l.localize("TaskService.fetchingBuildTasks","Fetching build tasks..."),select:l.localize("TaskService.pickBuildTask","Select the build task to run"),notFoundConfigure:l.localize("TaskService.noBuildTask","No build task to run found. Configure Build Task...")},this._runConfigureDefaultBuildTask,this._build)}_runTestCommand(){return this._runTaskGroupCommand(R.Test,{fetching:l.localize("TaskService.fetchingTestTasks","Fetching test tasks..."),select:l.localize("TaskService.pickTestTask","Select the test task to run"),notFoundConfigure:l.localize("TaskService.noTestTaskTerminal","No test task to run found. Configure Tasks...")},this._runConfigureDefaultTestTask,this._runTest)}_runTerminateCommand(e){if(e==="terminateAll"){this._terminateAll();return}const t=s=>{this._showQuickPick(s||this.getActiveTasks(),l.localize("TaskService.taskToTerminate","Select a task to terminate"),{label:l.localize("TaskService.noTaskRunning","No task is currently running"),task:void 0},!1,!0,void 0,[{label:l.localize("TaskService.terminateAllRunningTasks","All Running Tasks"),id:"terminateAll",task:void 0}]).then(i=>{i&&i.id==="terminateAll"&&this._terminateAll();const r=i?i.task:void 0;r!=null&&this.terminate(r)})};if(this.inTerminal()){const s=this._getTaskIdentifier(e);let i;s!==void 0?(i=this.getActiveTasks(),i.then(r=>{for(const n of r)if(n.matches(s)){this.terminate(n);return}t(i)})):t()}else this._isActive().then(s=>{s&&this._terminateAll().then(i=>{const r=i[0];r.success||(r.code&&r.code===Ae.ProcessNotFound?this._notificationService.error(l.localize("TerminateAction.noProcess","The launched process doesn't exist anymore. If the task spawned background tasks exiting VS Code might result in orphaned processes.")):this._notificationService.error(l.localize("TerminateAction.failed","Failed to terminate running task")))})})}async _runRestartTaskCommand(e){const t=await this.getActiveTasks();if(t.length===1){this._restart(t[0]);return}if(this.inTerminal()){const s=this._getTaskIdentifier(e);if(s!==void 0){for(const r of t)if(r.matches(s)){this._restart(r);return}}const i=await this._showQuickPick(t,l.localize("TaskService.taskToRestart","Select the task to restart"),{label:l.localize("TaskService.noTaskToRestart","No task to restart"),task:null},!1,!0);i&&i.task&&this._restart(i.task)}else t.length>0&&this._restart(t[0])}_getTaskIdentifier(e){let t;return E.isString(e)?t=e:e&&E.isString(e.type)&&(t=ie.createTaskIdentifier(e,console)),t}_configHasTasks(e){return!!e&&!!e.tasks&&e.tasks.length>0}_openTaskFile(e,t){let s=!1;this._fileService.stat(e).then(i=>i,()=>{}).then(async i=>{const r=!!i,n=this._configurationService.inspect("tasks",{resource:e});let a,d;switch(t){case y.User:a=this._configHasTasks(n.userValue),d=J.USER;break;case y.WorkspaceFile:a=this._configHasTasks(n.workspaceValue),d=J.WORKSPACE;break;default:a=this._configHasTasks(n.workspaceFolderValue),d=J.WORKSPACE_FOLDER}let u;if(!a){const o=await this._quickInputService.pick(mt(),{placeHolder:l.localize("TaskService.template","Select a Task Template")});if(!o)return Promise.resolve(void 0);u=o.content;const c=this._configurationService.getValue();c.editor.insertSpaces&&(u=u.replace(/(\n)(\t+)/g,(f,g,h)=>g+" ".repeat(h.length*c.editor.tabSize))),s=!0}if(!r&&u)return this._textFileService.create([{resource:e,value:u}]).then(o=>o[0].resource);if(r&&(a||u)){const o=i?.resource;return u&&o&&this._configurationService.updateValue("tasks",De.parse(u),{resource:o},d),o}}).then(i=>{i&&this._editorService.openEditor({resource:i,options:{pinned:s}})})}_isTaskEntry(e){const t=e;return t&&!!t.task}_isSettingEntry(e){const t=e;return t&&!!t.settingType}_configureTask(e){F.is(e)?this.customize(e,void 0,!0):C.is(e)?this.openConfig(e):L.is(e)}_handleSelection(e){if(e)if(this._isTaskEntry(e))this._configureTask(e.task);else if(this._isSettingEntry(e))this._instantiationService.createInstance(Q).handleSettingOption(e.settingType);else if(e.folder&&this._contextService.getWorkbenchState()!==W.EMPTY)this._openTaskFile(e.folder.toResource(".vscode/tasks.json"),y.Workspace);else{const t=this._getResourceForKind(y.User);t&&this._openTaskFile(t,y.User)}}getTaskDescription(e){let t;if(e._source.kind===y.User)t=l.localize("taskQuickPick.userSettings","User");else if(e._source.kind===y.WorkspaceFile)t=e.getWorkspaceFileName();else if(this.needsFolderQualification()){const s=e.getWorkspaceFolder();s&&(t=s.name)}return t}async _runConfigureTasks(){if(!await this._trust())return;let e;this.schemaVersion===M.V2_0_0?e=this._getGroupedTasks():e=Promise.resolve(new A);const t=this._contextService.getWorkspace().folders.map(o=>this._fileService.stat(o.toResource(".vscode/tasks.json")).then(c=>c,()=>{})),s=l.localize("TaskService.createJsonFile","Create tasks.json file from template"),i=l.localize("TaskService.openJsonFile","Open tasks.json file"),r=new Ie,n=r.token,a=Promise.all(t).then(o=>e.then(c=>{const f=[];let g=0,h=c.all();if(h.length>0){h=h.sort((k,m)=>k._label.localeCompare(m._label));for(const k of h){const m={label:Q.getTaskLabelWithIcon(k),task:k,description:this.getTaskDescription(k),detail:this._showDetail()?k.configurationProperties.detail:void 0};Q.applyColorStyles(k,m,this._themeService),f.push(m),F.is(k)||g++}}const p=g===0;if(p||c.get(Z).length===g){const k=o[0]!==void 0?i:s;f.length&&f.push({type:"separator"}),f.push({label:k,folder:this._contextService.getWorkspace().folders[0]})}return f.length===1&&!p&&r.cancel(),f}));if(!await Promise.race([new Promise(o=>{a.then(()=>o(!1))}),new Promise(o=>{const c=setTimeout(()=>{clearTimeout(c),o(!0)},200)})])&&(await a).length===1&&this._configurationService.getValue(Pe)){const o=(await a)[0];if(o.task){this._handleSelection(o);return}}const u=a.then(o=>(o.push(...Q.allSettingEntries(this._configurationService)),o));this._quickInputService.pick(u,{placeHolder:l.localize("TaskService.pickTask","Select a task to configure")},n).then(async o=>{if(n.isCancellationRequested){const c=(await a)[0];c.task&&(o=c)}this._handleSelection(o)})}_runConfigureDefaultBuildTask(){this.schemaVersion===M.V2_0_0?this.tasks().then(e=>{if(e.length===0){this._runConfigureTasks();return}const t=[];let s,i;this._showIgnoredFoldersMessage().then(async()=>{const{globGroupTasks:r}=await this._getGlobTasks(R.Build._id);let n=r;n?.length||(n=this._getDefaultTasks(e,!1));let a;if(n.length===1){const o=n[0].configurationProperties.group;o&&(typeof o=="string"&&R.Build._id,a=n[0])}for(const o of e)if(o===a){const c=l.localize("TaskService.defaultBuildTaskExists","{0} is already marked as the default build task",Q.getTaskLabelWithIcon(o,o.getQualifiedLabel()));s=o,i={label:c,task:o,description:this.getTaskDescription(o),detail:this._showDetail()?o.configurationProperties.detail:void 0},Q.applyColorStyles(o,i,this._themeService)}else{const c={label:Q.getTaskLabelWithIcon(o),task:o,description:this.getTaskDescription(o),detail:this._showDetail()?o.configurationProperties.detail:void 0};Q.applyColorStyles(o,c,this._themeService),t.push(c)}i&&t.unshift(i);const u=new Ie().token;this._quickInputService.pick(t,{placeHolder:l.localize("TaskService.pickTask","Select a task to configure")},u).then(async o=>{if(u.isCancellationRequested){const f=(await t)[0];f.task&&(o=f)}const c=o&&"task"in o?o.task:void 0;c!=null&&(c===s&&C.is(c)&&this.openConfig(c),x.is(c)||this.customize(c,{group:{kind:"build",isDefault:!0}},!0).then(()=>{s&&c!==s&&!x.is(s)&&this.customize(s,{group:"build"},!1)}))}),this._quickInputService.pick(t,{placeHolder:l.localize("TaskService.pickDefaultBuildTask","Select the task to be used as the default build task")}).then(o=>{const c=o&&"task"in o?o.task:void 0;c!=null&&(c===s&&C.is(c)&&this.openConfig(c),x.is(c)||this.customize(c,{group:{kind:"build",isDefault:!0}},!0).then(()=>{s&&c!==s&&!x.is(s)&&this.customize(s,{group:"build"},!1)}))})})}):this._runConfigureTasks()}_runConfigureDefaultTestTask(){this.schemaVersion===M.V2_0_0?this.tasks().then(e=>{if(e.length===0){this._runConfigureTasks();return}let t,s;for(const i of e){const r=R.from(i.configurationProperties.group);if(r&&r.isDefault&&r._id===R.Test._id){t=i;break}}t&&(s={label:l.localize("TaskService.defaultTestTaskExists","{0} is already marked as the default test task.",t.getQualifiedLabel()),task:t,detail:this._showDetail()?t.configurationProperties.detail:void 0}),this._showIgnoredFoldersMessage().then(()=>{this._showQuickPick(e,l.localize("TaskService.pickDefaultTestTask","Select the task to be used as the default test task"),void 0,!0,!1,s).then(i=>{const r=i?i.task:void 0;r&&(r===t&&C.is(r)&&this.openConfig(r),x.is(r)||this.customize(r,{group:{kind:"test",isDefault:!0}},!0).then(()=>{t&&r!==t&&!x.is(t)&&this.customize(t,{group:"test"},!1)}))})})}):this._runConfigureTasks()}async runShowTasks(){const e=this.getActiveTasks(),t=await e;let s;t.length===1?this._taskSystem.revealTask(t[0]):t.length&&t.every(i=>x.is(i)?!1:(s||(s=i.command.presentation?.group),i.command.presentation?.group&&i.command.presentation.group===s))?this._taskSystem.revealTask(t[0]):this._showQuickPick(e,l.localize("TaskService.pickShowTask","Select the task to show its output"),{label:l.localize("TaskService.noTaskIsRunning","No task is running"),task:null},!1,!0).then(i=>{const r=i?i.task:void 0;r!=null&&this._taskSystem.revealTask(r)})}async _createTasksDotOld(e){const t=e.toResource(".vscode/tasks.json");if(await this._fileService.exists(t)){const s=t.with({path:`${t.path}.old`});return await this._fileService.copy(t,s,!0),[s,t]}}_upgradeTask(e,t,s){if(!C.is(e))return;const i={label:e._label},r=new Set(["gulp","jake","grunt"]);E.isString(e.command.name)&&r.has(e.command.name)?(i.type=e.command.name,i.task=e.command.args[0]):(e.command.runtime===fe.Shell&&(i.type=fe.toString(fe.Shell)),e.command.name&&!t&&!s.windows?.command&&!s.osx?.command&&!s.linux?.command?i.command=e.command.name:t&&(i.command=e._source.config.element.command),e.command.args&&(!Array.isArray(e.command.args)||e.command.args.length>0)&&(!s.windows?.args&&!s.osx?.args&&!s.linux?.args?i.args=e.command.args:i.args=e._source.config.element.args)),e.configurationProperties.presentation&&(i.presentation=e.configurationProperties.presentation),e.configurationProperties.isBackground&&(i.isBackground=e.configurationProperties.isBackground),e.configurationProperties.problemMatchers&&(i.problemMatcher=e._source.config.element.problemMatcher),e.configurationProperties.group&&(i.group=e.configurationProperties.group),e._source.config.element=i;const n=new C(e._id,e._source,e._label,e.type,e.command,e.hasDefinedMatchers,e.runOptions,e.configurationProperties),a=this._createCustomizableTask(n);if(a)return a}async _upgrade(){if(this.schemaVersion===M.V2_0_0)return;if(!this._workspaceTrustManagementService.isWorkspaceTrusted()){this._register(ue.once(this._workspaceTrustManagementService.onDidChangeTrust)(s=>{s&&this._upgrade()}));return}const e=await this._getGroupedTasks(),t=[];for(const s of this.workspaceFolders){const i=await this._createTasksDotOld(s);if(i&&t.push(i),!i)continue;const r=[],n=!!this._configurationService.getValue(U.SuppressTaskName,{resource:s.uri}),a={windows:this._configurationService.getValue(U.Windows,{resource:s.uri}),osx:this._configurationService.getValue(U.Osx,{resource:s.uri}),linux:this._configurationService.getValue(U.Linux,{resource:s.uri})};e.get(s).forEach(d=>{const u=this._upgradeTask(d,n,a);u&&r.push(u)}),this._taskSystem=void 0,this._workspaceTasksPromise=void 0,await this._writeConfiguration(s,"tasks.tasks",r),await this._writeConfiguration(s,"tasks.version","2.0.0"),this._configurationService.getValue(U.ShowOutput,{resource:s.uri})&&await this._configurationService.updateValue(U.ShowOutput,void 0,{resource:s.uri}),this._configurationService.getValue(U.IsShellCommand,{resource:s.uri})&&await this._configurationService.updateValue(U.IsShellCommand,void 0,{resource:s.uri}),this._configurationService.getValue(U.SuppressTaskName,{resource:s.uri})&&await this._configurationService.updateValue(U.SuppressTaskName,void 0,{resource:s.uri})}this._updateSetup(),this._notificationService.prompt(z.Warning,t.length===1?l.localize("taskService.upgradeVersion","The deprecated tasks version 0.1.0 has been removed. Your tasks have been upgraded to version 2.0.0. Open the diff to review the upgrade."):l.localize("taskService.upgradeVersionPlural","The deprecated tasks version 0.1.0 has been removed. Your tasks have been upgraded to version 2.0.0. Open the diffs to review the upgrade."),[{label:t.length===1?l.localize("taskService.openDiff","Open diff"):l.localize("taskService.openDiffs","Open diffs"),run:async()=>{for(const s of t)await this._editorService.openEditor({original:{resource:s[0]},modified:{resource:s[1]}})}}])}};w=me([T(0,Le),T(1,je),T(2,ot),T(3,Qt),T(4,zt),T(5,Ne),T(6,nt),T(7,Ge),T(8,tt),T(9,He),T(10,at),T(11,et),T(12,$e),T(13,_t),T(14,rt),T(15,ut),T(16,ct),T(17,qe),T(18,Be),T(19,Ze),T(20,Ye),T(21,Xe),T(22,vt),T(23,Ut),T(24,lt),T(25,Nt),T(26,bt),T(27,Lt),T(28,Mt),T(29,Wt),T(30,Ft),T(31,Pt),T(32,Et),T(33,Vt),T(34,Gt),T(35,wt)],w);export{w as AbstractTaskService,ae as ConfigureTaskAction};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var AbstractTaskService_1;
+import { Action } from '../../../../base/common/actions.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import * as glob from '../../../../base/common/glob.js';
+import * as json from '../../../../base/common/json.js';
+import { Disposable, dispose } from '../../../../base/common/lifecycle.js';
+import { LRUCache } from '../../../../base/common/map.js';
+import * as Objects from '../../../../base/common/objects.js';
+import { ValidationStatus } from '../../../../base/common/parsers.js';
+import * as Platform from '../../../../base/common/platform.js';
+import * as resources from '../../../../base/common/resources.js';
+import Severity from '../../../../base/common/severity.js';
+import * as Types from '../../../../base/common/types.js';
+import { URI } from '../../../../base/common/uri.js';
+import * as UUID from '../../../../base/common/uuid.js';
+import * as nls from '../../../../nls.js';
+import { CommandsRegistry, ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IMarkerService } from '../../../../platform/markers/common/markers.js';
+import { IProgressService } from '../../../../platform/progress/common/progress.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { ProblemMatcherRegistry } from '../common/problemMatcher.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { IModelService } from '../../../../editor/common/services/model.js';
+import { IWorkspaceContextService, WorkspaceFolder } from '../../../../platform/workspace/common/workspace.js';
+import { Markers } from '../../markers/common/markers.js';
+import { IConfigurationResolverService } from '../../../services/configurationResolver/common/configurationResolver.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IOutputService } from '../../../services/output/common/output.js';
+import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
+import { ITerminalGroupService, ITerminalService } from '../../terminal/browser/terminal.js';
+import { ITerminalProfileResolverService } from '../../terminal/common/terminal.js';
+import { ConfiguringTask, ContributedTask, CustomTask, ExecutionEngine, InMemoryTask, KeyedTaskIdentifier, RuntimeType, TASK_RUNNING_STATE, TaskDefinition, TaskGroup, TaskSorter, TaskSourceKind, USER_TASKS_GROUP_KEY } from '../common/tasks.js';
+import { CustomExecutionSupportedContext, ProcessExecutionSupportedContext, ServerlessWebContext, ShellExecutionSupportedContext, TaskCommandsRegistered, TaskExecutionSupportedContext } from '../common/taskService.js';
+import { TaskError } from '../common/taskSystem.js';
+import { getTemplates as getTaskTemplates } from '../common/taskTemplates.js';
+import * as TaskConfig from '../common/taskConfiguration.js';
+import { TerminalTaskSystem } from './terminalTaskSystem.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { TaskDefinitionRegistry } from '../common/taskDefinitionRegistry.js';
+import { raceTimeout } from '../../../../base/common/async.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { toFormattedString } from '../../../../base/common/jsonFormatter.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { TerminalExitReason } from '../../../../platform/terminal/common/terminal.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { IWorkspaceTrustManagementService, IWorkspaceTrustRequestService } from '../../../../platform/workspace/common/workspaceTrust.js';
+import { VirtualWorkspaceContext } from '../../../common/contextkeys.js';
+import { EditorResourceAccessor } from '../../../common/editor.js';
+import { IViewDescriptorService } from '../../../common/views.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+import { configureTaskIcon, isWorkspaceFolder, QUICKOPEN_DETAIL_CONFIG, QUICKOPEN_SKIP_CONFIG, TaskQuickPick } from './taskQuickPick.js';
+import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
+import { ILifecycleService } from '../../../services/lifecycle/common/lifecycle.js';
+import { IPaneCompositePartService } from '../../../services/panecomposite/browser/panecomposite.js';
+import { IPathService } from '../../../services/path/common/pathService.js';
+import { IPreferencesService } from '../../../services/preferences/common/preferences.js';
+import { IRemoteAgentService } from '../../../services/remote/common/remoteAgentService.js';
+const QUICKOPEN_HISTORY_LIMIT_CONFIG = 'task.quickOpen.history';
+const PROBLEM_MATCHER_NEVER_CONFIG = 'task.problemMatchers.neverPrompt';
+const USE_SLOW_PICKER = 'task.quickOpen.showAll';
+export var ConfigureTaskAction;
+(function (ConfigureTaskAction) {
+    ConfigureTaskAction.ID = 'workbench.action.tasks.configureTaskRunner';
+    ConfigureTaskAction.TEXT = nls.localize2('ConfigureTaskRunnerAction.label', "Configure Task");
+})(ConfigureTaskAction || (ConfigureTaskAction = {}));
+class ProblemReporter {
+    constructor(_outputChannel) {
+        this._outputChannel = _outputChannel;
+        this._validationStatus = new ValidationStatus();
+    }
+    info(message) {
+        this._validationStatus.state = 1;
+        this._outputChannel.append(message + '\n');
+    }
+    warn(message) {
+        this._validationStatus.state = 2;
+        this._outputChannel.append(message + '\n');
+    }
+    error(message) {
+        this._validationStatus.state = 3;
+        this._outputChannel.append(message + '\n');
+    }
+    fatal(message) {
+        this._validationStatus.state = 4;
+        this._outputChannel.append(message + '\n');
+    }
+    get status() {
+        return this._validationStatus;
+    }
+}
+class TaskMap {
+    constructor() {
+        this._store = new Map();
+    }
+    forEach(callback) {
+        this._store.forEach(callback);
+    }
+    static getKey(workspaceFolder) {
+        let key;
+        if (Types.isString(workspaceFolder)) {
+            key = workspaceFolder;
+        }
+        else {
+            const uri = isWorkspaceFolder(workspaceFolder) ? workspaceFolder.uri : workspaceFolder.configuration;
+            key = uri ? uri.toString() : '';
+        }
+        return key;
+    }
+    get(workspaceFolder) {
+        const key = TaskMap.getKey(workspaceFolder);
+        let result = this._store.get(key);
+        if (!result) {
+            result = [];
+            this._store.set(key, result);
+        }
+        return result;
+    }
+    add(workspaceFolder, ...task) {
+        const key = TaskMap.getKey(workspaceFolder);
+        let values = this._store.get(key);
+        if (!values) {
+            values = [];
+            this._store.set(key, values);
+        }
+        values.push(...task);
+    }
+    all() {
+        const result = [];
+        this._store.forEach((values) => result.push(...values));
+        return result;
+    }
+}
+let AbstractTaskService = class AbstractTaskService extends Disposable {
+    static { AbstractTaskService_1 = this; }
+    static { this.RecentlyUsedTasks_Key = 'workbench.tasks.recentlyUsedTasks'; }
+    static { this.RecentlyUsedTasks_KeyV2 = 'workbench.tasks.recentlyUsedTasks2'; }
+    static { this.PersistentTasks_Key = 'workbench.tasks.persistentTasks'; }
+    static { this.IgnoreTask010DonotShowAgain_key = 'workbench.tasks.ignoreTask010Shown'; }
+    static { this.OutputChannelId = 'tasks'; }
+    static { this.OutputChannelLabel = nls.localize('tasks', "Tasks"); }
+    static { this._nextHandle = 0; }
+    get isReconnected() { return this._tasksReconnected; }
+    constructor(_configurationService, _markerService, _outputService, _paneCompositeService, _viewsService, _commandService, _editorService, _fileService, _contextService, _telemetryService, _textFileService, _modelService, _extensionService, _quickInputService, _configurationResolverService, _terminalService, _terminalGroupService, _storageService, _progressService, _openerService, _dialogService, _notificationService, _contextKeyService, _environmentService, _terminalProfileResolverService, _pathService, _textModelResolverService, _preferencesService, _viewDescriptorService, _workspaceTrustRequestService, _workspaceTrustManagementService, _logService, _themeService, _lifecycleService, remoteAgentService, _instantiationService) {
+        super();
+        this._configurationService = _configurationService;
+        this._markerService = _markerService;
+        this._outputService = _outputService;
+        this._paneCompositeService = _paneCompositeService;
+        this._viewsService = _viewsService;
+        this._commandService = _commandService;
+        this._editorService = _editorService;
+        this._fileService = _fileService;
+        this._contextService = _contextService;
+        this._telemetryService = _telemetryService;
+        this._textFileService = _textFileService;
+        this._modelService = _modelService;
+        this._extensionService = _extensionService;
+        this._quickInputService = _quickInputService;
+        this._configurationResolverService = _configurationResolverService;
+        this._terminalService = _terminalService;
+        this._terminalGroupService = _terminalGroupService;
+        this._storageService = _storageService;
+        this._progressService = _progressService;
+        this._openerService = _openerService;
+        this._dialogService = _dialogService;
+        this._notificationService = _notificationService;
+        this._contextKeyService = _contextKeyService;
+        this._environmentService = _environmentService;
+        this._terminalProfileResolverService = _terminalProfileResolverService;
+        this._pathService = _pathService;
+        this._textModelResolverService = _textModelResolverService;
+        this._preferencesService = _preferencesService;
+        this._viewDescriptorService = _viewDescriptorService;
+        this._workspaceTrustRequestService = _workspaceTrustRequestService;
+        this._workspaceTrustManagementService = _workspaceTrustManagementService;
+        this._logService = _logService;
+        this._themeService = _themeService;
+        this._lifecycleService = _lifecycleService;
+        this._instantiationService = _instantiationService;
+        this._tasksReconnected = false;
+        this._taskSystemListeners = [];
+        this._onDidRegisterSupportedExecutions = new Emitter();
+        this._onDidRegisterAllSupportedExecutions = new Emitter();
+        this._onDidChangeTaskSystemInfo = new Emitter();
+        this._willRestart = false;
+        this.onDidChangeTaskSystemInfo = this._onDidChangeTaskSystemInfo.event;
+        this._onDidReconnectToTasks = new Emitter();
+        this.onDidReconnectToTasks = this._onDidReconnectToTasks.event;
+        this._onDidChangeTaskConfig = new Emitter();
+        this.onDidChangeTaskConfig = this._onDidChangeTaskConfig.event;
+        this._onDidChangeTaskProviders = this._register(new Emitter());
+        this.onDidChangeTaskProviders = this._onDidChangeTaskProviders.event;
+        this._whenTaskSystemReady = Event.toPromise(this.onDidChangeTaskSystemInfo);
+        this._workspaceTasksPromise = undefined;
+        this._taskSystem = undefined;
+        this._taskSystemListeners = undefined;
+        this._outputChannel = this._outputService.getChannel(AbstractTaskService_1.OutputChannelId);
+        this._providers = new Map();
+        this._providerTypes = new Map();
+        this._taskSystemInfos = new Map();
+        this._register(this._contextService.onDidChangeWorkspaceFolders(() => {
+            const folderSetup = this._computeWorkspaceFolderSetup();
+            if (this.executionEngine !== folderSetup[2]) {
+                this._disposeTaskSystemListeners();
+                this._taskSystem = undefined;
+            }
+            this._updateSetup(folderSetup);
+            return this._updateWorkspaceTasks(2);
+        }));
+        this._register(this._configurationService.onDidChangeConfiguration(async (e) => {
+            if (!e.affectsConfiguration('tasks') || (!this._taskSystem && !this._workspaceTasksPromise)) {
+                return;
+            }
+            if (!this._taskSystem || this._taskSystem instanceof TerminalTaskSystem) {
+                this._outputChannel.clear();
+            }
+            if (e.affectsConfiguration("task.reconnection")) {
+                if (!this._configurationService.getValue("task.reconnection")) {
+                    this._persistentTasks?.clear();
+                    this._storageService.remove(AbstractTaskService_1.PersistentTasks_Key, 1);
+                }
+            }
+            this._setTaskLRUCacheLimit();
+            await this._updateWorkspaceTasks(3);
+            this._onDidChangeTaskConfig.fire();
+        }));
+        this._taskRunningState = TASK_RUNNING_STATE.bindTo(_contextKeyService);
+        this._onDidStateChange = this._register(new Emitter());
+        this._registerCommands().then(() => TaskCommandsRegistered.bindTo(this._contextKeyService).set(true));
+        ServerlessWebContext.bindTo(this._contextKeyService).set(Platform.isWeb && !remoteAgentService.getConnection()?.remoteAuthority);
+        this._configurationResolverService.contributeVariable('defaultBuildTask', async () => {
+            let tasks = await this._getTasksForGroup(TaskGroup.Build, true);
+            if (tasks.length > 0) {
+                const defaults = this._getDefaultTasks(tasks);
+                if (defaults.length === 1) {
+                    return defaults[0]._label;
+                }
+            }
+            tasks = await this._getTasksForGroup(TaskGroup.Build);
+            const defaults = this._getDefaultTasks(tasks);
+            if (defaults.length === 1) {
+                return defaults[0]._label;
+            }
+            else if (defaults.length) {
+                tasks = defaults;
+            }
+            let entry;
+            if (tasks && tasks.length > 0) {
+                entry = await this._showQuickPick(tasks, nls.localize('TaskService.pickBuildTaskForLabel', 'Select the build task (there is no default build task defined)'));
+            }
+            const task = entry ? entry.task : undefined;
+            if (!task) {
+                return undefined;
+            }
+            return task._label;
+        });
+        this._register(this._lifecycleService.onBeforeShutdown(e => {
+            this._willRestart = e.reason !== 3;
+        }));
+        this._register(this.onDidStateChange(e => {
+            this._log(nls.localize('taskEvent', 'Task Event kind: {0}', e.kind), true);
+            if (e.kind === "changed") {
+            }
+            else if ((this._willRestart || (e.kind === "terminated" && e.exitReason === TerminalExitReason.User)) && e.taskId) {
+                const key = e.__task.getKey();
+                if (key) {
+                    this.removePersistentTask(key);
+                }
+            }
+            else if (e.kind === "start" && e.__task && e.__task.getWorkspaceFolder()) {
+                this._setPersistentTask(e.__task);
+            }
+        }));
+        this._waitForAllSupportedExecutions = new Promise(resolve => {
+            Event.once(this._onDidRegisterAllSupportedExecutions.event)(() => resolve());
+        });
+        if (this._terminalService.getReconnectedTerminals('Task')?.length) {
+            this._attemptTaskReconnection();
+        }
+        else {
+            this._terminalService.whenConnected.then(() => {
+                if (this._terminalService.getReconnectedTerminals('Task')?.length) {
+                    this._attemptTaskReconnection();
+                }
+                else {
+                    this._tasksReconnected = true;
+                    this._onDidReconnectToTasks.fire();
+                }
+            });
+        }
+        this._upgrade();
+    }
+    registerSupportedExecutions(custom, shell, process) {
+        if (custom !== undefined) {
+            const customContext = CustomExecutionSupportedContext.bindTo(this._contextKeyService);
+            customContext.set(custom);
+        }
+        const isVirtual = !!VirtualWorkspaceContext.getValue(this._contextKeyService);
+        if (shell !== undefined) {
+            const shellContext = ShellExecutionSupportedContext.bindTo(this._contextKeyService);
+            shellContext.set(shell && !isVirtual);
+        }
+        if (process !== undefined) {
+            const processContext = ProcessExecutionSupportedContext.bindTo(this._contextKeyService);
+            processContext.set(process && !isVirtual);
+        }
+        this._workspaceTasksPromise = undefined;
+        this._onDidRegisterSupportedExecutions.fire();
+        if (Platform.isWeb || (custom && shell && process)) {
+            this._onDidRegisterAllSupportedExecutions.fire();
+        }
+    }
+    _attemptTaskReconnection() {
+        if (this._lifecycleService.startupKind !== 3) {
+            this._log(nls.localize('TaskService.skippingReconnection', 'Startup kind not window reload, setting connected and removing persistent tasks'), true);
+            this._tasksReconnected = true;
+            this._storageService.remove(AbstractTaskService_1.PersistentTasks_Key, 1);
+        }
+        if (!this._configurationService.getValue("task.reconnection") || this._tasksReconnected) {
+            this._log(nls.localize('TaskService.notConnecting', 'Setting tasks connected configured value {0}, tasks were already reconnected {1}', this._configurationService.getValue("task.reconnection"), this._tasksReconnected), true);
+            this._tasksReconnected = true;
+            return;
+        }
+        this._log(nls.localize('TaskService.reconnecting', 'Reconnecting to running tasks...'), true);
+        this.getWorkspaceTasks(4).then(async () => {
+            this._tasksReconnected = await this._reconnectTasks();
+            this._log(nls.localize('TaskService.reconnected', 'Reconnected to running tasks.'), true);
+            this._onDidReconnectToTasks.fire();
+        });
+    }
+    async _reconnectTasks() {
+        const tasks = await this.getSavedTasks('persistent');
+        if (!tasks.length) {
+            this._log(nls.localize('TaskService.noTasks', 'No persistent tasks to reconnect.'), true);
+            return true;
+        }
+        const taskLabels = tasks.map(task => task._label).join(', ');
+        this._log(nls.localize('TaskService.reconnectingTasks', 'Reconnecting to {0} tasks...', taskLabels), true);
+        for (const task of tasks) {
+            if (ConfiguringTask.is(task)) {
+                const resolved = await this.tryResolveTask(task);
+                if (resolved) {
+                    this.run(resolved, undefined, 4);
+                }
+            }
+            else {
+                this.run(task, undefined, 4);
+            }
+        }
+        return true;
+    }
+    get onDidStateChange() {
+        return this._onDidStateChange.event;
+    }
+    get supportsMultipleTaskExecutions() {
+        return this.inTerminal();
+    }
+    async _registerCommands() {
+        CommandsRegistry.registerCommand({
+            id: 'workbench.action.tasks.runTask',
+            handler: async (accessor, arg) => {
+                if (await this._trust()) {
+                    await this._runTaskCommand(arg);
+                }
+            },
+            metadata: {
+                description: 'Run Task',
+                args: [{
+                        name: 'args',
+                        isOptional: true,
+                        description: nls.localize('runTask.arg', "Filters the tasks shown in the quickpick"),
+                        schema: {
+                            anyOf: [
+                                {
+                                    type: 'string',
+                                    description: nls.localize('runTask.label', "The task's label or a term to filter by")
+                                },
+                                {
+                                    type: 'object',
+                                    properties: {
+                                        type: {
+                                            type: 'string',
+                                            description: nls.localize('runTask.type', "The contributed task type")
+                                        },
+                                        task: {
+                                            type: 'string',
+                                            description: nls.localize('runTask.task', "The task's label or a term to filter by")
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }]
+            }
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.reRunTask', async (accessor, arg) => {
+            if (await this._trust()) {
+                this._reRunTaskCommand();
+            }
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.restartTask', async (accessor, arg) => {
+            if (await this._trust()) {
+                this._runRestartTaskCommand(arg);
+            }
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.terminate', async (accessor, arg) => {
+            if (await this._trust()) {
+                this._runTerminateCommand(arg);
+            }
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.showLog', () => {
+            this._showOutput(undefined, true);
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.build', async () => {
+            if (await this._trust()) {
+                this._runBuildCommand();
+            }
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.test', async () => {
+            if (await this._trust()) {
+                this._runTestCommand();
+            }
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.configureTaskRunner', async () => {
+            if (await this._trust()) {
+                this._runConfigureTasks();
+            }
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.configureDefaultBuildTask', async () => {
+            if (await this._trust()) {
+                this._runConfigureDefaultBuildTask();
+            }
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.configureDefaultTestTask', async () => {
+            if (await this._trust()) {
+                this._runConfigureDefaultTestTask();
+            }
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.showTasks', async () => {
+            if (await this._trust()) {
+                return this.runShowTasks();
+            }
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.toggleProblems', () => this._commandService.executeCommand(Markers.TOGGLE_MARKERS_VIEW_ACTION_ID));
+        CommandsRegistry.registerCommand('workbench.action.tasks.openUserTasks', async () => {
+            const resource = this._getResourceForKind(TaskSourceKind.User);
+            if (resource) {
+                this._openTaskFile(resource, TaskSourceKind.User);
+            }
+        });
+        CommandsRegistry.registerCommand('workbench.action.tasks.openWorkspaceFileTasks', async () => {
+            const resource = this._getResourceForKind(TaskSourceKind.WorkspaceFile);
+            if (resource) {
+                this._openTaskFile(resource, TaskSourceKind.WorkspaceFile);
+            }
+        });
+    }
+    get workspaceFolders() {
+        if (!this._workspaceFolders) {
+            this._updateSetup();
+        }
+        return this._workspaceFolders;
+    }
+    get ignoredWorkspaceFolders() {
+        if (!this._ignoredWorkspaceFolders) {
+            this._updateSetup();
+        }
+        return this._ignoredWorkspaceFolders;
+    }
+    get executionEngine() {
+        if (this._executionEngine === undefined) {
+            this._updateSetup();
+        }
+        return this._executionEngine;
+    }
+    get schemaVersion() {
+        if (this._schemaVersion === undefined) {
+            this._updateSetup();
+        }
+        return this._schemaVersion;
+    }
+    get showIgnoreMessage() {
+        if (this._showIgnoreMessage === undefined) {
+            this._showIgnoreMessage = !this._storageService.getBoolean(AbstractTaskService_1.IgnoreTask010DonotShowAgain_key, 1, false);
+        }
+        return this._showIgnoreMessage;
+    }
+    _getActivationEvents(type) {
+        const result = [];
+        result.push('onCommand:workbench.action.tasks.runTask');
+        if (type) {
+            result.push(`onTaskType:${type}`);
+        }
+        else {
+            for (const definition of TaskDefinitionRegistry.all()) {
+                result.push(`onTaskType:${definition.taskType}`);
+            }
+        }
+        return result;
+    }
+    async _activateTaskProviders(type) {
+        await this._extensionService.whenInstalledExtensionsRegistered();
+        this._log('Activating task providers ' + (type ?? 'all'));
+        await raceTimeout(Promise.all(this._getActivationEvents(type).map(activationEvent => this._extensionService.activateByEvent(activationEvent))), 5000, () => console.warn('Timed out activating extensions for task providers'));
+    }
+    _updateSetup(setup) {
+        if (!setup) {
+            setup = this._computeWorkspaceFolderSetup();
+        }
+        this._workspaceFolders = setup[0];
+        if (this._ignoredWorkspaceFolders) {
+            if (this._ignoredWorkspaceFolders.length !== setup[1].length) {
+                this._showIgnoreMessage = undefined;
+            }
+            else {
+                const set = new Set();
+                this._ignoredWorkspaceFolders.forEach(folder => set.add(folder.uri.toString()));
+                for (const folder of setup[1]) {
+                    if (!set.has(folder.uri.toString())) {
+                        this._showIgnoreMessage = undefined;
+                        break;
+                    }
+                }
+            }
+        }
+        this._ignoredWorkspaceFolders = setup[1];
+        this._executionEngine = setup[2];
+        this._schemaVersion = setup[3];
+        this._workspace = setup[4];
+    }
+    _showOutput(runSource = 1, userRequested) {
+        if (!VirtualWorkspaceContext.getValue(this._contextKeyService) && ((runSource === 1) || (runSource === 3))) {
+            if (userRequested) {
+                this._outputService.showChannel(this._outputChannel.id, true);
+            }
+            else {
+                this._notificationService.prompt(Severity.Warning, nls.localize('taskServiceOutputPrompt', 'There are task errors. See the output for details.'), [{
+                        label: nls.localize('showOutput', "Show output"),
+                        run: () => {
+                            this._outputService.showChannel(this._outputChannel.id, true);
+                        }
+                    }]);
+            }
+        }
+    }
+    _disposeTaskSystemListeners() {
+        if (this._taskSystemListeners) {
+            dispose(this._taskSystemListeners);
+            this._taskSystemListeners = undefined;
+        }
+    }
+    registerTaskProvider(provider, type) {
+        if (!provider) {
+            return {
+                dispose: () => { }
+            };
+        }
+        const handle = AbstractTaskService_1._nextHandle++;
+        this._providers.set(handle, provider);
+        this._providerTypes.set(handle, type);
+        this._onDidChangeTaskProviders.fire();
+        return {
+            dispose: () => {
+                this._providers.delete(handle);
+                this._providerTypes.delete(handle);
+                this._onDidChangeTaskProviders.fire();
+            }
+        };
+    }
+    get hasTaskSystemInfo() {
+        const infosCount = Array.from(this._taskSystemInfos.values()).flat().length;
+        if (this._environmentService.remoteAuthority) {
+            return infosCount > 1;
+        }
+        return infosCount > 0;
+    }
+    registerTaskSystem(key, info) {
+        if (info.platform === 0) {
+            key = this.workspaceFolders.length ? this.workspaceFolders[0].uri.scheme : key;
+        }
+        if (!this._taskSystemInfos.has(key)) {
+            this._taskSystemInfos.set(key, [info]);
+        }
+        else {
+            const infos = this._taskSystemInfos.get(key);
+            if (info.platform === 0) {
+                infos.push(info);
+            }
+            else {
+                infos.unshift(info);
+            }
+        }
+        if (this.hasTaskSystemInfo) {
+            this._onDidChangeTaskSystemInfo.fire();
+        }
+    }
+    _getTaskSystemInfo(key) {
+        const infos = this._taskSystemInfos.get(key);
+        return (infos && infos.length) ? infos[0] : undefined;
+    }
+    extensionCallbackTaskComplete(task, result) {
+        if (!this._taskSystem) {
+            return Promise.resolve();
+        }
+        return this._taskSystem.customExecutionComplete(task, result);
+    }
+    async _findWorkspaceTasks(predicate) {
+        const result = [];
+        const tasks = await this.getWorkspaceTasks();
+        for (const [, workspaceTasks] of tasks) {
+            if (workspaceTasks.configurations) {
+                for (const taskName in workspaceTasks.configurations.byIdentifier) {
+                    const task = workspaceTasks.configurations.byIdentifier[taskName];
+                    if (predicate(task, workspaceTasks.workspaceFolder)) {
+                        result.push(task);
+                    }
+                }
+            }
+            if (workspaceTasks.set) {
+                for (const task of workspaceTasks.set.tasks) {
+                    if (predicate(task, workspaceTasks.workspaceFolder)) {
+                        result.push(task);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+    async _findWorkspaceTasksInGroup(group, isDefault) {
+        return this._findWorkspaceTasks((task) => {
+            const taskGroup = task.configurationProperties.group;
+            if (taskGroup && typeof taskGroup !== 'string') {
+                return (taskGroup._id === group._id && (!isDefault || !!taskGroup.isDefault));
+            }
+            return false;
+        });
+    }
+    async getTask(folder, identifier, compareId = false, type = undefined) {
+        if (!(await this._trust())) {
+            return;
+        }
+        const name = Types.isString(folder) ? folder : isWorkspaceFolder(folder) ? folder.name : folder.configuration ? resources.basename(folder.configuration) : undefined;
+        if (this.ignoredWorkspaceFolders.some(ignored => ignored.name === name)) {
+            return Promise.reject(new Error(nls.localize('TaskServer.folderIgnored', 'The folder {0} is ignored since it uses task version 0.1.0', name)));
+        }
+        const key = !Types.isString(identifier)
+            ? TaskDefinition.createTaskIdentifier(identifier, console)
+            : identifier;
+        if (key === undefined) {
+            return Promise.resolve(undefined);
+        }
+        const requestedFolder = TaskMap.getKey(folder);
+        const matchedTasks = await this._findWorkspaceTasks((task, workspaceFolder) => {
+            const taskFolder = TaskMap.getKey(workspaceFolder);
+            if (taskFolder !== requestedFolder && taskFolder !== USER_TASKS_GROUP_KEY) {
+                return false;
+            }
+            return task.matches(key, compareId);
+        });
+        matchedTasks.sort(task => task._source.kind === TaskSourceKind.Extension ? 1 : -1);
+        if (matchedTasks.length > 0) {
+            const task = matchedTasks[0];
+            if (ConfiguringTask.is(task)) {
+                return this.tryResolveTask(task);
+            }
+            else {
+                return task;
+            }
+        }
+        const map = await this._getGroupedTasks({ type });
+        let values = map.get(folder);
+        values = values.concat(map.get(USER_TASKS_GROUP_KEY));
+        if (!values) {
+            return undefined;
+        }
+        values = values.filter(task => task.matches(key, compareId)).sort(task => task._source.kind === TaskSourceKind.Extension ? 1 : -1);
+        return values.length > 0 ? values[0] : undefined;
+    }
+    async tryResolveTask(configuringTask) {
+        if (!(await this._trust())) {
+            return;
+        }
+        await this._activateTaskProviders(configuringTask.type);
+        let matchingProvider;
+        let matchingProviderUnavailable = false;
+        for (const [handle, provider] of this._providers) {
+            const providerType = this._providerTypes.get(handle);
+            if (configuringTask.type === providerType) {
+                if (providerType && !this._isTaskProviderEnabled(providerType)) {
+                    matchingProviderUnavailable = true;
+                    continue;
+                }
+                matchingProvider = provider;
+                break;
+            }
+        }
+        if (!matchingProvider) {
+            if (matchingProviderUnavailable) {
+                this._log(nls.localize('TaskService.providerUnavailable', 'Warning: {0} tasks are unavailable in the current environment.', configuringTask.configures.type));
+            }
+            return;
+        }
+        try {
+            const resolvedTask = await matchingProvider.resolveTask(configuringTask);
+            if (resolvedTask && (resolvedTask._id === configuringTask._id)) {
+                return TaskConfig.createCustomTask(resolvedTask, configuringTask);
+            }
+        }
+        catch (error) {
+        }
+        const tasks = await this.tasks({ type: configuringTask.type });
+        for (const task of tasks) {
+            if (task._id === configuringTask._id) {
+                return TaskConfig.createCustomTask(task, configuringTask);
+            }
+        }
+        return;
+    }
+    async tasks(filter) {
+        if (!(await this._trust())) {
+            return [];
+        }
+        if (!this._versionAndEngineCompatible(filter)) {
+            return Promise.resolve([]);
+        }
+        return this._getGroupedTasks(filter).then((map) => this.applyFilterToTaskMap(filter, map));
+    }
+    async getKnownTasks(filter) {
+        if (!this._versionAndEngineCompatible(filter)) {
+            return Promise.resolve([]);
+        }
+        return this._getGroupedTasks(filter, true, true).then((map) => this.applyFilterToTaskMap(filter, map));
+    }
+    taskTypes() {
+        const types = [];
+        if (this._isProvideTasksEnabled()) {
+            for (const definition of TaskDefinitionRegistry.all()) {
+                if (this._isTaskProviderEnabled(definition.taskType)) {
+                    types.push(definition.taskType);
+                }
+            }
+        }
+        return types;
+    }
+    createSorter() {
+        return new TaskSorter(this._contextService.getWorkspace() ? this._contextService.getWorkspace().folders : []);
+    }
+    _isActive() {
+        if (!this._taskSystem) {
+            return Promise.resolve(false);
+        }
+        return this._taskSystem.isActive();
+    }
+    async getActiveTasks() {
+        if (!this._taskSystem) {
+            return [];
+        }
+        return this._taskSystem.getActiveTasks();
+    }
+    async getBusyTasks() {
+        if (!this._taskSystem) {
+            return [];
+        }
+        return this._taskSystem.getBusyTasks();
+    }
+    getRecentlyUsedTasksV1() {
+        if (this._recentlyUsedTasksV1) {
+            return this._recentlyUsedTasksV1;
+        }
+        const quickOpenHistoryLimit = this._configurationService.getValue(QUICKOPEN_HISTORY_LIMIT_CONFIG);
+        this._recentlyUsedTasksV1 = new LRUCache(quickOpenHistoryLimit);
+        const storageValue = this._storageService.get(AbstractTaskService_1.RecentlyUsedTasks_Key, 1);
+        if (storageValue) {
+            try {
+                const values = JSON.parse(storageValue);
+                if (Array.isArray(values)) {
+                    for (const value of values) {
+                        this._recentlyUsedTasksV1.set(value, value);
+                    }
+                }
+            }
+            catch (error) {
+            }
+        }
+        return this._recentlyUsedTasksV1;
+    }
+    applyFilterToTaskMap(filter, map) {
+        if (!filter || !filter.type) {
+            return map.all();
+        }
+        const result = [];
+        map.forEach((tasks) => {
+            for (const task of tasks) {
+                if (ContributedTask.is(task) && ((task.defines.type === filter.type) || (task._source.label === filter.type))) {
+                    result.push(task);
+                }
+                else if (CustomTask.is(task)) {
+                    if (task.type === filter.type) {
+                        result.push(task);
+                    }
+                    else {
+                        const customizes = task.customizes();
+                        if (customizes && customizes.type === filter.type) {
+                            result.push(task);
+                        }
+                    }
+                }
+            }
+        });
+        return result;
+    }
+    _getTasksFromStorage(type) {
+        return type === 'persistent' ? this._getPersistentTasks() : this._getRecentTasks();
+    }
+    _getRecentTasks() {
+        if (this._recentlyUsedTasks) {
+            return this._recentlyUsedTasks;
+        }
+        const quickOpenHistoryLimit = this._configurationService.getValue(QUICKOPEN_HISTORY_LIMIT_CONFIG);
+        this._recentlyUsedTasks = new LRUCache(quickOpenHistoryLimit);
+        const storageValue = this._storageService.get(AbstractTaskService_1.RecentlyUsedTasks_KeyV2, 1);
+        if (storageValue) {
+            try {
+                const values = JSON.parse(storageValue);
+                if (Array.isArray(values)) {
+                    for (const value of values) {
+                        this._recentlyUsedTasks.set(value[0], value[1]);
+                    }
+                }
+            }
+            catch (error) {
+            }
+        }
+        return this._recentlyUsedTasks;
+    }
+    _getPersistentTasks() {
+        if (this._persistentTasks) {
+            this._log(nls.localize('taskService.gettingCachedTasks', 'Returning cached tasks {0}', this._persistentTasks.size), true);
+            return this._persistentTasks;
+        }
+        this._persistentTasks = new LRUCache(10);
+        const storageValue = this._storageService.get(AbstractTaskService_1.PersistentTasks_Key, 1);
+        if (storageValue) {
+            try {
+                const values = JSON.parse(storageValue);
+                if (Array.isArray(values)) {
+                    for (const value of values) {
+                        this._persistentTasks.set(value[0], value[1]);
+                    }
+                }
+            }
+            catch (error) {
+            }
+        }
+        return this._persistentTasks;
+    }
+    _getFolderFromTaskKey(key) {
+        const keyValue = JSON.parse(key);
+        return {
+            folder: keyValue.folder, isWorkspaceFile: keyValue.id?.endsWith(TaskSourceKind.WorkspaceFile)
+        };
+    }
+    async getSavedTasks(type) {
+        const folderMap = Object.create(null);
+        this.workspaceFolders.forEach(folder => {
+            folderMap[folder.uri.toString()] = folder;
+        });
+        const folderToTasksMap = new Map();
+        const workspaceToTaskMap = new Map();
+        const storedTasks = this._getTasksFromStorage(type);
+        const tasks = [];
+        this._log(nls.localize('taskService.getSavedTasks', 'Fetching tasks from task storage.'), true);
+        function addTaskToMap(map, folder, task) {
+            if (folder && !map.has(folder)) {
+                map.set(folder, []);
+            }
+            if (folder && (folderMap[folder] || (folder === USER_TASKS_GROUP_KEY)) && task) {
+                map.get(folder).push(task);
+            }
+        }
+        for (const entry of storedTasks.entries()) {
+            try {
+                const key = entry[0];
+                const task = JSON.parse(entry[1]);
+                const folderInfo = this._getFolderFromTaskKey(key);
+                this._log(nls.localize('taskService.getSavedTasks.reading', 'Reading tasks from task storage, {0}, {1}, {2}', key, task, folderInfo.folder), true);
+                addTaskToMap(folderInfo.isWorkspaceFile ? workspaceToTaskMap : folderToTasksMap, folderInfo.folder, task);
+            }
+            catch (error) {
+                this._log(nls.localize('taskService.getSavedTasks.error', 'Fetching a task from task storage failed: {0}.', error), true);
+            }
+        }
+        const readTasksMap = new Map();
+        async function readTasks(that, map, isWorkspaceFile) {
+            for (const key of map.keys()) {
+                const custom = [];
+                const customized = Object.create(null);
+                const taskConfigSource = (folderMap[key]
+                    ? (isWorkspaceFile
+                        ? TaskConfig.TaskConfigSource.WorkspaceFile : TaskConfig.TaskConfigSource.TasksJson)
+                    : TaskConfig.TaskConfigSource.User);
+                await that._computeTasksForSingleConfig(folderMap[key] ?? await that._getAFolder(), {
+                    version: '2.0.0',
+                    tasks: map.get(key)
+                }, 0, custom, customized, taskConfigSource, true);
+                custom.forEach(task => {
+                    const taskKey = task.getKey();
+                    if (taskKey) {
+                        readTasksMap.set(taskKey, task);
+                    }
+                });
+                for (const configuration in customized) {
+                    const taskKey = customized[configuration].getKey();
+                    if (taskKey) {
+                        readTasksMap.set(taskKey, customized[configuration]);
+                    }
+                }
+            }
+        }
+        await readTasks(this, folderToTasksMap, false);
+        await readTasks(this, workspaceToTaskMap, true);
+        for (const key of storedTasks.keys()) {
+            if (readTasksMap.has(key)) {
+                tasks.push(readTasksMap.get(key));
+                this._log(nls.localize('taskService.getSavedTasks.resolved', 'Resolved task {0}', key), true);
+            }
+            else {
+                this._log(nls.localize('taskService.getSavedTasks.unresolved', 'Unable to resolve task {0} ', key), true);
+            }
+        }
+        return tasks;
+    }
+    removeRecentlyUsedTask(taskRecentlyUsedKey) {
+        if (this._getTasksFromStorage('historical').has(taskRecentlyUsedKey)) {
+            this._getTasksFromStorage('historical').delete(taskRecentlyUsedKey);
+            this._saveRecentlyUsedTasks();
+        }
+    }
+    removePersistentTask(key) {
+        this._log(nls.localize('taskService.removePersistentTask', 'Removing persistent task {0}', key), true);
+        if (this._getTasksFromStorage('persistent').has(key)) {
+            this._getTasksFromStorage('persistent').delete(key);
+            this._savePersistentTasks();
+        }
+    }
+    _setTaskLRUCacheLimit() {
+        const quickOpenHistoryLimit = this._configurationService.getValue(QUICKOPEN_HISTORY_LIMIT_CONFIG);
+        if (this._recentlyUsedTasks) {
+            this._recentlyUsedTasks.limit = quickOpenHistoryLimit;
+        }
+    }
+    async _setRecentlyUsedTask(task) {
+        let key = task.getKey();
+        if (!InMemoryTask.is(task) && key) {
+            const customizations = this._createCustomizableTask(task);
+            if (ContributedTask.is(task) && customizations) {
+                const custom = [];
+                const customized = Object.create(null);
+                await this._computeTasksForSingleConfig(task._source.workspaceFolder ?? this.workspaceFolders[0], {
+                    version: '2.0.0',
+                    tasks: [customizations]
+                }, 0, custom, customized, TaskConfig.TaskConfigSource.TasksJson, true);
+                for (const configuration in customized) {
+                    key = customized[configuration].getKey();
+                }
+            }
+            this._getTasksFromStorage('historical').set(key, JSON.stringify(customizations));
+            this._saveRecentlyUsedTasks();
+        }
+    }
+    _saveRecentlyUsedTasks() {
+        if (!this._recentlyUsedTasks) {
+            return;
+        }
+        const quickOpenHistoryLimit = this._configurationService.getValue(QUICKOPEN_HISTORY_LIMIT_CONFIG);
+        if (quickOpenHistoryLimit === 0) {
+            return;
+        }
+        let keys = [...this._recentlyUsedTasks.keys()];
+        if (keys.length > quickOpenHistoryLimit) {
+            keys = keys.slice(0, quickOpenHistoryLimit);
+        }
+        const keyValues = [];
+        for (const key of keys) {
+            keyValues.push([key, this._recentlyUsedTasks.get(key, 0)]);
+        }
+        this._storageService.store(AbstractTaskService_1.RecentlyUsedTasks_KeyV2, JSON.stringify(keyValues), 1, 1);
+    }
+    async _setPersistentTask(task) {
+        if (!this._configurationService.getValue("task.reconnection")) {
+            return;
+        }
+        let key = task.getKey();
+        if (!InMemoryTask.is(task) && key) {
+            const customizations = this._createCustomizableTask(task);
+            if (ContributedTask.is(task) && customizations) {
+                const custom = [];
+                const customized = Object.create(null);
+                await this._computeTasksForSingleConfig(task._source.workspaceFolder ?? this.workspaceFolders[0], {
+                    version: '2.0.0',
+                    tasks: [customizations]
+                }, 0, custom, customized, TaskConfig.TaskConfigSource.TasksJson, true);
+                for (const configuration in customized) {
+                    key = customized[configuration].getKey();
+                }
+            }
+            if (!task.configurationProperties.isBackground) {
+                return;
+            }
+            this._log(nls.localize('taskService.setPersistentTask', 'Setting persistent task {0}', key), true);
+            this._getTasksFromStorage('persistent').set(key, JSON.stringify(customizations));
+            this._savePersistentTasks();
+        }
+    }
+    _savePersistentTasks() {
+        this._persistentTasks = this._getTasksFromStorage('persistent');
+        const keys = [...this._persistentTasks.keys()];
+        const keyValues = [];
+        for (const key of keys) {
+            keyValues.push([key, this._persistentTasks.get(key, 0)]);
+        }
+        this._log(nls.localize('savePersistentTask', 'Saving persistent tasks: {0}', keys.join(', ')), true);
+        this._storageService.store(AbstractTaskService_1.PersistentTasks_Key, JSON.stringify(keyValues), 1, 1);
+    }
+    _openDocumentation() {
+        this._openerService.open(URI.parse('https://code.visualstudio.com/docs/editor/tasks#_defining-a-problem-matcher'));
+    }
+    async _findSingleWorkspaceTaskOfGroup(group) {
+        const tasksOfGroup = await this._findWorkspaceTasksInGroup(group, true);
+        if ((tasksOfGroup.length === 1) && (typeof tasksOfGroup[0].configurationProperties.group !== 'string') && tasksOfGroup[0].configurationProperties.group?.isDefault) {
+            let resolvedTask;
+            if (ConfiguringTask.is(tasksOfGroup[0])) {
+                resolvedTask = await this.tryResolveTask(tasksOfGroup[0]);
+            }
+            else {
+                resolvedTask = tasksOfGroup[0];
+            }
+            if (resolvedTask) {
+                return this.run(resolvedTask, undefined, 1);
+            }
+        }
+        return undefined;
+    }
+    async _build() {
+        const tryBuildShortcut = await this._findSingleWorkspaceTaskOfGroup(TaskGroup.Build);
+        if (tryBuildShortcut) {
+            return tryBuildShortcut;
+        }
+        return this._getGroupedTasksAndExecute();
+    }
+    async _runTest() {
+        const tryTestShortcut = await this._findSingleWorkspaceTaskOfGroup(TaskGroup.Test);
+        if (tryTestShortcut) {
+            return tryTestShortcut;
+        }
+        return this._getGroupedTasksAndExecute(true);
+    }
+    async _getGroupedTasksAndExecute(test) {
+        const tasks = await this._getGroupedTasks();
+        const runnable = this._createRunnableTask(tasks, test ? TaskGroup.Test : TaskGroup.Build);
+        if (!runnable || !runnable.task) {
+            if (test) {
+                if (this.schemaVersion === 1) {
+                    throw new TaskError(Severity.Info, nls.localize('TaskService.noTestTask1', 'No test task defined. Mark a task with \'isTestCommand\' in the tasks.json file.'), 3);
+                }
+                else {
+                    throw new TaskError(Severity.Info, nls.localize('TaskService.noTestTask2', 'No test task defined. Mark a task with as a \'test\' group in the tasks.json file.'), 3);
+                }
+            }
+            else {
+                if (this.schemaVersion === 1) {
+                    throw new TaskError(Severity.Info, nls.localize('TaskService.noBuildTask1', 'No build task defined. Mark a task with \'isBuildCommand\' in the tasks.json file.'), 2);
+                }
+                else {
+                    throw new TaskError(Severity.Info, nls.localize('TaskService.noBuildTask2', 'No build task defined. Mark a task with as a \'build\' group in the tasks.json file.'), 2);
+                }
+            }
+        }
+        let executeTaskResult;
+        try {
+            executeTaskResult = await this._executeTask(runnable.task, runnable.resolver, 1);
+        }
+        catch (error) {
+            this._handleError(error);
+            return Promise.reject(error);
+        }
+        return executeTaskResult;
+    }
+    async run(task, options, runSource = 0) {
+        if (!(await this._trust())) {
+            return;
+        }
+        if (!task) {
+            throw new TaskError(Severity.Info, nls.localize('TaskServer.noTask', 'Task to execute is undefined'), 5);
+        }
+        const resolver = this._createResolver();
+        let executeTaskResult;
+        try {
+            if (options && options.attachProblemMatcher && this._shouldAttachProblemMatcher(task) && !InMemoryTask.is(task)) {
+                const taskToExecute = await this._attachProblemMatcher(task);
+                if (taskToExecute) {
+                    executeTaskResult = await this._executeTask(taskToExecute, resolver, runSource);
+                }
+            }
+            else {
+                executeTaskResult = await this._executeTask(task, resolver, runSource);
+            }
+            return executeTaskResult;
+        }
+        catch (error) {
+            this._handleError(error);
+            return Promise.reject(error);
+        }
+    }
+    _isProvideTasksEnabled() {
+        const settingValue = this._configurationService.getValue("task.autoDetect");
+        return settingValue === 'on';
+    }
+    _isProblemMatcherPromptEnabled(type) {
+        const settingValue = this._configurationService.getValue(PROBLEM_MATCHER_NEVER_CONFIG);
+        if (Types.isBoolean(settingValue)) {
+            return !settingValue;
+        }
+        if (type === undefined) {
+            return true;
+        }
+        const settingValueMap = settingValue;
+        return !settingValueMap[type];
+    }
+    _getTypeForTask(task) {
+        let type;
+        if (CustomTask.is(task)) {
+            const configProperties = task._source.config.element;
+            type = configProperties.type;
+        }
+        else {
+            type = task.getDefinition().type;
+        }
+        return type;
+    }
+    _shouldAttachProblemMatcher(task) {
+        const enabled = this._isProblemMatcherPromptEnabled(this._getTypeForTask(task));
+        if (enabled === false) {
+            return false;
+        }
+        if (!this._canCustomize(task)) {
+            return false;
+        }
+        if (task.configurationProperties.group !== undefined && task.configurationProperties.group !== TaskGroup.Build) {
+            return false;
+        }
+        if (task.configurationProperties.problemMatchers !== undefined && task.configurationProperties.problemMatchers.length > 0) {
+            return false;
+        }
+        if (ContributedTask.is(task)) {
+            return !task.hasDefinedMatchers && !!task.configurationProperties.problemMatchers && (task.configurationProperties.problemMatchers.length === 0);
+        }
+        if (CustomTask.is(task)) {
+            const configProperties = task._source.config.element;
+            return configProperties.problemMatcher === undefined && !task.hasDefinedMatchers;
+        }
+        return false;
+    }
+    async _updateNeverProblemMatcherSetting(type) {
+        const current = this._configurationService.getValue(PROBLEM_MATCHER_NEVER_CONFIG);
+        if (current === true) {
+            return;
+        }
+        let newValue;
+        if (current !== false) {
+            newValue = current;
+        }
+        else {
+            newValue = Object.create(null);
+        }
+        newValue[type] = true;
+        return this._configurationService.updateValue(PROBLEM_MATCHER_NEVER_CONFIG, newValue);
+    }
+    async _attachProblemMatcher(task) {
+        let entries = [];
+        for (const key of ProblemMatcherRegistry.keys()) {
+            const matcher = ProblemMatcherRegistry.get(key);
+            if (matcher.deprecated) {
+                continue;
+            }
+            if (matcher.name === matcher.label) {
+                entries.push({ label: matcher.name, matcher: matcher });
+            }
+            else {
+                entries.push({
+                    label: matcher.label,
+                    description: `$${matcher.name}`,
+                    matcher: matcher
+                });
+            }
+        }
+        if (entries.length === 0) {
+            return;
+        }
+        entries = entries.sort((a, b) => {
+            if (a.label && b.label) {
+                return a.label.localeCompare(b.label);
+            }
+            else {
+                return 0;
+            }
+        });
+        entries.unshift({ type: 'separator', label: nls.localize('TaskService.associate', 'associate') });
+        let taskType;
+        if (CustomTask.is(task)) {
+            const configProperties = task._source.config.element;
+            taskType = configProperties.type;
+        }
+        else {
+            taskType = task.getDefinition().type;
+        }
+        entries.unshift({ label: nls.localize('TaskService.attachProblemMatcher.continueWithout', 'Continue without scanning the task output'), matcher: undefined }, { label: nls.localize('TaskService.attachProblemMatcher.never', 'Never scan the task output for this task'), matcher: undefined, never: true }, { label: nls.localize('TaskService.attachProblemMatcher.neverType', 'Never scan the task output for {0} tasks', taskType), matcher: undefined, setting: taskType }, { label: nls.localize('TaskService.attachProblemMatcher.learnMoreAbout', 'Learn more about scanning the task output'), matcher: undefined, learnMore: true });
+        const problemMatcher = await this._quickInputService.pick(entries, { placeHolder: nls.localize('selectProblemMatcher', 'Select for which kind of errors and warnings to scan the task output') });
+        if (!problemMatcher) {
+            return task;
+        }
+        if (problemMatcher.learnMore) {
+            this._openDocumentation();
+            return undefined;
+        }
+        if (problemMatcher.never) {
+            this.customize(task, { problemMatcher: [] }, true);
+            return task;
+        }
+        if (problemMatcher.matcher) {
+            const newTask = task.clone();
+            const matcherReference = `$${problemMatcher.matcher.name}`;
+            const properties = { problemMatcher: [matcherReference] };
+            newTask.configurationProperties.problemMatchers = [matcherReference];
+            const matcher = ProblemMatcherRegistry.get(problemMatcher.matcher.name);
+            if (matcher && matcher.watching !== undefined) {
+                properties.isBackground = true;
+                newTask.configurationProperties.isBackground = true;
+            }
+            this.customize(task, properties, true);
+            return newTask;
+        }
+        if (problemMatcher.setting) {
+            await this._updateNeverProblemMatcherSetting(problemMatcher.setting);
+        }
+        return task;
+    }
+    async _getTasksForGroup(group, waitToActivate) {
+        const groups = await this._getGroupedTasks(undefined, waitToActivate);
+        const result = [];
+        groups.forEach(tasks => {
+            for (const task of tasks) {
+                const configTaskGroup = TaskGroup.from(task.configurationProperties.group);
+                if (configTaskGroup?._id === group._id) {
+                    result.push(task);
+                }
+            }
+        });
+        return result;
+    }
+    needsFolderQualification() {
+        return this._contextService.getWorkbenchState() === 3;
+    }
+    _canCustomize(task) {
+        if (this.schemaVersion !== 2) {
+            return false;
+        }
+        if (CustomTask.is(task)) {
+            return true;
+        }
+        if (ContributedTask.is(task)) {
+            return !!task.getWorkspaceFolder();
+        }
+        return false;
+    }
+    async _formatTaskForJson(resource, task) {
+        let reference;
+        let stringValue = '';
+        try {
+            reference = await this._textModelResolverService.createModelReference(resource);
+            const model = reference.object.textEditorModel;
+            const { tabSize, insertSpaces } = model.getOptions();
+            const eol = model.getEOL();
+            let stringified = toFormattedString(task, { eol, tabSize, insertSpaces });
+            const regex = new RegExp(eol + (insertSpaces ? ' '.repeat(tabSize) : '\\t'), 'g');
+            stringified = stringified.replace(regex, eol + (insertSpaces ? ' '.repeat(tabSize * 3) : '\t\t\t'));
+            const twoTabs = insertSpaces ? ' '.repeat(tabSize * 2) : '\t\t';
+            stringValue = twoTabs + stringified.slice(0, stringified.length - 1) + twoTabs + stringified.slice(stringified.length - 1);
+        }
+        finally {
+            reference?.dispose();
+        }
+        return stringValue;
+    }
+    async _openEditorAtTask(resource, task, configIndex = -1) {
+        if (resource === undefined) {
+            return Promise.resolve(false);
+        }
+        const fileContent = await this._fileService.readFile(resource);
+        const content = fileContent.value;
+        if (!content || !task) {
+            return false;
+        }
+        const contentValue = content.toString();
+        let stringValue;
+        if (configIndex !== -1) {
+            const json = this._configurationService.getValue('tasks', { resource });
+            if (json.tasks && (json.tasks.length > configIndex)) {
+                stringValue = await this._formatTaskForJson(resource, json.tasks[configIndex]);
+            }
+        }
+        if (!stringValue) {
+            if (typeof task === 'string') {
+                stringValue = task;
+            }
+            else {
+                stringValue = await this._formatTaskForJson(resource, task);
+            }
+        }
+        const index = contentValue.indexOf(stringValue);
+        let startLineNumber = 1;
+        for (let i = 0; i < index; i++) {
+            if (contentValue.charAt(i) === '\n') {
+                startLineNumber++;
+            }
+        }
+        let endLineNumber = startLineNumber;
+        for (let i = 0; i < stringValue.length; i++) {
+            if (stringValue.charAt(i) === '\n') {
+                endLineNumber++;
+            }
+        }
+        const selection = startLineNumber > 1 ? { startLineNumber, startColumn: startLineNumber === endLineNumber ? 4 : 3, endLineNumber, endColumn: startLineNumber === endLineNumber ? undefined : 4 } : undefined;
+        await this._editorService.openEditor({
+            resource,
+            options: {
+                pinned: false,
+                forceReload: true,
+                selection,
+                selectionRevealType: 1
+            }
+        });
+        return !!selection;
+    }
+    _createCustomizableTask(task) {
+        let toCustomize;
+        const taskConfig = CustomTask.is(task) || ConfiguringTask.is(task) ? task._source.config : undefined;
+        if (taskConfig && taskConfig.element) {
+            toCustomize = { ...(taskConfig.element) };
+        }
+        else if (ContributedTask.is(task)) {
+            toCustomize = {};
+            const identifier = Object.assign(Object.create(null), task.defines);
+            delete identifier['_key'];
+            Object.keys(identifier).forEach(key => toCustomize[key] = identifier[key]);
+            if (task.configurationProperties.problemMatchers && task.configurationProperties.problemMatchers.length > 0 && Types.isStringArray(task.configurationProperties.problemMatchers)) {
+                toCustomize.problemMatcher = task.configurationProperties.problemMatchers;
+            }
+            if (task.configurationProperties.group) {
+                toCustomize.group = TaskConfig.GroupKind.to(task.configurationProperties.group);
+            }
+        }
+        if (!toCustomize) {
+            return undefined;
+        }
+        if (toCustomize.problemMatcher === undefined && task.configurationProperties.problemMatchers === undefined || (task.configurationProperties.problemMatchers && task.configurationProperties.problemMatchers.length === 0)) {
+            toCustomize.problemMatcher = [];
+        }
+        if (task._source.label !== 'Workspace') {
+            toCustomize.label = task.configurationProperties.identifier;
+        }
+        else {
+            toCustomize.label = task._label;
+        }
+        toCustomize.detail = task.configurationProperties.detail;
+        return toCustomize;
+    }
+    async customize(task, properties, openConfig) {
+        if (!(await this._trust())) {
+            return;
+        }
+        const workspaceFolder = task.getWorkspaceFolder();
+        if (!workspaceFolder) {
+            return Promise.resolve(undefined);
+        }
+        const configuration = this._getConfiguration(workspaceFolder, task._source.kind);
+        if (configuration.hasParseErrors) {
+            this._notificationService.warn(nls.localize('customizeParseErrors', 'The current task configuration has errors. Please fix the errors first before customizing a task.'));
+            return Promise.resolve(undefined);
+        }
+        const fileConfig = configuration.config;
+        const toCustomize = this._createCustomizableTask(task);
+        if (!toCustomize) {
+            return Promise.resolve(undefined);
+        }
+        const index = CustomTask.is(task) ? task._source.config.index : undefined;
+        if (properties) {
+            for (const property of Object.getOwnPropertyNames(properties)) {
+                const value = properties[property];
+                if (value !== undefined && value !== null) {
+                    toCustomize[property] = value;
+                }
+            }
+        }
+        if (!fileConfig) {
+            const value = {
+                version: '2.0.0',
+                tasks: [toCustomize]
+            };
+            let content = [
+                '{',
+                nls.localize('tasksJsonComment', '\t// See https://go.microsoft.com/fwlink/?LinkId=733558 \n\t// for the documentation about the tasks.json format'),
+            ].join('\n') + JSON.stringify(value, null, '\t').substr(1);
+            const editorConfig = this._configurationService.getValue();
+            if (editorConfig.editor.insertSpaces) {
+                content = content.replace(/(\n)(\t+)/g, (_, s1, s2) => s1 + ' '.repeat(s2.length * editorConfig.editor.tabSize));
+            }
+            await this._textFileService.create([{ resource: workspaceFolder.toResource('.vscode/tasks.json'), value: content }]);
+        }
+        else {
+            if ((index === -1) && properties) {
+                if (properties.problemMatcher !== undefined) {
+                    fileConfig.problemMatcher = properties.problemMatcher;
+                    await this._writeConfiguration(workspaceFolder, 'tasks.problemMatchers', fileConfig.problemMatcher, task._source.kind);
+                }
+                else if (properties.group !== undefined) {
+                    fileConfig.group = properties.group;
+                    await this._writeConfiguration(workspaceFolder, 'tasks.group', fileConfig.group, task._source.kind);
+                }
+            }
+            else {
+                if (!Array.isArray(fileConfig.tasks)) {
+                    fileConfig.tasks = [];
+                }
+                if (index === undefined) {
+                    fileConfig.tasks.push(toCustomize);
+                }
+                else {
+                    fileConfig.tasks[index] = toCustomize;
+                }
+                await this._writeConfiguration(workspaceFolder, 'tasks.tasks', fileConfig.tasks, task._source.kind);
+            }
+        }
+        if (openConfig) {
+            this._openEditorAtTask(this._getResourceForTask(task), toCustomize);
+        }
+    }
+    _writeConfiguration(workspaceFolder, key, value, source) {
+        let target = undefined;
+        switch (source) {
+            case TaskSourceKind.User:
+                target = 2;
+                break;
+            case TaskSourceKind.WorkspaceFile:
+                target = 5;
+                break;
+            default: if (this._contextService.getWorkbenchState() === 2) {
+                target = 5;
+            }
+            else if (this._contextService.getWorkbenchState() === 3) {
+                target = 6;
+            }
+        }
+        if (target) {
+            return this._configurationService.updateValue(key, value, { resource: workspaceFolder.uri }, target);
+        }
+        else {
+            return undefined;
+        }
+    }
+    _getResourceForKind(kind) {
+        this._updateSetup();
+        switch (kind) {
+            case TaskSourceKind.User: {
+                return resources.joinPath(resources.dirname(this._preferencesService.userSettingsResource), 'tasks.json');
+            }
+            case TaskSourceKind.WorkspaceFile: {
+                if (this._workspace && this._workspace.configuration) {
+                    return this._workspace.configuration;
+                }
+            }
+            default: {
+                return undefined;
+            }
+        }
+    }
+    _getResourceForTask(task) {
+        if (CustomTask.is(task)) {
+            let uri = this._getResourceForKind(task._source.kind);
+            if (!uri) {
+                const taskFolder = task.getWorkspaceFolder();
+                if (taskFolder) {
+                    uri = taskFolder.toResource(task._source.config.file);
+                }
+                else {
+                    uri = this.workspaceFolders[0].uri;
+                }
+            }
+            return uri;
+        }
+        else {
+            return task.getWorkspaceFolder().toResource('.vscode/tasks.json');
+        }
+    }
+    async openConfig(task) {
+        let resource;
+        if (task) {
+            resource = this._getResourceForTask(task);
+        }
+        else {
+            resource = (this._workspaceFolders && (this._workspaceFolders.length > 0)) ? this._workspaceFolders[0].toResource('.vscode/tasks.json') : undefined;
+        }
+        return this._openEditorAtTask(resource, task ? task._label : undefined, task ? task._source.config.index : -1);
+    }
+    _createRunnableTask(tasks, group) {
+        const resolverData = new Map();
+        const workspaceTasks = [];
+        const extensionTasks = [];
+        tasks.forEach((tasks, folder) => {
+            let data = resolverData.get(folder);
+            if (!data) {
+                data = {
+                    id: new Map(),
+                    label: new Map(),
+                    identifier: new Map()
+                };
+                resolverData.set(folder, data);
+            }
+            for (const task of tasks) {
+                data.id.set(task._id, task);
+                data.label.set(task._label, task);
+                if (task.configurationProperties.identifier) {
+                    data.identifier.set(task.configurationProperties.identifier, task);
+                }
+                if (group && task.configurationProperties.group === group) {
+                    if (task._source.kind === TaskSourceKind.Workspace) {
+                        workspaceTasks.push(task);
+                    }
+                    else {
+                        extensionTasks.push(task);
+                    }
+                }
+            }
+        });
+        const resolver = {
+            resolve: async (uri, alias) => {
+                const data = resolverData.get(typeof uri === 'string' ? uri : uri.toString());
+                if (!data) {
+                    return undefined;
+                }
+                return data.id.get(alias) || data.label.get(alias) || data.identifier.get(alias);
+            }
+        };
+        if (workspaceTasks.length > 0) {
+            if (workspaceTasks.length > 1) {
+                this._log(nls.localize('moreThanOneBuildTask', 'There are many build tasks defined in the tasks.json. Executing the first one.'));
+            }
+            return { task: workspaceTasks[0], resolver };
+        }
+        if (extensionTasks.length === 0) {
+            return undefined;
+        }
+        if (extensionTasks.length === 1) {
+            return { task: extensionTasks[0], resolver };
+        }
+        else {
+            const id = UUID.generateUuid();
+            const task = new InMemoryTask(id, { kind: TaskSourceKind.InMemory, label: 'inMemory' }, id, 'inMemory', { reevaluateOnRerun: true }, {
+                identifier: id,
+                dependsOn: extensionTasks.map((extensionTask) => { return { uri: extensionTask.getWorkspaceFolder().uri, task: extensionTask._id }; }),
+                name: id
+            });
+            return { task, resolver };
+        }
+    }
+    _createResolver(grouped) {
+        let resolverData;
+        async function quickResolve(that, uri, identifier) {
+            const foundTasks = await that._findWorkspaceTasks((task) => {
+                const taskUri = ((ConfiguringTask.is(task) || CustomTask.is(task)) ? task._source.config.workspaceFolder?.uri : undefined);
+                const originalUri = (typeof uri === 'string' ? uri : uri.toString());
+                if (taskUri?.toString() !== originalUri) {
+                    return false;
+                }
+                if (Types.isString(identifier)) {
+                    return ((task._label === identifier) || (task.configurationProperties.identifier === identifier));
+                }
+                else {
+                    const keyedIdentifier = task.getDefinition(true);
+                    const searchIdentifier = TaskDefinition.createTaskIdentifier(identifier, console);
+                    return (searchIdentifier && keyedIdentifier) ? (searchIdentifier._key === keyedIdentifier._key) : false;
+                }
+            });
+            if (foundTasks.length === 0) {
+                return undefined;
+            }
+            const task = foundTasks[0];
+            if (ConfiguringTask.is(task)) {
+                return that.tryResolveTask(task);
+            }
+            return task;
+        }
+        async function getResolverData(that) {
+            if (resolverData === undefined) {
+                resolverData = new Map();
+                (grouped || await that._getGroupedTasks()).forEach((tasks, folder) => {
+                    let data = resolverData.get(folder);
+                    if (!data) {
+                        data = { label: new Map(), identifier: new Map(), taskIdentifier: new Map() };
+                        resolverData.set(folder, data);
+                    }
+                    for (const task of tasks) {
+                        data.label.set(task._label, task);
+                        if (task.configurationProperties.identifier) {
+                            data.identifier.set(task.configurationProperties.identifier, task);
+                        }
+                        const keyedIdentifier = task.getDefinition(true);
+                        if (keyedIdentifier !== undefined) {
+                            data.taskIdentifier.set(keyedIdentifier._key, task);
+                        }
+                    }
+                });
+            }
+            return resolverData;
+        }
+        async function fullResolve(that, uri, identifier) {
+            const allResolverData = await getResolverData(that);
+            const data = allResolverData.get(typeof uri === 'string' ? uri : uri.toString());
+            if (!data) {
+                return undefined;
+            }
+            if (Types.isString(identifier)) {
+                return data.label.get(identifier) || data.identifier.get(identifier);
+            }
+            else {
+                const key = TaskDefinition.createTaskIdentifier(identifier, console);
+                return key !== undefined ? data.taskIdentifier.get(key._key) : undefined;
+            }
+        }
+        return {
+            resolve: async (uri, identifier) => {
+                if (!identifier) {
+                    return undefined;
+                }
+                if ((resolverData === undefined) && (grouped === undefined)) {
+                    return (await quickResolve(this, uri, identifier)) ?? fullResolve(this, uri, identifier);
+                }
+                else {
+                    return fullResolve(this, uri, identifier);
+                }
+            }
+        };
+    }
+    async _saveBeforeRun() {
+        let SaveBeforeRunConfigOptions;
+        (function (SaveBeforeRunConfigOptions) {
+            SaveBeforeRunConfigOptions["Always"] = "always";
+            SaveBeforeRunConfigOptions["Never"] = "never";
+            SaveBeforeRunConfigOptions["Prompt"] = "prompt";
+        })(SaveBeforeRunConfigOptions || (SaveBeforeRunConfigOptions = {}));
+        const saveBeforeRunTaskConfig = this._configurationService.getValue("task.saveBeforeRun");
+        if (saveBeforeRunTaskConfig === SaveBeforeRunConfigOptions.Never) {
+            return false;
+        }
+        else if (saveBeforeRunTaskConfig === SaveBeforeRunConfigOptions.Prompt && this._editorService.editors.some(e => e.isDirty())) {
+            const { confirmed } = await this._dialogService.confirm({
+                message: nls.localize('TaskSystem.saveBeforeRun.prompt.title', "Save all editors?"),
+                detail: nls.localize('detail', "Do you want to save all editors before running the task?"),
+                primaryButton: nls.localize({ key: 'saveBeforeRun.save', comment: ['&& denotes a mnemonic'] }, '&&Save'),
+                cancelButton: nls.localize({ key: 'saveBeforeRun.dontSave', comment: ['&& denotes a mnemonic'] }, "Do&&n't Save"),
+            });
+            if (!confirmed) {
+                return false;
+            }
+        }
+        await this._editorService.saveAll({ reason: 2 });
+        return true;
+    }
+    async _executeTask(task, resolver, runSource) {
+        let taskToRun = task;
+        if (await this._saveBeforeRun()) {
+            await this._configurationService.reloadConfiguration();
+            await this._updateWorkspaceTasks();
+            const taskFolder = task.getWorkspaceFolder();
+            const taskIdentifier = task.configurationProperties.identifier;
+            const taskType = CustomTask.is(task) ? task.customizes()?.type : (ContributedTask.is(task) ? task.type : undefined);
+            taskToRun = ((taskFolder && taskIdentifier && (runSource === 1))
+                ? await this.getTask(taskFolder, taskIdentifier, false, taskType) : task) ?? task;
+        }
+        await ProblemMatcherRegistry.onReady();
+        const executeResult = runSource === 4 ? this._getTaskSystem().reconnect(taskToRun, resolver) : this._getTaskSystem().run(taskToRun, resolver);
+        if (executeResult) {
+            return this._handleExecuteResult(executeResult, runSource);
+        }
+        return { exitCode: 0 };
+    }
+    async _handleExecuteResult(executeResult, runSource) {
+        if (runSource === 1) {
+            await this._setRecentlyUsedTask(executeResult.task);
+        }
+        if (executeResult.kind === 2) {
+            const active = executeResult.active;
+            if (active && active.same && runSource === 2 || runSource === 4) {
+                this._logService.debug('Ignoring task that is already active', executeResult.task);
+                return executeResult.promise;
+            }
+            if (active && active.same) {
+                if (this._taskSystem?.isTaskVisible(executeResult.task)) {
+                    const message = nls.localize('TaskSystem.activeSame.noBackground', 'The task \'{0}\' is already active.', executeResult.task.getQualifiedLabel());
+                    const lastInstance = this._getTaskSystem().getLastInstance(executeResult.task) ?? executeResult.task;
+                    this._notificationService.prompt(Severity.Warning, message, [{
+                            label: nls.localize('terminateTask', "Terminate Task"),
+                            run: () => this.terminate(lastInstance)
+                        },
+                        {
+                            label: nls.localize('restartTask', "Restart Task"),
+                            run: () => this._restart(lastInstance)
+                        }], { sticky: true });
+                }
+                else {
+                    this._taskSystem?.revealTask(executeResult.task);
+                }
+            }
+            else {
+                throw new TaskError(Severity.Warning, nls.localize('TaskSystem.active', 'There is already a task running. Terminate it first before executing another task.'), 1);
+            }
+        }
+        this._setRecentlyUsedTask(executeResult.task);
+        return executeResult.promise;
+    }
+    async _restart(task) {
+        if (!this._taskSystem) {
+            return;
+        }
+        const response = await this._taskSystem.terminate(task);
+        if (response.success) {
+            try {
+                await this.run(task);
+            }
+            catch {
+            }
+        }
+        else {
+            this._notificationService.warn(nls.localize('TaskSystem.restartFailed', 'Failed to terminate and restart task {0}', Types.isString(task) ? task : task.configurationProperties.name));
+        }
+    }
+    async terminate(task) {
+        if (!(await this._trust())) {
+            return { success: true, task: undefined };
+        }
+        if (!this._taskSystem) {
+            return { success: true, task: undefined };
+        }
+        return this._taskSystem.terminate(task);
+    }
+    _terminateAll() {
+        if (!this._taskSystem) {
+            return Promise.resolve([]);
+        }
+        return this._taskSystem.terminateAll();
+    }
+    _createTerminalTaskSystem() {
+        return new TerminalTaskSystem(this._terminalService, this._terminalGroupService, this._outputService, this._paneCompositeService, this._viewsService, this._markerService, this._modelService, this._configurationResolverService, this._contextService, this._environmentService, AbstractTaskService_1.OutputChannelId, this._fileService, this._terminalProfileResolverService, this._pathService, this._viewDescriptorService, this._logService, this._notificationService, this._instantiationService, (workspaceFolder) => {
+            if (workspaceFolder) {
+                return this._getTaskSystemInfo(workspaceFolder.uri.scheme);
+            }
+            else if (this._taskSystemInfos.size > 0) {
+                const infos = Array.from(this._taskSystemInfos.entries());
+                const notFile = infos.filter(info => info[0] !== Schemas.file);
+                if (notFile.length > 0) {
+                    return notFile[0][1][0];
+                }
+                return infos[0][1][0];
+            }
+            else {
+                return undefined;
+            }
+        });
+    }
+    _isTaskProviderEnabled(type) {
+        const definition = TaskDefinitionRegistry.get(type);
+        return !definition || !definition.when || this._contextKeyService.contextMatchesRules(definition.when);
+    }
+    async _getGroupedTasks(filter, waitToActivate, knownOnlyOrTrusted) {
+        await this._waitForAllSupportedExecutions;
+        const type = filter?.type;
+        const needsRecentTasksMigration = this._needsRecentTasksMigration();
+        if (!waitToActivate) {
+            await this._activateTaskProviders(filter?.type);
+        }
+        const validTypes = Object.create(null);
+        TaskDefinitionRegistry.all().forEach(definition => validTypes[definition.taskType] = true);
+        validTypes['shell'] = true;
+        validTypes['process'] = true;
+        const contributedTaskSets = await new Promise(resolve => {
+            const result = [];
+            let counter = 0;
+            const done = (value) => {
+                if (value) {
+                    result.push(value);
+                }
+                if (--counter === 0) {
+                    resolve(result);
+                }
+            };
+            const error = (error) => {
+                try {
+                    if (error && Types.isString(error.message)) {
+                        this._log(`Error: ${error.message}\n`);
+                        this._showOutput();
+                    }
+                    else {
+                        this._log('Unknown error received while collecting tasks from providers.');
+                        this._showOutput();
+                    }
+                }
+                finally {
+                    if (--counter === 0) {
+                        resolve(result);
+                    }
+                }
+            };
+            if (this._isProvideTasksEnabled() && (this.schemaVersion === 2) && (this._providers.size > 0)) {
+                let foundAnyProviders = false;
+                for (const [handle, provider] of this._providers) {
+                    const providerType = this._providerTypes.get(handle);
+                    if ((type === undefined) || (type === providerType)) {
+                        if (providerType && !this._isTaskProviderEnabled(providerType)) {
+                            continue;
+                        }
+                        foundAnyProviders = true;
+                        counter++;
+                        raceTimeout(provider.provideTasks(validTypes).then((taskSet) => {
+                            for (const task of taskSet.tasks) {
+                                if (task.type !== this._providerTypes.get(handle)) {
+                                    this._log(nls.localize('unexpectedTaskType', "The task provider for \"{0}\" tasks unexpectedly provided a task of type \"{1}\".\n", this._providerTypes.get(handle), task.type));
+                                    if ((task.type !== 'shell') && (task.type !== 'process')) {
+                                        this._showOutput();
+                                    }
+                                    break;
+                                }
+                            }
+                            return done(taskSet);
+                        }, error), 5000, () => {
+                            console.error('Timed out getting tasks from ', providerType);
+                            done(undefined);
+                        });
+                    }
+                }
+                if (!foundAnyProviders) {
+                    resolve(result);
+                }
+            }
+            else {
+                resolve(result);
+            }
+        });
+        const result = new TaskMap();
+        const contributedTasks = new TaskMap();
+        for (const set of contributedTaskSets) {
+            for (const task of set.tasks) {
+                const workspaceFolder = task.getWorkspaceFolder();
+                if (workspaceFolder) {
+                    contributedTasks.add(workspaceFolder, task);
+                }
+            }
+        }
+        try {
+            let tasks = [];
+            if (!knownOnlyOrTrusted || this._workspaceTrustManagementService.isWorkspaceTrusted()) {
+                tasks = Array.from(await this.getWorkspaceTasks());
+            }
+            await Promise.all(this._getCustomTaskPromises(tasks, filter, result, contributedTasks, waitToActivate));
+            if (needsRecentTasksMigration) {
+                await this._migrateRecentTasks(result.all());
+            }
+            return result;
+        }
+        catch {
+            const result = new TaskMap();
+            for (const set of contributedTaskSets) {
+                for (const task of set.tasks) {
+                    const folder = task.getWorkspaceFolder();
+                    if (folder) {
+                        result.add(folder, task);
+                    }
+                }
+            }
+            return result;
+        }
+    }
+    _getCustomTaskPromises(customTasksKeyValuePairs, filter, result, contributedTasks, waitToActivate) {
+        return customTasksKeyValuePairs.map(async ([key, folderTasks]) => {
+            const contributed = contributedTasks.get(key);
+            if (!folderTasks.set) {
+                if (contributed) {
+                    result.add(key, ...contributed);
+                }
+                return;
+            }
+            if (this._contextService.getWorkbenchState() === 1) {
+                result.add(key, ...folderTasks.set.tasks);
+            }
+            else {
+                const configurations = folderTasks.configurations;
+                const legacyTaskConfigurations = folderTasks.set ? this._getLegacyTaskConfigurations(folderTasks.set) : undefined;
+                const customTasksToDelete = [];
+                if (configurations || legacyTaskConfigurations) {
+                    const unUsedConfigurations = new Set();
+                    if (configurations) {
+                        Object.keys(configurations.byIdentifier).forEach(key => unUsedConfigurations.add(key));
+                    }
+                    for (const task of contributed) {
+                        if (!ContributedTask.is(task)) {
+                            continue;
+                        }
+                        if (configurations) {
+                            const configuringTask = configurations.byIdentifier[task.defines._key];
+                            if (configuringTask) {
+                                unUsedConfigurations.delete(task.defines._key);
+                                result.add(key, TaskConfig.createCustomTask(task, configuringTask));
+                            }
+                            else {
+                                result.add(key, task);
+                            }
+                        }
+                        else if (legacyTaskConfigurations) {
+                            const configuringTask = legacyTaskConfigurations[task.defines._key];
+                            if (configuringTask) {
+                                result.add(key, TaskConfig.createCustomTask(task, configuringTask));
+                                customTasksToDelete.push(configuringTask);
+                            }
+                            else {
+                                result.add(key, task);
+                            }
+                        }
+                        else {
+                            result.add(key, task);
+                        }
+                    }
+                    if (customTasksToDelete.length > 0) {
+                        const toDelete = customTasksToDelete.reduce((map, task) => {
+                            map[task._id] = true;
+                            return map;
+                        }, Object.create(null));
+                        for (const task of folderTasks.set.tasks) {
+                            if (toDelete[task._id]) {
+                                continue;
+                            }
+                            result.add(key, task);
+                        }
+                    }
+                    else {
+                        result.add(key, ...folderTasks.set.tasks);
+                    }
+                    const unUsedConfigurationsAsArray = Array.from(unUsedConfigurations);
+                    const unUsedConfigurationPromises = unUsedConfigurationsAsArray.map(async (value) => {
+                        const configuringTask = configurations.byIdentifier[value];
+                        if (filter?.type && (filter.type !== configuringTask.configures.type)) {
+                            return;
+                        }
+                        let requiredTaskProviderUnavailable = false;
+                        for (const [handle, provider] of this._providers) {
+                            const providerType = this._providerTypes.get(handle);
+                            if (configuringTask.type === providerType) {
+                                if (providerType && !this._isTaskProviderEnabled(providerType)) {
+                                    requiredTaskProviderUnavailable = true;
+                                    continue;
+                                }
+                                try {
+                                    const resolvedTask = await provider.resolveTask(configuringTask);
+                                    if (resolvedTask && (resolvedTask._id === configuringTask._id)) {
+                                        result.add(key, TaskConfig.createCustomTask(resolvedTask, configuringTask));
+                                        return;
+                                    }
+                                }
+                                catch (error) {
+                                }
+                            }
+                        }
+                        if (requiredTaskProviderUnavailable) {
+                            this._log(nls.localize('TaskService.providerUnavailable', 'Warning: {0} tasks are unavailable in the current environment.', configuringTask.configures.type));
+                        }
+                        else if (!waitToActivate) {
+                            this._log(nls.localize('TaskService.noConfiguration', 'Error: The {0} task detection didn\'t contribute a task for the following configuration:\n{1}\nThe task will be ignored.', configuringTask.configures.type, JSON.stringify(configuringTask._source.config.element, undefined, 4)));
+                            this._showOutput();
+                        }
+                    });
+                    await Promise.all(unUsedConfigurationPromises);
+                }
+                else {
+                    result.add(key, ...folderTasks.set.tasks);
+                    result.add(key, ...contributed);
+                }
+            }
+        });
+    }
+    _getLegacyTaskConfigurations(workspaceTasks) {
+        let result;
+        function getResult() {
+            if (result) {
+                return result;
+            }
+            result = Object.create(null);
+            return result;
+        }
+        for (const task of workspaceTasks.tasks) {
+            if (CustomTask.is(task)) {
+                const commandName = task.command && task.command.name;
+                if (commandName === 'gulp' || commandName === 'grunt' || commandName === 'jake') {
+                    const identifier = KeyedTaskIdentifier.create({
+                        type: commandName,
+                        task: task.configurationProperties.name
+                    });
+                    getResult()[identifier._key] = task;
+                }
+            }
+        }
+        return result;
+    }
+    async getWorkspaceTasks(runSource = 1) {
+        if (!(await this._trust())) {
+            return new Map();
+        }
+        await raceTimeout(this._waitForAllSupportedExecutions, 2000, () => {
+            this._logService.warn('Timed out waiting for all supported executions');
+        });
+        await this._whenTaskSystemReady;
+        if (this._workspaceTasksPromise) {
+            return this._workspaceTasksPromise;
+        }
+        return this._updateWorkspaceTasks(runSource);
+    }
+    _updateWorkspaceTasks(runSource = 1) {
+        this._workspaceTasksPromise = this._computeWorkspaceTasks(runSource);
+        return this._workspaceTasksPromise;
+    }
+    async _getAFolder() {
+        let folder = this.workspaceFolders.length > 0 ? this.workspaceFolders[0] : undefined;
+        if (!folder) {
+            const userhome = await this._pathService.userHome();
+            folder = new WorkspaceFolder({ uri: userhome, name: resources.basename(userhome), index: 0 });
+        }
+        return folder;
+    }
+    async _computeWorkspaceTasks(runSource = 1) {
+        const promises = [];
+        for (const folder of this.workspaceFolders) {
+            promises.push(this._computeWorkspaceFolderTasks(folder, runSource));
+        }
+        const values = await Promise.all(promises);
+        const result = new Map();
+        for (const value of values) {
+            if (value) {
+                result.set(value.workspaceFolder.uri.toString(), value);
+            }
+        }
+        const folder = await this._getAFolder();
+        if (this._contextService.getWorkbenchState() !== 1) {
+            const workspaceFileTasks = await this._computeWorkspaceFileTasks(folder, runSource);
+            if (workspaceFileTasks && this._workspace && this._workspace.configuration) {
+                result.set(this._workspace.configuration.toString(), workspaceFileTasks);
+            }
+        }
+        const userTasks = await this._computeUserTasks(folder, runSource);
+        if (userTasks) {
+            result.set(USER_TASKS_GROUP_KEY, userTasks);
+        }
+        return result;
+    }
+    get _jsonTasksSupported() {
+        return ShellExecutionSupportedContext.getValue(this._contextKeyService) === true && ProcessExecutionSupportedContext.getValue(this._contextKeyService) === true;
+    }
+    async _computeWorkspaceFolderTasks(workspaceFolder, runSource = 1) {
+        const workspaceFolderConfiguration = (this._executionEngine === ExecutionEngine.Process ? await this._computeLegacyConfiguration(workspaceFolder) : await this._computeConfiguration(workspaceFolder));
+        if (!workspaceFolderConfiguration || !workspaceFolderConfiguration.config || workspaceFolderConfiguration.hasErrors) {
+            return Promise.resolve({ workspaceFolder, set: undefined, configurations: undefined, hasErrors: workspaceFolderConfiguration ? workspaceFolderConfiguration.hasErrors : false });
+        }
+        await ProblemMatcherRegistry.onReady();
+        const taskSystemInfo = this._getTaskSystemInfo(workspaceFolder.uri.scheme);
+        const problemReporter = new ProblemReporter(this._outputChannel);
+        const parseResult = TaskConfig.parse(workspaceFolder, undefined, taskSystemInfo ? taskSystemInfo.platform : Platform.platform, workspaceFolderConfiguration.config, problemReporter, TaskConfig.TaskConfigSource.TasksJson, this._contextKeyService);
+        let hasErrors = false;
+        if (!parseResult.validationStatus.isOK() && (parseResult.validationStatus.state !== 1)) {
+            hasErrors = true;
+            this._showOutput(runSource);
+        }
+        if (problemReporter.status.isFatal()) {
+            problemReporter.fatal(nls.localize('TaskSystem.configurationErrors', 'Error: the provided task configuration has validation errors and can\'t not be used. Please correct the errors first.'));
+            return { workspaceFolder, set: undefined, configurations: undefined, hasErrors };
+        }
+        let customizedTasks;
+        if (parseResult.configured && parseResult.configured.length > 0) {
+            customizedTasks = {
+                byIdentifier: Object.create(null)
+            };
+            for (const task of parseResult.configured) {
+                customizedTasks.byIdentifier[task.configures._key] = task;
+            }
+        }
+        if (!this._jsonTasksSupported && (parseResult.custom.length > 0)) {
+            console.warn('Custom workspace tasks are not supported.');
+        }
+        return { workspaceFolder, set: { tasks: this._jsonTasksSupported ? parseResult.custom : [] }, configurations: customizedTasks, hasErrors };
+    }
+    _testParseExternalConfig(config, location) {
+        if (!config) {
+            return { config: undefined, hasParseErrors: false };
+        }
+        const parseErrors = config.$parseErrors;
+        if (parseErrors) {
+            let isAffected = false;
+            for (const parseError of parseErrors) {
+                if (/tasks\.json$/.test(parseError)) {
+                    isAffected = true;
+                    break;
+                }
+            }
+            if (isAffected) {
+                this._log(nls.localize({ key: 'TaskSystem.invalidTaskJsonOther', comment: ['Message notifies of an error in one of several places there is tasks related json, not necessarily in a file named tasks.json'] }, 'Error: The content of the tasks json in {0} has syntax errors. Please correct them before executing a task.', location));
+                this._showOutput();
+                return { config, hasParseErrors: true };
+            }
+        }
+        return { config, hasParseErrors: false };
+    }
+    _log(value, verbose) {
+        if (!verbose || this._configurationService.getValue("task.verboseLogging")) {
+            this._outputChannel.append(value + '\n');
+        }
+    }
+    async _computeWorkspaceFileTasks(workspaceFolder, runSource = 1) {
+        if (this._executionEngine === ExecutionEngine.Process) {
+            return this._emptyWorkspaceTaskResults(workspaceFolder);
+        }
+        const workspaceFileConfig = this._getConfiguration(workspaceFolder, TaskSourceKind.WorkspaceFile);
+        const configuration = this._testParseExternalConfig(workspaceFileConfig.config, nls.localize('TasksSystem.locationWorkspaceConfig', 'workspace file'));
+        const customizedTasks = {
+            byIdentifier: Object.create(null)
+        };
+        const custom = [];
+        await this._computeTasksForSingleConfig(workspaceFolder, configuration.config, runSource, custom, customizedTasks.byIdentifier, TaskConfig.TaskConfigSource.WorkspaceFile);
+        const engine = configuration.config ? TaskConfig.ExecutionEngine.from(configuration.config) : ExecutionEngine.Terminal;
+        if (engine === ExecutionEngine.Process) {
+            this._notificationService.warn(nls.localize('TaskSystem.versionWorkspaceFile', 'Only tasks version 2.0.0 permitted in workspace configuration files.'));
+            return this._emptyWorkspaceTaskResults(workspaceFolder);
+        }
+        return { workspaceFolder, set: { tasks: custom }, configurations: customizedTasks, hasErrors: configuration.hasParseErrors };
+    }
+    async _computeUserTasks(workspaceFolder, runSource = 1) {
+        if (this._executionEngine === ExecutionEngine.Process) {
+            return this._emptyWorkspaceTaskResults(workspaceFolder);
+        }
+        const userTasksConfig = this._getConfiguration(workspaceFolder, TaskSourceKind.User);
+        const configuration = this._testParseExternalConfig(userTasksConfig.config, nls.localize('TasksSystem.locationUserConfig', 'user settings'));
+        const customizedTasks = {
+            byIdentifier: Object.create(null)
+        };
+        const custom = [];
+        await this._computeTasksForSingleConfig(workspaceFolder, configuration.config, runSource, custom, customizedTasks.byIdentifier, TaskConfig.TaskConfigSource.User);
+        const engine = configuration.config ? TaskConfig.ExecutionEngine.from(configuration.config) : ExecutionEngine.Terminal;
+        if (engine === ExecutionEngine.Process) {
+            this._notificationService.warn(nls.localize('TaskSystem.versionSettings', 'Only tasks version 2.0.0 permitted in user settings.'));
+            return this._emptyWorkspaceTaskResults(workspaceFolder);
+        }
+        return { workspaceFolder, set: { tasks: custom }, configurations: customizedTasks, hasErrors: configuration.hasParseErrors };
+    }
+    _emptyWorkspaceTaskResults(workspaceFolder) {
+        return { workspaceFolder, set: undefined, configurations: undefined, hasErrors: false };
+    }
+    async _computeTasksForSingleConfig(workspaceFolder, config, runSource, custom, customized, source, isRecentTask = false) {
+        if (!config) {
+            return false;
+        }
+        else if (!workspaceFolder) {
+            this._logService.trace('TaskService.computeTasksForSingleConfig: no workspace folder for worskspace', this._workspace?.id);
+            return false;
+        }
+        const taskSystemInfo = this._getTaskSystemInfo(workspaceFolder.uri.scheme);
+        const problemReporter = new ProblemReporter(this._outputChannel);
+        const parseResult = TaskConfig.parse(workspaceFolder, this._workspace, taskSystemInfo ? taskSystemInfo.platform : Platform.platform, config, problemReporter, source, this._contextKeyService, isRecentTask);
+        let hasErrors = false;
+        if (!parseResult.validationStatus.isOK() && (parseResult.validationStatus.state !== 1)) {
+            this._showOutput(runSource);
+            hasErrors = true;
+        }
+        if (problemReporter.status.isFatal()) {
+            problemReporter.fatal(nls.localize('TaskSystem.configurationErrors', 'Error: the provided task configuration has validation errors and can\'t not be used. Please correct the errors first.'));
+            return hasErrors;
+        }
+        if (parseResult.configured && parseResult.configured.length > 0) {
+            for (const task of parseResult.configured) {
+                customized[task.configures._key] = task;
+            }
+        }
+        if (!this._jsonTasksSupported && (parseResult.custom.length > 0)) {
+            console.warn('Custom workspace tasks are not supported.');
+        }
+        else {
+            for (const task of parseResult.custom) {
+                custom.push(task);
+            }
+        }
+        return hasErrors;
+    }
+    _computeConfiguration(workspaceFolder) {
+        const { config, hasParseErrors } = this._getConfiguration(workspaceFolder);
+        return Promise.resolve({ workspaceFolder, config, hasErrors: hasParseErrors });
+    }
+    _computeWorkspaceFolderSetup() {
+        const workspaceFolders = [];
+        const ignoredWorkspaceFolders = [];
+        let executionEngine = ExecutionEngine.Terminal;
+        let schemaVersion = 2;
+        let workspace;
+        if (this._contextService.getWorkbenchState() === 2) {
+            const workspaceFolder = this._contextService.getWorkspace().folders[0];
+            workspaceFolders.push(workspaceFolder);
+            executionEngine = this._computeExecutionEngine(workspaceFolder);
+            const telemetryData = {
+                executionEngineVersion: executionEngine
+            };
+            this._telemetryService.publicLog('taskService.engineVersion', telemetryData);
+            schemaVersion = this._computeJsonSchemaVersion(workspaceFolder);
+        }
+        else if (this._contextService.getWorkbenchState() === 3) {
+            workspace = this._contextService.getWorkspace();
+            for (const workspaceFolder of this._contextService.getWorkspace().folders) {
+                if (schemaVersion === this._computeJsonSchemaVersion(workspaceFolder)) {
+                    workspaceFolders.push(workspaceFolder);
+                }
+                else {
+                    ignoredWorkspaceFolders.push(workspaceFolder);
+                    this._log(nls.localize('taskService.ignoreingFolder', 'Ignoring task configurations for workspace folder {0}. Multi folder workspace task support requires that all folders use task version 2.0.0', workspaceFolder.uri.fsPath));
+                }
+            }
+        }
+        return [workspaceFolders, ignoredWorkspaceFolders, executionEngine, schemaVersion, workspace];
+    }
+    _computeExecutionEngine(workspaceFolder) {
+        const { config } = this._getConfiguration(workspaceFolder);
+        if (!config) {
+            return ExecutionEngine._default;
+        }
+        return TaskConfig.ExecutionEngine.from(config);
+    }
+    _computeJsonSchemaVersion(workspaceFolder) {
+        const { config } = this._getConfiguration(workspaceFolder);
+        if (!config) {
+            return 2;
+        }
+        return TaskConfig.JsonSchemaVersion.from(config);
+    }
+    _getConfiguration(workspaceFolder, source) {
+        let result;
+        if ((source !== TaskSourceKind.User) && (this._contextService.getWorkbenchState() === 1)) {
+            result = undefined;
+        }
+        else {
+            const wholeConfig = this._configurationService.inspect('tasks', { resource: workspaceFolder.uri });
+            switch (source) {
+                case TaskSourceKind.User: {
+                    if (wholeConfig.userValue !== wholeConfig.workspaceFolderValue) {
+                        result = Objects.deepClone(wholeConfig.userValue);
+                    }
+                    break;
+                }
+                case TaskSourceKind.Workspace:
+                    result = Objects.deepClone(wholeConfig.workspaceFolderValue);
+                    break;
+                case TaskSourceKind.WorkspaceFile: {
+                    if ((this._contextService.getWorkbenchState() === 3)
+                        && (wholeConfig.workspaceFolderValue !== wholeConfig.workspaceValue)) {
+                        result = Objects.deepClone(wholeConfig.workspaceValue);
+                    }
+                    break;
+                }
+                default: result = Objects.deepClone(wholeConfig.workspaceFolderValue);
+            }
+        }
+        if (!result) {
+            return { config: undefined, hasParseErrors: false };
+        }
+        const parseErrors = result.$parseErrors;
+        if (parseErrors) {
+            let isAffected = false;
+            for (const parseError of parseErrors) {
+                if (/tasks\.json$/.test(parseError)) {
+                    isAffected = true;
+                    break;
+                }
+            }
+            if (isAffected) {
+                this._log(nls.localize('TaskSystem.invalidTaskJson', 'Error: The content of the tasks.json file has syntax errors. Please correct them before executing a task.'));
+                this._showOutput();
+                return { config: undefined, hasParseErrors: true };
+            }
+        }
+        return { config: result, hasParseErrors: false };
+    }
+    inTerminal() {
+        if (this._taskSystem) {
+            return this._taskSystem instanceof TerminalTaskSystem;
+        }
+        return this._executionEngine === ExecutionEngine.Terminal;
+    }
+    configureAction() {
+        const thisCapture = this;
+        return new class extends Action {
+            constructor() {
+                super(ConfigureTaskAction.ID, ConfigureTaskAction.TEXT.value, undefined, true, () => { thisCapture._runConfigureTasks(); return Promise.resolve(undefined); });
+            }
+        };
+    }
+    _handleError(err) {
+        let showOutput = true;
+        if (err instanceof TaskError) {
+            const buildError = err;
+            const needsConfig = buildError.code === 0 || buildError.code === 2 || buildError.code === 3;
+            const needsTerminate = buildError.code === 1;
+            if (needsConfig || needsTerminate) {
+                this._notificationService.prompt(buildError.severity, buildError.message, [{
+                        label: needsConfig ? ConfigureTaskAction.TEXT.value : nls.localize('TerminateAction.label', "Terminate Task"),
+                        run: () => {
+                            if (needsConfig) {
+                                this._runConfigureTasks();
+                            }
+                            else {
+                                this._runTerminateCommand();
+                            }
+                        }
+                    }]);
+            }
+            else {
+                this._notificationService.notify({ severity: buildError.severity, message: buildError.message });
+            }
+        }
+        else if (err instanceof Error) {
+            const error = err;
+            this._notificationService.error(error.message);
+            showOutput = false;
+        }
+        else if (Types.isString(err)) {
+            this._notificationService.error(err);
+        }
+        else {
+            this._notificationService.error(nls.localize('TaskSystem.unknownError', 'An error has occurred while running a task. See task log for details.'));
+        }
+        if (showOutput) {
+            this._showOutput();
+        }
+    }
+    _showDetail() {
+        return this._configurationService.getValue(QUICKOPEN_DETAIL_CONFIG);
+    }
+    async _createTaskQuickPickEntries(tasks, group = false, sort = false, selectedEntry, includeRecents = true) {
+        let encounteredTasks = {};
+        if (tasks === undefined || tasks === null || tasks.length === 0) {
+            return [];
+        }
+        const TaskQuickPickEntry = (task) => {
+            const newEntry = { label: task._label, description: this.getTaskDescription(task), task, detail: this._showDetail() ? task.configurationProperties.detail : undefined };
+            if (encounteredTasks[task._id]) {
+                if (encounteredTasks[task._id].length === 1) {
+                    encounteredTasks[task._id][0].label += ' (1)';
+                }
+                newEntry.label = newEntry.label + ' (' + (encounteredTasks[task._id].length + 1).toString() + ')';
+            }
+            else {
+                encounteredTasks[task._id] = [];
+            }
+            encounteredTasks[task._id].push(newEntry);
+            return newEntry;
+        };
+        function fillEntries(entries, tasks, groupLabel) {
+            if (tasks.length) {
+                entries.push({ type: 'separator', label: groupLabel });
+            }
+            for (const task of tasks) {
+                const entry = TaskQuickPickEntry(task);
+                entry.buttons = [{ iconClass: ThemeIcon.asClassName(configureTaskIcon), tooltip: nls.localize('configureTask', "Configure Task") }];
+                if (selectedEntry && (task === selectedEntry.task)) {
+                    entries.unshift(selectedEntry);
+                }
+                else {
+                    entries.push(entry);
+                }
+            }
+        }
+        let entries;
+        if (group) {
+            entries = [];
+            if (tasks.length === 1) {
+                entries.push(TaskQuickPickEntry(tasks[0]));
+            }
+            else {
+                const recentlyUsedTasks = await this.getSavedTasks('historical');
+                const recent = [];
+                const recentSet = new Set();
+                let configured = [];
+                let detected = [];
+                const taskMap = Object.create(null);
+                tasks.forEach(task => {
+                    const key = task.getCommonTaskId();
+                    if (key) {
+                        taskMap[key] = task;
+                    }
+                });
+                recentlyUsedTasks.reverse().forEach(recentTask => {
+                    const key = recentTask.getCommonTaskId();
+                    if (key) {
+                        recentSet.add(key);
+                        const task = taskMap[key];
+                        if (task) {
+                            recent.push(task);
+                        }
+                    }
+                });
+                for (const task of tasks) {
+                    const key = task.getCommonTaskId();
+                    if (!key || !recentSet.has(key)) {
+                        if ((task._source.kind === TaskSourceKind.Workspace) || (task._source.kind === TaskSourceKind.User)) {
+                            configured.push(task);
+                        }
+                        else {
+                            detected.push(task);
+                        }
+                    }
+                }
+                const sorter = this.createSorter();
+                if (includeRecents) {
+                    fillEntries(entries, recent, nls.localize('recentlyUsed', 'recently used tasks'));
+                }
+                configured = configured.sort((a, b) => sorter.compare(a, b));
+                fillEntries(entries, configured, nls.localize('configured', 'configured tasks'));
+                detected = detected.sort((a, b) => sorter.compare(a, b));
+                fillEntries(entries, detected, nls.localize('detected', 'detected tasks'));
+            }
+        }
+        else {
+            if (sort) {
+                const sorter = this.createSorter();
+                tasks = tasks.sort((a, b) => sorter.compare(a, b));
+            }
+            entries = tasks.map(task => TaskQuickPickEntry(task));
+        }
+        encounteredTasks = {};
+        return entries;
+    }
+    async _showTwoLevelQuickPick(placeHolder, defaultEntry, type, name) {
+        return this._instantiationService.createInstance(TaskQuickPick).show(placeHolder, defaultEntry, type, name);
+    }
+    async _showQuickPick(tasks, placeHolder, defaultEntry, group = false, sort = false, selectedEntry, additionalEntries, name) {
+        const resolvedTasks = await tasks;
+        const entries = await raceTimeout(this._createTaskQuickPickEntries(resolvedTasks, group, sort, selectedEntry), 200, () => undefined);
+        if (!entries) {
+            return undefined;
+        }
+        if (entries.length === 1 && this._configurationService.getValue(QUICKOPEN_SKIP_CONFIG)) {
+            return entries[0];
+        }
+        else if ((entries.length === 0) && defaultEntry) {
+            entries.push(defaultEntry);
+        }
+        else if (entries.length > 1 && additionalEntries && additionalEntries.length > 0) {
+            entries.push({ type: 'separator', label: '' });
+            entries.push(additionalEntries[0]);
+        }
+        return this._quickInputService.pick(entries, {
+            value: name,
+            placeHolder,
+            matchOnDescription: true,
+            onDidTriggerItemButton: context => {
+                const task = context.item.task;
+                this._quickInputService.cancel();
+                if (ContributedTask.is(task)) {
+                    this.customize(task, undefined, true);
+                }
+                else if (CustomTask.is(task)) {
+                    this.openConfig(task);
+                }
+            },
+        });
+    }
+    _needsRecentTasksMigration() {
+        return (this.getRecentlyUsedTasksV1().size > 0) && (this._getTasksFromStorage('historical').size === 0);
+    }
+    async _migrateRecentTasks(tasks) {
+        if (!this._needsRecentTasksMigration()) {
+            return;
+        }
+        const recentlyUsedTasks = this.getRecentlyUsedTasksV1();
+        const taskMap = Object.create(null);
+        tasks.forEach(task => {
+            const key = task.getKey();
+            if (key) {
+                taskMap[key] = task;
+            }
+        });
+        const reversed = [...recentlyUsedTasks.keys()].reverse();
+        for (const key in reversed) {
+            const task = taskMap[key];
+            if (task) {
+                await this._setRecentlyUsedTask(task);
+            }
+        }
+        this._storageService.remove(AbstractTaskService_1.RecentlyUsedTasks_Key, 1);
+    }
+    _showIgnoredFoldersMessage() {
+        if (this.ignoredWorkspaceFolders.length === 0 || !this.showIgnoreMessage) {
+            return Promise.resolve(undefined);
+        }
+        this._notificationService.prompt(Severity.Info, nls.localize('TaskService.ignoredFolder', 'The following workspace folders are ignored since they use task version 0.1.0: {0}', this.ignoredWorkspaceFolders.map(f => f.name).join(', ')), [{
+                label: nls.localize('TaskService.notAgain', "Don't Show Again"),
+                isSecondary: true,
+                run: () => {
+                    this._storageService.store(AbstractTaskService_1.IgnoreTask010DonotShowAgain_key, true, 1, 1);
+                    this._showIgnoreMessage = false;
+                }
+            }]);
+        return Promise.resolve(undefined);
+    }
+    async _trust() {
+        if (ServerlessWebContext && !TaskExecutionSupportedContext) {
+            return false;
+        }
+        await this._workspaceTrustManagementService.workspaceTrustInitialized;
+        if (!this._workspaceTrustManagementService.isWorkspaceTrusted()) {
+            return (await this._workspaceTrustRequestService.requestWorkspaceTrust({
+                message: nls.localize('TaskService.requestTrust', "Listing and running tasks requires that some of the files in this workspace be executed as code.")
+            })) === true;
+        }
+        return true;
+    }
+    async _runTaskCommand(filter) {
+        if (!this._tasksReconnected) {
+            return;
+        }
+        if (!filter) {
+            return this._doRunTaskCommand();
+        }
+        const type = typeof filter === 'string' ? undefined : filter.type;
+        const taskName = typeof filter === 'string' ? filter : filter.task;
+        const grouped = await this._getGroupedTasks({ type });
+        const identifier = this._getTaskIdentifier(filter);
+        const tasks = grouped.all();
+        const resolver = this._createResolver(grouped);
+        const folderURIs = this._contextService.getWorkspace().folders.map(folder => folder.uri);
+        if (this._contextService.getWorkbenchState() === 3) {
+            folderURIs.push(this._contextService.getWorkspace().configuration);
+        }
+        folderURIs.push(USER_TASKS_GROUP_KEY);
+        if (identifier) {
+            for (const uri of folderURIs) {
+                const task = await resolver.resolve(uri, identifier);
+                if (task) {
+                    this.run(task);
+                    return;
+                }
+            }
+        }
+        const exactMatchTask = !taskName ? undefined : tasks.find(t => t.configurationProperties.identifier === taskName || t.getDefinition(true)?.configurationProperties?.identifier === taskName);
+        if (!exactMatchTask) {
+            return this._doRunTaskCommand(tasks, type, taskName);
+        }
+        for (const uri of folderURIs) {
+            const task = await resolver.resolve(uri, taskName);
+            if (task) {
+                await this.run(task, { attachProblemMatcher: true }, 1);
+                return;
+            }
+        }
+    }
+    _tasksAndGroupedTasks(filter) {
+        if (!this._versionAndEngineCompatible(filter)) {
+            return { tasks: Promise.resolve([]), grouped: Promise.resolve(new TaskMap()) };
+        }
+        const grouped = this._getGroupedTasks(filter);
+        const tasks = grouped.then((map) => {
+            if (!filter || !filter.type) {
+                return map.all();
+            }
+            const result = [];
+            map.forEach((tasks) => {
+                for (const task of tasks) {
+                    if (ContributedTask.is(task) && task.defines.type === filter.type) {
+                        result.push(task);
+                    }
+                    else if (CustomTask.is(task)) {
+                        if (task.type === filter.type) {
+                            result.push(task);
+                        }
+                        else {
+                            const customizes = task.customizes();
+                            if (customizes && customizes.type === filter.type) {
+                                result.push(task);
+                            }
+                        }
+                    }
+                }
+            });
+            return result;
+        });
+        return { tasks, grouped };
+    }
+    _doRunTaskCommand(tasks, type, name) {
+        const pickThen = (task) => {
+            if (task === undefined) {
+                return;
+            }
+            if (task === null) {
+                this._runConfigureTasks();
+            }
+            else {
+                this.run(task, { attachProblemMatcher: true }, 1).then(undefined, reason => {
+                });
+            }
+        };
+        const placeholder = nls.localize('TaskService.pickRunTask', 'Select the task to run');
+        this._showIgnoredFoldersMessage().then(() => {
+            if (this._configurationService.getValue(USE_SLOW_PICKER)) {
+                let taskResult = undefined;
+                if (!tasks) {
+                    taskResult = this._tasksAndGroupedTasks();
+                }
+                this._showQuickPick(tasks ? tasks : taskResult.tasks, placeholder, {
+                    label: '$(plus) ' + nls.localize('TaskService.noEntryToRun', 'Configure a Task'),
+                    task: null
+                }, true, undefined, undefined, undefined, name).
+                    then((entry) => {
+                    return pickThen(entry ? entry.task : undefined);
+                });
+            }
+            else {
+                this._showTwoLevelQuickPick(placeholder, {
+                    label: '$(plus) ' + nls.localize('TaskService.noEntryToRun', 'Configure a Task'),
+                    task: null
+                }, type, name).
+                    then(pickThen);
+            }
+        });
+    }
+    _reRunTaskCommand() {
+        ProblemMatcherRegistry.onReady().then(() => {
+            return this._editorService.saveAll({ reason: 2 }).then(() => {
+                const executeResult = this._getTaskSystem().rerun();
+                if (executeResult) {
+                    return this._handleExecuteResult(executeResult);
+                }
+                else {
+                    if (!this._taskRunningState.get()) {
+                        this._doRunTaskCommand();
+                    }
+                    return Promise.resolve(undefined);
+                }
+            });
+        });
+    }
+    _getDefaultTasks(tasks, taskGlobsInList = false) {
+        const defaults = [];
+        for (const task of tasks.filter(t => !!t.configurationProperties.group)) {
+            if (taskGlobsInList && typeof task.configurationProperties.group.isDefault === 'string') {
+                defaults.push(task);
+            }
+            else if (!taskGlobsInList && task.configurationProperties.group.isDefault === true) {
+                defaults.push(task);
+            }
+        }
+        return defaults;
+    }
+    _runTaskGroupCommand(taskGroup, strings, configure, legacyCommand) {
+        if (this.schemaVersion === 1) {
+            legacyCommand();
+            return;
+        }
+        const options = {
+            location: 10,
+            title: strings.fetching
+        };
+        const promise = (async () => {
+            async function runSingleTask(task, problemMatcherOptions, that) {
+                that.run(task, problemMatcherOptions, 1).then(undefined, reason => {
+                });
+            }
+            const chooseAndRunTask = (tasks) => {
+                this._showIgnoredFoldersMessage().then(() => {
+                    this._showQuickPick(tasks, strings.select, {
+                        label: strings.notFoundConfigure,
+                        task: null
+                    }, true).then((entry) => {
+                        const task = entry ? entry.task : undefined;
+                        if (task === undefined) {
+                            return;
+                        }
+                        if (task === null) {
+                            configure.apply(this);
+                            return;
+                        }
+                        runSingleTask(task, { attachProblemMatcher: true }, this);
+                    });
+                });
+            };
+            let groupTasks = [];
+            const { globGroupTasks, globTasksDetected } = await this._getGlobTasks(taskGroup._id);
+            groupTasks = [...globGroupTasks];
+            if (!globTasksDetected && groupTasks.length === 0) {
+                groupTasks = await this._findWorkspaceTasksInGroup(taskGroup, true);
+            }
+            const handleMultipleTasks = (areGlobTasks) => {
+                return this._getTasksForGroup(taskGroup).then((tasks) => {
+                    if (tasks.length > 0) {
+                        const defaults = this._getDefaultTasks(tasks, areGlobTasks);
+                        if (defaults.length === 1) {
+                            runSingleTask(defaults[0], undefined, this);
+                            return;
+                        }
+                        else if (defaults.length > 0) {
+                            tasks = defaults;
+                        }
+                    }
+                    chooseAndRunTask(tasks);
+                });
+            };
+            const resolveTaskAndRun = (taskGroupTask) => {
+                if (ConfiguringTask.is(taskGroupTask)) {
+                    this.tryResolveTask(taskGroupTask).then(resolvedTask => {
+                        runSingleTask(resolvedTask, undefined, this);
+                    });
+                }
+                else {
+                    runSingleTask(taskGroupTask, undefined, this);
+                }
+            };
+            if (groupTasks.length === 1) {
+                return resolveTaskAndRun(groupTasks[0]);
+            }
+            if (globTasksDetected && groupTasks.length > 1) {
+                return handleMultipleTasks(true);
+            }
+            if (!groupTasks.length) {
+                groupTasks = await this._findWorkspaceTasksInGroup(taskGroup, true);
+            }
+            if (groupTasks.length === 1) {
+                return resolveTaskAndRun(groupTasks[0]);
+            }
+            return handleMultipleTasks(false);
+        })();
+        this._progressService.withProgress(options, () => promise);
+    }
+    async _getGlobTasks(taskGroupId) {
+        let globTasksDetected = false;
+        const absoluteURI = EditorResourceAccessor.getOriginalUri(this._editorService.activeEditor);
+        if (absoluteURI) {
+            const workspaceFolder = this._contextService.getWorkspaceFolder(absoluteURI);
+            if (workspaceFolder) {
+                const configuredTasks = this._getConfiguration(workspaceFolder)?.config?.tasks;
+                if (configuredTasks) {
+                    globTasksDetected = configuredTasks.filter(task => task.group && typeof task.group !== 'string' && typeof task.group.isDefault === 'string').length > 0;
+                    if (globTasksDetected) {
+                        const relativePath = workspaceFolder?.uri ? (resources.relativePath(workspaceFolder.uri, absoluteURI) ?? absoluteURI.path) : absoluteURI.path;
+                        const globGroupTasks = await this._findWorkspaceTasks((task) => {
+                            const currentTaskGroup = task.configurationProperties.group;
+                            if (currentTaskGroup && typeof currentTaskGroup !== 'string' && typeof currentTaskGroup.isDefault === 'string') {
+                                return (currentTaskGroup._id === taskGroupId && glob.match(currentTaskGroup.isDefault, relativePath));
+                            }
+                            globTasksDetected = false;
+                            return false;
+                        });
+                        return { globGroupTasks, globTasksDetected };
+                    }
+                }
+            }
+        }
+        return { globGroupTasks: [], globTasksDetected };
+    }
+    _runBuildCommand() {
+        if (!this._tasksReconnected) {
+            return;
+        }
+        return this._runTaskGroupCommand(TaskGroup.Build, {
+            fetching: nls.localize('TaskService.fetchingBuildTasks', 'Fetching build tasks...'),
+            select: nls.localize('TaskService.pickBuildTask', 'Select the build task to run'),
+            notFoundConfigure: nls.localize('TaskService.noBuildTask', 'No build task to run found. Configure Build Task...')
+        }, this._runConfigureDefaultBuildTask, this._build);
+    }
+    _runTestCommand() {
+        return this._runTaskGroupCommand(TaskGroup.Test, {
+            fetching: nls.localize('TaskService.fetchingTestTasks', 'Fetching test tasks...'),
+            select: nls.localize('TaskService.pickTestTask', 'Select the test task to run'),
+            notFoundConfigure: nls.localize('TaskService.noTestTaskTerminal', 'No test task to run found. Configure Tasks...')
+        }, this._runConfigureDefaultTestTask, this._runTest);
+    }
+    _runTerminateCommand(arg) {
+        if (arg === 'terminateAll') {
+            this._terminateAll();
+            return;
+        }
+        const runQuickPick = (promise) => {
+            this._showQuickPick(promise || this.getActiveTasks(), nls.localize('TaskService.taskToTerminate', 'Select a task to terminate'), {
+                label: nls.localize('TaskService.noTaskRunning', 'No task is currently running'),
+                task: undefined
+            }, false, true, undefined, [{
+                    label: nls.localize('TaskService.terminateAllRunningTasks', 'All Running Tasks'),
+                    id: 'terminateAll',
+                    task: undefined
+                }]).then(entry => {
+                if (entry && entry.id === 'terminateAll') {
+                    this._terminateAll();
+                }
+                const task = entry ? entry.task : undefined;
+                if (task === undefined || task === null) {
+                    return;
+                }
+                this.terminate(task);
+            });
+        };
+        if (this.inTerminal()) {
+            const identifier = this._getTaskIdentifier(arg);
+            let promise;
+            if (identifier !== undefined) {
+                promise = this.getActiveTasks();
+                promise.then((tasks) => {
+                    for (const task of tasks) {
+                        if (task.matches(identifier)) {
+                            this.terminate(task);
+                            return;
+                        }
+                    }
+                    runQuickPick(promise);
+                });
+            }
+            else {
+                runQuickPick();
+            }
+        }
+        else {
+            this._isActive().then((active) => {
+                if (active) {
+                    this._terminateAll().then((responses) => {
+                        const response = responses[0];
+                        if (response.success) {
+                            return;
+                        }
+                        if (response.code && response.code === 3) {
+                            this._notificationService.error(nls.localize('TerminateAction.noProcess', 'The launched process doesn\'t exist anymore. If the task spawned background tasks exiting VS Code might result in orphaned processes.'));
+                        }
+                        else {
+                            this._notificationService.error(nls.localize('TerminateAction.failed', 'Failed to terminate running task'));
+                        }
+                    });
+                }
+            });
+        }
+    }
+    async _runRestartTaskCommand(arg) {
+        const activeTasks = await this.getActiveTasks();
+        if (activeTasks.length === 1) {
+            this._restart(activeTasks[0]);
+            return;
+        }
+        if (this.inTerminal()) {
+            const identifier = this._getTaskIdentifier(arg);
+            if (identifier !== undefined) {
+                for (const task of activeTasks) {
+                    if (task.matches(identifier)) {
+                        this._restart(task);
+                        return;
+                    }
+                }
+            }
+            const entry = await this._showQuickPick(activeTasks, nls.localize('TaskService.taskToRestart', 'Select the task to restart'), {
+                label: nls.localize('TaskService.noTaskToRestart', 'No task to restart'),
+                task: null
+            }, false, true);
+            if (entry && entry.task) {
+                this._restart(entry.task);
+            }
+        }
+        else {
+            if (activeTasks.length > 0) {
+                this._restart(activeTasks[0]);
+            }
+        }
+    }
+    _getTaskIdentifier(filter) {
+        let result = undefined;
+        if (Types.isString(filter)) {
+            result = filter;
+        }
+        else if (filter && Types.isString(filter.type)) {
+            result = TaskDefinition.createTaskIdentifier(filter, console);
+        }
+        return result;
+    }
+    _configHasTasks(taskConfig) {
+        return !!taskConfig && !!taskConfig.tasks && taskConfig.tasks.length > 0;
+    }
+    _openTaskFile(resource, taskSource) {
+        let configFileCreated = false;
+        this._fileService.stat(resource).then((stat) => stat, () => undefined).then(async (stat) => {
+            const fileExists = !!stat;
+            const configValue = this._configurationService.inspect('tasks', { resource });
+            let tasksExistInFile;
+            let target;
+            switch (taskSource) {
+                case TaskSourceKind.User:
+                    tasksExistInFile = this._configHasTasks(configValue.userValue);
+                    target = 2;
+                    break;
+                case TaskSourceKind.WorkspaceFile:
+                    tasksExistInFile = this._configHasTasks(configValue.workspaceValue);
+                    target = 5;
+                    break;
+                default:
+                    tasksExistInFile = this._configHasTasks(configValue.workspaceFolderValue);
+                    target = 6;
+            }
+            let content;
+            if (!tasksExistInFile) {
+                const pickTemplateResult = await this._quickInputService.pick(getTaskTemplates(), { placeHolder: nls.localize('TaskService.template', 'Select a Task Template') });
+                if (!pickTemplateResult) {
+                    return Promise.resolve(undefined);
+                }
+                content = pickTemplateResult.content;
+                const editorConfig = this._configurationService.getValue();
+                if (editorConfig.editor.insertSpaces) {
+                    content = content.replace(/(\n)(\t+)/g, (_, s1, s2) => s1 + ' '.repeat(s2.length * editorConfig.editor.tabSize));
+                }
+                configFileCreated = true;
+            }
+            if (!fileExists && content) {
+                return this._textFileService.create([{ resource, value: content }]).then(result => {
+                    return result[0].resource;
+                });
+            }
+            else if (fileExists && (tasksExistInFile || content)) {
+                const statResource = stat?.resource;
+                if (content && statResource) {
+                    this._configurationService.updateValue('tasks', json.parse(content), { resource: statResource }, target);
+                }
+                return statResource;
+            }
+            return undefined;
+        }).then((resource) => {
+            if (!resource) {
+                return;
+            }
+            this._editorService.openEditor({
+                resource,
+                options: {
+                    pinned: configFileCreated
+                }
+            });
+        });
+    }
+    _isTaskEntry(value) {
+        const candidate = value;
+        return candidate && !!candidate.task;
+    }
+    _isSettingEntry(value) {
+        const candidate = value;
+        return candidate && !!candidate.settingType;
+    }
+    _configureTask(task) {
+        if (ContributedTask.is(task)) {
+            this.customize(task, undefined, true);
+        }
+        else if (CustomTask.is(task)) {
+            this.openConfig(task);
+        }
+        else if (ConfiguringTask.is(task)) {
+        }
+    }
+    _handleSelection(selection) {
+        if (!selection) {
+            return;
+        }
+        if (this._isTaskEntry(selection)) {
+            this._configureTask(selection.task);
+        }
+        else if (this._isSettingEntry(selection)) {
+            const taskQuickPick = this._instantiationService.createInstance(TaskQuickPick);
+            taskQuickPick.handleSettingOption(selection.settingType);
+        }
+        else if (selection.folder && (this._contextService.getWorkbenchState() !== 1)) {
+            this._openTaskFile(selection.folder.toResource('.vscode/tasks.json'), TaskSourceKind.Workspace);
+        }
+        else {
+            const resource = this._getResourceForKind(TaskSourceKind.User);
+            if (resource) {
+                this._openTaskFile(resource, TaskSourceKind.User);
+            }
+        }
+    }
+    getTaskDescription(task) {
+        let description;
+        if (task._source.kind === TaskSourceKind.User) {
+            description = nls.localize('taskQuickPick.userSettings', 'User');
+        }
+        else if (task._source.kind === TaskSourceKind.WorkspaceFile) {
+            description = task.getWorkspaceFileName();
+        }
+        else if (this.needsFolderQualification()) {
+            const workspaceFolder = task.getWorkspaceFolder();
+            if (workspaceFolder) {
+                description = workspaceFolder.name;
+            }
+        }
+        return description;
+    }
+    async _runConfigureTasks() {
+        if (!(await this._trust())) {
+            return;
+        }
+        let taskPromise;
+        if (this.schemaVersion === 2) {
+            taskPromise = this._getGroupedTasks();
+        }
+        else {
+            taskPromise = Promise.resolve(new TaskMap());
+        }
+        const stats = this._contextService.getWorkspace().folders.map((folder) => {
+            return this._fileService.stat(folder.toResource('.vscode/tasks.json')).then(stat => stat, () => undefined);
+        });
+        const createLabel = nls.localize('TaskService.createJsonFile', 'Create tasks.json file from template');
+        const openLabel = nls.localize('TaskService.openJsonFile', 'Open tasks.json file');
+        const tokenSource = new CancellationTokenSource();
+        const cancellationToken = tokenSource.token;
+        const entries = Promise.all(stats).then((stats) => {
+            return taskPromise.then((taskMap) => {
+                const entries = [];
+                let configuredCount = 0;
+                let tasks = taskMap.all();
+                if (tasks.length > 0) {
+                    tasks = tasks.sort((a, b) => a._label.localeCompare(b._label));
+                    for (const task of tasks) {
+                        const entry = { label: TaskQuickPick.getTaskLabelWithIcon(task), task, description: this.getTaskDescription(task), detail: this._showDetail() ? task.configurationProperties.detail : undefined };
+                        TaskQuickPick.applyColorStyles(task, entry, this._themeService);
+                        entries.push(entry);
+                        if (!ContributedTask.is(task)) {
+                            configuredCount++;
+                        }
+                    }
+                }
+                const needsCreateOrOpen = (configuredCount === 0);
+                if (needsCreateOrOpen || (taskMap.get(USER_TASKS_GROUP_KEY).length === configuredCount)) {
+                    const label = stats[0] !== undefined ? openLabel : createLabel;
+                    if (entries.length) {
+                        entries.push({ type: 'separator' });
+                    }
+                    entries.push({ label, folder: this._contextService.getWorkspace().folders[0] });
+                }
+                if ((entries.length === 1) && !needsCreateOrOpen) {
+                    tokenSource.cancel();
+                }
+                return entries;
+            });
+        });
+        const timeout = await Promise.race([new Promise((resolve) => {
+                entries.then(() => resolve(false));
+            }), new Promise((resolve) => {
+                const timer = setTimeout(() => {
+                    clearTimeout(timer);
+                    resolve(true);
+                }, 200);
+            })]);
+        if (!timeout && ((await entries).length === 1) && this._configurationService.getValue(QUICKOPEN_SKIP_CONFIG)) {
+            const entry = (await entries)[0];
+            if (entry.task) {
+                this._handleSelection(entry);
+                return;
+            }
+        }
+        const entriesWithSettings = entries.then(resolvedEntries => {
+            resolvedEntries.push(...TaskQuickPick.allSettingEntries(this._configurationService));
+            return resolvedEntries;
+        });
+        this._quickInputService.pick(entriesWithSettings, { placeHolder: nls.localize('TaskService.pickTask', 'Select a task to configure') }, cancellationToken).
+            then(async (selection) => {
+            if (cancellationToken.isCancellationRequested) {
+                const task = (await entries)[0];
+                if (task.task) {
+                    selection = task;
+                }
+            }
+            this._handleSelection(selection);
+        });
+    }
+    _runConfigureDefaultBuildTask() {
+        if (this.schemaVersion === 2) {
+            this.tasks().then((tasks => {
+                if (tasks.length === 0) {
+                    this._runConfigureTasks();
+                    return;
+                }
+                const entries = [];
+                let selectedTask;
+                let selectedEntry;
+                this._showIgnoredFoldersMessage().then(async () => {
+                    const { globGroupTasks } = await this._getGlobTasks(TaskGroup.Build._id);
+                    let defaultTasks = globGroupTasks;
+                    if (!defaultTasks?.length) {
+                        defaultTasks = this._getDefaultTasks(tasks, false);
+                    }
+                    let defaultBuildTask;
+                    if (defaultTasks.length === 1) {
+                        const group = defaultTasks[0].configurationProperties.group;
+                        if (group) {
+                            if (typeof group === 'string' && group === TaskGroup.Build._id) {
+                                defaultBuildTask = defaultTasks[0];
+                            }
+                            else {
+                                defaultBuildTask = defaultTasks[0];
+                            }
+                        }
+                    }
+                    for (const task of tasks) {
+                        if (task === defaultBuildTask) {
+                            const label = nls.localize('TaskService.defaultBuildTaskExists', '{0} is already marked as the default build task', TaskQuickPick.getTaskLabelWithIcon(task, task.getQualifiedLabel()));
+                            selectedTask = task;
+                            selectedEntry = { label, task, description: this.getTaskDescription(task), detail: this._showDetail() ? task.configurationProperties.detail : undefined };
+                            TaskQuickPick.applyColorStyles(task, selectedEntry, this._themeService);
+                        }
+                        else {
+                            const entry = { label: TaskQuickPick.getTaskLabelWithIcon(task), task, description: this.getTaskDescription(task), detail: this._showDetail() ? task.configurationProperties.detail : undefined };
+                            TaskQuickPick.applyColorStyles(task, entry, this._themeService);
+                            entries.push(entry);
+                        }
+                    }
+                    if (selectedEntry) {
+                        entries.unshift(selectedEntry);
+                    }
+                    const tokenSource = new CancellationTokenSource();
+                    const cancellationToken = tokenSource.token;
+                    this._quickInputService.pick(entries, { placeHolder: nls.localize('TaskService.pickTask', 'Select a task to configure') }, cancellationToken).
+                        then(async (entry) => {
+                        if (cancellationToken.isCancellationRequested) {
+                            const task = (await entries)[0];
+                            if (task.task) {
+                                entry = task;
+                            }
+                        }
+                        const task = entry && 'task' in entry ? entry.task : undefined;
+                        if ((task === undefined) || (task === null)) {
+                            return;
+                        }
+                        if (task === selectedTask && CustomTask.is(task)) {
+                            this.openConfig(task);
+                        }
+                        if (!InMemoryTask.is(task)) {
+                            this.customize(task, { group: { kind: 'build', isDefault: true } }, true).then(() => {
+                                if (selectedTask && (task !== selectedTask) && !InMemoryTask.is(selectedTask)) {
+                                    this.customize(selectedTask, { group: 'build' }, false);
+                                }
+                            });
+                        }
+                    });
+                    this._quickInputService.pick(entries, {
+                        placeHolder: nls.localize('TaskService.pickDefaultBuildTask', 'Select the task to be used as the default build task')
+                    }).
+                        then((entry) => {
+                        const task = entry && 'task' in entry ? entry.task : undefined;
+                        if ((task === undefined) || (task === null)) {
+                            return;
+                        }
+                        if (task === selectedTask && CustomTask.is(task)) {
+                            this.openConfig(task);
+                        }
+                        if (!InMemoryTask.is(task)) {
+                            this.customize(task, { group: { kind: 'build', isDefault: true } }, true).then(() => {
+                                if (selectedTask && (task !== selectedTask) && !InMemoryTask.is(selectedTask)) {
+                                    this.customize(selectedTask, { group: 'build' }, false);
+                                }
+                            });
+                        }
+                    });
+                });
+            }));
+        }
+        else {
+            this._runConfigureTasks();
+        }
+    }
+    _runConfigureDefaultTestTask() {
+        if (this.schemaVersion === 2) {
+            this.tasks().then((tasks => {
+                if (tasks.length === 0) {
+                    this._runConfigureTasks();
+                    return;
+                }
+                let selectedTask;
+                let selectedEntry;
+                for (const task of tasks) {
+                    const taskGroup = TaskGroup.from(task.configurationProperties.group);
+                    if (taskGroup && taskGroup.isDefault && taskGroup._id === TaskGroup.Test._id) {
+                        selectedTask = task;
+                        break;
+                    }
+                }
+                if (selectedTask) {
+                    selectedEntry = {
+                        label: nls.localize('TaskService.defaultTestTaskExists', '{0} is already marked as the default test task.', selectedTask.getQualifiedLabel()),
+                        task: selectedTask,
+                        detail: this._showDetail() ? selectedTask.configurationProperties.detail : undefined
+                    };
+                }
+                this._showIgnoredFoldersMessage().then(() => {
+                    this._showQuickPick(tasks, nls.localize('TaskService.pickDefaultTestTask', 'Select the task to be used as the default test task'), undefined, true, false, selectedEntry).then((entry) => {
+                        const task = entry ? entry.task : undefined;
+                        if (!task) {
+                            return;
+                        }
+                        if (task === selectedTask && CustomTask.is(task)) {
+                            this.openConfig(task);
+                        }
+                        if (!InMemoryTask.is(task)) {
+                            this.customize(task, { group: { kind: 'test', isDefault: true } }, true).then(() => {
+                                if (selectedTask && (task !== selectedTask) && !InMemoryTask.is(selectedTask)) {
+                                    this.customize(selectedTask, { group: 'test' }, false);
+                                }
+                            });
+                        }
+                    });
+                });
+            }));
+        }
+        else {
+            this._runConfigureTasks();
+        }
+    }
+    async runShowTasks() {
+        const activeTasksPromise = this.getActiveTasks();
+        const activeTasks = await activeTasksPromise;
+        let group;
+        if (activeTasks.length === 1) {
+            this._taskSystem.revealTask(activeTasks[0]);
+        }
+        else if (activeTasks.length && activeTasks.every((task) => {
+            if (InMemoryTask.is(task)) {
+                return false;
+            }
+            if (!group) {
+                group = task.command.presentation?.group;
+            }
+            return task.command.presentation?.group && (task.command.presentation.group === group);
+        })) {
+            this._taskSystem.revealTask(activeTasks[0]);
+        }
+        else {
+            this._showQuickPick(activeTasksPromise, nls.localize('TaskService.pickShowTask', 'Select the task to show its output'), {
+                label: nls.localize('TaskService.noTaskIsRunning', 'No task is running'),
+                task: null
+            }, false, true).then((entry) => {
+                const task = entry ? entry.task : undefined;
+                if (task === undefined || task === null) {
+                    return;
+                }
+                this._taskSystem.revealTask(task);
+            });
+        }
+    }
+    async _createTasksDotOld(folder) {
+        const tasksFile = folder.toResource('.vscode/tasks.json');
+        if (await this._fileService.exists(tasksFile)) {
+            const oldFile = tasksFile.with({ path: `${tasksFile.path}.old` });
+            await this._fileService.copy(tasksFile, oldFile, true);
+            return [oldFile, tasksFile];
+        }
+        return undefined;
+    }
+    _upgradeTask(task, suppressTaskName, globalConfig) {
+        if (!CustomTask.is(task)) {
+            return;
+        }
+        const configElement = {
+            label: task._label
+        };
+        const oldTaskTypes = new Set(['gulp', 'jake', 'grunt']);
+        if (Types.isString(task.command.name) && oldTaskTypes.has(task.command.name)) {
+            configElement.type = task.command.name;
+            configElement.task = task.command.args[0];
+        }
+        else {
+            if (task.command.runtime === RuntimeType.Shell) {
+                configElement.type = RuntimeType.toString(RuntimeType.Shell);
+            }
+            if (task.command.name && !suppressTaskName && !globalConfig.windows?.command && !globalConfig.osx?.command && !globalConfig.linux?.command) {
+                configElement.command = task.command.name;
+            }
+            else if (suppressTaskName) {
+                configElement.command = task._source.config.element.command;
+            }
+            if (task.command.args && (!Array.isArray(task.command.args) || (task.command.args.length > 0))) {
+                if (!globalConfig.windows?.args && !globalConfig.osx?.args && !globalConfig.linux?.args) {
+                    configElement.args = task.command.args;
+                }
+                else {
+                    configElement.args = task._source.config.element.args;
+                }
+            }
+        }
+        if (task.configurationProperties.presentation) {
+            configElement.presentation = task.configurationProperties.presentation;
+        }
+        if (task.configurationProperties.isBackground) {
+            configElement.isBackground = task.configurationProperties.isBackground;
+        }
+        if (task.configurationProperties.problemMatchers) {
+            configElement.problemMatcher = task._source.config.element.problemMatcher;
+        }
+        if (task.configurationProperties.group) {
+            configElement.group = task.configurationProperties.group;
+        }
+        task._source.config.element = configElement;
+        const tempTask = new CustomTask(task._id, task._source, task._label, task.type, task.command, task.hasDefinedMatchers, task.runOptions, task.configurationProperties);
+        const configTask = this._createCustomizableTask(tempTask);
+        if (configTask) {
+            return configTask;
+        }
+        return;
+    }
+    async _upgrade() {
+        if (this.schemaVersion === 2) {
+            return;
+        }
+        if (!this._workspaceTrustManagementService.isWorkspaceTrusted()) {
+            this._register(Event.once(this._workspaceTrustManagementService.onDidChangeTrust)(isTrusted => {
+                if (isTrusted) {
+                    this._upgrade();
+                }
+            }));
+            return;
+        }
+        const tasks = await this._getGroupedTasks();
+        const fileDiffs = [];
+        for (const folder of this.workspaceFolders) {
+            const diff = await this._createTasksDotOld(folder);
+            if (diff) {
+                fileDiffs.push(diff);
+            }
+            if (!diff) {
+                continue;
+            }
+            const configTasks = [];
+            const suppressTaskName = !!this._configurationService.getValue("tasks.suppressTaskName", { resource: folder.uri });
+            const globalConfig = {
+                windows: this._configurationService.getValue("tasks.windows", { resource: folder.uri }),
+                osx: this._configurationService.getValue("tasks.osx", { resource: folder.uri }),
+                linux: this._configurationService.getValue("tasks.linux", { resource: folder.uri })
+            };
+            tasks.get(folder).forEach(task => {
+                const configTask = this._upgradeTask(task, suppressTaskName, globalConfig);
+                if (configTask) {
+                    configTasks.push(configTask);
+                }
+            });
+            this._taskSystem = undefined;
+            this._workspaceTasksPromise = undefined;
+            await this._writeConfiguration(folder, 'tasks.tasks', configTasks);
+            await this._writeConfiguration(folder, 'tasks.version', '2.0.0');
+            if (this._configurationService.getValue("tasks.showOutput", { resource: folder.uri })) {
+                await this._configurationService.updateValue("tasks.showOutput", undefined, { resource: folder.uri });
+            }
+            if (this._configurationService.getValue("tasks.isShellCommand", { resource: folder.uri })) {
+                await this._configurationService.updateValue("tasks.isShellCommand", undefined, { resource: folder.uri });
+            }
+            if (this._configurationService.getValue("tasks.suppressTaskName", { resource: folder.uri })) {
+                await this._configurationService.updateValue("tasks.suppressTaskName", undefined, { resource: folder.uri });
+            }
+        }
+        this._updateSetup();
+        this._notificationService.prompt(Severity.Warning, fileDiffs.length === 1 ?
+            nls.localize('taskService.upgradeVersion', "The deprecated tasks version 0.1.0 has been removed. Your tasks have been upgraded to version 2.0.0. Open the diff to review the upgrade.")
+            : nls.localize('taskService.upgradeVersionPlural', "The deprecated tasks version 0.1.0 has been removed. Your tasks have been upgraded to version 2.0.0. Open the diffs to review the upgrade."), [{
+                label: fileDiffs.length === 1 ? nls.localize('taskService.openDiff', "Open diff") : nls.localize('taskService.openDiffs', "Open diffs"),
+                run: async () => {
+                    for (const upgrade of fileDiffs) {
+                        await this._editorService.openEditor({
+                            original: { resource: upgrade[0] },
+                            modified: { resource: upgrade[1] }
+                        });
+                    }
+                }
+            }]);
+    }
+};
+AbstractTaskService = AbstractTaskService_1 = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, IMarkerService),
+    __param(2, IOutputService),
+    __param(3, IPaneCompositePartService),
+    __param(4, IViewsService),
+    __param(5, ICommandService),
+    __param(6, IEditorService),
+    __param(7, IFileService),
+    __param(8, IWorkspaceContextService),
+    __param(9, ITelemetryService),
+    __param(10, ITextFileService),
+    __param(11, IModelService),
+    __param(12, IExtensionService),
+    __param(13, IQuickInputService),
+    __param(14, IConfigurationResolverService),
+    __param(15, ITerminalService),
+    __param(16, ITerminalGroupService),
+    __param(17, IStorageService),
+    __param(18, IProgressService),
+    __param(19, IOpenerService),
+    __param(20, IDialogService),
+    __param(21, INotificationService),
+    __param(22, IContextKeyService),
+    __param(23, IWorkbenchEnvironmentService),
+    __param(24, ITerminalProfileResolverService),
+    __param(25, IPathService),
+    __param(26, ITextModelService),
+    __param(27, IPreferencesService),
+    __param(28, IViewDescriptorService),
+    __param(29, IWorkspaceTrustRequestService),
+    __param(30, IWorkspaceTrustManagementService),
+    __param(31, ILogService),
+    __param(32, IThemeService),
+    __param(33, ILifecycleService),
+    __param(34, IRemoteAgentService),
+    __param(35, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], AbstractTaskService);
+export { AbstractTaskService };

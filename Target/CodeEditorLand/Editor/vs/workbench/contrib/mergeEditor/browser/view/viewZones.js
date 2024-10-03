@@ -1,1 +1,162 @@
-import{$ as D}from"../../../../../base/browser/dom.js";import{CompareResult as T}from"../../../../../base/common/arrays.js";import"../../../../../base/common/lifecycle.js";import"../../../../../base/common/observable.js";import"../../../../../editor/browser/editorBrowser.js";import{LineRange as P}from"../model/lineRange.js";import"../model/mapping.js";import"../model/modifiedBaseRange.js";import{join as W}from"../utils.js";import{ActionsSource as _,ConflictActionsFactory as v}from"./conflictActions.js";import{getAlignments as j}from"./lineAlignment.js";import"./viewModel.js";class ce{constructor(s,o,e){this.input1Editor=s;this.input2Editor=o;this.resultEditor=e}conflictActionsFactoryInput1=new v(this.input1Editor);conflictActionsFactoryInput2=new v(this.input2Editor);conflictActionsFactoryResult=new v(this.resultEditor);computeViewZones(s,o,e){let a=0,V=0,Z=0,I=0;const h=[],L=[],w=[],R=[],A=o.model,S=A.baseResultDiffs.read(s),B=W(A.modifiedBaseRanges.read(s),S,(n,r)=>n.baseRange.touches(r.inputRange)?T.neitherLessOrGreaterThan:P.compareByStart(n.baseRange,r.inputRange)),F=e.codeLensesVisible,O=e.showNonConflictingChanges;let d,f;for(const n of B){if(F&&n.left&&(n.left.isConflicting||O||!A.isHandled(n.left).read(s))){const t=new _(o,n.left);(e.shouldAlignResult||!t.inputIsEmpty.read(s))&&(h.push(new E(this.conflictActionsFactoryInput1,n.left.input1Range.startLineNumber-1,t.itemsInput1)),L.push(new E(this.conflictActionsFactoryInput2,n.left.input2Range.startLineNumber-1,t.itemsInput2)),e.shouldAlignBase&&w.push(new H(n.left.baseRange.startLineNumber-1,16)));const p=n.left.baseRange.startLineNumber+(f?.resultingDeltaFromOriginalToModified??0)-1;R.push(new E(this.conflictActionsFactoryResult,p,t.resultItems))}const r=n.rights.at(-1);r&&(f=r);let u;n.left?(u=j(n.left).map(t=>({input1Line:t[0],baseLine:t[1],input2Line:t[2],resultLine:void 0})),d=n.left,u[u.length-1].resultLine=n.left.baseRange.endLineNumberExclusive+(f?f.resultingDeltaFromOriginalToModified:0)):u=[{baseLine:r.inputRange.endLineNumberExclusive,input1Line:r.inputRange.endLineNumberExclusive+(d?d.input1Range.endLineNumberExclusive-d.baseRange.endLineNumberExclusive:0),input2Line:r.inputRange.endLineNumberExclusive+(d?d.input2Range.endLineNumberExclusive-d.baseRange.endLineNumberExclusive:0),resultLine:r.outputRange.endLineNumberExclusive}];for(const{input1Line:t,baseLine:p,input2Line:c,resultLine:g}of u){if(!e.shouldAlignBase&&(t===void 0||c===void 0))continue;const N=t!==void 0?t+a:-1,C=c!==void 0?c+V:-1,M=p+Z,x=g!==void 0?g+I:-1,m=Math.max(e.shouldAlignBase?M:0,N,C,e.shouldAlignResult?x:0);if(t!==void 0){const i=m-N;i>0&&(h.push(new b(t-1,i)),a+=i)}if(c!==void 0){const i=m-C;i>0&&(L.push(new b(c-1,i)),V+=i)}if(e.shouldAlignBase){const i=m-M;i>0&&(w.push(new b(p-1,i)),Z+=i)}if(e.shouldAlignResult&&g!==void 0){const i=m-x;i>0&&(R.push(new b(g-1,i)),I+=i)}}}return new G(h,L,w,R)}}class G{constructor(s,o,e,a){this.input1ViewZones=s;this.input2ViewZones=o;this.baseViewZones=e;this.resultViewZones=a}}class y{}class b extends y{constructor(o,e){super();this.afterLineNumber=o;this.heightInLines=e}create(o,e,a){e.push(o.addZone({afterLineNumber:this.afterLineNumber,heightInLines:this.heightInLines,domNode:D("div.diagonal-fill")}))}}class H extends y{constructor(o,e){super();this.afterLineNumber=o;this.heightPx=e}create(o,e,a){e.push(o.addZone({afterLineNumber:this.afterLineNumber,heightInPx:this.heightPx,domNode:D("div.conflict-actions-placeholder")}))}}class E extends y{constructor(o,e,a){super();this.conflictActionsFactory=o;this.lineNumber=e;this.items=a}create(o,e,a){a.add(this.conflictActionsFactory.createWidget(o,this.lineNumber,this.items,e))}}export{y as MergeEditorViewZone,G as MergeEditorViewZones,ce as ViewZoneComputer};
+import { $ } from '../../../../../base/browser/dom.js';
+import { CompareResult } from '../../../../../base/common/arrays.js';
+import { LineRange } from '../model/lineRange.js';
+import { join } from '../utils.js';
+import { ActionsSource, ConflictActionsFactory } from './conflictActions.js';
+import { getAlignments } from './lineAlignment.js';
+export class ViewZoneComputer {
+    constructor(input1Editor, input2Editor, resultEditor) {
+        this.input1Editor = input1Editor;
+        this.input2Editor = input2Editor;
+        this.resultEditor = resultEditor;
+        this.conflictActionsFactoryInput1 = new ConflictActionsFactory(this.input1Editor);
+        this.conflictActionsFactoryInput2 = new ConflictActionsFactory(this.input2Editor);
+        this.conflictActionsFactoryResult = new ConflictActionsFactory(this.resultEditor);
+    }
+    computeViewZones(reader, viewModel, options) {
+        let input1LinesAdded = 0;
+        let input2LinesAdded = 0;
+        let baseLinesAdded = 0;
+        let resultLinesAdded = 0;
+        const input1ViewZones = [];
+        const input2ViewZones = [];
+        const baseViewZones = [];
+        const resultViewZones = [];
+        const model = viewModel.model;
+        const resultDiffs = model.baseResultDiffs.read(reader);
+        const baseRangeWithStoreAndTouchingDiffs = join(model.modifiedBaseRanges.read(reader), resultDiffs, (baseRange, diff) => baseRange.baseRange.touches(diff.inputRange)
+            ? CompareResult.neitherLessOrGreaterThan
+            : LineRange.compareByStart(baseRange.baseRange, diff.inputRange));
+        const shouldShowCodeLenses = options.codeLensesVisible;
+        const showNonConflictingChanges = options.showNonConflictingChanges;
+        let lastModifiedBaseRange = undefined;
+        let lastBaseResultDiff = undefined;
+        for (const m of baseRangeWithStoreAndTouchingDiffs) {
+            if (shouldShowCodeLenses && m.left && (m.left.isConflicting || showNonConflictingChanges || !model.isHandled(m.left).read(reader))) {
+                const actions = new ActionsSource(viewModel, m.left);
+                if (options.shouldAlignResult || !actions.inputIsEmpty.read(reader)) {
+                    input1ViewZones.push(new CommandViewZone(this.conflictActionsFactoryInput1, m.left.input1Range.startLineNumber - 1, actions.itemsInput1));
+                    input2ViewZones.push(new CommandViewZone(this.conflictActionsFactoryInput2, m.left.input2Range.startLineNumber - 1, actions.itemsInput2));
+                    if (options.shouldAlignBase) {
+                        baseViewZones.push(new Placeholder(m.left.baseRange.startLineNumber - 1, 16));
+                    }
+                }
+                const afterLineNumber = m.left.baseRange.startLineNumber + (lastBaseResultDiff?.resultingDeltaFromOriginalToModified ?? 0) - 1;
+                resultViewZones.push(new CommandViewZone(this.conflictActionsFactoryResult, afterLineNumber, actions.resultItems));
+            }
+            const lastResultDiff = m.rights.at(-1);
+            if (lastResultDiff) {
+                lastBaseResultDiff = lastResultDiff;
+            }
+            let alignedLines;
+            if (m.left) {
+                alignedLines = getAlignments(m.left).map(a => ({
+                    input1Line: a[0],
+                    baseLine: a[1],
+                    input2Line: a[2],
+                    resultLine: undefined,
+                }));
+                lastModifiedBaseRange = m.left;
+                alignedLines[alignedLines.length - 1].resultLine =
+                    m.left.baseRange.endLineNumberExclusive
+                        + (lastBaseResultDiff ? lastBaseResultDiff.resultingDeltaFromOriginalToModified : 0);
+            }
+            else {
+                alignedLines = [{
+                        baseLine: lastResultDiff.inputRange.endLineNumberExclusive,
+                        input1Line: lastResultDiff.inputRange.endLineNumberExclusive + (lastModifiedBaseRange ? (lastModifiedBaseRange.input1Range.endLineNumberExclusive - lastModifiedBaseRange.baseRange.endLineNumberExclusive) : 0),
+                        input2Line: lastResultDiff.inputRange.endLineNumberExclusive + (lastModifiedBaseRange ? (lastModifiedBaseRange.input2Range.endLineNumberExclusive - lastModifiedBaseRange.baseRange.endLineNumberExclusive) : 0),
+                        resultLine: lastResultDiff.outputRange.endLineNumberExclusive,
+                    }];
+            }
+            for (const { input1Line, baseLine, input2Line, resultLine } of alignedLines) {
+                if (!options.shouldAlignBase && (input1Line === undefined || input2Line === undefined)) {
+                    continue;
+                }
+                const input1Line_ = input1Line !== undefined ? input1Line + input1LinesAdded : -1;
+                const input2Line_ = input2Line !== undefined ? input2Line + input2LinesAdded : -1;
+                const baseLine_ = baseLine + baseLinesAdded;
+                const resultLine_ = resultLine !== undefined ? resultLine + resultLinesAdded : -1;
+                const max = Math.max(options.shouldAlignBase ? baseLine_ : 0, input1Line_, input2Line_, options.shouldAlignResult ? resultLine_ : 0);
+                if (input1Line !== undefined) {
+                    const diffInput1 = max - input1Line_;
+                    if (diffInput1 > 0) {
+                        input1ViewZones.push(new Spacer(input1Line - 1, diffInput1));
+                        input1LinesAdded += diffInput1;
+                    }
+                }
+                if (input2Line !== undefined) {
+                    const diffInput2 = max - input2Line_;
+                    if (diffInput2 > 0) {
+                        input2ViewZones.push(new Spacer(input2Line - 1, diffInput2));
+                        input2LinesAdded += diffInput2;
+                    }
+                }
+                if (options.shouldAlignBase) {
+                    const diffBase = max - baseLine_;
+                    if (diffBase > 0) {
+                        baseViewZones.push(new Spacer(baseLine - 1, diffBase));
+                        baseLinesAdded += diffBase;
+                    }
+                }
+                if (options.shouldAlignResult && resultLine !== undefined) {
+                    const diffResult = max - resultLine_;
+                    if (diffResult > 0) {
+                        resultViewZones.push(new Spacer(resultLine - 1, diffResult));
+                        resultLinesAdded += diffResult;
+                    }
+                }
+            }
+        }
+        return new MergeEditorViewZones(input1ViewZones, input2ViewZones, baseViewZones, resultViewZones);
+    }
+}
+export class MergeEditorViewZones {
+    constructor(input1ViewZones, input2ViewZones, baseViewZones, resultViewZones) {
+        this.input1ViewZones = input1ViewZones;
+        this.input2ViewZones = input2ViewZones;
+        this.baseViewZones = baseViewZones;
+        this.resultViewZones = resultViewZones;
+    }
+}
+export class MergeEditorViewZone {
+}
+class Spacer extends MergeEditorViewZone {
+    constructor(afterLineNumber, heightInLines) {
+        super();
+        this.afterLineNumber = afterLineNumber;
+        this.heightInLines = heightInLines;
+    }
+    create(viewZoneChangeAccessor, viewZoneIdsToCleanUp, disposableStore) {
+        viewZoneIdsToCleanUp.push(viewZoneChangeAccessor.addZone({
+            afterLineNumber: this.afterLineNumber,
+            heightInLines: this.heightInLines,
+            domNode: $('div.diagonal-fill'),
+        }));
+    }
+}
+class Placeholder extends MergeEditorViewZone {
+    constructor(afterLineNumber, heightPx) {
+        super();
+        this.afterLineNumber = afterLineNumber;
+        this.heightPx = heightPx;
+    }
+    create(viewZoneChangeAccessor, viewZoneIdsToCleanUp, disposableStore) {
+        viewZoneIdsToCleanUp.push(viewZoneChangeAccessor.addZone({
+            afterLineNumber: this.afterLineNumber,
+            heightInPx: this.heightPx,
+            domNode: $('div.conflict-actions-placeholder'),
+        }));
+    }
+}
+class CommandViewZone extends MergeEditorViewZone {
+    constructor(conflictActionsFactory, lineNumber, items) {
+        super();
+        this.conflictActionsFactory = conflictActionsFactory;
+        this.lineNumber = lineNumber;
+        this.items = items;
+    }
+    create(viewZoneChangeAccessor, viewZoneIdsToCleanUp, disposableStore) {
+        disposableStore.add(this.conflictActionsFactory.createWidget(viewZoneChangeAccessor, this.lineNumber, this.items, viewZoneIdsToCleanUp));
+    }
+}

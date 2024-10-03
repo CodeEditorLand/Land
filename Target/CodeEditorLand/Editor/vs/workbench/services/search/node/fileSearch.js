@@ -1,6 +1,569 @@
-import*as C from"child_process";import*as S from"fs";import*as p from"../../../../base/common/path.js";import"stream";import{StringDecoder as y}from"string_decoder";import*as k from"../../../../base/common/arrays.js";import{toErrorMessage as D}from"../../../../base/common/errorMessage.js";import*as m from"../../../../base/common/glob.js";import*as R from"../../../../base/common/normalization.js";import{isEqualOrParent as M}from"../../../../base/common/extpath.js";import*as H from"../../../../base/common/platform.js";import{StopWatch as W}from"../../../../base/common/stopwatch.js";import*as A from"../../../../base/common/strings.js";import*as z from"../../../../base/common/types.js";import"../../../../base/common/uri.js";import{Promises as B}from"../../../../base/node/pfs.js";import{isFilePatternMatch as T,hasSiblingFn as L}from"../common/search.js";import{spawnRipgrepCmd as j}from"./ripgrepFileSearch.js";import{prepareQuery as O}from"../../../../base/common/fuzzyScorer.js";const w=new Set;process.on("exit",()=>{w.forEach(b=>b())});class N{config;filePattern;normalizedFilePatternLowercase=null;includePattern;maxResults;exists;maxFilesize=null;isLimitHit;resultCount;isCanceled=!1;fileWalkSW=null;directoriesWalked;filesWalked;errors;cmdSW=null;cmdResultCount=0;folderExcludePatterns;globalExcludePattern;walkedPaths;constructor(e){this.config=e,this.filePattern=e.filePattern||"",this.includePattern=e.includePattern&&m.parse(e.includePattern),this.maxResults=e.maxResults||null,this.exists=!!e.exists,this.walkedPaths=Object.create(null),this.resultCount=0,this.isLimitHit=!1,this.directoriesWalked=0,this.filesWalked=0,this.errors=[],this.filePattern&&(this.normalizedFilePatternLowercase=e.shouldGlobMatchFilePattern?null:O(this.filePattern).normalizedLowercase),this.globalExcludePattern=e.excludePattern&&m.parse(e.excludePattern),this.folderExcludePatterns=new Map,e.folderQueries.forEach(t=>{const r={};t.excludePattern?.forEach(s=>{Object.assign(r,s.pattern||{},this.config.excludePattern||{})}),t.excludePattern?.length||Object.assign(r,this.config.excludePattern||{});const i=t.folder.fsPath;e.folderQueries.map(s=>s.folder.fsPath).filter(s=>s!==i).forEach(s=>{M(s,i)&&(r[p.relative(i,s)]=!0)}),this.folderExcludePatterns.set(i,new Q(r,i))})}cancel(){this.isCanceled=!0,w.forEach(e=>e())}walk(e,t,r,i,s,o){if(this.fileWalkSW=W.create(!1),this.isCanceled)return o(null,this.isLimitHit);t.forEach(l=>{const n=p.basename(l.fsPath);this.globalExcludePattern&&this.globalExcludePattern(l.fsPath,n)||this.matchFile(i,{relativePath:l.fsPath,searchPath:void 0})}),this.cmdSW=W.create(!1),this.parallel(e,(l,n)=>{this.call(this.cmdTraversal,this,l,r,i,s,a=>{if(a){const u=D(a);this.errors.push(u),n(a,void 0)}else n(null,void 0)})},(l,n)=>{this.fileWalkSW.stop();const a=l?k.coalesce(l)[0]:null;o(a,this.isLimitHit)})}parallel(e,t,r){const i=new Array(e.length),s=new Array(e.length);let o=!1,l=0;if(e.length===0)return r(null,[]);e.forEach((n,a)=>{t(n,(u,d)=>{if(u?(o=!0,i[a]=null,s[a]=u):(i[a]=d,s[a]=null),++l===e.length)return r(o?s:null,i)})})}call(e,t,...r){try{e.apply(t,r)}catch(i){r[r.length-1](i)}}cmdTraversal(e,t,r,i,s){const o=e.folder.fsPath,l=H.isMacintosh,n=()=>g&&g.kill();w.add(n);let a=h=>{w.delete(n),a=()=>{},s(h)},u="";const d=this.initDirectoryTree(),c=j(this.config,e,this.config.includePattern,this.folderExcludePatterns.get(e.folder.fsPath).expression,t),g=c.cmd,E=!Object.keys(c.siblingClauses).length,P=c.rgArgs.args.map(h=>h.match(/^-/)?h:`'${h}'`).join(" ");let v=`${c.rgDiskPath} ${P}
- - cwd: ${c.cwd}`;c.rgArgs.siblingClauses&&(v+=`
- - Sibling clauses: ${JSON.stringify(c.rgArgs.siblingClauses)}`),i({message:v}),this.cmdResultCount=0,this.collectStdout(g,"utf8",i,(h,I,F)=>{if(h){a(h);return}if(this.isLimitHit){a();return}const f=(u+(l?R.normalizeNFC(I||""):I)).split(`
-`);if(F){const x=f.length;f[x-1]=f[x-1].trim(),f[x-1]||f.pop()}else u=f.pop()||"";if(f.length&&f[0].indexOf(`
-`)!==-1){a(new Error("Splitting up files failed"));return}if(this.cmdResultCount+=f.length,E){for(const x of f)if(this.matchFile(r,{base:o,relativePath:x,searchPath:this.getSearchPath(e,x)}),this.isLimitHit){n();break}(F||this.isLimitHit)&&a();return}this.addDirectoryEntries(e,d,o,f,r),F&&(this.matchDirectoryTree(d,o,r),a())})}spawnFindCmd(e){const t=this.folderExcludePatterns.get(e.folder.fsPath),r=t.getBasenameTerms(),i=t.getPathTerms(),s=["-L","."];if(r.length||i.length){s.push("-not","(","(");for(const o of r)s.push("-name",o),s.push("-o");for(const o of i)s.push("-path",o),s.push("-o");s.pop(),s.push(")","-prune",")")}return s.push("-type","f"),C.spawn("find",s,{cwd:e.folder.fsPath})}readStdout(e,t,r){let i="";this.collectStdout(e,t,()=>{},(s,o,l)=>{if(s){r(s);return}i+=o,l&&r(null,i)})}collectStdout(e,t,r,i){let s=(n,a,u)=>{(n||u)&&(s=()=>{},this.cmdSW?.stop()),i(n,a,u)},o=!1;e.stdout?(this.forwardData(e.stdout,t,s),e.stdout.once("data",()=>o=!0)):r({message:"stdout is null"});let l;e.stderr?l=this.collectData(e.stderr):r({message:"stderr is null"}),e.on("error",n=>{s(n)}),e.on("close",n=>{let a;!o&&(a=this.decodeData(l,t))&&$(a)?s(new Error(`command failed with error code ${n}: ${this.decodeData(l,t)}`)):(this.exists&&n===0&&(this.isLimitHit=!0),s(null,"",!0))})}forwardData(e,t,r){const i=new y(t);return e.on("data",s=>{r(null,i.write(s))}),i}collectData(e){const t=[];return e.on("data",r=>{t.push(r)}),t}decodeData(e,t){const r=new y(t);return e.map(i=>r.write(i)).join("")}initDirectoryTree(){const e={rootEntries:[],pathToEntries:Object.create(null)};return e.pathToEntries["."]=e.rootEntries,e}addDirectoryEntries(e,{pathToEntries:t},r,i,s){i.indexOf(this.filePattern)!==-1&&this.matchFile(s,{base:r,relativePath:this.filePattern,searchPath:this.getSearchPath(e,this.filePattern)});const o=l=>{const n=p.basename(l),a=p.dirname(l);let u=t[a];u||(u=t[a]=[],o(a)),u.push({base:r,relativePath:l,basename:n,searchPath:this.getSearchPath(e,l)})};i.forEach(o)}matchDirectoryTree({rootEntries:e,pathToEntries:t},r,i){const s=this,o=this.folderExcludePatterns.get(r),l=this.filePattern;function n(a){s.directoriesWalked++;const u=L(()=>a.map(d=>d.basename));for(let d=0,c=a.length;d<c;d++){const g=a[d],{relativePath:E,basename:P}=g;if(o.test(E,P,l!==P?u:void 0))continue;const v=t[E];if(v)n(v);else{if(s.filesWalked++,E===l)continue;s.matchFile(i,g)}if(s.isLimitHit)break}}n(e)}getStats(){return{cmdTime:this.cmdSW.elapsed(),fileWalkTime:this.fileWalkSW.elapsed(),directoriesWalked:this.directoriesWalked,filesWalked:this.filesWalked,cmdResultCount:this.cmdResultCount}}doWalk(e,t,r,i,s){const o=e.folder,l=L(()=>r);this.parallel(r,(n,a)=>{if(this.isCanceled||this.isLimitHit)return a(null);const u=t?[t,n].join(p.sep):n;if(this.folderExcludePatterns.get(e.folder.fsPath).test(u,n,this.config.filePattern!==n?l:void 0))return a(null);const d=[o.fsPath,u].join(p.sep);S.lstat(d,(c,g)=>{if(c||this.isCanceled||this.isLimitHit)return a(null);this.statLinkIfNeeded(d,g,(E,P)=>E||this.isCanceled||this.isLimitHit?a(null):P.isDirectory()?(this.directoriesWalked++,this.realPathIfNeeded(d,g,(v,h)=>v||this.isCanceled||this.isLimitHit||(h=h||"",this.walkedPaths[h])?a(null):(this.walkedPaths[h]=!0,B.readdir(d).then(I=>{if(this.isCanceled||this.isLimitHit)return a(null);this.doWalk(e,u,I,i,F=>a(F||null))},I=>{a(null)})))):(this.filesWalked++,u===this.filePattern||this.maxFilesize&&z.isNumber(P.size)&&P.size>this.maxFilesize||this.matchFile(i,{base:o.fsPath,relativePath:u,searchPath:this.getSearchPath(e,u)}),a(null,void 0)))})},n=>{const a=n&&k.coalesce(n);return s(a&&a.length>0?a[0]:void 0)})}matchFile(e,t){this.isFileMatch(t)&&(!this.includePattern||this.includePattern(t.relativePath,p.basename(t.relativePath)))&&(this.resultCount++,(this.exists||this.maxResults&&this.resultCount>this.maxResults)&&(this.isLimitHit=!0),this.isLimitHit||e(t))}isFileMatch(e){if(this.filePattern){if(this.filePattern==="*")return!0;if(this.normalizedFilePatternLowercase)return T(e,this.normalizedFilePatternLowercase);if(this.filePattern)return T(e,this.filePattern,!1)}return!0}statLinkIfNeeded(e,t,r){return t.isSymbolicLink()?S.stat(e,r):r(null,t)}realPathIfNeeded(e,t,r){return t.isSymbolicLink()?S.realpath(e,(i,s)=>i?r(i):r(null,s)):r(null,e)}getSearchPath(e,t){return e.folderName?p.join(e.folderName,t):t}}class de{folderQueries;extraFiles;walker;numThreads;constructor(e,t){this.folderQueries=e.folderQueries,this.extraFiles=e.extraFileResources||[],this.numThreads=t,this.walker=new N(e)}search(e,t,r){this.walker.walk(this.folderQueries,this.extraFiles,this.numThreads,e,t,(i,s)=>{r(i,{limitHit:s,stats:this.walker.getStats(),messages:[]})})}cancel(){this.walker.cancel()}}class Q{constructor(e,t){this.expression=e;this.root=t;this.init(e)}absoluteParsedExpr;relativeParsedExpr;init(e){let t,r;Object.keys(e).filter(i=>e[i]).forEach(i=>{p.isAbsolute(i)?(t=t||m.getEmptyExpression(),t[i]=e[i]):(r=r||m.getEmptyExpression(),r[i]=e[i])}),this.absoluteParsedExpr=t&&m.parse(t,{trimForExclusions:!0}),this.relativeParsedExpr=r&&m.parse(r,{trimForExclusions:!0})}test(e,t,r){return this.relativeParsedExpr&&this.relativeParsedExpr(e,t,r)||this.absoluteParsedExpr&&this.absoluteParsedExpr(p.join(this.root,e),t,r)}getBasenameTerms(){const e=[];return this.absoluteParsedExpr&&e.push(...m.getBasenameTerms(this.absoluteParsedExpr)),this.relativeParsedExpr&&e.push(...m.getBasenameTerms(this.relativeParsedExpr)),e}getPathTerms(){const e=[];return this.absoluteParsedExpr&&e.push(...m.getPathTerms(this.absoluteParsedExpr)),this.relativeParsedExpr&&e.push(...m.getPathTerms(this.relativeParsedExpr)),e}}function $(b){const e=b.trim().split(`
-`),t=e[0].trim();if(t.startsWith("Error parsing regex"))return t;if(t.startsWith("regex parse error"))return A.uppercaseFirstLetter(e[e.length-1].trim());if(t.startsWith("error parsing glob")||t.startsWith("unsupported encoding"))return t.charAt(0).toUpperCase()+t.substr(1);if(t==="Literal '\\n' not allowed.")return"Literal '\\n' currently not supported";if(t.startsWith("Literal "))return t}export{de as Engine,N as FileWalker};
+import * as childProcess from 'child_process';
+import * as fs from 'fs';
+import * as path from '../../../../base/common/path.js';
+import { StringDecoder } from 'string_decoder';
+import * as arrays from '../../../../base/common/arrays.js';
+import { toErrorMessage } from '../../../../base/common/errorMessage.js';
+import * as glob from '../../../../base/common/glob.js';
+import * as normalization from '../../../../base/common/normalization.js';
+import { isEqualOrParent } from '../../../../base/common/extpath.js';
+import * as platform from '../../../../base/common/platform.js';
+import { StopWatch } from '../../../../base/common/stopwatch.js';
+import * as strings from '../../../../base/common/strings.js';
+import * as types from '../../../../base/common/types.js';
+import { Promises } from '../../../../base/node/pfs.js';
+import { isFilePatternMatch, hasSiblingFn } from '../common/search.js';
+import { spawnRipgrepCmd } from './ripgrepFileSearch.js';
+import { prepareQuery } from '../../../../base/common/fuzzyScorer.js';
+const killCmds = new Set();
+process.on('exit', () => {
+    killCmds.forEach(cmd => cmd());
+});
+export class FileWalker {
+    constructor(config) {
+        this.normalizedFilePatternLowercase = null;
+        this.maxFilesize = null;
+        this.isCanceled = false;
+        this.fileWalkSW = null;
+        this.cmdSW = null;
+        this.cmdResultCount = 0;
+        this.config = config;
+        this.filePattern = config.filePattern || '';
+        this.includePattern = config.includePattern && glob.parse(config.includePattern);
+        this.maxResults = config.maxResults || null;
+        this.exists = !!config.exists;
+        this.walkedPaths = Object.create(null);
+        this.resultCount = 0;
+        this.isLimitHit = false;
+        this.directoriesWalked = 0;
+        this.filesWalked = 0;
+        this.errors = [];
+        if (this.filePattern) {
+            this.normalizedFilePatternLowercase = config.shouldGlobMatchFilePattern ? null : prepareQuery(this.filePattern).normalizedLowercase;
+        }
+        this.globalExcludePattern = config.excludePattern && glob.parse(config.excludePattern);
+        this.folderExcludePatterns = new Map();
+        config.folderQueries.forEach(folderQuery => {
+            const folderExcludeExpression = {};
+            folderQuery.excludePattern?.forEach(excludePattern => {
+                Object.assign(folderExcludeExpression, excludePattern.pattern || {}, this.config.excludePattern || {});
+            });
+            if (!folderQuery.excludePattern?.length) {
+                Object.assign(folderExcludeExpression, this.config.excludePattern || {});
+            }
+            const fqPath = folderQuery.folder.fsPath;
+            config.folderQueries
+                .map(rootFolderQuery => rootFolderQuery.folder.fsPath)
+                .filter(rootFolder => rootFolder !== fqPath)
+                .forEach(otherRootFolder => {
+                if (isEqualOrParent(otherRootFolder, fqPath)) {
+                    folderExcludeExpression[path.relative(fqPath, otherRootFolder)] = true;
+                }
+            });
+            this.folderExcludePatterns.set(fqPath, new AbsoluteAndRelativeParsedExpression(folderExcludeExpression, fqPath));
+        });
+    }
+    cancel() {
+        this.isCanceled = true;
+        killCmds.forEach(cmd => cmd());
+    }
+    walk(folderQueries, extraFiles, numThreads, onResult, onMessage, done) {
+        this.fileWalkSW = StopWatch.create(false);
+        if (this.isCanceled) {
+            return done(null, this.isLimitHit);
+        }
+        extraFiles.forEach(extraFilePath => {
+            const basename = path.basename(extraFilePath.fsPath);
+            if (this.globalExcludePattern && this.globalExcludePattern(extraFilePath.fsPath, basename)) {
+                return;
+            }
+            this.matchFile(onResult, { relativePath: extraFilePath.fsPath, searchPath: undefined });
+        });
+        this.cmdSW = StopWatch.create(false);
+        this.parallel(folderQueries, (folderQuery, rootFolderDone) => {
+            this.call(this.cmdTraversal, this, folderQuery, numThreads, onResult, onMessage, (err) => {
+                if (err) {
+                    const errorMessage = toErrorMessage(err);
+                    console.error(errorMessage);
+                    this.errors.push(errorMessage);
+                    rootFolderDone(err, undefined);
+                }
+                else {
+                    rootFolderDone(null, undefined);
+                }
+            });
+        }, (errors, _result) => {
+            this.fileWalkSW.stop();
+            const err = errors ? arrays.coalesce(errors)[0] : null;
+            done(err, this.isLimitHit);
+        });
+    }
+    parallel(list, fn, callback) {
+        const results = new Array(list.length);
+        const errors = new Array(list.length);
+        let didErrorOccur = false;
+        let doneCount = 0;
+        if (list.length === 0) {
+            return callback(null, []);
+        }
+        list.forEach((item, index) => {
+            fn(item, (error, result) => {
+                if (error) {
+                    didErrorOccur = true;
+                    results[index] = null;
+                    errors[index] = error;
+                }
+                else {
+                    results[index] = result;
+                    errors[index] = null;
+                }
+                if (++doneCount === list.length) {
+                    return callback(didErrorOccur ? errors : null, results);
+                }
+            });
+        });
+    }
+    call(fun, that, ...args) {
+        try {
+            fun.apply(that, args);
+        }
+        catch (e) {
+            args[args.length - 1](e);
+        }
+    }
+    cmdTraversal(folderQuery, numThreads, onResult, onMessage, cb) {
+        const rootFolder = folderQuery.folder.fsPath;
+        const isMac = platform.isMacintosh;
+        const killCmd = () => cmd && cmd.kill();
+        killCmds.add(killCmd);
+        let done = (err) => {
+            killCmds.delete(killCmd);
+            done = () => { };
+            cb(err);
+        };
+        let leftover = '';
+        const tree = this.initDirectoryTree();
+        const ripgrep = spawnRipgrepCmd(this.config, folderQuery, this.config.includePattern, this.folderExcludePatterns.get(folderQuery.folder.fsPath).expression, numThreads);
+        const cmd = ripgrep.cmd;
+        const noSiblingsClauses = !Object.keys(ripgrep.siblingClauses).length;
+        const escapedArgs = ripgrep.rgArgs.args
+            .map(arg => arg.match(/^-/) ? arg : `'${arg}'`)
+            .join(' ');
+        let rgCmd = `${ripgrep.rgDiskPath} ${escapedArgs}\n - cwd: ${ripgrep.cwd}`;
+        if (ripgrep.rgArgs.siblingClauses) {
+            rgCmd += `\n - Sibling clauses: ${JSON.stringify(ripgrep.rgArgs.siblingClauses)}`;
+        }
+        onMessage({ message: rgCmd });
+        this.cmdResultCount = 0;
+        this.collectStdout(cmd, 'utf8', onMessage, (err, stdout, last) => {
+            if (err) {
+                done(err);
+                return;
+            }
+            if (this.isLimitHit) {
+                done();
+                return;
+            }
+            const normalized = leftover + (isMac ? normalization.normalizeNFC(stdout || '') : stdout);
+            const relativeFiles = normalized.split('\n');
+            if (last) {
+                const n = relativeFiles.length;
+                relativeFiles[n - 1] = relativeFiles[n - 1].trim();
+                if (!relativeFiles[n - 1]) {
+                    relativeFiles.pop();
+                }
+            }
+            else {
+                leftover = relativeFiles.pop() || '';
+            }
+            if (relativeFiles.length && relativeFiles[0].indexOf('\n') !== -1) {
+                done(new Error('Splitting up files failed'));
+                return;
+            }
+            this.cmdResultCount += relativeFiles.length;
+            if (noSiblingsClauses) {
+                for (const relativePath of relativeFiles) {
+                    this.matchFile(onResult, { base: rootFolder, relativePath, searchPath: this.getSearchPath(folderQuery, relativePath) });
+                    if (this.isLimitHit) {
+                        killCmd();
+                        break;
+                    }
+                }
+                if (last || this.isLimitHit) {
+                    done();
+                }
+                return;
+            }
+            this.addDirectoryEntries(folderQuery, tree, rootFolder, relativeFiles, onResult);
+            if (last) {
+                this.matchDirectoryTree(tree, rootFolder, onResult);
+                done();
+            }
+        });
+    }
+    spawnFindCmd(folderQuery) {
+        const excludePattern = this.folderExcludePatterns.get(folderQuery.folder.fsPath);
+        const basenames = excludePattern.getBasenameTerms();
+        const pathTerms = excludePattern.getPathTerms();
+        const args = ['-L', '.'];
+        if (basenames.length || pathTerms.length) {
+            args.push('-not', '(', '(');
+            for (const basename of basenames) {
+                args.push('-name', basename);
+                args.push('-o');
+            }
+            for (const path of pathTerms) {
+                args.push('-path', path);
+                args.push('-o');
+            }
+            args.pop();
+            args.push(')', '-prune', ')');
+        }
+        args.push('-type', 'f');
+        return childProcess.spawn('find', args, { cwd: folderQuery.folder.fsPath });
+    }
+    readStdout(cmd, encoding, cb) {
+        let all = '';
+        this.collectStdout(cmd, encoding, () => { }, (err, stdout, last) => {
+            if (err) {
+                cb(err);
+                return;
+            }
+            all += stdout;
+            if (last) {
+                cb(null, all);
+            }
+        });
+    }
+    collectStdout(cmd, encoding, onMessage, cb) {
+        let onData = (err, stdout, last) => {
+            if (err || last) {
+                onData = () => { };
+                this.cmdSW?.stop();
+            }
+            cb(err, stdout, last);
+        };
+        let gotData = false;
+        if (cmd.stdout) {
+            this.forwardData(cmd.stdout, encoding, onData);
+            cmd.stdout.once('data', () => gotData = true);
+        }
+        else {
+            onMessage({ message: 'stdout is null' });
+        }
+        let stderr;
+        if (cmd.stderr) {
+            stderr = this.collectData(cmd.stderr);
+        }
+        else {
+            onMessage({ message: 'stderr is null' });
+        }
+        cmd.on('error', (err) => {
+            onData(err);
+        });
+        cmd.on('close', (code) => {
+            let stderrText;
+            if (!gotData && (stderrText = this.decodeData(stderr, encoding)) && rgErrorMsgForDisplay(stderrText)) {
+                onData(new Error(`command failed with error code ${code}: ${this.decodeData(stderr, encoding)}`));
+            }
+            else {
+                if (this.exists && code === 0) {
+                    this.isLimitHit = true;
+                }
+                onData(null, '', true);
+            }
+        });
+    }
+    forwardData(stream, encoding, cb) {
+        const decoder = new StringDecoder(encoding);
+        stream.on('data', (data) => {
+            cb(null, decoder.write(data));
+        });
+        return decoder;
+    }
+    collectData(stream) {
+        const buffers = [];
+        stream.on('data', (data) => {
+            buffers.push(data);
+        });
+        return buffers;
+    }
+    decodeData(buffers, encoding) {
+        const decoder = new StringDecoder(encoding);
+        return buffers.map(buffer => decoder.write(buffer)).join('');
+    }
+    initDirectoryTree() {
+        const tree = {
+            rootEntries: [],
+            pathToEntries: Object.create(null)
+        };
+        tree.pathToEntries['.'] = tree.rootEntries;
+        return tree;
+    }
+    addDirectoryEntries(folderQuery, { pathToEntries }, base, relativeFiles, onResult) {
+        if (relativeFiles.indexOf(this.filePattern) !== -1) {
+            this.matchFile(onResult, {
+                base,
+                relativePath: this.filePattern,
+                searchPath: this.getSearchPath(folderQuery, this.filePattern)
+            });
+        }
+        const add = (relativePath) => {
+            const basename = path.basename(relativePath);
+            const dirname = path.dirname(relativePath);
+            let entries = pathToEntries[dirname];
+            if (!entries) {
+                entries = pathToEntries[dirname] = [];
+                add(dirname);
+            }
+            entries.push({
+                base,
+                relativePath,
+                basename,
+                searchPath: this.getSearchPath(folderQuery, relativePath),
+            });
+        };
+        relativeFiles.forEach(add);
+    }
+    matchDirectoryTree({ rootEntries, pathToEntries }, rootFolder, onResult) {
+        const self = this;
+        const excludePattern = this.folderExcludePatterns.get(rootFolder);
+        const filePattern = this.filePattern;
+        function matchDirectory(entries) {
+            self.directoriesWalked++;
+            const hasSibling = hasSiblingFn(() => entries.map(entry => entry.basename));
+            for (let i = 0, n = entries.length; i < n; i++) {
+                const entry = entries[i];
+                const { relativePath, basename } = entry;
+                if (excludePattern.test(relativePath, basename, filePattern !== basename ? hasSibling : undefined)) {
+                    continue;
+                }
+                const sub = pathToEntries[relativePath];
+                if (sub) {
+                    matchDirectory(sub);
+                }
+                else {
+                    self.filesWalked++;
+                    if (relativePath === filePattern) {
+                        continue;
+                    }
+                    self.matchFile(onResult, entry);
+                }
+                if (self.isLimitHit) {
+                    break;
+                }
+            }
+        }
+        matchDirectory(rootEntries);
+    }
+    getStats() {
+        return {
+            cmdTime: this.cmdSW.elapsed(),
+            fileWalkTime: this.fileWalkSW.elapsed(),
+            directoriesWalked: this.directoriesWalked,
+            filesWalked: this.filesWalked,
+            cmdResultCount: this.cmdResultCount
+        };
+    }
+    doWalk(folderQuery, relativeParentPath, files, onResult, done) {
+        const rootFolder = folderQuery.folder;
+        const hasSibling = hasSiblingFn(() => files);
+        this.parallel(files, (file, clb) => {
+            if (this.isCanceled || this.isLimitHit) {
+                return clb(null);
+            }
+            const currentRelativePath = relativeParentPath ? [relativeParentPath, file].join(path.sep) : file;
+            if (this.folderExcludePatterns.get(folderQuery.folder.fsPath).test(currentRelativePath, file, this.config.filePattern !== file ? hasSibling : undefined)) {
+                return clb(null);
+            }
+            const currentAbsolutePath = [rootFolder.fsPath, currentRelativePath].join(path.sep);
+            fs.lstat(currentAbsolutePath, (error, lstat) => {
+                if (error || this.isCanceled || this.isLimitHit) {
+                    return clb(null);
+                }
+                this.statLinkIfNeeded(currentAbsolutePath, lstat, (error, stat) => {
+                    if (error || this.isCanceled || this.isLimitHit) {
+                        return clb(null);
+                    }
+                    if (stat.isDirectory()) {
+                        this.directoriesWalked++;
+                        return this.realPathIfNeeded(currentAbsolutePath, lstat, (error, realpath) => {
+                            if (error || this.isCanceled || this.isLimitHit) {
+                                return clb(null);
+                            }
+                            realpath = realpath || '';
+                            if (this.walkedPaths[realpath]) {
+                                return clb(null);
+                            }
+                            this.walkedPaths[realpath] = true;
+                            return Promises.readdir(currentAbsolutePath).then(children => {
+                                if (this.isCanceled || this.isLimitHit) {
+                                    return clb(null);
+                                }
+                                this.doWalk(folderQuery, currentRelativePath, children, onResult, err => clb(err || null));
+                            }, error => {
+                                clb(null);
+                            });
+                        });
+                    }
+                    else {
+                        this.filesWalked++;
+                        if (currentRelativePath === this.filePattern) {
+                            return clb(null, undefined);
+                        }
+                        if (this.maxFilesize && types.isNumber(stat.size) && stat.size > this.maxFilesize) {
+                            return clb(null, undefined);
+                        }
+                        this.matchFile(onResult, {
+                            base: rootFolder.fsPath,
+                            relativePath: currentRelativePath,
+                            searchPath: this.getSearchPath(folderQuery, currentRelativePath),
+                        });
+                    }
+                    return clb(null, undefined);
+                });
+            });
+        }, (error) => {
+            const filteredErrors = error ? arrays.coalesce(error) : error;
+            return done(filteredErrors && filteredErrors.length > 0 ? filteredErrors[0] : undefined);
+        });
+    }
+    matchFile(onResult, candidate) {
+        if (this.isFileMatch(candidate) && (!this.includePattern || this.includePattern(candidate.relativePath, path.basename(candidate.relativePath)))) {
+            this.resultCount++;
+            if (this.exists || (this.maxResults && this.resultCount > this.maxResults)) {
+                this.isLimitHit = true;
+            }
+            if (!this.isLimitHit) {
+                onResult(candidate);
+            }
+        }
+    }
+    isFileMatch(candidate) {
+        if (this.filePattern) {
+            if (this.filePattern === '*') {
+                return true;
+            }
+            if (this.normalizedFilePatternLowercase) {
+                return isFilePatternMatch(candidate, this.normalizedFilePatternLowercase);
+            }
+            else if (this.filePattern) {
+                return isFilePatternMatch(candidate, this.filePattern, false);
+            }
+        }
+        return true;
+    }
+    statLinkIfNeeded(path, lstat, clb) {
+        if (lstat.isSymbolicLink()) {
+            return fs.stat(path, clb);
+        }
+        return clb(null, lstat);
+    }
+    realPathIfNeeded(path, lstat, clb) {
+        if (lstat.isSymbolicLink()) {
+            return fs.realpath(path, (error, realpath) => {
+                if (error) {
+                    return clb(error);
+                }
+                return clb(null, realpath);
+            });
+        }
+        return clb(null, path);
+    }
+    getSearchPath(folderQuery, relativePath) {
+        if (folderQuery.folderName) {
+            return path.join(folderQuery.folderName, relativePath);
+        }
+        return relativePath;
+    }
+}
+export class Engine {
+    constructor(config, numThreads) {
+        this.folderQueries = config.folderQueries;
+        this.extraFiles = config.extraFileResources || [];
+        this.numThreads = numThreads;
+        this.walker = new FileWalker(config);
+    }
+    search(onResult, onProgress, done) {
+        this.walker.walk(this.folderQueries, this.extraFiles, this.numThreads, onResult, onProgress, (err, isLimitHit) => {
+            done(err, {
+                limitHit: isLimitHit,
+                stats: this.walker.getStats(),
+                messages: [],
+            });
+        });
+    }
+    cancel() {
+        this.walker.cancel();
+    }
+}
+class AbsoluteAndRelativeParsedExpression {
+    constructor(expression, root) {
+        this.expression = expression;
+        this.root = root;
+        this.init(expression);
+    }
+    init(expr) {
+        let absoluteGlobExpr;
+        let relativeGlobExpr;
+        Object.keys(expr)
+            .filter(key => expr[key])
+            .forEach(key => {
+            if (path.isAbsolute(key)) {
+                absoluteGlobExpr = absoluteGlobExpr || glob.getEmptyExpression();
+                absoluteGlobExpr[key] = expr[key];
+            }
+            else {
+                relativeGlobExpr = relativeGlobExpr || glob.getEmptyExpression();
+                relativeGlobExpr[key] = expr[key];
+            }
+        });
+        this.absoluteParsedExpr = absoluteGlobExpr && glob.parse(absoluteGlobExpr, { trimForExclusions: true });
+        this.relativeParsedExpr = relativeGlobExpr && glob.parse(relativeGlobExpr, { trimForExclusions: true });
+    }
+    test(_path, basename, hasSibling) {
+        return (this.relativeParsedExpr && this.relativeParsedExpr(_path, basename, hasSibling)) ||
+            (this.absoluteParsedExpr && this.absoluteParsedExpr(path.join(this.root, _path), basename, hasSibling));
+    }
+    getBasenameTerms() {
+        const basenameTerms = [];
+        if (this.absoluteParsedExpr) {
+            basenameTerms.push(...glob.getBasenameTerms(this.absoluteParsedExpr));
+        }
+        if (this.relativeParsedExpr) {
+            basenameTerms.push(...glob.getBasenameTerms(this.relativeParsedExpr));
+        }
+        return basenameTerms;
+    }
+    getPathTerms() {
+        const pathTerms = [];
+        if (this.absoluteParsedExpr) {
+            pathTerms.push(...glob.getPathTerms(this.absoluteParsedExpr));
+        }
+        if (this.relativeParsedExpr) {
+            pathTerms.push(...glob.getPathTerms(this.relativeParsedExpr));
+        }
+        return pathTerms;
+    }
+}
+function rgErrorMsgForDisplay(msg) {
+    const lines = msg.trim().split('\n');
+    const firstLine = lines[0].trim();
+    if (firstLine.startsWith('Error parsing regex')) {
+        return firstLine;
+    }
+    if (firstLine.startsWith('regex parse error')) {
+        return strings.uppercaseFirstLetter(lines[lines.length - 1].trim());
+    }
+    if (firstLine.startsWith('error parsing glob') ||
+        firstLine.startsWith('unsupported encoding')) {
+        return firstLine.charAt(0).toUpperCase() + firstLine.substr(1);
+    }
+    if (firstLine === `Literal '\\n' not allowed.`) {
+        return `Literal '\\n' currently not supported`;
+    }
+    if (firstLine.startsWith('Literal ')) {
+        return firstLine;
+    }
+    return undefined;
+}

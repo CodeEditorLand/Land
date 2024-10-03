@@ -1,1 +1,62 @@
-var f=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var c=(n,t,i,o)=>{for(var e=o>1?void 0:o?p(t,i):t,a=n.length-1,l;a>=0;a--)(l=n[a])&&(e=(o?l(t,i,e):l(e))||e);return o&&e&&f(t,i,e),e},s=(n,t)=>(i,o)=>t(i,o,n);import*as d from"../../../../nls.js";import*as m from"../../../../base/common/path.js";import{Disposable as u}from"../../../../base/common/lifecycle.js";import"../../../../editor/browser/editorBrowser.js";import{EditorContributionInstantiation as g,registerEditorContribution as h}from"../../../../editor/browser/editorExtensions.js";import"../../../../editor/common/editorCommon.js";import{IConfigurationService as v}from"../../../../platform/configuration/common/configuration.js";import{INotificationService as b,Severity as _}from"../../../../platform/notification/common/notification.js";let r=class extends u{constructor(i,o,e){super();this._editor=i;this._notificationService=o;this._configurationService=e;this._register(this._editor.onDidChangeModel(a=>this._update())),this._update()}static ID="editor.contrib.largeFileOptimizationsWarner";_update(){const i=this._editor.getModel();if(i&&i.isTooLargeForTokenization()){const o=d.localize({key:"largeFile",comment:["Variable 0 will be a file name."]},"{0}: tokenization, wrapping, folding, codelens, word highlighting and sticky scroll have been turned off for this large file in order to reduce memory usage and avoid freezing or crashing.",m.basename(i.uri.path));this._notificationService.prompt(_.Info,o,[{label:d.localize("removeOptimizations","Forcefully Enable Features"),run:()=>{this._configurationService.updateValue("editor.largeFileOptimizations",!1).then(()=>{this._notificationService.info(d.localize("reopenFilePrompt","Please reopen file in order for this setting to take effect."))},e=>{this._notificationService.error(e)})}}],{neverShowAgain:{id:"editor.contrib.largeFileOptimizationsWarner"}})}}};r=c([s(1,b),s(2,v)],r),h(r.ID,r,g.AfterFirstRender);export{r as LargeFileOptimizationsWarner};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as nls from '../../../../nls.js';
+import * as path from '../../../../base/common/path.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { registerEditorContribution } from '../../../../editor/browser/editorExtensions.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
+let LargeFileOptimizationsWarner = class LargeFileOptimizationsWarner extends Disposable {
+    static { this.ID = 'editor.contrib.largeFileOptimizationsWarner'; }
+    constructor(_editor, _notificationService, _configurationService) {
+        super();
+        this._editor = _editor;
+        this._notificationService = _notificationService;
+        this._configurationService = _configurationService;
+        this._register(this._editor.onDidChangeModel((e) => this._update()));
+        this._update();
+    }
+    _update() {
+        const model = this._editor.getModel();
+        if (!model) {
+            return;
+        }
+        if (model.isTooLargeForTokenization()) {
+            const message = nls.localize({
+                key: 'largeFile',
+                comment: [
+                    'Variable 0 will be a file name.'
+                ]
+            }, "{0}: tokenization, wrapping, folding, codelens, word highlighting and sticky scroll have been turned off for this large file in order to reduce memory usage and avoid freezing or crashing.", path.basename(model.uri.path));
+            this._notificationService.prompt(Severity.Info, message, [
+                {
+                    label: nls.localize('removeOptimizations', "Forcefully Enable Features"),
+                    run: () => {
+                        this._configurationService.updateValue(`editor.largeFileOptimizations`, false).then(() => {
+                            this._notificationService.info(nls.localize('reopenFilePrompt', "Please reopen file in order for this setting to take effect."));
+                        }, (err) => {
+                            this._notificationService.error(err);
+                        });
+                    }
+                }
+            ], { neverShowAgain: { id: 'editor.contrib.largeFileOptimizationsWarner' } });
+        }
+    }
+};
+LargeFileOptimizationsWarner = __decorate([
+    __param(1, INotificationService),
+    __param(2, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], LargeFileOptimizationsWarner);
+export { LargeFileOptimizationsWarner };
+registerEditorContribution(LargeFileOptimizationsWarner.ID, LargeFileOptimizationsWarner, 1);

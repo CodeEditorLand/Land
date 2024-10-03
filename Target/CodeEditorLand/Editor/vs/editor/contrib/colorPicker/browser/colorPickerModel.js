@@ -1,1 +1,66 @@
-import"../../../../base/common/color.js";import{Emitter as i}from"../../../../base/common/event.js";import"../../../common/languages.js";class p{constructor(o,n,e){this.presentationIndex=e;this.originalColor=o,this._color=o,this._colorPresentations=n}originalColor;_color;get color(){return this._color}set color(o){this._color.equals(o)||(this._color=o,this._onDidChangeColor.fire(o))}get presentation(){return this.colorPresentations[this.presentationIndex]}_colorPresentations;get colorPresentations(){return this._colorPresentations}set colorPresentations(o){this._colorPresentations=o,this.presentationIndex>o.length-1&&(this.presentationIndex=0),this._onDidChangePresentation.fire(this.presentation)}_onColorFlushed=new i;onColorFlushed=this._onColorFlushed.event;_onDidChangeColor=new i;onDidChangeColor=this._onDidChangeColor.event;_onDidChangePresentation=new i;onDidChangePresentation=this._onDidChangePresentation.event;selectNextColorPresentation(){this.presentationIndex=(this.presentationIndex+1)%this.colorPresentations.length,this.flushColor(),this._onDidChangePresentation.fire(this.presentation)}guessColorPresentation(o,n){let e=-1;for(let t=0;t<this.colorPresentations.length;t++)if(n.toLowerCase()===this.colorPresentations[t].label){e=t;break}if(e===-1){const t=n.split("(")[0].toLowerCase();for(let r=0;r<this.colorPresentations.length;r++)if(this.colorPresentations[r].label.toLowerCase().startsWith(t)){e=r;break}}e!==-1&&e!==this.presentationIndex&&(this.presentationIndex=e,this._onDidChangePresentation.fire(this.presentation))}flushColor(){this._onColorFlushed.fire(this._color)}}export{p as ColorPickerModel};
+import { Emitter } from '../../../../base/common/event.js';
+export class ColorPickerModel {
+    get color() {
+        return this._color;
+    }
+    set color(color) {
+        if (this._color.equals(color)) {
+            return;
+        }
+        this._color = color;
+        this._onDidChangeColor.fire(color);
+    }
+    get presentation() { return this.colorPresentations[this.presentationIndex]; }
+    get colorPresentations() {
+        return this._colorPresentations;
+    }
+    set colorPresentations(colorPresentations) {
+        this._colorPresentations = colorPresentations;
+        if (this.presentationIndex > colorPresentations.length - 1) {
+            this.presentationIndex = 0;
+        }
+        this._onDidChangePresentation.fire(this.presentation);
+    }
+    constructor(color, availableColorPresentations, presentationIndex) {
+        this.presentationIndex = presentationIndex;
+        this._onColorFlushed = new Emitter();
+        this.onColorFlushed = this._onColorFlushed.event;
+        this._onDidChangeColor = new Emitter();
+        this.onDidChangeColor = this._onDidChangeColor.event;
+        this._onDidChangePresentation = new Emitter();
+        this.onDidChangePresentation = this._onDidChangePresentation.event;
+        this.originalColor = color;
+        this._color = color;
+        this._colorPresentations = availableColorPresentations;
+    }
+    selectNextColorPresentation() {
+        this.presentationIndex = (this.presentationIndex + 1) % this.colorPresentations.length;
+        this.flushColor();
+        this._onDidChangePresentation.fire(this.presentation);
+    }
+    guessColorPresentation(color, originalText) {
+        let presentationIndex = -1;
+        for (let i = 0; i < this.colorPresentations.length; i++) {
+            if (originalText.toLowerCase() === this.colorPresentations[i].label) {
+                presentationIndex = i;
+                break;
+            }
+        }
+        if (presentationIndex === -1) {
+            const originalTextPrefix = originalText.split('(')[0].toLowerCase();
+            for (let i = 0; i < this.colorPresentations.length; i++) {
+                if (this.colorPresentations[i].label.toLowerCase().startsWith(originalTextPrefix)) {
+                    presentationIndex = i;
+                    break;
+                }
+            }
+        }
+        if (presentationIndex !== -1 && presentationIndex !== this.presentationIndex) {
+            this.presentationIndex = presentationIndex;
+            this._onDidChangePresentation.fire(this.presentation);
+        }
+    }
+    flushColor() {
+        this._onColorFlushed.fire(this._color);
+    }
+}

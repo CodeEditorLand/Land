@@ -1,1 +1,250 @@
-var C=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var p=(l,s,o,t)=>{for(var e=t>1?void 0:t?b(s,o):s,r=l.length-1,i;r>=0;r--)(i=l[r])&&(e=(t?i(s,o,e):i(e))||e);return t&&e&&C(s,o,e),e},d=(l,s)=>(o,t)=>s(o,t,l);import{createCancelablePromise as I,TimeoutTimer as v}from"../../../../base/common/async.js";import{RGBA as E}from"../../../../base/common/color.js";import{onUnexpectedError as M}from"../../../../base/common/errors.js";import{Emitter as P}from"../../../../base/common/event.js";import{Disposable as T,DisposableStore as g}from"../../../../base/common/lifecycle.js";import{StopWatch as L}from"../../../../base/common/stopwatch.js";import{noBreakWhitespace as y}from"../../../../base/common/strings.js";import"../../../browser/editorBrowser.js";import{DynamicCssRules as R}from"../../../browser/editorDom.js";import{EditorOption as a}from"../../../common/config/editorOptions.js";import"../../../common/core/position.js";import{Range as S}from"../../../common/core/range.js";import"../../../common/editorCommon.js";import"../../../common/model.js";import{ModelDecorationOptions as w}from"../../../common/model/textModel.js";import{ILanguageFeatureDebounceService as N}from"../../../common/services/languageFeatureDebounce.js";import{ILanguageFeaturesService as F}from"../../../common/services/languageFeatures.js";import{getColors as O}from"./color.js";import{IConfigurationService as x}from"../../../../platform/configuration/common/configuration.js";const A=Object.create({});let n=class extends T{constructor(o,t,e,r){super();this._editor=o;this._configurationService=t;this._languageFeaturesService=e;this._debounceInformation=r.for(e.colorProvider,"Document Colors",{min:n.RECOMPUTE_TIME}),this._register(o.onDidChangeModel(()=>{this._isColorDecoratorsEnabled=this.isEnabled(),this.updateColors()})),this._register(o.onDidChangeModelLanguage(()=>this.updateColors())),this._register(e.colorProvider.onDidChange(()=>this.updateColors())),this._register(o.onDidChangeConfiguration(i=>{const u=this._isColorDecoratorsEnabled;this._isColorDecoratorsEnabled=this.isEnabled(),this._isDefaultColorDecoratorsEnabled=this._editor.getOption(a.defaultColorDecorators);const m=u!==this._isColorDecoratorsEnabled||i.hasChanged(a.colorDecoratorsLimit),h=i.hasChanged(a.defaultColorDecorators);(m||h)&&(this._isColorDecoratorsEnabled?this.updateColors():this.removeAllDecorations())})),this._timeoutTimer=null,this._computePromise=null,this._isColorDecoratorsEnabled=this.isEnabled(),this._isDefaultColorDecoratorsEnabled=this._editor.getOption(a.defaultColorDecorators),this.updateColors()}static ID="editor.contrib.colorDetector";static RECOMPUTE_TIME=1e3;_localToDispose=this._register(new g);_computePromise;_timeoutTimer;_debounceInformation;_decorationsIds=[];_colorDatas=new Map;_colorDecoratorIds=this._editor.createDecorationsCollection();_isColorDecoratorsEnabled;_isDefaultColorDecoratorsEnabled;_ruleFactory=new R(this._editor);_decoratorLimitReporter=new $;isEnabled(){const o=this._editor.getModel();if(!o)return!1;const t=o.getLanguageId(),e=this._configurationService.getValue(t);if(e&&typeof e=="object"){const r=e.colorDecorators;if(r&&r.enable!==void 0&&!r.enable)return r.enable}return this._editor.getOption(a.colorDecorators)}get limitReporter(){return this._decoratorLimitReporter}static get(o){return o.getContribution(this.ID)}dispose(){this.stop(),this.removeAllDecorations(),super.dispose()}updateColors(){if(this.stop(),!this._isColorDecoratorsEnabled)return;const o=this._editor.getModel();!o||!this._languageFeaturesService.colorProvider.has(o)||(this._localToDispose.add(this._editor.onDidChangeModelContent(()=>{this._timeoutTimer||(this._timeoutTimer=new v,this._timeoutTimer.cancelAndSet(()=>{this._timeoutTimer=null,this.beginCompute()},this._debounceInformation.get(o)))})),this.beginCompute())}async beginCompute(){this._computePromise=I(async o=>{const t=this._editor.getModel();if(!t)return[];const e=new L(!1),r=await O(this._languageFeaturesService.colorProvider,t,o,this._isDefaultColorDecoratorsEnabled);return this._debounceInformation.update(t,e.elapsed()),r});try{const o=await this._computePromise;this.updateDecorations(o),this.updateColorDecorators(o),this._computePromise=null}catch(o){M(o)}}stop(){this._timeoutTimer&&(this._timeoutTimer.cancel(),this._timeoutTimer=null),this._computePromise&&(this._computePromise.cancel(),this._computePromise=null),this._localToDispose.clear()}updateDecorations(o){const t=o.map(e=>({range:{startLineNumber:e.colorInfo.range.startLineNumber,startColumn:e.colorInfo.range.startColumn,endLineNumber:e.colorInfo.range.endLineNumber,endColumn:e.colorInfo.range.endColumn},options:w.EMPTY}));this._editor.changeDecorations(e=>{this._decorationsIds=e.deltaDecorations(this._decorationsIds,t),this._colorDatas=new Map,this._decorationsIds.forEach((r,i)=>this._colorDatas.set(r,o[i]))})}_colorDecorationClassRefs=this._register(new g);updateColorDecorators(o){this._colorDecorationClassRefs.clear();const t=[],e=this._editor.getOption(a.colorDecoratorsLimit);for(let i=0;i<o.length&&t.length<e;i++){const{red:u,green:m,blue:h,alpha:_}=o[i].colorInfo.color,c=new E(Math.round(u*255),Math.round(m*255),Math.round(h*255),_),f=`rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})`,D=this._colorDecorationClassRefs.add(this._ruleFactory.createClassNameRef({backgroundColor:f}));t.push({range:{startLineNumber:o[i].colorInfo.range.startLineNumber,startColumn:o[i].colorInfo.range.startColumn,endLineNumber:o[i].colorInfo.range.endLineNumber,endColumn:o[i].colorInfo.range.endColumn},options:{description:"colorDetector",before:{content:y,inlineClassName:`${D.className} colorpicker-color-decoration`,inlineClassNameAffectsLetterSpacing:!0,attachedData:A}}})}const r=e<o.length?e:!1;this._decoratorLimitReporter.update(o.length,r),this._colorDecoratorIds.set(t)}removeAllDecorations(){this._editor.removeDecorations(this._decorationsIds),this._decorationsIds=[],this._colorDecoratorIds.clear(),this._colorDecorationClassRefs.clear()}getColorData(o){const t=this._editor.getModel();if(!t)return null;const e=t.getDecorationsInRange(S.fromPositions(o,o)).filter(r=>this._colorDatas.has(r.id));return e.length===0?null:this._colorDatas.get(e[0].id)}isColorDecoration(o){return this._colorDecoratorIds.has(o)}};n=p([d(1,x),d(2,F),d(3,N)],n);class ${_onDidChange=new P;onDidChange=this._onDidChange.event;_computed=0;_limited=!1;get computed(){return this._computed}get limited(){return this._limited}update(s,o){(s!==this._computed||o!==this._limited)&&(this._computed=s,this._limited=o,this._onDidChange.fire())}}export{A as ColorDecorationInjectedTextMarker,n as ColorDetector,$ as DecoratorLimitReporter};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ColorDetector_1;
+import { createCancelablePromise, TimeoutTimer } from '../../../../base/common/async.js';
+import { RGBA } from '../../../../base/common/color.js';
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { StopWatch } from '../../../../base/common/stopwatch.js';
+import { noBreakWhitespace } from '../../../../base/common/strings.js';
+import { DynamicCssRules } from '../../../browser/editorDom.js';
+import { Range } from '../../../common/core/range.js';
+import { ModelDecorationOptions } from '../../../common/model/textModel.js';
+import { ILanguageFeatureDebounceService } from '../../../common/services/languageFeatureDebounce.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { getColors } from './color.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+export const ColorDecorationInjectedTextMarker = Object.create({});
+let ColorDetector = class ColorDetector extends Disposable {
+    static { ColorDetector_1 = this; }
+    static { this.ID = 'editor.contrib.colorDetector'; }
+    static { this.RECOMPUTE_TIME = 1000; }
+    constructor(_editor, _configurationService, _languageFeaturesService, languageFeatureDebounceService) {
+        super();
+        this._editor = _editor;
+        this._configurationService = _configurationService;
+        this._languageFeaturesService = _languageFeaturesService;
+        this._localToDispose = this._register(new DisposableStore());
+        this._decorationsIds = [];
+        this._colorDatas = new Map();
+        this._colorDecoratorIds = this._editor.createDecorationsCollection();
+        this._ruleFactory = new DynamicCssRules(this._editor);
+        this._decoratorLimitReporter = new DecoratorLimitReporter();
+        this._colorDecorationClassRefs = this._register(new DisposableStore());
+        this._debounceInformation = languageFeatureDebounceService.for(_languageFeaturesService.colorProvider, 'Document Colors', { min: ColorDetector_1.RECOMPUTE_TIME });
+        this._register(_editor.onDidChangeModel(() => {
+            this._isColorDecoratorsEnabled = this.isEnabled();
+            this.updateColors();
+        }));
+        this._register(_editor.onDidChangeModelLanguage(() => this.updateColors()));
+        this._register(_languageFeaturesService.colorProvider.onDidChange(() => this.updateColors()));
+        this._register(_editor.onDidChangeConfiguration((e) => {
+            const prevIsEnabled = this._isColorDecoratorsEnabled;
+            this._isColorDecoratorsEnabled = this.isEnabled();
+            this._isDefaultColorDecoratorsEnabled = this._editor.getOption(150);
+            const updatedColorDecoratorsSetting = prevIsEnabled !== this._isColorDecoratorsEnabled || e.hasChanged(21);
+            const updatedDefaultColorDecoratorsSetting = e.hasChanged(150);
+            if (updatedColorDecoratorsSetting || updatedDefaultColorDecoratorsSetting) {
+                if (this._isColorDecoratorsEnabled) {
+                    this.updateColors();
+                }
+                else {
+                    this.removeAllDecorations();
+                }
+            }
+        }));
+        this._timeoutTimer = null;
+        this._computePromise = null;
+        this._isColorDecoratorsEnabled = this.isEnabled();
+        this._isDefaultColorDecoratorsEnabled = this._editor.getOption(150);
+        this.updateColors();
+    }
+    isEnabled() {
+        const model = this._editor.getModel();
+        if (!model) {
+            return false;
+        }
+        const languageId = model.getLanguageId();
+        const deprecatedConfig = this._configurationService.getValue(languageId);
+        if (deprecatedConfig && typeof deprecatedConfig === 'object') {
+            const colorDecorators = deprecatedConfig['colorDecorators'];
+            if (colorDecorators && colorDecorators['enable'] !== undefined && !colorDecorators['enable']) {
+                return colorDecorators['enable'];
+            }
+        }
+        return this._editor.getOption(20);
+    }
+    get limitReporter() {
+        return this._decoratorLimitReporter;
+    }
+    static get(editor) {
+        return editor.getContribution(this.ID);
+    }
+    dispose() {
+        this.stop();
+        this.removeAllDecorations();
+        super.dispose();
+    }
+    updateColors() {
+        this.stop();
+        if (!this._isColorDecoratorsEnabled) {
+            return;
+        }
+        const model = this._editor.getModel();
+        if (!model || !this._languageFeaturesService.colorProvider.has(model)) {
+            return;
+        }
+        this._localToDispose.add(this._editor.onDidChangeModelContent(() => {
+            if (!this._timeoutTimer) {
+                this._timeoutTimer = new TimeoutTimer();
+                this._timeoutTimer.cancelAndSet(() => {
+                    this._timeoutTimer = null;
+                    this.beginCompute();
+                }, this._debounceInformation.get(model));
+            }
+        }));
+        this.beginCompute();
+    }
+    async beginCompute() {
+        this._computePromise = createCancelablePromise(async (token) => {
+            const model = this._editor.getModel();
+            if (!model) {
+                return [];
+            }
+            const sw = new StopWatch(false);
+            const colors = await getColors(this._languageFeaturesService.colorProvider, model, token, this._isDefaultColorDecoratorsEnabled);
+            this._debounceInformation.update(model, sw.elapsed());
+            return colors;
+        });
+        try {
+            const colors = await this._computePromise;
+            this.updateDecorations(colors);
+            this.updateColorDecorators(colors);
+            this._computePromise = null;
+        }
+        catch (e) {
+            onUnexpectedError(e);
+        }
+    }
+    stop() {
+        if (this._timeoutTimer) {
+            this._timeoutTimer.cancel();
+            this._timeoutTimer = null;
+        }
+        if (this._computePromise) {
+            this._computePromise.cancel();
+            this._computePromise = null;
+        }
+        this._localToDispose.clear();
+    }
+    updateDecorations(colorDatas) {
+        const decorations = colorDatas.map(c => ({
+            range: {
+                startLineNumber: c.colorInfo.range.startLineNumber,
+                startColumn: c.colorInfo.range.startColumn,
+                endLineNumber: c.colorInfo.range.endLineNumber,
+                endColumn: c.colorInfo.range.endColumn
+            },
+            options: ModelDecorationOptions.EMPTY
+        }));
+        this._editor.changeDecorations((changeAccessor) => {
+            this._decorationsIds = changeAccessor.deltaDecorations(this._decorationsIds, decorations);
+            this._colorDatas = new Map();
+            this._decorationsIds.forEach((id, i) => this._colorDatas.set(id, colorDatas[i]));
+        });
+    }
+    updateColorDecorators(colorData) {
+        this._colorDecorationClassRefs.clear();
+        const decorations = [];
+        const limit = this._editor.getOption(21);
+        for (let i = 0; i < colorData.length && decorations.length < limit; i++) {
+            const { red, green, blue, alpha } = colorData[i].colorInfo.color;
+            const rgba = new RGBA(Math.round(red * 255), Math.round(green * 255), Math.round(blue * 255), alpha);
+            const color = `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a})`;
+            const ref = this._colorDecorationClassRefs.add(this._ruleFactory.createClassNameRef({
+                backgroundColor: color
+            }));
+            decorations.push({
+                range: {
+                    startLineNumber: colorData[i].colorInfo.range.startLineNumber,
+                    startColumn: colorData[i].colorInfo.range.startColumn,
+                    endLineNumber: colorData[i].colorInfo.range.endLineNumber,
+                    endColumn: colorData[i].colorInfo.range.endColumn
+                },
+                options: {
+                    description: 'colorDetector',
+                    before: {
+                        content: noBreakWhitespace,
+                        inlineClassName: `${ref.className} colorpicker-color-decoration`,
+                        inlineClassNameAffectsLetterSpacing: true,
+                        attachedData: ColorDecorationInjectedTextMarker
+                    }
+                }
+            });
+        }
+        const limited = limit < colorData.length ? limit : false;
+        this._decoratorLimitReporter.update(colorData.length, limited);
+        this._colorDecoratorIds.set(decorations);
+    }
+    removeAllDecorations() {
+        this._editor.removeDecorations(this._decorationsIds);
+        this._decorationsIds = [];
+        this._colorDecoratorIds.clear();
+        this._colorDecorationClassRefs.clear();
+    }
+    getColorData(position) {
+        const model = this._editor.getModel();
+        if (!model) {
+            return null;
+        }
+        const decorations = model
+            .getDecorationsInRange(Range.fromPositions(position, position))
+            .filter(d => this._colorDatas.has(d.id));
+        if (decorations.length === 0) {
+            return null;
+        }
+        return this._colorDatas.get(decorations[0].id);
+    }
+    isColorDecoration(decoration) {
+        return this._colorDecoratorIds.has(decoration);
+    }
+};
+ColorDetector = ColorDetector_1 = __decorate([
+    __param(1, IConfigurationService),
+    __param(2, ILanguageFeaturesService),
+    __param(3, ILanguageFeatureDebounceService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], ColorDetector);
+export { ColorDetector };
+export class DecoratorLimitReporter {
+    constructor() {
+        this._onDidChange = new Emitter();
+        this.onDidChange = this._onDidChange.event;
+        this._computed = 0;
+        this._limited = false;
+    }
+    get computed() {
+        return this._computed;
+    }
+    get limited() {
+        return this._limited;
+    }
+    update(computed, limited) {
+        if (computed !== this._computed || limited !== this._limited) {
+            this._computed = computed;
+            this._limited = limited;
+            this._onDidChange.fire();
+        }
+    }
+}

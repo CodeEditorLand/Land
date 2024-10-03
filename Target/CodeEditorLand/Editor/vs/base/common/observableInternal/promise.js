@@ -1,1 +1,59 @@
-import{observableValue as a,transaction as u}from"./base.js";import{derived as o}from"./derived.js";class n{constructor(e){this._computeValue=e}_value=a(this,void 0);get cachedValue(){return this._value}getValue(){let e=this._value.get();return e||(e=this._computeValue(),this._value.set(e,void 0)),e}}class i{static fromFn(e){return new i(e())}_value=a(this,void 0);promise;promiseResult=this._value;constructor(e){this.promise=e.then(r=>(u(t=>{this._value.set(new l(r,void 0),t)}),r),r=>{throw u(t=>{this._value.set(new l(void 0,r),t)}),r})}}class l{constructor(e,r){this.data=e;this.error=r}getDataOrThrow(){if(this.error)throw this.error;return this.data}}class m{constructor(e){this._computePromise=e}_lazyValue=new n(()=>new i(this._computePromise()));cachedPromiseResult=o(this,e=>this._lazyValue.cachedValue.read(e)?.promiseResult.read(e));getPromise(){return this._lazyValue.getValue().promise}}export{n as ObservableLazy,m as ObservableLazyPromise,i as ObservablePromise,l as PromiseResult};
+import { observableValue, transaction } from './base.js';
+import { derived } from './derived.js';
+export class ObservableLazy {
+    get cachedValue() { return this._value; }
+    constructor(_computeValue) {
+        this._computeValue = _computeValue;
+        this._value = observableValue(this, undefined);
+    }
+    getValue() {
+        let v = this._value.get();
+        if (!v) {
+            v = this._computeValue();
+            this._value.set(v, undefined);
+        }
+        return v;
+    }
+}
+export class ObservablePromise {
+    static fromFn(fn) {
+        return new ObservablePromise(fn());
+    }
+    constructor(promise) {
+        this._value = observableValue(this, undefined);
+        this.promiseResult = this._value;
+        this.promise = promise.then(value => {
+            transaction(tx => {
+                this._value.set(new PromiseResult(value, undefined), tx);
+            });
+            return value;
+        }, error => {
+            transaction(tx => {
+                this._value.set(new PromiseResult(undefined, error), tx);
+            });
+            throw error;
+        });
+    }
+}
+export class PromiseResult {
+    constructor(data, error) {
+        this.data = data;
+        this.error = error;
+    }
+    getDataOrThrow() {
+        if (this.error) {
+            throw this.error;
+        }
+        return this.data;
+    }
+}
+export class ObservableLazyPromise {
+    constructor(_computePromise) {
+        this._computePromise = _computePromise;
+        this._lazyValue = new ObservableLazy(() => new ObservablePromise(this._computePromise()));
+        this.cachedPromiseResult = derived(this, reader => this._lazyValue.cachedValue.read(reader)?.promiseResult.read(reader));
+    }
+    getPromise() {
+        return this._lazyValue.getValue().promise;
+    }
+}

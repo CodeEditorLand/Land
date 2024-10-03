@@ -1,1 +1,55 @@
-import"../../../base/common/collections.js";import{Event as l}from"../../../base/common/event.js";import{DisposableStore as c}from"../../../base/common/lifecycle.js";import"../../../base/parts/ipc/common/ipc.js";import{AbstractPolicyService as a}from"./policy.js";class I{constructor(s){this.service=s}disposables=new c;listen(s,e){switch(e){case"onDidChange":return l.map(this.service.onDidChange,o=>o.reduce((i,n)=>({...i,[n]:this.service.getPolicyValue(n)??null}),{}),this.disposables)}throw new Error(`Event not found: ${e}`)}call(s,e,o){switch(e){case"updatePolicyDefinitions":return this.service.updatePolicyDefinitions(o)}throw new Error(`Call not found: ${e}`)}dispose(){this.disposables.dispose()}}class S extends a{constructor(e,o){super();this.channel=o;for(const i in e){const{definition:n,value:t}=e[i];this.policyDefinitions[i]=n,t!==void 0&&this.policies.set(i,t)}this.channel.listen("onDidChange")(i=>{for(const n in i){const t=i[n];t===null?this.policies.delete(n):this.policies.set(n,t)}this._onDidChange.fire(Object.keys(i))})}async _updatePolicyDefinitions(e){const o=await this.channel.call("updatePolicyDefinitions",e);for(const i in o)this.policies.set(i,o[i])}}export{I as PolicyChannel,S as PolicyChannelClient};
+import { Event } from '../../../base/common/event.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { AbstractPolicyService } from './policy.js';
+export class PolicyChannel {
+    constructor(service) {
+        this.service = service;
+        this.disposables = new DisposableStore();
+    }
+    listen(_, event) {
+        switch (event) {
+            case 'onDidChange': return Event.map(this.service.onDidChange, names => names.reduce((r, name) => ({ ...r, [name]: this.service.getPolicyValue(name) ?? null }), {}), this.disposables);
+        }
+        throw new Error(`Event not found: ${event}`);
+    }
+    call(_, command, arg) {
+        switch (command) {
+            case 'updatePolicyDefinitions': return this.service.updatePolicyDefinitions(arg);
+        }
+        throw new Error(`Call not found: ${command}`);
+    }
+    dispose() {
+        this.disposables.dispose();
+    }
+}
+export class PolicyChannelClient extends AbstractPolicyService {
+    constructor(policiesData, channel) {
+        super();
+        this.channel = channel;
+        for (const name in policiesData) {
+            const { definition, value } = policiesData[name];
+            this.policyDefinitions[name] = definition;
+            if (value !== undefined) {
+                this.policies.set(name, value);
+            }
+        }
+        this.channel.listen('onDidChange')(policies => {
+            for (const name in policies) {
+                const value = policies[name];
+                if (value === null) {
+                    this.policies.delete(name);
+                }
+                else {
+                    this.policies.set(name, value);
+                }
+            }
+            this._onDidChange.fire(Object.keys(policies));
+        });
+    }
+    async _updatePolicyDefinitions(policyDefinitions) {
+        const result = await this.channel.call('updatePolicyDefinitions', policyDefinitions);
+        for (const name in result) {
+            this.policies.set(name, result[name]);
+        }
+    }
+}

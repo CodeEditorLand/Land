@@ -1,1 +1,567 @@
-import{Emitter as u}from"../../../../../base/common/event.js";import{Disposable as C,MutableDisposable as S,dispose as c}from"../../../../../base/common/lifecycle.js";import{Mimes as g}from"../../../../../base/common/mime.js";import"../../../../../editor/browser/editorBrowser.js";import"../../../../../editor/browser/services/codeEditorService.js";import"../../../../../editor/common/config/editorOptions.js";import"../../../../../editor/common/core/position.js";import{Range as m}from"../../../../../editor/common/core/range.js";import{Selection as _}from"../../../../../editor/common/core/selection.js";import*as v from"../../../../../editor/common/editorCommon.js";import"../../../../../editor/common/model.js";import{SearchParams as x}from"../../../../../editor/common/model/textModelSearch.js";import"../../../../../editor/common/services/resolverService.js";import"../../../../../platform/configuration/common/configuration.js";import"../../../../../platform/undoRedo/common/undoRedo.js";import{readTransientState as D,writeTransientState as E}from"../../../codeEditor/browser/toggleWordWrap.js";import{InlineChatController as M}from"../../../inlineChat/browser/inlineChatController.js";import{CellEditState as f,CellFocusMode as p,CursorAtBoundary as a,CursorAtLineBoundary as d}from"../notebookBrowser.js";import"../notebookOptions.js";import"../notebookViewEvents.js";import"./viewContext.js";import"../../common/model/notebookCellTextModel.js";import"../../common/notebookCommon.js";class Ce extends C{constructor(e,t,i,o,r,n,s,l){super();this.viewType=e;this.model=t;this.id=i;this._viewContext=o;this._configurationService=r;this._modelService=n;this._undoRedoService=s;this._codeEditorService=l;this._register(t.onDidChangeMetadata(()=>{this._onDidChangeState.fire({metadataChanged:!0})})),this._register(t.onDidChangeInternalMetadata(h=>{this._onDidChangeState.fire({internalMetadataChanged:!0}),h.lastRunSuccessChanged&&this.layoutChange({})})),this._register(this._configurationService.onDidChangeConfiguration(h=>{h.affectsConfiguration("notebook.lineNumbers")&&(this.lineNumbers="inherit")})),this.model.collapseState?.inputCollapsed&&(this._inputCollapsed=!0),this.model.collapseState?.outputCollapsed&&(this._outputCollapsed=!0),this._commentOptions=this._configurationService.getValue("editor.comments",{overrideIdentifier:this.language}),this._register(this._configurationService.onDidChangeConfiguration(h=>{h.affectsConfiguration("editor.comments")&&(this._commentOptions=this._configurationService.getValue("editor.comments",{overrideIdentifier:this.language}))}))}_onDidChangeEditorAttachState=this._register(new u);onDidChangeEditorAttachState=this._onDidChangeEditorAttachState.event;_onDidChangeState=this._register(new u);onDidChangeState=this._onDidChangeState.event;get handle(){return this.model.handle}get uri(){return this.model.uri}get lineCount(){return this.model.textBuffer.getLineCount()}get metadata(){return this.model.metadata}get internalMetadata(){return this.model.internalMetadata}get language(){return this.model.language}get mime(){if(typeof this.model.mime=="string")return this.model.mime;switch(this.language){case"markdown":return g.markdown;default:return g.text}}_editState=f.Preview;_lineNumbers="inherit";get lineNumbers(){return this._lineNumbers}set lineNumbers(e){e!==this._lineNumbers&&(this._lineNumbers=e,this._onDidChangeState.fire({cellLineNumberChanged:!0}))}_commentOptions;get commentOptions(){return this._commentOptions}set commentOptions(e){this._commentOptions=e}_focusMode=p.Container;get focusMode(){return this._focusMode}set focusMode(e){this._focusMode!==e&&(this._focusMode=e,this._onDidChangeState.fire({focusModeChanged:!0}))}_textEditor;get editorAttached(){return!!this._textEditor}_editorListeners=[];_editorViewStates=null;_editorTransientState=null;_resolvedCellDecorations=new Map;_textModelRefChangeDisposable=this._register(new S);_cellDecorationsChanged=this._register(new u);onCellDecorationsChanged=this._cellDecorationsChanged.event;_resolvedDecorations=new Map;_lastDecorationId=0;_cellStatusBarItems=new Map;_onDidChangeCellStatusBarItems=this._register(new u);onDidChangeCellStatusBarItems=this._onDidChangeCellStatusBarItems.event;_lastStatusBarId=0;get textModel(){return this.model.textModel}hasModel(){return!!this.textModel}_dragging=!1;get dragging(){return this._dragging}set dragging(e){this._dragging=e,this._onDidChangeState.fire({dragStateChanged:!0})}_textModelRef;_inputCollapsed=!1;get isInputCollapsed(){return this._inputCollapsed}set isInputCollapsed(e){this._inputCollapsed=e,this._onDidChangeState.fire({inputCollapsedChanged:!0})}_outputCollapsed=!1;get isOutputCollapsed(){return this._outputCollapsed}set isOutputCollapsed(e){this._outputCollapsed=e,this._onDidChangeState.fire({outputCollapsedChanged:!0})}_commentHeight=0;set commentHeight(e){this._commentHeight!==e&&(this._commentHeight=e,this.layoutChange({commentHeight:!0},"BaseCellViewModel#commentHeight"))}_isDisposed=!1;_isReadonly=!1;updateOptions(e){this._textEditor&&typeof e.readonly=="boolean"&&this._textEditor.updateOptions({readOnly:e.readonly}),typeof e.readonly=="boolean"&&(this._isReadonly=e.readonly)}assertTextModelAttached(){return!!(this.textModel&&this._textEditor&&this._textEditor.getModel()===this.textModel)}attachTextEditor(e,t){if(!e.hasModel())throw new Error("Invalid editor: model is missing");if(this._textEditor===e){this._editorListeners.length===0&&(this._editorListeners.push(this._textEditor.onDidChangeCursorSelection(()=>{this._onDidChangeState.fire({selectionChanged:!0})})),this._onDidChangeState.fire({selectionChanged:!0}));return}if(this._textEditor=e,this._isReadonly&&e.updateOptions({readOnly:this._isReadonly}),this._editorViewStates?this._restoreViewState(this._editorViewStates):t&&this._restoreViewState({contributionsState:{},cursorState:[],viewState:{scrollLeft:0,firstPosition:{lineNumber:1,column:1},firstPositionDeltaTop:this._viewContext.notebookOptions.getLayoutConfiguration().editorTopPadding}}),this._editorTransientState&&E(e.getModel(),this._editorTransientState,this._codeEditorService),this._isDisposed)return;e.changeDecorations(o=>{this._resolvedDecorations.forEach((r,n)=>{if(n.startsWith("_lazy_")){const s=o.addDecoration(r.options.range,r.options.options);this._resolvedDecorations.get(n).id=s}else{const s=o.addDecoration(r.options.range,r.options.options);this._resolvedDecorations.get(n).id=s}})}),this._editorListeners.push(e.onDidChangeCursorSelection(()=>{this._onDidChangeState.fire({selectionChanged:!0})}));const i=M.get(this._textEditor);i&&this._editorListeners.push(i.onWillStartSession(()=>{this.textBuffer.getLength()===0&&this.enableAutoLanguageDetection()})),this._onDidChangeState.fire({selectionChanged:!0}),this._onDidChangeEditorAttachState.fire()}detachTextEditor(){this.saveViewState(),this.saveTransientState(),this._textEditor?.changeDecorations(e=>{this._resolvedDecorations.forEach(t=>{const i=t.id;i&&e.removeDecoration(i)})}),this._textEditor=void 0,c(this._editorListeners),this._editorListeners=[],this._onDidChangeEditorAttachState.fire(),this._textModelRef&&(this._textModelRef.dispose(),this._textModelRef=void 0),this._textModelRefChangeDisposable.clear()}getText(){return this.model.getValue()}getAlternativeId(){return this.model.alternativeId}getTextLength(){return this.model.getTextLength()}enableAutoLanguageDetection(){this.model.enableAutoLanguageDetection()}saveViewState(){this._textEditor&&(this._editorViewStates=this._textEditor.saveViewState())}saveTransientState(){!this._textEditor||!this._textEditor.hasModel()||(this._editorTransientState=D(this._textEditor.getModel(),this._codeEditorService))}saveEditorViewState(){return this._textEditor&&(this._editorViewStates=this._textEditor.saveViewState()),this._editorViewStates}restoreEditorViewState(e,t){this._editorViewStates=e}_restoreViewState(e){e&&this._textEditor?.restoreViewState(e)}addModelDecoration(e){if(!this._textEditor){const i=++this._lastDecorationId,o=`_lazy_${this.id};${i}`;return this._resolvedDecorations.set(o,{options:e}),o}let t;return this._textEditor.changeDecorations(i=>{t=i.addDecoration(e.range,e.options),this._resolvedDecorations.set(t,{id:t,options:e})}),t}removeModelDecoration(e){const t=this._resolvedDecorations.get(e);this._textEditor&&t&&t.id!==void 0&&this._textEditor.changeDecorations(i=>{i.removeDecoration(t.id)}),this._resolvedDecorations.delete(e)}deltaModelDecorations(e,t){return e.forEach(o=>{this.removeModelDecoration(o)}),t.map(o=>this.addModelDecoration(o))}_removeCellDecoration(e){const t=this._resolvedCellDecorations.get(e);if(this._resolvedCellDecorations.delete(e),t){for(const i of this._resolvedCellDecorations.values())t.className===i.className&&(t.className=void 0),t.outputClassName===i.outputClassName&&(t.outputClassName=void 0),t.gutterClassName===i.gutterClassName&&(t.gutterClassName=void 0),t.topClassName===i.topClassName&&(t.topClassName=void 0);this._cellDecorationsChanged.fire({added:[],removed:[t]})}}_addCellDecoration(e){const t=++this._lastDecorationId,i=`_cell_${this.id};${t}`;return this._resolvedCellDecorations.set(i,e),this._cellDecorationsChanged.fire({added:[e],removed:[]}),i}getCellDecorations(){return[...this._resolvedCellDecorations.values()]}getCellDecorationRange(e){return this._textEditor?this._textEditor.getModel()?.getDecorationRange(e)??null:null}deltaCellDecorations(e,t){return e.forEach(o=>{this._removeCellDecoration(o)}),t.map(o=>this._addCellDecoration(o))}deltaCellStatusBarItems(e,t){e.forEach(o=>{this._cellStatusBarItems.get(o)&&this._cellStatusBarItems.delete(o)});const i=t.map(o=>{const r=++this._lastStatusBarId,n=`_cell_${this.id};${r}`;return this._cellStatusBarItems.set(n,o),n});return this._onDidChangeCellStatusBarItems.fire(),i}getCellStatusBarItems(){return Array.from(this._cellStatusBarItems.values())}revealRangeInCenter(e){this._textEditor?.revealRangeInCenter(e,v.ScrollType.Immediate)}setSelection(e){this._textEditor?.setSelection(e)}setSelections(e){e.length&&(this._textEditor?this._textEditor?.setSelections(e):this._editorViewStates&&(this._editorViewStates.cursorState=e.map(t=>({inSelectionMode:!t.isEmpty(),selectionStart:t.getStartPosition(),position:t.getEndPosition()}))))}getSelections(){return this._textEditor?.getSelections()??this._editorViewStates?.cursorState.map(e=>new _(e.selectionStart.lineNumber,e.selectionStart.column,e.position.lineNumber,e.position.column))??[]}getSelectionsStartPosition(){return this._textEditor?this._textEditor.getSelections()?.map(t=>t.getStartPosition()):this._editorViewStates?.cursorState?.map(t=>t.selectionStart)}getLineScrollTopOffset(e){if(!this._textEditor)return 0;const t=this._viewContext.notebookOptions.computeEditorPadding(this.internalMetadata,this.uri);return this._textEditor.getTopForLineNumber(e)+t.top}getPositionScrollTopOffset(e){if(!this._textEditor)return 0;const t=e instanceof _?e.getPosition():e.getStartPosition(),i=this._viewContext.notebookOptions.computeEditorPadding(this.internalMetadata,this.uri);return this._textEditor.getTopForPosition(t.lineNumber,t.column)+i.top}cursorAtLineBoundary(){if(!this._textEditor||!this.textModel||!this._textEditor.hasTextFocus())return d.None;const e=this._textEditor.getSelection();if(!e||!e.isEmpty())return d.None;const t=this.textModel.getLineLength(e.startLineNumber);if(t===0)return d.Both;switch(e.startColumn){case 1:return d.Start;case t+1:return d.End;default:return d.None}}cursorAtBoundary(){if(!this._textEditor)return a.None;if(!this.textModel)return a.None;const e=this._textEditor.getSelection();if(!e||!e.isEmpty())return a.None;const t=this._textEditor.getTopForPosition(1,1),i=this._textEditor.getTopForPosition(this.textModel.getLineCount(),this.textModel.getLineLength(this.textModel.getLineCount())),o=this._textEditor.getTopForPosition(e.startLineNumber,e.startColumn);return o===i?o===t?a.Both:a.Bottom:o===t?a.Top:a.None}_editStateSource="";get editStateSource(){return this._editStateSource}updateEditState(e,t){this._editStateSource=t,e!==this._editState&&(this._editState=e,this._onDidChangeState.fire({editStateChanged:!0}),this._editState===f.Preview&&(this.focusMode=p.Container))}getEditState(){return this._editState}get textBuffer(){return this.model.textBuffer}async resolveTextModel(){if(!this._textModelRef||!this.textModel){if(this._textModelRef=await this._modelService.createModelReference(this.uri),this._isDisposed)return this.textModel;if(!this._textModelRef)throw new Error(`Cannot resolve text model for ${this.uri}`);this._textModelRefChangeDisposable.value=this.textModel.onDidChangeContent(()=>this.onDidChangeTextModelContent())}return this.textModel}cellStartFind(e,t){let i=[];const o=this.textBuffer.getLineCount(),r=t.findScope?.selectedTextRanges??[new m(1,1,o,this.textBuffer.getLineLength(o)+1)];if(this.assertTextModelAttached())i=this.textModel.findMatches(e,r,t.regex||!1,t.caseSensitive||!1,t.wholeWord&&t.wordSeparators||null,t.regex||!1);else{const s=new x(e,t.regex||!1,t.caseSensitive||!1,t.wholeWord&&t.wordSeparators||null).parseSearchRequest();if(!s)return null;r.forEach(l=>{i.push(...this.textBuffer.findMatchesLineByLine(new m(l.startLineNumber,l.startColumn,l.endLineNumber,l.endColumn),s,t.regex||!1,1e3))})}return i}dispose(){this._isDisposed=!0,super.dispose(),c(this._editorListeners),this._undoRedoService.getUriComparisonKey(this.uri)===this.uri.toString()&&this._undoRedoService.removeElements(this.uri),this._textModelRef?.dispose()}toJSON(){return{handle:this.handle}}}export{Ce as BaseCellViewModel};
+import { Emitter } from '../../../../../base/common/event.js';
+import { Disposable, MutableDisposable, dispose } from '../../../../../base/common/lifecycle.js';
+import { Mimes } from '../../../../../base/common/mime.js';
+import { Range } from '../../../../../editor/common/core/range.js';
+import { Selection } from '../../../../../editor/common/core/selection.js';
+import { SearchParams } from '../../../../../editor/common/model/textModelSearch.js';
+import { readTransientState, writeTransientState } from '../../../codeEditor/browser/toggleWordWrap.js';
+import { InlineChatController } from '../../../inlineChat/browser/inlineChatController.js';
+import { CellEditState, CellFocusMode, CursorAtBoundary, CursorAtLineBoundary } from '../notebookBrowser.js';
+export class BaseCellViewModel extends Disposable {
+    get handle() {
+        return this.model.handle;
+    }
+    get uri() {
+        return this.model.uri;
+    }
+    get lineCount() {
+        return this.model.textBuffer.getLineCount();
+    }
+    get metadata() {
+        return this.model.metadata;
+    }
+    get internalMetadata() {
+        return this.model.internalMetadata;
+    }
+    get language() {
+        return this.model.language;
+    }
+    get mime() {
+        if (typeof this.model.mime === 'string') {
+            return this.model.mime;
+        }
+        switch (this.language) {
+            case 'markdown':
+                return Mimes.markdown;
+            default:
+                return Mimes.text;
+        }
+    }
+    get lineNumbers() {
+        return this._lineNumbers;
+    }
+    set lineNumbers(lineNumbers) {
+        if (lineNumbers === this._lineNumbers) {
+            return;
+        }
+        this._lineNumbers = lineNumbers;
+        this._onDidChangeState.fire({ cellLineNumberChanged: true });
+    }
+    get commentOptions() {
+        return this._commentOptions;
+    }
+    set commentOptions(newOptions) {
+        this._commentOptions = newOptions;
+    }
+    get focusMode() {
+        return this._focusMode;
+    }
+    set focusMode(newMode) {
+        if (this._focusMode !== newMode) {
+            this._focusMode = newMode;
+            this._onDidChangeState.fire({ focusModeChanged: true });
+        }
+    }
+    get editorAttached() {
+        return !!this._textEditor;
+    }
+    get textModel() {
+        return this.model.textModel;
+    }
+    hasModel() {
+        return !!this.textModel;
+    }
+    get dragging() {
+        return this._dragging;
+    }
+    set dragging(v) {
+        this._dragging = v;
+        this._onDidChangeState.fire({ dragStateChanged: true });
+    }
+    get isInputCollapsed() {
+        return this._inputCollapsed;
+    }
+    set isInputCollapsed(v) {
+        this._inputCollapsed = v;
+        this._onDidChangeState.fire({ inputCollapsedChanged: true });
+    }
+    get isOutputCollapsed() {
+        return this._outputCollapsed;
+    }
+    set isOutputCollapsed(v) {
+        this._outputCollapsed = v;
+        this._onDidChangeState.fire({ outputCollapsedChanged: true });
+    }
+    set commentHeight(height) {
+        if (this._commentHeight === height) {
+            return;
+        }
+        this._commentHeight = height;
+        this.layoutChange({ commentHeight: true }, 'BaseCellViewModel#commentHeight');
+    }
+    constructor(viewType, model, id, _viewContext, _configurationService, _modelService, _undoRedoService, _codeEditorService) {
+        super();
+        this.viewType = viewType;
+        this.model = model;
+        this.id = id;
+        this._viewContext = _viewContext;
+        this._configurationService = _configurationService;
+        this._modelService = _modelService;
+        this._undoRedoService = _undoRedoService;
+        this._codeEditorService = _codeEditorService;
+        this._onDidChangeEditorAttachState = this._register(new Emitter());
+        this.onDidChangeEditorAttachState = this._onDidChangeEditorAttachState.event;
+        this._onDidChangeState = this._register(new Emitter());
+        this.onDidChangeState = this._onDidChangeState.event;
+        this._editState = CellEditState.Preview;
+        this._lineNumbers = 'inherit';
+        this._focusMode = CellFocusMode.Container;
+        this._editorListeners = [];
+        this._editorViewStates = null;
+        this._editorTransientState = null;
+        this._resolvedCellDecorations = new Map();
+        this._textModelRefChangeDisposable = this._register(new MutableDisposable());
+        this._cellDecorationsChanged = this._register(new Emitter());
+        this.onCellDecorationsChanged = this._cellDecorationsChanged.event;
+        this._resolvedDecorations = new Map();
+        this._lastDecorationId = 0;
+        this._cellStatusBarItems = new Map();
+        this._onDidChangeCellStatusBarItems = this._register(new Emitter());
+        this.onDidChangeCellStatusBarItems = this._onDidChangeCellStatusBarItems.event;
+        this._lastStatusBarId = 0;
+        this._dragging = false;
+        this._inputCollapsed = false;
+        this._outputCollapsed = false;
+        this._commentHeight = 0;
+        this._isDisposed = false;
+        this._isReadonly = false;
+        this._editStateSource = '';
+        this._register(model.onDidChangeMetadata(() => {
+            this._onDidChangeState.fire({ metadataChanged: true });
+        }));
+        this._register(model.onDidChangeInternalMetadata(e => {
+            this._onDidChangeState.fire({ internalMetadataChanged: true });
+            if (e.lastRunSuccessChanged) {
+                this.layoutChange({});
+            }
+        }));
+        this._register(this._configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('notebook.lineNumbers')) {
+                this.lineNumbers = 'inherit';
+            }
+        }));
+        if (this.model.collapseState?.inputCollapsed) {
+            this._inputCollapsed = true;
+        }
+        if (this.model.collapseState?.outputCollapsed) {
+            this._outputCollapsed = true;
+        }
+        this._commentOptions = this._configurationService.getValue('editor.comments', { overrideIdentifier: this.language });
+        this._register(this._configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('editor.comments')) {
+                this._commentOptions = this._configurationService.getValue('editor.comments', { overrideIdentifier: this.language });
+            }
+        }));
+    }
+    updateOptions(e) {
+        if (this._textEditor && typeof e.readonly === 'boolean') {
+            this._textEditor.updateOptions({ readOnly: e.readonly });
+        }
+        if (typeof e.readonly === 'boolean') {
+            this._isReadonly = e.readonly;
+        }
+    }
+    assertTextModelAttached() {
+        if (this.textModel && this._textEditor && this._textEditor.getModel() === this.textModel) {
+            return true;
+        }
+        return false;
+    }
+    attachTextEditor(editor, estimatedHasHorizontalScrolling) {
+        if (!editor.hasModel()) {
+            throw new Error('Invalid editor: model is missing');
+        }
+        if (this._textEditor === editor) {
+            if (this._editorListeners.length === 0) {
+                this._editorListeners.push(this._textEditor.onDidChangeCursorSelection(() => { this._onDidChangeState.fire({ selectionChanged: true }); }));
+                this._onDidChangeState.fire({ selectionChanged: true });
+            }
+            return;
+        }
+        this._textEditor = editor;
+        if (this._isReadonly) {
+            editor.updateOptions({ readOnly: this._isReadonly });
+        }
+        if (this._editorViewStates) {
+            this._restoreViewState(this._editorViewStates);
+        }
+        else {
+            if (estimatedHasHorizontalScrolling) {
+                this._restoreViewState({
+                    contributionsState: {},
+                    cursorState: [],
+                    viewState: {
+                        scrollLeft: 0,
+                        firstPosition: { lineNumber: 1, column: 1 },
+                        firstPositionDeltaTop: this._viewContext.notebookOptions.getLayoutConfiguration().editorTopPadding
+                    }
+                });
+            }
+        }
+        if (this._editorTransientState) {
+            writeTransientState(editor.getModel(), this._editorTransientState, this._codeEditorService);
+        }
+        if (this._isDisposed) {
+            return;
+        }
+        editor.changeDecorations((accessor) => {
+            this._resolvedDecorations.forEach((value, key) => {
+                if (key.startsWith('_lazy_')) {
+                    const ret = accessor.addDecoration(value.options.range, value.options.options);
+                    this._resolvedDecorations.get(key).id = ret;
+                }
+                else {
+                    const ret = accessor.addDecoration(value.options.range, value.options.options);
+                    this._resolvedDecorations.get(key).id = ret;
+                }
+            });
+        });
+        this._editorListeners.push(editor.onDidChangeCursorSelection(() => { this._onDidChangeState.fire({ selectionChanged: true }); }));
+        const inlineChatController = InlineChatController.get(this._textEditor);
+        if (inlineChatController) {
+            this._editorListeners.push(inlineChatController.onWillStartSession(() => {
+                if (this.textBuffer.getLength() === 0) {
+                    this.enableAutoLanguageDetection();
+                }
+            }));
+        }
+        this._onDidChangeState.fire({ selectionChanged: true });
+        this._onDidChangeEditorAttachState.fire();
+    }
+    detachTextEditor() {
+        this.saveViewState();
+        this.saveTransientState();
+        this._textEditor?.changeDecorations((accessor) => {
+            this._resolvedDecorations.forEach(value => {
+                const resolvedid = value.id;
+                if (resolvedid) {
+                    accessor.removeDecoration(resolvedid);
+                }
+            });
+        });
+        this._textEditor = undefined;
+        dispose(this._editorListeners);
+        this._editorListeners = [];
+        this._onDidChangeEditorAttachState.fire();
+        if (this._textModelRef) {
+            this._textModelRef.dispose();
+            this._textModelRef = undefined;
+        }
+        this._textModelRefChangeDisposable.clear();
+    }
+    getText() {
+        return this.model.getValue();
+    }
+    getAlternativeId() {
+        return this.model.alternativeId;
+    }
+    getTextLength() {
+        return this.model.getTextLength();
+    }
+    enableAutoLanguageDetection() {
+        this.model.enableAutoLanguageDetection();
+    }
+    saveViewState() {
+        if (!this._textEditor) {
+            return;
+        }
+        this._editorViewStates = this._textEditor.saveViewState();
+    }
+    saveTransientState() {
+        if (!this._textEditor || !this._textEditor.hasModel()) {
+            return;
+        }
+        this._editorTransientState = readTransientState(this._textEditor.getModel(), this._codeEditorService);
+    }
+    saveEditorViewState() {
+        if (this._textEditor) {
+            this._editorViewStates = this._textEditor.saveViewState();
+        }
+        return this._editorViewStates;
+    }
+    restoreEditorViewState(editorViewStates, totalHeight) {
+        this._editorViewStates = editorViewStates;
+    }
+    _restoreViewState(state) {
+        if (state) {
+            this._textEditor?.restoreViewState(state);
+        }
+    }
+    addModelDecoration(decoration) {
+        if (!this._textEditor) {
+            const id = ++this._lastDecorationId;
+            const decorationId = `_lazy_${this.id};${id}`;
+            this._resolvedDecorations.set(decorationId, { options: decoration });
+            return decorationId;
+        }
+        let id;
+        this._textEditor.changeDecorations((accessor) => {
+            id = accessor.addDecoration(decoration.range, decoration.options);
+            this._resolvedDecorations.set(id, { id, options: decoration });
+        });
+        return id;
+    }
+    removeModelDecoration(decorationId) {
+        const realDecorationId = this._resolvedDecorations.get(decorationId);
+        if (this._textEditor && realDecorationId && realDecorationId.id !== undefined) {
+            this._textEditor.changeDecorations((accessor) => {
+                accessor.removeDecoration(realDecorationId.id);
+            });
+        }
+        this._resolvedDecorations.delete(decorationId);
+    }
+    deltaModelDecorations(oldDecorations, newDecorations) {
+        oldDecorations.forEach(id => {
+            this.removeModelDecoration(id);
+        });
+        const ret = newDecorations.map(option => {
+            return this.addModelDecoration(option);
+        });
+        return ret;
+    }
+    _removeCellDecoration(decorationId) {
+        const options = this._resolvedCellDecorations.get(decorationId);
+        this._resolvedCellDecorations.delete(decorationId);
+        if (options) {
+            for (const existingOptions of this._resolvedCellDecorations.values()) {
+                if (options.className === existingOptions.className) {
+                    options.className = undefined;
+                }
+                if (options.outputClassName === existingOptions.outputClassName) {
+                    options.outputClassName = undefined;
+                }
+                if (options.gutterClassName === existingOptions.gutterClassName) {
+                    options.gutterClassName = undefined;
+                }
+                if (options.topClassName === existingOptions.topClassName) {
+                    options.topClassName = undefined;
+                }
+            }
+            this._cellDecorationsChanged.fire({ added: [], removed: [options] });
+        }
+    }
+    _addCellDecoration(options) {
+        const id = ++this._lastDecorationId;
+        const decorationId = `_cell_${this.id};${id}`;
+        this._resolvedCellDecorations.set(decorationId, options);
+        this._cellDecorationsChanged.fire({ added: [options], removed: [] });
+        return decorationId;
+    }
+    getCellDecorations() {
+        return [...this._resolvedCellDecorations.values()];
+    }
+    getCellDecorationRange(decorationId) {
+        if (this._textEditor) {
+            return this._textEditor.getModel()?.getDecorationRange(decorationId) ?? null;
+        }
+        return null;
+    }
+    deltaCellDecorations(oldDecorations, newDecorations) {
+        oldDecorations.forEach(id => {
+            this._removeCellDecoration(id);
+        });
+        const ret = newDecorations.map(option => {
+            return this._addCellDecoration(option);
+        });
+        return ret;
+    }
+    deltaCellStatusBarItems(oldItems, newItems) {
+        oldItems.forEach(id => {
+            const item = this._cellStatusBarItems.get(id);
+            if (item) {
+                this._cellStatusBarItems.delete(id);
+            }
+        });
+        const newIds = newItems.map(item => {
+            const id = ++this._lastStatusBarId;
+            const itemId = `_cell_${this.id};${id}`;
+            this._cellStatusBarItems.set(itemId, item);
+            return itemId;
+        });
+        this._onDidChangeCellStatusBarItems.fire();
+        return newIds;
+    }
+    getCellStatusBarItems() {
+        return Array.from(this._cellStatusBarItems.values());
+    }
+    revealRangeInCenter(range) {
+        this._textEditor?.revealRangeInCenter(range, 1);
+    }
+    setSelection(range) {
+        this._textEditor?.setSelection(range);
+    }
+    setSelections(selections) {
+        if (selections.length) {
+            if (this._textEditor) {
+                this._textEditor?.setSelections(selections);
+            }
+            else if (this._editorViewStates) {
+                this._editorViewStates.cursorState = selections.map(selection => {
+                    return {
+                        inSelectionMode: !selection.isEmpty(),
+                        selectionStart: selection.getStartPosition(),
+                        position: selection.getEndPosition(),
+                    };
+                });
+            }
+        }
+    }
+    getSelections() {
+        return this._textEditor?.getSelections()
+            ?? this._editorViewStates?.cursorState.map(state => new Selection(state.selectionStart.lineNumber, state.selectionStart.column, state.position.lineNumber, state.position.column))
+            ?? [];
+    }
+    getSelectionsStartPosition() {
+        if (this._textEditor) {
+            const selections = this._textEditor.getSelections();
+            return selections?.map(s => s.getStartPosition());
+        }
+        else {
+            const selections = this._editorViewStates?.cursorState;
+            return selections?.map(s => s.selectionStart);
+        }
+    }
+    getLineScrollTopOffset(line) {
+        if (!this._textEditor) {
+            return 0;
+        }
+        const editorPadding = this._viewContext.notebookOptions.computeEditorPadding(this.internalMetadata, this.uri);
+        return this._textEditor.getTopForLineNumber(line) + editorPadding.top;
+    }
+    getPositionScrollTopOffset(range) {
+        if (!this._textEditor) {
+            return 0;
+        }
+        const position = range instanceof Selection ? range.getPosition() : range.getStartPosition();
+        const editorPadding = this._viewContext.notebookOptions.computeEditorPadding(this.internalMetadata, this.uri);
+        return this._textEditor.getTopForPosition(position.lineNumber, position.column) + editorPadding.top;
+    }
+    cursorAtLineBoundary() {
+        if (!this._textEditor || !this.textModel || !this._textEditor.hasTextFocus()) {
+            return CursorAtLineBoundary.None;
+        }
+        const selection = this._textEditor.getSelection();
+        if (!selection || !selection.isEmpty()) {
+            return CursorAtLineBoundary.None;
+        }
+        const currentLineLength = this.textModel.getLineLength(selection.startLineNumber);
+        if (currentLineLength === 0) {
+            return CursorAtLineBoundary.Both;
+        }
+        switch (selection.startColumn) {
+            case 1:
+                return CursorAtLineBoundary.Start;
+            case currentLineLength + 1:
+                return CursorAtLineBoundary.End;
+            default:
+                return CursorAtLineBoundary.None;
+        }
+    }
+    cursorAtBoundary() {
+        if (!this._textEditor) {
+            return CursorAtBoundary.None;
+        }
+        if (!this.textModel) {
+            return CursorAtBoundary.None;
+        }
+        const selection = this._textEditor.getSelection();
+        if (!selection || !selection.isEmpty()) {
+            return CursorAtBoundary.None;
+        }
+        const firstViewLineTop = this._textEditor.getTopForPosition(1, 1);
+        const lastViewLineTop = this._textEditor.getTopForPosition(this.textModel.getLineCount(), this.textModel.getLineLength(this.textModel.getLineCount()));
+        const selectionTop = this._textEditor.getTopForPosition(selection.startLineNumber, selection.startColumn);
+        if (selectionTop === lastViewLineTop) {
+            if (selectionTop === firstViewLineTop) {
+                return CursorAtBoundary.Both;
+            }
+            else {
+                return CursorAtBoundary.Bottom;
+            }
+        }
+        else {
+            if (selectionTop === firstViewLineTop) {
+                return CursorAtBoundary.Top;
+            }
+            else {
+                return CursorAtBoundary.None;
+            }
+        }
+    }
+    get editStateSource() {
+        return this._editStateSource;
+    }
+    updateEditState(newState, source) {
+        this._editStateSource = source;
+        if (newState === this._editState) {
+            return;
+        }
+        this._editState = newState;
+        this._onDidChangeState.fire({ editStateChanged: true });
+        if (this._editState === CellEditState.Preview) {
+            this.focusMode = CellFocusMode.Container;
+        }
+    }
+    getEditState() {
+        return this._editState;
+    }
+    get textBuffer() {
+        return this.model.textBuffer;
+    }
+    async resolveTextModel() {
+        if (!this._textModelRef || !this.textModel) {
+            this._textModelRef = await this._modelService.createModelReference(this.uri);
+            if (this._isDisposed) {
+                return this.textModel;
+            }
+            if (!this._textModelRef) {
+                throw new Error(`Cannot resolve text model for ${this.uri}`);
+            }
+            this._textModelRefChangeDisposable.value = this.textModel.onDidChangeContent(() => this.onDidChangeTextModelContent());
+        }
+        return this.textModel;
+    }
+    cellStartFind(value, options) {
+        let cellMatches = [];
+        const lineCount = this.textBuffer.getLineCount();
+        const findRange = options.findScope?.selectedTextRanges ?? [new Range(1, 1, lineCount, this.textBuffer.getLineLength(lineCount) + 1)];
+        if (this.assertTextModelAttached()) {
+            cellMatches = this.textModel.findMatches(value, findRange, options.regex || false, options.caseSensitive || false, options.wholeWord ? options.wordSeparators || null : null, options.regex || false);
+        }
+        else {
+            const searchParams = new SearchParams(value, options.regex || false, options.caseSensitive || false, options.wholeWord ? options.wordSeparators || null : null);
+            const searchData = searchParams.parseSearchRequest();
+            if (!searchData) {
+                return null;
+            }
+            findRange.forEach(range => {
+                cellMatches.push(...this.textBuffer.findMatchesLineByLine(new Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn), searchData, options.regex || false, 1000));
+            });
+        }
+        return cellMatches;
+    }
+    dispose() {
+        this._isDisposed = true;
+        super.dispose();
+        dispose(this._editorListeners);
+        if (this._undoRedoService.getUriComparisonKey(this.uri) === this.uri.toString()) {
+            this._undoRedoService.removeElements(this.uri);
+        }
+        this._textModelRef?.dispose();
+    }
+    toJSON() {
+        return {
+            handle: this.handle
+        };
+    }
+}

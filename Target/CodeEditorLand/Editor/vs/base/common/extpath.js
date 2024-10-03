@@ -1,1 +1,282 @@
-import{CharCode as s}from"./charCode.js";import{isAbsolute as C,join as h,normalize as A,posix as c,sep as g}from"./path.js";import{isWindows as l}from"./platform.js";import{equalsIgnoreCase as I,rtrim as m,startsWithIgnoreCase as N}from"./strings.js";import{isNumber as L}from"./types.js";function u(e){return e===s.Slash||e===s.Backslash}function D(e){return e.replace(/[\\/]/g,c.sep)}function z(e){return e.indexOf("/")===-1&&(e=D(e)),/^[a-zA-Z]:(\/|$)/.test(e)&&(e="/"+e),e}function R(e,r=c.sep){if(!e)return"";const n=e.length,t=e.charCodeAt(0);if(u(t)){if(u(e.charCodeAt(1))&&!u(e.charCodeAt(2))){let i=3;const f=i;for(;i<n&&!u(e.charCodeAt(i));i++);if(f!==i&&!u(e.charCodeAt(i+1))){for(i+=1;i<n;i++)if(u(e.charCodeAt(i)))return e.slice(0,i+1).replace(/[\\/]/g,r)}}return r}else if(x(t)&&e.charCodeAt(1)===s.Colon)return u(e.charCodeAt(2))?e.slice(0,2)+r:e.slice(0,2);let o=e.indexOf("://");if(o!==-1){for(o+=3;o<n;o++)if(u(e.charCodeAt(o)))return e.slice(0,o+1)}return""}function q(e){if(!l||!e||e.length<5)return!1;let r=e.charCodeAt(0);if(r!==s.Backslash||(r=e.charCodeAt(1),r!==s.Backslash))return!1;let n=2;const t=n;for(;n<e.length&&(r=e.charCodeAt(n),r!==s.Backslash);n++);return!(t===n||(r=e.charCodeAt(n+1),isNaN(r)||r===s.Backslash))}const E=/[\\/:\*\?"<>\|]/g,W=/[/]/g,k=/^(con|prn|aux|clock\$|nul|lpt[0-9]|com[0-9])(\.(.*?))?$/i;function M(e,r=l){const n=r?E:W;return!(!e||e.length===0||/^\s+$/.test(e)||(n.lastIndex=0,n.test(e))||r&&k.test(e)||e==="."||e===".."||r&&e[e.length-1]==="."||r&&e.length!==e.trim().length||e.length>255)}function P(e,r,n){const t=e===r;return!n||t?t:!e||!r?!1:I(e,r)}function $(e,r,n,t=g){if(e===r)return!0;if(!e||!r||r.length>e.length)return!1;if(n){if(!N(e,r))return!1;if(r.length===e.length)return!0;let i=r.length;return r.charAt(r.length-1)===t&&i--,e.charAt(i)===t}return r.charAt(r.length-1)!==t&&(r+=t),e.indexOf(r)===0}function x(e){return e>=s.A&&e<=s.Z||e>=s.a&&e<=s.z}function U(e,r){return l&&e.endsWith(":")&&(e+=g),C(e)||(e=h(r,e)),e=A(e),F(e)}function F(e){return l?(e=m(e,g),e.endsWith(":")&&(e+=g)):(e=m(e,g),e||(e=g)),e}function V(e){const r=A(e);return l?e.length>3?!1:b(r)&&(e.length===2||r.charCodeAt(2)===s.Backslash):r===c.sep}function b(e,r=l){return r?x(e.charCodeAt(0))&&e.charCodeAt(1)===s.Colon:!1}function j(e,r=l){return b(e,r)?e[0]:void 0}function H(e,r,n){return r.length>e.length?-1:e===r?0:(n&&(e=e.toLowerCase(),r=r.toLowerCase()),e.indexOf(r))}function T(e){const r=e.split(":");let n,t,o;for(const i of r){const f=Number(i);L(f)?t===void 0?t=f:o===void 0&&(o=f):n=n?[n,i].join(":"):i}if(!n)throw new Error("Format for `--goto` should be: `FILE:LINE(:COLUMN)`");return{path:n,line:t!==void 0?t:void 0,column:o!==void 0?o:t!==void 0?1:void 0}}const O="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",S="BDEFGHIJKMOQRSTUVWXYZbdefghijkmoqrstuvwxyz0123456789";function Z(e,r,n=8){let t="";for(let i=0;i<n;i++){let f;i===0&&l&&!r&&(n===3||n===4)?f=S:f=O,t+=f.charAt(Math.floor(Math.random()*f.length))}let o;return r?o=`${r}-${t}`:o=t,e?h(e,o):o}export{j as getDriveLetter,R as getRoot,b as hasDriveLetter,H as indexOfPath,P as isEqual,$ as isEqualOrParent,u as isPathSeparator,V as isRootOrDriveLetter,q as isUNC,M as isValidBasename,x as isWindowsDriveLetter,T as parseLineAndColumnAware,Z as randomPath,F as removeTrailingPathSeparator,U as sanitizeFilePath,z as toPosixPath,D as toSlashes};
+import { isAbsolute, join, normalize, posix, sep } from './path.js';
+import { isWindows } from './platform.js';
+import { equalsIgnoreCase, rtrim, startsWithIgnoreCase } from './strings.js';
+import { isNumber } from './types.js';
+export function isPathSeparator(code) {
+    return code === 47 || code === 92;
+}
+export function toSlashes(osPath) {
+    return osPath.replace(/[\\/]/g, posix.sep);
+}
+export function toPosixPath(osPath) {
+    if (osPath.indexOf('/') === -1) {
+        osPath = toSlashes(osPath);
+    }
+    if (/^[a-zA-Z]:(\/|$)/.test(osPath)) {
+        osPath = '/' + osPath;
+    }
+    return osPath;
+}
+export function getRoot(path, sep = posix.sep) {
+    if (!path) {
+        return '';
+    }
+    const len = path.length;
+    const firstLetter = path.charCodeAt(0);
+    if (isPathSeparator(firstLetter)) {
+        if (isPathSeparator(path.charCodeAt(1))) {
+            if (!isPathSeparator(path.charCodeAt(2))) {
+                let pos = 3;
+                const start = pos;
+                for (; pos < len; pos++) {
+                    if (isPathSeparator(path.charCodeAt(pos))) {
+                        break;
+                    }
+                }
+                if (start !== pos && !isPathSeparator(path.charCodeAt(pos + 1))) {
+                    pos += 1;
+                    for (; pos < len; pos++) {
+                        if (isPathSeparator(path.charCodeAt(pos))) {
+                            return path.slice(0, pos + 1)
+                                .replace(/[\\/]/g, sep);
+                        }
+                    }
+                }
+            }
+        }
+        return sep;
+    }
+    else if (isWindowsDriveLetter(firstLetter)) {
+        if (path.charCodeAt(1) === 58) {
+            if (isPathSeparator(path.charCodeAt(2))) {
+                return path.slice(0, 2) + sep;
+            }
+            else {
+                return path.slice(0, 2);
+            }
+        }
+    }
+    let pos = path.indexOf('://');
+    if (pos !== -1) {
+        pos += 3;
+        for (; pos < len; pos++) {
+            if (isPathSeparator(path.charCodeAt(pos))) {
+                return path.slice(0, pos + 1);
+            }
+        }
+    }
+    return '';
+}
+export function isUNC(path) {
+    if (!isWindows) {
+        return false;
+    }
+    if (!path || path.length < 5) {
+        return false;
+    }
+    let code = path.charCodeAt(0);
+    if (code !== 92) {
+        return false;
+    }
+    code = path.charCodeAt(1);
+    if (code !== 92) {
+        return false;
+    }
+    let pos = 2;
+    const start = pos;
+    for (; pos < path.length; pos++) {
+        code = path.charCodeAt(pos);
+        if (code === 92) {
+            break;
+        }
+    }
+    if (start === pos) {
+        return false;
+    }
+    code = path.charCodeAt(pos + 1);
+    if (isNaN(code) || code === 92) {
+        return false;
+    }
+    return true;
+}
+const WINDOWS_INVALID_FILE_CHARS = /[\\/:\*\?"<>\|]/g;
+const UNIX_INVALID_FILE_CHARS = /[/]/g;
+const WINDOWS_FORBIDDEN_NAMES = /^(con|prn|aux|clock\$|nul|lpt[0-9]|com[0-9])(\.(.*?))?$/i;
+export function isValidBasename(name, isWindowsOS = isWindows) {
+    const invalidFileChars = isWindowsOS ? WINDOWS_INVALID_FILE_CHARS : UNIX_INVALID_FILE_CHARS;
+    if (!name || name.length === 0 || /^\s+$/.test(name)) {
+        return false;
+    }
+    invalidFileChars.lastIndex = 0;
+    if (invalidFileChars.test(name)) {
+        return false;
+    }
+    if (isWindowsOS && WINDOWS_FORBIDDEN_NAMES.test(name)) {
+        return false;
+    }
+    if (name === '.' || name === '..') {
+        return false;
+    }
+    if (isWindowsOS && name[name.length - 1] === '.') {
+        return false;
+    }
+    if (isWindowsOS && name.length !== name.trim().length) {
+        return false;
+    }
+    if (name.length > 255) {
+        return false;
+    }
+    return true;
+}
+export function isEqual(pathA, pathB, ignoreCase) {
+    const identityEquals = (pathA === pathB);
+    if (!ignoreCase || identityEquals) {
+        return identityEquals;
+    }
+    if (!pathA || !pathB) {
+        return false;
+    }
+    return equalsIgnoreCase(pathA, pathB);
+}
+export function isEqualOrParent(base, parentCandidate, ignoreCase, separator = sep) {
+    if (base === parentCandidate) {
+        return true;
+    }
+    if (!base || !parentCandidate) {
+        return false;
+    }
+    if (parentCandidate.length > base.length) {
+        return false;
+    }
+    if (ignoreCase) {
+        const beginsWith = startsWithIgnoreCase(base, parentCandidate);
+        if (!beginsWith) {
+            return false;
+        }
+        if (parentCandidate.length === base.length) {
+            return true;
+        }
+        let sepOffset = parentCandidate.length;
+        if (parentCandidate.charAt(parentCandidate.length - 1) === separator) {
+            sepOffset--;
+        }
+        return base.charAt(sepOffset) === separator;
+    }
+    if (parentCandidate.charAt(parentCandidate.length - 1) !== separator) {
+        parentCandidate += separator;
+    }
+    return base.indexOf(parentCandidate) === 0;
+}
+export function isWindowsDriveLetter(char0) {
+    return char0 >= 65 && char0 <= 90 || char0 >= 97 && char0 <= 122;
+}
+export function sanitizeFilePath(candidate, cwd) {
+    if (isWindows && candidate.endsWith(':')) {
+        candidate += sep;
+    }
+    if (!isAbsolute(candidate)) {
+        candidate = join(cwd, candidate);
+    }
+    candidate = normalize(candidate);
+    return removeTrailingPathSeparator(candidate);
+}
+export function removeTrailingPathSeparator(candidate) {
+    if (isWindows) {
+        candidate = rtrim(candidate, sep);
+        if (candidate.endsWith(':')) {
+            candidate += sep;
+        }
+    }
+    else {
+        candidate = rtrim(candidate, sep);
+        if (!candidate) {
+            candidate = sep;
+        }
+    }
+    return candidate;
+}
+export function isRootOrDriveLetter(path) {
+    const pathNormalized = normalize(path);
+    if (isWindows) {
+        if (path.length > 3) {
+            return false;
+        }
+        return hasDriveLetter(pathNormalized) &&
+            (path.length === 2 || pathNormalized.charCodeAt(2) === 92);
+    }
+    return pathNormalized === posix.sep;
+}
+export function hasDriveLetter(path, isWindowsOS = isWindows) {
+    if (isWindowsOS) {
+        return isWindowsDriveLetter(path.charCodeAt(0)) && path.charCodeAt(1) === 58;
+    }
+    return false;
+}
+export function getDriveLetter(path, isWindowsOS = isWindows) {
+    return hasDriveLetter(path, isWindowsOS) ? path[0] : undefined;
+}
+export function indexOfPath(path, candidate, ignoreCase) {
+    if (candidate.length > path.length) {
+        return -1;
+    }
+    if (path === candidate) {
+        return 0;
+    }
+    if (ignoreCase) {
+        path = path.toLowerCase();
+        candidate = candidate.toLowerCase();
+    }
+    return path.indexOf(candidate);
+}
+export function parseLineAndColumnAware(rawPath) {
+    const segments = rawPath.split(':');
+    let path = undefined;
+    let line = undefined;
+    let column = undefined;
+    for (const segment of segments) {
+        const segmentAsNumber = Number(segment);
+        if (!isNumber(segmentAsNumber)) {
+            path = !!path ? [path, segment].join(':') : segment;
+        }
+        else if (line === undefined) {
+            line = segmentAsNumber;
+        }
+        else if (column === undefined) {
+            column = segmentAsNumber;
+        }
+    }
+    if (!path) {
+        throw new Error('Format for `--goto` should be: `FILE:LINE(:COLUMN)`');
+    }
+    return {
+        path,
+        line: line !== undefined ? line : undefined,
+        column: column !== undefined ? column : line !== undefined ? 1 : undefined
+    };
+}
+const pathChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const windowsSafePathFirstChars = 'BDEFGHIJKMOQRSTUVWXYZbdefghijkmoqrstuvwxyz0123456789';
+export function randomPath(parent, prefix, randomLength = 8) {
+    let suffix = '';
+    for (let i = 0; i < randomLength; i++) {
+        let pathCharsTouse;
+        if (i === 0 && isWindows && !prefix && (randomLength === 3 || randomLength === 4)) {
+            pathCharsTouse = windowsSafePathFirstChars;
+        }
+        else {
+            pathCharsTouse = pathChars;
+        }
+        suffix += pathCharsTouse.charAt(Math.floor(Math.random() * pathCharsTouse.length));
+    }
+    let randomFileName;
+    if (prefix) {
+        randomFileName = `${prefix}-${suffix}`;
+    }
+    else {
+        randomFileName = suffix;
+    }
+    if (parent) {
+        return join(parent, randomFileName);
+    }
+    return randomFileName;
+}

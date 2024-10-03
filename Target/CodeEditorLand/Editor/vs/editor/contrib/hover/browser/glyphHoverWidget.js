@@ -1,1 +1,160 @@
-var O=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var v=(a,e,t,i)=>{for(var o=i>1?void 0:i?f(e,t):e,s=a.length-1,r;s>=0;s--)(r=a[s])&&(o=(i?r(e,t,o):r(o))||o);return i&&o&&O(e,t,o),o},p=(a,e)=>(t,i)=>e(t,i,a);import*as l from"../../../../base/browser/dom.js";import{Disposable as b,DisposableStore as C}from"../../../../base/common/lifecycle.js";import{MarkdownRenderer as y}from"../../../browser/widget/markdownRenderer/browser/markdownRenderer.js";import{MouseTargetType as m}from"../../../browser/editorBrowser.js";import{EditorOption as _}from"../../../common/config/editorOptions.js";import{ILanguageService as M}from"../../../common/languages/language.js";import{HoverOperation as N,HoverStartMode as u}from"./hoverOperation.js";import{IOpenerService as D}from"../../../../platform/opener/common/opener.js";import{HoverWidget as I}from"../../../../base/browser/ui/hover/hoverWidget.js";import"./hoverTypes.js";import{GlyphHoverComputer as L}from"./glyphHoverComputer.js";import{isMousePositionWithinElement as E}from"./hoverUtils.js";const g=l.$;let n=class extends b{static ID="editor.contrib.modesGlyphHoverWidget";_editor;_hover;_isVisible;_messages;_markdownRenderer;_hoverOperation;_renderDisposeables=this._register(new C);_hoverComputerOptions;constructor(e,t,i){super(),this._editor=e,this._isVisible=!1,this._messages=[],this._hover=this._register(new I),this._hover.containerDomNode.classList.toggle("hidden",!this._isVisible),this._markdownRenderer=this._register(new y({editor:this._editor},t,i)),this._hoverOperation=this._register(new N(this._editor,new L(this._editor))),this._register(this._hoverOperation.onResult(o=>this._withResult(o))),this._register(this._editor.onDidChangeModelDecorations(()=>this._onModelDecorationsChanged())),this._register(this._editor.onDidChangeConfiguration(o=>{o.hasChanged(_.fontInfo)&&this._updateFont()})),this._register(l.addStandardDisposableListener(this._hover.containerDomNode,"mouseleave",o=>{this._onMouseLeave(o)})),this._editor.addOverlayWidget(this)}dispose(){this._hoverComputerOptions=void 0,this._editor.removeOverlayWidget(this),super.dispose()}getId(){return n.ID}getDomNode(){return this._hover.containerDomNode}getPosition(){return null}_updateFont(){Array.prototype.slice.call(this._hover.contentsDomNode.getElementsByClassName("code")).forEach(t=>this._editor.applyFontInfo(t))}_onModelDecorationsChanged(){this._isVisible&&this._hoverComputerOptions&&(this._hoverOperation.cancel(),this._hoverOperation.start(u.Delayed,this._hoverComputerOptions))}showsOrWillShow(e){const t=e.target;return t.type===m.GUTTER_GLYPH_MARGIN&&t.detail.glyphMarginLane?(this._startShowingAt(t.position.lineNumber,t.detail.glyphMarginLane),!0):t.type===m.GUTTER_LINE_NUMBERS?(this._startShowingAt(t.position.lineNumber,"lineNo"),!0):!1}_startShowingAt(e,t){this._hoverComputerOptions&&this._hoverComputerOptions.lineNumber===e&&this._hoverComputerOptions.laneOrLine===t||(this._hoverOperation.cancel(),this.hide(),this._hoverComputerOptions={lineNumber:e,laneOrLine:t},this._hoverOperation.start(u.Delayed,this._hoverComputerOptions))}hide(){this._hoverComputerOptions=void 0,this._hoverOperation.cancel(),this._isVisible&&(this._isVisible=!1,this._hover.containerDomNode.classList.toggle("hidden",!this._isVisible))}_withResult(e){this._messages=e.value,this._messages.length>0?this._renderMessages(e.options.lineNumber,e.options.laneOrLine,this._messages):this.hide()}_renderMessages(e,t,i){this._renderDisposeables.clear();const o=document.createDocumentFragment();for(const s of i){const r=g("div.hover-row.markdown-hover"),h=l.append(r,g("div.hover-contents")),d=this._renderDisposeables.add(this._markdownRenderer.render(s.value));h.appendChild(d.element),o.appendChild(r)}this._updateContents(o),this._showAt(e,t)}_updateContents(e){this._hover.contentsDomNode.textContent="",this._hover.contentsDomNode.appendChild(e),this._updateFont()}_showAt(e,t){this._isVisible||(this._isVisible=!0,this._hover.containerDomNode.classList.toggle("hidden",!this._isVisible));const i=this._editor.getLayoutInfo(),o=this._editor.getTopForLineNumber(e),s=this._editor.getScrollTop(),r=this._editor.getOption(_.lineHeight),h=this._hover.containerDomNode.clientHeight,d=o-s-(h-r)/2,c=i.glyphMarginLeft+i.glyphMarginWidth+(t==="lineNo"?i.lineNumbersWidth:0);this._hover.containerDomNode.style.left=`${c}px`,this._hover.containerDomNode.style.top=`${Math.max(Math.round(d),0)}px`}_onMouseLeave(e){const t=this._editor.getDomNode();(!t||!E(t,e.x,e.y))&&this.hide()}};n=v([p(1,M),p(2,D)],n);export{n as GlyphHoverWidget};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var GlyphHoverWidget_1;
+import * as dom from '../../../../base/browser/dom.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { MarkdownRenderer } from '../../../browser/widget/markdownRenderer/browser/markdownRenderer.js';
+import { ILanguageService } from '../../../common/languages/language.js';
+import { HoverOperation } from './hoverOperation.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { HoverWidget } from '../../../../base/browser/ui/hover/hoverWidget.js';
+import { GlyphHoverComputer } from './glyphHoverComputer.js';
+import { isMousePositionWithinElement } from './hoverUtils.js';
+const $ = dom.$;
+let GlyphHoverWidget = class GlyphHoverWidget extends Disposable {
+    static { GlyphHoverWidget_1 = this; }
+    static { this.ID = 'editor.contrib.modesGlyphHoverWidget'; }
+    constructor(editor, languageService, openerService) {
+        super();
+        this._renderDisposeables = this._register(new DisposableStore());
+        this._editor = editor;
+        this._isVisible = false;
+        this._messages = [];
+        this._hover = this._register(new HoverWidget());
+        this._hover.containerDomNode.classList.toggle('hidden', !this._isVisible);
+        this._markdownRenderer = this._register(new MarkdownRenderer({ editor: this._editor }, languageService, openerService));
+        this._hoverOperation = this._register(new HoverOperation(this._editor, new GlyphHoverComputer(this._editor)));
+        this._register(this._hoverOperation.onResult((result) => this._withResult(result)));
+        this._register(this._editor.onDidChangeModelDecorations(() => this._onModelDecorationsChanged()));
+        this._register(this._editor.onDidChangeConfiguration((e) => {
+            if (e.hasChanged(52)) {
+                this._updateFont();
+            }
+        }));
+        this._register(dom.addStandardDisposableListener(this._hover.containerDomNode, 'mouseleave', (e) => {
+            this._onMouseLeave(e);
+        }));
+        this._editor.addOverlayWidget(this);
+    }
+    dispose() {
+        this._hoverComputerOptions = undefined;
+        this._editor.removeOverlayWidget(this);
+        super.dispose();
+    }
+    getId() {
+        return GlyphHoverWidget_1.ID;
+    }
+    getDomNode() {
+        return this._hover.containerDomNode;
+    }
+    getPosition() {
+        return null;
+    }
+    _updateFont() {
+        const codeClasses = Array.prototype.slice.call(this._hover.contentsDomNode.getElementsByClassName('code'));
+        codeClasses.forEach(node => this._editor.applyFontInfo(node));
+    }
+    _onModelDecorationsChanged() {
+        if (this._isVisible && this._hoverComputerOptions) {
+            this._hoverOperation.cancel();
+            this._hoverOperation.start(0, this._hoverComputerOptions);
+        }
+    }
+    showsOrWillShow(mouseEvent) {
+        const target = mouseEvent.target;
+        if (target.type === 2 && target.detail.glyphMarginLane) {
+            this._startShowingAt(target.position.lineNumber, target.detail.glyphMarginLane);
+            return true;
+        }
+        if (target.type === 3) {
+            this._startShowingAt(target.position.lineNumber, 'lineNo');
+            return true;
+        }
+        return false;
+    }
+    _startShowingAt(lineNumber, laneOrLine) {
+        if (this._hoverComputerOptions
+            && this._hoverComputerOptions.lineNumber === lineNumber
+            && this._hoverComputerOptions.laneOrLine === laneOrLine) {
+            return;
+        }
+        this._hoverOperation.cancel();
+        this.hide();
+        this._hoverComputerOptions = { lineNumber, laneOrLine };
+        this._hoverOperation.start(0, this._hoverComputerOptions);
+    }
+    hide() {
+        this._hoverComputerOptions = undefined;
+        this._hoverOperation.cancel();
+        if (!this._isVisible) {
+            return;
+        }
+        this._isVisible = false;
+        this._hover.containerDomNode.classList.toggle('hidden', !this._isVisible);
+    }
+    _withResult(result) {
+        this._messages = result.value;
+        if (this._messages.length > 0) {
+            this._renderMessages(result.options.lineNumber, result.options.laneOrLine, this._messages);
+        }
+        else {
+            this.hide();
+        }
+    }
+    _renderMessages(lineNumber, laneOrLine, messages) {
+        this._renderDisposeables.clear();
+        const fragment = document.createDocumentFragment();
+        for (const msg of messages) {
+            const markdownHoverElement = $('div.hover-row.markdown-hover');
+            const hoverContentsElement = dom.append(markdownHoverElement, $('div.hover-contents'));
+            const renderedContents = this._renderDisposeables.add(this._markdownRenderer.render(msg.value));
+            hoverContentsElement.appendChild(renderedContents.element);
+            fragment.appendChild(markdownHoverElement);
+        }
+        this._updateContents(fragment);
+        this._showAt(lineNumber, laneOrLine);
+    }
+    _updateContents(node) {
+        this._hover.contentsDomNode.textContent = '';
+        this._hover.contentsDomNode.appendChild(node);
+        this._updateFont();
+    }
+    _showAt(lineNumber, laneOrLine) {
+        if (!this._isVisible) {
+            this._isVisible = true;
+            this._hover.containerDomNode.classList.toggle('hidden', !this._isVisible);
+        }
+        const editorLayout = this._editor.getLayoutInfo();
+        const topForLineNumber = this._editor.getTopForLineNumber(lineNumber);
+        const editorScrollTop = this._editor.getScrollTop();
+        const lineHeight = this._editor.getOption(69);
+        const nodeHeight = this._hover.containerDomNode.clientHeight;
+        const top = topForLineNumber - editorScrollTop - ((nodeHeight - lineHeight) / 2);
+        const left = editorLayout.glyphMarginLeft + editorLayout.glyphMarginWidth + (laneOrLine === 'lineNo' ? editorLayout.lineNumbersWidth : 0);
+        this._hover.containerDomNode.style.left = `${left}px`;
+        this._hover.containerDomNode.style.top = `${Math.max(Math.round(top), 0)}px`;
+    }
+    _onMouseLeave(e) {
+        const editorDomNode = this._editor.getDomNode();
+        const isMousePositionOutsideOfEditor = !editorDomNode || !isMousePositionWithinElement(editorDomNode, e.x, e.y);
+        if (isMousePositionOutsideOfEditor) {
+            this.hide();
+        }
+    }
+};
+GlyphHoverWidget = GlyphHoverWidget_1 = __decorate([
+    __param(1, ILanguageService),
+    __param(2, IOpenerService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], GlyphHoverWidget);
+export { GlyphHoverWidget };

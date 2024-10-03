@@ -1,1 +1,44 @@
-import*as f from"./strings.js";function c(r,i){if(r&&r[0]!==""){const e=o(r,i,"-"),n=o(r,i,"_");return e&&!n?l(r,i,"-"):!e&&n?l(r,i,"_"):r[0].toUpperCase()===r[0]?i.toUpperCase():r[0].toLowerCase()===r[0]?i.toLowerCase():f.containsUppercaseCharacter(r[0][0])&&i.length>0?i[0].toUpperCase()+i.substr(1):r[0][0].toUpperCase()!==r[0][0]&&i.length>0?i[0].toLowerCase()+i.substr(1):i}else return i}function o(r,i,e){return r[0].indexOf(e)!==-1&&i.indexOf(e)!==-1&&r[0].split(e).length===i.split(e).length}function l(r,i,e){const n=i.split(e),t=r[0].split(e);let s="";return n.forEach((g,u)=>{s+=c([t[u]],g)+e}),s.slice(0,-1)}export{c as buildReplaceStringWithCasePreserved};
+import * as strings from './strings.js';
+export function buildReplaceStringWithCasePreserved(matches, pattern) {
+    if (matches && (matches[0] !== '')) {
+        const containsHyphens = validateSpecificSpecialCharacter(matches, pattern, '-');
+        const containsUnderscores = validateSpecificSpecialCharacter(matches, pattern, '_');
+        if (containsHyphens && !containsUnderscores) {
+            return buildReplaceStringForSpecificSpecialCharacter(matches, pattern, '-');
+        }
+        else if (!containsHyphens && containsUnderscores) {
+            return buildReplaceStringForSpecificSpecialCharacter(matches, pattern, '_');
+        }
+        if (matches[0].toUpperCase() === matches[0]) {
+            return pattern.toUpperCase();
+        }
+        else if (matches[0].toLowerCase() === matches[0]) {
+            return pattern.toLowerCase();
+        }
+        else if (strings.containsUppercaseCharacter(matches[0][0]) && pattern.length > 0) {
+            return pattern[0].toUpperCase() + pattern.substr(1);
+        }
+        else if (matches[0][0].toUpperCase() !== matches[0][0] && pattern.length > 0) {
+            return pattern[0].toLowerCase() + pattern.substr(1);
+        }
+        else {
+            return pattern;
+        }
+    }
+    else {
+        return pattern;
+    }
+}
+function validateSpecificSpecialCharacter(matches, pattern, specialCharacter) {
+    const doesContainSpecialCharacter = matches[0].indexOf(specialCharacter) !== -1 && pattern.indexOf(specialCharacter) !== -1;
+    return doesContainSpecialCharacter && matches[0].split(specialCharacter).length === pattern.split(specialCharacter).length;
+}
+function buildReplaceStringForSpecificSpecialCharacter(matches, pattern, specialCharacter) {
+    const splitPatternAtSpecialCharacter = pattern.split(specialCharacter);
+    const splitMatchAtSpecialCharacter = matches[0].split(specialCharacter);
+    let replaceString = '';
+    splitPatternAtSpecialCharacter.forEach((splitValue, index) => {
+        replaceString += buildReplaceStringWithCasePreserved([splitMatchAtSpecialCharacter[index]], splitValue) + specialCharacter;
+    });
+    return replaceString.slice(0, -1);
+}

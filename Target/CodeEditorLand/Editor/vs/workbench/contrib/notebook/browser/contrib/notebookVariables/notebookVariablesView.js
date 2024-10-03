@@ -1,1 +1,181 @@
-var g=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var l=(s,r,t,e)=>{for(var o=e>1?void 0:e?f(r,t):r,n=s.length-1,a;n>=0;n--)(a=s[n])&&(o=(e?a(r,t,o):a(o))||o);return e&&o&&g(r,t,o),o},i=(s,r)=>(t,e)=>r(t,e,s);import"../../../../../../base/browser/ui/tree/tree.js";import"../../../../../../base/common/actions.js";import{RunOnceScheduler as N}from"../../../../../../base/common/async.js";import"../../../../../../base/common/uri.js";import*as v from"../../../../../../nls.js";import"../../../../../../platform/action/common/action.js";import{createAndFillInContextMenuActions as x}from"../../../../../../platform/actions/browser/menuEntryActionViewItem.js";import{IMenuService as A,MenuId as y}from"../../../../../../platform/actions/common/actions.js";import{ICommandService as T}from"../../../../../../platform/commands/common/commands.js";import{IConfigurationService as C}from"../../../../../../platform/configuration/common/configuration.js";import{IContextKeyService as M}from"../../../../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as V}from"../../../../../../platform/contextview/browser/contextView.js";import{IHoverService as L}from"../../../../../../platform/hover/browser/hover.js";import{IInstantiationService as O}from"../../../../../../platform/instantiation/common/instantiation.js";import{IKeybindingService as D}from"../../../../../../platform/keybinding/common/keybinding.js";import{WorkbenchAsyncDataTree as _}from"../../../../../../platform/list/browser/listService.js";import{IOpenerService as P}from"../../../../../../platform/opener/common/opener.js";import{IQuickInputService as R}from"../../../../../../platform/quickinput/common/quickInput.js";import{ITelemetryService as B}from"../../../../../../platform/telemetry/common/telemetry.js";import{IThemeService as K}from"../../../../../../platform/theme/common/themeService.js";import{ViewPane as X}from"../../../../../browser/parts/views/viewPane.js";import{IViewDescriptorService as w}from"../../../../../common/views.js";import{CONTEXT_VARIABLE_EXTENSIONID as z,CONTEXT_VARIABLE_INTERFACES as F,CONTEXT_VARIABLE_LANGUAGE as U,CONTEXT_VARIABLE_NAME as H,CONTEXT_VARIABLE_TYPE as W,CONTEXT_VARIABLE_VALUE as G}from"../../../../debug/common/debug.js";import{NotebookVariableDataSource as Q}from"./notebookVariablesDataSource.js";import{NotebookVariableAccessibilityProvider as q,NotebookVariableRenderer as Y,NotebookVariablesDelegate as j}from"./notebookVariablesTree.js";import{getNotebookEditorFromEditorPane as u}from"../../notebookBrowser.js";import"../../../common/model/notebookTextModel.js";import{INotebookExecutionStateService as J}from"../../../common/notebookExecutionStateService.js";import{INotebookKernelService as Z}from"../../../common/notebookKernelService.js";import{IEditorService as $}from"../../../../../services/editor/common/editorService.js";import"../../../../../common/editor.js";import{isCompositeNotebookEditorInput as ee}from"../../../common/notebookEditorInput.js";let c=class extends X{constructor(t,e,o,n,a,d,m,h,p,b,I,te,oe,S,k,E,ie){super(t,a,d,h,m,b,p,I,S,k,E);this.editorService=e;this.notebookKernelService=o;this.notebookExecutionStateService=n;this.quickInputService=te;this.commandService=oe;this.menuService=ie;this._register(this.editorService.onDidActiveEditorChange(this.handleActiveEditorChange.bind(this))),this._register(this.notebookKernelService.onDidNotebookVariablesUpdate(this.handleVariablesChanged.bind(this))),this._register(this.notebookExecutionStateService.onDidChangeExecution(this.handleExecutionStateChange.bind(this))),this.activeNotebook=this.getActiveNotebook()?.notebookDocument,this.dataSource=new Q(this.notebookKernelService),this.updateScheduler=new N(()=>this.tree?.updateChildren(),100)}static ID="notebookVariablesView";static NOTEBOOK_TITLE=v.localize2("notebook.notebookVariables","Notebook Variables");static REPL_TITLE=v.localize2("notebook.ReplVariables","REPL Variables");tree;activeNotebook;dataSource;updateScheduler;renderBody(t){super.renderBody(t),this.element.classList.add("debug-pane"),this.tree=this.instantiationService.createInstance(_,"notebookVariablesTree",t,new j,[this.instantiationService.createInstance(Y)],this.dataSource,{accessibilityProvider:new q,identityProvider:{getId:e=>e.id}}),this.tree.layout(),this.activeNotebook&&this.tree.setInput({kind:"root",notebook:this.activeNotebook}),this._register(this.tree.onContextMenu(e=>this.onContextMenu(e)))}onContextMenu(t){if(!t.element)return;const e=t.element,o={source:e.notebook.uri.toString(),name:e.name,value:e.value,type:e.type,expression:e.expression,language:e.language,extensionId:e.extensionId},n=[],a=this.contextKeyService.createOverlay([[H.key,e.name],[G.key,e.value],[W.key,e.type],[F.key,e.interfaces],[U.key,e.language],[z.key,e.extensionId]]),d=this.menuService.getMenuActions(y.NotebookVariablesContext,a,{arg:o,shouldForwardArgs:!0});x(d,n),this.contextMenuService.showContextMenu({getAnchor:()=>t.anchor,getActions:()=>n})}layoutBody(t,e){super.layoutBody(t,e),this.tree?.layout(t,e)}setActiveNotebook(t,e){this.activeNotebook=t,this.tree?.setInput({kind:"root",notebook:t}),this.updateScheduler.schedule(),ee(e.input)?this.updateTitle(c.REPL_TITLE.value):this.updateTitle(c.NOTEBOOK_TITLE.value)}getActiveNotebook(){const t=this.editorService.activeEditorPane,e=u(t)?.textModel;return e&&t?{notebookDocument:e,notebookEditor:t}:void 0}handleActiveEditorChange(){const t=this.getActiveNotebook();t&&t.notebookDocument!==this.activeNotebook&&this.setActiveNotebook(t.notebookDocument,t.notebookEditor)}handleExecutionStateChange(t){this.activeNotebook&&t.affectsNotebook(this.activeNotebook.uri)?(this.dataSource.cancel(),t.changed===void 0?this.updateScheduler.schedule():this.updateScheduler.cancel()):this.getActiveNotebook()||this.editorService.visibleEditorPanes.forEach(e=>{const o=u(e)?.textModel;o&&t.affectsNotebook(o.uri)&&this.setActiveNotebook(o,e)})}handleVariablesChanged(t){this.activeNotebook&&t.toString()===this.activeNotebook.uri.toString()?this.updateScheduler.schedule():this.getActiveNotebook()||this.editorService.visibleEditorPanes.forEach(e=>{const o=u(e)?.textModel;o&&o.uri.toString()===t.toString()&&this.setActiveNotebook(o,e)})}};c=l([i(1,$),i(2,Z),i(3,J),i(4,D),i(5,V),i(6,M),i(7,C),i(8,O),i(9,w),i(10,P),i(11,R),i(12,T),i(13,K),i(14,B),i(15,L),i(16,A)],c);export{c as NotebookVariablesView};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var NotebookVariablesView_1;
+import { RunOnceScheduler } from '../../../../../../base/common/async.js';
+import * as nls from '../../../../../../nls.js';
+import { createAndFillInContextMenuActions } from '../../../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { IMenuService, MenuId } from '../../../../../../platform/actions/common/actions.js';
+import { ICommandService } from '../../../../../../platform/commands/common/commands.js';
+import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService } from '../../../../../../platform/contextview/browser/contextView.js';
+import { IHoverService } from '../../../../../../platform/hover/browser/hover.js';
+import { IInstantiationService } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { IKeybindingService } from '../../../../../../platform/keybinding/common/keybinding.js';
+import { WorkbenchAsyncDataTree } from '../../../../../../platform/list/browser/listService.js';
+import { IOpenerService } from '../../../../../../platform/opener/common/opener.js';
+import { IQuickInputService } from '../../../../../../platform/quickinput/common/quickInput.js';
+import { ITelemetryService } from '../../../../../../platform/telemetry/common/telemetry.js';
+import { IThemeService } from '../../../../../../platform/theme/common/themeService.js';
+import { ViewPane } from '../../../../../browser/parts/views/viewPane.js';
+import { IViewDescriptorService } from '../../../../../common/views.js';
+import { CONTEXT_VARIABLE_EXTENSIONID, CONTEXT_VARIABLE_INTERFACES, CONTEXT_VARIABLE_LANGUAGE, CONTEXT_VARIABLE_NAME, CONTEXT_VARIABLE_TYPE, CONTEXT_VARIABLE_VALUE } from '../../../../debug/common/debug.js';
+import { NotebookVariableDataSource } from './notebookVariablesDataSource.js';
+import { NotebookVariableAccessibilityProvider, NotebookVariableRenderer, NotebookVariablesDelegate } from './notebookVariablesTree.js';
+import { getNotebookEditorFromEditorPane } from '../../notebookBrowser.js';
+import { INotebookExecutionStateService } from '../../../common/notebookExecutionStateService.js';
+import { INotebookKernelService } from '../../../common/notebookKernelService.js';
+import { IEditorService } from '../../../../../services/editor/common/editorService.js';
+import { isCompositeNotebookEditorInput } from '../../../common/notebookEditorInput.js';
+let NotebookVariablesView = class NotebookVariablesView extends ViewPane {
+    static { NotebookVariablesView_1 = this; }
+    static { this.ID = 'notebookVariablesView'; }
+    static { this.NOTEBOOK_TITLE = nls.localize2('notebook.notebookVariables', "Notebook Variables"); }
+    static { this.REPL_TITLE = nls.localize2('notebook.ReplVariables', "REPL Variables"); }
+    constructor(options, editorService, notebookKernelService, notebookExecutionStateService, keybindingService, contextMenuService, contextKeyService, configurationService, instantiationService, viewDescriptorService, openerService, quickInputService, commandService, themeService, telemetryService, hoverService, menuService) {
+        super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService, hoverService);
+        this.editorService = editorService;
+        this.notebookKernelService = notebookKernelService;
+        this.notebookExecutionStateService = notebookExecutionStateService;
+        this.quickInputService = quickInputService;
+        this.commandService = commandService;
+        this.menuService = menuService;
+        this._register(this.editorService.onDidActiveEditorChange(this.handleActiveEditorChange.bind(this)));
+        this._register(this.notebookKernelService.onDidNotebookVariablesUpdate(this.handleVariablesChanged.bind(this)));
+        this._register(this.notebookExecutionStateService.onDidChangeExecution(this.handleExecutionStateChange.bind(this)));
+        this.activeNotebook = this.getActiveNotebook()?.notebookDocument;
+        this.dataSource = new NotebookVariableDataSource(this.notebookKernelService);
+        this.updateScheduler = new RunOnceScheduler(() => this.tree?.updateChildren(), 100);
+    }
+    renderBody(container) {
+        super.renderBody(container);
+        this.element.classList.add('debug-pane');
+        this.tree = this.instantiationService.createInstance(WorkbenchAsyncDataTree, 'notebookVariablesTree', container, new NotebookVariablesDelegate(), [this.instantiationService.createInstance(NotebookVariableRenderer)], this.dataSource, {
+            accessibilityProvider: new NotebookVariableAccessibilityProvider(),
+            identityProvider: { getId: (e) => e.id },
+        });
+        this.tree.layout();
+        if (this.activeNotebook) {
+            this.tree.setInput({ kind: 'root', notebook: this.activeNotebook });
+        }
+        this._register(this.tree.onContextMenu(e => this.onContextMenu(e)));
+    }
+    onContextMenu(e) {
+        if (!e.element) {
+            return;
+        }
+        const element = e.element;
+        const arg = {
+            source: element.notebook.uri.toString(),
+            name: element.name,
+            value: element.value,
+            type: element.type,
+            expression: element.expression,
+            language: element.language,
+            extensionId: element.extensionId
+        };
+        const actions = [];
+        const overlayedContext = this.contextKeyService.createOverlay([
+            [CONTEXT_VARIABLE_NAME.key, element.name],
+            [CONTEXT_VARIABLE_VALUE.key, element.value],
+            [CONTEXT_VARIABLE_TYPE.key, element.type],
+            [CONTEXT_VARIABLE_INTERFACES.key, element.interfaces],
+            [CONTEXT_VARIABLE_LANGUAGE.key, element.language],
+            [CONTEXT_VARIABLE_EXTENSIONID.key, element.extensionId]
+        ]);
+        const menu = this.menuService.getMenuActions(MenuId.NotebookVariablesContext, overlayedContext, { arg, shouldForwardArgs: true });
+        createAndFillInContextMenuActions(menu, actions);
+        this.contextMenuService.showContextMenu({
+            getAnchor: () => e.anchor,
+            getActions: () => actions
+        });
+    }
+    layoutBody(height, width) {
+        super.layoutBody(height, width);
+        this.tree?.layout(height, width);
+    }
+    setActiveNotebook(notebookDocument, editor) {
+        this.activeNotebook = notebookDocument;
+        this.tree?.setInput({ kind: 'root', notebook: notebookDocument });
+        this.updateScheduler.schedule();
+        if (isCompositeNotebookEditorInput(editor.input)) {
+            this.updateTitle(NotebookVariablesView_1.REPL_TITLE.value);
+        }
+        else {
+            this.updateTitle(NotebookVariablesView_1.NOTEBOOK_TITLE.value);
+        }
+    }
+    getActiveNotebook() {
+        const notebookEditor = this.editorService.activeEditorPane;
+        const notebookDocument = getNotebookEditorFromEditorPane(notebookEditor)?.textModel;
+        return notebookDocument && notebookEditor ? { notebookDocument, notebookEditor } : undefined;
+    }
+    handleActiveEditorChange() {
+        const found = this.getActiveNotebook();
+        if (found && found.notebookDocument !== this.activeNotebook) {
+            this.setActiveNotebook(found.notebookDocument, found.notebookEditor);
+        }
+    }
+    handleExecutionStateChange(event) {
+        if (this.activeNotebook && event.affectsNotebook(this.activeNotebook.uri)) {
+            this.dataSource.cancel();
+            if (event.changed === undefined) {
+                this.updateScheduler.schedule();
+            }
+            else {
+                this.updateScheduler.cancel();
+            }
+        }
+        else if (!this.getActiveNotebook()) {
+            this.editorService.visibleEditorPanes.forEach(editor => {
+                const notebookDocument = getNotebookEditorFromEditorPane(editor)?.textModel;
+                if (notebookDocument && event.affectsNotebook(notebookDocument.uri)) {
+                    this.setActiveNotebook(notebookDocument, editor);
+                }
+            });
+        }
+    }
+    handleVariablesChanged(notebookUri) {
+        if (this.activeNotebook && notebookUri.toString() === this.activeNotebook.uri.toString()) {
+            this.updateScheduler.schedule();
+        }
+        else if (!this.getActiveNotebook()) {
+            this.editorService.visibleEditorPanes.forEach(editor => {
+                const notebookDocument = getNotebookEditorFromEditorPane(editor)?.textModel;
+                if (notebookDocument && notebookDocument.uri.toString() === notebookUri.toString()) {
+                    this.setActiveNotebook(notebookDocument, editor);
+                }
+            });
+        }
+    }
+};
+NotebookVariablesView = NotebookVariablesView_1 = __decorate([
+    __param(1, IEditorService),
+    __param(2, INotebookKernelService),
+    __param(3, INotebookExecutionStateService),
+    __param(4, IKeybindingService),
+    __param(5, IContextMenuService),
+    __param(6, IContextKeyService),
+    __param(7, IConfigurationService),
+    __param(8, IInstantiationService),
+    __param(9, IViewDescriptorService),
+    __param(10, IOpenerService),
+    __param(11, IQuickInputService),
+    __param(12, ICommandService),
+    __param(13, IThemeService),
+    __param(14, ITelemetryService),
+    __param(15, IHoverService),
+    __param(16, IMenuService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], NotebookVariablesView);
+export { NotebookVariablesView };

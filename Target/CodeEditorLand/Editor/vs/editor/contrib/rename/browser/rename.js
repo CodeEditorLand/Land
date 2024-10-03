@@ -1,4 +1,467 @@
-var q=Object.defineProperty;var V=Object.getOwnPropertyDescriptor;var F=(s,e,i,t)=>{for(var r=t>1?void 0:t?V(e,i):e,o=s.length-1,a;o>=0;o--)(a=s[o])&&(r=(t?a(e,i,r):a(r))||r);return t&&r&&q(e,i,r),r},l=(s,e)=>(i,t)=>e(i,t,s);import{alert as J}from"../../../../base/browser/ui/aria/aria.js";import{raceCancellation as $}from"../../../../base/common/async.js";import{CancellationToken as w,CancellationTokenSource as j}from"../../../../base/common/cancellation.js";import{CancellationError as G,onUnexpectedError as H}from"../../../../base/common/errors.js";import{isMarkdownString as X}from"../../../../base/common/htmlContent.js";import{KeyCode as p,KeyMod as T}from"../../../../base/common/keyCodes.js";import{DisposableStore as Q}from"../../../../base/common/lifecycle.js";import{assertType as Y}from"../../../../base/common/types.js";import{URI as Z}from"../../../../base/common/uri.js";import"../../../browser/editorBrowser.js";import{EditorAction as ee,EditorCommand as te,EditorContributionInstantiation as ie,registerEditorAction as oe,registerEditorCommand as b,registerEditorContribution as re,registerModelAndPositionCommand as L}from"../../../browser/editorExtensions.js";import{IBulkEditService as ne}from"../../../browser/services/bulkEditService.js";import{ICodeEditorService as E}from"../../../browser/services/codeEditorService.js";import{Position as ae}from"../../../common/core/position.js";import{Range as _}from"../../../common/core/range.js";import"../../../common/editorCommon.js";import{EditorContextKeys as f}from"../../../common/editorContextKeys.js";import"../../../common/languageFeatureRegistry.js";import{NewSymbolNameTriggerKind as se}from"../../../common/languages.js";import"../../../common/model.js";import{ILanguageFeaturesService as P}from"../../../common/services/languageFeatures.js";import{ITextResourceConfigurationService as ce}from"../../../common/services/textResourceConfiguration.js";import{CodeEditorStateFlag as y,EditorStateCancellationTokenSource as M}from"../../editorState/browser/editorState.js";import{MessageController as W}from"../../message/browser/messageController.js";import*as d from"../../../../nls.js";import{Action2 as D,registerAction2 as O}from"../../../../platform/actions/common/actions.js";import{ConfigurationScope as de,Extensions as me}from"../../../../platform/configuration/common/configurationRegistry.js";import{ContextKeyExpr as v}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as le}from"../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as h}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{ILogService as z}from"../../../../platform/log/common/log.js";import{INotificationService as ue}from"../../../../platform/notification/common/notification.js";import{IEditorProgressService as ge}from"../../../../platform/progress/common/progress.js";import{Registry as pe}from"../../../../platform/registry/common/platform.js";import{ITelemetryService as ve}from"../../../../platform/telemetry/common/telemetry.js";import{CONTEXT_RENAME_INPUT_VISIBLE as S,RenameWidget as fe}from"./renameWidget.js";class C{constructor(e,i,t){this.model=e;this.position=i;this._providers=t.ordered(e)}_providers;_providerRenameIdx=0;hasProvider(){return this._providers.length>0}async resolveRenameLocation(e){const i=[];for(this._providerRenameIdx=0;this._providerRenameIdx<this._providers.length;this._providerRenameIdx++){const r=this._providers[this._providerRenameIdx];if(!r.resolveRenameLocation)break;const o=await r.resolveRenameLocation(this.model,this.position,e);if(o){if(o.rejectReason){i.push(o.rejectReason);continue}return o}}this._providerRenameIdx=0;const t=this.model.getWordAtPosition(this.position);return t?{range:new _(this.position.lineNumber,t.startColumn,this.position.lineNumber,t.endColumn),text:t.word,rejectReason:i.length>0?i.join(`
-`):void 0}:{range:_.fromPositions(this.position),text:"",rejectReason:i.length>0?i.join(`
-`):void 0}}async provideRenameEdits(e,i){return this._provideRenameEdits(e,this._providerRenameIdx,[],i)}async _provideRenameEdits(e,i,t,r){const o=this._providers[i];if(!o)return{edits:[],rejectReason:t.join(`
-`)};const a=await o.provideRenameEdits(this.model,this.position,e,r);if(a){if(a.rejectReason)return this._provideRenameEdits(e,i+1,t.concat(a.rejectReason),r)}else return this._provideRenameEdits(e,i+1,t.concat(d.localize("no result","No result.")),r);return a}}async function he(s,e,i,t){const r=new C(e,i,s),o=await r.resolveRenameLocation(w.None);return o?.rejectReason?{edits:[],rejectReason:o.rejectReason}:r.provideRenameEdits(t,w.None)}let c=class{constructor(e,i,t,r,o,a,u,R,x){this.editor=e;this._instaService=i;this._notificationService=t;this._bulkEditService=r;this._progressService=o;this._logService=a;this._configService=u;this._languageFeaturesService=R;this._telemetryService=x;this._renameWidget=this._disposableStore.add(this._instaService.createInstance(fe,this.editor,["acceptRenameInput","acceptRenameInputWithPreview"]))}static ID="editor.contrib.renameController";static get(e){return e.getContribution(c.ID)}_renameWidget;_disposableStore=new Q;_cts=new j;dispose(){this._disposableStore.dispose(),this._cts.dispose(!0)}async run(){const e=this._logService.trace.bind(this._logService,"[rename]");if(this._cts.dispose(!0),this._cts=new j,!this.editor.hasModel()){e("editor has no model");return}const i=this.editor.getPosition(),t=new C(this.editor.getModel(),i,this._languageFeaturesService.renameProvider);if(!t.hasProvider()){e("skeleton has no provider");return}const r=new M(this.editor,y.Position|y.Value,void 0,this._cts.token);let o;try{e("resolving rename location");const n=t.resolveRenameLocation(r.token);this._progressService.showWhile(n,250),o=await n,e("resolved rename location")}catch(n){n instanceof G?e("resolve rename location cancelled",JSON.stringify(n,null,"	")):(e("resolve rename location failed",n instanceof Error?n:JSON.stringify(n,null,"	")),(typeof n=="string"||X(n))&&W.get(this.editor)?.showMessage(n||d.localize("resolveRenameLocationFailed","An unknown error occurred while resolving rename location"),i));return}finally{r.dispose()}if(!o){e("returning early - no loc");return}if(o.rejectReason){e(`returning early - rejected with reason: ${o.rejectReason}`,o.rejectReason),W.get(this.editor)?.showMessage(o.rejectReason,i);return}if(r.token.isCancellationRequested){e("returning early - cts1 cancelled");return}const a=new M(this.editor,y.Position|y.Value,o.range,this._cts.token),u=this.editor.getModel(),R=this._languageFeaturesService.newSymbolNamesProvider.all(u),x=await Promise.all(R.map(async n=>[n,await n.supportsAutomaticNewSymbolNamesTriggerKind??!1])),B=(n,g)=>{let I=x.slice();return n===se.Automatic&&(I=I.filter(([A,U])=>U)),I.map(([A])=>A.provideNewSymbolNames(u,o.range,n,g))};e("creating rename input field and awaiting its result");const K=this._bulkEditService.hasPreviewHandler()&&this._configService.getValue(this.editor.getModel().uri,"editor.rename.enablePreview"),m=await this._renameWidget.getInput(o.range,o.text,K,R.length>0?B:void 0,a);if(e("received response from rename input field"),R.length>0&&this._reportTelemetry(R.length,u.getLanguageId(),m),typeof m=="boolean"){e(`returning early - rename input field response - ${m}`),m&&this.editor.focus(),a.dispose();return}this.editor.focus(),e("requesting rename edits");const N=$(t.provideRenameEdits(m.newName,a.token),a.token).then(async n=>{if(!n){e("returning early - no rename edits result");return}if(!this.editor.hasModel()){e("returning early - no model after rename edits are provided");return}if(n.rejectReason){e(`returning early - rejected with reason: ${n.rejectReason}`),this._notificationService.info(n.rejectReason);return}this.editor.setSelection(_.fromPositions(this.editor.getSelection().getPosition())),e("applying edits"),this._bulkEditService.apply(n,{editor:this.editor,showPreview:m.wantsPreview,label:d.localize("label","Renaming '{0}' to '{1}'",o?.text,m.newName),code:"undoredo.rename",quotableLabel:d.localize("quotableLabel","Renaming {0} to {1}",o?.text,m.newName),respectAutoSaveConfig:!0}).then(g=>{e("edits applied"),g.ariaSummary&&J(d.localize("aria","Successfully renamed '{0}' to '{1}'. Summary: {2}",o.text,m.newName,g.ariaSummary))}).catch(g=>{e(`error when applying edits ${JSON.stringify(g,null,"	")}`),this._notificationService.error(d.localize("rename.failedApply","Rename failed to apply edits")),this._logService.error(g)})},n=>{e("error when providing rename edits",JSON.stringify(n,null,"	")),this._notificationService.error(d.localize("rename.failed","Rename failed to compute edits")),this._logService.error(n)}).finally(()=>{a.dispose()});return e("returning rename operation"),this._progressService.showWhile(N,250),N}acceptRenameInput(e){this._renameWidget.acceptInput(e)}cancelRenameInput(){this._renameWidget.cancelInput(!0,"cancelRenameInput command")}focusNextRenameSuggestion(){this._renameWidget.focusNextRenameSuggestion()}focusPreviousRenameSuggestion(){this._renameWidget.focusPreviousRenameSuggestion()}_reportTelemetry(e,i,t){const r=typeof t=="boolean"?{kind:"cancelled",languageId:i,nRenameSuggestionProviders:e}:{kind:"accepted",languageId:i,nRenameSuggestionProviders:e,source:t.stats.source.k,nRenameSuggestions:t.stats.nRenameSuggestions,timeBeforeFirstInputFieldEdit:t.stats.timeBeforeFirstInputFieldEdit,wantsPreview:t.wantsPreview,nRenameSuggestionsInvocations:t.stats.nRenameSuggestionsInvocations,hadAutomaticRenameSuggestionsInvocation:t.stats.hadAutomaticRenameSuggestionsInvocation};this._telemetryService.publicLog2("renameInvokedEvent",r)}};c=F([l(1,le),l(2,ue),l(3,ne),l(4,ge),l(5,z),l(6,ce),l(7,P),l(8,ve)],c);class Re extends ee{constructor(){super({id:"editor.action.rename",label:d.localize("rename.label","Rename Symbol"),alias:"Rename Symbol",precondition:v.and(f.writable,f.hasRenameProvider),kbOpts:{kbExpr:f.editorTextFocus,primary:p.F2,weight:h.EditorContrib},contextMenuOpts:{group:"1_modification",order:1.1}})}runCommand(e,i){const t=e.get(E),[r,o]=Array.isArray(i)&&i||[void 0,void 0];return Z.isUri(r)&&ae.isIPosition(o)?t.openCodeEditor({resource:r},t.getActiveCodeEditor()).then(a=>{a&&(a.setPosition(o),a.invokeWithinContext(u=>(this.reportTelemetry(u,a),this.run(u,a))))},H):super.runCommand(e,i)}run(e,i){const t=e.get(z),r=c.get(i);return r?(t.trace("[RenameAction] got controller, running..."),r.run()):(t.trace("[RenameAction] returning early - controller missing"),Promise.resolve())}}re(c.ID,c,ie.Lazy),oe(Re);const k=te.bindToContribution(c.get);b(new k({id:"acceptRenameInput",precondition:S,handler:s=>s.acceptRenameInput(!1),kbOpts:{weight:h.EditorContrib+99,kbExpr:v.and(f.focus,v.not("isComposing")),primary:p.Enter}})),b(new k({id:"acceptRenameInputWithPreview",precondition:v.and(S,v.has("config.editor.rename.enablePreview")),handler:s=>s.acceptRenameInput(!0),kbOpts:{weight:h.EditorContrib+99,kbExpr:v.and(f.focus,v.not("isComposing")),primary:T.CtrlCmd+p.Enter}})),b(new k({id:"cancelRenameInput",precondition:S,handler:s=>s.cancelRenameInput(),kbOpts:{weight:h.EditorContrib+99,kbExpr:f.focus,primary:p.Escape,secondary:[T.Shift|p.Escape]}})),O(class extends D{constructor(){super({id:"focusNextRenameSuggestion",title:{...d.localize2("focusNextRenameSuggestion","Focus Next Rename Suggestion")},precondition:S,keybinding:[{primary:p.DownArrow,weight:h.EditorContrib+99}]})}run(e){const i=e.get(E).getFocusedCodeEditor();if(!i)return;const t=c.get(i);t&&t.focusNextRenameSuggestion()}}),O(class extends D{constructor(){super({id:"focusPreviousRenameSuggestion",title:{...d.localize2("focusPreviousRenameSuggestion","Focus Previous Rename Suggestion")},precondition:S,keybinding:[{primary:p.UpArrow,weight:h.EditorContrib+99}]})}run(e){const i=e.get(E).getFocusedCodeEditor();if(!i)return;const t=c.get(i);t&&t.focusPreviousRenameSuggestion()}}),L("_executeDocumentRenameProvider",function(s,e,i,...t){const[r]=t;Y(typeof r=="string");const{renameProvider:o}=s.get(P);return he(o,e,i,r)}),L("_executePrepareRename",async function(s,e,i){const{renameProvider:t}=s.get(P),o=await new C(e,i,t).resolveRenameLocation(w.None);if(o?.rejectReason)throw new Error(o.rejectReason);return o}),pe.as(me.Configuration).registerConfiguration({id:"editor",properties:{"editor.rename.enablePreview":{scope:de.LANGUAGE_OVERRIDABLE,description:d.localize("enablePreview","Enable/disable the ability to preview changes before renaming"),default:!0,type:"boolean"}}});export{Re as RenameAction,he as rename};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var RenameController_1;
+import { alert } from '../../../../base/browser/ui/aria/aria.js';
+import { raceCancellation } from '../../../../base/common/async.js';
+import { CancellationToken, CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { CancellationError, onUnexpectedError } from '../../../../base/common/errors.js';
+import { isMarkdownString } from '../../../../base/common/htmlContent.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { assertType } from '../../../../base/common/types.js';
+import { URI } from '../../../../base/common/uri.js';
+import { EditorAction, EditorCommand, registerEditorAction, registerEditorCommand, registerEditorContribution, registerModelAndPositionCommand } from '../../../browser/editorExtensions.js';
+import { IBulkEditService } from '../../../browser/services/bulkEditService.js';
+import { ICodeEditorService } from '../../../browser/services/codeEditorService.js';
+import { Position } from '../../../common/core/position.js';
+import { Range } from '../../../common/core/range.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import { NewSymbolNameTriggerKind } from '../../../common/languages.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { ITextResourceConfigurationService } from '../../../common/services/textResourceConfiguration.js';
+import { EditorStateCancellationTokenSource } from '../../editorState/browser/editorState.js';
+import { MessageController } from '../../message/browser/messageController.js';
+import * as nls from '../../../../nls.js';
+import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { Extensions } from '../../../../platform/configuration/common/configurationRegistry.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { IEditorProgressService } from '../../../../platform/progress/common/progress.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { CONTEXT_RENAME_INPUT_VISIBLE, RenameWidget } from './renameWidget.js';
+class RenameSkeleton {
+    constructor(model, position, registry) {
+        this.model = model;
+        this.position = position;
+        this._providerRenameIdx = 0;
+        this._providers = registry.ordered(model);
+    }
+    hasProvider() {
+        return this._providers.length > 0;
+    }
+    async resolveRenameLocation(token) {
+        const rejects = [];
+        for (this._providerRenameIdx = 0; this._providerRenameIdx < this._providers.length; this._providerRenameIdx++) {
+            const provider = this._providers[this._providerRenameIdx];
+            if (!provider.resolveRenameLocation) {
+                break;
+            }
+            const res = await provider.resolveRenameLocation(this.model, this.position, token);
+            if (!res) {
+                continue;
+            }
+            if (res.rejectReason) {
+                rejects.push(res.rejectReason);
+                continue;
+            }
+            return res;
+        }
+        this._providerRenameIdx = 0;
+        const word = this.model.getWordAtPosition(this.position);
+        if (!word) {
+            return {
+                range: Range.fromPositions(this.position),
+                text: '',
+                rejectReason: rejects.length > 0 ? rejects.join('\n') : undefined
+            };
+        }
+        return {
+            range: new Range(this.position.lineNumber, word.startColumn, this.position.lineNumber, word.endColumn),
+            text: word.word,
+            rejectReason: rejects.length > 0 ? rejects.join('\n') : undefined
+        };
+    }
+    async provideRenameEdits(newName, token) {
+        return this._provideRenameEdits(newName, this._providerRenameIdx, [], token);
+    }
+    async _provideRenameEdits(newName, i, rejects, token) {
+        const provider = this._providers[i];
+        if (!provider) {
+            return {
+                edits: [],
+                rejectReason: rejects.join('\n')
+            };
+        }
+        const result = await provider.provideRenameEdits(this.model, this.position, newName, token);
+        if (!result) {
+            return this._provideRenameEdits(newName, i + 1, rejects.concat(nls.localize('no result', "No result.")), token);
+        }
+        else if (result.rejectReason) {
+            return this._provideRenameEdits(newName, i + 1, rejects.concat(result.rejectReason), token);
+        }
+        return result;
+    }
+}
+export async function rename(registry, model, position, newName) {
+    const skeleton = new RenameSkeleton(model, position, registry);
+    const loc = await skeleton.resolveRenameLocation(CancellationToken.None);
+    if (loc?.rejectReason) {
+        return { edits: [], rejectReason: loc.rejectReason };
+    }
+    return skeleton.provideRenameEdits(newName, CancellationToken.None);
+}
+let RenameController = class RenameController {
+    static { RenameController_1 = this; }
+    static { this.ID = 'editor.contrib.renameController'; }
+    static get(editor) {
+        return editor.getContribution(RenameController_1.ID);
+    }
+    constructor(editor, _instaService, _notificationService, _bulkEditService, _progressService, _logService, _configService, _languageFeaturesService, _telemetryService) {
+        this.editor = editor;
+        this._instaService = _instaService;
+        this._notificationService = _notificationService;
+        this._bulkEditService = _bulkEditService;
+        this._progressService = _progressService;
+        this._logService = _logService;
+        this._configService = _configService;
+        this._languageFeaturesService = _languageFeaturesService;
+        this._telemetryService = _telemetryService;
+        this._disposableStore = new DisposableStore();
+        this._cts = new CancellationTokenSource();
+        this._renameWidget = this._disposableStore.add(this._instaService.createInstance(RenameWidget, this.editor, ['acceptRenameInput', 'acceptRenameInputWithPreview']));
+    }
+    dispose() {
+        this._disposableStore.dispose();
+        this._cts.dispose(true);
+    }
+    async run() {
+        const trace = this._logService.trace.bind(this._logService, '[rename]');
+        this._cts.dispose(true);
+        this._cts = new CancellationTokenSource();
+        if (!this.editor.hasModel()) {
+            trace('editor has no model');
+            return undefined;
+        }
+        const position = this.editor.getPosition();
+        const skeleton = new RenameSkeleton(this.editor.getModel(), position, this._languageFeaturesService.renameProvider);
+        if (!skeleton.hasProvider()) {
+            trace('skeleton has no provider');
+            return undefined;
+        }
+        const cts1 = new EditorStateCancellationTokenSource(this.editor, 4 | 1, undefined, this._cts.token);
+        let loc;
+        try {
+            trace('resolving rename location');
+            const resolveLocationOperation = skeleton.resolveRenameLocation(cts1.token);
+            this._progressService.showWhile(resolveLocationOperation, 250);
+            loc = await resolveLocationOperation;
+            trace('resolved rename location');
+        }
+        catch (e) {
+            if (e instanceof CancellationError) {
+                trace('resolve rename location cancelled', JSON.stringify(e, null, '\t'));
+            }
+            else {
+                trace('resolve rename location failed', e instanceof Error ? e : JSON.stringify(e, null, '\t'));
+                if (typeof e === 'string' || isMarkdownString(e)) {
+                    MessageController.get(this.editor)?.showMessage(e || nls.localize('resolveRenameLocationFailed', "An unknown error occurred while resolving rename location"), position);
+                }
+            }
+            return undefined;
+        }
+        finally {
+            cts1.dispose();
+        }
+        if (!loc) {
+            trace('returning early - no loc');
+            return undefined;
+        }
+        if (loc.rejectReason) {
+            trace(`returning early - rejected with reason: ${loc.rejectReason}`, loc.rejectReason);
+            MessageController.get(this.editor)?.showMessage(loc.rejectReason, position);
+            return undefined;
+        }
+        if (cts1.token.isCancellationRequested) {
+            trace('returning early - cts1 cancelled');
+            return undefined;
+        }
+        const cts2 = new EditorStateCancellationTokenSource(this.editor, 4 | 1, loc.range, this._cts.token);
+        const model = this.editor.getModel();
+        const newSymbolNamesProviders = this._languageFeaturesService.newSymbolNamesProvider.all(model);
+        const resolvedNewSymbolnamesProviders = await Promise.all(newSymbolNamesProviders.map(async (p) => [p, await p.supportsAutomaticNewSymbolNamesTriggerKind ?? false]));
+        const requestRenameSuggestions = (triggerKind, cts) => {
+            let providers = resolvedNewSymbolnamesProviders.slice();
+            if (triggerKind === NewSymbolNameTriggerKind.Automatic) {
+                providers = providers.filter(([_, supportsAutomatic]) => supportsAutomatic);
+            }
+            return providers.map(([p,]) => p.provideNewSymbolNames(model, loc.range, triggerKind, cts));
+        };
+        trace('creating rename input field and awaiting its result');
+        const supportPreview = this._bulkEditService.hasPreviewHandler() && this._configService.getValue(this.editor.getModel().uri, 'editor.rename.enablePreview');
+        const inputFieldResult = await this._renameWidget.getInput(loc.range, loc.text, supportPreview, newSymbolNamesProviders.length > 0 ? requestRenameSuggestions : undefined, cts2);
+        trace('received response from rename input field');
+        if (newSymbolNamesProviders.length > 0) {
+            this._reportTelemetry(newSymbolNamesProviders.length, model.getLanguageId(), inputFieldResult);
+        }
+        if (typeof inputFieldResult === 'boolean') {
+            trace(`returning early - rename input field response - ${inputFieldResult}`);
+            if (inputFieldResult) {
+                this.editor.focus();
+            }
+            cts2.dispose();
+            return undefined;
+        }
+        this.editor.focus();
+        trace('requesting rename edits');
+        const renameOperation = raceCancellation(skeleton.provideRenameEdits(inputFieldResult.newName, cts2.token), cts2.token).then(async (renameResult) => {
+            if (!renameResult) {
+                trace('returning early - no rename edits result');
+                return;
+            }
+            if (!this.editor.hasModel()) {
+                trace('returning early - no model after rename edits are provided');
+                return;
+            }
+            if (renameResult.rejectReason) {
+                trace(`returning early - rejected with reason: ${renameResult.rejectReason}`);
+                this._notificationService.info(renameResult.rejectReason);
+                return;
+            }
+            this.editor.setSelection(Range.fromPositions(this.editor.getSelection().getPosition()));
+            trace('applying edits');
+            this._bulkEditService.apply(renameResult, {
+                editor: this.editor,
+                showPreview: inputFieldResult.wantsPreview,
+                label: nls.localize('label', "Renaming '{0}' to '{1}'", loc?.text, inputFieldResult.newName),
+                code: 'undoredo.rename',
+                quotableLabel: nls.localize('quotableLabel', "Renaming {0} to {1}", loc?.text, inputFieldResult.newName),
+                respectAutoSaveConfig: true
+            }).then(result => {
+                trace('edits applied');
+                if (result.ariaSummary) {
+                    alert(nls.localize('aria', "Successfully renamed '{0}' to '{1}'. Summary: {2}", loc.text, inputFieldResult.newName, result.ariaSummary));
+                }
+            }).catch(err => {
+                trace(`error when applying edits ${JSON.stringify(err, null, '\t')}`);
+                this._notificationService.error(nls.localize('rename.failedApply', "Rename failed to apply edits"));
+                this._logService.error(err);
+            });
+        }, err => {
+            trace('error when providing rename edits', JSON.stringify(err, null, '\t'));
+            this._notificationService.error(nls.localize('rename.failed', "Rename failed to compute edits"));
+            this._logService.error(err);
+        }).finally(() => {
+            cts2.dispose();
+        });
+        trace('returning rename operation');
+        this._progressService.showWhile(renameOperation, 250);
+        return renameOperation;
+    }
+    acceptRenameInput(wantsPreview) {
+        this._renameWidget.acceptInput(wantsPreview);
+    }
+    cancelRenameInput() {
+        this._renameWidget.cancelInput(true, 'cancelRenameInput command');
+    }
+    focusNextRenameSuggestion() {
+        this._renameWidget.focusNextRenameSuggestion();
+    }
+    focusPreviousRenameSuggestion() {
+        this._renameWidget.focusPreviousRenameSuggestion();
+    }
+    _reportTelemetry(nRenameSuggestionProviders, languageId, inputFieldResult) {
+        const value = typeof inputFieldResult === 'boolean'
+            ? {
+                kind: 'cancelled',
+                languageId,
+                nRenameSuggestionProviders,
+            }
+            : {
+                kind: 'accepted',
+                languageId,
+                nRenameSuggestionProviders,
+                source: inputFieldResult.stats.source.k,
+                nRenameSuggestions: inputFieldResult.stats.nRenameSuggestions,
+                timeBeforeFirstInputFieldEdit: inputFieldResult.stats.timeBeforeFirstInputFieldEdit,
+                wantsPreview: inputFieldResult.wantsPreview,
+                nRenameSuggestionsInvocations: inputFieldResult.stats.nRenameSuggestionsInvocations,
+                hadAutomaticRenameSuggestionsInvocation: inputFieldResult.stats.hadAutomaticRenameSuggestionsInvocation,
+            };
+        this._telemetryService.publicLog2('renameInvokedEvent', value);
+    }
+};
+RenameController = RenameController_1 = __decorate([
+    __param(1, IInstantiationService),
+    __param(2, INotificationService),
+    __param(3, IBulkEditService),
+    __param(4, IEditorProgressService),
+    __param(5, ILogService),
+    __param(6, ITextResourceConfigurationService),
+    __param(7, ILanguageFeaturesService),
+    __param(8, ITelemetryService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], RenameController);
+export class RenameAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.rename',
+            label: nls.localize('rename.label', "Rename Symbol"),
+            alias: 'Rename Symbol',
+            precondition: ContextKeyExpr.and(EditorContextKeys.writable, EditorContextKeys.hasRenameProvider),
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 60,
+                weight: 100
+            },
+            contextMenuOpts: {
+                group: '1_modification',
+                order: 1.1
+            }
+        });
+    }
+    runCommand(accessor, args) {
+        const editorService = accessor.get(ICodeEditorService);
+        const [uri, pos] = Array.isArray(args) && args || [undefined, undefined];
+        if (URI.isUri(uri) && Position.isIPosition(pos)) {
+            return editorService.openCodeEditor({ resource: uri }, editorService.getActiveCodeEditor()).then(editor => {
+                if (!editor) {
+                    return;
+                }
+                editor.setPosition(pos);
+                editor.invokeWithinContext(accessor => {
+                    this.reportTelemetry(accessor, editor);
+                    return this.run(accessor, editor);
+                });
+            }, onUnexpectedError);
+        }
+        return super.runCommand(accessor, args);
+    }
+    run(accessor, editor) {
+        const logService = accessor.get(ILogService);
+        const controller = RenameController.get(editor);
+        if (controller) {
+            logService.trace('[RenameAction] got controller, running...');
+            return controller.run();
+        }
+        logService.trace('[RenameAction] returning early - controller missing');
+        return Promise.resolve();
+    }
+}
+registerEditorContribution(RenameController.ID, RenameController, 4);
+registerEditorAction(RenameAction);
+const RenameCommand = EditorCommand.bindToContribution(RenameController.get);
+registerEditorCommand(new RenameCommand({
+    id: 'acceptRenameInput',
+    precondition: CONTEXT_RENAME_INPUT_VISIBLE,
+    handler: x => x.acceptRenameInput(false),
+    kbOpts: {
+        weight: 100 + 99,
+        kbExpr: ContextKeyExpr.and(EditorContextKeys.focus, ContextKeyExpr.not('isComposing')),
+        primary: 3
+    }
+}));
+registerEditorCommand(new RenameCommand({
+    id: 'acceptRenameInputWithPreview',
+    precondition: ContextKeyExpr.and(CONTEXT_RENAME_INPUT_VISIBLE, ContextKeyExpr.has('config.editor.rename.enablePreview')),
+    handler: x => x.acceptRenameInput(true),
+    kbOpts: {
+        weight: 100 + 99,
+        kbExpr: ContextKeyExpr.and(EditorContextKeys.focus, ContextKeyExpr.not('isComposing')),
+        primary: 2048 + 3
+    }
+}));
+registerEditorCommand(new RenameCommand({
+    id: 'cancelRenameInput',
+    precondition: CONTEXT_RENAME_INPUT_VISIBLE,
+    handler: x => x.cancelRenameInput(),
+    kbOpts: {
+        weight: 100 + 99,
+        kbExpr: EditorContextKeys.focus,
+        primary: 9,
+        secondary: [1024 | 9]
+    }
+}));
+registerAction2(class FocusNextRenameSuggestion extends Action2 {
+    constructor() {
+        super({
+            id: 'focusNextRenameSuggestion',
+            title: {
+                ...nls.localize2('focusNextRenameSuggestion', "Focus Next Rename Suggestion"),
+            },
+            precondition: CONTEXT_RENAME_INPUT_VISIBLE,
+            keybinding: [
+                {
+                    primary: 18,
+                    weight: 100 + 99,
+                }
+            ]
+        });
+    }
+    run(accessor) {
+        const currentEditor = accessor.get(ICodeEditorService).getFocusedCodeEditor();
+        if (!currentEditor) {
+            return;
+        }
+        const controller = RenameController.get(currentEditor);
+        if (!controller) {
+            return;
+        }
+        controller.focusNextRenameSuggestion();
+    }
+});
+registerAction2(class FocusPreviousRenameSuggestion extends Action2 {
+    constructor() {
+        super({
+            id: 'focusPreviousRenameSuggestion',
+            title: {
+                ...nls.localize2('focusPreviousRenameSuggestion', "Focus Previous Rename Suggestion"),
+            },
+            precondition: CONTEXT_RENAME_INPUT_VISIBLE,
+            keybinding: [
+                {
+                    primary: 16,
+                    weight: 100 + 99,
+                }
+            ]
+        });
+    }
+    run(accessor) {
+        const currentEditor = accessor.get(ICodeEditorService).getFocusedCodeEditor();
+        if (!currentEditor) {
+            return;
+        }
+        const controller = RenameController.get(currentEditor);
+        if (!controller) {
+            return;
+        }
+        controller.focusPreviousRenameSuggestion();
+    }
+});
+registerModelAndPositionCommand('_executeDocumentRenameProvider', function (accessor, model, position, ...args) {
+    const [newName] = args;
+    assertType(typeof newName === 'string');
+    const { renameProvider } = accessor.get(ILanguageFeaturesService);
+    return rename(renameProvider, model, position, newName);
+});
+registerModelAndPositionCommand('_executePrepareRename', async function (accessor, model, position) {
+    const { renameProvider } = accessor.get(ILanguageFeaturesService);
+    const skeleton = new RenameSkeleton(model, position, renameProvider);
+    const loc = await skeleton.resolveRenameLocation(CancellationToken.None);
+    if (loc?.rejectReason) {
+        throw new Error(loc.rejectReason);
+    }
+    return loc;
+});
+Registry.as(Extensions.Configuration).registerConfiguration({
+    id: 'editor',
+    properties: {
+        'editor.rename.enablePreview': {
+            scope: 5,
+            description: nls.localize('enablePreview', "Enable/disable the ability to preview changes before renaming"),
+            default: true,
+            type: 'boolean'
+        }
+    }
+});

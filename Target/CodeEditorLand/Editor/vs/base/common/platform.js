@@ -1,1 +1,174 @@
-import*as E from"../../nls.js";const f="en";let d=!1,u=!1,p=!1,I=!1,W=!1,v=!1,_=!1,L=!1,w=!1,N=!1,x,g=f,b=f,P,r;const a=globalThis;let t;typeof a.vscode<"u"&&typeof a.vscode.process<"u"?t=a.vscode.process:typeof process<"u"&&typeof process?.versions?.node=="string"&&(t=process);const S=typeof t?.versions?.electron=="string",O=S&&t?.type==="renderer";if(typeof t=="object"){d=t.platform==="win32",u=t.platform==="darwin",p=t.platform==="linux",I=p&&!!t.env.SNAP&&!!t.env.SNAP_REVISION,_=S,w=!!t.env.CI||!!t.env.BUILD_ARTIFACTSTAGINGDIRECTORY,x=f,g=f;const e=t.env.VSCODE_NLS_CONFIG;if(e)try{const i=JSON.parse(e);x=i.userLocale,b=i.osLocale,g=i.resolvedLanguage||f,P=i.languagePack?.translationsConfigFile}catch{}W=!0}else typeof navigator=="object"&&!O&&(r=navigator.userAgent,d=r.indexOf("Windows")>=0,u=r.indexOf("Macintosh")>=0,L=(r.indexOf("Macintosh")>=0||r.indexOf("iPad")>=0||r.indexOf("iPhone")>=0)&&!!navigator.maxTouchPoints&&navigator.maxTouchPoints>0,p=r.indexOf("Linux")>=0,N=r?.indexOf("Mobi")>=0,v=!0,g=E.getNLSLanguage()||f,x=navigator.language.toLowerCase(),b=x);var C=(o=>(o[o.Web=0]="Web",o[o.Mac=1]="Mac",o[o.Linux=2]="Linux",o[o.Windows=3]="Windows",o))(C||{});function U(e){switch(e){case 0:return"Web";case 1:return"Mac";case 2:return"Linux";case 3:return"Windows"}}let m=0;u?m=1:d?m=3:p&&(m=2);const G=d,R=u,V=p,j=I,B=W,Q=_,J=v,M=v&&typeof a.importScripts=="function",Y=M?a.origin:void 0,$=L,q=N,z=w,H=m,s=r,c=g;var T;(n=>{function e(){return c}n.value=e;function i(){return c.length===2?c==="en":c.length>=3?c[0]==="e"&&c[1]==="n"&&c[2]==="-":!1}n.isDefaultVariant=i;function l(){return c==="en"}n.isDefault=l})(T||={});const K=x,X=b,Z=P,k=typeof a.postMessage=="function"&&!a.importScripts,ee=(()=>{if(k){const e=[];a.addEventListener("message",l=>{if(l.data&&l.data.vscodeScheduleAsyncWork)for(let n=0,o=e.length;n<o;n++){const h=e[n];if(h.id===l.data.vscodeScheduleAsyncWork){e.splice(n,1),h.callback();return}}});let i=0;return l=>{const n=++i;e.push({id:n,callback:l}),a.postMessage({vscodeScheduleAsyncWork:n},"*")}}return e=>setTimeout(e)})();var F=(n=>(n[n.Windows=1]="Windows",n[n.Macintosh=2]="Macintosh",n[n.Linux=3]="Linux",n))(F||{});const ne=u||L?2:d?1:3;let y=!0,A=!1;function te(){if(!A){A=!0;const e=new Uint8Array(2);e[0]=1,e[1]=2,y=new Uint16Array(e.buffer)[0]===513}return y}const D=!!(s&&s.indexOf("Chrome")>=0),oe=!!(s&&s.indexOf("Firefox")>=0),se=!!(!D&&s&&s.indexOf("Safari")>=0),ie=!!(s&&s.indexOf("Edg/")>=0),re=!!(s&&s.indexOf("Android")>=0);function ae(e){return parseFloat(e)>=20}export{f as LANGUAGE_DEFAULT,T as Language,ne as OS,F as OperatingSystem,C as Platform,U as PlatformToString,re as isAndroid,ae as isBigSurOrNewer,z as isCI,D as isChrome,ie as isEdge,Q as isElectron,oe as isFirefox,$ as isIOS,V as isLinux,j as isLinuxSnap,te as isLittleEndian,R as isMacintosh,q as isMobile,B as isNative,se as isSafari,J as isWeb,M as isWebWorker,G as isWindows,c as language,K as locale,H as platform,X as platformLocale,ee as setTimeout0,k as setTimeout0IsFaster,Z as translationsConfigFile,s as userAgent,Y as webWorkerOrigin};
+import * as nls from '../../nls.js';
+export const LANGUAGE_DEFAULT = 'en';
+let _isWindows = false;
+let _isMacintosh = false;
+let _isLinux = false;
+let _isLinuxSnap = false;
+let _isNative = false;
+let _isWeb = false;
+let _isElectron = false;
+let _isIOS = false;
+let _isCI = false;
+let _isMobile = false;
+let _locale = undefined;
+let _language = LANGUAGE_DEFAULT;
+let _platformLocale = LANGUAGE_DEFAULT;
+let _translationsConfigFile = undefined;
+let _userAgent = undefined;
+const $globalThis = globalThis;
+let nodeProcess = undefined;
+if (typeof $globalThis.vscode !== 'undefined' && typeof $globalThis.vscode.process !== 'undefined') {
+    nodeProcess = $globalThis.vscode.process;
+}
+else if (typeof process !== 'undefined' && typeof process?.versions?.node === 'string') {
+    nodeProcess = process;
+}
+const isElectronProcess = typeof nodeProcess?.versions?.electron === 'string';
+const isElectronRenderer = isElectronProcess && nodeProcess?.type === 'renderer';
+if (typeof nodeProcess === 'object') {
+    _isWindows = (nodeProcess.platform === 'win32');
+    _isMacintosh = (nodeProcess.platform === 'darwin');
+    _isLinux = (nodeProcess.platform === 'linux');
+    _isLinuxSnap = _isLinux && !!nodeProcess.env['SNAP'] && !!nodeProcess.env['SNAP_REVISION'];
+    _isElectron = isElectronProcess;
+    _isCI = !!nodeProcess.env['CI'] || !!nodeProcess.env['BUILD_ARTIFACTSTAGINGDIRECTORY'];
+    _locale = LANGUAGE_DEFAULT;
+    _language = LANGUAGE_DEFAULT;
+    const rawNlsConfig = nodeProcess.env['VSCODE_NLS_CONFIG'];
+    if (rawNlsConfig) {
+        try {
+            const nlsConfig = JSON.parse(rawNlsConfig);
+            _locale = nlsConfig.userLocale;
+            _platformLocale = nlsConfig.osLocale;
+            _language = nlsConfig.resolvedLanguage || LANGUAGE_DEFAULT;
+            _translationsConfigFile = nlsConfig.languagePack?.translationsConfigFile;
+        }
+        catch (e) {
+        }
+    }
+    _isNative = true;
+}
+else if (typeof navigator === 'object' && !isElectronRenderer) {
+    _userAgent = navigator.userAgent;
+    _isWindows = _userAgent.indexOf('Windows') >= 0;
+    _isMacintosh = _userAgent.indexOf('Macintosh') >= 0;
+    _isIOS = (_userAgent.indexOf('Macintosh') >= 0 || _userAgent.indexOf('iPad') >= 0 || _userAgent.indexOf('iPhone') >= 0) && !!navigator.maxTouchPoints && navigator.maxTouchPoints > 0;
+    _isLinux = _userAgent.indexOf('Linux') >= 0;
+    _isMobile = _userAgent?.indexOf('Mobi') >= 0;
+    _isWeb = true;
+    _language = nls.getNLSLanguage() || LANGUAGE_DEFAULT;
+    _locale = navigator.language.toLowerCase();
+    _platformLocale = _locale;
+}
+else {
+    console.error('Unable to resolve platform.');
+}
+export function PlatformToString(platform) {
+    switch (platform) {
+        case 0: return 'Web';
+        case 1: return 'Mac';
+        case 2: return 'Linux';
+        case 3: return 'Windows';
+    }
+}
+let _platform = 0;
+if (_isMacintosh) {
+    _platform = 1;
+}
+else if (_isWindows) {
+    _platform = 3;
+}
+else if (_isLinux) {
+    _platform = 2;
+}
+export const isWindows = _isWindows;
+export const isMacintosh = _isMacintosh;
+export const isLinux = _isLinux;
+export const isLinuxSnap = _isLinuxSnap;
+export const isNative = _isNative;
+export const isElectron = _isElectron;
+export const isWeb = _isWeb;
+export const isWebWorker = (_isWeb && typeof $globalThis.importScripts === 'function');
+export const webWorkerOrigin = isWebWorker ? $globalThis.origin : undefined;
+export const isIOS = _isIOS;
+export const isMobile = _isMobile;
+export const isCI = _isCI;
+export const platform = _platform;
+export const userAgent = _userAgent;
+export const language = _language;
+export var Language;
+(function (Language) {
+    function value() {
+        return language;
+    }
+    Language.value = value;
+    function isDefaultVariant() {
+        if (language.length === 2) {
+            return language === 'en';
+        }
+        else if (language.length >= 3) {
+            return language[0] === 'e' && language[1] === 'n' && language[2] === '-';
+        }
+        else {
+            return false;
+        }
+    }
+    Language.isDefaultVariant = isDefaultVariant;
+    function isDefault() {
+        return language === 'en';
+    }
+    Language.isDefault = isDefault;
+})(Language || (Language = {}));
+export const locale = _locale;
+export const platformLocale = _platformLocale;
+export const translationsConfigFile = _translationsConfigFile;
+export const setTimeout0IsFaster = (typeof $globalThis.postMessage === 'function' && !$globalThis.importScripts);
+export const setTimeout0 = (() => {
+    if (setTimeout0IsFaster) {
+        const pending = [];
+        $globalThis.addEventListener('message', (e) => {
+            if (e.data && e.data.vscodeScheduleAsyncWork) {
+                for (let i = 0, len = pending.length; i < len; i++) {
+                    const candidate = pending[i];
+                    if (candidate.id === e.data.vscodeScheduleAsyncWork) {
+                        pending.splice(i, 1);
+                        candidate.callback();
+                        return;
+                    }
+                }
+            }
+        });
+        let lastId = 0;
+        return (callback) => {
+            const myId = ++lastId;
+            pending.push({
+                id: myId,
+                callback: callback
+            });
+            $globalThis.postMessage({ vscodeScheduleAsyncWork: myId }, '*');
+        };
+    }
+    return (callback) => setTimeout(callback);
+})();
+export const OS = (_isMacintosh || _isIOS ? 2 : (_isWindows ? 1 : 3));
+let _isLittleEndian = true;
+let _isLittleEndianComputed = false;
+export function isLittleEndian() {
+    if (!_isLittleEndianComputed) {
+        _isLittleEndianComputed = true;
+        const test = new Uint8Array(2);
+        test[0] = 1;
+        test[1] = 2;
+        const view = new Uint16Array(test.buffer);
+        _isLittleEndian = (view[0] === (2 << 8) + 1);
+    }
+    return _isLittleEndian;
+}
+export const isChrome = !!(userAgent && userAgent.indexOf('Chrome') >= 0);
+export const isFirefox = !!(userAgent && userAgent.indexOf('Firefox') >= 0);
+export const isSafari = !!(!isChrome && (userAgent && userAgent.indexOf('Safari') >= 0));
+export const isEdge = !!(userAgent && userAgent.indexOf('Edg/') >= 0);
+export const isAndroid = !!(userAgent && userAgent.indexOf('Android') >= 0);
+export function isBigSurOrNewer(osVersion) {
+    return parseFloat(osVersion) >= 20;
+}

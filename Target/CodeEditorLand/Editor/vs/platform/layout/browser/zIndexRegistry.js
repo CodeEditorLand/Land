@@ -1,2 +1,57 @@
-import{clearNode as o,createCSSRule as u,createStyleSheet as l}from"../../../base/browser/dom.js";import{RunOnceScheduler as h}from"../../../base/common/async.js";var a=(e=>(e[e.Base=0]="Base",e[e.Sash=35]="Sash",e[e.SuggestWidget=40]="SuggestWidget",e[e.Hover=50]="Hover",e[e.DragImage=1e3]="DragImage",e[e.MenubarMenuItemsHolder=2e3]="MenubarMenuItemsHolder",e[e.ContextView=2500]="ContextView",e[e.ModalDialog=2600]="ModalDialog",e[e.PaneDropOverlay=1e4]="PaneDropOverlay",e))(a||{});const g=Object.keys(a).filter(r=>!isNaN(Number(r))).map(r=>Number(r)).sort((r,t)=>t-r);function c(r){for(const t of g)if(r>=t)return t;return-1}class p{styleSheet;zIndexMap;scheduler;constructor(){this.styleSheet=l(),this.zIndexMap=new Map,this.scheduler=new h(()=>this.updateStyleElement(),200)}registerZIndex(t,s,i){if(this.zIndexMap.get(i))throw new Error(`z-index with name ${i} has already been registered.`);const n=t+s;if(c(n)!==t)throw new Error(`Relative layer: ${t} + z-index: ${s} exceeds next layer ${n}.`);return this.zIndexMap.set(i,n),this.scheduler.schedule(),this.getVarName(i)}getVarName(t){return`--z-index-${t}`}updateStyleElement(){o(this.styleSheet);let t="";this.zIndexMap.forEach((s,i)=>{t+=`${this.getVarName(i)}: ${s};
-`}),u(":root",t,this.styleSheet)}}const m=new p;function y(r,t,s){return m.registerZIndex(r,t,s)}export{a as ZIndex,y as registerZIndex};
+import { clearNode, createCSSRule, createStyleSheet } from '../../../base/browser/dom.js';
+import { RunOnceScheduler } from '../../../base/common/async.js';
+export var ZIndex;
+(function (ZIndex) {
+    ZIndex[ZIndex["Base"] = 0] = "Base";
+    ZIndex[ZIndex["Sash"] = 35] = "Sash";
+    ZIndex[ZIndex["SuggestWidget"] = 40] = "SuggestWidget";
+    ZIndex[ZIndex["Hover"] = 50] = "Hover";
+    ZIndex[ZIndex["DragImage"] = 1000] = "DragImage";
+    ZIndex[ZIndex["MenubarMenuItemsHolder"] = 2000] = "MenubarMenuItemsHolder";
+    ZIndex[ZIndex["ContextView"] = 2500] = "ContextView";
+    ZIndex[ZIndex["ModalDialog"] = 2600] = "ModalDialog";
+    ZIndex[ZIndex["PaneDropOverlay"] = 10000] = "PaneDropOverlay";
+})(ZIndex || (ZIndex = {}));
+const ZIndexValues = Object.keys(ZIndex).filter(key => !isNaN(Number(key))).map(key => Number(key)).sort((a, b) => b - a);
+function findBase(z) {
+    for (const zi of ZIndexValues) {
+        if (z >= zi) {
+            return zi;
+        }
+    }
+    return -1;
+}
+class ZIndexRegistry {
+    constructor() {
+        this.styleSheet = createStyleSheet();
+        this.zIndexMap = new Map();
+        this.scheduler = new RunOnceScheduler(() => this.updateStyleElement(), 200);
+    }
+    registerZIndex(relativeLayer, z, name) {
+        if (this.zIndexMap.get(name)) {
+            throw new Error(`z-index with name ${name} has already been registered.`);
+        }
+        const proposedZValue = relativeLayer + z;
+        if (findBase(proposedZValue) !== relativeLayer) {
+            throw new Error(`Relative layer: ${relativeLayer} + z-index: ${z} exceeds next layer ${proposedZValue}.`);
+        }
+        this.zIndexMap.set(name, proposedZValue);
+        this.scheduler.schedule();
+        return this.getVarName(name);
+    }
+    getVarName(name) {
+        return `--z-index-${name}`;
+    }
+    updateStyleElement() {
+        clearNode(this.styleSheet);
+        let ruleBuilder = '';
+        this.zIndexMap.forEach((zIndex, name) => {
+            ruleBuilder += `${this.getVarName(name)}: ${zIndex};\n`;
+        });
+        createCSSRule(':root', ruleBuilder, this.styleSheet);
+    }
+}
+const zIndexRegistry = new ZIndexRegistry();
+export function registerZIndex(relativeLayer, z, name) {
+    return zIndexRegistry.registerZIndex(relativeLayer, z, name);
+}

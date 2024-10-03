@@ -1,1 +1,6 @@
-import"../../../common/lifecycle.js";import{Client as t}from"../common/ipc.mp.js";class n extends t{constructor(s,e){super(s,e)}}export{n as Client};
+import { Client as MessagePortClient } from '../common/ipc.mp.js';
+export class Client extends MessagePortClient {
+    constructor(port, clientId) {
+        super(port, clientId);
+    }
+}

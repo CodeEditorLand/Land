@@ -1,1 +1,231 @@
-var R=Object.defineProperty;var x=Object.getOwnPropertyDescriptor;var p=(r,e,t,s)=>{for(var o=s>1?void 0:s?x(e,t):e,c=r.length-1,h;c>=0;c--)(h=r[c])&&(o=(s?h(e,t,o):h(o))||o);return s&&o&&R(e,t,o),o},n=(r,e)=>(t,s)=>e(t,s,r);import"../../../../base/common/actions.js";import{equals as m}from"../../../../base/common/arrays.js";import{Emitter as f}from"../../../../base/common/event.js";import{DisposableStore as d,dispose as g}from"../../../../base/common/lifecycle.js";import"./media/scm.css";import{localize as G}from"../../../../nls.js";import{createAndFillInActionBarActions as _}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import{IMenuService as v,MenuId as i,MenuRegistry as M}from"../../../../platform/actions/common/actions.js";import{IContextKeyService as I}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as S}from"../../../../platform/instantiation/common/instantiation.js";import{ServiceCollection as b}from"../../../../platform/instantiation/common/serviceCollection.js";import{ISCMService as D}from"../common/scm.js";function C(r,e){return r.id===e.id}const y=new d;M.onDidChangeMenu(r=>{if(r.has(i.SCMTitle)){y.clear();for(const e of M.getMenuItems(i.SCMTitle))y.add(M.appendMenuItem(i.SCMSourceControlInline,e))}});let u=class{_actions=[];get actions(){return this._actions}_secondaryActions=[];get secondaryActions(){return this._secondaryActions}_onDidChangeTitle=new f;onDidChangeTitle=this._onDidChangeTitle.event;menu;disposables=new d;constructor(e,t){this.menu=e.createMenu(i.SCMTitle,t),this.disposables.add(this.menu),this.menu.onDidChange(this.updateTitleActions,this,this.disposables),this.updateTitleActions()}updateTitleActions(){const e=[],t=[];_(this.menu,{shouldForwardArgs:!0},{primary:e,secondary:t}),!(m(e,this._actions,C)&&m(t,this._secondaryActions,C))&&(this._actions=e,this._secondaryActions=t,this._onDidChangeTitle.fire())}dispose(){this.disposables.dispose()}};u=p([n(0,v),n(1,I)],u);class A{constructor(e,t){this.contextKeyService=e;this.menuService=t}_resourceGroupMenu;get resourceGroupMenu(){return this._resourceGroupMenu||(this._resourceGroupMenu=this.menuService.createMenu(i.SCMResourceGroupContext,this.contextKeyService)),this._resourceGroupMenu}_resourceFolderMenu;get resourceFolderMenu(){return this._resourceFolderMenu||(this._resourceFolderMenu=this.menuService.createMenu(i.SCMResourceFolderContext,this.contextKeyService)),this._resourceFolderMenu}genericResourceMenu;contextualResourceMenus;getResourceMenu(e){if(typeof e.contextValue>"u")return this.genericResourceMenu||(this.genericResourceMenu=this.menuService.createMenu(i.SCMResourceContext,this.contextKeyService)),this.genericResourceMenu;this.contextualResourceMenus||(this.contextualResourceMenus=new Map);let t=this.contextualResourceMenus.get(e.contextValue);if(!t){const s=this.contextKeyService.createOverlay([["scmResourceState",e.contextValue]]),o=this.menuService.createMenu(i.SCMResourceContext,s);t={menu:o,dispose(){o.dispose()}},this.contextualResourceMenus.set(e.contextValue,t)}return t.menu}dispose(){this._resourceGroupMenu?.dispose(),this._resourceFolderMenu?.dispose(),this.genericResourceMenu?.dispose(),this.contextualResourceMenus&&(g(this.contextualResourceMenus.values()),this.contextualResourceMenus.clear(),this.contextualResourceMenus=void 0)}}let a=class{constructor(e,t,s,o){this.provider=e;this.menuService=o;this.contextKeyService=t.createOverlay([["scmProvider",e.contextValue],["scmProviderRootUri",e.rootUri?.toString()],["scmProviderHasRootUri",!!e.rootUri]]);const c=new b([I,this.contextKeyService]);s=s.createChild(c,this.disposables),this.titleMenu=s.createInstance(u),this.disposables.add(this.titleMenu),this.repositoryMenu=o.createMenu(i.SCMSourceControlInline,this.contextKeyService),this.disposables.add(this.repositoryMenu),e.onDidChangeResourceGroups(this.onDidChangeResourceGroups,this,this.disposables),this.onDidChangeResourceGroups()}contextKeyService;titleMenu;repositoryMenu;resourceGroupMenusItems=new Map;_repositoryContextMenu;get repositoryContextMenu(){return this._repositoryContextMenu||(this._repositoryContextMenu=this.menuService.createMenu(i.SCMSourceControl,this.contextKeyService),this.disposables.add(this._repositoryContextMenu)),this._repositoryContextMenu}disposables=new d;getResourceGroupMenu(e){return this.getOrCreateResourceGroupMenusItem(e).resourceGroupMenu}getResourceMenu(e){return this.getOrCreateResourceGroupMenusItem(e.resourceGroup).getResourceMenu(e)}getResourceFolderMenu(e){return this.getOrCreateResourceGroupMenusItem(e).resourceFolderMenu}getOrCreateResourceGroupMenusItem(e){let t=this.resourceGroupMenusItems.get(e);if(!t){const s=this.contextKeyService.createOverlay([["scmResourceGroup",e.id],["multiDiffEditorEnableViewChanges",e.multiDiffEditorEnableViewChanges]]);t=new A(s,this.menuService),this.resourceGroupMenusItems.set(e,t)}return t}onDidChangeResourceGroups(){for(const e of this.resourceGroupMenusItems.keys())this.provider.groups.includes(e)||(this.resourceGroupMenusItems.get(e)?.dispose(),this.resourceGroupMenusItems.delete(e))}dispose(){this.disposables.dispose(),this.resourceGroupMenusItems.forEach(e=>e.dispose())}};a=p([n(1,I),n(2,S),n(3,v)],a);let l=class{constructor(e,t){this.instantiationService=t;this.titleMenu=t.createInstance(u),e.onDidRemoveRepository(this.onDidRemoveRepository,this,this.disposables)}titleMenu;disposables=new d;menus=new Map;onDidRemoveRepository(e){this.menus.get(e.provider)?.dispose(),this.menus.delete(e.provider)}getRepositoryMenus(e){let t=this.menus.get(e);if(!t){const s=this.instantiationService.createInstance(a,e);t={menus:s,dispose:()=>{s.dispose(),this.menus.delete(e)}},this.menus.set(e,t)}return t.menus}dispose(){this.disposables.dispose()}};l=p([n(0,D),n(1,S)],l),M.appendMenuItem(i.SCMResourceContext,{title:G("miShare","Share"),submenu:i.SCMResourceContextShare,group:"45_share",order:3});export{l as SCMMenus,a as SCMRepositoryMenus,u as SCMTitleMenu};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { equals } from '../../../../base/common/arrays.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { DisposableStore, dispose } from '../../../../base/common/lifecycle.js';
+import './media/scm.css';
+import { localize } from '../../../../nls.js';
+import { createAndFillInActionBarActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { IMenuService, MenuId, MenuRegistry } from '../../../../platform/actions/common/actions.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { ISCMService } from '../common/scm.js';
+function actionEquals(a, b) {
+    return a.id === b.id;
+}
+const repositoryMenuDisposables = new DisposableStore();
+MenuRegistry.onDidChangeMenu(e => {
+    if (e.has(MenuId.SCMTitle)) {
+        repositoryMenuDisposables.clear();
+        for (const menuItem of MenuRegistry.getMenuItems(MenuId.SCMTitle)) {
+            repositoryMenuDisposables.add(MenuRegistry.appendMenuItem(MenuId.SCMSourceControlInline, menuItem));
+        }
+    }
+});
+let SCMTitleMenu = class SCMTitleMenu {
+    get actions() { return this._actions; }
+    get secondaryActions() { return this._secondaryActions; }
+    constructor(menuService, contextKeyService) {
+        this._actions = [];
+        this._secondaryActions = [];
+        this._onDidChangeTitle = new Emitter();
+        this.onDidChangeTitle = this._onDidChangeTitle.event;
+        this.disposables = new DisposableStore();
+        this.menu = menuService.createMenu(MenuId.SCMTitle, contextKeyService);
+        this.disposables.add(this.menu);
+        this.menu.onDidChange(this.updateTitleActions, this, this.disposables);
+        this.updateTitleActions();
+    }
+    updateTitleActions() {
+        const primary = [];
+        const secondary = [];
+        createAndFillInActionBarActions(this.menu, { shouldForwardArgs: true }, { primary, secondary });
+        if (equals(primary, this._actions, actionEquals) && equals(secondary, this._secondaryActions, actionEquals)) {
+            return;
+        }
+        this._actions = primary;
+        this._secondaryActions = secondary;
+        this._onDidChangeTitle.fire();
+    }
+    dispose() {
+        this.disposables.dispose();
+    }
+};
+SCMTitleMenu = __decorate([
+    __param(0, IMenuService),
+    __param(1, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object])
+], SCMTitleMenu);
+export { SCMTitleMenu };
+class SCMMenusItem {
+    get resourceGroupMenu() {
+        if (!this._resourceGroupMenu) {
+            this._resourceGroupMenu = this.menuService.createMenu(MenuId.SCMResourceGroupContext, this.contextKeyService);
+        }
+        return this._resourceGroupMenu;
+    }
+    get resourceFolderMenu() {
+        if (!this._resourceFolderMenu) {
+            this._resourceFolderMenu = this.menuService.createMenu(MenuId.SCMResourceFolderContext, this.contextKeyService);
+        }
+        return this._resourceFolderMenu;
+    }
+    constructor(contextKeyService, menuService) {
+        this.contextKeyService = contextKeyService;
+        this.menuService = menuService;
+    }
+    getResourceMenu(resource) {
+        if (typeof resource.contextValue === 'undefined') {
+            if (!this.genericResourceMenu) {
+                this.genericResourceMenu = this.menuService.createMenu(MenuId.SCMResourceContext, this.contextKeyService);
+            }
+            return this.genericResourceMenu;
+        }
+        if (!this.contextualResourceMenus) {
+            this.contextualResourceMenus = new Map();
+        }
+        let item = this.contextualResourceMenus.get(resource.contextValue);
+        if (!item) {
+            const contextKeyService = this.contextKeyService.createOverlay([['scmResourceState', resource.contextValue]]);
+            const menu = this.menuService.createMenu(MenuId.SCMResourceContext, contextKeyService);
+            item = {
+                menu, dispose() {
+                    menu.dispose();
+                }
+            };
+            this.contextualResourceMenus.set(resource.contextValue, item);
+        }
+        return item.menu;
+    }
+    dispose() {
+        this._resourceGroupMenu?.dispose();
+        this._resourceFolderMenu?.dispose();
+        this.genericResourceMenu?.dispose();
+        if (this.contextualResourceMenus) {
+            dispose(this.contextualResourceMenus.values());
+            this.contextualResourceMenus.clear();
+            this.contextualResourceMenus = undefined;
+        }
+    }
+}
+let SCMRepositoryMenus = class SCMRepositoryMenus {
+    get repositoryContextMenu() {
+        if (!this._repositoryContextMenu) {
+            this._repositoryContextMenu = this.menuService.createMenu(MenuId.SCMSourceControl, this.contextKeyService);
+            this.disposables.add(this._repositoryContextMenu);
+        }
+        return this._repositoryContextMenu;
+    }
+    constructor(provider, contextKeyService, instantiationService, menuService) {
+        this.provider = provider;
+        this.menuService = menuService;
+        this.resourceGroupMenusItems = new Map();
+        this.disposables = new DisposableStore();
+        this.contextKeyService = contextKeyService.createOverlay([
+            ['scmProvider', provider.contextValue],
+            ['scmProviderRootUri', provider.rootUri?.toString()],
+            ['scmProviderHasRootUri', !!provider.rootUri],
+        ]);
+        const serviceCollection = new ServiceCollection([IContextKeyService, this.contextKeyService]);
+        instantiationService = instantiationService.createChild(serviceCollection, this.disposables);
+        this.titleMenu = instantiationService.createInstance(SCMTitleMenu);
+        this.disposables.add(this.titleMenu);
+        this.repositoryMenu = menuService.createMenu(MenuId.SCMSourceControlInline, this.contextKeyService);
+        this.disposables.add(this.repositoryMenu);
+        provider.onDidChangeResourceGroups(this.onDidChangeResourceGroups, this, this.disposables);
+        this.onDidChangeResourceGroups();
+    }
+    getResourceGroupMenu(group) {
+        return this.getOrCreateResourceGroupMenusItem(group).resourceGroupMenu;
+    }
+    getResourceMenu(resource) {
+        return this.getOrCreateResourceGroupMenusItem(resource.resourceGroup).getResourceMenu(resource);
+    }
+    getResourceFolderMenu(group) {
+        return this.getOrCreateResourceGroupMenusItem(group).resourceFolderMenu;
+    }
+    getOrCreateResourceGroupMenusItem(group) {
+        let result = this.resourceGroupMenusItems.get(group);
+        if (!result) {
+            const contextKeyService = this.contextKeyService.createOverlay([
+                ['scmResourceGroup', group.id],
+                ['multiDiffEditorEnableViewChanges', group.multiDiffEditorEnableViewChanges],
+            ]);
+            result = new SCMMenusItem(contextKeyService, this.menuService);
+            this.resourceGroupMenusItems.set(group, result);
+        }
+        return result;
+    }
+    onDidChangeResourceGroups() {
+        for (const resourceGroup of this.resourceGroupMenusItems.keys()) {
+            if (!this.provider.groups.includes(resourceGroup)) {
+                this.resourceGroupMenusItems.get(resourceGroup)?.dispose();
+                this.resourceGroupMenusItems.delete(resourceGroup);
+            }
+        }
+    }
+    dispose() {
+        this.disposables.dispose();
+        this.resourceGroupMenusItems.forEach(item => item.dispose());
+    }
+};
+SCMRepositoryMenus = __decorate([
+    __param(1, IContextKeyService),
+    __param(2, IInstantiationService),
+    __param(3, IMenuService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], SCMRepositoryMenus);
+export { SCMRepositoryMenus };
+let SCMMenus = class SCMMenus {
+    constructor(scmService, instantiationService) {
+        this.instantiationService = instantiationService;
+        this.disposables = new DisposableStore();
+        this.menus = new Map();
+        this.titleMenu = instantiationService.createInstance(SCMTitleMenu);
+        scmService.onDidRemoveRepository(this.onDidRemoveRepository, this, this.disposables);
+    }
+    onDidRemoveRepository(repository) {
+        const menus = this.menus.get(repository.provider);
+        menus?.dispose();
+        this.menus.delete(repository.provider);
+    }
+    getRepositoryMenus(provider) {
+        let result = this.menus.get(provider);
+        if (!result) {
+            const menus = this.instantiationService.createInstance(SCMRepositoryMenus, provider);
+            const dispose = () => {
+                menus.dispose();
+                this.menus.delete(provider);
+            };
+            result = { menus, dispose };
+            this.menus.set(provider, result);
+        }
+        return result.menus;
+    }
+    dispose() {
+        this.disposables.dispose();
+    }
+};
+SCMMenus = __decorate([
+    __param(0, ISCMService),
+    __param(1, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object])
+], SCMMenus);
+export { SCMMenus };
+MenuRegistry.appendMenuItem(MenuId.SCMResourceContext, {
+    title: localize('miShare', "Share"),
+    submenu: MenuId.SCMResourceContextShare,
+    group: '45_share',
+    order: 3,
+});

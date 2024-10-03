@@ -1,1 +1,146 @@
-var B=Object.defineProperty;var U=Object.getOwnPropertyDescriptor;var N=(p,s,f,a)=>{for(var t=a>1?void 0:a?U(s,f):s,_=p.length-1,I;_>=0;_--)(I=p[_])&&(t=(a?I(s,f,t):I(t))||t);return a&&t&&B(s,f,t),t},w=(p,s)=>(f,a)=>s(f,a,p);import{EventType as S,addDisposableListener as j,addStandardDisposableListener as k,h as q}from"../../../../../base/browser/dom.js";import{createFastDomNode as G}from"../../../../../base/browser/fastDomNode.js";import"../../../../../base/browser/mouseEvent.js";import{ScrollbarState as J}from"../../../../../base/browser/ui/scrollbar/scrollbarState.js";import"../../../../../base/common/color.js";import{Disposable as K}from"../../../../../base/common/lifecycle.js";import{autorun as y,autorunWithStore as Q,derived as X,observableFromEvent as Y,observableSignalFromEvent as V}from"../../../../../base/common/observable.js";import"../../codeEditor/codeEditorWidget.js";import"../components/diffEditorEditors.js";import"../diffEditorViewModel.js";import{appendRemoveOnDispose as W}from"../utils.js";import{EditorOption as $}from"../../../../common/config/editorOptions.js";import"../../../../common/core/lineRange.js";import{Position as L}from"../../../../common/core/position.js";import{OverviewRulerZone as ee}from"../../../../common/viewModel/overviewZoneManager.js";import{defaultInsertColor as oe,defaultRemoveColor as ie,diffInserted as te,diffOverviewRulerInserted as re,diffOverviewRulerRemoved as ne,diffRemoved as de}from"../../../../../platform/theme/common/colorRegistry.js";import{IThemeService as se}from"../../../../../platform/theme/common/themeService.js";let e=class extends K{constructor(f,a,t,_,I,ae,le){super();this._editors=f;this._rootElement=a;this._diffModel=t;this._rootWidth=_;this._rootHeight=I;this._modifiedEditorLayoutInfo=ae;this._themeService=le;const M=Y(this._themeService.onDidColorThemeChange,()=>this._themeService.getColorTheme()),Z=X(l=>{const i=M.read(l),b=i.getColor(re)||(i.getColor(te)||oe).transparent(2),d=i.getColor(ne)||(i.getColor(de)||ie).transparent(2);return{insertColor:b,removeColor:d}}),r=G(document.createElement("div"));r.setClassName("diffViewport"),r.setPosition("absolute");const n=q("div.diffOverview",{style:{position:"absolute",top:"0px",width:e.ENTIRE_DIFF_OVERVIEW_WIDTH+"px"}}).root;this._register(W(n,r.domNode)),this._register(k(n,S.POINTER_DOWN,l=>{this._editors.modified.delegateVerticalScrollbarPointerDown(l)})),this._register(j(n,S.MOUSE_WHEEL,l=>{this._editors.modified.delegateScrollFromMouseWheelEvent(l)},{passive:!1})),this._register(W(this._rootElement,n)),this._register(Q((l,i)=>{const b=this._diffModel.read(l),d=this._editors.original.createOverviewRuler("original diffOverviewRuler");d&&(i.add(d),i.add(W(n,d.getDomNode())));const h=this._editors.modified.createOverviewRuler("modified diffOverviewRuler");if(h&&(i.add(h),i.add(W(n,h.getDomNode()))),!d||!h)return;const P=V("viewZoneChanged",this._editors.original.onDidChangeViewZones),x=V("viewZoneChanged",this._editors.modified.onDidChangeViewZones),F=V("hiddenRangesChanged",this._editors.original.onDidChangeHiddenAreas),z=V("hiddenRangesChanged",this._editors.modified.onDidChangeHiddenAreas);i.add(y(o=>{P.read(o),x.read(o),F.read(o),z.read(o);const c=Z.read(o),v=b?.diff.read(o)?.mappings;function E(m,g,D){const R=D._getViewModel();return R?m.filter(C=>C.length>0).map(C=>{const u=R.coordinatesConverter.convertModelPositionToViewPosition(new L(C.startLineNumber,1)),H=R.coordinatesConverter.convertModelPositionToViewPosition(new L(C.endLineNumberExclusive,1)),A=H.lineNumber-u.lineNumber;return new ee(u.lineNumber,H.lineNumber,A,g.toString())}):[]}const T=E((v||[]).map(m=>m.lineRangeMapping.original),c.removeColor,this._editors.original),O=E((v||[]).map(m=>m.lineRangeMapping.modified),c.insertColor,this._editors.modified);d?.setZones(T),h?.setZones(O)})),i.add(y(o=>{const c=this._rootHeight.read(o),v=this._rootWidth.read(o),E=this._modifiedEditorLayoutInfo.read(o);if(E){const T=e.ENTIRE_DIFF_OVERVIEW_WIDTH-2*e.ONE_OVERVIEW_WIDTH;d.setLayout({top:0,height:c,right:T+e.ONE_OVERVIEW_WIDTH,width:e.ONE_OVERVIEW_WIDTH}),h.setLayout({top:0,height:c,right:0,width:e.ONE_OVERVIEW_WIDTH});const O=this._editors.modifiedScrollTop.read(o),m=this._editors.modifiedScrollHeight.read(o),g=this._editors.modified.getOption($.scrollbar),D=new J(g.verticalHasArrows?g.arrowSize:0,g.verticalScrollbarSize,0,E.height,m,O);r.setTop(D.getSliderPosition()),r.setHeight(D.getSliderSize())}else r.setTop(0),r.setHeight(0);n.style.height=c+"px",n.style.left=v-e.ENTIRE_DIFF_OVERVIEW_WIDTH+"px",r.setWidth(e.ENTIRE_DIFF_OVERVIEW_WIDTH)}))}))}static ONE_OVERVIEW_WIDTH=15;static ENTIRE_DIFF_OVERVIEW_WIDTH=this.ONE_OVERVIEW_WIDTH*2;width=e.ENTIRE_DIFF_OVERVIEW_WIDTH};e=N([w(6,se)],e);export{e as OverviewRulerFeature};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var OverviewRulerFeature_1;
+import { EventType, addDisposableListener, addStandardDisposableListener, h } from '../../../../../base/browser/dom.js';
+import { createFastDomNode } from '../../../../../base/browser/fastDomNode.js';
+import { ScrollbarState } from '../../../../../base/browser/ui/scrollbar/scrollbarState.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { autorun, autorunWithStore, derived, observableFromEvent, observableSignalFromEvent } from '../../../../../base/common/observable.js';
+import { DiffEditorEditors } from '../components/diffEditorEditors.js';
+import { appendRemoveOnDispose } from '../utils.js';
+import { Position } from '../../../../common/core/position.js';
+import { OverviewRulerZone } from '../../../../common/viewModel/overviewZoneManager.js';
+import { defaultInsertColor, defaultRemoveColor, diffInserted, diffOverviewRulerInserted, diffOverviewRulerRemoved, diffRemoved } from '../../../../../platform/theme/common/colorRegistry.js';
+import { IThemeService } from '../../../../../platform/theme/common/themeService.js';
+let OverviewRulerFeature = class OverviewRulerFeature extends Disposable {
+    static { OverviewRulerFeature_1 = this; }
+    static { this.ONE_OVERVIEW_WIDTH = 15; }
+    static { this.ENTIRE_DIFF_OVERVIEW_WIDTH = this.ONE_OVERVIEW_WIDTH * 2; }
+    constructor(_editors, _rootElement, _diffModel, _rootWidth, _rootHeight, _modifiedEditorLayoutInfo, _themeService) {
+        super();
+        this._editors = _editors;
+        this._rootElement = _rootElement;
+        this._diffModel = _diffModel;
+        this._rootWidth = _rootWidth;
+        this._rootHeight = _rootHeight;
+        this._modifiedEditorLayoutInfo = _modifiedEditorLayoutInfo;
+        this._themeService = _themeService;
+        this.width = OverviewRulerFeature_1.ENTIRE_DIFF_OVERVIEW_WIDTH;
+        const currentColorTheme = observableFromEvent(this._themeService.onDidColorThemeChange, () => this._themeService.getColorTheme());
+        const currentColors = derived(reader => {
+            const theme = currentColorTheme.read(reader);
+            const insertColor = theme.getColor(diffOverviewRulerInserted) || (theme.getColor(diffInserted) || defaultInsertColor).transparent(2);
+            const removeColor = theme.getColor(diffOverviewRulerRemoved) || (theme.getColor(diffRemoved) || defaultRemoveColor).transparent(2);
+            return { insertColor, removeColor };
+        });
+        const viewportDomElement = createFastDomNode(document.createElement('div'));
+        viewportDomElement.setClassName('diffViewport');
+        viewportDomElement.setPosition('absolute');
+        const diffOverviewRoot = h('div.diffOverview', {
+            style: { position: 'absolute', top: '0px', width: OverviewRulerFeature_1.ENTIRE_DIFF_OVERVIEW_WIDTH + 'px' }
+        }).root;
+        this._register(appendRemoveOnDispose(diffOverviewRoot, viewportDomElement.domNode));
+        this._register(addStandardDisposableListener(diffOverviewRoot, EventType.POINTER_DOWN, (e) => {
+            this._editors.modified.delegateVerticalScrollbarPointerDown(e);
+        }));
+        this._register(addDisposableListener(diffOverviewRoot, EventType.MOUSE_WHEEL, (e) => {
+            this._editors.modified.delegateScrollFromMouseWheelEvent(e);
+        }, { passive: false }));
+        this._register(appendRemoveOnDispose(this._rootElement, diffOverviewRoot));
+        this._register(autorunWithStore((reader, store) => {
+            const m = this._diffModel.read(reader);
+            const originalOverviewRuler = this._editors.original.createOverviewRuler('original diffOverviewRuler');
+            if (originalOverviewRuler) {
+                store.add(originalOverviewRuler);
+                store.add(appendRemoveOnDispose(diffOverviewRoot, originalOverviewRuler.getDomNode()));
+            }
+            const modifiedOverviewRuler = this._editors.modified.createOverviewRuler('modified diffOverviewRuler');
+            if (modifiedOverviewRuler) {
+                store.add(modifiedOverviewRuler);
+                store.add(appendRemoveOnDispose(diffOverviewRoot, modifiedOverviewRuler.getDomNode()));
+            }
+            if (!originalOverviewRuler || !modifiedOverviewRuler) {
+                return;
+            }
+            const origViewZonesChanged = observableSignalFromEvent('viewZoneChanged', this._editors.original.onDidChangeViewZones);
+            const modViewZonesChanged = observableSignalFromEvent('viewZoneChanged', this._editors.modified.onDidChangeViewZones);
+            const origHiddenRangesChanged = observableSignalFromEvent('hiddenRangesChanged', this._editors.original.onDidChangeHiddenAreas);
+            const modHiddenRangesChanged = observableSignalFromEvent('hiddenRangesChanged', this._editors.modified.onDidChangeHiddenAreas);
+            store.add(autorun(reader => {
+                origViewZonesChanged.read(reader);
+                modViewZonesChanged.read(reader);
+                origHiddenRangesChanged.read(reader);
+                modHiddenRangesChanged.read(reader);
+                const colors = currentColors.read(reader);
+                const diff = m?.diff.read(reader)?.mappings;
+                function createZones(ranges, color, editor) {
+                    const vm = editor._getViewModel();
+                    if (!vm) {
+                        return [];
+                    }
+                    return ranges
+                        .filter(d => d.length > 0)
+                        .map(r => {
+                        const start = vm.coordinatesConverter.convertModelPositionToViewPosition(new Position(r.startLineNumber, 1));
+                        const end = vm.coordinatesConverter.convertModelPositionToViewPosition(new Position(r.endLineNumberExclusive, 1));
+                        const lineCount = end.lineNumber - start.lineNumber;
+                        return new OverviewRulerZone(start.lineNumber, end.lineNumber, lineCount, color.toString());
+                    });
+                }
+                const originalZones = createZones((diff || []).map(d => d.lineRangeMapping.original), colors.removeColor, this._editors.original);
+                const modifiedZones = createZones((diff || []).map(d => d.lineRangeMapping.modified), colors.insertColor, this._editors.modified);
+                originalOverviewRuler?.setZones(originalZones);
+                modifiedOverviewRuler?.setZones(modifiedZones);
+            }));
+            store.add(autorun(reader => {
+                const height = this._rootHeight.read(reader);
+                const width = this._rootWidth.read(reader);
+                const layoutInfo = this._modifiedEditorLayoutInfo.read(reader);
+                if (layoutInfo) {
+                    const freeSpace = OverviewRulerFeature_1.ENTIRE_DIFF_OVERVIEW_WIDTH - 2 * OverviewRulerFeature_1.ONE_OVERVIEW_WIDTH;
+                    originalOverviewRuler.setLayout({
+                        top: 0,
+                        height: height,
+                        right: freeSpace + OverviewRulerFeature_1.ONE_OVERVIEW_WIDTH,
+                        width: OverviewRulerFeature_1.ONE_OVERVIEW_WIDTH,
+                    });
+                    modifiedOverviewRuler.setLayout({
+                        top: 0,
+                        height: height,
+                        right: 0,
+                        width: OverviewRulerFeature_1.ONE_OVERVIEW_WIDTH,
+                    });
+                    const scrollTop = this._editors.modifiedScrollTop.read(reader);
+                    const scrollHeight = this._editors.modifiedScrollHeight.read(reader);
+                    const scrollBarOptions = this._editors.modified.getOption(106);
+                    const state = new ScrollbarState(scrollBarOptions.verticalHasArrows ? scrollBarOptions.arrowSize : 0, scrollBarOptions.verticalScrollbarSize, 0, layoutInfo.height, scrollHeight, scrollTop);
+                    viewportDomElement.setTop(state.getSliderPosition());
+                    viewportDomElement.setHeight(state.getSliderSize());
+                }
+                else {
+                    viewportDomElement.setTop(0);
+                    viewportDomElement.setHeight(0);
+                }
+                diffOverviewRoot.style.height = height + 'px';
+                diffOverviewRoot.style.left = (width - OverviewRulerFeature_1.ENTIRE_DIFF_OVERVIEW_WIDTH) + 'px';
+                viewportDomElement.setWidth(OverviewRulerFeature_1.ENTIRE_DIFF_OVERVIEW_WIDTH);
+            }));
+        }));
+    }
+};
+OverviewRulerFeature = OverviewRulerFeature_1 = __decorate([
+    __param(6, IThemeService),
+    __metadata("design:paramtypes", [DiffEditorEditors,
+        HTMLElement, Object, Object, Object, Object, Object])
+], OverviewRulerFeature);
+export { OverviewRulerFeature };

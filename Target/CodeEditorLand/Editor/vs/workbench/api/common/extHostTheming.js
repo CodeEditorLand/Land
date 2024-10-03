@@ -1,1 +1,50 @@
-var s=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var l=(i,t,e,r)=>{for(var o=r>1?void 0:r?p(t,e):t,n=i.length-1,c;n>=0;n--)(c=i[n])&&(o=(r?c(t,e,o):c(o))||o);return r&&o&&s(t,e,o),o},m=(i,t)=>(e,r)=>t(e,r,i);import{ColorTheme as C,ColorThemeKind as h}from"./extHostTypes.js";import{IExtHostRpcService as v}from"./extHostRpcService.js";import"./extHost.protocol.js";import{Emitter as g}from"../../../base/common/event.js";let a=class{_serviceBrand;_actual;_onDidChangeActiveColorTheme;constructor(t){this._actual=new C(h.Dark),this._onDidChangeActiveColorTheme=new g}get activeColorTheme(){return this._actual}$onColorThemeChange(t){let e;switch(t){case"light":e=h.Light;break;case"hcDark":e=h.HighContrast;break;case"hcLight":e=h.HighContrastLight;break;default:e=h.Dark}this._actual=new C(e),this._onDidChangeActiveColorTheme.fire(this._actual)}get onDidChangeActiveColorTheme(){return this._onDidChangeActiveColorTheme.event}};a=l([m(0,v)],a);export{a as ExtHostTheming};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ColorTheme, ColorThemeKind } from './extHostTypes.js';
+import { IExtHostRpcService } from './extHostRpcService.js';
+import { Emitter } from '../../../base/common/event.js';
+let ExtHostTheming = class ExtHostTheming {
+    constructor(_extHostRpc) {
+        this._actual = new ColorTheme(ColorThemeKind.Dark);
+        this._onDidChangeActiveColorTheme = new Emitter();
+    }
+    get activeColorTheme() {
+        return this._actual;
+    }
+    $onColorThemeChange(type) {
+        let kind;
+        switch (type) {
+            case 'light':
+                kind = ColorThemeKind.Light;
+                break;
+            case 'hcDark':
+                kind = ColorThemeKind.HighContrast;
+                break;
+            case 'hcLight':
+                kind = ColorThemeKind.HighContrastLight;
+                break;
+            default:
+                kind = ColorThemeKind.Dark;
+        }
+        this._actual = new ColorTheme(kind);
+        this._onDidChangeActiveColorTheme.fire(this._actual);
+    }
+    get onDidChangeActiveColorTheme() {
+        return this._onDidChangeActiveColorTheme.event;
+    }
+};
+ExtHostTheming = __decorate([
+    __param(0, IExtHostRpcService),
+    __metadata("design:paramtypes", [Object])
+], ExtHostTheming);
+export { ExtHostTheming };

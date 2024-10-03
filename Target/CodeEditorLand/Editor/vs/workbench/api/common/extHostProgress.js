@@ -1,1 +1,85 @@
-var m=Object.defineProperty;var g=Object.getOwnPropertyDescriptor;var p=(s,e,o,t)=>{for(var r=t>1?void 0:t?g(e,o):e,n=s.length-1,i;n>=0;n--)(i=s[n])&&(r=(t?i(e,o,r):i(r))||r);return t&&r&&m(e,o,r),r};import"vscode";import"./extHost.protocol.js";import{ProgressLocation as h}from"./extHostTypeConverters.js";import{Progress as d}from"../../../platform/progress/common/progress.js";import{CancellationTokenSource as P,CancellationToken as S}from"../../../base/common/cancellation.js";import{throttle as u}from"../../../base/common/decorators.js";import"../../../platform/extensions/common/extensions.js";import{onUnexpectedExternalError as f}from"../../../base/common/errors.js";class D{_proxy;_handles=0;_mapHandleToCancellationSource=new Map;constructor(e){this._proxy=e}async withProgress(e,o,t){const r=this._handles++,{title:n,location:i,cancellable:a}=o,l={label:e.displayName||e.name,id:e.identifier.value};return this._proxy.$startProgress(r,{location:h.from(i),title:n,source:l,cancellable:a},e.isUnderDevelopment?void 0:e.identifier.value).catch(f),this._withProgress(r,t,!!a)}_withProgress(e,o,t){let r;t&&(r=new P,this._mapHandleToCancellationSource.set(e,r));const n=a=>{this._proxy.$progressEnd(a),this._mapHandleToCancellationSource.delete(a),r?.dispose()};let i;try{i=o(new c(this._proxy,e),t&&r?r.token:S.None)}catch(a){throw n(e),a}return i.then(a=>n(e),a=>n(e)),i}$acceptProgressCanceled(e){const o=this._mapHandleToCancellationSource.get(e);o&&(o.cancel(),this._mapHandleToCancellationSource.delete(e))}}function T(s,e){return s.message=e.message,typeof e.increment=="number"&&(typeof s.increment=="number"?s.increment+=e.increment:s.increment=e.increment),s}class c extends d{constructor(o,t){super(r=>this.throttledReport(r));this._proxy=o;this._handle=t}throttledReport(o){this._proxy.$progressReport(this._handle,o)}}p([u(100,(o,t)=>T(o,t),()=>Object.create(null))],c.prototype,"throttledReport",1);export{D as ExtHostProgress};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+import { ProgressLocation } from './extHostTypeConverters.js';
+import { Progress } from '../../../platform/progress/common/progress.js';
+import { CancellationTokenSource, CancellationToken } from '../../../base/common/cancellation.js';
+import { throttle } from '../../../base/common/decorators.js';
+import { onUnexpectedExternalError } from '../../../base/common/errors.js';
+export class ExtHostProgress {
+    constructor(proxy) {
+        this._handles = 0;
+        this._mapHandleToCancellationSource = new Map();
+        this._proxy = proxy;
+    }
+    async withProgress(extension, options, task) {
+        const handle = this._handles++;
+        const { title, location, cancellable } = options;
+        const source = { label: extension.displayName || extension.name, id: extension.identifier.value };
+        this._proxy.$startProgress(handle, { location: ProgressLocation.from(location), title, source, cancellable }, !extension.isUnderDevelopment ? extension.identifier.value : undefined).catch(onUnexpectedExternalError);
+        return this._withProgress(handle, task, !!cancellable);
+    }
+    _withProgress(handle, task, cancellable) {
+        let source;
+        if (cancellable) {
+            source = new CancellationTokenSource();
+            this._mapHandleToCancellationSource.set(handle, source);
+        }
+        const progressEnd = (handle) => {
+            this._proxy.$progressEnd(handle);
+            this._mapHandleToCancellationSource.delete(handle);
+            source?.dispose();
+        };
+        let p;
+        try {
+            p = task(new ProgressCallback(this._proxy, handle), cancellable && source ? source.token : CancellationToken.None);
+        }
+        catch (err) {
+            progressEnd(handle);
+            throw err;
+        }
+        p.then(result => progressEnd(handle), err => progressEnd(handle));
+        return p;
+    }
+    $acceptProgressCanceled(handle) {
+        const source = this._mapHandleToCancellationSource.get(handle);
+        if (source) {
+            source.cancel();
+            this._mapHandleToCancellationSource.delete(handle);
+        }
+    }
+}
+function mergeProgress(result, currentValue) {
+    result.message = currentValue.message;
+    if (typeof currentValue.increment === 'number') {
+        if (typeof result.increment === 'number') {
+            result.increment += currentValue.increment;
+        }
+        else {
+            result.increment = currentValue.increment;
+        }
+    }
+    return result;
+}
+class ProgressCallback extends Progress {
+    constructor(_proxy, _handle) {
+        super(p => this.throttledReport(p));
+        this._proxy = _proxy;
+        this._handle = _handle;
+    }
+    throttledReport(p) {
+        this._proxy.$progressReport(this._handle, p);
+    }
+}
+__decorate([
+    throttle(100, (result, currentValue) => mergeProgress(result, currentValue), () => Object.create(null)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ProgressCallback.prototype, "throttledReport", null);

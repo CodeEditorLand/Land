@@ -1,1 +1,88 @@
-var m=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var i=(r,o,e,a)=>{for(var t=a>1?void 0:a?p(o,e):o,s=r.length-1,c;s>=0;s--)(c=r[s])&&(t=(a?c(o,e,t):c(t))||t);return a&&t&&m(o,e,t),t},d=(r,o)=>(e,a)=>o(e,a,r);import{MainContext as g}from"./extHost.protocol.js";import{createDecorator as k}from"../../../platform/instantiation/common/instantiation.js";import"vscode";import{Disposable as S,DisposableStore as l,toDisposable as y}from"../../../base/common/lifecycle.js";import{IExtHostRpcService as u}from"./extHostRpcService.js";import{VSBuffer as h}from"../../../base/common/buffer.js";const F=k("IExtHostManagedSockets");let n=class{_proxy;_remoteSocketIdCounter=0;_factory=null;_managedRemoteSockets=new Map;constructor(o){this._proxy=o.getProxy(g.MainThreadManagedSockets)}setFactory(o,e){for(const a of this._managedRemoteSockets.values())a.dispose();this._factory&&this._proxy.$unregisterSocketFactory(this._factory.socketFactoryId),this._factory=new f(o,e),this._proxy.$registerSocketFactory(this._factory.socketFactoryId)}async $openRemoteSocket(o){if(!this._factory||this._factory.socketFactoryId!==o)throw new Error(`No socket factory with id ${o}`);const e=++this._remoteSocketIdCounter,a=await this._factory.makeConnection(),t=new l;return this._managedRemoteSockets.set(e,new M(e,a,t)),t.add(y(()=>this._managedRemoteSockets.delete(e))),t.add(a.onDidEnd(()=>{this._proxy.$onDidManagedSocketEnd(e),t.dispose()})),t.add(a.onDidClose(s=>{this._proxy.$onDidManagedSocketClose(e,s?.stack??s?.message),t.dispose()})),t.add(a.onDidReceiveMessage(s=>this._proxy.$onDidManagedSocketHaveData(e,h.wrap(s)))),e}$remoteSocketWrite(o,e){this._managedRemoteSockets.get(o)?.actual.send(e.buffer)}$remoteSocketEnd(o){const e=this._managedRemoteSockets.get(o);e&&(e.actual.end(),e.dispose())}async $remoteSocketDrain(o){await this._managedRemoteSockets.get(o)?.actual.drain?.()}};n=i([d(0,u)],n);class f{constructor(o,e){this.socketFactoryId=o;this.makeConnection=e}}class M extends S{constructor(e,a,t){super();this.socketId=e;this.actual=a;this._register(t)}}export{n as ExtHostManagedSockets,F as IExtHostManagedSockets};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { MainContext } from './extHost.protocol.js';
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../base/common/lifecycle.js';
+import { IExtHostRpcService } from './extHostRpcService.js';
+import { VSBuffer } from '../../../base/common/buffer.js';
+export const IExtHostManagedSockets = createDecorator('IExtHostManagedSockets');
+let ExtHostManagedSockets = class ExtHostManagedSockets {
+    constructor(extHostRpc) {
+        this._remoteSocketIdCounter = 0;
+        this._factory = null;
+        this._managedRemoteSockets = new Map();
+        this._proxy = extHostRpc.getProxy(MainContext.MainThreadManagedSockets);
+    }
+    setFactory(socketFactoryId, makeConnection) {
+        for (const socket of this._managedRemoteSockets.values()) {
+            socket.dispose();
+        }
+        if (this._factory) {
+            this._proxy.$unregisterSocketFactory(this._factory.socketFactoryId);
+        }
+        this._factory = new ManagedSocketFactory(socketFactoryId, makeConnection);
+        this._proxy.$registerSocketFactory(this._factory.socketFactoryId);
+    }
+    async $openRemoteSocket(socketFactoryId) {
+        if (!this._factory || this._factory.socketFactoryId !== socketFactoryId) {
+            throw new Error(`No socket factory with id ${socketFactoryId}`);
+        }
+        const id = (++this._remoteSocketIdCounter);
+        const socket = await this._factory.makeConnection();
+        const disposable = new DisposableStore();
+        this._managedRemoteSockets.set(id, new ManagedSocket(id, socket, disposable));
+        disposable.add(toDisposable(() => this._managedRemoteSockets.delete(id)));
+        disposable.add(socket.onDidEnd(() => {
+            this._proxy.$onDidManagedSocketEnd(id);
+            disposable.dispose();
+        }));
+        disposable.add(socket.onDidClose(e => {
+            this._proxy.$onDidManagedSocketClose(id, e?.stack ?? e?.message);
+            disposable.dispose();
+        }));
+        disposable.add(socket.onDidReceiveMessage(e => this._proxy.$onDidManagedSocketHaveData(id, VSBuffer.wrap(e))));
+        return id;
+    }
+    $remoteSocketWrite(socketId, buffer) {
+        this._managedRemoteSockets.get(socketId)?.actual.send(buffer.buffer);
+    }
+    $remoteSocketEnd(socketId) {
+        const socket = this._managedRemoteSockets.get(socketId);
+        if (socket) {
+            socket.actual.end();
+            socket.dispose();
+        }
+    }
+    async $remoteSocketDrain(socketId) {
+        await this._managedRemoteSockets.get(socketId)?.actual.drain?.();
+    }
+};
+ExtHostManagedSockets = __decorate([
+    __param(0, IExtHostRpcService),
+    __metadata("design:paramtypes", [Object])
+], ExtHostManagedSockets);
+export { ExtHostManagedSockets };
+class ManagedSocketFactory {
+    constructor(socketFactoryId, makeConnection) {
+        this.socketFactoryId = socketFactoryId;
+        this.makeConnection = makeConnection;
+    }
+}
+class ManagedSocket extends Disposable {
+    constructor(socketId, actual, disposer) {
+        super();
+        this.socketId = socketId;
+        this.actual = actual;
+        this._register(disposer);
+    }
+}

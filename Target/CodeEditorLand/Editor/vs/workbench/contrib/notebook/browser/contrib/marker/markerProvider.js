@@ -1,1 +1,106 @@
-var h=Object.defineProperty;var k=Object.getOwnPropertyDescriptor;var m=(a,o,e,r)=>{for(var t=r>1?void 0:r?k(o,e):o,i=a.length-1,n;i>=0;i--)(n=a[i])&&(t=(r?n(o,e,t):n(t))||t);return r&&t&&h(o,e,t),t},l=(a,o)=>(e,r)=>o(e,r,a);import"../../../../../../base/common/uri.js";import{WorkbenchPhase as g,registerWorkbenchContribution2 as b}from"../../../../../common/contributions.js";import{MarkerList as f,IMarkerNavigationService as _}from"../../../../../../editor/contrib/gotoError/browser/markerNavigationService.js";import{CellUri as p}from"../../../common/notebookCommon.js";import{IMarkerService as u,MarkerSeverity as c}from"../../../../../../platform/markers/common/markers.js";import{IConfigurationService as I}from"../../../../../../platform/configuration/common/configuration.js";import{Disposable as S}from"../../../../../../base/common/lifecycle.js";import{NotebookOverviewRulerLane as E}from"../../notebookBrowser.js";import{registerNotebookContribution as D}from"../../notebookEditorExtensions.js";import{throttle as C}from"../../../../../../base/common/decorators.js";import{editorErrorForeground as R,editorWarningForeground as N}from"../../../../../../platform/theme/common/colorRegistry.js";import{isEqual as w}from"../../../../../../base/common/resources.js";let d=class{constructor(o,e,r){this._markerService=o;this._configService=r;this._dispoables=e.registerProvider(this)}static ID="workbench.contrib.markerListProvider";_dispoables;dispose(){this._dispoables.dispose()}getMarkerList(o){if(!o)return;const e=p.parse(o);if(e)return new f(r=>p.parse(r)?.notebook.toString()===e.notebook.toString(),this._markerService,this._configService)}};d=m([l(0,u),l(1,_),l(2,I)],d);let s=class extends S{constructor(e,r){super();this._notebookEditor=e;this._markerService=r;this._update(),this._register(this._notebookEditor.onDidChangeModel(()=>this._update())),this._register(this._markerService.onMarkerChanged(t=>{t.some(i=>this._notebookEditor.getCellsInRange().some(n=>w(n.uri,i)))&&this._update()}))}static id="workbench.notebook.markerDecoration";_markersOverviewRulerDecorations=[];_update(){if(!this._notebookEditor.hasModel())return;const e=[];this._notebookEditor.getCellsInRange().forEach(r=>{this._markerService.read({resource:r.uri,severities:c.Error|c.Warning}).forEach(i=>{const n=i.severity===c.Error?R:N,v={startLineNumber:i.startLineNumber,startColumn:i.startColumn,endLineNumber:i.endLineNumber,endColumn:i.endColumn};e.push({handle:r.handle,options:{overviewRuler:{color:n,modelRanges:[v],includeOutput:!1,position:E.Right}}})})}),this._markersOverviewRulerDecorations=this._notebookEditor.deltaCellDecorations(this._markersOverviewRulerDecorations,e)}};m([C(100)],s.prototype,"_update",1),s=m([l(1,u)],s),b(d.ID,d,g.BlockRestore),D(s.id,s);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { registerWorkbenchContribution2 } from '../../../../../common/contributions.js';
+import { MarkerList, IMarkerNavigationService } from '../../../../../../editor/contrib/gotoError/browser/markerNavigationService.js';
+import { CellUri } from '../../../common/notebookCommon.js';
+import { IMarkerService, MarkerSeverity } from '../../../../../../platform/markers/common/markers.js';
+import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+import { NotebookOverviewRulerLane } from '../../notebookBrowser.js';
+import { registerNotebookContribution } from '../../notebookEditorExtensions.js';
+import { throttle } from '../../../../../../base/common/decorators.js';
+import { editorErrorForeground, editorWarningForeground } from '../../../../../../platform/theme/common/colorRegistry.js';
+import { isEqual } from '../../../../../../base/common/resources.js';
+let MarkerListProvider = class MarkerListProvider {
+    static { this.ID = 'workbench.contrib.markerListProvider'; }
+    constructor(_markerService, markerNavigation, _configService) {
+        this._markerService = _markerService;
+        this._configService = _configService;
+        this._dispoables = markerNavigation.registerProvider(this);
+    }
+    dispose() {
+        this._dispoables.dispose();
+    }
+    getMarkerList(resource) {
+        if (!resource) {
+            return undefined;
+        }
+        const data = CellUri.parse(resource);
+        if (!data) {
+            return undefined;
+        }
+        return new MarkerList(uri => {
+            const otherData = CellUri.parse(uri);
+            return otherData?.notebook.toString() === data.notebook.toString();
+        }, this._markerService, this._configService);
+    }
+};
+MarkerListProvider = __decorate([
+    __param(0, IMarkerService),
+    __param(1, IMarkerNavigationService),
+    __param(2, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], MarkerListProvider);
+let NotebookMarkerDecorationContribution = class NotebookMarkerDecorationContribution extends Disposable {
+    static { this.id = 'workbench.notebook.markerDecoration'; }
+    constructor(_notebookEditor, _markerService) {
+        super();
+        this._notebookEditor = _notebookEditor;
+        this._markerService = _markerService;
+        this._markersOverviewRulerDecorations = [];
+        this._update();
+        this._register(this._notebookEditor.onDidChangeModel(() => this._update()));
+        this._register(this._markerService.onMarkerChanged(e => {
+            if (e.some(uri => this._notebookEditor.getCellsInRange().some(cell => isEqual(cell.uri, uri)))) {
+                this._update();
+            }
+        }));
+    }
+    _update() {
+        if (!this._notebookEditor.hasModel()) {
+            return;
+        }
+        const cellDecorations = [];
+        this._notebookEditor.getCellsInRange().forEach(cell => {
+            const marker = this._markerService.read({ resource: cell.uri, severities: MarkerSeverity.Error | MarkerSeverity.Warning });
+            marker.forEach(m => {
+                const color = m.severity === MarkerSeverity.Error ? editorErrorForeground : editorWarningForeground;
+                const range = { startLineNumber: m.startLineNumber, startColumn: m.startColumn, endLineNumber: m.endLineNumber, endColumn: m.endColumn };
+                cellDecorations.push({
+                    handle: cell.handle,
+                    options: {
+                        overviewRuler: {
+                            color: color,
+                            modelRanges: [range],
+                            includeOutput: false,
+                            position: NotebookOverviewRulerLane.Right
+                        }
+                    }
+                });
+            });
+        });
+        this._markersOverviewRulerDecorations = this._notebookEditor.deltaCellDecorations(this._markersOverviewRulerDecorations, cellDecorations);
+    }
+};
+__decorate([
+    throttle(100),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], NotebookMarkerDecorationContribution.prototype, "_update", null);
+NotebookMarkerDecorationContribution = __decorate([
+    __param(1, IMarkerService),
+    __metadata("design:paramtypes", [Object, Object])
+], NotebookMarkerDecorationContribution);
+registerWorkbenchContribution2(MarkerListProvider.ID, MarkerListProvider, 2);
+registerNotebookContribution(NotebookMarkerDecorationContribution.id, NotebookMarkerDecorationContribution);

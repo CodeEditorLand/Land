@@ -1,1 +1,73 @@
-var g=Object.defineProperty;var I=Object.getOwnPropertyDescriptor;var C=(r,e,t,o)=>{for(var i=o>1?void 0:o?I(e,t):e,a=r.length-1,n;a>=0;a--)(n=r[a])&&(i=(o?n(e,t,i):n(i))||i);return o&&i&&g(e,t,i),i},c=(r,e)=>(t,o)=>e(t,o,r);import{Event as p}from"../../../base/common/event.js";import{assertIsDefined as L}from"../../../base/common/types.js";import{InstantiationType as l,registerSingleton as u}from"../../../platform/instantiation/common/extensions.js";import{IInstantiationService as f}from"../../../platform/instantiation/common/instantiation.js";import"../../../platform/progress/common/progress.js";import"../panecomposite.js";import{AuxiliaryBarPart as w}from"./auxiliarybar/auxiliaryBarPart.js";import{PanelPart as y}from"./panel/panelPart.js";import{SidebarPart as h}from"./sidebar/sidebarPart.js";import"../../common/panecomposite.js";import{ViewContainerLocation as P,ViewContainerLocations as d}from"../../common/views.js";import{IPaneCompositePartService as v}from"../../services/panecomposite/browser/panecomposite.js";import{Disposable as V,DisposableStore as B}from"../../../base/common/lifecycle.js";import"./paneCompositePart.js";let s=class extends V{onDidPaneCompositeOpen;onDidPaneCompositeClose;paneCompositeParts=new Map;constructor(e){super();const t=e.createInstance(y),o=e.createInstance(h),i=e.createInstance(w);this.paneCompositeParts.set(P.Panel,t),this.paneCompositeParts.set(P.Sidebar,o),this.paneCompositeParts.set(P.AuxiliaryBar,i);const a=this._register(new B);this.onDidPaneCompositeOpen=p.any(...d.map(n=>p.map(this.paneCompositeParts.get(n).onDidPaneCompositeOpen,m=>({composite:m,viewContainerLocation:n}),a))),this.onDidPaneCompositeClose=p.any(...d.map(n=>p.map(this.paneCompositeParts.get(n).onDidPaneCompositeClose,m=>({composite:m,viewContainerLocation:n}),a)))}openPaneComposite(e,t,o){return this.getPartByLocation(t).openPaneComposite(e,o)}getActivePaneComposite(e){return this.getPartByLocation(e).getActivePaneComposite()}getPaneComposite(e,t){return this.getPartByLocation(t).getPaneComposite(e)}getPaneComposites(e){return this.getPartByLocation(e).getPaneComposites()}getPinnedPaneCompositeIds(e){return this.getPartByLocation(e).getPinnedPaneCompositeIds()}getVisiblePaneCompositeIds(e){return this.getPartByLocation(e).getVisiblePaneCompositeIds()}getProgressIndicator(e,t){return this.getPartByLocation(t).getProgressIndicator(e)}hideActivePaneComposite(e){this.getPartByLocation(e).hideActivePaneComposite()}getLastActivePaneCompositeId(e){return this.getPartByLocation(e).getLastActivePaneCompositeId()}getPartByLocation(e){return L(this.paneCompositeParts.get(e))}};s=C([c(0,f)],s),u(v,s,l.Delayed);export{s as PaneCompositePartService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Event } from '../../../base/common/event.js';
+import { assertIsDefined } from '../../../base/common/types.js';
+import { registerSingleton } from '../../../platform/instantiation/common/extensions.js';
+import { IInstantiationService } from '../../../platform/instantiation/common/instantiation.js';
+import { AuxiliaryBarPart } from './auxiliarybar/auxiliaryBarPart.js';
+import { PanelPart } from './panel/panelPart.js';
+import { SidebarPart } from './sidebar/sidebarPart.js';
+import { ViewContainerLocations } from '../../common/views.js';
+import { IPaneCompositePartService } from '../../services/panecomposite/browser/panecomposite.js';
+import { Disposable, DisposableStore } from '../../../base/common/lifecycle.js';
+let PaneCompositePartService = class PaneCompositePartService extends Disposable {
+    constructor(instantiationService) {
+        super();
+        this.paneCompositeParts = new Map();
+        const panelPart = instantiationService.createInstance(PanelPart);
+        const sideBarPart = instantiationService.createInstance(SidebarPart);
+        const auxiliaryBarPart = instantiationService.createInstance(AuxiliaryBarPart);
+        this.paneCompositeParts.set(1, panelPart);
+        this.paneCompositeParts.set(0, sideBarPart);
+        this.paneCompositeParts.set(2, auxiliaryBarPart);
+        const eventDisposables = this._register(new DisposableStore());
+        this.onDidPaneCompositeOpen = Event.any(...ViewContainerLocations.map(loc => Event.map(this.paneCompositeParts.get(loc).onDidPaneCompositeOpen, composite => { return { composite, viewContainerLocation: loc }; }, eventDisposables)));
+        this.onDidPaneCompositeClose = Event.any(...ViewContainerLocations.map(loc => Event.map(this.paneCompositeParts.get(loc).onDidPaneCompositeClose, composite => { return { composite, viewContainerLocation: loc }; }, eventDisposables)));
+    }
+    openPaneComposite(id, viewContainerLocation, focus) {
+        return this.getPartByLocation(viewContainerLocation).openPaneComposite(id, focus);
+    }
+    getActivePaneComposite(viewContainerLocation) {
+        return this.getPartByLocation(viewContainerLocation).getActivePaneComposite();
+    }
+    getPaneComposite(id, viewContainerLocation) {
+        return this.getPartByLocation(viewContainerLocation).getPaneComposite(id);
+    }
+    getPaneComposites(viewContainerLocation) {
+        return this.getPartByLocation(viewContainerLocation).getPaneComposites();
+    }
+    getPinnedPaneCompositeIds(viewContainerLocation) {
+        return this.getPartByLocation(viewContainerLocation).getPinnedPaneCompositeIds();
+    }
+    getVisiblePaneCompositeIds(viewContainerLocation) {
+        return this.getPartByLocation(viewContainerLocation).getVisiblePaneCompositeIds();
+    }
+    getProgressIndicator(id, viewContainerLocation) {
+        return this.getPartByLocation(viewContainerLocation).getProgressIndicator(id);
+    }
+    hideActivePaneComposite(viewContainerLocation) {
+        this.getPartByLocation(viewContainerLocation).hideActivePaneComposite();
+    }
+    getLastActivePaneCompositeId(viewContainerLocation) {
+        return this.getPartByLocation(viewContainerLocation).getLastActivePaneCompositeId();
+    }
+    getPartByLocation(viewContainerLocation) {
+        return assertIsDefined(this.paneCompositeParts.get(viewContainerLocation));
+    }
+};
+PaneCompositePartService = __decorate([
+    __param(0, IInstantiationService),
+    __metadata("design:paramtypes", [Object])
+], PaneCompositePartService);
+export { PaneCompositePartService };
+registerSingleton(IPaneCompositePartService, PaneCompositePartService, 1);

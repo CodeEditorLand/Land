@@ -1,1 +1,98 @@
-import{Constants as m}from"../../../../base/common/uint.js";import{FloatHorizontalRange as g}from"../../view/renderingContext.js";import"./domReadingContext.js";class H{static _handyReadyRange;static _createRange(){return this._handyReadyRange||(this._handyReadyRange=document.createRange()),this._handyReadyRange}static _detachRange(t,n){t.selectNodeContents(n)}static _readClientRects(t,n,l,e,a){const i=this._createRange();try{return i.setStart(t,n),i.setEnd(l,e),i.getClientRects()}catch{return null}finally{this._detachRange(i,a)}}static _mergeAdjacentRanges(t){if(t.length===1)return t;t.sort(g.compare);const n=[];let l=0,e=t[0];for(let a=1,i=t.length;a<i;a++){const r=t[a];e.left+e.width+.9>=r.left?e.width=Math.max(e.width,r.left+r.width-e.left):(n[l++]=e,e=r)}return n[l++]=e,n}static _createHorizontalRangesFromClientRects(t,n,l){if(!t||t.length===0)return null;const e=[];for(let a=0,i=t.length;a<i;a++){const r=t[a];e[a]=new g(Math.max(0,(r.left-n)/l),r.width/l)}return this._mergeAdjacentRanges(e)}static readHorizontalRanges(t,n,l,e,a,i){const R=t.children.length-1;if(0>R)return null;if(n=Math.min(R,Math.max(0,n)),e=Math.min(R,Math.max(0,e)),n===e&&l===a&&l===0&&!t.children[n].firstChild){const u=t.children[n].getClientRects();return i.markDidDomLayout(),this._createHorizontalRangesFromClientRects(u,i.clientRectDeltaLeft,i.clientRectScale)}n!==e&&e>0&&a===0&&(e--,a=m.MAX_SAFE_SMALL_INTEGER);let o=t.children[n].firstChild,c=t.children[e].firstChild;if((!o||!c)&&(!o&&l===0&&n>0&&(o=t.children[n-1].firstChild,l=m.MAX_SAFE_SMALL_INTEGER),!c&&a===0&&e>0&&(c=t.children[e-1].firstChild,a=m.MAX_SAFE_SMALL_INTEGER)),!o||!c)return null;l=Math.min(o.textContent.length,Math.max(0,l)),a=Math.min(c.textContent.length,Math.max(0,a));const h=this._readClientRects(o,l,c,a,i.endNode);return i.markDidDomLayout(),this._createHorizontalRangesFromClientRects(h,i.clientRectDeltaLeft,i.clientRectScale)}}export{H as RangeUtil};
+import { FloatHorizontalRange } from '../../view/renderingContext.js';
+export class RangeUtil {
+    static _createRange() {
+        if (!this._handyReadyRange) {
+            this._handyReadyRange = document.createRange();
+        }
+        return this._handyReadyRange;
+    }
+    static _detachRange(range, endNode) {
+        range.selectNodeContents(endNode);
+    }
+    static _readClientRects(startElement, startOffset, endElement, endOffset, endNode) {
+        const range = this._createRange();
+        try {
+            range.setStart(startElement, startOffset);
+            range.setEnd(endElement, endOffset);
+            return range.getClientRects();
+        }
+        catch (e) {
+            return null;
+        }
+        finally {
+            this._detachRange(range, endNode);
+        }
+    }
+    static _mergeAdjacentRanges(ranges) {
+        if (ranges.length === 1) {
+            return ranges;
+        }
+        ranges.sort(FloatHorizontalRange.compare);
+        const result = [];
+        let resultLen = 0;
+        let prev = ranges[0];
+        for (let i = 1, len = ranges.length; i < len; i++) {
+            const range = ranges[i];
+            if (prev.left + prev.width + 0.9 >= range.left) {
+                prev.width = Math.max(prev.width, range.left + range.width - prev.left);
+            }
+            else {
+                result[resultLen++] = prev;
+                prev = range;
+            }
+        }
+        result[resultLen++] = prev;
+        return result;
+    }
+    static _createHorizontalRangesFromClientRects(clientRects, clientRectDeltaLeft, clientRectScale) {
+        if (!clientRects || clientRects.length === 0) {
+            return null;
+        }
+        const result = [];
+        for (let i = 0, len = clientRects.length; i < len; i++) {
+            const clientRect = clientRects[i];
+            result[i] = new FloatHorizontalRange(Math.max(0, (clientRect.left - clientRectDeltaLeft) / clientRectScale), clientRect.width / clientRectScale);
+        }
+        return this._mergeAdjacentRanges(result);
+    }
+    static readHorizontalRanges(domNode, startChildIndex, startOffset, endChildIndex, endOffset, context) {
+        const min = 0;
+        const max = domNode.children.length - 1;
+        if (min > max) {
+            return null;
+        }
+        startChildIndex = Math.min(max, Math.max(min, startChildIndex));
+        endChildIndex = Math.min(max, Math.max(min, endChildIndex));
+        if (startChildIndex === endChildIndex && startOffset === endOffset && startOffset === 0 && !domNode.children[startChildIndex].firstChild) {
+            const clientRects = domNode.children[startChildIndex].getClientRects();
+            context.markDidDomLayout();
+            return this._createHorizontalRangesFromClientRects(clientRects, context.clientRectDeltaLeft, context.clientRectScale);
+        }
+        if (startChildIndex !== endChildIndex) {
+            if (endChildIndex > 0 && endOffset === 0) {
+                endChildIndex--;
+                endOffset = 1073741824;
+            }
+        }
+        let startElement = domNode.children[startChildIndex].firstChild;
+        let endElement = domNode.children[endChildIndex].firstChild;
+        if (!startElement || !endElement) {
+            if (!startElement && startOffset === 0 && startChildIndex > 0) {
+                startElement = domNode.children[startChildIndex - 1].firstChild;
+                startOffset = 1073741824;
+            }
+            if (!endElement && endOffset === 0 && endChildIndex > 0) {
+                endElement = domNode.children[endChildIndex - 1].firstChild;
+                endOffset = 1073741824;
+            }
+        }
+        if (!startElement || !endElement) {
+            return null;
+        }
+        startOffset = Math.min(startElement.textContent.length, Math.max(0, startOffset));
+        endOffset = Math.min(endElement.textContent.length, Math.max(0, endOffset));
+        const clientRects = this._readClientRects(startElement, startOffset, endElement, endOffset, context.endNode);
+        context.markDidDomLayout();
+        return this._createHorizontalRangesFromClientRects(clientRects, context.clientRectDeltaLeft, context.clientRectScale);
+    }
+}

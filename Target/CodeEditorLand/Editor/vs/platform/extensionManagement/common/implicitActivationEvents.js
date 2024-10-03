@@ -1,1 +1,57 @@
-import{onUnexpectedError as c}from"../../../base/common/errors.js";import{ExtensionIdentifier as o}from"../../extensions/common/extensions.js";class v{_generators=new Map;_cache=new WeakMap;register(t,i){this._generators.set(t,i)}readActivationEvents(t){return this._cache.has(t)||this._cache.set(t,this._readActivationEvents(t)),this._cache.get(t)}createActivationEventsMap(t){const i=Object.create(null);for(const n of t){const e=this.readActivationEvents(n);e.length>0&&(i[o.toKey(n.identifier)]=e)}return i}_readActivationEvents(t){if(typeof t.main>"u"&&typeof t.browser>"u")return[];const i=Array.isArray(t.activationEvents)?t.activationEvents.slice(0):[];for(let n=0;n<i.length;n++)i[n]==="onUri"&&(i[n]=`onUri:${o.toKey(t.identifier)}`);if(!t.contributes)return i;for(const n in t.contributes){const e=this._generators.get(n);if(!e)continue;const r=t.contributes[n],s=Array.isArray(r)?r:[r];try{e(s,i)}catch(a){c(a)}}return i}}const l=new v;export{l as ImplicitActivationEvents,v as ImplicitActivationEventsImpl};
+import { onUnexpectedError } from '../../../base/common/errors.js';
+import { ExtensionIdentifier } from '../../extensions/common/extensions.js';
+export class ImplicitActivationEventsImpl {
+    constructor() {
+        this._generators = new Map();
+        this._cache = new WeakMap();
+    }
+    register(extensionPointName, generator) {
+        this._generators.set(extensionPointName, generator);
+    }
+    readActivationEvents(extensionDescription) {
+        if (!this._cache.has(extensionDescription)) {
+            this._cache.set(extensionDescription, this._readActivationEvents(extensionDescription));
+        }
+        return this._cache.get(extensionDescription);
+    }
+    createActivationEventsMap(extensionDescriptions) {
+        const result = Object.create(null);
+        for (const extensionDescription of extensionDescriptions) {
+            const activationEvents = this.readActivationEvents(extensionDescription);
+            if (activationEvents.length > 0) {
+                result[ExtensionIdentifier.toKey(extensionDescription.identifier)] = activationEvents;
+            }
+        }
+        return result;
+    }
+    _readActivationEvents(desc) {
+        if (typeof desc.main === 'undefined' && typeof desc.browser === 'undefined') {
+            return [];
+        }
+        const activationEvents = (Array.isArray(desc.activationEvents) ? desc.activationEvents.slice(0) : []);
+        for (let i = 0; i < activationEvents.length; i++) {
+            if (activationEvents[i] === 'onUri') {
+                activationEvents[i] = `onUri:${ExtensionIdentifier.toKey(desc.identifier)}`;
+            }
+        }
+        if (!desc.contributes) {
+            return activationEvents;
+        }
+        for (const extPointName in desc.contributes) {
+            const generator = this._generators.get(extPointName);
+            if (!generator) {
+                continue;
+            }
+            const contrib = desc.contributes[extPointName];
+            const contribArr = Array.isArray(contrib) ? contrib : [contrib];
+            try {
+                generator(contribArr, activationEvents);
+            }
+            catch (err) {
+                onUnexpectedError(err);
+            }
+        }
+        return activationEvents;
+    }
+}
+export const ImplicitActivationEvents = new ImplicitActivationEventsImpl();

@@ -1,1 +1,217 @@
-var y=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var g=(a,o,e,t)=>{for(var r=t>1?void 0:t?D(o,e):o,i=a.length-1,n;i>=0;i--)(n=a[i])&&(r=(t?n(o,e,r):n(r))||r);return t&&r&&y(o,e,r),r},p=(a,o)=>(e,t)=>o(e,t,a);import{DataTransfers as l}from"../../../../base/browser/dnd.js";import{$ as h,DragAndDropObserver as I}from"../../../../base/browser/dom.js";import{renderLabelWithIcons as E}from"../../../../base/browser/ui/iconLabel/iconLabels.js";import{coalesce as x}from"../../../../base/common/arrays.js";import{Codicon as m}from"../../../../base/common/codicons.js";import{basename as v}from"../../../../base/common/resources.js";import"../../../../base/common/uri.js";import{localize as c}from"../../../../nls.js";import{IConfigurationService as C}from"../../../../platform/configuration/common/configuration.js";import{containsDragType as f,extractEditorsDropData as T}from"../../../../platform/dnd/browser/dnd.js";import{IThemeService as S,Themable as b}from"../../../../platform/theme/common/themeService.js";import"../../../common/editor/editorInput.js";import"../common/chatModel.js";import"./chatInputPart.js";import"./chatWidget.js";var A=(e=>(e[e.FILE=0]="FILE",e[e.IMAGE=1]="IMAGE",e))(A||{});let u=class extends b{constructor(e,t,r,i,n){super(i);this.contianer=e;this.inputPart=t;this.styles=r;this.configurationService=n;let d=!1;this._register(new I(this.contianer,{onDragEnter:s=>{d||(d=!0,this.onDragEnter(s))},onDragOver:s=>{s.stopPropagation()},onDragLeave:s=>{this.onDragLeave(s),d=!1},onDrop:s=>{this.onDrop(s),d=!1}})),this.overlay=document.createElement("div"),this.overlay.classList.add("chat-dnd-overlay"),this.contianer.appendChild(this.overlay),this.updateStyles()}overlay;overlayText;overlayTextBackground="";onDragEnter(e){const t=this.guessDropType(e);t!==void 0&&(e.stopPropagation(),e.preventDefault()),this.updateDropFeedback(e,t)}onDragLeave(e){this.updateDropFeedback(e,void 0)}onDrop(e){this.updateDropFeedback(e,void 0);const t=this.getAttachContext(e);if(t.length===0)return;e.stopPropagation(),e.preventDefault();const r=new Set(Array.from(this.inputPart.attachedContext).map(n=>n.id)),i=[];for(const n of t)r.has(n.id)||(r.add(n.id),i.push(n));this.inputPart.attachContext(!1,...i)}updateDropFeedback(e,t){const r=t!==void 0;e.dataTransfer&&(e.dataTransfer.dropEffect=r?"copy":"none"),this.setOverlay(t)}isImageDnd(e){if(f(e,"image"))return!0;if(f(e,l.FILES)){const t=e.dataTransfer?.files;if(t&&t.length>0)return t[0].type.startsWith("image/");const r=e.dataTransfer?.items;if(r&&r.length>0)return r[0].type.startsWith("image/")}return!1}guessDropType(e){if(this.isImageDnd(e))return this.configurationService.getValue("chat.experimental.imageAttachments")?1:void 0;if(f(e,l.FILES,l.INTERNAL_URI_LIST))return 0}isDragEventSupported(e){return this.guessDropType(e)!==void 0}getDropTypeName(e){switch(e){case 0:return c("file","File");case 1:return c("image","Image")}}getAttachContext(e){if(!this.isDragEventSupported(e))return[];const t=T(e);return x(t.map(r=>this.resolveAttachContext(r)))}resolveAttachContext(e){const t=R(e);return t?this.configurationService.getValue("chat.experimental.imageAttachments")?t:void 0:L(e)}setOverlay(e){if(this.overlayText?.remove(),this.overlayText=void 0,e!==void 0){const t=this.getDropTypeName(e),i=E(`$(${m.attach.id}) ${c("attach as context","Attach {0} as Context",t)}`).map(n=>typeof n=="string"?h("span.overlay-text",void 0,n):n);this.overlayText=h("span.attach-context-overlay-text",void 0,...i),this.overlayText.style.backgroundColor=this.overlayTextBackground,this.overlay.appendChild(this.overlayText)}this.overlay.classList.toggle("visible",e!==void 0)}updateStyles(){this.overlay.style.backgroundColor=this.getColor(this.styles.overlayBackground)||"",this.overlay.style.color=this.getColor(this.styles.listForeground)||"",this.overlayTextBackground=this.getColor(this.styles.listBackground)||""}};u=g([p(3,S),p(4,C)],u);function L(a){if(a.resource)return F(a.resource)}function F(a){return{value:a,id:a.toString(),name:v(a),isFile:!0,isDynamic:!0}}function R(a){if(a.resource&&/\.(png|jpg|jpeg|bmp|gif|tiff)$/i.test(a.resource.path)){const o=v(a.resource);return{id:a.resource.toString(),name:o,fullName:a.resource.path,value:a.resource,icon:m.fileMedia,isDynamic:!0,isImage:!0,isFile:!1}}}export{u as ChatDragAndDrop};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { DataTransfers } from '../../../../base/browser/dnd.js';
+import { $, DragAndDropObserver } from '../../../../base/browser/dom.js';
+import { renderLabelWithIcons } from '../../../../base/browser/ui/iconLabel/iconLabels.js';
+import { coalesce } from '../../../../base/common/arrays.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { basename } from '../../../../base/common/resources.js';
+import { localize } from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { containsDragType, extractEditorsDropData } from '../../../../platform/dnd/browser/dnd.js';
+import { IThemeService, Themable } from '../../../../platform/theme/common/themeService.js';
+import { ChatInputPart } from './chatInputPart.js';
+var ChatDragAndDropType;
+(function (ChatDragAndDropType) {
+    ChatDragAndDropType[ChatDragAndDropType["FILE"] = 0] = "FILE";
+    ChatDragAndDropType[ChatDragAndDropType["IMAGE"] = 1] = "IMAGE";
+})(ChatDragAndDropType || (ChatDragAndDropType = {}));
+let ChatDragAndDrop = class ChatDragAndDrop extends Themable {
+    constructor(contianer, inputPart, styles, themeService, configurationService) {
+        super(themeService);
+        this.contianer = contianer;
+        this.inputPart = inputPart;
+        this.styles = styles;
+        this.configurationService = configurationService;
+        this.overlayTextBackground = '';
+        let mouseInside = false;
+        this._register(new DragAndDropObserver(this.contianer, {
+            onDragEnter: (e) => {
+                if (!mouseInside) {
+                    mouseInside = true;
+                    this.onDragEnter(e);
+                }
+            },
+            onDragOver: (e) => {
+                e.stopPropagation();
+            },
+            onDragLeave: (e) => {
+                this.onDragLeave(e);
+                mouseInside = false;
+            },
+            onDrop: (e) => {
+                this.onDrop(e);
+                mouseInside = false;
+            },
+        }));
+        this.overlay = document.createElement('div');
+        this.overlay.classList.add('chat-dnd-overlay');
+        this.contianer.appendChild(this.overlay);
+        this.updateStyles();
+    }
+    onDragEnter(e) {
+        const estimatedDropType = this.guessDropType(e);
+        if (estimatedDropType !== undefined) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+        this.updateDropFeedback(e, estimatedDropType);
+    }
+    onDragLeave(e) {
+        this.updateDropFeedback(e, undefined);
+    }
+    onDrop(e) {
+        this.updateDropFeedback(e, undefined);
+        const contexts = this.getAttachContext(e);
+        if (contexts.length === 0) {
+            return;
+        }
+        e.stopPropagation();
+        e.preventDefault();
+        const currentContextIds = new Set(Array.from(this.inputPart.attachedContext).map(context => context.id));
+        const filteredContext = [];
+        for (const context of contexts) {
+            if (!currentContextIds.has(context.id)) {
+                currentContextIds.add(context.id);
+                filteredContext.push(context);
+            }
+        }
+        this.inputPart.attachContext(false, ...filteredContext);
+    }
+    updateDropFeedback(e, dropType) {
+        const showOverlay = dropType !== undefined;
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = showOverlay ? 'copy' : 'none';
+        }
+        this.setOverlay(dropType);
+    }
+    isImageDnd(e) {
+        if (containsDragType(e, 'image')) {
+            return true;
+        }
+        if (containsDragType(e, DataTransfers.FILES)) {
+            const files = e.dataTransfer?.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                return file.type.startsWith('image/');
+            }
+            const items = e.dataTransfer?.items;
+            if (items && items.length > 0) {
+                const item = items[0];
+                return item.type.startsWith('image/');
+            }
+        }
+        return false;
+    }
+    guessDropType(e) {
+        if (this.isImageDnd(e)) {
+            const imageDndSupported = this.configurationService.getValue('chat.experimental.imageAttachments');
+            return imageDndSupported ? ChatDragAndDropType.IMAGE : undefined;
+        }
+        else if (containsDragType(e, DataTransfers.FILES, DataTransfers.INTERNAL_URI_LIST)) {
+            return ChatDragAndDropType.FILE;
+        }
+        return undefined;
+    }
+    isDragEventSupported(e) {
+        const dropType = this.guessDropType(e);
+        return dropType !== undefined;
+    }
+    getDropTypeName(type) {
+        switch (type) {
+            case ChatDragAndDropType.FILE: return localize('file', 'File');
+            case ChatDragAndDropType.IMAGE: return localize('image', 'Image');
+        }
+    }
+    getAttachContext(e) {
+        if (!this.isDragEventSupported(e)) {
+            return [];
+        }
+        const data = extractEditorsDropData(e);
+        return coalesce(data.map(editorInput => {
+            return this.resolveAttachContext(editorInput);
+        }));
+    }
+    resolveAttachContext(editorInput) {
+        const imageContext = getImageAttachContext(editorInput);
+        if (imageContext) {
+            const isImageDndSupported = this.configurationService.getValue('chat.experimental.imageAttachments');
+            return isImageDndSupported ? imageContext : undefined;
+        }
+        return getEditorAttachContext(editorInput);
+    }
+    setOverlay(type) {
+        this.overlayText?.remove();
+        this.overlayText = undefined;
+        if (type !== undefined) {
+            const typeName = this.getDropTypeName(type);
+            const iconAndtextElements = renderLabelWithIcons(`$(${Codicon.attach.id}) ${localize('attach as context', 'Attach {0} as Context', typeName)}`);
+            const htmlElements = iconAndtextElements.map(element => {
+                if (typeof element === 'string') {
+                    return $('span.overlay-text', undefined, element);
+                }
+                return element;
+            });
+            this.overlayText = $('span.attach-context-overlay-text', undefined, ...htmlElements);
+            this.overlayText.style.backgroundColor = this.overlayTextBackground;
+            this.overlay.appendChild(this.overlayText);
+        }
+        this.overlay.classList.toggle('visible', type !== undefined);
+    }
+    updateStyles() {
+        this.overlay.style.backgroundColor = this.getColor(this.styles.overlayBackground) || '';
+        this.overlay.style.color = this.getColor(this.styles.listForeground) || '';
+        this.overlayTextBackground = this.getColor(this.styles.listBackground) || '';
+    }
+};
+ChatDragAndDrop = __decorate([
+    __param(3, IThemeService),
+    __param(4, IConfigurationService),
+    __metadata("design:paramtypes", [HTMLElement,
+        ChatInputPart, Object, Object, Object])
+], ChatDragAndDrop);
+export { ChatDragAndDrop };
+function getEditorAttachContext(editor) {
+    if (!editor.resource) {
+        return undefined;
+    }
+    return getFileAttachContext(editor.resource);
+}
+function getFileAttachContext(resource) {
+    return {
+        value: resource,
+        id: resource.toString(),
+        name: basename(resource),
+        isFile: true,
+        isDynamic: true
+    };
+}
+function getImageAttachContext(editor) {
+    if (!editor.resource) {
+        return undefined;
+    }
+    if (/\.(png|jpg|jpeg|bmp|gif|tiff)$/i.test(editor.resource.path)) {
+        const fileName = basename(editor.resource);
+        return {
+            id: editor.resource.toString(),
+            name: fileName,
+            fullName: editor.resource.path,
+            value: editor.resource,
+            icon: Codicon.fileMedia,
+            isDynamic: true,
+            isImage: true,
+            isFile: false
+        };
+    }
+    return undefined;
+}

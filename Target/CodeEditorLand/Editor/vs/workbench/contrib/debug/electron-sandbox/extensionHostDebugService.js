@@ -1,1 +1,4 @@
-import{IExtensionHostDebugService as e}from"../../../../platform/debug/common/extensionHostDebug.js";import{registerMainProcessRemoteService as n}from"../../../../platform/ipc/electron-sandbox/services.js";import{ExtensionHostDebugChannelClient as o,ExtensionHostDebugBroadcastChannel as t}from"../../../../platform/debug/common/extensionHostDebugIpc.js";n(e,t.ChannelName,{channelClientCtor:o});
+import { IExtensionHostDebugService } from '../../../../platform/debug/common/extensionHostDebug.js';
+import { registerMainProcessRemoteService } from '../../../../platform/ipc/electron-sandbox/services.js';
+import { ExtensionHostDebugChannelClient, ExtensionHostDebugBroadcastChannel } from '../../../../platform/debug/common/extensionHostDebugIpc.js';
+registerMainProcessRemoteService(IExtensionHostDebugService, ExtensionHostDebugBroadcastChannel.ChannelName, { channelClientCtor: ExtensionHostDebugChannelClient });

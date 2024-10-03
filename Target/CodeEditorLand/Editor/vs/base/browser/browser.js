@@ -1,1 +1,100 @@
-import{mainWindow as d}from"./window.js";import{Emitter as s}from"../common/event.js";class t{static INSTANCE=new t;mapWindowIdToZoomLevel=new Map;_onDidChangeZoomLevel=new s;onDidChangeZoomLevel=this._onDidChangeZoomLevel.event;getZoomLevel(e){return this.mapWindowIdToZoomLevel.get(this.getWindowId(e))??0}setZoomLevel(e,n){if(this.getZoomLevel(n)===e)return;const r=this.getWindowId(n);this.mapWindowIdToZoomLevel.set(r,e),this._onDidChangeZoomLevel.fire(r)}mapWindowIdToZoomFactor=new Map;getZoomFactor(e){return this.mapWindowIdToZoomFactor.get(this.getWindowId(e))??1}setZoomFactor(e,n){this.mapWindowIdToZoomFactor.set(this.getWindowId(n),e)}_onDidChangeFullscreen=new s;onDidChangeFullscreen=this._onDidChangeFullscreen.event;mapWindowIdToFullScreen=new Map;setFullscreen(e,n){if(this.isFullscreen(n)===e)return;const r=this.getWindowId(n);this.mapWindowIdToFullScreen.set(r,e),this._onDidChangeFullscreen.fire(r)}isFullscreen(e){return!!this.mapWindowIdToFullScreen.get(this.getWindowId(e))}getWindowId(e){return e.vscodeWindowId}}function c(o,e,n){typeof e=="string"&&(e=o.matchMedia(e)),e.addEventListener("change",n)}function v(o,e){t.INSTANCE.setZoomLevel(o,e)}function W(o){return t.INSTANCE.getZoomLevel(o)}const g=t.INSTANCE.onDidChangeZoomLevel;function f(o){return t.INSTANCE.getZoomFactor(o)}function b(o,e){t.INSTANCE.setZoomFactor(o,e)}function C(o,e){t.INSTANCE.setFullscreen(o,e)}function I(o){return t.INSTANCE.isFullscreen(o)}const x=t.INSTANCE.onDidChangeFullscreen,i=navigator.userAgent,F=i.indexOf("Firefox")>=0,m=i.indexOf("AppleWebKit")>=0,l=i.indexOf("Chrome")>=0,u=!l&&i.indexOf("Safari")>=0,Z=!l&&!u&&m,L=i.indexOf("Electron/")>=0,T=i.indexOf("Android")>=0;let a=!1;if(typeof d.matchMedia=="function"){const o=d.matchMedia("(display-mode: standalone) or (display-mode: window-controls-overlay)"),e=d.matchMedia("(display-mode: fullscreen)");a=o.matches,c(d,o,({matches:n})=>{a&&e.matches||(a=n)})}function y(){return a}function N(){return navigator?.windowControlsOverlay?.visible}function M(o){return o.navigator?.windowControlsOverlay?.getTitlebarAreaRect()}export{c as addMatchMediaChangeListener,M as getWCOTitlebarAreaRect,f as getZoomFactor,W as getZoomLevel,T as isAndroid,l as isChrome,L as isElectron,F as isFirefox,I as isFullscreen,u as isSafari,y as isStandalone,N as isWCOEnabled,m as isWebKit,Z as isWebkitWebView,x as onDidChangeFullscreen,g as onDidChangeZoomLevel,C as setFullscreen,b as setZoomFactor,v as setZoomLevel};
+import { mainWindow } from './window.js';
+import { Emitter } from '../common/event.js';
+class WindowManager {
+    constructor() {
+        this.mapWindowIdToZoomLevel = new Map();
+        this._onDidChangeZoomLevel = new Emitter();
+        this.onDidChangeZoomLevel = this._onDidChangeZoomLevel.event;
+        this.mapWindowIdToZoomFactor = new Map();
+        this._onDidChangeFullscreen = new Emitter();
+        this.onDidChangeFullscreen = this._onDidChangeFullscreen.event;
+        this.mapWindowIdToFullScreen = new Map();
+    }
+    static { this.INSTANCE = new WindowManager(); }
+    getZoomLevel(targetWindow) {
+        return this.mapWindowIdToZoomLevel.get(this.getWindowId(targetWindow)) ?? 0;
+    }
+    setZoomLevel(zoomLevel, targetWindow) {
+        if (this.getZoomLevel(targetWindow) === zoomLevel) {
+            return;
+        }
+        const targetWindowId = this.getWindowId(targetWindow);
+        this.mapWindowIdToZoomLevel.set(targetWindowId, zoomLevel);
+        this._onDidChangeZoomLevel.fire(targetWindowId);
+    }
+    getZoomFactor(targetWindow) {
+        return this.mapWindowIdToZoomFactor.get(this.getWindowId(targetWindow)) ?? 1;
+    }
+    setZoomFactor(zoomFactor, targetWindow) {
+        this.mapWindowIdToZoomFactor.set(this.getWindowId(targetWindow), zoomFactor);
+    }
+    setFullscreen(fullscreen, targetWindow) {
+        if (this.isFullscreen(targetWindow) === fullscreen) {
+            return;
+        }
+        const windowId = this.getWindowId(targetWindow);
+        this.mapWindowIdToFullScreen.set(windowId, fullscreen);
+        this._onDidChangeFullscreen.fire(windowId);
+    }
+    isFullscreen(targetWindow) {
+        return !!this.mapWindowIdToFullScreen.get(this.getWindowId(targetWindow));
+    }
+    getWindowId(targetWindow) {
+        return targetWindow.vscodeWindowId;
+    }
+}
+export function addMatchMediaChangeListener(targetWindow, query, callback) {
+    if (typeof query === 'string') {
+        query = targetWindow.matchMedia(query);
+    }
+    query.addEventListener('change', callback);
+}
+export function setZoomLevel(zoomLevel, targetWindow) {
+    WindowManager.INSTANCE.setZoomLevel(zoomLevel, targetWindow);
+}
+export function getZoomLevel(targetWindow) {
+    return WindowManager.INSTANCE.getZoomLevel(targetWindow);
+}
+export const onDidChangeZoomLevel = WindowManager.INSTANCE.onDidChangeZoomLevel;
+export function getZoomFactor(targetWindow) {
+    return WindowManager.INSTANCE.getZoomFactor(targetWindow);
+}
+export function setZoomFactor(zoomFactor, targetWindow) {
+    WindowManager.INSTANCE.setZoomFactor(zoomFactor, targetWindow);
+}
+export function setFullscreen(fullscreen, targetWindow) {
+    WindowManager.INSTANCE.setFullscreen(fullscreen, targetWindow);
+}
+export function isFullscreen(targetWindow) {
+    return WindowManager.INSTANCE.isFullscreen(targetWindow);
+}
+export const onDidChangeFullscreen = WindowManager.INSTANCE.onDidChangeFullscreen;
+const userAgent = navigator.userAgent;
+export const isFirefox = (userAgent.indexOf('Firefox') >= 0);
+export const isWebKit = (userAgent.indexOf('AppleWebKit') >= 0);
+export const isChrome = (userAgent.indexOf('Chrome') >= 0);
+export const isSafari = (!isChrome && (userAgent.indexOf('Safari') >= 0));
+export const isWebkitWebView = (!isChrome && !isSafari && isWebKit);
+export const isElectron = (userAgent.indexOf('Electron/') >= 0);
+export const isAndroid = (userAgent.indexOf('Android') >= 0);
+let standalone = false;
+if (typeof mainWindow.matchMedia === 'function') {
+    const standaloneMatchMedia = mainWindow.matchMedia('(display-mode: standalone) or (display-mode: window-controls-overlay)');
+    const fullScreenMatchMedia = mainWindow.matchMedia('(display-mode: fullscreen)');
+    standalone = standaloneMatchMedia.matches;
+    addMatchMediaChangeListener(mainWindow, standaloneMatchMedia, ({ matches }) => {
+        if (standalone && fullScreenMatchMedia.matches) {
+            return;
+        }
+        standalone = matches;
+    });
+}
+export function isStandalone() {
+    return standalone;
+}
+export function isWCOEnabled() {
+    return navigator?.windowControlsOverlay?.visible;
+}
+export function getWCOTitlebarAreaRect(targetWindow) {
+    return targetWindow.navigator?.windowControlsOverlay?.getTitlebarAreaRect();
+}

@@ -1,1 +1,65 @@
-var g=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var p=(d,n,i,r)=>{for(var t=r>1?void 0:r?v(n,i):n,s=d.length-1,u;s>=0;s--)(u=d[s])&&(t=(r?u(n,i,t):u(t))||t);return r&&t&&g(n,i,t),t},f=(d,n)=>(i,r)=>n(i,r,d);import{Event as o}from"../../../../base/common/event.js";import{Disposable as E}from"../../../../base/common/lifecycle.js";import{isWeb as I}from"../../../../base/common/platform.js";import{isEqual as l}from"../../../../base/common/resources.js";import{IUserDataProfilesService as S}from"../../../../platform/userDataProfile/common/userDataProfile.js";import{IUserDataAutoSyncService as b}from"../../../../platform/userDataSync/common/userDataSync.js";import"../../../common/contributions.js";import"../../../common/editor/editorInput.js";import{IViewsService as h}from"../../../services/views/common/viewsService.js";import{VIEWLET_ID as D}from"../../extensions/common/extensions.js";import{IEditorService as y}from"../../../services/editor/common/editorService.js";import{IHostService as P}from"../../../services/host/browser/host.js";import{KeybindingsEditorInput as C}from"../../../services/preferences/browser/keybindingsEditorInput.js";import{SettingsEditor2Input as k}from"../../../services/preferences/common/preferencesEditorInput.js";let m=class extends E{constructor(i,r,t,s,u){super();this.userDataProfilesService=r;const a=o.filter(o.any(o.map(i.onDidActiveEditorChange,()=>this.getUserDataEditorInputSource(i.activeEditor)),o.map(o.filter(t.onDidChangeViewContainerVisibility,e=>e.id===D&&e.visible),e=>e.id)),e=>e!==void 0);I?this._register(o.debounce(o.any(o.map(u.onDidChangeFocus,()=>"windowFocus"),o.map(a,e=>e)),(e,c)=>e?[...e,c]:[c],1e3)(e=>s.triggerSync(e,!0,!1))):this._register(a(e=>s.triggerSync([e],!0,!1)))}getUserDataEditorInputSource(i){if(!i)return;if(i instanceof k)return"settingsEditor";if(i instanceof C)return"keybindingsEditor";const r=i.resource;if(l(r,this.userDataProfilesService.defaultProfile.settingsResource))return"settingsEditor";if(l(r,this.userDataProfilesService.defaultProfile.keybindingsResource))return"keybindingsEditor"}};m=p([f(0,y),f(1,S),f(2,h),f(3,b),f(4,P)],m);export{m as UserDataSyncTrigger};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Event } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { isWeb } from '../../../../base/common/platform.js';
+import { isEqual } from '../../../../base/common/resources.js';
+import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
+import { IUserDataAutoSyncService } from '../../../../platform/userDataSync/common/userDataSync.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+import { VIEWLET_ID } from '../../extensions/common/extensions.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+import { KeybindingsEditorInput } from '../../../services/preferences/browser/keybindingsEditorInput.js';
+import { SettingsEditor2Input } from '../../../services/preferences/common/preferencesEditorInput.js';
+let UserDataSyncTrigger = class UserDataSyncTrigger extends Disposable {
+    constructor(editorService, userDataProfilesService, viewsService, userDataAutoSyncService, hostService) {
+        super();
+        this.userDataProfilesService = userDataProfilesService;
+        const event = Event.filter(Event.any(Event.map(editorService.onDidActiveEditorChange, () => this.getUserDataEditorInputSource(editorService.activeEditor)), Event.map(Event.filter(viewsService.onDidChangeViewContainerVisibility, e => e.id === VIEWLET_ID && e.visible), e => e.id)), source => source !== undefined);
+        if (isWeb) {
+            this._register(Event.debounce(Event.any(Event.map(hostService.onDidChangeFocus, () => 'windowFocus'), Event.map(event, source => source)), (last, source) => last ? [...last, source] : [source], 1000)(sources => userDataAutoSyncService.triggerSync(sources, true, false)));
+        }
+        else {
+            this._register(event(source => userDataAutoSyncService.triggerSync([source], true, false)));
+        }
+    }
+    getUserDataEditorInputSource(editorInput) {
+        if (!editorInput) {
+            return undefined;
+        }
+        if (editorInput instanceof SettingsEditor2Input) {
+            return 'settingsEditor';
+        }
+        if (editorInput instanceof KeybindingsEditorInput) {
+            return 'keybindingsEditor';
+        }
+        const resource = editorInput.resource;
+        if (isEqual(resource, this.userDataProfilesService.defaultProfile.settingsResource)) {
+            return 'settingsEditor';
+        }
+        if (isEqual(resource, this.userDataProfilesService.defaultProfile.keybindingsResource)) {
+            return 'keybindingsEditor';
+        }
+        return undefined;
+    }
+};
+UserDataSyncTrigger = __decorate([
+    __param(0, IEditorService),
+    __param(1, IUserDataProfilesService),
+    __param(2, IViewsService),
+    __param(3, IUserDataAutoSyncService),
+    __param(4, IHostService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], UserDataSyncTrigger);
+export { UserDataSyncTrigger };

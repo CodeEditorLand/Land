@@ -1,1 +1,140 @@
-import{asArray as c,coalesce as l}from"../../../../base/common/arrays.js";import"../../../../base/common/cancellation.js";import"../../../../base/common/uri.js";import"../../../../platform/progress/common/progress.js";import{DEFAULT_TEXT_SEARCH_PREVIEW_OPTIONS as u}from"./search.js";import{TextSearchContextNew as g,TextSearchMatchNew as d}from"./searchExtTypes.js";function T(e){return"uri"in e&&"ranges"in e&&"preview"in e}function v(e){return e.folderOptions.map(r=>({folder:r.folder,excludes:r.excludes.map(i=>typeof i=="string"?i:i.pattern),includes:r.includes,useGlobalIgnoreFiles:r.useIgnoreFiles.global,useIgnoreFiles:r.useIgnoreFiles.local,useParentIgnoreFiles:r.useIgnoreFiles.parent,followSymlinks:r.followSymlinks,maxResults:e.maxResults,session:e.session}))}class V{constructor(r){this.provider=r}provideFileSearchResults(r,i,s){return(async()=>{const n=v(i);return Promise.all(n.map(h=>this.provider.provideFileSearchResults({pattern:r},h,s)))})().then(n=>l(n).flat())}}function x(e){return e.folderOptions.map(r=>({folder:r.folder,excludes:r.excludes.map(i=>typeof i=="string"?i:i.pattern),includes:r.includes,useGlobalIgnoreFiles:r.useIgnoreFiles.global,useIgnoreFiles:r.useIgnoreFiles.local,useParentIgnoreFiles:r.useIgnoreFiles.parent,followSymlinks:r.followSymlinks,maxResults:e.maxResults,previewOptions:R(e.previewOptions),maxFileSize:e.maxFileSize,encoding:r.encoding,afterContext:e.surroundingContext,beforeContext:e.surroundingContext}))}function R(e){return{matchLines:e?.matchLines??u.matchLines,charsPerLine:e?.charsPerLine??u.charsPerLine}}function p(e){if(T(e)){const r=c(e.ranges).map((i,s)=>{const n=c(e.preview.matches)[s];return{sourceRange:i,previewRange:n}});return new d(e.uri,r,e.preview.text)}else return new g(e.uri,e.text,e.lineNumber)}class _{constructor(r){this.provider=r}provideTextSearchResults(r,i,s,o){const n=t=>{m(t)&&s.report(p(t))};return(async()=>l(await Promise.all(x(i).map(t=>this.provider.provideTextSearchResults(r,t,{report:a=>n(a)},o)))).reduce((t,a)=>({limitHit:t.limitHit||a.limitHit}),{limitHit:!1}))().then(t=>({limitHit:t.limitHit,message:l(c(t.message))}))}}class q{constructor(r){this.provider=r;this.name=this.provider.name}name;provideAITextSearchResults(r,i,s,o){const n=t=>{m(t)&&s.report(p(t))};return(async()=>l(await Promise.all(x(i).map(t=>this.provider.provideAITextSearchResults(r,t,{report:a=>n(a)},o)))).reduce((t,a)=>({limitHit:t.limitHit||a.limitHit}),{limitHit:!1}))().then(t=>({limitHit:t.limitHit,message:l(c(t.message))}))}}function m(e){if(P(e)){if(Array.isArray(e.ranges)){if(!Array.isArray(e.preview.matches)||e.preview.matches.length!==e.ranges.length)return!1}else if(Array.isArray(e.preview.matches))return!1}return!0}function P(e){return!!e.preview}export{q as OldAITextSearchProviderConverter,V as OldFileSearchProviderConverter,_ as OldTextSearchProviderConverter,P as extensionResultIsMatch,R as newToOldPreviewOptions,p as oldToNewTextSearchResult};
+import { asArray, coalesce } from '../../../../base/common/arrays.js';
+import { DEFAULT_TEXT_SEARCH_PREVIEW_OPTIONS } from './search.js';
+import { TextSearchContextNew, TextSearchMatchNew } from './searchExtTypes.js';
+function isTextSearchMatch(object) {
+    return 'uri' in object && 'ranges' in object && 'preview' in object;
+}
+function newToOldFileProviderOptions(options) {
+    return options.folderOptions.map(folderOption => ({
+        folder: folderOption.folder,
+        excludes: folderOption.excludes.map(e => typeof (e) === 'string' ? e : e.pattern),
+        includes: folderOption.includes,
+        useGlobalIgnoreFiles: folderOption.useIgnoreFiles.global,
+        useIgnoreFiles: folderOption.useIgnoreFiles.local,
+        useParentIgnoreFiles: folderOption.useIgnoreFiles.parent,
+        followSymlinks: folderOption.followSymlinks,
+        maxResults: options.maxResults,
+        session: options.session
+    }));
+}
+export class OldFileSearchProviderConverter {
+    constructor(provider) {
+        this.provider = provider;
+    }
+    provideFileSearchResults(pattern, options, token) {
+        const getResult = async () => {
+            const newOpts = newToOldFileProviderOptions(options);
+            return Promise.all(newOpts.map(o => this.provider.provideFileSearchResults({ pattern }, o, token)));
+        };
+        return getResult().then(e => coalesce(e).flat());
+    }
+}
+function newToOldTextProviderOptions(options) {
+    return options.folderOptions.map(folderOption => ({
+        folder: folderOption.folder,
+        excludes: folderOption.excludes.map(e => typeof (e) === 'string' ? e : e.pattern),
+        includes: folderOption.includes,
+        useGlobalIgnoreFiles: folderOption.useIgnoreFiles.global,
+        useIgnoreFiles: folderOption.useIgnoreFiles.local,
+        useParentIgnoreFiles: folderOption.useIgnoreFiles.parent,
+        followSymlinks: folderOption.followSymlinks,
+        maxResults: options.maxResults,
+        previewOptions: newToOldPreviewOptions(options.previewOptions),
+        maxFileSize: options.maxFileSize,
+        encoding: folderOption.encoding,
+        afterContext: options.surroundingContext,
+        beforeContext: options.surroundingContext
+    }));
+}
+export function newToOldPreviewOptions(options) {
+    return {
+        matchLines: options?.matchLines ?? DEFAULT_TEXT_SEARCH_PREVIEW_OPTIONS.matchLines,
+        charsPerLine: options?.charsPerLine ?? DEFAULT_TEXT_SEARCH_PREVIEW_OPTIONS.charsPerLine
+    };
+}
+export function oldToNewTextSearchResult(result) {
+    if (isTextSearchMatch(result)) {
+        const ranges = asArray(result.ranges).map((r, i) => {
+            const previewArr = asArray(result.preview.matches);
+            const matchingPreviewRange = previewArr[i];
+            return { sourceRange: r, previewRange: matchingPreviewRange };
+        });
+        return new TextSearchMatchNew(result.uri, ranges, result.preview.text);
+    }
+    else {
+        return new TextSearchContextNew(result.uri, result.text, result.lineNumber);
+    }
+}
+export class OldTextSearchProviderConverter {
+    constructor(provider) {
+        this.provider = provider;
+    }
+    provideTextSearchResults(query, options, progress, token) {
+        const progressShim = (oldResult) => {
+            if (!validateProviderResult(oldResult)) {
+                return;
+            }
+            progress.report(oldToNewTextSearchResult(oldResult));
+        };
+        const getResult = async () => {
+            return coalesce(await Promise.all(newToOldTextProviderOptions(options).map(o => this.provider.provideTextSearchResults(query, o, { report: (e) => progressShim(e) }, token))))
+                .reduce((prev, cur) => ({ limitHit: prev.limitHit || cur.limitHit }), { limitHit: false });
+        };
+        const oldResult = getResult();
+        return oldResult.then((e) => {
+            return {
+                limitHit: e.limitHit,
+                message: coalesce(asArray(e.message))
+            };
+        });
+    }
+}
+export class OldAITextSearchProviderConverter {
+    constructor(provider) {
+        this.provider = provider;
+        this.name = this.provider.name;
+    }
+    provideAITextSearchResults(query, options, progress, token) {
+        const progressShim = (oldResult) => {
+            if (!validateProviderResult(oldResult)) {
+                return;
+            }
+            progress.report(oldToNewTextSearchResult(oldResult));
+        };
+        const getResult = async () => {
+            return coalesce(await Promise.all(newToOldTextProviderOptions(options).map(o => this.provider.provideAITextSearchResults(query, o, { report: (e) => progressShim(e) }, token))))
+                .reduce((prev, cur) => ({ limitHit: prev.limitHit || cur.limitHit }), { limitHit: false });
+        };
+        const oldResult = getResult();
+        return oldResult.then((e) => {
+            return {
+                limitHit: e.limitHit,
+                message: coalesce(asArray(e.message))
+            };
+        });
+    }
+}
+function validateProviderResult(result) {
+    if (extensionResultIsMatch(result)) {
+        if (Array.isArray(result.ranges)) {
+            if (!Array.isArray(result.preview.matches)) {
+                console.warn('INVALID - A text search provider match\'s`ranges` and`matches` properties must have the same type.');
+                return false;
+            }
+            if (result.preview.matches.length !== result.ranges.length) {
+                console.warn('INVALID - A text search provider match\'s`ranges` and`matches` properties must have the same length.');
+                return false;
+            }
+        }
+        else {
+            if (Array.isArray(result.preview.matches)) {
+                console.warn('INVALID - A text search provider match\'s`ranges` and`matches` properties must have the same length.');
+                return false;
+            }
+        }
+    }
+    return true;
+}
+export function extensionResultIsMatch(data) {
+    return !!data.preview;
+}

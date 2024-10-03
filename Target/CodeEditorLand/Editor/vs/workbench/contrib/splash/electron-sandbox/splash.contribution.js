@@ -1,1 +1,28 @@
-var d=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var m=(i,r,t,s)=>{for(var o=s>1?void 0:s?h(r,t):r,a=i.length-1,n;a>=0;a--)(n=i[a])&&(o=(s?n(r,t,o):n(o))||o);return s&&o&&d(r,t,o),o},p=(i,r)=>(t,s)=>r(t,s,i);import{WorkbenchPhase as I,registerWorkbenchContribution2 as c}from"../../../common/contributions.js";import{ISplashStorageService as f}from"../browser/splash.js";import{INativeHostService as v}from"../../../../platform/native/common/native.js";import{InstantiationType as S,registerSingleton as P}from"../../../../platform/instantiation/common/extensions.js";import{PartsSplash as l}from"../browser/partsSplash.js";import"../../../../platform/theme/common/themeService.js";let e=class{_serviceBrand;saveWindowSplash;constructor(r){this.saveWindowSplash=r.saveWindowSplash.bind(r)}};e=m([p(0,v)],e),P(f,e,S.Delayed),c(l.ID,l,I.BlockStartup);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { registerWorkbenchContribution2 } from '../../../common/contributions.js';
+import { ISplashStorageService } from '../browser/splash.js';
+import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { PartsSplash } from '../browser/partsSplash.js';
+let SplashStorageService = class SplashStorageService {
+    constructor(nativeHostService) {
+        this.saveWindowSplash = nativeHostService.saveWindowSplash.bind(nativeHostService);
+    }
+};
+SplashStorageService = __decorate([
+    __param(0, INativeHostService),
+    __metadata("design:paramtypes", [Object])
+], SplashStorageService);
+registerSingleton(ISplashStorageService, SplashStorageService, 1);
+registerWorkbenchContribution2(PartsSplash.ID, PartsSplash, 1);

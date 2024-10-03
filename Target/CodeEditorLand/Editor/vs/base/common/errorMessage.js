@@ -1,2 +1,71 @@
-import*as c from"./arrays.js";import*as l from"./types.js";import*as n from"../../nls.js";import"./actions.js";function o(r,e){return e&&(r.stack||r.stacktrace)?n.localize("stackTrace.format","{0}: {1}",a(r),i(r.stack)||i(r.stacktrace)):a(r)}function i(r){return Array.isArray(r)?r.join(`
-`):r}function a(r){return r.code==="ERR_UNC_HOST_NOT_ALLOWED"?`${r.message}. Please update the 'security.allowedUNCHosts' setting if you want to allow this host.`:typeof r.code=="string"&&typeof r.errno=="number"&&typeof r.syscall=="string"?n.localize("nodeExceptionMessage","A system error occurred ({0})",r.message):r.message||n.localize("error.defaultMessage","An unknown error occurred. Please consult the log for more details.")}function u(r=null,e=!1){if(!r)return n.localize("error.defaultMessage","An unknown error occurred. Please consult the log for more details.");if(Array.isArray(r)){const t=c.coalesce(r),s=u(t[0],e);return t.length>1?n.localize("error.moreErrors","{0} ({1} errors in total)",s,t.length):s}if(l.isString(r))return r;if(r.detail){const t=r.detail;if(t.error)return o(t.error,e);if(t.exception)return o(t.exception,e)}return r.stack?o(r,e):r.message?r.message:n.localize("error.defaultMessage","An unknown error occurred. Please consult the log for more details.")}function d(r){const e=r;return e instanceof Error&&Array.isArray(e.actions)}function A(r,e){let t;return typeof r=="string"?t=new Error(r):t=r,t.actions=e,t}export{A as createErrorWithActions,d as isErrorWithActions,u as toErrorMessage};
+import * as arrays from './arrays.js';
+import * as types from './types.js';
+import * as nls from '../../nls.js';
+function exceptionToErrorMessage(exception, verbose) {
+    if (verbose && (exception.stack || exception.stacktrace)) {
+        return nls.localize('stackTrace.format', "{0}: {1}", detectSystemErrorMessage(exception), stackToString(exception.stack) || stackToString(exception.stacktrace));
+    }
+    return detectSystemErrorMessage(exception);
+}
+function stackToString(stack) {
+    if (Array.isArray(stack)) {
+        return stack.join('\n');
+    }
+    return stack;
+}
+function detectSystemErrorMessage(exception) {
+    if (exception.code === 'ERR_UNC_HOST_NOT_ALLOWED') {
+        return `${exception.message}. Please update the 'security.allowedUNCHosts' setting if you want to allow this host.`;
+    }
+    if (typeof exception.code === 'string' && typeof exception.errno === 'number' && typeof exception.syscall === 'string') {
+        return nls.localize('nodeExceptionMessage', "A system error occurred ({0})", exception.message);
+    }
+    return exception.message || nls.localize('error.defaultMessage', "An unknown error occurred. Please consult the log for more details.");
+}
+export function toErrorMessage(error = null, verbose = false) {
+    if (!error) {
+        return nls.localize('error.defaultMessage', "An unknown error occurred. Please consult the log for more details.");
+    }
+    if (Array.isArray(error)) {
+        const errors = arrays.coalesce(error);
+        const msg = toErrorMessage(errors[0], verbose);
+        if (errors.length > 1) {
+            return nls.localize('error.moreErrors', "{0} ({1} errors in total)", msg, errors.length);
+        }
+        return msg;
+    }
+    if (types.isString(error)) {
+        return error;
+    }
+    if (error.detail) {
+        const detail = error.detail;
+        if (detail.error) {
+            return exceptionToErrorMessage(detail.error, verbose);
+        }
+        if (detail.exception) {
+            return exceptionToErrorMessage(detail.exception, verbose);
+        }
+    }
+    if (error.stack) {
+        return exceptionToErrorMessage(error, verbose);
+    }
+    if (error.message) {
+        return error.message;
+    }
+    return nls.localize('error.defaultMessage', "An unknown error occurred. Please consult the log for more details.");
+}
+export function isErrorWithActions(obj) {
+    const candidate = obj;
+    return candidate instanceof Error && Array.isArray(candidate.actions);
+}
+export function createErrorWithActions(messageOrError, actions) {
+    let error;
+    if (typeof messageOrError === 'string') {
+        error = new Error(messageOrError);
+    }
+    else {
+        error = messageOrError;
+    }
+    error.actions = actions;
+    return error;
+}

@@ -1,1 +1,189 @@
-import{quickSelect as S}from"../../../../base/common/arrays.js";import{CharCode as _}from"../../../../base/common/charCode.js";import{anyScore as v,fuzzyScore as g,FuzzyScore as I,fuzzyScoreGracefulAggressive as x,FuzzyScoreOptions as y}from"../../../../base/common/filters.js";import{compareIgnoreCase as z}from"../../../../base/common/strings.js";import"../../../common/config/editorOptions.js";import{CompletionItemKind as h}from"../../../common/languages.js";import"./wordDistance.js";import"./suggest.js";class q{constructor(t,i){this.leadingLineContent=t;this.characterCountDelta=i}}var L=(o=>(o[o.Nothing=0]="Nothing",o[o.All=1]="All",o[o.Incr=2]="Incr",o))(L||{});class c{constructor(t,i,o,n,l,m,d=y.default,u=void 0){this.clipboardText=u;this._items=t,this._column=i,this._wordDistance=n,this._options=l,this._refilterKind=1,this._lineContext=o,this._fuzzyScoreOptions=d,m==="top"?this._snippetCompareFn=c._compareCompletionItemsSnippetsUp:m==="bottom"&&(this._snippetCompareFn=c._compareCompletionItemsSnippetsDown)}_items;_column;_wordDistance;_options;_snippetCompareFn=c._compareCompletionItems;_fuzzyScoreOptions;_lineContext;_refilterKind;_filteredItems;_itemsByProvider;_stats;get lineContext(){return this._lineContext}set lineContext(t){(this._lineContext.leadingLineContent!==t.leadingLineContent||this._lineContext.characterCountDelta!==t.characterCountDelta)&&(this._refilterKind=this._lineContext.characterCountDelta<t.characterCountDelta&&this._filteredItems?2:1,this._lineContext=t)}get items(){return this._ensureCachedState(),this._filteredItems}getItemsByProvider(){return this._ensureCachedState(),this._itemsByProvider}getIncompleteProvider(){this._ensureCachedState();const t=new Set;for(const[i,o]of this.getItemsByProvider())o.length>0&&o[0].container.incomplete&&t.add(i);return t}get stats(){return this._ensureCachedState(),this._stats}_ensureCachedState(){this._refilterKind!==0&&this._createCachedState()}_createCachedState(){this._itemsByProvider=new Map;const t=[],{leadingLineContent:i,characterCountDelta:o}=this._lineContext;let n="",l="";const m=this._refilterKind===1?this._items:this._filteredItems,d=[],u=!this._options.filterGraceful||m.length>2e3?g:x;for(let p=0;p<m.length;p++){const e=m[p];if(e.isInvalid)continue;const f=this._itemsByProvider.get(e.provider);f?f.push(e):this._itemsByProvider.set(e.provider,[e]);const C=e.position.column-e.editStart.column,a=C+o-(e.position.column-this._column);if(n.length!==a&&(n=a===0?"":i.slice(-a),l=n.toLowerCase()),e.word=n,a===0)e.score=I.Default;else{let s=0;for(;s<C;){const r=n.charCodeAt(s);if(r===_.Space||r===_.Tab)s+=1;else break}if(s>=a)e.score=I.Default;else if(typeof e.completion.filterText=="string"){const r=u(n,l,s,e.completion.filterText,e.filterTextLow,0,this._fuzzyScoreOptions);if(!r)continue;z(e.completion.filterText,e.textLabel)===0?e.score=r:(e.score=v(n,l,s,e.textLabel,e.labelLow,0),e.score[0]=r[0])}else{const r=u(n,l,s,e.textLabel,e.labelLow,0,this._fuzzyScoreOptions);if(!r)continue;e.score=r}}e.idx=p,e.distance=this._wordDistance.distance(e.position,e.completion),d.push(e),t.push(e.textLabel.length)}this._filteredItems=d.sort(this._snippetCompareFn),this._refilterKind=0,this._stats={pLabelLen:t.length?S(t.length-.85,t,(p,e)=>p-e):0}}static _compareCompletionItems(t,i){return t.score[0]>i.score[0]?-1:t.score[0]<i.score[0]?1:t.distance<i.distance?-1:t.distance>i.distance?1:t.idx<i.idx?-1:t.idx>i.idx?1:0}static _compareCompletionItemsSnippetsDown(t,i){if(t.completion.kind!==i.completion.kind){if(t.completion.kind===h.Snippet)return 1;if(i.completion.kind===h.Snippet)return-1}return c._compareCompletionItems(t,i)}static _compareCompletionItemsSnippetsUp(t,i){if(t.completion.kind!==i.completion.kind){if(t.completion.kind===h.Snippet)return-1;if(i.completion.kind===h.Snippet)return 1}return c._compareCompletionItems(t,i)}}export{c as CompletionModel,q as LineContext};
+import { quickSelect } from '../../../../base/common/arrays.js';
+import { anyScore, fuzzyScore, FuzzyScore, fuzzyScoreGracefulAggressive, FuzzyScoreOptions } from '../../../../base/common/filters.js';
+import { compareIgnoreCase } from '../../../../base/common/strings.js';
+export class LineContext {
+    constructor(leadingLineContent, characterCountDelta) {
+        this.leadingLineContent = leadingLineContent;
+        this.characterCountDelta = characterCountDelta;
+    }
+}
+export class CompletionModel {
+    constructor(items, column, lineContext, wordDistance, options, snippetSuggestions, fuzzyScoreOptions = FuzzyScoreOptions.default, clipboardText = undefined) {
+        this.clipboardText = clipboardText;
+        this._snippetCompareFn = CompletionModel._compareCompletionItems;
+        this._items = items;
+        this._column = column;
+        this._wordDistance = wordDistance;
+        this._options = options;
+        this._refilterKind = 1;
+        this._lineContext = lineContext;
+        this._fuzzyScoreOptions = fuzzyScoreOptions;
+        if (snippetSuggestions === 'top') {
+            this._snippetCompareFn = CompletionModel._compareCompletionItemsSnippetsUp;
+        }
+        else if (snippetSuggestions === 'bottom') {
+            this._snippetCompareFn = CompletionModel._compareCompletionItemsSnippetsDown;
+        }
+    }
+    get lineContext() {
+        return this._lineContext;
+    }
+    set lineContext(value) {
+        if (this._lineContext.leadingLineContent !== value.leadingLineContent
+            || this._lineContext.characterCountDelta !== value.characterCountDelta) {
+            this._refilterKind = this._lineContext.characterCountDelta < value.characterCountDelta && this._filteredItems ? 2 : 1;
+            this._lineContext = value;
+        }
+    }
+    get items() {
+        this._ensureCachedState();
+        return this._filteredItems;
+    }
+    getItemsByProvider() {
+        this._ensureCachedState();
+        return this._itemsByProvider;
+    }
+    getIncompleteProvider() {
+        this._ensureCachedState();
+        const result = new Set();
+        for (const [provider, items] of this.getItemsByProvider()) {
+            if (items.length > 0 && items[0].container.incomplete) {
+                result.add(provider);
+            }
+        }
+        return result;
+    }
+    get stats() {
+        this._ensureCachedState();
+        return this._stats;
+    }
+    _ensureCachedState() {
+        if (this._refilterKind !== 0) {
+            this._createCachedState();
+        }
+    }
+    _createCachedState() {
+        this._itemsByProvider = new Map();
+        const labelLengths = [];
+        const { leadingLineContent, characterCountDelta } = this._lineContext;
+        let word = '';
+        let wordLow = '';
+        const source = this._refilterKind === 1 ? this._items : this._filteredItems;
+        const target = [];
+        const scoreFn = (!this._options.filterGraceful || source.length > 2000) ? fuzzyScore : fuzzyScoreGracefulAggressive;
+        for (let i = 0; i < source.length; i++) {
+            const item = source[i];
+            if (item.isInvalid) {
+                continue;
+            }
+            const arr = this._itemsByProvider.get(item.provider);
+            if (arr) {
+                arr.push(item);
+            }
+            else {
+                this._itemsByProvider.set(item.provider, [item]);
+            }
+            const overwriteBefore = item.position.column - item.editStart.column;
+            const wordLen = overwriteBefore + characterCountDelta - (item.position.column - this._column);
+            if (word.length !== wordLen) {
+                word = wordLen === 0 ? '' : leadingLineContent.slice(-wordLen);
+                wordLow = word.toLowerCase();
+            }
+            item.word = word;
+            if (wordLen === 0) {
+                item.score = FuzzyScore.Default;
+            }
+            else {
+                let wordPos = 0;
+                while (wordPos < overwriteBefore) {
+                    const ch = word.charCodeAt(wordPos);
+                    if (ch === 32 || ch === 9) {
+                        wordPos += 1;
+                    }
+                    else {
+                        break;
+                    }
+                }
+                if (wordPos >= wordLen) {
+                    item.score = FuzzyScore.Default;
+                }
+                else if (typeof item.completion.filterText === 'string') {
+                    const match = scoreFn(word, wordLow, wordPos, item.completion.filterText, item.filterTextLow, 0, this._fuzzyScoreOptions);
+                    if (!match) {
+                        continue;
+                    }
+                    if (compareIgnoreCase(item.completion.filterText, item.textLabel) === 0) {
+                        item.score = match;
+                    }
+                    else {
+                        item.score = anyScore(word, wordLow, wordPos, item.textLabel, item.labelLow, 0);
+                        item.score[0] = match[0];
+                    }
+                }
+                else {
+                    const match = scoreFn(word, wordLow, wordPos, item.textLabel, item.labelLow, 0, this._fuzzyScoreOptions);
+                    if (!match) {
+                        continue;
+                    }
+                    item.score = match;
+                }
+            }
+            item.idx = i;
+            item.distance = this._wordDistance.distance(item.position, item.completion);
+            target.push(item);
+            labelLengths.push(item.textLabel.length);
+        }
+        this._filteredItems = target.sort(this._snippetCompareFn);
+        this._refilterKind = 0;
+        this._stats = {
+            pLabelLen: labelLengths.length ?
+                quickSelect(labelLengths.length - .85, labelLengths, (a, b) => a - b)
+                : 0
+        };
+    }
+    static _compareCompletionItems(a, b) {
+        if (a.score[0] > b.score[0]) {
+            return -1;
+        }
+        else if (a.score[0] < b.score[0]) {
+            return 1;
+        }
+        else if (a.distance < b.distance) {
+            return -1;
+        }
+        else if (a.distance > b.distance) {
+            return 1;
+        }
+        else if (a.idx < b.idx) {
+            return -1;
+        }
+        else if (a.idx > b.idx) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+    static _compareCompletionItemsSnippetsDown(a, b) {
+        if (a.completion.kind !== b.completion.kind) {
+            if (a.completion.kind === 27) {
+                return 1;
+            }
+            else if (b.completion.kind === 27) {
+                return -1;
+            }
+        }
+        return CompletionModel._compareCompletionItems(a, b);
+    }
+    static _compareCompletionItemsSnippetsUp(a, b) {
+        if (a.completion.kind !== b.completion.kind) {
+            if (a.completion.kind === 27) {
+                return -1;
+            }
+            else if (b.completion.kind === 27) {
+                return 1;
+            }
+        }
+        return CompletionModel._compareCompletionItems(a, b);
+    }
+}

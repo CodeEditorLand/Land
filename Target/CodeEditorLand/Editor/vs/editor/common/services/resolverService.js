@@ -1,1 +1,6 @@
-import"../../../base/common/event.js";import"../../../base/common/htmlContent.js";import"../../../base/common/lifecycle.js";import"../../../base/common/uri.js";import"../model.js";import"../../../platform/editor/common/editor.js";import{createDecorator as o}from"../../../platform/instantiation/common/instantiation.js";const f=o("textModelService");function E(e){return!!e.textEditorModel}export{f as ITextModelService,E as isResolvedTextEditorModel};
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+export const ITextModelService = createDecorator('textModelService');
+export function isResolvedTextEditorModel(model) {
+    const candidate = model;
+    return !!candidate.textEditorModel;
+}

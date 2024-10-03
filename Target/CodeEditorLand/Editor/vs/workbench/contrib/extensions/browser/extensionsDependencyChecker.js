@@ -1,1 +1,88 @@
-var d=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var m=(o,t,n,i)=>{for(var e=i>1?void 0:i?p(t,n):t,s=o.length-1,l;s>=0;s--)(l=o[s])&&(e=(i?l(t,n,e):l(e))||e);return i&&e&&d(t,n,e),e},r=(o,t)=>(n,i)=>t(n,i,o);import{IExtensionsWorkbenchService as g}from"../common/extensions.js";import"../../../common/contributions.js";import{IExtensionService as v}from"../../../services/extensions/common/extensions.js";import{CommandsRegistry as f}from"../../../../platform/commands/common/commands.js";import{MenuRegistry as h,MenuId as S}from"../../../../platform/actions/common/actions.js";import{localize as a}from"../../../../nls.js";import{areSameExtensions as x}from"../../../../platform/extensionManagement/common/extensionManagementUtil.js";import{INotificationService as w,Severity as u}from"../../../../platform/notification/common/notification.js";import{Action as I}from"../../../../base/common/actions.js";import{IHostService as b}from"../../../services/host/browser/host.js";import{Disposable as y}from"../../../../base/common/lifecycle.js";import{CancellationToken as M}from"../../../../base/common/cancellation.js";import{Promises as D}from"../../../../base/common/async.js";let c=class extends y{constructor(n,i,e,s){super();this.extensionService=n;this.extensionsWorkbenchService=i;this.notificationService=e;this.hostService=s;f.registerCommand("workbench.extensions.installMissingDependencies",()=>this.installMissingDependencies()),h.appendMenuItem(S.CommandPalette,{command:{id:"workbench.extensions.installMissingDependencies",category:a("extensions","Extensions"),title:a("auto install missing deps","Install Missing Dependencies")}})}async getUninstalledMissingDependencies(){const n=await this.getAllMissingDependencies(),i=await this.extensionsWorkbenchService.queryLocal();return n.filter(e=>i.every(s=>!x(s.identifier,{id:e})))}async getAllMissingDependencies(){await this.extensionService.whenInstalledExtensionsRegistered();const n=this.extensionService.extensions.reduce((e,s)=>(e.add(s.identifier.value.toLowerCase()),e),new Set),i=new Set;for(const e of this.extensionService.extensions)e.extensionDependencies&&e.extensionDependencies.forEach(s=>{n.has(s.toLowerCase())||i.add(s)});return[...i.values()]}async installMissingDependencies(){const n=await this.getUninstalledMissingDependencies();if(n.length){const i=await this.extensionsWorkbenchService.getExtensions(n.map(e=>({id:e})),M.None);i.length&&(await D.settled(i.map(e=>this.extensionsWorkbenchService.install(e))),this.notificationService.notify({severity:u.Info,message:a("finished installing missing deps","Finished installing missing dependencies. Please reload the window now."),actions:{primary:[new I("realod",a("reload","Reload Window"),"",!0,()=>this.hostService.reload())]}}))}else this.notificationService.info(a("no missing deps","There are no missing dependencies to install."))}};c=m([r(0,v),r(1,g),r(2,w),r(3,b)],c);export{c as ExtensionDependencyChecker};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IExtensionsWorkbenchService } from '../common/extensions.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { MenuRegistry, MenuId } from '../../../../platform/actions/common/actions.js';
+import { localize } from '../../../../nls.js';
+import { areSameExtensions } from '../../../../platform/extensionManagement/common/extensionManagementUtil.js';
+import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
+import { Action } from '../../../../base/common/actions.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { Promises } from '../../../../base/common/async.js';
+let ExtensionDependencyChecker = class ExtensionDependencyChecker extends Disposable {
+    constructor(extensionService, extensionsWorkbenchService, notificationService, hostService) {
+        super();
+        this.extensionService = extensionService;
+        this.extensionsWorkbenchService = extensionsWorkbenchService;
+        this.notificationService = notificationService;
+        this.hostService = hostService;
+        CommandsRegistry.registerCommand('workbench.extensions.installMissingDependencies', () => this.installMissingDependencies());
+        MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
+            command: {
+                id: 'workbench.extensions.installMissingDependencies',
+                category: localize('extensions', "Extensions"),
+                title: localize('auto install missing deps', "Install Missing Dependencies")
+            }
+        });
+    }
+    async getUninstalledMissingDependencies() {
+        const allMissingDependencies = await this.getAllMissingDependencies();
+        const localExtensions = await this.extensionsWorkbenchService.queryLocal();
+        return allMissingDependencies.filter(id => localExtensions.every(l => !areSameExtensions(l.identifier, { id })));
+    }
+    async getAllMissingDependencies() {
+        await this.extensionService.whenInstalledExtensionsRegistered();
+        const runningExtensionsIds = this.extensionService.extensions.reduce((result, r) => { result.add(r.identifier.value.toLowerCase()); return result; }, new Set());
+        const missingDependencies = new Set();
+        for (const extension of this.extensionService.extensions) {
+            if (extension.extensionDependencies) {
+                extension.extensionDependencies.forEach(dep => {
+                    if (!runningExtensionsIds.has(dep.toLowerCase())) {
+                        missingDependencies.add(dep);
+                    }
+                });
+            }
+        }
+        return [...missingDependencies.values()];
+    }
+    async installMissingDependencies() {
+        const missingDependencies = await this.getUninstalledMissingDependencies();
+        if (missingDependencies.length) {
+            const extensions = await this.extensionsWorkbenchService.getExtensions(missingDependencies.map(id => ({ id })), CancellationToken.None);
+            if (extensions.length) {
+                await Promises.settled(extensions.map(extension => this.extensionsWorkbenchService.install(extension)));
+                this.notificationService.notify({
+                    severity: Severity.Info,
+                    message: localize('finished installing missing deps', "Finished installing missing dependencies. Please reload the window now."),
+                    actions: {
+                        primary: [new Action('realod', localize('reload', "Reload Window"), '', true, () => this.hostService.reload())]
+                    }
+                });
+            }
+        }
+        else {
+            this.notificationService.info(localize('no missing deps', "There are no missing dependencies to install."));
+        }
+    }
+};
+ExtensionDependencyChecker = __decorate([
+    __param(0, IExtensionService),
+    __param(1, IExtensionsWorkbenchService),
+    __param(2, INotificationService),
+    __param(3, IHostService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], ExtensionDependencyChecker);
+export { ExtensionDependencyChecker };

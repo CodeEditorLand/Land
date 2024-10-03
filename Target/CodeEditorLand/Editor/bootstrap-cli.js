@@ -1,1 +1,2 @@
-delete process.env.VSCODE_CWD;
+"use strict";
+delete process.env['VSCODE_CWD'];

@@ -1,1 +1,81 @@
-var h=Object.defineProperty;var E=Object.getOwnPropertyDescriptor;var v=(s,n,o,r)=>{for(var t=r>1?void 0:r?E(n,o):n,i=s.length-1,c;i>=0;i--)(c=s[i])&&(t=(r?c(n,o,t):c(t))||t);return r&&t&&h(n,o,t),t},e=(s,n)=>(o,r)=>n(o,r,s);import{Schemas as g}from"../../../../../../base/common/network.js";import"../../../../../../editor/browser/editorBrowser.js";import{EditorContributionInstantiation as b,registerEditorContribution as _}from"../../../../../../editor/browser/editorExtensions.js";import{ICommandService as x}from"../../../../../../platform/commands/common/commands.js";import{IConfigurationService as y}from"../../../../../../platform/configuration/common/configuration.js";import{IContextMenuService as H}from"../../../../../../platform/contextview/browser/contextView.js";import{IHoverService as T}from"../../../../../../platform/hover/browser/hover.js";import{IKeybindingService as k}from"../../../../../../platform/keybinding/common/keybinding.js";import{IProductService as N}from"../../../../../../platform/product/common/productService.js";import{ITelemetryService as R}from"../../../../../../platform/telemetry/common/telemetry.js";import{IChatAgentService as O}from"../../../../chat/common/chatAgents.js";import{EmptyTextEditorHintContribution as P}from"../../../../codeEditor/browser/emptyTextEditorHint/emptyTextEditorHint.js";import{IInlineChatSessionService as A}from"../../../../inlineChat/browser/inlineChatSessionService.js";import{getNotebookEditorFromEditorPane as a}from"../../notebookBrowser.js";import{IEditorGroupsService as D}from"../../../../../services/editor/common/editorGroupsService.js";import{IEditorService as M}from"../../../../../services/editor/common/editorService.js";let d=class extends P{constructor(o,r,t,i,c,l,I,f,p,u,S,C){super(o,t,i,c,l,I,f,p,u,S,C);this._editorService=r;const m=a(this._editorService.activeEditorPane);m&&this.toDispose.push(m.onDidChangeActiveCell(()=>this.update()))}static CONTRIB_ID="notebook.editor.contrib.emptyCellEditorHint";_getOptions(){return{clickable:!1}}_shouldRenderHint(){if(!super._shouldRenderHint())return!1;const r=this.editor.getModel();if(!r||!(r?.uri.scheme===g.vscodeNotebookCell))return!1;const i=a(this._editorService.activeEditorPane);return!(!i||i.getActiveCell()?.uri.fragment!==r.uri.fragment)}};d=v([e(1,M),e(2,D),e(3,x),e(4,y),e(5,T),e(6,k),e(7,A),e(8,O),e(9,R),e(10,N),e(11,H)],d),_(d.CONTRIB_ID,d,b.Eager);export{d as EmptyCellEditorHintContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Schemas } from '../../../../../../base/common/network.js';
+import { registerEditorContribution } from '../../../../../../editor/browser/editorExtensions.js';
+import { ICommandService } from '../../../../../../platform/commands/common/commands.js';
+import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
+import { IContextMenuService } from '../../../../../../platform/contextview/browser/contextView.js';
+import { IHoverService } from '../../../../../../platform/hover/browser/hover.js';
+import { IKeybindingService } from '../../../../../../platform/keybinding/common/keybinding.js';
+import { IProductService } from '../../../../../../platform/product/common/productService.js';
+import { ITelemetryService } from '../../../../../../platform/telemetry/common/telemetry.js';
+import { IChatAgentService } from '../../../../chat/common/chatAgents.js';
+import { EmptyTextEditorHintContribution } from '../../../../codeEditor/browser/emptyTextEditorHint/emptyTextEditorHint.js';
+import { IInlineChatSessionService } from '../../../../inlineChat/browser/inlineChatSessionService.js';
+import { getNotebookEditorFromEditorPane } from '../../notebookBrowser.js';
+import { IEditorGroupsService } from '../../../../../services/editor/common/editorGroupsService.js';
+import { IEditorService } from '../../../../../services/editor/common/editorService.js';
+let EmptyCellEditorHintContribution = class EmptyCellEditorHintContribution extends EmptyTextEditorHintContribution {
+    static { this.CONTRIB_ID = 'notebook.editor.contrib.emptyCellEditorHint'; }
+    constructor(editor, _editorService, editorGroupsService, commandService, configurationService, hoverService, keybindingService, inlineChatSessionService, chatAgentService, telemetryService, productService, contextMenuService) {
+        super(editor, editorGroupsService, commandService, configurationService, hoverService, keybindingService, inlineChatSessionService, chatAgentService, telemetryService, productService, contextMenuService);
+        this._editorService = _editorService;
+        const activeEditor = getNotebookEditorFromEditorPane(this._editorService.activeEditorPane);
+        if (!activeEditor) {
+            return;
+        }
+        this.toDispose.push(activeEditor.onDidChangeActiveCell(() => this.update()));
+    }
+    _getOptions() {
+        return { clickable: false };
+    }
+    _shouldRenderHint() {
+        const shouldRenderHint = super._shouldRenderHint();
+        if (!shouldRenderHint) {
+            return false;
+        }
+        const model = this.editor.getModel();
+        if (!model) {
+            return false;
+        }
+        const isNotebookCell = model?.uri.scheme === Schemas.vscodeNotebookCell;
+        if (!isNotebookCell) {
+            return false;
+        }
+        const activeEditor = getNotebookEditorFromEditorPane(this._editorService.activeEditorPane);
+        if (!activeEditor) {
+            return false;
+        }
+        const activeCell = activeEditor.getActiveCell();
+        if (activeCell?.uri.fragment !== model.uri.fragment) {
+            return false;
+        }
+        return true;
+    }
+};
+EmptyCellEditorHintContribution = __decorate([
+    __param(1, IEditorService),
+    __param(2, IEditorGroupsService),
+    __param(3, ICommandService),
+    __param(4, IConfigurationService),
+    __param(5, IHoverService),
+    __param(6, IKeybindingService),
+    __param(7, IInlineChatSessionService),
+    __param(8, IChatAgentService),
+    __param(9, ITelemetryService),
+    __param(10, IProductService),
+    __param(11, IContextMenuService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], EmptyCellEditorHintContribution);
+export { EmptyCellEditorHintContribution };
+registerEditorContribution(EmptyCellEditorHintContribution.CONTRIB_ID, EmptyCellEditorHintContribution, 0);

@@ -1,1 +1,59 @@
-import{EditOperation as c}from"../../../../editor/common/core/editOperation.js";import"../../../../editor/common/core/range.js";import{TrackedRangeStickiness as p}from"../../../../editor/common/model.js";import"./inlineChatStrategies.js";import"../../../../platform/progress/common/progress.js";import{AsyncIterableSource as g}from"../../../../base/common/async.js";import"../../../../base/common/cancellation.js";import{getNWords as f}from"../../chat/common/chatWordCounter.js";async function D(e,i,o,s){const[n]=e.deltaDecorations([],[{range:i.range,options:{description:"asyncTextEdit",stickiness:p.AlwaysGrowsWhenTypingAtEdges}}]);let r=!0;for await(const a of i.newText){if(e.isDisposed())break;const t=e.getDecorationRange(n);if(!t)throw new Error("FAILED to perform async replace edit because the anchor decoration was removed");const l=r?c.replace(t,a):c.insert(t.getEndPosition(),a);s?.start(),e.pushEditOperations(null,[l],d=>(o?.report(d),null)),s?.stop(),r=!1}}function S(e,i,o,s){o=Math.max(30,o);const n=new g;let r=i.text??"";e.cancelAndSet(()=>{if(s.isCancellationRequested)return;const t=f(r,1);n.emitOne(t.value),r=r.substring(t.value.length),t.isFullString&&(e.cancel(),n.resolve(),a.dispose())},1e3/o);const a=s.onCancellationRequested(()=>{e.cancel(),n.resolve(),a.dispose()});return{range:i.range,newText:n.asyncIterable}}export{S as asProgressiveEdit,D as performAsyncTextEdit};
+import { EditOperation } from '../../../../editor/common/core/editOperation.js';
+import { AsyncIterableSource } from '../../../../base/common/async.js';
+import { getNWords } from '../../chat/common/chatWordCounter.js';
+export async function performAsyncTextEdit(model, edit, progress, obs) {
+    const [id] = model.deltaDecorations([], [{
+            range: edit.range,
+            options: {
+                description: 'asyncTextEdit',
+                stickiness: 0
+            }
+        }]);
+    let first = true;
+    for await (const part of edit.newText) {
+        if (model.isDisposed()) {
+            break;
+        }
+        const range = model.getDecorationRange(id);
+        if (!range) {
+            throw new Error('FAILED to perform async replace edit because the anchor decoration was removed');
+        }
+        const edit = first
+            ? EditOperation.replace(range, part)
+            : EditOperation.insert(range.getEndPosition(), part);
+        obs?.start();
+        model.pushEditOperations(null, [edit], (undoEdits) => {
+            progress?.report(undoEdits);
+            return null;
+        });
+        obs?.stop();
+        first = false;
+    }
+}
+export function asProgressiveEdit(interval, edit, wordsPerSec, token) {
+    wordsPerSec = Math.max(30, wordsPerSec);
+    const stream = new AsyncIterableSource();
+    let newText = edit.text ?? '';
+    interval.cancelAndSet(() => {
+        if (token.isCancellationRequested) {
+            return;
+        }
+        const r = getNWords(newText, 1);
+        stream.emitOne(r.value);
+        newText = newText.substring(r.value.length);
+        if (r.isFullString) {
+            interval.cancel();
+            stream.resolve();
+            d.dispose();
+        }
+    }, 1000 / wordsPerSec);
+    const d = token.onCancellationRequested(() => {
+        interval.cancel();
+        stream.resolve();
+        d.dispose();
+    });
+    return {
+        range: edit.range,
+        newText: stream.asyncIterable
+    };
+}

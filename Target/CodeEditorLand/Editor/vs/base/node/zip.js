@@ -1,1 +1,185 @@
-import{createWriteStream as y,promises as P}from"fs";import"stream";import{createCancelablePromise as x,Sequencer as v}from"../common/async.js";import"../common/cancellation.js";import*as f from"../common/path.js";import{assertIsDefined as R}from"../common/types.js";import{Promises as I}from"./pfs.js";import*as g from"../../nls.js";const T="end of central directory record signature not found",S=new RegExp(T);class h extends Error{type;constructor(t,r){let o=r.message;switch(t){case"CorruptZip":o=`Corrupt ZIP: ${o}`;break}super(o),this.type=t,this.cause=r}}function q(e){const t=e.externalFileAttributes>>16||33188;return[448,56,7].map(r=>t&r).reduce((r,o)=>r+o,t&61440)}function w(e){if(e instanceof h)return e;let t;return S.test(e.message)&&(t="CorruptZip"),new h(t,e)}function B(e,t,r,o,i,n){const s=f.dirname(t),a=f.join(o,s);if(!a.startsWith(o))return Promise.reject(new Error(g.localize("invalid file","Error extracting {0}. Invalid file.",t)));const l=f.join(o,t);let u;return n.onCancellationRequested(()=>{u?.destroy()}),Promise.resolve(P.mkdir(a,{recursive:!0})).then(()=>new Promise((m,c)=>{if(!n.isCancellationRequested)try{u=y(l,{mode:r}),u.once("close",()=>m()),u.once("error",c),e.once("error",c),e.pipe(u)}catch(p){c(p)}}))}function N(e,t,r,o){let i=x(()=>Promise.resolve()),n=0;const s=o.onCancellationRequested(()=>{i.cancel(),e.close()});return new Promise((a,l)=>{const u=new v,m=c=>{c.isCancellationRequested||(n++,e.readEntry())};e.once("error",l),e.once("close",()=>i.then(()=>{o.isCancellationRequested||e.entryCount===n?a():l(new h("Incomplete",new Error(g.localize("incompleteExtract","Incomplete. Found {0} of {1} entries",n,e.entryCount))))},l)),e.readEntry(),e.on("entry",c=>{if(o.isCancellationRequested)return;if(!r.sourcePathRegex.test(c.fileName)){m(o);return}const p=c.fileName.replace(r.sourcePathRegex,"");if(/\/$/.test(p)){const d=f.join(t,p);i=x(E=>P.mkdir(d,{recursive:!0}).then(()=>m(E)).then(void 0,l));return}const Z=F(e,c),b=q(c);i=x(d=>u.queue(()=>Z.then(E=>B(E,p,b,t,r,d).then(()=>m(d)))).then(null,l))})}).finally(()=>s.dispose())}async function C(e,t=!1){const{open:r}=await import("yauzl");return new Promise((o,i)=>{r(e,t?{lazyEntries:!0}:void 0,(n,s)=>{n?i(w(n)):o(R(s))})})}function F(e,t){return new Promise((r,o)=>{e.openReadStream(t,(i,n)=>{i?o(w(i)):r(R(n))})})}async function G(e,t){const{ZipFile:r}=await import("yazl");return new Promise((o,i)=>{const n=new r;t.forEach(a=>{a.contents?n.addBuffer(typeof a.contents=="string"?Buffer.from(a.contents,"utf8"):a.contents,a.path):a.localPath&&n.addFile(a.localPath,a.path)}),n.end();const s=y(e);n.outputStream.pipe(s),n.outputStream.once("error",i),s.once("error",i),s.once("finish",()=>o(e))})}function H(e,t,r={},o){const i=new RegExp(r.sourcePath?`^${r.sourcePath}`:"");let n=C(e,!0);return r.overwrite&&(n=n.then(s=>I.rm(t).then(()=>s))),n.then(s=>N(s,t,{sourcePathRegex:i},o))}function O(e,t){return C(e).then(r=>new Promise((o,i)=>{r.on("entry",n=>{n.fileName===t&&F(r,n).then(s=>o(s),s=>i(s))}),r.once("close",()=>i(new Error(g.localize("notFound","{0} not found inside zip.",t))))}))}function J(e,t){return O(e,t).then(r=>new Promise((o,i)=>{const n=[];r.once("error",i),r.on("data",s=>n.push(s)),r.on("end",()=>o(Buffer.concat(n)))}))}export{T as CorruptZipMessage,h as ExtractError,J as buffer,H as extract,G as zip};
+import { createWriteStream, promises } from 'fs';
+import { createCancelablePromise, Sequencer } from '../common/async.js';
+import * as path from '../common/path.js';
+import { assertIsDefined } from '../common/types.js';
+import { Promises } from './pfs.js';
+import * as nls from '../../nls.js';
+export const CorruptZipMessage = 'end of central directory record signature not found';
+const CORRUPT_ZIP_PATTERN = new RegExp(CorruptZipMessage);
+export class ExtractError extends Error {
+    constructor(type, cause) {
+        let message = cause.message;
+        switch (type) {
+            case 'CorruptZip':
+                message = `Corrupt ZIP: ${message}`;
+                break;
+        }
+        super(message);
+        this.type = type;
+        this.cause = cause;
+    }
+}
+function modeFromEntry(entry) {
+    const attr = entry.externalFileAttributes >> 16 || 33188;
+    return [448, 56, 7]
+        .map(mask => attr & mask)
+        .reduce((a, b) => a + b, attr & 61440);
+}
+function toExtractError(err) {
+    if (err instanceof ExtractError) {
+        return err;
+    }
+    let type = undefined;
+    if (CORRUPT_ZIP_PATTERN.test(err.message)) {
+        type = 'CorruptZip';
+    }
+    return new ExtractError(type, err);
+}
+function extractEntry(stream, fileName, mode, targetPath, options, token) {
+    const dirName = path.dirname(fileName);
+    const targetDirName = path.join(targetPath, dirName);
+    if (!targetDirName.startsWith(targetPath)) {
+        return Promise.reject(new Error(nls.localize('invalid file', "Error extracting {0}. Invalid file.", fileName)));
+    }
+    const targetFileName = path.join(targetPath, fileName);
+    let istream;
+    token.onCancellationRequested(() => {
+        istream?.destroy();
+    });
+    return Promise.resolve(promises.mkdir(targetDirName, { recursive: true })).then(() => new Promise((c, e) => {
+        if (token.isCancellationRequested) {
+            return;
+        }
+        try {
+            istream = createWriteStream(targetFileName, { mode });
+            istream.once('close', () => c());
+            istream.once('error', e);
+            stream.once('error', e);
+            stream.pipe(istream);
+        }
+        catch (error) {
+            e(error);
+        }
+    }));
+}
+function extractZip(zipfile, targetPath, options, token) {
+    let last = createCancelablePromise(() => Promise.resolve());
+    let extractedEntriesCount = 0;
+    const listener = token.onCancellationRequested(() => {
+        last.cancel();
+        zipfile.close();
+    });
+    return new Promise((c, e) => {
+        const throttler = new Sequencer();
+        const readNextEntry = (token) => {
+            if (token.isCancellationRequested) {
+                return;
+            }
+            extractedEntriesCount++;
+            zipfile.readEntry();
+        };
+        zipfile.once('error', e);
+        zipfile.once('close', () => last.then(() => {
+            if (token.isCancellationRequested || zipfile.entryCount === extractedEntriesCount) {
+                c();
+            }
+            else {
+                e(new ExtractError('Incomplete', new Error(nls.localize('incompleteExtract', "Incomplete. Found {0} of {1} entries", extractedEntriesCount, zipfile.entryCount))));
+            }
+        }, e));
+        zipfile.readEntry();
+        zipfile.on('entry', (entry) => {
+            if (token.isCancellationRequested) {
+                return;
+            }
+            if (!options.sourcePathRegex.test(entry.fileName)) {
+                readNextEntry(token);
+                return;
+            }
+            const fileName = entry.fileName.replace(options.sourcePathRegex, '');
+            if (/\/$/.test(fileName)) {
+                const targetFileName = path.join(targetPath, fileName);
+                last = createCancelablePromise(token => promises.mkdir(targetFileName, { recursive: true }).then(() => readNextEntry(token)).then(undefined, e));
+                return;
+            }
+            const stream = openZipStream(zipfile, entry);
+            const mode = modeFromEntry(entry);
+            last = createCancelablePromise(token => throttler.queue(() => stream.then(stream => extractEntry(stream, fileName, mode, targetPath, options, token).then(() => readNextEntry(token)))).then(null, e));
+        });
+    }).finally(() => listener.dispose());
+}
+async function openZip(zipFile, lazy = false) {
+    const { open } = await import('yauzl');
+    return new Promise((resolve, reject) => {
+        open(zipFile, lazy ? { lazyEntries: true } : undefined, (error, zipfile) => {
+            if (error) {
+                reject(toExtractError(error));
+            }
+            else {
+                resolve(assertIsDefined(zipfile));
+            }
+        });
+    });
+}
+function openZipStream(zipFile, entry) {
+    return new Promise((resolve, reject) => {
+        zipFile.openReadStream(entry, (error, stream) => {
+            if (error) {
+                reject(toExtractError(error));
+            }
+            else {
+                resolve(assertIsDefined(stream));
+            }
+        });
+    });
+}
+export async function zip(zipPath, files) {
+    const { ZipFile } = await import('yazl');
+    return new Promise((c, e) => {
+        const zip = new ZipFile();
+        files.forEach(f => {
+            if (f.contents) {
+                zip.addBuffer(typeof f.contents === 'string' ? Buffer.from(f.contents, 'utf8') : f.contents, f.path);
+            }
+            else if (f.localPath) {
+                zip.addFile(f.localPath, f.path);
+            }
+        });
+        zip.end();
+        const zipStream = createWriteStream(zipPath);
+        zip.outputStream.pipe(zipStream);
+        zip.outputStream.once('error', e);
+        zipStream.once('error', e);
+        zipStream.once('finish', () => c(zipPath));
+    });
+}
+export function extract(zipPath, targetPath, options = {}, token) {
+    const sourcePathRegex = new RegExp(options.sourcePath ? `^${options.sourcePath}` : '');
+    let promise = openZip(zipPath, true);
+    if (options.overwrite) {
+        promise = promise.then(zipfile => Promises.rm(targetPath).then(() => zipfile));
+    }
+    return promise.then(zipfile => extractZip(zipfile, targetPath, { sourcePathRegex }, token));
+}
+function read(zipPath, filePath) {
+    return openZip(zipPath).then(zipfile => {
+        return new Promise((c, e) => {
+            zipfile.on('entry', (entry) => {
+                if (entry.fileName === filePath) {
+                    openZipStream(zipfile, entry).then(stream => c(stream), err => e(err));
+                }
+            });
+            zipfile.once('close', () => e(new Error(nls.localize('notFound', "{0} not found inside zip.", filePath))));
+        });
+    });
+}
+export function buffer(zipPath, filePath) {
+    return read(zipPath, filePath).then(stream => {
+        return new Promise((c, e) => {
+            const buffers = [];
+            stream.once('error', e);
+            stream.on('data', (b) => buffers.push(b));
+            stream.on('end', () => c(Buffer.concat(buffers)));
+        });
+    });
+}

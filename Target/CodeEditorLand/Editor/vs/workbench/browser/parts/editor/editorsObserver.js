@@ -1,1 +1,365 @@
-var G=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var v=(f,c,e,i)=>{for(var t=i>1?void 0:i?S(c,e):c,r=f.length-1,o;r>=0;r--)(o=f[r])&&(t=(i?o(c,e,t):o(t))||t);return i&&t&&G(c,e,t),t},l=(f,c)=>(e,i)=>c(e,i,f);import{EditorExtensions as R,EditorsOrder as E,GroupModelChangeKind as m,EditorInputCapabilities as g}from"../../../common/editor.js";import"../../../common/editor/editorInput.js";import{SideBySideEditorInput as C}from"../../../common/editor/sideBySideEditorInput.js";import{dispose as y,Disposable as M,DisposableStore as O}from"../../../../base/common/lifecycle.js";import{IStorageService as A,StorageScope as h,StorageTarget as T}from"../../../../platform/storage/common/storage.js";import{Registry as P}from"../../../../platform/registry/common/platform.js";import{Event as L,Emitter as b}from"../../../../base/common/event.js";import{IEditorGroupsService as D,GroupsOrder as z}from"../../../services/editor/common/editorGroupsService.js";import{coalesce as _}from"../../../../base/common/arrays.js";import{LinkedMap as w,Touch as I,ResourceMap as k}from"../../../../base/common/map.js";import{equals as K}from"../../../../base/common/objects.js";import"../../../../platform/editor/common/editor.js";import"../../../../base/common/uri.js";let u=class extends M{constructor(e,i,t){super();this.editorGroupService=i;this.storageService=t;this.editorGroupsContainer=e??i,this.isScoped=!!e,this.registerListeners(),this.loadState()}static STORAGE_KEY="editors.mru";keyMap=new Map;mostRecentEditorsMap=new w;editorsPerResourceCounter=new k;_onDidMostRecentlyActiveEditorsChange=this._register(new b);onDidMostRecentlyActiveEditorsChange=this._onDidMostRecentlyActiveEditorsChange.event;get count(){return this.mostRecentEditorsMap.size}get editors(){return[...this.mostRecentEditorsMap.values()]}hasEditor(e){return this.editorsPerResourceCounter.get(e.resource)?.has(this.toIdentifier(e))??!1}hasEditors(e){return this.editorsPerResourceCounter.has(e)}toIdentifier(e,i){return typeof e!="string"?this.toIdentifier(e.typeId,e.editorId):i?`${e}/${i}`:e}editorGroupsContainer;isScoped;registerListeners(){this._register(this.editorGroupsContainer.onDidAddGroup(e=>this.onGroupAdded(e))),this._register(this.editorGroupService.onDidChangeEditorPartOptions(e=>this.onDidChangeEditorPartOptions(e))),this._register(this.storageService.onWillSaveState(()=>this.saveState()))}onGroupAdded(e){const i=e.getEditors(E.MOST_RECENTLY_ACTIVE);for(let t=i.length-1;t>=0;t--)this.addMostRecentEditor(e,i[t],!1,!0);this.editorGroupsContainer.activeGroup===e&&e.activeEditor&&this.addMostRecentEditor(e,e.activeEditor,!0,!1),this.registerGroupListeners(e)}registerGroupListeners(e){const i=new O;i.add(e.onDidModelChange(t=>{switch(t.kind){case m.GROUP_ACTIVE:{this.editorGroupsContainer.activeGroup===e&&e.activeEditor&&this.addMostRecentEditor(e,e.activeEditor,!0,!1);break}case m.EDITOR_OPEN:{t.editor&&(this.addMostRecentEditor(e,t.editor,!1,!0),this.ensureOpenedEditorsLimit({groupId:e.id,editor:t.editor},e.id));break}}})),i.add(e.onDidCloseEditor(t=>{this.removeMostRecentEditor(e,t.editor)})),i.add(e.onDidActiveEditorChange(t=>{t.editor&&this.addMostRecentEditor(e,t.editor,this.editorGroupsContainer.activeGroup===e,!1)})),L.once(e.onWillDispose)(()=>y(i))}onDidChangeEditorPartOptions(e){if(!K(e.newPartOptions.limit,e.oldPartOptions.limit)){const i=this.editorGroupsContainer.activeGroup;let t;i.activeEditor&&(t={editor:i.activeEditor,groupId:i.id}),this.ensureOpenedEditorsLimit(t)}}addMostRecentEditor(e,i,t,r){const o=this.ensureKey(e,i),s=this.mostRecentEditorsMap.first;t||!s?this.mostRecentEditorsMap.set(o,o,s?I.AsOld:void 0):(this.mostRecentEditorsMap.set(o,o,I.AsOld),this.mostRecentEditorsMap.set(s,s,I.AsOld)),r&&this.updateEditorResourcesMap(i,!0),this._onDidMostRecentlyActiveEditorsChange.fire()}updateEditorResourcesMap(e,i){let t,r,o;if(e instanceof C?(t=e.primary.resource,r=e.primary.typeId,o=e.primary.editorId):(t=e.resource,r=e.typeId,o=e.editorId),!t)return;const s=this.toIdentifier(r,o);if(i){let n=this.editorsPerResourceCounter.get(t);n||(n=new Map,this.editorsPerResourceCounter.set(t,n)),n.set(s,(n.get(s)??0)+1)}else{const n=this.editorsPerResourceCounter.get(t);if(n){const d=n.get(s)??0;d>1?n.set(s,d-1):(n.delete(s),n.size===0&&this.editorsPerResourceCounter.delete(t))}}}removeMostRecentEditor(e,i){this.updateEditorResourcesMap(i,!1);const t=this.findKey(e,i);if(t){this.mostRecentEditorsMap.delete(t);const r=this.keyMap.get(e.id);r&&r.delete(t.editor)&&r.size===0&&this.keyMap.delete(e.id),this._onDidMostRecentlyActiveEditorsChange.fire()}}findKey(e,i){const t=this.keyMap.get(e.id);if(t)return t.get(i)}ensureKey(e,i){let t=this.keyMap.get(e.id);t||(t=new Map,this.keyMap.set(e.id,t));let r=t.get(i);return r||(r={groupId:e.id,editor:i},t.set(i,r)),r}async ensureOpenedEditorsLimit(e,i){if(!this.editorGroupService.partOptions.limit?.enabled||typeof this.editorGroupService.partOptions.limit.value!="number"||this.editorGroupService.partOptions.limit.value<=0)return;const t=this.editorGroupService.partOptions.limit.value;if(this.editorGroupService.partOptions.limit?.perEditorGroup)if(typeof i=="number"){const r=this.editorGroupsContainer.getGroup(i);r&&await this.doEnsureOpenedEditorsLimit(t,r.getEditors(E.MOST_RECENTLY_ACTIVE).map(o=>({editor:o,groupId:i})),e)}else for(const r of this.editorGroupsContainer.groups)await this.ensureOpenedEditorsLimit(e,r.id);else await this.doEnsureOpenedEditorsLimit(t,[...this.mostRecentEditorsMap.values()],e)}async doEnsureOpenedEditorsLimit(e,i,t){let r;if(this.editorGroupService.partOptions.limit?.excludeDirty?r=i.filter(({editor:d})=>!(d.isDirty()&&!d.isSaving()||d.hasCapability(g.Scratchpad))):r=i,e>=r.length)return;const o=r.reverse().filter(({editor:d,groupId:a})=>!(d.isDirty()&&!d.isSaving()||d.hasCapability(g.Scratchpad)||t&&d===t.editor&&a===t.groupId||this.editorGroupsContainer.getGroup(a)?.isSticky(d)));let s=r.length-e;const n=new Map;for(const{groupId:d,editor:a}of o){let p=n.get(d);if(p||(p=[],n.set(d,p)),p.push(a),s--,s===0)break}for(const[d,a]of n){const p=this.editorGroupsContainer.getGroup(d);p&&await p.closeEditors(a,{preserveFocus:!0})}}saveState(){this.isScoped||(this.mostRecentEditorsMap.isEmpty()?this.storageService.remove(u.STORAGE_KEY,h.WORKSPACE):this.storageService.store(u.STORAGE_KEY,JSON.stringify(this.serialize()),h.WORKSPACE,T.MACHINE))}serialize(){const e=P.as(R.EditorFactory),i=[...this.mostRecentEditorsMap.values()],t=new Map;return{entries:_(i.map(({editor:r,groupId:o})=>{const s=this.editorGroupsContainer.getGroup(o);if(!s)return;let n=t.get(s);n||(n=s.getEditors(E.SEQUENTIAL).filter(a=>e.getEditorSerializer(a)?.canSerialize(a)),t.set(s,n));const d=n.indexOf(r);if(d!==-1)return{groupId:o,index:d}}))}}async loadState(){(this.editorGroupsContainer===this.editorGroupService.mainPart||this.editorGroupsContainer===this.editorGroupService)&&await this.editorGroupService.whenReady;let e=!1;if(!this.isScoped){const i=this.storageService.get(u.STORAGE_KEY,h.WORKSPACE);i&&(e=!0,this.deserialize(JSON.parse(i)))}if(!e){const i=this.editorGroupsContainer.getGroups(z.MOST_RECENTLY_ACTIVE);for(let t=i.length-1;t>=0;t--){const r=i[t],o=r.getEditors(E.MOST_RECENTLY_ACTIVE);for(let s=o.length-1;s>=0;s--)this.addMostRecentEditor(r,o[s],!0,!0)}}for(const i of this.editorGroupsContainer.groups)this.registerGroupListeners(i)}deserialize(e){const i=[];for(const{groupId:t,index:r}of e.entries){const o=this.editorGroupsContainer.getGroup(t);if(!o)continue;const s=o.getEditorByIndex(r);if(!s)continue;const n=this.ensureKey(o,s);i.push([n,n]),this.updateEditorResourcesMap(s,!0)}this.mostRecentEditorsMap.fromJSON(i)}};u=v([l(1,D),l(2,A)],u);export{u as EditorsObserver};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var EditorsObserver_1;
+import { EditorExtensions } from '../../../common/editor.js';
+import { SideBySideEditorInput } from '../../../common/editor/sideBySideEditorInput.js';
+import { dispose, Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Event, Emitter } from '../../../../base/common/event.js';
+import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+import { coalesce } from '../../../../base/common/arrays.js';
+import { LinkedMap, ResourceMap } from '../../../../base/common/map.js';
+import { equals } from '../../../../base/common/objects.js';
+let EditorsObserver = class EditorsObserver extends Disposable {
+    static { EditorsObserver_1 = this; }
+    static { this.STORAGE_KEY = 'editors.mru'; }
+    get count() {
+        return this.mostRecentEditorsMap.size;
+    }
+    get editors() {
+        return [...this.mostRecentEditorsMap.values()];
+    }
+    hasEditor(editor) {
+        const editors = this.editorsPerResourceCounter.get(editor.resource);
+        return editors?.has(this.toIdentifier(editor)) ?? false;
+    }
+    hasEditors(resource) {
+        return this.editorsPerResourceCounter.has(resource);
+    }
+    toIdentifier(arg1, editorId) {
+        if (typeof arg1 !== 'string') {
+            return this.toIdentifier(arg1.typeId, arg1.editorId);
+        }
+        if (editorId) {
+            return `${arg1}/${editorId}`;
+        }
+        return arg1;
+    }
+    constructor(editorGroupsContainer, editorGroupService, storageService) {
+        super();
+        this.editorGroupService = editorGroupService;
+        this.storageService = storageService;
+        this.keyMap = new Map();
+        this.mostRecentEditorsMap = new LinkedMap();
+        this.editorsPerResourceCounter = new ResourceMap();
+        this._onDidMostRecentlyActiveEditorsChange = this._register(new Emitter());
+        this.onDidMostRecentlyActiveEditorsChange = this._onDidMostRecentlyActiveEditorsChange.event;
+        this.editorGroupsContainer = editorGroupsContainer ?? editorGroupService;
+        this.isScoped = !!editorGroupsContainer;
+        this.registerListeners();
+        this.loadState();
+    }
+    registerListeners() {
+        this._register(this.editorGroupsContainer.onDidAddGroup(group => this.onGroupAdded(group)));
+        this._register(this.editorGroupService.onDidChangeEditorPartOptions(e => this.onDidChangeEditorPartOptions(e)));
+        this._register(this.storageService.onWillSaveState(() => this.saveState()));
+    }
+    onGroupAdded(group) {
+        const groupEditorsMru = group.getEditors(0);
+        for (let i = groupEditorsMru.length - 1; i >= 0; i--) {
+            this.addMostRecentEditor(group, groupEditorsMru[i], false, true);
+        }
+        if (this.editorGroupsContainer.activeGroup === group && group.activeEditor) {
+            this.addMostRecentEditor(group, group.activeEditor, true, false);
+        }
+        this.registerGroupListeners(group);
+    }
+    registerGroupListeners(group) {
+        const groupDisposables = new DisposableStore();
+        groupDisposables.add(group.onDidModelChange(e => {
+            switch (e.kind) {
+                case 0: {
+                    if (this.editorGroupsContainer.activeGroup === group && group.activeEditor) {
+                        this.addMostRecentEditor(group, group.activeEditor, true, false);
+                    }
+                    break;
+                }
+                case 5: {
+                    if (e.editor) {
+                        this.addMostRecentEditor(group, e.editor, false, true);
+                        this.ensureOpenedEditorsLimit({ groupId: group.id, editor: e.editor }, group.id);
+                    }
+                    break;
+                }
+            }
+        }));
+        groupDisposables.add(group.onDidCloseEditor(e => {
+            this.removeMostRecentEditor(group, e.editor);
+        }));
+        groupDisposables.add(group.onDidActiveEditorChange(e => {
+            if (e.editor) {
+                this.addMostRecentEditor(group, e.editor, this.editorGroupsContainer.activeGroup === group, false);
+            }
+        }));
+        Event.once(group.onWillDispose)(() => dispose(groupDisposables));
+    }
+    onDidChangeEditorPartOptions(event) {
+        if (!equals(event.newPartOptions.limit, event.oldPartOptions.limit)) {
+            const activeGroup = this.editorGroupsContainer.activeGroup;
+            let exclude = undefined;
+            if (activeGroup.activeEditor) {
+                exclude = { editor: activeGroup.activeEditor, groupId: activeGroup.id };
+            }
+            this.ensureOpenedEditorsLimit(exclude);
+        }
+    }
+    addMostRecentEditor(group, editor, isActive, isNew) {
+        const key = this.ensureKey(group, editor);
+        const mostRecentEditor = this.mostRecentEditorsMap.first;
+        if (isActive || !mostRecentEditor) {
+            this.mostRecentEditorsMap.set(key, key, mostRecentEditor ? 1 : undefined);
+        }
+        else {
+            this.mostRecentEditorsMap.set(key, key, 1);
+            this.mostRecentEditorsMap.set(mostRecentEditor, mostRecentEditor, 1);
+        }
+        if (isNew) {
+            this.updateEditorResourcesMap(editor, true);
+        }
+        this._onDidMostRecentlyActiveEditorsChange.fire();
+    }
+    updateEditorResourcesMap(editor, add) {
+        let resource = undefined;
+        let typeId = undefined;
+        let editorId = undefined;
+        if (editor instanceof SideBySideEditorInput) {
+            resource = editor.primary.resource;
+            typeId = editor.primary.typeId;
+            editorId = editor.primary.editorId;
+        }
+        else {
+            resource = editor.resource;
+            typeId = editor.typeId;
+            editorId = editor.editorId;
+        }
+        if (!resource) {
+            return;
+        }
+        const identifier = this.toIdentifier(typeId, editorId);
+        if (add) {
+            let editorsPerResource = this.editorsPerResourceCounter.get(resource);
+            if (!editorsPerResource) {
+                editorsPerResource = new Map();
+                this.editorsPerResourceCounter.set(resource, editorsPerResource);
+            }
+            editorsPerResource.set(identifier, (editorsPerResource.get(identifier) ?? 0) + 1);
+        }
+        else {
+            const editorsPerResource = this.editorsPerResourceCounter.get(resource);
+            if (editorsPerResource) {
+                const counter = editorsPerResource.get(identifier) ?? 0;
+                if (counter > 1) {
+                    editorsPerResource.set(identifier, counter - 1);
+                }
+                else {
+                    editorsPerResource.delete(identifier);
+                    if (editorsPerResource.size === 0) {
+                        this.editorsPerResourceCounter.delete(resource);
+                    }
+                }
+            }
+        }
+    }
+    removeMostRecentEditor(group, editor) {
+        this.updateEditorResourcesMap(editor, false);
+        const key = this.findKey(group, editor);
+        if (key) {
+            this.mostRecentEditorsMap.delete(key);
+            const map = this.keyMap.get(group.id);
+            if (map && map.delete(key.editor) && map.size === 0) {
+                this.keyMap.delete(group.id);
+            }
+            this._onDidMostRecentlyActiveEditorsChange.fire();
+        }
+    }
+    findKey(group, editor) {
+        const groupMap = this.keyMap.get(group.id);
+        if (!groupMap) {
+            return undefined;
+        }
+        return groupMap.get(editor);
+    }
+    ensureKey(group, editor) {
+        let groupMap = this.keyMap.get(group.id);
+        if (!groupMap) {
+            groupMap = new Map();
+            this.keyMap.set(group.id, groupMap);
+        }
+        let key = groupMap.get(editor);
+        if (!key) {
+            key = { groupId: group.id, editor };
+            groupMap.set(editor, key);
+        }
+        return key;
+    }
+    async ensureOpenedEditorsLimit(exclude, groupId) {
+        if (!this.editorGroupService.partOptions.limit?.enabled ||
+            typeof this.editorGroupService.partOptions.limit.value !== 'number' ||
+            this.editorGroupService.partOptions.limit.value <= 0) {
+            return;
+        }
+        const limit = this.editorGroupService.partOptions.limit.value;
+        if (this.editorGroupService.partOptions.limit?.perEditorGroup) {
+            if (typeof groupId === 'number') {
+                const group = this.editorGroupsContainer.getGroup(groupId);
+                if (group) {
+                    await this.doEnsureOpenedEditorsLimit(limit, group.getEditors(0).map(editor => ({ editor, groupId })), exclude);
+                }
+            }
+            else {
+                for (const group of this.editorGroupsContainer.groups) {
+                    await this.ensureOpenedEditorsLimit(exclude, group.id);
+                }
+            }
+        }
+        else {
+            await this.doEnsureOpenedEditorsLimit(limit, [...this.mostRecentEditorsMap.values()], exclude);
+        }
+    }
+    async doEnsureOpenedEditorsLimit(limit, mostRecentEditors, exclude) {
+        let mostRecentEditorsCountingForLimit;
+        if (this.editorGroupService.partOptions.limit?.excludeDirty) {
+            mostRecentEditorsCountingForLimit = mostRecentEditors.filter(({ editor }) => {
+                if ((editor.isDirty() && !editor.isSaving()) || editor.hasCapability(512)) {
+                    return false;
+                }
+                return true;
+            });
+        }
+        else {
+            mostRecentEditorsCountingForLimit = mostRecentEditors;
+        }
+        if (limit >= mostRecentEditorsCountingForLimit.length) {
+            return;
+        }
+        const leastRecentlyClosableEditors = mostRecentEditorsCountingForLimit.reverse().filter(({ editor, groupId }) => {
+            if ((editor.isDirty() && !editor.isSaving()) || editor.hasCapability(512)) {
+                return false;
+            }
+            if (exclude && editor === exclude.editor && groupId === exclude.groupId) {
+                return false;
+            }
+            if (this.editorGroupsContainer.getGroup(groupId)?.isSticky(editor)) {
+                return false;
+            }
+            return true;
+        });
+        let editorsToCloseCount = mostRecentEditorsCountingForLimit.length - limit;
+        const mapGroupToEditorsToClose = new Map();
+        for (const { groupId, editor } of leastRecentlyClosableEditors) {
+            let editorsInGroupToClose = mapGroupToEditorsToClose.get(groupId);
+            if (!editorsInGroupToClose) {
+                editorsInGroupToClose = [];
+                mapGroupToEditorsToClose.set(groupId, editorsInGroupToClose);
+            }
+            editorsInGroupToClose.push(editor);
+            editorsToCloseCount--;
+            if (editorsToCloseCount === 0) {
+                break;
+            }
+        }
+        for (const [groupId, editors] of mapGroupToEditorsToClose) {
+            const group = this.editorGroupsContainer.getGroup(groupId);
+            if (group) {
+                await group.closeEditors(editors, { preserveFocus: true });
+            }
+        }
+    }
+    saveState() {
+        if (this.isScoped) {
+            return;
+        }
+        if (this.mostRecentEditorsMap.isEmpty()) {
+            this.storageService.remove(EditorsObserver_1.STORAGE_KEY, 1);
+        }
+        else {
+            this.storageService.store(EditorsObserver_1.STORAGE_KEY, JSON.stringify(this.serialize()), 1, 1);
+        }
+    }
+    serialize() {
+        const registry = Registry.as(EditorExtensions.EditorFactory);
+        const entries = [...this.mostRecentEditorsMap.values()];
+        const mapGroupToSerializableEditorsOfGroup = new Map();
+        return {
+            entries: coalesce(entries.map(({ editor, groupId }) => {
+                const group = this.editorGroupsContainer.getGroup(groupId);
+                if (!group) {
+                    return undefined;
+                }
+                let serializableEditorsOfGroup = mapGroupToSerializableEditorsOfGroup.get(group);
+                if (!serializableEditorsOfGroup) {
+                    serializableEditorsOfGroup = group.getEditors(1).filter(editor => {
+                        const editorSerializer = registry.getEditorSerializer(editor);
+                        return editorSerializer?.canSerialize(editor);
+                    });
+                    mapGroupToSerializableEditorsOfGroup.set(group, serializableEditorsOfGroup);
+                }
+                const index = serializableEditorsOfGroup.indexOf(editor);
+                if (index === -1) {
+                    return undefined;
+                }
+                return { groupId, index };
+            }))
+        };
+    }
+    async loadState() {
+        if (this.editorGroupsContainer === this.editorGroupService.mainPart || this.editorGroupsContainer === this.editorGroupService) {
+            await this.editorGroupService.whenReady;
+        }
+        let hasRestorableState = false;
+        if (!this.isScoped) {
+            const serialized = this.storageService.get(EditorsObserver_1.STORAGE_KEY, 1);
+            if (serialized) {
+                hasRestorableState = true;
+                this.deserialize(JSON.parse(serialized));
+            }
+        }
+        if (!hasRestorableState) {
+            const groups = this.editorGroupsContainer.getGroups(1);
+            for (let i = groups.length - 1; i >= 0; i--) {
+                const group = groups[i];
+                const groupEditorsMru = group.getEditors(0);
+                for (let i = groupEditorsMru.length - 1; i >= 0; i--) {
+                    this.addMostRecentEditor(group, groupEditorsMru[i], true, true);
+                }
+            }
+        }
+        for (const group of this.editorGroupsContainer.groups) {
+            this.registerGroupListeners(group);
+        }
+    }
+    deserialize(serialized) {
+        const mapValues = [];
+        for (const { groupId, index } of serialized.entries) {
+            const group = this.editorGroupsContainer.getGroup(groupId);
+            if (!group) {
+                continue;
+            }
+            const editor = group.getEditorByIndex(index);
+            if (!editor) {
+                continue;
+            }
+            const editorIdentifier = this.ensureKey(group, editor);
+            mapValues.push([editorIdentifier, editorIdentifier]);
+            this.updateEditorResourcesMap(editor, true);
+        }
+        this.mostRecentEditorsMap.fromJSON(mapValues);
+    }
+};
+EditorsObserver = EditorsObserver_1 = __decorate([
+    __param(1, IEditorGroupsService),
+    __param(2, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], EditorsObserver);
+export { EditorsObserver };

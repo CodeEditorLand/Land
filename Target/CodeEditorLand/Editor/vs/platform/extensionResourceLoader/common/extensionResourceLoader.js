@@ -1,1 +1,86 @@
-import{isWeb as u}from"../../../base/common/platform.js";import{format2 as d}from"../../../base/common/strings.js";import{URI as a}from"../../../base/common/uri.js";import"../../configuration/common/configuration.js";import"../../environment/common/environment.js";import"../../files/common/files.js";import{createDecorator as m}from"../../instantiation/common/instantiation.js";import"../../product/common/productService.js";import{getServiceMachineId as p}from"../../externalServices/common/serviceMachineId.js";import"../../storage/common/storage.js";import{TelemetryLevel as h}from"../../telemetry/common/telemetry.js";import{getTelemetryLevel as v,supportsTelemetry as f}from"../../telemetry/common/telemetryUtils.js";import{RemoteAuthorities as c}from"../../../base/common/network.js";import{TargetPlatform as s}from"../../extensions/common/extensions.js";const y="/web-extension-resource/",w=m("extensionResourceLoaderService");function O(n,e){if(n.query!==`target=${e}`)return;const r=n.path.split("/");if(r[3])return r[3]=`${r[3]}+${e}`,n.with({query:null,path:r.join("/")})}class X{constructor(e,r,i,t,l){this._fileService=e;this._storageService=r;this._productService=i;this._environmentService=t;this._configurationService=l;i.extensionsGallery&&(this._extensionGalleryResourceUrlTemplate=i.extensionsGallery.resourceUrlTemplate,this._extensionGalleryAuthority=this._extensionGalleryResourceUrlTemplate?this._getExtensionGalleryAuthority(a.parse(this._extensionGalleryResourceUrlTemplate)):void 0)}_serviceBrand;_extensionGalleryResourceUrlTemplate;_extensionGalleryAuthority;get supportsExtensionGalleryResources(){return this._extensionGalleryResourceUrlTemplate!==void 0}getExtensionGalleryResourceURL({publisher:e,name:r,version:i,targetPlatform:t},l){if(this._extensionGalleryResourceUrlTemplate){const o=a.parse(d(this._extensionGalleryResourceUrlTemplate,{publisher:e,name:r,version:t!==void 0&&t!==s.UNDEFINED&&t!==s.UNKNOWN&&t!==s.UNIVERSAL?`${i}+${t}`:i,path:"extension"}));return this._isWebExtensionResourceEndPoint(o)?o.with({scheme:c.getPreferredWebSchema()}):o}}isExtensionGalleryResource(e){return!!this._extensionGalleryAuthority&&this._extensionGalleryAuthority===this._getExtensionGalleryAuthority(e)}async getExtensionGalleryRequestHeaders(){const e={"X-Client-Name":`${this._productService.applicationName}${u?"-web":""}`,"X-Client-Version":this._productService.version};return f(this._productService,this._environmentService)&&v(this._configurationService)===h.USAGE&&(e["X-Machine-Id"]=await this._getServiceMachineId()),this._productService.commit&&(e["X-Client-Commit"]=this._productService.commit),e}_serviceMachineIdPromise;_getServiceMachineId(){return this._serviceMachineIdPromise||(this._serviceMachineIdPromise=p(this._environmentService,this._fileService,this._storageService)),this._serviceMachineIdPromise}_getExtensionGalleryAuthority(e){if(this._isWebExtensionResourceEndPoint(e))return e.authority;const r=e.authority.indexOf(".");return r!==-1?e.authority.substring(r+1):void 0}_isWebExtensionResourceEndPoint(e){const r=e.path,i=c.getServerRootPath();return r.startsWith(i)&&r.startsWith(y,i.length)}}export{X as AbstractExtensionResourceLoaderService,w as IExtensionResourceLoaderService,O as migratePlatformSpecificExtensionGalleryResourceURL};
+import { isWeb } from '../../../base/common/platform.js';
+import { format2 } from '../../../base/common/strings.js';
+import { URI } from '../../../base/common/uri.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { getServiceMachineId } from '../../externalServices/common/serviceMachineId.js';
+import { getTelemetryLevel, supportsTelemetry } from '../../telemetry/common/telemetryUtils.js';
+import { RemoteAuthorities } from '../../../base/common/network.js';
+const WEB_EXTENSION_RESOURCE_END_POINT_SEGMENT = '/web-extension-resource/';
+export const IExtensionResourceLoaderService = createDecorator('extensionResourceLoaderService');
+export function migratePlatformSpecificExtensionGalleryResourceURL(resource, targetPlatform) {
+    if (resource.query !== `target=${targetPlatform}`) {
+        return undefined;
+    }
+    const paths = resource.path.split('/');
+    if (!paths[3]) {
+        return undefined;
+    }
+    paths[3] = `${paths[3]}+${targetPlatform}`;
+    return resource.with({ query: null, path: paths.join('/') });
+}
+export class AbstractExtensionResourceLoaderService {
+    constructor(_fileService, _storageService, _productService, _environmentService, _configurationService) {
+        this._fileService = _fileService;
+        this._storageService = _storageService;
+        this._productService = _productService;
+        this._environmentService = _environmentService;
+        this._configurationService = _configurationService;
+        if (_productService.extensionsGallery) {
+            this._extensionGalleryResourceUrlTemplate = _productService.extensionsGallery.resourceUrlTemplate;
+            this._extensionGalleryAuthority = this._extensionGalleryResourceUrlTemplate ? this._getExtensionGalleryAuthority(URI.parse(this._extensionGalleryResourceUrlTemplate)) : undefined;
+        }
+    }
+    get supportsExtensionGalleryResources() {
+        return this._extensionGalleryResourceUrlTemplate !== undefined;
+    }
+    getExtensionGalleryResourceURL({ publisher, name, version, targetPlatform }, path) {
+        if (this._extensionGalleryResourceUrlTemplate) {
+            const uri = URI.parse(format2(this._extensionGalleryResourceUrlTemplate, {
+                publisher,
+                name,
+                version: targetPlatform !== undefined
+                    && targetPlatform !== "undefined"
+                    && targetPlatform !== "unknown"
+                    && targetPlatform !== "universal"
+                    ? `${version}+${targetPlatform}`
+                    : version,
+                path: 'extension'
+            }));
+            return this._isWebExtensionResourceEndPoint(uri) ? uri.with({ scheme: RemoteAuthorities.getPreferredWebSchema() }) : uri;
+        }
+        return undefined;
+    }
+    isExtensionGalleryResource(uri) {
+        return !!this._extensionGalleryAuthority && this._extensionGalleryAuthority === this._getExtensionGalleryAuthority(uri);
+    }
+    async getExtensionGalleryRequestHeaders() {
+        const headers = {
+            'X-Client-Name': `${this._productService.applicationName}${isWeb ? '-web' : ''}`,
+            'X-Client-Version': this._productService.version
+        };
+        if (supportsTelemetry(this._productService, this._environmentService) && getTelemetryLevel(this._configurationService) === 3) {
+            headers['X-Machine-Id'] = await this._getServiceMachineId();
+        }
+        if (this._productService.commit) {
+            headers['X-Client-Commit'] = this._productService.commit;
+        }
+        return headers;
+    }
+    _getServiceMachineId() {
+        if (!this._serviceMachineIdPromise) {
+            this._serviceMachineIdPromise = getServiceMachineId(this._environmentService, this._fileService, this._storageService);
+        }
+        return this._serviceMachineIdPromise;
+    }
+    _getExtensionGalleryAuthority(uri) {
+        if (this._isWebExtensionResourceEndPoint(uri)) {
+            return uri.authority;
+        }
+        const index = uri.authority.indexOf('.');
+        return index !== -1 ? uri.authority.substring(index + 1) : undefined;
+    }
+    _isWebExtensionResourceEndPoint(uri) {
+        const uriPath = uri.path, serverRootPath = RemoteAuthorities.getServerRootPath();
+        return uriPath.startsWith(serverRootPath) && uriPath.startsWith(WEB_EXTENSION_RESOURCE_END_POINT_SEGMENT, serverRootPath.length);
+    }
+}

@@ -1,1 +1,48 @@
-var p=Object.defineProperty;var c=Object.getOwnPropertyDescriptor;var d=(o,r,t,n)=>{for(var e=n>1?void 0:n?c(r,t):r,s=o.length-1,a;s>=0;s--)(a=o[s])&&(e=(n?a(r,t,e):a(e))||e);return n&&e&&p(r,t,e),e},l=(o,r)=>(t,n)=>r(t,n,o);import{first as m}from"../../../base/common/async.js";import{Disposable as u,toDisposable as f}from"../../../base/common/lifecycle.js";import{URI as h}from"../../../base/common/uri.js";import{IProductService as I}from"../../product/common/productService.js";import"./url.js";class U extends u{handlers=new Set;open(r,t){const n=[...this.handlers.values()];return m(n.map(e=>()=>e.handleURL(r,t)),void 0,!1).then(e=>e||!1)}registerHandler(r){return this.handlers.add(r),f(()=>this.handlers.delete(r))}}let i=class extends U{constructor(t){super();this.productService=t}create(t){let{authority:n,path:e,query:s,fragment:a}=t||{authority:void 0,path:void 0,query:void 0,fragment:void 0};return n&&e&&e.indexOf("/")!==0&&(e=`/${e}`),h.from({scheme:this.productService.urlProtocol,authority:n,path:e,query:s,fragment:a})}};i=d([l(0,I)],i);export{U as AbstractURLService,i as NativeURLService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { first } from '../../../base/common/async.js';
+import { Disposable, toDisposable } from '../../../base/common/lifecycle.js';
+import { URI } from '../../../base/common/uri.js';
+import { IProductService } from '../../product/common/productService.js';
+export class AbstractURLService extends Disposable {
+    constructor() {
+        super(...arguments);
+        this.handlers = new Set();
+    }
+    open(uri, options) {
+        const handlers = [...this.handlers.values()];
+        return first(handlers.map(h => () => h.handleURL(uri, options)), undefined, false).then(val => val || false);
+    }
+    registerHandler(handler) {
+        this.handlers.add(handler);
+        return toDisposable(() => this.handlers.delete(handler));
+    }
+}
+let NativeURLService = class NativeURLService extends AbstractURLService {
+    constructor(productService) {
+        super();
+        this.productService = productService;
+    }
+    create(options) {
+        let { authority, path, query, fragment } = options ? options : { authority: undefined, path: undefined, query: undefined, fragment: undefined };
+        if (authority && path && path.indexOf('/') !== 0) {
+            path = `/${path}`;
+        }
+        return URI.from({ scheme: this.productService.urlProtocol, authority, path, query, fragment });
+    }
+};
+NativeURLService = __decorate([
+    __param(0, IProductService),
+    __metadata("design:paramtypes", [Object])
+], NativeURLService);
+export { NativeURLService };

@@ -1,1 +1,103 @@
-var v=Object.defineProperty;var _=Object.getOwnPropertyDescriptor;var g=(h,r,i,s)=>{for(var e=s>1?void 0:s?_(r,i):r,n=h.length-1,o;n>=0;n--)(o=h[n])&&(e=(s?o(r,i,e):o(e))||e);return s&&e&&v(r,i,e),e},d=(h,r)=>(i,s)=>r(i,s,h);import{Disposable as c,toDisposable as w}from"../../../../../base/common/lifecycle.js";import"../../../../../base/common/htmlContent.js";import{Widget as y}from"../../../../../base/browser/ui/widget.js";import"./widgets.js";import*as m from"../../../../../base/browser/dom.js";import{IHoverService as f}from"../../../../../platform/hover/browser/hover.js";import{IConfigurationService as u}from"../../../../../platform/configuration/common/configuration.js";import{TerminalSettingId as x}from"../../../../../platform/terminal/common/terminal.js";const a=m.$;let l=class extends c{constructor(i,s,e,n,o,t){super();this._targetOptions=i;this._text=s;this._actions=e;this._linkHandler=n;this._hoverService=o;this._configurationService=t}id="hover";attach(i){if(!this._configurationService.getValue(x.ShowLinkHover))return;const e=new D(i,this._targetOptions),n=this._hoverService.showHover({target:e,content:this._text,actions:this._actions,linkHandler:this._linkHandler,additionalClasses:["xterm-hover"]});n&&this._register(n)}};l=g([d(4,f),d(5,u)],l);class D extends y{constructor(i,s){super();this._options=s;this._domNode=a("div.terminal-hover-targets.xterm-hover");const e=this._options.viewportRange.end.y-this._options.viewportRange.start.y+1,n=(this._options.viewportRange.end.y>this._options.viewportRange.start.y?this._options.terminalDimensions.width-this._options.viewportRange.start.x:this._options.viewportRange.end.x-this._options.viewportRange.start.x+1)*this._options.cellDimensions.width,o=a("div.terminal-hover-target.hoverHighlight");if(o.style.left=`${this._options.viewportRange.start.x*this._options.cellDimensions.width}px`,o.style.bottom=`${(this._options.terminalDimensions.height-this._options.viewportRange.start.y-1)*this._options.cellDimensions.height}px`,o.style.width=`${n}px`,o.style.height=`${this._options.cellDimensions.height}px`,this._targetElements.push(this._domNode.appendChild(o)),e>2){const t=a("div.terminal-hover-target.hoverHighlight");t.style.left="0px",t.style.bottom=`${(this._options.terminalDimensions.height-this._options.viewportRange.start.y-1-(e-2))*this._options.cellDimensions.height}px`,t.style.width=`${this._options.terminalDimensions.width*this._options.cellDimensions.width}px`,t.style.height=`${(e-2)*this._options.cellDimensions.height}px`,this._targetElements.push(this._domNode.appendChild(t))}if(e>1){const t=a("div.terminal-hover-target.hoverHighlight");t.style.left="0px",t.style.bottom=`${(this._options.terminalDimensions.height-this._options.viewportRange.end.y-1)*this._options.cellDimensions.height}px`,t.style.width=`${(this._options.viewportRange.end.x+1)*this._options.cellDimensions.width}px`,t.style.height=`${this._options.cellDimensions.height}px`,this._targetElements.push(this._domNode.appendChild(t))}if(this._options.modifierDownCallback&&this._options.modifierUpCallback){let t=!1;this._register(m.addDisposableListener(i.ownerDocument,"keydown",p=>{p.ctrlKey&&!t&&(t=!0,this._options.modifierDownCallback())})),this._register(m.addDisposableListener(i.ownerDocument,"keyup",p=>{p.ctrlKey||(t=!1,this._options.modifierUpCallback())}))}i.appendChild(this._domNode),this._register(w(()=>this._domNode?.remove()))}_domNode;_targetElements=[];get targetElements(){return this._targetElements}}export{l as TerminalHover};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable, toDisposable } from '../../../../../base/common/lifecycle.js';
+import { Widget } from '../../../../../base/browser/ui/widget.js';
+import * as dom from '../../../../../base/browser/dom.js';
+import { IHoverService } from '../../../../../platform/hover/browser/hover.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+const $ = dom.$;
+let TerminalHover = class TerminalHover extends Disposable {
+    constructor(_targetOptions, _text, _actions, _linkHandler, _hoverService, _configurationService) {
+        super();
+        this._targetOptions = _targetOptions;
+        this._text = _text;
+        this._actions = _actions;
+        this._linkHandler = _linkHandler;
+        this._hoverService = _hoverService;
+        this._configurationService = _configurationService;
+        this.id = 'hover';
+    }
+    attach(container) {
+        const showLinkHover = this._configurationService.getValue("terminal.integrated.showLinkHover");
+        if (!showLinkHover) {
+            return;
+        }
+        const target = new CellHoverTarget(container, this._targetOptions);
+        const hover = this._hoverService.showHover({
+            target,
+            content: this._text,
+            actions: this._actions,
+            linkHandler: this._linkHandler,
+            additionalClasses: ['xterm-hover']
+        });
+        if (hover) {
+            this._register(hover);
+        }
+    }
+};
+TerminalHover = __decorate([
+    __param(4, IHoverService),
+    __param(5, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Function, Object, Object])
+], TerminalHover);
+export { TerminalHover };
+class CellHoverTarget extends Widget {
+    get targetElements() { return this._targetElements; }
+    constructor(container, _options) {
+        super();
+        this._options = _options;
+        this._targetElements = [];
+        this._domNode = $('div.terminal-hover-targets.xterm-hover');
+        const rowCount = this._options.viewportRange.end.y - this._options.viewportRange.start.y + 1;
+        const width = (this._options.viewportRange.end.y > this._options.viewportRange.start.y ? this._options.terminalDimensions.width - this._options.viewportRange.start.x : this._options.viewportRange.end.x - this._options.viewportRange.start.x + 1) * this._options.cellDimensions.width;
+        const topTarget = $('div.terminal-hover-target.hoverHighlight');
+        topTarget.style.left = `${this._options.viewportRange.start.x * this._options.cellDimensions.width}px`;
+        topTarget.style.bottom = `${(this._options.terminalDimensions.height - this._options.viewportRange.start.y - 1) * this._options.cellDimensions.height}px`;
+        topTarget.style.width = `${width}px`;
+        topTarget.style.height = `${this._options.cellDimensions.height}px`;
+        this._targetElements.push(this._domNode.appendChild(topTarget));
+        if (rowCount > 2) {
+            const middleTarget = $('div.terminal-hover-target.hoverHighlight');
+            middleTarget.style.left = `0px`;
+            middleTarget.style.bottom = `${(this._options.terminalDimensions.height - this._options.viewportRange.start.y - 1 - (rowCount - 2)) * this._options.cellDimensions.height}px`;
+            middleTarget.style.width = `${this._options.terminalDimensions.width * this._options.cellDimensions.width}px`;
+            middleTarget.style.height = `${(rowCount - 2) * this._options.cellDimensions.height}px`;
+            this._targetElements.push(this._domNode.appendChild(middleTarget));
+        }
+        if (rowCount > 1) {
+            const bottomTarget = $('div.terminal-hover-target.hoverHighlight');
+            bottomTarget.style.left = `0px`;
+            bottomTarget.style.bottom = `${(this._options.terminalDimensions.height - this._options.viewportRange.end.y - 1) * this._options.cellDimensions.height}px`;
+            bottomTarget.style.width = `${(this._options.viewportRange.end.x + 1) * this._options.cellDimensions.width}px`;
+            bottomTarget.style.height = `${this._options.cellDimensions.height}px`;
+            this._targetElements.push(this._domNode.appendChild(bottomTarget));
+        }
+        if (this._options.modifierDownCallback && this._options.modifierUpCallback) {
+            let down = false;
+            this._register(dom.addDisposableListener(container.ownerDocument, 'keydown', e => {
+                if (e.ctrlKey && !down) {
+                    down = true;
+                    this._options.modifierDownCallback();
+                }
+            }));
+            this._register(dom.addDisposableListener(container.ownerDocument, 'keyup', e => {
+                if (!e.ctrlKey) {
+                    down = false;
+                    this._options.modifierUpCallback();
+                }
+            }));
+        }
+        container.appendChild(this._domNode);
+        this._register(toDisposable(() => this._domNode?.remove()));
+    }
+}

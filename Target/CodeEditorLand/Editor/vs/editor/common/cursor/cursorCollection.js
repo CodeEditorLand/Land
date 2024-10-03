@@ -1,1 +1,180 @@
-import{compareBy as C}from"../../../base/common/arrays.js";import{findLastMax as P,findFirstMin as y}from"../../../base/common/arraysFind.js";import{CursorState as g}from"../cursorCommon.js";import"./cursorContext.js";import{Cursor as b}from"./oneCursor.js";import{Position as v}from"../core/position.js";import{Range as A}from"../core/range.js";import{Selection as w}from"../core/selection.js";class z{context;cursors;lastAddedCursorIndex;constructor(t){this.context=t,this.cursors=[new b(t)],this.lastAddedCursorIndex=0}dispose(){for(const t of this.cursors)t.dispose(this.context)}startTrackingSelections(){for(const t of this.cursors)t.startTrackingSelection(this.context)}stopTrackingSelections(){for(const t of this.cursors)t.stopTrackingSelection(this.context)}updateContext(t){this.context=t}ensureValidState(){for(const t of this.cursors)t.ensureValidState(this.context)}readSelectionFromMarkers(){return this.cursors.map(t=>t.readSelectionFromMarkers(this.context))}getAll(){return this.cursors.map(t=>t.asCursorState())}getViewPositions(){return this.cursors.map(t=>t.viewState.position)}getTopMostViewPosition(){return y(this.cursors,C(t=>t.viewState.position,v.compare)).viewState.position}getBottomMostViewPosition(){return P(this.cursors,C(t=>t.viewState.position,v.compare)).viewState.position}getSelections(){return this.cursors.map(t=>t.modelState.selection)}getViewSelections(){return this.cursors.map(t=>t.viewState.selection)}setSelections(t){this.setStates(g.fromModelSelections(t))}getPrimaryCursor(){return this.cursors[0].asCursorState()}setStates(t){t!==null&&(this.cursors[0].setState(this.context,t[0].modelState,t[0].viewState),this._setSecondaryStates(t.slice(1)))}_setSecondaryStates(t){const o=this.cursors.length-1,e=t.length;if(o<e){const r=e-o;for(let i=0;i<r;i++)this._addSecondaryCursor()}else if(o>e){const r=o-e;for(let i=0;i<r;i++)this._removeSecondaryCursor(this.cursors.length-2)}for(let r=0;r<e;r++)this.cursors[r+1].setState(this.context,t[r].modelState,t[r].viewState)}killSecondaryCursors(){this._setSecondaryStates([])}_addSecondaryCursor(){this.cursors.push(new b(this.context)),this.lastAddedCursorIndex=this.cursors.length-1}getLastAddedCursorIndex(){return this.cursors.length===1||this.lastAddedCursorIndex===0?0:this.lastAddedCursorIndex}_removeSecondaryCursor(t){this.lastAddedCursorIndex>=t+1&&this.lastAddedCursorIndex--,this.cursors[t+1].dispose(this.context),this.cursors.splice(t+1,1)}normalize(){if(this.cursors.length===1)return;const t=this.cursors.slice(0),o=[];for(let e=0,r=t.length;e<r;e++)o.push({index:e,selection:t[e].modelState.selection});o.sort(C(e=>e.selection,A.compareRangesUsingStarts));for(let e=0;e<o.length-1;e++){const r=o[e],i=o[e+1],a=r.selection,d=i.selection;if(!this.context.cursorConfig.multiCursorMergeOverlapping)continue;let S;if(d.isEmpty()||a.isEmpty()?S=d.getStartPosition().isBeforeOrEqual(a.getEndPosition()):S=d.getStartPosition().isBefore(a.getEndPosition()),S){const h=r.index<i.index?e:e+1,p=r.index<i.index?e+1:e,l=o[p].index,x=o[h].index,n=o[p].selection,c=o[h].selection;if(!n.equalsSelection(c)){const s=n.plusRange(c),I=n.selectionStartLineNumber===n.startLineNumber&&n.selectionStartColumn===n.startColumn,L=c.selectionStartLineNumber===c.startLineNumber&&c.selectionStartColumn===c.startColumn;let m;l===this.lastAddedCursorIndex?(m=I,this.lastAddedCursorIndex=x):m=L;let u;m?u=new w(s.startLineNumber,s.startColumn,s.endLineNumber,s.endColumn):u=new w(s.endLineNumber,s.endColumn,s.startLineNumber,s.startColumn),o[h].selection=u;const f=g.fromModelSelection(u);t[x].setState(this.context,f.modelState,f.viewState)}for(const s of o)s.index>l&&s.index--;t.splice(l,1),o.splice(p,1),this._removeSecondaryCursor(l-1),e--}}}}export{z as CursorCollection};
+import { compareBy } from '../../../base/common/arrays.js';
+import { findLastMax, findFirstMin } from '../../../base/common/arraysFind.js';
+import { CursorState } from '../cursorCommon.js';
+import { Cursor } from './oneCursor.js';
+import { Position } from '../core/position.js';
+import { Range } from '../core/range.js';
+import { Selection } from '../core/selection.js';
+export class CursorCollection {
+    constructor(context) {
+        this.context = context;
+        this.cursors = [new Cursor(context)];
+        this.lastAddedCursorIndex = 0;
+    }
+    dispose() {
+        for (const cursor of this.cursors) {
+            cursor.dispose(this.context);
+        }
+    }
+    startTrackingSelections() {
+        for (const cursor of this.cursors) {
+            cursor.startTrackingSelection(this.context);
+        }
+    }
+    stopTrackingSelections() {
+        for (const cursor of this.cursors) {
+            cursor.stopTrackingSelection(this.context);
+        }
+    }
+    updateContext(context) {
+        this.context = context;
+    }
+    ensureValidState() {
+        for (const cursor of this.cursors) {
+            cursor.ensureValidState(this.context);
+        }
+    }
+    readSelectionFromMarkers() {
+        return this.cursors.map(c => c.readSelectionFromMarkers(this.context));
+    }
+    getAll() {
+        return this.cursors.map(c => c.asCursorState());
+    }
+    getViewPositions() {
+        return this.cursors.map(c => c.viewState.position);
+    }
+    getTopMostViewPosition() {
+        return findFirstMin(this.cursors, compareBy(c => c.viewState.position, Position.compare)).viewState.position;
+    }
+    getBottomMostViewPosition() {
+        return findLastMax(this.cursors, compareBy(c => c.viewState.position, Position.compare)).viewState.position;
+    }
+    getSelections() {
+        return this.cursors.map(c => c.modelState.selection);
+    }
+    getViewSelections() {
+        return this.cursors.map(c => c.viewState.selection);
+    }
+    setSelections(selections) {
+        this.setStates(CursorState.fromModelSelections(selections));
+    }
+    getPrimaryCursor() {
+        return this.cursors[0].asCursorState();
+    }
+    setStates(states) {
+        if (states === null) {
+            return;
+        }
+        this.cursors[0].setState(this.context, states[0].modelState, states[0].viewState);
+        this._setSecondaryStates(states.slice(1));
+    }
+    _setSecondaryStates(secondaryStates) {
+        const secondaryCursorsLength = this.cursors.length - 1;
+        const secondaryStatesLength = secondaryStates.length;
+        if (secondaryCursorsLength < secondaryStatesLength) {
+            const createCnt = secondaryStatesLength - secondaryCursorsLength;
+            for (let i = 0; i < createCnt; i++) {
+                this._addSecondaryCursor();
+            }
+        }
+        else if (secondaryCursorsLength > secondaryStatesLength) {
+            const removeCnt = secondaryCursorsLength - secondaryStatesLength;
+            for (let i = 0; i < removeCnt; i++) {
+                this._removeSecondaryCursor(this.cursors.length - 2);
+            }
+        }
+        for (let i = 0; i < secondaryStatesLength; i++) {
+            this.cursors[i + 1].setState(this.context, secondaryStates[i].modelState, secondaryStates[i].viewState);
+        }
+    }
+    killSecondaryCursors() {
+        this._setSecondaryStates([]);
+    }
+    _addSecondaryCursor() {
+        this.cursors.push(new Cursor(this.context));
+        this.lastAddedCursorIndex = this.cursors.length - 1;
+    }
+    getLastAddedCursorIndex() {
+        if (this.cursors.length === 1 || this.lastAddedCursorIndex === 0) {
+            return 0;
+        }
+        return this.lastAddedCursorIndex;
+    }
+    _removeSecondaryCursor(removeIndex) {
+        if (this.lastAddedCursorIndex >= removeIndex + 1) {
+            this.lastAddedCursorIndex--;
+        }
+        this.cursors[removeIndex + 1].dispose(this.context);
+        this.cursors.splice(removeIndex + 1, 1);
+    }
+    normalize() {
+        if (this.cursors.length === 1) {
+            return;
+        }
+        const cursors = this.cursors.slice(0);
+        const sortedCursors = [];
+        for (let i = 0, len = cursors.length; i < len; i++) {
+            sortedCursors.push({
+                index: i,
+                selection: cursors[i].modelState.selection,
+            });
+        }
+        sortedCursors.sort(compareBy(s => s.selection, Range.compareRangesUsingStarts));
+        for (let sortedCursorIndex = 0; sortedCursorIndex < sortedCursors.length - 1; sortedCursorIndex++) {
+            const current = sortedCursors[sortedCursorIndex];
+            const next = sortedCursors[sortedCursorIndex + 1];
+            const currentSelection = current.selection;
+            const nextSelection = next.selection;
+            if (!this.context.cursorConfig.multiCursorMergeOverlapping) {
+                continue;
+            }
+            let shouldMergeCursors;
+            if (nextSelection.isEmpty() || currentSelection.isEmpty()) {
+                shouldMergeCursors = nextSelection.getStartPosition().isBeforeOrEqual(currentSelection.getEndPosition());
+            }
+            else {
+                shouldMergeCursors = nextSelection.getStartPosition().isBefore(currentSelection.getEndPosition());
+            }
+            if (shouldMergeCursors) {
+                const winnerSortedCursorIndex = current.index < next.index ? sortedCursorIndex : sortedCursorIndex + 1;
+                const looserSortedCursorIndex = current.index < next.index ? sortedCursorIndex + 1 : sortedCursorIndex;
+                const looserIndex = sortedCursors[looserSortedCursorIndex].index;
+                const winnerIndex = sortedCursors[winnerSortedCursorIndex].index;
+                const looserSelection = sortedCursors[looserSortedCursorIndex].selection;
+                const winnerSelection = sortedCursors[winnerSortedCursorIndex].selection;
+                if (!looserSelection.equalsSelection(winnerSelection)) {
+                    const resultingRange = looserSelection.plusRange(winnerSelection);
+                    const looserSelectionIsLTR = (looserSelection.selectionStartLineNumber === looserSelection.startLineNumber && looserSelection.selectionStartColumn === looserSelection.startColumn);
+                    const winnerSelectionIsLTR = (winnerSelection.selectionStartLineNumber === winnerSelection.startLineNumber && winnerSelection.selectionStartColumn === winnerSelection.startColumn);
+                    let resultingSelectionIsLTR;
+                    if (looserIndex === this.lastAddedCursorIndex) {
+                        resultingSelectionIsLTR = looserSelectionIsLTR;
+                        this.lastAddedCursorIndex = winnerIndex;
+                    }
+                    else {
+                        resultingSelectionIsLTR = winnerSelectionIsLTR;
+                    }
+                    let resultingSelection;
+                    if (resultingSelectionIsLTR) {
+                        resultingSelection = new Selection(resultingRange.startLineNumber, resultingRange.startColumn, resultingRange.endLineNumber, resultingRange.endColumn);
+                    }
+                    else {
+                        resultingSelection = new Selection(resultingRange.endLineNumber, resultingRange.endColumn, resultingRange.startLineNumber, resultingRange.startColumn);
+                    }
+                    sortedCursors[winnerSortedCursorIndex].selection = resultingSelection;
+                    const resultingState = CursorState.fromModelSelection(resultingSelection);
+                    cursors[winnerIndex].setState(this.context, resultingState.modelState, resultingState.viewState);
+                }
+                for (const sortedCursor of sortedCursors) {
+                    if (sortedCursor.index > looserIndex) {
+                        sortedCursor.index--;
+                    }
+                }
+                cursors.splice(looserIndex, 1);
+                sortedCursors.splice(looserSortedCursorIndex, 1);
+                this._removeSecondaryCursor(looserIndex - 1);
+                sortedCursorIndex--;
+            }
+        }
+    }
+}

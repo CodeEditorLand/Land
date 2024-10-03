@@ -1,1 +1,32 @@
-import"../../../base/common/cancellation.js";import{URI as a}from"../../../base/common/uri.js";import{MainContext as p}from"./extHost.protocol.js";import{asPromise as f}from"../../../base/common/async.js";import{DocumentSelector as m}from"./extHostTypeConverters.js";import"../../../base/common/uriIpc.js";class n{constructor(e,i){this.uriTransformer=i;this.proxy=e.getProxy(p.MainThreadQuickDiff)}static handlePool=0;proxy;providers=new Map;$provideOriginalResource(e,i,o){const t=a.revive(i),r=this.providers.get(e);return r?f(()=>r.provideOriginalResource(t,o)).then(s=>s||null):Promise.resolve(null)}registerQuickDiffProvider(e,i,o,t){const r=n.handlePool++;return this.providers.set(r,i),this.proxy.$registerQuickDiffProvider(r,m.from(e,this.uriTransformer),o,t),{dispose:()=>{this.proxy.$unregisterQuickDiffProvider(r),this.providers.delete(r)}}}}export{n as ExtHostQuickDiff};
+import { URI } from '../../../base/common/uri.js';
+import { MainContext } from './extHost.protocol.js';
+import { asPromise } from '../../../base/common/async.js';
+import { DocumentSelector } from './extHostTypeConverters.js';
+export class ExtHostQuickDiff {
+    static { this.handlePool = 0; }
+    constructor(mainContext, uriTransformer) {
+        this.uriTransformer = uriTransformer;
+        this.providers = new Map();
+        this.proxy = mainContext.getProxy(MainContext.MainThreadQuickDiff);
+    }
+    $provideOriginalResource(handle, uriComponents, token) {
+        const uri = URI.revive(uriComponents);
+        const provider = this.providers.get(handle);
+        if (!provider) {
+            return Promise.resolve(null);
+        }
+        return asPromise(() => provider.provideOriginalResource(uri, token))
+            .then(r => r || null);
+    }
+    registerQuickDiffProvider(selector, quickDiffProvider, label, rootUri) {
+        const handle = ExtHostQuickDiff.handlePool++;
+        this.providers.set(handle, quickDiffProvider);
+        this.proxy.$registerQuickDiffProvider(handle, DocumentSelector.from(selector, this.uriTransformer), label, rootUri);
+        return {
+            dispose: () => {
+                this.proxy.$unregisterQuickDiffProvider(handle);
+                this.providers.delete(handle);
+            }
+        };
+    }
+}

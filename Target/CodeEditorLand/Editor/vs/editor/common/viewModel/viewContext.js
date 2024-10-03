@@ -1,1 +1,15 @@
-import"../config/editorConfiguration.js";import"../viewEventHandler.js";import"../viewModel.js";import"../../../platform/theme/common/themeService.js";import{EditorTheme as t}from"../editorTheme.js";class E{configuration;viewModel;viewLayout;theme;constructor(e,o,i){this.configuration=e,this.theme=new t(o),this.viewModel=i,this.viewLayout=i.viewLayout}addEventHandler(e){this.viewModel.addViewEventHandler(e)}removeEventHandler(e){this.viewModel.removeViewEventHandler(e)}}export{E as ViewContext};
+import { EditorTheme } from '../editorTheme.js';
+export class ViewContext {
+    constructor(configuration, theme, model) {
+        this.configuration = configuration;
+        this.theme = new EditorTheme(theme);
+        this.viewModel = model;
+        this.viewLayout = model.viewLayout;
+    }
+    addEventHandler(eventHandler) {
+        this.viewModel.addViewEventHandler(eventHandler);
+    }
+    removeEventHandler(eventHandler) {
+        this.viewModel.removeViewEventHandler(eventHandler);
+    }
+}

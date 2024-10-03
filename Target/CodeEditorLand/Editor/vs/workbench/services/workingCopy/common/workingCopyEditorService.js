@@ -1,1 +1,54 @@
-var l=Object.defineProperty;var I=Object.getOwnPropertyDescriptor;var s=(n,o,r,e)=>{for(var i=e>1?void 0:e?I(o,r):o,d=n.length-1,p;d>=0;d--)(p=n[d])&&(i=(e?p(o,r,i):p(i))||i);return e&&i&&l(o,r,i),i},a=(n,o)=>(r,e)=>o(r,e,n);import{Emitter as f}from"../../../../base/common/event.js";import{createDecorator as g}from"../../../../platform/instantiation/common/instantiation.js";import{InstantiationType as y,registerSingleton as E}from"../../../../platform/instantiation/common/extensions.js";import{EditorsOrder as C}from"../../../common/editor.js";import"../../../common/editor/editorInput.js";import"./workingCopy.js";import{Disposable as m,toDisposable as c}from"../../../../base/common/lifecycle.js";import{IEditorService as k}from"../../editor/common/editorService.js";const u=g("workingCopyEditorService");let t=class extends m{constructor(r){super();this.editorService=r}_onDidRegisterHandler=this._register(new f);onDidRegisterHandler=this._onDidRegisterHandler.event;handlers=new Set;registerHandler(r){return this.handlers.add(r),this._onDidRegisterHandler.fire(r),c(()=>this.handlers.delete(r))}findEditor(r){for(const e of this.editorService.getEditors(C.MOST_RECENTLY_ACTIVE))if(this.isOpen(r,e.editor))return e}isOpen(r,e){for(const i of this.handlers)if(i.isOpen(r,e))return!0;return!1}};t=s([a(0,k)],t),E(u,t,y.Delayed);export{u as IWorkingCopyEditorService,t as WorkingCopyEditorService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter } from '../../../../base/common/event.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { Disposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { IEditorService } from '../../editor/common/editorService.js';
+export const IWorkingCopyEditorService = createDecorator('workingCopyEditorService');
+let WorkingCopyEditorService = class WorkingCopyEditorService extends Disposable {
+    constructor(editorService) {
+        super();
+        this.editorService = editorService;
+        this._onDidRegisterHandler = this._register(new Emitter());
+        this.onDidRegisterHandler = this._onDidRegisterHandler.event;
+        this.handlers = new Set();
+    }
+    registerHandler(handler) {
+        this.handlers.add(handler);
+        this._onDidRegisterHandler.fire(handler);
+        return toDisposable(() => this.handlers.delete(handler));
+    }
+    findEditor(workingCopy) {
+        for (const editorIdentifier of this.editorService.getEditors(0)) {
+            if (this.isOpen(workingCopy, editorIdentifier.editor)) {
+                return editorIdentifier;
+            }
+        }
+        return undefined;
+    }
+    isOpen(workingCopy, editor) {
+        for (const handler of this.handlers) {
+            if (handler.isOpen(workingCopy, editor)) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
+WorkingCopyEditorService = __decorate([
+    __param(0, IEditorService),
+    __metadata("design:paramtypes", [Object])
+], WorkingCopyEditorService);
+export { WorkingCopyEditorService };
+registerSingleton(IWorkingCopyEditorService, WorkingCopyEditorService, 1);

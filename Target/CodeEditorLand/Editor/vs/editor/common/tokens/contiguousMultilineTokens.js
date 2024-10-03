@@ -1,1 +1,151 @@
-import*as b from"../../../base/common/arrays.js";import{readUInt32BE as s,writeUInt32BE as u}from"../../../base/common/buffer.js";import{Position as k}from"../core/position.js";import"../core/range.js";import{countEOL as c}from"../core/eolCounter.js";import{ContiguousTokensEditing as i}from"./contiguousTokensEditing.js";import{LineRange as p}from"../core/lineRange.js";class m{static deserialize(e,t,n){const r=new Uint32Array(e.buffer),a=s(e,t);t+=4;const _=s(e,t);t+=4;const o=[];for(let h=0;h<_;h++){const l=s(e,t);t+=4,o.push(r.subarray(t/4,t/4+l/4)),t+=l}return n.push(new m(a,o)),t}_startLineNumber;_tokens;get startLineNumber(){return this._startLineNumber}get endLineNumber(){return this._startLineNumber+this._tokens.length-1}constructor(e,t){this._startLineNumber=e,this._tokens=t}getLineRange(){return new p(this._startLineNumber,this._startLineNumber+this._tokens.length)}getLineTokens(e){return this._tokens[e-this._startLineNumber]}appendLineTokens(e){this._tokens.push(e)}serializeSize(){let e=0;e+=4,e+=4;for(let t=0;t<this._tokens.length;t++){const n=this._tokens[t];if(!(n instanceof Uint32Array))throw new Error("Not supported!");e+=4,e+=n.byteLength}return e}serialize(e,t){u(e,this._startLineNumber,t),t+=4,u(e,this._tokens.length,t),t+=4;for(let n=0;n<this._tokens.length;n++){const r=this._tokens[n];if(!(r instanceof Uint32Array))throw new Error("Not supported!");u(e,r.byteLength,t),t+=4,e.set(new Uint8Array(r.buffer),t),t+=r.byteLength}return t}applyEdit(e,t){const[n,r]=c(t);this._acceptDeleteRange(e),this._acceptInsertText(new k(e.startLineNumber,e.startColumn),n,r)}_acceptDeleteRange(e){if(e.startLineNumber===e.endLineNumber&&e.startColumn===e.endColumn)return;const t=e.startLineNumber-this._startLineNumber,n=e.endLineNumber-this._startLineNumber;if(n<0){const r=n-t;this._startLineNumber-=r;return}if(!(t>=this._tokens.length)){if(t<0&&n>=this._tokens.length){this._startLineNumber=0,this._tokens=[];return}if(t===n){this._tokens[t]=i.delete(this._tokens[t],e.startColumn-1,e.endColumn-1);return}if(t>=0)if(this._tokens[t]=i.deleteEnding(this._tokens[t],e.startColumn-1),n<this._tokens.length){const r=i.deleteBeginning(this._tokens[n],e.endColumn-1);this._tokens[t]=i.append(this._tokens[t],r),this._tokens.splice(t+1,n-t)}else this._tokens[t]=i.append(this._tokens[t],null),this._tokens=this._tokens.slice(0,t+1);else{const r=-t;this._startLineNumber-=r,this._tokens[n]=i.deleteBeginning(this._tokens[n],e.endColumn-1),this._tokens=this._tokens.slice(n)}}}_acceptInsertText(e,t,n){if(t===0&&n===0)return;const r=e.lineNumber-this._startLineNumber;if(r<0){this._startLineNumber+=t;return}if(!(r>=this._tokens.length)){if(t===0){this._tokens[r]=i.insert(this._tokens[r],e.column-1,n);return}this._tokens[r]=i.deleteEnding(this._tokens[r],e.column-1),this._tokens[r]=i.insert(this._tokens[r],e.column-1,n),this._insertLines(e.lineNumber,t)}}_insertLines(e,t){if(t===0)return;const n=[];for(let r=0;r<t;r++)n[r]=null;this._tokens=b.arrayInsert(this._tokens,e,n)}}export{m as ContiguousMultilineTokens};
+import * as arrays from '../../../base/common/arrays.js';
+import { readUInt32BE, writeUInt32BE } from '../../../base/common/buffer.js';
+import { Position } from '../core/position.js';
+import { countEOL } from '../core/eolCounter.js';
+import { ContiguousTokensEditing } from './contiguousTokensEditing.js';
+import { LineRange } from '../core/lineRange.js';
+export class ContiguousMultilineTokens {
+    static deserialize(buff, offset, result) {
+        const view32 = new Uint32Array(buff.buffer);
+        const startLineNumber = readUInt32BE(buff, offset);
+        offset += 4;
+        const count = readUInt32BE(buff, offset);
+        offset += 4;
+        const tokens = [];
+        for (let i = 0; i < count; i++) {
+            const byteCount = readUInt32BE(buff, offset);
+            offset += 4;
+            tokens.push(view32.subarray(offset / 4, offset / 4 + byteCount / 4));
+            offset += byteCount;
+        }
+        result.push(new ContiguousMultilineTokens(startLineNumber, tokens));
+        return offset;
+    }
+    get startLineNumber() {
+        return this._startLineNumber;
+    }
+    get endLineNumber() {
+        return this._startLineNumber + this._tokens.length - 1;
+    }
+    constructor(startLineNumber, tokens) {
+        this._startLineNumber = startLineNumber;
+        this._tokens = tokens;
+    }
+    getLineRange() {
+        return new LineRange(this._startLineNumber, this._startLineNumber + this._tokens.length);
+    }
+    getLineTokens(lineNumber) {
+        return this._tokens[lineNumber - this._startLineNumber];
+    }
+    appendLineTokens(lineTokens) {
+        this._tokens.push(lineTokens);
+    }
+    serializeSize() {
+        let result = 0;
+        result += 4;
+        result += 4;
+        for (let i = 0; i < this._tokens.length; i++) {
+            const lineTokens = this._tokens[i];
+            if (!(lineTokens instanceof Uint32Array)) {
+                throw new Error(`Not supported!`);
+            }
+            result += 4;
+            result += lineTokens.byteLength;
+        }
+        return result;
+    }
+    serialize(destination, offset) {
+        writeUInt32BE(destination, this._startLineNumber, offset);
+        offset += 4;
+        writeUInt32BE(destination, this._tokens.length, offset);
+        offset += 4;
+        for (let i = 0; i < this._tokens.length; i++) {
+            const lineTokens = this._tokens[i];
+            if (!(lineTokens instanceof Uint32Array)) {
+                throw new Error(`Not supported!`);
+            }
+            writeUInt32BE(destination, lineTokens.byteLength, offset);
+            offset += 4;
+            destination.set(new Uint8Array(lineTokens.buffer), offset);
+            offset += lineTokens.byteLength;
+        }
+        return offset;
+    }
+    applyEdit(range, text) {
+        const [eolCount, firstLineLength] = countEOL(text);
+        this._acceptDeleteRange(range);
+        this._acceptInsertText(new Position(range.startLineNumber, range.startColumn), eolCount, firstLineLength);
+    }
+    _acceptDeleteRange(range) {
+        if (range.startLineNumber === range.endLineNumber && range.startColumn === range.endColumn) {
+            return;
+        }
+        const firstLineIndex = range.startLineNumber - this._startLineNumber;
+        const lastLineIndex = range.endLineNumber - this._startLineNumber;
+        if (lastLineIndex < 0) {
+            const deletedLinesCount = lastLineIndex - firstLineIndex;
+            this._startLineNumber -= deletedLinesCount;
+            return;
+        }
+        if (firstLineIndex >= this._tokens.length) {
+            return;
+        }
+        if (firstLineIndex < 0 && lastLineIndex >= this._tokens.length) {
+            this._startLineNumber = 0;
+            this._tokens = [];
+            return;
+        }
+        if (firstLineIndex === lastLineIndex) {
+            this._tokens[firstLineIndex] = ContiguousTokensEditing.delete(this._tokens[firstLineIndex], range.startColumn - 1, range.endColumn - 1);
+            return;
+        }
+        if (firstLineIndex >= 0) {
+            this._tokens[firstLineIndex] = ContiguousTokensEditing.deleteEnding(this._tokens[firstLineIndex], range.startColumn - 1);
+            if (lastLineIndex < this._tokens.length) {
+                const lastLineTokens = ContiguousTokensEditing.deleteBeginning(this._tokens[lastLineIndex], range.endColumn - 1);
+                this._tokens[firstLineIndex] = ContiguousTokensEditing.append(this._tokens[firstLineIndex], lastLineTokens);
+                this._tokens.splice(firstLineIndex + 1, lastLineIndex - firstLineIndex);
+            }
+            else {
+                this._tokens[firstLineIndex] = ContiguousTokensEditing.append(this._tokens[firstLineIndex], null);
+                this._tokens = this._tokens.slice(0, firstLineIndex + 1);
+            }
+        }
+        else {
+            const deletedBefore = -firstLineIndex;
+            this._startLineNumber -= deletedBefore;
+            this._tokens[lastLineIndex] = ContiguousTokensEditing.deleteBeginning(this._tokens[lastLineIndex], range.endColumn - 1);
+            this._tokens = this._tokens.slice(lastLineIndex);
+        }
+    }
+    _acceptInsertText(position, eolCount, firstLineLength) {
+        if (eolCount === 0 && firstLineLength === 0) {
+            return;
+        }
+        const lineIndex = position.lineNumber - this._startLineNumber;
+        if (lineIndex < 0) {
+            this._startLineNumber += eolCount;
+            return;
+        }
+        if (lineIndex >= this._tokens.length) {
+            return;
+        }
+        if (eolCount === 0) {
+            this._tokens[lineIndex] = ContiguousTokensEditing.insert(this._tokens[lineIndex], position.column - 1, firstLineLength);
+            return;
+        }
+        this._tokens[lineIndex] = ContiguousTokensEditing.deleteEnding(this._tokens[lineIndex], position.column - 1);
+        this._tokens[lineIndex] = ContiguousTokensEditing.insert(this._tokens[lineIndex], position.column - 1, firstLineLength);
+        this._insertLines(position.lineNumber, eolCount);
+    }
+    _insertLines(insertIndex, insertCount) {
+        if (insertCount === 0) {
+            return;
+        }
+        const lineTokens = [];
+        for (let i = 0; i < insertCount; i++) {
+            lineTokens[i] = null;
+        }
+        this._tokens = arrays.arrayInsert(this._tokens, insertIndex, lineTokens);
+    }
+}

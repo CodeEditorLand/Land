@@ -1,1 +1,8 @@
-import"../../../common/model.js";import"../../../../platform/configuration/common/configuration.js";import"../../../../platform/theme/common/themeService.js";const r="editor.semanticHighlighting";function m(e,t,o){const i=o.getValue(r,{overrideIdentifier:e.getLanguageId(),resource:e.uri})?.enabled;return typeof i=="boolean"?i:t.getColorTheme().semanticHighlighting}export{r as SEMANTIC_HIGHLIGHTING_SETTING_ID,m as isSemanticColoringEnabled};
+export const SEMANTIC_HIGHLIGHTING_SETTING_ID = 'editor.semanticHighlighting';
+export function isSemanticColoringEnabled(model, themeService, configurationService) {
+    const setting = configurationService.getValue(SEMANTIC_HIGHLIGHTING_SETTING_ID, { overrideIdentifier: model.getLanguageId(), resource: model.uri })?.enabled;
+    if (typeof setting === 'boolean') {
+        return setting;
+    }
+    return themeService.getColorTheme().semanticHighlighting;
+}

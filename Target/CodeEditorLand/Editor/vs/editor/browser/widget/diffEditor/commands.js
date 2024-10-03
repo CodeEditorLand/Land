@@ -1,1 +1,236 @@
-import{getActiveElement as I}from"../../../../base/browser/dom.js";import{Codicon as f}from"../../../../base/common/codicons.js";import{KeyCode as p,KeyMod as D}from"../../../../base/common/keyCodes.js";import"../../editorBrowser.js";import{EditorAction2 as u}from"../../editorExtensions.js";import{ICodeEditorService as v}from"../../services/codeEditorService.js";import{DiffEditorWidget as l}from"./diffEditorWidget.js";import{EditorContextKeys as b}from"../../../common/editorContextKeys.js";import{localize2 as n}from"../../../../nls.js";import"../../../../platform/action/common/action.js";import{Action2 as s,MenuId as A}from"../../../../platform/actions/common/actions.js";import{IConfigurationService as E}from"../../../../platform/configuration/common/configuration.js";import{ContextKeyExpr as d}from"../../../../platform/contextkey/common/contextkey.js";import{KeybindingWeight as S}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import"./registrations.contribution.js";import"./features/gutterFeature.js";import"../../../../base/common/uri.js";class $ extends s{constructor(){super({id:"diffEditor.toggleCollapseUnchangedRegions",title:n("toggleCollapseUnchangedRegions","Toggle Collapse Unchanged Regions"),icon:f.map,toggled:d.has("config.diffEditor.hideUnchangedRegions.enabled"),precondition:d.has("isInDiffEditor"),menu:{when:d.has("isInDiffEditor"),id:A.EditorTitle,order:22,group:"navigation"}})}run(e,...o){const t=e.get(E),i=!t.getValue("diffEditor.hideUnchangedRegions.enabled");t.updateValue("diffEditor.hideUnchangedRegions.enabled",i)}}class _ extends s{constructor(){super({id:"diffEditor.toggleShowMovedCodeBlocks",title:n("toggleShowMovedCodeBlocks","Toggle Show Moved Code Blocks"),precondition:d.has("isInDiffEditor")})}run(e,...o){const t=e.get(E),i=!t.getValue("diffEditor.experimental.showMoves");t.updateValue("diffEditor.experimental.showMoves",i)}}class ee extends s{constructor(){super({id:"diffEditor.toggleUseInlineViewWhenSpaceIsLimited",title:n("toggleUseInlineViewWhenSpaceIsLimited","Toggle Use Inline View When Space Is Limited"),precondition:d.has("isInDiffEditor")})}run(e,...o){const t=e.get(E),i=!t.getValue("diffEditor.useInlineViewWhenSpaceIsLimited");t.updateValue("diffEditor.useInlineViewWhenSpaceIsLimited",i)}}const a=n("diffEditor","Diff Editor");class ie extends u{constructor(){super({id:"diffEditor.switchSide",title:n("switchSide","Switch Side"),icon:f.arrowSwap,precondition:d.has("isInDiffEditor"),f1:!0,category:a})}runEditorCommand(e,o,t){const i=c(e);if(i instanceof l){if(t&&t.dryRun)return{destinationSelection:i.mapToOtherSide().destinationSelection};i.switchSide()}}}class oe extends u{constructor(){super({id:"diffEditor.exitCompareMove",title:n("exitCompareMove","Exit Compare Move"),icon:f.close,precondition:b.comparingMovedCode,f1:!1,category:a,keybinding:{weight:1e4,primary:p.Escape}})}runEditorCommand(e,o,...t){const i=c(e);i instanceof l&&i.exitCompareMove()}}class te extends u{constructor(){super({id:"diffEditor.collapseAllUnchangedRegions",title:n("collapseAllUnchangedRegions","Collapse All Unchanged Regions"),icon:f.fold,precondition:d.has("isInDiffEditor"),f1:!0,category:a})}runEditorCommand(e,o,...t){const i=c(e);i instanceof l&&i.collapseAllUnchangedRegions()}}class re extends u{constructor(){super({id:"diffEditor.showAllUnchangedRegions",title:n("showAllUnchangedRegions","Show All Unchanged Regions"),icon:f.unfold,precondition:d.has("isInDiffEditor"),f1:!0,category:a})}runEditorCommand(e,o,...t){const i=c(e);i instanceof l&&i.showAllUnchangedRegions()}}class ne extends s{constructor(){super({id:"diffEditor.revert",title:n("revert","Revert"),f1:!1,category:a})}run(e,o){const t=U(e,o.originalUri,o.modifiedUri);t instanceof l&&t.revertRangeMappings(o.mapping.innerChanges??[])}}const w=n("accessibleDiffViewer","Accessible Diff Viewer");class C extends s{static id="editor.action.accessibleDiffViewer.next";constructor(){super({id:C.id,title:n("editor.action.accessibleDiffViewer.next","Go to Next Difference"),category:w,precondition:d.has("isInDiffEditor"),keybinding:{primary:p.F7,weight:S.EditorContrib},f1:!0})}run(e){c(e)?.accessibleDiffViewerNext()}}class x extends s{static id="editor.action.accessibleDiffViewer.prev";constructor(){super({id:x.id,title:n("editor.action.accessibleDiffViewer.prev","Go to Previous Difference"),category:w,precondition:d.has("isInDiffEditor"),keybinding:{primary:D.Shift|p.F7,weight:S.EditorContrib},f1:!0})}run(e){c(e)?.accessibleDiffViewerPrev()}}function U(r,e,o){return r.get(v).listDiffEditors().find(g=>{const m=g.getModifiedEditor(),h=g.getOriginalEditor();return m&&m.getModel()?.uri.toString()===o.toString()&&h&&h.getModel()?.uri.toString()===e.toString()})||null}function c(r){const o=r.get(v).listDiffEditors(),t=I();if(t)for(const i of o){const g=i.getContainerDomNode();if(R(g,t))return i}return null}function R(r,e){let o=e;for(;o;){if(o===r)return!0;o=o.parentElement}return!1}export{C as AccessibleDiffViewerNext,x as AccessibleDiffViewerPrev,te as CollapseAllUnchangedRegions,oe as ExitCompareMove,ne as RevertHunkOrSelection,re as ShowAllUnchangedRegions,ie as SwitchSide,$ as ToggleCollapseUnchangedRegions,_ as ToggleShowMovedCodeBlocks,ee as ToggleUseInlineViewWhenSpaceIsLimited,U as findDiffEditor,c as findFocusedDiffEditor};
+import { getActiveElement } from '../../../../base/browser/dom.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { EditorAction2 } from '../../editorExtensions.js';
+import { ICodeEditorService } from '../../services/codeEditorService.js';
+import { DiffEditorWidget } from './diffEditorWidget.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import { localize2 } from '../../../../nls.js';
+import { Action2, MenuId } from '../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import './registrations.contribution.js';
+export class ToggleCollapseUnchangedRegions extends Action2 {
+    constructor() {
+        super({
+            id: 'diffEditor.toggleCollapseUnchangedRegions',
+            title: localize2('toggleCollapseUnchangedRegions', 'Toggle Collapse Unchanged Regions'),
+            icon: Codicon.map,
+            toggled: ContextKeyExpr.has('config.diffEditor.hideUnchangedRegions.enabled'),
+            precondition: ContextKeyExpr.has('isInDiffEditor'),
+            menu: {
+                when: ContextKeyExpr.has('isInDiffEditor'),
+                id: MenuId.EditorTitle,
+                order: 22,
+                group: 'navigation',
+            },
+        });
+    }
+    run(accessor, ...args) {
+        const configurationService = accessor.get(IConfigurationService);
+        const newValue = !configurationService.getValue('diffEditor.hideUnchangedRegions.enabled');
+        configurationService.updateValue('diffEditor.hideUnchangedRegions.enabled', newValue);
+    }
+}
+export class ToggleShowMovedCodeBlocks extends Action2 {
+    constructor() {
+        super({
+            id: 'diffEditor.toggleShowMovedCodeBlocks',
+            title: localize2('toggleShowMovedCodeBlocks', 'Toggle Show Moved Code Blocks'),
+            precondition: ContextKeyExpr.has('isInDiffEditor'),
+        });
+    }
+    run(accessor, ...args) {
+        const configurationService = accessor.get(IConfigurationService);
+        const newValue = !configurationService.getValue('diffEditor.experimental.showMoves');
+        configurationService.updateValue('diffEditor.experimental.showMoves', newValue);
+    }
+}
+export class ToggleUseInlineViewWhenSpaceIsLimited extends Action2 {
+    constructor() {
+        super({
+            id: 'diffEditor.toggleUseInlineViewWhenSpaceIsLimited',
+            title: localize2('toggleUseInlineViewWhenSpaceIsLimited', 'Toggle Use Inline View When Space Is Limited'),
+            precondition: ContextKeyExpr.has('isInDiffEditor'),
+        });
+    }
+    run(accessor, ...args) {
+        const configurationService = accessor.get(IConfigurationService);
+        const newValue = !configurationService.getValue('diffEditor.useInlineViewWhenSpaceIsLimited');
+        configurationService.updateValue('diffEditor.useInlineViewWhenSpaceIsLimited', newValue);
+    }
+}
+const diffEditorCategory = localize2('diffEditor', "Diff Editor");
+export class SwitchSide extends EditorAction2 {
+    constructor() {
+        super({
+            id: 'diffEditor.switchSide',
+            title: localize2('switchSide', 'Switch Side'),
+            icon: Codicon.arrowSwap,
+            precondition: ContextKeyExpr.has('isInDiffEditor'),
+            f1: true,
+            category: diffEditorCategory,
+        });
+    }
+    runEditorCommand(accessor, editor, arg) {
+        const diffEditor = findFocusedDiffEditor(accessor);
+        if (diffEditor instanceof DiffEditorWidget) {
+            if (arg && arg.dryRun) {
+                return { destinationSelection: diffEditor.mapToOtherSide().destinationSelection };
+            }
+            else {
+                diffEditor.switchSide();
+            }
+        }
+        return undefined;
+    }
+}
+export class ExitCompareMove extends EditorAction2 {
+    constructor() {
+        super({
+            id: 'diffEditor.exitCompareMove',
+            title: localize2('exitCompareMove', 'Exit Compare Move'),
+            icon: Codicon.close,
+            precondition: EditorContextKeys.comparingMovedCode,
+            f1: false,
+            category: diffEditorCategory,
+            keybinding: {
+                weight: 10000,
+                primary: 9,
+            }
+        });
+    }
+    runEditorCommand(accessor, editor, ...args) {
+        const diffEditor = findFocusedDiffEditor(accessor);
+        if (diffEditor instanceof DiffEditorWidget) {
+            diffEditor.exitCompareMove();
+        }
+    }
+}
+export class CollapseAllUnchangedRegions extends EditorAction2 {
+    constructor() {
+        super({
+            id: 'diffEditor.collapseAllUnchangedRegions',
+            title: localize2('collapseAllUnchangedRegions', 'Collapse All Unchanged Regions'),
+            icon: Codicon.fold,
+            precondition: ContextKeyExpr.has('isInDiffEditor'),
+            f1: true,
+            category: diffEditorCategory,
+        });
+    }
+    runEditorCommand(accessor, editor, ...args) {
+        const diffEditor = findFocusedDiffEditor(accessor);
+        if (diffEditor instanceof DiffEditorWidget) {
+            diffEditor.collapseAllUnchangedRegions();
+        }
+    }
+}
+export class ShowAllUnchangedRegions extends EditorAction2 {
+    constructor() {
+        super({
+            id: 'diffEditor.showAllUnchangedRegions',
+            title: localize2('showAllUnchangedRegions', 'Show All Unchanged Regions'),
+            icon: Codicon.unfold,
+            precondition: ContextKeyExpr.has('isInDiffEditor'),
+            f1: true,
+            category: diffEditorCategory,
+        });
+    }
+    runEditorCommand(accessor, editor, ...args) {
+        const diffEditor = findFocusedDiffEditor(accessor);
+        if (diffEditor instanceof DiffEditorWidget) {
+            diffEditor.showAllUnchangedRegions();
+        }
+    }
+}
+export class RevertHunkOrSelection extends Action2 {
+    constructor() {
+        super({
+            id: 'diffEditor.revert',
+            title: localize2('revert', 'Revert'),
+            f1: false,
+            category: diffEditorCategory,
+        });
+    }
+    run(accessor, arg) {
+        const diffEditor = findDiffEditor(accessor, arg.originalUri, arg.modifiedUri);
+        if (diffEditor instanceof DiffEditorWidget) {
+            diffEditor.revertRangeMappings(arg.mapping.innerChanges ?? []);
+        }
+        return undefined;
+    }
+}
+const accessibleDiffViewerCategory = localize2('accessibleDiffViewer', "Accessible Diff Viewer");
+export class AccessibleDiffViewerNext extends Action2 {
+    static { this.id = 'editor.action.accessibleDiffViewer.next'; }
+    constructor() {
+        super({
+            id: AccessibleDiffViewerNext.id,
+            title: localize2('editor.action.accessibleDiffViewer.next', 'Go to Next Difference'),
+            category: accessibleDiffViewerCategory,
+            precondition: ContextKeyExpr.has('isInDiffEditor'),
+            keybinding: {
+                primary: 65,
+                weight: 100
+            },
+            f1: true,
+        });
+    }
+    run(accessor) {
+        const diffEditor = findFocusedDiffEditor(accessor);
+        diffEditor?.accessibleDiffViewerNext();
+    }
+}
+export class AccessibleDiffViewerPrev extends Action2 {
+    static { this.id = 'editor.action.accessibleDiffViewer.prev'; }
+    constructor() {
+        super({
+            id: AccessibleDiffViewerPrev.id,
+            title: localize2('editor.action.accessibleDiffViewer.prev', 'Go to Previous Difference'),
+            category: accessibleDiffViewerCategory,
+            precondition: ContextKeyExpr.has('isInDiffEditor'),
+            keybinding: {
+                primary: 1024 | 65,
+                weight: 100
+            },
+            f1: true,
+        });
+    }
+    run(accessor) {
+        const diffEditor = findFocusedDiffEditor(accessor);
+        diffEditor?.accessibleDiffViewerPrev();
+    }
+}
+export function findDiffEditor(accessor, originalUri, modifiedUri) {
+    const codeEditorService = accessor.get(ICodeEditorService);
+    const diffEditors = codeEditorService.listDiffEditors();
+    return diffEditors.find(diffEditor => {
+        const modified = diffEditor.getModifiedEditor();
+        const original = diffEditor.getOriginalEditor();
+        return modified && modified.getModel()?.uri.toString() === modifiedUri.toString()
+            && original && original.getModel()?.uri.toString() === originalUri.toString();
+    }) || null;
+}
+export function findFocusedDiffEditor(accessor) {
+    const codeEditorService = accessor.get(ICodeEditorService);
+    const diffEditors = codeEditorService.listDiffEditors();
+    const activeElement = getActiveElement();
+    if (activeElement) {
+        for (const d of diffEditors) {
+            const container = d.getContainerDomNode();
+            if (isElementOrParentOf(container, activeElement)) {
+                return d;
+            }
+        }
+    }
+    return null;
+}
+function isElementOrParentOf(elementOrParent, element) {
+    let e = element;
+    while (e) {
+        if (e === elementOrParent) {
+            return true;
+        }
+        e = e.parentElement;
+    }
+    return false;
+}

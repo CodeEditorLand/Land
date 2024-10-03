@@ -1,1 +1,7 @@
-import{localize as a}from"../../../../nls.js";const t={showLanguagePackExtensions:a("showLanguagePackExtensions","Search language packs in the Marketplace to change the display language to {0}."),searchMarketplace:a("searchMarketplace","Search Marketplace"),installAndRestartMessage:a("installAndRestartMessage","Install language pack to change the display language to {0}."),installAndRestart:a("installAndRestart","Install and Restart")};export{t as minimumTranslatedStrings};
+import { localize } from '../../../../nls.js';
+export const minimumTranslatedStrings = {
+    showLanguagePackExtensions: localize('showLanguagePackExtensions', "Search language packs in the Marketplace to change the display language to {0}."),
+    searchMarketplace: localize('searchMarketplace', "Search Marketplace"),
+    installAndRestartMessage: localize('installAndRestartMessage', "Install language pack to change the display language to {0}."),
+    installAndRestart: localize('installAndRestart', "Install and Restart")
+};

@@ -1,1 +1,82 @@
-import{Codicon as u}from"./codicons.js";var m;(d=>{function c(t){return t&&typeof t=="object"&&typeof t.id=="string"}d.isThemeColor=c})(m||={});function S(c){return{id:c}}var x;(r=>{r.iconNameSegment="[A-Za-z0-9]+",r.iconNameExpression="[A-Za-z0-9-]+",r.iconModifierExpression="~[A-Za-z]+",r.iconNameCharacter="[A-Za-z0-9~-]";const p=new RegExp(`^(${r.iconNameExpression})(${r.iconModifierExpression})?$`);function s(e){const n=p.exec(e.id);if(!n)return s(u.error);const[,o,i]=n,f=["codicon","codicon-"+o];return i&&f.push("codicon-modifier-"+i.substring(1)),f}r.asClassNameArray=s;function g(e){return s(e).join(" ")}r.asClassName=g;function h(e){return"."+s(e).join(".")}r.asCSSSelector=h;function I(e){return e&&typeof e=="object"&&typeof e.id=="string"&&(typeof e.color>"u"||m.isThemeColor(e.color))}r.isThemeIcon=I;const a=new RegExp(`^\\$\\((${r.iconNameExpression}(?:${r.iconModifierExpression})?)\\)$`);function T(e){const n=a.exec(e);if(!n)return;const[,o]=n;return{id:o}}r.fromString=T;function C(e){return{id:e}}r.fromId=C;function y(e,n){let o=e.id;const i=o.lastIndexOf("~");return i!==-1&&(o=o.substring(0,i)),n&&(o=`${o}~${n}`),{id:o}}r.modify=y;function $(e){const n=e.id.lastIndexOf("~");if(n!==-1)return e.id.substring(n+1)}r.getModifier=$;function E(e,n){return e.id===n.id&&e.color?.id===n.color?.id}r.isEqual=E})(x||={});export{m as ThemeColor,x as ThemeIcon,S as themeColorFromId};
+import { Codicon } from './codicons.js';
+export var ThemeColor;
+(function (ThemeColor) {
+    function isThemeColor(obj) {
+        return obj && typeof obj === 'object' && typeof obj.id === 'string';
+    }
+    ThemeColor.isThemeColor = isThemeColor;
+})(ThemeColor || (ThemeColor = {}));
+export function themeColorFromId(id) {
+    return { id };
+}
+export var ThemeIcon;
+(function (ThemeIcon) {
+    ThemeIcon.iconNameSegment = '[A-Za-z0-9]+';
+    ThemeIcon.iconNameExpression = '[A-Za-z0-9-]+';
+    ThemeIcon.iconModifierExpression = '~[A-Za-z]+';
+    ThemeIcon.iconNameCharacter = '[A-Za-z0-9~-]';
+    const ThemeIconIdRegex = new RegExp(`^(${ThemeIcon.iconNameExpression})(${ThemeIcon.iconModifierExpression})?$`);
+    function asClassNameArray(icon) {
+        const match = ThemeIconIdRegex.exec(icon.id);
+        if (!match) {
+            return asClassNameArray(Codicon.error);
+        }
+        const [, id, modifier] = match;
+        const classNames = ['codicon', 'codicon-' + id];
+        if (modifier) {
+            classNames.push('codicon-modifier-' + modifier.substring(1));
+        }
+        return classNames;
+    }
+    ThemeIcon.asClassNameArray = asClassNameArray;
+    function asClassName(icon) {
+        return asClassNameArray(icon).join(' ');
+    }
+    ThemeIcon.asClassName = asClassName;
+    function asCSSSelector(icon) {
+        return '.' + asClassNameArray(icon).join('.');
+    }
+    ThemeIcon.asCSSSelector = asCSSSelector;
+    function isThemeIcon(obj) {
+        return obj && typeof obj === 'object' && typeof obj.id === 'string' && (typeof obj.color === 'undefined' || ThemeColor.isThemeColor(obj.color));
+    }
+    ThemeIcon.isThemeIcon = isThemeIcon;
+    const _regexFromString = new RegExp(`^\\$\\((${ThemeIcon.iconNameExpression}(?:${ThemeIcon.iconModifierExpression})?)\\)$`);
+    function fromString(str) {
+        const match = _regexFromString.exec(str);
+        if (!match) {
+            return undefined;
+        }
+        const [, name] = match;
+        return { id: name };
+    }
+    ThemeIcon.fromString = fromString;
+    function fromId(id) {
+        return { id };
+    }
+    ThemeIcon.fromId = fromId;
+    function modify(icon, modifier) {
+        let id = icon.id;
+        const tildeIndex = id.lastIndexOf('~');
+        if (tildeIndex !== -1) {
+            id = id.substring(0, tildeIndex);
+        }
+        if (modifier) {
+            id = `${id}~${modifier}`;
+        }
+        return { id };
+    }
+    ThemeIcon.modify = modify;
+    function getModifier(icon) {
+        const tildeIndex = icon.id.lastIndexOf('~');
+        if (tildeIndex !== -1) {
+            return icon.id.substring(tildeIndex + 1);
+        }
+        return undefined;
+    }
+    ThemeIcon.getModifier = getModifier;
+    function isEqual(ti1, ti2) {
+        return ti1.id === ti2.id && ti1.color?.id === ti2.color?.id;
+    }
+    ThemeIcon.isEqual = isEqual;
+})(ThemeIcon || (ThemeIcon = {}));

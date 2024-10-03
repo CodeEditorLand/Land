@@ -1,1 +1,167 @@
-var f=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=(n,e,t,i)=>{for(var r=i>1?void 0:i?h(e,t):e,c=n.length-1,a;c>=0;c--)(a=n[c])&&(r=(i?a(e,t,r):a(r))||r);return i&&r&&f(e,t,r),r},o=(n,e)=>(t,i)=>e(t,i,n);import"./standaloneQuickInput.css";import{Event as I}from"../../../../base/common/event.js";import{OverlayWidgetPositionPreference as S}from"../../../browser/editorBrowser.js";import{EditorContributionInstantiation as P,registerEditorContribution as Q}from"../../../browser/editorExtensions.js";import"../../../common/editorCommon.js";import{IThemeService as E}from"../../../../platform/theme/common/themeService.js";import"../../../../platform/quickinput/common/quickInput.js";import{CancellationToken as y}from"../../../../base/common/cancellation.js";import{IInstantiationService as k}from"../../../../platform/instantiation/common/instantiation.js";import{IContextKeyService as T}from"../../../../platform/contextkey/common/contextkey.js";import{EditorScopedLayoutService as D}from"../standaloneLayoutService.js";import{ICodeEditorService as l}from"../../../browser/services/codeEditorService.js";import"../../../../platform/quickinput/browser/quickInputController.js";import{QuickInputService as b}from"../../../../platform/quickinput/browser/quickInputService.js";import{createSingleCallFunction as O}from"../../../../base/common/functional.js";import{IConfigurationService as x}from"../../../../platform/configuration/common/configuration.js";let s=class extends b{host=void 0;constructor(e,t,i,r,c,a){super(t,i,r,new D(e.getContainerDomNode(),c),a);const g=d.get(e);if(g){const u=g.widget;this.host={_serviceBrand:void 0,get mainContainer(){return u.getDomNode()},getContainer(){return u.getDomNode()},whenContainerStylesLoaded(){},get containers(){return[u.getDomNode()]},get activeContainer(){return u.getDomNode()},get mainContainerDimension(){return e.getLayoutInfo()},get activeContainerDimension(){return e.getLayoutInfo()},get onDidLayoutMainContainer(){return e.onDidLayoutChange},get onDidLayoutActiveContainer(){return e.onDidLayoutChange},get onDidLayoutContainer(){return I.map(e.onDidLayoutChange,C=>({container:u.getDomNode(),dimension:C}))},get onDidChangeActiveContainer(){return I.None},get onDidAddContainer(){return I.None},get mainContainerOffset(){return{top:0,quickPickTop:0}},get activeContainerOffset(){return{top:0,quickPickTop:0}},focus:()=>e.focus()}}else this.host=void 0}createController(){return super.createController(this.host)}};s=p([o(1,k),o(2,T),o(3,E),o(4,l),o(5,x)],s);let v=class{constructor(e,t){this.instantiationService=e;this.codeEditorService=t}mapEditorToService=new Map;get activeService(){const e=this.codeEditorService.getFocusedCodeEditor();if(!e)throw new Error("Quick input service needs a focused editor to work.");let t=this.mapEditorToService.get(e);if(!t){const i=t=this.instantiationService.createInstance(s,e);this.mapEditorToService.set(e,t),O(e.onDidDispose)(()=>{i.dispose(),this.mapEditorToService.delete(e)})}return t}get currentQuickInput(){return this.activeService.currentQuickInput}get quickAccess(){return this.activeService.quickAccess}get backButton(){return this.activeService.backButton}get onShow(){return this.activeService.onShow}get onHide(){return this.activeService.onHide}pick(e,t,i=y.None){return this.activeService.pick(e,t,i)}input(e,t){return this.activeService.input(e,t)}createQuickPick(e={useSeparators:!1}){return this.activeService.createQuickPick(e)}createInputBox(){return this.activeService.createInputBox()}createQuickWidget(){return this.activeService.createQuickWidget()}focus(){return this.activeService.focus()}toggle(){return this.activeService.toggle()}navigate(e,t){return this.activeService.navigate(e,t)}accept(){return this.activeService.accept()}back(){return this.activeService.back()}cancel(){return this.activeService.cancel()}};v=p([o(0,k),o(1,l)],v);class d{constructor(e){this.editor=e}static ID="editor.controller.quickInput";static get(e){return e.getContribution(d.ID)}widget=new m(this.editor);dispose(){this.widget.dispose()}}class m{constructor(e){this.codeEditor=e;this.domNode=document.createElement("div"),this.codeEditor.addOverlayWidget(this)}static ID="editor.contrib.quickInputWidget";domNode;getId(){return m.ID}getDomNode(){return this.domNode}getPosition(){return{preference:S.TOP_CENTER}}dispose(){this.codeEditor.removeOverlayWidget(this)}}Q(d.ID,d,P.Lazy);export{d as QuickInputEditorContribution,m as QuickInputEditorWidget,v as StandaloneQuickInputService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import './standaloneQuickInput.css';
+import { Event } from '../../../../base/common/event.js';
+import { registerEditorContribution } from '../../../browser/editorExtensions.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { EditorScopedLayoutService } from '../standaloneLayoutService.js';
+import { ICodeEditorService } from '../../../browser/services/codeEditorService.js';
+import { QuickInputService } from '../../../../platform/quickinput/browser/quickInputService.js';
+import { createSingleCallFunction } from '../../../../base/common/functional.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+let EditorScopedQuickInputService = class EditorScopedQuickInputService extends QuickInputService {
+    constructor(editor, instantiationService, contextKeyService, themeService, codeEditorService, configurationService) {
+        super(instantiationService, contextKeyService, themeService, new EditorScopedLayoutService(editor.getContainerDomNode(), codeEditorService), configurationService);
+        this.host = undefined;
+        const contribution = QuickInputEditorContribution.get(editor);
+        if (contribution) {
+            const widget = contribution.widget;
+            this.host = {
+                _serviceBrand: undefined,
+                get mainContainer() { return widget.getDomNode(); },
+                getContainer() { return widget.getDomNode(); },
+                whenContainerStylesLoaded() { return undefined; },
+                get containers() { return [widget.getDomNode()]; },
+                get activeContainer() { return widget.getDomNode(); },
+                get mainContainerDimension() { return editor.getLayoutInfo(); },
+                get activeContainerDimension() { return editor.getLayoutInfo(); },
+                get onDidLayoutMainContainer() { return editor.onDidLayoutChange; },
+                get onDidLayoutActiveContainer() { return editor.onDidLayoutChange; },
+                get onDidLayoutContainer() { return Event.map(editor.onDidLayoutChange, dimension => ({ container: widget.getDomNode(), dimension })); },
+                get onDidChangeActiveContainer() { return Event.None; },
+                get onDidAddContainer() { return Event.None; },
+                get mainContainerOffset() { return { top: 0, quickPickTop: 0 }; },
+                get activeContainerOffset() { return { top: 0, quickPickTop: 0 }; },
+                focus: () => editor.focus()
+            };
+        }
+        else {
+            this.host = undefined;
+        }
+    }
+    createController() {
+        return super.createController(this.host);
+    }
+};
+EditorScopedQuickInputService = __decorate([
+    __param(1, IInstantiationService),
+    __param(2, IContextKeyService),
+    __param(3, IThemeService),
+    __param(4, ICodeEditorService),
+    __param(5, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], EditorScopedQuickInputService);
+let StandaloneQuickInputService = class StandaloneQuickInputService {
+    get activeService() {
+        const editor = this.codeEditorService.getFocusedCodeEditor();
+        if (!editor) {
+            throw new Error('Quick input service needs a focused editor to work.');
+        }
+        let quickInputService = this.mapEditorToService.get(editor);
+        if (!quickInputService) {
+            const newQuickInputService = quickInputService = this.instantiationService.createInstance(EditorScopedQuickInputService, editor);
+            this.mapEditorToService.set(editor, quickInputService);
+            createSingleCallFunction(editor.onDidDispose)(() => {
+                newQuickInputService.dispose();
+                this.mapEditorToService.delete(editor);
+            });
+        }
+        return quickInputService;
+    }
+    get currentQuickInput() { return this.activeService.currentQuickInput; }
+    get quickAccess() { return this.activeService.quickAccess; }
+    get backButton() { return this.activeService.backButton; }
+    get onShow() { return this.activeService.onShow; }
+    get onHide() { return this.activeService.onHide; }
+    constructor(instantiationService, codeEditorService) {
+        this.instantiationService = instantiationService;
+        this.codeEditorService = codeEditorService;
+        this.mapEditorToService = new Map();
+    }
+    pick(picks, options, token = CancellationToken.None) {
+        return this.activeService.pick(picks, options, token);
+    }
+    input(options, token) {
+        return this.activeService.input(options, token);
+    }
+    createQuickPick(options = { useSeparators: false }) {
+        return this.activeService.createQuickPick(options);
+    }
+    createInputBox() {
+        return this.activeService.createInputBox();
+    }
+    createQuickWidget() {
+        return this.activeService.createQuickWidget();
+    }
+    focus() {
+        return this.activeService.focus();
+    }
+    toggle() {
+        return this.activeService.toggle();
+    }
+    navigate(next, quickNavigate) {
+        return this.activeService.navigate(next, quickNavigate);
+    }
+    accept() {
+        return this.activeService.accept();
+    }
+    back() {
+        return this.activeService.back();
+    }
+    cancel() {
+        return this.activeService.cancel();
+    }
+};
+StandaloneQuickInputService = __decorate([
+    __param(0, IInstantiationService),
+    __param(1, ICodeEditorService),
+    __metadata("design:paramtypes", [Object, Object])
+], StandaloneQuickInputService);
+export { StandaloneQuickInputService };
+export class QuickInputEditorContribution {
+    static { this.ID = 'editor.controller.quickInput'; }
+    static get(editor) {
+        return editor.getContribution(QuickInputEditorContribution.ID);
+    }
+    constructor(editor) {
+        this.editor = editor;
+        this.widget = new QuickInputEditorWidget(this.editor);
+    }
+    dispose() {
+        this.widget.dispose();
+    }
+}
+export class QuickInputEditorWidget {
+    static { this.ID = 'editor.contrib.quickInputWidget'; }
+    constructor(codeEditor) {
+        this.codeEditor = codeEditor;
+        this.domNode = document.createElement('div');
+        this.codeEditor.addOverlayWidget(this);
+    }
+    getId() {
+        return QuickInputEditorWidget.ID;
+    }
+    getDomNode() {
+        return this.domNode;
+    }
+    getPosition() {
+        return { preference: 2 };
+    }
+    dispose() {
+        this.codeEditor.removeOverlayWidget(this);
+    }
+}
+registerEditorContribution(QuickInputEditorContribution.ID, QuickInputEditorContribution, 4);

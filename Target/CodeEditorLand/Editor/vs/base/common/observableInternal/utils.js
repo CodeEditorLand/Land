@@ -1,1 +1,487 @@
-import{autorun as f,autorunOpts as D,autorunWithStoreHandleChanges as w}from"./autorun.js";import{BaseObservable as v,ConvenientObservable as V,_setKeepObserved as _,_setRecomputeInitiallyAndOnChange as E,observableValue as c,subtransaction as x,transaction as g}from"./base.js";import{DebugNameData as b,getDebugName as S}from"./debugName.js";import{BugIndicatingError as R,DisposableStore as h,Event as N,strictEquals as p,toDisposable as m}from"./commonFacade/deps.js";import{derived as A,derivedOpts as T}from"./derived.js";import{getLogger as O}from"./logging.js";function re(t){return new F(t)}class F extends V{constructor(e){super();this.value=e}get debugName(){return this.toString()}get(){return this.value}addObserver(e){}removeObserver(e){}toString(){return`Const: ${this.value}`}}function ae(t){const n=c("promiseValue",{});return t.then(e=>{n.set({value:e},void 0)}),n}function l(...t){let n,e,r;return t.length===3?[n,e,r]=t:[e,r]=t,new u(new b(n,void 0,r),e,r,()=>u.globalTransaction,p)}function se(t,n,e){return new u(new b(t.owner,t.debugName,t.debugReferenceFn??e),n,e,()=>u.globalTransaction,t.equalsFn??p)}class u extends v{constructor(e,r,a,s,i){super();this._debugNameData=e;this.event=r;this._getValue=a;this._getTransaction=s;this._equalityComparator=i}static globalTransaction;value;hasValue=!1;subscription;getDebugName(){return this._debugNameData.getDebugName(this)}get debugName(){const e=this.getDebugName();return"From Event"+(e?`: ${e}`:"")}onFirstObserverAdded(){this.subscription=this.event(this.handleEvent)}handleEvent=e=>{const r=this._getValue(e),a=this.value,s=!this.hasValue||!this._equalityComparator(a,r);let i=!1;s&&(this.value=r,this.hasValue&&(i=!0,x(this._getTransaction(),o=>{O()?.handleFromEventObservableTriggered(this,{oldValue:a,newValue:r,change:void 0,didChange:s,hadValue:this.hasValue});for(const d of this.observers)o.updateObserver(d,this),d.handleChange(this,void 0)},()=>{const o=this.getDebugName();return"Event fired"+(o?`: ${o}`:"")})),this.hasValue=!0),i||O()?.handleFromEventObservableTriggered(this,{oldValue:a,newValue:r,change:void 0,didChange:s,hadValue:this.hasValue})};onLastObserverRemoved(){this.subscription.dispose(),this.subscription=void 0,this.hasValue=!1,this.value=void 0}get(){return this.subscription?(this.hasValue||this.handleEvent(void 0),this.value):this._getValue(void 0)}}(e=>{e.Observer=u;function n(r,a){let s=!1;u.globalTransaction===void 0&&(u.globalTransaction=r,s=!0);try{a()}finally{s&&(u.globalTransaction=void 0)}}e.batchEventsGlobally=n})(l||={});function ie(t,n){return new W(t,n)}class W extends v{constructor(e,r){super();this.debugName=e;this.event=r}subscription;onFirstObserverAdded(){this.subscription=this.event(this.handleEvent)}handleEvent=()=>{g(e=>{for(const r of this.observers)e.updateObserver(r,this),r.handleChange(this,void 0)},()=>this.debugName)};onLastObserverRemoved(){this.subscription.dispose(),this.subscription=void 0}get(){}}function k(t){return typeof t=="string"?new I(t):new I(void 0,t)}class I extends v{constructor(e,r){super();this._debugName=e;this._owner=r}get debugName(){return new b(this._owner,this._debugName,void 0).getDebugName(this)??"Observable Signal"}toString(){return this.debugName}trigger(e,r){if(!e){g(a=>{this.trigger(a,r)},()=>`Trigger signal ${this.debugName}`);return}for(const a of this.observers)e.updateObserver(a,this),a.handleChange(this,r)}get(){}}function oe(t,n){return T({owner:t,equalsFn:()=>!1},e=>{n.read(e)})}function de(t,n,e){const r=c("debounced",void 0);let a;return e.add(f(s=>{const i=t.read(s);a&&clearTimeout(a),a=setTimeout(()=>{g(o=>{r.set(i,o)})},n)})),r}function ue(t,n){let e=!1,r,a;return l(s=>{const i=f(o=>{const d=t.read(o);e?(a&&clearTimeout(a),a=setTimeout(()=>{r=d,s()},n)):(e=!0,r=d)});return{dispose(){i.dispose(),e=!1,r=void 0}}},()=>e?r:t.get())}function le(t,n,e){const r=c("triggeredRecently",!1);let a;return e.add(t(()=>{r.set(!0,void 0),a&&clearTimeout(a),a=setTimeout(()=>{r.set(!1,void 0)},n)})),r}function q(t){const n=new y(!1,void 0);return t.addObserver(n),m(()=>{t.removeObserver(n)})}_(q);function K(t,n){const e=new y(!0,n);return t.addObserver(e),n?n(t.get()):t.reportChanges(),m(()=>{t.removeObserver(e)})}E(K);class y{constructor(n,e){this._forceRecompute=n;this._handleValue=e}_counter=0;beginUpdate(n){this._counter++}endUpdate(n){this._counter--,this._counter===0&&this._forceRecompute&&(this._handleValue?this._handleValue(n.get()):n.reportChanges())}handlePossibleChange(n){}handleChange(n,e){}}function L(t,n){let e;return T({owner:t,debugReferenceFn:n},a=>(e=n(a,e),e))}function be(t,n){let e;const r=k("derivedObservableWithWritableCache"),a=A(t,s=>(r.read(s),e=n(s,e),e));return Object.assign(a,{clearCache:s=>{e=void 0,r.trigger(s)},setCache:(s,i)=>{e=s,r.trigger(i)}})}function ve(t,n,e,r){let a=new C(e,r);return T({debugReferenceFn:e,owner:t,onLastObserverRemoved:()=>{a.dispose(),a=new C(e)}},i=>(a.setItems(n.read(i)),a.getItems()))}class C{constructor(n,e){this._map=n;this._keySelector=e}_cache=new Map;_items=[];dispose(){this._cache.forEach(n=>n.store.dispose()),this._cache.clear()}setItems(n){const e=[],r=new Set(this._cache.keys());for(const a of n){const s=this._keySelector?this._keySelector(a):a;let i=this._cache.get(s);if(i)r.delete(s);else{const o=new h;i={out:this._map(a,o),store:o},this._cache.set(s,i)}e.push(i.out)}for(const a of r)this._cache.get(a).store.dispose(),this._cache.delete(a);this._items=e}getItems(){return this._items}}class U{constructor(n){this.observable=n}get onDidChange(){return N.fromObservableLight(this.observable)}get value(){return this.observable.get()}}function ce(t,n){return n instanceof U?n.observable:l(t,n.onDidChange,()=>n.value)}function ge(t,n){if(n.length===0)throw new R;let e=!1,r;const a=l(t,s=>{const i=new h;for(const o of n)i.add(D({debugName:()=>S(a,new b(t,void 0,void 0))+".updateLastChangedValue"},d=>{e=!0,r=o.read(d),s()}));return i.add({dispose(){e=!1,r=void 0}}),i},()=>e?r:n[n.length-1].get());return a}function he(t,n){return L(t,(e,r)=>r??n(e))}function j(t,n){let e;return w({createEmptyChangeSummary:()=>({deltas:[],didChange:!1}),handleChange:(r,a)=>{if(r.didChange(t)){const s=r.change;s!==void 0&&a.deltas.push(s),a.didChange=!0}return!0}},(r,a)=>{const s=t.read(r),i=e;a.didChange&&(e=s,n(s,i,a.deltas))})}function Te(t,n){const e=new h,r=j(t,(a,s,i)=>{e.clear(),n(a,s,i,e)});return{dispose(){r.dispose(),e.dispose()}}}export{u as FromEventObservable,y as KeepAliveObserver,U as ValueWithChangeEventFromObservable,re as constObservable,de as debouncedObservable,ue as debouncedObservable2,he as derivedConstOnceDefined,L as derivedObservableWithCache,be as derivedObservableWithWritableCache,q as keepObserved,ge as latestChangedValue,ve as mapObservableArrayCached,l as observableFromEvent,se as observableFromEventOpts,ae as observableFromPromise,ce as observableFromValueWithChangeEvent,k as observableSignal,ie as observableSignalFromEvent,K as recomputeInitiallyAndOnChange,j as runOnChange,Te as runOnChangeWithStore,oe as signalFromObservable,le as wasEventTriggeredRecently};
+import { autorun, autorunOpts, autorunWithStoreHandleChanges } from './autorun.js';
+import { BaseObservable, ConvenientObservable, _setKeepObserved, _setRecomputeInitiallyAndOnChange, observableValue, subtransaction, transaction } from './base.js';
+import { DebugNameData, getDebugName, } from './debugName.js';
+import { BugIndicatingError, DisposableStore, Event, strictEquals, toDisposable } from './commonFacade/deps.js';
+import { derived, derivedOpts } from './derived.js';
+import { getLogger } from './logging.js';
+export function constObservable(value) {
+    return new ConstObservable(value);
+}
+class ConstObservable extends ConvenientObservable {
+    constructor(value) {
+        super();
+        this.value = value;
+    }
+    get debugName() {
+        return this.toString();
+    }
+    get() {
+        return this.value;
+    }
+    addObserver(observer) {
+    }
+    removeObserver(observer) {
+    }
+    toString() {
+        return `Const: ${this.value}`;
+    }
+}
+export function observableFromPromise(promise) {
+    const observable = observableValue('promiseValue', {});
+    promise.then((value) => {
+        observable.set({ value }, undefined);
+    });
+    return observable;
+}
+export function observableFromEvent(...args) {
+    let owner;
+    let event;
+    let getValue;
+    if (args.length === 3) {
+        [owner, event, getValue] = args;
+    }
+    else {
+        [event, getValue] = args;
+    }
+    return new FromEventObservable(new DebugNameData(owner, undefined, getValue), event, getValue, () => FromEventObservable.globalTransaction, strictEquals);
+}
+export function observableFromEventOpts(options, event, getValue) {
+    return new FromEventObservable(new DebugNameData(options.owner, options.debugName, options.debugReferenceFn ?? getValue), event, getValue, () => FromEventObservable.globalTransaction, options.equalsFn ?? strictEquals);
+}
+export class FromEventObservable extends BaseObservable {
+    constructor(_debugNameData, event, _getValue, _getTransaction, _equalityComparator) {
+        super();
+        this._debugNameData = _debugNameData;
+        this.event = event;
+        this._getValue = _getValue;
+        this._getTransaction = _getTransaction;
+        this._equalityComparator = _equalityComparator;
+        this.hasValue = false;
+        this.handleEvent = (args) => {
+            const newValue = this._getValue(args);
+            const oldValue = this.value;
+            const didChange = !this.hasValue || !(this._equalityComparator(oldValue, newValue));
+            let didRunTransaction = false;
+            if (didChange) {
+                this.value = newValue;
+                if (this.hasValue) {
+                    didRunTransaction = true;
+                    subtransaction(this._getTransaction(), (tx) => {
+                        getLogger()?.handleFromEventObservableTriggered(this, { oldValue, newValue, change: undefined, didChange, hadValue: this.hasValue });
+                        for (const o of this.observers) {
+                            tx.updateObserver(o, this);
+                            o.handleChange(this, undefined);
+                        }
+                    }, () => {
+                        const name = this.getDebugName();
+                        return 'Event fired' + (name ? `: ${name}` : '');
+                    });
+                }
+                this.hasValue = true;
+            }
+            if (!didRunTransaction) {
+                getLogger()?.handleFromEventObservableTriggered(this, { oldValue, newValue, change: undefined, didChange, hadValue: this.hasValue });
+            }
+        };
+    }
+    getDebugName() {
+        return this._debugNameData.getDebugName(this);
+    }
+    get debugName() {
+        const name = this.getDebugName();
+        return 'From Event' + (name ? `: ${name}` : '');
+    }
+    onFirstObserverAdded() {
+        this.subscription = this.event(this.handleEvent);
+    }
+    onLastObserverRemoved() {
+        this.subscription.dispose();
+        this.subscription = undefined;
+        this.hasValue = false;
+        this.value = undefined;
+    }
+    get() {
+        if (this.subscription) {
+            if (!this.hasValue) {
+                this.handleEvent(undefined);
+            }
+            return this.value;
+        }
+        else {
+            const value = this._getValue(undefined);
+            return value;
+        }
+    }
+}
+(function (observableFromEvent) {
+    observableFromEvent.Observer = FromEventObservable;
+    function batchEventsGlobally(tx, fn) {
+        let didSet = false;
+        if (FromEventObservable.globalTransaction === undefined) {
+            FromEventObservable.globalTransaction = tx;
+            didSet = true;
+        }
+        try {
+            fn();
+        }
+        finally {
+            if (didSet) {
+                FromEventObservable.globalTransaction = undefined;
+            }
+        }
+    }
+    observableFromEvent.batchEventsGlobally = batchEventsGlobally;
+})(observableFromEvent || (observableFromEvent = {}));
+export function observableSignalFromEvent(debugName, event) {
+    return new FromEventObservableSignal(debugName, event);
+}
+class FromEventObservableSignal extends BaseObservable {
+    constructor(debugName, event) {
+        super();
+        this.debugName = debugName;
+        this.event = event;
+        this.handleEvent = () => {
+            transaction((tx) => {
+                for (const o of this.observers) {
+                    tx.updateObserver(o, this);
+                    o.handleChange(this, undefined);
+                }
+            }, () => this.debugName);
+        };
+    }
+    onFirstObserverAdded() {
+        this.subscription = this.event(this.handleEvent);
+    }
+    onLastObserverRemoved() {
+        this.subscription.dispose();
+        this.subscription = undefined;
+    }
+    get() {
+    }
+}
+export function observableSignal(debugNameOrOwner) {
+    if (typeof debugNameOrOwner === 'string') {
+        return new ObservableSignal(debugNameOrOwner);
+    }
+    else {
+        return new ObservableSignal(undefined, debugNameOrOwner);
+    }
+}
+class ObservableSignal extends BaseObservable {
+    get debugName() {
+        return new DebugNameData(this._owner, this._debugName, undefined).getDebugName(this) ?? 'Observable Signal';
+    }
+    toString() {
+        return this.debugName;
+    }
+    constructor(_debugName, _owner) {
+        super();
+        this._debugName = _debugName;
+        this._owner = _owner;
+    }
+    trigger(tx, change) {
+        if (!tx) {
+            transaction(tx => {
+                this.trigger(tx, change);
+            }, () => `Trigger signal ${this.debugName}`);
+            return;
+        }
+        for (const o of this.observers) {
+            tx.updateObserver(o, this);
+            o.handleChange(this, change);
+        }
+    }
+    get() {
+    }
+}
+export function signalFromObservable(owner, observable) {
+    return derivedOpts({
+        owner,
+        equalsFn: () => false,
+    }, reader => {
+        observable.read(reader);
+    });
+}
+export function debouncedObservable(observable, debounceMs, disposableStore) {
+    const debouncedObservable = observableValue('debounced', undefined);
+    let timeout = undefined;
+    disposableStore.add(autorun(reader => {
+        const value = observable.read(reader);
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(() => {
+            transaction(tx => {
+                debouncedObservable.set(value, tx);
+            });
+        }, debounceMs);
+    }));
+    return debouncedObservable;
+}
+export function debouncedObservable2(observable, debounceMs) {
+    let hasValue = false;
+    let lastValue;
+    let timeout = undefined;
+    return observableFromEvent(cb => {
+        const d = autorun(reader => {
+            const value = observable.read(reader);
+            if (!hasValue) {
+                hasValue = true;
+                lastValue = value;
+            }
+            else {
+                if (timeout) {
+                    clearTimeout(timeout);
+                }
+                timeout = setTimeout(() => {
+                    lastValue = value;
+                    cb();
+                }, debounceMs);
+            }
+        });
+        return {
+            dispose() {
+                d.dispose();
+                hasValue = false;
+                lastValue = undefined;
+            },
+        };
+    }, () => {
+        if (hasValue) {
+            return lastValue;
+        }
+        else {
+            return observable.get();
+        }
+    });
+}
+export function wasEventTriggeredRecently(event, timeoutMs, disposableStore) {
+    const observable = observableValue('triggeredRecently', false);
+    let timeout = undefined;
+    disposableStore.add(event(() => {
+        observable.set(true, undefined);
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(() => {
+            observable.set(false, undefined);
+        }, timeoutMs);
+    }));
+    return observable;
+}
+export function keepObserved(observable) {
+    const o = new KeepAliveObserver(false, undefined);
+    observable.addObserver(o);
+    return toDisposable(() => {
+        observable.removeObserver(o);
+    });
+}
+_setKeepObserved(keepObserved);
+export function recomputeInitiallyAndOnChange(observable, handleValue) {
+    const o = new KeepAliveObserver(true, handleValue);
+    observable.addObserver(o);
+    if (handleValue) {
+        handleValue(observable.get());
+    }
+    else {
+        observable.reportChanges();
+    }
+    return toDisposable(() => {
+        observable.removeObserver(o);
+    });
+}
+_setRecomputeInitiallyAndOnChange(recomputeInitiallyAndOnChange);
+export class KeepAliveObserver {
+    constructor(_forceRecompute, _handleValue) {
+        this._forceRecompute = _forceRecompute;
+        this._handleValue = _handleValue;
+        this._counter = 0;
+    }
+    beginUpdate(observable) {
+        this._counter++;
+    }
+    endUpdate(observable) {
+        this._counter--;
+        if (this._counter === 0 && this._forceRecompute) {
+            if (this._handleValue) {
+                this._handleValue(observable.get());
+            }
+            else {
+                observable.reportChanges();
+            }
+        }
+    }
+    handlePossibleChange(observable) {
+    }
+    handleChange(observable, change) {
+    }
+}
+export function derivedObservableWithCache(owner, computeFn) {
+    let lastValue = undefined;
+    const observable = derivedOpts({ owner, debugReferenceFn: computeFn }, reader => {
+        lastValue = computeFn(reader, lastValue);
+        return lastValue;
+    });
+    return observable;
+}
+export function derivedObservableWithWritableCache(owner, computeFn) {
+    let lastValue = undefined;
+    const onChange = observableSignal('derivedObservableWithWritableCache');
+    const observable = derived(owner, reader => {
+        onChange.read(reader);
+        lastValue = computeFn(reader, lastValue);
+        return lastValue;
+    });
+    return Object.assign(observable, {
+        clearCache: (tx) => {
+            lastValue = undefined;
+            onChange.trigger(tx);
+        },
+        setCache: (newValue, tx) => {
+            lastValue = newValue;
+            onChange.trigger(tx);
+        }
+    });
+}
+export function mapObservableArrayCached(owner, items, map, keySelector) {
+    let m = new ArrayMap(map, keySelector);
+    const self = derivedOpts({
+        debugReferenceFn: map,
+        owner,
+        onLastObserverRemoved: () => {
+            m.dispose();
+            m = new ArrayMap(map);
+        }
+    }, (reader) => {
+        m.setItems(items.read(reader));
+        return m.getItems();
+    });
+    return self;
+}
+class ArrayMap {
+    constructor(_map, _keySelector) {
+        this._map = _map;
+        this._keySelector = _keySelector;
+        this._cache = new Map();
+        this._items = [];
+    }
+    dispose() {
+        this._cache.forEach(entry => entry.store.dispose());
+        this._cache.clear();
+    }
+    setItems(items) {
+        const newItems = [];
+        const itemsToRemove = new Set(this._cache.keys());
+        for (const item of items) {
+            const key = this._keySelector ? this._keySelector(item) : item;
+            let entry = this._cache.get(key);
+            if (!entry) {
+                const store = new DisposableStore();
+                const out = this._map(item, store);
+                entry = { out, store };
+                this._cache.set(key, entry);
+            }
+            else {
+                itemsToRemove.delete(key);
+            }
+            newItems.push(entry.out);
+        }
+        for (const item of itemsToRemove) {
+            const entry = this._cache.get(item);
+            entry.store.dispose();
+            this._cache.delete(item);
+        }
+        this._items = newItems;
+    }
+    getItems() {
+        return this._items;
+    }
+}
+export class ValueWithChangeEventFromObservable {
+    constructor(observable) {
+        this.observable = observable;
+    }
+    get onDidChange() {
+        return Event.fromObservableLight(this.observable);
+    }
+    get value() {
+        return this.observable.get();
+    }
+}
+export function observableFromValueWithChangeEvent(owner, value) {
+    if (value instanceof ValueWithChangeEventFromObservable) {
+        return value.observable;
+    }
+    return observableFromEvent(owner, value.onDidChange, () => value.value);
+}
+export function latestChangedValue(owner, observables) {
+    if (observables.length === 0) {
+        throw new BugIndicatingError();
+    }
+    let hasLastChangedValue = false;
+    let lastChangedValue = undefined;
+    const result = observableFromEvent(owner, cb => {
+        const store = new DisposableStore();
+        for (const o of observables) {
+            store.add(autorunOpts({ debugName: () => getDebugName(result, new DebugNameData(owner, undefined, undefined)) + '.updateLastChangedValue' }, reader => {
+                hasLastChangedValue = true;
+                lastChangedValue = o.read(reader);
+                cb();
+            }));
+        }
+        store.add({
+            dispose() {
+                hasLastChangedValue = false;
+                lastChangedValue = undefined;
+            },
+        });
+        return store;
+    }, () => {
+        if (hasLastChangedValue) {
+            return lastChangedValue;
+        }
+        else {
+            return observables[observables.length - 1].get();
+        }
+    });
+    return result;
+}
+export function derivedConstOnceDefined(owner, fn) {
+    return derivedObservableWithCache(owner, (reader, lastValue) => lastValue ?? fn(reader));
+}
+export function runOnChange(observable, cb) {
+    let _previousValue;
+    return autorunWithStoreHandleChanges({
+        createEmptyChangeSummary: () => ({ deltas: [], didChange: false }),
+        handleChange: (context, changeSummary) => {
+            if (context.didChange(observable)) {
+                const e = context.change;
+                if (e !== undefined) {
+                    changeSummary.deltas.push(e);
+                }
+                changeSummary.didChange = true;
+            }
+            return true;
+        },
+    }, (reader, changeSummary) => {
+        const value = observable.read(reader);
+        const previousValue = _previousValue;
+        if (changeSummary.didChange) {
+            _previousValue = value;
+            cb(value, previousValue, changeSummary.deltas);
+        }
+    });
+}
+export function runOnChangeWithStore(observable, cb) {
+    const store = new DisposableStore();
+    const disposable = runOnChange(observable, (value, previousValue, deltas) => {
+        store.clear();
+        cb(value, previousValue, deltas, store);
+    });
+    return {
+        dispose() {
+            disposable.dispose();
+            store.dispose();
+        }
+    };
+}

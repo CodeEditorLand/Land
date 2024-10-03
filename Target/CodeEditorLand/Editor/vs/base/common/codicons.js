@@ -1,1 +1,39 @@
-import"./themables.js";import{register as e}from"./codiconsUtil.js";import{codiconsLibrary as o}from"./codiconsLibrary.js";function a(){return Object.values(r)}const t={dialogError:e("dialog-error","error"),dialogWarning:e("dialog-warning","warning"),dialogInfo:e("dialog-info","info"),dialogClose:e("dialog-close","close"),treeItemExpanded:e("tree-item-expanded","chevron-down"),treeFilterOnTypeOn:e("tree-filter-on-type-on","list-filter"),treeFilterOnTypeOff:e("tree-filter-on-type-off","list-selection"),treeFilterClear:e("tree-filter-clear","close"),treeItemLoading:e("tree-item-loading","loading"),menuSelection:e("menu-selection","check"),menuSubmenu:e("menu-submenu","chevron-right"),menuBarMore:e("menubar-more","more"),scrollbarButtonLeft:e("scrollbar-button-left","triangle-left"),scrollbarButtonRight:e("scrollbar-button-right","triangle-right"),scrollbarButtonUp:e("scrollbar-button-up","triangle-up"),scrollbarButtonDown:e("scrollbar-button-down","triangle-down"),toolBarMore:e("toolbar-more","more"),quickInputBack:e("quick-input-back","arrow-left"),dropDownButton:e("drop-down-button",60084),symbolCustomColor:e("symbol-customcolor",60252),exportIcon:e("export",60332),workspaceUnspecified:e("workspace-unspecified",60355),newLine:e("newline",60394),thumbsDownFilled:e("thumbsdown-filled",60435),thumbsUpFilled:e("thumbsup-filled",60436),gitFetch:e("git-fetch",60445),lightbulbSparkleAutofix:e("lightbulb-sparkle-autofix",60447),debugBreakpointPending:e("debug-breakpoint-pending",60377)},r={...o,...t};export{r as Codicon,t as codiconsDerived,a as getAllCodicons};
+import { register } from './codiconsUtil.js';
+import { codiconsLibrary } from './codiconsLibrary.js';
+export function getAllCodicons() {
+    return Object.values(Codicon);
+}
+export const codiconsDerived = {
+    dialogError: register('dialog-error', 'error'),
+    dialogWarning: register('dialog-warning', 'warning'),
+    dialogInfo: register('dialog-info', 'info'),
+    dialogClose: register('dialog-close', 'close'),
+    treeItemExpanded: register('tree-item-expanded', 'chevron-down'),
+    treeFilterOnTypeOn: register('tree-filter-on-type-on', 'list-filter'),
+    treeFilterOnTypeOff: register('tree-filter-on-type-off', 'list-selection'),
+    treeFilterClear: register('tree-filter-clear', 'close'),
+    treeItemLoading: register('tree-item-loading', 'loading'),
+    menuSelection: register('menu-selection', 'check'),
+    menuSubmenu: register('menu-submenu', 'chevron-right'),
+    menuBarMore: register('menubar-more', 'more'),
+    scrollbarButtonLeft: register('scrollbar-button-left', 'triangle-left'),
+    scrollbarButtonRight: register('scrollbar-button-right', 'triangle-right'),
+    scrollbarButtonUp: register('scrollbar-button-up', 'triangle-up'),
+    scrollbarButtonDown: register('scrollbar-button-down', 'triangle-down'),
+    toolBarMore: register('toolbar-more', 'more'),
+    quickInputBack: register('quick-input-back', 'arrow-left'),
+    dropDownButton: register('drop-down-button', 0xeab4),
+    symbolCustomColor: register('symbol-customcolor', 0xeb5c),
+    exportIcon: register('export', 0xebac),
+    workspaceUnspecified: register('workspace-unspecified', 0xebc3),
+    newLine: register('newline', 0xebea),
+    thumbsDownFilled: register('thumbsdown-filled', 0xec13),
+    thumbsUpFilled: register('thumbsup-filled', 0xec14),
+    gitFetch: register('git-fetch', 0xec1d),
+    lightbulbSparkleAutofix: register('lightbulb-sparkle-autofix', 0xec1f),
+    debugBreakpointPending: register('debug-breakpoint-pending', 0xebd9),
+};
+export const Codicon = {
+    ...codiconsLibrary,
+    ...codiconsDerived
+};

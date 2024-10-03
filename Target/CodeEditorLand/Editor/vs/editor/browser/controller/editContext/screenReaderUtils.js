@@ -1,2 +1,89 @@
-import{EndOfLinePreference as s}from"../../../common/model.js";import"../../../common/core/position.js";import{Range as u}from"../../../common/core/range.js";import{EditorOption as C}from"../../../common/config/editorOptions.js";import"../../../../platform/keybinding/common/keybinding.js";import{AccessibilitySupport as A}from"../../../../platform/accessibility/common/accessibility.js";import*as d from"../../../../nls.js";class b{static _getPageOfLine(e,n){return Math.floor((e-1)/n)}static _getRangeForPage(e,n){const t=e*n,o=t+1,g=t+n;return new u(o,1,g+1,1)}static fromEditorSelection(e,n,t,o){const r=b._getPageOfLine(n.startLineNumber,t),p=b._getRangeForPage(r,t),f=b._getPageOfLine(n.endLineNumber,t),R=b._getRangeForPage(f,t);let a=p.intersectRanges(new u(1,1,n.startLineNumber,n.startColumn));if(o&&e.getValueLengthInRange(a,s.LF)>500){const l=e.modifyPosition(a.getEndPosition(),-500);a=u.fromPositions(l,a.getEndPosition())}const L=e.getValueInRange(a,s.LF),I=e.getLineCount(),S=e.getLineMaxColumn(I);let c=R.intersectRanges(new u(n.endLineNumber,n.endColumn,I,S));if(o&&e.getValueLengthInRange(c,s.LF)>500){const l=e.modifyPosition(c.getStartPosition(),500);c=u.fromPositions(c.getStartPosition(),l)}const h=e.getValueInRange(c,s.LF);let i;if(r===f||r+1===f)i=e.getValueInRange(n,s.LF);else{const l=p.intersectRanges(n),y=R.intersectRanges(n);i=e.getValueInRange(l,s.LF)+"\u2026"+e.getValueInRange(y,s.LF)}return o&&i.length>2*500&&(i=i.substring(0,500)+"\u2026"+i.substring(i.length-500,i.length)),{value:L+i+h,selection:n,selectionStart:L.length,selectionEnd:L.length+i.length,newlineCountBeforeSelection:a.endLineNumber-a.startLineNumber}}}function T(m,e){if(m.get(C.accessibilitySupport)===A.Disabled){const t=e.lookupKeybinding("editor.action.toggleScreenReaderAccessibilityMode")?.getAriaLabel(),o=e.lookupKeybinding("workbench.action.showCommands")?.getAriaLabel(),g=e.lookupKeybinding("workbench.action.openGlobalKeybindings")?.getAriaLabel(),r=d.localize("accessibilityModeOff","The editor is not accessible at this time.");return t?d.localize("accessibilityOffAriaLabel","{0} To enable screen reader optimized mode, use {1}",r,t):o?d.localize("accessibilityOffAriaLabelNoKb","{0} To enable screen reader optimized mode, open the quick pick with {1} and run the command Toggle Screen Reader Accessibility Mode, which is currently not triggerable via keyboard.",r,o):g?d.localize("accessibilityOffAriaLabelNoKbs","{0} Please assign a keybinding for the command Toggle Screen Reader Accessibility Mode by accessing the keybindings editor with {1} and run it.",r,g):r}return m.get(C.ariaLabel)}function k(m){let e=0,n=-1;do{if(n=m.indexOf(`
-`,n+1),n===-1)break;e++}while(!0);return e}export{b as PagedScreenReaderStrategy,T as ariaLabelForScreenReaderContent,k as newlinecount};
+import { Range } from '../../../common/core/range.js';
+import * as nls from '../../../../nls.js';
+export class PagedScreenReaderStrategy {
+    static _getPageOfLine(lineNumber, linesPerPage) {
+        return Math.floor((lineNumber - 1) / linesPerPage);
+    }
+    static _getRangeForPage(page, linesPerPage) {
+        const offset = page * linesPerPage;
+        const startLineNumber = offset + 1;
+        const endLineNumber = offset + linesPerPage;
+        return new Range(startLineNumber, 1, endLineNumber + 1, 1);
+    }
+    static fromEditorSelection(model, selection, linesPerPage, trimLongText) {
+        const LIMIT_CHARS = 500;
+        const selectionStartPage = PagedScreenReaderStrategy._getPageOfLine(selection.startLineNumber, linesPerPage);
+        const selectionStartPageRange = PagedScreenReaderStrategy._getRangeForPage(selectionStartPage, linesPerPage);
+        const selectionEndPage = PagedScreenReaderStrategy._getPageOfLine(selection.endLineNumber, linesPerPage);
+        const selectionEndPageRange = PagedScreenReaderStrategy._getRangeForPage(selectionEndPage, linesPerPage);
+        let pretextRange = selectionStartPageRange.intersectRanges(new Range(1, 1, selection.startLineNumber, selection.startColumn));
+        if (trimLongText && model.getValueLengthInRange(pretextRange, 1) > LIMIT_CHARS) {
+            const pretextStart = model.modifyPosition(pretextRange.getEndPosition(), -LIMIT_CHARS);
+            pretextRange = Range.fromPositions(pretextStart, pretextRange.getEndPosition());
+        }
+        const pretext = model.getValueInRange(pretextRange, 1);
+        const lastLine = model.getLineCount();
+        const lastLineMaxColumn = model.getLineMaxColumn(lastLine);
+        let posttextRange = selectionEndPageRange.intersectRanges(new Range(selection.endLineNumber, selection.endColumn, lastLine, lastLineMaxColumn));
+        if (trimLongText && model.getValueLengthInRange(posttextRange, 1) > LIMIT_CHARS) {
+            const posttextEnd = model.modifyPosition(posttextRange.getStartPosition(), LIMIT_CHARS);
+            posttextRange = Range.fromPositions(posttextRange.getStartPosition(), posttextEnd);
+        }
+        const posttext = model.getValueInRange(posttextRange, 1);
+        let text;
+        if (selectionStartPage === selectionEndPage || selectionStartPage + 1 === selectionEndPage) {
+            text = model.getValueInRange(selection, 1);
+        }
+        else {
+            const selectionRange1 = selectionStartPageRange.intersectRanges(selection);
+            const selectionRange2 = selectionEndPageRange.intersectRanges(selection);
+            text = (model.getValueInRange(selectionRange1, 1)
+                + String.fromCharCode(8230)
+                + model.getValueInRange(selectionRange2, 1));
+        }
+        if (trimLongText && text.length > 2 * LIMIT_CHARS) {
+            text = text.substring(0, LIMIT_CHARS) + String.fromCharCode(8230) + text.substring(text.length - LIMIT_CHARS, text.length);
+        }
+        return {
+            value: pretext + text + posttext,
+            selection: selection,
+            selectionStart: pretext.length,
+            selectionEnd: pretext.length + text.length,
+            newlineCountBeforeSelection: pretextRange.endLineNumber - pretextRange.startLineNumber,
+        };
+    }
+}
+export function ariaLabelForScreenReaderContent(options, keybindingService) {
+    const accessibilitySupport = options.get(2);
+    if (accessibilitySupport === 1) {
+        const toggleKeybindingLabel = keybindingService.lookupKeybinding('editor.action.toggleScreenReaderAccessibilityMode')?.getAriaLabel();
+        const runCommandKeybindingLabel = keybindingService.lookupKeybinding('workbench.action.showCommands')?.getAriaLabel();
+        const keybindingEditorKeybindingLabel = keybindingService.lookupKeybinding('workbench.action.openGlobalKeybindings')?.getAriaLabel();
+        const editorNotAccessibleMessage = nls.localize('accessibilityModeOff', "The editor is not accessible at this time.");
+        if (toggleKeybindingLabel) {
+            return nls.localize('accessibilityOffAriaLabel', "{0} To enable screen reader optimized mode, use {1}", editorNotAccessibleMessage, toggleKeybindingLabel);
+        }
+        else if (runCommandKeybindingLabel) {
+            return nls.localize('accessibilityOffAriaLabelNoKb', "{0} To enable screen reader optimized mode, open the quick pick with {1} and run the command Toggle Screen Reader Accessibility Mode, which is currently not triggerable via keyboard.", editorNotAccessibleMessage, runCommandKeybindingLabel);
+        }
+        else if (keybindingEditorKeybindingLabel) {
+            return nls.localize('accessibilityOffAriaLabelNoKbs', "{0} Please assign a keybinding for the command Toggle Screen Reader Accessibility Mode by accessing the keybindings editor with {1} and run it.", editorNotAccessibleMessage, keybindingEditorKeybindingLabel);
+        }
+        else {
+            return editorNotAccessibleMessage;
+        }
+    }
+    return options.get(4);
+}
+export function newlinecount(text) {
+    let result = 0;
+    let startIndex = -1;
+    do {
+        startIndex = text.indexOf('\n', startIndex + 1);
+        if (startIndex === -1) {
+            break;
+        }
+        result++;
+    } while (true);
+    return result;
+}

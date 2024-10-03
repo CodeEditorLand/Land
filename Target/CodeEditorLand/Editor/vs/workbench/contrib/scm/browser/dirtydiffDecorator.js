@@ -1,4 +1,615 @@
-var Se=Object.defineProperty;var we=Object.getOwnPropertyDescriptor;var b=(d,n,e,i)=>{for(var t=i>1?void 0:i?we(n,e):n,o=d.length-1,r;o>=0;o--)(r=d[o])&&(t=(i?r(n,e,t):r(t))||t);return i&&t&&Se(n,e,t),t},h=(d,n)=>(e,i)=>n(e,i,d);import*as c from"../../../../nls.js";import"./media/dirtydiffDecorator.css";import{ThrottledDelayer as Ee}from"../../../../base/common/async.js";import{dispose as V,toDisposable as Y,Disposable as D,DisposableStore as M}from"../../../../base/common/lifecycle.js";import{Event as m,Emitter as xe}from"../../../../base/common/event.js";import"../../../common/contributions.js";import{IInstantiationService as _}from"../../../../platform/instantiation/common/instantiation.js";import{ITextModelService as _e}from"../../../../editor/common/services/resolverService.js";import{IEditorWorkerService as Le}from"../../../../editor/common/services/editorWorker.js";import{IConfigurationService as L}from"../../../../platform/configuration/common/configuration.js";import"../../../../base/common/uri.js";import{ISCMService as ke}from"../common/scm.js";import{ModelDecorationOptions as Ne}from"../../../../editor/common/model/textModel.js";import{themeColorFromId as Z,IThemeService as Te}from"../../../../platform/theme/common/themeService.js";import{editorErrorForeground as Ae,registerColor as p,transparent as W}from"../../../../platform/theme/common/colorRegistry.js";import{isCodeEditor as ee,MouseTargetType as ie}from"../../../../editor/browser/editorBrowser.js";import{registerEditorAction as k,registerEditorContribution as Re,EditorAction as N,EditorContributionInstantiation as Pe}from"../../../../editor/browser/editorExtensions.js";import{PeekViewWidget as Oe,getOuterEditor as Ge,peekViewBorder as Fe,peekViewTitleBackground as Ve,peekViewTitleForeground as We,peekViewTitleInfoForeground as Be}from"../../../../editor/contrib/peekView/browser/peekView.js";import{IContextKeyService as te,ContextKeyExpr as ze,RawContextKey as Qe}from"../../../../platform/contextkey/common/contextkey.js";import{EditorContextKeys as T}from"../../../../editor/common/editorContextKeys.js";import{KeyCode as I,KeyMod as C}from"../../../../base/common/keyCodes.js";import{Position as oe}from"../../../../editor/common/core/position.js";import"../../../../editor/common/core/range.js";import{rot as re}from"../../../../base/common/numbers.js";import{KeybindingsRegistry as Ke,KeybindingWeight as S}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{EmbeddedDiffEditorWidget as ne}from"../../../../editor/browser/widget/diffEditor/embeddedDiffEditorWidget.js";import{EditorOption as qe}from"../../../../editor/common/config/editorOptions.js";import{Action as se,ActionRunner as He}from"../../../../base/common/actions.js";import"../../../../base/browser/ui/actionbar/actionbar.js";import{IKeybindingService as Ue}from"../../../../platform/keybinding/common/keybinding.js";import{basename as $e}from"../../../../base/common/resources.js";import{MenuId as B,IMenuService as je,MenuItemAction as Xe,MenuRegistry as de}from"../../../../platform/actions/common/actions.js";import{createAndFillInActionBarActions as Je}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import{ScrollType as ae}from"../../../../editor/common/editorCommon.js";import{OverviewRulerLane as Ye,MinimapPosition as Ze,shouldSynchronizeModel as ei}from"../../../../editor/common/model.js";import{equals as ii,sortedDiff as ti}from"../../../../base/common/arrays.js";import{ICodeEditorService as z}from"../../../../editor/browser/services/codeEditorService.js";import"../../../../base/common/sequence.js";import*as A from"../../../../base/browser/dom.js";import{EncodingMode as oi,ITextFileService as ri,isTextFileEditorModel as ni}from"../../../services/textfile/common/textfiles.js";import{gotoNextLocation as si,gotoPreviousLocation as di}from"../../../../platform/theme/common/iconRegistry.js";import{Codicon as ai}from"../../../../base/common/codicons.js";import{ThemeIcon as Q}from"../../../../base/common/themables.js";import{onUnexpectedError as li}from"../../../../base/common/errors.js";import{TextCompareEditorActiveContext as R}from"../../../common/contextkeys.js";import{IProgressService as ci,ProgressLocation as hi}from"../../../../platform/progress/common/progress.js";import"../../../../editor/common/diff/legacyLinesDiffComputer.js";import{Color as le}from"../../../../base/common/color.js";import{ResourceMap as fi}from"../../../../base/common/map.js";import{IEditorService as gi}from"../../../services/editor/common/editorService.js";import{AccessibilitySignal as K,IAccessibilitySignalService as ce}from"../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";import{IAccessibilityService as he}from"../../../../platform/accessibility/common/accessibility.js";import{IQuickDiffService as ui}from"../common/quickDiff.js";import{SwitchQuickDiffBaseAction as mi,SwitchQuickDiffViewItem as pi}from"./dirtyDiffSwitcher.js";class vi extends He{runAction(n,e){return n instanceof Xe?n.run(...e):super.runAction(n,e)}}const fe=new Qe("dirtyDiffVisible",!1);function bi(d){const n=d.modifiedEndLineNumber-d.modifiedStartLineNumber+1,e=d.originalEndLineNumber-d.originalStartLineNumber+1;return d.originalEndLineNumber===0?n:d.modifiedEndLineNumber===0?e:n+e}function q(d){return d.modifiedEndLineNumber===0?d.modifiedStartLineNumber===0?1:d.modifiedStartLineNumber:d.modifiedEndLineNumber}function Ci(d,n){return d===1&&n.modifiedStartLineNumber===0&&n.modifiedEndLineNumber===0?!0:d>=n.modifiedStartLineNumber&&d<=(n.modifiedEndLineNumber||n.modifiedStartLineNumber)}let y=class extends se{editor;action;instantiationService;constructor(n,e,i,t,o){const r=t.lookupKeybinding(e.id),s=e.label+(r?` (${r.getLabel()})`:"");super(e.id,s,i),this.instantiationService=o,this.action=e,this.editor=n}run(){return Promise.resolve(this.instantiationService.invokeFunction(n=>this.action.run(n,this.editor,null)))}};y=b([h(3,Ue),h(4,_)],y);var yi=(i=>(i[i.Modify=0]="Modify",i[i.Add=1]="Add",i[i.Delete=2]="Delete",i))(yi||{});function H(d){return d.originalEndLineNumber===0?1:d.modifiedEndLineNumber===0?2:0}function Di(d,n){switch(n){case 0:return d.getColor(U);case 1:return d.getColor($);case 2:return d.getColor(j)}}function w(d){const n=d.get(z).listDiffEditors();for(const e of n)if(e.hasTextFocus()&&e instanceof ne)return e.getParentEditor();return Ge(d)}let E=class extends Oe{constructor(e,i,t,o,r,s){super(e,{isResizeable:!0,frameWidth:1,keepEditorSelection:!0,className:"dirty-diff"},o);this.model=i;this.themeService=t;this.menuService=r;this.contextKeyService=s;this._disposables.add(t.onDidColorThemeChange(this._applyTheme,this)),this._applyTheme(t.getColorTheme()),this.model.original.length>0&&(s=s.createOverlay([["originalResourceScheme",this.model.original[0].uri.scheme],["originalResourceSchemes",this.model.original.map(a=>a.uri.scheme)]])),this.create(),e.hasModel()?this.title=$e(e.getModel().uri):this.title="",this.setTitle(this.title)}diffEditor;title;menu;_index=0;_provider="";change;height=void 0;dropdown;dropdownContainer;get provider(){return this._provider}get index(){return this._index}get visibleRange(){const e=this.diffEditor.getModifiedEditor().getVisibleRanges();return e.length>=0?e[0]:void 0}showChange(e,i=!0){const t=this.model.changes[e],o=t.change;if(this._index=e,this.contextKeyService.createKey("originalResourceScheme",this.model.changes[e].uri.scheme),this.updateActions(),this._provider=t.label,this.change=o,!this.model.original)return;m.once(this.diffEditor.onDidUpdateDiff)(()=>setTimeout(()=>this.revealChange(o),0));const a=this.model.getDiffEditorModel(t.uri.toString());if(!a)return;this.diffEditor.setModel(a),this.dropdown?.setSelection(t.label);const l=new oe(q(o),1),f=this.editor.getOption(qe.lineHeight),v=this.editor.getLayoutInfo().height,O=Math.floor(v/f),Ie=Math.min(bi(o)+8,Math.floor(O/3));this.renderTitle(t.label);const Me=H(o),X=Di(this.themeService.getColorTheme(),Me);this.style({frameColor:X,arrowColor:X});const G=[];let J=e;for(const F of this.model.changes)F.label===this.model.changes[this._index].label&&(G.push(F.change),t===F&&(J=G.length-1));this._actionbarWidget.context=[a.modified.uri,G,J],i&&(this.show(l,Ie),this.editor.setPosition(l),this.editor.focus())}renderTitle(e){const i=this.model.mapChanges.get(e),t=i.indexOf(this._index);let o;this.shouldUseDropdown()?(o=this.model.changes.length>1?c.localize("multiChanges","{0} of {1} changes",t+1,i.length):c.localize("multiChange","{0} of {1} change",t+1,i.length),this.dropdownContainer.style.display="inherit"):(o=this.model.changes.length>1?c.localize("changes","{0} - {1} of {2} changes",e,t+1,i.length):c.localize("change","{0} - {1} of {2} change",e,t+1,i.length),this.dropdownContainer.style.display="none"),this.setTitle(this.title,o)}switchQuickDiff(e){const i=e?.provider;if(i===this.model.changes[this._index].label)return;let t=this._index<this.model.changes.length-1?this._index+1:0;for(let s=t;s!==this._index;s<this.model.changes.length-1?s++:s=0)if(this.model.changes[s].label===i){t=s;break}let o=this._index>0?this._index-1:this.model.changes.length-1;for(let s=o;s!==this._index;s>=0?s--:s=this.model.changes.length-1)if(this.model.changes[s].label===i){o=s;break}const r=Math.abs(this.model.changes[t].change.modifiedEndLineNumber-this.model.changes[this._index].change.modifiedEndLineNumber)<Math.abs(this.model.changes[o].change.modifiedEndLineNumber-this.model.changes[this._index].change.modifiedEndLineNumber)?t:o;this.showChange(r,!1)}shouldUseDropdown(){let e=0;if(this.model.mapChanges.size>1){const i=Array.from(this.model.mapChanges.keys());for(let t=0;t<i.length&&e<=1;t++)this.model.mapChanges.get(i[t]).length>0&&e++}return e>=2}updateActions(){if(!this._actionbarWidget)return;const e=this.instantiationService.createInstance(y,this.editor,new ge(this.editor),Q.asClassName(di)),i=this.instantiationService.createInstance(y,this.editor,new ue(this.editor),Q.asClassName(si));this._disposables.add(e),this._disposables.add(i);const t=[];this.menu&&this.menu.dispose(),this.menu=this.menuService.createMenu(B.SCMChangeContext,this.contextKeyService),Je(this.menu,{shouldForwardArgs:!0},t),this._actionbarWidget.clear(),this._actionbarWidget.push(t.reverse(),{label:!1,icon:!0}),this._actionbarWidget.push([i,e],{label:!1,icon:!0}),this._actionbarWidget.push(new se("peekview.close",c.localize("label.close","Close"),Q.asClassName(ai.close),!0,()=>this.dispose()),{label:!1,icon:!0})}_fillHead(e){super._fillHead(e,!0),this.dropdownContainer=A.prepend(this._titleElement,A.$(".dropdown")),this.dropdown=this.instantiationService.createInstance(pi,new mi(i=>this.switchQuickDiff(i)),this.model.quickDiffs.map(i=>i.label),this.model.changes[this._index].label),this.dropdown.render(this.dropdownContainer),this.updateActions()}_getActionBarOptions(){const e=new vi;return e.onDidRun(i=>{!(i.action instanceof y)&&!i.error&&this.dispose()}),{...super._getActionBarOptions(),actionRunner:e}}_fillBody(e){const i={scrollBeyondLastLine:!0,scrollbar:{verticalScrollbarSize:14,horizontal:"auto",useShadows:!0,verticalHasArrows:!1,horizontalHasArrows:!1},overviewRulerLanes:2,fixedOverflowWidgets:!0,minimap:{enabled:!1},renderSideBySide:!1,readOnly:!1,renderIndicators:!1,diffAlgorithm:"advanced",ignoreTrimWhitespace:!1,stickyScroll:{enabled:!1}};this.diffEditor=this.instantiationService.createInstance(ne,e,i,{},this.editor),this._disposables.add(this.diffEditor)}_onWidth(e){typeof this.height>"u"||this.diffEditor.layout({height:this.height,width:e})}_doLayoutBody(e,i){super._doLayoutBody(e,i),this.diffEditor.layout({height:e,width:i}),typeof this.height>"u"&&this.change&&this.revealChange(this.change),this.height=e}revealChange(e){let i,t;e.modifiedEndLineNumber===0?(i=e.modifiedStartLineNumber,t=e.modifiedStartLineNumber+1):e.originalEndLineNumber>0?(i=e.modifiedStartLineNumber-1,t=e.modifiedEndLineNumber+1):(i=e.modifiedStartLineNumber,t=e.modifiedEndLineNumber),this.diffEditor.revealLinesInCenter(i,t,ae.Immediate)}_applyTheme(e){const i=e.getColor(Fe)||le.transparent;this.style({arrowColor:i,frameColor:i,headerBackgroundColor:e.getColor(Ve)||le.transparent,primaryHeadingColor:e.getColor(We),secondaryHeadingColor:e.getColor(Be)})}revealRange(e){this.editor.revealLineInCenterIfOutsideViewport(e.endLineNumber,ae.Smooth)}hasFocus(){return this.diffEditor.hasTextFocus()}dispose(){super.dispose(),this.menu?.dispose()}};E=b([h(2,Te),h(3,_),h(4,je),h(5,te)],E);class ge extends N{constructor(e){super({id:"editor.action.dirtydiff.previous",label:c.localize("show previous change","Show Previous Change"),alias:"Show Previous Change",precondition:R.toNegated(),kbOpts:{kbExpr:T.editorTextFocus,primary:C.Shift|C.Alt|I.F3,weight:S.EditorContrib}});this.outerEditor=e}run(e){const i=this.outerEditor??w(e);if(!i)return;const t=g.get(i);t&&t.canNavigate()&&t.previous()}}k(ge);class ue extends N{constructor(e){super({id:"editor.action.dirtydiff.next",label:c.localize("show next change","Show Next Change"),alias:"Show Next Change",precondition:R.toNegated(),kbOpts:{kbExpr:T.editorTextFocus,primary:C.Alt|I.F3,weight:S.EditorContrib}});this.outerEditor=e}run(e){const i=this.outerEditor??w(e);if(!i)return;const t=g.get(i);t&&t.canNavigate()&&t.next()}}k(ue),de.appendMenuItem(B.MenubarGoMenu,{group:"7_change_nav",command:{id:"editor.action.dirtydiff.next",title:c.localize({key:"miGotoNextChange",comment:["&& denotes a mnemonic"]},"Next &&Change")},order:1}),de.appendMenuItem(B.MenubarGoMenu,{group:"7_change_nav",command:{id:"editor.action.dirtydiff.previous",title:c.localize({key:"miGotoPreviousChange",comment:["&& denotes a mnemonic"]},"Previous &&Change")},order:2});class Ii extends N{constructor(){super({id:"workbench.action.editor.previousChange",label:c.localize("move to previous change","Go to Previous Change"),alias:"Go to Previous Change",precondition:R.toNegated(),kbOpts:{kbExpr:T.editorTextFocus,primary:C.Shift|C.Alt|I.F5,weight:S.EditorContrib}})}async run(n){const e=w(n),i=n.get(ce),t=n.get(he),o=n.get(z);if(!e||!e.hasModel())return;const r=g.get(e);if(!r||!r.modelRegistry)return;const s=e.getPosition().lineNumber,a=r.modelRegistry.getModel(e.getModel(),e);if(!a||a.changes.length===0)return;const l=a.findPreviousClosestChange(s,!1),f=a.changes[l];await pe(f.change,i),me(f.change,e,t,o)}}k(Ii);class Mi extends N{constructor(){super({id:"workbench.action.editor.nextChange",label:c.localize("move to next change","Go to Next Change"),alias:"Go to Next Change",precondition:R.toNegated(),kbOpts:{kbExpr:T.editorTextFocus,primary:C.Alt|I.F5,weight:S.EditorContrib}})}async run(n){const e=n.get(ce),i=w(n),t=n.get(he),o=n.get(z);if(!i||!i.hasModel())return;const r=g.get(i);if(!r||!r.modelRegistry)return;const s=i.getPosition().lineNumber,a=r.modelRegistry.getModel(i.getModel(),i);if(!a||a.changes.length===0)return;const l=a.findNextClosestChange(s,!1),f=a.changes[l].change;await pe(f,e),me(f,i,t,o)}}function me(d,n,e,i){const t=new oe(d.modifiedStartLineNumber,1);n.setPosition(t),n.revealPositionInCenter(t),e.isScreenReaderOptimized()&&(n.setSelection({startLineNumber:d.modifiedStartLineNumber,startColumn:0,endLineNumber:d.modifiedStartLineNumber,endColumn:Number.MAX_VALUE}),i.getActiveCodeEditor()?.writeScreenReaderContent("diff-navigation"))}async function pe(d,n){switch(H(d)){case 1:n.playSignal(K.diffLineInserted,{allowManyInParallel:!0,source:"dirtyDiffDecoration"});break;case 2:n.playSignal(K.diffLineDeleted,{allowManyInParallel:!0,source:"dirtyDiffDecoration"});break;case 0:n.playSignal(K.diffLineModified,{allowManyInParallel:!0,source:"dirtyDiffDecoration"});break}}k(Mi),Ke.registerCommandAndKeybindingRule({id:"closeDirtyDiff",weight:S.EditorContrib+50,primary:I.Escape,secondary:[C.Shift|I.Escape],when:ze.and(fe),handler:d=>{const n=w(d);if(!n)return;const e=g.get(n);e&&e.close()}});let g=class extends D{constructor(e,i,t,o){super();this.editor=e;this.configurationService=t;this.instantiationService=o;if(this.enabled=!i.getContextKeyValue("isInDiffEditor"),this.stylesheet=A.createStyleSheet(void 0,void 0,this._store),this.enabled){this.isDirtyDiffVisible=fe.bindTo(i),this._register(e.onDidChangeModel(()=>this.close()));const r=m.filter(t.onDidChangeConfiguration,s=>s.affectsConfiguration("scm.diffDecorationsGutterAction"));this._register(r(this.onDidChangeGutterAction,this)),this.onDidChangeGutterAction()}}static ID="editor.contrib.dirtydiff";static get(e){return e.getContribution(g.ID)}modelRegistry=null;model=null;widget=null;isDirtyDiffVisible;session=D.None;mouseDownInfo=null;enabled=!1;gutterActionDisposables=new M;stylesheet;onDidChangeGutterAction(){const e=this.configurationService.getValue("scm.diffDecorationsGutterAction");this.gutterActionDisposables.clear(),e==="diff"?(this.gutterActionDisposables.add(this.editor.onMouseDown(i=>this.onEditorMouseDown(i))),this.gutterActionDisposables.add(this.editor.onMouseUp(i=>this.onEditorMouseUp(i))),this.stylesheet.textContent=`
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var DirtyDiffController_1, DirtyDiffDecorator_1;
+import * as nls from '../../../../nls.js';
+import './media/dirtydiffDecorator.css';
+import { ThrottledDelayer } from '../../../../base/common/async.js';
+import { dispose, toDisposable, Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { Event, Emitter } from '../../../../base/common/event.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { IEditorWorkerService } from '../../../../editor/common/services/editorWorker.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ISCMService } from '../common/scm.js';
+import { ModelDecorationOptions } from '../../../../editor/common/model/textModel.js';
+import { themeColorFromId, IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { editorErrorForeground, registerColor, transparent } from '../../../../platform/theme/common/colorRegistry.js';
+import { isCodeEditor } from '../../../../editor/browser/editorBrowser.js';
+import { registerEditorAction, registerEditorContribution, EditorAction } from '../../../../editor/browser/editorExtensions.js';
+import { PeekViewWidget, getOuterEditor, peekViewBorder, peekViewTitleBackground, peekViewTitleForeground, peekViewTitleInfoForeground } from '../../../../editor/contrib/peekView/browser/peekView.js';
+import { IContextKeyService, ContextKeyExpr, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
+import { Position } from '../../../../editor/common/core/position.js';
+import { rot } from '../../../../base/common/numbers.js';
+import { KeybindingsRegistry } from '../../../../platform/keybinding/common/keybindingsRegistry.js';
+import { EmbeddedDiffEditorWidget } from '../../../../editor/browser/widget/diffEditor/embeddedDiffEditorWidget.js';
+import { Action, ActionRunner } from '../../../../base/common/actions.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { basename } from '../../../../base/common/resources.js';
+import { MenuId, IMenuService, MenuItemAction, MenuRegistry } from '../../../../platform/actions/common/actions.js';
+import { createAndFillInActionBarActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { OverviewRulerLane, shouldSynchronizeModel } from '../../../../editor/common/model.js';
+import { equals, sortedDiff } from '../../../../base/common/arrays.js';
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import * as dom from '../../../../base/browser/dom.js';
+import { ITextFileService, isTextFileEditorModel } from '../../../services/textfile/common/textfiles.js';
+import { gotoNextLocation, gotoPreviousLocation } from '../../../../platform/theme/common/iconRegistry.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+import { TextCompareEditorActiveContext } from '../../../common/contextkeys.js';
+import { IProgressService } from '../../../../platform/progress/common/progress.js';
+import { Color } from '../../../../base/common/color.js';
+import { ResourceMap } from '../../../../base/common/map.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { AccessibilitySignal, IAccessibilitySignalService } from '../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+import { IAccessibilityService } from '../../../../platform/accessibility/common/accessibility.js';
+import { IQuickDiffService } from '../common/quickDiff.js';
+import { SwitchQuickDiffBaseAction, SwitchQuickDiffViewItem } from './dirtyDiffSwitcher.js';
+class DiffActionRunner extends ActionRunner {
+    runAction(action, context) {
+        if (action instanceof MenuItemAction) {
+            return action.run(...context);
+        }
+        return super.runAction(action, context);
+    }
+}
+export const isDirtyDiffVisible = new RawContextKey('dirtyDiffVisible', false);
+function getChangeHeight(change) {
+    const modified = change.modifiedEndLineNumber - change.modifiedStartLineNumber + 1;
+    const original = change.originalEndLineNumber - change.originalStartLineNumber + 1;
+    if (change.originalEndLineNumber === 0) {
+        return modified;
+    }
+    else if (change.modifiedEndLineNumber === 0) {
+        return original;
+    }
+    else {
+        return modified + original;
+    }
+}
+function getModifiedEndLineNumber(change) {
+    if (change.modifiedEndLineNumber === 0) {
+        return change.modifiedStartLineNumber === 0 ? 1 : change.modifiedStartLineNumber;
+    }
+    else {
+        return change.modifiedEndLineNumber;
+    }
+}
+function lineIntersectsChange(lineNumber, change) {
+    if (lineNumber === 1 && change.modifiedStartLineNumber === 0 && change.modifiedEndLineNumber === 0) {
+        return true;
+    }
+    return lineNumber >= change.modifiedStartLineNumber && lineNumber <= (change.modifiedEndLineNumber || change.modifiedStartLineNumber);
+}
+let UIEditorAction = class UIEditorAction extends Action {
+    constructor(editor, action, cssClass, keybindingService, instantiationService) {
+        const keybinding = keybindingService.lookupKeybinding(action.id);
+        const label = action.label + (keybinding ? ` (${keybinding.getLabel()})` : '');
+        super(action.id, label, cssClass);
+        this.instantiationService = instantiationService;
+        this.action = action;
+        this.editor = editor;
+    }
+    run() {
+        return Promise.resolve(this.instantiationService.invokeFunction(accessor => this.action.run(accessor, this.editor, null)));
+    }
+};
+UIEditorAction = __decorate([
+    __param(3, IKeybindingService),
+    __param(4, IInstantiationService),
+    __metadata("design:paramtypes", [Object, EditorAction, String, Object, Object])
+], UIEditorAction);
+var ChangeType;
+(function (ChangeType) {
+    ChangeType[ChangeType["Modify"] = 0] = "Modify";
+    ChangeType[ChangeType["Add"] = 1] = "Add";
+    ChangeType[ChangeType["Delete"] = 2] = "Delete";
+})(ChangeType || (ChangeType = {}));
+function getChangeType(change) {
+    if (change.originalEndLineNumber === 0) {
+        return ChangeType.Add;
+    }
+    else if (change.modifiedEndLineNumber === 0) {
+        return ChangeType.Delete;
+    }
+    else {
+        return ChangeType.Modify;
+    }
+}
+function getChangeTypeColor(theme, changeType) {
+    switch (changeType) {
+        case ChangeType.Modify: return theme.getColor(editorGutterModifiedBackground);
+        case ChangeType.Add: return theme.getColor(editorGutterAddedBackground);
+        case ChangeType.Delete: return theme.getColor(editorGutterDeletedBackground);
+    }
+}
+function getOuterEditorFromDiffEditor(accessor) {
+    const diffEditors = accessor.get(ICodeEditorService).listDiffEditors();
+    for (const diffEditor of diffEditors) {
+        if (diffEditor.hasTextFocus() && diffEditor instanceof EmbeddedDiffEditorWidget) {
+            return diffEditor.getParentEditor();
+        }
+    }
+    return getOuterEditor(accessor);
+}
+let DirtyDiffWidget = class DirtyDiffWidget extends PeekViewWidget {
+    constructor(editor, model, themeService, instantiationService, menuService, contextKeyService) {
+        super(editor, { isResizeable: true, frameWidth: 1, keepEditorSelection: true, className: 'dirty-diff' }, instantiationService);
+        this.model = model;
+        this.themeService = themeService;
+        this.menuService = menuService;
+        this.contextKeyService = contextKeyService;
+        this._index = 0;
+        this._provider = '';
+        this.height = undefined;
+        this._disposables.add(themeService.onDidColorThemeChange(this._applyTheme, this));
+        this._applyTheme(themeService.getColorTheme());
+        if (this.model.original.length > 0) {
+            contextKeyService = contextKeyService.createOverlay([['originalResourceScheme', this.model.original[0].uri.scheme], ['originalResourceSchemes', this.model.original.map(original => original.uri.scheme)]]);
+        }
+        this.create();
+        if (editor.hasModel()) {
+            this.title = basename(editor.getModel().uri);
+        }
+        else {
+            this.title = '';
+        }
+        this.setTitle(this.title);
+    }
+    get provider() {
+        return this._provider;
+    }
+    get index() {
+        return this._index;
+    }
+    get visibleRange() {
+        const visibleRanges = this.diffEditor.getModifiedEditor().getVisibleRanges();
+        return visibleRanges.length >= 0 ? visibleRanges[0] : undefined;
+    }
+    showChange(index, usePosition = true) {
+        const labeledChange = this.model.changes[index];
+        const change = labeledChange.change;
+        this._index = index;
+        this.contextKeyService.createKey('originalResourceScheme', this.model.changes[index].uri.scheme);
+        this.updateActions();
+        this._provider = labeledChange.label;
+        this.change = change;
+        const originalModel = this.model.original;
+        if (!originalModel) {
+            return;
+        }
+        const onFirstDiffUpdate = Event.once(this.diffEditor.onDidUpdateDiff);
+        onFirstDiffUpdate(() => setTimeout(() => this.revealChange(change), 0));
+        const diffEditorModel = this.model.getDiffEditorModel(labeledChange.uri.toString());
+        if (!diffEditorModel) {
+            return;
+        }
+        this.diffEditor.setModel(diffEditorModel);
+        this.dropdown?.setSelection(labeledChange.label);
+        const position = new Position(getModifiedEndLineNumber(change), 1);
+        const lineHeight = this.editor.getOption(69);
+        const editorHeight = this.editor.getLayoutInfo().height;
+        const editorHeightInLines = Math.floor(editorHeight / lineHeight);
+        const height = Math.min(getChangeHeight(change) + 8, Math.floor(editorHeightInLines / 3));
+        this.renderTitle(labeledChange.label);
+        const changeType = getChangeType(change);
+        const changeTypeColor = getChangeTypeColor(this.themeService.getColorTheme(), changeType);
+        this.style({ frameColor: changeTypeColor, arrowColor: changeTypeColor });
+        const providerSpecificChanges = [];
+        let contextIndex = index;
+        for (const change of this.model.changes) {
+            if (change.label === this.model.changes[this._index].label) {
+                providerSpecificChanges.push(change.change);
+                if (labeledChange === change) {
+                    contextIndex = providerSpecificChanges.length - 1;
+                }
+            }
+        }
+        this._actionbarWidget.context = [diffEditorModel.modified.uri, providerSpecificChanges, contextIndex];
+        if (usePosition) {
+            this.show(position, height);
+            this.editor.setPosition(position);
+            this.editor.focus();
+        }
+    }
+    renderTitle(label) {
+        const providerChanges = this.model.mapChanges.get(label);
+        const providerIndex = providerChanges.indexOf(this._index);
+        let detail;
+        if (!this.shouldUseDropdown()) {
+            detail = this.model.changes.length > 1
+                ? nls.localize('changes', "{0} - {1} of {2} changes", label, providerIndex + 1, providerChanges.length)
+                : nls.localize('change', "{0} - {1} of {2} change", label, providerIndex + 1, providerChanges.length);
+            this.dropdownContainer.style.display = 'none';
+        }
+        else {
+            detail = this.model.changes.length > 1
+                ? nls.localize('multiChanges', "{0} of {1} changes", providerIndex + 1, providerChanges.length)
+                : nls.localize('multiChange', "{0} of {1} change", providerIndex + 1, providerChanges.length);
+            this.dropdownContainer.style.display = 'inherit';
+        }
+        this.setTitle(this.title, detail);
+    }
+    switchQuickDiff(event) {
+        const newProvider = event?.provider;
+        if (newProvider === this.model.changes[this._index].label) {
+            return;
+        }
+        let closestGreaterIndex = this._index < this.model.changes.length - 1 ? this._index + 1 : 0;
+        for (let i = closestGreaterIndex; i !== this._index; i < this.model.changes.length - 1 ? i++ : i = 0) {
+            if (this.model.changes[i].label === newProvider) {
+                closestGreaterIndex = i;
+                break;
+            }
+        }
+        let closestLesserIndex = this._index > 0 ? this._index - 1 : this.model.changes.length - 1;
+        for (let i = closestLesserIndex; i !== this._index; i >= 0 ? i-- : i = this.model.changes.length - 1) {
+            if (this.model.changes[i].label === newProvider) {
+                closestLesserIndex = i;
+                break;
+            }
+        }
+        const closestIndex = Math.abs(this.model.changes[closestGreaterIndex].change.modifiedEndLineNumber - this.model.changes[this._index].change.modifiedEndLineNumber)
+            < Math.abs(this.model.changes[closestLesserIndex].change.modifiedEndLineNumber - this.model.changes[this._index].change.modifiedEndLineNumber)
+            ? closestGreaterIndex : closestLesserIndex;
+        this.showChange(closestIndex, false);
+    }
+    shouldUseDropdown() {
+        let providersWithChangesCount = 0;
+        if (this.model.mapChanges.size > 1) {
+            const keys = Array.from(this.model.mapChanges.keys());
+            for (let i = 0; (i < keys.length) && (providersWithChangesCount <= 1); i++) {
+                if (this.model.mapChanges.get(keys[i]).length > 0) {
+                    providersWithChangesCount++;
+                }
+            }
+        }
+        return providersWithChangesCount >= 2;
+    }
+    updateActions() {
+        if (!this._actionbarWidget) {
+            return;
+        }
+        const previous = this.instantiationService.createInstance(UIEditorAction, this.editor, new ShowPreviousChangeAction(this.editor), ThemeIcon.asClassName(gotoPreviousLocation));
+        const next = this.instantiationService.createInstance(UIEditorAction, this.editor, new ShowNextChangeAction(this.editor), ThemeIcon.asClassName(gotoNextLocation));
+        this._disposables.add(previous);
+        this._disposables.add(next);
+        const actions = [];
+        if (this.menu) {
+            this.menu.dispose();
+        }
+        this.menu = this.menuService.createMenu(MenuId.SCMChangeContext, this.contextKeyService);
+        createAndFillInActionBarActions(this.menu, { shouldForwardArgs: true }, actions);
+        this._actionbarWidget.clear();
+        this._actionbarWidget.push(actions.reverse(), { label: false, icon: true });
+        this._actionbarWidget.push([next, previous], { label: false, icon: true });
+        this._actionbarWidget.push(new Action('peekview.close', nls.localize('label.close', "Close"), ThemeIcon.asClassName(Codicon.close), true, () => this.dispose()), { label: false, icon: true });
+    }
+    _fillHead(container) {
+        super._fillHead(container, true);
+        this.dropdownContainer = dom.prepend(this._titleElement, dom.$('.dropdown'));
+        this.dropdown = this.instantiationService.createInstance(SwitchQuickDiffViewItem, new SwitchQuickDiffBaseAction((event) => this.switchQuickDiff(event)), this.model.quickDiffs.map(quickDiffer => quickDiffer.label), this.model.changes[this._index].label);
+        this.dropdown.render(this.dropdownContainer);
+        this.updateActions();
+    }
+    _getActionBarOptions() {
+        const actionRunner = new DiffActionRunner();
+        actionRunner.onDidRun(e => {
+            if (!(e.action instanceof UIEditorAction) && !e.error) {
+                this.dispose();
+            }
+        });
+        return {
+            ...super._getActionBarOptions(),
+            actionRunner
+        };
+    }
+    _fillBody(container) {
+        const options = {
+            scrollBeyondLastLine: true,
+            scrollbar: {
+                verticalScrollbarSize: 14,
+                horizontal: 'auto',
+                useShadows: true,
+                verticalHasArrows: false,
+                horizontalHasArrows: false
+            },
+            overviewRulerLanes: 2,
+            fixedOverflowWidgets: true,
+            minimap: { enabled: false },
+            renderSideBySide: false,
+            readOnly: false,
+            renderIndicators: false,
+            diffAlgorithm: 'advanced',
+            ignoreTrimWhitespace: false,
+            stickyScroll: { enabled: false }
+        };
+        this.diffEditor = this.instantiationService.createInstance(EmbeddedDiffEditorWidget, container, options, {}, this.editor);
+        this._disposables.add(this.diffEditor);
+    }
+    _onWidth(width) {
+        if (typeof this.height === 'undefined') {
+            return;
+        }
+        this.diffEditor.layout({ height: this.height, width });
+    }
+    _doLayoutBody(height, width) {
+        super._doLayoutBody(height, width);
+        this.diffEditor.layout({ height, width });
+        if (typeof this.height === 'undefined' && this.change) {
+            this.revealChange(this.change);
+        }
+        this.height = height;
+    }
+    revealChange(change) {
+        let start, end;
+        if (change.modifiedEndLineNumber === 0) {
+            start = change.modifiedStartLineNumber;
+            end = change.modifiedStartLineNumber + 1;
+        }
+        else if (change.originalEndLineNumber > 0) {
+            start = change.modifiedStartLineNumber - 1;
+            end = change.modifiedEndLineNumber + 1;
+        }
+        else {
+            start = change.modifiedStartLineNumber;
+            end = change.modifiedEndLineNumber;
+        }
+        this.diffEditor.revealLinesInCenter(start, end, 1);
+    }
+    _applyTheme(theme) {
+        const borderColor = theme.getColor(peekViewBorder) || Color.transparent;
+        this.style({
+            arrowColor: borderColor,
+            frameColor: borderColor,
+            headerBackgroundColor: theme.getColor(peekViewTitleBackground) || Color.transparent,
+            primaryHeadingColor: theme.getColor(peekViewTitleForeground),
+            secondaryHeadingColor: theme.getColor(peekViewTitleInfoForeground)
+        });
+    }
+    revealRange(range) {
+        this.editor.revealLineInCenterIfOutsideViewport(range.endLineNumber, 0);
+    }
+    hasFocus() {
+        return this.diffEditor.hasTextFocus();
+    }
+    dispose() {
+        super.dispose();
+        this.menu?.dispose();
+    }
+};
+DirtyDiffWidget = __decorate([
+    __param(2, IThemeService),
+    __param(3, IInstantiationService),
+    __param(4, IMenuService),
+    __param(5, IContextKeyService),
+    __metadata("design:paramtypes", [Object, DirtyDiffModel, Object, Object, Object, Object])
+], DirtyDiffWidget);
+export class ShowPreviousChangeAction extends EditorAction {
+    constructor(outerEditor) {
+        super({
+            id: 'editor.action.dirtydiff.previous',
+            label: nls.localize('show previous change', "Show Previous Change"),
+            alias: 'Show Previous Change',
+            precondition: TextCompareEditorActiveContext.toNegated(),
+            kbOpts: { kbExpr: EditorContextKeys.editorTextFocus, primary: 1024 | 512 | 61, weight: 100 }
+        });
+        this.outerEditor = outerEditor;
+    }
+    run(accessor) {
+        const outerEditor = this.outerEditor ?? getOuterEditorFromDiffEditor(accessor);
+        if (!outerEditor) {
+            return;
+        }
+        const controller = DirtyDiffController.get(outerEditor);
+        if (!controller) {
+            return;
+        }
+        if (!controller.canNavigate()) {
+            return;
+        }
+        controller.previous();
+    }
+}
+registerEditorAction(ShowPreviousChangeAction);
+export class ShowNextChangeAction extends EditorAction {
+    constructor(outerEditor) {
+        super({
+            id: 'editor.action.dirtydiff.next',
+            label: nls.localize('show next change', "Show Next Change"),
+            alias: 'Show Next Change',
+            precondition: TextCompareEditorActiveContext.toNegated(),
+            kbOpts: { kbExpr: EditorContextKeys.editorTextFocus, primary: 512 | 61, weight: 100 }
+        });
+        this.outerEditor = outerEditor;
+    }
+    run(accessor) {
+        const outerEditor = this.outerEditor ?? getOuterEditorFromDiffEditor(accessor);
+        if (!outerEditor) {
+            return;
+        }
+        const controller = DirtyDiffController.get(outerEditor);
+        if (!controller) {
+            return;
+        }
+        if (!controller.canNavigate()) {
+            return;
+        }
+        controller.next();
+    }
+}
+registerEditorAction(ShowNextChangeAction);
+MenuRegistry.appendMenuItem(MenuId.MenubarGoMenu, {
+    group: '7_change_nav',
+    command: {
+        id: 'editor.action.dirtydiff.next',
+        title: nls.localize({ key: 'miGotoNextChange', comment: ['&& denotes a mnemonic'] }, "Next &&Change")
+    },
+    order: 1
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarGoMenu, {
+    group: '7_change_nav',
+    command: {
+        id: 'editor.action.dirtydiff.previous',
+        title: nls.localize({ key: 'miGotoPreviousChange', comment: ['&& denotes a mnemonic'] }, "Previous &&Change")
+    },
+    order: 2
+});
+export class GotoPreviousChangeAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'workbench.action.editor.previousChange',
+            label: nls.localize('move to previous change', "Go to Previous Change"),
+            alias: 'Go to Previous Change',
+            precondition: TextCompareEditorActiveContext.toNegated(),
+            kbOpts: { kbExpr: EditorContextKeys.editorTextFocus, primary: 1024 | 512 | 63, weight: 100 }
+        });
+    }
+    async run(accessor) {
+        const outerEditor = getOuterEditorFromDiffEditor(accessor);
+        const accessibilitySignalService = accessor.get(IAccessibilitySignalService);
+        const accessibilityService = accessor.get(IAccessibilityService);
+        const codeEditorService = accessor.get(ICodeEditorService);
+        if (!outerEditor || !outerEditor.hasModel()) {
+            return;
+        }
+        const controller = DirtyDiffController.get(outerEditor);
+        if (!controller || !controller.modelRegistry) {
+            return;
+        }
+        const lineNumber = outerEditor.getPosition().lineNumber;
+        const model = controller.modelRegistry.getModel(outerEditor.getModel(), outerEditor);
+        if (!model || model.changes.length === 0) {
+            return;
+        }
+        const index = model.findPreviousClosestChange(lineNumber, false);
+        const change = model.changes[index];
+        await playAccessibilitySymbolForChange(change.change, accessibilitySignalService);
+        setPositionAndSelection(change.change, outerEditor, accessibilityService, codeEditorService);
+    }
+}
+registerEditorAction(GotoPreviousChangeAction);
+export class GotoNextChangeAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'workbench.action.editor.nextChange',
+            label: nls.localize('move to next change', "Go to Next Change"),
+            alias: 'Go to Next Change',
+            precondition: TextCompareEditorActiveContext.toNegated(),
+            kbOpts: { kbExpr: EditorContextKeys.editorTextFocus, primary: 512 | 63, weight: 100 }
+        });
+    }
+    async run(accessor) {
+        const accessibilitySignalService = accessor.get(IAccessibilitySignalService);
+        const outerEditor = getOuterEditorFromDiffEditor(accessor);
+        const accessibilityService = accessor.get(IAccessibilityService);
+        const codeEditorService = accessor.get(ICodeEditorService);
+        if (!outerEditor || !outerEditor.hasModel()) {
+            return;
+        }
+        const controller = DirtyDiffController.get(outerEditor);
+        if (!controller || !controller.modelRegistry) {
+            return;
+        }
+        const lineNumber = outerEditor.getPosition().lineNumber;
+        const model = controller.modelRegistry.getModel(outerEditor.getModel(), outerEditor);
+        if (!model || model.changes.length === 0) {
+            return;
+        }
+        const index = model.findNextClosestChange(lineNumber, false);
+        const change = model.changes[index].change;
+        await playAccessibilitySymbolForChange(change, accessibilitySignalService);
+        setPositionAndSelection(change, outerEditor, accessibilityService, codeEditorService);
+    }
+}
+function setPositionAndSelection(change, editor, accessibilityService, codeEditorService) {
+    const position = new Position(change.modifiedStartLineNumber, 1);
+    editor.setPosition(position);
+    editor.revealPositionInCenter(position);
+    if (accessibilityService.isScreenReaderOptimized()) {
+        editor.setSelection({ startLineNumber: change.modifiedStartLineNumber, startColumn: 0, endLineNumber: change.modifiedStartLineNumber, endColumn: Number.MAX_VALUE });
+        codeEditorService.getActiveCodeEditor()?.writeScreenReaderContent('diff-navigation');
+    }
+}
+async function playAccessibilitySymbolForChange(change, accessibilitySignalService) {
+    const changeType = getChangeType(change);
+    switch (changeType) {
+        case ChangeType.Add:
+            accessibilitySignalService.playSignal(AccessibilitySignal.diffLineInserted, { allowManyInParallel: true, source: 'dirtyDiffDecoration' });
+            break;
+        case ChangeType.Delete:
+            accessibilitySignalService.playSignal(AccessibilitySignal.diffLineDeleted, { allowManyInParallel: true, source: 'dirtyDiffDecoration' });
+            break;
+        case ChangeType.Modify:
+            accessibilitySignalService.playSignal(AccessibilitySignal.diffLineModified, { allowManyInParallel: true, source: 'dirtyDiffDecoration' });
+            break;
+    }
+}
+registerEditorAction(GotoNextChangeAction);
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'closeDirtyDiff',
+    weight: 100 + 50,
+    primary: 9,
+    secondary: [1024 | 9],
+    when: ContextKeyExpr.and(isDirtyDiffVisible),
+    handler: (accessor) => {
+        const outerEditor = getOuterEditorFromDiffEditor(accessor);
+        if (!outerEditor) {
+            return;
+        }
+        const controller = DirtyDiffController.get(outerEditor);
+        if (!controller) {
+            return;
+        }
+        controller.close();
+    }
+});
+let DirtyDiffController = class DirtyDiffController extends Disposable {
+    static { DirtyDiffController_1 = this; }
+    static { this.ID = 'editor.contrib.dirtydiff'; }
+    static get(editor) {
+        return editor.getContribution(DirtyDiffController_1.ID);
+    }
+    constructor(editor, contextKeyService, configurationService, instantiationService) {
+        super();
+        this.editor = editor;
+        this.configurationService = configurationService;
+        this.instantiationService = instantiationService;
+        this.modelRegistry = null;
+        this.model = null;
+        this.widget = null;
+        this.session = Disposable.None;
+        this.mouseDownInfo = null;
+        this.enabled = false;
+        this.gutterActionDisposables = new DisposableStore();
+        this.enabled = !contextKeyService.getContextKeyValue('isInDiffEditor');
+        this.stylesheet = dom.createStyleSheet(undefined, undefined, this._store);
+        if (this.enabled) {
+            this.isDirtyDiffVisible = isDirtyDiffVisible.bindTo(contextKeyService);
+            this._register(editor.onDidChangeModel(() => this.close()));
+            const onDidChangeGutterAction = Event.filter(configurationService.onDidChangeConfiguration, e => e.affectsConfiguration('scm.diffDecorationsGutterAction'));
+            this._register(onDidChangeGutterAction(this.onDidChangeGutterAction, this));
+            this.onDidChangeGutterAction();
+        }
+    }
+    onDidChangeGutterAction() {
+        const gutterAction = this.configurationService.getValue('scm.diffDecorationsGutterAction');
+        this.gutterActionDisposables.clear();
+        if (gutterAction === 'diff') {
+            this.gutterActionDisposables.add(this.editor.onMouseDown(e => this.onEditorMouseDown(e)));
+            this.gutterActionDisposables.add(this.editor.onMouseUp(e => this.onEditorMouseUp(e)));
+            this.stylesheet.textContent = `
 				.monaco-editor .dirty-diff-glyph {
 					cursor: pointer;
 				}
@@ -14,22 +625,766 @@ var Se=Object.defineProperty;var we=Object.getOwnPropertyDescriptor;var b=(d,n,e
 					border-top-width: 0;
 					border-bottom-width: 0;
 				}
-			`):this.stylesheet.textContent=""}canNavigate(){return!this.widget||this.widget?.index===-1||!!this.model&&this.model.changes.length>1}refresh(){this.widget?.showChange(this.widget.index,!1)}next(e){if(!this.assertWidget()||!this.widget||!this.model)return;let i;if(this.editor.hasModel()&&(typeof e=="number"||!this.widget.provider))i=this.model.findNextClosestChange(typeof e=="number"?e:this.editor.getPosition().lineNumber,!0,this.widget.provider);else{const t=this.model.mapChanges.get(this.widget.provider)??this.model.mapChanges.values().next().value,o=t.findIndex(r=>r===this.widget.index);i=t[re(o+1,t.length)]}this.widget.showChange(i)}previous(e){if(!this.assertWidget()||!this.widget||!this.model)return;let i;if(this.editor.hasModel()&&typeof e=="number")i=this.model.findPreviousClosestChange(typeof e=="number"?e:this.editor.getPosition().lineNumber,!0,this.widget.provider);else{const t=this.model.mapChanges.get(this.widget.provider)??this.model.mapChanges.values().next().value,o=t.findIndex(r=>r===this.widget.index);i=t[re(o-1,t.length)]}this.widget.showChange(i)}close(){this.session.dispose(),this.session=D.None}assertWidget(){if(!this.enabled)return!1;if(this.widget)return!this.model||this.model.changes.length===0?(this.close(),!1):!0;if(!this.modelRegistry)return!1;const e=this.editor.getModel();if(!e)return!1;const i=this.modelRegistry.getModel(e,this.editor);if(!i||i.changes.length===0)return!1;this.model=i,this.widget=this.instantiationService.createInstance(E,this.editor,i),this.isDirtyDiffVisible.set(!0);const t=new M;return t.add(m.once(this.widget.onDidClose)(this.close,this)),m.chain(i.onDidChange,r=>r.filter(s=>s.diff.length>0).map(s=>s.diff))(this.onDidModelChange,this,t),t.add(this.widget),t.add(Y(()=>{this.model=null,this.widget=null,this.isDirtyDiffVisible.set(!1),this.editor.focus()})),this.session=t,!0}onDidModelChange(e){if(!(!this.model||!this.widget||this.widget.hasFocus())){for(const i of e)if(i.start<=this.widget.index){this.next();return}this.refresh()}}onEditorMouseDown(e){this.mouseDownInfo=null;const i=e.target.range;if(!i||!e.event.leftButton||e.target.type!==ie.GUTTER_LINE_DECORATIONS||!e.target.element||e.target.element.className.indexOf("dirty-diff-glyph")<0)return;const t=e.target.detail,o=e.target.element.offsetLeft,r=t.offsetX-o;r<-3||r>3||(this.mouseDownInfo={lineNumber:i.startLineNumber})}onEditorMouseUp(e){if(!this.mouseDownInfo)return;const{lineNumber:i}=this.mouseDownInfo;this.mouseDownInfo=null;const t=e.target.range;if(!t||t.startLineNumber!==i||e.target.type!==ie.GUTTER_LINE_DECORATIONS||!this.modelRegistry)return;const o=this.editor.getModel();if(!o)return;const r=this.modelRegistry.getModel(o,this.editor);if(!r)return;const s=r.changes.findIndex(a=>Ci(i,a.change));s<0||(s===this.widget?.index?this.close():this.next(i))}getChanges(){if(!this.modelRegistry)return[];if(!this.editor.hasModel())return[];const e=this.modelRegistry.getModel(this.editor.getModel(),this.editor);return e?e.changes.map(i=>i.change):[]}dispose(){this.gutterActionDisposables.dispose(),super.dispose()}};g=b([h(1,te),h(2,L),h(3,_)],g);const U=p("editorGutter.modifiedBackground",{dark:"#1B81A8",light:"#2090D3",hcDark:"#1B81A8",hcLight:"#2090D3"},c.localize("editorGutterModifiedBackground","Editor gutter background color for lines that are modified.")),$=p("editorGutter.addedBackground",{dark:"#487E02",light:"#48985D",hcDark:"#487E02",hcLight:"#48985D"},c.localize("editorGutterAddedBackground","Editor gutter background color for lines that are added.")),j=p("editorGutter.deletedBackground",Ae,c.localize("editorGutterDeletedBackground","Editor gutter background color for lines that are deleted.")),ve=p("minimapGutter.modifiedBackground",U,c.localize("minimapGutterModifiedBackground","Minimap gutter background color for lines that are modified.")),be=p("minimapGutter.addedBackground",$,c.localize("minimapGutterAddedBackground","Minimap gutter background color for lines that are added.")),Si=p("minimapGutter.deletedBackground",j,c.localize("minimapGutterDeletedBackground","Minimap gutter background color for lines that are deleted.")),Ce=p("editorOverviewRuler.modifiedForeground",W(U,.6),c.localize("overviewRulerModifiedForeground","Overview ruler marker color for modified content.")),ye=p("editorOverviewRuler.addedForeground",W($,.6),c.localize("overviewRulerAddedForeground","Overview ruler marker color for added content.")),wi=p("editorOverviewRuler.deletedForeground",W(j,.6),c.localize("overviewRulerDeletedForeground","Overview ruler marker color for deleted content."));let u=class extends D{constructor(e,i,t,o){super();this.codeEditor=i;this.model=t;this.configurationService=o;this.editorModel=e;const r=o.getValue("scm.diffDecorations"),s=r==="all"||r==="gutter",a=r==="all"||r==="overview",l=r==="all"||r==="minimap",f=c.localize("diffAdded","Added lines");this.addedOptions=u.createDecoration("dirty-diff-added",f,{gutter:s,overview:{active:a,color:ye},minimap:{active:l,color:be},isWholeLine:!0}),this.addedPatternOptions=u.createDecoration("dirty-diff-added-pattern",f,{gutter:s,overview:{active:a,color:ye},minimap:{active:l,color:be},isWholeLine:!0});const v=c.localize("diffModified","Changed lines");this.modifiedOptions=u.createDecoration("dirty-diff-modified",v,{gutter:s,overview:{active:a,color:Ce},minimap:{active:l,color:ve},isWholeLine:!0}),this.modifiedPatternOptions=u.createDecoration("dirty-diff-modified-pattern",v,{gutter:s,overview:{active:a,color:Ce},minimap:{active:l,color:ve},isWholeLine:!0}),this.deletedOptions=u.createDecoration("dirty-diff-deleted",c.localize("diffDeleted","Removed lines"),{gutter:s,overview:{active:a,color:wi},minimap:{active:l,color:Si},isWholeLine:!1}),this._register(o.onDidChangeConfiguration(O=>{O.affectsConfiguration("scm.diffDecorationsGutterPattern")&&this.onDidChange()})),this._register(t.onDidChange(this.onDidChange,this))}static createDecoration(e,i,t){const o={description:"dirty-diff-decoration",isWholeLine:t.isWholeLine};return t.gutter&&(o.linesDecorationsClassName=`dirty-diff-glyph ${e}`,o.linesDecorationsTooltip=i),t.overview.active&&(o.overviewRuler={color:Z(t.overview.color),position:Ye.Left}),t.minimap.active&&(o.minimap={color:Z(t.minimap.color),position:Ze.Gutter}),Ne.createDynamic(o)}addedOptions;addedPatternOptions;modifiedOptions;modifiedPatternOptions;deletedOptions;decorationsCollection;editorModel;onDidChange(){if(!this.editorModel)return;const e=this.configurationService.getValue("scm.diffDecorationsGutterPattern"),i=this.model.changes.map(t=>{const o=t.change,r=H(o),s=o.modifiedStartLineNumber,a=o.modifiedEndLineNumber||s;switch(r){case 1:return{range:{startLineNumber:s,startColumn:1,endLineNumber:a,endColumn:1},options:e.added?this.addedPatternOptions:this.addedOptions};case 2:return{range:{startLineNumber:s,startColumn:Number.MAX_VALUE,endLineNumber:s,endColumn:Number.MAX_VALUE},options:this.deletedOptions};case 0:return{range:{startLineNumber:s,startColumn:1,endLineNumber:a,endColumn:1},options:e.modified?this.modifiedPatternOptions:this.modifiedOptions}}});this.decorationsCollection?this.decorationsCollection.set(i):this.decorationsCollection=this.codeEditor.createDecorationsCollection(i)}dispose(){super.dispose(),this.decorationsCollection&&this.decorationsCollection?.clear(),this.editorModel=null,this.decorationsCollection=void 0}};u=b([h(3,L)],u);function De(d,n){let e=d.modifiedStartLineNumber-n.modifiedStartLineNumber;return e!==0||(e=d.modifiedEndLineNumber-n.modifiedEndLineNumber,e!==0)||(e=d.originalStartLineNumber-n.originalStartLineNumber,e!==0)?e:d.originalEndLineNumber-n.originalEndLineNumber}async function Yt(d,n,e,i){const t=await d.getQuickDiffs(n,e,i);return t.length>0?t[0].originalResource:null}let x=class extends D{constructor(e,i,t,o,r,s,a){super();this.scmService=i;this.quickDiffService=t;this.editorWorkerService=o;this.configurationService=r;this.textModelResolverService=s;this.progressService=a;this._model=e,this._register(e.textEditorModel.onDidChangeContent(()=>this.triggerDiff())),this._register(m.filter(r.onDidChangeConfiguration,l=>l.affectsConfiguration("scm.diffDecorationsIgnoreTrimWhitespace")||l.affectsConfiguration("diffEditor.ignoreTrimWhitespace"))(this.triggerDiff,this)),this._register(i.onDidAddRepository(this.onDidAddRepository,this));for(const l of i.repositories)this.onDidAddRepository(l);this._register(this._model.onDidChangeEncoding(()=>{this.diffDelayer.cancel(),this._quickDiffs=[],this._originalModels.clear(),this._originalTextModels=[],this._quickDiffsPromise=void 0,this.setChanges([],new Map),this.triggerDiff()})),this._register(this.quickDiffService.onDidChangeQuickDiffProviders(()=>this.triggerDiff())),this.triggerDiff()}_quickDiffs=[];_originalModels=new Map;_originalTextModels=[];_model;get original(){return this._originalTextModels}diffDelayer=new Ee(200);_quickDiffsPromise;repositoryDisposables=new Set;originalModelDisposables=this._register(new M);_disposed=!1;_onDidChange=new xe;onDidChange=this._onDidChange.event;_changes=[];get changes(){return this._changes}_mapChanges=new Map;get mapChanges(){return this._mapChanges}get quickDiffs(){return this._quickDiffs}getDiffEditorModel(e){if(!this._originalModels.has(e))return;const i=this._originalModels.get(e);return{modified:this._model.textEditorModel,original:i.textEditorModel}}onDidAddRepository(e){const i=new M;this.repositoryDisposables.add(i),i.add(Y(()=>this.repositoryDisposables.delete(i))),i.add(e.provider.onDidChangeResources(this.triggerDiff,this));const t=m.filter(this.scmService.onDidRemoveRepository,o=>o===e);i.add(t(()=>V(i),null)),this.triggerDiff()}triggerDiff(){return this.diffDelayer?this.diffDelayer.trigger(()=>this.diff()).then(e=>{const i=Array.from(this._originalModels.values());!e||this._disposed||this._model.isDisposed()||i.some(t=>t.isDisposed())||(i.every(t=>t.textEditorModel.getValueLength()===0)&&(e.changes=[]),e.changes||(e.changes=[]),this.setChanges(e.changes,e.mapChanges))},e=>li(e)):Promise.resolve()}setChanges(e,i){const t=ti(this._changes,e,(o,r)=>De(o.change,r.change));this._changes=e,this._mapChanges=i,this._onDidChange.fire({changes:e,diff:t})}diff(){return this.progressService.withProgress({location:hi.Scm,delay:250},async()=>{const e=await this.getQuickDiffsPromise();if(this._disposed||this._model.isDisposed()||e.length===0)return Promise.resolve({changes:[],mapChanges:new Map});const i=e.filter(l=>this.editorWorkerService.canComputeDirtyDiff(l.originalResource,this._model.resource));if(i.length===0)return Promise.resolve({changes:[],mapChanges:new Map});const t=this.configurationService.getValue("scm.diffDecorationsIgnoreTrimWhitespace"),o=t==="inherit"?this.configurationService.getValue("diffEditor.ignoreTrimWhitespace"):t!=="false",r=[];for(const l of i){const f=await this.editorWorkerService.computeDirtyDiff(l.originalResource,this._model.resource,o);if(f)for(const v of f)v&&r.push({change:v,label:l.label,uri:l.originalResource})}const s=r.sort((l,f)=>De(l.change,f.change)),a=new Map;for(let l=0;l<s.length;l++){const f=s[l].label;a.has(f)||a.set(f,[]),a.get(f).push(l)}return{changes:s,mapChanges:a}})}getQuickDiffsPromise(){return this._quickDiffsPromise?this._quickDiffsPromise:(this._quickDiffsPromise=this.getOriginalResource().then(async e=>this._disposed?[]:e.length===0?(this._quickDiffs=[],this._originalModels.clear(),this._originalTextModels=[],[]):ii(this._quickDiffs,e,(i,t)=>i.originalResource.toString()===t.originalResource.toString()&&i.label===t.label)?e:(this.originalModelDisposables.clear(),this._originalModels.clear(),this._originalTextModels=[],this._quickDiffs=e,(await Promise.all(e.map(async i=>{try{const t=await this.textModelResolverService.createModelReference(i.originalResource);if(this._disposed)return t.dispose(),[];if(this._originalModels.set(i.originalResource.toString(),t.object),this._originalTextModels.push(t.object.textEditorModel),ni(t.object)){const o=this._model.getEncoding();o&&t.object.setEncoding(o,oi.Decode)}return this.originalModelDisposables.add(t),this.originalModelDisposables.add(t.object.textEditorModel.onDidChangeContent(()=>this.triggerDiff())),i}catch{return[]}}))).flat())),this._quickDiffsPromise.finally(()=>{this._quickDiffsPromise=void 0}))}async getOriginalResource(){if(this._disposed)return Promise.resolve([]);const e=this._model.resource;return this.quickDiffService.getQuickDiffs(e,this._model.getLanguageId(),this._model.textEditorModel?ei(this._model.textEditorModel):void 0)}findNextClosestChange(e,i=!0,t){let o;!t&&i&&(o=this.quickDiffs.find(s=>s.isSCM)?.label);const r=[];for(let s=0;s<this.changes.length;s++){if(t&&this.changes[s].label!==t)continue;const a=this.changes[s],l=r.length;if(i){if(q(a.change)>=e)if(o&&a.label!==o)r.push(s);else return s}else if(a.change.modifiedStartLineNumber>e)return s;if(r.length>0&&r.length===l)return r[0]}return r.length>0?r[0]:0}findPreviousClosestChange(e,i=!0,t){for(let o=this.changes.length-1;o>=0;o--){if(t&&this.changes[o].label!==t)continue;const r=this.changes[o].change;if(i){if(r.modifiedStartLineNumber<=e)return o}else if(q(r)<e)return o}return this.changes.length-1}dispose(){super.dispose(),this._disposed=!0,this._quickDiffs=[],this._originalModels.clear(),this._originalTextModels=[],this.diffDelayer.cancel(),this.repositoryDisposables.forEach(e=>V(e)),this.repositoryDisposables.clear()}};x=b([h(1,ke),h(2,ui),h(3,Le),h(4,L),h(5,_e),h(6,ci)],x);class Ei{constructor(n,e){this.model=n;this.decorator=e}dispose(){this.decorator.dispose(),this.model.dispose()}}let P=class extends D{constructor(e,i,t,o){super();this.editorService=e;this.instantiationService=i;this.configurationService=t;this.textFileService=o;this.stylesheet=A.createStyleSheet(void 0,void 0,this._store);const r=m.filter(t.onDidChangeConfiguration,l=>l.affectsConfiguration("scm.diffDecorations"));this._register(r(this.onDidChangeConfiguration,this)),this.onDidChangeConfiguration();const s=m.filter(t.onDidChangeConfiguration,l=>l.affectsConfiguration("scm.diffDecorationsGutterWidth"));this._register(s(this.onDidChangeDiffWidthConfiguration,this)),this.onDidChangeDiffWidthConfiguration();const a=m.filter(t.onDidChangeConfiguration,l=>l.affectsConfiguration("scm.diffDecorationsGutterVisibility"));this._register(a(this.onDidChangeDiffVisibilityConfiguration,this)),this.onDidChangeDiffVisibilityConfiguration()}enabled=!1;viewState={width:3,visibility:"always"};items=new fi;transientDisposables=this._register(new M);stylesheet;onDidChangeConfiguration(){this.configurationService.getValue("scm.diffDecorations")!=="none"?this.enable():this.disable()}onDidChangeDiffWidthConfiguration(){let e=this.configurationService.getValue("scm.diffDecorationsGutterWidth");(isNaN(e)||e<=0||e>5)&&(e=3),this.setViewState({...this.viewState,width:e})}onDidChangeDiffVisibilityConfiguration(){const e=this.configurationService.getValue("scm.diffDecorationsGutterVisibility");this.setViewState({...this.viewState,visibility:e})}setViewState(e){this.viewState=e,this.stylesheet.textContent=`
+			`;
+        }
+        else {
+            this.stylesheet.textContent = ``;
+        }
+    }
+    canNavigate() {
+        return !this.widget || (this.widget?.index === -1) || (!!this.model && this.model.changes.length > 1);
+    }
+    refresh() {
+        this.widget?.showChange(this.widget.index, false);
+    }
+    next(lineNumber) {
+        if (!this.assertWidget()) {
+            return;
+        }
+        if (!this.widget || !this.model) {
+            return;
+        }
+        let index;
+        if (this.editor.hasModel() && (typeof lineNumber === 'number' || !this.widget.provider)) {
+            index = this.model.findNextClosestChange(typeof lineNumber === 'number' ? lineNumber : this.editor.getPosition().lineNumber, true, this.widget.provider);
+        }
+        else {
+            const providerChanges = this.model.mapChanges.get(this.widget.provider) ?? this.model.mapChanges.values().next().value;
+            const mapIndex = providerChanges.findIndex(value => value === this.widget.index);
+            index = providerChanges[rot(mapIndex + 1, providerChanges.length)];
+        }
+        this.widget.showChange(index);
+    }
+    previous(lineNumber) {
+        if (!this.assertWidget()) {
+            return;
+        }
+        if (!this.widget || !this.model) {
+            return;
+        }
+        let index;
+        if (this.editor.hasModel() && (typeof lineNumber === 'number')) {
+            index = this.model.findPreviousClosestChange(typeof lineNumber === 'number' ? lineNumber : this.editor.getPosition().lineNumber, true, this.widget.provider);
+        }
+        else {
+            const providerChanges = this.model.mapChanges.get(this.widget.provider) ?? this.model.mapChanges.values().next().value;
+            const mapIndex = providerChanges.findIndex(value => value === this.widget.index);
+            index = providerChanges[rot(mapIndex - 1, providerChanges.length)];
+        }
+        this.widget.showChange(index);
+    }
+    close() {
+        this.session.dispose();
+        this.session = Disposable.None;
+    }
+    assertWidget() {
+        if (!this.enabled) {
+            return false;
+        }
+        if (this.widget) {
+            if (!this.model || this.model.changes.length === 0) {
+                this.close();
+                return false;
+            }
+            return true;
+        }
+        if (!this.modelRegistry) {
+            return false;
+        }
+        const editorModel = this.editor.getModel();
+        if (!editorModel) {
+            return false;
+        }
+        const model = this.modelRegistry.getModel(editorModel, this.editor);
+        if (!model) {
+            return false;
+        }
+        if (model.changes.length === 0) {
+            return false;
+        }
+        this.model = model;
+        this.widget = this.instantiationService.createInstance(DirtyDiffWidget, this.editor, model);
+        this.isDirtyDiffVisible.set(true);
+        const disposables = new DisposableStore();
+        disposables.add(Event.once(this.widget.onDidClose)(this.close, this));
+        const onDidModelChange = Event.chain(model.onDidChange, $ => $.filter(e => e.diff.length > 0)
+            .map(e => e.diff));
+        onDidModelChange(this.onDidModelChange, this, disposables);
+        disposables.add(this.widget);
+        disposables.add(toDisposable(() => {
+            this.model = null;
+            this.widget = null;
+            this.isDirtyDiffVisible.set(false);
+            this.editor.focus();
+        }));
+        this.session = disposables;
+        return true;
+    }
+    onDidModelChange(splices) {
+        if (!this.model || !this.widget || this.widget.hasFocus()) {
+            return;
+        }
+        for (const splice of splices) {
+            if (splice.start <= this.widget.index) {
+                this.next();
+                return;
+            }
+        }
+        this.refresh();
+    }
+    onEditorMouseDown(e) {
+        this.mouseDownInfo = null;
+        const range = e.target.range;
+        if (!range) {
+            return;
+        }
+        if (!e.event.leftButton) {
+            return;
+        }
+        if (e.target.type !== 4) {
+            return;
+        }
+        if (!e.target.element) {
+            return;
+        }
+        if (e.target.element.className.indexOf('dirty-diff-glyph') < 0) {
+            return;
+        }
+        const data = e.target.detail;
+        const offsetLeftInGutter = e.target.element.offsetLeft;
+        const gutterOffsetX = data.offsetX - offsetLeftInGutter;
+        if (gutterOffsetX < -3 || gutterOffsetX > 3) {
+            return;
+        }
+        this.mouseDownInfo = { lineNumber: range.startLineNumber };
+    }
+    onEditorMouseUp(e) {
+        if (!this.mouseDownInfo) {
+            return;
+        }
+        const { lineNumber } = this.mouseDownInfo;
+        this.mouseDownInfo = null;
+        const range = e.target.range;
+        if (!range || range.startLineNumber !== lineNumber) {
+            return;
+        }
+        if (e.target.type !== 4) {
+            return;
+        }
+        if (!this.modelRegistry) {
+            return;
+        }
+        const editorModel = this.editor.getModel();
+        if (!editorModel) {
+            return;
+        }
+        const model = this.modelRegistry.getModel(editorModel, this.editor);
+        if (!model) {
+            return;
+        }
+        const index = model.changes.findIndex(change => lineIntersectsChange(lineNumber, change.change));
+        if (index < 0) {
+            return;
+        }
+        if (index === this.widget?.index) {
+            this.close();
+        }
+        else {
+            this.next(lineNumber);
+        }
+    }
+    getChanges() {
+        if (!this.modelRegistry) {
+            return [];
+        }
+        if (!this.editor.hasModel()) {
+            return [];
+        }
+        const model = this.modelRegistry.getModel(this.editor.getModel(), this.editor);
+        if (!model) {
+            return [];
+        }
+        return model.changes.map(change => change.change);
+    }
+    dispose() {
+        this.gutterActionDisposables.dispose();
+        super.dispose();
+    }
+};
+DirtyDiffController = DirtyDiffController_1 = __decorate([
+    __param(1, IContextKeyService),
+    __param(2, IConfigurationService),
+    __param(3, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], DirtyDiffController);
+export { DirtyDiffController };
+const editorGutterModifiedBackground = registerColor('editorGutter.modifiedBackground', {
+    dark: '#1B81A8',
+    light: '#2090D3',
+    hcDark: '#1B81A8',
+    hcLight: '#2090D3'
+}, nls.localize('editorGutterModifiedBackground', "Editor gutter background color for lines that are modified."));
+const editorGutterAddedBackground = registerColor('editorGutter.addedBackground', {
+    dark: '#487E02',
+    light: '#48985D',
+    hcDark: '#487E02',
+    hcLight: '#48985D'
+}, nls.localize('editorGutterAddedBackground', "Editor gutter background color for lines that are added."));
+const editorGutterDeletedBackground = registerColor('editorGutter.deletedBackground', editorErrorForeground, nls.localize('editorGutterDeletedBackground', "Editor gutter background color for lines that are deleted."));
+const minimapGutterModifiedBackground = registerColor('minimapGutter.modifiedBackground', editorGutterModifiedBackground, nls.localize('minimapGutterModifiedBackground', "Minimap gutter background color for lines that are modified."));
+const minimapGutterAddedBackground = registerColor('minimapGutter.addedBackground', editorGutterAddedBackground, nls.localize('minimapGutterAddedBackground', "Minimap gutter background color for lines that are added."));
+const minimapGutterDeletedBackground = registerColor('minimapGutter.deletedBackground', editorGutterDeletedBackground, nls.localize('minimapGutterDeletedBackground', "Minimap gutter background color for lines that are deleted."));
+const overviewRulerModifiedForeground = registerColor('editorOverviewRuler.modifiedForeground', transparent(editorGutterModifiedBackground, 0.6), nls.localize('overviewRulerModifiedForeground', 'Overview ruler marker color for modified content.'));
+const overviewRulerAddedForeground = registerColor('editorOverviewRuler.addedForeground', transparent(editorGutterAddedBackground, 0.6), nls.localize('overviewRulerAddedForeground', 'Overview ruler marker color for added content.'));
+const overviewRulerDeletedForeground = registerColor('editorOverviewRuler.deletedForeground', transparent(editorGutterDeletedBackground, 0.6), nls.localize('overviewRulerDeletedForeground', 'Overview ruler marker color for deleted content.'));
+let DirtyDiffDecorator = DirtyDiffDecorator_1 = class DirtyDiffDecorator extends Disposable {
+    static createDecoration(className, tooltip, options) {
+        const decorationOptions = {
+            description: 'dirty-diff-decoration',
+            isWholeLine: options.isWholeLine,
+        };
+        if (options.gutter) {
+            decorationOptions.linesDecorationsClassName = `dirty-diff-glyph ${className}`;
+            decorationOptions.linesDecorationsTooltip = tooltip;
+        }
+        if (options.overview.active) {
+            decorationOptions.overviewRuler = {
+                color: themeColorFromId(options.overview.color),
+                position: OverviewRulerLane.Left
+            };
+        }
+        if (options.minimap.active) {
+            decorationOptions.minimap = {
+                color: themeColorFromId(options.minimap.color),
+                position: 2
+            };
+        }
+        return ModelDecorationOptions.createDynamic(decorationOptions);
+    }
+    constructor(editorModel, codeEditor, model, configurationService) {
+        super();
+        this.codeEditor = codeEditor;
+        this.model = model;
+        this.configurationService = configurationService;
+        this.editorModel = editorModel;
+        const decorations = configurationService.getValue('scm.diffDecorations');
+        const gutter = decorations === 'all' || decorations === 'gutter';
+        const overview = decorations === 'all' || decorations === 'overview';
+        const minimap = decorations === 'all' || decorations === 'minimap';
+        const diffAdded = nls.localize('diffAdded', 'Added lines');
+        this.addedOptions = DirtyDiffDecorator_1.createDecoration('dirty-diff-added', diffAdded, {
+            gutter,
+            overview: { active: overview, color: overviewRulerAddedForeground },
+            minimap: { active: minimap, color: minimapGutterAddedBackground },
+            isWholeLine: true
+        });
+        this.addedPatternOptions = DirtyDiffDecorator_1.createDecoration('dirty-diff-added-pattern', diffAdded, {
+            gutter,
+            overview: { active: overview, color: overviewRulerAddedForeground },
+            minimap: { active: minimap, color: minimapGutterAddedBackground },
+            isWholeLine: true
+        });
+        const diffModified = nls.localize('diffModified', 'Changed lines');
+        this.modifiedOptions = DirtyDiffDecorator_1.createDecoration('dirty-diff-modified', diffModified, {
+            gutter,
+            overview: { active: overview, color: overviewRulerModifiedForeground },
+            minimap: { active: minimap, color: minimapGutterModifiedBackground },
+            isWholeLine: true
+        });
+        this.modifiedPatternOptions = DirtyDiffDecorator_1.createDecoration('dirty-diff-modified-pattern', diffModified, {
+            gutter,
+            overview: { active: overview, color: overviewRulerModifiedForeground },
+            minimap: { active: minimap, color: minimapGutterModifiedBackground },
+            isWholeLine: true
+        });
+        this.deletedOptions = DirtyDiffDecorator_1.createDecoration('dirty-diff-deleted', nls.localize('diffDeleted', 'Removed lines'), {
+            gutter,
+            overview: { active: overview, color: overviewRulerDeletedForeground },
+            minimap: { active: minimap, color: minimapGutterDeletedBackground },
+            isWholeLine: false
+        });
+        this._register(configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('scm.diffDecorationsGutterPattern')) {
+                this.onDidChange();
+            }
+        }));
+        this._register(model.onDidChange(this.onDidChange, this));
+    }
+    onDidChange() {
+        if (!this.editorModel) {
+            return;
+        }
+        const pattern = this.configurationService.getValue('scm.diffDecorationsGutterPattern');
+        const decorations = this.model.changes.map((labeledChange) => {
+            const change = labeledChange.change;
+            const changeType = getChangeType(change);
+            const startLineNumber = change.modifiedStartLineNumber;
+            const endLineNumber = change.modifiedEndLineNumber || startLineNumber;
+            switch (changeType) {
+                case ChangeType.Add:
+                    return {
+                        range: {
+                            startLineNumber: startLineNumber, startColumn: 1,
+                            endLineNumber: endLineNumber, endColumn: 1
+                        },
+                        options: pattern.added ? this.addedPatternOptions : this.addedOptions
+                    };
+                case ChangeType.Delete:
+                    return {
+                        range: {
+                            startLineNumber: startLineNumber, startColumn: Number.MAX_VALUE,
+                            endLineNumber: startLineNumber, endColumn: Number.MAX_VALUE
+                        },
+                        options: this.deletedOptions
+                    };
+                case ChangeType.Modify:
+                    return {
+                        range: {
+                            startLineNumber: startLineNumber, startColumn: 1,
+                            endLineNumber: endLineNumber, endColumn: 1
+                        },
+                        options: pattern.modified ? this.modifiedPatternOptions : this.modifiedOptions
+                    };
+            }
+        });
+        if (!this.decorationsCollection) {
+            this.decorationsCollection = this.codeEditor.createDecorationsCollection(decorations);
+        }
+        else {
+            this.decorationsCollection.set(decorations);
+        }
+    }
+    dispose() {
+        super.dispose();
+        if (this.decorationsCollection) {
+            this.decorationsCollection?.clear();
+        }
+        this.editorModel = null;
+        this.decorationsCollection = undefined;
+    }
+};
+DirtyDiffDecorator = DirtyDiffDecorator_1 = __decorate([
+    __param(3, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, DirtyDiffModel, Object])
+], DirtyDiffDecorator);
+function compareChanges(a, b) {
+    let result = a.modifiedStartLineNumber - b.modifiedStartLineNumber;
+    if (result !== 0) {
+        return result;
+    }
+    result = a.modifiedEndLineNumber - b.modifiedEndLineNumber;
+    if (result !== 0) {
+        return result;
+    }
+    result = a.originalStartLineNumber - b.originalStartLineNumber;
+    if (result !== 0) {
+        return result;
+    }
+    return a.originalEndLineNumber - b.originalEndLineNumber;
+}
+export async function getOriginalResource(quickDiffService, uri, language, isSynchronized) {
+    const quickDiffs = await quickDiffService.getQuickDiffs(uri, language, isSynchronized);
+    return quickDiffs.length > 0 ? quickDiffs[0].originalResource : null;
+}
+let DirtyDiffModel = class DirtyDiffModel extends Disposable {
+    get original() { return this._originalTextModels; }
+    get changes() { return this._changes; }
+    get mapChanges() { return this._mapChanges; }
+    constructor(textFileModel, scmService, quickDiffService, editorWorkerService, configurationService, textModelResolverService, progressService) {
+        super();
+        this.scmService = scmService;
+        this.quickDiffService = quickDiffService;
+        this.editorWorkerService = editorWorkerService;
+        this.configurationService = configurationService;
+        this.textModelResolverService = textModelResolverService;
+        this.progressService = progressService;
+        this._quickDiffs = [];
+        this._originalModels = new Map();
+        this._originalTextModels = [];
+        this.diffDelayer = new ThrottledDelayer(200);
+        this.repositoryDisposables = new Set();
+        this.originalModelDisposables = this._register(new DisposableStore());
+        this._disposed = false;
+        this._onDidChange = new Emitter();
+        this.onDidChange = this._onDidChange.event;
+        this._changes = [];
+        this._mapChanges = new Map();
+        this._model = textFileModel;
+        this._register(textFileModel.textEditorModel.onDidChangeContent(() => this.triggerDiff()));
+        this._register(Event.filter(configurationService.onDidChangeConfiguration, e => e.affectsConfiguration('scm.diffDecorationsIgnoreTrimWhitespace') || e.affectsConfiguration('diffEditor.ignoreTrimWhitespace'))(this.triggerDiff, this));
+        this._register(scmService.onDidAddRepository(this.onDidAddRepository, this));
+        for (const r of scmService.repositories) {
+            this.onDidAddRepository(r);
+        }
+        this._register(this._model.onDidChangeEncoding(() => {
+            this.diffDelayer.cancel();
+            this._quickDiffs = [];
+            this._originalModels.clear();
+            this._originalTextModels = [];
+            this._quickDiffsPromise = undefined;
+            this.setChanges([], new Map());
+            this.triggerDiff();
+        }));
+        this._register(this.quickDiffService.onDidChangeQuickDiffProviders(() => this.triggerDiff()));
+        this.triggerDiff();
+    }
+    get quickDiffs() {
+        return this._quickDiffs;
+    }
+    getDiffEditorModel(originalUri) {
+        if (!this._originalModels.has(originalUri)) {
+            return;
+        }
+        const original = this._originalModels.get(originalUri);
+        return {
+            modified: this._model.textEditorModel,
+            original: original.textEditorModel
+        };
+    }
+    onDidAddRepository(repository) {
+        const disposables = new DisposableStore();
+        this.repositoryDisposables.add(disposables);
+        disposables.add(toDisposable(() => this.repositoryDisposables.delete(disposables)));
+        disposables.add(repository.provider.onDidChangeResources(this.triggerDiff, this));
+        const onDidRemoveThis = Event.filter(this.scmService.onDidRemoveRepository, r => r === repository);
+        disposables.add(onDidRemoveThis(() => dispose(disposables), null));
+        this.triggerDiff();
+    }
+    triggerDiff() {
+        if (!this.diffDelayer) {
+            return Promise.resolve();
+        }
+        return this.diffDelayer
+            .trigger(() => this.diff())
+            .then((result) => {
+            const originalModels = Array.from(this._originalModels.values());
+            if (!result || this._disposed || this._model.isDisposed() || originalModels.some(originalModel => originalModel.isDisposed())) {
+                return;
+            }
+            if (originalModels.every(originalModel => originalModel.textEditorModel.getValueLength() === 0)) {
+                result.changes = [];
+            }
+            if (!result.changes) {
+                result.changes = [];
+            }
+            this.setChanges(result.changes, result.mapChanges);
+        }, (err) => onUnexpectedError(err));
+    }
+    setChanges(changes, mapChanges) {
+        const diff = sortedDiff(this._changes, changes, (a, b) => compareChanges(a.change, b.change));
+        this._changes = changes;
+        this._mapChanges = mapChanges;
+        this._onDidChange.fire({ changes, diff });
+    }
+    diff() {
+        return this.progressService.withProgress({ location: 3, delay: 250 }, async () => {
+            const originalURIs = await this.getQuickDiffsPromise();
+            if (this._disposed || this._model.isDisposed() || (originalURIs.length === 0)) {
+                return Promise.resolve({ changes: [], mapChanges: new Map() });
+            }
+            const filteredToDiffable = originalURIs.filter(quickDiff => this.editorWorkerService.canComputeDirtyDiff(quickDiff.originalResource, this._model.resource));
+            if (filteredToDiffable.length === 0) {
+                return Promise.resolve({ changes: [], mapChanges: new Map() });
+            }
+            const ignoreTrimWhitespaceSetting = this.configurationService.getValue('scm.diffDecorationsIgnoreTrimWhitespace');
+            const ignoreTrimWhitespace = ignoreTrimWhitespaceSetting === 'inherit'
+                ? this.configurationService.getValue('diffEditor.ignoreTrimWhitespace')
+                : ignoreTrimWhitespaceSetting !== 'false';
+            const allDiffs = [];
+            for (const quickDiff of filteredToDiffable) {
+                const dirtyDiff = await this.editorWorkerService.computeDirtyDiff(quickDiff.originalResource, this._model.resource, ignoreTrimWhitespace);
+                if (dirtyDiff) {
+                    for (const diff of dirtyDiff) {
+                        if (diff) {
+                            allDiffs.push({ change: diff, label: quickDiff.label, uri: quickDiff.originalResource });
+                        }
+                    }
+                }
+            }
+            const sorted = allDiffs.sort((a, b) => compareChanges(a.change, b.change));
+            const map = new Map();
+            for (let i = 0; i < sorted.length; i++) {
+                const label = sorted[i].label;
+                if (!map.has(label)) {
+                    map.set(label, []);
+                }
+                map.get(label).push(i);
+            }
+            return { changes: sorted, mapChanges: map };
+        });
+    }
+    getQuickDiffsPromise() {
+        if (this._quickDiffsPromise) {
+            return this._quickDiffsPromise;
+        }
+        this._quickDiffsPromise = this.getOriginalResource().then(async (quickDiffs) => {
+            if (this._disposed) {
+                return [];
+            }
+            if (quickDiffs.length === 0) {
+                this._quickDiffs = [];
+                this._originalModels.clear();
+                this._originalTextModels = [];
+                return [];
+            }
+            if (equals(this._quickDiffs, quickDiffs, (a, b) => a.originalResource.toString() === b.originalResource.toString() && a.label === b.label)) {
+                return quickDiffs;
+            }
+            this.originalModelDisposables.clear();
+            this._originalModels.clear();
+            this._originalTextModels = [];
+            this._quickDiffs = quickDiffs;
+            return (await Promise.all(quickDiffs.map(async (quickDiff) => {
+                try {
+                    const ref = await this.textModelResolverService.createModelReference(quickDiff.originalResource);
+                    if (this._disposed) {
+                        ref.dispose();
+                        return [];
+                    }
+                    this._originalModels.set(quickDiff.originalResource.toString(), ref.object);
+                    this._originalTextModels.push(ref.object.textEditorModel);
+                    if (isTextFileEditorModel(ref.object)) {
+                        const encoding = this._model.getEncoding();
+                        if (encoding) {
+                            ref.object.setEncoding(encoding, 1);
+                        }
+                    }
+                    this.originalModelDisposables.add(ref);
+                    this.originalModelDisposables.add(ref.object.textEditorModel.onDidChangeContent(() => this.triggerDiff()));
+                    return quickDiff;
+                }
+                catch (error) {
+                    return [];
+                }
+            }))).flat();
+        });
+        return this._quickDiffsPromise.finally(() => {
+            this._quickDiffsPromise = undefined;
+        });
+    }
+    async getOriginalResource() {
+        if (this._disposed) {
+            return Promise.resolve([]);
+        }
+        const uri = this._model.resource;
+        return this.quickDiffService.getQuickDiffs(uri, this._model.getLanguageId(), this._model.textEditorModel ? shouldSynchronizeModel(this._model.textEditorModel) : undefined);
+    }
+    findNextClosestChange(lineNumber, inclusive = true, provider) {
+        let preferredProvider;
+        if (!provider && inclusive) {
+            preferredProvider = this.quickDiffs.find(value => value.isSCM)?.label;
+        }
+        const possibleChanges = [];
+        for (let i = 0; i < this.changes.length; i++) {
+            if (provider && this.changes[i].label !== provider) {
+                continue;
+            }
+            const change = this.changes[i];
+            const possibleChangesLength = possibleChanges.length;
+            if (inclusive) {
+                if (getModifiedEndLineNumber(change.change) >= lineNumber) {
+                    if (preferredProvider && change.label !== preferredProvider) {
+                        possibleChanges.push(i);
+                    }
+                    else {
+                        return i;
+                    }
+                }
+            }
+            else {
+                if (change.change.modifiedStartLineNumber > lineNumber) {
+                    return i;
+                }
+            }
+            if ((possibleChanges.length > 0) && (possibleChanges.length === possibleChangesLength)) {
+                return possibleChanges[0];
+            }
+        }
+        return possibleChanges.length > 0 ? possibleChanges[0] : 0;
+    }
+    findPreviousClosestChange(lineNumber, inclusive = true, provider) {
+        for (let i = this.changes.length - 1; i >= 0; i--) {
+            if (provider && this.changes[i].label !== provider) {
+                continue;
+            }
+            const change = this.changes[i].change;
+            if (inclusive) {
+                if (change.modifiedStartLineNumber <= lineNumber) {
+                    return i;
+                }
+            }
+            else {
+                if (getModifiedEndLineNumber(change) < lineNumber) {
+                    return i;
+                }
+            }
+        }
+        return this.changes.length - 1;
+    }
+    dispose() {
+        super.dispose();
+        this._disposed = true;
+        this._quickDiffs = [];
+        this._originalModels.clear();
+        this._originalTextModels = [];
+        this.diffDelayer.cancel();
+        this.repositoryDisposables.forEach(d => dispose(d));
+        this.repositoryDisposables.clear();
+    }
+};
+DirtyDiffModel = __decorate([
+    __param(1, ISCMService),
+    __param(2, IQuickDiffService),
+    __param(3, IEditorWorkerService),
+    __param(4, IConfigurationService),
+    __param(5, ITextModelService),
+    __param(6, IProgressService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], DirtyDiffModel);
+export { DirtyDiffModel };
+class DirtyDiffItem {
+    constructor(model, decorator) {
+        this.model = model;
+        this.decorator = decorator;
+    }
+    dispose() {
+        this.decorator.dispose();
+        this.model.dispose();
+    }
+}
+let DirtyDiffWorkbenchController = class DirtyDiffWorkbenchController extends Disposable {
+    constructor(editorService, instantiationService, configurationService, textFileService) {
+        super();
+        this.editorService = editorService;
+        this.instantiationService = instantiationService;
+        this.configurationService = configurationService;
+        this.textFileService = textFileService;
+        this.enabled = false;
+        this.viewState = { width: 3, visibility: 'always' };
+        this.items = new ResourceMap();
+        this.transientDisposables = this._register(new DisposableStore());
+        this.stylesheet = dom.createStyleSheet(undefined, undefined, this._store);
+        const onDidChangeConfiguration = Event.filter(configurationService.onDidChangeConfiguration, e => e.affectsConfiguration('scm.diffDecorations'));
+        this._register(onDidChangeConfiguration(this.onDidChangeConfiguration, this));
+        this.onDidChangeConfiguration();
+        const onDidChangeDiffWidthConfiguration = Event.filter(configurationService.onDidChangeConfiguration, e => e.affectsConfiguration('scm.diffDecorationsGutterWidth'));
+        this._register(onDidChangeDiffWidthConfiguration(this.onDidChangeDiffWidthConfiguration, this));
+        this.onDidChangeDiffWidthConfiguration();
+        const onDidChangeDiffVisibilityConfiguration = Event.filter(configurationService.onDidChangeConfiguration, e => e.affectsConfiguration('scm.diffDecorationsGutterVisibility'));
+        this._register(onDidChangeDiffVisibilityConfiguration(this.onDidChangeDiffVisibilityConfiguration, this));
+        this.onDidChangeDiffVisibilityConfiguration();
+    }
+    onDidChangeConfiguration() {
+        const enabled = this.configurationService.getValue('scm.diffDecorations') !== 'none';
+        if (enabled) {
+            this.enable();
+        }
+        else {
+            this.disable();
+        }
+    }
+    onDidChangeDiffWidthConfiguration() {
+        let width = this.configurationService.getValue('scm.diffDecorationsGutterWidth');
+        if (isNaN(width) || width <= 0 || width > 5) {
+            width = 3;
+        }
+        this.setViewState({ ...this.viewState, width });
+    }
+    onDidChangeDiffVisibilityConfiguration() {
+        const visibility = this.configurationService.getValue('scm.diffDecorationsGutterVisibility');
+        this.setViewState({ ...this.viewState, visibility });
+    }
+    setViewState(state) {
+        this.viewState = state;
+        this.stylesheet.textContent = `
 			.monaco-editor .dirty-diff-added,
 			.monaco-editor .dirty-diff-modified {
-				border-left-width:${e.width}px;
+				border-left-width:${state.width}px;
 			}
 			.monaco-editor .dirty-diff-added-pattern,
 			.monaco-editor .dirty-diff-added-pattern:before,
 			.monaco-editor .dirty-diff-modified-pattern,
 			.monaco-editor .dirty-diff-modified-pattern:before {
-				background-size: ${e.width}px ${e.width}px;
+				background-size: ${state.width}px ${state.width}px;
 			}
 			.monaco-editor .dirty-diff-added,
 			.monaco-editor .dirty-diff-added-pattern,
 			.monaco-editor .dirty-diff-modified,
 			.monaco-editor .dirty-diff-modified-pattern,
 			.monaco-editor .dirty-diff-deleted {
-				opacity: ${e.visibility==="always"?1:0};
+				opacity: ${state.visibility === 'always' ? 1 : 0};
 			}
-		`}enable(){this.enabled&&this.disable(),this.transientDisposables.add(m.any(this.editorService.onDidCloseEditor,this.editorService.onDidVisibleEditorsChange)(()=>this.onEditorsChanged())),this.onEditorsChanged(),this.enabled=!0}disable(){if(this.enabled){this.transientDisposables.clear();for(const[,e]of this.items)V(e.values());this.items.clear(),this.enabled=!1}}onEditorsChanged(){for(const e of this.editorService.visibleTextEditorControls)if(ee(e)){const i=e.getModel(),t=g.get(e);if(t&&(t.modelRegistry=this),i&&(!this.items.has(i.uri)||!this.items.get(i.uri).has(e.getId()))){const o=this.textFileService.files.get(i.uri);if(o?.isResolved()){const r=this.instantiationService.createInstance(x,o),s=new u(o.textEditorModel,e,r,this.configurationService);this.items.has(i.uri)||this.items.set(i.uri,new Map),this.items.get(i.uri)?.set(e.getId(),new Ei(r,s))}}}for(const[e,i]of this.items)for(const t of i.keys())this.editorService.visibleTextEditorControls.find(o=>ee(o)&&o.getModel()?.uri.toString()===e.toString()&&o.getId()===t)||i.has(t)&&(i.get(t)?.dispose(),i.delete(t),i.size===0&&this.items.delete(e))}getModel(e,i){return this.items.get(e.uri)?.get(i.getId())?.model}dispose(){this.disable(),super.dispose()}};P=b([h(0,gi),h(1,_),h(2,L),h(3,ri)],P),Re(g.ID,g,Pe.AfterFirstRender);export{g as DirtyDiffController,x as DirtyDiffModel,P as DirtyDiffWorkbenchController,Mi as GotoNextChangeAction,Ii as GotoPreviousChangeAction,ue as ShowNextChangeAction,ge as ShowPreviousChangeAction,Yt as getOriginalResource,fe as isDirtyDiffVisible};
+		`;
+    }
+    enable() {
+        if (this.enabled) {
+            this.disable();
+        }
+        this.transientDisposables.add(Event.any(this.editorService.onDidCloseEditor, this.editorService.onDidVisibleEditorsChange)(() => this.onEditorsChanged()));
+        this.onEditorsChanged();
+        this.enabled = true;
+    }
+    disable() {
+        if (!this.enabled) {
+            return;
+        }
+        this.transientDisposables.clear();
+        for (const [, dirtyDiff] of this.items) {
+            dispose(dirtyDiff.values());
+        }
+        this.items.clear();
+        this.enabled = false;
+    }
+    onEditorsChanged() {
+        for (const editor of this.editorService.visibleTextEditorControls) {
+            if (isCodeEditor(editor)) {
+                const textModel = editor.getModel();
+                const controller = DirtyDiffController.get(editor);
+                if (controller) {
+                    controller.modelRegistry = this;
+                }
+                if (textModel && (!this.items.has(textModel.uri) || !this.items.get(textModel.uri).has(editor.getId()))) {
+                    const textFileModel = this.textFileService.files.get(textModel.uri);
+                    if (textFileModel?.isResolved()) {
+                        const dirtyDiffModel = this.instantiationService.createInstance(DirtyDiffModel, textFileModel);
+                        const decorator = new DirtyDiffDecorator(textFileModel.textEditorModel, editor, dirtyDiffModel, this.configurationService);
+                        if (!this.items.has(textModel.uri)) {
+                            this.items.set(textModel.uri, new Map());
+                        }
+                        this.items.get(textModel.uri)?.set(editor.getId(), new DirtyDiffItem(dirtyDiffModel, decorator));
+                    }
+                }
+            }
+        }
+        for (const [uri, item] of this.items) {
+            for (const editorId of item.keys()) {
+                if (!this.editorService.visibleTextEditorControls.find(editor => isCodeEditor(editor) && editor.getModel()?.uri.toString() === uri.toString() && editor.getId() === editorId)) {
+                    if (item.has(editorId)) {
+                        const dirtyDiffItem = item.get(editorId);
+                        dirtyDiffItem?.dispose();
+                        item.delete(editorId);
+                        if (item.size === 0) {
+                            this.items.delete(uri);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    getModel(editorModel, codeEditor) {
+        return this.items.get(editorModel.uri)?.get(codeEditor.getId())?.model;
+    }
+    dispose() {
+        this.disable();
+        super.dispose();
+    }
+};
+DirtyDiffWorkbenchController = __decorate([
+    __param(0, IEditorService),
+    __param(1, IInstantiationService),
+    __param(2, IConfigurationService),
+    __param(3, ITextFileService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], DirtyDiffWorkbenchController);
+export { DirtyDiffWorkbenchController };
+registerEditorContribution(DirtyDiffController.ID, DirtyDiffController, 1);

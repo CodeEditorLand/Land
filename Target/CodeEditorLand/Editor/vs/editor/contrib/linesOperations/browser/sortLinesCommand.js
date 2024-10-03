@@ -1,2 +1,73 @@
-import{EditOperation as c}from"../../../common/core/editOperation.js";import{Range as d}from"../../../common/core/range.js";import"../../../common/core/selection.js";import"../../../common/editorCommon.js";import"../../../common/model.js";class l{static _COLLATOR=null;static getCollator(){return l._COLLATOR||(l._COLLATOR=new Intl.Collator),l._COLLATOR}selection;descending;selectionId;constructor(t,n){this.selection=t,this.descending=n,this.selectionId=null}getEditOperations(t,n){const e=p(t,this.selection,this.descending);e&&n.addEditOperation(e.range,e.text),this.selectionId=n.trackSelection(this.selection)}computeCursorState(t,n){return n.getTrackedSelection(this.selectionId)}static canRun(t,n,e){if(t===null)return!1;const r=s(t,n,e);if(!r)return!1;for(let o=0,i=r.before.length;o<i;o++)if(r.before[o]!==r.after[o])return!0;return!1}}function s(a,t,n){const e=t.startLineNumber;let r=t.endLineNumber;if(t.endColumn===1&&r--,e>=r)return null;const o=[];for(let u=e;u<=r;u++)o.push(a.getLineContent(u));let i=o.slice(0);return i.sort(l.getCollator().compare),n===!0&&(i=i.reverse()),{startLineNumber:e,endLineNumber:r,before:o,after:i}}function p(a,t,n){const e=s(a,t,n);return e?c.replace(new d(e.startLineNumber,1,e.endLineNumber,a.getLineMaxColumn(e.endLineNumber)),e.after.join(`
-`)):null}export{l as SortLinesCommand};
+import { EditOperation } from '../../../common/core/editOperation.js';
+import { Range } from '../../../common/core/range.js';
+export class SortLinesCommand {
+    static { this._COLLATOR = null; }
+    static getCollator() {
+        if (!SortLinesCommand._COLLATOR) {
+            SortLinesCommand._COLLATOR = new Intl.Collator();
+        }
+        return SortLinesCommand._COLLATOR;
+    }
+    constructor(selection, descending) {
+        this.selection = selection;
+        this.descending = descending;
+        this.selectionId = null;
+    }
+    getEditOperations(model, builder) {
+        const op = sortLines(model, this.selection, this.descending);
+        if (op) {
+            builder.addEditOperation(op.range, op.text);
+        }
+        this.selectionId = builder.trackSelection(this.selection);
+    }
+    computeCursorState(model, helper) {
+        return helper.getTrackedSelection(this.selectionId);
+    }
+    static canRun(model, selection, descending) {
+        if (model === null) {
+            return false;
+        }
+        const data = getSortData(model, selection, descending);
+        if (!data) {
+            return false;
+        }
+        for (let i = 0, len = data.before.length; i < len; i++) {
+            if (data.before[i] !== data.after[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+function getSortData(model, selection, descending) {
+    const startLineNumber = selection.startLineNumber;
+    let endLineNumber = selection.endLineNumber;
+    if (selection.endColumn === 1) {
+        endLineNumber--;
+    }
+    if (startLineNumber >= endLineNumber) {
+        return null;
+    }
+    const linesToSort = [];
+    for (let lineNumber = startLineNumber; lineNumber <= endLineNumber; lineNumber++) {
+        linesToSort.push(model.getLineContent(lineNumber));
+    }
+    let sorted = linesToSort.slice(0);
+    sorted.sort(SortLinesCommand.getCollator().compare);
+    if (descending === true) {
+        sorted = sorted.reverse();
+    }
+    return {
+        startLineNumber: startLineNumber,
+        endLineNumber: endLineNumber,
+        before: linesToSort,
+        after: sorted
+    };
+}
+function sortLines(model, selection, descending) {
+    const data = getSortData(model, selection, descending);
+    if (!data) {
+        return null;
+    }
+    return EditOperation.replace(new Range(data.startLineNumber, 1, data.endLineNumber, model.getLineMaxColumn(data.endLineNumber)), data.after.join('\n'));
+}

@@ -1,1 +1,38 @@
-import{isHotReloadEnabled as o,registerHotReloadHandler as i}from"./hotReload.js";import{constObservable as b,observableSignalFromEvent as l,observableValue as u}from"./observable.js";function T(e,r){return f([e],r),e}function f(e,r){o()&&l("reload",a=>i(({oldExports:d})=>{if([...Object.values(d)].some(n=>e.includes(n)))return n=>(a(void 0),!0)})).read(r)}const s=new Map;function x(e){if(!o())return b(e);const r=e.name;let t=s.get(r);return t?setTimeout(()=>{t.set(e,void 0)},0):(t=u(r,e),s.set(r,t)),t}export{x as createHotClass,f as observeHotReloadableExports,T as readHotReloadableExport};
+import { isHotReloadEnabled, registerHotReloadHandler } from './hotReload.js';
+import { constObservable, observableSignalFromEvent, observableValue } from './observable.js';
+export function readHotReloadableExport(value, reader) {
+    observeHotReloadableExports([value], reader);
+    return value;
+}
+export function observeHotReloadableExports(values, reader) {
+    if (isHotReloadEnabled()) {
+        const o = observableSignalFromEvent('reload', event => registerHotReloadHandler(({ oldExports }) => {
+            if (![...Object.values(oldExports)].some(v => values.includes(v))) {
+                return undefined;
+            }
+            return (_newExports) => {
+                event(undefined);
+                return true;
+            };
+        }));
+        o.read(reader);
+    }
+}
+const classes = new Map();
+export function createHotClass(clazz) {
+    if (!isHotReloadEnabled()) {
+        return constObservable(clazz);
+    }
+    const id = clazz.name;
+    let existing = classes.get(id);
+    if (!existing) {
+        existing = observableValue(id, clazz);
+        classes.set(id, existing);
+    }
+    else {
+        setTimeout(() => {
+            existing.set(clazz, undefined);
+        }, 0);
+    }
+    return existing;
+}

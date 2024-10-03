@@ -1,1 +1,20 @@
-import{Range as r}from"../core/range.js";import"../core/selection.js";import"../viewModel.js";class V{selections;startLineNumber;endLineNumber;relativeVerticalOffset;visibleRange;bigNumbersDelta;whitespaceViewportData;_model;lineHeight;constructor(i,e,t,n){this.selections=i,this.startLineNumber=e.startLineNumber|0,this.endLineNumber=e.endLineNumber|0,this.relativeVerticalOffset=e.relativeVerticalOffset,this.bigNumbersDelta=e.bigNumbersDelta|0,this.lineHeight=e.lineHeight|0,this.whitespaceViewportData=t,this._model=n,this.visibleRange=new r(e.startLineNumber,this._model.getLineMinColumn(e.startLineNumber),e.endLineNumber,this._model.getLineMaxColumn(e.endLineNumber))}getViewLineRenderingData(i){return this._model.getViewportViewLineRenderingData(this.visibleRange,i)}getDecorationsInViewport(){return this._model.getDecorationsInViewport(this.visibleRange)}}export{V as ViewportData};
+import { Range } from '../core/range.js';
+export class ViewportData {
+    constructor(selections, partialData, whitespaceViewportData, model) {
+        this.selections = selections;
+        this.startLineNumber = partialData.startLineNumber | 0;
+        this.endLineNumber = partialData.endLineNumber | 0;
+        this.relativeVerticalOffset = partialData.relativeVerticalOffset;
+        this.bigNumbersDelta = partialData.bigNumbersDelta | 0;
+        this.lineHeight = partialData.lineHeight | 0;
+        this.whitespaceViewportData = whitespaceViewportData;
+        this._model = model;
+        this.visibleRange = new Range(partialData.startLineNumber, this._model.getLineMinColumn(partialData.startLineNumber), partialData.endLineNumber, this._model.getLineMaxColumn(partialData.endLineNumber));
+    }
+    getViewLineRenderingData(lineNumber) {
+        return this._model.getViewportViewLineRenderingData(this.visibleRange, lineNumber);
+    }
+    getDecorationsInViewport() {
+        return this._model.getDecorationsInViewport(this.visibleRange);
+    }
+}

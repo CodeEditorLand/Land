@@ -1,1 +1,26 @@
-import"../../../../platform/instantiation/common/instantiation.js";import"./notebookBrowser.js";class o{static INSTANCE=new o;editorContributions;constructor(){this.editorContributions=[]}registerEditorContribution(t,r){this.editorContributions.push({id:t,ctor:r})}getEditorContributions(){return this.editorContributions.slice(0)}}function p(i,t){o.INSTANCE.registerEditorContribution(i,t)}var s;(r=>{function i(){return o.INSTANCE.getEditorContributions()}r.getEditorContributions=i;function t(e){return o.INSTANCE.getEditorContributions().filter(n=>e.indexOf(n.id)>=0)}r.getSomeEditorContributions=t})(s||={});export{s as NotebookEditorExtensionsRegistry,p as registerNotebookContribution};
+class EditorContributionRegistry {
+    static { this.INSTANCE = new EditorContributionRegistry(); }
+    constructor() {
+        this.editorContributions = [];
+    }
+    registerEditorContribution(id, ctor) {
+        this.editorContributions.push({ id, ctor: ctor });
+    }
+    getEditorContributions() {
+        return this.editorContributions.slice(0);
+    }
+}
+export function registerNotebookContribution(id, ctor) {
+    EditorContributionRegistry.INSTANCE.registerEditorContribution(id, ctor);
+}
+export var NotebookEditorExtensionsRegistry;
+(function (NotebookEditorExtensionsRegistry) {
+    function getEditorContributions() {
+        return EditorContributionRegistry.INSTANCE.getEditorContributions();
+    }
+    NotebookEditorExtensionsRegistry.getEditorContributions = getEditorContributions;
+    function getSomeEditorContributions(ids) {
+        return EditorContributionRegistry.INSTANCE.getEditorContributions().filter(c => ids.indexOf(c.id) >= 0);
+    }
+    NotebookEditorExtensionsRegistry.getSomeEditorContributions = getSomeEditorContributions;
+})(NotebookEditorExtensionsRegistry || (NotebookEditorExtensionsRegistry = {}));

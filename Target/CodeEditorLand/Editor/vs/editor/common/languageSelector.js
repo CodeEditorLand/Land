@@ -1,1 +1,104 @@
-import{match as y}from"../../base/common/glob.js";import"../../base/common/uri.js";import{normalize as p}from"../../base/common/path.js";function b(e,s,a,o,u,g){if(Array.isArray(e)){let n=0;for(const l of e){const t=b(l,s,a,o,u,g);if(t===10)return t;t>n&&(n=t)}return n}else{if(typeof e=="string")return o?e==="*"?5:e===a?10:0:0;if(e){const{language:n,pattern:l,scheme:t,hasAccessToAllModels:m,notebookType:f}=e;if(!o&&!m)return 0;f&&u&&(s=u);let r=0;if(t)if(t===s.scheme)r=10;else if(t==="*")r=5;else return 0;if(n)if(n===a)r=10;else if(n==="*")r=Math.max(r,5);else return 0;if(f)if(f===g)r=10;else if(f==="*"&&g!==void 0)r=Math.max(r,5);else return 0;if(l){let i;if(typeof l=="string"?i=l:i={...l,base:p(l.base)},i===s.fsPath||y(i,s.fsPath))r=10;else return 0}return r}else return 0}}function h(e){return typeof e=="string"?!1:Array.isArray(e)?e.some(h):!!e.notebookType}export{b as score,h as targetsNotebooks};
+import { match as matchGlobPattern } from '../../base/common/glob.js';
+import { normalize } from '../../base/common/path.js';
+export function score(selector, candidateUri, candidateLanguage, candidateIsSynchronized, candidateNotebookUri, candidateNotebookType) {
+    if (Array.isArray(selector)) {
+        let ret = 0;
+        for (const filter of selector) {
+            const value = score(filter, candidateUri, candidateLanguage, candidateIsSynchronized, candidateNotebookUri, candidateNotebookType);
+            if (value === 10) {
+                return value;
+            }
+            if (value > ret) {
+                ret = value;
+            }
+        }
+        return ret;
+    }
+    else if (typeof selector === 'string') {
+        if (!candidateIsSynchronized) {
+            return 0;
+        }
+        if (selector === '*') {
+            return 5;
+        }
+        else if (selector === candidateLanguage) {
+            return 10;
+        }
+        else {
+            return 0;
+        }
+    }
+    else if (selector) {
+        const { language, pattern, scheme, hasAccessToAllModels, notebookType } = selector;
+        if (!candidateIsSynchronized && !hasAccessToAllModels) {
+            return 0;
+        }
+        if (notebookType && candidateNotebookUri) {
+            candidateUri = candidateNotebookUri;
+        }
+        let ret = 0;
+        if (scheme) {
+            if (scheme === candidateUri.scheme) {
+                ret = 10;
+            }
+            else if (scheme === '*') {
+                ret = 5;
+            }
+            else {
+                return 0;
+            }
+        }
+        if (language) {
+            if (language === candidateLanguage) {
+                ret = 10;
+            }
+            else if (language === '*') {
+                ret = Math.max(ret, 5);
+            }
+            else {
+                return 0;
+            }
+        }
+        if (notebookType) {
+            if (notebookType === candidateNotebookType) {
+                ret = 10;
+            }
+            else if (notebookType === '*' && candidateNotebookType !== undefined) {
+                ret = Math.max(ret, 5);
+            }
+            else {
+                return 0;
+            }
+        }
+        if (pattern) {
+            let normalizedPattern;
+            if (typeof pattern === 'string') {
+                normalizedPattern = pattern;
+            }
+            else {
+                normalizedPattern = { ...pattern, base: normalize(pattern.base) };
+            }
+            if (normalizedPattern === candidateUri.fsPath || matchGlobPattern(normalizedPattern, candidateUri.fsPath)) {
+                ret = 10;
+            }
+            else {
+                return 0;
+            }
+        }
+        return ret;
+    }
+    else {
+        return 0;
+    }
+}
+export function targetsNotebooks(selector) {
+    if (typeof selector === 'string') {
+        return false;
+    }
+    else if (Array.isArray(selector)) {
+        return selector.some(targetsNotebooks);
+    }
+    else {
+        return !!selector.notebookType;
+    }
+}

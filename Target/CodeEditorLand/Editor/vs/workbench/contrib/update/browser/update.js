@@ -1,1 +1,548 @@
-var re=Object.defineProperty;var se=Object.getOwnPropertyDescriptor;var C=(l,a,e,i)=>{for(var o=i>1?void 0:i?se(a,e):a,d=l.length-1,c;d>=0;d--)(c=l[d])&&(o=(i?c(a,e,o):c(o))||o);return i&&o&&re(a,e,o),o},n=(l,a)=>(e,i)=>a(e,i,l);import*as t from"../../../../nls.js";import T from"../../../../base/common/severity.js";import{Disposable as G,MutableDisposable as le}from"../../../../base/common/lifecycle.js";import{URI as j}from"../../../../base/common/uri.js";import{IActivityService as ce,NumberBadge as de,ProgressBadge as L}from"../../../services/activity/common/activity.js";import{IInstantiationService as O}from"../../../../platform/instantiation/common/instantiation.js";import{IOpenerService as _}from"../../../../platform/opener/common/opener.js";import"../../../common/contributions.js";import{IStorageService as q,StorageScope as p,StorageTarget as D}from"../../../../platform/storage/common/storage.js";import{IUpdateService as pe,StateType as r,DisablementReason as ue}from"../../../../platform/update/common/update.js";import{INotificationService as F,Severity as W}from"../../../../platform/notification/common/notification.js";import{IDialogService as H}from"../../../../platform/dialogs/common/dialogs.js";import{IBrowserWorkbenchEnvironmentService as Q}from"../../../services/environment/browser/environmentService.js";import{ReleaseNotesManager as ve}from"./releaseNotesEditor.js";import{isMacintosh as me,isWeb as he,isWindows as Se}from"../../../../base/common/platform.js";import{IConfigurationService as Y}from"../../../../platform/configuration/common/configuration.js";import{RawContextKey as k,IContextKeyService as $,ContextKeyExpr as z}from"../../../../platform/contextkey/common/contextkey.js";import{MenuRegistry as S,MenuId as u,registerAction2 as ge,Action2 as ye}from"../../../../platform/actions/common/actions.js";import{CommandsRegistry as v}from"../../../../platform/commands/common/commands.js";import{IHostService as J}from"../../../services/host/browser/host.js";import{IProductService as R}from"../../../../platform/product/common/productService.js";import{IUserDataSyncEnablementService as fe,IUserDataSyncService as Ie,IUserDataSyncStoreManagementService as we,SyncStatus as X}from"../../../../platform/userDataSync/common/userDataSync.js";import{IsWebContext as Z}from"../../../../platform/contextkey/common/contextkeys.js";import{Promises as be}from"../../../../base/common/async.js";import{IUserDataSyncWorkbenchService as Ue}from"../../../services/userDataSync/common/userDataSync.js";import{Event as ee}from"../../../../base/common/event.js";import{Action as Ae}from"../../../../base/common/actions.js";const m=new k("updateState",r.Uninitialized),te=new k("majorMinorUpdateAvailable",!1),Ne=new k("releaseNotesUrl",""),Ce=new k("downloadUrl","");let B;function ie(l,a,e){return B||(B=l.createInstance(ve)),B.show(a,e)}async function Te(l){const a=l.get(_),e=l.get(R);if(e.releaseNotesUrl){const i=j.parse(e.releaseNotesUrl);await a.open(i)}else throw new Error(t.localize("update.noReleaseNotesOnline","This version of {0} does not have release notes online",e.nameLong))}async function E(l,a){const e=l.get(O);try{await ie(e,a,!1)}catch(i){try{await e.invokeFunction(Te)}catch(o){throw new Error(`${i.message} and ${o.message}`)}}}function V(l){const a=/([0-9]+)\.([0-9]+)\.([0-9]+)/.exec(l);if(a)return{major:parseInt(a[1]),minor:parseInt(a[2]),patch:parseInt(a[3])}}function oe(l,a){return l.major<a.major||l.minor<a.minor}let f=class{static KEY="releaseNotes/lastVersion";constructor(a,e,i,o,d,c,I,s,h){s.releaseNotesUrl&&Ne.bindTo(h).set(s.releaseNotesUrl),s.downloadUrl&&Ce.bindTo(h).set(s.downloadUrl),!he&&I.hadLastFocus().then(async w=>{if(!w)return;const b=V(a.get(f.KEY,p.APPLICATION,"")),g=V(s.version),A=c.getValue("update.showReleaseNotes"),y=s.releaseNotesUrl;A&&!o.skipReleaseNotes&&y&&b&&g&&oe(b,g)&&ie(e,s.version,!1).then(void 0,()=>{i.prompt(T.Info,t.localize("read the release notes","Welcome to {0} v{1}! Would you like to read the Release Notes?",s.nameLong,s.version),[{label:t.localize("releaseNotes","Release Notes"),run:()=>{const P=j.parse(y);d.open(P)}}])}),a.store(f.KEY,s.version,p.APPLICATION,D.MACHINE)})}};f=C([n(0,q),n(1,O),n(2,F),n(3,Q),n(4,_),n(5,Y),n(6,J),n(7,R),n(8,$)],f);let x=class extends G{constructor(e,i,o,d,c,I,s,h,w,b,g){super();this.storageService=e;this.instantiationService=i;this.notificationService=o;this.dialogService=d;this.updateService=c;this.activityService=I;this.contextKeyService=s;this.productService=h;this.openerService=w;this.configurationService=b;this.hostService=g;this.state=c.state,this.updateStateContextKey=m.bindTo(this.contextKeyService),this.majorMinorUpdateAvailableContextKey=te.bindTo(this.contextKeyService),this._register(c.onStateChange(this.onUpdateStateChange,this)),this.onUpdateStateChange(this.updateService.state);const A=this.productService.commit,y=this.storageService.get("update/lastKnownVersion",p.APPLICATION);A!==y&&(this.storageService.remove("update/lastKnownVersion",p.APPLICATION),this.storageService.remove("update/updateNotificationTime",p.APPLICATION)),this.registerGlobalActivityActions()}state;badgeDisposable=this._register(new le);updateStateContextKey;majorMinorUpdateAvailableContextKey;async onUpdateStateChange(e){switch(this.updateStateContextKey.set(e.type),e.type){case r.Disabled:e.reason===ue.RunningAsAdmin&&this.notificationService.notify({severity:W.Info,message:t.localize("update service disabled","Updates are disabled because you are running the user-scope installation of {0} as Administrator.",this.productService.nameLong),actions:{primary:[new Ae("",t.localize("learn more","Learn More"),void 0,void 0,()=>{this.openerService.open("https://aka.ms/vscode-windows-setup")})]},neverShowAgain:{id:"no-updates-running-as-admin"}});break;case r.Idle:e.error?this.onError(e.error):this.state.type===r.CheckingForUpdates&&this.state.explicit&&await this.hostService.hadLastFocus()&&this.onUpdateNotAvailable();break;case r.AvailableForDownload:this.onUpdateAvailable(e.update);break;case r.Downloaded:this.onUpdateDownloaded(e.update);break;case r.Ready:{const d=e.update.productVersion;if(d){const c=V(this.productService.version),I=V(d);this.majorMinorUpdateAvailableContextKey.set(!!(c&&I&&oe(c,I))),this.onUpdateReady(e.update)}break}}let i,o;e.type===r.AvailableForDownload||e.type===r.Downloaded||e.type===r.Ready?i=new de(1,()=>t.localize("updateIsReady","New {0} update available.",this.productService.nameShort)):e.type===r.CheckingForUpdates?(i=new L(()=>t.localize("checkingForUpdates","Checking for Updates...")),o=1):e.type===r.Downloading?(i=new L(()=>t.localize("downloading","Downloading...")),o=1):e.type===r.Updating&&(i=new L(()=>t.localize("updating","Updating...")),o=1),this.badgeDisposable.clear(),i&&(this.badgeDisposable.value=this.activityService.showGlobalActivity({badge:i,priority:o})),this.state=e}onError(e){/The request timed out|The network connection was lost/i.test(e)||(e=e.replace(/See https:\/\/github\.com\/Squirrel\/Squirrel\.Mac\/issues\/182 for more information/,"This might mean the application was put on quarantine by macOS. See [this link](https://github.com/microsoft/vscode/issues/7426#issuecomment-425093469) for more information"),this.notificationService.notify({severity:W.Error,message:e,source:t.localize("update service","Update Service")}))}onUpdateNotAvailable(){this.dialogService.info(t.localize("noUpdatesAvailable","There are currently no updates available."))}onUpdateAvailable(e){if(!this.shouldShowNotification())return;const i=e.productVersion;i&&this.notificationService.prompt(T.Info,t.localize("thereIsUpdateAvailable","There is an available update."),[{label:t.localize("download update","Download Update"),run:()=>this.updateService.downloadUpdate()},{label:t.localize("later","Later"),run:()=>{}},{label:t.localize("releaseNotes","Release Notes"),run:()=>{this.instantiationService.invokeFunction(o=>E(o,i))}}])}onUpdateDownloaded(e){if(me||this.configurationService.getValue("update.enableWindowsBackgroundUpdates")&&this.productService.target==="user"||!this.shouldShowNotification())return;const i=e.productVersion;i&&this.notificationService.prompt(T.Info,t.localize("updateAvailable","There's an update available: {0} {1}",this.productService.nameLong,i),[{label:t.localize("installUpdate","Install Update"),run:()=>this.updateService.applyUpdate()},{label:t.localize("later","Later"),run:()=>{}},{label:t.localize("releaseNotes","Release Notes"),run:()=>{this.instantiationService.invokeFunction(o=>E(o,i))}}])}onUpdateReady(e){if(!(Se&&this.productService.target!=="user")&&!this.shouldShowNotification())return;const i=[{label:t.localize("updateNow","Update Now"),run:()=>this.updateService.quitAndInstall()},{label:t.localize("later","Later"),run:()=>{}}],o=e.productVersion;o&&i.push({label:t.localize("releaseNotes","Release Notes"),run:()=>{this.instantiationService.invokeFunction(d=>E(d,o))}}),this.notificationService.prompt(T.Info,t.localize("updateAvailableAfterRestart","Restart {0} to apply the latest update.",this.productService.nameLong),i,{sticky:!0})}shouldShowNotification(){const e=this.productService.commit,i=new Date().getTime(),o=this.storageService.get("update/lastKnownVersion",p.APPLICATION);e!==o&&(this.storageService.store("update/lastKnownVersion",e,p.APPLICATION,D.MACHINE),this.storageService.store("update/updateNotificationTime",i,p.APPLICATION,D.MACHINE));const d=this.storageService.getNumber("update/updateNotificationTime",p.APPLICATION,i);return(i-d)/(1e3*60*60*24)>5}registerGlobalActivityActions(){v.registerCommand("update.check",()=>this.updateService.checkForUpdates(!0)),S.appendMenuItem(u.GlobalActivity,{group:"7_update",command:{id:"update.check",title:t.localize("checkForUpdates","Check for Updates...")},when:m.isEqualTo(r.Idle)}),v.registerCommand("update.checking",()=>{}),S.appendMenuItem(u.GlobalActivity,{group:"7_update",command:{id:"update.checking",title:t.localize("checkingForUpdates","Checking for Updates..."),precondition:z.false()},when:m.isEqualTo(r.CheckingForUpdates)}),v.registerCommand("update.downloadNow",()=>this.updateService.downloadUpdate()),S.appendMenuItem(u.GlobalActivity,{group:"7_update",command:{id:"update.downloadNow",title:t.localize("download update_1","Download Update (1)")},when:m.isEqualTo(r.AvailableForDownload)}),v.registerCommand("update.downloading",()=>{}),S.appendMenuItem(u.GlobalActivity,{group:"7_update",command:{id:"update.downloading",title:t.localize("DownloadingUpdate","Downloading Update..."),precondition:z.false()},when:m.isEqualTo(r.Downloading)}),v.registerCommand("update.install",()=>this.updateService.applyUpdate()),S.appendMenuItem(u.GlobalActivity,{group:"7_update",command:{id:"update.install",title:t.localize("installUpdate...","Install Update... (1)")},when:m.isEqualTo(r.Downloaded)}),v.registerCommand("update.updating",()=>{}),S.appendMenuItem(u.GlobalActivity,{group:"7_update",command:{id:"update.updating",title:t.localize("installingUpdate","Installing Update..."),precondition:z.false()},when:m.isEqualTo(r.Updating)}),this.productService.quality==="stable"&&(v.registerCommand("update.showUpdateReleaseNotes",()=>{if(this.updateService.state.type!==r.Ready)return;const e=this.updateService.state.update.productVersion;e&&this.instantiationService.invokeFunction(i=>E(i,e))}),S.appendMenuItem(u.GlobalActivity,{group:"7_update",order:1,command:{id:"update.showUpdateReleaseNotes",title:t.localize("showUpdateReleaseNotes","Show Update Release Notes")},when:z.and(m.isEqualTo(r.Ready),te)})),v.registerCommand("update.restart",()=>this.updateService.quitAndInstall()),S.appendMenuItem(u.GlobalActivity,{group:"7_update",order:2,command:{id:"update.restart",title:t.localize("restartToUpdate","Restart to Update (1)")},when:m.isEqualTo(r.Ready)}),v.registerCommand("_update.state",()=>this.state)}};x=C([n(0,q),n(1,O),n(2,F),n(3,H),n(4,pe),n(5,ce),n(6,$),n(7,R),n(8,_),n(9,Y),n(10,J)],x);let M=class extends G{constructor(e,i){super();this.productService=e;this.environmentService=i;this.registerGlobalActivityActions()}registerGlobalActivityActions(){const e=this.productService.quality,i=this.environmentService.options?.productQualityChangeHandler;if(i&&(e==="stable"||e==="insider")){const o=e==="stable"?"insider":"stable",d=`update.switchQuality.${o}`,c=o==="insider";this._register(ge(class extends ye{constructor(){super({id:d,title:c?t.localize("switchToInsiders","Switch to Insiders Version..."):t.localize("switchToStable","Switch to Stable Version..."),precondition:Z,menu:{id:u.GlobalActivity,when:Z,group:"7_update"}})}async run(s){const h=s.get(H),w=s.get(fe),b=s.get(we),g=s.get(q),A=s.get(Ue),y=s.get(Ie),P=s.get(F);try{const N="switchQuality.selectSettingsSyncServiceDialogShown",ae=b.userDataSyncStore;let U;if(ae&&c&&w.isEnabled()&&!g.getBoolean(N,p.APPLICATION,!1)){if(U=await this.selectSettingsSyncService(h),!U)return;g.store(N,!0,p.APPLICATION,D.USER),U==="stable"&&await b.switch(U)}if((await h.confirm({type:"info",message:t.localize("relaunchMessage","Changing the version requires a reload to take effect"),detail:o==="insider"?t.localize("relaunchDetailInsiders","Press the reload button to switch to the Insiders version of VS Code."):t.localize("relaunchDetailStable","Press the reload button to switch to the Stable version of VS Code."),primaryButton:t.localize({key:"reload",comment:["&& denotes a mnemonic"]},"&&Reload")})).confirmed){const K=[];y.status===X.Syncing&&K.push(ee.toPromise(ee.filter(y.onDidChangeStatus,ne=>ne!==X.Syncing))),c&&U&&K.push(A.synchroniseUserDataSyncStoreType()),await be.settled(K),i(o)}else U&&g.remove(N,p.APPLICATION)}catch(N){P.error(N)}}async selectSettingsSyncService(s){const{result:h}=await s.prompt({type:W.Info,message:t.localize("selectSyncService.message","Choose the settings sync service to use after changing the version"),detail:t.localize("selectSyncService.detail","The Insiders version of VS Code will synchronize your settings, keybindings, extensions, snippets and UI State using separate insiders settings sync service by default."),buttons:[{label:t.localize({key:"use insiders",comment:["&& denotes a mnemonic"]},"&&Insiders"),run:()=>"insiders"},{label:t.localize({key:"use stable",comment:["&& denotes a mnemonic"]},"&&Stable (current)"),run:()=>"stable"}],cancelButton:!0});return h}}))}}};M=C([n(0,R),n(1,Q)],M);export{m as CONTEXT_UPDATE_STATE,Ce as DOWNLOAD_URL,te as MAJOR_MINOR_UPDATE_AVAILABLE,f as ProductContribution,Ne as RELEASE_NOTES_URL,M as SwitchProductQualityContribution,x as UpdateContribution,ie as showReleaseNotesInEditor};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ProductContribution_1;
+import * as nls from '../../../../nls.js';
+import severity from '../../../../base/common/severity.js';
+import { Disposable, MutableDisposable } from '../../../../base/common/lifecycle.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IActivityService, NumberBadge, ProgressBadge } from '../../../services/activity/common/activity.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IUpdateService } from '../../../../platform/update/common/update.js';
+import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { IBrowserWorkbenchEnvironmentService } from '../../../services/environment/browser/environmentService.js';
+import { ReleaseNotesManager } from './releaseNotesEditor.js';
+import { isMacintosh, isWeb, isWindows } from '../../../../base/common/platform.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { RawContextKey, IContextKeyService, ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { MenuRegistry, MenuId, registerAction2, Action2 } from '../../../../platform/actions/common/actions.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { IUserDataSyncEnablementService, IUserDataSyncService, IUserDataSyncStoreManagementService } from '../../../../platform/userDataSync/common/userDataSync.js';
+import { IsWebContext } from '../../../../platform/contextkey/common/contextkeys.js';
+import { Promises } from '../../../../base/common/async.js';
+import { IUserDataSyncWorkbenchService } from '../../../services/userDataSync/common/userDataSync.js';
+import { Event } from '../../../../base/common/event.js';
+import { Action } from '../../../../base/common/actions.js';
+export const CONTEXT_UPDATE_STATE = new RawContextKey('updateState', "uninitialized");
+export const MAJOR_MINOR_UPDATE_AVAILABLE = new RawContextKey('majorMinorUpdateAvailable', false);
+export const RELEASE_NOTES_URL = new RawContextKey('releaseNotesUrl', '');
+export const DOWNLOAD_URL = new RawContextKey('downloadUrl', '');
+let releaseNotesManager = undefined;
+export function showReleaseNotesInEditor(instantiationService, version, useCurrentFile) {
+    if (!releaseNotesManager) {
+        releaseNotesManager = instantiationService.createInstance(ReleaseNotesManager);
+    }
+    return releaseNotesManager.show(version, useCurrentFile);
+}
+async function openLatestReleaseNotesInBrowser(accessor) {
+    const openerService = accessor.get(IOpenerService);
+    const productService = accessor.get(IProductService);
+    if (productService.releaseNotesUrl) {
+        const uri = URI.parse(productService.releaseNotesUrl);
+        await openerService.open(uri);
+    }
+    else {
+        throw new Error(nls.localize('update.noReleaseNotesOnline', "This version of {0} does not have release notes online", productService.nameLong));
+    }
+}
+async function showReleaseNotes(accessor, version) {
+    const instantiationService = accessor.get(IInstantiationService);
+    try {
+        await showReleaseNotesInEditor(instantiationService, version, false);
+    }
+    catch (err) {
+        try {
+            await instantiationService.invokeFunction(openLatestReleaseNotesInBrowser);
+        }
+        catch (err2) {
+            throw new Error(`${err.message} and ${err2.message}`);
+        }
+    }
+}
+function parseVersion(version) {
+    const match = /([0-9]+)\.([0-9]+)\.([0-9]+)/.exec(version);
+    if (!match) {
+        return undefined;
+    }
+    return {
+        major: parseInt(match[1]),
+        minor: parseInt(match[2]),
+        patch: parseInt(match[3])
+    };
+}
+function isMajorMinorUpdate(before, after) {
+    return before.major < after.major || before.minor < after.minor;
+}
+let ProductContribution = class ProductContribution {
+    static { ProductContribution_1 = this; }
+    static { this.KEY = 'releaseNotes/lastVersion'; }
+    constructor(storageService, instantiationService, notificationService, environmentService, openerService, configurationService, hostService, productService, contextKeyService) {
+        if (productService.releaseNotesUrl) {
+            const releaseNotesUrlKey = RELEASE_NOTES_URL.bindTo(contextKeyService);
+            releaseNotesUrlKey.set(productService.releaseNotesUrl);
+        }
+        if (productService.downloadUrl) {
+            const downloadUrlKey = DOWNLOAD_URL.bindTo(contextKeyService);
+            downloadUrlKey.set(productService.downloadUrl);
+        }
+        if (isWeb) {
+            return;
+        }
+        hostService.hadLastFocus().then(async (hadLastFocus) => {
+            if (!hadLastFocus) {
+                return;
+            }
+            const lastVersion = parseVersion(storageService.get(ProductContribution_1.KEY, -1, ''));
+            const currentVersion = parseVersion(productService.version);
+            const shouldShowReleaseNotes = configurationService.getValue('update.showReleaseNotes');
+            const releaseNotesUrl = productService.releaseNotesUrl;
+            if (shouldShowReleaseNotes && !environmentService.skipReleaseNotes && releaseNotesUrl && lastVersion && currentVersion && isMajorMinorUpdate(lastVersion, currentVersion)) {
+                showReleaseNotesInEditor(instantiationService, productService.version, false)
+                    .then(undefined, () => {
+                    notificationService.prompt(severity.Info, nls.localize('read the release notes', "Welcome to {0} v{1}! Would you like to read the Release Notes?", productService.nameLong, productService.version), [{
+                            label: nls.localize('releaseNotes', "Release Notes"),
+                            run: () => {
+                                const uri = URI.parse(releaseNotesUrl);
+                                openerService.open(uri);
+                            }
+                        }]);
+                });
+            }
+            storageService.store(ProductContribution_1.KEY, productService.version, -1, 1);
+        });
+    }
+};
+ProductContribution = ProductContribution_1 = __decorate([
+    __param(0, IStorageService),
+    __param(1, IInstantiationService),
+    __param(2, INotificationService),
+    __param(3, IBrowserWorkbenchEnvironmentService),
+    __param(4, IOpenerService),
+    __param(5, IConfigurationService),
+    __param(6, IHostService),
+    __param(7, IProductService),
+    __param(8, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], ProductContribution);
+export { ProductContribution };
+let UpdateContribution = class UpdateContribution extends Disposable {
+    constructor(storageService, instantiationService, notificationService, dialogService, updateService, activityService, contextKeyService, productService, openerService, configurationService, hostService) {
+        super();
+        this.storageService = storageService;
+        this.instantiationService = instantiationService;
+        this.notificationService = notificationService;
+        this.dialogService = dialogService;
+        this.updateService = updateService;
+        this.activityService = activityService;
+        this.contextKeyService = contextKeyService;
+        this.productService = productService;
+        this.openerService = openerService;
+        this.configurationService = configurationService;
+        this.hostService = hostService;
+        this.badgeDisposable = this._register(new MutableDisposable());
+        this.state = updateService.state;
+        this.updateStateContextKey = CONTEXT_UPDATE_STATE.bindTo(this.contextKeyService);
+        this.majorMinorUpdateAvailableContextKey = MAJOR_MINOR_UPDATE_AVAILABLE.bindTo(this.contextKeyService);
+        this._register(updateService.onStateChange(this.onUpdateStateChange, this));
+        this.onUpdateStateChange(this.updateService.state);
+        const currentVersion = this.productService.commit;
+        const lastKnownVersion = this.storageService.get('update/lastKnownVersion', -1);
+        if (currentVersion !== lastKnownVersion) {
+            this.storageService.remove('update/lastKnownVersion', -1);
+            this.storageService.remove('update/updateNotificationTime', -1);
+        }
+        this.registerGlobalActivityActions();
+    }
+    async onUpdateStateChange(state) {
+        this.updateStateContextKey.set(state.type);
+        switch (state.type) {
+            case "disabled":
+                if (state.reason === 5) {
+                    this.notificationService.notify({
+                        severity: Severity.Info,
+                        message: nls.localize('update service disabled', "Updates are disabled because you are running the user-scope installation of {0} as Administrator.", this.productService.nameLong),
+                        actions: {
+                            primary: [
+                                new Action('', nls.localize('learn more', "Learn More"), undefined, undefined, () => {
+                                    this.openerService.open('https://aka.ms/vscode-windows-setup');
+                                })
+                            ]
+                        },
+                        neverShowAgain: { id: 'no-updates-running-as-admin', }
+                    });
+                }
+                break;
+            case "idle":
+                if (state.error) {
+                    this.onError(state.error);
+                }
+                else if (this.state.type === "checking for updates" && this.state.explicit && await this.hostService.hadLastFocus()) {
+                    this.onUpdateNotAvailable();
+                }
+                break;
+            case "available for download":
+                this.onUpdateAvailable(state.update);
+                break;
+            case "downloaded":
+                this.onUpdateDownloaded(state.update);
+                break;
+            case "ready": {
+                const productVersion = state.update.productVersion;
+                if (productVersion) {
+                    const currentVersion = parseVersion(this.productService.version);
+                    const nextVersion = parseVersion(productVersion);
+                    this.majorMinorUpdateAvailableContextKey.set(Boolean(currentVersion && nextVersion && isMajorMinorUpdate(currentVersion, nextVersion)));
+                    this.onUpdateReady(state.update);
+                }
+                break;
+            }
+        }
+        let badge = undefined;
+        let priority = undefined;
+        if (state.type === "available for download" || state.type === "downloaded" || state.type === "ready") {
+            badge = new NumberBadge(1, () => nls.localize('updateIsReady', "New {0} update available.", this.productService.nameShort));
+        }
+        else if (state.type === "checking for updates") {
+            badge = new ProgressBadge(() => nls.localize('checkingForUpdates', "Checking for Updates..."));
+            priority = 1;
+        }
+        else if (state.type === "downloading") {
+            badge = new ProgressBadge(() => nls.localize('downloading', "Downloading..."));
+            priority = 1;
+        }
+        else if (state.type === "updating") {
+            badge = new ProgressBadge(() => nls.localize('updating', "Updating..."));
+            priority = 1;
+        }
+        this.badgeDisposable.clear();
+        if (badge) {
+            this.badgeDisposable.value = this.activityService.showGlobalActivity({ badge, priority });
+        }
+        this.state = state;
+    }
+    onError(error) {
+        if (/The request timed out|The network connection was lost/i.test(error)) {
+            return;
+        }
+        error = error.replace(/See https:\/\/github\.com\/Squirrel\/Squirrel\.Mac\/issues\/182 for more information/, 'This might mean the application was put on quarantine by macOS. See [this link](https://github.com/microsoft/vscode/issues/7426#issuecomment-425093469) for more information');
+        this.notificationService.notify({
+            severity: Severity.Error,
+            message: error,
+            source: nls.localize('update service', "Update Service"),
+        });
+    }
+    onUpdateNotAvailable() {
+        this.dialogService.info(nls.localize('noUpdatesAvailable', "There are currently no updates available."));
+    }
+    onUpdateAvailable(update) {
+        if (!this.shouldShowNotification()) {
+            return;
+        }
+        const productVersion = update.productVersion;
+        if (!productVersion) {
+            return;
+        }
+        this.notificationService.prompt(severity.Info, nls.localize('thereIsUpdateAvailable', "There is an available update."), [{
+                label: nls.localize('download update', "Download Update"),
+                run: () => this.updateService.downloadUpdate()
+            }, {
+                label: nls.localize('later', "Later"),
+                run: () => { }
+            }, {
+                label: nls.localize('releaseNotes', "Release Notes"),
+                run: () => {
+                    this.instantiationService.invokeFunction(accessor => showReleaseNotes(accessor, productVersion));
+                }
+            }]);
+    }
+    onUpdateDownloaded(update) {
+        if (isMacintosh) {
+            return;
+        }
+        if (this.configurationService.getValue('update.enableWindowsBackgroundUpdates') && this.productService.target === 'user') {
+            return;
+        }
+        if (!this.shouldShowNotification()) {
+            return;
+        }
+        const productVersion = update.productVersion;
+        if (!productVersion) {
+            return;
+        }
+        this.notificationService.prompt(severity.Info, nls.localize('updateAvailable', "There's an update available: {0} {1}", this.productService.nameLong, productVersion), [{
+                label: nls.localize('installUpdate', "Install Update"),
+                run: () => this.updateService.applyUpdate()
+            }, {
+                label: nls.localize('later', "Later"),
+                run: () => { }
+            }, {
+                label: nls.localize('releaseNotes', "Release Notes"),
+                run: () => {
+                    this.instantiationService.invokeFunction(accessor => showReleaseNotes(accessor, productVersion));
+                }
+            }]);
+    }
+    onUpdateReady(update) {
+        if (!(isWindows && this.productService.target !== 'user') && !this.shouldShowNotification()) {
+            return;
+        }
+        const actions = [{
+                label: nls.localize('updateNow', "Update Now"),
+                run: () => this.updateService.quitAndInstall()
+            }, {
+                label: nls.localize('later', "Later"),
+                run: () => { }
+            }];
+        const productVersion = update.productVersion;
+        if (productVersion) {
+            actions.push({
+                label: nls.localize('releaseNotes', "Release Notes"),
+                run: () => {
+                    this.instantiationService.invokeFunction(accessor => showReleaseNotes(accessor, productVersion));
+                }
+            });
+        }
+        this.notificationService.prompt(severity.Info, nls.localize('updateAvailableAfterRestart', "Restart {0} to apply the latest update.", this.productService.nameLong), actions, { sticky: true });
+    }
+    shouldShowNotification() {
+        const currentVersion = this.productService.commit;
+        const currentMillis = new Date().getTime();
+        const lastKnownVersion = this.storageService.get('update/lastKnownVersion', -1);
+        if (currentVersion !== lastKnownVersion) {
+            this.storageService.store('update/lastKnownVersion', currentVersion, -1, 1);
+            this.storageService.store('update/updateNotificationTime', currentMillis, -1, 1);
+        }
+        const updateNotificationMillis = this.storageService.getNumber('update/updateNotificationTime', -1, currentMillis);
+        const diffDays = (currentMillis - updateNotificationMillis) / (1000 * 60 * 60 * 24);
+        return diffDays > 5;
+    }
+    registerGlobalActivityActions() {
+        CommandsRegistry.registerCommand('update.check', () => this.updateService.checkForUpdates(true));
+        MenuRegistry.appendMenuItem(MenuId.GlobalActivity, {
+            group: '7_update',
+            command: {
+                id: 'update.check',
+                title: nls.localize('checkForUpdates', "Check for Updates...")
+            },
+            when: CONTEXT_UPDATE_STATE.isEqualTo("idle")
+        });
+        CommandsRegistry.registerCommand('update.checking', () => { });
+        MenuRegistry.appendMenuItem(MenuId.GlobalActivity, {
+            group: '7_update',
+            command: {
+                id: 'update.checking',
+                title: nls.localize('checkingForUpdates', "Checking for Updates..."),
+                precondition: ContextKeyExpr.false()
+            },
+            when: CONTEXT_UPDATE_STATE.isEqualTo("checking for updates")
+        });
+        CommandsRegistry.registerCommand('update.downloadNow', () => this.updateService.downloadUpdate());
+        MenuRegistry.appendMenuItem(MenuId.GlobalActivity, {
+            group: '7_update',
+            command: {
+                id: 'update.downloadNow',
+                title: nls.localize('download update_1', "Download Update (1)")
+            },
+            when: CONTEXT_UPDATE_STATE.isEqualTo("available for download")
+        });
+        CommandsRegistry.registerCommand('update.downloading', () => { });
+        MenuRegistry.appendMenuItem(MenuId.GlobalActivity, {
+            group: '7_update',
+            command: {
+                id: 'update.downloading',
+                title: nls.localize('DownloadingUpdate', "Downloading Update..."),
+                precondition: ContextKeyExpr.false()
+            },
+            when: CONTEXT_UPDATE_STATE.isEqualTo("downloading")
+        });
+        CommandsRegistry.registerCommand('update.install', () => this.updateService.applyUpdate());
+        MenuRegistry.appendMenuItem(MenuId.GlobalActivity, {
+            group: '7_update',
+            command: {
+                id: 'update.install',
+                title: nls.localize('installUpdate...', "Install Update... (1)")
+            },
+            when: CONTEXT_UPDATE_STATE.isEqualTo("downloaded")
+        });
+        CommandsRegistry.registerCommand('update.updating', () => { });
+        MenuRegistry.appendMenuItem(MenuId.GlobalActivity, {
+            group: '7_update',
+            command: {
+                id: 'update.updating',
+                title: nls.localize('installingUpdate', "Installing Update..."),
+                precondition: ContextKeyExpr.false()
+            },
+            when: CONTEXT_UPDATE_STATE.isEqualTo("updating")
+        });
+        if (this.productService.quality === 'stable') {
+            CommandsRegistry.registerCommand('update.showUpdateReleaseNotes', () => {
+                if (this.updateService.state.type !== "ready") {
+                    return;
+                }
+                const productVersion = this.updateService.state.update.productVersion;
+                if (productVersion) {
+                    this.instantiationService.invokeFunction(accessor => showReleaseNotes(accessor, productVersion));
+                }
+            });
+            MenuRegistry.appendMenuItem(MenuId.GlobalActivity, {
+                group: '7_update',
+                order: 1,
+                command: {
+                    id: 'update.showUpdateReleaseNotes',
+                    title: nls.localize('showUpdateReleaseNotes', "Show Update Release Notes")
+                },
+                when: ContextKeyExpr.and(CONTEXT_UPDATE_STATE.isEqualTo("ready"), MAJOR_MINOR_UPDATE_AVAILABLE)
+            });
+        }
+        CommandsRegistry.registerCommand('update.restart', () => this.updateService.quitAndInstall());
+        MenuRegistry.appendMenuItem(MenuId.GlobalActivity, {
+            group: '7_update',
+            order: 2,
+            command: {
+                id: 'update.restart',
+                title: nls.localize('restartToUpdate', "Restart to Update (1)")
+            },
+            when: CONTEXT_UPDATE_STATE.isEqualTo("ready")
+        });
+        CommandsRegistry.registerCommand('_update.state', () => {
+            return this.state;
+        });
+    }
+};
+UpdateContribution = __decorate([
+    __param(0, IStorageService),
+    __param(1, IInstantiationService),
+    __param(2, INotificationService),
+    __param(3, IDialogService),
+    __param(4, IUpdateService),
+    __param(5, IActivityService),
+    __param(6, IContextKeyService),
+    __param(7, IProductService),
+    __param(8, IOpenerService),
+    __param(9, IConfigurationService),
+    __param(10, IHostService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], UpdateContribution);
+export { UpdateContribution };
+let SwitchProductQualityContribution = class SwitchProductQualityContribution extends Disposable {
+    constructor(productService, environmentService) {
+        super();
+        this.productService = productService;
+        this.environmentService = environmentService;
+        this.registerGlobalActivityActions();
+    }
+    registerGlobalActivityActions() {
+        const quality = this.productService.quality;
+        const productQualityChangeHandler = this.environmentService.options?.productQualityChangeHandler;
+        if (productQualityChangeHandler && (quality === 'stable' || quality === 'insider')) {
+            const newQuality = quality === 'stable' ? 'insider' : 'stable';
+            const commandId = `update.switchQuality.${newQuality}`;
+            const isSwitchingToInsiders = newQuality === 'insider';
+            this._register(registerAction2(class SwitchQuality extends Action2 {
+                constructor() {
+                    super({
+                        id: commandId,
+                        title: isSwitchingToInsiders ? nls.localize('switchToInsiders', "Switch to Insiders Version...") : nls.localize('switchToStable', "Switch to Stable Version..."),
+                        precondition: IsWebContext,
+                        menu: {
+                            id: MenuId.GlobalActivity,
+                            when: IsWebContext,
+                            group: '7_update',
+                        }
+                    });
+                }
+                async run(accessor) {
+                    const dialogService = accessor.get(IDialogService);
+                    const userDataSyncEnablementService = accessor.get(IUserDataSyncEnablementService);
+                    const userDataSyncStoreManagementService = accessor.get(IUserDataSyncStoreManagementService);
+                    const storageService = accessor.get(IStorageService);
+                    const userDataSyncWorkbenchService = accessor.get(IUserDataSyncWorkbenchService);
+                    const userDataSyncService = accessor.get(IUserDataSyncService);
+                    const notificationService = accessor.get(INotificationService);
+                    try {
+                        const selectSettingsSyncServiceDialogShownKey = 'switchQuality.selectSettingsSyncServiceDialogShown';
+                        const userDataSyncStore = userDataSyncStoreManagementService.userDataSyncStore;
+                        let userDataSyncStoreType;
+                        if (userDataSyncStore && isSwitchingToInsiders && userDataSyncEnablementService.isEnabled()
+                            && !storageService.getBoolean(selectSettingsSyncServiceDialogShownKey, -1, false)) {
+                            userDataSyncStoreType = await this.selectSettingsSyncService(dialogService);
+                            if (!userDataSyncStoreType) {
+                                return;
+                            }
+                            storageService.store(selectSettingsSyncServiceDialogShownKey, true, -1, 0);
+                            if (userDataSyncStoreType === 'stable') {
+                                await userDataSyncStoreManagementService.switch(userDataSyncStoreType);
+                            }
+                        }
+                        const res = await dialogService.confirm({
+                            type: 'info',
+                            message: nls.localize('relaunchMessage', "Changing the version requires a reload to take effect"),
+                            detail: newQuality === 'insider' ?
+                                nls.localize('relaunchDetailInsiders', "Press the reload button to switch to the Insiders version of VS Code.") :
+                                nls.localize('relaunchDetailStable', "Press the reload button to switch to the Stable version of VS Code."),
+                            primaryButton: nls.localize({ key: 'reload', comment: ['&& denotes a mnemonic'] }, "&&Reload")
+                        });
+                        if (res.confirmed) {
+                            const promises = [];
+                            if (userDataSyncService.status === "syncing") {
+                                promises.push(Event.toPromise(Event.filter(userDataSyncService.onDidChangeStatus, status => status !== "syncing")));
+                            }
+                            if (isSwitchingToInsiders && userDataSyncStoreType) {
+                                promises.push(userDataSyncWorkbenchService.synchroniseUserDataSyncStoreType());
+                            }
+                            await Promises.settled(promises);
+                            productQualityChangeHandler(newQuality);
+                        }
+                        else {
+                            if (userDataSyncStoreType) {
+                                storageService.remove(selectSettingsSyncServiceDialogShownKey, -1);
+                            }
+                        }
+                    }
+                    catch (error) {
+                        notificationService.error(error);
+                    }
+                }
+                async selectSettingsSyncService(dialogService) {
+                    const { result } = await dialogService.prompt({
+                        type: Severity.Info,
+                        message: nls.localize('selectSyncService.message', "Choose the settings sync service to use after changing the version"),
+                        detail: nls.localize('selectSyncService.detail', "The Insiders version of VS Code will synchronize your settings, keybindings, extensions, snippets and UI State using separate insiders settings sync service by default."),
+                        buttons: [
+                            {
+                                label: nls.localize({ key: 'use insiders', comment: ['&& denotes a mnemonic'] }, "&&Insiders"),
+                                run: () => 'insiders'
+                            },
+                            {
+                                label: nls.localize({ key: 'use stable', comment: ['&& denotes a mnemonic'] }, "&&Stable (current)"),
+                                run: () => 'stable'
+                            }
+                        ],
+                        cancelButton: true
+                    });
+                    return result;
+                }
+            }));
+        }
+    }
+};
+SwitchProductQualityContribution = __decorate([
+    __param(0, IProductService),
+    __param(1, IBrowserWorkbenchEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object])
+], SwitchProductQualityContribution);
+export { SwitchProductQualityContribution };

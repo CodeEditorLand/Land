@@ -1,1 +1,16 @@
-import"../../../../base/common/event.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import"../../../../editor/browser/editorBrowser.js";import"../../../../editor/common/core/selection.js";import{localize as o}from"../../../../nls.js";import"../../../../platform/actions/common/actions.js";import"../../../../platform/contextkey/common/contextkey.js";import{createDecorator as e}from"../../../../platform/instantiation/common/instantiation.js";import"./chatViewPane.js";import"./chatWidget.js";import"./codeBlockPart.js";import"../common/chatAgents.js";import"../common/chatModel.js";import"../common/chatParserTypes.js";import{CHAT_PROVIDER_ID as n}from"../common/chatParticipantContribTypes.js";import"../common/chatViewModel.js";import"../../../services/views/common/viewsService.js";import"./chatInputPart.js";const N=e("chatWidgetService");async function $(t){return(await t.openView(i))?.widget}async function j(t){return(await t.openView(r))?.widget}const J=e("quickChatService"),X=e("chatAccessibilityService"),Y=e("chatCodeBlockContextProviderService"),Z=o("generating","Generating"),i=`workbench.panel.chat.view.${n}`,r="workbench.panel.chat.view.edits";export{i as CHAT_VIEW_ID,r as EDITS_VIEW_ID,Z as GeneratingPhrase,X as IChatAccessibilityService,Y as IChatCodeBlockContextProviderService,N as IChatWidgetService,J as IQuickChatService,$ as showChatView,j as showEditsView};
+import { localize } from '../../../../nls.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { CHAT_PROVIDER_ID } from '../common/chatParticipantContribTypes.js';
+export const IChatWidgetService = createDecorator('chatWidgetService');
+export async function showChatView(viewsService) {
+    return (await viewsService.openView(CHAT_VIEW_ID))?.widget;
+}
+export async function showEditsView(viewsService) {
+    return (await viewsService.openView(EDITS_VIEW_ID))?.widget;
+}
+export const IQuickChatService = createDecorator('quickChatService');
+export const IChatAccessibilityService = createDecorator('chatAccessibilityService');
+export const IChatCodeBlockContextProviderService = createDecorator('chatCodeBlockContextProviderService');
+export const GeneratingPhrase = localize('generating', "Generating");
+export const CHAT_VIEW_ID = `workbench.panel.chat.view.${CHAT_PROVIDER_ID}`;
+export const EDITS_VIEW_ID = 'workbench.panel.chat.view.edits';

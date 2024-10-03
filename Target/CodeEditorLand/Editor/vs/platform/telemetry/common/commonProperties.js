@@ -1,1 +1,58 @@
-import{isLinuxSnap as g,platform as s,Platform as D,PlatformToString as P}from"../../../base/common/platform.js";import{env as I,platform as b}from"../../../base/common/process.js";import{generateUuid as v}from"../../../base/common/uuid.js";import"./telemetry.js";function w(o){if(s===D.Linux&&/^penguin(\.|$)/i.test(o))return"chromebook"}function q(o,n,t,r,a,f,c,u,m,d){const e=Object.create(null);e["common.machineId"]=f,e["common.sqmId"]=c,e["common.devDeviceId"]=u,e.sessionID=v()+Date.now(),e.commitHash=r,e.version=a,e["common.platformVersion"]=(o||"").replace(/^(\d+)(\.\d+)?(\.\d+)?(.*)/,"$1$2$3"),e["common.platform"]=P(s),e["common.nodePlatform"]=b,e["common.nodeArch"]=t,e["common.product"]=d||"desktop",m&&(e["common.msftInternal"]=m);let l=0;const p=Date.now();Object.defineProperties(e,{timestamp:{get:()=>new Date,enumerable:!0},"common.timesincesessionstart":{get:()=>Date.now()-p,enumerable:!0},"common.sequence":{get:()=>l++,enumerable:!0}}),g&&(e["common.snap"]="true");const i=w(n);return i&&(e["common.platformDetail"]=i),e}function L(o){const n=I.USERDNSDOMAIN;if(!n)return!1;const t=n.toLowerCase();return o.some(r=>t===r)}export{q as resolveCommonProperties,L as verifyMicrosoftInternalDomain};
+import { isLinuxSnap, platform, PlatformToString } from '../../../base/common/platform.js';
+import { env, platform as nodePlatform } from '../../../base/common/process.js';
+import { generateUuid } from '../../../base/common/uuid.js';
+function getPlatformDetail(hostname) {
+    if (platform === 2 && /^penguin(\.|$)/i.test(hostname)) {
+        return 'chromebook';
+    }
+    return undefined;
+}
+export function resolveCommonProperties(release, hostname, arch, commit, version, machineId, sqmId, devDeviceId, isInternalTelemetry, product) {
+    const result = Object.create(null);
+    result['common.machineId'] = machineId;
+    result['common.sqmId'] = sqmId;
+    result['common.devDeviceId'] = devDeviceId;
+    result['sessionID'] = generateUuid() + Date.now();
+    result['commitHash'] = commit;
+    result['version'] = version;
+    result['common.platformVersion'] = (release || '').replace(/^(\d+)(\.\d+)?(\.\d+)?(.*)/, '$1$2$3');
+    result['common.platform'] = PlatformToString(platform);
+    result['common.nodePlatform'] = nodePlatform;
+    result['common.nodeArch'] = arch;
+    result['common.product'] = product || 'desktop';
+    if (isInternalTelemetry) {
+        result['common.msftInternal'] = isInternalTelemetry;
+    }
+    let seq = 0;
+    const startTime = Date.now();
+    Object.defineProperties(result, {
+        'timestamp': {
+            get: () => new Date(),
+            enumerable: true
+        },
+        'common.timesincesessionstart': {
+            get: () => Date.now() - startTime,
+            enumerable: true
+        },
+        'common.sequence': {
+            get: () => seq++,
+            enumerable: true
+        }
+    });
+    if (isLinuxSnap) {
+        result['common.snap'] = 'true';
+    }
+    const platformDetail = getPlatformDetail(hostname);
+    if (platformDetail) {
+        result['common.platformDetail'] = platformDetail;
+    }
+    return result;
+}
+export function verifyMicrosoftInternalDomain(domainList) {
+    const userDnsDomain = env['USERDNSDOMAIN'];
+    if (!userDnsDomain) {
+        return false;
+    }
+    const domain = userDnsDomain.toLowerCase();
+    return domainList.some(msftDomain => domain === msftDomain);
+}

@@ -1,1 +1,126 @@
-var g=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var u=(d,o,e,r)=>{for(var t=r>1?void 0:r?b(o,e):o,i=d.length-1,n;i>=0;i--)(n=d[i])&&(t=(r?n(o,e,t):n(t))||t);return r&&t&&g(o,e,t),t},v=(d,o)=>(e,r)=>o(e,r,d);import{AsyncIterableObject as P}from"../../../../../base/common/async.js";import"../../../../../base/common/cancellation.js";import"../../../../browser/editorBrowser.js";import{Range as I}from"../../../../common/core/range.js";import"../../../../common/model.js";import"../../../../common/languages.js";import{ColorDetector as y}from"../colorDetector.js";import"../colorPickerModel.js";import{ColorPickerWidget as D}from"./hoverColorPickerWidget.js";import{HoverAnchorType as _,RenderedHoverParts as C}from"../../../hover/browser/hoverTypes.js";import{IThemeService as A}from"../../../../../platform/theme/common/themeService.js";import*as M from"../../../../../nls.js";import{createColorHover as k,updateColorPresentations as h,updateEditorModel as R}from"../colorPickerParticipantUtils.js";import{EditorOption as f}from"../../../../common/config/editorOptions.js";import{Dimension as w}from"../../../../../base/browser/dom.js";import{DisposableStore as E}from"../../../../../base/common/lifecycle.js";import"../../../../../base/common/color.js";class m{constructor(o,e,r,t){this.owner=o;this.range=e;this.model=r;this.provider=t}forceShowAtRange=!0;isValidForHoverAnchor(o){return o.type===_.Range&&this.range.startColumn<=o.range.startColumn&&this.range.endColumn>=o.range.endColumn}static fromBaseColor(o,e){return new m(o,e.range,e.model,e.provider)}}let s=class{constructor(o,e){this._editor=o;this._themeService=e}hoverOrdinal=2;_colorPicker;computeSync(o,e){return[]}computeAsync(o,e,r){return P.fromPromise(this._computeAsync(o,e,r))}async _computeAsync(o,e,r){if(!this._editor.hasModel())return[];const t=y.get(this._editor);if(!t)return[];for(const i of e){if(!t.isColorDecoration(i))continue;const n=t.getColorData(i.range.getStartPosition());if(n)return[m.fromBaseColor(this,await k(this._editor.getModel(),n.colorInfo,n.provider))]}return[]}renderHoverParts(o,e){const r=this._editor;if(e.length===0||!r.hasModel())return new C([]);if(o.setMinimumDimensions){const a=r.getOption(f.lineHeight)+8;o.setMinimumDimensions(new w(302,a))}const t=new E,i=e[0],n=r.getModel(),l=i.model;this._colorPicker=t.add(new D(o.fragment,l,r.getOption(f.pixelRatio),this._themeService,!1));let p=!1,c=new I(i.range.startLineNumber,i.range.startColumn,i.range.endLineNumber,i.range.endColumn);t.add(l.onColorFlushed(async a=>{await h(n,l,a,c,i),p=!0,c=R(r,c,l)})),t.add(l.onDidChangeColor(a=>{h(n,l,a,c,i)})),t.add(r.onDidChangeModelContent(a=>{p?p=!1:(o.hide(),r.focus())}));const H={hoverPart:m.fromBaseColor(this,i),hoverElement:this._colorPicker.domNode,dispose(){t.dispose()}};return new C([H])}getAccessibleContent(o){return M.localize("hoverAccessibilityColorParticipant","There is a color picker here.")}handleResize(){this._colorPicker?.layout()}isColorPickerVisible(){return!!this._colorPicker}};s=u([v(1,A)],s);export{m as ColorHover,s as HoverColorPickerParticipant};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { AsyncIterableObject } from '../../../../../base/common/async.js';
+import { Range } from '../../../../common/core/range.js';
+import { ColorDetector } from '../colorDetector.js';
+import { ColorPickerWidget } from './hoverColorPickerWidget.js';
+import { RenderedHoverParts } from '../../../hover/browser/hoverTypes.js';
+import { IThemeService } from '../../../../../platform/theme/common/themeService.js';
+import * as nls from '../../../../../nls.js';
+import { createColorHover, updateColorPresentations, updateEditorModel } from '../colorPickerParticipantUtils.js';
+import { Dimension } from '../../../../../base/browser/dom.js';
+import { DisposableStore } from '../../../../../base/common/lifecycle.js';
+export class ColorHover {
+    constructor(owner, range, model, provider) {
+        this.owner = owner;
+        this.range = range;
+        this.model = model;
+        this.provider = provider;
+        this.forceShowAtRange = true;
+    }
+    isValidForHoverAnchor(anchor) {
+        return (anchor.type === 1
+            && this.range.startColumn <= anchor.range.startColumn
+            && this.range.endColumn >= anchor.range.endColumn);
+    }
+    static fromBaseColor(owner, color) {
+        return new ColorHover(owner, color.range, color.model, color.provider);
+    }
+}
+let HoverColorPickerParticipant = class HoverColorPickerParticipant {
+    constructor(_editor, _themeService) {
+        this._editor = _editor;
+        this._themeService = _themeService;
+        this.hoverOrdinal = 2;
+    }
+    computeSync(_anchor, _lineDecorations) {
+        return [];
+    }
+    computeAsync(anchor, lineDecorations, token) {
+        return AsyncIterableObject.fromPromise(this._computeAsync(anchor, lineDecorations, token));
+    }
+    async _computeAsync(_anchor, lineDecorations, _token) {
+        if (!this._editor.hasModel()) {
+            return [];
+        }
+        const colorDetector = ColorDetector.get(this._editor);
+        if (!colorDetector) {
+            return [];
+        }
+        for (const d of lineDecorations) {
+            if (!colorDetector.isColorDecoration(d)) {
+                continue;
+            }
+            const colorData = colorDetector.getColorData(d.range.getStartPosition());
+            if (colorData) {
+                const colorHover = ColorHover.fromBaseColor(this, await createColorHover(this._editor.getModel(), colorData.colorInfo, colorData.provider));
+                return [colorHover];
+            }
+        }
+        return [];
+    }
+    renderHoverParts(context, hoverParts) {
+        const editor = this._editor;
+        if (hoverParts.length === 0 || !editor.hasModel()) {
+            return new RenderedHoverParts([]);
+        }
+        if (context.setMinimumDimensions) {
+            const minimumHeight = editor.getOption(69) + 8;
+            context.setMinimumDimensions(new Dimension(302, minimumHeight));
+        }
+        const disposables = new DisposableStore();
+        const colorHover = hoverParts[0];
+        const editorModel = editor.getModel();
+        const model = colorHover.model;
+        this._colorPicker = disposables.add(new ColorPickerWidget(context.fragment, model, editor.getOption(146), this._themeService, false));
+        let editorUpdatedByColorPicker = false;
+        let range = new Range(colorHover.range.startLineNumber, colorHover.range.startColumn, colorHover.range.endLineNumber, colorHover.range.endColumn);
+        disposables.add(model.onColorFlushed(async (color) => {
+            await updateColorPresentations(editorModel, model, color, range, colorHover);
+            editorUpdatedByColorPicker = true;
+            range = updateEditorModel(editor, range, model);
+        }));
+        disposables.add(model.onDidChangeColor((color) => {
+            updateColorPresentations(editorModel, model, color, range, colorHover);
+        }));
+        disposables.add(editor.onDidChangeModelContent((e) => {
+            if (editorUpdatedByColorPicker) {
+                editorUpdatedByColorPicker = false;
+            }
+            else {
+                context.hide();
+                editor.focus();
+            }
+        }));
+        const renderedHoverPart = {
+            hoverPart: ColorHover.fromBaseColor(this, colorHover),
+            hoverElement: this._colorPicker.domNode,
+            dispose() { disposables.dispose(); }
+        };
+        return new RenderedHoverParts([renderedHoverPart]);
+    }
+    getAccessibleContent(hoverPart) {
+        return nls.localize('hoverAccessibilityColorParticipant', 'There is a color picker here.');
+    }
+    handleResize() {
+        this._colorPicker?.layout();
+    }
+    isColorPickerVisible() {
+        return !!this._colorPicker;
+    }
+};
+HoverColorPickerParticipant = __decorate([
+    __param(1, IThemeService),
+    __metadata("design:paramtypes", [Object, Object])
+], HoverColorPickerParticipant);
+export { HoverColorPickerParticipant };

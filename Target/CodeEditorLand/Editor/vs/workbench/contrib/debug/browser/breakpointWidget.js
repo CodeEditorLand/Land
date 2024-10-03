@@ -1,1 +1,506 @@
-var z=Object.defineProperty;var U=Object.getOwnPropertyDescriptor;var P=(h,d,e,t)=>{for(var i=t>1?void 0:t?U(d,e):d,r=h.length-1,a;r>=0;r--)(a=h[r])&&(i=(t?a(d,e,i):a(i))||i);return t&&i&&z(d,e,i),i},p=(h,d)=>(e,t)=>d(e,t,h);import*as g from"../../../../base/browser/dom.js";import{StandardKeyboardEvent as F}from"../../../../base/browser/keyboardEvent.js";import{Button as $}from"../../../../base/browser/ui/button/button.js";import{getDefaultHoverDelegate as X}from"../../../../base/browser/ui/hover/hoverDelegateFactory.js";import{SelectBox as M}from"../../../../base/browser/ui/selectBox/selectBox.js";import"../../../../base/common/cancellation.js";import{onUnexpectedError as Y}from"../../../../base/common/errors.js";import{KeyCode as b,KeyMod as j}from"../../../../base/common/keyCodes.js";import*as q from"../../../../base/common/lifecycle.js";import{URI as Z}from"../../../../base/common/uri.js";import"./media/breakpointWidget.css";import"../../../../editor/browser/editorBrowser.js";import{EditorCommand as _,registerEditorCommand as w}from"../../../../editor/browser/editorExtensions.js";import{ICodeEditorService as J}from"../../../../editor/browser/services/codeEditorService.js";import{CodeEditorWidget as Q}from"../../../../editor/browser/widget/codeEditor/codeEditorWidget.js";import{EditorOption as ee}from"../../../../editor/common/config/editorOptions.js";import{Position as te}from"../../../../editor/common/core/position.js";import{Range as G}from"../../../../editor/common/core/range.js";import"../../../../editor/common/editorCommon.js";import{EditorContextKeys as ie}from"../../../../editor/common/editorContextKeys.js";import{CompletionItemKind as oe}from"../../../../editor/common/languages.js";import{PLAINTEXT_LANGUAGE_ID as ne}from"../../../../editor/common/languages/modesRegistry.js";import"../../../../editor/common/model.js";import{ILanguageFeaturesService as re}from"../../../../editor/common/services/languageFeatures.js";import{IModelService as se}from"../../../../editor/common/services/model.js";import{ITextModelService as ae}from"../../../../editor/common/services/resolverService.js";import{CompletionOptions as de,provideSuggestionItems as pe}from"../../../../editor/contrib/suggest/browser/suggest.js";import{ZoneWidget as ce}from"../../../../editor/contrib/zoneWidget/browser/zoneWidget.js";import*as c from"../../../../nls.js";import{IConfigurationService as le}from"../../../../platform/configuration/common/configuration.js";import{IContextKeyService as H}from"../../../../platform/contextkey/common/contextkey.js";import{IContextViewService as ue}from"../../../../platform/contextview/browser/contextView.js";import{IHoverService as he}from"../../../../platform/hover/browser/hover.js";import{IInstantiationService as ge,createDecorator as me}from"../../../../platform/instantiation/common/instantiation.js";import{ServiceCollection as Ie}from"../../../../platform/instantiation/common/serviceCollection.js";import{IKeybindingService as ve}from"../../../../platform/keybinding/common/keybinding.js";import{KeybindingWeight as A}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{ILabelService as fe}from"../../../../platform/label/common/label.js";import{defaultButtonStyles as Ce,defaultSelectBoxStyles as T}from"../../../../platform/theme/browser/defaultStyles.js";import{editorForeground as Se}from"../../../../platform/theme/common/colorRegistry.js";import{IThemeService as be}from"../../../../platform/theme/common/themeService.js";import{getSimpleCodeEditorWidgetOptions as ke,getSimpleEditorOptions as xe}from"../../codeEditor/browser/simpleEditorOptions.js";import{BREAKPOINT_EDITOR_CONTRIBUTION_ID as Ee,CONTEXT_BREAKPOINT_WIDGET_VISIBLE as W,CONTEXT_IN_BREAKPOINT_WIDGET as R,BreakpointWidgetContext as n,DEBUG_SCHEME as K,IDebugService as Be}from"../common/debug.js";const v=g.$,y=me("privateBreakpointWidgetService"),V="breakpointwidgetdecoration";function Me(h){return h.getModel().bracketPairs.getBracketPairsInRange(G.fromPositions(h.getPosition())).some(t=>t.openingBracketInfo.bracketText==="{")}function Te(h,d){const e=h.getColor(Se)?.transparent(.4);return[{range:{startLineNumber:0,endLineNumber:0,startColumn:0,endColumn:1},renderOptions:{after:{contentText:d,color:e?e.toString():void 0}}}]}let k=class extends ce{constructor(e,t,i,r,a,s,u,o,l,f,D,S,B,O,m,I,ye){super(e,{showFrame:!0,showArrow:!1,frameWidth:1,isAccessible:!0});this.lineNumber=t;this.column=i;this.contextViewService=a;this.debugService=s;this.themeService=u;this.contextKeyService=o;this.instantiationService=l;this.modelService=f;this.codeEditorService=D;this._configurationService=S;this.languageFeaturesService=B;this.keybindingService=O;this.labelService=m;this.textModelService=I;this.hoverService=ye;this.toDispose=[];const L=this.editor.getModel();if(L){const C=L.uri,N=this.debugService.getModel().getBreakpoints({lineNumber:this.lineNumber,column:this.column,uri:C});this.breakpoint=N.length?N[0]:void 0}r===void 0?this.breakpoint&&!this.breakpoint.condition&&!this.breakpoint.hitCondition&&this.breakpoint.logMessage?this.context=n.LOG_MESSAGE:this.breakpoint&&!this.breakpoint.condition&&this.breakpoint.hitCondition?this.context=n.HIT_COUNT:this.breakpoint&&this.breakpoint.triggeredBy?this.context=n.TRIGGER_POINT:this.context=n.CONDITION:this.context=r,this.toDispose.push(this.debugService.getModel().onDidChangeBreakpoints(C=>{this.breakpoint&&C&&C.removed&&C.removed.indexOf(this.breakpoint)>=0&&this.dispose()})),this.codeEditorService.registerDecorationType("breakpoint-widget",V,{}),this.create()}selectContainer;inputContainer;selectBreakpointContainer;input;selectBreakpointBox;selectModeBox;toDispose;conditionInput="";hitCountInput="";logMessageInput="";modeInput;breakpoint;context;heightInPx;triggeredByBreakpointInput;get placeholder(){const e=this.keybindingService.lookupKeybinding(x.ID)?.getLabel()||"Enter",t=this.keybindingService.lookupKeybinding(E.ID)?.getLabel()||"Escape";switch(this.context){case n.LOG_MESSAGE:return c.localize("breakpointWidgetLogMessagePlaceholder","Message to log when breakpoint is hit. Expressions within {} are interpolated. '{0}' to accept, '{1}' to cancel.",e,t);case n.HIT_COUNT:return c.localize("breakpointWidgetHitCountPlaceholder","Break when hit count condition is met. '{0}' to accept, '{1}' to cancel.",e,t);default:return c.localize("breakpointWidgetExpressionPlaceholder","Break when expression evaluates to true. '{0}' to accept, '{1}' to cancel.",e,t)}}getInputValue(e){switch(this.context){case n.LOG_MESSAGE:return e&&e.logMessage?e.logMessage:this.logMessageInput;case n.HIT_COUNT:return e&&e.hitCondition?e.hitCondition:this.hitCountInput;default:return e&&e.condition?e.condition:this.conditionInput}}rememberInput(){if(this.context!==n.TRIGGER_POINT){const e=this.input.getModel().getValue();switch(this.context){case n.LOG_MESSAGE:this.logMessageInput=e;break;case n.HIT_COUNT:this.hitCountInput=e;break;default:this.conditionInput=e}}}setInputMode(){if(this.editor.hasModel()){const e=this.context===n.LOG_MESSAGE?ne:this.editor.getModel().getLanguageId();this.input.getModel().setLanguage(e)}}show(e){const t=this.input.getModel().getLineCount();super.show(e,t+1)}fitHeightToContent(){const e=this.input.getModel().getLineCount();this._relayout(e+1)}_fillContainer(e){this.setCssClass("breakpoint-widget");const t=new M([{text:c.localize("expression","Expression")},{text:c.localize("hitCount","Hit Count")},{text:c.localize("logMessage","Log Message")},{text:c.localize("triggeredBy","Wait for Breakpoint")}],this.context,this.contextViewService,T,{ariaLabel:c.localize("breakpointType","Breakpoint Type")});this.selectContainer=v(".breakpoint-select-container"),t.render(g.append(e,this.selectContainer)),t.onDidSelect(i=>{this.rememberInput(),this.context=i.index,this.updateContextInput()}),this.createModesInput(e),this.inputContainer=v(".inputContainer"),this.toDispose.push(this.hoverService.setupManagedHover(X("mouse"),this.inputContainer,this.placeholder)),this.createBreakpointInput(g.append(e,this.inputContainer)),this.input.getModel().setValue(this.getInputValue(this.breakpoint)),this.toDispose.push(this.input.getModel().onDidChangeContent(()=>{this.fitHeightToContent()})),this.input.setPosition({lineNumber:1,column:this.input.getModel().getLineMaxColumn(1)}),this.createTriggerBreakpointInput(e),this.updateContextInput(),setTimeout(()=>this.focusInput(),150)}createModesInput(e){const t=this.debugService.getModel().getBreakpointModes("source");if(t.length<=1)return;const i=this.selectModeBox=new M([{text:c.localize("bpMode","Mode"),isDisabled:!0},...t.map(s=>({text:s.label,description:s.description}))],t.findIndex(s=>s.mode===this.breakpoint?.mode)+1,this.contextViewService,T);this.toDispose.push(i),this.toDispose.push(i.onDidSelect(s=>{this.modeInput=t[s.index-1]}));const r=v(".select-mode-container"),a=v(".select-box-container");g.append(r,a),i.render(a),g.append(e,r)}createTriggerBreakpointInput(e){const t=this.debugService.getModel().getBreakpoints().filter(o=>o!==this.breakpoint&&!o.logMessage),i=[{text:c.localize("noTriggerByBreakpoint","None"),isDisabled:!0},...t.map(o=>({text:`${this.labelService.getUriLabel(o.uri,{relative:!0})}: ${o.lineNumber}`,description:c.localize("triggerByLoading","Loading...")}))],r=t.findIndex(o=>this.breakpoint?.triggeredBy===o.getId());for(const[o,l]of t.entries())this.textModelService.createModelReference(l.uri).then(f=>{try{i[o+1].description=f.object.textEditorModel.getLineContent(l.lineNumber).trim()}finally{f.dispose()}}).catch(()=>{i[o+1].description=c.localize("noBpSource","Could not load source.")});const a=this.selectBreakpointBox=new M(i,r+1,this.contextViewService,T,{ariaLabel:c.localize("selectBreakpoint","Select breakpoint")});a.onDidSelect(o=>{o.index===0?this.triggeredByBreakpointInput=void 0:this.triggeredByBreakpointInput=t[o.index-1]}),this.toDispose.push(a),this.selectBreakpointContainer=v(".select-breakpoint-container"),this.toDispose.push(g.addDisposableListener(this.selectBreakpointContainer,g.EventType.KEY_DOWN,o=>{new F(o).equals(b.Escape)&&this.close(!1)}));const s=v(".select-box-container");g.append(this.selectBreakpointContainer,s),a.render(s),g.append(e,this.selectBreakpointContainer);const u=new $(this.selectBreakpointContainer,Ce);u.label=c.localize("ok","Ok"),this.toDispose.push(u.onDidClick(()=>this.close(!0))),this.toDispose.push(u)}updateContextInput(){if(this.context===n.TRIGGER_POINT)this.inputContainer.hidden=!0,this.selectBreakpointContainer.hidden=!1;else{this.inputContainer.hidden=!1,this.selectBreakpointContainer.hidden=!0,this.setInputMode();const e=this.getInputValue(this.breakpoint);this.input.getModel().setValue(e),this.focusInput()}}_doLayout(e,t){this.heightInPx=e,this.input.layout({height:e,width:t-113}),this.centerInputVertically()}_onWidth(e){typeof this.heightInPx=="number"&&this._doLayout(this.heightInPx,e)}createBreakpointInput(e){const t=this.contextKeyService.createScoped(e);this.toDispose.push(t);const i=this.instantiationService.createChild(new Ie([H,t],[y,this]));this.toDispose.push(i);const r=this.createEditorOptions(),a=ke();this.input=i.createInstance(Q,e,r,a),R.bindTo(t).set(!0);const s=this.modelService.createModel("",null,Z.parse(`${K}:${this.editor.getId()}:breakpointinput`),!0);this.editor.hasModel()&&s.setLanguage(this.editor.getModel().getLanguageId()),this.input.setModel(s),this.setInputMode(),this.toDispose.push(s);const u=()=>{const l=this.input.getModel().getValue()?[]:Te(this.themeService.getColorTheme(),this.placeholder);this.input.setDecorationsByType("breakpoint-widget",V,l)};this.input.getModel().onDidChangeContent(()=>u()),this.themeService.onDidColorThemeChange(()=>u()),this.toDispose.push(this.languageFeaturesService.completionProvider.register({scheme:K,hasAccessToAllModels:!0},{_debugDisplayName:"breakpointWidget",provideCompletionItems:(o,l,f,D)=>{let S;const B=this.editor.getModel();return B&&(this.context===n.CONDITION||this.context===n.LOG_MESSAGE&&Me(this.input))?S=pe(this.languageFeaturesService.completionProvider,B,new te(this.lineNumber,1),new de(void 0,new Set().add(oe.Snippet)),f,D).then(O=>{let m=0;if(this.context===n.CONDITION)m=l.column-1;else{const I=this.input.getModel().getValue();for(;l.column-2-m>=0&&I[l.column-2-m]!=="{"&&I[l.column-2-m]!==" ";)m++}return{suggestions:O.items.map(I=>(I.completion.range=G.fromPositions(l.delta(0,-m),l),I.completion))}}):S=Promise.resolve({suggestions:[]}),S}})),this.toDispose.push(this._configurationService.onDidChangeConfiguration(o=>{(o.affectsConfiguration("editor.fontSize")||o.affectsConfiguration("editor.lineHeight"))&&(this.input.updateOptions(this.createEditorOptions()),this.centerInputVertically())}))}createEditorOptions(){const e=this._configurationService.getValue("editor"),t=xe(this._configurationService);return t.fontSize=e.fontSize,t.fontFamily=e.fontFamily,t.lineHeight=e.lineHeight,t.fontLigatures=e.fontLigatures,t.ariaLabel=this.placeholder,t}centerInputVertically(){if(this.container&&typeof this.heightInPx=="number"){const e=this.input.getOption(ee.lineHeight),t=this.input.getModel().getLineCount(),i=(this.heightInPx-t*e)/2;this.inputContainer.style.marginTop=i+"px"}}close(e){if(e){let t,i,r,a,s,u;if(this.rememberInput(),(this.conditionInput||this.context===n.CONDITION)&&(t=this.conditionInput),(this.hitCountInput||this.context===n.HIT_COUNT)&&(i=this.hitCountInput),(this.logMessageInput||this.context===n.LOG_MESSAGE)&&(r=this.logMessageInput),this.selectModeBox&&(s=this.modeInput?.mode,u=this.modeInput?.label),this.context===n.TRIGGER_POINT&&(t=void 0,i=void 0,r=void 0,a=this.triggeredByBreakpointInput?.getId()),this.breakpoint){const o=new Map;o.set(this.breakpoint.getId(),{condition:t,hitCondition:i,logMessage:r,triggeredBy:a,mode:s,modeLabel:u}),this.debugService.updateBreakpoints(this.breakpoint.originalUri,o,!1).then(void 0,Y)}else{const o=this.editor.getModel();o&&this.debugService.addBreakpoints(o.uri,[{lineNumber:this.lineNumber,column:this.column,enabled:!0,condition:t,hitCondition:i,logMessage:r,triggeredBy:a,mode:s,modeLabel:u}])}}this.dispose()}focusInput(){this.context===n.TRIGGER_POINT?this.selectBreakpointBox.focus():this.input.focus()}dispose(){super.dispose(),this.input.dispose(),q.dispose(this.toDispose),setTimeout(()=>this.editor.focus(),0)}};k=P([p(4,ue),p(5,Be),p(6,be),p(7,H),p(8,ge),p(9,se),p(10,J),p(11,le),p(12,re),p(13,ve),p(14,fe),p(15,ae),p(16,he)],k);class x extends _{static ID="breakpointWidget.action.acceptInput";constructor(){super({id:x.ID,precondition:W,kbOpts:{kbExpr:R,primary:b.Enter,weight:A.EditorContrib}})}runEditorCommand(d,e){d.get(y).close(!0)}}class E extends _{static ID="closeBreakpointWidget";constructor(){super({id:E.ID,precondition:W,kbOpts:{kbExpr:ie.textInputFocus,primary:b.Escape,secondary:[j.Shift|b.Escape],weight:A.EditorContrib}})}runEditorCommand(d,e,t){const i=e.getContribution(Ee);if(i)return i.closeBreakpointWidget();d.get(y).close(!1)}}w(new x),w(new E);export{k as BreakpointWidget};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../base/browser/dom.js';
+import { StandardKeyboardEvent } from '../../../../base/browser/keyboardEvent.js';
+import { Button } from '../../../../base/browser/ui/button/button.js';
+import { getDefaultHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { SelectBox } from '../../../../base/browser/ui/selectBox/selectBox.js';
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+import * as lifecycle from '../../../../base/common/lifecycle.js';
+import { URI as uri } from '../../../../base/common/uri.js';
+import './media/breakpointWidget.css';
+import { EditorCommand, registerEditorCommand } from '../../../../editor/browser/editorExtensions.js';
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { CodeEditorWidget } from '../../../../editor/browser/widget/codeEditor/codeEditorWidget.js';
+import { Position } from '../../../../editor/common/core/position.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
+import { PLAINTEXT_LANGUAGE_ID } from '../../../../editor/common/languages/modesRegistry.js';
+import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
+import { IModelService } from '../../../../editor/common/services/model.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { CompletionOptions, provideSuggestionItems } from '../../../../editor/contrib/suggest/browser/suggest.js';
+import { ZoneWidget } from '../../../../editor/contrib/zoneWidget/browser/zoneWidget.js';
+import * as nls from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IContextViewService } from '../../../../platform/contextview/browser/contextView.js';
+import { IHoverService } from '../../../../platform/hover/browser/hover.js';
+import { IInstantiationService, createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { defaultButtonStyles, defaultSelectBoxStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+import { editorForeground } from '../../../../platform/theme/common/colorRegistry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { getSimpleCodeEditorWidgetOptions, getSimpleEditorOptions } from '../../codeEditor/browser/simpleEditorOptions.js';
+import { BREAKPOINT_EDITOR_CONTRIBUTION_ID, CONTEXT_BREAKPOINT_WIDGET_VISIBLE, CONTEXT_IN_BREAKPOINT_WIDGET, DEBUG_SCHEME, IDebugService } from '../common/debug.js';
+const $ = dom.$;
+const IPrivateBreakpointWidgetService = createDecorator('privateBreakpointWidgetService');
+const DECORATION_KEY = 'breakpointwidgetdecoration';
+function isPositionInCurlyBracketBlock(input) {
+    const model = input.getModel();
+    const bracketPairs = model.bracketPairs.getBracketPairsInRange(Range.fromPositions(input.getPosition()));
+    return bracketPairs.some(p => p.openingBracketInfo.bracketText === '{');
+}
+function createDecorations(theme, placeHolder) {
+    const transparentForeground = theme.getColor(editorForeground)?.transparent(0.4);
+    return [{
+            range: {
+                startLineNumber: 0,
+                endLineNumber: 0,
+                startColumn: 0,
+                endColumn: 1
+            },
+            renderOptions: {
+                after: {
+                    contentText: placeHolder,
+                    color: transparentForeground ? transparentForeground.toString() : undefined
+                }
+            }
+        }];
+}
+let BreakpointWidget = class BreakpointWidget extends ZoneWidget {
+    constructor(editor, lineNumber, column, context, contextViewService, debugService, themeService, contextKeyService, instantiationService, modelService, codeEditorService, _configurationService, languageFeaturesService, keybindingService, labelService, textModelService, hoverService) {
+        super(editor, { showFrame: true, showArrow: false, frameWidth: 1, isAccessible: true });
+        this.lineNumber = lineNumber;
+        this.column = column;
+        this.contextViewService = contextViewService;
+        this.debugService = debugService;
+        this.themeService = themeService;
+        this.contextKeyService = contextKeyService;
+        this.instantiationService = instantiationService;
+        this.modelService = modelService;
+        this.codeEditorService = codeEditorService;
+        this._configurationService = _configurationService;
+        this.languageFeaturesService = languageFeaturesService;
+        this.keybindingService = keybindingService;
+        this.labelService = labelService;
+        this.textModelService = textModelService;
+        this.hoverService = hoverService;
+        this.conditionInput = '';
+        this.hitCountInput = '';
+        this.logMessageInput = '';
+        this.toDispose = [];
+        const model = this.editor.getModel();
+        if (model) {
+            const uri = model.uri;
+            const breakpoints = this.debugService.getModel().getBreakpoints({ lineNumber: this.lineNumber, column: this.column, uri });
+            this.breakpoint = breakpoints.length ? breakpoints[0] : undefined;
+        }
+        if (context === undefined) {
+            if (this.breakpoint && !this.breakpoint.condition && !this.breakpoint.hitCondition && this.breakpoint.logMessage) {
+                this.context = 2;
+            }
+            else if (this.breakpoint && !this.breakpoint.condition && this.breakpoint.hitCondition) {
+                this.context = 1;
+            }
+            else if (this.breakpoint && this.breakpoint.triggeredBy) {
+                this.context = 3;
+            }
+            else {
+                this.context = 0;
+            }
+        }
+        else {
+            this.context = context;
+        }
+        this.toDispose.push(this.debugService.getModel().onDidChangeBreakpoints(e => {
+            if (this.breakpoint && e && e.removed && e.removed.indexOf(this.breakpoint) >= 0) {
+                this.dispose();
+            }
+        }));
+        this.codeEditorService.registerDecorationType('breakpoint-widget', DECORATION_KEY, {});
+        this.create();
+    }
+    get placeholder() {
+        const acceptString = this.keybindingService.lookupKeybinding(AcceptBreakpointWidgetInputAction.ID)?.getLabel() || 'Enter';
+        const closeString = this.keybindingService.lookupKeybinding(CloseBreakpointWidgetCommand.ID)?.getLabel() || 'Escape';
+        switch (this.context) {
+            case 2:
+                return nls.localize('breakpointWidgetLogMessagePlaceholder', "Message to log when breakpoint is hit. Expressions within {} are interpolated. '{0}' to accept, '{1}' to cancel.", acceptString, closeString);
+            case 1:
+                return nls.localize('breakpointWidgetHitCountPlaceholder', "Break when hit count condition is met. '{0}' to accept, '{1}' to cancel.", acceptString, closeString);
+            default:
+                return nls.localize('breakpointWidgetExpressionPlaceholder', "Break when expression evaluates to true. '{0}' to accept, '{1}' to cancel.", acceptString, closeString);
+        }
+    }
+    getInputValue(breakpoint) {
+        switch (this.context) {
+            case 2:
+                return breakpoint && breakpoint.logMessage ? breakpoint.logMessage : this.logMessageInput;
+            case 1:
+                return breakpoint && breakpoint.hitCondition ? breakpoint.hitCondition : this.hitCountInput;
+            default:
+                return breakpoint && breakpoint.condition ? breakpoint.condition : this.conditionInput;
+        }
+    }
+    rememberInput() {
+        if (this.context !== 3) {
+            const value = this.input.getModel().getValue();
+            switch (this.context) {
+                case 2:
+                    this.logMessageInput = value;
+                    break;
+                case 1:
+                    this.hitCountInput = value;
+                    break;
+                default:
+                    this.conditionInput = value;
+            }
+        }
+    }
+    setInputMode() {
+        if (this.editor.hasModel()) {
+            const languageId = this.context === 2 ? PLAINTEXT_LANGUAGE_ID : this.editor.getModel().getLanguageId();
+            this.input.getModel().setLanguage(languageId);
+        }
+    }
+    show(rangeOrPos) {
+        const lineNum = this.input.getModel().getLineCount();
+        super.show(rangeOrPos, lineNum + 1);
+    }
+    fitHeightToContent() {
+        const lineNum = this.input.getModel().getLineCount();
+        this._relayout(lineNum + 1);
+    }
+    _fillContainer(container) {
+        this.setCssClass('breakpoint-widget');
+        const selectBox = new SelectBox([
+            { text: nls.localize('expression', "Expression") },
+            { text: nls.localize('hitCount', "Hit Count") },
+            { text: nls.localize('logMessage', "Log Message") },
+            { text: nls.localize('triggeredBy', "Wait for Breakpoint") },
+        ], this.context, this.contextViewService, defaultSelectBoxStyles, { ariaLabel: nls.localize('breakpointType', 'Breakpoint Type') });
+        this.selectContainer = $('.breakpoint-select-container');
+        selectBox.render(dom.append(container, this.selectContainer));
+        selectBox.onDidSelect(e => {
+            this.rememberInput();
+            this.context = e.index;
+            this.updateContextInput();
+        });
+        this.createModesInput(container);
+        this.inputContainer = $('.inputContainer');
+        this.toDispose.push(this.hoverService.setupManagedHover(getDefaultHoverDelegate('mouse'), this.inputContainer, this.placeholder));
+        this.createBreakpointInput(dom.append(container, this.inputContainer));
+        this.input.getModel().setValue(this.getInputValue(this.breakpoint));
+        this.toDispose.push(this.input.getModel().onDidChangeContent(() => {
+            this.fitHeightToContent();
+        }));
+        this.input.setPosition({ lineNumber: 1, column: this.input.getModel().getLineMaxColumn(1) });
+        this.createTriggerBreakpointInput(container);
+        this.updateContextInput();
+        setTimeout(() => this.focusInput(), 150);
+    }
+    createModesInput(container) {
+        const modes = this.debugService.getModel().getBreakpointModes('source');
+        if (modes.length <= 1) {
+            return;
+        }
+        const sb = this.selectModeBox = new SelectBox([
+            { text: nls.localize('bpMode', 'Mode'), isDisabled: true },
+            ...modes.map(mode => ({ text: mode.label, description: mode.description })),
+        ], modes.findIndex(m => m.mode === this.breakpoint?.mode) + 1, this.contextViewService, defaultSelectBoxStyles);
+        this.toDispose.push(sb);
+        this.toDispose.push(sb.onDidSelect(e => {
+            this.modeInput = modes[e.index - 1];
+        }));
+        const modeWrapper = $('.select-mode-container');
+        const selectionWrapper = $('.select-box-container');
+        dom.append(modeWrapper, selectionWrapper);
+        sb.render(selectionWrapper);
+        dom.append(container, modeWrapper);
+    }
+    createTriggerBreakpointInput(container) {
+        const breakpoints = this.debugService.getModel().getBreakpoints().filter(bp => bp !== this.breakpoint && !bp.logMessage);
+        const breakpointOptions = [
+            { text: nls.localize('noTriggerByBreakpoint', 'None'), isDisabled: true },
+            ...breakpoints.map(bp => ({
+                text: `${this.labelService.getUriLabel(bp.uri, { relative: true })}: ${bp.lineNumber}`,
+                description: nls.localize('triggerByLoading', 'Loading...')
+            })),
+        ];
+        const index = breakpoints.findIndex((bp) => this.breakpoint?.triggeredBy === bp.getId());
+        for (const [i, bp] of breakpoints.entries()) {
+            this.textModelService.createModelReference(bp.uri).then(ref => {
+                try {
+                    breakpointOptions[i + 1].description = ref.object.textEditorModel.getLineContent(bp.lineNumber).trim();
+                }
+                finally {
+                    ref.dispose();
+                }
+            }).catch(() => {
+                breakpointOptions[i + 1].description = nls.localize('noBpSource', 'Could not load source.');
+            });
+        }
+        const selectBreakpointBox = this.selectBreakpointBox = new SelectBox(breakpointOptions, index + 1, this.contextViewService, defaultSelectBoxStyles, { ariaLabel: nls.localize('selectBreakpoint', 'Select breakpoint') });
+        selectBreakpointBox.onDidSelect(e => {
+            if (e.index === 0) {
+                this.triggeredByBreakpointInput = undefined;
+            }
+            else {
+                this.triggeredByBreakpointInput = breakpoints[e.index - 1];
+            }
+        });
+        this.toDispose.push(selectBreakpointBox);
+        this.selectBreakpointContainer = $('.select-breakpoint-container');
+        this.toDispose.push(dom.addDisposableListener(this.selectBreakpointContainer, dom.EventType.KEY_DOWN, e => {
+            const event = new StandardKeyboardEvent(e);
+            if (event.equals(9)) {
+                this.close(false);
+            }
+        }));
+        const selectionWrapper = $('.select-box-container');
+        dom.append(this.selectBreakpointContainer, selectionWrapper);
+        selectBreakpointBox.render(selectionWrapper);
+        dom.append(container, this.selectBreakpointContainer);
+        const closeButton = new Button(this.selectBreakpointContainer, defaultButtonStyles);
+        closeButton.label = nls.localize('ok', "Ok");
+        this.toDispose.push(closeButton.onDidClick(() => this.close(true)));
+        this.toDispose.push(closeButton);
+    }
+    updateContextInput() {
+        if (this.context === 3) {
+            this.inputContainer.hidden = true;
+            this.selectBreakpointContainer.hidden = false;
+        }
+        else {
+            this.inputContainer.hidden = false;
+            this.selectBreakpointContainer.hidden = true;
+            this.setInputMode();
+            const value = this.getInputValue(this.breakpoint);
+            this.input.getModel().setValue(value);
+            this.focusInput();
+        }
+    }
+    _doLayout(heightInPixel, widthInPixel) {
+        this.heightInPx = heightInPixel;
+        this.input.layout({ height: heightInPixel, width: widthInPixel - 113 });
+        this.centerInputVertically();
+    }
+    _onWidth(widthInPixel) {
+        if (typeof this.heightInPx === 'number') {
+            this._doLayout(this.heightInPx, widthInPixel);
+        }
+    }
+    createBreakpointInput(container) {
+        const scopedContextKeyService = this.contextKeyService.createScoped(container);
+        this.toDispose.push(scopedContextKeyService);
+        const scopedInstatiationService = this.instantiationService.createChild(new ServiceCollection([IContextKeyService, scopedContextKeyService], [IPrivateBreakpointWidgetService, this]));
+        this.toDispose.push(scopedInstatiationService);
+        const options = this.createEditorOptions();
+        const codeEditorWidgetOptions = getSimpleCodeEditorWidgetOptions();
+        this.input = scopedInstatiationService.createInstance(CodeEditorWidget, container, options, codeEditorWidgetOptions);
+        CONTEXT_IN_BREAKPOINT_WIDGET.bindTo(scopedContextKeyService).set(true);
+        const model = this.modelService.createModel('', null, uri.parse(`${DEBUG_SCHEME}:${this.editor.getId()}:breakpointinput`), true);
+        if (this.editor.hasModel()) {
+            model.setLanguage(this.editor.getModel().getLanguageId());
+        }
+        this.input.setModel(model);
+        this.setInputMode();
+        this.toDispose.push(model);
+        const setDecorations = () => {
+            const value = this.input.getModel().getValue();
+            const decorations = !!value ? [] : createDecorations(this.themeService.getColorTheme(), this.placeholder);
+            this.input.setDecorationsByType('breakpoint-widget', DECORATION_KEY, decorations);
+        };
+        this.input.getModel().onDidChangeContent(() => setDecorations());
+        this.themeService.onDidColorThemeChange(() => setDecorations());
+        this.toDispose.push(this.languageFeaturesService.completionProvider.register({ scheme: DEBUG_SCHEME, hasAccessToAllModels: true }, {
+            _debugDisplayName: 'breakpointWidget',
+            provideCompletionItems: (model, position, _context, token) => {
+                let suggestionsPromise;
+                const underlyingModel = this.editor.getModel();
+                if (underlyingModel && (this.context === 0 || (this.context === 2 && isPositionInCurlyBracketBlock(this.input)))) {
+                    suggestionsPromise = provideSuggestionItems(this.languageFeaturesService.completionProvider, underlyingModel, new Position(this.lineNumber, 1), new CompletionOptions(undefined, new Set().add(27)), _context, token).then(suggestions => {
+                        let overwriteBefore = 0;
+                        if (this.context === 0) {
+                            overwriteBefore = position.column - 1;
+                        }
+                        else {
+                            const value = this.input.getModel().getValue();
+                            while ((position.column - 2 - overwriteBefore >= 0) && value[position.column - 2 - overwriteBefore] !== '{' && value[position.column - 2 - overwriteBefore] !== ' ') {
+                                overwriteBefore++;
+                            }
+                        }
+                        return {
+                            suggestions: suggestions.items.map(s => {
+                                s.completion.range = Range.fromPositions(position.delta(0, -overwriteBefore), position);
+                                return s.completion;
+                            })
+                        };
+                    });
+                }
+                else {
+                    suggestionsPromise = Promise.resolve({ suggestions: [] });
+                }
+                return suggestionsPromise;
+            }
+        }));
+        this.toDispose.push(this._configurationService.onDidChangeConfiguration((e) => {
+            if (e.affectsConfiguration('editor.fontSize') || e.affectsConfiguration('editor.lineHeight')) {
+                this.input.updateOptions(this.createEditorOptions());
+                this.centerInputVertically();
+            }
+        }));
+    }
+    createEditorOptions() {
+        const editorConfig = this._configurationService.getValue('editor');
+        const options = getSimpleEditorOptions(this._configurationService);
+        options.fontSize = editorConfig.fontSize;
+        options.fontFamily = editorConfig.fontFamily;
+        options.lineHeight = editorConfig.lineHeight;
+        options.fontLigatures = editorConfig.fontLigatures;
+        options.ariaLabel = this.placeholder;
+        return options;
+    }
+    centerInputVertically() {
+        if (this.container && typeof this.heightInPx === 'number') {
+            const lineHeight = this.input.getOption(69);
+            const lineNum = this.input.getModel().getLineCount();
+            const newTopMargin = (this.heightInPx - lineNum * lineHeight) / 2;
+            this.inputContainer.style.marginTop = newTopMargin + 'px';
+        }
+    }
+    close(success) {
+        if (success) {
+            let condition = undefined;
+            let hitCondition = undefined;
+            let logMessage = undefined;
+            let triggeredBy = undefined;
+            let mode = undefined;
+            let modeLabel = undefined;
+            this.rememberInput();
+            if (this.conditionInput || this.context === 0) {
+                condition = this.conditionInput;
+            }
+            if (this.hitCountInput || this.context === 1) {
+                hitCondition = this.hitCountInput;
+            }
+            if (this.logMessageInput || this.context === 2) {
+                logMessage = this.logMessageInput;
+            }
+            if (this.selectModeBox) {
+                mode = this.modeInput?.mode;
+                modeLabel = this.modeInput?.label;
+            }
+            if (this.context === 3) {
+                condition = undefined;
+                hitCondition = undefined;
+                logMessage = undefined;
+                triggeredBy = this.triggeredByBreakpointInput?.getId();
+            }
+            if (this.breakpoint) {
+                const data = new Map();
+                data.set(this.breakpoint.getId(), {
+                    condition,
+                    hitCondition,
+                    logMessage,
+                    triggeredBy,
+                    mode,
+                    modeLabel,
+                });
+                this.debugService.updateBreakpoints(this.breakpoint.originalUri, data, false).then(undefined, onUnexpectedError);
+            }
+            else {
+                const model = this.editor.getModel();
+                if (model) {
+                    this.debugService.addBreakpoints(model.uri, [{
+                            lineNumber: this.lineNumber,
+                            column: this.column,
+                            enabled: true,
+                            condition,
+                            hitCondition,
+                            logMessage,
+                            triggeredBy,
+                            mode,
+                            modeLabel,
+                        }]);
+                }
+            }
+        }
+        this.dispose();
+    }
+    focusInput() {
+        if (this.context === 3) {
+            this.selectBreakpointBox.focus();
+        }
+        else {
+            this.input.focus();
+        }
+    }
+    dispose() {
+        super.dispose();
+        this.input.dispose();
+        lifecycle.dispose(this.toDispose);
+        setTimeout(() => this.editor.focus(), 0);
+    }
+};
+BreakpointWidget = __decorate([
+    __param(4, IContextViewService),
+    __param(5, IDebugService),
+    __param(6, IThemeService),
+    __param(7, IContextKeyService),
+    __param(8, IInstantiationService),
+    __param(9, IModelService),
+    __param(10, ICodeEditorService),
+    __param(11, IConfigurationService),
+    __param(12, ILanguageFeaturesService),
+    __param(13, IKeybindingService),
+    __param(14, ILabelService),
+    __param(15, ITextModelService),
+    __param(16, IHoverService),
+    __metadata("design:paramtypes", [Object, Number, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], BreakpointWidget);
+export { BreakpointWidget };
+class AcceptBreakpointWidgetInputAction extends EditorCommand {
+    static { this.ID = 'breakpointWidget.action.acceptInput'; }
+    constructor() {
+        super({
+            id: AcceptBreakpointWidgetInputAction.ID,
+            precondition: CONTEXT_BREAKPOINT_WIDGET_VISIBLE,
+            kbOpts: {
+                kbExpr: CONTEXT_IN_BREAKPOINT_WIDGET,
+                primary: 3,
+                weight: 100
+            }
+        });
+    }
+    runEditorCommand(accessor, editor) {
+        accessor.get(IPrivateBreakpointWidgetService).close(true);
+    }
+}
+class CloseBreakpointWidgetCommand extends EditorCommand {
+    static { this.ID = 'closeBreakpointWidget'; }
+    constructor() {
+        super({
+            id: CloseBreakpointWidgetCommand.ID,
+            precondition: CONTEXT_BREAKPOINT_WIDGET_VISIBLE,
+            kbOpts: {
+                kbExpr: EditorContextKeys.textInputFocus,
+                primary: 9,
+                secondary: [1024 | 9],
+                weight: 100
+            }
+        });
+    }
+    runEditorCommand(accessor, editor, args) {
+        const debugContribution = editor.getContribution(BREAKPOINT_EDITOR_CONTRIBUTION_ID);
+        if (debugContribution) {
+            return debugContribution.closeBreakpointWidget();
+        }
+        accessor.get(IPrivateBreakpointWidgetService).close(false);
+    }
+}
+registerEditorCommand(new AcceptBreakpointWidgetInputAction());
+registerEditorCommand(new CloseBreakpointWidgetCommand());

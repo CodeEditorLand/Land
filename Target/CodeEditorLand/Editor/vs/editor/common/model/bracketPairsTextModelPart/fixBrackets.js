@@ -1,2 +1,64 @@
-import"../../languages/languageConfigurationRegistry.js";import{AstNodeKind as r}from"./bracketPairsTree/ast.js";import{LanguageAgnosticBracketTokens as T}from"./bracketPairsTree/brackets.js";import{lengthAdd as o,lengthGetColumnCountIfZeroLineCount as l,lengthZero as p}from"./bracketPairsTree/length.js";import{parseDocument as B}from"./bracketPairsTree/parser.js";import{DenseKeyProvider as d}from"./bracketPairsTree/smallImmutableSet.js";import{TextBufferTokenizer as C}from"./bracketPairsTree/tokenizer.js";import"../../tokens/lineTokens.js";function Z(g,i){const k=new d,a=new T(k,e=>i.getLanguageConfiguration(e)),u=new C(new I([g]),a),m=B(u,[],void 0,!0);let c="";const L=g.getLineContent();function t(e,n){if(e.kind===r.Pair)if(t(e.openingBracket,n),n=o(n,e.openingBracket.length),e.child&&(t(e.child,n),n=o(n,e.child.length)),e.closingBracket)t(e.closingBracket,n),n=o(n,e.closingBracket.length);else{const h=a.getSingleLanguageBracketTokens(e.openingBracket.languageId).findClosingTokenText(e.openingBracket.bracketIds);c+=h}else if(e.kind!==r.UnexpectedClosingBracket){if(e.kind===r.Text||e.kind===r.Bracket)c+=L.substring(l(n),l(o(n,e.length)));else if(e.kind===r.List)for(const s of e.children)t(s,n),n=o(n,s.length)}}return t(m,p),c}class I{constructor(i){this.lines=i}getValue(){return this.lines.map(i=>i.getLineContent()).join(`
-`)}getLineCount(){return this.lines.length}getLineLength(i){return this.lines[i-1].getLineContent().length}tokenization={getLineTokens:i=>this.lines[i-1]}}export{Z as fixBracketsInLine};
+import { LanguageAgnosticBracketTokens } from './bracketPairsTree/brackets.js';
+import { lengthAdd, lengthGetColumnCountIfZeroLineCount, lengthZero } from './bracketPairsTree/length.js';
+import { parseDocument } from './bracketPairsTree/parser.js';
+import { DenseKeyProvider } from './bracketPairsTree/smallImmutableSet.js';
+import { TextBufferTokenizer } from './bracketPairsTree/tokenizer.js';
+export function fixBracketsInLine(tokens, languageConfigurationService) {
+    const denseKeyProvider = new DenseKeyProvider();
+    const bracketTokens = new LanguageAgnosticBracketTokens(denseKeyProvider, (languageId) => languageConfigurationService.getLanguageConfiguration(languageId));
+    const tokenizer = new TextBufferTokenizer(new StaticTokenizerSource([tokens]), bracketTokens);
+    const node = parseDocument(tokenizer, [], undefined, true);
+    let str = '';
+    const line = tokens.getLineContent();
+    function processNode(node, offset) {
+        if (node.kind === 2) {
+            processNode(node.openingBracket, offset);
+            offset = lengthAdd(offset, node.openingBracket.length);
+            if (node.child) {
+                processNode(node.child, offset);
+                offset = lengthAdd(offset, node.child.length);
+            }
+            if (node.closingBracket) {
+                processNode(node.closingBracket, offset);
+                offset = lengthAdd(offset, node.closingBracket.length);
+            }
+            else {
+                const singleLangBracketTokens = bracketTokens.getSingleLanguageBracketTokens(node.openingBracket.languageId);
+                const closingTokenText = singleLangBracketTokens.findClosingTokenText(node.openingBracket.bracketIds);
+                str += closingTokenText;
+            }
+        }
+        else if (node.kind === 3) {
+        }
+        else if (node.kind === 0 || node.kind === 1) {
+            str += line.substring(lengthGetColumnCountIfZeroLineCount(offset), lengthGetColumnCountIfZeroLineCount(lengthAdd(offset, node.length)));
+        }
+        else if (node.kind === 4) {
+            for (const child of node.children) {
+                processNode(child, offset);
+                offset = lengthAdd(offset, child.length);
+            }
+        }
+    }
+    processNode(node, lengthZero);
+    return str;
+}
+class StaticTokenizerSource {
+    constructor(lines) {
+        this.lines = lines;
+        this.tokenization = {
+            getLineTokens: (lineNumber) => {
+                return this.lines[lineNumber - 1];
+            }
+        };
+    }
+    getValue() {
+        return this.lines.map(l => l.getLineContent()).join('\n');
+    }
+    getLineCount() {
+        return this.lines.length;
+    }
+    getLineLength(lineNumber) {
+        return this.lines[lineNumber - 1].getLineContent().length;
+    }
+}

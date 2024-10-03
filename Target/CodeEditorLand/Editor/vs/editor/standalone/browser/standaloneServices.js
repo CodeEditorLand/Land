@@ -1,5 +1,1023 @@
-var ve=Object.defineProperty;var Ie=Object.getOwnPropertyDescriptor;var v=(t,e,i,r)=>{for(var o=r>1?void 0:r?Ie(e,i):e,a=t.length-1,c;a>=0;a--)(c=t[a])&&(o=(r?c(e,i,o):c(o))||o);return r&&o&&ve(e,i,o),o},d=(t,e)=>(i,r)=>e(i,r,t);import"./standaloneCodeEditorService.js";import"./standaloneLayoutService.js";import"../../../platform/undoRedo/common/undoRedoService.js";import"../../common/services/languageFeatureDebounce.js";import"../../common/services/semanticTokensStylingService.js";import"../../common/services/languageFeaturesService.js";import"../../browser/services/hoverService/hoverService.js";import*as ye from"../../../base/common/strings.js";import*as O from"../../../base/browser/dom.js";import{StandardKeyboardEvent as Q}from"../../../base/browser/keyboardEvent.js";import{Emitter as I,Event as C,ValueWithChangeEvent as he}from"../../../base/common/event.js";import{KeyCodeChord as be,decodeKeybinding as Ee}from"../../../base/common/keybindings.js";import{ImmortalReference as Ce,toDisposable as J,DisposableStore as X,Disposable as V,combinedDisposable as Se}from"../../../base/common/lifecycle.js";import{OS as F,isLinux as Pe,isMacintosh as De}from"../../../base/common/platform.js";import E from"../../../base/common/severity.js";import{URI as g}from"../../../base/common/uri.js";import{IBulkEditService as Re,ResourceEdit as Te,ResourceTextEdit as ke}from"../../browser/services/bulkEditService.js";import{isDiffEditorConfigurationKey as we,isEditorConfigurationKey as _e}from"../../common/config/editorConfigurationSchema.js";import{EditOperation as We}from"../../common/core/editOperation.js";import{Position as xe}from"../../common/core/position.js";import{Range as Le}from"../../common/core/range.js";import"../../common/model.js";import{IModelService as R}from"../../common/services/model.js";import{ITextModelService as Me}from"../../common/services/resolverService.js";import{ITextResourceConfigurationService as Z,ITextResourcePropertiesService as Ne}from"../../common/services/textResourceConfiguration.js";import{CommandsRegistry as ee,ICommandService as ie}from"../../../platform/commands/common/commands.js";import{IConfigurationService as A,ConfigurationTarget as Ke}from"../../../platform/configuration/common/configuration.js";import{Configuration as Oe,ConfigurationModel as P,ConfigurationChangeEvent as Fe}from"../../../platform/configuration/common/configurationModels.js";import{IContextKeyService as B}from"../../../platform/contextkey/common/contextkey.js";import{IDialogService as Ue}from"../../../platform/dialogs/common/dialogs.js";import{createDecorator as He,IInstantiationService as re}from"../../../platform/instantiation/common/instantiation.js";import{AbstractKeybindingService as Ve}from"../../../platform/keybinding/common/abstractKeybindingService.js";import{IKeybindingService as oe}from"../../../platform/keybinding/common/keybinding.js";import{KeybindingResolver as Ae}from"../../../platform/keybinding/common/keybindingResolver.js";import{KeybindingsRegistry as Be}from"../../../platform/keybinding/common/keybindingsRegistry.js";import{ResolvedKeybindingItem as te}from"../../../platform/keybinding/common/resolvedKeybindingItem.js";import{USLayoutResolvedKeybinding as z}from"../../../platform/keybinding/common/usLayoutResolvedKeybinding.js";import{ILabelService as ze}from"../../../platform/label/common/label.js";import{INotificationService as j,NoOpNotification as je,NotificationsFilter as Ye}from"../../../platform/notification/common/notification.js";import{IEditorProgressService as Ge,IProgressService as $e}from"../../../platform/progress/common/progress.js";import{ITelemetryService as Y,TelemetryLevel as qe}from"../../../platform/telemetry/common/telemetry.js";import{IWorkspaceContextService as Qe,WorkbenchState as G,WorkspaceFolder as Je,STANDALONE_EDITOR_WORKSPACE_ID as Xe}from"../../../platform/workspace/common/workspace.js";import{ILayoutService as Ze}from"../../../platform/layout/browser/layoutService.js";import{StandaloneServicesNLS as ei}from"../../common/standaloneStrings.js";import{basename as ii}from"../../../base/common/resources.js";import{ICodeEditorService as ne}from"../../browser/services/codeEditorService.js";import{ConsoleLogger as ri,ILogService as U}from"../../../platform/log/common/log.js";import{IWorkspaceTrustManagementService as oi}from"../../../platform/workspace/common/workspaceTrust.js";import{EditorOption as se}from"../../common/config/editorOptions.js";import"../../browser/editorBrowser.js";import{IContextMenuService as ti,IContextViewService as ae}from"../../../platform/contextview/browser/contextView.js";import{ContextViewService as ni}from"../../../platform/contextview/browser/contextViewService.js";import{LanguageService as si}from"../../common/services/languageService.js";import{ContextMenuService as ai}from"../../../platform/contextview/browser/contextMenuService.js";import{getSingletonServiceDescriptors as de,InstantiationType as n,registerSingleton as s}from"../../../platform/instantiation/common/extensions.js";import{OpenerService as di}from"../../browser/services/openerService.js";import{IEditorWorkerService as ci}from"../../common/services/editorWorker.js";import{EditorWorkerService as li}from"../../browser/services/editorWorkerService.js";import{ILanguageService as ce}from"../../common/languages/language.js";import{MarkerDecorationsService as ui}from"../../common/services/markerDecorationsService.js";import{IMarkerDecorationsService as mi}from"../../common/services/markerDecorations.js";import{ModelService as pi}from"../../common/services/modelService.js";import{StandaloneQuickInputService as fi}from"./quickInput/standaloneQuickInputService.js";import{StandaloneThemeService as gi}from"./standaloneThemeService.js";import{IStandaloneThemeService as vi}from"../common/standaloneTheme.js";import{AccessibilityService as Ii}from"../../../platform/accessibility/browser/accessibilityService.js";import{IAccessibilityService as yi}from"../../../platform/accessibility/common/accessibility.js";import{IMenuService as le}from"../../../platform/actions/common/actions.js";import{MenuService as hi}from"../../../platform/actions/common/menuService.js";import{BrowserClipboardService as bi}from"../../../platform/clipboard/browser/clipboardService.js";import{IClipboardService as Ei}from"../../../platform/clipboard/common/clipboardService.js";import{ContextKeyService as Ci}from"../../../platform/contextkey/browser/contextKeyService.js";import{SyncDescriptor as ue}from"../../../platform/instantiation/common/descriptors.js";import{InstantiationService as Si}from"../../../platform/instantiation/common/instantiationService.js";import{ServiceCollection as Pi}from"../../../platform/instantiation/common/serviceCollection.js";import{IListService as Di,ListService as Ri}from"../../../platform/list/browser/listService.js";import{IMarkerService as Ti}from"../../../platform/markers/common/markers.js";import{MarkerService as ki}from"../../../platform/markers/common/markerService.js";import{IOpenerService as wi}from"../../../platform/opener/common/opener.js";import{IQuickInputService as _i}from"../../../platform/quickinput/common/quickInput.js";import{IStorageService as Wi,InMemoryStorageService as xi}from"../../../platform/storage/common/storage.js";import{DefaultConfiguration as Li}from"../../../platform/configuration/common/configurations.js";import"../../common/languages.js";import{IAccessibilitySignalService as Mi}from"../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";import{ILanguageFeaturesService as Ni}from"../../common/services/languageFeatures.js";import{ILanguageConfigurationService as Ki}from"../../common/languages/languageConfigurationRegistry.js";import{LogService as Oi}from"../../../platform/log/common/logService.js";import{getEditorFeatures as Fi}from"../../common/editorFeatures.js";import{onUnexpectedError as Ui}from"../../../base/common/errors.js";import{IEnvironmentService as Hi}from"../../../platform/environment/common/environment.js";import{mainWindow as me}from"../../../base/browser/window.js";import{ResourceMap as pe}from"../../../base/common/map.js";import{ITreeSitterParserService as Vi}from"../../common/services/treeSitterParserService.js";import{StandaloneTreeSitterParserService as Ai}from"./standaloneTreeSitterService.js";import"../../../base/common/worker/simpleWorker.js";class Bi{model;_onWillDispose;constructor(e){this.model=e,this._onWillDispose=new I}get onWillDispose(){return this._onWillDispose.event}resolve(){return Promise.resolve()}get textEditorModel(){return this.model}createSnapshot(){return this.model.createSnapshot()}isReadonly(){return!1}disposed=!1;dispose(){this.disposed=!0,this._onWillDispose.fire()}isDisposed(){return this.disposed}isResolved(){return!0}getLanguageId(){return this.model.getLanguageId()}}let T=class{constructor(e){this.modelService=e}_serviceBrand;createModelReference(e){const i=this.modelService.getModel(e);return i?Promise.resolve(new Ce(new Bi(i))):Promise.reject(new Error("Model not found"))}registerTextModelContentProvider(e,i){return{dispose:function(){}}}canHandleResource(e){return!1}};T=v([d(0,R)],T);class ${static NULL_PROGRESS_RUNNER={done:()=>{},total:()=>{},worked:()=>{}};show(){return $.NULL_PROGRESS_RUNNER}async showWhile(e,i){await e}}class zi{withProgress(e,i,r){return i({report:()=>{}})}}class ji{stateResource=g.from({scheme:"monaco",authority:"stateResource"});userRoamingDataHome=g.from({scheme:"monaco",authority:"userRoamingDataHome"});keyboardLayoutResource=g.from({scheme:"monaco",authority:"keyboardLayoutResource"});argvResource=g.from({scheme:"monaco",authority:"argvResource"});untitledWorkspacesHome=g.from({scheme:"monaco",authority:"untitledWorkspacesHome"});workspaceStorageHome=g.from({scheme:"monaco",authority:"workspaceStorageHome"});localHistoryHome=g.from({scheme:"monaco",authority:"localHistoryHome"});cacheHome=g.from({scheme:"monaco",authority:"cacheHome"});userDataSyncHome=g.from({scheme:"monaco",authority:"userDataSyncHome"});sync=void 0;continueOn=void 0;editSessionId=void 0;debugExtensionHost={port:null,break:!1};isExtensionDevelopment=!1;disableExtensions=!1;enableExtensions=void 0;extensionDevelopmentLocationURI=void 0;extensionDevelopmentKind=void 0;extensionTestsLocationURI=void 0;logsHome=g.from({scheme:"monaco",authority:"logsHome"});logLevel=void 0;extensionLogLevel=void 0;verbose=!1;isBuilt=!1;disableTelemetry=!1;serviceMachineIdResource=g.from({scheme:"monaco",authority:"serviceMachineIdResource"});policyFile=void 0}class Yi{_serviceBrand;onWillShowDialog=C.None;onDidShowDialog=C.None;async confirm(e){return{confirmed:this.doConfirm(e.message,e.detail),checkboxChecked:!1}}doConfirm(e,i){let r=e;return i&&(r=r+`
-
-`+i),me.confirm(r)}async prompt(e){let i;if(this.doConfirm(e.message,e.detail)){const o=[...e.buttons??[]];e.cancelButton&&typeof e.cancelButton!="string"&&typeof e.cancelButton!="boolean"&&o.push(e.cancelButton),i=await o[0]?.run({checkboxChecked:!1})}return{result:i}}async info(e,i){await this.prompt({type:E.Info,message:e,detail:i})}async warn(e,i){await this.prompt({type:E.Warning,message:e,detail:i})}async error(e,i){await this.prompt({type:E.Error,message:e,detail:i})}input(){return Promise.resolve({confirmed:!1})}about(){return Promise.resolve(void 0)}}class H{onDidAddNotification=C.None;onDidRemoveNotification=C.None;onDidChangeFilter=C.None;_serviceBrand;static NO_OP=new je;info(e){return this.notify({severity:E.Info,message:e})}warn(e){return this.notify({severity:E.Warning,message:e})}error(e){return this.notify({severity:E.Error,message:e})}notify(e){switch(e.severity){case E.Error:break;case E.Warning:break;default:break}return H.NO_OP}prompt(e,i,r,o){return H.NO_OP}status(e,i){return V.None}setFilter(e){}getFilter(e){return Ye.OFF}getFilters(){return[]}removeFilter(e){}}let k=class{_instantiationService;_onWillExecuteCommand=new I;_onDidExecuteCommand=new I;onWillExecuteCommand=this._onWillExecuteCommand.event;onDidExecuteCommand=this._onDidExecuteCommand.event;constructor(e){this._instantiationService=e}executeCommand(e,...i){const r=ee.getCommand(e);if(!r)return Promise.reject(new Error(`command '${e}' not found`));try{this._onWillExecuteCommand.fire({commandId:e,args:i});const o=this._instantiationService.invokeFunction.apply(this._instantiationService,[r.handler,...i]);return this._onDidExecuteCommand.fire({commandId:e,args:i}),Promise.resolve(o)}catch(o){return Promise.reject(o)}}};k=v([d(0,re)],k);let w=class extends Ve{_cachedResolver;_dynamicKeybindings;_domNodeListeners;constructor(e,i,r,o,a,c){super(e,i,r,o,a),this._cachedResolver=null,this._dynamicKeybindings=[],this._domNodeListeners=[];const m=p=>{const h=new X;h.add(O.addDisposableListener(p,O.EventType.KEY_DOWN,S=>{const b=new Q(S);this._dispatch(b,b.target)&&(b.preventDefault(),b.stopPropagation())})),h.add(O.addDisposableListener(p,O.EventType.KEY_UP,S=>{const b=new Q(S);this._singleModifierDispatch(b,b.target)&&b.preventDefault()})),this._domNodeListeners.push(new Gi(p,h))},l=p=>{for(let h=0;h<this._domNodeListeners.length;h++){const S=this._domNodeListeners[h];S.domNode===p&&(this._domNodeListeners.splice(h,1),S.dispose())}},u=p=>{p.getOption(se.inDiffEditor)||m(p.getContainerDomNode())},f=p=>{p.getOption(se.inDiffEditor)||l(p.getContainerDomNode())};this._register(c.onCodeEditorAdd(u)),this._register(c.onCodeEditorRemove(f)),c.listCodeEditors().forEach(u);const y=p=>{m(p.getContainerDomNode())},q=p=>{l(p.getContainerDomNode())};this._register(c.onDiffEditorAdd(y)),this._register(c.onDiffEditorRemove(q)),c.listDiffEditors().forEach(y)}addDynamicKeybinding(e,i,r,o){return Se(ee.registerCommand(e,r),this.addDynamicKeybindings([{keybinding:i,command:e,when:o}]))}addDynamicKeybindings(e){const i=e.map(r=>({keybinding:Ee(r.keybinding,F),command:r.command??null,commandArgs:r.commandArgs,when:r.when,weight1:1e3,weight2:0,extensionId:null,isBuiltinExtension:!1}));return this._dynamicKeybindings=this._dynamicKeybindings.concat(i),this.updateResolver(),J(()=>{for(let r=0;r<this._dynamicKeybindings.length;r++)if(this._dynamicKeybindings[r]===i[0]){this._dynamicKeybindings.splice(r,i.length),this.updateResolver();return}})}updateResolver(){this._cachedResolver=null,this._onDidUpdateKeybindings.fire()}_getResolver(){if(!this._cachedResolver){const e=this._toNormalizedKeybindingItems(Be.getDefaultKeybindings(),!0),i=this._toNormalizedKeybindingItems(this._dynamicKeybindings,!1);this._cachedResolver=new Ae(e,i,r=>this._log(r))}return this._cachedResolver}_documentHasFocus(){return me.document.hasFocus()}_toNormalizedKeybindingItems(e,i){const r=[];let o=0;for(const a of e){const c=a.when||void 0,m=a.keybinding;if(!m)r[o++]=new te(void 0,a.command,a.commandArgs,c,i,null,!1);else{const l=z.resolveKeybinding(m,F);for(const u of l)r[o++]=new te(u,a.command,a.commandArgs,c,i,null,!1)}}return r}resolveKeybinding(e){return z.resolveKeybinding(e,F)}resolveKeyboardEvent(e){const i=new be(e.ctrlKey,e.shiftKey,e.altKey,e.metaKey,e.keyCode);return new z([i],F)}resolveUserBinding(e){return[]}_dumpDebugInfo(){return""}_dumpDebugInfoJSON(){return""}registerSchemaContribution(e){}enableKeybindingHoldMode(e){}};w=v([d(0,B),d(1,ie),d(2,Y),d(3,j),d(4,U),d(5,ne)],w);class Gi extends V{constructor(i,r){super();this.domNode=i;this._register(r)}}function fe(t){return t&&typeof t=="object"&&(!t.overrideIdentifier||typeof t.overrideIdentifier=="string")&&(!t.resource||t.resource instanceof g)}let D=class{constructor(e){this.logService=e;const i=new Li(e);this._configuration=new Oe(i.reload(),P.createEmptyModel(e),P.createEmptyModel(e),P.createEmptyModel(e),P.createEmptyModel(e),P.createEmptyModel(e),new pe,P.createEmptyModel(e),new pe,e),i.dispose()}_onDidChangeConfiguration=new I;onDidChangeConfiguration=this._onDidChangeConfiguration.event;_configuration;getValue(e,i){const r=typeof e=="string"?e:void 0,o=fe(e)?e:fe(i)?i:{};return this._configuration.getValue(r,o,void 0)}updateValues(e){const i={data:this._configuration.toData()},r=[];for(const o of e){const[a,c]=o;this.getValue(a)!==c&&(this._configuration.updateValue(a,c),r.push(a))}if(r.length>0){const o=new Fe({keys:r,overrides:[]},i,this._configuration,void 0,this.logService);o.source=Ke.MEMORY,this._onDidChangeConfiguration.fire(o)}return Promise.resolve()}updateValue(e,i,r,o){return this.updateValues([[e,i]])}inspect(e,i={}){return this._configuration.inspect(e,i,void 0)}keys(){return this._configuration.keys(void 0)}reloadConfiguration(){return Promise.resolve(void 0)}getConfigurationData(){const e={contents:{},keys:[],overrides:[]};return{defaults:e,policy:e,application:e,user:e,workspace:e,folders:[]}}};D=v([d(0,U)],D);let _=class{constructor(e,i,r){this.configurationService=e;this.modelService=i;this.languageService=r;this.configurationService.onDidChangeConfiguration(o=>{this._onDidChangeConfiguration.fire({affectedKeys:o.affectedKeys,affectsConfiguration:(a,c)=>o.affectsConfiguration(c)})})}_onDidChangeConfiguration=new I;onDidChangeConfiguration=this._onDidChangeConfiguration.event;getValue(e,i,r){const o=xe.isIPosition(i)?i:null,a=o?typeof r=="string"?r:void 0:typeof i=="string"?i:void 0,c=e?this.getLanguage(e,o):void 0;return typeof a>"u"?this.configurationService.getValue({resource:e,overrideIdentifier:c}):this.configurationService.getValue(a,{resource:e,overrideIdentifier:c})}inspect(e,i,r){const o=e?this.getLanguage(e,i):void 0;return this.configurationService.inspect(r,{resource:e,overrideIdentifier:o})}getLanguage(e,i){const r=this.modelService.getModel(e);return r?i?r.getLanguageIdAtPosition(i.lineNumber,i.column):r.getLanguageId():this.languageService.guessLanguageIdByFilepathOrFirstLine(e)}updateValue(e,i,r,o){return this.configurationService.updateValue(i,r,{resource:e},o)}};_=v([d(0,A),d(1,R),d(2,ce)],_);let W=class{constructor(e){this.configurationService=e}getEOL(e,i){const r=this.configurationService.getValue("files.eol",{overrideIdentifier:i,resource:e});return r&&typeof r=="string"&&r!=="auto"?r:Pe||De?`
-`:`\r
-`}};W=v([d(0,A)],W);class $i{telemetryLevel=qe.NONE;sessionId="someValue.sessionId";machineId="someValue.machineId";sqmId="someValue.sqmId";devDeviceId="someValue.devDeviceId";firstSessionDate="someValue.firstSessionDate";sendErrorTelemetry=!1;setEnabled(){}setExperimentProperty(){}publicLog(){}publicLog2(){}publicLogError(){}publicLogError2(){}}class K{_serviceBrand;static SCHEME="inmemory";_onDidChangeWorkspaceName=new I;onDidChangeWorkspaceName=this._onDidChangeWorkspaceName.event;_onWillChangeWorkspaceFolders=new I;onWillChangeWorkspaceFolders=this._onWillChangeWorkspaceFolders.event;_onDidChangeWorkspaceFolders=new I;onDidChangeWorkspaceFolders=this._onDidChangeWorkspaceFolders.event;_onDidChangeWorkbenchState=new I;onDidChangeWorkbenchState=this._onDidChangeWorkbenchState.event;workspace;constructor(){const e=g.from({scheme:K.SCHEME,authority:"model",path:"/"});this.workspace={id:Xe,folders:[new Je({uri:e,name:"",index:0})]}}getCompleteWorkspace(){return Promise.resolve(this.getWorkspace())}getWorkspace(){return this.workspace}getWorkbenchState(){return this.workspace?this.workspace.configuration?G.WORKSPACE:G.FOLDER:G.EMPTY}getWorkspaceFolder(e){return e&&e.scheme===K.SCHEME?this.workspace.folders[0]:null}isInsideWorkspace(e){return e&&e.scheme===K.SCHEME}isCurrentWorkspace(e){return!0}}function dn(t,e,i){if(!e||!(t instanceof D))return;const r=[];Object.keys(e).forEach(o=>{_e(o)&&r.push([`editor.${o}`,e[o]]),i&&we(o)&&r.push([`diffEditor.${o}`,e[o]])}),r.length>0&&t.updateValues(r)}let x=class{constructor(e){this._modelService=e}hasPreviewHandler(){return!1}setPreviewHandler(){return V.None}async apply(e,i){const r=Array.isArray(e)?e:Te.convert(e),o=new Map;for(const m of r){if(!(m instanceof ke))throw new Error("bad edit - only text edits are supported");const l=this._modelService.getModel(m.resource);if(!l)throw new Error("bad edit - model not found");if(typeof m.versionId=="number"&&l.getVersionId()!==m.versionId)throw new Error("bad state - model changed in the meantime");let u=o.get(l);u||(u=[],o.set(l,u)),u.push(We.replaceMove(Le.lift(m.textEdit.range),m.textEdit.text))}let a=0,c=0;for(const[m,l]of o)m.pushStackElement(),m.pushEditOperations([],l,()=>[]),m.pushStackElement(),c+=1,a+=l.length;return{ariaSummary:ye.format(ei.bulkEditServiceSummary,a,c),isApplied:a>0}}};x=v([d(0,R)],x);class qi{onDidChangeFormatters=C.None;getUriLabel(e,i){return e.scheme==="file"?e.fsPath:e.path}getUriBasenameLabel(e){return ii(e)}getWorkspaceLabel(e,i){return""}getSeparator(e,i){return"/"}registerFormatter(e){throw new Error("Not implemented")}registerCachedFormatter(e){return this.registerFormatter(e)}getHostLabel(){return""}getHostTooltip(){}}let L=class extends ni{constructor(i,r){super(i);this._codeEditorService=r}showContextView(i,r,o){if(!r){const a=this._codeEditorService.getFocusedCodeEditor()||this._codeEditorService.getActiveCodeEditor();a&&(r=a.getContainerDomNode())}return super.showContextView(i,r,o)}};L=v([d(0,Ze),d(1,ne)],L);class Qi{_serviceBrand;_neverEmitter=new I;onDidChangeTrust=this._neverEmitter.event;onDidChangeTrustedFolders=this._neverEmitter.event;workspaceResolved=Promise.resolve();workspaceTrustInitialized=Promise.resolve();acceptsOutOfWorkspaceFiles=!0;isWorkspaceTrusted(){return!0}isWorkspaceTrustForced(){return!1}canSetParentFolderTrust(){return!1}async setParentFolderTrust(e){}canSetWorkspaceTrust(){return!1}async setWorkspaceTrust(e){}getUriTrustInfo(e){throw new Error("Method not supported.")}async setUrisTrust(e,i){}getTrustedUris(){return[]}async setTrustedUris(e){}addWorkspaceTrustTransitionParticipant(e){throw new Error("Method not supported.")}}class Ji extends si{constructor(){super()}}class Xi extends Oi{constructor(){super(new ri)}}let M=class extends ai{constructor(e,i,r,o,a,c){super(e,i,r,o,a,c),this.configure({blockMouse:!1})}};M=v([d(0,Y),d(1,j),d(2,ae),d(3,oe),d(4,le),d(5,B)],M);const Zi={moduleId:"vs/editor/common/services/editorSimpleWorker",esmModuleLocation:void 0,label:"editorWorkerService"};let N=class extends li{constructor(e,i,r,o,a){super(Zi,e,i,r,o,a)}};N=v([d(0,R),d(1,Z),d(2,U),d(3,Ki),d(4,Ni)],N);class er{_serviceBrand;async playSignal(e,i){}async playSignals(e){}getEnabledState(e,i,r){return he.const(!1)}getDelayMs(e,i){return 0}isSoundEnabled(e){return!1}isAnnouncementEnabled(e){return!1}onSoundEnabledChanged(e){return C.None}async playSound(e,i){}playSignalLoop(e){return J(()=>{})}}s(U,Xi,n.Eager),s(A,D,n.Eager),s(Z,_,n.Eager),s(Ne,W,n.Eager),s(Qe,K,n.Eager),s(ze,qi,n.Eager),s(Y,$i,n.Eager),s(Ue,Yi,n.Eager),s(Hi,ji,n.Eager),s(j,H,n.Eager),s(Ti,ki,n.Eager),s(ce,Ji,n.Eager),s(vi,gi,n.Eager),s(R,pi,n.Eager),s(mi,ui,n.Eager),s(B,Ci,n.Eager),s($e,zi,n.Eager),s(Ge,$,n.Eager),s(Wi,xi,n.Eager),s(ci,N,n.Eager),s(Re,x,n.Eager),s(oi,Qi,n.Eager),s(Me,T,n.Eager),s(yi,Ii,n.Eager),s(Di,Ri,n.Eager),s(ie,k,n.Eager),s(oe,w,n.Eager),s(_i,fi,n.Eager),s(ae,L,n.Eager),s(wi,di,n.Eager),s(Ei,bi,n.Eager),s(ti,M,n.Eager),s(le,hi,n.Eager),s(Mi,er,n.Eager),s(Vi,Ai,n.Eager);var ir;(m=>{const t=new Pi;for(const[l,u]of de())t.set(l,u);const e=new Si(t,!0);t.set(re,e);function i(l){r||a({});const u=t.get(l);if(!u)throw new Error("Missing service "+l);return u instanceof ue?e.invokeFunction(f=>f.get(l)):u}m.get=i;let r=!1;const o=new I;function a(l){if(r)return e;r=!0;for(const[f,y]of de())t.get(f)||t.set(f,y);for(const f in l)if(l.hasOwnProperty(f)){const y=He(f);t.get(y)instanceof ue&&t.set(y,l[f])}const u=Fi();for(const f of u)try{e.createInstance(f)}catch(y){Ui(y)}return o.fire(),e}m.initialize=a;function c(l){if(r)return l();const u=new X,f=u.add(o.event(()=>{f.dispose(),u.add(l())}));return u}m.withServices=c})(ir||={});export{k as StandaloneCommandService,D as StandaloneConfigurationService,w as StandaloneKeybindingService,H as StandaloneNotificationService,ir as StandaloneServices,Zi as standaloneEditorWorkerDescriptor,dn as updateConfigurationService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import './standaloneCodeEditorService.js';
+import './standaloneLayoutService.js';
+import '../../../platform/undoRedo/common/undoRedoService.js';
+import '../../common/services/languageFeatureDebounce.js';
+import '../../common/services/semanticTokensStylingService.js';
+import '../../common/services/languageFeaturesService.js';
+import '../../browser/services/hoverService/hoverService.js';
+import * as strings from '../../../base/common/strings.js';
+import * as dom from '../../../base/browser/dom.js';
+import { StandardKeyboardEvent } from '../../../base/browser/keyboardEvent.js';
+import { Emitter, Event, ValueWithChangeEvent } from '../../../base/common/event.js';
+import { KeyCodeChord, decodeKeybinding } from '../../../base/common/keybindings.js';
+import { ImmortalReference, toDisposable, DisposableStore, Disposable, combinedDisposable } from '../../../base/common/lifecycle.js';
+import { OS, isLinux, isMacintosh } from '../../../base/common/platform.js';
+import Severity from '../../../base/common/severity.js';
+import { URI } from '../../../base/common/uri.js';
+import { IBulkEditService, ResourceEdit, ResourceTextEdit } from '../../browser/services/bulkEditService.js';
+import { isDiffEditorConfigurationKey, isEditorConfigurationKey } from '../../common/config/editorConfigurationSchema.js';
+import { EditOperation } from '../../common/core/editOperation.js';
+import { Position as Pos } from '../../common/core/position.js';
+import { Range } from '../../common/core/range.js';
+import { IModelService } from '../../common/services/model.js';
+import { ITextModelService } from '../../common/services/resolverService.js';
+import { ITextResourceConfigurationService, ITextResourcePropertiesService } from '../../common/services/textResourceConfiguration.js';
+import { CommandsRegistry, ICommandService } from '../../../platform/commands/common/commands.js';
+import { IConfigurationService } from '../../../platform/configuration/common/configuration.js';
+import { Configuration, ConfigurationModel, ConfigurationChangeEvent } from '../../../platform/configuration/common/configurationModels.js';
+import { IContextKeyService } from '../../../platform/contextkey/common/contextkey.js';
+import { IDialogService } from '../../../platform/dialogs/common/dialogs.js';
+import { createDecorator, IInstantiationService } from '../../../platform/instantiation/common/instantiation.js';
+import { AbstractKeybindingService } from '../../../platform/keybinding/common/abstractKeybindingService.js';
+import { IKeybindingService } from '../../../platform/keybinding/common/keybinding.js';
+import { KeybindingResolver } from '../../../platform/keybinding/common/keybindingResolver.js';
+import { KeybindingsRegistry } from '../../../platform/keybinding/common/keybindingsRegistry.js';
+import { ResolvedKeybindingItem } from '../../../platform/keybinding/common/resolvedKeybindingItem.js';
+import { USLayoutResolvedKeybinding } from '../../../platform/keybinding/common/usLayoutResolvedKeybinding.js';
+import { ILabelService } from '../../../platform/label/common/label.js';
+import { INotificationService, NoOpNotification, NotificationsFilter } from '../../../platform/notification/common/notification.js';
+import { IEditorProgressService, IProgressService } from '../../../platform/progress/common/progress.js';
+import { ITelemetryService } from '../../../platform/telemetry/common/telemetry.js';
+import { IWorkspaceContextService, WorkspaceFolder, STANDALONE_EDITOR_WORKSPACE_ID } from '../../../platform/workspace/common/workspace.js';
+import { ILayoutService } from '../../../platform/layout/browser/layoutService.js';
+import { StandaloneServicesNLS } from '../../common/standaloneStrings.js';
+import { basename } from '../../../base/common/resources.js';
+import { ICodeEditorService } from '../../browser/services/codeEditorService.js';
+import { ConsoleLogger, ILogService } from '../../../platform/log/common/log.js';
+import { IWorkspaceTrustManagementService } from '../../../platform/workspace/common/workspaceTrust.js';
+import { IContextMenuService, IContextViewService } from '../../../platform/contextview/browser/contextView.js';
+import { ContextViewService } from '../../../platform/contextview/browser/contextViewService.js';
+import { LanguageService } from '../../common/services/languageService.js';
+import { ContextMenuService } from '../../../platform/contextview/browser/contextMenuService.js';
+import { getSingletonServiceDescriptors, registerSingleton } from '../../../platform/instantiation/common/extensions.js';
+import { OpenerService } from '../../browser/services/openerService.js';
+import { IEditorWorkerService } from '../../common/services/editorWorker.js';
+import { EditorWorkerService } from '../../browser/services/editorWorkerService.js';
+import { ILanguageService } from '../../common/languages/language.js';
+import { MarkerDecorationsService } from '../../common/services/markerDecorationsService.js';
+import { IMarkerDecorationsService } from '../../common/services/markerDecorations.js';
+import { ModelService } from '../../common/services/modelService.js';
+import { StandaloneQuickInputService } from './quickInput/standaloneQuickInputService.js';
+import { StandaloneThemeService } from './standaloneThemeService.js';
+import { IStandaloneThemeService } from '../common/standaloneTheme.js';
+import { AccessibilityService } from '../../../platform/accessibility/browser/accessibilityService.js';
+import { IAccessibilityService } from '../../../platform/accessibility/common/accessibility.js';
+import { IMenuService } from '../../../platform/actions/common/actions.js';
+import { MenuService } from '../../../platform/actions/common/menuService.js';
+import { BrowserClipboardService } from '../../../platform/clipboard/browser/clipboardService.js';
+import { IClipboardService } from '../../../platform/clipboard/common/clipboardService.js';
+import { ContextKeyService } from '../../../platform/contextkey/browser/contextKeyService.js';
+import { SyncDescriptor } from '../../../platform/instantiation/common/descriptors.js';
+import { InstantiationService } from '../../../platform/instantiation/common/instantiationService.js';
+import { ServiceCollection } from '../../../platform/instantiation/common/serviceCollection.js';
+import { IListService, ListService } from '../../../platform/list/browser/listService.js';
+import { IMarkerService } from '../../../platform/markers/common/markers.js';
+import { MarkerService } from '../../../platform/markers/common/markerService.js';
+import { IOpenerService } from '../../../platform/opener/common/opener.js';
+import { IQuickInputService } from '../../../platform/quickinput/common/quickInput.js';
+import { IStorageService, InMemoryStorageService } from '../../../platform/storage/common/storage.js';
+import { DefaultConfiguration } from '../../../platform/configuration/common/configurations.js';
+import { IAccessibilitySignalService } from '../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+import { ILanguageFeaturesService } from '../../common/services/languageFeatures.js';
+import { ILanguageConfigurationService } from '../../common/languages/languageConfigurationRegistry.js';
+import { LogService } from '../../../platform/log/common/logService.js';
+import { getEditorFeatures } from '../../common/editorFeatures.js';
+import { onUnexpectedError } from '../../../base/common/errors.js';
+import { IEnvironmentService } from '../../../platform/environment/common/environment.js';
+import { mainWindow } from '../../../base/browser/window.js';
+import { ResourceMap } from '../../../base/common/map.js';
+import { ITreeSitterParserService } from '../../common/services/treeSitterParserService.js';
+import { StandaloneTreeSitterParserService } from './standaloneTreeSitterService.js';
+class SimpleModel {
+    constructor(model) {
+        this.disposed = false;
+        this.model = model;
+        this._onWillDispose = new Emitter();
+    }
+    get onWillDispose() {
+        return this._onWillDispose.event;
+    }
+    resolve() {
+        return Promise.resolve();
+    }
+    get textEditorModel() {
+        return this.model;
+    }
+    createSnapshot() {
+        return this.model.createSnapshot();
+    }
+    isReadonly() {
+        return false;
+    }
+    dispose() {
+        this.disposed = true;
+        this._onWillDispose.fire();
+    }
+    isDisposed() {
+        return this.disposed;
+    }
+    isResolved() {
+        return true;
+    }
+    getLanguageId() {
+        return this.model.getLanguageId();
+    }
+}
+let StandaloneTextModelService = class StandaloneTextModelService {
+    constructor(modelService) {
+        this.modelService = modelService;
+    }
+    createModelReference(resource) {
+        const model = this.modelService.getModel(resource);
+        if (!model) {
+            return Promise.reject(new Error(`Model not found`));
+        }
+        return Promise.resolve(new ImmortalReference(new SimpleModel(model)));
+    }
+    registerTextModelContentProvider(scheme, provider) {
+        return {
+            dispose: function () { }
+        };
+    }
+    canHandleResource(resource) {
+        return false;
+    }
+};
+StandaloneTextModelService = __decorate([
+    __param(0, IModelService),
+    __metadata("design:paramtypes", [Object])
+], StandaloneTextModelService);
+class StandaloneEditorProgressService {
+    static { this.NULL_PROGRESS_RUNNER = {
+        done: () => { },
+        total: () => { },
+        worked: () => { }
+    }; }
+    show() {
+        return StandaloneEditorProgressService.NULL_PROGRESS_RUNNER;
+    }
+    async showWhile(promise, delay) {
+        await promise;
+    }
+}
+class StandaloneProgressService {
+    withProgress(_options, task, onDidCancel) {
+        return task({
+            report: () => { },
+        });
+    }
+}
+class StandaloneEnvironmentService {
+    constructor() {
+        this.stateResource = URI.from({ scheme: 'monaco', authority: 'stateResource' });
+        this.userRoamingDataHome = URI.from({ scheme: 'monaco', authority: 'userRoamingDataHome' });
+        this.keyboardLayoutResource = URI.from({ scheme: 'monaco', authority: 'keyboardLayoutResource' });
+        this.argvResource = URI.from({ scheme: 'monaco', authority: 'argvResource' });
+        this.untitledWorkspacesHome = URI.from({ scheme: 'monaco', authority: 'untitledWorkspacesHome' });
+        this.workspaceStorageHome = URI.from({ scheme: 'monaco', authority: 'workspaceStorageHome' });
+        this.localHistoryHome = URI.from({ scheme: 'monaco', authority: 'localHistoryHome' });
+        this.cacheHome = URI.from({ scheme: 'monaco', authority: 'cacheHome' });
+        this.userDataSyncHome = URI.from({ scheme: 'monaco', authority: 'userDataSyncHome' });
+        this.sync = undefined;
+        this.continueOn = undefined;
+        this.editSessionId = undefined;
+        this.debugExtensionHost = { port: null, break: false };
+        this.isExtensionDevelopment = false;
+        this.disableExtensions = false;
+        this.enableExtensions = undefined;
+        this.extensionDevelopmentLocationURI = undefined;
+        this.extensionDevelopmentKind = undefined;
+        this.extensionTestsLocationURI = undefined;
+        this.logsHome = URI.from({ scheme: 'monaco', authority: 'logsHome' });
+        this.logLevel = undefined;
+        this.extensionLogLevel = undefined;
+        this.verbose = false;
+        this.isBuilt = false;
+        this.disableTelemetry = false;
+        this.serviceMachineIdResource = URI.from({ scheme: 'monaco', authority: 'serviceMachineIdResource' });
+        this.policyFile = undefined;
+    }
+}
+class StandaloneDialogService {
+    constructor() {
+        this.onWillShowDialog = Event.None;
+        this.onDidShowDialog = Event.None;
+    }
+    async confirm(confirmation) {
+        const confirmed = this.doConfirm(confirmation.message, confirmation.detail);
+        return {
+            confirmed,
+            checkboxChecked: false
+        };
+    }
+    doConfirm(message, detail) {
+        let messageText = message;
+        if (detail) {
+            messageText = messageText + '\n\n' + detail;
+        }
+        return mainWindow.confirm(messageText);
+    }
+    async prompt(prompt) {
+        let result = undefined;
+        const confirmed = this.doConfirm(prompt.message, prompt.detail);
+        if (confirmed) {
+            const promptButtons = [...(prompt.buttons ?? [])];
+            if (prompt.cancelButton && typeof prompt.cancelButton !== 'string' && typeof prompt.cancelButton !== 'boolean') {
+                promptButtons.push(prompt.cancelButton);
+            }
+            result = await promptButtons[0]?.run({ checkboxChecked: false });
+        }
+        return { result };
+    }
+    async info(message, detail) {
+        await this.prompt({ type: Severity.Info, message, detail });
+    }
+    async warn(message, detail) {
+        await this.prompt({ type: Severity.Warning, message, detail });
+    }
+    async error(message, detail) {
+        await this.prompt({ type: Severity.Error, message, detail });
+    }
+    input() {
+        return Promise.resolve({ confirmed: false });
+    }
+    about() {
+        return Promise.resolve(undefined);
+    }
+}
+export class StandaloneNotificationService {
+    constructor() {
+        this.onDidAddNotification = Event.None;
+        this.onDidRemoveNotification = Event.None;
+        this.onDidChangeFilter = Event.None;
+    }
+    static { this.NO_OP = new NoOpNotification(); }
+    info(message) {
+        return this.notify({ severity: Severity.Info, message });
+    }
+    warn(message) {
+        return this.notify({ severity: Severity.Warning, message });
+    }
+    error(error) {
+        return this.notify({ severity: Severity.Error, message: error });
+    }
+    notify(notification) {
+        switch (notification.severity) {
+            case Severity.Error:
+                console.error(notification.message);
+                break;
+            case Severity.Warning:
+                console.warn(notification.message);
+                break;
+            default:
+                console.log(notification.message);
+                break;
+        }
+        return StandaloneNotificationService.NO_OP;
+    }
+    prompt(severity, message, choices, options) {
+        return StandaloneNotificationService.NO_OP;
+    }
+    status(message, options) {
+        return Disposable.None;
+    }
+    setFilter(filter) { }
+    getFilter(source) {
+        return NotificationsFilter.OFF;
+    }
+    getFilters() {
+        return [];
+    }
+    removeFilter(sourceId) { }
+}
+let StandaloneCommandService = class StandaloneCommandService {
+    constructor(instantiationService) {
+        this._onWillExecuteCommand = new Emitter();
+        this._onDidExecuteCommand = new Emitter();
+        this.onWillExecuteCommand = this._onWillExecuteCommand.event;
+        this.onDidExecuteCommand = this._onDidExecuteCommand.event;
+        this._instantiationService = instantiationService;
+    }
+    executeCommand(id, ...args) {
+        const command = CommandsRegistry.getCommand(id);
+        if (!command) {
+            return Promise.reject(new Error(`command '${id}' not found`));
+        }
+        try {
+            this._onWillExecuteCommand.fire({ commandId: id, args });
+            const result = this._instantiationService.invokeFunction.apply(this._instantiationService, [command.handler, ...args]);
+            this._onDidExecuteCommand.fire({ commandId: id, args });
+            return Promise.resolve(result);
+        }
+        catch (err) {
+            return Promise.reject(err);
+        }
+    }
+};
+StandaloneCommandService = __decorate([
+    __param(0, IInstantiationService),
+    __metadata("design:paramtypes", [Object])
+], StandaloneCommandService);
+export { StandaloneCommandService };
+let StandaloneKeybindingService = class StandaloneKeybindingService extends AbstractKeybindingService {
+    constructor(contextKeyService, commandService, telemetryService, notificationService, logService, codeEditorService) {
+        super(contextKeyService, commandService, telemetryService, notificationService, logService);
+        this._cachedResolver = null;
+        this._dynamicKeybindings = [];
+        this._domNodeListeners = [];
+        const addContainer = (domNode) => {
+            const disposables = new DisposableStore();
+            disposables.add(dom.addDisposableListener(domNode, dom.EventType.KEY_DOWN, (e) => {
+                const keyEvent = new StandardKeyboardEvent(e);
+                const shouldPreventDefault = this._dispatch(keyEvent, keyEvent.target);
+                if (shouldPreventDefault) {
+                    keyEvent.preventDefault();
+                    keyEvent.stopPropagation();
+                }
+            }));
+            disposables.add(dom.addDisposableListener(domNode, dom.EventType.KEY_UP, (e) => {
+                const keyEvent = new StandardKeyboardEvent(e);
+                const shouldPreventDefault = this._singleModifierDispatch(keyEvent, keyEvent.target);
+                if (shouldPreventDefault) {
+                    keyEvent.preventDefault();
+                }
+            }));
+            this._domNodeListeners.push(new DomNodeListeners(domNode, disposables));
+        };
+        const removeContainer = (domNode) => {
+            for (let i = 0; i < this._domNodeListeners.length; i++) {
+                const domNodeListeners = this._domNodeListeners[i];
+                if (domNodeListeners.domNode === domNode) {
+                    this._domNodeListeners.splice(i, 1);
+                    domNodeListeners.dispose();
+                }
+            }
+        };
+        const addCodeEditor = (codeEditor) => {
+            if (codeEditor.getOption(63)) {
+                return;
+            }
+            addContainer(codeEditor.getContainerDomNode());
+        };
+        const removeCodeEditor = (codeEditor) => {
+            if (codeEditor.getOption(63)) {
+                return;
+            }
+            removeContainer(codeEditor.getContainerDomNode());
+        };
+        this._register(codeEditorService.onCodeEditorAdd(addCodeEditor));
+        this._register(codeEditorService.onCodeEditorRemove(removeCodeEditor));
+        codeEditorService.listCodeEditors().forEach(addCodeEditor);
+        const addDiffEditor = (diffEditor) => {
+            addContainer(diffEditor.getContainerDomNode());
+        };
+        const removeDiffEditor = (diffEditor) => {
+            removeContainer(diffEditor.getContainerDomNode());
+        };
+        this._register(codeEditorService.onDiffEditorAdd(addDiffEditor));
+        this._register(codeEditorService.onDiffEditorRemove(removeDiffEditor));
+        codeEditorService.listDiffEditors().forEach(addDiffEditor);
+    }
+    addDynamicKeybinding(command, keybinding, handler, when) {
+        return combinedDisposable(CommandsRegistry.registerCommand(command, handler), this.addDynamicKeybindings([{
+                keybinding,
+                command,
+                when
+            }]));
+    }
+    addDynamicKeybindings(rules) {
+        const entries = rules.map((rule) => {
+            const keybinding = decodeKeybinding(rule.keybinding, OS);
+            return {
+                keybinding,
+                command: rule.command ?? null,
+                commandArgs: rule.commandArgs,
+                when: rule.when,
+                weight1: 1000,
+                weight2: 0,
+                extensionId: null,
+                isBuiltinExtension: false
+            };
+        });
+        this._dynamicKeybindings = this._dynamicKeybindings.concat(entries);
+        this.updateResolver();
+        return toDisposable(() => {
+            for (let i = 0; i < this._dynamicKeybindings.length; i++) {
+                if (this._dynamicKeybindings[i] === entries[0]) {
+                    this._dynamicKeybindings.splice(i, entries.length);
+                    this.updateResolver();
+                    return;
+                }
+            }
+        });
+    }
+    updateResolver() {
+        this._cachedResolver = null;
+        this._onDidUpdateKeybindings.fire();
+    }
+    _getResolver() {
+        if (!this._cachedResolver) {
+            const defaults = this._toNormalizedKeybindingItems(KeybindingsRegistry.getDefaultKeybindings(), true);
+            const overrides = this._toNormalizedKeybindingItems(this._dynamicKeybindings, false);
+            this._cachedResolver = new KeybindingResolver(defaults, overrides, (str) => this._log(str));
+        }
+        return this._cachedResolver;
+    }
+    _documentHasFocus() {
+        return mainWindow.document.hasFocus();
+    }
+    _toNormalizedKeybindingItems(items, isDefault) {
+        const result = [];
+        let resultLen = 0;
+        for (const item of items) {
+            const when = item.when || undefined;
+            const keybinding = item.keybinding;
+            if (!keybinding) {
+                result[resultLen++] = new ResolvedKeybindingItem(undefined, item.command, item.commandArgs, when, isDefault, null, false);
+            }
+            else {
+                const resolvedKeybindings = USLayoutResolvedKeybinding.resolveKeybinding(keybinding, OS);
+                for (const resolvedKeybinding of resolvedKeybindings) {
+                    result[resultLen++] = new ResolvedKeybindingItem(resolvedKeybinding, item.command, item.commandArgs, when, isDefault, null, false);
+                }
+            }
+        }
+        return result;
+    }
+    resolveKeybinding(keybinding) {
+        return USLayoutResolvedKeybinding.resolveKeybinding(keybinding, OS);
+    }
+    resolveKeyboardEvent(keyboardEvent) {
+        const chord = new KeyCodeChord(keyboardEvent.ctrlKey, keyboardEvent.shiftKey, keyboardEvent.altKey, keyboardEvent.metaKey, keyboardEvent.keyCode);
+        return new USLayoutResolvedKeybinding([chord], OS);
+    }
+    resolveUserBinding(userBinding) {
+        return [];
+    }
+    _dumpDebugInfo() {
+        return '';
+    }
+    _dumpDebugInfoJSON() {
+        return '';
+    }
+    registerSchemaContribution(contribution) {
+    }
+    enableKeybindingHoldMode(commandId) {
+        return undefined;
+    }
+};
+StandaloneKeybindingService = __decorate([
+    __param(0, IContextKeyService),
+    __param(1, ICommandService),
+    __param(2, ITelemetryService),
+    __param(3, INotificationService),
+    __param(4, ILogService),
+    __param(5, ICodeEditorService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], StandaloneKeybindingService);
+export { StandaloneKeybindingService };
+class DomNodeListeners extends Disposable {
+    constructor(domNode, disposables) {
+        super();
+        this.domNode = domNode;
+        this._register(disposables);
+    }
+}
+function isConfigurationOverrides(thing) {
+    return thing
+        && typeof thing === 'object'
+        && (!thing.overrideIdentifier || typeof thing.overrideIdentifier === 'string')
+        && (!thing.resource || thing.resource instanceof URI);
+}
+let StandaloneConfigurationService = class StandaloneConfigurationService {
+    constructor(logService) {
+        this.logService = logService;
+        this._onDidChangeConfiguration = new Emitter();
+        this.onDidChangeConfiguration = this._onDidChangeConfiguration.event;
+        const defaultConfiguration = new DefaultConfiguration(logService);
+        this._configuration = new Configuration(defaultConfiguration.reload(), ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), new ResourceMap(), ConfigurationModel.createEmptyModel(logService), new ResourceMap(), logService);
+        defaultConfiguration.dispose();
+    }
+    getValue(arg1, arg2) {
+        const section = typeof arg1 === 'string' ? arg1 : undefined;
+        const overrides = isConfigurationOverrides(arg1) ? arg1 : isConfigurationOverrides(arg2) ? arg2 : {};
+        return this._configuration.getValue(section, overrides, undefined);
+    }
+    updateValues(values) {
+        const previous = { data: this._configuration.toData() };
+        const changedKeys = [];
+        for (const entry of values) {
+            const [key, value] = entry;
+            if (this.getValue(key) === value) {
+                continue;
+            }
+            this._configuration.updateValue(key, value);
+            changedKeys.push(key);
+        }
+        if (changedKeys.length > 0) {
+            const configurationChangeEvent = new ConfigurationChangeEvent({ keys: changedKeys, overrides: [] }, previous, this._configuration, undefined, this.logService);
+            configurationChangeEvent.source = 8;
+            this._onDidChangeConfiguration.fire(configurationChangeEvent);
+        }
+        return Promise.resolve();
+    }
+    updateValue(key, value, arg3, arg4) {
+        return this.updateValues([[key, value]]);
+    }
+    inspect(key, options = {}) {
+        return this._configuration.inspect(key, options, undefined);
+    }
+    keys() {
+        return this._configuration.keys(undefined);
+    }
+    reloadConfiguration() {
+        return Promise.resolve(undefined);
+    }
+    getConfigurationData() {
+        const emptyModel = {
+            contents: {},
+            keys: [],
+            overrides: []
+        };
+        return {
+            defaults: emptyModel,
+            policy: emptyModel,
+            application: emptyModel,
+            user: emptyModel,
+            workspace: emptyModel,
+            folders: []
+        };
+    }
+};
+StandaloneConfigurationService = __decorate([
+    __param(0, ILogService),
+    __metadata("design:paramtypes", [Object])
+], StandaloneConfigurationService);
+export { StandaloneConfigurationService };
+let StandaloneResourceConfigurationService = class StandaloneResourceConfigurationService {
+    constructor(configurationService, modelService, languageService) {
+        this.configurationService = configurationService;
+        this.modelService = modelService;
+        this.languageService = languageService;
+        this._onDidChangeConfiguration = new Emitter();
+        this.onDidChangeConfiguration = this._onDidChangeConfiguration.event;
+        this.configurationService.onDidChangeConfiguration((e) => {
+            this._onDidChangeConfiguration.fire({ affectedKeys: e.affectedKeys, affectsConfiguration: (resource, configuration) => e.affectsConfiguration(configuration) });
+        });
+    }
+    getValue(resource, arg2, arg3) {
+        const position = Pos.isIPosition(arg2) ? arg2 : null;
+        const section = position ? (typeof arg3 === 'string' ? arg3 : undefined) : (typeof arg2 === 'string' ? arg2 : undefined);
+        const language = resource ? this.getLanguage(resource, position) : undefined;
+        if (typeof section === 'undefined') {
+            return this.configurationService.getValue({
+                resource,
+                overrideIdentifier: language
+            });
+        }
+        return this.configurationService.getValue(section, {
+            resource,
+            overrideIdentifier: language
+        });
+    }
+    inspect(resource, position, section) {
+        const language = resource ? this.getLanguage(resource, position) : undefined;
+        return this.configurationService.inspect(section, { resource, overrideIdentifier: language });
+    }
+    getLanguage(resource, position) {
+        const model = this.modelService.getModel(resource);
+        if (model) {
+            return position ? model.getLanguageIdAtPosition(position.lineNumber, position.column) : model.getLanguageId();
+        }
+        return this.languageService.guessLanguageIdByFilepathOrFirstLine(resource);
+    }
+    updateValue(resource, key, value, configurationTarget) {
+        return this.configurationService.updateValue(key, value, { resource }, configurationTarget);
+    }
+};
+StandaloneResourceConfigurationService = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, IModelService),
+    __param(2, ILanguageService),
+    __metadata("design:paramtypes", [StandaloneConfigurationService, Object, Object])
+], StandaloneResourceConfigurationService);
+let StandaloneResourcePropertiesService = class StandaloneResourcePropertiesService {
+    constructor(configurationService) {
+        this.configurationService = configurationService;
+    }
+    getEOL(resource, language) {
+        const eol = this.configurationService.getValue('files.eol', { overrideIdentifier: language, resource });
+        if (eol && typeof eol === 'string' && eol !== 'auto') {
+            return eol;
+        }
+        return (isLinux || isMacintosh) ? '\n' : '\r\n';
+    }
+};
+StandaloneResourcePropertiesService = __decorate([
+    __param(0, IConfigurationService),
+    __metadata("design:paramtypes", [Object])
+], StandaloneResourcePropertiesService);
+class StandaloneTelemetryService {
+    constructor() {
+        this.telemetryLevel = 0;
+        this.sessionId = 'someValue.sessionId';
+        this.machineId = 'someValue.machineId';
+        this.sqmId = 'someValue.sqmId';
+        this.devDeviceId = 'someValue.devDeviceId';
+        this.firstSessionDate = 'someValue.firstSessionDate';
+        this.sendErrorTelemetry = false;
+    }
+    setEnabled() { }
+    setExperimentProperty() { }
+    publicLog() { }
+    publicLog2() { }
+    publicLogError() { }
+    publicLogError2() { }
+}
+class StandaloneWorkspaceContextService {
+    static { this.SCHEME = 'inmemory'; }
+    constructor() {
+        this._onDidChangeWorkspaceName = new Emitter();
+        this.onDidChangeWorkspaceName = this._onDidChangeWorkspaceName.event;
+        this._onWillChangeWorkspaceFolders = new Emitter();
+        this.onWillChangeWorkspaceFolders = this._onWillChangeWorkspaceFolders.event;
+        this._onDidChangeWorkspaceFolders = new Emitter();
+        this.onDidChangeWorkspaceFolders = this._onDidChangeWorkspaceFolders.event;
+        this._onDidChangeWorkbenchState = new Emitter();
+        this.onDidChangeWorkbenchState = this._onDidChangeWorkbenchState.event;
+        const resource = URI.from({ scheme: StandaloneWorkspaceContextService.SCHEME, authority: 'model', path: '/' });
+        this.workspace = { id: STANDALONE_EDITOR_WORKSPACE_ID, folders: [new WorkspaceFolder({ uri: resource, name: '', index: 0 })] };
+    }
+    getCompleteWorkspace() {
+        return Promise.resolve(this.getWorkspace());
+    }
+    getWorkspace() {
+        return this.workspace;
+    }
+    getWorkbenchState() {
+        if (this.workspace) {
+            if (this.workspace.configuration) {
+                return 3;
+            }
+            return 2;
+        }
+        return 1;
+    }
+    getWorkspaceFolder(resource) {
+        return resource && resource.scheme === StandaloneWorkspaceContextService.SCHEME ? this.workspace.folders[0] : null;
+    }
+    isInsideWorkspace(resource) {
+        return resource && resource.scheme === StandaloneWorkspaceContextService.SCHEME;
+    }
+    isCurrentWorkspace(workspaceIdOrFolder) {
+        return true;
+    }
+}
+export function updateConfigurationService(configurationService, source, isDiffEditor) {
+    if (!source) {
+        return;
+    }
+    if (!(configurationService instanceof StandaloneConfigurationService)) {
+        return;
+    }
+    const toUpdate = [];
+    Object.keys(source).forEach((key) => {
+        if (isEditorConfigurationKey(key)) {
+            toUpdate.push([`editor.${key}`, source[key]]);
+        }
+        if (isDiffEditor && isDiffEditorConfigurationKey(key)) {
+            toUpdate.push([`diffEditor.${key}`, source[key]]);
+        }
+    });
+    if (toUpdate.length > 0) {
+        configurationService.updateValues(toUpdate);
+    }
+}
+let StandaloneBulkEditService = class StandaloneBulkEditService {
+    constructor(_modelService) {
+        this._modelService = _modelService;
+    }
+    hasPreviewHandler() {
+        return false;
+    }
+    setPreviewHandler() {
+        return Disposable.None;
+    }
+    async apply(editsIn, _options) {
+        const edits = Array.isArray(editsIn) ? editsIn : ResourceEdit.convert(editsIn);
+        const textEdits = new Map();
+        for (const edit of edits) {
+            if (!(edit instanceof ResourceTextEdit)) {
+                throw new Error('bad edit - only text edits are supported');
+            }
+            const model = this._modelService.getModel(edit.resource);
+            if (!model) {
+                throw new Error('bad edit - model not found');
+            }
+            if (typeof edit.versionId === 'number' && model.getVersionId() !== edit.versionId) {
+                throw new Error('bad state - model changed in the meantime');
+            }
+            let array = textEdits.get(model);
+            if (!array) {
+                array = [];
+                textEdits.set(model, array);
+            }
+            array.push(EditOperation.replaceMove(Range.lift(edit.textEdit.range), edit.textEdit.text));
+        }
+        let totalEdits = 0;
+        let totalFiles = 0;
+        for (const [model, edits] of textEdits) {
+            model.pushStackElement();
+            model.pushEditOperations([], edits, () => []);
+            model.pushStackElement();
+            totalFiles += 1;
+            totalEdits += edits.length;
+        }
+        return {
+            ariaSummary: strings.format(StandaloneServicesNLS.bulkEditServiceSummary, totalEdits, totalFiles),
+            isApplied: totalEdits > 0
+        };
+    }
+};
+StandaloneBulkEditService = __decorate([
+    __param(0, IModelService),
+    __metadata("design:paramtypes", [Object])
+], StandaloneBulkEditService);
+class StandaloneUriLabelService {
+    constructor() {
+        this.onDidChangeFormatters = Event.None;
+    }
+    getUriLabel(resource, options) {
+        if (resource.scheme === 'file') {
+            return resource.fsPath;
+        }
+        return resource.path;
+    }
+    getUriBasenameLabel(resource) {
+        return basename(resource);
+    }
+    getWorkspaceLabel(workspace, options) {
+        return '';
+    }
+    getSeparator(scheme, authority) {
+        return '/';
+    }
+    registerFormatter(formatter) {
+        throw new Error('Not implemented');
+    }
+    registerCachedFormatter(formatter) {
+        return this.registerFormatter(formatter);
+    }
+    getHostLabel() {
+        return '';
+    }
+    getHostTooltip() {
+        return undefined;
+    }
+}
+let StandaloneContextViewService = class StandaloneContextViewService extends ContextViewService {
+    constructor(layoutService, _codeEditorService) {
+        super(layoutService);
+        this._codeEditorService = _codeEditorService;
+    }
+    showContextView(delegate, container, shadowRoot) {
+        if (!container) {
+            const codeEditor = this._codeEditorService.getFocusedCodeEditor() || this._codeEditorService.getActiveCodeEditor();
+            if (codeEditor) {
+                container = codeEditor.getContainerDomNode();
+            }
+        }
+        return super.showContextView(delegate, container, shadowRoot);
+    }
+};
+StandaloneContextViewService = __decorate([
+    __param(0, ILayoutService),
+    __param(1, ICodeEditorService),
+    __metadata("design:paramtypes", [Object, Object])
+], StandaloneContextViewService);
+class StandaloneWorkspaceTrustManagementService {
+    constructor() {
+        this._neverEmitter = new Emitter();
+        this.onDidChangeTrust = this._neverEmitter.event;
+        this.onDidChangeTrustedFolders = this._neverEmitter.event;
+        this.workspaceResolved = Promise.resolve();
+        this.workspaceTrustInitialized = Promise.resolve();
+        this.acceptsOutOfWorkspaceFiles = true;
+    }
+    isWorkspaceTrusted() {
+        return true;
+    }
+    isWorkspaceTrustForced() {
+        return false;
+    }
+    canSetParentFolderTrust() {
+        return false;
+    }
+    async setParentFolderTrust(trusted) {
+    }
+    canSetWorkspaceTrust() {
+        return false;
+    }
+    async setWorkspaceTrust(trusted) {
+    }
+    getUriTrustInfo(uri) {
+        throw new Error('Method not supported.');
+    }
+    async setUrisTrust(uri, trusted) {
+    }
+    getTrustedUris() {
+        return [];
+    }
+    async setTrustedUris(uris) {
+    }
+    addWorkspaceTrustTransitionParticipant(participant) {
+        throw new Error('Method not supported.');
+    }
+}
+class StandaloneLanguageService extends LanguageService {
+    constructor() {
+        super();
+    }
+}
+class StandaloneLogService extends LogService {
+    constructor() {
+        super(new ConsoleLogger());
+    }
+}
+let StandaloneContextMenuService = class StandaloneContextMenuService extends ContextMenuService {
+    constructor(telemetryService, notificationService, contextViewService, keybindingService, menuService, contextKeyService) {
+        super(telemetryService, notificationService, contextViewService, keybindingService, menuService, contextKeyService);
+        this.configure({ blockMouse: false });
+    }
+};
+StandaloneContextMenuService = __decorate([
+    __param(0, ITelemetryService),
+    __param(1, INotificationService),
+    __param(2, IContextViewService),
+    __param(3, IKeybindingService),
+    __param(4, IMenuService),
+    __param(5, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], StandaloneContextMenuService);
+export const standaloneEditorWorkerDescriptor = {
+    moduleId: 'vs/editor/common/services/editorSimpleWorker',
+    esmModuleLocation: undefined,
+    label: 'editorWorkerService'
+};
+let StandaloneEditorWorkerService = class StandaloneEditorWorkerService extends EditorWorkerService {
+    constructor(modelService, configurationService, logService, languageConfigurationService, languageFeaturesService) {
+        super(standaloneEditorWorkerDescriptor, modelService, configurationService, logService, languageConfigurationService, languageFeaturesService);
+    }
+};
+StandaloneEditorWorkerService = __decorate([
+    __param(0, IModelService),
+    __param(1, ITextResourceConfigurationService),
+    __param(2, ILogService),
+    __param(3, ILanguageConfigurationService),
+    __param(4, ILanguageFeaturesService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], StandaloneEditorWorkerService);
+class StandaloneAccessbilitySignalService {
+    async playSignal(cue, options) {
+    }
+    async playSignals(cues) {
+    }
+    getEnabledState(signal, userGesture, modality) {
+        return ValueWithChangeEvent.const(false);
+    }
+    getDelayMs(signal, modality) {
+        return 0;
+    }
+    isSoundEnabled(cue) {
+        return false;
+    }
+    isAnnouncementEnabled(cue) {
+        return false;
+    }
+    onSoundEnabledChanged(cue) {
+        return Event.None;
+    }
+    async playSound(cue, allowManyInParallel) {
+    }
+    playSignalLoop(cue) {
+        return toDisposable(() => { });
+    }
+}
+registerSingleton(ILogService, StandaloneLogService, 0);
+registerSingleton(IConfigurationService, StandaloneConfigurationService, 0);
+registerSingleton(ITextResourceConfigurationService, StandaloneResourceConfigurationService, 0);
+registerSingleton(ITextResourcePropertiesService, StandaloneResourcePropertiesService, 0);
+registerSingleton(IWorkspaceContextService, StandaloneWorkspaceContextService, 0);
+registerSingleton(ILabelService, StandaloneUriLabelService, 0);
+registerSingleton(ITelemetryService, StandaloneTelemetryService, 0);
+registerSingleton(IDialogService, StandaloneDialogService, 0);
+registerSingleton(IEnvironmentService, StandaloneEnvironmentService, 0);
+registerSingleton(INotificationService, StandaloneNotificationService, 0);
+registerSingleton(IMarkerService, MarkerService, 0);
+registerSingleton(ILanguageService, StandaloneLanguageService, 0);
+registerSingleton(IStandaloneThemeService, StandaloneThemeService, 0);
+registerSingleton(IModelService, ModelService, 0);
+registerSingleton(IMarkerDecorationsService, MarkerDecorationsService, 0);
+registerSingleton(IContextKeyService, ContextKeyService, 0);
+registerSingleton(IProgressService, StandaloneProgressService, 0);
+registerSingleton(IEditorProgressService, StandaloneEditorProgressService, 0);
+registerSingleton(IStorageService, InMemoryStorageService, 0);
+registerSingleton(IEditorWorkerService, StandaloneEditorWorkerService, 0);
+registerSingleton(IBulkEditService, StandaloneBulkEditService, 0);
+registerSingleton(IWorkspaceTrustManagementService, StandaloneWorkspaceTrustManagementService, 0);
+registerSingleton(ITextModelService, StandaloneTextModelService, 0);
+registerSingleton(IAccessibilityService, AccessibilityService, 0);
+registerSingleton(IListService, ListService, 0);
+registerSingleton(ICommandService, StandaloneCommandService, 0);
+registerSingleton(IKeybindingService, StandaloneKeybindingService, 0);
+registerSingleton(IQuickInputService, StandaloneQuickInputService, 0);
+registerSingleton(IContextViewService, StandaloneContextViewService, 0);
+registerSingleton(IOpenerService, OpenerService, 0);
+registerSingleton(IClipboardService, BrowserClipboardService, 0);
+registerSingleton(IContextMenuService, StandaloneContextMenuService, 0);
+registerSingleton(IMenuService, MenuService, 0);
+registerSingleton(IAccessibilitySignalService, StandaloneAccessbilitySignalService, 0);
+registerSingleton(ITreeSitterParserService, StandaloneTreeSitterParserService, 0);
+export var StandaloneServices;
+(function (StandaloneServices) {
+    const serviceCollection = new ServiceCollection();
+    for (const [id, descriptor] of getSingletonServiceDescriptors()) {
+        serviceCollection.set(id, descriptor);
+    }
+    const instantiationService = new InstantiationService(serviceCollection, true);
+    serviceCollection.set(IInstantiationService, instantiationService);
+    function get(serviceId) {
+        if (!initialized) {
+            initialize({});
+        }
+        const r = serviceCollection.get(serviceId);
+        if (!r) {
+            throw new Error('Missing service ' + serviceId);
+        }
+        if (r instanceof SyncDescriptor) {
+            return instantiationService.invokeFunction((accessor) => accessor.get(serviceId));
+        }
+        else {
+            return r;
+        }
+    }
+    StandaloneServices.get = get;
+    let initialized = false;
+    const onDidInitialize = new Emitter();
+    function initialize(overrides) {
+        if (initialized) {
+            return instantiationService;
+        }
+        initialized = true;
+        for (const [id, descriptor] of getSingletonServiceDescriptors()) {
+            if (!serviceCollection.get(id)) {
+                serviceCollection.set(id, descriptor);
+            }
+        }
+        for (const serviceId in overrides) {
+            if (overrides.hasOwnProperty(serviceId)) {
+                const serviceIdentifier = createDecorator(serviceId);
+                const r = serviceCollection.get(serviceIdentifier);
+                if (r instanceof SyncDescriptor) {
+                    serviceCollection.set(serviceIdentifier, overrides[serviceId]);
+                }
+            }
+        }
+        const editorFeatures = getEditorFeatures();
+        for (const feature of editorFeatures) {
+            try {
+                instantiationService.createInstance(feature);
+            }
+            catch (err) {
+                onUnexpectedError(err);
+            }
+        }
+        onDidInitialize.fire();
+        return instantiationService;
+    }
+    StandaloneServices.initialize = initialize;
+    function withServices(callback) {
+        if (initialized) {
+            return callback();
+        }
+        const disposable = new DisposableStore();
+        const listener = disposable.add(onDidInitialize.event(() => {
+            listener.dispose();
+            disposable.add(callback());
+        }));
+        return disposable;
+    }
+    StandaloneServices.withServices = withServices;
+})(StandaloneServices || (StandaloneServices = {}));

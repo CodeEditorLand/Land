@@ -1,1 +1,62 @@
-import{getAllMethodNames as c}from"../../../base/common/objects.js";import"../../../base/common/uri.js";import"../../../base/common/worker/simpleWorker.js";import{EditorWorkerClient as g}from"../../browser/services/editorWorkerService.js";import"../../common/services/model.js";import{standaloneEditorWorkerDescriptor as l}from"./standaloneServices.js";function x(n,e){return new f(n,e)}class f extends g{_foreignModuleId;_foreignModuleHost;_foreignModuleCreateData;_foreignProxy;constructor(e,r){const t={moduleId:l.moduleId,esmModuleLocation:l.esmModuleLocation,label:r.label};super(t,r.keepIdleModels||!1,e),this._foreignModuleId=r.moduleId,this._foreignModuleCreateData=r.createData||null,this._foreignModuleHost=r.host||null,this._foreignProxy=null}fhr(e,r){if(!this._foreignModuleHost||typeof this._foreignModuleHost[e]!="function")return Promise.reject(new Error("Missing method "+e+" or missing main thread foreign host."));try{return Promise.resolve(this._foreignModuleHost[e].apply(this._foreignModuleHost,r))}catch(t){return Promise.reject(t)}}_getForeignProxy(){return this._foreignProxy||(this._foreignProxy=this._getProxy().then(e=>{const r=this._foreignModuleHost?c(this._foreignModuleHost):[];return e.$loadForeignModule(this._foreignModuleId,this._foreignModuleCreateData,r).then(t=>{this._foreignModuleCreateData=null;const a=(o,i)=>e.$fmr(o,i),d=(o,i)=>function(){const u=Array.prototype.slice.call(arguments,0);return i(o,u)},s={};for(const o of t)s[o]=d(o,a);return s})})),this._foreignProxy}getProxy(){return this._getForeignProxy()}withSyncedResources(e){return this.workerWithSyncedResources(e).then(r=>this.getProxy())}}export{x as createWebWorker};
+import { getAllMethodNames } from '../../../base/common/objects.js';
+import { EditorWorkerClient } from '../../browser/services/editorWorkerService.js';
+import { standaloneEditorWorkerDescriptor } from './standaloneServices.js';
+export function createWebWorker(modelService, opts) {
+    return new MonacoWebWorkerImpl(modelService, opts);
+}
+class MonacoWebWorkerImpl extends EditorWorkerClient {
+    constructor(modelService, opts) {
+        const workerDescriptor = {
+            moduleId: standaloneEditorWorkerDescriptor.moduleId,
+            esmModuleLocation: standaloneEditorWorkerDescriptor.esmModuleLocation,
+            label: opts.label,
+        };
+        super(workerDescriptor, opts.keepIdleModels || false, modelService);
+        this._foreignModuleId = opts.moduleId;
+        this._foreignModuleCreateData = opts.createData || null;
+        this._foreignModuleHost = opts.host || null;
+        this._foreignProxy = null;
+    }
+    fhr(method, args) {
+        if (!this._foreignModuleHost || typeof this._foreignModuleHost[method] !== 'function') {
+            return Promise.reject(new Error('Missing method ' + method + ' or missing main thread foreign host.'));
+        }
+        try {
+            return Promise.resolve(this._foreignModuleHost[method].apply(this._foreignModuleHost, args));
+        }
+        catch (e) {
+            return Promise.reject(e);
+        }
+    }
+    _getForeignProxy() {
+        if (!this._foreignProxy) {
+            this._foreignProxy = this._getProxy().then((proxy) => {
+                const foreignHostMethods = this._foreignModuleHost ? getAllMethodNames(this._foreignModuleHost) : [];
+                return proxy.$loadForeignModule(this._foreignModuleId, this._foreignModuleCreateData, foreignHostMethods).then((foreignMethods) => {
+                    this._foreignModuleCreateData = null;
+                    const proxyMethodRequest = (method, args) => {
+                        return proxy.$fmr(method, args);
+                    };
+                    const createProxyMethod = (method, proxyMethodRequest) => {
+                        return function () {
+                            const args = Array.prototype.slice.call(arguments, 0);
+                            return proxyMethodRequest(method, args);
+                        };
+                    };
+                    const foreignProxy = {};
+                    for (const foreignMethod of foreignMethods) {
+                        foreignProxy[foreignMethod] = createProxyMethod(foreignMethod, proxyMethodRequest);
+                    }
+                    return foreignProxy;
+                });
+            });
+        }
+        return this._foreignProxy;
+    }
+    getProxy() {
+        return this._getForeignProxy();
+    }
+    withSyncedResources(resources) {
+        return this.workerWithSyncedResources(resources).then(_ => this.getProxy());
+    }
+}

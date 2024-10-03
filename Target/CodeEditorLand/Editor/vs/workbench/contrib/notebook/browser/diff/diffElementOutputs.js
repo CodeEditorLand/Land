@@ -1,1 +1,259 @@
-var C=Object.defineProperty;var k=Object.getOwnPropertyDescriptor;var I=(c,p,e,t)=>{for(var i=t>1?void 0:t?k(p,e):p,r=c.length-1,o;r>=0;r--)(o=c[r])&&(i=(t?o(p,e,i):o(i))||i);return t&&i&&C(p,e,i),i},_=(c,p)=>(e,t)=>p(e,t,c);import*as u from"../../../../../base/browser/dom.js";import*as f from"../../../../../nls.js";import{Disposable as w,DisposableStore as E}from"../../../../../base/common/lifecycle.js";import{SideBySideDiffElementViewModel as g}from"./diffElementViewModel.js";import{DiffSide as b}from"./notebookDiffEditorBrowser.js";import{RenderOutputType as M}from"../notebookBrowser.js";import"../../common/model/notebookTextModel.js";import"../../common/notebookCommon.js";import{INotebookService as T}from"../../common/notebookService.js";import"./diffNestedCellViewModel.js";import{ThemeIcon as V}from"../../../../../base/common/themables.js";import{mimetypeIcon as O}from"../notebookIcons.js";import{StandardKeyboardEvent as x}from"../../../../../base/browser/keyboardEvent.js";import{KeyCode as y}from"../../../../../base/common/keyCodes.js";import{IQuickInputService as S}from"../../../../../platform/quickinput/common/quickInput.js";class N extends w{constructor(e,t,i,r,o,l,d,a,n){super();this._notebookEditor=e;this._notebookTextModel=t;this._notebookService=i;this._quickInputService=r;this._diffElementViewModel=o;this._diffSide=l;this._nestedCell=d;this._outputContainer=a;this.output=n}resizeListener=this._register(new E);domNode;renderResult;render(e,t){const i=document.createElement("div");let r;const[o,l]=this.output.resolveMimeTypes(this._notebookTextModel,void 0),d=this.output.pickedMimeType||o[l];if(o.length>1){i.style.position="relative";const n=u.$(".multi-mimetype-output");n.classList.add(...V.asClassNameArray(O)),n.tabIndex=0,n.title=f.localize("mimeTypePicker","Choose a different output mimetype, available mimetypes: {0}",o.map(s=>s.mimeType).join(", ")),i.appendChild(n),this.resizeListener.add(u.addStandardDisposableListener(n,"mousedown",async s=>{s.leftButton&&(s.preventDefault(),s.stopPropagation(),await this.pickActiveMimeTypeRenderer(this._notebookTextModel,this.output))})),this.resizeListener.add(u.addDisposableListener(n,u.EventType.KEY_DOWN,async s=>{const m=new x(s);(m.equals(y.Enter)||m.equals(y.Space))&&(s.preventDefault(),s.stopPropagation(),await this.pickActiveMimeTypeRenderer(this._notebookTextModel,this.output))}))}const a=u.$(".output-inner-container");if(u.append(i,a),o.length!==0){const n=this._notebookService.getRendererInfo(d.rendererId);r=n?{type:M.Extension,renderer:n,source:this.output,mimeType:d.mimeType}:this._renderMissingRenderer(this.output,d.mimeType),this.output.pickedMimeType=d}this.domNode=i,this.renderResult=r,r&&(t?this._outputContainer.insertBefore(i,t):this._outputContainer.appendChild(i),this._notebookEditor.createOutput(this._diffElementViewModel,this._nestedCell,r,()=>this.getOutputOffsetInCell(e),this._diffElementViewModel instanceof g?this._diffSide:this._diffElementViewModel.type==="insert"?b.Modified:b.Original))}_renderMissingRenderer(e,t){if(!e.model.outputs.length)return this._renderMessage(e,f.localize("empty","Cell has no output"));if(!t){const r=e.model.outputs.map(o=>o.mime).join(", ");return this._renderMessage(e,f.localize("noRenderer.2","No renderer could be found for output. It has the following mimetypes: {0}",r))}return this._renderSearchForMimetype(e,t)}_renderSearchForMimetype(e,t){const i=`@tag:notebookRenderer ${t}`,r=u.$("p",void 0,`No renderer could be found for mimetype "${t}", but one might be available on the Marketplace.`),o=u.$("a",{href:`command:workbench.extensions.search?%22${i}%22`,class:"monaco-button monaco-text-button",tabindex:0,role:"button",style:"padding: 8px; text-decoration: none; color: rgb(255, 255, 255); background-color: rgb(14, 99, 156); max-width: 200px;"},"Search Marketplace");return{type:M.Html,source:e,htmlContent:r.outerHTML+o.outerHTML}}_renderMessage(e,t){const i=u.$("p",void 0,t);return{type:M.Html,source:e,htmlContent:i.outerHTML}}async pickActiveMimeTypeRenderer(e,t){const[i,r]=t.resolveMimeTypes(e,void 0),o=i.filter(n=>n.isTrusted).map((n,s)=>({label:n.mimeType,id:n.mimeType,index:s,picked:s===r,detail:this.generateRendererInfo(n.rendererId),description:s===r?f.localize("curruentActiveMimeType","Currently Active"):void 0})),l=new E,d=l.add(this._quickInputService.createQuickPick());d.items=o,d.activeItems=o.filter(n=>!!n.picked),d.placeholder=o.length!==i.length?f.localize("promptChooseMimeTypeInSecure.placeHolder","Select mimetype to render for current output. Rich mimetypes are available only when the notebook is trusted"):f.localize("promptChooseMimeType.placeHolder","Select mimetype to render for current output");const a=await new Promise(n=>{l.add(d.onDidAccept(()=>{n(d.selectedItems.length===1?d.selectedItems[0].index:void 0),l.dispose()})),d.show()});if(a!==void 0&&a!==r){const n=this._nestedCell.outputsViewModels.indexOf(t),s=this.domNode.nextElementSibling;this.resizeListener.clear();const m=this.domNode;m&&(m.remove(),this._notebookEditor.removeInset(this._diffElementViewModel,this._nestedCell,t,this._diffSide)),t.pickedMimeType=i[a],this.render(n,s)}}generateRendererInfo(e){const t=this._notebookService.getRendererInfo(e);return t?`${t.displayName!==""?t.displayName:t.id} (${t.extensionId.value})`:f.localize("builtinRenderInfo","built-in")}getCellOutputCurrentIndex(){return this._diffElementViewModel.getNestedCellViewModel(this._diffSide).outputs.indexOf(this.output.model)}updateHeight(e,t){this._diffElementViewModel.updateOutputHeight(this._diffSide,e,t)}getOutputOffsetInContainer(e){return this._diffElementViewModel.getOutputOffsetInContainer(this._diffSide,e)}getOutputOffsetInCell(e){return this._diffElementViewModel.getOutputOffsetInCell(this._diffSide,e)}}let h=class extends w{constructor(e,t,i,r,o,l,d,a){super();this._editor=e;this._notebookTextModel=t;this._diffElementViewModel=i;this._nestedCellViewModel=r;this._diffSide=o;this._outputContainer=l;this._notebookService=d;this._quickInputService=a;this._register(this._diffElementViewModel.onDidLayoutChange(()=>{this._outputEntries.forEach((n,s)=>{const m=r.outputs.indexOf(s.model);if(m>=0){const v=this._diffElementViewModel.getOutputOffsetInContainer(this._diffSide,m);n.domNode.style.top=`${v}px`}})})),this._register(this._nestedCellViewModel.textModel.onDidChangeOutputs(n=>{this._updateOutputs(n)}))}_outputEntries=new Map;_updateOutputs(e){const t=[];this._outputEntries.forEach((o,l)=>{this._nestedCellViewModel.outputsViewModels.indexOf(l)<0&&(t.push(l),o.domNode.remove(),this._editor.removeInset(this._diffElementViewModel,this._nestedCellViewModel,l,this._diffSide))}),t.forEach(o=>{this._outputEntries.get(o)?.dispose(),this._outputEntries.delete(o)});let i;this._nestedCellViewModel.outputsViewModels.reverse().forEach(o=>{if(this._outputEntries.has(o)){i=this._outputEntries.get(o).domNode;return}const l=this._nestedCellViewModel.outputsViewModels.indexOf(o);this._renderOutput(o,l,i),i=this._outputEntries.get(o)?.domNode})}render(){for(let e=0;e<this._nestedCellViewModel.outputsViewModels.length;e++){const t=this._nestedCellViewModel.outputsViewModels[e];this._renderOutput(t,e,void 0)}}showOutputs(){for(let e=0;e<this._nestedCellViewModel.outputsViewModels.length;e++){const t=this._nestedCellViewModel.outputsViewModels[e];this._editor.showInset(this._diffElementViewModel,t.cellViewModel,t,this._diffSide)}}hideOutputs(){this._outputEntries.forEach((e,t)=>{this._editor.hideInset(this._diffElementViewModel,this._nestedCellViewModel,t)})}_renderOutput(e,t,i){this._outputEntries.has(e)||this._outputEntries.set(e,new N(this._editor,this._notebookTextModel,this._notebookService,this._quickInputService,this._diffElementViewModel,this._diffSide,this._nestedCellViewModel,this._outputContainer,e)),this._outputEntries.get(e).render(t,i)}};h=I([_(6,T),_(7,S)],h);export{h as OutputContainer,N as OutputElement};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as DOM from '../../../../../base/browser/dom.js';
+import * as nls from '../../../../../nls.js';
+import { Disposable, DisposableStore } from '../../../../../base/common/lifecycle.js';
+import { DiffElementCellViewModelBase, SideBySideDiffElementViewModel } from './diffElementViewModel.js';
+import { DiffSide } from './notebookDiffEditorBrowser.js';
+import { NotebookTextModel } from '../../common/model/notebookTextModel.js';
+import { INotebookService } from '../../common/notebookService.js';
+import { DiffNestedCellViewModel } from './diffNestedCellViewModel.js';
+import { ThemeIcon } from '../../../../../base/common/themables.js';
+import { mimetypeIcon } from '../notebookIcons.js';
+import { StandardKeyboardEvent } from '../../../../../base/browser/keyboardEvent.js';
+import { IQuickInputService } from '../../../../../platform/quickinput/common/quickInput.js';
+export class OutputElement extends Disposable {
+    constructor(_notebookEditor, _notebookTextModel, _notebookService, _quickInputService, _diffElementViewModel, _diffSide, _nestedCell, _outputContainer, output) {
+        super();
+        this._notebookEditor = _notebookEditor;
+        this._notebookTextModel = _notebookTextModel;
+        this._notebookService = _notebookService;
+        this._quickInputService = _quickInputService;
+        this._diffElementViewModel = _diffElementViewModel;
+        this._diffSide = _diffSide;
+        this._nestedCell = _nestedCell;
+        this._outputContainer = _outputContainer;
+        this.output = output;
+        this.resizeListener = this._register(new DisposableStore());
+    }
+    render(index, beforeElement) {
+        const outputItemDiv = document.createElement('div');
+        let result = undefined;
+        const [mimeTypes, pick] = this.output.resolveMimeTypes(this._notebookTextModel, undefined);
+        const pickedMimeTypeRenderer = this.output.pickedMimeType || mimeTypes[pick];
+        if (mimeTypes.length > 1) {
+            outputItemDiv.style.position = 'relative';
+            const mimeTypePicker = DOM.$('.multi-mimetype-output');
+            mimeTypePicker.classList.add(...ThemeIcon.asClassNameArray(mimetypeIcon));
+            mimeTypePicker.tabIndex = 0;
+            mimeTypePicker.title = nls.localize('mimeTypePicker', "Choose a different output mimetype, available mimetypes: {0}", mimeTypes.map(mimeType => mimeType.mimeType).join(', '));
+            outputItemDiv.appendChild(mimeTypePicker);
+            this.resizeListener.add(DOM.addStandardDisposableListener(mimeTypePicker, 'mousedown', async (e) => {
+                if (e.leftButton) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await this.pickActiveMimeTypeRenderer(this._notebookTextModel, this.output);
+                }
+            }));
+            this.resizeListener.add((DOM.addDisposableListener(mimeTypePicker, DOM.EventType.KEY_DOWN, async (e) => {
+                const event = new StandardKeyboardEvent(e);
+                if ((event.equals(3) || event.equals(10))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await this.pickActiveMimeTypeRenderer(this._notebookTextModel, this.output);
+                }
+            })));
+        }
+        const innerContainer = DOM.$('.output-inner-container');
+        DOM.append(outputItemDiv, innerContainer);
+        if (mimeTypes.length !== 0) {
+            const renderer = this._notebookService.getRendererInfo(pickedMimeTypeRenderer.rendererId);
+            result = renderer
+                ? { type: 1, renderer, source: this.output, mimeType: pickedMimeTypeRenderer.mimeType }
+                : this._renderMissingRenderer(this.output, pickedMimeTypeRenderer.mimeType);
+            this.output.pickedMimeType = pickedMimeTypeRenderer;
+        }
+        this.domNode = outputItemDiv;
+        this.renderResult = result;
+        if (!result) {
+            return;
+        }
+        if (beforeElement) {
+            this._outputContainer.insertBefore(outputItemDiv, beforeElement);
+        }
+        else {
+            this._outputContainer.appendChild(outputItemDiv);
+        }
+        this._notebookEditor.createOutput(this._diffElementViewModel, this._nestedCell, result, () => this.getOutputOffsetInCell(index), this._diffElementViewModel instanceof SideBySideDiffElementViewModel
+            ? this._diffSide
+            : this._diffElementViewModel.type === 'insert' ? DiffSide.Modified : DiffSide.Original);
+    }
+    _renderMissingRenderer(viewModel, preferredMimeType) {
+        if (!viewModel.model.outputs.length) {
+            return this._renderMessage(viewModel, nls.localize('empty', "Cell has no output"));
+        }
+        if (!preferredMimeType) {
+            const mimeTypes = viewModel.model.outputs.map(op => op.mime);
+            const mimeTypesMessage = mimeTypes.join(', ');
+            return this._renderMessage(viewModel, nls.localize('noRenderer.2', "No renderer could be found for output. It has the following mimetypes: {0}", mimeTypesMessage));
+        }
+        return this._renderSearchForMimetype(viewModel, preferredMimeType);
+    }
+    _renderSearchForMimetype(viewModel, mimeType) {
+        const query = `@tag:notebookRenderer ${mimeType}`;
+        const p = DOM.$('p', undefined, `No renderer could be found for mimetype "${mimeType}", but one might be available on the Marketplace.`);
+        const a = DOM.$('a', { href: `command:workbench.extensions.search?%22${query}%22`, class: 'monaco-button monaco-text-button', tabindex: 0, role: 'button', style: 'padding: 8px; text-decoration: none; color: rgb(255, 255, 255); background-color: rgb(14, 99, 156); max-width: 200px;' }, `Search Marketplace`);
+        return {
+            type: 0,
+            source: viewModel,
+            htmlContent: p.outerHTML + a.outerHTML,
+        };
+    }
+    _renderMessage(viewModel, message) {
+        const el = DOM.$('p', undefined, message);
+        return { type: 0, source: viewModel, htmlContent: el.outerHTML };
+    }
+    async pickActiveMimeTypeRenderer(notebookTextModel, viewModel) {
+        const [mimeTypes, currIndex] = viewModel.resolveMimeTypes(notebookTextModel, undefined);
+        const items = mimeTypes.filter(mimeType => mimeType.isTrusted).map((mimeType, index) => ({
+            label: mimeType.mimeType,
+            id: mimeType.mimeType,
+            index: index,
+            picked: index === currIndex,
+            detail: this.generateRendererInfo(mimeType.rendererId),
+            description: index === currIndex ? nls.localize('curruentActiveMimeType', "Currently Active") : undefined
+        }));
+        const disposables = new DisposableStore();
+        const picker = disposables.add(this._quickInputService.createQuickPick());
+        picker.items = items;
+        picker.activeItems = items.filter(item => !!item.picked);
+        picker.placeholder = items.length !== mimeTypes.length
+            ? nls.localize('promptChooseMimeTypeInSecure.placeHolder', "Select mimetype to render for current output. Rich mimetypes are available only when the notebook is trusted")
+            : nls.localize('promptChooseMimeType.placeHolder', "Select mimetype to render for current output");
+        const pick = await new Promise(resolve => {
+            disposables.add(picker.onDidAccept(() => {
+                resolve(picker.selectedItems.length === 1 ? picker.selectedItems[0].index : undefined);
+                disposables.dispose();
+            }));
+            picker.show();
+        });
+        if (pick === undefined) {
+            return;
+        }
+        if (pick !== currIndex) {
+            const index = this._nestedCell.outputsViewModels.indexOf(viewModel);
+            const nextElement = this.domNode.nextElementSibling;
+            this.resizeListener.clear();
+            const element = this.domNode;
+            if (element) {
+                element.remove();
+                this._notebookEditor.removeInset(this._diffElementViewModel, this._nestedCell, viewModel, this._diffSide);
+            }
+            viewModel.pickedMimeType = mimeTypes[pick];
+            this.render(index, nextElement);
+        }
+    }
+    generateRendererInfo(renderId) {
+        const renderInfo = this._notebookService.getRendererInfo(renderId);
+        if (renderInfo) {
+            const displayName = renderInfo.displayName !== '' ? renderInfo.displayName : renderInfo.id;
+            return `${displayName} (${renderInfo.extensionId.value})`;
+        }
+        return nls.localize('builtinRenderInfo', "built-in");
+    }
+    getCellOutputCurrentIndex() {
+        return this._diffElementViewModel.getNestedCellViewModel(this._diffSide).outputs.indexOf(this.output.model);
+    }
+    updateHeight(index, height) {
+        this._diffElementViewModel.updateOutputHeight(this._diffSide, index, height);
+    }
+    getOutputOffsetInContainer(index) {
+        return this._diffElementViewModel.getOutputOffsetInContainer(this._diffSide, index);
+    }
+    getOutputOffsetInCell(index) {
+        return this._diffElementViewModel.getOutputOffsetInCell(this._diffSide, index);
+    }
+}
+let OutputContainer = class OutputContainer extends Disposable {
+    constructor(_editor, _notebookTextModel, _diffElementViewModel, _nestedCellViewModel, _diffSide, _outputContainer, _notebookService, _quickInputService) {
+        super();
+        this._editor = _editor;
+        this._notebookTextModel = _notebookTextModel;
+        this._diffElementViewModel = _diffElementViewModel;
+        this._nestedCellViewModel = _nestedCellViewModel;
+        this._diffSide = _diffSide;
+        this._outputContainer = _outputContainer;
+        this._notebookService = _notebookService;
+        this._quickInputService = _quickInputService;
+        this._outputEntries = new Map();
+        this._register(this._diffElementViewModel.onDidLayoutChange(() => {
+            this._outputEntries.forEach((value, key) => {
+                const index = _nestedCellViewModel.outputs.indexOf(key.model);
+                if (index >= 0) {
+                    const top = this._diffElementViewModel.getOutputOffsetInContainer(this._diffSide, index);
+                    value.domNode.style.top = `${top}px`;
+                }
+            });
+        }));
+        this._register(this._nestedCellViewModel.textModel.onDidChangeOutputs(splice => {
+            this._updateOutputs(splice);
+        }));
+    }
+    _updateOutputs(splice) {
+        const removedKeys = [];
+        this._outputEntries.forEach((value, key) => {
+            if (this._nestedCellViewModel.outputsViewModels.indexOf(key) < 0) {
+                removedKeys.push(key);
+                value.domNode.remove();
+                this._editor.removeInset(this._diffElementViewModel, this._nestedCellViewModel, key, this._diffSide);
+            }
+        });
+        removedKeys.forEach(key => {
+            this._outputEntries.get(key)?.dispose();
+            this._outputEntries.delete(key);
+        });
+        let prevElement = undefined;
+        const outputsToRender = this._nestedCellViewModel.outputsViewModels;
+        outputsToRender.reverse().forEach(output => {
+            if (this._outputEntries.has(output)) {
+                prevElement = this._outputEntries.get(output).domNode;
+                return;
+            }
+            const currIndex = this._nestedCellViewModel.outputsViewModels.indexOf(output);
+            this._renderOutput(output, currIndex, prevElement);
+            prevElement = this._outputEntries.get(output)?.domNode;
+        });
+    }
+    render() {
+        for (let index = 0; index < this._nestedCellViewModel.outputsViewModels.length; index++) {
+            const currOutput = this._nestedCellViewModel.outputsViewModels[index];
+            this._renderOutput(currOutput, index, undefined);
+        }
+    }
+    showOutputs() {
+        for (let index = 0; index < this._nestedCellViewModel.outputsViewModels.length; index++) {
+            const currOutput = this._nestedCellViewModel.outputsViewModels[index];
+            this._editor.showInset(this._diffElementViewModel, currOutput.cellViewModel, currOutput, this._diffSide);
+        }
+    }
+    hideOutputs() {
+        this._outputEntries.forEach((outputElement, cellOutputViewModel) => {
+            this._editor.hideInset(this._diffElementViewModel, this._nestedCellViewModel, cellOutputViewModel);
+        });
+    }
+    _renderOutput(currOutput, index, beforeElement) {
+        if (!this._outputEntries.has(currOutput)) {
+            this._outputEntries.set(currOutput, new OutputElement(this._editor, this._notebookTextModel, this._notebookService, this._quickInputService, this._diffElementViewModel, this._diffSide, this._nestedCellViewModel, this._outputContainer, currOutput));
+        }
+        const renderElement = this._outputEntries.get(currOutput);
+        renderElement.render(index, beforeElement);
+    }
+};
+OutputContainer = __decorate([
+    __param(6, INotebookService),
+    __param(7, IQuickInputService),
+    __metadata("design:paramtypes", [Object, NotebookTextModel,
+        DiffElementCellViewModelBase,
+        DiffNestedCellViewModel, Number, HTMLElement, Object, Object])
+], OutputContainer);
+export { OutputContainer };

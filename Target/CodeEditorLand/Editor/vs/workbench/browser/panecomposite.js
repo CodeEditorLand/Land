@@ -1,1 +1,172 @@
-var h=Object.defineProperty;var I=Object.getOwnPropertyDescriptor;var C=(a,r,e,t)=>{for(var i=t>1?void 0:t?I(r,e):r,n=a.length-1,o;n>=0;n--)(o=a[n])&&(i=(t?o(r,e,i):o(i))||i);return t&&i&&h(r,e,i),i},s=(a,r)=>(e,t)=>r(e,t,a);import{Registry as p}from"../../platform/registry/common/platform.js";import{Composite as g,CompositeDescriptor as P,CompositeRegistry as l}from"./composite.js";import{IInstantiationService as A}from"../../platform/instantiation/common/instantiation.js";import"../../base/common/uri.js";import"../../base/browser/dom.js";import"../../base/browser/ui/actionbar/actionbar.js";import{Separator as S}from"../../base/common/actions.js";import{SubmenuItemAction as f}from"../../platform/actions/common/actions.js";import{IContextMenuService as x}from"../../platform/contextview/browser/contextView.js";import{IStorageService as V}from"../../platform/storage/common/storage.js";import{ITelemetryService as b}from"../../platform/telemetry/common/telemetry.js";import{IThemeService as y}from"../../platform/theme/common/themeService.js";import{IWorkspaceContextService as M}from"../../platform/workspace/common/workspace.js";import{ViewsSubMenu as T}from"./parts/views/viewPaneContainer.js";import"../common/panecomposite.js";import"../common/views.js";import{IExtensionService as D}from"../services/extensions/common/extensions.js";import{VIEWPANE_FILTER_ACTION as B}from"./parts/views/viewPane.js";import"../../base/browser/ui/sash/sash.js";import"../../base/browser/ui/actionbar/actionViewItems.js";let m=class extends g{constructor(e,t,i,n,o,c,u,E){super(e,t,o,i);this.storageService=i;this.instantiationService=n;this.contextMenuService=c;this.extensionService=u;this.contextService=E}viewPaneContainer;create(e){super.create(e),this.viewPaneContainer=this._register(this.createViewPaneContainer(e)),this._register(this.viewPaneContainer.onTitleAreaUpdate(()=>this.updateTitleArea())),this.viewPaneContainer.create(e)}setVisible(e){super.setVisible(e),this.viewPaneContainer?.setVisible(e)}layout(e){this.viewPaneContainer?.layout(e)}setBoundarySashes(e){this.viewPaneContainer?.setBoundarySashes(e)}getOptimalWidth(){return this.viewPaneContainer?.getOptimalWidth()??0}openView(e,t){return this.viewPaneContainer?.openView(e,t)}getViewPaneContainer(){return this.viewPaneContainer}getActionsContext(){return this.getViewPaneContainer()?.getActionsContext()}getContextMenuActions(){return this.viewPaneContainer?.menuActions?.getContextMenuActions()??[]}getMenuIds(){const e=[];return this.viewPaneContainer?.menuActions&&(e.push(this.viewPaneContainer.menuActions.menuId),this.viewPaneContainer.isViewMergedWithContainer()&&e.push(this.viewPaneContainer.panes[0].menuActions.menuId)),e}getActions(){const e=[];if(this.viewPaneContainer?.menuActions&&(e.push(...this.viewPaneContainer.menuActions.getPrimaryActions()),this.viewPaneContainer.isViewMergedWithContainer())){const t=this.viewPaneContainer.panes[0];t.shouldShowFilterInHeader()&&e.push(B),e.push(...t.menuActions.getPrimaryActions())}return e}getSecondaryActions(){if(!this.viewPaneContainer?.menuActions)return[];const e=this.viewPaneContainer.isViewMergedWithContainer()?this.viewPaneContainer.panes[0].menuActions.getSecondaryActions():[];let t=this.viewPaneContainer.menuActions.getSecondaryActions();const i=t.findIndex(n=>n instanceof f&&n.item.submenu===T);if(i!==-1){const n=t[i];n.actions.some(({enabled:o})=>o)?t.length===1&&e.length===0?t=n.actions.slice():i!==0&&(t=[n,...t.slice(0,i),...t.slice(i+1)]):t.splice(i,1)}return t.length&&e.length?[...t,new S,...e]:t.length?t:e}getActionViewItem(e,t){return this.viewPaneContainer?.getActionViewItem(e,t)}getTitle(){return this.viewPaneContainer?.getTitle()??""}focus(){super.focus(),this.viewPaneContainer?.focus()}};m=C([s(1,b),s(2,V),s(3,A),s(4,y),s(5,x),s(6,D),s(7,M)],m);class w extends P{constructor(e,t,i,n,o,c,u){super(e,t,i,n,o,c);this.iconUrl=u}static create(e,t,i,n,o,c,u){return new w(e,t,i,n,o,c,u)}}const d={Viewlets:"workbench.contributions.viewlets",Panels:"workbench.contributions.panels",Auxiliary:"workbench.contributions.auxiliary"};class v extends l{registerPaneComposite(r){super.registerComposite(r)}deregisterPaneComposite(r){super.deregisterComposite(r)}getPaneComposite(r){return this.getComposite(r)}getPaneComposites(){return this.getComposites()}}p.add(d.Viewlets,new v),p.add(d.Panels,new v),p.add(d.Auxiliary,new v);export{d as Extensions,m as PaneComposite,w as PaneCompositeDescriptor,v as PaneCompositeRegistry};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Registry } from '../../platform/registry/common/platform.js';
+import { Composite, CompositeDescriptor, CompositeRegistry } from './composite.js';
+import { IInstantiationService } from '../../platform/instantiation/common/instantiation.js';
+import { Separator } from '../../base/common/actions.js';
+import { SubmenuItemAction } from '../../platform/actions/common/actions.js';
+import { IContextMenuService } from '../../platform/contextview/browser/contextView.js';
+import { IStorageService } from '../../platform/storage/common/storage.js';
+import { ITelemetryService } from '../../platform/telemetry/common/telemetry.js';
+import { IThemeService } from '../../platform/theme/common/themeService.js';
+import { IWorkspaceContextService } from '../../platform/workspace/common/workspace.js';
+import { ViewsSubMenu } from './parts/views/viewPaneContainer.js';
+import { IExtensionService } from '../services/extensions/common/extensions.js';
+import { VIEWPANE_FILTER_ACTION } from './parts/views/viewPane.js';
+let PaneComposite = class PaneComposite extends Composite {
+    constructor(id, telemetryService, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService) {
+        super(id, telemetryService, themeService, storageService);
+        this.storageService = storageService;
+        this.instantiationService = instantiationService;
+        this.contextMenuService = contextMenuService;
+        this.extensionService = extensionService;
+        this.contextService = contextService;
+    }
+    create(parent) {
+        super.create(parent);
+        this.viewPaneContainer = this._register(this.createViewPaneContainer(parent));
+        this._register(this.viewPaneContainer.onTitleAreaUpdate(() => this.updateTitleArea()));
+        this.viewPaneContainer.create(parent);
+    }
+    setVisible(visible) {
+        super.setVisible(visible);
+        this.viewPaneContainer?.setVisible(visible);
+    }
+    layout(dimension) {
+        this.viewPaneContainer?.layout(dimension);
+    }
+    setBoundarySashes(sashes) {
+        this.viewPaneContainer?.setBoundarySashes(sashes);
+    }
+    getOptimalWidth() {
+        return this.viewPaneContainer?.getOptimalWidth() ?? 0;
+    }
+    openView(id, focus) {
+        return this.viewPaneContainer?.openView(id, focus);
+    }
+    getViewPaneContainer() {
+        return this.viewPaneContainer;
+    }
+    getActionsContext() {
+        return this.getViewPaneContainer()?.getActionsContext();
+    }
+    getContextMenuActions() {
+        return this.viewPaneContainer?.menuActions?.getContextMenuActions() ?? [];
+    }
+    getMenuIds() {
+        const result = [];
+        if (this.viewPaneContainer?.menuActions) {
+            result.push(this.viewPaneContainer.menuActions.menuId);
+            if (this.viewPaneContainer.isViewMergedWithContainer()) {
+                result.push(this.viewPaneContainer.panes[0].menuActions.menuId);
+            }
+        }
+        return result;
+    }
+    getActions() {
+        const result = [];
+        if (this.viewPaneContainer?.menuActions) {
+            result.push(...this.viewPaneContainer.menuActions.getPrimaryActions());
+            if (this.viewPaneContainer.isViewMergedWithContainer()) {
+                const viewPane = this.viewPaneContainer.panes[0];
+                if (viewPane.shouldShowFilterInHeader()) {
+                    result.push(VIEWPANE_FILTER_ACTION);
+                }
+                result.push(...viewPane.menuActions.getPrimaryActions());
+            }
+        }
+        return result;
+    }
+    getSecondaryActions() {
+        if (!this.viewPaneContainer?.menuActions) {
+            return [];
+        }
+        const viewPaneActions = this.viewPaneContainer.isViewMergedWithContainer() ? this.viewPaneContainer.panes[0].menuActions.getSecondaryActions() : [];
+        let menuActions = this.viewPaneContainer.menuActions.getSecondaryActions();
+        const viewsSubmenuActionIndex = menuActions.findIndex(action => action instanceof SubmenuItemAction && action.item.submenu === ViewsSubMenu);
+        if (viewsSubmenuActionIndex !== -1) {
+            const viewsSubmenuAction = menuActions[viewsSubmenuActionIndex];
+            if (viewsSubmenuAction.actions.some(({ enabled }) => enabled)) {
+                if (menuActions.length === 1 && viewPaneActions.length === 0) {
+                    menuActions = viewsSubmenuAction.actions.slice();
+                }
+                else if (viewsSubmenuActionIndex !== 0) {
+                    menuActions = [viewsSubmenuAction, ...menuActions.slice(0, viewsSubmenuActionIndex), ...menuActions.slice(viewsSubmenuActionIndex + 1)];
+                }
+            }
+            else {
+                menuActions.splice(viewsSubmenuActionIndex, 1);
+            }
+        }
+        if (menuActions.length && viewPaneActions.length) {
+            return [
+                ...menuActions,
+                new Separator(),
+                ...viewPaneActions
+            ];
+        }
+        return menuActions.length ? menuActions : viewPaneActions;
+    }
+    getActionViewItem(action, options) {
+        return this.viewPaneContainer?.getActionViewItem(action, options);
+    }
+    getTitle() {
+        return this.viewPaneContainer?.getTitle() ?? '';
+    }
+    focus() {
+        super.focus();
+        this.viewPaneContainer?.focus();
+    }
+};
+PaneComposite = __decorate([
+    __param(1, ITelemetryService),
+    __param(2, IStorageService),
+    __param(3, IInstantiationService),
+    __param(4, IThemeService),
+    __param(5, IContextMenuService),
+    __param(6, IExtensionService),
+    __param(7, IWorkspaceContextService),
+    __metadata("design:paramtypes", [String, Object, Object, Object, Object, Object, Object, Object])
+], PaneComposite);
+export { PaneComposite };
+export class PaneCompositeDescriptor extends CompositeDescriptor {
+    static create(ctor, id, name, cssClass, order, requestedIndex, iconUrl) {
+        return new PaneCompositeDescriptor(ctor, id, name, cssClass, order, requestedIndex, iconUrl);
+    }
+    constructor(ctor, id, name, cssClass, order, requestedIndex, iconUrl) {
+        super(ctor, id, name, cssClass, order, requestedIndex);
+        this.iconUrl = iconUrl;
+    }
+}
+export const Extensions = {
+    Viewlets: 'workbench.contributions.viewlets',
+    Panels: 'workbench.contributions.panels',
+    Auxiliary: 'workbench.contributions.auxiliary',
+};
+export class PaneCompositeRegistry extends CompositeRegistry {
+    registerPaneComposite(descriptor) {
+        super.registerComposite(descriptor);
+    }
+    deregisterPaneComposite(id) {
+        super.deregisterComposite(id);
+    }
+    getPaneComposite(id) {
+        return this.getComposite(id);
+    }
+    getPaneComposites() {
+        return this.getComposites();
+    }
+}
+Registry.add(Extensions.Viewlets, new PaneCompositeRegistry());
+Registry.add(Extensions.Panels, new PaneCompositeRegistry());
+Registry.add(Extensions.Auxiliary, new PaneCompositeRegistry());

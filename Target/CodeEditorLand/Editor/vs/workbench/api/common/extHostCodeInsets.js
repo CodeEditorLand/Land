@@ -1,1 +1,104 @@
-import{Emitter as l}from"../../../base/common/event.js";import{DisposableStore as E}from"../../../base/common/lifecycle.js";import"../../../platform/extensions/common/extensions.js";import"./extHostTextEditor.js";import"./extHostTextEditors.js";import{asWebviewUri as b,webviewGenericCspSource as h}from"../../contrib/webview/common/webview.js";import"./extHost.protocol.js";class R{constructor(t,s,r){this._proxy=t;this._editors=s;this._remoteInfo=r;this._disposables.add(s.onDidChangeVisibleTextEditors(()=>{const a=s.getVisibleTextEditors();for(const n of this._insets.values())a.indexOf(n.editor)<0&&n.inset.dispose()}))}_handlePool=0;_disposables=new E;_insets=new Map;dispose(){this._insets.forEach(t=>t.inset.dispose()),this._disposables.dispose()}createWebviewEditorInset(t,s,r,a,n){let d;for(const e of this._editors.getVisibleTextEditors(!0))if(e.value===t){d=e;break}if(!d)throw new Error("not a visible editor");const o=this,i=this._handlePool++,p=new l,v=new l,m=new class{_html="";_options=Object.create(null);asWebviewUri(e){return b(e,o._remoteInfo)}get cspSource(){return h}set options(e){this._options=e,o._proxy.$setOptions(i,e)}get options(){return this._options}set html(e){this._html=e,o._proxy.$setHtml(i,e)}get html(){return this._html}get onDidReceiveMessage(){return p.event}postMessage(e){return o._proxy.$postMessage(i,e)}},c=new class{editor=t;line=s;height=r;webview=m;onDidDispose=v.event;dispose(){o._insets.has(i)&&(o._insets.delete(i),o._proxy.$disposeEditorInset(i),v.fire(),v.dispose(),p.dispose())}};return this._proxy.$createEditorInset(i,d.id,d.value.document.uri,s+1,r,a||{},n.identifier,n.extensionLocation),this._insets.set(i,{editor:t,inset:c,onDidReceiveMessage:p}),c}$onDidDispose(t){const s=this._insets.get(t);s&&s.inset.dispose()}$onDidReceiveMessage(t,s){this._insets.get(t)?.onDidReceiveMessage.fire(s)}}export{R as ExtHostEditorInsets};
+import { Emitter } from '../../../base/common/event.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { asWebviewUri, webviewGenericCspSource } from '../../contrib/webview/common/webview.js';
+export class ExtHostEditorInsets {
+    constructor(_proxy, _editors, _remoteInfo) {
+        this._proxy = _proxy;
+        this._editors = _editors;
+        this._remoteInfo = _remoteInfo;
+        this._handlePool = 0;
+        this._disposables = new DisposableStore();
+        this._insets = new Map();
+        this._disposables.add(_editors.onDidChangeVisibleTextEditors(() => {
+            const visibleEditor = _editors.getVisibleTextEditors();
+            for (const value of this._insets.values()) {
+                if (visibleEditor.indexOf(value.editor) < 0) {
+                    value.inset.dispose();
+                }
+            }
+        }));
+    }
+    dispose() {
+        this._insets.forEach(value => value.inset.dispose());
+        this._disposables.dispose();
+    }
+    createWebviewEditorInset(editor, line, height, options, extension) {
+        let apiEditor;
+        for (const candidate of this._editors.getVisibleTextEditors(true)) {
+            if (candidate.value === editor) {
+                apiEditor = candidate;
+                break;
+            }
+        }
+        if (!apiEditor) {
+            throw new Error('not a visible editor');
+        }
+        const that = this;
+        const handle = this._handlePool++;
+        const onDidReceiveMessage = new Emitter();
+        const onDidDispose = new Emitter();
+        const webview = new class {
+            constructor() {
+                this._html = '';
+                this._options = Object.create(null);
+            }
+            asWebviewUri(resource) {
+                return asWebviewUri(resource, that._remoteInfo);
+            }
+            get cspSource() {
+                return webviewGenericCspSource;
+            }
+            set options(value) {
+                this._options = value;
+                that._proxy.$setOptions(handle, value);
+            }
+            get options() {
+                return this._options;
+            }
+            set html(value) {
+                this._html = value;
+                that._proxy.$setHtml(handle, value);
+            }
+            get html() {
+                return this._html;
+            }
+            get onDidReceiveMessage() {
+                return onDidReceiveMessage.event;
+            }
+            postMessage(message) {
+                return that._proxy.$postMessage(handle, message);
+            }
+        };
+        const inset = new class {
+            constructor() {
+                this.editor = editor;
+                this.line = line;
+                this.height = height;
+                this.webview = webview;
+                this.onDidDispose = onDidDispose.event;
+            }
+            dispose() {
+                if (that._insets.has(handle)) {
+                    that._insets.delete(handle);
+                    that._proxy.$disposeEditorInset(handle);
+                    onDidDispose.fire();
+                    onDidDispose.dispose();
+                    onDidReceiveMessage.dispose();
+                }
+            }
+        };
+        this._proxy.$createEditorInset(handle, apiEditor.id, apiEditor.value.document.uri, line + 1, height, options || {}, extension.identifier, extension.extensionLocation);
+        this._insets.set(handle, { editor, inset, onDidReceiveMessage });
+        return inset;
+    }
+    $onDidDispose(handle) {
+        const value = this._insets.get(handle);
+        if (value) {
+            value.inset.dispose();
+        }
+    }
+    $onDidReceiveMessage(handle, message) {
+        const value = this._insets.get(handle);
+        value?.onDidReceiveMessage.fire(message);
+    }
+}

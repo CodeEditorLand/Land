@@ -1,1 +1,230 @@
-import{onUnexpectedError as b}from"../../../../base/common/errors.js";import{Emitter as w}from"../../../../base/common/event.js";import"../../../../base/common/filters.js";import{defaultGenerator as I}from"../../../../base/common/idGenerator.js";import{dispose as d}from"../../../../base/common/lifecycle.js";import{ResourceMap as y}from"../../../../base/common/map.js";import{basename as a,extUri as p}from"../../../../base/common/resources.js";import*as L from"../../../../base/common/strings.js";import{Constants as x}from"../../../../base/common/uint.js";import"../../../../base/common/uri.js";import"../../../common/core/position.js";import{Range as l}from"../../../common/core/range.js";import"../../../common/languages.js";import"../../../common/services/resolverService.js";import{localize as o}from"../../../../nls.js";class P{constructor(r,t,n,e){this.isProviderFirst=r;this.parent=t;this.link=n;this._rangeCallback=e}id=I.nextId();_range;get uri(){return this.link.uri}get range(){return this._range??this.link.targetSelectionRange??this.link.range}set range(r){this._range=r,this._rangeCallback(this)}get ariaMessage(){const r=this.parent.getPreview(this)?.preview(this.range);return r?o({key:"aria.oneReference.preview",comment:["Placeholders are: 0: filename, 1:line number, 2: column number, 3: preview snippet of source code"]},"{0} in {1} on line {2} at column {3}",r.value,a(this.uri),this.range.startLineNumber,this.range.startColumn):o("aria.oneReference","in {0} on line {1} at column {2}",a(this.uri),this.range.startLineNumber,this.range.startColumn)}}class C{constructor(r){this._modelReference=r}dispose(){this._modelReference.dispose()}preview(r,t=8){const n=this._modelReference.object.textEditorModel;if(!n)return;const{startLineNumber:e,startColumn:i,endLineNumber:s,endColumn:f}=r,m=n.getWordUntilPosition({lineNumber:e,column:i-t}),R=new l(e,m.startColumn,e,i),v=new l(s,f,s,x.MAX_SAFE_SMALL_INTEGER),u=n.getValueInRange(R).replace(/^\s+/,""),g=n.getValueInRange(r),_=n.getValueInRange(v).replace(/\s+$/,"");return{value:u+g+_,highlight:{start:u.length,end:u.length+g.length}}}}class M{constructor(r,t){this.parent=r;this.uri=t}children=[];_previews=new y;dispose(){d(this._previews.values()),this._previews.clear()}getPreview(r){return this._previews.get(r.uri)}get ariaMessage(){const r=this.children.length;return r===1?o("aria.fileReferences.1","1 symbol in {0}, full path {1}",a(this.uri),this.uri.fsPath):o("aria.fileReferences.N","{0} symbols in {1}, full path {2}",r,a(this.uri),this.uri.fsPath)}async resolve(r){if(this._previews.size!==0)return this;for(const t of this.children)if(!this._previews.has(t.uri))try{const n=await r.createModelReference(t.uri);this._previews.set(t.uri,new C(n))}catch(n){b(n)}return this}}class c{_links;_title;groups=[];references=[];_onDidChangeReferenceRange=new w;onDidChangeReferenceRange=this._onDidChangeReferenceRange.event;constructor(r,t){this._links=r,this._title=t;const[n]=r;r.sort(c._compareReferences);let e;for(const i of r)if((!e||!p.isEqual(e.uri,i.uri,!0))&&(e=new M(this,i.uri),this.groups.push(e)),e.children.length===0||c._compareReferences(i,e.children[e.children.length-1])!==0){const s=new P(n===i,e,i,f=>this._onDidChangeReferenceRange.fire(f));this.references.push(s),e.children.push(s)}}dispose(){d(this.groups),this._onDidChangeReferenceRange.dispose(),this.groups.length=0}clone(){return new c(this._links,this._title)}get title(){return this._title}get isEmpty(){return this.groups.length===0}get ariaMessage(){return this.isEmpty?o("aria.result.0","No results found"):this.references.length===1?o("aria.result.1","Found 1 symbol in {0}",this.references[0].uri.fsPath):this.groups.length===1?o("aria.result.n1","Found {0} symbols in {1}",this.references.length,this.groups[0].uri.fsPath):o("aria.result.nm","Found {0} symbols in {1} files",this.references.length,this.groups.length)}nextOrPreviousReference(r,t){const{parent:n}=r;let e=n.children.indexOf(r);const i=n.children.length,s=n.parent.groups.length;return s===1||t&&e+1<i||!t&&e>0?(t?e=(e+1)%i:e=(e+i-1)%i,n.children[e]):(e=n.parent.groups.indexOf(n),t?(e=(e+1)%s,n.parent.groups[e].children[0]):(e=(e+s-1)%s,n.parent.groups[e].children[n.parent.groups[e].children.length-1]))}nearestReference(r,t){const n=this.references.map((e,i)=>({idx:i,prefixLen:L.commonPrefixLength(e.uri.toString(),r.toString()),offsetDist:Math.abs(e.range.startLineNumber-t.lineNumber)*100+Math.abs(e.range.startColumn-t.column)})).sort((e,i)=>e.prefixLen>i.prefixLen?-1:e.prefixLen<i.prefixLen?1:e.offsetDist<i.offsetDist?-1:e.offsetDist>i.offsetDist?1:0)[0];if(n)return this.references[n.idx]}referenceAt(r,t){for(const n of this.references)if(n.uri.toString()===r.toString()&&l.containsPosition(n.range,t))return n}firstReference(){for(const r of this.references)if(r.isProviderFirst)return r;return this.references[0]}static _compareReferences(r,t){return p.compare(r.uri,t.uri)||l.compareRangesUsingStarts(r.range,t.range)}}export{C as FilePreview,M as FileReferences,P as OneReference,c as ReferencesModel};
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { defaultGenerator } from '../../../../base/common/idGenerator.js';
+import { dispose } from '../../../../base/common/lifecycle.js';
+import { ResourceMap } from '../../../../base/common/map.js';
+import { basename, extUri } from '../../../../base/common/resources.js';
+import * as strings from '../../../../base/common/strings.js';
+import { Range } from '../../../common/core/range.js';
+import { localize } from '../../../../nls.js';
+export class OneReference {
+    constructor(isProviderFirst, parent, link, _rangeCallback) {
+        this.isProviderFirst = isProviderFirst;
+        this.parent = parent;
+        this.link = link;
+        this._rangeCallback = _rangeCallback;
+        this.id = defaultGenerator.nextId();
+    }
+    get uri() {
+        return this.link.uri;
+    }
+    get range() {
+        return this._range ?? this.link.targetSelectionRange ?? this.link.range;
+    }
+    set range(value) {
+        this._range = value;
+        this._rangeCallback(this);
+    }
+    get ariaMessage() {
+        const preview = this.parent.getPreview(this)?.preview(this.range);
+        if (!preview) {
+            return localize('aria.oneReference', "in {0} on line {1} at column {2}", basename(this.uri), this.range.startLineNumber, this.range.startColumn);
+        }
+        else {
+            return localize({ key: 'aria.oneReference.preview', comment: ['Placeholders are: 0: filename, 1:line number, 2: column number, 3: preview snippet of source code'] }, "{0} in {1} on line {2} at column {3}", preview.value, basename(this.uri), this.range.startLineNumber, this.range.startColumn);
+        }
+    }
+}
+export class FilePreview {
+    constructor(_modelReference) {
+        this._modelReference = _modelReference;
+    }
+    dispose() {
+        this._modelReference.dispose();
+    }
+    preview(range, n = 8) {
+        const model = this._modelReference.object.textEditorModel;
+        if (!model) {
+            return undefined;
+        }
+        const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
+        const word = model.getWordUntilPosition({ lineNumber: startLineNumber, column: startColumn - n });
+        const beforeRange = new Range(startLineNumber, word.startColumn, startLineNumber, startColumn);
+        const afterRange = new Range(endLineNumber, endColumn, endLineNumber, 1073741824);
+        const before = model.getValueInRange(beforeRange).replace(/^\s+/, '');
+        const inside = model.getValueInRange(range);
+        const after = model.getValueInRange(afterRange).replace(/\s+$/, '');
+        return {
+            value: before + inside + after,
+            highlight: { start: before.length, end: before.length + inside.length }
+        };
+    }
+}
+export class FileReferences {
+    constructor(parent, uri) {
+        this.parent = parent;
+        this.uri = uri;
+        this.children = [];
+        this._previews = new ResourceMap();
+    }
+    dispose() {
+        dispose(this._previews.values());
+        this._previews.clear();
+    }
+    getPreview(child) {
+        return this._previews.get(child.uri);
+    }
+    get ariaMessage() {
+        const len = this.children.length;
+        if (len === 1) {
+            return localize('aria.fileReferences.1', "1 symbol in {0}, full path {1}", basename(this.uri), this.uri.fsPath);
+        }
+        else {
+            return localize('aria.fileReferences.N', "{0} symbols in {1}, full path {2}", len, basename(this.uri), this.uri.fsPath);
+        }
+    }
+    async resolve(textModelResolverService) {
+        if (this._previews.size !== 0) {
+            return this;
+        }
+        for (const child of this.children) {
+            if (this._previews.has(child.uri)) {
+                continue;
+            }
+            try {
+                const ref = await textModelResolverService.createModelReference(child.uri);
+                this._previews.set(child.uri, new FilePreview(ref));
+            }
+            catch (err) {
+                onUnexpectedError(err);
+            }
+        }
+        return this;
+    }
+}
+export class ReferencesModel {
+    constructor(links, title) {
+        this.groups = [];
+        this.references = [];
+        this._onDidChangeReferenceRange = new Emitter();
+        this.onDidChangeReferenceRange = this._onDidChangeReferenceRange.event;
+        this._links = links;
+        this._title = title;
+        const [providersFirst] = links;
+        links.sort(ReferencesModel._compareReferences);
+        let current;
+        for (const link of links) {
+            if (!current || !extUri.isEqual(current.uri, link.uri, true)) {
+                current = new FileReferences(this, link.uri);
+                this.groups.push(current);
+            }
+            if (current.children.length === 0 || ReferencesModel._compareReferences(link, current.children[current.children.length - 1]) !== 0) {
+                const oneRef = new OneReference(providersFirst === link, current, link, ref => this._onDidChangeReferenceRange.fire(ref));
+                this.references.push(oneRef);
+                current.children.push(oneRef);
+            }
+        }
+    }
+    dispose() {
+        dispose(this.groups);
+        this._onDidChangeReferenceRange.dispose();
+        this.groups.length = 0;
+    }
+    clone() {
+        return new ReferencesModel(this._links, this._title);
+    }
+    get title() {
+        return this._title;
+    }
+    get isEmpty() {
+        return this.groups.length === 0;
+    }
+    get ariaMessage() {
+        if (this.isEmpty) {
+            return localize('aria.result.0', "No results found");
+        }
+        else if (this.references.length === 1) {
+            return localize('aria.result.1', "Found 1 symbol in {0}", this.references[0].uri.fsPath);
+        }
+        else if (this.groups.length === 1) {
+            return localize('aria.result.n1', "Found {0} symbols in {1}", this.references.length, this.groups[0].uri.fsPath);
+        }
+        else {
+            return localize('aria.result.nm', "Found {0} symbols in {1} files", this.references.length, this.groups.length);
+        }
+    }
+    nextOrPreviousReference(reference, next) {
+        const { parent } = reference;
+        let idx = parent.children.indexOf(reference);
+        const childCount = parent.children.length;
+        const groupCount = parent.parent.groups.length;
+        if (groupCount === 1 || next && idx + 1 < childCount || !next && idx > 0) {
+            if (next) {
+                idx = (idx + 1) % childCount;
+            }
+            else {
+                idx = (idx + childCount - 1) % childCount;
+            }
+            return parent.children[idx];
+        }
+        idx = parent.parent.groups.indexOf(parent);
+        if (next) {
+            idx = (idx + 1) % groupCount;
+            return parent.parent.groups[idx].children[0];
+        }
+        else {
+            idx = (idx + groupCount - 1) % groupCount;
+            return parent.parent.groups[idx].children[parent.parent.groups[idx].children.length - 1];
+        }
+    }
+    nearestReference(resource, position) {
+        const nearest = this.references.map((ref, idx) => {
+            return {
+                idx,
+                prefixLen: strings.commonPrefixLength(ref.uri.toString(), resource.toString()),
+                offsetDist: Math.abs(ref.range.startLineNumber - position.lineNumber) * 100 + Math.abs(ref.range.startColumn - position.column)
+            };
+        }).sort((a, b) => {
+            if (a.prefixLen > b.prefixLen) {
+                return -1;
+            }
+            else if (a.prefixLen < b.prefixLen) {
+                return 1;
+            }
+            else if (a.offsetDist < b.offsetDist) {
+                return -1;
+            }
+            else if (a.offsetDist > b.offsetDist) {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        })[0];
+        if (nearest) {
+            return this.references[nearest.idx];
+        }
+        return undefined;
+    }
+    referenceAt(resource, position) {
+        for (const ref of this.references) {
+            if (ref.uri.toString() === resource.toString()) {
+                if (Range.containsPosition(ref.range, position)) {
+                    return ref;
+                }
+            }
+        }
+        return undefined;
+    }
+    firstReference() {
+        for (const ref of this.references) {
+            if (ref.isProviderFirst) {
+                return ref;
+            }
+        }
+        return this.references[0];
+    }
+    static _compareReferences(a, b) {
+        return extUri.compare(a.uri, b.uri) || Range.compareRangesUsingStarts(a.range, b.range);
+    }
+}

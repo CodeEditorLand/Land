@@ -1,1 +1,163 @@
-import{findNodeAtLocation as m,parseTree as O}from"./json.js";import{format as S,isEOL as E}from"./jsonFormatter.js";function L(n,s,r){return N(n,s,void 0,r)}function N(n,s,r,i,o){const t=s.slice(),p=O(n,[]);let e,f;for(;t.length>0&&(f=t.pop(),e=m(p,t),e===void 0&&r!==void 0);)typeof f=="string"?r={[f]:r}:r=[r];if(e)if(e.type==="object"&&typeof f=="string"&&Array.isArray(e.children)){const l=m(e,[f]);if(l!==void 0)if(r===void 0){if(!l.parent)throw new Error("Malformed AST");const d=e.children.indexOf(l.parent);let h,g=l.parent.offset+l.parent.length;if(d>0){const c=e.children[d-1];h=c.offset+c.length}else h=e.offset+1,e.children.length>1&&(g=e.children[1].offset);return y(n,{offset:h,length:g-h,content:""},i)}else return y(n,{offset:l.offset,length:l.length,content:JSON.stringify(r)},i);else{if(r===void 0)return[];const d=`${JSON.stringify(f)}: ${JSON.stringify(r)}`,h=o?o(e.children.map(c=>c.children[0].value)):e.children.length;let g;if(h>0){const c=e.children[h-1];g={offset:c.offset+c.length,length:0,content:","+d}}else e.children.length===0?g={offset:e.offset+1,length:0,content:d}:g={offset:e.offset+1,length:0,content:d+","};return y(n,g,i)}}else if(e.type==="array"&&typeof f=="number"&&Array.isArray(e.children))if(r!==void 0){const l=`${JSON.stringify(r)}`;let d;if(e.children.length===0||f===0)d={offset:e.offset+1,length:0,content:e.children.length===0?l:l+","};else{const h=f===-1||f>e.children.length?e.children.length:f,g=e.children[h-1];d={offset:g.offset+g.length,length:0,content:","+l}}return y(n,d,i)}else{const l=f,d=e.children[l];let h;if(e.children.length===1)h={offset:e.offset+1,length:e.length-2,content:""};else if(e.children.length-1===l){const g=e.children[l-1],c=g.offset+g.length,w=e.offset+e.length;h={offset:c,length:w-2-c,content:""}}else h={offset:d.offset,length:e.children[l+1].offset-d.offset,content:""};return y(n,h,i)}else throw new Error(`Can not add ${typeof f!="number"?"index":"property"} to parent of type ${e.type}`);else return r===void 0?[]:y(n,{offset:p?p.offset:0,length:p?p.length:0,content:JSON.stringify(r)},i)}function y(n,s,r){let i=a(n,s),o=s.offset,t=s.offset+s.content.length;if(s.length===0||s.content.length===0){for(;o>0&&!E(i,o-1);)o--;for(;t<i.length&&!E(i,t);)t++}const u=S(i,{offset:o,length:t-o},r);for(let e=u.length-1;e>=0;e--){const f=u[e];i=a(i,f),o=Math.min(o,f.offset),t=Math.max(t,f.offset+f.length),t+=f.content.length-f.length}const p=n.length-(i.length-t)-o;return[{offset:o,length:p,content:i.substring(o,t)}]}function a(n,s){return n.substring(0,s.offset)+s.content+n.substring(s.offset+s.length)}function T(n,s){const r=s.slice(0).sort((o,t)=>{const u=o.offset-t.offset;return u===0?o.length-t.length:u});let i=n.length;for(let o=r.length-1;o>=0;o--){const t=r[o];if(t.offset+t.length<=i)n=a(n,t);else throw new Error("Overlapping edit");i=t.offset}return n}export{a as applyEdit,T as applyEdits,L as removeProperty,N as setProperty,y as withFormatting};
+import { findNodeAtLocation, parseTree } from './json.js';
+import { format, isEOL } from './jsonFormatter.js';
+export function removeProperty(text, path, formattingOptions) {
+    return setProperty(text, path, undefined, formattingOptions);
+}
+export function setProperty(text, originalPath, value, formattingOptions, getInsertionIndex) {
+    const path = originalPath.slice();
+    const errors = [];
+    const root = parseTree(text, errors);
+    let parent = undefined;
+    let lastSegment = undefined;
+    while (path.length > 0) {
+        lastSegment = path.pop();
+        parent = findNodeAtLocation(root, path);
+        if (parent === undefined && value !== undefined) {
+            if (typeof lastSegment === 'string') {
+                value = { [lastSegment]: value };
+            }
+            else {
+                value = [value];
+            }
+        }
+        else {
+            break;
+        }
+    }
+    if (!parent) {
+        if (value === undefined) {
+            return [];
+        }
+        return withFormatting(text, { offset: root ? root.offset : 0, length: root ? root.length : 0, content: JSON.stringify(value) }, formattingOptions);
+    }
+    else if (parent.type === 'object' && typeof lastSegment === 'string' && Array.isArray(parent.children)) {
+        const existing = findNodeAtLocation(parent, [lastSegment]);
+        if (existing !== undefined) {
+            if (value === undefined) {
+                if (!existing.parent) {
+                    throw new Error('Malformed AST');
+                }
+                const propertyIndex = parent.children.indexOf(existing.parent);
+                let removeBegin;
+                let removeEnd = existing.parent.offset + existing.parent.length;
+                if (propertyIndex > 0) {
+                    const previous = parent.children[propertyIndex - 1];
+                    removeBegin = previous.offset + previous.length;
+                }
+                else {
+                    removeBegin = parent.offset + 1;
+                    if (parent.children.length > 1) {
+                        const next = parent.children[1];
+                        removeEnd = next.offset;
+                    }
+                }
+                return withFormatting(text, { offset: removeBegin, length: removeEnd - removeBegin, content: '' }, formattingOptions);
+            }
+            else {
+                return withFormatting(text, { offset: existing.offset, length: existing.length, content: JSON.stringify(value) }, formattingOptions);
+            }
+        }
+        else {
+            if (value === undefined) {
+                return [];
+            }
+            const newProperty = `${JSON.stringify(lastSegment)}: ${JSON.stringify(value)}`;
+            const index = getInsertionIndex ? getInsertionIndex(parent.children.map(p => p.children[0].value)) : parent.children.length;
+            let edit;
+            if (index > 0) {
+                const previous = parent.children[index - 1];
+                edit = { offset: previous.offset + previous.length, length: 0, content: ',' + newProperty };
+            }
+            else if (parent.children.length === 0) {
+                edit = { offset: parent.offset + 1, length: 0, content: newProperty };
+            }
+            else {
+                edit = { offset: parent.offset + 1, length: 0, content: newProperty + ',' };
+            }
+            return withFormatting(text, edit, formattingOptions);
+        }
+    }
+    else if (parent.type === 'array' && typeof lastSegment === 'number' && Array.isArray(parent.children)) {
+        if (value !== undefined) {
+            const newProperty = `${JSON.stringify(value)}`;
+            let edit;
+            if (parent.children.length === 0 || lastSegment === 0) {
+                edit = { offset: parent.offset + 1, length: 0, content: parent.children.length === 0 ? newProperty : newProperty + ',' };
+            }
+            else {
+                const index = lastSegment === -1 || lastSegment > parent.children.length ? parent.children.length : lastSegment;
+                const previous = parent.children[index - 1];
+                edit = { offset: previous.offset + previous.length, length: 0, content: ',' + newProperty };
+            }
+            return withFormatting(text, edit, formattingOptions);
+        }
+        else {
+            const removalIndex = lastSegment;
+            const toRemove = parent.children[removalIndex];
+            let edit;
+            if (parent.children.length === 1) {
+                edit = { offset: parent.offset + 1, length: parent.length - 2, content: '' };
+            }
+            else if (parent.children.length - 1 === removalIndex) {
+                const previous = parent.children[removalIndex - 1];
+                const offset = previous.offset + previous.length;
+                const parentEndOffset = parent.offset + parent.length;
+                edit = { offset, length: parentEndOffset - 2 - offset, content: '' };
+            }
+            else {
+                edit = { offset: toRemove.offset, length: parent.children[removalIndex + 1].offset - toRemove.offset, content: '' };
+            }
+            return withFormatting(text, edit, formattingOptions);
+        }
+    }
+    else {
+        throw new Error(`Can not add ${typeof lastSegment !== 'number' ? 'index' : 'property'} to parent of type ${parent.type}`);
+    }
+}
+export function withFormatting(text, edit, formattingOptions) {
+    let newText = applyEdit(text, edit);
+    let begin = edit.offset;
+    let end = edit.offset + edit.content.length;
+    if (edit.length === 0 || edit.content.length === 0) {
+        while (begin > 0 && !isEOL(newText, begin - 1)) {
+            begin--;
+        }
+        while (end < newText.length && !isEOL(newText, end)) {
+            end++;
+        }
+    }
+    const edits = format(newText, { offset: begin, length: end - begin }, formattingOptions);
+    for (let i = edits.length - 1; i >= 0; i--) {
+        const curr = edits[i];
+        newText = applyEdit(newText, curr);
+        begin = Math.min(begin, curr.offset);
+        end = Math.max(end, curr.offset + curr.length);
+        end += curr.content.length - curr.length;
+    }
+    const editLength = text.length - (newText.length - end) - begin;
+    return [{ offset: begin, length: editLength, content: newText.substring(begin, end) }];
+}
+export function applyEdit(text, edit) {
+    return text.substring(0, edit.offset) + edit.content + text.substring(edit.offset + edit.length);
+}
+export function applyEdits(text, edits) {
+    const sortedEdits = edits.slice(0).sort((a, b) => {
+        const diff = a.offset - b.offset;
+        if (diff === 0) {
+            return a.length - b.length;
+        }
+        return diff;
+    });
+    let lastModifiedOffset = text.length;
+    for (let i = sortedEdits.length - 1; i >= 0; i--) {
+        const e = sortedEdits[i];
+        if (e.offset + e.length <= lastModifiedOffset) {
+            text = applyEdit(text, e);
+        }
+        else {
+            throw new Error('Overlapping edit');
+        }
+        lastModifiedOffset = e.offset;
+    }
+    return text;
+}

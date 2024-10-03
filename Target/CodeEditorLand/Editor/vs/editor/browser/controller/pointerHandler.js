@@ -1,1 +1,120 @@
-import{BrowserFeatures as m}from"../../../base/browser/canIUse.js";import*as r from"../../../base/browser/dom.js";import{EventType as n,Gesture as u}from"../../../base/browser/touch.js";import{mainWindow as w}from"../../../base/browser/window.js";import{Disposable as f}from"../../../base/common/lifecycle.js";import*as p from"../../../base/common/platform.js";import{MouseHandler as h}from"./mouseHandler.js";import{NavigationCommandRevealType as v}from"../coreCommands.js";import{MouseTargetType as T}from"../editorBrowser.js";import{EditorMouseEvent as l,EditorPointerEventFactory as c}from"../editorDom.js";import"../view/viewController.js";import"../../common/viewModel/viewContext.js";import{TextAreaSyntethicEvents as g}from"./editContext/textArea/textAreaEditContextInput.js";class _ extends h{_lastPointerType;constructor(e,t,i){super(e,t,i),this._register(u.addTarget(this.viewHelper.linesContentDomNode)),this._register(r.addDisposableListener(this.viewHelper.linesContentDomNode,n.Tap,o=>this.onTap(o))),this._register(r.addDisposableListener(this.viewHelper.linesContentDomNode,n.Change,o=>this.onChange(o))),this._register(r.addDisposableListener(this.viewHelper.linesContentDomNode,n.Contextmenu,o=>this._onContextMenu(new l(o,!1,this.viewHelper.viewDomNode),!1))),this._lastPointerType="mouse",this._register(r.addDisposableListener(this.viewHelper.linesContentDomNode,"pointerdown",o=>{const a=o.pointerType;if(a==="mouse"){this._lastPointerType="mouse";return}else a==="touch"?this._lastPointerType="touch":this._lastPointerType="pen"}));const s=new c(this.viewHelper.viewDomNode);this._register(s.onPointerMove(this.viewHelper.viewDomNode,o=>this._onMouseMove(o))),this._register(s.onPointerUp(this.viewHelper.viewDomNode,o=>this._onMouseUp(o))),this._register(s.onPointerLeave(this.viewHelper.viewDomNode,o=>this._onMouseLeave(o))),this._register(s.onPointerDown(this.viewHelper.viewDomNode,(o,a)=>this._onMouseDown(o,a)))}onTap(e){!e.initialTarget||!this.viewHelper.linesContentDomNode.contains(e.initialTarget)||(e.preventDefault(),this.viewHelper.focusTextArea(),this._dispatchGesture(e,!1))}onChange(e){this._lastPointerType==="touch"&&this._context.viewModel.viewLayout.deltaScrollNow(-e.translationX,-e.translationY),this._lastPointerType==="pen"&&this._dispatchGesture(e,!0)}_dispatchGesture(e,t){const i=this._createMouseTarget(new l(e,!1,this.viewHelper.viewDomNode),!1);i.position&&this.viewController.dispatchMouse({position:i.position,mouseColumn:i.position.column,startedOnLineNumbers:!1,revealType:v.Minimal,mouseDownCount:e.tapCount,inSelectionMode:t,altKey:!1,ctrlKey:!1,metaKey:!1,shiftKey:!1,leftButton:!1,middleButton:!1,onInjectedText:i.type===T.CONTENT_TEXT&&i.detail.injectedText!==null})}_onMouseDown(e,t){e.browserEvent.pointerType!=="touch"&&super._onMouseDown(e,t)}}class C extends h{constructor(e,t,i){super(e,t,i),this._register(u.addTarget(this.viewHelper.linesContentDomNode)),this._register(r.addDisposableListener(this.viewHelper.linesContentDomNode,n.Tap,s=>this.onTap(s))),this._register(r.addDisposableListener(this.viewHelper.linesContentDomNode,n.Change,s=>this.onChange(s))),this._register(r.addDisposableListener(this.viewHelper.linesContentDomNode,n.Contextmenu,s=>this._onContextMenu(new l(s,!1,this.viewHelper.viewDomNode),!1)))}onTap(e){e.preventDefault(),this.viewHelper.focusTextArea();const t=this._createMouseTarget(new l(e,!1,this.viewHelper.viewDomNode),!1);if(t.position){const i=document.createEvent("CustomEvent");i.initEvent(g.Tap,!1,!0),this.viewHelper.dispatchTextAreaEvent(i),this.viewController.moveTo(t.position,v.Minimal)}}onChange(e){this._context.viewModel.viewLayout.deltaScrollNow(-e.translationX,-e.translationY)}}class B extends f{handler;constructor(e,t,i){super(),(p.isIOS||p.isAndroid&&p.isMobile)&&m.pointerEvents?this.handler=this._register(new _(e,t,i)):w.TouchEvent?this.handler=this._register(new C(e,t,i)):this.handler=this._register(new h(e,t,i))}getTargetAtClientPoint(e,t){return this.handler.getTargetAtClientPoint(e,t)}}export{_ as PointerEventHandler,B as PointerHandler};
+import { BrowserFeatures } from '../../../base/browser/canIUse.js';
+import * as dom from '../../../base/browser/dom.js';
+import { EventType, Gesture } from '../../../base/browser/touch.js';
+import { mainWindow } from '../../../base/browser/window.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import * as platform from '../../../base/common/platform.js';
+import { MouseHandler } from './mouseHandler.js';
+import { EditorMouseEvent, EditorPointerEventFactory } from '../editorDom.js';
+import { TextAreaSyntethicEvents } from './editContext/textArea/textAreaEditContextInput.js';
+export class PointerEventHandler extends MouseHandler {
+    constructor(context, viewController, viewHelper) {
+        super(context, viewController, viewHelper);
+        this._register(Gesture.addTarget(this.viewHelper.linesContentDomNode));
+        this._register(dom.addDisposableListener(this.viewHelper.linesContentDomNode, EventType.Tap, (e) => this.onTap(e)));
+        this._register(dom.addDisposableListener(this.viewHelper.linesContentDomNode, EventType.Change, (e) => this.onChange(e)));
+        this._register(dom.addDisposableListener(this.viewHelper.linesContentDomNode, EventType.Contextmenu, (e) => this._onContextMenu(new EditorMouseEvent(e, false, this.viewHelper.viewDomNode), false)));
+        this._lastPointerType = 'mouse';
+        this._register(dom.addDisposableListener(this.viewHelper.linesContentDomNode, 'pointerdown', (e) => {
+            const pointerType = e.pointerType;
+            if (pointerType === 'mouse') {
+                this._lastPointerType = 'mouse';
+                return;
+            }
+            else if (pointerType === 'touch') {
+                this._lastPointerType = 'touch';
+            }
+            else {
+                this._lastPointerType = 'pen';
+            }
+        }));
+        const pointerEvents = new EditorPointerEventFactory(this.viewHelper.viewDomNode);
+        this._register(pointerEvents.onPointerMove(this.viewHelper.viewDomNode, (e) => this._onMouseMove(e)));
+        this._register(pointerEvents.onPointerUp(this.viewHelper.viewDomNode, (e) => this._onMouseUp(e)));
+        this._register(pointerEvents.onPointerLeave(this.viewHelper.viewDomNode, (e) => this._onMouseLeave(e)));
+        this._register(pointerEvents.onPointerDown(this.viewHelper.viewDomNode, (e, pointerId) => this._onMouseDown(e, pointerId)));
+    }
+    onTap(event) {
+        if (!event.initialTarget || !this.viewHelper.linesContentDomNode.contains(event.initialTarget)) {
+            return;
+        }
+        event.preventDefault();
+        this.viewHelper.focusTextArea();
+        this._dispatchGesture(event, false);
+    }
+    onChange(event) {
+        if (this._lastPointerType === 'touch') {
+            this._context.viewModel.viewLayout.deltaScrollNow(-event.translationX, -event.translationY);
+        }
+        if (this._lastPointerType === 'pen') {
+            this._dispatchGesture(event, true);
+        }
+    }
+    _dispatchGesture(event, inSelectionMode) {
+        const target = this._createMouseTarget(new EditorMouseEvent(event, false, this.viewHelper.viewDomNode), false);
+        if (target.position) {
+            this.viewController.dispatchMouse({
+                position: target.position,
+                mouseColumn: target.position.column,
+                startedOnLineNumbers: false,
+                revealType: 1,
+                mouseDownCount: event.tapCount,
+                inSelectionMode,
+                altKey: false,
+                ctrlKey: false,
+                metaKey: false,
+                shiftKey: false,
+                leftButton: false,
+                middleButton: false,
+                onInjectedText: target.type === 6 && target.detail.injectedText !== null
+            });
+        }
+    }
+    _onMouseDown(e, pointerId) {
+        if (e.browserEvent.pointerType === 'touch') {
+            return;
+        }
+        super._onMouseDown(e, pointerId);
+    }
+}
+class TouchHandler extends MouseHandler {
+    constructor(context, viewController, viewHelper) {
+        super(context, viewController, viewHelper);
+        this._register(Gesture.addTarget(this.viewHelper.linesContentDomNode));
+        this._register(dom.addDisposableListener(this.viewHelper.linesContentDomNode, EventType.Tap, (e) => this.onTap(e)));
+        this._register(dom.addDisposableListener(this.viewHelper.linesContentDomNode, EventType.Change, (e) => this.onChange(e)));
+        this._register(dom.addDisposableListener(this.viewHelper.linesContentDomNode, EventType.Contextmenu, (e) => this._onContextMenu(new EditorMouseEvent(e, false, this.viewHelper.viewDomNode), false)));
+    }
+    onTap(event) {
+        event.preventDefault();
+        this.viewHelper.focusTextArea();
+        const target = this._createMouseTarget(new EditorMouseEvent(event, false, this.viewHelper.viewDomNode), false);
+        if (target.position) {
+            const event = document.createEvent('CustomEvent');
+            event.initEvent(TextAreaSyntethicEvents.Tap, false, true);
+            this.viewHelper.dispatchTextAreaEvent(event);
+            this.viewController.moveTo(target.position, 1);
+        }
+    }
+    onChange(e) {
+        this._context.viewModel.viewLayout.deltaScrollNow(-e.translationX, -e.translationY);
+    }
+}
+export class PointerHandler extends Disposable {
+    constructor(context, viewController, viewHelper) {
+        super();
+        const isPhone = platform.isIOS || (platform.isAndroid && platform.isMobile);
+        if (isPhone && BrowserFeatures.pointerEvents) {
+            this.handler = this._register(new PointerEventHandler(context, viewController, viewHelper));
+        }
+        else if (mainWindow.TouchEvent) {
+            this.handler = this._register(new TouchHandler(context, viewController, viewHelper));
+        }
+        else {
+            this.handler = this._register(new MouseHandler(context, viewController, viewHelper));
+        }
+    }
+    getTargetAtClientPoint(clientX, clientY) {
+        return this.handler.getTargetAtClientPoint(clientX, clientY);
+    }
+}

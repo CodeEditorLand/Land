@@ -1,1 +1,39 @@
-import"../../dnd.js";import"../../mouseEvent.js";import{ListDragOverEffectPosition as a,ListDragOverEffectType as l}from"../list/list.js";import"../list/listView.js";import"../../../common/event.js";var i=(n=>(n[n.Hidden=0]="Hidden",n[n.Visible=1]="Visible",n[n.Recurse=2]="Recurse",n))(i||{}),d=(e=>(e[e.Expanded=0]="Expanded",e[e.Collapsed=1]="Collapsed",e[e.PreserveOrExpanded=2]="PreserveOrExpanded",e[e.PreserveOrCollapsed=3]="PreserveOrCollapsed",e))(d||{}),T=(e=>(e[e.Unknown=0]="Unknown",e[e.Twistie=1]="Twistie",e[e.Element=2]="Element",e[e.Filter=3]="Filter",e))(T||{}),p=(t=>(t[t.Down=0]="Down",t[t.Up=1]="Up",t))(p||{});const R={acceptBubbleUp(){return{accept:!0,bubble:1}},acceptBubbleDown(o=!1){return{accept:!0,bubble:0,autoExpand:o}},acceptCopyBubbleUp(){return{accept:!0,bubble:1,effect:{type:l.Copy,position:a.Over}}},acceptCopyBubbleDown(o=!1){return{accept:!0,bubble:0,effect:{type:l.Copy,position:a.Over},autoExpand:o}}};class F extends Error{constructor(r,t){super(`TreeError [${r}] ${t}`)}}class E{constructor(r){this.fn=r}_map=new WeakMap;map(r){let t=this._map.get(r);return t||(t=this.fn(r),this._map.set(r,t)),t}}export{d as ObjectTreeElementCollapseState,p as TreeDragOverBubble,R as TreeDragOverReactions,F as TreeError,T as TreeMouseEventTarget,i as TreeVisibility,E as WeakMapper};
+export var ObjectTreeElementCollapseState;
+(function (ObjectTreeElementCollapseState) {
+    ObjectTreeElementCollapseState[ObjectTreeElementCollapseState["Expanded"] = 0] = "Expanded";
+    ObjectTreeElementCollapseState[ObjectTreeElementCollapseState["Collapsed"] = 1] = "Collapsed";
+    ObjectTreeElementCollapseState[ObjectTreeElementCollapseState["PreserveOrExpanded"] = 2] = "PreserveOrExpanded";
+    ObjectTreeElementCollapseState[ObjectTreeElementCollapseState["PreserveOrCollapsed"] = 3] = "PreserveOrCollapsed";
+})(ObjectTreeElementCollapseState || (ObjectTreeElementCollapseState = {}));
+export var TreeMouseEventTarget;
+(function (TreeMouseEventTarget) {
+    TreeMouseEventTarget[TreeMouseEventTarget["Unknown"] = 0] = "Unknown";
+    TreeMouseEventTarget[TreeMouseEventTarget["Twistie"] = 1] = "Twistie";
+    TreeMouseEventTarget[TreeMouseEventTarget["Element"] = 2] = "Element";
+    TreeMouseEventTarget[TreeMouseEventTarget["Filter"] = 3] = "Filter";
+})(TreeMouseEventTarget || (TreeMouseEventTarget = {}));
+export const TreeDragOverReactions = {
+    acceptBubbleUp() { return { accept: true, bubble: 1 }; },
+    acceptBubbleDown(autoExpand = false) { return { accept: true, bubble: 0, autoExpand }; },
+    acceptCopyBubbleUp() { return { accept: true, bubble: 1, effect: { type: 0, position: "drop-target" } }; },
+    acceptCopyBubbleDown(autoExpand = false) { return { accept: true, bubble: 0, effect: { type: 0, position: "drop-target" }, autoExpand }; }
+};
+export class TreeError extends Error {
+    constructor(user, message) {
+        super(`TreeError [${user}] ${message}`);
+    }
+}
+export class WeakMapper {
+    constructor(fn) {
+        this.fn = fn;
+        this._map = new WeakMap();
+    }
+    map(key) {
+        let result = this._map.get(key);
+        if (!result) {
+            result = this.fn(key);
+            this._map.set(key, result);
+        }
+        return result;
+    }
+}

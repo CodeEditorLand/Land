@@ -1,1 +1,791 @@
-var G=Object.defineProperty;var Y=Object.getOwnPropertyDescriptor;var U=(o,u,e,t)=>{for(var r=t>1?void 0:t?Y(u,e):u,s=o.length-1,i;s>=0;s--)(i=o[s])&&(r=(t?i(u,e,r):i(r))||r);return t&&r&&G(u,e,r),r},n=(o,u)=>(e,t)=>u(e,t,o);import{equals as W}from"../../../base/common/arrays.js";import{createCancelablePromise as B,ThrottledDelayer as Q}from"../../../base/common/async.js";import{VSBuffer as p}from"../../../base/common/buffer.js";import{CancellationToken as I}from"../../../base/common/cancellation.js";import"../../../base/common/collections.js";import{Emitter as A}from"../../../base/common/event.js";import{parse as X}from"../../../base/common/json.js";import"../../../base/common/jsonFormatter.js";import{Disposable as Z}from"../../../base/common/lifecycle.js";import"../../../base/common/resources.js";import{uppercaseFirstLetter as ee}from"../../../base/common/strings.js";import{isUndefined as te}from"../../../base/common/types.js";import"../../../base/common/uri.js";import"../../../base/parts/request/common/request.js";import{localize as K}from"../../../nls.js";import{IConfigurationService as M}from"../../configuration/common/configuration.js";import{IEnvironmentService as b}from"../../environment/common/environment.js";import{FileOperationError as C,FileOperationResult as R,IFileService as F,toFileOperationResult as re}from"../../files/common/files.js";import{ILogService as se}from"../../log/common/log.js";import{getServiceMachineId as ie}from"../../externalServices/common/serviceMachineId.js";import{IStorageService as E,StorageScope as w,StorageTarget as T}from"../../storage/common/storage.js";import{ITelemetryService as H}from"../../telemetry/common/telemetry.js";import{IUriIdentityService as O}from"../../uriIdentity/common/uriIdentity.js";import{Change as D,getLastSyncResourceUri as j,IUserDataSyncLocalStoreService as k,IUserDataSyncLogService as z,IUserDataSyncEnablementService as J,IUserDataSyncStoreService as q,IUserDataSyncUtilService as ae,MergeState as S,PREVIEW_DIR_NAME as ne,SyncStatus as y,UserDataSyncError as v,UserDataSyncErrorCode as m,USER_DATA_SYNC_CONFIGURATION_SCOPE as oe,USER_DATA_SYNC_SCHEME as ce,getPathSegments as le}from"./userDataSync.js";import{IUserDataProfilesService as ue}from"../../userDataProfile/common/userDataProfile.js";function ye(o){return!!(o&&o.ref!==void 0&&typeof o.ref=="string"&&o.ref!==""&&o.syncData!==void 0&&(o.syncData===null||V(o.syncData)))}function V(o){return!!(o&&o.version!==void 0&&typeof o.version=="number"&&o.content!==void 0&&typeof o.content=="string"&&(Object.keys(o).length===2||Object.keys(o).length===3&&o.machineId!==void 0&&typeof o.machineId=="string"))}function he(o,u){return`${ee(o)}${u.isDefault?"":` (${u.name})`}`}let P=class extends Z{constructor(e,t,r,s,i,a,h,l,c,g,d,f){super();this.syncResource=e;this.collection=t;this.fileService=r;this.environmentService=s;this.storageService=i;this.userDataSyncStoreService=a;this.userDataSyncLocalStoreService=h;this.userDataSyncEnablementService=l;this.telemetryService=c;this.logService=g;this.configurationService=d;this.syncResourceLogLabel=he(e.syncResource,e.profile),this.extUri=f.extUri,this.syncFolder=this.extUri.joinPath(s.userDataSyncHome,...le(e.profile.isDefault?void 0:e.profile.id,e.syncResource)),this.syncPreviewFolder=this.extUri.joinPath(this.syncFolder,ne),this.lastSyncResource=j(e.profile.isDefault?void 0:e.profile.id,e.syncResource,s,this.extUri),this.currentMachineIdPromise=ie(s,r,i)}syncPreviewPromise=null;syncFolder;syncPreviewFolder;extUri;currentMachineIdPromise;_status=y.Idle;get status(){return this._status}_onDidChangStatus=this._register(new A);onDidChangeStatus=this._onDidChangStatus.event;_conflicts=[];get conflicts(){return{...this.syncResource,conflicts:this._conflicts}}_onDidChangeConflicts=this._register(new A);onDidChangeConflicts=this._onDidChangeConflicts.event;localChangeTriggerThrottler=this._register(new Q(50));_onDidChangeLocal=this._register(new A);onDidChangeLocal=this._onDidChangeLocal.event;lastSyncResource;lastSyncUserDataStateKey=`${this.collection?`${this.collection}.`:""}${this.syncResource.syncResource}.lastSyncUserData`;hasSyncResourceStateVersionChanged=!1;syncResourceLogLabel;syncHeaders={};resource=this.syncResource.syncResource;triggerLocalChange(){this.localChangeTriggerThrottler.trigger(()=>this.doTriggerLocalChange())}async doTriggerLocalChange(){if(this.status===y.HasConflicts){this.logService.info(`${this.syncResourceLogLabel}: In conflicts state and local change detected. Syncing again...`);const e=await this.syncPreviewPromise;this.syncPreviewPromise=null;const t=await this.performSync(e.remoteUserData,e.lastSyncUserData,!0,this.getUserDataSyncConfiguration());this.setStatus(t)}else{this.logService.trace(`${this.syncResourceLogLabel}: Checking for local changes...`);const e=await this.getLastSyncUserData();(e?await this.hasRemoteChanged(e):!0)&&this._onDidChangeLocal.fire()}}setStatus(e){this._status!==e&&(this._status=e,this._onDidChangStatus.fire(e))}async sync(e,t={}){await this._sync(e,!0,this.getUserDataSyncConfiguration(),t)}async preview(e,t,r={}){return this._sync(e,!1,t,r)}async apply(e,t={}){try{this.syncHeaders={...t};const r=await this.doApply(e);return this.setStatus(r),this.syncPreviewPromise}finally{this.syncHeaders={}}}async _sync(e,t,r,s){try{if(this.syncHeaders={...s},this.status===y.HasConflicts)return this.logService.info(`${this.syncResourceLogLabel}: Skipped synchronizing ${this.resource.toLowerCase()} as there are conflicts.`),this.syncPreviewPromise;if(this.status===y.Syncing)return this.logService.info(`${this.syncResourceLogLabel}: Skipped synchronizing ${this.resource.toLowerCase()} as it is running already.`),this.syncPreviewPromise;this.logService.trace(`${this.syncResourceLogLabel}: Started synchronizing ${this.resource.toLowerCase()}...`),this.setStatus(y.Syncing);let i=y.Idle;try{const a=await this.getLastSyncUserData(),h=await this.getLatestRemoteUserData(e,a);return i=await this.performSync(h,a,t,r),i===y.HasConflicts?this.logService.info(`${this.syncResourceLogLabel}: Detected conflicts while synchronizing ${this.resource.toLowerCase()}.`):i===y.Idle&&this.logService.trace(`${this.syncResourceLogLabel}: Finished synchronizing ${this.resource.toLowerCase()}.`),this.syncPreviewPromise||null}finally{this.setStatus(i)}}finally{this.syncHeaders={}}}async replace(e){const t=this.parseSyncData(e);if(!t)return!1;await this.stop();try{this.logService.trace(`${this.syncResourceLogLabel}: Started resetting ${this.resource.toLowerCase()}...`),this.setStatus(y.Syncing);const r=await this.getLastSyncUserData(),s=await this.getLatestRemoteUserData(null,r),i=await this.isRemoteDataFromCurrentMachine(s),a=await this.generateSyncPreview({ref:s.ref,syncData:t},r,i,this.getUserDataSyncConfiguration(),I.None),h=[];for(const l of a){const c=await this.getAcceptResult(l,l.remoteResource,void 0,I.None),{remoteChange:g}=await this.getAcceptResult(l,l.previewResource,l.remoteContent,I.None);h.push([l,{...c,remoteChange:g!==D.None?g:D.Modified}])}await this.applyResult(s,r,h,!1),this.logService.info(`${this.syncResourceLogLabel}: Finished resetting ${this.resource.toLowerCase()}.`)}finally{this.setStatus(y.Idle)}return!0}async isRemoteDataFromCurrentMachine(e){const t=await this.currentMachineIdPromise;return!!e.syncData?.machineId&&e.syncData.machineId===t}async getLatestRemoteUserData(e,t){if(t){const r=e?e[this.resource]:void 0;if(t.ref===r||r===void 0&&t.syncData===null)return t}return this.getRemoteUserData(t)}async performSync(e,t,r,s){if(e.syncData&&e.syncData.version>this.version)throw this.telemetryService.publicLog2("sync/incompatible",{source:this.resource}),new v(K({key:"incompatible",comment:["This is an error while syncing a resource that its local version is not compatible with its remote version."]},"Cannot sync {0} as its local version {1} is not compatible with its remote version {2}",this.resource,this.version,e.syncData.version),m.IncompatibleLocalContent,this.resource);try{return await this.doSync(e,t,r,s)}catch(i){if(i instanceof v)switch(i.code){case m.LocalPreconditionFailed:return this.logService.info(`${this.syncResourceLogLabel}: Failed to synchronize ${this.syncResourceLogLabel} as there is a new local version available. Synchronizing again...`),this.performSync(e,t,r,s);case m.Conflict:case m.PreconditionFailed:return this.logService.info(`${this.syncResourceLogLabel}: Failed to synchronize as there is a new remote version available. Synchronizing again...`),e=await this.getRemoteUserData(null),t=await this.getLastSyncUserData(),this.performSync(e,t,r,s)}throw i}}async doSync(e,t,r,s){try{const i=await this.isRemoteDataFromCurrentMachine(e),a=!i&&t===null&&this.getStoredLastSyncUserDataStateContent()!==void 0,h=r&&!a;this.syncPreviewPromise||(this.syncPreviewPromise=B(c=>this.doGenerateSyncResourcePreview(e,t,i,h,s,c)));let l=await this.syncPreviewPromise;if(r&&a){this.logService.info(`${this.syncResourceLogLabel}: Accepting remote because it was synced before and the last sync data is not available.`);for(const c of l.resourcePreviews)l=await this.accept(c.remoteResource)||l}return this.updateConflicts(l.resourcePreviews),l.resourcePreviews.some(({mergeState:c})=>c===S.Conflict)?y.HasConflicts:r?await this.doApply(!1):y.Syncing}catch(i){throw this.syncPreviewPromise=null,i}}async merge(e){return await this.updateSyncResourcePreview(e,async t=>{const r=await this.getMergeResult(t,I.None);await this.fileService.writeFile(t.previewResource,p.fromString(r?.content||""));const s=r&&!r.hasConflicts?await this.getAcceptResult(t,t.previewResource,void 0,I.None):void 0;return t.acceptResult=s,t.mergeState=r.hasConflicts?S.Conflict:s?S.Accepted:S.Preview,t.localChange=s?s.localChange:r.localChange,t.remoteChange=s?s.remoteChange:r.remoteChange,t}),this.syncPreviewPromise}async accept(e,t){return await this.updateSyncResourcePreview(e,async r=>{const s=await this.getAcceptResult(r,e,t,I.None);return r.acceptResult=s,r.mergeState=S.Accepted,r.localChange=s.localChange,r.remoteChange=s.remoteChange,r}),this.syncPreviewPromise}async discard(e){return await this.updateSyncResourcePreview(e,async t=>{const r=await this.getMergeResult(t,I.None);return await this.fileService.writeFile(t.previewResource,p.fromString(r.content||"")),t.acceptResult=void 0,t.mergeState=S.Preview,t.localChange=r.localChange,t.remoteChange=r.remoteChange,t}),this.syncPreviewPromise}async updateSyncResourcePreview(e,t){if(!this.syncPreviewPromise)return;let r=await this.syncPreviewPromise;const s=r.resourcePreviews.findIndex(({localResource:i,remoteResource:a,previewResource:h})=>this.extUri.isEqual(i,e)||this.extUri.isEqual(a,e)||this.extUri.isEqual(h,e));s!==-1&&(this.syncPreviewPromise=B(async i=>{const a=[...r.resourcePreviews];return a[s]=await t(a[s]),{...r,resourcePreviews:a}}),r=await this.syncPreviewPromise,this.updateConflicts(r.resourcePreviews),r.resourcePreviews.some(({mergeState:i})=>i===S.Conflict)?this.setStatus(y.HasConflicts):this.setStatus(y.Syncing))}async doApply(e){if(!this.syncPreviewPromise)return y.Idle;const t=await this.syncPreviewPromise;return t.resourcePreviews.some(({mergeState:r})=>r===S.Conflict)?y.HasConflicts:t.resourcePreviews.some(({mergeState:r})=>r!==S.Accepted)?y.Syncing:(await this.applyResult(t.remoteUserData,t.lastSyncUserData,t.resourcePreviews.map(r=>[r,r.acceptResult]),e),this.syncPreviewPromise=null,await this.clearPreviewFolder(),y.Idle)}async clearPreviewFolder(){try{await this.fileService.del(this.syncPreviewFolder,{recursive:!0})}catch{}}updateConflicts(e){const t=e.filter(({mergeState:r})=>r===S.Conflict);W(this._conflicts,t,(r,s)=>this.extUri.isEqual(r.previewResource,s.previewResource))||(this._conflicts=t,this._onDidChangeConflicts.fire(this.conflicts))}async hasPreviouslySynced(){const e=await this.getLastSyncUserData();return!!e&&e.syncData!==null}async resolvePreviewContent(e){const t=this.syncPreviewPromise?await this.syncPreviewPromise:null;if(t)for(const r of t.resourcePreviews){if(this.extUri.isEqual(r.acceptedResource,e))return r.acceptResult?r.acceptResult.content:null;if(this.extUri.isEqual(r.remoteResource,e))return r.remoteContent;if(this.extUri.isEqual(r.localResource,e))return r.localContent;if(this.extUri.isEqual(r.baseResource,e))return r.baseContent}return null}async resetLocal(){this.storageService.remove(this.lastSyncUserDataStateKey,w.APPLICATION);try{await this.fileService.del(this.lastSyncResource)}catch(e){re(e)!==R.FILE_NOT_FOUND&&this.logService.error(e)}}async doGenerateSyncResourcePreview(e,t,r,s,i,a){const h=await this.generateSyncPreview(e,t,r,i,a),l=[];for(const c of h){const g=c.previewResource.with({scheme:ce,authority:"accepted"});if(c.localChange===D.None&&c.remoteChange===D.None)l.push({...c,acceptedResource:g,acceptResult:{content:null,localChange:D.None,remoteChange:D.None},mergeState:S.Accepted});else{const d=s?await this.getMergeResult(c,a):void 0;if(a.isCancellationRequested)break;await this.fileService.writeFile(c.previewResource,p.fromString(d?.content||""));const f=d&&!d.hasConflicts?await this.getAcceptResult(c,c.previewResource,void 0,a):void 0;l.push({...c,acceptResult:f,mergeState:d?.hasConflicts?S.Conflict:f?S.Accepted:S.Preview,localChange:f?f.localChange:d?d.localChange:c.localChange,remoteChange:f?f.remoteChange:d?d.remoteChange:c.remoteChange})}}return{syncResource:this.resource,profile:this.syncResource.profile,remoteUserData:e,lastSyncUserData:t,resourcePreviews:l,isLastSyncFromCurrentMachine:r}}async getLastSyncUserData(){let e=this.getStoredLastSyncUserDataStateContent();if(e||(e=await this.migrateLastSyncUserData()),!e)return this.logService.info(`${this.syncResourceLogLabel}: Last sync data state does not exist.`),null;const t=JSON.parse(e),r=this.userDataSyncEnablementService.getResourceSyncStateVersion(this.resource);if(this.hasSyncResourceStateVersionChanged=!!t.version&&!!r&&t.version!==r,this.hasSyncResourceStateVersionChanged)return this.logService.info(`${this.syncResourceLogLabel}: Reset last sync state because last sync state version ${t.version} is not compatible with current sync state version ${r}.`),await this.resetLocal(),null;let s,i=1;for(;s===void 0&&i++<6;)try{const a=await this.readLastSyncStoredRemoteUserData();a&&(a.ref===t.ref?s=a.syncData:this.logService.info(`${this.syncResourceLogLabel}: Last sync data stored locally is not same as the last sync state.`));break}catch(a){if(a instanceof C&&a.fileOperationResult===R.FILE_NOT_FOUND){this.logService.info(`${this.syncResourceLogLabel}: Last sync resource does not exist locally.`);break}else{if(a instanceof v)throw a;this.logService.error(a,i)}}if(s===void 0)try{const a=await this.userDataSyncStoreService.resolveResourceContent(this.resource,t.ref,this.collection,this.syncHeaders);s=a===null?null:this.parseSyncData(a),await this.writeLastSyncStoredRemoteUserData({ref:t.ref,syncData:s})}catch(a){if(a instanceof v&&a.code===m.NotFound)this.logService.info(`${this.syncResourceLogLabel}: Last sync resource does not exist remotely.`);else throw a}return s===void 0?null:{...t,syncData:s}}async updateLastSyncUserData(e,t={}){if(t.ref||t.version)throw new Error("Cannot have core properties as additional");const r=this.userDataSyncEnablementService.getResourceSyncStateVersion(this.resource),s={ref:e.ref,version:r,...t};this.storageService.store(this.lastSyncUserDataStateKey,JSON.stringify(s),w.APPLICATION,T.MACHINE),await this.writeLastSyncStoredRemoteUserData(e)}getStoredLastSyncUserDataStateContent(){return this.storageService.get(this.lastSyncUserDataStateKey,w.APPLICATION)}async readLastSyncStoredRemoteUserData(){const e=(await this.fileService.readFile(this.lastSyncResource)).value.toString();try{const t=e?JSON.parse(e):void 0;if(ye(t))return t}catch(t){this.logService.error(t)}}async writeLastSyncStoredRemoteUserData(e){await this.fileService.writeFile(this.lastSyncResource,p.fromString(JSON.stringify(e)))}async migrateLastSyncUserData(){try{const e=await this.fileService.readFile(this.lastSyncResource),t=JSON.parse(e.value.toString());await this.fileService.del(this.lastSyncResource),t.ref&&t.content!==void 0?(this.storageService.store(this.lastSyncUserDataStateKey,JSON.stringify({...t,content:void 0}),w.APPLICATION,T.MACHINE),await this.writeLastSyncStoredRemoteUserData({ref:t.ref,syncData:t.content===null?null:JSON.parse(t.content)})):this.logService.info(`${this.syncResourceLogLabel}: Migrating last sync user data. Invalid data.`,t)}catch(e){e instanceof C&&e.fileOperationResult===R.FILE_NOT_FOUND?this.logService.info(`${this.syncResourceLogLabel}: Migrating last sync user data. Resource does not exist.`):this.logService.error(e)}return this.storageService.get(this.lastSyncUserDataStateKey,w.APPLICATION)}async getRemoteUserData(e){const{ref:t,content:r}=await this.getUserData(e);let s=null;return r!==null&&(s=this.parseSyncData(r)),{ref:t,syncData:s}}parseSyncData(e){try{const t=JSON.parse(e);if(V(t))return t}catch(t){this.logService.error(t)}throw new v(K("incompatible sync data","Cannot parse sync data as it is not compatible with the current version."),m.IncompatibleRemoteContent,this.resource)}async getUserData(e){const t=e?{ref:e.ref,content:e.syncData?JSON.stringify(e.syncData):null}:null;return this.userDataSyncStoreService.readResource(this.resource,t,this.collection,this.syncHeaders)}async updateRemoteUserData(e,t){const r=await this.currentMachineIdPromise,s={version:this.version,machineId:r,content:e};try{return t=await this.userDataSyncStoreService.writeResource(this.resource,JSON.stringify(s),t,this.collection,this.syncHeaders),{ref:t,syncData:s}}catch(i){throw i instanceof v&&i.code===m.TooLarge&&(i=new v(i.message,i.code,this.resource)),i}}async backupLocal(e){const t={version:this.version,content:e};return this.userDataSyncLocalStoreService.writeResource(this.resource,JSON.stringify(t),new Date,this.syncResource.profile.isDefault?void 0:this.syncResource.profile.id)}async stop(){this.status!==y.Idle&&(this.logService.trace(`${this.syncResourceLogLabel}: Stopping synchronizing ${this.resource.toLowerCase()}.`),this.syncPreviewPromise&&(this.syncPreviewPromise.cancel(),this.syncPreviewPromise=null),this.updateConflicts([]),await this.clearPreviewFolder(),this.setStatus(y.Idle),this.logService.info(`${this.syncResourceLogLabel}: Stopped synchronizing ${this.resource.toLowerCase()}.`))}getUserDataSyncConfiguration(){return this.configurationService.getValue(oe)}};P=U([n(2,F),n(3,b),n(4,E),n(5,q),n(6,k),n(7,J),n(8,H),n(9,z),n(10,M),n(11,O)],P);let L=class extends P{constructor(e,t,r,s,i,a,h,l,c,g,d,f,x){super(t,r,s,i,a,h,l,c,g,d,f,x);this.file=e;this._register(this.fileService.watch(this.extUri.dirname(e))),this._register(this.fileService.onDidFilesChange($=>this.onFileChanges($)))}async getLocalFileContent(){try{return await this.fileService.readFile(this.file)}catch{return null}}async updateLocalFileContent(e,t,r){try{t?await this.fileService.writeFile(this.file,p.fromString(e),r?void 0:t):await this.fileService.createFile(this.file,p.fromString(e),{overwrite:r})}catch(s){throw s instanceof C&&s.fileOperationResult===R.FILE_NOT_FOUND||s instanceof C&&s.fileOperationResult===R.FILE_MODIFIED_SINCE?new v(s.message,m.LocalPreconditionFailed):s}}async deleteLocalFile(){try{await this.fileService.del(this.file)}catch(e){if(!(e instanceof C&&e.fileOperationResult===R.FILE_NOT_FOUND))throw e}}onFileChanges(e){e.contains(this.file)&&this.triggerLocalChange()}};L=U([n(3,F),n(4,b),n(5,E),n(6,q),n(7,k),n(8,J),n(9,H),n(10,z),n(11,M),n(12,O)],L);let N=class extends L{constructor(e,t,r,s,i,a,h,l,c,g,d,f,x,$){super(e,t,r,s,i,a,h,l,c,g,d,x,$);this.userDataSyncUtilService=f}hasErrors(e,t){const r=[],s=X(e,r,{allowEmptyContent:!0,allowTrailingComma:!0});return r.length>0||!te(s)&&t!==Array.isArray(s)}_formattingOptions=void 0;getFormattingOptions(){return this._formattingOptions||(this._formattingOptions=this.userDataSyncUtilService.resolveFormattingOptions(this.file)),this._formattingOptions}};N=U([n(3,F),n(4,b),n(5,E),n(6,q),n(7,k),n(8,J),n(9,H),n(10,z),n(11,ae),n(12,M),n(13,O)],N);let _=class{constructor(u,e,t,r,s,i,a){this.resource=u;this.userDataProfilesService=e;this.environmentService=t;this.logService=r;this.fileService=s;this.storageService=i;this.extUri=a.extUri,this.lastSyncResource=j(void 0,this.resource,t,this.extUri)}extUri;lastSyncResource;async initialize({ref:u,content:e}){if(!e){this.logService.info("Remote content does not exist.",this.resource);return}const t=this.parseSyncData(e);if(t)try{await this.doInitialize({ref:u,syncData:t})}catch(r){this.logService.error(r)}}parseSyncData(u){try{const e=JSON.parse(u);if(V(e))return e}catch(e){this.logService.error(e)}this.logService.info("Cannot parse sync data as it is not compatible with the current version.",this.resource)}async updateLastSyncUserData(u,e={}){if(e.ref||e.version)throw new Error("Cannot have core properties as additional");const t={ref:u.ref,version:void 0,...e};this.storageService.store(`${this.resource}.lastSyncUserData`,JSON.stringify(t),w.APPLICATION,T.MACHINE),await this.fileService.writeFile(this.lastSyncResource,p.fromString(JSON.stringify(u)))}};_=U([n(1,ue),n(2,b),n(3,se),n(4,F),n(5,E),n(6,O)],_);export{L as AbstractFileSynchroniser,_ as AbstractInitializer,N as AbstractJsonFileSynchroniser,P as AbstractSynchroniser,he as getSyncResourceLogLabel,ye as isRemoteUserData,V as isSyncData};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { equals } from '../../../base/common/arrays.js';
+import { createCancelablePromise, ThrottledDelayer } from '../../../base/common/async.js';
+import { VSBuffer } from '../../../base/common/buffer.js';
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { Emitter } from '../../../base/common/event.js';
+import { parse } from '../../../base/common/json.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { uppercaseFirstLetter } from '../../../base/common/strings.js';
+import { isUndefined } from '../../../base/common/types.js';
+import { URI } from '../../../base/common/uri.js';
+import { localize } from '../../../nls.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { IEnvironmentService } from '../../environment/common/environment.js';
+import { FileOperationError, IFileService, toFileOperationResult } from '../../files/common/files.js';
+import { ILogService } from '../../log/common/log.js';
+import { getServiceMachineId } from '../../externalServices/common/serviceMachineId.js';
+import { IStorageService } from '../../storage/common/storage.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+import { IUriIdentityService } from '../../uriIdentity/common/uriIdentity.js';
+import { getLastSyncResourceUri, IUserDataSyncLocalStoreService, IUserDataSyncLogService, IUserDataSyncEnablementService, IUserDataSyncStoreService, IUserDataSyncUtilService, PREVIEW_DIR_NAME, UserDataSyncError, USER_DATA_SYNC_CONFIGURATION_SCOPE, USER_DATA_SYNC_SCHEME, getPathSegments } from './userDataSync.js';
+import { IUserDataProfilesService } from '../../userDataProfile/common/userDataProfile.js';
+export function isRemoteUserData(thing) {
+    if (thing
+        && (thing.ref !== undefined && typeof thing.ref === 'string' && thing.ref !== '')
+        && (thing.syncData !== undefined && (thing.syncData === null || isSyncData(thing.syncData)))) {
+        return true;
+    }
+    return false;
+}
+export function isSyncData(thing) {
+    if (thing
+        && (thing.version !== undefined && typeof thing.version === 'number')
+        && (thing.content !== undefined && typeof thing.content === 'string')) {
+        if (Object.keys(thing).length === 2) {
+            return true;
+        }
+        if (Object.keys(thing).length === 3
+            && (thing.machineId !== undefined && typeof thing.machineId === 'string')) {
+            return true;
+        }
+    }
+    return false;
+}
+export function getSyncResourceLogLabel(syncResource, profile) {
+    return `${uppercaseFirstLetter(syncResource)}${profile.isDefault ? '' : ` (${profile.name})`}`;
+}
+let AbstractSynchroniser = class AbstractSynchroniser extends Disposable {
+    get status() { return this._status; }
+    get conflicts() { return { ...this.syncResource, conflicts: this._conflicts }; }
+    constructor(syncResource, collection, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncLocalStoreService, userDataSyncEnablementService, telemetryService, logService, configurationService, uriIdentityService) {
+        super();
+        this.syncResource = syncResource;
+        this.collection = collection;
+        this.fileService = fileService;
+        this.environmentService = environmentService;
+        this.storageService = storageService;
+        this.userDataSyncStoreService = userDataSyncStoreService;
+        this.userDataSyncLocalStoreService = userDataSyncLocalStoreService;
+        this.userDataSyncEnablementService = userDataSyncEnablementService;
+        this.telemetryService = telemetryService;
+        this.logService = logService;
+        this.configurationService = configurationService;
+        this.syncPreviewPromise = null;
+        this._status = "idle";
+        this._onDidChangStatus = this._register(new Emitter());
+        this.onDidChangeStatus = this._onDidChangStatus.event;
+        this._conflicts = [];
+        this._onDidChangeConflicts = this._register(new Emitter());
+        this.onDidChangeConflicts = this._onDidChangeConflicts.event;
+        this.localChangeTriggerThrottler = this._register(new ThrottledDelayer(50));
+        this._onDidChangeLocal = this._register(new Emitter());
+        this.onDidChangeLocal = this._onDidChangeLocal.event;
+        this.lastSyncUserDataStateKey = `${this.collection ? `${this.collection}.` : ''}${this.syncResource.syncResource}.lastSyncUserData`;
+        this.hasSyncResourceStateVersionChanged = false;
+        this.syncHeaders = {};
+        this.resource = this.syncResource.syncResource;
+        this.syncResourceLogLabel = getSyncResourceLogLabel(syncResource.syncResource, syncResource.profile);
+        this.extUri = uriIdentityService.extUri;
+        this.syncFolder = this.extUri.joinPath(environmentService.userDataSyncHome, ...getPathSegments(syncResource.profile.isDefault ? undefined : syncResource.profile.id, syncResource.syncResource));
+        this.syncPreviewFolder = this.extUri.joinPath(this.syncFolder, PREVIEW_DIR_NAME);
+        this.lastSyncResource = getLastSyncResourceUri(syncResource.profile.isDefault ? undefined : syncResource.profile.id, syncResource.syncResource, environmentService, this.extUri);
+        this.currentMachineIdPromise = getServiceMachineId(environmentService, fileService, storageService);
+    }
+    triggerLocalChange() {
+        this.localChangeTriggerThrottler.trigger(() => this.doTriggerLocalChange());
+    }
+    async doTriggerLocalChange() {
+        if (this.status === "hasConflicts") {
+            this.logService.info(`${this.syncResourceLogLabel}: In conflicts state and local change detected. Syncing again...`);
+            const preview = await this.syncPreviewPromise;
+            this.syncPreviewPromise = null;
+            const status = await this.performSync(preview.remoteUserData, preview.lastSyncUserData, true, this.getUserDataSyncConfiguration());
+            this.setStatus(status);
+        }
+        else {
+            this.logService.trace(`${this.syncResourceLogLabel}: Checking for local changes...`);
+            const lastSyncUserData = await this.getLastSyncUserData();
+            const hasRemoteChanged = lastSyncUserData ? await this.hasRemoteChanged(lastSyncUserData) : true;
+            if (hasRemoteChanged) {
+                this._onDidChangeLocal.fire();
+            }
+        }
+    }
+    setStatus(status) {
+        if (this._status !== status) {
+            this._status = status;
+            this._onDidChangStatus.fire(status);
+        }
+    }
+    async sync(manifest, headers = {}) {
+        await this._sync(manifest, true, this.getUserDataSyncConfiguration(), headers);
+    }
+    async preview(manifest, userDataSyncConfiguration, headers = {}) {
+        return this._sync(manifest, false, userDataSyncConfiguration, headers);
+    }
+    async apply(force, headers = {}) {
+        try {
+            this.syncHeaders = { ...headers };
+            const status = await this.doApply(force);
+            this.setStatus(status);
+            return this.syncPreviewPromise;
+        }
+        finally {
+            this.syncHeaders = {};
+        }
+    }
+    async _sync(manifest, apply, userDataSyncConfiguration, headers) {
+        try {
+            this.syncHeaders = { ...headers };
+            if (this.status === "hasConflicts") {
+                this.logService.info(`${this.syncResourceLogLabel}: Skipped synchronizing ${this.resource.toLowerCase()} as there are conflicts.`);
+                return this.syncPreviewPromise;
+            }
+            if (this.status === "syncing") {
+                this.logService.info(`${this.syncResourceLogLabel}: Skipped synchronizing ${this.resource.toLowerCase()} as it is running already.`);
+                return this.syncPreviewPromise;
+            }
+            this.logService.trace(`${this.syncResourceLogLabel}: Started synchronizing ${this.resource.toLowerCase()}...`);
+            this.setStatus("syncing");
+            let status = "idle";
+            try {
+                const lastSyncUserData = await this.getLastSyncUserData();
+                const remoteUserData = await this.getLatestRemoteUserData(manifest, lastSyncUserData);
+                status = await this.performSync(remoteUserData, lastSyncUserData, apply, userDataSyncConfiguration);
+                if (status === "hasConflicts") {
+                    this.logService.info(`${this.syncResourceLogLabel}: Detected conflicts while synchronizing ${this.resource.toLowerCase()}.`);
+                }
+                else if (status === "idle") {
+                    this.logService.trace(`${this.syncResourceLogLabel}: Finished synchronizing ${this.resource.toLowerCase()}.`);
+                }
+                return this.syncPreviewPromise || null;
+            }
+            finally {
+                this.setStatus(status);
+            }
+        }
+        finally {
+            this.syncHeaders = {};
+        }
+    }
+    async replace(content) {
+        const syncData = this.parseSyncData(content);
+        if (!syncData) {
+            return false;
+        }
+        await this.stop();
+        try {
+            this.logService.trace(`${this.syncResourceLogLabel}: Started resetting ${this.resource.toLowerCase()}...`);
+            this.setStatus("syncing");
+            const lastSyncUserData = await this.getLastSyncUserData();
+            const remoteUserData = await this.getLatestRemoteUserData(null, lastSyncUserData);
+            const isRemoteDataFromCurrentMachine = await this.isRemoteDataFromCurrentMachine(remoteUserData);
+            const resourcePreviewResults = await this.generateSyncPreview({ ref: remoteUserData.ref, syncData }, lastSyncUserData, isRemoteDataFromCurrentMachine, this.getUserDataSyncConfiguration(), CancellationToken.None);
+            const resourcePreviews = [];
+            for (const resourcePreviewResult of resourcePreviewResults) {
+                const acceptResult = await this.getAcceptResult(resourcePreviewResult, resourcePreviewResult.remoteResource, undefined, CancellationToken.None);
+                const { remoteChange } = await this.getAcceptResult(resourcePreviewResult, resourcePreviewResult.previewResource, resourcePreviewResult.remoteContent, CancellationToken.None);
+                resourcePreviews.push([resourcePreviewResult, { ...acceptResult, remoteChange: remoteChange !== 0 ? remoteChange : 2 }]);
+            }
+            await this.applyResult(remoteUserData, lastSyncUserData, resourcePreviews, false);
+            this.logService.info(`${this.syncResourceLogLabel}: Finished resetting ${this.resource.toLowerCase()}.`);
+        }
+        finally {
+            this.setStatus("idle");
+        }
+        return true;
+    }
+    async isRemoteDataFromCurrentMachine(remoteUserData) {
+        const machineId = await this.currentMachineIdPromise;
+        return !!remoteUserData.syncData?.machineId && remoteUserData.syncData.machineId === machineId;
+    }
+    async getLatestRemoteUserData(manifest, lastSyncUserData) {
+        if (lastSyncUserData) {
+            const latestRef = manifest ? manifest[this.resource] : undefined;
+            if (lastSyncUserData.ref === latestRef) {
+                return lastSyncUserData;
+            }
+            if (latestRef === undefined && lastSyncUserData.syncData === null) {
+                return lastSyncUserData;
+            }
+        }
+        return this.getRemoteUserData(lastSyncUserData);
+    }
+    async performSync(remoteUserData, lastSyncUserData, apply, userDataSyncConfiguration) {
+        if (remoteUserData.syncData && remoteUserData.syncData.version > this.version) {
+            this.telemetryService.publicLog2('sync/incompatible', { source: this.resource });
+            throw new UserDataSyncError(localize({ key: 'incompatible', comment: ['This is an error while syncing a resource that its local version is not compatible with its remote version.'] }, "Cannot sync {0} as its local version {1} is not compatible with its remote version {2}", this.resource, this.version, remoteUserData.syncData.version), "IncompatibleLocalContent", this.resource);
+        }
+        try {
+            return await this.doSync(remoteUserData, lastSyncUserData, apply, userDataSyncConfiguration);
+        }
+        catch (e) {
+            if (e instanceof UserDataSyncError) {
+                switch (e.code) {
+                    case "LocalPreconditionFailed":
+                        this.logService.info(`${this.syncResourceLogLabel}: Failed to synchronize ${this.syncResourceLogLabel} as there is a new local version available. Synchronizing again...`);
+                        return this.performSync(remoteUserData, lastSyncUserData, apply, userDataSyncConfiguration);
+                    case "Conflict":
+                    case "PreconditionFailed":
+                        this.logService.info(`${this.syncResourceLogLabel}: Failed to synchronize as there is a new remote version available. Synchronizing again...`);
+                        remoteUserData = await this.getRemoteUserData(null);
+                        lastSyncUserData = await this.getLastSyncUserData();
+                        return this.performSync(remoteUserData, lastSyncUserData, apply, userDataSyncConfiguration);
+                }
+            }
+            throw e;
+        }
+    }
+    async doSync(remoteUserData, lastSyncUserData, apply, userDataSyncConfiguration) {
+        try {
+            const isRemoteDataFromCurrentMachine = await this.isRemoteDataFromCurrentMachine(remoteUserData);
+            const acceptRemote = !isRemoteDataFromCurrentMachine && lastSyncUserData === null && this.getStoredLastSyncUserDataStateContent() !== undefined;
+            const merge = apply && !acceptRemote;
+            if (!this.syncPreviewPromise) {
+                this.syncPreviewPromise = createCancelablePromise(token => this.doGenerateSyncResourcePreview(remoteUserData, lastSyncUserData, isRemoteDataFromCurrentMachine, merge, userDataSyncConfiguration, token));
+            }
+            let preview = await this.syncPreviewPromise;
+            if (apply && acceptRemote) {
+                this.logService.info(`${this.syncResourceLogLabel}: Accepting remote because it was synced before and the last sync data is not available.`);
+                for (const resourcePreview of preview.resourcePreviews) {
+                    preview = (await this.accept(resourcePreview.remoteResource)) || preview;
+                }
+            }
+            this.updateConflicts(preview.resourcePreviews);
+            if (preview.resourcePreviews.some(({ mergeState }) => mergeState === "conflict")) {
+                return "hasConflicts";
+            }
+            if (apply) {
+                return await this.doApply(false);
+            }
+            return "syncing";
+        }
+        catch (error) {
+            this.syncPreviewPromise = null;
+            throw error;
+        }
+    }
+    async merge(resource) {
+        await this.updateSyncResourcePreview(resource, async (resourcePreview) => {
+            const mergeResult = await this.getMergeResult(resourcePreview, CancellationToken.None);
+            await this.fileService.writeFile(resourcePreview.previewResource, VSBuffer.fromString(mergeResult?.content || ''));
+            const acceptResult = mergeResult && !mergeResult.hasConflicts
+                ? await this.getAcceptResult(resourcePreview, resourcePreview.previewResource, undefined, CancellationToken.None)
+                : undefined;
+            resourcePreview.acceptResult = acceptResult;
+            resourcePreview.mergeState = mergeResult.hasConflicts ? "conflict" : acceptResult ? "accepted" : "preview";
+            resourcePreview.localChange = acceptResult ? acceptResult.localChange : mergeResult.localChange;
+            resourcePreview.remoteChange = acceptResult ? acceptResult.remoteChange : mergeResult.remoteChange;
+            return resourcePreview;
+        });
+        return this.syncPreviewPromise;
+    }
+    async accept(resource, content) {
+        await this.updateSyncResourcePreview(resource, async (resourcePreview) => {
+            const acceptResult = await this.getAcceptResult(resourcePreview, resource, content, CancellationToken.None);
+            resourcePreview.acceptResult = acceptResult;
+            resourcePreview.mergeState = "accepted";
+            resourcePreview.localChange = acceptResult.localChange;
+            resourcePreview.remoteChange = acceptResult.remoteChange;
+            return resourcePreview;
+        });
+        return this.syncPreviewPromise;
+    }
+    async discard(resource) {
+        await this.updateSyncResourcePreview(resource, async (resourcePreview) => {
+            const mergeResult = await this.getMergeResult(resourcePreview, CancellationToken.None);
+            await this.fileService.writeFile(resourcePreview.previewResource, VSBuffer.fromString(mergeResult.content || ''));
+            resourcePreview.acceptResult = undefined;
+            resourcePreview.mergeState = "preview";
+            resourcePreview.localChange = mergeResult.localChange;
+            resourcePreview.remoteChange = mergeResult.remoteChange;
+            return resourcePreview;
+        });
+        return this.syncPreviewPromise;
+    }
+    async updateSyncResourcePreview(resource, updateResourcePreview) {
+        if (!this.syncPreviewPromise) {
+            return;
+        }
+        let preview = await this.syncPreviewPromise;
+        const index = preview.resourcePreviews.findIndex(({ localResource, remoteResource, previewResource }) => this.extUri.isEqual(localResource, resource) || this.extUri.isEqual(remoteResource, resource) || this.extUri.isEqual(previewResource, resource));
+        if (index === -1) {
+            return;
+        }
+        this.syncPreviewPromise = createCancelablePromise(async (token) => {
+            const resourcePreviews = [...preview.resourcePreviews];
+            resourcePreviews[index] = await updateResourcePreview(resourcePreviews[index]);
+            return {
+                ...preview,
+                resourcePreviews
+            };
+        });
+        preview = await this.syncPreviewPromise;
+        this.updateConflicts(preview.resourcePreviews);
+        if (preview.resourcePreviews.some(({ mergeState }) => mergeState === "conflict")) {
+            this.setStatus("hasConflicts");
+        }
+        else {
+            this.setStatus("syncing");
+        }
+    }
+    async doApply(force) {
+        if (!this.syncPreviewPromise) {
+            return "idle";
+        }
+        const preview = await this.syncPreviewPromise;
+        if (preview.resourcePreviews.some(({ mergeState }) => mergeState === "conflict")) {
+            return "hasConflicts";
+        }
+        if (preview.resourcePreviews.some(({ mergeState }) => mergeState !== "accepted")) {
+            return "syncing";
+        }
+        await this.applyResult(preview.remoteUserData, preview.lastSyncUserData, preview.resourcePreviews.map(resourcePreview => ([resourcePreview, resourcePreview.acceptResult])), force);
+        this.syncPreviewPromise = null;
+        await this.clearPreviewFolder();
+        return "idle";
+    }
+    async clearPreviewFolder() {
+        try {
+            await this.fileService.del(this.syncPreviewFolder, { recursive: true });
+        }
+        catch (error) { }
+    }
+    updateConflicts(resourcePreviews) {
+        const conflicts = resourcePreviews.filter(({ mergeState }) => mergeState === "conflict");
+        if (!equals(this._conflicts, conflicts, (a, b) => this.extUri.isEqual(a.previewResource, b.previewResource))) {
+            this._conflicts = conflicts;
+            this._onDidChangeConflicts.fire(this.conflicts);
+        }
+    }
+    async hasPreviouslySynced() {
+        const lastSyncData = await this.getLastSyncUserData();
+        return !!lastSyncData && lastSyncData.syncData !== null;
+    }
+    async resolvePreviewContent(uri) {
+        const syncPreview = this.syncPreviewPromise ? await this.syncPreviewPromise : null;
+        if (syncPreview) {
+            for (const resourcePreview of syncPreview.resourcePreviews) {
+                if (this.extUri.isEqual(resourcePreview.acceptedResource, uri)) {
+                    return resourcePreview.acceptResult ? resourcePreview.acceptResult.content : null;
+                }
+                if (this.extUri.isEqual(resourcePreview.remoteResource, uri)) {
+                    return resourcePreview.remoteContent;
+                }
+                if (this.extUri.isEqual(resourcePreview.localResource, uri)) {
+                    return resourcePreview.localContent;
+                }
+                if (this.extUri.isEqual(resourcePreview.baseResource, uri)) {
+                    return resourcePreview.baseContent;
+                }
+            }
+        }
+        return null;
+    }
+    async resetLocal() {
+        this.storageService.remove(this.lastSyncUserDataStateKey, -1);
+        try {
+            await this.fileService.del(this.lastSyncResource);
+        }
+        catch (error) {
+            if (toFileOperationResult(error) !== 1) {
+                this.logService.error(error);
+            }
+        }
+    }
+    async doGenerateSyncResourcePreview(remoteUserData, lastSyncUserData, isRemoteDataFromCurrentMachine, merge, userDataSyncConfiguration, token) {
+        const resourcePreviewResults = await this.generateSyncPreview(remoteUserData, lastSyncUserData, isRemoteDataFromCurrentMachine, userDataSyncConfiguration, token);
+        const resourcePreviews = [];
+        for (const resourcePreviewResult of resourcePreviewResults) {
+            const acceptedResource = resourcePreviewResult.previewResource.with({ scheme: USER_DATA_SYNC_SCHEME, authority: 'accepted' });
+            if (resourcePreviewResult.localChange === 0 && resourcePreviewResult.remoteChange === 0) {
+                resourcePreviews.push({
+                    ...resourcePreviewResult,
+                    acceptedResource,
+                    acceptResult: { content: null, localChange: 0, remoteChange: 0 },
+                    mergeState: "accepted"
+                });
+            }
+            else {
+                const mergeResult = merge ? await this.getMergeResult(resourcePreviewResult, token) : undefined;
+                if (token.isCancellationRequested) {
+                    break;
+                }
+                await this.fileService.writeFile(resourcePreviewResult.previewResource, VSBuffer.fromString(mergeResult?.content || ''));
+                const acceptResult = mergeResult && !mergeResult.hasConflicts
+                    ? await this.getAcceptResult(resourcePreviewResult, resourcePreviewResult.previewResource, undefined, token)
+                    : undefined;
+                resourcePreviews.push({
+                    ...resourcePreviewResult,
+                    acceptResult,
+                    mergeState: mergeResult?.hasConflicts ? "conflict" : acceptResult ? "accepted" : "preview",
+                    localChange: acceptResult ? acceptResult.localChange : mergeResult ? mergeResult.localChange : resourcePreviewResult.localChange,
+                    remoteChange: acceptResult ? acceptResult.remoteChange : mergeResult ? mergeResult.remoteChange : resourcePreviewResult.remoteChange
+                });
+            }
+        }
+        return { syncResource: this.resource, profile: this.syncResource.profile, remoteUserData, lastSyncUserData, resourcePreviews, isLastSyncFromCurrentMachine: isRemoteDataFromCurrentMachine };
+    }
+    async getLastSyncUserData() {
+        let storedLastSyncUserDataStateContent = this.getStoredLastSyncUserDataStateContent();
+        if (!storedLastSyncUserDataStateContent) {
+            storedLastSyncUserDataStateContent = await this.migrateLastSyncUserData();
+        }
+        if (!storedLastSyncUserDataStateContent) {
+            this.logService.info(`${this.syncResourceLogLabel}: Last sync data state does not exist.`);
+            return null;
+        }
+        const lastSyncUserDataState = JSON.parse(storedLastSyncUserDataStateContent);
+        const resourceSyncStateVersion = this.userDataSyncEnablementService.getResourceSyncStateVersion(this.resource);
+        this.hasSyncResourceStateVersionChanged = !!lastSyncUserDataState.version && !!resourceSyncStateVersion && lastSyncUserDataState.version !== resourceSyncStateVersion;
+        if (this.hasSyncResourceStateVersionChanged) {
+            this.logService.info(`${this.syncResourceLogLabel}: Reset last sync state because last sync state version ${lastSyncUserDataState.version} is not compatible with current sync state version ${resourceSyncStateVersion}.`);
+            await this.resetLocal();
+            return null;
+        }
+        let syncData = undefined;
+        let retrial = 1;
+        while (syncData === undefined && retrial++ < 6) {
+            try {
+                const lastSyncStoredRemoteUserData = await this.readLastSyncStoredRemoteUserData();
+                if (lastSyncStoredRemoteUserData) {
+                    if (lastSyncStoredRemoteUserData.ref === lastSyncUserDataState.ref) {
+                        syncData = lastSyncStoredRemoteUserData.syncData;
+                    }
+                    else {
+                        this.logService.info(`${this.syncResourceLogLabel}: Last sync data stored locally is not same as the last sync state.`);
+                    }
+                }
+                break;
+            }
+            catch (error) {
+                if (error instanceof FileOperationError && error.fileOperationResult === 1) {
+                    this.logService.info(`${this.syncResourceLogLabel}: Last sync resource does not exist locally.`);
+                    break;
+                }
+                else if (error instanceof UserDataSyncError) {
+                    throw error;
+                }
+                else {
+                    this.logService.error(error, retrial);
+                }
+            }
+        }
+        if (syncData === undefined) {
+            try {
+                const content = await this.userDataSyncStoreService.resolveResourceContent(this.resource, lastSyncUserDataState.ref, this.collection, this.syncHeaders);
+                syncData = content === null ? null : this.parseSyncData(content);
+                await this.writeLastSyncStoredRemoteUserData({ ref: lastSyncUserDataState.ref, syncData });
+            }
+            catch (error) {
+                if (error instanceof UserDataSyncError && error.code === "NotFound") {
+                    this.logService.info(`${this.syncResourceLogLabel}: Last sync resource does not exist remotely.`);
+                }
+                else {
+                    throw error;
+                }
+            }
+        }
+        if (syncData === undefined) {
+            return null;
+        }
+        return {
+            ...lastSyncUserDataState,
+            syncData,
+        };
+    }
+    async updateLastSyncUserData(lastSyncRemoteUserData, additionalProps = {}) {
+        if (additionalProps['ref'] || additionalProps['version']) {
+            throw new Error('Cannot have core properties as additional');
+        }
+        const version = this.userDataSyncEnablementService.getResourceSyncStateVersion(this.resource);
+        const lastSyncUserDataState = {
+            ref: lastSyncRemoteUserData.ref,
+            version,
+            ...additionalProps
+        };
+        this.storageService.store(this.lastSyncUserDataStateKey, JSON.stringify(lastSyncUserDataState), -1, 1);
+        await this.writeLastSyncStoredRemoteUserData(lastSyncRemoteUserData);
+    }
+    getStoredLastSyncUserDataStateContent() {
+        return this.storageService.get(this.lastSyncUserDataStateKey, -1);
+    }
+    async readLastSyncStoredRemoteUserData() {
+        const content = (await this.fileService.readFile(this.lastSyncResource)).value.toString();
+        try {
+            const lastSyncStoredRemoteUserData = content ? JSON.parse(content) : undefined;
+            if (isRemoteUserData(lastSyncStoredRemoteUserData)) {
+                return lastSyncStoredRemoteUserData;
+            }
+        }
+        catch (e) {
+            this.logService.error(e);
+        }
+        return undefined;
+    }
+    async writeLastSyncStoredRemoteUserData(lastSyncRemoteUserData) {
+        await this.fileService.writeFile(this.lastSyncResource, VSBuffer.fromString(JSON.stringify(lastSyncRemoteUserData)));
+    }
+    async migrateLastSyncUserData() {
+        try {
+            const content = await this.fileService.readFile(this.lastSyncResource);
+            const userData = JSON.parse(content.value.toString());
+            await this.fileService.del(this.lastSyncResource);
+            if (userData.ref && userData.content !== undefined) {
+                this.storageService.store(this.lastSyncUserDataStateKey, JSON.stringify({
+                    ...userData,
+                    content: undefined,
+                }), -1, 1);
+                await this.writeLastSyncStoredRemoteUserData({ ref: userData.ref, syncData: userData.content === null ? null : JSON.parse(userData.content) });
+            }
+            else {
+                this.logService.info(`${this.syncResourceLogLabel}: Migrating last sync user data. Invalid data.`, userData);
+            }
+        }
+        catch (error) {
+            if (error instanceof FileOperationError && error.fileOperationResult === 1) {
+                this.logService.info(`${this.syncResourceLogLabel}: Migrating last sync user data. Resource does not exist.`);
+            }
+            else {
+                this.logService.error(error);
+            }
+        }
+        return this.storageService.get(this.lastSyncUserDataStateKey, -1);
+    }
+    async getRemoteUserData(lastSyncData) {
+        const { ref, content } = await this.getUserData(lastSyncData);
+        let syncData = null;
+        if (content !== null) {
+            syncData = this.parseSyncData(content);
+        }
+        return { ref, syncData };
+    }
+    parseSyncData(content) {
+        try {
+            const syncData = JSON.parse(content);
+            if (isSyncData(syncData)) {
+                return syncData;
+            }
+        }
+        catch (error) {
+            this.logService.error(error);
+        }
+        throw new UserDataSyncError(localize('incompatible sync data', "Cannot parse sync data as it is not compatible with the current version."), "IncompatibleRemoteContent", this.resource);
+    }
+    async getUserData(lastSyncData) {
+        const lastSyncUserData = lastSyncData ? { ref: lastSyncData.ref, content: lastSyncData.syncData ? JSON.stringify(lastSyncData.syncData) : null } : null;
+        return this.userDataSyncStoreService.readResource(this.resource, lastSyncUserData, this.collection, this.syncHeaders);
+    }
+    async updateRemoteUserData(content, ref) {
+        const machineId = await this.currentMachineIdPromise;
+        const syncData = { version: this.version, machineId, content };
+        try {
+            ref = await this.userDataSyncStoreService.writeResource(this.resource, JSON.stringify(syncData), ref, this.collection, this.syncHeaders);
+            return { ref, syncData };
+        }
+        catch (error) {
+            if (error instanceof UserDataSyncError && error.code === "TooLarge") {
+                error = new UserDataSyncError(error.message, error.code, this.resource);
+            }
+            throw error;
+        }
+    }
+    async backupLocal(content) {
+        const syncData = { version: this.version, content };
+        return this.userDataSyncLocalStoreService.writeResource(this.resource, JSON.stringify(syncData), new Date(), this.syncResource.profile.isDefault ? undefined : this.syncResource.profile.id);
+    }
+    async stop() {
+        if (this.status === "idle") {
+            return;
+        }
+        this.logService.trace(`${this.syncResourceLogLabel}: Stopping synchronizing ${this.resource.toLowerCase()}.`);
+        if (this.syncPreviewPromise) {
+            this.syncPreviewPromise.cancel();
+            this.syncPreviewPromise = null;
+        }
+        this.updateConflicts([]);
+        await this.clearPreviewFolder();
+        this.setStatus("idle");
+        this.logService.info(`${this.syncResourceLogLabel}: Stopped synchronizing ${this.resource.toLowerCase()}.`);
+    }
+    getUserDataSyncConfiguration() {
+        return this.configurationService.getValue(USER_DATA_SYNC_CONFIGURATION_SCOPE);
+    }
+};
+AbstractSynchroniser = __decorate([
+    __param(2, IFileService),
+    __param(3, IEnvironmentService),
+    __param(4, IStorageService),
+    __param(5, IUserDataSyncStoreService),
+    __param(6, IUserDataSyncLocalStoreService),
+    __param(7, IUserDataSyncEnablementService),
+    __param(8, ITelemetryService),
+    __param(9, IUserDataSyncLogService),
+    __param(10, IConfigurationService),
+    __param(11, IUriIdentityService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], AbstractSynchroniser);
+export { AbstractSynchroniser };
+let AbstractFileSynchroniser = class AbstractFileSynchroniser extends AbstractSynchroniser {
+    constructor(file, syncResource, collection, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncLocalStoreService, userDataSyncEnablementService, telemetryService, logService, configurationService, uriIdentityService) {
+        super(syncResource, collection, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncLocalStoreService, userDataSyncEnablementService, telemetryService, logService, configurationService, uriIdentityService);
+        this.file = file;
+        this._register(this.fileService.watch(this.extUri.dirname(file)));
+        this._register(this.fileService.onDidFilesChange(e => this.onFileChanges(e)));
+    }
+    async getLocalFileContent() {
+        try {
+            return await this.fileService.readFile(this.file);
+        }
+        catch (error) {
+            return null;
+        }
+    }
+    async updateLocalFileContent(newContent, oldContent, force) {
+        try {
+            if (oldContent) {
+                await this.fileService.writeFile(this.file, VSBuffer.fromString(newContent), force ? undefined : oldContent);
+            }
+            else {
+                await this.fileService.createFile(this.file, VSBuffer.fromString(newContent), { overwrite: force });
+            }
+        }
+        catch (e) {
+            if ((e instanceof FileOperationError && e.fileOperationResult === 1) ||
+                (e instanceof FileOperationError && e.fileOperationResult === 3)) {
+                throw new UserDataSyncError(e.message, "LocalPreconditionFailed");
+            }
+            else {
+                throw e;
+            }
+        }
+    }
+    async deleteLocalFile() {
+        try {
+            await this.fileService.del(this.file);
+        }
+        catch (e) {
+            if (!(e instanceof FileOperationError && e.fileOperationResult === 1)) {
+                throw e;
+            }
+        }
+    }
+    onFileChanges(e) {
+        if (!e.contains(this.file)) {
+            return;
+        }
+        this.triggerLocalChange();
+    }
+};
+AbstractFileSynchroniser = __decorate([
+    __param(3, IFileService),
+    __param(4, IEnvironmentService),
+    __param(5, IStorageService),
+    __param(6, IUserDataSyncStoreService),
+    __param(7, IUserDataSyncLocalStoreService),
+    __param(8, IUserDataSyncEnablementService),
+    __param(9, ITelemetryService),
+    __param(10, IUserDataSyncLogService),
+    __param(11, IConfigurationService),
+    __param(12, IUriIdentityService),
+    __metadata("design:paramtypes", [URI, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], AbstractFileSynchroniser);
+export { AbstractFileSynchroniser };
+let AbstractJsonFileSynchroniser = class AbstractJsonFileSynchroniser extends AbstractFileSynchroniser {
+    constructor(file, syncResource, collection, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncLocalStoreService, userDataSyncEnablementService, telemetryService, logService, userDataSyncUtilService, configurationService, uriIdentityService) {
+        super(file, syncResource, collection, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncLocalStoreService, userDataSyncEnablementService, telemetryService, logService, configurationService, uriIdentityService);
+        this.userDataSyncUtilService = userDataSyncUtilService;
+        this._formattingOptions = undefined;
+    }
+    hasErrors(content, isArray) {
+        const parseErrors = [];
+        const result = parse(content, parseErrors, { allowEmptyContent: true, allowTrailingComma: true });
+        return parseErrors.length > 0 || (!isUndefined(result) && isArray !== Array.isArray(result));
+    }
+    getFormattingOptions() {
+        if (!this._formattingOptions) {
+            this._formattingOptions = this.userDataSyncUtilService.resolveFormattingOptions(this.file);
+        }
+        return this._formattingOptions;
+    }
+};
+AbstractJsonFileSynchroniser = __decorate([
+    __param(3, IFileService),
+    __param(4, IEnvironmentService),
+    __param(5, IStorageService),
+    __param(6, IUserDataSyncStoreService),
+    __param(7, IUserDataSyncLocalStoreService),
+    __param(8, IUserDataSyncEnablementService),
+    __param(9, ITelemetryService),
+    __param(10, IUserDataSyncLogService),
+    __param(11, IUserDataSyncUtilService),
+    __param(12, IConfigurationService),
+    __param(13, IUriIdentityService),
+    __metadata("design:paramtypes", [URI, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], AbstractJsonFileSynchroniser);
+export { AbstractJsonFileSynchroniser };
+let AbstractInitializer = class AbstractInitializer {
+    constructor(resource, userDataProfilesService, environmentService, logService, fileService, storageService, uriIdentityService) {
+        this.resource = resource;
+        this.userDataProfilesService = userDataProfilesService;
+        this.environmentService = environmentService;
+        this.logService = logService;
+        this.fileService = fileService;
+        this.storageService = storageService;
+        this.extUri = uriIdentityService.extUri;
+        this.lastSyncResource = getLastSyncResourceUri(undefined, this.resource, environmentService, this.extUri);
+    }
+    async initialize({ ref, content }) {
+        if (!content) {
+            this.logService.info('Remote content does not exist.', this.resource);
+            return;
+        }
+        const syncData = this.parseSyncData(content);
+        if (!syncData) {
+            return;
+        }
+        try {
+            await this.doInitialize({ ref, syncData });
+        }
+        catch (error) {
+            this.logService.error(error);
+        }
+    }
+    parseSyncData(content) {
+        try {
+            const syncData = JSON.parse(content);
+            if (isSyncData(syncData)) {
+                return syncData;
+            }
+        }
+        catch (error) {
+            this.logService.error(error);
+        }
+        this.logService.info('Cannot parse sync data as it is not compatible with the current version.', this.resource);
+        return undefined;
+    }
+    async updateLastSyncUserData(lastSyncRemoteUserData, additionalProps = {}) {
+        if (additionalProps['ref'] || additionalProps['version']) {
+            throw new Error('Cannot have core properties as additional');
+        }
+        const lastSyncUserDataState = {
+            ref: lastSyncRemoteUserData.ref,
+            version: undefined,
+            ...additionalProps
+        };
+        this.storageService.store(`${this.resource}.lastSyncUserData`, JSON.stringify(lastSyncUserDataState), -1, 1);
+        await this.fileService.writeFile(this.lastSyncResource, VSBuffer.fromString(JSON.stringify(lastSyncRemoteUserData)));
+    }
+};
+AbstractInitializer = __decorate([
+    __param(1, IUserDataProfilesService),
+    __param(2, IEnvironmentService),
+    __param(3, ILogService),
+    __param(4, IFileService),
+    __param(5, IStorageService),
+    __param(6, IUriIdentityService),
+    __metadata("design:paramtypes", [String, Object, Object, Object, Object, Object, Object])
+], AbstractInitializer);
+export { AbstractInitializer };

@@ -1,1 +1,251 @@
-var y=Object.defineProperty;var A=Object.getOwnPropertyDescriptor;var f=(s,i,e,t)=>{for(var r=t>1?void 0:t?A(i,e):i,o=s.length-1,n;o>=0;o--)(n=s[o])&&(r=(t?n(i,e,r):n(r))||r);return t&&r&&y(i,e,r),r},a=(s,i)=>(e,t)=>i(e,t,s);import{CancellationToken as g}from"../../../base/common/cancellation.js";import{Emitter as x}from"../../../base/common/event.js";import{Disposable as w,toDisposable as h}from"../../../base/common/lifecycle.js";import*as T from"../../../nls.js";import"../../../platform/extensions/common/extensions.js";import{createDecorator as _}from"../../../platform/instantiation/common/instantiation.js";import{ILogService as S}from"../../../platform/log/common/log.js";import{DisposableTunnel as D,TunnelPrivacyId as u}from"../../../platform/tunnel/common/tunnel.js";import{MainContext as F}from"./extHost.protocol.js";import{IExtHostInitDataService as C}from"./extHostInitDataService.js";import{IExtHostRpcService as I}from"./extHostRpcService.js";import*as E from"./extHostTypes.js";import"../../services/remote/common/tunnelModel.js";import"vscode";class H extends D{}var b;(e=>{function s(t){return{remoteAddress:t.remoteAddress,localAddress:t.localAddress,public:!!t.public,privacy:t.privacy??(t.public?u.Public:u.Private),protocol:t.protocol}}e.fromApiTunnel=s;function i(t){return{remoteAddress:{host:t.tunnelRemoteHost,port:t.tunnelRemotePort},localAddress:t.localAddress,public:t.privacy!==u.ConstantPrivate&&t.privacy!==u.ConstantPrivate,privacy:t.privacy,protocol:t.protocol}}e.fromServiceTunnel=i})(b||={});const ie=_("IExtHostTunnelService");let l=class extends w{constructor(e,t,r){super();this.logService=r;this._proxy=e.getProxy(F.MainThreadTunnelService)}_serviceBrand;_proxy;_forwardPortProvider;_showCandidatePort=()=>Promise.resolve(!0);_extensionTunnels=new Map;_onDidChangeTunnels=new x;onDidChangeTunnels=this._onDidChangeTunnels.event;_providerHandleCounter=0;_portAttributesProviders=new Map;async openTunnel(e,t){this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) ${e.identifier.value} called openTunnel API for ${t.remoteAddress.host}:${t.remoteAddress.port}.`);const r=await this._proxy.$openTunnel(t,e.displayName);if(r){const o=new H(r.remoteAddress,r.localAddress,()=>this._proxy.$closeTunnel(r.remoteAddress));return this._register(o),o}}async getTunnels(){return this._proxy.$getTunnels()}nextPortAttributesProviderHandle(){return this._providerHandleCounter++}registerPortsAttributesProvider(e,t){e.portRange===void 0&&e.commandPattern===void 0&&this.logService.error("PortAttributesProvider must specify either a portRange or a commandPattern");const r=this.nextPortAttributesProviderHandle();return this._portAttributesProviders.set(r,{selector:e,provider:t}),this._proxy.$registerPortsAttributesProvider(e,r),new E.Disposable(()=>{this._portAttributesProviders.delete(r),this._proxy.$unregisterPortsAttributesProvider(r)})}async $providePortAttributes(e,t,r,o,n){const c=[];for(const d of e){const p=this._portAttributesProviders.get(d);if(!p)return[];c.push(...await Promise.all(t.map(async v=>{let P;try{P=await p.provider.providePortAttributes({port:v,pid:r,commandLine:o},n)}catch{P=await p.provider.providePortAttributes(v,r,o,n)}return{providedAttributes:P,port:v}})))}const m=c.filter(d=>!!d.providedAttributes);return m.length>0?m.map(d=>({autoForwardAction:d.providedAttributes.autoForwardAction,port:d.port})):[]}async $registerCandidateFinder(e){}registerTunnelProvider(e,t){if(this._forwardPortProvider)throw new Error("A tunnel provider has already been registered. Only the first tunnel provider to be registered will be used.");this._forwardPortProvider=async(o,n)=>await e.provideTunnel(o,n,g.None)??void 0;const r=t.tunnelFeatures?{elevation:!!t.tunnelFeatures?.elevation,privacyOptions:t.tunnelFeatures?.privacyOptions,protocol:t.tunnelFeatures.protocol===void 0?!0:t.tunnelFeatures.protocol}:void 0;return this._proxy.$setTunnelProvider(r,!0),Promise.resolve(h(()=>{this._forwardPortProvider=void 0,this._proxy.$setTunnelProvider(void 0,!1)}))}async setTunnelFactory(e,t){if(e){e.candidatePortSource!==void 0&&this._proxy.$setCandidatePortSource(e.candidatePortSource),e.showCandidatePort&&(this._showCandidatePort=e.showCandidatePort,this._proxy.$setCandidateFilter());const r=e.tunnelFactory??(t?this.makeManagedTunnelFactory(t):void 0);if(r){this._forwardPortProvider=r;let o=e.tunnelFeatures?.privacyOptions??[];e.tunnelFeatures?.public&&o.length===0&&(o=[{id:"private",label:T.localize("tunnelPrivacy.private","Private"),themeIcon:"lock"},{id:"public",label:T.localize("tunnelPrivacy.public","Public"),themeIcon:"eye"}]);const n=e.tunnelFeatures?{elevation:!!e.tunnelFeatures?.elevation,public:!!e.tunnelFeatures?.public,privacyOptions:o,protocol:!0}:void 0;this._proxy.$setTunnelProvider(n,!!e.tunnelFactory)}}else this._forwardPortProvider=void 0;return h(()=>{this._forwardPortProvider=void 0})}makeManagedTunnelFactory(e){}async $closeTunnel(e,t){if(this._extensionTunnels.has(e.host)){const r=this._extensionTunnels.get(e.host);r.has(e.port)&&(t&&r.get(e.port).disposeListener.dispose(),await r.get(e.port).tunnel.dispose(),r.delete(e.port))}}async $onDidTunnelsChange(){this._onDidChangeTunnels.fire()}async $forwardPort(e,t){if(this._forwardPortProvider)try{this.logService.trace("ForwardedPorts: (ExtHostTunnelService) Getting tunnel from provider.");const r=this._forwardPortProvider(e,t);if(this.logService.trace("ForwardedPorts: (ExtHostTunnelService) Got tunnel promise from provider."),r!==void 0){const o=await r;if(this.logService.trace("ForwardedPorts: (ExtHostTunnelService) Successfully awaited tunnel from provider."),o===void 0){this.logService.error("ForwardedPorts: (ExtHostTunnelService) Resolved tunnel is undefined");return}this._extensionTunnels.has(e.remoteAddress.host)||this._extensionTunnels.set(e.remoteAddress.host,new Map);const n=this._register(o.onDidDispose(()=>(this.logService.trace("ForwardedPorts: (ExtHostTunnelService) Extension fired tunnel's onDidDispose."),this._proxy.$closeTunnel(o.remoteAddress))));return this._extensionTunnels.get(e.remoteAddress.host).set(e.remoteAddress.port,{tunnel:o,disposeListener:n}),b.fromApiTunnel(o)}else this.logService.trace("ForwardedPorts: (ExtHostTunnelService) Tunnel is undefined")}catch(r){if(this.logService.trace("ForwardedPorts: (ExtHostTunnelService) tunnel provider error"),r instanceof Error)return r.message}}async $applyCandidateFilter(e){const t=await Promise.all(e.map(o=>this._showCandidatePort(o.host,o.port,o.detail??""))),r=e.filter((o,n)=>t[n]);return this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) filtered from ${e.map(o=>o.port).join(", ")} to ${r.map(o=>o.port).join(", ")}`),r}};l=f([a(0,I),a(1,C),a(2,S)],l);export{l as ExtHostTunnelService,ie as IExtHostTunnelService,b as TunnelDtoConverter};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { Emitter } from '../../../base/common/event.js';
+import { Disposable, toDisposable } from '../../../base/common/lifecycle.js';
+import * as nls from '../../../nls.js';
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { DisposableTunnel, TunnelPrivacyId } from '../../../platform/tunnel/common/tunnel.js';
+import { MainContext } from './extHost.protocol.js';
+import { IExtHostInitDataService } from './extHostInitDataService.js';
+import { IExtHostRpcService } from './extHostRpcService.js';
+import * as types from './extHostTypes.js';
+class ExtensionTunnel extends DisposableTunnel {
+}
+export var TunnelDtoConverter;
+(function (TunnelDtoConverter) {
+    function fromApiTunnel(tunnel) {
+        return {
+            remoteAddress: tunnel.remoteAddress,
+            localAddress: tunnel.localAddress,
+            public: !!tunnel.public,
+            privacy: tunnel.privacy ?? (tunnel.public ? TunnelPrivacyId.Public : TunnelPrivacyId.Private),
+            protocol: tunnel.protocol
+        };
+    }
+    TunnelDtoConverter.fromApiTunnel = fromApiTunnel;
+    function fromServiceTunnel(tunnel) {
+        return {
+            remoteAddress: {
+                host: tunnel.tunnelRemoteHost,
+                port: tunnel.tunnelRemotePort
+            },
+            localAddress: tunnel.localAddress,
+            public: tunnel.privacy !== TunnelPrivacyId.ConstantPrivate && tunnel.privacy !== TunnelPrivacyId.ConstantPrivate,
+            privacy: tunnel.privacy,
+            protocol: tunnel.protocol
+        };
+    }
+    TunnelDtoConverter.fromServiceTunnel = fromServiceTunnel;
+})(TunnelDtoConverter || (TunnelDtoConverter = {}));
+export const IExtHostTunnelService = createDecorator('IExtHostTunnelService');
+let ExtHostTunnelService = class ExtHostTunnelService extends Disposable {
+    constructor(extHostRpc, initData, logService) {
+        super();
+        this.logService = logService;
+        this._showCandidatePort = () => { return Promise.resolve(true); };
+        this._extensionTunnels = new Map();
+        this._onDidChangeTunnels = new Emitter();
+        this.onDidChangeTunnels = this._onDidChangeTunnels.event;
+        this._providerHandleCounter = 0;
+        this._portAttributesProviders = new Map();
+        this._proxy = extHostRpc.getProxy(MainContext.MainThreadTunnelService);
+    }
+    async openTunnel(extension, forward) {
+        this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) ${extension.identifier.value} called openTunnel API for ${forward.remoteAddress.host}:${forward.remoteAddress.port}.`);
+        const tunnel = await this._proxy.$openTunnel(forward, extension.displayName);
+        if (tunnel) {
+            const disposableTunnel = new ExtensionTunnel(tunnel.remoteAddress, tunnel.localAddress, () => {
+                return this._proxy.$closeTunnel(tunnel.remoteAddress);
+            });
+            this._register(disposableTunnel);
+            return disposableTunnel;
+        }
+        return undefined;
+    }
+    async getTunnels() {
+        return this._proxy.$getTunnels();
+    }
+    nextPortAttributesProviderHandle() {
+        return this._providerHandleCounter++;
+    }
+    registerPortsAttributesProvider(portSelector, provider) {
+        if (portSelector.portRange === undefined && portSelector.commandPattern === undefined) {
+            this.logService.error('PortAttributesProvider must specify either a portRange or a commandPattern');
+        }
+        const providerHandle = this.nextPortAttributesProviderHandle();
+        this._portAttributesProviders.set(providerHandle, { selector: portSelector, provider });
+        this._proxy.$registerPortsAttributesProvider(portSelector, providerHandle);
+        return new types.Disposable(() => {
+            this._portAttributesProviders.delete(providerHandle);
+            this._proxy.$unregisterPortsAttributesProvider(providerHandle);
+        });
+    }
+    async $providePortAttributes(handles, ports, pid, commandLine, cancellationToken) {
+        const providedAttributes = [];
+        for (const handle of handles) {
+            const provider = this._portAttributesProviders.get(handle);
+            if (!provider) {
+                return [];
+            }
+            providedAttributes.push(...(await Promise.all(ports.map(async (port) => {
+                let providedAttributes;
+                try {
+                    providedAttributes = await provider.provider.providePortAttributes({ port, pid, commandLine }, cancellationToken);
+                }
+                catch (e) {
+                    providedAttributes = await provider.provider.providePortAttributes(port, pid, commandLine, cancellationToken);
+                }
+                return { providedAttributes, port };
+            }))));
+        }
+        const allAttributes = providedAttributes.filter(attribute => !!attribute.providedAttributes);
+        return (allAttributes.length > 0) ? allAttributes.map(attributes => {
+            return {
+                autoForwardAction: attributes.providedAttributes.autoForwardAction,
+                port: attributes.port
+            };
+        }) : [];
+    }
+    async $registerCandidateFinder(_enable) { }
+    registerTunnelProvider(provider, information) {
+        if (this._forwardPortProvider) {
+            throw new Error('A tunnel provider has already been registered. Only the first tunnel provider to be registered will be used.');
+        }
+        this._forwardPortProvider = async (tunnelOptions, tunnelCreationOptions) => {
+            const result = await provider.provideTunnel(tunnelOptions, tunnelCreationOptions, CancellationToken.None);
+            return result ?? undefined;
+        };
+        const tunnelFeatures = information.tunnelFeatures ? {
+            elevation: !!information.tunnelFeatures?.elevation,
+            privacyOptions: information.tunnelFeatures?.privacyOptions,
+            protocol: information.tunnelFeatures.protocol === undefined ? true : information.tunnelFeatures.protocol,
+        } : undefined;
+        this._proxy.$setTunnelProvider(tunnelFeatures, true);
+        return Promise.resolve(toDisposable(() => {
+            this._forwardPortProvider = undefined;
+            this._proxy.$setTunnelProvider(undefined, false);
+        }));
+    }
+    async setTunnelFactory(provider, managedRemoteAuthority) {
+        if (provider) {
+            if (provider.candidatePortSource !== undefined) {
+                this._proxy.$setCandidatePortSource(provider.candidatePortSource);
+            }
+            if (provider.showCandidatePort) {
+                this._showCandidatePort = provider.showCandidatePort;
+                this._proxy.$setCandidateFilter();
+            }
+            const tunnelFactory = provider.tunnelFactory ?? (managedRemoteAuthority ? this.makeManagedTunnelFactory(managedRemoteAuthority) : undefined);
+            if (tunnelFactory) {
+                this._forwardPortProvider = tunnelFactory;
+                let privacyOptions = provider.tunnelFeatures?.privacyOptions ?? [];
+                if (provider.tunnelFeatures?.public && (privacyOptions.length === 0)) {
+                    privacyOptions = [
+                        {
+                            id: 'private',
+                            label: nls.localize('tunnelPrivacy.private', "Private"),
+                            themeIcon: 'lock'
+                        },
+                        {
+                            id: 'public',
+                            label: nls.localize('tunnelPrivacy.public', "Public"),
+                            themeIcon: 'eye'
+                        }
+                    ];
+                }
+                const tunnelFeatures = provider.tunnelFeatures ? {
+                    elevation: !!provider.tunnelFeatures?.elevation,
+                    public: !!provider.tunnelFeatures?.public,
+                    privacyOptions,
+                    protocol: true
+                } : undefined;
+                this._proxy.$setTunnelProvider(tunnelFeatures, !!provider.tunnelFactory);
+            }
+        }
+        else {
+            this._forwardPortProvider = undefined;
+        }
+        return toDisposable(() => {
+            this._forwardPortProvider = undefined;
+        });
+    }
+    makeManagedTunnelFactory(_authority) {
+        return undefined;
+    }
+    async $closeTunnel(remote, silent) {
+        if (this._extensionTunnels.has(remote.host)) {
+            const hostMap = this._extensionTunnels.get(remote.host);
+            if (hostMap.has(remote.port)) {
+                if (silent) {
+                    hostMap.get(remote.port).disposeListener.dispose();
+                }
+                await hostMap.get(remote.port).tunnel.dispose();
+                hostMap.delete(remote.port);
+            }
+        }
+    }
+    async $onDidTunnelsChange() {
+        this._onDidChangeTunnels.fire();
+    }
+    async $forwardPort(tunnelOptions, tunnelCreationOptions) {
+        if (this._forwardPortProvider) {
+            try {
+                this.logService.trace('ForwardedPorts: (ExtHostTunnelService) Getting tunnel from provider.');
+                const providedPort = this._forwardPortProvider(tunnelOptions, tunnelCreationOptions);
+                this.logService.trace('ForwardedPorts: (ExtHostTunnelService) Got tunnel promise from provider.');
+                if (providedPort !== undefined) {
+                    const tunnel = await providedPort;
+                    this.logService.trace('ForwardedPorts: (ExtHostTunnelService) Successfully awaited tunnel from provider.');
+                    if (tunnel === undefined) {
+                        this.logService.error('ForwardedPorts: (ExtHostTunnelService) Resolved tunnel is undefined');
+                        return undefined;
+                    }
+                    if (!this._extensionTunnels.has(tunnelOptions.remoteAddress.host)) {
+                        this._extensionTunnels.set(tunnelOptions.remoteAddress.host, new Map());
+                    }
+                    const disposeListener = this._register(tunnel.onDidDispose(() => {
+                        this.logService.trace('ForwardedPorts: (ExtHostTunnelService) Extension fired tunnel\'s onDidDispose.');
+                        return this._proxy.$closeTunnel(tunnel.remoteAddress);
+                    }));
+                    this._extensionTunnels.get(tunnelOptions.remoteAddress.host).set(tunnelOptions.remoteAddress.port, { tunnel, disposeListener });
+                    return TunnelDtoConverter.fromApiTunnel(tunnel);
+                }
+                else {
+                    this.logService.trace('ForwardedPorts: (ExtHostTunnelService) Tunnel is undefined');
+                }
+            }
+            catch (e) {
+                this.logService.trace('ForwardedPorts: (ExtHostTunnelService) tunnel provider error');
+                if (e instanceof Error) {
+                    return e.message;
+                }
+            }
+        }
+        return undefined;
+    }
+    async $applyCandidateFilter(candidates) {
+        const filter = await Promise.all(candidates.map(candidate => this._showCandidatePort(candidate.host, candidate.port, candidate.detail ?? '')));
+        const result = candidates.filter((candidate, index) => filter[index]);
+        this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) filtered from ${candidates.map(port => port.port).join(', ')} to ${result.map(port => port.port).join(', ')}`);
+        return result;
+    }
+};
+ExtHostTunnelService = __decorate([
+    __param(0, IExtHostRpcService),
+    __param(1, IExtHostInitDataService),
+    __param(2, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], ExtHostTunnelService);
+export { ExtHostTunnelService };

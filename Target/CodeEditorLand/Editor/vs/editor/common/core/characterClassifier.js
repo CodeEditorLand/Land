@@ -1,1 +1,49 @@
-import{toUint8 as r}from"../../../base/common/uint.js";class a{_asciiMap;_map;_defaultValue;constructor(e){const t=r(e);this._defaultValue=t,this._asciiMap=a._createAsciiMap(t),this._map=new Map}static _createAsciiMap(e){const t=new Uint8Array(256);return t.fill(e),t}set(e,t){const i=r(t);e>=0&&e<256?this._asciiMap[e]=i:this._map.set(e,i)}get(e){return e>=0&&e<256?this._asciiMap[e]:this._map.get(e)||this._defaultValue}clear(){this._asciiMap.fill(this._defaultValue),this._map.clear()}}var s=(t=>(t[t.False=0]="False",t[t.True=1]="True",t))(s||{});class n{_actual;constructor(){this._actual=new a(0)}add(e){this._actual.set(e,1)}has(e){return this._actual.get(e)===1}clear(){return this._actual.clear()}}export{a as CharacterClassifier,n as CharacterSet};
+import { toUint8 } from '../../../base/common/uint.js';
+export class CharacterClassifier {
+    constructor(_defaultValue) {
+        const defaultValue = toUint8(_defaultValue);
+        this._defaultValue = defaultValue;
+        this._asciiMap = CharacterClassifier._createAsciiMap(defaultValue);
+        this._map = new Map();
+    }
+    static _createAsciiMap(defaultValue) {
+        const asciiMap = new Uint8Array(256);
+        asciiMap.fill(defaultValue);
+        return asciiMap;
+    }
+    set(charCode, _value) {
+        const value = toUint8(_value);
+        if (charCode >= 0 && charCode < 256) {
+            this._asciiMap[charCode] = value;
+        }
+        else {
+            this._map.set(charCode, value);
+        }
+    }
+    get(charCode) {
+        if (charCode >= 0 && charCode < 256) {
+            return this._asciiMap[charCode];
+        }
+        else {
+            return (this._map.get(charCode) || this._defaultValue);
+        }
+    }
+    clear() {
+        this._asciiMap.fill(this._defaultValue);
+        this._map.clear();
+    }
+}
+export class CharacterSet {
+    constructor() {
+        this._actual = new CharacterClassifier(0);
+    }
+    add(charCode) {
+        this._actual.set(charCode, 1);
+    }
+    has(charCode) {
+        return (this._actual.get(charCode) === 1);
+    }
+    clear() {
+        return this._actual.clear();
+    }
+}

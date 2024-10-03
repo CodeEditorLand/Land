@@ -1,1 +1,23 @@
-import{reset as o}from"../../dom.js";import{getBaseLayerHoverDelegate as r}from"../hover/hoverDelegate2.js";import{getDefaultHoverDelegate as t}from"../hover/hoverDelegateFactory.js";import{renderLabelWithIcons as s}from"./iconLabels.js";import"../../../common/lifecycle.js";class l{constructor(e){this._container=e}hover;set text(e){o(this._container,...s(e??""))}set title(e){!this.hover&&e?this.hover=r().setupManagedHover(t("mouse"),this._container,e):this.hover&&this.hover.update(e)}dispose(){this.hover?.dispose()}}export{l as SimpleIconLabel};
+import { reset } from '../../dom.js';
+import { getBaseLayerHoverDelegate } from '../hover/hoverDelegate2.js';
+import { getDefaultHoverDelegate } from '../hover/hoverDelegateFactory.js';
+import { renderLabelWithIcons } from './iconLabels.js';
+export class SimpleIconLabel {
+    constructor(_container) {
+        this._container = _container;
+    }
+    set text(text) {
+        reset(this._container, ...renderLabelWithIcons(text ?? ''));
+    }
+    set title(title) {
+        if (!this.hover && title) {
+            this.hover = getBaseLayerHoverDelegate().setupManagedHover(getDefaultHoverDelegate('mouse'), this._container, title);
+        }
+        else if (this.hover) {
+            this.hover.update(title);
+        }
+    }
+    dispose() {
+        this.hover?.dispose();
+    }
+}

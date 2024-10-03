@@ -1,1 +1,210 @@
-var m=Object.defineProperty;var g=Object.getOwnPropertyDescriptor;var p=(u,d,e,t)=>{for(var i=t>1?void 0:t?g(d,e):d,r=u.length-1,o;r>=0;r--)(o=u[r])&&(i=(t?o(d,e,i):o(i))||i);return t&&i&&m(d,e,i),i},s=(u,d)=>(e,t)=>d(e,t,u);import{Event as R}from"../../../../base/common/event.js";import"../../../../base/common/lifecycle.js";import*as v from"../../../../base/common/path.js";import{isEqual as h,joinPath as M}from"../../../../base/common/resources.js";import"../../../../base/common/uri.js";import{PLAINTEXT_LANGUAGE_ID as S}from"../../../../editor/common/languages/modesRegistry.js";import{ITextModelService as b}from"../../../../editor/common/services/resolverService.js";import{IConfigurationService as y}from"../../../../platform/configuration/common/configuration.js";import{IFileDialogService as D}from"../../../../platform/dialogs/common/dialogs.js";import{IInstantiationService as E}from"../../../../platform/instantiation/common/instantiation.js";import{EditorInputCapabilities as l}from"../../../common/editor.js";import{EditorInput as k}from"../../../common/editor/editorInput.js";import{IInteractiveDocumentService as N}from"./interactiveDocumentService.js";import{IInteractiveHistoryService as C}from"./interactiveHistoryService.js";import{NotebookSetting as w}from"../../notebook/common/notebookCommon.js";import{NotebookEditorInput as U}from"../../notebook/common/notebookEditorInput.js";import{INotebookService as x}from"../../notebook/common/notebookService.js";let n=class extends k{constructor(e,t,i,r,o,c,a,f,L,P,_){const I=U.getOrCreate(o,e,void 0,"interactive",{});super();this._notebookService=L;this._fileDialogService=P;this.isScratchpad=_.getValue(w.InteractiveWindowPromptToSave)!==!0,this._notebookEditorInput=I,this._register(this._notebookEditorInput),this.name=i??n.windowNames[e.path]??v.basename(e.path,v.extname(e.path)),this._initLanguage=r,this._resource=e,this._inputResource=t,this._inputResolver=null,this._editorModelReference=null,this._inputModelRef=null,this._textModelService=c,this._interactiveDocumentService=a,this._historyService=f,this._registerListeners()}static create(e,t,i,r,o){return e.createInstance(n,t,i,r,o)}static windowNames={};static setName(e,t){t&&(this.windowNames[e.path]=t)}static ID="workbench.input.interactive";get editorId(){return"interactive"}get typeId(){return n.ID}name;isScratchpad;get language(){return this._inputModelRef?.object.textEditorModel.getLanguageId()??this._initLanguage}_initLanguage;_notebookEditorInput;get notebookEditorInput(){return this._notebookEditorInput}get editorInputs(){return[this._notebookEditorInput]}_resource;get resource(){return this._resource}_inputResource;get inputResource(){return this._inputResource}_inputResolver;_editorModelReference;_inputModelRef;get primary(){return this._notebookEditorInput}_textModelService;_interactiveDocumentService;_historyService;_registerListeners(){const e=R.once(this.primary.onWillDispose);this._register(e(()=>{this.isDisposed()||this.dispose()})),this._register(this.primary.onDidChangeDirty(()=>this._onDidChangeDirty.fire())),this._register(this.primary.onDidChangeLabel(()=>this._onDidChangeLabel.fire())),this._register(this.primary.onDidChangeCapabilities(()=>this._onDidChangeCapabilities.fire()))}get capabilities(){const e=this.isScratchpad?l.Scratchpad:0;return l.Untitled|l.Readonly|e}async _resolveEditorModel(){return this._editorModelReference||(this._editorModelReference=await this._notebookEditorInput.resolve()),this._editorModelReference}async resolve(){return this._editorModelReference?this._editorModelReference:this._inputResolver?this._inputResolver:(this._inputResolver=this._resolveEditorModel(),this._inputResolver)}async resolveInput(e){if(this._inputModelRef)return this._inputModelRef.object.textEditorModel;const t=e??this._initLanguage??S;return this._interactiveDocumentService.willCreateInteractiveDocument(this.resource,this.inputResource,t),this._inputModelRef=await this._textModelService.createModelReference(this.inputResource),this._inputModelRef.object.textEditorModel}async save(e,t){if(this._editorModelReference)return this.hasCapability(l.Untitled)?this.saveAs(e,t):(await this._editorModelReference.save(t),this)}async saveAs(e,t){if(!this._editorModelReference||!this._notebookService.getContributedNotebookType("interactive"))return;const r=this.getName()+".ipynb",o=M(await this._fileDialogService.defaultFilePath(),r),c=await this._fileDialogService.pickFileToSave(o,t?.availableFileSystems);if(!c)return;const a=await this._editorModelReference.saveAs(c);return a&&"resource"in a&&a.resource&&this._notebookService.getNotebookTextModel(a.resource)?.dispose(),a}matches(e){return super.matches(e)?!0:e instanceof n?h(this.resource,e.resource)&&h(this.inputResource,e.inputResource):!1}getName(){return this.name}isDirty(){return this.isScratchpad?!1:this._editorModelReference?.isDirty()??!1}isModified(){return this._editorModelReference?.isModified()??!1}async revert(e,t){this._editorModelReference&&this._editorModelReference.isDirty()&&await this._editorModelReference.revert(t)}dispose(){this._editorModelReference?.revert({soft:!0}),this._notebookEditorInput?.dispose(),this._editorModelReference?.dispose(),this._editorModelReference=null,this._interactiveDocumentService.willRemoveInteractiveDocument(this.resource,this.inputResource),this._inputModelRef?.dispose(),this._inputModelRef=null,super.dispose()}get historyService(){return this._historyService}};n=p([s(4,E),s(5,b),s(6,N),s(7,C),s(8,x),s(9,D),s(10,y)],n);export{n as InteractiveEditorInput};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var InteractiveEditorInput_1;
+import { Event } from '../../../../base/common/event.js';
+import * as paths from '../../../../base/common/path.js';
+import { isEqual, joinPath } from '../../../../base/common/resources.js';
+import { URI } from '../../../../base/common/uri.js';
+import { PLAINTEXT_LANGUAGE_ID } from '../../../../editor/common/languages/modesRegistry.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IFileDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { EditorInput } from '../../../common/editor/editorInput.js';
+import { IInteractiveDocumentService } from './interactiveDocumentService.js';
+import { IInteractiveHistoryService } from './interactiveHistoryService.js';
+import { NotebookSetting } from '../../notebook/common/notebookCommon.js';
+import { NotebookEditorInput } from '../../notebook/common/notebookEditorInput.js';
+import { INotebookService } from '../../notebook/common/notebookService.js';
+let InteractiveEditorInput = class InteractiveEditorInput extends EditorInput {
+    static { InteractiveEditorInput_1 = this; }
+    static create(instantiationService, resource, inputResource, title, language) {
+        return instantiationService.createInstance(InteractiveEditorInput_1, resource, inputResource, title, language);
+    }
+    static { this.windowNames = {}; }
+    static setName(notebookUri, title) {
+        if (title) {
+            this.windowNames[notebookUri.path] = title;
+        }
+    }
+    static { this.ID = 'workbench.input.interactive'; }
+    get editorId() {
+        return 'interactive';
+    }
+    get typeId() {
+        return InteractiveEditorInput_1.ID;
+    }
+    get language() {
+        return this._inputModelRef?.object.textEditorModel.getLanguageId() ?? this._initLanguage;
+    }
+    get notebookEditorInput() {
+        return this._notebookEditorInput;
+    }
+    get editorInputs() {
+        return [this._notebookEditorInput];
+    }
+    get resource() {
+        return this._resource;
+    }
+    get inputResource() {
+        return this._inputResource;
+    }
+    get primary() {
+        return this._notebookEditorInput;
+    }
+    constructor(resource, inputResource, title, languageId, instantiationService, textModelService, interactiveDocumentService, historyService, _notebookService, _fileDialogService, configurationService) {
+        const input = NotebookEditorInput.getOrCreate(instantiationService, resource, undefined, 'interactive', {});
+        super();
+        this._notebookService = _notebookService;
+        this._fileDialogService = _fileDialogService;
+        this.isScratchpad = configurationService.getValue(NotebookSetting.InteractiveWindowPromptToSave) !== true;
+        this._notebookEditorInput = input;
+        this._register(this._notebookEditorInput);
+        this.name = title ?? InteractiveEditorInput_1.windowNames[resource.path] ?? paths.basename(resource.path, paths.extname(resource.path));
+        this._initLanguage = languageId;
+        this._resource = resource;
+        this._inputResource = inputResource;
+        this._inputResolver = null;
+        this._editorModelReference = null;
+        this._inputModelRef = null;
+        this._textModelService = textModelService;
+        this._interactiveDocumentService = interactiveDocumentService;
+        this._historyService = historyService;
+        this._registerListeners();
+    }
+    _registerListeners() {
+        const oncePrimaryDisposed = Event.once(this.primary.onWillDispose);
+        this._register(oncePrimaryDisposed(() => {
+            if (!this.isDisposed()) {
+                this.dispose();
+            }
+        }));
+        this._register(this.primary.onDidChangeDirty(() => this._onDidChangeDirty.fire()));
+        this._register(this.primary.onDidChangeLabel(() => this._onDidChangeLabel.fire()));
+        this._register(this.primary.onDidChangeCapabilities(() => this._onDidChangeCapabilities.fire()));
+    }
+    get capabilities() {
+        const scratchPad = this.isScratchpad ? 512 : 0;
+        return 4
+            | 2
+            | scratchPad;
+    }
+    async _resolveEditorModel() {
+        if (!this._editorModelReference) {
+            this._editorModelReference = await this._notebookEditorInput.resolve();
+        }
+        return this._editorModelReference;
+    }
+    async resolve() {
+        if (this._editorModelReference) {
+            return this._editorModelReference;
+        }
+        if (this._inputResolver) {
+            return this._inputResolver;
+        }
+        this._inputResolver = this._resolveEditorModel();
+        return this._inputResolver;
+    }
+    async resolveInput(language) {
+        if (this._inputModelRef) {
+            return this._inputModelRef.object.textEditorModel;
+        }
+        const resolvedLanguage = language ?? this._initLanguage ?? PLAINTEXT_LANGUAGE_ID;
+        this._interactiveDocumentService.willCreateInteractiveDocument(this.resource, this.inputResource, resolvedLanguage);
+        this._inputModelRef = await this._textModelService.createModelReference(this.inputResource);
+        return this._inputModelRef.object.textEditorModel;
+    }
+    async save(group, options) {
+        if (this._editorModelReference) {
+            if (this.hasCapability(4)) {
+                return this.saveAs(group, options);
+            }
+            else {
+                await this._editorModelReference.save(options);
+            }
+            return this;
+        }
+        return undefined;
+    }
+    async saveAs(group, options) {
+        if (!this._editorModelReference) {
+            return undefined;
+        }
+        const provider = this._notebookService.getContributedNotebookType('interactive');
+        if (!provider) {
+            return undefined;
+        }
+        const filename = this.getName() + '.ipynb';
+        const pathCandidate = joinPath(await this._fileDialogService.defaultFilePath(), filename);
+        const target = await this._fileDialogService.pickFileToSave(pathCandidate, options?.availableFileSystems);
+        if (!target) {
+            return undefined;
+        }
+        const saved = await this._editorModelReference.saveAs(target);
+        if (saved && 'resource' in saved && saved.resource) {
+            this._notebookService.getNotebookTextModel(saved.resource)?.dispose();
+        }
+        return saved;
+    }
+    matches(otherInput) {
+        if (super.matches(otherInput)) {
+            return true;
+        }
+        if (otherInput instanceof InteractiveEditorInput_1) {
+            return isEqual(this.resource, otherInput.resource) && isEqual(this.inputResource, otherInput.inputResource);
+        }
+        return false;
+    }
+    getName() {
+        return this.name;
+    }
+    isDirty() {
+        if (this.isScratchpad) {
+            return false;
+        }
+        return this._editorModelReference?.isDirty() ?? false;
+    }
+    isModified() {
+        return this._editorModelReference?.isModified() ?? false;
+    }
+    async revert(_group, options) {
+        if (this._editorModelReference && this._editorModelReference.isDirty()) {
+            await this._editorModelReference.revert(options);
+        }
+    }
+    dispose() {
+        this._editorModelReference?.revert({ soft: true });
+        this._notebookEditorInput?.dispose();
+        this._editorModelReference?.dispose();
+        this._editorModelReference = null;
+        this._interactiveDocumentService.willRemoveInteractiveDocument(this.resource, this.inputResource);
+        this._inputModelRef?.dispose();
+        this._inputModelRef = null;
+        super.dispose();
+    }
+    get historyService() {
+        return this._historyService;
+    }
+};
+InteractiveEditorInput = InteractiveEditorInput_1 = __decorate([
+    __param(4, IInstantiationService),
+    __param(5, ITextModelService),
+    __param(6, IInteractiveDocumentService),
+    __param(7, IInteractiveHistoryService),
+    __param(8, INotebookService),
+    __param(9, IFileDialogService),
+    __param(10, IConfigurationService),
+    __metadata("design:paramtypes", [URI,
+        URI, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], InteractiveEditorInput);
+export { InteractiveEditorInput };

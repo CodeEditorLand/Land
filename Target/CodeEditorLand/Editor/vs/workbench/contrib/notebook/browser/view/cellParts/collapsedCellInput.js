@@ -1,1 +1,28 @@
-import*as e from"../../../../../../base/browser/dom.js";import"../../notebookBrowser.js";import{CellContentPart as r}from"../cellPart.js";class u extends r{constructor(n,s){super();this.notebookEditor=n;this._register(e.addDisposableListener(s,e.EventType.DBLCLICK,o=>{!this.currentCell||!this.notebookEditor.hasModel()||(this.currentCell.isInputCollapsed?this.currentCell.isInputCollapsed=!1:this.currentCell.isOutputCollapsed=!1)})),this._register(e.addDisposableListener(s,e.EventType.CLICK,o=>{if(!this.currentCell||!this.notebookEditor.hasModel())return;const t=o.target;t&&t.classList&&t.classList.contains("expandInputIcon")&&(this.currentCell.isInputCollapsed=!1)}))}}export{u as CollapsedCellInput};
+import * as DOM from '../../../../../../base/browser/dom.js';
+import { CellContentPart } from '../cellPart.js';
+export class CollapsedCellInput extends CellContentPart {
+    constructor(notebookEditor, cellInputCollapsedContainer) {
+        super();
+        this.notebookEditor = notebookEditor;
+        this._register(DOM.addDisposableListener(cellInputCollapsedContainer, DOM.EventType.DBLCLICK, e => {
+            if (!this.currentCell || !this.notebookEditor.hasModel()) {
+                return;
+            }
+            if (this.currentCell.isInputCollapsed) {
+                this.currentCell.isInputCollapsed = false;
+            }
+            else {
+                this.currentCell.isOutputCollapsed = false;
+            }
+        }));
+        this._register(DOM.addDisposableListener(cellInputCollapsedContainer, DOM.EventType.CLICK, e => {
+            if (!this.currentCell || !this.notebookEditor.hasModel()) {
+                return;
+            }
+            const element = e.target;
+            if (element && element.classList && element.classList.contains('expandInputIcon')) {
+                this.currentCell.isInputCollapsed = false;
+            }
+        }));
+    }
+}

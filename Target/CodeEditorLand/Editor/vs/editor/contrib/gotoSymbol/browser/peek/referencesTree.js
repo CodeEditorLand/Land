@@ -1,1 +1,192 @@
-var L=Object.defineProperty;var R=Object.getOwnPropertyDescriptor;var l=(n,e,r,t)=>{for(var i=t>1?void 0:t?R(e,r):e,a=n.length-1,f;a>=0;a--)(f=n[a])&&(i=(t?f(e,r,i):f(i))||i);return t&&i&&L(e,r,i),i},o=(n,e)=>(r,t)=>e(r,t,n);import*as b from"../../../../../base/browser/dom.js";import"../../../../../base/browser/keyboardEvent.js";import{CountBadge as S}from"../../../../../base/browser/ui/countBadge/countBadge.js";import{HighlightedLabel as E}from"../../../../../base/browser/ui/highlightedlabel/highlightedLabel.js";import{IconLabel as F}from"../../../../../base/browser/ui/iconLabel/iconLabel.js";import"../../../../../base/browser/ui/list/list.js";import"../../../../../base/browser/ui/list/listWidget.js";import"../../../../../base/browser/ui/tree/tree.js";import{createMatches as v,FuzzyScore as M}from"../../../../../base/common/filters.js";import{Disposable as h}from"../../../../../base/common/lifecycle.js";import{basename as I,dirname as x}from"../../../../../base/common/resources.js";import{ITextModelService as O}from"../../../../common/services/resolverService.js";import{localize as p}from"../../../../../nls.js";import{IInstantiationService as z}from"../../../../../platform/instantiation/common/instantiation.js";import{IKeybindingService as C}from"../../../../../platform/keybinding/common/keybinding.js";import{ILabelService as P}from"../../../../../platform/label/common/label.js";import{defaultCountBadgeStyles as w}from"../../../../../platform/theme/browser/defaultStyles.js";import{FileReferences as u,OneReference as y,ReferencesModel as T}from"../referencesModel.js";let d=class{constructor(e){this._resolverService=e}hasChildren(e){return e instanceof T||e instanceof u}getChildren(e){if(e instanceof T)return e.groups;if(e instanceof u)return e.resolve(this._resolverService).then(r=>r.children);throw new Error("bad tree")}};d=l([o(0,O)],d);class oe{getHeight(){return 23}getTemplateId(e){return e instanceof u?s.id:g.id}}let m=class{constructor(e){this._keybindingService=e}getKeyboardNavigationLabel(e){if(e instanceof y){const r=e.parent.getPreview(e)?.preview(e.range);if(r)return r.value}return I(e.uri)}mightProducePrintableCharacter(e){return this._keybindingService.mightProducePrintableCharacter(e)}};m=l([o(0,C)],m);class ce{getId(e){return e instanceof y?e.id:e.uri}}let c=class extends h{constructor(r,t){super();this._labelService=t;const i=document.createElement("div");i.classList.add("reference-file"),this.file=this._register(new F(i,{supportHighlights:!0})),this.badge=new S(b.append(i,b.$(".count")),{},w),r.appendChild(i)}file;badge;set(r,t){const i=x(r.uri);this.file.setLabel(this._labelService.getUriBasenameLabel(r.uri),this._labelService.getUriLabel(i,{relative:!0}),{title:this._labelService.getUriLabel(r.uri),matches:t});const a=r.children.length;this.badge.setCount(a),a>1?this.badge.setTitleFormat(p("referencesCount","{0} references",a)):this.badge.setTitleFormat(p("referenceCount","{0} reference",a))}};c=l([o(1,P)],c);let s=class{constructor(e){this._instantiationService=e}static id="FileReferencesRenderer";templateId=s.id;renderTemplate(e){return this._instantiationService.createInstance(c,e)}renderElement(e,r,t){t.set(e.element,v(e.filterData))}disposeTemplate(e){e.dispose()}};s=l([o(0,z)],s);class _ extends h{label;constructor(e){super(),this.label=this._register(new E(e))}set(e,r){const t=e.parent.getPreview(e)?.preview(e.range);if(!t||!t.value)this.label.set(`${I(e.uri)}:${e.range.startLineNumber+1}:${e.range.startColumn+1}`);else{const{value:i,highlight:a}=t;r&&!M.isDefault(r)?(this.label.element.classList.toggle("referenceMatch",!1),this.label.set(i,v(r))):(this.label.element.classList.toggle("referenceMatch",!0),this.label.set(i,[a]))}}}class g{static id="OneReferenceRenderer";templateId=g.id;renderTemplate(e){return new _(e)}renderElement(e,r,t){t.set(e.element,e.filterData)}disposeTemplate(e){e.dispose()}}class de{getWidgetAriaLabel(){return p("treeAriaLabel","References")}getAriaLabel(e){return e.ariaMessage}}export{de as AccessibilityProvider,d as DataSource,oe as Delegate,s as FileReferencesRenderer,ce as IdentityProvider,g as OneReferenceRenderer,m as StringRepresentationProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var FileReferencesRenderer_1;
+import * as dom from '../../../../../base/browser/dom.js';
+import { CountBadge } from '../../../../../base/browser/ui/countBadge/countBadge.js';
+import { HighlightedLabel } from '../../../../../base/browser/ui/highlightedlabel/highlightedLabel.js';
+import { IconLabel } from '../../../../../base/browser/ui/iconLabel/iconLabel.js';
+import { createMatches, FuzzyScore } from '../../../../../base/common/filters.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { basename, dirname } from '../../../../../base/common/resources.js';
+import { ITextModelService } from '../../../../common/services/resolverService.js';
+import { localize } from '../../../../../nls.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { IKeybindingService } from '../../../../../platform/keybinding/common/keybinding.js';
+import { ILabelService } from '../../../../../platform/label/common/label.js';
+import { defaultCountBadgeStyles } from '../../../../../platform/theme/browser/defaultStyles.js';
+import { FileReferences, OneReference, ReferencesModel } from '../referencesModel.js';
+let DataSource = class DataSource {
+    constructor(_resolverService) {
+        this._resolverService = _resolverService;
+    }
+    hasChildren(element) {
+        if (element instanceof ReferencesModel) {
+            return true;
+        }
+        if (element instanceof FileReferences) {
+            return true;
+        }
+        return false;
+    }
+    getChildren(element) {
+        if (element instanceof ReferencesModel) {
+            return element.groups;
+        }
+        if (element instanceof FileReferences) {
+            return element.resolve(this._resolverService).then(val => {
+                return val.children;
+            });
+        }
+        throw new Error('bad tree');
+    }
+};
+DataSource = __decorate([
+    __param(0, ITextModelService),
+    __metadata("design:paramtypes", [Object])
+], DataSource);
+export { DataSource };
+export class Delegate {
+    getHeight() {
+        return 23;
+    }
+    getTemplateId(element) {
+        if (element instanceof FileReferences) {
+            return FileReferencesRenderer.id;
+        }
+        else {
+            return OneReferenceRenderer.id;
+        }
+    }
+}
+let StringRepresentationProvider = class StringRepresentationProvider {
+    constructor(_keybindingService) {
+        this._keybindingService = _keybindingService;
+    }
+    getKeyboardNavigationLabel(element) {
+        if (element instanceof OneReference) {
+            const parts = element.parent.getPreview(element)?.preview(element.range);
+            if (parts) {
+                return parts.value;
+            }
+        }
+        return basename(element.uri);
+    }
+    mightProducePrintableCharacter(event) {
+        return this._keybindingService.mightProducePrintableCharacter(event);
+    }
+};
+StringRepresentationProvider = __decorate([
+    __param(0, IKeybindingService),
+    __metadata("design:paramtypes", [Object])
+], StringRepresentationProvider);
+export { StringRepresentationProvider };
+export class IdentityProvider {
+    getId(element) {
+        return element instanceof OneReference ? element.id : element.uri;
+    }
+}
+let FileReferencesTemplate = class FileReferencesTemplate extends Disposable {
+    constructor(container, _labelService) {
+        super();
+        this._labelService = _labelService;
+        const parent = document.createElement('div');
+        parent.classList.add('reference-file');
+        this.file = this._register(new IconLabel(parent, { supportHighlights: true }));
+        this.badge = new CountBadge(dom.append(parent, dom.$('.count')), {}, defaultCountBadgeStyles);
+        container.appendChild(parent);
+    }
+    set(element, matches) {
+        const parent = dirname(element.uri);
+        this.file.setLabel(this._labelService.getUriBasenameLabel(element.uri), this._labelService.getUriLabel(parent, { relative: true }), { title: this._labelService.getUriLabel(element.uri), matches });
+        const len = element.children.length;
+        this.badge.setCount(len);
+        if (len > 1) {
+            this.badge.setTitleFormat(localize('referencesCount', "{0} references", len));
+        }
+        else {
+            this.badge.setTitleFormat(localize('referenceCount', "{0} reference", len));
+        }
+    }
+};
+FileReferencesTemplate = __decorate([
+    __param(1, ILabelService),
+    __metadata("design:paramtypes", [HTMLElement, Object])
+], FileReferencesTemplate);
+let FileReferencesRenderer = class FileReferencesRenderer {
+    static { FileReferencesRenderer_1 = this; }
+    static { this.id = 'FileReferencesRenderer'; }
+    constructor(_instantiationService) {
+        this._instantiationService = _instantiationService;
+        this.templateId = FileReferencesRenderer_1.id;
+    }
+    renderTemplate(container) {
+        return this._instantiationService.createInstance(FileReferencesTemplate, container);
+    }
+    renderElement(node, index, template) {
+        template.set(node.element, createMatches(node.filterData));
+    }
+    disposeTemplate(templateData) {
+        templateData.dispose();
+    }
+};
+FileReferencesRenderer = FileReferencesRenderer_1 = __decorate([
+    __param(0, IInstantiationService),
+    __metadata("design:paramtypes", [Object])
+], FileReferencesRenderer);
+export { FileReferencesRenderer };
+class OneReferenceTemplate extends Disposable {
+    constructor(container) {
+        super();
+        this.label = this._register(new HighlightedLabel(container));
+    }
+    set(element, score) {
+        const preview = element.parent.getPreview(element)?.preview(element.range);
+        if (!preview || !preview.value) {
+            this.label.set(`${basename(element.uri)}:${element.range.startLineNumber + 1}:${element.range.startColumn + 1}`);
+        }
+        else {
+            const { value, highlight } = preview;
+            if (score && !FuzzyScore.isDefault(score)) {
+                this.label.element.classList.toggle('referenceMatch', false);
+                this.label.set(value, createMatches(score));
+            }
+            else {
+                this.label.element.classList.toggle('referenceMatch', true);
+                this.label.set(value, [highlight]);
+            }
+        }
+    }
+}
+export class OneReferenceRenderer {
+    constructor() {
+        this.templateId = OneReferenceRenderer.id;
+    }
+    static { this.id = 'OneReferenceRenderer'; }
+    renderTemplate(container) {
+        return new OneReferenceTemplate(container);
+    }
+    renderElement(node, index, templateData) {
+        templateData.set(node.element, node.filterData);
+    }
+    disposeTemplate(templateData) {
+        templateData.dispose();
+    }
+}
+export class AccessibilityProvider {
+    getWidgetAriaLabel() {
+        return localize('treeAriaLabel', "References");
+    }
+    getAriaLabel(element) {
+        return element.ariaMessage;
+    }
+}

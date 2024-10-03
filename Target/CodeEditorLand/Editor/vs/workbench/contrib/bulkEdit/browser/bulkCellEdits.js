@@ -1,1 +1,100 @@
-var I=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var m=(d,i,e,t)=>{for(var o=t>1?void 0:t?b(i,e):i,r=d.length-1,s;r>=0;r--)(s=d[r])&&(o=(t?s(i,e,o):s(o))||o);return t&&o&&I(i,e,o),o},p=(d,i)=>(e,t)=>i(e,t,d);import{groupBy as E}from"../../../../base/common/arrays.js";import"../../../../base/common/cancellation.js";import{compare as S}from"../../../../base/common/strings.js";import{isObject as v}from"../../../../base/common/types.js";import{URI as y}from"../../../../base/common/uri.js";import{ResourceEdit as R}from"../../../../editor/browser/services/bulkEditService.js";import"../../../../editor/common/languages.js";import"../../../../platform/progress/common/progress.js";import"../../../../platform/undoRedo/common/undoRedo.js";import{getNotebookEditorFromEditorPane as h}from"../../notebook/browser/notebookBrowser.js";import{CellUri as f,SelectionStateType as g}from"../../notebook/common/notebookCommon.js";import{INotebookEditorModelResolverService as U}from"../../notebook/common/notebookEditorModelResolverService.js";import{IEditorService as C}from"../../../services/editor/common/editorService.js";class a extends R{constructor(e,t,o=void 0,r){super(r);this.resource=e;this.cellEdit=t;this.notebookVersionId=o}static is(e){return e instanceof a?!0:y.isUri(e.resource)&&v(e.cellEdit)}static lift(e){return e instanceof a?e:new a(e.resource,e.cellEdit,e.notebookVersionId,e.metadata)}}let l=class{constructor(i,e,t,o,r,s,u){this._undoRedoGroup=i;this._progress=t;this._token=o;this._edits=r;this._editorService=s;this._notebookModelService=u;this._edits=this._edits.map(n=>{if(n.resource.scheme===f.scheme){const c=f.parse(n.resource)?.notebook;if(!c)throw new Error(`Invalid notebook URI: ${n.resource}`);return new a(c,n.cellEdit,n.notebookVersionId,n.metadata)}else return n})}async apply(){const i=[],e=E(this._edits,(t,o)=>S(t.resource.toString(),o.resource.toString()));for(const t of e){if(this._token.isCancellationRequested)break;const[o]=t,r=await this._notebookModelService.resolve(o.resource);if(typeof o.notebookVersionId=="number"&&r.object.notebook.versionId!==o.notebookVersionId)throw r.dispose(),new Error(`Notebook '${o.resource}' has changed in the meantime`);const s=t.map(k=>k.cellEdit),u=!r.object.isReadonly(),n=h(this._editorService.activeEditorPane),c=n?.textModel?.uri.toString()===r.object.notebook.uri.toString()?{kind:g.Index,focus:n.getFocus(),selections:n.getSelections()}:void 0;r.object.notebook.applyEdits(s,!0,c,()=>{},this._undoRedoGroup,u),r.dispose(),this._progress.report(void 0),i.push(o.resource)}return i}};l=m([p(5,C),p(6,U)],l);export{l as BulkCellEdits,a as ResourceNotebookCellEdit};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { groupBy } from '../../../../base/common/arrays.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { compare } from '../../../../base/common/strings.js';
+import { isObject } from '../../../../base/common/types.js';
+import { URI } from '../../../../base/common/uri.js';
+import { ResourceEdit } from '../../../../editor/browser/services/bulkEditService.js';
+import { UndoRedoGroup } from '../../../../platform/undoRedo/common/undoRedo.js';
+import { getNotebookEditorFromEditorPane } from '../../notebook/browser/notebookBrowser.js';
+import { CellUri, SelectionStateType } from '../../notebook/common/notebookCommon.js';
+import { INotebookEditorModelResolverService } from '../../notebook/common/notebookEditorModelResolverService.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+export class ResourceNotebookCellEdit extends ResourceEdit {
+    static is(candidate) {
+        if (candidate instanceof ResourceNotebookCellEdit) {
+            return true;
+        }
+        return URI.isUri(candidate.resource)
+            && isObject(candidate.cellEdit);
+    }
+    static lift(edit) {
+        if (edit instanceof ResourceNotebookCellEdit) {
+            return edit;
+        }
+        return new ResourceNotebookCellEdit(edit.resource, edit.cellEdit, edit.notebookVersionId, edit.metadata);
+    }
+    constructor(resource, cellEdit, notebookVersionId = undefined, metadata) {
+        super(metadata);
+        this.resource = resource;
+        this.cellEdit = cellEdit;
+        this.notebookVersionId = notebookVersionId;
+    }
+}
+let BulkCellEdits = class BulkCellEdits {
+    constructor(_undoRedoGroup, undoRedoSource, _progress, _token, _edits, _editorService, _notebookModelService) {
+        this._undoRedoGroup = _undoRedoGroup;
+        this._progress = _progress;
+        this._token = _token;
+        this._edits = _edits;
+        this._editorService = _editorService;
+        this._notebookModelService = _notebookModelService;
+        this._edits = this._edits.map(e => {
+            if (e.resource.scheme === CellUri.scheme) {
+                const uri = CellUri.parse(e.resource)?.notebook;
+                if (!uri) {
+                    throw new Error(`Invalid notebook URI: ${e.resource}`);
+                }
+                return new ResourceNotebookCellEdit(uri, e.cellEdit, e.notebookVersionId, e.metadata);
+            }
+            else {
+                return e;
+            }
+        });
+    }
+    async apply() {
+        const resources = [];
+        const editsByNotebook = groupBy(this._edits, (a, b) => compare(a.resource.toString(), b.resource.toString()));
+        for (const group of editsByNotebook) {
+            if (this._token.isCancellationRequested) {
+                break;
+            }
+            const [first] = group;
+            const ref = await this._notebookModelService.resolve(first.resource);
+            if (typeof first.notebookVersionId === 'number' && ref.object.notebook.versionId !== first.notebookVersionId) {
+                ref.dispose();
+                throw new Error(`Notebook '${first.resource}' has changed in the meantime`);
+            }
+            const edits = group.map(entry => entry.cellEdit);
+            const computeUndo = !ref.object.isReadonly();
+            const editor = getNotebookEditorFromEditorPane(this._editorService.activeEditorPane);
+            const initialSelectionState = editor?.textModel?.uri.toString() === ref.object.notebook.uri.toString() ? {
+                kind: SelectionStateType.Index,
+                focus: editor.getFocus(),
+                selections: editor.getSelections()
+            } : undefined;
+            ref.object.notebook.applyEdits(edits, true, initialSelectionState, () => undefined, this._undoRedoGroup, computeUndo);
+            ref.dispose();
+            this._progress.report(undefined);
+            resources.push(first.resource);
+        }
+        return resources;
+    }
+};
+BulkCellEdits = __decorate([
+    __param(5, IEditorService),
+    __param(6, INotebookEditorModelResolverService),
+    __metadata("design:paramtypes", [UndoRedoGroup, Object, Object, Object, Array, Object, Object])
+], BulkCellEdits);
+export { BulkCellEdits };

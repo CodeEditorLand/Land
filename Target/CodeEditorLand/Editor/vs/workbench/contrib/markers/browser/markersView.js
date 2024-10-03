@@ -1,1 +1,887 @@
-var Y=Object.defineProperty;var Q=Object.getOwnPropertyDescriptor;var C=(u,c,e,t)=>{for(var i=t>1?void 0:t?Q(c,e):c,r=u.length-1,s;r>=0;r--)(s=u[r])&&(i=(t?s(c,e,i):s(i))||i);return t&&i&&Y(c,e,i),i},n=(u,c)=>(e,t)=>c(e,t,u);import"./media/markers.css";import"../../../../base/common/uri.js";import*as o from"../../../../base/browser/dom.js";import{Separator as J}from"../../../../base/common/actions.js";import{ITelemetryService as X}from"../../../../platform/telemetry/common/telemetry.js";import{IEditorService as Z,SIDE_GROUP as ee,ACTIVE_GROUP as te}from"../../../services/editor/common/editorService.js";import{Marker as d,ResourceMarkers as y,RelatedInformation as F,MarkersModel as ie,compareMarkersByUri as re,MarkerTableItem as R}from"./markersModel.js";import{IInstantiationService as L}from"../../../../platform/instantiation/common/instantiation.js";import{MarkersFilters as se}from"./markersViewActions.js";import{IConfigurationService as D}from"../../../../platform/configuration/common/configuration.js";import h from"./messages.js";import{RangeHighlightDecorations as oe}from"../../../browser/codeeditor.js";import{IThemeService as V}from"../../../../platform/theme/common/themeService.js";import"../../../../editor/browser/editorBrowser.js";import{IStorageService as ne,StorageScope as ae,StorageTarget as le}from"../../../../platform/storage/common/storage.js";import{localize as f}from"../../../../nls.js";import{IContextKeyService as P}from"../../../../platform/contextkey/common/contextkey.js";import{Iterable as p}from"../../../../base/common/iterator.js";import"../../../../base/browser/ui/tree/tree.js";import{Relay as de,Event as v}from"../../../../base/common/event.js";import{WorkbenchObjectTree as ce,IListService as he}from"../../../../platform/list/browser/listService.js";import{FilterOptions as _}from"./markersFilterOptions.js";import"../../../../base/common/glob.js";import{deepClone as ue}from"../../../../base/common/objects.js";import{IWorkspaceContextService as ge}from"../../../../platform/workspace/common/workspace.js";import{Filter as me,VirtualDelegate as fe,ResourceMarkersRenderer as pe,MarkerRenderer as ve,RelatedInformationRenderer as Me,MarkersWidgetAccessibilityProvider as ke,MarkersViewModel as be}from"./markersTreeViewer.js";import{IContextMenuService as Se}from"../../../../platform/contextview/browser/contextView.js";import{MenuId as Ie}from"../../../../platform/actions/common/actions.js";import{IKeybindingService as Ee}from"../../../../platform/keybinding/common/keybinding.js";import{StandardKeyboardEvent as we}from"../../../../base/browser/keyboardEvent.js";import{ResourceLabels as Ce}from"../../../browser/labels.js";import{IMarkerService as ye,MarkerSeverity as x}from"../../../../platform/markers/common/markers.js";import{Memento as Fe}from"../../../common/memento.js";import"../../../../base/browser/ui/list/list.js";import{KeyCode as H}from"../../../../base/common/keyCodes.js";import{FilterViewPane as Re}from"../../../browser/parts/views/viewPane.js";import{IViewDescriptorService as xe}from"../../../common/views.js";import{IOpenerService as Ae,withSelection as A}from"../../../../platform/opener/common/opener.js";import{ActionViewItem as Te}from"../../../../base/browser/ui/actionbar/actionViewItems.js";import{IUriIdentityService as Le}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{DisposableStore as B,toDisposable as M}from"../../../../base/common/lifecycle.js";import{groupBy as De}from"../../../../base/common/arrays.js";import{ResourceMap as Ve}from"../../../../base/common/map.js";import{EditorResourceAccessor as Pe,SideBySideEditor as _e}from"../../../common/editor.js";import"./markers.js";import{ResourceListDnDHandler as W}from"../../../browser/dnd.js";import"../../../../base/browser/ui/table/table.js";import{MarkersTable as He}from"./markersTable.js";import{Markers as Be,MarkersContextKeys as k,MarkersViewMode as b}from"../common/markers.js";import{registerNavigableContainer as We}from"../../../browser/actions/widgetNavigationCommands.js";import{IHoverService as Ne}from"../../../../platform/hover/browser/hover.js";import{ResultKind as N}from"../../../../platform/keybinding/common/keybindingResolver.js";function K(u){return p.map(u.markers,c=>{const e=p.from(c.relatedInformation),t=p.map(e,i=>({element:i}));return{element:c,children:t}})}let S=class extends Re{constructor(e,t,i,r,s,l,a,I,O,E,U,$,G,z,q,j){const T=new Fe(Be.MARKERS_VIEW_STORAGE_ID,G),w=T.getMemento(ae.WORKSPACE,le.MACHINE);super({...e,filterOptions:{ariaLabel:h.MARKERS_PANEL_FILTER_ARIA_LABEL,placeholder:h.MARKERS_PANEL_FILTER_PLACEHOLDER,focusContextKey:k.MarkerViewFilterFocusContextKey.key,text:w.filter||"",history:w.filterHistory||[]}},$,E,s,I,i,t,z,q,l,j);this.editorService=r;this.markerService=a;this.workspaceContextService=O;this.uriIdentityService=U;this.memento=T,this.panelState=w,this.markersModel=this._register(t.createInstance(ie)),this.markersViewModel=this._register(t.createInstance(be,this.panelState.multiline,this.panelState.viewMode??this.getDefaultViewMode())),this._register(this.onDidChangeVisibility(g=>this.onDidChangeMarkersViewVisibility(g))),this._register(this.markersViewModel.onDidChangeViewMode(g=>this.onDidChangeViewMode())),this.widgetAccessibilityProvider=t.createInstance(ke),this.widgetIdentityProvider={getId(g){return g.id}},this.setCurrentActiveEditor(),this.filter=new me(_.EMPTY(U)),this.rangeHighlightDecorations=this._register(this.instantiationService.createInstance(oe)),this.filters=this._register(new se({filterHistory:this.panelState.filterHistory||[],showErrors:this.panelState.showErrors!==!1,showWarnings:this.panelState.showWarnings!==!1,showInfos:this.panelState.showInfos!==!1,excludedFiles:!!this.panelState.useFilesExclude,activeFile:!!this.panelState.activeFile},this.contextKeyService)),this._register(this.configurationService.onDidChangeConfiguration(g=>{this.filters.excludedFiles&&g.affectsConfiguration("files.exclude")&&this.updateFilter()}))}lastSelectedRelativeTop=0;currentActiveResource=null;rangeHighlightDecorations;markersModel;filter;onVisibleDisposables=this._register(new B);widget;widgetDisposables=this._register(new B);widgetContainer;widgetIdentityProvider;widgetAccessibilityProvider;messageBoxContainer;ariaLabelElement;filters;currentHeight=0;currentWidth=0;memento;panelState;cachedFilterStats=void 0;currentResourceGotAddedToMarkersData=!1;markersViewModel;onDidChangeVisibility=this.onDidChangeBodyVisibility;render(){super.render(),this._register(We({name:"markersView",focusNotifiers:[this,this.filterWidget],focusNextWidget:()=>{this.filterWidget.hasFocus()&&this.focus()},focusPreviousWidget:()=>{this.filterWidget.hasFocus()||this.focusFilter()}}))}renderBody(e){super.renderBody(e),e.classList.add("markers-panel"),this._register(o.addDisposableListener(e,"keydown",i=>{const r=new we(i);if(!this.keybindingService.mightProducePrintableCharacter(r))return;const s=this.keybindingService.softDispatch(r,r.target);s.kind===N.MoreChordsNeeded||s.kind===N.KbFound||this.focusFilter()}));const t=o.append(e,o.$(".markers-panel-container"));this.createArialLabelElement(t),this.createMessageBox(t),this.widgetContainer=o.append(t,o.$(".widget-container")),this.createWidget(this.widgetContainer),this.updateFilter(),this.renderContent()}getTitle(){return h.MARKERS_PANEL_TITLE_PROBLEMS.value}layoutBodyContent(e=this.currentHeight,t=this.currentWidth){this.messageBoxContainer&&(this.messageBoxContainer.style.height=`${e}px`),this.widget.layout(e,t),this.currentHeight=e,this.currentWidth=t}focus(){super.focus(),!o.isActiveElement(this.widget.getHTMLElement())&&(this.hasNoProblems()?this.messageBoxContainer.focus():(this.widget.domFocus(),this.widget.setMarkerSelection()))}focusFilter(){this.filterWidget.focus()}updateBadge(e,t){this.filterWidget.updateBadge(e===t||e===0?void 0:f("showing filtered problems","Showing {0} of {1}",t,e))}checkMoreFilters(){this.filterWidget.checkMoreFilters(!this.filters.showErrors||!this.filters.showWarnings||!this.filters.showInfos||this.filters.excludedFiles||this.filters.activeFile)}clearFilterText(){this.filterWidget.setFilterText("")}showQuickFixes(e){const t=this.markersViewModel.getViewModel(e);t&&t.quickFixAction.run()}openFileAtElement(e,t,i,r){const{resource:s,selection:l}=e instanceof d?{resource:e.resource,selection:e.range}:e instanceof F?{resource:e.raw.resource,selection:e.raw}:"marker"in e?{resource:e.marker.resource,selection:e.marker.range}:{resource:null,selection:null};return s&&l?(this.editorService.openEditor({resource:s,options:{selection:l,preserveFocus:t,pinned:r,revealIfVisible:!0}},i?ee:te).then(a=>{a&&t?this.rangeHighlightDecorations.highlightRange({resource:s,range:l},a.getControl()):this.rangeHighlightDecorations.removeHighlightRange()}),!0):(this.rangeHighlightDecorations.removeHighlightRange(),!1)}refreshPanel(e){if(this.isVisible()){const t=this.widget.getSelection().length>0;e?e instanceof d?this.widget.updateMarker(e):e.added.size||e.removed.size?this.resetWidget():this.widget.update([...e.updated]):this.resetWidget(),t&&this.widget.setMarkerSelection(),this.cachedFilterStats=void 0;const{total:i,filtered:r}=this.getFilterStats();this.toggleVisibility(i===0||r===0),this.renderMessage(),this.updateBadge(i,r),this.checkMoreFilters()}}onDidChangeViewState(e){this.refreshPanel(e)}resetWidget(){this.widget.reset(this.getResourceMarkers())}updateFilter(){this.filter.options=new _(this.filterWidget.getFilterText(),this.getFilesExcludeExpressions(),this.filters.showWarnings,this.filters.showErrors,this.filters.showInfos,this.uriIdentityService),this.widget.filterMarkers(this.getResourceMarkers(),this.filter.options),this.cachedFilterStats=void 0;const{total:e,filtered:t}=this.getFilterStats();this.toggleVisibility(e===0||t===0),this.renderMessage(),this.updateBadge(e,t),this.checkMoreFilters()}getDefaultViewMode(){switch(this.configurationService.getValue("problems.defaultViewMode")){case"table":return b.Table;case"tree":return b.Tree;default:return b.Tree}}getFilesExcludeExpressions(){if(!this.filters.excludedFiles)return[];const e=this.workspaceContextService.getWorkspace().folders;return e.length?e.map(t=>({root:t.uri,expression:this.getFilesExclude(t.uri)})):this.getFilesExclude()}getFilesExclude(e){return ue(this.configurationService.getValue("files.exclude",{resource:e}))||{}}getResourceMarkers(){if(!this.filters.activeFile)return this.markersModel.resourceMarkers;let e=[];if(this.currentActiveResource){const t=this.markersModel.getResourceMarkers(this.currentActiveResource);t&&(e=[t])}return e}createMessageBox(e){this.messageBoxContainer=o.append(e,o.$(".message-box-container")),this.messageBoxContainer.setAttribute("aria-labelledby","markers-panel-arialabel")}createArialLabelElement(e){this.ariaLabelElement=o.append(e,o.$("")),this.ariaLabelElement.setAttribute("id","markers-panel-arialabel")}createWidget(e){this.widget=this.markersViewModel.viewMode===b.Table?this.createTable(e):this.createTree(e),this.widgetDisposables.add(this.widget);const t=k.MarkerFocusContextKey.bindTo(this.widget.contextKeyService),i=k.RelatedInformationFocusContextKey.bindTo(this.widget.contextKeyService);this.widgetDisposables.add(this.widget.onDidChangeFocus(r=>{t.set(r.elements.some(s=>s instanceof d)),i.set(r.elements.some(s=>s instanceof F))})),this.widgetDisposables.add(v.debounce(this.widget.onDidOpen,(r,s)=>s,75,!0)(r=>{this.openFileAtElement(r.element,!!r.editorOptions.preserveFocus,r.sideBySide,!!r.editorOptions.pinned)})),this.widgetDisposables.add(v.any(this.widget.onDidChangeSelection,this.widget.onDidChangeFocus)(()=>{const r=[...this.widget.getSelection(),...this.widget.getFocus()];for(const s of r)s instanceof d&&this.markersViewModel.getViewModel(s)?.showLightBulb()})),this.widgetDisposables.add(this.widget.onContextMenu(this.onContextMenu,this)),this.widgetDisposables.add(this.widget.onDidChangeSelection(this.onSelected,this))}createTable(e){return this.instantiationService.createInstance(He,o.append(e,o.$(".markers-table-container")),this.markersViewModel,this.getResourceMarkers(),this.filter.options,{accessibilityProvider:this.widgetAccessibilityProvider,dnd:this.instantiationService.createInstance(W,i=>i instanceof R?A(i.resource,i.range):null),horizontalScrolling:!1,identityProvider:this.widgetIdentityProvider,multipleSelectionSupport:!0,selectionNavigation:!0})}createTree(e){const t=new de,i=this.instantiationService.createInstance(Ce,this),r=new fe(this.markersViewModel),s=[this.instantiationService.createInstance(pe,i,t.event),this.instantiationService.createInstance(ve,this.markersViewModel),this.instantiationService.createInstance(Me)],l=this.instantiationService.createInstance(m,"MarkersView",o.append(e,o.$(".tree-container.show-file-icons")),r,s,{filter:this.filter,accessibilityProvider:this.widgetAccessibilityProvider,identityProvider:this.widgetIdentityProvider,dnd:this.instantiationService.createInstance(W,a=>a instanceof y?a.resource:a instanceof d?A(a.resource,a.range):a instanceof F?A(a.raw.resource,a.raw):null),expandOnlyOnTwistieClick:a=>a instanceof d&&a.relatedInformation.length>0,overrideStyles:this.getLocationBasedColors().listOverrideStyles,selectionNavigation:!0,multipleSelectionSupport:!0});return t.input=l.onDidChangeRenderNodeCount,l}collapseAll(){this.widget.collapseMarkers()}setMultiline(e){this.markersViewModel.multiline=e}setViewMode(e){this.markersViewModel.viewMode=e}onDidChangeMarkersViewVisibility(e){if(this.onVisibleDisposables.clear(),e){for(const t of this.reInitialize())this.onVisibleDisposables.add(t);this.refreshPanel()}}reInitialize(){const e=[],t=i=>this.markerService.read({resource:i,severities:x.Error|x.Warning|x.Info});return this.markersModel.setResourceMarkers(De(t(),re).map(i=>[i[0].resource,i])),e.push(v.debounce(this.markerService.onMarkerChanged,(i,r)=>(i=i||new Ve,r.forEach(s=>i.set(s,s)),i),64)(i=>{this.markersModel.setResourceMarkers([...i.values()].map(r=>[r,t(r)]))})),e.push(v.any(this.markersModel.onDidChange,this.editorService.onDidActiveEditorChange)(i=>{i?this.onDidChangeModel(i):this.onActiveEditorChanged()})),e.push(M(()=>this.markersModel.reset())),this.markersModel.resourceMarkers.forEach(i=>i.markers.forEach(r=>this.markersViewModel.add(r))),e.push(this.markersViewModel.onDidChange(i=>this.onDidChangeViewState(i))),e.push(M(()=>this.markersModel.resourceMarkers.forEach(i=>this.markersViewModel.remove(i.resource)))),e.push(this.filters.onDidChange(i=>{i.activeFile?this.refreshPanel():(i.excludedFiles||i.showWarnings||i.showErrors||i.showInfos)&&this.updateFilter()})),e.push(this.filterWidget.onDidChangeFilterText(i=>this.updateFilter())),e.push(M(()=>{this.cachedFilterStats=void 0})),e.push(M(()=>this.rangeHighlightDecorations.removeHighlightRange())),e}onDidChangeModel(e){const t=[...e.added,...e.removed,...e.updated],i=[];for(const{resource:r}of t){this.markersViewModel.remove(r);const s=this.markersModel.getResourceMarkers(r);if(s)for(const l of s.markers)this.markersViewModel.add(l);i.push(r)}this.currentResourceGotAddedToMarkersData=this.currentResourceGotAddedToMarkersData||this.isCurrentResourceGotAddedToMarkersData(i),this.refreshPanel(e),this.updateRangeHighlights(),this.currentResourceGotAddedToMarkersData&&(this.autoReveal(),this.currentResourceGotAddedToMarkersData=!1)}onDidChangeViewMode(){this.widgetContainer&&this.widget&&(this.widgetContainer.textContent="",this.widgetDisposables.clear());const e=new Set;for(const i of this.widget.getSelection())i instanceof y?i.markers.forEach(r=>e.add(r)):(i instanceof d||i instanceof R)&&e.add(i);const t=new Set;for(const i of this.widget.getFocus())(i instanceof d||i instanceof R)&&t.add(i);this.createWidget(this.widgetContainer),this.refreshPanel(),e.size>0&&(this.widget.setMarkerSelection(Array.from(e),Array.from(t)),this.widget.domFocus())}isCurrentResourceGotAddedToMarkersData(e){const t=this.currentActiveResource;return!t||this.getResourceForCurrentActiveResource()?!1:e.some(r=>r.toString()===t.toString())}onActiveEditorChanged(){this.setCurrentActiveEditor(),this.filters.activeFile&&this.refreshPanel(),this.autoReveal()}setCurrentActiveEditor(){const e=this.editorService.activeEditor;this.currentActiveResource=e?Pe.getOriginalUri(e,{supportSideBySide:_e.PRIMARY})??null:null}onSelected(){const e=this.widget.getSelection();e&&e.length>0&&(this.lastSelectedRelativeTop=this.widget.getRelativeTop(e[0])||0)}hasNoProblems(){const{total:e,filtered:t}=this.getFilterStats();return e===0||t===0}renderContent(){this.cachedFilterStats=void 0,this.resetWidget(),this.toggleVisibility(this.hasNoProblems()),this.renderMessage()}renderMessage(){if(!this.messageBoxContainer||!this.ariaLabelElement)return;o.clearNode(this.messageBoxContainer);const{total:e,filtered:t}=this.getFilterStats();t===0?(this.messageBoxContainer.style.display="block",this.messageBoxContainer.setAttribute("tabIndex","0"),this.filters.activeFile?this.renderFilterMessageForActiveFile(this.messageBoxContainer):e>0?this.renderFilteredByFilterMessage(this.messageBoxContainer):this.renderNoProblemsMessage(this.messageBoxContainer)):(this.messageBoxContainer.style.display="none",t===e?this.setAriaLabel(f("No problems filtered","Showing {0} problems",e)):this.setAriaLabel(f("problems filtered","Showing {0} of {1} problems",t,e)),this.messageBoxContainer.removeAttribute("tabIndex"))}renderFilterMessageForActiveFile(e){this.currentActiveResource&&this.markersModel.getResourceMarkers(this.currentActiveResource)?this.renderFilteredByFilterMessage(e):this.renderNoProblemsMessageForActiveFile(e)}renderFilteredByFilterMessage(e){const t=o.append(e,o.$("span"));t.textContent=h.MARKERS_PANEL_NO_PROBLEMS_FILTERS;const i=o.append(e,o.$("a.messageAction"));i.textContent=f("clearFilter","Clear Filters"),i.setAttribute("tabIndex","0");const r=o.append(e,o.$("span"));r.textContent=".",o.addStandardDisposableListener(i,o.EventType.CLICK,()=>this.clearFilters()),o.addStandardDisposableListener(i,o.EventType.KEY_DOWN,s=>{(s.equals(H.Enter)||s.equals(H.Space))&&(this.clearFilters(),s.stopPropagation())}),this.setAriaLabel(h.MARKERS_PANEL_NO_PROBLEMS_FILTERS)}renderNoProblemsMessageForActiveFile(e){const t=o.append(e,o.$("span"));t.textContent=h.MARKERS_PANEL_NO_PROBLEMS_ACTIVE_FILE_BUILT,this.setAriaLabel(h.MARKERS_PANEL_NO_PROBLEMS_ACTIVE_FILE_BUILT)}renderNoProblemsMessage(e){const t=o.append(e,o.$("span"));t.textContent=h.MARKERS_PANEL_NO_PROBLEMS_BUILT,this.setAriaLabel(h.MARKERS_PANEL_NO_PROBLEMS_BUILT)}setAriaLabel(e){this.widget.setAriaLabel(e),this.ariaLabelElement.setAttribute("aria-label",e)}clearFilters(){this.filterWidget.setFilterText(""),this.filters.excludedFiles=!1,this.filters.showErrors=!0,this.filters.showWarnings=!0,this.filters.showInfos=!0}autoReveal(e=!1){if(this.filters.activeFile)return;const t=this.configurationService.getValue("problems.autoReveal");if(typeof t=="boolean"&&t){const i=this.getResourceForCurrentActiveResource();this.widget.revealMarkers(i,e,this.lastSelectedRelativeTop)}}getResourceForCurrentActiveResource(){return this.currentActiveResource?this.markersModel.getResourceMarkers(this.currentActiveResource):null}updateRangeHighlights(){this.rangeHighlightDecorations.removeHighlightRange(),o.isActiveElement(this.widget.getHTMLElement())&&this.highlightCurrentSelectedMarkerRange()}highlightCurrentSelectedMarkerRange(){const e=this.widget.getSelection()??[];if(e.length!==1)return;const t=e[0];t instanceof d&&this.rangeHighlightDecorations.highlightRange(t)}onContextMenu(e){const t=e.element;t&&(e.browserEvent.preventDefault(),e.browserEvent.stopPropagation(),this.contextMenuService.showContextMenu({getAnchor:()=>e.anchor,menuId:Ie.ProblemsPanelContext,contextKeyService:this.widget.contextKeyService,getActions:()=>this.getMenuActions(t),getActionViewItem:i=>{const r=this.keybindingService.lookupKeybinding(i.id);if(r)return new Te(i,i,{label:!0,keybinding:r.getLabel()})},onHide:i=>{i&&this.widget.domFocus()}}))}getMenuActions(e){const t=[];if(e instanceof d){const i=this.markersViewModel.getViewModel(e);if(i){const r=i.quickFixAction.quickFixes;r.length&&(t.push(...r),t.push(new J))}}return t}getFocusElement(){return this.widget.getFocus()[0]??void 0}getFocusedSelectedElements(){const e=this.getFocusElement();if(!e)return null;const t=this.widget.getSelection();if(t.includes(e)){const i=[];for(const r of t)r&&i.push(r);return i}else return[e]}getAllResourceMarkers(){return this.markersModel.resourceMarkers}getFilterStats(){return this.cachedFilterStats||(this.cachedFilterStats={total:this.markersModel.total,filtered:this.widget?.getVisibleItemCount()??0}),this.cachedFilterStats}toggleVisibility(e){this.widget.toggleVisibility(e),this.layoutBodyContent()}saveState(){this.panelState.filter=this.filterWidget.getFilterText(),this.panelState.filterHistory=this.filters.filterHistory,this.panelState.showErrors=this.filters.showErrors,this.panelState.showWarnings=this.filters.showWarnings,this.panelState.showInfos=this.filters.showInfos,this.panelState.useFilesExclude=this.filters.excludedFiles,this.panelState.activeFile=this.filters.activeFile,this.panelState.multiline=this.markersViewModel.multiline,this.panelState.viewMode=this.markersViewModel.viewMode,this.memento.saveMemento(),super.saveState()}dispose(){super.dispose()}};S=C([n(1,L),n(2,xe),n(3,Z),n(4,D),n(5,X),n(6,ye),n(7,P),n(8,ge),n(9,Se),n(10,Le),n(11,Ee),n(12,ne),n(13,Ae),n(14,V),n(15,Ne)],S);let m=class extends ce{constructor(e,t,i,r,s,l,a,I,O,E){super(e,t,i,r,s,l,a,I,E);this.container=t;this.visibilityContextKey=k.MarkersTreeVisibilityContextKey.bindTo(a)}visibilityContextKey;collapseMarkers(){this.collapseAll(),this.setSelection([]),this.setFocus([]),this.getHTMLElement().focus(),this.focusFirst()}filterMarkers(){this.refilter()}getVisibleItemCount(){let e=0;const t=this.getNode();for(const i of t.children)for(const r of i.children)i.visible&&r.visible&&e++;return e}isVisible(){return!this.container.classList.contains("hidden")}toggleVisibility(e){this.visibilityContextKey.set(!e),this.container.classList.toggle("hidden",e)}reset(e){this.setChildren(null,p.map(e,t=>({element:t,children:K(t)})))}revealMarkers(e,t,i){e?this.hasElement(e)&&(!this.isCollapsed(e)&&this.hasSelectedMarkerFor(e)?(this.reveal(this.getSelection()[0],i),t&&this.setFocus(this.getSelection())):(this.expand(e),this.reveal(e,0),t&&(this.setFocus([e]),this.setSelection([e])))):t&&(this.setSelection([]),this.focusFirst())}setAriaLabel(e){this.ariaLabel=e}setMarkerSelection(e,t){if(this.isVisible()){if(e&&e.length>0)this.setSelection(e.map(i=>this.findMarkerNode(i))),t&&t.length>0?this.setFocus(t.map(i=>this.findMarkerNode(i))):this.setFocus([this.findMarkerNode(e[0])]),this.reveal(this.findMarkerNode(e[0]));else if(this.getSelection().length===0){const i=this.firstVisibleElement,r=i?i instanceof y?i.markers[0]:i instanceof d?i:void 0:void 0;r&&(this.setSelection([r]),this.setFocus([r]),this.reveal(r))}}}update(e){for(const t of e)this.hasElement(t)&&(this.setChildren(t,K(t)),this.rerender(t))}updateMarker(e){this.rerender(e)}findMarkerNode(e){for(const t of this.getNode().children)for(const i of t.children)if(i.element instanceof d&&i.element.marker===e.marker)return i.element;return null}hasSelectedMarkerFor(e){const t=this.getSelection();return!!(t&&t.length>0&&t[0]instanceof d&&e.has(t[0].marker.resource))}dispose(){super.dispose()}layout(e,t){this.container.style.height=`${e}px`,super.layout(e,t)}};m=C([n(5,L),n(6,P),n(7,he),n(8,V),n(9,D)],m);export{S as MarkersView};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import './media/markers.css';
+import * as dom from '../../../../base/browser/dom.js';
+import { Separator } from '../../../../base/common/actions.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { IEditorService, SIDE_GROUP, ACTIVE_GROUP } from '../../../services/editor/common/editorService.js';
+import { Marker, ResourceMarkers, RelatedInformation, MarkersModel, compareMarkersByUri, MarkerTableItem } from './markersModel.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { MarkersFilters } from './markersViewActions.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import Messages from './messages.js';
+import { RangeHighlightDecorations } from '../../../browser/codeeditor.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { localize } from '../../../../nls.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { Relay, Event } from '../../../../base/common/event.js';
+import { WorkbenchObjectTree, IListService } from '../../../../platform/list/browser/listService.js';
+import { FilterOptions } from './markersFilterOptions.js';
+import { deepClone } from '../../../../base/common/objects.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { Filter, VirtualDelegate, ResourceMarkersRenderer, MarkerRenderer, RelatedInformationRenderer, MarkersWidgetAccessibilityProvider, MarkersViewModel } from './markersTreeViewer.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { MenuId } from '../../../../platform/actions/common/actions.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { StandardKeyboardEvent } from '../../../../base/browser/keyboardEvent.js';
+import { ResourceLabels } from '../../../browser/labels.js';
+import { IMarkerService, MarkerSeverity } from '../../../../platform/markers/common/markers.js';
+import { Memento } from '../../../common/memento.js';
+import { FilterViewPane } from '../../../browser/parts/views/viewPane.js';
+import { IViewDescriptorService } from '../../../common/views.js';
+import { IOpenerService, withSelection } from '../../../../platform/opener/common/opener.js';
+import { ActionViewItem } from '../../../../base/browser/ui/actionbar/actionViewItems.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { groupBy } from '../../../../base/common/arrays.js';
+import { ResourceMap } from '../../../../base/common/map.js';
+import { EditorResourceAccessor, SideBySideEditor } from '../../../common/editor.js';
+import { ResourceListDnDHandler } from '../../../browser/dnd.js';
+import { MarkersTable } from './markersTable.js';
+import { Markers, MarkersContextKeys } from '../common/markers.js';
+import { registerNavigableContainer } from '../../../browser/actions/widgetNavigationCommands.js';
+import { IHoverService } from '../../../../platform/hover/browser/hover.js';
+function createResourceMarkersIterator(resourceMarkers) {
+    return Iterable.map(resourceMarkers.markers, m => {
+        const relatedInformationIt = Iterable.from(m.relatedInformation);
+        const children = Iterable.map(relatedInformationIt, r => ({ element: r }));
+        return { element: m, children };
+    });
+}
+let MarkersView = class MarkersView extends FilterViewPane {
+    constructor(options, instantiationService, viewDescriptorService, editorService, configurationService, telemetryService, markerService, contextKeyService, workspaceContextService, contextMenuService, uriIdentityService, keybindingService, storageService, openerService, themeService, hoverService) {
+        const memento = new Memento(Markers.MARKERS_VIEW_STORAGE_ID, storageService);
+        const panelState = memento.getMemento(1, 1);
+        super({
+            ...options,
+            filterOptions: {
+                ariaLabel: Messages.MARKERS_PANEL_FILTER_ARIA_LABEL,
+                placeholder: Messages.MARKERS_PANEL_FILTER_PLACEHOLDER,
+                focusContextKey: MarkersContextKeys.MarkerViewFilterFocusContextKey.key,
+                text: panelState['filter'] || '',
+                history: panelState['filterHistory'] || []
+            }
+        }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService, hoverService);
+        this.editorService = editorService;
+        this.markerService = markerService;
+        this.workspaceContextService = workspaceContextService;
+        this.uriIdentityService = uriIdentityService;
+        this.lastSelectedRelativeTop = 0;
+        this.currentActiveResource = null;
+        this.onVisibleDisposables = this._register(new DisposableStore());
+        this.widgetDisposables = this._register(new DisposableStore());
+        this.currentHeight = 0;
+        this.currentWidth = 0;
+        this.cachedFilterStats = undefined;
+        this.currentResourceGotAddedToMarkersData = false;
+        this.onDidChangeVisibility = this.onDidChangeBodyVisibility;
+        this.memento = memento;
+        this.panelState = panelState;
+        this.markersModel = this._register(instantiationService.createInstance(MarkersModel));
+        this.markersViewModel = this._register(instantiationService.createInstance(MarkersViewModel, this.panelState['multiline'], this.panelState['viewMode'] ?? this.getDefaultViewMode()));
+        this._register(this.onDidChangeVisibility(visible => this.onDidChangeMarkersViewVisibility(visible)));
+        this._register(this.markersViewModel.onDidChangeViewMode(_ => this.onDidChangeViewMode()));
+        this.widgetAccessibilityProvider = instantiationService.createInstance(MarkersWidgetAccessibilityProvider);
+        this.widgetIdentityProvider = { getId(element) { return element.id; } };
+        this.setCurrentActiveEditor();
+        this.filter = new Filter(FilterOptions.EMPTY(uriIdentityService));
+        this.rangeHighlightDecorations = this._register(this.instantiationService.createInstance(RangeHighlightDecorations));
+        this.filters = this._register(new MarkersFilters({
+            filterHistory: this.panelState['filterHistory'] || [],
+            showErrors: this.panelState['showErrors'] !== false,
+            showWarnings: this.panelState['showWarnings'] !== false,
+            showInfos: this.panelState['showInfos'] !== false,
+            excludedFiles: !!this.panelState['useFilesExclude'],
+            activeFile: !!this.panelState['activeFile'],
+        }, this.contextKeyService));
+        this._register(this.configurationService.onDidChangeConfiguration(e => {
+            if (this.filters.excludedFiles && e.affectsConfiguration('files.exclude')) {
+                this.updateFilter();
+            }
+        }));
+    }
+    render() {
+        super.render();
+        this._register(registerNavigableContainer({
+            name: 'markersView',
+            focusNotifiers: [this, this.filterWidget],
+            focusNextWidget: () => {
+                if (this.filterWidget.hasFocus()) {
+                    this.focus();
+                }
+            },
+            focusPreviousWidget: () => {
+                if (!this.filterWidget.hasFocus()) {
+                    this.focusFilter();
+                }
+            }
+        }));
+    }
+    renderBody(parent) {
+        super.renderBody(parent);
+        parent.classList.add('markers-panel');
+        this._register(dom.addDisposableListener(parent, 'keydown', e => {
+            const event = new StandardKeyboardEvent(e);
+            if (!this.keybindingService.mightProducePrintableCharacter(event)) {
+                return;
+            }
+            const result = this.keybindingService.softDispatch(event, event.target);
+            if (result.kind === 1 || result.kind === 2) {
+                return;
+            }
+            this.focusFilter();
+        }));
+        const panelContainer = dom.append(parent, dom.$('.markers-panel-container'));
+        this.createArialLabelElement(panelContainer);
+        this.createMessageBox(panelContainer);
+        this.widgetContainer = dom.append(panelContainer, dom.$('.widget-container'));
+        this.createWidget(this.widgetContainer);
+        this.updateFilter();
+        this.renderContent();
+    }
+    getTitle() {
+        return Messages.MARKERS_PANEL_TITLE_PROBLEMS.value;
+    }
+    layoutBodyContent(height = this.currentHeight, width = this.currentWidth) {
+        if (this.messageBoxContainer) {
+            this.messageBoxContainer.style.height = `${height}px`;
+        }
+        this.widget.layout(height, width);
+        this.currentHeight = height;
+        this.currentWidth = width;
+    }
+    focus() {
+        super.focus();
+        if (dom.isActiveElement(this.widget.getHTMLElement())) {
+            return;
+        }
+        if (this.hasNoProblems()) {
+            this.messageBoxContainer.focus();
+        }
+        else {
+            this.widget.domFocus();
+            this.widget.setMarkerSelection();
+        }
+    }
+    focusFilter() {
+        this.filterWidget.focus();
+    }
+    updateBadge(total, filtered) {
+        this.filterWidget.updateBadge(total === filtered || total === 0 ? undefined : localize('showing filtered problems', "Showing {0} of {1}", filtered, total));
+    }
+    checkMoreFilters() {
+        this.filterWidget.checkMoreFilters(!this.filters.showErrors || !this.filters.showWarnings || !this.filters.showInfos || this.filters.excludedFiles || this.filters.activeFile);
+    }
+    clearFilterText() {
+        this.filterWidget.setFilterText('');
+    }
+    showQuickFixes(marker) {
+        const viewModel = this.markersViewModel.getViewModel(marker);
+        if (viewModel) {
+            viewModel.quickFixAction.run();
+        }
+    }
+    openFileAtElement(element, preserveFocus, sideByside, pinned) {
+        const { resource, selection } = element instanceof Marker ? { resource: element.resource, selection: element.range } :
+            element instanceof RelatedInformation ? { resource: element.raw.resource, selection: element.raw } :
+                'marker' in element ? { resource: element.marker.resource, selection: element.marker.range } :
+                    { resource: null, selection: null };
+        if (resource && selection) {
+            this.editorService.openEditor({
+                resource,
+                options: {
+                    selection,
+                    preserveFocus,
+                    pinned,
+                    revealIfVisible: true
+                },
+            }, sideByside ? SIDE_GROUP : ACTIVE_GROUP).then(editor => {
+                if (editor && preserveFocus) {
+                    this.rangeHighlightDecorations.highlightRange({ resource, range: selection }, editor.getControl());
+                }
+                else {
+                    this.rangeHighlightDecorations.removeHighlightRange();
+                }
+            });
+            return true;
+        }
+        else {
+            this.rangeHighlightDecorations.removeHighlightRange();
+        }
+        return false;
+    }
+    refreshPanel(markerOrChange) {
+        if (this.isVisible()) {
+            const hasSelection = this.widget.getSelection().length > 0;
+            if (markerOrChange) {
+                if (markerOrChange instanceof Marker) {
+                    this.widget.updateMarker(markerOrChange);
+                }
+                else {
+                    if (markerOrChange.added.size || markerOrChange.removed.size) {
+                        this.resetWidget();
+                    }
+                    else {
+                        this.widget.update([...markerOrChange.updated]);
+                    }
+                }
+            }
+            else {
+                this.resetWidget();
+            }
+            if (hasSelection) {
+                this.widget.setMarkerSelection();
+            }
+            this.cachedFilterStats = undefined;
+            const { total, filtered } = this.getFilterStats();
+            this.toggleVisibility(total === 0 || filtered === 0);
+            this.renderMessage();
+            this.updateBadge(total, filtered);
+            this.checkMoreFilters();
+        }
+    }
+    onDidChangeViewState(marker) {
+        this.refreshPanel(marker);
+    }
+    resetWidget() {
+        this.widget.reset(this.getResourceMarkers());
+    }
+    updateFilter() {
+        this.filter.options = new FilterOptions(this.filterWidget.getFilterText(), this.getFilesExcludeExpressions(), this.filters.showWarnings, this.filters.showErrors, this.filters.showInfos, this.uriIdentityService);
+        this.widget.filterMarkers(this.getResourceMarkers(), this.filter.options);
+        this.cachedFilterStats = undefined;
+        const { total, filtered } = this.getFilterStats();
+        this.toggleVisibility(total === 0 || filtered === 0);
+        this.renderMessage();
+        this.updateBadge(total, filtered);
+        this.checkMoreFilters();
+    }
+    getDefaultViewMode() {
+        switch (this.configurationService.getValue('problems.defaultViewMode')) {
+            case 'table':
+                return "table";
+            case 'tree':
+                return "tree";
+            default:
+                return "tree";
+        }
+    }
+    getFilesExcludeExpressions() {
+        if (!this.filters.excludedFiles) {
+            return [];
+        }
+        const workspaceFolders = this.workspaceContextService.getWorkspace().folders;
+        return workspaceFolders.length
+            ? workspaceFolders.map(workspaceFolder => ({ root: workspaceFolder.uri, expression: this.getFilesExclude(workspaceFolder.uri) }))
+            : this.getFilesExclude();
+    }
+    getFilesExclude(resource) {
+        return deepClone(this.configurationService.getValue('files.exclude', { resource })) || {};
+    }
+    getResourceMarkers() {
+        if (!this.filters.activeFile) {
+            return this.markersModel.resourceMarkers;
+        }
+        let resourceMarkers = [];
+        if (this.currentActiveResource) {
+            const activeResourceMarkers = this.markersModel.getResourceMarkers(this.currentActiveResource);
+            if (activeResourceMarkers) {
+                resourceMarkers = [activeResourceMarkers];
+            }
+        }
+        return resourceMarkers;
+    }
+    createMessageBox(parent) {
+        this.messageBoxContainer = dom.append(parent, dom.$('.message-box-container'));
+        this.messageBoxContainer.setAttribute('aria-labelledby', 'markers-panel-arialabel');
+    }
+    createArialLabelElement(parent) {
+        this.ariaLabelElement = dom.append(parent, dom.$(''));
+        this.ariaLabelElement.setAttribute('id', 'markers-panel-arialabel');
+    }
+    createWidget(parent) {
+        this.widget = this.markersViewModel.viewMode === "table" ? this.createTable(parent) : this.createTree(parent);
+        this.widgetDisposables.add(this.widget);
+        const markerFocusContextKey = MarkersContextKeys.MarkerFocusContextKey.bindTo(this.widget.contextKeyService);
+        const relatedInformationFocusContextKey = MarkersContextKeys.RelatedInformationFocusContextKey.bindTo(this.widget.contextKeyService);
+        this.widgetDisposables.add(this.widget.onDidChangeFocus(focus => {
+            markerFocusContextKey.set(focus.elements.some(e => e instanceof Marker));
+            relatedInformationFocusContextKey.set(focus.elements.some(e => e instanceof RelatedInformation));
+        }));
+        this.widgetDisposables.add(Event.debounce(this.widget.onDidOpen, (last, event) => event, 75, true)(options => {
+            this.openFileAtElement(options.element, !!options.editorOptions.preserveFocus, options.sideBySide, !!options.editorOptions.pinned);
+        }));
+        this.widgetDisposables.add(Event.any(this.widget.onDidChangeSelection, this.widget.onDidChangeFocus)(() => {
+            const elements = [...this.widget.getSelection(), ...this.widget.getFocus()];
+            for (const element of elements) {
+                if (element instanceof Marker) {
+                    const viewModel = this.markersViewModel.getViewModel(element);
+                    viewModel?.showLightBulb();
+                }
+            }
+        }));
+        this.widgetDisposables.add(this.widget.onContextMenu(this.onContextMenu, this));
+        this.widgetDisposables.add(this.widget.onDidChangeSelection(this.onSelected, this));
+    }
+    createTable(parent) {
+        const table = this.instantiationService.createInstance(MarkersTable, dom.append(parent, dom.$('.markers-table-container')), this.markersViewModel, this.getResourceMarkers(), this.filter.options, {
+            accessibilityProvider: this.widgetAccessibilityProvider,
+            dnd: this.instantiationService.createInstance(ResourceListDnDHandler, (element) => {
+                if (element instanceof MarkerTableItem) {
+                    return withSelection(element.resource, element.range);
+                }
+                return null;
+            }),
+            horizontalScrolling: false,
+            identityProvider: this.widgetIdentityProvider,
+            multipleSelectionSupport: true,
+            selectionNavigation: true
+        });
+        return table;
+    }
+    createTree(parent) {
+        const onDidChangeRenderNodeCount = new Relay();
+        const treeLabels = this.instantiationService.createInstance(ResourceLabels, this);
+        const virtualDelegate = new VirtualDelegate(this.markersViewModel);
+        const renderers = [
+            this.instantiationService.createInstance(ResourceMarkersRenderer, treeLabels, onDidChangeRenderNodeCount.event),
+            this.instantiationService.createInstance(MarkerRenderer, this.markersViewModel),
+            this.instantiationService.createInstance(RelatedInformationRenderer)
+        ];
+        const tree = this.instantiationService.createInstance(MarkersTree, 'MarkersView', dom.append(parent, dom.$('.tree-container.show-file-icons')), virtualDelegate, renderers, {
+            filter: this.filter,
+            accessibilityProvider: this.widgetAccessibilityProvider,
+            identityProvider: this.widgetIdentityProvider,
+            dnd: this.instantiationService.createInstance(ResourceListDnDHandler, (element) => {
+                if (element instanceof ResourceMarkers) {
+                    return element.resource;
+                }
+                if (element instanceof Marker) {
+                    return withSelection(element.resource, element.range);
+                }
+                if (element instanceof RelatedInformation) {
+                    return withSelection(element.raw.resource, element.raw);
+                }
+                return null;
+            }),
+            expandOnlyOnTwistieClick: (e) => e instanceof Marker && e.relatedInformation.length > 0,
+            overrideStyles: this.getLocationBasedColors().listOverrideStyles,
+            selectionNavigation: true,
+            multipleSelectionSupport: true,
+        });
+        onDidChangeRenderNodeCount.input = tree.onDidChangeRenderNodeCount;
+        return tree;
+    }
+    collapseAll() {
+        this.widget.collapseMarkers();
+    }
+    setMultiline(multiline) {
+        this.markersViewModel.multiline = multiline;
+    }
+    setViewMode(viewMode) {
+        this.markersViewModel.viewMode = viewMode;
+    }
+    onDidChangeMarkersViewVisibility(visible) {
+        this.onVisibleDisposables.clear();
+        if (visible) {
+            for (const disposable of this.reInitialize()) {
+                this.onVisibleDisposables.add(disposable);
+            }
+            this.refreshPanel();
+        }
+    }
+    reInitialize() {
+        const disposables = [];
+        const readMarkers = (resource) => this.markerService.read({ resource, severities: MarkerSeverity.Error | MarkerSeverity.Warning | MarkerSeverity.Info });
+        this.markersModel.setResourceMarkers(groupBy(readMarkers(), compareMarkersByUri).map(group => [group[0].resource, group]));
+        disposables.push(Event.debounce(this.markerService.onMarkerChanged, (resourcesMap, resources) => {
+            resourcesMap = resourcesMap || new ResourceMap();
+            resources.forEach(resource => resourcesMap.set(resource, resource));
+            return resourcesMap;
+        }, 64)(resourcesMap => {
+            this.markersModel.setResourceMarkers([...resourcesMap.values()].map(resource => [resource, readMarkers(resource)]));
+        }));
+        disposables.push(Event.any(this.markersModel.onDidChange, this.editorService.onDidActiveEditorChange)(changes => {
+            if (changes) {
+                this.onDidChangeModel(changes);
+            }
+            else {
+                this.onActiveEditorChanged();
+            }
+        }));
+        disposables.push(toDisposable(() => this.markersModel.reset()));
+        this.markersModel.resourceMarkers.forEach(resourceMarker => resourceMarker.markers.forEach(marker => this.markersViewModel.add(marker)));
+        disposables.push(this.markersViewModel.onDidChange(marker => this.onDidChangeViewState(marker)));
+        disposables.push(toDisposable(() => this.markersModel.resourceMarkers.forEach(resourceMarker => this.markersViewModel.remove(resourceMarker.resource))));
+        disposables.push(this.filters.onDidChange((event) => {
+            if (event.activeFile) {
+                this.refreshPanel();
+            }
+            else if (event.excludedFiles || event.showWarnings || event.showErrors || event.showInfos) {
+                this.updateFilter();
+            }
+        }));
+        disposables.push(this.filterWidget.onDidChangeFilterText(e => this.updateFilter()));
+        disposables.push(toDisposable(() => { this.cachedFilterStats = undefined; }));
+        disposables.push(toDisposable(() => this.rangeHighlightDecorations.removeHighlightRange()));
+        return disposables;
+    }
+    onDidChangeModel(change) {
+        const resourceMarkers = [...change.added, ...change.removed, ...change.updated];
+        const resources = [];
+        for (const { resource } of resourceMarkers) {
+            this.markersViewModel.remove(resource);
+            const resourceMarkers = this.markersModel.getResourceMarkers(resource);
+            if (resourceMarkers) {
+                for (const marker of resourceMarkers.markers) {
+                    this.markersViewModel.add(marker);
+                }
+            }
+            resources.push(resource);
+        }
+        this.currentResourceGotAddedToMarkersData = this.currentResourceGotAddedToMarkersData || this.isCurrentResourceGotAddedToMarkersData(resources);
+        this.refreshPanel(change);
+        this.updateRangeHighlights();
+        if (this.currentResourceGotAddedToMarkersData) {
+            this.autoReveal();
+            this.currentResourceGotAddedToMarkersData = false;
+        }
+    }
+    onDidChangeViewMode() {
+        if (this.widgetContainer && this.widget) {
+            this.widgetContainer.textContent = '';
+            this.widgetDisposables.clear();
+        }
+        const selection = new Set();
+        for (const marker of this.widget.getSelection()) {
+            if (marker instanceof ResourceMarkers) {
+                marker.markers.forEach(m => selection.add(m));
+            }
+            else if (marker instanceof Marker || marker instanceof MarkerTableItem) {
+                selection.add(marker);
+            }
+        }
+        const focus = new Set();
+        for (const marker of this.widget.getFocus()) {
+            if (marker instanceof Marker || marker instanceof MarkerTableItem) {
+                focus.add(marker);
+            }
+        }
+        this.createWidget(this.widgetContainer);
+        this.refreshPanel();
+        if (selection.size > 0) {
+            this.widget.setMarkerSelection(Array.from(selection), Array.from(focus));
+            this.widget.domFocus();
+        }
+    }
+    isCurrentResourceGotAddedToMarkersData(changedResources) {
+        const currentlyActiveResource = this.currentActiveResource;
+        if (!currentlyActiveResource) {
+            return false;
+        }
+        const resourceForCurrentActiveResource = this.getResourceForCurrentActiveResource();
+        if (resourceForCurrentActiveResource) {
+            return false;
+        }
+        return changedResources.some(r => r.toString() === currentlyActiveResource.toString());
+    }
+    onActiveEditorChanged() {
+        this.setCurrentActiveEditor();
+        if (this.filters.activeFile) {
+            this.refreshPanel();
+        }
+        this.autoReveal();
+    }
+    setCurrentActiveEditor() {
+        const activeEditor = this.editorService.activeEditor;
+        this.currentActiveResource = activeEditor ? EditorResourceAccessor.getOriginalUri(activeEditor, { supportSideBySide: SideBySideEditor.PRIMARY }) ?? null : null;
+    }
+    onSelected() {
+        const selection = this.widget.getSelection();
+        if (selection && selection.length > 0) {
+            this.lastSelectedRelativeTop = this.widget.getRelativeTop(selection[0]) || 0;
+        }
+    }
+    hasNoProblems() {
+        const { total, filtered } = this.getFilterStats();
+        return total === 0 || filtered === 0;
+    }
+    renderContent() {
+        this.cachedFilterStats = undefined;
+        this.resetWidget();
+        this.toggleVisibility(this.hasNoProblems());
+        this.renderMessage();
+    }
+    renderMessage() {
+        if (!this.messageBoxContainer || !this.ariaLabelElement) {
+            return;
+        }
+        dom.clearNode(this.messageBoxContainer);
+        const { total, filtered } = this.getFilterStats();
+        if (filtered === 0) {
+            this.messageBoxContainer.style.display = 'block';
+            this.messageBoxContainer.setAttribute('tabIndex', '0');
+            if (this.filters.activeFile) {
+                this.renderFilterMessageForActiveFile(this.messageBoxContainer);
+            }
+            else {
+                if (total > 0) {
+                    this.renderFilteredByFilterMessage(this.messageBoxContainer);
+                }
+                else {
+                    this.renderNoProblemsMessage(this.messageBoxContainer);
+                }
+            }
+        }
+        else {
+            this.messageBoxContainer.style.display = 'none';
+            if (filtered === total) {
+                this.setAriaLabel(localize('No problems filtered', "Showing {0} problems", total));
+            }
+            else {
+                this.setAriaLabel(localize('problems filtered', "Showing {0} of {1} problems", filtered, total));
+            }
+            this.messageBoxContainer.removeAttribute('tabIndex');
+        }
+    }
+    renderFilterMessageForActiveFile(container) {
+        if (this.currentActiveResource && this.markersModel.getResourceMarkers(this.currentActiveResource)) {
+            this.renderFilteredByFilterMessage(container);
+        }
+        else {
+            this.renderNoProblemsMessageForActiveFile(container);
+        }
+    }
+    renderFilteredByFilterMessage(container) {
+        const span1 = dom.append(container, dom.$('span'));
+        span1.textContent = Messages.MARKERS_PANEL_NO_PROBLEMS_FILTERS;
+        const link = dom.append(container, dom.$('a.messageAction'));
+        link.textContent = localize('clearFilter', "Clear Filters");
+        link.setAttribute('tabIndex', '0');
+        const span2 = dom.append(container, dom.$('span'));
+        span2.textContent = '.';
+        dom.addStandardDisposableListener(link, dom.EventType.CLICK, () => this.clearFilters());
+        dom.addStandardDisposableListener(link, dom.EventType.KEY_DOWN, (e) => {
+            if (e.equals(3) || e.equals(10)) {
+                this.clearFilters();
+                e.stopPropagation();
+            }
+        });
+        this.setAriaLabel(Messages.MARKERS_PANEL_NO_PROBLEMS_FILTERS);
+    }
+    renderNoProblemsMessageForActiveFile(container) {
+        const span = dom.append(container, dom.$('span'));
+        span.textContent = Messages.MARKERS_PANEL_NO_PROBLEMS_ACTIVE_FILE_BUILT;
+        this.setAriaLabel(Messages.MARKERS_PANEL_NO_PROBLEMS_ACTIVE_FILE_BUILT);
+    }
+    renderNoProblemsMessage(container) {
+        const span = dom.append(container, dom.$('span'));
+        span.textContent = Messages.MARKERS_PANEL_NO_PROBLEMS_BUILT;
+        this.setAriaLabel(Messages.MARKERS_PANEL_NO_PROBLEMS_BUILT);
+    }
+    setAriaLabel(label) {
+        this.widget.setAriaLabel(label);
+        this.ariaLabelElement.setAttribute('aria-label', label);
+    }
+    clearFilters() {
+        this.filterWidget.setFilterText('');
+        this.filters.excludedFiles = false;
+        this.filters.showErrors = true;
+        this.filters.showWarnings = true;
+        this.filters.showInfos = true;
+    }
+    autoReveal(focus = false) {
+        if (this.filters.activeFile) {
+            return;
+        }
+        const autoReveal = this.configurationService.getValue('problems.autoReveal');
+        if (typeof autoReveal === 'boolean' && autoReveal) {
+            const currentActiveResource = this.getResourceForCurrentActiveResource();
+            this.widget.revealMarkers(currentActiveResource, focus, this.lastSelectedRelativeTop);
+        }
+    }
+    getResourceForCurrentActiveResource() {
+        return this.currentActiveResource ? this.markersModel.getResourceMarkers(this.currentActiveResource) : null;
+    }
+    updateRangeHighlights() {
+        this.rangeHighlightDecorations.removeHighlightRange();
+        if (dom.isActiveElement(this.widget.getHTMLElement())) {
+            this.highlightCurrentSelectedMarkerRange();
+        }
+    }
+    highlightCurrentSelectedMarkerRange() {
+        const selections = this.widget.getSelection() ?? [];
+        if (selections.length !== 1) {
+            return;
+        }
+        const selection = selections[0];
+        if (!(selection instanceof Marker)) {
+            return;
+        }
+        this.rangeHighlightDecorations.highlightRange(selection);
+    }
+    onContextMenu(e) {
+        const element = e.element;
+        if (!element) {
+            return;
+        }
+        e.browserEvent.preventDefault();
+        e.browserEvent.stopPropagation();
+        this.contextMenuService.showContextMenu({
+            getAnchor: () => e.anchor,
+            menuId: MenuId.ProblemsPanelContext,
+            contextKeyService: this.widget.contextKeyService,
+            getActions: () => this.getMenuActions(element),
+            getActionViewItem: (action) => {
+                const keybinding = this.keybindingService.lookupKeybinding(action.id);
+                if (keybinding) {
+                    return new ActionViewItem(action, action, { label: true, keybinding: keybinding.getLabel() });
+                }
+                return undefined;
+            },
+            onHide: (wasCancelled) => {
+                if (wasCancelled) {
+                    this.widget.domFocus();
+                }
+            }
+        });
+    }
+    getMenuActions(element) {
+        const result = [];
+        if (element instanceof Marker) {
+            const viewModel = this.markersViewModel.getViewModel(element);
+            if (viewModel) {
+                const quickFixActions = viewModel.quickFixAction.quickFixes;
+                if (quickFixActions.length) {
+                    result.push(...quickFixActions);
+                    result.push(new Separator());
+                }
+            }
+        }
+        return result;
+    }
+    getFocusElement() {
+        return this.widget.getFocus()[0] ?? undefined;
+    }
+    getFocusedSelectedElements() {
+        const focus = this.getFocusElement();
+        if (!focus) {
+            return null;
+        }
+        const selection = this.widget.getSelection();
+        if (selection.includes(focus)) {
+            const result = [];
+            for (const selected of selection) {
+                if (selected) {
+                    result.push(selected);
+                }
+            }
+            return result;
+        }
+        else {
+            return [focus];
+        }
+    }
+    getAllResourceMarkers() {
+        return this.markersModel.resourceMarkers;
+    }
+    getFilterStats() {
+        if (!this.cachedFilterStats) {
+            this.cachedFilterStats = {
+                total: this.markersModel.total,
+                filtered: this.widget?.getVisibleItemCount() ?? 0
+            };
+        }
+        return this.cachedFilterStats;
+    }
+    toggleVisibility(hide) {
+        this.widget.toggleVisibility(hide);
+        this.layoutBodyContent();
+    }
+    saveState() {
+        this.panelState['filter'] = this.filterWidget.getFilterText();
+        this.panelState['filterHistory'] = this.filters.filterHistory;
+        this.panelState['showErrors'] = this.filters.showErrors;
+        this.panelState['showWarnings'] = this.filters.showWarnings;
+        this.panelState['showInfos'] = this.filters.showInfos;
+        this.panelState['useFilesExclude'] = this.filters.excludedFiles;
+        this.panelState['activeFile'] = this.filters.activeFile;
+        this.panelState['multiline'] = this.markersViewModel.multiline;
+        this.panelState['viewMode'] = this.markersViewModel.viewMode;
+        this.memento.saveMemento();
+        super.saveState();
+    }
+    dispose() {
+        super.dispose();
+    }
+};
+MarkersView = __decorate([
+    __param(1, IInstantiationService),
+    __param(2, IViewDescriptorService),
+    __param(3, IEditorService),
+    __param(4, IConfigurationService),
+    __param(5, ITelemetryService),
+    __param(6, IMarkerService),
+    __param(7, IContextKeyService),
+    __param(8, IWorkspaceContextService),
+    __param(9, IContextMenuService),
+    __param(10, IUriIdentityService),
+    __param(11, IKeybindingService),
+    __param(12, IStorageService),
+    __param(13, IOpenerService),
+    __param(14, IThemeService),
+    __param(15, IHoverService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], MarkersView);
+export { MarkersView };
+let MarkersTree = class MarkersTree extends WorkbenchObjectTree {
+    constructor(user, container, delegate, renderers, options, instantiationService, contextKeyService, listService, themeService, configurationService) {
+        super(user, container, delegate, renderers, options, instantiationService, contextKeyService, listService, configurationService);
+        this.container = container;
+        this.visibilityContextKey = MarkersContextKeys.MarkersTreeVisibilityContextKey.bindTo(contextKeyService);
+    }
+    collapseMarkers() {
+        this.collapseAll();
+        this.setSelection([]);
+        this.setFocus([]);
+        this.getHTMLElement().focus();
+        this.focusFirst();
+    }
+    filterMarkers() {
+        this.refilter();
+    }
+    getVisibleItemCount() {
+        let filtered = 0;
+        const root = this.getNode();
+        for (const resourceMarkerNode of root.children) {
+            for (const markerNode of resourceMarkerNode.children) {
+                if (resourceMarkerNode.visible && markerNode.visible) {
+                    filtered++;
+                }
+            }
+        }
+        return filtered;
+    }
+    isVisible() {
+        return !this.container.classList.contains('hidden');
+    }
+    toggleVisibility(hide) {
+        this.visibilityContextKey.set(!hide);
+        this.container.classList.toggle('hidden', hide);
+    }
+    reset(resourceMarkers) {
+        this.setChildren(null, Iterable.map(resourceMarkers, m => ({ element: m, children: createResourceMarkersIterator(m) })));
+    }
+    revealMarkers(activeResource, focus, lastSelectedRelativeTop) {
+        if (activeResource) {
+            if (this.hasElement(activeResource)) {
+                if (!this.isCollapsed(activeResource) && this.hasSelectedMarkerFor(activeResource)) {
+                    this.reveal(this.getSelection()[0], lastSelectedRelativeTop);
+                    if (focus) {
+                        this.setFocus(this.getSelection());
+                    }
+                }
+                else {
+                    this.expand(activeResource);
+                    this.reveal(activeResource, 0);
+                    if (focus) {
+                        this.setFocus([activeResource]);
+                        this.setSelection([activeResource]);
+                    }
+                }
+            }
+        }
+        else if (focus) {
+            this.setSelection([]);
+            this.focusFirst();
+        }
+    }
+    setAriaLabel(label) {
+        this.ariaLabel = label;
+    }
+    setMarkerSelection(selection, focus) {
+        if (this.isVisible()) {
+            if (selection && selection.length > 0) {
+                this.setSelection(selection.map(m => this.findMarkerNode(m)));
+                if (focus && focus.length > 0) {
+                    this.setFocus(focus.map(f => this.findMarkerNode(f)));
+                }
+                else {
+                    this.setFocus([this.findMarkerNode(selection[0])]);
+                }
+                this.reveal(this.findMarkerNode(selection[0]));
+            }
+            else if (this.getSelection().length === 0) {
+                const firstVisibleElement = this.firstVisibleElement;
+                const marker = firstVisibleElement ?
+                    firstVisibleElement instanceof ResourceMarkers ? firstVisibleElement.markers[0] :
+                        firstVisibleElement instanceof Marker ? firstVisibleElement : undefined
+                    : undefined;
+                if (marker) {
+                    this.setSelection([marker]);
+                    this.setFocus([marker]);
+                    this.reveal(marker);
+                }
+            }
+        }
+    }
+    update(resourceMarkers) {
+        for (const resourceMarker of resourceMarkers) {
+            if (this.hasElement(resourceMarker)) {
+                this.setChildren(resourceMarker, createResourceMarkersIterator(resourceMarker));
+                this.rerender(resourceMarker);
+            }
+        }
+    }
+    updateMarker(marker) {
+        this.rerender(marker);
+    }
+    findMarkerNode(marker) {
+        for (const resourceNode of this.getNode().children) {
+            for (const markerNode of resourceNode.children) {
+                if (markerNode.element instanceof Marker && markerNode.element.marker === marker.marker) {
+                    return markerNode.element;
+                }
+            }
+        }
+        return null;
+    }
+    hasSelectedMarkerFor(resource) {
+        const selectedElement = this.getSelection();
+        if (selectedElement && selectedElement.length > 0) {
+            if (selectedElement[0] instanceof Marker) {
+                if (resource.has(selectedElement[0].marker.resource)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    dispose() {
+        super.dispose();
+    }
+    layout(height, width) {
+        this.container.style.height = `${height}px`;
+        super.layout(height, width);
+    }
+};
+MarkersTree = __decorate([
+    __param(5, IInstantiationService),
+    __param(6, IContextKeyService),
+    __param(7, IListService),
+    __param(8, IThemeService),
+    __param(9, IConfigurationService),
+    __metadata("design:paramtypes", [String, HTMLElement, Object, Array, Object, Object, Object, Object, Object, Object])
+], MarkersTree);

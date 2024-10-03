@@ -1,1 +1,133 @@
-import{importAMDNodeModule as h}from"../../../../../../amdX.js";import{RunOnceScheduler as S}from"../../../../../../base/common/async.js";import{observableValue as g}from"../../../../../../base/common/observable.js";import{setTimeout0 as p}from"../../../../../../base/common/platform.js";import"../../../../../../base/common/uri.js";import{LineRange as c}from"../../../../../../editor/common/core/lineRange.js";import"../../../../../../editor/common/encodedTokenAttributes.js";import{MirrorTextModel as k}from"../../../../../../editor/common/model/mirrorTextModel.js";import{TokenizerWithStateStore as f}from"../../../../../../editor/common/model/textModelTokens.js";import{ContiguousMultilineTokensBuilder as _}from"../../../../../../editor/common/tokens/contiguousMultilineTokensBuilder.js";import{LineTokens as z}from"../../../../../../editor/common/tokens/lineTokens.js";import{TextMateTokenizationSupport as T}from"../../tokenizationSupport/textMateTokenizationSupport.js";import{TokenizationSupportWithLineLimit as v}from"../../tokenizationSupport/tokenizationSupportWithLineLimit.js";import"../../../common/TMGrammarFactory.js";import"./textMateTokenizationWorker.worker.js";import{Disposable as b}from"../../../../../../base/common/lifecycle.js";class J extends k{constructor(e,t,a,n,s,l,i,r){super(e,t,a,n);this._host=s;this._languageId=l;this._encodedLanguageId=i;this._maxTokenizationLineLength.set(r,void 0),this._resetTokenization()}_tokenizerWithStateStore=null;_isDisposed=!1;_maxTokenizationLineLength=g(this,-1);_diffStateStacksRefEqFn;_tokenizeDebouncer=new S(()=>this._tokenize(),10);dispose(){this._isDisposed=!0,super.dispose()}onLanguageId(e,t){this._languageId=e,this._encodedLanguageId=t,this._resetTokenization()}onEvents(e){super.onEvents(e),this._tokenizerWithStateStore?.store.acceptChanges(e.changes),this._tokenizeDebouncer.schedule()}acceptMaxTokenizationLineLength(e){this._maxTokenizationLineLength.set(e,void 0)}retokenize(e,t){this._tokenizerWithStateStore&&(this._tokenizerWithStateStore.store.invalidateEndStateRange(new c(e,t)),this._tokenizeDebouncer.schedule())}async _resetTokenization(){this._tokenizerWithStateStore=null;const e=this._languageId,t=this._encodedLanguageId,a=await this._host.getOrCreateGrammar(e,t);if(!(this._isDisposed||e!==this._languageId||t!==this._encodedLanguageId||!a)){if(a.grammar){const n=new v(this._encodedLanguageId,new T(a.grammar,a.initialState,!1,void 0,()=>!1,(s,l,i)=>{this._host.reportTokenizationTime(s,e,a.sourceExtensionId,l,i)},!1),b.None,this._maxTokenizationLineLength);this._tokenizerWithStateStore=new f(this._lines.length,n)}else this._tokenizerWithStateStore=null;this._tokenize()}}async _tokenize(){if(this._isDisposed||!this._tokenizerWithStateStore)return;if(!this._diffStateStacksRefEqFn){const{diffStateStacksRefEq:t}=await h("vscode-textmate","release/main.js");this._diffStateStacksRefEqFn=t}const e=new Date().getTime();for(;;){let t=0;const a=new _,n=new L;for(;;){const i=this._tokenizerWithStateStore.getFirstInvalidLine();if(i===null||t>200)break;t++;const r=this._lines[i.lineNumber-1],d=this._tokenizerWithStateStore.tokenizationSupport.tokenizeEncoded(r,!0,i.startState);if(this._tokenizerWithStateStore.store.setEndState(i.lineNumber,d.endState)){const m=this._diffStateStacksRefEqFn(i.startState,d.endState);n.setState(i.lineNumber,m)}else n.setState(i.lineNumber,null);if(z.convertToEndOffset(d.tokens,r.length),a.add(i.lineNumber,d.tokens),new Date().getTime()-e>20)break}if(t===0)break;const s=n.getStateDeltas();if(this._host.setTokensAndStates(this._versionId,a.serialize(),s),new Date().getTime()-e>20){p(()=>this._tokenize());return}}}}class L{_lastStartLineNumber=-1;_stateDeltas=[];setState(o,e){o===this._lastStartLineNumber+1?this._stateDeltas[this._stateDeltas.length-1].stateDeltas.push(e):this._stateDeltas.push({startLineNumber:o,stateDeltas:[e]}),this._lastStartLineNumber=o}getStateDeltas(){return this._stateDeltas}}export{J as TextMateWorkerTokenizer};
+import { importAMDNodeModule } from '../../../../../../amdX.js';
+import { RunOnceScheduler } from '../../../../../../base/common/async.js';
+import { observableValue } from '../../../../../../base/common/observable.js';
+import { setTimeout0 } from '../../../../../../base/common/platform.js';
+import { LineRange } from '../../../../../../editor/common/core/lineRange.js';
+import { MirrorTextModel } from '../../../../../../editor/common/model/mirrorTextModel.js';
+import { TokenizerWithStateStore } from '../../../../../../editor/common/model/textModelTokens.js';
+import { ContiguousMultilineTokensBuilder } from '../../../../../../editor/common/tokens/contiguousMultilineTokensBuilder.js';
+import { LineTokens } from '../../../../../../editor/common/tokens/lineTokens.js';
+import { TextMateTokenizationSupport } from '../../tokenizationSupport/textMateTokenizationSupport.js';
+import { TokenizationSupportWithLineLimit } from '../../tokenizationSupport/tokenizationSupportWithLineLimit.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+export class TextMateWorkerTokenizer extends MirrorTextModel {
+    constructor(uri, lines, eol, versionId, _host, _languageId, _encodedLanguageId, maxTokenizationLineLength) {
+        super(uri, lines, eol, versionId);
+        this._host = _host;
+        this._languageId = _languageId;
+        this._encodedLanguageId = _encodedLanguageId;
+        this._tokenizerWithStateStore = null;
+        this._isDisposed = false;
+        this._maxTokenizationLineLength = observableValue(this, -1);
+        this._tokenizeDebouncer = new RunOnceScheduler(() => this._tokenize(), 10);
+        this._maxTokenizationLineLength.set(maxTokenizationLineLength, undefined);
+        this._resetTokenization();
+    }
+    dispose() {
+        this._isDisposed = true;
+        super.dispose();
+    }
+    onLanguageId(languageId, encodedLanguageId) {
+        this._languageId = languageId;
+        this._encodedLanguageId = encodedLanguageId;
+        this._resetTokenization();
+    }
+    onEvents(e) {
+        super.onEvents(e);
+        this._tokenizerWithStateStore?.store.acceptChanges(e.changes);
+        this._tokenizeDebouncer.schedule();
+    }
+    acceptMaxTokenizationLineLength(maxTokenizationLineLength) {
+        this._maxTokenizationLineLength.set(maxTokenizationLineLength, undefined);
+    }
+    retokenize(startLineNumber, endLineNumberExclusive) {
+        if (this._tokenizerWithStateStore) {
+            this._tokenizerWithStateStore.store.invalidateEndStateRange(new LineRange(startLineNumber, endLineNumberExclusive));
+            this._tokenizeDebouncer.schedule();
+        }
+    }
+    async _resetTokenization() {
+        this._tokenizerWithStateStore = null;
+        const languageId = this._languageId;
+        const encodedLanguageId = this._encodedLanguageId;
+        const r = await this._host.getOrCreateGrammar(languageId, encodedLanguageId);
+        if (this._isDisposed || languageId !== this._languageId || encodedLanguageId !== this._encodedLanguageId || !r) {
+            return;
+        }
+        if (r.grammar) {
+            const tokenizationSupport = new TokenizationSupportWithLineLimit(this._encodedLanguageId, new TextMateTokenizationSupport(r.grammar, r.initialState, false, undefined, () => false, (timeMs, lineLength, isRandomSample) => {
+                this._host.reportTokenizationTime(timeMs, languageId, r.sourceExtensionId, lineLength, isRandomSample);
+            }, false), Disposable.None, this._maxTokenizationLineLength);
+            this._tokenizerWithStateStore = new TokenizerWithStateStore(this._lines.length, tokenizationSupport);
+        }
+        else {
+            this._tokenizerWithStateStore = null;
+        }
+        this._tokenize();
+    }
+    async _tokenize() {
+        if (this._isDisposed || !this._tokenizerWithStateStore) {
+            return;
+        }
+        if (!this._diffStateStacksRefEqFn) {
+            const { diffStateStacksRefEq } = await importAMDNodeModule('vscode-textmate', 'release/main.js');
+            this._diffStateStacksRefEqFn = diffStateStacksRefEq;
+        }
+        const startTime = new Date().getTime();
+        while (true) {
+            let tokenizedLines = 0;
+            const tokenBuilder = new ContiguousMultilineTokensBuilder();
+            const stateDeltaBuilder = new StateDeltaBuilder();
+            while (true) {
+                const lineToTokenize = this._tokenizerWithStateStore.getFirstInvalidLine();
+                if (lineToTokenize === null || tokenizedLines > 200) {
+                    break;
+                }
+                tokenizedLines++;
+                const text = this._lines[lineToTokenize.lineNumber - 1];
+                const r = this._tokenizerWithStateStore.tokenizationSupport.tokenizeEncoded(text, true, lineToTokenize.startState);
+                if (this._tokenizerWithStateStore.store.setEndState(lineToTokenize.lineNumber, r.endState)) {
+                    const delta = this._diffStateStacksRefEqFn(lineToTokenize.startState, r.endState);
+                    stateDeltaBuilder.setState(lineToTokenize.lineNumber, delta);
+                }
+                else {
+                    stateDeltaBuilder.setState(lineToTokenize.lineNumber, null);
+                }
+                LineTokens.convertToEndOffset(r.tokens, text.length);
+                tokenBuilder.add(lineToTokenize.lineNumber, r.tokens);
+                const deltaMs = new Date().getTime() - startTime;
+                if (deltaMs > 20) {
+                    break;
+                }
+            }
+            if (tokenizedLines === 0) {
+                break;
+            }
+            const stateDeltas = stateDeltaBuilder.getStateDeltas();
+            this._host.setTokensAndStates(this._versionId, tokenBuilder.serialize(), stateDeltas);
+            const deltaMs = new Date().getTime() - startTime;
+            if (deltaMs > 20) {
+                setTimeout0(() => this._tokenize());
+                return;
+            }
+        }
+    }
+}
+class StateDeltaBuilder {
+    constructor() {
+        this._lastStartLineNumber = -1;
+        this._stateDeltas = [];
+    }
+    setState(lineNumber, stackDiff) {
+        if (lineNumber === this._lastStartLineNumber + 1) {
+            this._stateDeltas[this._stateDeltas.length - 1].stateDeltas.push(stackDiff);
+        }
+        else {
+            this._stateDeltas.push({ startLineNumber: lineNumber, stateDeltas: [stackDiff] });
+        }
+        this._lastStartLineNumber = lineNumber;
+    }
+    getStateDeltas() {
+        return this._stateDeltas;
+    }
+}

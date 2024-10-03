@@ -1,1 +1,66 @@
-import{h as u}from"../../../../base/browser/dom.js";import{structuralEquals as b}from"../../../../base/common/equals.js";import{Disposable as c}from"../../../../base/common/lifecycle.js";import{autorun as n,constObservable as a,derivedObservableWithCache as f,derivedOpts as m,derivedWithStore as O}from"../../../../base/common/observable.js";import"../../../browser/editorBrowser.js";import{observableCodeEditor as v}from"../../../browser/observableCodeEditor.js";import{EditorOption as d}from"../../../common/config/editorOptions.js";import"../../../common/editorCommon.js";class s extends c{constructor(e){super();this._editor=e;this._view.recomputeInitiallyAndOnChange(this._store)}static get(e){return e.getContribution(s.ID)}static ID="editor.contrib.placeholderText";_editorObs=v(this._editor);_placeholderText=this._editorObs.getOption(d.placeholder);_state=m({owner:this,equalsFn:b},e=>{const t=this._placeholderText.read(e);if(t&&this._editorObs.valueIsEmpty.read(e))return{placeholder:t}});_shouldViewBeAlive=y(this,e=>this._state.read(e)?.placeholder!==void 0);_view=O((e,t)=>{if(!this._shouldViewBeAlive.read(e))return;const o=u("div.editorPlaceholder");t.add(n(r=>{const i=this._state.read(r),h=i?.placeholder!==void 0;o.root.style.display=h?"block":"none",o.root.innerText=i?.placeholder??""})),t.add(n(r=>{const i=this._editorObs.layoutInfo.read(r);o.root.style.left=`${i.contentLeft}px`,o.root.style.width=i.contentWidth-i.verticalScrollbarWidth+"px",o.root.style.top=`${this._editor.getTopForLineNumber(0)}px`})),t.add(n(r=>{o.root.style.fontFamily=this._editorObs.getOption(d.fontFamily).read(r),o.root.style.fontSize=this._editorObs.getOption(d.fontSize).read(r)+"px",o.root.style.lineHeight=this._editorObs.getOption(d.lineHeight).read(r)+"px"})),t.add(this._editorObs.createOverlayWidget({allowEditorOverflow:!1,minContentWidthInPx:a(0),position:a(null),domNode:o.root}))})}function y(p,l){return f(p,(e,t)=>t===!0?!0:l(e))}export{s as PlaceholderTextContribution};
+import { h } from '../../../../base/browser/dom.js';
+import { structuralEquals } from '../../../../base/common/equals.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { autorun, constObservable, derivedObservableWithCache, derivedOpts, derivedWithStore } from '../../../../base/common/observable.js';
+import { observableCodeEditor } from '../../../browser/observableCodeEditor.js';
+export class PlaceholderTextContribution extends Disposable {
+    static get(editor) {
+        return editor.getContribution(PlaceholderTextContribution.ID);
+    }
+    static { this.ID = 'editor.contrib.placeholderText'; }
+    constructor(_editor) {
+        super();
+        this._editor = _editor;
+        this._editorObs = observableCodeEditor(this._editor);
+        this._placeholderText = this._editorObs.getOption(90);
+        this._state = derivedOpts({ owner: this, equalsFn: structuralEquals }, reader => {
+            const p = this._placeholderText.read(reader);
+            if (!p) {
+                return undefined;
+            }
+            if (!this._editorObs.valueIsEmpty.read(reader)) {
+                return undefined;
+            }
+            return { placeholder: p };
+        });
+        this._shouldViewBeAlive = isOrWasTrue(this, reader => this._state.read(reader)?.placeholder !== undefined);
+        this._view = derivedWithStore((reader, store) => {
+            if (!this._shouldViewBeAlive.read(reader)) {
+                return;
+            }
+            const element = h('div.editorPlaceholder');
+            store.add(autorun(reader => {
+                const data = this._state.read(reader);
+                const shouldBeVisibile = data?.placeholder !== undefined;
+                element.root.style.display = shouldBeVisibile ? 'block' : 'none';
+                element.root.innerText = data?.placeholder ?? '';
+            }));
+            store.add(autorun(reader => {
+                const info = this._editorObs.layoutInfo.read(reader);
+                element.root.style.left = `${info.contentLeft}px`;
+                element.root.style.width = (info.contentWidth - info.verticalScrollbarWidth) + 'px';
+                element.root.style.top = `${this._editor.getTopForLineNumber(0)}px`;
+            }));
+            store.add(autorun(reader => {
+                element.root.style.fontFamily = this._editorObs.getOption(51).read(reader);
+                element.root.style.fontSize = this._editorObs.getOption(54).read(reader) + 'px';
+                element.root.style.lineHeight = this._editorObs.getOption(69).read(reader) + 'px';
+            }));
+            store.add(this._editorObs.createOverlayWidget({
+                allowEditorOverflow: false,
+                minContentWidthInPx: constObservable(0),
+                position: constObservable(null),
+                domNode: element.root,
+            }));
+        });
+        this._view.recomputeInitiallyAndOnChange(this._store);
+    }
+}
+function isOrWasTrue(owner, fn) {
+    return derivedObservableWithCache(owner, (reader, lastValue) => {
+        if (lastValue === true) {
+            return true;
+        }
+        return fn(reader);
+    });
+}

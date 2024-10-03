@@ -1,1 +1,89 @@
-var p=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var u=(t,i,e,o)=>{for(var r=o>1?void 0:o?S(i,e):i,n=t.length-1,s;n>=0;n--)(s=t[n])&&(r=(o?s(i,e,r):s(r))||r);return o&&r&&p(i,e,r),r},c=(t,i)=>(e,o)=>i(e,o,t);import{WindowIdleValue as f}from"../../../../base/browser/dom.js";import{mainWindow as h}from"../../../../base/browser/window.js";import{Disposable as I,DisposableStore as g}from"../../../../base/common/lifecycle.js";import{URI as d}from"../../../../base/common/uri.js";import{IInstantiationService as v,createDecorator as D}from"../../../../platform/instantiation/common/instantiation.js";import{IStorageService as _,StorageScope as T}from"../../../../platform/storage/common/storage.js";import{TRUSTED_DOMAINS_STORAGE_KEY as R,readStaticTrustedDomains as m}from"./trustedDomains.js";import{testUrlMatchesGlob as U}from"../common/urlGlob.js";const F=D("ITrustedDomainService");let a=class extends I{constructor(e,o){super();this._instantiationService=e;this._storageService=o;const r=()=>new f(h,()=>{const{defaultTrustedDomains:n,trustedDomains:s}=this._instantiationService.invokeFunction(m);return[...n,...s]});this._staticTrustedDomainsResult=r(),this._register(this._storageService.onDidChangeValue(T.APPLICATION,R,this._register(new g))(()=>{this._staticTrustedDomainsResult?.dispose(),this._staticTrustedDomainsResult=r()}))}_serviceBrand;_staticTrustedDomainsResult;isValid(e){const{defaultTrustedDomains:o,trustedDomains:r}=this._instantiationService.invokeFunction(m),n=[...o,...r];return A(e,n)}};a=u([c(0,v),c(1,_)],a);const b=/^localhost(:\d+)?$/i,w=/^127.0.0.1(:\d+)?$/;function y(t){return b.test(t)||w.test(t)}function l(t){const i=["github.com"];try{const e=typeof t=="string"?d.parse(t,!0):t;return i.includes(e.authority)?e.with({path:e.path.toLowerCase()}).toString(!0):e.toString(!0)}catch{return t.toString()}}function A(t,i){if(t=d.parse(l(t)),i=i.map(l),y(t.authority))return!0;for(let e=0;e<i.length;e++)if(i[e]==="*"||U(t,i[e]))return!0;return!1}export{F as ITrustedDomainService,a as TrustedDomainService,A as isURLDomainTrusted};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { WindowIdleValue } from '../../../../base/browser/dom.js';
+import { mainWindow } from '../../../../base/browser/window.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IInstantiationService, createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { TRUSTED_DOMAINS_STORAGE_KEY, readStaticTrustedDomains } from './trustedDomains.js';
+import { testUrlMatchesGlob } from '../common/urlGlob.js';
+export const ITrustedDomainService = createDecorator('ITrustedDomainService');
+let TrustedDomainService = class TrustedDomainService extends Disposable {
+    constructor(_instantiationService, _storageService) {
+        super();
+        this._instantiationService = _instantiationService;
+        this._storageService = _storageService;
+        const initStaticDomainsResult = () => {
+            return new WindowIdleValue(mainWindow, () => {
+                const { defaultTrustedDomains, trustedDomains, } = this._instantiationService.invokeFunction(readStaticTrustedDomains);
+                return [
+                    ...defaultTrustedDomains,
+                    ...trustedDomains
+                ];
+            });
+        };
+        this._staticTrustedDomainsResult = initStaticDomainsResult();
+        this._register(this._storageService.onDidChangeValue(-1, TRUSTED_DOMAINS_STORAGE_KEY, this._register(new DisposableStore()))(() => {
+            this._staticTrustedDomainsResult?.dispose();
+            this._staticTrustedDomainsResult = initStaticDomainsResult();
+        }));
+    }
+    isValid(resource) {
+        const { defaultTrustedDomains, trustedDomains, } = this._instantiationService.invokeFunction(readStaticTrustedDomains);
+        const allTrustedDomains = [...defaultTrustedDomains, ...trustedDomains];
+        return isURLDomainTrusted(resource, allTrustedDomains);
+    }
+};
+TrustedDomainService = __decorate([
+    __param(0, IInstantiationService),
+    __param(1, IStorageService),
+    __metadata("design:paramtypes", [Object, Object])
+], TrustedDomainService);
+export { TrustedDomainService };
+const rLocalhost = /^localhost(:\d+)?$/i;
+const r127 = /^127.0.0.1(:\d+)?$/;
+function isLocalhostAuthority(authority) {
+    return rLocalhost.test(authority) || r127.test(authority);
+}
+function normalizeURL(url) {
+    const caseInsensitiveAuthorities = ['github.com'];
+    try {
+        const parsed = typeof url === 'string' ? URI.parse(url, true) : url;
+        if (caseInsensitiveAuthorities.includes(parsed.authority)) {
+            return parsed.with({ path: parsed.path.toLowerCase() }).toString(true);
+        }
+        else {
+            return parsed.toString(true);
+        }
+    }
+    catch {
+        return url.toString();
+    }
+}
+export function isURLDomainTrusted(url, trustedDomains) {
+    url = URI.parse(normalizeURL(url));
+    trustedDomains = trustedDomains.map(normalizeURL);
+    if (isLocalhostAuthority(url.authority)) {
+        return true;
+    }
+    for (let i = 0; i < trustedDomains.length; i++) {
+        if (trustedDomains[i] === '*') {
+            return true;
+        }
+        if (testUrlMatchesGlob(url, trustedDomains[i])) {
+            return true;
+        }
+    }
+    return false;
+}

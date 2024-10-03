@@ -1,1 +1,232 @@
-var T=Object.defineProperty;var M=Object.getOwnPropertyDescriptor;var R=(L,s,i,t)=>{for(var n=t>1?void 0:t?M(s,i):s,r=L.length-1,l;r>=0;r--)(l=L[r])&&(n=(t?l(s,i,n):l(n))||n);return t&&n&&T(s,i,n),n},g=(L,s)=>(i,t)=>s(i,t,L);import{OS as P}from"../../../../../base/common/platform.js";import{URI as W}from"../../../../../base/common/uri.js";import{IUriIdentityService as w}from"../../../../../platform/uriIdentity/common/uriIdentity.js";import{IWorkspaceContextService as B}from"../../../../../platform/workspace/common/workspace.js";import{TerminalBuiltinLinkType as y}from"./links.js";import{convertLinkRangeToBuffer as C,getXtermLineContent as A,getXtermRangesByAttr as D,osPathModule as U,updateLinkWithRelativeCwd as E}from"./terminalLinkHelpers.js";import{TerminalCapability as $}from"../../../../../platform/terminal/common/capabilities/capabilities.js";import"../../../terminal/common/terminal.js";import{detectLinks as F}from"./terminalLinkParsing.js";import{ITerminalLogService as G}from"../../../../../platform/terminal/common/terminal.js";var N=(t=>(t[t.MaxLineLength=2e3]="MaxLineLength",t[t.MaxResolvedLinksInLine=10]="MaxResolvedLinksInLine",t[t.MaxResolvedLinkLength=1024]="MaxResolvedLinkLength",t))(N||{});const O=[/^ *File (?<link>"(?<path>.+)"(, line (?<line>\d+))?)/,/^ +FILE +(?<link>(?<path>.+)(?::(?<line>\d+)(?::(?<col>\d+))?)?)/,/^(?<link>(?<path>.+)\((?<line>\d+)(?:, ?(?<col>\d+))?\)) ?:/,/^(?<link>(?<path>.+):(?<line>\d+)(?::(?<col>\d+))?) ?:/,/^(?<link>(?<path>.+))>/,/^ *(?<link>(?<path>.+))/];let v=class{constructor(s,i,t,n,r,l,u){this.xterm=s;this._capabilities=i;this._processManager=t;this._linkResolver=n;this._logService=r;this._uriIdentityService=l;this._workspaceContextService=u}static id="local";maxLinkLength=500;async detect(s,i,t){const n=[],r=A(this.xterm.buffer.active,i,t,this.xterm.cols);if(r===""||r.length>2e3)return[];let l=-1,u=0;const S=this._processManager.os||P,_=F(r,S);this._logService.trace("terminalLocalLinkDetector#detect text",r),this._logService.trace("terminalLocalLinkDetector#detect parsedLinks",_);for(const e of _){if(e.path.text.length>1024)continue;const o=C(s,this.xterm.cols,{startColumn:(e.prefix?.index??e.path.index)+1,startLineNumber:1,endColumn:e.path.index+e.path.text.length+(e.suffix?.suffix.text.length??0)+1,endLineNumber:1},i),a=[],d=U(S),c=e.path.text.startsWith("file://");if(d.isAbsolute(e.path.text)||e.path.text.startsWith("~")||c)a.push(e.path.text);else{if(this._capabilities.has($.CommandDetection)){const h=E(this._capabilities,o.start.y,e.path.text,d,this._logService);h&&a.push(...h)}a.length===0&&(a.push(e.path.text),e.path.text.match(/^(\.\.[\/\\])+/)&&a.push(e.path.text.replace(/^(\.\.[\/\\])+/,"")))}const p=/[\[\]"'\.]$/,f=new Map,k=[];for(const h of a){let I=h,x=I.replace(p,""),b=0;for(;x!==I;)e.suffix||b++,k.push(x),f.set(x,b),I=x,x=x.replace(p,"")}a.push(...k),this._logService.trace("terminalLocalLinkDetector#detect linkCandidates",a);const m=await this._validateAndGetLink(void 0,o,a,f);if(m&&(m.parsedLink=e,m.text=r.substring(e.prefix?.index??e.path.index,e.suffix?e.suffix.suffix.index+e.suffix.suffix.text.length:e.path.index+e.path.text.length),this._logService.trace("terminalLocalLinkDetector#detect verified link",m),n.push(m)),++u>=10)break}if(n.length===0)for(const e of O){const a=r.match(e)?.groups;if(!a)continue;const d=a?.link,c=a?.path,p=a?.line,f=a?.col;if(!d||!c||d.length>1024)continue;l=r.indexOf(d);const k=C(s,this.xterm.cols,{startColumn:l+1,startLineNumber:1,endColumn:l+d.length+1,endLineNumber:1},i),m=p?`:${p}${f?`:${f}`:""}`:"",h=await this._validateAndGetLink(`${c}${m}`,k,[c]);h&&n.push(h);break}if(n.length===0){const e=D(this.xterm.buffer.active,i,t,this.xterm.cols);for(const o of e){let a="";for(let c=o.start.y;c<=o.end.y;c++){const p=this.xterm.buffer.active.getLine(c);if(!p)break;const f=c===o.start.y?o.start.x:0,k=c===o.end.y?o.end.x:this.xterm.cols-1;a+=p.translateToString(!1,f,k)}o.start.x++,o.start.y++,o.end.y++;const d=await this._validateAndGetLink(a,o,[a]);if(d&&n.push(d),++u>=10)break}}return n}_isDirectoryInsideWorkspace(s){const i=this._workspaceContextService.getWorkspace().folders;for(let t=0;t<i.length;t++)if(this._uriIdentityService.extUri.isEqualOrParent(s,i[t].uri))return!0;return!1}async _validateLinkCandidates(s){for(const i of s){let t;i.startsWith("file://")&&(t=W.parse(i));const n=await this._linkResolver.resolveLink(this._processManager,i,t);if(n)return n}}async _validateAndGetLink(s,i,t,n){const r=await this._validateLinkCandidates(t);if(r){let l;r.isDirectory?this._isDirectoryInsideWorkspace(r.uri)?l=y.LocalFolderInWorkspace:l=y.LocalFolderOutsideWorkspace:l=y.LocalFile;const u=n?.get(r.link);return u&&(i.end.x-=u,i.end.x<0&&(i.end.y--,i.end.x+=this.xterm.cols)),{text:s??r.link,uri:r.uri,bufferRange:i,type:l}}}};v=R([g(4,G),g(5,w),g(6,B)],v);export{v as TerminalLocalLinkDetector};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { OS } from '../../../../../base/common/platform.js';
+import { URI } from '../../../../../base/common/uri.js';
+import { IUriIdentityService } from '../../../../../platform/uriIdentity/common/uriIdentity.js';
+import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
+import { convertLinkRangeToBuffer, getXtermLineContent, getXtermRangesByAttr, osPathModule, updateLinkWithRelativeCwd } from './terminalLinkHelpers.js';
+import { detectLinks } from './terminalLinkParsing.js';
+import { ITerminalLogService } from '../../../../../platform/terminal/common/terminal.js';
+const fallbackMatchers = [
+    /^ *File (?<link>"(?<path>.+)"(, line (?<line>\d+))?)/,
+    /^ +FILE +(?<link>(?<path>.+)(?::(?<line>\d+)(?::(?<col>\d+))?)?)/,
+    /^(?<link>(?<path>.+)\((?<line>\d+)(?:, ?(?<col>\d+))?\)) ?:/,
+    /^(?<link>(?<path>.+):(?<line>\d+)(?::(?<col>\d+))?) ?:/,
+    /^(?<link>(?<path>.+))>/,
+    /^ *(?<link>(?<path>.+))/
+];
+let TerminalLocalLinkDetector = class TerminalLocalLinkDetector {
+    static { this.id = 'local'; }
+    constructor(xterm, _capabilities, _processManager, _linkResolver, _logService, _uriIdentityService, _workspaceContextService) {
+        this.xterm = xterm;
+        this._capabilities = _capabilities;
+        this._processManager = _processManager;
+        this._linkResolver = _linkResolver;
+        this._logService = _logService;
+        this._uriIdentityService = _uriIdentityService;
+        this._workspaceContextService = _workspaceContextService;
+        this.maxLinkLength = 500;
+    }
+    async detect(lines, startLine, endLine) {
+        const links = [];
+        const text = getXtermLineContent(this.xterm.buffer.active, startLine, endLine, this.xterm.cols);
+        if (text === '' || text.length > 2000) {
+            return [];
+        }
+        let stringIndex = -1;
+        let resolvedLinkCount = 0;
+        const os = this._processManager.os || OS;
+        const parsedLinks = detectLinks(text, os);
+        this._logService.trace('terminalLocalLinkDetector#detect text', text);
+        this._logService.trace('terminalLocalLinkDetector#detect parsedLinks', parsedLinks);
+        for (const parsedLink of parsedLinks) {
+            if (parsedLink.path.text.length > 1024) {
+                continue;
+            }
+            const bufferRange = convertLinkRangeToBuffer(lines, this.xterm.cols, {
+                startColumn: (parsedLink.prefix?.index ?? parsedLink.path.index) + 1,
+                startLineNumber: 1,
+                endColumn: parsedLink.path.index + parsedLink.path.text.length + (parsedLink.suffix?.suffix.text.length ?? 0) + 1,
+                endLineNumber: 1
+            }, startLine);
+            const linkCandidates = [];
+            const osPath = osPathModule(os);
+            const isUri = parsedLink.path.text.startsWith('file://');
+            if (osPath.isAbsolute(parsedLink.path.text) || parsedLink.path.text.startsWith('~') || isUri) {
+                linkCandidates.push(parsedLink.path.text);
+            }
+            else {
+                if (this._capabilities.has(2)) {
+                    const absolutePath = updateLinkWithRelativeCwd(this._capabilities, bufferRange.start.y, parsedLink.path.text, osPath, this._logService);
+                    if (absolutePath) {
+                        linkCandidates.push(...absolutePath);
+                    }
+                }
+                if (linkCandidates.length === 0) {
+                    linkCandidates.push(parsedLink.path.text);
+                    if (parsedLink.path.text.match(/^(\.\.[\/\\])+/)) {
+                        linkCandidates.push(parsedLink.path.text.replace(/^(\.\.[\/\\])+/, ''));
+                    }
+                }
+            }
+            const specialEndCharRegex = /[\[\]"'\.]$/;
+            const trimRangeMap = new Map();
+            const specialEndLinkCandidates = [];
+            for (const candidate of linkCandidates) {
+                let previous = candidate;
+                let removed = previous.replace(specialEndCharRegex, '');
+                let trimRange = 0;
+                while (removed !== previous) {
+                    if (!parsedLink.suffix) {
+                        trimRange++;
+                    }
+                    specialEndLinkCandidates.push(removed);
+                    trimRangeMap.set(removed, trimRange);
+                    previous = removed;
+                    removed = removed.replace(specialEndCharRegex, '');
+                }
+            }
+            linkCandidates.push(...specialEndLinkCandidates);
+            this._logService.trace('terminalLocalLinkDetector#detect linkCandidates', linkCandidates);
+            const simpleLink = await this._validateAndGetLink(undefined, bufferRange, linkCandidates, trimRangeMap);
+            if (simpleLink) {
+                simpleLink.parsedLink = parsedLink;
+                simpleLink.text = text.substring(parsedLink.prefix?.index ?? parsedLink.path.index, parsedLink.suffix ? parsedLink.suffix.suffix.index + parsedLink.suffix.suffix.text.length : parsedLink.path.index + parsedLink.path.text.length);
+                this._logService.trace('terminalLocalLinkDetector#detect verified link', simpleLink);
+                links.push(simpleLink);
+            }
+            if (++resolvedLinkCount >= 10) {
+                break;
+            }
+        }
+        if (links.length === 0) {
+            for (const matcher of fallbackMatchers) {
+                const match = text.match(matcher);
+                const group = match?.groups;
+                if (!group) {
+                    continue;
+                }
+                const link = group?.link;
+                const path = group?.path;
+                const line = group?.line;
+                const col = group?.col;
+                if (!link || !path) {
+                    continue;
+                }
+                if (link.length > 1024) {
+                    continue;
+                }
+                stringIndex = text.indexOf(link);
+                const bufferRange = convertLinkRangeToBuffer(lines, this.xterm.cols, {
+                    startColumn: stringIndex + 1,
+                    startLineNumber: 1,
+                    endColumn: stringIndex + link.length + 1,
+                    endLineNumber: 1
+                }, startLine);
+                const suffix = line ? `:${line}${col ? `:${col}` : ''}` : '';
+                const simpleLink = await this._validateAndGetLink(`${path}${suffix}`, bufferRange, [path]);
+                if (simpleLink) {
+                    links.push(simpleLink);
+                }
+                break;
+            }
+        }
+        if (links.length === 0) {
+            const rangeCandidates = getXtermRangesByAttr(this.xterm.buffer.active, startLine, endLine, this.xterm.cols);
+            for (const rangeCandidate of rangeCandidates) {
+                let text = '';
+                for (let y = rangeCandidate.start.y; y <= rangeCandidate.end.y; y++) {
+                    const line = this.xterm.buffer.active.getLine(y);
+                    if (!line) {
+                        break;
+                    }
+                    const lineStartX = y === rangeCandidate.start.y ? rangeCandidate.start.x : 0;
+                    const lineEndX = y === rangeCandidate.end.y ? rangeCandidate.end.x : this.xterm.cols - 1;
+                    text += line.translateToString(false, lineStartX, lineEndX);
+                }
+                rangeCandidate.start.x++;
+                rangeCandidate.start.y++;
+                rangeCandidate.end.y++;
+                const simpleLink = await this._validateAndGetLink(text, rangeCandidate, [text]);
+                if (simpleLink) {
+                    links.push(simpleLink);
+                }
+                if (++resolvedLinkCount >= 10) {
+                    break;
+                }
+            }
+        }
+        return links;
+    }
+    _isDirectoryInsideWorkspace(uri) {
+        const folders = this._workspaceContextService.getWorkspace().folders;
+        for (let i = 0; i < folders.length; i++) {
+            if (this._uriIdentityService.extUri.isEqualOrParent(uri, folders[i].uri)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    async _validateLinkCandidates(linkCandidates) {
+        for (const link of linkCandidates) {
+            let uri;
+            if (link.startsWith('file://')) {
+                uri = URI.parse(link);
+            }
+            const result = await this._linkResolver.resolveLink(this._processManager, link, uri);
+            if (result) {
+                return result;
+            }
+        }
+        return undefined;
+    }
+    async _validateAndGetLink(linkText, bufferRange, linkCandidates, trimRangeMap) {
+        const linkStat = await this._validateLinkCandidates(linkCandidates);
+        if (linkStat) {
+            let type;
+            if (linkStat.isDirectory) {
+                if (this._isDirectoryInsideWorkspace(linkStat.uri)) {
+                    type = "LocalFolderInWorkspace";
+                }
+                else {
+                    type = "LocalFolderOutsideWorkspace";
+                }
+            }
+            else {
+                type = "LocalFile";
+            }
+            const trimRange = trimRangeMap?.get(linkStat.link);
+            if (trimRange) {
+                bufferRange.end.x -= trimRange;
+                if (bufferRange.end.x < 0) {
+                    bufferRange.end.y--;
+                    bufferRange.end.x += this.xterm.cols;
+                }
+            }
+            return {
+                text: linkText ?? linkStat.link,
+                uri: linkStat.uri,
+                bufferRange: bufferRange,
+                type
+            };
+        }
+        return undefined;
+    }
+};
+TerminalLocalLinkDetector = __decorate([
+    __param(4, ITerminalLogService),
+    __param(5, IUriIdentityService),
+    __param(6, IWorkspaceContextService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], TerminalLocalLinkDetector);
+export { TerminalLocalLinkDetector };

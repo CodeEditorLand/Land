@@ -1,1 +1,19 @@
-import"../core/range.js";import{AbstractText as n}from"../core/textEdit.js";import{TextLength as r}from"../core/textLength.js";import"../model.js";class L extends n{constructor(e){super();this._textModel=e}getValueOfRange(e){return this._textModel.getValueInRange(e)}getLineLength(e){return this._textModel.getLineLength(e)}get length(){const e=this._textModel.getLineCount(),t=this._textModel.getLineLength(e);return new r(e-1,t)}}export{L as TextModelText};
+import { AbstractText } from '../core/textEdit.js';
+import { TextLength } from '../core/textLength.js';
+export class TextModelText extends AbstractText {
+    constructor(_textModel) {
+        super();
+        this._textModel = _textModel;
+    }
+    getValueOfRange(range) {
+        return this._textModel.getValueInRange(range);
+    }
+    getLineLength(lineNumber) {
+        return this._textModel.getLineLength(lineNumber);
+    }
+    get length() {
+        const lastLineNumber = this._textModel.getLineCount();
+        const lastLineLen = this._textModel.getLineLength(lastLineNumber);
+        return new TextLength(lastLineNumber - 1, lastLineLen);
+    }
+}

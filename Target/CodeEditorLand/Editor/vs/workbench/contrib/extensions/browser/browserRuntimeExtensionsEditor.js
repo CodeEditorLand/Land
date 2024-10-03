@@ -1,1 +1,19 @@
-import"../../../../base/common/actions.js";import"../../../services/extensions/common/extensions.js";import"../../../../platform/extensions/common/extensions.js";import{AbstractRuntimeExtensionsEditor as t}from"./abstractRuntimeExtensionsEditor.js";import{ReportExtensionIssueAction as n}from"../common/reportExtensionIssueAction.js";class d extends t{_getProfileInfo(){return null}_getUnresponsiveProfile(e){}_createSlowExtensionAction(e){return null}_createReportExtensionIssueAction(e){return e.marketplaceInfo?this._instantiationService.createInstance(n,e.description):null}}export{d as RuntimeExtensionsEditor};
+import { AbstractRuntimeExtensionsEditor } from './abstractRuntimeExtensionsEditor.js';
+import { ReportExtensionIssueAction } from '../common/reportExtensionIssueAction.js';
+export class RuntimeExtensionsEditor extends AbstractRuntimeExtensionsEditor {
+    _getProfileInfo() {
+        return null;
+    }
+    _getUnresponsiveProfile(extensionId) {
+        return undefined;
+    }
+    _createSlowExtensionAction(element) {
+        return null;
+    }
+    _createReportExtensionIssueAction(element) {
+        if (element.marketplaceInfo) {
+            return this._instantiationService.createInstance(ReportExtensionIssueAction, element.description);
+        }
+        return null;
+    }
+}

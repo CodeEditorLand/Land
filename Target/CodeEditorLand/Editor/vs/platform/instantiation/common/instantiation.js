@@ -1,1 +1,37 @@
-import"../../../base/common/lifecycle.js";import"./descriptors.js";import"./serviceCollection.js";var n;(i=>{i.serviceIds=new Map,i.DI_TARGET="$di$target",i.DI_DEPENDENCIES="$di$dependencies";function s(o){return o[i.DI_DEPENDENCIES]||[]}i.getServiceDependencies=s})(n||={});const I=a("instantiationService");function c(r,e,t){e[n.DI_TARGET]===e?e[n.DI_DEPENDENCIES].push({id:r,index:t}):(e[n.DI_DEPENDENCIES]=[{id:r,index:t}],e[n.DI_TARGET]=e)}function a(r){if(n.serviceIds.has(r))return n.serviceIds.get(r);const e=function(t,s,i){if(arguments.length!==3)throw new Error("@IServiceName-decorator can only be used to decorate a parameter");c(e,t,i)};return e.toString=()=>r,n.serviceIds.set(r,e),e}function f(r){return r}export{I as IInstantiationService,n as _util,a as createDecorator,f as refineServiceDecorator};
+export var _util;
+(function (_util) {
+    _util.serviceIds = new Map();
+    _util.DI_TARGET = '$di$target';
+    _util.DI_DEPENDENCIES = '$di$dependencies';
+    function getServiceDependencies(ctor) {
+        return ctor[_util.DI_DEPENDENCIES] || [];
+    }
+    _util.getServiceDependencies = getServiceDependencies;
+})(_util || (_util = {}));
+export const IInstantiationService = createDecorator('instantiationService');
+function storeServiceDependency(id, target, index) {
+    if (target[_util.DI_TARGET] === target) {
+        target[_util.DI_DEPENDENCIES].push({ id, index });
+    }
+    else {
+        target[_util.DI_DEPENDENCIES] = [{ id, index }];
+        target[_util.DI_TARGET] = target;
+    }
+}
+export function createDecorator(serviceId) {
+    if (_util.serviceIds.has(serviceId)) {
+        return _util.serviceIds.get(serviceId);
+    }
+    const id = function (target, key, index) {
+        if (arguments.length !== 3) {
+            throw new Error('@IServiceName-decorator can only be used to decorate a parameter');
+        }
+        storeServiceDependency(id, target, index);
+    };
+    id.toString = () => serviceId;
+    _util.serviceIds.set(serviceId, id);
+    return id;
+}
+export function refineServiceDecorator(serviceIdentifier) {
+    return serviceIdentifier;
+}

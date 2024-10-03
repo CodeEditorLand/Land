@@ -1,1 +1,69 @@
-import{h as p}from"../../../../../../base/browser/dom.js";import{KeybindingLabel as m,unthemedKeybindingLabelOptions as u}from"../../../../../../base/browser/ui/keybindingLabel/keybindingLabel.js";import"../../../../../../base/common/observable.js";import{OS as c}from"../../../../../../base/common/platform.js";import{URI as b}from"../../../../../../base/common/uri.js";import{MenuEntryActionViewItem as g}from"../../../../../../platform/actions/browser/menuEntryActionViewItem.js";import"../../../../../browser/observableCodeEditor.js";import"../../../../../common/core/lineRange.js";import"../../../../../common/core/textEdit.js";import{RangeMapping as f}from"../../../../../common/diff/rangeMapping.js";function O(i,e,t){i.layoutInfo.read(t),i.value.read(t);const n=i.model.get();if(!n)return 0;let o=0;i.scrollTop.read(t);for(let r=e.startLineNumber;r<e.endLineNumberExclusive;r++){const l=n.getLineMaxColumn(r),d=i.editor.getOffsetForColumn(r,l);o=Math.max(o,d)}return o}class K extends g{updateLabel(){const e=this._keybindingService.lookupKeybinding(this._action.id,this._contextKeyService);if(!e)return super.updateLabel();if(this.label){const t=p("div.keybinding").root;this._register(new m(t,c,{disableTitle:!0,...u})).set(e),this.label.textContent=this._action.label,this.label.appendChild(t),this.label.classList.add("inlineSuggestionStatusBarItemLabel")}}updateTooltip(){}}class a{constructor(e,t){this.x=e;this.y=t}add(e){return new a(this.x+e.x,this.y+e.y)}deltaX(e){return new a(this.x+e,this.y)}}class s{constructor(e){this.scheme=e}static _modelId=0;getUniqueUri(){return b.from({scheme:this.scheme,path:new Date().toString()+String(s._modelId++)})}}function U(i,e){const t=[];for(const n of i){const o=e.mapRange(n.modifiedRange);t.push(new f(n.originalRange,o))}return t}export{a as Point,K as StatusBarViewItem,s as UniqueUriGenerator,U as applyEditToModifiedRangeMappings,O as maxLeftInRange};
+import { h } from '../../../../../../base/browser/dom.js';
+import { KeybindingLabel, unthemedKeybindingLabelOptions } from '../../../../../../base/browser/ui/keybindingLabel/keybindingLabel.js';
+import { OS } from '../../../../../../base/common/platform.js';
+import { URI } from '../../../../../../base/common/uri.js';
+import { MenuEntryActionViewItem } from '../../../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { RangeMapping } from '../../../../../common/diff/rangeMapping.js';
+export function maxLeftInRange(editor, range, reader) {
+    editor.layoutInfo.read(reader);
+    editor.value.read(reader);
+    const model = editor.model.get();
+    if (!model) {
+        return 0;
+    }
+    let maxLeft = 0;
+    editor.scrollTop.read(reader);
+    for (let i = range.startLineNumber; i < range.endLineNumberExclusive; i++) {
+        const column = model.getLineMaxColumn(i);
+        const left = editor.editor.getOffsetForColumn(i, column);
+        maxLeft = Math.max(maxLeft, left);
+    }
+    return maxLeft;
+}
+export class StatusBarViewItem extends MenuEntryActionViewItem {
+    updateLabel() {
+        const kb = this._keybindingService.lookupKeybinding(this._action.id, this._contextKeyService);
+        if (!kb) {
+            return super.updateLabel();
+        }
+        if (this.label) {
+            const div = h('div.keybinding').root;
+            const keybindingLabel = this._register(new KeybindingLabel(div, OS, { disableTitle: true, ...unthemedKeybindingLabelOptions }));
+            keybindingLabel.set(kb);
+            this.label.textContent = this._action.label;
+            this.label.appendChild(div);
+            this.label.classList.add('inlineSuggestionStatusBarItemLabel');
+        }
+    }
+    updateTooltip() {
+    }
+}
+export class Point {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    add(other) {
+        return new Point(this.x + other.x, this.y + other.y);
+    }
+    deltaX(delta) {
+        return new Point(this.x + delta, this.y);
+    }
+}
+export class UniqueUriGenerator {
+    static { this._modelId = 0; }
+    constructor(scheme) {
+        this.scheme = scheme;
+    }
+    getUniqueUri() {
+        return URI.from({ scheme: this.scheme, path: new Date().toString() + String(UniqueUriGenerator._modelId++) });
+    }
+}
+export function applyEditToModifiedRangeMappings(rangeMapping, edit) {
+    const updatedMappings = [];
+    for (const m of rangeMapping) {
+        const updatedRange = edit.mapRange(m.modifiedRange);
+        updatedMappings.push(new RangeMapping(m.originalRange, updatedRange));
+    }
+    return updatedMappings;
+}

@@ -1,4 +1,360 @@
-var E=Object.defineProperty;var M=Object.getOwnPropertyDescriptor;var k=(i,n,e,o)=>{for(var t=o>1?void 0:o?M(n,e):n,r=i.length-1,s;r>=0;r--)(s=i[r])&&(t=(o?s(n,e,t):s(t))||t);return o&&t&&E(n,e,t),t},f=(i,n)=>(e,o)=>n(e,o,i);import*as g from"fs";import{exec as y}from"child_process";import{VSBuffer as I}from"../../../base/common/buffer.js";import{Emitter as v}from"../../../base/common/event.js";import{DisposableStore as F}from"../../../base/common/lifecycle.js";import{MovingAverage as _}from"../../../base/common/numbers.js";import{isLinux as A}from"../../../base/common/platform.js";import*as w from"../../../base/common/resources.js";import{URI as T}from"../../../base/common/uri.js";import*as D from"../../../base/node/pfs.js";import{SocketCloseEventType as H}from"../../../base/parts/ipc/common/ipc.net.js";import{ILogService as $}from"../../../platform/log/common/log.js";import{ManagedSocket as N,connectManagedSocket as j}from"../../../platform/remote/common/managedSocket.js";import{ManagedRemoteConnection as L}from"../../../platform/remote/common/remoteAuthorityResolver.js";import{ISignService as V}from"../../../platform/sign/common/sign.js";import{isAllInterfaces as q,isLocalhost as B}from"../../../platform/tunnel/common/tunnel.js";import{NodeRemoteTunnel as U}from"../../../platform/tunnel/node/tunnelService.js";import{IExtHostInitDataService as J}from"../common/extHostInitDataService.js";import{IExtHostRpcService as O}from"../common/extHostRpcService.js";import{ExtHostTunnelService as z}from"../common/extHostTunnelService.js";import{parseAddress as W}from"../../services/remote/common/tunnelModel.js";import"vscode";function X(i){const n=i.trim().split(`
-`),e=[];return n.forEach(t=>{const r=/\/proc\/(\d+)\/fd\/\d+ -> socket:\[(\d+)\]/.exec(t);r&&r.length>=3&&e.push({pid:parseInt(r[1],10),socket:parseInt(r[2],10)})}),e.reduce((t,r)=>(t[r.socket]=r,t),{})}function Z(...i){const n=[].concat(...i.map(K));return[...new Map(n.filter(e=>e.st==="0A").map(e=>{const o=e.local_address.split(":");return{socket:parseInt(e.inode,10),ip:G(o[0]),port:parseInt(o[1],16)}}).map(e=>[e.ip+":"+e.port,e])).values()]}function G(i){let n="";if(i.length===8)for(let e=i.length-2;e>=0;e-=2)n+=parseInt(i.substr(e,2),16),e!==0&&(n+=".");else for(let e=0;e<i.length;e+=8){const o=i.substring(e,e+8);let t="";for(let r=8;r>=2;r-=2)t+=o.substring(r-2,r),(r===6||r===2)&&(t=parseInt(t,16).toString(16),n+=`${t}`,t="",e+r!==i.length-6&&(n+=":"))}return n}function K(i){const n=i.trim().split(`
-`),e=n.shift().trim().split(/\s+/).filter(t=>t!=="rx_queue"&&t!=="tm->when");return n.map(t=>t.trim().split(/\s+/).reduce((r,s,c)=>(r[e[c]||c]=s,r),{}))}function Q(i){return!!i.match(/.*\.vscode-server-[a-zA-Z]+\/bin.*/)||i.indexOf("out/server-main.js")!==-1||i.indexOf("_productName=VSCode")!==-1}function Y(i){const n=i.trim().split(`
-`),e=[];return n.forEach(o=>{const t=/^\d+\s+\D+\s+root\s+(\d+)\s+(\d+).+\d+\:\d+\:\d+\s+(.+)$/.exec(o);t&&t.length>=4&&e.push({pid:parseInt(t[1],10),ppid:parseInt(t[2]),cmd:t[3]})}),e}async function ee(i,n,e){const o=e.reduce((r,s)=>(r[s.pid]=s,r),{}),t=[];return i.forEach(({socket:r,ip:s,port:c})=>{const d=n[r]?n[r].pid:void 0,a=d?o[d]?.cmd:void 0;d&&a&&!Q(a)&&t.push({host:s,port:c,detail:a,pid:d})}),t}function te(i,n,e){const o=new Map,t=Y(n);for(const r of i){const s=e.get(r.port);if(s){o.set(r.port,s);continue}const c=t.find(d=>d.cmd.includes(`${r.port}`));if(c){let d=c,a;do a=t.find(m=>m.ppid===d.pid),a&&(d=a);while(a);o.set(r.port,{host:r.ip,port:r.port,pid:d.pid,detail:d.cmd,ppid:d.ppid})}else o.set(r.port,{host:r.ip,port:r.port,ppid:Number.MAX_VALUE})}return o}let P=class extends z{constructor(e,o,t,r){super(e,o,t);this.initData=o;this.signService=r;A&&o.remote.isRemote&&o.remote.authority&&(this._proxy.$setRemoteTunnelService(process.pid),this.setInitialCandidates())}_initialCandidates=void 0;_foundRootPorts=new Map;_candidateFindingEnabled=!1;async $registerCandidateFinder(e){if(e&&this._candidateFindingEnabled)return;this._candidateFindingEnabled=e;let o;this._initialCandidates&&(o=this._initialCandidates,await this._proxy.$onFoundNewCandidates(this._initialCandidates));const t=new _;let r=0;for(;this._candidateFindingEnabled;){const s=new Date().getTime(),c=(await this.findCandidatePorts()).filter(m=>B(m.host)||q(m.host));this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) found candidate ports ${c.map(m=>m.port).join(", ")}`);const d=new Date().getTime()-s;this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) candidate port scan took ${d} ms.`),r++>3&&t.update(d),(!o||JSON.stringify(o)!==JSON.stringify(c))&&(o=c,await this._proxy.$onFoundNewCandidates(o));const a=this.calculateDelay(t.value);this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) next candidate port scan in ${a} ms.`),await new Promise(m=>setTimeout(()=>m(),a))}}calculateDelay(e){return Math.max(e*20,2e3)}async setInitialCandidates(){this._initialCandidates=await this.findCandidatePorts(),this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) Initial candidates found: ${this._initialCandidates.map(e=>e.port).join(", ")}`)}async findCandidatePorts(){let e="",o="";try{e=await g.promises.readFile("/proc/net/tcp","utf8"),o=await g.promises.readFile("/proc/net/tcp6","utf8")}catch{}const t=Z(e,o),r=await new Promise(p=>{y("ls -l /proc/[0-9]*/fd/[0-9]* | grep socket:",(l,u,b)=>{p(u)})}),s=X(r),c=await D.Promises.readdir("/proc"),d=[];for(const p of c)try{const l=Number(p),u=w.joinPath(T.file("/proc"),p);if((await g.promises.stat(u.fsPath)).isDirectory()&&!isNaN(l)){const C=await g.promises.readlink(w.joinPath(u,"cwd").fsPath),x=await g.promises.readFile(w.joinPath(u,"cmdline").fsPath,"utf8");d.push({pid:l,cwd:C,cmd:x})}}catch{}const a=[],m=t.filter(p=>{const l=s[p.socket];return l||a.push(p),l}),R=ee(m,s,d);let h;if(this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) number of possible root ports ${a.length}`),a.length>0){const p=await new Promise(l=>{y("ps -F -A -l | grep root",(u,b,C)=>{l(b)})});this._foundRootPorts=te(a,p,this._foundRootPorts),h=Array.from(this._foundRootPorts.values()),this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) heuristic ports ${h.map(l=>l.port).join(", ")}`)}return R.then(p=>h?p.concat(h):p)}makeManagedTunnelFactory(e){return async o=>{const t=new U({commit:this.initData.commit,quality:this.initData.quality,logService:this.logService,ipcLogger:null,remoteSocketFactoryService:{_serviceBrand:void 0,async connect(s,c,d,a){const m=await e.makeConnection();return S.connect(m,c,d,a)},register(){throw new Error("not implemented")}},addressProvider:{getAddress(){return Promise.resolve({connectTo:new L(0),connectionToken:e.connectionToken})}},signService:this.signService},"localhost",o.remoteAddress.host||"localhost",o.remoteAddress.port,o.localAddressPort);await t.waitForReady();const r=new v;return{localAddress:W(t.localAddress)??t.localAddress,remoteAddress:{port:t.tunnelRemotePort,host:t.tunnelRemoteHost},onDidDispose:r.event,dispose:()=>{t.dispose(),r.fire(),r.dispose()}}}}};P=k([f(0,O),f(1,J),f(2,$),f(3,V)],P);class S extends N{constructor(e,o,t){super(o,t);this.passing=e}static connect(e,o,t,r){const s=new F,c={onClose:s.add(new v),onData:s.add(new v),onEnd:s.add(new v)};s.add(e.onDidReceiveMessage(a=>c.onData.fire(I.wrap(a)))),s.add(e.onDidEnd(()=>c.onEnd.fire())),s.add(e.onDidClose(a=>c.onClose.fire({type:H.NodeSocketCloseEvent,error:a,hadError:!!a})));const d=new S(e,r,c);return d._register(s),j(d,o,t,r,c)}write(e){this.passing.send(e.buffer)}closeRemote(){this.passing.end()}async drain(){await this.passing.drain?.()}}export{P as NodeExtHostTunnelService,ee as findPorts,Y as getRootProcesses,X as getSockets,K as loadConnectionTable,Z as loadListeningPorts,G as parseIpAddress,te as tryFindRootPorts};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as fs from 'fs';
+import { exec } from 'child_process';
+import { VSBuffer } from '../../../base/common/buffer.js';
+import { Emitter } from '../../../base/common/event.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { MovingAverage } from '../../../base/common/numbers.js';
+import { isLinux } from '../../../base/common/platform.js';
+import * as resources from '../../../base/common/resources.js';
+import { URI } from '../../../base/common/uri.js';
+import * as pfs from '../../../base/node/pfs.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { ManagedSocket, connectManagedSocket } from '../../../platform/remote/common/managedSocket.js';
+import { ManagedRemoteConnection } from '../../../platform/remote/common/remoteAuthorityResolver.js';
+import { ISignService } from '../../../platform/sign/common/sign.js';
+import { isAllInterfaces, isLocalhost } from '../../../platform/tunnel/common/tunnel.js';
+import { NodeRemoteTunnel } from '../../../platform/tunnel/node/tunnelService.js';
+import { IExtHostInitDataService } from '../common/extHostInitDataService.js';
+import { IExtHostRpcService } from '../common/extHostRpcService.js';
+import { ExtHostTunnelService } from '../common/extHostTunnelService.js';
+import { parseAddress } from '../../services/remote/common/tunnelModel.js';
+export function getSockets(stdout) {
+    const lines = stdout.trim().split('\n');
+    const mapped = [];
+    lines.forEach(line => {
+        const match = /\/proc\/(\d+)\/fd\/\d+ -> socket:\[(\d+)\]/.exec(line);
+        if (match && match.length >= 3) {
+            mapped.push({
+                pid: parseInt(match[1], 10),
+                socket: parseInt(match[2], 10)
+            });
+        }
+    });
+    const socketMap = mapped.reduce((m, socket) => {
+        m[socket.socket] = socket;
+        return m;
+    }, {});
+    return socketMap;
+}
+export function loadListeningPorts(...stdouts) {
+    const table = [].concat(...stdouts.map(loadConnectionTable));
+    return [
+        ...new Map(table.filter(row => row.st === '0A')
+            .map(row => {
+            const address = row.local_address.split(':');
+            return {
+                socket: parseInt(row.inode, 10),
+                ip: parseIpAddress(address[0]),
+                port: parseInt(address[1], 16)
+            };
+        }).map(port => [port.ip + ':' + port.port, port])).values()
+    ];
+}
+export function parseIpAddress(hex) {
+    let result = '';
+    if (hex.length === 8) {
+        for (let i = hex.length - 2; i >= 0; i -= 2) {
+            result += parseInt(hex.substr(i, 2), 16);
+            if (i !== 0) {
+                result += '.';
+            }
+        }
+    }
+    else {
+        for (let i = 0; i < hex.length; i += 8) {
+            const word = hex.substring(i, i + 8);
+            let subWord = '';
+            for (let j = 8; j >= 2; j -= 2) {
+                subWord += word.substring(j - 2, j);
+                if ((j === 6) || (j === 2)) {
+                    subWord = parseInt(subWord, 16).toString(16);
+                    result += `${subWord}`;
+                    subWord = '';
+                    if (i + j !== hex.length - 6) {
+                        result += ':';
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}
+export function loadConnectionTable(stdout) {
+    const lines = stdout.trim().split('\n');
+    const names = lines.shift().trim().split(/\s+/)
+        .filter(name => name !== 'rx_queue' && name !== 'tm->when');
+    const table = lines.map(line => line.trim().split(/\s+/).reduce((obj, value, i) => {
+        obj[names[i] || i] = value;
+        return obj;
+    }, {}));
+    return table;
+}
+function knownExcludeCmdline(command) {
+    return !!command.match(/.*\.vscode-server-[a-zA-Z]+\/bin.*/)
+        || (command.indexOf('out/server-main.js') !== -1)
+        || (command.indexOf('_productName=VSCode') !== -1);
+}
+export function getRootProcesses(stdout) {
+    const lines = stdout.trim().split('\n');
+    const mapped = [];
+    lines.forEach(line => {
+        const match = /^\d+\s+\D+\s+root\s+(\d+)\s+(\d+).+\d+\:\d+\:\d+\s+(.+)$/.exec(line);
+        if (match && match.length >= 4) {
+            mapped.push({
+                pid: parseInt(match[1], 10),
+                ppid: parseInt(match[2]),
+                cmd: match[3]
+            });
+        }
+    });
+    return mapped;
+}
+export async function findPorts(connections, socketMap, processes) {
+    const processMap = processes.reduce((m, process) => {
+        m[process.pid] = process;
+        return m;
+    }, {});
+    const ports = [];
+    connections.forEach(({ socket, ip, port }) => {
+        const pid = socketMap[socket] ? socketMap[socket].pid : undefined;
+        const command = pid ? processMap[pid]?.cmd : undefined;
+        if (pid && command && !knownExcludeCmdline(command)) {
+            ports.push({ host: ip, port, detail: command, pid });
+        }
+    });
+    return ports;
+}
+export function tryFindRootPorts(connections, rootProcessesStdout, previousPorts) {
+    const ports = new Map();
+    const rootProcesses = getRootProcesses(rootProcessesStdout);
+    for (const connection of connections) {
+        const previousPort = previousPorts.get(connection.port);
+        if (previousPort) {
+            ports.set(connection.port, previousPort);
+            continue;
+        }
+        const rootProcessMatch = rootProcesses.find((value) => value.cmd.includes(`${connection.port}`));
+        if (rootProcessMatch) {
+            let bestMatch = rootProcessMatch;
+            let mostChild;
+            do {
+                mostChild = rootProcesses.find(value => value.ppid === bestMatch.pid);
+                if (mostChild) {
+                    bestMatch = mostChild;
+                }
+            } while (mostChild);
+            ports.set(connection.port, { host: connection.ip, port: connection.port, pid: bestMatch.pid, detail: bestMatch.cmd, ppid: bestMatch.ppid });
+        }
+        else {
+            ports.set(connection.port, { host: connection.ip, port: connection.port, ppid: Number.MAX_VALUE });
+        }
+    }
+    return ports;
+}
+let NodeExtHostTunnelService = class NodeExtHostTunnelService extends ExtHostTunnelService {
+    constructor(extHostRpc, initData, logService, signService) {
+        super(extHostRpc, initData, logService);
+        this.initData = initData;
+        this.signService = signService;
+        this._initialCandidates = undefined;
+        this._foundRootPorts = new Map();
+        this._candidateFindingEnabled = false;
+        if (isLinux && initData.remote.isRemote && initData.remote.authority) {
+            this._proxy.$setRemoteTunnelService(process.pid);
+            this.setInitialCandidates();
+        }
+    }
+    async $registerCandidateFinder(enable) {
+        if (enable && this._candidateFindingEnabled) {
+            return;
+        }
+        this._candidateFindingEnabled = enable;
+        let oldPorts = undefined;
+        if (this._initialCandidates) {
+            oldPorts = this._initialCandidates;
+            await this._proxy.$onFoundNewCandidates(this._initialCandidates);
+        }
+        const movingAverage = new MovingAverage();
+        let scanCount = 0;
+        while (this._candidateFindingEnabled) {
+            const startTime = new Date().getTime();
+            const newPorts = (await this.findCandidatePorts()).filter(candidate => (isLocalhost(candidate.host) || isAllInterfaces(candidate.host)));
+            this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) found candidate ports ${newPorts.map(port => port.port).join(', ')}`);
+            const timeTaken = new Date().getTime() - startTime;
+            this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) candidate port scan took ${timeTaken} ms.`);
+            if (scanCount++ > 3) {
+                movingAverage.update(timeTaken);
+            }
+            if (!oldPorts || (JSON.stringify(oldPorts) !== JSON.stringify(newPorts))) {
+                oldPorts = newPorts;
+                await this._proxy.$onFoundNewCandidates(oldPorts);
+            }
+            const delay = this.calculateDelay(movingAverage.value);
+            this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) next candidate port scan in ${delay} ms.`);
+            await (new Promise(resolve => setTimeout(() => resolve(), delay)));
+        }
+    }
+    calculateDelay(movingAverage) {
+        return Math.max(movingAverage * 20, 2000);
+    }
+    async setInitialCandidates() {
+        this._initialCandidates = await this.findCandidatePorts();
+        this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) Initial candidates found: ${this._initialCandidates.map(c => c.port).join(', ')}`);
+    }
+    async findCandidatePorts() {
+        let tcp = '';
+        let tcp6 = '';
+        try {
+            tcp = await fs.promises.readFile('/proc/net/tcp', 'utf8');
+            tcp6 = await fs.promises.readFile('/proc/net/tcp6', 'utf8');
+        }
+        catch (e) {
+        }
+        const connections = loadListeningPorts(tcp, tcp6);
+        const procSockets = await (new Promise(resolve => {
+            exec('ls -l /proc/[0-9]*/fd/[0-9]* | grep socket:', (error, stdout, stderr) => {
+                resolve(stdout);
+            });
+        }));
+        const socketMap = getSockets(procSockets);
+        const procChildren = await pfs.Promises.readdir('/proc');
+        const processes = [];
+        for (const childName of procChildren) {
+            try {
+                const pid = Number(childName);
+                const childUri = resources.joinPath(URI.file('/proc'), childName);
+                const childStat = await fs.promises.stat(childUri.fsPath);
+                if (childStat.isDirectory() && !isNaN(pid)) {
+                    const cwd = await fs.promises.readlink(resources.joinPath(childUri, 'cwd').fsPath);
+                    const cmd = await fs.promises.readFile(resources.joinPath(childUri, 'cmdline').fsPath, 'utf8');
+                    processes.push({ pid, cwd, cmd });
+                }
+            }
+            catch (e) {
+            }
+        }
+        const unFoundConnections = [];
+        const filteredConnections = connections.filter((connection => {
+            const foundConnection = socketMap[connection.socket];
+            if (!foundConnection) {
+                unFoundConnections.push(connection);
+            }
+            return foundConnection;
+        }));
+        const foundPorts = findPorts(filteredConnections, socketMap, processes);
+        let heuristicPorts;
+        this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) number of possible root ports ${unFoundConnections.length}`);
+        if (unFoundConnections.length > 0) {
+            const rootProcesses = await (new Promise(resolve => {
+                exec('ps -F -A -l | grep root', (error, stdout, stderr) => {
+                    resolve(stdout);
+                });
+            }));
+            this._foundRootPorts = tryFindRootPorts(unFoundConnections, rootProcesses, this._foundRootPorts);
+            heuristicPorts = Array.from(this._foundRootPorts.values());
+            this.logService.trace(`ForwardedPorts: (ExtHostTunnelService) heuristic ports ${heuristicPorts.map(heuristicPort => heuristicPort.port).join(', ')}`);
+        }
+        return foundPorts.then(foundCandidates => {
+            if (heuristicPorts) {
+                return foundCandidates.concat(heuristicPorts);
+            }
+            else {
+                return foundCandidates;
+            }
+        });
+    }
+    makeManagedTunnelFactory(authority) {
+        return async (tunnelOptions) => {
+            const t = new NodeRemoteTunnel({
+                commit: this.initData.commit,
+                quality: this.initData.quality,
+                logService: this.logService,
+                ipcLogger: null,
+                remoteSocketFactoryService: {
+                    _serviceBrand: undefined,
+                    async connect(_connectTo, path, query, debugLabel) {
+                        const result = await authority.makeConnection();
+                        return ExtHostManagedSocket.connect(result, path, query, debugLabel);
+                    },
+                    register() {
+                        throw new Error('not implemented');
+                    },
+                },
+                addressProvider: {
+                    getAddress() {
+                        return Promise.resolve({
+                            connectTo: new ManagedRemoteConnection(0),
+                            connectionToken: authority.connectionToken,
+                        });
+                    },
+                },
+                signService: this.signService,
+            }, 'localhost', tunnelOptions.remoteAddress.host || 'localhost', tunnelOptions.remoteAddress.port, tunnelOptions.localAddressPort);
+            await t.waitForReady();
+            const disposeEmitter = new Emitter();
+            return {
+                localAddress: parseAddress(t.localAddress) ?? t.localAddress,
+                remoteAddress: { port: t.tunnelRemotePort, host: t.tunnelRemoteHost },
+                onDidDispose: disposeEmitter.event,
+                dispose: () => {
+                    t.dispose();
+                    disposeEmitter.fire();
+                    disposeEmitter.dispose();
+                },
+            };
+        };
+    }
+};
+NodeExtHostTunnelService = __decorate([
+    __param(0, IExtHostRpcService),
+    __param(1, IExtHostInitDataService),
+    __param(2, ILogService),
+    __param(3, ISignService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], NodeExtHostTunnelService);
+export { NodeExtHostTunnelService };
+class ExtHostManagedSocket extends ManagedSocket {
+    static connect(passing, path, query, debugLabel) {
+        const d = new DisposableStore();
+        const half = {
+            onClose: d.add(new Emitter()),
+            onData: d.add(new Emitter()),
+            onEnd: d.add(new Emitter()),
+        };
+        d.add(passing.onDidReceiveMessage(d => half.onData.fire(VSBuffer.wrap(d))));
+        d.add(passing.onDidEnd(() => half.onEnd.fire()));
+        d.add(passing.onDidClose(error => half.onClose.fire({
+            type: 0,
+            error,
+            hadError: !!error
+        })));
+        const socket = new ExtHostManagedSocket(passing, debugLabel, half);
+        socket._register(d);
+        return connectManagedSocket(socket, path, query, debugLabel, half);
+    }
+    constructor(passing, debugLabel, half) {
+        super(debugLabel, half);
+        this.passing = passing;
+    }
+    write(buffer) {
+        this.passing.send(buffer.buffer);
+    }
+    closeRemote() {
+        this.passing.end();
+    }
+    async drain() {
+        await this.passing.drain?.();
+    }
+}

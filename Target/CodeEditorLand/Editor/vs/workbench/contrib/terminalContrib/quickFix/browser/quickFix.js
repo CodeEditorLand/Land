@@ -1,1 +1,9 @@
-import{createDecorator as i}from"../../../../../platform/instantiation/common/instantiation.js";import"../../../../../base/common/event.js";import"../../../../../base/common/lifecycle.js";import"../../../../../base/common/actions.js";import"../../../../../base/common/cancellation.js";import"../../../../../base/common/uri.js";import"../../../../../platform/terminal/common/terminal.js";import"../../../../../platform/terminal/common/capabilities/capabilities.js";const v=i("terminalQuickFixService");var n=(e=>(e[e.TerminalCommand=0]="TerminalCommand",e[e.Opener=1]="Opener",e[e.Port=2]="Port",e[e.VscodeCommand=3]="VscodeCommand",e))(n||{});export{v as ITerminalQuickFixService,n as TerminalQuickFixType};
+import { createDecorator } from '../../../../../platform/instantiation/common/instantiation.js';
+export const ITerminalQuickFixService = createDecorator('terminalQuickFixService');
+export var TerminalQuickFixType;
+(function (TerminalQuickFixType) {
+    TerminalQuickFixType[TerminalQuickFixType["TerminalCommand"] = 0] = "TerminalCommand";
+    TerminalQuickFixType[TerminalQuickFixType["Opener"] = 1] = "Opener";
+    TerminalQuickFixType[TerminalQuickFixType["Port"] = 2] = "Port";
+    TerminalQuickFixType[TerminalQuickFixType["VscodeCommand"] = 3] = "VscodeCommand";
+})(TerminalQuickFixType || (TerminalQuickFixType = {}));

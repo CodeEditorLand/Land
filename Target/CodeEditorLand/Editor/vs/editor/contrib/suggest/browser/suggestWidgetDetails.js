@@ -1,7 +1,384 @@
-var E=Object.defineProperty;var W=Object.getOwnPropertyDescriptor;var L=(a,e,i,o)=>{for(var s=o>1?void 0:o?W(e,i):e,t=a.length-1,r;t>=0;t--)(r=a[t])&&(s=(o?r(e,i,s):r(s))||s);return o&&s&&E(e,i,s),s},T=(a,e)=>(i,o)=>e(i,o,a);import*as n from"../../../../base/browser/dom.js";import{DomScrollableElement as M}from"../../../../base/browser/ui/scrollbar/scrollableElement.js";import{Codicon as $}from"../../../../base/common/codicons.js";import{ThemeIcon as A}from"../../../../base/common/themables.js";import{Emitter as x}from"../../../../base/common/event.js";import{MarkdownString as O}from"../../../../base/common/htmlContent.js";import{DisposableStore as v}from"../../../../base/common/lifecycle.js";import{MarkdownRenderer as R}from"../../../browser/widget/markdownRenderer/browser/markdownRenderer.js";import"../../../browser/editorBrowser.js";import{EditorOption as b}from"../../../common/config/editorOptions.js";import{ResizableHTMLElement as k}from"../../../../base/browser/ui/resizable/resizable.js";import*as N from"../../../../nls.js";import{IInstantiationService as F}from"../../../../platform/instantiation/common/instantiation.js";import"./suggest.js";function U(a){return!!a&&!!(a.completion.documentation||a.completion.detail&&a.completion.detail!==a.completion.label)}let u=class{constructor(e,i){this._editor=e;this.domNode=n.$(".suggest-details"),this.domNode.classList.add("no-docs"),this._markdownRenderer=i.createInstance(R,{editor:e}),this._body=n.$(".body"),this._scrollbar=new M(this._body,{alwaysConsumeMouseWheel:!0}),n.append(this.domNode,this._scrollbar.getDomNode()),this._disposables.add(this._scrollbar),this._header=n.append(this._body,n.$(".header")),this._close=n.append(this._header,n.$("span"+A.asCSSSelector($.close))),this._close.title=N.localize("details.close","Close"),this._close.role="button",this._close.tabIndex=-1,this._type=n.append(this._header,n.$("p.type")),this._docs=n.append(this._body,n.$("p.docs")),this._configureFont(),this._disposables.add(this._editor.onDidChangeConfiguration(o=>{o.hasChanged(b.fontInfo)&&this._configureFont()}))}domNode;_onDidClose=new x;onDidClose=this._onDidClose.event;_onDidChangeContents=new x;onDidChangeContents=this._onDidChangeContents.event;_close;_scrollbar;_body;_header;_type;_docs;_disposables=new v;_markdownRenderer;_renderDisposeable=new v;_borderWidth=1;_size=new n.Dimension(330,0);dispose(){this._disposables.dispose(),this._renderDisposeable.dispose()}_configureFont(){const e=this._editor.getOptions(),i=e.get(b.fontInfo),o=i.getMassagedFontFamily(),s=e.get(b.suggestFontSize)||i.fontSize,t=e.get(b.suggestLineHeight)||i.lineHeight,r=i.fontWeight,l=`${s}px`,p=`${t}px`;this.domNode.style.fontSize=l,this.domNode.style.lineHeight=`${t/s}`,this.domNode.style.fontWeight=r,this.domNode.style.fontFeatureSettings=i.fontFeatureSettings,this._type.style.fontFamily=o,this._close.style.height=p,this._close.style.width=p}getLayoutInfo(){const e=this._editor.getOption(b.suggestLineHeight)||this._editor.getOption(b.fontInfo).lineHeight,i=this._borderWidth,o=i*2;return{lineHeight:e,borderWidth:i,borderHeight:o,verticalPadding:22,horizontalPadding:14}}renderLoading(){this._type.textContent=N.localize("loading","Loading..."),this._docs.textContent="",this.domNode.classList.remove("no-docs","no-type"),this.layout(this.size.width,this.getLayoutInfo().lineHeight*2),this._onDidChangeContents.fire(this)}renderItem(e,i){this._renderDisposeable.clear();let{detail:o,documentation:s}=e.completion;if(i){let t="";t+=`score: ${e.score[0]}
-`,t+=`prefix: ${e.word??"(no prefix)"}
-`,t+=`word: ${e.completion.filterText?e.completion.filterText+" (filterText)":e.textLabel}
-`,t+=`distance: ${e.distance} (localityBonus-setting)
-`,t+=`index: ${e.idx}, based on ${e.completion.sortText&&`sortText: "${e.completion.sortText}"`||"label"}
-`,t+=`commit_chars: ${e.completion.commitCharacters?.join("")}
-`,s=new O().appendCodeblock("empty",t),o=`Provider: ${e.provider._debugDisplayName}`}if(!i&&!U(e)){this.clearContents();return}if(this.domNode.classList.remove("no-docs","no-type"),o){const t=o.length>1e5?`${o.substr(0,1e5)}\u2026`:o;this._type.textContent=t,this._type.title=t,n.show(this._type),this._type.classList.toggle("auto-wrap",!/\r?\n^\s+/gmi.test(t))}else n.clearNode(this._type),this._type.title="",n.hide(this._type),this.domNode.classList.add("no-type");if(n.clearNode(this._docs),typeof s=="string")this._docs.classList.remove("markdown-docs"),this._docs.textContent=s;else if(s){this._docs.classList.add("markdown-docs"),n.clearNode(this._docs);const t=this._markdownRenderer.render(s);this._docs.appendChild(t.element),this._renderDisposeable.add(t),this._renderDisposeable.add(this._markdownRenderer.onDidRenderAsync(()=>{this.layout(this._size.width,this._type.clientHeight+this._docs.clientHeight),this._onDidChangeContents.fire(this)}))}this.domNode.style.userSelect="text",this.domNode.tabIndex=-1,this._close.onmousedown=t=>{t.preventDefault(),t.stopPropagation()},this._close.onclick=t=>{t.preventDefault(),t.stopPropagation(),this._onDidClose.fire()},this._body.scrollTop=0,this.layout(this._size.width,this._type.clientHeight+this._docs.clientHeight),this._onDidChangeContents.fire(this)}clearContents(){this.domNode.classList.add("no-docs"),this._type.textContent="",this._docs.textContent=""}get isEmpty(){return this.domNode.classList.contains("no-docs")}get size(){return this._size}layout(e,i){const o=new n.Dimension(e,i);n.Dimension.equals(o,this._size)||(this._size=o,n.size(this.domNode,e,i)),this._scrollbar.scanDomNode()}scrollDown(e=8){this._body.scrollTop+=e}scrollUp(e=8){this._body.scrollTop-=e}scrollTop(){this._body.scrollTop=0}scrollBottom(){this._body.scrollTop=this._body.scrollHeight}pageDown(){this.scrollDown(80)}pageUp(){this.scrollUp(80)}set borderWidth(e){this._borderWidth=e}get borderWidth(){return this._borderWidth}focus(){this.domNode.focus()}};u=L([T(1,F)],u);class re{constructor(e,i){this.widget=e;this._editor=i;this._resizable=new k,this._resizable.domNode.classList.add("suggest-details-container"),this._resizable.domNode.appendChild(e.domNode),this._resizable.enableSashes(!1,!0,!0,!1);let o,s,t=0,r=0;this._disposables.add(this._resizable.onDidWillResize(()=>{o=this._topLeft,s=this._resizable.size})),this._disposables.add(this._resizable.onDidResize(l=>{if(o&&s){this.widget.layout(l.dimension.width,l.dimension.height);let p=!1;l.west&&(r=s.width-l.dimension.width,p=!0),l.north&&(t=s.height-l.dimension.height,p=!0),p&&this._applyTopLeft({top:o.top+t,left:o.left+r})}l.done&&(o=void 0,s=void 0,t=0,r=0,this._userSize=l.dimension)})),this._disposables.add(this.widget.onDidChangeContents(()=>{this._anchorBox&&this._placeAtAnchor(this._anchorBox,this._userSize??this.widget.size,this._preferAlignAtTop)}))}allowEditorOverflow=!0;_disposables=new v;_resizable;_added=!1;_anchorBox;_preferAlignAtTop=!0;_userSize;_topLeft;dispose(){this._resizable.dispose(),this._disposables.dispose(),this.hide()}getId(){return"suggest.details"}getDomNode(){return this._resizable.domNode}getPosition(){return this._topLeft?{preference:this._topLeft}:null}show(){this._added||(this._editor.addOverlayWidget(this),this._added=!0)}hide(e=!1){this._resizable.clearSashHoverState(),this._added&&(this._editor.removeOverlayWidget(this),this._added=!1,this._anchorBox=void 0,this._topLeft=void 0),e&&(this._userSize=void 0,this.widget.clearContents())}placeAtAnchor(e,i){const o=e.getBoundingClientRect();this._anchorBox=o,this._preferAlignAtTop=i,this._placeAtAnchor(this._anchorBox,this._userSize??this.widget.size,i)}_placeAtAnchor(e,i,o){const s=n.getClientArea(this.getDomNode().ownerDocument.body),t=this.widget.getLayoutInfo(),r=new n.Dimension(220,2*t.lineHeight),l=e.top,p=function(){const d=s.width-(e.left+e.width+t.borderWidth+t.horizontalPadding),f=-t.borderWidth+e.left+e.width,m=new n.Dimension(d,s.height-e.top-t.borderHeight-t.verticalPadding),w=m.with(void 0,e.top+e.height-t.borderHeight-t.verticalPadding);return{top:l,left:f,fit:d-i.width,maxSizeTop:m,maxSizeBottom:w,minSize:r.with(Math.min(d,r.width))}}(),H=function(){const d=e.left-t.borderWidth-t.horizontalPadding,f=Math.max(t.horizontalPadding,e.left-i.width-t.borderWidth),m=new n.Dimension(d,s.height-e.top-t.borderHeight-t.verticalPadding),w=m.with(void 0,e.top+e.height-t.borderHeight-t.verticalPadding);return{top:l,left:f,fit:d-i.width,maxSizeTop:m,maxSizeBottom:w,minSize:r.with(Math.min(d,r.width))}}(),P=function(){const d=e.left,f=-t.borderWidth+e.top+e.height,m=new n.Dimension(e.width-t.borderHeight,s.height-e.top-e.height-t.verticalPadding);return{top:f,left:d,fit:m.height-i.height,maxSizeBottom:m,maxSizeTop:m,minSize:r.with(m.width)}}(),z=[p,H,P],h=z.find(d=>d.fit>=0)??z.sort((d,f)=>f.fit-d.fit)[0],I=e.top+e.height-t.borderHeight;let c,_=i.height;const D=Math.max(h.maxSizeTop.height,h.maxSizeBottom.height);_>D&&(_=D);let g;o?_<=h.maxSizeTop.height?(c=!0,g=h.maxSizeTop):(c=!1,g=h.maxSizeBottom):_<=h.maxSizeBottom.height?(c=!1,g=h.maxSizeBottom):(c=!0,g=h.maxSizeTop);let{top:y,left:S}=h;!c&&_>e.height&&(y=I-_);const C=this._editor.getDomNode();if(C){const d=C.getBoundingClientRect();y-=d.top,S-=d.left}this._applyTopLeft({left:S,top:y}),this._resizable.enableSashes(!c,h===p,c,h!==p),this._resizable.minSize=h.minSize,this._resizable.maxSize=g,this._resizable.layout(_,Math.min(g.width,i.width)),this.widget.layout(this._resizable.size.width,this._resizable.size.height)}_applyTopLeft(e){this._topLeft=e,this._editor.layoutOverlayWidget(this)}}export{re as SuggestDetailsOverlay,u as SuggestDetailsWidget,U as canExpandCompletionItem};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../base/browser/dom.js';
+import { DomScrollableElement } from '../../../../base/browser/ui/scrollbar/scrollableElement.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { MarkdownRenderer } from '../../../browser/widget/markdownRenderer/browser/markdownRenderer.js';
+import { ResizableHTMLElement } from '../../../../base/browser/ui/resizable/resizable.js';
+import * as nls from '../../../../nls.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+export function canExpandCompletionItem(item) {
+    return !!item && Boolean(item.completion.documentation || item.completion.detail && item.completion.detail !== item.completion.label);
+}
+let SuggestDetailsWidget = class SuggestDetailsWidget {
+    constructor(_editor, instaService) {
+        this._editor = _editor;
+        this._onDidClose = new Emitter();
+        this.onDidClose = this._onDidClose.event;
+        this._onDidChangeContents = new Emitter();
+        this.onDidChangeContents = this._onDidChangeContents.event;
+        this._disposables = new DisposableStore();
+        this._renderDisposeable = new DisposableStore();
+        this._borderWidth = 1;
+        this._size = new dom.Dimension(330, 0);
+        this.domNode = dom.$('.suggest-details');
+        this.domNode.classList.add('no-docs');
+        this._markdownRenderer = instaService.createInstance(MarkdownRenderer, { editor: _editor });
+        this._body = dom.$('.body');
+        this._scrollbar = new DomScrollableElement(this._body, {
+            alwaysConsumeMouseWheel: true,
+        });
+        dom.append(this.domNode, this._scrollbar.getDomNode());
+        this._disposables.add(this._scrollbar);
+        this._header = dom.append(this._body, dom.$('.header'));
+        this._close = dom.append(this._header, dom.$('span' + ThemeIcon.asCSSSelector(Codicon.close)));
+        this._close.title = nls.localize('details.close', "Close");
+        this._close.role = 'button';
+        this._close.tabIndex = -1;
+        this._type = dom.append(this._header, dom.$('p.type'));
+        this._docs = dom.append(this._body, dom.$('p.docs'));
+        this._configureFont();
+        this._disposables.add(this._editor.onDidChangeConfiguration(e => {
+            if (e.hasChanged(52)) {
+                this._configureFont();
+            }
+        }));
+    }
+    dispose() {
+        this._disposables.dispose();
+        this._renderDisposeable.dispose();
+    }
+    _configureFont() {
+        const options = this._editor.getOptions();
+        const fontInfo = options.get(52);
+        const fontFamily = fontInfo.getMassagedFontFamily();
+        const fontSize = options.get(122) || fontInfo.fontSize;
+        const lineHeight = options.get(123) || fontInfo.lineHeight;
+        const fontWeight = fontInfo.fontWeight;
+        const fontSizePx = `${fontSize}px`;
+        const lineHeightPx = `${lineHeight}px`;
+        this.domNode.style.fontSize = fontSizePx;
+        this.domNode.style.lineHeight = `${lineHeight / fontSize}`;
+        this.domNode.style.fontWeight = fontWeight;
+        this.domNode.style.fontFeatureSettings = fontInfo.fontFeatureSettings;
+        this._type.style.fontFamily = fontFamily;
+        this._close.style.height = lineHeightPx;
+        this._close.style.width = lineHeightPx;
+    }
+    getLayoutInfo() {
+        const lineHeight = this._editor.getOption(123) || this._editor.getOption(52).lineHeight;
+        const borderWidth = this._borderWidth;
+        const borderHeight = borderWidth * 2;
+        return {
+            lineHeight,
+            borderWidth,
+            borderHeight,
+            verticalPadding: 22,
+            horizontalPadding: 14
+        };
+    }
+    renderLoading() {
+        this._type.textContent = nls.localize('loading', "Loading...");
+        this._docs.textContent = '';
+        this.domNode.classList.remove('no-docs', 'no-type');
+        this.layout(this.size.width, this.getLayoutInfo().lineHeight * 2);
+        this._onDidChangeContents.fire(this);
+    }
+    renderItem(item, explainMode) {
+        this._renderDisposeable.clear();
+        let { detail, documentation } = item.completion;
+        if (explainMode) {
+            let md = '';
+            md += `score: ${item.score[0]}\n`;
+            md += `prefix: ${item.word ?? '(no prefix)'}\n`;
+            md += `word: ${item.completion.filterText ? item.completion.filterText + ' (filterText)' : item.textLabel}\n`;
+            md += `distance: ${item.distance} (localityBonus-setting)\n`;
+            md += `index: ${item.idx}, based on ${item.completion.sortText && `sortText: "${item.completion.sortText}"` || 'label'}\n`;
+            md += `commit_chars: ${item.completion.commitCharacters?.join('')}\n`;
+            documentation = new MarkdownString().appendCodeblock('empty', md);
+            detail = `Provider: ${item.provider._debugDisplayName}`;
+        }
+        if (!explainMode && !canExpandCompletionItem(item)) {
+            this.clearContents();
+            return;
+        }
+        this.domNode.classList.remove('no-docs', 'no-type');
+        if (detail) {
+            const cappedDetail = detail.length > 100000 ? `${detail.substr(0, 100000)}…` : detail;
+            this._type.textContent = cappedDetail;
+            this._type.title = cappedDetail;
+            dom.show(this._type);
+            this._type.classList.toggle('auto-wrap', !/\r?\n^\s+/gmi.test(cappedDetail));
+        }
+        else {
+            dom.clearNode(this._type);
+            this._type.title = '';
+            dom.hide(this._type);
+            this.domNode.classList.add('no-type');
+        }
+        dom.clearNode(this._docs);
+        if (typeof documentation === 'string') {
+            this._docs.classList.remove('markdown-docs');
+            this._docs.textContent = documentation;
+        }
+        else if (documentation) {
+            this._docs.classList.add('markdown-docs');
+            dom.clearNode(this._docs);
+            const renderedContents = this._markdownRenderer.render(documentation);
+            this._docs.appendChild(renderedContents.element);
+            this._renderDisposeable.add(renderedContents);
+            this._renderDisposeable.add(this._markdownRenderer.onDidRenderAsync(() => {
+                this.layout(this._size.width, this._type.clientHeight + this._docs.clientHeight);
+                this._onDidChangeContents.fire(this);
+            }));
+        }
+        this.domNode.style.userSelect = 'text';
+        this.domNode.tabIndex = -1;
+        this._close.onmousedown = e => {
+            e.preventDefault();
+            e.stopPropagation();
+        };
+        this._close.onclick = e => {
+            e.preventDefault();
+            e.stopPropagation();
+            this._onDidClose.fire();
+        };
+        this._body.scrollTop = 0;
+        this.layout(this._size.width, this._type.clientHeight + this._docs.clientHeight);
+        this._onDidChangeContents.fire(this);
+    }
+    clearContents() {
+        this.domNode.classList.add('no-docs');
+        this._type.textContent = '';
+        this._docs.textContent = '';
+    }
+    get isEmpty() {
+        return this.domNode.classList.contains('no-docs');
+    }
+    get size() {
+        return this._size;
+    }
+    layout(width, height) {
+        const newSize = new dom.Dimension(width, height);
+        if (!dom.Dimension.equals(newSize, this._size)) {
+            this._size = newSize;
+            dom.size(this.domNode, width, height);
+        }
+        this._scrollbar.scanDomNode();
+    }
+    scrollDown(much = 8) {
+        this._body.scrollTop += much;
+    }
+    scrollUp(much = 8) {
+        this._body.scrollTop -= much;
+    }
+    scrollTop() {
+        this._body.scrollTop = 0;
+    }
+    scrollBottom() {
+        this._body.scrollTop = this._body.scrollHeight;
+    }
+    pageDown() {
+        this.scrollDown(80);
+    }
+    pageUp() {
+        this.scrollUp(80);
+    }
+    set borderWidth(width) {
+        this._borderWidth = width;
+    }
+    get borderWidth() {
+        return this._borderWidth;
+    }
+    focus() {
+        this.domNode.focus();
+    }
+};
+SuggestDetailsWidget = __decorate([
+    __param(1, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object])
+], SuggestDetailsWidget);
+export { SuggestDetailsWidget };
+export class SuggestDetailsOverlay {
+    constructor(widget, _editor) {
+        this.widget = widget;
+        this._editor = _editor;
+        this.allowEditorOverflow = true;
+        this._disposables = new DisposableStore();
+        this._added = false;
+        this._preferAlignAtTop = true;
+        this._resizable = new ResizableHTMLElement();
+        this._resizable.domNode.classList.add('suggest-details-container');
+        this._resizable.domNode.appendChild(widget.domNode);
+        this._resizable.enableSashes(false, true, true, false);
+        let topLeftNow;
+        let sizeNow;
+        let deltaTop = 0;
+        let deltaLeft = 0;
+        this._disposables.add(this._resizable.onDidWillResize(() => {
+            topLeftNow = this._topLeft;
+            sizeNow = this._resizable.size;
+        }));
+        this._disposables.add(this._resizable.onDidResize(e => {
+            if (topLeftNow && sizeNow) {
+                this.widget.layout(e.dimension.width, e.dimension.height);
+                let updateTopLeft = false;
+                if (e.west) {
+                    deltaLeft = sizeNow.width - e.dimension.width;
+                    updateTopLeft = true;
+                }
+                if (e.north) {
+                    deltaTop = sizeNow.height - e.dimension.height;
+                    updateTopLeft = true;
+                }
+                if (updateTopLeft) {
+                    this._applyTopLeft({
+                        top: topLeftNow.top + deltaTop,
+                        left: topLeftNow.left + deltaLeft,
+                    });
+                }
+            }
+            if (e.done) {
+                topLeftNow = undefined;
+                sizeNow = undefined;
+                deltaTop = 0;
+                deltaLeft = 0;
+                this._userSize = e.dimension;
+            }
+        }));
+        this._disposables.add(this.widget.onDidChangeContents(() => {
+            if (this._anchorBox) {
+                this._placeAtAnchor(this._anchorBox, this._userSize ?? this.widget.size, this._preferAlignAtTop);
+            }
+        }));
+    }
+    dispose() {
+        this._resizable.dispose();
+        this._disposables.dispose();
+        this.hide();
+    }
+    getId() {
+        return 'suggest.details';
+    }
+    getDomNode() {
+        return this._resizable.domNode;
+    }
+    getPosition() {
+        return this._topLeft ? { preference: this._topLeft } : null;
+    }
+    show() {
+        if (!this._added) {
+            this._editor.addOverlayWidget(this);
+            this._added = true;
+        }
+    }
+    hide(sessionEnded = false) {
+        this._resizable.clearSashHoverState();
+        if (this._added) {
+            this._editor.removeOverlayWidget(this);
+            this._added = false;
+            this._anchorBox = undefined;
+            this._topLeft = undefined;
+        }
+        if (sessionEnded) {
+            this._userSize = undefined;
+            this.widget.clearContents();
+        }
+    }
+    placeAtAnchor(anchor, preferAlignAtTop) {
+        const anchorBox = anchor.getBoundingClientRect();
+        this._anchorBox = anchorBox;
+        this._preferAlignAtTop = preferAlignAtTop;
+        this._placeAtAnchor(this._anchorBox, this._userSize ?? this.widget.size, preferAlignAtTop);
+    }
+    _placeAtAnchor(anchorBox, size, preferAlignAtTop) {
+        const bodyBox = dom.getClientArea(this.getDomNode().ownerDocument.body);
+        const info = this.widget.getLayoutInfo();
+        const defaultMinSize = new dom.Dimension(220, 2 * info.lineHeight);
+        const defaultTop = anchorBox.top;
+        const eastPlacement = (function () {
+            const width = bodyBox.width - (anchorBox.left + anchorBox.width + info.borderWidth + info.horizontalPadding);
+            const left = -info.borderWidth + anchorBox.left + anchorBox.width;
+            const maxSizeTop = new dom.Dimension(width, bodyBox.height - anchorBox.top - info.borderHeight - info.verticalPadding);
+            const maxSizeBottom = maxSizeTop.with(undefined, anchorBox.top + anchorBox.height - info.borderHeight - info.verticalPadding);
+            return { top: defaultTop, left, fit: width - size.width, maxSizeTop, maxSizeBottom, minSize: defaultMinSize.with(Math.min(width, defaultMinSize.width)) };
+        })();
+        const westPlacement = (function () {
+            const width = anchorBox.left - info.borderWidth - info.horizontalPadding;
+            const left = Math.max(info.horizontalPadding, anchorBox.left - size.width - info.borderWidth);
+            const maxSizeTop = new dom.Dimension(width, bodyBox.height - anchorBox.top - info.borderHeight - info.verticalPadding);
+            const maxSizeBottom = maxSizeTop.with(undefined, anchorBox.top + anchorBox.height - info.borderHeight - info.verticalPadding);
+            return { top: defaultTop, left, fit: width - size.width, maxSizeTop, maxSizeBottom, minSize: defaultMinSize.with(Math.min(width, defaultMinSize.width)) };
+        })();
+        const southPacement = (function () {
+            const left = anchorBox.left;
+            const top = -info.borderWidth + anchorBox.top + anchorBox.height;
+            const maxSizeBottom = new dom.Dimension(anchorBox.width - info.borderHeight, bodyBox.height - anchorBox.top - anchorBox.height - info.verticalPadding);
+            return { top, left, fit: maxSizeBottom.height - size.height, maxSizeBottom, maxSizeTop: maxSizeBottom, minSize: defaultMinSize.with(maxSizeBottom.width) };
+        })();
+        const placements = [eastPlacement, westPlacement, southPacement];
+        const placement = placements.find(p => p.fit >= 0) ?? placements.sort((a, b) => b.fit - a.fit)[0];
+        const bottom = anchorBox.top + anchorBox.height - info.borderHeight;
+        let alignAtTop;
+        let height = size.height;
+        const maxHeight = Math.max(placement.maxSizeTop.height, placement.maxSizeBottom.height);
+        if (height > maxHeight) {
+            height = maxHeight;
+        }
+        let maxSize;
+        if (preferAlignAtTop) {
+            if (height <= placement.maxSizeTop.height) {
+                alignAtTop = true;
+                maxSize = placement.maxSizeTop;
+            }
+            else {
+                alignAtTop = false;
+                maxSize = placement.maxSizeBottom;
+            }
+        }
+        else {
+            if (height <= placement.maxSizeBottom.height) {
+                alignAtTop = false;
+                maxSize = placement.maxSizeBottom;
+            }
+            else {
+                alignAtTop = true;
+                maxSize = placement.maxSizeTop;
+            }
+        }
+        let { top, left } = placement;
+        if (!alignAtTop && height > anchorBox.height) {
+            top = bottom - height;
+        }
+        const editorDomNode = this._editor.getDomNode();
+        if (editorDomNode) {
+            const editorBoundingBox = editorDomNode.getBoundingClientRect();
+            top -= editorBoundingBox.top;
+            left -= editorBoundingBox.left;
+        }
+        this._applyTopLeft({ left, top });
+        this._resizable.enableSashes(!alignAtTop, placement === eastPlacement, alignAtTop, placement !== eastPlacement);
+        this._resizable.minSize = placement.minSize;
+        this._resizable.maxSize = maxSize;
+        this._resizable.layout(height, Math.min(maxSize.width, size.width));
+        this.widget.layout(this._resizable.size.width, this._resizable.size.height);
+    }
+    _applyTopLeft(topLeft) {
+        this._topLeft = topLeft;
+        this._editor.layoutOverlayWidget(this);
+    }
+}

@@ -1,1 +1,3 @@
-import{create as r}from"./outputLinkComputer.js";import{bootstrapSimpleWorker as o}from"../../../../base/common/worker/simpleWorkerBootstrap.js";o(r);
+import { create } from './outputLinkComputer.js';
+import { bootstrapSimpleWorker } from '../../../../base/common/worker/simpleWorkerBootstrap.js';
+bootstrapSimpleWorker(create);

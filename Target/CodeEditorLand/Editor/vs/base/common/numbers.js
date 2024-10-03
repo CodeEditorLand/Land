@@ -1,1 +1,71 @@
-function A(n,t,e){return Math.min(Math.max(n,t),e)}function M(n,t){return(t+n%t)%t}class w{_next=0;getNext(){return this._next++}}class W{_n=1;_val=0;update(t){return this._val=this._val+(t-this._val)/this._n,this._n+=1,this._val}get value(){return this._val}}class C{_n=0;_val=0;_values=[];_index=0;_sum=0;constructor(t){this._values=new Array(t),this._values.fill(0,0,t)}update(t){const e=this._values[this._index];return this._values[this._index]=t,this._index=(this._index+1)%this._values.length,this._sum-=e,this._sum+=t,this._n<this._values.length&&(this._n+=1),this._val=this._sum/this._n,this._val}get value(){return this._val}}function D(n,t,e,v,d,g,f,y){const r=f-e,s=y-v,i=d-e,u=g-v,o=n-e,_=t-v,h=r*r+s*s,a=r*i+s*u,m=r*o+s*_,l=i*i+u*u,b=i*o+u*_,c=1/(h*l-a*a),p=(l*m-a*b)*c,x=(h*b-a*m)*c;return p>=0&&x>=0&&p+x<1}export{w as Counter,W as MovingAverage,C as SlidingWindowAverage,A as clamp,D as isPointWithinTriangle,M as rot};
+export function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
+export function rot(index, modulo) {
+    return (modulo + (index % modulo)) % modulo;
+}
+export class Counter {
+    constructor() {
+        this._next = 0;
+    }
+    getNext() {
+        return this._next++;
+    }
+}
+export class MovingAverage {
+    constructor() {
+        this._n = 1;
+        this._val = 0;
+    }
+    update(value) {
+        this._val = this._val + (value - this._val) / this._n;
+        this._n += 1;
+        return this._val;
+    }
+    get value() {
+        return this._val;
+    }
+}
+export class SlidingWindowAverage {
+    constructor(size) {
+        this._n = 0;
+        this._val = 0;
+        this._values = [];
+        this._index = 0;
+        this._sum = 0;
+        this._values = new Array(size);
+        this._values.fill(0, 0, size);
+    }
+    update(value) {
+        const oldValue = this._values[this._index];
+        this._values[this._index] = value;
+        this._index = (this._index + 1) % this._values.length;
+        this._sum -= oldValue;
+        this._sum += value;
+        if (this._n < this._values.length) {
+            this._n += 1;
+        }
+        this._val = this._sum / this._n;
+        return this._val;
+    }
+    get value() {
+        return this._val;
+    }
+}
+export function isPointWithinTriangle(x, y, ax, ay, bx, by, cx, cy) {
+    const v0x = cx - ax;
+    const v0y = cy - ay;
+    const v1x = bx - ax;
+    const v1y = by - ay;
+    const v2x = x - ax;
+    const v2y = y - ay;
+    const dot00 = v0x * v0x + v0y * v0y;
+    const dot01 = v0x * v1x + v0y * v1y;
+    const dot02 = v0x * v2x + v0y * v2y;
+    const dot11 = v1x * v1x + v1y * v1y;
+    const dot12 = v1x * v2x + v1y * v2y;
+    const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+    const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+    return u >= 0 && v >= 0 && u + v < 1;
+}

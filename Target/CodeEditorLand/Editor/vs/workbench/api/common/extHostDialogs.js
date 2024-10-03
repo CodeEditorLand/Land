@@ -1,1 +1,21 @@
-import{URI as r}from"../../../base/common/uri.js";import{MainContext as t}from"./extHost.protocol.js";import{checkProposedApiEnabled as a}from"../../services/extensions/common/extensions.js";import"../../../platform/extensions/common/extensions.js";class v{_proxy;constructor(o){this._proxy=o.getProxy(t.MainThreadDialogs)}showOpenDialog(o,e){return e?.allowUIResources&&a(o,"showLocal"),this._proxy.$showOpenDialog(e).then(i=>i?i.map(n=>r.revive(n)):void 0)}showSaveDialog(o){return this._proxy.$showSaveDialog(o).then(e=>e?r.revive(e):void 0)}}export{v as ExtHostDialogs};
+import { URI } from '../../../base/common/uri.js';
+import { MainContext } from './extHost.protocol.js';
+import { checkProposedApiEnabled } from '../../services/extensions/common/extensions.js';
+export class ExtHostDialogs {
+    constructor(mainContext) {
+        this._proxy = mainContext.getProxy(MainContext.MainThreadDialogs);
+    }
+    showOpenDialog(extension, options) {
+        if (options?.allowUIResources) {
+            checkProposedApiEnabled(extension, 'showLocal');
+        }
+        return this._proxy.$showOpenDialog(options).then(filepaths => {
+            return filepaths ? filepaths.map(p => URI.revive(p)) : undefined;
+        });
+    }
+    showSaveDialog(options) {
+        return this._proxy.$showSaveDialog(options).then(filepath => {
+            return filepath ? URI.revive(filepath) : undefined;
+        });
+    }
+}

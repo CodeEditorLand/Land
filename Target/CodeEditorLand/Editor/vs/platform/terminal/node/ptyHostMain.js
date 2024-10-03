@@ -1,1 +1,71 @@
-import{DefaultURITransformer as f}from"../../../base/common/uriIpc.js";import{ProxyChannel as l}from"../../../base/parts/ipc/common/ipc.js";import{Server as g}from"../../../base/parts/ipc/node/ipc.cp.js";import{Server as _}from"../../../base/parts/ipc/node/ipc.mp.js";import{localize as y}from"../../../nls.js";import{OPTIONS as T,parseArgs as d}from"../../environment/node/argv.js";import{NativeEnvironmentService as O}from"../../environment/node/environmentService.js";import{getLogLevel as P}from"../../log/common/log.js";import{LoggerChannel as R}from"../../log/common/logIpc.js";import{LogService as I}from"../../log/common/logService.js";import{LoggerService as L}from"../../log/node/loggerService.js";import N from"../../product/common/product.js";import"../../product/common/productService.js";import{TerminalIpcChannels as t}from"../common/terminal.js";import{HeartbeatService as h}from"./heartbeatService.js";import{PtyService as D}from"./ptyService.js";import{isUtilityProcess as w}from"../../../base/parts/sandbox/node/electronTypes.js";import{timeout as A}from"../../../base/common/async.js";import{DisposableStore as u}from"../../../base/common/lifecycle.js";H();async function H(){const o=parseInt(process.env.VSCODE_STARTUP_DELAY??"0"),s=parseInt(process.env.VSCODE_LATENCY??"0"),v={graceTime:parseInt(process.env.VSCODE_RECONNECT_GRACE_TIME||"0"),shortGraceTime:parseInt(process.env.VSCODE_RECONNECT_SHORT_GRACE_TIME||"0"),scrollback:parseInt(process.env.VSCODE_RECONNECT_SCROLLBACK||"100")};delete process.env.VSCODE_RECONNECT_GRACE_TIME,delete process.env.VSCODE_RECONNECT_SHORT_GRACE_TIME,delete process.env.VSCODE_RECONNECT_SCROLLBACK,delete process.env.VSCODE_LATENCY,delete process.env.VSCODE_STARTUP_DELAY,o&&await A(o);const n=w(process);let e;n?e=new _:e=new g(t.PtyHost);const i={_serviceBrand:void 0,...N},c=new O(d(process.argv,T),i),a=new L(P(c),c.logsHome);e.registerChannel(t.Logger,new R(a,()=>f));const E=a.createLogger("ptyhost",{name:y("ptyHost","Pty Host")}),r=new I(E);o&&r.warn(`Pty Host startup is delayed ${o}ms`),s&&r.warn(`Pty host is simulating ${s}ms latency`);const m=new u,p=new h;e.registerChannel(t.Heartbeat,l.fromService(p,m));const C=new D(r,i,v,s),S=l.fromService(C,m);e.registerChannel(t.PtyHost,S),n&&e.registerChannel(t.PtyHostWindow,S),process.once("exit",()=>{r.trace("Pty host exiting"),r.dispose(),p.dispose(),C.dispose()})}
+import { DefaultURITransformer } from '../../../base/common/uriIpc.js';
+import { ProxyChannel } from '../../../base/parts/ipc/common/ipc.js';
+import { Server as ChildProcessServer } from '../../../base/parts/ipc/node/ipc.cp.js';
+import { Server as UtilityProcessServer } from '../../../base/parts/ipc/node/ipc.mp.js';
+import { localize } from '../../../nls.js';
+import { OPTIONS, parseArgs } from '../../environment/node/argv.js';
+import { NativeEnvironmentService } from '../../environment/node/environmentService.js';
+import { getLogLevel } from '../../log/common/log.js';
+import { LoggerChannel } from '../../log/common/logIpc.js';
+import { LogService } from '../../log/common/logService.js';
+import { LoggerService } from '../../log/node/loggerService.js';
+import product from '../../product/common/product.js';
+import { TerminalIpcChannels } from '../common/terminal.js';
+import { HeartbeatService } from './heartbeatService.js';
+import { PtyService } from './ptyService.js';
+import { isUtilityProcess } from '../../../base/parts/sandbox/node/electronTypes.js';
+import { timeout } from '../../../base/common/async.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+startPtyHost();
+async function startPtyHost() {
+    const startupDelay = parseInt(process.env.VSCODE_STARTUP_DELAY ?? '0');
+    const simulatedLatency = parseInt(process.env.VSCODE_LATENCY ?? '0');
+    const reconnectConstants = {
+        graceTime: parseInt(process.env.VSCODE_RECONNECT_GRACE_TIME || '0'),
+        shortGraceTime: parseInt(process.env.VSCODE_RECONNECT_SHORT_GRACE_TIME || '0'),
+        scrollback: parseInt(process.env.VSCODE_RECONNECT_SCROLLBACK || '100')
+    };
+    delete process.env.VSCODE_RECONNECT_GRACE_TIME;
+    delete process.env.VSCODE_RECONNECT_SHORT_GRACE_TIME;
+    delete process.env.VSCODE_RECONNECT_SCROLLBACK;
+    delete process.env.VSCODE_LATENCY;
+    delete process.env.VSCODE_STARTUP_DELAY;
+    if (startupDelay) {
+        await timeout(startupDelay);
+    }
+    const _isUtilityProcess = isUtilityProcess(process);
+    let server;
+    if (_isUtilityProcess) {
+        server = new UtilityProcessServer();
+    }
+    else {
+        server = new ChildProcessServer(TerminalIpcChannels.PtyHost);
+    }
+    const productService = { _serviceBrand: undefined, ...product };
+    const environmentService = new NativeEnvironmentService(parseArgs(process.argv, OPTIONS), productService);
+    const loggerService = new LoggerService(getLogLevel(environmentService), environmentService.logsHome);
+    server.registerChannel(TerminalIpcChannels.Logger, new LoggerChannel(loggerService, () => DefaultURITransformer));
+    const logger = loggerService.createLogger('ptyhost', { name: localize('ptyHost', "Pty Host") });
+    const logService = new LogService(logger);
+    if (startupDelay) {
+        logService.warn(`Pty Host startup is delayed ${startupDelay}ms`);
+    }
+    if (simulatedLatency) {
+        logService.warn(`Pty host is simulating ${simulatedLatency}ms latency`);
+    }
+    const disposables = new DisposableStore();
+    const heartbeatService = new HeartbeatService();
+    server.registerChannel(TerminalIpcChannels.Heartbeat, ProxyChannel.fromService(heartbeatService, disposables));
+    const ptyService = new PtyService(logService, productService, reconnectConstants, simulatedLatency);
+    const ptyServiceChannel = ProxyChannel.fromService(ptyService, disposables);
+    server.registerChannel(TerminalIpcChannels.PtyHost, ptyServiceChannel);
+    if (_isUtilityProcess) {
+        server.registerChannel(TerminalIpcChannels.PtyHostWindow, ptyServiceChannel);
+    }
+    process.once('exit', () => {
+        logService.trace('Pty host exiting');
+        logService.dispose();
+        heartbeatService.dispose();
+        ptyService.dispose();
+    });
+}

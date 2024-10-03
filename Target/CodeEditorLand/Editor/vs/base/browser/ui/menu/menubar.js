@@ -1,1 +1,833 @@
-import*as I from"../../browser.js";import*as u from"../../dom.js";import{StandardKeyboardEvent as p}from"../../keyboardEvent.js";import{StandardMouseEvent as g}from"../../mouseEvent.js";import{EventType as w,Gesture as S}from"../../touch.js";import{cleanMnemonic as y,HorizontalDirection as m,Menu as R,MENU_ESCAPED_MNEMONIC_REGEX as M,MENU_MNEMONIC_REGEX as O,VerticalDirection as b}from"./menu.js";import{ActionRunner as U,Separator as F,SubmenuAction as D}from"../../../common/actions.js";import{asArray as N}from"../../../common/arrays.js";import{RunOnceScheduler as _}from"../../../common/async.js";import{Codicon as A}from"../../../common/codicons.js";import{ThemeIcon as V}from"../../../common/themables.js";import{Emitter as L}from"../../../common/event.js";import{KeyCode as c,KeyMod as C,ScanCode as W,ScanCodeUtils as K}from"../../../common/keyCodes.js";import"../../../common/keybindings.js";import{Disposable as H,DisposableStore as P,dispose as X}from"../../../common/lifecycle.js";import{isMacintosh as x}from"../../../common/platform.js";import*as E from"../../../common/strings.js";import"./menubar.css";import*as T from"../../../../nls.js";import{mainWindow as z}from"../../window.js";const f=u.$;var k=(o=>(o[o.HIDDEN=0]="HIDDEN",o[o.VISIBLE=1]="VISIBLE",o[o.FOCUSED=2]="FOCUSED",o[o.OPEN=3]="OPEN",o))(k||{});class h extends H{constructor(e,s,o){super();this.container=e;this.options=s;this.menuStyle=o;this.container.setAttribute("role","menubar"),this.isCompact&&this.container.classList.add("compact"),this.menus=[],this.mnemonics=new Map,this._focusState=1,this._onVisibilityChange=this._register(new L),this._onFocusStateChange=this._register(new L),this.createOverflowMenu(),this.menuUpdater=this._register(new _(()=>this.update(),200)),this.actionRunner=this.options.actionRunner??this._register(new U),this._register(this.actionRunner.onWillRun(()=>{this.setUnfocusedState()})),this._register(u.ModifierKeyEmitter.getInstance().event(this.onModifierKeyToggled,this)),this._register(u.addDisposableListener(this.container,u.EventType.KEY_DOWN,r=>{const i=new p(r);let t=!0;const a=r.key?r.key.toLocaleLowerCase():"",l=x&&!this.isCompact;if(i.equals(c.LeftArrow)||l&&i.equals(c.Tab|C.Shift))this.focusPrevious();else if(i.equals(c.RightArrow)||l&&i.equals(c.Tab))this.focusNext();else if(i.equals(c.Escape)&&this.isFocused&&!this.isOpen)this.setUnfocusedState();else if(!this.isOpen&&!i.ctrlKey&&this.options.enableMnemonics&&this.mnemonicsInUse&&this.mnemonics.has(a)){const d=this.mnemonics.get(a);this.onMenuTriggered(d,!1)}else t=!1;!this.isCompact&&(i.equals(c.Tab|C.Shift)||i.equals(c.Tab))&&i.preventDefault(),t&&(i.preventDefault(),i.stopPropagation())}));const n=u.getWindow(this.container);this._register(u.addDisposableListener(n,u.EventType.MOUSE_DOWN,()=>{this.isFocused&&this.setUnfocusedState()})),this._register(u.addDisposableListener(this.container,u.EventType.FOCUS_IN,r=>{const i=r;i.relatedTarget&&(this.container.contains(i.relatedTarget)||(this.focusToReturn=i.relatedTarget))})),this._register(u.addDisposableListener(this.container,u.EventType.FOCUS_OUT,r=>{const i=r;i.relatedTarget?i.relatedTarget&&!this.container.contains(i.relatedTarget)&&(this.focusToReturn=void 0,this.setUnfocusedState()):this.setUnfocusedState()})),this._register(u.addDisposableListener(n,u.EventType.KEY_DOWN,r=>{if(!this.options.enableMnemonics||!r.altKey||r.ctrlKey||r.defaultPrevented)return;const i=r.key.toLocaleLowerCase();if(!this.mnemonics.has(i))return;this.mnemonicsInUse=!0,this.updateMnemonicVisibility(!0);const t=this.mnemonics.get(i);this.onMenuTriggered(t,!1)})),this.setUnfocusedState()}static OVERFLOW_INDEX=-1;menus;overflowMenu;focusedMenu;focusToReturn;menuUpdater;_mnemonicsInUse=!1;openedViaKeyboard=!1;awaitingAltRelease=!1;ignoreNextMouseUp=!1;mnemonics;updatePending=!1;_focusState;actionRunner;_onVisibilityChange;_onFocusStateChange;numMenusShown=0;overflowLayoutScheduled=void 0;menuDisposables=this._register(new P);push(e){N(e).forEach(o=>{const n=this.menus.length,r=y(o.label),i=O.exec(o.label);if(i){const t=i[1]?i[1]:i[3];this.registerMnemonic(this.menus.length,t)}if(this.isCompact)this.menus.push(o);else{const t=f("div.menubar-menu-button",{role:"menuitem",tabindex:-1,"aria-label":r,"aria-haspopup":!0}),a=f("div.menubar-menu-title",{role:"none","aria-hidden":!0});t.appendChild(a),this.container.insertBefore(t,this.overflowMenu.buttonElement),this.updateLabels(a,t,o.label),this._register(u.addDisposableListener(t,u.EventType.KEY_UP,l=>{const d=new p(l);let v=!0;(d.equals(c.DownArrow)||d.equals(c.Enter))&&!this.isOpen?(this.focusedMenu={index:n},this.openedViaKeyboard=!0,this.focusState=3):v=!1,v&&(d.preventDefault(),d.stopPropagation())})),this._register(S.addTarget(t)),this._register(u.addDisposableListener(t,w.Tap,l=>{this.isOpen&&this.focusedMenu&&this.focusedMenu.holder&&u.isAncestor(l.initialTarget,this.focusedMenu.holder)||(this.ignoreNextMouseUp=!1,this.onMenuTriggered(n,!0),l.preventDefault(),l.stopPropagation())})),this._register(u.addDisposableListener(t,u.EventType.MOUSE_DOWN,l=>{if(!new g(u.getWindow(t),l).leftButton){l.preventDefault();return}this.isOpen?this.ignoreNextMouseUp=!1:(this.ignoreNextMouseUp=!0,this.onMenuTriggered(n,!0)),l.preventDefault(),l.stopPropagation()})),this._register(u.addDisposableListener(t,u.EventType.MOUSE_UP,l=>{l.defaultPrevented||(this.ignoreNextMouseUp?this.ignoreNextMouseUp=!1:this.isFocused&&this.onMenuTriggered(n,!0))})),this._register(u.addDisposableListener(t,u.EventType.MOUSE_ENTER,()=>{this.isOpen&&!this.isCurrentMenu(n)?(t.focus(),this.cleanupCustomMenu(),this.showCustomMenu(n,!1)):this.isFocused&&!this.isOpen&&(this.focusedMenu={index:n},t.focus())})),this.menus.push({label:o.label,actions:o.actions,buttonElement:t,titleElement:a})}})}createOverflowMenu(){const e=this.isCompact?T.localize("mAppMenu","Application Menu"):T.localize("mMore","More"),s=f("div.menubar-menu-button",{role:"menuitem",tabindex:this.isCompact?0:-1,"aria-label":e,"aria-haspopup":!0}),o=f("div.menubar-menu-title.toolbar-toggle-more"+V.asCSSSelector(A.menuBarMore),{role:"none","aria-hidden":!0});s.appendChild(o),this.container.appendChild(s),s.style.visibility="hidden",this._register(u.addDisposableListener(s,u.EventType.KEY_UP,n=>{const r=new p(n);let i=!0;const t=[c.Enter];this.isCompact?(t.push(c.Space),this.options.compactMode?.horizontal===m.Right?t.push(c.RightArrow):this.options.compactMode?.horizontal===m.Left&&t.push(c.LeftArrow)):t.push(c.DownArrow),t.some(a=>r.equals(a))&&!this.isOpen?(this.focusedMenu={index:h.OVERFLOW_INDEX},this.openedViaKeyboard=!0,this.focusState=3):i=!1,i&&(r.preventDefault(),r.stopPropagation())})),this._register(S.addTarget(s)),this._register(u.addDisposableListener(s,w.Tap,n=>{this.isOpen&&this.focusedMenu&&this.focusedMenu.holder&&u.isAncestor(n.initialTarget,this.focusedMenu.holder)||(this.ignoreNextMouseUp=!1,this.onMenuTriggered(h.OVERFLOW_INDEX,!0),n.preventDefault(),n.stopPropagation())})),this._register(u.addDisposableListener(s,u.EventType.MOUSE_DOWN,n=>{if(!new g(u.getWindow(s),n).leftButton){n.preventDefault();return}this.isOpen?this.ignoreNextMouseUp=!1:(this.ignoreNextMouseUp=!0,this.onMenuTriggered(h.OVERFLOW_INDEX,!0)),n.preventDefault(),n.stopPropagation()})),this._register(u.addDisposableListener(s,u.EventType.MOUSE_UP,n=>{n.defaultPrevented||(this.ignoreNextMouseUp?this.ignoreNextMouseUp=!1:this.isFocused&&this.onMenuTriggered(h.OVERFLOW_INDEX,!0))})),this._register(u.addDisposableListener(s,u.EventType.MOUSE_ENTER,()=>{this.isOpen&&!this.isCurrentMenu(h.OVERFLOW_INDEX)?(this.overflowMenu.buttonElement.focus(),this.cleanupCustomMenu(),this.showCustomMenu(h.OVERFLOW_INDEX,!1)):this.isFocused&&!this.isOpen&&(this.focusedMenu={index:h.OVERFLOW_INDEX},s.focus())})),this.overflowMenu={buttonElement:s,titleElement:o,label:"More",actions:[]}}updateMenu(e){const s=this.menus.filter(o=>o.label===e.label);s&&s.length&&(s[0].actions=e.actions)}dispose(){super.dispose(),this.menus.forEach(e=>{e.titleElement?.remove(),e.buttonElement?.remove()}),this.overflowMenu.titleElement.remove(),this.overflowMenu.buttonElement.remove(),X(this.overflowLayoutScheduled),this.overflowLayoutScheduled=void 0}blur(){this.setUnfocusedState()}getWidth(){if(!this.isCompact&&this.menus){const e=this.menus[0].buttonElement.getBoundingClientRect().left;return(this.hasOverflow?this.overflowMenu.buttonElement.getBoundingClientRect().right:this.menus[this.menus.length-1].buttonElement.getBoundingClientRect().right)-e}return 0}getHeight(){return this.container.clientHeight}toggleFocus(){!this.isFocused&&this.options.visibility!=="hidden"?(this.mnemonicsInUse=!0,this.focusedMenu={index:this.numMenusShown>0?0:h.OVERFLOW_INDEX},this.focusState=2):this.isOpen||this.setUnfocusedState()}updateOverflowAction(){if(!this.menus||!this.menus.length)return;const e="overflow-menu-only";this.container.classList.toggle(e,!1);const s=this.container.offsetWidth;let o=0,n=this.isCompact;const r=this.numMenusShown;this.numMenusShown=0;const i=this.menus.filter(t=>t.buttonElement!==void 0&&t.titleElement!==void 0);for(const t of i){if(!n){const a=t.buttonElement.offsetWidth;o+a>s?n=!0:(o+=a,this.numMenusShown++,this.numMenusShown>r&&(t.buttonElement.style.visibility="visible"))}n&&(t.buttonElement.style.visibility="hidden")}if(this.numMenusShown-1<=i.length/4){for(const t of i)t.buttonElement.style.visibility="hidden";n=!0,this.numMenusShown=0,o=0}if(this.isCompact){this.overflowMenu.actions=[];for(let a=this.numMenusShown;a<this.menus.length;a++)this.overflowMenu.actions.push(new D(`menubar.submenu.${this.menus[a].label}`,this.menus[a].label,this.menus[a].actions||[]));const t=this.options.getCompactMenuActions?.();t&&t.length&&(this.overflowMenu.actions.push(new F),this.overflowMenu.actions.push(...t)),this.overflowMenu.buttonElement.style.visibility="visible"}else if(n){for(;o+this.overflowMenu.buttonElement.offsetWidth>s&&this.numMenusShown>0;){this.numMenusShown--;const t=i[this.numMenusShown].buttonElement.offsetWidth;i[this.numMenusShown].buttonElement.style.visibility="hidden",o-=t}this.overflowMenu.actions=[];for(let t=this.numMenusShown;t<i.length;t++)this.overflowMenu.actions.push(new D(`menubar.submenu.${i[t].label}`,i[t].label,i[t].actions||[]));this.overflowMenu.buttonElement.nextElementSibling!==i[this.numMenusShown].buttonElement&&(this.overflowMenu.buttonElement.remove(),this.container.insertBefore(this.overflowMenu.buttonElement,i[this.numMenusShown].buttonElement)),this.overflowMenu.buttonElement.style.visibility="visible"}else this.overflowMenu.buttonElement.remove(),this.container.appendChild(this.overflowMenu.buttonElement),this.overflowMenu.buttonElement.style.visibility="hidden";this.container.classList.toggle(e,this.numMenusShown===0)}updateLabels(e,s,o){const n=y(o);if(this.options.enableMnemonics){const i=E.escape(o);M.lastIndex=0;let t=M.exec(i);for(;t&&t[1];)t=M.exec(i);const a=l=>l.replace(/&amp;&amp;/g,"&amp;");t?(e.innerText="",e.append(E.ltrim(a(i.substr(0,t.index))," "),f("mnemonic",{"aria-hidden":"true"},t[3]),E.rtrim(a(i.substr(t.index+t[0].length))," "))):e.innerText=a(i).trim()}else e.innerText=n.replace(/&&/g,"&");const r=O.exec(o);if(r){const i=r[1]?r[1]:r[3];this.options.enableMnemonics?s.setAttribute("aria-keyshortcuts","Alt+"+i.toLocaleLowerCase()):s.removeAttribute("aria-keyshortcuts")}}update(e){if(e&&(this.options=e),this.isFocused){this.updatePending=!0;return}this.menus.forEach(s=>{!s.buttonElement||!s.titleElement||this.updateLabels(s.titleElement,s.buttonElement,s.label)}),this.overflowLayoutScheduled||(this.overflowLayoutScheduled=u.scheduleAtNextAnimationFrame(u.getWindow(this.container),()=>{this.updateOverflowAction(),this.overflowLayoutScheduled=void 0})),this.setUnfocusedState()}registerMnemonic(e,s){this.mnemonics.set(s.toLocaleLowerCase(),e)}hideMenubar(){this.container.style.display!=="none"&&(this.container.style.display="none",this._onVisibilityChange.fire(!1))}showMenubar(){this.container.style.display!=="flex"&&(this.container.style.display="flex",this._onVisibilityChange.fire(!0),this.updateOverflowAction())}get focusState(){return this._focusState}set focusState(e){if(this._focusState>=2&&e<2&&this.updatePending&&(this.menuUpdater.schedule(),this.updatePending=!1),e===this._focusState)return;const s=this.isVisible,o=this.isOpen,n=this.isFocused;switch(this._focusState=e,e){case 0:s&&this.hideMenubar(),o&&this.cleanupCustomMenu(),n&&(this.focusedMenu=void 0,this.focusToReturn&&(this.focusToReturn.focus(),this.focusToReturn=void 0));break;case 1:s||this.showMenubar(),o&&this.cleanupCustomMenu(),n&&(this.focusedMenu&&(this.focusedMenu.index===h.OVERFLOW_INDEX?this.overflowMenu.buttonElement.blur():this.menus[this.focusedMenu.index].buttonElement?.blur()),this.focusedMenu=void 0,this.focusToReturn&&(this.focusToReturn.focus(),this.focusToReturn=void 0));break;case 2:s||this.showMenubar(),o&&this.cleanupCustomMenu(),this.focusedMenu&&(this.focusedMenu.index===h.OVERFLOW_INDEX?this.overflowMenu.buttonElement.focus():this.menus[this.focusedMenu.index].buttonElement?.focus());break;case 3:s||this.showMenubar(),this.focusedMenu&&(this.cleanupCustomMenu(),this.showCustomMenu(this.focusedMenu.index,this.openedViaKeyboard));break}this._focusState=e,this._onFocusStateChange.fire(this.focusState>=2)}get isVisible(){return this.focusState>=1}get isFocused(){return this.focusState>=2}get isOpen(){return this.focusState>=3}get hasOverflow(){return this.isCompact||this.numMenusShown<this.menus.length}get isCompact(){return this.options.compactMode!==void 0}setUnfocusedState(){this.options.visibility==="toggle"||this.options.visibility==="hidden"?this.focusState=0:this.options.visibility==="classic"&&I.isFullscreen(z)?this.focusState=0:this.focusState=1,this.ignoreNextMouseUp=!1,this.mnemonicsInUse=!1,this.updateMnemonicVisibility(!1)}focusPrevious(){if(!this.focusedMenu||this.numMenusShown===0)return;let e=(this.focusedMenu.index-1+this.numMenusShown)%this.numMenusShown;this.focusedMenu.index===h.OVERFLOW_INDEX?e=this.numMenusShown-1:this.focusedMenu.index===0&&this.hasOverflow&&(e=h.OVERFLOW_INDEX),e!==this.focusedMenu.index&&(this.isOpen?(this.cleanupCustomMenu(),this.showCustomMenu(e)):this.isFocused&&(this.focusedMenu.index=e,e===h.OVERFLOW_INDEX?this.overflowMenu.buttonElement.focus():this.menus[e].buttonElement?.focus()))}focusNext(){if(!this.focusedMenu||this.numMenusShown===0)return;let e=(this.focusedMenu.index+1)%this.numMenusShown;this.focusedMenu.index===h.OVERFLOW_INDEX?e=0:this.focusedMenu.index===this.numMenusShown-1&&(e=h.OVERFLOW_INDEX),e!==this.focusedMenu.index&&(this.isOpen?(this.cleanupCustomMenu(),this.showCustomMenu(e)):this.isFocused&&(this.focusedMenu.index=e,e===h.OVERFLOW_INDEX?this.overflowMenu.buttonElement.focus():this.menus[e].buttonElement?.focus()))}updateMnemonicVisibility(e){this.menus&&this.menus.forEach(s=>{if(s.titleElement&&s.titleElement.children.length){const o=s.titleElement.children.item(0);o&&(o.style.textDecoration=this.options.alwaysOnMnemonics||e?"underline":"")}})}get mnemonicsInUse(){return this._mnemonicsInUse}set mnemonicsInUse(e){this._mnemonicsInUse=e}get shouldAltKeyFocus(){return x?!1:!this.options.disableAltFocus||this.options.visibility==="toggle"}get onVisibilityChange(){return this._onVisibilityChange.event}get onFocusStateChange(){return this._onFocusStateChange.event}onMenuTriggered(e,s){this.isOpen?this.isCurrentMenu(e)?this.setUnfocusedState():(this.cleanupCustomMenu(),this.showCustomMenu(e,this.openedViaKeyboard)):(this.focusedMenu={index:e},this.openedViaKeyboard=!s,this.focusState=3)}onModifierKeyToggled(e){const s=!e.altKey&&!e.ctrlKey&&!e.shiftKey&&!e.metaKey;this.options.visibility!=="hidden"&&(e.event&&this.shouldAltKeyFocus&&K.toEnum(e.event.code)===W.AltLeft&&e.event.preventDefault(),this.isFocused&&e.lastKeyPressed==="alt"&&e.altKey&&(this.setUnfocusedState(),this.mnemonicsInUse=!1,this.awaitingAltRelease=!0),s&&e.lastKeyPressed==="alt"&&e.lastKeyReleased==="alt"&&(this.awaitingAltRelease||(!this.isFocused&&this.shouldAltKeyFocus?(this.mnemonicsInUse=!0,this.focusedMenu={index:this.numMenusShown>0?0:h.OVERFLOW_INDEX},this.focusState=2):this.isOpen||this.setUnfocusedState())),!e.altKey&&e.lastKeyReleased==="alt"&&(this.awaitingAltRelease=!1),this.options.enableMnemonics&&this.menus&&!this.isOpen&&this.updateMnemonicVisibility(!this.awaitingAltRelease&&e.altKey||this.mnemonicsInUse))}isCurrentMenu(e){return this.focusedMenu?this.focusedMenu.index===e:!1}cleanupCustomMenu(){this.focusedMenu&&(this.focusedMenu.index===h.OVERFLOW_INDEX?this.overflowMenu.buttonElement.focus():this.menus[this.focusedMenu.index].buttonElement?.focus(),this.focusedMenu.holder&&(this.focusedMenu.holder.parentElement?.classList.remove("open"),this.focusedMenu.holder.remove()),this.focusedMenu.widget?.dispose(),this.focusedMenu={index:this.focusedMenu.index}),this.menuDisposables.clear()}showCustomMenu(e,s=!0){const o=e>=this.numMenusShown?h.OVERFLOW_INDEX:e,n=o===h.OVERFLOW_INDEX?this.overflowMenu:this.menus[o];if(!n.actions||!n.buttonElement||!n.titleElement)return;const r=f("div.menubar-menu-items-holder",{title:""});n.buttonElement.classList.add("open");const i=n.titleElement.getBoundingClientRect(),t=u.getDomNodeZoomLevel(n.titleElement);if(this.options.compactMode?.horizontal===m.Right)r.style.left=`${i.left+this.container.clientWidth}px`;else if(this.options.compactMode?.horizontal===m.Left){const d=u.getWindow(this.container).innerWidth;r.style.right=`${d-i.left}px`,r.style.left="auto"}else r.style.left=`${i.left*t}px`;this.options.compactMode?.vertical===b.Above?r.style.top=`${i.top-this.menus.length*30+this.container.clientHeight}px`:this.options.compactMode?.vertical===b.Below?r.style.top=`${i.top}px`:r.style.top=`${i.bottom*t}px`,n.buttonElement.appendChild(r);const a={getKeyBinding:this.options.getKeybinding,actionRunner:this.actionRunner,enableMnemonics:this.options.alwaysOnMnemonics||this.mnemonicsInUse&&this.options.enableMnemonics,ariaLabel:n.buttonElement.getAttribute("aria-label")??void 0,expandDirection:this.isCompact?this.options.compactMode:{horizontal:m.Right,vertical:b.Below},useEventAsContext:!0},l=this.menuDisposables.add(new R(r,n.actions,a,this.menuStyle));this.menuDisposables.add(l.onDidCancel(()=>{this.focusState=2})),o!==e?l.trigger(e-this.numMenusShown):l.focus(s),this.focusedMenu={index:o,holder:r,widget:l}}}export{h as MenuBar};
+import * as browser from '../../browser.js';
+import * as DOM from '../../dom.js';
+import { StandardKeyboardEvent } from '../../keyboardEvent.js';
+import { StandardMouseEvent } from '../../mouseEvent.js';
+import { EventType, Gesture } from '../../touch.js';
+import { cleanMnemonic, HorizontalDirection, Menu, MENU_ESCAPED_MNEMONIC_REGEX, MENU_MNEMONIC_REGEX, VerticalDirection } from './menu.js';
+import { ActionRunner, Separator, SubmenuAction } from '../../../common/actions.js';
+import { asArray } from '../../../common/arrays.js';
+import { RunOnceScheduler } from '../../../common/async.js';
+import { Codicon } from '../../../common/codicons.js';
+import { ThemeIcon } from '../../../common/themables.js';
+import { Emitter } from '../../../common/event.js';
+import { ScanCodeUtils } from '../../../common/keyCodes.js';
+import { Disposable, DisposableStore, dispose } from '../../../common/lifecycle.js';
+import { isMacintosh } from '../../../common/platform.js';
+import * as strings from '../../../common/strings.js';
+import './menubar.css';
+import * as nls from '../../../../nls.js';
+import { mainWindow } from '../../window.js';
+const $ = DOM.$;
+var MenubarState;
+(function (MenubarState) {
+    MenubarState[MenubarState["HIDDEN"] = 0] = "HIDDEN";
+    MenubarState[MenubarState["VISIBLE"] = 1] = "VISIBLE";
+    MenubarState[MenubarState["FOCUSED"] = 2] = "FOCUSED";
+    MenubarState[MenubarState["OPEN"] = 3] = "OPEN";
+})(MenubarState || (MenubarState = {}));
+export class MenuBar extends Disposable {
+    static { this.OVERFLOW_INDEX = -1; }
+    constructor(container, options, menuStyle) {
+        super();
+        this.container = container;
+        this.options = options;
+        this.menuStyle = menuStyle;
+        this._mnemonicsInUse = false;
+        this.openedViaKeyboard = false;
+        this.awaitingAltRelease = false;
+        this.ignoreNextMouseUp = false;
+        this.updatePending = false;
+        this.numMenusShown = 0;
+        this.overflowLayoutScheduled = undefined;
+        this.menuDisposables = this._register(new DisposableStore());
+        this.container.setAttribute('role', 'menubar');
+        if (this.isCompact) {
+            this.container.classList.add('compact');
+        }
+        this.menus = [];
+        this.mnemonics = new Map();
+        this._focusState = MenubarState.VISIBLE;
+        this._onVisibilityChange = this._register(new Emitter());
+        this._onFocusStateChange = this._register(new Emitter());
+        this.createOverflowMenu();
+        this.menuUpdater = this._register(new RunOnceScheduler(() => this.update(), 200));
+        this.actionRunner = this.options.actionRunner ?? this._register(new ActionRunner());
+        this._register(this.actionRunner.onWillRun(() => {
+            this.setUnfocusedState();
+        }));
+        this._register(DOM.ModifierKeyEmitter.getInstance().event(this.onModifierKeyToggled, this));
+        this._register(DOM.addDisposableListener(this.container, DOM.EventType.KEY_DOWN, (e) => {
+            const event = new StandardKeyboardEvent(e);
+            let eventHandled = true;
+            const key = !!e.key ? e.key.toLocaleLowerCase() : '';
+            const tabNav = isMacintosh && !this.isCompact;
+            if (event.equals(15) || (tabNav && event.equals(2 | 1024))) {
+                this.focusPrevious();
+            }
+            else if (event.equals(17) || (tabNav && event.equals(2))) {
+                this.focusNext();
+            }
+            else if (event.equals(9) && this.isFocused && !this.isOpen) {
+                this.setUnfocusedState();
+            }
+            else if (!this.isOpen && !event.ctrlKey && this.options.enableMnemonics && this.mnemonicsInUse && this.mnemonics.has(key)) {
+                const menuIndex = this.mnemonics.get(key);
+                this.onMenuTriggered(menuIndex, false);
+            }
+            else {
+                eventHandled = false;
+            }
+            if (!this.isCompact && (event.equals(2 | 1024) || event.equals(2))) {
+                event.preventDefault();
+            }
+            if (eventHandled) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }));
+        const window = DOM.getWindow(this.container);
+        this._register(DOM.addDisposableListener(window, DOM.EventType.MOUSE_DOWN, () => {
+            if (this.isFocused) {
+                this.setUnfocusedState();
+            }
+        }));
+        this._register(DOM.addDisposableListener(this.container, DOM.EventType.FOCUS_IN, (e) => {
+            const event = e;
+            if (event.relatedTarget) {
+                if (!this.container.contains(event.relatedTarget)) {
+                    this.focusToReturn = event.relatedTarget;
+                }
+            }
+        }));
+        this._register(DOM.addDisposableListener(this.container, DOM.EventType.FOCUS_OUT, (e) => {
+            const event = e;
+            if (!event.relatedTarget) {
+                this.setUnfocusedState();
+            }
+            else if (event.relatedTarget && !this.container.contains(event.relatedTarget)) {
+                this.focusToReturn = undefined;
+                this.setUnfocusedState();
+            }
+        }));
+        this._register(DOM.addDisposableListener(window, DOM.EventType.KEY_DOWN, (e) => {
+            if (!this.options.enableMnemonics || !e.altKey || e.ctrlKey || e.defaultPrevented) {
+                return;
+            }
+            const key = e.key.toLocaleLowerCase();
+            if (!this.mnemonics.has(key)) {
+                return;
+            }
+            this.mnemonicsInUse = true;
+            this.updateMnemonicVisibility(true);
+            const menuIndex = this.mnemonics.get(key);
+            this.onMenuTriggered(menuIndex, false);
+        }));
+        this.setUnfocusedState();
+    }
+    push(arg) {
+        const menus = asArray(arg);
+        menus.forEach((menuBarMenu) => {
+            const menuIndex = this.menus.length;
+            const cleanMenuLabel = cleanMnemonic(menuBarMenu.label);
+            const mnemonicMatches = MENU_MNEMONIC_REGEX.exec(menuBarMenu.label);
+            if (mnemonicMatches) {
+                const mnemonic = !!mnemonicMatches[1] ? mnemonicMatches[1] : mnemonicMatches[3];
+                this.registerMnemonic(this.menus.length, mnemonic);
+            }
+            if (this.isCompact) {
+                this.menus.push(menuBarMenu);
+            }
+            else {
+                const buttonElement = $('div.menubar-menu-button', { 'role': 'menuitem', 'tabindex': -1, 'aria-label': cleanMenuLabel, 'aria-haspopup': true });
+                const titleElement = $('div.menubar-menu-title', { 'role': 'none', 'aria-hidden': true });
+                buttonElement.appendChild(titleElement);
+                this.container.insertBefore(buttonElement, this.overflowMenu.buttonElement);
+                this.updateLabels(titleElement, buttonElement, menuBarMenu.label);
+                this._register(DOM.addDisposableListener(buttonElement, DOM.EventType.KEY_UP, (e) => {
+                    const event = new StandardKeyboardEvent(e);
+                    let eventHandled = true;
+                    if ((event.equals(18) || event.equals(3)) && !this.isOpen) {
+                        this.focusedMenu = { index: menuIndex };
+                        this.openedViaKeyboard = true;
+                        this.focusState = MenubarState.OPEN;
+                    }
+                    else {
+                        eventHandled = false;
+                    }
+                    if (eventHandled) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                }));
+                this._register(Gesture.addTarget(buttonElement));
+                this._register(DOM.addDisposableListener(buttonElement, EventType.Tap, (e) => {
+                    if (this.isOpen && this.focusedMenu && this.focusedMenu.holder && DOM.isAncestor(e.initialTarget, this.focusedMenu.holder)) {
+                        return;
+                    }
+                    this.ignoreNextMouseUp = false;
+                    this.onMenuTriggered(menuIndex, true);
+                    e.preventDefault();
+                    e.stopPropagation();
+                }));
+                this._register(DOM.addDisposableListener(buttonElement, DOM.EventType.MOUSE_DOWN, (e) => {
+                    const mouseEvent = new StandardMouseEvent(DOM.getWindow(buttonElement), e);
+                    if (!mouseEvent.leftButton) {
+                        e.preventDefault();
+                        return;
+                    }
+                    if (!this.isOpen) {
+                        this.ignoreNextMouseUp = true;
+                        this.onMenuTriggered(menuIndex, true);
+                    }
+                    else {
+                        this.ignoreNextMouseUp = false;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                }));
+                this._register(DOM.addDisposableListener(buttonElement, DOM.EventType.MOUSE_UP, (e) => {
+                    if (e.defaultPrevented) {
+                        return;
+                    }
+                    if (!this.ignoreNextMouseUp) {
+                        if (this.isFocused) {
+                            this.onMenuTriggered(menuIndex, true);
+                        }
+                    }
+                    else {
+                        this.ignoreNextMouseUp = false;
+                    }
+                }));
+                this._register(DOM.addDisposableListener(buttonElement, DOM.EventType.MOUSE_ENTER, () => {
+                    if (this.isOpen && !this.isCurrentMenu(menuIndex)) {
+                        buttonElement.focus();
+                        this.cleanupCustomMenu();
+                        this.showCustomMenu(menuIndex, false);
+                    }
+                    else if (this.isFocused && !this.isOpen) {
+                        this.focusedMenu = { index: menuIndex };
+                        buttonElement.focus();
+                    }
+                }));
+                this.menus.push({
+                    label: menuBarMenu.label,
+                    actions: menuBarMenu.actions,
+                    buttonElement: buttonElement,
+                    titleElement: titleElement
+                });
+            }
+        });
+    }
+    createOverflowMenu() {
+        const label = this.isCompact ? nls.localize('mAppMenu', 'Application Menu') : nls.localize('mMore', 'More');
+        const buttonElement = $('div.menubar-menu-button', { 'role': 'menuitem', 'tabindex': this.isCompact ? 0 : -1, 'aria-label': label, 'aria-haspopup': true });
+        const titleElement = $('div.menubar-menu-title.toolbar-toggle-more' + ThemeIcon.asCSSSelector(Codicon.menuBarMore), { 'role': 'none', 'aria-hidden': true });
+        buttonElement.appendChild(titleElement);
+        this.container.appendChild(buttonElement);
+        buttonElement.style.visibility = 'hidden';
+        this._register(DOM.addDisposableListener(buttonElement, DOM.EventType.KEY_UP, (e) => {
+            const event = new StandardKeyboardEvent(e);
+            let eventHandled = true;
+            const triggerKeys = [3];
+            if (!this.isCompact) {
+                triggerKeys.push(18);
+            }
+            else {
+                triggerKeys.push(10);
+                if (this.options.compactMode?.horizontal === HorizontalDirection.Right) {
+                    triggerKeys.push(17);
+                }
+                else if (this.options.compactMode?.horizontal === HorizontalDirection.Left) {
+                    triggerKeys.push(15);
+                }
+            }
+            if ((triggerKeys.some(k => event.equals(k)) && !this.isOpen)) {
+                this.focusedMenu = { index: MenuBar.OVERFLOW_INDEX };
+                this.openedViaKeyboard = true;
+                this.focusState = MenubarState.OPEN;
+            }
+            else {
+                eventHandled = false;
+            }
+            if (eventHandled) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }));
+        this._register(Gesture.addTarget(buttonElement));
+        this._register(DOM.addDisposableListener(buttonElement, EventType.Tap, (e) => {
+            if (this.isOpen && this.focusedMenu && this.focusedMenu.holder && DOM.isAncestor(e.initialTarget, this.focusedMenu.holder)) {
+                return;
+            }
+            this.ignoreNextMouseUp = false;
+            this.onMenuTriggered(MenuBar.OVERFLOW_INDEX, true);
+            e.preventDefault();
+            e.stopPropagation();
+        }));
+        this._register(DOM.addDisposableListener(buttonElement, DOM.EventType.MOUSE_DOWN, (e) => {
+            const mouseEvent = new StandardMouseEvent(DOM.getWindow(buttonElement), e);
+            if (!mouseEvent.leftButton) {
+                e.preventDefault();
+                return;
+            }
+            if (!this.isOpen) {
+                this.ignoreNextMouseUp = true;
+                this.onMenuTriggered(MenuBar.OVERFLOW_INDEX, true);
+            }
+            else {
+                this.ignoreNextMouseUp = false;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+        }));
+        this._register(DOM.addDisposableListener(buttonElement, DOM.EventType.MOUSE_UP, (e) => {
+            if (e.defaultPrevented) {
+                return;
+            }
+            if (!this.ignoreNextMouseUp) {
+                if (this.isFocused) {
+                    this.onMenuTriggered(MenuBar.OVERFLOW_INDEX, true);
+                }
+            }
+            else {
+                this.ignoreNextMouseUp = false;
+            }
+        }));
+        this._register(DOM.addDisposableListener(buttonElement, DOM.EventType.MOUSE_ENTER, () => {
+            if (this.isOpen && !this.isCurrentMenu(MenuBar.OVERFLOW_INDEX)) {
+                this.overflowMenu.buttonElement.focus();
+                this.cleanupCustomMenu();
+                this.showCustomMenu(MenuBar.OVERFLOW_INDEX, false);
+            }
+            else if (this.isFocused && !this.isOpen) {
+                this.focusedMenu = { index: MenuBar.OVERFLOW_INDEX };
+                buttonElement.focus();
+            }
+        }));
+        this.overflowMenu = {
+            buttonElement: buttonElement,
+            titleElement: titleElement,
+            label: 'More',
+            actions: []
+        };
+    }
+    updateMenu(menu) {
+        const menuToUpdate = this.menus.filter(menuBarMenu => menuBarMenu.label === menu.label);
+        if (menuToUpdate && menuToUpdate.length) {
+            menuToUpdate[0].actions = menu.actions;
+        }
+    }
+    dispose() {
+        super.dispose();
+        this.menus.forEach(menuBarMenu => {
+            menuBarMenu.titleElement?.remove();
+            menuBarMenu.buttonElement?.remove();
+        });
+        this.overflowMenu.titleElement.remove();
+        this.overflowMenu.buttonElement.remove();
+        dispose(this.overflowLayoutScheduled);
+        this.overflowLayoutScheduled = undefined;
+    }
+    blur() {
+        this.setUnfocusedState();
+    }
+    getWidth() {
+        if (!this.isCompact && this.menus) {
+            const left = this.menus[0].buttonElement.getBoundingClientRect().left;
+            const right = this.hasOverflow ? this.overflowMenu.buttonElement.getBoundingClientRect().right : this.menus[this.menus.length - 1].buttonElement.getBoundingClientRect().right;
+            return right - left;
+        }
+        return 0;
+    }
+    getHeight() {
+        return this.container.clientHeight;
+    }
+    toggleFocus() {
+        if (!this.isFocused && this.options.visibility !== 'hidden') {
+            this.mnemonicsInUse = true;
+            this.focusedMenu = { index: this.numMenusShown > 0 ? 0 : MenuBar.OVERFLOW_INDEX };
+            this.focusState = MenubarState.FOCUSED;
+        }
+        else if (!this.isOpen) {
+            this.setUnfocusedState();
+        }
+    }
+    updateOverflowAction() {
+        if (!this.menus || !this.menus.length) {
+            return;
+        }
+        const overflowMenuOnlyClass = 'overflow-menu-only';
+        this.container.classList.toggle(overflowMenuOnlyClass, false);
+        const sizeAvailable = this.container.offsetWidth;
+        let currentSize = 0;
+        let full = this.isCompact;
+        const prevNumMenusShown = this.numMenusShown;
+        this.numMenusShown = 0;
+        const showableMenus = this.menus.filter(menu => menu.buttonElement !== undefined && menu.titleElement !== undefined);
+        for (const menuBarMenu of showableMenus) {
+            if (!full) {
+                const size = menuBarMenu.buttonElement.offsetWidth;
+                if (currentSize + size > sizeAvailable) {
+                    full = true;
+                }
+                else {
+                    currentSize += size;
+                    this.numMenusShown++;
+                    if (this.numMenusShown > prevNumMenusShown) {
+                        menuBarMenu.buttonElement.style.visibility = 'visible';
+                    }
+                }
+            }
+            if (full) {
+                menuBarMenu.buttonElement.style.visibility = 'hidden';
+            }
+        }
+        if (this.numMenusShown - 1 <= showableMenus.length / 4) {
+            for (const menuBarMenu of showableMenus) {
+                menuBarMenu.buttonElement.style.visibility = 'hidden';
+            }
+            full = true;
+            this.numMenusShown = 0;
+            currentSize = 0;
+        }
+        if (this.isCompact) {
+            this.overflowMenu.actions = [];
+            for (let idx = this.numMenusShown; idx < this.menus.length; idx++) {
+                this.overflowMenu.actions.push(new SubmenuAction(`menubar.submenu.${this.menus[idx].label}`, this.menus[idx].label, this.menus[idx].actions || []));
+            }
+            const compactMenuActions = this.options.getCompactMenuActions?.();
+            if (compactMenuActions && compactMenuActions.length) {
+                this.overflowMenu.actions.push(new Separator());
+                this.overflowMenu.actions.push(...compactMenuActions);
+            }
+            this.overflowMenu.buttonElement.style.visibility = 'visible';
+        }
+        else if (full) {
+            while (currentSize + this.overflowMenu.buttonElement.offsetWidth > sizeAvailable && this.numMenusShown > 0) {
+                this.numMenusShown--;
+                const size = showableMenus[this.numMenusShown].buttonElement.offsetWidth;
+                showableMenus[this.numMenusShown].buttonElement.style.visibility = 'hidden';
+                currentSize -= size;
+            }
+            this.overflowMenu.actions = [];
+            for (let idx = this.numMenusShown; idx < showableMenus.length; idx++) {
+                this.overflowMenu.actions.push(new SubmenuAction(`menubar.submenu.${showableMenus[idx].label}`, showableMenus[idx].label, showableMenus[idx].actions || []));
+            }
+            if (this.overflowMenu.buttonElement.nextElementSibling !== showableMenus[this.numMenusShown].buttonElement) {
+                this.overflowMenu.buttonElement.remove();
+                this.container.insertBefore(this.overflowMenu.buttonElement, showableMenus[this.numMenusShown].buttonElement);
+            }
+            this.overflowMenu.buttonElement.style.visibility = 'visible';
+        }
+        else {
+            this.overflowMenu.buttonElement.remove();
+            this.container.appendChild(this.overflowMenu.buttonElement);
+            this.overflowMenu.buttonElement.style.visibility = 'hidden';
+        }
+        this.container.classList.toggle(overflowMenuOnlyClass, this.numMenusShown === 0);
+    }
+    updateLabels(titleElement, buttonElement, label) {
+        const cleanMenuLabel = cleanMnemonic(label);
+        if (this.options.enableMnemonics) {
+            const cleanLabel = strings.escape(label);
+            MENU_ESCAPED_MNEMONIC_REGEX.lastIndex = 0;
+            let escMatch = MENU_ESCAPED_MNEMONIC_REGEX.exec(cleanLabel);
+            while (escMatch && escMatch[1]) {
+                escMatch = MENU_ESCAPED_MNEMONIC_REGEX.exec(cleanLabel);
+            }
+            const replaceDoubleEscapes = (str) => str.replace(/&amp;&amp;/g, '&amp;');
+            if (escMatch) {
+                titleElement.innerText = '';
+                titleElement.append(strings.ltrim(replaceDoubleEscapes(cleanLabel.substr(0, escMatch.index)), ' '), $('mnemonic', { 'aria-hidden': 'true' }, escMatch[3]), strings.rtrim(replaceDoubleEscapes(cleanLabel.substr(escMatch.index + escMatch[0].length)), ' '));
+            }
+            else {
+                titleElement.innerText = replaceDoubleEscapes(cleanLabel).trim();
+            }
+        }
+        else {
+            titleElement.innerText = cleanMenuLabel.replace(/&&/g, '&');
+        }
+        const mnemonicMatches = MENU_MNEMONIC_REGEX.exec(label);
+        if (mnemonicMatches) {
+            const mnemonic = !!mnemonicMatches[1] ? mnemonicMatches[1] : mnemonicMatches[3];
+            if (this.options.enableMnemonics) {
+                buttonElement.setAttribute('aria-keyshortcuts', 'Alt+' + mnemonic.toLocaleLowerCase());
+            }
+            else {
+                buttonElement.removeAttribute('aria-keyshortcuts');
+            }
+        }
+    }
+    update(options) {
+        if (options) {
+            this.options = options;
+        }
+        if (this.isFocused) {
+            this.updatePending = true;
+            return;
+        }
+        this.menus.forEach(menuBarMenu => {
+            if (!menuBarMenu.buttonElement || !menuBarMenu.titleElement) {
+                return;
+            }
+            this.updateLabels(menuBarMenu.titleElement, menuBarMenu.buttonElement, menuBarMenu.label);
+        });
+        if (!this.overflowLayoutScheduled) {
+            this.overflowLayoutScheduled = DOM.scheduleAtNextAnimationFrame(DOM.getWindow(this.container), () => {
+                this.updateOverflowAction();
+                this.overflowLayoutScheduled = undefined;
+            });
+        }
+        this.setUnfocusedState();
+    }
+    registerMnemonic(menuIndex, mnemonic) {
+        this.mnemonics.set(mnemonic.toLocaleLowerCase(), menuIndex);
+    }
+    hideMenubar() {
+        if (this.container.style.display !== 'none') {
+            this.container.style.display = 'none';
+            this._onVisibilityChange.fire(false);
+        }
+    }
+    showMenubar() {
+        if (this.container.style.display !== 'flex') {
+            this.container.style.display = 'flex';
+            this._onVisibilityChange.fire(true);
+            this.updateOverflowAction();
+        }
+    }
+    get focusState() {
+        return this._focusState;
+    }
+    set focusState(value) {
+        if (this._focusState >= MenubarState.FOCUSED && value < MenubarState.FOCUSED) {
+            if (this.updatePending) {
+                this.menuUpdater.schedule();
+                this.updatePending = false;
+            }
+        }
+        if (value === this._focusState) {
+            return;
+        }
+        const isVisible = this.isVisible;
+        const isOpen = this.isOpen;
+        const isFocused = this.isFocused;
+        this._focusState = value;
+        switch (value) {
+            case MenubarState.HIDDEN:
+                if (isVisible) {
+                    this.hideMenubar();
+                }
+                if (isOpen) {
+                    this.cleanupCustomMenu();
+                }
+                if (isFocused) {
+                    this.focusedMenu = undefined;
+                    if (this.focusToReturn) {
+                        this.focusToReturn.focus();
+                        this.focusToReturn = undefined;
+                    }
+                }
+                break;
+            case MenubarState.VISIBLE:
+                if (!isVisible) {
+                    this.showMenubar();
+                }
+                if (isOpen) {
+                    this.cleanupCustomMenu();
+                }
+                if (isFocused) {
+                    if (this.focusedMenu) {
+                        if (this.focusedMenu.index === MenuBar.OVERFLOW_INDEX) {
+                            this.overflowMenu.buttonElement.blur();
+                        }
+                        else {
+                            this.menus[this.focusedMenu.index].buttonElement?.blur();
+                        }
+                    }
+                    this.focusedMenu = undefined;
+                    if (this.focusToReturn) {
+                        this.focusToReturn.focus();
+                        this.focusToReturn = undefined;
+                    }
+                }
+                break;
+            case MenubarState.FOCUSED:
+                if (!isVisible) {
+                    this.showMenubar();
+                }
+                if (isOpen) {
+                    this.cleanupCustomMenu();
+                }
+                if (this.focusedMenu) {
+                    if (this.focusedMenu.index === MenuBar.OVERFLOW_INDEX) {
+                        this.overflowMenu.buttonElement.focus();
+                    }
+                    else {
+                        this.menus[this.focusedMenu.index].buttonElement?.focus();
+                    }
+                }
+                break;
+            case MenubarState.OPEN:
+                if (!isVisible) {
+                    this.showMenubar();
+                }
+                if (this.focusedMenu) {
+                    this.cleanupCustomMenu();
+                    this.showCustomMenu(this.focusedMenu.index, this.openedViaKeyboard);
+                }
+                break;
+        }
+        this._focusState = value;
+        this._onFocusStateChange.fire(this.focusState >= MenubarState.FOCUSED);
+    }
+    get isVisible() {
+        return this.focusState >= MenubarState.VISIBLE;
+    }
+    get isFocused() {
+        return this.focusState >= MenubarState.FOCUSED;
+    }
+    get isOpen() {
+        return this.focusState >= MenubarState.OPEN;
+    }
+    get hasOverflow() {
+        return this.isCompact || this.numMenusShown < this.menus.length;
+    }
+    get isCompact() {
+        return this.options.compactMode !== undefined;
+    }
+    setUnfocusedState() {
+        if (this.options.visibility === 'toggle' || this.options.visibility === 'hidden') {
+            this.focusState = MenubarState.HIDDEN;
+        }
+        else if (this.options.visibility === 'classic' && browser.isFullscreen(mainWindow)) {
+            this.focusState = MenubarState.HIDDEN;
+        }
+        else {
+            this.focusState = MenubarState.VISIBLE;
+        }
+        this.ignoreNextMouseUp = false;
+        this.mnemonicsInUse = false;
+        this.updateMnemonicVisibility(false);
+    }
+    focusPrevious() {
+        if (!this.focusedMenu || this.numMenusShown === 0) {
+            return;
+        }
+        let newFocusedIndex = (this.focusedMenu.index - 1 + this.numMenusShown) % this.numMenusShown;
+        if (this.focusedMenu.index === MenuBar.OVERFLOW_INDEX) {
+            newFocusedIndex = this.numMenusShown - 1;
+        }
+        else if (this.focusedMenu.index === 0 && this.hasOverflow) {
+            newFocusedIndex = MenuBar.OVERFLOW_INDEX;
+        }
+        if (newFocusedIndex === this.focusedMenu.index) {
+            return;
+        }
+        if (this.isOpen) {
+            this.cleanupCustomMenu();
+            this.showCustomMenu(newFocusedIndex);
+        }
+        else if (this.isFocused) {
+            this.focusedMenu.index = newFocusedIndex;
+            if (newFocusedIndex === MenuBar.OVERFLOW_INDEX) {
+                this.overflowMenu.buttonElement.focus();
+            }
+            else {
+                this.menus[newFocusedIndex].buttonElement?.focus();
+            }
+        }
+    }
+    focusNext() {
+        if (!this.focusedMenu || this.numMenusShown === 0) {
+            return;
+        }
+        let newFocusedIndex = (this.focusedMenu.index + 1) % this.numMenusShown;
+        if (this.focusedMenu.index === MenuBar.OVERFLOW_INDEX) {
+            newFocusedIndex = 0;
+        }
+        else if (this.focusedMenu.index === this.numMenusShown - 1) {
+            newFocusedIndex = MenuBar.OVERFLOW_INDEX;
+        }
+        if (newFocusedIndex === this.focusedMenu.index) {
+            return;
+        }
+        if (this.isOpen) {
+            this.cleanupCustomMenu();
+            this.showCustomMenu(newFocusedIndex);
+        }
+        else if (this.isFocused) {
+            this.focusedMenu.index = newFocusedIndex;
+            if (newFocusedIndex === MenuBar.OVERFLOW_INDEX) {
+                this.overflowMenu.buttonElement.focus();
+            }
+            else {
+                this.menus[newFocusedIndex].buttonElement?.focus();
+            }
+        }
+    }
+    updateMnemonicVisibility(visible) {
+        if (this.menus) {
+            this.menus.forEach(menuBarMenu => {
+                if (menuBarMenu.titleElement && menuBarMenu.titleElement.children.length) {
+                    const child = menuBarMenu.titleElement.children.item(0);
+                    if (child) {
+                        child.style.textDecoration = (this.options.alwaysOnMnemonics || visible) ? 'underline' : '';
+                    }
+                }
+            });
+        }
+    }
+    get mnemonicsInUse() {
+        return this._mnemonicsInUse;
+    }
+    set mnemonicsInUse(value) {
+        this._mnemonicsInUse = value;
+    }
+    get shouldAltKeyFocus() {
+        if (isMacintosh) {
+            return false;
+        }
+        if (!this.options.disableAltFocus) {
+            return true;
+        }
+        if (this.options.visibility === 'toggle') {
+            return true;
+        }
+        return false;
+    }
+    get onVisibilityChange() {
+        return this._onVisibilityChange.event;
+    }
+    get onFocusStateChange() {
+        return this._onFocusStateChange.event;
+    }
+    onMenuTriggered(menuIndex, clicked) {
+        if (this.isOpen) {
+            if (this.isCurrentMenu(menuIndex)) {
+                this.setUnfocusedState();
+            }
+            else {
+                this.cleanupCustomMenu();
+                this.showCustomMenu(menuIndex, this.openedViaKeyboard);
+            }
+        }
+        else {
+            this.focusedMenu = { index: menuIndex };
+            this.openedViaKeyboard = !clicked;
+            this.focusState = MenubarState.OPEN;
+        }
+    }
+    onModifierKeyToggled(modifierKeyStatus) {
+        const allModifiersReleased = !modifierKeyStatus.altKey && !modifierKeyStatus.ctrlKey && !modifierKeyStatus.shiftKey && !modifierKeyStatus.metaKey;
+        if (this.options.visibility === 'hidden') {
+            return;
+        }
+        if (modifierKeyStatus.event && this.shouldAltKeyFocus) {
+            if (ScanCodeUtils.toEnum(modifierKeyStatus.event.code) === 159) {
+                modifierKeyStatus.event.preventDefault();
+            }
+        }
+        if (this.isFocused && modifierKeyStatus.lastKeyPressed === 'alt' && modifierKeyStatus.altKey) {
+            this.setUnfocusedState();
+            this.mnemonicsInUse = false;
+            this.awaitingAltRelease = true;
+        }
+        if (allModifiersReleased && modifierKeyStatus.lastKeyPressed === 'alt' && modifierKeyStatus.lastKeyReleased === 'alt') {
+            if (!this.awaitingAltRelease) {
+                if (!this.isFocused && this.shouldAltKeyFocus) {
+                    this.mnemonicsInUse = true;
+                    this.focusedMenu = { index: this.numMenusShown > 0 ? 0 : MenuBar.OVERFLOW_INDEX };
+                    this.focusState = MenubarState.FOCUSED;
+                }
+                else if (!this.isOpen) {
+                    this.setUnfocusedState();
+                }
+            }
+        }
+        if (!modifierKeyStatus.altKey && modifierKeyStatus.lastKeyReleased === 'alt') {
+            this.awaitingAltRelease = false;
+        }
+        if (this.options.enableMnemonics && this.menus && !this.isOpen) {
+            this.updateMnemonicVisibility((!this.awaitingAltRelease && modifierKeyStatus.altKey) || this.mnemonicsInUse);
+        }
+    }
+    isCurrentMenu(menuIndex) {
+        if (!this.focusedMenu) {
+            return false;
+        }
+        return this.focusedMenu.index === menuIndex;
+    }
+    cleanupCustomMenu() {
+        if (this.focusedMenu) {
+            if (this.focusedMenu.index === MenuBar.OVERFLOW_INDEX) {
+                this.overflowMenu.buttonElement.focus();
+            }
+            else {
+                this.menus[this.focusedMenu.index].buttonElement?.focus();
+            }
+            if (this.focusedMenu.holder) {
+                this.focusedMenu.holder.parentElement?.classList.remove('open');
+                this.focusedMenu.holder.remove();
+            }
+            this.focusedMenu.widget?.dispose();
+            this.focusedMenu = { index: this.focusedMenu.index };
+        }
+        this.menuDisposables.clear();
+    }
+    showCustomMenu(menuIndex, selectFirst = true) {
+        const actualMenuIndex = menuIndex >= this.numMenusShown ? MenuBar.OVERFLOW_INDEX : menuIndex;
+        const customMenu = actualMenuIndex === MenuBar.OVERFLOW_INDEX ? this.overflowMenu : this.menus[actualMenuIndex];
+        if (!customMenu.actions || !customMenu.buttonElement || !customMenu.titleElement) {
+            return;
+        }
+        const menuHolder = $('div.menubar-menu-items-holder', { 'title': '' });
+        customMenu.buttonElement.classList.add('open');
+        const titleBoundingRect = customMenu.titleElement.getBoundingClientRect();
+        const titleBoundingRectZoom = DOM.getDomNodeZoomLevel(customMenu.titleElement);
+        if (this.options.compactMode?.horizontal === HorizontalDirection.Right) {
+            menuHolder.style.left = `${titleBoundingRect.left + this.container.clientWidth}px`;
+        }
+        else if (this.options.compactMode?.horizontal === HorizontalDirection.Left) {
+            const windowWidth = DOM.getWindow(this.container).innerWidth;
+            menuHolder.style.right = `${windowWidth - titleBoundingRect.left}px`;
+            menuHolder.style.left = 'auto';
+        }
+        else {
+            menuHolder.style.left = `${titleBoundingRect.left * titleBoundingRectZoom}px`;
+        }
+        if (this.options.compactMode?.vertical === VerticalDirection.Above) {
+            menuHolder.style.top = `${titleBoundingRect.top - this.menus.length * 30 + this.container.clientHeight}px`;
+        }
+        else if (this.options.compactMode?.vertical === VerticalDirection.Below) {
+            menuHolder.style.top = `${titleBoundingRect.top}px`;
+        }
+        else {
+            menuHolder.style.top = `${titleBoundingRect.bottom * titleBoundingRectZoom}px`;
+        }
+        customMenu.buttonElement.appendChild(menuHolder);
+        const menuOptions = {
+            getKeyBinding: this.options.getKeybinding,
+            actionRunner: this.actionRunner,
+            enableMnemonics: this.options.alwaysOnMnemonics || (this.mnemonicsInUse && this.options.enableMnemonics),
+            ariaLabel: customMenu.buttonElement.getAttribute('aria-label') ?? undefined,
+            expandDirection: this.isCompact ? this.options.compactMode : { horizontal: HorizontalDirection.Right, vertical: VerticalDirection.Below },
+            useEventAsContext: true
+        };
+        const menuWidget = this.menuDisposables.add(new Menu(menuHolder, customMenu.actions, menuOptions, this.menuStyle));
+        this.menuDisposables.add(menuWidget.onDidCancel(() => {
+            this.focusState = MenubarState.FOCUSED;
+        }));
+        if (actualMenuIndex !== menuIndex) {
+            menuWidget.trigger(menuIndex - this.numMenusShown);
+        }
+        else {
+            menuWidget.focus(selectFirst);
+        }
+        this.focusedMenu = {
+            index: actualMenuIndex,
+            holder: menuHolder,
+            widget: menuWidget
+        };
+    }
+}

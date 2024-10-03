@@ -1,1 +1,40 @@
-import{isCancellationError as s,isSigPipeError as c,onUnexpectedError as i,setUnexpectedErrorHandler as d}from"../../../base/common/errors.js";import a from"../common/errorTelemetry.js";class l extends a{installErrorListeners(){d(e=>{});const o=[];process.on("unhandledRejection",(e,r)=>{o.push(r),setTimeout(()=>{const n=o.indexOf(r);n>=0&&r.catch(t=>{o.splice(n,1),s(t)||(t.stack,e&&i(e))})},1e3)}),process.on("rejectionHandled",e=>{const r=o.indexOf(e);r>=0&&o.splice(r,1)}),process.on("uncaughtException",e=>{c(e)||i(e)})}}export{l as default};
+import { isCancellationError, isSigPipeError, onUnexpectedError, setUnexpectedErrorHandler } from '../../../base/common/errors.js';
+import BaseErrorTelemetry from '../common/errorTelemetry.js';
+export default class ErrorTelemetry extends BaseErrorTelemetry {
+    installErrorListeners() {
+        setUnexpectedErrorHandler(err => console.error(err));
+        const unhandledPromises = [];
+        process.on('unhandledRejection', (reason, promise) => {
+            unhandledPromises.push(promise);
+            setTimeout(() => {
+                const idx = unhandledPromises.indexOf(promise);
+                if (idx >= 0) {
+                    promise.catch(e => {
+                        unhandledPromises.splice(idx, 1);
+                        if (!isCancellationError(e)) {
+                            console.warn(`rejected promise not handled within 1 second: ${e}`);
+                            if (e.stack) {
+                                console.warn(`stack trace: ${e.stack}`);
+                            }
+                            if (reason) {
+                                onUnexpectedError(reason);
+                            }
+                        }
+                    });
+                }
+            }, 1000);
+        });
+        process.on('rejectionHandled', (promise) => {
+            const idx = unhandledPromises.indexOf(promise);
+            if (idx >= 0) {
+                unhandledPromises.splice(idx, 1);
+            }
+        });
+        process.on('uncaughtException', (err) => {
+            if (isSigPipeError(err)) {
+                return;
+            }
+            onUnexpectedError(err);
+        });
+    }
+}

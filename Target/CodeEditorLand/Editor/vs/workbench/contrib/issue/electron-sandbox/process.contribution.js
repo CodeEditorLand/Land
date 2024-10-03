@@ -1,1 +1,73 @@
-import{localize as r,localize2 as s}from"../../../../nls.js";import{MenuRegistry as S,MenuId as f,registerAction2 as n,Action2 as c}from"../../../../platform/actions/common/actions.js";import{IWorkbenchProcessService as y}from"../common/issue.js";import{CommandsRegistry as I}from"../../../../platform/commands/common/commands.js";import{Categories as a}from"../../../../platform/action/common/actionCommonCategories.js";import"../../../../platform/instantiation/common/instantiation.js";import{INativeEnvironmentService as P}from"../../../../platform/environment/common/environment.js";import{IDialogService as T}from"../../../../platform/dialogs/common/dialogs.js";import{INativeHostService as h}from"../../../../platform/native/common/native.js";import{IProgressService as D,ProgressLocation as x}from"../../../../platform/progress/common/progress.js";import{IProcessMainService as m}from"../../../../platform/issue/common/issue.js";import"./processService.js";import"./issueMainService.js";class o extends c{static ID="workbench.action.openProcessExplorer";constructor(){super({id:o.ID,title:s("openProcessExplorer","Open Process Explorer"),category:a.Developer,f1:!0})}async run(e){return e.get(y).openProcessExplorer()}}n(o),S.appendMenuItem(f.MenubarHelpMenu,{group:"5_tools",command:{id:o.ID,title:r({key:"miOpenProcessExplorerer",comment:["&& denotes a mnemonic"]},"Open &&Process Explorer")},order:2});class t extends c{static ID="workbench.action.stopTracing";constructor(){super({id:t.ID,title:s("stopTracing","Stop Tracing"),category:a.Developer,f1:!0})}async run(e){const i=e.get(m),g=e.get(P),l=e.get(T),u=e.get(h),v=e.get(D);if(!g.args.trace){const{confirmed:d}=await l.confirm({message:r("stopTracing.message","Tracing requires to launch with a '--trace' argument"),primaryButton:r({key:"stopTracing.button",comment:["&& denotes a mnemonic"]},"&&Relaunch and Enable Tracing")});if(d)return u.relaunch({addArgs:["--trace"]})}await v.withProgress({location:x.Dialog,title:r("stopTracing.title","Creating trace file..."),cancellable:!1,detail:r("stopTracing.detail","This can take up to one minute to complete.")},()=>i.stopTracing())}}n(t),I.registerCommand("_issues.getSystemStatus",p=>p.get(m).getSystemStatus());
+import { localize, localize2 } from '../../../../nls.js';
+import { MenuRegistry, MenuId, registerAction2, Action2 } from '../../../../platform/actions/common/actions.js';
+import { IWorkbenchProcessService } from '../common/issue.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
+import { INativeEnvironmentService } from '../../../../platform/environment/common/environment.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { IProgressService } from '../../../../platform/progress/common/progress.js';
+import { IProcessMainService } from '../../../../platform/issue/common/issue.js';
+import './processService.js';
+import './issueMainService.js';
+class OpenProcessExplorer extends Action2 {
+    static { this.ID = 'workbench.action.openProcessExplorer'; }
+    constructor() {
+        super({
+            id: OpenProcessExplorer.ID,
+            title: localize2('openProcessExplorer', 'Open Process Explorer'),
+            category: Categories.Developer,
+            f1: true
+        });
+    }
+    async run(accessor) {
+        const processService = accessor.get(IWorkbenchProcessService);
+        return processService.openProcessExplorer();
+    }
+}
+registerAction2(OpenProcessExplorer);
+MenuRegistry.appendMenuItem(MenuId.MenubarHelpMenu, {
+    group: '5_tools',
+    command: {
+        id: OpenProcessExplorer.ID,
+        title: localize({ key: 'miOpenProcessExplorerer', comment: ['&& denotes a mnemonic'] }, "Open &&Process Explorer")
+    },
+    order: 2
+});
+class StopTracing extends Action2 {
+    static { this.ID = 'workbench.action.stopTracing'; }
+    constructor() {
+        super({
+            id: StopTracing.ID,
+            title: localize2('stopTracing', 'Stop Tracing'),
+            category: Categories.Developer,
+            f1: true
+        });
+    }
+    async run(accessor) {
+        const processService = accessor.get(IProcessMainService);
+        const environmentService = accessor.get(INativeEnvironmentService);
+        const dialogService = accessor.get(IDialogService);
+        const nativeHostService = accessor.get(INativeHostService);
+        const progressService = accessor.get(IProgressService);
+        if (!environmentService.args.trace) {
+            const { confirmed } = await dialogService.confirm({
+                message: localize('stopTracing.message', "Tracing requires to launch with a '--trace' argument"),
+                primaryButton: localize({ key: 'stopTracing.button', comment: ['&& denotes a mnemonic'] }, "&&Relaunch and Enable Tracing"),
+            });
+            if (confirmed) {
+                return nativeHostService.relaunch({ addArgs: ['--trace'] });
+            }
+        }
+        await progressService.withProgress({
+            location: 20,
+            title: localize('stopTracing.title', "Creating trace file..."),
+            cancellable: false,
+            detail: localize('stopTracing.detail', "This can take up to one minute to complete.")
+        }, () => processService.stopTracing());
+    }
+}
+registerAction2(StopTracing);
+CommandsRegistry.registerCommand('_issues.getSystemStatus', (accessor) => {
+    return accessor.get(IProcessMainService).getSystemStatus();
+});

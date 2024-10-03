@@ -1,1 +1,2 @@
-const o="rendererLog",n="workbench.action.showWindowLog";export{n as showWindowLogActionId,o as windowLogId};
+export const windowLogId = 'rendererLog';
+export const showWindowLogActionId = 'workbench.action.showWindowLog';

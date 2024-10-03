@@ -1,1 +1,185 @@
-import*as f from"../../../base/browser/dom.js";import{RunOnceScheduler as h}from"../../../base/common/async.js";import{VSBuffer as S}from"../../../base/common/buffer.js";import{Emitter as u}from"../../../base/common/event.js";import{Disposable as p}from"../../../base/common/lifecycle.js";import{SocketCloseEventType as _,SocketDiagnostics as v,SocketDiagnosticsEventType as n}from"../../../base/parts/ipc/common/ipc.net.js";import"../common/remoteSocketFactoryService.js";import{RemoteAuthorityResolverError as y,RemoteAuthorityResolverErrorCode as b}from"../common/remoteAuthorityResolver.js";import{mainWindow as E}from"../../../base/browser/window.js";class g extends p{_onData=new u;onData=this._onData.event;_onOpen=this._register(new u);onOpen=this._onOpen.event;_onClose=this._register(new u);onClose=this._onClose.event;_onError=this._register(new u);onError=this._onError.event;_debugLabel;_socket;_fileReader;_queue;_isReading;_isClosed;_socketMessageListener;traceSocketEvent(t,o){v.traceSocketEvent(this._socket,this._debugLabel,t,o)}constructor(t,o){super(),this._debugLabel=o,this._socket=new WebSocket(t),this.traceSocketEvent(n.Created,{type:"BrowserWebSocket",url:t}),this._fileReader=new FileReader,this._queue=[],this._isReading=!1,this._isClosed=!1,this._fileReader.onload=e=>{this._isReading=!1;const s=e.target.result;this.traceSocketEvent(n.Read,s),this._onData.fire(s),this._queue.length>0&&r(this._queue.shift())};const r=e=>{if(this._isReading){this._queue.push(e);return}this._isReading=!0,this._fileReader.readAsArrayBuffer(e)};this._socketMessageListener=e=>{const s=e.data;this.traceSocketEvent(n.BrowserWebSocketBlobReceived,{type:s.type,size:s.size}),r(s)},this._socket.addEventListener("message",this._socketMessageListener),this._register(f.addDisposableListener(this._socket,"open",e=>{this.traceSocketEvent(n.Open),this._onOpen.fire()}));let i=null;const a=()=>{const e=i;i=null,this._onError.fire(e)},c=this._register(new h(a,0)),k=e=>{c.cancel(),i=e,c.schedule()},d=e=>{c.cancel(),i=e,a()};this._register(f.addDisposableListener(this._socket,"close",e=>{this.traceSocketEvent(n.Close,{code:e.code,reason:e.reason,wasClean:e.wasClean}),this._isClosed=!0,i&&(navigator.onLine?e.wasClean?(c.cancel(),a()):d(new y(e.reason||`WebSocket close with status code ${e.code}`,b.TemporarilyNotAvailable,e)):d(new y("Browser is offline",b.TemporarilyNotAvailable,e))),this._onClose.fire({code:e.code,reason:e.reason,wasClean:e.wasClean,event:e})})),this._register(f.addDisposableListener(this._socket,"error",e=>{this.traceSocketEvent(n.Error,{message:e?.message}),k(e)}))}send(t){this._isClosed||(this.traceSocketEvent(n.Write,t),this._socket.send(t))}close(){this._isClosed=!0,this.traceSocketEvent(n.Close),this._socket.close(),this._socket.removeEventListener("message",this._socketMessageListener),this.dispose()}}const m=new class{create(l,t){return new g(l,t)}};class w{socket;debugLabel;traceSocketEvent(t,o){typeof this.socket.traceSocketEvent=="function"?this.socket.traceSocketEvent(t,o):v.traceSocketEvent(this.socket,this.debugLabel,t,o)}constructor(t,o){this.socket=t,this.debugLabel=o}dispose(){this.socket.close()}onData(t){return this.socket.onData(o=>t(S.wrap(new Uint8Array(o))))}onClose(t){const o=r=>{t(typeof r>"u"?r:{type:_.WebSocketCloseEvent,code:r.code,reason:r.reason,wasClean:r.wasClean,event:r.event})};return this.socket.onClose(o)}onEnd(t){return p.None}write(t){this.socket.send(t.buffer)}end(){this.socket.close()}drain(){return Promise.resolve()}}class x{_webSocketFactory;constructor(t){this._webSocketFactory=t||m}supports(t){return!0}connect({host:t,port:o},r,i,a){return new Promise((c,k)=>{const d=/^https:/.test(E.location.href)?"wss":"ws",e=this._webSocketFactory.create(`${d}://${/:/.test(t)&&!/\[/.test(t)?`[${t}]`:t}:${o}${r}?${i}&skipWebSocketFrames=false`,a),s=e.onError(k);e.onOpen(()=>{s.dispose(),c(new w(e,a))})})}}export{x as BrowserSocketFactory};
+import * as dom from '../../../base/browser/dom.js';
+import { RunOnceScheduler } from '../../../base/common/async.js';
+import { VSBuffer } from '../../../base/common/buffer.js';
+import { Emitter } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { SocketDiagnostics } from '../../../base/parts/ipc/common/ipc.net.js';
+import { RemoteAuthorityResolverError, RemoteAuthorityResolverErrorCode } from '../common/remoteAuthorityResolver.js';
+import { mainWindow } from '../../../base/browser/window.js';
+class BrowserWebSocket extends Disposable {
+    traceSocketEvent(type, data) {
+        SocketDiagnostics.traceSocketEvent(this._socket, this._debugLabel, type, data);
+    }
+    constructor(url, debugLabel) {
+        super();
+        this._onData = new Emitter();
+        this.onData = this._onData.event;
+        this._onOpen = this._register(new Emitter());
+        this.onOpen = this._onOpen.event;
+        this._onClose = this._register(new Emitter());
+        this.onClose = this._onClose.event;
+        this._onError = this._register(new Emitter());
+        this.onError = this._onError.event;
+        this._debugLabel = debugLabel;
+        this._socket = new WebSocket(url);
+        this.traceSocketEvent("created", { type: 'BrowserWebSocket', url });
+        this._fileReader = new FileReader();
+        this._queue = [];
+        this._isReading = false;
+        this._isClosed = false;
+        this._fileReader.onload = (event) => {
+            this._isReading = false;
+            const buff = event.target.result;
+            this.traceSocketEvent("read", buff);
+            this._onData.fire(buff);
+            if (this._queue.length > 0) {
+                enqueue(this._queue.shift());
+            }
+        };
+        const enqueue = (blob) => {
+            if (this._isReading) {
+                this._queue.push(blob);
+                return;
+            }
+            this._isReading = true;
+            this._fileReader.readAsArrayBuffer(blob);
+        };
+        this._socketMessageListener = (ev) => {
+            const blob = ev.data;
+            this.traceSocketEvent("browserWebSocketBlobReceived", { type: blob.type, size: blob.size });
+            enqueue(blob);
+        };
+        this._socket.addEventListener('message', this._socketMessageListener);
+        this._register(dom.addDisposableListener(this._socket, 'open', (e) => {
+            this.traceSocketEvent("open");
+            this._onOpen.fire();
+        }));
+        let pendingErrorEvent = null;
+        const sendPendingErrorNow = () => {
+            const err = pendingErrorEvent;
+            pendingErrorEvent = null;
+            this._onError.fire(err);
+        };
+        const errorRunner = this._register(new RunOnceScheduler(sendPendingErrorNow, 0));
+        const sendErrorSoon = (err) => {
+            errorRunner.cancel();
+            pendingErrorEvent = err;
+            errorRunner.schedule();
+        };
+        const sendErrorNow = (err) => {
+            errorRunner.cancel();
+            pendingErrorEvent = err;
+            sendPendingErrorNow();
+        };
+        this._register(dom.addDisposableListener(this._socket, 'close', (e) => {
+            this.traceSocketEvent("close", { code: e.code, reason: e.reason, wasClean: e.wasClean });
+            this._isClosed = true;
+            if (pendingErrorEvent) {
+                if (!navigator.onLine) {
+                    sendErrorNow(new RemoteAuthorityResolverError('Browser is offline', RemoteAuthorityResolverErrorCode.TemporarilyNotAvailable, e));
+                }
+                else {
+                    if (!e.wasClean) {
+                        sendErrorNow(new RemoteAuthorityResolverError(e.reason || `WebSocket close with status code ${e.code}`, RemoteAuthorityResolverErrorCode.TemporarilyNotAvailable, e));
+                    }
+                    else {
+                        errorRunner.cancel();
+                        sendPendingErrorNow();
+                    }
+                }
+            }
+            this._onClose.fire({ code: e.code, reason: e.reason, wasClean: e.wasClean, event: e });
+        }));
+        this._register(dom.addDisposableListener(this._socket, 'error', (err) => {
+            this.traceSocketEvent("error", { message: err?.message });
+            sendErrorSoon(err);
+        }));
+    }
+    send(data) {
+        if (this._isClosed) {
+            return;
+        }
+        this.traceSocketEvent("write", data);
+        this._socket.send(data);
+    }
+    close() {
+        this._isClosed = true;
+        this.traceSocketEvent("close");
+        this._socket.close();
+        this._socket.removeEventListener('message', this._socketMessageListener);
+        this.dispose();
+    }
+}
+const defaultWebSocketFactory = new class {
+    create(url, debugLabel) {
+        return new BrowserWebSocket(url, debugLabel);
+    }
+};
+class BrowserSocket {
+    traceSocketEvent(type, data) {
+        if (typeof this.socket.traceSocketEvent === 'function') {
+            this.socket.traceSocketEvent(type, data);
+        }
+        else {
+            SocketDiagnostics.traceSocketEvent(this.socket, this.debugLabel, type, data);
+        }
+    }
+    constructor(socket, debugLabel) {
+        this.socket = socket;
+        this.debugLabel = debugLabel;
+    }
+    dispose() {
+        this.socket.close();
+    }
+    onData(listener) {
+        return this.socket.onData((data) => listener(VSBuffer.wrap(new Uint8Array(data))));
+    }
+    onClose(listener) {
+        const adapter = (e) => {
+            if (typeof e === 'undefined') {
+                listener(e);
+            }
+            else {
+                listener({
+                    type: 1,
+                    code: e.code,
+                    reason: e.reason,
+                    wasClean: e.wasClean,
+                    event: e.event
+                });
+            }
+        };
+        return this.socket.onClose(adapter);
+    }
+    onEnd(listener) {
+        return Disposable.None;
+    }
+    write(buffer) {
+        this.socket.send(buffer.buffer);
+    }
+    end() {
+        this.socket.close();
+    }
+    drain() {
+        return Promise.resolve();
+    }
+}
+export class BrowserSocketFactory {
+    constructor(webSocketFactory) {
+        this._webSocketFactory = webSocketFactory || defaultWebSocketFactory;
+    }
+    supports(connectTo) {
+        return true;
+    }
+    connect({ host, port }, path, query, debugLabel) {
+        return new Promise((resolve, reject) => {
+            const webSocketSchema = (/^https:/.test(mainWindow.location.href) ? 'wss' : 'ws');
+            const socket = this._webSocketFactory.create(`${webSocketSchema}://${(/:/.test(host) && !/\[/.test(host)) ? `[${host}]` : host}:${port}${path}?${query}&skipWebSocketFrames=false`, debugLabel);
+            const errorListener = socket.onError(reject);
+            socket.onOpen(() => {
+                errorListener.dispose();
+                resolve(new BrowserSocket(socket, debugLabel));
+            });
+        });
+    }
+}

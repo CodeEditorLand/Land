@@ -1,1 +1,195 @@
-var M=Object.defineProperty;var y=Object.getOwnPropertyDescriptor;var I=(p,d,i,e)=>{for(var t=e>1?void 0:e?y(d,i):d,n=p.length-1,r;n>=0;n--)(r=p[n])&&(t=(e?r(d,i,t):r(t))||t);return e&&t&&M(d,i,t),t},T=(p,d)=>(i,e)=>d(i,e,p);import{Disposable as S,toDisposable as w}from"../../../../base/common/lifecycle.js";import{derived as L,observableFromEvent as _,observableValue as E}from"../../../../base/common/observable.js";import"./inlineEdit.css";import"../../../browser/editorBrowser.js";import{Position as O}from"../../../common/core/position.js";import{Range as v}from"../../../common/core/range.js";import{ILanguageService as P}from"../../../common/languages/language.js";import{InjectedTextCursorStops as W}from"../../../common/model.js";import{LineDecoration as N}from"../../../common/viewLayout/lineDecorations.js";import{InlineDecorationType as C}from"../../../common/viewModel.js";import{AdditionalLinesWidget as k}from"../../inlineCompletions/browser/view/ghostText/ghostTextView.js";import"../../inlineCompletions/browser/model/ghostText.js";import{ColumnRange as A}from"../../inlineCompletions/browser/utils.js";import{diffDeleteDecoration as B,diffLineDeleteDecorationBackgroundWithIndicator as F}from"../../../browser/widget/diffEditor/registrations.contribution.js";import{LineTokens as V}from"../../../common/tokens/lineTokens.js";import{observableCodeEditor as Z}from"../../../browser/observableCodeEditor.js";const x="inline-edit";let h=class extends S{constructor(i,e,t){super();this._editor=i;this.model=e;this.languageService=t;this._register(w(()=>{this.isDisposed.set(!0,void 0)})),this._register(this._editorObs.setDecorations(this.decorations))}isDisposed=E(this,!1);currentTextModel=_(this,this._editor.onDidChangeModel,()=>this._editor.getModel());_editorObs=Z(this._editor);uiState=L(this,i=>{if(this.isDisposed.read(i))return;const e=this.currentTextModel.read(i);if(e!==this.model.targetTextModel.read(i))return;const t=this.model.ghostText.read(i);if(!t)return;let n=this.model.range?.read(i);n&&n.startLineNumber===n.endLineNumber&&n.startColumn===n.endColumn&&(n=void 0);const r=(n?n.startLineNumber===n.endLineNumber:!0)&&t.parts.length===1&&t.parts[0].lines.length===1,g=t.parts.length===1&&t.parts[0].lines.every(o=>o.length===0),a=[],l=[];function c(o,s){if(l.length>0){const u=l[l.length-1];s&&u.decorations.push(new N(u.content.length+1,u.content.length+1+o[0].length,s,C.Regular)),u.content+=o[0],o=o.slice(1)}for(const u of o)l.push({content:u,decorations:s?[new N(1,u.length+1,s,C.Regular)]:[]})}const m=e.getLineContent(t.lineNumber);let f,b=0;if(!g&&(r||!n)){for(const o of t.parts){let s=o.lines;n&&!r&&(c(s,x),s=[]),f===void 0?(a.push({column:o.column,text:s[0],preview:o.preview}),s=s.slice(1)):c([m.substring(b,o.column-1)],void 0),s.length>0&&(c(s,x),f===void 0&&o.column<=m.length&&(f=o.column)),b=o.column-1}f!==void 0&&c([m.substring(b)],void 0)}const D=f!==void 0?new A(f,m.length+1):void 0,R=r||!n?t.lineNumber:n.endLineNumber-1;return{inlineTexts:a,additionalLines:l,hiddenRange:D,lineNumber:R,additionalReservedLineCount:this.model.minReservedLineCount.read(i),targetTextModel:e,range:n,isSingleLine:r,isPureRemove:g}});decorations=L(this,i=>{const e=this.uiState.read(i);if(!e)return[];const t=[];if(e.hiddenRange&&t.push({range:e.hiddenRange.toRange(e.lineNumber),options:{inlineClassName:"inline-edit-hidden",description:"inline-edit-hidden"}}),e.range){const n=[];if(e.isSingleLine)n.push(e.range);else if(!e.isPureRemove){const r=e.range.endLineNumber-e.range.startLineNumber;for(let g=0;g<r;g++){const a=e.range.startLineNumber+g,l=e.targetTextModel.getLineFirstNonWhitespaceColumn(a),c=e.targetTextModel.getLineLastNonWhitespaceColumn(a),m=new v(a,l,a,c);n.push(m)}}for(const r of n)t.push({range:r,options:B})}if(e.range&&!e.isSingleLine&&e.isPureRemove){const n=new v(e.range.startLineNumber,1,e.range.endLineNumber-1,1);t.push({range:n,options:F})}for(const n of e.inlineTexts)t.push({range:v.fromPositions(new O(e.lineNumber,n.column)),options:{description:x,after:{content:n.text,inlineClassName:n.preview?"inline-edit-decoration-preview":"inline-edit-decoration",cursorStops:W.Left},showIfCollapsed:!0}});return t});additionalLinesWidget=this._register(new k(this._editor,L(i=>{const e=this.uiState.read(i);return e&&!e.isPureRemove&&(e.isSingleLine||!e.range)?{lineNumber:e.lineNumber,additionalLines:e.additionalLines.map(t=>({content:V.createEmpty(t.content,this.languageService.languageIdCodec),decorations:t.decorations})),minReservedLineCount:e.additionalReservedLineCount,targetTextModel:e.targetTextModel}:void 0})));ownsViewZone(i){return this.additionalLinesWidget.viewZoneId===i}};h=I([T(2,P)],h);export{h as GhostTextWidget,x as INLINE_EDIT_DESCRIPTION};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { derived, observableFromEvent, observableValue } from '../../../../base/common/observable.js';
+import './inlineEdit.css';
+import { Position } from '../../../common/core/position.js';
+import { Range } from '../../../common/core/range.js';
+import { ILanguageService } from '../../../common/languages/language.js';
+import { InjectedTextCursorStops } from '../../../common/model.js';
+import { LineDecoration } from '../../../common/viewLayout/lineDecorations.js';
+import { AdditionalLinesWidget } from '../../inlineCompletions/browser/view/ghostText/ghostTextView.js';
+import { ColumnRange } from '../../inlineCompletions/browser/utils.js';
+import { diffDeleteDecoration, diffLineDeleteDecorationBackgroundWithIndicator } from '../../../browser/widget/diffEditor/registrations.contribution.js';
+import { LineTokens } from '../../../common/tokens/lineTokens.js';
+import { observableCodeEditor } from '../../../browser/observableCodeEditor.js';
+export const INLINE_EDIT_DESCRIPTION = 'inline-edit';
+let GhostTextWidget = class GhostTextWidget extends Disposable {
+    constructor(_editor, model, languageService) {
+        super();
+        this._editor = _editor;
+        this.model = model;
+        this.languageService = languageService;
+        this.isDisposed = observableValue(this, false);
+        this.currentTextModel = observableFromEvent(this, this._editor.onDidChangeModel, () => this._editor.getModel());
+        this._editorObs = observableCodeEditor(this._editor);
+        this.uiState = derived(this, reader => {
+            if (this.isDisposed.read(reader)) {
+                return undefined;
+            }
+            const textModel = this.currentTextModel.read(reader);
+            if (textModel !== this.model.targetTextModel.read(reader)) {
+                return undefined;
+            }
+            const ghostText = this.model.ghostText.read(reader);
+            if (!ghostText) {
+                return undefined;
+            }
+            let range = this.model.range?.read(reader);
+            if (range && range.startLineNumber === range.endLineNumber && range.startColumn === range.endColumn) {
+                range = undefined;
+            }
+            const isSingleLine = (range ? range.startLineNumber === range.endLineNumber : true) && ghostText.parts.length === 1 && ghostText.parts[0].lines.length === 1;
+            const isPureRemove = ghostText.parts.length === 1 && ghostText.parts[0].lines.every(l => l.length === 0);
+            const inlineTexts = [];
+            const additionalLines = [];
+            function addToAdditionalLines(lines, className) {
+                if (additionalLines.length > 0) {
+                    const lastLine = additionalLines[additionalLines.length - 1];
+                    if (className) {
+                        lastLine.decorations.push(new LineDecoration(lastLine.content.length + 1, lastLine.content.length + 1 + lines[0].length, className, 0));
+                    }
+                    lastLine.content += lines[0];
+                    lines = lines.slice(1);
+                }
+                for (const line of lines) {
+                    additionalLines.push({
+                        content: line,
+                        decorations: className ? [new LineDecoration(1, line.length + 1, className, 0)] : []
+                    });
+                }
+            }
+            const textBufferLine = textModel.getLineContent(ghostText.lineNumber);
+            let hiddenTextStartColumn = undefined;
+            let lastIdx = 0;
+            if (!isPureRemove && (isSingleLine || !range)) {
+                for (const part of ghostText.parts) {
+                    let lines = part.lines;
+                    if (range && !isSingleLine) {
+                        addToAdditionalLines(lines, INLINE_EDIT_DESCRIPTION);
+                        lines = [];
+                    }
+                    if (hiddenTextStartColumn === undefined) {
+                        inlineTexts.push({
+                            column: part.column,
+                            text: lines[0],
+                            preview: part.preview,
+                        });
+                        lines = lines.slice(1);
+                    }
+                    else {
+                        addToAdditionalLines([textBufferLine.substring(lastIdx, part.column - 1)], undefined);
+                    }
+                    if (lines.length > 0) {
+                        addToAdditionalLines(lines, INLINE_EDIT_DESCRIPTION);
+                        if (hiddenTextStartColumn === undefined && part.column <= textBufferLine.length) {
+                            hiddenTextStartColumn = part.column;
+                        }
+                    }
+                    lastIdx = part.column - 1;
+                }
+                if (hiddenTextStartColumn !== undefined) {
+                    addToAdditionalLines([textBufferLine.substring(lastIdx)], undefined);
+                }
+            }
+            const hiddenRange = hiddenTextStartColumn !== undefined ? new ColumnRange(hiddenTextStartColumn, textBufferLine.length + 1) : undefined;
+            const lineNumber = (isSingleLine || !range) ? ghostText.lineNumber : range.endLineNumber - 1;
+            return {
+                inlineTexts,
+                additionalLines,
+                hiddenRange,
+                lineNumber,
+                additionalReservedLineCount: this.model.minReservedLineCount.read(reader),
+                targetTextModel: textModel,
+                range,
+                isSingleLine,
+                isPureRemove,
+            };
+        });
+        this.decorations = derived(this, reader => {
+            const uiState = this.uiState.read(reader);
+            if (!uiState) {
+                return [];
+            }
+            const decorations = [];
+            if (uiState.hiddenRange) {
+                decorations.push({
+                    range: uiState.hiddenRange.toRange(uiState.lineNumber),
+                    options: { inlineClassName: 'inline-edit-hidden', description: 'inline-edit-hidden', }
+                });
+            }
+            if (uiState.range) {
+                const ranges = [];
+                if (uiState.isSingleLine) {
+                    ranges.push(uiState.range);
+                }
+                else if (!uiState.isPureRemove) {
+                    const lines = uiState.range.endLineNumber - uiState.range.startLineNumber;
+                    for (let i = 0; i < lines; i++) {
+                        const line = uiState.range.startLineNumber + i;
+                        const firstNonWhitespace = uiState.targetTextModel.getLineFirstNonWhitespaceColumn(line);
+                        const lastNonWhitespace = uiState.targetTextModel.getLineLastNonWhitespaceColumn(line);
+                        const range = new Range(line, firstNonWhitespace, line, lastNonWhitespace);
+                        ranges.push(range);
+                    }
+                }
+                for (const range of ranges) {
+                    decorations.push({
+                        range,
+                        options: diffDeleteDecoration
+                    });
+                }
+            }
+            if (uiState.range && !uiState.isSingleLine && uiState.isPureRemove) {
+                const r = new Range(uiState.range.startLineNumber, 1, uiState.range.endLineNumber - 1, 1);
+                decorations.push({
+                    range: r,
+                    options: diffLineDeleteDecorationBackgroundWithIndicator
+                });
+            }
+            for (const p of uiState.inlineTexts) {
+                decorations.push({
+                    range: Range.fromPositions(new Position(uiState.lineNumber, p.column)),
+                    options: {
+                        description: INLINE_EDIT_DESCRIPTION,
+                        after: { content: p.text, inlineClassName: p.preview ? 'inline-edit-decoration-preview' : 'inline-edit-decoration', cursorStops: InjectedTextCursorStops.Left },
+                        showIfCollapsed: true,
+                    }
+                });
+            }
+            return decorations;
+        });
+        this.additionalLinesWidget = this._register(new AdditionalLinesWidget(this._editor, derived(reader => {
+            const uiState = this.uiState.read(reader);
+            return uiState && !uiState.isPureRemove && (uiState.isSingleLine || !uiState.range) ? {
+                lineNumber: uiState.lineNumber,
+                additionalLines: uiState.additionalLines.map(l => ({
+                    content: LineTokens.createEmpty(l.content, this.languageService.languageIdCodec),
+                    decorations: l.decorations
+                })),
+                minReservedLineCount: uiState.additionalReservedLineCount,
+                targetTextModel: uiState.targetTextModel,
+            } : undefined;
+        })));
+        this._register(toDisposable(() => { this.isDisposed.set(true, undefined); }));
+        this._register(this._editorObs.setDecorations(this.decorations));
+    }
+    ownsViewZone(viewZoneId) {
+        return this.additionalLinesWidget.viewZoneId === viewZoneId;
+    }
+};
+GhostTextWidget = __decorate([
+    __param(2, ILanguageService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], GhostTextWidget);
+export { GhostTextWidget };

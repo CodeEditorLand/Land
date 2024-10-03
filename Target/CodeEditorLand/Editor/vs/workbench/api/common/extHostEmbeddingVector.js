@@ -1,1 +1,33 @@
-import"../../../platform/extensions/common/extensions.js";import{MainContext as n}from"./extHost.protocol.js";import{Disposable as d}from"./extHostTypes.js";class v{_AiEmbeddingVectorProviders=new Map;_nextHandle=0;_proxy;constructor(r){this._proxy=r.getProxy(n.MainThreadAiEmbeddingVector)}async $provideAiEmbeddingVector(r,i,o){if(this._AiEmbeddingVectorProviders.size===0)throw new Error("No embedding vector providers registered");const e=this._AiEmbeddingVectorProviders.get(r);if(!e)throw new Error("Embedding vector provider not found");const t=await e.provideEmbeddingVector(i,o);if(!t)throw new Error("Embedding vector provider returned undefined");return t}registerEmbeddingVectorProvider(r,i,o){const e=this._nextHandle;return this._nextHandle++,this._AiEmbeddingVectorProviders.set(e,o),this._proxy.$registerAiEmbeddingVectorProvider(i,e),new d(()=>{this._proxy.$unregisterAiEmbeddingVectorProvider(e),this._AiEmbeddingVectorProviders.delete(e)})}}export{v as ExtHostAiEmbeddingVector};
+import { MainContext } from './extHost.protocol.js';
+import { Disposable } from './extHostTypes.js';
+export class ExtHostAiEmbeddingVector {
+    constructor(mainContext) {
+        this._AiEmbeddingVectorProviders = new Map();
+        this._nextHandle = 0;
+        this._proxy = mainContext.getProxy(MainContext.MainThreadAiEmbeddingVector);
+    }
+    async $provideAiEmbeddingVector(handle, strings, token) {
+        if (this._AiEmbeddingVectorProviders.size === 0) {
+            throw new Error('No embedding vector providers registered');
+        }
+        const provider = this._AiEmbeddingVectorProviders.get(handle);
+        if (!provider) {
+            throw new Error('Embedding vector provider not found');
+        }
+        const result = await provider.provideEmbeddingVector(strings, token);
+        if (!result) {
+            throw new Error('Embedding vector provider returned undefined');
+        }
+        return result;
+    }
+    registerEmbeddingVectorProvider(extension, model, provider) {
+        const handle = this._nextHandle;
+        this._nextHandle++;
+        this._AiEmbeddingVectorProviders.set(handle, provider);
+        this._proxy.$registerAiEmbeddingVectorProvider(model, handle);
+        return new Disposable(() => {
+            this._proxy.$unregisterAiEmbeddingVectorProvider(handle);
+            this._AiEmbeddingVectorProviders.delete(handle);
+        });
+    }
+}

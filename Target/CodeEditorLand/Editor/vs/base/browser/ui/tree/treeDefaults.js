@@ -1,1 +1,13 @@
-import"./asyncDataTree.js";import{Action as l}from"../../../common/actions.js";import*as o from"../../../../nls.js";class p extends l{constructor(s,e){super("vs.tree.collapse",o.localize("collapse all","Collapse All"),"collapse-all",e);this.viewer=s}async run(){this.viewer.collapseAll(),this.viewer.setSelection([]),this.viewer.setFocus([])}}export{p as CollapseAllAction};
+import { Action } from '../../../common/actions.js';
+import * as nls from '../../../../nls.js';
+export class CollapseAllAction extends Action {
+    constructor(viewer, enabled) {
+        super('vs.tree.collapse', nls.localize('collapse all', "Collapse All"), 'collapse-all', enabled);
+        this.viewer = viewer;
+    }
+    async run() {
+        this.viewer.collapseAll();
+        this.viewer.setSelection([]);
+        this.viewer.setFocus([]);
+    }
+}

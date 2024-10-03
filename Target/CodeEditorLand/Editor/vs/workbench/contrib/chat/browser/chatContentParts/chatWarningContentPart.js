@@ -1,1 +1,33 @@
-import*as s from"../../../../../base/browser/dom.js";import{renderIcon as m}from"../../../../../base/browser/ui/iconLabel/iconLabels.js";import{Codicon as e}from"../../../../../base/common/codicons.js";import"../../../../../base/common/htmlContent.js";import{Disposable as c}from"../../../../../base/common/lifecycle.js";import"../../../../../editor/browser/widget/markdownRenderer/browser/markdownRenderer.js";import"./chatContentParts.js";import"../../common/chatModel.js";const t=s.$;class M extends c{domNode;constructor(r,a,i){super(),this.domNode=t(".chat-notification-widget");let o,n;switch(r){case"warning":o=e.warning,n=".chat-warning-codicon";break;case"error":o=e.error,n=".chat-error-codicon";break;case"info":o=e.info,n=".chat-info-codicon";break}this.domNode.appendChild(t(n,void 0,m(o)));const d=i.render(a);this.domNode.appendChild(d.element)}hasSameContent(r){return r.kind==="warning"}}export{M as ChatWarningContentPart};
+import * as dom from '../../../../../base/browser/dom.js';
+import { renderIcon } from '../../../../../base/browser/ui/iconLabel/iconLabels.js';
+import { Codicon } from '../../../../../base/common/codicons.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+const $ = dom.$;
+export class ChatWarningContentPart extends Disposable {
+    constructor(kind, content, renderer) {
+        super();
+        this.domNode = $('.chat-notification-widget');
+        let icon;
+        let iconClass;
+        switch (kind) {
+            case 'warning':
+                icon = Codicon.warning;
+                iconClass = '.chat-warning-codicon';
+                break;
+            case 'error':
+                icon = Codicon.error;
+                iconClass = '.chat-error-codicon';
+                break;
+            case 'info':
+                icon = Codicon.info;
+                iconClass = '.chat-info-codicon';
+                break;
+        }
+        this.domNode.appendChild($(iconClass, undefined, renderIcon(icon)));
+        const markdownContent = renderer.render(content);
+        this.domNode.appendChild(markdownContent.element);
+    }
+    hasSameContent(other) {
+        return other.kind === 'warning';
+    }
+}

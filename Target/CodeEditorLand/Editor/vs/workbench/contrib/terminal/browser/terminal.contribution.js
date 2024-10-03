@@ -1,1 +1,189 @@
-import{KeyCode as e,KeyMod as r}from"../../../../base/common/keyCodes.js";import{Schemas as V}from"../../../../base/common/network.js";import{isIOS as P,isWindows as h}from"../../../../base/common/platform.js";import{URI as W}from"../../../../base/common/uri.js";import"./media/terminal.css";import"./media/terminalVoice.css";import"./media/widgets.css";import"./media/xterm.css";import*as y from"../../../../nls.js";import{CONTEXT_ACCESSIBILITY_MODE_ENABLED as s}from"../../../../platform/accessibility/common/accessibility.js";import{ContextKeyExpr as t}from"../../../../platform/contextkey/common/contextkey.js";import{Extensions as v}from"../../../../platform/dnd/browser/dnd.js";import{SyncDescriptor as S}from"../../../../platform/instantiation/common/descriptors.js";import{InstantiationType as n,registerSingleton as m}from"../../../../platform/instantiation/common/extensions.js";import{Registry as f}from"../../../../platform/registry/common/platform.js";import{GeneralShellType as p,ITerminalLogService as x,WindowsShellType as K}from"../../../../platform/terminal/common/terminal.js";import{TerminalLogService as L}from"../../../../platform/terminal/common/terminalLogService.js";import{registerTerminalPlatformConfiguration as k}from"../../../../platform/terminal/common/terminalPlatformConfiguration.js";import{EditorPaneDescriptor as O}from"../../../browser/editor.js";import{ViewPaneContainer as q}from"../../../browser/parts/views/viewPaneContainer.js";import{WorkbenchPhase as u,registerWorkbenchContribution2 as T}from"../../../common/contributions.js";import{EditorExtensions as I}from"../../../common/editor.js";import{Extensions as E,ViewContainerLocation as B}from"../../../common/views.js";import{RemoteTerminalBackendContribution as w}from"./remoteTerminalBackend.js";import{ITerminalConfigurationService as N,ITerminalEditorService as M,ITerminalGroupService as _,ITerminalInstanceService as z,ITerminalService as G,TerminalDataTransfers as D,terminalEditorId as F}from"./terminal.js";import{registerTerminalActions as H}from"./terminalActions.js";import{setupTerminalCommands as J}from"./terminalCommands.js";import{TerminalConfigurationService as U}from"./terminalConfigurationService.js";import{TerminalEditor as X}from"./terminalEditor.js";import{TerminalEditorInput as A}from"./terminalEditorInput.js";import{TerminalInputSerializer as Y}from"./terminalEditorSerializer.js";import{TerminalEditorService as j}from"./terminalEditorService.js";import{TerminalGroupService as Q}from"./terminalGroupService.js";import{terminalViewIcon as R}from"./terminalIcons.js";import{TerminalInstanceService as Z}from"./terminalInstanceService.js";import{TerminalMainContribution as b}from"./terminalMainContribution.js";import{setupTerminalMenus as $}from"./terminalMenus.js";import{TerminalProfileService as rr}from"./terminalProfileService.js";import{TerminalService as er}from"./terminalService.js";import{TerminalViewPane as ir}from"./terminalView.js";import{ITerminalProfileService as tr,TERMINAL_VIEW_ID as C,TerminalCommandId as or}from"../common/terminal.js";import{registerColors as ar}from"../common/terminalColorRegistry.js";import{registerTerminalConfiguration as nr}from"../common/terminalConfiguration.js";import{TerminalContextKeyStrings as l,TerminalContextKeys as o}from"../common/terminalContextKey.js";import{terminalStrings as mr}from"../common/terminalStrings.js";import{registerSendSequenceKeybinding as i}from"./terminalKeybindings.js";m(x,L,n.Delayed),m(N,U,n.Delayed),m(G,er,n.Delayed),m(M,j,n.Delayed),m(_,Q,n.Delayed),m(z,Z,n.Delayed),m(tr,rr,n.Delayed),T(b.ID,b,u.BlockStartup),T(w.ID,w,u.AfterRestored),k(),nr(),f.as(I.EditorFactory).registerEditorSerializer(A.ID,Y),f.as(I.EditorPane).registerEditorPane(O.create(X,F,mr.terminal),[new S(A)]),f.as(v.DragAndDropContribution).register({dataFormatKey:D.Terminals,getEditorInputs(g){const a=[];try{const c=JSON.parse(g);for(const d of c)a.push({resource:W.parse(d)})}catch{}return a},setData(g,a){const c=g.filter(({resource:d})=>d.scheme===V.vscodeTerminal);c.length&&a.dataTransfer?.setData(D.Terminals,JSON.stringify(c.map(({resource:d})=>d.toString())))}});const lr=f.as(E.ViewContainersRegistry).registerViewContainer({id:C,title:y.localize2("terminal","Terminal"),icon:R,ctorDescriptor:new S(q,[C,{mergeViewWithContainerWhenSingleView:!0}]),storageId:C,hideIfEmpty:!0,order:3},B.Panel,{doNotRegisterOpenCommand:!0,isDefault:!0});f.as(E.ViewsRegistry).registerViews([{id:C,name:y.localize2("terminal","Terminal"),containerIcon:R,canToggleVisibility:!1,canMoveView:!0,ctorDescriptor:new S(ir),openCommandActionDescriptor:{id:or.Toggle,mnemonicTitle:y.localize({key:"miToggleIntegratedTerminal",comment:["&& denotes a mnemonic"]},"&&Terminal"),keybindings:{primary:r.CtrlCmd|e.Backquote,mac:{primary:r.WinCtrl|e.Backquote}},order:3}}],lr),H();var sr=(a=>(a[a.CtrlLetterOffset=64]="CtrlLetterOffset",a))(sr||{});h&&i("",{when:t.and(o.focus,t.equals(l.ShellType,p.PowerShell),s.negate()),primary:r.CtrlCmd|e.KeyV}),i("\x1B[24~a",{when:t.and(o.focus,t.equals(l.ShellType,p.PowerShell),o.terminalShellIntegrationEnabled,s.negate()),primary:r.CtrlCmd|e.Space,mac:{primary:r.WinCtrl|e.Space}}),i("\x1B[24~b",{when:t.and(o.focus,t.equals(l.ShellType,p.PowerShell),o.terminalShellIntegrationEnabled,s.negate()),primary:r.Alt|e.Space}),i("\x1B[24~c",{when:t.and(o.focus,t.equals(l.ShellType,p.PowerShell),o.terminalShellIntegrationEnabled,s.negate()),primary:r.Shift|e.Enter}),i("\x1B[24~d",{when:t.and(o.focus,t.equals(l.ShellType,p.PowerShell),o.terminalShellIntegrationEnabled,s.negate()),mac:{primary:r.Shift|r.CtrlCmd|e.RightArrow}}),i("\x1B[1;2H",{when:t.and(o.focus,t.equals(l.ShellType,p.PowerShell)),mac:{primary:r.Shift|r.CtrlCmd|e.LeftArrow}}),i("",{when:t.and(o.focus,s),primary:r.CtrlCmd|r.Alt|e.KeyR,mac:{primary:r.WinCtrl|r.Alt|e.KeyR}}),i("\x07",{when:o.focus,primary:r.CtrlCmd|r.Alt|e.KeyG,mac:{primary:r.WinCtrl|r.Alt|e.KeyG}}),P&&i("",{when:t.and(o.focus),primary:r.WinCtrl|e.KeyC}),i("",{primary:r.CtrlCmd|e.Backspace,mac:{primary:r.Alt|e.Backspace}}),h&&i("\b",{when:t.and(o.focus,t.equals(l.ShellType,K.CommandPrompt)),primary:r.CtrlCmd|e.Backspace}),i("\x1Bd",{primary:r.CtrlCmd|e.Delete,mac:{primary:r.Alt|e.Delete}}),i("",{mac:{primary:r.CtrlCmd|e.Backspace}}),i("",{mac:{primary:r.CtrlCmd|e.LeftArrow}}),i("",{mac:{primary:r.CtrlCmd|e.RightArrow}}),i("\0",{primary:r.CtrlCmd|r.Shift|e.Digit2,mac:{primary:r.WinCtrl|r.Shift|e.Digit2}}),i("",{primary:r.CtrlCmd|r.Shift|e.Digit6,mac:{primary:r.WinCtrl|r.Shift|e.Digit6}}),i("",{primary:r.CtrlCmd|e.Slash,mac:{primary:r.WinCtrl|e.Slash}}),J(),$(),ar();
+import { Schemas } from '../../../../base/common/network.js';
+import { isIOS, isWindows } from '../../../../base/common/platform.js';
+import { URI } from '../../../../base/common/uri.js';
+import './media/terminal.css';
+import './media/terminalVoice.css';
+import './media/widgets.css';
+import './media/xterm.css';
+import * as nls from '../../../../nls.js';
+import { CONTEXT_ACCESSIBILITY_MODE_ENABLED } from '../../../../platform/accessibility/common/accessibility.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { Extensions as DragAndDropExtensions } from '../../../../platform/dnd/browser/dnd.js';
+import { SyncDescriptor } from '../../../../platform/instantiation/common/descriptors.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { ITerminalLogService } from '../../../../platform/terminal/common/terminal.js';
+import { TerminalLogService } from '../../../../platform/terminal/common/terminalLogService.js';
+import { registerTerminalPlatformConfiguration } from '../../../../platform/terminal/common/terminalPlatformConfiguration.js';
+import { EditorPaneDescriptor } from '../../../browser/editor.js';
+import { ViewPaneContainer } from '../../../browser/parts/views/viewPaneContainer.js';
+import { registerWorkbenchContribution2 } from '../../../common/contributions.js';
+import { EditorExtensions } from '../../../common/editor.js';
+import { Extensions as ViewContainerExtensions } from '../../../common/views.js';
+import { RemoteTerminalBackendContribution } from './remoteTerminalBackend.js';
+import { ITerminalConfigurationService, ITerminalEditorService, ITerminalGroupService, ITerminalInstanceService, ITerminalService, terminalEditorId } from './terminal.js';
+import { registerTerminalActions } from './terminalActions.js';
+import { setupTerminalCommands } from './terminalCommands.js';
+import { TerminalConfigurationService } from './terminalConfigurationService.js';
+import { TerminalEditor } from './terminalEditor.js';
+import { TerminalEditorInput } from './terminalEditorInput.js';
+import { TerminalInputSerializer } from './terminalEditorSerializer.js';
+import { TerminalEditorService } from './terminalEditorService.js';
+import { TerminalGroupService } from './terminalGroupService.js';
+import { terminalViewIcon } from './terminalIcons.js';
+import { TerminalInstanceService } from './terminalInstanceService.js';
+import { TerminalMainContribution } from './terminalMainContribution.js';
+import { setupTerminalMenus } from './terminalMenus.js';
+import { TerminalProfileService } from './terminalProfileService.js';
+import { TerminalService } from './terminalService.js';
+import { TerminalViewPane } from './terminalView.js';
+import { ITerminalProfileService, TERMINAL_VIEW_ID } from '../common/terminal.js';
+import { registerColors } from '../common/terminalColorRegistry.js';
+import { registerTerminalConfiguration } from '../common/terminalConfiguration.js';
+import { TerminalContextKeys } from '../common/terminalContextKey.js';
+import { terminalStrings } from '../common/terminalStrings.js';
+import { registerSendSequenceKeybinding } from './terminalKeybindings.js';
+registerSingleton(ITerminalLogService, TerminalLogService, 1);
+registerSingleton(ITerminalConfigurationService, TerminalConfigurationService, 1);
+registerSingleton(ITerminalService, TerminalService, 1);
+registerSingleton(ITerminalEditorService, TerminalEditorService, 1);
+registerSingleton(ITerminalGroupService, TerminalGroupService, 1);
+registerSingleton(ITerminalInstanceService, TerminalInstanceService, 1);
+registerSingleton(ITerminalProfileService, TerminalProfileService, 1);
+registerWorkbenchContribution2(TerminalMainContribution.ID, TerminalMainContribution, 1);
+registerWorkbenchContribution2(RemoteTerminalBackendContribution.ID, RemoteTerminalBackendContribution, 3);
+registerTerminalPlatformConfiguration();
+registerTerminalConfiguration();
+Registry.as(EditorExtensions.EditorFactory).registerEditorSerializer(TerminalEditorInput.ID, TerminalInputSerializer);
+Registry.as(EditorExtensions.EditorPane).registerEditorPane(EditorPaneDescriptor.create(TerminalEditor, terminalEditorId, terminalStrings.terminal), [
+    new SyncDescriptor(TerminalEditorInput)
+]);
+Registry.as(DragAndDropExtensions.DragAndDropContribution).register({
+    dataFormatKey: "Terminals",
+    getEditorInputs(data) {
+        const editors = [];
+        try {
+            const terminalEditors = JSON.parse(data);
+            for (const terminalEditor of terminalEditors) {
+                editors.push({ resource: URI.parse(terminalEditor) });
+            }
+        }
+        catch (error) {
+        }
+        return editors;
+    },
+    setData(resources, event) {
+        const terminalResources = resources.filter(({ resource }) => resource.scheme === Schemas.vscodeTerminal);
+        if (terminalResources.length) {
+            event.dataTransfer?.setData("Terminals", JSON.stringify(terminalResources.map(({ resource }) => resource.toString())));
+        }
+    }
+});
+const VIEW_CONTAINER = Registry.as(ViewContainerExtensions.ViewContainersRegistry).registerViewContainer({
+    id: TERMINAL_VIEW_ID,
+    title: nls.localize2('terminal', "Terminal"),
+    icon: terminalViewIcon,
+    ctorDescriptor: new SyncDescriptor(ViewPaneContainer, [TERMINAL_VIEW_ID, { mergeViewWithContainerWhenSingleView: true }]),
+    storageId: TERMINAL_VIEW_ID,
+    hideIfEmpty: true,
+    order: 3,
+}, 1, { doNotRegisterOpenCommand: true, isDefault: true });
+Registry.as(ViewContainerExtensions.ViewsRegistry).registerViews([{
+        id: TERMINAL_VIEW_ID,
+        name: nls.localize2('terminal', "Terminal"),
+        containerIcon: terminalViewIcon,
+        canToggleVisibility: false,
+        canMoveView: true,
+        ctorDescriptor: new SyncDescriptor(TerminalViewPane),
+        openCommandActionDescriptor: {
+            id: "workbench.action.terminal.toggleTerminal",
+            mnemonicTitle: nls.localize({ key: 'miToggleIntegratedTerminal', comment: ['&& denotes a mnemonic'] }, "&&Terminal"),
+            keybindings: {
+                primary: 2048 | 91,
+                mac: { primary: 256 | 91 }
+            },
+            order: 3
+        }
+    }], VIEW_CONTAINER);
+registerTerminalActions();
+if (isWindows) {
+    registerSendSequenceKeybinding(String.fromCharCode('V'.charCodeAt(0) - 64), {
+        when: ContextKeyExpr.and(TerminalContextKeys.focus, ContextKeyExpr.equals("terminalShellType", "pwsh"), CONTEXT_ACCESSIBILITY_MODE_ENABLED.negate()),
+        primary: 2048 | 52
+    });
+}
+registerSendSequenceKeybinding('\x1b[24~a', {
+    when: ContextKeyExpr.and(TerminalContextKeys.focus, ContextKeyExpr.equals("terminalShellType", "pwsh"), TerminalContextKeys.terminalShellIntegrationEnabled, CONTEXT_ACCESSIBILITY_MODE_ENABLED.negate()),
+    primary: 2048 | 10,
+    mac: { primary: 256 | 10 }
+});
+registerSendSequenceKeybinding('\x1b[24~b', {
+    when: ContextKeyExpr.and(TerminalContextKeys.focus, ContextKeyExpr.equals("terminalShellType", "pwsh"), TerminalContextKeys.terminalShellIntegrationEnabled, CONTEXT_ACCESSIBILITY_MODE_ENABLED.negate()),
+    primary: 512 | 10
+});
+registerSendSequenceKeybinding('\x1b[24~c', {
+    when: ContextKeyExpr.and(TerminalContextKeys.focus, ContextKeyExpr.equals("terminalShellType", "pwsh"), TerminalContextKeys.terminalShellIntegrationEnabled, CONTEXT_ACCESSIBILITY_MODE_ENABLED.negate()),
+    primary: 1024 | 3
+});
+registerSendSequenceKeybinding('\x1b[24~d', {
+    when: ContextKeyExpr.and(TerminalContextKeys.focus, ContextKeyExpr.equals("terminalShellType", "pwsh"), TerminalContextKeys.terminalShellIntegrationEnabled, CONTEXT_ACCESSIBILITY_MODE_ENABLED.negate()),
+    mac: { primary: 1024 | 2048 | 17 }
+});
+registerSendSequenceKeybinding('\x1b[1;2H', {
+    when: ContextKeyExpr.and(TerminalContextKeys.focus, ContextKeyExpr.equals("terminalShellType", "pwsh")),
+    mac: { primary: 1024 | 2048 | 15 }
+});
+registerSendSequenceKeybinding('\x12', {
+    when: ContextKeyExpr.and(TerminalContextKeys.focus, CONTEXT_ACCESSIBILITY_MODE_ENABLED),
+    primary: 2048 | 512 | 48,
+    mac: { primary: 256 | 512 | 48 }
+});
+registerSendSequenceKeybinding('\x07', {
+    when: TerminalContextKeys.focus,
+    primary: 2048 | 512 | 37,
+    mac: { primary: 256 | 512 | 37 }
+});
+if (isIOS) {
+    registerSendSequenceKeybinding(String.fromCharCode('C'.charCodeAt(0) - 64), {
+        when: ContextKeyExpr.and(TerminalContextKeys.focus),
+        primary: 256 | 33
+    });
+}
+registerSendSequenceKeybinding(String.fromCharCode('W'.charCodeAt(0) - 64), {
+    primary: 2048 | 1,
+    mac: { primary: 512 | 1 }
+});
+if (isWindows) {
+    registerSendSequenceKeybinding(String.fromCharCode('H'.charCodeAt(0) - 64), {
+        when: ContextKeyExpr.and(TerminalContextKeys.focus, ContextKeyExpr.equals("terminalShellType", "cmd")),
+        primary: 2048 | 1,
+    });
+}
+registerSendSequenceKeybinding('\u001bd', {
+    primary: 2048 | 20,
+    mac: { primary: 512 | 20 }
+});
+registerSendSequenceKeybinding('\u0015', {
+    mac: { primary: 2048 | 1 }
+});
+registerSendSequenceKeybinding(String.fromCharCode('A'.charCodeAt(0) - 64), {
+    mac: { primary: 2048 | 15 }
+});
+registerSendSequenceKeybinding(String.fromCharCode('E'.charCodeAt(0) - 64), {
+    mac: { primary: 2048 | 17 }
+});
+registerSendSequenceKeybinding('\u0000', {
+    primary: 2048 | 1024 | 23,
+    mac: { primary: 256 | 1024 | 23 }
+});
+registerSendSequenceKeybinding('\u001e', {
+    primary: 2048 | 1024 | 27,
+    mac: { primary: 256 | 1024 | 27 }
+});
+registerSendSequenceKeybinding('\u001f', {
+    primary: 2048 | 90,
+    mac: { primary: 256 | 90 }
+});
+setupTerminalCommands();
+setupTerminalMenus();
+registerColors();

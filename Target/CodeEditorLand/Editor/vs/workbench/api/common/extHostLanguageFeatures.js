@@ -1,1 +1,2386 @@
-import{asArray as Ee,coalesce as ee,isFalsyOrEmpty as te,isNonEmptyArray as B}from"../../../base/common/arrays.js";import{raceCancellationError as Te}from"../../../base/common/async.js";import"../../../base/common/buffer.js";import{CancellationToken as He}from"../../../base/common/cancellation.js";import{NotImplementedError as Ae,isCancellationError as we}from"../../../base/common/errors.js";import{IdGenerator as oe}from"../../../base/common/idGenerator.js";import{DisposableStore as I}from"../../../base/common/lifecycle.js";import{equals as Re,mixin as ke}from"../../../base/common/objects.js";import{StopWatch as Le}from"../../../base/common/stopwatch.js";import{regExpLeadsToEndlessLoop as $e}from"../../../base/common/strings.js";import{assertType as Fe,isObject as Ne}from"../../../base/common/types.js";import{URI as p}from"../../../base/common/uri.js";import"../../../base/common/uriIpc.js";import"../../../editor/common/core/editOperation.js";import"../../../editor/common/core/position.js";import{Range as ne}from"../../../editor/common/core/range.js";import{Selection as Ue}from"../../../editor/common/core/selection.js";import*as C from"../../../editor/common/languages.js";import"../../../editor/common/languages/languageConfiguration.js";import{encodeSemanticTokensDto as j}from"../../../editor/common/services/semanticTokensDto.js";import{localize as ie}from"../../../nls.js";import{ExtensionIdentifier as re}from"../../../platform/extensions/common/extensions.js";import"../../../platform/log/common/log.js";import"./extHostApiDeprecationService.js";import"./extHostCommands.js";import"./extHostDiagnostics.js";import"./extHostDocuments.js";import"./extHostTelemetry.js";import*as d from"./extHostTypeConverters.js";import{CodeActionKind as Me,CompletionList as Oe,Disposable as A,DocumentDropOrPasteEditKind as We,DocumentSymbol as Ke,InlineCompletionTriggerKind as se,InlineEditTriggerKind as ae,InternalDataTransferItem as Ve,Location as ze,NewSymbolNameTriggerKind as de,Range as M,SemanticTokens as qe,SemanticTokensEdit as Be,SemanticTokensEdits as G,SnippetString as je,SyntaxTokenType as Ge}from"./extHostTypes.js";import{checkProposedApiEnabled as Je,isProposedApiEnabled as k}from"../../services/extensions/common/extensions.js";import{Cache as S}from"./cache.js";import*as u from"./extHost.protocol.js";class q{constructor(e,t){this._documents=e;this._provider=t}async provideDocumentSymbols(e,t){const o=this._documents.getDocument(e),n=await this._provider.provideDocumentSymbols(o,t);if(!te(n))return n[0]instanceof Ke?n.map(d.DocumentSymbol.from):q._asDocumentSymbolTree(n)}static _asDocumentSymbolTree(e){e=e.slice(0).sort((n,i)=>{let r=n.location.range.start.compareTo(i.location.range.start);return r===0&&(r=i.location.range.end.compareTo(n.location.range.end)),r});const t=[],o=[];for(const n of e){const i={name:n.name||"!!MISSING: name!!",kind:d.SymbolKind.from(n.kind),tags:n.tags?.map(d.SymbolTag.from)||[],detail:"",containerName:n.containerName,range:d.Range.from(n.location.range),selectionRange:d.Range.from(n.location.range),children:[]};for(;;){if(o.length===0){o.push(i),t.push(i);break}const r=o[o.length-1];if(ne.containsRange(r.range,i.range)&&!ne.equalsRange(r.range,i.range)){r.children?.push(i),o.push(i);break}o.pop()}}return t}}class O{constructor(e,t,o,n,i,r){this._documents=e;this._commands=t;this._provider=o;this._extension=n;this._extTelemetry=i;this._logService=r}_cache=new S("CodeLens");_disposables=new Map;async provideCodeLenses(e,t){const o=this._documents.getDocument(e),n=await this._provider.provideCodeLenses(o,t);if(!n||t.isCancellationRequested)return;const i=this._cache.add(n),r=new I;this._disposables.set(i,r);const s={cacheId:i,lenses:[]};for(let a=0;a<n.length;a++)s.lenses.push({cacheId:[i,a],range:d.Range.from(n[a].range),command:this._commands.toInternal(n[a].command,r)});return s}async resolveCodeLens(e,t){const o=e.cacheId&&this._cache.get(...e.cacheId);if(!o)return;let n;if(typeof this._provider.resolveCodeLens!="function"||o.isResolved?n=o:n=await this._provider.resolveCodeLens(o,t),n||(n=o),t.isCancellationRequested)return;const i=e.cacheId&&this._disposables.get(e.cacheId[0]);if(i){if(!n.command){const r=new Error("INVALID code lens resolved, lacks command: "+this._extension.identifier.value);this._extTelemetry.onExtensionError(this._extension.identifier,r),this._logService.error(r);return}return e.command=this._commands.toInternal(n.command,i),e}}releaseCodeLenses(e){this._disposables.get(e)?.dispose(),this._disposables.delete(e),this._cache.delete(e)}}function W(g){return Array.isArray(g)?g.map(d.DefinitionLink.from):g?[d.DefinitionLink.from(g)]:[]}class ce{constructor(e,t){this._documents=e;this._provider=t}async provideDefinition(e,t,o){const n=this._documents.getDocument(e),i=d.Position.to(t),r=await this._provider.provideDefinition(n,i,o);return W(r)}}class le{constructor(e,t){this._documents=e;this._provider=t}async provideDeclaration(e,t,o){const n=this._documents.getDocument(e),i=d.Position.to(t),r=await this._provider.provideDeclaration(n,i,o);return W(r)}}class ue{constructor(e,t){this._documents=e;this._provider=t}async provideImplementation(e,t,o){const n=this._documents.getDocument(e),i=d.Position.to(t),r=await this._provider.provideImplementation(n,i,o);return W(r)}}class me{constructor(e,t){this._documents=e;this._provider=t}async provideTypeDefinition(e,t,o){const n=this._documents.getDocument(e),i=d.Position.to(t),r=await this._provider.provideTypeDefinition(n,i,o);return W(r)}}class U{constructor(e,t){this._documents=e;this._provider=t}_hoverCounter=0;_hoverMap=new Map;static HOVER_MAP_MAX_SIZE=10;async provideHover(e,t,o,n){const i=this._documents.getDocument(e),r=d.Position.to(t);let s;if(o&&o.verbosityRequest){const v=o.verbosityRequest.previousHover.id,l=this._hoverMap.get(v);if(!l)throw new Error(`Hover with id ${v} not found`);const D={verbosityDelta:o.verbosityRequest.verbosityDelta,previousHover:l};s=await this._provider.provideHover(i,r,n,D)}else s=await this._provider.provideHover(i,r,n);if(!s||te(s.contents))return;s.range||(s.range=i.getWordRangeAtPosition(r)),s.range||(s.range=new M(r,r));const a=d.Hover.from(s),c=this._hoverCounter;if(this._hoverMap.size===U.HOVER_MAP_MAX_SIZE){const v=Math.min(...this._hoverMap.keys());this._hoverMap.delete(v)}return this._hoverMap.set(c,s),this._hoverCounter+=1,{...a,id:c}}releaseHover(e){this._hoverMap.delete(e)}}class pe{constructor(e,t){this._documents=e;this._provider=t}async provideEvaluatableExpression(e,t,o){const n=this._documents.getDocument(e),i=d.Position.to(t),r=await this._provider.provideEvaluatableExpression(n,i,o);if(r)return d.EvaluatableExpression.from(r)}}class ve{constructor(e,t){this._documents=e;this._provider=t}async provideInlineValues(e,t,o,n){const i=this._documents.getDocument(e),r=await this._provider.provideInlineValues(i,d.Range.to(t),d.InlineValueContext.to(o),n);if(Array.isArray(r))return r.map(s=>d.InlineValue.from(s))}}class ge{constructor(e,t){this._documents=e;this._provider=t}async provideDocumentHighlights(e,t,o){const n=this._documents.getDocument(e),i=d.Position.to(t),r=await this._provider.provideDocumentHighlights(n,i,o);if(Array.isArray(r))return r.map(d.DocumentHighlight.from)}}class he{constructor(e,t,o){this._documents=e;this._provider=t;this._logService=o}async provideMultiDocumentHighlights(e,t,o,n){const i=this._documents.getDocument(e),r=o.map(c=>{try{return this._documents.getDocument(c)}catch(h){this._logService.error("Error: Unable to retrieve document from URI: "+c+". Error message: "+h);return}}).filter(c=>c!==void 0),s=d.Position.to(t),a=await this._provider.provideMultiDocumentHighlights(i,s,r,n);if(Array.isArray(a))return a.map(d.MultiDocumentHighlight.from)}}class fe{constructor(e,t){this._documents=e;this._provider=t}async provideLinkedEditingRanges(e,t,o){const n=this._documents.getDocument(e),i=d.Position.to(t),r=await this._provider.provideLinkedEditingRanges(n,i,o);if(r&&Array.isArray(r.ranges))return{ranges:ee(r.ranges.map(d.Range.from)),wordPattern:r.wordPattern}}}class De{constructor(e,t){this._documents=e;this._provider=t}async provideReferences(e,t,o,n){const i=this._documents.getDocument(e),r=d.Position.to(t),s=await this._provider.provideReferences(i,r,o,n);if(Array.isArray(s))return s.map(d.location.from)}}class x{constructor(e,t,o,n,i,r,s){this._documents=e;this._commands=t;this._diagnostics=o;this._provider=n;this._logService=i;this._extension=r;this._apiDeprecation=s}static _maxCodeActionsPerFile=1e3;_cache=new S("CodeAction");_disposables=new Map;async provideCodeActions(e,t,o,n){const i=this._documents.getDocument(e),r=Ue.isISelection(t)?d.Selection.to(t):d.Range.to(t),s=[];for(const D of this._diagnostics.getDiagnostics(e))if(r.intersection(D.range)&&s.push(D)>x._maxCodeActionsPerFile)break;const a={diagnostics:s,only:o.only?new Me(o.only):void 0,triggerKind:d.CodeActionTriggerKind.to(o.trigger)},c=await this._provider.provideCodeActions(i,r,a,n);if(!B(c)||n.isCancellationRequested)return;const h=this._cache.add(c),v=new I;this._disposables.set(h,v);const l=[];for(let D=0;D<c.length;D++){const m=c[D];if(m)if(x._isCommand(m))this._apiDeprecation.report("CodeActionProvider.provideCodeActions - return commands",this._extension,"Return 'CodeAction' instances instead."),l.push({_isSynthetic:!0,title:m.title,command:this._commands.toInternal(m,v)});else{a.only&&(m.kind?a.only.contains(m.kind)||this._logService.warn(`${this._extension.identifier.value} - Code actions of kind '${a.only.value}' requested but returned code action is of kind '${m.kind.value}'. Code action will be dropped. Please check 'CodeActionContext.only' to only return requested code actions.`):this._logService.warn(`${this._extension.identifier.value} - Code actions of kind '${a.only.value}' requested but returned code action does not have a 'kind'. Code action will be dropped. Please set 'CodeAction.kind'.`));const E=m.ranges??[];l.push({cacheId:[h,D],title:m.title,command:m.command&&this._commands.toInternal(m.command,v),diagnostics:m.diagnostics&&m.diagnostics.map(d.Diagnostic.from),edit:m.edit&&d.WorkspaceEdit.from(m.edit,void 0),kind:m.kind&&m.kind.value,isPreferred:m.isPreferred,isAI:k(this._extension,"codeActionAI")?m.isAI:!1,ranges:k(this._extension,"codeActionRanges")?ee(E.map(d.Range.from)):void 0,disabled:m.disabled?.reason})}}return{cacheId:h,actions:l}}async resolveCodeAction(e,t){const[o,n]=e,i=this._cache.get(o,n);if(!i||x._isCommand(i))return{};if(!this._provider.resolveCodeAction)return{};const r=await this._provider.resolveCodeAction(i,t)??i;let s;r.edit&&(s=d.WorkspaceEdit.from(r.edit,void 0));let a;if(r.command){const c=this._disposables.get(o);c&&(a=this._commands.toInternal(r.command,c))}return{edit:s,command:a}}releaseCodeActions(e){this._disposables.get(e)?.dispose(),this._disposables.delete(e),this._cache.delete(e)}static _isCommand(e){return typeof e.command=="string"&&typeof e.title=="string"}}class L{constructor(e,t,o,n,i){this._proxy=e;this._documents=t;this._provider=o;this._handle=n;this._extension=i}_cache=new S("DocumentPasteEdit");async prepareDocumentPaste(e,t,o,n){if(!this._provider.prepareDocumentPaste)return;const i=this._documents.getDocument(e),r=t.map(c=>d.Range.to(c)),s=d.DataTransfer.toDataTransfer(o,()=>{throw new Ae});if(await this._provider.prepareDocumentPaste(i,r,s,n),n.isCancellationRequested)return;const a=Array.from(s).filter(([,c])=>!(c instanceof Ve));return d.DataTransfer.from(a)}async providePasteEdits(e,t,o,n,i,r){if(!this._provider.provideDocumentPasteEdits)return[];const s=this._documents.getDocument(t),a=o.map(l=>d.Range.to(l)),c=d.DataTransfer.toDataTransfer(n,async l=>(await this._proxy.$resolvePasteFileData(this._handle,e,l)).buffer),h=await this._provider.provideDocumentPasteEdits(s,a,c,{only:i.only?new We(i.only):void 0,triggerKind:i.triggerKind},r);if(!h||r.isCancellationRequested)return[];const v=this._cache.add(h);return h.map((l,D)=>({_cacheId:[v,D],title:l.title??ie("defaultPasteLabel","Paste using '{0}' extension",this._extension.displayName||this._extension.name),kind:l.kind,yieldTo:l.yieldTo?.map(m=>m.value),insertText:typeof l.insertText=="string"?l.insertText:{snippet:l.insertText.value},additionalEdit:l.additionalEdit?d.WorkspaceEdit.from(l.additionalEdit,void 0):void 0}))}async resolvePasteEdit(e,t){const[o,n]=e,i=this._cache.get(o,n);if(!i||!this._provider.resolveDocumentPasteEdit)return{};const r=await this._provider.resolveDocumentPasteEdit(i,t)??i;return{additionalEdit:r.additionalEdit?d.WorkspaceEdit.from(r.additionalEdit,void 0):void 0}}releasePasteEdits(e){this._cache.delete(e)}}class _e{constructor(e,t){this._documents=e;this._provider=t}async provideDocumentFormattingEdits(e,t,o){const n=this._documents.getDocument(e),i=await this._provider.provideDocumentFormattingEdits(n,t,o);if(Array.isArray(i))return i.map(d.TextEdit.from)}}class J{constructor(e,t){this._documents=e;this._provider=t}async provideDocumentRangeFormattingEdits(e,t,o,n){const i=this._documents.getDocument(e),r=d.Range.to(t),s=await this._provider.provideDocumentRangeFormattingEdits(i,r,o,n);if(Array.isArray(s))return s.map(d.TextEdit.from)}async provideDocumentRangesFormattingEdits(e,t,o,n){Fe(typeof this._provider.provideDocumentRangesFormattingEdits=="function","INVALID invocation of `provideDocumentRangesFormattingEdits`");const i=this._documents.getDocument(e),r=t.map(d.Range.to),s=await this._provider.provideDocumentRangesFormattingEdits(i,r,o,n);if(Array.isArray(s))return s.map(d.TextEdit.from)}}class Ie{constructor(e,t){this._documents=e;this._provider=t}autoFormatTriggerCharacters=[];async provideOnTypeFormattingEdits(e,t,o,n,i){const r=this._documents.getDocument(e),s=d.Position.to(t),a=await this._provider.provideOnTypeFormattingEdits(r,s,o,n,i);if(Array.isArray(a))return a.map(d.TextEdit.from)}}class K{constructor(e,t){this._provider=e;this._logService=t}_cache=new S("WorkspaceSymbols");async provideWorkspaceSymbols(e,t){const o=await this._provider.provideWorkspaceSymbols(e,t);if(!B(o))return{symbols:[]};const n=this._cache.add(o),i={cacheId:n,symbols:[]};for(let r=0;r<o.length;r++){const s=o[r];if(!s||!s.name){this._logService.warn("INVALID SymbolInformation",s);continue}i.symbols.push({...d.WorkspaceSymbol.from(s),cacheId:[n,r]})}return i}async resolveWorkspaceSymbol(e,t){if(typeof this._provider.resolveWorkspaceSymbol!="function"||!e.cacheId)return e;const o=this._cache.get(...e.cacheId);if(o){const n=await this._provider.resolveWorkspaceSymbol(o,t);return n&&ke(e,d.WorkspaceSymbol.from(n),!0)}}releaseWorkspaceSymbols(e){this._cache.delete(e)}}class H{constructor(e,t,o){this._documents=e;this._provider=t;this._logService=o}static supportsResolving(e){return typeof e.prepareRename=="function"}async provideRenameEdits(e,t,o,n){const i=this._documents.getDocument(e),r=d.Position.to(t);try{const s=await this._provider.provideRenameEdits(i,r,o,n);return s?d.WorkspaceEdit.from(s):void 0}catch(s){const a=H._asMessage(s);return a?{rejectReason:a,edits:void 0}:Promise.reject(s)}}async resolveRenameLocation(e,t,o){if(typeof this._provider.prepareRename!="function")return Promise.resolve(void 0);const n=this._documents.getDocument(e),i=d.Position.to(t);try{const r=await this._provider.prepareRename(n,i,o);let s,a;if(M.isRange(r)?(s=r,a=n.getText(r)):Ne(r)&&(s=r.range,a=r.placeholder),!s||!a)return;if(s.start.line>i.line||s.end.line<i.line){this._logService.warn("INVALID rename location: position line must be within range start/end lines");return}return{range:d.Range.from(s),text:a}}catch(r){const s=H._asMessage(r);return s?{rejectReason:s,range:void 0,text:void 0}:Promise.reject(r)}}static _asMessage(e){return typeof e=="string"?e:e instanceof Error&&typeof e.message=="string"?e.message:void 0}}class R{constructor(e,t,o){this._documents=e;this._provider=t;this._logService=o}static languageTriggerKindToVSCodeTriggerKind={[C.NewSymbolNameTriggerKind.Invoke]:de.Invoke,[C.NewSymbolNameTriggerKind.Automatic]:de.Automatic};async supportsAutomaticNewSymbolNamesTriggerKind(){return this._provider.supportsAutomaticTriggerKind}async provideNewSymbolNames(e,t,o,n){const i=this._documents.getDocument(e),r=d.Range.to(t);try{const s=R.languageTriggerKindToVSCodeTriggerKind[o],a=await this._provider.provideNewSymbolNames(i,r,s,n);return a?a.map(c=>typeof c=="string"?{newSymbolName:c}:{newSymbolName:c.newSymbolName,tags:c.tags}):void 0}catch(s){this._logService.error(R._asMessage(s)??JSON.stringify(s,null,"	"));return}}static _asMessage(e){return typeof e=="string"?e:e instanceof Error&&typeof e.message=="string"?e.message:void 0}}class X{constructor(e,t){this.resultId=e;this.tokens=t}}class _{constructor(e,t){this._documents=e;this._provider=t;this._previousResults=new Map}_previousResults;_nextResultId=1;async provideDocumentSemanticTokens(e,t,o){const n=this._documents.getDocument(e),i=t!==0?this._previousResults.get(t):null;let r=typeof i?.resultId=="string"&&typeof this._provider.provideDocumentSemanticTokensEdits=="function"?await this._provider.provideDocumentSemanticTokensEdits(n,i.resultId,o):await this._provider.provideDocumentSemanticTokens(n,o);return i&&this._previousResults.delete(t),r?(r=_._fixProvidedSemanticTokens(r),this._send(_._convertToEdits(i,r),r)):null}async releaseDocumentSemanticColoring(e){this._previousResults.delete(e)}static _fixProvidedSemanticTokens(e){return _._isSemanticTokens(e)?_._isCorrectSemanticTokens(e)?e:new qe(new Uint32Array(e.data),e.resultId):_._isSemanticTokensEdits(e)?_._isCorrectSemanticTokensEdits(e)?e:new G(e.edits.map(t=>new Be(t.start,t.deleteCount,t.data?new Uint32Array(t.data):t.data)),e.resultId):e}static _isSemanticTokens(e){return e&&!!e.data}static _isCorrectSemanticTokens(e){return e.data instanceof Uint32Array}static _isSemanticTokensEdits(e){return e&&Array.isArray(e.edits)}static _isCorrectSemanticTokensEdits(e){for(const t of e.edits)if(!(t.data instanceof Uint32Array))return!1;return!0}static _convertToEdits(e,t){if(!_._isSemanticTokens(t)||!e||!e.tokens)return t;const o=e.tokens,n=o.length,i=t.data,r=i.length;let s=0;const a=Math.min(n,r);for(;s<a&&o[s]===i[s];)s++;if(s===n&&s===r)return new G([],t.resultId);let c=0;const h=a-s;for(;c<h&&o[n-c-1]===i[r-c-1];)c++;return new G([{start:s,deleteCount:n-s-c,data:i.subarray(s,r-c)}],t.resultId)}_send(e,t){if(_._isSemanticTokens(e)){const o=this._nextResultId++;return this._previousResults.set(o,new X(e.resultId,e.data)),j({id:o,type:"full",data:e.data})}if(_._isSemanticTokensEdits(e)){const o=this._nextResultId++;return _._isSemanticTokens(t)?this._previousResults.set(o,new X(t.resultId,t.data)):this._previousResults.set(o,new X(e.resultId)),j({id:o,type:"delta",deltas:(e.edits||[]).map(n=>({start:n.start,deleteCount:n.deleteCount,data:n.data}))})}return null}}class ye{constructor(e,t){this._documents=e;this._provider=t}async provideDocumentRangeSemanticTokens(e,t,o){const n=this._documents.getDocument(e),i=await this._provider.provideDocumentRangeSemanticTokens(n,d.Range.to(t),o);return i?this._send(i):null}_send(e){return j({id:0,type:"full",data:e.data})}}class T{constructor(e,t,o,n,i){this._documents=e;this._commands=t;this._provider=o;this._apiDeprecation=n;this._extension=i}static supportsResolving(e){return typeof e.resolveCompletionItem=="function"}_cache=new S("CompletionItem");_disposables=new Map;async provideCompletionItems(e,t,o,n){const i=this._documents.getDocument(e),r=d.Position.to(t),s=i.getWordRangeAtPosition(r)||new M(r,r),a=s.with({end:r}),c=new Le,h=await this._provider.provideCompletionItems(i,r,n,d.CompletionContext.to(o));if(!h||n.isCancellationRequested)return;const v=Array.isArray(h)?new Oe(h):h,l=T.supportsResolving(this._provider)?this._cache.add(v.items):this._cache.add([]),D=new I;this._disposables.set(l,D);const m=[],E={x:l,[u.ISuggestResultDtoField.completions]:m,[u.ISuggestResultDtoField.defaultRanges]:{replace:d.Range.from(s),insert:d.Range.from(a)},[u.ISuggestResultDtoField.isIncomplete]:v.isIncomplete||void 0,[u.ISuggestResultDtoField.duration]:c.elapsed()};for(let y=0;y<v.items.length;y++){const P=v.items[y],be=this._convertCompletionItem(P,[l,y],a,s);m.push(be)}return E}async resolveCompletionItem(e,t){if(typeof this._provider.resolveCompletionItem!="function")return;const o=this._cache.get(...e);if(!o)return;const n=this._convertCompletionItem(o,e),i=await this._provider.resolveCompletionItem(o,t);if(!i)return;const r=this._convertCompletionItem(i,e);return(n[u.ISuggestDataDtoField.insertText]!==r[u.ISuggestDataDtoField.insertText]||n[u.ISuggestDataDtoField.insertTextRules]!==r[u.ISuggestDataDtoField.insertTextRules])&&this._apiDeprecation.report("CompletionItem.insertText",this._extension,"extension MAY NOT change 'insertText' of a CompletionItem during resolve"),(n[u.ISuggestDataDtoField.commandIdent]!==r[u.ISuggestDataDtoField.commandIdent]||n[u.ISuggestDataDtoField.commandId]!==r[u.ISuggestDataDtoField.commandId]||!Re(n[u.ISuggestDataDtoField.commandArguments],r[u.ISuggestDataDtoField.commandArguments]))&&this._apiDeprecation.report("CompletionItem.command",this._extension,"extension MAY NOT change 'command' of a CompletionItem during resolve"),{...n,[u.ISuggestDataDtoField.documentation]:r[u.ISuggestDataDtoField.documentation],[u.ISuggestDataDtoField.detail]:r[u.ISuggestDataDtoField.detail],[u.ISuggestDataDtoField.additionalTextEdits]:r[u.ISuggestDataDtoField.additionalTextEdits],[u.ISuggestDataDtoField.insertText]:r[u.ISuggestDataDtoField.insertText],[u.ISuggestDataDtoField.insertTextRules]:r[u.ISuggestDataDtoField.insertTextRules],[u.ISuggestDataDtoField.commandIdent]:r[u.ISuggestDataDtoField.commandIdent],[u.ISuggestDataDtoField.commandId]:r[u.ISuggestDataDtoField.commandId],[u.ISuggestDataDtoField.commandArguments]:r[u.ISuggestDataDtoField.commandArguments]}}releaseCompletionItems(e){this._disposables.get(e)?.dispose(),this._disposables.delete(e),this._cache.delete(e)}_convertCompletionItem(e,t,o,n){const i=this._disposables.get(t[0]);if(!i)throw Error("DisposableStore is missing...");const r=this._commands.toInternal(e.command,i),s={x:t,[u.ISuggestDataDtoField.label]:e.label,[u.ISuggestDataDtoField.kind]:e.kind!==void 0?d.CompletionItemKind.from(e.kind):void 0,[u.ISuggestDataDtoField.kindModifier]:e.tags&&e.tags.map(d.CompletionItemTag.from),[u.ISuggestDataDtoField.detail]:e.detail,[u.ISuggestDataDtoField.documentation]:typeof e.documentation>"u"?void 0:d.MarkdownString.fromStrict(e.documentation),[u.ISuggestDataDtoField.sortText]:e.sortText!==e.label?e.sortText:void 0,[u.ISuggestDataDtoField.filterText]:e.filterText!==e.label?e.filterText:void 0,[u.ISuggestDataDtoField.preselect]:e.preselect||void 0,[u.ISuggestDataDtoField.insertTextRules]:e.keepWhitespace?C.CompletionItemInsertTextRule.KeepWhitespace:C.CompletionItemInsertTextRule.None,[u.ISuggestDataDtoField.commitCharacters]:e.commitCharacters?.join(""),[u.ISuggestDataDtoField.additionalTextEdits]:e.additionalTextEdits&&e.additionalTextEdits.map(d.TextEdit.from),[u.ISuggestDataDtoField.commandIdent]:r?.$ident,[u.ISuggestDataDtoField.commandId]:r?.id,[u.ISuggestDataDtoField.commandArguments]:r?.$ident?void 0:r?.arguments};e.textEdit?(this._apiDeprecation.report("CompletionItem.textEdit",this._extension,"Use 'CompletionItem.insertText' and 'CompletionItem.range' instead."),s[u.ISuggestDataDtoField.insertText]=e.textEdit.newText):typeof e.insertText=="string"?s[u.ISuggestDataDtoField.insertText]=e.insertText:e.insertText instanceof je&&(s[u.ISuggestDataDtoField.insertText]=e.insertText.value,s[u.ISuggestDataDtoField.insertTextRules]|=C.CompletionItemInsertTextRule.InsertAsSnippet);let a;return e.textEdit?a=e.textEdit.range:e.range&&(a=e.range),M.isRange(a)?s[u.ISuggestDataDtoField.range]=d.Range.from(a):a&&(!o?.isEqual(a.inserting)||!n?.isEqual(a.replacing))&&(s[u.ISuggestDataDtoField.range]={insert:d.Range.from(a.inserting),replace:d.Range.from(a.replacing)}),s}}class w{async provideInlineCompletions(e,t,o,n){}async provideInlineEditsForRange(e,t,o,n){}disposeCompletions(e){}handleDidShowCompletionItem(e,t,o){}handlePartialAccept(e,t,o,n){}}class Xe extends w{constructor(t,o,n,i){super();this._extension=t;this._documents=o;this._provider=n;this._commands=i}_references=new Pe;_isAdditionsProposedApiEnabled=k(this._extension,"inlineCompletionsAdditions");get supportsHandleEvents(){return k(this._extension,"inlineCompletionsAdditions")&&(typeof this._provider.handleDidShowCompletionItem=="function"||typeof this._provider.handleDidPartiallyAcceptCompletionItem=="function")}languageTriggerKindToVSCodeTriggerKind={[C.InlineCompletionTriggerKind.Automatic]:se.Automatic,[C.InlineCompletionTriggerKind.Explicit]:se.Invoke};async provideInlineCompletions(t,o,n,i){const r=this._documents.getDocument(t),s=d.Position.to(o),a=await this._provider.provideInlineCompletionItems(r,s,{selectedCompletionInfo:n.selectedSuggestionInfo?{range:d.Range.to(n.selectedSuggestionInfo.range),text:n.selectedSuggestionInfo.text}:void 0,triggerKind:this.languageTriggerKindToVSCodeTriggerKind[n.triggerKind]},i);if(!a||i.isCancellationRequested)return;const c=Array.isArray(a)?a:a.items,h=this._isAdditionsProposedApiEnabled?Array.isArray(a)?[]:a.commands||[]:[],v=this._isAdditionsProposedApiEnabled&&!Array.isArray(a)?a.enableForwardStability:void 0;let l;return{pid:this._references.createReferenceId({dispose(){l?.dispose()},items:c}),items:c.map((m,E)=>{let y;m.command&&(l||(l=new I),y=this._commands.toInternal(m.command,l));const P=m.insertText;return{insertText:typeof P=="string"?P:{snippet:P.value},filterText:m.filterText,range:m.range?d.Range.from(m.range):void 0,command:y,idx:E,completeBracketPairs:this._isAdditionsProposedApiEnabled?m.completeBracketPairs:!1}}),commands:h.map(m=>(l||(l=new I),this._commands.toInternal(m,l))),suppressSuggestions:!1,enableForwardStability:v}}async provideInlineEditsForRange(t,o,n,i){if(!this._provider.provideInlineEditsForRange)return;Je(this._extension,"inlineCompletionsAdditions");const r=this._documents.getDocument(t),s=d.Range.to(o),a=await this._provider.provideInlineEditsForRange(r,s,{selectedCompletionInfo:n.selectedSuggestionInfo?{range:d.Range.to(n.selectedSuggestionInfo.range),text:n.selectedSuggestionInfo.text}:void 0,triggerKind:this.languageTriggerKindToVSCodeTriggerKind[n.triggerKind],userPrompt:n.userPrompt},i);if(!a||i.isCancellationRequested)return;const c=Array.isArray(a)?a:a.items,h=this._isAdditionsProposedApiEnabled?Array.isArray(a)?[]:a.commands||[]:[],v=this._isAdditionsProposedApiEnabled&&!Array.isArray(a)?a.enableForwardStability:void 0;let l;return{pid:this._references.createReferenceId({dispose(){l?.dispose()},items:c}),items:c.map((m,E)=>{let y;m.command&&(l||(l=new I),y=this._commands.toInternal(m.command,l));const P=m.insertText;return{insertText:typeof P=="string"?P:{snippet:P.value},filterText:m.filterText,range:m.range?d.Range.from(m.range):void 0,command:y,idx:E,completeBracketPairs:this._isAdditionsProposedApiEnabled?m.completeBracketPairs:!1}}),commands:h.map(m=>(l||(l=new I),this._commands.toInternal(m,l))),suppressSuggestions:!1,enableForwardStability:v}}disposeCompletions(t){this._references.disposeReferenceId(t)?.dispose()}handleDidShowCompletionItem(t,o,n){const i=this._references.get(t)?.items[o];i&&this._provider.handleDidShowCompletionItem&&this._isAdditionsProposedApiEnabled&&this._provider.handleDidShowCompletionItem(i,n)}handlePartialAccept(t,o,n,i){const r=this._references.get(t)?.items[o];r&&this._provider.handleDidPartiallyAcceptCompletionItem&&this._isAdditionsProposedApiEnabled&&(this._provider.handleDidPartiallyAcceptCompletionItem(r,n),this._provider.handleDidPartiallyAcceptCompletionItem(r,d.PartialAcceptInfo.to(i)))}}class Y{constructor(e,t,o,n){this._documents=t;this._provider=o;this._commands=n}_references=new Pe;languageTriggerKindToVSCodeTriggerKind={[C.InlineEditTriggerKind.Automatic]:ae.Automatic,[C.InlineEditTriggerKind.Invoke]:ae.Invoke};async provideInlineEdits(e,t,o){const n=this._documents.getDocument(e),i=await this._provider.provideInlineEdit(n,{triggerKind:this.languageTriggerKindToVSCodeTriggerKind[t.triggerKind]},o);if(!i||o.isCancellationRequested)return;let r;const s=this._references.createReferenceId({dispose(){r?.dispose()},item:i});let a;i.accepted&&(r||(r=new I),a=this._commands.toInternal(i.accepted,r));let c;return i.rejected&&(r||(r=new I),c=this._commands.toInternal(i.rejected,r)),{pid:s,text:i.text,range:d.Range.from(i.range),accepted:a,rejected:c}}disposeEdit(e){this._references.disposeReferenceId(e)?.dispose()}}class Pe{_references=new Map;_idPool=1;createReferenceId(e){const t=this._idPool++;return this._references.set(t,e),t}disposeReferenceId(e){const t=this._references.get(e);return this._references.delete(e),t}get(e){return this._references.get(e)}}class Z{constructor(e,t){this._documents=e;this._provider=t}_cache=new S("SignatureHelp");async provideSignatureHelp(e,t,o,n){const i=this._documents.getDocument(e),r=d.Position.to(t),s=this.reviveContext(o),a=await this._provider.provideSignatureHelp(i,r,n,s);if(a){const c=this._cache.add([a]);return{...d.SignatureHelp.from(a),id:c}}}reviveContext(e){let t;if(e.activeSignatureHelp){const o=d.SignatureHelp.to(e.activeSignatureHelp),n=this._cache.get(e.activeSignatureHelp.id,0);n?(t=n,t.activeSignature=o.activeSignature,t.activeParameter=o.activeParameter):t=o}return{...e,activeSignatureHelp:t}}releaseSignatureHelp(e){this._cache.delete(e)}}class V{constructor(e,t,o,n,i){this._documents=e;this._commands=t;this._provider=o;this._logService=n;this._extension=i}_cache=new S("InlayHints");_disposables=new Map;async provideInlayHints(e,t,o){const n=this._documents.getDocument(e),i=d.Range.to(t),r=await this._provider.provideInlayHints(n,i,o);if(!Array.isArray(r)||r.length===0){this._logService.trace(`[InlayHints] NO inlay hints from '${this._extension.identifier.value}' for range ${JSON.stringify(t)}`);return}if(o.isCancellationRequested)return;const s=this._cache.add(r);this._disposables.set(s,new I);const a={hints:[],cacheId:s};for(let c=0;c<r.length;c++)this._isValidInlayHint(r[c],i)&&a.hints.push(this._convertInlayHint(r[c],[s,c]));return this._logService.trace(`[InlayHints] ${a.hints.length} inlay hints from '${this._extension.identifier.value}' for range ${JSON.stringify(t)}`),a}async resolveInlayHint(e,t){if(typeof this._provider.resolveInlayHint!="function")return;const o=this._cache.get(...e);if(!o)return;const n=await this._provider.resolveInlayHint(o,t);if(n&&this._isValidInlayHint(n))return this._convertInlayHint(n,e)}releaseHints(e){this._disposables.get(e)?.dispose(),this._disposables.delete(e),this._cache.delete(e)}_isValidInlayHint(e,t){return!(e.label.length===0||Array.isArray(e.label)&&e.label.every(o=>o.value.length===0)||t&&!t.contains(e.position))}_convertInlayHint(e,t){const o=this._disposables.get(t[0]);if(!o)throw Error("DisposableStore is missing...");const n={label:"",cacheId:t,tooltip:d.MarkdownString.fromStrict(e.tooltip),position:d.Position.from(e.position),textEdits:e.textEdits&&e.textEdits.map(d.TextEdit.from),kind:e.kind&&d.InlayHintKind.from(e.kind),paddingLeft:e.paddingLeft,paddingRight:e.paddingRight};if(typeof e.label=="string")n.label=e.label;else{const i=[];n.label=i;for(const r of e.label){if(!r.value)continue;const s={label:r.value,tooltip:d.MarkdownString.fromStrict(r.tooltip)};ze.isLocation(r.location)&&(s.location=d.location.from(r.location)),r.command&&(s.command=this._commands.toInternal(r.command,o)),i.push(s)}}return n}}class b{constructor(e,t){this._documents=e;this._provider=t}_cache=new S("DocumentLink");async provideLinks(e,t){const o=this._documents.getDocument(e),n=await this._provider.provideDocumentLinks(o,t);if(!(!Array.isArray(n)||n.length===0)&&!t.isCancellationRequested){if(typeof this._provider.resolveDocumentLink!="function")return{links:n.filter(b._validateLink).map(d.DocumentLink.from)};{const i=this._cache.add(n),r={links:[],cacheId:i};for(let s=0;s<n.length;s++){if(!b._validateLink(n[s]))continue;const a=d.DocumentLink.from(n[s]);a.cacheId=[i,s],r.links.push(a)}return r}}}static _validateLink(e){return!(e.target&&e.target.path.length>5e4)}async resolveLink(e,t){if(typeof this._provider.resolveDocumentLink!="function")return;const o=this._cache.get(...e);if(!o)return;const n=await this._provider.resolveDocumentLink(o,t);if(!(!n||!b._validateLink(n)))return d.DocumentLink.from(n)}releaseLinks(e){this._cache.delete(e)}}class Q{constructor(e,t){this._documents=e;this._provider=t}async provideColors(e,t){const o=this._documents.getDocument(e),n=await this._provider.provideDocumentColors(o,t);return Array.isArray(n)?n.map(r=>({color:d.Color.from(r.color),range:d.Range.from(r.range)})):[]}async provideColorPresentations(e,t,o){const n=this._documents.getDocument(e),i=d.Range.to(t.range),r=d.Color.to(t.color),s=await this._provider.provideColorPresentations(r,{document:n,range:i},o);if(Array.isArray(s))return s.map(d.ColorPresentation.from)}}class Ce{constructor(e,t){this._documents=e;this._provider=t}async provideFoldingRanges(e,t,o){const n=this._documents.getDocument(e),i=await this._provider.provideFoldingRanges(n,t,o);if(Array.isArray(i))return i.map(d.FoldingRange.from)}}class Se{constructor(e,t,o){this._documents=e;this._provider=t;this._logService=o}async provideSelectionRanges(e,t,o){const n=this._documents.getDocument(e),i=t.map(d.Position.to),r=await this._provider.provideSelectionRanges(n,i,o);if(!B(r))return[];if(r.length!==i.length)return this._logService.warn("BAD selection ranges, provider must return ranges for each position"),[];const s=[];for(let a=0;a<i.length;a++){const c=[];s.push(c);let h=i[a],v=r[a];for(;;){if(!v.range.contains(h))throw new Error("INVALID selection range, must contain the previous range");if(c.push(d.SelectionRange.from(v)),!v.parent)break;h=v.range,v=v.parent}}return s}}class ${constructor(e,t){this._documents=e;this._provider=t}_idPool=new oe("");_cache=new Map;async prepareSession(e,t,o){const n=this._documents.getDocument(e),i=d.Position.to(t),r=await this._provider.prepareCallHierarchy(n,i,o);if(!r)return;const s=this._idPool.nextId();return this._cache.set(s,new Map),Array.isArray(r)?r.map(a=>this._cacheAndConvertItem(s,a)):[this._cacheAndConvertItem(s,r)]}async provideCallsTo(e,t,o){const n=this._itemFromCache(e,t);if(!n)throw new Error("missing call hierarchy item");const i=await this._provider.provideCallHierarchyIncomingCalls(n,o);if(i)return i.map(r=>({from:this._cacheAndConvertItem(e,r.from),fromRanges:r.fromRanges.map(s=>d.Range.from(s))}))}async provideCallsFrom(e,t,o){const n=this._itemFromCache(e,t);if(!n)throw new Error("missing call hierarchy item");const i=await this._provider.provideCallHierarchyOutgoingCalls(n,o);if(i)return i.map(r=>({to:this._cacheAndConvertItem(e,r.to),fromRanges:r.fromRanges.map(s=>d.Range.from(s))}))}releaseSession(e){this._cache.delete(e)}_cacheAndConvertItem(e,t){const o=this._cache.get(e),n=d.CallHierarchyItem.from(t,e,o.size.toString(36));return o.set(n._itemId,t),n}_itemFromCache(e,t){return this._cache.get(e)?.get(t)}}class F{constructor(e,t){this._documents=e;this._provider=t}_idPool=new oe("");_cache=new Map;async prepareSession(e,t,o){const n=this._documents.getDocument(e),i=d.Position.to(t),r=await this._provider.prepareTypeHierarchy(n,i,o);if(!r)return;const s=this._idPool.nextId();return this._cache.set(s,new Map),Array.isArray(r)?r.map(a=>this._cacheAndConvertItem(s,a)):[this._cacheAndConvertItem(s,r)]}async provideSupertypes(e,t,o){const n=this._itemFromCache(e,t);if(!n)throw new Error("missing type hierarchy item");const i=await this._provider.provideTypeHierarchySupertypes(n,o);if(i)return i.map(r=>this._cacheAndConvertItem(e,r))}async provideSubtypes(e,t,o){const n=this._itemFromCache(e,t);if(!n)throw new Error("missing type hierarchy item");const i=await this._provider.provideTypeHierarchySubtypes(n,o);if(i)return i.map(r=>this._cacheAndConvertItem(e,r))}releaseSession(e){this._cache.delete(e)}_cacheAndConvertItem(e,t){const o=this._cache.get(e),n=d.TypeHierarchyItem.from(t,e,o.size.toString(36));return o.set(n._itemId,t),n}_itemFromCache(e,t){return this._cache.get(e)?.get(t)}}class z{constructor(e,t,o,n,i){this._proxy=e;this._documents=t;this._provider=o;this._handle=n;this._extension=i}_cache=new S("DocumentDropEdit");async provideDocumentOnDropEdits(e,t,o,n,i){const r=this._documents.getDocument(t),s=d.Position.to(o),a=d.DataTransfer.toDataTransfer(n,async l=>(await this._proxy.$resolveDocumentOnDropFileData(this._handle,e,l)).buffer),c=await this._provider.provideDocumentDropEdits(r,s,a,i);if(!c)return;const h=Ee(c),v=this._cache.add(h);return h.map((l,D)=>({_cacheId:[v,D],title:l.title??ie("defaultDropLabel","Drop using '{0}' extension",this._extension.displayName||this._extension.name),kind:l.kind?.value,yieldTo:l.yieldTo?.map(m=>m.value),insertText:typeof l.insertText=="string"?l.insertText:{snippet:l.insertText.value},additionalEdit:l.additionalEdit?d.WorkspaceEdit.from(l.additionalEdit,void 0):void 0}))}async resolveDropEdit(e,t){const[o,n]=e,i=this._cache.get(o,n);if(!i||!this._provider.resolveDocumentDropEdit)return{};const r=await this._provider.resolveDocumentDropEdit(i,t)??i;return{additionalEdit:r.additionalEdit?d.WorkspaceEdit.from(r.additionalEdit,void 0):void 0}}releaseDropEdits(e){this._cache.delete(e)}}class xe{constructor(e,t){this._documents=e;this._provider=t}async provideMappedEdits(e,t,o,n){const i=p.revive(e),r=this._documents.getDocument(i),s=v=>({uri:p.revive(v.uri),version:v.version,ranges:v.ranges.map(l=>d.Range.to(l))}),a=o.documents.map(v=>v.map(s)),c={documents:a,selections:a[0]?.[0]?.ranges??[],conversation:o.conversation?.map(v=>v.type==="response"?{type:"response",message:v.message,references:v.references?.map(s)}:{type:"request",message:v.message})},h=await this._provider.provideMappedEdits(r,t,c,n);return h?d.WorkspaceEdit.from(h):null}}class N{constructor(e,t){this.adapter=e;this.extension=t}}class f{constructor(e,t,o,n,i,r,s,a){this._uriTransformer=t;this._documents=o;this._commands=n;this._diagnostics=i;this._logService=r;this._apiDeprecation=s;this._extensionTelemetry=a;this._proxy=e.getProxy(u.MainContext.MainThreadLanguageFeatures)}static _handlePool=0;_proxy;_adapter=new Map;_transformDocumentSelector(e,t){return d.DocumentSelector.from(e,this._uriTransformer,t)}_createDisposable(e){return new A(()=>{this._adapter.delete(e),this._proxy.$unregister(e)})}_nextHandle(){return f._handlePool++}async _withAdapter(e,t,o,n,i,r=!1){const s=this._adapter.get(e);if(!s||!(s.adapter instanceof t))return n;const a=Date.now();r||this._logService.trace(`[${s.extension.identifier.value}] INVOKE provider '${o.toString().replace(/[\r\n]/g,"")}'`);const c=o(s.adapter,s.extension);return Promise.resolve(c).catch(h=>{we(h)||(this._logService.error(`[${s.extension.identifier.value}] provider FAILED`),this._logService.error(h),this._extensionTelemetry.onExtensionError(s.extension.identifier,h))}).finally(()=>{r||this._logService.trace(`[${s.extension.identifier.value}] provider DONE after ${Date.now()-a}ms`)}),He.isCancellationToken(i)?Te(c,i):c}_addNewAdapter(e,t){const o=this._nextHandle();return this._adapter.set(o,new N(e,t)),o}static _extLabel(e){return e.displayName||e.name}static _extId(e){return e.identifier.value}registerDocumentSymbolProvider(e,t,o,n){const i=this._addNewAdapter(new q(this._documents,o),e),r=n&&n.label||f._extLabel(e);return this._proxy.$registerDocumentSymbolProvider(i,this._transformDocumentSelector(t,e),r),this._createDisposable(i)}$provideDocumentSymbols(e,t,o){return this._withAdapter(e,q,n=>n.provideDocumentSymbols(p.revive(t),o),void 0,o)}registerCodeLensProvider(e,t,o){const n=this._nextHandle(),i=typeof o.onDidChangeCodeLenses=="function"?this._nextHandle():void 0;this._adapter.set(n,new N(new O(this._documents,this._commands.converter,o,e,this._extensionTelemetry,this._logService),e)),this._proxy.$registerCodeLensSupport(n,this._transformDocumentSelector(t,e),i);let r=this._createDisposable(n);if(i!==void 0){const s=o.onDidChangeCodeLenses(a=>this._proxy.$emitCodeLensEvent(i));r=A.from(r,s)}return r}$provideCodeLenses(e,t,o){return this._withAdapter(e,O,n=>n.provideCodeLenses(p.revive(t),o),void 0,o,t.scheme==="output")}$resolveCodeLens(e,t,o){return this._withAdapter(e,O,n=>n.resolveCodeLens(t,o),void 0,void 0,!0)}$releaseCodeLenses(e,t){this._withAdapter(e,O,o=>Promise.resolve(o.releaseCodeLenses(t)),void 0,void 0,!0)}registerDefinitionProvider(e,t,o){const n=this._addNewAdapter(new ce(this._documents,o),e);return this._proxy.$registerDefinitionSupport(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$provideDefinition(e,t,o,n){return this._withAdapter(e,ce,i=>i.provideDefinition(p.revive(t),o,n),[],n)}registerDeclarationProvider(e,t,o){const n=this._addNewAdapter(new le(this._documents,o),e);return this._proxy.$registerDeclarationSupport(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$provideDeclaration(e,t,o,n){return this._withAdapter(e,le,i=>i.provideDeclaration(p.revive(t),o,n),[],n)}registerImplementationProvider(e,t,o){const n=this._addNewAdapter(new ue(this._documents,o),e);return this._proxy.$registerImplementationSupport(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$provideImplementation(e,t,o,n){return this._withAdapter(e,ue,i=>i.provideImplementation(p.revive(t),o,n),[],n)}registerTypeDefinitionProvider(e,t,o){const n=this._addNewAdapter(new me(this._documents,o),e);return this._proxy.$registerTypeDefinitionSupport(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$provideTypeDefinition(e,t,o,n){return this._withAdapter(e,me,i=>i.provideTypeDefinition(p.revive(t),o,n),[],n)}registerHoverProvider(e,t,o,n){const i=this._addNewAdapter(new U(this._documents,o),e);return this._proxy.$registerHoverProvider(i,this._transformDocumentSelector(t,e)),this._createDisposable(i)}$provideHover(e,t,o,n,i){return this._withAdapter(e,U,r=>r.provideHover(p.revive(t),o,n,i),void 0,i)}$releaseHover(e,t){this._withAdapter(e,U,o=>Promise.resolve(o.releaseHover(t)),void 0,void 0)}registerEvaluatableExpressionProvider(e,t,o,n){const i=this._addNewAdapter(new pe(this._documents,o),e);return this._proxy.$registerEvaluatableExpressionProvider(i,this._transformDocumentSelector(t,e)),this._createDisposable(i)}$provideEvaluatableExpression(e,t,o,n){return this._withAdapter(e,pe,i=>i.provideEvaluatableExpression(p.revive(t),o,n),void 0,n)}registerInlineValuesProvider(e,t,o,n){const i=typeof o.onDidChangeInlineValues=="function"?this._nextHandle():void 0,r=this._addNewAdapter(new ve(this._documents,o),e);this._proxy.$registerInlineValuesProvider(r,this._transformDocumentSelector(t,e),i);let s=this._createDisposable(r);if(i!==void 0){const a=o.onDidChangeInlineValues(c=>this._proxy.$emitInlineValuesEvent(i));s=A.from(s,a)}return s}$provideInlineValues(e,t,o,n,i){return this._withAdapter(e,ve,r=>r.provideInlineValues(p.revive(t),o,n,i),void 0,i)}registerDocumentHighlightProvider(e,t,o){const n=this._addNewAdapter(new ge(this._documents,o),e);return this._proxy.$registerDocumentHighlightProvider(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}registerMultiDocumentHighlightProvider(e,t,o){const n=this._addNewAdapter(new he(this._documents,o,this._logService),e);return this._proxy.$registerMultiDocumentHighlightProvider(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$provideDocumentHighlights(e,t,o,n){return this._withAdapter(e,ge,i=>i.provideDocumentHighlights(p.revive(t),o,n),void 0,n)}$provideMultiDocumentHighlights(e,t,o,n,i){return this._withAdapter(e,he,r=>r.provideMultiDocumentHighlights(p.revive(t),o,n.map(s=>p.revive(s)),i),void 0,i)}registerLinkedEditingRangeProvider(e,t,o){const n=this._addNewAdapter(new fe(this._documents,o),e);return this._proxy.$registerLinkedEditingRangeProvider(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$provideLinkedEditingRanges(e,t,o,n){return this._withAdapter(e,fe,async i=>{const r=await i.provideLinkedEditingRanges(p.revive(t),o,n);if(r)return{ranges:r.ranges,wordPattern:r.wordPattern?f._serializeRegExp(r.wordPattern):void 0}},void 0,n)}registerReferenceProvider(e,t,o){const n=this._addNewAdapter(new De(this._documents,o),e);return this._proxy.$registerReferenceSupport(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$provideReferences(e,t,o,n,i){return this._withAdapter(e,De,r=>r.provideReferences(p.revive(t),o,n,i),void 0,i)}registerCodeActionProvider(e,t,o,n){const i=new I,r=this._addNewAdapter(new x(this._documents,this._commands.converter,this._diagnostics,o,this._logService,e,this._apiDeprecation),e);return this._proxy.$registerCodeActionSupport(r,this._transformDocumentSelector(t,e),{providedKinds:n?.providedCodeActionKinds?.map(s=>s.value),documentation:n?.documentation?.map(s=>({kind:s.kind.value,command:this._commands.converter.toInternal(s.command,i)}))},f._extLabel(e),f._extId(e),!!o.resolveCodeAction),i.add(this._createDisposable(r)),i}$provideCodeActions(e,t,o,n,i){return this._withAdapter(e,x,r=>r.provideCodeActions(p.revive(t),o,n,i),void 0,i)}$resolveCodeAction(e,t,o){return this._withAdapter(e,x,n=>n.resolveCodeAction(t,o),{},void 0)}$releaseCodeActions(e,t){this._withAdapter(e,x,o=>Promise.resolve(o.releaseCodeActions(t)),void 0,void 0)}registerDocumentFormattingEditProvider(e,t,o){const n=this._addNewAdapter(new _e(this._documents,o),e);return this._proxy.$registerDocumentFormattingSupport(n,this._transformDocumentSelector(t,e),e.identifier,e.displayName||e.name),this._createDisposable(n)}$provideDocumentFormattingEdits(e,t,o,n){return this._withAdapter(e,_e,i=>i.provideDocumentFormattingEdits(p.revive(t),o,n),void 0,n)}registerDocumentRangeFormattingEditProvider(e,t,o){const n=typeof o.provideDocumentRangesFormattingEdits=="function",i=this._addNewAdapter(new J(this._documents,o),e);return this._proxy.$registerRangeFormattingSupport(i,this._transformDocumentSelector(t,e),e.identifier,e.displayName||e.name,n),this._createDisposable(i)}$provideDocumentRangeFormattingEdits(e,t,o,n,i){return this._withAdapter(e,J,r=>r.provideDocumentRangeFormattingEdits(p.revive(t),o,n,i),void 0,i)}$provideDocumentRangesFormattingEdits(e,t,o,n,i){return this._withAdapter(e,J,r=>r.provideDocumentRangesFormattingEdits(p.revive(t),o,n,i),void 0,i)}registerOnTypeFormattingEditProvider(e,t,o,n){const i=this._addNewAdapter(new Ie(this._documents,o),e);return this._proxy.$registerOnTypeFormattingSupport(i,this._transformDocumentSelector(t,e),n,e.identifier),this._createDisposable(i)}$provideOnTypeFormattingEdits(e,t,o,n,i,r){return this._withAdapter(e,Ie,s=>s.provideOnTypeFormattingEdits(p.revive(t),o,n,i,r),void 0,r)}registerWorkspaceSymbolProvider(e,t){const o=this._addNewAdapter(new K(t,this._logService),e);return this._proxy.$registerNavigateTypeSupport(o,typeof t.resolveWorkspaceSymbol=="function"),this._createDisposable(o)}$provideWorkspaceSymbols(e,t,o){return this._withAdapter(e,K,n=>n.provideWorkspaceSymbols(t,o),{symbols:[]},o)}$resolveWorkspaceSymbol(e,t,o){return this._withAdapter(e,K,n=>n.resolveWorkspaceSymbol(t,o),void 0,void 0)}$releaseWorkspaceSymbols(e,t){this._withAdapter(e,K,o=>o.releaseWorkspaceSymbols(t),void 0,void 0)}registerRenameProvider(e,t,o){const n=this._addNewAdapter(new H(this._documents,o,this._logService),e);return this._proxy.$registerRenameSupport(n,this._transformDocumentSelector(t,e),H.supportsResolving(o)),this._createDisposable(n)}$provideRenameEdits(e,t,o,n,i){return this._withAdapter(e,H,r=>r.provideRenameEdits(p.revive(t),o,n,i),void 0,i)}$resolveRenameLocation(e,t,o,n){return this._withAdapter(e,H,i=>i.resolveRenameLocation(p.revive(t),o,n),void 0,n)}registerNewSymbolNamesProvider(e,t,o){const n=this._addNewAdapter(new R(this._documents,o,this._logService),e);return this._proxy.$registerNewSymbolNamesProvider(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$supportsAutomaticNewSymbolNamesTriggerKind(e){return this._withAdapter(e,R,t=>t.supportsAutomaticNewSymbolNamesTriggerKind(),!1,void 0)}$provideNewSymbolNames(e,t,o,n,i){return this._withAdapter(e,R,r=>r.provideNewSymbolNames(p.revive(t),o,n,i),void 0,i)}registerDocumentSemanticTokensProvider(e,t,o,n){const i=this._addNewAdapter(new _(this._documents,o),e),r=typeof o.onDidChangeSemanticTokens=="function"?this._nextHandle():void 0;this._proxy.$registerDocumentSemanticTokensProvider(i,this._transformDocumentSelector(t,e),n,r);let s=this._createDisposable(i);if(r){const a=o.onDidChangeSemanticTokens(c=>this._proxy.$emitDocumentSemanticTokensEvent(r));s=A.from(s,a)}return s}$provideDocumentSemanticTokens(e,t,o,n){return this._withAdapter(e,_,i=>i.provideDocumentSemanticTokens(p.revive(t),o,n),null,n)}$releaseDocumentSemanticTokens(e,t){this._withAdapter(e,_,o=>o.releaseDocumentSemanticColoring(t),void 0,void 0)}registerDocumentRangeSemanticTokensProvider(e,t,o,n){const i=this._addNewAdapter(new ye(this._documents,o),e);return this._proxy.$registerDocumentRangeSemanticTokensProvider(i,this._transformDocumentSelector(t,e),n),this._createDisposable(i)}$provideDocumentRangeSemanticTokens(e,t,o,n){return this._withAdapter(e,ye,i=>i.provideDocumentRangeSemanticTokens(p.revive(t),o,n),null,n)}registerCompletionItemProvider(e,t,o,n){const i=this._addNewAdapter(new T(this._documents,this._commands.converter,o,this._apiDeprecation,e),e);return this._proxy.$registerCompletionsProvider(i,this._transformDocumentSelector(t,e),n,T.supportsResolving(o),e.identifier),this._createDisposable(i)}$provideCompletionItems(e,t,o,n,i){return this._withAdapter(e,T,r=>r.provideCompletionItems(p.revive(t),o,n,i),void 0,i)}$resolveCompletionItem(e,t,o){return this._withAdapter(e,T,n=>n.resolveCompletionItem(t,o),void 0,o)}$releaseCompletionItems(e,t){this._withAdapter(e,T,o=>o.releaseCompletionItems(t),void 0,void 0)}registerInlineCompletionsProvider(e,t,o,n){const i=new Xe(e,this._documents,o,this._commands.converter),r=this._addNewAdapter(i,e);return this._proxy.$registerInlineCompletionsSupport(r,this._transformDocumentSelector(t,e),i.supportsHandleEvents,re.toKey(e.identifier.value),n?.yieldTo?.map(s=>re.toKey(s))||[]),this._createDisposable(r)}$provideInlineCompletions(e,t,o,n,i){return this._withAdapter(e,w,r=>r.provideInlineCompletions(p.revive(t),o,n,i),void 0,i)}$provideInlineEditsForRange(e,t,o,n,i){return this._withAdapter(e,w,r=>r.provideInlineEditsForRange(p.revive(t),o,n,i),void 0,i)}$handleInlineCompletionDidShow(e,t,o,n){this._withAdapter(e,w,async i=>{i.handleDidShowCompletionItem(t,o,n)},void 0,void 0)}$handleInlineCompletionPartialAccept(e,t,o,n,i){this._withAdapter(e,w,async r=>{r.handlePartialAccept(t,o,n,i)},void 0,void 0)}$freeInlineCompletionsList(e,t){this._withAdapter(e,w,async o=>{o.disposeCompletions(t)},void 0,void 0)}registerInlineEditProvider(e,t,o){const n=new Y(e,this._documents,o,this._commands.converter),i=this._addNewAdapter(n,e);return this._proxy.$registerInlineEditProvider(i,this._transformDocumentSelector(t,e),e.identifier),this._createDisposable(i)}$provideInlineEdit(e,t,o,n){return this._withAdapter(e,Y,i=>i.provideInlineEdits(p.revive(t),o,n),void 0,n)}$freeInlineEdit(e,t){this._withAdapter(e,Y,async o=>{o.disposeEdit(t)},void 0,void 0)}registerSignatureHelpProvider(e,t,o,n){const i=Array.isArray(n)?{triggerCharacters:n,retriggerCharacters:[]}:n,r=this._addNewAdapter(new Z(this._documents,o),e);return this._proxy.$registerSignatureHelpProvider(r,this._transformDocumentSelector(t,e),i),this._createDisposable(r)}$provideSignatureHelp(e,t,o,n,i){return this._withAdapter(e,Z,r=>r.provideSignatureHelp(p.revive(t),o,n,i),void 0,i)}$releaseSignatureHelp(e,t){this._withAdapter(e,Z,o=>o.releaseSignatureHelp(t),void 0,void 0)}registerInlayHintsProvider(e,t,o){const n=typeof o.onDidChangeInlayHints=="function"?this._nextHandle():void 0,i=this._addNewAdapter(new V(this._documents,this._commands.converter,o,this._logService,e),e);this._proxy.$registerInlayHintsProvider(i,this._transformDocumentSelector(t,e),typeof o.resolveInlayHint=="function",n,f._extLabel(e));let r=this._createDisposable(i);if(n!==void 0){const s=o.onDidChangeInlayHints(a=>this._proxy.$emitInlayHintsEvent(n));r=A.from(r,s)}return r}$provideInlayHints(e,t,o,n){return this._withAdapter(e,V,i=>i.provideInlayHints(p.revive(t),o,n),void 0,n)}$resolveInlayHint(e,t,o){return this._withAdapter(e,V,n=>n.resolveInlayHint(t,o),void 0,o)}$releaseInlayHints(e,t){this._withAdapter(e,V,o=>o.releaseHints(t),void 0,void 0)}registerDocumentLinkProvider(e,t,o){const n=this._addNewAdapter(new b(this._documents,o),e);return this._proxy.$registerDocumentLinkProvider(n,this._transformDocumentSelector(t,e),typeof o.resolveDocumentLink=="function"),this._createDisposable(n)}$provideDocumentLinks(e,t,o){return this._withAdapter(e,b,n=>n.provideLinks(p.revive(t),o),void 0,o,t.scheme==="output")}$resolveDocumentLink(e,t,o){return this._withAdapter(e,b,n=>n.resolveLink(t,o),void 0,void 0,!0)}$releaseDocumentLinks(e,t){this._withAdapter(e,b,o=>o.releaseLinks(t),void 0,void 0,!0)}registerColorProvider(e,t,o){const n=this._addNewAdapter(new Q(this._documents,o),e);return this._proxy.$registerDocumentColorProvider(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$provideDocumentColors(e,t,o){return this._withAdapter(e,Q,n=>n.provideColors(p.revive(t),o),[],o)}$provideColorPresentations(e,t,o,n){return this._withAdapter(e,Q,i=>i.provideColorPresentations(p.revive(t),o,n),void 0,n)}registerFoldingRangeProvider(e,t,o){const n=this._nextHandle(),i=typeof o.onDidChangeFoldingRanges=="function"?this._nextHandle():void 0;this._adapter.set(n,new N(new Ce(this._documents,o),e)),this._proxy.$registerFoldingRangeProvider(n,this._transformDocumentSelector(t,e),e.identifier,i);let r=this._createDisposable(n);if(i!==void 0){const s=o.onDidChangeFoldingRanges(()=>this._proxy.$emitFoldingRangeEvent(i));r=A.from(r,s)}return r}$provideFoldingRanges(e,t,o,n){return this._withAdapter(e,Ce,i=>i.provideFoldingRanges(p.revive(t),o,n),void 0,n)}registerSelectionRangeProvider(e,t,o){const n=this._addNewAdapter(new Se(this._documents,o,this._logService),e);return this._proxy.$registerSelectionRangeProvider(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$provideSelectionRanges(e,t,o,n){return this._withAdapter(e,Se,i=>i.provideSelectionRanges(p.revive(t),o,n),[],n)}registerCallHierarchyProvider(e,t,o){const n=this._addNewAdapter(new $(this._documents,o),e);return this._proxy.$registerCallHierarchyProvider(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$prepareCallHierarchy(e,t,o,n){return this._withAdapter(e,$,i=>Promise.resolve(i.prepareSession(p.revive(t),o,n)),void 0,n)}$provideCallHierarchyIncomingCalls(e,t,o,n){return this._withAdapter(e,$,i=>i.provideCallsTo(t,o,n),void 0,n)}$provideCallHierarchyOutgoingCalls(e,t,o,n){return this._withAdapter(e,$,i=>i.provideCallsFrom(t,o,n),void 0,n)}$releaseCallHierarchy(e,t){this._withAdapter(e,$,o=>Promise.resolve(o.releaseSession(t)),void 0,void 0)}registerTypeHierarchyProvider(e,t,o){const n=this._addNewAdapter(new F(this._documents,o),e);return this._proxy.$registerTypeHierarchyProvider(n,this._transformDocumentSelector(t,e)),this._createDisposable(n)}$prepareTypeHierarchy(e,t,o,n){return this._withAdapter(e,F,i=>Promise.resolve(i.prepareSession(p.revive(t),o,n)),void 0,n)}$provideTypeHierarchySupertypes(e,t,o,n){return this._withAdapter(e,F,i=>i.provideSupertypes(t,o,n),void 0,n)}$provideTypeHierarchySubtypes(e,t,o,n){return this._withAdapter(e,F,i=>i.provideSubtypes(t,o,n),void 0,n)}$releaseTypeHierarchy(e,t){this._withAdapter(e,F,o=>Promise.resolve(o.releaseSession(t)),void 0,void 0)}registerDocumentOnDropEditProvider(e,t,o,n){const i=this._nextHandle();return this._adapter.set(i,new N(new z(this._proxy,this._documents,o,i,e),e)),this._proxy.$registerDocumentOnDropEditProvider(i,this._transformDocumentSelector(t,e),k(e,"documentPaste")&&n?{supportsResolve:!!o.resolveDocumentDropEdit,dropMimeTypes:n.dropMimeTypes}:void 0),this._createDisposable(i)}$provideDocumentOnDropEdits(e,t,o,n,i,r){return this._withAdapter(e,z,s=>Promise.resolve(s.provideDocumentOnDropEdits(t,p.revive(o),n,i,r)),void 0,void 0)}$resolveDropEdit(e,t,o){return this._withAdapter(e,z,n=>n.resolveDropEdit(t,o),{},void 0)}$releaseDocumentOnDropEdits(e,t){this._withAdapter(e,z,o=>Promise.resolve(o.releaseDropEdits(t)),void 0,void 0)}registerMappedEditsProvider(e,t,o){const n=this._addNewAdapter(new xe(this._documents,o),e);return this._proxy.$registerMappedEditsProvider(n,this._transformDocumentSelector(t,e),e.displayName??e.name),this._createDisposable(n)}$provideMappedEdits(e,t,o,n,i){return this._withAdapter(e,xe,r=>Promise.resolve(r.provideMappedEdits(t,o,n,i)),null,i)}registerDocumentPasteEditProvider(e,t,o,n){const i=this._nextHandle();return this._adapter.set(i,new N(new L(this._proxy,this._documents,o,i,e),e)),this._proxy.$registerPasteEditProvider(i,this._transformDocumentSelector(t,e),{supportsCopy:!!o.prepareDocumentPaste,supportsPaste:!!o.provideDocumentPasteEdits,supportsResolve:!!o.resolveDocumentPasteEdit,providedPasteEditKinds:n.providedPasteEditKinds?.map(r=>r.value),copyMimeTypes:n.copyMimeTypes,pasteMimeTypes:n.pasteMimeTypes}),this._createDisposable(i)}$prepareDocumentPaste(e,t,o,n,i){return this._withAdapter(e,L,r=>r.prepareDocumentPaste(p.revive(t),o,n,i),void 0,i)}$providePasteEdits(e,t,o,n,i,r,s){return this._withAdapter(e,L,a=>a.providePasteEdits(t,p.revive(o),n,i,r,s),void 0,s)}$resolvePasteEdit(e,t,o){return this._withAdapter(e,L,n=>n.resolvePasteEdit(t,o),{},void 0)}$releasePasteEdits(e,t){this._withAdapter(e,L,o=>Promise.resolve(o.releasePasteEdits(t)),void 0,void 0)}static _serializeRegExp(e){return{pattern:e.source,flags:e.flags}}static _serializeIndentationRule(e){return{decreaseIndentPattern:f._serializeRegExp(e.decreaseIndentPattern),increaseIndentPattern:f._serializeRegExp(e.increaseIndentPattern),indentNextLinePattern:e.indentNextLinePattern?f._serializeRegExp(e.indentNextLinePattern):void 0,unIndentedLinePattern:e.unIndentedLinePattern?f._serializeRegExp(e.unIndentedLinePattern):void 0}}static _serializeOnEnterRule(e){return{beforeText:f._serializeRegExp(e.beforeText),afterText:e.afterText?f._serializeRegExp(e.afterText):void 0,previousLineText:e.previousLineText?f._serializeRegExp(e.previousLineText):void 0,action:e.action}}static _serializeOnEnterRules(e){return e.map(f._serializeOnEnterRule)}static _serializeAutoClosingPair(e){return{open:e.open,close:e.close,notIn:e.notIn?e.notIn.map(t=>Ge.toString(t)):void 0}}static _serializeAutoClosingPairs(e){return e.map(f._serializeAutoClosingPair)}setLanguageConfiguration(e,t,o){const{wordPattern:n}=o;if(n&&$e(n))throw new Error(`Invalid language configuration: wordPattern '${n}' is not allowed to match the empty string.`);n?this._documents.setWordDefinitionFor(t,n):this._documents.setWordDefinitionFor(t,void 0),o.__electricCharacterSupport&&this._apiDeprecation.report("LanguageConfiguration.__electricCharacterSupport",e,"Do not use."),o.__characterPairSupport&&this._apiDeprecation.report("LanguageConfiguration.__characterPairSupport",e,"Do not use.");const i=this._nextHandle(),r={comments:o.comments,brackets:o.brackets,wordPattern:o.wordPattern?f._serializeRegExp(o.wordPattern):void 0,indentationRules:o.indentationRules?f._serializeIndentationRule(o.indentationRules):void 0,onEnterRules:o.onEnterRules?f._serializeOnEnterRules(o.onEnterRules):void 0,__electricCharacterSupport:o.__electricCharacterSupport,__characterPairSupport:o.__characterPairSupport,autoClosingPairs:o.autoClosingPairs?f._serializeAutoClosingPairs(o.autoClosingPairs):void 0};return this._proxy.$setLanguageConfiguration(i,t,r),this._createDisposable(i)}$setWordDefinitions(e){for(const t of e)this._documents.setWordDefinitionFor(t.languageId,new RegExp(t.regexSource,t.regexFlags))}}export{f as ExtHostLanguageFeatures};
+import { asArray, coalesce, isFalsyOrEmpty, isNonEmptyArray } from '../../../base/common/arrays.js';
+import { raceCancellationError } from '../../../base/common/async.js';
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { NotImplementedError, isCancellationError } from '../../../base/common/errors.js';
+import { IdGenerator } from '../../../base/common/idGenerator.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { equals, mixin } from '../../../base/common/objects.js';
+import { StopWatch } from '../../../base/common/stopwatch.js';
+import { regExpLeadsToEndlessLoop } from '../../../base/common/strings.js';
+import { assertType, isObject } from '../../../base/common/types.js';
+import { URI } from '../../../base/common/uri.js';
+import { Range as EditorRange } from '../../../editor/common/core/range.js';
+import { Selection } from '../../../editor/common/core/selection.js';
+import * as languages from '../../../editor/common/languages.js';
+import { encodeSemanticTokensDto } from '../../../editor/common/services/semanticTokensDto.js';
+import { localize } from '../../../nls.js';
+import { ExtensionIdentifier } from '../../../platform/extensions/common/extensions.js';
+import * as typeConvert from './extHostTypeConverters.js';
+import { CodeActionKind, CompletionList, Disposable, DocumentDropOrPasteEditKind, DocumentSymbol, InlineCompletionTriggerKind, InlineEditTriggerKind, InternalDataTransferItem, Location, NewSymbolNameTriggerKind, Range, SemanticTokens, SemanticTokensEdit, SemanticTokensEdits, SnippetString, SyntaxTokenType } from './extHostTypes.js';
+import { checkProposedApiEnabled, isProposedApiEnabled } from '../../services/extensions/common/extensions.js';
+import { Cache } from './cache.js';
+import * as extHostProtocol from './extHost.protocol.js';
+class DocumentSymbolAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideDocumentSymbols(resource, token) {
+        const doc = this._documents.getDocument(resource);
+        const value = await this._provider.provideDocumentSymbols(doc, token);
+        if (isFalsyOrEmpty(value)) {
+            return undefined;
+        }
+        else if (value[0] instanceof DocumentSymbol) {
+            return value.map(typeConvert.DocumentSymbol.from);
+        }
+        else {
+            return DocumentSymbolAdapter._asDocumentSymbolTree(value);
+        }
+    }
+    static _asDocumentSymbolTree(infos) {
+        infos = infos.slice(0).sort((a, b) => {
+            let res = a.location.range.start.compareTo(b.location.range.start);
+            if (res === 0) {
+                res = b.location.range.end.compareTo(a.location.range.end);
+            }
+            return res;
+        });
+        const res = [];
+        const parentStack = [];
+        for (const info of infos) {
+            const element = {
+                name: info.name || '!!MISSING: name!!',
+                kind: typeConvert.SymbolKind.from(info.kind),
+                tags: info.tags?.map(typeConvert.SymbolTag.from) || [],
+                detail: '',
+                containerName: info.containerName,
+                range: typeConvert.Range.from(info.location.range),
+                selectionRange: typeConvert.Range.from(info.location.range),
+                children: []
+            };
+            while (true) {
+                if (parentStack.length === 0) {
+                    parentStack.push(element);
+                    res.push(element);
+                    break;
+                }
+                const parent = parentStack[parentStack.length - 1];
+                if (EditorRange.containsRange(parent.range, element.range) && !EditorRange.equalsRange(parent.range, element.range)) {
+                    parent.children?.push(element);
+                    parentStack.push(element);
+                    break;
+                }
+                parentStack.pop();
+            }
+        }
+        return res;
+    }
+}
+class CodeLensAdapter {
+    constructor(_documents, _commands, _provider, _extension, _extTelemetry, _logService) {
+        this._documents = _documents;
+        this._commands = _commands;
+        this._provider = _provider;
+        this._extension = _extension;
+        this._extTelemetry = _extTelemetry;
+        this._logService = _logService;
+        this._cache = new Cache('CodeLens');
+        this._disposables = new Map();
+    }
+    async provideCodeLenses(resource, token) {
+        const doc = this._documents.getDocument(resource);
+        const lenses = await this._provider.provideCodeLenses(doc, token);
+        if (!lenses || token.isCancellationRequested) {
+            return undefined;
+        }
+        const cacheId = this._cache.add(lenses);
+        const disposables = new DisposableStore();
+        this._disposables.set(cacheId, disposables);
+        const result = {
+            cacheId,
+            lenses: [],
+        };
+        for (let i = 0; i < lenses.length; i++) {
+            result.lenses.push({
+                cacheId: [cacheId, i],
+                range: typeConvert.Range.from(lenses[i].range),
+                command: this._commands.toInternal(lenses[i].command, disposables)
+            });
+        }
+        return result;
+    }
+    async resolveCodeLens(symbol, token) {
+        const lens = symbol.cacheId && this._cache.get(...symbol.cacheId);
+        if (!lens) {
+            return undefined;
+        }
+        let resolvedLens;
+        if (typeof this._provider.resolveCodeLens !== 'function' || lens.isResolved) {
+            resolvedLens = lens;
+        }
+        else {
+            resolvedLens = await this._provider.resolveCodeLens(lens, token);
+        }
+        if (!resolvedLens) {
+            resolvedLens = lens;
+        }
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
+        const disposables = symbol.cacheId && this._disposables.get(symbol.cacheId[0]);
+        if (!disposables) {
+            return undefined;
+        }
+        if (!resolvedLens.command) {
+            const error = new Error('INVALID code lens resolved, lacks command: ' + this._extension.identifier.value);
+            this._extTelemetry.onExtensionError(this._extension.identifier, error);
+            this._logService.error(error);
+            return undefined;
+        }
+        symbol.command = this._commands.toInternal(resolvedLens.command, disposables);
+        return symbol;
+    }
+    releaseCodeLenses(cachedId) {
+        this._disposables.get(cachedId)?.dispose();
+        this._disposables.delete(cachedId);
+        this._cache.delete(cachedId);
+    }
+}
+function convertToLocationLinks(value) {
+    if (Array.isArray(value)) {
+        return value.map(typeConvert.DefinitionLink.from);
+    }
+    else if (value) {
+        return [typeConvert.DefinitionLink.from(value)];
+    }
+    return [];
+}
+class DefinitionAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideDefinition(resource, position, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const value = await this._provider.provideDefinition(doc, pos, token);
+        return convertToLocationLinks(value);
+    }
+}
+class DeclarationAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideDeclaration(resource, position, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const value = await this._provider.provideDeclaration(doc, pos, token);
+        return convertToLocationLinks(value);
+    }
+}
+class ImplementationAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideImplementation(resource, position, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const value = await this._provider.provideImplementation(doc, pos, token);
+        return convertToLocationLinks(value);
+    }
+}
+class TypeDefinitionAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideTypeDefinition(resource, position, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const value = await this._provider.provideTypeDefinition(doc, pos, token);
+        return convertToLocationLinks(value);
+    }
+}
+class HoverAdapter {
+    static { this.HOVER_MAP_MAX_SIZE = 10; }
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this._hoverCounter = 0;
+        this._hoverMap = new Map();
+    }
+    async provideHover(resource, position, context, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        let value;
+        if (context && context.verbosityRequest) {
+            const previousHoverId = context.verbosityRequest.previousHover.id;
+            const previousHover = this._hoverMap.get(previousHoverId);
+            if (!previousHover) {
+                throw new Error(`Hover with id ${previousHoverId} not found`);
+            }
+            const hoverContext = { verbosityDelta: context.verbosityRequest.verbosityDelta, previousHover };
+            value = await this._provider.provideHover(doc, pos, token, hoverContext);
+        }
+        else {
+            value = await this._provider.provideHover(doc, pos, token);
+        }
+        if (!value || isFalsyOrEmpty(value.contents)) {
+            return undefined;
+        }
+        if (!value.range) {
+            value.range = doc.getWordRangeAtPosition(pos);
+        }
+        if (!value.range) {
+            value.range = new Range(pos, pos);
+        }
+        const convertedHover = typeConvert.Hover.from(value);
+        const id = this._hoverCounter;
+        if (this._hoverMap.size === HoverAdapter.HOVER_MAP_MAX_SIZE) {
+            const minimumId = Math.min(...this._hoverMap.keys());
+            this._hoverMap.delete(minimumId);
+        }
+        this._hoverMap.set(id, value);
+        this._hoverCounter += 1;
+        const hover = {
+            ...convertedHover,
+            id
+        };
+        return hover;
+    }
+    releaseHover(id) {
+        this._hoverMap.delete(id);
+    }
+}
+class EvaluatableExpressionAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideEvaluatableExpression(resource, position, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const value = await this._provider.provideEvaluatableExpression(doc, pos, token);
+        if (value) {
+            return typeConvert.EvaluatableExpression.from(value);
+        }
+        return undefined;
+    }
+}
+class InlineValuesAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideInlineValues(resource, viewPort, context, token) {
+        const doc = this._documents.getDocument(resource);
+        const value = await this._provider.provideInlineValues(doc, typeConvert.Range.to(viewPort), typeConvert.InlineValueContext.to(context), token);
+        if (Array.isArray(value)) {
+            return value.map(iv => typeConvert.InlineValue.from(iv));
+        }
+        return undefined;
+    }
+}
+class DocumentHighlightAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideDocumentHighlights(resource, position, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const value = await this._provider.provideDocumentHighlights(doc, pos, token);
+        if (Array.isArray(value)) {
+            return value.map(typeConvert.DocumentHighlight.from);
+        }
+        return undefined;
+    }
+}
+class MultiDocumentHighlightAdapter {
+    constructor(_documents, _provider, _logService) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this._logService = _logService;
+    }
+    async provideMultiDocumentHighlights(resource, position, otherResources, token) {
+        const doc = this._documents.getDocument(resource);
+        const otherDocuments = otherResources.map(r => {
+            try {
+                return this._documents.getDocument(r);
+            }
+            catch (err) {
+                this._logService.error('Error: Unable to retrieve document from URI: ' + r + '. Error message: ' + err);
+                return undefined;
+            }
+        }).filter(doc => doc !== undefined);
+        const pos = typeConvert.Position.to(position);
+        const value = await this._provider.provideMultiDocumentHighlights(doc, pos, otherDocuments, token);
+        if (Array.isArray(value)) {
+            return value.map(typeConvert.MultiDocumentHighlight.from);
+        }
+        return undefined;
+    }
+}
+class LinkedEditingRangeAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideLinkedEditingRanges(resource, position, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const value = await this._provider.provideLinkedEditingRanges(doc, pos, token);
+        if (value && Array.isArray(value.ranges)) {
+            return {
+                ranges: coalesce(value.ranges.map(typeConvert.Range.from)),
+                wordPattern: value.wordPattern
+            };
+        }
+        return undefined;
+    }
+}
+class ReferenceAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideReferences(resource, position, context, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const value = await this._provider.provideReferences(doc, pos, context, token);
+        if (Array.isArray(value)) {
+            return value.map(typeConvert.location.from);
+        }
+        return undefined;
+    }
+}
+class CodeActionAdapter {
+    static { this._maxCodeActionsPerFile = 1000; }
+    constructor(_documents, _commands, _diagnostics, _provider, _logService, _extension, _apiDeprecation) {
+        this._documents = _documents;
+        this._commands = _commands;
+        this._diagnostics = _diagnostics;
+        this._provider = _provider;
+        this._logService = _logService;
+        this._extension = _extension;
+        this._apiDeprecation = _apiDeprecation;
+        this._cache = new Cache('CodeAction');
+        this._disposables = new Map();
+    }
+    async provideCodeActions(resource, rangeOrSelection, context, token) {
+        const doc = this._documents.getDocument(resource);
+        const ran = Selection.isISelection(rangeOrSelection)
+            ? typeConvert.Selection.to(rangeOrSelection)
+            : typeConvert.Range.to(rangeOrSelection);
+        const allDiagnostics = [];
+        for (const diagnostic of this._diagnostics.getDiagnostics(resource)) {
+            if (ran.intersection(diagnostic.range)) {
+                const newLen = allDiagnostics.push(diagnostic);
+                if (newLen > CodeActionAdapter._maxCodeActionsPerFile) {
+                    break;
+                }
+            }
+        }
+        const codeActionContext = {
+            diagnostics: allDiagnostics,
+            only: context.only ? new CodeActionKind(context.only) : undefined,
+            triggerKind: typeConvert.CodeActionTriggerKind.to(context.trigger),
+        };
+        const commandsOrActions = await this._provider.provideCodeActions(doc, ran, codeActionContext, token);
+        if (!isNonEmptyArray(commandsOrActions) || token.isCancellationRequested) {
+            return undefined;
+        }
+        const cacheId = this._cache.add(commandsOrActions);
+        const disposables = new DisposableStore();
+        this._disposables.set(cacheId, disposables);
+        const actions = [];
+        for (let i = 0; i < commandsOrActions.length; i++) {
+            const candidate = commandsOrActions[i];
+            if (!candidate) {
+                continue;
+            }
+            if (CodeActionAdapter._isCommand(candidate)) {
+                this._apiDeprecation.report('CodeActionProvider.provideCodeActions - return commands', this._extension, `Return 'CodeAction' instances instead.`);
+                actions.push({
+                    _isSynthetic: true,
+                    title: candidate.title,
+                    command: this._commands.toInternal(candidate, disposables),
+                });
+            }
+            else {
+                if (codeActionContext.only) {
+                    if (!candidate.kind) {
+                        this._logService.warn(`${this._extension.identifier.value} - Code actions of kind '${codeActionContext.only.value}' requested but returned code action does not have a 'kind'. Code action will be dropped. Please set 'CodeAction.kind'.`);
+                    }
+                    else if (!codeActionContext.only.contains(candidate.kind)) {
+                        this._logService.warn(`${this._extension.identifier.value} - Code actions of kind '${codeActionContext.only.value}' requested but returned code action is of kind '${candidate.kind.value}'. Code action will be dropped. Please check 'CodeActionContext.only' to only return requested code actions.`);
+                    }
+                }
+                const range = candidate.ranges ?? [];
+                actions.push({
+                    cacheId: [cacheId, i],
+                    title: candidate.title,
+                    command: candidate.command && this._commands.toInternal(candidate.command, disposables),
+                    diagnostics: candidate.diagnostics && candidate.diagnostics.map(typeConvert.Diagnostic.from),
+                    edit: candidate.edit && typeConvert.WorkspaceEdit.from(candidate.edit, undefined),
+                    kind: candidate.kind && candidate.kind.value,
+                    isPreferred: candidate.isPreferred,
+                    isAI: isProposedApiEnabled(this._extension, 'codeActionAI') ? candidate.isAI : false,
+                    ranges: isProposedApiEnabled(this._extension, 'codeActionRanges') ? coalesce(range.map(typeConvert.Range.from)) : undefined,
+                    disabled: candidate.disabled?.reason
+                });
+            }
+        }
+        return { cacheId, actions };
+    }
+    async resolveCodeAction(id, token) {
+        const [sessionId, itemId] = id;
+        const item = this._cache.get(sessionId, itemId);
+        if (!item || CodeActionAdapter._isCommand(item)) {
+            return {};
+        }
+        if (!this._provider.resolveCodeAction) {
+            return {};
+        }
+        const resolvedItem = (await this._provider.resolveCodeAction(item, token)) ?? item;
+        let resolvedEdit;
+        if (resolvedItem.edit) {
+            resolvedEdit = typeConvert.WorkspaceEdit.from(resolvedItem.edit, undefined);
+        }
+        let resolvedCommand;
+        if (resolvedItem.command) {
+            const disposables = this._disposables.get(sessionId);
+            if (disposables) {
+                resolvedCommand = this._commands.toInternal(resolvedItem.command, disposables);
+            }
+        }
+        return { edit: resolvedEdit, command: resolvedCommand };
+    }
+    releaseCodeActions(cachedId) {
+        this._disposables.get(cachedId)?.dispose();
+        this._disposables.delete(cachedId);
+        this._cache.delete(cachedId);
+    }
+    static _isCommand(thing) {
+        return typeof thing.command === 'string' && typeof thing.title === 'string';
+    }
+}
+class DocumentPasteEditProvider {
+    constructor(_proxy, _documents, _provider, _handle, _extension) {
+        this._proxy = _proxy;
+        this._documents = _documents;
+        this._provider = _provider;
+        this._handle = _handle;
+        this._extension = _extension;
+        this._cache = new Cache('DocumentPasteEdit');
+    }
+    async prepareDocumentPaste(resource, ranges, dataTransferDto, token) {
+        if (!this._provider.prepareDocumentPaste) {
+            return;
+        }
+        const doc = this._documents.getDocument(resource);
+        const vscodeRanges = ranges.map(range => typeConvert.Range.to(range));
+        const dataTransfer = typeConvert.DataTransfer.toDataTransfer(dataTransferDto, () => {
+            throw new NotImplementedError();
+        });
+        await this._provider.prepareDocumentPaste(doc, vscodeRanges, dataTransfer, token);
+        if (token.isCancellationRequested) {
+            return;
+        }
+        const entries = Array.from(dataTransfer).filter(([, value]) => !(value instanceof InternalDataTransferItem));
+        return typeConvert.DataTransfer.from(entries);
+    }
+    async providePasteEdits(requestId, resource, ranges, dataTransferDto, context, token) {
+        if (!this._provider.provideDocumentPasteEdits) {
+            return [];
+        }
+        const doc = this._documents.getDocument(resource);
+        const vscodeRanges = ranges.map(range => typeConvert.Range.to(range));
+        const dataTransfer = typeConvert.DataTransfer.toDataTransfer(dataTransferDto, async (id) => {
+            return (await this._proxy.$resolvePasteFileData(this._handle, requestId, id)).buffer;
+        });
+        const edits = await this._provider.provideDocumentPasteEdits(doc, vscodeRanges, dataTransfer, {
+            only: context.only ? new DocumentDropOrPasteEditKind(context.only) : undefined,
+            triggerKind: context.triggerKind,
+        }, token);
+        if (!edits || token.isCancellationRequested) {
+            return [];
+        }
+        const cacheId = this._cache.add(edits);
+        return edits.map((edit, i) => ({
+            _cacheId: [cacheId, i],
+            title: edit.title ?? localize('defaultPasteLabel', "Paste using '{0}' extension", this._extension.displayName || this._extension.name),
+            kind: edit.kind,
+            yieldTo: edit.yieldTo?.map(x => x.value),
+            insertText: typeof edit.insertText === 'string' ? edit.insertText : { snippet: edit.insertText.value },
+            additionalEdit: edit.additionalEdit ? typeConvert.WorkspaceEdit.from(edit.additionalEdit, undefined) : undefined,
+        }));
+    }
+    async resolvePasteEdit(id, token) {
+        const [sessionId, itemId] = id;
+        const item = this._cache.get(sessionId, itemId);
+        if (!item || !this._provider.resolveDocumentPasteEdit) {
+            return {};
+        }
+        const resolvedItem = (await this._provider.resolveDocumentPasteEdit(item, token)) ?? item;
+        const additionalEdit = resolvedItem.additionalEdit ? typeConvert.WorkspaceEdit.from(resolvedItem.additionalEdit, undefined) : undefined;
+        return { additionalEdit };
+    }
+    releasePasteEdits(id) {
+        this._cache.delete(id);
+    }
+}
+class DocumentFormattingAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideDocumentFormattingEdits(resource, options, token) {
+        const document = this._documents.getDocument(resource);
+        const value = await this._provider.provideDocumentFormattingEdits(document, options, token);
+        if (Array.isArray(value)) {
+            return value.map(typeConvert.TextEdit.from);
+        }
+        return undefined;
+    }
+}
+class RangeFormattingAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideDocumentRangeFormattingEdits(resource, range, options, token) {
+        const document = this._documents.getDocument(resource);
+        const ran = typeConvert.Range.to(range);
+        const value = await this._provider.provideDocumentRangeFormattingEdits(document, ran, options, token);
+        if (Array.isArray(value)) {
+            return value.map(typeConvert.TextEdit.from);
+        }
+        return undefined;
+    }
+    async provideDocumentRangesFormattingEdits(resource, ranges, options, token) {
+        assertType(typeof this._provider.provideDocumentRangesFormattingEdits === 'function', 'INVALID invocation of `provideDocumentRangesFormattingEdits`');
+        const document = this._documents.getDocument(resource);
+        const _ranges = ranges.map(typeConvert.Range.to);
+        const value = await this._provider.provideDocumentRangesFormattingEdits(document, _ranges, options, token);
+        if (Array.isArray(value)) {
+            return value.map(typeConvert.TextEdit.from);
+        }
+        return undefined;
+    }
+}
+class OnTypeFormattingAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this.autoFormatTriggerCharacters = [];
+    }
+    async provideOnTypeFormattingEdits(resource, position, ch, options, token) {
+        const document = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const value = await this._provider.provideOnTypeFormattingEdits(document, pos, ch, options, token);
+        if (Array.isArray(value)) {
+            return value.map(typeConvert.TextEdit.from);
+        }
+        return undefined;
+    }
+}
+class NavigateTypeAdapter {
+    constructor(_provider, _logService) {
+        this._provider = _provider;
+        this._logService = _logService;
+        this._cache = new Cache('WorkspaceSymbols');
+    }
+    async provideWorkspaceSymbols(search, token) {
+        const value = await this._provider.provideWorkspaceSymbols(search, token);
+        if (!isNonEmptyArray(value)) {
+            return { symbols: [] };
+        }
+        const sid = this._cache.add(value);
+        const result = {
+            cacheId: sid,
+            symbols: []
+        };
+        for (let i = 0; i < value.length; i++) {
+            const item = value[i];
+            if (!item || !item.name) {
+                this._logService.warn('INVALID SymbolInformation', item);
+                continue;
+            }
+            result.symbols.push({
+                ...typeConvert.WorkspaceSymbol.from(item),
+                cacheId: [sid, i]
+            });
+        }
+        return result;
+    }
+    async resolveWorkspaceSymbol(symbol, token) {
+        if (typeof this._provider.resolveWorkspaceSymbol !== 'function') {
+            return symbol;
+        }
+        if (!symbol.cacheId) {
+            return symbol;
+        }
+        const item = this._cache.get(...symbol.cacheId);
+        if (item) {
+            const value = await this._provider.resolveWorkspaceSymbol(item, token);
+            return value && mixin(symbol, typeConvert.WorkspaceSymbol.from(value), true);
+        }
+        return undefined;
+    }
+    releaseWorkspaceSymbols(id) {
+        this._cache.delete(id);
+    }
+}
+class RenameAdapter {
+    static supportsResolving(provider) {
+        return typeof provider.prepareRename === 'function';
+    }
+    constructor(_documents, _provider, _logService) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this._logService = _logService;
+    }
+    async provideRenameEdits(resource, position, newName, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        try {
+            const value = await this._provider.provideRenameEdits(doc, pos, newName, token);
+            if (!value) {
+                return undefined;
+            }
+            return typeConvert.WorkspaceEdit.from(value);
+        }
+        catch (err) {
+            const rejectReason = RenameAdapter._asMessage(err);
+            if (rejectReason) {
+                return { rejectReason, edits: undefined };
+            }
+            else {
+                return Promise.reject(err);
+            }
+        }
+    }
+    async resolveRenameLocation(resource, position, token) {
+        if (typeof this._provider.prepareRename !== 'function') {
+            return Promise.resolve(undefined);
+        }
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        try {
+            const rangeOrLocation = await this._provider.prepareRename(doc, pos, token);
+            let range;
+            let text;
+            if (Range.isRange(rangeOrLocation)) {
+                range = rangeOrLocation;
+                text = doc.getText(rangeOrLocation);
+            }
+            else if (isObject(rangeOrLocation)) {
+                range = rangeOrLocation.range;
+                text = rangeOrLocation.placeholder;
+            }
+            if (!range || !text) {
+                return undefined;
+            }
+            if (range.start.line > pos.line || range.end.line < pos.line) {
+                this._logService.warn('INVALID rename location: position line must be within range start/end lines');
+                return undefined;
+            }
+            return { range: typeConvert.Range.from(range), text };
+        }
+        catch (err) {
+            const rejectReason = RenameAdapter._asMessage(err);
+            if (rejectReason) {
+                return { rejectReason, range: undefined, text: undefined };
+            }
+            else {
+                return Promise.reject(err);
+            }
+        }
+    }
+    static _asMessage(err) {
+        if (typeof err === 'string') {
+            return err;
+        }
+        else if (err instanceof Error && typeof err.message === 'string') {
+            return err.message;
+        }
+        else {
+            return undefined;
+        }
+    }
+}
+class NewSymbolNamesAdapter {
+    static { this.languageTriggerKindToVSCodeTriggerKind = {
+        [languages.NewSymbolNameTriggerKind.Invoke]: NewSymbolNameTriggerKind.Invoke,
+        [languages.NewSymbolNameTriggerKind.Automatic]: NewSymbolNameTriggerKind.Automatic,
+    }; }
+    constructor(_documents, _provider, _logService) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this._logService = _logService;
+    }
+    async supportsAutomaticNewSymbolNamesTriggerKind() {
+        return this._provider.supportsAutomaticTriggerKind;
+    }
+    async provideNewSymbolNames(resource, range, triggerKind, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Range.to(range);
+        try {
+            const kind = NewSymbolNamesAdapter.languageTriggerKindToVSCodeTriggerKind[triggerKind];
+            const value = await this._provider.provideNewSymbolNames(doc, pos, kind, token);
+            if (!value) {
+                return undefined;
+            }
+            return value.map(v => typeof v === 'string'
+                ? { newSymbolName: v }
+                : { newSymbolName: v.newSymbolName, tags: v.tags });
+        }
+        catch (err) {
+            this._logService.error(NewSymbolNamesAdapter._asMessage(err) ?? JSON.stringify(err, null, '\t'));
+            return undefined;
+        }
+    }
+    static _asMessage(err) {
+        if (typeof err === 'string') {
+            return err;
+        }
+        else if (err instanceof Error && typeof err.message === 'string') {
+            return err.message;
+        }
+        else {
+            return undefined;
+        }
+    }
+}
+class SemanticTokensPreviousResult {
+    constructor(resultId, tokens) {
+        this.resultId = resultId;
+        this.tokens = tokens;
+    }
+}
+class DocumentSemanticTokensAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this._nextResultId = 1;
+        this._previousResults = new Map();
+    }
+    async provideDocumentSemanticTokens(resource, previousResultId, token) {
+        const doc = this._documents.getDocument(resource);
+        const previousResult = (previousResultId !== 0 ? this._previousResults.get(previousResultId) : null);
+        let value = typeof previousResult?.resultId === 'string' && typeof this._provider.provideDocumentSemanticTokensEdits === 'function'
+            ? await this._provider.provideDocumentSemanticTokensEdits(doc, previousResult.resultId, token)
+            : await this._provider.provideDocumentSemanticTokens(doc, token);
+        if (previousResult) {
+            this._previousResults.delete(previousResultId);
+        }
+        if (!value) {
+            return null;
+        }
+        value = DocumentSemanticTokensAdapter._fixProvidedSemanticTokens(value);
+        return this._send(DocumentSemanticTokensAdapter._convertToEdits(previousResult, value), value);
+    }
+    async releaseDocumentSemanticColoring(semanticColoringResultId) {
+        this._previousResults.delete(semanticColoringResultId);
+    }
+    static _fixProvidedSemanticTokens(v) {
+        if (DocumentSemanticTokensAdapter._isSemanticTokens(v)) {
+            if (DocumentSemanticTokensAdapter._isCorrectSemanticTokens(v)) {
+                return v;
+            }
+            return new SemanticTokens(new Uint32Array(v.data), v.resultId);
+        }
+        else if (DocumentSemanticTokensAdapter._isSemanticTokensEdits(v)) {
+            if (DocumentSemanticTokensAdapter._isCorrectSemanticTokensEdits(v)) {
+                return v;
+            }
+            return new SemanticTokensEdits(v.edits.map(edit => new SemanticTokensEdit(edit.start, edit.deleteCount, edit.data ? new Uint32Array(edit.data) : edit.data)), v.resultId);
+        }
+        return v;
+    }
+    static _isSemanticTokens(v) {
+        return v && !!(v.data);
+    }
+    static _isCorrectSemanticTokens(v) {
+        return (v.data instanceof Uint32Array);
+    }
+    static _isSemanticTokensEdits(v) {
+        return v && Array.isArray(v.edits);
+    }
+    static _isCorrectSemanticTokensEdits(v) {
+        for (const edit of v.edits) {
+            if (!(edit.data instanceof Uint32Array)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    static _convertToEdits(previousResult, newResult) {
+        if (!DocumentSemanticTokensAdapter._isSemanticTokens(newResult)) {
+            return newResult;
+        }
+        if (!previousResult || !previousResult.tokens) {
+            return newResult;
+        }
+        const oldData = previousResult.tokens;
+        const oldLength = oldData.length;
+        const newData = newResult.data;
+        const newLength = newData.length;
+        let commonPrefixLength = 0;
+        const maxCommonPrefixLength = Math.min(oldLength, newLength);
+        while (commonPrefixLength < maxCommonPrefixLength && oldData[commonPrefixLength] === newData[commonPrefixLength]) {
+            commonPrefixLength++;
+        }
+        if (commonPrefixLength === oldLength && commonPrefixLength === newLength) {
+            return new SemanticTokensEdits([], newResult.resultId);
+        }
+        let commonSuffixLength = 0;
+        const maxCommonSuffixLength = maxCommonPrefixLength - commonPrefixLength;
+        while (commonSuffixLength < maxCommonSuffixLength && oldData[oldLength - commonSuffixLength - 1] === newData[newLength - commonSuffixLength - 1]) {
+            commonSuffixLength++;
+        }
+        return new SemanticTokensEdits([{
+                start: commonPrefixLength,
+                deleteCount: (oldLength - commonPrefixLength - commonSuffixLength),
+                data: newData.subarray(commonPrefixLength, newLength - commonSuffixLength)
+            }], newResult.resultId);
+    }
+    _send(value, original) {
+        if (DocumentSemanticTokensAdapter._isSemanticTokens(value)) {
+            const myId = this._nextResultId++;
+            this._previousResults.set(myId, new SemanticTokensPreviousResult(value.resultId, value.data));
+            return encodeSemanticTokensDto({
+                id: myId,
+                type: 'full',
+                data: value.data
+            });
+        }
+        if (DocumentSemanticTokensAdapter._isSemanticTokensEdits(value)) {
+            const myId = this._nextResultId++;
+            if (DocumentSemanticTokensAdapter._isSemanticTokens(original)) {
+                this._previousResults.set(myId, new SemanticTokensPreviousResult(original.resultId, original.data));
+            }
+            else {
+                this._previousResults.set(myId, new SemanticTokensPreviousResult(value.resultId));
+            }
+            return encodeSemanticTokensDto({
+                id: myId,
+                type: 'delta',
+                deltas: (value.edits || []).map(edit => ({ start: edit.start, deleteCount: edit.deleteCount, data: edit.data }))
+            });
+        }
+        return null;
+    }
+}
+class DocumentRangeSemanticTokensAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideDocumentRangeSemanticTokens(resource, range, token) {
+        const doc = this._documents.getDocument(resource);
+        const value = await this._provider.provideDocumentRangeSemanticTokens(doc, typeConvert.Range.to(range), token);
+        if (!value) {
+            return null;
+        }
+        return this._send(value);
+    }
+    _send(value) {
+        return encodeSemanticTokensDto({
+            id: 0,
+            type: 'full',
+            data: value.data
+        });
+    }
+}
+class CompletionsAdapter {
+    static supportsResolving(provider) {
+        return typeof provider.resolveCompletionItem === 'function';
+    }
+    constructor(_documents, _commands, _provider, _apiDeprecation, _extension) {
+        this._documents = _documents;
+        this._commands = _commands;
+        this._provider = _provider;
+        this._apiDeprecation = _apiDeprecation;
+        this._extension = _extension;
+        this._cache = new Cache('CompletionItem');
+        this._disposables = new Map();
+    }
+    async provideCompletionItems(resource, position, context, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const replaceRange = doc.getWordRangeAtPosition(pos) || new Range(pos, pos);
+        const insertRange = replaceRange.with({ end: pos });
+        const sw = new StopWatch();
+        const itemsOrList = await this._provider.provideCompletionItems(doc, pos, token, typeConvert.CompletionContext.to(context));
+        if (!itemsOrList) {
+            return undefined;
+        }
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
+        const list = Array.isArray(itemsOrList) ? new CompletionList(itemsOrList) : itemsOrList;
+        const pid = CompletionsAdapter.supportsResolving(this._provider) ? this._cache.add(list.items) : this._cache.add([]);
+        const disposables = new DisposableStore();
+        this._disposables.set(pid, disposables);
+        const completions = [];
+        const result = {
+            x: pid,
+            ["b"]: completions,
+            ["a"]: { replace: typeConvert.Range.from(replaceRange), insert: typeConvert.Range.from(insertRange) },
+            ["c"]: list.isIncomplete || undefined,
+            ["d"]: sw.elapsed()
+        };
+        for (let i = 0; i < list.items.length; i++) {
+            const item = list.items[i];
+            const dto = this._convertCompletionItem(item, [pid, i], insertRange, replaceRange);
+            completions.push(dto);
+        }
+        return result;
+    }
+    async resolveCompletionItem(id, token) {
+        if (typeof this._provider.resolveCompletionItem !== 'function') {
+            return undefined;
+        }
+        const item = this._cache.get(...id);
+        if (!item) {
+            return undefined;
+        }
+        const dto1 = this._convertCompletionItem(item, id);
+        const resolvedItem = await this._provider.resolveCompletionItem(item, token);
+        if (!resolvedItem) {
+            return undefined;
+        }
+        const dto2 = this._convertCompletionItem(resolvedItem, id);
+        if (dto1["h"] !== dto2["h"]
+            || dto1["i"] !== dto2["i"]) {
+            this._apiDeprecation.report('CompletionItem.insertText', this._extension, 'extension MAY NOT change \'insertText\' of a CompletionItem during resolve');
+        }
+        if (dto1["n"] !== dto2["n"]
+            || dto1["o"] !== dto2["o"]
+            || !equals(dto1["p"], dto2["p"])) {
+            this._apiDeprecation.report('CompletionItem.command', this._extension, 'extension MAY NOT change \'command\' of a CompletionItem during resolve');
+        }
+        return {
+            ...dto1,
+            ["d"]: dto2["d"],
+            ["c"]: dto2["c"],
+            ["l"]: dto2["l"],
+            ["h"]: dto2["h"],
+            ["i"]: dto2["i"],
+            ["n"]: dto2["n"],
+            ["o"]: dto2["o"],
+            ["p"]: dto2["p"],
+        };
+    }
+    releaseCompletionItems(id) {
+        this._disposables.get(id)?.dispose();
+        this._disposables.delete(id);
+        this._cache.delete(id);
+    }
+    _convertCompletionItem(item, id, defaultInsertRange, defaultReplaceRange) {
+        const disposables = this._disposables.get(id[0]);
+        if (!disposables) {
+            throw Error('DisposableStore is missing...');
+        }
+        const command = this._commands.toInternal(item.command, disposables);
+        const result = {
+            x: id,
+            ["a"]: item.label,
+            ["b"]: item.kind !== undefined ? typeConvert.CompletionItemKind.from(item.kind) : undefined,
+            ["m"]: item.tags && item.tags.map(typeConvert.CompletionItemTag.from),
+            ["c"]: item.detail,
+            ["d"]: typeof item.documentation === 'undefined' ? undefined : typeConvert.MarkdownString.fromStrict(item.documentation),
+            ["e"]: item.sortText !== item.label ? item.sortText : undefined,
+            ["f"]: item.filterText !== item.label ? item.filterText : undefined,
+            ["g"]: item.preselect || undefined,
+            ["i"]: item.keepWhitespace ? 1 : 0,
+            ["k"]: item.commitCharacters?.join(''),
+            ["l"]: item.additionalTextEdits && item.additionalTextEdits.map(typeConvert.TextEdit.from),
+            ["n"]: command?.$ident,
+            ["o"]: command?.id,
+            ["p"]: command?.$ident ? undefined : command?.arguments,
+        };
+        if (item.textEdit) {
+            this._apiDeprecation.report('CompletionItem.textEdit', this._extension, `Use 'CompletionItem.insertText' and 'CompletionItem.range' instead.`);
+            result["h"] = item.textEdit.newText;
+        }
+        else if (typeof item.insertText === 'string') {
+            result["h"] = item.insertText;
+        }
+        else if (item.insertText instanceof SnippetString) {
+            result["h"] = item.insertText.value;
+            result["i"] |= 4;
+        }
+        let range;
+        if (item.textEdit) {
+            range = item.textEdit.range;
+        }
+        else if (item.range) {
+            range = item.range;
+        }
+        if (Range.isRange(range)) {
+            result["j"] = typeConvert.Range.from(range);
+        }
+        else if (range && (!defaultInsertRange?.isEqual(range.inserting) || !defaultReplaceRange?.isEqual(range.replacing))) {
+            result["j"] = {
+                insert: typeConvert.Range.from(range.inserting),
+                replace: typeConvert.Range.from(range.replacing)
+            };
+        }
+        return result;
+    }
+}
+class InlineCompletionAdapterBase {
+    async provideInlineCompletions(resource, position, context, token) {
+        return undefined;
+    }
+    async provideInlineEditsForRange(resource, range, context, token) {
+        return undefined;
+    }
+    disposeCompletions(pid) { }
+    handleDidShowCompletionItem(pid, idx, updatedInsertText) { }
+    handlePartialAccept(pid, idx, acceptedCharacters, info) { }
+}
+class InlineCompletionAdapter extends InlineCompletionAdapterBase {
+    constructor(_extension, _documents, _provider, _commands) {
+        super();
+        this._extension = _extension;
+        this._documents = _documents;
+        this._provider = _provider;
+        this._commands = _commands;
+        this._references = new ReferenceMap();
+        this._isAdditionsProposedApiEnabled = isProposedApiEnabled(this._extension, 'inlineCompletionsAdditions');
+        this.languageTriggerKindToVSCodeTriggerKind = {
+            [languages.InlineCompletionTriggerKind.Automatic]: InlineCompletionTriggerKind.Automatic,
+            [languages.InlineCompletionTriggerKind.Explicit]: InlineCompletionTriggerKind.Invoke,
+        };
+    }
+    get supportsHandleEvents() {
+        return isProposedApiEnabled(this._extension, 'inlineCompletionsAdditions')
+            && (typeof this._provider.handleDidShowCompletionItem === 'function'
+                || typeof this._provider.handleDidPartiallyAcceptCompletionItem === 'function');
+    }
+    async provideInlineCompletions(resource, position, context, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const result = await this._provider.provideInlineCompletionItems(doc, pos, {
+            selectedCompletionInfo: context.selectedSuggestionInfo
+                ? {
+                    range: typeConvert.Range.to(context.selectedSuggestionInfo.range),
+                    text: context.selectedSuggestionInfo.text
+                }
+                : undefined,
+            triggerKind: this.languageTriggerKindToVSCodeTriggerKind[context.triggerKind]
+        }, token);
+        if (!result) {
+            return undefined;
+        }
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
+        const normalizedResult = Array.isArray(result) ? result : result.items;
+        const commands = this._isAdditionsProposedApiEnabled ? Array.isArray(result) ? [] : result.commands || [] : [];
+        const enableForwardStability = this._isAdditionsProposedApiEnabled && !Array.isArray(result) ? result.enableForwardStability : undefined;
+        let disposableStore = undefined;
+        const pid = this._references.createReferenceId({
+            dispose() {
+                disposableStore?.dispose();
+            },
+            items: normalizedResult
+        });
+        return {
+            pid,
+            items: normalizedResult.map((item, idx) => {
+                let command = undefined;
+                if (item.command) {
+                    if (!disposableStore) {
+                        disposableStore = new DisposableStore();
+                    }
+                    command = this._commands.toInternal(item.command, disposableStore);
+                }
+                const insertText = item.insertText;
+                return ({
+                    insertText: typeof insertText === 'string' ? insertText : { snippet: insertText.value },
+                    filterText: item.filterText,
+                    range: item.range ? typeConvert.Range.from(item.range) : undefined,
+                    command,
+                    idx: idx,
+                    completeBracketPairs: this._isAdditionsProposedApiEnabled ? item.completeBracketPairs : false,
+                });
+            }),
+            commands: commands.map(c => {
+                if (!disposableStore) {
+                    disposableStore = new DisposableStore();
+                }
+                return this._commands.toInternal(c, disposableStore);
+            }),
+            suppressSuggestions: false,
+            enableForwardStability,
+        };
+    }
+    async provideInlineEditsForRange(resource, range, context, token) {
+        if (!this._provider.provideInlineEditsForRange) {
+            return undefined;
+        }
+        checkProposedApiEnabled(this._extension, 'inlineCompletionsAdditions');
+        const doc = this._documents.getDocument(resource);
+        const r = typeConvert.Range.to(range);
+        const result = await this._provider.provideInlineEditsForRange(doc, r, {
+            selectedCompletionInfo: context.selectedSuggestionInfo
+                ? {
+                    range: typeConvert.Range.to(context.selectedSuggestionInfo.range),
+                    text: context.selectedSuggestionInfo.text
+                }
+                : undefined,
+            triggerKind: this.languageTriggerKindToVSCodeTriggerKind[context.triggerKind],
+            userPrompt: context.userPrompt,
+        }, token);
+        if (!result) {
+            return undefined;
+        }
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
+        const normalizedResult = Array.isArray(result) ? result : result.items;
+        const commands = this._isAdditionsProposedApiEnabled ? Array.isArray(result) ? [] : result.commands || [] : [];
+        const enableForwardStability = this._isAdditionsProposedApiEnabled && !Array.isArray(result) ? result.enableForwardStability : undefined;
+        let disposableStore = undefined;
+        const pid = this._references.createReferenceId({
+            dispose() {
+                disposableStore?.dispose();
+            },
+            items: normalizedResult
+        });
+        return {
+            pid,
+            items: normalizedResult.map((item, idx) => {
+                let command = undefined;
+                if (item.command) {
+                    if (!disposableStore) {
+                        disposableStore = new DisposableStore();
+                    }
+                    command = this._commands.toInternal(item.command, disposableStore);
+                }
+                const insertText = item.insertText;
+                return ({
+                    insertText: typeof insertText === 'string' ? insertText : { snippet: insertText.value },
+                    filterText: item.filterText,
+                    range: item.range ? typeConvert.Range.from(item.range) : undefined,
+                    command,
+                    idx: idx,
+                    completeBracketPairs: this._isAdditionsProposedApiEnabled ? item.completeBracketPairs : false,
+                });
+            }),
+            commands: commands.map(c => {
+                if (!disposableStore) {
+                    disposableStore = new DisposableStore();
+                }
+                return this._commands.toInternal(c, disposableStore);
+            }),
+            suppressSuggestions: false,
+            enableForwardStability,
+        };
+    }
+    disposeCompletions(pid) {
+        const data = this._references.disposeReferenceId(pid);
+        data?.dispose();
+    }
+    handleDidShowCompletionItem(pid, idx, updatedInsertText) {
+        const completionItem = this._references.get(pid)?.items[idx];
+        if (completionItem) {
+            if (this._provider.handleDidShowCompletionItem && this._isAdditionsProposedApiEnabled) {
+                this._provider.handleDidShowCompletionItem(completionItem, updatedInsertText);
+            }
+        }
+    }
+    handlePartialAccept(pid, idx, acceptedCharacters, info) {
+        const completionItem = this._references.get(pid)?.items[idx];
+        if (completionItem) {
+            if (this._provider.handleDidPartiallyAcceptCompletionItem && this._isAdditionsProposedApiEnabled) {
+                this._provider.handleDidPartiallyAcceptCompletionItem(completionItem, acceptedCharacters);
+                this._provider.handleDidPartiallyAcceptCompletionItem(completionItem, typeConvert.PartialAcceptInfo.to(info));
+            }
+        }
+    }
+}
+class InlineEditAdapter {
+    async provideInlineEdits(uri, context, token) {
+        const doc = this._documents.getDocument(uri);
+        const result = await this._provider.provideInlineEdit(doc, {
+            triggerKind: this.languageTriggerKindToVSCodeTriggerKind[context.triggerKind]
+        }, token);
+        if (!result) {
+            return undefined;
+        }
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
+        let disposableStore = undefined;
+        const pid = this._references.createReferenceId({
+            dispose() {
+                disposableStore?.dispose();
+            },
+            item: result
+        });
+        let acceptCommand = undefined;
+        if (result.accepted) {
+            if (!disposableStore) {
+                disposableStore = new DisposableStore();
+            }
+            acceptCommand = this._commands.toInternal(result.accepted, disposableStore);
+        }
+        let rejectCommand = undefined;
+        if (result.rejected) {
+            if (!disposableStore) {
+                disposableStore = new DisposableStore();
+            }
+            rejectCommand = this._commands.toInternal(result.rejected, disposableStore);
+        }
+        const langResult = {
+            pid,
+            text: result.text,
+            range: typeConvert.Range.from(result.range),
+            accepted: acceptCommand,
+            rejected: rejectCommand,
+        };
+        return langResult;
+    }
+    disposeEdit(pid) {
+        const data = this._references.disposeReferenceId(pid);
+        data?.dispose();
+    }
+    constructor(_extension, _documents, _provider, _commands) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this._commands = _commands;
+        this._references = new ReferenceMap();
+        this.languageTriggerKindToVSCodeTriggerKind = {
+            [languages.InlineEditTriggerKind.Automatic]: InlineEditTriggerKind.Automatic,
+            [languages.InlineEditTriggerKind.Invoke]: InlineEditTriggerKind.Invoke,
+        };
+    }
+}
+class ReferenceMap {
+    constructor() {
+        this._references = new Map();
+        this._idPool = 1;
+    }
+    createReferenceId(value) {
+        const id = this._idPool++;
+        this._references.set(id, value);
+        return id;
+    }
+    disposeReferenceId(referenceId) {
+        const value = this._references.get(referenceId);
+        this._references.delete(referenceId);
+        return value;
+    }
+    get(referenceId) {
+        return this._references.get(referenceId);
+    }
+}
+class SignatureHelpAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this._cache = new Cache('SignatureHelp');
+    }
+    async provideSignatureHelp(resource, position, context, token) {
+        const doc = this._documents.getDocument(resource);
+        const pos = typeConvert.Position.to(position);
+        const vscodeContext = this.reviveContext(context);
+        const value = await this._provider.provideSignatureHelp(doc, pos, token, vscodeContext);
+        if (value) {
+            const id = this._cache.add([value]);
+            return { ...typeConvert.SignatureHelp.from(value), id };
+        }
+        return undefined;
+    }
+    reviveContext(context) {
+        let activeSignatureHelp = undefined;
+        if (context.activeSignatureHelp) {
+            const revivedSignatureHelp = typeConvert.SignatureHelp.to(context.activeSignatureHelp);
+            const saved = this._cache.get(context.activeSignatureHelp.id, 0);
+            if (saved) {
+                activeSignatureHelp = saved;
+                activeSignatureHelp.activeSignature = revivedSignatureHelp.activeSignature;
+                activeSignatureHelp.activeParameter = revivedSignatureHelp.activeParameter;
+            }
+            else {
+                activeSignatureHelp = revivedSignatureHelp;
+            }
+        }
+        return { ...context, activeSignatureHelp };
+    }
+    releaseSignatureHelp(id) {
+        this._cache.delete(id);
+    }
+}
+class InlayHintsAdapter {
+    constructor(_documents, _commands, _provider, _logService, _extension) {
+        this._documents = _documents;
+        this._commands = _commands;
+        this._provider = _provider;
+        this._logService = _logService;
+        this._extension = _extension;
+        this._cache = new Cache('InlayHints');
+        this._disposables = new Map();
+    }
+    async provideInlayHints(resource, ran, token) {
+        const doc = this._documents.getDocument(resource);
+        const range = typeConvert.Range.to(ran);
+        const hints = await this._provider.provideInlayHints(doc, range, token);
+        if (!Array.isArray(hints) || hints.length === 0) {
+            this._logService.trace(`[InlayHints] NO inlay hints from '${this._extension.identifier.value}' for range ${JSON.stringify(ran)}`);
+            return undefined;
+        }
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
+        const pid = this._cache.add(hints);
+        this._disposables.set(pid, new DisposableStore());
+        const result = { hints: [], cacheId: pid };
+        for (let i = 0; i < hints.length; i++) {
+            if (this._isValidInlayHint(hints[i], range)) {
+                result.hints.push(this._convertInlayHint(hints[i], [pid, i]));
+            }
+        }
+        this._logService.trace(`[InlayHints] ${result.hints.length} inlay hints from '${this._extension.identifier.value}' for range ${JSON.stringify(ran)}`);
+        return result;
+    }
+    async resolveInlayHint(id, token) {
+        if (typeof this._provider.resolveInlayHint !== 'function') {
+            return undefined;
+        }
+        const item = this._cache.get(...id);
+        if (!item) {
+            return undefined;
+        }
+        const hint = await this._provider.resolveInlayHint(item, token);
+        if (!hint) {
+            return undefined;
+        }
+        if (!this._isValidInlayHint(hint)) {
+            return undefined;
+        }
+        return this._convertInlayHint(hint, id);
+    }
+    releaseHints(id) {
+        this._disposables.get(id)?.dispose();
+        this._disposables.delete(id);
+        this._cache.delete(id);
+    }
+    _isValidInlayHint(hint, range) {
+        if (hint.label.length === 0 || Array.isArray(hint.label) && hint.label.every(part => part.value.length === 0)) {
+            console.log('INVALID inlay hint, empty label', hint);
+            return false;
+        }
+        if (range && !range.contains(hint.position)) {
+            return false;
+        }
+        return true;
+    }
+    _convertInlayHint(hint, id) {
+        const disposables = this._disposables.get(id[0]);
+        if (!disposables) {
+            throw Error('DisposableStore is missing...');
+        }
+        const result = {
+            label: '',
+            cacheId: id,
+            tooltip: typeConvert.MarkdownString.fromStrict(hint.tooltip),
+            position: typeConvert.Position.from(hint.position),
+            textEdits: hint.textEdits && hint.textEdits.map(typeConvert.TextEdit.from),
+            kind: hint.kind && typeConvert.InlayHintKind.from(hint.kind),
+            paddingLeft: hint.paddingLeft,
+            paddingRight: hint.paddingRight,
+        };
+        if (typeof hint.label === 'string') {
+            result.label = hint.label;
+        }
+        else {
+            const parts = [];
+            result.label = parts;
+            for (const part of hint.label) {
+                if (!part.value) {
+                    console.warn('INVALID inlay hint, empty label part', this._extension.identifier.value);
+                    continue;
+                }
+                const part2 = {
+                    label: part.value,
+                    tooltip: typeConvert.MarkdownString.fromStrict(part.tooltip)
+                };
+                if (Location.isLocation(part.location)) {
+                    part2.location = typeConvert.location.from(part.location);
+                }
+                if (part.command) {
+                    part2.command = this._commands.toInternal(part.command, disposables);
+                }
+                parts.push(part2);
+            }
+        }
+        return result;
+    }
+}
+class LinkProviderAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this._cache = new Cache('DocumentLink');
+    }
+    async provideLinks(resource, token) {
+        const doc = this._documents.getDocument(resource);
+        const links = await this._provider.provideDocumentLinks(doc, token);
+        if (!Array.isArray(links) || links.length === 0) {
+            return undefined;
+        }
+        if (token.isCancellationRequested) {
+            return undefined;
+        }
+        if (typeof this._provider.resolveDocumentLink !== 'function') {
+            return { links: links.filter(LinkProviderAdapter._validateLink).map(typeConvert.DocumentLink.from) };
+        }
+        else {
+            const pid = this._cache.add(links);
+            const result = { links: [], cacheId: pid };
+            for (let i = 0; i < links.length; i++) {
+                if (!LinkProviderAdapter._validateLink(links[i])) {
+                    continue;
+                }
+                const dto = typeConvert.DocumentLink.from(links[i]);
+                dto.cacheId = [pid, i];
+                result.links.push(dto);
+            }
+            return result;
+        }
+    }
+    static _validateLink(link) {
+        if (link.target && link.target.path.length > 50_000) {
+            console.warn('DROPPING link because it is too long');
+            return false;
+        }
+        return true;
+    }
+    async resolveLink(id, token) {
+        if (typeof this._provider.resolveDocumentLink !== 'function') {
+            return undefined;
+        }
+        const item = this._cache.get(...id);
+        if (!item) {
+            return undefined;
+        }
+        const link = await this._provider.resolveDocumentLink(item, token);
+        if (!link || !LinkProviderAdapter._validateLink(link)) {
+            return undefined;
+        }
+        return typeConvert.DocumentLink.from(link);
+    }
+    releaseLinks(id) {
+        this._cache.delete(id);
+    }
+}
+class ColorProviderAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideColors(resource, token) {
+        const doc = this._documents.getDocument(resource);
+        const colors = await this._provider.provideDocumentColors(doc, token);
+        if (!Array.isArray(colors)) {
+            return [];
+        }
+        const colorInfos = colors.map(ci => {
+            return {
+                color: typeConvert.Color.from(ci.color),
+                range: typeConvert.Range.from(ci.range)
+            };
+        });
+        return colorInfos;
+    }
+    async provideColorPresentations(resource, raw, token) {
+        const document = this._documents.getDocument(resource);
+        const range = typeConvert.Range.to(raw.range);
+        const color = typeConvert.Color.to(raw.color);
+        const value = await this._provider.provideColorPresentations(color, { document, range }, token);
+        if (!Array.isArray(value)) {
+            return undefined;
+        }
+        return value.map(typeConvert.ColorPresentation.from);
+    }
+}
+class FoldingProviderAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideFoldingRanges(resource, context, token) {
+        const doc = this._documents.getDocument(resource);
+        const ranges = await this._provider.provideFoldingRanges(doc, context, token);
+        if (!Array.isArray(ranges)) {
+            return undefined;
+        }
+        return ranges.map(typeConvert.FoldingRange.from);
+    }
+}
+class SelectionRangeAdapter {
+    constructor(_documents, _provider, _logService) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this._logService = _logService;
+    }
+    async provideSelectionRanges(resource, pos, token) {
+        const document = this._documents.getDocument(resource);
+        const positions = pos.map(typeConvert.Position.to);
+        const allProviderRanges = await this._provider.provideSelectionRanges(document, positions, token);
+        if (!isNonEmptyArray(allProviderRanges)) {
+            return [];
+        }
+        if (allProviderRanges.length !== positions.length) {
+            this._logService.warn('BAD selection ranges, provider must return ranges for each position');
+            return [];
+        }
+        const allResults = [];
+        for (let i = 0; i < positions.length; i++) {
+            const oneResult = [];
+            allResults.push(oneResult);
+            let last = positions[i];
+            let selectionRange = allProviderRanges[i];
+            while (true) {
+                if (!selectionRange.range.contains(last)) {
+                    throw new Error('INVALID selection range, must contain the previous range');
+                }
+                oneResult.push(typeConvert.SelectionRange.from(selectionRange));
+                if (!selectionRange.parent) {
+                    break;
+                }
+                last = selectionRange.range;
+                selectionRange = selectionRange.parent;
+            }
+        }
+        return allResults;
+    }
+}
+class CallHierarchyAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this._idPool = new IdGenerator('');
+        this._cache = new Map();
+    }
+    async prepareSession(uri, position, token) {
+        const doc = this._documents.getDocument(uri);
+        const pos = typeConvert.Position.to(position);
+        const items = await this._provider.prepareCallHierarchy(doc, pos, token);
+        if (!items) {
+            return undefined;
+        }
+        const sessionId = this._idPool.nextId();
+        this._cache.set(sessionId, new Map());
+        if (Array.isArray(items)) {
+            return items.map(item => this._cacheAndConvertItem(sessionId, item));
+        }
+        else {
+            return [this._cacheAndConvertItem(sessionId, items)];
+        }
+    }
+    async provideCallsTo(sessionId, itemId, token) {
+        const item = this._itemFromCache(sessionId, itemId);
+        if (!item) {
+            throw new Error('missing call hierarchy item');
+        }
+        const calls = await this._provider.provideCallHierarchyIncomingCalls(item, token);
+        if (!calls) {
+            return undefined;
+        }
+        return calls.map(call => {
+            return {
+                from: this._cacheAndConvertItem(sessionId, call.from),
+                fromRanges: call.fromRanges.map(r => typeConvert.Range.from(r))
+            };
+        });
+    }
+    async provideCallsFrom(sessionId, itemId, token) {
+        const item = this._itemFromCache(sessionId, itemId);
+        if (!item) {
+            throw new Error('missing call hierarchy item');
+        }
+        const calls = await this._provider.provideCallHierarchyOutgoingCalls(item, token);
+        if (!calls) {
+            return undefined;
+        }
+        return calls.map(call => {
+            return {
+                to: this._cacheAndConvertItem(sessionId, call.to),
+                fromRanges: call.fromRanges.map(r => typeConvert.Range.from(r))
+            };
+        });
+    }
+    releaseSession(sessionId) {
+        this._cache.delete(sessionId);
+    }
+    _cacheAndConvertItem(sessionId, item) {
+        const map = this._cache.get(sessionId);
+        const dto = typeConvert.CallHierarchyItem.from(item, sessionId, map.size.toString(36));
+        map.set(dto._itemId, item);
+        return dto;
+    }
+    _itemFromCache(sessionId, itemId) {
+        const map = this._cache.get(sessionId);
+        return map?.get(itemId);
+    }
+}
+class TypeHierarchyAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+        this._idPool = new IdGenerator('');
+        this._cache = new Map();
+    }
+    async prepareSession(uri, position, token) {
+        const doc = this._documents.getDocument(uri);
+        const pos = typeConvert.Position.to(position);
+        const items = await this._provider.prepareTypeHierarchy(doc, pos, token);
+        if (!items) {
+            return undefined;
+        }
+        const sessionId = this._idPool.nextId();
+        this._cache.set(sessionId, new Map());
+        if (Array.isArray(items)) {
+            return items.map(item => this._cacheAndConvertItem(sessionId, item));
+        }
+        else {
+            return [this._cacheAndConvertItem(sessionId, items)];
+        }
+    }
+    async provideSupertypes(sessionId, itemId, token) {
+        const item = this._itemFromCache(sessionId, itemId);
+        if (!item) {
+            throw new Error('missing type hierarchy item');
+        }
+        const supertypes = await this._provider.provideTypeHierarchySupertypes(item, token);
+        if (!supertypes) {
+            return undefined;
+        }
+        return supertypes.map(supertype => {
+            return this._cacheAndConvertItem(sessionId, supertype);
+        });
+    }
+    async provideSubtypes(sessionId, itemId, token) {
+        const item = this._itemFromCache(sessionId, itemId);
+        if (!item) {
+            throw new Error('missing type hierarchy item');
+        }
+        const subtypes = await this._provider.provideTypeHierarchySubtypes(item, token);
+        if (!subtypes) {
+            return undefined;
+        }
+        return subtypes.map(subtype => {
+            return this._cacheAndConvertItem(sessionId, subtype);
+        });
+    }
+    releaseSession(sessionId) {
+        this._cache.delete(sessionId);
+    }
+    _cacheAndConvertItem(sessionId, item) {
+        const map = this._cache.get(sessionId);
+        const dto = typeConvert.TypeHierarchyItem.from(item, sessionId, map.size.toString(36));
+        map.set(dto._itemId, item);
+        return dto;
+    }
+    _itemFromCache(sessionId, itemId) {
+        const map = this._cache.get(sessionId);
+        return map?.get(itemId);
+    }
+}
+class DocumentDropEditAdapter {
+    constructor(_proxy, _documents, _provider, _handle, _extension) {
+        this._proxy = _proxy;
+        this._documents = _documents;
+        this._provider = _provider;
+        this._handle = _handle;
+        this._extension = _extension;
+        this._cache = new Cache('DocumentDropEdit');
+    }
+    async provideDocumentOnDropEdits(requestId, uri, position, dataTransferDto, token) {
+        const doc = this._documents.getDocument(uri);
+        const pos = typeConvert.Position.to(position);
+        const dataTransfer = typeConvert.DataTransfer.toDataTransfer(dataTransferDto, async (id) => {
+            return (await this._proxy.$resolveDocumentOnDropFileData(this._handle, requestId, id)).buffer;
+        });
+        const edits = await this._provider.provideDocumentDropEdits(doc, pos, dataTransfer, token);
+        if (!edits) {
+            return undefined;
+        }
+        const editsArray = asArray(edits);
+        const cacheId = this._cache.add(editsArray);
+        return editsArray.map((edit, i) => ({
+            _cacheId: [cacheId, i],
+            title: edit.title ?? localize('defaultDropLabel', "Drop using '{0}' extension", this._extension.displayName || this._extension.name),
+            kind: edit.kind?.value,
+            yieldTo: edit.yieldTo?.map(x => x.value),
+            insertText: typeof edit.insertText === 'string' ? edit.insertText : { snippet: edit.insertText.value },
+            additionalEdit: edit.additionalEdit ? typeConvert.WorkspaceEdit.from(edit.additionalEdit, undefined) : undefined,
+        }));
+    }
+    async resolveDropEdit(id, token) {
+        const [sessionId, itemId] = id;
+        const item = this._cache.get(sessionId, itemId);
+        if (!item || !this._provider.resolveDocumentDropEdit) {
+            return {};
+        }
+        const resolvedItem = (await this._provider.resolveDocumentDropEdit(item, token)) ?? item;
+        const additionalEdit = resolvedItem.additionalEdit ? typeConvert.WorkspaceEdit.from(resolvedItem.additionalEdit, undefined) : undefined;
+        return { additionalEdit };
+    }
+    releaseDropEdits(id) {
+        this._cache.delete(id);
+    }
+}
+class MappedEditsAdapter {
+    constructor(_documents, _provider) {
+        this._documents = _documents;
+        this._provider = _provider;
+    }
+    async provideMappedEdits(resource, codeBlocks, context, token) {
+        const uri = URI.revive(resource);
+        const doc = this._documents.getDocument(uri);
+        const reviveContextItem = (item) => ({
+            uri: URI.revive(item.uri),
+            version: item.version,
+            ranges: item.ranges.map(r => typeConvert.Range.to(r)),
+        });
+        const usedContext = context.documents.map(docSubArray => docSubArray.map(reviveContextItem));
+        const ctx = {
+            documents: usedContext,
+            selections: usedContext[0]?.[0]?.ranges ?? [],
+            conversation: context.conversation?.map(c => {
+                if (c.type === 'response') {
+                    return {
+                        type: 'response',
+                        message: c.message,
+                        references: c.references?.map(reviveContextItem)
+                    };
+                }
+                else {
+                    return {
+                        type: 'request',
+                        message: c.message,
+                    };
+                }
+            })
+        };
+        const mappedEdits = await this._provider.provideMappedEdits(doc, codeBlocks, ctx, token);
+        return mappedEdits ? typeConvert.WorkspaceEdit.from(mappedEdits) : null;
+    }
+}
+class AdapterData {
+    constructor(adapter, extension) {
+        this.adapter = adapter;
+        this.extension = extension;
+    }
+}
+export class ExtHostLanguageFeatures {
+    static { this._handlePool = 0; }
+    constructor(mainContext, _uriTransformer, _documents, _commands, _diagnostics, _logService, _apiDeprecation, _extensionTelemetry) {
+        this._uriTransformer = _uriTransformer;
+        this._documents = _documents;
+        this._commands = _commands;
+        this._diagnostics = _diagnostics;
+        this._logService = _logService;
+        this._apiDeprecation = _apiDeprecation;
+        this._extensionTelemetry = _extensionTelemetry;
+        this._adapter = new Map();
+        this._proxy = mainContext.getProxy(extHostProtocol.MainContext.MainThreadLanguageFeatures);
+    }
+    _transformDocumentSelector(selector, extension) {
+        return typeConvert.DocumentSelector.from(selector, this._uriTransformer, extension);
+    }
+    _createDisposable(handle) {
+        return new Disposable(() => {
+            this._adapter.delete(handle);
+            this._proxy.$unregister(handle);
+        });
+    }
+    _nextHandle() {
+        return ExtHostLanguageFeatures._handlePool++;
+    }
+    async _withAdapter(handle, ctor, callback, fallbackValue, tokenToRaceAgainst, doNotLog = false) {
+        const data = this._adapter.get(handle);
+        if (!data || !(data.adapter instanceof ctor)) {
+            return fallbackValue;
+        }
+        const t1 = Date.now();
+        if (!doNotLog) {
+            this._logService.trace(`[${data.extension.identifier.value}] INVOKE provider '${callback.toString().replace(/[\r\n]/g, '')}'`);
+        }
+        const result = callback(data.adapter, data.extension);
+        Promise.resolve(result).catch(err => {
+            if (!isCancellationError(err)) {
+                this._logService.error(`[${data.extension.identifier.value}] provider FAILED`);
+                this._logService.error(err);
+                this._extensionTelemetry.onExtensionError(data.extension.identifier, err);
+            }
+        }).finally(() => {
+            if (!doNotLog) {
+                this._logService.trace(`[${data.extension.identifier.value}] provider DONE after ${Date.now() - t1}ms`);
+            }
+        });
+        if (CancellationToken.isCancellationToken(tokenToRaceAgainst)) {
+            return raceCancellationError(result, tokenToRaceAgainst);
+        }
+        return result;
+    }
+    _addNewAdapter(adapter, extension) {
+        const handle = this._nextHandle();
+        this._adapter.set(handle, new AdapterData(adapter, extension));
+        return handle;
+    }
+    static _extLabel(ext) {
+        return ext.displayName || ext.name;
+    }
+    static _extId(ext) {
+        return ext.identifier.value;
+    }
+    registerDocumentSymbolProvider(extension, selector, provider, metadata) {
+        const handle = this._addNewAdapter(new DocumentSymbolAdapter(this._documents, provider), extension);
+        const displayName = (metadata && metadata.label) || ExtHostLanguageFeatures._extLabel(extension);
+        this._proxy.$registerDocumentSymbolProvider(handle, this._transformDocumentSelector(selector, extension), displayName);
+        return this._createDisposable(handle);
+    }
+    $provideDocumentSymbols(handle, resource, token) {
+        return this._withAdapter(handle, DocumentSymbolAdapter, adapter => adapter.provideDocumentSymbols(URI.revive(resource), token), undefined, token);
+    }
+    registerCodeLensProvider(extension, selector, provider) {
+        const handle = this._nextHandle();
+        const eventHandle = typeof provider.onDidChangeCodeLenses === 'function' ? this._nextHandle() : undefined;
+        this._adapter.set(handle, new AdapterData(new CodeLensAdapter(this._documents, this._commands.converter, provider, extension, this._extensionTelemetry, this._logService), extension));
+        this._proxy.$registerCodeLensSupport(handle, this._transformDocumentSelector(selector, extension), eventHandle);
+        let result = this._createDisposable(handle);
+        if (eventHandle !== undefined) {
+            const subscription = provider.onDidChangeCodeLenses(_ => this._proxy.$emitCodeLensEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+        return result;
+    }
+    $provideCodeLenses(handle, resource, token) {
+        return this._withAdapter(handle, CodeLensAdapter, adapter => adapter.provideCodeLenses(URI.revive(resource), token), undefined, token, resource.scheme === 'output');
+    }
+    $resolveCodeLens(handle, symbol, token) {
+        return this._withAdapter(handle, CodeLensAdapter, adapter => adapter.resolveCodeLens(symbol, token), undefined, undefined, true);
+    }
+    $releaseCodeLenses(handle, cacheId) {
+        this._withAdapter(handle, CodeLensAdapter, adapter => Promise.resolve(adapter.releaseCodeLenses(cacheId)), undefined, undefined, true);
+    }
+    registerDefinitionProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new DefinitionAdapter(this._documents, provider), extension);
+        this._proxy.$registerDefinitionSupport(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $provideDefinition(handle, resource, position, token) {
+        return this._withAdapter(handle, DefinitionAdapter, adapter => adapter.provideDefinition(URI.revive(resource), position, token), [], token);
+    }
+    registerDeclarationProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new DeclarationAdapter(this._documents, provider), extension);
+        this._proxy.$registerDeclarationSupport(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $provideDeclaration(handle, resource, position, token) {
+        return this._withAdapter(handle, DeclarationAdapter, adapter => adapter.provideDeclaration(URI.revive(resource), position, token), [], token);
+    }
+    registerImplementationProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new ImplementationAdapter(this._documents, provider), extension);
+        this._proxy.$registerImplementationSupport(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $provideImplementation(handle, resource, position, token) {
+        return this._withAdapter(handle, ImplementationAdapter, adapter => adapter.provideImplementation(URI.revive(resource), position, token), [], token);
+    }
+    registerTypeDefinitionProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new TypeDefinitionAdapter(this._documents, provider), extension);
+        this._proxy.$registerTypeDefinitionSupport(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $provideTypeDefinition(handle, resource, position, token) {
+        return this._withAdapter(handle, TypeDefinitionAdapter, adapter => adapter.provideTypeDefinition(URI.revive(resource), position, token), [], token);
+    }
+    registerHoverProvider(extension, selector, provider, extensionId) {
+        const handle = this._addNewAdapter(new HoverAdapter(this._documents, provider), extension);
+        this._proxy.$registerHoverProvider(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $provideHover(handle, resource, position, context, token) {
+        return this._withAdapter(handle, HoverAdapter, adapter => adapter.provideHover(URI.revive(resource), position, context, token), undefined, token);
+    }
+    $releaseHover(handle, id) {
+        this._withAdapter(handle, HoverAdapter, adapter => Promise.resolve(adapter.releaseHover(id)), undefined, undefined);
+    }
+    registerEvaluatableExpressionProvider(extension, selector, provider, extensionId) {
+        const handle = this._addNewAdapter(new EvaluatableExpressionAdapter(this._documents, provider), extension);
+        this._proxy.$registerEvaluatableExpressionProvider(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $provideEvaluatableExpression(handle, resource, position, token) {
+        return this._withAdapter(handle, EvaluatableExpressionAdapter, adapter => adapter.provideEvaluatableExpression(URI.revive(resource), position, token), undefined, token);
+    }
+    registerInlineValuesProvider(extension, selector, provider, extensionId) {
+        const eventHandle = typeof provider.onDidChangeInlineValues === 'function' ? this._nextHandle() : undefined;
+        const handle = this._addNewAdapter(new InlineValuesAdapter(this._documents, provider), extension);
+        this._proxy.$registerInlineValuesProvider(handle, this._transformDocumentSelector(selector, extension), eventHandle);
+        let result = this._createDisposable(handle);
+        if (eventHandle !== undefined) {
+            const subscription = provider.onDidChangeInlineValues(_ => this._proxy.$emitInlineValuesEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+        return result;
+    }
+    $provideInlineValues(handle, resource, range, context, token) {
+        return this._withAdapter(handle, InlineValuesAdapter, adapter => adapter.provideInlineValues(URI.revive(resource), range, context, token), undefined, token);
+    }
+    registerDocumentHighlightProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new DocumentHighlightAdapter(this._documents, provider), extension);
+        this._proxy.$registerDocumentHighlightProvider(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    registerMultiDocumentHighlightProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new MultiDocumentHighlightAdapter(this._documents, provider, this._logService), extension);
+        this._proxy.$registerMultiDocumentHighlightProvider(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $provideDocumentHighlights(handle, resource, position, token) {
+        return this._withAdapter(handle, DocumentHighlightAdapter, adapter => adapter.provideDocumentHighlights(URI.revive(resource), position, token), undefined, token);
+    }
+    $provideMultiDocumentHighlights(handle, resource, position, otherModels, token) {
+        return this._withAdapter(handle, MultiDocumentHighlightAdapter, adapter => adapter.provideMultiDocumentHighlights(URI.revive(resource), position, otherModels.map(model => URI.revive(model)), token), undefined, token);
+    }
+    registerLinkedEditingRangeProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new LinkedEditingRangeAdapter(this._documents, provider), extension);
+        this._proxy.$registerLinkedEditingRangeProvider(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $provideLinkedEditingRanges(handle, resource, position, token) {
+        return this._withAdapter(handle, LinkedEditingRangeAdapter, async (adapter) => {
+            const res = await adapter.provideLinkedEditingRanges(URI.revive(resource), position, token);
+            if (res) {
+                return {
+                    ranges: res.ranges,
+                    wordPattern: res.wordPattern ? ExtHostLanguageFeatures._serializeRegExp(res.wordPattern) : undefined
+                };
+            }
+            return undefined;
+        }, undefined, token);
+    }
+    registerReferenceProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new ReferenceAdapter(this._documents, provider), extension);
+        this._proxy.$registerReferenceSupport(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $provideReferences(handle, resource, position, context, token) {
+        return this._withAdapter(handle, ReferenceAdapter, adapter => adapter.provideReferences(URI.revive(resource), position, context, token), undefined, token);
+    }
+    registerCodeActionProvider(extension, selector, provider, metadata) {
+        const store = new DisposableStore();
+        const handle = this._addNewAdapter(new CodeActionAdapter(this._documents, this._commands.converter, this._diagnostics, provider, this._logService, extension, this._apiDeprecation), extension);
+        this._proxy.$registerCodeActionSupport(handle, this._transformDocumentSelector(selector, extension), {
+            providedKinds: metadata?.providedCodeActionKinds?.map(kind => kind.value),
+            documentation: metadata?.documentation?.map(x => ({
+                kind: x.kind.value,
+                command: this._commands.converter.toInternal(x.command, store),
+            }))
+        }, ExtHostLanguageFeatures._extLabel(extension), ExtHostLanguageFeatures._extId(extension), Boolean(provider.resolveCodeAction));
+        store.add(this._createDisposable(handle));
+        return store;
+    }
+    $provideCodeActions(handle, resource, rangeOrSelection, context, token) {
+        return this._withAdapter(handle, CodeActionAdapter, adapter => adapter.provideCodeActions(URI.revive(resource), rangeOrSelection, context, token), undefined, token);
+    }
+    $resolveCodeAction(handle, id, token) {
+        return this._withAdapter(handle, CodeActionAdapter, adapter => adapter.resolveCodeAction(id, token), {}, undefined);
+    }
+    $releaseCodeActions(handle, cacheId) {
+        this._withAdapter(handle, CodeActionAdapter, adapter => Promise.resolve(adapter.releaseCodeActions(cacheId)), undefined, undefined);
+    }
+    registerDocumentFormattingEditProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new DocumentFormattingAdapter(this._documents, provider), extension);
+        this._proxy.$registerDocumentFormattingSupport(handle, this._transformDocumentSelector(selector, extension), extension.identifier, extension.displayName || extension.name);
+        return this._createDisposable(handle);
+    }
+    $provideDocumentFormattingEdits(handle, resource, options, token) {
+        return this._withAdapter(handle, DocumentFormattingAdapter, adapter => adapter.provideDocumentFormattingEdits(URI.revive(resource), options, token), undefined, token);
+    }
+    registerDocumentRangeFormattingEditProvider(extension, selector, provider) {
+        const canFormatMultipleRanges = typeof provider.provideDocumentRangesFormattingEdits === 'function';
+        const handle = this._addNewAdapter(new RangeFormattingAdapter(this._documents, provider), extension);
+        this._proxy.$registerRangeFormattingSupport(handle, this._transformDocumentSelector(selector, extension), extension.identifier, extension.displayName || extension.name, canFormatMultipleRanges);
+        return this._createDisposable(handle);
+    }
+    $provideDocumentRangeFormattingEdits(handle, resource, range, options, token) {
+        return this._withAdapter(handle, RangeFormattingAdapter, adapter => adapter.provideDocumentRangeFormattingEdits(URI.revive(resource), range, options, token), undefined, token);
+    }
+    $provideDocumentRangesFormattingEdits(handle, resource, ranges, options, token) {
+        return this._withAdapter(handle, RangeFormattingAdapter, adapter => adapter.provideDocumentRangesFormattingEdits(URI.revive(resource), ranges, options, token), undefined, token);
+    }
+    registerOnTypeFormattingEditProvider(extension, selector, provider, triggerCharacters) {
+        const handle = this._addNewAdapter(new OnTypeFormattingAdapter(this._documents, provider), extension);
+        this._proxy.$registerOnTypeFormattingSupport(handle, this._transformDocumentSelector(selector, extension), triggerCharacters, extension.identifier);
+        return this._createDisposable(handle);
+    }
+    $provideOnTypeFormattingEdits(handle, resource, position, ch, options, token) {
+        return this._withAdapter(handle, OnTypeFormattingAdapter, adapter => adapter.provideOnTypeFormattingEdits(URI.revive(resource), position, ch, options, token), undefined, token);
+    }
+    registerWorkspaceSymbolProvider(extension, provider) {
+        const handle = this._addNewAdapter(new NavigateTypeAdapter(provider, this._logService), extension);
+        this._proxy.$registerNavigateTypeSupport(handle, typeof provider.resolveWorkspaceSymbol === 'function');
+        return this._createDisposable(handle);
+    }
+    $provideWorkspaceSymbols(handle, search, token) {
+        return this._withAdapter(handle, NavigateTypeAdapter, adapter => adapter.provideWorkspaceSymbols(search, token), { symbols: [] }, token);
+    }
+    $resolveWorkspaceSymbol(handle, symbol, token) {
+        return this._withAdapter(handle, NavigateTypeAdapter, adapter => adapter.resolveWorkspaceSymbol(symbol, token), undefined, undefined);
+    }
+    $releaseWorkspaceSymbols(handle, id) {
+        this._withAdapter(handle, NavigateTypeAdapter, adapter => adapter.releaseWorkspaceSymbols(id), undefined, undefined);
+    }
+    registerRenameProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new RenameAdapter(this._documents, provider, this._logService), extension);
+        this._proxy.$registerRenameSupport(handle, this._transformDocumentSelector(selector, extension), RenameAdapter.supportsResolving(provider));
+        return this._createDisposable(handle);
+    }
+    $provideRenameEdits(handle, resource, position, newName, token) {
+        return this._withAdapter(handle, RenameAdapter, adapter => adapter.provideRenameEdits(URI.revive(resource), position, newName, token), undefined, token);
+    }
+    $resolveRenameLocation(handle, resource, position, token) {
+        return this._withAdapter(handle, RenameAdapter, adapter => adapter.resolveRenameLocation(URI.revive(resource), position, token), undefined, token);
+    }
+    registerNewSymbolNamesProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new NewSymbolNamesAdapter(this._documents, provider, this._logService), extension);
+        this._proxy.$registerNewSymbolNamesProvider(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $supportsAutomaticNewSymbolNamesTriggerKind(handle) {
+        return this._withAdapter(handle, NewSymbolNamesAdapter, adapter => adapter.supportsAutomaticNewSymbolNamesTriggerKind(), false, undefined);
+    }
+    $provideNewSymbolNames(handle, resource, range, triggerKind, token) {
+        return this._withAdapter(handle, NewSymbolNamesAdapter, adapter => adapter.provideNewSymbolNames(URI.revive(resource), range, triggerKind, token), undefined, token);
+    }
+    registerDocumentSemanticTokensProvider(extension, selector, provider, legend) {
+        const handle = this._addNewAdapter(new DocumentSemanticTokensAdapter(this._documents, provider), extension);
+        const eventHandle = (typeof provider.onDidChangeSemanticTokens === 'function' ? this._nextHandle() : undefined);
+        this._proxy.$registerDocumentSemanticTokensProvider(handle, this._transformDocumentSelector(selector, extension), legend, eventHandle);
+        let result = this._createDisposable(handle);
+        if (eventHandle) {
+            const subscription = provider.onDidChangeSemanticTokens(_ => this._proxy.$emitDocumentSemanticTokensEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+        return result;
+    }
+    $provideDocumentSemanticTokens(handle, resource, previousResultId, token) {
+        return this._withAdapter(handle, DocumentSemanticTokensAdapter, adapter => adapter.provideDocumentSemanticTokens(URI.revive(resource), previousResultId, token), null, token);
+    }
+    $releaseDocumentSemanticTokens(handle, semanticColoringResultId) {
+        this._withAdapter(handle, DocumentSemanticTokensAdapter, adapter => adapter.releaseDocumentSemanticColoring(semanticColoringResultId), undefined, undefined);
+    }
+    registerDocumentRangeSemanticTokensProvider(extension, selector, provider, legend) {
+        const handle = this._addNewAdapter(new DocumentRangeSemanticTokensAdapter(this._documents, provider), extension);
+        this._proxy.$registerDocumentRangeSemanticTokensProvider(handle, this._transformDocumentSelector(selector, extension), legend);
+        return this._createDisposable(handle);
+    }
+    $provideDocumentRangeSemanticTokens(handle, resource, range, token) {
+        return this._withAdapter(handle, DocumentRangeSemanticTokensAdapter, adapter => adapter.provideDocumentRangeSemanticTokens(URI.revive(resource), range, token), null, token);
+    }
+    registerCompletionItemProvider(extension, selector, provider, triggerCharacters) {
+        const handle = this._addNewAdapter(new CompletionsAdapter(this._documents, this._commands.converter, provider, this._apiDeprecation, extension), extension);
+        this._proxy.$registerCompletionsProvider(handle, this._transformDocumentSelector(selector, extension), triggerCharacters, CompletionsAdapter.supportsResolving(provider), extension.identifier);
+        return this._createDisposable(handle);
+    }
+    $provideCompletionItems(handle, resource, position, context, token) {
+        return this._withAdapter(handle, CompletionsAdapter, adapter => adapter.provideCompletionItems(URI.revive(resource), position, context, token), undefined, token);
+    }
+    $resolveCompletionItem(handle, id, token) {
+        return this._withAdapter(handle, CompletionsAdapter, adapter => adapter.resolveCompletionItem(id, token), undefined, token);
+    }
+    $releaseCompletionItems(handle, id) {
+        this._withAdapter(handle, CompletionsAdapter, adapter => adapter.releaseCompletionItems(id), undefined, undefined);
+    }
+    registerInlineCompletionsProvider(extension, selector, provider, metadata) {
+        const adapter = new InlineCompletionAdapter(extension, this._documents, provider, this._commands.converter);
+        const handle = this._addNewAdapter(adapter, extension);
+        this._proxy.$registerInlineCompletionsSupport(handle, this._transformDocumentSelector(selector, extension), adapter.supportsHandleEvents, ExtensionIdentifier.toKey(extension.identifier.value), metadata?.yieldTo?.map(extId => ExtensionIdentifier.toKey(extId)) || []);
+        return this._createDisposable(handle);
+    }
+    $provideInlineCompletions(handle, resource, position, context, token) {
+        return this._withAdapter(handle, InlineCompletionAdapterBase, adapter => adapter.provideInlineCompletions(URI.revive(resource), position, context, token), undefined, token);
+    }
+    $provideInlineEditsForRange(handle, resource, range, context, token) {
+        return this._withAdapter(handle, InlineCompletionAdapterBase, adapter => adapter.provideInlineEditsForRange(URI.revive(resource), range, context, token), undefined, token);
+    }
+    $handleInlineCompletionDidShow(handle, pid, idx, updatedInsertText) {
+        this._withAdapter(handle, InlineCompletionAdapterBase, async (adapter) => {
+            adapter.handleDidShowCompletionItem(pid, idx, updatedInsertText);
+        }, undefined, undefined);
+    }
+    $handleInlineCompletionPartialAccept(handle, pid, idx, acceptedCharacters, info) {
+        this._withAdapter(handle, InlineCompletionAdapterBase, async (adapter) => {
+            adapter.handlePartialAccept(pid, idx, acceptedCharacters, info);
+        }, undefined, undefined);
+    }
+    $freeInlineCompletionsList(handle, pid) {
+        this._withAdapter(handle, InlineCompletionAdapterBase, async (adapter) => { adapter.disposeCompletions(pid); }, undefined, undefined);
+    }
+    registerInlineEditProvider(extension, selector, provider) {
+        const adapter = new InlineEditAdapter(extension, this._documents, provider, this._commands.converter);
+        const handle = this._addNewAdapter(adapter, extension);
+        this._proxy.$registerInlineEditProvider(handle, this._transformDocumentSelector(selector, extension), extension.identifier);
+        return this._createDisposable(handle);
+    }
+    $provideInlineEdit(handle, resource, context, token) {
+        return this._withAdapter(handle, InlineEditAdapter, adapter => adapter.provideInlineEdits(URI.revive(resource), context, token), undefined, token);
+    }
+    $freeInlineEdit(handle, pid) {
+        this._withAdapter(handle, InlineEditAdapter, async (adapter) => { adapter.disposeEdit(pid); }, undefined, undefined);
+    }
+    registerSignatureHelpProvider(extension, selector, provider, metadataOrTriggerChars) {
+        const metadata = Array.isArray(metadataOrTriggerChars)
+            ? { triggerCharacters: metadataOrTriggerChars, retriggerCharacters: [] }
+            : metadataOrTriggerChars;
+        const handle = this._addNewAdapter(new SignatureHelpAdapter(this._documents, provider), extension);
+        this._proxy.$registerSignatureHelpProvider(handle, this._transformDocumentSelector(selector, extension), metadata);
+        return this._createDisposable(handle);
+    }
+    $provideSignatureHelp(handle, resource, position, context, token) {
+        return this._withAdapter(handle, SignatureHelpAdapter, adapter => adapter.provideSignatureHelp(URI.revive(resource), position, context, token), undefined, token);
+    }
+    $releaseSignatureHelp(handle, id) {
+        this._withAdapter(handle, SignatureHelpAdapter, adapter => adapter.releaseSignatureHelp(id), undefined, undefined);
+    }
+    registerInlayHintsProvider(extension, selector, provider) {
+        const eventHandle = typeof provider.onDidChangeInlayHints === 'function' ? this._nextHandle() : undefined;
+        const handle = this._addNewAdapter(new InlayHintsAdapter(this._documents, this._commands.converter, provider, this._logService, extension), extension);
+        this._proxy.$registerInlayHintsProvider(handle, this._transformDocumentSelector(selector, extension), typeof provider.resolveInlayHint === 'function', eventHandle, ExtHostLanguageFeatures._extLabel(extension));
+        let result = this._createDisposable(handle);
+        if (eventHandle !== undefined) {
+            const subscription = provider.onDidChangeInlayHints(uri => this._proxy.$emitInlayHintsEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+        return result;
+    }
+    $provideInlayHints(handle, resource, range, token) {
+        return this._withAdapter(handle, InlayHintsAdapter, adapter => adapter.provideInlayHints(URI.revive(resource), range, token), undefined, token);
+    }
+    $resolveInlayHint(handle, id, token) {
+        return this._withAdapter(handle, InlayHintsAdapter, adapter => adapter.resolveInlayHint(id, token), undefined, token);
+    }
+    $releaseInlayHints(handle, id) {
+        this._withAdapter(handle, InlayHintsAdapter, adapter => adapter.releaseHints(id), undefined, undefined);
+    }
+    registerDocumentLinkProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new LinkProviderAdapter(this._documents, provider), extension);
+        this._proxy.$registerDocumentLinkProvider(handle, this._transformDocumentSelector(selector, extension), typeof provider.resolveDocumentLink === 'function');
+        return this._createDisposable(handle);
+    }
+    $provideDocumentLinks(handle, resource, token) {
+        return this._withAdapter(handle, LinkProviderAdapter, adapter => adapter.provideLinks(URI.revive(resource), token), undefined, token, resource.scheme === 'output');
+    }
+    $resolveDocumentLink(handle, id, token) {
+        return this._withAdapter(handle, LinkProviderAdapter, adapter => adapter.resolveLink(id, token), undefined, undefined, true);
+    }
+    $releaseDocumentLinks(handle, id) {
+        this._withAdapter(handle, LinkProviderAdapter, adapter => adapter.releaseLinks(id), undefined, undefined, true);
+    }
+    registerColorProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new ColorProviderAdapter(this._documents, provider), extension);
+        this._proxy.$registerDocumentColorProvider(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $provideDocumentColors(handle, resource, token) {
+        return this._withAdapter(handle, ColorProviderAdapter, adapter => adapter.provideColors(URI.revive(resource), token), [], token);
+    }
+    $provideColorPresentations(handle, resource, colorInfo, token) {
+        return this._withAdapter(handle, ColorProviderAdapter, adapter => adapter.provideColorPresentations(URI.revive(resource), colorInfo, token), undefined, token);
+    }
+    registerFoldingRangeProvider(extension, selector, provider) {
+        const handle = this._nextHandle();
+        const eventHandle = typeof provider.onDidChangeFoldingRanges === 'function' ? this._nextHandle() : undefined;
+        this._adapter.set(handle, new AdapterData(new FoldingProviderAdapter(this._documents, provider), extension));
+        this._proxy.$registerFoldingRangeProvider(handle, this._transformDocumentSelector(selector, extension), extension.identifier, eventHandle);
+        let result = this._createDisposable(handle);
+        if (eventHandle !== undefined) {
+            const subscription = provider.onDidChangeFoldingRanges(() => this._proxy.$emitFoldingRangeEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+        return result;
+    }
+    $provideFoldingRanges(handle, resource, context, token) {
+        return this._withAdapter(handle, FoldingProviderAdapter, (adapter) => adapter.provideFoldingRanges(URI.revive(resource), context, token), undefined, token);
+    }
+    registerSelectionRangeProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new SelectionRangeAdapter(this._documents, provider, this._logService), extension);
+        this._proxy.$registerSelectionRangeProvider(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $provideSelectionRanges(handle, resource, positions, token) {
+        return this._withAdapter(handle, SelectionRangeAdapter, adapter => adapter.provideSelectionRanges(URI.revive(resource), positions, token), [], token);
+    }
+    registerCallHierarchyProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new CallHierarchyAdapter(this._documents, provider), extension);
+        this._proxy.$registerCallHierarchyProvider(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $prepareCallHierarchy(handle, resource, position, token) {
+        return this._withAdapter(handle, CallHierarchyAdapter, adapter => Promise.resolve(adapter.prepareSession(URI.revive(resource), position, token)), undefined, token);
+    }
+    $provideCallHierarchyIncomingCalls(handle, sessionId, itemId, token) {
+        return this._withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallsTo(sessionId, itemId, token), undefined, token);
+    }
+    $provideCallHierarchyOutgoingCalls(handle, sessionId, itemId, token) {
+        return this._withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallsFrom(sessionId, itemId, token), undefined, token);
+    }
+    $releaseCallHierarchy(handle, sessionId) {
+        this._withAdapter(handle, CallHierarchyAdapter, adapter => Promise.resolve(adapter.releaseSession(sessionId)), undefined, undefined);
+    }
+    registerTypeHierarchyProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new TypeHierarchyAdapter(this._documents, provider), extension);
+        this._proxy.$registerTypeHierarchyProvider(handle, this._transformDocumentSelector(selector, extension));
+        return this._createDisposable(handle);
+    }
+    $prepareTypeHierarchy(handle, resource, position, token) {
+        return this._withAdapter(handle, TypeHierarchyAdapter, adapter => Promise.resolve(adapter.prepareSession(URI.revive(resource), position, token)), undefined, token);
+    }
+    $provideTypeHierarchySupertypes(handle, sessionId, itemId, token) {
+        return this._withAdapter(handle, TypeHierarchyAdapter, adapter => adapter.provideSupertypes(sessionId, itemId, token), undefined, token);
+    }
+    $provideTypeHierarchySubtypes(handle, sessionId, itemId, token) {
+        return this._withAdapter(handle, TypeHierarchyAdapter, adapter => adapter.provideSubtypes(sessionId, itemId, token), undefined, token);
+    }
+    $releaseTypeHierarchy(handle, sessionId) {
+        this._withAdapter(handle, TypeHierarchyAdapter, adapter => Promise.resolve(adapter.releaseSession(sessionId)), undefined, undefined);
+    }
+    registerDocumentOnDropEditProvider(extension, selector, provider, metadata) {
+        const handle = this._nextHandle();
+        this._adapter.set(handle, new AdapterData(new DocumentDropEditAdapter(this._proxy, this._documents, provider, handle, extension), extension));
+        this._proxy.$registerDocumentOnDropEditProvider(handle, this._transformDocumentSelector(selector, extension), isProposedApiEnabled(extension, 'documentPaste') && metadata ? {
+            supportsResolve: !!provider.resolveDocumentDropEdit,
+            dropMimeTypes: metadata.dropMimeTypes,
+        } : undefined);
+        return this._createDisposable(handle);
+    }
+    $provideDocumentOnDropEdits(handle, requestId, resource, position, dataTransferDto, token) {
+        return this._withAdapter(handle, DocumentDropEditAdapter, adapter => Promise.resolve(adapter.provideDocumentOnDropEdits(requestId, URI.revive(resource), position, dataTransferDto, token)), undefined, undefined);
+    }
+    $resolveDropEdit(handle, id, token) {
+        return this._withAdapter(handle, DocumentDropEditAdapter, adapter => adapter.resolveDropEdit(id, token), {}, undefined);
+    }
+    $releaseDocumentOnDropEdits(handle, cacheId) {
+        this._withAdapter(handle, DocumentDropEditAdapter, adapter => Promise.resolve(adapter.releaseDropEdits(cacheId)), undefined, undefined);
+    }
+    registerMappedEditsProvider(extension, selector, provider) {
+        const handle = this._addNewAdapter(new MappedEditsAdapter(this._documents, provider), extension);
+        this._proxy.$registerMappedEditsProvider(handle, this._transformDocumentSelector(selector, extension), extension.displayName ?? extension.name);
+        return this._createDisposable(handle);
+    }
+    $provideMappedEdits(handle, document, codeBlocks, context, token) {
+        return this._withAdapter(handle, MappedEditsAdapter, adapter => Promise.resolve(adapter.provideMappedEdits(document, codeBlocks, context, token)), null, token);
+    }
+    registerDocumentPasteEditProvider(extension, selector, provider, metadata) {
+        const handle = this._nextHandle();
+        this._adapter.set(handle, new AdapterData(new DocumentPasteEditProvider(this._proxy, this._documents, provider, handle, extension), extension));
+        this._proxy.$registerPasteEditProvider(handle, this._transformDocumentSelector(selector, extension), {
+            supportsCopy: !!provider.prepareDocumentPaste,
+            supportsPaste: !!provider.provideDocumentPasteEdits,
+            supportsResolve: !!provider.resolveDocumentPasteEdit,
+            providedPasteEditKinds: metadata.providedPasteEditKinds?.map(x => x.value),
+            copyMimeTypes: metadata.copyMimeTypes,
+            pasteMimeTypes: metadata.pasteMimeTypes,
+        });
+        return this._createDisposable(handle);
+    }
+    $prepareDocumentPaste(handle, resource, ranges, dataTransfer, token) {
+        return this._withAdapter(handle, DocumentPasteEditProvider, adapter => adapter.prepareDocumentPaste(URI.revive(resource), ranges, dataTransfer, token), undefined, token);
+    }
+    $providePasteEdits(handle, requestId, resource, ranges, dataTransferDto, context, token) {
+        return this._withAdapter(handle, DocumentPasteEditProvider, adapter => adapter.providePasteEdits(requestId, URI.revive(resource), ranges, dataTransferDto, context, token), undefined, token);
+    }
+    $resolvePasteEdit(handle, id, token) {
+        return this._withAdapter(handle, DocumentPasteEditProvider, adapter => adapter.resolvePasteEdit(id, token), {}, undefined);
+    }
+    $releasePasteEdits(handle, cacheId) {
+        this._withAdapter(handle, DocumentPasteEditProvider, adapter => Promise.resolve(adapter.releasePasteEdits(cacheId)), undefined, undefined);
+    }
+    static _serializeRegExp(regExp) {
+        return {
+            pattern: regExp.source,
+            flags: regExp.flags,
+        };
+    }
+    static _serializeIndentationRule(indentationRule) {
+        return {
+            decreaseIndentPattern: ExtHostLanguageFeatures._serializeRegExp(indentationRule.decreaseIndentPattern),
+            increaseIndentPattern: ExtHostLanguageFeatures._serializeRegExp(indentationRule.increaseIndentPattern),
+            indentNextLinePattern: indentationRule.indentNextLinePattern ? ExtHostLanguageFeatures._serializeRegExp(indentationRule.indentNextLinePattern) : undefined,
+            unIndentedLinePattern: indentationRule.unIndentedLinePattern ? ExtHostLanguageFeatures._serializeRegExp(indentationRule.unIndentedLinePattern) : undefined,
+        };
+    }
+    static _serializeOnEnterRule(onEnterRule) {
+        return {
+            beforeText: ExtHostLanguageFeatures._serializeRegExp(onEnterRule.beforeText),
+            afterText: onEnterRule.afterText ? ExtHostLanguageFeatures._serializeRegExp(onEnterRule.afterText) : undefined,
+            previousLineText: onEnterRule.previousLineText ? ExtHostLanguageFeatures._serializeRegExp(onEnterRule.previousLineText) : undefined,
+            action: onEnterRule.action
+        };
+    }
+    static _serializeOnEnterRules(onEnterRules) {
+        return onEnterRules.map(ExtHostLanguageFeatures._serializeOnEnterRule);
+    }
+    static _serializeAutoClosingPair(autoClosingPair) {
+        return {
+            open: autoClosingPair.open,
+            close: autoClosingPair.close,
+            notIn: autoClosingPair.notIn ? autoClosingPair.notIn.map(v => SyntaxTokenType.toString(v)) : undefined,
+        };
+    }
+    static _serializeAutoClosingPairs(autoClosingPairs) {
+        return autoClosingPairs.map(ExtHostLanguageFeatures._serializeAutoClosingPair);
+    }
+    setLanguageConfiguration(extension, languageId, configuration) {
+        const { wordPattern } = configuration;
+        if (wordPattern && regExpLeadsToEndlessLoop(wordPattern)) {
+            throw new Error(`Invalid language configuration: wordPattern '${wordPattern}' is not allowed to match the empty string.`);
+        }
+        if (wordPattern) {
+            this._documents.setWordDefinitionFor(languageId, wordPattern);
+        }
+        else {
+            this._documents.setWordDefinitionFor(languageId, undefined);
+        }
+        if (configuration.__electricCharacterSupport) {
+            this._apiDeprecation.report('LanguageConfiguration.__electricCharacterSupport', extension, `Do not use.`);
+        }
+        if (configuration.__characterPairSupport) {
+            this._apiDeprecation.report('LanguageConfiguration.__characterPairSupport', extension, `Do not use.`);
+        }
+        const handle = this._nextHandle();
+        const serializedConfiguration = {
+            comments: configuration.comments,
+            brackets: configuration.brackets,
+            wordPattern: configuration.wordPattern ? ExtHostLanguageFeatures._serializeRegExp(configuration.wordPattern) : undefined,
+            indentationRules: configuration.indentationRules ? ExtHostLanguageFeatures._serializeIndentationRule(configuration.indentationRules) : undefined,
+            onEnterRules: configuration.onEnterRules ? ExtHostLanguageFeatures._serializeOnEnterRules(configuration.onEnterRules) : undefined,
+            __electricCharacterSupport: configuration.__electricCharacterSupport,
+            __characterPairSupport: configuration.__characterPairSupport,
+            autoClosingPairs: configuration.autoClosingPairs ? ExtHostLanguageFeatures._serializeAutoClosingPairs(configuration.autoClosingPairs) : undefined,
+        };
+        this._proxy.$setLanguageConfiguration(handle, languageId, serializedConfiguration);
+        return this._createDisposable(handle);
+    }
+    $setWordDefinitions(wordDefinitions) {
+        for (const wordDefinition of wordDefinitions) {
+            this._documents.setWordDefinitionFor(wordDefinition.languageId, new RegExp(wordDefinition.regexSource, wordDefinition.regexFlags));
+        }
+    }
+}

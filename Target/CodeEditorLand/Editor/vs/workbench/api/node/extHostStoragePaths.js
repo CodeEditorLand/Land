@@ -1,1 +1,225 @@
-import*as a from"fs";import*as m from"../../../base/common/path.js";import{URI as w}from"../../../base/common/uri.js";import{ExtensionStoragePaths as L}from"../common/extHostStoragePaths.js";import{Disposable as y}from"../../../base/common/lifecycle.js";import{Schemas as g}from"../../../base/common/network.js";import{IntervalTimer as $,timeout as k}from"../../../base/common/async.js";import"../../../platform/log/common/log.js";import{Promises as d}from"../../../base/node/pfs.js";class U extends L{_workspaceStorageLock=null;async _getWorkspaceStorageURI(e){const o=await super._getWorkspaceStorageURI(e);if(o.scheme!==g.file)return o;if(this._environment.skipWorkspaceStorageLock)return this._logService.info(`Skipping acquiring lock for ${o.fsPath}.`),o;const r=o.fsPath;let s=0;do{let n;s===0?n=r:n=/[/\\]$/.test(r)?`${r.substr(0,r.length-1)}-${s}`:`${r}-${s}`,await I(n);const l=m.join(n,"vscode.lock"),i=await h(this._logService,l,!1);if(i)return this._workspaceStorageLock=i,process.on("exit",()=>{i.dispose()}),w.file(n);s++}while(s<10);return o}onWillDeactivateAll(){this._workspaceStorageLock?.setWillRelease(6e3)}}async function I(t){try{await a.promises.stat(t);return}catch{}try{await a.promises.mkdir(t,{recursive:!0})}catch{}}const T=1e3,f=10*60*1e3;class _ extends y{constructor(o,r){super();this.logService=o;this.filename=r;this._timer=this._register(new $),this._timer.cancelAndSet(async()=>{const s=await u(o,r);(!s||s.pid!==process.pid)&&(o.info(`Lock '${r}': The lock was lost unexpectedly.`),this._timer.cancel());try{await a.promises.utimes(r,new Date,new Date)}catch(n){o.error(n),o.info(`Lock '${r}': Could not update mtime.`)}},T)}_timer;dispose(){super.dispose();try{a.unlinkSync(this.filename)}catch{}}async setWillRelease(o){this.logService.info(`Lock '${this.filename}': Marking the lockfile as scheduled to be released in ${o} ms.`);try{const r={pid:process.pid,willReleaseAt:Date.now()+o};await d.writeFile(this.filename,JSON.stringify(r),{flag:"w"})}catch(r){this.logService.error(r)}}}async function h(t,e,o){try{const s={pid:process.pid,willReleaseAt:0};await d.writeFile(e,JSON.stringify(s),{flag:"wx"})}catch(s){t.error(s)}const r=await u(t,e);return!r||r.pid!==process.pid?o?(t.info(`Lock '${e}': Could not acquire lock, giving up.`),null):(t.info(`Lock '${e}': Could not acquire lock, checking if the file is stale.`),b(t,e)):(t.info(`Lock '${e}': Lock acquired.`),new _(t,e))}async function u(t,e){let o;try{o=await a.promises.readFile(e)}catch(r){return t.error(r),null}try{return JSON.parse(String(o))}catch(r){return t.error(r),null}}async function p(t,e){let o;try{o=await a.promises.stat(e)}catch(r){return t.error(r),0}return o.mtime.getTime()}function P(t){try{return process.kill(t,0),!0}catch{return!1}}async function b(t,e){const o=await u(t,e);if(!o)return t.info(`Lock '${e}': Could not read pid of lock holder.`),c(t,e);if(o.willReleaseAt){let i=o.willReleaseAt-Date.now();if(i<5e3){for(i>0?t.info(`Lock '${e}': The lockfile is scheduled to be released in ${i} ms.`):t.info(`Lock '${e}': The lockfile is scheduled to have been released.`);i>0;){if(await k(Math.min(100,i)),await p(t,e)===0)return c(t,e);i=o.willReleaseAt-Date.now()}return c(t,e)}}if(!P(o.pid))return t.info(`Lock '${e}': The pid ${o.pid} appears to be gone.`),c(t,e);const r=await p(t,e),s=Date.now()-r;if(s<=f)return t.info(`Lock '${e}': The lock does not look stale, elapsed: ${s} ms, giving up.`),null;t.info(`Lock '${e}': The lock looks stale, waiting for 2s.`),await k(2e3);const n=await p(t,e),l=Date.now()-n;return l<=f?(t.info(`Lock '${e}': The lock does not look stale, elapsed: ${l} ms, giving up.`),null):(t.info(`Lock '${e}': The lock looks stale even after waiting for 2s.`),c(t,e))}async function c(t,e){t.info(`Lock '${e}': Deleting a stale lock.`);try{await a.promises.unlink(e)}catch{}return h(t,e,!0)}export{U as ExtensionStoragePaths};
+import * as fs from 'fs';
+import * as path from '../../../base/common/path.js';
+import { URI } from '../../../base/common/uri.js';
+import { ExtensionStoragePaths as CommonExtensionStoragePaths } from '../common/extHostStoragePaths.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { Schemas } from '../../../base/common/network.js';
+import { IntervalTimer, timeout } from '../../../base/common/async.js';
+import { Promises } from '../../../base/node/pfs.js';
+export class ExtensionStoragePaths extends CommonExtensionStoragePaths {
+    constructor() {
+        super(...arguments);
+        this._workspaceStorageLock = null;
+    }
+    async _getWorkspaceStorageURI(storageName) {
+        const workspaceStorageURI = await super._getWorkspaceStorageURI(storageName);
+        if (workspaceStorageURI.scheme !== Schemas.file) {
+            return workspaceStorageURI;
+        }
+        if (this._environment.skipWorkspaceStorageLock) {
+            this._logService.info(`Skipping acquiring lock for ${workspaceStorageURI.fsPath}.`);
+            return workspaceStorageURI;
+        }
+        const workspaceStorageBase = workspaceStorageURI.fsPath;
+        let attempt = 0;
+        do {
+            let workspaceStoragePath;
+            if (attempt === 0) {
+                workspaceStoragePath = workspaceStorageBase;
+            }
+            else {
+                workspaceStoragePath = (/[/\\]$/.test(workspaceStorageBase)
+                    ? `${workspaceStorageBase.substr(0, workspaceStorageBase.length - 1)}-${attempt}`
+                    : `${workspaceStorageBase}-${attempt}`);
+            }
+            await mkdir(workspaceStoragePath);
+            const lockfile = path.join(workspaceStoragePath, 'vscode.lock');
+            const lock = await tryAcquireLock(this._logService, lockfile, false);
+            if (lock) {
+                this._workspaceStorageLock = lock;
+                process.on('exit', () => {
+                    lock.dispose();
+                });
+                return URI.file(workspaceStoragePath);
+            }
+            attempt++;
+        } while (attempt < 10);
+        return workspaceStorageURI;
+    }
+    onWillDeactivateAll() {
+        this._workspaceStorageLock?.setWillRelease(6000);
+    }
+}
+async function mkdir(dir) {
+    try {
+        await fs.promises.stat(dir);
+        return;
+    }
+    catch {
+    }
+    try {
+        await fs.promises.mkdir(dir, { recursive: true });
+    }
+    catch {
+    }
+}
+const MTIME_UPDATE_TIME = 1000;
+const STALE_LOCK_TIME = 10 * 60 * 1000;
+class Lock extends Disposable {
+    constructor(logService, filename) {
+        super();
+        this.logService = logService;
+        this.filename = filename;
+        this._timer = this._register(new IntervalTimer());
+        this._timer.cancelAndSet(async () => {
+            const contents = await readLockfileContents(logService, filename);
+            if (!contents || contents.pid !== process.pid) {
+                logService.info(`Lock '${filename}': The lock was lost unexpectedly.`);
+                this._timer.cancel();
+            }
+            try {
+                await fs.promises.utimes(filename, new Date(), new Date());
+            }
+            catch (err) {
+                logService.error(err);
+                logService.info(`Lock '${filename}': Could not update mtime.`);
+            }
+        }, MTIME_UPDATE_TIME);
+    }
+    dispose() {
+        super.dispose();
+        try {
+            fs.unlinkSync(this.filename);
+        }
+        catch (err) { }
+    }
+    async setWillRelease(timeUntilReleaseMs) {
+        this.logService.info(`Lock '${this.filename}': Marking the lockfile as scheduled to be released in ${timeUntilReleaseMs} ms.`);
+        try {
+            const contents = {
+                pid: process.pid,
+                willReleaseAt: Date.now() + timeUntilReleaseMs
+            };
+            await Promises.writeFile(this.filename, JSON.stringify(contents), { flag: 'w' });
+        }
+        catch (err) {
+            this.logService.error(err);
+        }
+    }
+}
+async function tryAcquireLock(logService, filename, isSecondAttempt) {
+    try {
+        const contents = {
+            pid: process.pid,
+            willReleaseAt: 0
+        };
+        await Promises.writeFile(filename, JSON.stringify(contents), { flag: 'wx' });
+    }
+    catch (err) {
+        logService.error(err);
+    }
+    const contents = await readLockfileContents(logService, filename);
+    if (!contents || contents.pid !== process.pid) {
+        if (isSecondAttempt) {
+            logService.info(`Lock '${filename}': Could not acquire lock, giving up.`);
+            return null;
+        }
+        logService.info(`Lock '${filename}': Could not acquire lock, checking if the file is stale.`);
+        return checkStaleAndTryAcquireLock(logService, filename);
+    }
+    logService.info(`Lock '${filename}': Lock acquired.`);
+    return new Lock(logService, filename);
+}
+async function readLockfileContents(logService, filename) {
+    let contents;
+    try {
+        contents = await fs.promises.readFile(filename);
+    }
+    catch (err) {
+        logService.error(err);
+        return null;
+    }
+    try {
+        return JSON.parse(String(contents));
+    }
+    catch (err) {
+        logService.error(err);
+        return null;
+    }
+}
+async function readmtime(logService, filename) {
+    let stats;
+    try {
+        stats = await fs.promises.stat(filename);
+    }
+    catch (err) {
+        logService.error(err);
+        return 0;
+    }
+    return stats.mtime.getTime();
+}
+function processExists(pid) {
+    try {
+        process.kill(pid, 0);
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+}
+async function checkStaleAndTryAcquireLock(logService, filename) {
+    const contents = await readLockfileContents(logService, filename);
+    if (!contents) {
+        logService.info(`Lock '${filename}': Could not read pid of lock holder.`);
+        return tryDeleteAndAcquireLock(logService, filename);
+    }
+    if (contents.willReleaseAt) {
+        let timeUntilRelease = contents.willReleaseAt - Date.now();
+        if (timeUntilRelease < 5000) {
+            if (timeUntilRelease > 0) {
+                logService.info(`Lock '${filename}': The lockfile is scheduled to be released in ${timeUntilRelease} ms.`);
+            }
+            else {
+                logService.info(`Lock '${filename}': The lockfile is scheduled to have been released.`);
+            }
+            while (timeUntilRelease > 0) {
+                await timeout(Math.min(100, timeUntilRelease));
+                const mtime = await readmtime(logService, filename);
+                if (mtime === 0) {
+                    return tryDeleteAndAcquireLock(logService, filename);
+                }
+                timeUntilRelease = contents.willReleaseAt - Date.now();
+            }
+            return tryDeleteAndAcquireLock(logService, filename);
+        }
+    }
+    if (!processExists(contents.pid)) {
+        logService.info(`Lock '${filename}': The pid ${contents.pid} appears to be gone.`);
+        return tryDeleteAndAcquireLock(logService, filename);
+    }
+    const mtime1 = await readmtime(logService, filename);
+    const elapsed1 = Date.now() - mtime1;
+    if (elapsed1 <= STALE_LOCK_TIME) {
+        logService.info(`Lock '${filename}': The lock does not look stale, elapsed: ${elapsed1} ms, giving up.`);
+        return null;
+    }
+    logService.info(`Lock '${filename}': The lock looks stale, waiting for 2s.`);
+    await timeout(2000);
+    const mtime2 = await readmtime(logService, filename);
+    const elapsed2 = Date.now() - mtime2;
+    if (elapsed2 <= STALE_LOCK_TIME) {
+        logService.info(`Lock '${filename}': The lock does not look stale, elapsed: ${elapsed2} ms, giving up.`);
+        return null;
+    }
+    logService.info(`Lock '${filename}': The lock looks stale even after waiting for 2s.`);
+    return tryDeleteAndAcquireLock(logService, filename);
+}
+async function tryDeleteAndAcquireLock(logService, filename) {
+    logService.info(`Lock '${filename}': Deleting a stale lock.`);
+    try {
+        await fs.promises.unlink(filename);
+    }
+    catch (err) {
+    }
+    return tryAcquireLock(logService, filename, true);
+}

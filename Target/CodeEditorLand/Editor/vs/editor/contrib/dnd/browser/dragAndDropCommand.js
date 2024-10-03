@@ -1,1 +1,52 @@
-import"../../../common/core/position.js";import{Range as o}from"../../../common/core/range.js";import{Selection as e}from"../../../common/core/selection.js";import"../../../common/editorCommon.js";import"../../../common/model.js";class P{selection;targetPosition;targetSelection;copy;constructor(i,t,n){this.selection=i,this.targetPosition=t,this.copy=n,this.targetSelection=null}getEditOperations(i,t){const n=i.getValueInRange(this.selection);if(this.copy||t.addEditOperation(this.selection,null),t.addEditOperation(new o(this.targetPosition.lineNumber,this.targetPosition.column,this.targetPosition.lineNumber,this.targetPosition.column),n),this.selection.containsPosition(this.targetPosition)&&!(this.copy&&(this.selection.getEndPosition().equals(this.targetPosition)||this.selection.getStartPosition().equals(this.targetPosition)))){this.targetSelection=this.selection;return}if(this.copy){this.targetSelection=new e(this.targetPosition.lineNumber,this.targetPosition.column,this.selection.endLineNumber-this.selection.startLineNumber+this.targetPosition.lineNumber,this.selection.startLineNumber===this.selection.endLineNumber?this.targetPosition.column+this.selection.endColumn-this.selection.startColumn:this.selection.endColumn);return}if(this.targetPosition.lineNumber>this.selection.endLineNumber){this.targetSelection=new e(this.targetPosition.lineNumber-this.selection.endLineNumber+this.selection.startLineNumber,this.targetPosition.column,this.targetPosition.lineNumber,this.selection.startLineNumber===this.selection.endLineNumber?this.targetPosition.column+this.selection.endColumn-this.selection.startColumn:this.selection.endColumn);return}if(this.targetPosition.lineNumber<this.selection.endLineNumber){this.targetSelection=new e(this.targetPosition.lineNumber,this.targetPosition.column,this.targetPosition.lineNumber+this.selection.endLineNumber-this.selection.startLineNumber,this.selection.startLineNumber===this.selection.endLineNumber?this.targetPosition.column+this.selection.endColumn-this.selection.startColumn:this.selection.endColumn);return}this.selection.endColumn<=this.targetPosition.column?this.targetSelection=new e(this.targetPosition.lineNumber-this.selection.endLineNumber+this.selection.startLineNumber,this.selection.startLineNumber===this.selection.endLineNumber?this.targetPosition.column-this.selection.endColumn+this.selection.startColumn:this.targetPosition.column-this.selection.endColumn+this.selection.startColumn,this.targetPosition.lineNumber,this.selection.startLineNumber===this.selection.endLineNumber?this.targetPosition.column:this.selection.endColumn):this.targetSelection=new e(this.targetPosition.lineNumber-this.selection.endLineNumber+this.selection.startLineNumber,this.targetPosition.column,this.targetPosition.lineNumber,this.targetPosition.column+this.selection.endColumn-this.selection.startColumn)}computeCursorState(i,t){return this.targetSelection}}export{P as DragAndDropCommand};
+import { Range } from '../../../common/core/range.js';
+import { Selection } from '../../../common/core/selection.js';
+export class DragAndDropCommand {
+    constructor(selection, targetPosition, copy) {
+        this.selection = selection;
+        this.targetPosition = targetPosition;
+        this.copy = copy;
+        this.targetSelection = null;
+    }
+    getEditOperations(model, builder) {
+        const text = model.getValueInRange(this.selection);
+        if (!this.copy) {
+            builder.addEditOperation(this.selection, null);
+        }
+        builder.addEditOperation(new Range(this.targetPosition.lineNumber, this.targetPosition.column, this.targetPosition.lineNumber, this.targetPosition.column), text);
+        if (this.selection.containsPosition(this.targetPosition) && !(this.copy && (this.selection.getEndPosition().equals(this.targetPosition) || this.selection.getStartPosition().equals(this.targetPosition)))) {
+            this.targetSelection = this.selection;
+            return;
+        }
+        if (this.copy) {
+            this.targetSelection = new Selection(this.targetPosition.lineNumber, this.targetPosition.column, this.selection.endLineNumber - this.selection.startLineNumber + this.targetPosition.lineNumber, this.selection.startLineNumber === this.selection.endLineNumber ?
+                this.targetPosition.column + this.selection.endColumn - this.selection.startColumn :
+                this.selection.endColumn);
+            return;
+        }
+        if (this.targetPosition.lineNumber > this.selection.endLineNumber) {
+            this.targetSelection = new Selection(this.targetPosition.lineNumber - this.selection.endLineNumber + this.selection.startLineNumber, this.targetPosition.column, this.targetPosition.lineNumber, this.selection.startLineNumber === this.selection.endLineNumber ?
+                this.targetPosition.column + this.selection.endColumn - this.selection.startColumn :
+                this.selection.endColumn);
+            return;
+        }
+        if (this.targetPosition.lineNumber < this.selection.endLineNumber) {
+            this.targetSelection = new Selection(this.targetPosition.lineNumber, this.targetPosition.column, this.targetPosition.lineNumber + this.selection.endLineNumber - this.selection.startLineNumber, this.selection.startLineNumber === this.selection.endLineNumber ?
+                this.targetPosition.column + this.selection.endColumn - this.selection.startColumn :
+                this.selection.endColumn);
+            return;
+        }
+        if (this.selection.endColumn <= this.targetPosition.column) {
+            this.targetSelection = new Selection(this.targetPosition.lineNumber - this.selection.endLineNumber + this.selection.startLineNumber, this.selection.startLineNumber === this.selection.endLineNumber ?
+                this.targetPosition.column - this.selection.endColumn + this.selection.startColumn :
+                this.targetPosition.column - this.selection.endColumn + this.selection.startColumn, this.targetPosition.lineNumber, this.selection.startLineNumber === this.selection.endLineNumber ?
+                this.targetPosition.column :
+                this.selection.endColumn);
+        }
+        else {
+            this.targetSelection = new Selection(this.targetPosition.lineNumber - this.selection.endLineNumber + this.selection.startLineNumber, this.targetPosition.column, this.targetPosition.lineNumber, this.targetPosition.column + this.selection.endColumn - this.selection.startColumn);
+        }
+    }
+    computeCursorState(model, helper) {
+        return this.targetSelection;
+    }
+}

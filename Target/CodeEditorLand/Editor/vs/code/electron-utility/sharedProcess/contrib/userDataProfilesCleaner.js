@@ -1,1 +1,29 @@
-var d=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var u=(o,e,r,s)=>{for(var c=s>1?void 0:s?h(e,r):e,i=o.length-1,p;i>=0;i--)(p=o[i])&&(c=(s?p(e,r,c):p(c))||c);return s&&c&&d(e,r,c),c},m=(o,e)=>(r,s)=>e(r,s,o);import{RunOnceScheduler as n}from"../../../../base/common/async.js";import{Disposable as l}from"../../../../base/common/lifecycle.js";import{IUserDataProfilesService as S}from"../../../../platform/userDataProfile/common/userDataProfile.js";let t=class extends l{constructor(e){super(),this._register(new n(()=>{e.cleanUp()},10*1e3)).schedule()}};t=u([m(0,S)],t);export{t as UserDataProfilesCleaner};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { RunOnceScheduler } from '../../../../base/common/async.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
+let UserDataProfilesCleaner = class UserDataProfilesCleaner extends Disposable {
+    constructor(userDataProfilesService) {
+        super();
+        const scheduler = this._register(new RunOnceScheduler(() => {
+            userDataProfilesService.cleanUp();
+        }, 10 * 1000));
+        scheduler.schedule();
+    }
+};
+UserDataProfilesCleaner = __decorate([
+    __param(0, IUserDataProfilesService),
+    __metadata("design:paramtypes", [Object])
+], UserDataProfilesCleaner);
+export { UserDataProfilesCleaner };

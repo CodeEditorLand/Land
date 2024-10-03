@@ -1,1 +1,22 @@
-import"./media/severityIcon.css";import{Codicon as r}from"../../../base/common/codicons.js";import{ThemeIcon as e}from"../../../base/common/themables.js";import a from"../../../base/common/severity.js";var n;(t=>{function o(s){switch(s){case a.Ignore:return"severity-ignore "+e.asClassName(r.info);case a.Info:return e.asClassName(r.info);case a.Warning:return e.asClassName(r.warning);case a.Error:return e.asClassName(r.error);default:return""}}t.className=o})(n||={});export{n as SeverityIcon};
+import './media/severityIcon.css';
+import { Codicon } from '../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../base/common/themables.js';
+import Severity from '../../../base/common/severity.js';
+export var SeverityIcon;
+(function (SeverityIcon) {
+    function className(severity) {
+        switch (severity) {
+            case Severity.Ignore:
+                return 'severity-ignore ' + ThemeIcon.asClassName(Codicon.info);
+            case Severity.Info:
+                return ThemeIcon.asClassName(Codicon.info);
+            case Severity.Warning:
+                return ThemeIcon.asClassName(Codicon.warning);
+            case Severity.Error:
+                return ThemeIcon.asClassName(Codicon.error);
+            default:
+                return '';
+        }
+    }
+    SeverityIcon.className = className;
+})(SeverityIcon || (SeverityIcon = {}));

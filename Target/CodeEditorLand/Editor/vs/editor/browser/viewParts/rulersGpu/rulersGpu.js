@@ -1,1 +1,50 @@
-import{ViewPart as g}from"../../view/viewPart.js";import"../../view/renderingContext.js";import"../../../common/viewModel/viewContext.js";import"../../../common/viewEvents.js";import{EditorOption as c}from"../../../common/config/editorOptions.js";import{Color as l}from"../../../../base/common/color.js";import{editorRuler as h}from"../../../common/core/editorColorRegistry.js";import{autorun as f}from"../../../../base/common/observable.js";class I extends g{constructor(e,i){super(e);this._viewGpuContext=i;this._register(f(t=>this._updateEntries(t)))}_gpuShapes=[];onConfigurationChanged(e){return this._updateEntries(void 0),!0}prepareRender(e){}render(e){}_updateEntries(e){const i=this._context.configuration.options,t=i.get(c.rulers),u=i.get(c.fontInfo).typicalHalfwidthCharacterWidth,p=this._viewGpuContext.devicePixelRatio.read(e);for(let r=0,d=t.length;r<d;r++){const n=t[r],s=this._gpuShapes[r],o=n.color?l.fromHex(n.color):this._context.theme.getColor(h)??l.white,a=[n.column*u*p,0,Math.max(1,Math.ceil(p)),Number.MAX_SAFE_INTEGER,o.rgba.r/255,o.rgba.g/255,o.rgba.b/255,o.rgba.a];s?s.setRaw(a):this._gpuShapes[r]=this._viewGpuContext.rectangleRenderer.register(...a)}for(;this._gpuShapes.length>t.length;)this._gpuShapes.splice(-1,1)[0].dispose()}}export{I as RulersGpu};
+import { ViewPart } from '../../view/viewPart.js';
+import { Color } from '../../../../base/common/color.js';
+import { editorRuler } from '../../../common/core/editorColorRegistry.js';
+import { autorun } from '../../../../base/common/observable.js';
+export class RulersGpu extends ViewPart {
+    constructor(context, _viewGpuContext) {
+        super(context);
+        this._viewGpuContext = _viewGpuContext;
+        this._gpuShapes = [];
+        this._register(autorun(reader => this._updateEntries(reader)));
+    }
+    onConfigurationChanged(e) {
+        this._updateEntries(undefined);
+        return true;
+    }
+    prepareRender(ctx) {
+    }
+    render(ctx) {
+    }
+    _updateEntries(reader) {
+        const options = this._context.configuration.options;
+        const rulers = options.get(105);
+        const typicalHalfwidthCharacterWidth = options.get(52).typicalHalfwidthCharacterWidth;
+        const devicePixelRatio = this._viewGpuContext.devicePixelRatio.read(reader);
+        for (let i = 0, len = rulers.length; i < len; i++) {
+            const ruler = rulers[i];
+            const shape = this._gpuShapes[i];
+            const color = ruler.color ? Color.fromHex(ruler.color) : this._context.theme.getColor(editorRuler) ?? Color.white;
+            const rulerData = [
+                ruler.column * typicalHalfwidthCharacterWidth * devicePixelRatio,
+                0,
+                Math.max(1, Math.ceil(devicePixelRatio)),
+                Number.MAX_SAFE_INTEGER,
+                color.rgba.r / 255,
+                color.rgba.g / 255,
+                color.rgba.b / 255,
+                color.rgba.a,
+            ];
+            if (!shape) {
+                this._gpuShapes[i] = this._viewGpuContext.rectangleRenderer.register(...rulerData);
+            }
+            else {
+                shape.setRaw(rulerData);
+            }
+        }
+        while (this._gpuShapes.length > rulers.length) {
+            this._gpuShapes.splice(-1, 1)[0].dispose();
+        }
+    }
+}

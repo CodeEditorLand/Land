@@ -1,1 +1,36 @@
-(function(){const{ipcRenderer:o,webFrame:n,contextBridge:i}=require("electron");function t(e){if(!e||!e.startsWith("vscode:"))throw new Error(`Unsupported event IPC channel '${e}'`);return!0}const s={ipcRenderer:{send(e,...r){t(e)&&o.send(e,...r)},invoke(e,...r){return t(e),o.invoke(e,...r)}},webFrame:{setZoomLevel(e){typeof e=="number"&&n.setZoomLevel(e)}}};try{i.exposeInMainWorld("vscode",s)}catch{}})();
+"use strict";
+(function () {
+    const { ipcRenderer, webFrame, contextBridge } = require('electron');
+    function validateIPC(channel) {
+        if (!channel || !channel.startsWith('vscode:')) {
+            throw new Error(`Unsupported event IPC channel '${channel}'`);
+        }
+        return true;
+    }
+    const globals = {
+        ipcRenderer: {
+            send(channel, ...args) {
+                if (validateIPC(channel)) {
+                    ipcRenderer.send(channel, ...args);
+                }
+            },
+            invoke(channel, ...args) {
+                validateIPC(channel);
+                return ipcRenderer.invoke(channel, ...args);
+            }
+        },
+        webFrame: {
+            setZoomLevel(level) {
+                if (typeof level === 'number') {
+                    webFrame.setZoomLevel(level);
+                }
+            }
+        }
+    };
+    try {
+        contextBridge.exposeInMainWorld('vscode', globals);
+    }
+    catch (error) {
+        console.error(error);
+    }
+}());

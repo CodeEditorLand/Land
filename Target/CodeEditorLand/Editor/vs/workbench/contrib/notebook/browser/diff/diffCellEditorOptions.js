@@ -1,1 +1,51 @@
-import"../../../../../editor/browser/editorBrowser.js";import"../../../../../editor/common/config/editorOptions.js";const i={top:24,bottom:24},e={top:12,bottom:12};function s(r){return r===1?i:e}const o={padding:e,scrollBeyondLastLine:!1,scrollbar:{verticalScrollbarSize:14,horizontal:"auto",vertical:"auto",useShadows:!0,verticalHasArrows:!1,horizontalHasArrows:!1,alwaysConsumeMouseWheel:!1},renderLineHighlightOnlyWhenFocus:!0,overviewRulerLanes:0,overviewRulerBorder:!1,selectOnLineNumbers:!1,wordWrap:"off",lineNumbers:"off",glyphMargin:!0,fixedOverflowWidgets:!0,minimap:{enabled:!1},renderValidationDecorations:"on",renderLineHighlight:"none",readOnly:!0},l={...o,glyphMargin:!0,enableSplitViewResizing:!1,renderIndicators:!0,renderMarginRevertIcon:!1,readOnly:!1,isInEmbeddedEditor:!0,renderOverviewRuler:!1,wordWrap:"off",diffWordWrap:"off",diffAlgorithm:"advanced",renderSideBySide:!0,useInlineViewWhenSpaceIsLimited:!1};export{l as fixedDiffEditorOptions,o as fixedEditorOptions,s as getEditorPadding};
+const fixedEditorPaddingSingleLineCells = {
+    top: 24,
+    bottom: 24
+};
+const fixedEditorPadding = {
+    top: 12,
+    bottom: 12
+};
+export function getEditorPadding(lineCount) {
+    return lineCount === 1 ? fixedEditorPaddingSingleLineCells : fixedEditorPadding;
+}
+export const fixedEditorOptions = {
+    padding: fixedEditorPadding,
+    scrollBeyondLastLine: false,
+    scrollbar: {
+        verticalScrollbarSize: 14,
+        horizontal: 'auto',
+        vertical: 'auto',
+        useShadows: true,
+        verticalHasArrows: false,
+        horizontalHasArrows: false,
+        alwaysConsumeMouseWheel: false,
+    },
+    renderLineHighlightOnlyWhenFocus: true,
+    overviewRulerLanes: 0,
+    overviewRulerBorder: false,
+    selectOnLineNumbers: false,
+    wordWrap: 'off',
+    lineNumbers: 'off',
+    glyphMargin: true,
+    fixedOverflowWidgets: true,
+    minimap: { enabled: false },
+    renderValidationDecorations: 'on',
+    renderLineHighlight: 'none',
+    readOnly: true
+};
+export const fixedDiffEditorOptions = {
+    ...fixedEditorOptions,
+    glyphMargin: true,
+    enableSplitViewResizing: false,
+    renderIndicators: true,
+    renderMarginRevertIcon: false,
+    readOnly: false,
+    isInEmbeddedEditor: true,
+    renderOverviewRuler: false,
+    wordWrap: 'off',
+    diffWordWrap: 'off',
+    diffAlgorithm: 'advanced',
+    renderSideBySide: true,
+    useInlineViewWhenSpaceIsLimited: false
+};

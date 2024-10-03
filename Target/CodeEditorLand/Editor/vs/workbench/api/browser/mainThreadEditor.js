@@ -1,1 +1,408 @@
-import{Emitter as g}from"../../../base/common/event.js";import{DisposableStore as E}from"../../../base/common/lifecycle.js";import"../../../editor/browser/editorBrowser.js";import{RenderLineNumbersType as a,TextEditorCursorStyle as b,cursorStyleToString as v,EditorOption as f}from"../../../editor/common/config/editorOptions.js";import{Range as h}from"../../../editor/common/core/range.js";import{Selection as _}from"../../../editor/common/core/selection.js";import{ScrollType as c}from"../../../editor/common/editorCommon.js";import"../../../editor/common/model.js";import"../../../editor/common/core/editOperation.js";import"../../../editor/common/services/model.js";import{SnippetController2 as I}from"../../../editor/contrib/snippet/browser/snippetController2.js";import{TextEditorRevealType as p}from"../common/extHost.protocol.js";import"../../common/editor.js";import{equals as S}from"../../../base/common/arrays.js";import{CodeEditorStateFlag as m,EditorState as T}from"../../../editor/contrib/editorState/browser/editorState.js";import"../../../platform/clipboard/common/clipboardService.js";import{SnippetParser as C}from"../../../editor/contrib/snippet/browser/snippetParser.js";import"./mainThreadDocuments.js";import"../../../editor/contrib/snippet/browser/snippetSession.js";class n{constructor(e,t,i){this.selections=e;this.options=t;this.visibleRanges=i}static readFromEditor(e,t,i){const o=n._readSelectionsFromCodeEditor(e,i),r=n._readOptionsFromCodeEditor(e,t,i),s=n._readVisibleRangesFromCodeEditor(e,i);return new n(o,r,s)}static _readSelectionsFromCodeEditor(e,t){let i=null;return t&&(i=t.getSelections()),!i&&e&&(i=e.selections),i||(i=[new _(1,1,1,1)]),i}static _readOptionsFromCodeEditor(e,t,i){if(t.isDisposed()){if(e)return e.options;throw new Error("No valid properties")}let o,r;if(i){const d=i.getOptions(),l=d.get(f.lineNumbers);o=d.get(f.cursorStyle),r=l.renderType}else e?(o=e.options.cursorStyle,r=e.options.lineNumbers):(o=b.Line,r=a.On);const s=t.getOptions();return{insertSpaces:s.insertSpaces,tabSize:s.tabSize,indentSize:s.indentSize,originalIndentSize:s.originalIndentSize,cursorStyle:o,lineNumbers:r}}static _readVisibleRangesFromCodeEditor(e,t){return t?t.getVisibleRanges():[]}generateDelta(e,t){const i={options:null,selections:null,visibleRanges:null};return(!e||!n._selectionsEqual(e.selections,this.selections))&&(i.selections={selections:this.selections,source:t??void 0}),(!e||!n._optionsEqual(e.options,this.options))&&(i.options=this.options),(!e||!n._rangesEqual(e.visibleRanges,this.visibleRanges))&&(i.visibleRanges=this.visibleRanges),i.selections||i.options||i.visibleRanges?i:null}static _selectionsEqual(e,t){return S(e,t,(i,o)=>i.equalsSelection(o))}static _rangesEqual(e,t){return S(e,t,(i,o)=>i.equalsRange(o))}static _optionsEqual(e,t){return e&&!t||!e&&t?!1:!e&&!t?!0:e.tabSize===t.tabSize&&e.indentSize===t.indentSize&&e.insertSpaces===t.insertSpaces&&e.cursorStyle===t.cursorStyle&&e.lineNumbers===t.lineNumbers}}class ae{_id;_model;_mainThreadDocuments;_modelService;_clipboardService;_modelListeners=new E;_codeEditor;_focusTracker;_codeEditorListeners=new E;_properties;_onPropertiesChanged;constructor(e,t,i,o,r,s,d){this._id=e,this._model=t,this._codeEditor=null,this._properties=null,this._focusTracker=o,this._mainThreadDocuments=r,this._modelService=s,this._clipboardService=d,this._onPropertiesChanged=new g,this._modelListeners.add(this._model.onDidChangeOptions(l=>{this._updatePropertiesNow(null)})),this.setCodeEditor(i),this._updatePropertiesNow(null)}dispose(){this._modelListeners.dispose(),this._codeEditor=null,this._codeEditorListeners.dispose()}_updatePropertiesNow(e){this._setProperties(n.readFromEditor(this._properties,this._model,this._codeEditor),e)}_setProperties(e,t){const i=e.generateDelta(this._properties,t);this._properties=e,i&&this._onPropertiesChanged.fire(i)}getId(){return this._id}getModel(){return this._model}getCodeEditor(){return this._codeEditor}hasCodeEditor(e){return this._codeEditor===e}setCodeEditor(e){if(!this.hasCodeEditor(e)&&(this._codeEditorListeners.clear(),this._codeEditor=e,this._codeEditor)){this._codeEditorListeners.add(this._codeEditor.onDidChangeModel(()=>{this.setCodeEditor(null)})),this._codeEditorListeners.add(this._codeEditor.onDidFocusEditorWidget(()=>{this._focusTracker.onGainedFocus()})),this._codeEditorListeners.add(this._codeEditor.onDidBlurEditorWidget(()=>{this._focusTracker.onLostFocus()}));let t=null;this._codeEditorListeners.add(this._mainThreadDocuments.onIsCaughtUpWithContentChanges(r=>{if(r.toString()===this._model.uri.toString()){const s=t;t=null,this._updatePropertiesNow(s)}}));const i=()=>this._codeEditor&&this._codeEditor.getModel()===this._model,o=r=>{this._mainThreadDocuments.isCaughtUpWithContentChanges(this._model.uri)?(t=null,this._updatePropertiesNow(r)):t=r};this._codeEditorListeners.add(this._codeEditor.onDidChangeCursorSelection(r=>{i()&&o(r.source)})),this._codeEditorListeners.add(this._codeEditor.onDidChangeConfiguration(r=>{i()&&o(null)})),this._codeEditorListeners.add(this._codeEditor.onDidLayoutChange(()=>{i()&&o(null)})),this._codeEditorListeners.add(this._codeEditor.onDidScrollChange(()=>{i()&&o(null)})),this._updatePropertiesNow(null)}}isVisible(){return!!this._codeEditor}getProperties(){return this._properties}get onPropertiesChanged(){return this._onPropertiesChanged.event}setSelections(e){if(this._codeEditor){this._codeEditor.setSelections(e);return}const t=e.map(_.liftSelection);this._setProperties(new n(t,this._properties.options,this._properties.visibleRanges),null)}_setIndentConfiguration(e){const t=this._modelService.getCreationOptions(this._model.getLanguageId(),this._model.uri,this._model.isForSimpleWidget);if(e.tabSize==="auto"||e.insertSpaces==="auto"){let o=t.insertSpaces,r=t.tabSize;e.insertSpaces!=="auto"&&typeof e.insertSpaces<"u"&&(o=e.insertSpaces),e.tabSize!=="auto"&&typeof e.tabSize<"u"&&(r=e.tabSize),this._model.detectIndentation(o,r);return}const i={};typeof e.insertSpaces<"u"&&(i.insertSpaces=e.insertSpaces),typeof e.tabSize<"u"&&(i.tabSize=e.tabSize),typeof e.indentSize<"u"&&(i.indentSize=e.indentSize),this._model.updateOptions(i)}setConfiguration(e){if(this._setIndentConfiguration(e),!!this._codeEditor){if(e.cursorStyle){const t=v(e.cursorStyle);this._codeEditor.updateOptions({cursorStyle:t})}if(typeof e.lineNumbers<"u"){let t;switch(e.lineNumbers){case a.On:t="on";break;case a.Relative:t="relative";break;case a.Interval:t="interval";break;default:t="off"}this._codeEditor.updateOptions({lineNumbers:t})}}}setDecorations(e,t){this._codeEditor&&this._codeEditor.setDecorationsByType("exthost-api",e,t)}setDecorationsFast(e,t){if(!this._codeEditor)return;const i=[];for(let o=0,r=Math.floor(t.length/4);o<r;o++)i[o]=new h(t[4*o],t[4*o+1],t[4*o+2],t[4*o+3]);this._codeEditor.setDecorationsByTypeFast(e,i)}revealRange(e,t){if(this._codeEditor)switch(t){case p.Default:this._codeEditor.revealRange(e,c.Smooth);break;case p.InCenter:this._codeEditor.revealRangeInCenter(e,c.Smooth);break;case p.InCenterIfOutsideViewport:this._codeEditor.revealRangeInCenterIfOutsideViewport(e,c.Smooth);break;case p.AtTop:this._codeEditor.revealRangeAtTop(e,c.Smooth);break;default:break}}isFocused(){return this._codeEditor?this._codeEditor.hasTextFocus():!1}matches(e){return e?e.getControl()===this._codeEditor:!1}applyEdits(e,t,i){if(this._model.getVersionId()!==e||!this._codeEditor)return!1;typeof i.setEndOfLine<"u"&&this._model.pushEOL(i.setEndOfLine);const o=t.map(r=>({range:h.lift(r.range),text:r.text,forceMoveMarkers:r.forceMoveMarkers}));return i.undoStopBefore&&this._codeEditor.pushUndoStop(),this._codeEditor.executeEdits("MainThreadTextEditor",o),i.undoStopAfter&&this._codeEditor.pushUndoStop(),!0}async insertSnippet(e,t,i,o){if(!this._codeEditor||!this._codeEditor.hasModel())return!1;let r;if(C.guessNeedsClipboard(t)){const u=new T(this._codeEditor,m.Value|m.Position);if(r=await this._clipboardService.readText(),!u.validate(this._codeEditor))return!1}if(this._codeEditor.getModel().getVersionId()!==e)return!1;const d=I.get(this._codeEditor);if(!d)return!1;this._codeEditor.focus();const l=i.map(u=>({range:h.lift(u),template:t}));return d.apply(l,{overwriteBefore:0,overwriteAfter:0,undoStopBefore:o.undoStopBefore,undoStopAfter:o.undoStopAfter,clipboardText:r}),!0}}export{ae as MainThreadTextEditor,n as MainThreadTextEditorProperties};
+import { Emitter } from '../../../base/common/event.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { TextEditorCursorStyle, cursorStyleToString } from '../../../editor/common/config/editorOptions.js';
+import { Range } from '../../../editor/common/core/range.js';
+import { Selection } from '../../../editor/common/core/selection.js';
+import { SnippetController2 } from '../../../editor/contrib/snippet/browser/snippetController2.js';
+import { TextEditorRevealType } from '../common/extHost.protocol.js';
+import { equals } from '../../../base/common/arrays.js';
+import { EditorState } from '../../../editor/contrib/editorState/browser/editorState.js';
+import { SnippetParser } from '../../../editor/contrib/snippet/browser/snippetParser.js';
+export class MainThreadTextEditorProperties {
+    static readFromEditor(previousProperties, model, codeEditor) {
+        const selections = MainThreadTextEditorProperties._readSelectionsFromCodeEditor(previousProperties, codeEditor);
+        const options = MainThreadTextEditorProperties._readOptionsFromCodeEditor(previousProperties, model, codeEditor);
+        const visibleRanges = MainThreadTextEditorProperties._readVisibleRangesFromCodeEditor(previousProperties, codeEditor);
+        return new MainThreadTextEditorProperties(selections, options, visibleRanges);
+    }
+    static _readSelectionsFromCodeEditor(previousProperties, codeEditor) {
+        let result = null;
+        if (codeEditor) {
+            result = codeEditor.getSelections();
+        }
+        if (!result && previousProperties) {
+            result = previousProperties.selections;
+        }
+        if (!result) {
+            result = [new Selection(1, 1, 1, 1)];
+        }
+        return result;
+    }
+    static _readOptionsFromCodeEditor(previousProperties, model, codeEditor) {
+        if (model.isDisposed()) {
+            if (previousProperties) {
+                return previousProperties.options;
+            }
+            else {
+                throw new Error('No valid properties');
+            }
+        }
+        let cursorStyle;
+        let lineNumbers;
+        if (codeEditor) {
+            const options = codeEditor.getOptions();
+            const lineNumbersOpts = options.get(70);
+            cursorStyle = options.get(28);
+            lineNumbers = lineNumbersOpts.renderType;
+        }
+        else if (previousProperties) {
+            cursorStyle = previousProperties.options.cursorStyle;
+            lineNumbers = previousProperties.options.lineNumbers;
+        }
+        else {
+            cursorStyle = TextEditorCursorStyle.Line;
+            lineNumbers = 1;
+        }
+        const modelOptions = model.getOptions();
+        return {
+            insertSpaces: modelOptions.insertSpaces,
+            tabSize: modelOptions.tabSize,
+            indentSize: modelOptions.indentSize,
+            originalIndentSize: modelOptions.originalIndentSize,
+            cursorStyle: cursorStyle,
+            lineNumbers: lineNumbers
+        };
+    }
+    static _readVisibleRangesFromCodeEditor(previousProperties, codeEditor) {
+        if (codeEditor) {
+            return codeEditor.getVisibleRanges();
+        }
+        return [];
+    }
+    constructor(selections, options, visibleRanges) {
+        this.selections = selections;
+        this.options = options;
+        this.visibleRanges = visibleRanges;
+    }
+    generateDelta(oldProps, selectionChangeSource) {
+        const delta = {
+            options: null,
+            selections: null,
+            visibleRanges: null
+        };
+        if (!oldProps || !MainThreadTextEditorProperties._selectionsEqual(oldProps.selections, this.selections)) {
+            delta.selections = {
+                selections: this.selections,
+                source: selectionChangeSource ?? undefined,
+            };
+        }
+        if (!oldProps || !MainThreadTextEditorProperties._optionsEqual(oldProps.options, this.options)) {
+            delta.options = this.options;
+        }
+        if (!oldProps || !MainThreadTextEditorProperties._rangesEqual(oldProps.visibleRanges, this.visibleRanges)) {
+            delta.visibleRanges = this.visibleRanges;
+        }
+        if (delta.selections || delta.options || delta.visibleRanges) {
+            return delta;
+        }
+        return null;
+    }
+    static _selectionsEqual(a, b) {
+        return equals(a, b, (aValue, bValue) => aValue.equalsSelection(bValue));
+    }
+    static _rangesEqual(a, b) {
+        return equals(a, b, (aValue, bValue) => aValue.equalsRange(bValue));
+    }
+    static _optionsEqual(a, b) {
+        if (a && !b || !a && b) {
+            return false;
+        }
+        if (!a && !b) {
+            return true;
+        }
+        return (a.tabSize === b.tabSize
+            && a.indentSize === b.indentSize
+            && a.insertSpaces === b.insertSpaces
+            && a.cursorStyle === b.cursorStyle
+            && a.lineNumbers === b.lineNumbers);
+    }
+}
+export class MainThreadTextEditor {
+    constructor(id, model, codeEditor, focusTracker, mainThreadDocuments, modelService, clipboardService) {
+        this._modelListeners = new DisposableStore();
+        this._codeEditorListeners = new DisposableStore();
+        this._id = id;
+        this._model = model;
+        this._codeEditor = null;
+        this._properties = null;
+        this._focusTracker = focusTracker;
+        this._mainThreadDocuments = mainThreadDocuments;
+        this._modelService = modelService;
+        this._clipboardService = clipboardService;
+        this._onPropertiesChanged = new Emitter();
+        this._modelListeners.add(this._model.onDidChangeOptions((e) => {
+            this._updatePropertiesNow(null);
+        }));
+        this.setCodeEditor(codeEditor);
+        this._updatePropertiesNow(null);
+    }
+    dispose() {
+        this._modelListeners.dispose();
+        this._codeEditor = null;
+        this._codeEditorListeners.dispose();
+    }
+    _updatePropertiesNow(selectionChangeSource) {
+        this._setProperties(MainThreadTextEditorProperties.readFromEditor(this._properties, this._model, this._codeEditor), selectionChangeSource);
+    }
+    _setProperties(newProperties, selectionChangeSource) {
+        const delta = newProperties.generateDelta(this._properties, selectionChangeSource);
+        this._properties = newProperties;
+        if (delta) {
+            this._onPropertiesChanged.fire(delta);
+        }
+    }
+    getId() {
+        return this._id;
+    }
+    getModel() {
+        return this._model;
+    }
+    getCodeEditor() {
+        return this._codeEditor;
+    }
+    hasCodeEditor(codeEditor) {
+        return (this._codeEditor === codeEditor);
+    }
+    setCodeEditor(codeEditor) {
+        if (this.hasCodeEditor(codeEditor)) {
+            return;
+        }
+        this._codeEditorListeners.clear();
+        this._codeEditor = codeEditor;
+        if (this._codeEditor) {
+            this._codeEditorListeners.add(this._codeEditor.onDidChangeModel(() => {
+                this.setCodeEditor(null);
+            }));
+            this._codeEditorListeners.add(this._codeEditor.onDidFocusEditorWidget(() => {
+                this._focusTracker.onGainedFocus();
+            }));
+            this._codeEditorListeners.add(this._codeEditor.onDidBlurEditorWidget(() => {
+                this._focusTracker.onLostFocus();
+            }));
+            let nextSelectionChangeSource = null;
+            this._codeEditorListeners.add(this._mainThreadDocuments.onIsCaughtUpWithContentChanges((uri) => {
+                if (uri.toString() === this._model.uri.toString()) {
+                    const selectionChangeSource = nextSelectionChangeSource;
+                    nextSelectionChangeSource = null;
+                    this._updatePropertiesNow(selectionChangeSource);
+                }
+            }));
+            const isValidCodeEditor = () => {
+                return (this._codeEditor && this._codeEditor.getModel() === this._model);
+            };
+            const updateProperties = (selectionChangeSource) => {
+                if (this._mainThreadDocuments.isCaughtUpWithContentChanges(this._model.uri)) {
+                    nextSelectionChangeSource = null;
+                    this._updatePropertiesNow(selectionChangeSource);
+                }
+                else {
+                    nextSelectionChangeSource = selectionChangeSource;
+                }
+            };
+            this._codeEditorListeners.add(this._codeEditor.onDidChangeCursorSelection((e) => {
+                if (!isValidCodeEditor()) {
+                    return;
+                }
+                updateProperties(e.source);
+            }));
+            this._codeEditorListeners.add(this._codeEditor.onDidChangeConfiguration((e) => {
+                if (!isValidCodeEditor()) {
+                    return;
+                }
+                updateProperties(null);
+            }));
+            this._codeEditorListeners.add(this._codeEditor.onDidLayoutChange(() => {
+                if (!isValidCodeEditor()) {
+                    return;
+                }
+                updateProperties(null);
+            }));
+            this._codeEditorListeners.add(this._codeEditor.onDidScrollChange(() => {
+                if (!isValidCodeEditor()) {
+                    return;
+                }
+                updateProperties(null);
+            }));
+            this._updatePropertiesNow(null);
+        }
+    }
+    isVisible() {
+        return !!this._codeEditor;
+    }
+    getProperties() {
+        return this._properties;
+    }
+    get onPropertiesChanged() {
+        return this._onPropertiesChanged.event;
+    }
+    setSelections(selections) {
+        if (this._codeEditor) {
+            this._codeEditor.setSelections(selections);
+            return;
+        }
+        const newSelections = selections.map(Selection.liftSelection);
+        this._setProperties(new MainThreadTextEditorProperties(newSelections, this._properties.options, this._properties.visibleRanges), null);
+    }
+    _setIndentConfiguration(newConfiguration) {
+        const creationOpts = this._modelService.getCreationOptions(this._model.getLanguageId(), this._model.uri, this._model.isForSimpleWidget);
+        if (newConfiguration.tabSize === 'auto' || newConfiguration.insertSpaces === 'auto') {
+            let insertSpaces = creationOpts.insertSpaces;
+            let tabSize = creationOpts.tabSize;
+            if (newConfiguration.insertSpaces !== 'auto' && typeof newConfiguration.insertSpaces !== 'undefined') {
+                insertSpaces = newConfiguration.insertSpaces;
+            }
+            if (newConfiguration.tabSize !== 'auto' && typeof newConfiguration.tabSize !== 'undefined') {
+                tabSize = newConfiguration.tabSize;
+            }
+            this._model.detectIndentation(insertSpaces, tabSize);
+            return;
+        }
+        const newOpts = {};
+        if (typeof newConfiguration.insertSpaces !== 'undefined') {
+            newOpts.insertSpaces = newConfiguration.insertSpaces;
+        }
+        if (typeof newConfiguration.tabSize !== 'undefined') {
+            newOpts.tabSize = newConfiguration.tabSize;
+        }
+        if (typeof newConfiguration.indentSize !== 'undefined') {
+            newOpts.indentSize = newConfiguration.indentSize;
+        }
+        this._model.updateOptions(newOpts);
+    }
+    setConfiguration(newConfiguration) {
+        this._setIndentConfiguration(newConfiguration);
+        if (!this._codeEditor) {
+            return;
+        }
+        if (newConfiguration.cursorStyle) {
+            const newCursorStyle = cursorStyleToString(newConfiguration.cursorStyle);
+            this._codeEditor.updateOptions({
+                cursorStyle: newCursorStyle
+            });
+        }
+        if (typeof newConfiguration.lineNumbers !== 'undefined') {
+            let lineNumbers;
+            switch (newConfiguration.lineNumbers) {
+                case 1:
+                    lineNumbers = 'on';
+                    break;
+                case 2:
+                    lineNumbers = 'relative';
+                    break;
+                case 3:
+                    lineNumbers = 'interval';
+                    break;
+                default:
+                    lineNumbers = 'off';
+            }
+            this._codeEditor.updateOptions({
+                lineNumbers: lineNumbers
+            });
+        }
+    }
+    setDecorations(key, ranges) {
+        if (!this._codeEditor) {
+            return;
+        }
+        this._codeEditor.setDecorationsByType('exthost-api', key, ranges);
+    }
+    setDecorationsFast(key, _ranges) {
+        if (!this._codeEditor) {
+            return;
+        }
+        const ranges = [];
+        for (let i = 0, len = Math.floor(_ranges.length / 4); i < len; i++) {
+            ranges[i] = new Range(_ranges[4 * i], _ranges[4 * i + 1], _ranges[4 * i + 2], _ranges[4 * i + 3]);
+        }
+        this._codeEditor.setDecorationsByTypeFast(key, ranges);
+    }
+    revealRange(range, revealType) {
+        if (!this._codeEditor) {
+            return;
+        }
+        switch (revealType) {
+            case TextEditorRevealType.Default:
+                this._codeEditor.revealRange(range, 0);
+                break;
+            case TextEditorRevealType.InCenter:
+                this._codeEditor.revealRangeInCenter(range, 0);
+                break;
+            case TextEditorRevealType.InCenterIfOutsideViewport:
+                this._codeEditor.revealRangeInCenterIfOutsideViewport(range, 0);
+                break;
+            case TextEditorRevealType.AtTop:
+                this._codeEditor.revealRangeAtTop(range, 0);
+                break;
+            default:
+                console.warn(`Unknown revealType: ${revealType}`);
+                break;
+        }
+    }
+    isFocused() {
+        if (this._codeEditor) {
+            return this._codeEditor.hasTextFocus();
+        }
+        return false;
+    }
+    matches(editor) {
+        if (!editor) {
+            return false;
+        }
+        return editor.getControl() === this._codeEditor;
+    }
+    applyEdits(versionIdCheck, edits, opts) {
+        if (this._model.getVersionId() !== versionIdCheck) {
+            return false;
+        }
+        if (!this._codeEditor) {
+            return false;
+        }
+        if (typeof opts.setEndOfLine !== 'undefined') {
+            this._model.pushEOL(opts.setEndOfLine);
+        }
+        const transformedEdits = edits.map((edit) => {
+            return {
+                range: Range.lift(edit.range),
+                text: edit.text,
+                forceMoveMarkers: edit.forceMoveMarkers
+            };
+        });
+        if (opts.undoStopBefore) {
+            this._codeEditor.pushUndoStop();
+        }
+        this._codeEditor.executeEdits('MainThreadTextEditor', transformedEdits);
+        if (opts.undoStopAfter) {
+            this._codeEditor.pushUndoStop();
+        }
+        return true;
+    }
+    async insertSnippet(modelVersionId, template, ranges, opts) {
+        if (!this._codeEditor || !this._codeEditor.hasModel()) {
+            return false;
+        }
+        let clipboardText;
+        const needsTemplate = SnippetParser.guessNeedsClipboard(template);
+        if (needsTemplate) {
+            const state = new EditorState(this._codeEditor, 1 | 4);
+            clipboardText = await this._clipboardService.readText();
+            if (!state.validate(this._codeEditor)) {
+                return false;
+            }
+        }
+        if (this._codeEditor.getModel().getVersionId() !== modelVersionId) {
+            return false;
+        }
+        const snippetController = SnippetController2.get(this._codeEditor);
+        if (!snippetController) {
+            return false;
+        }
+        this._codeEditor.focus();
+        const edits = ranges.map(range => ({ range: Range.lift(range), template }));
+        snippetController.apply(edits, {
+            overwriteBefore: 0, overwriteAfter: 0,
+            undoStopBefore: opts.undoStopBefore, undoStopAfter: opts.undoStopAfter,
+            clipboardText
+        });
+        return true;
+    }
+}

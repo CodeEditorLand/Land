@@ -1,1 +1,90 @@
-var c=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var p=(n,t,i,o)=>{for(var e=o>1?void 0:o?v(t,i):t,s=n.length-1,r;s>=0;s--)(r=n[s])&&(e=(o?r(t,i,e):r(e))||e);return o&&e&&c(t,i,e),e},d=(n,t)=>(i,o)=>t(i,o,n);import{timeout as f}from"../../../../base/common/async.js";import{CancellationToken as D}from"../../../../base/common/cancellation.js";import{Emitter as l}from"../../../../base/common/event.js";import{Disposable as g}from"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import{FileChangeType as h,IFileService as C}from"../../../../platform/files/common/files.js";import"../../../common/editor.js";import"./workingCopy.js";let a=class extends g{constructor(i,o){super();this.resource=i;this.fileService=o;this._register(this.fileService.onDidFilesChange(e=>this.onDidFilesChange(e)))}_onDidChangeOrphaned=this._register(new l);onDidChangeOrphaned=this._onDidChangeOrphaned.event;orphaned=!1;isOrphaned(){return this.orphaned}async onDidFilesChange(i){let o=!1,e;if(this.orphaned?i.contains(this.resource,h.ADDED)&&(e=!1,o=!0):i.contains(this.resource,h.DELETED)&&(e=!0,o=!0),o&&this.orphaned!==e){let s=!1;e&&(await f(100,D.None),this.isDisposed()?s=!0:s=!await this.fileService.exists(this.resource)),this.orphaned!==s&&!this.isDisposed()&&this.setOrphaned(s)}}setOrphaned(i){this.orphaned!==i&&(this.orphaned=i,this._onDidChangeOrphaned.fire())}_onWillDispose=this._register(new l);onWillDispose=this._onWillDispose.event;isDisposed(){return this._store.isDisposed}dispose(){this.orphaned=!1,this._onWillDispose.fire(),super.dispose()}isModified(){return this.isDirty()}};a=p([d(1,C)],a);export{a as ResourceWorkingCopy};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { timeout } from '../../../../base/common/async.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+let ResourceWorkingCopy = class ResourceWorkingCopy extends Disposable {
+    constructor(resource, fileService) {
+        super();
+        this.resource = resource;
+        this.fileService = fileService;
+        this._onDidChangeOrphaned = this._register(new Emitter());
+        this.onDidChangeOrphaned = this._onDidChangeOrphaned.event;
+        this.orphaned = false;
+        this._onWillDispose = this._register(new Emitter());
+        this.onWillDispose = this._onWillDispose.event;
+        this._register(this.fileService.onDidFilesChange(e => this.onDidFilesChange(e)));
+    }
+    isOrphaned() {
+        return this.orphaned;
+    }
+    async onDidFilesChange(e) {
+        let fileEventImpactsUs = false;
+        let newInOrphanModeGuess;
+        if (this.orphaned) {
+            const fileWorkingCopyResourceAdded = e.contains(this.resource, 1);
+            if (fileWorkingCopyResourceAdded) {
+                newInOrphanModeGuess = false;
+                fileEventImpactsUs = true;
+            }
+        }
+        else {
+            const fileWorkingCopyResourceDeleted = e.contains(this.resource, 2);
+            if (fileWorkingCopyResourceDeleted) {
+                newInOrphanModeGuess = true;
+                fileEventImpactsUs = true;
+            }
+        }
+        if (fileEventImpactsUs && this.orphaned !== newInOrphanModeGuess) {
+            let newInOrphanModeValidated = false;
+            if (newInOrphanModeGuess) {
+                await timeout(100, CancellationToken.None);
+                if (this.isDisposed()) {
+                    newInOrphanModeValidated = true;
+                }
+                else {
+                    const exists = await this.fileService.exists(this.resource);
+                    newInOrphanModeValidated = !exists;
+                }
+            }
+            if (this.orphaned !== newInOrphanModeValidated && !this.isDisposed()) {
+                this.setOrphaned(newInOrphanModeValidated);
+            }
+        }
+    }
+    setOrphaned(orphaned) {
+        if (this.orphaned !== orphaned) {
+            this.orphaned = orphaned;
+            this._onDidChangeOrphaned.fire();
+        }
+    }
+    isDisposed() {
+        return this._store.isDisposed;
+    }
+    dispose() {
+        this.orphaned = false;
+        this._onWillDispose.fire();
+        super.dispose();
+    }
+    isModified() {
+        return this.isDirty();
+    }
+};
+ResourceWorkingCopy = __decorate([
+    __param(1, IFileService),
+    __metadata("design:paramtypes", [URI, Object])
+], ResourceWorkingCopy);
+export { ResourceWorkingCopy };

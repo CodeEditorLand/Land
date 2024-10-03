@@ -1,4 +1,357 @@
-var A=Object.defineProperty;var P=Object.getOwnPropertyDescriptor;var x=(b,n,i,o)=>{for(var r=o>1?void 0:o?P(n,i):n,s=b.length-1,t;s>=0;s--)(t=b[s])&&(r=(o?t(n,i,r):t(r))||r);return o&&r&&A(n,i,r),r},O=(b,n)=>(i,o)=>n(i,o,b);import*as h from"../../../../base/common/strings.js";import{ShiftCommand as T}from"../../../common/commands/shiftCommand.js";import{EditorAutoIndentStrategy as D}from"../../../common/config/editorOptions.js";import{Range as f}from"../../../common/core/range.js";import{Selection as W}from"../../../common/core/selection.js";import"../../../common/editorCommon.js";import"../../../common/model.js";import{IndentAction as _}from"../../../common/languages/languageConfiguration.js";import{ILanguageConfigurationService as R}from"../../../common/languages/languageConfigurationRegistry.js";import{IndentConsts as z}from"../../../common/languages/supports/indentRules.js";import*as L from"../../indentation/common/indentUtils.js";import{getGoodIndentForLine as N,getIndentMetadata as B}from"../../../common/languages/autoIndent.js";import{getEnterAction as w}from"../../../common/languages/enterAction.js";let M=class{constructor(n,i,o,r){this._languageConfigurationService=r;this._selection=n,this._isMovingDown=i,this._autoIndent=o,this._selectionId=null,this._moveEndLineSelectionShrink=!1}_selection;_isMovingDown;_autoIndent;_selectionId;_moveEndPositionDown;_moveEndLineSelectionShrink;getEditOperations(n,i){const o=()=>n.getLanguageId(),r=(a,g)=>n.getLanguageIdAtPosition(a,g),s=n.getLineCount();if(this._isMovingDown&&this._selection.endLineNumber===s){this._selectionId=i.trackSelection(this._selection);return}if(!this._isMovingDown&&this._selection.startLineNumber===1){this._selectionId=i.trackSelection(this._selection);return}this._moveEndPositionDown=!1;let t=this._selection;t.startLineNumber<t.endLineNumber&&t.endColumn===1&&(this._moveEndPositionDown=!0,t=t.setEndPosition(t.endLineNumber-1,n.getLineMaxColumn(t.endLineNumber-1)));const{tabSize:e,indentSize:l,insertSpaces:c}=n.getOptions(),d=this.buildIndentConverter(e,l,c);if(t.startLineNumber===t.endLineNumber&&n.getLineMaxColumn(t.startLineNumber)===1){const a=t.startLineNumber,g=this._isMovingDown?a+1:a-1;n.getLineMaxColumn(g)===1?i.addEditOperation(new f(1,1,1,1),null):(i.addEditOperation(new f(a,1,a,1),n.getLineContent(g)),i.addEditOperation(new f(g,1,g,n.getLineMaxColumn(g)),null)),t=new W(g,1,g,1)}else{let a,g;if(this._isMovingDown){a=t.endLineNumber+1,g=n.getLineContent(a),i.addEditOperation(new f(a-1,n.getLineMaxColumn(a-1),a,n.getLineMaxColumn(a)),null);let C=g;if(this.shouldAutoIndent(n,t)){const v=this.matchEnterRule(n,d,e,a,t.startLineNumber-1);if(v!==null){const m=h.getLeadingWhitespace(n.getLineContent(a)),p=v+L.getSpaceCnt(m,e);C=L.generateIndent(p,e,c)+this.trimStart(g)}else{const m={tokenization:{getLineTokens:u=>u===t.startLineNumber?n.tokenization.getLineTokens(a):n.tokenization.getLineTokens(u),getLanguageId:o,getLanguageIdAtPosition:r},getLineContent:u=>u===t.startLineNumber?n.getLineContent(a):n.getLineContent(u)},p=N(this._autoIndent,m,n.getLanguageIdAtPosition(a,1),t.startLineNumber,d,this._languageConfigurationService);if(p!==null){const u=h.getLeadingWhitespace(n.getLineContent(a)),S=L.getSpaceCnt(p,e),E=L.getSpaceCnt(u,e);S!==E&&(C=L.generateIndent(S,e,c)+this.trimStart(g))}}i.addEditOperation(new f(t.startLineNumber,1,t.startLineNumber,1),C+`
-`);const I=this.matchEnterRuleMovingDown(n,d,e,t.startLineNumber,a,C);if(I!==null)I!==0&&this.getIndentEditsOfMovingBlock(n,i,t,e,c,I);else{const m={tokenization:{getLineTokens:u=>u===t.startLineNumber?n.tokenization.getLineTokens(a):u>=t.startLineNumber+1&&u<=t.endLineNumber+1?n.tokenization.getLineTokens(u-1):n.tokenization.getLineTokens(u),getLanguageId:o,getLanguageIdAtPosition:r},getLineContent:u=>u===t.startLineNumber?C:u>=t.startLineNumber+1&&u<=t.endLineNumber+1?n.getLineContent(u-1):n.getLineContent(u)},p=N(this._autoIndent,m,n.getLanguageIdAtPosition(a,1),t.startLineNumber+1,d,this._languageConfigurationService);if(p!==null){const u=h.getLeadingWhitespace(n.getLineContent(t.startLineNumber)),S=L.getSpaceCnt(p,e),E=L.getSpaceCnt(u,e);if(S!==E){const k=S-E;this.getIndentEditsOfMovingBlock(n,i,t,e,c,k)}}}}else i.addEditOperation(new f(t.startLineNumber,1,t.startLineNumber,1),C+`
-`)}else if(a=t.startLineNumber-1,g=n.getLineContent(a),i.addEditOperation(new f(a,1,a+1,1),null),i.addEditOperation(new f(t.endLineNumber,n.getLineMaxColumn(t.endLineNumber),t.endLineNumber,n.getLineMaxColumn(t.endLineNumber)),`
-`+g),this.shouldAutoIndent(n,t)){const C={tokenization:{getLineTokens:I=>I===a?n.tokenization.getLineTokens(t.startLineNumber):n.tokenization.getLineTokens(I),getLanguageId:o,getLanguageIdAtPosition:r},getLineContent:I=>I===a?n.getLineContent(t.startLineNumber):n.getLineContent(I)},v=this.matchEnterRule(n,d,e,t.startLineNumber,t.startLineNumber-2);if(v!==null)v!==0&&this.getIndentEditsOfMovingBlock(n,i,t,e,c,v);else{const I=N(this._autoIndent,C,n.getLanguageIdAtPosition(t.startLineNumber,1),a,d,this._languageConfigurationService);if(I!==null){const m=h.getLeadingWhitespace(n.getLineContent(t.startLineNumber)),p=L.getSpaceCnt(I,e),u=L.getSpaceCnt(m,e);if(p!==u){const S=p-u;this.getIndentEditsOfMovingBlock(n,i,t,e,c,S)}}}}}this._selectionId=i.trackSelection(t)}buildIndentConverter(n,i,o){return{shiftIndent:r=>T.shiftIndent(r,r.length+1,n,i,o),unshiftIndent:r=>T.unshiftIndent(r,r.length+1,n,i,o)}}parseEnterResult(n,i,o,r,s){if(s){let t=s.indentation;s.indentAction===_.None||s.indentAction===_.Indent?t=s.indentation+s.appendText:s.indentAction===_.IndentOutdent?t=s.indentation:s.indentAction===_.Outdent&&(t=i.unshiftIndent(s.indentation)+s.appendText);const e=n.getLineContent(r);if(this.trimStart(e).indexOf(this.trimStart(t))>=0){const l=h.getLeadingWhitespace(n.getLineContent(r));let c=h.getLeadingWhitespace(t);const d=B(n,r,this._languageConfigurationService);d!==null&&d&z.DECREASE_MASK&&(c=i.unshiftIndent(c));const a=L.getSpaceCnt(c,o),g=L.getSpaceCnt(l,o);return a-g}}return null}matchEnterRuleMovingDown(n,i,o,r,s,t){if(h.lastNonWhitespaceIndex(t)>=0){const e=n.getLineMaxColumn(s),l=w(this._autoIndent,n,new f(s,e,s,e),this._languageConfigurationService);return this.parseEnterResult(n,i,o,r,l)}else{let e=r-1;for(;e>=1;){const d=n.getLineContent(e);if(h.lastNonWhitespaceIndex(d)>=0)break;e--}if(e<1||r>n.getLineCount())return null;const l=n.getLineMaxColumn(e),c=w(this._autoIndent,n,new f(e,l,e,l),this._languageConfigurationService);return this.parseEnterResult(n,i,o,r,c)}}matchEnterRule(n,i,o,r,s,t){let e=s;for(;e>=1;){let d;if(e===s&&t!==void 0?d=t:d=n.getLineContent(e),h.lastNonWhitespaceIndex(d)>=0)break;e--}if(e<1||r>n.getLineCount())return null;const l=n.getLineMaxColumn(e),c=w(this._autoIndent,n,new f(e,l,e,l),this._languageConfigurationService);return this.parseEnterResult(n,i,o,r,c)}trimStart(n){return n.replace(/^\s+/,"")}shouldAutoIndent(n,i){if(this._autoIndent<D.Full||!n.tokenization.isCheapToTokenize(i.startLineNumber))return!1;const o=n.getLanguageIdAtPosition(i.startLineNumber,1),r=n.getLanguageIdAtPosition(i.endLineNumber,1);return!(o!==r||this._languageConfigurationService.getLanguageConfiguration(o).indentRulesSupport===null)}getIndentEditsOfMovingBlock(n,i,o,r,s,t){for(let e=o.startLineNumber;e<=o.endLineNumber;e++){const l=n.getLineContent(e),c=h.getLeadingWhitespace(l),a=L.getSpaceCnt(c,r)+t,g=L.generateIndent(a,r,s);g!==c&&(i.addEditOperation(new f(e,1,e,c.length+1),g),e===o.endLineNumber&&o.endColumn<=c.length+1&&g===""&&(this._moveEndLineSelectionShrink=!0))}}computeCursorState(n,i){let o=i.getTrackedSelection(this._selectionId);return this._moveEndPositionDown&&(o=o.setEndPosition(o.endLineNumber+1,1)),this._moveEndLineSelectionShrink&&o.startLineNumber<o.endLineNumber&&(o=o.setEndPosition(o.endLineNumber,2)),o}};M=x([O(3,R)],M);export{M as MoveLinesCommand};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as strings from '../../../../base/common/strings.js';
+import { ShiftCommand } from '../../../common/commands/shiftCommand.js';
+import { Range } from '../../../common/core/range.js';
+import { Selection } from '../../../common/core/selection.js';
+import { IndentAction } from '../../../common/languages/languageConfiguration.js';
+import { ILanguageConfigurationService } from '../../../common/languages/languageConfigurationRegistry.js';
+import * as indentUtils from '../../indentation/common/indentUtils.js';
+import { getGoodIndentForLine, getIndentMetadata } from '../../../common/languages/autoIndent.js';
+import { getEnterAction } from '../../../common/languages/enterAction.js';
+let MoveLinesCommand = class MoveLinesCommand {
+    constructor(selection, isMovingDown, autoIndent, _languageConfigurationService) {
+        this._languageConfigurationService = _languageConfigurationService;
+        this._selection = selection;
+        this._isMovingDown = isMovingDown;
+        this._autoIndent = autoIndent;
+        this._selectionId = null;
+        this._moveEndLineSelectionShrink = false;
+    }
+    getEditOperations(model, builder) {
+        const getLanguageId = () => {
+            return model.getLanguageId();
+        };
+        const getLanguageIdAtPosition = (lineNumber, column) => {
+            return model.getLanguageIdAtPosition(lineNumber, column);
+        };
+        const modelLineCount = model.getLineCount();
+        if (this._isMovingDown && this._selection.endLineNumber === modelLineCount) {
+            this._selectionId = builder.trackSelection(this._selection);
+            return;
+        }
+        if (!this._isMovingDown && this._selection.startLineNumber === 1) {
+            this._selectionId = builder.trackSelection(this._selection);
+            return;
+        }
+        this._moveEndPositionDown = false;
+        let s = this._selection;
+        if (s.startLineNumber < s.endLineNumber && s.endColumn === 1) {
+            this._moveEndPositionDown = true;
+            s = s.setEndPosition(s.endLineNumber - 1, model.getLineMaxColumn(s.endLineNumber - 1));
+        }
+        const { tabSize, indentSize, insertSpaces } = model.getOptions();
+        const indentConverter = this.buildIndentConverter(tabSize, indentSize, insertSpaces);
+        if (s.startLineNumber === s.endLineNumber && model.getLineMaxColumn(s.startLineNumber) === 1) {
+            const lineNumber = s.startLineNumber;
+            const otherLineNumber = (this._isMovingDown ? lineNumber + 1 : lineNumber - 1);
+            if (model.getLineMaxColumn(otherLineNumber) === 1) {
+                builder.addEditOperation(new Range(1, 1, 1, 1), null);
+            }
+            else {
+                builder.addEditOperation(new Range(lineNumber, 1, lineNumber, 1), model.getLineContent(otherLineNumber));
+                builder.addEditOperation(new Range(otherLineNumber, 1, otherLineNumber, model.getLineMaxColumn(otherLineNumber)), null);
+            }
+            s = new Selection(otherLineNumber, 1, otherLineNumber, 1);
+        }
+        else {
+            let movingLineNumber;
+            let movingLineText;
+            if (this._isMovingDown) {
+                movingLineNumber = s.endLineNumber + 1;
+                movingLineText = model.getLineContent(movingLineNumber);
+                builder.addEditOperation(new Range(movingLineNumber - 1, model.getLineMaxColumn(movingLineNumber - 1), movingLineNumber, model.getLineMaxColumn(movingLineNumber)), null);
+                let insertingText = movingLineText;
+                if (this.shouldAutoIndent(model, s)) {
+                    const movingLineMatchResult = this.matchEnterRule(model, indentConverter, tabSize, movingLineNumber, s.startLineNumber - 1);
+                    if (movingLineMatchResult !== null) {
+                        const oldIndentation = strings.getLeadingWhitespace(model.getLineContent(movingLineNumber));
+                        const newSpaceCnt = movingLineMatchResult + indentUtils.getSpaceCnt(oldIndentation, tabSize);
+                        const newIndentation = indentUtils.generateIndent(newSpaceCnt, tabSize, insertSpaces);
+                        insertingText = newIndentation + this.trimStart(movingLineText);
+                    }
+                    else {
+                        const virtualModel = {
+                            tokenization: {
+                                getLineTokens: (lineNumber) => {
+                                    if (lineNumber === s.startLineNumber) {
+                                        return model.tokenization.getLineTokens(movingLineNumber);
+                                    }
+                                    else {
+                                        return model.tokenization.getLineTokens(lineNumber);
+                                    }
+                                },
+                                getLanguageId,
+                                getLanguageIdAtPosition,
+                            },
+                            getLineContent: (lineNumber) => {
+                                if (lineNumber === s.startLineNumber) {
+                                    return model.getLineContent(movingLineNumber);
+                                }
+                                else {
+                                    return model.getLineContent(lineNumber);
+                                }
+                            },
+                        };
+                        const indentOfMovingLine = getGoodIndentForLine(this._autoIndent, virtualModel, model.getLanguageIdAtPosition(movingLineNumber, 1), s.startLineNumber, indentConverter, this._languageConfigurationService);
+                        if (indentOfMovingLine !== null) {
+                            const oldIndentation = strings.getLeadingWhitespace(model.getLineContent(movingLineNumber));
+                            const newSpaceCnt = indentUtils.getSpaceCnt(indentOfMovingLine, tabSize);
+                            const oldSpaceCnt = indentUtils.getSpaceCnt(oldIndentation, tabSize);
+                            if (newSpaceCnt !== oldSpaceCnt) {
+                                const newIndentation = indentUtils.generateIndent(newSpaceCnt, tabSize, insertSpaces);
+                                insertingText = newIndentation + this.trimStart(movingLineText);
+                            }
+                        }
+                    }
+                    builder.addEditOperation(new Range(s.startLineNumber, 1, s.startLineNumber, 1), insertingText + '\n');
+                    const ret = this.matchEnterRuleMovingDown(model, indentConverter, tabSize, s.startLineNumber, movingLineNumber, insertingText);
+                    if (ret !== null) {
+                        if (ret !== 0) {
+                            this.getIndentEditsOfMovingBlock(model, builder, s, tabSize, insertSpaces, ret);
+                        }
+                    }
+                    else {
+                        const virtualModel = {
+                            tokenization: {
+                                getLineTokens: (lineNumber) => {
+                                    if (lineNumber === s.startLineNumber) {
+                                        return model.tokenization.getLineTokens(movingLineNumber);
+                                    }
+                                    else if (lineNumber >= s.startLineNumber + 1 && lineNumber <= s.endLineNumber + 1) {
+                                        return model.tokenization.getLineTokens(lineNumber - 1);
+                                    }
+                                    else {
+                                        return model.tokenization.getLineTokens(lineNumber);
+                                    }
+                                },
+                                getLanguageId,
+                                getLanguageIdAtPosition,
+                            },
+                            getLineContent: (lineNumber) => {
+                                if (lineNumber === s.startLineNumber) {
+                                    return insertingText;
+                                }
+                                else if (lineNumber >= s.startLineNumber + 1 && lineNumber <= s.endLineNumber + 1) {
+                                    return model.getLineContent(lineNumber - 1);
+                                }
+                                else {
+                                    return model.getLineContent(lineNumber);
+                                }
+                            },
+                        };
+                        const newIndentatOfMovingBlock = getGoodIndentForLine(this._autoIndent, virtualModel, model.getLanguageIdAtPosition(movingLineNumber, 1), s.startLineNumber + 1, indentConverter, this._languageConfigurationService);
+                        if (newIndentatOfMovingBlock !== null) {
+                            const oldIndentation = strings.getLeadingWhitespace(model.getLineContent(s.startLineNumber));
+                            const newSpaceCnt = indentUtils.getSpaceCnt(newIndentatOfMovingBlock, tabSize);
+                            const oldSpaceCnt = indentUtils.getSpaceCnt(oldIndentation, tabSize);
+                            if (newSpaceCnt !== oldSpaceCnt) {
+                                const spaceCntOffset = newSpaceCnt - oldSpaceCnt;
+                                this.getIndentEditsOfMovingBlock(model, builder, s, tabSize, insertSpaces, spaceCntOffset);
+                            }
+                        }
+                    }
+                }
+                else {
+                    builder.addEditOperation(new Range(s.startLineNumber, 1, s.startLineNumber, 1), insertingText + '\n');
+                }
+            }
+            else {
+                movingLineNumber = s.startLineNumber - 1;
+                movingLineText = model.getLineContent(movingLineNumber);
+                builder.addEditOperation(new Range(movingLineNumber, 1, movingLineNumber + 1, 1), null);
+                builder.addEditOperation(new Range(s.endLineNumber, model.getLineMaxColumn(s.endLineNumber), s.endLineNumber, model.getLineMaxColumn(s.endLineNumber)), '\n' + movingLineText);
+                if (this.shouldAutoIndent(model, s)) {
+                    const virtualModel = {
+                        tokenization: {
+                            getLineTokens: (lineNumber) => {
+                                if (lineNumber === movingLineNumber) {
+                                    return model.tokenization.getLineTokens(s.startLineNumber);
+                                }
+                                else {
+                                    return model.tokenization.getLineTokens(lineNumber);
+                                }
+                            },
+                            getLanguageId,
+                            getLanguageIdAtPosition,
+                        },
+                        getLineContent: (lineNumber) => {
+                            if (lineNumber === movingLineNumber) {
+                                return model.getLineContent(s.startLineNumber);
+                            }
+                            else {
+                                return model.getLineContent(lineNumber);
+                            }
+                        },
+                    };
+                    const ret = this.matchEnterRule(model, indentConverter, tabSize, s.startLineNumber, s.startLineNumber - 2);
+                    if (ret !== null) {
+                        if (ret !== 0) {
+                            this.getIndentEditsOfMovingBlock(model, builder, s, tabSize, insertSpaces, ret);
+                        }
+                    }
+                    else {
+                        const indentOfFirstLine = getGoodIndentForLine(this._autoIndent, virtualModel, model.getLanguageIdAtPosition(s.startLineNumber, 1), movingLineNumber, indentConverter, this._languageConfigurationService);
+                        if (indentOfFirstLine !== null) {
+                            const oldIndent = strings.getLeadingWhitespace(model.getLineContent(s.startLineNumber));
+                            const newSpaceCnt = indentUtils.getSpaceCnt(indentOfFirstLine, tabSize);
+                            const oldSpaceCnt = indentUtils.getSpaceCnt(oldIndent, tabSize);
+                            if (newSpaceCnt !== oldSpaceCnt) {
+                                const spaceCntOffset = newSpaceCnt - oldSpaceCnt;
+                                this.getIndentEditsOfMovingBlock(model, builder, s, tabSize, insertSpaces, spaceCntOffset);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        this._selectionId = builder.trackSelection(s);
+    }
+    buildIndentConverter(tabSize, indentSize, insertSpaces) {
+        return {
+            shiftIndent: (indentation) => {
+                return ShiftCommand.shiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces);
+            },
+            unshiftIndent: (indentation) => {
+                return ShiftCommand.unshiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces);
+            }
+        };
+    }
+    parseEnterResult(model, indentConverter, tabSize, line, enter) {
+        if (enter) {
+            let enterPrefix = enter.indentation;
+            if (enter.indentAction === IndentAction.None) {
+                enterPrefix = enter.indentation + enter.appendText;
+            }
+            else if (enter.indentAction === IndentAction.Indent) {
+                enterPrefix = enter.indentation + enter.appendText;
+            }
+            else if (enter.indentAction === IndentAction.IndentOutdent) {
+                enterPrefix = enter.indentation;
+            }
+            else if (enter.indentAction === IndentAction.Outdent) {
+                enterPrefix = indentConverter.unshiftIndent(enter.indentation) + enter.appendText;
+            }
+            const movingLineText = model.getLineContent(line);
+            if (this.trimStart(movingLineText).indexOf(this.trimStart(enterPrefix)) >= 0) {
+                const oldIndentation = strings.getLeadingWhitespace(model.getLineContent(line));
+                let newIndentation = strings.getLeadingWhitespace(enterPrefix);
+                const indentMetadataOfMovelingLine = getIndentMetadata(model, line, this._languageConfigurationService);
+                if (indentMetadataOfMovelingLine !== null && indentMetadataOfMovelingLine & 2) {
+                    newIndentation = indentConverter.unshiftIndent(newIndentation);
+                }
+                const newSpaceCnt = indentUtils.getSpaceCnt(newIndentation, tabSize);
+                const oldSpaceCnt = indentUtils.getSpaceCnt(oldIndentation, tabSize);
+                return newSpaceCnt - oldSpaceCnt;
+            }
+        }
+        return null;
+    }
+    matchEnterRuleMovingDown(model, indentConverter, tabSize, line, futureAboveLineNumber, futureAboveLineText) {
+        if (strings.lastNonWhitespaceIndex(futureAboveLineText) >= 0) {
+            const maxColumn = model.getLineMaxColumn(futureAboveLineNumber);
+            const enter = getEnterAction(this._autoIndent, model, new Range(futureAboveLineNumber, maxColumn, futureAboveLineNumber, maxColumn), this._languageConfigurationService);
+            return this.parseEnterResult(model, indentConverter, tabSize, line, enter);
+        }
+        else {
+            let validPrecedingLine = line - 1;
+            while (validPrecedingLine >= 1) {
+                const lineContent = model.getLineContent(validPrecedingLine);
+                const nonWhitespaceIdx = strings.lastNonWhitespaceIndex(lineContent);
+                if (nonWhitespaceIdx >= 0) {
+                    break;
+                }
+                validPrecedingLine--;
+            }
+            if (validPrecedingLine < 1 || line > model.getLineCount()) {
+                return null;
+            }
+            const maxColumn = model.getLineMaxColumn(validPrecedingLine);
+            const enter = getEnterAction(this._autoIndent, model, new Range(validPrecedingLine, maxColumn, validPrecedingLine, maxColumn), this._languageConfigurationService);
+            return this.parseEnterResult(model, indentConverter, tabSize, line, enter);
+        }
+    }
+    matchEnterRule(model, indentConverter, tabSize, line, oneLineAbove, previousLineText) {
+        let validPrecedingLine = oneLineAbove;
+        while (validPrecedingLine >= 1) {
+            let lineContent;
+            if (validPrecedingLine === oneLineAbove && previousLineText !== undefined) {
+                lineContent = previousLineText;
+            }
+            else {
+                lineContent = model.getLineContent(validPrecedingLine);
+            }
+            const nonWhitespaceIdx = strings.lastNonWhitespaceIndex(lineContent);
+            if (nonWhitespaceIdx >= 0) {
+                break;
+            }
+            validPrecedingLine--;
+        }
+        if (validPrecedingLine < 1 || line > model.getLineCount()) {
+            return null;
+        }
+        const maxColumn = model.getLineMaxColumn(validPrecedingLine);
+        const enter = getEnterAction(this._autoIndent, model, new Range(validPrecedingLine, maxColumn, validPrecedingLine, maxColumn), this._languageConfigurationService);
+        return this.parseEnterResult(model, indentConverter, tabSize, line, enter);
+    }
+    trimStart(str) {
+        return str.replace(/^\s+/, '');
+    }
+    shouldAutoIndent(model, selection) {
+        if (this._autoIndent < 4) {
+            return false;
+        }
+        if (!model.tokenization.isCheapToTokenize(selection.startLineNumber)) {
+            return false;
+        }
+        const languageAtSelectionStart = model.getLanguageIdAtPosition(selection.startLineNumber, 1);
+        const languageAtSelectionEnd = model.getLanguageIdAtPosition(selection.endLineNumber, 1);
+        if (languageAtSelectionStart !== languageAtSelectionEnd) {
+            return false;
+        }
+        if (this._languageConfigurationService.getLanguageConfiguration(languageAtSelectionStart).indentRulesSupport === null) {
+            return false;
+        }
+        return true;
+    }
+    getIndentEditsOfMovingBlock(model, builder, s, tabSize, insertSpaces, offset) {
+        for (let i = s.startLineNumber; i <= s.endLineNumber; i++) {
+            const lineContent = model.getLineContent(i);
+            const originalIndent = strings.getLeadingWhitespace(lineContent);
+            const originalSpacesCnt = indentUtils.getSpaceCnt(originalIndent, tabSize);
+            const newSpacesCnt = originalSpacesCnt + offset;
+            const newIndent = indentUtils.generateIndent(newSpacesCnt, tabSize, insertSpaces);
+            if (newIndent !== originalIndent) {
+                builder.addEditOperation(new Range(i, 1, i, originalIndent.length + 1), newIndent);
+                if (i === s.endLineNumber && s.endColumn <= originalIndent.length + 1 && newIndent === '') {
+                    this._moveEndLineSelectionShrink = true;
+                }
+            }
+        }
+    }
+    computeCursorState(model, helper) {
+        let result = helper.getTrackedSelection(this._selectionId);
+        if (this._moveEndPositionDown) {
+            result = result.setEndPosition(result.endLineNumber + 1, 1);
+        }
+        if (this._moveEndLineSelectionShrink && result.startLineNumber < result.endLineNumber) {
+            result = result.setEndPosition(result.endLineNumber, 2);
+        }
+        return result;
+    }
+};
+MoveLinesCommand = __decorate([
+    __param(3, ILanguageConfigurationService),
+    __metadata("design:paramtypes", [Selection, Boolean, Number, Object])
+], MoveLinesCommand);
+export { MoveLinesCommand };

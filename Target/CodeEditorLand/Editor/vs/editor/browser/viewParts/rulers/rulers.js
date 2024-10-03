@@ -1,1 +1,67 @@
-import"./rulers.css";import{createFastDomNode as l}from"../../../../base/browser/fastDomNode.js";import{ViewPart as a}from"../../view/viewPart.js";import"../../view/renderingContext.js";import"../../../common/viewModel/viewContext.js";import"../../../common/viewEvents.js";import{EditorOption as s}from"../../../common/config/editorOptions.js";class N extends a{domNode;_renderedRulers;_rulers;_typicalHalfwidthCharacterWidth;constructor(t){super(t),this.domNode=l(document.createElement("div")),this.domNode.setAttribute("role","presentation"),this.domNode.setAttribute("aria-hidden","true"),this.domNode.setClassName("view-rulers"),this._renderedRulers=[];const e=this._context.configuration.options;this._rulers=e.get(s.rulers),this._typicalHalfwidthCharacterWidth=e.get(s.fontInfo).typicalHalfwidthCharacterWidth}dispose(){super.dispose()}onConfigurationChanged(t){const e=this._context.configuration.options;return this._rulers=e.get(s.rulers),this._typicalHalfwidthCharacterWidth=e.get(s.fontInfo).typicalHalfwidthCharacterWidth,!0}onScrollChanged(t){return t.scrollHeightChanged}prepareRender(t){}_ensureRulersCount(){const t=this._renderedRulers.length,e=this._rulers.length;if(t===e)return;if(t<e){const{tabSize:r}=this._context.viewModel.model.getOptions(),o=r;let d=e-t;for(;d>0;){const n=l(document.createElement("div"));n.setClassName("view-ruler"),n.setWidth(o),this.domNode.appendChild(n),this._renderedRulers.push(n),d--}return}let i=t-e;for(;i>0;){const r=this._renderedRulers.pop();this.domNode.removeChild(r),i--}}render(t){this._ensureRulersCount();for(let e=0,i=this._rulers.length;e<i;e++){const r=this._renderedRulers[e],o=this._rulers[e];r.setBoxShadow(o.color?`1px 0 0 0 ${o.color} inset`:""),r.setHeight(Math.min(t.scrollHeight,1e6)),r.setLeft(o.column*this._typicalHalfwidthCharacterWidth)}}}export{N as Rulers};
+import './rulers.css';
+import { createFastDomNode } from '../../../../base/browser/fastDomNode.js';
+import { ViewPart } from '../../view/viewPart.js';
+export class Rulers extends ViewPart {
+    constructor(context) {
+        super(context);
+        this.domNode = createFastDomNode(document.createElement('div'));
+        this.domNode.setAttribute('role', 'presentation');
+        this.domNode.setAttribute('aria-hidden', 'true');
+        this.domNode.setClassName('view-rulers');
+        this._renderedRulers = [];
+        const options = this._context.configuration.options;
+        this._rulers = options.get(105);
+        this._typicalHalfwidthCharacterWidth = options.get(52).typicalHalfwidthCharacterWidth;
+    }
+    dispose() {
+        super.dispose();
+    }
+    onConfigurationChanged(e) {
+        const options = this._context.configuration.options;
+        this._rulers = options.get(105);
+        this._typicalHalfwidthCharacterWidth = options.get(52).typicalHalfwidthCharacterWidth;
+        return true;
+    }
+    onScrollChanged(e) {
+        return e.scrollHeightChanged;
+    }
+    prepareRender(ctx) {
+    }
+    _ensureRulersCount() {
+        const currentCount = this._renderedRulers.length;
+        const desiredCount = this._rulers.length;
+        if (currentCount === desiredCount) {
+            return;
+        }
+        if (currentCount < desiredCount) {
+            const { tabSize } = this._context.viewModel.model.getOptions();
+            const rulerWidth = tabSize;
+            let addCount = desiredCount - currentCount;
+            while (addCount > 0) {
+                const node = createFastDomNode(document.createElement('div'));
+                node.setClassName('view-ruler');
+                node.setWidth(rulerWidth);
+                this.domNode.appendChild(node);
+                this._renderedRulers.push(node);
+                addCount--;
+            }
+            return;
+        }
+        let removeCount = currentCount - desiredCount;
+        while (removeCount > 0) {
+            const node = this._renderedRulers.pop();
+            this.domNode.removeChild(node);
+            removeCount--;
+        }
+    }
+    render(ctx) {
+        this._ensureRulersCount();
+        for (let i = 0, len = this._rulers.length; i < len; i++) {
+            const node = this._renderedRulers[i];
+            const ruler = this._rulers[i];
+            node.setBoxShadow(ruler.color ? `1px 0 0 0 ${ruler.color} inset` : ``);
+            node.setHeight(Math.min(ctx.scrollHeight, 1000000));
+            node.setLeft(ruler.column * this._typicalHalfwidthCharacterWidth);
+        }
+    }
+}

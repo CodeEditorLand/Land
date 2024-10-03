@@ -1,1 +1,242 @@
-var B=Object.defineProperty;var V=Object.getOwnPropertyDescriptor;var E=(v,e,o,i)=>{for(var r=i>1?void 0:i?V(e,o):e,c=v.length-1,l;c>=0;c--)(l=v[c])&&(r=(i?l(e,o,r):l(r))||r);return i&&r&&B(e,o,r),r},s=(v,e)=>(o,i)=>e(o,i,v);import*as a from"../../../../base/browser/dom.js";import{StandardMouseEvent as W}from"../../../../base/browser/mouseEvent.js";import{getDefaultHoverDelegate as X}from"../../../../base/browser/ui/hover/hoverDelegateFactory.js";import"../../../../base/common/actions.js";import{Lazy as J}from"../../../../base/common/lazy.js";import{Disposable as Q}from"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import{generateUuid as Y}from"../../../../base/common/uuid.js";import{ICodeEditorService as F}from"../../../../editor/browser/services/codeEditorService.js";import"../../../../editor/common/core/range.js";import{EditorContextKeys as b}from"../../../../editor/common/editorContextKeys.js";import{SymbolKinds as Z}from"../../../../editor/common/languages.js";import{ILanguageService as ee}from"../../../../editor/common/languages/language.js";import{getIconClasses as k}from"../../../../editor/common/services/getIconClasses.js";import{ILanguageFeaturesService as oe}from"../../../../editor/common/services/languageFeatures.js";import{IModelService as te}from"../../../../editor/common/services/model.js";import{DefinitionAction as ie}from"../../../../editor/contrib/gotoSymbol/browser/goToCommands.js";import*as g from"../../../../nls.js";import{createAndFillInContextMenuActions as re}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import{Action2 as A,IMenuService as ne,MenuId as p,registerAction2 as R}from"../../../../platform/actions/common/actions.js";import{ICommandService as se}from"../../../../platform/commands/common/commands.js";import{IContextKeyService as ae}from"../../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as ce}from"../../../../platform/contextview/browser/contextView.js";import{FileKind as N,IFileService as de}from"../../../../platform/files/common/files.js";import{IHoverService as me}from"../../../../platform/hover/browser/hover.js";import{IInstantiationService as le}from"../../../../platform/instantiation/common/instantiation.js";import{ILabelService as ue}from"../../../../platform/label/common/label.js";import{ITelemetryService as fe}from"../../../../platform/telemetry/common/telemetry.js";import{fillEditorsDragData as he}from"../../../browser/dnd.js";import{ResourceContextKey as ge}from"../../../common/contextkeys.js";import{ExplorerFolderContext as U}from"../../files/common/files.js";import"../common/annotations.js";import{IChatVariablesService as pe}from"../common/chatVariables.js";import{IChatWidgetService as ve}from"./chat.js";let f=class extends Q{static className="chat-inline-anchor-widget";constructor(e,o,i={},r,c,l,H,$,T,I,y,_,C,M){super();const u=this._register(r.createScoped(e)),w=new J(Y);e.classList.add(f.className,"show-file-icons"),i.handleClick&&e.classList.add("clickable");let S,L,t,x,D;if(o.kind==="symbol"){t=o.symbol.location,x=p.ChatInlineSymbolAnchorContext,D=t,S=o.symbol.name,L=["codicon",...k(C,y,void 0,void 0,Z.toIcon(o.symbol.kind))];const n=C.getModel(t.uri);if(n){const d=b.hasDefinitionProvider.bindTo(u),h=b.hasReferenceProvider.bindTo(u),m=()=>{n.isDisposed()||(d.set(I.definitionProvider.has(n)),h.set(I.definitionProvider.has(n)))};m(),this._register(I.definitionProvider.onDidChange(m)),this._register(I.referenceProvider.onDidChange(m))}this._register(a.addDisposableListener(e,"click",()=>{M.publicLog2("chat.inlineAnchor.openSymbol",{anchorId:w.value})}))}else{t=o,x=p.ChatInlineResourceAnchorContext,D=t.uri,this._register(new ge(u,l,y,C)).set(t.uri);const d=T.getUriBasenameLabel(t.uri);S=t.range&&o.kind!=="symbol"?`${d}#${t.range.startLineNumber}-${t.range.endLineNumber}`:d;const h=t.uri.path.endsWith("/")?N.FOLDER:N.FILE;L=k(C,y,t.uri,h);const m=U.bindTo(u);l.stat(t.uri).then(O=>{m.set(O.isDirectory)}).catch(()=>{}),this._register(a.addDisposableListener(e,"click",()=>{i.handleClick?.(t.uri),M.publicLog2("chat.inlineAnchor.openResource",{anchorId:w.value})}))}const P=a.$("span.icon");P.classList.add(...L),e.replaceChildren(P,a.$("span.icon-label",{},S));const j=t.range?`${t.range.startLineNumber}-${t.range.endLineNumber}`:"";e.setAttribute("data-href",t.uri.with({fragment:j}).toString()),this._register(a.addDisposableListener(e,a.EventType.CONTEXT_MENU,n=>{const d=new W(a.getWindow(n),n);a.EventHelper.stop(n,!0),c.showContextMenu({contextKeyService:u,getAnchor:()=>d,getActions:()=>{const h=_.getMenuActions(x,u,{arg:D}),m=[];return re(h,m),m}})}));const q=T.getUriLabel(t.uri,{relative:!0});this._register(H.setupManagedHover(X("element"),e,q)),e.draggable=!0,this._register(a.addDisposableListener(e,"dragstart",n=>{$.invokeFunction(d=>he(d,[t.uri],n)),n.dataTransfer?.setDragImage(e,0,0)}))}};f=E([s(3,ae),s(4,ce),s(5,de),s(6,me),s(7,le),s(8,ue),s(9,oe),s(10,ee),s(11,ne),s(12,te),s(13,fe)],f),R(class K extends A{static id="chat.inlineResourceAnchor.addFileToChat";constructor(){super({id:K.id,title:{...g.localize2("actions.attach.label","Add File to Chat")},menu:[{id:p.ChatInlineResourceAnchorContext,group:"chat",order:1,when:U.negate()}]})}async run(e,o){const i=e.get(ve),r=e.get(pe),c=i.lastFocusedWidget;c&&r.attachContext("file",o,c.location)}}),R(class z extends A{static id="chat.inlineSymbolAnchor.goToDefinition";constructor(){super({id:z.id,title:{...g.localize2("actions.goToDecl.label","Go to Definition"),mnemonicTitle:g.localize({key:"miGotoDefinition",comment:["&& denotes a mnemonic"]},"Go to &&Definition")},precondition:b.hasDefinitionProvider,menu:[{id:p.ChatInlineSymbolAnchorContext,group:"navigation",order:1.1}]})}async run(e,o){return await e.get(F).openCodeEditor({resource:o.uri,options:{selection:{startColumn:o.range.startColumn,startLineNumber:o.range.startLineNumber}}},null),new ie({openToSide:!1,openInPeek:!1,muteMessage:!0},{title:{value:"",original:""},id:"",precondition:void 0}).run(e)}}),R(class G extends A{static id="chat.inlineSymbolAnchor.goToReferences";constructor(){super({id:G.id,title:{...g.localize2("goToReferences.label","Go to References"),mnemonicTitle:g.localize({key:"miGotoReference",comment:["&& denotes a mnemonic"]},"Go to &&References")},precondition:b.hasReferenceProvider,menu:[{id:p.ChatInlineSymbolAnchorContext,group:"navigation",order:1.1}]})}async run(e,o){const i=e.get(F),r=e.get(se);await i.openCodeEditor({resource:o.uri,options:{selection:{startColumn:o.range.startColumn,startLineNumber:o.range.startLineNumber}}},null),await r.executeCommand("editor.action.goToReferences")}});export{f as InlineAnchorWidget};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var InlineAnchorWidget_1;
+import * as dom from '../../../../base/browser/dom.js';
+import { StandardMouseEvent } from '../../../../base/browser/mouseEvent.js';
+import { getDefaultHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { Lazy } from '../../../../base/common/lazy.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
+import { SymbolKinds } from '../../../../editor/common/languages.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+import { getIconClasses } from '../../../../editor/common/services/getIconClasses.js';
+import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
+import { IModelService } from '../../../../editor/common/services/model.js';
+import { DefinitionAction } from '../../../../editor/contrib/gotoSymbol/browser/goToCommands.js';
+import * as nls from '../../../../nls.js';
+import { createAndFillInContextMenuActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { Action2, IMenuService, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { FileKind, IFileService } from '../../../../platform/files/common/files.js';
+import { IHoverService } from '../../../../platform/hover/browser/hover.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { fillEditorsDragData } from '../../../browser/dnd.js';
+import { ResourceContextKey } from '../../../common/contextkeys.js';
+import { ExplorerFolderContext } from '../../files/common/files.js';
+import { IChatVariablesService } from '../common/chatVariables.js';
+import { IChatWidgetService } from './chat.js';
+let InlineAnchorWidget = class InlineAnchorWidget extends Disposable {
+    static { InlineAnchorWidget_1 = this; }
+    static { this.className = 'chat-inline-anchor-widget'; }
+    constructor(element, data, options = {}, originalContextKeyService, contextMenuService, fileService, hoverService, instantiationService, labelService, languageFeaturesService, languageService, menuService, modelService, telemetryService) {
+        super();
+        const contextKeyService = this._register(originalContextKeyService.createScoped(element));
+        const anchorId = new Lazy(generateUuid);
+        element.classList.add(InlineAnchorWidget_1.className, 'show-file-icons');
+        if (options.handleClick) {
+            element.classList.add('clickable');
+        }
+        let iconText;
+        let iconClasses;
+        let location;
+        let contextMenuId;
+        let contextMenuArg;
+        if (data.kind === 'symbol') {
+            location = data.symbol.location;
+            contextMenuId = MenuId.ChatInlineSymbolAnchorContext;
+            contextMenuArg = location;
+            iconText = data.symbol.name;
+            iconClasses = ['codicon', ...getIconClasses(modelService, languageService, undefined, undefined, SymbolKinds.toIcon(data.symbol.kind))];
+            const model = modelService.getModel(location.uri);
+            if (model) {
+                const hasDefinitionProvider = EditorContextKeys.hasDefinitionProvider.bindTo(contextKeyService);
+                const hasReferenceProvider = EditorContextKeys.hasReferenceProvider.bindTo(contextKeyService);
+                const updateContents = () => {
+                    if (model.isDisposed()) {
+                        return;
+                    }
+                    hasDefinitionProvider.set(languageFeaturesService.definitionProvider.has(model));
+                    hasReferenceProvider.set(languageFeaturesService.definitionProvider.has(model));
+                };
+                updateContents();
+                this._register(languageFeaturesService.definitionProvider.onDidChange(updateContents));
+                this._register(languageFeaturesService.referenceProvider.onDidChange(updateContents));
+            }
+            this._register(dom.addDisposableListener(element, 'click', () => {
+                telemetryService.publicLog2('chat.inlineAnchor.openSymbol', {
+                    anchorId: anchorId.value
+                });
+            }));
+        }
+        else {
+            location = data;
+            contextMenuId = MenuId.ChatInlineResourceAnchorContext;
+            contextMenuArg = location.uri;
+            const resourceContextKey = this._register(new ResourceContextKey(contextKeyService, fileService, languageService, modelService));
+            resourceContextKey.set(location.uri);
+            const label = labelService.getUriBasenameLabel(location.uri);
+            iconText = location.range && data.kind !== 'symbol' ?
+                `${label}#${location.range.startLineNumber}-${location.range.endLineNumber}` :
+                label;
+            const fileKind = location.uri.path.endsWith('/') ? FileKind.FOLDER : FileKind.FILE;
+            iconClasses = getIconClasses(modelService, languageService, location.uri, fileKind);
+            const isFolderContext = ExplorerFolderContext.bindTo(contextKeyService);
+            fileService.stat(location.uri)
+                .then(stat => {
+                isFolderContext.set(stat.isDirectory);
+            })
+                .catch(() => { });
+            this._register(dom.addDisposableListener(element, 'click', () => {
+                options.handleClick?.(location.uri);
+                telemetryService.publicLog2('chat.inlineAnchor.openResource', {
+                    anchorId: anchorId.value
+                });
+            }));
+        }
+        const iconEl = dom.$('span.icon');
+        iconEl.classList.add(...iconClasses);
+        element.replaceChildren(iconEl, dom.$('span.icon-label', {}, iconText));
+        const fragment = location.range ? `${location.range.startLineNumber}-${location.range.endLineNumber}` : '';
+        element.setAttribute('data-href', location.uri.with({ fragment }).toString());
+        this._register(dom.addDisposableListener(element, dom.EventType.CONTEXT_MENU, domEvent => {
+            const event = new StandardMouseEvent(dom.getWindow(domEvent), domEvent);
+            dom.EventHelper.stop(domEvent, true);
+            contextMenuService.showContextMenu({
+                contextKeyService,
+                getAnchor: () => event,
+                getActions: () => {
+                    const menu = menuService.getMenuActions(contextMenuId, contextKeyService, { arg: contextMenuArg });
+                    const primary = [];
+                    createAndFillInContextMenuActions(menu, primary);
+                    return primary;
+                },
+            });
+        }));
+        const relativeLabel = labelService.getUriLabel(location.uri, { relative: true });
+        this._register(hoverService.setupManagedHover(getDefaultHoverDelegate('element'), element, relativeLabel));
+        element.draggable = true;
+        this._register(dom.addDisposableListener(element, 'dragstart', e => {
+            instantiationService.invokeFunction(accessor => fillEditorsDragData(accessor, [location.uri], e));
+            e.dataTransfer?.setDragImage(element, 0, 0);
+        }));
+    }
+};
+InlineAnchorWidget = InlineAnchorWidget_1 = __decorate([
+    __param(3, IContextKeyService),
+    __param(4, IContextMenuService),
+    __param(5, IFileService),
+    __param(6, IHoverService),
+    __param(7, IInstantiationService),
+    __param(8, ILabelService),
+    __param(9, ILanguageFeaturesService),
+    __param(10, ILanguageService),
+    __param(11, IMenuService),
+    __param(12, IModelService),
+    __param(13, ITelemetryService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], InlineAnchorWidget);
+export { InlineAnchorWidget };
+registerAction2(class AddFileToChatAction extends Action2 {
+    static { this.id = 'chat.inlineResourceAnchor.addFileToChat'; }
+    constructor() {
+        super({
+            id: AddFileToChatAction.id,
+            title: {
+                ...nls.localize2('actions.attach.label', "Add File to Chat"),
+            },
+            menu: [{
+                    id: MenuId.ChatInlineResourceAnchorContext,
+                    group: 'chat',
+                    order: 1,
+                    when: ExplorerFolderContext.negate(),
+                }]
+        });
+    }
+    async run(accessor, resource) {
+        const chatWidgetService = accessor.get(IChatWidgetService);
+        const variablesService = accessor.get(IChatVariablesService);
+        const widget = chatWidgetService.lastFocusedWidget;
+        if (!widget) {
+            return;
+        }
+        variablesService.attachContext('file', resource, widget.location);
+    }
+});
+registerAction2(class GoToDefinitionAction extends Action2 {
+    static { this.id = 'chat.inlineSymbolAnchor.goToDefinition'; }
+    constructor() {
+        super({
+            id: GoToDefinitionAction.id,
+            title: {
+                ...nls.localize2('actions.goToDecl.label', "Go to Definition"),
+                mnemonicTitle: nls.localize({ key: 'miGotoDefinition', comment: ['&& denotes a mnemonic'] }, "Go to &&Definition"),
+            },
+            precondition: EditorContextKeys.hasDefinitionProvider,
+            menu: [{
+                    id: MenuId.ChatInlineSymbolAnchorContext,
+                    group: 'navigation',
+                    order: 1.1,
+                },]
+        });
+    }
+    async run(accessor, location) {
+        const editorService = accessor.get(ICodeEditorService);
+        await editorService.openCodeEditor({
+            resource: location.uri, options: {
+                selection: {
+                    startColumn: location.range.startColumn,
+                    startLineNumber: location.range.startLineNumber,
+                }
+            }
+        }, null);
+        const action = new DefinitionAction({ openToSide: false, openInPeek: false, muteMessage: true }, { title: { value: '', original: '' }, id: '', precondition: undefined });
+        return action.run(accessor);
+    }
+});
+registerAction2(class GoToReferencesAction extends Action2 {
+    static { this.id = 'chat.inlineSymbolAnchor.goToReferences'; }
+    constructor() {
+        super({
+            id: GoToReferencesAction.id,
+            title: {
+                ...nls.localize2('goToReferences.label', "Go to References"),
+                mnemonicTitle: nls.localize({ key: 'miGotoReference', comment: ['&& denotes a mnemonic'] }, "Go to &&References"),
+            },
+            precondition: EditorContextKeys.hasReferenceProvider,
+            menu: [{
+                    id: MenuId.ChatInlineSymbolAnchorContext,
+                    group: 'navigation',
+                    order: 1.1,
+                },]
+        });
+    }
+    async run(accessor, location) {
+        const editorService = accessor.get(ICodeEditorService);
+        const commandService = accessor.get(ICommandService);
+        await editorService.openCodeEditor({
+            resource: location.uri, options: {
+                selection: {
+                    startColumn: location.range.startColumn,
+                    startLineNumber: location.range.startLineNumber,
+                }
+            }
+        }, null);
+        await commandService.executeCommand('editor.action.goToReferences');
+    }
+});

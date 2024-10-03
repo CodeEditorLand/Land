@@ -1,1 +1,839 @@
-var J=Object.defineProperty;var V=Object.getOwnPropertyDescriptor;var _=(h,v,e,t)=>{for(var r=t>1?void 0:t?V(v,e):v,i=h.length-1,n;i>=0;i--)(n=h[i])&&(r=(t?n(v,e,r):n(r))||r);return t&&r&&J(v,e,r),r},S=(h,v)=>(e,t)=>v(e,t,h);import{equals as C}from"../../../base/common/arrays.js";import{createCancelablePromise as j,RunOnceScheduler as Q}from"../../../base/common/async.js";import{CancellationTokenSource as X}from"../../../base/common/cancellation.js";import{toErrorMessage as E}from"../../../base/common/errorMessage.js";import{Emitter as m}from"../../../base/common/event.js";import{Disposable as M,DisposableStore as w,toDisposable as A}from"../../../base/common/lifecycle.js";import{isEqual as k}from"../../../base/common/resources.js";import{isBoolean as Z,isUndefined as U}from"../../../base/common/types.js";import"../../../base/common/uri.js";import{generateUuid as T}from"../../../base/common/uuid.js";import{IConfigurationService as ee}from"../../configuration/common/configuration.js";import{IExtensionGalleryService as te}from"../../extensionManagement/common/extensionManagement.js";import{IFileService as re}from"../../files/common/files.js";import{IInstantiationService as x}from"../../instantiation/common/instantiation.js";import{IStorageService as ie,StorageScope as P,StorageTarget as N}from"../../storage/common/storage.js";import{ITelemetryService as O}from"../../telemetry/common/telemetry.js";import{IUserDataProfilesService as F}from"../../userDataProfile/common/userDataProfile.js";import{ExtensionsSynchroniser as ne}from"./extensionsSync.js";import{GlobalStateSynchroniser as se}from"./globalStateSync.js";import{KeybindingsSynchroniser as oe}from"./keybindingsSync.js";import{SettingsSynchroniser as H}from"./settingsSync.js";import{SnippetsSynchroniser as ae}from"./snippetsSync.js";import{TasksSynchroniser as ce}from"./tasksSync.js";import{UserDataProfilesManifestSynchroniser as z}from"./userDataProfilesManifestSync.js";import{ALL_SYNC_RESOURCES as $,Change as q,createSyncHeaders as I,IUserDataSyncEnablementService as G,IUserDataSyncLogService as W,IUserDataSyncStoreManagementService as K,IUserDataSyncStoreService as le,MergeState as Se,SyncResource as l,SyncStatus as f,UserDataSyncError as D,UserDataSyncErrorCode as d,UserDataSyncStoreError as Y,USER_DATA_SYNC_CONFIGURATION_SCOPE as fe,IUserDataSyncResourceProviderService as he,IUserDataSyncLocalStoreService as ue}from"./userDataSync.js";const L="sync.lastSyncTime";let b=class extends M{constructor(e,t,r,i,n,s,o,a,c,u,y){super();this.fileService=e;this.userDataSyncStoreService=t;this.userDataSyncStoreManagementService=r;this.instantiationService=i;this.logService=n;this.telemetryService=s;this.storageService=o;this.userDataSyncEnablementService=a;this.userDataProfilesService=c;this.userDataSyncResourceProviderService=u;this.userDataSyncLocalStoreService=y;this._status=r.userDataSyncStore?f.Idle:f.Uninitialized,this._lastSyncTime=this.storageService.getNumber(L,P.APPLICATION,void 0),this._register(A(()=>this.clearActiveProfileSynchronizers())),this._register(new Q(()=>this.cleanUpStaleStorageData(),5*1e3)).schedule()}_serviceBrand;_status=f.Uninitialized;get status(){return this._status}_onDidChangeStatus=this._register(new m);onDidChangeStatus=this._onDidChangeStatus.event;_onDidChangeLocal=this._register(new m);onDidChangeLocal=this._onDidChangeLocal.event;_conflicts=[];get conflicts(){return this._conflicts}_onDidChangeConflicts=this._register(new m);onDidChangeConflicts=this._onDidChangeConflicts.event;_syncErrors=[];_onSyncErrors=this._register(new m);onSyncErrors=this._onSyncErrors.event;_lastSyncTime=void 0;get lastSyncTime(){return this._lastSyncTime}_onDidChangeLastSyncTime=this._register(new m);onDidChangeLastSyncTime=this._onDidChangeLastSyncTime.event;_onDidResetLocal=this._register(new m);onDidResetLocal=this._onDidResetLocal.event;_onDidResetRemote=this._register(new m);onDidResetRemote=this._onDidResetRemote.event;activeProfileSynchronizers=new Map;async createSyncTask(e,t){this.checkEnablement(),this.logService.info("Sync started.");const r=new Date().getTime(),i=T();try{const a=I(i);t&&(a["Cache-Control"]="no-cache"),e=await this.userDataSyncStoreService.manifest(e,a)}catch(a){const c=D.toUserDataSyncError(a);throw R(c,i,this.userDataSyncStoreManagementService,this.telemetryService),c}const n=!1,s=this;let o;return{manifest:e,async run(){if(n)throw new Error("Can run a task only once");o=j(a=>s.sync(e,!1,i,a)),await o.finally(()=>o=void 0),s.logService.info(`Sync done. Took ${new Date().getTime()-r}ms`),s.updateLastSyncTime()},stop(){return o?.cancel(),s.stop()}}}async createManualSyncTask(){if(this.checkEnablement(),this.userDataSyncEnablementService.isEnabled())throw new D("Cannot start manual sync when sync is enabled",d.LocalError);this.logService.info("Sync started.");const e=new Date().getTime(),t=T(),r=I(t);let i;try{i=await this.userDataSyncStoreService.manifest(null,r)}catch(o){const a=D.toUserDataSyncError(o);throw R(a,t,this.userDataSyncStoreManagementService,this.telemetryService),a}await this.resetLocal();const n=this,s=new X;return{id:t,async merge(){return n.sync(i,!0,t,s.token)},async apply(){try{try{await n.applyManualSync(i,t,s.token)}catch(o){if(D.toUserDataSyncError(o).code===d.MethodNotFound)n.logService.info("Client is making invalid requests. Cleaning up data..."),await n.cleanUpRemoteData(),n.logService.info("Applying manual sync again..."),await n.applyManualSync(i,t,s.token);else throw o}}catch(o){throw n.logService.error(o),o}n.logService.info(`Sync done. Took ${new Date().getTime()-e}ms`),n.updateLastSyncTime()},async stop(){s.cancel(),await n.stop(),await n.resetLocal()}}}async sync(e,t,r,i){this._syncErrors=[];try{this.status!==f.HasConflicts&&this.setStatus(f.Syncing);const n=this.getOrCreateActiveProfileSynchronizer(this.userDataProfilesService.defaultProfile,void 0);this._syncErrors.push(...await this.syncProfile(n,e,t,r,i));const s=n.enabled.find(o=>o.resource===l.Profiles);if(s){const o=await s.getLastSyncedProfiles()||[];if(i.isCancellationRequested)return;await this.syncRemoteProfiles(o,e,t,r,i)}}finally{this.status!==f.HasConflicts&&this.setStatus(f.Idle),this._onSyncErrors.fire(this._syncErrors)}}async syncRemoteProfiles(e,t,r,i,n){for(const s of e){if(n.isCancellationRequested)return;const o=this.userDataProfilesService.profiles.find(c=>c.id===s.id);if(!o){this.logService.error(`Profile with id:${s.id} and name: ${s.name} does not exist locally to sync.`);continue}this.logService.info("Syncing profile.",s.name);const a=this.getOrCreateActiveProfileSynchronizer(o,s);this._syncErrors.push(...await this.syncProfile(a,t,r,i,n))}for(const[s,o]of this.activeProfileSynchronizers.entries())this.userDataProfilesService.profiles.some(a=>a.id===o[0].profile.id)||(await o[0].resetLocal(),o[1].dispose(),this.activeProfileSynchronizers.delete(s))}async applyManualSync(e,t,r){try{this.setStatus(f.Syncing);const i=this.getActiveProfileSynchronizers();for(const c of i){if(r.isCancellationRequested)return;await c.apply(t,r)}const n=i.find(c=>c.profile.isDefault);if(!n)return;const s=n.enabled.find(c=>c.resource===l.Profiles);if(!s)return;const a=(await s.getRemoteSyncedProfiles(e?.latest??null)||[]).filter(c=>i.every(u=>u.profile.id!==c.id));a.length&&await this.syncRemoteProfiles(a,e,!1,t,r)}finally{this.setStatus(f.Idle)}}async syncProfile(e,t,r,i,n){return(await e.sync(t,r,i,n)).map(([o,a])=>({profile:e.profile,syncResource:o,error:a}))}async stop(){this.status!==f.Idle&&await Promise.allSettled(this.getActiveProfileSynchronizers().map(e=>e.stop()))}async resolveContent(e){const t=await this.userDataSyncResourceProviderService.resolveContent(e);if(t)return t;for(const r of this.getActiveProfileSynchronizers())for(const i of r.enabled){const n=await i.resolveContent(e);if(n)return n}return null}async replace(e){this.checkEnablement();const t=this.userDataSyncResourceProviderService.resolveUserDataSyncResource(e);if(!t)return;const r=await this.resolveContent(e.uri);r&&await this.performAction(t.profile,async i=>{if(t.syncResource===i.resource)return await i.replace(r),!0})}async accept(e,t,r,i){this.checkEnablement(),await this.performAction(e.profile,async n=>{if(e.syncResource===n.resource)return await n.accept(t,r),i&&await n.apply(Z(i)?!1:i.force,I(T())),!0})}async hasLocalData(){return!!await this.performAction(this.userDataProfilesService.defaultProfile,async t=>{if(t.resource!==l.GlobalState&&await t.hasLocalData())return!0})}async hasPreviouslySynced(){return!!await this.performAction(this.userDataProfilesService.defaultProfile,async t=>{if(await t.hasPreviouslySynced())return!0})}async reset(){this.checkEnablement(),await this.resetRemote(),await this.resetLocal()}async resetRemote(){this.checkEnablement();try{await this.userDataSyncStoreService.clear(),this.logService.info("Cleared data on server")}catch(e){this.logService.error(e)}this._onDidResetRemote.fire()}async resetLocal(){this.checkEnablement(),this._lastSyncTime=void 0,this.storageService.remove(L,P.APPLICATION);for(const[e]of this.activeProfileSynchronizers.values())try{await e.resetLocal()}catch(t){this.logService.error(t)}this.clearActiveProfileSynchronizers(),this._onDidResetLocal.fire(),this.logService.info("Did reset the local sync state.")}async cleanUpStaleStorageData(){const e=this.storageService.keys(P.APPLICATION,N.MACHINE),t=[];for(const i of e){if(!i.endsWith(".lastSyncUserData"))continue;const n=i.split(".");n.length===3&&t.push([i,n[0]])}if(!t.length)return;const r=new w;try{let i=this.activeProfileSynchronizers.get(this.userDataProfilesService.defaultProfile.id)?.[0];i||(i=r.add(this.instantiationService.createInstance(g,this.userDataProfilesService.defaultProfile,void 0)));const n=i.enabled.find(a=>a.resource===l.Profiles);if(!n)return;const o=(await n.getLastSyncedProfiles())?.map(a=>a.collection)??[];for(const[a,c]of t)o.includes(c)||(this.logService.info(`Removing last sync state for stale profile: ${c}`),this.storageService.remove(a,P.APPLICATION))}finally{r.dispose()}}async cleanUpRemoteData(){const e=await this.userDataSyncResourceProviderService.getRemoteSyncedProfiles(),t=e.map(s=>s.collection),r=await this.userDataSyncStoreService.getAllCollections(),i=r.filter(s=>!t.includes(s));i.length&&(this.logService.info(`Deleting ${i.length} redundant collections on server`),await Promise.allSettled(i.map(s=>this.userDataSyncStoreService.deleteCollection(s))),this.logService.info("Deleted redundant collections on server"));const n=e.filter(s=>r.includes(s.collection));if(n.length!==e.length){const s=this.instantiationService.createInstance(z,this.userDataProfilesService.defaultProfile,void 0);try{this.logService.info("Resetting the last synced state of profiles"),await s.resetLocal(),this.logService.info("Did reset the last synced state of profiles"),this.logService.info("Updating remote profiles with invalid collections on server"),await s.updateRemoteProfiles(n,null),this.logService.info("Updated remote profiles on server")}finally{s.dispose()}}}async saveRemoteActivityData(e){this.checkEnablement();const t=await this.userDataSyncStoreService.getActivityData();await this.fileService.writeFile(e,t)}async extractActivityData(e,t){const r=(await this.fileService.readFile(e)).value.toString(),i=JSON.parse(r);if(i.resources)for(const n in i.resources)for(const s of i.resources[n])await this.userDataSyncLocalStoreService.writeResource(n,s.content,new Date(s.created*1e3),void 0,t);if(i.collections)for(const n in i.collections)for(const s in i.collections[n].resources)for(const o of i.collections[n].resources?.[s]??[])await this.userDataSyncLocalStoreService.writeResource(s,o.content,new Date(o.created*1e3),n,t)}async performAction(e,t){const r=new w;try{const i=this.activeProfileSynchronizers.get(e.id);if(i){const c=await this.performActionWithProfileSynchronizer(i[0],t,r);return U(c)?null:c}if(e.isDefault){const c=r.add(this.instantiationService.createInstance(g,e,void 0)),u=await this.performActionWithProfileSynchronizer(c,t,r);return U(u)?null:u}if(this.userDataProfilesService.isEnabled())return null;const n=r.add(this.instantiationService.createInstance(z,e,void 0)),s=await this.userDataSyncStoreService.manifest(null),a=(await n.getRemoteSyncedProfiles(s?.latest??null)||[]).find(c=>c.id===e.id);if(a){const c=r.add(this.instantiationService.createInstance(g,e,a.collection)),u=await this.performActionWithProfileSynchronizer(c,t,r);return U(u)?null:u}return null}finally{r.dispose()}}async performActionWithProfileSynchronizer(e,t,r){const i=[...e.enabled,...e.disabled.reduce((n,s)=>(s!==l.WorkspaceState&&n.push(r.add(e.createSynchronizer(s))),n),[])];for(const n of i){const s=await t(n);if(!U(s))return s}}setStatus(e){const t=this._status;this._status!==e&&(this._status=e,this._onDidChangeStatus.fire(e),t===f.HasConflicts&&this.updateLastSyncTime())}updateConflicts(){const e=this.getActiveProfileSynchronizers().map(t=>t.conflicts).flat();C(this._conflicts,e,(t,r)=>t.profile.id===r.profile.id&&t.syncResource===r.syncResource&&C(t.conflicts,r.conflicts,(i,n)=>k(i.previewResource,n.previewResource)))||(this._conflicts=e,this._onDidChangeConflicts.fire(e))}updateLastSyncTime(){this.status===f.Idle&&(this._lastSyncTime=new Date().getTime(),this.storageService.store(L,this._lastSyncTime,P.APPLICATION,N.MACHINE),this._onDidChangeLastSyncTime.fire(this._lastSyncTime))}getOrCreateActiveProfileSynchronizer(e,t){let r=this.activeProfileSynchronizers.get(e.id);if(r&&r[0].collection!==t?.collection&&(this.logService.error("Profile synchronizer collection does not match with the remote sync profile collection"),r[1].dispose(),r=void 0,this.activeProfileSynchronizers.delete(e.id)),!r){const i=new w,n=i.add(this.instantiationService.createInstance(g,e,t?.collection));i.add(n.onDidChangeStatus(s=>this.setStatus(s))),i.add(n.onDidChangeConflicts(s=>this.updateConflicts())),i.add(n.onDidChangeLocal(s=>this._onDidChangeLocal.fire(s))),this.activeProfileSynchronizers.set(e.id,r=[n,i])}return r[0]}getActiveProfileSynchronizers(){const e=[];for(const[t]of this.activeProfileSynchronizers.values())e.push(t);return e}clearActiveProfileSynchronizers(){this.activeProfileSynchronizers.forEach(([,e])=>e.dispose()),this.activeProfileSynchronizers.clear()}checkEnablement(){if(!this.userDataSyncStoreManagementService.userDataSyncStore)throw new Error("Not enabled")}};b=_([S(0,re),S(1,le),S(2,K),S(3,x),S(4,W),S(5,O),S(6,ie),S(7,G),S(8,F),S(9,he),S(10,ue)],b);let g=class extends M{constructor(e,t,r,i,n,s,o,a,c,u){super();this.profile=e;this.collection=t;this.userDataSyncEnablementService=r;this.instantiationService=i;this.extensionGalleryService=n;this.userDataSyncStoreManagementService=s;this.telemetryService=o;this.logService=a;this.userDataProfilesService=c;this.configurationService=u;this._register(r.onDidChangeResourceEnablement(([y,p])=>this.onDidChangeResourceEnablement(y,p))),this._register(A(()=>this._enabled.splice(0,this._enabled.length).forEach(([,,y])=>y.dispose())));for(const y of $)r.isResourceEnabled(y)&&this.registerSynchronizer(y)}_enabled=[];get enabled(){return this._enabled.sort((e,t)=>e[1]-t[1]).map(([e])=>e)}get disabled(){return $.filter(e=>!this.userDataSyncEnablementService.isResourceEnabled(e))}_status=f.Idle;get status(){return this._status}_onDidChangeStatus=this._register(new m);onDidChangeStatus=this._onDidChangeStatus.event;_onDidChangeLocal=this._register(new m);onDidChangeLocal=this._onDidChangeLocal.event;_conflicts=[];get conflicts(){return this._conflicts}_onDidChangeConflicts=this._register(new m);onDidChangeConflicts=this._onDidChangeConflicts.event;onDidChangeResourceEnablement(e,t){t?this.registerSynchronizer(e):this.deRegisterSynchronizer(e)}registerSynchronizer(e){if(this._enabled.some(([n])=>n.resource===e))return;if(e===l.Extensions&&!this.extensionGalleryService.isEnabled()){this.logService.info("Skipping extensions sync because gallery is not configured");return}if(e===l.Profiles&&(!this.profile.isDefault||!this.userDataProfilesService.isEnabled())||e===l.WorkspaceState)return;if(e!==l.Profiles&&this.profile.useDefaultFlags?.[e]){this.logService.debug(`Skipping syncing ${e} in ${this.profile.name} because it is already synced by default profile`);return}const t=new w,r=t.add(this.createSynchronizer(e));t.add(r.onDidChangeStatus(()=>this.updateStatus())),t.add(r.onDidChangeConflicts(()=>this.updateConflicts())),t.add(r.onDidChangeLocal(()=>this._onDidChangeLocal.fire(e)));const i=this.getOrder(e);this._enabled.push([r,i,t])}deRegisterSynchronizer(e){const t=this._enabled.findIndex(([r])=>r.resource===e);if(t!==-1){const[[r,,i]]=this._enabled.splice(t,1);i.dispose(),this.updateStatus(),r.stop().then(null,n=>this.logService.error(n))}}createSynchronizer(e){switch(e){case l.Settings:return this.instantiationService.createInstance(H,this.profile,this.collection);case l.Keybindings:return this.instantiationService.createInstance(oe,this.profile,this.collection);case l.Snippets:return this.instantiationService.createInstance(ae,this.profile,this.collection);case l.Tasks:return this.instantiationService.createInstance(ce,this.profile,this.collection);case l.GlobalState:return this.instantiationService.createInstance(se,this.profile,this.collection);case l.Extensions:return this.instantiationService.createInstance(ne,this.profile,this.collection);case l.Profiles:return this.instantiationService.createInstance(z,this.profile,this.collection)}}async sync(e,t,r,i){if(i.isCancellationRequested)return[];const n=this.enabled;if(!n.length)return[];try{const s=[],o=I(r),a=(this.collection?e?.collections?.[this.collection]?.latest:e?.latest)??null,c=t?await this.getUserDataSyncConfiguration(a):{};for(const u of n){if(i.isCancellationRequested)return[];if(!this.userDataSyncEnablementService.isResourceEnabled(u.resource))return[];try{if(t){const y=await u.preview(a,c,o);if(y)for(const p of y.resourcePreviews)(p.localChange!==q.None||p.remoteChange!==q.None)&&p.mergeState===Se.Preview&&await u.merge(p.previewResource)}else await u.sync(a,o)}catch(y){const p=D.toUserDataSyncError(y);if(R(p,r,this.userDataSyncStoreManagementService,this.telemetryService),B(y))throw p;this.logService.error(y),this.logService.error(`${u.resource}: ${E(y)}`),s.push([u.resource,p])}}return s}finally{this.updateStatus()}}async apply(e,t){const r=I(e);for(const i of this.enabled){if(t.isCancellationRequested)return;try{await i.apply(!1,r)}catch(n){const s=D.toUserDataSyncError(n);if(R(s,e,this.userDataSyncStoreManagementService,this.telemetryService),B(n))throw s;this.logService.error(n),this.logService.error(`${i.resource}: ${E(n)}`)}}}async stop(){for(const e of this.enabled)try{e.status!==f.Idle&&await e.stop()}catch(t){this.logService.error(t)}}async resetLocal(){for(const e of this.enabled)try{await e.resetLocal()}catch(t){this.logService.error(`${e.resource}: ${E(t)}`),this.logService.error(t)}}async getUserDataSyncConfiguration(e){if(!this.profile.isDefault)return{};const t=this.configurationService.getValue(fe),r=this.enabled.find(i=>i instanceof H);if(r){const i=await r.getRemoteUserDataSyncConfiguration(e);return{...t,...i}}return t}setStatus(e){this._status!==e&&(this._status=e,this._onDidChangeStatus.fire(e))}updateStatus(){return this.updateConflicts(),this.enabled.some(e=>e.status===f.HasConflicts)?this.setStatus(f.HasConflicts):this.enabled.some(e=>e.status===f.Syncing)?this.setStatus(f.Syncing):this.setStatus(f.Idle)}updateConflicts(){const e=this.enabled.filter(t=>t.status===f.HasConflicts).filter(t=>t.conflicts.conflicts.length>0).map(t=>t.conflicts);C(this._conflicts,e,(t,r)=>t.syncResource===r.syncResource&&C(t.conflicts,r.conflicts,(i,n)=>k(i.previewResource,n.previewResource)))||(this._conflicts=e,this._onDidChangeConflicts.fire(e))}getOrder(e){switch(e){case l.Settings:return 0;case l.Keybindings:return 1;case l.Snippets:return 2;case l.Tasks:return 3;case l.GlobalState:return 4;case l.Extensions:return 5;case l.Profiles:return 6;case l.WorkspaceState:return 7}}};g=_([S(2,G),S(3,x),S(4,te),S(5,K),S(6,O),S(7,W),S(8,F),S(9,ee)],g);function B(h){if(h instanceof D)switch(h.code){case d.MethodNotFound:case d.TooLarge:case d.TooManyRequests:case d.TooManyRequestsAndRetryAfter:case d.LocalTooManyRequests:case d.LocalTooManyProfiles:case d.Gone:case d.UpgradeRequired:case d.IncompatibleRemoteContent:case d.IncompatibleLocalContent:return!0}return!1}function R(h,v,e,t){t.publicLog2("sync/error",{code:h.code,serverCode:h instanceof Y?String(h.serverCode):void 0,url:h instanceof Y?h.url:void 0,resource:h.resource,executionId:v,service:e.userDataSyncStore.url.toString()})}export{b as UserDataSyncService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { equals } from '../../../base/common/arrays.js';
+import { createCancelablePromise, RunOnceScheduler } from '../../../base/common/async.js';
+import { CancellationTokenSource } from '../../../base/common/cancellation.js';
+import { toErrorMessage } from '../../../base/common/errorMessage.js';
+import { Emitter } from '../../../base/common/event.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../base/common/lifecycle.js';
+import { isEqual } from '../../../base/common/resources.js';
+import { isBoolean, isUndefined } from '../../../base/common/types.js';
+import { generateUuid } from '../../../base/common/uuid.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { IExtensionGalleryService } from '../../extensionManagement/common/extensionManagement.js';
+import { IFileService } from '../../files/common/files.js';
+import { IInstantiationService } from '../../instantiation/common/instantiation.js';
+import { IStorageService } from '../../storage/common/storage.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+import { IUserDataProfilesService } from '../../userDataProfile/common/userDataProfile.js';
+import { ExtensionsSynchroniser } from './extensionsSync.js';
+import { GlobalStateSynchroniser } from './globalStateSync.js';
+import { KeybindingsSynchroniser } from './keybindingsSync.js';
+import { SettingsSynchroniser } from './settingsSync.js';
+import { SnippetsSynchroniser } from './snippetsSync.js';
+import { TasksSynchroniser } from './tasksSync.js';
+import { UserDataProfilesManifestSynchroniser } from './userDataProfilesManifestSync.js';
+import { ALL_SYNC_RESOURCES, createSyncHeaders, IUserDataSyncEnablementService, IUserDataSyncLogService, IUserDataSyncStoreManagementService, IUserDataSyncStoreService, UserDataSyncError, UserDataSyncStoreError, USER_DATA_SYNC_CONFIGURATION_SCOPE, IUserDataSyncResourceProviderService, IUserDataSyncLocalStoreService } from './userDataSync.js';
+const LAST_SYNC_TIME_KEY = 'sync.lastSyncTime';
+let UserDataSyncService = class UserDataSyncService extends Disposable {
+    get status() { return this._status; }
+    get conflicts() { return this._conflicts; }
+    get lastSyncTime() { return this._lastSyncTime; }
+    constructor(fileService, userDataSyncStoreService, userDataSyncStoreManagementService, instantiationService, logService, telemetryService, storageService, userDataSyncEnablementService, userDataProfilesService, userDataSyncResourceProviderService, userDataSyncLocalStoreService) {
+        super();
+        this.fileService = fileService;
+        this.userDataSyncStoreService = userDataSyncStoreService;
+        this.userDataSyncStoreManagementService = userDataSyncStoreManagementService;
+        this.instantiationService = instantiationService;
+        this.logService = logService;
+        this.telemetryService = telemetryService;
+        this.storageService = storageService;
+        this.userDataSyncEnablementService = userDataSyncEnablementService;
+        this.userDataProfilesService = userDataProfilesService;
+        this.userDataSyncResourceProviderService = userDataSyncResourceProviderService;
+        this.userDataSyncLocalStoreService = userDataSyncLocalStoreService;
+        this._status = "uninitialized";
+        this._onDidChangeStatus = this._register(new Emitter());
+        this.onDidChangeStatus = this._onDidChangeStatus.event;
+        this._onDidChangeLocal = this._register(new Emitter());
+        this.onDidChangeLocal = this._onDidChangeLocal.event;
+        this._conflicts = [];
+        this._onDidChangeConflicts = this._register(new Emitter());
+        this.onDidChangeConflicts = this._onDidChangeConflicts.event;
+        this._syncErrors = [];
+        this._onSyncErrors = this._register(new Emitter());
+        this.onSyncErrors = this._onSyncErrors.event;
+        this._lastSyncTime = undefined;
+        this._onDidChangeLastSyncTime = this._register(new Emitter());
+        this.onDidChangeLastSyncTime = this._onDidChangeLastSyncTime.event;
+        this._onDidResetLocal = this._register(new Emitter());
+        this.onDidResetLocal = this._onDidResetLocal.event;
+        this._onDidResetRemote = this._register(new Emitter());
+        this.onDidResetRemote = this._onDidResetRemote.event;
+        this.activeProfileSynchronizers = new Map();
+        this._status = userDataSyncStoreManagementService.userDataSyncStore ? "idle" : "uninitialized";
+        this._lastSyncTime = this.storageService.getNumber(LAST_SYNC_TIME_KEY, -1, undefined);
+        this._register(toDisposable(() => this.clearActiveProfileSynchronizers()));
+        this._register(new RunOnceScheduler(() => this.cleanUpStaleStorageData(), 5 * 1000)).schedule();
+    }
+    async createSyncTask(manifest, disableCache) {
+        this.checkEnablement();
+        this.logService.info('Sync started.');
+        const startTime = new Date().getTime();
+        const executionId = generateUuid();
+        try {
+            const syncHeaders = createSyncHeaders(executionId);
+            if (disableCache) {
+                syncHeaders['Cache-Control'] = 'no-cache';
+            }
+            manifest = await this.userDataSyncStoreService.manifest(manifest, syncHeaders);
+        }
+        catch (error) {
+            const userDataSyncError = UserDataSyncError.toUserDataSyncError(error);
+            reportUserDataSyncError(userDataSyncError, executionId, this.userDataSyncStoreManagementService, this.telemetryService);
+            throw userDataSyncError;
+        }
+        const executed = false;
+        const that = this;
+        let cancellablePromise;
+        return {
+            manifest,
+            async run() {
+                if (executed) {
+                    throw new Error('Can run a task only once');
+                }
+                cancellablePromise = createCancelablePromise(token => that.sync(manifest, false, executionId, token));
+                await cancellablePromise.finally(() => cancellablePromise = undefined);
+                that.logService.info(`Sync done. Took ${new Date().getTime() - startTime}ms`);
+                that.updateLastSyncTime();
+            },
+            stop() {
+                cancellablePromise?.cancel();
+                return that.stop();
+            }
+        };
+    }
+    async createManualSyncTask() {
+        this.checkEnablement();
+        if (this.userDataSyncEnablementService.isEnabled()) {
+            throw new UserDataSyncError('Cannot start manual sync when sync is enabled', "LocalError");
+        }
+        this.logService.info('Sync started.');
+        const startTime = new Date().getTime();
+        const executionId = generateUuid();
+        const syncHeaders = createSyncHeaders(executionId);
+        let manifest;
+        try {
+            manifest = await this.userDataSyncStoreService.manifest(null, syncHeaders);
+        }
+        catch (error) {
+            const userDataSyncError = UserDataSyncError.toUserDataSyncError(error);
+            reportUserDataSyncError(userDataSyncError, executionId, this.userDataSyncStoreManagementService, this.telemetryService);
+            throw userDataSyncError;
+        }
+        await this.resetLocal();
+        const that = this;
+        const cancellableToken = new CancellationTokenSource();
+        return {
+            id: executionId,
+            async merge() {
+                return that.sync(manifest, true, executionId, cancellableToken.token);
+            },
+            async apply() {
+                try {
+                    try {
+                        await that.applyManualSync(manifest, executionId, cancellableToken.token);
+                    }
+                    catch (error) {
+                        if (UserDataSyncError.toUserDataSyncError(error).code === "MethodNotFound") {
+                            that.logService.info('Client is making invalid requests. Cleaning up data...');
+                            await that.cleanUpRemoteData();
+                            that.logService.info('Applying manual sync again...');
+                            await that.applyManualSync(manifest, executionId, cancellableToken.token);
+                        }
+                        else {
+                            throw error;
+                        }
+                    }
+                }
+                catch (error) {
+                    that.logService.error(error);
+                    throw error;
+                }
+                that.logService.info(`Sync done. Took ${new Date().getTime() - startTime}ms`);
+                that.updateLastSyncTime();
+            },
+            async stop() {
+                cancellableToken.cancel();
+                await that.stop();
+                await that.resetLocal();
+            }
+        };
+    }
+    async sync(manifest, merge, executionId, token) {
+        this._syncErrors = [];
+        try {
+            if (this.status !== "hasConflicts") {
+                this.setStatus("syncing");
+            }
+            const defaultProfileSynchronizer = this.getOrCreateActiveProfileSynchronizer(this.userDataProfilesService.defaultProfile, undefined);
+            this._syncErrors.push(...await this.syncProfile(defaultProfileSynchronizer, manifest, merge, executionId, token));
+            const userDataProfileManifestSynchronizer = defaultProfileSynchronizer.enabled.find(s => s.resource === "profiles");
+            if (userDataProfileManifestSynchronizer) {
+                const syncProfiles = (await userDataProfileManifestSynchronizer.getLastSyncedProfiles()) || [];
+                if (token.isCancellationRequested) {
+                    return;
+                }
+                await this.syncRemoteProfiles(syncProfiles, manifest, merge, executionId, token);
+            }
+        }
+        finally {
+            if (this.status !== "hasConflicts") {
+                this.setStatus("idle");
+            }
+            this._onSyncErrors.fire(this._syncErrors);
+        }
+    }
+    async syncRemoteProfiles(remoteProfiles, manifest, merge, executionId, token) {
+        for (const syncProfile of remoteProfiles) {
+            if (token.isCancellationRequested) {
+                return;
+            }
+            const profile = this.userDataProfilesService.profiles.find(p => p.id === syncProfile.id);
+            if (!profile) {
+                this.logService.error(`Profile with id:${syncProfile.id} and name: ${syncProfile.name} does not exist locally to sync.`);
+                continue;
+            }
+            this.logService.info('Syncing profile.', syncProfile.name);
+            const profileSynchronizer = this.getOrCreateActiveProfileSynchronizer(profile, syncProfile);
+            this._syncErrors.push(...await this.syncProfile(profileSynchronizer, manifest, merge, executionId, token));
+        }
+        for (const [key, profileSynchronizerItem] of this.activeProfileSynchronizers.entries()) {
+            if (this.userDataProfilesService.profiles.some(p => p.id === profileSynchronizerItem[0].profile.id)) {
+                continue;
+            }
+            await profileSynchronizerItem[0].resetLocal();
+            profileSynchronizerItem[1].dispose();
+            this.activeProfileSynchronizers.delete(key);
+        }
+    }
+    async applyManualSync(manifest, executionId, token) {
+        try {
+            this.setStatus("syncing");
+            const profileSynchronizers = this.getActiveProfileSynchronizers();
+            for (const profileSynchronizer of profileSynchronizers) {
+                if (token.isCancellationRequested) {
+                    return;
+                }
+                await profileSynchronizer.apply(executionId, token);
+            }
+            const defaultProfileSynchronizer = profileSynchronizers.find(s => s.profile.isDefault);
+            if (!defaultProfileSynchronizer) {
+                return;
+            }
+            const userDataProfileManifestSynchronizer = defaultProfileSynchronizer.enabled.find(s => s.resource === "profiles");
+            if (!userDataProfileManifestSynchronizer) {
+                return;
+            }
+            const remoteProfiles = (await userDataProfileManifestSynchronizer.getRemoteSyncedProfiles(manifest?.latest ?? null)) || [];
+            const remoteProfilesToSync = remoteProfiles.filter(remoteProfile => profileSynchronizers.every(s => s.profile.id !== remoteProfile.id));
+            if (remoteProfilesToSync.length) {
+                await this.syncRemoteProfiles(remoteProfilesToSync, manifest, false, executionId, token);
+            }
+        }
+        finally {
+            this.setStatus("idle");
+        }
+    }
+    async syncProfile(profileSynchronizer, manifest, merge, executionId, token) {
+        const errors = await profileSynchronizer.sync(manifest, merge, executionId, token);
+        return errors.map(([syncResource, error]) => ({ profile: profileSynchronizer.profile, syncResource, error }));
+    }
+    async stop() {
+        if (this.status !== "idle") {
+            await Promise.allSettled(this.getActiveProfileSynchronizers().map(profileSynchronizer => profileSynchronizer.stop()));
+        }
+    }
+    async resolveContent(resource) {
+        const content = await this.userDataSyncResourceProviderService.resolveContent(resource);
+        if (content) {
+            return content;
+        }
+        for (const profileSynchronizer of this.getActiveProfileSynchronizers()) {
+            for (const synchronizer of profileSynchronizer.enabled) {
+                const content = await synchronizer.resolveContent(resource);
+                if (content) {
+                    return content;
+                }
+            }
+        }
+        return null;
+    }
+    async replace(syncResourceHandle) {
+        this.checkEnablement();
+        const profileSyncResource = this.userDataSyncResourceProviderService.resolveUserDataSyncResource(syncResourceHandle);
+        if (!profileSyncResource) {
+            return;
+        }
+        const content = await this.resolveContent(syncResourceHandle.uri);
+        if (!content) {
+            return;
+        }
+        await this.performAction(profileSyncResource.profile, async (synchronizer) => {
+            if (profileSyncResource.syncResource === synchronizer.resource) {
+                await synchronizer.replace(content);
+                return true;
+            }
+            return undefined;
+        });
+        return;
+    }
+    async accept(syncResource, resource, content, apply) {
+        this.checkEnablement();
+        await this.performAction(syncResource.profile, async (synchronizer) => {
+            if (syncResource.syncResource === synchronizer.resource) {
+                await synchronizer.accept(resource, content);
+                if (apply) {
+                    await synchronizer.apply(isBoolean(apply) ? false : apply.force, createSyncHeaders(generateUuid()));
+                }
+                return true;
+            }
+            return undefined;
+        });
+    }
+    async hasLocalData() {
+        const result = await this.performAction(this.userDataProfilesService.defaultProfile, async (synchronizer) => {
+            if (synchronizer.resource !== "globalState" && await synchronizer.hasLocalData()) {
+                return true;
+            }
+            return undefined;
+        });
+        return !!result;
+    }
+    async hasPreviouslySynced() {
+        const result = await this.performAction(this.userDataProfilesService.defaultProfile, async (synchronizer) => {
+            if (await synchronizer.hasPreviouslySynced()) {
+                return true;
+            }
+            return undefined;
+        });
+        return !!result;
+    }
+    async reset() {
+        this.checkEnablement();
+        await this.resetRemote();
+        await this.resetLocal();
+    }
+    async resetRemote() {
+        this.checkEnablement();
+        try {
+            await this.userDataSyncStoreService.clear();
+            this.logService.info('Cleared data on server');
+        }
+        catch (e) {
+            this.logService.error(e);
+        }
+        this._onDidResetRemote.fire();
+    }
+    async resetLocal() {
+        this.checkEnablement();
+        this._lastSyncTime = undefined;
+        this.storageService.remove(LAST_SYNC_TIME_KEY, -1);
+        for (const [synchronizer] of this.activeProfileSynchronizers.values()) {
+            try {
+                await synchronizer.resetLocal();
+            }
+            catch (e) {
+                this.logService.error(e);
+            }
+        }
+        this.clearActiveProfileSynchronizers();
+        this._onDidResetLocal.fire();
+        this.logService.info('Did reset the local sync state.');
+    }
+    async cleanUpStaleStorageData() {
+        const allKeys = this.storageService.keys(-1, 1);
+        const lastSyncProfileKeys = [];
+        for (const key of allKeys) {
+            if (!key.endsWith('.lastSyncUserData')) {
+                continue;
+            }
+            const segments = key.split('.');
+            if (segments.length === 3) {
+                lastSyncProfileKeys.push([key, segments[0]]);
+            }
+        }
+        if (!lastSyncProfileKeys.length) {
+            return;
+        }
+        const disposables = new DisposableStore();
+        try {
+            let defaultProfileSynchronizer = this.activeProfileSynchronizers.get(this.userDataProfilesService.defaultProfile.id)?.[0];
+            if (!defaultProfileSynchronizer) {
+                defaultProfileSynchronizer = disposables.add(this.instantiationService.createInstance(ProfileSynchronizer, this.userDataProfilesService.defaultProfile, undefined));
+            }
+            const userDataProfileManifestSynchronizer = defaultProfileSynchronizer.enabled.find(s => s.resource === "profiles");
+            if (!userDataProfileManifestSynchronizer) {
+                return;
+            }
+            const lastSyncedProfiles = await userDataProfileManifestSynchronizer.getLastSyncedProfiles();
+            const lastSyncedCollections = lastSyncedProfiles?.map(p => p.collection) ?? [];
+            for (const [key, collection] of lastSyncProfileKeys) {
+                if (!lastSyncedCollections.includes(collection)) {
+                    this.logService.info(`Removing last sync state for stale profile: ${collection}`);
+                    this.storageService.remove(key, -1);
+                }
+            }
+        }
+        finally {
+            disposables.dispose();
+        }
+    }
+    async cleanUpRemoteData() {
+        const remoteProfiles = await this.userDataSyncResourceProviderService.getRemoteSyncedProfiles();
+        const remoteProfileCollections = remoteProfiles.map(profile => profile.collection);
+        const allCollections = await this.userDataSyncStoreService.getAllCollections();
+        const redundantCollections = allCollections.filter(c => !remoteProfileCollections.includes(c));
+        if (redundantCollections.length) {
+            this.logService.info(`Deleting ${redundantCollections.length} redundant collections on server`);
+            await Promise.allSettled(redundantCollections.map(collectionId => this.userDataSyncStoreService.deleteCollection(collectionId)));
+            this.logService.info(`Deleted redundant collections on server`);
+        }
+        const updatedRemoteProfiles = remoteProfiles.filter(profile => allCollections.includes(profile.collection));
+        if (updatedRemoteProfiles.length !== remoteProfiles.length) {
+            const profileManifestSynchronizer = this.instantiationService.createInstance(UserDataProfilesManifestSynchroniser, this.userDataProfilesService.defaultProfile, undefined);
+            try {
+                this.logService.info('Resetting the last synced state of profiles');
+                await profileManifestSynchronizer.resetLocal();
+                this.logService.info('Did reset the last synced state of profiles');
+                this.logService.info(`Updating remote profiles with invalid collections on server`);
+                await profileManifestSynchronizer.updateRemoteProfiles(updatedRemoteProfiles, null);
+                this.logService.info(`Updated remote profiles on server`);
+            }
+            finally {
+                profileManifestSynchronizer.dispose();
+            }
+        }
+    }
+    async saveRemoteActivityData(location) {
+        this.checkEnablement();
+        const data = await this.userDataSyncStoreService.getActivityData();
+        await this.fileService.writeFile(location, data);
+    }
+    async extractActivityData(activityDataResource, location) {
+        const content = (await this.fileService.readFile(activityDataResource)).value.toString();
+        const activityData = JSON.parse(content);
+        if (activityData.resources) {
+            for (const resource in activityData.resources) {
+                for (const version of activityData.resources[resource]) {
+                    await this.userDataSyncLocalStoreService.writeResource(resource, version.content, new Date(version.created * 1000), undefined, location);
+                }
+            }
+        }
+        if (activityData.collections) {
+            for (const collection in activityData.collections) {
+                for (const resource in activityData.collections[collection].resources) {
+                    for (const version of activityData.collections[collection].resources?.[resource] ?? []) {
+                        await this.userDataSyncLocalStoreService.writeResource(resource, version.content, new Date(version.created * 1000), collection, location);
+                    }
+                }
+            }
+        }
+    }
+    async performAction(profile, action) {
+        const disposables = new DisposableStore();
+        try {
+            const activeProfileSyncronizer = this.activeProfileSynchronizers.get(profile.id);
+            if (activeProfileSyncronizer) {
+                const result = await this.performActionWithProfileSynchronizer(activeProfileSyncronizer[0], action, disposables);
+                return isUndefined(result) ? null : result;
+            }
+            if (profile.isDefault) {
+                const defaultProfileSynchronizer = disposables.add(this.instantiationService.createInstance(ProfileSynchronizer, profile, undefined));
+                const result = await this.performActionWithProfileSynchronizer(defaultProfileSynchronizer, action, disposables);
+                return isUndefined(result) ? null : result;
+            }
+            if (this.userDataProfilesService.isEnabled()) {
+                return null;
+            }
+            const userDataProfileManifestSynchronizer = disposables.add(this.instantiationService.createInstance(UserDataProfilesManifestSynchroniser, profile, undefined));
+            const manifest = await this.userDataSyncStoreService.manifest(null);
+            const syncProfiles = (await userDataProfileManifestSynchronizer.getRemoteSyncedProfiles(manifest?.latest ?? null)) || [];
+            const syncProfile = syncProfiles.find(syncProfile => syncProfile.id === profile.id);
+            if (syncProfile) {
+                const profileSynchronizer = disposables.add(this.instantiationService.createInstance(ProfileSynchronizer, profile, syncProfile.collection));
+                const result = await this.performActionWithProfileSynchronizer(profileSynchronizer, action, disposables);
+                return isUndefined(result) ? null : result;
+            }
+            return null;
+        }
+        finally {
+            disposables.dispose();
+        }
+    }
+    async performActionWithProfileSynchronizer(profileSynchronizer, action, disposables) {
+        const allSynchronizers = [...profileSynchronizer.enabled, ...profileSynchronizer.disabled.reduce((synchronizers, syncResource) => {
+                if (syncResource !== "workspaceState") {
+                    synchronizers.push(disposables.add(profileSynchronizer.createSynchronizer(syncResource)));
+                }
+                return synchronizers;
+            }, [])];
+        for (const synchronizer of allSynchronizers) {
+            const result = await action(synchronizer);
+            if (!isUndefined(result)) {
+                return result;
+            }
+        }
+        return undefined;
+    }
+    setStatus(status) {
+        const oldStatus = this._status;
+        if (this._status !== status) {
+            this._status = status;
+            this._onDidChangeStatus.fire(status);
+            if (oldStatus === "hasConflicts") {
+                this.updateLastSyncTime();
+            }
+        }
+    }
+    updateConflicts() {
+        const conflicts = this.getActiveProfileSynchronizers().map(synchronizer => synchronizer.conflicts).flat();
+        if (!equals(this._conflicts, conflicts, (a, b) => a.profile.id === b.profile.id && a.syncResource === b.syncResource && equals(a.conflicts, b.conflicts, (a, b) => isEqual(a.previewResource, b.previewResource)))) {
+            this._conflicts = conflicts;
+            this._onDidChangeConflicts.fire(conflicts);
+        }
+    }
+    updateLastSyncTime() {
+        if (this.status === "idle") {
+            this._lastSyncTime = new Date().getTime();
+            this.storageService.store(LAST_SYNC_TIME_KEY, this._lastSyncTime, -1, 1);
+            this._onDidChangeLastSyncTime.fire(this._lastSyncTime);
+        }
+    }
+    getOrCreateActiveProfileSynchronizer(profile, syncProfile) {
+        let activeProfileSynchronizer = this.activeProfileSynchronizers.get(profile.id);
+        if (activeProfileSynchronizer && activeProfileSynchronizer[0].collection !== syncProfile?.collection) {
+            this.logService.error('Profile synchronizer collection does not match with the remote sync profile collection');
+            activeProfileSynchronizer[1].dispose();
+            activeProfileSynchronizer = undefined;
+            this.activeProfileSynchronizers.delete(profile.id);
+        }
+        if (!activeProfileSynchronizer) {
+            const disposables = new DisposableStore();
+            const profileSynchronizer = disposables.add(this.instantiationService.createInstance(ProfileSynchronizer, profile, syncProfile?.collection));
+            disposables.add(profileSynchronizer.onDidChangeStatus(e => this.setStatus(e)));
+            disposables.add(profileSynchronizer.onDidChangeConflicts(conflicts => this.updateConflicts()));
+            disposables.add(profileSynchronizer.onDidChangeLocal(e => this._onDidChangeLocal.fire(e)));
+            this.activeProfileSynchronizers.set(profile.id, activeProfileSynchronizer = [profileSynchronizer, disposables]);
+        }
+        return activeProfileSynchronizer[0];
+    }
+    getActiveProfileSynchronizers() {
+        const profileSynchronizers = [];
+        for (const [profileSynchronizer] of this.activeProfileSynchronizers.values()) {
+            profileSynchronizers.push(profileSynchronizer);
+        }
+        return profileSynchronizers;
+    }
+    clearActiveProfileSynchronizers() {
+        this.activeProfileSynchronizers.forEach(([, disposable]) => disposable.dispose());
+        this.activeProfileSynchronizers.clear();
+    }
+    checkEnablement() {
+        if (!this.userDataSyncStoreManagementService.userDataSyncStore) {
+            throw new Error('Not enabled');
+        }
+    }
+};
+UserDataSyncService = __decorate([
+    __param(0, IFileService),
+    __param(1, IUserDataSyncStoreService),
+    __param(2, IUserDataSyncStoreManagementService),
+    __param(3, IInstantiationService),
+    __param(4, IUserDataSyncLogService),
+    __param(5, ITelemetryService),
+    __param(6, IStorageService),
+    __param(7, IUserDataSyncEnablementService),
+    __param(8, IUserDataProfilesService),
+    __param(9, IUserDataSyncResourceProviderService),
+    __param(10, IUserDataSyncLocalStoreService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], UserDataSyncService);
+export { UserDataSyncService };
+let ProfileSynchronizer = class ProfileSynchronizer extends Disposable {
+    get enabled() { return this._enabled.sort((a, b) => a[1] - b[1]).map(([synchronizer]) => synchronizer); }
+    get disabled() { return ALL_SYNC_RESOURCES.filter(syncResource => !this.userDataSyncEnablementService.isResourceEnabled(syncResource)); }
+    get status() { return this._status; }
+    get conflicts() { return this._conflicts; }
+    constructor(profile, collection, userDataSyncEnablementService, instantiationService, extensionGalleryService, userDataSyncStoreManagementService, telemetryService, logService, userDataProfilesService, configurationService) {
+        super();
+        this.profile = profile;
+        this.collection = collection;
+        this.userDataSyncEnablementService = userDataSyncEnablementService;
+        this.instantiationService = instantiationService;
+        this.extensionGalleryService = extensionGalleryService;
+        this.userDataSyncStoreManagementService = userDataSyncStoreManagementService;
+        this.telemetryService = telemetryService;
+        this.logService = logService;
+        this.userDataProfilesService = userDataProfilesService;
+        this.configurationService = configurationService;
+        this._enabled = [];
+        this._status = "idle";
+        this._onDidChangeStatus = this._register(new Emitter());
+        this.onDidChangeStatus = this._onDidChangeStatus.event;
+        this._onDidChangeLocal = this._register(new Emitter());
+        this.onDidChangeLocal = this._onDidChangeLocal.event;
+        this._conflicts = [];
+        this._onDidChangeConflicts = this._register(new Emitter());
+        this.onDidChangeConflicts = this._onDidChangeConflicts.event;
+        this._register(userDataSyncEnablementService.onDidChangeResourceEnablement(([syncResource, enablement]) => this.onDidChangeResourceEnablement(syncResource, enablement)));
+        this._register(toDisposable(() => this._enabled.splice(0, this._enabled.length).forEach(([, , disposable]) => disposable.dispose())));
+        for (const syncResource of ALL_SYNC_RESOURCES) {
+            if (userDataSyncEnablementService.isResourceEnabled(syncResource)) {
+                this.registerSynchronizer(syncResource);
+            }
+        }
+    }
+    onDidChangeResourceEnablement(syncResource, enabled) {
+        if (enabled) {
+            this.registerSynchronizer(syncResource);
+        }
+        else {
+            this.deRegisterSynchronizer(syncResource);
+        }
+    }
+    registerSynchronizer(syncResource) {
+        if (this._enabled.some(([synchronizer]) => synchronizer.resource === syncResource)) {
+            return;
+        }
+        if (syncResource === "extensions" && !this.extensionGalleryService.isEnabled()) {
+            this.logService.info('Skipping extensions sync because gallery is not configured');
+            return;
+        }
+        if (syncResource === "profiles") {
+            if (!this.profile.isDefault) {
+                return;
+            }
+            if (!this.userDataProfilesService.isEnabled()) {
+                return;
+            }
+        }
+        if (syncResource === "workspaceState") {
+            return;
+        }
+        if (syncResource !== "profiles" && this.profile.useDefaultFlags?.[syncResource]) {
+            this.logService.debug(`Skipping syncing ${syncResource} in ${this.profile.name} because it is already synced by default profile`);
+            return;
+        }
+        const disposables = new DisposableStore();
+        const synchronizer = disposables.add(this.createSynchronizer(syncResource));
+        disposables.add(synchronizer.onDidChangeStatus(() => this.updateStatus()));
+        disposables.add(synchronizer.onDidChangeConflicts(() => this.updateConflicts()));
+        disposables.add(synchronizer.onDidChangeLocal(() => this._onDidChangeLocal.fire(syncResource)));
+        const order = this.getOrder(syncResource);
+        this._enabled.push([synchronizer, order, disposables]);
+    }
+    deRegisterSynchronizer(syncResource) {
+        const index = this._enabled.findIndex(([synchronizer]) => synchronizer.resource === syncResource);
+        if (index !== -1) {
+            const [[synchronizer, , disposable]] = this._enabled.splice(index, 1);
+            disposable.dispose();
+            this.updateStatus();
+            synchronizer.stop().then(null, error => this.logService.error(error));
+        }
+    }
+    createSynchronizer(syncResource) {
+        switch (syncResource) {
+            case "settings": return this.instantiationService.createInstance(SettingsSynchroniser, this.profile, this.collection);
+            case "keybindings": return this.instantiationService.createInstance(KeybindingsSynchroniser, this.profile, this.collection);
+            case "snippets": return this.instantiationService.createInstance(SnippetsSynchroniser, this.profile, this.collection);
+            case "tasks": return this.instantiationService.createInstance(TasksSynchroniser, this.profile, this.collection);
+            case "globalState": return this.instantiationService.createInstance(GlobalStateSynchroniser, this.profile, this.collection);
+            case "extensions": return this.instantiationService.createInstance(ExtensionsSynchroniser, this.profile, this.collection);
+            case "profiles": return this.instantiationService.createInstance(UserDataProfilesManifestSynchroniser, this.profile, this.collection);
+        }
+    }
+    async sync(manifest, merge, executionId, token) {
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        const synchronizers = this.enabled;
+        if (!synchronizers.length) {
+            return [];
+        }
+        try {
+            const syncErrors = [];
+            const syncHeaders = createSyncHeaders(executionId);
+            const resourceManifest = (this.collection ? manifest?.collections?.[this.collection]?.latest : manifest?.latest) ?? null;
+            const userDataSyncConfiguration = merge ? await this.getUserDataSyncConfiguration(resourceManifest) : {};
+            for (const synchroniser of synchronizers) {
+                if (token.isCancellationRequested) {
+                    return [];
+                }
+                if (!this.userDataSyncEnablementService.isResourceEnabled(synchroniser.resource)) {
+                    return [];
+                }
+                try {
+                    if (merge) {
+                        const preview = await synchroniser.preview(resourceManifest, userDataSyncConfiguration, syncHeaders);
+                        if (preview) {
+                            for (const resourcePreview of preview.resourcePreviews) {
+                                if ((resourcePreview.localChange !== 0 || resourcePreview.remoteChange !== 0) && resourcePreview.mergeState === "preview") {
+                                    await synchroniser.merge(resourcePreview.previewResource);
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        await synchroniser.sync(resourceManifest, syncHeaders);
+                    }
+                }
+                catch (e) {
+                    const userDataSyncError = UserDataSyncError.toUserDataSyncError(e);
+                    reportUserDataSyncError(userDataSyncError, executionId, this.userDataSyncStoreManagementService, this.telemetryService);
+                    if (canBailout(e)) {
+                        throw userDataSyncError;
+                    }
+                    this.logService.error(e);
+                    this.logService.error(`${synchroniser.resource}: ${toErrorMessage(e)}`);
+                    syncErrors.push([synchroniser.resource, userDataSyncError]);
+                }
+            }
+            return syncErrors;
+        }
+        finally {
+            this.updateStatus();
+        }
+    }
+    async apply(executionId, token) {
+        const syncHeaders = createSyncHeaders(executionId);
+        for (const synchroniser of this.enabled) {
+            if (token.isCancellationRequested) {
+                return;
+            }
+            try {
+                await synchroniser.apply(false, syncHeaders);
+            }
+            catch (e) {
+                const userDataSyncError = UserDataSyncError.toUserDataSyncError(e);
+                reportUserDataSyncError(userDataSyncError, executionId, this.userDataSyncStoreManagementService, this.telemetryService);
+                if (canBailout(e)) {
+                    throw userDataSyncError;
+                }
+                this.logService.error(e);
+                this.logService.error(`${synchroniser.resource}: ${toErrorMessage(e)}`);
+            }
+        }
+    }
+    async stop() {
+        for (const synchroniser of this.enabled) {
+            try {
+                if (synchroniser.status !== "idle") {
+                    await synchroniser.stop();
+                }
+            }
+            catch (e) {
+                this.logService.error(e);
+            }
+        }
+    }
+    async resetLocal() {
+        for (const synchroniser of this.enabled) {
+            try {
+                await synchroniser.resetLocal();
+            }
+            catch (e) {
+                this.logService.error(`${synchroniser.resource}: ${toErrorMessage(e)}`);
+                this.logService.error(e);
+            }
+        }
+    }
+    async getUserDataSyncConfiguration(manifest) {
+        if (!this.profile.isDefault) {
+            return {};
+        }
+        const local = this.configurationService.getValue(USER_DATA_SYNC_CONFIGURATION_SCOPE);
+        const settingsSynchronizer = this.enabled.find(synchronizer => synchronizer instanceof SettingsSynchroniser);
+        if (settingsSynchronizer) {
+            const remote = await settingsSynchronizer.getRemoteUserDataSyncConfiguration(manifest);
+            return { ...local, ...remote };
+        }
+        return local;
+    }
+    setStatus(status) {
+        if (this._status !== status) {
+            this._status = status;
+            this._onDidChangeStatus.fire(status);
+        }
+    }
+    updateStatus() {
+        this.updateConflicts();
+        if (this.enabled.some(s => s.status === "hasConflicts")) {
+            return this.setStatus("hasConflicts");
+        }
+        if (this.enabled.some(s => s.status === "syncing")) {
+            return this.setStatus("syncing");
+        }
+        return this.setStatus("idle");
+    }
+    updateConflicts() {
+        const conflicts = this.enabled.filter(s => s.status === "hasConflicts")
+            .filter(s => s.conflicts.conflicts.length > 0)
+            .map(s => s.conflicts);
+        if (!equals(this._conflicts, conflicts, (a, b) => a.syncResource === b.syncResource && equals(a.conflicts, b.conflicts, (a, b) => isEqual(a.previewResource, b.previewResource)))) {
+            this._conflicts = conflicts;
+            this._onDidChangeConflicts.fire(conflicts);
+        }
+    }
+    getOrder(syncResource) {
+        switch (syncResource) {
+            case "settings": return 0;
+            case "keybindings": return 1;
+            case "snippets": return 2;
+            case "tasks": return 3;
+            case "globalState": return 4;
+            case "extensions": return 5;
+            case "profiles": return 6;
+            case "workspaceState": return 7;
+        }
+    }
+};
+ProfileSynchronizer = __decorate([
+    __param(2, IUserDataSyncEnablementService),
+    __param(3, IInstantiationService),
+    __param(4, IExtensionGalleryService),
+    __param(5, IUserDataSyncStoreManagementService),
+    __param(6, ITelemetryService),
+    __param(7, IUserDataSyncLogService),
+    __param(8, IUserDataProfilesService),
+    __param(9, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], ProfileSynchronizer);
+function canBailout(e) {
+    if (e instanceof UserDataSyncError) {
+        switch (e.code) {
+            case "MethodNotFound":
+            case "TooLarge":
+            case "RemoteTooManyRequests":
+            case "TooManyRequestsAndRetryAfter":
+            case "LocalTooManyRequests":
+            case "LocalTooManyProfiles":
+            case "Gone":
+            case "UpgradeRequired":
+            case "IncompatibleRemoteContent":
+            case "IncompatibleLocalContent":
+                return true;
+        }
+    }
+    return false;
+}
+function reportUserDataSyncError(userDataSyncError, executionId, userDataSyncStoreManagementService, telemetryService) {
+    telemetryService.publicLog2('sync/error', {
+        code: userDataSyncError.code,
+        serverCode: userDataSyncError instanceof UserDataSyncStoreError ? String(userDataSyncError.serverCode) : undefined,
+        url: userDataSyncError instanceof UserDataSyncStoreError ? userDataSyncError.url : undefined,
+        resource: userDataSyncError.resource,
+        executionId,
+        service: userDataSyncStoreManagementService.userDataSyncStore.url.toString()
+    });
+}

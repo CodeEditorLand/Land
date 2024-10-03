@@ -1,1 +1,96 @@
-var u=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var l=(o,i,r,s)=>{for(var e=s>1?void 0:s?f(i,r):i,t=o.length-1,n;t>=0;t--)(n=o[t])&&(e=(s?n(i,r,e):n(e))||e);return s&&e&&u(i,r,e),e},c=(o,i)=>(r,s)=>i(r,s,o);import{decodeBase64 as m}from"../../../base/common/buffer.js";import{revive as v}from"../../../base/common/marshalling.js";import{IBulkEditService as E,ResourceFileEdit as I,ResourceTextEdit as k}from"../../../editor/browser/services/bulkEditService.js";import"../../../editor/common/languages.js";import{ILogService as S}from"../../../platform/log/common/log.js";import{IUriIdentityService as W}from"../../../platform/uriIdentity/common/uriIdentity.js";import{MainContext as C}from"../common/extHost.protocol.js";import{ResourceNotebookCellEdit as y}from"../../contrib/bulkEdit/browser/bulkCellEdits.js";import{CellEditType as x}from"../../contrib/notebook/common/notebookCommon.js";import{extHostNamedCustomer as D}from"../../services/extensions/common/extHostCustomers.js";import"../../services/extensions/common/proxyIdentifier.js";let a=class{constructor(i,r,s,e){this._bulkEditService=r;this._logService=s;this._uriIdentService=e}dispose(){}$tryApplyWorkspaceEdit(i,r,s){const e=b(i.value,this._uriIdentService);return this._bulkEditService.apply(e,{undoRedoGroupId:r,respectAutoSaveConfig:s}).then(t=>t.isApplied,t=>(this._logService.warn(`IGNORING workspace edit: ${t}`),!1))}};a=l([D(C.MainThreadBulkEdits),c(1,E),c(2,S),c(3,W)],a);function b(o,i,r){if(!o||!o.edits)return o;const s=v(o);for(const e of s.edits){if(k.is(e)&&(e.resource=i.asCanonicalUri(e.resource)),I.is(e)){if(e.options){const t=e.options?.contents;if(t)if(t.type==="base64")e.options.contents=Promise.resolve(m(t.value));else if(r)e.options.contents=r(t.id);else throw new Error("Could not revive data transfer file")}e.newResource=e.newResource&&i.asCanonicalUri(e.newResource),e.oldResource=e.oldResource&&i.asCanonicalUri(e.oldResource)}if(y.is(e)){e.resource=i.asCanonicalUri(e.resource);const t=e.cellEdit;t.editType===x.Replace&&(e.cellEdit={...t,cells:t.cells.map(n=>({...n,outputs:n.outputs.map(d=>({...d,outputs:d.items.map(p=>({mime:p.mime,data:p.valueBytes}))}))}))})}}return o}export{a as MainThreadBulkEdits,b as reviveWorkspaceEditDto};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { decodeBase64 } from '../../../base/common/buffer.js';
+import { revive } from '../../../base/common/marshalling.js';
+import { IBulkEditService, ResourceFileEdit, ResourceTextEdit } from '../../../editor/browser/services/bulkEditService.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { IUriIdentityService } from '../../../platform/uriIdentity/common/uriIdentity.js';
+import { MainContext } from '../common/extHost.protocol.js';
+import { ResourceNotebookCellEdit } from '../../contrib/bulkEdit/browser/bulkCellEdits.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+let MainThreadBulkEdits = class MainThreadBulkEdits {
+    constructor(_extHostContext, _bulkEditService, _logService, _uriIdentService) {
+        this._bulkEditService = _bulkEditService;
+        this._logService = _logService;
+        this._uriIdentService = _uriIdentService;
+    }
+    dispose() { }
+    $tryApplyWorkspaceEdit(dto, undoRedoGroupId, isRefactoring) {
+        const edits = reviveWorkspaceEditDto(dto.value, this._uriIdentService);
+        return this._bulkEditService.apply(edits, { undoRedoGroupId, respectAutoSaveConfig: isRefactoring }).then((res) => res.isApplied, err => {
+            this._logService.warn(`IGNORING workspace edit: ${err}`);
+            return false;
+        });
+    }
+};
+MainThreadBulkEdits = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadBulkEdits),
+    __param(1, IBulkEditService),
+    __param(2, ILogService),
+    __param(3, IUriIdentityService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], MainThreadBulkEdits);
+export { MainThreadBulkEdits };
+export function reviveWorkspaceEditDto(data, uriIdentityService, resolveDataTransferFile) {
+    if (!data || !data.edits) {
+        return data;
+    }
+    const result = revive(data);
+    for (const edit of result.edits) {
+        if (ResourceTextEdit.is(edit)) {
+            edit.resource = uriIdentityService.asCanonicalUri(edit.resource);
+        }
+        if (ResourceFileEdit.is(edit)) {
+            if (edit.options) {
+                const inContents = edit.options?.contents;
+                if (inContents) {
+                    if (inContents.type === 'base64') {
+                        edit.options.contents = Promise.resolve(decodeBase64(inContents.value));
+                    }
+                    else {
+                        if (resolveDataTransferFile) {
+                            edit.options.contents = resolveDataTransferFile(inContents.id);
+                        }
+                        else {
+                            throw new Error('Could not revive data transfer file');
+                        }
+                    }
+                }
+            }
+            edit.newResource = edit.newResource && uriIdentityService.asCanonicalUri(edit.newResource);
+            edit.oldResource = edit.oldResource && uriIdentityService.asCanonicalUri(edit.oldResource);
+        }
+        if (ResourceNotebookCellEdit.is(edit)) {
+            edit.resource = uriIdentityService.asCanonicalUri(edit.resource);
+            const cellEdit = edit.cellEdit;
+            if (cellEdit.editType === 1) {
+                edit.cellEdit = {
+                    ...cellEdit,
+                    cells: cellEdit.cells.map(cell => ({
+                        ...cell,
+                        outputs: cell.outputs.map(output => ({
+                            ...output,
+                            outputs: output.items.map(item => {
+                                return {
+                                    mime: item.mime,
+                                    data: item.valueBytes
+                                };
+                            })
+                        }))
+                    }))
+                };
+            }
+        }
+    }
+    return data;
+}

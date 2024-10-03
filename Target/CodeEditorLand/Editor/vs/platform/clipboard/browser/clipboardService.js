@@ -1,1 +1,208 @@
-var b=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var u=(d,o,e,r)=>{for(var t=r>1?void 0:r?f(o,e):o,i=d.length-1,s;i>=0;i--)(s=d[i])&&(t=(r?s(o,e,t):s(t))||t);return r&&t&&b(o,e,t),t},p=(d,o)=>(e,r)=>o(e,r,d);import{isSafari as g,isWebkitWebView as y}from"../../../base/browser/browser.js";import{$ as v,addDisposableListener as l,getActiveDocument as w,getActiveWindow as a,isHTMLElement as T,onDidRegisterWindow as S}from"../../../base/browser/dom.js";import{mainWindow as P}from"../../../base/browser/window.js";import{DeferredPromise as R}from"../../../base/common/async.js";import{Event as h}from"../../../base/common/event.js";import{hash as x}from"../../../base/common/hash.js";import{Disposable as W}from"../../../base/common/lifecycle.js";import{URI as I}from"../../../base/common/uri.js";import"../common/clipboardService.js";import{ILayoutService as E}from"../../layout/browser/layoutService.js";import{ILogService as A}from"../../log/common/log.js";const c="application/vnd.code.resources";let n=class extends W{constructor(e,r){super();this.layoutService=e;this.logService=r;(g||y)&&this.installWebKitWriteTextWorkaround(),this._register(h.runAndSubscribe(S,({window:t,disposables:i})=>{i.add(l(t.document,"copy",()=>this.clearResourcesState()))},{window:P,disposables:this._store}))}async readImage(){try{const r=(await navigator.clipboard.read())[0],i=["image/png","image/jpeg","image/gif","image/tiff","image/bmp"].find(s=>r.types.includes(s));if(i){const m=await(await r.getType(i)).arrayBuffer();return new Uint8Array(m)}}catch{}return new Uint8Array(0)}webKitPendingClipboardWritePromise;installWebKitWriteTextWorkaround(){const e=()=>{const r=new R;this.webKitPendingClipboardWritePromise&&!this.webKitPendingClipboardWritePromise.isSettled&&this.webKitPendingClipboardWritePromise.cancel(),this.webKitPendingClipboardWritePromise=r,a().navigator.clipboard.write([new ClipboardItem({"text/plain":r.p})]).catch(async t=>{(!(t instanceof Error)||t.name!=="NotAllowedError"||!r.isRejected)&&this.logService.error(t)})};this._register(h.runAndSubscribe(this.layoutService.onDidAddContainer,({container:r,disposables:t})=>{t.add(l(r,"click",e)),t.add(l(r,"keydown",e))},{container:this.layoutService.mainContainer,disposables:this._store}))}mapTextToType=new Map;async writeText(e,r){if(this.clearResourcesState(),r){this.mapTextToType.set(r,e);return}if(this.webKitPendingClipboardWritePromise)return this.webKitPendingClipboardWritePromise.complete(e);try{return await a().navigator.clipboard.writeText(e)}catch{}this.fallbackWriteText(e)}fallbackWriteText(e){const r=w(),t=r.activeElement,i=r.body.appendChild(v("textarea",{"aria-hidden":!0}));i.style.height="1px",i.style.width="1px",i.style.position="absolute",i.value=e,i.focus(),i.select(),r.execCommand("copy"),T(t)&&t.focus(),i.remove()}async readText(e){if(e)return this.mapTextToType.get(e)||"";try{return await a().navigator.clipboard.readText()}catch{}return""}findText="";async readFindText(){return this.findText}async writeFindText(e){this.findText=e}resources=[];resourcesStateHash=void 0;static MAX_RESOURCE_STATE_SOURCE_LENGTH=1e3;async writeResources(e){try{await a().navigator.clipboard.write([new ClipboardItem({[`web ${c}`]:new Blob([JSON.stringify(e.map(r=>r.toJSON()))],{type:c})})])}catch{}e.length===0?this.clearResourcesState():(this.resources=e,this.resourcesStateHash=await this.computeResourcesStateHash())}async readResources(){try{const r=await a().navigator.clipboard.read();for(const t of r)if(t.types.includes(`web ${c}`)){const i=await t.getType(`web ${c}`);return JSON.parse(await i.text()).map(m=>I.from(m))}}catch{}const e=await this.computeResourcesStateHash();return this.resourcesStateHash!==e&&this.clearResourcesState(),this.resources}async computeResourcesStateHash(){if(this.resources.length===0)return;const e=await this.readText();return x(e.substring(0,n.MAX_RESOURCE_STATE_SOURCE_LENGTH))}async hasResources(){try{const e=await a().navigator.clipboard.read();for(const r of e)if(r.types.includes(`web ${c}`))return!0}catch{}return this.resources.length>0}clearInternalState(){this.clearResourcesState()}clearResourcesState(){this.resources=[],this.resourcesStateHash=void 0}};n=u([p(0,E),p(1,A)],n);export{n as BrowserClipboardService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var BrowserClipboardService_1;
+import { isSafari, isWebkitWebView } from '../../../base/browser/browser.js';
+import { $, addDisposableListener, getActiveDocument, getActiveWindow, isHTMLElement, onDidRegisterWindow } from '../../../base/browser/dom.js';
+import { mainWindow } from '../../../base/browser/window.js';
+import { DeferredPromise } from '../../../base/common/async.js';
+import { Event } from '../../../base/common/event.js';
+import { hash } from '../../../base/common/hash.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { URI } from '../../../base/common/uri.js';
+import { ILayoutService } from '../../layout/browser/layoutService.js';
+import { ILogService } from '../../log/common/log.js';
+const vscodeResourcesMime = 'application/vnd.code.resources';
+let BrowserClipboardService = class BrowserClipboardService extends Disposable {
+    static { BrowserClipboardService_1 = this; }
+    constructor(layoutService, logService) {
+        super();
+        this.layoutService = layoutService;
+        this.logService = logService;
+        this.mapTextToType = new Map();
+        this.findText = '';
+        this.resources = [];
+        this.resourcesStateHash = undefined;
+        if (isSafari || isWebkitWebView) {
+            this.installWebKitWriteTextWorkaround();
+        }
+        this._register(Event.runAndSubscribe(onDidRegisterWindow, ({ window, disposables }) => {
+            disposables.add(addDisposableListener(window.document, 'copy', () => this.clearResourcesState()));
+        }, { window: mainWindow, disposables: this._store }));
+    }
+    async readImage() {
+        try {
+            const clipboardItems = await navigator.clipboard.read();
+            const clipboardItem = clipboardItems[0];
+            const supportedImageTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/tiff', 'image/bmp'];
+            const mimeType = supportedImageTypes.find(type => clipboardItem.types.includes(type));
+            if (mimeType) {
+                const blob = await clipboardItem.getType(mimeType);
+                const buffer = await blob.arrayBuffer();
+                return new Uint8Array(buffer);
+            }
+            else {
+                console.error('No supported image type found in the clipboard');
+            }
+        }
+        catch (error) {
+            console.error('Error reading image from clipboard:', error);
+        }
+        return new Uint8Array(0);
+    }
+    installWebKitWriteTextWorkaround() {
+        const handler = () => {
+            const currentWritePromise = new DeferredPromise();
+            if (this.webKitPendingClipboardWritePromise && !this.webKitPendingClipboardWritePromise.isSettled) {
+                this.webKitPendingClipboardWritePromise.cancel();
+            }
+            this.webKitPendingClipboardWritePromise = currentWritePromise;
+            getActiveWindow().navigator.clipboard.write([new ClipboardItem({
+                    'text/plain': currentWritePromise.p,
+                })]).catch(async (err) => {
+                if (!(err instanceof Error) || err.name !== 'NotAllowedError' || !currentWritePromise.isRejected) {
+                    this.logService.error(err);
+                }
+            });
+        };
+        this._register(Event.runAndSubscribe(this.layoutService.onDidAddContainer, ({ container, disposables }) => {
+            disposables.add(addDisposableListener(container, 'click', handler));
+            disposables.add(addDisposableListener(container, 'keydown', handler));
+        }, { container: this.layoutService.mainContainer, disposables: this._store }));
+    }
+    async writeText(text, type) {
+        this.clearResourcesState();
+        if (type) {
+            this.mapTextToType.set(type, text);
+            return;
+        }
+        if (this.webKitPendingClipboardWritePromise) {
+            return this.webKitPendingClipboardWritePromise.complete(text);
+        }
+        try {
+            return await getActiveWindow().navigator.clipboard.writeText(text);
+        }
+        catch (error) {
+            console.error(error);
+        }
+        this.fallbackWriteText(text);
+    }
+    fallbackWriteText(text) {
+        const activeDocument = getActiveDocument();
+        const activeElement = activeDocument.activeElement;
+        const textArea = activeDocument.body.appendChild($('textarea', { 'aria-hidden': true }));
+        textArea.style.height = '1px';
+        textArea.style.width = '1px';
+        textArea.style.position = 'absolute';
+        textArea.value = text;
+        textArea.focus();
+        textArea.select();
+        activeDocument.execCommand('copy');
+        if (isHTMLElement(activeElement)) {
+            activeElement.focus();
+        }
+        textArea.remove();
+    }
+    async readText(type) {
+        if (type) {
+            return this.mapTextToType.get(type) || '';
+        }
+        try {
+            return await getActiveWindow().navigator.clipboard.readText();
+        }
+        catch (error) {
+            console.error(error);
+        }
+        return '';
+    }
+    async readFindText() {
+        return this.findText;
+    }
+    async writeFindText(text) {
+        this.findText = text;
+    }
+    static { this.MAX_RESOURCE_STATE_SOURCE_LENGTH = 1000; }
+    async writeResources(resources) {
+        try {
+            await getActiveWindow().navigator.clipboard.write([
+                new ClipboardItem({
+                    [`web ${vscodeResourcesMime}`]: new Blob([
+                        JSON.stringify(resources.map(x => x.toJSON()))
+                    ], {
+                        type: vscodeResourcesMime
+                    })
+                })
+            ]);
+        }
+        catch (error) {
+        }
+        if (resources.length === 0) {
+            this.clearResourcesState();
+        }
+        else {
+            this.resources = resources;
+            this.resourcesStateHash = await this.computeResourcesStateHash();
+        }
+    }
+    async readResources() {
+        try {
+            const items = await getActiveWindow().navigator.clipboard.read();
+            for (const item of items) {
+                if (item.types.includes(`web ${vscodeResourcesMime}`)) {
+                    const blob = await item.getType(`web ${vscodeResourcesMime}`);
+                    const resources = JSON.parse(await blob.text()).map(x => URI.from(x));
+                    return resources;
+                }
+            }
+        }
+        catch (error) {
+        }
+        const resourcesStateHash = await this.computeResourcesStateHash();
+        if (this.resourcesStateHash !== resourcesStateHash) {
+            this.clearResourcesState();
+        }
+        return this.resources;
+    }
+    async computeResourcesStateHash() {
+        if (this.resources.length === 0) {
+            return undefined;
+        }
+        const clipboardText = await this.readText();
+        return hash(clipboardText.substring(0, BrowserClipboardService_1.MAX_RESOURCE_STATE_SOURCE_LENGTH));
+    }
+    async hasResources() {
+        try {
+            const items = await getActiveWindow().navigator.clipboard.read();
+            for (const item of items) {
+                if (item.types.includes(`web ${vscodeResourcesMime}`)) {
+                    return true;
+                }
+            }
+        }
+        catch (error) {
+        }
+        return this.resources.length > 0;
+    }
+    clearInternalState() {
+        this.clearResourcesState();
+    }
+    clearResourcesState() {
+        this.resources = [];
+        this.resourcesStateHash = undefined;
+    }
+};
+BrowserClipboardService = BrowserClipboardService_1 = __decorate([
+    __param(0, ILayoutService),
+    __param(1, ILogService),
+    __metadata("design:paramtypes", [Object, Object])
+], BrowserClipboardService);
+export { BrowserClipboardService };

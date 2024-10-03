@@ -1,1 +1,361 @@
-import{isFirefox as p}from"../../browser.js";import{DataTransfers as b}from"../../dnd.js";import{addDisposableListener as n,EventHelper as a,EventType as l}from"../../dom.js";import{EventType as m,Gesture as f}from"../../touch.js";import"./actionbar.js";import"../contextview/contextview.js";import{getDefaultHoverDelegate as v}from"../hover/hoverDelegateFactory.js";import"../hover/hoverDelegate.js";import{SelectBox as g}from"../selectBox/selectBox.js";import"../toggle/toggle.js";import{Action as I,ActionRunner as x,Separator as A}from"../../../common/actions.js";import{Disposable as L}from"../../../common/lifecycle.js";import*as C from"../../../common/platform.js";import*as c from"../../../common/types.js";import"./actionbar.css";import*as T from"../../../../nls.js";import{getBaseLayerHoverDelegate as _}from"../hover/hoverDelegate2.js";class h extends L{constructor(e,i,o={}){super();this.options=o;this._context=e||this,this._action=i,i instanceof I&&this._register(i.onDidChange(s=>{this.element&&this.handleActionChangeEvent(s)}))}element;_context;_action;customHover;get action(){return this._action}_actionRunner;handleActionChangeEvent(e){e.enabled!==void 0&&this.updateEnabled(),e.checked!==void 0&&this.updateChecked(),e.class!==void 0&&this.updateClass(),e.label!==void 0&&(this.updateLabel(),this.updateTooltip()),e.tooltip!==void 0&&this.updateTooltip()}get actionRunner(){return this._actionRunner||(this._actionRunner=this._register(new x)),this._actionRunner}set actionRunner(e){this._actionRunner=e}isEnabled(){return this._action.enabled}setActionContext(e){this._context=e}render(e){const i=this.element=e;this._register(f.addTarget(e));const o=this.options&&this.options.draggable;o&&(e.draggable=!0,p&&this._register(n(e,l.DRAG_START,s=>s.dataTransfer?.setData(b.TEXT,this._action.label)))),this._register(n(i,m.Tap,s=>this.onClick(s,!0))),this._register(n(i,l.MOUSE_DOWN,s=>{o||a.stop(s,!0),this._action.enabled&&s.button===0&&i.classList.add("active")})),C.isMacintosh&&this._register(n(i,l.CONTEXT_MENU,s=>{s.button===0&&s.ctrlKey===!0&&this.onClick(s)})),this._register(n(i,l.CLICK,s=>{a.stop(s,!0),this.options&&this.options.isMenu||this.onClick(s)})),this._register(n(i,l.DBLCLICK,s=>{a.stop(s,!0)})),[l.MOUSE_UP,l.MOUSE_OUT].forEach(s=>{this._register(n(i,s,r=>{a.stop(r),i.classList.remove("active")}))})}onClick(e,i=!1){a.stop(e,!0);const o=c.isUndefinedOrNull(this._context)?this.options?.useEventAsContext?e:{preserveFocus:i}:this._context;this.actionRunner.run(this._action,o)}focus(){this.element&&(this.element.tabIndex=0,this.element.focus(),this.element.classList.add("focused"))}isFocused(){return!!this.element?.classList.contains("focused")}blur(){this.element&&(this.element.blur(),this.element.tabIndex=-1,this.element.classList.remove("focused"))}setFocusable(e){this.element&&(this.element.tabIndex=e?0:-1)}get trapsArrowNavigation(){return!1}updateEnabled(){}updateLabel(){}getClass(){return this.action.class}getTooltip(){return this.action.tooltip}updateTooltip(){if(!this.element)return;const e=this.getTooltip()??"";if(this.updateAriaLabel(),this.options.hoverDelegate?.showNativeHover)this.element.title=e;else if(!this.customHover&&e!==""){const i=this.options.hoverDelegate??v("element");this.customHover=this._store.add(_().setupManagedHover(i,this.element,e))}else this.customHover&&this.customHover.update(e)}updateAriaLabel(){if(this.element){const e=this.getTooltip()??"";this.element.setAttribute("aria-label",e)}}updateClass(){}updateChecked(){}dispose(){this.element&&(this.element.remove(),this.element=void 0),this._context=void 0,super.dispose()}}class Y extends h{label;options;cssClass;constructor(t,e,i){super(t,e,i),this.options=i,this.options.icon=i.icon!==void 0?i.icon:!1,this.options.label=i.label!==void 0?i.label:!0,this.cssClass=""}render(t){super.render(t),c.assertType(this.element);const e=document.createElement("a");if(e.classList.add("action-label"),e.setAttribute("role",this.getDefaultAriaRole()),this.label=e,this.element.appendChild(e),this.options.label&&this.options.keybinding){const i=document.createElement("span");i.classList.add("keybinding"),i.textContent=this.options.keybinding,this.element.appendChild(i)}this.updateClass(),this.updateLabel(),this.updateTooltip(),this.updateEnabled(),this.updateChecked()}getDefaultAriaRole(){return this._action.id===A.ID?"presentation":this.options.isMenu?"menuitem":this.options.isTabList?"tab":"button"}focus(){this.label&&(this.label.tabIndex=0,this.label.focus())}isFocused(){return!!this.label&&this.label?.tabIndex===0}blur(){this.label&&(this.label.tabIndex=-1)}setFocusable(t){this.label&&(this.label.tabIndex=t?0:-1)}updateLabel(){this.options.label&&this.label&&(this.label.textContent=this.action.label)}getTooltip(){let t=null;return this.action.tooltip?t=this.action.tooltip:!this.options.label&&this.action.label&&this.options.icon&&(t=this.action.label,this.options.keybinding&&(t=T.localize({key:"titleLabel",comment:["action title","action keybinding"]},"{0} ({1})",t,this.options.keybinding))),t??void 0}updateClass(){this.cssClass&&this.label&&this.label.classList.remove(...this.cssClass.split(" ")),this.options.icon?(this.cssClass=this.getClass(),this.label&&(this.label.classList.add("codicon"),this.cssClass&&this.label.classList.add(...this.cssClass.split(" "))),this.updateEnabled()):this.label?.classList.remove("codicon")}updateEnabled(){this.action.enabled?(this.label&&(this.label.removeAttribute("aria-disabled"),this.label.classList.remove("disabled")),this.element?.classList.remove("disabled")):(this.label&&(this.label.setAttribute("aria-disabled","true"),this.label.classList.add("disabled")),this.element?.classList.add("disabled"))}updateAriaLabel(){if(this.label){const t=this.getTooltip()??"";this.label.setAttribute("aria-label",t)}}updateChecked(){this.label&&(this.action.checked!==void 0?(this.label.classList.toggle("checked",this.action.checked),this.options.isTabList?this.label.setAttribute("aria-selected",this.action.checked?"true":"false"):(this.label.setAttribute("aria-checked",this.action.checked?"true":"false"),this.label.setAttribute("role","checkbox"))):(this.label.classList.remove("checked"),this.label.removeAttribute(this.options.isTabList?"aria-selected":"aria-checked"),this.label.setAttribute("role",this.getDefaultAriaRole())))}}class Z extends h{selectBox;constructor(t,e,i,o,s,r,u){super(t,e),this.selectBox=new g(i,o,s,r,u),this.selectBox.setFocusable(!1),this._register(this.selectBox),this.registerListeners()}setOptions(t,e){this.selectBox.setOptions(t,e)}select(t){this.selectBox.select(t)}registerListeners(){this._register(this.selectBox.onDidSelect(t=>this.runAction(t.selected,t.index)))}runAction(t,e){this.actionRunner.run(this._action,this.getActionContext(t,e))}getActionContext(t,e){return t}setFocusable(t){this.selectBox.setFocusable(t)}focus(){this.selectBox?.focus()}blur(){this.selectBox?.blur()}render(t){this.selectBox.render(t)}}export{Y as ActionViewItem,h as BaseActionViewItem,Z as SelectActionViewItem};
+import { isFirefox } from '../../browser.js';
+import { DataTransfers } from '../../dnd.js';
+import { addDisposableListener, EventHelper, EventType } from '../../dom.js';
+import { EventType as TouchEventType, Gesture } from '../../touch.js';
+import { getDefaultHoverDelegate } from '../hover/hoverDelegateFactory.js';
+import { SelectBox } from '../selectBox/selectBox.js';
+import { Action, ActionRunner, Separator } from '../../../common/actions.js';
+import { Disposable } from '../../../common/lifecycle.js';
+import * as platform from '../../../common/platform.js';
+import * as types from '../../../common/types.js';
+import './actionbar.css';
+import * as nls from '../../../../nls.js';
+import { getBaseLayerHoverDelegate } from '../hover/hoverDelegate2.js';
+export class BaseActionViewItem extends Disposable {
+    get action() {
+        return this._action;
+    }
+    constructor(context, action, options = {}) {
+        super();
+        this.options = options;
+        this._context = context || this;
+        this._action = action;
+        if (action instanceof Action) {
+            this._register(action.onDidChange(event => {
+                if (!this.element) {
+                    return;
+                }
+                this.handleActionChangeEvent(event);
+            }));
+        }
+    }
+    handleActionChangeEvent(event) {
+        if (event.enabled !== undefined) {
+            this.updateEnabled();
+        }
+        if (event.checked !== undefined) {
+            this.updateChecked();
+        }
+        if (event.class !== undefined) {
+            this.updateClass();
+        }
+        if (event.label !== undefined) {
+            this.updateLabel();
+            this.updateTooltip();
+        }
+        if (event.tooltip !== undefined) {
+            this.updateTooltip();
+        }
+    }
+    get actionRunner() {
+        if (!this._actionRunner) {
+            this._actionRunner = this._register(new ActionRunner());
+        }
+        return this._actionRunner;
+    }
+    set actionRunner(actionRunner) {
+        this._actionRunner = actionRunner;
+    }
+    isEnabled() {
+        return this._action.enabled;
+    }
+    setActionContext(newContext) {
+        this._context = newContext;
+    }
+    render(container) {
+        const element = this.element = container;
+        this._register(Gesture.addTarget(container));
+        const enableDragging = this.options && this.options.draggable;
+        if (enableDragging) {
+            container.draggable = true;
+            if (isFirefox) {
+                this._register(addDisposableListener(container, EventType.DRAG_START, e => e.dataTransfer?.setData(DataTransfers.TEXT, this._action.label)));
+            }
+        }
+        this._register(addDisposableListener(element, TouchEventType.Tap, e => this.onClick(e, true)));
+        this._register(addDisposableListener(element, EventType.MOUSE_DOWN, e => {
+            if (!enableDragging) {
+                EventHelper.stop(e, true);
+            }
+            if (this._action.enabled && e.button === 0) {
+                element.classList.add('active');
+            }
+        }));
+        if (platform.isMacintosh) {
+            this._register(addDisposableListener(element, EventType.CONTEXT_MENU, e => {
+                if (e.button === 0 && e.ctrlKey === true) {
+                    this.onClick(e);
+                }
+            }));
+        }
+        this._register(addDisposableListener(element, EventType.CLICK, e => {
+            EventHelper.stop(e, true);
+            if (!(this.options && this.options.isMenu)) {
+                this.onClick(e);
+            }
+        }));
+        this._register(addDisposableListener(element, EventType.DBLCLICK, e => {
+            EventHelper.stop(e, true);
+        }));
+        [EventType.MOUSE_UP, EventType.MOUSE_OUT].forEach(event => {
+            this._register(addDisposableListener(element, event, e => {
+                EventHelper.stop(e);
+                element.classList.remove('active');
+            }));
+        });
+    }
+    onClick(event, preserveFocus = false) {
+        EventHelper.stop(event, true);
+        const context = types.isUndefinedOrNull(this._context) ? this.options?.useEventAsContext ? event : { preserveFocus } : this._context;
+        this.actionRunner.run(this._action, context);
+    }
+    focus() {
+        if (this.element) {
+            this.element.tabIndex = 0;
+            this.element.focus();
+            this.element.classList.add('focused');
+        }
+    }
+    isFocused() {
+        return !!this.element?.classList.contains('focused');
+    }
+    blur() {
+        if (this.element) {
+            this.element.blur();
+            this.element.tabIndex = -1;
+            this.element.classList.remove('focused');
+        }
+    }
+    setFocusable(focusable) {
+        if (this.element) {
+            this.element.tabIndex = focusable ? 0 : -1;
+        }
+    }
+    get trapsArrowNavigation() {
+        return false;
+    }
+    updateEnabled() {
+    }
+    updateLabel() {
+    }
+    getClass() {
+        return this.action.class;
+    }
+    getTooltip() {
+        return this.action.tooltip;
+    }
+    updateTooltip() {
+        if (!this.element) {
+            return;
+        }
+        const title = this.getTooltip() ?? '';
+        this.updateAriaLabel();
+        if (this.options.hoverDelegate?.showNativeHover) {
+            this.element.title = title;
+        }
+        else {
+            if (!this.customHover && title !== '') {
+                const hoverDelegate = this.options.hoverDelegate ?? getDefaultHoverDelegate('element');
+                this.customHover = this._store.add(getBaseLayerHoverDelegate().setupManagedHover(hoverDelegate, this.element, title));
+            }
+            else if (this.customHover) {
+                this.customHover.update(title);
+            }
+        }
+    }
+    updateAriaLabel() {
+        if (this.element) {
+            const title = this.getTooltip() ?? '';
+            this.element.setAttribute('aria-label', title);
+        }
+    }
+    updateClass() {
+    }
+    updateChecked() {
+    }
+    dispose() {
+        if (this.element) {
+            this.element.remove();
+            this.element = undefined;
+        }
+        this._context = undefined;
+        super.dispose();
+    }
+}
+export class ActionViewItem extends BaseActionViewItem {
+    constructor(context, action, options) {
+        super(context, action, options);
+        this.options = options;
+        this.options.icon = options.icon !== undefined ? options.icon : false;
+        this.options.label = options.label !== undefined ? options.label : true;
+        this.cssClass = '';
+    }
+    render(container) {
+        super.render(container);
+        types.assertType(this.element);
+        const label = document.createElement('a');
+        label.classList.add('action-label');
+        label.setAttribute('role', this.getDefaultAriaRole());
+        this.label = label;
+        this.element.appendChild(label);
+        if (this.options.label && this.options.keybinding) {
+            const kbLabel = document.createElement('span');
+            kbLabel.classList.add('keybinding');
+            kbLabel.textContent = this.options.keybinding;
+            this.element.appendChild(kbLabel);
+        }
+        this.updateClass();
+        this.updateLabel();
+        this.updateTooltip();
+        this.updateEnabled();
+        this.updateChecked();
+    }
+    getDefaultAriaRole() {
+        if (this._action.id === Separator.ID) {
+            return 'presentation';
+        }
+        else {
+            if (this.options.isMenu) {
+                return 'menuitem';
+            }
+            else if (this.options.isTabList) {
+                return 'tab';
+            }
+            else {
+                return 'button';
+            }
+        }
+    }
+    focus() {
+        if (this.label) {
+            this.label.tabIndex = 0;
+            this.label.focus();
+        }
+    }
+    isFocused() {
+        return !!this.label && this.label?.tabIndex === 0;
+    }
+    blur() {
+        if (this.label) {
+            this.label.tabIndex = -1;
+        }
+    }
+    setFocusable(focusable) {
+        if (this.label) {
+            this.label.tabIndex = focusable ? 0 : -1;
+        }
+    }
+    updateLabel() {
+        if (this.options.label && this.label) {
+            this.label.textContent = this.action.label;
+        }
+    }
+    getTooltip() {
+        let title = null;
+        if (this.action.tooltip) {
+            title = this.action.tooltip;
+        }
+        else if (!this.options.label && this.action.label && this.options.icon) {
+            title = this.action.label;
+            if (this.options.keybinding) {
+                title = nls.localize({ key: 'titleLabel', comment: ['action title', 'action keybinding'] }, "{0} ({1})", title, this.options.keybinding);
+            }
+        }
+        return title ?? undefined;
+    }
+    updateClass() {
+        if (this.cssClass && this.label) {
+            this.label.classList.remove(...this.cssClass.split(' '));
+        }
+        if (this.options.icon) {
+            this.cssClass = this.getClass();
+            if (this.label) {
+                this.label.classList.add('codicon');
+                if (this.cssClass) {
+                    this.label.classList.add(...this.cssClass.split(' '));
+                }
+            }
+            this.updateEnabled();
+        }
+        else {
+            this.label?.classList.remove('codicon');
+        }
+    }
+    updateEnabled() {
+        if (this.action.enabled) {
+            if (this.label) {
+                this.label.removeAttribute('aria-disabled');
+                this.label.classList.remove('disabled');
+            }
+            this.element?.classList.remove('disabled');
+        }
+        else {
+            if (this.label) {
+                this.label.setAttribute('aria-disabled', 'true');
+                this.label.classList.add('disabled');
+            }
+            this.element?.classList.add('disabled');
+        }
+    }
+    updateAriaLabel() {
+        if (this.label) {
+            const title = this.getTooltip() ?? '';
+            this.label.setAttribute('aria-label', title);
+        }
+    }
+    updateChecked() {
+        if (this.label) {
+            if (this.action.checked !== undefined) {
+                this.label.classList.toggle('checked', this.action.checked);
+                if (this.options.isTabList) {
+                    this.label.setAttribute('aria-selected', this.action.checked ? 'true' : 'false');
+                }
+                else {
+                    this.label.setAttribute('aria-checked', this.action.checked ? 'true' : 'false');
+                    this.label.setAttribute('role', 'checkbox');
+                }
+            }
+            else {
+                this.label.classList.remove('checked');
+                this.label.removeAttribute(this.options.isTabList ? 'aria-selected' : 'aria-checked');
+                this.label.setAttribute('role', this.getDefaultAriaRole());
+            }
+        }
+    }
+}
+export class SelectActionViewItem extends BaseActionViewItem {
+    constructor(ctx, action, options, selected, contextViewProvider, styles, selectBoxOptions) {
+        super(ctx, action);
+        this.selectBox = new SelectBox(options, selected, contextViewProvider, styles, selectBoxOptions);
+        this.selectBox.setFocusable(false);
+        this._register(this.selectBox);
+        this.registerListeners();
+    }
+    setOptions(options, selected) {
+        this.selectBox.setOptions(options, selected);
+    }
+    select(index) {
+        this.selectBox.select(index);
+    }
+    registerListeners() {
+        this._register(this.selectBox.onDidSelect(e => this.runAction(e.selected, e.index)));
+    }
+    runAction(option, index) {
+        this.actionRunner.run(this._action, this.getActionContext(option, index));
+    }
+    getActionContext(option, index) {
+        return option;
+    }
+    setFocusable(focusable) {
+        this.selectBox.setFocusable(focusable);
+    }
+    focus() {
+        this.selectBox?.focus();
+    }
+    blur() {
+        this.selectBox?.blur();
+    }
+    render(container) {
+        this.selectBox.render(container);
+    }
+}

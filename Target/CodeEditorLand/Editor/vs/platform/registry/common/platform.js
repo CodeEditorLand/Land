@@ -1,1 +1,20 @@
-import*as s from"../../../base/common/assert.js";import*as a from"../../../base/common/types.js";class e{data=new Map;add(t,i){s.ok(a.isString(t)),s.ok(a.isObject(i)),s.ok(!this.data.has(t),"There is already an extension with this id"),this.data.set(t,i)}knows(t){return this.data.has(t)}as(t){return this.data.get(t)||null}}const n=new e;export{n as Registry};
+import * as Assert from '../../../base/common/assert.js';
+import * as Types from '../../../base/common/types.js';
+class RegistryImpl {
+    constructor() {
+        this.data = new Map();
+    }
+    add(id, data) {
+        Assert.ok(Types.isString(id));
+        Assert.ok(Types.isObject(data));
+        Assert.ok(!this.data.has(id), 'There is already an extension with this id');
+        this.data.set(id, data);
+    }
+    knows(id) {
+        return this.data.has(id);
+    }
+    as(id) {
+        return this.data.get(id) || null;
+    }
+}
+export const Registry = new RegistryImpl();

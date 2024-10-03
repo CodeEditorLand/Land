@@ -1,1 +1,64 @@
-import"./capabilities/capabilities.js";import"./terminalProcess.js";var s=(t=>(t[t.MaxRecorderDataSize=10485760]="MaxRecorderDataSize",t))(s||{});class c{_entries;_totalDataLength=0;constructor(t,a){this._entries=[{cols:t,rows:a,data:[]}]}handleResize(t,a){if(this._entries.length>0&&this._entries[this._entries.length-1].data.length===0&&this._entries.pop(),this._entries.length>0){const e=this._entries[this._entries.length-1];if(e.cols===t&&e.rows===a)return;if(e.cols===0&&e.rows===0){e.cols=t,e.rows=a;return}}this._entries.push({cols:t,rows:a,data:[]})}handleData(t){for(this._entries[this._entries.length-1].data.push(t),this._totalDataLength+=t.length;this._totalDataLength>10485760;){const e=this._entries[0],n=this._totalDataLength-10485760;n>=e.data[0].length?(this._totalDataLength-=e.data[0].length,e.data.shift(),e.data.length===0&&this._entries.shift()):(e.data[0]=e.data[0].substr(n),this._totalDataLength-=n)}}generateReplayEventSync(){return this._entries.forEach(t=>{t.data.length>0&&(t.data=[t.data.join("")])}),{events:this._entries.map(t=>({cols:t.cols,rows:t.rows,data:t.data[0]??""})),commands:{isWindowsPty:!1,commands:[],promptInputModel:void 0}}}async generateReplayEvent(){return this.generateReplayEventSync()}}export{c as TerminalRecorder};
+export class TerminalRecorder {
+    constructor(cols, rows) {
+        this._totalDataLength = 0;
+        this._entries = [{ cols, rows, data: [] }];
+    }
+    handleResize(cols, rows) {
+        if (this._entries.length > 0) {
+            const lastEntry = this._entries[this._entries.length - 1];
+            if (lastEntry.data.length === 0) {
+                this._entries.pop();
+            }
+        }
+        if (this._entries.length > 0) {
+            const lastEntry = this._entries[this._entries.length - 1];
+            if (lastEntry.cols === cols && lastEntry.rows === rows) {
+                return;
+            }
+            if (lastEntry.cols === 0 && lastEntry.rows === 0) {
+                lastEntry.cols = cols;
+                lastEntry.rows = rows;
+                return;
+            }
+        }
+        this._entries.push({ cols, rows, data: [] });
+    }
+    handleData(data) {
+        const lastEntry = this._entries[this._entries.length - 1];
+        lastEntry.data.push(data);
+        this._totalDataLength += data.length;
+        while (this._totalDataLength > 10485760) {
+            const firstEntry = this._entries[0];
+            const remainingToDelete = this._totalDataLength - 10485760;
+            if (remainingToDelete >= firstEntry.data[0].length) {
+                this._totalDataLength -= firstEntry.data[0].length;
+                firstEntry.data.shift();
+                if (firstEntry.data.length === 0) {
+                    this._entries.shift();
+                }
+            }
+            else {
+                firstEntry.data[0] = firstEntry.data[0].substr(remainingToDelete);
+                this._totalDataLength -= remainingToDelete;
+            }
+        }
+    }
+    generateReplayEventSync() {
+        this._entries.forEach((entry) => {
+            if (entry.data.length > 0) {
+                entry.data = [entry.data.join('')];
+            }
+        });
+        return {
+            events: this._entries.map(entry => ({ cols: entry.cols, rows: entry.rows, data: entry.data[0] ?? '' })),
+            commands: {
+                isWindowsPty: false,
+                commands: [],
+                promptInputModel: undefined,
+            }
+        };
+    }
+    async generateReplayEvent() {
+        return this.generateReplayEventSync();
+    }
+}

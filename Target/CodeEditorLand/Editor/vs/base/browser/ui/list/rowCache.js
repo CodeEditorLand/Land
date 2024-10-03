@@ -1,1 +1,91 @@
-import{$ as a}from"../../dom.js";import"../../../common/lifecycle.js";import"./list.js";class p{constructor(e){this.renderers=e}cache=new Map;transactionNodesPendingRemoval=new Set;inTransaction=!1;alloc(e){let t=this.getTemplateCache(e).pop(),r=!1;if(t)r=this.transactionNodesPendingRemoval.has(t.domNode),r&&this.transactionNodesPendingRemoval.delete(t.domNode);else{const o=a(".monaco-list-row"),n=this.getRenderer(e).renderTemplate(o);t={domNode:o,templateId:e,templateData:n}}return{row:t,isReusingConnectedDomNode:r}}release(e){e&&this.releaseRow(e)}transact(e){if(this.inTransaction)throw new Error("Already in transaction");this.inTransaction=!0;try{e()}finally{for(const t of this.transactionNodesPendingRemoval)this.doRemoveNode(t);this.transactionNodesPendingRemoval.clear(),this.inTransaction=!1}}releaseRow(e){const{domNode:t,templateId:r}=e;t&&(this.inTransaction?this.transactionNodesPendingRemoval.add(t):this.doRemoveNode(t)),this.getTemplateCache(r).push(e)}doRemoveNode(e){e.classList.remove("scrolling"),e.remove()}getTemplateCache(e){let t=this.cache.get(e);return t||(t=[],this.cache.set(e,t)),t}dispose(){this.cache.forEach((e,t)=>{for(const r of e)this.getRenderer(t).disposeTemplate(r.templateData),r.templateData=null}),this.cache.clear(),this.transactionNodesPendingRemoval.clear()}getRenderer(e){const t=this.renderers.get(e);if(!t)throw new Error(`No renderer found for ${e}`);return t}}export{p as RowCache};
+import { $ } from '../../dom.js';
+export class RowCache {
+    constructor(renderers) {
+        this.renderers = renderers;
+        this.cache = new Map();
+        this.transactionNodesPendingRemoval = new Set();
+        this.inTransaction = false;
+    }
+    alloc(templateId) {
+        let result = this.getTemplateCache(templateId).pop();
+        let isStale = false;
+        if (result) {
+            isStale = this.transactionNodesPendingRemoval.has(result.domNode);
+            if (isStale) {
+                this.transactionNodesPendingRemoval.delete(result.domNode);
+            }
+        }
+        else {
+            const domNode = $('.monaco-list-row');
+            const renderer = this.getRenderer(templateId);
+            const templateData = renderer.renderTemplate(domNode);
+            result = { domNode, templateId, templateData };
+        }
+        return { row: result, isReusingConnectedDomNode: isStale };
+    }
+    release(row) {
+        if (!row) {
+            return;
+        }
+        this.releaseRow(row);
+    }
+    transact(makeChanges) {
+        if (this.inTransaction) {
+            throw new Error('Already in transaction');
+        }
+        this.inTransaction = true;
+        try {
+            makeChanges();
+        }
+        finally {
+            for (const domNode of this.transactionNodesPendingRemoval) {
+                this.doRemoveNode(domNode);
+            }
+            this.transactionNodesPendingRemoval.clear();
+            this.inTransaction = false;
+        }
+    }
+    releaseRow(row) {
+        const { domNode, templateId } = row;
+        if (domNode) {
+            if (this.inTransaction) {
+                this.transactionNodesPendingRemoval.add(domNode);
+            }
+            else {
+                this.doRemoveNode(domNode);
+            }
+        }
+        const cache = this.getTemplateCache(templateId);
+        cache.push(row);
+    }
+    doRemoveNode(domNode) {
+        domNode.classList.remove('scrolling');
+        domNode.remove();
+    }
+    getTemplateCache(templateId) {
+        let result = this.cache.get(templateId);
+        if (!result) {
+            result = [];
+            this.cache.set(templateId, result);
+        }
+        return result;
+    }
+    dispose() {
+        this.cache.forEach((cachedRows, templateId) => {
+            for (const cachedRow of cachedRows) {
+                const renderer = this.getRenderer(templateId);
+                renderer.disposeTemplate(cachedRow.templateData);
+                cachedRow.templateData = null;
+            }
+        });
+        this.cache.clear();
+        this.transactionNodesPendingRemoval.clear();
+    }
+    getRenderer(templateId) {
+        const renderer = this.renderers.get(templateId);
+        if (!renderer) {
+            throw new Error(`No renderer found for ${templateId}`);
+        }
+        return renderer;
+    }
+}

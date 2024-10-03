@@ -1,1 +1,17 @@
-import"../../log/common/log.js";import"../../state/node/state.js";import{machineIdKey as i,sqmIdKey as t,devDeviceIdKey as s}from"../common/telemetry.js";import{resolveMachineId as I,resolveSqmId as c,resolvedevDeviceId as v}from"../node/telemetryUtils.js";async function f(e,o){const r=await I(e,o);return e.setItem(i,r),r}async function g(e,o){const r=await c(e,o);return e.setItem(t,r),r}async function p(e,o){const r=await v(e,o);return e.setItem(s,r),r}export{f as resolveMachineId,g as resolveSqmId,p as resolvedevDeviceId};
+import { machineIdKey, sqmIdKey, devDeviceIdKey } from '../common/telemetry.js';
+import { resolveMachineId as resolveNodeMachineId, resolveSqmId as resolveNodeSqmId, resolvedevDeviceId as resolveNodedevDeviceId } from '../node/telemetryUtils.js';
+export async function resolveMachineId(stateService, logService) {
+    const machineId = await resolveNodeMachineId(stateService, logService);
+    stateService.setItem(machineIdKey, machineId);
+    return machineId;
+}
+export async function resolveSqmId(stateService, logService) {
+    const sqmId = await resolveNodeSqmId(stateService, logService);
+    stateService.setItem(sqmIdKey, sqmId);
+    return sqmId;
+}
+export async function resolvedevDeviceId(stateService, logService) {
+    const devDeviceId = await resolveNodedevDeviceId(stateService, logService);
+    stateService.setItem(devDeviceIdKey, devDeviceId);
+    return devDeviceId;
+}

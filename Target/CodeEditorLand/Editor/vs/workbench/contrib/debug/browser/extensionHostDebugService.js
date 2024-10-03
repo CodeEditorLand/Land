@@ -1,1 +1,153 @@
-var v=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var I=(d,s,i,t)=>{for(var r=t>1?void 0:t?h(s,i):s,p=d.length-1,o;p>=0;p--)(o=d[p])&&(r=(t?o(s,i,r):o(r))||r);return t&&r&&v(s,i,r),r},c=(d,s)=>(i,t)=>s(i,t,d);import{Event as S}from"../../../../base/common/event.js";import{URI as g}from"../../../../base/common/uri.js";import"../../../../base/parts/ipc/common/ipc.js";import{IExtensionHostDebugService as W}from"../../../../platform/debug/common/extensionHostDebug.js";import{ExtensionHostDebugBroadcastChannel as x,ExtensionHostDebugChannelClient as P}from"../../../../platform/debug/common/extensionHostDebugIpc.js";import{IFileService as O}from"../../../../platform/files/common/files.js";import{InstantiationType as A,registerSingleton as U}from"../../../../platform/instantiation/common/extensions.js";import{ILogService as w}from"../../../../platform/log/common/log.js";import{IStorageService as N,StorageScope as E,StorageTarget as T}from"../../../../platform/storage/common/storage.js";import{isFolderToOpen as C,isWorkspaceToOpen as R}from"../../../../platform/window/common/window.js";import{IWorkspaceContextService as _,isSingleFolderWorkspaceIdentifier as u,isWorkspaceIdentifier as b,toWorkspaceIdentifier as y,hasWorkspaceFileExtension as k}from"../../../../platform/workspace/common/workspace.js";import"../../../browser/web.api.js";import{IBrowserWorkbenchEnvironmentService as L}from"../../../services/environment/browser/environmentService.js";import{IHostService as D}from"../../../services/host/browser/host.js";import{IRemoteAgentService as F}from"../../../services/remote/common/remoteAgentService.js";let a=class extends P{static LAST_EXTENSION_DEVELOPMENT_WORKSPACE_KEY="debug.lastExtensionDevelopmentWorkspace";workspaceProvider;storageService;fileService;constructor(s,i,t,r,p,o,f){const l=s.getConnection();let m;if(l?m=l.getChannel(x.ChannelName):m={call:async()=>{},listen:()=>S.None},super(m),this.storageService=o,this.fileService=f,i.options&&i.options.workspaceProvider?this.workspaceProvider=i.options.workspaceProvider:(this.workspaceProvider={open:async()=>!0,workspace:void 0,trusted:void 0},t.warn("Extension Host Debugging not available due to missing workspace provider.")),this._register(this.onReload(e=>{i.isExtensionDevelopment&&i.debugExtensionHost.debugId===e.sessionId&&r.reload()})),this._register(this.onClose(e=>{i.isExtensionDevelopment&&i.debugExtensionHost.debugId===e.sessionId&&r.close()})),i.isExtensionDevelopment&&!i.extensionTestsLocationURI){const e=y(p.getWorkspace());if(u(e)||b(e)){const n=u(e)?{folderUri:e.uri.toJSON()}:{workspaceUri:e.configPath.toJSON()};o.store(a.LAST_EXTENSION_DEVELOPMENT_WORKSPACE_KEY,JSON.stringify(n),E.PROFILE,T.MACHINE)}else o.remove(a.LAST_EXTENSION_DEVELOPMENT_WORKSPACE_KEY,E.PROFILE)}}async openExtensionDevelopmentHostWindow(s,i){const t=new Map,r=this.findArgument("file-uri",s);r&&!k(r)&&t.set("openFile",r);const p=["extensionDevelopmentPath","extensionTestsPath","extensionEnvironment","debugId","inspect-brk-extensions","inspect-extensions"];for(const e of p){const n=this.findArgument(e,s);n&&t.set(e,n)}let o;const f=this.findArgument("folder-uri",s);if(f)o={folderUri:g.parse(f)};else{const e=this.findArgument("file-uri",s);e&&k(e)&&(o={workspaceUri:g.parse(e)})}const l=this.findArgument("extensionTestsPath",s);if(!o&&!l){const e=this.storageService.get(a.LAST_EXTENSION_DEVELOPMENT_WORKSPACE_KEY,E.PROFILE);if(e)try{const n=JSON.parse(e);n.workspaceUri?o={workspaceUri:g.revive(n.workspaceUri)}:n.folderUri&&(o={folderUri:g.revive(n.folderUri)})}catch{}}if(o){const e=C(o)?o.folderUri:R(o)?o.workspaceUri:void 0;e&&(await this.fileService.exists(e)||(o=void 0))}return{success:await this.workspaceProvider.open(o,{reuse:!1,payload:Array.from(t.entries())})}}findArgument(s,i){for(const t of i){const r=`--${s}=`;if(t.indexOf(r)===0)return t.substring(r.length)}}};a=I([c(0,F),c(1,L),c(2,w),c(3,D),c(4,_),c(5,N),c(6,O)],a),U(W,a,A.Delayed);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var BrowserExtensionHostDebugService_1;
+import { Event } from '../../../../base/common/event.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IExtensionHostDebugService } from '../../../../platform/debug/common/extensionHostDebug.js';
+import { ExtensionHostDebugBroadcastChannel, ExtensionHostDebugChannelClient } from '../../../../platform/debug/common/extensionHostDebugIpc.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { isFolderToOpen, isWorkspaceToOpen } from '../../../../platform/window/common/window.js';
+import { IWorkspaceContextService, isSingleFolderWorkspaceIdentifier, isWorkspaceIdentifier, toWorkspaceIdentifier, hasWorkspaceFileExtension } from '../../../../platform/workspace/common/workspace.js';
+import { IBrowserWorkbenchEnvironmentService } from '../../../services/environment/browser/environmentService.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+import { IRemoteAgentService } from '../../../services/remote/common/remoteAgentService.js';
+let BrowserExtensionHostDebugService = class BrowserExtensionHostDebugService extends ExtensionHostDebugChannelClient {
+    static { BrowserExtensionHostDebugService_1 = this; }
+    static { this.LAST_EXTENSION_DEVELOPMENT_WORKSPACE_KEY = 'debug.lastExtensionDevelopmentWorkspace'; }
+    constructor(remoteAgentService, environmentService, logService, hostService, contextService, storageService, fileService) {
+        const connection = remoteAgentService.getConnection();
+        let channel;
+        if (connection) {
+            channel = connection.getChannel(ExtensionHostDebugBroadcastChannel.ChannelName);
+        }
+        else {
+            channel = { call: async () => undefined, listen: () => Event.None };
+        }
+        super(channel);
+        this.storageService = storageService;
+        this.fileService = fileService;
+        if (environmentService.options && environmentService.options.workspaceProvider) {
+            this.workspaceProvider = environmentService.options.workspaceProvider;
+        }
+        else {
+            this.workspaceProvider = { open: async () => true, workspace: undefined, trusted: undefined };
+            logService.warn('Extension Host Debugging not available due to missing workspace provider.');
+        }
+        this._register(this.onReload(event => {
+            if (environmentService.isExtensionDevelopment && environmentService.debugExtensionHost.debugId === event.sessionId) {
+                hostService.reload();
+            }
+        }));
+        this._register(this.onClose(event => {
+            if (environmentService.isExtensionDevelopment && environmentService.debugExtensionHost.debugId === event.sessionId) {
+                hostService.close();
+            }
+        }));
+        if (environmentService.isExtensionDevelopment && !environmentService.extensionTestsLocationURI) {
+            const workspaceId = toWorkspaceIdentifier(contextService.getWorkspace());
+            if (isSingleFolderWorkspaceIdentifier(workspaceId) || isWorkspaceIdentifier(workspaceId)) {
+                const serializedWorkspace = isSingleFolderWorkspaceIdentifier(workspaceId) ? { folderUri: workspaceId.uri.toJSON() } : { workspaceUri: workspaceId.configPath.toJSON() };
+                storageService.store(BrowserExtensionHostDebugService_1.LAST_EXTENSION_DEVELOPMENT_WORKSPACE_KEY, JSON.stringify(serializedWorkspace), 0, 1);
+            }
+            else {
+                storageService.remove(BrowserExtensionHostDebugService_1.LAST_EXTENSION_DEVELOPMENT_WORKSPACE_KEY, 0);
+            }
+        }
+    }
+    async openExtensionDevelopmentHostWindow(args, _debugRenderer) {
+        const environment = new Map();
+        const fileUriArg = this.findArgument('file-uri', args);
+        if (fileUriArg && !hasWorkspaceFileExtension(fileUriArg)) {
+            environment.set('openFile', fileUriArg);
+        }
+        const copyArgs = [
+            'extensionDevelopmentPath',
+            'extensionTestsPath',
+            'extensionEnvironment',
+            'debugId',
+            'inspect-brk-extensions',
+            'inspect-extensions',
+        ];
+        for (const argName of copyArgs) {
+            const value = this.findArgument(argName, args);
+            if (value) {
+                environment.set(argName, value);
+            }
+        }
+        let debugWorkspace = undefined;
+        const folderUriArg = this.findArgument('folder-uri', args);
+        if (folderUriArg) {
+            debugWorkspace = { folderUri: URI.parse(folderUriArg) };
+        }
+        else {
+            const fileUriArg = this.findArgument('file-uri', args);
+            if (fileUriArg && hasWorkspaceFileExtension(fileUriArg)) {
+                debugWorkspace = { workspaceUri: URI.parse(fileUriArg) };
+            }
+        }
+        const extensionTestsPath = this.findArgument('extensionTestsPath', args);
+        if (!debugWorkspace && !extensionTestsPath) {
+            const lastExtensionDevelopmentWorkspace = this.storageService.get(BrowserExtensionHostDebugService_1.LAST_EXTENSION_DEVELOPMENT_WORKSPACE_KEY, 0);
+            if (lastExtensionDevelopmentWorkspace) {
+                try {
+                    const serializedWorkspace = JSON.parse(lastExtensionDevelopmentWorkspace);
+                    if (serializedWorkspace.workspaceUri) {
+                        debugWorkspace = { workspaceUri: URI.revive(serializedWorkspace.workspaceUri) };
+                    }
+                    else if (serializedWorkspace.folderUri) {
+                        debugWorkspace = { folderUri: URI.revive(serializedWorkspace.folderUri) };
+                    }
+                }
+                catch (error) {
+                }
+            }
+        }
+        if (debugWorkspace) {
+            const debugWorkspaceResource = isFolderToOpen(debugWorkspace) ? debugWorkspace.folderUri : isWorkspaceToOpen(debugWorkspace) ? debugWorkspace.workspaceUri : undefined;
+            if (debugWorkspaceResource) {
+                const workspaceExists = await this.fileService.exists(debugWorkspaceResource);
+                if (!workspaceExists) {
+                    debugWorkspace = undefined;
+                }
+            }
+        }
+        const success = await this.workspaceProvider.open(debugWorkspace, {
+            reuse: false,
+            payload: Array.from(environment.entries())
+        });
+        return { success };
+    }
+    findArgument(key, args) {
+        for (const a of args) {
+            const k = `--${key}=`;
+            if (a.indexOf(k) === 0) {
+                return a.substring(k.length);
+            }
+        }
+        return undefined;
+    }
+};
+BrowserExtensionHostDebugService = BrowserExtensionHostDebugService_1 = __decorate([
+    __param(0, IRemoteAgentService),
+    __param(1, IBrowserWorkbenchEnvironmentService),
+    __param(2, ILogService),
+    __param(3, IHostService),
+    __param(4, IWorkspaceContextService),
+    __param(5, IStorageService),
+    __param(6, IFileService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], BrowserExtensionHostDebugService);
+registerSingleton(IExtensionHostDebugService, BrowserExtensionHostDebugService, 1);

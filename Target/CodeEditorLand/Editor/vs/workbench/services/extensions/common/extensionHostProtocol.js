@@ -1,1 +1,32 @@
-import{VSBuffer as r}from"../../../../base/common/buffer.js";import"../../../../base/common/uri.js";import"../../../../platform/extensions/common/extensions.js";import"../../../../platform/log/common/log.js";import"../../../../platform/remote/common/remoteAuthorityResolver.js";var i=(e=>(e[e.Desktop=1]="Desktop",e[e.Web=2]="Web",e))(i||{}),a=(e=>(e[e.VersionMismatch=55]="VersionMismatch",e[e.UnexpectedError=81]="UnexpectedError",e))(a||{}),s=(t=>(t[t.Initialized=0]="Initialized",t[t.Ready=1]="Ready",t[t.Terminate=2]="Terminate",t))(s||{});function v(o){const n=r.alloc(1);switch(o){case 0:n.writeUInt8(1,0);break;case 1:n.writeUInt8(2,0);break;case 2:n.writeUInt8(3,0);break}return n}function b(o,n){if(o.byteLength!==1)return!1;switch(o.readUInt8(0)){case 1:return n===0;case 2:return n===1;case 3:return n===2;default:return!1}}var l=(e=>(e.Start="START_NATIVE_LOG",e.End="END_NATIVE_LOG",e))(l||{});export{a as ExtensionHostExitCode,s as MessageType,l as NativeLogMarkers,i as UIKind,v as createMessageOfType,b as isMessageOfType};
+import { VSBuffer } from '../../../../base/common/buffer.js';
+export var UIKind;
+(function (UIKind) {
+    UIKind[UIKind["Desktop"] = 1] = "Desktop";
+    UIKind[UIKind["Web"] = 2] = "Web";
+})(UIKind || (UIKind = {}));
+export function createMessageOfType(type) {
+    const result = VSBuffer.alloc(1);
+    switch (type) {
+        case 0:
+            result.writeUInt8(1, 0);
+            break;
+        case 1:
+            result.writeUInt8(2, 0);
+            break;
+        case 2:
+            result.writeUInt8(3, 0);
+            break;
+    }
+    return result;
+}
+export function isMessageOfType(message, type) {
+    if (message.byteLength !== 1) {
+        return false;
+    }
+    switch (message.readUInt8(0)) {
+        case 1: return type === 0;
+        case 2: return type === 1;
+        case 3: return type === 2;
+        default: return false;
+    }
+}

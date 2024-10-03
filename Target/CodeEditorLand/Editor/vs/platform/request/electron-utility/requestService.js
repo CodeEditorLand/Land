@@ -1,1 +1,10 @@
-import{net as s}from"electron";import"../../../base/common/cancellation.js";import"../../../base/parts/request/common/request.js";import{RequestService as r}from"../node/requestService.js";function n(e){return s.request}class I extends r{request(t,o){return super.request({...t||{},getRawRequest:n,isChromiumNetwork:!0},o)}}export{I as RequestService};
+import { net } from 'electron';
+import { RequestService as NodeRequestService } from '../node/requestService.js';
+function getRawRequest(options) {
+    return net.request;
+}
+export class RequestService extends NodeRequestService {
+    request(options, token) {
+        return super.request({ ...(options || {}), getRawRequest, isChromiumNetwork: true }, token);
+    }
+}

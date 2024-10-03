@@ -1,1 +1,73 @@
-var p=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var h=(r,e,n,t)=>{for(var i=t>1?void 0:t?u(e,n):e,s=r.length-1,o;s>=0;s--)(o=r[s])&&(i=(t?o(e,n,i):o(i))||i);return t&&i&&p(e,n,i),i},c=(r,e)=>(n,t)=>e(n,t,r);import*as d from"../../../../base/browser/dom.js";import{ActionBar as l}from"../../../../base/browser/ui/actionbar/actionbar.js";import"../../../../base/common/actions.js";import{DisposableStore as v}from"../../../../base/common/lifecycle.js";import{TextOnlyMenuEntryActionViewItem as A}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import{IMenuService as I,MenuItemAction as _}from"../../../../platform/actions/common/actions.js";import{IContextKeyService as f}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as y}from"../../../../platform/instantiation/common/instantiation.js";let m=class{constructor(e,n,t,i,s){this._menuId=n;this._menuService=i;this._contextKeyService=s;this.element=d.append(e,d.$(".suggest-status-bar"));const o=a=>a instanceof _?t.createInstance(A,a,{useComma:!0}):void 0;this._leftActions=new l(this.element,{actionViewItemProvider:o}),this._rightActions=new l(this.element,{actionViewItemProvider:o}),this._leftActions.domNode.classList.add("left"),this._rightActions.domNode.classList.add("right")}element;_leftActions;_rightActions;_menuDisposables=new v;dispose(){this._menuDisposables.dispose(),this._leftActions.dispose(),this._rightActions.dispose(),this.element.remove()}show(){const e=this._menuService.createMenu(this._menuId,this._contextKeyService),n=()=>{const t=[],i=[];for(const[s,o]of e.getActions())s==="left"?t.push(...o):i.push(...o);this._leftActions.clear(),this._leftActions.push(t),this._rightActions.clear(),this._rightActions.push(i)};this._menuDisposables.add(e.onDidChange(()=>n())),this._menuDisposables.add(e)}hide(){this._menuDisposables.clear()}};m=h([c(2,y),c(3,I),c(4,f)],m);export{m as SuggestWidgetStatus};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../base/browser/dom.js';
+import { ActionBar } from '../../../../base/browser/ui/actionbar/actionbar.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { TextOnlyMenuEntryActionViewItem } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { IMenuService, MenuId, MenuItemAction } from '../../../../platform/actions/common/actions.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+let SuggestWidgetStatus = class SuggestWidgetStatus {
+    constructor(container, _menuId, instantiationService, _menuService, _contextKeyService) {
+        this._menuId = _menuId;
+        this._menuService = _menuService;
+        this._contextKeyService = _contextKeyService;
+        this._menuDisposables = new DisposableStore();
+        this.element = dom.append(container, dom.$('.suggest-status-bar'));
+        const actionViewItemProvider = (action => {
+            return action instanceof MenuItemAction ? instantiationService.createInstance(TextOnlyMenuEntryActionViewItem, action, { useComma: true }) : undefined;
+        });
+        this._leftActions = new ActionBar(this.element, { actionViewItemProvider });
+        this._rightActions = new ActionBar(this.element, { actionViewItemProvider });
+        this._leftActions.domNode.classList.add('left');
+        this._rightActions.domNode.classList.add('right');
+    }
+    dispose() {
+        this._menuDisposables.dispose();
+        this._leftActions.dispose();
+        this._rightActions.dispose();
+        this.element.remove();
+    }
+    show() {
+        const menu = this._menuService.createMenu(this._menuId, this._contextKeyService);
+        const renderMenu = () => {
+            const left = [];
+            const right = [];
+            for (const [group, actions] of menu.getActions()) {
+                if (group === 'left') {
+                    left.push(...actions);
+                }
+                else {
+                    right.push(...actions);
+                }
+            }
+            this._leftActions.clear();
+            this._leftActions.push(left);
+            this._rightActions.clear();
+            this._rightActions.push(right);
+        };
+        this._menuDisposables.add(menu.onDidChange(() => renderMenu()));
+        this._menuDisposables.add(menu);
+    }
+    hide() {
+        this._menuDisposables.clear();
+    }
+};
+SuggestWidgetStatus = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, IMenuService),
+    __param(4, IContextKeyService),
+    __metadata("design:paramtypes", [HTMLElement,
+        MenuId, Object, Object, Object])
+], SuggestWidgetStatus);
+export { SuggestWidgetStatus };

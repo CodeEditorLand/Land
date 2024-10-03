@@ -1,1 +1,34 @@
-import{LRUCache as s}from"./map.js";const o=new s(1e4);function l(n){return c(n,"NFC",o)}const g=new s(1e4);function u(n){return c(n,"NFD",g)}const f=/[^\u0000-\u0080]/;function c(n,r,e){if(!n)return n;const i=e.get(n);if(i)return i;let t;return f.test(n)?t=n.normalize(r):t=n,e.set(n,t),t}const m=function(){const n=/[\u0300-\u036f]/g;return function(r){return u(r).replace(n,"")}}();export{l as normalizeNFC,u as normalizeNFD,m as removeAccents};
+import { LRUCache } from './map.js';
+const nfcCache = new LRUCache(10000);
+export function normalizeNFC(str) {
+    return normalize(str, 'NFC', nfcCache);
+}
+const nfdCache = new LRUCache(10000);
+export function normalizeNFD(str) {
+    return normalize(str, 'NFD', nfdCache);
+}
+const nonAsciiCharactersPattern = /[^\u0000-\u0080]/;
+function normalize(str, form, normalizedCache) {
+    if (!str) {
+        return str;
+    }
+    const cached = normalizedCache.get(str);
+    if (cached) {
+        return cached;
+    }
+    let res;
+    if (nonAsciiCharactersPattern.test(str)) {
+        res = str.normalize(form);
+    }
+    else {
+        res = str;
+    }
+    normalizedCache.set(str, res);
+    return res;
+}
+export const removeAccents = (function () {
+    const regex = /[\u0300-\u036f]/g;
+    return function (str) {
+        return normalizeNFD(str).replace(regex, '');
+    };
+})();

@@ -1,1 +1,15 @@
-import{localize as r}from"../../../../../nls.js";import{registerColor as l}from"../../../../../platform/theme/common/colorUtils.js";const t=l("terminalStickyScroll.background",null,r("terminalStickyScroll.background","The background color of the sticky scroll overlay in the terminal.")),e=l("terminalStickyScrollHover.background",{dark:"#2A2D2E",light:"#F0F0F0",hcDark:"#E48B39",hcLight:"#0f4a85"},r("terminalStickyScrollHover.background","The background color of the sticky scroll overlay in the terminal when hovered."));l("terminalStickyScroll.border",{dark:null,light:null,hcDark:"#6fc3df",hcLight:"#0f4a85"},r("terminalStickyScroll.border","The border of the sticky scroll overlay in the terminal."));export{t as terminalStickyScrollBackground,e as terminalStickyScrollHoverBackground};
+import { localize } from '../../../../../nls.js';
+import { registerColor } from '../../../../../platform/theme/common/colorUtils.js';
+export const terminalStickyScrollBackground = registerColor('terminalStickyScroll.background', null, localize('terminalStickyScroll.background', 'The background color of the sticky scroll overlay in the terminal.'));
+export const terminalStickyScrollHoverBackground = registerColor('terminalStickyScrollHover.background', {
+    dark: '#2A2D2E',
+    light: '#F0F0F0',
+    hcDark: '#E48B39',
+    hcLight: '#0f4a85'
+}, localize('terminalStickyScrollHover.background', 'The background color of the sticky scroll overlay in the terminal when hovered.'));
+registerColor('terminalStickyScroll.border', {
+    dark: null,
+    light: null,
+    hcDark: '#6fc3df',
+    hcLight: '#0f4a85'
+}, localize('terminalStickyScroll.border', 'The border of the sticky scroll overlay in the terminal.'));

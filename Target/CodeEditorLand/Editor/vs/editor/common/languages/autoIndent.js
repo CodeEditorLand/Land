@@ -1,1 +1,346 @@
-import*as L from"../../../base/common/strings.js";import"../core/range.js";import"../model.js";import{IndentAction as p}from"./languageConfiguration.js";import{IndentConsts as R}from"./supports/indentRules.js";import{EditorAutoIndentStrategy as A}from"../config/editorOptions.js";import"./languageConfigurationRegistry.js";import"../tokens/lineTokens.js";import{IndentationContextProcessor as k,isLanguageDifferentFromLineStart as S,ProcessedIndentRulesSupport as m}from"./supports/indentationLineProcessor.js";import"../cursorCommon.js";function V(i,n,e){const c=i.tokenization.getLanguageIdAtPosition(n,0);if(n>1){let t,a=-1;for(t=n-1;t>=1;t--){if(i.tokenization.getLanguageIdAtPosition(t,0)!==c)return a;const r=i.getLineContent(t);if(e.shouldIgnore(t)||/^\s+$/.test(r)||r===""){a=t;continue}return t}}return-1}function T(i,n,e,c=!0,t){if(i<A.Full)return null;const a=t.getLanguageConfiguration(n.tokenization.getLanguageId()).indentRulesSupport;if(!a)return null;const r=new m(n,a,t);if(e<=1)return{indentation:"",action:null};for(let g=e-1;g>0&&n.getLineContent(g)==="";g--)if(g===1)return{indentation:"",action:null};const s=V(n,e,r);if(s<0)return null;if(s<1)return{indentation:"",action:null};if(r.shouldIncrease(s)||r.shouldIndentNextLine(s)){const g=n.getLineContent(s);return{indentation:L.getLeadingWhitespace(g),action:p.Indent,line:s}}else if(r.shouldDecrease(s)){const g=n.getLineContent(s);return{indentation:L.getLeadingWhitespace(g),action:null,line:s}}else{if(s===1)return{indentation:L.getLeadingWhitespace(n.getLineContent(s)),action:null,line:s};const g=s-1,d=a.getIndentMetadata(n.getLineContent(g));if(!(d&(R.INCREASE_MASK|R.DECREASE_MASK))&&d&R.INDENT_NEXTLINE_MASK){let o=0;for(let f=g-1;f>0;f--)if(!r.shouldIndentNextLine(f)){o=f;break}return{indentation:L.getLeadingWhitespace(n.getLineContent(o+1)),action:null,line:o+1}}if(c)return{indentation:L.getLeadingWhitespace(n.getLineContent(s)),action:null,line:s};for(let o=s;o>0;o--){if(r.shouldIncrease(o))return{indentation:L.getLeadingWhitespace(n.getLineContent(o)),action:p.Indent,line:o};if(r.shouldIndentNextLine(o)){let f=0;for(let u=o-1;u>0;u--)if(!r.shouldIndentNextLine(o)){f=u;break}return{indentation:L.getLeadingWhitespace(n.getLineContent(f+1)),action:null,line:f+1}}else if(r.shouldDecrease(o))return{indentation:L.getLeadingWhitespace(n.getLineContent(o)),action:null,line:o}}return{indentation:L.getLeadingWhitespace(n.getLineContent(1)),action:null,line:1}}}function Y(i,n,e,c,t,a){if(i<A.Full)return null;const r=a.getLanguageConfiguration(e);if(!r)return null;const s=a.getLanguageConfiguration(e).indentRulesSupport;if(!s)return null;const g=new m(n,s,a),d=T(i,n,c,void 0,a);if(d){const o=d.line;if(o!==void 0){let f=!0;for(let u=o;u<c-1;u++)if(!/^\s*$/.test(n.getLineContent(u))){f=!1;break}if(f){const u=r.onEnter(i,"",n.getLineContent(o),"");if(u){let l=L.getLeadingWhitespace(n.getLineContent(o));return u.removeText&&(l=l.substring(0,l.length-u.removeText)),u.indentAction===p.Indent||u.indentAction===p.IndentOutdent?l=t.shiftIndent(l):u.indentAction===p.Outdent&&(l=t.unshiftIndent(l)),g.shouldDecrease(c)&&(l=t.unshiftIndent(l)),u.appendText&&(l+=u.appendText),L.getLeadingWhitespace(l)}}}return g.shouldDecrease(c)?d.action===p.Indent?d.indentation:t.unshiftIndent(d.indentation):d.action===p.Indent?t.shiftIndent(d.indentation):d.indentation}return null}function Z(i,n,e,c,t){if(i<A.Full)return null;const a=n.getLanguageIdAtPosition(e.startLineNumber,e.startColumn),r=t.getLanguageConfiguration(a).indentRulesSupport;if(!r)return null;n.tokenization.forceTokenization(e.startLineNumber);const g=new k(n,t).getProcessedTokenContextAroundRange(e),d=g.afterRangeProcessedTokens,o=g.beforeRangeProcessedTokens,f=L.getLeadingWhitespace(o.getLineContent()),u=z(n,e.startLineNumber,o),l=S(n,e.getStartPosition()),x=n.getLineContent(e.startLineNumber),h=L.getLeadingWhitespace(x),b=T(i,u,e.startLineNumber+1,void 0,t);if(!b){const C=l?h:f;return{beforeEnter:C,afterEnter:C}}let I=l?h:b.indentation;return b.action===p.Indent&&(I=c.shiftIndent(I)),r.shouldDecrease(d.getLineContent())&&(I=c.unshiftIndent(I)),{beforeEnter:l?h:f,afterEnter:I}}function nn(i,n,e,c,t,a){const r=i.autoIndent;if(r<A.Full||S(n,e.getStartPosition()))return null;const g=n.getLanguageIdAtPosition(e.startLineNumber,e.startColumn),d=a.getLanguageConfiguration(g).indentRulesSupport;if(!d)return null;const f=new k(n,a).getProcessedTokenContextAroundRange(e),u=f.beforeRangeProcessedTokens.getLineContent(),l=f.afterRangeProcessedTokens.getLineContent(),x=u+l,h=u+c+l;if(!d.shouldDecrease(x)&&d.shouldDecrease(h)){const I=T(r,n,e.startLineNumber,!1,a);if(!I)return null;let C=I.indentation;return I.action!==p.Indent&&(C=t.unshiftIndent(C)),C}const b=e.startLineNumber-1;if(b>0){const I=n.getLineContent(b);if(d.shouldIndentNextLine(I)&&d.shouldIncrease(h)){const E=T(r,n,e.startLineNumber,!1,a)?.indentation;if(E!==void 0){const M=n.getLineContent(e.startLineNumber),W=L.getLeadingWhitespace(M),N=t.shiftIndent(E)===W,D=/^\s*$/.test(x),P=i.autoClosingPairs.autoClosingPairsOpenByEnd.get(c),F=P&&P.length>0&&D;if(N&&F)return E}}}return null}function tn(i,n,e){const c=e.getLanguageConfiguration(i.getLanguageId()).indentRulesSupport;return!c||n<1||n>i.getLineCount()?null:c.getIndentMetadata(i.getLineContent(n))}function z(i,n,e){return{tokenization:{getLineTokens:t=>t===n?e:i.tokenization.getLineTokens(t),getLanguageId:()=>i.getLanguageId(),getLanguageIdAtPosition:(t,a)=>i.getLanguageIdAtPosition(t,a)},getLineContent:t=>t===n?e.getLineContent():i.getLineContent(t)}}export{Y as getGoodIndentForLine,nn as getIndentActionForType,Z as getIndentForEnter,tn as getIndentMetadata,T as getInheritIndentForLine};
+import * as strings from '../../../base/common/strings.js';
+import { IndentAction } from './languageConfiguration.js';
+import { IndentationContextProcessor, isLanguageDifferentFromLineStart, ProcessedIndentRulesSupport } from './supports/indentationLineProcessor.js';
+function getPrecedingValidLine(model, lineNumber, processedIndentRulesSupport) {
+    const languageId = model.tokenization.getLanguageIdAtPosition(lineNumber, 0);
+    if (lineNumber > 1) {
+        let lastLineNumber;
+        let resultLineNumber = -1;
+        for (lastLineNumber = lineNumber - 1; lastLineNumber >= 1; lastLineNumber--) {
+            if (model.tokenization.getLanguageIdAtPosition(lastLineNumber, 0) !== languageId) {
+                return resultLineNumber;
+            }
+            const text = model.getLineContent(lastLineNumber);
+            if (processedIndentRulesSupport.shouldIgnore(lastLineNumber) || /^\s+$/.test(text) || text === '') {
+                resultLineNumber = lastLineNumber;
+                continue;
+            }
+            return lastLineNumber;
+        }
+    }
+    return -1;
+}
+export function getInheritIndentForLine(autoIndent, model, lineNumber, honorIntentialIndent = true, languageConfigurationService) {
+    if (autoIndent < 4) {
+        return null;
+    }
+    const indentRulesSupport = languageConfigurationService.getLanguageConfiguration(model.tokenization.getLanguageId()).indentRulesSupport;
+    if (!indentRulesSupport) {
+        return null;
+    }
+    const processedIndentRulesSupport = new ProcessedIndentRulesSupport(model, indentRulesSupport, languageConfigurationService);
+    if (lineNumber <= 1) {
+        return {
+            indentation: '',
+            action: null
+        };
+    }
+    for (let priorLineNumber = lineNumber - 1; priorLineNumber > 0; priorLineNumber--) {
+        if (model.getLineContent(priorLineNumber) !== '') {
+            break;
+        }
+        if (priorLineNumber === 1) {
+            return {
+                indentation: '',
+                action: null
+            };
+        }
+    }
+    const precedingUnIgnoredLine = getPrecedingValidLine(model, lineNumber, processedIndentRulesSupport);
+    if (precedingUnIgnoredLine < 0) {
+        return null;
+    }
+    else if (precedingUnIgnoredLine < 1) {
+        return {
+            indentation: '',
+            action: null
+        };
+    }
+    if (processedIndentRulesSupport.shouldIncrease(precedingUnIgnoredLine) || processedIndentRulesSupport.shouldIndentNextLine(precedingUnIgnoredLine)) {
+        const precedingUnIgnoredLineContent = model.getLineContent(precedingUnIgnoredLine);
+        return {
+            indentation: strings.getLeadingWhitespace(precedingUnIgnoredLineContent),
+            action: IndentAction.Indent,
+            line: precedingUnIgnoredLine
+        };
+    }
+    else if (processedIndentRulesSupport.shouldDecrease(precedingUnIgnoredLine)) {
+        const precedingUnIgnoredLineContent = model.getLineContent(precedingUnIgnoredLine);
+        return {
+            indentation: strings.getLeadingWhitespace(precedingUnIgnoredLineContent),
+            action: null,
+            line: precedingUnIgnoredLine
+        };
+    }
+    else {
+        if (precedingUnIgnoredLine === 1) {
+            return {
+                indentation: strings.getLeadingWhitespace(model.getLineContent(precedingUnIgnoredLine)),
+                action: null,
+                line: precedingUnIgnoredLine
+            };
+        }
+        const previousLine = precedingUnIgnoredLine - 1;
+        const previousLineIndentMetadata = indentRulesSupport.getIndentMetadata(model.getLineContent(previousLine));
+        if (!(previousLineIndentMetadata & (1 | 2)) &&
+            (previousLineIndentMetadata & 4)) {
+            let stopLine = 0;
+            for (let i = previousLine - 1; i > 0; i--) {
+                if (processedIndentRulesSupport.shouldIndentNextLine(i)) {
+                    continue;
+                }
+                stopLine = i;
+                break;
+            }
+            return {
+                indentation: strings.getLeadingWhitespace(model.getLineContent(stopLine + 1)),
+                action: null,
+                line: stopLine + 1
+            };
+        }
+        if (honorIntentialIndent) {
+            return {
+                indentation: strings.getLeadingWhitespace(model.getLineContent(precedingUnIgnoredLine)),
+                action: null,
+                line: precedingUnIgnoredLine
+            };
+        }
+        else {
+            for (let i = precedingUnIgnoredLine; i > 0; i--) {
+                if (processedIndentRulesSupport.shouldIncrease(i)) {
+                    return {
+                        indentation: strings.getLeadingWhitespace(model.getLineContent(i)),
+                        action: IndentAction.Indent,
+                        line: i
+                    };
+                }
+                else if (processedIndentRulesSupport.shouldIndentNextLine(i)) {
+                    let stopLine = 0;
+                    for (let j = i - 1; j > 0; j--) {
+                        if (processedIndentRulesSupport.shouldIndentNextLine(i)) {
+                            continue;
+                        }
+                        stopLine = j;
+                        break;
+                    }
+                    return {
+                        indentation: strings.getLeadingWhitespace(model.getLineContent(stopLine + 1)),
+                        action: null,
+                        line: stopLine + 1
+                    };
+                }
+                else if (processedIndentRulesSupport.shouldDecrease(i)) {
+                    return {
+                        indentation: strings.getLeadingWhitespace(model.getLineContent(i)),
+                        action: null,
+                        line: i
+                    };
+                }
+            }
+            return {
+                indentation: strings.getLeadingWhitespace(model.getLineContent(1)),
+                action: null,
+                line: 1
+            };
+        }
+    }
+}
+export function getGoodIndentForLine(autoIndent, virtualModel, languageId, lineNumber, indentConverter, languageConfigurationService) {
+    if (autoIndent < 4) {
+        return null;
+    }
+    const richEditSupport = languageConfigurationService.getLanguageConfiguration(languageId);
+    if (!richEditSupport) {
+        return null;
+    }
+    const indentRulesSupport = languageConfigurationService.getLanguageConfiguration(languageId).indentRulesSupport;
+    if (!indentRulesSupport) {
+        return null;
+    }
+    const processedIndentRulesSupport = new ProcessedIndentRulesSupport(virtualModel, indentRulesSupport, languageConfigurationService);
+    const indent = getInheritIndentForLine(autoIndent, virtualModel, lineNumber, undefined, languageConfigurationService);
+    if (indent) {
+        const inheritLine = indent.line;
+        if (inheritLine !== undefined) {
+            let shouldApplyEnterRules = true;
+            for (let inBetweenLine = inheritLine; inBetweenLine < lineNumber - 1; inBetweenLine++) {
+                if (!/^\s*$/.test(virtualModel.getLineContent(inBetweenLine))) {
+                    shouldApplyEnterRules = false;
+                    break;
+                }
+            }
+            if (shouldApplyEnterRules) {
+                const enterResult = richEditSupport.onEnter(autoIndent, '', virtualModel.getLineContent(inheritLine), '');
+                if (enterResult) {
+                    let indentation = strings.getLeadingWhitespace(virtualModel.getLineContent(inheritLine));
+                    if (enterResult.removeText) {
+                        indentation = indentation.substring(0, indentation.length - enterResult.removeText);
+                    }
+                    if ((enterResult.indentAction === IndentAction.Indent) ||
+                        (enterResult.indentAction === IndentAction.IndentOutdent)) {
+                        indentation = indentConverter.shiftIndent(indentation);
+                    }
+                    else if (enterResult.indentAction === IndentAction.Outdent) {
+                        indentation = indentConverter.unshiftIndent(indentation);
+                    }
+                    if (processedIndentRulesSupport.shouldDecrease(lineNumber)) {
+                        indentation = indentConverter.unshiftIndent(indentation);
+                    }
+                    if (enterResult.appendText) {
+                        indentation += enterResult.appendText;
+                    }
+                    return strings.getLeadingWhitespace(indentation);
+                }
+            }
+        }
+        if (processedIndentRulesSupport.shouldDecrease(lineNumber)) {
+            if (indent.action === IndentAction.Indent) {
+                return indent.indentation;
+            }
+            else {
+                return indentConverter.unshiftIndent(indent.indentation);
+            }
+        }
+        else {
+            if (indent.action === IndentAction.Indent) {
+                return indentConverter.shiftIndent(indent.indentation);
+            }
+            else {
+                return indent.indentation;
+            }
+        }
+    }
+    return null;
+}
+export function getIndentForEnter(autoIndent, model, range, indentConverter, languageConfigurationService) {
+    if (autoIndent < 4) {
+        return null;
+    }
+    const languageId = model.getLanguageIdAtPosition(range.startLineNumber, range.startColumn);
+    const indentRulesSupport = languageConfigurationService.getLanguageConfiguration(languageId).indentRulesSupport;
+    if (!indentRulesSupport) {
+        return null;
+    }
+    model.tokenization.forceTokenization(range.startLineNumber);
+    const indentationContextProcessor = new IndentationContextProcessor(model, languageConfigurationService);
+    const processedContextTokens = indentationContextProcessor.getProcessedTokenContextAroundRange(range);
+    const afterEnterProcessedTokens = processedContextTokens.afterRangeProcessedTokens;
+    const beforeEnterProcessedTokens = processedContextTokens.beforeRangeProcessedTokens;
+    const beforeEnterIndent = strings.getLeadingWhitespace(beforeEnterProcessedTokens.getLineContent());
+    const virtualModel = createVirtualModelWithModifiedTokensAtLine(model, range.startLineNumber, beforeEnterProcessedTokens);
+    const languageIsDifferentFromLineStart = isLanguageDifferentFromLineStart(model, range.getStartPosition());
+    const currentLine = model.getLineContent(range.startLineNumber);
+    const currentLineIndent = strings.getLeadingWhitespace(currentLine);
+    const afterEnterAction = getInheritIndentForLine(autoIndent, virtualModel, range.startLineNumber + 1, undefined, languageConfigurationService);
+    if (!afterEnterAction) {
+        const beforeEnter = languageIsDifferentFromLineStart ? currentLineIndent : beforeEnterIndent;
+        return {
+            beforeEnter: beforeEnter,
+            afterEnter: beforeEnter
+        };
+    }
+    let afterEnterIndent = languageIsDifferentFromLineStart ? currentLineIndent : afterEnterAction.indentation;
+    if (afterEnterAction.action === IndentAction.Indent) {
+        afterEnterIndent = indentConverter.shiftIndent(afterEnterIndent);
+    }
+    if (indentRulesSupport.shouldDecrease(afterEnterProcessedTokens.getLineContent())) {
+        afterEnterIndent = indentConverter.unshiftIndent(afterEnterIndent);
+    }
+    return {
+        beforeEnter: languageIsDifferentFromLineStart ? currentLineIndent : beforeEnterIndent,
+        afterEnter: afterEnterIndent
+    };
+}
+export function getIndentActionForType(cursorConfig, model, range, ch, indentConverter, languageConfigurationService) {
+    const autoIndent = cursorConfig.autoIndent;
+    if (autoIndent < 4) {
+        return null;
+    }
+    const languageIsDifferentFromLineStart = isLanguageDifferentFromLineStart(model, range.getStartPosition());
+    if (languageIsDifferentFromLineStart) {
+        return null;
+    }
+    const languageId = model.getLanguageIdAtPosition(range.startLineNumber, range.startColumn);
+    const indentRulesSupport = languageConfigurationService.getLanguageConfiguration(languageId).indentRulesSupport;
+    if (!indentRulesSupport) {
+        return null;
+    }
+    const indentationContextProcessor = new IndentationContextProcessor(model, languageConfigurationService);
+    const processedContextTokens = indentationContextProcessor.getProcessedTokenContextAroundRange(range);
+    const beforeRangeText = processedContextTokens.beforeRangeProcessedTokens.getLineContent();
+    const afterRangeText = processedContextTokens.afterRangeProcessedTokens.getLineContent();
+    const textAroundRange = beforeRangeText + afterRangeText;
+    const textAroundRangeWithCharacter = beforeRangeText + ch + afterRangeText;
+    if (!indentRulesSupport.shouldDecrease(textAroundRange) && indentRulesSupport.shouldDecrease(textAroundRangeWithCharacter)) {
+        const r = getInheritIndentForLine(autoIndent, model, range.startLineNumber, false, languageConfigurationService);
+        if (!r) {
+            return null;
+        }
+        let indentation = r.indentation;
+        if (r.action !== IndentAction.Indent) {
+            indentation = indentConverter.unshiftIndent(indentation);
+        }
+        return indentation;
+    }
+    const previousLineNumber = range.startLineNumber - 1;
+    if (previousLineNumber > 0) {
+        const previousLine = model.getLineContent(previousLineNumber);
+        if (indentRulesSupport.shouldIndentNextLine(previousLine) && indentRulesSupport.shouldIncrease(textAroundRangeWithCharacter)) {
+            const inheritedIndentationData = getInheritIndentForLine(autoIndent, model, range.startLineNumber, false, languageConfigurationService);
+            const inheritedIndentation = inheritedIndentationData?.indentation;
+            if (inheritedIndentation !== undefined) {
+                const currentLine = model.getLineContent(range.startLineNumber);
+                const actualCurrentIndentation = strings.getLeadingWhitespace(currentLine);
+                const inferredCurrentIndentation = indentConverter.shiftIndent(inheritedIndentation);
+                const inferredIndentationEqualsActual = inferredCurrentIndentation === actualCurrentIndentation;
+                const textAroundRangeContainsOnlyWhitespace = /^\s*$/.test(textAroundRange);
+                const autoClosingPairs = cursorConfig.autoClosingPairs.autoClosingPairsOpenByEnd.get(ch);
+                const autoClosingPairExists = autoClosingPairs && autoClosingPairs.length > 0;
+                const isChFirstNonWhitespaceCharacterAndInAutoClosingPair = autoClosingPairExists && textAroundRangeContainsOnlyWhitespace;
+                if (inferredIndentationEqualsActual && isChFirstNonWhitespaceCharacterAndInAutoClosingPair) {
+                    return inheritedIndentation;
+                }
+            }
+        }
+    }
+    return null;
+}
+export function getIndentMetadata(model, lineNumber, languageConfigurationService) {
+    const indentRulesSupport = languageConfigurationService.getLanguageConfiguration(model.getLanguageId()).indentRulesSupport;
+    if (!indentRulesSupport) {
+        return null;
+    }
+    if (lineNumber < 1 || lineNumber > model.getLineCount()) {
+        return null;
+    }
+    return indentRulesSupport.getIndentMetadata(model.getLineContent(lineNumber));
+}
+function createVirtualModelWithModifiedTokensAtLine(model, modifiedLineNumber, modifiedTokens) {
+    const virtualModel = {
+        tokenization: {
+            getLineTokens: (lineNumber) => {
+                if (lineNumber === modifiedLineNumber) {
+                    return modifiedTokens;
+                }
+                else {
+                    return model.tokenization.getLineTokens(lineNumber);
+                }
+            },
+            getLanguageId: () => {
+                return model.getLanguageId();
+            },
+            getLanguageIdAtPosition: (lineNumber, column) => {
+                return model.getLanguageIdAtPosition(lineNumber, column);
+            },
+        },
+        getLineContent: (lineNumber) => {
+            if (lineNumber === modifiedLineNumber) {
+                return modifiedTokens.getLineContent();
+            }
+            else {
+                return model.getLineContent(lineNumber);
+            }
+        }
+    };
+    return virtualModel;
+}

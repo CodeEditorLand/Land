@@ -1,1 +1,44 @@
-import"../../../common/viewModel.js";import"../../../common/core/range.js";import{isWindows as c}from"../../../../base/common/platform.js";function b(o,t,a,d){const e=o.getPlainTextToCopy(t,a,c),p=o.model.getEOL(),u=a&&t.length===1&&t[0].isEmpty(),g=Array.isArray(e)?e:null,i=Array.isArray(e)?e.join(p):e;let r,l=null;if(y.forceCopyWithSyntaxHighlighting||d&&i.length<65536){const n=o.getRichTextToCopy(t,a);n&&(r=n.html,l=n.mode)}return{isFromEmptySelection:u,multicursorText:g,text:i,html:r,mode:l}}class s{static INSTANCE=new s;_lastState;constructor(){this._lastState=null}set(t,a){this._lastState={lastCopiedValue:t,data:a}}get(t){return this._lastState&&this._lastState.lastCopiedValue===t?this._lastState.data:(this._lastState=null,null)}}const y={forceCopyWithSyntaxHighlighting:!1};export{y as CopyOptions,s as InMemoryClipboardMetadataManager,b as getDataToCopy};
+import { isWindows } from '../../../../base/common/platform.js';
+export function getDataToCopy(viewModel, modelSelections, emptySelectionClipboard, copyWithSyntaxHighlighting) {
+    const rawTextToCopy = viewModel.getPlainTextToCopy(modelSelections, emptySelectionClipboard, isWindows);
+    const newLineCharacter = viewModel.model.getEOL();
+    const isFromEmptySelection = (emptySelectionClipboard && modelSelections.length === 1 && modelSelections[0].isEmpty());
+    const multicursorText = (Array.isArray(rawTextToCopy) ? rawTextToCopy : null);
+    const text = (Array.isArray(rawTextToCopy) ? rawTextToCopy.join(newLineCharacter) : rawTextToCopy);
+    let html = undefined;
+    let mode = null;
+    if (CopyOptions.forceCopyWithSyntaxHighlighting || (copyWithSyntaxHighlighting && text.length < 65536)) {
+        const richText = viewModel.getRichTextToCopy(modelSelections, emptySelectionClipboard);
+        if (richText) {
+            html = richText.html;
+            mode = richText.mode;
+        }
+    }
+    const dataToCopy = {
+        isFromEmptySelection,
+        multicursorText,
+        text,
+        html,
+        mode
+    };
+    return dataToCopy;
+}
+export class InMemoryClipboardMetadataManager {
+    static { this.INSTANCE = new InMemoryClipboardMetadataManager(); }
+    constructor() {
+        this._lastState = null;
+    }
+    set(lastCopiedValue, data) {
+        this._lastState = { lastCopiedValue, data };
+    }
+    get(pastedText) {
+        if (this._lastState && this._lastState.lastCopiedValue === pastedText) {
+            return this._lastState.data;
+        }
+        this._lastState = null;
+        return null;
+    }
+}
+export const CopyOptions = {
+    forceCopyWithSyntaxHighlighting: false
+};

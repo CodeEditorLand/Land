@@ -1,1 +1,148 @@
-var l=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var p=(s,o,e,t)=>{for(var i=t>1?void 0:t?v(o,e):o,d=s.length-1,a;d>=0;d--)(a=s[d])&&(i=(t?a(o,e,i):a(i))||i);return t&&i&&l(o,e,i),i},r=(s,o)=>(e,t)=>o(e,t,s);import"../../../../base/common/uri.js";import{Event as f}from"../../../../base/common/event.js";import{EditorResourceAccessor as h,SideBySideEditor as I}from"../../../common/editor.js";import{EditorPane as w}from"./editorPane.js";import{IStorageService as m}from"../../../../platform/storage/common/storage.js";import{IInstantiationService as V}from"../../../../platform/instantiation/common/instantiation.js";import{ITelemetryService as b}from"../../../../platform/telemetry/common/telemetry.js";import{IThemeService as g}from"../../../../platform/theme/common/themeService.js";import{ITextResourceConfigurationService as R}from"../../../../editor/common/services/textResourceConfiguration.js";import{IEditorGroupsService as D}from"../../../services/editor/common/editorGroupsService.js";import{IEditorService as T}from"../../../services/editor/common/editorService.js";import"../../../../base/common/resources.js";import{MutableDisposable as x}from"../../../../base/common/lifecycle.js";import"../../../common/editor/editorInput.js";let n=class extends w{constructor(e,t,i,d,a,u,c,S,C,E){super(e,t,d,S,u);this.instantiationService=a;this.textResourceConfigurationService=c;this.editorService=C;this.editorGroupService=E;this.viewState=this.getEditorMemento(E,c,i,100)}viewState;groupListener=this._register(new x);editorViewStateDisposables;setEditorVisible(e){this.groupListener.value=this.group.onWillCloseEditor(t=>this.onWillCloseEditor(t)),super.setEditorVisible(e)}onWillCloseEditor(e){const t=e.editor;t===this.input&&this.updateEditorViewState(t)}clearInput(){this.updateEditorViewState(this.input),super.clearInput()}saveState(){this.updateEditorViewState(this.input),super.saveState()}updateEditorViewState(e){if(!e||!this.tracksEditorViewState(e))return;const t=this.toEditorViewStateResource(e);t&&(this.tracksDisposedEditorViewState()||(this.editorViewStateDisposables||(this.editorViewStateDisposables=new Map),this.editorViewStateDisposables.has(e)||this.editorViewStateDisposables.set(e,f.once(e.onWillDispose)(()=>{this.clearEditorViewState(t,this.group),this.editorViewStateDisposables?.delete(e)}))),e.isDisposed()&&!this.tracksDisposedEditorViewState()||!this.shouldRestoreEditorViewState(e)&&!this.group.contains(e)?this.clearEditorViewState(t,this.group):e.isDisposed()||this.saveEditorViewState(t))}shouldRestoreEditorViewState(e,t){return t?.newInGroup?this.textResourceConfigurationService.getValue(h.getOriginalUri(e,{supportSideBySide:I.PRIMARY}),"workbench.editor.restoreViewState")!==!1:!0}getViewState(){const e=this.input;if(!e||!this.tracksEditorViewState(e))return;const t=this.toEditorViewStateResource(e);if(t)return this.computeEditorViewState(t)}saveEditorViewState(e){const t=this.computeEditorViewState(e);t&&this.viewState.saveEditorState(this.group,e,t)}loadEditorViewState(e,t){if(!e||!this.tracksEditorViewState(e)||!this.shouldRestoreEditorViewState(e,t))return;const i=this.toEditorViewStateResource(e);if(i)return this.viewState.loadEditorState(this.group,i)}moveEditorViewState(e,t,i){return this.viewState.moveEditorState(e,t,i)}clearEditorViewState(e,t){this.viewState.clearEditorState(e,t)}dispose(){if(super.dispose(),this.editorViewStateDisposables){for(const[,e]of this.editorViewStateDisposables)e.dispose();this.editorViewStateDisposables=void 0}}tracksDisposedEditorViewState(){return!1}};n=p([r(3,b),r(4,V),r(5,m),r(6,R),r(7,g),r(8,T),r(9,D)],n);export{n as AbstractEditorWithViewState};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Event } from '../../../../base/common/event.js';
+import { EditorResourceAccessor, SideBySideEditor } from '../../../common/editor.js';
+import { EditorPane } from './editorPane.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { ITextResourceConfigurationService } from '../../../../editor/common/services/textResourceConfiguration.js';
+import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { MutableDisposable } from '../../../../base/common/lifecycle.js';
+let AbstractEditorWithViewState = class AbstractEditorWithViewState extends EditorPane {
+    constructor(id, group, viewStateStorageKey, telemetryService, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService) {
+        super(id, group, telemetryService, themeService, storageService);
+        this.instantiationService = instantiationService;
+        this.textResourceConfigurationService = textResourceConfigurationService;
+        this.editorService = editorService;
+        this.editorGroupService = editorGroupService;
+        this.groupListener = this._register(new MutableDisposable());
+        this.viewState = this.getEditorMemento(editorGroupService, textResourceConfigurationService, viewStateStorageKey, 100);
+    }
+    setEditorVisible(visible) {
+        this.groupListener.value = this.group.onWillCloseEditor(e => this.onWillCloseEditor(e));
+        super.setEditorVisible(visible);
+    }
+    onWillCloseEditor(e) {
+        const editor = e.editor;
+        if (editor === this.input) {
+            this.updateEditorViewState(editor);
+        }
+    }
+    clearInput() {
+        this.updateEditorViewState(this.input);
+        super.clearInput();
+    }
+    saveState() {
+        this.updateEditorViewState(this.input);
+        super.saveState();
+    }
+    updateEditorViewState(input) {
+        if (!input || !this.tracksEditorViewState(input)) {
+            return;
+        }
+        const resource = this.toEditorViewStateResource(input);
+        if (!resource) {
+            return;
+        }
+        if (!this.tracksDisposedEditorViewState()) {
+            if (!this.editorViewStateDisposables) {
+                this.editorViewStateDisposables = new Map();
+            }
+            if (!this.editorViewStateDisposables.has(input)) {
+                this.editorViewStateDisposables.set(input, Event.once(input.onWillDispose)(() => {
+                    this.clearEditorViewState(resource, this.group);
+                    this.editorViewStateDisposables?.delete(input);
+                }));
+            }
+        }
+        if ((input.isDisposed() && !this.tracksDisposedEditorViewState()) ||
+            (!this.shouldRestoreEditorViewState(input) && !this.group.contains(input))) {
+            this.clearEditorViewState(resource, this.group);
+        }
+        else if (!input.isDisposed()) {
+            this.saveEditorViewState(resource);
+        }
+    }
+    shouldRestoreEditorViewState(input, context) {
+        if (context?.newInGroup) {
+            return this.textResourceConfigurationService.getValue(EditorResourceAccessor.getOriginalUri(input, { supportSideBySide: SideBySideEditor.PRIMARY }), 'workbench.editor.restoreViewState') === false ? false : true;
+        }
+        return true;
+    }
+    getViewState() {
+        const input = this.input;
+        if (!input || !this.tracksEditorViewState(input)) {
+            return;
+        }
+        const resource = this.toEditorViewStateResource(input);
+        if (!resource) {
+            return;
+        }
+        return this.computeEditorViewState(resource);
+    }
+    saveEditorViewState(resource) {
+        const editorViewState = this.computeEditorViewState(resource);
+        if (!editorViewState) {
+            return;
+        }
+        this.viewState.saveEditorState(this.group, resource, editorViewState);
+    }
+    loadEditorViewState(input, context) {
+        if (!input) {
+            return undefined;
+        }
+        if (!this.tracksEditorViewState(input)) {
+            return undefined;
+        }
+        if (!this.shouldRestoreEditorViewState(input, context)) {
+            return undefined;
+        }
+        const resource = this.toEditorViewStateResource(input);
+        if (!resource) {
+            return;
+        }
+        return this.viewState.loadEditorState(this.group, resource);
+    }
+    moveEditorViewState(source, target, comparer) {
+        return this.viewState.moveEditorState(source, target, comparer);
+    }
+    clearEditorViewState(resource, group) {
+        this.viewState.clearEditorState(resource, group);
+    }
+    dispose() {
+        super.dispose();
+        if (this.editorViewStateDisposables) {
+            for (const [, disposables] of this.editorViewStateDisposables) {
+                disposables.dispose();
+            }
+            this.editorViewStateDisposables = undefined;
+        }
+    }
+    tracksDisposedEditorViewState() {
+        return false;
+    }
+};
+AbstractEditorWithViewState = __decorate([
+    __param(3, ITelemetryService),
+    __param(4, IInstantiationService),
+    __param(5, IStorageService),
+    __param(6, ITextResourceConfigurationService),
+    __param(7, IThemeService),
+    __param(8, IEditorService),
+    __param(9, IEditorGroupsService),
+    __metadata("design:paramtypes", [String, Object, String, Object, Object, Object, Object, Object, Object, Object])
+], AbstractEditorWithViewState);
+export { AbstractEditorWithViewState };

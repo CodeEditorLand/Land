@@ -1,1 +1,111 @@
-var _=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var d=(r,o,t,e)=>{for(var i=e>1?void 0:e?u(o,t):o,a=r.length-1,n;a>=0;a--)(n=r[a])&&(i=(e?n(o,t,i):n(i))||i);return e&&i&&_(o,t,i),i},s=(r,o)=>(t,e)=>o(t,e,r);import*as c from"../../../../../../base/browser/dom.js";import*as I from"../../../../../../base/common/types.js";import{EventType as f}from"../../../../../../base/browser/touch.js";import"../../../../../../base/browser/ui/actionbar/actionbar.js";import"../../../../../../base/browser/ui/dropdown/dropdown.js";import{getDefaultHoverDelegate as m}from"../../../../../../base/browser/ui/hover/hoverDelegateFactory.js";import{renderLabelWithIcons as A}from"../../../../../../base/browser/ui/iconLabel/iconLabels.js";import"../../../../../../base/common/actions.js";import{ThemeIcon as h}from"../../../../../../base/common/themables.js";import{MenuEntryActionViewItem as p,SubmenuEntryActionViewItem as y}from"../../../../../../platform/actions/browser/menuEntryActionViewItem.js";import{MenuItemAction as E}from"../../../../../../platform/actions/common/actions.js";import{IContextMenuService as T}from"../../../../../../platform/contextview/browser/contextView.js";import{IKeybindingService as M}from"../../../../../../platform/keybinding/common/keybinding.js";import{IThemeService as g}from"../../../../../../platform/theme/common/themeService.js";import{IHoverService as x}from"../../../../../../platform/hover/browser/hover.js";class Q extends p{updateLabel(){this.options.label&&this.label&&c.reset(this.label,...A(this._commandAction.label??""))}}class X extends p{_actionLabel;render(o){super.render(o),o.classList.add("notebook-action-view-item"),this._actionLabel=document.createElement("a"),o.appendChild(this._actionLabel),this.updateLabel()}updateLabel(){this._actionLabel&&(this._actionLabel.classList.add("notebook-label"),this._actionLabel.innerText=this._action.label)}}let l=class extends y{constructor(t,e,i,a,n,v,b,L,C){super(t,{...e,hoverDelegate:e?.hoverDelegate??m("element")},v,b,L);this.renderLabel=i;this.subActionProvider=a;this.subActionViewItemProvider=n;this._hoverService=C}_actionLabel;_hover;_primaryAction;render(t){super.render(t),t.classList.add("notebook-action-view-item"),t.classList.add("notebook-action-view-item-unified"),this._actionLabel=document.createElement("a"),t.appendChild(this._actionLabel),this._hover=this._register(this._hoverService.setupManagedHover(this.options.hoverDelegate??m("element"),this._actionLabel,"")),this.updateLabel();for(const e of[c.EventType.CLICK,c.EventType.MOUSE_DOWN,f.Tap])this._register(c.addDisposableListener(t,e,i=>this.onClick(i,!0)))}onClick(t,e=!1){c.EventHelper.stop(t,!0);const i=I.isUndefinedOrNull(this._context)?this.options?.useEventAsContext?t:{preserveFocus:e}:this._context;this.actionRunner.run(this._primaryAction??this._action,i)}updateLabel(){const t=this.subActionProvider.getActions();if(this._actionLabel){const e=t[0];if(this._primaryAction=e,e&&e instanceof E){const i=this.element;if(i&&e.item.icon&&h.isThemeIcon(e.item.icon)){const a=h.asClassNameArray(e.item.icon);i.classList.forEach(n=>{n.startsWith("codicon-")&&i.classList.remove(n)}),i.classList.add(...a)}this.renderLabel&&(this._actionLabel.classList.add("notebook-label"),this._actionLabel.innerText=this._action.label,this._hover?.update(e.tooltip.length?e.tooltip:e.label))}else this.renderLabel&&(this._actionLabel.classList.add("notebook-label"),this._actionLabel.innerText=this._action.label,this._hover?.update(this._action.tooltip.length?this._action.tooltip:this._action.label))}}};l=d([s(5,M),s(6,T),s(7,g),s(8,x)],l);export{X as ActionViewWithLabel,Q as CodiconActionViewItem,l as UnifiedSubmenuActionView};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as DOM from '../../../../../../base/browser/dom.js';
+import * as types from '../../../../../../base/common/types.js';
+import { EventType as TouchEventType } from '../../../../../../base/browser/touch.js';
+import { getDefaultHoverDelegate } from '../../../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { renderLabelWithIcons } from '../../../../../../base/browser/ui/iconLabel/iconLabels.js';
+import { ThemeIcon } from '../../../../../../base/common/themables.js';
+import { MenuEntryActionViewItem, SubmenuEntryActionViewItem } from '../../../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { MenuItemAction, SubmenuItemAction } from '../../../../../../platform/actions/common/actions.js';
+import { IContextMenuService } from '../../../../../../platform/contextview/browser/contextView.js';
+import { IKeybindingService } from '../../../../../../platform/keybinding/common/keybinding.js';
+import { IThemeService } from '../../../../../../platform/theme/common/themeService.js';
+import { IHoverService } from '../../../../../../platform/hover/browser/hover.js';
+export class CodiconActionViewItem extends MenuEntryActionViewItem {
+    updateLabel() {
+        if (this.options.label && this.label) {
+            DOM.reset(this.label, ...renderLabelWithIcons(this._commandAction.label ?? ''));
+        }
+    }
+}
+export class ActionViewWithLabel extends MenuEntryActionViewItem {
+    render(container) {
+        super.render(container);
+        container.classList.add('notebook-action-view-item');
+        this._actionLabel = document.createElement('a');
+        container.appendChild(this._actionLabel);
+        this.updateLabel();
+    }
+    updateLabel() {
+        if (this._actionLabel) {
+            this._actionLabel.classList.add('notebook-label');
+            this._actionLabel.innerText = this._action.label;
+        }
+    }
+}
+let UnifiedSubmenuActionView = class UnifiedSubmenuActionView extends SubmenuEntryActionViewItem {
+    constructor(action, options, renderLabel, subActionProvider, subActionViewItemProvider, _keybindingService, _contextMenuService, _themeService, _hoverService) {
+        super(action, { ...options, hoverDelegate: options?.hoverDelegate ?? getDefaultHoverDelegate('element') }, _keybindingService, _contextMenuService, _themeService);
+        this.renderLabel = renderLabel;
+        this.subActionProvider = subActionProvider;
+        this.subActionViewItemProvider = subActionViewItemProvider;
+        this._hoverService = _hoverService;
+    }
+    render(container) {
+        super.render(container);
+        container.classList.add('notebook-action-view-item');
+        container.classList.add('notebook-action-view-item-unified');
+        this._actionLabel = document.createElement('a');
+        container.appendChild(this._actionLabel);
+        this._hover = this._register(this._hoverService.setupManagedHover(this.options.hoverDelegate ?? getDefaultHoverDelegate('element'), this._actionLabel, ''));
+        this.updateLabel();
+        for (const event of [DOM.EventType.CLICK, DOM.EventType.MOUSE_DOWN, TouchEventType.Tap]) {
+            this._register(DOM.addDisposableListener(container, event, e => this.onClick(e, true)));
+        }
+    }
+    onClick(event, preserveFocus = false) {
+        DOM.EventHelper.stop(event, true);
+        const context = types.isUndefinedOrNull(this._context) ? this.options?.useEventAsContext ? event : { preserveFocus } : this._context;
+        this.actionRunner.run(this._primaryAction ?? this._action, context);
+    }
+    updateLabel() {
+        const actions = this.subActionProvider.getActions();
+        if (this._actionLabel) {
+            const primaryAction = actions[0];
+            this._primaryAction = primaryAction;
+            if (primaryAction && primaryAction instanceof MenuItemAction) {
+                const element = this.element;
+                if (element && primaryAction.item.icon && ThemeIcon.isThemeIcon(primaryAction.item.icon)) {
+                    const iconClasses = ThemeIcon.asClassNameArray(primaryAction.item.icon);
+                    element.classList.forEach((cl) => {
+                        if (cl.startsWith('codicon-')) {
+                            element.classList.remove(cl);
+                        }
+                    });
+                    element.classList.add(...iconClasses);
+                }
+                if (this.renderLabel) {
+                    this._actionLabel.classList.add('notebook-label');
+                    this._actionLabel.innerText = this._action.label;
+                    this._hover?.update(primaryAction.tooltip.length ? primaryAction.tooltip : primaryAction.label);
+                }
+            }
+            else {
+                if (this.renderLabel) {
+                    this._actionLabel.classList.add('notebook-label');
+                    this._actionLabel.innerText = this._action.label;
+                    this._hover?.update(this._action.tooltip.length ? this._action.tooltip : this._action.label);
+                }
+            }
+        }
+    }
+};
+UnifiedSubmenuActionView = __decorate([
+    __param(5, IKeybindingService),
+    __param(6, IContextMenuService),
+    __param(7, IThemeService),
+    __param(8, IHoverService),
+    __metadata("design:paramtypes", [SubmenuItemAction, Object, Boolean, Object, Object, Object, Object, Object, Object])
+], UnifiedSubmenuActionView);
+export { UnifiedSubmenuActionView };

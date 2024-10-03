@@ -1,1 +1,37 @@
-var n=Object.defineProperty;var l=Object.getOwnPropertyDescriptor;var c=(a,e,t,o)=>{for(var r=o>1?void 0:o?l(e,t):e,m=a.length-1,S;m>=0;m--)(S=a[m])&&(r=(o?S(e,t,r):S(r))||r);return o&&r&&n(e,t,r),r},i=(a,e)=>(t,o)=>e(t,o,a);import{Disposable as p}from"../../../../base/common/lifecycle.js";import{IExtensionGalleryService as I,IGlobalExtensionEnablementService as s}from"../../../../platform/extensionManagement/common/extensionManagement.js";import{ExtensionStorageService as E,IExtensionStorageService as g}from"../../../../platform/extensionManagement/common/extensionStorage.js";import{migrateUnsupportedExtensions as x}from"../../../../platform/extensionManagement/common/unsupportedExtensionsMigration.js";import{INativeServerExtensionManagementService as f}from"../../../../platform/extensionManagement/node/extensionManagementService.js";import{ILogService as d}from"../../../../platform/log/common/log.js";import{IStorageService as G}from"../../../../platform/storage/common/storage.js";let v=class extends p{constructor(e,t,o,r,m,S){super(),e.cleanUp(),x(e,t,o,r,S),E.removeOutdatedExtensionVersions(e,m)}};v=c([i(0,f),i(1,I),i(2,g),i(3,s),i(4,G),i(5,d)],v);export{v as ExtensionsContributions};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IExtensionGalleryService, IGlobalExtensionEnablementService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { ExtensionStorageService, IExtensionStorageService } from '../../../../platform/extensionManagement/common/extensionStorage.js';
+import { migrateUnsupportedExtensions } from '../../../../platform/extensionManagement/common/unsupportedExtensionsMigration.js';
+import { INativeServerExtensionManagementService } from '../../../../platform/extensionManagement/node/extensionManagementService.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+let ExtensionsContributions = class ExtensionsContributions extends Disposable {
+    constructor(extensionManagementService, extensionGalleryService, extensionStorageService, extensionEnablementService, storageService, logService) {
+        super();
+        extensionManagementService.cleanUp();
+        migrateUnsupportedExtensions(extensionManagementService, extensionGalleryService, extensionStorageService, extensionEnablementService, logService);
+        ExtensionStorageService.removeOutdatedExtensionVersions(extensionManagementService, storageService);
+    }
+};
+ExtensionsContributions = __decorate([
+    __param(0, INativeServerExtensionManagementService),
+    __param(1, IExtensionGalleryService),
+    __param(2, IExtensionStorageService),
+    __param(3, IGlobalExtensionEnablementService),
+    __param(4, IStorageService),
+    __param(5, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], ExtensionsContributions);
+export { ExtensionsContributions };

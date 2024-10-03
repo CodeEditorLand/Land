@@ -1,1 +1,70 @@
-var S=Object.defineProperty;var d=Object.getOwnPropertyDescriptor;var k=(o,s,i,c)=>{for(var r=c>1?void 0:c?d(s,i):s,e=o.length-1,t;e>=0;e--)(t=o[e])&&(r=(c?t(s,i,r):t(r))||r);return c&&r&&S(s,i,r),r},n=(o,s)=>(i,c)=>s(i,c,o);import"../../../../base/common/cancellation.js";import{matchesFuzzy as I}from"../../../../base/common/filters.js";import"../../../../base/common/lifecycle.js";import{localize as v}from"../../../../nls.js";import{ICommandService as P}from"../../../../platform/commands/common/commands.js";import{PickerQuickAccessProvider as f}from"../../../../platform/quickinput/browser/pickerQuickAccess.js";import"../../../../platform/quickinput/common/quickInput.js";import{IViewsService as h}from"../../../services/views/common/viewsService.js";import{DEBUG_CONSOLE_QUICK_ACCESS_PREFIX as _,SELECT_AND_START_ID as b}from"./debugCommands.js";import{IDebugService as g,REPL_VIEW_ID as l}from"../common/debug.js";let m=class extends f{constructor(i,c,r){super(_,{canAcceptInBackground:!0});this._debugService=i;this._viewsService=c;this._commandService=r}_getPicks(i,c,r){const e=[];this._debugService.getModel().getSessions(!0).filter(a=>a.hasSeparateRepl()).forEach((a,u)=>{const p=this._createPick(a,u,i);p&&e.push(p)}),e.length>0&&e.push({type:"separator"});const t=v("workbench.action.debug.startDebug","Start a New Debug Session");return e.push({label:`$(plus) ${t}`,ariaLabel:t,accept:()=>this._commandService.executeCommand(b)}),e}_createPick(i,c,r){const e=i.name,t=I(r,e,!0);if(t)return{label:e,highlights:{label:t},accept:(a,u)=>{this._debugService.focusStackFrame(void 0,void 0,i,{explicit:!0}),this._viewsService.isViewVisible(l)||this._viewsService.openView(l,!0)}}}};m=k([n(0,g),n(1,h),n(2,P)],m);export{m as DebugConsoleQuickAccess};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { matchesFuzzy } from '../../../../base/common/filters.js';
+import { localize } from '../../../../nls.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { PickerQuickAccessProvider } from '../../../../platform/quickinput/browser/pickerQuickAccess.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+import { DEBUG_CONSOLE_QUICK_ACCESS_PREFIX, SELECT_AND_START_ID } from './debugCommands.js';
+import { IDebugService, REPL_VIEW_ID } from '../common/debug.js';
+let DebugConsoleQuickAccess = class DebugConsoleQuickAccess extends PickerQuickAccessProvider {
+    constructor(_debugService, _viewsService, _commandService) {
+        super(DEBUG_CONSOLE_QUICK_ACCESS_PREFIX, { canAcceptInBackground: true });
+        this._debugService = _debugService;
+        this._viewsService = _viewsService;
+        this._commandService = _commandService;
+    }
+    _getPicks(filter, disposables, token) {
+        const debugConsolePicks = [];
+        this._debugService.getModel().getSessions(true).filter(s => s.hasSeparateRepl()).forEach((session, index) => {
+            const pick = this._createPick(session, index, filter);
+            if (pick) {
+                debugConsolePicks.push(pick);
+            }
+        });
+        if (debugConsolePicks.length > 0) {
+            debugConsolePicks.push({ type: 'separator' });
+        }
+        const createTerminalLabel = localize("workbench.action.debug.startDebug", "Start a New Debug Session");
+        debugConsolePicks.push({
+            label: `$(plus) ${createTerminalLabel}`,
+            ariaLabel: createTerminalLabel,
+            accept: () => this._commandService.executeCommand(SELECT_AND_START_ID)
+        });
+        return debugConsolePicks;
+    }
+    _createPick(session, sessionIndex, filter) {
+        const label = session.name;
+        const highlights = matchesFuzzy(filter, label, true);
+        if (highlights) {
+            return {
+                label,
+                highlights: { label: highlights },
+                accept: (keyMod, event) => {
+                    this._debugService.focusStackFrame(undefined, undefined, session, { explicit: true });
+                    if (!this._viewsService.isViewVisible(REPL_VIEW_ID)) {
+                        this._viewsService.openView(REPL_VIEW_ID, true);
+                    }
+                }
+            };
+        }
+        return undefined;
+    }
+};
+DebugConsoleQuickAccess = __decorate([
+    __param(0, IDebugService),
+    __param(1, IViewsService),
+    __param(2, ICommandService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], DebugConsoleQuickAccess);
+export { DebugConsoleQuickAccess };

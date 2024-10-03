@@ -1,1 +1,165 @@
-import{findLastIdxMonotonous as L,findLastMonotonous as b,findFirstMonotonous as y}from"../../../../base/common/arraysFind.js";import{CharCode as o}from"../../../../base/common/charCode.js";import{OffsetRange as m}from"../../core/offsetRange.js";import{Position as c}from"../../core/position.js";import{Range as h}from"../../core/range.js";import"./algorithms/diffAlgorithm.js";import{isSpace as B}from"./utils.js";class w{constructor(e,i,n){this.lines=e;this.range=i;this.considerWhitespaceChanges=n;this.firstElementOffsetByLineIdx.push(0);for(let s=this.range.startLineNumber;s<=this.range.endLineNumber;s++){let a=e[s-1],u=0;s===this.range.startLineNumber&&this.range.startColumn>1&&(u=this.range.startColumn-1,a=a.substring(u)),this.lineStartOffsets.push(u);let l=0;if(!n){const t=a.trimStart();l=a.length-t.length,a=t.trimEnd()}this.trimmedWsLengthsByLineIdx.push(l);const p=s===this.range.endLineNumber?Math.min(this.range.endColumn-1-u-l,a.length):a.length;for(let t=0;t<p;t++)this.elements.push(a.charCodeAt(t));s<this.range.endLineNumber&&(this.elements.push(10),this.firstElementOffsetByLineIdx.push(this.elements.length))}}elements=[];firstElementOffsetByLineIdx=[];lineStartOffsets=[];trimmedWsLengthsByLineIdx=[];toString(){return`Slice: "${this.text}"`}get text(){return this.getText(new m(0,this.length))}getText(e){return this.elements.slice(e.start,e.endExclusive).map(i=>String.fromCharCode(i)).join("")}getElement(e){return this.elements[e]}get length(){return this.elements.length}getBoundaryScore(e){const i=d(e>0?this.elements[e-1]:-1),n=d(e<this.elements.length?this.elements[e]:-1);if(i===7&&n===8)return 0;if(i===8)return 150;let s=0;return i!==n&&(s+=10,i===0&&n===1&&(s+=1)),s+=g(i),s+=g(n),s}translateOffset(e,i="right"){const n=L(this.firstElementOffsetByLineIdx,a=>a<=e),s=e-this.firstElementOffsetByLineIdx[n];return new c(this.range.startLineNumber+n,1+this.lineStartOffsets[n]+s+(s===0&&i==="left"?0:this.trimmedWsLengthsByLineIdx[n]))}translateRange(e){const i=this.translateOffset(e.start,"right"),n=this.translateOffset(e.endExclusive,"left");return n.isBefore(i)?h.fromPositions(n,n):h.fromPositions(i,n)}findWordContaining(e){if(e<0||e>=this.elements.length||!f(this.elements[e]))return;let i=e;for(;i>0&&f(this.elements[i-1]);)i--;let n=e;for(;n<this.elements.length&&f(this.elements[n]);)n++;return new m(i,n)}countLinesIn(e){return this.translateOffset(e.endExclusive).lineNumber-this.translateOffset(e.start).lineNumber}isStronglyEqual(e,i){return this.elements[e]===this.elements[i]}extendToFullLines(e){const i=b(this.firstElementOffsetByLineIdx,s=>s<=e.start)??0,n=y(this.firstElementOffsetByLineIdx,s=>e.endExclusive<=s)??this.elements.length;return new m(i,n)}}function f(r){return r>=o.a&&r<=o.z||r>=o.A&&r<=o.Z||r>=o.Digit0&&r<=o.Digit9}var O=(t=>(t[t.WordLower=0]="WordLower",t[t.WordUpper=1]="WordUpper",t[t.WordNumber=2]="WordNumber",t[t.End=3]="End",t[t.Other=4]="Other",t[t.Separator=5]="Separator",t[t.Space=6]="Space",t[t.LineBreakCR=7]="LineBreakCR",t[t.LineBreakLF=8]="LineBreakLF",t))(O||{});const S={0:0,1:0,2:0,3:10,4:2,5:30,6:3,7:10,8:10};function g(r){return S[r]}function d(r){return r===o.LineFeed?8:r===o.CarriageReturn?7:B(r)?6:r>=o.a&&r<=o.z?0:r>=o.A&&r<=o.Z?1:r>=o.Digit0&&r<=o.Digit9?2:r===-1?3:r===o.Comma||r===o.Semicolon?5:4}export{w as LinesSliceCharSequence};
+import { findLastIdxMonotonous, findLastMonotonous, findFirstMonotonous } from '../../../../base/common/arraysFind.js';
+import { OffsetRange } from '../../core/offsetRange.js';
+import { Position } from '../../core/position.js';
+import { Range } from '../../core/range.js';
+import { isSpace } from './utils.js';
+export class LinesSliceCharSequence {
+    constructor(lines, range, considerWhitespaceChanges) {
+        this.lines = lines;
+        this.range = range;
+        this.considerWhitespaceChanges = considerWhitespaceChanges;
+        this.elements = [];
+        this.firstElementOffsetByLineIdx = [];
+        this.lineStartOffsets = [];
+        this.trimmedWsLengthsByLineIdx = [];
+        this.firstElementOffsetByLineIdx.push(0);
+        for (let lineNumber = this.range.startLineNumber; lineNumber <= this.range.endLineNumber; lineNumber++) {
+            let line = lines[lineNumber - 1];
+            let lineStartOffset = 0;
+            if (lineNumber === this.range.startLineNumber && this.range.startColumn > 1) {
+                lineStartOffset = this.range.startColumn - 1;
+                line = line.substring(lineStartOffset);
+            }
+            this.lineStartOffsets.push(lineStartOffset);
+            let trimmedWsLength = 0;
+            if (!considerWhitespaceChanges) {
+                const trimmedStartLine = line.trimStart();
+                trimmedWsLength = line.length - trimmedStartLine.length;
+                line = trimmedStartLine.trimEnd();
+            }
+            this.trimmedWsLengthsByLineIdx.push(trimmedWsLength);
+            const lineLength = lineNumber === this.range.endLineNumber ? Math.min(this.range.endColumn - 1 - lineStartOffset - trimmedWsLength, line.length) : line.length;
+            for (let i = 0; i < lineLength; i++) {
+                this.elements.push(line.charCodeAt(i));
+            }
+            if (lineNumber < this.range.endLineNumber) {
+                this.elements.push('\n'.charCodeAt(0));
+                this.firstElementOffsetByLineIdx.push(this.elements.length);
+            }
+        }
+    }
+    toString() {
+        return `Slice: "${this.text}"`;
+    }
+    get text() {
+        return this.getText(new OffsetRange(0, this.length));
+    }
+    getText(range) {
+        return this.elements.slice(range.start, range.endExclusive).map(e => String.fromCharCode(e)).join('');
+    }
+    getElement(offset) {
+        return this.elements[offset];
+    }
+    get length() {
+        return this.elements.length;
+    }
+    getBoundaryScore(length) {
+        const prevCategory = getCategory(length > 0 ? this.elements[length - 1] : -1);
+        const nextCategory = getCategory(length < this.elements.length ? this.elements[length] : -1);
+        if (prevCategory === 7 && nextCategory === 8) {
+            return 0;
+        }
+        if (prevCategory === 8) {
+            return 150;
+        }
+        let score = 0;
+        if (prevCategory !== nextCategory) {
+            score += 10;
+            if (prevCategory === 0 && nextCategory === 1) {
+                score += 1;
+            }
+        }
+        score += getCategoryBoundaryScore(prevCategory);
+        score += getCategoryBoundaryScore(nextCategory);
+        return score;
+    }
+    translateOffset(offset, preference = 'right') {
+        const i = findLastIdxMonotonous(this.firstElementOffsetByLineIdx, (value) => value <= offset);
+        const lineOffset = offset - this.firstElementOffsetByLineIdx[i];
+        return new Position(this.range.startLineNumber + i, 1 + this.lineStartOffsets[i] + lineOffset + ((lineOffset === 0 && preference === 'left') ? 0 : this.trimmedWsLengthsByLineIdx[i]));
+    }
+    translateRange(range) {
+        const pos1 = this.translateOffset(range.start, 'right');
+        const pos2 = this.translateOffset(range.endExclusive, 'left');
+        if (pos2.isBefore(pos1)) {
+            return Range.fromPositions(pos2, pos2);
+        }
+        return Range.fromPositions(pos1, pos2);
+    }
+    findWordContaining(offset) {
+        if (offset < 0 || offset >= this.elements.length) {
+            return undefined;
+        }
+        if (!isWordChar(this.elements[offset])) {
+            return undefined;
+        }
+        let start = offset;
+        while (start > 0 && isWordChar(this.elements[start - 1])) {
+            start--;
+        }
+        let end = offset;
+        while (end < this.elements.length && isWordChar(this.elements[end])) {
+            end++;
+        }
+        return new OffsetRange(start, end);
+    }
+    countLinesIn(range) {
+        return this.translateOffset(range.endExclusive).lineNumber - this.translateOffset(range.start).lineNumber;
+    }
+    isStronglyEqual(offset1, offset2) {
+        return this.elements[offset1] === this.elements[offset2];
+    }
+    extendToFullLines(range) {
+        const start = findLastMonotonous(this.firstElementOffsetByLineIdx, x => x <= range.start) ?? 0;
+        const end = findFirstMonotonous(this.firstElementOffsetByLineIdx, x => range.endExclusive <= x) ?? this.elements.length;
+        return new OffsetRange(start, end);
+    }
+}
+function isWordChar(charCode) {
+    return charCode >= 97 && charCode <= 122
+        || charCode >= 65 && charCode <= 90
+        || charCode >= 48 && charCode <= 57;
+}
+const score = {
+    [0]: 0,
+    [1]: 0,
+    [2]: 0,
+    [3]: 10,
+    [4]: 2,
+    [5]: 30,
+    [6]: 3,
+    [7]: 10,
+    [8]: 10,
+};
+function getCategoryBoundaryScore(category) {
+    return score[category];
+}
+function getCategory(charCode) {
+    if (charCode === 10) {
+        return 8;
+    }
+    else if (charCode === 13) {
+        return 7;
+    }
+    else if (isSpace(charCode)) {
+        return 6;
+    }
+    else if (charCode >= 97 && charCode <= 122) {
+        return 0;
+    }
+    else if (charCode >= 65 && charCode <= 90) {
+        return 1;
+    }
+    else if (charCode >= 48 && charCode <= 57) {
+        return 2;
+    }
+    else if (charCode === -1) {
+        return 3;
+    }
+    else if (charCode === 44 || charCode === 59) {
+        return 5;
+    }
+    else {
+        return 4;
+    }
+}

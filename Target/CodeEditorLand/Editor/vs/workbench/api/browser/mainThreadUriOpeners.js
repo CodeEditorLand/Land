@@ -1,1 +1,116 @@
-var x=Object.defineProperty;var O=Object.getOwnPropertyDescriptor;var c=(a,n,e,t)=>{for(var r=t>1?void 0:t?O(n,e):n,i=a.length-1,o;i>=0;i--)(o=a[i])&&(r=(t?o(n,e,r):o(r))||r);return t&&r&&x(n,e,r),r},s=(a,n)=>(e,t)=>n(e,t,a);import{Action as f}from"../../../base/common/actions.js";import{isCancellationError as v}from"../../../base/common/errors.js";import{Disposable as S}from"../../../base/common/lifecycle.js";import{Schemas as m}from"../../../base/common/network.js";import"../../../base/common/uri.js";import{localize as h}from"../../../nls.js";import"../../../platform/extensions/common/extensions.js";import{INotificationService as g,Severity as E}from"../../../platform/notification/common/notification.js";import{IOpenerService as u}from"../../../platform/opener/common/opener.js";import{IStorageService as y}from"../../../platform/storage/common/storage.js";import{ExtHostContext as I,MainContext as U}from"../common/extHost.protocol.js";import{defaultExternalUriOpenerId as b}from"../../contrib/externalUriOpener/common/configuration.js";import{ContributedExternalUriOpenersStore as w}from"../../contrib/externalUriOpener/common/contributedOpeners.js";import{IExternalUriOpenerService as _}from"../../contrib/externalUriOpener/common/externalUriOpenerService.js";import{IExtensionService as C}from"../../services/extensions/common/extensions.js";import{extHostNamedCustomer as H}from"../../services/extensions/common/extHostCustomers.js";let p=class extends S{constructor(e,t,r,i,o,l){super();this.extensionService=i;this.openerService=o;this.notificationService=l;this.proxy=e.getProxy(I.ExtHostUriOpeners),this._register(r.registerExternalOpenerProvider(this)),this._contributedExternalUriOpenersStore=this._register(new w(t,i))}proxy;_registeredOpeners=new Map;_contributedExternalUriOpenersStore;async*getOpeners(e){if(!(e.scheme!==m.http&&e.scheme!==m.https)){await this.extensionService.activateByEvent(`onOpenExternalUri:${e.scheme}`);for(const[t,r]of this._registeredOpeners)r.schemes.has(e.scheme)&&(yield this.createOpener(t,r))}}createOpener(e,t){return{id:e,label:t.label,canOpen:(r,i)=>this.proxy.$canOpenUri(e,r,i),openExternalUri:async(r,i,o)=>{try{await this.proxy.$openUri(e,{resolvedUri:r,sourceUri:i.sourceUri},o)}catch(l){if(!v(l)){const d=new f("default",h("openerFailedUseDefault","Open using default opener"),void 0,void 0,async()=>{await this.openerService.open(r,{allowTunneling:!1,allowContributedOpeners:b})});d.tooltip=r.toString(),this.notificationService.notify({severity:E.Error,message:h({key:"openerFailedMessage",comment:["{0} is the id of the opener. {1} is the url being opened."]},"Could not open uri with '{0}': {1}",e,l.toString()),actions:{primary:[d]}})}}return!0}}}async $registerUriOpener(e,t,r,i){if(this._registeredOpeners.has(e))throw new Error(`Opener with id '${e}' already registered`);this._registeredOpeners.set(e,{schemes:new Set(t),label:i,extensionId:r}),this._contributedExternalUriOpenersStore.didRegisterOpener(e,r.value)}async $unregisterUriOpener(e){this._registeredOpeners.delete(e),this._contributedExternalUriOpenersStore.delete(e)}dispose(){super.dispose(),this._registeredOpeners.clear()}};p=c([H(U.MainThreadUriOpeners),s(1,y),s(2,_),s(3,C),s(4,u),s(5,g)],p);export{p as MainThreadUriOpeners};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Action } from '../../../base/common/actions.js';
+import { isCancellationError } from '../../../base/common/errors.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { Schemas } from '../../../base/common/network.js';
+import { localize } from '../../../nls.js';
+import { INotificationService, Severity } from '../../../platform/notification/common/notification.js';
+import { IOpenerService } from '../../../platform/opener/common/opener.js';
+import { IStorageService } from '../../../platform/storage/common/storage.js';
+import { ExtHostContext, MainContext } from '../common/extHost.protocol.js';
+import { defaultExternalUriOpenerId } from '../../contrib/externalUriOpener/common/configuration.js';
+import { ContributedExternalUriOpenersStore } from '../../contrib/externalUriOpener/common/contributedOpeners.js';
+import { IExternalUriOpenerService } from '../../contrib/externalUriOpener/common/externalUriOpenerService.js';
+import { IExtensionService } from '../../services/extensions/common/extensions.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+let MainThreadUriOpeners = class MainThreadUriOpeners extends Disposable {
+    constructor(context, storageService, externalUriOpenerService, extensionService, openerService, notificationService) {
+        super();
+        this.extensionService = extensionService;
+        this.openerService = openerService;
+        this.notificationService = notificationService;
+        this._registeredOpeners = new Map();
+        this.proxy = context.getProxy(ExtHostContext.ExtHostUriOpeners);
+        this._register(externalUriOpenerService.registerExternalOpenerProvider(this));
+        this._contributedExternalUriOpenersStore = this._register(new ContributedExternalUriOpenersStore(storageService, extensionService));
+    }
+    async *getOpeners(targetUri) {
+        if (targetUri.scheme !== Schemas.http && targetUri.scheme !== Schemas.https) {
+            return;
+        }
+        await this.extensionService.activateByEvent(`onOpenExternalUri:${targetUri.scheme}`);
+        for (const [id, openerMetadata] of this._registeredOpeners) {
+            if (openerMetadata.schemes.has(targetUri.scheme)) {
+                yield this.createOpener(id, openerMetadata);
+            }
+        }
+    }
+    createOpener(id, metadata) {
+        return {
+            id: id,
+            label: metadata.label,
+            canOpen: (uri, token) => {
+                return this.proxy.$canOpenUri(id, uri, token);
+            },
+            openExternalUri: async (uri, ctx, token) => {
+                try {
+                    await this.proxy.$openUri(id, { resolvedUri: uri, sourceUri: ctx.sourceUri }, token);
+                }
+                catch (e) {
+                    if (!isCancellationError(e)) {
+                        const openDefaultAction = new Action('default', localize('openerFailedUseDefault', "Open using default opener"), undefined, undefined, async () => {
+                            await this.openerService.open(uri, {
+                                allowTunneling: false,
+                                allowContributedOpeners: defaultExternalUriOpenerId,
+                            });
+                        });
+                        openDefaultAction.tooltip = uri.toString();
+                        this.notificationService.notify({
+                            severity: Severity.Error,
+                            message: localize({
+                                key: 'openerFailedMessage',
+                                comment: ['{0} is the id of the opener. {1} is the url being opened.'],
+                            }, 'Could not open uri with \'{0}\': {1}', id, e.toString()),
+                            actions: {
+                                primary: [
+                                    openDefaultAction
+                                ]
+                            }
+                        });
+                    }
+                }
+                return true;
+            },
+        };
+    }
+    async $registerUriOpener(id, schemes, extensionId, label) {
+        if (this._registeredOpeners.has(id)) {
+            throw new Error(`Opener with id '${id}' already registered`);
+        }
+        this._registeredOpeners.set(id, {
+            schemes: new Set(schemes),
+            label,
+            extensionId,
+        });
+        this._contributedExternalUriOpenersStore.didRegisterOpener(id, extensionId.value);
+    }
+    async $unregisterUriOpener(id) {
+        this._registeredOpeners.delete(id);
+        this._contributedExternalUriOpenersStore.delete(id);
+    }
+    dispose() {
+        super.dispose();
+        this._registeredOpeners.clear();
+    }
+};
+MainThreadUriOpeners = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadUriOpeners),
+    __param(1, IStorageService),
+    __param(2, IExternalUriOpenerService),
+    __param(3, IExtensionService),
+    __param(4, IOpenerService),
+    __param(5, INotificationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], MainThreadUriOpeners);
+export { MainThreadUriOpeners };

@@ -1,1 +1,145 @@
-var g=Object.defineProperty;var y=Object.getOwnPropertyDescriptor;var f=(i,e,t,o)=>{for(var d=o>1?void 0:o?y(e,t):e,h=i.length-1,p;h>=0;h--)(p=i[h])&&(d=(o?p(e,t,d):p(d))||d);return o&&d&&g(e,t,d),d},u=(i,e)=>(t,o)=>e(t,o,i);import{derived as n,derivedConstOnceDefined as S,observableFromEvent as I,observableValue as c}from"../../../../base/common/observable.js";import{Constants as a}from"../../../../base/common/uint.js";import{IAccessibilityService as R}from"../../../../platform/accessibility/common/accessibility.js";import{diffEditorDefaultOptions as E}from"../../../common/config/diffEditor.js";import{clampedFloat as _,clampedInt as s,boolean as r,stringSet as m}from"../../../common/config/editorOptions.js";import"../../../common/diff/rangeMapping.js";import{allowsTrueInlineDiffRendering as v}from"./components/diffEditorViewZones/diffEditorViewZones.js";import"./diffEditorViewModel.js";let l=class{constructor(e,t){this._accessibilityService=t;const o={...e,...b(e,E)};this._options=c(this,o)}_options;get editorOptions(){return this._options}_diffEditorWidth=c(this,0);_screenReaderMode=I(this,this._accessibilityService.onDidChangeScreenReaderOptimized,()=>this._accessibilityService.isScreenReaderOptimized());couldShowInlineViewBecauseOfSize=n(this,e=>this._options.read(e).renderSideBySide&&this._diffEditorWidth.read(e)<=this._options.read(e).renderSideBySideInlineBreakpoint);renderOverviewRuler=n(this,e=>this._options.read(e).renderOverviewRuler);renderSideBySide=n(this,e=>this.compactMode.read(e)&&this.shouldRenderInlineViewInSmartMode.read(e)?!1:this._options.read(e).renderSideBySide&&!(this._options.read(e).useInlineViewWhenSpaceIsLimited&&this.couldShowInlineViewBecauseOfSize.read(e)&&!this._screenReaderMode.read(e)));readOnly=n(this,e=>this._options.read(e).readOnly);shouldRenderOldRevertArrows=n(this,e=>!(!this._options.read(e).renderMarginRevertIcon||!this.renderSideBySide.read(e)||this.readOnly.read(e)||this.shouldRenderGutterMenu.read(e)));shouldRenderGutterMenu=n(this,e=>this._options.read(e).renderGutterMenu);renderIndicators=n(this,e=>this._options.read(e).renderIndicators);enableSplitViewResizing=n(this,e=>this._options.read(e).enableSplitViewResizing);splitViewDefaultRatio=n(this,e=>this._options.read(e).splitViewDefaultRatio);ignoreTrimWhitespace=n(this,e=>this._options.read(e).ignoreTrimWhitespace);maxComputationTimeMs=n(this,e=>this._options.read(e).maxComputationTime);showMoves=n(this,e=>this._options.read(e).experimental.showMoves&&this.renderSideBySide.read(e));isInEmbeddedEditor=n(this,e=>this._options.read(e).isInEmbeddedEditor);diffWordWrap=n(this,e=>this._options.read(e).diffWordWrap);originalEditable=n(this,e=>this._options.read(e).originalEditable);diffCodeLens=n(this,e=>this._options.read(e).diffCodeLens);accessibilityVerbose=n(this,e=>this._options.read(e).accessibilityVerbose);diffAlgorithm=n(this,e=>this._options.read(e).diffAlgorithm);showEmptyDecorations=n(this,e=>this._options.read(e).experimental.showEmptyDecorations);onlyShowAccessibleDiffViewer=n(this,e=>this._options.read(e).onlyShowAccessibleDiffViewer);compactMode=n(this,e=>this._options.read(e).compactMode);trueInlineDiffRenderingEnabled=n(this,e=>this._options.read(e).experimental.useTrueInlineView);useTrueInlineDiffRendering=n(this,e=>!this.renderSideBySide.read(e)&&this.trueInlineDiffRenderingEnabled.read(e));hideUnchangedRegions=n(this,e=>this._options.read(e).hideUnchangedRegions.enabled);hideUnchangedRegionsRevealLineCount=n(this,e=>this._options.read(e).hideUnchangedRegions.revealLineCount);hideUnchangedRegionsContextLineCount=n(this,e=>this._options.read(e).hideUnchangedRegions.contextLineCount);hideUnchangedRegionsMinimumLineCount=n(this,e=>this._options.read(e).hideUnchangedRegions.minimumLineCount);updateOptions(e){const t=b(e,this._options.get()),o={...this._options.get(),...e,...t};this._options.set(o,void 0,{changedOptions:e})}setWidth(e){this._diffEditorWidth.set(e,void 0)}_model=c(this,void 0);setModel(e){this._model.set(e,void 0)}shouldRenderInlineViewInSmartMode=this._model.map(this,e=>S(this,t=>{const o=e?.diff.read(t);return o?w(o,this.trueInlineDiffRenderingEnabled.read(t)):void 0})).flatten().map(this,e=>!!e);inlineViewHideOriginalLineNumbers=this.compactMode};l=f([u(1,R)],l);function w(i,e){return i.mappings.every(t=>M(t.lineRangeMapping)||O(t.lineRangeMapping)||e&&v(t.lineRangeMapping))}function M(i){return i.original.length===0}function O(i){return i.modified.length===0}function b(i,e){return{enableSplitViewResizing:r(i.enableSplitViewResizing,e.enableSplitViewResizing),splitViewDefaultRatio:_(i.splitViewDefaultRatio,.5,.1,.9),renderSideBySide:r(i.renderSideBySide,e.renderSideBySide),renderMarginRevertIcon:r(i.renderMarginRevertIcon,e.renderMarginRevertIcon),maxComputationTime:s(i.maxComputationTime,e.maxComputationTime,0,a.MAX_SAFE_SMALL_INTEGER),maxFileSize:s(i.maxFileSize,e.maxFileSize,0,a.MAX_SAFE_SMALL_INTEGER),ignoreTrimWhitespace:r(i.ignoreTrimWhitespace,e.ignoreTrimWhitespace),renderIndicators:r(i.renderIndicators,e.renderIndicators),originalEditable:r(i.originalEditable,e.originalEditable),diffCodeLens:r(i.diffCodeLens,e.diffCodeLens),renderOverviewRuler:r(i.renderOverviewRuler,e.renderOverviewRuler),diffWordWrap:m(i.diffWordWrap,e.diffWordWrap,["off","on","inherit"]),diffAlgorithm:m(i.diffAlgorithm,e.diffAlgorithm,["legacy","advanced"],{smart:"legacy",experimental:"advanced"}),accessibilityVerbose:r(i.accessibilityVerbose,e.accessibilityVerbose),experimental:{showMoves:r(i.experimental?.showMoves,e.experimental.showMoves),showEmptyDecorations:r(i.experimental?.showEmptyDecorations,e.experimental.showEmptyDecorations),useTrueInlineView:r(i.experimental?.useTrueInlineView,e.experimental.useTrueInlineView)},hideUnchangedRegions:{enabled:r(i.hideUnchangedRegions?.enabled??i.experimental?.collapseUnchangedRegions,e.hideUnchangedRegions.enabled),contextLineCount:s(i.hideUnchangedRegions?.contextLineCount,e.hideUnchangedRegions.contextLineCount,0,a.MAX_SAFE_SMALL_INTEGER),minimumLineCount:s(i.hideUnchangedRegions?.minimumLineCount,e.hideUnchangedRegions.minimumLineCount,0,a.MAX_SAFE_SMALL_INTEGER),revealLineCount:s(i.hideUnchangedRegions?.revealLineCount,e.hideUnchangedRegions.revealLineCount,0,a.MAX_SAFE_SMALL_INTEGER)},isInEmbeddedEditor:r(i.isInEmbeddedEditor,e.isInEmbeddedEditor),onlyShowAccessibleDiffViewer:r(i.onlyShowAccessibleDiffViewer,e.onlyShowAccessibleDiffViewer),renderSideBySideInlineBreakpoint:s(i.renderSideBySideInlineBreakpoint,e.renderSideBySideInlineBreakpoint,0,a.MAX_SAFE_SMALL_INTEGER),useInlineViewWhenSpaceIsLimited:r(i.useInlineViewWhenSpaceIsLimited,e.useInlineViewWhenSpaceIsLimited),renderGutterMenu:r(i.renderGutterMenu,e.renderGutterMenu),compactMode:r(i.compactMode,e.compactMode)}}export{l as DiffEditorOptions};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { derived, derivedConstOnceDefined, observableFromEvent, observableValue } from '../../../../base/common/observable.js';
+import { IAccessibilityService } from '../../../../platform/accessibility/common/accessibility.js';
+import { diffEditorDefaultOptions } from '../../../common/config/diffEditor.js';
+import { clampedFloat, clampedInt, boolean as validateBooleanOption, stringSet as validateStringSetOption } from '../../../common/config/editorOptions.js';
+import { allowsTrueInlineDiffRendering } from './components/diffEditorViewZones/diffEditorViewZones.js';
+let DiffEditorOptions = class DiffEditorOptions {
+    get editorOptions() { return this._options; }
+    constructor(options, _accessibilityService) {
+        this._accessibilityService = _accessibilityService;
+        this._diffEditorWidth = observableValue(this, 0);
+        this._screenReaderMode = observableFromEvent(this, this._accessibilityService.onDidChangeScreenReaderOptimized, () => this._accessibilityService.isScreenReaderOptimized());
+        this.couldShowInlineViewBecauseOfSize = derived(this, reader => this._options.read(reader).renderSideBySide && this._diffEditorWidth.read(reader) <= this._options.read(reader).renderSideBySideInlineBreakpoint);
+        this.renderOverviewRuler = derived(this, reader => this._options.read(reader).renderOverviewRuler);
+        this.renderSideBySide = derived(this, reader => {
+            if (this.compactMode.read(reader)) {
+                if (this.shouldRenderInlineViewInSmartMode.read(reader)) {
+                    return false;
+                }
+            }
+            return this._options.read(reader).renderSideBySide
+                && !(this._options.read(reader).useInlineViewWhenSpaceIsLimited && this.couldShowInlineViewBecauseOfSize.read(reader) && !this._screenReaderMode.read(reader));
+        });
+        this.readOnly = derived(this, reader => this._options.read(reader).readOnly);
+        this.shouldRenderOldRevertArrows = derived(this, reader => {
+            if (!this._options.read(reader).renderMarginRevertIcon) {
+                return false;
+            }
+            if (!this.renderSideBySide.read(reader)) {
+                return false;
+            }
+            if (this.readOnly.read(reader)) {
+                return false;
+            }
+            if (this.shouldRenderGutterMenu.read(reader)) {
+                return false;
+            }
+            return true;
+        });
+        this.shouldRenderGutterMenu = derived(this, reader => this._options.read(reader).renderGutterMenu);
+        this.renderIndicators = derived(this, reader => this._options.read(reader).renderIndicators);
+        this.enableSplitViewResizing = derived(this, reader => this._options.read(reader).enableSplitViewResizing);
+        this.splitViewDefaultRatio = derived(this, reader => this._options.read(reader).splitViewDefaultRatio);
+        this.ignoreTrimWhitespace = derived(this, reader => this._options.read(reader).ignoreTrimWhitespace);
+        this.maxComputationTimeMs = derived(this, reader => this._options.read(reader).maxComputationTime);
+        this.showMoves = derived(this, reader => this._options.read(reader).experimental.showMoves && this.renderSideBySide.read(reader));
+        this.isInEmbeddedEditor = derived(this, reader => this._options.read(reader).isInEmbeddedEditor);
+        this.diffWordWrap = derived(this, reader => this._options.read(reader).diffWordWrap);
+        this.originalEditable = derived(this, reader => this._options.read(reader).originalEditable);
+        this.diffCodeLens = derived(this, reader => this._options.read(reader).diffCodeLens);
+        this.accessibilityVerbose = derived(this, reader => this._options.read(reader).accessibilityVerbose);
+        this.diffAlgorithm = derived(this, reader => this._options.read(reader).diffAlgorithm);
+        this.showEmptyDecorations = derived(this, reader => this._options.read(reader).experimental.showEmptyDecorations);
+        this.onlyShowAccessibleDiffViewer = derived(this, reader => this._options.read(reader).onlyShowAccessibleDiffViewer);
+        this.compactMode = derived(this, reader => this._options.read(reader).compactMode);
+        this.trueInlineDiffRenderingEnabled = derived(this, reader => this._options.read(reader).experimental.useTrueInlineView);
+        this.useTrueInlineDiffRendering = derived(this, reader => !this.renderSideBySide.read(reader) && this.trueInlineDiffRenderingEnabled.read(reader));
+        this.hideUnchangedRegions = derived(this, reader => this._options.read(reader).hideUnchangedRegions.enabled);
+        this.hideUnchangedRegionsRevealLineCount = derived(this, reader => this._options.read(reader).hideUnchangedRegions.revealLineCount);
+        this.hideUnchangedRegionsContextLineCount = derived(this, reader => this._options.read(reader).hideUnchangedRegions.contextLineCount);
+        this.hideUnchangedRegionsMinimumLineCount = derived(this, reader => this._options.read(reader).hideUnchangedRegions.minimumLineCount);
+        this._model = observableValue(this, undefined);
+        this.shouldRenderInlineViewInSmartMode = this._model
+            .map(this, model => derivedConstOnceDefined(this, reader => {
+            const diffs = model?.diff.read(reader);
+            return diffs ? isSimpleDiff(diffs, this.trueInlineDiffRenderingEnabled.read(reader)) : undefined;
+        }))
+            .flatten()
+            .map(this, v => !!v);
+        this.inlineViewHideOriginalLineNumbers = this.compactMode;
+        const optionsCopy = { ...options, ...validateDiffEditorOptions(options, diffEditorDefaultOptions) };
+        this._options = observableValue(this, optionsCopy);
+    }
+    updateOptions(changedOptions) {
+        const newDiffEditorOptions = validateDiffEditorOptions(changedOptions, this._options.get());
+        const newOptions = { ...this._options.get(), ...changedOptions, ...newDiffEditorOptions };
+        this._options.set(newOptions, undefined, { changedOptions: changedOptions });
+    }
+    setWidth(width) {
+        this._diffEditorWidth.set(width, undefined);
+    }
+    setModel(model) {
+        this._model.set(model, undefined);
+    }
+};
+DiffEditorOptions = __decorate([
+    __param(1, IAccessibilityService),
+    __metadata("design:paramtypes", [Object, Object])
+], DiffEditorOptions);
+export { DiffEditorOptions };
+function isSimpleDiff(diff, supportsTrueDiffRendering) {
+    return diff.mappings.every(m => isInsertion(m.lineRangeMapping) || isDeletion(m.lineRangeMapping) || (supportsTrueDiffRendering && allowsTrueInlineDiffRendering(m.lineRangeMapping)));
+}
+function isInsertion(mapping) {
+    return mapping.original.length === 0;
+}
+function isDeletion(mapping) {
+    return mapping.modified.length === 0;
+}
+function validateDiffEditorOptions(options, defaults) {
+    return {
+        enableSplitViewResizing: validateBooleanOption(options.enableSplitViewResizing, defaults.enableSplitViewResizing),
+        splitViewDefaultRatio: clampedFloat(options.splitViewDefaultRatio, 0.5, 0.1, 0.9),
+        renderSideBySide: validateBooleanOption(options.renderSideBySide, defaults.renderSideBySide),
+        renderMarginRevertIcon: validateBooleanOption(options.renderMarginRevertIcon, defaults.renderMarginRevertIcon),
+        maxComputationTime: clampedInt(options.maxComputationTime, defaults.maxComputationTime, 0, 1073741824),
+        maxFileSize: clampedInt(options.maxFileSize, defaults.maxFileSize, 0, 1073741824),
+        ignoreTrimWhitespace: validateBooleanOption(options.ignoreTrimWhitespace, defaults.ignoreTrimWhitespace),
+        renderIndicators: validateBooleanOption(options.renderIndicators, defaults.renderIndicators),
+        originalEditable: validateBooleanOption(options.originalEditable, defaults.originalEditable),
+        diffCodeLens: validateBooleanOption(options.diffCodeLens, defaults.diffCodeLens),
+        renderOverviewRuler: validateBooleanOption(options.renderOverviewRuler, defaults.renderOverviewRuler),
+        diffWordWrap: validateStringSetOption(options.diffWordWrap, defaults.diffWordWrap, ['off', 'on', 'inherit']),
+        diffAlgorithm: validateStringSetOption(options.diffAlgorithm, defaults.diffAlgorithm, ['legacy', 'advanced'], { 'smart': 'legacy', 'experimental': 'advanced' }),
+        accessibilityVerbose: validateBooleanOption(options.accessibilityVerbose, defaults.accessibilityVerbose),
+        experimental: {
+            showMoves: validateBooleanOption(options.experimental?.showMoves, defaults.experimental.showMoves),
+            showEmptyDecorations: validateBooleanOption(options.experimental?.showEmptyDecorations, defaults.experimental.showEmptyDecorations),
+            useTrueInlineView: validateBooleanOption(options.experimental?.useTrueInlineView, defaults.experimental.useTrueInlineView),
+        },
+        hideUnchangedRegions: {
+            enabled: validateBooleanOption(options.hideUnchangedRegions?.enabled ?? options.experimental?.collapseUnchangedRegions, defaults.hideUnchangedRegions.enabled),
+            contextLineCount: clampedInt(options.hideUnchangedRegions?.contextLineCount, defaults.hideUnchangedRegions.contextLineCount, 0, 1073741824),
+            minimumLineCount: clampedInt(options.hideUnchangedRegions?.minimumLineCount, defaults.hideUnchangedRegions.minimumLineCount, 0, 1073741824),
+            revealLineCount: clampedInt(options.hideUnchangedRegions?.revealLineCount, defaults.hideUnchangedRegions.revealLineCount, 0, 1073741824),
+        },
+        isInEmbeddedEditor: validateBooleanOption(options.isInEmbeddedEditor, defaults.isInEmbeddedEditor),
+        onlyShowAccessibleDiffViewer: validateBooleanOption(options.onlyShowAccessibleDiffViewer, defaults.onlyShowAccessibleDiffViewer),
+        renderSideBySideInlineBreakpoint: clampedInt(options.renderSideBySideInlineBreakpoint, defaults.renderSideBySideInlineBreakpoint, 0, 1073741824),
+        useInlineViewWhenSpaceIsLimited: validateBooleanOption(options.useInlineViewWhenSpaceIsLimited, defaults.useInlineViewWhenSpaceIsLimited),
+        renderGutterMenu: validateBooleanOption(options.renderGutterMenu, defaults.renderGutterMenu),
+        compactMode: validateBooleanOption(options.compactMode, defaults.compactMode),
+    };
+}

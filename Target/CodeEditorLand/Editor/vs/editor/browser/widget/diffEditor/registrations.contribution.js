@@ -1,1 +1,65 @@
-import{Codicon as t}from"../../../../base/common/codicons.js";import{ThemeIcon as o}from"../../../../base/common/themables.js";import{ModelDecorationOptions as e}from"../../../common/model/textModel.js";import{localize as i}from"../../../../nls.js";import{registerColor as r}from"../../../../platform/theme/common/colorRegistry.js";import{registerIcon as n}from"../../../../platform/theme/common/iconRegistry.js";const g=r("diffEditor.move.border","#8b8b8b9c",i("diffEditor.move.border","The border color for text that got moved in the diff editor.")),p=r("diffEditor.moveActive.border","#FFA500",i("diffEditor.moveActive.border","The active border color for text that got moved in the diff editor.")),u=r("diffEditor.unchangedRegionShadow",{dark:"#000000",light:"#737373BF",hcDark:"#000000",hcLight:"#737373BF"},i("diffEditor.unchangedRegionShadow","The color of the shadow around unchanged region widgets.")),d=n("diff-insert",t.add,i("diffInsertIcon","Line decoration for inserts in the diff editor.")),s=n("diff-remove",t.remove,i("diffRemoveIcon","Line decoration for removals in the diff editor.")),D=e.register({className:"line-insert",description:"line-insert",isWholeLine:!0,linesDecorationsClassName:"insert-sign "+o.asClassName(d),marginClassName:"gutter-insert"}),L=e.register({className:"line-delete",description:"line-delete",isWholeLine:!0,linesDecorationsClassName:"delete-sign "+o.asClassName(s),marginClassName:"gutter-delete"}),N=e.register({className:"line-insert",description:"line-insert",isWholeLine:!0,marginClassName:"gutter-insert"}),v=e.register({className:"line-delete",description:"line-delete",isWholeLine:!0,marginClassName:"gutter-delete"}),x=e.register({className:"char-insert",description:"char-insert",shouldFillLineOnLineBreak:!0}),B=e.register({className:"char-insert",description:"char-insert",isWholeLine:!0}),C=e.register({className:"char-insert diff-range-empty",description:"char-insert diff-range-empty"}),I=e.register({className:"char-delete",description:"char-delete",shouldFillLineOnLineBreak:!0}),W=e.register({className:"char-delete",description:"char-delete",isWholeLine:!0}),b=e.register({className:"char-delete diff-range-empty",description:"char-delete diff-range-empty"});export{x as diffAddDecoration,C as diffAddDecorationEmpty,I as diffDeleteDecoration,b as diffDeleteDecorationEmpty,u as diffEditorUnchangedRegionShadow,d as diffInsertIcon,N as diffLineAddDecorationBackground,D as diffLineAddDecorationBackgroundWithIndicator,v as diffLineDeleteDecorationBackground,L as diffLineDeleteDecorationBackgroundWithIndicator,g as diffMoveBorder,p as diffMoveBorderActive,s as diffRemoveIcon,B as diffWholeLineAddDecoration,W as diffWholeLineDeleteDecoration};
+import { Codicon } from '../../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { ModelDecorationOptions } from '../../../common/model/textModel.js';
+import { localize } from '../../../../nls.js';
+import { registerColor } from '../../../../platform/theme/common/colorRegistry.js';
+import { registerIcon } from '../../../../platform/theme/common/iconRegistry.js';
+export const diffMoveBorder = registerColor('diffEditor.move.border', '#8b8b8b9c', localize('diffEditor.move.border', 'The border color for text that got moved in the diff editor.'));
+export const diffMoveBorderActive = registerColor('diffEditor.moveActive.border', '#FFA500', localize('diffEditor.moveActive.border', 'The active border color for text that got moved in the diff editor.'));
+export const diffEditorUnchangedRegionShadow = registerColor('diffEditor.unchangedRegionShadow', { dark: '#000000', light: '#737373BF', hcDark: '#000000', hcLight: '#737373BF', }, localize('diffEditor.unchangedRegionShadow', 'The color of the shadow around unchanged region widgets.'));
+export const diffInsertIcon = registerIcon('diff-insert', Codicon.add, localize('diffInsertIcon', 'Line decoration for inserts in the diff editor.'));
+export const diffRemoveIcon = registerIcon('diff-remove', Codicon.remove, localize('diffRemoveIcon', 'Line decoration for removals in the diff editor.'));
+export const diffLineAddDecorationBackgroundWithIndicator = ModelDecorationOptions.register({
+    className: 'line-insert',
+    description: 'line-insert',
+    isWholeLine: true,
+    linesDecorationsClassName: 'insert-sign ' + ThemeIcon.asClassName(diffInsertIcon),
+    marginClassName: 'gutter-insert',
+});
+export const diffLineDeleteDecorationBackgroundWithIndicator = ModelDecorationOptions.register({
+    className: 'line-delete',
+    description: 'line-delete',
+    isWholeLine: true,
+    linesDecorationsClassName: 'delete-sign ' + ThemeIcon.asClassName(diffRemoveIcon),
+    marginClassName: 'gutter-delete',
+});
+export const diffLineAddDecorationBackground = ModelDecorationOptions.register({
+    className: 'line-insert',
+    description: 'line-insert',
+    isWholeLine: true,
+    marginClassName: 'gutter-insert',
+});
+export const diffLineDeleteDecorationBackground = ModelDecorationOptions.register({
+    className: 'line-delete',
+    description: 'line-delete',
+    isWholeLine: true,
+    marginClassName: 'gutter-delete',
+});
+export const diffAddDecoration = ModelDecorationOptions.register({
+    className: 'char-insert',
+    description: 'char-insert',
+    shouldFillLineOnLineBreak: true,
+});
+export const diffWholeLineAddDecoration = ModelDecorationOptions.register({
+    className: 'char-insert',
+    description: 'char-insert',
+    isWholeLine: true,
+});
+export const diffAddDecorationEmpty = ModelDecorationOptions.register({
+    className: 'char-insert diff-range-empty',
+    description: 'char-insert diff-range-empty',
+});
+export const diffDeleteDecoration = ModelDecorationOptions.register({
+    className: 'char-delete',
+    description: 'char-delete',
+    shouldFillLineOnLineBreak: true,
+});
+export const diffWholeLineDeleteDecoration = ModelDecorationOptions.register({
+    className: 'char-delete',
+    description: 'char-delete',
+    isWholeLine: true,
+});
+export const diffDeleteDecorationEmpty = ModelDecorationOptions.register({
+    className: 'char-delete diff-range-empty',
+    description: 'char-delete diff-range-empty',
+});

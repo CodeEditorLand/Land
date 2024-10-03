@@ -1,1 +1,203 @@
-var p=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var v=(i,e,t,r)=>{for(var o=r>1?void 0:r?m(e,t):e,a=i.length-1,s;a>=0;a--)(s=i[a])&&(o=(r?s(e,t,o):s(o))||o);return r&&o&&p(e,t,o),o},c=(i,e)=>(t,r)=>e(t,r,i);import{toDisposable as h}from"../../../base/common/lifecycle.js";import{MainContext as I}from"./extHost.protocol.js";import{createDecorator as u}from"../../../platform/instantiation/common/instantiation.js";import{FileSearchManager as P}from"../../services/search/common/fileSearchManager.js";import{IExtHostRpcService as T}from"./extHostRpcService.js";import{IURITransformerService as g}from"./extHostUriTransformerService.js";import{ILogService as _}from"../../../platform/log/common/log.js";import"../../services/search/common/search.js";import{URI as f}from"../../../base/common/uri.js";import{TextSearchManager as x}from"../../services/search/common/textSearchManager.js";import"../../../base/common/cancellation.js";import{revive as y}from"../../../base/common/marshalling.js";import{OldAITextSearchProviderConverter as w,OldFileSearchProviderConverter as U,OldTextSearchProviderConverter as F}from"../../services/search/common/searchExtConversionTypes.js";const ie=u("IExtHostSearch");let n=class{constructor(e,t,r){this.extHostRpc=e;this._uriTransformer=t;this._logService=r}_proxy=this.extHostRpc.getProxy(I.MainThreadSearch);_handlePool=0;_textSearchProvider=new Map;_textSearchUsedSchemes=new Set;_aiTextSearchProvider=new Map;_aiTextSearchUsedSchemes=new Set;_fileSearchProvider=new Map;_fileSearchUsedSchemes=new Set;_fileSearchManager=new P;_transformScheme(e){return this._uriTransformer.transformOutgoingScheme(e)}registerTextSearchProviderOld(e,t){if(this._textSearchUsedSchemes.has(e))throw new Error(`a text search provider for the scheme '${e}' is already registered`);this._textSearchUsedSchemes.add(e);const r=this._handlePool++;return this._textSearchProvider.set(r,new F(t)),this._proxy.$registerTextSearchProvider(r,this._transformScheme(e)),h(()=>{this._textSearchUsedSchemes.delete(e),this._textSearchProvider.delete(r),this._proxy.$unregisterProvider(r)})}registerTextSearchProvider(e,t){if(this._textSearchUsedSchemes.has(e))throw new Error(`a text search provider for the scheme '${e}' is already registered`);this._textSearchUsedSchemes.add(e);const r=this._handlePool++;return this._textSearchProvider.set(r,t),this._proxy.$registerTextSearchProvider(r,this._transformScheme(e)),h(()=>{this._textSearchUsedSchemes.delete(e),this._textSearchProvider.delete(r),this._proxy.$unregisterProvider(r)})}registerAITextSearchProviderOld(e,t){if(this._aiTextSearchUsedSchemes.has(e))throw new Error(`an AI text search provider for the scheme '${e}'is already registered`);this._aiTextSearchUsedSchemes.add(e);const r=this._handlePool++;return this._aiTextSearchProvider.set(r,new w(t)),this._proxy.$registerAITextSearchProvider(r,this._transformScheme(e)),h(()=>{this._aiTextSearchUsedSchemes.delete(e),this._aiTextSearchProvider.delete(r),this._proxy.$unregisterProvider(r)})}registerAITextSearchProvider(e,t){if(this._aiTextSearchUsedSchemes.has(e))throw new Error(`an AI text search provider for the scheme '${e}'is already registered`);this._aiTextSearchUsedSchemes.add(e);const r=this._handlePool++;return this._aiTextSearchProvider.set(r,t),this._proxy.$registerAITextSearchProvider(r,this._transformScheme(e)),h(()=>{this._aiTextSearchUsedSchemes.delete(e),this._aiTextSearchProvider.delete(r),this._proxy.$unregisterProvider(r)})}registerFileSearchProviderOld(e,t){if(this._fileSearchUsedSchemes.has(e))throw new Error(`a file search provider for the scheme '${e}' is already registered`);this._fileSearchUsedSchemes.add(e);const r=this._handlePool++;return this._fileSearchProvider.set(r,new U(t)),this._proxy.$registerFileSearchProvider(r,this._transformScheme(e)),h(()=>{this._fileSearchUsedSchemes.delete(e),this._fileSearchProvider.delete(r),this._proxy.$unregisterProvider(r)})}registerFileSearchProvider(e,t){if(this._fileSearchUsedSchemes.has(e))throw new Error(`a file search provider for the scheme '${e}' is already registered`);this._fileSearchUsedSchemes.add(e);const r=this._handlePool++;return this._fileSearchProvider.set(r,t),this._proxy.$registerFileSearchProvider(r,this._transformScheme(e)),h(()=>{this._fileSearchUsedSchemes.delete(e),this._fileSearchProvider.delete(r),this._proxy.$unregisterProvider(r)})}$provideFileSearchResults(e,t,r,o){const a=l(r),s=this._fileSearchProvider.get(e);if(s)return this._fileSearchManager.fileSearch(a,s,S=>{this._proxy.$handleFileMatch(e,t,S.map(d=>d.resource))},o);throw new Error("unknown provider: "+e)}async doInternalFileSearchWithCustomCallback(e,t,r){return{messages:[]}}$clearCache(e){return this._fileSearchManager.clearCache(e),Promise.resolve(void 0)}$provideTextSearchResults(e,t,r,o){const a=this._textSearchProvider.get(e);if(!a||!a.provideTextSearchResults)throw new Error(`Unknown Text Search Provider ${e}`);const s=l(r);return this.createTextSearchManager(s,a).search(d=>this._proxy.$handleTextMatch(e,t,d),o)}$provideAITextSearchResults(e,t,r,o){const a=this._aiTextSearchProvider.get(e);if(!a||!a.provideAITextSearchResults)throw new Error(`Unknown AI Text Search Provider ${e}`);const s=l(r);return this.createAITextSearchManager(s,a).search(d=>this._proxy.$handleTextMatch(e,t,d),o)}$enableExtensionHostSearch(){}async $getAIName(e){const t=this._aiTextSearchProvider.get(e);if(!(!t||!t.provideAITextSearchResults))return t.name??"AI"}createTextSearchManager(e,t){return new x({query:e,provider:t},{readdir:r=>Promise.resolve([]),toCanonicalName:r=>r},"textSearchProvider")}createAITextSearchManager(e,t){return new x({query:e,provider:t},{readdir:r=>Promise.resolve([]),toCanonicalName:r=>r},"aiTextSearchProvider")}};n=v([c(0,T),c(1,g),c(2,_)],n);function l(i){return{...i,folderQueries:i.folderQueries&&i.folderQueries.map(A),extraFileResources:i.extraFileResources&&i.extraFileResources.map(e=>f.revive(e))}}function A(i){return y(i)}export{n as ExtHostSearch,ie as IExtHostSearch,l as reviveQuery};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { toDisposable } from '../../../base/common/lifecycle.js';
+import { MainContext } from './extHost.protocol.js';
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+import { FileSearchManager } from '../../services/search/common/fileSearchManager.js';
+import { IExtHostRpcService } from './extHostRpcService.js';
+import { IURITransformerService } from './extHostUriTransformerService.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { URI } from '../../../base/common/uri.js';
+import { TextSearchManager } from '../../services/search/common/textSearchManager.js';
+import { revive } from '../../../base/common/marshalling.js';
+import { OldAITextSearchProviderConverter, OldFileSearchProviderConverter, OldTextSearchProviderConverter } from '../../services/search/common/searchExtConversionTypes.js';
+export const IExtHostSearch = createDecorator('IExtHostSearch');
+let ExtHostSearch = class ExtHostSearch {
+    constructor(extHostRpc, _uriTransformer, _logService) {
+        this.extHostRpc = extHostRpc;
+        this._uriTransformer = _uriTransformer;
+        this._logService = _logService;
+        this._proxy = this.extHostRpc.getProxy(MainContext.MainThreadSearch);
+        this._handlePool = 0;
+        this._textSearchProvider = new Map();
+        this._textSearchUsedSchemes = new Set();
+        this._aiTextSearchProvider = new Map();
+        this._aiTextSearchUsedSchemes = new Set();
+        this._fileSearchProvider = new Map();
+        this._fileSearchUsedSchemes = new Set();
+        this._fileSearchManager = new FileSearchManager();
+    }
+    _transformScheme(scheme) {
+        return this._uriTransformer.transformOutgoingScheme(scheme);
+    }
+    registerTextSearchProviderOld(scheme, provider) {
+        if (this._textSearchUsedSchemes.has(scheme)) {
+            throw new Error(`a text search provider for the scheme '${scheme}' is already registered`);
+        }
+        this._textSearchUsedSchemes.add(scheme);
+        const handle = this._handlePool++;
+        this._textSearchProvider.set(handle, new OldTextSearchProviderConverter(provider));
+        this._proxy.$registerTextSearchProvider(handle, this._transformScheme(scheme));
+        return toDisposable(() => {
+            this._textSearchUsedSchemes.delete(scheme);
+            this._textSearchProvider.delete(handle);
+            this._proxy.$unregisterProvider(handle);
+        });
+    }
+    registerTextSearchProvider(scheme, provider) {
+        if (this._textSearchUsedSchemes.has(scheme)) {
+            throw new Error(`a text search provider for the scheme '${scheme}' is already registered`);
+        }
+        this._textSearchUsedSchemes.add(scheme);
+        const handle = this._handlePool++;
+        this._textSearchProvider.set(handle, provider);
+        this._proxy.$registerTextSearchProvider(handle, this._transformScheme(scheme));
+        return toDisposable(() => {
+            this._textSearchUsedSchemes.delete(scheme);
+            this._textSearchProvider.delete(handle);
+            this._proxy.$unregisterProvider(handle);
+        });
+    }
+    registerAITextSearchProviderOld(scheme, provider) {
+        if (this._aiTextSearchUsedSchemes.has(scheme)) {
+            throw new Error(`an AI text search provider for the scheme '${scheme}'is already registered`);
+        }
+        this._aiTextSearchUsedSchemes.add(scheme);
+        const handle = this._handlePool++;
+        this._aiTextSearchProvider.set(handle, new OldAITextSearchProviderConverter(provider));
+        this._proxy.$registerAITextSearchProvider(handle, this._transformScheme(scheme));
+        return toDisposable(() => {
+            this._aiTextSearchUsedSchemes.delete(scheme);
+            this._aiTextSearchProvider.delete(handle);
+            this._proxy.$unregisterProvider(handle);
+        });
+    }
+    registerAITextSearchProvider(scheme, provider) {
+        if (this._aiTextSearchUsedSchemes.has(scheme)) {
+            throw new Error(`an AI text search provider for the scheme '${scheme}'is already registered`);
+        }
+        this._aiTextSearchUsedSchemes.add(scheme);
+        const handle = this._handlePool++;
+        this._aiTextSearchProvider.set(handle, provider);
+        this._proxy.$registerAITextSearchProvider(handle, this._transformScheme(scheme));
+        return toDisposable(() => {
+            this._aiTextSearchUsedSchemes.delete(scheme);
+            this._aiTextSearchProvider.delete(handle);
+            this._proxy.$unregisterProvider(handle);
+        });
+    }
+    registerFileSearchProviderOld(scheme, provider) {
+        if (this._fileSearchUsedSchemes.has(scheme)) {
+            throw new Error(`a file search provider for the scheme '${scheme}' is already registered`);
+        }
+        this._fileSearchUsedSchemes.add(scheme);
+        const handle = this._handlePool++;
+        this._fileSearchProvider.set(handle, new OldFileSearchProviderConverter(provider));
+        this._proxy.$registerFileSearchProvider(handle, this._transformScheme(scheme));
+        return toDisposable(() => {
+            this._fileSearchUsedSchemes.delete(scheme);
+            this._fileSearchProvider.delete(handle);
+            this._proxy.$unregisterProvider(handle);
+        });
+    }
+    registerFileSearchProvider(scheme, provider) {
+        if (this._fileSearchUsedSchemes.has(scheme)) {
+            throw new Error(`a file search provider for the scheme '${scheme}' is already registered`);
+        }
+        this._fileSearchUsedSchemes.add(scheme);
+        const handle = this._handlePool++;
+        this._fileSearchProvider.set(handle, provider);
+        this._proxy.$registerFileSearchProvider(handle, this._transformScheme(scheme));
+        return toDisposable(() => {
+            this._fileSearchUsedSchemes.delete(scheme);
+            this._fileSearchProvider.delete(handle);
+            this._proxy.$unregisterProvider(handle);
+        });
+    }
+    $provideFileSearchResults(handle, session, rawQuery, token) {
+        const query = reviveQuery(rawQuery);
+        const provider = this._fileSearchProvider.get(handle);
+        if (provider) {
+            return this._fileSearchManager.fileSearch(query, provider, batch => {
+                this._proxy.$handleFileMatch(handle, session, batch.map(p => p.resource));
+            }, token);
+        }
+        else {
+            throw new Error('unknown provider: ' + handle);
+        }
+    }
+    async doInternalFileSearchWithCustomCallback(query, token, handleFileMatch) {
+        return { messages: [] };
+    }
+    $clearCache(cacheKey) {
+        this._fileSearchManager.clearCache(cacheKey);
+        return Promise.resolve(undefined);
+    }
+    $provideTextSearchResults(handle, session, rawQuery, token) {
+        const provider = this._textSearchProvider.get(handle);
+        if (!provider || !provider.provideTextSearchResults) {
+            throw new Error(`Unknown Text Search Provider ${handle}`);
+        }
+        const query = reviveQuery(rawQuery);
+        const engine = this.createTextSearchManager(query, provider);
+        return engine.search(progress => this._proxy.$handleTextMatch(handle, session, progress), token);
+    }
+    $provideAITextSearchResults(handle, session, rawQuery, token) {
+        const provider = this._aiTextSearchProvider.get(handle);
+        if (!provider || !provider.provideAITextSearchResults) {
+            throw new Error(`Unknown AI Text Search Provider ${handle}`);
+        }
+        const query = reviveQuery(rawQuery);
+        const engine = this.createAITextSearchManager(query, provider);
+        return engine.search(progress => this._proxy.$handleTextMatch(handle, session, progress), token);
+    }
+    $enableExtensionHostSearch() { }
+    async $getAIName(handle) {
+        const provider = this._aiTextSearchProvider.get(handle);
+        if (!provider || !provider.provideAITextSearchResults) {
+            return undefined;
+        }
+        return provider.name ?? 'AI';
+    }
+    createTextSearchManager(query, provider) {
+        return new TextSearchManager({ query, provider }, {
+            readdir: resource => Promise.resolve([]),
+            toCanonicalName: encoding => encoding
+        }, 'textSearchProvider');
+    }
+    createAITextSearchManager(query, provider) {
+        return new TextSearchManager({ query, provider }, {
+            readdir: resource => Promise.resolve([]),
+            toCanonicalName: encoding => encoding
+        }, 'aiTextSearchProvider');
+    }
+};
+ExtHostSearch = __decorate([
+    __param(0, IExtHostRpcService),
+    __param(1, IURITransformerService),
+    __param(2, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], ExtHostSearch);
+export { ExtHostSearch };
+export function reviveQuery(rawQuery) {
+    return {
+        ...rawQuery,
+        ...{
+            folderQueries: rawQuery.folderQueries && rawQuery.folderQueries.map(reviveFolderQuery),
+            extraFileResources: rawQuery.extraFileResources && rawQuery.extraFileResources.map(components => URI.revive(components))
+        }
+    };
+}
+function reviveFolderQuery(rawFolderQuery) {
+    return revive(rawFolderQuery);
+}

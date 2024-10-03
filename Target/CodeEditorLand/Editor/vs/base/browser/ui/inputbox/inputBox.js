@@ -1,1 +1,574 @@
-import*as s from"../../dom.js";import{DomEmitter as f}from"../../event.js";import{renderFormattedText as m,renderText as b}from"../../formattedTextRenderer.js";import"../../history.js";import"../../markdownRenderer.js";import{ActionBar as v}from"../actionbar/actionbar.js";import*as c from"../aria/aria.js";import{AnchorAlignment as y}from"../contextview/contextview.js";import{getBaseLayerHoverDelegate as x}from"../hover/hoverDelegate2.js";import{getDefaultHoverDelegate as I}from"../hover/hoverDelegateFactory.js";import{ScrollableElement as H}from"../scrollbar/scrollableElement.js";import{Widget as w}from"../widget.js";import"../../../common/actions.js";import{Emitter as p,Event as E}from"../../../common/event.js";import{HistoryNavigator as V}from"../../../common/history.js";import{equals as C}from"../../../common/objects.js";import{ScrollbarVisibility as T}from"../../../common/scrollable.js";import"./inputBox.css";import*as h from"../../../../nls.js";const u=s.$;var F=(e=>(e[e.INFO=1]="INFO",e[e.WARNING=2]="WARNING",e[e.ERROR=3]="ERROR",e))(F||{});const J={inputBackground:"#3C3C3C",inputForeground:"#CCCCCC",inputValidationInfoBorder:"#55AAFF",inputValidationInfoBackground:"#063B49",inputValidationWarningBorder:"#B89500",inputValidationWarningBackground:"#352A05",inputValidationErrorBorder:"#BE1100",inputValidationErrorBackground:"#5A1D1D",inputBorder:void 0,inputValidationErrorForeground:void 0,inputValidationInfoForeground:void 0,inputValidationWarningForeground:void 0};class M extends w{contextViewProvider;element;input;actionbar;options;message;placeholder;tooltip;ariaLabel;validation;state="idle";mirror;cachedHeight;cachedContentHeight;maxHeight=Number.POSITIVE_INFINITY;scrollableElement;hover;_onDidChange=this._register(new p);onDidChange=this._onDidChange.event;_onDidHeightChange=this._register(new p);onDidHeightChange=this._onDidHeightChange.event;constructor(t,i,e){super(),this.contextViewProvider=i,this.options=e,this.message=null,this.placeholder=this.options.placeholder||"",this.tooltip=this.options.tooltip??(this.placeholder||""),this.ariaLabel=this.options.ariaLabel||"",this.options.validationOptions&&(this.validation=this.options.validationOptions.validation),this.element=s.append(t,u(".monaco-inputbox.idle"));const n=this.options.flexibleHeight?"textarea":"input",r=s.append(this.element,u(".ibwrapper"));if(this.input=s.append(r,u(n+".input.empty")),this.input.setAttribute("autocorrect","off"),this.input.setAttribute("autocapitalize","off"),this.input.setAttribute("spellcheck","false"),this.onfocus(this.input,()=>this.element.classList.add("synthetic-focus")),this.onblur(this.input,()=>this.element.classList.remove("synthetic-focus")),this.options.flexibleHeight){this.maxHeight=typeof this.options.flexibleMaxHeight=="number"?this.options.flexibleMaxHeight:Number.POSITIVE_INFINITY,this.mirror=s.append(r,u("div.mirror")),this.mirror.innerText="\xA0",this.scrollableElement=new H(this.element,{vertical:T.Auto}),this.options.flexibleWidth&&(this.input.setAttribute("wrap","off"),this.mirror.style.whiteSpace="pre",this.mirror.style.wordWrap="initial"),s.append(t,this.scrollableElement.getDomNode()),this._register(this.scrollableElement),this._register(this.scrollableElement.onScroll(a=>this.input.scrollTop=a.scrollTop));const l=this._register(new f(t.ownerDocument,"selectionchange")),o=E.filter(l.event,()=>t.ownerDocument.getSelection()?.anchorNode===r);this._register(o(this.updateScrollDimensions,this)),this._register(this.onDidHeightChange(this.updateScrollDimensions,this))}else this.input.type=this.options.type||"text",this.input.setAttribute("wrap","off");this.ariaLabel&&this.input.setAttribute("aria-label",this.ariaLabel),this.placeholder&&!this.options.showPlaceholderOnFocus&&this.setPlaceHolder(this.placeholder),this.tooltip&&this.setTooltip(this.tooltip),this.oninput(this.input,()=>this.onValueChange()),this.onblur(this.input,()=>this.onBlur()),this.onfocus(this.input,()=>this.onFocus()),this._register(this.ignoreGesture(this.input)),setTimeout(()=>this.updateMirror(),0),this.options.actions&&(this.actionbar=this._register(new v(this.element)),this.actionbar.push(this.options.actions,{icon:!0,label:!1})),this.applyStyles()}onBlur(){this._hideMessage(),this.options.showPlaceholderOnFocus&&this.input.setAttribute("placeholder","")}onFocus(){this._showMessage(),this.options.showPlaceholderOnFocus&&this.input.setAttribute("placeholder",this.placeholder||"")}setPlaceHolder(t){this.placeholder=t,this.input.setAttribute("placeholder",t)}setTooltip(t){this.tooltip=t,this.hover?this.hover.update(t):this.hover=this._register(x().setupManagedHover(I("mouse"),this.input,t))}setAriaLabel(t){this.ariaLabel=t,t?this.input.setAttribute("aria-label",this.ariaLabel):this.input.removeAttribute("aria-label")}getAriaLabel(){return this.ariaLabel}get mirrorElement(){return this.mirror}get inputElement(){return this.input}get value(){return this.input.value}set value(t){this.input.value!==t&&(this.input.value=t,this.onValueChange())}get step(){return this.input.step}set step(t){this.input.step=t}get height(){return typeof this.cachedHeight=="number"?this.cachedHeight:s.getTotalHeight(this.element)}focus(){this.input.focus()}blur(){this.input.blur()}hasFocus(){return s.isActiveElement(this.input)}select(t=null){this.input.select(),t&&(this.input.setSelectionRange(t.start,t.end),t.end===this.input.value.length&&(this.input.scrollLeft=this.input.scrollWidth))}isSelectionAtEnd(){return this.input.selectionEnd===this.input.value.length&&this.input.selectionStart===this.input.selectionEnd}getSelection(){const t=this.input.selectionStart;if(t===null)return null;const i=this.input.selectionEnd??t;return{start:t,end:i}}enable(){this.input.removeAttribute("disabled")}disable(){this.blur(),this.input.disabled=!0,this._hideMessage()}setEnabled(t){t?this.enable():this.disable()}get width(){return s.getTotalWidth(this.input)}set width(t){if(this.options.flexibleHeight&&this.options.flexibleWidth){let i=0;if(this.mirror){const e=parseFloat(this.mirror.style.paddingLeft||"")||0,n=parseFloat(this.mirror.style.paddingRight||"")||0;i=e+n}this.input.style.width=t-i+"px"}else this.input.style.width=t+"px";this.mirror&&(this.mirror.style.width=t+"px")}set paddingRight(t){this.input.style.width=`calc(100% - ${t}px)`,this.mirror&&(this.mirror.style.paddingRight=t+"px")}updateScrollDimensions(){if(typeof this.cachedContentHeight!="number"||typeof this.cachedHeight!="number"||!this.scrollableElement)return;const t=this.cachedContentHeight,i=this.cachedHeight,e=this.input.scrollTop;this.scrollableElement.setScrollDimensions({scrollHeight:t,height:i}),this.scrollableElement.setScrollPosition({scrollTop:e})}showMessage(t,i){if(this.state==="open"&&C(this.message,t))return;this.message=t,this.element.classList.remove("idle"),this.element.classList.remove("info"),this.element.classList.remove("warning"),this.element.classList.remove("error"),this.element.classList.add(this.classForType(t.type));const e=this.stylesForType(this.message.type);this.element.style.border=`1px solid ${s.asCssValueWithDefault(e.border,"transparent")}`,this.message.content&&(this.hasFocus()||i)&&this._showMessage()}hideMessage(){this.message=null,this.element.classList.remove("info"),this.element.classList.remove("warning"),this.element.classList.remove("error"),this.element.classList.add("idle"),this._hideMessage(),this.applyStyles()}isInputValid(){return!!this.validation&&!this.validation(this.value)}validate(){let t=null;return this.validation&&(t=this.validation(this.value),t?(this.inputElement.setAttribute("aria-invalid","true"),this.showMessage(t)):this.inputElement.hasAttribute("aria-invalid")&&(this.inputElement.removeAttribute("aria-invalid"),this.hideMessage())),t?.type}stylesForType(t){const i=this.options.inputBoxStyles;switch(t){case 1:return{border:i.inputValidationInfoBorder,background:i.inputValidationInfoBackground,foreground:i.inputValidationInfoForeground};case 2:return{border:i.inputValidationWarningBorder,background:i.inputValidationWarningBackground,foreground:i.inputValidationWarningForeground};default:return{border:i.inputValidationErrorBorder,background:i.inputValidationErrorBackground,foreground:i.inputValidationErrorForeground}}}classForType(t){switch(t){case 1:return"info";case 2:return"warning";default:return"error"}}_showMessage(){if(!this.contextViewProvider||!this.message)return;let t;const i=()=>t.style.width=s.getTotalWidth(this.element)+"px";this.contextViewProvider.showContextView({getAnchor:()=>this.element,anchorAlignment:y.RIGHT,render:n=>{if(!this.message)return null;t=s.append(n,u(".monaco-inputbox-container")),i();const r={inline:!0,className:"monaco-inputbox-message"},l=this.message.formatContent?m(this.message.content,r):b(this.message.content,r);l.classList.add(this.classForType(this.message.type));const o=this.stylesForType(this.message.type);return l.style.backgroundColor=o.background??"",l.style.color=o.foreground??"",l.style.border=o.border?`1px solid ${o.border}`:"",s.append(t,l),null},onHide:()=>{this.state="closed"},layout:i});let e;this.message.type===3?e=h.localize("alertErrorMessage","Error: {0}",this.message.content):this.message.type===2?e=h.localize("alertWarningMessage","Warning: {0}",this.message.content):e=h.localize("alertInfoMessage","Info: {0}",this.message.content),c.alert(e),this.state="open"}_hideMessage(){this.contextViewProvider&&(this.state==="open"&&this.contextViewProvider.hideContextView(),this.state="idle")}onValueChange(){this._onDidChange.fire(this.value),this.validate(),this.updateMirror(),this.input.classList.toggle("empty",!this.value),this.state==="open"&&this.contextViewProvider&&this.contextViewProvider.layout()}updateMirror(){if(!this.mirror)return;const t=this.value,e=t.charCodeAt(t.length-1)===10?" ":"";(t+e).replace(/\u000c/g,"")?this.mirror.textContent=t+e:this.mirror.innerText="\xA0",this.layout()}applyStyles(){const t=this.options.inputBoxStyles,i=t.inputBackground??"",e=t.inputForeground??"",n=t.inputBorder??"";this.element.style.backgroundColor=i,this.element.style.color=e,this.input.style.backgroundColor="inherit",this.input.style.color=e,this.element.style.border=`1px solid ${s.asCssValueWithDefault(n,"transparent")}`}layout(){if(!this.mirror)return;const t=this.cachedContentHeight;this.cachedContentHeight=s.getTotalHeight(this.mirror),t!==this.cachedContentHeight&&(this.cachedHeight=Math.min(this.cachedContentHeight,this.maxHeight),this.input.style.height=this.cachedHeight+"px",this._onDidHeightChange.fire(this.cachedContentHeight))}insertAtCursor(t){const i=this.inputElement,e=i.selectionStart,n=i.selectionEnd,r=i.value;e!==null&&n!==null&&(this.value=r.substr(0,e)+t+r.substr(n),i.setSelectionRange(e+1,e+1),this.layout())}dispose(){this._hideMessage(),this.message=null,this.actionbar?.dispose(),super.dispose()}}class K extends M{history;observer;_onDidFocus=this._register(new p);onDidFocus=this._onDidFocus.event;_onDidBlur=this._register(new p);onDidBlur=this._onDidBlur.event;constructor(t,i,e){const n=h.localize({key:"history.inputbox.hint.suffix.noparens",comment:['Text is the suffix of an input field placeholder coming after the action the input field performs, this will be used when the input field ends in a closing parenthesis ")", for example "Filter (e.g. text, !exclude)". The character inserted into the final string is \u21C5 to represent the up and down arrow keys.']}," or {0} for history","\u21C5"),r=h.localize({key:"history.inputbox.hint.suffix.inparens",comment:['Text is the suffix of an input field placeholder coming after the action the input field performs, this will be used when the input field does NOT end in a closing parenthesis (eg. "Find"). The character inserted into the final string is \u21C5 to represent the up and down arrow keys.']}," ({0} for history)","\u21C5");super(t,i,e),this.history=new V(e.history,100);const l=()=>{if(e.showHistoryHint&&e.showHistoryHint()&&!this.placeholder.endsWith(n)&&!this.placeholder.endsWith(r)&&this.history.getHistory().length){const o=this.placeholder.endsWith(")")?n:r,a=this.placeholder+o;e.showPlaceholderOnFocus&&!s.isActiveElement(this.input)?this.placeholder=a:this.setPlaceHolder(a)}};this.observer=new MutationObserver((o,a)=>{o.forEach(d=>{d.target.textContent||l()})}),this.observer.observe(this.input,{attributeFilter:["class"]}),this.onfocus(this.input,()=>l()),this.onblur(this.input,()=>{const o=a=>{if(this.placeholder.endsWith(a)){const d=this.placeholder.slice(0,this.placeholder.length-a.length);return e.showPlaceholderOnFocus?this.placeholder=d:this.setPlaceHolder(d),!0}else return!1};o(r)||o(n)})}dispose(){super.dispose(),this.observer&&(this.observer.disconnect(),this.observer=void 0)}addToHistory(t){this.value&&(t||this.value!==this.getCurrentValue())&&this.history.add(this.value)}prependHistory(t){const i=this.getHistory();this.clearHistory(),t.forEach(e=>{this.history.add(e)}),i.forEach(e=>{this.history.add(e)})}getHistory(){return this.history.getHistory()}isAtFirstInHistory(){return this.history.isFirst()}isAtLastInHistory(){return this.history.isLast()}isNowhereInHistory(){return this.history.isNowhere()}showNextValue(){this.history.has(this.value)||this.addToHistory();let t=this.getNextValue();t&&(t=t===this.value?this.getNextValue():t),this.value=t??"",c.status(this.value?this.value:h.localize("clearedInput","Cleared Input"))}showPreviousValue(){this.history.has(this.value)||this.addToHistory();let t=this.getPreviousValue();t&&(t=t===this.value?this.getPreviousValue():t),t&&(this.value=t,c.status(this.value))}clearHistory(){this.history.clear()}setPlaceHolder(t){super.setPlaceHolder(t),this.setTooltip(t)}onBlur(){super.onBlur(),this._onDidBlur.fire()}onFocus(){super.onFocus(),this._onDidFocus.fire()}getCurrentValue(){let t=this.history.current();return t||(t=this.history.last(),this.history.next()),t}getPreviousValue(){return this.history.previous()||this.history.first()}getNextValue(){return this.history.next()}}export{K as HistoryInputBox,M as InputBox,F as MessageType,J as unthemedInboxStyles};
+import * as dom from '../../dom.js';
+import { DomEmitter } from '../../event.js';
+import { renderFormattedText, renderText } from '../../formattedTextRenderer.js';
+import { ActionBar } from '../actionbar/actionbar.js';
+import * as aria from '../aria/aria.js';
+import { getBaseLayerHoverDelegate } from '../hover/hoverDelegate2.js';
+import { getDefaultHoverDelegate } from '../hover/hoverDelegateFactory.js';
+import { ScrollableElement } from '../scrollbar/scrollableElement.js';
+import { Widget } from '../widget.js';
+import { Emitter, Event } from '../../../common/event.js';
+import { HistoryNavigator } from '../../../common/history.js';
+import { equals } from '../../../common/objects.js';
+import './inputBox.css';
+import * as nls from '../../../../nls.js';
+const $ = dom.$;
+export const unthemedInboxStyles = {
+    inputBackground: '#3C3C3C',
+    inputForeground: '#CCCCCC',
+    inputValidationInfoBorder: '#55AAFF',
+    inputValidationInfoBackground: '#063B49',
+    inputValidationWarningBorder: '#B89500',
+    inputValidationWarningBackground: '#352A05',
+    inputValidationErrorBorder: '#BE1100',
+    inputValidationErrorBackground: '#5A1D1D',
+    inputBorder: undefined,
+    inputValidationErrorForeground: undefined,
+    inputValidationInfoForeground: undefined,
+    inputValidationWarningForeground: undefined
+};
+export class InputBox extends Widget {
+    constructor(container, contextViewProvider, options) {
+        super();
+        this.state = 'idle';
+        this.maxHeight = Number.POSITIVE_INFINITY;
+        this._onDidChange = this._register(new Emitter());
+        this.onDidChange = this._onDidChange.event;
+        this._onDidHeightChange = this._register(new Emitter());
+        this.onDidHeightChange = this._onDidHeightChange.event;
+        this.contextViewProvider = contextViewProvider;
+        this.options = options;
+        this.message = null;
+        this.placeholder = this.options.placeholder || '';
+        this.tooltip = this.options.tooltip ?? (this.placeholder || '');
+        this.ariaLabel = this.options.ariaLabel || '';
+        if (this.options.validationOptions) {
+            this.validation = this.options.validationOptions.validation;
+        }
+        this.element = dom.append(container, $('.monaco-inputbox.idle'));
+        const tagName = this.options.flexibleHeight ? 'textarea' : 'input';
+        const wrapper = dom.append(this.element, $('.ibwrapper'));
+        this.input = dom.append(wrapper, $(tagName + '.input.empty'));
+        this.input.setAttribute('autocorrect', 'off');
+        this.input.setAttribute('autocapitalize', 'off');
+        this.input.setAttribute('spellcheck', 'false');
+        this.onfocus(this.input, () => this.element.classList.add('synthetic-focus'));
+        this.onblur(this.input, () => this.element.classList.remove('synthetic-focus'));
+        if (this.options.flexibleHeight) {
+            this.maxHeight = typeof this.options.flexibleMaxHeight === 'number' ? this.options.flexibleMaxHeight : Number.POSITIVE_INFINITY;
+            this.mirror = dom.append(wrapper, $('div.mirror'));
+            this.mirror.innerText = '\u00a0';
+            this.scrollableElement = new ScrollableElement(this.element, { vertical: 1 });
+            if (this.options.flexibleWidth) {
+                this.input.setAttribute('wrap', 'off');
+                this.mirror.style.whiteSpace = 'pre';
+                this.mirror.style.wordWrap = 'initial';
+            }
+            dom.append(container, this.scrollableElement.getDomNode());
+            this._register(this.scrollableElement);
+            this._register(this.scrollableElement.onScroll(e => this.input.scrollTop = e.scrollTop));
+            const onSelectionChange = this._register(new DomEmitter(container.ownerDocument, 'selectionchange'));
+            const onAnchoredSelectionChange = Event.filter(onSelectionChange.event, () => {
+                const selection = container.ownerDocument.getSelection();
+                return selection?.anchorNode === wrapper;
+            });
+            this._register(onAnchoredSelectionChange(this.updateScrollDimensions, this));
+            this._register(this.onDidHeightChange(this.updateScrollDimensions, this));
+        }
+        else {
+            this.input.type = this.options.type || 'text';
+            this.input.setAttribute('wrap', 'off');
+        }
+        if (this.ariaLabel) {
+            this.input.setAttribute('aria-label', this.ariaLabel);
+        }
+        if (this.placeholder && !this.options.showPlaceholderOnFocus) {
+            this.setPlaceHolder(this.placeholder);
+        }
+        if (this.tooltip) {
+            this.setTooltip(this.tooltip);
+        }
+        this.oninput(this.input, () => this.onValueChange());
+        this.onblur(this.input, () => this.onBlur());
+        this.onfocus(this.input, () => this.onFocus());
+        this._register(this.ignoreGesture(this.input));
+        setTimeout(() => this.updateMirror(), 0);
+        if (this.options.actions) {
+            this.actionbar = this._register(new ActionBar(this.element));
+            this.actionbar.push(this.options.actions, { icon: true, label: false });
+        }
+        this.applyStyles();
+    }
+    onBlur() {
+        this._hideMessage();
+        if (this.options.showPlaceholderOnFocus) {
+            this.input.setAttribute('placeholder', '');
+        }
+    }
+    onFocus() {
+        this._showMessage();
+        if (this.options.showPlaceholderOnFocus) {
+            this.input.setAttribute('placeholder', this.placeholder || '');
+        }
+    }
+    setPlaceHolder(placeHolder) {
+        this.placeholder = placeHolder;
+        this.input.setAttribute('placeholder', placeHolder);
+    }
+    setTooltip(tooltip) {
+        this.tooltip = tooltip;
+        if (!this.hover) {
+            this.hover = this._register(getBaseLayerHoverDelegate().setupManagedHover(getDefaultHoverDelegate('mouse'), this.input, tooltip));
+        }
+        else {
+            this.hover.update(tooltip);
+        }
+    }
+    setAriaLabel(label) {
+        this.ariaLabel = label;
+        if (label) {
+            this.input.setAttribute('aria-label', this.ariaLabel);
+        }
+        else {
+            this.input.removeAttribute('aria-label');
+        }
+    }
+    getAriaLabel() {
+        return this.ariaLabel;
+    }
+    get mirrorElement() {
+        return this.mirror;
+    }
+    get inputElement() {
+        return this.input;
+    }
+    get value() {
+        return this.input.value;
+    }
+    set value(newValue) {
+        if (this.input.value !== newValue) {
+            this.input.value = newValue;
+            this.onValueChange();
+        }
+    }
+    get step() {
+        return this.input.step;
+    }
+    set step(newValue) {
+        this.input.step = newValue;
+    }
+    get height() {
+        return typeof this.cachedHeight === 'number' ? this.cachedHeight : dom.getTotalHeight(this.element);
+    }
+    focus() {
+        this.input.focus();
+    }
+    blur() {
+        this.input.blur();
+    }
+    hasFocus() {
+        return dom.isActiveElement(this.input);
+    }
+    select(range = null) {
+        this.input.select();
+        if (range) {
+            this.input.setSelectionRange(range.start, range.end);
+            if (range.end === this.input.value.length) {
+                this.input.scrollLeft = this.input.scrollWidth;
+            }
+        }
+    }
+    isSelectionAtEnd() {
+        return this.input.selectionEnd === this.input.value.length && this.input.selectionStart === this.input.selectionEnd;
+    }
+    getSelection() {
+        const selectionStart = this.input.selectionStart;
+        if (selectionStart === null) {
+            return null;
+        }
+        const selectionEnd = this.input.selectionEnd ?? selectionStart;
+        return {
+            start: selectionStart,
+            end: selectionEnd,
+        };
+    }
+    enable() {
+        this.input.removeAttribute('disabled');
+    }
+    disable() {
+        this.blur();
+        this.input.disabled = true;
+        this._hideMessage();
+    }
+    setEnabled(enabled) {
+        if (enabled) {
+            this.enable();
+        }
+        else {
+            this.disable();
+        }
+    }
+    get width() {
+        return dom.getTotalWidth(this.input);
+    }
+    set width(width) {
+        if (this.options.flexibleHeight && this.options.flexibleWidth) {
+            let horizontalPadding = 0;
+            if (this.mirror) {
+                const paddingLeft = parseFloat(this.mirror.style.paddingLeft || '') || 0;
+                const paddingRight = parseFloat(this.mirror.style.paddingRight || '') || 0;
+                horizontalPadding = paddingLeft + paddingRight;
+            }
+            this.input.style.width = (width - horizontalPadding) + 'px';
+        }
+        else {
+            this.input.style.width = width + 'px';
+        }
+        if (this.mirror) {
+            this.mirror.style.width = width + 'px';
+        }
+    }
+    set paddingRight(paddingRight) {
+        this.input.style.width = `calc(100% - ${paddingRight}px)`;
+        if (this.mirror) {
+            this.mirror.style.paddingRight = paddingRight + 'px';
+        }
+    }
+    updateScrollDimensions() {
+        if (typeof this.cachedContentHeight !== 'number' || typeof this.cachedHeight !== 'number' || !this.scrollableElement) {
+            return;
+        }
+        const scrollHeight = this.cachedContentHeight;
+        const height = this.cachedHeight;
+        const scrollTop = this.input.scrollTop;
+        this.scrollableElement.setScrollDimensions({ scrollHeight, height });
+        this.scrollableElement.setScrollPosition({ scrollTop });
+    }
+    showMessage(message, force) {
+        if (this.state === 'open' && equals(this.message, message)) {
+            return;
+        }
+        this.message = message;
+        this.element.classList.remove('idle');
+        this.element.classList.remove('info');
+        this.element.classList.remove('warning');
+        this.element.classList.remove('error');
+        this.element.classList.add(this.classForType(message.type));
+        const styles = this.stylesForType(this.message.type);
+        this.element.style.border = `1px solid ${dom.asCssValueWithDefault(styles.border, 'transparent')}`;
+        if (this.message.content && (this.hasFocus() || force)) {
+            this._showMessage();
+        }
+    }
+    hideMessage() {
+        this.message = null;
+        this.element.classList.remove('info');
+        this.element.classList.remove('warning');
+        this.element.classList.remove('error');
+        this.element.classList.add('idle');
+        this._hideMessage();
+        this.applyStyles();
+    }
+    isInputValid() {
+        return !!this.validation && !this.validation(this.value);
+    }
+    validate() {
+        let errorMsg = null;
+        if (this.validation) {
+            errorMsg = this.validation(this.value);
+            if (errorMsg) {
+                this.inputElement.setAttribute('aria-invalid', 'true');
+                this.showMessage(errorMsg);
+            }
+            else if (this.inputElement.hasAttribute('aria-invalid')) {
+                this.inputElement.removeAttribute('aria-invalid');
+                this.hideMessage();
+            }
+        }
+        return errorMsg?.type;
+    }
+    stylesForType(type) {
+        const styles = this.options.inputBoxStyles;
+        switch (type) {
+            case 1: return { border: styles.inputValidationInfoBorder, background: styles.inputValidationInfoBackground, foreground: styles.inputValidationInfoForeground };
+            case 2: return { border: styles.inputValidationWarningBorder, background: styles.inputValidationWarningBackground, foreground: styles.inputValidationWarningForeground };
+            default: return { border: styles.inputValidationErrorBorder, background: styles.inputValidationErrorBackground, foreground: styles.inputValidationErrorForeground };
+        }
+    }
+    classForType(type) {
+        switch (type) {
+            case 1: return 'info';
+            case 2: return 'warning';
+            default: return 'error';
+        }
+    }
+    _showMessage() {
+        if (!this.contextViewProvider || !this.message) {
+            return;
+        }
+        let div;
+        const layout = () => div.style.width = dom.getTotalWidth(this.element) + 'px';
+        this.contextViewProvider.showContextView({
+            getAnchor: () => this.element,
+            anchorAlignment: 1,
+            render: (container) => {
+                if (!this.message) {
+                    return null;
+                }
+                div = dom.append(container, $('.monaco-inputbox-container'));
+                layout();
+                const renderOptions = {
+                    inline: true,
+                    className: 'monaco-inputbox-message'
+                };
+                const spanElement = (this.message.formatContent
+                    ? renderFormattedText(this.message.content, renderOptions)
+                    : renderText(this.message.content, renderOptions));
+                spanElement.classList.add(this.classForType(this.message.type));
+                const styles = this.stylesForType(this.message.type);
+                spanElement.style.backgroundColor = styles.background ?? '';
+                spanElement.style.color = styles.foreground ?? '';
+                spanElement.style.border = styles.border ? `1px solid ${styles.border}` : '';
+                dom.append(div, spanElement);
+                return null;
+            },
+            onHide: () => {
+                this.state = 'closed';
+            },
+            layout: layout
+        });
+        let alertText;
+        if (this.message.type === 3) {
+            alertText = nls.localize('alertErrorMessage', "Error: {0}", this.message.content);
+        }
+        else if (this.message.type === 2) {
+            alertText = nls.localize('alertWarningMessage', "Warning: {0}", this.message.content);
+        }
+        else {
+            alertText = nls.localize('alertInfoMessage', "Info: {0}", this.message.content);
+        }
+        aria.alert(alertText);
+        this.state = 'open';
+    }
+    _hideMessage() {
+        if (!this.contextViewProvider) {
+            return;
+        }
+        if (this.state === 'open') {
+            this.contextViewProvider.hideContextView();
+        }
+        this.state = 'idle';
+    }
+    onValueChange() {
+        this._onDidChange.fire(this.value);
+        this.validate();
+        this.updateMirror();
+        this.input.classList.toggle('empty', !this.value);
+        if (this.state === 'open' && this.contextViewProvider) {
+            this.contextViewProvider.layout();
+        }
+    }
+    updateMirror() {
+        if (!this.mirror) {
+            return;
+        }
+        const value = this.value;
+        const lastCharCode = value.charCodeAt(value.length - 1);
+        const suffix = lastCharCode === 10 ? ' ' : '';
+        const mirrorTextContent = (value + suffix)
+            .replace(/\u000c/g, '');
+        if (mirrorTextContent) {
+            this.mirror.textContent = value + suffix;
+        }
+        else {
+            this.mirror.innerText = '\u00a0';
+        }
+        this.layout();
+    }
+    applyStyles() {
+        const styles = this.options.inputBoxStyles;
+        const background = styles.inputBackground ?? '';
+        const foreground = styles.inputForeground ?? '';
+        const border = styles.inputBorder ?? '';
+        this.element.style.backgroundColor = background;
+        this.element.style.color = foreground;
+        this.input.style.backgroundColor = 'inherit';
+        this.input.style.color = foreground;
+        this.element.style.border = `1px solid ${dom.asCssValueWithDefault(border, 'transparent')}`;
+    }
+    layout() {
+        if (!this.mirror) {
+            return;
+        }
+        const previousHeight = this.cachedContentHeight;
+        this.cachedContentHeight = dom.getTotalHeight(this.mirror);
+        if (previousHeight !== this.cachedContentHeight) {
+            this.cachedHeight = Math.min(this.cachedContentHeight, this.maxHeight);
+            this.input.style.height = this.cachedHeight + 'px';
+            this._onDidHeightChange.fire(this.cachedContentHeight);
+        }
+    }
+    insertAtCursor(text) {
+        const inputElement = this.inputElement;
+        const start = inputElement.selectionStart;
+        const end = inputElement.selectionEnd;
+        const content = inputElement.value;
+        if (start !== null && end !== null) {
+            this.value = content.substr(0, start) + text + content.substr(end);
+            inputElement.setSelectionRange(start + 1, start + 1);
+            this.layout();
+        }
+    }
+    dispose() {
+        this._hideMessage();
+        this.message = null;
+        this.actionbar?.dispose();
+        super.dispose();
+    }
+}
+export class HistoryInputBox extends InputBox {
+    constructor(container, contextViewProvider, options) {
+        const NLS_PLACEHOLDER_HISTORY_HINT_SUFFIX_NO_PARENS = nls.localize({
+            key: 'history.inputbox.hint.suffix.noparens',
+            comment: ['Text is the suffix of an input field placeholder coming after the action the input field performs, this will be used when the input field ends in a closing parenthesis ")", for example "Filter (e.g. text, !exclude)". The character inserted into the final string is \u21C5 to represent the up and down arrow keys.']
+        }, ' or {0} for history', `\u21C5`);
+        const NLS_PLACEHOLDER_HISTORY_HINT_SUFFIX_IN_PARENS = nls.localize({
+            key: 'history.inputbox.hint.suffix.inparens',
+            comment: ['Text is the suffix of an input field placeholder coming after the action the input field performs, this will be used when the input field does NOT end in a closing parenthesis (eg. "Find"). The character inserted into the final string is \u21C5 to represent the up and down arrow keys.']
+        }, ' ({0} for history)', `\u21C5`);
+        super(container, contextViewProvider, options);
+        this._onDidFocus = this._register(new Emitter());
+        this.onDidFocus = this._onDidFocus.event;
+        this._onDidBlur = this._register(new Emitter());
+        this.onDidBlur = this._onDidBlur.event;
+        this.history = new HistoryNavigator(options.history, 100);
+        const addSuffix = () => {
+            if (options.showHistoryHint && options.showHistoryHint() && !this.placeholder.endsWith(NLS_PLACEHOLDER_HISTORY_HINT_SUFFIX_NO_PARENS) && !this.placeholder.endsWith(NLS_PLACEHOLDER_HISTORY_HINT_SUFFIX_IN_PARENS) && this.history.getHistory().length) {
+                const suffix = this.placeholder.endsWith(')') ? NLS_PLACEHOLDER_HISTORY_HINT_SUFFIX_NO_PARENS : NLS_PLACEHOLDER_HISTORY_HINT_SUFFIX_IN_PARENS;
+                const suffixedPlaceholder = this.placeholder + suffix;
+                if (options.showPlaceholderOnFocus && !dom.isActiveElement(this.input)) {
+                    this.placeholder = suffixedPlaceholder;
+                }
+                else {
+                    this.setPlaceHolder(suffixedPlaceholder);
+                }
+            }
+        };
+        this.observer = new MutationObserver((mutationList, observer) => {
+            mutationList.forEach((mutation) => {
+                if (!mutation.target.textContent) {
+                    addSuffix();
+                }
+            });
+        });
+        this.observer.observe(this.input, { attributeFilter: ['class'] });
+        this.onfocus(this.input, () => addSuffix());
+        this.onblur(this.input, () => {
+            const resetPlaceholder = (historyHint) => {
+                if (!this.placeholder.endsWith(historyHint)) {
+                    return false;
+                }
+                else {
+                    const revertedPlaceholder = this.placeholder.slice(0, this.placeholder.length - historyHint.length);
+                    if (options.showPlaceholderOnFocus) {
+                        this.placeholder = revertedPlaceholder;
+                    }
+                    else {
+                        this.setPlaceHolder(revertedPlaceholder);
+                    }
+                    return true;
+                }
+            };
+            if (!resetPlaceholder(NLS_PLACEHOLDER_HISTORY_HINT_SUFFIX_IN_PARENS)) {
+                resetPlaceholder(NLS_PLACEHOLDER_HISTORY_HINT_SUFFIX_NO_PARENS);
+            }
+        });
+    }
+    dispose() {
+        super.dispose();
+        if (this.observer) {
+            this.observer.disconnect();
+            this.observer = undefined;
+        }
+    }
+    addToHistory(always) {
+        if (this.value && (always || this.value !== this.getCurrentValue())) {
+            this.history.add(this.value);
+        }
+    }
+    prependHistory(restoredHistory) {
+        const newHistory = this.getHistory();
+        this.clearHistory();
+        restoredHistory.forEach((item) => {
+            this.history.add(item);
+        });
+        newHistory.forEach(item => {
+            this.history.add(item);
+        });
+    }
+    getHistory() {
+        return this.history.getHistory();
+    }
+    isAtFirstInHistory() {
+        return this.history.isFirst();
+    }
+    isAtLastInHistory() {
+        return this.history.isLast();
+    }
+    isNowhereInHistory() {
+        return this.history.isNowhere();
+    }
+    showNextValue() {
+        if (!this.history.has(this.value)) {
+            this.addToHistory();
+        }
+        let next = this.getNextValue();
+        if (next) {
+            next = next === this.value ? this.getNextValue() : next;
+        }
+        this.value = next ?? '';
+        aria.status(this.value ? this.value : nls.localize('clearedInput', "Cleared Input"));
+    }
+    showPreviousValue() {
+        if (!this.history.has(this.value)) {
+            this.addToHistory();
+        }
+        let previous = this.getPreviousValue();
+        if (previous) {
+            previous = previous === this.value ? this.getPreviousValue() : previous;
+        }
+        if (previous) {
+            this.value = previous;
+            aria.status(this.value);
+        }
+    }
+    clearHistory() {
+        this.history.clear();
+    }
+    setPlaceHolder(placeHolder) {
+        super.setPlaceHolder(placeHolder);
+        this.setTooltip(placeHolder);
+    }
+    onBlur() {
+        super.onBlur();
+        this._onDidBlur.fire();
+    }
+    onFocus() {
+        super.onFocus();
+        this._onDidFocus.fire();
+    }
+    getCurrentValue() {
+        let currentValue = this.history.current();
+        if (!currentValue) {
+            currentValue = this.history.last();
+            this.history.next();
+        }
+        return currentValue;
+    }
+    getPreviousValue() {
+        return this.history.previous() || this.history.first();
+    }
+    getNextValue() {
+        return this.history.next();
+    }
+}

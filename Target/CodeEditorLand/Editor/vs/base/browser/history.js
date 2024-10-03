@@ -1,1 +1,1 @@
-import"../common/event.js";
+export {};

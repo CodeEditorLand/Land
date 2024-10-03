@@ -1,1 +1,121 @@
-function d(i){let l=!1;const p=new Map,u=new Map;if(h(i,n=>{if(i===n)return!0;const o=JSON.stringify(n);if(o.length<30)return!0;const c=p.get(o);if(!c){const a={schemas:[n]};return p.set(o,a),u.set(n,a),!0}return c.schemas.push(n),u.set(n,c),l=!0,!1}),p.clear(),!l)return JSON.stringify(i);let m="$defs";for(;i.hasOwnProperty(m);)m+="_";const s=[];function e(n){return JSON.stringify(n,(o,c)=>{if(c!==n){const a=u.get(c);if(a&&a.schemas.length>1)return a.id||(a.id=`_${s.length}`,s.push(a.schemas[0])),{$ref:`#/${m}/${a.id}`}}return c})}const r=e(i),t=[];for(let n=0;n<s.length;n++)t.push(`"_${n}":${e(s[n])}`);return t.length?`${r.substring(0,r.length-1)},"${m}":{${t.join(",")}}}`:r}function S(i){return typeof i=="object"&&i!==null}function h(i,l){if(!i||typeof i!="object")return;const p=(...r)=>{for(const t of r)S(t)&&s.push(t)},u=(...r)=>{for(const t of r)if(S(t))for(const n in t){const o=t[n];S(o)&&s.push(o)}},f=(...r)=>{for(const t of r)if(Array.isArray(t))for(const n of t)S(n)&&s.push(n)},m=r=>{if(Array.isArray(r))for(const t of r)S(t)&&s.push(t);else S(r)&&s.push(r)},s=[i];let e=s.pop();for(;e;)l(e)&&(p(e.additionalItems,e.additionalProperties,e.not,e.contains,e.propertyNames,e.if,e.then,e.else,e.unevaluatedItems,e.unevaluatedProperties),u(e.definitions,e.$defs,e.properties,e.patternProperties,e.dependencies,e.dependentSchemas),f(e.anyOf,e.allOf,e.oneOf,e.prefixItems),m(e.items)),e=s.pop()}export{d as getCompressedContent};
+export function getCompressedContent(schema) {
+    let hasDups = false;
+    const equalsByString = new Map();
+    const nodeToEquals = new Map();
+    const visitSchemas = (next) => {
+        if (schema === next) {
+            return true;
+        }
+        const val = JSON.stringify(next);
+        if (val.length < 30) {
+            return true;
+        }
+        const eq = equalsByString.get(val);
+        if (!eq) {
+            const newEq = { schemas: [next] };
+            equalsByString.set(val, newEq);
+            nodeToEquals.set(next, newEq);
+            return true;
+        }
+        eq.schemas.push(next);
+        nodeToEquals.set(next, eq);
+        hasDups = true;
+        return false;
+    };
+    traverseNodes(schema, visitSchemas);
+    equalsByString.clear();
+    if (!hasDups) {
+        return JSON.stringify(schema);
+    }
+    let defNodeName = '$defs';
+    while (schema.hasOwnProperty(defNodeName)) {
+        defNodeName += '_';
+    }
+    const definitions = [];
+    function stringify(root) {
+        return JSON.stringify(root, (_key, value) => {
+            if (value !== root) {
+                const eq = nodeToEquals.get(value);
+                if (eq && eq.schemas.length > 1) {
+                    if (!eq.id) {
+                        eq.id = `_${definitions.length}`;
+                        definitions.push(eq.schemas[0]);
+                    }
+                    return { $ref: `#/${defNodeName}/${eq.id}` };
+                }
+            }
+            return value;
+        });
+    }
+    const str = stringify(schema);
+    const defStrings = [];
+    for (let i = 0; i < definitions.length; i++) {
+        defStrings.push(`"_${i}":${stringify(definitions[i])}`);
+    }
+    if (defStrings.length) {
+        return `${str.substring(0, str.length - 1)},"${defNodeName}":{${defStrings.join(',')}}}`;
+    }
+    return str;
+}
+function isObject(thing) {
+    return typeof thing === 'object' && thing !== null;
+}
+function traverseNodes(root, visit) {
+    if (!root || typeof root !== 'object') {
+        return;
+    }
+    const collectEntries = (...entries) => {
+        for (const entry of entries) {
+            if (isObject(entry)) {
+                toWalk.push(entry);
+            }
+        }
+    };
+    const collectMapEntries = (...maps) => {
+        for (const map of maps) {
+            if (isObject(map)) {
+                for (const key in map) {
+                    const entry = map[key];
+                    if (isObject(entry)) {
+                        toWalk.push(entry);
+                    }
+                }
+            }
+        }
+    };
+    const collectArrayEntries = (...arrays) => {
+        for (const array of arrays) {
+            if (Array.isArray(array)) {
+                for (const entry of array) {
+                    if (isObject(entry)) {
+                        toWalk.push(entry);
+                    }
+                }
+            }
+        }
+    };
+    const collectEntryOrArrayEntries = (items) => {
+        if (Array.isArray(items)) {
+            for (const entry of items) {
+                if (isObject(entry)) {
+                    toWalk.push(entry);
+                }
+            }
+        }
+        else if (isObject(items)) {
+            toWalk.push(items);
+        }
+    };
+    const toWalk = [root];
+    let next = toWalk.pop();
+    while (next) {
+        const visitChildern = visit(next);
+        if (visitChildern) {
+            collectEntries(next.additionalItems, next.additionalProperties, next.not, next.contains, next.propertyNames, next.if, next.then, next.else, next.unevaluatedItems, next.unevaluatedProperties);
+            collectMapEntries(next.definitions, next.$defs, next.properties, next.patternProperties, next.dependencies, next.dependentSchemas);
+            collectArrayEntries(next.anyOf, next.allOf, next.oneOf, next.prefixItems);
+            collectEntryOrArrayEntries(next.items);
+        }
+        next = toWalk.pop();
+    }
+}

@@ -1,1 +1,34 @@
-import{KeyMod as e}from"../../../../base/common/keyCodes.js";import{Disposable as r}from"../../../../base/common/lifecycle.js";import"../../../../editor/browser/editorBrowser.js";import{EditorContributionInstantiation as s,registerEditorContribution as n}from"../../../../editor/browser/editorExtensions.js";import"../../../../editor/common/editorCommon.js";class i extends r{static ID="editor.contrib.menuPreventer";_editor;_altListeningMouse;_altMouseTriggered;constructor(o){super(),this._editor=o,this._altListeningMouse=!1,this._altMouseTriggered=!1,this._register(this._editor.onMouseDown(t=>{this._altListeningMouse&&(this._altMouseTriggered=!0)})),this._register(this._editor.onKeyDown(t=>{t.equals(e.Alt)&&(this._altListeningMouse||(this._altMouseTriggered=!1),this._altListeningMouse=!0)})),this._register(this._editor.onKeyUp(t=>{t.equals(e.Alt)&&(this._altMouseTriggered&&t.preventDefault(),this._altListeningMouse=!1,this._altMouseTriggered=!1)}))}}n(i.ID,i,s.BeforeFirstInteraction);export{i as MenuPreventer};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { registerEditorContribution } from '../../../../editor/browser/editorExtensions.js';
+export class MenuPreventer extends Disposable {
+    static { this.ID = 'editor.contrib.menuPreventer'; }
+    constructor(editor) {
+        super();
+        this._editor = editor;
+        this._altListeningMouse = false;
+        this._altMouseTriggered = false;
+        this._register(this._editor.onMouseDown((e) => {
+            if (this._altListeningMouse) {
+                this._altMouseTriggered = true;
+            }
+        }));
+        this._register(this._editor.onKeyDown((e) => {
+            if (e.equals(512)) {
+                if (!this._altListeningMouse) {
+                    this._altMouseTriggered = false;
+                }
+                this._altListeningMouse = true;
+            }
+        }));
+        this._register(this._editor.onKeyUp((e) => {
+            if (e.equals(512)) {
+                if (this._altMouseTriggered) {
+                    e.preventDefault();
+                }
+                this._altListeningMouse = false;
+                this._altMouseTriggered = false;
+            }
+        }));
+    }
+}
+registerEditorContribution(MenuPreventer.ID, MenuPreventer, 2);

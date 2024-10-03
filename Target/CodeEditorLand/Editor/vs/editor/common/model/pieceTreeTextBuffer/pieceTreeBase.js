@@ -1,8 +1,1421 @@
-import{CharCode as _}from"../../../../base/common/charCode.js";import{Position as F}from"../../core/position.js";import{Range as P}from"../../core/range.js";import{FindMatch as M}from"../../model.js";import{NodeColor as A,SENTINEL as d,TreeNode as v,fixInsert as z,leftest as W,rbDelete as T,righttest as U,updateTreeMetadata as S}from"./rbTreeBase.js";import{Searcher as k,createFindMatch as R,isValidMatch as j}from"../textModelSearch.js";const I=65535;function V(b){let e;return b[b.length-1]<65536?e=new Uint16Array(b.length):e=new Uint32Array(b.length),e.set(b,0),e}class D{constructor(e,n,t,i,r){this.lineStarts=e;this.cr=n;this.lf=t;this.crlf=i;this.isBasicASCII=r}}function B(b,e=!0){const n=[0];let t=1;for(let i=0,r=b.length;i<r;i++){const s=b.charCodeAt(i);s===_.CarriageReturn?i+1<r&&b.charCodeAt(i+1)===_.LineFeed?(n[t++]=i+2,i++):n[t++]=i+1:s===_.LineFeed&&(n[t++]=i+1)}return e?V(n):n}function ee(b,e){b.length=0,b[0]=0;let n=1,t=0,i=0,r=0,s=!0;for(let f=0,u=e.length;f<u;f++){const l=e.charCodeAt(f);l===_.CarriageReturn?f+1<u&&e.charCodeAt(f+1)===_.LineFeed?(r++,b[n++]=f+2,f++):(t++,b[n++]=f+1):l===_.LineFeed?(i++,b[n++]=f+1):s&&l!==_.Tab&&(l<32||l>126)&&(s=!1)}const o=new D(V(b),t,i,r,s);return b.length=0,o}class C{bufferIndex;start;end;length;lineFeedCnt;constructor(e,n,t,i,r){this.bufferIndex=e,this.start=n,this.end=t,this.lineFeedCnt=i,this.length=r}}class w{buffer;lineStarts;constructor(e,n){this.buffer=e,this.lineStarts=n}}class H{_pieces;_index;_tree;_BOM;constructor(e,n){this._pieces=[],this._tree=e,this._BOM=n,this._index=0,e.root!==d&&e.iterate(e.root,t=>(t!==d&&this._pieces.push(t.piece),!0))}read(){return this._pieces.length===0?this._index===0?(this._index++,this._BOM):null:this._index>this._pieces.length-1?null:this._index===0?this._BOM+this._tree.getPieceContent(this._pieces[this._index++]):this._tree.getPieceContent(this._pieces[this._index++])}}class ${_limit;_cache;constructor(e){this._limit=e,this._cache=[]}get(e){for(let n=this._cache.length-1;n>=0;n--){const t=this._cache[n];if(t.nodeStartOffset<=e&&t.nodeStartOffset+t.node.piece.length>=e)return t}return null}get2(e){for(let n=this._cache.length-1;n>=0;n--){const t=this._cache[n];if(t.nodeStartLineNumber&&t.nodeStartLineNumber<e&&t.nodeStartLineNumber+t.node.piece.lineFeedCnt>=e)return t}return null}set(e){this._cache.length>=this._limit&&this._cache.shift(),this._cache.push(e)}validate(e){let n=!1;const t=this._cache;for(let i=0;i<t.length;i++){const r=t[i];if(r.node.parent===null||r.nodeStartOffset>=e){t[i]=null,n=!0;continue}}if(n){const i=[];for(const r of t)r!==null&&i.push(r);this._cache=i}}}class te{root;_buffers;_lineCnt;_length;_EOL;_EOLLength;_EOLNormalized;_lastChangeBufferPos;_searchCache;_lastVisitedLine;constructor(e,n,t){this.create(e,n,t)}create(e,n,t){this._buffers=[new w("",[0])],this._lastChangeBufferPos={line:0,column:0},this.root=d,this._lineCnt=1,this._length=0,this._EOL=n,this._EOLLength=n.length,this._EOLNormalized=t;let i=null;for(let r=0,s=e.length;r<s;r++)if(e[r].buffer.length>0){e[r].lineStarts||(e[r].lineStarts=B(e[r].buffer));const o=new C(r+1,{line:0,column:0},{line:e[r].lineStarts.length-1,column:e[r].buffer.length-e[r].lineStarts[e[r].lineStarts.length-1]},e[r].lineStarts.length-1,e[r].buffer.length);this._buffers.push(e[r]),i=this.rbInsertRight(i,o)}this._searchCache=new $(1),this._lastVisitedLine={lineNumber:0,value:""},this.computeBufferMetadata()}normalizeEOL(e){const n=I,t=n-Math.floor(n/3),i=t*2;let r="",s=0;const o=[];if(this.iterate(this.root,f=>{const u=this.getNodeContent(f),l=u.length;if(s<=t||s+l<i)return r+=u,s+=l,!0;const h=r.replace(/\r\n|\r|\n/g,e);return o.push(new w(h,B(h))),r=u,s=l,!0}),s>0){const f=r.replace(/\r\n|\r|\n/g,e);o.push(new w(f,B(f)))}this.create(o,e,!0)}getEOL(){return this._EOL}setEOL(e){this._EOL=e,this._EOLLength=this._EOL.length,this.normalizeEOL(e)}createSnapshot(e){return new H(this,e)}equal(e){if(this.getLength()!==e.getLength()||this.getLineCount()!==e.getLineCount())return!1;let n=0;return this.iterate(this.root,i=>{if(i===d)return!0;const r=this.getNodeContent(i),s=r.length,o=e.nodeAt(n),f=e.nodeAt(n+s),u=e.getValueInRange2(o,f);return n+=s,r===u})}getOffsetAt(e,n){let t=0,i=this.root;for(;i!==d;)if(i.left!==d&&i.lf_left+1>=e)i=i.left;else if(i.lf_left+i.piece.lineFeedCnt+1>=e){t+=i.size_left;const r=this.getAccumulatedValue(i,e-i.lf_left-2);return t+=r+n-1}else e-=i.lf_left+i.piece.lineFeedCnt,t+=i.size_left+i.piece.length,i=i.right;return t}getPositionAt(e){e=Math.floor(e),e=Math.max(0,e);let n=this.root,t=0;const i=e;for(;n!==d;)if(n.size_left!==0&&n.size_left>=e)n=n.left;else if(n.size_left+n.piece.length>=e){const r=this.getIndexOf(n,e-n.size_left);if(t+=n.lf_left+r.index,r.index===0){const s=this.getOffsetAt(t+1,1),o=i-s;return new F(t+1,o+1)}return new F(t+1,r.remainder+1)}else if(e-=n.size_left+n.piece.length,t+=n.lf_left+n.piece.lineFeedCnt,n.right===d){const r=this.getOffsetAt(t+1,1),s=i-e-r;return new F(t+1,s+1)}else n=n.right;return new F(1,1)}getValueInRange(e,n){if(e.startLineNumber===e.endLineNumber&&e.startColumn===e.endColumn)return"";const t=this.nodeAt2(e.startLineNumber,e.startColumn),i=this.nodeAt2(e.endLineNumber,e.endColumn),r=this.getValueInRange2(t,i);return n?n!==this._EOL||!this._EOLNormalized?r.replace(/\r\n|\r|\n/g,n):n===this.getEOL()&&this._EOLNormalized?r:r.replace(/\r\n|\r|\n/g,n):r}getValueInRange2(e,n){if(e.node===n.node){const o=e.node,f=this._buffers[o.piece.bufferIndex].buffer,u=this.offsetInBuffer(o.piece.bufferIndex,o.piece.start);return f.substring(u+e.remainder,u+n.remainder)}let t=e.node;const i=this._buffers[t.piece.bufferIndex].buffer,r=this.offsetInBuffer(t.piece.bufferIndex,t.piece.start);let s=i.substring(r+e.remainder,r+t.piece.length);for(t=t.next();t!==d;){const o=this._buffers[t.piece.bufferIndex].buffer,f=this.offsetInBuffer(t.piece.bufferIndex,t.piece.start);if(t===n.node){s+=o.substring(f,f+n.remainder);break}else s+=o.substr(f,t.piece.length);t=t.next()}return s}getLinesContent(){const e=[];let n=0,t="",i=!1;return this.iterate(this.root,r=>{if(r===d)return!0;const s=r.piece;let o=s.length;if(o===0)return!0;const f=this._buffers[s.bufferIndex].buffer,u=this._buffers[s.bufferIndex].lineStarts,l=s.start.line,h=s.end.line;let c=u[l]+s.start.column;if(i&&(f.charCodeAt(c)===_.LineFeed&&(c++,o--),e[n++]=t,t="",i=!1,o===0))return!0;if(l===h)return!this._EOLNormalized&&f.charCodeAt(c+o-1)===_.CarriageReturn?(i=!0,t+=f.substr(c,o-1)):t+=f.substr(c,o),!0;t+=this._EOLNormalized?f.substring(c,Math.max(c,u[l+1]-this._EOLLength)):f.substring(c,u[l+1]).replace(/(\r\n|\r|\n)$/,""),e[n++]=t;for(let a=l+1;a<h;a++)t=this._EOLNormalized?f.substring(u[a],u[a+1]-this._EOLLength):f.substring(u[a],u[a+1]).replace(/(\r\n|\r|\n)$/,""),e[n++]=t;return!this._EOLNormalized&&f.charCodeAt(u[h]+s.end.column-1)===_.CarriageReturn?(i=!0,s.end.column===0?n--:t=f.substr(u[h],s.end.column-1)):t=f.substr(u[h],s.end.column),!0}),i&&(e[n++]=t,t=""),e[n++]=t,e}getLength(){return this._length}getLineCount(){return this._lineCnt}getLineContent(e){return this._lastVisitedLine.lineNumber===e?this._lastVisitedLine.value:(this._lastVisitedLine.lineNumber=e,e===this._lineCnt?this._lastVisitedLine.value=this.getLineRawContent(e):this._EOLNormalized?this._lastVisitedLine.value=this.getLineRawContent(e,this._EOLLength):this._lastVisitedLine.value=this.getLineRawContent(e).replace(/(\r\n|\r|\n)$/,""),this._lastVisitedLine.value)}_getCharCode(e){if(e.remainder===e.node.piece.length){const n=e.node.next();if(!n)return 0;const t=this._buffers[n.piece.bufferIndex],i=this.offsetInBuffer(n.piece.bufferIndex,n.piece.start);return t.buffer.charCodeAt(i)}else{const n=this._buffers[e.node.piece.bufferIndex],i=this.offsetInBuffer(e.node.piece.bufferIndex,e.node.piece.start)+e.remainder;return n.buffer.charCodeAt(i)}}getLineCharCode(e,n){const t=this.nodeAt2(e,n+1);return this._getCharCode(t)}getLineLength(e){if(e===this.getLineCount()){const n=this.getOffsetAt(e,1);return this.getLength()-n}return this.getOffsetAt(e+1,1)-this.getOffsetAt(e,1)-this._EOLLength}getCharCode(e){const n=this.nodeAt(e);return this._getCharCode(n)}getNearestChunk(e){const n=this.nodeAt(e);if(n.remainder===n.node.piece.length){const t=n.node.next();if(!t||t===d)return"";const i=this._buffers[t.piece.bufferIndex],r=this.offsetInBuffer(t.piece.bufferIndex,t.piece.start);return i.buffer.substring(r,r+t.piece.length)}else{const t=this._buffers[n.node.piece.bufferIndex],i=this.offsetInBuffer(n.node.piece.bufferIndex,n.node.piece.start),r=i+n.remainder,s=i+n.node.piece.length;return t.buffer.substring(r,s)}}findMatchesInNode(e,n,t,i,r,s,o,f,u,l,h){const c=this._buffers[e.piece.bufferIndex],a=this.offsetInBuffer(e.piece.bufferIndex,e.piece.start),p=this.offsetInBuffer(e.piece.bufferIndex,r),g=this.offsetInBuffer(e.piece.bufferIndex,s);let m;const L={line:0,column:0};let O,N;n._wordSeparators?(O=c.buffer.substring(p,g),N=x=>x+p,n.reset(0)):(O=c.buffer,N=x=>x,n.reset(p));do if(m=n.next(O),m){if(N(m.index)>=g)return l;this.positionInBuffer(e,N(m.index)-a,L);const x=this.getLineFeedCnt(e.piece.bufferIndex,r,L),E=L.line===r.line?L.column-r.column+i:L.column+1,y=E+m[0].length;if(h[l++]=R(new P(t+x,E,t+x,y),m,f),N(m.index)+m[0].length>=g||l>=u)return l}while(m);return l}findMatchesLineByLine(e,n,t,i){const r=[];let s=0;const o=new k(n.wordSeparators,n.regex);let f=this.nodeAt2(e.startLineNumber,e.startColumn);if(f===null)return[];const u=this.nodeAt2(e.endLineNumber,e.endColumn);if(u===null)return[];let l=this.positionInBuffer(f.node,f.remainder);const h=this.positionInBuffer(u.node,u.remainder);if(f.node===u.node)return this.findMatchesInNode(f.node,o,e.startLineNumber,e.startColumn,l,h,n,t,i,s,r),r;let c=e.startLineNumber,a=f.node;for(;a!==u.node;){const g=this.getLineFeedCnt(a.piece.bufferIndex,l,a.piece.end);if(g>=1){const L=this._buffers[a.piece.bufferIndex].lineStarts,O=this.offsetInBuffer(a.piece.bufferIndex,a.piece.start),N=L[l.line+g],x=c===e.startLineNumber?e.startColumn:1;if(s=this.findMatchesInNode(a,o,c,x,l,this.positionInBuffer(a,N-O),n,t,i,s,r),s>=i)return r;c+=g}const m=c===e.startLineNumber?e.startColumn-1:0;if(c===e.endLineNumber){const L=this.getLineContent(c).substring(m,e.endColumn-1);return s=this._findMatchesInLine(n,o,L,e.endLineNumber,m,s,r,t,i),r}if(s=this._findMatchesInLine(n,o,this.getLineContent(c).substr(m),c,m,s,r,t,i),s>=i)return r;c++,f=this.nodeAt2(c,1),a=f.node,l=this.positionInBuffer(f.node,f.remainder)}if(c===e.endLineNumber){const g=c===e.startLineNumber?e.startColumn-1:0,m=this.getLineContent(c).substring(g,e.endColumn-1);return s=this._findMatchesInLine(n,o,m,e.endLineNumber,g,s,r,t,i),r}const p=c===e.startLineNumber?e.startColumn:1;return s=this.findMatchesInNode(u.node,o,c,p,l,h,n,t,i,s,r),r}_findMatchesInLine(e,n,t,i,r,s,o,f,u){const l=e.wordSeparators;if(!f&&e.simpleSearch){const c=e.simpleSearch,a=c.length,p=t.length;let g=-a;for(;(g=t.indexOf(c,g+a))!==-1;)if((!l||j(l,t,p,g,a))&&(o[s++]=new M(new P(i,g+1+r,i,g+1+a+r),null),s>=u))return s;return s}let h;n.reset(0);do if(h=n.next(t),h&&(o[s++]=R(new P(i,h.index+1+r,i,h.index+1+h[0].length+r),h,f),s>=u))return s;while(h);return s}insert(e,n,t=!1){if(this._EOLNormalized=this._EOLNormalized&&t,this._lastVisitedLine.lineNumber=0,this._lastVisitedLine.value="",this.root!==d){const{node:i,remainder:r,nodeStartOffset:s}=this.nodeAt(e),o=i.piece,f=o.bufferIndex,u=this.positionInBuffer(i,r);if(i.piece.bufferIndex===0&&o.end.line===this._lastChangeBufferPos.line&&o.end.column===this._lastChangeBufferPos.column&&s+o.length===e&&n.length<I){this.appendToNode(i,n),this.computeBufferMetadata();return}if(s===e)this.insertContentToNodeLeft(n,i),this._searchCache.validate(e);else if(s+i.piece.length>e){const l=[];let h=new C(o.bufferIndex,u,o.end,this.getLineFeedCnt(o.bufferIndex,u,o.end),this.offsetInBuffer(f,o.end)-this.offsetInBuffer(f,u));if(this.shouldCheckCRLF()&&this.endWithCR(n)&&this.nodeCharCodeAt(i,r)===10){const g={line:h.start.line+1,column:0};h=new C(h.bufferIndex,g,h.end,this.getLineFeedCnt(h.bufferIndex,g,h.end),h.length-1),n+=`
-`}if(this.shouldCheckCRLF()&&this.startWithLF(n))if(this.nodeCharCodeAt(i,r-1)===13){const g=this.positionInBuffer(i,r-1);this.deleteNodeTail(i,g),n="\r"+n,i.piece.length===0&&l.push(i)}else this.deleteNodeTail(i,u);else this.deleteNodeTail(i,u);const c=this.createNewPieces(n);h.length>0&&this.rbInsertRight(i,h);let a=i;for(let p=0;p<c.length;p++)a=this.rbInsertRight(a,c[p]);this.deleteNodes(l)}else this.insertContentToNodeRight(n,i)}else{const i=this.createNewPieces(n);let r=this.rbInsertLeft(null,i[0]);for(let s=1;s<i.length;s++)r=this.rbInsertRight(r,i[s])}this.computeBufferMetadata()}delete(e,n){if(this._lastVisitedLine.lineNumber=0,this._lastVisitedLine.value="",n<=0||this.root===d)return;const t=this.nodeAt(e),i=this.nodeAt(e+n),r=t.node,s=i.node;if(r===s){const c=this.positionInBuffer(r,t.remainder),a=this.positionInBuffer(r,i.remainder);if(t.nodeStartOffset===e){if(n===r.piece.length){const p=r.next();T(this,r),this.validateCRLFWithPrevNode(p),this.computeBufferMetadata();return}this.deleteNodeHead(r,a),this._searchCache.validate(e),this.validateCRLFWithPrevNode(r),this.computeBufferMetadata();return}if(t.nodeStartOffset+r.piece.length===e+n){this.deleteNodeTail(r,c),this.validateCRLFWithNextNode(r),this.computeBufferMetadata();return}this.shrinkNode(r,c,a),this.computeBufferMetadata();return}const o=[],f=this.positionInBuffer(r,t.remainder);this.deleteNodeTail(r,f),this._searchCache.validate(e),r.piece.length===0&&o.push(r);const u=this.positionInBuffer(s,i.remainder);this.deleteNodeHead(s,u),s.piece.length===0&&o.push(s);const l=r.next();for(let c=l;c!==d&&c!==s;c=c.next())o.push(c);const h=r.piece.length===0?r.prev():r;this.deleteNodes(o),this.validateCRLFWithNextNode(h),this.computeBufferMetadata()}insertContentToNodeLeft(e,n){const t=[];if(this.shouldCheckCRLF()&&this.endWithCR(e)&&this.startWithLF(n)){const s=n.piece,o={line:s.start.line+1,column:0},f=new C(s.bufferIndex,o,s.end,this.getLineFeedCnt(s.bufferIndex,o,s.end),s.length-1);n.piece=f,e+=`
-`,S(this,n,-1,-1),n.piece.length===0&&t.push(n)}const i=this.createNewPieces(e);let r=this.rbInsertLeft(n,i[i.length-1]);for(let s=i.length-2;s>=0;s--)r=this.rbInsertLeft(r,i[s]);this.validateCRLFWithPrevNode(r),this.deleteNodes(t)}insertContentToNodeRight(e,n){this.adjustCarriageReturnFromNext(e,n)&&(e+=`
-`);const t=this.createNewPieces(e),i=this.rbInsertRight(n,t[0]);let r=i;for(let s=1;s<t.length;s++)r=this.rbInsertRight(r,t[s]);this.validateCRLFWithPrevNode(i)}positionInBuffer(e,n,t){const i=e.piece,r=e.piece.bufferIndex,s=this._buffers[r].lineStarts,f=s[i.start.line]+i.start.column+n;let u=i.start.line,l=i.end.line,h=0,c=0,a=0;for(;u<=l&&(h=u+(l-u)/2|0,a=s[h],h!==l);)if(c=s[h+1],f<a)l=h-1;else if(f>=c)u=h+1;else break;return t?(t.line=h,t.column=f-a,null):{line:h,column:f-a}}getLineFeedCnt(e,n,t){if(t.column===0)return t.line-n.line;const i=this._buffers[e].lineStarts;if(t.line===i.length-1)return t.line-n.line;const r=i[t.line+1],s=i[t.line]+t.column;if(r>s+1)return t.line-n.line;const o=s-1;return this._buffers[e].buffer.charCodeAt(o)===13?t.line-n.line+1:t.line-n.line}offsetInBuffer(e,n){return this._buffers[e].lineStarts[n.line]+n.column}deleteNodes(e){for(let n=0;n<e.length;n++)T(this,e[n])}createNewPieces(e){if(e.length>I){const l=[];for(;e.length>I;){const c=e.charCodeAt(I-1);let a;c===_.CarriageReturn||c>=55296&&c<=56319?(a=e.substring(0,I-1),e=e.substring(I-1)):(a=e.substring(0,I),e=e.substring(I));const p=B(a);l.push(new C(this._buffers.length,{line:0,column:0},{line:p.length-1,column:a.length-p[p.length-1]},p.length-1,a.length)),this._buffers.push(new w(a,p))}const h=B(e);return l.push(new C(this._buffers.length,{line:0,column:0},{line:h.length-1,column:e.length-h[h.length-1]},h.length-1,e.length)),this._buffers.push(new w(e,h)),l}let n=this._buffers[0].buffer.length;const t=B(e,!1);let i=this._lastChangeBufferPos;if(this._buffers[0].lineStarts[this._buffers[0].lineStarts.length-1]===n&&n!==0&&this.startWithLF(e)&&this.endWithCR(this._buffers[0].buffer)){this._lastChangeBufferPos={line:this._lastChangeBufferPos.line,column:this._lastChangeBufferPos.column+1},i=this._lastChangeBufferPos;for(let l=0;l<t.length;l++)t[l]+=n+1;this._buffers[0].lineStarts=this._buffers[0].lineStarts.concat(t.slice(1)),this._buffers[0].buffer+="_"+e,n+=1}else{if(n!==0)for(let l=0;l<t.length;l++)t[l]+=n;this._buffers[0].lineStarts=this._buffers[0].lineStarts.concat(t.slice(1)),this._buffers[0].buffer+=e}const r=this._buffers[0].buffer.length,s=this._buffers[0].lineStarts.length-1,o=r-this._buffers[0].lineStarts[s],f={line:s,column:o},u=new C(0,i,f,this.getLineFeedCnt(0,i,f),r-n);return this._lastChangeBufferPos=f,[u]}getLinesRawContent(){return this.getContentOfSubTree(this.root)}getLineRawContent(e,n=0){let t=this.root,i="";const r=this._searchCache.get2(e);if(r){t=r.node;const s=this.getAccumulatedValue(t,e-r.nodeStartLineNumber-1),o=this._buffers[t.piece.bufferIndex].buffer,f=this.offsetInBuffer(t.piece.bufferIndex,t.piece.start);if(r.nodeStartLineNumber+t.piece.lineFeedCnt===e)i=o.substring(f+s,f+t.piece.length);else{const u=this.getAccumulatedValue(t,e-r.nodeStartLineNumber);return o.substring(f+s,f+u-n)}}else{let s=0;const o=e;for(;t!==d;)if(t.left!==d&&t.lf_left>=e-1)t=t.left;else if(t.lf_left+t.piece.lineFeedCnt>e-1){const f=this.getAccumulatedValue(t,e-t.lf_left-2),u=this.getAccumulatedValue(t,e-t.lf_left-1),l=this._buffers[t.piece.bufferIndex].buffer,h=this.offsetInBuffer(t.piece.bufferIndex,t.piece.start);return s+=t.size_left,this._searchCache.set({node:t,nodeStartOffset:s,nodeStartLineNumber:o-(e-1-t.lf_left)}),l.substring(h+f,h+u-n)}else if(t.lf_left+t.piece.lineFeedCnt===e-1){const f=this.getAccumulatedValue(t,e-t.lf_left-2),u=this._buffers[t.piece.bufferIndex].buffer,l=this.offsetInBuffer(t.piece.bufferIndex,t.piece.start);i=u.substring(l+f,l+t.piece.length);break}else e-=t.lf_left+t.piece.lineFeedCnt,s+=t.size_left+t.piece.length,t=t.right}for(t=t.next();t!==d;){const s=this._buffers[t.piece.bufferIndex].buffer;if(t.piece.lineFeedCnt>0){const o=this.getAccumulatedValue(t,0),f=this.offsetInBuffer(t.piece.bufferIndex,t.piece.start);return i+=s.substring(f,f+o-n),i}else{const o=this.offsetInBuffer(t.piece.bufferIndex,t.piece.start);i+=s.substr(o,t.piece.length)}t=t.next()}return i}computeBufferMetadata(){let e=this.root,n=1,t=0;for(;e!==d;)n+=e.lf_left+e.piece.lineFeedCnt,t+=e.size_left+e.piece.length,e=e.right;this._lineCnt=n,this._length=t,this._searchCache.validate(this._length)}getIndexOf(e,n){const t=e.piece,i=this.positionInBuffer(e,n),r=i.line-t.start.line;if(this.offsetInBuffer(t.bufferIndex,t.end)-this.offsetInBuffer(t.bufferIndex,t.start)===n){const s=this.getLineFeedCnt(e.piece.bufferIndex,t.start,i);if(s!==r)return{index:s,remainder:0}}return{index:r,remainder:i.column}}getAccumulatedValue(e,n){if(n<0)return 0;const t=e.piece,i=this._buffers[t.bufferIndex].lineStarts,r=t.start.line+n+1;return r>t.end.line?i[t.end.line]+t.end.column-i[t.start.line]-t.start.column:i[r]-i[t.start.line]-t.start.column}deleteNodeTail(e,n){const t=e.piece,i=t.lineFeedCnt,r=this.offsetInBuffer(t.bufferIndex,t.end),s=n,o=this.offsetInBuffer(t.bufferIndex,s),f=this.getLineFeedCnt(t.bufferIndex,t.start,s),u=f-i,l=o-r,h=t.length+l;e.piece=new C(t.bufferIndex,t.start,s,f,h),S(this,e,l,u)}deleteNodeHead(e,n){const t=e.piece,i=t.lineFeedCnt,r=this.offsetInBuffer(t.bufferIndex,t.start),s=n,o=this.getLineFeedCnt(t.bufferIndex,s,t.end),f=this.offsetInBuffer(t.bufferIndex,s),u=o-i,l=r-f,h=t.length+l;e.piece=new C(t.bufferIndex,s,t.end,o,h),S(this,e,l,u)}shrinkNode(e,n,t){const i=e.piece,r=i.start,s=i.end,o=i.length,f=i.lineFeedCnt,u=n,l=this.getLineFeedCnt(i.bufferIndex,i.start,u),h=this.offsetInBuffer(i.bufferIndex,n)-this.offsetInBuffer(i.bufferIndex,r);e.piece=new C(i.bufferIndex,i.start,u,l,h),S(this,e,h-o,l-f);const c=new C(i.bufferIndex,t,s,this.getLineFeedCnt(i.bufferIndex,t,s),this.offsetInBuffer(i.bufferIndex,s)-this.offsetInBuffer(i.bufferIndex,t)),a=this.rbInsertRight(e,c);this.validateCRLFWithPrevNode(a)}appendToNode(e,n){this.adjustCarriageReturnFromNext(n,e)&&(n+=`
-`);const t=this.shouldCheckCRLF()&&this.startWithLF(n)&&this.endWithCR(e),i=this._buffers[0].buffer.length;this._buffers[0].buffer+=n;const r=B(n,!1);for(let a=0;a<r.length;a++)r[a]+=i;if(t){const a=this._buffers[0].lineStarts[this._buffers[0].lineStarts.length-2];this._buffers[0].lineStarts.pop(),this._lastChangeBufferPos={line:this._lastChangeBufferPos.line-1,column:i-a}}this._buffers[0].lineStarts=this._buffers[0].lineStarts.concat(r.slice(1));const s=this._buffers[0].lineStarts.length-1,o=this._buffers[0].buffer.length-this._buffers[0].lineStarts[s],f={line:s,column:o},u=e.piece.length+n.length,l=e.piece.lineFeedCnt,h=this.getLineFeedCnt(0,e.piece.start,f),c=h-l;e.piece=new C(e.piece.bufferIndex,e.piece.start,f,h,u),this._lastChangeBufferPos=f,S(this,e,n.length,c)}nodeAt(e){let n=this.root;const t=this._searchCache.get(e);if(t)return{node:t.node,nodeStartOffset:t.nodeStartOffset,remainder:e-t.nodeStartOffset};let i=0;for(;n!==d;)if(n.size_left>e)n=n.left;else if(n.size_left+n.piece.length>=e){i+=n.size_left;const r={node:n,remainder:e-n.size_left,nodeStartOffset:i};return this._searchCache.set(r),r}else e-=n.size_left+n.piece.length,i+=n.size_left+n.piece.length,n=n.right;return null}nodeAt2(e,n){let t=this.root,i=0;for(;t!==d;)if(t.left!==d&&t.lf_left>=e-1)t=t.left;else if(t.lf_left+t.piece.lineFeedCnt>e-1){const r=this.getAccumulatedValue(t,e-t.lf_left-2),s=this.getAccumulatedValue(t,e-t.lf_left-1);return i+=t.size_left,{node:t,remainder:Math.min(r+n-1,s),nodeStartOffset:i}}else if(t.lf_left+t.piece.lineFeedCnt===e-1){const r=this.getAccumulatedValue(t,e-t.lf_left-2);if(r+n-1<=t.piece.length)return{node:t,remainder:r+n-1,nodeStartOffset:i};n-=t.piece.length-r;break}else e-=t.lf_left+t.piece.lineFeedCnt,i+=t.size_left+t.piece.length,t=t.right;for(t=t.next();t!==d;){if(t.piece.lineFeedCnt>0){const r=this.getAccumulatedValue(t,0),s=this.offsetOfNode(t);return{node:t,remainder:Math.min(n-1,r),nodeStartOffset:s}}else if(t.piece.length>=n-1){const r=this.offsetOfNode(t);return{node:t,remainder:n-1,nodeStartOffset:r}}else n-=t.piece.length;t=t.next()}return null}nodeCharCodeAt(e,n){if(e.piece.lineFeedCnt<1)return-1;const t=this._buffers[e.piece.bufferIndex],i=this.offsetInBuffer(e.piece.bufferIndex,e.piece.start)+n;return t.buffer.charCodeAt(i)}offsetOfNode(e){if(!e)return 0;let n=e.size_left;for(;e!==this.root;)e.parent.right===e&&(n+=e.parent.size_left+e.parent.piece.length),e=e.parent;return n}shouldCheckCRLF(){return!(this._EOLNormalized&&this._EOL===`
-`)}startWithLF(e){if(typeof e=="string")return e.charCodeAt(0)===10;if(e===d||e.piece.lineFeedCnt===0)return!1;const n=e.piece,t=this._buffers[n.bufferIndex].lineStarts,i=n.start.line,r=t[i]+n.start.column;return i===t.length-1||t[i+1]>r+1?!1:this._buffers[n.bufferIndex].buffer.charCodeAt(r)===10}endWithCR(e){return typeof e=="string"?e.charCodeAt(e.length-1)===13:e===d||e.piece.lineFeedCnt===0?!1:this.nodeCharCodeAt(e,e.piece.length-1)===13}validateCRLFWithPrevNode(e){if(this.shouldCheckCRLF()&&this.startWithLF(e)){const n=e.prev();this.endWithCR(n)&&this.fixCRLF(n,e)}}validateCRLFWithNextNode(e){if(this.shouldCheckCRLF()&&this.endWithCR(e)){const n=e.next();this.startWithLF(n)&&this.fixCRLF(e,n)}}fixCRLF(e,n){const t=[],i=this._buffers[e.piece.bufferIndex].lineStarts;let r;e.piece.end.column===0?r={line:e.piece.end.line-1,column:i[e.piece.end.line]-i[e.piece.end.line-1]-1}:r={line:e.piece.end.line,column:e.piece.end.column-1};const s=e.piece.length-1,o=e.piece.lineFeedCnt-1;e.piece=new C(e.piece.bufferIndex,e.piece.start,r,o,s),S(this,e,-1,-1),e.piece.length===0&&t.push(e);const f={line:n.piece.start.line+1,column:0},u=n.piece.length-1,l=this.getLineFeedCnt(n.piece.bufferIndex,f,n.piece.end);n.piece=new C(n.piece.bufferIndex,f,n.piece.end,l,u),S(this,n,-1,-1),n.piece.length===0&&t.push(n);const h=this.createNewPieces(`\r
-`);this.rbInsertRight(e,h[0]);for(let c=0;c<t.length;c++)T(this,t[c])}adjustCarriageReturnFromNext(e,n){if(this.shouldCheckCRLF()&&this.endWithCR(e)){const t=n.next();if(this.startWithLF(t)){if(e+=`
-`,t.piece.length===1)T(this,t);else{const i=t.piece,r={line:i.start.line+1,column:0},s=i.length-1,o=this.getLineFeedCnt(i.bufferIndex,r,i.end);t.piece=new C(i.bufferIndex,r,i.end,o,s),S(this,t,-1,-1)}return!0}}return!1}iterate(e,n){if(e===d)return n(d);const t=this.iterate(e.left,n);return t&&n(e)&&this.iterate(e.right,n)}getNodeContent(e){if(e===d)return"";const n=this._buffers[e.piece.bufferIndex],t=e.piece,i=this.offsetInBuffer(t.bufferIndex,t.start),r=this.offsetInBuffer(t.bufferIndex,t.end);return n.buffer.substring(i,r)}getPieceContent(e){const n=this._buffers[e.bufferIndex],t=this.offsetInBuffer(e.bufferIndex,e.start),i=this.offsetInBuffer(e.bufferIndex,e.end);return n.buffer.substring(t,i)}rbInsertRight(e,n){const t=new v(n,A.Red);if(t.left=d,t.right=d,t.parent=d,t.size_left=0,t.lf_left=0,this.root===d)this.root=t,t.color=A.Black;else if(e.right===d)e.right=t,t.parent=e;else{const r=W(e.right);r.left=t,t.parent=r}return z(this,t),t}rbInsertLeft(e,n){const t=new v(n,A.Red);if(t.left=d,t.right=d,t.parent=d,t.size_left=0,t.lf_left=0,this.root===d)this.root=t,t.color=A.Black;else if(e.left===d)e.left=t,t.parent=e;else{const i=U(e.left);i.right=t,t.parent=i}return z(this,t),t}getContentOfSubTree(e){let n="";return this.iterate(e,t=>(n+=this.getNodeContent(t),!0)),n}}export{C as Piece,te as PieceTreeBase,w as StringBuffer,ee as createLineStarts,B as createLineStartsFast};
+import { Position } from '../../core/position.js';
+import { Range } from '../../core/range.js';
+import { FindMatch } from '../../model.js';
+import { SENTINEL, TreeNode, fixInsert, leftest, rbDelete, righttest, updateTreeMetadata } from './rbTreeBase.js';
+import { Searcher, createFindMatch, isValidMatch } from '../textModelSearch.js';
+const AverageBufferSize = 65535;
+function createUintArray(arr) {
+    let r;
+    if (arr[arr.length - 1] < 65536) {
+        r = new Uint16Array(arr.length);
+    }
+    else {
+        r = new Uint32Array(arr.length);
+    }
+    r.set(arr, 0);
+    return r;
+}
+class LineStarts {
+    constructor(lineStarts, cr, lf, crlf, isBasicASCII) {
+        this.lineStarts = lineStarts;
+        this.cr = cr;
+        this.lf = lf;
+        this.crlf = crlf;
+        this.isBasicASCII = isBasicASCII;
+    }
+}
+export function createLineStartsFast(str, readonly = true) {
+    const r = [0];
+    let rLength = 1;
+    for (let i = 0, len = str.length; i < len; i++) {
+        const chr = str.charCodeAt(i);
+        if (chr === 13) {
+            if (i + 1 < len && str.charCodeAt(i + 1) === 10) {
+                r[rLength++] = i + 2;
+                i++;
+            }
+            else {
+                r[rLength++] = i + 1;
+            }
+        }
+        else if (chr === 10) {
+            r[rLength++] = i + 1;
+        }
+    }
+    if (readonly) {
+        return createUintArray(r);
+    }
+    else {
+        return r;
+    }
+}
+export function createLineStarts(r, str) {
+    r.length = 0;
+    r[0] = 0;
+    let rLength = 1;
+    let cr = 0, lf = 0, crlf = 0;
+    let isBasicASCII = true;
+    for (let i = 0, len = str.length; i < len; i++) {
+        const chr = str.charCodeAt(i);
+        if (chr === 13) {
+            if (i + 1 < len && str.charCodeAt(i + 1) === 10) {
+                crlf++;
+                r[rLength++] = i + 2;
+                i++;
+            }
+            else {
+                cr++;
+                r[rLength++] = i + 1;
+            }
+        }
+        else if (chr === 10) {
+            lf++;
+            r[rLength++] = i + 1;
+        }
+        else {
+            if (isBasicASCII) {
+                if (chr !== 9 && (chr < 32 || chr > 126)) {
+                    isBasicASCII = false;
+                }
+            }
+        }
+    }
+    const result = new LineStarts(createUintArray(r), cr, lf, crlf, isBasicASCII);
+    r.length = 0;
+    return result;
+}
+export class Piece {
+    constructor(bufferIndex, start, end, lineFeedCnt, length) {
+        this.bufferIndex = bufferIndex;
+        this.start = start;
+        this.end = end;
+        this.lineFeedCnt = lineFeedCnt;
+        this.length = length;
+    }
+}
+export class StringBuffer {
+    constructor(buffer, lineStarts) {
+        this.buffer = buffer;
+        this.lineStarts = lineStarts;
+    }
+}
+class PieceTreeSnapshot {
+    constructor(tree, BOM) {
+        this._pieces = [];
+        this._tree = tree;
+        this._BOM = BOM;
+        this._index = 0;
+        if (tree.root !== SENTINEL) {
+            tree.iterate(tree.root, node => {
+                if (node !== SENTINEL) {
+                    this._pieces.push(node.piece);
+                }
+                return true;
+            });
+        }
+    }
+    read() {
+        if (this._pieces.length === 0) {
+            if (this._index === 0) {
+                this._index++;
+                return this._BOM;
+            }
+            else {
+                return null;
+            }
+        }
+        if (this._index > this._pieces.length - 1) {
+            return null;
+        }
+        if (this._index === 0) {
+            return this._BOM + this._tree.getPieceContent(this._pieces[this._index++]);
+        }
+        return this._tree.getPieceContent(this._pieces[this._index++]);
+    }
+}
+class PieceTreeSearchCache {
+    constructor(limit) {
+        this._limit = limit;
+        this._cache = [];
+    }
+    get(offset) {
+        for (let i = this._cache.length - 1; i >= 0; i--) {
+            const nodePos = this._cache[i];
+            if (nodePos.nodeStartOffset <= offset && nodePos.nodeStartOffset + nodePos.node.piece.length >= offset) {
+                return nodePos;
+            }
+        }
+        return null;
+    }
+    get2(lineNumber) {
+        for (let i = this._cache.length - 1; i >= 0; i--) {
+            const nodePos = this._cache[i];
+            if (nodePos.nodeStartLineNumber && nodePos.nodeStartLineNumber < lineNumber && nodePos.nodeStartLineNumber + nodePos.node.piece.lineFeedCnt >= lineNumber) {
+                return nodePos;
+            }
+        }
+        return null;
+    }
+    set(nodePosition) {
+        if (this._cache.length >= this._limit) {
+            this._cache.shift();
+        }
+        this._cache.push(nodePosition);
+    }
+    validate(offset) {
+        let hasInvalidVal = false;
+        const tmp = this._cache;
+        for (let i = 0; i < tmp.length; i++) {
+            const nodePos = tmp[i];
+            if (nodePos.node.parent === null || nodePos.nodeStartOffset >= offset) {
+                tmp[i] = null;
+                hasInvalidVal = true;
+                continue;
+            }
+        }
+        if (hasInvalidVal) {
+            const newArr = [];
+            for (const entry of tmp) {
+                if (entry !== null) {
+                    newArr.push(entry);
+                }
+            }
+            this._cache = newArr;
+        }
+    }
+}
+export class PieceTreeBase {
+    constructor(chunks, eol, eolNormalized) {
+        this.create(chunks, eol, eolNormalized);
+    }
+    create(chunks, eol, eolNormalized) {
+        this._buffers = [
+            new StringBuffer('', [0])
+        ];
+        this._lastChangeBufferPos = { line: 0, column: 0 };
+        this.root = SENTINEL;
+        this._lineCnt = 1;
+        this._length = 0;
+        this._EOL = eol;
+        this._EOLLength = eol.length;
+        this._EOLNormalized = eolNormalized;
+        let lastNode = null;
+        for (let i = 0, len = chunks.length; i < len; i++) {
+            if (chunks[i].buffer.length > 0) {
+                if (!chunks[i].lineStarts) {
+                    chunks[i].lineStarts = createLineStartsFast(chunks[i].buffer);
+                }
+                const piece = new Piece(i + 1, { line: 0, column: 0 }, { line: chunks[i].lineStarts.length - 1, column: chunks[i].buffer.length - chunks[i].lineStarts[chunks[i].lineStarts.length - 1] }, chunks[i].lineStarts.length - 1, chunks[i].buffer.length);
+                this._buffers.push(chunks[i]);
+                lastNode = this.rbInsertRight(lastNode, piece);
+            }
+        }
+        this._searchCache = new PieceTreeSearchCache(1);
+        this._lastVisitedLine = { lineNumber: 0, value: '' };
+        this.computeBufferMetadata();
+    }
+    normalizeEOL(eol) {
+        const averageBufferSize = AverageBufferSize;
+        const min = averageBufferSize - Math.floor(averageBufferSize / 3);
+        const max = min * 2;
+        let tempChunk = '';
+        let tempChunkLen = 0;
+        const chunks = [];
+        this.iterate(this.root, node => {
+            const str = this.getNodeContent(node);
+            const len = str.length;
+            if (tempChunkLen <= min || tempChunkLen + len < max) {
+                tempChunk += str;
+                tempChunkLen += len;
+                return true;
+            }
+            const text = tempChunk.replace(/\r\n|\r|\n/g, eol);
+            chunks.push(new StringBuffer(text, createLineStartsFast(text)));
+            tempChunk = str;
+            tempChunkLen = len;
+            return true;
+        });
+        if (tempChunkLen > 0) {
+            const text = tempChunk.replace(/\r\n|\r|\n/g, eol);
+            chunks.push(new StringBuffer(text, createLineStartsFast(text)));
+        }
+        this.create(chunks, eol, true);
+    }
+    getEOL() {
+        return this._EOL;
+    }
+    setEOL(newEOL) {
+        this._EOL = newEOL;
+        this._EOLLength = this._EOL.length;
+        this.normalizeEOL(newEOL);
+    }
+    createSnapshot(BOM) {
+        return new PieceTreeSnapshot(this, BOM);
+    }
+    equal(other) {
+        if (this.getLength() !== other.getLength()) {
+            return false;
+        }
+        if (this.getLineCount() !== other.getLineCount()) {
+            return false;
+        }
+        let offset = 0;
+        const ret = this.iterate(this.root, node => {
+            if (node === SENTINEL) {
+                return true;
+            }
+            const str = this.getNodeContent(node);
+            const len = str.length;
+            const startPosition = other.nodeAt(offset);
+            const endPosition = other.nodeAt(offset + len);
+            const val = other.getValueInRange2(startPosition, endPosition);
+            offset += len;
+            return str === val;
+        });
+        return ret;
+    }
+    getOffsetAt(lineNumber, column) {
+        let leftLen = 0;
+        let x = this.root;
+        while (x !== SENTINEL) {
+            if (x.left !== SENTINEL && x.lf_left + 1 >= lineNumber) {
+                x = x.left;
+            }
+            else if (x.lf_left + x.piece.lineFeedCnt + 1 >= lineNumber) {
+                leftLen += x.size_left;
+                const accumualtedValInCurrentIndex = this.getAccumulatedValue(x, lineNumber - x.lf_left - 2);
+                return leftLen += accumualtedValInCurrentIndex + column - 1;
+            }
+            else {
+                lineNumber -= x.lf_left + x.piece.lineFeedCnt;
+                leftLen += x.size_left + x.piece.length;
+                x = x.right;
+            }
+        }
+        return leftLen;
+    }
+    getPositionAt(offset) {
+        offset = Math.floor(offset);
+        offset = Math.max(0, offset);
+        let x = this.root;
+        let lfCnt = 0;
+        const originalOffset = offset;
+        while (x !== SENTINEL) {
+            if (x.size_left !== 0 && x.size_left >= offset) {
+                x = x.left;
+            }
+            else if (x.size_left + x.piece.length >= offset) {
+                const out = this.getIndexOf(x, offset - x.size_left);
+                lfCnt += x.lf_left + out.index;
+                if (out.index === 0) {
+                    const lineStartOffset = this.getOffsetAt(lfCnt + 1, 1);
+                    const column = originalOffset - lineStartOffset;
+                    return new Position(lfCnt + 1, column + 1);
+                }
+                return new Position(lfCnt + 1, out.remainder + 1);
+            }
+            else {
+                offset -= x.size_left + x.piece.length;
+                lfCnt += x.lf_left + x.piece.lineFeedCnt;
+                if (x.right === SENTINEL) {
+                    const lineStartOffset = this.getOffsetAt(lfCnt + 1, 1);
+                    const column = originalOffset - offset - lineStartOffset;
+                    return new Position(lfCnt + 1, column + 1);
+                }
+                else {
+                    x = x.right;
+                }
+            }
+        }
+        return new Position(1, 1);
+    }
+    getValueInRange(range, eol) {
+        if (range.startLineNumber === range.endLineNumber && range.startColumn === range.endColumn) {
+            return '';
+        }
+        const startPosition = this.nodeAt2(range.startLineNumber, range.startColumn);
+        const endPosition = this.nodeAt2(range.endLineNumber, range.endColumn);
+        const value = this.getValueInRange2(startPosition, endPosition);
+        if (eol) {
+            if (eol !== this._EOL || !this._EOLNormalized) {
+                return value.replace(/\r\n|\r|\n/g, eol);
+            }
+            if (eol === this.getEOL() && this._EOLNormalized) {
+                if (eol === '\r\n') {
+                }
+                return value;
+            }
+            return value.replace(/\r\n|\r|\n/g, eol);
+        }
+        return value;
+    }
+    getValueInRange2(startPosition, endPosition) {
+        if (startPosition.node === endPosition.node) {
+            const node = startPosition.node;
+            const buffer = this._buffers[node.piece.bufferIndex].buffer;
+            const startOffset = this.offsetInBuffer(node.piece.bufferIndex, node.piece.start);
+            return buffer.substring(startOffset + startPosition.remainder, startOffset + endPosition.remainder);
+        }
+        let x = startPosition.node;
+        const buffer = this._buffers[x.piece.bufferIndex].buffer;
+        const startOffset = this.offsetInBuffer(x.piece.bufferIndex, x.piece.start);
+        let ret = buffer.substring(startOffset + startPosition.remainder, startOffset + x.piece.length);
+        x = x.next();
+        while (x !== SENTINEL) {
+            const buffer = this._buffers[x.piece.bufferIndex].buffer;
+            const startOffset = this.offsetInBuffer(x.piece.bufferIndex, x.piece.start);
+            if (x === endPosition.node) {
+                ret += buffer.substring(startOffset, startOffset + endPosition.remainder);
+                break;
+            }
+            else {
+                ret += buffer.substr(startOffset, x.piece.length);
+            }
+            x = x.next();
+        }
+        return ret;
+    }
+    getLinesContent() {
+        const lines = [];
+        let linesLength = 0;
+        let currentLine = '';
+        let danglingCR = false;
+        this.iterate(this.root, node => {
+            if (node === SENTINEL) {
+                return true;
+            }
+            const piece = node.piece;
+            let pieceLength = piece.length;
+            if (pieceLength === 0) {
+                return true;
+            }
+            const buffer = this._buffers[piece.bufferIndex].buffer;
+            const lineStarts = this._buffers[piece.bufferIndex].lineStarts;
+            const pieceStartLine = piece.start.line;
+            const pieceEndLine = piece.end.line;
+            let pieceStartOffset = lineStarts[pieceStartLine] + piece.start.column;
+            if (danglingCR) {
+                if (buffer.charCodeAt(pieceStartOffset) === 10) {
+                    pieceStartOffset++;
+                    pieceLength--;
+                }
+                lines[linesLength++] = currentLine;
+                currentLine = '';
+                danglingCR = false;
+                if (pieceLength === 0) {
+                    return true;
+                }
+            }
+            if (pieceStartLine === pieceEndLine) {
+                if (!this._EOLNormalized && buffer.charCodeAt(pieceStartOffset + pieceLength - 1) === 13) {
+                    danglingCR = true;
+                    currentLine += buffer.substr(pieceStartOffset, pieceLength - 1);
+                }
+                else {
+                    currentLine += buffer.substr(pieceStartOffset, pieceLength);
+                }
+                return true;
+            }
+            currentLine += (this._EOLNormalized
+                ? buffer.substring(pieceStartOffset, Math.max(pieceStartOffset, lineStarts[pieceStartLine + 1] - this._EOLLength))
+                : buffer.substring(pieceStartOffset, lineStarts[pieceStartLine + 1]).replace(/(\r\n|\r|\n)$/, ''));
+            lines[linesLength++] = currentLine;
+            for (let line = pieceStartLine + 1; line < pieceEndLine; line++) {
+                currentLine = (this._EOLNormalized
+                    ? buffer.substring(lineStarts[line], lineStarts[line + 1] - this._EOLLength)
+                    : buffer.substring(lineStarts[line], lineStarts[line + 1]).replace(/(\r\n|\r|\n)$/, ''));
+                lines[linesLength++] = currentLine;
+            }
+            if (!this._EOLNormalized && buffer.charCodeAt(lineStarts[pieceEndLine] + piece.end.column - 1) === 13) {
+                danglingCR = true;
+                if (piece.end.column === 0) {
+                    linesLength--;
+                }
+                else {
+                    currentLine = buffer.substr(lineStarts[pieceEndLine], piece.end.column - 1);
+                }
+            }
+            else {
+                currentLine = buffer.substr(lineStarts[pieceEndLine], piece.end.column);
+            }
+            return true;
+        });
+        if (danglingCR) {
+            lines[linesLength++] = currentLine;
+            currentLine = '';
+        }
+        lines[linesLength++] = currentLine;
+        return lines;
+    }
+    getLength() {
+        return this._length;
+    }
+    getLineCount() {
+        return this._lineCnt;
+    }
+    getLineContent(lineNumber) {
+        if (this._lastVisitedLine.lineNumber === lineNumber) {
+            return this._lastVisitedLine.value;
+        }
+        this._lastVisitedLine.lineNumber = lineNumber;
+        if (lineNumber === this._lineCnt) {
+            this._lastVisitedLine.value = this.getLineRawContent(lineNumber);
+        }
+        else if (this._EOLNormalized) {
+            this._lastVisitedLine.value = this.getLineRawContent(lineNumber, this._EOLLength);
+        }
+        else {
+            this._lastVisitedLine.value = this.getLineRawContent(lineNumber).replace(/(\r\n|\r|\n)$/, '');
+        }
+        return this._lastVisitedLine.value;
+    }
+    _getCharCode(nodePos) {
+        if (nodePos.remainder === nodePos.node.piece.length) {
+            const matchingNode = nodePos.node.next();
+            if (!matchingNode) {
+                return 0;
+            }
+            const buffer = this._buffers[matchingNode.piece.bufferIndex];
+            const startOffset = this.offsetInBuffer(matchingNode.piece.bufferIndex, matchingNode.piece.start);
+            return buffer.buffer.charCodeAt(startOffset);
+        }
+        else {
+            const buffer = this._buffers[nodePos.node.piece.bufferIndex];
+            const startOffset = this.offsetInBuffer(nodePos.node.piece.bufferIndex, nodePos.node.piece.start);
+            const targetOffset = startOffset + nodePos.remainder;
+            return buffer.buffer.charCodeAt(targetOffset);
+        }
+    }
+    getLineCharCode(lineNumber, index) {
+        const nodePos = this.nodeAt2(lineNumber, index + 1);
+        return this._getCharCode(nodePos);
+    }
+    getLineLength(lineNumber) {
+        if (lineNumber === this.getLineCount()) {
+            const startOffset = this.getOffsetAt(lineNumber, 1);
+            return this.getLength() - startOffset;
+        }
+        return this.getOffsetAt(lineNumber + 1, 1) - this.getOffsetAt(lineNumber, 1) - this._EOLLength;
+    }
+    getCharCode(offset) {
+        const nodePos = this.nodeAt(offset);
+        return this._getCharCode(nodePos);
+    }
+    getNearestChunk(offset) {
+        const nodePos = this.nodeAt(offset);
+        if (nodePos.remainder === nodePos.node.piece.length) {
+            const matchingNode = nodePos.node.next();
+            if (!matchingNode || matchingNode === SENTINEL) {
+                return '';
+            }
+            const buffer = this._buffers[matchingNode.piece.bufferIndex];
+            const startOffset = this.offsetInBuffer(matchingNode.piece.bufferIndex, matchingNode.piece.start);
+            return buffer.buffer.substring(startOffset, startOffset + matchingNode.piece.length);
+        }
+        else {
+            const buffer = this._buffers[nodePos.node.piece.bufferIndex];
+            const startOffset = this.offsetInBuffer(nodePos.node.piece.bufferIndex, nodePos.node.piece.start);
+            const targetOffset = startOffset + nodePos.remainder;
+            const targetEnd = startOffset + nodePos.node.piece.length;
+            return buffer.buffer.substring(targetOffset, targetEnd);
+        }
+    }
+    findMatchesInNode(node, searcher, startLineNumber, startColumn, startCursor, endCursor, searchData, captureMatches, limitResultCount, resultLen, result) {
+        const buffer = this._buffers[node.piece.bufferIndex];
+        const startOffsetInBuffer = this.offsetInBuffer(node.piece.bufferIndex, node.piece.start);
+        const start = this.offsetInBuffer(node.piece.bufferIndex, startCursor);
+        const end = this.offsetInBuffer(node.piece.bufferIndex, endCursor);
+        let m;
+        const ret = { line: 0, column: 0 };
+        let searchText;
+        let offsetInBuffer;
+        if (searcher._wordSeparators) {
+            searchText = buffer.buffer.substring(start, end);
+            offsetInBuffer = (offset) => offset + start;
+            searcher.reset(0);
+        }
+        else {
+            searchText = buffer.buffer;
+            offsetInBuffer = (offset) => offset;
+            searcher.reset(start);
+        }
+        do {
+            m = searcher.next(searchText);
+            if (m) {
+                if (offsetInBuffer(m.index) >= end) {
+                    return resultLen;
+                }
+                this.positionInBuffer(node, offsetInBuffer(m.index) - startOffsetInBuffer, ret);
+                const lineFeedCnt = this.getLineFeedCnt(node.piece.bufferIndex, startCursor, ret);
+                const retStartColumn = ret.line === startCursor.line ? ret.column - startCursor.column + startColumn : ret.column + 1;
+                const retEndColumn = retStartColumn + m[0].length;
+                result[resultLen++] = createFindMatch(new Range(startLineNumber + lineFeedCnt, retStartColumn, startLineNumber + lineFeedCnt, retEndColumn), m, captureMatches);
+                if (offsetInBuffer(m.index) + m[0].length >= end) {
+                    return resultLen;
+                }
+                if (resultLen >= limitResultCount) {
+                    return resultLen;
+                }
+            }
+        } while (m);
+        return resultLen;
+    }
+    findMatchesLineByLine(searchRange, searchData, captureMatches, limitResultCount) {
+        const result = [];
+        let resultLen = 0;
+        const searcher = new Searcher(searchData.wordSeparators, searchData.regex);
+        let startPosition = this.nodeAt2(searchRange.startLineNumber, searchRange.startColumn);
+        if (startPosition === null) {
+            return [];
+        }
+        const endPosition = this.nodeAt2(searchRange.endLineNumber, searchRange.endColumn);
+        if (endPosition === null) {
+            return [];
+        }
+        let start = this.positionInBuffer(startPosition.node, startPosition.remainder);
+        const end = this.positionInBuffer(endPosition.node, endPosition.remainder);
+        if (startPosition.node === endPosition.node) {
+            this.findMatchesInNode(startPosition.node, searcher, searchRange.startLineNumber, searchRange.startColumn, start, end, searchData, captureMatches, limitResultCount, resultLen, result);
+            return result;
+        }
+        let startLineNumber = searchRange.startLineNumber;
+        let currentNode = startPosition.node;
+        while (currentNode !== endPosition.node) {
+            const lineBreakCnt = this.getLineFeedCnt(currentNode.piece.bufferIndex, start, currentNode.piece.end);
+            if (lineBreakCnt >= 1) {
+                const lineStarts = this._buffers[currentNode.piece.bufferIndex].lineStarts;
+                const startOffsetInBuffer = this.offsetInBuffer(currentNode.piece.bufferIndex, currentNode.piece.start);
+                const nextLineStartOffset = lineStarts[start.line + lineBreakCnt];
+                const startColumn = startLineNumber === searchRange.startLineNumber ? searchRange.startColumn : 1;
+                resultLen = this.findMatchesInNode(currentNode, searcher, startLineNumber, startColumn, start, this.positionInBuffer(currentNode, nextLineStartOffset - startOffsetInBuffer), searchData, captureMatches, limitResultCount, resultLen, result);
+                if (resultLen >= limitResultCount) {
+                    return result;
+                }
+                startLineNumber += lineBreakCnt;
+            }
+            const startColumn = startLineNumber === searchRange.startLineNumber ? searchRange.startColumn - 1 : 0;
+            if (startLineNumber === searchRange.endLineNumber) {
+                const text = this.getLineContent(startLineNumber).substring(startColumn, searchRange.endColumn - 1);
+                resultLen = this._findMatchesInLine(searchData, searcher, text, searchRange.endLineNumber, startColumn, resultLen, result, captureMatches, limitResultCount);
+                return result;
+            }
+            resultLen = this._findMatchesInLine(searchData, searcher, this.getLineContent(startLineNumber).substr(startColumn), startLineNumber, startColumn, resultLen, result, captureMatches, limitResultCount);
+            if (resultLen >= limitResultCount) {
+                return result;
+            }
+            startLineNumber++;
+            startPosition = this.nodeAt2(startLineNumber, 1);
+            currentNode = startPosition.node;
+            start = this.positionInBuffer(startPosition.node, startPosition.remainder);
+        }
+        if (startLineNumber === searchRange.endLineNumber) {
+            const startColumn = startLineNumber === searchRange.startLineNumber ? searchRange.startColumn - 1 : 0;
+            const text = this.getLineContent(startLineNumber).substring(startColumn, searchRange.endColumn - 1);
+            resultLen = this._findMatchesInLine(searchData, searcher, text, searchRange.endLineNumber, startColumn, resultLen, result, captureMatches, limitResultCount);
+            return result;
+        }
+        const startColumn = startLineNumber === searchRange.startLineNumber ? searchRange.startColumn : 1;
+        resultLen = this.findMatchesInNode(endPosition.node, searcher, startLineNumber, startColumn, start, end, searchData, captureMatches, limitResultCount, resultLen, result);
+        return result;
+    }
+    _findMatchesInLine(searchData, searcher, text, lineNumber, deltaOffset, resultLen, result, captureMatches, limitResultCount) {
+        const wordSeparators = searchData.wordSeparators;
+        if (!captureMatches && searchData.simpleSearch) {
+            const searchString = searchData.simpleSearch;
+            const searchStringLen = searchString.length;
+            const textLength = text.length;
+            let lastMatchIndex = -searchStringLen;
+            while ((lastMatchIndex = text.indexOf(searchString, lastMatchIndex + searchStringLen)) !== -1) {
+                if (!wordSeparators || isValidMatch(wordSeparators, text, textLength, lastMatchIndex, searchStringLen)) {
+                    result[resultLen++] = new FindMatch(new Range(lineNumber, lastMatchIndex + 1 + deltaOffset, lineNumber, lastMatchIndex + 1 + searchStringLen + deltaOffset), null);
+                    if (resultLen >= limitResultCount) {
+                        return resultLen;
+                    }
+                }
+            }
+            return resultLen;
+        }
+        let m;
+        searcher.reset(0);
+        do {
+            m = searcher.next(text);
+            if (m) {
+                result[resultLen++] = createFindMatch(new Range(lineNumber, m.index + 1 + deltaOffset, lineNumber, m.index + 1 + m[0].length + deltaOffset), m, captureMatches);
+                if (resultLen >= limitResultCount) {
+                    return resultLen;
+                }
+            }
+        } while (m);
+        return resultLen;
+    }
+    insert(offset, value, eolNormalized = false) {
+        this._EOLNormalized = this._EOLNormalized && eolNormalized;
+        this._lastVisitedLine.lineNumber = 0;
+        this._lastVisitedLine.value = '';
+        if (this.root !== SENTINEL) {
+            const { node, remainder, nodeStartOffset } = this.nodeAt(offset);
+            const piece = node.piece;
+            const bufferIndex = piece.bufferIndex;
+            const insertPosInBuffer = this.positionInBuffer(node, remainder);
+            if (node.piece.bufferIndex === 0 &&
+                piece.end.line === this._lastChangeBufferPos.line &&
+                piece.end.column === this._lastChangeBufferPos.column &&
+                (nodeStartOffset + piece.length === offset) &&
+                value.length < AverageBufferSize) {
+                this.appendToNode(node, value);
+                this.computeBufferMetadata();
+                return;
+            }
+            if (nodeStartOffset === offset) {
+                this.insertContentToNodeLeft(value, node);
+                this._searchCache.validate(offset);
+            }
+            else if (nodeStartOffset + node.piece.length > offset) {
+                const nodesToDel = [];
+                let newRightPiece = new Piece(piece.bufferIndex, insertPosInBuffer, piece.end, this.getLineFeedCnt(piece.bufferIndex, insertPosInBuffer, piece.end), this.offsetInBuffer(bufferIndex, piece.end) - this.offsetInBuffer(bufferIndex, insertPosInBuffer));
+                if (this.shouldCheckCRLF() && this.endWithCR(value)) {
+                    const headOfRight = this.nodeCharCodeAt(node, remainder);
+                    if (headOfRight === 10) {
+                        const newStart = { line: newRightPiece.start.line + 1, column: 0 };
+                        newRightPiece = new Piece(newRightPiece.bufferIndex, newStart, newRightPiece.end, this.getLineFeedCnt(newRightPiece.bufferIndex, newStart, newRightPiece.end), newRightPiece.length - 1);
+                        value += '\n';
+                    }
+                }
+                if (this.shouldCheckCRLF() && this.startWithLF(value)) {
+                    const tailOfLeft = this.nodeCharCodeAt(node, remainder - 1);
+                    if (tailOfLeft === 13) {
+                        const previousPos = this.positionInBuffer(node, remainder - 1);
+                        this.deleteNodeTail(node, previousPos);
+                        value = '\r' + value;
+                        if (node.piece.length === 0) {
+                            nodesToDel.push(node);
+                        }
+                    }
+                    else {
+                        this.deleteNodeTail(node, insertPosInBuffer);
+                    }
+                }
+                else {
+                    this.deleteNodeTail(node, insertPosInBuffer);
+                }
+                const newPieces = this.createNewPieces(value);
+                if (newRightPiece.length > 0) {
+                    this.rbInsertRight(node, newRightPiece);
+                }
+                let tmpNode = node;
+                for (let k = 0; k < newPieces.length; k++) {
+                    tmpNode = this.rbInsertRight(tmpNode, newPieces[k]);
+                }
+                this.deleteNodes(nodesToDel);
+            }
+            else {
+                this.insertContentToNodeRight(value, node);
+            }
+        }
+        else {
+            const pieces = this.createNewPieces(value);
+            let node = this.rbInsertLeft(null, pieces[0]);
+            for (let k = 1; k < pieces.length; k++) {
+                node = this.rbInsertRight(node, pieces[k]);
+            }
+        }
+        this.computeBufferMetadata();
+    }
+    delete(offset, cnt) {
+        this._lastVisitedLine.lineNumber = 0;
+        this._lastVisitedLine.value = '';
+        if (cnt <= 0 || this.root === SENTINEL) {
+            return;
+        }
+        const startPosition = this.nodeAt(offset);
+        const endPosition = this.nodeAt(offset + cnt);
+        const startNode = startPosition.node;
+        const endNode = endPosition.node;
+        if (startNode === endNode) {
+            const startSplitPosInBuffer = this.positionInBuffer(startNode, startPosition.remainder);
+            const endSplitPosInBuffer = this.positionInBuffer(startNode, endPosition.remainder);
+            if (startPosition.nodeStartOffset === offset) {
+                if (cnt === startNode.piece.length) {
+                    const next = startNode.next();
+                    rbDelete(this, startNode);
+                    this.validateCRLFWithPrevNode(next);
+                    this.computeBufferMetadata();
+                    return;
+                }
+                this.deleteNodeHead(startNode, endSplitPosInBuffer);
+                this._searchCache.validate(offset);
+                this.validateCRLFWithPrevNode(startNode);
+                this.computeBufferMetadata();
+                return;
+            }
+            if (startPosition.nodeStartOffset + startNode.piece.length === offset + cnt) {
+                this.deleteNodeTail(startNode, startSplitPosInBuffer);
+                this.validateCRLFWithNextNode(startNode);
+                this.computeBufferMetadata();
+                return;
+            }
+            this.shrinkNode(startNode, startSplitPosInBuffer, endSplitPosInBuffer);
+            this.computeBufferMetadata();
+            return;
+        }
+        const nodesToDel = [];
+        const startSplitPosInBuffer = this.positionInBuffer(startNode, startPosition.remainder);
+        this.deleteNodeTail(startNode, startSplitPosInBuffer);
+        this._searchCache.validate(offset);
+        if (startNode.piece.length === 0) {
+            nodesToDel.push(startNode);
+        }
+        const endSplitPosInBuffer = this.positionInBuffer(endNode, endPosition.remainder);
+        this.deleteNodeHead(endNode, endSplitPosInBuffer);
+        if (endNode.piece.length === 0) {
+            nodesToDel.push(endNode);
+        }
+        const secondNode = startNode.next();
+        for (let node = secondNode; node !== SENTINEL && node !== endNode; node = node.next()) {
+            nodesToDel.push(node);
+        }
+        const prev = startNode.piece.length === 0 ? startNode.prev() : startNode;
+        this.deleteNodes(nodesToDel);
+        this.validateCRLFWithNextNode(prev);
+        this.computeBufferMetadata();
+    }
+    insertContentToNodeLeft(value, node) {
+        const nodesToDel = [];
+        if (this.shouldCheckCRLF() && this.endWithCR(value) && this.startWithLF(node)) {
+            const piece = node.piece;
+            const newStart = { line: piece.start.line + 1, column: 0 };
+            const nPiece = new Piece(piece.bufferIndex, newStart, piece.end, this.getLineFeedCnt(piece.bufferIndex, newStart, piece.end), piece.length - 1);
+            node.piece = nPiece;
+            value += '\n';
+            updateTreeMetadata(this, node, -1, -1);
+            if (node.piece.length === 0) {
+                nodesToDel.push(node);
+            }
+        }
+        const newPieces = this.createNewPieces(value);
+        let newNode = this.rbInsertLeft(node, newPieces[newPieces.length - 1]);
+        for (let k = newPieces.length - 2; k >= 0; k--) {
+            newNode = this.rbInsertLeft(newNode, newPieces[k]);
+        }
+        this.validateCRLFWithPrevNode(newNode);
+        this.deleteNodes(nodesToDel);
+    }
+    insertContentToNodeRight(value, node) {
+        if (this.adjustCarriageReturnFromNext(value, node)) {
+            value += '\n';
+        }
+        const newPieces = this.createNewPieces(value);
+        const newNode = this.rbInsertRight(node, newPieces[0]);
+        let tmpNode = newNode;
+        for (let k = 1; k < newPieces.length; k++) {
+            tmpNode = this.rbInsertRight(tmpNode, newPieces[k]);
+        }
+        this.validateCRLFWithPrevNode(newNode);
+    }
+    positionInBuffer(node, remainder, ret) {
+        const piece = node.piece;
+        const bufferIndex = node.piece.bufferIndex;
+        const lineStarts = this._buffers[bufferIndex].lineStarts;
+        const startOffset = lineStarts[piece.start.line] + piece.start.column;
+        const offset = startOffset + remainder;
+        let low = piece.start.line;
+        let high = piece.end.line;
+        let mid = 0;
+        let midStop = 0;
+        let midStart = 0;
+        while (low <= high) {
+            mid = low + ((high - low) / 2) | 0;
+            midStart = lineStarts[mid];
+            if (mid === high) {
+                break;
+            }
+            midStop = lineStarts[mid + 1];
+            if (offset < midStart) {
+                high = mid - 1;
+            }
+            else if (offset >= midStop) {
+                low = mid + 1;
+            }
+            else {
+                break;
+            }
+        }
+        if (ret) {
+            ret.line = mid;
+            ret.column = offset - midStart;
+            return null;
+        }
+        return {
+            line: mid,
+            column: offset - midStart
+        };
+    }
+    getLineFeedCnt(bufferIndex, start, end) {
+        if (end.column === 0) {
+            return end.line - start.line;
+        }
+        const lineStarts = this._buffers[bufferIndex].lineStarts;
+        if (end.line === lineStarts.length - 1) {
+            return end.line - start.line;
+        }
+        const nextLineStartOffset = lineStarts[end.line + 1];
+        const endOffset = lineStarts[end.line] + end.column;
+        if (nextLineStartOffset > endOffset + 1) {
+            return end.line - start.line;
+        }
+        const previousCharOffset = endOffset - 1;
+        const buffer = this._buffers[bufferIndex].buffer;
+        if (buffer.charCodeAt(previousCharOffset) === 13) {
+            return end.line - start.line + 1;
+        }
+        else {
+            return end.line - start.line;
+        }
+    }
+    offsetInBuffer(bufferIndex, cursor) {
+        const lineStarts = this._buffers[bufferIndex].lineStarts;
+        return lineStarts[cursor.line] + cursor.column;
+    }
+    deleteNodes(nodes) {
+        for (let i = 0; i < nodes.length; i++) {
+            rbDelete(this, nodes[i]);
+        }
+    }
+    createNewPieces(text) {
+        if (text.length > AverageBufferSize) {
+            const newPieces = [];
+            while (text.length > AverageBufferSize) {
+                const lastChar = text.charCodeAt(AverageBufferSize - 1);
+                let splitText;
+                if (lastChar === 13 || (lastChar >= 0xD800 && lastChar <= 0xDBFF)) {
+                    splitText = text.substring(0, AverageBufferSize - 1);
+                    text = text.substring(AverageBufferSize - 1);
+                }
+                else {
+                    splitText = text.substring(0, AverageBufferSize);
+                    text = text.substring(AverageBufferSize);
+                }
+                const lineStarts = createLineStartsFast(splitText);
+                newPieces.push(new Piece(this._buffers.length, { line: 0, column: 0 }, { line: lineStarts.length - 1, column: splitText.length - lineStarts[lineStarts.length - 1] }, lineStarts.length - 1, splitText.length));
+                this._buffers.push(new StringBuffer(splitText, lineStarts));
+            }
+            const lineStarts = createLineStartsFast(text);
+            newPieces.push(new Piece(this._buffers.length, { line: 0, column: 0 }, { line: lineStarts.length - 1, column: text.length - lineStarts[lineStarts.length - 1] }, lineStarts.length - 1, text.length));
+            this._buffers.push(new StringBuffer(text, lineStarts));
+            return newPieces;
+        }
+        let startOffset = this._buffers[0].buffer.length;
+        const lineStarts = createLineStartsFast(text, false);
+        let start = this._lastChangeBufferPos;
+        if (this._buffers[0].lineStarts[this._buffers[0].lineStarts.length - 1] === startOffset
+            && startOffset !== 0
+            && this.startWithLF(text)
+            && this.endWithCR(this._buffers[0].buffer)) {
+            this._lastChangeBufferPos = { line: this._lastChangeBufferPos.line, column: this._lastChangeBufferPos.column + 1 };
+            start = this._lastChangeBufferPos;
+            for (let i = 0; i < lineStarts.length; i++) {
+                lineStarts[i] += startOffset + 1;
+            }
+            this._buffers[0].lineStarts = this._buffers[0].lineStarts.concat(lineStarts.slice(1));
+            this._buffers[0].buffer += '_' + text;
+            startOffset += 1;
+        }
+        else {
+            if (startOffset !== 0) {
+                for (let i = 0; i < lineStarts.length; i++) {
+                    lineStarts[i] += startOffset;
+                }
+            }
+            this._buffers[0].lineStarts = this._buffers[0].lineStarts.concat(lineStarts.slice(1));
+            this._buffers[0].buffer += text;
+        }
+        const endOffset = this._buffers[0].buffer.length;
+        const endIndex = this._buffers[0].lineStarts.length - 1;
+        const endColumn = endOffset - this._buffers[0].lineStarts[endIndex];
+        const endPos = { line: endIndex, column: endColumn };
+        const newPiece = new Piece(0, start, endPos, this.getLineFeedCnt(0, start, endPos), endOffset - startOffset);
+        this._lastChangeBufferPos = endPos;
+        return [newPiece];
+    }
+    getLinesRawContent() {
+        return this.getContentOfSubTree(this.root);
+    }
+    getLineRawContent(lineNumber, endOffset = 0) {
+        let x = this.root;
+        let ret = '';
+        const cache = this._searchCache.get2(lineNumber);
+        if (cache) {
+            x = cache.node;
+            const prevAccumulatedValue = this.getAccumulatedValue(x, lineNumber - cache.nodeStartLineNumber - 1);
+            const buffer = this._buffers[x.piece.bufferIndex].buffer;
+            const startOffset = this.offsetInBuffer(x.piece.bufferIndex, x.piece.start);
+            if (cache.nodeStartLineNumber + x.piece.lineFeedCnt === lineNumber) {
+                ret = buffer.substring(startOffset + prevAccumulatedValue, startOffset + x.piece.length);
+            }
+            else {
+                const accumulatedValue = this.getAccumulatedValue(x, lineNumber - cache.nodeStartLineNumber);
+                return buffer.substring(startOffset + prevAccumulatedValue, startOffset + accumulatedValue - endOffset);
+            }
+        }
+        else {
+            let nodeStartOffset = 0;
+            const originalLineNumber = lineNumber;
+            while (x !== SENTINEL) {
+                if (x.left !== SENTINEL && x.lf_left >= lineNumber - 1) {
+                    x = x.left;
+                }
+                else if (x.lf_left + x.piece.lineFeedCnt > lineNumber - 1) {
+                    const prevAccumulatedValue = this.getAccumulatedValue(x, lineNumber - x.lf_left - 2);
+                    const accumulatedValue = this.getAccumulatedValue(x, lineNumber - x.lf_left - 1);
+                    const buffer = this._buffers[x.piece.bufferIndex].buffer;
+                    const startOffset = this.offsetInBuffer(x.piece.bufferIndex, x.piece.start);
+                    nodeStartOffset += x.size_left;
+                    this._searchCache.set({
+                        node: x,
+                        nodeStartOffset,
+                        nodeStartLineNumber: originalLineNumber - (lineNumber - 1 - x.lf_left)
+                    });
+                    return buffer.substring(startOffset + prevAccumulatedValue, startOffset + accumulatedValue - endOffset);
+                }
+                else if (x.lf_left + x.piece.lineFeedCnt === lineNumber - 1) {
+                    const prevAccumulatedValue = this.getAccumulatedValue(x, lineNumber - x.lf_left - 2);
+                    const buffer = this._buffers[x.piece.bufferIndex].buffer;
+                    const startOffset = this.offsetInBuffer(x.piece.bufferIndex, x.piece.start);
+                    ret = buffer.substring(startOffset + prevAccumulatedValue, startOffset + x.piece.length);
+                    break;
+                }
+                else {
+                    lineNumber -= x.lf_left + x.piece.lineFeedCnt;
+                    nodeStartOffset += x.size_left + x.piece.length;
+                    x = x.right;
+                }
+            }
+        }
+        x = x.next();
+        while (x !== SENTINEL) {
+            const buffer = this._buffers[x.piece.bufferIndex].buffer;
+            if (x.piece.lineFeedCnt > 0) {
+                const accumulatedValue = this.getAccumulatedValue(x, 0);
+                const startOffset = this.offsetInBuffer(x.piece.bufferIndex, x.piece.start);
+                ret += buffer.substring(startOffset, startOffset + accumulatedValue - endOffset);
+                return ret;
+            }
+            else {
+                const startOffset = this.offsetInBuffer(x.piece.bufferIndex, x.piece.start);
+                ret += buffer.substr(startOffset, x.piece.length);
+            }
+            x = x.next();
+        }
+        return ret;
+    }
+    computeBufferMetadata() {
+        let x = this.root;
+        let lfCnt = 1;
+        let len = 0;
+        while (x !== SENTINEL) {
+            lfCnt += x.lf_left + x.piece.lineFeedCnt;
+            len += x.size_left + x.piece.length;
+            x = x.right;
+        }
+        this._lineCnt = lfCnt;
+        this._length = len;
+        this._searchCache.validate(this._length);
+    }
+    getIndexOf(node, accumulatedValue) {
+        const piece = node.piece;
+        const pos = this.positionInBuffer(node, accumulatedValue);
+        const lineCnt = pos.line - piece.start.line;
+        if (this.offsetInBuffer(piece.bufferIndex, piece.end) - this.offsetInBuffer(piece.bufferIndex, piece.start) === accumulatedValue) {
+            const realLineCnt = this.getLineFeedCnt(node.piece.bufferIndex, piece.start, pos);
+            if (realLineCnt !== lineCnt) {
+                return { index: realLineCnt, remainder: 0 };
+            }
+        }
+        return { index: lineCnt, remainder: pos.column };
+    }
+    getAccumulatedValue(node, index) {
+        if (index < 0) {
+            return 0;
+        }
+        const piece = node.piece;
+        const lineStarts = this._buffers[piece.bufferIndex].lineStarts;
+        const expectedLineStartIndex = piece.start.line + index + 1;
+        if (expectedLineStartIndex > piece.end.line) {
+            return lineStarts[piece.end.line] + piece.end.column - lineStarts[piece.start.line] - piece.start.column;
+        }
+        else {
+            return lineStarts[expectedLineStartIndex] - lineStarts[piece.start.line] - piece.start.column;
+        }
+    }
+    deleteNodeTail(node, pos) {
+        const piece = node.piece;
+        const originalLFCnt = piece.lineFeedCnt;
+        const originalEndOffset = this.offsetInBuffer(piece.bufferIndex, piece.end);
+        const newEnd = pos;
+        const newEndOffset = this.offsetInBuffer(piece.bufferIndex, newEnd);
+        const newLineFeedCnt = this.getLineFeedCnt(piece.bufferIndex, piece.start, newEnd);
+        const lf_delta = newLineFeedCnt - originalLFCnt;
+        const size_delta = newEndOffset - originalEndOffset;
+        const newLength = piece.length + size_delta;
+        node.piece = new Piece(piece.bufferIndex, piece.start, newEnd, newLineFeedCnt, newLength);
+        updateTreeMetadata(this, node, size_delta, lf_delta);
+    }
+    deleteNodeHead(node, pos) {
+        const piece = node.piece;
+        const originalLFCnt = piece.lineFeedCnt;
+        const originalStartOffset = this.offsetInBuffer(piece.bufferIndex, piece.start);
+        const newStart = pos;
+        const newLineFeedCnt = this.getLineFeedCnt(piece.bufferIndex, newStart, piece.end);
+        const newStartOffset = this.offsetInBuffer(piece.bufferIndex, newStart);
+        const lf_delta = newLineFeedCnt - originalLFCnt;
+        const size_delta = originalStartOffset - newStartOffset;
+        const newLength = piece.length + size_delta;
+        node.piece = new Piece(piece.bufferIndex, newStart, piece.end, newLineFeedCnt, newLength);
+        updateTreeMetadata(this, node, size_delta, lf_delta);
+    }
+    shrinkNode(node, start, end) {
+        const piece = node.piece;
+        const originalStartPos = piece.start;
+        const originalEndPos = piece.end;
+        const oldLength = piece.length;
+        const oldLFCnt = piece.lineFeedCnt;
+        const newEnd = start;
+        const newLineFeedCnt = this.getLineFeedCnt(piece.bufferIndex, piece.start, newEnd);
+        const newLength = this.offsetInBuffer(piece.bufferIndex, start) - this.offsetInBuffer(piece.bufferIndex, originalStartPos);
+        node.piece = new Piece(piece.bufferIndex, piece.start, newEnd, newLineFeedCnt, newLength);
+        updateTreeMetadata(this, node, newLength - oldLength, newLineFeedCnt - oldLFCnt);
+        const newPiece = new Piece(piece.bufferIndex, end, originalEndPos, this.getLineFeedCnt(piece.bufferIndex, end, originalEndPos), this.offsetInBuffer(piece.bufferIndex, originalEndPos) - this.offsetInBuffer(piece.bufferIndex, end));
+        const newNode = this.rbInsertRight(node, newPiece);
+        this.validateCRLFWithPrevNode(newNode);
+    }
+    appendToNode(node, value) {
+        if (this.adjustCarriageReturnFromNext(value, node)) {
+            value += '\n';
+        }
+        const hitCRLF = this.shouldCheckCRLF() && this.startWithLF(value) && this.endWithCR(node);
+        const startOffset = this._buffers[0].buffer.length;
+        this._buffers[0].buffer += value;
+        const lineStarts = createLineStartsFast(value, false);
+        for (let i = 0; i < lineStarts.length; i++) {
+            lineStarts[i] += startOffset;
+        }
+        if (hitCRLF) {
+            const prevStartOffset = this._buffers[0].lineStarts[this._buffers[0].lineStarts.length - 2];
+            this._buffers[0].lineStarts.pop();
+            this._lastChangeBufferPos = { line: this._lastChangeBufferPos.line - 1, column: startOffset - prevStartOffset };
+        }
+        this._buffers[0].lineStarts = this._buffers[0].lineStarts.concat(lineStarts.slice(1));
+        const endIndex = this._buffers[0].lineStarts.length - 1;
+        const endColumn = this._buffers[0].buffer.length - this._buffers[0].lineStarts[endIndex];
+        const newEnd = { line: endIndex, column: endColumn };
+        const newLength = node.piece.length + value.length;
+        const oldLineFeedCnt = node.piece.lineFeedCnt;
+        const newLineFeedCnt = this.getLineFeedCnt(0, node.piece.start, newEnd);
+        const lf_delta = newLineFeedCnt - oldLineFeedCnt;
+        node.piece = new Piece(node.piece.bufferIndex, node.piece.start, newEnd, newLineFeedCnt, newLength);
+        this._lastChangeBufferPos = newEnd;
+        updateTreeMetadata(this, node, value.length, lf_delta);
+    }
+    nodeAt(offset) {
+        let x = this.root;
+        const cache = this._searchCache.get(offset);
+        if (cache) {
+            return {
+                node: cache.node,
+                nodeStartOffset: cache.nodeStartOffset,
+                remainder: offset - cache.nodeStartOffset
+            };
+        }
+        let nodeStartOffset = 0;
+        while (x !== SENTINEL) {
+            if (x.size_left > offset) {
+                x = x.left;
+            }
+            else if (x.size_left + x.piece.length >= offset) {
+                nodeStartOffset += x.size_left;
+                const ret = {
+                    node: x,
+                    remainder: offset - x.size_left,
+                    nodeStartOffset
+                };
+                this._searchCache.set(ret);
+                return ret;
+            }
+            else {
+                offset -= x.size_left + x.piece.length;
+                nodeStartOffset += x.size_left + x.piece.length;
+                x = x.right;
+            }
+        }
+        return null;
+    }
+    nodeAt2(lineNumber, column) {
+        let x = this.root;
+        let nodeStartOffset = 0;
+        while (x !== SENTINEL) {
+            if (x.left !== SENTINEL && x.lf_left >= lineNumber - 1) {
+                x = x.left;
+            }
+            else if (x.lf_left + x.piece.lineFeedCnt > lineNumber - 1) {
+                const prevAccumualtedValue = this.getAccumulatedValue(x, lineNumber - x.lf_left - 2);
+                const accumulatedValue = this.getAccumulatedValue(x, lineNumber - x.lf_left - 1);
+                nodeStartOffset += x.size_left;
+                return {
+                    node: x,
+                    remainder: Math.min(prevAccumualtedValue + column - 1, accumulatedValue),
+                    nodeStartOffset
+                };
+            }
+            else if (x.lf_left + x.piece.lineFeedCnt === lineNumber - 1) {
+                const prevAccumualtedValue = this.getAccumulatedValue(x, lineNumber - x.lf_left - 2);
+                if (prevAccumualtedValue + column - 1 <= x.piece.length) {
+                    return {
+                        node: x,
+                        remainder: prevAccumualtedValue + column - 1,
+                        nodeStartOffset
+                    };
+                }
+                else {
+                    column -= x.piece.length - prevAccumualtedValue;
+                    break;
+                }
+            }
+            else {
+                lineNumber -= x.lf_left + x.piece.lineFeedCnt;
+                nodeStartOffset += x.size_left + x.piece.length;
+                x = x.right;
+            }
+        }
+        x = x.next();
+        while (x !== SENTINEL) {
+            if (x.piece.lineFeedCnt > 0) {
+                const accumulatedValue = this.getAccumulatedValue(x, 0);
+                const nodeStartOffset = this.offsetOfNode(x);
+                return {
+                    node: x,
+                    remainder: Math.min(column - 1, accumulatedValue),
+                    nodeStartOffset
+                };
+            }
+            else {
+                if (x.piece.length >= column - 1) {
+                    const nodeStartOffset = this.offsetOfNode(x);
+                    return {
+                        node: x,
+                        remainder: column - 1,
+                        nodeStartOffset
+                    };
+                }
+                else {
+                    column -= x.piece.length;
+                }
+            }
+            x = x.next();
+        }
+        return null;
+    }
+    nodeCharCodeAt(node, offset) {
+        if (node.piece.lineFeedCnt < 1) {
+            return -1;
+        }
+        const buffer = this._buffers[node.piece.bufferIndex];
+        const newOffset = this.offsetInBuffer(node.piece.bufferIndex, node.piece.start) + offset;
+        return buffer.buffer.charCodeAt(newOffset);
+    }
+    offsetOfNode(node) {
+        if (!node) {
+            return 0;
+        }
+        let pos = node.size_left;
+        while (node !== this.root) {
+            if (node.parent.right === node) {
+                pos += node.parent.size_left + node.parent.piece.length;
+            }
+            node = node.parent;
+        }
+        return pos;
+    }
+    shouldCheckCRLF() {
+        return !(this._EOLNormalized && this._EOL === '\n');
+    }
+    startWithLF(val) {
+        if (typeof val === 'string') {
+            return val.charCodeAt(0) === 10;
+        }
+        if (val === SENTINEL || val.piece.lineFeedCnt === 0) {
+            return false;
+        }
+        const piece = val.piece;
+        const lineStarts = this._buffers[piece.bufferIndex].lineStarts;
+        const line = piece.start.line;
+        const startOffset = lineStarts[line] + piece.start.column;
+        if (line === lineStarts.length - 1) {
+            return false;
+        }
+        const nextLineOffset = lineStarts[line + 1];
+        if (nextLineOffset > startOffset + 1) {
+            return false;
+        }
+        return this._buffers[piece.bufferIndex].buffer.charCodeAt(startOffset) === 10;
+    }
+    endWithCR(val) {
+        if (typeof val === 'string') {
+            return val.charCodeAt(val.length - 1) === 13;
+        }
+        if (val === SENTINEL || val.piece.lineFeedCnt === 0) {
+            return false;
+        }
+        return this.nodeCharCodeAt(val, val.piece.length - 1) === 13;
+    }
+    validateCRLFWithPrevNode(nextNode) {
+        if (this.shouldCheckCRLF() && this.startWithLF(nextNode)) {
+            const node = nextNode.prev();
+            if (this.endWithCR(node)) {
+                this.fixCRLF(node, nextNode);
+            }
+        }
+    }
+    validateCRLFWithNextNode(node) {
+        if (this.shouldCheckCRLF() && this.endWithCR(node)) {
+            const nextNode = node.next();
+            if (this.startWithLF(nextNode)) {
+                this.fixCRLF(node, nextNode);
+            }
+        }
+    }
+    fixCRLF(prev, next) {
+        const nodesToDel = [];
+        const lineStarts = this._buffers[prev.piece.bufferIndex].lineStarts;
+        let newEnd;
+        if (prev.piece.end.column === 0) {
+            newEnd = { line: prev.piece.end.line - 1, column: lineStarts[prev.piece.end.line] - lineStarts[prev.piece.end.line - 1] - 1 };
+        }
+        else {
+            newEnd = { line: prev.piece.end.line, column: prev.piece.end.column - 1 };
+        }
+        const prevNewLength = prev.piece.length - 1;
+        const prevNewLFCnt = prev.piece.lineFeedCnt - 1;
+        prev.piece = new Piece(prev.piece.bufferIndex, prev.piece.start, newEnd, prevNewLFCnt, prevNewLength);
+        updateTreeMetadata(this, prev, -1, -1);
+        if (prev.piece.length === 0) {
+            nodesToDel.push(prev);
+        }
+        const newStart = { line: next.piece.start.line + 1, column: 0 };
+        const newLength = next.piece.length - 1;
+        const newLineFeedCnt = this.getLineFeedCnt(next.piece.bufferIndex, newStart, next.piece.end);
+        next.piece = new Piece(next.piece.bufferIndex, newStart, next.piece.end, newLineFeedCnt, newLength);
+        updateTreeMetadata(this, next, -1, -1);
+        if (next.piece.length === 0) {
+            nodesToDel.push(next);
+        }
+        const pieces = this.createNewPieces('\r\n');
+        this.rbInsertRight(prev, pieces[0]);
+        for (let i = 0; i < nodesToDel.length; i++) {
+            rbDelete(this, nodesToDel[i]);
+        }
+    }
+    adjustCarriageReturnFromNext(value, node) {
+        if (this.shouldCheckCRLF() && this.endWithCR(value)) {
+            const nextNode = node.next();
+            if (this.startWithLF(nextNode)) {
+                value += '\n';
+                if (nextNode.piece.length === 1) {
+                    rbDelete(this, nextNode);
+                }
+                else {
+                    const piece = nextNode.piece;
+                    const newStart = { line: piece.start.line + 1, column: 0 };
+                    const newLength = piece.length - 1;
+                    const newLineFeedCnt = this.getLineFeedCnt(piece.bufferIndex, newStart, piece.end);
+                    nextNode.piece = new Piece(piece.bufferIndex, newStart, piece.end, newLineFeedCnt, newLength);
+                    updateTreeMetadata(this, nextNode, -1, -1);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+    iterate(node, callback) {
+        if (node === SENTINEL) {
+            return callback(SENTINEL);
+        }
+        const leftRet = this.iterate(node.left, callback);
+        if (!leftRet) {
+            return leftRet;
+        }
+        return callback(node) && this.iterate(node.right, callback);
+    }
+    getNodeContent(node) {
+        if (node === SENTINEL) {
+            return '';
+        }
+        const buffer = this._buffers[node.piece.bufferIndex];
+        const piece = node.piece;
+        const startOffset = this.offsetInBuffer(piece.bufferIndex, piece.start);
+        const endOffset = this.offsetInBuffer(piece.bufferIndex, piece.end);
+        const currentContent = buffer.buffer.substring(startOffset, endOffset);
+        return currentContent;
+    }
+    getPieceContent(piece) {
+        const buffer = this._buffers[piece.bufferIndex];
+        const startOffset = this.offsetInBuffer(piece.bufferIndex, piece.start);
+        const endOffset = this.offsetInBuffer(piece.bufferIndex, piece.end);
+        const currentContent = buffer.buffer.substring(startOffset, endOffset);
+        return currentContent;
+    }
+    rbInsertRight(node, p) {
+        const z = new TreeNode(p, 1);
+        z.left = SENTINEL;
+        z.right = SENTINEL;
+        z.parent = SENTINEL;
+        z.size_left = 0;
+        z.lf_left = 0;
+        const x = this.root;
+        if (x === SENTINEL) {
+            this.root = z;
+            z.color = 0;
+        }
+        else if (node.right === SENTINEL) {
+            node.right = z;
+            z.parent = node;
+        }
+        else {
+            const nextNode = leftest(node.right);
+            nextNode.left = z;
+            z.parent = nextNode;
+        }
+        fixInsert(this, z);
+        return z;
+    }
+    rbInsertLeft(node, p) {
+        const z = new TreeNode(p, 1);
+        z.left = SENTINEL;
+        z.right = SENTINEL;
+        z.parent = SENTINEL;
+        z.size_left = 0;
+        z.lf_left = 0;
+        if (this.root === SENTINEL) {
+            this.root = z;
+            z.color = 0;
+        }
+        else if (node.left === SENTINEL) {
+            node.left = z;
+            z.parent = node;
+        }
+        else {
+            const prevNode = righttest(node.left);
+            prevNode.right = z;
+            z.parent = prevNode;
+        }
+        fixInsert(this, z);
+        return z;
+    }
+    getContentOfSubTree(node) {
+        let str = '';
+        this.iterate(node, node => {
+            str += this.getNodeContent(node);
+            return true;
+        });
+        return str;
+    }
+}

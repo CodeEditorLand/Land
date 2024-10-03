@@ -1,0 +1,82 @@
+import { URI } from '../../../../base/common/uri.js';
+import { IFileStat, IFileService } from '../../../../platform/files/common/files.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { IDisposable } from '../../../../base/common/lifecycle.js';
+import { Event } from '../../../../base/common/event.js';
+import { SortOrder } from './files.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IFilesConfigurationService } from '../../../services/filesConfiguration/common/filesConfigurationService.js';
+import { IMarkdownString } from '../../../../base/common/htmlContent.js';
+export declare class ExplorerModel implements IDisposable {
+    private readonly contextService;
+    private readonly uriIdentityService;
+    private _roots;
+    private _listener;
+    private readonly _onDidChangeRoots;
+    constructor(contextService: IWorkspaceContextService, uriIdentityService: IUriIdentityService, fileService: IFileService, configService: IConfigurationService, filesConfigService: IFilesConfigurationService);
+    get roots(): ExplorerItem[];
+    get onDidChangeRoots(): Event<void>;
+    findAll(resource: URI): ExplorerItem[];
+    findClosest(resource: URI): ExplorerItem | null;
+    dispose(): void;
+}
+export declare class ExplorerItem {
+    resource: URI;
+    private readonly fileService;
+    private readonly configService;
+    private readonly filesConfigService;
+    private _parent;
+    private _isDirectory?;
+    private _isSymbolicLink?;
+    private _readonly?;
+    private _locked?;
+    private _name;
+    private _mtime?;
+    private _unknown;
+    _isDirectoryResolved: boolean;
+    error: Error | undefined;
+    private _isExcluded;
+    nestedParent: ExplorerItem | undefined;
+    nestedChildren: ExplorerItem[] | undefined;
+    constructor(resource: URI, fileService: IFileService, configService: IConfigurationService, filesConfigService: IFilesConfigurationService, _parent: ExplorerItem | undefined, _isDirectory?: boolean | undefined, _isSymbolicLink?: boolean | undefined, _readonly?: boolean | undefined, _locked?: boolean | undefined, _name?: string, _mtime?: number | undefined, _unknown?: boolean);
+    get isExcluded(): boolean;
+    set isExcluded(value: boolean);
+    hasChildren(filter: (stat: ExplorerItem) => boolean): boolean;
+    get hasNests(): boolean;
+    get isDirectoryResolved(): boolean;
+    get isSymbolicLink(): boolean;
+    get isDirectory(): boolean;
+    get isReadonly(): boolean | IMarkdownString;
+    get mtime(): number | undefined;
+    get name(): string;
+    get isUnknown(): boolean;
+    get parent(): ExplorerItem | undefined;
+    get root(): ExplorerItem;
+    get children(): Map<string, ExplorerItem>;
+    private updateName;
+    getId(): string;
+    toString(): string;
+    get isRoot(): boolean;
+    static create(fileService: IFileService, configService: IConfigurationService, filesConfigService: IFilesConfigurationService, raw: IFileStat, parent: ExplorerItem | undefined, resolveTo?: readonly URI[]): ExplorerItem;
+    static mergeLocalWithDisk(disk: ExplorerItem, local: ExplorerItem): void;
+    addChild(child: ExplorerItem): void;
+    getChild(name: string): ExplorerItem | undefined;
+    fetchChildren(sortOrder: SortOrder): ExplorerItem[] | Promise<ExplorerItem[]>;
+    private _fileNester;
+    private get fileNester();
+    removeChild(child: ExplorerItem): void;
+    forgetChildren(): void;
+    private getPlatformAwareName;
+    move(newParent: ExplorerItem): void;
+    private updateResource;
+    rename(renamedStat: {
+        name: string;
+        mtime?: number;
+    }): void;
+    find(resource: URI): ExplorerItem | null;
+    private findByPath;
+}
+export declare class NewExplorerItem extends ExplorerItem {
+    constructor(fileService: IFileService, configService: IConfigurationService, filesConfigService: IFilesConfigurationService, parent: ExplorerItem, isDirectory: boolean);
+}

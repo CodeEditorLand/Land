@@ -1,1 +1,55 @@
-import{diffSets as n}from"../../../../../../base/common/collections.js";import{Emitter as a}from"../../../../../../base/common/event.js";import{Disposable as h,DisposableStore as b}from"../../../../../../base/common/lifecycle.js";import{isDefined as l}from"../../../../../../base/common/types.js";import"../../notebookBrowser.js";import{cellRangesToIndexes as C}from"../../../common/notebookRange.js";class D extends h{constructor(i){super();this._notebookEditor=i;this._register(this._notebookEditor.onDidChangeVisibleRanges(this._updateVisibleCells,this)),this._register(this._notebookEditor.onDidChangeModel(this._onModelChange,this)),this._updateVisibleCells()}_onDidChangeVisibleCells=this._register(new a);onDidChangeVisibleCells=this._onDidChangeVisibleCells.event;_viewModelDisposables=this._register(new b);_visibleCells=[];get visibleCells(){return this._visibleCells}_onModelChange(){this._viewModelDisposables.clear(),this._notebookEditor.hasModel()&&this._viewModelDisposables.add(this._notebookEditor.onDidChangeViewCells(()=>this.updateEverything())),this.updateEverything()}updateEverything(){this._onDidChangeVisibleCells.fire({added:[],removed:Array.from(this._visibleCells)}),this._visibleCells=[],this._updateVisibleCells()}_updateVisibleCells(){if(!this._notebookEditor.hasModel())return;const i=C(this._notebookEditor.visibleRanges).map(e=>this._notebookEditor.cellAt(e)).filter(l),t=new Set(i.map(e=>e.handle)),s=new Set(this._visibleCells.map(e=>e.handle)),o=n(s,t),d=o.added.map(e=>this._notebookEditor.getCellByHandle(e)).filter(l),r=o.removed.map(e=>this._notebookEditor.getCellByHandle(e)).filter(l);this._visibleCells=i,this._onDidChangeVisibleCells.fire({added:d,removed:r})}}export{D as NotebookVisibleCellObserver};
+import { diffSets } from '../../../../../../base/common/collections.js';
+import { Emitter } from '../../../../../../base/common/event.js';
+import { Disposable, DisposableStore } from '../../../../../../base/common/lifecycle.js';
+import { isDefined } from '../../../../../../base/common/types.js';
+import { cellRangesToIndexes } from '../../../common/notebookRange.js';
+export class NotebookVisibleCellObserver extends Disposable {
+    get visibleCells() {
+        return this._visibleCells;
+    }
+    constructor(_notebookEditor) {
+        super();
+        this._notebookEditor = _notebookEditor;
+        this._onDidChangeVisibleCells = this._register(new Emitter());
+        this.onDidChangeVisibleCells = this._onDidChangeVisibleCells.event;
+        this._viewModelDisposables = this._register(new DisposableStore());
+        this._visibleCells = [];
+        this._register(this._notebookEditor.onDidChangeVisibleRanges(this._updateVisibleCells, this));
+        this._register(this._notebookEditor.onDidChangeModel(this._onModelChange, this));
+        this._updateVisibleCells();
+    }
+    _onModelChange() {
+        this._viewModelDisposables.clear();
+        if (this._notebookEditor.hasModel()) {
+            this._viewModelDisposables.add(this._notebookEditor.onDidChangeViewCells(() => this.updateEverything()));
+        }
+        this.updateEverything();
+    }
+    updateEverything() {
+        this._onDidChangeVisibleCells.fire({ added: [], removed: Array.from(this._visibleCells) });
+        this._visibleCells = [];
+        this._updateVisibleCells();
+    }
+    _updateVisibleCells() {
+        if (!this._notebookEditor.hasModel()) {
+            return;
+        }
+        const newVisibleCells = cellRangesToIndexes(this._notebookEditor.visibleRanges)
+            .map(index => this._notebookEditor.cellAt(index))
+            .filter(isDefined);
+        const newVisibleHandles = new Set(newVisibleCells.map(cell => cell.handle));
+        const oldVisibleHandles = new Set(this._visibleCells.map(cell => cell.handle));
+        const diff = diffSets(oldVisibleHandles, newVisibleHandles);
+        const added = diff.added
+            .map(handle => this._notebookEditor.getCellByHandle(handle))
+            .filter(isDefined);
+        const removed = diff.removed
+            .map(handle => this._notebookEditor.getCellByHandle(handle))
+            .filter(isDefined);
+        this._visibleCells = newVisibleCells;
+        this._onDidChangeVisibleCells.fire({
+            added,
+            removed
+        });
+    }
+}

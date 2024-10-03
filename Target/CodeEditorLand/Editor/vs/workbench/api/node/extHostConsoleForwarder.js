@@ -1,6 +1,57 @@
-var d=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var g=(a,r,s,t)=>{for(var e=t>1?void 0:t?v(r,s):r,o=a.length-1,i;o>=0;o--)(i=a[o])&&(e=(t?i(r,s,e):i(e))||e);return t&&e&&d(r,s,e),e},l=(a,r)=>(s,t)=>r(s,t,a);import{AbstractExtHostConsoleForwarder as _}from"../common/extHostConsoleForwarder.js";import{IExtHostInitDataService as u}from"../common/extHostInitDataService.js";import{IExtHostRpcService as S}from"../common/extHostRpcService.js";import{NativeLogMarkers as f}from"../../services/extensions/common/extensionHostProtocol.js";const w=1024*1024;let n=class extends _{_isMakingConsoleCall=!1;constructor(r,s){super(r,s),this._wrapStream("stderr","error"),this._wrapStream("stdout","log")}_nativeConsoleLogMessage(r,s,t){const e=r==="error"||r==="warn"?process.stderr:process.stdout;this._isMakingConsoleCall=!0,e.write(`
-${f.Start}
-`),s.apply(console,t),e.write(`
-${f.End}
-`),this._isMakingConsoleCall=!1}_wrapStream(r,s){const t=process[r],e=t.write;let o="";Object.defineProperty(t,"write",{set:()=>{},get:()=>(i,c,m)=>{if(!this._isMakingConsoleCall){o+=i.toString(c);const p=o.length>w?o.length:o.lastIndexOf(`
-`);p!==-1&&(o=o.slice(p+1))}e.call(t,i,c,m)}})}};n=g([l(0,S),l(1,u)],n);export{n as ExtHostConsoleForwarder};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { AbstractExtHostConsoleForwarder } from '../common/extHostConsoleForwarder.js';
+import { IExtHostInitDataService } from '../common/extHostInitDataService.js';
+import { IExtHostRpcService } from '../common/extHostRpcService.js';
+const MAX_STREAM_BUFFER_LENGTH = 1024 * 1024;
+let ExtHostConsoleForwarder = class ExtHostConsoleForwarder extends AbstractExtHostConsoleForwarder {
+    constructor(extHostRpc, initData) {
+        super(extHostRpc, initData);
+        this._isMakingConsoleCall = false;
+        this._wrapStream('stderr', 'error');
+        this._wrapStream('stdout', 'log');
+    }
+    _nativeConsoleLogMessage(method, original, args) {
+        const stream = method === 'error' || method === 'warn' ? process.stderr : process.stdout;
+        this._isMakingConsoleCall = true;
+        stream.write(`\n${"START_NATIVE_LOG"}\n`);
+        original.apply(console, args);
+        stream.write(`\n${"END_NATIVE_LOG"}\n`);
+        this._isMakingConsoleCall = false;
+    }
+    _wrapStream(streamName, severity) {
+        const stream = process[streamName];
+        const original = stream.write;
+        let buf = '';
+        Object.defineProperty(stream, 'write', {
+            set: () => { },
+            get: () => (chunk, encoding, callback) => {
+                if (!this._isMakingConsoleCall) {
+                    buf += chunk.toString(encoding);
+                    const eol = buf.length > MAX_STREAM_BUFFER_LENGTH ? buf.length : buf.lastIndexOf('\n');
+                    if (eol !== -1) {
+                        console[severity](buf.slice(0, eol));
+                        buf = buf.slice(eol + 1);
+                    }
+                }
+                original.call(stream, chunk, encoding, callback);
+            },
+        });
+    }
+};
+ExtHostConsoleForwarder = __decorate([
+    __param(0, IExtHostRpcService),
+    __param(1, IExtHostInitDataService),
+    __metadata("design:paramtypes", [Object, Object])
+], ExtHostConsoleForwarder);
+export { ExtHostConsoleForwarder };

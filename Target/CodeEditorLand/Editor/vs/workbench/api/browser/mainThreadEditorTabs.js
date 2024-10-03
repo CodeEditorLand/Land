@@ -1,1 +1,535 @@
-var E=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var g=(b,e,t,i)=>{for(var r=i>1?void 0:i?D(e,t):e,o=b.length-1,n;o>=0;o--)(n=b[o])&&(r=(i?n(e,t,r):n(r))||r);return i&&r&&E(e,t,r),r},l=(b,e)=>(t,i)=>e(t,i,b);import{Event as k}from"../../../base/common/event.js";import{DisposableMap as G,DisposableStore as S}from"../../../base/common/lifecycle.js";import{isEqual as y}from"../../../base/common/resources.js";import{URI as x}from"../../../base/common/uri.js";import{IConfigurationService as M}from"../../../platform/configuration/common/configuration.js";import{ILogService as L}from"../../../platform/log/common/log.js";import{ExtHostContext as A,MainContext as O,TabInputKind as s,TabModelOperationKind as c}from"../common/extHost.protocol.js";import{EditorResourceAccessor as C,GroupModelChangeKind as p,SideBySideEditor as w}from"../../common/editor.js";import{DiffEditorInput as v}from"../../common/editor/diffEditorInput.js";import{isGroupEditorMoveEvent as P}from"../../common/editor/editorGroupModel.js";import"../../common/editor/editorInput.js";import{SideBySideEditorInput as R}from"../../common/editor/sideBySideEditorInput.js";import{AbstractTextResourceEditorInput as h}from"../../common/editor/textResourceEditorInput.js";import{ChatEditorInput as $}from"../../contrib/chat/browser/chatEditorInput.js";import{CustomEditorInput as U}from"../../contrib/customEditor/browser/customEditorInput.js";import{InteractiveEditorInput as B}from"../../contrib/interactive/browser/interactiveEditorInput.js";import{MergeEditorInput as N}from"../../contrib/mergeEditor/browser/mergeEditorInput.js";import{MultiDiffEditorInput as I}from"../../contrib/multiDiffEditor/browser/multiDiffEditorInput.js";import{NotebookEditorInput as T}from"../../contrib/notebook/common/notebookEditorInput.js";import{TerminalEditorInput as H}from"../../contrib/terminal/browser/terminalEditorInput.js";import{WebviewInput as j}from"../../contrib/webviewPanel/browser/webviewEditorInput.js";import{columnToEditorGroup as K,editorGroupToColumn as V}from"../../services/editor/common/editorGroupColumn.js";import{GroupDirection as F,IEditorGroupsService as W,preferredSideBySideGroupDirection as Y}from"../../services/editor/common/editorGroupsService.js";import{IEditorService as q,SIDE_GROUP as z}from"../../services/editor/common/editorService.js";import{extHostNamedCustomer as J}from"../../services/extensions/common/extHostCustomers.js";let _=class{constructor(e,t,i,r,o){this._editorGroupsService=t;this._configurationService=i;this._logService=r;this._proxy=e.getProxy(A.ExtHostEditorTabs),this._dispoables.add(o.onDidEditorsChange(n=>{try{this._updateTabsModel(n)}catch{this._logService.error("Failed to update model, rebuilding"),this._createTabsModel()}})),this._dispoables.add(this._multiDiffEditorInputListeners),this._dispoables.add(this._editorGroupsService.onDidAddGroup(()=>this._createTabsModel())),this._dispoables.add(this._editorGroupsService.onDidRemoveGroup(()=>this._createTabsModel())),this._editorGroupsService.whenReady.then(()=>this._createTabsModel())}_dispoables=new S;_proxy;_tabGroupModel=[];_groupLookup=new Map;_tabInfoLookup=new Map;_multiDiffEditorInputListeners=new G;dispose(){this._groupLookup.clear(),this._tabInfoLookup.clear(),this._dispoables.dispose()}_buildTabObject(e,t,i){const r=t.editorId;return{id:this._generateTabId(t,e.id),label:t.getName(),editorId:r,input:this._editorInputToDto(t),isPinned:e.isSticky(i),isPreview:!e.isPinned(i),isActive:e.isActive(t),isDirty:t.isDirty()}}_editorInputToDto(e){if(e instanceof N)return{kind:s.TextMergeInput,base:e.base,input1:e.input1.uri,input2:e.input2.uri,result:e.resource};if(e instanceof h)return{kind:s.TextInput,uri:e.resource};if(e instanceof R&&!(e instanceof v)){const t=e.primary.resource,i=e.secondary.resource;return e.primary instanceof h&&e.secondary instanceof h&&y(t,i)&&t&&i?{kind:s.TextInput,uri:t}:{kind:s.UnknownInput}}if(e instanceof T)return{kind:s.NotebookInput,notebookType:e.viewType,uri:e.resource};if(e instanceof U)return{kind:s.CustomEditorInput,viewType:e.viewType,uri:e.resource};if(e instanceof j)return{kind:s.WebviewEditorInput,viewType:e.viewType};if(e instanceof H)return{kind:s.TerminalEditorInput};if(e instanceof v){if(e.modified instanceof h&&e.original instanceof h)return{kind:s.TextDiffInput,modified:e.modified.resource,original:e.original.resource};if(e.modified instanceof T&&e.original instanceof T)return{kind:s.NotebookDiffInput,notebookType:e.original.viewType,modified:e.modified.resource,original:e.original.resource}}if(e instanceof B)return{kind:s.InteractiveEditorInput,uri:e.resource,inputBoxUri:e.inputResource};if(e instanceof $)return{kind:s.ChatEditorInput};if(e instanceof I){const t=[];for(const i of e?.resources.get()??[])i.originalUri&&i.modifiedUri&&t.push({kind:s.TextDiffInput,original:i.originalUri,modified:i.modifiedUri});return{kind:s.MultiDiffEditorInput,diffEditors:t}}return{kind:s.UnknownInput}}_generateTabId(e,t){let i;const r=C.getCanonicalUri(e,{supportSideBySide:w.BOTH});return r instanceof x?i=r.toString():i=`${r?.primary?.toString()}-${r?.secondary?.toString()}`,`${t}~${e.editorId}-${e.typeId}-${i} `}_onDidGroupActivate(){const e=this._editorGroupsService.activeGroup.id,t=this._groupLookup.get(e);t&&(t.isActive=!0,this._proxy.$acceptTabGroupUpdate(t))}_onDidTabLabelChange(e,t,i){const r=this._generateTabId(t,e),o=this._tabInfoLookup.get(r);o?(o.tab.label=t.getName(),this._proxy.$acceptTabOperation({groupId:e,index:i,tabDto:o.tab,kind:c.TAB_UPDATE})):(this._logService.error("Invalid model for label change, rebuilding"),this._createTabsModel())}_onDidTabOpen(e,t,i){const r=this._editorGroupsService.getGroup(e),o=this._groupLookup.get(e)!==void 0;if(!r||!o){this._createTabsModel();return}const n=this._groupLookup.get(e)?.tabs;if(!n)return;const a=this._buildTabObject(r,t,i);n.splice(i,0,a);const d=this._generateTabId(t,e);this._tabInfoLookup.set(d,{group:r,editorInput:t,tab:a}),t instanceof I&&this._multiDiffEditorInputListeners.set(t,k.fromObservableLight(t.resources)(()=>{const u=this._tabInfoLookup.get(d);u&&(u.tab=this._buildTabObject(r,t,i),this._proxy.$acceptTabOperation({groupId:e,index:i,tabDto:u.tab,kind:c.TAB_UPDATE}))})),this._proxy.$acceptTabOperation({groupId:e,index:i,tabDto:a,kind:c.TAB_OPEN})}_onDidTabClose(e,t){const i=this._editorGroupsService.getGroup(e),r=this._groupLookup.get(e)?.tabs;if(!i||!r){this._createTabsModel();return}const o=r.splice(t,1);o.length!==0&&(this._tabInfoLookup.delete(o[0]?.id??""),o[0]?.input instanceof I&&this._multiDiffEditorInputListeners.deleteAndDispose(o[0]?.input),this._proxy.$acceptTabOperation({groupId:e,index:t,tabDto:o[0],kind:c.TAB_CLOSE}))}_onDidTabActiveChange(e,t){const i=this._groupLookup.get(e)?.tabs;if(!i)return;const r=i[t];r.isActive=!0,this._proxy.$acceptTabOperation({groupId:e,index:t,tabDto:r,kind:c.TAB_UPDATE})}_onDidTabDirty(e,t,i){const r=this._generateTabId(i,e),o=this._tabInfoLookup.get(r);if(!o){this._logService.error("Invalid model for dirty change, rebuilding"),this._createTabsModel();return}o.tab.isDirty=i.isDirty(),this._proxy.$acceptTabOperation({groupId:e,index:t,tabDto:o.tab,kind:c.TAB_UPDATE})}_onDidTabPinChange(e,t,i){const r=this._generateTabId(i,e),o=this._tabInfoLookup.get(r),n=o?.group,a=o?.tab;if(!n||!a){this._logService.error("Invalid model for sticky change, rebuilding"),this._createTabsModel();return}a.isPinned=n.isSticky(t),this._proxy.$acceptTabOperation({groupId:e,index:t,tabDto:a,kind:c.TAB_UPDATE})}_onDidTabPreviewChange(e,t,i){const r=this._generateTabId(i,e),o=this._tabInfoLookup.get(r),n=o?.group,a=o?.tab;if(!n||!a){this._logService.error("Invalid model for sticky change, rebuilding"),this._createTabsModel();return}a.isPreview=!n.isPinned(t),this._proxy.$acceptTabOperation({kind:c.TAB_UPDATE,groupId:e,tabDto:a,index:t})}_onDidTabMove(e,t,i,r){const o=this._groupLookup.get(e)?.tabs;if(!o){this._logService.error("Invalid model for move change, rebuilding"),this._createTabsModel();return}const n=o.splice(i,1);n.length!==0&&(o.splice(t,0,n[0]),this._proxy.$acceptTabOperation({kind:c.TAB_MOVE,groupId:e,tabDto:n[0],index:t,oldIndex:i}))}_createTabsModel(){if(this._editorGroupsService.groups.length===0)return;this._tabGroupModel=[],this._groupLookup.clear(),this._tabInfoLookup.clear();let e=[];for(const t of this._editorGroupsService.groups){const i={groupId:t.id,isActive:t.id===this._editorGroupsService.activeGroup.id,viewColumn:V(this._editorGroupsService,t),tabs:[]};t.editors.forEach((r,o)=>{const n=this._buildTabObject(t,r,o);e.push(n),this._tabInfoLookup.set(this._generateTabId(r,t.id),{group:t,tab:n,editorInput:r})}),i.tabs=e,this._tabGroupModel.push(i),this._groupLookup.set(t.id,i),e=[]}this._proxy.$acceptEditorTabModel(this._tabGroupModel)}_updateTabsModel(e){const t=e.event,i=e.groupId;switch(t.kind){case p.GROUP_ACTIVE:if(i===this._editorGroupsService.activeGroup.id){this._onDidGroupActivate();break}else return;case p.EDITOR_LABEL:if(t.editor!==void 0&&t.editorIndex!==void 0){this._onDidTabLabelChange(i,t.editor,t.editorIndex);break}case p.EDITOR_OPEN:if(t.editor!==void 0&&t.editorIndex!==void 0){this._onDidTabOpen(i,t.editor,t.editorIndex);break}case p.EDITOR_CLOSE:if(t.editorIndex!==void 0){this._onDidTabClose(i,t.editorIndex);break}case p.EDITOR_ACTIVE:if(t.editorIndex!==void 0){this._onDidTabActiveChange(i,t.editorIndex);break}case p.EDITOR_DIRTY:if(t.editorIndex!==void 0&&t.editor!==void 0){this._onDidTabDirty(i,t.editorIndex,t.editor);break}case p.EDITOR_STICKY:if(t.editorIndex!==void 0&&t.editor!==void 0){this._onDidTabPinChange(i,t.editorIndex,t.editor);break}case p.EDITOR_PIN:if(t.editorIndex!==void 0&&t.editor!==void 0){this._onDidTabPreviewChange(i,t.editorIndex,t.editor);break}case p.EDITOR_TRANSIENT:break;case p.EDITOR_MOVE:if(P(t)&&t.editor&&t.editorIndex!==void 0&&t.oldEditorIndex!==void 0){this._onDidTabMove(i,t.editorIndex,t.oldEditorIndex,t.editor);break}default:this._createTabsModel()}}$moveTab(e,t,i,r){const o=K(this._editorGroupsService,this._configurationService,i),n=this._tabInfoLookup.get(e);if(!n?.tab)throw new Error(`Attempted to close tab with id ${e} which does not exist`);let d;const u=this._editorGroupsService.getGroup(n.group.id);if(!u)return;if(this._groupLookup.get(o)===void 0){let m=F.RIGHT;i===z&&(m=Y(this._configurationService)),d=this._editorGroupsService.addGroup(this._editorGroupsService.groups[this._editorGroupsService.groups.length-1],m)}else d=this._editorGroupsService.getGroup(o);if(!d)return;(t<0||t>d.editors.length)&&(t=d.editors.length);const f=n?.editorInput;f&&u.moveEditor(f,d,{index:t,preserveFocus:r})}async $closeTab(e,t){const i=new Map;for(const o of e){const n=this._tabInfoLookup.get(o),a=n?.tab,d=n?.group,u=n?.editorInput;if(!d||!a||!n||!u)continue;const f=i.get(d);f?f.push(u):i.set(d,[u])}const r=[];for(const[o,n]of i)r.push(await o.closeEditors(n,{preserveFocus:t}));return r.every(o=>o)}async $closeGroup(e,t){const i=[];for(const r of e){const o=this._editorGroupsService.getGroup(r);o&&(i.push(await o.closeAllEditors()),o.count===0&&this._editorGroupsService.getGroup(o.id)&&this._editorGroupsService.removeGroup(o))}return i.every(r=>r)}};_=g([J(O.MainThreadEditorTabs),l(1,W),l(2,M),l(3,L),l(4,q)],_);export{_ as MainThreadEditorTabs};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Event } from '../../../base/common/event.js';
+import { DisposableMap, DisposableStore } from '../../../base/common/lifecycle.js';
+import { isEqual } from '../../../base/common/resources.js';
+import { URI } from '../../../base/common/uri.js';
+import { IConfigurationService } from '../../../platform/configuration/common/configuration.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { ExtHostContext, MainContext } from '../common/extHost.protocol.js';
+import { EditorResourceAccessor, SideBySideEditor } from '../../common/editor.js';
+import { DiffEditorInput } from '../../common/editor/diffEditorInput.js';
+import { isGroupEditorMoveEvent } from '../../common/editor/editorGroupModel.js';
+import { SideBySideEditorInput } from '../../common/editor/sideBySideEditorInput.js';
+import { AbstractTextResourceEditorInput } from '../../common/editor/textResourceEditorInput.js';
+import { ChatEditorInput } from '../../contrib/chat/browser/chatEditorInput.js';
+import { CustomEditorInput } from '../../contrib/customEditor/browser/customEditorInput.js';
+import { InteractiveEditorInput } from '../../contrib/interactive/browser/interactiveEditorInput.js';
+import { MergeEditorInput } from '../../contrib/mergeEditor/browser/mergeEditorInput.js';
+import { MultiDiffEditorInput } from '../../contrib/multiDiffEditor/browser/multiDiffEditorInput.js';
+import { NotebookEditorInput } from '../../contrib/notebook/common/notebookEditorInput.js';
+import { TerminalEditorInput } from '../../contrib/terminal/browser/terminalEditorInput.js';
+import { WebviewInput } from '../../contrib/webviewPanel/browser/webviewEditorInput.js';
+import { columnToEditorGroup, editorGroupToColumn } from '../../services/editor/common/editorGroupColumn.js';
+import { IEditorGroupsService, preferredSideBySideGroupDirection } from '../../services/editor/common/editorGroupsService.js';
+import { IEditorService, SIDE_GROUP } from '../../services/editor/common/editorService.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+let MainThreadEditorTabs = class MainThreadEditorTabs {
+    constructor(extHostContext, _editorGroupsService, _configurationService, _logService, editorService) {
+        this._editorGroupsService = _editorGroupsService;
+        this._configurationService = _configurationService;
+        this._logService = _logService;
+        this._dispoables = new DisposableStore();
+        this._tabGroupModel = [];
+        this._groupLookup = new Map();
+        this._tabInfoLookup = new Map();
+        this._multiDiffEditorInputListeners = new DisposableMap();
+        this._proxy = extHostContext.getProxy(ExtHostContext.ExtHostEditorTabs);
+        this._dispoables.add(editorService.onDidEditorsChange((event) => {
+            try {
+                this._updateTabsModel(event);
+            }
+            catch {
+                this._logService.error('Failed to update model, rebuilding');
+                this._createTabsModel();
+            }
+        }));
+        this._dispoables.add(this._multiDiffEditorInputListeners);
+        this._dispoables.add(this._editorGroupsService.onDidAddGroup(() => this._createTabsModel()));
+        this._dispoables.add(this._editorGroupsService.onDidRemoveGroup(() => this._createTabsModel()));
+        this._editorGroupsService.whenReady.then(() => this._createTabsModel());
+    }
+    dispose() {
+        this._groupLookup.clear();
+        this._tabInfoLookup.clear();
+        this._dispoables.dispose();
+    }
+    _buildTabObject(group, editor, editorIndex) {
+        const editorId = editor.editorId;
+        const tab = {
+            id: this._generateTabId(editor, group.id),
+            label: editor.getName(),
+            editorId,
+            input: this._editorInputToDto(editor),
+            isPinned: group.isSticky(editorIndex),
+            isPreview: !group.isPinned(editorIndex),
+            isActive: group.isActive(editor),
+            isDirty: editor.isDirty()
+        };
+        return tab;
+    }
+    _editorInputToDto(editor) {
+        if (editor instanceof MergeEditorInput) {
+            return {
+                kind: 3,
+                base: editor.base,
+                input1: editor.input1.uri,
+                input2: editor.input2.uri,
+                result: editor.resource
+            };
+        }
+        if (editor instanceof AbstractTextResourceEditorInput) {
+            return {
+                kind: 1,
+                uri: editor.resource
+            };
+        }
+        if (editor instanceof SideBySideEditorInput && !(editor instanceof DiffEditorInput)) {
+            const primaryResource = editor.primary.resource;
+            const secondaryResource = editor.secondary.resource;
+            if (editor.primary instanceof AbstractTextResourceEditorInput
+                && editor.secondary instanceof AbstractTextResourceEditorInput
+                && isEqual(primaryResource, secondaryResource)
+                && primaryResource
+                && secondaryResource) {
+                return {
+                    kind: 1,
+                    uri: primaryResource
+                };
+            }
+            return { kind: 0 };
+        }
+        if (editor instanceof NotebookEditorInput) {
+            return {
+                kind: 4,
+                notebookType: editor.viewType,
+                uri: editor.resource
+            };
+        }
+        if (editor instanceof CustomEditorInput) {
+            return {
+                kind: 6,
+                viewType: editor.viewType,
+                uri: editor.resource,
+            };
+        }
+        if (editor instanceof WebviewInput) {
+            return {
+                kind: 7,
+                viewType: editor.viewType
+            };
+        }
+        if (editor instanceof TerminalEditorInput) {
+            return {
+                kind: 8
+            };
+        }
+        if (editor instanceof DiffEditorInput) {
+            if (editor.modified instanceof AbstractTextResourceEditorInput && editor.original instanceof AbstractTextResourceEditorInput) {
+                return {
+                    kind: 2,
+                    modified: editor.modified.resource,
+                    original: editor.original.resource
+                };
+            }
+            if (editor.modified instanceof NotebookEditorInput && editor.original instanceof NotebookEditorInput) {
+                return {
+                    kind: 5,
+                    notebookType: editor.original.viewType,
+                    modified: editor.modified.resource,
+                    original: editor.original.resource
+                };
+            }
+        }
+        if (editor instanceof InteractiveEditorInput) {
+            return {
+                kind: 9,
+                uri: editor.resource,
+                inputBoxUri: editor.inputResource
+            };
+        }
+        if (editor instanceof ChatEditorInput) {
+            return {
+                kind: 10,
+            };
+        }
+        if (editor instanceof MultiDiffEditorInput) {
+            const diffEditors = [];
+            for (const resource of (editor?.resources.get() ?? [])) {
+                if (resource.originalUri && resource.modifiedUri) {
+                    diffEditors.push({
+                        kind: 2,
+                        original: resource.originalUri,
+                        modified: resource.modifiedUri
+                    });
+                }
+            }
+            return {
+                kind: 11,
+                diffEditors
+            };
+        }
+        return { kind: 0 };
+    }
+    _generateTabId(editor, groupId) {
+        let resourceString;
+        const resource = EditorResourceAccessor.getCanonicalUri(editor, { supportSideBySide: SideBySideEditor.BOTH });
+        if (resource instanceof URI) {
+            resourceString = resource.toString();
+        }
+        else {
+            resourceString = `${resource?.primary?.toString()}-${resource?.secondary?.toString()}`;
+        }
+        return `${groupId}~${editor.editorId}-${editor.typeId}-${resourceString} `;
+    }
+    _onDidGroupActivate() {
+        const activeGroupId = this._editorGroupsService.activeGroup.id;
+        const activeGroup = this._groupLookup.get(activeGroupId);
+        if (activeGroup) {
+            activeGroup.isActive = true;
+            this._proxy.$acceptTabGroupUpdate(activeGroup);
+        }
+    }
+    _onDidTabLabelChange(groupId, editorInput, editorIndex) {
+        const tabId = this._generateTabId(editorInput, groupId);
+        const tabInfo = this._tabInfoLookup.get(tabId);
+        if (tabInfo) {
+            tabInfo.tab.label = editorInput.getName();
+            this._proxy.$acceptTabOperation({
+                groupId,
+                index: editorIndex,
+                tabDto: tabInfo.tab,
+                kind: 2
+            });
+        }
+        else {
+            this._logService.error('Invalid model for label change, rebuilding');
+            this._createTabsModel();
+        }
+    }
+    _onDidTabOpen(groupId, editorInput, editorIndex) {
+        const group = this._editorGroupsService.getGroup(groupId);
+        const groupInModel = this._groupLookup.get(groupId) !== undefined;
+        if (!group || !groupInModel) {
+            this._createTabsModel();
+            return;
+        }
+        const tabs = this._groupLookup.get(groupId)?.tabs;
+        if (!tabs) {
+            return;
+        }
+        const tabObject = this._buildTabObject(group, editorInput, editorIndex);
+        tabs.splice(editorIndex, 0, tabObject);
+        const tabId = this._generateTabId(editorInput, groupId);
+        this._tabInfoLookup.set(tabId, { group, editorInput, tab: tabObject });
+        if (editorInput instanceof MultiDiffEditorInput) {
+            this._multiDiffEditorInputListeners.set(editorInput, Event.fromObservableLight(editorInput.resources)(() => {
+                const tabInfo = this._tabInfoLookup.get(tabId);
+                if (!tabInfo) {
+                    return;
+                }
+                tabInfo.tab = this._buildTabObject(group, editorInput, editorIndex);
+                this._proxy.$acceptTabOperation({
+                    groupId,
+                    index: editorIndex,
+                    tabDto: tabInfo.tab,
+                    kind: 2
+                });
+            }));
+        }
+        this._proxy.$acceptTabOperation({
+            groupId,
+            index: editorIndex,
+            tabDto: tabObject,
+            kind: 0
+        });
+    }
+    _onDidTabClose(groupId, editorIndex) {
+        const group = this._editorGroupsService.getGroup(groupId);
+        const tabs = this._groupLookup.get(groupId)?.tabs;
+        if (!group || !tabs) {
+            this._createTabsModel();
+            return;
+        }
+        const removedTab = tabs.splice(editorIndex, 1);
+        if (removedTab.length === 0) {
+            return;
+        }
+        this._tabInfoLookup.delete(removedTab[0]?.id ?? '');
+        if (removedTab[0]?.input instanceof MultiDiffEditorInput) {
+            this._multiDiffEditorInputListeners.deleteAndDispose(removedTab[0]?.input);
+        }
+        this._proxy.$acceptTabOperation({
+            groupId,
+            index: editorIndex,
+            tabDto: removedTab[0],
+            kind: 1
+        });
+    }
+    _onDidTabActiveChange(groupId, editorIndex) {
+        const tabs = this._groupLookup.get(groupId)?.tabs;
+        if (!tabs) {
+            return;
+        }
+        const activeTab = tabs[editorIndex];
+        activeTab.isActive = true;
+        this._proxy.$acceptTabOperation({
+            groupId,
+            index: editorIndex,
+            tabDto: activeTab,
+            kind: 2
+        });
+    }
+    _onDidTabDirty(groupId, editorIndex, editor) {
+        const tabId = this._generateTabId(editor, groupId);
+        const tabInfo = this._tabInfoLookup.get(tabId);
+        if (!tabInfo) {
+            this._logService.error('Invalid model for dirty change, rebuilding');
+            this._createTabsModel();
+            return;
+        }
+        tabInfo.tab.isDirty = editor.isDirty();
+        this._proxy.$acceptTabOperation({
+            groupId,
+            index: editorIndex,
+            tabDto: tabInfo.tab,
+            kind: 2
+        });
+    }
+    _onDidTabPinChange(groupId, editorIndex, editor) {
+        const tabId = this._generateTabId(editor, groupId);
+        const tabInfo = this._tabInfoLookup.get(tabId);
+        const group = tabInfo?.group;
+        const tab = tabInfo?.tab;
+        if (!group || !tab) {
+            this._logService.error('Invalid model for sticky change, rebuilding');
+            this._createTabsModel();
+            return;
+        }
+        tab.isPinned = group.isSticky(editorIndex);
+        this._proxy.$acceptTabOperation({
+            groupId,
+            index: editorIndex,
+            tabDto: tab,
+            kind: 2
+        });
+    }
+    _onDidTabPreviewChange(groupId, editorIndex, editor) {
+        const tabId = this._generateTabId(editor, groupId);
+        const tabInfo = this._tabInfoLookup.get(tabId);
+        const group = tabInfo?.group;
+        const tab = tabInfo?.tab;
+        if (!group || !tab) {
+            this._logService.error('Invalid model for sticky change, rebuilding');
+            this._createTabsModel();
+            return;
+        }
+        tab.isPreview = !group.isPinned(editorIndex);
+        this._proxy.$acceptTabOperation({
+            kind: 2,
+            groupId,
+            tabDto: tab,
+            index: editorIndex
+        });
+    }
+    _onDidTabMove(groupId, editorIndex, oldEditorIndex, editor) {
+        const tabs = this._groupLookup.get(groupId)?.tabs;
+        if (!tabs) {
+            this._logService.error('Invalid model for move change, rebuilding');
+            this._createTabsModel();
+            return;
+        }
+        const removedTab = tabs.splice(oldEditorIndex, 1);
+        if (removedTab.length === 0) {
+            return;
+        }
+        tabs.splice(editorIndex, 0, removedTab[0]);
+        this._proxy.$acceptTabOperation({
+            kind: 3,
+            groupId,
+            tabDto: removedTab[0],
+            index: editorIndex,
+            oldIndex: oldEditorIndex
+        });
+    }
+    _createTabsModel() {
+        if (this._editorGroupsService.groups.length === 0) {
+            return;
+        }
+        this._tabGroupModel = [];
+        this._groupLookup.clear();
+        this._tabInfoLookup.clear();
+        let tabs = [];
+        for (const group of this._editorGroupsService.groups) {
+            const currentTabGroupModel = {
+                groupId: group.id,
+                isActive: group.id === this._editorGroupsService.activeGroup.id,
+                viewColumn: editorGroupToColumn(this._editorGroupsService, group),
+                tabs: []
+            };
+            group.editors.forEach((editor, editorIndex) => {
+                const tab = this._buildTabObject(group, editor, editorIndex);
+                tabs.push(tab);
+                this._tabInfoLookup.set(this._generateTabId(editor, group.id), {
+                    group,
+                    tab,
+                    editorInput: editor
+                });
+            });
+            currentTabGroupModel.tabs = tabs;
+            this._tabGroupModel.push(currentTabGroupModel);
+            this._groupLookup.set(group.id, currentTabGroupModel);
+            tabs = [];
+        }
+        this._proxy.$acceptEditorTabModel(this._tabGroupModel);
+    }
+    _updateTabsModel(changeEvent) {
+        const event = changeEvent.event;
+        const groupId = changeEvent.groupId;
+        switch (event.kind) {
+            case 0:
+                if (groupId === this._editorGroupsService.activeGroup.id) {
+                    this._onDidGroupActivate();
+                    break;
+                }
+                else {
+                    return;
+                }
+            case 9:
+                if (event.editor !== undefined && event.editorIndex !== undefined) {
+                    this._onDidTabLabelChange(groupId, event.editor, event.editorIndex);
+                    break;
+                }
+            case 5:
+                if (event.editor !== undefined && event.editorIndex !== undefined) {
+                    this._onDidTabOpen(groupId, event.editor, event.editorIndex);
+                    break;
+                }
+            case 6:
+                if (event.editorIndex !== undefined) {
+                    this._onDidTabClose(groupId, event.editorIndex);
+                    break;
+                }
+            case 8:
+                if (event.editorIndex !== undefined) {
+                    this._onDidTabActiveChange(groupId, event.editorIndex);
+                    break;
+                }
+            case 14:
+                if (event.editorIndex !== undefined && event.editor !== undefined) {
+                    this._onDidTabDirty(groupId, event.editorIndex, event.editor);
+                    break;
+                }
+            case 13:
+                if (event.editorIndex !== undefined && event.editor !== undefined) {
+                    this._onDidTabPinChange(groupId, event.editorIndex, event.editor);
+                    break;
+                }
+            case 11:
+                if (event.editorIndex !== undefined && event.editor !== undefined) {
+                    this._onDidTabPreviewChange(groupId, event.editorIndex, event.editor);
+                    break;
+                }
+            case 12:
+                break;
+            case 7:
+                if (isGroupEditorMoveEvent(event) && event.editor && event.editorIndex !== undefined && event.oldEditorIndex !== undefined) {
+                    this._onDidTabMove(groupId, event.editorIndex, event.oldEditorIndex, event.editor);
+                    break;
+                }
+            default:
+                this._createTabsModel();
+        }
+    }
+    $moveTab(tabId, index, viewColumn, preserveFocus) {
+        const groupId = columnToEditorGroup(this._editorGroupsService, this._configurationService, viewColumn);
+        const tabInfo = this._tabInfoLookup.get(tabId);
+        const tab = tabInfo?.tab;
+        if (!tab) {
+            throw new Error(`Attempted to close tab with id ${tabId} which does not exist`);
+        }
+        let targetGroup;
+        const sourceGroup = this._editorGroupsService.getGroup(tabInfo.group.id);
+        if (!sourceGroup) {
+            return;
+        }
+        if (this._groupLookup.get(groupId) === undefined) {
+            let direction = 3;
+            if (viewColumn === SIDE_GROUP) {
+                direction = preferredSideBySideGroupDirection(this._configurationService);
+            }
+            targetGroup = this._editorGroupsService.addGroup(this._editorGroupsService.groups[this._editorGroupsService.groups.length - 1], direction);
+        }
+        else {
+            targetGroup = this._editorGroupsService.getGroup(groupId);
+        }
+        if (!targetGroup) {
+            return;
+        }
+        if (index < 0 || index > targetGroup.editors.length) {
+            index = targetGroup.editors.length;
+        }
+        const editorInput = tabInfo?.editorInput;
+        if (!editorInput) {
+            return;
+        }
+        sourceGroup.moveEditor(editorInput, targetGroup, { index, preserveFocus });
+        return;
+    }
+    async $closeTab(tabIds, preserveFocus) {
+        const groups = new Map();
+        for (const tabId of tabIds) {
+            const tabInfo = this._tabInfoLookup.get(tabId);
+            const tab = tabInfo?.tab;
+            const group = tabInfo?.group;
+            const editorTab = tabInfo?.editorInput;
+            if (!group || !tab || !tabInfo || !editorTab) {
+                continue;
+            }
+            const groupEditors = groups.get(group);
+            if (!groupEditors) {
+                groups.set(group, [editorTab]);
+            }
+            else {
+                groupEditors.push(editorTab);
+            }
+        }
+        const results = [];
+        for (const [group, editors] of groups) {
+            results.push(await group.closeEditors(editors, { preserveFocus }));
+        }
+        return results.every(result => result);
+    }
+    async $closeGroup(groupIds, preserveFocus) {
+        const groupCloseResults = [];
+        for (const groupId of groupIds) {
+            const group = this._editorGroupsService.getGroup(groupId);
+            if (group) {
+                groupCloseResults.push(await group.closeAllEditors());
+                if (group.count === 0 && this._editorGroupsService.getGroup(group.id)) {
+                    this._editorGroupsService.removeGroup(group);
+                }
+            }
+        }
+        return groupCloseResults.every(result => result);
+    }
+};
+MainThreadEditorTabs = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadEditorTabs),
+    __param(1, IEditorGroupsService),
+    __param(2, IConfigurationService),
+    __param(3, ILogService),
+    __param(4, IEditorService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], MainThreadEditorTabs);
+export { MainThreadEditorTabs };

@@ -1,1 +1,92 @@
-var m=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var p=(d,n,e,o)=>{for(var t=o>1?void 0:o?b(n,e):n,r=d.length-1,l;r>=0;r--)(l=d[r])&&(t=(o?l(n,e,t):l(t))||t);return o&&t&&m(n,e,t),t},u=(d,n)=>(e,o)=>n(e,o,d);import{Action as i,Separator as v}from"../../../base/common/actions.js";import{localize as a}from"../../../nls.js";import{IWorkbenchLayoutService as C}from"../../services/layout/browser/layoutService.js";import{IContextMenuService as f}from"../../../platform/contextview/browser/contextView.js";import{Disposable as h}from"../../../base/common/lifecycle.js";import{EventHelper as x,addDisposableListener as y,getActiveDocument as c,getWindow as S,isHTMLElement as A,isHTMLInputElement as w,isHTMLTextAreaElement as g}from"../../../base/browser/dom.js";import{WorkbenchPhase as I,registerWorkbenchContribution2 as E}from"../../common/contributions.js";import{isNative as M}from"../../../base/common/platform.js";import{IClipboardService as L}from"../../../platform/clipboard/common/clipboardService.js";import{StandardMouseEvent as k}from"../../../base/browser/mouseEvent.js";import{Event as W}from"../../../base/common/event.js";import{Lazy as D}from"../../../base/common/lazy.js";let s=class extends h{constructor(e,o,t){super();this.layoutService=e;this.contextMenuService=o;this.clipboardService=t;this.registerListeners()}static ID="workbench.contrib.textInputActionsProvider";textInputActions=new D(()=>this.createActions());createActions(){return[new i("undo",a("undo","Undo"),void 0,!0,async()=>c().execCommand("undo")),new i("redo",a("redo","Redo"),void 0,!0,async()=>c().execCommand("redo")),new v,new i("editor.action.clipboardCutAction",a("cut","Cut"),void 0,!0,async()=>c().execCommand("cut")),new i("editor.action.clipboardCopyAction",a("copy","Copy"),void 0,!0,async()=>c().execCommand("copy")),new i("editor.action.clipboardPasteAction",a("paste","Paste"),void 0,!0,async e=>{if(M)c().execCommand("paste");else{const o=await this.clipboardService.readText();if(g(e)||w(e)){const t=e.selectionStart||0,r=e.selectionEnd||0;e.value=`${e.value.substring(0,t)}${o}${e.value.substring(r,e.value.length)}`,e.selectionStart=t+o.length,e.selectionEnd=e.selectionStart,e.dispatchEvent(new Event("input",{bubbles:!0,cancelable:!0}))}}}),new v,new i("editor.action.selectAll",a("selectAll","Select All"),void 0,!0,async()=>c().execCommand("selectAll"))]}registerListeners(){this._register(W.runAndSubscribe(this.layoutService.onDidAddContainer,({container:e,disposables:o})=>{o.add(y(e,"contextmenu",t=>this.onContextMenu(S(e),t)))},{container:this.layoutService.mainContainer,disposables:this._store}))}onContextMenu(e,o){if(o.defaultPrevented)return;const t=o.target;if(!A(t)||t.nodeName.toLowerCase()!=="input"&&t.nodeName.toLowerCase()!=="textarea")return;x.stop(o,!0);const r=new k(e,o);this.contextMenuService.showContextMenu({getAnchor:()=>r,getActions:()=>this.textInputActions.value,getActionsContext:()=>t})}};s=p([u(0,C),u(1,f),u(2,L)],s),E(s.ID,s,I.BlockRestore);export{s as TextInputActionsProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Action, Separator } from '../../../base/common/actions.js';
+import { localize } from '../../../nls.js';
+import { IWorkbenchLayoutService } from '../../services/layout/browser/layoutService.js';
+import { IContextMenuService } from '../../../platform/contextview/browser/contextView.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { EventHelper, addDisposableListener, getActiveDocument, getWindow, isHTMLElement, isHTMLInputElement, isHTMLTextAreaElement } from '../../../base/browser/dom.js';
+import { registerWorkbenchContribution2 } from '../../common/contributions.js';
+import { isNative } from '../../../base/common/platform.js';
+import { IClipboardService } from '../../../platform/clipboard/common/clipboardService.js';
+import { StandardMouseEvent } from '../../../base/browser/mouseEvent.js';
+import { Event as BaseEvent } from '../../../base/common/event.js';
+import { Lazy } from '../../../base/common/lazy.js';
+let TextInputActionsProvider = class TextInputActionsProvider extends Disposable {
+    static { this.ID = 'workbench.contrib.textInputActionsProvider'; }
+    constructor(layoutService, contextMenuService, clipboardService) {
+        super();
+        this.layoutService = layoutService;
+        this.contextMenuService = contextMenuService;
+        this.clipboardService = clipboardService;
+        this.textInputActions = new Lazy(() => this.createActions());
+        this.registerListeners();
+    }
+    createActions() {
+        return [
+            new Action('undo', localize('undo', "Undo"), undefined, true, async () => getActiveDocument().execCommand('undo')),
+            new Action('redo', localize('redo', "Redo"), undefined, true, async () => getActiveDocument().execCommand('redo')),
+            new Separator(),
+            new Action('editor.action.clipboardCutAction', localize('cut', "Cut"), undefined, true, async () => getActiveDocument().execCommand('cut')),
+            new Action('editor.action.clipboardCopyAction', localize('copy', "Copy"), undefined, true, async () => getActiveDocument().execCommand('copy')),
+            new Action('editor.action.clipboardPasteAction', localize('paste', "Paste"), undefined, true, async (element) => {
+                if (isNative) {
+                    getActiveDocument().execCommand('paste');
+                }
+                else {
+                    const clipboardText = await this.clipboardService.readText();
+                    if (isHTMLTextAreaElement(element) ||
+                        isHTMLInputElement(element)) {
+                        const selectionStart = element.selectionStart || 0;
+                        const selectionEnd = element.selectionEnd || 0;
+                        element.value = `${element.value.substring(0, selectionStart)}${clipboardText}${element.value.substring(selectionEnd, element.value.length)}`;
+                        element.selectionStart = selectionStart + clipboardText.length;
+                        element.selectionEnd = element.selectionStart;
+                        element.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+                    }
+                }
+            }),
+            new Separator(),
+            new Action('editor.action.selectAll', localize('selectAll', "Select All"), undefined, true, async () => getActiveDocument().execCommand('selectAll'))
+        ];
+    }
+    registerListeners() {
+        this._register(BaseEvent.runAndSubscribe(this.layoutService.onDidAddContainer, ({ container, disposables }) => {
+            disposables.add(addDisposableListener(container, 'contextmenu', e => this.onContextMenu(getWindow(container), e)));
+        }, { container: this.layoutService.mainContainer, disposables: this._store }));
+    }
+    onContextMenu(targetWindow, e) {
+        if (e.defaultPrevented) {
+            return;
+        }
+        const target = e.target;
+        if (!(isHTMLElement(target)) || (target.nodeName.toLowerCase() !== 'input' && target.nodeName.toLowerCase() !== 'textarea')) {
+            return;
+        }
+        EventHelper.stop(e, true);
+        const event = new StandardMouseEvent(targetWindow, e);
+        this.contextMenuService.showContextMenu({
+            getAnchor: () => event,
+            getActions: () => this.textInputActions.value,
+            getActionsContext: () => target,
+        });
+    }
+};
+TextInputActionsProvider = __decorate([
+    __param(0, IWorkbenchLayoutService),
+    __param(1, IContextMenuService),
+    __param(2, IClipboardService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], TextInputActionsProvider);
+export { TextInputActionsProvider };
+registerWorkbenchContribution2(TextInputActionsProvider.ID, TextInputActionsProvider, 2);

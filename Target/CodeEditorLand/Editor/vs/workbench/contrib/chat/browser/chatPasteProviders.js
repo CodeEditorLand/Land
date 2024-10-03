@@ -1,1 +1,36 @@
-var d=Object.defineProperty;var l=Object.getOwnPropertyDescriptor;var m=(r,e,n,o)=>{for(var t=o>1?void 0:o?l(e,n):e,a=r.length-1,s;a>=0;a--)(s=r[a])&&(t=(o?s(e,n,t):s(t))||t);return o&&t&&d(e,n,t),t},c=(r,e)=>(n,o)=>e(n,o,r);import"../../../../base/common/cancellation.js";import"../../../../base/common/dataTransfer.js";import{HierarchicalKind as p}from"../../../../base/common/hierarchicalKind.js";import"../../../../editor/common/core/range.js";import"../../../../editor/common/languages.js";import"../../../../editor/common/model.js";import{ILanguageFeaturesService as u}from"../../../../editor/common/services/languageFeatures.js";import{Disposable as f}from"../../../../base/common/lifecycle.js";import{ChatInputPart as g}from"./chatInputPart.js";class I{kind=new p("image");pasteMimeTypes=["image/*"];async provideDocumentPasteEdits(e,n,o,t,a){}}let i=class extends f{constructor(e){super(),this._register(e.documentPasteEditProvider.register({scheme:g.INPUT_SCHEME,pattern:"*",hasAccessToAllModels:!0},new I))}};i=m([c(0,u)],i);export{i as ChatPasteProvidersFeature,I as PasteImageProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { HierarchicalKind } from '../../../../base/common/hierarchicalKind.js';
+import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { ChatInputPart } from './chatInputPart.js';
+export class PasteImageProvider {
+    constructor() {
+        this.kind = new HierarchicalKind('image');
+        this.pasteMimeTypes = ['image/*'];
+    }
+    async provideDocumentPasteEdits(_model, _ranges, dataTransfer, context, token) {
+        return;
+    }
+}
+let ChatPasteProvidersFeature = class ChatPasteProvidersFeature extends Disposable {
+    constructor(languageFeaturesService) {
+        super();
+        this._register(languageFeaturesService.documentPasteEditProvider.register({ scheme: ChatInputPart.INPUT_SCHEME, pattern: '*', hasAccessToAllModels: true }, new PasteImageProvider()));
+    }
+};
+ChatPasteProvidersFeature = __decorate([
+    __param(0, ILanguageFeaturesService),
+    __metadata("design:paramtypes", [Object])
+], ChatPasteProvidersFeature);
+export { ChatPasteProvidersFeature };

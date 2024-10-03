@@ -1,1 +1,96 @@
-import"../../base/common/event.js";import"../../base/common/htmlContent.js";import"../../base/common/lifecycle.js";import{equals as a}from"../../base/common/objects.js";import"../../base/common/themables.js";import"../../base/common/uri.js";import"./core/editOperation.js";import"./core/position.js";import"./core/range.js";import"./core/selection.js";import"./core/textChange.js";import"./core/wordCharacterClassifier.js";import"./core/wordHelper.js";import"./languages.js";import"./languages/language.js";import"./textModelBracketPairs.js";import"./textModelEvents.js";import"./textModelGuides.js";import"./tokenizationTextModelPart.js";import"../../platform/undoRedo/common/undoRedo.js";import"./tokens/tokenArray.js";var l=(n=>(n[n.Left=1]="Left",n[n.Center=2]="Center",n[n.Right=4]="Right",n[n.Full=7]="Full",n))(l||{}),s=(o=>(o[o.Left=1]="Left",o[o.Center=2]="Center",o[o.Right=3]="Right",o))(s||{}),d=(t=>(t[t.Inline=1]="Inline",t[t.Gutter=2]="Gutter",t))(d||{}),u=(t=>(t[t.Normal=1]="Normal",t[t.Underlined=2]="Underlined",t))(u||{}),g=(n=>(n[n.Both=0]="Both",n[n.Right=1]="Right",n[n.Left=2]="Left",n[n.None=3]="None",n))(g||{}),c=(o=>(o[o.TextDefined=0]="TextDefined",o[o.LF=1]="LF",o[o.CRLF=2]="CRLF",o))(c||{}),p=(t=>(t[t.LF=1]="LF",t[t.CRLF=2]="CRLF",t))(p||{}),b=(t=>(t[t.LF=0]="LF",t[t.CRLF=1]="CRLF",t))(b||{});class Ie{_textModelResolvedOptionsBrand=void 0;tabSize;indentSize;_indentSizeIsTabSize;insertSpaces;defaultEOL;trimAutoWhitespace;bracketPairColorizationOptions;get originalIndentSize(){return this._indentSizeIsTabSize?"tabSize":this.indentSize}constructor(e){this.tabSize=Math.max(1,e.tabSize|0),e.indentSize==="tabSize"?(this.indentSize=this.tabSize,this._indentSizeIsTabSize=!0):(this.indentSize=Math.max(1,e.indentSize|0),this._indentSizeIsTabSize=!1),this.insertSpaces=!!e.insertSpaces,this.defaultEOL=e.defaultEOL|0,this.trimAutoWhitespace=!!e.trimAutoWhitespace,this.bracketPairColorizationOptions=e.bracketPairColorizationOptions}equals(e){return this.tabSize===e.tabSize&&this._indentSizeIsTabSize===e._indentSizeIsTabSize&&this.indentSize===e.indentSize&&this.insertSpaces===e.insertSpaces&&this.defaultEOL===e.defaultEOL&&this.trimAutoWhitespace===e.trimAutoWhitespace&&a(this.bracketPairColorizationOptions,e.bracketPairColorizationOptions)}createChangeEvent(e){return{tabSize:this.tabSize!==e.tabSize,indentSize:this.indentSize!==e.indentSize,insertSpaces:this.insertSpaces!==e.insertSpaces,trimAutoWhitespace:this.trimAutoWhitespace!==e.trimAutoWhitespace}}}class he{_findMatchBrand=void 0;range;matches;constructor(e,t){this.range=e,this.matches=t}}var m=(n=>(n[n.AlwaysGrowsWhenTypingAtEdges=0]="AlwaysGrowsWhenTypingAtEdges",n[n.NeverGrowsWhenTypingAtEdges=1]="NeverGrowsWhenTypingAtEdges",n[n.GrowsOnlyWhenTypingBefore=2]="GrowsOnlyWhenTypingBefore",n[n.GrowsOnlyWhenTypingAfter=3]="GrowsOnlyWhenTypingAfter",n))(m||{});function fe(r){return r&&typeof r.read=="function"}var I=(i=>(i[i.Left=0]="Left",i[i.Right=1]="Right",i[i.None=2]="None",i[i.LeftOfInjectedText=3]="LeftOfInjectedText",i[i.RightOfInjectedText=4]="RightOfInjectedText",i))(I||{}),h=(e=>(e[e.FIRST_LINE_DETECTION_LENGTH_LIMIT=1e3]="FIRST_LINE_DETECTION_LENGTH_LIMIT",e))(h||{});class Ce{constructor(e,t,o,n,i,f){this.identifier=e;this.range=t;this.text=o;this.forceMoveMarkers=n;this.isAutoWhitespaceEdit=i;this._isTracked=f}}class Se{regex;wordSeparators;simpleSearch;constructor(e,t,o){this.regex=e,this.wordSeparators=t,this.simpleSearch=o}}class Oe{constructor(e,t,o){this.reverseEdits=e;this.changes=t;this.trimAutoWhitespaceLineNumbers=o}}function xe(r){return!r.isTooLargeForSyncing()&&!r.isForSimpleWidget}export{Oe as ApplyEditsResult,p as DefaultEndOfLine,c as EndOfLinePreference,b as EndOfLineSequence,he as FindMatch,s as GlyphMarginLane,g as InjectedTextCursorStops,d as MinimapPosition,u as MinimapSectionHeaderStyle,h as ModelConstants,l as OverviewRulerLane,I as PositionAffinity,Se as SearchData,Ie as TextModelResolvedOptions,m as TrackedRangeStickiness,Ce as ValidAnnotatedEditOperation,fe as isITextSnapshot,xe as shouldSynchronizeModel};
+import { equals } from '../../base/common/objects.js';
+export var OverviewRulerLane;
+(function (OverviewRulerLane) {
+    OverviewRulerLane[OverviewRulerLane["Left"] = 1] = "Left";
+    OverviewRulerLane[OverviewRulerLane["Center"] = 2] = "Center";
+    OverviewRulerLane[OverviewRulerLane["Right"] = 4] = "Right";
+    OverviewRulerLane[OverviewRulerLane["Full"] = 7] = "Full";
+})(OverviewRulerLane || (OverviewRulerLane = {}));
+export var GlyphMarginLane;
+(function (GlyphMarginLane) {
+    GlyphMarginLane[GlyphMarginLane["Left"] = 1] = "Left";
+    GlyphMarginLane[GlyphMarginLane["Center"] = 2] = "Center";
+    GlyphMarginLane[GlyphMarginLane["Right"] = 3] = "Right";
+})(GlyphMarginLane || (GlyphMarginLane = {}));
+export var InjectedTextCursorStops;
+(function (InjectedTextCursorStops) {
+    InjectedTextCursorStops[InjectedTextCursorStops["Both"] = 0] = "Both";
+    InjectedTextCursorStops[InjectedTextCursorStops["Right"] = 1] = "Right";
+    InjectedTextCursorStops[InjectedTextCursorStops["Left"] = 2] = "Left";
+    InjectedTextCursorStops[InjectedTextCursorStops["None"] = 3] = "None";
+})(InjectedTextCursorStops || (InjectedTextCursorStops = {}));
+export class TextModelResolvedOptions {
+    get originalIndentSize() {
+        return this._indentSizeIsTabSize ? 'tabSize' : this.indentSize;
+    }
+    constructor(src) {
+        this._textModelResolvedOptionsBrand = undefined;
+        this.tabSize = Math.max(1, src.tabSize | 0);
+        if (src.indentSize === 'tabSize') {
+            this.indentSize = this.tabSize;
+            this._indentSizeIsTabSize = true;
+        }
+        else {
+            this.indentSize = Math.max(1, src.indentSize | 0);
+            this._indentSizeIsTabSize = false;
+        }
+        this.insertSpaces = Boolean(src.insertSpaces);
+        this.defaultEOL = src.defaultEOL | 0;
+        this.trimAutoWhitespace = Boolean(src.trimAutoWhitespace);
+        this.bracketPairColorizationOptions = src.bracketPairColorizationOptions;
+    }
+    equals(other) {
+        return (this.tabSize === other.tabSize
+            && this._indentSizeIsTabSize === other._indentSizeIsTabSize
+            && this.indentSize === other.indentSize
+            && this.insertSpaces === other.insertSpaces
+            && this.defaultEOL === other.defaultEOL
+            && this.trimAutoWhitespace === other.trimAutoWhitespace
+            && equals(this.bracketPairColorizationOptions, other.bracketPairColorizationOptions));
+    }
+    createChangeEvent(newOpts) {
+        return {
+            tabSize: this.tabSize !== newOpts.tabSize,
+            indentSize: this.indentSize !== newOpts.indentSize,
+            insertSpaces: this.insertSpaces !== newOpts.insertSpaces,
+            trimAutoWhitespace: this.trimAutoWhitespace !== newOpts.trimAutoWhitespace,
+        };
+    }
+}
+export class FindMatch {
+    constructor(range, matches) {
+        this._findMatchBrand = undefined;
+        this.range = range;
+        this.matches = matches;
+    }
+}
+export function isITextSnapshot(obj) {
+    return (obj && typeof obj.read === 'function');
+}
+export class ValidAnnotatedEditOperation {
+    constructor(identifier, range, text, forceMoveMarkers, isAutoWhitespaceEdit, _isTracked) {
+        this.identifier = identifier;
+        this.range = range;
+        this.text = text;
+        this.forceMoveMarkers = forceMoveMarkers;
+        this.isAutoWhitespaceEdit = isAutoWhitespaceEdit;
+        this._isTracked = _isTracked;
+    }
+}
+export class SearchData {
+    constructor(regex, wordSeparators, simpleSearch) {
+        this.regex = regex;
+        this.wordSeparators = wordSeparators;
+        this.simpleSearch = simpleSearch;
+    }
+}
+export class ApplyEditsResult {
+    constructor(reverseEdits, changes, trimAutoWhitespaceLineNumbers) {
+        this.reverseEdits = reverseEdits;
+        this.changes = changes;
+        this.trimAutoWhitespaceLineNumbers = trimAutoWhitespaceLineNumbers;
+    }
+}
+export function shouldSynchronizeModel(model) {
+    return (!model.isTooLargeForSyncing() && !model.isForSimpleWidget);
+}

@@ -1,1 +1,301 @@
-var S=Object.defineProperty;var E=Object.getOwnPropertyDescriptor;var h=(a,t,e,r)=>{for(var i=r>1?void 0:r?E(t,e):t,n=a.length-1,s;n>=0;n--)(s=a[n])&&(i=(r?s(t,e,i):s(i))||i);return r&&i&&S(t,e,i),i},m=(a,t)=>(e,r)=>t(e,r,a);import{Event as g}from"../../../base/common/event.js";import"../../../base/common/htmlContent.js";import"../../../base/common/uri.js";import{localize as v}from"../../../nls.js";import"../../../platform/instantiation/common/instantiation.js";import{Registry as D}from"../../../platform/registry/common/platform.js";import{EditorInputCapabilities as o,EditorExtensions as z,isResourceSideBySideEditorInput as c,isDiffEditorInput as b,isResourceDiffEditorInput as u,findViewStateForEditor as f,isEditorInput as C,isResourceEditorInput as N,isResourceMergeEditorInput as I,isResourceMultiDiffEditorInput as l}from"../editor.js";import{EditorInput as y}from"./editorInput.js";import{IEditorService as T}from"../../services/editor/common/editorService.js";let d=class extends y{constructor(e,r,i,n,s){super();this.preferredName=e;this.preferredDescription=r;this.secondary=i;this.primary=n;this.editorService=s;this.registerListeners()}static ID="workbench.editorinputs.sidebysideEditorInput";get typeId(){return d.ID}get capabilities(){let e=this.primary.capabilities;return e&=~o.CanSplitInGroup,this.secondary.hasCapability(o.RequiresTrust)&&(e|=o.RequiresTrust),this.secondary.hasCapability(o.Singleton)&&(e|=o.Singleton),e|=o.MultipleEditors,e}get resource(){if(this.hasIdenticalSides)return this.primary.resource}hasIdenticalSides=this.primary.matches(this.secondary);registerListeners(){this._register(g.once(g.any(this.primary.onWillDispose,this.secondary.onWillDispose))(()=>{this.isDisposed()||this.dispose()})),this._register(this.primary.onDidChangeDirty(()=>this._onDidChangeDirty.fire())),this._register(this.primary.onDidChangeCapabilities(()=>this._onDidChangeCapabilities.fire())),this._register(this.secondary.onDidChangeCapabilities(()=>this._onDidChangeCapabilities.fire())),this._register(this.primary.onDidChangeLabel(()=>this._onDidChangeLabel.fire())),this._register(this.secondary.onDidChangeLabel(()=>this._onDidChangeLabel.fire()))}getName(){const e=this.getPreferredName();return e||(this.hasIdenticalSides?this.primary.getName():v("sideBySideLabels","{0} - {1}",this.secondary.getName(),this.primary.getName()))}getPreferredName(){return this.preferredName}getDescription(e){const r=this.getPreferredDescription();return r||(this.hasIdenticalSides?this.primary.getDescription(e):super.getDescription(e))}getPreferredDescription(){return this.preferredDescription}getTitle(e){let r;this.hasIdenticalSides?r=this.primary.getTitle(e)??this.getName():r=super.getTitle(e);const i=this.getPreferredTitle();return i&&(r=`${i} (${r})`),r}getPreferredTitle(){if(this.preferredName&&this.preferredDescription)return`${this.preferredName} ${this.preferredDescription}`;if(this.preferredName||this.preferredDescription)return this.preferredName??this.preferredDescription}getLabelExtraClasses(){return this.hasIdenticalSides?this.primary.getLabelExtraClasses():super.getLabelExtraClasses()}getAriaLabel(){return this.hasIdenticalSides?this.primary.getAriaLabel():super.getAriaLabel()}getTelemetryDescriptor(){return{...this.primary.getTelemetryDescriptor(),...super.getTelemetryDescriptor()}}isDirty(){return this.primary.isDirty()}isSaving(){return this.primary.isSaving()}async save(e,r){const i=await this.primary.save(e,r);return this.saveResultToEditor(i)}async saveAs(e,r){const i=await this.primary.saveAs(e,r);return this.saveResultToEditor(i)}saveResultToEditor(e){if(!e||!this.hasIdenticalSides)return e;if(this.primary.matches(e))return this;if(e instanceof y)return new d(this.preferredName,this.preferredDescription,e,e,this.editorService);if(!u(e)&&!l(e)&&!c(e)&&!I(e))return{primary:e,secondary:e,label:this.preferredName,description:this.preferredDescription}}revert(e,r){return this.primary.revert(e,r)}async rename(e,r){if(!this.hasIdenticalSides)return;const i=await this.primary.rename(e,r);if(i){if(C(i.editor))return{editor:new d(this.preferredName,this.preferredDescription,i.editor,i.editor,this.editorService),options:{...i.options,viewState:f(this,e,this.editorService)}};if(N(i.editor))return{editor:{label:this.preferredName,description:this.preferredDescription,primary:i.editor,secondary:i.editor,options:{...i.options,viewState:f(this,e,this.editorService)}}}}}isReadonly(){return this.primary.isReadonly()}toUntyped(e){const r=this.primary.toUntyped(e),i=this.secondary.toUntyped(e);if(r&&i&&!u(r)&&!u(i)&&!l(r)&&!l(i)&&!c(r)&&!c(i)&&!I(r)&&!I(i)){const n={label:this.preferredName,description:this.preferredDescription,primary:r,secondary:i};return typeof e?.preserveViewState=="number"&&(n.options={viewState:f(this,e.preserveViewState,this.editorService)}),n}}matches(e){return this===e?!0:b(e)||u(e)?!1:e instanceof d?this.primary.matches(e.primary)&&this.secondary.matches(e.secondary):c(e)?this.primary.matches(e.primary)&&this.secondary.matches(e.secondary):!1}};d=h([m(4,T)],d);class R{canSerialize(t){const e=t;if(e.primary&&e.secondary){const[r,i]=this.getSerializers(e.secondary.typeId,e.primary.typeId);return!!(r?.canSerialize(e.secondary)&&i?.canSerialize(e.primary))}return!1}serialize(t){const e=t;if(e.primary&&e.secondary){const[r,i]=this.getSerializers(e.secondary.typeId,e.primary.typeId);if(i&&r){const n=i.serialize(e.primary),s=r.serialize(e.secondary);if(n&&s){const p={name:e.getPreferredName(),description:e.getPreferredDescription(),primarySerialized:n,secondarySerialized:s,primaryTypeId:e.primary.typeId,secondaryTypeId:e.secondary.typeId};return JSON.stringify(p)}}}}deserialize(t,e){const r=JSON.parse(e),[i,n]=this.getSerializers(r.secondaryTypeId,r.primaryTypeId);if(n&&i){const s=n.deserialize(t,r.primarySerialized),p=i.deserialize(t,r.secondarySerialized);if(s instanceof y&&p instanceof y)return this.createEditorInput(t,r.name,r.description,p,s)}}getSerializers(t,e){const r=D.as(z.EditorFactory);return[r.getEditorSerializer(t),r.getEditorSerializer(e)]}}class Z extends R{createEditorInput(t,e,r,i,n){return t.createInstance(d,e,r,i,n)}}export{R as AbstractSideBySideEditorInputSerializer,d as SideBySideEditorInput,Z as SideBySideEditorInputSerializer};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SideBySideEditorInput_1;
+import { Event } from '../../../base/common/event.js';
+import { localize } from '../../../nls.js';
+import { Registry } from '../../../platform/registry/common/platform.js';
+import { EditorExtensions, isResourceSideBySideEditorInput, isDiffEditorInput, isResourceDiffEditorInput, findViewStateForEditor, isEditorInput, isResourceEditorInput, isResourceMergeEditorInput, isResourceMultiDiffEditorInput } from '../editor.js';
+import { EditorInput } from './editorInput.js';
+import { IEditorService } from '../../services/editor/common/editorService.js';
+let SideBySideEditorInput = class SideBySideEditorInput extends EditorInput {
+    static { SideBySideEditorInput_1 = this; }
+    static { this.ID = 'workbench.editorinputs.sidebysideEditorInput'; }
+    get typeId() {
+        return SideBySideEditorInput_1.ID;
+    }
+    get capabilities() {
+        let capabilities = this.primary.capabilities;
+        capabilities &= ~32;
+        if (this.secondary.hasCapability(16)) {
+            capabilities |= 16;
+        }
+        if (this.secondary.hasCapability(8)) {
+            capabilities |= 8;
+        }
+        capabilities |= 256;
+        return capabilities;
+    }
+    get resource() {
+        if (this.hasIdenticalSides) {
+            return this.primary.resource;
+        }
+        return undefined;
+    }
+    constructor(preferredName, preferredDescription, secondary, primary, editorService) {
+        super();
+        this.preferredName = preferredName;
+        this.preferredDescription = preferredDescription;
+        this.secondary = secondary;
+        this.primary = primary;
+        this.editorService = editorService;
+        this.hasIdenticalSides = this.primary.matches(this.secondary);
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(Event.once(Event.any(this.primary.onWillDispose, this.secondary.onWillDispose))(() => {
+            if (!this.isDisposed()) {
+                this.dispose();
+            }
+        }));
+        this._register(this.primary.onDidChangeDirty(() => this._onDidChangeDirty.fire()));
+        this._register(this.primary.onDidChangeCapabilities(() => this._onDidChangeCapabilities.fire()));
+        this._register(this.secondary.onDidChangeCapabilities(() => this._onDidChangeCapabilities.fire()));
+        this._register(this.primary.onDidChangeLabel(() => this._onDidChangeLabel.fire()));
+        this._register(this.secondary.onDidChangeLabel(() => this._onDidChangeLabel.fire()));
+    }
+    getName() {
+        const preferredName = this.getPreferredName();
+        if (preferredName) {
+            return preferredName;
+        }
+        if (this.hasIdenticalSides) {
+            return this.primary.getName();
+        }
+        return localize('sideBySideLabels', "{0} - {1}", this.secondary.getName(), this.primary.getName());
+    }
+    getPreferredName() {
+        return this.preferredName;
+    }
+    getDescription(verbosity) {
+        const preferredDescription = this.getPreferredDescription();
+        if (preferredDescription) {
+            return preferredDescription;
+        }
+        if (this.hasIdenticalSides) {
+            return this.primary.getDescription(verbosity);
+        }
+        return super.getDescription(verbosity);
+    }
+    getPreferredDescription() {
+        return this.preferredDescription;
+    }
+    getTitle(verbosity) {
+        let title;
+        if (this.hasIdenticalSides) {
+            title = this.primary.getTitle(verbosity) ?? this.getName();
+        }
+        else {
+            title = super.getTitle(verbosity);
+        }
+        const preferredTitle = this.getPreferredTitle();
+        if (preferredTitle) {
+            title = `${preferredTitle} (${title})`;
+        }
+        return title;
+    }
+    getPreferredTitle() {
+        if (this.preferredName && this.preferredDescription) {
+            return `${this.preferredName} ${this.preferredDescription}`;
+        }
+        if (this.preferredName || this.preferredDescription) {
+            return this.preferredName ?? this.preferredDescription;
+        }
+        return undefined;
+    }
+    getLabelExtraClasses() {
+        if (this.hasIdenticalSides) {
+            return this.primary.getLabelExtraClasses();
+        }
+        return super.getLabelExtraClasses();
+    }
+    getAriaLabel() {
+        if (this.hasIdenticalSides) {
+            return this.primary.getAriaLabel();
+        }
+        return super.getAriaLabel();
+    }
+    getTelemetryDescriptor() {
+        const descriptor = this.primary.getTelemetryDescriptor();
+        return { ...descriptor, ...super.getTelemetryDescriptor() };
+    }
+    isDirty() {
+        return this.primary.isDirty();
+    }
+    isSaving() {
+        return this.primary.isSaving();
+    }
+    async save(group, options) {
+        const primarySaveResult = await this.primary.save(group, options);
+        return this.saveResultToEditor(primarySaveResult);
+    }
+    async saveAs(group, options) {
+        const primarySaveResult = await this.primary.saveAs(group, options);
+        return this.saveResultToEditor(primarySaveResult);
+    }
+    saveResultToEditor(primarySaveResult) {
+        if (!primarySaveResult || !this.hasIdenticalSides) {
+            return primarySaveResult;
+        }
+        if (this.primary.matches(primarySaveResult)) {
+            return this;
+        }
+        if (primarySaveResult instanceof EditorInput) {
+            return new SideBySideEditorInput_1(this.preferredName, this.preferredDescription, primarySaveResult, primarySaveResult, this.editorService);
+        }
+        if (!isResourceDiffEditorInput(primarySaveResult) && !isResourceMultiDiffEditorInput(primarySaveResult) && !isResourceSideBySideEditorInput(primarySaveResult) && !isResourceMergeEditorInput(primarySaveResult)) {
+            return {
+                primary: primarySaveResult,
+                secondary: primarySaveResult,
+                label: this.preferredName,
+                description: this.preferredDescription
+            };
+        }
+        return undefined;
+    }
+    revert(group, options) {
+        return this.primary.revert(group, options);
+    }
+    async rename(group, target) {
+        if (!this.hasIdenticalSides) {
+            return;
+        }
+        const renameResult = await this.primary.rename(group, target);
+        if (!renameResult) {
+            return undefined;
+        }
+        if (isEditorInput(renameResult.editor)) {
+            return {
+                editor: new SideBySideEditorInput_1(this.preferredName, this.preferredDescription, renameResult.editor, renameResult.editor, this.editorService),
+                options: {
+                    ...renameResult.options,
+                    viewState: findViewStateForEditor(this, group, this.editorService)
+                }
+            };
+        }
+        if (isResourceEditorInput(renameResult.editor)) {
+            return {
+                editor: {
+                    label: this.preferredName,
+                    description: this.preferredDescription,
+                    primary: renameResult.editor,
+                    secondary: renameResult.editor,
+                    options: {
+                        ...renameResult.options,
+                        viewState: findViewStateForEditor(this, group, this.editorService)
+                    }
+                }
+            };
+        }
+        return undefined;
+    }
+    isReadonly() {
+        return this.primary.isReadonly();
+    }
+    toUntyped(options) {
+        const primaryResourceEditorInput = this.primary.toUntyped(options);
+        const secondaryResourceEditorInput = this.secondary.toUntyped(options);
+        if (primaryResourceEditorInput && secondaryResourceEditorInput &&
+            !isResourceDiffEditorInput(primaryResourceEditorInput) && !isResourceDiffEditorInput(secondaryResourceEditorInput) &&
+            !isResourceMultiDiffEditorInput(primaryResourceEditorInput) && !isResourceMultiDiffEditorInput(secondaryResourceEditorInput) &&
+            !isResourceSideBySideEditorInput(primaryResourceEditorInput) && !isResourceSideBySideEditorInput(secondaryResourceEditorInput) &&
+            !isResourceMergeEditorInput(primaryResourceEditorInput) && !isResourceMergeEditorInput(secondaryResourceEditorInput)) {
+            const untypedInput = {
+                label: this.preferredName,
+                description: this.preferredDescription,
+                primary: primaryResourceEditorInput,
+                secondary: secondaryResourceEditorInput
+            };
+            if (typeof options?.preserveViewState === 'number') {
+                untypedInput.options = {
+                    viewState: findViewStateForEditor(this, options.preserveViewState, this.editorService)
+                };
+            }
+            return untypedInput;
+        }
+        return undefined;
+    }
+    matches(otherInput) {
+        if (this === otherInput) {
+            return true;
+        }
+        if (isDiffEditorInput(otherInput) || isResourceDiffEditorInput(otherInput)) {
+            return false;
+        }
+        if (otherInput instanceof SideBySideEditorInput_1) {
+            return this.primary.matches(otherInput.primary) && this.secondary.matches(otherInput.secondary);
+        }
+        if (isResourceSideBySideEditorInput(otherInput)) {
+            return this.primary.matches(otherInput.primary) && this.secondary.matches(otherInput.secondary);
+        }
+        return false;
+    }
+};
+SideBySideEditorInput = SideBySideEditorInput_1 = __decorate([
+    __param(4, IEditorService),
+    __metadata("design:paramtypes", [Object, Object, EditorInput,
+        EditorInput, Object])
+], SideBySideEditorInput);
+export { SideBySideEditorInput };
+export class AbstractSideBySideEditorInputSerializer {
+    canSerialize(editorInput) {
+        const input = editorInput;
+        if (input.primary && input.secondary) {
+            const [secondaryInputSerializer, primaryInputSerializer] = this.getSerializers(input.secondary.typeId, input.primary.typeId);
+            return !!(secondaryInputSerializer?.canSerialize(input.secondary) && primaryInputSerializer?.canSerialize(input.primary));
+        }
+        return false;
+    }
+    serialize(editorInput) {
+        const input = editorInput;
+        if (input.primary && input.secondary) {
+            const [secondaryInputSerializer, primaryInputSerializer] = this.getSerializers(input.secondary.typeId, input.primary.typeId);
+            if (primaryInputSerializer && secondaryInputSerializer) {
+                const primarySerialized = primaryInputSerializer.serialize(input.primary);
+                const secondarySerialized = secondaryInputSerializer.serialize(input.secondary);
+                if (primarySerialized && secondarySerialized) {
+                    const serializedEditorInput = {
+                        name: input.getPreferredName(),
+                        description: input.getPreferredDescription(),
+                        primarySerialized,
+                        secondarySerialized,
+                        primaryTypeId: input.primary.typeId,
+                        secondaryTypeId: input.secondary.typeId
+                    };
+                    return JSON.stringify(serializedEditorInput);
+                }
+            }
+        }
+        return undefined;
+    }
+    deserialize(instantiationService, serializedEditorInput) {
+        const deserialized = JSON.parse(serializedEditorInput);
+        const [secondaryInputSerializer, primaryInputSerializer] = this.getSerializers(deserialized.secondaryTypeId, deserialized.primaryTypeId);
+        if (primaryInputSerializer && secondaryInputSerializer) {
+            const primaryInput = primaryInputSerializer.deserialize(instantiationService, deserialized.primarySerialized);
+            const secondaryInput = secondaryInputSerializer.deserialize(instantiationService, deserialized.secondarySerialized);
+            if (primaryInput instanceof EditorInput && secondaryInput instanceof EditorInput) {
+                return this.createEditorInput(instantiationService, deserialized.name, deserialized.description, secondaryInput, primaryInput);
+            }
+        }
+        return undefined;
+    }
+    getSerializers(secondaryEditorInputTypeId, primaryEditorInputTypeId) {
+        const registry = Registry.as(EditorExtensions.EditorFactory);
+        return [registry.getEditorSerializer(secondaryEditorInputTypeId), registry.getEditorSerializer(primaryEditorInputTypeId)];
+    }
+}
+export class SideBySideEditorInputSerializer extends AbstractSideBySideEditorInputSerializer {
+    createEditorInput(instantiationService, name, description, secondaryInput, primaryInput) {
+        return instantiationService.createInstance(SideBySideEditorInput, name, description, secondaryInput, primaryInput);
+    }
+}

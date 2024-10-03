@@ -1,1 +1,136 @@
-var m=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var h=(a,s,n,o)=>{for(var e=o>1?void 0:o?u(s,n):s,t=a.length-1,r;t>=0;t--)(r=a[t])&&(e=(o?r(s,n,e):r(e))||e);return o&&e&&m(s,n,e),e},l=(a,s)=>(n,o)=>s(n,o,a);import*as d from"../../../../../base/browser/dom.js";import{Disposable as v,DisposableStore as b,MutableDisposable as k}from"../../../../../base/common/lifecycle.js";import{HiddenItemStrategy as g,MenuWorkbenchToolBar as T}from"../../../../../platform/actions/browser/toolbar.js";import{IMenuService as C,MenuItemAction as I}from"../../../../../platform/actions/common/actions.js";import{IContextMenuService as f}from"../../../../../platform/contextview/browser/contextView.js";import{IInstantiationService as E}from"../../../../../platform/instantiation/common/instantiation.js";import"../controller/coreActions.js";import"../notebookBrowser.js";import"../notebookOptions.js";import{CodiconActionViewItem as M}from"../view/cellParts/cellActionView.js";let p=class extends v{constructor(n,o,e,t,r){super();this.notebookEditor=n;this.notebookOptions=o;this.instantiationService=e;this.contextMenuService=t;this.menuService=r;this.topCellToolbarContainer=d.$("div"),this.topCellToolbar=d.$(".cell-list-top-cell-toolbar-container"),this.topCellToolbarContainer.appendChild(this.topCellToolbar),this._register(this.notebookEditor.onDidAttachViewModel(()=>{this.updateTopToolbar()})),this._register(this.notebookOptions.onDidChangeOptions(i=>{(i.insertToolbarAlignment||i.insertToolbarPosition||i.cellToolbarLocation)&&this.updateTopToolbar()}))}topCellToolbarContainer;topCellToolbar;viewZone=this._register(new k);_modelDisposables=this._register(new b);updateTopToolbar(){const n=this.notebookOptions.getLayoutConfiguration();if(this.viewZone.value=new b,n.insertToolbarPosition==="hidden"||n.insertToolbarPosition==="notebookToolbar"){const o=this.notebookOptions.computeTopInsertToolbarHeight(this.notebookEditor.textModel?.viewType);o!==0&&this.notebookEditor.changeViewZones(e=>{const t=e.addZone({afterModelPosition:0,heightInPx:o,domNode:d.$("div")});e.layoutZone(t),this.viewZone.value?.add({dispose:()=>{this.notebookEditor.isDisposed||this.notebookEditor.changeViewZones(r=>{r.removeZone(t)})}})});return}this.notebookEditor.changeViewZones(o=>{const e=this.notebookOptions.computeTopInsertToolbarHeight(this.notebookEditor.textModel?.viewType),t=o.addZone({afterModelPosition:0,heightInPx:e,domNode:this.topCellToolbarContainer});o.layoutZone(t),this.viewZone.value?.add({dispose:()=>{this.notebookEditor.isDisposed||this.notebookEditor.changeViewZones(i=>{i.removeZone(t)})}}),d.clearNode(this.topCellToolbar);const r=this.instantiationService.createInstance(T,this.topCellToolbar,this.notebookEditor.creationOptions.menuIds.cellTopInsertToolbar,{actionViewItemProvider:(i,c)=>{if(i instanceof I)return this.instantiationService.createInstance(M,i,{hoverDelegate:c.hoverDelegate})},menuOptions:{shouldForwardArgs:!0},toolbarOptions:{primaryGroup:i=>/^inline/.test(i)},hiddenItemStrategy:g.Ignore});this.notebookEditor.hasModel()&&(r.context={notebookEditor:this.notebookEditor}),this.viewZone.value?.add(r),this.viewZone.value?.add(this.notebookEditor.onDidChangeModel(()=>{this._modelDisposables.clear(),this.notebookEditor.hasModel()&&(this._modelDisposables.add(this.notebookEditor.onDidChangeViewCells(()=>{this.updateClass()})),this.updateClass())})),this.updateClass()})}updateClass(){this.notebookEditor.hasModel()&&this.notebookEditor.getLength()===0?this.topCellToolbar.classList.add("emptyNotebook"):this.topCellToolbar.classList.remove("emptyNotebook")}};p=h([l(2,E),l(3,f),l(4,C)],p);export{p as ListTopCellToolbar};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as DOM from '../../../../../base/browser/dom.js';
+import { Disposable, DisposableStore, MutableDisposable } from '../../../../../base/common/lifecycle.js';
+import { MenuWorkbenchToolBar } from '../../../../../platform/actions/browser/toolbar.js';
+import { IMenuService, MenuItemAction } from '../../../../../platform/actions/common/actions.js';
+import { IContextMenuService } from '../../../../../platform/contextview/browser/contextView.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { NotebookOptions } from '../notebookOptions.js';
+import { CodiconActionViewItem } from '../view/cellParts/cellActionView.js';
+let ListTopCellToolbar = class ListTopCellToolbar extends Disposable {
+    constructor(notebookEditor, notebookOptions, instantiationService, contextMenuService, menuService) {
+        super();
+        this.notebookEditor = notebookEditor;
+        this.notebookOptions = notebookOptions;
+        this.instantiationService = instantiationService;
+        this.contextMenuService = contextMenuService;
+        this.menuService = menuService;
+        this.viewZone = this._register(new MutableDisposable());
+        this._modelDisposables = this._register(new DisposableStore());
+        this.topCellToolbarContainer = DOM.$('div');
+        this.topCellToolbar = DOM.$('.cell-list-top-cell-toolbar-container');
+        this.topCellToolbarContainer.appendChild(this.topCellToolbar);
+        this._register(this.notebookEditor.onDidAttachViewModel(() => {
+            this.updateTopToolbar();
+        }));
+        this._register(this.notebookOptions.onDidChangeOptions(e => {
+            if (e.insertToolbarAlignment || e.insertToolbarPosition || e.cellToolbarLocation) {
+                this.updateTopToolbar();
+            }
+        }));
+    }
+    updateTopToolbar() {
+        const layoutInfo = this.notebookOptions.getLayoutConfiguration();
+        this.viewZone.value = new DisposableStore();
+        if (layoutInfo.insertToolbarPosition === 'hidden' || layoutInfo.insertToolbarPosition === 'notebookToolbar') {
+            const height = this.notebookOptions.computeTopInsertToolbarHeight(this.notebookEditor.textModel?.viewType);
+            if (height !== 0) {
+                this.notebookEditor.changeViewZones(accessor => {
+                    const id = accessor.addZone({
+                        afterModelPosition: 0,
+                        heightInPx: height,
+                        domNode: DOM.$('div')
+                    });
+                    accessor.layoutZone(id);
+                    this.viewZone.value?.add({
+                        dispose: () => {
+                            if (!this.notebookEditor.isDisposed) {
+                                this.notebookEditor.changeViewZones(accessor => {
+                                    accessor.removeZone(id);
+                                });
+                            }
+                        }
+                    });
+                });
+            }
+            return;
+        }
+        this.notebookEditor.changeViewZones(accessor => {
+            const height = this.notebookOptions.computeTopInsertToolbarHeight(this.notebookEditor.textModel?.viewType);
+            const id = accessor.addZone({
+                afterModelPosition: 0,
+                heightInPx: height,
+                domNode: this.topCellToolbarContainer
+            });
+            accessor.layoutZone(id);
+            this.viewZone.value?.add({
+                dispose: () => {
+                    if (!this.notebookEditor.isDisposed) {
+                        this.notebookEditor.changeViewZones(accessor => {
+                            accessor.removeZone(id);
+                        });
+                    }
+                }
+            });
+            DOM.clearNode(this.topCellToolbar);
+            const toolbar = this.instantiationService.createInstance(MenuWorkbenchToolBar, this.topCellToolbar, this.notebookEditor.creationOptions.menuIds.cellTopInsertToolbar, {
+                actionViewItemProvider: (action, options) => {
+                    if (action instanceof MenuItemAction) {
+                        const item = this.instantiationService.createInstance(CodiconActionViewItem, action, { hoverDelegate: options.hoverDelegate });
+                        return item;
+                    }
+                    return undefined;
+                },
+                menuOptions: {
+                    shouldForwardArgs: true
+                },
+                toolbarOptions: {
+                    primaryGroup: (g) => /^inline/.test(g),
+                },
+                hiddenItemStrategy: 0,
+            });
+            if (this.notebookEditor.hasModel()) {
+                toolbar.context = {
+                    notebookEditor: this.notebookEditor
+                };
+            }
+            this.viewZone.value?.add(toolbar);
+            this.viewZone.value?.add(this.notebookEditor.onDidChangeModel(() => {
+                this._modelDisposables.clear();
+                if (this.notebookEditor.hasModel()) {
+                    this._modelDisposables.add(this.notebookEditor.onDidChangeViewCells(() => {
+                        this.updateClass();
+                    }));
+                    this.updateClass();
+                }
+            }));
+            this.updateClass();
+        });
+    }
+    updateClass() {
+        if (this.notebookEditor.hasModel() && this.notebookEditor.getLength() === 0) {
+            this.topCellToolbar.classList.add('emptyNotebook');
+        }
+        else {
+            this.topCellToolbar.classList.remove('emptyNotebook');
+        }
+    }
+};
+ListTopCellToolbar = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, IContextMenuService),
+    __param(4, IMenuService),
+    __metadata("design:paramtypes", [Object, NotebookOptions, Object, Object, Object])
+], ListTopCellToolbar);
+export { ListTopCellToolbar };

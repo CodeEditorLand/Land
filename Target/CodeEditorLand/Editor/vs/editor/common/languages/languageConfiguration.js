@@ -1,1 +1,104 @@
-import{CharCode as i}from"../../../base/common/charCode.js";import{StandardTokenType as s}from"../encodedTokenAttributes.js";import"./supports.js";var l=(e=>(e[e.None=0]="None",e[e.Indent=1]="Indent",e[e.IndentOutdent=2]="IndentOutdent",e[e.Outdent=3]="Outdent",e))(l||{});class c{open;close;_inString;_inComment;_inRegEx;_neutralCharacter=null;_neutralCharacterSearched=!1;constructor(t){if(this.open=t.open,this.close=t.close,this._inString=!0,this._inComment=!0,this._inRegEx=!0,Array.isArray(t.notIn))for(let n=0,r=t.notIn.length;n<r;n++)switch(t.notIn[n]){case"string":this._inString=!1;break;case"comment":this._inComment=!1;break;case"regex":this._inRegEx=!1;break}}isOK(t){switch(t){case s.Other:return!0;case s.Comment:return this._inComment;case s.String:return this._inString;case s.RegEx:return this._inRegEx}}shouldAutoClose(t,n){if(t.getTokenCount()===0)return!0;const r=t.findTokenIndexAtOffset(n-2),e=t.getStandardTokenType(r);return this.isOK(e)}_findNeutralCharacterInRange(t,n){for(let r=t;r<=n;r++){const e=String.fromCharCode(r);if(!this.open.includes(e)&&!this.close.includes(e))return e}return null}findNeutralCharacter(){return this._neutralCharacterSearched||(this._neutralCharacterSearched=!0,this._neutralCharacter||(this._neutralCharacter=this._findNeutralCharacterInRange(i.Digit0,i.Digit9)),this._neutralCharacter||(this._neutralCharacter=this._findNeutralCharacterInRange(i.a,i.z)),this._neutralCharacter||(this._neutralCharacter=this._findNeutralCharacterInRange(i.A,i.Z))),this._neutralCharacter}}class p{autoClosingPairsOpenByStart;autoClosingPairsOpenByEnd;autoClosingPairsCloseByStart;autoClosingPairsCloseByEnd;autoClosingPairsCloseSingleChar;constructor(t){this.autoClosingPairsOpenByStart=new Map,this.autoClosingPairsOpenByEnd=new Map,this.autoClosingPairsCloseByStart=new Map,this.autoClosingPairsCloseByEnd=new Map,this.autoClosingPairsCloseSingleChar=new Map;for(const n of t)o(this.autoClosingPairsOpenByStart,n.open.charAt(0),n),o(this.autoClosingPairsOpenByEnd,n.open.charAt(n.open.length-1),n),o(this.autoClosingPairsCloseByStart,n.close.charAt(0),n),o(this.autoClosingPairsCloseByEnd,n.close.charAt(n.close.length-1),n),n.close.length===1&&n.open.length===1&&o(this.autoClosingPairsCloseSingleChar,n.close,n)}}function o(a,t,n){a.has(t)?a.get(t).push(n):a.set(t,[n])}export{p as AutoClosingPairs,l as IndentAction,c as StandardAutoClosingPairConditional};
+export var IndentAction;
+(function (IndentAction) {
+    IndentAction[IndentAction["None"] = 0] = "None";
+    IndentAction[IndentAction["Indent"] = 1] = "Indent";
+    IndentAction[IndentAction["IndentOutdent"] = 2] = "IndentOutdent";
+    IndentAction[IndentAction["Outdent"] = 3] = "Outdent";
+})(IndentAction || (IndentAction = {}));
+export class StandardAutoClosingPairConditional {
+    constructor(source) {
+        this._neutralCharacter = null;
+        this._neutralCharacterSearched = false;
+        this.open = source.open;
+        this.close = source.close;
+        this._inString = true;
+        this._inComment = true;
+        this._inRegEx = true;
+        if (Array.isArray(source.notIn)) {
+            for (let i = 0, len = source.notIn.length; i < len; i++) {
+                const notIn = source.notIn[i];
+                switch (notIn) {
+                    case 'string':
+                        this._inString = false;
+                        break;
+                    case 'comment':
+                        this._inComment = false;
+                        break;
+                    case 'regex':
+                        this._inRegEx = false;
+                        break;
+                }
+            }
+        }
+    }
+    isOK(standardToken) {
+        switch (standardToken) {
+            case 0:
+                return true;
+            case 1:
+                return this._inComment;
+            case 2:
+                return this._inString;
+            case 3:
+                return this._inRegEx;
+        }
+    }
+    shouldAutoClose(context, column) {
+        if (context.getTokenCount() === 0) {
+            return true;
+        }
+        const tokenIndex = context.findTokenIndexAtOffset(column - 2);
+        const standardTokenType = context.getStandardTokenType(tokenIndex);
+        return this.isOK(standardTokenType);
+    }
+    _findNeutralCharacterInRange(fromCharCode, toCharCode) {
+        for (let charCode = fromCharCode; charCode <= toCharCode; charCode++) {
+            const character = String.fromCharCode(charCode);
+            if (!this.open.includes(character) && !this.close.includes(character)) {
+                return character;
+            }
+        }
+        return null;
+    }
+    findNeutralCharacter() {
+        if (!this._neutralCharacterSearched) {
+            this._neutralCharacterSearched = true;
+            if (!this._neutralCharacter) {
+                this._neutralCharacter = this._findNeutralCharacterInRange(48, 57);
+            }
+            if (!this._neutralCharacter) {
+                this._neutralCharacter = this._findNeutralCharacterInRange(97, 122);
+            }
+            if (!this._neutralCharacter) {
+                this._neutralCharacter = this._findNeutralCharacterInRange(65, 90);
+            }
+        }
+        return this._neutralCharacter;
+    }
+}
+export class AutoClosingPairs {
+    constructor(autoClosingPairs) {
+        this.autoClosingPairsOpenByStart = new Map();
+        this.autoClosingPairsOpenByEnd = new Map();
+        this.autoClosingPairsCloseByStart = new Map();
+        this.autoClosingPairsCloseByEnd = new Map();
+        this.autoClosingPairsCloseSingleChar = new Map();
+        for (const pair of autoClosingPairs) {
+            appendEntry(this.autoClosingPairsOpenByStart, pair.open.charAt(0), pair);
+            appendEntry(this.autoClosingPairsOpenByEnd, pair.open.charAt(pair.open.length - 1), pair);
+            appendEntry(this.autoClosingPairsCloseByStart, pair.close.charAt(0), pair);
+            appendEntry(this.autoClosingPairsCloseByEnd, pair.close.charAt(pair.close.length - 1), pair);
+            if (pair.close.length === 1 && pair.open.length === 1) {
+                appendEntry(this.autoClosingPairsCloseSingleChar, pair.close, pair);
+            }
+        }
+    }
+}
+function appendEntry(target, key, value) {
+    if (target.has(key)) {
+        target.get(key).push(value);
+    }
+    else {
+        target.set(key, [value]);
+    }
+}

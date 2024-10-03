@@ -1,1 +1,35 @@
-import"../list/list.js";import{AbstractTree as o}from"./abstractTree.js";import{IndexTreeModel as d}from"./indexTreeModel.js";import{TreeError as l}from"./tree.js";import{Iterable as a}from"../../../common/iterator.js";import"./media/tree.css";class F extends o{constructor(e,r,t,i,s,n={}){super(e,r,t,i,n);this.user=e;this.rootElement=s}splice(e,r,t=a.empty()){this.model.splice(e,r,t)}rerender(e){if(e===void 0){this.view.rerender();return}this.model.rerender(e)}updateElementHeight(e,r){if(e.length===0)throw new l(this.user,"Update element height failed: invalid location");const t=this.model.getListIndex(e);t!==-1&&this.view.updateElementHeight(t,r)}createModel(e,r){return new d(e,this.rootElement,r)}}export{F as IndexTree};
+import { AbstractTree } from './abstractTree.js';
+import { IndexTreeModel } from './indexTreeModel.js';
+import { TreeError } from './tree.js';
+import { Iterable } from '../../../common/iterator.js';
+import './media/tree.css';
+export class IndexTree extends AbstractTree {
+    constructor(user, container, delegate, renderers, rootElement, options = {}) {
+        super(user, container, delegate, renderers, options);
+        this.user = user;
+        this.rootElement = rootElement;
+    }
+    splice(location, deleteCount, toInsert = Iterable.empty()) {
+        this.model.splice(location, deleteCount, toInsert);
+    }
+    rerender(location) {
+        if (location === undefined) {
+            this.view.rerender();
+            return;
+        }
+        this.model.rerender(location);
+    }
+    updateElementHeight(location, height) {
+        if (location.length === 0) {
+            throw new TreeError(this.user, `Update element height failed: invalid location`);
+        }
+        const elementIndex = this.model.getListIndex(location);
+        if (elementIndex === -1) {
+            return;
+        }
+        this.view.updateElementHeight(elementIndex, height);
+    }
+    createModel(user, options) {
+        return new IndexTreeModel(user, this.rootElement, options);
+    }
+}

@@ -1,1 +1,30 @@
-var f=Object.defineProperty;var s=Object.getOwnPropertyDescriptor;var v=(m,e,i,o)=>{for(var r=o>1?void 0:o?s(e,i):e,I=m.length-1,p;I>=0;I--)(p=m[I])&&(r=(o?p(e,i,r):p(r))||r);return o&&r&&f(e,i,r),r},t=(m,e)=>(i,o)=>e(i,o,m);import{IStorageService as n}from"../../storage/common/storage.js";import{ILogService as u}from"../../log/common/log.js";import{IUserDataProfilesService as S}from"../common/userDataProfile.js";import{IMainProcessService as g}from"../../ipc/common/mainProcessService.js";import{RemoteUserDataProfileStorageService as x}from"../common/userDataProfileStorageService.js";let c=class extends x{constructor(e,i,o,r){super(!0,e,i,o,r)}};c=v([t(0,g),t(1,S),t(2,n),t(3,u)],c);export{c as SharedProcessUserDataProfileStorageService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IStorageService } from '../../storage/common/storage.js';
+import { ILogService } from '../../log/common/log.js';
+import { IUserDataProfilesService } from '../common/userDataProfile.js';
+import { IMainProcessService } from '../../ipc/common/mainProcessService.js';
+import { RemoteUserDataProfileStorageService } from '../common/userDataProfileStorageService.js';
+let SharedProcessUserDataProfileStorageService = class SharedProcessUserDataProfileStorageService extends RemoteUserDataProfileStorageService {
+    constructor(mainProcessService, userDataProfilesService, storageService, logService) {
+        super(true, mainProcessService, userDataProfilesService, storageService, logService);
+    }
+};
+SharedProcessUserDataProfileStorageService = __decorate([
+    __param(0, IMainProcessService),
+    __param(1, IUserDataProfilesService),
+    __param(2, IStorageService),
+    __param(3, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], SharedProcessUserDataProfileStorageService);
+export { SharedProcessUserDataProfileStorageService };

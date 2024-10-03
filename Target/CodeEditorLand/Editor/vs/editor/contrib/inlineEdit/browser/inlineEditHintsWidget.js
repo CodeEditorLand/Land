@@ -1,1 +1,206 @@
-var x=Object.defineProperty;var M=Object.getOwnPropertyDescriptor;var h=(l,n,e,t)=>{for(var i=t>1?void 0:t?M(n,e):n,o=l.length-1,a;o>=0;o--)(a=l[o])&&(i=(t?a(n,e,i):a(i))||i);return t&&i&&x(n,e,i),i},s=(l,n)=>(e,t)=>n(e,t,l);import{h as b}from"../../../../base/browser/dom.js";import{KeybindingLabel as O,unthemedKeybindingLabelOptions as B}from"../../../../base/browser/ui/keybindingLabel/keybindingLabel.js";import{Separator as E}from"../../../../base/common/actions.js";import{equals as I}from"../../../../base/common/arrays.js";import{Disposable as S,toDisposable as D}from"../../../../base/common/lifecycle.js";import{autorun as g,autorunWithStore as K,derived as L,observableFromEvent as V}from"../../../../base/common/observable.js";import{OS as W}from"../../../../base/common/platform.js";import"./inlineEditHintsWidget.css";import{ContentWidgetPositionPreference as A}from"../../../browser/editorBrowser.js";import{EditorOption as k}from"../../../common/config/editorOptions.js";import{Position as N}from"../../../common/core/position.js";import{PositionAffinity as G}from"../../../common/model.js";import"./ghostTextWidget.js";import{MenuEntryActionViewItem as F,createAndFillInActionBarActions as j}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import{WorkbenchToolBar as q}from"../../../../platform/actions/browser/toolbar.js";import{IMenuService as T,MenuId as w,MenuItemAction as C}from"../../../../platform/actions/common/actions.js";import{ICommandService as R}from"../../../../platform/commands/common/commands.js";import{IContextKeyService as P}from"../../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as X}from"../../../../platform/contextview/browser/contextView.js";import{IInstantiationService as _}from"../../../../platform/instantiation/common/instantiation.js";import{IKeybindingService as $}from"../../../../platform/keybinding/common/keybinding.js";import{ITelemetryService as J}from"../../../../platform/telemetry/common/telemetry.js";let u=class extends S{constructor(e,t,i){super();this.editor=e;this.model=t;this.instantiationService=i;this._register(K((o,a)=>{if(!this.model.read(o)||!this.alwaysShowToolbar.read(o))return;const r=a.add(this.instantiationService.createInstance(d,this.editor,!0,this.position));e.addContentWidget(r),a.add(D(()=>e.removeContentWidget(r)))}))}alwaysShowToolbar=V(this,this.editor.onDidChangeConfiguration,()=>this.editor.getOption(k.inlineEdit).showToolbar==="always");sessionPosition=void 0;position=L(this,e=>{const t=this.model.read(e)?.model.ghostText.read(e);if(!this.alwaysShowToolbar.read(e)||!t||t.parts.length===0)return this.sessionPosition=void 0,null;const i=t.parts[0].column;this.sessionPosition&&this.sessionPosition.lineNumber!==t.lineNumber&&(this.sessionPosition=void 0);const o=new N(t.lineNumber,Math.min(i,this.sessionPosition?.column??Number.MAX_SAFE_INTEGER));return this.sessionPosition=o,o})};u=h([s(2,_)],u);let d=class extends S{constructor(e,t,i,o,a,m){super();this.editor=e;this.withBorder=t;this._position=i;this._contextKeyService=a;this._menuService=m;this.toolBar=this._register(o.createInstance(c,this.nodes.toolBar,this.editor,w.InlineEditToolbar,{menuOptions:{renderShortTitle:!0},toolbarOptions:{primaryGroup:r=>r.startsWith("primary")},actionViewItemProvider:(r,p)=>{if(r instanceof C)return o.createInstance(Q,r,void 0)},telemetrySource:"InlineEditToolbar"})),this._register(this.toolBar.onDidChangeDropdownVisibility(r=>{d._dropDownVisible=r})),this._register(g(r=>{this._position.read(r),this.editor.layoutContentWidget(this)})),this._register(g(r=>{const p=[];for(const[y,v]of this.inlineCompletionsActionsMenus.getActions())for(const f of v)f instanceof C&&p.push(f);p.length>0&&p.unshift(new E),this.toolBar.setAdditionalSecondaryActions(p)}))}static _dropDownVisible=!1;static get dropDownVisible(){return this._dropDownVisible}static id=0;id=`InlineEditHintsContentWidget${d.id++}`;allowEditorOverflow=!0;suppressMouseDown=!1;nodes=b("div.inlineEditHints",{className:this.withBorder?".withBorder":""},[b("div@toolBar")]);toolBar;inlineCompletionsActionsMenus=this._register(this._menuService.createMenu(w.InlineEditActions,this._contextKeyService));getId(){return this.id}getDomNode(){return this.nodes.root}getPosition(){return{position:this._position.get(),preference:[A.ABOVE,A.BELOW],positionAffinity:G.LeftOfInjectedText}}};d=h([s(3,_),s(4,P),s(5,T)],d);class Q extends F{updateLabel(){const n=this._keybindingService.lookupKeybinding(this._action.id,this._contextKeyService);if(!n)return super.updateLabel();if(this.label){const e=b("div.keybinding").root;this._register(new O(e,W,{disableTitle:!0,...B})).set(n),this.label.textContent=this._action.label,this.label.appendChild(e),this.label.classList.add("inlineEditStatusBarItemLabel")}}updateTooltip(){}}let c=class extends q{constructor(e,t,i,o,a,m,r,p,y,v){super(e,{resetMenu:i,...o},a,m,r,p,y,v);this.editor=t;this.menuId=i;this.options2=o;this.menuService=a;this.contextKeyService=m;this._store.add(this.menu.onDidChange(()=>this.updateToolbar())),this._store.add(this.editor.onDidChangeCursorPosition(()=>this.updateToolbar())),this.updateToolbar()}menu=this._store.add(this.menuService.createMenu(this.menuId,this.contextKeyService,{emitEventsForSubmenuChanges:!0}));additionalActions=[];prependedPrimaryActions=[];updateToolbar(){const e=[],t=[];j(this.menu,this.options2?.menuOptions,{primary:e,secondary:t},this.options2?.toolbarOptions?.primaryGroup,this.options2?.toolbarOptions?.shouldInlineSubmenu,this.options2?.toolbarOptions?.useSeparatorsInPrimaryActions),t.push(...this.additionalActions),e.unshift(...this.prependedPrimaryActions),this.setActions(e,t)}setPrependedPrimaryActions(e){I(this.prependedPrimaryActions,e,(t,i)=>t===i)||(this.prependedPrimaryActions=e,this.updateToolbar())}setAdditionalSecondaryActions(e){I(this.additionalActions,e,(t,i)=>t===i)||(this.additionalActions=e,this.updateToolbar())}};c=h([s(4,T),s(5,P),s(6,X),s(7,$),s(8,R),s(9,J)],c);export{c as CustomizedMenuWorkbenchToolBar,d as InlineEditHintsContentWidget,u as InlineEditHintsWidget};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var InlineEditHintsContentWidget_1;
+import { h } from '../../../../base/browser/dom.js';
+import { KeybindingLabel, unthemedKeybindingLabelOptions } from '../../../../base/browser/ui/keybindingLabel/keybindingLabel.js';
+import { Separator } from '../../../../base/common/actions.js';
+import { equals } from '../../../../base/common/arrays.js';
+import { Disposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { autorun, autorunWithStore, derived, observableFromEvent } from '../../../../base/common/observable.js';
+import { OS } from '../../../../base/common/platform.js';
+import './inlineEditHintsWidget.css';
+import { Position } from '../../../common/core/position.js';
+import { MenuEntryActionViewItem, createAndFillInActionBarActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { WorkbenchToolBar } from '../../../../platform/actions/browser/toolbar.js';
+import { IMenuService, MenuId, MenuItemAction } from '../../../../platform/actions/common/actions.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+let InlineEditHintsWidget = class InlineEditHintsWidget extends Disposable {
+    constructor(editor, model, instantiationService) {
+        super();
+        this.editor = editor;
+        this.model = model;
+        this.instantiationService = instantiationService;
+        this.alwaysShowToolbar = observableFromEvent(this, this.editor.onDidChangeConfiguration, () => this.editor.getOption(65).showToolbar === 'always');
+        this.sessionPosition = undefined;
+        this.position = derived(this, reader => {
+            const ghostText = this.model.read(reader)?.model.ghostText.read(reader);
+            if (!this.alwaysShowToolbar.read(reader) || !ghostText || ghostText.parts.length === 0) {
+                this.sessionPosition = undefined;
+                return null;
+            }
+            const firstColumn = ghostText.parts[0].column;
+            if (this.sessionPosition && this.sessionPosition.lineNumber !== ghostText.lineNumber) {
+                this.sessionPosition = undefined;
+            }
+            const position = new Position(ghostText.lineNumber, Math.min(firstColumn, this.sessionPosition?.column ?? Number.MAX_SAFE_INTEGER));
+            this.sessionPosition = position;
+            return position;
+        });
+        this._register(autorunWithStore((reader, store) => {
+            const model = this.model.read(reader);
+            if (!model || !this.alwaysShowToolbar.read(reader)) {
+                return;
+            }
+            const contentWidget = store.add(this.instantiationService.createInstance(InlineEditHintsContentWidget, this.editor, true, this.position));
+            editor.addContentWidget(contentWidget);
+            store.add(toDisposable(() => editor.removeContentWidget(contentWidget)));
+        }));
+    }
+};
+InlineEditHintsWidget = __decorate([
+    __param(2, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], InlineEditHintsWidget);
+export { InlineEditHintsWidget };
+let InlineEditHintsContentWidget = class InlineEditHintsContentWidget extends Disposable {
+    static { InlineEditHintsContentWidget_1 = this; }
+    static { this._dropDownVisible = false; }
+    static get dropDownVisible() { return this._dropDownVisible; }
+    static { this.id = 0; }
+    constructor(editor, withBorder, _position, instantiationService, _contextKeyService, _menuService) {
+        super();
+        this.editor = editor;
+        this.withBorder = withBorder;
+        this._position = _position;
+        this._contextKeyService = _contextKeyService;
+        this._menuService = _menuService;
+        this.id = `InlineEditHintsContentWidget${InlineEditHintsContentWidget_1.id++}`;
+        this.allowEditorOverflow = true;
+        this.suppressMouseDown = false;
+        this.nodes = h('div.inlineEditHints', { className: this.withBorder ? '.withBorder' : '' }, [
+            h('div@toolBar'),
+        ]);
+        this.inlineCompletionsActionsMenus = this._register(this._menuService.createMenu(MenuId.InlineEditActions, this._contextKeyService));
+        this.toolBar = this._register(instantiationService.createInstance(CustomizedMenuWorkbenchToolBar, this.nodes.toolBar, this.editor, MenuId.InlineEditToolbar, {
+            menuOptions: { renderShortTitle: true },
+            toolbarOptions: { primaryGroup: g => g.startsWith('primary') },
+            actionViewItemProvider: (action, options) => {
+                if (action instanceof MenuItemAction) {
+                    return instantiationService.createInstance(StatusBarViewItem, action, undefined);
+                }
+                return undefined;
+            },
+            telemetrySource: 'InlineEditToolbar',
+        }));
+        this._register(this.toolBar.onDidChangeDropdownVisibility(e => {
+            InlineEditHintsContentWidget_1._dropDownVisible = e;
+        }));
+        this._register(autorun(reader => {
+            this._position.read(reader);
+            this.editor.layoutContentWidget(this);
+        }));
+        this._register(autorun(reader => {
+            const extraActions = [];
+            for (const [_, group] of this.inlineCompletionsActionsMenus.getActions()) {
+                for (const action of group) {
+                    if (action instanceof MenuItemAction) {
+                        extraActions.push(action);
+                    }
+                }
+            }
+            if (extraActions.length > 0) {
+                extraActions.unshift(new Separator());
+            }
+            this.toolBar.setAdditionalSecondaryActions(extraActions);
+        }));
+    }
+    getId() { return this.id; }
+    getDomNode() {
+        return this.nodes.root;
+    }
+    getPosition() {
+        return {
+            position: this._position.get(),
+            preference: [1, 2],
+            positionAffinity: 3,
+        };
+    }
+};
+InlineEditHintsContentWidget = InlineEditHintsContentWidget_1 = __decorate([
+    __param(3, IInstantiationService),
+    __param(4, IContextKeyService),
+    __param(5, IMenuService),
+    __metadata("design:paramtypes", [Object, Boolean, Object, Object, Object, Object])
+], InlineEditHintsContentWidget);
+export { InlineEditHintsContentWidget };
+class StatusBarViewItem extends MenuEntryActionViewItem {
+    updateLabel() {
+        const kb = this._keybindingService.lookupKeybinding(this._action.id, this._contextKeyService);
+        if (!kb) {
+            return super.updateLabel();
+        }
+        if (this.label) {
+            const div = h('div.keybinding').root;
+            const k = this._register(new KeybindingLabel(div, OS, { disableTitle: true, ...unthemedKeybindingLabelOptions }));
+            k.set(kb);
+            this.label.textContent = this._action.label;
+            this.label.appendChild(div);
+            this.label.classList.add('inlineEditStatusBarItemLabel');
+        }
+    }
+    updateTooltip() {
+    }
+}
+let CustomizedMenuWorkbenchToolBar = class CustomizedMenuWorkbenchToolBar extends WorkbenchToolBar {
+    constructor(container, editor, menuId, options2, menuService, contextKeyService, contextMenuService, keybindingService, commandService, telemetryService) {
+        super(container, { resetMenu: menuId, ...options2 }, menuService, contextKeyService, contextMenuService, keybindingService, commandService, telemetryService);
+        this.editor = editor;
+        this.menuId = menuId;
+        this.options2 = options2;
+        this.menuService = menuService;
+        this.contextKeyService = contextKeyService;
+        this.menu = this._store.add(this.menuService.createMenu(this.menuId, this.contextKeyService, { emitEventsForSubmenuChanges: true }));
+        this.additionalActions = [];
+        this.prependedPrimaryActions = [];
+        this._store.add(this.menu.onDidChange(() => this.updateToolbar()));
+        this._store.add(this.editor.onDidChangeCursorPosition(() => this.updateToolbar()));
+        this.updateToolbar();
+    }
+    updateToolbar() {
+        const primary = [];
+        const secondary = [];
+        createAndFillInActionBarActions(this.menu, this.options2?.menuOptions, { primary, secondary }, this.options2?.toolbarOptions?.primaryGroup, this.options2?.toolbarOptions?.shouldInlineSubmenu, this.options2?.toolbarOptions?.useSeparatorsInPrimaryActions);
+        secondary.push(...this.additionalActions);
+        primary.unshift(...this.prependedPrimaryActions);
+        this.setActions(primary, secondary);
+    }
+    setPrependedPrimaryActions(actions) {
+        if (equals(this.prependedPrimaryActions, actions, (a, b) => a === b)) {
+            return;
+        }
+        this.prependedPrimaryActions = actions;
+        this.updateToolbar();
+    }
+    setAdditionalSecondaryActions(actions) {
+        if (equals(this.additionalActions, actions, (a, b) => a === b)) {
+            return;
+        }
+        this.additionalActions = actions;
+        this.updateToolbar();
+    }
+};
+CustomizedMenuWorkbenchToolBar = __decorate([
+    __param(4, IMenuService),
+    __param(5, IContextKeyService),
+    __param(6, IContextMenuService),
+    __param(7, IKeybindingService),
+    __param(8, ICommandService),
+    __param(9, ITelemetryService),
+    __metadata("design:paramtypes", [HTMLElement, Object, MenuId, Object, Object, Object, Object, Object, Object, Object])
+], CustomizedMenuWorkbenchToolBar);
+export { CustomizedMenuWorkbenchToolBar };

@@ -1,1 +1,108 @@
-var K=Object.defineProperty;var C=Object.getOwnPropertyDescriptor;var l=(e,n,i,o)=>{for(var r=o>1?void 0:o?C(n,i):n,p=e.length-1,g;p>=0;p--)(g=e[p])&&(r=(o?g(n,i,r):g(r))||r);return o&&r&&K(n,i,r),r},m=(e,n)=>(i,o)=>n(i,o,e);import{IconSelectBox as f}from"../../../../base/browser/ui/icons/iconSelectBox.js";import{KeyCode as c}from"../../../../base/common/keyCodes.js";import*as b from"../../../../base/browser/dom.js";import{ContextKeyExpr as x,IContextKeyService as w,RawContextKey as y}from"../../../../platform/contextkey/common/contextkey.js";import{KeybindingsRegistry as d,KeybindingWeight as u}from"../../../../platform/keybinding/common/keybindingsRegistry.js";const s=new y("iconSelectBoxFocus",!0),h=new y("iconSelectBoxInputFocus",!0),a=new y("iconSelectBoxInputEmpty",!0);let t=class extends f{static focusedWidget;static getFocusedWidget(){return t.focusedWidget}contextKeyService;inputFocusContextKey;inputEmptyContextKey;constructor(n,i){if(super(n),this.contextKeyService=this._register(i.createScoped(this.domNode)),s.bindTo(this.contextKeyService),this.inputFocusContextKey=h.bindTo(this.contextKeyService),this.inputEmptyContextKey=a.bindTo(this.contextKeyService),this.inputBox){const o=this._register(b.trackFocus(this.inputBox.inputElement));this._register(o.onDidFocus(()=>this.inputFocusContextKey.set(!0))),this._register(o.onDidBlur(()=>this.inputFocusContextKey.set(!1))),this._register(this.inputBox.onDidChange(()=>this.inputEmptyContextKey.set(this.inputBox?.value.length===0)))}}focus(){super.focus(),t.focusedWidget=this}};t=l([m(1,w)],t),d.registerCommandAndKeybindingRule({id:"iconSelectBox.focusUp",weight:u.WorkbenchContrib,when:s,primary:c.UpArrow,handler:()=>{const e=t.getFocusedWidget();e&&e.focusPreviousRow()}}),d.registerCommandAndKeybindingRule({id:"iconSelectBox.focusDown",weight:u.WorkbenchContrib,when:s,primary:c.DownArrow,handler:()=>{const e=t.getFocusedWidget();e&&e.focusNextRow()}}),d.registerCommandAndKeybindingRule({id:"iconSelectBox.focusNext",weight:u.WorkbenchContrib,when:x.and(s,x.or(a,h.toNegated())),primary:c.RightArrow,handler:()=>{const e=t.getFocusedWidget();e&&e.focusNext()}}),d.registerCommandAndKeybindingRule({id:"iconSelectBox.focusPrevious",weight:u.WorkbenchContrib,when:x.and(s,x.or(a,h.toNegated())),primary:c.LeftArrow,handler:()=>{const e=t.getFocusedWidget();e&&e.focusPrevious()}}),d.registerCommandAndKeybindingRule({id:"iconSelectBox.selectFocused",weight:u.WorkbenchContrib,when:s,primary:c.Enter,handler:()=>{const e=t.getFocusedWidget();e&&e.setSelection(e.getFocus()[0])}});export{t as WorkbenchIconSelectBox,s as WorkbenchIconSelectBoxFocusContextKey,a as WorkbenchIconSelectBoxInputEmptyContextKey,h as WorkbenchIconSelectBoxInputFocusContextKey};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var WorkbenchIconSelectBox_1;
+import { IconSelectBox } from '../../../../base/browser/ui/icons/iconSelectBox.js';
+import * as dom from '../../../../base/browser/dom.js';
+import { ContextKeyExpr, IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { KeybindingsRegistry } from '../../../../platform/keybinding/common/keybindingsRegistry.js';
+export const WorkbenchIconSelectBoxFocusContextKey = new RawContextKey('iconSelectBoxFocus', true);
+export const WorkbenchIconSelectBoxInputFocusContextKey = new RawContextKey('iconSelectBoxInputFocus', true);
+export const WorkbenchIconSelectBoxInputEmptyContextKey = new RawContextKey('iconSelectBoxInputEmpty', true);
+let WorkbenchIconSelectBox = class WorkbenchIconSelectBox extends IconSelectBox {
+    static { WorkbenchIconSelectBox_1 = this; }
+    static getFocusedWidget() {
+        return WorkbenchIconSelectBox_1.focusedWidget;
+    }
+    constructor(options, contextKeyService) {
+        super(options);
+        this.contextKeyService = this._register(contextKeyService.createScoped(this.domNode));
+        WorkbenchIconSelectBoxFocusContextKey.bindTo(this.contextKeyService);
+        this.inputFocusContextKey = WorkbenchIconSelectBoxInputFocusContextKey.bindTo(this.contextKeyService);
+        this.inputEmptyContextKey = WorkbenchIconSelectBoxInputEmptyContextKey.bindTo(this.contextKeyService);
+        if (this.inputBox) {
+            const focusTracker = this._register(dom.trackFocus(this.inputBox.inputElement));
+            this._register(focusTracker.onDidFocus(() => this.inputFocusContextKey.set(true)));
+            this._register(focusTracker.onDidBlur(() => this.inputFocusContextKey.set(false)));
+            this._register(this.inputBox.onDidChange(() => this.inputEmptyContextKey.set(this.inputBox?.value.length === 0)));
+        }
+    }
+    focus() {
+        super.focus();
+        WorkbenchIconSelectBox_1.focusedWidget = this;
+    }
+};
+WorkbenchIconSelectBox = WorkbenchIconSelectBox_1 = __decorate([
+    __param(1, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object])
+], WorkbenchIconSelectBox);
+export { WorkbenchIconSelectBox };
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'iconSelectBox.focusUp',
+    weight: 200,
+    when: WorkbenchIconSelectBoxFocusContextKey,
+    primary: 16,
+    handler: () => {
+        const selectBox = WorkbenchIconSelectBox.getFocusedWidget();
+        if (selectBox) {
+            selectBox.focusPreviousRow();
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'iconSelectBox.focusDown',
+    weight: 200,
+    when: WorkbenchIconSelectBoxFocusContextKey,
+    primary: 18,
+    handler: () => {
+        const selectBox = WorkbenchIconSelectBox.getFocusedWidget();
+        if (selectBox) {
+            selectBox.focusNextRow();
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'iconSelectBox.focusNext',
+    weight: 200,
+    when: ContextKeyExpr.and(WorkbenchIconSelectBoxFocusContextKey, ContextKeyExpr.or(WorkbenchIconSelectBoxInputEmptyContextKey, WorkbenchIconSelectBoxInputFocusContextKey.toNegated())),
+    primary: 17,
+    handler: () => {
+        const selectBox = WorkbenchIconSelectBox.getFocusedWidget();
+        if (selectBox) {
+            selectBox.focusNext();
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'iconSelectBox.focusPrevious',
+    weight: 200,
+    when: ContextKeyExpr.and(WorkbenchIconSelectBoxFocusContextKey, ContextKeyExpr.or(WorkbenchIconSelectBoxInputEmptyContextKey, WorkbenchIconSelectBoxInputFocusContextKey.toNegated())),
+    primary: 15,
+    handler: () => {
+        const selectBox = WorkbenchIconSelectBox.getFocusedWidget();
+        if (selectBox) {
+            selectBox.focusPrevious();
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'iconSelectBox.selectFocused',
+    weight: 200,
+    when: WorkbenchIconSelectBoxFocusContextKey,
+    primary: 3,
+    handler: () => {
+        const selectBox = WorkbenchIconSelectBox.getFocusedWidget();
+        if (selectBox) {
+            selectBox.setSelection(selectBox.getFocus()[0]);
+        }
+    }
+});

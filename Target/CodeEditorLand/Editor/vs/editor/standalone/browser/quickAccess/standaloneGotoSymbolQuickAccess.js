@@ -1,1 +1,74 @@
-var g=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var a=(o,e,t,r)=>{for(var i=r>1?void 0:r?v(e,t):e,m=o.length-1,p;m>=0;m--)(p=o[m])&&(i=(r?p(e,t,i):p(i))||i);return r&&i&&g(e,t,i),i},s=(o,e)=>(t,r)=>e(t,r,o);import"../../../../base/browser/ui/codicons/codiconStyles.js";import"../../../contrib/symbolIcons/browser/symbolIcons.js";import{AbstractGotoSymbolQuickAccessProvider as c}from"../../../contrib/quickAccess/browser/gotoSymbolQuickAccess.js";import{Registry as E}from"../../../../platform/registry/common/platform.js";import{Extensions as I}from"../../../../platform/quickinput/common/quickAccess.js";import{ICodeEditorService as y}from"../../../browser/services/codeEditorService.js";import{QuickOutlineNLS as u}from"../../../common/standaloneStrings.js";import{Event as A}from"../../../../base/common/event.js";import{EditorAction as x,registerEditorAction as C}from"../../../browser/editorExtensions.js";import{EditorContextKeys as l}from"../../../common/editorContextKeys.js";import{KeyMod as f,KeyCode as O}from"../../../../base/common/keyCodes.js";import{KeybindingWeight as k}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import"../../../../platform/instantiation/common/instantiation.js";import{IQuickInputService as S,ItemActivation as b}from"../../../../platform/quickinput/common/quickInput.js";import{IOutlineModelService as h}from"../../../contrib/documentSymbols/browser/outlineModel.js";import{ILanguageFeaturesService as R}from"../../../common/services/languageFeatures.js";let n=class extends c{constructor(t,r,i){super(r,i);this.editorService=t}onDidActiveTextEditorControlChange=A.None;get activeTextEditorControl(){return this.editorService.getFocusedCodeEditor()??void 0}};n=a([s(0,y),s(1,R),s(2,h)],n);class d extends x{static ID="editor.action.quickOutline";constructor(){super({id:d.ID,label:u.quickOutlineActionLabel,alias:"Go to Symbol...",precondition:l.hasDocumentSymbolProvider,kbOpts:{kbExpr:l.focus,primary:f.CtrlCmd|f.Shift|O.KeyO,weight:k.EditorContrib},contextMenuOpts:{group:"navigation",order:3}})}run(e){e.get(S).quickAccess.show(c.PREFIX,{itemActivation:b.NONE})}}C(d),E.as(I.Quickaccess).registerQuickAccessProvider({ctor:n,prefix:c.PREFIX,helpEntries:[{description:u.quickOutlineActionLabel,prefix:c.PREFIX,commandId:d.ID},{description:u.quickOutlineByCategoryActionLabel,prefix:c.PREFIX_BY_CATEGORY}]});export{d as GotoSymbolAction,n as StandaloneGotoSymbolQuickAccessProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import '../../../../base/browser/ui/codicons/codiconStyles.js';
+import '../../../contrib/symbolIcons/browser/symbolIcons.js';
+import { AbstractGotoSymbolQuickAccessProvider } from '../../../contrib/quickAccess/browser/gotoSymbolQuickAccess.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Extensions } from '../../../../platform/quickinput/common/quickAccess.js';
+import { ICodeEditorService } from '../../../browser/services/codeEditorService.js';
+import { QuickOutlineNLS } from '../../../common/standaloneStrings.js';
+import { Event } from '../../../../base/common/event.js';
+import { EditorAction, registerEditorAction } from '../../../browser/editorExtensions.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import { IQuickInputService, ItemActivation } from '../../../../platform/quickinput/common/quickInput.js';
+import { IOutlineModelService } from '../../../contrib/documentSymbols/browser/outlineModel.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+let StandaloneGotoSymbolQuickAccessProvider = class StandaloneGotoSymbolQuickAccessProvider extends AbstractGotoSymbolQuickAccessProvider {
+    constructor(editorService, languageFeaturesService, outlineModelService) {
+        super(languageFeaturesService, outlineModelService);
+        this.editorService = editorService;
+        this.onDidActiveTextEditorControlChange = Event.None;
+    }
+    get activeTextEditorControl() {
+        return this.editorService.getFocusedCodeEditor() ?? undefined;
+    }
+};
+StandaloneGotoSymbolQuickAccessProvider = __decorate([
+    __param(0, ICodeEditorService),
+    __param(1, ILanguageFeaturesService),
+    __param(2, IOutlineModelService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], StandaloneGotoSymbolQuickAccessProvider);
+export { StandaloneGotoSymbolQuickAccessProvider };
+export class GotoSymbolAction extends EditorAction {
+    static { this.ID = 'editor.action.quickOutline'; }
+    constructor() {
+        super({
+            id: GotoSymbolAction.ID,
+            label: QuickOutlineNLS.quickOutlineActionLabel,
+            alias: 'Go to Symbol...',
+            precondition: EditorContextKeys.hasDocumentSymbolProvider,
+            kbOpts: {
+                kbExpr: EditorContextKeys.focus,
+                primary: 2048 | 1024 | 45,
+                weight: 100
+            },
+            contextMenuOpts: {
+                group: 'navigation',
+                order: 3
+            }
+        });
+    }
+    run(accessor) {
+        accessor.get(IQuickInputService).quickAccess.show(AbstractGotoSymbolQuickAccessProvider.PREFIX, { itemActivation: ItemActivation.NONE });
+    }
+}
+registerEditorAction(GotoSymbolAction);
+Registry.as(Extensions.Quickaccess).registerQuickAccessProvider({
+    ctor: StandaloneGotoSymbolQuickAccessProvider,
+    prefix: AbstractGotoSymbolQuickAccessProvider.PREFIX,
+    helpEntries: [
+        { description: QuickOutlineNLS.quickOutlineActionLabel, prefix: AbstractGotoSymbolQuickAccessProvider.PREFIX, commandId: GotoSymbolAction.ID },
+        { description: QuickOutlineNLS.quickOutlineByCategoryActionLabel, prefix: AbstractGotoSymbolQuickAccessProvider.PREFIX_BY_CATEGORY }
+    ]
+});

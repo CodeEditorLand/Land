@@ -1,1 +1,786 @@
-import{RunOnceScheduler as z}from"../../../../base/common/async.js";import{VSBuffer as c}from"../../../../base/common/buffer.js";import{CancellationToken as k,CancellationTokenSource as A}from"../../../../base/common/cancellation.js";import{CharCode as U}from"../../../../base/common/charCode.js";import*as b from"../../../../base/common/errors.js";import{Emitter as T}from"../../../../base/common/event.js";import{Disposable as V,DisposableStore as C}from"../../../../base/common/lifecycle.js";import"../../../../base/common/marshalling.js";import{MarshalledId as B}from"../../../../base/common/marshallingIds.js";import{transformIncomingURIs as y}from"../../../../base/common/uriIpc.js";import"../../../../base/parts/ipc/common/ipc.js";import{CanceledLazyPromise as E,LazyPromise as P}from"./lazyPromise.js";import{getStringIdentifierForProxy as _,ProxyIdentifier as x,SerializableObjectWithBuffers as S}from"./proxyIdentifier.js";function m(u,e){try{return JSON.stringify(u,e)}catch{return"null"}}const R="$$ref$$",L={[R]:-1};class pe{constructor(e,r){this.jsonString=e;this.referencedBuffers=r}}function I(u,e=null,r=!1){const i=[];return{jsonString:(r?m:JSON.stringify)(u,(s,n)=>{if(typeof n>"u")return L;if(typeof n=="object"){if(n instanceof c){const f=i.push(n)-1;return{[R]:f}}if(e)return e(s,n)}return n}),referencedBuffers:i}}function O(u,e,r){return JSON.parse(u,(i,t)=>{if(t){const s=t[R];if(typeof s=="number")return e[s];if(r&&t.$mid===B.Uri)return r.transformIncoming(t)}return t})}function w(u,e){return JSON.stringify(u,e)}function M(u){return u?(e,r)=>r&&r.$mid===B.Uri?u.transformOutgoing(r):r:null}var N=(r=>(r[r.LocalSide=0]="LocalSide",r[r.OtherSide=1]="OtherSide",r))(N||{}),J=(r=>(r[r.Responsive=0]="Responsive",r[r.Unresponsive=1]="Unresponsive",r))(J||{});const q=()=>{},W=Symbol.for("rpcProtocol"),K=Symbol.for("rpcProxy");class v extends V{[W]=!0;static UNRESPONSIVE_TIME=3*1e3;_onDidChangeResponsiveState=this._register(new T);onDidChangeResponsiveState=this._onDidChangeResponsiveState.event;_protocol;_logger;_uriTransformer;_uriReplacer;_isDisposed;_locals;_proxies;_lastMessageId;_cancelInvokedHandlers;_pendingRPCReplies;_responsiveState;_unacknowledgedCount;_unresponsiveTime;_asyncCheckUresponsive;constructor(e,r=null,i=null){super(),this._protocol=e,this._logger=r,this._uriTransformer=i,this._uriReplacer=M(this._uriTransformer),this._isDisposed=!1,this._locals=[],this._proxies=[];for(let t=0,s=x.count;t<s;t++)this._locals[t]=null,this._proxies[t]=null;this._lastMessageId=0,this._cancelInvokedHandlers=Object.create(null),this._pendingRPCReplies={},this._responsiveState=0,this._unacknowledgedCount=0,this._unresponsiveTime=0,this._asyncCheckUresponsive=this._register(new z(()=>this._checkUnresponsive(),1e3)),this._register(this._protocol.onMessage(t=>this._receiveOneMessage(t)))}dispose(){this._isDisposed=!0,Object.keys(this._pendingRPCReplies).forEach(e=>{const r=this._pendingRPCReplies[e];delete this._pendingRPCReplies[e],r.resolveErr(b.canceled())}),super.dispose()}drain(){return typeof this._protocol.drain=="function"?this._protocol.drain():Promise.resolve()}_onWillSendRequest(e){this._unacknowledgedCount===0&&(this._unresponsiveTime=Date.now()+v.UNRESPONSIVE_TIME),this._unacknowledgedCount++,this._asyncCheckUresponsive.isScheduled()||this._asyncCheckUresponsive.schedule()}_onDidReceiveAcknowledge(e){this._unresponsiveTime=Date.now()+v.UNRESPONSIVE_TIME,this._unacknowledgedCount--,this._unacknowledgedCount===0&&this._asyncCheckUresponsive.cancel(),this._setResponsiveState(0)}_checkUnresponsive(){this._unacknowledgedCount!==0&&(Date.now()>this._unresponsiveTime?this._setResponsiveState(1):this._asyncCheckUresponsive.schedule())}_setResponsiveState(e){this._responsiveState!==e&&(this._responsiveState=e,this._onDidChangeResponsiveState.fire(this._responsiveState))}get responsiveState(){return this._responsiveState}transformIncomingURIs(e){return this._uriTransformer?y(e,this._uriTransformer):e}getProxy(e){const{nid:r,sid:i}=e;return this._proxies[r]||(this._proxies[r]=this._createProxy(r,i)),this._proxies[r]}_createProxy(e,r){const i={get:(t,s)=>(typeof s=="string"&&!t[s]&&s.charCodeAt(0)===U.DollarSign&&(t[s]=(...n)=>this._remoteCall(e,s,n)),s===K?r:t[s])};return new Proxy(Object.create(null),i)}set(e,r){return this._locals[e.nid]=r,r}assertRegistered(e){for(let r=0,i=e.length;r<i;r++){const t=e[r];if(!this._locals[t.nid])throw new Error(`Missing proxy instance ${t.sid}`)}}_receiveOneMessage(e){if(this._isDisposed)return;const r=e.byteLength,i=a.read(e,0),t=i.readUInt8(),s=i.readUInt32();switch(t){case 1:case 2:{let{rpcId:n,method:f,args:o}=g.deserializeRequestJSONArgs(i);this._uriTransformer&&(o=y(o,this._uriTransformer)),this._receiveRequest(r,s,n,f,o,t===2);break}case 3:case 4:{let{rpcId:n,method:f,args:o}=g.deserializeRequestMixedArgs(i);this._uriTransformer&&(o=y(o,this._uriTransformer)),this._receiveRequest(r,s,n,f,o,t===4);break}case 5:{this._logger?.logIncoming(r,s,0,"ack"),this._onDidReceiveAcknowledge(s);break}case 6:{this._receiveCancel(r,s);break}case 7:{this._receiveReply(r,s,void 0);break}case 9:{let n=g.deserializeReplyOKJSON(i);this._uriTransformer&&(n=y(n,this._uriTransformer)),this._receiveReply(r,s,n);break}case 10:{const n=g.deserializeReplyOKJSONWithBuffers(i,this._uriTransformer);this._receiveReply(r,s,n);break}case 8:{const n=g.deserializeReplyOKVSBuffer(i);this._receiveReply(r,s,n);break}case 11:{let n=g.deserializeReplyErrError(i);this._uriTransformer&&(n=y(n,this._uriTransformer)),this._receiveReplyErr(r,s,n);break}case 12:{this._receiveReplyErr(r,s,void 0);break}default:}}_receiveRequest(e,r,i,t,s,n){this._logger?.logIncoming(e,r,1,`receiveRequest ${_(i)}.${t}(`,s);const f=String(r);let o,p;if(n){const d=new A;s.push(d.token),o=this._invokeHandler(i,t,s),p=()=>d.cancel()}else o=this._invokeHandler(i,t,s),p=q;this._cancelInvokedHandlers[f]=p;const h=g.serializeAcknowledged(r);this._logger?.logOutgoing(h.byteLength,r,1,"ack"),this._protocol.send(h),o.then(d=>{delete this._cancelInvokedHandlers[f];const l=g.serializeReplyOK(r,d,this._uriReplacer);this._logger?.logOutgoing(l.byteLength,r,1,"reply:",d),this._protocol.send(l)},d=>{delete this._cancelInvokedHandlers[f];const l=g.serializeReplyErr(r,d);this._logger?.logOutgoing(l.byteLength,r,1,"replyErr:",d),this._protocol.send(l)})}_receiveCancel(e,r){this._logger?.logIncoming(e,r,1,"receiveCancel");const i=String(r);this._cancelInvokedHandlers[i]?.()}_receiveReply(e,r,i){this._logger?.logIncoming(e,r,0,"receiveReply:",i);const t=String(r);if(!this._pendingRPCReplies.hasOwnProperty(t))return;const s=this._pendingRPCReplies[t];delete this._pendingRPCReplies[t],s.resolveOk(i)}_receiveReplyErr(e,r,i){this._logger?.logIncoming(e,r,0,"receiveReplyErr:",i);const t=String(r);if(!this._pendingRPCReplies.hasOwnProperty(t))return;const s=this._pendingRPCReplies[t];delete this._pendingRPCReplies[t];let n;i&&(i.$isError?(n=new Error,n.name=i.name,n.message=i.message,n.stack=i.stack):n=i),s.resolveErr(n)}_invokeHandler(e,r,i){try{return Promise.resolve(this._doInvokeHandler(e,r,i))}catch(t){return Promise.reject(t)}}_doInvokeHandler(e,r,i){const t=this._locals[e];if(!t)throw new Error("Unknown actor "+_(e));const s=t[r];if(typeof s!="function")throw new Error("Unknown method "+r+" on actor "+_(e));return s.apply(t,i)}_remoteCall(e,r,i){if(this._isDisposed)return new E;let t=null;if(i.length>0&&k.isCancellationToken(i[i.length-1])&&(t=i.pop()),t&&t.isCancellationRequested)return Promise.reject(b.canceled());const s=g.serializeRequestArguments(i,this._uriReplacer),n=++this._lastMessageId,f=String(n),o=new P,p=new C;t&&p.add(t.onCancellationRequested(()=>{const d=g.serializeCancel(n);this._logger?.logOutgoing(d.byteLength,n,0,"cancel"),this._protocol.send(g.serializeCancel(n))})),this._pendingRPCReplies[f]=new j(o,p),this._onWillSendRequest(n);const h=g.serializeRequest(n,e,r,s,!!t);return this._logger?.logOutgoing(h.byteLength,n,0,`request: ${_(e)}.${r}(`,i),this._protocol.send(h),o}}class j{constructor(e,r){this._promise=e;this._disposable=r}resolveOk(e){this._promise.resolveOk(e),this._disposable.dispose()}resolveErr(e){this._promise.resolveErr(e),this._disposable.dispose()}}class a{static alloc(e,r,i){const t=new a(c.alloc(i+1+4),0);return t.writeUInt8(e),t.writeUInt32(r),t}static read(e,r){return new a(e,r)}_buff;_offset;get buffer(){return this._buff}constructor(e,r){this._buff=e,this._offset=r}static sizeUInt8(){return 1}static sizeUInt32=4;writeUInt8(e){this._buff.writeUInt8(e,this._offset),this._offset+=1}readUInt8(){const e=this._buff.readUInt8(this._offset);return this._offset+=1,e}writeUInt32(e){this._buff.writeUInt32BE(e,this._offset),this._offset+=4}readUInt32(){const e=this._buff.readUInt32BE(this._offset);return this._offset+=4,e}static sizeShortString(e){return 1+e.byteLength}writeShortString(e){this._buff.writeUInt8(e.byteLength,this._offset),this._offset+=1,this._buff.set(e,this._offset),this._offset+=e.byteLength}readShortString(){const e=this._buff.readUInt8(this._offset);this._offset+=1;const i=this._buff.slice(this._offset,this._offset+e).toString();return this._offset+=e,i}static sizeLongString(e){return 4+e.byteLength}writeLongString(e){this._buff.writeUInt32BE(e.byteLength,this._offset),this._offset+=4,this._buff.set(e,this._offset),this._offset+=e.byteLength}readLongString(){const e=this._buff.readUInt32BE(this._offset);this._offset+=4;const i=this._buff.slice(this._offset,this._offset+e).toString();return this._offset+=e,i}writeBuffer(e){this._buff.writeUInt32BE(e.byteLength,this._offset),this._offset+=4,this._buff.set(e,this._offset),this._offset+=e.byteLength}static sizeVSBuffer(e){return 4+e.byteLength}writeVSBuffer(e){this._buff.writeUInt32BE(e.byteLength,this._offset),this._offset+=4,this._buff.set(e,this._offset),this._offset+=e.byteLength}readVSBuffer(){const e=this._buff.readUInt32BE(this._offset);this._offset+=4;const r=this._buff.slice(this._offset,this._offset+e);return this._offset+=e,r}static sizeMixedArray(e){let r=0;r+=1;for(let i=0,t=e.length;i<t;i++){const s=e[i];switch(r+=1,s.type){case 1:r+=this.sizeLongString(s.value);break;case 2:r+=this.sizeVSBuffer(s.value);break;case 3:r+=this.sizeUInt32,r+=this.sizeLongString(s.value);for(let n=0;n<s.buffers.length;++n)r+=this.sizeVSBuffer(s.buffers[n]);break;case 4:break}}return r}writeMixedArray(e){this._buff.writeUInt8(e.length,this._offset),this._offset+=1;for(let r=0,i=e.length;r<i;r++){const t=e[r];switch(t.type){case 1:this.writeUInt8(1),this.writeLongString(t.value);break;case 2:this.writeUInt8(2),this.writeVSBuffer(t.value);break;case 3:this.writeUInt8(3),this.writeUInt32(t.buffers.length),this.writeLongString(t.value);for(let s=0;s<t.buffers.length;++s)this.writeBuffer(t.buffers[s]);break;case 4:this.writeUInt8(4);break}}}readMixedArray(){const e=this._buff.readUInt8(this._offset);this._offset+=1;const r=new Array(e);for(let i=0;i<e;i++)switch(this.readUInt8()){case 1:r[i]=this.readLongString();break;case 2:r[i]=this.readVSBuffer();break;case 3:{const s=this.readUInt32(),n=this.readLongString(),f=[];for(let o=0;o<s;++o)f.push(this.readVSBuffer());r[i]=new S(O(n,f,null));break}case 4:r[i]=void 0;break}return r}}var D=(r=>(r[r.Simple=0]="Simple",r[r.Mixed=1]="Mixed",r))(D||{});class g{static _useMixedArgSerialization(e){for(let r=0,i=e.length;r<i;r++)if(e[r]instanceof c||e[r]instanceof S||typeof e[r]>"u")return!0;return!1}static serializeRequestArguments(e,r){if(this._useMixedArgSerialization(e)){const i=[];for(let t=0,s=e.length;t<s;t++){const n=e[t];if(n instanceof c)i[t]={type:2,value:n};else if(typeof n>"u")i[t]={type:4};else if(n instanceof S){const{jsonString:f,referencedBuffers:o}=I(n.value,r);i[t]={type:3,value:c.fromString(f),buffers:o}}else i[t]={type:1,value:c.fromString(w(n,r))}}return{type:1,args:i}}return{type:0,args:w(e,r)}}static serializeRequest(e,r,i,t,s){switch(t.type){case 0:return this._requestJSONArgs(e,r,i,t.args,s);case 1:return this._requestMixedArgs(e,r,i,t.args,s)}}static _requestJSONArgs(e,r,i,t,s){const n=c.fromString(i),f=c.fromString(t);let o=0;o+=a.sizeUInt8(),o+=a.sizeShortString(n),o+=a.sizeLongString(f);const p=a.alloc(s?2:1,e,o);return p.writeUInt8(r),p.writeShortString(n),p.writeLongString(f),p.buffer}static deserializeRequestJSONArgs(e){const r=e.readUInt8(),i=e.readShortString(),t=e.readLongString();return{rpcId:r,method:i,args:JSON.parse(t)}}static _requestMixedArgs(e,r,i,t,s){const n=c.fromString(i);let f=0;f+=a.sizeUInt8(),f+=a.sizeShortString(n),f+=a.sizeMixedArray(t);const o=a.alloc(s?4:3,e,f);return o.writeUInt8(r),o.writeShortString(n),o.writeMixedArray(t),o.buffer}static deserializeRequestMixedArgs(e){const r=e.readUInt8(),i=e.readShortString(),t=e.readMixedArray(),s=new Array(t.length);for(let n=0,f=t.length;n<f;n++){const o=t[n];typeof o=="string"?s[n]=JSON.parse(o):s[n]=o}return{rpcId:r,method:i,args:s}}static serializeAcknowledged(e){return a.alloc(5,e,0).buffer}static serializeCancel(e){return a.alloc(6,e,0).buffer}static serializeReplyOK(e,r,i){if(typeof r>"u")return this._serializeReplyOKEmpty(e);if(r instanceof c)return this._serializeReplyOKVSBuffer(e,r);if(r instanceof S){const{jsonString:t,referencedBuffers:s}=I(r.value,i,!0);return this._serializeReplyOKJSONWithBuffers(e,t,s)}else return this._serializeReplyOKJSON(e,m(r,i))}static _serializeReplyOKEmpty(e){return a.alloc(7,e,0).buffer}static _serializeReplyOKVSBuffer(e,r){let i=0;i+=a.sizeVSBuffer(r);const t=a.alloc(8,e,i);return t.writeVSBuffer(r),t.buffer}static deserializeReplyOKVSBuffer(e){return e.readVSBuffer()}static _serializeReplyOKJSON(e,r){const i=c.fromString(r);let t=0;t+=a.sizeLongString(i);const s=a.alloc(9,e,t);return s.writeLongString(i),s.buffer}static _serializeReplyOKJSONWithBuffers(e,r,i){const t=c.fromString(r);let s=0;s+=a.sizeUInt32,s+=a.sizeLongString(t);for(const f of i)s+=a.sizeVSBuffer(f);const n=a.alloc(10,e,s);n.writeUInt32(i.length),n.writeLongString(t);for(const f of i)n.writeBuffer(f);return n.buffer}static deserializeReplyOKJSON(e){const r=e.readLongString();return JSON.parse(r)}static deserializeReplyOKJSONWithBuffers(e,r){const i=e.readUInt32(),t=e.readLongString(),s=[];for(let n=0;n<i;++n)s.push(e.readVSBuffer());return new S(O(t,s,r))}static serializeReplyErr(e,r){const i=r?m(b.transformErrorForSerialization(r),null):void 0;if(typeof i!="string")return this._serializeReplyErrEmpty(e);const t=c.fromString(i);let s=0;s+=a.sizeLongString(t);const n=a.alloc(11,e,s);return n.writeLongString(t),n.buffer}static deserializeReplyErrError(e){const r=e.readLongString();return JSON.parse(r)}static _serializeReplyErrEmpty(e){return a.alloc(12,e,0).buffer}}var $=(l=>(l[l.RequestJSONArgs=1]="RequestJSONArgs",l[l.RequestJSONArgsWithCancellation=2]="RequestJSONArgsWithCancellation",l[l.RequestMixedArgs=3]="RequestMixedArgs",l[l.RequestMixedArgsWithCancellation=4]="RequestMixedArgsWithCancellation",l[l.Acknowledged=5]="Acknowledged",l[l.Cancel=6]="Cancel",l[l.ReplyOKEmpty=7]="ReplyOKEmpty",l[l.ReplyOKVSBuffer=8]="ReplyOKVSBuffer",l[l.ReplyOKJSON=9]="ReplyOKJSON",l[l.ReplyOKJSONWithBuffers=10]="ReplyOKJSONWithBuffers",l[l.ReplyErrError=11]="ReplyErrError",l[l.ReplyErrEmpty=12]="ReplyErrEmpty",l))($||{}),H=(t=>(t[t.String=1]="String",t[t.VSBuffer=2]="VSBuffer",t[t.SerializedObjectWithBuffers=3]="SerializedObjectWithBuffers",t[t.Undefined=4]="Undefined",t))(H||{});export{v as RPCProtocol,N as RequestInitiator,J as ResponsiveState,O as parseJsonAndRestoreBufferRefs,I as stringifyJsonWithBufferRefs};
+var _a;
+import { RunOnceScheduler } from '../../../../base/common/async.js';
+import { VSBuffer } from '../../../../base/common/buffer.js';
+import { CancellationToken, CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import * as errors from '../../../../base/common/errors.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { transformIncomingURIs } from '../../../../base/common/uriIpc.js';
+import { CanceledLazyPromise, LazyPromise } from './lazyPromise.js';
+import { getStringIdentifierForProxy, ProxyIdentifier, SerializableObjectWithBuffers } from './proxyIdentifier.js';
+function safeStringify(obj, replacer) {
+    try {
+        return JSON.stringify(obj, replacer);
+    }
+    catch (err) {
+        return 'null';
+    }
+}
+const refSymbolName = '$$ref$$';
+const undefinedRef = { [refSymbolName]: -1 };
+class StringifiedJsonWithBufferRefs {
+    constructor(jsonString, referencedBuffers) {
+        this.jsonString = jsonString;
+        this.referencedBuffers = referencedBuffers;
+    }
+}
+export function stringifyJsonWithBufferRefs(obj, replacer = null, useSafeStringify = false) {
+    const foundBuffers = [];
+    const serialized = (useSafeStringify ? safeStringify : JSON.stringify)(obj, (key, value) => {
+        if (typeof value === 'undefined') {
+            return undefinedRef;
+        }
+        else if (typeof value === 'object') {
+            if (value instanceof VSBuffer) {
+                const bufferIndex = foundBuffers.push(value) - 1;
+                return { [refSymbolName]: bufferIndex };
+            }
+            if (replacer) {
+                return replacer(key, value);
+            }
+        }
+        return value;
+    });
+    return {
+        jsonString: serialized,
+        referencedBuffers: foundBuffers
+    };
+}
+export function parseJsonAndRestoreBufferRefs(jsonString, buffers, uriTransformer) {
+    return JSON.parse(jsonString, (_key, value) => {
+        if (value) {
+            const ref = value[refSymbolName];
+            if (typeof ref === 'number') {
+                return buffers[ref];
+            }
+            if (uriTransformer && value.$mid === 1) {
+                return uriTransformer.transformIncoming(value);
+            }
+        }
+        return value;
+    });
+}
+function stringify(obj, replacer) {
+    return JSON.stringify(obj, replacer);
+}
+function createURIReplacer(transformer) {
+    if (!transformer) {
+        return null;
+    }
+    return (key, value) => {
+        if (value && value.$mid === 1) {
+            return transformer.transformOutgoing(value);
+        }
+        return value;
+    };
+}
+const noop = () => { };
+const _RPCProtocolSymbol = Symbol.for('rpcProtocol');
+const _RPCProxySymbol = Symbol.for('rpcProxy');
+export class RPCProtocol extends Disposable {
+    static { _a = _RPCProtocolSymbol; }
+    static { this.UNRESPONSIVE_TIME = 3 * 1000; }
+    constructor(protocol, logger = null, transformer = null) {
+        super();
+        this[_a] = true;
+        this._onDidChangeResponsiveState = this._register(new Emitter());
+        this.onDidChangeResponsiveState = this._onDidChangeResponsiveState.event;
+        this._protocol = protocol;
+        this._logger = logger;
+        this._uriTransformer = transformer;
+        this._uriReplacer = createURIReplacer(this._uriTransformer);
+        this._isDisposed = false;
+        this._locals = [];
+        this._proxies = [];
+        for (let i = 0, len = ProxyIdentifier.count; i < len; i++) {
+            this._locals[i] = null;
+            this._proxies[i] = null;
+        }
+        this._lastMessageId = 0;
+        this._cancelInvokedHandlers = Object.create(null);
+        this._pendingRPCReplies = {};
+        this._responsiveState = 0;
+        this._unacknowledgedCount = 0;
+        this._unresponsiveTime = 0;
+        this._asyncCheckUresponsive = this._register(new RunOnceScheduler(() => this._checkUnresponsive(), 1000));
+        this._register(this._protocol.onMessage((msg) => this._receiveOneMessage(msg)));
+    }
+    dispose() {
+        this._isDisposed = true;
+        Object.keys(this._pendingRPCReplies).forEach((msgId) => {
+            const pending = this._pendingRPCReplies[msgId];
+            delete this._pendingRPCReplies[msgId];
+            pending.resolveErr(errors.canceled());
+        });
+        super.dispose();
+    }
+    drain() {
+        if (typeof this._protocol.drain === 'function') {
+            return this._protocol.drain();
+        }
+        return Promise.resolve();
+    }
+    _onWillSendRequest(req) {
+        if (this._unacknowledgedCount === 0) {
+            this._unresponsiveTime = Date.now() + RPCProtocol.UNRESPONSIVE_TIME;
+        }
+        this._unacknowledgedCount++;
+        if (!this._asyncCheckUresponsive.isScheduled()) {
+            this._asyncCheckUresponsive.schedule();
+        }
+    }
+    _onDidReceiveAcknowledge(req) {
+        this._unresponsiveTime = Date.now() + RPCProtocol.UNRESPONSIVE_TIME;
+        this._unacknowledgedCount--;
+        if (this._unacknowledgedCount === 0) {
+            this._asyncCheckUresponsive.cancel();
+        }
+        this._setResponsiveState(0);
+    }
+    _checkUnresponsive() {
+        if (this._unacknowledgedCount === 0) {
+            return;
+        }
+        if (Date.now() > this._unresponsiveTime) {
+            this._setResponsiveState(1);
+        }
+        else {
+            this._asyncCheckUresponsive.schedule();
+        }
+    }
+    _setResponsiveState(newResponsiveState) {
+        if (this._responsiveState === newResponsiveState) {
+            return;
+        }
+        this._responsiveState = newResponsiveState;
+        this._onDidChangeResponsiveState.fire(this._responsiveState);
+    }
+    get responsiveState() {
+        return this._responsiveState;
+    }
+    transformIncomingURIs(obj) {
+        if (!this._uriTransformer) {
+            return obj;
+        }
+        return transformIncomingURIs(obj, this._uriTransformer);
+    }
+    getProxy(identifier) {
+        const { nid: rpcId, sid } = identifier;
+        if (!this._proxies[rpcId]) {
+            this._proxies[rpcId] = this._createProxy(rpcId, sid);
+        }
+        return this._proxies[rpcId];
+    }
+    _createProxy(rpcId, debugName) {
+        const handler = {
+            get: (target, name) => {
+                if (typeof name === 'string' && !target[name] && name.charCodeAt(0) === 36) {
+                    target[name] = (...myArgs) => {
+                        return this._remoteCall(rpcId, name, myArgs);
+                    };
+                }
+                if (name === _RPCProxySymbol) {
+                    return debugName;
+                }
+                return target[name];
+            }
+        };
+        return new Proxy(Object.create(null), handler);
+    }
+    set(identifier, value) {
+        this._locals[identifier.nid] = value;
+        return value;
+    }
+    assertRegistered(identifiers) {
+        for (let i = 0, len = identifiers.length; i < len; i++) {
+            const identifier = identifiers[i];
+            if (!this._locals[identifier.nid]) {
+                throw new Error(`Missing proxy instance ${identifier.sid}`);
+            }
+        }
+    }
+    _receiveOneMessage(rawmsg) {
+        if (this._isDisposed) {
+            return;
+        }
+        const msgLength = rawmsg.byteLength;
+        const buff = MessageBuffer.read(rawmsg, 0);
+        const messageType = buff.readUInt8();
+        const req = buff.readUInt32();
+        switch (messageType) {
+            case 1:
+            case 2: {
+                let { rpcId, method, args } = MessageIO.deserializeRequestJSONArgs(buff);
+                if (this._uriTransformer) {
+                    args = transformIncomingURIs(args, this._uriTransformer);
+                }
+                this._receiveRequest(msgLength, req, rpcId, method, args, (messageType === 2));
+                break;
+            }
+            case 3:
+            case 4: {
+                let { rpcId, method, args } = MessageIO.deserializeRequestMixedArgs(buff);
+                if (this._uriTransformer) {
+                    args = transformIncomingURIs(args, this._uriTransformer);
+                }
+                this._receiveRequest(msgLength, req, rpcId, method, args, (messageType === 4));
+                break;
+            }
+            case 5: {
+                this._logger?.logIncoming(msgLength, req, 0, `ack`);
+                this._onDidReceiveAcknowledge(req);
+                break;
+            }
+            case 6: {
+                this._receiveCancel(msgLength, req);
+                break;
+            }
+            case 7: {
+                this._receiveReply(msgLength, req, undefined);
+                break;
+            }
+            case 9: {
+                let value = MessageIO.deserializeReplyOKJSON(buff);
+                if (this._uriTransformer) {
+                    value = transformIncomingURIs(value, this._uriTransformer);
+                }
+                this._receiveReply(msgLength, req, value);
+                break;
+            }
+            case 10: {
+                const value = MessageIO.deserializeReplyOKJSONWithBuffers(buff, this._uriTransformer);
+                this._receiveReply(msgLength, req, value);
+                break;
+            }
+            case 8: {
+                const value = MessageIO.deserializeReplyOKVSBuffer(buff);
+                this._receiveReply(msgLength, req, value);
+                break;
+            }
+            case 11: {
+                let err = MessageIO.deserializeReplyErrError(buff);
+                if (this._uriTransformer) {
+                    err = transformIncomingURIs(err, this._uriTransformer);
+                }
+                this._receiveReplyErr(msgLength, req, err);
+                break;
+            }
+            case 12: {
+                this._receiveReplyErr(msgLength, req, undefined);
+                break;
+            }
+            default:
+                console.error(`received unexpected message`);
+                console.error(rawmsg);
+        }
+    }
+    _receiveRequest(msgLength, req, rpcId, method, args, usesCancellationToken) {
+        this._logger?.logIncoming(msgLength, req, 1, `receiveRequest ${getStringIdentifierForProxy(rpcId)}.${method}(`, args);
+        const callId = String(req);
+        let promise;
+        let cancel;
+        if (usesCancellationToken) {
+            const cancellationTokenSource = new CancellationTokenSource();
+            args.push(cancellationTokenSource.token);
+            promise = this._invokeHandler(rpcId, method, args);
+            cancel = () => cancellationTokenSource.cancel();
+        }
+        else {
+            promise = this._invokeHandler(rpcId, method, args);
+            cancel = noop;
+        }
+        this._cancelInvokedHandlers[callId] = cancel;
+        const msg = MessageIO.serializeAcknowledged(req);
+        this._logger?.logOutgoing(msg.byteLength, req, 1, `ack`);
+        this._protocol.send(msg);
+        promise.then((r) => {
+            delete this._cancelInvokedHandlers[callId];
+            const msg = MessageIO.serializeReplyOK(req, r, this._uriReplacer);
+            this._logger?.logOutgoing(msg.byteLength, req, 1, `reply:`, r);
+            this._protocol.send(msg);
+        }, (err) => {
+            delete this._cancelInvokedHandlers[callId];
+            const msg = MessageIO.serializeReplyErr(req, err);
+            this._logger?.logOutgoing(msg.byteLength, req, 1, `replyErr:`, err);
+            this._protocol.send(msg);
+        });
+    }
+    _receiveCancel(msgLength, req) {
+        this._logger?.logIncoming(msgLength, req, 1, `receiveCancel`);
+        const callId = String(req);
+        this._cancelInvokedHandlers[callId]?.();
+    }
+    _receiveReply(msgLength, req, value) {
+        this._logger?.logIncoming(msgLength, req, 0, `receiveReply:`, value);
+        const callId = String(req);
+        if (!this._pendingRPCReplies.hasOwnProperty(callId)) {
+            return;
+        }
+        const pendingReply = this._pendingRPCReplies[callId];
+        delete this._pendingRPCReplies[callId];
+        pendingReply.resolveOk(value);
+    }
+    _receiveReplyErr(msgLength, req, value) {
+        this._logger?.logIncoming(msgLength, req, 0, `receiveReplyErr:`, value);
+        const callId = String(req);
+        if (!this._pendingRPCReplies.hasOwnProperty(callId)) {
+            return;
+        }
+        const pendingReply = this._pendingRPCReplies[callId];
+        delete this._pendingRPCReplies[callId];
+        let err = undefined;
+        if (value) {
+            if (value.$isError) {
+                err = new Error();
+                err.name = value.name;
+                err.message = value.message;
+                err.stack = value.stack;
+            }
+            else {
+                err = value;
+            }
+        }
+        pendingReply.resolveErr(err);
+    }
+    _invokeHandler(rpcId, methodName, args) {
+        try {
+            return Promise.resolve(this._doInvokeHandler(rpcId, methodName, args));
+        }
+        catch (err) {
+            return Promise.reject(err);
+        }
+    }
+    _doInvokeHandler(rpcId, methodName, args) {
+        const actor = this._locals[rpcId];
+        if (!actor) {
+            throw new Error('Unknown actor ' + getStringIdentifierForProxy(rpcId));
+        }
+        const method = actor[methodName];
+        if (typeof method !== 'function') {
+            throw new Error('Unknown method ' + methodName + ' on actor ' + getStringIdentifierForProxy(rpcId));
+        }
+        return method.apply(actor, args);
+    }
+    _remoteCall(rpcId, methodName, args) {
+        if (this._isDisposed) {
+            return new CanceledLazyPromise();
+        }
+        let cancellationToken = null;
+        if (args.length > 0 && CancellationToken.isCancellationToken(args[args.length - 1])) {
+            cancellationToken = args.pop();
+        }
+        if (cancellationToken && cancellationToken.isCancellationRequested) {
+            return Promise.reject(errors.canceled());
+        }
+        const serializedRequestArguments = MessageIO.serializeRequestArguments(args, this._uriReplacer);
+        const req = ++this._lastMessageId;
+        const callId = String(req);
+        const result = new LazyPromise();
+        const disposable = new DisposableStore();
+        if (cancellationToken) {
+            disposable.add(cancellationToken.onCancellationRequested(() => {
+                const msg = MessageIO.serializeCancel(req);
+                this._logger?.logOutgoing(msg.byteLength, req, 0, `cancel`);
+                this._protocol.send(MessageIO.serializeCancel(req));
+            }));
+        }
+        this._pendingRPCReplies[callId] = new PendingRPCReply(result, disposable);
+        this._onWillSendRequest(req);
+        const msg = MessageIO.serializeRequest(req, rpcId, methodName, serializedRequestArguments, !!cancellationToken);
+        this._logger?.logOutgoing(msg.byteLength, req, 0, `request: ${getStringIdentifierForProxy(rpcId)}.${methodName}(`, args);
+        this._protocol.send(msg);
+        return result;
+    }
+}
+class PendingRPCReply {
+    constructor(_promise, _disposable) {
+        this._promise = _promise;
+        this._disposable = _disposable;
+    }
+    resolveOk(value) {
+        this._promise.resolveOk(value);
+        this._disposable.dispose();
+    }
+    resolveErr(err) {
+        this._promise.resolveErr(err);
+        this._disposable.dispose();
+    }
+}
+class MessageBuffer {
+    static alloc(type, req, messageSize) {
+        const result = new MessageBuffer(VSBuffer.alloc(messageSize + 1 + 4), 0);
+        result.writeUInt8(type);
+        result.writeUInt32(req);
+        return result;
+    }
+    static read(buff, offset) {
+        return new MessageBuffer(buff, offset);
+    }
+    get buffer() {
+        return this._buff;
+    }
+    constructor(buff, offset) {
+        this._buff = buff;
+        this._offset = offset;
+    }
+    static sizeUInt8() {
+        return 1;
+    }
+    static { this.sizeUInt32 = 4; }
+    writeUInt8(n) {
+        this._buff.writeUInt8(n, this._offset);
+        this._offset += 1;
+    }
+    readUInt8() {
+        const n = this._buff.readUInt8(this._offset);
+        this._offset += 1;
+        return n;
+    }
+    writeUInt32(n) {
+        this._buff.writeUInt32BE(n, this._offset);
+        this._offset += 4;
+    }
+    readUInt32() {
+        const n = this._buff.readUInt32BE(this._offset);
+        this._offset += 4;
+        return n;
+    }
+    static sizeShortString(str) {
+        return 1 + str.byteLength;
+    }
+    writeShortString(str) {
+        this._buff.writeUInt8(str.byteLength, this._offset);
+        this._offset += 1;
+        this._buff.set(str, this._offset);
+        this._offset += str.byteLength;
+    }
+    readShortString() {
+        const strByteLength = this._buff.readUInt8(this._offset);
+        this._offset += 1;
+        const strBuff = this._buff.slice(this._offset, this._offset + strByteLength);
+        const str = strBuff.toString();
+        this._offset += strByteLength;
+        return str;
+    }
+    static sizeLongString(str) {
+        return 4 + str.byteLength;
+    }
+    writeLongString(str) {
+        this._buff.writeUInt32BE(str.byteLength, this._offset);
+        this._offset += 4;
+        this._buff.set(str, this._offset);
+        this._offset += str.byteLength;
+    }
+    readLongString() {
+        const strByteLength = this._buff.readUInt32BE(this._offset);
+        this._offset += 4;
+        const strBuff = this._buff.slice(this._offset, this._offset + strByteLength);
+        const str = strBuff.toString();
+        this._offset += strByteLength;
+        return str;
+    }
+    writeBuffer(buff) {
+        this._buff.writeUInt32BE(buff.byteLength, this._offset);
+        this._offset += 4;
+        this._buff.set(buff, this._offset);
+        this._offset += buff.byteLength;
+    }
+    static sizeVSBuffer(buff) {
+        return 4 + buff.byteLength;
+    }
+    writeVSBuffer(buff) {
+        this._buff.writeUInt32BE(buff.byteLength, this._offset);
+        this._offset += 4;
+        this._buff.set(buff, this._offset);
+        this._offset += buff.byteLength;
+    }
+    readVSBuffer() {
+        const buffLength = this._buff.readUInt32BE(this._offset);
+        this._offset += 4;
+        const buff = this._buff.slice(this._offset, this._offset + buffLength);
+        this._offset += buffLength;
+        return buff;
+    }
+    static sizeMixedArray(arr) {
+        let size = 0;
+        size += 1;
+        for (let i = 0, len = arr.length; i < len; i++) {
+            const el = arr[i];
+            size += 1;
+            switch (el.type) {
+                case 1:
+                    size += this.sizeLongString(el.value);
+                    break;
+                case 2:
+                    size += this.sizeVSBuffer(el.value);
+                    break;
+                case 3:
+                    size += this.sizeUInt32;
+                    size += this.sizeLongString(el.value);
+                    for (let i = 0; i < el.buffers.length; ++i) {
+                        size += this.sizeVSBuffer(el.buffers[i]);
+                    }
+                    break;
+                case 4:
+                    break;
+            }
+        }
+        return size;
+    }
+    writeMixedArray(arr) {
+        this._buff.writeUInt8(arr.length, this._offset);
+        this._offset += 1;
+        for (let i = 0, len = arr.length; i < len; i++) {
+            const el = arr[i];
+            switch (el.type) {
+                case 1:
+                    this.writeUInt8(1);
+                    this.writeLongString(el.value);
+                    break;
+                case 2:
+                    this.writeUInt8(2);
+                    this.writeVSBuffer(el.value);
+                    break;
+                case 3:
+                    this.writeUInt8(3);
+                    this.writeUInt32(el.buffers.length);
+                    this.writeLongString(el.value);
+                    for (let i = 0; i < el.buffers.length; ++i) {
+                        this.writeBuffer(el.buffers[i]);
+                    }
+                    break;
+                case 4:
+                    this.writeUInt8(4);
+                    break;
+            }
+        }
+    }
+    readMixedArray() {
+        const arrLen = this._buff.readUInt8(this._offset);
+        this._offset += 1;
+        const arr = new Array(arrLen);
+        for (let i = 0; i < arrLen; i++) {
+            const argType = this.readUInt8();
+            switch (argType) {
+                case 1:
+                    arr[i] = this.readLongString();
+                    break;
+                case 2:
+                    arr[i] = this.readVSBuffer();
+                    break;
+                case 3: {
+                    const bufferCount = this.readUInt32();
+                    const jsonString = this.readLongString();
+                    const buffers = [];
+                    for (let i = 0; i < bufferCount; ++i) {
+                        buffers.push(this.readVSBuffer());
+                    }
+                    arr[i] = new SerializableObjectWithBuffers(parseJsonAndRestoreBufferRefs(jsonString, buffers, null));
+                    break;
+                }
+                case 4:
+                    arr[i] = undefined;
+                    break;
+            }
+        }
+        return arr;
+    }
+}
+class MessageIO {
+    static _useMixedArgSerialization(arr) {
+        for (let i = 0, len = arr.length; i < len; i++) {
+            if (arr[i] instanceof VSBuffer) {
+                return true;
+            }
+            if (arr[i] instanceof SerializableObjectWithBuffers) {
+                return true;
+            }
+            if (typeof arr[i] === 'undefined') {
+                return true;
+            }
+        }
+        return false;
+    }
+    static serializeRequestArguments(args, replacer) {
+        if (this._useMixedArgSerialization(args)) {
+            const massagedArgs = [];
+            for (let i = 0, len = args.length; i < len; i++) {
+                const arg = args[i];
+                if (arg instanceof VSBuffer) {
+                    massagedArgs[i] = { type: 2, value: arg };
+                }
+                else if (typeof arg === 'undefined') {
+                    massagedArgs[i] = { type: 4 };
+                }
+                else if (arg instanceof SerializableObjectWithBuffers) {
+                    const { jsonString, referencedBuffers } = stringifyJsonWithBufferRefs(arg.value, replacer);
+                    massagedArgs[i] = { type: 3, value: VSBuffer.fromString(jsonString), buffers: referencedBuffers };
+                }
+                else {
+                    massagedArgs[i] = { type: 1, value: VSBuffer.fromString(stringify(arg, replacer)) };
+                }
+            }
+            return {
+                type: 1,
+                args: massagedArgs,
+            };
+        }
+        return {
+            type: 0,
+            args: stringify(args, replacer)
+        };
+    }
+    static serializeRequest(req, rpcId, method, serializedArgs, usesCancellationToken) {
+        switch (serializedArgs.type) {
+            case 0:
+                return this._requestJSONArgs(req, rpcId, method, serializedArgs.args, usesCancellationToken);
+            case 1:
+                return this._requestMixedArgs(req, rpcId, method, serializedArgs.args, usesCancellationToken);
+        }
+    }
+    static _requestJSONArgs(req, rpcId, method, args, usesCancellationToken) {
+        const methodBuff = VSBuffer.fromString(method);
+        const argsBuff = VSBuffer.fromString(args);
+        let len = 0;
+        len += MessageBuffer.sizeUInt8();
+        len += MessageBuffer.sizeShortString(methodBuff);
+        len += MessageBuffer.sizeLongString(argsBuff);
+        const result = MessageBuffer.alloc(usesCancellationToken ? 2 : 1, req, len);
+        result.writeUInt8(rpcId);
+        result.writeShortString(methodBuff);
+        result.writeLongString(argsBuff);
+        return result.buffer;
+    }
+    static deserializeRequestJSONArgs(buff) {
+        const rpcId = buff.readUInt8();
+        const method = buff.readShortString();
+        const args = buff.readLongString();
+        return {
+            rpcId: rpcId,
+            method: method,
+            args: JSON.parse(args)
+        };
+    }
+    static _requestMixedArgs(req, rpcId, method, args, usesCancellationToken) {
+        const methodBuff = VSBuffer.fromString(method);
+        let len = 0;
+        len += MessageBuffer.sizeUInt8();
+        len += MessageBuffer.sizeShortString(methodBuff);
+        len += MessageBuffer.sizeMixedArray(args);
+        const result = MessageBuffer.alloc(usesCancellationToken ? 4 : 3, req, len);
+        result.writeUInt8(rpcId);
+        result.writeShortString(methodBuff);
+        result.writeMixedArray(args);
+        return result.buffer;
+    }
+    static deserializeRequestMixedArgs(buff) {
+        const rpcId = buff.readUInt8();
+        const method = buff.readShortString();
+        const rawargs = buff.readMixedArray();
+        const args = new Array(rawargs.length);
+        for (let i = 0, len = rawargs.length; i < len; i++) {
+            const rawarg = rawargs[i];
+            if (typeof rawarg === 'string') {
+                args[i] = JSON.parse(rawarg);
+            }
+            else {
+                args[i] = rawarg;
+            }
+        }
+        return {
+            rpcId: rpcId,
+            method: method,
+            args: args
+        };
+    }
+    static serializeAcknowledged(req) {
+        return MessageBuffer.alloc(5, req, 0).buffer;
+    }
+    static serializeCancel(req) {
+        return MessageBuffer.alloc(6, req, 0).buffer;
+    }
+    static serializeReplyOK(req, res, replacer) {
+        if (typeof res === 'undefined') {
+            return this._serializeReplyOKEmpty(req);
+        }
+        else if (res instanceof VSBuffer) {
+            return this._serializeReplyOKVSBuffer(req, res);
+        }
+        else if (res instanceof SerializableObjectWithBuffers) {
+            const { jsonString, referencedBuffers } = stringifyJsonWithBufferRefs(res.value, replacer, true);
+            return this._serializeReplyOKJSONWithBuffers(req, jsonString, referencedBuffers);
+        }
+        else {
+            return this._serializeReplyOKJSON(req, safeStringify(res, replacer));
+        }
+    }
+    static _serializeReplyOKEmpty(req) {
+        return MessageBuffer.alloc(7, req, 0).buffer;
+    }
+    static _serializeReplyOKVSBuffer(req, res) {
+        let len = 0;
+        len += MessageBuffer.sizeVSBuffer(res);
+        const result = MessageBuffer.alloc(8, req, len);
+        result.writeVSBuffer(res);
+        return result.buffer;
+    }
+    static deserializeReplyOKVSBuffer(buff) {
+        return buff.readVSBuffer();
+    }
+    static _serializeReplyOKJSON(req, res) {
+        const resBuff = VSBuffer.fromString(res);
+        let len = 0;
+        len += MessageBuffer.sizeLongString(resBuff);
+        const result = MessageBuffer.alloc(9, req, len);
+        result.writeLongString(resBuff);
+        return result.buffer;
+    }
+    static _serializeReplyOKJSONWithBuffers(req, res, buffers) {
+        const resBuff = VSBuffer.fromString(res);
+        let len = 0;
+        len += MessageBuffer.sizeUInt32;
+        len += MessageBuffer.sizeLongString(resBuff);
+        for (const buffer of buffers) {
+            len += MessageBuffer.sizeVSBuffer(buffer);
+        }
+        const result = MessageBuffer.alloc(10, req, len);
+        result.writeUInt32(buffers.length);
+        result.writeLongString(resBuff);
+        for (const buffer of buffers) {
+            result.writeBuffer(buffer);
+        }
+        return result.buffer;
+    }
+    static deserializeReplyOKJSON(buff) {
+        const res = buff.readLongString();
+        return JSON.parse(res);
+    }
+    static deserializeReplyOKJSONWithBuffers(buff, uriTransformer) {
+        const bufferCount = buff.readUInt32();
+        const res = buff.readLongString();
+        const buffers = [];
+        for (let i = 0; i < bufferCount; ++i) {
+            buffers.push(buff.readVSBuffer());
+        }
+        return new SerializableObjectWithBuffers(parseJsonAndRestoreBufferRefs(res, buffers, uriTransformer));
+    }
+    static serializeReplyErr(req, err) {
+        const errStr = (err ? safeStringify(errors.transformErrorForSerialization(err), null) : undefined);
+        if (typeof errStr !== 'string') {
+            return this._serializeReplyErrEmpty(req);
+        }
+        const errBuff = VSBuffer.fromString(errStr);
+        let len = 0;
+        len += MessageBuffer.sizeLongString(errBuff);
+        const result = MessageBuffer.alloc(11, req, len);
+        result.writeLongString(errBuff);
+        return result.buffer;
+    }
+    static deserializeReplyErrError(buff) {
+        const err = buff.readLongString();
+        return JSON.parse(err);
+    }
+    static _serializeReplyErrEmpty(req) {
+        return MessageBuffer.alloc(12, req, 0).buffer;
+    }
+}

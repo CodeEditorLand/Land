@@ -1,1 +1,79 @@
-import"./configuration.js";import"../../../../base/common/uri.js";import{FileOperationResult as n}from"../../../../platform/files/common/files.js";import{joinPath as t}from"../../../../base/common/resources.js";import{VSBuffer as c}from"../../../../base/common/buffer.js";import{Queue as s}from"../../../../base/common/async.js";import"../../../../platform/environment/common/environment.js";class w{constructor(e,i,r){this.donotCacheResourcesWithSchemes=e;this.fileService=r;this.cacheHome=i.cacheHome}cacheHome;cachedConfigurations=new Map;needsCaching(e){return!this.donotCacheResourcesWithSchemes.includes(e.scheme)}read(e){return this.getCachedConfiguration(e).read()}write(e,i){return this.getCachedConfiguration(e).save(i)}remove(e){return this.getCachedConfiguration(e).remove()}getCachedConfiguration({type:e,key:i}){const r=`${e}:${i}`;let o=this.cachedConfigurations.get(r);return o||(o=new u({type:e,key:i},this.cacheHome,this.fileService),this.cachedConfigurations.set(r,o)),o}}class u{constructor({type:e,key:i},r,o){this.fileService=o;this.cachedConfigurationFolderResource=t(r,"CachedConfigurations",e,i),this.cachedConfigurationFileResource=t(this.cachedConfigurationFolderResource,e==="workspaces"?"workspace.json":"configuration.json"),this.queue=new s}queue;cachedConfigurationFolderResource;cachedConfigurationFileResource;async read(){try{return(await this.fileService.readFile(this.cachedConfigurationFileResource)).value.toString()}catch{return""}}async save(e){await this.createCachedFolder()&&await this.queue.queue(async()=>{await this.fileService.writeFile(this.cachedConfigurationFileResource,c.fromString(e))})}async remove(){try{await this.queue.queue(()=>this.fileService.del(this.cachedConfigurationFolderResource,{recursive:!0,useTrash:!1}))}catch(e){if(e.fileOperationResult!==n.FILE_NOT_FOUND)throw e}}async createCachedFolder(){if(await this.fileService.exists(this.cachedConfigurationFolderResource))return!0;try{return await this.fileService.createFolder(this.cachedConfigurationFolderResource),!0}catch{return!1}}}export{w as ConfigurationCache};
+import { joinPath } from '../../../../base/common/resources.js';
+import { VSBuffer } from '../../../../base/common/buffer.js';
+import { Queue } from '../../../../base/common/async.js';
+export class ConfigurationCache {
+    constructor(donotCacheResourcesWithSchemes, environmentService, fileService) {
+        this.donotCacheResourcesWithSchemes = donotCacheResourcesWithSchemes;
+        this.fileService = fileService;
+        this.cachedConfigurations = new Map();
+        this.cacheHome = environmentService.cacheHome;
+    }
+    needsCaching(resource) {
+        return !this.donotCacheResourcesWithSchemes.includes(resource.scheme);
+    }
+    read(key) {
+        return this.getCachedConfiguration(key).read();
+    }
+    write(key, content) {
+        return this.getCachedConfiguration(key).save(content);
+    }
+    remove(key) {
+        return this.getCachedConfiguration(key).remove();
+    }
+    getCachedConfiguration({ type, key }) {
+        const k = `${type}:${key}`;
+        let cachedConfiguration = this.cachedConfigurations.get(k);
+        if (!cachedConfiguration) {
+            cachedConfiguration = new CachedConfiguration({ type, key }, this.cacheHome, this.fileService);
+            this.cachedConfigurations.set(k, cachedConfiguration);
+        }
+        return cachedConfiguration;
+    }
+}
+class CachedConfiguration {
+    constructor({ type, key }, cacheHome, fileService) {
+        this.fileService = fileService;
+        this.cachedConfigurationFolderResource = joinPath(cacheHome, 'CachedConfigurations', type, key);
+        this.cachedConfigurationFileResource = joinPath(this.cachedConfigurationFolderResource, type === 'workspaces' ? 'workspace.json' : 'configuration.json');
+        this.queue = new Queue();
+    }
+    async read() {
+        try {
+            const content = await this.fileService.readFile(this.cachedConfigurationFileResource);
+            return content.value.toString();
+        }
+        catch (e) {
+            return '';
+        }
+    }
+    async save(content) {
+        const created = await this.createCachedFolder();
+        if (created) {
+            await this.queue.queue(async () => {
+                await this.fileService.writeFile(this.cachedConfigurationFileResource, VSBuffer.fromString(content));
+            });
+        }
+    }
+    async remove() {
+        try {
+            await this.queue.queue(() => this.fileService.del(this.cachedConfigurationFolderResource, { recursive: true, useTrash: false }));
+        }
+        catch (error) {
+            if (error.fileOperationResult !== 1) {
+                throw error;
+            }
+        }
+    }
+    async createCachedFolder() {
+        if (await this.fileService.exists(this.cachedConfigurationFolderResource)) {
+            return true;
+        }
+        try {
+            await this.fileService.createFolder(this.cachedConfigurationFolderResource);
+            return true;
+        }
+        catch (error) {
+            return false;
+        }
+    }
+}

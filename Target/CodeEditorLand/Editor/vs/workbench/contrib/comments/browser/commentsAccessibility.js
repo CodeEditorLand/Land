@@ -1,2 +1,47 @@
-import{ContextKeyExpr as s}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as a}from"../../../../platform/instantiation/common/instantiation.js";import{ctxCommentEditorFocused as d}from"./simpleCommentEditor.js";import{CommentContextKeys as c}from"../common/commentContextKeys.js";import*as o from"../../../../nls.js";import{AccessibilityVerbositySettingId as p}from"../../accessibility/browser/accessibilityConfiguration.js";import{CommentCommandId as n}from"../common/commentCommandIds.js";import{ToggleTabFocusModeAction as l}from"../../../../editor/contrib/toggleTabFocusMode/browser/toggleTabFocusMode.js";import{AccessibleViewProviderId as g,AccessibleViewType as r}from"../../../../platform/accessibility/browser/accessibleView.js";import"../../../../platform/accessibility/browser/accessibleViewRegistry.js";import{Disposable as u}from"../../../../base/common/lifecycle.js";var t;(e=>(e.intro=o.localize("intro","The editor contains commentable range(s). Some useful commands include:"),e.tabFocus=o.localize("introWidget","This widget contains a text area, for composition of new comments, and actions, that can be tabbed to once tab moves focus mode has been enabled with the command Toggle Tab Key Moves Focus{0}.",`<keybinding:${l.ID}>`),e.commentCommands=o.localize("commentCommands","Some useful comment commands include:"),e.escape=o.localize("escape","- Dismiss Comment (Escape)"),e.nextRange=o.localize("next","- Go to Next Commenting Range{0}.",`<keybinding:${n.NextRange}>`),e.previousRange=o.localize("previous","- Go to Previous Commenting Range{0}.",`<keybinding:${n.PreviousRange}>`),e.nextCommentThread=o.localize("nextCommentThreadKb","- Go to Next Comment Thread{0}.",`<keybinding:${n.NextThread}>`),e.previousCommentThread=o.localize("previousCommentThreadKb","- Go to Previous Comment Thread{0}.",`<keybinding:${n.PreviousThread}>`),e.nextCommentedRange=o.localize("nextCommentedRangeKb","- Go to Next Commented Range{0}.",`<keybinding:${n.NextCommentedRange}>`),e.previousCommentedRange=o.localize("previousCommentedRangeKb","- Go to Previous Commented Range{0}.",`<keybinding:${n.PreviousCommentedRange}>`),e.addComment=o.localize("addCommentNoKb","- Add Comment on Current Selection{0}.",`<keybinding:${n.Add}>`),e.submitComment=o.localize("submitComment","- Submit Comment{0}.",`<keybinding:${n.Submit}>`)))(t||={});class b extends u{id=g.Comments;verbositySettingKey=p.Comments;options={type:r.Help};_element;provideContent(){return[t.tabFocus,t.commentCommands,t.escape,t.addComment,t.submitComment,t.nextRange,t.previousRange].join(`
-`)}onClose(){this._element?.focus()}}class j{priority=110;name="comments";type=r.Help;when=s.or(d,c.commentFocused);getProvider(i){return i.get(a).createInstance(b)}}export{t as CommentAccessibilityHelpNLS,j as CommentsAccessibilityHelp,b as CommentsAccessibilityHelpProvider};
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ctxCommentEditorFocused } from './simpleCommentEditor.js';
+import { CommentContextKeys } from '../common/commentContextKeys.js';
+import * as nls from '../../../../nls.js';
+import { ToggleTabFocusModeAction } from '../../../../editor/contrib/toggleTabFocusMode/browser/toggleTabFocusMode.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+export var CommentAccessibilityHelpNLS;
+(function (CommentAccessibilityHelpNLS) {
+    CommentAccessibilityHelpNLS.intro = nls.localize('intro', "The editor contains commentable range(s). Some useful commands include:");
+    CommentAccessibilityHelpNLS.tabFocus = nls.localize('introWidget', "This widget contains a text area, for composition of new comments, and actions, that can be tabbed to once tab moves focus mode has been enabled with the command Toggle Tab Key Moves Focus{0}.", `<keybinding:${ToggleTabFocusModeAction.ID}>`);
+    CommentAccessibilityHelpNLS.commentCommands = nls.localize('commentCommands', "Some useful comment commands include:");
+    CommentAccessibilityHelpNLS.escape = nls.localize('escape', "- Dismiss Comment (Escape)");
+    CommentAccessibilityHelpNLS.nextRange = nls.localize('next', "- Go to Next Commenting Range{0}.", `<keybinding:${"editor.action.nextCommentingRange"}>`);
+    CommentAccessibilityHelpNLS.previousRange = nls.localize('previous', "- Go to Previous Commenting Range{0}.", `<keybinding:${"editor.action.previousCommentingRange"}>`);
+    CommentAccessibilityHelpNLS.nextCommentThread = nls.localize('nextCommentThreadKb', "- Go to Next Comment Thread{0}.", `<keybinding:${"editor.action.nextCommentThreadAction"}>`);
+    CommentAccessibilityHelpNLS.previousCommentThread = nls.localize('previousCommentThreadKb', "- Go to Previous Comment Thread{0}.", `<keybinding:${"editor.action.previousCommentThreadAction"}>`);
+    CommentAccessibilityHelpNLS.nextCommentedRange = nls.localize('nextCommentedRangeKb', "- Go to Next Commented Range{0}.", `<keybinding:${"editor.action.nextCommentedRangeAction"}>`);
+    CommentAccessibilityHelpNLS.previousCommentedRange = nls.localize('previousCommentedRangeKb', "- Go to Previous Commented Range{0}.", `<keybinding:${"editor.action.previousCommentedRangeAction"}>`);
+    CommentAccessibilityHelpNLS.addComment = nls.localize('addCommentNoKb', "- Add Comment on Current Selection{0}.", `<keybinding:${"workbench.action.addComment"}>`);
+    CommentAccessibilityHelpNLS.submitComment = nls.localize('submitComment', "- Submit Comment{0}.", `<keybinding:${"editor.action.submitComment"}>`);
+})(CommentAccessibilityHelpNLS || (CommentAccessibilityHelpNLS = {}));
+export class CommentsAccessibilityHelpProvider extends Disposable {
+    constructor() {
+        super(...arguments);
+        this.id = "comments";
+        this.verbositySettingKey = "accessibility.verbosity.comments";
+        this.options = { type: "help" };
+    }
+    provideContent() {
+        return [CommentAccessibilityHelpNLS.tabFocus, CommentAccessibilityHelpNLS.commentCommands, CommentAccessibilityHelpNLS.escape, CommentAccessibilityHelpNLS.addComment, CommentAccessibilityHelpNLS.submitComment, CommentAccessibilityHelpNLS.nextRange, CommentAccessibilityHelpNLS.previousRange].join('\n');
+    }
+    onClose() {
+        this._element?.focus();
+    }
+}
+export class CommentsAccessibilityHelp {
+    constructor() {
+        this.priority = 110;
+        this.name = 'comments';
+        this.type = "help";
+        this.when = ContextKeyExpr.or(ctxCommentEditorFocused, CommentContextKeys.commentFocused);
+    }
+    getProvider(accessor) {
+        return accessor.get(IInstantiationService).createInstance(CommentsAccessibilityHelpProvider);
+    }
+}

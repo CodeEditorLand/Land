@@ -1,1 +1,42 @@
-var S=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var p=(n,r,t,i)=>{for(var e=i>1?void 0:i?f(r,t):r,m=n.length-1,I;m>=0;m--)(I=n[m])&&(e=(i?I(r,t,e):I(e))||e);return i&&e&&S(r,t,e),e},o=(n,r)=>(t,i)=>r(t,i,n);import{IFileService as g}from"../../../../platform/files/common/files.js";import{IRemoteAgentService as l}from"../../remote/common/remoteAgentService.js";import{IWorkbenchEnvironmentService as a}from"../../environment/common/environmentService.js";import{IUriIdentityService as s}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{ILabelService as d}from"../../../../platform/label/common/label.js";import{ILogService as u}from"../../../../platform/log/common/log.js";import{IConfigurationService as y}from"../../../../platform/configuration/common/configuration.js";import{WorkingCopyHistoryService as b}from"../common/workingCopyHistoryService.js";import{InstantiationType as h,registerSingleton as C}from"../../../../platform/instantiation/common/extensions.js";import{IWorkingCopyHistoryService as L}from"../common/workingCopyHistory.js";let c=class extends b{constructor(r,t,i,e,m,I,v){super(r,t,i,e,m,I,v)}getModelOptions(){return{flushOnChange:!0}}};c=p([o(0,g),o(1,l),o(2,a),o(3,s),o(4,d),o(5,u),o(6,y)],c),C(L,c,h.Delayed);export{c as BrowserWorkingCopyHistoryService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IRemoteAgentService } from '../../remote/common/remoteAgentService.js';
+import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { WorkingCopyHistoryService } from '../common/workingCopyHistoryService.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IWorkingCopyHistoryService } from '../common/workingCopyHistory.js';
+let BrowserWorkingCopyHistoryService = class BrowserWorkingCopyHistoryService extends WorkingCopyHistoryService {
+    constructor(fileService, remoteAgentService, environmentService, uriIdentityService, labelService, logService, configurationService) {
+        super(fileService, remoteAgentService, environmentService, uriIdentityService, labelService, logService, configurationService);
+    }
+    getModelOptions() {
+        return { flushOnChange: true };
+    }
+};
+BrowserWorkingCopyHistoryService = __decorate([
+    __param(0, IFileService),
+    __param(1, IRemoteAgentService),
+    __param(2, IWorkbenchEnvironmentService),
+    __param(3, IUriIdentityService),
+    __param(4, ILabelService),
+    __param(5, ILogService),
+    __param(6, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], BrowserWorkingCopyHistoryService);
+export { BrowserWorkingCopyHistoryService };
+registerSingleton(IWorkingCopyHistoryService, BrowserWorkingCopyHistoryService, 1);

@@ -1,1 +1,73 @@
-import{Emitter as g}from"../../../base/common/event.js";import{Iterable as l}from"../../../base/common/iterator.js";import"../../../base/common/jsonSchema.js";import{toDisposable as p}from"../../../base/common/lifecycle.js";import{LinkedList as C}from"../../../base/common/linkedList.js";import{validateConstraints as I}from"../../../base/common/types.js";import"../../action/common/action.js";import{createDecorator as f}from"../../instantiation/common/instantiation.js";const y=f("commandService"),s=new class{_commands=new Map;_onDidRegisterCommand=new g;onDidRegisterCommand=this._onDidRegisterCommand.event;registerCommand(n,e){if(!n)throw new Error("invalid command");if(typeof n=="string"){if(!e)throw new Error("invalid command");return this.registerCommand({id:n,handler:e})}if(n.metadata&&Array.isArray(n.metadata.args)){const a=[];for(const o of n.metadata.args)a.push(o.constraint);const c=n.handler;n.handler=function(o,...m){return I(m,a),c(o,...m)}}const{id:t}=n;let r=this._commands.get(t);r||(r=new C,this._commands.set(t,r));const i=r.unshift(n),d=p(()=>{i(),this._commands.get(t)?.isEmpty()&&this._commands.delete(t)});return this._onDidRegisterCommand.fire(t),d}registerCommandAlias(n,e){return s.registerCommand(n,(t,...r)=>t.get(y).executeCommand(e,...r))}getCommand(n){const e=this._commands.get(n);if(!(!e||e.isEmpty()))return l.first(e)}getCommands(){const n=new Map;for(const e of this._commands.keys()){const t=this.getCommand(e);t&&n.set(e,t)}return n}};s.registerCommand("noop",()=>{});export{s as CommandsRegistry,y as ICommandService};
+import { Emitter } from '../../../base/common/event.js';
+import { Iterable } from '../../../base/common/iterator.js';
+import { toDisposable } from '../../../base/common/lifecycle.js';
+import { LinkedList } from '../../../base/common/linkedList.js';
+import { validateConstraints } from '../../../base/common/types.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const ICommandService = createDecorator('commandService');
+export const CommandsRegistry = new class {
+    constructor() {
+        this._commands = new Map();
+        this._onDidRegisterCommand = new Emitter();
+        this.onDidRegisterCommand = this._onDidRegisterCommand.event;
+    }
+    registerCommand(idOrCommand, handler) {
+        if (!idOrCommand) {
+            throw new Error(`invalid command`);
+        }
+        if (typeof idOrCommand === 'string') {
+            if (!handler) {
+                throw new Error(`invalid command`);
+            }
+            return this.registerCommand({ id: idOrCommand, handler });
+        }
+        if (idOrCommand.metadata && Array.isArray(idOrCommand.metadata.args)) {
+            const constraints = [];
+            for (const arg of idOrCommand.metadata.args) {
+                constraints.push(arg.constraint);
+            }
+            const actualHandler = idOrCommand.handler;
+            idOrCommand.handler = function (accessor, ...args) {
+                validateConstraints(args, constraints);
+                return actualHandler(accessor, ...args);
+            };
+        }
+        const { id } = idOrCommand;
+        let commands = this._commands.get(id);
+        if (!commands) {
+            commands = new LinkedList();
+            this._commands.set(id, commands);
+        }
+        const removeFn = commands.unshift(idOrCommand);
+        const ret = toDisposable(() => {
+            removeFn();
+            const command = this._commands.get(id);
+            if (command?.isEmpty()) {
+                this._commands.delete(id);
+            }
+        });
+        this._onDidRegisterCommand.fire(id);
+        return ret;
+    }
+    registerCommandAlias(oldId, newId) {
+        return CommandsRegistry.registerCommand(oldId, (accessor, ...args) => accessor.get(ICommandService).executeCommand(newId, ...args));
+    }
+    getCommand(id) {
+        const list = this._commands.get(id);
+        if (!list || list.isEmpty()) {
+            return undefined;
+        }
+        return Iterable.first(list);
+    }
+    getCommands() {
+        const result = new Map();
+        for (const key of this._commands.keys()) {
+            const command = this.getCommand(key);
+            if (command) {
+                result.set(key, command);
+            }
+        }
+        return result;
+    }
+};
+CommandsRegistry.registerCommand('noop', () => { });

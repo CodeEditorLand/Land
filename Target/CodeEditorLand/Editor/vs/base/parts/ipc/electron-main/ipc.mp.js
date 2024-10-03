@@ -1,1 +1,25 @@
-import"electron";import{validatedIpcMain as a}from"./ipcMain.js";import{Event as o}from"../../../common/event.js";import"../../../common/lifecycle.js";import{generateUuid as c}from"../../../common/uuid.js";import{Client as m}from"../common/ipc.mp.js";class w extends m{constructor(e,r){super({addEventListener:(t,s)=>e.addListener(t,s),removeEventListener:(t,s)=>e.removeListener(t,s),postMessage:t=>e.postMessage(t),start:()=>e.start(),close:()=>e.close()},r)}}async function P(n){if(n.isDestroyed()||n.webContents.isDestroyed())throw new Error("ipc.mp#connect: Cannot talk to window because it is closed or destroyed");const e=c();n.webContents.send("vscode:createMessageChannel",e);const r=o.fromNodeEventEmitter(a,"vscode:createMessageChannelResult",(s,i)=>({nonce:i,port:s.ports[0]})),{port:t}=await o.toPromise(o.once(o.filter(r,s=>s.nonce===e)));return t}export{w as Client,P as connect};
+import { validatedIpcMain } from './ipcMain.js';
+import { Event } from '../../../common/event.js';
+import { generateUuid } from '../../../common/uuid.js';
+import { Client as MessagePortClient } from '../common/ipc.mp.js';
+export class Client extends MessagePortClient {
+    constructor(port, clientId) {
+        super({
+            addEventListener: (type, listener) => port.addListener(type, listener),
+            removeEventListener: (type, listener) => port.removeListener(type, listener),
+            postMessage: message => port.postMessage(message),
+            start: () => port.start(),
+            close: () => port.close()
+        }, clientId);
+    }
+}
+export async function connect(window) {
+    if (window.isDestroyed() || window.webContents.isDestroyed()) {
+        throw new Error('ipc.mp#connect: Cannot talk to window because it is closed or destroyed');
+    }
+    const nonce = generateUuid();
+    window.webContents.send('vscode:createMessageChannel', nonce);
+    const onMessageChannelResult = Event.fromNodeEventEmitter(validatedIpcMain, 'vscode:createMessageChannelResult', (e, nonce) => ({ nonce, port: e.ports[0] }));
+    const { port } = await Event.toPromise(Event.once(Event.filter(onMessageChannelResult, e => e.nonce === nonce)));
+    return port;
+}

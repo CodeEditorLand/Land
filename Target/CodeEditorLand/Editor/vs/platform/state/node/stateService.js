@@ -1,1 +1,149 @@
-var u=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var d=(n,r,e,t)=>{for(var i=t>1?void 0:t?m(r,e):r,s=n.length-1,l;s>=0;s--)(l=n[s])&&(i=(t?l(r,e,i):l(i))||i);return t&&i&&u(r,e,i),i},a=(n,r)=>(e,t)=>r(e,t,n);import{ThrottledDelayer as c}from"../../../base/common/async.js";import{VSBuffer as h}from"../../../base/common/buffer.js";import{Disposable as g}from"../../../base/common/lifecycle.js";import{isUndefined as f,isUndefinedOrNull as v}from"../../../base/common/types.js";import"../../../base/common/uri.js";import{IEnvironmentService as S}from"../../environment/common/environment.js";import{FileOperationResult as p,IFileService as I}from"../../files/common/files.js";import{ILogService as y}from"../../log/common/log.js";import"./state.js";var T=(e=>(e[e.IMMEDIATE=0]="IMMEDIATE",e[e.DELAYED=1]="DELAYED",e))(T||{});class b extends g{constructor(e,t,i,s){super();this.storagePath=e;this.saveStrategy=t;this.logService=i;this.fileService=s}storage=Object.create(null);lastSavedStorageContents="";flushDelayer=this._register(new c(this.saveStrategy===0?0:100));initializing=void 0;closing=void 0;init(){return this.initializing||(this.initializing=this.doInit()),this.initializing}async doInit(){try{this.lastSavedStorageContents=(await this.fileService.readFile(this.storagePath)).value.toString(),this.storage=JSON.parse(this.lastSavedStorageContents)}catch(e){e.fileOperationResult!==p.FILE_NOT_FOUND&&this.logService.error(e)}}getItem(e,t){const i=this.storage[e];return v(i)?t:i}setItem(e,t){this.setItems([{key:e,data:t}])}setItems(e){let t=!1;for(const{key:i,data:s}of e)this.storage[i]!==s&&(v(s)?f(this.storage[i])||(this.storage[i]=void 0,t=!0):(this.storage[i]=s,t=!0));t&&this.save()}removeItem(e){f(this.storage[e])||(this.storage[e]=void 0,this.save())}async save(){if(!this.closing)return this.flushDelayer.trigger(()=>this.doSave())}async doSave(){if(!this.initializing)return;await this.initializing;const e=JSON.stringify(this.storage,null,4);if(e!==this.lastSavedStorageContents)try{await this.fileService.writeFile(this.storagePath,h.fromString(e),{atomic:{postfix:".vsctmp"}}),this.lastSavedStorageContents=e}catch(t){this.logService.error(t)}}async close(){return this.closing||(this.closing=this.flushDelayer.trigger(()=>this.doSave(),0)),this.closing}}let o=class extends g{fileStorage;constructor(r,e,t,i){super(),this.fileStorage=this._register(new b(e.stateResource,r,t,i))}async init(){await this.fileStorage.init()}getItem(r,e){return this.fileStorage.getItem(r,e)}};o=d([a(1,S),a(2,y),a(3,I)],o);class U extends o{setItem(r,e){this.fileStorage.setItem(r,e)}setItems(r){this.fileStorage.setItems(r)}removeItem(r){this.fileStorage.removeItem(r)}close(){return this.fileStorage.close()}}export{b as FileStorage,T as SaveStrategy,o as StateReadonlyService,U as StateService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ThrottledDelayer } from '../../../base/common/async.js';
+import { VSBuffer } from '../../../base/common/buffer.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { isUndefined, isUndefinedOrNull } from '../../../base/common/types.js';
+import { IEnvironmentService } from '../../environment/common/environment.js';
+import { IFileService } from '../../files/common/files.js';
+import { ILogService } from '../../log/common/log.js';
+export class FileStorage extends Disposable {
+    constructor(storagePath, saveStrategy, logService, fileService) {
+        super();
+        this.storagePath = storagePath;
+        this.saveStrategy = saveStrategy;
+        this.logService = logService;
+        this.fileService = fileService;
+        this.storage = Object.create(null);
+        this.lastSavedStorageContents = '';
+        this.flushDelayer = this._register(new ThrottledDelayer(this.saveStrategy === 0 ? 0 : 100));
+        this.initializing = undefined;
+        this.closing = undefined;
+    }
+    init() {
+        if (!this.initializing) {
+            this.initializing = this.doInit();
+        }
+        return this.initializing;
+    }
+    async doInit() {
+        try {
+            this.lastSavedStorageContents = (await this.fileService.readFile(this.storagePath)).value.toString();
+            this.storage = JSON.parse(this.lastSavedStorageContents);
+        }
+        catch (error) {
+            if (error.fileOperationResult !== 1) {
+                this.logService.error(error);
+            }
+        }
+    }
+    getItem(key, defaultValue) {
+        const res = this.storage[key];
+        if (isUndefinedOrNull(res)) {
+            return defaultValue;
+        }
+        return res;
+    }
+    setItem(key, data) {
+        this.setItems([{ key, data }]);
+    }
+    setItems(items) {
+        let save = false;
+        for (const { key, data } of items) {
+            if (this.storage[key] === data) {
+                continue;
+            }
+            if (isUndefinedOrNull(data)) {
+                if (!isUndefined(this.storage[key])) {
+                    this.storage[key] = undefined;
+                    save = true;
+                }
+            }
+            else {
+                this.storage[key] = data;
+                save = true;
+            }
+        }
+        if (save) {
+            this.save();
+        }
+    }
+    removeItem(key) {
+        if (!isUndefined(this.storage[key])) {
+            this.storage[key] = undefined;
+            this.save();
+        }
+    }
+    async save() {
+        if (this.closing) {
+            return;
+        }
+        return this.flushDelayer.trigger(() => this.doSave());
+    }
+    async doSave() {
+        if (!this.initializing) {
+            return;
+        }
+        await this.initializing;
+        const serializedDatabase = JSON.stringify(this.storage, null, 4);
+        if (serializedDatabase === this.lastSavedStorageContents) {
+            return;
+        }
+        try {
+            await this.fileService.writeFile(this.storagePath, VSBuffer.fromString(serializedDatabase), { atomic: { postfix: '.vsctmp' } });
+            this.lastSavedStorageContents = serializedDatabase;
+        }
+        catch (error) {
+            this.logService.error(error);
+        }
+    }
+    async close() {
+        if (!this.closing) {
+            this.closing = this.flushDelayer.trigger(() => this.doSave(), 0);
+        }
+        return this.closing;
+    }
+}
+let StateReadonlyService = class StateReadonlyService extends Disposable {
+    constructor(saveStrategy, environmentService, logService, fileService) {
+        super();
+        this.fileStorage = this._register(new FileStorage(environmentService.stateResource, saveStrategy, logService, fileService));
+    }
+    async init() {
+        await this.fileStorage.init();
+    }
+    getItem(key, defaultValue) {
+        return this.fileStorage.getItem(key, defaultValue);
+    }
+};
+StateReadonlyService = __decorate([
+    __param(1, IEnvironmentService),
+    __param(2, ILogService),
+    __param(3, IFileService),
+    __metadata("design:paramtypes", [Number, Object, Object, Object])
+], StateReadonlyService);
+export { StateReadonlyService };
+export class StateService extends StateReadonlyService {
+    setItem(key, data) {
+        this.fileStorage.setItem(key, data);
+    }
+    setItems(items) {
+        this.fileStorage.setItems(items);
+    }
+    removeItem(key) {
+        this.fileStorage.removeItem(key);
+    }
+    close() {
+        return this.fileStorage.close();
+    }
+}

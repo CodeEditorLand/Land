@@ -1,1 +1,47 @@
-var S=Object.defineProperty;var l=Object.getOwnPropertyDescriptor;var m=(s,i,e,t)=>{for(var r=t>1?void 0:t?l(i,e):i,o=s.length-1,a;o>=0;o--)(a=s[o])&&(r=(t?a(i,e,r):a(r))||r);return t&&r&&S(i,e,r),r},n=(s,i)=>(e,t)=>i(e,t,s);import"../../../base/common/uri.js";import{InstantiationType as u,registerSingleton as v}from"../../instantiation/common/extensions.js";import{IFileService as I}from"../../files/common/files.js";import{IProductService as f}from"../../product/common/productService.js";import{asTextOrError as p,IRequestService as g}from"../../request/common/request.js";import{IStorageService as d}from"../../storage/common/storage.js";import{IEnvironmentService as q}from"../../environment/common/environment.js";import{IConfigurationService as x}from"../../configuration/common/configuration.js";import{CancellationToken as y}from"../../../base/common/cancellation.js";import{AbstractExtensionResourceLoaderService as R,IExtensionResourceLoaderService as h}from"./extensionResourceLoader.js";let c=class extends R{constructor(e,t,r,o,a,E){super(e,t,r,o,a);this._requestService=E}async readExtensionResource(e){if(this.isExtensionGalleryResource(e)){const r=await this.getExtensionGalleryRequestHeaders(),o=await this._requestService.request({url:e.toString(),headers:r},y.None);return await p(o)||""}return(await this._fileService.readFile(e)).value.toString()}};c=m([n(0,I),n(1,d),n(2,f),n(3,q),n(4,x),n(5,g)],c),v(h,c,u.Delayed);export{c as ExtensionResourceLoaderService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { registerSingleton } from '../../instantiation/common/extensions.js';
+import { IFileService } from '../../files/common/files.js';
+import { IProductService } from '../../product/common/productService.js';
+import { asTextOrError, IRequestService } from '../../request/common/request.js';
+import { IStorageService } from '../../storage/common/storage.js';
+import { IEnvironmentService } from '../../environment/common/environment.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { AbstractExtensionResourceLoaderService, IExtensionResourceLoaderService } from './extensionResourceLoader.js';
+let ExtensionResourceLoaderService = class ExtensionResourceLoaderService extends AbstractExtensionResourceLoaderService {
+    constructor(fileService, storageService, productService, environmentService, configurationService, _requestService) {
+        super(fileService, storageService, productService, environmentService, configurationService);
+        this._requestService = _requestService;
+    }
+    async readExtensionResource(uri) {
+        if (this.isExtensionGalleryResource(uri)) {
+            const headers = await this.getExtensionGalleryRequestHeaders();
+            const requestContext = await this._requestService.request({ url: uri.toString(), headers }, CancellationToken.None);
+            return (await asTextOrError(requestContext)) || '';
+        }
+        const result = await this._fileService.readFile(uri);
+        return result.value.toString();
+    }
+};
+ExtensionResourceLoaderService = __decorate([
+    __param(0, IFileService),
+    __param(1, IStorageService),
+    __param(2, IProductService),
+    __param(3, IEnvironmentService),
+    __param(4, IConfigurationService),
+    __param(5, IRequestService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], ExtensionResourceLoaderService);
+export { ExtensionResourceLoaderService };
+registerSingleton(IExtensionResourceLoaderService, ExtensionResourceLoaderService, 1);

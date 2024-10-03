@@ -1,1 +1,183 @@
-import"../../../base/common/buffer.js";import"../../../base/common/cancellation.js";import"../../../base/common/console.js";import"../../../base/common/errors.js";import"../../../base/common/glob.js";import"../../../base/common/htmlContent.js";import"../../../base/common/lifecycle.js";import"../../../base/common/performance.js";import"../../../base/common/severity.js";import"../../../base/common/themables.js";import"../../../base/common/uri.js";import"../../../editor/common/config/editorOptions.js";import"../../../editor/common/core/editOperation.js";import"../../../editor/common/core/position.js";import"../../../editor/common/core/range.js";import"../../../editor/common/core/selection.js";import"../../../editor/common/diff/legacyLinesDiffComputer.js";import"../../../editor/common/editorCommon.js";import"../../../editor/common/encodedTokenAttributes.js";import"../../../editor/common/languages.js";import"../../../editor/common/languages/languageConfiguration.js";import"../../../editor/common/model.js";import"../../../editor/common/model/mirrorTextModel.js";import"../../../platform/accessibility/common/accessibility.js";import"../../../platform/action/common/action.js";import"../../../platform/configuration/common/configuration.js";import"../../../platform/configuration/common/configurationRegistry.js";import"../../../platform/extensionManagement/common/extensionStorage.js";import"../../../platform/extensions/common/extensions.js";import"../../../platform/files/common/files.js";import"../../../platform/label/common/label.js";import"../../../platform/log/common/log.js";import"../../../platform/markers/common/markers.js";import"../../../platform/progress/common/progress.js";import"../../../platform/quickinput/common/quickInput.js";import"../../../platform/remote/common/remoteAuthorityResolver.js";import"../../../platform/request/common/request.js";import"../../../platform/telemetry/common/gdprTypings.js";import"../../../platform/telemetry/common/telemetry.js";import"../../../platform/terminal/common/environmentVariable.js";import"../../../platform/terminal/common/terminal.js";import"../../../platform/tunnel/common/tunnel.js";import"../../../platform/workspace/common/editSessions.js";import"../../../platform/workspace/common/workspaceTrust.js";import"../../common/editor.js";import"../../common/views.js";import"../../contrib/callHierarchy/common/callHierarchy.js";import"../../contrib/chat/common/chatAgents.js";import"../../contrib/chat/common/chatCodeMapperService.js";import"../../contrib/chat/common/chatModel.js";import"../../contrib/chat/common/chatService.js";import"../../contrib/chat/common/chatVariables.js";import"../../contrib/chat/common/languageModels.js";import"../../contrib/chat/common/languageModelToolsService.js";import"../../contrib/debug/common/debug.js";import"../../contrib/notebook/common/notebookCommon.js";import"../../contrib/notebook/common/notebookExecutionService.js";import"../../contrib/notebook/common/notebookExecutionStateService.js";import"../../contrib/notebook/common/notebookRange.js";import"../../contrib/scm/common/scm.js";import"../../contrib/search/common/search.js";import"../../contrib/search/common/searchNotebookHelpers.js";import"../../contrib/speech/common/speechService.js";import"../../contrib/testing/common/testTypes.js";import"../../contrib/timeline/common/timeline.js";import"../../contrib/typeHierarchy/common/typeHierarchy.js";import"../../services/aiRelatedInformation/common/aiRelatedInformation.js";import"../../services/authentication/common/authentication.js";import"../../services/editor/common/editorGroupColumn.js";import"../../services/extensions/common/extensionHostProtocol.js";import"../../services/extensions/common/extensionHostProxy.js";import"../../services/extensions/common/extensions.js";import{createProxyIdentifier as e}from"../../services/extensions/common/proxyIdentifier.js";import"../../services/languageStatus/common/languageStatusService.js";import"../../services/output/common/output.js";import"../../services/remote/common/tunnelModel.js";import"../../services/search/common/queryBuilder.js";import"../../services/search/common/search.js";import"../../services/search/common/searchExtTypes.js";import"../../services/userDataProfile/common/userDataProfile.js";import"./extHostTypes.js";import"./shared/tasks.js";var l=(n=>(n[n.Default=0]="Default",n[n.InCenter=1]="InCenter",n[n.InCenterIfOutsideViewport=2]="InCenterIfOutsideViewport",n[n.AtTop=3]="AtTop",n))(l||{}),m=(o=>(o[o.UnknownInput=0]="UnknownInput",o[o.TextInput=1]="TextInput",o[o.TextDiffInput=2]="TextDiffInput",o[o.TextMergeInput=3]="TextMergeInput",o[o.NotebookInput=4]="NotebookInput",o[o.NotebookDiffInput=5]="NotebookDiffInput",o[o.CustomEditorInput=6]="CustomEditorInput",o[o.WebviewEditorInput=7]="WebviewEditorInput",o[o.TerminalEditorInput=8]="TerminalEditorInput",o[o.InteractiveEditorInput=9]="InteractiveEditorInput",o[o.ChatEditorInput=10]="ChatEditorInput",o[o.MultiDiffEditorInput=11]="MultiDiffEditorInput",o))(m||{}),u=(n=>(n[n.TAB_OPEN=0]="TAB_OPEN",n[n.TAB_CLOSE=1]="TAB_CLOSE",n[n.TAB_UPDATE=2]="TAB_UPDATE",n[n.TAB_MOVE=3]="TAB_MOVE",n))(u||{}),p=(r=>(r[r.Editable=0]="Editable",r[r.SupportsHotExit=1]="SupportsHotExit",r))(p||{}),c=(t=>(t[t.Int8Array=1]="Int8Array",t[t.Uint8Array=2]="Uint8Array",t[t.Uint8ClampedArray=3]="Uint8ClampedArray",t[t.Int16Array=4]="Int16Array",t[t.Uint16Array=5]="Uint16Array",t[t.Int32Array=6]="Int32Array",t[t.Uint32Array=7]="Uint32Array",t[t.Float32Array=8]="Float32Array",t[t.Float64Array=9]="Float64Array",t[t.BigInt64Array=10]="BigInt64Array",t[t.BigUint64Array=11]="BigUint64Array",t))(c||{}),g=(a=>(a[a.Text=1]="Text",a[a.Error=2]="Error",a[a.Rich=3]="Rich",a))(g||{}),b=(n=>(n[n.Default=0]="Default",n[n.InCenter=1]="InCenter",n[n.InCenterIfOutsideViewport=2]="InCenterIfOutsideViewport",n[n.AtTop=3]="AtTop",n))(b||{}),h=(n=>(n[n.None=0]="None",n[n.Process=1]="Process",n[n.Output=2]="Output",n[n.Hybrid=3]="Hybrid",n))(h||{});class d{_id;static _n=0;static mixin(s){return s._id=d._n++,s}}var I=(i=>(i.label="a",i.kind="b",i.detail="c",i.documentation="d",i.sortText="e",i.filterText="f",i.preselect="g",i.insertText="h",i.insertTextRules="i",i.range="j",i.commitCharacters="k",i.additionalTextEdits="l",i.kindModifier="m",i.commandIdent="n",i.commandId="o",i.commandArguments="p",i))(I||{}),v=(n=>(n.defaultRanges="a",n.completions="b",n.isIncomplete="c",n.duration="d",n))(v||{}),C=(r=>(r[r.Workspace=0]="Workspace",r[r.TextDocument=1]="TextDocument",r))(C||{});const ii={MainThreadAuthentication:e("MainThreadAuthentication"),MainThreadBulkEdits:e("MainThreadBulkEdits"),MainThreadLanguageModels:e("MainThreadLanguageModels"),MainThreadEmbeddings:e("MainThreadEmbeddings"),MainThreadChatAgents2:e("MainThreadChatAgents2"),MainThreadCodeMapper:e("MainThreadCodeMapper"),MainThreadChatVariables:e("MainThreadChatVariables"),MainThreadLanguageModelTools:e("MainThreadChatSkills"),MainThreadClipboard:e("MainThreadClipboard"),MainThreadCommands:e("MainThreadCommands"),MainThreadComments:e("MainThreadComments"),MainThreadConfiguration:e("MainThreadConfiguration"),MainThreadConsole:e("MainThreadConsole"),MainThreadDebugService:e("MainThreadDebugService"),MainThreadDecorations:e("MainThreadDecorations"),MainThreadDiagnostics:e("MainThreadDiagnostics"),MainThreadDialogs:e("MainThreadDiaglogs"),MainThreadDocuments:e("MainThreadDocuments"),MainThreadDocumentContentProviders:e("MainThreadDocumentContentProviders"),MainThreadTextEditors:e("MainThreadTextEditors"),MainThreadEditorInsets:e("MainThreadEditorInsets"),MainThreadEditorTabs:e("MainThreadEditorTabs"),MainThreadErrors:e("MainThreadErrors"),MainThreadTreeViews:e("MainThreadTreeViews"),MainThreadDownloadService:e("MainThreadDownloadService"),MainThreadLanguageFeatures:e("MainThreadLanguageFeatures"),MainThreadLanguages:e("MainThreadLanguages"),MainThreadLogger:e("MainThreadLogger"),MainThreadMessageService:e("MainThreadMessageService"),MainThreadOutputService:e("MainThreadOutputService"),MainThreadProgress:e("MainThreadProgress"),MainThreadQuickDiff:e("MainThreadQuickDiff"),MainThreadQuickOpen:e("MainThreadQuickOpen"),MainThreadStatusBar:e("MainThreadStatusBar"),MainThreadSecretState:e("MainThreadSecretState"),MainThreadStorage:e("MainThreadStorage"),MainThreadSpeech:e("MainThreadSpeechProvider"),MainThreadTelemetry:e("MainThreadTelemetry"),MainThreadTerminalService:e("MainThreadTerminalService"),MainThreadTerminalShellIntegration:e("MainThreadTerminalShellIntegration"),MainThreadWebviews:e("MainThreadWebviews"),MainThreadWebviewPanels:e("MainThreadWebviewPanels"),MainThreadWebviewViews:e("MainThreadWebviewViews"),MainThreadCustomEditors:e("MainThreadCustomEditors"),MainThreadUrls:e("MainThreadUrls"),MainThreadUriOpeners:e("MainThreadUriOpeners"),MainThreadProfileContentHandlers:e("MainThreadProfileContentHandlers"),MainThreadWorkspace:e("MainThreadWorkspace"),MainThreadFileSystem:e("MainThreadFileSystem"),MainThreadFileSystemEventService:e("MainThreadFileSystemEventService"),MainThreadExtensionService:e("MainThreadExtensionService"),MainThreadSCM:e("MainThreadSCM"),MainThreadSearch:e("MainThreadSearch"),MainThreadShare:e("MainThreadShare"),MainThreadTask:e("MainThreadTask"),MainThreadWindow:e("MainThreadWindow"),MainThreadLabelService:e("MainThreadLabelService"),MainThreadNotebook:e("MainThreadNotebook"),MainThreadNotebookDocuments:e("MainThreadNotebookDocumentsShape"),MainThreadNotebookEditors:e("MainThreadNotebookEditorsShape"),MainThreadNotebookKernels:e("MainThreadNotebookKernels"),MainThreadNotebookRenderers:e("MainThreadNotebookRenderers"),MainThreadInteractive:e("MainThreadInteractive"),MainThreadTheming:e("MainThreadTheming"),MainThreadTunnelService:e("MainThreadTunnelService"),MainThreadManagedSockets:e("MainThreadManagedSockets"),MainThreadTimeline:e("MainThreadTimeline"),MainThreadTesting:e("MainThreadTesting"),MainThreadLocalization:e("MainThreadLocalizationShape"),MainThreadAiRelatedInformation:e("MainThreadAiRelatedInformation"),MainThreadAiEmbeddingVector:e("MainThreadAiEmbeddingVector")},ri={ExtHostCodeMapper:e("ExtHostCodeMapper"),ExtHostCommands:e("ExtHostCommands"),ExtHostConfiguration:e("ExtHostConfiguration"),ExtHostDiagnostics:e("ExtHostDiagnostics"),ExtHostDebugService:e("ExtHostDebugService"),ExtHostDecorations:e("ExtHostDecorations"),ExtHostDocumentsAndEditors:e("ExtHostDocumentsAndEditors"),ExtHostDocuments:e("ExtHostDocuments"),ExtHostDocumentContentProviders:e("ExtHostDocumentContentProviders"),ExtHostDocumentSaveParticipant:e("ExtHostDocumentSaveParticipant"),ExtHostEditors:e("ExtHostEditors"),ExtHostTreeViews:e("ExtHostTreeViews"),ExtHostFileSystem:e("ExtHostFileSystem"),ExtHostFileSystemInfo:e("ExtHostFileSystemInfo"),ExtHostFileSystemEventService:e("ExtHostFileSystemEventService"),ExtHostLanguages:e("ExtHostLanguages"),ExtHostLanguageFeatures:e("ExtHostLanguageFeatures"),ExtHostQuickOpen:e("ExtHostQuickOpen"),ExtHostQuickDiff:e("ExtHostQuickDiff"),ExtHostStatusBar:e("ExtHostStatusBar"),ExtHostShare:e("ExtHostShare"),ExtHostExtensionService:e("ExtHostExtensionService"),ExtHostLogLevelServiceShape:e("ExtHostLogLevelServiceShape"),ExtHostTerminalService:e("ExtHostTerminalService"),ExtHostTerminalShellIntegration:e("ExtHostTerminalShellIntegration"),ExtHostSCM:e("ExtHostSCM"),ExtHostSearch:e("ExtHostSearch"),ExtHostTask:e("ExtHostTask"),ExtHostWorkspace:e("ExtHostWorkspace"),ExtHostWindow:e("ExtHostWindow"),ExtHostWebviews:e("ExtHostWebviews"),ExtHostWebviewPanels:e("ExtHostWebviewPanels"),ExtHostCustomEditors:e("ExtHostCustomEditors"),ExtHostWebviewViews:e("ExtHostWebviewViews"),ExtHostEditorInsets:e("ExtHostEditorInsets"),ExtHostEditorTabs:e("ExtHostEditorTabs"),ExtHostProgress:e("ExtHostProgress"),ExtHostComments:e("ExtHostComments"),ExtHostSecretState:e("ExtHostSecretState"),ExtHostStorage:e("ExtHostStorage"),ExtHostUrls:e("ExtHostUrls"),ExtHostUriOpeners:e("ExtHostUriOpeners"),ExtHostProfileContentHandlers:e("ExtHostProfileContentHandlers"),ExtHostOutputService:e("ExtHostOutputService"),ExtHostLabelService:e("ExtHostLabelService"),ExtHostNotebook:e("ExtHostNotebook"),ExtHostNotebookDocuments:e("ExtHostNotebookDocuments"),ExtHostNotebookEditors:e("ExtHostNotebookEditors"),ExtHostNotebookKernels:e("ExtHostNotebookKernels"),ExtHostNotebookRenderers:e("ExtHostNotebookRenderers"),ExtHostNotebookDocumentSaveParticipant:e("ExtHostNotebookDocumentSaveParticipant"),ExtHostInteractive:e("ExtHostInteractive"),ExtHostChatAgents2:e("ExtHostChatAgents"),ExtHostChatVariables:e("ExtHostChatVariables"),ExtHostLanguageModelTools:e("ExtHostChatSkills"),ExtHostChatProvider:e("ExtHostChatProvider"),ExtHostSpeech:e("ExtHostSpeech"),ExtHostEmbeddings:e("ExtHostEmbeddings"),ExtHostAiRelatedInformation:e("ExtHostAiRelatedInformation"),ExtHostAiEmbeddingVector:e("ExtHostAiEmbeddingVector"),ExtHostTheming:e("ExtHostTheming"),ExtHostTunnelService:e("ExtHostTunnelService"),ExtHostManagedSockets:e("ExtHostManagedSockets"),ExtHostAuthentication:e("ExtHostAuthentication"),ExtHostTimeline:e("ExtHostTimeline"),ExtHostTesting:e("ExtHostTesting"),ExtHostTelemetry:e("ExtHostTelemetry"),ExtHostLocalization:e("ExtHostLocalization")};export{h as CandidatePortSource,g as CellOutputKind,ri as ExtHostContext,C as ExtHostTestingResource,I as ISuggestDataDtoField,v as ISuggestResultDtoField,d as IdObject,ii as MainContext,b as NotebookEditorRevealType,m as TabInputKind,u as TabModelOperationKind,l as TextEditorRevealType,p as WebviewEditorCapabilities,c as WebviewMessageArrayBufferViewType};
+import { createProxyIdentifier } from '../../services/extensions/common/proxyIdentifier.js';
+export var TextEditorRevealType;
+(function (TextEditorRevealType) {
+    TextEditorRevealType[TextEditorRevealType["Default"] = 0] = "Default";
+    TextEditorRevealType[TextEditorRevealType["InCenter"] = 1] = "InCenter";
+    TextEditorRevealType[TextEditorRevealType["InCenterIfOutsideViewport"] = 2] = "InCenterIfOutsideViewport";
+    TextEditorRevealType[TextEditorRevealType["AtTop"] = 3] = "AtTop";
+})(TextEditorRevealType || (TextEditorRevealType = {}));
+export var WebviewEditorCapabilities;
+(function (WebviewEditorCapabilities) {
+    WebviewEditorCapabilities[WebviewEditorCapabilities["Editable"] = 0] = "Editable";
+    WebviewEditorCapabilities[WebviewEditorCapabilities["SupportsHotExit"] = 1] = "SupportsHotExit";
+})(WebviewEditorCapabilities || (WebviewEditorCapabilities = {}));
+export var CellOutputKind;
+(function (CellOutputKind) {
+    CellOutputKind[CellOutputKind["Text"] = 1] = "Text";
+    CellOutputKind[CellOutputKind["Error"] = 2] = "Error";
+    CellOutputKind[CellOutputKind["Rich"] = 3] = "Rich";
+})(CellOutputKind || (CellOutputKind = {}));
+export var NotebookEditorRevealType;
+(function (NotebookEditorRevealType) {
+    NotebookEditorRevealType[NotebookEditorRevealType["Default"] = 0] = "Default";
+    NotebookEditorRevealType[NotebookEditorRevealType["InCenter"] = 1] = "InCenter";
+    NotebookEditorRevealType[NotebookEditorRevealType["InCenterIfOutsideViewport"] = 2] = "InCenterIfOutsideViewport";
+    NotebookEditorRevealType[NotebookEditorRevealType["AtTop"] = 3] = "AtTop";
+})(NotebookEditorRevealType || (NotebookEditorRevealType = {}));
+export var CandidatePortSource;
+(function (CandidatePortSource) {
+    CandidatePortSource[CandidatePortSource["None"] = 0] = "None";
+    CandidatePortSource[CandidatePortSource["Process"] = 1] = "Process";
+    CandidatePortSource[CandidatePortSource["Output"] = 2] = "Output";
+    CandidatePortSource[CandidatePortSource["Hybrid"] = 3] = "Hybrid";
+})(CandidatePortSource || (CandidatePortSource = {}));
+export class IdObject {
+    static { this._n = 0; }
+    static mixin(object) {
+        object._id = IdObject._n++;
+        return object;
+    }
+}
+export const MainContext = {
+    MainThreadAuthentication: createProxyIdentifier('MainThreadAuthentication'),
+    MainThreadBulkEdits: createProxyIdentifier('MainThreadBulkEdits'),
+    MainThreadLanguageModels: createProxyIdentifier('MainThreadLanguageModels'),
+    MainThreadEmbeddings: createProxyIdentifier('MainThreadEmbeddings'),
+    MainThreadChatAgents2: createProxyIdentifier('MainThreadChatAgents2'),
+    MainThreadCodeMapper: createProxyIdentifier('MainThreadCodeMapper'),
+    MainThreadChatVariables: createProxyIdentifier('MainThreadChatVariables'),
+    MainThreadLanguageModelTools: createProxyIdentifier('MainThreadChatSkills'),
+    MainThreadClipboard: createProxyIdentifier('MainThreadClipboard'),
+    MainThreadCommands: createProxyIdentifier('MainThreadCommands'),
+    MainThreadComments: createProxyIdentifier('MainThreadComments'),
+    MainThreadConfiguration: createProxyIdentifier('MainThreadConfiguration'),
+    MainThreadConsole: createProxyIdentifier('MainThreadConsole'),
+    MainThreadDebugService: createProxyIdentifier('MainThreadDebugService'),
+    MainThreadDecorations: createProxyIdentifier('MainThreadDecorations'),
+    MainThreadDiagnostics: createProxyIdentifier('MainThreadDiagnostics'),
+    MainThreadDialogs: createProxyIdentifier('MainThreadDiaglogs'),
+    MainThreadDocuments: createProxyIdentifier('MainThreadDocuments'),
+    MainThreadDocumentContentProviders: createProxyIdentifier('MainThreadDocumentContentProviders'),
+    MainThreadTextEditors: createProxyIdentifier('MainThreadTextEditors'),
+    MainThreadEditorInsets: createProxyIdentifier('MainThreadEditorInsets'),
+    MainThreadEditorTabs: createProxyIdentifier('MainThreadEditorTabs'),
+    MainThreadErrors: createProxyIdentifier('MainThreadErrors'),
+    MainThreadTreeViews: createProxyIdentifier('MainThreadTreeViews'),
+    MainThreadDownloadService: createProxyIdentifier('MainThreadDownloadService'),
+    MainThreadLanguageFeatures: createProxyIdentifier('MainThreadLanguageFeatures'),
+    MainThreadLanguages: createProxyIdentifier('MainThreadLanguages'),
+    MainThreadLogger: createProxyIdentifier('MainThreadLogger'),
+    MainThreadMessageService: createProxyIdentifier('MainThreadMessageService'),
+    MainThreadOutputService: createProxyIdentifier('MainThreadOutputService'),
+    MainThreadProgress: createProxyIdentifier('MainThreadProgress'),
+    MainThreadQuickDiff: createProxyIdentifier('MainThreadQuickDiff'),
+    MainThreadQuickOpen: createProxyIdentifier('MainThreadQuickOpen'),
+    MainThreadStatusBar: createProxyIdentifier('MainThreadStatusBar'),
+    MainThreadSecretState: createProxyIdentifier('MainThreadSecretState'),
+    MainThreadStorage: createProxyIdentifier('MainThreadStorage'),
+    MainThreadSpeech: createProxyIdentifier('MainThreadSpeechProvider'),
+    MainThreadTelemetry: createProxyIdentifier('MainThreadTelemetry'),
+    MainThreadTerminalService: createProxyIdentifier('MainThreadTerminalService'),
+    MainThreadTerminalShellIntegration: createProxyIdentifier('MainThreadTerminalShellIntegration'),
+    MainThreadWebviews: createProxyIdentifier('MainThreadWebviews'),
+    MainThreadWebviewPanels: createProxyIdentifier('MainThreadWebviewPanels'),
+    MainThreadWebviewViews: createProxyIdentifier('MainThreadWebviewViews'),
+    MainThreadCustomEditors: createProxyIdentifier('MainThreadCustomEditors'),
+    MainThreadUrls: createProxyIdentifier('MainThreadUrls'),
+    MainThreadUriOpeners: createProxyIdentifier('MainThreadUriOpeners'),
+    MainThreadProfileContentHandlers: createProxyIdentifier('MainThreadProfileContentHandlers'),
+    MainThreadWorkspace: createProxyIdentifier('MainThreadWorkspace'),
+    MainThreadFileSystem: createProxyIdentifier('MainThreadFileSystem'),
+    MainThreadFileSystemEventService: createProxyIdentifier('MainThreadFileSystemEventService'),
+    MainThreadExtensionService: createProxyIdentifier('MainThreadExtensionService'),
+    MainThreadSCM: createProxyIdentifier('MainThreadSCM'),
+    MainThreadSearch: createProxyIdentifier('MainThreadSearch'),
+    MainThreadShare: createProxyIdentifier('MainThreadShare'),
+    MainThreadTask: createProxyIdentifier('MainThreadTask'),
+    MainThreadWindow: createProxyIdentifier('MainThreadWindow'),
+    MainThreadLabelService: createProxyIdentifier('MainThreadLabelService'),
+    MainThreadNotebook: createProxyIdentifier('MainThreadNotebook'),
+    MainThreadNotebookDocuments: createProxyIdentifier('MainThreadNotebookDocumentsShape'),
+    MainThreadNotebookEditors: createProxyIdentifier('MainThreadNotebookEditorsShape'),
+    MainThreadNotebookKernels: createProxyIdentifier('MainThreadNotebookKernels'),
+    MainThreadNotebookRenderers: createProxyIdentifier('MainThreadNotebookRenderers'),
+    MainThreadInteractive: createProxyIdentifier('MainThreadInteractive'),
+    MainThreadTheming: createProxyIdentifier('MainThreadTheming'),
+    MainThreadTunnelService: createProxyIdentifier('MainThreadTunnelService'),
+    MainThreadManagedSockets: createProxyIdentifier('MainThreadManagedSockets'),
+    MainThreadTimeline: createProxyIdentifier('MainThreadTimeline'),
+    MainThreadTesting: createProxyIdentifier('MainThreadTesting'),
+    MainThreadLocalization: createProxyIdentifier('MainThreadLocalizationShape'),
+    MainThreadAiRelatedInformation: createProxyIdentifier('MainThreadAiRelatedInformation'),
+    MainThreadAiEmbeddingVector: createProxyIdentifier('MainThreadAiEmbeddingVector')
+};
+export const ExtHostContext = {
+    ExtHostCodeMapper: createProxyIdentifier('ExtHostCodeMapper'),
+    ExtHostCommands: createProxyIdentifier('ExtHostCommands'),
+    ExtHostConfiguration: createProxyIdentifier('ExtHostConfiguration'),
+    ExtHostDiagnostics: createProxyIdentifier('ExtHostDiagnostics'),
+    ExtHostDebugService: createProxyIdentifier('ExtHostDebugService'),
+    ExtHostDecorations: createProxyIdentifier('ExtHostDecorations'),
+    ExtHostDocumentsAndEditors: createProxyIdentifier('ExtHostDocumentsAndEditors'),
+    ExtHostDocuments: createProxyIdentifier('ExtHostDocuments'),
+    ExtHostDocumentContentProviders: createProxyIdentifier('ExtHostDocumentContentProviders'),
+    ExtHostDocumentSaveParticipant: createProxyIdentifier('ExtHostDocumentSaveParticipant'),
+    ExtHostEditors: createProxyIdentifier('ExtHostEditors'),
+    ExtHostTreeViews: createProxyIdentifier('ExtHostTreeViews'),
+    ExtHostFileSystem: createProxyIdentifier('ExtHostFileSystem'),
+    ExtHostFileSystemInfo: createProxyIdentifier('ExtHostFileSystemInfo'),
+    ExtHostFileSystemEventService: createProxyIdentifier('ExtHostFileSystemEventService'),
+    ExtHostLanguages: createProxyIdentifier('ExtHostLanguages'),
+    ExtHostLanguageFeatures: createProxyIdentifier('ExtHostLanguageFeatures'),
+    ExtHostQuickOpen: createProxyIdentifier('ExtHostQuickOpen'),
+    ExtHostQuickDiff: createProxyIdentifier('ExtHostQuickDiff'),
+    ExtHostStatusBar: createProxyIdentifier('ExtHostStatusBar'),
+    ExtHostShare: createProxyIdentifier('ExtHostShare'),
+    ExtHostExtensionService: createProxyIdentifier('ExtHostExtensionService'),
+    ExtHostLogLevelServiceShape: createProxyIdentifier('ExtHostLogLevelServiceShape'),
+    ExtHostTerminalService: createProxyIdentifier('ExtHostTerminalService'),
+    ExtHostTerminalShellIntegration: createProxyIdentifier('ExtHostTerminalShellIntegration'),
+    ExtHostSCM: createProxyIdentifier('ExtHostSCM'),
+    ExtHostSearch: createProxyIdentifier('ExtHostSearch'),
+    ExtHostTask: createProxyIdentifier('ExtHostTask'),
+    ExtHostWorkspace: createProxyIdentifier('ExtHostWorkspace'),
+    ExtHostWindow: createProxyIdentifier('ExtHostWindow'),
+    ExtHostWebviews: createProxyIdentifier('ExtHostWebviews'),
+    ExtHostWebviewPanels: createProxyIdentifier('ExtHostWebviewPanels'),
+    ExtHostCustomEditors: createProxyIdentifier('ExtHostCustomEditors'),
+    ExtHostWebviewViews: createProxyIdentifier('ExtHostWebviewViews'),
+    ExtHostEditorInsets: createProxyIdentifier('ExtHostEditorInsets'),
+    ExtHostEditorTabs: createProxyIdentifier('ExtHostEditorTabs'),
+    ExtHostProgress: createProxyIdentifier('ExtHostProgress'),
+    ExtHostComments: createProxyIdentifier('ExtHostComments'),
+    ExtHostSecretState: createProxyIdentifier('ExtHostSecretState'),
+    ExtHostStorage: createProxyIdentifier('ExtHostStorage'),
+    ExtHostUrls: createProxyIdentifier('ExtHostUrls'),
+    ExtHostUriOpeners: createProxyIdentifier('ExtHostUriOpeners'),
+    ExtHostProfileContentHandlers: createProxyIdentifier('ExtHostProfileContentHandlers'),
+    ExtHostOutputService: createProxyIdentifier('ExtHostOutputService'),
+    ExtHostLabelService: createProxyIdentifier('ExtHostLabelService'),
+    ExtHostNotebook: createProxyIdentifier('ExtHostNotebook'),
+    ExtHostNotebookDocuments: createProxyIdentifier('ExtHostNotebookDocuments'),
+    ExtHostNotebookEditors: createProxyIdentifier('ExtHostNotebookEditors'),
+    ExtHostNotebookKernels: createProxyIdentifier('ExtHostNotebookKernels'),
+    ExtHostNotebookRenderers: createProxyIdentifier('ExtHostNotebookRenderers'),
+    ExtHostNotebookDocumentSaveParticipant: createProxyIdentifier('ExtHostNotebookDocumentSaveParticipant'),
+    ExtHostInteractive: createProxyIdentifier('ExtHostInteractive'),
+    ExtHostChatAgents2: createProxyIdentifier('ExtHostChatAgents'),
+    ExtHostChatVariables: createProxyIdentifier('ExtHostChatVariables'),
+    ExtHostLanguageModelTools: createProxyIdentifier('ExtHostChatSkills'),
+    ExtHostChatProvider: createProxyIdentifier('ExtHostChatProvider'),
+    ExtHostSpeech: createProxyIdentifier('ExtHostSpeech'),
+    ExtHostEmbeddings: createProxyIdentifier('ExtHostEmbeddings'),
+    ExtHostAiRelatedInformation: createProxyIdentifier('ExtHostAiRelatedInformation'),
+    ExtHostAiEmbeddingVector: createProxyIdentifier('ExtHostAiEmbeddingVector'),
+    ExtHostTheming: createProxyIdentifier('ExtHostTheming'),
+    ExtHostTunnelService: createProxyIdentifier('ExtHostTunnelService'),
+    ExtHostManagedSockets: createProxyIdentifier('ExtHostManagedSockets'),
+    ExtHostAuthentication: createProxyIdentifier('ExtHostAuthentication'),
+    ExtHostTimeline: createProxyIdentifier('ExtHostTimeline'),
+    ExtHostTesting: createProxyIdentifier('ExtHostTesting'),
+    ExtHostTelemetry: createProxyIdentifier('ExtHostTelemetry'),
+    ExtHostLocalization: createProxyIdentifier('ExtHostLocalization')
+};

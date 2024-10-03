@@ -1,1 +1,1370 @@
-var We=Object.defineProperty;var De=Object.getOwnPropertyDescriptor;var $=(p,o,e,t)=>{for(var n=t>1?void 0:t?De(o,e):o,s=p.length-1,r;s>=0;s--)(r=p[s])&&(n=(t?r(o,e,n):r(n))||n);return t&&n&&We(o,e,n),n},c=(p,o)=>(e,t)=>o(e,t,p);import{localize as E}from"../../../../nls.js";import{Disposable as Ue,DisposableStore as A,toDisposable as Ne}from"../../../../base/common/lifecycle.js";import{Event as T,Emitter as z}from"../../../../base/common/event.js";import{isCancellationError as q,getErrorMessage as Ae}from"../../../../base/common/errors.js";import{createErrorWithActions as Fe}from"../../../../base/common/errorMessage.js";import{PagedModel as f,DelayedPagedModel as ee}from"../../../../base/common/paging.js";import{SortOrder as te,SortBy as b,ExtensionGalleryErrorCode as Ve,ExtensionGalleryError as He}from"../../../../platform/extensionManagement/common/extensionManagement.js";import{IExtensionManagementServerService as ne,EnablementState as P,IWorkbenchExtensionManagementService as se,IWorkbenchExtensionEnablementService as ie}from"../../../services/extensionManagement/common/extensionManagement.js";import{IExtensionRecommendationsService as re}from"../../../services/extensionRecommendations/common/extensionRecommendations.js";import{areSameExtensions as I,getExtensionDependencies as Ge}from"../../../../platform/extensionManagement/common/extensionManagementUtil.js";import{IKeybindingService as oe}from"../../../../platform/keybinding/common/keybinding.js";import{IContextMenuService as ae}from"../../../../platform/contextview/browser/contextView.js";import{append as W,$ as D}from"../../../../base/browser/dom.js";import{IInstantiationService as le}from"../../../../platform/instantiation/common/instantiation.js";import{Delegate as $e,Renderer as ze}from"./extensionsList.js";import{ExtensionState as Ke,IExtensionsWorkbenchService as de}from"../common/extensions.js";import{Query as _e}from"../common/extensionQuery.js";import{IExtensionService as ce,toExtension as ue}from"../../../services/extensions/common/extensions.js";import{IThemeService as me}from"../../../../platform/theme/common/themeService.js";import"../../../browser/parts/views/viewsViewlet.js";import{ITelemetryService as pe}from"../../../../platform/telemetry/common/telemetry.js";import{CountBadge as Ze}from"../../../../base/browser/ui/countBadge/countBadge.js";import{ManageExtensionAction as je,getContextMenuActions as Ye,ExtensionAction as Je}from"./extensionsActions.js";import{WorkbenchPagedList as Xe}from"../../../../platform/list/browser/listService.js";import{IConfigurationService as he}from"../../../../platform/configuration/common/configuration.js";import{INotificationService as ge,Severity as K}from"../../../../platform/notification/common/notification.js";import{ViewPane as qe,ViewPaneShowActions as et}from"../../../browser/parts/views/viewPane.js";import{IWorkspaceContextService as F}from"../../../../platform/workspace/common/workspace.js";import{coalesce as xe,distinct as _}from"../../../../base/common/arrays.js";import{alert as tt}from"../../../../base/browser/ui/aria/aria.js";import"../../../../base/browser/ui/list/list.js";import{CancellationToken as nt}from"../../../../base/common/cancellation.js";import{Action as st,Separator as it,ActionRunner as rt}from"../../../../base/common/actions.js";import{ExtensionIdentifier as ot,ExtensionIdentifierMap as at,isLanguagePackExtension as fe}from"../../../../platform/extensions/common/extensions.js";import{createCancelablePromise as lt,ThrottledDelayer as dt}from"../../../../base/common/async.js";import{IProductService as ye}from"../../../../platform/product/common/productService.js";import{SeverityIcon as ve}from"../../../../platform/severityIcon/browser/severityIcon.js";import{IContextKeyService as Ee}from"../../../../platform/contextkey/common/contextkey.js";import{IViewDescriptorService as Ie,ViewContainerLocation as Se}from"../../../common/views.js";import{IOpenerService as be}from"../../../../platform/opener/common/opener.js";import{IPreferencesService as we}from"../../../services/preferences/common/preferences.js";import{IStorageService as Re,StorageScope as Ce,StorageTarget as ct}from"../../../../platform/storage/common/storage.js";import{IExtensionManifestPropertiesService as Pe}from"../../../services/extensions/common/extensionManifestPropertiesService.js";import{isVirtualWorkspace as ut}from"../../../../platform/workspace/common/virtualWorkspace.js";import{IWorkspaceTrustManagementService as Me}from"../../../../platform/workspace/common/workspaceTrust.js";import{IWorkbenchLayoutService as Qe,Position as ke}from"../../../services/layout/browser/layoutService.js";import{HoverPosition as U}from"../../../../base/browser/ui/hover/hoverWidget.js";import{ILogService as Be}from"../../../../platform/log/common/log.js";import{isOfflineError as mt}from"../../../../base/parts/request/common/request.js";import{defaultCountBadgeStyles as pt}from"../../../../platform/theme/browser/defaultStyles.js";import{Registry as ht}from"../../../../platform/registry/common/platform.js";import{Extensions as gt,IExtensionFeaturesManagementService as Oe}from"../../../services/extensionManagement/common/extensionFeatures.js";import"../../../../base/common/uri.js";import{isString as V}from"../../../../base/common/types.js";import{IUriIdentityService as Le}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{IHoverService as Te}from"../../../../platform/hover/browser/hover.js";const xt="none";class ft extends Ue{_onFocus=this._register(new z);onFocus=this._onFocus.event;_onBlur=this._register(new z);onBlur=this._onBlur.event;currentlyFocusedItems=[];onFocusChange(o){this.currentlyFocusedItems.forEach(e=>this._onBlur.fire(e)),this.currentlyFocusedItems=o,this.currentlyFocusedItems.forEach(e=>this._onFocus.fire(e))}}var yt=(o=>(o.UpdateDate="UpdateDate",o))(yt||{});function vt(p){switch(p){case"UpdateDate":return!0}}let u=class extends qe{constructor(e,t,n,s,r,a,i,d,l,m,h,w,x,v,S,M,R,g,y,Q,C,k,B,O,L,Z,j,Y,J,X){super({...t,showActions:et.Always,maximumBodySize:e.flexibleHeight?O.getNumber(`${t.id}.size`,Ce.PROFILE,0)?void 0:0:void 0},s,r,x,Q,C,a,k,i,h,w);this.options=e;this.notificationService=n;this.extensionService=d;this.extensionsWorkbenchService=l;this.extensionRecommendationsService=m;this.contextService=v;this.extensionManagementServerService=S;this.extensionManifestPropertiesService=M;this.extensionManagementService=R;this.workspaceService=g;this.productService=y;this.preferencesService=B;this.storageService=O;this.workspaceTrustManagementService=L;this.extensionEnablementService=Z;this.layoutService=j;this.extensionFeaturesManagementService=Y;this.uriIdentityService=J;this.logService=X;this.options.onDidChangeTitle&&this._register(this.options.onDidChangeTitle(N=>this.updateTitle(N))),this._register(this.contextMenuActionRunner.onDidRun(({error:N})=>N&&this.notificationService.error(N))),this.registerActions()}static RECENT_UPDATE_DURATION=7*24*60*60*1e3;bodyTemplate;badge;list=null;queryRequest=null;queryResult;contextMenuActionRunner=this._register(new rt);registerActions(){}renderHeader(e){e.classList.add("extension-view-header"),super.renderHeader(e),this.options.hideBadge||(this.badge=new Ze(W(e,D(".count-badge-wrapper")),{},pt))}renderBody(e){super.renderBody(e);const t=W(e,D(".extensions-list")),n=W(e,D(".message-container")),s=W(n,D("")),r=W(n,D(".message")),a=new $e,i=new ft,d=this.instantiationService.createInstance(ze,i,{hoverOptions:{position:()=>{const l=this.viewDescriptorService.getViewLocationById(this.id);return l===Se.Sidebar?this.layoutService.getSideBarPosition()===ke.LEFT?U.RIGHT:U.LEFT:l===Se.AuxiliaryBar?this.layoutService.getSideBarPosition()===ke.LEFT?U.LEFT:U.RIGHT:U.RIGHT}}});this.list=this.instantiationService.createInstance(Xe,"Extensions",t,a,[d],{multipleSelectionSupport:!1,setRowLineHeight:!1,horizontalScrolling:!1,accessibilityProvider:{getAriaLabel(l){return Et(l)},getWidgetAriaLabel(){return E("extensions","Extensions")}},overrideStyles:this.getLocationBasedColors().listOverrideStyles,openOnSingleClick:!0}),this._register(this.list.onContextMenu(l=>this.onContextMenu(l),this)),this._register(this.list.onDidChangeFocus(l=>i.onFocusChange(xe(l.elements)),this)),this._register(this.list),this._register(i),this._register(T.debounce(T.filter(this.list.onDidOpen,l=>l.element!==null),(l,m)=>m,75,!0)(l=>{this.openExtension(l.element,{sideByside:l.sideBySide,...l.editorOptions})})),this.bodyTemplate={extensionsList:t,messageBox:r,messageContainer:n,messageSeverityIcon:s},this.queryResult&&this.setModel(this.queryResult.model)}layoutBody(e,t){super.layoutBody(e,t),this.bodyTemplate&&(this.bodyTemplate.extensionsList.style.height=e+"px"),this.list?.layout(e,t)}async show(e,t){if(this.queryRequest){if(!t&&this.queryRequest.query===e)return this.queryRequest.request;this.queryRequest.request.cancel(),this.queryRequest=null}this.queryResult&&(this.queryResult.disposables.dispose(),this.queryResult=void 0);const n=_e.parse(e),s={sortOrder:te.Default};switch(n.sortBy){case"installs":s.sortBy=b.InstallCount;break;case"rating":s.sortBy=b.WeightedRating;break;case"name":s.sortBy=b.Title;break;case"publishedDate":s.sortBy=b.PublishedDate;break;case"updateDate":s.sortBy="UpdateDate";break}const r=lt(async a=>{try{this.queryResult=await this.query(n,s,a);const i=this.queryResult.model;return this.setModel(i),this.queryResult.onDidChangeModel&&this.queryResult.disposables.add(this.queryResult.onDidChangeModel(d=>{this.queryResult&&(this.queryResult.model=d,this.updateModel(d))})),i}catch(i){const d=new f([]);return q(i)||(this.logService.error(i),this.setModel(d,i)),this.list?this.list.model:d}});return r.finally(()=>this.queryRequest=null),this.queryRequest={query:e,request:r},r}count(){return this.queryResult?.model.length??0}showEmptyModel(){const e=new f([]);return this.setModel(e),Promise.resolve(e)}async onContextMenu(e){if(e.element){const t=new A,n=t.add(this.instantiationService.createInstance(je)),s=e.element&&this.extensionsWorkbenchService.local.find(i=>I(i.identifier,e.element.identifier)&&(!e.element.server||e.element.server===i.server))||e.element;n.extension=s;let r=[];n.enabled?r=await n.getActionGroups():s&&(r=await Ye(s,this.contextKeyService,this.instantiationService),r.forEach(i=>i.forEach(d=>{d instanceof Je&&(d.extension=s)})));let a=[];for(const i of r)a=[...a,...i,new it];a.pop(),this.contextMenuService.showContextMenu({getAnchor:()=>e.anchor,getActions:()=>a,actionRunner:this.contextMenuActionRunner,onHide:()=>t.dispose()})}}async query(e,t,n){const s=/@id:(([a-z0-9A-Z][a-z0-9\-A-Z]*)\.([a-z0-9A-Z][a-z0-9\-A-Z]*))/g,r=[];let a;for(;(a=s.exec(e.value))!==null;){const l=a[1];r.push(l)}if(r.length)return{model:await this.queryByIds(r,t,n),disposables:new A};if(u.isLocalExtensionsQuery(e.value,e.sortBy))return this.queryLocal(e,t);u.isSearchPopularQuery(e.value)?(e.value=e.value.replace("@popular",""),t.sortBy=t.sortBy?t.sortBy:b.InstallCount):u.isSearchRecentlyPublishedQuery(e.value)&&(e.value=e.value.replace("@recentlyPublished",""),t.sortBy=t.sortBy?t.sortBy:b.PublishedDate);const i={...t,sortBy:vt(t.sortBy)?void 0:t.sortBy};return{model:await this.queryGallery(e,i,n),disposables:new A}}async queryByIds(e,t,n){const s=e.reduce((i,d)=>(i.add(d.toLowerCase()),i),new Set),r=(await this.extensionsWorkbenchService.queryLocal(this.options.server)).filter(i=>s.has(i.identifier.id.toLowerCase())),a=r.length?e.filter(i=>r.every(d=>!I(d.identifier,{id:i}))):e;if(a.length){const i=await this.extensionsWorkbenchService.getExtensions(a.map(d=>({id:d})),{source:"queryById"},n);r.push(...i)}return this.getPagedModel(r)}async queryLocal(e,t){const n=await this.extensionsWorkbenchService.queryLocal(this.options.server);let{extensions:s,canIncludeInstalledExtensions:r}=await this.filterLocal(n,this.extensionService.extensions,e,t);const a=new A,i=a.add(new z);if(r){let d=!1;a.add(Ne(()=>d=!0)),a.add(T.debounce(T.any(T.filter(this.extensionsWorkbenchService.onChange,l=>l?.state===Ke.Installed),this.extensionService.onDidChangeExtensions),()=>{})(async()=>{const l=this.options.server?this.extensionsWorkbenchService.installed.filter(h=>h.server===this.options.server):this.extensionsWorkbenchService.local,{extensions:m}=await this.filterLocal(l,this.extensionService.extensions,e,t);if(!d){const h=this.mergeAddedExtensions(s,m);h&&(s=h,i.fire(new f(s)))}}))}return{model:new f(s),onDidChangeModel:i.event,disposables:a}}async filterLocal(e,t,n,s){const r=n.value;let a=[],i=!0;return/@builtin/i.test(r)?(a=this.filterBuiltinExtensions(e,n,s),i=!1):/@installed/i.test(r)?a=this.filterInstalledExtensions(e,t,n,s):/@outdated/i.test(r)?a=this.filterOutdatedExtensions(e,n,s):/@disabled/i.test(r)?a=this.filterDisabledExtensions(e,t,n,s):/@enabled/i.test(r)?a=this.filterEnabledExtensions(e,t,n,s):/@workspaceUnsupported/i.test(r)?a=this.filterWorkspaceUnsupportedExtensions(e,n,s):/@deprecated/i.test(n.value)?a=await this.filterDeprecatedExtensions(e,n,s):/@recentlyUpdated/i.test(n.value)?a=this.filterRecentlyUpdatedExtensions(e,n,s):/@feature:/i.test(n.value)&&(a=this.filterExtensionsByFeature(e,n,s)),{extensions:a,canIncludeInstalledExtensions:i}}filterBuiltinExtensions(e,t,n){let{value:s,includedCategories:r,excludedCategories:a}=this.parseCategories(t.value);s=s.replace(/@builtin/g,"").replace(/@sort:(\w+)(-\w*)?/g,"").trim().toLowerCase();const i=e.filter(d=>d.isBuiltin&&(d.name.toLowerCase().indexOf(s)>-1||d.displayName.toLowerCase().indexOf(s)>-1)&&this.filterExtensionByCategory(d,r,a));return this.sortExtensions(i,n)}filterExtensionByCategory(e,t,n){return!t.length&&!n.length?!0:e.categories.length?n.length&&e.categories.some(s=>n.includes(s.toLowerCase()))?!1:e.categories.some(s=>t.includes(s.toLowerCase())):t.includes(xt)}parseCategories(e){const t=[],n=[];return e=e.replace(/\bcategory:("([^"]*)"|([^"]\S*))(\s+|\b|$)/g,(s,r,a)=>{const i=(a||r||"").toLowerCase();return i.startsWith("-")?n.indexOf(i)===-1&&n.push(i):t.indexOf(i)===-1&&t.push(i),""}),{value:e,includedCategories:t,excludedCategories:n}}filterInstalledExtensions(e,t,n,s){let{value:r,includedCategories:a,excludedCategories:i}=this.parseCategories(n.value);r=r.replace(/@installed/g,"").replace(/@sort:(\w+)(-\w*)?/g,"").trim().toLowerCase();const d=m=>(m.name.toLowerCase().indexOf(r)>-1||m.displayName.toLowerCase().indexOf(r)>-1||m.description.toLowerCase().indexOf(r)>-1)&&this.filterExtensionByCategory(m,a,i);let l;if(s.sortBy!==void 0)l=e.filter(m=>!m.isBuiltin&&d(m)),l=this.sortExtensions(l,s);else{l=e.filter(g=>(!g.isBuiltin||g.outdated||g.runtimeState!==void 0)&&d(g));const m=t.reduce((g,y)=>(g.set(y.identifier.value,y),g),new at),h=(g,y)=>{const Q=m.get(g.identifier.id),C=!!Q&&this.extensionManagementServerService.getExtensionManagementServer(ue(Q))===g.server,k=m.get(y.identifier.id),B=k&&this.extensionManagementServerService.getExtensionManagementServer(ue(k))===y.server;if(C&&B)return g.displayName.localeCompare(y.displayName);const O=g.local&&fe(g.local.manifest),L=y.local&&fe(y.local.manifest);return!C&&!B?O?-1:L?1:g.displayName.localeCompare(y.displayName):C&&L||B&&O?g.displayName.localeCompare(y.displayName):C?-1:1},w=[],x=[],v=[],S=[],M=[],R=[];for(const g of l)g.enablementState===P.DisabledByInvalidExtension?w.push(g):g.enablementState===P.DisabledByExtensionDependency?x.push(g):g.deprecationInfo?v.push(g):g.outdated?S.push(g):g.runtimeState?M.push(g):R.push(g);l=[...w.sort(h),...x.sort(h),...v.sort(h),...S.sort(h),...M.sort(h),...R.sort(h)]}return l}filterOutdatedExtensions(e,t,n){let{value:s,includedCategories:r,excludedCategories:a}=this.parseCategories(t.value);s=s.replace(/@outdated/g,"").replace(/@sort:(\w+)(-\w*)?/g,"").trim().toLowerCase();const i=e.sort((d,l)=>d.displayName.localeCompare(l.displayName)).filter(d=>d.outdated&&(d.name.toLowerCase().indexOf(s)>-1||d.displayName.toLowerCase().indexOf(s)>-1)&&this.filterExtensionByCategory(d,r,a));return this.sortExtensions(i,n)}filterDisabledExtensions(e,t,n,s){let{value:r,includedCategories:a,excludedCategories:i}=this.parseCategories(n.value);r=r.replace(/@disabled/g,"").replace(/@sort:(\w+)(-\w*)?/g,"").trim().toLowerCase();const d=e.sort((l,m)=>l.displayName.localeCompare(m.displayName)).filter(l=>t.every(m=>!I({id:m.identifier.value,uuid:m.uuid},l.identifier))&&(l.name.toLowerCase().indexOf(r)>-1||l.displayName.toLowerCase().indexOf(r)>-1)&&this.filterExtensionByCategory(l,a,i));return this.sortExtensions(d,s)}filterEnabledExtensions(e,t,n,s){let{value:r,includedCategories:a,excludedCategories:i}=this.parseCategories(n.value);r=r?r.replace(/@enabled/g,"").replace(/@sort:(\w+)(-\w*)?/g,"").trim().toLowerCase():"",e=e.filter(l=>!l.isBuiltin);const d=e.sort((l,m)=>l.displayName.localeCompare(m.displayName)).filter(l=>t.some(m=>I({id:m.identifier.value,uuid:m.uuid},l.identifier))&&(l.name.toLowerCase().indexOf(r)>-1||l.displayName.toLowerCase().indexOf(r)>-1)&&this.filterExtensionByCategory(l,a,i));return this.sortExtensions(d,s)}filterWorkspaceUnsupportedExtensions(e,t,n){const r=t.value.match(/^\s*@workspaceUnsupported(?::(untrusted|virtual)(Partial)?)?(?:\s+([^\s]*))?/i);if(!r)return[];const a=r[1]?.toLowerCase(),i=!!r[2],d=r[3]?.toLowerCase();d&&(e=e.filter(x=>x.name.toLowerCase().indexOf(d)>-1||x.displayName.toLowerCase().indexOf(d)>-1));const l=(x,v)=>x.local&&this.extensionManifestPropertiesService.getExtensionVirtualWorkspaceSupportType(x.local.manifest)===v,m=(x,v)=>{if(!x.local)return!1;const S=this.extensionEnablementService.getEnablementState(x.local);return S!==P.EnabledGlobally&&S!==P.EnabledWorkspace&&S!==P.DisabledByTrustRequirement&&S!==P.DisabledByExtensionDependency?!1:this.extensionManifestPropertiesService.getExtensionUntrustedWorkspaceSupportType(x.local.manifest)===v?!0:v===!1?Ge(e.map(R=>R.local),x.local).some(R=>this.extensionManifestPropertiesService.getExtensionUntrustedWorkspaceSupportType(R.manifest)===v):!1},h=ut(this.workspaceService.getWorkspace()),w=!this.workspaceTrustManagementService.isWorkspaceTrusted();return a==="virtual"?e=e.filter(x=>h&&l(x,i?"limited":!1)&&!(w&&m(x,!1))):a==="untrusted"?e=e.filter(x=>m(x,i?"limited":!1)&&!(h&&l(x,!1))):e=e.filter(x=>h&&!l(x,!0)||w&&!m(x,!0)),this.sortExtensions(e,n)}async filterDeprecatedExtensions(e,t,n){const s=t.value.replace(/@deprecated/g,"").replace(/@sort:(\w+)(-\w*)?/g,"").trim().toLowerCase(),r=await this.extensionManagementService.getExtensionsControlManifest(),a=Object.keys(r.deprecated);return e=e.filter(i=>a.includes(i.identifier.id)&&(!s||i.name.toLowerCase().indexOf(s)>-1||i.displayName.toLowerCase().indexOf(s)>-1)),this.sortExtensions(e,n)}filterRecentlyUpdatedExtensions(e,t,n){let{value:s,includedCategories:r,excludedCategories:a}=this.parseCategories(t.value);const i=Date.now();e=e.filter(l=>!l.isBuiltin&&!l.outdated&&l.local?.updated&&l.local?.installedTimestamp!==void 0&&i-l.local.installedTimestamp<u.RECENT_UPDATE_DURATION),s=s.replace(/@recentlyUpdated/g,"").replace(/@sort:(\w+)(-\w*)?/g,"").trim().toLowerCase();const d=e.filter(l=>(l.name.toLowerCase().indexOf(s)>-1||l.displayName.toLowerCase().indexOf(s)>-1)&&this.filterExtensionByCategory(l,r,a));return n.sortBy=n.sortBy??"UpdateDate",this.sortExtensions(d,n)}filterExtensionsByFeature(e,t,n){const r=t.value.replace(/@feature:/g,"").trim().split(" ")[0],a=ht.as(gt.ExtensionFeaturesRegistry).getExtensionFeature(r);if(!a)return[];const i=a.renderer?this.instantiationService.createInstance(a.renderer):void 0;try{const d=e.filter(l=>l.local?i?.shouldRender(l.local.manifest)||this.extensionFeaturesManagementService.getAccessData(new ot(l.identifier.id),r):!1);return this.sortExtensions(d,n)}finally{i?.dispose()}}mergeAddedExtensions(e,t){const n=[...e],s=a=>{let i=-1;const d=t[a];return d&&(i=n.findIndex(l=>I(l.identifier,d.identifier)),i===-1)?s(a-1):i};let r=!1;for(let a=0;a<t.length;a++){const i=t[a];e.every(d=>!I(d.identifier,i.identifier))&&(r=!0,e.splice(s(a-1)+1,0,i))}return r?e:void 0}async queryGallery(e,t,n){const s=t.sortBy!==void 0;if(!s&&!e.value.trim()&&(t.sortBy=b.InstallCount),this.isRecommendationsQuery(e))return this.queryRecommendations(e,t,n);const r=e.value;if(/\bext:([^\s]+)\b/g.test(r))return t.text=r,t.source="file-extension-tags",this.extensionsWorkbenchService.queryGallery(t,n).then(l=>this.getPagedModel(l));let a=[];if(r){if(t.text=r.substring(0,350),t.source="searchText",!s){const m=(await this.extensionManagementService.getExtensionsControlManifest()).search;if(Array.isArray(m)){for(const h of m)if(h.query&&h.query.toLowerCase()===r.toLowerCase()&&Array.isArray(h.preferredResults)){a=h.preferredResults;break}}}}else t.source="viewlet";const i=await this.extensionsWorkbenchService.queryGallery(t,n);let d=0;for(const l of a)for(let m=d;m<i.firstPage.length;m++)if(I(i.firstPage[m].identifier,{id:l})){if(d!==m){const h=i.firstPage.splice(m,1)[0];i.firstPage.splice(d,0,h),d++}break}return this.getPagedModel(i)}sortExtensions(e,t){switch(t.sortBy){case b.InstallCount:e=e.sort((n,s)=>typeof s.installCount=="number"&&typeof n.installCount=="number"?s.installCount-n.installCount:NaN);break;case"UpdateDate":e=e.sort((n,s)=>typeof s.local?.installedTimestamp=="number"&&typeof n.local?.installedTimestamp=="number"?s.local.installedTimestamp-n.local.installedTimestamp:typeof s.local?.installedTimestamp=="number"?1:typeof n.local?.installedTimestamp=="number"?-1:NaN);break;case b.AverageRating:case b.WeightedRating:e=e.sort((n,s)=>typeof s.rating=="number"&&typeof n.rating=="number"?s.rating-n.rating:NaN);break;default:e=e.sort((n,s)=>n.displayName.localeCompare(s.displayName));break}return t.sortOrder===te.Descending&&(e=e.reverse()),e}isRecommendationsQuery(e){return u.isWorkspaceRecommendedExtensionsQuery(e.value)||u.isKeymapsRecommendedExtensionsQuery(e.value)||u.isLanguageRecommendedExtensionsQuery(e.value)||u.isExeRecommendedExtensionsQuery(e.value)||u.isRemoteRecommendedExtensionsQuery(e.value)||/@recommended:all/i.test(e.value)||u.isSearchRecommendedExtensionsQuery(e.value)||u.isRecommendedExtensionsQuery(e.value)}async queryRecommendations(e,t,n){return u.isWorkspaceRecommendedExtensionsQuery(e.value)?this.getWorkspaceRecommendationsModel(e,t,n):u.isKeymapsRecommendedExtensionsQuery(e.value)?this.getKeymapRecommendationsModel(e,t,n):u.isLanguageRecommendedExtensionsQuery(e.value)?this.getLanguageRecommendationsModel(e,t,n):u.isExeRecommendedExtensionsQuery(e.value)?this.getExeRecommendationsModel(e,t,n):u.isRemoteRecommendedExtensionsQuery(e.value)?this.getRemoteRecommendationsModel(e,t,n):/@recommended:all/i.test(e.value)?this.getAllRecommendationsModel(t,n):u.isSearchRecommendedExtensionsQuery(e.value)||u.isRecommendedExtensionsQuery(e.value)&&t.sortBy!==void 0?this.searchRecommendations(e,t,n):u.isRecommendedExtensionsQuery(e.value)?this.getOtherRecommendationsModel(e,t,n):new f([])}async getInstallableRecommendations(e,t,n){const s=[];if(e.length){const r=[],a=[];for(const i of e)typeof i=="string"?r.push(i):a.push(i);if(r.length)try{const i=await this.extensionsWorkbenchService.getExtensions(r.map(d=>({id:d})),{source:t.source},n);for(const d of i)d.gallery&&!d.deprecationInfo&&await this.extensionManagementService.canInstall(d.gallery)&&s.push(d)}catch(i){if(!a.length||!this.isOfflineError(i))throw i}if(a.length){const i=await this.extensionsWorkbenchService.getResourceExtensions(a,!0);for(const d of i)await this.extensionsWorkbenchService.canInstall(d)&&s.push(d)}}return s}async getWorkspaceRecommendations(){const e=await this.extensionRecommendationsService.getWorkspaceRecommendations(),{important:t}=await this.extensionRecommendationsService.getConfigBasedRecommendations();for(const n of t)e.find(s=>s===n)||e.push(n);return e}async getWorkspaceRecommendationsModel(e,t,n){const s=await this.getWorkspaceRecommendations(),r=await this.getInstallableRecommendations(s,{...t,source:"recommendations-workspace"},n);return new f(r)}async getKeymapRecommendationsModel(e,t,n){const s=e.value.replace(/@recommended:keymaps/g,"").trim().toLowerCase(),r=this.extensionRecommendationsService.getKeymapRecommendations(),a=(await this.getInstallableRecommendations(r,{...t,source:"recommendations-keymaps"},n)).filter(i=>i.identifier.id.toLowerCase().indexOf(s)>-1);return new f(a)}async getLanguageRecommendationsModel(e,t,n){const s=e.value.replace(/@recommended:languages/g,"").trim().toLowerCase(),r=this.extensionRecommendationsService.getLanguageRecommendations(),a=(await this.getInstallableRecommendations(r,{...t,source:"recommendations-languages"},n)).filter(i=>i.identifier.id.toLowerCase().indexOf(s)>-1);return new f(a)}async getRemoteRecommendationsModel(e,t,n){const s=e.value.replace(/@recommended:remotes/g,"").trim().toLowerCase(),r=this.extensionRecommendationsService.getRemoteRecommendations(),a=(await this.getInstallableRecommendations(r,{...t,source:"recommendations-remotes"},n)).filter(i=>i.identifier.id.toLowerCase().indexOf(s)>-1);return new f(a)}async getExeRecommendationsModel(e,t,n){const s=e.value.replace(/@exe:/g,"").trim().toLowerCase(),{important:r,others:a}=await this.extensionRecommendationsService.getExeBasedRecommendations(s.startsWith('"')?s.substring(1,s.length-1):s),i=await this.getInstallableRecommendations([...r,...a],{...t,source:"recommendations-exe"},n);return new f(i)}async getOtherRecommendationsModel(e,t,n){const s=await this.getOtherRecommendations(),r=await this.getInstallableRecommendations(s,{...t,source:"recommendations-other",sortBy:void 0},n),a=xe(s.map(i=>r.find(d=>I(d.identifier,{id:i}))));return new f(a)}async getOtherRecommendations(){const e=(await this.extensionsWorkbenchService.queryLocal(this.options.server)).map(n=>n.identifier.id.toLowerCase()),t=(await this.getWorkspaceRecommendations()).map(n=>V(n)?n.toLowerCase():n);return _((await Promise.all([this.extensionRecommendationsService.getImportantRecommendations(),this.extensionRecommendationsService.getFileBasedRecommendations(),this.extensionRecommendationsService.getOtherRecommendations()])).flat().filter(n=>!e.includes(n.toLowerCase())&&!t.includes(n.toLowerCase())),n=>n.toLowerCase())}async getAllRecommendationsModel(e,t){const n=await this.extensionsWorkbenchService.queryLocal(this.options.server),s=n.map(d=>d.identifier.id.toLowerCase()),r=_((await Promise.all([this.getWorkspaceRecommendations(),this.extensionRecommendationsService.getImportantRecommendations(),this.extensionRecommendationsService.getFileBasedRecommendations(),this.extensionRecommendationsService.getOtherRecommendations()])).flat().filter(d=>V(d)?!s.includes(d.toLowerCase()):!n.some(l=>l.local&&this.uriIdentityService.extUri.isEqual(l.local.location,d)))),a=await this.getInstallableRecommendations(r,{...e,source:"recommendations-all",sortBy:void 0},t),i=[];for(let d=0;d<a.length&&i.length<8;d++){const l=r[d];if(V(l)){const m=a.find(h=>I(h.identifier,{id:l}));m&&i.push(m)}else{const m=a.find(h=>h.resourceExtension&&this.uriIdentityService.extUri.isEqual(h.resourceExtension.location,l));m&&i.push(m)}}return new f(i)}async searchRecommendations(e,t,n){const s=e.value.replace(/@recommended/g,"").trim().toLowerCase(),r=_([...await this.getWorkspaceRecommendations(),...await this.getOtherRecommendations()]),a=(await this.getInstallableRecommendations(r,{...t,source:"recommendations",sortBy:void 0},n)).filter(i=>i.identifier.id.toLowerCase().indexOf(s)>-1);return new f(this.sortExtensions(a,t))}setModel(e,t,n){this.list&&(this.list.model=new ee(e),n||(this.list.scrollTop=0),this.updateBody(t)),this.badge&&this.badge.setCount(this.count())}updateModel(e){this.list&&(this.list.model=new ee(e),this.updateBody()),this.badge&&this.badge.setCount(this.count())}updateBody(e){if(this.bodyTemplate){const t=this.count();this.bodyTemplate.extensionsList.classList.toggle("hidden",t===0),this.bodyTemplate.messageContainer.classList.toggle("hidden",t>0),t===0&&this.isBodyVisible()&&(e?this.isOfflineError(e)?(this.bodyTemplate.messageSeverityIcon.className=ve.className(K.Warning),this.bodyTemplate.messageBox.textContent=E("offline error","Unable to search the Marketplace when offline, please check your network connection.")):(this.bodyTemplate.messageSeverityIcon.className=ve.className(K.Error),this.bodyTemplate.messageBox.textContent=E("error","Error while fetching extensions. {0}",Ae(e))):(this.bodyTemplate.messageSeverityIcon.className="",this.bodyTemplate.messageBox.textContent=E("no extensions found","No extensions found.")),tt(this.bodyTemplate.messageBox.textContent))}this.updateSize()}isOfflineError(e){return e instanceof He?e.code===Ve.Offline:mt(e)}updateSize(){this.options.flexibleHeight&&(this.maximumBodySize=this.list?.model.length?Number.POSITIVE_INFINITY:0,this.storageService.store(`${this.id}.size`,this.list?.model.length||0,Ce.PROFILE,ct.MACHINE))}openExtension(e,t){e=this.extensionsWorkbenchService.local.filter(n=>I(n.identifier,e.identifier))[0]||e,this.extensionsWorkbenchService.open(e,t).then(void 0,n=>this.onError(n))}onError(e){if(q(e))return;const t=e&&e.message||"";if(/ECONNREFUSED/.test(t)){const n=Fe(E("suggestProxyError","Marketplace returned 'ECONNREFUSED'. Please check the 'http.proxy' setting."),[new st("open user settings",E("open user settings","Open User Settings"),void 0,!0,()=>this.preferencesService.openUserSettings())]);this.notificationService.error(n);return}this.notificationService.error(e)}getPagedModel(e){if(Array.isArray(e))return new f(e);const t={total:e.total,pageSize:e.pageSize,firstPage:e.firstPage,getPage:(n,s)=>e.getPage(n,s)};return new f(t)}dispose(){super.dispose(),this.queryRequest&&(this.queryRequest.request.cancel(),this.queryRequest=null),this.queryResult&&(this.queryResult.disposables.dispose(),this.queryResult=void 0),this.list=null}static isLocalExtensionsQuery(e,t){return this.isInstalledExtensionsQuery(e)||this.isSearchInstalledExtensionsQuery(e)||this.isOutdatedExtensionsQuery(e)||this.isEnabledExtensionsQuery(e)||this.isDisabledExtensionsQuery(e)||this.isBuiltInExtensionsQuery(e)||this.isSearchBuiltInExtensionsQuery(e)||this.isBuiltInGroupExtensionsQuery(e)||this.isSearchDeprecatedExtensionsQuery(e)||this.isSearchWorkspaceUnsupportedExtensionsQuery(e)||this.isSearchRecentlyUpdatedQuery(e)||this.isSearchExtensionUpdatesQuery(e)||this.isSortInstalledExtensionsQuery(e,t)||this.isFeatureExtensionsQuery(e)}static isSearchBuiltInExtensionsQuery(e){return/@builtin\s.+/i.test(e)}static isBuiltInExtensionsQuery(e){return/^\s*@builtin$/i.test(e.trim())}static isBuiltInGroupExtensionsQuery(e){return/^\s*@builtin:.+$/i.test(e.trim())}static isSearchWorkspaceUnsupportedExtensionsQuery(e){return/^\s*@workspaceUnsupported(:(untrusted|virtual)(Partial)?)?(\s|$)/i.test(e)}static isInstalledExtensionsQuery(e){return/@installed$/i.test(e)}static isSearchInstalledExtensionsQuery(e){return/@installed\s./i.test(e)||this.isFeatureExtensionsQuery(e)}static isOutdatedExtensionsQuery(e){return/@outdated/i.test(e)}static isEnabledExtensionsQuery(e){return/@enabled/i.test(e)}static isDisabledExtensionsQuery(e){return/@disabled/i.test(e)}static isSearchDeprecatedExtensionsQuery(e){return/@deprecated\s?.*/i.test(e)}static isRecommendedExtensionsQuery(e){return/^@recommended$/i.test(e.trim())}static isSearchRecommendedExtensionsQuery(e){return/@recommended\s.+/i.test(e)}static isWorkspaceRecommendedExtensionsQuery(e){return/@recommended:workspace/i.test(e)}static isExeRecommendedExtensionsQuery(e){return/@exe:.+/i.test(e)}static isRemoteRecommendedExtensionsQuery(e){return/@recommended:remotes/i.test(e)}static isKeymapsRecommendedExtensionsQuery(e){return/@recommended:keymaps/i.test(e)}static isLanguageRecommendedExtensionsQuery(e){return/@recommended:languages/i.test(e)}static isSortInstalledExtensionsQuery(e,t){return t!==void 0&&t!==""&&e===""||!t&&/^@sort:\S*$/i.test(e)}static isSearchPopularQuery(e){return/@popular/i.test(e)}static isSearchRecentlyPublishedQuery(e){return/@recentlyPublished/i.test(e)}static isSearchRecentlyUpdatedQuery(e){return/@recentlyUpdated/i.test(e)}static isSearchExtensionUpdatesQuery(e){return/@updates/i.test(e)}static isSortUpdateDateQuery(e){return/@sort:updateDate/i.test(e)}static isFeatureExtensionsQuery(e){return/@feature:/i.test(e)}focus(){super.focus(),this.list&&(this.list.getFocus().length||this.list.getSelection().length||this.list.focusNext(),this.list.domFocus())}};u=$([c(2,ge),c(3,oe),c(4,ae),c(5,le),c(6,me),c(7,ce),c(8,de),c(9,re),c(10,pe),c(11,Te),c(12,he),c(13,F),c(14,ne),c(15,Pe),c(16,se),c(17,F),c(18,ye),c(19,Ee),c(20,Ie),c(21,be),c(22,we),c(23,Re),c(24,Me),c(25,ie),c(26,Qe),c(27,Oe),c(28,Le),c(29,Be)],u);class $n extends u{async show(){const o=this.extensionManagementServerService.webExtensionManagementServer&&!this.extensionManagementServerService.localExtensionManagementServer&&!this.extensionManagementServerService.remoteExtensionManagementServer?"@web":"";return super.show(o)}}class zn extends u{async show(o){return o=o||"@installed",(!u.isLocalExtensionsQuery(o)||u.isSortInstalledExtensionsQuery(o))&&(o=o+=" @installed"),super.show(o.trim())}}class Kn extends u{async show(o){return o=o||"@enabled",u.isEnabledExtensionsQuery(o)?super.show(o):u.isSortInstalledExtensionsQuery(o)?super.show("@enabled "+o):this.showEmptyModel()}}class _n extends u{async show(o){return o=o||"@disabled",u.isDisabledExtensionsQuery(o)?super.show(o):u.isSortInstalledExtensionsQuery(o)?super.show("@disabled "+o):this.showEmptyModel()}}class Zn extends u{async show(o){return o=o||"@outdated",u.isSearchExtensionUpdatesQuery(o)&&(o=o.replace("@updates","@outdated")),super.show(o.trim())}updateSize(){super.updateSize(),this.setExpanded(this.count()>0)}}class jn extends u{async show(o){return o=o||"@recentlyUpdated",u.isSearchExtensionUpdatesQuery(o)&&(o=o.replace("@updates","@recentlyUpdated")),super.show(o.trim())}}let H=class extends u{constructor(e,t,n,s,r,a,i,d,l,m,h,w,x,v,S,M,R,g,y,Q,C,k,B,O,L,Z,j,Y,J,X){super(e,t,n,s,r,a,i,d,l,m,h,w,x,v,S,M,R,g,y,Q,C,k,B,O,L,Z,j,Y,J,X);this.options=e}show(){return super.show(this.options.query)}};H=$([c(2,ge),c(3,oe),c(4,ae),c(5,le),c(6,me),c(7,ce),c(8,de),c(9,re),c(10,pe),c(11,Te),c(12,he),c(13,F),c(14,ne),c(15,Pe),c(16,se),c(17,F),c(18,ye),c(19,Ee),c(20,Ie),c(21,be),c(22,we),c(23,Re),c(24,Me),c(25,ie),c(26,Qe),c(27,Oe),c(28,Le),c(29,Be)],H);function G(p,o){if(!p)return"@workspaceUnsupported:"+o;const e=p.match(new RegExp(`@workspaceUnsupported(:${o})?(\\s|$)`,"i"));if(e)return e[1]?p:p.replace(/@workspaceUnsupported/gi,"@workspaceUnsupported:"+o)}class Yn extends u{async show(o){const e=G(o,"untrusted");return e?super.show(e):this.showEmptyModel()}}class Jn extends u{async show(o){const e=G(o,"untrustedPartial");return e?super.show(e):this.showEmptyModel()}}class Xn extends u{async show(o){const e=G(o,"virtual");return e?super.show(e):this.showEmptyModel()}}class qn extends u{async show(o){const e=G(o,"virtualPartial");return e?super.show(e):this.showEmptyModel()}}class es extends u{async show(o){return u.isSearchDeprecatedExtensionsQuery(o)?super.show(o):this.showEmptyModel()}}class ts extends u{reportSearchFinishedDelayer=this._register(new dt(2e3));searchWaitPromise=Promise.resolve();async show(o){const e=super.show(o);return this.reportSearchFinishedDelayer.trigger(()=>this.reportSearchFinished()),this.searchWaitPromise=e.then(null,null),e}async reportSearchFinished(){await this.searchWaitPromise,this.telemetryService.publicLog2("extensionsView:MarketplaceSearchFinished")}}class ns extends u{recommendedExtensionsQuery="@recommended:all";renderBody(o){super.renderBody(o),this._register(this.extensionRecommendationsService.onDidChangeRecommendations(()=>{this.show("")}))}async show(o){if(o&&o.trim()!==this.recommendedExtensionsQuery)return this.showEmptyModel();const e=await super.show(this.recommendedExtensionsQuery);return this.extensionsWorkbenchService.local.some(t=>!t.isBuiltin)||this.setExpanded(e.length>0),e}}class ss extends u{recommendedExtensionsQuery="@recommended";renderBody(o){super.renderBody(o),this._register(this.extensionRecommendationsService.onDidChangeRecommendations(()=>{this.show("")}))}async show(o){return o&&o.trim()!==this.recommendedExtensionsQuery?this.showEmptyModel():super.show(this.recommendedExtensionsQuery)}}class is extends u{recommendedExtensionsQuery="@recommended:workspace";renderBody(o){super.renderBody(o),this._register(this.extensionRecommendationsService.onDidChangeRecommendations(()=>this.show(this.recommendedExtensionsQuery))),this._register(this.contextService.onDidChangeWorkbenchState(()=>this.show(this.recommendedExtensionsQuery)))}async show(o){const t=await(o&&o.trim()!=="@recommended"&&o.trim()!=="@recommended:workspace"?this.showEmptyModel():super.show(this.recommendedExtensionsQuery));return this.setExpanded(t.length>0),t}async getInstallableWorkspaceRecommendations(){const o=(await this.extensionsWorkbenchService.queryLocal()).filter(t=>t.enablementState!==P.DisabledByExtensionKind),e=(await this.getWorkspaceRecommendations()).filter(t=>o.every(n=>V(t)?!I({id:t},n.identifier):!this.uriIdentityService.extUri.isEqual(t,n.local?.location)));return this.getInstallableRecommendations(e,{source:"install-all-workspace-recommendations"},nt.None)}async installWorkspaceRecommendations(){const o=await this.getInstallableWorkspaceRecommendations();if(o.length){const e=[],t=[];for(const n of o)n.gallery?e.push({extension:n.gallery,options:{}}):t.push(n);await Promise.all([this.extensionManagementService.installGalleryExtensions(e),...t.map(n=>this.extensionsWorkbenchService.install(n))])}else this.notificationService.notify({severity:K.Info,message:E("no local extensions","There are no extensions to install.")})}}function Et(p){if(!p)return"";const o=p.publisherDomain?.verified?E("extension.arialabel.verifiedPublisher","Verified Publisher {0}",p.publisherDisplayName):E("extension.arialabel.publisher","Publisher {0}",p.publisherDisplayName),e=p?.deprecationInfo?E("extension.arialabel.deprecated","Deprecated"):"",t=p?.rating?E("extension.arialabel.rating","Rated {0} out of 5 stars by {1} users",p.rating.toFixed(2),p.ratingCount):"";return`${p.displayName}, ${e?`${e}, `:""}${p.version}, ${o}, ${p.description} ${t?`, ${t}`:""}`}export{$n as DefaultPopularExtensionsView,ns as DefaultRecommendedExtensionsView,es as DeprecatedExtensionsView,_n as DisabledExtensionsView,Kn as EnabledExtensionsView,u as ExtensionsListView,xt as NONE_CATEGORY,Zn as OutdatedExtensionsView,jn as RecentlyUpdatedExtensionsView,ss as RecommendedExtensionsView,ts as SearchMarketplaceExtensionsView,zn as ServerInstalledExtensionsView,H as StaticQueryExtensionsView,Jn as UntrustedWorkspacePartiallySupportedExtensionsView,Yn as UntrustedWorkspaceUnsupportedExtensionsView,qn as VirtualWorkspacePartiallySupportedExtensionsView,Xn as VirtualWorkspaceUnsupportedExtensionsView,is as WorkspaceRecommendedExtensionsView,Et as getAriaLabelForExtension};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ExtensionsListView_1;
+import { localize } from '../../../../nls.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { Event, Emitter } from '../../../../base/common/event.js';
+import { isCancellationError, getErrorMessage } from '../../../../base/common/errors.js';
+import { createErrorWithActions } from '../../../../base/common/errorMessage.js';
+import { PagedModel, DelayedPagedModel } from '../../../../base/common/paging.js';
+import { ExtensionGalleryError } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { IExtensionManagementServerService, IWorkbenchExtensionManagementService, IWorkbenchExtensionEnablementService } from '../../../services/extensionManagement/common/extensionManagement.js';
+import { IExtensionRecommendationsService } from '../../../services/extensionRecommendations/common/extensionRecommendations.js';
+import { areSameExtensions, getExtensionDependencies } from '../../../../platform/extensionManagement/common/extensionManagementUtil.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { append, $ } from '../../../../base/browser/dom.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { Delegate, Renderer } from './extensionsList.js';
+import { IExtensionsWorkbenchService } from '../common/extensions.js';
+import { Query } from '../common/extensionQuery.js';
+import { IExtensionService, toExtension } from '../../../services/extensions/common/extensions.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { CountBadge } from '../../../../base/browser/ui/countBadge/countBadge.js';
+import { ManageExtensionAction, getContextMenuActions, ExtensionAction } from './extensionsActions.js';
+import { WorkbenchPagedList } from '../../../../platform/list/browser/listService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
+import { ViewPane, ViewPaneShowActions } from '../../../browser/parts/views/viewPane.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { coalesce, distinct } from '../../../../base/common/arrays.js';
+import { alert } from '../../../../base/browser/ui/aria/aria.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { Action, Separator, ActionRunner } from '../../../../base/common/actions.js';
+import { ExtensionIdentifier, ExtensionIdentifierMap, isLanguagePackExtension } from '../../../../platform/extensions/common/extensions.js';
+import { createCancelablePromise, ThrottledDelayer } from '../../../../base/common/async.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { SeverityIcon } from '../../../../platform/severityIcon/browser/severityIcon.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IViewDescriptorService } from '../../../common/views.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { IPreferencesService } from '../../../services/preferences/common/preferences.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IExtensionManifestPropertiesService } from '../../../services/extensions/common/extensionManifestPropertiesService.js';
+import { isVirtualWorkspace } from '../../../../platform/workspace/common/virtualWorkspace.js';
+import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
+import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { isOfflineError } from '../../../../base/parts/request/common/request.js';
+import { defaultCountBadgeStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Extensions, IExtensionFeaturesManagementService } from '../../../services/extensionManagement/common/extensionFeatures.js';
+import { isString } from '../../../../base/common/types.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { IHoverService } from '../../../../platform/hover/browser/hover.js';
+export const NONE_CATEGORY = 'none';
+class ExtensionsViewState extends Disposable {
+    constructor() {
+        super(...arguments);
+        this._onFocus = this._register(new Emitter());
+        this.onFocus = this._onFocus.event;
+        this._onBlur = this._register(new Emitter());
+        this.onBlur = this._onBlur.event;
+        this.currentlyFocusedItems = [];
+    }
+    onFocusChange(extensions) {
+        this.currentlyFocusedItems.forEach(extension => this._onBlur.fire(extension));
+        this.currentlyFocusedItems = extensions;
+        this.currentlyFocusedItems.forEach(extension => this._onFocus.fire(extension));
+    }
+}
+function isLocalSortBy(value) {
+    switch (value) {
+        case "UpdateDate": return true;
+    }
+}
+let ExtensionsListView = class ExtensionsListView extends ViewPane {
+    static { ExtensionsListView_1 = this; }
+    static { this.RECENT_UPDATE_DURATION = 7 * 24 * 60 * 60 * 1000; }
+    constructor(options, viewletViewOptions, notificationService, keybindingService, contextMenuService, instantiationService, themeService, extensionService, extensionsWorkbenchService, extensionRecommendationsService, telemetryService, hoverService, configurationService, contextService, extensionManagementServerService, extensionManifestPropertiesService, extensionManagementService, workspaceService, productService, contextKeyService, viewDescriptorService, openerService, preferencesService, storageService, workspaceTrustManagementService, extensionEnablementService, layoutService, extensionFeaturesManagementService, uriIdentityService, logService) {
+        super({
+            ...viewletViewOptions,
+            showActions: ViewPaneShowActions.Always,
+            maximumBodySize: options.flexibleHeight ? (storageService.getNumber(`${viewletViewOptions.id}.size`, 0, 0) ? undefined : 0) : undefined
+        }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService, hoverService);
+        this.options = options;
+        this.notificationService = notificationService;
+        this.extensionService = extensionService;
+        this.extensionsWorkbenchService = extensionsWorkbenchService;
+        this.extensionRecommendationsService = extensionRecommendationsService;
+        this.contextService = contextService;
+        this.extensionManagementServerService = extensionManagementServerService;
+        this.extensionManifestPropertiesService = extensionManifestPropertiesService;
+        this.extensionManagementService = extensionManagementService;
+        this.workspaceService = workspaceService;
+        this.productService = productService;
+        this.preferencesService = preferencesService;
+        this.storageService = storageService;
+        this.workspaceTrustManagementService = workspaceTrustManagementService;
+        this.extensionEnablementService = extensionEnablementService;
+        this.layoutService = layoutService;
+        this.extensionFeaturesManagementService = extensionFeaturesManagementService;
+        this.uriIdentityService = uriIdentityService;
+        this.logService = logService;
+        this.list = null;
+        this.queryRequest = null;
+        this.contextMenuActionRunner = this._register(new ActionRunner());
+        if (this.options.onDidChangeTitle) {
+            this._register(this.options.onDidChangeTitle(title => this.updateTitle(title)));
+        }
+        this._register(this.contextMenuActionRunner.onDidRun(({ error }) => error && this.notificationService.error(error)));
+        this.registerActions();
+    }
+    registerActions() { }
+    renderHeader(container) {
+        container.classList.add('extension-view-header');
+        super.renderHeader(container);
+        if (!this.options.hideBadge) {
+            this.badge = new CountBadge(append(container, $('.count-badge-wrapper')), {}, defaultCountBadgeStyles);
+        }
+    }
+    renderBody(container) {
+        super.renderBody(container);
+        const extensionsList = append(container, $('.extensions-list'));
+        const messageContainer = append(container, $('.message-container'));
+        const messageSeverityIcon = append(messageContainer, $(''));
+        const messageBox = append(messageContainer, $('.message'));
+        const delegate = new Delegate();
+        const extensionsViewState = new ExtensionsViewState();
+        const renderer = this.instantiationService.createInstance(Renderer, extensionsViewState, {
+            hoverOptions: {
+                position: () => {
+                    const viewLocation = this.viewDescriptorService.getViewLocationById(this.id);
+                    if (viewLocation === 0) {
+                        return this.layoutService.getSideBarPosition() === 0 ? 1 : 0;
+                    }
+                    if (viewLocation === 2) {
+                        return this.layoutService.getSideBarPosition() === 0 ? 0 : 1;
+                    }
+                    return 1;
+                }
+            }
+        });
+        this.list = this.instantiationService.createInstance(WorkbenchPagedList, 'Extensions', extensionsList, delegate, [renderer], {
+            multipleSelectionSupport: false,
+            setRowLineHeight: false,
+            horizontalScrolling: false,
+            accessibilityProvider: {
+                getAriaLabel(extension) {
+                    return getAriaLabelForExtension(extension);
+                },
+                getWidgetAriaLabel() {
+                    return localize('extensions', "Extensions");
+                }
+            },
+            overrideStyles: this.getLocationBasedColors().listOverrideStyles,
+            openOnSingleClick: true
+        });
+        this._register(this.list.onContextMenu(e => this.onContextMenu(e), this));
+        this._register(this.list.onDidChangeFocus(e => extensionsViewState.onFocusChange(coalesce(e.elements)), this));
+        this._register(this.list);
+        this._register(extensionsViewState);
+        this._register(Event.debounce(Event.filter(this.list.onDidOpen, e => e.element !== null), (_, event) => event, 75, true)(options => {
+            this.openExtension(options.element, { sideByside: options.sideBySide, ...options.editorOptions });
+        }));
+        this.bodyTemplate = {
+            extensionsList,
+            messageBox,
+            messageContainer,
+            messageSeverityIcon
+        };
+        if (this.queryResult) {
+            this.setModel(this.queryResult.model);
+        }
+    }
+    layoutBody(height, width) {
+        super.layoutBody(height, width);
+        if (this.bodyTemplate) {
+            this.bodyTemplate.extensionsList.style.height = height + 'px';
+        }
+        this.list?.layout(height, width);
+    }
+    async show(query, refresh) {
+        if (this.queryRequest) {
+            if (!refresh && this.queryRequest.query === query) {
+                return this.queryRequest.request;
+            }
+            this.queryRequest.request.cancel();
+            this.queryRequest = null;
+        }
+        if (this.queryResult) {
+            this.queryResult.disposables.dispose();
+            this.queryResult = undefined;
+        }
+        const parsedQuery = Query.parse(query);
+        const options = {
+            sortOrder: 0
+        };
+        switch (parsedQuery.sortBy) {
+            case 'installs':
+                options.sortBy = 4;
+                break;
+            case 'rating':
+                options.sortBy = 12;
+                break;
+            case 'name':
+                options.sortBy = 2;
+                break;
+            case 'publishedDate':
+                options.sortBy = 10;
+                break;
+            case 'updateDate':
+                options.sortBy = "UpdateDate";
+                break;
+        }
+        const request = createCancelablePromise(async (token) => {
+            try {
+                this.queryResult = await this.query(parsedQuery, options, token);
+                const model = this.queryResult.model;
+                this.setModel(model);
+                if (this.queryResult.onDidChangeModel) {
+                    this.queryResult.disposables.add(this.queryResult.onDidChangeModel(model => {
+                        if (this.queryResult) {
+                            this.queryResult.model = model;
+                            this.updateModel(model);
+                        }
+                    }));
+                }
+                return model;
+            }
+            catch (e) {
+                const model = new PagedModel([]);
+                if (!isCancellationError(e)) {
+                    this.logService.error(e);
+                    this.setModel(model, e);
+                }
+                return this.list ? this.list.model : model;
+            }
+        });
+        request.finally(() => this.queryRequest = null);
+        this.queryRequest = { query, request };
+        return request;
+    }
+    count() {
+        return this.queryResult?.model.length ?? 0;
+    }
+    showEmptyModel() {
+        const emptyModel = new PagedModel([]);
+        this.setModel(emptyModel);
+        return Promise.resolve(emptyModel);
+    }
+    async onContextMenu(e) {
+        if (e.element) {
+            const disposables = new DisposableStore();
+            const manageExtensionAction = disposables.add(this.instantiationService.createInstance(ManageExtensionAction));
+            const extension = e.element ? this.extensionsWorkbenchService.local.find(local => areSameExtensions(local.identifier, e.element.identifier) && (!e.element.server || e.element.server === local.server)) || e.element
+                : e.element;
+            manageExtensionAction.extension = extension;
+            let groups = [];
+            if (manageExtensionAction.enabled) {
+                groups = await manageExtensionAction.getActionGroups();
+            }
+            else if (extension) {
+                groups = await getContextMenuActions(extension, this.contextKeyService, this.instantiationService);
+                groups.forEach(group => group.forEach(extensionAction => {
+                    if (extensionAction instanceof ExtensionAction) {
+                        extensionAction.extension = extension;
+                    }
+                }));
+            }
+            let actions = [];
+            for (const menuActions of groups) {
+                actions = [...actions, ...menuActions, new Separator()];
+            }
+            actions.pop();
+            this.contextMenuService.showContextMenu({
+                getAnchor: () => e.anchor,
+                getActions: () => actions,
+                actionRunner: this.contextMenuActionRunner,
+                onHide: () => disposables.dispose()
+            });
+        }
+    }
+    async query(query, options, token) {
+        const idRegex = /@id:(([a-z0-9A-Z][a-z0-9\-A-Z]*)\.([a-z0-9A-Z][a-z0-9\-A-Z]*))/g;
+        const ids = [];
+        let idMatch;
+        while ((idMatch = idRegex.exec(query.value)) !== null) {
+            const name = idMatch[1];
+            ids.push(name);
+        }
+        if (ids.length) {
+            const model = await this.queryByIds(ids, options, token);
+            return { model, disposables: new DisposableStore() };
+        }
+        if (ExtensionsListView_1.isLocalExtensionsQuery(query.value, query.sortBy)) {
+            return this.queryLocal(query, options);
+        }
+        if (ExtensionsListView_1.isSearchPopularQuery(query.value)) {
+            query.value = query.value.replace('@popular', '');
+            options.sortBy = !options.sortBy ? 4 : options.sortBy;
+        }
+        else if (ExtensionsListView_1.isSearchRecentlyPublishedQuery(query.value)) {
+            query.value = query.value.replace('@recentlyPublished', '');
+            options.sortBy = !options.sortBy ? 10 : options.sortBy;
+        }
+        const galleryQueryOptions = { ...options, sortBy: isLocalSortBy(options.sortBy) ? undefined : options.sortBy };
+        const model = await this.queryGallery(query, galleryQueryOptions, token);
+        return { model, disposables: new DisposableStore() };
+    }
+    async queryByIds(ids, options, token) {
+        const idsSet = ids.reduce((result, id) => { result.add(id.toLowerCase()); return result; }, new Set());
+        const result = (await this.extensionsWorkbenchService.queryLocal(this.options.server))
+            .filter(e => idsSet.has(e.identifier.id.toLowerCase()));
+        const galleryIds = result.length ? ids.filter(id => result.every(r => !areSameExtensions(r.identifier, { id }))) : ids;
+        if (galleryIds.length) {
+            const galleryResult = await this.extensionsWorkbenchService.getExtensions(galleryIds.map(id => ({ id })), { source: 'queryById' }, token);
+            result.push(...galleryResult);
+        }
+        return this.getPagedModel(result);
+    }
+    async queryLocal(query, options) {
+        const local = await this.extensionsWorkbenchService.queryLocal(this.options.server);
+        let { extensions, canIncludeInstalledExtensions } = await this.filterLocal(local, this.extensionService.extensions, query, options);
+        const disposables = new DisposableStore();
+        const onDidChangeModel = disposables.add(new Emitter());
+        if (canIncludeInstalledExtensions) {
+            let isDisposed = false;
+            disposables.add(toDisposable(() => isDisposed = true));
+            disposables.add(Event.debounce(Event.any(Event.filter(this.extensionsWorkbenchService.onChange, e => e?.state === 1), this.extensionService.onDidChangeExtensions), () => undefined)(async () => {
+                const local = this.options.server ? this.extensionsWorkbenchService.installed.filter(e => e.server === this.options.server) : this.extensionsWorkbenchService.local;
+                const { extensions: newExtensions } = await this.filterLocal(local, this.extensionService.extensions, query, options);
+                if (!isDisposed) {
+                    const mergedExtensions = this.mergeAddedExtensions(extensions, newExtensions);
+                    if (mergedExtensions) {
+                        extensions = mergedExtensions;
+                        onDidChangeModel.fire(new PagedModel(extensions));
+                    }
+                }
+            }));
+        }
+        return {
+            model: new PagedModel(extensions),
+            onDidChangeModel: onDidChangeModel.event,
+            disposables
+        };
+    }
+    async filterLocal(local, runningExtensions, query, options) {
+        const value = query.value;
+        let extensions = [];
+        let canIncludeInstalledExtensions = true;
+        if (/@builtin/i.test(value)) {
+            extensions = this.filterBuiltinExtensions(local, query, options);
+            canIncludeInstalledExtensions = false;
+        }
+        else if (/@installed/i.test(value)) {
+            extensions = this.filterInstalledExtensions(local, runningExtensions, query, options);
+        }
+        else if (/@outdated/i.test(value)) {
+            extensions = this.filterOutdatedExtensions(local, query, options);
+        }
+        else if (/@disabled/i.test(value)) {
+            extensions = this.filterDisabledExtensions(local, runningExtensions, query, options);
+        }
+        else if (/@enabled/i.test(value)) {
+            extensions = this.filterEnabledExtensions(local, runningExtensions, query, options);
+        }
+        else if (/@workspaceUnsupported/i.test(value)) {
+            extensions = this.filterWorkspaceUnsupportedExtensions(local, query, options);
+        }
+        else if (/@deprecated/i.test(query.value)) {
+            extensions = await this.filterDeprecatedExtensions(local, query, options);
+        }
+        else if (/@recentlyUpdated/i.test(query.value)) {
+            extensions = this.filterRecentlyUpdatedExtensions(local, query, options);
+        }
+        else if (/@feature:/i.test(query.value)) {
+            extensions = this.filterExtensionsByFeature(local, query, options);
+        }
+        return { extensions, canIncludeInstalledExtensions };
+    }
+    filterBuiltinExtensions(local, query, options) {
+        let { value, includedCategories, excludedCategories } = this.parseCategories(query.value);
+        value = value.replace(/@builtin/g, '').replace(/@sort:(\w+)(-\w*)?/g, '').trim().toLowerCase();
+        const result = local
+            .filter(e => e.isBuiltin && (e.name.toLowerCase().indexOf(value) > -1 || e.displayName.toLowerCase().indexOf(value) > -1)
+            && this.filterExtensionByCategory(e, includedCategories, excludedCategories));
+        return this.sortExtensions(result, options);
+    }
+    filterExtensionByCategory(e, includedCategories, excludedCategories) {
+        if (!includedCategories.length && !excludedCategories.length) {
+            return true;
+        }
+        if (e.categories.length) {
+            if (excludedCategories.length && e.categories.some(category => excludedCategories.includes(category.toLowerCase()))) {
+                return false;
+            }
+            return e.categories.some(category => includedCategories.includes(category.toLowerCase()));
+        }
+        else {
+            return includedCategories.includes(NONE_CATEGORY);
+        }
+    }
+    parseCategories(value) {
+        const includedCategories = [];
+        const excludedCategories = [];
+        value = value.replace(/\bcategory:("([^"]*)"|([^"]\S*))(\s+|\b|$)/g, (_, quotedCategory, category) => {
+            const entry = (category || quotedCategory || '').toLowerCase();
+            if (entry.startsWith('-')) {
+                if (excludedCategories.indexOf(entry) === -1) {
+                    excludedCategories.push(entry);
+                }
+            }
+            else {
+                if (includedCategories.indexOf(entry) === -1) {
+                    includedCategories.push(entry);
+                }
+            }
+            return '';
+        });
+        return { value, includedCategories, excludedCategories };
+    }
+    filterInstalledExtensions(local, runningExtensions, query, options) {
+        let { value, includedCategories, excludedCategories } = this.parseCategories(query.value);
+        value = value.replace(/@installed/g, '').replace(/@sort:(\w+)(-\w*)?/g, '').trim().toLowerCase();
+        const matchingText = (e) => (e.name.toLowerCase().indexOf(value) > -1 || e.displayName.toLowerCase().indexOf(value) > -1 || e.description.toLowerCase().indexOf(value) > -1)
+            && this.filterExtensionByCategory(e, includedCategories, excludedCategories);
+        let result;
+        if (options.sortBy !== undefined) {
+            result = local.filter(e => !e.isBuiltin && matchingText(e));
+            result = this.sortExtensions(result, options);
+        }
+        else {
+            result = local.filter(e => (!e.isBuiltin || e.outdated || e.runtimeState !== undefined) && matchingText(e));
+            const runningExtensionsById = runningExtensions.reduce((result, e) => { result.set(e.identifier.value, e); return result; }, new ExtensionIdentifierMap());
+            const defaultSort = (e1, e2) => {
+                const running1 = runningExtensionsById.get(e1.identifier.id);
+                const isE1Running = !!running1 && this.extensionManagementServerService.getExtensionManagementServer(toExtension(running1)) === e1.server;
+                const running2 = runningExtensionsById.get(e2.identifier.id);
+                const isE2Running = running2 && this.extensionManagementServerService.getExtensionManagementServer(toExtension(running2)) === e2.server;
+                if ((isE1Running && isE2Running)) {
+                    return e1.displayName.localeCompare(e2.displayName);
+                }
+                const isE1LanguagePackExtension = e1.local && isLanguagePackExtension(e1.local.manifest);
+                const isE2LanguagePackExtension = e2.local && isLanguagePackExtension(e2.local.manifest);
+                if (!isE1Running && !isE2Running) {
+                    if (isE1LanguagePackExtension) {
+                        return -1;
+                    }
+                    if (isE2LanguagePackExtension) {
+                        return 1;
+                    }
+                    return e1.displayName.localeCompare(e2.displayName);
+                }
+                if ((isE1Running && isE2LanguagePackExtension) || (isE2Running && isE1LanguagePackExtension)) {
+                    return e1.displayName.localeCompare(e2.displayName);
+                }
+                return isE1Running ? -1 : 1;
+            };
+            const incompatible = [];
+            const missingDeps = [];
+            const deprecated = [];
+            const outdated = [];
+            const actionRequired = [];
+            const noActionRequired = [];
+            for (const e of result) {
+                if (e.enablementState === 5) {
+                    incompatible.push(e);
+                }
+                else if (e.enablementState === 6) {
+                    missingDeps.push(e);
+                }
+                else if (e.deprecationInfo) {
+                    deprecated.push(e);
+                }
+                else if (e.outdated) {
+                    outdated.push(e);
+                }
+                else if (e.runtimeState) {
+                    actionRequired.push(e);
+                }
+                else {
+                    noActionRequired.push(e);
+                }
+            }
+            result = [
+                ...incompatible.sort(defaultSort),
+                ...missingDeps.sort(defaultSort),
+                ...deprecated.sort(defaultSort),
+                ...outdated.sort(defaultSort),
+                ...actionRequired.sort(defaultSort),
+                ...noActionRequired.sort(defaultSort)
+            ];
+        }
+        return result;
+    }
+    filterOutdatedExtensions(local, query, options) {
+        let { value, includedCategories, excludedCategories } = this.parseCategories(query.value);
+        value = value.replace(/@outdated/g, '').replace(/@sort:(\w+)(-\w*)?/g, '').trim().toLowerCase();
+        const result = local
+            .sort((e1, e2) => e1.displayName.localeCompare(e2.displayName))
+            .filter(extension => extension.outdated
+            && (extension.name.toLowerCase().indexOf(value) > -1 || extension.displayName.toLowerCase().indexOf(value) > -1)
+            && this.filterExtensionByCategory(extension, includedCategories, excludedCategories));
+        return this.sortExtensions(result, options);
+    }
+    filterDisabledExtensions(local, runningExtensions, query, options) {
+        let { value, includedCategories, excludedCategories } = this.parseCategories(query.value);
+        value = value.replace(/@disabled/g, '').replace(/@sort:(\w+)(-\w*)?/g, '').trim().toLowerCase();
+        const result = local
+            .sort((e1, e2) => e1.displayName.localeCompare(e2.displayName))
+            .filter(e => runningExtensions.every(r => !areSameExtensions({ id: r.identifier.value, uuid: r.uuid }, e.identifier))
+            && (e.name.toLowerCase().indexOf(value) > -1 || e.displayName.toLowerCase().indexOf(value) > -1)
+            && this.filterExtensionByCategory(e, includedCategories, excludedCategories));
+        return this.sortExtensions(result, options);
+    }
+    filterEnabledExtensions(local, runningExtensions, query, options) {
+        let { value, includedCategories, excludedCategories } = this.parseCategories(query.value);
+        value = value ? value.replace(/@enabled/g, '').replace(/@sort:(\w+)(-\w*)?/g, '').trim().toLowerCase() : '';
+        local = local.filter(e => !e.isBuiltin);
+        const result = local
+            .sort((e1, e2) => e1.displayName.localeCompare(e2.displayName))
+            .filter(e => runningExtensions.some(r => areSameExtensions({ id: r.identifier.value, uuid: r.uuid }, e.identifier))
+            && (e.name.toLowerCase().indexOf(value) > -1 || e.displayName.toLowerCase().indexOf(value) > -1)
+            && this.filterExtensionByCategory(e, includedCategories, excludedCategories));
+        return this.sortExtensions(result, options);
+    }
+    filterWorkspaceUnsupportedExtensions(local, query, options) {
+        const queryString = query.value;
+        const match = queryString.match(/^\s*@workspaceUnsupported(?::(untrusted|virtual)(Partial)?)?(?:\s+([^\s]*))?/i);
+        if (!match) {
+            return [];
+        }
+        const type = match[1]?.toLowerCase();
+        const partial = !!match[2];
+        const nameFilter = match[3]?.toLowerCase();
+        if (nameFilter) {
+            local = local.filter(extension => extension.name.toLowerCase().indexOf(nameFilter) > -1 || extension.displayName.toLowerCase().indexOf(nameFilter) > -1);
+        }
+        const hasVirtualSupportType = (extension, supportType) => {
+            return extension.local && this.extensionManifestPropertiesService.getExtensionVirtualWorkspaceSupportType(extension.local.manifest) === supportType;
+        };
+        const hasRestrictedSupportType = (extension, supportType) => {
+            if (!extension.local) {
+                return false;
+            }
+            const enablementState = this.extensionEnablementService.getEnablementState(extension.local);
+            if (enablementState !== 9 && enablementState !== 10 &&
+                enablementState !== 0 && enablementState !== 6) {
+                return false;
+            }
+            if (this.extensionManifestPropertiesService.getExtensionUntrustedWorkspaceSupportType(extension.local.manifest) === supportType) {
+                return true;
+            }
+            if (supportType === false) {
+                const dependencies = getExtensionDependencies(local.map(ext => ext.local), extension.local);
+                return dependencies.some(ext => this.extensionManifestPropertiesService.getExtensionUntrustedWorkspaceSupportType(ext.manifest) === supportType);
+            }
+            return false;
+        };
+        const inVirtualWorkspace = isVirtualWorkspace(this.workspaceService.getWorkspace());
+        const inRestrictedWorkspace = !this.workspaceTrustManagementService.isWorkspaceTrusted();
+        if (type === 'virtual') {
+            local = local.filter(extension => inVirtualWorkspace && hasVirtualSupportType(extension, partial ? 'limited' : false) && !(inRestrictedWorkspace && hasRestrictedSupportType(extension, false)));
+        }
+        else if (type === 'untrusted') {
+            local = local.filter(extension => hasRestrictedSupportType(extension, partial ? 'limited' : false) && !(inVirtualWorkspace && hasVirtualSupportType(extension, false)));
+        }
+        else {
+            local = local.filter(extension => inVirtualWorkspace && !hasVirtualSupportType(extension, true) || inRestrictedWorkspace && !hasRestrictedSupportType(extension, true));
+        }
+        return this.sortExtensions(local, options);
+    }
+    async filterDeprecatedExtensions(local, query, options) {
+        const value = query.value.replace(/@deprecated/g, '').replace(/@sort:(\w+)(-\w*)?/g, '').trim().toLowerCase();
+        const extensionsControlManifest = await this.extensionManagementService.getExtensionsControlManifest();
+        const deprecatedExtensionIds = Object.keys(extensionsControlManifest.deprecated);
+        local = local.filter(e => deprecatedExtensionIds.includes(e.identifier.id) && (!value || e.name.toLowerCase().indexOf(value) > -1 || e.displayName.toLowerCase().indexOf(value) > -1));
+        return this.sortExtensions(local, options);
+    }
+    filterRecentlyUpdatedExtensions(local, query, options) {
+        let { value, includedCategories, excludedCategories } = this.parseCategories(query.value);
+        const currentTime = Date.now();
+        local = local.filter(e => !e.isBuiltin && !e.outdated && e.local?.updated && e.local?.installedTimestamp !== undefined && currentTime - e.local.installedTimestamp < ExtensionsListView_1.RECENT_UPDATE_DURATION);
+        value = value.replace(/@recentlyUpdated/g, '').replace(/@sort:(\w+)(-\w*)?/g, '').trim().toLowerCase();
+        const result = local.filter(e => (e.name.toLowerCase().indexOf(value) > -1 || e.displayName.toLowerCase().indexOf(value) > -1)
+            && this.filterExtensionByCategory(e, includedCategories, excludedCategories));
+        options.sortBy = options.sortBy ?? "UpdateDate";
+        return this.sortExtensions(result, options);
+    }
+    filterExtensionsByFeature(local, query, options) {
+        const value = query.value.replace(/@feature:/g, '').trim();
+        const featureId = value.split(' ')[0];
+        const feature = Registry.as(Extensions.ExtensionFeaturesRegistry).getExtensionFeature(featureId);
+        if (!feature) {
+            return [];
+        }
+        const renderer = feature.renderer ? this.instantiationService.createInstance(feature.renderer) : undefined;
+        try {
+            const result = local.filter(e => {
+                if (!e.local) {
+                    return false;
+                }
+                return renderer?.shouldRender(e.local.manifest) || this.extensionFeaturesManagementService.getAccessData(new ExtensionIdentifier(e.identifier.id), featureId);
+            });
+            return this.sortExtensions(result, options);
+        }
+        finally {
+            renderer?.dispose();
+        }
+    }
+    mergeAddedExtensions(extensions, newExtensions) {
+        const oldExtensions = [...extensions];
+        const findPreviousExtensionIndex = (from) => {
+            let index = -1;
+            const previousExtensionInNew = newExtensions[from];
+            if (previousExtensionInNew) {
+                index = oldExtensions.findIndex(e => areSameExtensions(e.identifier, previousExtensionInNew.identifier));
+                if (index === -1) {
+                    return findPreviousExtensionIndex(from - 1);
+                }
+            }
+            return index;
+        };
+        let hasChanged = false;
+        for (let index = 0; index < newExtensions.length; index++) {
+            const extension = newExtensions[index];
+            if (extensions.every(r => !areSameExtensions(r.identifier, extension.identifier))) {
+                hasChanged = true;
+                extensions.splice(findPreviousExtensionIndex(index - 1) + 1, 0, extension);
+            }
+        }
+        return hasChanged ? extensions : undefined;
+    }
+    async queryGallery(query, options, token) {
+        const hasUserDefinedSortOrder = options.sortBy !== undefined;
+        if (!hasUserDefinedSortOrder && !query.value.trim()) {
+            options.sortBy = 4;
+        }
+        if (this.isRecommendationsQuery(query)) {
+            return this.queryRecommendations(query, options, token);
+        }
+        const text = query.value;
+        if (/\bext:([^\s]+)\b/g.test(text)) {
+            options.text = text;
+            options.source = 'file-extension-tags';
+            return this.extensionsWorkbenchService.queryGallery(options, token).then(pager => this.getPagedModel(pager));
+        }
+        let preferredResults = [];
+        if (text) {
+            options.text = text.substring(0, 350);
+            options.source = 'searchText';
+            if (!hasUserDefinedSortOrder) {
+                const manifest = await this.extensionManagementService.getExtensionsControlManifest();
+                const search = manifest.search;
+                if (Array.isArray(search)) {
+                    for (const s of search) {
+                        if (s.query && s.query.toLowerCase() === text.toLowerCase() && Array.isArray(s.preferredResults)) {
+                            preferredResults = s.preferredResults;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            options.source = 'viewlet';
+        }
+        const pager = await this.extensionsWorkbenchService.queryGallery(options, token);
+        let positionToUpdate = 0;
+        for (const preferredResult of preferredResults) {
+            for (let j = positionToUpdate; j < pager.firstPage.length; j++) {
+                if (areSameExtensions(pager.firstPage[j].identifier, { id: preferredResult })) {
+                    if (positionToUpdate !== j) {
+                        const preferredExtension = pager.firstPage.splice(j, 1)[0];
+                        pager.firstPage.splice(positionToUpdate, 0, preferredExtension);
+                        positionToUpdate++;
+                    }
+                    break;
+                }
+            }
+        }
+        return this.getPagedModel(pager);
+    }
+    sortExtensions(extensions, options) {
+        switch (options.sortBy) {
+            case 4:
+                extensions = extensions.sort((e1, e2) => typeof e2.installCount === 'number' && typeof e1.installCount === 'number' ? e2.installCount - e1.installCount : NaN);
+                break;
+            case "UpdateDate":
+                extensions = extensions.sort((e1, e2) => typeof e2.local?.installedTimestamp === 'number' && typeof e1.local?.installedTimestamp === 'number' ? e2.local.installedTimestamp - e1.local.installedTimestamp :
+                    typeof e2.local?.installedTimestamp === 'number' ? 1 :
+                        typeof e1.local?.installedTimestamp === 'number' ? -1 : NaN);
+                break;
+            case 6:
+            case 12:
+                extensions = extensions.sort((e1, e2) => typeof e2.rating === 'number' && typeof e1.rating === 'number' ? e2.rating - e1.rating : NaN);
+                break;
+            default:
+                extensions = extensions.sort((e1, e2) => e1.displayName.localeCompare(e2.displayName));
+                break;
+        }
+        if (options.sortOrder === 2) {
+            extensions = extensions.reverse();
+        }
+        return extensions;
+    }
+    isRecommendationsQuery(query) {
+        return ExtensionsListView_1.isWorkspaceRecommendedExtensionsQuery(query.value)
+            || ExtensionsListView_1.isKeymapsRecommendedExtensionsQuery(query.value)
+            || ExtensionsListView_1.isLanguageRecommendedExtensionsQuery(query.value)
+            || ExtensionsListView_1.isExeRecommendedExtensionsQuery(query.value)
+            || ExtensionsListView_1.isRemoteRecommendedExtensionsQuery(query.value)
+            || /@recommended:all/i.test(query.value)
+            || ExtensionsListView_1.isSearchRecommendedExtensionsQuery(query.value)
+            || ExtensionsListView_1.isRecommendedExtensionsQuery(query.value);
+    }
+    async queryRecommendations(query, options, token) {
+        if (ExtensionsListView_1.isWorkspaceRecommendedExtensionsQuery(query.value)) {
+            return this.getWorkspaceRecommendationsModel(query, options, token);
+        }
+        if (ExtensionsListView_1.isKeymapsRecommendedExtensionsQuery(query.value)) {
+            return this.getKeymapRecommendationsModel(query, options, token);
+        }
+        if (ExtensionsListView_1.isLanguageRecommendedExtensionsQuery(query.value)) {
+            return this.getLanguageRecommendationsModel(query, options, token);
+        }
+        if (ExtensionsListView_1.isExeRecommendedExtensionsQuery(query.value)) {
+            return this.getExeRecommendationsModel(query, options, token);
+        }
+        if (ExtensionsListView_1.isRemoteRecommendedExtensionsQuery(query.value)) {
+            return this.getRemoteRecommendationsModel(query, options, token);
+        }
+        if (/@recommended:all/i.test(query.value)) {
+            return this.getAllRecommendationsModel(options, token);
+        }
+        if (ExtensionsListView_1.isSearchRecommendedExtensionsQuery(query.value) ||
+            (ExtensionsListView_1.isRecommendedExtensionsQuery(query.value) && options.sortBy !== undefined)) {
+            return this.searchRecommendations(query, options, token);
+        }
+        if (ExtensionsListView_1.isRecommendedExtensionsQuery(query.value)) {
+            return this.getOtherRecommendationsModel(query, options, token);
+        }
+        return new PagedModel([]);
+    }
+    async getInstallableRecommendations(recommendations, options, token) {
+        const result = [];
+        if (recommendations.length) {
+            const galleryExtensions = [];
+            const resourceExtensions = [];
+            for (const recommendation of recommendations) {
+                if (typeof recommendation === 'string') {
+                    galleryExtensions.push(recommendation);
+                }
+                else {
+                    resourceExtensions.push(recommendation);
+                }
+            }
+            if (galleryExtensions.length) {
+                try {
+                    const extensions = await this.extensionsWorkbenchService.getExtensions(galleryExtensions.map(id => ({ id })), { source: options.source }, token);
+                    for (const extension of extensions) {
+                        if (extension.gallery && !extension.deprecationInfo && (await this.extensionManagementService.canInstall(extension.gallery))) {
+                            result.push(extension);
+                        }
+                    }
+                }
+                catch (error) {
+                    if (!resourceExtensions.length || !this.isOfflineError(error)) {
+                        throw error;
+                    }
+                }
+            }
+            if (resourceExtensions.length) {
+                const extensions = await this.extensionsWorkbenchService.getResourceExtensions(resourceExtensions, true);
+                for (const extension of extensions) {
+                    if (await this.extensionsWorkbenchService.canInstall(extension)) {
+                        result.push(extension);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+    async getWorkspaceRecommendations() {
+        const recommendations = await this.extensionRecommendationsService.getWorkspaceRecommendations();
+        const { important } = await this.extensionRecommendationsService.getConfigBasedRecommendations();
+        for (const configBasedRecommendation of important) {
+            if (!recommendations.find(extensionId => extensionId === configBasedRecommendation)) {
+                recommendations.push(configBasedRecommendation);
+            }
+        }
+        return recommendations;
+    }
+    async getWorkspaceRecommendationsModel(query, options, token) {
+        const recommendations = await this.getWorkspaceRecommendations();
+        const installableRecommendations = (await this.getInstallableRecommendations(recommendations, { ...options, source: 'recommendations-workspace' }, token));
+        return new PagedModel(installableRecommendations);
+    }
+    async getKeymapRecommendationsModel(query, options, token) {
+        const value = query.value.replace(/@recommended:keymaps/g, '').trim().toLowerCase();
+        const recommendations = this.extensionRecommendationsService.getKeymapRecommendations();
+        const installableRecommendations = (await this.getInstallableRecommendations(recommendations, { ...options, source: 'recommendations-keymaps' }, token))
+            .filter(extension => extension.identifier.id.toLowerCase().indexOf(value) > -1);
+        return new PagedModel(installableRecommendations);
+    }
+    async getLanguageRecommendationsModel(query, options, token) {
+        const value = query.value.replace(/@recommended:languages/g, '').trim().toLowerCase();
+        const recommendations = this.extensionRecommendationsService.getLanguageRecommendations();
+        const installableRecommendations = (await this.getInstallableRecommendations(recommendations, { ...options, source: 'recommendations-languages' }, token))
+            .filter(extension => extension.identifier.id.toLowerCase().indexOf(value) > -1);
+        return new PagedModel(installableRecommendations);
+    }
+    async getRemoteRecommendationsModel(query, options, token) {
+        const value = query.value.replace(/@recommended:remotes/g, '').trim().toLowerCase();
+        const recommendations = this.extensionRecommendationsService.getRemoteRecommendations();
+        const installableRecommendations = (await this.getInstallableRecommendations(recommendations, { ...options, source: 'recommendations-remotes' }, token))
+            .filter(extension => extension.identifier.id.toLowerCase().indexOf(value) > -1);
+        return new PagedModel(installableRecommendations);
+    }
+    async getExeRecommendationsModel(query, options, token) {
+        const exe = query.value.replace(/@exe:/g, '').trim().toLowerCase();
+        const { important, others } = await this.extensionRecommendationsService.getExeBasedRecommendations(exe.startsWith('"') ? exe.substring(1, exe.length - 1) : exe);
+        const installableRecommendations = await this.getInstallableRecommendations([...important, ...others], { ...options, source: 'recommendations-exe' }, token);
+        return new PagedModel(installableRecommendations);
+    }
+    async getOtherRecommendationsModel(query, options, token) {
+        const otherRecommendations = await this.getOtherRecommendations();
+        const installableRecommendations = await this.getInstallableRecommendations(otherRecommendations, { ...options, source: 'recommendations-other', sortBy: undefined }, token);
+        const result = coalesce(otherRecommendations.map(id => installableRecommendations.find(i => areSameExtensions(i.identifier, { id }))));
+        return new PagedModel(result);
+    }
+    async getOtherRecommendations() {
+        const local = (await this.extensionsWorkbenchService.queryLocal(this.options.server))
+            .map(e => e.identifier.id.toLowerCase());
+        const workspaceRecommendations = (await this.getWorkspaceRecommendations())
+            .map(extensionId => isString(extensionId) ? extensionId.toLowerCase() : extensionId);
+        return distinct((await Promise.all([
+            this.extensionRecommendationsService.getImportantRecommendations(),
+            this.extensionRecommendationsService.getFileBasedRecommendations(),
+            this.extensionRecommendationsService.getOtherRecommendations()
+        ])).flat().filter(extensionId => !local.includes(extensionId.toLowerCase()) && !workspaceRecommendations.includes(extensionId.toLowerCase())), extensionId => extensionId.toLowerCase());
+    }
+    async getAllRecommendationsModel(options, token) {
+        const localExtensions = await this.extensionsWorkbenchService.queryLocal(this.options.server);
+        const localExtensionIds = localExtensions.map(e => e.identifier.id.toLowerCase());
+        const allRecommendations = distinct((await Promise.all([
+            this.getWorkspaceRecommendations(),
+            this.extensionRecommendationsService.getImportantRecommendations(),
+            this.extensionRecommendationsService.getFileBasedRecommendations(),
+            this.extensionRecommendationsService.getOtherRecommendations()
+        ])).flat().filter(extensionId => {
+            if (isString(extensionId)) {
+                return !localExtensionIds.includes(extensionId.toLowerCase());
+            }
+            return !localExtensions.some(localExtension => localExtension.local && this.uriIdentityService.extUri.isEqual(localExtension.local.location, extensionId));
+        }));
+        const installableRecommendations = await this.getInstallableRecommendations(allRecommendations, { ...options, source: 'recommendations-all', sortBy: undefined }, token);
+        const result = [];
+        for (let i = 0; i < installableRecommendations.length && result.length < 8; i++) {
+            const recommendation = allRecommendations[i];
+            if (isString(recommendation)) {
+                const extension = installableRecommendations.find(extension => areSameExtensions(extension.identifier, { id: recommendation }));
+                if (extension) {
+                    result.push(extension);
+                }
+            }
+            else {
+                const extension = installableRecommendations.find(extension => extension.resourceExtension && this.uriIdentityService.extUri.isEqual(extension.resourceExtension.location, recommendation));
+                if (extension) {
+                    result.push(extension);
+                }
+            }
+        }
+        return new PagedModel(result);
+    }
+    async searchRecommendations(query, options, token) {
+        const value = query.value.replace(/@recommended/g, '').trim().toLowerCase();
+        const recommendations = distinct([...await this.getWorkspaceRecommendations(), ...await this.getOtherRecommendations()]);
+        const installableRecommendations = (await this.getInstallableRecommendations(recommendations, { ...options, source: 'recommendations', sortBy: undefined }, token))
+            .filter(extension => extension.identifier.id.toLowerCase().indexOf(value) > -1);
+        return new PagedModel(this.sortExtensions(installableRecommendations, options));
+    }
+    setModel(model, error, donotResetScrollTop) {
+        if (this.list) {
+            this.list.model = new DelayedPagedModel(model);
+            if (!donotResetScrollTop) {
+                this.list.scrollTop = 0;
+            }
+            this.updateBody(error);
+        }
+        if (this.badge) {
+            this.badge.setCount(this.count());
+        }
+    }
+    updateModel(model) {
+        if (this.list) {
+            this.list.model = new DelayedPagedModel(model);
+            this.updateBody();
+        }
+        if (this.badge) {
+            this.badge.setCount(this.count());
+        }
+    }
+    updateBody(error) {
+        if (this.bodyTemplate) {
+            const count = this.count();
+            this.bodyTemplate.extensionsList.classList.toggle('hidden', count === 0);
+            this.bodyTemplate.messageContainer.classList.toggle('hidden', count > 0);
+            if (count === 0 && this.isBodyVisible()) {
+                if (error) {
+                    if (this.isOfflineError(error)) {
+                        this.bodyTemplate.messageSeverityIcon.className = SeverityIcon.className(Severity.Warning);
+                        this.bodyTemplate.messageBox.textContent = localize('offline error', "Unable to search the Marketplace when offline, please check your network connection.");
+                    }
+                    else {
+                        this.bodyTemplate.messageSeverityIcon.className = SeverityIcon.className(Severity.Error);
+                        this.bodyTemplate.messageBox.textContent = localize('error', "Error while fetching extensions. {0}", getErrorMessage(error));
+                    }
+                }
+                else {
+                    this.bodyTemplate.messageSeverityIcon.className = '';
+                    this.bodyTemplate.messageBox.textContent = localize('no extensions found', "No extensions found.");
+                }
+                alert(this.bodyTemplate.messageBox.textContent);
+            }
+        }
+        this.updateSize();
+    }
+    isOfflineError(error) {
+        if (error instanceof ExtensionGalleryError) {
+            return error.code === "Offline";
+        }
+        return isOfflineError(error);
+    }
+    updateSize() {
+        if (this.options.flexibleHeight) {
+            this.maximumBodySize = this.list?.model.length ? Number.POSITIVE_INFINITY : 0;
+            this.storageService.store(`${this.id}.size`, this.list?.model.length || 0, 0, 1);
+        }
+    }
+    openExtension(extension, options) {
+        extension = this.extensionsWorkbenchService.local.filter(e => areSameExtensions(e.identifier, extension.identifier))[0] || extension;
+        this.extensionsWorkbenchService.open(extension, options).then(undefined, err => this.onError(err));
+    }
+    onError(err) {
+        if (isCancellationError(err)) {
+            return;
+        }
+        const message = err && err.message || '';
+        if (/ECONNREFUSED/.test(message)) {
+            const error = createErrorWithActions(localize('suggestProxyError', "Marketplace returned 'ECONNREFUSED'. Please check the 'http.proxy' setting."), [
+                new Action('open user settings', localize('open user settings', "Open User Settings"), undefined, true, () => this.preferencesService.openUserSettings())
+            ]);
+            this.notificationService.error(error);
+            return;
+        }
+        this.notificationService.error(err);
+    }
+    getPagedModel(arg) {
+        if (Array.isArray(arg)) {
+            return new PagedModel(arg);
+        }
+        const pager = {
+            total: arg.total,
+            pageSize: arg.pageSize,
+            firstPage: arg.firstPage,
+            getPage: (pageIndex, cancellationToken) => arg.getPage(pageIndex, cancellationToken)
+        };
+        return new PagedModel(pager);
+    }
+    dispose() {
+        super.dispose();
+        if (this.queryRequest) {
+            this.queryRequest.request.cancel();
+            this.queryRequest = null;
+        }
+        if (this.queryResult) {
+            this.queryResult.disposables.dispose();
+            this.queryResult = undefined;
+        }
+        this.list = null;
+    }
+    static isLocalExtensionsQuery(query, sortBy) {
+        return this.isInstalledExtensionsQuery(query)
+            || this.isSearchInstalledExtensionsQuery(query)
+            || this.isOutdatedExtensionsQuery(query)
+            || this.isEnabledExtensionsQuery(query)
+            || this.isDisabledExtensionsQuery(query)
+            || this.isBuiltInExtensionsQuery(query)
+            || this.isSearchBuiltInExtensionsQuery(query)
+            || this.isBuiltInGroupExtensionsQuery(query)
+            || this.isSearchDeprecatedExtensionsQuery(query)
+            || this.isSearchWorkspaceUnsupportedExtensionsQuery(query)
+            || this.isSearchRecentlyUpdatedQuery(query)
+            || this.isSearchExtensionUpdatesQuery(query)
+            || this.isSortInstalledExtensionsQuery(query, sortBy)
+            || this.isFeatureExtensionsQuery(query);
+    }
+    static isSearchBuiltInExtensionsQuery(query) {
+        return /@builtin\s.+/i.test(query);
+    }
+    static isBuiltInExtensionsQuery(query) {
+        return /^\s*@builtin$/i.test(query.trim());
+    }
+    static isBuiltInGroupExtensionsQuery(query) {
+        return /^\s*@builtin:.+$/i.test(query.trim());
+    }
+    static isSearchWorkspaceUnsupportedExtensionsQuery(query) {
+        return /^\s*@workspaceUnsupported(:(untrusted|virtual)(Partial)?)?(\s|$)/i.test(query);
+    }
+    static isInstalledExtensionsQuery(query) {
+        return /@installed$/i.test(query);
+    }
+    static isSearchInstalledExtensionsQuery(query) {
+        return /@installed\s./i.test(query) || this.isFeatureExtensionsQuery(query);
+    }
+    static isOutdatedExtensionsQuery(query) {
+        return /@outdated/i.test(query);
+    }
+    static isEnabledExtensionsQuery(query) {
+        return /@enabled/i.test(query);
+    }
+    static isDisabledExtensionsQuery(query) {
+        return /@disabled/i.test(query);
+    }
+    static isSearchDeprecatedExtensionsQuery(query) {
+        return /@deprecated\s?.*/i.test(query);
+    }
+    static isRecommendedExtensionsQuery(query) {
+        return /^@recommended$/i.test(query.trim());
+    }
+    static isSearchRecommendedExtensionsQuery(query) {
+        return /@recommended\s.+/i.test(query);
+    }
+    static isWorkspaceRecommendedExtensionsQuery(query) {
+        return /@recommended:workspace/i.test(query);
+    }
+    static isExeRecommendedExtensionsQuery(query) {
+        return /@exe:.+/i.test(query);
+    }
+    static isRemoteRecommendedExtensionsQuery(query) {
+        return /@recommended:remotes/i.test(query);
+    }
+    static isKeymapsRecommendedExtensionsQuery(query) {
+        return /@recommended:keymaps/i.test(query);
+    }
+    static isLanguageRecommendedExtensionsQuery(query) {
+        return /@recommended:languages/i.test(query);
+    }
+    static isSortInstalledExtensionsQuery(query, sortBy) {
+        return (sortBy !== undefined && sortBy !== '' && query === '') || (!sortBy && /^@sort:\S*$/i.test(query));
+    }
+    static isSearchPopularQuery(query) {
+        return /@popular/i.test(query);
+    }
+    static isSearchRecentlyPublishedQuery(query) {
+        return /@recentlyPublished/i.test(query);
+    }
+    static isSearchRecentlyUpdatedQuery(query) {
+        return /@recentlyUpdated/i.test(query);
+    }
+    static isSearchExtensionUpdatesQuery(query) {
+        return /@updates/i.test(query);
+    }
+    static isSortUpdateDateQuery(query) {
+        return /@sort:updateDate/i.test(query);
+    }
+    static isFeatureExtensionsQuery(query) {
+        return /@feature:/i.test(query);
+    }
+    focus() {
+        super.focus();
+        if (!this.list) {
+            return;
+        }
+        if (!(this.list.getFocus().length || this.list.getSelection().length)) {
+            this.list.focusNext();
+        }
+        this.list.domFocus();
+    }
+};
+ExtensionsListView = ExtensionsListView_1 = __decorate([
+    __param(2, INotificationService),
+    __param(3, IKeybindingService),
+    __param(4, IContextMenuService),
+    __param(5, IInstantiationService),
+    __param(6, IThemeService),
+    __param(7, IExtensionService),
+    __param(8, IExtensionsWorkbenchService),
+    __param(9, IExtensionRecommendationsService),
+    __param(10, ITelemetryService),
+    __param(11, IHoverService),
+    __param(12, IConfigurationService),
+    __param(13, IWorkspaceContextService),
+    __param(14, IExtensionManagementServerService),
+    __param(15, IExtensionManifestPropertiesService),
+    __param(16, IWorkbenchExtensionManagementService),
+    __param(17, IWorkspaceContextService),
+    __param(18, IProductService),
+    __param(19, IContextKeyService),
+    __param(20, IViewDescriptorService),
+    __param(21, IOpenerService),
+    __param(22, IPreferencesService),
+    __param(23, IStorageService),
+    __param(24, IWorkspaceTrustManagementService),
+    __param(25, IWorkbenchExtensionEnablementService),
+    __param(26, IWorkbenchLayoutService),
+    __param(27, IExtensionFeaturesManagementService),
+    __param(28, IUriIdentityService),
+    __param(29, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], ExtensionsListView);
+export { ExtensionsListView };
+export class DefaultPopularExtensionsView extends ExtensionsListView {
+    async show() {
+        const query = this.extensionManagementServerService.webExtensionManagementServer && !this.extensionManagementServerService.localExtensionManagementServer && !this.extensionManagementServerService.remoteExtensionManagementServer ? '@web' : '';
+        return super.show(query);
+    }
+}
+export class ServerInstalledExtensionsView extends ExtensionsListView {
+    async show(query) {
+        query = query ? query : '@installed';
+        if (!ExtensionsListView.isLocalExtensionsQuery(query) || ExtensionsListView.isSortInstalledExtensionsQuery(query)) {
+            query = query += ' @installed';
+        }
+        return super.show(query.trim());
+    }
+}
+export class EnabledExtensionsView extends ExtensionsListView {
+    async show(query) {
+        query = query || '@enabled';
+        return ExtensionsListView.isEnabledExtensionsQuery(query) ? super.show(query) :
+            ExtensionsListView.isSortInstalledExtensionsQuery(query) ? super.show('@enabled ' + query) : this.showEmptyModel();
+    }
+}
+export class DisabledExtensionsView extends ExtensionsListView {
+    async show(query) {
+        query = query || '@disabled';
+        return ExtensionsListView.isDisabledExtensionsQuery(query) ? super.show(query) :
+            ExtensionsListView.isSortInstalledExtensionsQuery(query) ? super.show('@disabled ' + query) : this.showEmptyModel();
+    }
+}
+export class OutdatedExtensionsView extends ExtensionsListView {
+    async show(query) {
+        query = query ? query : '@outdated';
+        if (ExtensionsListView.isSearchExtensionUpdatesQuery(query)) {
+            query = query.replace('@updates', '@outdated');
+        }
+        return super.show(query.trim());
+    }
+    updateSize() {
+        super.updateSize();
+        this.setExpanded(this.count() > 0);
+    }
+}
+export class RecentlyUpdatedExtensionsView extends ExtensionsListView {
+    async show(query) {
+        query = query ? query : '@recentlyUpdated';
+        if (ExtensionsListView.isSearchExtensionUpdatesQuery(query)) {
+            query = query.replace('@updates', '@recentlyUpdated');
+        }
+        return super.show(query.trim());
+    }
+}
+let StaticQueryExtensionsView = class StaticQueryExtensionsView extends ExtensionsListView {
+    constructor(options, viewletViewOptions, notificationService, keybindingService, contextMenuService, instantiationService, themeService, extensionService, extensionsWorkbenchService, extensionRecommendationsService, telemetryService, hoverService, configurationService, contextService, extensionManagementServerService, extensionManifestPropertiesService, extensionManagementService, workspaceService, productService, contextKeyService, viewDescriptorService, openerService, preferencesService, storageService, workspaceTrustManagementService, extensionEnablementService, layoutService, extensionFeaturesManagementService, uriIdentityService, logService) {
+        super(options, viewletViewOptions, notificationService, keybindingService, contextMenuService, instantiationService, themeService, extensionService, extensionsWorkbenchService, extensionRecommendationsService, telemetryService, hoverService, configurationService, contextService, extensionManagementServerService, extensionManifestPropertiesService, extensionManagementService, workspaceService, productService, contextKeyService, viewDescriptorService, openerService, preferencesService, storageService, workspaceTrustManagementService, extensionEnablementService, layoutService, extensionFeaturesManagementService, uriIdentityService, logService);
+        this.options = options;
+    }
+    show() {
+        return super.show(this.options.query);
+    }
+};
+StaticQueryExtensionsView = __decorate([
+    __param(2, INotificationService),
+    __param(3, IKeybindingService),
+    __param(4, IContextMenuService),
+    __param(5, IInstantiationService),
+    __param(6, IThemeService),
+    __param(7, IExtensionService),
+    __param(8, IExtensionsWorkbenchService),
+    __param(9, IExtensionRecommendationsService),
+    __param(10, ITelemetryService),
+    __param(11, IHoverService),
+    __param(12, IConfigurationService),
+    __param(13, IWorkspaceContextService),
+    __param(14, IExtensionManagementServerService),
+    __param(15, IExtensionManifestPropertiesService),
+    __param(16, IWorkbenchExtensionManagementService),
+    __param(17, IWorkspaceContextService),
+    __param(18, IProductService),
+    __param(19, IContextKeyService),
+    __param(20, IViewDescriptorService),
+    __param(21, IOpenerService),
+    __param(22, IPreferencesService),
+    __param(23, IStorageService),
+    __param(24, IWorkspaceTrustManagementService),
+    __param(25, IWorkbenchExtensionEnablementService),
+    __param(26, IWorkbenchLayoutService),
+    __param(27, IExtensionFeaturesManagementService),
+    __param(28, IUriIdentityService),
+    __param(29, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], StaticQueryExtensionsView);
+export { StaticQueryExtensionsView };
+function toSpecificWorkspaceUnsupportedQuery(query, qualifier) {
+    if (!query) {
+        return '@workspaceUnsupported:' + qualifier;
+    }
+    const match = query.match(new RegExp(`@workspaceUnsupported(:${qualifier})?(\\s|$)`, 'i'));
+    if (match) {
+        if (!match[1]) {
+            return query.replace(/@workspaceUnsupported/gi, '@workspaceUnsupported:' + qualifier);
+        }
+        return query;
+    }
+    return undefined;
+}
+export class UntrustedWorkspaceUnsupportedExtensionsView extends ExtensionsListView {
+    async show(query) {
+        const updatedQuery = toSpecificWorkspaceUnsupportedQuery(query, 'untrusted');
+        return updatedQuery ? super.show(updatedQuery) : this.showEmptyModel();
+    }
+}
+export class UntrustedWorkspacePartiallySupportedExtensionsView extends ExtensionsListView {
+    async show(query) {
+        const updatedQuery = toSpecificWorkspaceUnsupportedQuery(query, 'untrustedPartial');
+        return updatedQuery ? super.show(updatedQuery) : this.showEmptyModel();
+    }
+}
+export class VirtualWorkspaceUnsupportedExtensionsView extends ExtensionsListView {
+    async show(query) {
+        const updatedQuery = toSpecificWorkspaceUnsupportedQuery(query, 'virtual');
+        return updatedQuery ? super.show(updatedQuery) : this.showEmptyModel();
+    }
+}
+export class VirtualWorkspacePartiallySupportedExtensionsView extends ExtensionsListView {
+    async show(query) {
+        const updatedQuery = toSpecificWorkspaceUnsupportedQuery(query, 'virtualPartial');
+        return updatedQuery ? super.show(updatedQuery) : this.showEmptyModel();
+    }
+}
+export class DeprecatedExtensionsView extends ExtensionsListView {
+    async show(query) {
+        return ExtensionsListView.isSearchDeprecatedExtensionsQuery(query) ? super.show(query) : this.showEmptyModel();
+    }
+}
+export class SearchMarketplaceExtensionsView extends ExtensionsListView {
+    constructor() {
+        super(...arguments);
+        this.reportSearchFinishedDelayer = this._register(new ThrottledDelayer(2000));
+        this.searchWaitPromise = Promise.resolve();
+    }
+    async show(query) {
+        const queryPromise = super.show(query);
+        this.reportSearchFinishedDelayer.trigger(() => this.reportSearchFinished());
+        this.searchWaitPromise = queryPromise.then(null, null);
+        return queryPromise;
+    }
+    async reportSearchFinished() {
+        await this.searchWaitPromise;
+        this.telemetryService.publicLog2('extensionsView:MarketplaceSearchFinished');
+    }
+}
+export class DefaultRecommendedExtensionsView extends ExtensionsListView {
+    constructor() {
+        super(...arguments);
+        this.recommendedExtensionsQuery = '@recommended:all';
+    }
+    renderBody(container) {
+        super.renderBody(container);
+        this._register(this.extensionRecommendationsService.onDidChangeRecommendations(() => {
+            this.show('');
+        }));
+    }
+    async show(query) {
+        if (query && query.trim() !== this.recommendedExtensionsQuery) {
+            return this.showEmptyModel();
+        }
+        const model = await super.show(this.recommendedExtensionsQuery);
+        if (!this.extensionsWorkbenchService.local.some(e => !e.isBuiltin)) {
+            this.setExpanded(model.length > 0);
+        }
+        return model;
+    }
+}
+export class RecommendedExtensionsView extends ExtensionsListView {
+    constructor() {
+        super(...arguments);
+        this.recommendedExtensionsQuery = '@recommended';
+    }
+    renderBody(container) {
+        super.renderBody(container);
+        this._register(this.extensionRecommendationsService.onDidChangeRecommendations(() => {
+            this.show('');
+        }));
+    }
+    async show(query) {
+        return (query && query.trim() !== this.recommendedExtensionsQuery) ? this.showEmptyModel() : super.show(this.recommendedExtensionsQuery);
+    }
+}
+export class WorkspaceRecommendedExtensionsView extends ExtensionsListView {
+    constructor() {
+        super(...arguments);
+        this.recommendedExtensionsQuery = '@recommended:workspace';
+    }
+    renderBody(container) {
+        super.renderBody(container);
+        this._register(this.extensionRecommendationsService.onDidChangeRecommendations(() => this.show(this.recommendedExtensionsQuery)));
+        this._register(this.contextService.onDidChangeWorkbenchState(() => this.show(this.recommendedExtensionsQuery)));
+    }
+    async show(query) {
+        const shouldShowEmptyView = query && query.trim() !== '@recommended' && query.trim() !== '@recommended:workspace';
+        const model = await (shouldShowEmptyView ? this.showEmptyModel() : super.show(this.recommendedExtensionsQuery));
+        this.setExpanded(model.length > 0);
+        return model;
+    }
+    async getInstallableWorkspaceRecommendations() {
+        const installed = (await this.extensionsWorkbenchService.queryLocal())
+            .filter(l => l.enablementState !== 1);
+        const recommendations = (await this.getWorkspaceRecommendations())
+            .filter(recommendation => installed.every(local => isString(recommendation) ? !areSameExtensions({ id: recommendation }, local.identifier) : !this.uriIdentityService.extUri.isEqual(recommendation, local.local?.location)));
+        return this.getInstallableRecommendations(recommendations, { source: 'install-all-workspace-recommendations' }, CancellationToken.None);
+    }
+    async installWorkspaceRecommendations() {
+        const installableRecommendations = await this.getInstallableWorkspaceRecommendations();
+        if (installableRecommendations.length) {
+            const galleryExtensions = [];
+            const resourceExtensions = [];
+            for (const recommendation of installableRecommendations) {
+                if (recommendation.gallery) {
+                    galleryExtensions.push({ extension: recommendation.gallery, options: {} });
+                }
+                else {
+                    resourceExtensions.push(recommendation);
+                }
+            }
+            await Promise.all([
+                this.extensionManagementService.installGalleryExtensions(galleryExtensions),
+                ...resourceExtensions.map(extension => this.extensionsWorkbenchService.install(extension))
+            ]);
+        }
+        else {
+            this.notificationService.notify({
+                severity: Severity.Info,
+                message: localize('no local extensions', "There are no extensions to install.")
+            });
+        }
+    }
+}
+export function getAriaLabelForExtension(extension) {
+    if (!extension) {
+        return '';
+    }
+    const publisher = extension.publisherDomain?.verified ? localize('extension.arialabel.verifiedPublisher', "Verified Publisher {0}", extension.publisherDisplayName) : localize('extension.arialabel.publisher', "Publisher {0}", extension.publisherDisplayName);
+    const deprecated = extension?.deprecationInfo ? localize('extension.arialabel.deprecated', "Deprecated") : '';
+    const rating = extension?.rating ? localize('extension.arialabel.rating', "Rated {0} out of 5 stars by {1} users", extension.rating.toFixed(2), extension.ratingCount) : '';
+    return `${extension.displayName}, ${deprecated ? `${deprecated}, ` : ''}${extension.version}, ${publisher}, ${extension.description} ${rating ? `, ${rating}` : ''}`;
+}

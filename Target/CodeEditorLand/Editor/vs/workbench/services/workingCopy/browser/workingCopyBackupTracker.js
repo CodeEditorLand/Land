@@ -1,1 +1,55 @@
-var u=Object.defineProperty;var d=Object.getOwnPropertyDescriptor;var f=(n,e,i,o)=>{for(var r=o>1?void 0:o?d(e,i):e,c=n.length-1,p;c>=0;c--)(p=n[c])&&(r=(o?p(e,i,r):p(r))||r);return o&&r&&u(e,i,r),r},t=(n,e)=>(i,o)=>e(i,o,n);import{IWorkingCopyBackupService as v}from"../common/workingCopyBackup.js";import"../../../common/contributions.js";import{IFilesConfigurationService as a}from"../../filesConfiguration/common/filesConfigurationService.js";import{IWorkingCopyService as g}from"../common/workingCopyService.js";import{ILifecycleService as I}from"../../lifecycle/common/lifecycle.js";import{ILogService as k}from"../../../../platform/log/common/log.js";import{WorkingCopyBackupTracker as l}from"../common/workingCopyBackupTracker.js";import{IWorkingCopyEditorService as C}from"../common/workingCopyEditorService.js";import{IEditorService as h}from"../../editor/common/editorService.js";import{IEditorGroupsService as y}from"../../editor/common/editorGroupsService.js";let s=class extends l{static ID="workbench.contrib.browserWorkingCopyBackupTracker";constructor(e,i,o,r,c,p,m,S){super(e,o,c,r,i,p,m,S)}onFinalBeforeShutdown(e){const i=this.workingCopyService.modifiedWorkingCopies;if(!i.length)return!1;if(!this.filesConfigurationService.isHotExitEnabled)return!0;for(const o of i)if(!this.workingCopyBackupService.hasBackupSync(o,this.getContentVersion(o)))return this.logService.warn("Unload veto: pending backups"),!0;return!1}};s=f([t(0,v),t(1,a),t(2,g),t(3,I),t(4,k),t(5,C),t(6,h),t(7,y)],s);export{s as BrowserWorkingCopyBackupTracker};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IWorkingCopyBackupService } from '../common/workingCopyBackup.js';
+import { IFilesConfigurationService } from '../../filesConfiguration/common/filesConfigurationService.js';
+import { IWorkingCopyService } from '../common/workingCopyService.js';
+import { ILifecycleService } from '../../lifecycle/common/lifecycle.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { WorkingCopyBackupTracker } from '../common/workingCopyBackupTracker.js';
+import { IWorkingCopyEditorService } from '../common/workingCopyEditorService.js';
+import { IEditorService } from '../../editor/common/editorService.js';
+import { IEditorGroupsService } from '../../editor/common/editorGroupsService.js';
+let BrowserWorkingCopyBackupTracker = class BrowserWorkingCopyBackupTracker extends WorkingCopyBackupTracker {
+    static { this.ID = 'workbench.contrib.browserWorkingCopyBackupTracker'; }
+    constructor(workingCopyBackupService, filesConfigurationService, workingCopyService, lifecycleService, logService, workingCopyEditorService, editorService, editorGroupService) {
+        super(workingCopyBackupService, workingCopyService, logService, lifecycleService, filesConfigurationService, workingCopyEditorService, editorService, editorGroupService);
+    }
+    onFinalBeforeShutdown(reason) {
+        const modifiedWorkingCopies = this.workingCopyService.modifiedWorkingCopies;
+        if (!modifiedWorkingCopies.length) {
+            return false;
+        }
+        if (!this.filesConfigurationService.isHotExitEnabled) {
+            return true;
+        }
+        for (const modifiedWorkingCopy of modifiedWorkingCopies) {
+            if (!this.workingCopyBackupService.hasBackupSync(modifiedWorkingCopy, this.getContentVersion(modifiedWorkingCopy))) {
+                this.logService.warn('Unload veto: pending backups');
+                return true;
+            }
+        }
+        return false;
+    }
+};
+BrowserWorkingCopyBackupTracker = __decorate([
+    __param(0, IWorkingCopyBackupService),
+    __param(1, IFilesConfigurationService),
+    __param(2, IWorkingCopyService),
+    __param(3, ILifecycleService),
+    __param(4, ILogService),
+    __param(5, IWorkingCopyEditorService),
+    __param(6, IEditorService),
+    __param(7, IEditorGroupsService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], BrowserWorkingCopyBackupTracker);
+export { BrowserWorkingCopyBackupTracker };

@@ -1,1 +1,98 @@
-import*as p from"../../../../nls.js";import{matchesFuzzy as f}from"../../../../base/common/filters.js";import{DisposableStore as S}from"../../../../base/common/lifecycle.js";import{IDebugService as k,REPL_VIEW_ID as I}from"../common/debug.js";import{IQuickInputService as h}from"../../../../platform/quickinput/common/quickInput.js";import"../../../../platform/instantiation/common/instantiation.js";import"../common/loadedScriptsPicker.js";import{IViewsService as D}from"../../../services/views/common/viewsService.js";import{ICommandService as v}from"../../../../platform/commands/common/commands.js";async function O(i,a){const c=i.get(h),r=i.get(k),o=i.get(D),t=i.get(v),n=new S,e=c.createQuickPick({useSeparators:!0});n.add(e),e.matchOnLabel=e.matchOnDescription=e.matchOnDetail=e.sortByLabel=!1,e.placeholder=p.localize("moveFocusedView.selectView","Search debug sessions by name");const u=b(e.value,a,r,o,t);e.items=u.picks,e.activeItems=u.activeItems,n.add(e.onDidChangeValue(async()=>{e.items=b(e.value,a,r,o,t).picks})),n.add(e.onDidAccept(()=>{e.selectedItems[0].accept(),e.hide(),n.dispose()})),e.show()}function b(i,a,c,r,o){const t=[],n=[],e=c.getViewModel().focusedSession,u=c.getModel().getSessions(!1),m=[];u.forEach(s=>{s.compact&&s.parentSession&&n.push(s.parentSession)}),u.forEach(s=>{const d=n.includes(s);if(s.parentSession||t.push({type:"separator",label:d?s.name:void 0}),!d){const l=P(s,i,c,r,o);l&&(t.push(l),s.getId()===e?.getId()&&m.push(l))}}),t.length&&t.push({type:"separator"});const g=p.localize("workbench.action.debug.startDebug","Start a New Debug Session");return t.push({label:`$(plus) ${g}`,ariaLabel:g,accept:()=>o.executeCommand(a)}),{picks:t,activeItems:m}}function w(i){const a=i.configuration.name.length?i.configuration.name:i.name,c=i.compact?void 0:i.parentSession?.configuration.name;let r="",o="";return c&&(o=p.localize("workbench.action.debug.spawnFrom","Session {0} spawned from {1}",a,c),r=c),{label:a,description:r,ariaLabel:o}}function P(i,a,c,r,o){const t=w(i),n=f(a,t.label,!0);if(n)return{label:t.label,description:t.description,ariaLabel:t.ariaLabel,highlights:{label:n},accept:()=>{c.focusStackFrame(void 0,void 0,i,{explicit:!0}),r.isViewVisible(I)||r.openView(I,!0)}}}export{O as showDebugSessionMenu};
+import * as nls from '../../../../nls.js';
+import { matchesFuzzy } from '../../../../base/common/filters.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { IDebugService, REPL_VIEW_ID } from '../common/debug.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+export async function showDebugSessionMenu(accessor, selectAndStartID) {
+    const quickInputService = accessor.get(IQuickInputService);
+    const debugService = accessor.get(IDebugService);
+    const viewsService = accessor.get(IViewsService);
+    const commandService = accessor.get(ICommandService);
+    const localDisposableStore = new DisposableStore();
+    const quickPick = quickInputService.createQuickPick({ useSeparators: true });
+    localDisposableStore.add(quickPick);
+    quickPick.matchOnLabel = quickPick.matchOnDescription = quickPick.matchOnDetail = quickPick.sortByLabel = false;
+    quickPick.placeholder = nls.localize('moveFocusedView.selectView', 'Search debug sessions by name');
+    const pickItems = _getPicksAndActiveItem(quickPick.value, selectAndStartID, debugService, viewsService, commandService);
+    quickPick.items = pickItems.picks;
+    quickPick.activeItems = pickItems.activeItems;
+    localDisposableStore.add(quickPick.onDidChangeValue(async () => {
+        quickPick.items = _getPicksAndActiveItem(quickPick.value, selectAndStartID, debugService, viewsService, commandService).picks;
+    }));
+    localDisposableStore.add(quickPick.onDidAccept(() => {
+        const selectedItem = quickPick.selectedItems[0];
+        selectedItem.accept();
+        quickPick.hide();
+        localDisposableStore.dispose();
+    }));
+    quickPick.show();
+}
+function _getPicksAndActiveItem(filter, selectAndStartID, debugService, viewsService, commandService) {
+    const debugConsolePicks = [];
+    const headerSessions = [];
+    const currSession = debugService.getViewModel().focusedSession;
+    const sessions = debugService.getModel().getSessions(false);
+    const activeItems = [];
+    sessions.forEach((session) => {
+        if (session.compact && session.parentSession) {
+            headerSessions.push(session.parentSession);
+        }
+    });
+    sessions.forEach((session) => {
+        const isHeader = headerSessions.includes(session);
+        if (!session.parentSession) {
+            debugConsolePicks.push({ type: 'separator', label: isHeader ? session.name : undefined });
+        }
+        if (!isHeader) {
+            const pick = _createPick(session, filter, debugService, viewsService, commandService);
+            if (pick) {
+                debugConsolePicks.push(pick);
+                if (session.getId() === currSession?.getId()) {
+                    activeItems.push(pick);
+                }
+            }
+        }
+    });
+    if (debugConsolePicks.length) {
+        debugConsolePicks.push({ type: 'separator' });
+    }
+    const createDebugSessionLabel = nls.localize('workbench.action.debug.startDebug', 'Start a New Debug Session');
+    debugConsolePicks.push({
+        label: `$(plus) ${createDebugSessionLabel}`,
+        ariaLabel: createDebugSessionLabel,
+        accept: () => commandService.executeCommand(selectAndStartID)
+    });
+    return { picks: debugConsolePicks, activeItems };
+}
+function _getSessionInfo(session) {
+    const label = (!session.configuration.name.length) ? session.name : session.configuration.name;
+    const parentName = session.compact ? undefined : session.parentSession?.configuration.name;
+    let description = '';
+    let ariaLabel = '';
+    if (parentName) {
+        ariaLabel = nls.localize('workbench.action.debug.spawnFrom', 'Session {0} spawned from {1}', label, parentName);
+        description = parentName;
+    }
+    return { label, description, ariaLabel };
+}
+function _createPick(session, filter, debugService, viewsService, commandService) {
+    const pickInfo = _getSessionInfo(session);
+    const highlights = matchesFuzzy(filter, pickInfo.label, true);
+    if (highlights) {
+        return {
+            label: pickInfo.label,
+            description: pickInfo.description,
+            ariaLabel: pickInfo.ariaLabel,
+            highlights: { label: highlights },
+            accept: () => {
+                debugService.focusStackFrame(undefined, undefined, session, { explicit: true });
+                if (!viewsService.isViewVisible(REPL_VIEW_ID)) {
+                    viewsService.openView(REPL_VIEW_ID, true);
+                }
+            }
+        };
+    }
+    return undefined;
+}

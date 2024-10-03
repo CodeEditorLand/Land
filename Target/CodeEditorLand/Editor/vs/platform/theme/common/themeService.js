@@ -1,1 +1,70 @@
-import{Codicon as a}from"../../../base/common/codicons.js";import"../../../base/common/color.js";import{Emitter as l}from"../../../base/common/event.js";import{Disposable as s,toDisposable as c}from"../../../base/common/lifecycle.js";import"../../environment/common/environment.js";import{createDecorator as h}from"../../instantiation/common/instantiation.js";import*as m from"../../registry/common/platform.js";import"./colorRegistry.js";import"./iconRegistry.js";import{ColorScheme as o}from"./theme.js";const F=h("themeService");function R(e){return{id:e}}const w=a.file,H=a.folder;function _(e){switch(e){case o.DARK:return"vs-dark";case o.HIGH_CONTRAST_DARK:return"hc-black";case o.HIGH_CONTRAST_LIGHT:return"hc-light";default:return"vs"}}const g={ThemingContribution:"base.contributions.theming"};class u{themingParticipants=[];onThemingParticipantAddedEmitter;constructor(){this.themingParticipants=[],this.onThemingParticipantAddedEmitter=new l}onColorThemeChange(r){return this.themingParticipants.push(r),this.onThemingParticipantAddedEmitter.fire(r),c(()=>{const n=this.themingParticipants.indexOf(r);this.themingParticipants.splice(n,1)})}get onThemingParticipantAdded(){return this.onThemingParticipantAddedEmitter.event}getThemingParticipants(){return this.themingParticipants}}const d=new u;m.Registry.add(g.ThemingContribution,d);function G(e){return d.onColorThemeChange(e)}class L extends s{constructor(n){super();this.themeService=n;this.theme=n.getColorTheme(),this._register(this.themeService.onDidColorThemeChange(i=>this.onThemeChange(i)))}theme;onThemeChange(n){this.theme=n,this.updateStyles()}updateStyles(){}getColor(n,i){let t=this.theme.getColor(n);return t&&i&&(t=i(t,this.theme)),t?t.toString():null}}export{g as Extensions,w as FileThemeIcon,H as FolderThemeIcon,F as IThemeService,L as Themable,_ as getThemeTypeSelector,G as registerThemingParticipant,R as themeColorFromId};
+import { Codicon } from '../../../base/common/codicons.js';
+import { Emitter } from '../../../base/common/event.js';
+import { Disposable, toDisposable } from '../../../base/common/lifecycle.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import * as platform from '../../registry/common/platform.js';
+import { ColorScheme } from './theme.js';
+export const IThemeService = createDecorator('themeService');
+export function themeColorFromId(id) {
+    return { id };
+}
+export const FileThemeIcon = Codicon.file;
+export const FolderThemeIcon = Codicon.folder;
+export function getThemeTypeSelector(type) {
+    switch (type) {
+        case ColorScheme.DARK: return 'vs-dark';
+        case ColorScheme.HIGH_CONTRAST_DARK: return 'hc-black';
+        case ColorScheme.HIGH_CONTRAST_LIGHT: return 'hc-light';
+        default: return 'vs';
+    }
+}
+export const Extensions = {
+    ThemingContribution: 'base.contributions.theming'
+};
+class ThemingRegistry {
+    constructor() {
+        this.themingParticipants = [];
+        this.themingParticipants = [];
+        this.onThemingParticipantAddedEmitter = new Emitter();
+    }
+    onColorThemeChange(participant) {
+        this.themingParticipants.push(participant);
+        this.onThemingParticipantAddedEmitter.fire(participant);
+        return toDisposable(() => {
+            const idx = this.themingParticipants.indexOf(participant);
+            this.themingParticipants.splice(idx, 1);
+        });
+    }
+    get onThemingParticipantAdded() {
+        return this.onThemingParticipantAddedEmitter.event;
+    }
+    getThemingParticipants() {
+        return this.themingParticipants;
+    }
+}
+const themingRegistry = new ThemingRegistry();
+platform.Registry.add(Extensions.ThemingContribution, themingRegistry);
+export function registerThemingParticipant(participant) {
+    return themingRegistry.onColorThemeChange(participant);
+}
+export class Themable extends Disposable {
+    constructor(themeService) {
+        super();
+        this.themeService = themeService;
+        this.theme = themeService.getColorTheme();
+        this._register(this.themeService.onDidColorThemeChange(theme => this.onThemeChange(theme)));
+    }
+    onThemeChange(theme) {
+        this.theme = theme;
+        this.updateStyles();
+    }
+    updateStyles() {
+    }
+    getColor(id, modify) {
+        let color = this.theme.getColor(id);
+        if (color && modify) {
+            color = modify(color, this.theme);
+        }
+        return color ? color.toString() : null;
+    }
+}

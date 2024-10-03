@@ -1,1 +1,206 @@
-import{Emitter as c}from"../../../base/common/event.js";import"../../../base/parts/ipc/common/ipc.js";import{DiskFileSystemProvider as u}from"./diskFileSystemProvider.js";import{Disposable as h,dispose as m,toDisposable as f}from"../../../base/common/lifecycle.js";import"../../log/common/log.js";import"../../../base/common/uriIpc.js";import"../../../base/common/uri.js";import{VSBuffer as p}from"../../../base/common/buffer.js";import{listenStream as I}from"../../../base/common/stream.js";import"../common/files.js";import{CancellationTokenSource as v}from"../../../base/common/cancellation.js";import"../../environment/common/environment.js";import"../common/watcher.js";class X extends h{constructor(r,t){super();this.provider=r;this.logService=t}call(r,t,e){const i=this.getUriTransformer(r);switch(t){case"stat":return this.stat(i,e[0]);case"readdir":return this.readdir(i,e[0]);case"open":return this.open(i,e[0],e[1]);case"close":return this.close(e[0]);case"read":return this.read(e[0],e[1],e[2]);case"readFile":return this.readFile(i,e[0],e[1]);case"write":return this.write(e[0],e[1],e[2],e[3],e[4]);case"writeFile":return this.writeFile(i,e[0],e[1],e[2]);case"rename":return this.rename(i,e[0],e[1],e[2]);case"copy":return this.copy(i,e[0],e[1],e[2]);case"cloneFile":return this.cloneFile(i,e[0],e[1]);case"mkdir":return this.mkdir(i,e[0]);case"delete":return this.delete(i,e[0],e[1]);case"watch":return this.watch(i,e[0],e[1],e[2],e[3]);case"unwatch":return this.unwatch(e[0],e[1])}throw new Error(`IPC Command ${t} not found`)}listen(r,t,e){const i=this.getUriTransformer(r);switch(t){case"fileChange":return this.onFileChange(i,e[0]);case"readFileStream":return this.onReadFileStream(i,e[0],e[1])}throw new Error(`Unknown event ${t}`)}stat(r,t){const e=this.transformIncoming(r,t,!0);return this.provider.stat(e)}readdir(r,t){const e=this.transformIncoming(r,t);return this.provider.readdir(e)}async readFile(r,t,e){const i=this.transformIncoming(r,t,!0),s=await this.provider.readFile(i,e);return p.wrap(s)}onReadFileStream(r,t,e){const i=this.transformIncoming(r,t,!0),s=new v,n=new c({onDidRemoveLastListener:()=>{s.cancel()}}),a=this.provider.readFileStream(i,e,s.token);return I(a,{onData:o=>n.fire(p.wrap(o)),onError:o=>n.fire(o),onEnd:()=>{n.fire("end"),n.dispose(),s.dispose()}}),n.event}writeFile(r,t,e,i){const s=this.transformIncoming(r,t);return this.provider.writeFile(s,e.buffer,i)}open(r,t,e){const i=this.transformIncoming(r,t,!0);return this.provider.open(i,e)}close(r){return this.provider.close(r)}async read(r,t,e){const i=p.alloc(e),n=await this.provider.read(r,t,i.buffer,0,e);return[i,n]}write(r,t,e,i,s){return this.provider.write(r,t,e.buffer,i,s)}mkdir(r,t){const e=this.transformIncoming(r,t);return this.provider.mkdir(e)}delete(r,t,e){const i=this.transformIncoming(r,t);return this.provider.delete(i,e)}rename(r,t,e,i){const s=this.transformIncoming(r,t),n=this.transformIncoming(r,e);return this.provider.rename(s,n,i)}copy(r,t,e,i){const s=this.transformIncoming(r,t),n=this.transformIncoming(r,e);return this.provider.copy(s,n,i)}cloneFile(r,t,e){const i=this.transformIncoming(r,t),s=this.transformIncoming(r,e);return this.provider.cloneFile(i,s)}sessionToWatcher=new Map;watchRequests=new Map;onFileChange(r,t){const e=new c({onWillAddFirstListener:()=>{this.sessionToWatcher.set(t,this.createSessionFileWatcher(r,e))},onDidRemoveLastListener:()=>{m(this.sessionToWatcher.get(t)),this.sessionToWatcher.delete(t)}});return e.event}async watch(r,t,e,i,s){const n=this.sessionToWatcher.get(t);if(n){const a=this.transformIncoming(r,i),o=n.watch(e,a,s);this.watchRequests.set(t+e,o)}}async unwatch(r,t){const e=r+t,i=this.watchRequests.get(e);i&&(m(i),this.watchRequests.delete(e))}dispose(){super.dispose();for(const[,r]of this.watchRequests)r.dispose();this.watchRequests.clear();for(const[,r]of this.sessionToWatcher)r.dispose();this.sessionToWatcher.clear()}}class Y extends h{constructor(r,t,e,i){super();this.uriTransformer=r;this.logService=e;this.environmentService=i;this.registerListeners(t)}watcherRequests=new Map;fileWatcher=this._register(new u(this.logService));registerListeners(r){const t=this._register(new c);this._register(t.event(e=>{r.fire(e.map(i=>({resource:this.uriTransformer.transformOutgoingURI(i.resource),type:i.type,cId:i.cId})))})),this._register(this.fileWatcher.onDidChangeFile(e=>t.fire(e))),this._register(this.fileWatcher.onDidWatchError(e=>r.fire(e)))}getRecursiveWatcherOptions(r){}getExtraExcludes(r){}watch(r,t,e){const i=this.getExtraExcludes(this.environmentService);return Array.isArray(i)&&(e.excludes=[...e.excludes,...i]),this.watcherRequests.set(r,this.fileWatcher.watch(t,e)),f(()=>{m(this.watcherRequests.get(r)),this.watcherRequests.delete(r)})}dispose(){for(const[,r]of this.watcherRequests)r.dispose();this.watcherRequests.clear(),super.dispose()}}export{X as AbstractDiskFileSystemProviderChannel,Y as AbstractSessionFileWatcher};
+import { Emitter } from '../../../base/common/event.js';
+import { DiskFileSystemProvider } from './diskFileSystemProvider.js';
+import { Disposable, dispose, toDisposable } from '../../../base/common/lifecycle.js';
+import { VSBuffer } from '../../../base/common/buffer.js';
+import { listenStream } from '../../../base/common/stream.js';
+import { CancellationTokenSource } from '../../../base/common/cancellation.js';
+export class AbstractDiskFileSystemProviderChannel extends Disposable {
+    constructor(provider, logService) {
+        super();
+        this.provider = provider;
+        this.logService = logService;
+        this.sessionToWatcher = new Map();
+        this.watchRequests = new Map();
+    }
+    call(ctx, command, arg) {
+        const uriTransformer = this.getUriTransformer(ctx);
+        switch (command) {
+            case 'stat': return this.stat(uriTransformer, arg[0]);
+            case 'readdir': return this.readdir(uriTransformer, arg[0]);
+            case 'open': return this.open(uriTransformer, arg[0], arg[1]);
+            case 'close': return this.close(arg[0]);
+            case 'read': return this.read(arg[0], arg[1], arg[2]);
+            case 'readFile': return this.readFile(uriTransformer, arg[0], arg[1]);
+            case 'write': return this.write(arg[0], arg[1], arg[2], arg[3], arg[4]);
+            case 'writeFile': return this.writeFile(uriTransformer, arg[0], arg[1], arg[2]);
+            case 'rename': return this.rename(uriTransformer, arg[0], arg[1], arg[2]);
+            case 'copy': return this.copy(uriTransformer, arg[0], arg[1], arg[2]);
+            case 'cloneFile': return this.cloneFile(uriTransformer, arg[0], arg[1]);
+            case 'mkdir': return this.mkdir(uriTransformer, arg[0]);
+            case 'delete': return this.delete(uriTransformer, arg[0], arg[1]);
+            case 'watch': return this.watch(uriTransformer, arg[0], arg[1], arg[2], arg[3]);
+            case 'unwatch': return this.unwatch(arg[0], arg[1]);
+        }
+        throw new Error(`IPC Command ${command} not found`);
+    }
+    listen(ctx, event, arg) {
+        const uriTransformer = this.getUriTransformer(ctx);
+        switch (event) {
+            case 'fileChange': return this.onFileChange(uriTransformer, arg[0]);
+            case 'readFileStream': return this.onReadFileStream(uriTransformer, arg[0], arg[1]);
+        }
+        throw new Error(`Unknown event ${event}`);
+    }
+    stat(uriTransformer, _resource) {
+        const resource = this.transformIncoming(uriTransformer, _resource, true);
+        return this.provider.stat(resource);
+    }
+    readdir(uriTransformer, _resource) {
+        const resource = this.transformIncoming(uriTransformer, _resource);
+        return this.provider.readdir(resource);
+    }
+    async readFile(uriTransformer, _resource, opts) {
+        const resource = this.transformIncoming(uriTransformer, _resource, true);
+        const buffer = await this.provider.readFile(resource, opts);
+        return VSBuffer.wrap(buffer);
+    }
+    onReadFileStream(uriTransformer, _resource, opts) {
+        const resource = this.transformIncoming(uriTransformer, _resource, true);
+        const cts = new CancellationTokenSource();
+        const emitter = new Emitter({
+            onDidRemoveLastListener: () => {
+                cts.cancel();
+            }
+        });
+        const fileStream = this.provider.readFileStream(resource, opts, cts.token);
+        listenStream(fileStream, {
+            onData: chunk => emitter.fire(VSBuffer.wrap(chunk)),
+            onError: error => emitter.fire(error),
+            onEnd: () => {
+                emitter.fire('end');
+                emitter.dispose();
+                cts.dispose();
+            }
+        });
+        return emitter.event;
+    }
+    writeFile(uriTransformer, _resource, content, opts) {
+        const resource = this.transformIncoming(uriTransformer, _resource);
+        return this.provider.writeFile(resource, content.buffer, opts);
+    }
+    open(uriTransformer, _resource, opts) {
+        const resource = this.transformIncoming(uriTransformer, _resource, true);
+        return this.provider.open(resource, opts);
+    }
+    close(fd) {
+        return this.provider.close(fd);
+    }
+    async read(fd, pos, length) {
+        const buffer = VSBuffer.alloc(length);
+        const bufferOffset = 0;
+        const bytesRead = await this.provider.read(fd, pos, buffer.buffer, bufferOffset, length);
+        return [buffer, bytesRead];
+    }
+    write(fd, pos, data, offset, length) {
+        return this.provider.write(fd, pos, data.buffer, offset, length);
+    }
+    mkdir(uriTransformer, _resource) {
+        const resource = this.transformIncoming(uriTransformer, _resource);
+        return this.provider.mkdir(resource);
+    }
+    delete(uriTransformer, _resource, opts) {
+        const resource = this.transformIncoming(uriTransformer, _resource);
+        return this.provider.delete(resource, opts);
+    }
+    rename(uriTransformer, _source, _target, opts) {
+        const source = this.transformIncoming(uriTransformer, _source);
+        const target = this.transformIncoming(uriTransformer, _target);
+        return this.provider.rename(source, target, opts);
+    }
+    copy(uriTransformer, _source, _target, opts) {
+        const source = this.transformIncoming(uriTransformer, _source);
+        const target = this.transformIncoming(uriTransformer, _target);
+        return this.provider.copy(source, target, opts);
+    }
+    cloneFile(uriTransformer, _source, _target) {
+        const source = this.transformIncoming(uriTransformer, _source);
+        const target = this.transformIncoming(uriTransformer, _target);
+        return this.provider.cloneFile(source, target);
+    }
+    onFileChange(uriTransformer, sessionId) {
+        const emitter = new Emitter({
+            onWillAddFirstListener: () => {
+                this.sessionToWatcher.set(sessionId, this.createSessionFileWatcher(uriTransformer, emitter));
+            },
+            onDidRemoveLastListener: () => {
+                dispose(this.sessionToWatcher.get(sessionId));
+                this.sessionToWatcher.delete(sessionId);
+            }
+        });
+        return emitter.event;
+    }
+    async watch(uriTransformer, sessionId, req, _resource, opts) {
+        const watcher = this.sessionToWatcher.get(sessionId);
+        if (watcher) {
+            const resource = this.transformIncoming(uriTransformer, _resource);
+            const disposable = watcher.watch(req, resource, opts);
+            this.watchRequests.set(sessionId + req, disposable);
+        }
+    }
+    async unwatch(sessionId, req) {
+        const id = sessionId + req;
+        const disposable = this.watchRequests.get(id);
+        if (disposable) {
+            dispose(disposable);
+            this.watchRequests.delete(id);
+        }
+    }
+    dispose() {
+        super.dispose();
+        for (const [, disposable] of this.watchRequests) {
+            disposable.dispose();
+        }
+        this.watchRequests.clear();
+        for (const [, disposable] of this.sessionToWatcher) {
+            disposable.dispose();
+        }
+        this.sessionToWatcher.clear();
+    }
+}
+export class AbstractSessionFileWatcher extends Disposable {
+    constructor(uriTransformer, sessionEmitter, logService, environmentService) {
+        super();
+        this.uriTransformer = uriTransformer;
+        this.logService = logService;
+        this.environmentService = environmentService;
+        this.watcherRequests = new Map();
+        this.fileWatcher = this._register(new DiskFileSystemProvider(this.logService));
+        this.registerListeners(sessionEmitter);
+    }
+    registerListeners(sessionEmitter) {
+        const localChangeEmitter = this._register(new Emitter());
+        this._register(localChangeEmitter.event((events) => {
+            sessionEmitter.fire(events.map(e => ({
+                resource: this.uriTransformer.transformOutgoingURI(e.resource),
+                type: e.type,
+                cId: e.cId
+            })));
+        }));
+        this._register(this.fileWatcher.onDidChangeFile(events => localChangeEmitter.fire(events)));
+        this._register(this.fileWatcher.onDidWatchError(error => sessionEmitter.fire(error)));
+    }
+    getRecursiveWatcherOptions(environmentService) {
+        return undefined;
+    }
+    getExtraExcludes(environmentService) {
+        return undefined;
+    }
+    watch(req, resource, opts) {
+        const extraExcludes = this.getExtraExcludes(this.environmentService);
+        if (Array.isArray(extraExcludes)) {
+            opts.excludes = [...opts.excludes, ...extraExcludes];
+        }
+        this.watcherRequests.set(req, this.fileWatcher.watch(resource, opts));
+        return toDisposable(() => {
+            dispose(this.watcherRequests.get(req));
+            this.watcherRequests.delete(req);
+        });
+    }
+    dispose() {
+        for (const [, disposable] of this.watcherRequests) {
+            disposable.dispose();
+        }
+        this.watcherRequests.clear();
+        super.dispose();
+    }
+}

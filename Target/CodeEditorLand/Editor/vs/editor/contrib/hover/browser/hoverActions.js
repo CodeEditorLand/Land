@@ -1,1 +1,411 @@
-import{DECREASE_HOVER_VERBOSITY_ACTION_ID as O,DECREASE_HOVER_VERBOSITY_ACTION_LABEL as C,GO_TO_BOTTOM_HOVER_ACTION_ID as _,GO_TO_TOP_HOVER_ACTION_ID as S,INCREASE_HOVER_VERBOSITY_ACTION_ID as y,INCREASE_HOVER_VERBOSITY_ACTION_LABEL as D,PAGE_DOWN_HOVER_ACTION_ID as F,PAGE_UP_HOVER_ACTION_ID as T,SCROLL_DOWN_HOVER_ACTION_ID as x,SCROLL_LEFT_HOVER_ACTION_ID as R,SCROLL_RIGHT_HOVER_ACTION_ID as V,SCROLL_UP_HOVER_ACTION_ID as k,SHOW_DEFINITION_PREVIEW_HOVER_ACTION_ID as L,SHOW_OR_FOCUS_HOVER_ACTION_ID as N}from"./hoverActionIds.js";import{KeyChord as P,KeyCode as s,KeyMod as p}from"../../../../base/common/keyCodes.js";import"../../../browser/editorBrowser.js";import{EditorAction as n}from"../../../browser/editorExtensions.js";import{EditorOption as z}from"../../../common/config/editorOptions.js";import{Range as f}from"../../../common/core/range.js";import{EditorContextKeys as t}from"../../../common/editorContextKeys.js";import{GotoDefinitionAtPositionEditorContribution as B}from"../../gotoSymbol/browser/link/goToDefinitionAtPosition.js";import{HoverStartMode as b,HoverStartSource as g}from"./hoverOperation.js";import{AccessibilitySupport as U}from"../../../../platform/accessibility/common/accessibility.js";import{KeybindingWeight as h}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{ContentHoverController as c}from"./contentHoverController.js";import{HoverVerbosityAction as H}from"../../../common/languages.js";import*as r from"../../../../nls.js";import"./hover.css";var A=(o=>(o.NoAutoFocus="noAutoFocus",o.FocusIfVisible="focusIfVisible",o.AutoFocusImmediately="autoFocusImmediately",o))(A||{});class io extends n{constructor(){super({id:N,label:r.localize({key:"showOrFocusHover",comment:["Label for action that will trigger the showing/focusing of a hover in the editor.","If the hover is not visible, it will show the hover.","This allows for users to show the hover without using the mouse."]},"Show or Focus Hover"),metadata:{description:r.localize2("showOrFocusHoverDescription","Show or focus the editor hover which shows documentation, references, and other content for a symbol at the current cursor position."),args:[{name:"args",schema:{type:"object",properties:{focus:{description:"Controls if and when the hover should take focus upon being triggered by this action.",enum:["noAutoFocus","focusIfVisible","autoFocusImmediately"],enumDescriptions:[r.localize("showOrFocusHover.focus.noAutoFocus","The hover will not automatically take focus."),r.localize("showOrFocusHover.focus.focusIfVisible","The hover will take focus only if it is already visible."),r.localize("showOrFocusHover.focus.autoFocusImmediately","The hover will automatically take focus when it appears.")],default:"focusIfVisible"}}}}]},alias:"Show or Focus Hover",precondition:void 0,kbOpts:{kbExpr:t.editorTextFocus,primary:P(p.CtrlCmd|s.KeyK,p.CtrlCmd|s.KeyI),weight:h.EditorContrib}})}run(a,e,o){if(!e.hasModel())return;const i=c.get(e);if(!i)return;const d=o?.focus;let u="focusIfVisible";Object.values(A).includes(d)?u=d:typeof d=="boolean"&&d&&(u="autoFocusImmediately");const m=E=>{const v=e.getPosition(),I=new f(v.lineNumber,v.column,v.lineNumber,v.column);i.showContentHover(I,b.Immediate,g.Keyboard,E)},w=e.getOption(z.accessibilitySupport)===U.Enabled;i.isHoverVisible?u!=="noAutoFocus"?i.focus():m(w):m(w||u==="autoFocusImmediately")}}class so extends n{constructor(){super({id:L,label:r.localize({key:"showDefinitionPreviewHover",comment:["Label for action that will trigger the showing of definition preview hover in the editor.","This allows for users to show the definition preview hover without using the mouse."]},"Show Definition Preview Hover"),alias:"Show Definition Preview Hover",precondition:void 0,metadata:{description:r.localize2("showDefinitionPreviewHoverDescription","Show the definition preview hover in the editor.")}})}run(a,e){const o=c.get(e);if(!o)return;const i=e.getPosition();if(!i)return;const d=new f(i.lineNumber,i.column,i.lineNumber,i.column),u=B.get(e);if(!u)return;u.startFindDefinitionFromCursor(i).then(()=>{o.showContentHover(d,b.Immediate,g.Keyboard,!0)})}}class co extends n{constructor(){super({id:k,label:r.localize({key:"scrollUpHover",comment:["Action that allows to scroll up in the hover widget with the up arrow when the hover widget is focused."]},"Scroll Up Hover"),alias:"Scroll Up Hover",precondition:t.hoverFocused,kbOpts:{kbExpr:t.hoverFocused,primary:s.UpArrow,weight:h.EditorContrib},metadata:{description:r.localize2("scrollUpHoverDescription","Scroll up the editor hover.")}})}run(a,e){const o=c.get(e);o&&o.scrollUp()}}class no extends n{constructor(){super({id:x,label:r.localize({key:"scrollDownHover",comment:["Action that allows to scroll down in the hover widget with the up arrow when the hover widget is focused."]},"Scroll Down Hover"),alias:"Scroll Down Hover",precondition:t.hoverFocused,kbOpts:{kbExpr:t.hoverFocused,primary:s.DownArrow,weight:h.EditorContrib},metadata:{description:r.localize2("scrollDownHoverDescription","Scroll down the editor hover.")}})}run(a,e){const o=c.get(e);o&&o.scrollDown()}}class lo extends n{constructor(){super({id:R,label:r.localize({key:"scrollLeftHover",comment:["Action that allows to scroll left in the hover widget with the left arrow when the hover widget is focused."]},"Scroll Left Hover"),alias:"Scroll Left Hover",precondition:t.hoverFocused,kbOpts:{kbExpr:t.hoverFocused,primary:s.LeftArrow,weight:h.EditorContrib},metadata:{description:r.localize2("scrollLeftHoverDescription","Scroll left the editor hover.")}})}run(a,e){const o=c.get(e);o&&o.scrollLeft()}}class ao extends n{constructor(){super({id:V,label:r.localize({key:"scrollRightHover",comment:["Action that allows to scroll right in the hover widget with the right arrow when the hover widget is focused."]},"Scroll Right Hover"),alias:"Scroll Right Hover",precondition:t.hoverFocused,kbOpts:{kbExpr:t.hoverFocused,primary:s.RightArrow,weight:h.EditorContrib},metadata:{description:r.localize2("scrollRightHoverDescription","Scroll right the editor hover.")}})}run(a,e){const o=c.get(e);o&&o.scrollRight()}}class ho extends n{constructor(){super({id:T,label:r.localize({key:"pageUpHover",comment:["Action that allows to page up in the hover widget with the page up command when the hover widget is focused."]},"Page Up Hover"),alias:"Page Up Hover",precondition:t.hoverFocused,kbOpts:{kbExpr:t.hoverFocused,primary:s.PageUp,secondary:[p.Alt|s.UpArrow],weight:h.EditorContrib},metadata:{description:r.localize2("pageUpHoverDescription","Page up the editor hover.")}})}run(a,e){const o=c.get(e);o&&o.pageUp()}}class uo extends n{constructor(){super({id:F,label:r.localize({key:"pageDownHover",comment:["Action that allows to page down in the hover widget with the page down command when the hover widget is focused."]},"Page Down Hover"),alias:"Page Down Hover",precondition:t.hoverFocused,kbOpts:{kbExpr:t.hoverFocused,primary:s.PageDown,secondary:[p.Alt|s.DownArrow],weight:h.EditorContrib},metadata:{description:r.localize2("pageDownHoverDescription","Page down the editor hover.")}})}run(a,e){const o=c.get(e);o&&o.pageDown()}}class po extends n{constructor(){super({id:S,label:r.localize({key:"goToTopHover",comment:["Action that allows to go to the top of the hover widget with the home command when the hover widget is focused."]},"Go To Top Hover"),alias:"Go To Bottom Hover",precondition:t.hoverFocused,kbOpts:{kbExpr:t.hoverFocused,primary:s.Home,secondary:[p.CtrlCmd|s.UpArrow],weight:h.EditorContrib},metadata:{description:r.localize2("goToTopHoverDescription","Go to the top of the editor hover.")}})}run(a,e){const o=c.get(e);o&&o.goToTop()}}class vo extends n{constructor(){super({id:_,label:r.localize({key:"goToBottomHover",comment:["Action that allows to go to the bottom in the hover widget with the end command when the hover widget is focused."]},"Go To Bottom Hover"),alias:"Go To Bottom Hover",precondition:t.hoverFocused,kbOpts:{kbExpr:t.hoverFocused,primary:s.End,secondary:[p.CtrlCmd|s.DownArrow],weight:h.EditorContrib},metadata:{description:r.localize2("goToBottomHoverDescription","Go to the bottom of the editor hover.")}})}run(a,e){const o=c.get(e);o&&o.goToBottom()}}class mo extends n{constructor(){super({id:y,label:D,alias:"Increase Hover Verbosity Level",precondition:t.hoverVisible})}run(a,e,o){const i=c.get(e);if(!i)return;const d=o?.index!==void 0?o.index:i.focusedHoverPartIndex();i.updateHoverVerbosityLevel(H.Increase,d,o?.focus)}}class wo extends n{constructor(){super({id:O,label:C,alias:"Decrease Hover Verbosity Level",precondition:t.hoverVisible})}run(a,e,o){const i=c.get(e);if(!i)return;const d=o?.index!==void 0?o.index:i.focusedHoverPartIndex();c.get(e)?.updateHoverVerbosityLevel(H.Decrease,d,o?.focus)}}export{wo as DecreaseHoverVerbosityLevel,vo as GoToBottomHoverAction,po as GoToTopHoverAction,mo as IncreaseHoverVerbosityLevel,uo as PageDownHoverAction,ho as PageUpHoverAction,no as ScrollDownHoverAction,lo as ScrollLeftHoverAction,ao as ScrollRightHoverAction,co as ScrollUpHoverAction,so as ShowDefinitionPreviewHoverAction,io as ShowOrFocusHoverAction};
+import { DECREASE_HOVER_VERBOSITY_ACTION_ID, DECREASE_HOVER_VERBOSITY_ACTION_LABEL, GO_TO_BOTTOM_HOVER_ACTION_ID, GO_TO_TOP_HOVER_ACTION_ID, INCREASE_HOVER_VERBOSITY_ACTION_ID, INCREASE_HOVER_VERBOSITY_ACTION_LABEL, PAGE_DOWN_HOVER_ACTION_ID, PAGE_UP_HOVER_ACTION_ID, SCROLL_DOWN_HOVER_ACTION_ID, SCROLL_LEFT_HOVER_ACTION_ID, SCROLL_RIGHT_HOVER_ACTION_ID, SCROLL_UP_HOVER_ACTION_ID, SHOW_DEFINITION_PREVIEW_HOVER_ACTION_ID, SHOW_OR_FOCUS_HOVER_ACTION_ID } from './hoverActionIds.js';
+import { KeyChord } from '../../../../base/common/keyCodes.js';
+import { EditorAction } from '../../../browser/editorExtensions.js';
+import { Range } from '../../../common/core/range.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import { GotoDefinitionAtPositionEditorContribution } from '../../gotoSymbol/browser/link/goToDefinitionAtPosition.js';
+import { ContentHoverController } from './contentHoverController.js';
+import { HoverVerbosityAction } from '../../../common/languages.js';
+import * as nls from '../../../../nls.js';
+import './hover.css';
+var HoverFocusBehavior;
+(function (HoverFocusBehavior) {
+    HoverFocusBehavior["NoAutoFocus"] = "noAutoFocus";
+    HoverFocusBehavior["FocusIfVisible"] = "focusIfVisible";
+    HoverFocusBehavior["AutoFocusImmediately"] = "autoFocusImmediately";
+})(HoverFocusBehavior || (HoverFocusBehavior = {}));
+export class ShowOrFocusHoverAction extends EditorAction {
+    constructor() {
+        super({
+            id: SHOW_OR_FOCUS_HOVER_ACTION_ID,
+            label: nls.localize({
+                key: 'showOrFocusHover',
+                comment: [
+                    'Label for action that will trigger the showing/focusing of a hover in the editor.',
+                    'If the hover is not visible, it will show the hover.',
+                    'This allows for users to show the hover without using the mouse.'
+                ]
+            }, "Show or Focus Hover"),
+            metadata: {
+                description: nls.localize2('showOrFocusHoverDescription', 'Show or focus the editor hover which shows documentation, references, and other content for a symbol at the current cursor position.'),
+                args: [{
+                        name: 'args',
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                'focus': {
+                                    description: 'Controls if and when the hover should take focus upon being triggered by this action.',
+                                    enum: [HoverFocusBehavior.NoAutoFocus, HoverFocusBehavior.FocusIfVisible, HoverFocusBehavior.AutoFocusImmediately],
+                                    enumDescriptions: [
+                                        nls.localize('showOrFocusHover.focus.noAutoFocus', 'The hover will not automatically take focus.'),
+                                        nls.localize('showOrFocusHover.focus.focusIfVisible', 'The hover will take focus only if it is already visible.'),
+                                        nls.localize('showOrFocusHover.focus.autoFocusImmediately', 'The hover will automatically take focus when it appears.'),
+                                    ],
+                                    default: HoverFocusBehavior.FocusIfVisible,
+                                }
+                            },
+                        }
+                    }]
+            },
+            alias: 'Show or Focus Hover',
+            precondition: undefined,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: KeyChord(2048 | 41, 2048 | 39),
+                weight: 100
+            }
+        });
+    }
+    run(accessor, editor, args) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const controller = ContentHoverController.get(editor);
+        if (!controller) {
+            return;
+        }
+        const focusArgument = args?.focus;
+        let focusOption = HoverFocusBehavior.FocusIfVisible;
+        if (Object.values(HoverFocusBehavior).includes(focusArgument)) {
+            focusOption = focusArgument;
+        }
+        else if (typeof focusArgument === 'boolean' && focusArgument) {
+            focusOption = HoverFocusBehavior.AutoFocusImmediately;
+        }
+        const showContentHover = (focus) => {
+            const position = editor.getPosition();
+            const range = new Range(position.lineNumber, position.column, position.lineNumber, position.column);
+            controller.showContentHover(range, 1, 1, focus);
+        };
+        const accessibilitySupportEnabled = editor.getOption(2) === 2;
+        if (controller.isHoverVisible) {
+            if (focusOption !== HoverFocusBehavior.NoAutoFocus) {
+                controller.focus();
+            }
+            else {
+                showContentHover(accessibilitySupportEnabled);
+            }
+        }
+        else {
+            showContentHover(accessibilitySupportEnabled || focusOption === HoverFocusBehavior.AutoFocusImmediately);
+        }
+    }
+}
+export class ShowDefinitionPreviewHoverAction extends EditorAction {
+    constructor() {
+        super({
+            id: SHOW_DEFINITION_PREVIEW_HOVER_ACTION_ID,
+            label: nls.localize({
+                key: 'showDefinitionPreviewHover',
+                comment: [
+                    'Label for action that will trigger the showing of definition preview hover in the editor.',
+                    'This allows for users to show the definition preview hover without using the mouse.'
+                ]
+            }, "Show Definition Preview Hover"),
+            alias: 'Show Definition Preview Hover',
+            precondition: undefined,
+            metadata: {
+                description: nls.localize2('showDefinitionPreviewHoverDescription', 'Show the definition preview hover in the editor.'),
+            },
+        });
+    }
+    run(accessor, editor) {
+        const controller = ContentHoverController.get(editor);
+        if (!controller) {
+            return;
+        }
+        const position = editor.getPosition();
+        if (!position) {
+            return;
+        }
+        const range = new Range(position.lineNumber, position.column, position.lineNumber, position.column);
+        const goto = GotoDefinitionAtPositionEditorContribution.get(editor);
+        if (!goto) {
+            return;
+        }
+        const promise = goto.startFindDefinitionFromCursor(position);
+        promise.then(() => {
+            controller.showContentHover(range, 1, 1, true);
+        });
+    }
+}
+export class ScrollUpHoverAction extends EditorAction {
+    constructor() {
+        super({
+            id: SCROLL_UP_HOVER_ACTION_ID,
+            label: nls.localize({
+                key: 'scrollUpHover',
+                comment: [
+                    'Action that allows to scroll up in the hover widget with the up arrow when the hover widget is focused.'
+                ]
+            }, "Scroll Up Hover"),
+            alias: 'Scroll Up Hover',
+            precondition: EditorContextKeys.hoverFocused,
+            kbOpts: {
+                kbExpr: EditorContextKeys.hoverFocused,
+                primary: 16,
+                weight: 100
+            },
+            metadata: {
+                description: nls.localize2('scrollUpHoverDescription', 'Scroll up the editor hover.')
+            },
+        });
+    }
+    run(accessor, editor) {
+        const controller = ContentHoverController.get(editor);
+        if (!controller) {
+            return;
+        }
+        controller.scrollUp();
+    }
+}
+export class ScrollDownHoverAction extends EditorAction {
+    constructor() {
+        super({
+            id: SCROLL_DOWN_HOVER_ACTION_ID,
+            label: nls.localize({
+                key: 'scrollDownHover',
+                comment: [
+                    'Action that allows to scroll down in the hover widget with the up arrow when the hover widget is focused.'
+                ]
+            }, "Scroll Down Hover"),
+            alias: 'Scroll Down Hover',
+            precondition: EditorContextKeys.hoverFocused,
+            kbOpts: {
+                kbExpr: EditorContextKeys.hoverFocused,
+                primary: 18,
+                weight: 100
+            },
+            metadata: {
+                description: nls.localize2('scrollDownHoverDescription', 'Scroll down the editor hover.'),
+            },
+        });
+    }
+    run(accessor, editor) {
+        const controller = ContentHoverController.get(editor);
+        if (!controller) {
+            return;
+        }
+        controller.scrollDown();
+    }
+}
+export class ScrollLeftHoverAction extends EditorAction {
+    constructor() {
+        super({
+            id: SCROLL_LEFT_HOVER_ACTION_ID,
+            label: nls.localize({
+                key: 'scrollLeftHover',
+                comment: [
+                    'Action that allows to scroll left in the hover widget with the left arrow when the hover widget is focused.'
+                ]
+            }, "Scroll Left Hover"),
+            alias: 'Scroll Left Hover',
+            precondition: EditorContextKeys.hoverFocused,
+            kbOpts: {
+                kbExpr: EditorContextKeys.hoverFocused,
+                primary: 15,
+                weight: 100
+            },
+            metadata: {
+                description: nls.localize2('scrollLeftHoverDescription', 'Scroll left the editor hover.'),
+            },
+        });
+    }
+    run(accessor, editor) {
+        const controller = ContentHoverController.get(editor);
+        if (!controller) {
+            return;
+        }
+        controller.scrollLeft();
+    }
+}
+export class ScrollRightHoverAction extends EditorAction {
+    constructor() {
+        super({
+            id: SCROLL_RIGHT_HOVER_ACTION_ID,
+            label: nls.localize({
+                key: 'scrollRightHover',
+                comment: [
+                    'Action that allows to scroll right in the hover widget with the right arrow when the hover widget is focused.'
+                ]
+            }, "Scroll Right Hover"),
+            alias: 'Scroll Right Hover',
+            precondition: EditorContextKeys.hoverFocused,
+            kbOpts: {
+                kbExpr: EditorContextKeys.hoverFocused,
+                primary: 17,
+                weight: 100
+            },
+            metadata: {
+                description: nls.localize2('scrollRightHoverDescription', 'Scroll right the editor hover.')
+            },
+        });
+    }
+    run(accessor, editor) {
+        const controller = ContentHoverController.get(editor);
+        if (!controller) {
+            return;
+        }
+        controller.scrollRight();
+    }
+}
+export class PageUpHoverAction extends EditorAction {
+    constructor() {
+        super({
+            id: PAGE_UP_HOVER_ACTION_ID,
+            label: nls.localize({
+                key: 'pageUpHover',
+                comment: [
+                    'Action that allows to page up in the hover widget with the page up command when the hover widget is focused.'
+                ]
+            }, "Page Up Hover"),
+            alias: 'Page Up Hover',
+            precondition: EditorContextKeys.hoverFocused,
+            kbOpts: {
+                kbExpr: EditorContextKeys.hoverFocused,
+                primary: 11,
+                secondary: [512 | 16],
+                weight: 100
+            },
+            metadata: {
+                description: nls.localize2('pageUpHoverDescription', 'Page up the editor hover.'),
+            },
+        });
+    }
+    run(accessor, editor) {
+        const controller = ContentHoverController.get(editor);
+        if (!controller) {
+            return;
+        }
+        controller.pageUp();
+    }
+}
+export class PageDownHoverAction extends EditorAction {
+    constructor() {
+        super({
+            id: PAGE_DOWN_HOVER_ACTION_ID,
+            label: nls.localize({
+                key: 'pageDownHover',
+                comment: [
+                    'Action that allows to page down in the hover widget with the page down command when the hover widget is focused.'
+                ]
+            }, "Page Down Hover"),
+            alias: 'Page Down Hover',
+            precondition: EditorContextKeys.hoverFocused,
+            kbOpts: {
+                kbExpr: EditorContextKeys.hoverFocused,
+                primary: 12,
+                secondary: [512 | 18],
+                weight: 100
+            },
+            metadata: {
+                description: nls.localize2('pageDownHoverDescription', 'Page down the editor hover.'),
+            },
+        });
+    }
+    run(accessor, editor) {
+        const controller = ContentHoverController.get(editor);
+        if (!controller) {
+            return;
+        }
+        controller.pageDown();
+    }
+}
+export class GoToTopHoverAction extends EditorAction {
+    constructor() {
+        super({
+            id: GO_TO_TOP_HOVER_ACTION_ID,
+            label: nls.localize({
+                key: 'goToTopHover',
+                comment: [
+                    'Action that allows to go to the top of the hover widget with the home command when the hover widget is focused.'
+                ]
+            }, "Go To Top Hover"),
+            alias: 'Go To Bottom Hover',
+            precondition: EditorContextKeys.hoverFocused,
+            kbOpts: {
+                kbExpr: EditorContextKeys.hoverFocused,
+                primary: 14,
+                secondary: [2048 | 16],
+                weight: 100
+            },
+            metadata: {
+                description: nls.localize2('goToTopHoverDescription', 'Go to the top of the editor hover.'),
+            },
+        });
+    }
+    run(accessor, editor) {
+        const controller = ContentHoverController.get(editor);
+        if (!controller) {
+            return;
+        }
+        controller.goToTop();
+    }
+}
+export class GoToBottomHoverAction extends EditorAction {
+    constructor() {
+        super({
+            id: GO_TO_BOTTOM_HOVER_ACTION_ID,
+            label: nls.localize({
+                key: 'goToBottomHover',
+                comment: [
+                    'Action that allows to go to the bottom in the hover widget with the end command when the hover widget is focused.'
+                ]
+            }, "Go To Bottom Hover"),
+            alias: 'Go To Bottom Hover',
+            precondition: EditorContextKeys.hoverFocused,
+            kbOpts: {
+                kbExpr: EditorContextKeys.hoverFocused,
+                primary: 13,
+                secondary: [2048 | 18],
+                weight: 100
+            },
+            metadata: {
+                description: nls.localize2('goToBottomHoverDescription', 'Go to the bottom of the editor hover.')
+            },
+        });
+    }
+    run(accessor, editor) {
+        const controller = ContentHoverController.get(editor);
+        if (!controller) {
+            return;
+        }
+        controller.goToBottom();
+    }
+}
+export class IncreaseHoverVerbosityLevel extends EditorAction {
+    constructor() {
+        super({
+            id: INCREASE_HOVER_VERBOSITY_ACTION_ID,
+            label: INCREASE_HOVER_VERBOSITY_ACTION_LABEL,
+            alias: 'Increase Hover Verbosity Level',
+            precondition: EditorContextKeys.hoverVisible
+        });
+    }
+    run(accessor, editor, args) {
+        const hoverController = ContentHoverController.get(editor);
+        if (!hoverController) {
+            return;
+        }
+        const index = args?.index !== undefined ? args.index : hoverController.focusedHoverPartIndex();
+        hoverController.updateHoverVerbosityLevel(HoverVerbosityAction.Increase, index, args?.focus);
+    }
+}
+export class DecreaseHoverVerbosityLevel extends EditorAction {
+    constructor() {
+        super({
+            id: DECREASE_HOVER_VERBOSITY_ACTION_ID,
+            label: DECREASE_HOVER_VERBOSITY_ACTION_LABEL,
+            alias: 'Decrease Hover Verbosity Level',
+            precondition: EditorContextKeys.hoverVisible
+        });
+    }
+    run(accessor, editor, args) {
+        const hoverController = ContentHoverController.get(editor);
+        if (!hoverController) {
+            return;
+        }
+        const index = args?.index !== undefined ? args.index : hoverController.focusedHoverPartIndex();
+        ContentHoverController.get(editor)?.updateHoverVerbosityLevel(HoverVerbosityAction.Decrease, index, args?.focus);
+    }
+}

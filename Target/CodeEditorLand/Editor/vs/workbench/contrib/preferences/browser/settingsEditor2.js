@@ -1,1 +1,1559 @@
-var pe=Object.defineProperty;var fe=Object.getOwnPropertyDescriptor;var k=(M,v,e,t)=>{for(var i=t>1?void 0:t?fe(v,e):v,s=M.length-1,r;s>=0;s--)(r=M[s])&&(i=(t?r(v,e,i):r(i))||i);return t&&i&&pe(v,e,i),i},h=(M,v)=>(e,t)=>v(e,t,M);import*as a from"../../../../base/browser/dom.js";import*as Te from"../../../../base/browser/ui/aria/aria.js";import{StandardKeyboardEvent as me}from"../../../../base/browser/keyboardEvent.js";import{ActionBar as Ee}from"../../../../base/browser/ui/actionbar/actionbar.js";import{Button as ve}from"../../../../base/browser/ui/button/button.js";import"../../../../base/browser/ui/tree/tree.js";import{Action as Z}from"../../../../base/common/actions.js";import{Delayer as O,raceTimeout as Ie}from"../../../../base/common/async.js";import{CancellationToken as ye,CancellationTokenSource as Ce}from"../../../../base/common/cancellation.js";import{fromNow as Re}from"../../../../base/common/date.js";import{isCancellationError as Me}from"../../../../base/common/errors.js";import{Emitter as we,Event as ee}from"../../../../base/common/event.js";import{Iterable as De}from"../../../../base/common/iterator.js";import{KeyCode as te}from"../../../../base/common/keyCodes.js";import{Disposable as be,DisposableStore as Oe,dispose as _e,MutableDisposable as Fe}from"../../../../base/common/lifecycle.js";import*as H from"../../../../base/common/platform.js";import{URI as U}from"../../../../base/common/uri.js";import"./media/settingsEditor2.css";import{localize as I}from"../../../../nls.js";import{ICommandService as Le}from"../../../../platform/commands/common/commands.js";import{ConfigurationTarget as S}from"../../../../platform/configuration/common/configuration.js";import{IContextKeyService as xe}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as We}from"../../../../platform/instantiation/common/instantiation.js";import{ILogService as Ne}from"../../../../platform/log/common/log.js";import{IStorageService as Ae,StorageScope as L,StorageTarget as ie}from"../../../../platform/storage/common/storage.js";import{ITelemetryService as se}from"../../../../platform/telemetry/common/telemetry.js";import{asCssVariable as x,badgeBackground as Ve,badgeForeground as Pe,contrastBorder as Ue,editorForeground as Ge}from"../../../../platform/theme/common/colorRegistry.js";import{IThemeService as ke}from"../../../../platform/theme/common/themeService.js";import{ThemeIcon as re}from"../../../../base/common/themables.js";import{IUserDataSyncEnablementService as ne,IUserDataSyncService as He,SyncStatus as oe}from"../../../../platform/userDataSync/common/userDataSync.js";import{EditorPane as Be}from"../../../browser/parts/editor/editorPane.js";import"../../../common/editor.js";import{SuggestEnabledInput as Ke}from"../../codeEditor/browser/suggestEnabledInput/suggestEnabledInput.js";import{SettingsTargetsWidget as $e}from"./preferencesWidgets.js";import{getCommonlyUsedData as ze,tocData as qe}from"./settingsLayout.js";import{AbstractSettingRenderer as G,resolveConfiguredUntrustedSettings as Ye,createTocTreeForExtensionSettings as Xe,resolveSettingsTree as ae,SettingsTree as Qe,SettingTreeRenderers as je}from"./settingsTree.js";import{parseQuery as B,SearchResultIdx as C,SearchResultModel as le,SettingsTreeGroupElement as ce,SettingsTreeModel as Je,SettingsTreeSettingElement as K}from"./settingsTreeModels.js";import{createTOCIterator as Ze,TOCTree as et,TOCTreeModel as tt}from"./tocTree.js";import{CONTEXT_SETTINGS_EDITOR as it,CONTEXT_SETTINGS_ROW_FOCUS as st,CONTEXT_SETTINGS_SEARCH_FOCUS as rt,CONTEXT_TOC_ROW_FOCUS as nt,ENABLE_LANGUAGE_FILTER as ot,EXTENSION_FETCH_TIMEOUT_MS as at,EXTENSION_SETTING_TAG as $,FEATURE_SETTING_TAG as E,ID_SETTING_TAG as he,IPreferencesSearchService as lt,LANGUAGE_SETTING_TAG as w,MODIFIED_SETTING_TAG as z,POLICY_SETTING_TAG as ct,REQUIRE_TRUSTED_WORKSPACE_SETTING_TAG as ht,SETTINGS_EDITOR_COMMAND_CLEAR_SEARCH_RESULTS as dt,SETTINGS_EDITOR_COMMAND_SUGGEST_FILTERS as ut,WORKSPACE_TRUST_SETTING_TAG as gt,getExperimentalExtensionToggleData as St}from"../common/preferences.js";import{settingsHeaderBorder as pt,settingsSashBorder as q,settingsTextInputBorder as ft}from"../common/settingsEditorColorRegistry.js";import{IEditorGroupsService as Tt}from"../../../services/editor/common/editorGroupsService.js";import{IPreferencesService as mt,SettingMatchType as Et,SettingValueType as R,validateSettingsEditorOptions as vt}from"../../../services/preferences/common/preferences.js";import"../../../services/preferences/common/preferencesEditorInput.js";import{Settings2EditorModel as It,nullRange as W}from"../../../services/preferences/common/preferencesModels.js";import{IUserDataSyncWorkbenchService as yt}from"../../../services/userDataSync/common/userDataSync.js";import{preferencesClearInputIcon as Ct,preferencesFilterIcon as Rt}from"./preferencesIcons.js";import{IWorkspaceTrustManagementService as Mt}from"../../../../platform/workspace/common/workspaceTrust.js";import{IWorkbenchConfigurationService as wt}from"../../../services/configuration/common/configuration.js";import{ITextResourceConfigurationService as Dt}from"../../../../editor/common/services/textResourceConfiguration.js";import{IExtensionService as bt}from"../../../services/extensions/common/extensions.js";import{Orientation as Ot,Sizing as _t,SplitView as Ft}from"../../../../base/browser/ui/splitview/splitview.js";import{Color as de}from"../../../../base/common/color.js";import{ILanguageService as Lt}from"../../../../editor/common/languages/language.js";import{SettingsSearchFilterDropdownMenuActionViewItem as xt}from"./settingsSearchMenu.js";import{IExtensionGalleryService as Wt,IExtensionManagementService as Nt}from"../../../../platform/extensionManagement/common/extensionManagement.js";import"./settingsEditorSettingIndicators.js";import{ConfigurationScope as ue,Extensions as At}from"../../../../platform/configuration/common/configurationRegistry.js";import{Registry as Vt}from"../../../../platform/registry/common/platform.js";import{defaultButtonStyles as Pt}from"../../../../platform/theme/browser/defaultStyles.js";import{IProductService as Ut}from"../../../../platform/product/common/productService.js";import{registerNavigableContainer as Gt}from"../../../browser/actions/widgetNavigationCommands.js";import{IEditorProgressService as kt}from"../../../../platform/progress/common/progress.js";import"../../../../platform/extensions/common/extensions.js";import"../../../../base/browser/window.js";import{IUserDataProfileService as Ht}from"../../../services/userDataProfile/common/userDataProfile.js";var Bt=(i=>(i[i.Search=0]="Search",i[i.TableOfContents=1]="TableOfContents",i[i.SettingTree=2]="SettingTree",i[i.SettingControl=3]="SettingControl",i))(Bt||{});function ge(M){return De.map(M.children,v=>({element:v,children:v instanceof ce?ge(v):void 0}))}const p=a.$,Y=I("SearchSettings.AriaLabel","Search settings"),Se="workbench.settings.settingsSearchTocBehavior",Kt="settingsEditorState";let c=class extends Be{constructor(e,t,i,s,r,n,o,l,d,u,f,_,g,T,m,X,A,D,F,V,Q,P){super(c.ID,e,t,r,f);this.configurationService=i;this.preferencesService=n;this.instantiationService=o;this.preferencesSearchService=l;this.logService=d;this.storageService=f;this.editorGroupService=_;this.userDataSyncWorkbenchService=g;this.userDataSyncEnablementService=T;this.workspaceTrustManagementService=m;this.extensionService=X;this.languageService=A;this.extensionManagementService=D;this.productService=F;this.extensionGalleryService=V;this.editorProgressService=Q;this.delayedFilterLogging=new O(1e3),this.searchDelayer=new O(300),this.viewState={settingsTarget:S.USER_LOCAL},this.settingFastUpdateDelayer=new O(c.SETTING_UPDATE_FAST_DEBOUNCE),this.settingSlowUpdateDelayer=new O(c.SETTING_UPDATE_SLOW_DEBOUNCE),this.searchInputDelayer=new O(c.SEARCH_DEBOUNCE),this.updatedConfigSchemaDelayer=new O(c.CONFIG_SCHEMA_UPDATE_DELAYER),this.inSettingsEditorContextKey=it.bindTo(u),this.searchFocusContextKey=rt.bindTo(u),this.tocRowFocused=nt.bindTo(u),this.settingRowFocused=st.bindTo(u),this.scheduledRefreshes=new Map,this.editorMemento=this.getEditorMemento(_,s,Kt),this.dismissedExtensionSettings=this.storageService.get(this.DISMISSED_EXTENSION_SETTINGS_STORAGE_KEY,L.PROFILE,"").split(this.DISMISSED_EXTENSION_SETTINGS_DELIMITER),this._register(i.onDidChangeConfiguration(y=>{y.source!==S.DEFAULT&&this.onConfigUpdate(y.affectedKeys)})),this._register(P.onDidChangeCurrentProfile(y=>{y.join(this.whenCurrentProfileChanged())})),this._register(m.onDidChangeTrust(()=>{this.searchResultModel?.updateWorkspaceTrust(m.isWorkspaceTrusted()),this.settingsTreeModel&&(this.settingsTreeModel.updateWorkspaceTrust(m.isWorkspaceTrusted()),this.renderTree())})),this._register(i.onDidChangeRestrictedSettings(y=>{y.default.length&&this.currentSettingsModel&&this.updateElementsByKey(new Set(y.default))})),this._register(D.onDidInstallExtensions(()=>{this.refreshInstalledExtensionsList()})),this._register(D.onDidUninstallExtension(()=>{this.refreshInstalledExtensionsList()})),this.modelDisposables=this._register(new Oe),ot&&!c.SUGGESTIONS.includes(`@${w}`)&&c.SUGGESTIONS.push(`@${w}`),this.inputChangeListener=this._register(new Fe)}static ID="workbench.editor.settings2";static NUM_INSTANCES=0;static SEARCH_DEBOUNCE=200;static SETTING_UPDATE_FAST_DEBOUNCE=200;static SETTING_UPDATE_SLOW_DEBOUNCE=1e3;static CONFIG_SCHEMA_UPDATE_DELAYER=500;static TOC_MIN_WIDTH=100;static TOC_RESET_WIDTH=200;static EDITOR_MIN_WIDTH=500;static NARROW_TOTAL_WIDTH=this.TOC_RESET_WIDTH+this.EDITOR_MIN_WIDTH;static SUGGESTIONS=[`@${z}`,"@tag:notebookLayout","@tag:notebookOutputLayout",`@tag:${ht}`,`@tag:${gt}`,"@tag:sync","@tag:usesOnlineServices","@tag:telemetry","@tag:accessibility",`@${he}`,`@${$}`,`@${E}scm`,`@${E}explorer`,`@${E}search`,`@${E}debug`,`@${E}extensions`,`@${E}terminal`,`@${E}task`,`@${E}problems`,`@${E}output`,`@${E}comments`,`@${E}remote`,`@${E}timeline`,`@${E}notebook`,`@${ct}`];static shouldSettingUpdateFast(e){return Array.isArray(e)?!1:e===R.Enum||e===R.Array||e===R.BooleanObject||e===R.Object||e===R.Complex||e===R.Boolean||e===R.Exclude||e===R.Include}defaultSettingsEditorModel;modelDisposables;rootElement;headerContainer;bodyContainer;searchWidget;countElement;controlsElement;settingsTargetsWidget;splitView;settingsTreeContainer;settingsTree;settingRenderers;tocTreeModel;settingsTreeModel;noResultsMessage;clearFilterLinkContainer;tocTreeContainer;tocTree;delayedFilterLogging;searchDelayer;searchInProgress=null;searchInputDelayer;updatedConfigSchemaDelayer;settingFastUpdateDelayer;settingSlowUpdateDelayer;pendingSettingUpdate=null;viewState;_searchResultModel=null;searchResultLabel=null;lastSyncedLabel=null;settingsOrderByTocIndex=null;tocRowFocused;settingRowFocused;inSettingsEditorContextKey;searchFocusContextKey;scheduledRefreshes;_currentFocusContext=0;hasWarnedMissingSettings=!1;tocTreeDisposed=!1;editorMemento;tocFocusedElement=null;treeFocusedElement=null;settingsTreeScrollTop=0;dimension;installedExtensionIds=[];dismissedExtensionSettings=[];DISMISSED_EXTENSION_SETTINGS_STORAGE_KEY="settingsEditor2.dismissedExtensionSettings";DISMISSED_EXTENSION_SETTINGS_DELIMITER="	";inputChangeListener;async whenCurrentProfileChanged(){this.updatedConfigSchemaDelayer.trigger(()=>{this.dismissedExtensionSettings=this.storageService.get(this.DISMISSED_EXTENSION_SETTINGS_STORAGE_KEY,L.PROFILE,"").split(this.DISMISSED_EXTENSION_SETTINGS_DELIMITER),this.onConfigUpdate(void 0,!0)})}get minimumWidth(){return c.EDITOR_MIN_WIDTH}get maximumWidth(){return Number.POSITIVE_INFINITY}get minimumHeight(){return 180}set minimumWidth(e){}set maximumWidth(e){}get currentSettingsModel(){return this.searchResultModel||this.settingsTreeModel}get searchResultModel(){return this._searchResultModel}set searchResultModel(e){this._searchResultModel=e,this.rootElement.classList.toggle("search-mode",!!this._searchResultModel)}get focusedSettingDOMElement(){const e=this.settingsTree.getFocus()[0];if(e instanceof K)return this.settingRenderers.getDOMElementsForSettingKey(this.settingsTree.getHTMLElement(),e.setting.key)[0]}get currentFocusContext(){return this._currentFocusContext}createEditor(e){e.setAttribute("tabindex","-1"),this.rootElement=a.append(e,p(".settings-editor",{tabindex:"-1"})),this.createHeader(this.rootElement),this.createBody(this.rootElement),this.addCtrlAInterceptor(this.rootElement),this.updateStyles(),this._register(Gt({name:"settingsEditor2",focusNotifiers:[this],focusNextWidget:()=>{this.searchWidget.inputWidget.hasWidgetFocus()&&this.focusTOC()},focusPreviousWidget:()=>{this.searchWidget.inputWidget.hasWidgetFocus()||this.focusSearch()}}))}async setInput(e,t,i,s){if(this.inSettingsEditorContextKey.set(!0),await super.setInput(e,t,i,s),!this.input)return;const r=await this.input.resolve();if(!(s.isCancellationRequested||!(r instanceof It))){if(this.modelDisposables.clear(),this.modelDisposables.add(r.onDidChangeGroups(()=>{this.updatedConfigSchemaDelayer.trigger(()=>{this.onConfigUpdate(void 0,!1,!0)})})),this.defaultSettingsEditorModel=r,t=t||vt({}),!this.viewState.settingsTarget||!this.settingsTargetsWidget.settingsTarget){const n=t.viewState&&t.viewState.settingsTarget;!t.target&&!n&&(t.target=S.USER_LOCAL)}this._setOptions(t),this.onConfigUpdate(void 0,!0).then(()=>{this.inputChangeListener.value=e.onWillDispose(()=>{this.searchWidget.setValue("")}),this.updateTreeScrollSync()}),await this.refreshInstalledExtensionsList()}}async refreshInstalledExtensionsList(){const e=await this.extensionManagementService.getInstalled();this.installedExtensionIds=e.filter(t=>t.manifest.contributes?.configuration).map(t=>t.identifier.id)}restoreCachedState(){const e=this.input&&this.editorMemento.loadEditorState(this.group,this.input);if(e&&typeof e.target=="object"&&(e.target=U.revive(e.target)),e){const t=e.target;this.settingsTargetsWidget.settingsTarget=t,this.viewState.settingsTarget=t,this.searchWidget.getValue()||this.searchWidget.setValue(e.searchQuery)}return this.input&&this.editorMemento.clearEditorState(this.input,this.group),e??null}getViewState(){return this.viewState}setOptions(e){super.setOptions(e),e&&this._setOptions(e)}_setOptions(e){e.focusSearch&&!H.isIOS&&this.focusSearch();const t=e.viewState?e.viewState:void 0,i=t?.query??e.query;i!==void 0&&(this.searchWidget.setValue(i),this.viewState.query=i);const s=e.folderUri??t?.settingsTarget??e.target;s&&this.settingsTargetsWidget.updateTarget(s)}clearInput(){this.inSettingsEditorContextKey.set(!1),super.clearInput()}layout(e){if(this.dimension=e,!this.isVisible())return;this.layoutSplitView(e);const i=Math.min(this.headerContainer.clientWidth,e.width)-24*2-10-this.countElement.clientWidth-this.controlsElement.clientWidth-12;this.searchWidget.layout(new a.Dimension(i,20)),this.rootElement.classList.toggle("narrow-width",e.width<c.NARROW_TOTAL_WIDTH)}focus(){if(super.focus(),this._currentFocusContext===0)H.isIOS||this.focusSearch();else if(this._currentFocusContext===3){const e=this.focusedSettingDOMElement;if(e){const t=e.querySelector(G.CONTROL_SELECTOR);if(t){t.focus();return}}}else this._currentFocusContext===2?this.settingsTree.domFocus():this._currentFocusContext===1&&this.tocTree.domFocus()}setEditorVisible(e){super.setEditorVisible(e),e||setTimeout(()=>{this.searchWidget.onHide()},0)}focusSettings(e=!1){if(this.settingsTree.getFocus().length||this.settingsTree.focusFirst(),this.settingsTree.domFocus(),e){const i=this.settingsTree.getHTMLElement().querySelector(`.focused ${G.CONTROL_SELECTOR}`);i&&i.focus()}}focusTOC(){this.tocTree.domFocus()}showContextMenu(){const e=this.settingsTree.getFocus()[0],t=this.focusedSettingDOMElement;t&&e instanceof K&&this.settingRenderers.showContextMenu(e,t)}focusSearch(e,t=!0){e&&this.searchWidget&&this.searchWidget.setValue(e),this.searchWidget.focus(t&&!this.searchInputDelayer.isTriggered)}clearSearchResults(){this.searchWidget.setValue(""),this.focusSearch()}clearSearchFilters(){const t=this.searchWidget.getValue().split(" ").filter(i=>i.length&&!c.SUGGESTIONS.some(s=>i.startsWith(s)));this.searchWidget.setValue(t.join(" "))}updateInputAriaLabel(){let e=Y;this.searchResultLabel&&(e+=`. ${this.searchResultLabel}`),this.lastSyncedLabel&&(e+=`. ${this.lastSyncedLabel}`),this.searchWidget.updateAriaLabel(e)}createHeader(e){this.headerContainer=a.append(e,p(".settings-header"));const t=a.append(this.headerContainer,p(".search-container")),i=new Z(dt,I("clearInput","Clear Settings Search Input"),re.asClassName(Ct),!1,async()=>this.clearSearchResults()),s=new Z(ut,I("filterInput","Filter Settings"),re.asClassName(Rt));this.searchWidget=this._register(this.instantiationService.createInstance(Ke,`${c.ID}.searchbox`,t,{triggerCharacters:["@",":"],provideResults:l=>{const d=l.split(/\s/g);return d[d.length-1].startsWith(`@${w}`)?this.languageService.getRegisteredLanguageIds().map(f=>`@${w}${f} `).sort().filter(f=>!l.includes(f)):d[d.length-1].startsWith(`@${$}`)?this.installedExtensionIds.map(f=>`@${$}${f} `).sort().filter(f=>!l.includes(f)):d[d.length-1].startsWith("@")?c.SUGGESTIONS.filter(u=>!l.includes(u)).map(u=>u.endsWith(":")?u:u+" "):[]}},Y,"settingseditor:searchinput"+c.NUM_INSTANCES++,{placeholderText:Y,focusContextKey:this.searchFocusContextKey,styleOverrides:{inputBorder:ft}})),this._register(this.searchWidget.onDidFocus(()=>{this._currentFocusContext=0})),this.countElement=a.append(t,a.$(".settings-count-widget.monaco-count-badge.long")),this.countElement.style.backgroundColor=x(Ve),this.countElement.style.color=x(Pe),this.countElement.style.border=`1px solid ${x(Ue)}`,this._register(this.searchWidget.onInputDidChange(()=>{const l=this.searchWidget.getValue();i.enabled=!!l,this.searchInputDelayer.trigger(()=>this.onSearchInputChanged())}));const r=a.append(this.headerContainer,p(".settings-header-controls"));r.style.borderColor=x(pt);const n=a.append(r,p(".settings-target-container"));if(this.settingsTargetsWidget=this._register(this.instantiationService.createInstance($e,n,{enableRemoteSettings:!0})),this.settingsTargetsWidget.settingsTarget=S.USER_LOCAL,this.settingsTargetsWidget.onDidTargetChange(l=>this.onDidSettingsTargetChange(l)),this._register(a.addDisposableListener(n,a.EventType.KEY_DOWN,l=>{new me(l).keyCode===te.DownArrow&&this.focusSettings()})),this.userDataSyncWorkbenchService.enabled&&this.userDataSyncEnablementService.canToggleEnablement()){const l=this._register(this.instantiationService.createInstance(N,this.window,r));this._register(l.onDidChangeLastSyncedLabel(d=>{this.lastSyncedLabel=d,this.updateInputAriaLabel()}))}this.controlsElement=a.append(t,a.$(".settings-clear-widget")),this._register(new Ee(this.controlsElement,{actionViewItemProvider:(l,d)=>{if(l.id===s.id)return this.instantiationService.createInstance(xt,l,d,this.actionRunner,this.searchWidget)}})).push([i,s],{label:!1,icon:!0})}onDidSettingsTargetChange(e){this.viewState.settingsTarget=e,this.onConfigUpdate(void 0,!0)}onDidDismissExtensionSetting(e){this.dismissedExtensionSettings.includes(e)||this.dismissedExtensionSettings.push(e),this.storageService.store(this.DISMISSED_EXTENSION_SETTINGS_STORAGE_KEY,this.dismissedExtensionSettings.join(this.DISMISSED_EXTENSION_SETTINGS_DELIMITER),L.PROFILE,ie.USER),this.onConfigUpdate(void 0,!0)}onDidClickSetting(e,t){const i=this.currentSettingsModel.getElementsByName(e.targetKey)?.[0];let s=!1;if(i){let r=.5;try{const n=this.settingsTree.getRelativeTop(e.source);n!==null&&(r=n)}catch{}this.viewState.filterToCategory&&e.source.displayCategory!==i.displayCategory&&this.tocTree.setFocus([]);try{this.settingsTree.reveal(i,r)}catch{s=!0}if(!s){setTimeout(()=>{this.settingsTree.setFocus([i])},50);const n=this.settingRenderers.getDOMElementsForSettingKey(this.settingsTree.getHTMLElement(),e.targetKey);if(n&&n[0]){const o=n[0].querySelector(G.CONTROL_SELECTOR);o&&o.focus()}}}!t&&(!i||s)&&this.triggerSearch("").then(()=>{this.searchWidget.setValue(""),this.onDidClickSetting(e,!0)})}switchToSettingsFile(){const e=B(this.searchWidget.getValue()).query;return this.openSettingsFile({query:e})}async openSettingsFile(e){const t=this.settingsTargetsWidget.settingsTarget,i={jsonEditor:!0,...e};if(t===S.USER_LOCAL)return e?.revealSetting&&Vt.as(At.Configuration).getConfigurationProperties()[e?.revealSetting.key]?.scope===ue.APPLICATION?this.preferencesService.openApplicationSettings(i):this.preferencesService.openUserSettings(i);if(t===S.USER_REMOTE)return this.preferencesService.openRemoteSettings(i);if(t===S.WORKSPACE)return this.preferencesService.openWorkspaceSettings(i);if(U.isUri(t))return this.preferencesService.openFolderSettings({folderUri:t,...i})}createBody(e){this.bodyContainer=a.append(e,p(".settings-body")),this.noResultsMessage=a.append(this.bodyContainer,p(".no-results-message")),this.noResultsMessage.innerText=I("noResults","No Settings Found"),this.clearFilterLinkContainer=p("span.clear-search-filters"),this.clearFilterLinkContainer.textContent=" - ";const t=a.append(this.clearFilterLinkContainer,p("a.pointer.prominent",{tabindex:0},I("clearSearchFilters","Clear Filters")));this._register(a.addDisposableListener(t,a.EventType.CLICK,r=>{a.EventHelper.stop(r,!1),this.clearSearchFilters()})),a.append(this.noResultsMessage,this.clearFilterLinkContainer),this.noResultsMessage.style.color=x(Ge),this.tocTreeContainer=p(".settings-toc-container"),this.settingsTreeContainer=p(".settings-tree-container"),this.createTOC(this.tocTreeContainer),this.createSettingsTree(this.settingsTreeContainer),this.splitView=this._register(new Ft(this.bodyContainer,{orientation:Ot.HORIZONTAL,proportionalLayout:!0}));const i=this.storageService.getNumber("settingsEditor2.splitViewWidth",L.PROFILE,c.TOC_RESET_WIDTH);this.splitView.addView({onDidChange:ee.None,element:this.tocTreeContainer,minimumSize:c.TOC_MIN_WIDTH,maximumSize:Number.POSITIVE_INFINITY,layout:(r,n,o)=>{this.tocTreeContainer.style.width=`${r}px`,this.tocTree.layout(o,r)}},i,void 0,!0),this.splitView.addView({onDidChange:ee.None,element:this.settingsTreeContainer,minimumSize:c.EDITOR_MIN_WIDTH,maximumSize:Number.POSITIVE_INFINITY,layout:(r,n,o)=>{this.settingsTreeContainer.style.width=`${r}px`,this.settingsTree.layout(o,r)}},_t.Distribute,void 0,!0),this._register(this.splitView.onDidSashReset(()=>{const r=this.splitView.getViewSize(0)+this.splitView.getViewSize(1);this.splitView.resizeView(0,c.TOC_RESET_WIDTH),this.splitView.resizeView(1,r-c.TOC_RESET_WIDTH)})),this._register(this.splitView.onDidSashChange(()=>{const r=this.splitView.getViewSize(0);this.storageService.store("settingsEditor2.splitViewWidth",r,L.PROFILE,ie.USER)}));const s=this.theme.getColor(q);this.splitView.style({separatorBorder:s})}addCtrlAInterceptor(e){this._register(a.addStandardDisposableListener(e,a.EventType.KEY_DOWN,t=>{t.keyCode===te.KeyA&&(H.isMacintosh?t.metaKey:t.ctrlKey)&&!a.isEditableElement(t.target)&&(t.browserEvent.stopPropagation(),t.browserEvent.preventDefault())}))}createTOC(e){this.tocTreeModel=this.instantiationService.createInstance(tt,this.viewState),this.tocTree=this._register(this.instantiationService.createInstance(et,a.append(e,p(".settings-toc-wrapper",{role:"navigation","aria-label":I("settings","Settings")})),this.viewState)),this.tocTreeDisposed=!1,this._register(this.tocTree.onDidFocus(()=>{this._currentFocusContext=1})),this._register(this.tocTree.onDidChangeFocus(t=>{const i=t.elements?.[0]??null;this.tocFocusedElement!==i&&(this.tocFocusedElement=i,this.tocTree.setSelection(i?[i]:[]),this.searchResultModel?this.viewState.filterToCategory!==i&&(this.viewState.filterToCategory=i??void 0,this.renderTree(void 0,!0),this.settingsTree.scrollTop=0):i&&(!t.browserEvent||!t.browserEvent.fromScroll)&&(this.settingsTree.reveal(i,0),this.settingsTree.setFocus([i])))})),this._register(this.tocTree.onDidFocus(()=>{this.tocRowFocused.set(!0)})),this._register(this.tocTree.onDidBlur(()=>{this.tocRowFocused.set(!1)})),this._register(this.tocTree.onDidDispose(()=>{this.tocTreeDisposed=!0}))}applyFilter(e){if(this.searchWidget&&!this.searchWidget.getValue().includes(e)){const t=`${e} ${this.searchWidget.getValue().trimStart()}`;this.focusSearch(t,!1)}}removeLanguageFilters(){if(this.searchWidget&&this.searchWidget.getValue().includes(`@${w}`)){const t=this.searchWidget.getValue().split(" ").filter(i=>!i.startsWith(`@${w}`)).join(" ");this.focusSearch(t,!1)}}createSettingsTree(e){this.settingRenderers=this._register(this.instantiationService.createInstance(je)),this._register(this.settingRenderers.onDidChangeSetting(t=>this.onDidChangeSetting(t.key,t.value,t.type,t.manualReset,t.scope))),this._register(this.settingRenderers.onDidDismissExtensionSetting(t=>this.onDidDismissExtensionSetting(t))),this._register(this.settingRenderers.onDidOpenSettings(t=>{this.openSettingsFile({revealSetting:{key:t,edit:!0}})})),this._register(this.settingRenderers.onDidClickSettingLink(t=>this.onDidClickSetting(t))),this._register(this.settingRenderers.onDidFocusSetting(t=>{this.settingsTree.setFocus([t]),this._currentFocusContext=3,this.settingRowFocused.set(!1)})),this._register(this.settingRenderers.onDidChangeSettingHeight(t=>{const{element:i,height:s}=t;try{this.settingsTree.updateElementHeight(i,s)}catch{}})),this._register(this.settingRenderers.onApplyFilter(t=>this.applyFilter(t))),this._register(this.settingRenderers.onDidClickOverrideElement(t=>{this.removeLanguageFilters(),t.language&&this.applyFilter(`@${w}${t.language}`),t.scope==="workspace"?this.settingsTargetsWidget.updateTarget(S.WORKSPACE):t.scope==="user"?this.settingsTargetsWidget.updateTarget(S.USER_LOCAL):t.scope==="remote"&&this.settingsTargetsWidget.updateTarget(S.USER_REMOTE),this.applyFilter(`@${he}${t.settingKey}`)})),this.settingsTree=this._register(this.instantiationService.createInstance(Qe,e,this.viewState,this.settingRenderers.allRenderers)),this._register(this.settingsTree.onDidScroll(()=>{this.settingsTree.scrollTop!==this.settingsTreeScrollTop&&(this.settingsTreeScrollTop=this.settingsTree.scrollTop,setTimeout(()=>{this.updateTreeScrollSync()},0))})),this._register(this.settingsTree.onDidFocus(()=>{const t=e.ownerDocument.activeElement?.classList;t&&t.contains("monaco-list")&&t.contains("settings-editor-tree")&&(this._currentFocusContext=2,this.settingRowFocused.set(!0),this.treeFocusedElement??=this.settingsTree.firstVisibleElement??null,this.treeFocusedElement&&(this.treeFocusedElement.tabbable=!0))})),this._register(this.settingsTree.onDidBlur(()=>{this.settingRowFocused.set(!1),this.treeFocusedElement=null})),this._register(this.settingsTree.onDidChangeFocus(t=>{const i=t.elements[0];this.treeFocusedElement!==i&&(this.treeFocusedElement&&(this.treeFocusedElement.tabbable=!1),this.treeFocusedElement=i,this.treeFocusedElement&&(this.treeFocusedElement.tabbable=!0),this.settingsTree.setSelection(i?[i]:[]))}))}onDidChangeSetting(e,t,i,s,r){const o=B(this.searchWidget.getValue()).languageFilter;(s||this.pendingSettingUpdate&&this.pendingSettingUpdate.key!==e)&&this.updateChangedSetting(e,t,s,o,r),this.pendingSettingUpdate={key:e,value:t,languageFilter:o},c.shouldSettingUpdateFast(i)?this.settingFastUpdateDelayer.trigger(()=>this.updateChangedSetting(e,t,s,o,r)):this.settingSlowUpdateDelayer.trigger(()=>this.updateChangedSetting(e,t,s,o,r))}updateTreeScrollSync(){if(this.settingRenderers.cancelSuggesters(),this.searchResultModel||!this.tocTreeModel)return;const e=this.settingsTree.firstVisibleElement,t=e instanceof K?e.parent:e instanceof ce?e:null;let i=!0;try{this.tocTree.getNode(t)}catch{i=!1}if(i&&t&&this.tocTree.getSelection()[0]!==t){const s=this.getAncestors(t);s.forEach(o=>this.tocTree.expand(o)),this.tocTree.reveal(t);const r=this.tocTree.getRelativeTop(t);if(typeof r!="number")return;this.tocTree.collapseAll(),s.forEach(o=>this.tocTree.expand(o)),r<0||r>1?this.tocTree.reveal(t):this.tocTree.reveal(t,r),this.tocTree.expand(t),this.tocTree.setSelection([t]);const n=new KeyboardEvent("keydown");n.fromScroll=!0,this.tocTree.setFocus([t],n)}}getAncestors(e){const t=[];for(;e.parent;)e.parent.id!=="root"&&t.push(e.parent),e=e.parent;return t.reverse()}updateChangedSetting(e,t,i,s,r){const n=this.settingsTargetsWidget.settingsTarget,o=U.isUri(n)?n:void 0,l=(o?S.WORKSPACE_FOLDER:n)??S.USER_LOCAL,d={resource:o,overrideIdentifiers:s?[s]:void 0},f=l===S.WORKSPACE||l===S.WORKSPACE_FOLDER||!!s,_=f?i:t===void 0,g=this.configurationService.inspect(e,d);return!f&&g.defaultValue===t&&(t=void 0),this.configurationService.updateValue(e,t,d,l,{handleDirtyFile:"save"}).then(()=>{const T=this.searchWidget.getValue();T.includes(`@${z}`)&&this.refreshTOCTree(),this.renderTree(e,_);const m={key:e,query:T,searchResults:this.searchResultModel?.getUniqueResults()??null,rawResults:this.searchResultModel?.getRawResults()??null,showConfiguredOnly:!!this.viewState.tagFilters&&this.viewState.tagFilters.has(z),isReset:typeof t>"u",settingsTarget:this.settingsTargetsWidget.settingsTarget};return this.pendingSettingUpdate=null,this.reportModifiedSetting(m)})}reportModifiedSetting(e){let t,i,s;if(e.searchResults&&(s=e.searchResults.filterMatches.findIndex(o=>o.setting.key===e.key),this.searchResultModel)){const o=this.searchResultModel.getRawResults();if(o[C.Local]&&s>=0&&(t=o[C.Local].filterMatches.some(d=>d.setting.key===e.key)?"local":"remote"),o[C.Remote]){const l=o[C.Remote].filterMatches.findIndex(d=>d.setting.key===e.key);i=l>=0?l:void 0}}const r=e.settingsTarget===S.USER_LOCAL?"user":e.settingsTarget===S.USER_REMOTE?"user_remote":e.settingsTarget===S.WORKSPACE?"workspace":"folder",n={key:e.key,groupId:t,nlpIndex:i,displayIndex:s,showConfiguredOnly:e.showConfiguredOnly,isReset:e.isReset,target:r};this.telemetryService.publicLog2("settingsEditor.settingModified",n)}scheduleRefresh(e,t=""){if(t&&this.scheduledRefreshes.has(t))return;t||(_e(this.scheduledRefreshes.values()),this.scheduledRefreshes.clear());const i=a.trackFocus(e);this.scheduledRefreshes.set(t,i),i.onDidBlur(()=>{i.dispose(),this.scheduledRefreshes.delete(t),this.onConfigUpdate(new Set([t]))})}createSettingsOrderByTocIndex(e){const t=new Map;function i(s,r=0){if(s.settings)for(const n of s.settings)t.has(n.key)||t.set(n.key,r++);if(s.children)for(const n of s.children)r=i(n,r);return r}return i(e),t}refreshModels(e){this.settingsTreeModel.update(e),this.tocTreeModel.settingsTreeRoot=this.settingsTreeModel.root,this.settingsOrderByTocIndex=this.createSettingsOrderByTocIndex(e)}async onConfigUpdate(e,t=!1,i=!1){if(e&&this.settingsTreeModel)return this.updateElementsByKey(e);if(!this.defaultSettingsEditorModel)return;const s=this.defaultSettingsEditorModel.settingsGroups.slice(1),r=s.filter(g=>!g.extensionInfo),n=ae(qe,r,this.logService),o=n.tree;if(n.leftoverSettings.size&&!this.hasWarnedMissingSettings){const g=[];n.leftoverSettings.forEach(T=>{g.push(T.key)}),this.logService.warn(`SettingsEditor2: Settings not included in settingsLayout.ts: ${g.join(", ")}`),this.hasWarnedMissingSettings=!0}const l=[];let d=!1;const u=await St(this.extensionGalleryService,this.productService);if(u&&s.filter(g=>g.extensionInfo).length)for(const g in u.settingsEditorRecommendedExtensions){const T=u.recommendedExtensionsGalleryInfo[g];if(!T)continue;const m=T.identifier.id;await this.refreshInstalledExtensionsList();const X=this.installedExtensionIds.includes(m),A=s.findIndex(b=>b.extensionInfo&&b.extensionInfo.id.toLowerCase()===m.toLowerCase()&&b.sections.length===1&&b.sections[0].settings.length===1&&b.sections[0].settings[0].displayExtensionId);if(X||this.dismissedExtensionSettings.includes(m)){A!==-1&&(s.splice(A,1),d=!0);continue}if(A!==-1)continue;let D=null;try{D=await Ie(this.extensionGalleryService.getManifest(T,ye.None),at)??null}catch{continue}if(D===null)continue;const F=D?.contributes?.configuration;let V;Array.isArray(F)?F.length===1&&(V=F[0].title):V=F?.title;const Q=u.settingsEditorRecommendedExtensions[g],P=T.displayName??T.name??m,y=`${g}.manageExtension`,j={range:W,key:y,keyRange:W,value:null,valueRange:W,description:[Q.onSettingsEditorOpen?.descriptionOverride??T.description],descriptionIsMarkdown:!1,descriptionRanges:[],scope:ue.WINDOW,type:"null",displayExtensionId:m,extensionGroupTitle:V??P,categoryLabel:"Extensions",title:P},J={sections:[{settings:[j]}],id:m,title:j.extensionGroupTitle,titleRange:W,range:W,extensionInfo:{id:m,displayName:T.displayName}};s.push(J),l.push(J),d=!0}o.children.push(await Xe(this.extensionService,s.filter(g=>g.extensionInfo)));const f=ze(u),_=ae(f,s,this.logService);if(o.children.unshift(_.tree),u&&d&&this.defaultSettingsEditorModel.setAdditionalGroups(l),!this.workspaceTrustManagementService.isWorkspaceTrusted()&&(this.viewState.settingsTarget instanceof U||this.viewState.settingsTarget===S.WORKSPACE)){const g=Ye(s,this.viewState.settingsTarget,this.viewState.languageFilter,this.configurationService);g.length&&o.children.unshift({id:"workspaceTrust",label:I("settings require trust","Workspace Trust"),settings:g})}if(this.searchResultModel?.updateChildren(),this.settingsTreeModel){if(this.refreshModels(o),i&&this.searchResultModel)return await this.onSearchInputChanged();this.refreshTOCTree(),this.renderTree(void 0,t)}else this.settingsTreeModel=this.instantiationService.createInstance(Je,this.viewState,this.workspaceTrustManagementService.isWorkspaceTrusted()),this.refreshModels(o),(this.viewState.query?void 0:this.restoreCachedState())?.searchQuery||this.searchWidget.getValue()?await this.onSearchInputChanged():(this.refreshTOCTree(),this.refreshTree(),this.tocTree.collapseAll())}updateElementsByKey(e){e.size?(this.searchResultModel&&e.forEach(t=>this.searchResultModel.updateElementsByName(t)),this.settingsTreeModel&&e.forEach(t=>this.settingsTreeModel.updateElementsByName(t)),e.forEach(t=>this.renderTree(t))):this.renderTree()}getActiveControlInSettingsTree(){const e=this.settingsTree.getHTMLElement(),t=e.ownerDocument.activeElement;return t&&a.isAncestorOfActiveElement(e)?t:null}renderTree(e,t=!1){if(!t&&e&&this.scheduledRefreshes.has(e)){this.updateModifiedLabelForKey(e);return}if(this.contextViewFocused()){const r=this.window.document.querySelector(".context-view");r&&this.scheduleRefresh(r,e);return}const i=this.getActiveControlInSettingsTree(),s=i&&this.settingRenderers.getSettingDOMElementForDOMElement(i);if(s&&!t)if(e){if(s.getAttribute(G.SETTING_KEY_ATTR)===e&&s.parentElement&&!s.parentElement.classList.contains("setting-item-list")){this.updateModifiedLabelForKey(e),this.scheduleRefresh(s,e);return}}else{this.scheduleRefresh(s);return}if(this.renderResultCountMessages(),e){const r=this.currentSettingsModel.getElementsByName(e);if(r&&r.length)r.length>=2,this.refreshSingleElement(r[0]);else return}else this.refreshTree()}contextViewFocused(){return!!a.findParentWithClass(this.rootElement.ownerDocument.activeElement,"context-view")}refreshSingleElement(e){this.isVisible()&&this.settingsTree.rerender(e)}refreshTree(){this.isVisible()&&this.settingsTree.setChildren(null,ge(this.currentSettingsModel.root))}refreshTOCTree(){this.isVisible()&&(this.tocTreeModel.update(),this.tocTree.setChildren(null,Ze(this.tocTreeModel,this.tocTree)))}updateModifiedLabelForKey(e){const t=this.currentSettingsModel.getElementsByName(e),i=t&&t[0]&&t[0].isConfigured,s=this.settingRenderers.getDOMElementsForSettingKey(this.settingsTree.getHTMLElement(),e);s&&s[0]&&s[0].classList.toggle("is-configured",!!i)}async onSearchInputChanged(){if(!this.currentSettingsModel)return;const e=this.searchWidget.getValue().trim();this.viewState.query=e,this.delayedFilterLogging.cancel(),await this.triggerSearch(e.replace(/\u203A/g," ")),e&&this.searchResultModel&&this.delayedFilterLogging.trigger(()=>this.reportFilteringUsed(this.searchResultModel))}parseSettingFromJSON(e){const t=e.match(/"([a-zA-Z.]+)": /);return t&&t[1]}toggleTocBySearchBehaviorType(){this.configurationService.getValue(Se)==="hide"?(this.splitView.setViewVisible(0,!1),this.splitView.style({separatorBorder:de.transparent})):(this.splitView.setViewVisible(0,!0),this.splitView.style({separatorBorder:this.theme.getColor(q)}))}async triggerSearch(e){const t=this.editorProgressService.show(!0);if(this.viewState.tagFilters=new Set,this.viewState.extensionFilters=new Set,this.viewState.featureFilters=new Set,this.viewState.idFilters=new Set,this.viewState.languageFilter=void 0,e){const i=B(e);e=i.query,i.tags.forEach(s=>this.viewState.tagFilters.add(s)),i.extensionFilters.forEach(s=>this.viewState.extensionFilters.add(s)),i.featureFilters.forEach(s=>this.viewState.featureFilters.add(s)),i.idFilters.forEach(s=>this.viewState.idFilters.add(s)),this.viewState.languageFilter=i.languageFilter}this.settingsTargetsWidget.updateLanguageFilterIndicators(this.viewState.languageFilter),e&&e!=="@"?(e=this.parseSettingFromJSON(e)||e,await this.triggerFilterPreferences(e),this.toggleTocBySearchBehaviorType()):(this.viewState.tagFilters.size||this.viewState.extensionFilters.size||this.viewState.featureFilters.size||this.viewState.idFilters.size||this.viewState.languageFilter?this.searchResultModel=this.createFilterModel():this.searchResultModel=null,this.searchDelayer.cancel(),this.searchInProgress&&(this.searchInProgress.cancel(),this.searchInProgress.dispose(),this.searchInProgress=null),this.tocTree.setFocus([]),this.viewState.filterToCategory=void 0,this.tocTreeModel.currentSearchModel=this.searchResultModel,this.searchResultModel?(this.tocTree.setSelection([]),this.tocTree.expandAll(),this.refreshTOCTree(),this.renderResultCountMessages(),this.refreshTree(),this.toggleTocBySearchBehaviorType()):this.tocTreeDisposed||(this.tocTree.collapseAll(),this.refreshTOCTree(),this.renderResultCountMessages(),this.refreshTree(),this.splitView.setViewVisible(0,!0))),t.done()}createFilterModel(){const e=this.instantiationService.createInstance(le,this.viewState,this.settingsOrderByTocIndex,this.workspaceTrustManagementService.isWorkspaceTrusted()),t={filterMatches:[]};for(const i of this.defaultSettingsEditorModel.settingsGroups.slice(1))for(const s of i.sections)for(const r of s.settings)t.filterMatches.push({setting:r,matches:[],matchType:Et.None,score:0});return e.setResult(0,t),e}reportFilteringUsed(e){if(!e)return;const t={},i=e.getRawResults(),s=i[C.Local];s&&(t.filterResult=s.filterMatches.length);const r=i[C.Remote];r&&(t.nlpResult=r.filterMatches.length);const n=e.getUniqueResults(),o={"counts.nlpResult":t.nlpResult,"counts.filterResult":t.filterResult,"counts.uniqueResultsCount":n?.filterMatches.length};this.telemetryService.publicLog2("settingsEditor.filter",o)}async triggerFilterPreferences(e){this.searchInProgress&&(this.searchInProgress.cancel(),this.searchInProgress=null);const t=this.searchInProgress=new Ce;return this.searchDelayer.trigger(async()=>{if(!t.token.isCancellationRequested){const i=await this.localFilterPreferences(e,t.token);i&&!i.exactMatch&&!t.token.isCancellationRequested&&await this.remoteSearchPreferences(e,t.token),this.onDidFinishSearch()}})}onDidFinishSearch(){this.tocTreeModel.currentSearchModel=this.searchResultModel,this.tocTreeModel.update(),this.tocTree.setFocus([]),this.viewState.filterToCategory=void 0,this.tocTree.expandAll(),this.settingsTree.scrollTop=0,this.refreshTOCTree(),this.renderTree(void 0,!0)}localFilterPreferences(e,t){const i=this.preferencesSearchService.getLocalSearchProvider(e);return this.filterOrSearchPreferences(e,C.Local,i,t)}remoteSearchPreferences(e,t){const i=this.preferencesSearchService.getRemoteSearchProvider(e);return this.filterOrSearchPreferences(e,C.Remote,i,t)}async filterOrSearchPreferences(e,t,i,s){const r=await this._filterOrSearchPreferencesModel(e,this.defaultSettingsEditorModel,i,s);return s?.isCancellationRequested?null:(this.searchResultModel??=this.instantiationService.createInstance(le,this.viewState,this.settingsOrderByTocIndex,this.workspaceTrustManagementService.isWorkspaceTrusted()),this.searchResultModel.setResult(t,r),r)}renderResultCountMessages(){if(this.currentSettingsModel)if(this.clearFilterLinkContainer.style.display=this.viewState.tagFilters&&this.viewState.tagFilters.size>0?"initial":"none",this.searchResultModel){const e=this.searchResultModel.getUniqueResultsCount();let t;switch(e){case 0:t=I("noResults","No Settings Found");break;case 1:t=I("oneResult","1 Setting Found");break;default:t=I("moreThanOneResult","{0} Settings Found",e)}this.searchResultLabel=t,this.updateInputAriaLabel(),this.countElement.innerText=t,Te.status(t),this.countElement.style.display!=="block"&&(this.countElement.style.display="block",this.layout(this.dimension)),this.rootElement.classList.toggle("no-results",e===0),this.splitView.el.style.visibility=e===0?"hidden":"visible"}else{this.countElement.style.display!=="none"&&(this.searchResultLabel=null,this.updateInputAriaLabel(),this.countElement.style.display="none",this.countElement.innerText="",this.layout(this.dimension)),this.rootElement.classList.remove("no-results"),this.splitView.el.style.visibility="visible";return}}_filterOrSearchPreferencesModel(e,t,i,s){return(i?i.searchModel(t,s):Promise.resolve(null)).then(void 0,n=>Me(n)?Promise.reject(n):null)}layoutSplitView(e){const t=e.height-97;if(this.splitView.el.style.height=`${t}px`,this.splitView.layout(this.bodyContainer.clientWidth,t),!(this.configurationService.getValue(Se)==="hide"&&this.searchResultModel)){const r=this.splitView.isViewVisible(0),n=this.bodyContainer.clientWidth>=c.NARROW_TOTAL_WIDTH;this.splitView.setViewVisible(0,n),!r&&n&&this.bodyContainer.clientWidth>=c.EDITOR_MIN_WIDTH+c.TOC_RESET_WIDTH&&this.splitView.resizeView(0,c.TOC_RESET_WIDTH),this.splitView.style({separatorBorder:n?this.theme.getColor(q):de.transparent})}}saveState(){if(this.isVisible()){const e=this.searchWidget.getValue().trim(),t=this.settingsTargetsWidget.settingsTarget;this.input&&this.editorMemento.saveEditorState(this.group,this.input,{searchQuery:e,target:t})}else this.input&&this.editorMemento.clearEditorState(this.input,this.group);super.saveState()}};c=k([h(1,se),h(2,wt),h(3,Dt),h(4,ke),h(5,mt),h(6,We),h(7,lt),h(8,Ne),h(9,xe),h(10,Ae),h(11,Tt),h(12,yt),h(13,ne),h(14,Mt),h(15,bt),h(16,Lt),h(17,Nt),h(18,Ut),h(19,Wt),h(20,kt),h(21,Ht)],c);let N=class extends be{constructor(e,t,i,s,r,n){super();this.commandService=i;this.userDataSyncService=s;this.userDataSyncEnablementService=r;const o=a.append(t,p(".settings-right-controls")),l=a.append(o,p(".turn-on-sync"));this.turnOnSyncButton=this._register(new ve(l,{title:!0,...Pt})),this.lastSyncedLabel=a.append(o,p(".last-synced-label")),a.hide(this.lastSyncedLabel),this.turnOnSyncButton.enabled=!0,this.turnOnSyncButton.label=I("turnOnSyncButton","Backup and Sync Settings"),a.hide(this.turnOnSyncButton.element),this._register(this.turnOnSyncButton.onDidClick(async()=>{n.publicLog2("sync/turnOnSyncFromSettings"),await this.commandService.executeCommand("workbench.userDataSync.actions.turnOn")})),this.updateLastSyncedTime(),this._register(this.userDataSyncService.onDidChangeLastSyncTime(()=>{this.updateLastSyncedTime()})),this._register(new a.WindowIntervalTimer).cancelAndSet(()=>this.updateLastSyncedTime(),60*1e3,e),this.update(),this._register(this.userDataSyncService.onDidChangeStatus(()=>{this.update()})),this._register(this.userDataSyncEnablementService.onDidChangeEnablement(()=>{this.update()}))}lastSyncedLabel;turnOnSyncButton;_onDidChangeLastSyncedLabel=this._register(new we);onDidChangeLastSyncedLabel=this._onDidChangeLastSyncedLabel.event;updateLastSyncedTime(){const e=this.userDataSyncService.lastSyncTime;let t;if(typeof e=="number"){const i=Re(e,!0,void 0,!0);t=I("lastSyncedLabel","Last synced: {0}",i)}else t="";this.lastSyncedLabel.textContent=t,this._onDidChangeLastSyncedLabel.fire(t)}update(){this.userDataSyncService.status!==oe.Uninitialized&&(this.userDataSyncEnablementService.isEnabled()||this.userDataSyncService.status!==oe.Idle?(a.show(this.lastSyncedLabel),a.hide(this.turnOnSyncButton.element)):(a.hide(this.lastSyncedLabel),a.show(this.turnOnSyncButton.element)))}};N=k([h(2,Le),h(3,He),h(4,ne),h(5,se)],N);export{c as SettingsEditor2,Bt as SettingsFocusContext,ge as createGroupIterator};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SettingsEditor2_1;
+import * as DOM from '../../../../base/browser/dom.js';
+import * as aria from '../../../../base/browser/ui/aria/aria.js';
+import { StandardKeyboardEvent } from '../../../../base/browser/keyboardEvent.js';
+import { ActionBar } from '../../../../base/browser/ui/actionbar/actionbar.js';
+import { Button } from '../../../../base/browser/ui/button/button.js';
+import { Action } from '../../../../base/common/actions.js';
+import { Delayer, raceTimeout } from '../../../../base/common/async.js';
+import { CancellationToken, CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { fromNow } from '../../../../base/common/date.js';
+import { isCancellationError } from '../../../../base/common/errors.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { Disposable, DisposableStore, dispose, MutableDisposable } from '../../../../base/common/lifecycle.js';
+import * as platform from '../../../../base/common/platform.js';
+import { URI } from '../../../../base/common/uri.js';
+import './media/settingsEditor2.css';
+import { localize } from '../../../../nls.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { asCssVariable, badgeBackground, badgeForeground, contrastBorder, editorForeground } from '../../../../platform/theme/common/colorRegistry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { IUserDataSyncEnablementService, IUserDataSyncService } from '../../../../platform/userDataSync/common/userDataSync.js';
+import { EditorPane } from '../../../browser/parts/editor/editorPane.js';
+import { SuggestEnabledInput } from '../../codeEditor/browser/suggestEnabledInput/suggestEnabledInput.js';
+import { SettingsTargetsWidget } from './preferencesWidgets.js';
+import { getCommonlyUsedData, tocData } from './settingsLayout.js';
+import { AbstractSettingRenderer, resolveConfiguredUntrustedSettings, createTocTreeForExtensionSettings, resolveSettingsTree, SettingsTree, SettingTreeRenderers } from './settingsTree.js';
+import { parseQuery, SearchResultModel, SettingsTreeGroupElement, SettingsTreeModel, SettingsTreeSettingElement } from './settingsTreeModels.js';
+import { createTOCIterator, TOCTree, TOCTreeModel } from './tocTree.js';
+import { CONTEXT_SETTINGS_EDITOR, CONTEXT_SETTINGS_ROW_FOCUS, CONTEXT_SETTINGS_SEARCH_FOCUS, CONTEXT_TOC_ROW_FOCUS, ENABLE_LANGUAGE_FILTER, EXTENSION_FETCH_TIMEOUT_MS, EXTENSION_SETTING_TAG, FEATURE_SETTING_TAG, ID_SETTING_TAG, IPreferencesSearchService, LANGUAGE_SETTING_TAG, MODIFIED_SETTING_TAG, POLICY_SETTING_TAG, REQUIRE_TRUSTED_WORKSPACE_SETTING_TAG, SETTINGS_EDITOR_COMMAND_CLEAR_SEARCH_RESULTS, SETTINGS_EDITOR_COMMAND_SUGGEST_FILTERS, WORKSPACE_TRUST_SETTING_TAG, getExperimentalExtensionToggleData } from '../common/preferences.js';
+import { settingsHeaderBorder, settingsSashBorder, settingsTextInputBorder } from '../common/settingsEditorColorRegistry.js';
+import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+import { IPreferencesService, SettingMatchType, SettingValueType, validateSettingsEditorOptions } from '../../../services/preferences/common/preferences.js';
+import { Settings2EditorModel, nullRange } from '../../../services/preferences/common/preferencesModels.js';
+import { IUserDataSyncWorkbenchService } from '../../../services/userDataSync/common/userDataSync.js';
+import { preferencesClearInputIcon, preferencesFilterIcon } from './preferencesIcons.js';
+import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
+import { IWorkbenchConfigurationService } from '../../../services/configuration/common/configuration.js';
+import { ITextResourceConfigurationService } from '../../../../editor/common/services/textResourceConfiguration.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { Sizing, SplitView } from '../../../../base/browser/ui/splitview/splitview.js';
+import { Color } from '../../../../base/common/color.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+import { SettingsSearchFilterDropdownMenuActionViewItem } from './settingsSearchMenu.js';
+import { IExtensionGalleryService, IExtensionManagementService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { Extensions } from '../../../../platform/configuration/common/configurationRegistry.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { defaultButtonStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { registerNavigableContainer } from '../../../browser/actions/widgetNavigationCommands.js';
+import { IEditorProgressService } from '../../../../platform/progress/common/progress.js';
+import { IUserDataProfileService } from '../../../services/userDataProfile/common/userDataProfile.js';
+export function createGroupIterator(group) {
+    return Iterable.map(group.children, g => {
+        return {
+            element: g,
+            children: g instanceof SettingsTreeGroupElement ?
+                createGroupIterator(g) :
+                undefined
+        };
+    });
+}
+const $ = DOM.$;
+const searchBoxLabel = localize('SearchSettings.AriaLabel', "Search settings");
+const SEARCH_TOC_BEHAVIOR_KEY = 'workbench.settings.settingsSearchTocBehavior';
+const SETTINGS_EDITOR_STATE_KEY = 'settingsEditorState';
+let SettingsEditor2 = class SettingsEditor2 extends EditorPane {
+    static { SettingsEditor2_1 = this; }
+    static { this.ID = 'workbench.editor.settings2'; }
+    static { this.NUM_INSTANCES = 0; }
+    static { this.SEARCH_DEBOUNCE = 200; }
+    static { this.SETTING_UPDATE_FAST_DEBOUNCE = 200; }
+    static { this.SETTING_UPDATE_SLOW_DEBOUNCE = 1000; }
+    static { this.CONFIG_SCHEMA_UPDATE_DELAYER = 500; }
+    static { this.TOC_MIN_WIDTH = 100; }
+    static { this.TOC_RESET_WIDTH = 200; }
+    static { this.EDITOR_MIN_WIDTH = 500; }
+    static { this.NARROW_TOTAL_WIDTH = this.TOC_RESET_WIDTH + this.EDITOR_MIN_WIDTH; }
+    static { this.SUGGESTIONS = [
+        `@${MODIFIED_SETTING_TAG}`,
+        '@tag:notebookLayout',
+        '@tag:notebookOutputLayout',
+        `@tag:${REQUIRE_TRUSTED_WORKSPACE_SETTING_TAG}`,
+        `@tag:${WORKSPACE_TRUST_SETTING_TAG}`,
+        '@tag:sync',
+        '@tag:usesOnlineServices',
+        '@tag:telemetry',
+        '@tag:accessibility',
+        `@${ID_SETTING_TAG}`,
+        `@${EXTENSION_SETTING_TAG}`,
+        `@${FEATURE_SETTING_TAG}scm`,
+        `@${FEATURE_SETTING_TAG}explorer`,
+        `@${FEATURE_SETTING_TAG}search`,
+        `@${FEATURE_SETTING_TAG}debug`,
+        `@${FEATURE_SETTING_TAG}extensions`,
+        `@${FEATURE_SETTING_TAG}terminal`,
+        `@${FEATURE_SETTING_TAG}task`,
+        `@${FEATURE_SETTING_TAG}problems`,
+        `@${FEATURE_SETTING_TAG}output`,
+        `@${FEATURE_SETTING_TAG}comments`,
+        `@${FEATURE_SETTING_TAG}remote`,
+        `@${FEATURE_SETTING_TAG}timeline`,
+        `@${FEATURE_SETTING_TAG}notebook`,
+        `@${POLICY_SETTING_TAG}`
+    ]; }
+    static shouldSettingUpdateFast(type) {
+        if (Array.isArray(type)) {
+            return false;
+        }
+        return type === SettingValueType.Enum ||
+            type === SettingValueType.Array ||
+            type === SettingValueType.BooleanObject ||
+            type === SettingValueType.Object ||
+            type === SettingValueType.Complex ||
+            type === SettingValueType.Boolean ||
+            type === SettingValueType.Exclude ||
+            type === SettingValueType.Include;
+    }
+    constructor(group, telemetryService, configurationService, textResourceConfigurationService, themeService, preferencesService, instantiationService, preferencesSearchService, logService, contextKeyService, storageService, editorGroupService, userDataSyncWorkbenchService, userDataSyncEnablementService, workspaceTrustManagementService, extensionService, languageService, extensionManagementService, productService, extensionGalleryService, editorProgressService, userDataProfileService) {
+        super(SettingsEditor2_1.ID, group, telemetryService, themeService, storageService);
+        this.configurationService = configurationService;
+        this.preferencesService = preferencesService;
+        this.instantiationService = instantiationService;
+        this.preferencesSearchService = preferencesSearchService;
+        this.logService = logService;
+        this.storageService = storageService;
+        this.editorGroupService = editorGroupService;
+        this.userDataSyncWorkbenchService = userDataSyncWorkbenchService;
+        this.userDataSyncEnablementService = userDataSyncEnablementService;
+        this.workspaceTrustManagementService = workspaceTrustManagementService;
+        this.extensionService = extensionService;
+        this.languageService = languageService;
+        this.extensionManagementService = extensionManagementService;
+        this.productService = productService;
+        this.extensionGalleryService = extensionGalleryService;
+        this.editorProgressService = editorProgressService;
+        this.searchInProgress = null;
+        this.pendingSettingUpdate = null;
+        this._searchResultModel = null;
+        this.searchResultLabel = null;
+        this.lastSyncedLabel = null;
+        this.settingsOrderByTocIndex = null;
+        this._currentFocusContext = 0;
+        this.hasWarnedMissingSettings = false;
+        this.tocTreeDisposed = false;
+        this.tocFocusedElement = null;
+        this.treeFocusedElement = null;
+        this.settingsTreeScrollTop = 0;
+        this.installedExtensionIds = [];
+        this.dismissedExtensionSettings = [];
+        this.DISMISSED_EXTENSION_SETTINGS_STORAGE_KEY = 'settingsEditor2.dismissedExtensionSettings';
+        this.DISMISSED_EXTENSION_SETTINGS_DELIMITER = '\t';
+        this.delayedFilterLogging = new Delayer(1000);
+        this.searchDelayer = new Delayer(300);
+        this.viewState = { settingsTarget: 3 };
+        this.settingFastUpdateDelayer = new Delayer(SettingsEditor2_1.SETTING_UPDATE_FAST_DEBOUNCE);
+        this.settingSlowUpdateDelayer = new Delayer(SettingsEditor2_1.SETTING_UPDATE_SLOW_DEBOUNCE);
+        this.searchInputDelayer = new Delayer(SettingsEditor2_1.SEARCH_DEBOUNCE);
+        this.updatedConfigSchemaDelayer = new Delayer(SettingsEditor2_1.CONFIG_SCHEMA_UPDATE_DELAYER);
+        this.inSettingsEditorContextKey = CONTEXT_SETTINGS_EDITOR.bindTo(contextKeyService);
+        this.searchFocusContextKey = CONTEXT_SETTINGS_SEARCH_FOCUS.bindTo(contextKeyService);
+        this.tocRowFocused = CONTEXT_TOC_ROW_FOCUS.bindTo(contextKeyService);
+        this.settingRowFocused = CONTEXT_SETTINGS_ROW_FOCUS.bindTo(contextKeyService);
+        this.scheduledRefreshes = new Map();
+        this.editorMemento = this.getEditorMemento(editorGroupService, textResourceConfigurationService, SETTINGS_EDITOR_STATE_KEY);
+        this.dismissedExtensionSettings = this.storageService
+            .get(this.DISMISSED_EXTENSION_SETTINGS_STORAGE_KEY, 0, '')
+            .split(this.DISMISSED_EXTENSION_SETTINGS_DELIMITER);
+        this._register(configurationService.onDidChangeConfiguration(e => {
+            if (e.source !== 7) {
+                this.onConfigUpdate(e.affectedKeys);
+            }
+        }));
+        this._register(userDataProfileService.onDidChangeCurrentProfile(e => {
+            e.join(this.whenCurrentProfileChanged());
+        }));
+        this._register(workspaceTrustManagementService.onDidChangeTrust(() => {
+            this.searchResultModel?.updateWorkspaceTrust(workspaceTrustManagementService.isWorkspaceTrusted());
+            if (this.settingsTreeModel) {
+                this.settingsTreeModel.updateWorkspaceTrust(workspaceTrustManagementService.isWorkspaceTrusted());
+                this.renderTree();
+            }
+        }));
+        this._register(configurationService.onDidChangeRestrictedSettings(e => {
+            if (e.default.length && this.currentSettingsModel) {
+                this.updateElementsByKey(new Set(e.default));
+            }
+        }));
+        this._register(extensionManagementService.onDidInstallExtensions(() => {
+            this.refreshInstalledExtensionsList();
+        }));
+        this._register(extensionManagementService.onDidUninstallExtension(() => {
+            this.refreshInstalledExtensionsList();
+        }));
+        this.modelDisposables = this._register(new DisposableStore());
+        if (ENABLE_LANGUAGE_FILTER && !SettingsEditor2_1.SUGGESTIONS.includes(`@${LANGUAGE_SETTING_TAG}`)) {
+            SettingsEditor2_1.SUGGESTIONS.push(`@${LANGUAGE_SETTING_TAG}`);
+        }
+        this.inputChangeListener = this._register(new MutableDisposable());
+    }
+    async whenCurrentProfileChanged() {
+        this.updatedConfigSchemaDelayer.trigger(() => {
+            this.dismissedExtensionSettings = this.storageService
+                .get(this.DISMISSED_EXTENSION_SETTINGS_STORAGE_KEY, 0, '')
+                .split(this.DISMISSED_EXTENSION_SETTINGS_DELIMITER);
+            this.onConfigUpdate(undefined, true);
+        });
+    }
+    get minimumWidth() { return SettingsEditor2_1.EDITOR_MIN_WIDTH; }
+    get maximumWidth() { return Number.POSITIVE_INFINITY; }
+    get minimumHeight() { return 180; }
+    set minimumWidth(value) { }
+    set maximumWidth(value) { }
+    get currentSettingsModel() {
+        return this.searchResultModel || this.settingsTreeModel;
+    }
+    get searchResultModel() {
+        return this._searchResultModel;
+    }
+    set searchResultModel(value) {
+        this._searchResultModel = value;
+        this.rootElement.classList.toggle('search-mode', !!this._searchResultModel);
+    }
+    get focusedSettingDOMElement() {
+        const focused = this.settingsTree.getFocus()[0];
+        if (!(focused instanceof SettingsTreeSettingElement)) {
+            return;
+        }
+        return this.settingRenderers.getDOMElementsForSettingKey(this.settingsTree.getHTMLElement(), focused.setting.key)[0];
+    }
+    get currentFocusContext() {
+        return this._currentFocusContext;
+    }
+    createEditor(parent) {
+        parent.setAttribute('tabindex', '-1');
+        this.rootElement = DOM.append(parent, $('.settings-editor', { tabindex: '-1' }));
+        this.createHeader(this.rootElement);
+        this.createBody(this.rootElement);
+        this.addCtrlAInterceptor(this.rootElement);
+        this.updateStyles();
+        this._register(registerNavigableContainer({
+            name: 'settingsEditor2',
+            focusNotifiers: [this],
+            focusNextWidget: () => {
+                if (this.searchWidget.inputWidget.hasWidgetFocus()) {
+                    this.focusTOC();
+                }
+            },
+            focusPreviousWidget: () => {
+                if (!this.searchWidget.inputWidget.hasWidgetFocus()) {
+                    this.focusSearch();
+                }
+            }
+        }));
+    }
+    async setInput(input, options, context, token) {
+        this.inSettingsEditorContextKey.set(true);
+        await super.setInput(input, options, context, token);
+        if (!this.input) {
+            return;
+        }
+        const model = await this.input.resolve();
+        if (token.isCancellationRequested || !(model instanceof Settings2EditorModel)) {
+            return;
+        }
+        this.modelDisposables.clear();
+        this.modelDisposables.add(model.onDidChangeGroups(() => {
+            this.updatedConfigSchemaDelayer.trigger(() => {
+                this.onConfigUpdate(undefined, false, true);
+            });
+        }));
+        this.defaultSettingsEditorModel = model;
+        options = options || validateSettingsEditorOptions({});
+        if (!this.viewState.settingsTarget || !this.settingsTargetsWidget.settingsTarget) {
+            const optionsHasViewStateTarget = options.viewState && options.viewState.settingsTarget;
+            if (!options.target && !optionsHasViewStateTarget) {
+                options.target = 3;
+            }
+        }
+        this._setOptions(options);
+        this.onConfigUpdate(undefined, true).then(() => {
+            this.inputChangeListener.value = input.onWillDispose(() => {
+                this.searchWidget.setValue('');
+            });
+            this.updateTreeScrollSync();
+        });
+        await this.refreshInstalledExtensionsList();
+    }
+    async refreshInstalledExtensionsList() {
+        const installedExtensions = await this.extensionManagementService.getInstalled();
+        this.installedExtensionIds = installedExtensions
+            .filter(ext => ext.manifest.contributes?.configuration)
+            .map(ext => ext.identifier.id);
+    }
+    restoreCachedState() {
+        const cachedState = this.input && this.editorMemento.loadEditorState(this.group, this.input);
+        if (cachedState && typeof cachedState.target === 'object') {
+            cachedState.target = URI.revive(cachedState.target);
+        }
+        if (cachedState) {
+            const settingsTarget = cachedState.target;
+            this.settingsTargetsWidget.settingsTarget = settingsTarget;
+            this.viewState.settingsTarget = settingsTarget;
+            if (!this.searchWidget.getValue()) {
+                this.searchWidget.setValue(cachedState.searchQuery);
+            }
+        }
+        if (this.input) {
+            this.editorMemento.clearEditorState(this.input, this.group);
+        }
+        return cachedState ?? null;
+    }
+    getViewState() {
+        return this.viewState;
+    }
+    setOptions(options) {
+        super.setOptions(options);
+        if (options) {
+            this._setOptions(options);
+        }
+    }
+    _setOptions(options) {
+        if (options.focusSearch && !platform.isIOS) {
+            this.focusSearch();
+        }
+        const recoveredViewState = options.viewState ?
+            options.viewState : undefined;
+        const query = recoveredViewState?.query ?? options.query;
+        if (query !== undefined) {
+            this.searchWidget.setValue(query);
+            this.viewState.query = query;
+        }
+        const target = options.folderUri ?? recoveredViewState?.settingsTarget ?? options.target;
+        if (target) {
+            this.settingsTargetsWidget.updateTarget(target);
+        }
+    }
+    clearInput() {
+        this.inSettingsEditorContextKey.set(false);
+        super.clearInput();
+    }
+    layout(dimension) {
+        this.dimension = dimension;
+        if (!this.isVisible()) {
+            return;
+        }
+        this.layoutSplitView(dimension);
+        const innerWidth = Math.min(this.headerContainer.clientWidth, dimension.width) - 24 * 2;
+        const monacoWidth = innerWidth - 10 - this.countElement.clientWidth - this.controlsElement.clientWidth - 12;
+        this.searchWidget.layout(new DOM.Dimension(monacoWidth, 20));
+        this.rootElement.classList.toggle('narrow-width', dimension.width < SettingsEditor2_1.NARROW_TOTAL_WIDTH);
+    }
+    focus() {
+        super.focus();
+        if (this._currentFocusContext === 0) {
+            if (!platform.isIOS) {
+                this.focusSearch();
+            }
+        }
+        else if (this._currentFocusContext === 3) {
+            const element = this.focusedSettingDOMElement;
+            if (element) {
+                const control = element.querySelector(AbstractSettingRenderer.CONTROL_SELECTOR);
+                if (control) {
+                    control.focus();
+                    return;
+                }
+            }
+        }
+        else if (this._currentFocusContext === 2) {
+            this.settingsTree.domFocus();
+        }
+        else if (this._currentFocusContext === 1) {
+            this.tocTree.domFocus();
+        }
+    }
+    setEditorVisible(visible) {
+        super.setEditorVisible(visible);
+        if (!visible) {
+            setTimeout(() => {
+                this.searchWidget.onHide();
+            }, 0);
+        }
+    }
+    focusSettings(focusSettingInput = false) {
+        const focused = this.settingsTree.getFocus();
+        if (!focused.length) {
+            this.settingsTree.focusFirst();
+        }
+        this.settingsTree.domFocus();
+        if (focusSettingInput) {
+            const controlInFocusedRow = this.settingsTree.getHTMLElement().querySelector(`.focused ${AbstractSettingRenderer.CONTROL_SELECTOR}`);
+            if (controlInFocusedRow) {
+                controlInFocusedRow.focus();
+            }
+        }
+    }
+    focusTOC() {
+        this.tocTree.domFocus();
+    }
+    showContextMenu() {
+        const focused = this.settingsTree.getFocus()[0];
+        const rowElement = this.focusedSettingDOMElement;
+        if (rowElement && focused instanceof SettingsTreeSettingElement) {
+            this.settingRenderers.showContextMenu(focused, rowElement);
+        }
+    }
+    focusSearch(filter, selectAll = true) {
+        if (filter && this.searchWidget) {
+            this.searchWidget.setValue(filter);
+        }
+        this.searchWidget.focus(selectAll && !this.searchInputDelayer.isTriggered);
+    }
+    clearSearchResults() {
+        this.searchWidget.setValue('');
+        this.focusSearch();
+    }
+    clearSearchFilters() {
+        const query = this.searchWidget.getValue();
+        const splitQuery = query.split(' ').filter(word => {
+            return word.length && !SettingsEditor2_1.SUGGESTIONS.some(suggestion => word.startsWith(suggestion));
+        });
+        this.searchWidget.setValue(splitQuery.join(' '));
+    }
+    updateInputAriaLabel() {
+        let label = searchBoxLabel;
+        if (this.searchResultLabel) {
+            label += `. ${this.searchResultLabel}`;
+        }
+        if (this.lastSyncedLabel) {
+            label += `. ${this.lastSyncedLabel}`;
+        }
+        this.searchWidget.updateAriaLabel(label);
+    }
+    createHeader(parent) {
+        this.headerContainer = DOM.append(parent, $('.settings-header'));
+        const searchContainer = DOM.append(this.headerContainer, $('.search-container'));
+        const clearInputAction = new Action(SETTINGS_EDITOR_COMMAND_CLEAR_SEARCH_RESULTS, localize('clearInput', "Clear Settings Search Input"), ThemeIcon.asClassName(preferencesClearInputIcon), false, async () => this.clearSearchResults());
+        const filterAction = new Action(SETTINGS_EDITOR_COMMAND_SUGGEST_FILTERS, localize('filterInput', "Filter Settings"), ThemeIcon.asClassName(preferencesFilterIcon));
+        this.searchWidget = this._register(this.instantiationService.createInstance(SuggestEnabledInput, `${SettingsEditor2_1.ID}.searchbox`, searchContainer, {
+            triggerCharacters: ['@', ':'],
+            provideResults: (query) => {
+                const queryParts = query.split(/\s/g);
+                if (queryParts[queryParts.length - 1].startsWith(`@${LANGUAGE_SETTING_TAG}`)) {
+                    const sortedLanguages = this.languageService.getRegisteredLanguageIds().map(languageId => {
+                        return `@${LANGUAGE_SETTING_TAG}${languageId} `;
+                    }).sort();
+                    return sortedLanguages.filter(langFilter => !query.includes(langFilter));
+                }
+                else if (queryParts[queryParts.length - 1].startsWith(`@${EXTENSION_SETTING_TAG}`)) {
+                    const installedExtensionsTags = this.installedExtensionIds.map(extensionId => {
+                        return `@${EXTENSION_SETTING_TAG}${extensionId} `;
+                    }).sort();
+                    return installedExtensionsTags.filter(extFilter => !query.includes(extFilter));
+                }
+                else if (queryParts[queryParts.length - 1].startsWith('@')) {
+                    return SettingsEditor2_1.SUGGESTIONS.filter(tag => !query.includes(tag)).map(tag => tag.endsWith(':') ? tag : tag + ' ');
+                }
+                return [];
+            }
+        }, searchBoxLabel, 'settingseditor:searchinput' + SettingsEditor2_1.NUM_INSTANCES++, {
+            placeholderText: searchBoxLabel,
+            focusContextKey: this.searchFocusContextKey,
+            styleOverrides: {
+                inputBorder: settingsTextInputBorder
+            }
+        }));
+        this._register(this.searchWidget.onDidFocus(() => {
+            this._currentFocusContext = 0;
+        }));
+        this.countElement = DOM.append(searchContainer, DOM.$('.settings-count-widget.monaco-count-badge.long'));
+        this.countElement.style.backgroundColor = asCssVariable(badgeBackground);
+        this.countElement.style.color = asCssVariable(badgeForeground);
+        this.countElement.style.border = `1px solid ${asCssVariable(contrastBorder)}`;
+        this._register(this.searchWidget.onInputDidChange(() => {
+            const searchVal = this.searchWidget.getValue();
+            clearInputAction.enabled = !!searchVal;
+            this.searchInputDelayer.trigger(() => this.onSearchInputChanged());
+        }));
+        const headerControlsContainer = DOM.append(this.headerContainer, $('.settings-header-controls'));
+        headerControlsContainer.style.borderColor = asCssVariable(settingsHeaderBorder);
+        const targetWidgetContainer = DOM.append(headerControlsContainer, $('.settings-target-container'));
+        this.settingsTargetsWidget = this._register(this.instantiationService.createInstance(SettingsTargetsWidget, targetWidgetContainer, { enableRemoteSettings: true }));
+        this.settingsTargetsWidget.settingsTarget = 3;
+        this.settingsTargetsWidget.onDidTargetChange(target => this.onDidSettingsTargetChange(target));
+        this._register(DOM.addDisposableListener(targetWidgetContainer, DOM.EventType.KEY_DOWN, e => {
+            const event = new StandardKeyboardEvent(e);
+            if (event.keyCode === 18) {
+                this.focusSettings();
+            }
+        }));
+        if (this.userDataSyncWorkbenchService.enabled && this.userDataSyncEnablementService.canToggleEnablement()) {
+            const syncControls = this._register(this.instantiationService.createInstance(SyncControls, this.window, headerControlsContainer));
+            this._register(syncControls.onDidChangeLastSyncedLabel(lastSyncedLabel => {
+                this.lastSyncedLabel = lastSyncedLabel;
+                this.updateInputAriaLabel();
+            }));
+        }
+        this.controlsElement = DOM.append(searchContainer, DOM.$('.settings-clear-widget'));
+        const actionBar = this._register(new ActionBar(this.controlsElement, {
+            actionViewItemProvider: (action, options) => {
+                if (action.id === filterAction.id) {
+                    return this.instantiationService.createInstance(SettingsSearchFilterDropdownMenuActionViewItem, action, options, this.actionRunner, this.searchWidget);
+                }
+                return undefined;
+            }
+        }));
+        actionBar.push([clearInputAction, filterAction], { label: false, icon: true });
+    }
+    onDidSettingsTargetChange(target) {
+        this.viewState.settingsTarget = target;
+        this.onConfigUpdate(undefined, true);
+    }
+    onDidDismissExtensionSetting(extensionId) {
+        if (!this.dismissedExtensionSettings.includes(extensionId)) {
+            this.dismissedExtensionSettings.push(extensionId);
+        }
+        this.storageService.store(this.DISMISSED_EXTENSION_SETTINGS_STORAGE_KEY, this.dismissedExtensionSettings.join(this.DISMISSED_EXTENSION_SETTINGS_DELIMITER), 0, 0);
+        this.onConfigUpdate(undefined, true);
+    }
+    onDidClickSetting(evt, recursed) {
+        const targetElement = this.currentSettingsModel.getElementsByName(evt.targetKey)?.[0];
+        let revealFailed = false;
+        if (targetElement) {
+            let sourceTop = 0.5;
+            try {
+                const _sourceTop = this.settingsTree.getRelativeTop(evt.source);
+                if (_sourceTop !== null) {
+                    sourceTop = _sourceTop;
+                }
+            }
+            catch {
+            }
+            if (this.viewState.filterToCategory && evt.source.displayCategory !== targetElement.displayCategory) {
+                this.tocTree.setFocus([]);
+            }
+            try {
+                this.settingsTree.reveal(targetElement, sourceTop);
+            }
+            catch (_) {
+                revealFailed = true;
+            }
+            if (!revealFailed) {
+                setTimeout(() => {
+                    this.settingsTree.setFocus([targetElement]);
+                }, 50);
+                const domElements = this.settingRenderers.getDOMElementsForSettingKey(this.settingsTree.getHTMLElement(), evt.targetKey);
+                if (domElements && domElements[0]) {
+                    const control = domElements[0].querySelector(AbstractSettingRenderer.CONTROL_SELECTOR);
+                    if (control) {
+                        control.focus();
+                    }
+                }
+            }
+        }
+        if (!recursed && (!targetElement || revealFailed)) {
+            const p = this.triggerSearch('');
+            p.then(() => {
+                this.searchWidget.setValue('');
+                this.onDidClickSetting(evt, true);
+            });
+        }
+    }
+    switchToSettingsFile() {
+        const query = parseQuery(this.searchWidget.getValue()).query;
+        return this.openSettingsFile({ query });
+    }
+    async openSettingsFile(options) {
+        const currentSettingsTarget = this.settingsTargetsWidget.settingsTarget;
+        const openOptions = { jsonEditor: true, ...options };
+        if (currentSettingsTarget === 3) {
+            if (options?.revealSetting) {
+                const configurationProperties = Registry.as(Extensions.Configuration).getConfigurationProperties();
+                const configurationScope = configurationProperties[options?.revealSetting.key]?.scope;
+                if (configurationScope === 1) {
+                    return this.preferencesService.openApplicationSettings(openOptions);
+                }
+            }
+            return this.preferencesService.openUserSettings(openOptions);
+        }
+        else if (currentSettingsTarget === 4) {
+            return this.preferencesService.openRemoteSettings(openOptions);
+        }
+        else if (currentSettingsTarget === 5) {
+            return this.preferencesService.openWorkspaceSettings(openOptions);
+        }
+        else if (URI.isUri(currentSettingsTarget)) {
+            return this.preferencesService.openFolderSettings({ folderUri: currentSettingsTarget, ...openOptions });
+        }
+        return undefined;
+    }
+    createBody(parent) {
+        this.bodyContainer = DOM.append(parent, $('.settings-body'));
+        this.noResultsMessage = DOM.append(this.bodyContainer, $('.no-results-message'));
+        this.noResultsMessage.innerText = localize('noResults', "No Settings Found");
+        this.clearFilterLinkContainer = $('span.clear-search-filters');
+        this.clearFilterLinkContainer.textContent = ' - ';
+        const clearFilterLink = DOM.append(this.clearFilterLinkContainer, $('a.pointer.prominent', { tabindex: 0 }, localize('clearSearchFilters', 'Clear Filters')));
+        this._register(DOM.addDisposableListener(clearFilterLink, DOM.EventType.CLICK, (e) => {
+            DOM.EventHelper.stop(e, false);
+            this.clearSearchFilters();
+        }));
+        DOM.append(this.noResultsMessage, this.clearFilterLinkContainer);
+        this.noResultsMessage.style.color = asCssVariable(editorForeground);
+        this.tocTreeContainer = $('.settings-toc-container');
+        this.settingsTreeContainer = $('.settings-tree-container');
+        this.createTOC(this.tocTreeContainer);
+        this.createSettingsTree(this.settingsTreeContainer);
+        this.splitView = this._register(new SplitView(this.bodyContainer, {
+            orientation: 1,
+            proportionalLayout: true
+        }));
+        const startingWidth = this.storageService.getNumber('settingsEditor2.splitViewWidth', 0, SettingsEditor2_1.TOC_RESET_WIDTH);
+        this.splitView.addView({
+            onDidChange: Event.None,
+            element: this.tocTreeContainer,
+            minimumSize: SettingsEditor2_1.TOC_MIN_WIDTH,
+            maximumSize: Number.POSITIVE_INFINITY,
+            layout: (width, _, height) => {
+                this.tocTreeContainer.style.width = `${width}px`;
+                this.tocTree.layout(height, width);
+            }
+        }, startingWidth, undefined, true);
+        this.splitView.addView({
+            onDidChange: Event.None,
+            element: this.settingsTreeContainer,
+            minimumSize: SettingsEditor2_1.EDITOR_MIN_WIDTH,
+            maximumSize: Number.POSITIVE_INFINITY,
+            layout: (width, _, height) => {
+                this.settingsTreeContainer.style.width = `${width}px`;
+                this.settingsTree.layout(height, width);
+            }
+        }, Sizing.Distribute, undefined, true);
+        this._register(this.splitView.onDidSashReset(() => {
+            const totalSize = this.splitView.getViewSize(0) + this.splitView.getViewSize(1);
+            this.splitView.resizeView(0, SettingsEditor2_1.TOC_RESET_WIDTH);
+            this.splitView.resizeView(1, totalSize - SettingsEditor2_1.TOC_RESET_WIDTH);
+        }));
+        this._register(this.splitView.onDidSashChange(() => {
+            const width = this.splitView.getViewSize(0);
+            this.storageService.store('settingsEditor2.splitViewWidth', width, 0, 0);
+        }));
+        const borderColor = this.theme.getColor(settingsSashBorder);
+        this.splitView.style({ separatorBorder: borderColor });
+    }
+    addCtrlAInterceptor(container) {
+        this._register(DOM.addStandardDisposableListener(container, DOM.EventType.KEY_DOWN, (e) => {
+            if (e.keyCode === 31 &&
+                (platform.isMacintosh ? e.metaKey : e.ctrlKey) &&
+                !DOM.isEditableElement(e.target)) {
+                e.browserEvent.stopPropagation();
+                e.browserEvent.preventDefault();
+            }
+        }));
+    }
+    createTOC(container) {
+        this.tocTreeModel = this.instantiationService.createInstance(TOCTreeModel, this.viewState);
+        this.tocTree = this._register(this.instantiationService.createInstance(TOCTree, DOM.append(container, $('.settings-toc-wrapper', {
+            'role': 'navigation',
+            'aria-label': localize('settings', "Settings"),
+        })), this.viewState));
+        this.tocTreeDisposed = false;
+        this._register(this.tocTree.onDidFocus(() => {
+            this._currentFocusContext = 1;
+        }));
+        this._register(this.tocTree.onDidChangeFocus(e => {
+            const element = e.elements?.[0] ?? null;
+            if (this.tocFocusedElement === element) {
+                return;
+            }
+            this.tocFocusedElement = element;
+            this.tocTree.setSelection(element ? [element] : []);
+            if (this.searchResultModel) {
+                if (this.viewState.filterToCategory !== element) {
+                    this.viewState.filterToCategory = element ?? undefined;
+                    this.renderTree(undefined, true);
+                    this.settingsTree.scrollTop = 0;
+                }
+            }
+            else if (element && (!e.browserEvent || !e.browserEvent.fromScroll)) {
+                this.settingsTree.reveal(element, 0);
+                this.settingsTree.setFocus([element]);
+            }
+        }));
+        this._register(this.tocTree.onDidFocus(() => {
+            this.tocRowFocused.set(true);
+        }));
+        this._register(this.tocTree.onDidBlur(() => {
+            this.tocRowFocused.set(false);
+        }));
+        this._register(this.tocTree.onDidDispose(() => {
+            this.tocTreeDisposed = true;
+        }));
+    }
+    applyFilter(filter) {
+        if (this.searchWidget && !this.searchWidget.getValue().includes(filter)) {
+            const newQuery = `${filter} ${this.searchWidget.getValue().trimStart()}`;
+            this.focusSearch(newQuery, false);
+        }
+    }
+    removeLanguageFilters() {
+        if (this.searchWidget && this.searchWidget.getValue().includes(`@${LANGUAGE_SETTING_TAG}`)) {
+            const query = this.searchWidget.getValue().split(' ');
+            const newQuery = query.filter(word => !word.startsWith(`@${LANGUAGE_SETTING_TAG}`)).join(' ');
+            this.focusSearch(newQuery, false);
+        }
+    }
+    createSettingsTree(container) {
+        this.settingRenderers = this._register(this.instantiationService.createInstance(SettingTreeRenderers));
+        this._register(this.settingRenderers.onDidChangeSetting(e => this.onDidChangeSetting(e.key, e.value, e.type, e.manualReset, e.scope)));
+        this._register(this.settingRenderers.onDidDismissExtensionSetting((e) => this.onDidDismissExtensionSetting(e)));
+        this._register(this.settingRenderers.onDidOpenSettings(settingKey => {
+            this.openSettingsFile({ revealSetting: { key: settingKey, edit: true } });
+        }));
+        this._register(this.settingRenderers.onDidClickSettingLink(settingName => this.onDidClickSetting(settingName)));
+        this._register(this.settingRenderers.onDidFocusSetting(element => {
+            this.settingsTree.setFocus([element]);
+            this._currentFocusContext = 3;
+            this.settingRowFocused.set(false);
+        }));
+        this._register(this.settingRenderers.onDidChangeSettingHeight((params) => {
+            const { element, height } = params;
+            try {
+                this.settingsTree.updateElementHeight(element, height);
+            }
+            catch (e) {
+            }
+        }));
+        this._register(this.settingRenderers.onApplyFilter((filter) => this.applyFilter(filter)));
+        this._register(this.settingRenderers.onDidClickOverrideElement((element) => {
+            this.removeLanguageFilters();
+            if (element.language) {
+                this.applyFilter(`@${LANGUAGE_SETTING_TAG}${element.language}`);
+            }
+            if (element.scope === 'workspace') {
+                this.settingsTargetsWidget.updateTarget(5);
+            }
+            else if (element.scope === 'user') {
+                this.settingsTargetsWidget.updateTarget(3);
+            }
+            else if (element.scope === 'remote') {
+                this.settingsTargetsWidget.updateTarget(4);
+            }
+            this.applyFilter(`@${ID_SETTING_TAG}${element.settingKey}`);
+        }));
+        this.settingsTree = this._register(this.instantiationService.createInstance(SettingsTree, container, this.viewState, this.settingRenderers.allRenderers));
+        this._register(this.settingsTree.onDidScroll(() => {
+            if (this.settingsTree.scrollTop === this.settingsTreeScrollTop) {
+                return;
+            }
+            this.settingsTreeScrollTop = this.settingsTree.scrollTop;
+            setTimeout(() => {
+                this.updateTreeScrollSync();
+            }, 0);
+        }));
+        this._register(this.settingsTree.onDidFocus(() => {
+            const classList = container.ownerDocument.activeElement?.classList;
+            if (classList && classList.contains('monaco-list') && classList.contains('settings-editor-tree')) {
+                this._currentFocusContext = 2;
+                this.settingRowFocused.set(true);
+                this.treeFocusedElement ??= this.settingsTree.firstVisibleElement ?? null;
+                if (this.treeFocusedElement) {
+                    this.treeFocusedElement.tabbable = true;
+                }
+            }
+        }));
+        this._register(this.settingsTree.onDidBlur(() => {
+            this.settingRowFocused.set(false);
+            this.treeFocusedElement = null;
+        }));
+        this._register(this.settingsTree.onDidChangeFocus(e => {
+            const element = e.elements[0];
+            if (this.treeFocusedElement === element) {
+                return;
+            }
+            if (this.treeFocusedElement) {
+                this.treeFocusedElement.tabbable = false;
+            }
+            this.treeFocusedElement = element;
+            if (this.treeFocusedElement) {
+                this.treeFocusedElement.tabbable = true;
+            }
+            this.settingsTree.setSelection(element ? [element] : []);
+        }));
+    }
+    onDidChangeSetting(key, value, type, manualReset, scope) {
+        const parsedQuery = parseQuery(this.searchWidget.getValue());
+        const languageFilter = parsedQuery.languageFilter;
+        if (manualReset || (this.pendingSettingUpdate && this.pendingSettingUpdate.key !== key)) {
+            this.updateChangedSetting(key, value, manualReset, languageFilter, scope);
+        }
+        this.pendingSettingUpdate = { key, value, languageFilter };
+        if (SettingsEditor2_1.shouldSettingUpdateFast(type)) {
+            this.settingFastUpdateDelayer.trigger(() => this.updateChangedSetting(key, value, manualReset, languageFilter, scope));
+        }
+        else {
+            this.settingSlowUpdateDelayer.trigger(() => this.updateChangedSetting(key, value, manualReset, languageFilter, scope));
+        }
+    }
+    updateTreeScrollSync() {
+        this.settingRenderers.cancelSuggesters();
+        if (this.searchResultModel) {
+            return;
+        }
+        if (!this.tocTreeModel) {
+            return;
+        }
+        const elementToSync = this.settingsTree.firstVisibleElement;
+        const element = elementToSync instanceof SettingsTreeSettingElement ? elementToSync.parent :
+            elementToSync instanceof SettingsTreeGroupElement ? elementToSync :
+                null;
+        let nodeExists = true;
+        try {
+            this.tocTree.getNode(element);
+        }
+        catch (e) {
+            nodeExists = false;
+        }
+        if (!nodeExists) {
+            return;
+        }
+        if (element && this.tocTree.getSelection()[0] !== element) {
+            const ancestors = this.getAncestors(element);
+            ancestors.forEach(e => this.tocTree.expand(e));
+            this.tocTree.reveal(element);
+            const elementTop = this.tocTree.getRelativeTop(element);
+            if (typeof elementTop !== 'number') {
+                return;
+            }
+            this.tocTree.collapseAll();
+            ancestors.forEach(e => this.tocTree.expand(e));
+            if (elementTop < 0 || elementTop > 1) {
+                this.tocTree.reveal(element);
+            }
+            else {
+                this.tocTree.reveal(element, elementTop);
+            }
+            this.tocTree.expand(element);
+            this.tocTree.setSelection([element]);
+            const fakeKeyboardEvent = new KeyboardEvent('keydown');
+            fakeKeyboardEvent.fromScroll = true;
+            this.tocTree.setFocus([element], fakeKeyboardEvent);
+        }
+    }
+    getAncestors(element) {
+        const ancestors = [];
+        while (element.parent) {
+            if (element.parent.id !== 'root') {
+                ancestors.push(element.parent);
+            }
+            element = element.parent;
+        }
+        return ancestors.reverse();
+    }
+    updateChangedSetting(key, value, manualReset, languageFilter, scope) {
+        const settingsTarget = this.settingsTargetsWidget.settingsTarget;
+        const resource = URI.isUri(settingsTarget) ? settingsTarget : undefined;
+        const configurationTarget = (resource ? 6 : settingsTarget) ?? 3;
+        const overrides = { resource, overrideIdentifiers: languageFilter ? [languageFilter] : undefined };
+        const configurationTargetIsWorkspace = configurationTarget === 5 || configurationTarget === 6;
+        const userPassedInManualReset = configurationTargetIsWorkspace || !!languageFilter;
+        const isManualReset = userPassedInManualReset ? manualReset : value === undefined;
+        const inspected = this.configurationService.inspect(key, overrides);
+        if (!userPassedInManualReset && inspected.defaultValue === value) {
+            value = undefined;
+        }
+        return this.configurationService.updateValue(key, value, overrides, configurationTarget, { handleDirtyFile: 'save' })
+            .then(() => {
+            const query = this.searchWidget.getValue();
+            if (query.includes(`@${MODIFIED_SETTING_TAG}`)) {
+                this.refreshTOCTree();
+            }
+            this.renderTree(key, isManualReset);
+            const reportModifiedProps = {
+                key,
+                query,
+                searchResults: this.searchResultModel?.getUniqueResults() ?? null,
+                rawResults: this.searchResultModel?.getRawResults() ?? null,
+                showConfiguredOnly: !!this.viewState.tagFilters && this.viewState.tagFilters.has(MODIFIED_SETTING_TAG),
+                isReset: typeof value === 'undefined',
+                settingsTarget: this.settingsTargetsWidget.settingsTarget
+            };
+            this.pendingSettingUpdate = null;
+            return this.reportModifiedSetting(reportModifiedProps);
+        });
+    }
+    reportModifiedSetting(props) {
+        let groupId = undefined;
+        let nlpIndex = undefined;
+        let displayIndex = undefined;
+        if (props.searchResults) {
+            displayIndex = props.searchResults.filterMatches.findIndex(m => m.setting.key === props.key);
+            if (this.searchResultModel) {
+                const rawResults = this.searchResultModel.getRawResults();
+                if (rawResults[0] && displayIndex >= 0) {
+                    const settingInLocalResults = rawResults[0].filterMatches.some(m => m.setting.key === props.key);
+                    groupId = settingInLocalResults ? 'local' : 'remote';
+                }
+                if (rawResults[1]) {
+                    const _nlpIndex = rawResults[1].filterMatches.findIndex(m => m.setting.key === props.key);
+                    nlpIndex = _nlpIndex >= 0 ? _nlpIndex : undefined;
+                }
+            }
+        }
+        const reportedTarget = props.settingsTarget === 3 ? 'user' :
+            props.settingsTarget === 4 ? 'user_remote' :
+                props.settingsTarget === 5 ? 'workspace' :
+                    'folder';
+        const data = {
+            key: props.key,
+            groupId,
+            nlpIndex,
+            displayIndex,
+            showConfiguredOnly: props.showConfiguredOnly,
+            isReset: props.isReset,
+            target: reportedTarget
+        };
+        this.telemetryService.publicLog2('settingsEditor.settingModified', data);
+    }
+    scheduleRefresh(element, key = '') {
+        if (key && this.scheduledRefreshes.has(key)) {
+            return;
+        }
+        if (!key) {
+            dispose(this.scheduledRefreshes.values());
+            this.scheduledRefreshes.clear();
+        }
+        const scheduledRefreshTracker = DOM.trackFocus(element);
+        this.scheduledRefreshes.set(key, scheduledRefreshTracker);
+        scheduledRefreshTracker.onDidBlur(() => {
+            scheduledRefreshTracker.dispose();
+            this.scheduledRefreshes.delete(key);
+            this.onConfigUpdate(new Set([key]));
+        });
+    }
+    createSettingsOrderByTocIndex(resolvedSettingsRoot) {
+        const index = new Map();
+        function indexSettings(resolvedSettingsRoot, counter = 0) {
+            if (resolvedSettingsRoot.settings) {
+                for (const setting of resolvedSettingsRoot.settings) {
+                    if (!index.has(setting.key)) {
+                        index.set(setting.key, counter++);
+                    }
+                }
+            }
+            if (resolvedSettingsRoot.children) {
+                for (const child of resolvedSettingsRoot.children) {
+                    counter = indexSettings(child, counter);
+                }
+            }
+            return counter;
+        }
+        indexSettings(resolvedSettingsRoot);
+        return index;
+    }
+    refreshModels(resolvedSettingsRoot) {
+        this.settingsTreeModel.update(resolvedSettingsRoot);
+        this.tocTreeModel.settingsTreeRoot = this.settingsTreeModel.root;
+        this.settingsOrderByTocIndex = this.createSettingsOrderByTocIndex(resolvedSettingsRoot);
+    }
+    async onConfigUpdate(keys, forceRefresh = false, schemaChange = false) {
+        if (keys && this.settingsTreeModel) {
+            return this.updateElementsByKey(keys);
+        }
+        if (!this.defaultSettingsEditorModel) {
+            return;
+        }
+        const groups = this.defaultSettingsEditorModel.settingsGroups.slice(1);
+        const coreSettings = groups.filter(g => !g.extensionInfo);
+        const settingsResult = resolveSettingsTree(tocData, coreSettings, this.logService);
+        const resolvedSettingsRoot = settingsResult.tree;
+        if (settingsResult.leftoverSettings.size && !this.hasWarnedMissingSettings) {
+            const settingKeyList = [];
+            settingsResult.leftoverSettings.forEach(s => {
+                settingKeyList.push(s.key);
+            });
+            this.logService.warn(`SettingsEditor2: Settings not included in settingsLayout.ts: ${settingKeyList.join(', ')}`);
+            this.hasWarnedMissingSettings = true;
+        }
+        const additionalGroups = [];
+        let setAdditionalGroups = false;
+        const toggleData = await getExperimentalExtensionToggleData(this.extensionGalleryService, this.productService);
+        if (toggleData && groups.filter(g => g.extensionInfo).length) {
+            for (const key in toggleData.settingsEditorRecommendedExtensions) {
+                const extension = toggleData.recommendedExtensionsGalleryInfo[key];
+                if (!extension) {
+                    continue;
+                }
+                const extensionId = extension.identifier.id;
+                await this.refreshInstalledExtensionsList();
+                const extensionInstalled = this.installedExtensionIds.includes(extensionId);
+                const matchingGroupIndex = groups.findIndex(g => g.extensionInfo && g.extensionInfo.id.toLowerCase() === extensionId.toLowerCase() &&
+                    g.sections.length === 1 && g.sections[0].settings.length === 1 && g.sections[0].settings[0].displayExtensionId);
+                if (extensionInstalled || this.dismissedExtensionSettings.includes(extensionId)) {
+                    if (matchingGroupIndex !== -1) {
+                        groups.splice(matchingGroupIndex, 1);
+                        setAdditionalGroups = true;
+                    }
+                    continue;
+                }
+                if (matchingGroupIndex !== -1) {
+                    continue;
+                }
+                let manifest = null;
+                try {
+                    manifest = await raceTimeout(this.extensionGalleryService.getManifest(extension, CancellationToken.None), EXTENSION_FETCH_TIMEOUT_MS) ?? null;
+                }
+                catch (e) {
+                    continue;
+                }
+                if (manifest === null) {
+                    continue;
+                }
+                const contributesConfiguration = manifest?.contributes?.configuration;
+                let groupTitle;
+                if (!Array.isArray(contributesConfiguration)) {
+                    groupTitle = contributesConfiguration?.title;
+                }
+                else if (contributesConfiguration.length === 1) {
+                    groupTitle = contributesConfiguration[0].title;
+                }
+                const recommendationInfo = toggleData.settingsEditorRecommendedExtensions[key];
+                const extensionName = extension.displayName ?? extension.name ?? extensionId;
+                const settingKey = `${key}.manageExtension`;
+                const setting = {
+                    range: nullRange,
+                    key: settingKey,
+                    keyRange: nullRange,
+                    value: null,
+                    valueRange: nullRange,
+                    description: [recommendationInfo.onSettingsEditorOpen?.descriptionOverride ?? extension.description],
+                    descriptionIsMarkdown: false,
+                    descriptionRanges: [],
+                    scope: 3,
+                    type: 'null',
+                    displayExtensionId: extensionId,
+                    extensionGroupTitle: groupTitle ?? extensionName,
+                    categoryLabel: 'Extensions',
+                    title: extensionName
+                };
+                const additionalGroup = {
+                    sections: [{
+                            settings: [setting],
+                        }],
+                    id: extensionId,
+                    title: setting.extensionGroupTitle,
+                    titleRange: nullRange,
+                    range: nullRange,
+                    extensionInfo: {
+                        id: extensionId,
+                        displayName: extension.displayName,
+                    }
+                };
+                groups.push(additionalGroup);
+                additionalGroups.push(additionalGroup);
+                setAdditionalGroups = true;
+            }
+        }
+        resolvedSettingsRoot.children.push(await createTocTreeForExtensionSettings(this.extensionService, groups.filter(g => g.extensionInfo)));
+        const commonlyUsedDataToUse = getCommonlyUsedData(toggleData);
+        const commonlyUsed = resolveSettingsTree(commonlyUsedDataToUse, groups, this.logService);
+        resolvedSettingsRoot.children.unshift(commonlyUsed.tree);
+        if (toggleData && setAdditionalGroups) {
+            this.defaultSettingsEditorModel.setAdditionalGroups(additionalGroups);
+        }
+        if (!this.workspaceTrustManagementService.isWorkspaceTrusted() && (this.viewState.settingsTarget instanceof URI || this.viewState.settingsTarget === 5)) {
+            const configuredUntrustedWorkspaceSettings = resolveConfiguredUntrustedSettings(groups, this.viewState.settingsTarget, this.viewState.languageFilter, this.configurationService);
+            if (configuredUntrustedWorkspaceSettings.length) {
+                resolvedSettingsRoot.children.unshift({
+                    id: 'workspaceTrust',
+                    label: localize('settings require trust', "Workspace Trust"),
+                    settings: configuredUntrustedWorkspaceSettings
+                });
+            }
+        }
+        this.searchResultModel?.updateChildren();
+        if (this.settingsTreeModel) {
+            this.refreshModels(resolvedSettingsRoot);
+            if (schemaChange && !!this.searchResultModel) {
+                return await this.onSearchInputChanged();
+            }
+            this.refreshTOCTree();
+            this.renderTree(undefined, forceRefresh);
+        }
+        else {
+            this.settingsTreeModel = this.instantiationService.createInstance(SettingsTreeModel, this.viewState, this.workspaceTrustManagementService.isWorkspaceTrusted());
+            this.refreshModels(resolvedSettingsRoot);
+            const cachedState = !this.viewState.query ? this.restoreCachedState() : undefined;
+            if (cachedState?.searchQuery || this.searchWidget.getValue()) {
+                await this.onSearchInputChanged();
+            }
+            else {
+                this.refreshTOCTree();
+                this.refreshTree();
+                this.tocTree.collapseAll();
+            }
+        }
+    }
+    updateElementsByKey(keys) {
+        if (keys.size) {
+            if (this.searchResultModel) {
+                keys.forEach(key => this.searchResultModel.updateElementsByName(key));
+            }
+            if (this.settingsTreeModel) {
+                keys.forEach(key => this.settingsTreeModel.updateElementsByName(key));
+            }
+            keys.forEach(key => this.renderTree(key));
+        }
+        else {
+            this.renderTree();
+        }
+    }
+    getActiveControlInSettingsTree() {
+        const element = this.settingsTree.getHTMLElement();
+        const activeElement = element.ownerDocument.activeElement;
+        return (activeElement && DOM.isAncestorOfActiveElement(element)) ?
+            activeElement :
+            null;
+    }
+    renderTree(key, force = false) {
+        if (!force && key && this.scheduledRefreshes.has(key)) {
+            this.updateModifiedLabelForKey(key);
+            return;
+        }
+        if (this.contextViewFocused()) {
+            const element = this.window.document.querySelector('.context-view');
+            if (element) {
+                this.scheduleRefresh(element, key);
+            }
+            return;
+        }
+        const activeElement = this.getActiveControlInSettingsTree();
+        const focusedSetting = activeElement && this.settingRenderers.getSettingDOMElementForDOMElement(activeElement);
+        if (focusedSetting && !force) {
+            if (key) {
+                const focusedKey = focusedSetting.getAttribute(AbstractSettingRenderer.SETTING_KEY_ATTR);
+                if (focusedKey === key &&
+                    (focusedSetting.parentElement && !focusedSetting.parentElement.classList.contains('setting-item-list'))) {
+                    this.updateModifiedLabelForKey(key);
+                    this.scheduleRefresh(focusedSetting, key);
+                    return;
+                }
+            }
+            else {
+                this.scheduleRefresh(focusedSetting);
+                return;
+            }
+        }
+        this.renderResultCountMessages();
+        if (key) {
+            const elements = this.currentSettingsModel.getElementsByName(key);
+            if (elements && elements.length) {
+                if (elements.length >= 2) {
+                    console.warn('More than one setting with key ' + key + ' found');
+                }
+                this.refreshSingleElement(elements[0]);
+            }
+            else {
+                return;
+            }
+        }
+        else {
+            this.refreshTree();
+        }
+        return;
+    }
+    contextViewFocused() {
+        return !!DOM.findParentWithClass(this.rootElement.ownerDocument.activeElement, 'context-view');
+    }
+    refreshSingleElement(element) {
+        if (this.isVisible()) {
+            this.settingsTree.rerender(element);
+        }
+    }
+    refreshTree() {
+        if (this.isVisible()) {
+            this.settingsTree.setChildren(null, createGroupIterator(this.currentSettingsModel.root));
+        }
+    }
+    refreshTOCTree() {
+        if (this.isVisible()) {
+            this.tocTreeModel.update();
+            this.tocTree.setChildren(null, createTOCIterator(this.tocTreeModel, this.tocTree));
+        }
+    }
+    updateModifiedLabelForKey(key) {
+        const dataElements = this.currentSettingsModel.getElementsByName(key);
+        const isModified = dataElements && dataElements[0] && dataElements[0].isConfigured;
+        const elements = this.settingRenderers.getDOMElementsForSettingKey(this.settingsTree.getHTMLElement(), key);
+        if (elements && elements[0]) {
+            elements[0].classList.toggle('is-configured', !!isModified);
+        }
+    }
+    async onSearchInputChanged() {
+        if (!this.currentSettingsModel) {
+            return;
+        }
+        const query = this.searchWidget.getValue().trim();
+        this.viewState.query = query;
+        this.delayedFilterLogging.cancel();
+        await this.triggerSearch(query.replace(/\u203A/g, ' '));
+        if (query && this.searchResultModel) {
+            this.delayedFilterLogging.trigger(() => this.reportFilteringUsed(this.searchResultModel));
+        }
+    }
+    parseSettingFromJSON(query) {
+        const match = query.match(/"([a-zA-Z.]+)": /);
+        return match && match[1];
+    }
+    toggleTocBySearchBehaviorType() {
+        const tocBehavior = this.configurationService.getValue(SEARCH_TOC_BEHAVIOR_KEY);
+        const hideToc = tocBehavior === 'hide';
+        if (hideToc) {
+            this.splitView.setViewVisible(0, false);
+            this.splitView.style({
+                separatorBorder: Color.transparent
+            });
+        }
+        else {
+            this.splitView.setViewVisible(0, true);
+            this.splitView.style({
+                separatorBorder: this.theme.getColor(settingsSashBorder)
+            });
+        }
+    }
+    async triggerSearch(query) {
+        const progressRunner = this.editorProgressService.show(true);
+        this.viewState.tagFilters = new Set();
+        this.viewState.extensionFilters = new Set();
+        this.viewState.featureFilters = new Set();
+        this.viewState.idFilters = new Set();
+        this.viewState.languageFilter = undefined;
+        if (query) {
+            const parsedQuery = parseQuery(query);
+            query = parsedQuery.query;
+            parsedQuery.tags.forEach(tag => this.viewState.tagFilters.add(tag));
+            parsedQuery.extensionFilters.forEach(extensionId => this.viewState.extensionFilters.add(extensionId));
+            parsedQuery.featureFilters.forEach(feature => this.viewState.featureFilters.add(feature));
+            parsedQuery.idFilters.forEach(id => this.viewState.idFilters.add(id));
+            this.viewState.languageFilter = parsedQuery.languageFilter;
+        }
+        this.settingsTargetsWidget.updateLanguageFilterIndicators(this.viewState.languageFilter);
+        if (query && query !== '@') {
+            query = this.parseSettingFromJSON(query) || query;
+            await this.triggerFilterPreferences(query);
+            this.toggleTocBySearchBehaviorType();
+        }
+        else {
+            if (this.viewState.tagFilters.size || this.viewState.extensionFilters.size || this.viewState.featureFilters.size || this.viewState.idFilters.size || this.viewState.languageFilter) {
+                this.searchResultModel = this.createFilterModel();
+            }
+            else {
+                this.searchResultModel = null;
+            }
+            this.searchDelayer.cancel();
+            if (this.searchInProgress) {
+                this.searchInProgress.cancel();
+                this.searchInProgress.dispose();
+                this.searchInProgress = null;
+            }
+            this.tocTree.setFocus([]);
+            this.viewState.filterToCategory = undefined;
+            this.tocTreeModel.currentSearchModel = this.searchResultModel;
+            if (this.searchResultModel) {
+                this.tocTree.setSelection([]);
+                this.tocTree.expandAll();
+                this.refreshTOCTree();
+                this.renderResultCountMessages();
+                this.refreshTree();
+                this.toggleTocBySearchBehaviorType();
+            }
+            else if (!this.tocTreeDisposed) {
+                this.tocTree.collapseAll();
+                this.refreshTOCTree();
+                this.renderResultCountMessages();
+                this.refreshTree();
+                this.splitView.setViewVisible(0, true);
+            }
+        }
+        progressRunner.done();
+    }
+    createFilterModel() {
+        const filterModel = this.instantiationService.createInstance(SearchResultModel, this.viewState, this.settingsOrderByTocIndex, this.workspaceTrustManagementService.isWorkspaceTrusted());
+        const fullResult = {
+            filterMatches: []
+        };
+        for (const g of this.defaultSettingsEditorModel.settingsGroups.slice(1)) {
+            for (const sect of g.sections) {
+                for (const setting of sect.settings) {
+                    fullResult.filterMatches.push({ setting, matches: [], matchType: SettingMatchType.None, score: 0 });
+                }
+            }
+        }
+        filterModel.setResult(0, fullResult);
+        return filterModel;
+    }
+    reportFilteringUsed(searchResultModel) {
+        if (!searchResultModel) {
+            return;
+        }
+        const counts = {};
+        const rawResults = searchResultModel.getRawResults();
+        const filterResult = rawResults[0];
+        if (filterResult) {
+            counts['filterResult'] = filterResult.filterMatches.length;
+        }
+        const nlpResult = rawResults[1];
+        if (nlpResult) {
+            counts['nlpResult'] = nlpResult.filterMatches.length;
+        }
+        const uniqueResults = searchResultModel.getUniqueResults();
+        const data = {
+            'counts.nlpResult': counts['nlpResult'],
+            'counts.filterResult': counts['filterResult'],
+            'counts.uniqueResultsCount': uniqueResults?.filterMatches.length
+        };
+        this.telemetryService.publicLog2('settingsEditor.filter', data);
+    }
+    async triggerFilterPreferences(query) {
+        if (this.searchInProgress) {
+            this.searchInProgress.cancel();
+            this.searchInProgress = null;
+        }
+        const searchInProgress = this.searchInProgress = new CancellationTokenSource();
+        return this.searchDelayer.trigger(async () => {
+            if (!searchInProgress.token.isCancellationRequested) {
+                const localResults = await this.localFilterPreferences(query, searchInProgress.token);
+                if (localResults && !localResults.exactMatch && !searchInProgress.token.isCancellationRequested) {
+                    await this.remoteSearchPreferences(query, searchInProgress.token);
+                }
+                this.onDidFinishSearch();
+            }
+        });
+    }
+    onDidFinishSearch() {
+        this.tocTreeModel.currentSearchModel = this.searchResultModel;
+        this.tocTreeModel.update();
+        this.tocTree.setFocus([]);
+        this.viewState.filterToCategory = undefined;
+        this.tocTree.expandAll();
+        this.settingsTree.scrollTop = 0;
+        this.refreshTOCTree();
+        this.renderTree(undefined, true);
+    }
+    localFilterPreferences(query, token) {
+        const localSearchProvider = this.preferencesSearchService.getLocalSearchProvider(query);
+        return this.filterOrSearchPreferences(query, 0, localSearchProvider, token);
+    }
+    remoteSearchPreferences(query, token) {
+        const remoteSearchProvider = this.preferencesSearchService.getRemoteSearchProvider(query);
+        return this.filterOrSearchPreferences(query, 1, remoteSearchProvider, token);
+    }
+    async filterOrSearchPreferences(query, type, searchProvider, token) {
+        const result = await this._filterOrSearchPreferencesModel(query, this.defaultSettingsEditorModel, searchProvider, token);
+        if (token?.isCancellationRequested) {
+            return null;
+        }
+        this.searchResultModel ??= this.instantiationService.createInstance(SearchResultModel, this.viewState, this.settingsOrderByTocIndex, this.workspaceTrustManagementService.isWorkspaceTrusted());
+        this.searchResultModel.setResult(type, result);
+        return result;
+    }
+    renderResultCountMessages() {
+        if (!this.currentSettingsModel) {
+            return;
+        }
+        this.clearFilterLinkContainer.style.display = this.viewState.tagFilters && this.viewState.tagFilters.size > 0
+            ? 'initial'
+            : 'none';
+        if (!this.searchResultModel) {
+            if (this.countElement.style.display !== 'none') {
+                this.searchResultLabel = null;
+                this.updateInputAriaLabel();
+                this.countElement.style.display = 'none';
+                this.countElement.innerText = '';
+                this.layout(this.dimension);
+            }
+            this.rootElement.classList.remove('no-results');
+            this.splitView.el.style.visibility = 'visible';
+            return;
+        }
+        else {
+            const count = this.searchResultModel.getUniqueResultsCount();
+            let resultString;
+            switch (count) {
+                case 0:
+                    resultString = localize('noResults', "No Settings Found");
+                    break;
+                case 1:
+                    resultString = localize('oneResult', "1 Setting Found");
+                    break;
+                default: resultString = localize('moreThanOneResult', "{0} Settings Found", count);
+            }
+            this.searchResultLabel = resultString;
+            this.updateInputAriaLabel();
+            this.countElement.innerText = resultString;
+            aria.status(resultString);
+            if (this.countElement.style.display !== 'block') {
+                this.countElement.style.display = 'block';
+                this.layout(this.dimension);
+            }
+            this.rootElement.classList.toggle('no-results', count === 0);
+            this.splitView.el.style.visibility = count === 0 ? 'hidden' : 'visible';
+        }
+    }
+    _filterOrSearchPreferencesModel(filter, model, provider, token) {
+        const searchP = provider ? provider.searchModel(model, token) : Promise.resolve(null);
+        return searchP
+            .then(undefined, err => {
+            if (isCancellationError(err)) {
+                return Promise.reject(err);
+            }
+            else {
+                return null;
+            }
+        });
+    }
+    layoutSplitView(dimension) {
+        const listHeight = dimension.height - (72 + 11 + 14);
+        this.splitView.el.style.height = `${listHeight}px`;
+        this.splitView.layout(this.bodyContainer.clientWidth, listHeight);
+        const tocBehavior = this.configurationService.getValue(SEARCH_TOC_BEHAVIOR_KEY);
+        const hideTocForSearch = tocBehavior === 'hide' && this.searchResultModel;
+        if (!hideTocForSearch) {
+            const firstViewWasVisible = this.splitView.isViewVisible(0);
+            const firstViewVisible = this.bodyContainer.clientWidth >= SettingsEditor2_1.NARROW_TOTAL_WIDTH;
+            this.splitView.setViewVisible(0, firstViewVisible);
+            if (!firstViewWasVisible && firstViewVisible && this.bodyContainer.clientWidth >= SettingsEditor2_1.EDITOR_MIN_WIDTH + SettingsEditor2_1.TOC_RESET_WIDTH) {
+                this.splitView.resizeView(0, SettingsEditor2_1.TOC_RESET_WIDTH);
+            }
+            this.splitView.style({
+                separatorBorder: firstViewVisible ? this.theme.getColor(settingsSashBorder) : Color.transparent
+            });
+        }
+    }
+    saveState() {
+        if (this.isVisible()) {
+            const searchQuery = this.searchWidget.getValue().trim();
+            const target = this.settingsTargetsWidget.settingsTarget;
+            if (this.input) {
+                this.editorMemento.saveEditorState(this.group, this.input, { searchQuery, target });
+            }
+        }
+        else if (this.input) {
+            this.editorMemento.clearEditorState(this.input, this.group);
+        }
+        super.saveState();
+    }
+};
+SettingsEditor2 = SettingsEditor2_1 = __decorate([
+    __param(1, ITelemetryService),
+    __param(2, IWorkbenchConfigurationService),
+    __param(3, ITextResourceConfigurationService),
+    __param(4, IThemeService),
+    __param(5, IPreferencesService),
+    __param(6, IInstantiationService),
+    __param(7, IPreferencesSearchService),
+    __param(8, ILogService),
+    __param(9, IContextKeyService),
+    __param(10, IStorageService),
+    __param(11, IEditorGroupsService),
+    __param(12, IUserDataSyncWorkbenchService),
+    __param(13, IUserDataSyncEnablementService),
+    __param(14, IWorkspaceTrustManagementService),
+    __param(15, IExtensionService),
+    __param(16, ILanguageService),
+    __param(17, IExtensionManagementService),
+    __param(18, IProductService),
+    __param(19, IExtensionGalleryService),
+    __param(20, IEditorProgressService),
+    __param(21, IUserDataProfileService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], SettingsEditor2);
+export { SettingsEditor2 };
+let SyncControls = class SyncControls extends Disposable {
+    constructor(window, container, commandService, userDataSyncService, userDataSyncEnablementService, telemetryService) {
+        super();
+        this.commandService = commandService;
+        this.userDataSyncService = userDataSyncService;
+        this.userDataSyncEnablementService = userDataSyncEnablementService;
+        this._onDidChangeLastSyncedLabel = this._register(new Emitter());
+        this.onDidChangeLastSyncedLabel = this._onDidChangeLastSyncedLabel.event;
+        const headerRightControlsContainer = DOM.append(container, $('.settings-right-controls'));
+        const turnOnSyncButtonContainer = DOM.append(headerRightControlsContainer, $('.turn-on-sync'));
+        this.turnOnSyncButton = this._register(new Button(turnOnSyncButtonContainer, { title: true, ...defaultButtonStyles }));
+        this.lastSyncedLabel = DOM.append(headerRightControlsContainer, $('.last-synced-label'));
+        DOM.hide(this.lastSyncedLabel);
+        this.turnOnSyncButton.enabled = true;
+        this.turnOnSyncButton.label = localize('turnOnSyncButton', "Backup and Sync Settings");
+        DOM.hide(this.turnOnSyncButton.element);
+        this._register(this.turnOnSyncButton.onDidClick(async () => {
+            telemetryService.publicLog2('sync/turnOnSyncFromSettings');
+            await this.commandService.executeCommand('workbench.userDataSync.actions.turnOn');
+        }));
+        this.updateLastSyncedTime();
+        this._register(this.userDataSyncService.onDidChangeLastSyncTime(() => {
+            this.updateLastSyncedTime();
+        }));
+        const updateLastSyncedTimer = this._register(new DOM.WindowIntervalTimer());
+        updateLastSyncedTimer.cancelAndSet(() => this.updateLastSyncedTime(), 60 * 1000, window);
+        this.update();
+        this._register(this.userDataSyncService.onDidChangeStatus(() => {
+            this.update();
+        }));
+        this._register(this.userDataSyncEnablementService.onDidChangeEnablement(() => {
+            this.update();
+        }));
+    }
+    updateLastSyncedTime() {
+        const last = this.userDataSyncService.lastSyncTime;
+        let label;
+        if (typeof last === 'number') {
+            const d = fromNow(last, true, undefined, true);
+            label = localize('lastSyncedLabel', "Last synced: {0}", d);
+        }
+        else {
+            label = '';
+        }
+        this.lastSyncedLabel.textContent = label;
+        this._onDidChangeLastSyncedLabel.fire(label);
+    }
+    update() {
+        if (this.userDataSyncService.status === "uninitialized") {
+            return;
+        }
+        if (this.userDataSyncEnablementService.isEnabled() || this.userDataSyncService.status !== "idle") {
+            DOM.show(this.lastSyncedLabel);
+            DOM.hide(this.turnOnSyncButton.element);
+        }
+        else {
+            DOM.hide(this.lastSyncedLabel);
+            DOM.show(this.turnOnSyncButton.element);
+        }
+    }
+};
+SyncControls = __decorate([
+    __param(2, ICommandService),
+    __param(3, IUserDataSyncService),
+    __param(4, IUserDataSyncEnablementService),
+    __param(5, ITelemetryService),
+    __metadata("design:paramtypes", [Object, HTMLElement, Object, Object, Object, Object])
+], SyncControls);

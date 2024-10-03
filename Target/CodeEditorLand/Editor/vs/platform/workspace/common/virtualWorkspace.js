@@ -1,1 +1,22 @@
-import{Schemas as t}from"../../../base/common/network.js";import"../../../base/common/uri.js";import"./workspace.js";function n(e){return e.scheme!==t.file&&e.scheme!==t.vscodeRemote}function r(e){if(e.folders.length)return e.folders.every(i=>n(i.uri))?e.folders[0].uri:void 0;if(e.configuration&&n(e.configuration))return e.configuration}function a(e){return r(e)?.scheme}function d(e){return r(e)?.authority}function m(e){return r(e)!==void 0}export{d as getVirtualWorkspaceAuthority,r as getVirtualWorkspaceLocation,a as getVirtualWorkspaceScheme,n as isVirtualResource,m as isVirtualWorkspace};
+import { Schemas } from '../../../base/common/network.js';
+export function isVirtualResource(resource) {
+    return resource.scheme !== Schemas.file && resource.scheme !== Schemas.vscodeRemote;
+}
+export function getVirtualWorkspaceLocation(workspace) {
+    if (workspace.folders.length) {
+        return workspace.folders.every(f => isVirtualResource(f.uri)) ? workspace.folders[0].uri : undefined;
+    }
+    else if (workspace.configuration && isVirtualResource(workspace.configuration)) {
+        return workspace.configuration;
+    }
+    return undefined;
+}
+export function getVirtualWorkspaceScheme(workspace) {
+    return getVirtualWorkspaceLocation(workspace)?.scheme;
+}
+export function getVirtualWorkspaceAuthority(workspace) {
+    return getVirtualWorkspaceLocation(workspace)?.authority;
+}
+export function isVirtualWorkspace(workspace) {
+    return getVirtualWorkspaceLocation(workspace) !== undefined;
+}

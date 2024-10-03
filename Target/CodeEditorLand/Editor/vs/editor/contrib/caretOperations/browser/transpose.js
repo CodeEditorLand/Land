@@ -1,1 +1,58 @@
-import{KeyCode as b,KeyMod as h}from"../../../../base/common/keyCodes.js";import"../../../browser/editorBrowser.js";import{EditorAction as P,registerEditorAction as y}from"../../../browser/editorExtensions.js";import{ReplaceCommand as E}from"../../../common/commands/replaceCommand.js";import{MoveOperations as m}from"../../../common/cursor/cursorMoveOperations.js";import{Range as c}from"../../../common/core/range.js";import"../../../common/editorCommon.js";import{EditorContextKeys as d}from"../../../common/editorContextKeys.js";import*as I from"../../../../nls.js";import{KeybindingWeight as L}from"../../../../platform/keybinding/common/keybindingsRegistry.js";class x extends P{constructor(){super({id:"editor.action.transposeLetters",label:I.localize("transposeLetters.label","Transpose Letters"),alias:"Transpose Letters",precondition:d.writable,kbOpts:{kbExpr:d.textInputFocus,primary:0,mac:{primary:h.WinCtrl|b.KeyT},weight:L.EditorContrib}})}run(K,o){if(!o.hasModel())return;const t=o.getModel(),n=[],u=o.getSelections();for(const e of u){if(!e.isEmpty())continue;const a=e.startLineNumber,i=e.startColumn,l=t.getLineMaxColumn(a);if(a===1&&(i===1||i===2&&l===2))continue;const s=i===l?e.getPosition():m.rightPosition(t,e.getPosition().lineNumber,e.getPosition().column),r=m.leftPosition(t,s),p=m.leftPosition(t,r),f=t.getValueInRange(c.fromPositions(p,r)),g=t.getValueInRange(c.fromPositions(r,s)),C=c.fromPositions(p,s);n.push(new E(C,g+f))}n.length>0&&(o.pushUndoStop(),o.executeCommands(this.id,n),o.pushUndoStop())}}y(x);
+import { EditorAction, registerEditorAction } from '../../../browser/editorExtensions.js';
+import { ReplaceCommand } from '../../../common/commands/replaceCommand.js';
+import { MoveOperations } from '../../../common/cursor/cursorMoveOperations.js';
+import { Range } from '../../../common/core/range.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import * as nls from '../../../../nls.js';
+class TransposeLettersAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.transposeLetters',
+            label: nls.localize('transposeLetters.label', "Transpose Letters"),
+            alias: 'Transpose Letters',
+            precondition: EditorContextKeys.writable,
+            kbOpts: {
+                kbExpr: EditorContextKeys.textInputFocus,
+                primary: 0,
+                mac: {
+                    primary: 256 | 50
+                },
+                weight: 100
+            }
+        });
+    }
+    run(accessor, editor) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const model = editor.getModel();
+        const commands = [];
+        const selections = editor.getSelections();
+        for (const selection of selections) {
+            if (!selection.isEmpty()) {
+                continue;
+            }
+            const lineNumber = selection.startLineNumber;
+            const column = selection.startColumn;
+            const lastColumn = model.getLineMaxColumn(lineNumber);
+            if (lineNumber === 1 && (column === 1 || (column === 2 && lastColumn === 2))) {
+                continue;
+            }
+            const endPosition = (column === lastColumn) ?
+                selection.getPosition() :
+                MoveOperations.rightPosition(model, selection.getPosition().lineNumber, selection.getPosition().column);
+            const middlePosition = MoveOperations.leftPosition(model, endPosition);
+            const beginPosition = MoveOperations.leftPosition(model, middlePosition);
+            const leftChar = model.getValueInRange(Range.fromPositions(beginPosition, middlePosition));
+            const rightChar = model.getValueInRange(Range.fromPositions(middlePosition, endPosition));
+            const replaceRange = Range.fromPositions(beginPosition, endPosition);
+            commands.push(new ReplaceCommand(replaceRange, rightChar + leftChar));
+        }
+        if (commands.length > 0) {
+            editor.pushUndoStop();
+            editor.executeCommands(this.id, commands);
+            editor.pushUndoStop();
+        }
+    }
+}
+registerEditorAction(TransposeLettersAction);

@@ -1,1 +1,36 @@
-import"../../../base/common/collections.js";import{Emitter as l,Event as a}from"../../../base/common/event.js";import{Iterable as o}from"../../../base/common/iterator.js";import{Disposable as y}from"../../../base/common/lifecycle.js";import{createDecorator as s}from"../../instantiation/common/instantiation.js";const m=s("policy");class g extends y{_serviceBrand;policyDefinitions={};policies=new Map;_onDidChange=this._register(new l);onDidChange=this._onDidChange.event;async updatePolicyDefinitions(i){const e=Object.keys(this.policyDefinitions).length;return this.policyDefinitions={...i,...this.policyDefinitions},e!==Object.keys(this.policyDefinitions).length&&await this._updatePolicyDefinitions(i),o.reduce(this.policies.entries(),(n,[r,c])=>({...n,[r]:c}),{})}getPolicyValue(i){return this.policies.get(i)}serialize(){return o.reduce(Object.entries(this.policyDefinitions),(i,[e,n])=>({...i,[e]:{definition:n,value:this.policies.get(e)}}),{})}}class h{_serviceBrand;onDidChange=a.None;async updatePolicyDefinitions(){return{}}getPolicyValue(){}serialize(){}}export{g as AbstractPolicyService,m as IPolicyService,h as NullPolicyService};
+import { Emitter, Event } from '../../../base/common/event.js';
+import { Iterable } from '../../../base/common/iterator.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const IPolicyService = createDecorator('policy');
+export class AbstractPolicyService extends Disposable {
+    constructor() {
+        super(...arguments);
+        this.policyDefinitions = {};
+        this.policies = new Map();
+        this._onDidChange = this._register(new Emitter());
+        this.onDidChange = this._onDidChange.event;
+    }
+    async updatePolicyDefinitions(policyDefinitions) {
+        const size = Object.keys(this.policyDefinitions).length;
+        this.policyDefinitions = { ...policyDefinitions, ...this.policyDefinitions };
+        if (size !== Object.keys(this.policyDefinitions).length) {
+            await this._updatePolicyDefinitions(policyDefinitions);
+        }
+        return Iterable.reduce(this.policies.entries(), (r, [name, value]) => ({ ...r, [name]: value }), {});
+    }
+    getPolicyValue(name) {
+        return this.policies.get(name);
+    }
+    serialize() {
+        return Iterable.reduce(Object.entries(this.policyDefinitions), (r, [name, definition]) => ({ ...r, [name]: { definition, value: this.policies.get(name) } }), {});
+    }
+}
+export class NullPolicyService {
+    constructor() {
+        this.onDidChange = Event.None;
+    }
+    async updatePolicyDefinitions() { return {}; }
+    getPolicyValue() { return undefined; }
+    serialize() { return undefined; }
+}

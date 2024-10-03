@@ -1,1 +1,31 @@
-var l=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var n=(s,e,c,i)=>{for(var r=i>1?void 0:i?h(e,c):e,o=s.length-1,S;o>=0;o--)(S=s[o])&&(r=(i?S(e,c,r):S(r))||r);return i&&r&&l(e,c,r),r},a=(s,e)=>(c,i)=>e(c,i,s);import{Disposable as v}from"../../../../base/common/lifecycle.js";import{AccessibilitySignal as p,IAccessibilitySignalService as d}from"../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";import"../../../common/contributions.js";import{ISpeechService as g}from"../common/speechService.js";let t=class extends v{constructor(c,i){super();this._accessibilitySignalService=c;this._speechService=i;this._register(this._speechService.onDidStartSpeechToTextSession(()=>this._accessibilitySignalService.playSignal(p.voiceRecordingStarted))),this._register(this._speechService.onDidEndSpeechToTextSession(()=>this._accessibilitySignalService.playSignal(p.voiceRecordingStopped)))}static ID="workbench.contrib.speechAccessibilitySignal"};t=n([a(0,d),a(1,g)],t);export{t as SpeechAccessibilitySignalContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { AccessibilitySignal, IAccessibilitySignalService } from '../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+import { ISpeechService } from '../common/speechService.js';
+let SpeechAccessibilitySignalContribution = class SpeechAccessibilitySignalContribution extends Disposable {
+    static { this.ID = 'workbench.contrib.speechAccessibilitySignal'; }
+    constructor(_accessibilitySignalService, _speechService) {
+        super();
+        this._accessibilitySignalService = _accessibilitySignalService;
+        this._speechService = _speechService;
+        this._register(this._speechService.onDidStartSpeechToTextSession(() => this._accessibilitySignalService.playSignal(AccessibilitySignal.voiceRecordingStarted)));
+        this._register(this._speechService.onDidEndSpeechToTextSession(() => this._accessibilitySignalService.playSignal(AccessibilitySignal.voiceRecordingStopped)));
+    }
+};
+SpeechAccessibilitySignalContribution = __decorate([
+    __param(0, IAccessibilitySignalService),
+    __param(1, ISpeechService),
+    __metadata("design:paramtypes", [Object, Object])
+], SpeechAccessibilitySignalContribution);
+export { SpeechAccessibilitySignalContribution };

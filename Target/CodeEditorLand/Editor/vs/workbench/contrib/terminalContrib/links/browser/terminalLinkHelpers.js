@@ -1,1 +1,174 @@
-import"../../../../../editor/common/core/range.js";import{OperatingSystem as x}from"../../../../../base/common/platform.js";import{posix as C,win32 as B}from"../../../../../base/common/path.js";import{TerminalCapability as L}from"../../../../../platform/terminal/common/capabilities/capabilities.js";import"../../../../../platform/terminal/common/terminal.js";function O(s,e,t,c){const i={start:{x:t.startColumn,y:t.startLineNumber+c},end:{x:t.endColumn-1,y:t.endLineNumber+c}};let n=0;const l=Math.ceil(t.startColumn/e);for(let r=0;r<Math.min(l);r++){const m=Math.min(e,t.startColumn-1-r*e);let o=0;const f=s[r];if(!f)break;for(let p=0;p<Math.min(e,m+o);p++){const g=f.getCell(p);if(!g)break;g.getWidth()===2&&o++;const h=g.getChars();h.length>1&&(o-=h.length-1)}n+=o}let a=0;const u=Math.ceil(t.endColumn/e);for(let r=Math.max(0,l-1);r<u;r++){const m=r===l-1?(t.startColumn-1+n)%e:0,o=Math.min(e,t.endColumn+n-r*e);let f=0;const p=s[r];if(!p)break;for(let g=m;g<Math.min(e,o+f);g++){const d=p.getCell(g);if(!d)break;const h=d.getWidth(),I=d.getChars();h===2&&f++,g===e-1&&I===""&&f++,I.length>1&&(f-=I.length-1)}a+=f}for(i.start.x+=n,i.end.x+=n+a;i.start.x>e;)i.start.x-=e,i.start.y++;for(;i.end.x>e;)i.end.x-=e,i.end.y++;return i}function P(s,e){return{start:{x:s.start.x-1,y:s.start.y-e-1},end:{x:s.end.x-1,y:s.end.y-e-1}}}function A(s,e,t,c){const i=Math.max(2048,c*2);t=Math.min(t,e+i);let n="";for(let l=e;l<=t;l++){const a=s.getLine(l);a&&(n+=a.translateToString(!0,0,c))}return n}function D(s,e,t,c){let i,n=-1,l=-1;const a=[];for(let u=e;u<=t;u++){const r=s.getLine(u);if(r)for(let m=0;m<c;m++){const o=r.getCell(m);if(!o)break;const f=o.isBold()|o.isInverse()|o.isStrikethrough()|o.isUnderline(),p=o.isDim()|o.isItalic();if(n===-1||l===-1)i={x:m,y:u};else if(n!==f||l!==p){const g={x:m,y:u};a.push({start:i,end:g}),i={x:m,y:u}}n=f,l=p}}return a}function F(s,e,t,c,i){const n=s.get(L.CommandDetection)?.getCwdForLine(e);if(i.trace("terminalLinkHelpers#updateLinkWithRelativeCwd cwd",n),!n)return;const l=[],a=c.sep;if(!t.includes(a))l.push(c.resolve(n+a+t));else{let u=0,r=0;const m=n.split(a).reverse(),o=t.split(a);for(;r<m.length&&(l.push(c.resolve(n+a+o.slice(u).join(a))),m[r]===o[r]);){u++;r++}}return l}function V(s){return s===x.Windows?B:C}export{P as convertBufferRangeToViewport,O as convertLinkRangeToBuffer,A as getXtermLineContent,D as getXtermRangesByAttr,V as osPathModule,F as updateLinkWithRelativeCwd};
+import { posix, win32 } from '../../../../../base/common/path.js';
+export function convertLinkRangeToBuffer(lines, bufferWidth, range, startLine) {
+    const bufferRange = {
+        start: {
+            x: range.startColumn,
+            y: range.startLineNumber + startLine
+        },
+        end: {
+            x: range.endColumn - 1,
+            y: range.endLineNumber + startLine
+        }
+    };
+    let startOffset = 0;
+    const startWrappedLineCount = Math.ceil(range.startColumn / bufferWidth);
+    for (let y = 0; y < Math.min(startWrappedLineCount); y++) {
+        const lineLength = Math.min(bufferWidth, (range.startColumn - 1) - y * bufferWidth);
+        let lineOffset = 0;
+        const line = lines[y];
+        if (!line) {
+            break;
+        }
+        for (let x = 0; x < Math.min(bufferWidth, lineLength + lineOffset); x++) {
+            const cell = line.getCell(x);
+            if (!cell) {
+                break;
+            }
+            const width = cell.getWidth();
+            if (width === 2) {
+                lineOffset++;
+            }
+            const char = cell.getChars();
+            if (char.length > 1) {
+                lineOffset -= char.length - 1;
+            }
+        }
+        startOffset += lineOffset;
+    }
+    let endOffset = 0;
+    const endWrappedLineCount = Math.ceil(range.endColumn / bufferWidth);
+    for (let y = Math.max(0, startWrappedLineCount - 1); y < endWrappedLineCount; y++) {
+        const start = (y === startWrappedLineCount - 1 ? (range.startColumn - 1 + startOffset) % bufferWidth : 0);
+        const lineLength = Math.min(bufferWidth, range.endColumn + startOffset - y * bufferWidth);
+        let lineOffset = 0;
+        const line = lines[y];
+        if (!line) {
+            break;
+        }
+        for (let x = start; x < Math.min(bufferWidth, lineLength + lineOffset); x++) {
+            const cell = line.getCell(x);
+            if (!cell) {
+                break;
+            }
+            const width = cell.getWidth();
+            const chars = cell.getChars();
+            if (width === 2) {
+                lineOffset++;
+            }
+            if (x === bufferWidth - 1 && chars === '') {
+                lineOffset++;
+            }
+            if (chars.length > 1) {
+                lineOffset -= chars.length - 1;
+            }
+        }
+        endOffset += lineOffset;
+    }
+    bufferRange.start.x += startOffset;
+    bufferRange.end.x += startOffset + endOffset;
+    while (bufferRange.start.x > bufferWidth) {
+        bufferRange.start.x -= bufferWidth;
+        bufferRange.start.y++;
+    }
+    while (bufferRange.end.x > bufferWidth) {
+        bufferRange.end.x -= bufferWidth;
+        bufferRange.end.y++;
+    }
+    return bufferRange;
+}
+export function convertBufferRangeToViewport(bufferRange, viewportY) {
+    return {
+        start: {
+            x: bufferRange.start.x - 1,
+            y: bufferRange.start.y - viewportY - 1
+        },
+        end: {
+            x: bufferRange.end.x - 1,
+            y: bufferRange.end.y - viewportY - 1
+        }
+    };
+}
+export function getXtermLineContent(buffer, lineStart, lineEnd, cols) {
+    const maxLineLength = Math.max(2048, cols * 2);
+    lineEnd = Math.min(lineEnd, lineStart + maxLineLength);
+    let content = '';
+    for (let i = lineStart; i <= lineEnd; i++) {
+        const line = buffer.getLine(i);
+        if (line) {
+            content += line.translateToString(true, 0, cols);
+        }
+    }
+    return content;
+}
+export function getXtermRangesByAttr(buffer, lineStart, lineEnd, cols) {
+    let bufferRangeStart = undefined;
+    let lastFgAttr = -1;
+    let lastBgAttr = -1;
+    const ranges = [];
+    for (let y = lineStart; y <= lineEnd; y++) {
+        const line = buffer.getLine(y);
+        if (!line) {
+            continue;
+        }
+        for (let x = 0; x < cols; x++) {
+            const cell = line.getCell(x);
+            if (!cell) {
+                break;
+            }
+            const thisFgAttr = (cell.isBold() |
+                cell.isInverse() |
+                cell.isStrikethrough() |
+                cell.isUnderline());
+            const thisBgAttr = (cell.isDim() |
+                cell.isItalic());
+            if (lastFgAttr === -1 || lastBgAttr === -1) {
+                bufferRangeStart = { x, y };
+            }
+            else {
+                if (lastFgAttr !== thisFgAttr || lastBgAttr !== thisBgAttr) {
+                    const bufferRangeEnd = { x, y };
+                    ranges.push({
+                        start: bufferRangeStart,
+                        end: bufferRangeEnd
+                    });
+                    bufferRangeStart = { x, y };
+                }
+            }
+            lastFgAttr = thisFgAttr;
+            lastBgAttr = thisBgAttr;
+        }
+    }
+    return ranges;
+}
+export function updateLinkWithRelativeCwd(capabilities, y, text, osPath, logService) {
+    const cwd = capabilities.get(2)?.getCwdForLine(y);
+    logService.trace('terminalLinkHelpers#updateLinkWithRelativeCwd cwd', cwd);
+    if (!cwd) {
+        return undefined;
+    }
+    const result = [];
+    const sep = osPath.sep;
+    if (!text.includes(sep)) {
+        result.push(osPath.resolve(cwd + sep + text));
+    }
+    else {
+        let commonDirs = 0;
+        let i = 0;
+        const cwdPath = cwd.split(sep).reverse();
+        const linkPath = text.split(sep);
+        while (i < cwdPath.length) {
+            result.push(osPath.resolve(cwd + sep + linkPath.slice(commonDirs).join(sep)));
+            if (cwdPath[i] === linkPath[i]) {
+                commonDirs++;
+            }
+            else {
+                break;
+            }
+            i++;
+        }
+    }
+    return result;
+}
+export function osPathModule(os) {
+    return os === 1 ? win32 : posix;
+}

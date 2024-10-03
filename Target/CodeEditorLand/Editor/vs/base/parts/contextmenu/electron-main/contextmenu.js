@@ -1,1 +1,48 @@
-import{Menu as c,MenuItem as i}from"electron";import{validatedIpcMain as d}from"../../ipc/electron-main/ipcMain.js";import{CONTEXT_MENU_CHANNEL as o,CONTEXT_MENU_CLOSE_CHANNEL as s}from"../common/contextmenu.js";function x(){d.on(o,(r,a,u,t,e)=>{const n=l(r,t,u);n.popup({x:e?e.x:void 0,y:e?e.y:void 0,positioningItem:e?e.positioningItem:void 0,callback:()=>{n&&r.sender.send(s,a)}})})}function l(r,a,u){const t=new c;return u.forEach(e=>{let n;e.type==="separator"?n=new i({type:e.type}):Array.isArray(e.submenu)?n=new i({submenu:l(r,a,e.submenu),label:e.label}):n=new i({label:e.label,type:e.type,accelerator:e.accelerator,checked:e.checked,enabled:e.enabled,visible:e.visible,click:(I,b,p)=>r.sender.send(a,e.id,p)}),t.append(n)}),t}export{x as registerContextMenuListener};
+import { Menu, MenuItem } from 'electron';
+import { validatedIpcMain } from '../../ipc/electron-main/ipcMain.js';
+import { CONTEXT_MENU_CHANNEL, CONTEXT_MENU_CLOSE_CHANNEL } from '../common/contextmenu.js';
+export function registerContextMenuListener() {
+    validatedIpcMain.on(CONTEXT_MENU_CHANNEL, (event, contextMenuId, items, onClickChannel, options) => {
+        const menu = createMenu(event, onClickChannel, items);
+        menu.popup({
+            x: options ? options.x : undefined,
+            y: options ? options.y : undefined,
+            positioningItem: options ? options.positioningItem : undefined,
+            callback: () => {
+                if (menu) {
+                    event.sender.send(CONTEXT_MENU_CLOSE_CHANNEL, contextMenuId);
+                }
+            }
+        });
+    });
+}
+function createMenu(event, onClickChannel, items) {
+    const menu = new Menu();
+    items.forEach(item => {
+        let menuitem;
+        if (item.type === 'separator') {
+            menuitem = new MenuItem({
+                type: item.type,
+            });
+        }
+        else if (Array.isArray(item.submenu)) {
+            menuitem = new MenuItem({
+                submenu: createMenu(event, onClickChannel, item.submenu),
+                label: item.label
+            });
+        }
+        else {
+            menuitem = new MenuItem({
+                label: item.label,
+                type: item.type,
+                accelerator: item.accelerator,
+                checked: item.checked,
+                enabled: item.enabled,
+                visible: item.visible,
+                click: (menuItem, win, contextmenuEvent) => event.sender.send(onClickChannel, item.id, contextmenuEvent)
+            });
+        }
+        menu.append(menuitem);
+    });
+    return menu;
+}

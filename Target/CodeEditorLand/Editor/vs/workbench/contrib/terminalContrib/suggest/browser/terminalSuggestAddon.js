@@ -1,1 +1,596 @@
-var R=Object.defineProperty;var q=Object.getOwnPropertyDescriptor;var y=(r,s,e,o)=>{for(var i=o>1?void 0:o?q(s,e):s,t=r.length-1,n;t>=0;t--)(n=r[t])&&(i=(o?n(s,e,i):n(i))||i);return o&&i&&R(s,e,i),i},C=(r,s)=>(e,o)=>s(e,o,r);import*as v from"../../../../../base/browser/dom.js";import{Codicon as a}from"../../../../../base/common/codicons.js";import{Emitter as b,Event as D}from"../../../../../base/common/event.js";import{combinedDisposable as B,Disposable as F,MutableDisposable as A}from"../../../../../base/common/lifecycle.js";import{sep as T}from"../../../../../base/common/path.js";import{commonPrefixLength as E}from"../../../../../base/common/strings.js";import"../../../../../base/common/themables.js";import{editorSuggestWidgetSelectedBackground as O}from"../../../../../editor/contrib/suggest/browser/suggestWidget.js";import{IConfigurationService as k}from"../../../../../platform/configuration/common/configuration.js";import"../../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as K}from"../../../../../platform/instantiation/common/instantiation.js";import{IStorageService as V,StorageScope as P,StorageTarget as N}from"../../../../../platform/storage/common/storage.js";import{TerminalCapability as $}from"../../../../../platform/terminal/common/capabilities/capabilities.js";import{ShellIntegrationOscPs as H}from"../../../../../platform/terminal/common/xterm/shellIntegrationAddon.js";import{getListStyles as G}from"../../../../../platform/theme/browser/defaultStyles.js";import{activeContrastBorder as z}from"../../../../../platform/theme/common/colorRegistry.js";import{ITerminalConfigurationService as U}from"../../../terminal/browser/terminal.js";import{TerminalStorageKeys as j}from"../../../terminal/common/terminalStorageKeys.js";import{terminalSuggestConfigSection as w}from"../common/terminalSuggestConfiguration.js";import{SimpleCompletionItem as x}from"../../../../services/suggest/browser/simpleCompletionItem.js";import{LineContext as W,SimpleCompletionModel as M}from"../../../../services/suggest/browser/simpleCompletionModel.js";import{SimpleSuggestWidget as X}from"../../../../services/suggest/browser/simpleSuggestWidget.js";var J=(i=>(i.Completions="Completions",i.CompletionsPwshCommands="CompletionsPwshCommands",i.CompletionsBash="CompletionsBash",i.CompletionsBashFirstWord="CompletionsBashFirstWord",i))(J||{});const Y={0:a.symbolText,1:a.history,2:a.symbolMethod,3:a.symbolFile,4:a.folder,5:a.symbolProperty,6:a.symbolMethod,7:a.symbolVariable,8:a.symbolValue,9:a.symbolVariable,10:a.symbolNamespace,11:a.symbolInterface,12:a.symbolKeyword,13:a.symbolKeyword};let _=class extends F{constructor(e,o,i,t,n,p){super();this._cachedPwshCommands=e;this._capabilities=o;this._terminalSuggestWidgetVisibleContextKey=i;this._configurationService=t;this._instantiationService=n;this._terminalConfigurationService=p;this._register(D.runAndSubscribe(D.any(this._capabilities.onDidAddCapabilityType,this._capabilities.onDidRemoveCapabilityType),()=>{const l=this._capabilities.get($.CommandDetection);l?this._promptInputModel!==l.promptInputModel&&(this._promptInputModel=l.promptInputModel,this._promptInputModelSubscriptions.value=B(this._promptInputModel.onDidChangeInput(m=>this._sync(m)),this._promptInputModel.onDidFinishInput(()=>this.hideSuggestWidget()))):this._promptInputModel=void 0}))}_terminal;_promptInputModel;_promptInputModelSubscriptions=this._register(new A);_mostRecentPromptInputState;_currentPromptInputState;_model;_container;_screen;_suggestWidget;_enableWidget=!0;_pathSeparator=T;_isFilteringDirectories=!1;_mostRecentCompletion;_codeCompletionsRequested=!1;_gitCompletionsRequested=!1;_leadingLineContent;_cursorIndexDelta=0;_lastUserDataTimestamp=0;_lastAcceptedCompletionTimestamp=0;_lastUserData;isPasting=!1;static requestCompletionsSequence="\x1B[24~e";static requestGlobalCompletionsSequence="\x1B[24~f";static requestEnableGitCompletionsSequence="\x1B[24~g";static requestEnableCodeCompletionsSequence="\x1B[24~h";_onBell=this._register(new b);onBell=this._onBell.event;_onAcceptedCompletion=this._register(new b);onAcceptedCompletion=this._onAcceptedCompletion.event;_onDidRequestCompletions=this._register(new b);onDidRequestCompletions=this._onDidRequestCompletions.event;_onDidReceiveCompletions=this._register(new b);onDidReceiveCompletions=this._onDidReceiveCompletions.event;activate(e){this._terminal=e,this._register(e.parser.registerOscHandler(H.VSCode,o=>this._handleVSCodeSequence(o))),this._register(e.onData(o=>{this._lastUserData=o,this._lastUserDataTimestamp=Date.now()}))}setContainerWithOverflow(e){this._container=e}setScreen(e){this._screen=e}_requestCompletions(){if(!this._promptInputModel||this.isPasting)return;const e=this._configurationService.getValue(w).builtinCompletions;!this._codeCompletionsRequested&&e.pwshCode&&(this._onAcceptedCompletion.fire(_.requestEnableCodeCompletionsSequence),this._codeCompletionsRequested=!0),!this._gitCompletionsRequested&&e.pwshGit&&(this._onAcceptedCompletion.fire(_.requestEnableGitCompletionsSequence),this._gitCompletionsRequested=!0),this._cachedPwshCommands.size===0&&this._requestGlobalCompletions(),this._lastUserDataTimestamp>this._lastAcceptedCompletionTimestamp&&(this._onAcceptedCompletion.fire(_.requestCompletionsSequence),this._onDidRequestCompletions.fire())}_requestGlobalCompletions(){this._onAcceptedCompletion.fire(_.requestGlobalCompletionsSequence)}_sync(e){const o=this._configurationService.getValue(w);if(!this._mostRecentPromptInputState||e.cursorIndex>this._mostRecentPromptInputState.cursorIndex){let n=!1;if(this._terminalSuggestWidgetVisibleContextKey.get()||o.quickSuggestions&&(e.cursorIndex===1||e.prefix.match(/([\s\[])[^\s]$/))&&(this._lastUserData?.match(/^\x1b[\[O]?[A-D]$/)||(this._requestCompletions(),n=!0)),o.suggestOnTriggerCharacters&&!n){const p=e.prefix;(p?.match(/\s[\-]$/)||this._isFilteringDirectories&&p?.match(/[\\\/]$/))&&(this._requestCompletions(),n=!0)}}if(this._mostRecentPromptInputState=e,!this._promptInputModel||!this._terminal||!this._suggestWidget||this._leadingLineContent===void 0)return;if(this._currentPromptInputState=e,this._currentPromptInputState.cursorIndex>1&&this._currentPromptInputState.value.at(this._currentPromptInputState.cursorIndex-1)===" "){this.hideSuggestWidget();return}if(this._currentPromptInputState.cursorIndex<this._replacementIndex+this._replacementLength){this.hideSuggestWidget();return}if(this._terminalSuggestWidgetVisibleContextKey.get()){this._cursorIndexDelta=this._currentPromptInputState.cursorIndex-(this._replacementIndex+this._replacementLength);let n=this._currentPromptInputState.value.substring(this._replacementIndex,this._replacementIndex+this._replacementLength+this._cursorIndexDelta);this._isFilteringDirectories&&(n=L(n,this._pathSeparator));const p=new W(n,this._cursorIndexDelta);this._suggestWidget.setLineContext(p)}if(!this._suggestWidget.hasCompletions()){this.hideSuggestWidget();return}const i=this._getTerminalDimensions();if(!i.width||!i.height)return;const t=this._screen.getBoundingClientRect();this._suggestWidget.showSuggestions(0,!1,!1,{left:t.left+this._terminal.buffer.active.cursorX*i.width,top:t.top+this._terminal.buffer.active.cursorY*i.height,height:i.height})}_handleVSCodeSequence(e){if(!this._terminal)return!1;const[o,...i]=e.split(";");switch(o){case"Completions":return this._handleCompletionsSequence(this._terminal,e,o,i),!0;case"CompletionsBash":return this._handleCompletionsBashSequence(this._terminal,e,o,i),!0;case"CompletionsBashFirstWord":return this._handleCompletionsBashFirstWordSequence(this._terminal,e,o,i)}return!1}_replacementIndex=0;_replacementLength=0;_handleCompletionsSequence(e,o,i,t){if(this._onDidReceiveCompletions.fire(),!e.element||!this._enableWidget||!this._promptInputModel||!v.isAncestorOfActiveElement(e.element))return;let n=0,p=this._promptInputModel.cursorIndex;this._currentPromptInputState={value:this._promptInputModel.value,prefix:this._promptInputModel.prefix,suffix:this._promptInputModel.suffix,cursorIndex:this._promptInputModel.cursorIndex,ghostTextIndex:this._promptInputModel.ghostTextIndex},this._leadingLineContent=this._currentPromptInputState.prefix.substring(n,n+p+this._cursorIndexDelta);const l=o.slice(i.length+t[0].length+t[1].length+t[2].length+4),m=t.length===0||l.length===0?void 0:JSON.parse(l),c=Q(m),h=this._leadingLineContent.length===0?"":this._leadingLineContent[0];this._leadingLineContent.includes(" ")||h==="["?(n=parseInt(t[0]),p=parseInt(t[1]),this._leadingLineContent=this._promptInputModel.prefix):c.push(...this._cachedPwshCommands),this._replacementIndex=n,this._replacementLength=p,this._mostRecentCompletion?.isDirectory&&c.every(d=>d.completion.isDirectory)&&c.push(new x(this._mostRecentCompletion)),this._mostRecentCompletion=void 0,this._cursorIndexDelta=this._currentPromptInputState.cursorIndex-(n+p);let f=this._leadingLineContent;if(this._isFilteringDirectories=c.some(d=>d.completion.isDirectory),this._isFilteringDirectories){const d=c.find(I=>I.completion.isDirectory);this._pathSeparator=d?.completion.label.match(/(?<sep>[\\\/])/)?.groups?.sep??T,f=L(f,this._pathSeparator)}const g=new W(f,this._cursorIndexDelta),u=new M(c,g,n,p);this._handleCompletionModel(u)}_cachedBashAliases=new Set;_cachedBashBuiltins=new Set;_cachedBashCommands=new Set;_cachedBashKeywords=new Set;_cachedFirstWord;_handleCompletionsBashFirstWordSequence(e,o,i,t){const n=t[0],p=o.slice(i.length+n.length+2).split(";");let l;switch(n){case"alias":l=this._cachedBashAliases;break;case"builtin":l=this._cachedBashBuiltins;break;case"command":l=this._cachedBashCommands;break;case"keyword":l=this._cachedBashKeywords;break;default:return!1}l.clear();const m=new Set;for(const c of p)m.add(c);for(const c of m)l.add(new x({label:c,icon:a.symbolString,detail:n}));return this._cachedFirstWord=void 0,!0}_handleCompletionsBashSequence(e,o,i,t){if(!e.element)return;let n=parseInt(t[0]);const p=parseInt(t[1]);if(!t[2]){this._onBell.fire();return}const l=o.slice(i.length+t[0].length+t[1].length+t[2].length+4).split(";");let m;if(n!==100&&l.length>0?m=l.map(h=>new x({label:h,icon:a.symbolProperty})):(n=0,this._cachedFirstWord||(this._cachedFirstWord=[...this._cachedBashAliases,...this._cachedBashBuiltins,...this._cachedBashCommands,...this._cachedBashKeywords],this._cachedFirstWord.sort((h,f)=>{const g=h.completion.label.charCodeAt(0),u=f.completion.label.charCodeAt(0),d=g<65||g>90&&g<97||g>122?1:0,I=u<65||u>90&&u<97||u>122?1:0;return d!==I?d-I:h.completion.label.localeCompare(f.completion.label)})),m=this._cachedFirstWord),m.length===0)return;this._leadingLineContent=m[0].completion.label.slice(0,p);const c=new M(m,new W(this._leadingLineContent,n),n,p);if(m.length===1&&m[0].completion.label.substring(p).length===0){this._onBell.fire();return}this._handleCompletionModel(c)}_getTerminalDimensions(){const e=this._terminal._core._renderService.dimensions.css.cell;return{width:e.width,height:e.height}}_handleCompletionModel(e){if(!this._terminal?.element)return;const o=this._ensureSuggestWidget(this._terminal);if(o.setCompletionModel(e),e.items.length===0||!this._promptInputModel)return;this._model=e;const i=this._getTerminalDimensions();if(!i.width||!i.height)return;const t=this._screen.getBoundingClientRect();o.showSuggestions(0,!1,!1,{left:t.left+this._terminal.buffer.active.cursorX*i.width,top:t.top+this._terminal.buffer.active.cursorY*i.height,height:i.height})}_ensureSuggestWidget(e){if(this._terminalSuggestWidgetVisibleContextKey.set(!0),!this._suggestWidget){const o=this._terminalConfigurationService.config,i=this._terminalConfigurationService.getFont(v.getActiveWindow()),t={fontFamily:i.fontFamily,fontSize:i.fontSize,lineHeight:Math.ceil(1.5*i.fontSize),fontWeight:o.fontWeight.toString(),letterSpacing:i.letterSpacing};this._suggestWidget=this._register(this._instantiationService.createInstance(X,this._container,this._instantiationService.createInstance(S),()=>t,{})),this._suggestWidget.list.style(G({listInactiveFocusBackground:O,listInactiveFocusOutline:z})),this._register(this._suggestWidget.onDidSelect(async n=>this.acceptSelectedSuggestion(n))),this._register(this._suggestWidget.onDidHide(()=>this._terminalSuggestWidgetVisibleContextKey.set(!1))),this._register(this._suggestWidget.onDidShow(()=>this._terminalSuggestWidgetVisibleContextKey.set(!0)))}return this._suggestWidget}selectPreviousSuggestion(){this._suggestWidget?.selectPrevious()}selectPreviousPageSuggestion(){this._suggestWidget?.selectPreviousPage()}selectNextSuggestion(){this._suggestWidget?.selectNext()}selectNextPageSuggestion(){this._suggestWidget?.selectNextPage()}acceptSelectedSuggestion(e,o){e||(e=this._suggestWidget?.getFocusedItem());const i=this._mostRecentPromptInputState;if(!e||!i||!this._leadingLineContent||!this._model)return;this._lastAcceptedCompletionTimestamp=Date.now(),this._suggestWidget?.hide();const t=this._currentPromptInputState??i,n=t.value.substring(this._model.replacementIndex,t.cursorIndex);let p="";if((t.ghostTextIndex===-1||t.ghostTextIndex>t.cursorIndex)&&t.value.length>t.cursorIndex+1&&t.value.at(t.cursorIndex)!==" "){const d=t.value.substring(t.cursorIndex,t.ghostTextIndex===-1?void 0:t.ghostTextIndex).indexOf(" ");p=t.value.substring(t.cursorIndex,d===-1?void 0:t.cursorIndex+d)}const l=e.item.completion,m=l.label;let c=!1;if(o)switch(this._configurationService.getValue(w).runOnEnter){case"always":{c=!0;break}case"exactMatch":{c=n.toLowerCase()===m.toLowerCase();break}case"exactMatchIgnoreExtension":{c=n.toLowerCase()===m.toLowerCase(),l.isFile&&(c||=n.toLowerCase()===m.toLowerCase().replace(/\.[^\.]+$/,""));break}}l.icon===a.folder&&(this._lastAcceptedCompletionTimestamp=0),this._mostRecentCompletion=l;const h=E(n,l.label),f=n.substring(n.length-1-h,n.length-1),g=l.label.substring(h);let u;t.suffix.length>0&&t.prefix.endsWith(f)&&t.suffix.startsWith(g)?u="\x1BOC".repeat(l.label.length-h):u=["\x7F".repeat(n.length-h),"\x1B[3~".repeat(p.length),g,c?"\r":""].join(""),this._onAcceptedCompletion.fire(u),this.hideSuggestWidget()}hideSuggestWidget(){this._currentPromptInputState=void 0,this._leadingLineContent=void 0,this._suggestWidget?.hide()}};_=y([C(3,k),C(4,K),C(5,U)],_);let S=class{constructor(s){this._storageService=s}_key=j.TerminalSuggestSize;restore(){const s=this._storageService.get(this._key,P.PROFILE)??"";try{const e=JSON.parse(s);if(v.Dimension.is(e))return v.Dimension.lift(e)}catch{}}store(s){this._storageService.store(this._key,JSON.stringify(s),P.PROFILE,N.MACHINE)}reset(){this._storageService.remove(this._key,P.PROFILE)}};S=y([C(0,V)],S);function Q(r){if(!r)return[];let s;if(!Array.isArray(r))s=[r];else{if(r.length===0)return[];typeof r[0]=="string"?s=[r].map(e=>({CompletionText:e[0],ResultType:e[1],ToolTip:e[2],CustomIcon:e[3]})):Array.isArray(r[0])?s=r.map(e=>({CompletionText:e[0],ResultType:e[1],ToolTip:e[2],CustomIcon:e[3]})):s=r}return s.map(e=>Z(e))}function Z(r){let s=r.CompletionText;if(r.ResultType===4&&!s.match(/^[\-+]$/)&&!s.match(/^\.\.?$/)&&!s.match(/[\\\/]$/)){const t=s.match(/(?<sep>[\\\/])/)?.groups?.sep??T;s=s+t}const e=r.ToolTip??s,o=ee(r.ResultType,r.CustomIcon);return r.ResultType===2&&r.CompletionText.match(/\.[a-z0-9]{2,4}$/i)&&(r.ResultType=3),new x({label:s,icon:o,detail:e,isFile:r.ResultType===3,isDirectory:r.ResultType===4,isKeyword:r.ResultType===12})}function ee(r,s){if(s){const e=s in a?a[s]:a.symbolText;if(e)return e}return Y[r]??a.symbolText}function L(r,s){return s==="/"?r.replaceAll("\\","/"):r.replaceAll("/","\\")}export{_ as SuggestAddon,J as VSCodeSuggestOscPt,Q as parseCompletionsFromShell};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SuggestAddon_1;
+import * as dom from '../../../../../base/browser/dom.js';
+import { Codicon } from '../../../../../base/common/codicons.js';
+import { Emitter, Event } from '../../../../../base/common/event.js';
+import { combinedDisposable, Disposable, MutableDisposable } from '../../../../../base/common/lifecycle.js';
+import { sep } from '../../../../../base/common/path.js';
+import { commonPrefixLength } from '../../../../../base/common/strings.js';
+import { editorSuggestWidgetSelectedBackground } from '../../../../../editor/contrib/suggest/browser/suggestWidget.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { IStorageService } from '../../../../../platform/storage/common/storage.js';
+import { getListStyles } from '../../../../../platform/theme/browser/defaultStyles.js';
+import { activeContrastBorder } from '../../../../../platform/theme/common/colorRegistry.js';
+import { ITerminalConfigurationService } from '../../../terminal/browser/terminal.js';
+import { terminalSuggestConfigSection } from '../common/terminalSuggestConfiguration.js';
+import { SimpleCompletionItem } from '../../../../services/suggest/browser/simpleCompletionItem.js';
+import { LineContext, SimpleCompletionModel } from '../../../../services/suggest/browser/simpleCompletionModel.js';
+import { SimpleSuggestWidget } from '../../../../services/suggest/browser/simpleSuggestWidget.js';
+const pwshTypeToIconMap = {
+    0: Codicon.symbolText,
+    1: Codicon.history,
+    2: Codicon.symbolMethod,
+    3: Codicon.symbolFile,
+    4: Codicon.folder,
+    5: Codicon.symbolProperty,
+    6: Codicon.symbolMethod,
+    7: Codicon.symbolVariable,
+    8: Codicon.symbolValue,
+    9: Codicon.symbolVariable,
+    10: Codicon.symbolNamespace,
+    11: Codicon.symbolInterface,
+    12: Codicon.symbolKeyword,
+    13: Codicon.symbolKeyword
+};
+let SuggestAddon = class SuggestAddon extends Disposable {
+    static { SuggestAddon_1 = this; }
+    static { this.requestCompletionsSequence = '\x1b[24~e'; }
+    static { this.requestGlobalCompletionsSequence = '\x1b[24~f'; }
+    static { this.requestEnableGitCompletionsSequence = '\x1b[24~g'; }
+    static { this.requestEnableCodeCompletionsSequence = '\x1b[24~h'; }
+    constructor(_cachedPwshCommands, _capabilities, _terminalSuggestWidgetVisibleContextKey, _configurationService, _instantiationService, _terminalConfigurationService) {
+        super();
+        this._cachedPwshCommands = _cachedPwshCommands;
+        this._capabilities = _capabilities;
+        this._terminalSuggestWidgetVisibleContextKey = _terminalSuggestWidgetVisibleContextKey;
+        this._configurationService = _configurationService;
+        this._instantiationService = _instantiationService;
+        this._terminalConfigurationService = _terminalConfigurationService;
+        this._promptInputModelSubscriptions = this._register(new MutableDisposable());
+        this._enableWidget = true;
+        this._pathSeparator = sep;
+        this._isFilteringDirectories = false;
+        this._codeCompletionsRequested = false;
+        this._gitCompletionsRequested = false;
+        this._cursorIndexDelta = 0;
+        this._lastUserDataTimestamp = 0;
+        this._lastAcceptedCompletionTimestamp = 0;
+        this.isPasting = false;
+        this._onBell = this._register(new Emitter());
+        this.onBell = this._onBell.event;
+        this._onAcceptedCompletion = this._register(new Emitter());
+        this.onAcceptedCompletion = this._onAcceptedCompletion.event;
+        this._onDidRequestCompletions = this._register(new Emitter());
+        this.onDidRequestCompletions = this._onDidRequestCompletions.event;
+        this._onDidReceiveCompletions = this._register(new Emitter());
+        this.onDidReceiveCompletions = this._onDidReceiveCompletions.event;
+        this._replacementIndex = 0;
+        this._replacementLength = 0;
+        this._cachedBashAliases = new Set();
+        this._cachedBashBuiltins = new Set();
+        this._cachedBashCommands = new Set();
+        this._cachedBashKeywords = new Set();
+        this._register(Event.runAndSubscribe(Event.any(this._capabilities.onDidAddCapabilityType, this._capabilities.onDidRemoveCapabilityType), () => {
+            const commandDetection = this._capabilities.get(2);
+            if (commandDetection) {
+                if (this._promptInputModel !== commandDetection.promptInputModel) {
+                    this._promptInputModel = commandDetection.promptInputModel;
+                    this._promptInputModelSubscriptions.value = combinedDisposable(this._promptInputModel.onDidChangeInput(e => this._sync(e)), this._promptInputModel.onDidFinishInput(() => this.hideSuggestWidget()));
+                }
+            }
+            else {
+                this._promptInputModel = undefined;
+            }
+        }));
+    }
+    activate(xterm) {
+        this._terminal = xterm;
+        this._register(xterm.parser.registerOscHandler(633, data => {
+            return this._handleVSCodeSequence(data);
+        }));
+        this._register(xterm.onData(e => {
+            this._lastUserData = e;
+            this._lastUserDataTimestamp = Date.now();
+        }));
+    }
+    setContainerWithOverflow(container) {
+        this._container = container;
+    }
+    setScreen(screen) {
+        this._screen = screen;
+    }
+    _requestCompletions() {
+        if (!this._promptInputModel) {
+            return;
+        }
+        if (this.isPasting) {
+            return;
+        }
+        const builtinCompletionsConfig = this._configurationService.getValue(terminalSuggestConfigSection).builtinCompletions;
+        if (!this._codeCompletionsRequested && builtinCompletionsConfig.pwshCode) {
+            this._onAcceptedCompletion.fire(SuggestAddon_1.requestEnableCodeCompletionsSequence);
+            this._codeCompletionsRequested = true;
+        }
+        if (!this._gitCompletionsRequested && builtinCompletionsConfig.pwshGit) {
+            this._onAcceptedCompletion.fire(SuggestAddon_1.requestEnableGitCompletionsSequence);
+            this._gitCompletionsRequested = true;
+        }
+        if (this._cachedPwshCommands.size === 0) {
+            this._requestGlobalCompletions();
+        }
+        if (this._lastUserDataTimestamp > this._lastAcceptedCompletionTimestamp) {
+            this._onAcceptedCompletion.fire(SuggestAddon_1.requestCompletionsSequence);
+            this._onDidRequestCompletions.fire();
+        }
+    }
+    _requestGlobalCompletions() {
+        this._onAcceptedCompletion.fire(SuggestAddon_1.requestGlobalCompletionsSequence);
+    }
+    _sync(promptInputState) {
+        const config = this._configurationService.getValue(terminalSuggestConfigSection);
+        if (!this._mostRecentPromptInputState || promptInputState.cursorIndex > this._mostRecentPromptInputState.cursorIndex) {
+            let sent = false;
+            if (!this._terminalSuggestWidgetVisibleContextKey.get()) {
+                if (config.quickSuggestions) {
+                    if (promptInputState.cursorIndex === 1 || promptInputState.prefix.match(/([\s\[])[^\s]$/)) {
+                        if (!this._lastUserData?.match(/^\x1b[\[O]?[A-D]$/)) {
+                            this._requestCompletions();
+                            sent = true;
+                        }
+                    }
+                }
+            }
+            if (config.suggestOnTriggerCharacters && !sent) {
+                const prefix = promptInputState.prefix;
+                if (prefix?.match(/\s[\-]$/) ||
+                    this._isFilteringDirectories && prefix?.match(/[\\\/]$/)) {
+                    this._requestCompletions();
+                    sent = true;
+                }
+            }
+        }
+        this._mostRecentPromptInputState = promptInputState;
+        if (!this._promptInputModel || !this._terminal || !this._suggestWidget || this._leadingLineContent === undefined) {
+            return;
+        }
+        this._currentPromptInputState = promptInputState;
+        if (this._currentPromptInputState.cursorIndex > 1 && this._currentPromptInputState.value.at(this._currentPromptInputState.cursorIndex - 1) === ' ') {
+            this.hideSuggestWidget();
+            return;
+        }
+        if (this._currentPromptInputState.cursorIndex < this._replacementIndex + this._replacementLength) {
+            this.hideSuggestWidget();
+            return;
+        }
+        if (this._terminalSuggestWidgetVisibleContextKey.get()) {
+            this._cursorIndexDelta = this._currentPromptInputState.cursorIndex - (this._replacementIndex + this._replacementLength);
+            let normalizedLeadingLineContent = this._currentPromptInputState.value.substring(this._replacementIndex, this._replacementIndex + this._replacementLength + this._cursorIndexDelta);
+            if (this._isFilteringDirectories) {
+                normalizedLeadingLineContent = normalizePathSeparator(normalizedLeadingLineContent, this._pathSeparator);
+            }
+            const lineContext = new LineContext(normalizedLeadingLineContent, this._cursorIndexDelta);
+            this._suggestWidget.setLineContext(lineContext);
+        }
+        if (!this._suggestWidget.hasCompletions()) {
+            this.hideSuggestWidget();
+            return;
+        }
+        const dimensions = this._getTerminalDimensions();
+        if (!dimensions.width || !dimensions.height) {
+            return;
+        }
+        const xtermBox = this._screen.getBoundingClientRect();
+        this._suggestWidget.showSuggestions(0, false, false, {
+            left: xtermBox.left + this._terminal.buffer.active.cursorX * dimensions.width,
+            top: xtermBox.top + this._terminal.buffer.active.cursorY * dimensions.height,
+            height: dimensions.height
+        });
+    }
+    _handleVSCodeSequence(data) {
+        if (!this._terminal) {
+            return false;
+        }
+        const [command, ...args] = data.split(';');
+        switch (command) {
+            case "Completions":
+                this._handleCompletionsSequence(this._terminal, data, command, args);
+                return true;
+            case "CompletionsBash":
+                this._handleCompletionsBashSequence(this._terminal, data, command, args);
+                return true;
+            case "CompletionsBashFirstWord":
+                return this._handleCompletionsBashFirstWordSequence(this._terminal, data, command, args);
+        }
+        return false;
+    }
+    _handleCompletionsSequence(terminal, data, command, args) {
+        this._onDidReceiveCompletions.fire();
+        if (!terminal.element || !this._enableWidget || !this._promptInputModel) {
+            return;
+        }
+        if (!dom.isAncestorOfActiveElement(terminal.element)) {
+            return;
+        }
+        let replacementIndex = 0;
+        let replacementLength = this._promptInputModel.cursorIndex;
+        this._currentPromptInputState = {
+            value: this._promptInputModel.value,
+            prefix: this._promptInputModel.prefix,
+            suffix: this._promptInputModel.suffix,
+            cursorIndex: this._promptInputModel.cursorIndex,
+            ghostTextIndex: this._promptInputModel.ghostTextIndex
+        };
+        this._leadingLineContent = this._currentPromptInputState.prefix.substring(replacementIndex, replacementIndex + replacementLength + this._cursorIndexDelta);
+        const payload = data.slice(command.length + args[0].length + args[1].length + args[2].length + 4);
+        const rawCompletions = args.length === 0 || payload.length === 0 ? undefined : JSON.parse(payload);
+        const completions = parseCompletionsFromShell(rawCompletions);
+        const firstChar = this._leadingLineContent.length === 0 ? '' : this._leadingLineContent[0];
+        if (this._leadingLineContent.includes(' ') || firstChar === '[') {
+            replacementIndex = parseInt(args[0]);
+            replacementLength = parseInt(args[1]);
+            this._leadingLineContent = this._promptInputModel.prefix;
+        }
+        else {
+            completions.push(...this._cachedPwshCommands);
+        }
+        this._replacementIndex = replacementIndex;
+        this._replacementLength = replacementLength;
+        if (this._mostRecentCompletion?.isDirectory && completions.every(e => e.completion.isDirectory)) {
+            completions.push(new SimpleCompletionItem(this._mostRecentCompletion));
+        }
+        this._mostRecentCompletion = undefined;
+        this._cursorIndexDelta = this._currentPromptInputState.cursorIndex - (replacementIndex + replacementLength);
+        let normalizedLeadingLineContent = this._leadingLineContent;
+        this._isFilteringDirectories = completions.some(e => e.completion.isDirectory);
+        if (this._isFilteringDirectories) {
+            const firstDir = completions.find(e => e.completion.isDirectory);
+            this._pathSeparator = firstDir?.completion.label.match(/(?<sep>[\\\/])/)?.groups?.sep ?? sep;
+            normalizedLeadingLineContent = normalizePathSeparator(normalizedLeadingLineContent, this._pathSeparator);
+        }
+        const lineContext = new LineContext(normalizedLeadingLineContent, this._cursorIndexDelta);
+        const model = new SimpleCompletionModel(completions, lineContext, replacementIndex, replacementLength);
+        this._handleCompletionModel(model);
+    }
+    _handleCompletionsBashFirstWordSequence(terminal, data, command, args) {
+        const type = args[0];
+        const completionList = data.slice(command.length + type.length + 2).split(';');
+        let set;
+        switch (type) {
+            case 'alias':
+                set = this._cachedBashAliases;
+                break;
+            case 'builtin':
+                set = this._cachedBashBuiltins;
+                break;
+            case 'command':
+                set = this._cachedBashCommands;
+                break;
+            case 'keyword':
+                set = this._cachedBashKeywords;
+                break;
+            default: return false;
+        }
+        set.clear();
+        const distinctLabels = new Set();
+        for (const label of completionList) {
+            distinctLabels.add(label);
+        }
+        for (const label of distinctLabels) {
+            set.add(new SimpleCompletionItem({
+                label,
+                icon: Codicon.symbolString,
+                detail: type
+            }));
+        }
+        this._cachedFirstWord = undefined;
+        return true;
+    }
+    _handleCompletionsBashSequence(terminal, data, command, args) {
+        if (!terminal.element) {
+            return;
+        }
+        let replacementIndex = parseInt(args[0]);
+        const replacementLength = parseInt(args[1]);
+        if (!args[2]) {
+            this._onBell.fire();
+            return;
+        }
+        const completionList = data.slice(command.length + args[0].length + args[1].length + args[2].length + 4).split(';');
+        let completions;
+        if (replacementIndex !== 100 && completionList.length > 0) {
+            completions = completionList.map(label => {
+                return new SimpleCompletionItem({
+                    label: label,
+                    icon: Codicon.symbolProperty
+                });
+            });
+        }
+        else {
+            replacementIndex = 0;
+            if (!this._cachedFirstWord) {
+                this._cachedFirstWord = [
+                    ...this._cachedBashAliases,
+                    ...this._cachedBashBuiltins,
+                    ...this._cachedBashCommands,
+                    ...this._cachedBashKeywords
+                ];
+                this._cachedFirstWord.sort((a, b) => {
+                    const aCode = a.completion.label.charCodeAt(0);
+                    const bCode = b.completion.label.charCodeAt(0);
+                    const isANonAlpha = aCode < 65 || aCode > 90 && aCode < 97 || aCode > 122 ? 1 : 0;
+                    const isBNonAlpha = bCode < 65 || bCode > 90 && bCode < 97 || bCode > 122 ? 1 : 0;
+                    if (isANonAlpha !== isBNonAlpha) {
+                        return isANonAlpha - isBNonAlpha;
+                    }
+                    return a.completion.label.localeCompare(b.completion.label);
+                });
+            }
+            completions = this._cachedFirstWord;
+        }
+        if (completions.length === 0) {
+            return;
+        }
+        this._leadingLineContent = completions[0].completion.label.slice(0, replacementLength);
+        const model = new SimpleCompletionModel(completions, new LineContext(this._leadingLineContent, replacementIndex), replacementIndex, replacementLength);
+        if (completions.length === 1) {
+            const insertText = completions[0].completion.label.substring(replacementLength);
+            if (insertText.length === 0) {
+                this._onBell.fire();
+                return;
+            }
+        }
+        this._handleCompletionModel(model);
+    }
+    _getTerminalDimensions() {
+        const cssCellDims = this._terminal._core._renderService.dimensions.css.cell;
+        return {
+            width: cssCellDims.width,
+            height: cssCellDims.height,
+        };
+    }
+    _handleCompletionModel(model) {
+        if (!this._terminal?.element) {
+            return;
+        }
+        const suggestWidget = this._ensureSuggestWidget(this._terminal);
+        suggestWidget.setCompletionModel(model);
+        if (model.items.length === 0 || !this._promptInputModel) {
+            return;
+        }
+        this._model = model;
+        const dimensions = this._getTerminalDimensions();
+        if (!dimensions.width || !dimensions.height) {
+            return;
+        }
+        const xtermBox = this._screen.getBoundingClientRect();
+        suggestWidget.showSuggestions(0, false, false, {
+            left: xtermBox.left + this._terminal.buffer.active.cursorX * dimensions.width,
+            top: xtermBox.top + this._terminal.buffer.active.cursorY * dimensions.height,
+            height: dimensions.height
+        });
+    }
+    _ensureSuggestWidget(terminal) {
+        this._terminalSuggestWidgetVisibleContextKey.set(true);
+        if (!this._suggestWidget) {
+            const c = this._terminalConfigurationService.config;
+            const font = this._terminalConfigurationService.getFont(dom.getActiveWindow());
+            const fontInfo = {
+                fontFamily: font.fontFamily,
+                fontSize: font.fontSize,
+                lineHeight: Math.ceil(1.5 * font.fontSize),
+                fontWeight: c.fontWeight.toString(),
+                letterSpacing: font.letterSpacing
+            };
+            this._suggestWidget = this._register(this._instantiationService.createInstance(SimpleSuggestWidget, this._container, this._instantiationService.createInstance(PersistedWidgetSize), () => fontInfo, {}));
+            this._suggestWidget.list.style(getListStyles({
+                listInactiveFocusBackground: editorSuggestWidgetSelectedBackground,
+                listInactiveFocusOutline: activeContrastBorder
+            }));
+            this._register(this._suggestWidget.onDidSelect(async (e) => this.acceptSelectedSuggestion(e)));
+            this._register(this._suggestWidget.onDidHide(() => this._terminalSuggestWidgetVisibleContextKey.set(false)));
+            this._register(this._suggestWidget.onDidShow(() => this._terminalSuggestWidgetVisibleContextKey.set(true)));
+        }
+        return this._suggestWidget;
+    }
+    selectPreviousSuggestion() {
+        this._suggestWidget?.selectPrevious();
+    }
+    selectPreviousPageSuggestion() {
+        this._suggestWidget?.selectPreviousPage();
+    }
+    selectNextSuggestion() {
+        this._suggestWidget?.selectNext();
+    }
+    selectNextPageSuggestion() {
+        this._suggestWidget?.selectNextPage();
+    }
+    acceptSelectedSuggestion(suggestion, respectRunOnEnter) {
+        if (!suggestion) {
+            suggestion = this._suggestWidget?.getFocusedItem();
+        }
+        const initialPromptInputState = this._mostRecentPromptInputState;
+        if (!suggestion || !initialPromptInputState || !this._leadingLineContent || !this._model) {
+            return;
+        }
+        this._lastAcceptedCompletionTimestamp = Date.now();
+        this._suggestWidget?.hide();
+        const currentPromptInputState = this._currentPromptInputState ?? initialPromptInputState;
+        const replacementText = currentPromptInputState.value.substring(this._model.replacementIndex, currentPromptInputState.cursorIndex);
+        let rightSideReplacementText = '';
+        if ((currentPromptInputState.ghostTextIndex === -1 || currentPromptInputState.ghostTextIndex > currentPromptInputState.cursorIndex) &&
+            currentPromptInputState.value.length > currentPromptInputState.cursorIndex + 1 &&
+            currentPromptInputState.value.at(currentPromptInputState.cursorIndex) !== ' ') {
+            const spaceIndex = currentPromptInputState.value.substring(currentPromptInputState.cursorIndex, currentPromptInputState.ghostTextIndex === -1 ? undefined : currentPromptInputState.ghostTextIndex).indexOf(' ');
+            rightSideReplacementText = currentPromptInputState.value.substring(currentPromptInputState.cursorIndex, spaceIndex === -1 ? undefined : currentPromptInputState.cursorIndex + spaceIndex);
+        }
+        const completion = suggestion.item.completion;
+        const completionText = completion.label;
+        let runOnEnter = false;
+        if (respectRunOnEnter) {
+            const runOnEnterConfig = this._configurationService.getValue(terminalSuggestConfigSection).runOnEnter;
+            switch (runOnEnterConfig) {
+                case 'always': {
+                    runOnEnter = true;
+                    break;
+                }
+                case 'exactMatch': {
+                    runOnEnter = replacementText.toLowerCase() === completionText.toLowerCase();
+                    break;
+                }
+                case 'exactMatchIgnoreExtension': {
+                    runOnEnter = replacementText.toLowerCase() === completionText.toLowerCase();
+                    if (completion.isFile) {
+                        runOnEnter ||= replacementText.toLowerCase() === completionText.toLowerCase().replace(/\.[^\.]+$/, '');
+                    }
+                    break;
+                }
+            }
+        }
+        if (completion.icon === Codicon.folder) {
+            this._lastAcceptedCompletionTimestamp = 0;
+        }
+        this._mostRecentCompletion = completion;
+        const commonPrefixLen = commonPrefixLength(replacementText, completion.label);
+        const commonPrefix = replacementText.substring(replacementText.length - 1 - commonPrefixLen, replacementText.length - 1);
+        const completionSuffix = completion.label.substring(commonPrefixLen);
+        let resultSequence;
+        if (currentPromptInputState.suffix.length > 0 && currentPromptInputState.prefix.endsWith(commonPrefix) && currentPromptInputState.suffix.startsWith(completionSuffix)) {
+            resultSequence = '\x1bOC'.repeat(completion.label.length - commonPrefixLen);
+        }
+        else {
+            resultSequence = [
+                '\x7F'.repeat(replacementText.length - commonPrefixLen),
+                '\x1b[3~'.repeat(rightSideReplacementText.length),
+                completionSuffix,
+                runOnEnter ? '\r' : ''
+            ].join('');
+        }
+        this._onAcceptedCompletion.fire(resultSequence);
+        this.hideSuggestWidget();
+    }
+    hideSuggestWidget() {
+        this._currentPromptInputState = undefined;
+        this._leadingLineContent = undefined;
+        this._suggestWidget?.hide();
+    }
+};
+SuggestAddon = SuggestAddon_1 = __decorate([
+    __param(3, IConfigurationService),
+    __param(4, IInstantiationService),
+    __param(5, ITerminalConfigurationService),
+    __metadata("design:paramtypes", [Set, Object, Object, Object, Object, Object])
+], SuggestAddon);
+export { SuggestAddon };
+let PersistedWidgetSize = class PersistedWidgetSize {
+    constructor(_storageService) {
+        this._storageService = _storageService;
+        this._key = "terminal.integrated.suggestSize";
+    }
+    restore() {
+        const raw = this._storageService.get(this._key, 0) ?? '';
+        try {
+            const obj = JSON.parse(raw);
+            if (dom.Dimension.is(obj)) {
+                return dom.Dimension.lift(obj);
+            }
+        }
+        catch {
+        }
+        return undefined;
+    }
+    store(size) {
+        this._storageService.store(this._key, JSON.stringify(size), 0, 1);
+    }
+    reset() {
+        this._storageService.remove(this._key, 0);
+    }
+};
+PersistedWidgetSize = __decorate([
+    __param(0, IStorageService),
+    __metadata("design:paramtypes", [Object])
+], PersistedWidgetSize);
+export function parseCompletionsFromShell(rawCompletions) {
+    if (!rawCompletions) {
+        return [];
+    }
+    let typedRawCompletions;
+    if (!Array.isArray(rawCompletions)) {
+        typedRawCompletions = [rawCompletions];
+    }
+    else {
+        if (rawCompletions.length === 0) {
+            return [];
+        }
+        if (typeof rawCompletions[0] === 'string') {
+            typedRawCompletions = [rawCompletions].map(e => ({
+                CompletionText: e[0],
+                ResultType: e[1],
+                ToolTip: e[2],
+                CustomIcon: e[3],
+            }));
+        }
+        else if (Array.isArray(rawCompletions[0])) {
+            typedRawCompletions = rawCompletions.map(e => ({
+                CompletionText: e[0],
+                ResultType: e[1],
+                ToolTip: e[2],
+                CustomIcon: e[3],
+            }));
+        }
+        else {
+            typedRawCompletions = rawCompletions;
+        }
+    }
+    return typedRawCompletions.map(e => rawCompletionToSimpleCompletionItem(e));
+}
+function rawCompletionToSimpleCompletionItem(rawCompletion) {
+    let label = rawCompletion.CompletionText;
+    if (rawCompletion.ResultType === 4 &&
+        !label.match(/^[\-+]$/) &&
+        !label.match(/^\.\.?$/) &&
+        !label.match(/[\\\/]$/)) {
+        const separator = label.match(/(?<sep>[\\\/])/)?.groups?.sep ?? sep;
+        label = label + separator;
+    }
+    const detail = rawCompletion.ToolTip ?? label;
+    const icon = getIcon(rawCompletion.ResultType, rawCompletion.CustomIcon);
+    const isExecutable = rawCompletion.ResultType === 2 && rawCompletion.CompletionText.match(/\.[a-z0-9]{2,4}$/i);
+    if (isExecutable) {
+        rawCompletion.ResultType = 3;
+    }
+    return new SimpleCompletionItem({
+        label,
+        icon,
+        detail,
+        isFile: rawCompletion.ResultType === 3,
+        isDirectory: rawCompletion.ResultType === 4,
+        isKeyword: rawCompletion.ResultType === 12,
+    });
+}
+function getIcon(resultType, customIconId) {
+    if (customIconId) {
+        const icon = customIconId in Codicon ? Codicon[customIconId] : Codicon.symbolText;
+        if (icon) {
+            return icon;
+        }
+    }
+    return pwshTypeToIconMap[resultType] ?? Codicon.symbolText;
+}
+function normalizePathSeparator(path, sep) {
+    if (sep === '/') {
+        return path.replaceAll('\\', '/');
+    }
+    return path.replaceAll('/', '\\');
+}

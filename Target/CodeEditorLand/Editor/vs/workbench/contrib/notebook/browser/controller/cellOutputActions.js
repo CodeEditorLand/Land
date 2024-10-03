@@ -1,1 +1,152 @@
-import"../../../../../editor/browser/editorExtensions.js";import{localize as n}from"../../../../../nls.js";import{Action2 as p,MenuId as f,registerAction2 as s}from"../../../../../platform/actions/common/actions.js";import{IClipboardService as b}from"../../../../../platform/clipboard/common/clipboardService.js";import{IOpenerService as k}from"../../../../../platform/opener/common/opener.js";import{NOTEBOOK_ACTIONS_CATEGORY as c}from"./coreActions.js";import{NOTEBOOK_CELL_HAS_HIDDEN_OUTPUTS as E,NOTEBOOK_CELL_HAS_OUTPUTS as O}from"../../common/notebookContextKeys.js";import*as m from"../notebookIcons.js";import{ILogService as V}from"../../../../../platform/log/common/log.js";import{copyCellOutput as v}from"../contrib/clipboard/cellOutputClipboard.js";import{IEditorService as I}from"../../../../services/editor/common/editorService.js";import{getNotebookEditorFromEditorPane as M}from"../notebookBrowser.js";import{CellKind as a,CellUri as C}from"../../common/notebookCommon.js";import"../viewModel/codeCellViewModel.js";import{ContextKeyExpr as g}from"../../../../../platform/contextkey/common/contextkey.js";import{INotebookEditorModelResolverService as A}from"../../common/notebookEditorModelResolverService.js";const N="notebook.cellOutput.copy";s(class extends p{constructor(){super({id:"notebook.cellOuput.showEmptyOutputs",title:n("notebookActions.showAllOutput","Show empty outputs"),menu:{id:f.NotebookOutputToolbar,when:g.and(O,E)},f1:!1,category:c})}run(i,e){const t=e.cell;if(t&&t.cellKind===a.Code)for(let o=1;o<t.outputsViewModels.length;o++)t.outputsViewModels[o].visible.get()||(t.outputsViewModels[o].setVisible(!0,!0),t.updateOutputHeight(o,1,"command"))}}),s(class extends p{constructor(){super({id:N,title:n("notebookActions.copyOutput","Copy Cell Output"),menu:{id:f.NotebookOutputToolbar,when:O},category:c,icon:m.copyIcon})}getNoteboookEditor(i,e){return e&&"notebookEditor"in e?e.notebookEditor:M(i.activeEditorPane)}async run(i,e){const t=this.getNoteboookEditor(i.get(I),e);if(!t)return;let o;if(e&&"outputId"in e&&typeof e.outputId=="string"?o=w(e.outputId,t):e&&"outputViewModel"in e&&(o=e.outputViewModel),!o){const l=t.getActiveCell();if(!l)return;l.focusedOutputId!==void 0?o=l.outputsViewModels.find(d=>d.model.outputId===l.focusedOutputId):o=l.outputsViewModels.find(d=>d.pickedMimeType?.isTrusted)}if(!o)return;const r=o.pickedMimeType?.mimeType;if(r?.startsWith("image/")){const l={skipReveal:!0,outputId:o.model.outputId,altOutputId:o.model.alternativeOutputId};await t.focusNotebookCell(o.cellViewModel,"output",l),t.copyOutputImage(o)}else{const l=i.get(b),d=i.get(V);v(r,o,l,d)}}});function w(u,i){const e=i.getViewModel();if(e){const t=e.viewCells.filter(o=>o.cellKind===a.Code);for(const o of t){const r=o.outputsViewModels.find(l=>l.model.outputId===u||l.model.alternativeOutputId===u);if(r)return r}}}const y="notebook.cellOutput.openInTextEditor";s(class extends p{constructor(){super({id:y,title:n("notebookActions.openOutputInEditor","Open Cell Output in Text Editor"),f1:!1,category:c,icon:m.copyIcon})}getNoteboookEditor(i,e){return e&&"notebookEditor"in e?e.notebookEditor:M(i.activeEditorPane)}async run(i,e){const t=this.getNoteboookEditor(i.get(I),e),o=i.get(A);if(!t)return;let r;e&&"outputId"in e&&typeof e.outputId=="string"?r=w(e.outputId,t):e&&"outputViewModel"in e&&(r=e.outputViewModel);const l=i.get(k);if(r?.model.outputId&&t.textModel?.uri){const d=await o.resolve(t.textModel.uri);await l.open(C.generateCellOutputUri(t.textModel.uri,r.model.outputId)),d.dispose()}}});export{N as COPY_OUTPUT_COMMAND_ID,y as OPEN_OUTPUT_COMMAND_ID};
+import { localize } from '../../../../../nls.js';
+import { Action2, MenuId, registerAction2 } from '../../../../../platform/actions/common/actions.js';
+import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
+import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
+import { NOTEBOOK_ACTIONS_CATEGORY } from './coreActions.js';
+import { NOTEBOOK_CELL_HAS_HIDDEN_OUTPUTS, NOTEBOOK_CELL_HAS_OUTPUTS } from '../../common/notebookContextKeys.js';
+import * as icons from '../notebookIcons.js';
+import { ILogService } from '../../../../../platform/log/common/log.js';
+import { copyCellOutput } from '../contrib/clipboard/cellOutputClipboard.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+import { getNotebookEditorFromEditorPane } from '../notebookBrowser.js';
+import { CellKind, CellUri } from '../../common/notebookCommon.js';
+import { ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
+import { INotebookEditorModelResolverService } from '../../common/notebookEditorModelResolverService.js';
+export const COPY_OUTPUT_COMMAND_ID = 'notebook.cellOutput.copy';
+registerAction2(class ShowAllOutputsAction extends Action2 {
+    constructor() {
+        super({
+            id: 'notebook.cellOuput.showEmptyOutputs',
+            title: localize('notebookActions.showAllOutput', "Show empty outputs"),
+            menu: {
+                id: MenuId.NotebookOutputToolbar,
+                when: ContextKeyExpr.and(NOTEBOOK_CELL_HAS_OUTPUTS, NOTEBOOK_CELL_HAS_HIDDEN_OUTPUTS)
+            },
+            f1: false,
+            category: NOTEBOOK_ACTIONS_CATEGORY
+        });
+    }
+    run(accessor, context) {
+        const cell = context.cell;
+        if (cell && cell.cellKind === CellKind.Code) {
+            for (let i = 1; i < cell.outputsViewModels.length; i++) {
+                if (!cell.outputsViewModels[i].visible.get()) {
+                    cell.outputsViewModels[i].setVisible(true, true);
+                    cell.updateOutputHeight(i, 1, 'command');
+                }
+            }
+        }
+    }
+});
+registerAction2(class CopyCellOutputAction extends Action2 {
+    constructor() {
+        super({
+            id: COPY_OUTPUT_COMMAND_ID,
+            title: localize('notebookActions.copyOutput', "Copy Cell Output"),
+            menu: {
+                id: MenuId.NotebookOutputToolbar,
+                when: NOTEBOOK_CELL_HAS_OUTPUTS
+            },
+            category: NOTEBOOK_ACTIONS_CATEGORY,
+            icon: icons.copyIcon,
+        });
+    }
+    getNoteboookEditor(editorService, outputContext) {
+        if (outputContext && 'notebookEditor' in outputContext) {
+            return outputContext.notebookEditor;
+        }
+        return getNotebookEditorFromEditorPane(editorService.activeEditorPane);
+    }
+    async run(accessor, outputContext) {
+        const notebookEditor = this.getNoteboookEditor(accessor.get(IEditorService), outputContext);
+        if (!notebookEditor) {
+            return;
+        }
+        let outputViewModel;
+        if (outputContext && 'outputId' in outputContext && typeof outputContext.outputId === 'string') {
+            outputViewModel = getOutputViewModelFromId(outputContext.outputId, notebookEditor);
+        }
+        else if (outputContext && 'outputViewModel' in outputContext) {
+            outputViewModel = outputContext.outputViewModel;
+        }
+        if (!outputViewModel) {
+            const activeCell = notebookEditor.getActiveCell();
+            if (!activeCell) {
+                return;
+            }
+            if (activeCell.focusedOutputId !== undefined) {
+                outputViewModel = activeCell.outputsViewModels.find(output => {
+                    return output.model.outputId === activeCell.focusedOutputId;
+                });
+            }
+            else {
+                outputViewModel = activeCell.outputsViewModels.find(output => output.pickedMimeType?.isTrusted);
+            }
+        }
+        if (!outputViewModel) {
+            return;
+        }
+        const mimeType = outputViewModel.pickedMimeType?.mimeType;
+        if (mimeType?.startsWith('image/')) {
+            const focusOptions = { skipReveal: true, outputId: outputViewModel.model.outputId, altOutputId: outputViewModel.model.alternativeOutputId };
+            await notebookEditor.focusNotebookCell(outputViewModel.cellViewModel, 'output', focusOptions);
+            notebookEditor.copyOutputImage(outputViewModel);
+        }
+        else {
+            const clipboardService = accessor.get(IClipboardService);
+            const logService = accessor.get(ILogService);
+            copyCellOutput(mimeType, outputViewModel, clipboardService, logService);
+        }
+    }
+});
+function getOutputViewModelFromId(outputId, notebookEditor) {
+    const notebookViewModel = notebookEditor.getViewModel();
+    if (notebookViewModel) {
+        const codeCells = notebookViewModel.viewCells.filter(cell => cell.cellKind === CellKind.Code);
+        for (const cell of codeCells) {
+            const output = cell.outputsViewModels.find(output => output.model.outputId === outputId || output.model.alternativeOutputId === outputId);
+            if (output) {
+                return output;
+            }
+        }
+    }
+    return undefined;
+}
+export const OPEN_OUTPUT_COMMAND_ID = 'notebook.cellOutput.openInTextEditor';
+registerAction2(class OpenCellOutputInEditorAction extends Action2 {
+    constructor() {
+        super({
+            id: OPEN_OUTPUT_COMMAND_ID,
+            title: localize('notebookActions.openOutputInEditor', "Open Cell Output in Text Editor"),
+            f1: false,
+            category: NOTEBOOK_ACTIONS_CATEGORY,
+            icon: icons.copyIcon,
+        });
+    }
+    getNoteboookEditor(editorService, outputContext) {
+        if (outputContext && 'notebookEditor' in outputContext) {
+            return outputContext.notebookEditor;
+        }
+        return getNotebookEditorFromEditorPane(editorService.activeEditorPane);
+    }
+    async run(accessor, outputContext) {
+        const notebookEditor = this.getNoteboookEditor(accessor.get(IEditorService), outputContext);
+        const notebookModelService = accessor.get(INotebookEditorModelResolverService);
+        if (!notebookEditor) {
+            return;
+        }
+        let outputViewModel;
+        if (outputContext && 'outputId' in outputContext && typeof outputContext.outputId === 'string') {
+            outputViewModel = getOutputViewModelFromId(outputContext.outputId, notebookEditor);
+        }
+        else if (outputContext && 'outputViewModel' in outputContext) {
+            outputViewModel = outputContext.outputViewModel;
+        }
+        const openerService = accessor.get(IOpenerService);
+        if (outputViewModel?.model.outputId && notebookEditor.textModel?.uri) {
+            const ref = await notebookModelService.resolve(notebookEditor.textModel.uri);
+            await openerService.open(CellUri.generateCellOutputUri(notebookEditor.textModel.uri, outputViewModel.model.outputId));
+            ref.dispose();
+        }
+    }
+});

@@ -1,1 +1,95 @@
-import"./linesDecorations.css";import{DecorationToRender as v,DedupOverlay as g}from"../glyphMargin/glyphMargin.js";import"../../view/renderingContext.js";import"../../../common/viewModel/viewContext.js";import"../../../common/viewEvents.js";import{EditorOption as h}from"../../../common/config/editorOptions.js";class R extends g{_context;_decorationsLeft;_decorationsWidth;_renderResult;constructor(e){super(),this._context=e;const t=this._context.configuration.options.get(h.layoutInfo);this._decorationsLeft=t.decorationsLeft,this._decorationsWidth=t.decorationsWidth,this._renderResult=null,this._context.addEventHandler(this)}dispose(){this._context.removeEventHandler(this),this._renderResult=null,super.dispose()}onConfigurationChanged(e){const t=this._context.configuration.options.get(h.layoutInfo);return this._decorationsLeft=t.decorationsLeft,this._decorationsWidth=t.decorationsWidth,!0}onDecorationsChanged(e){return!0}onFlushed(e){return!0}onLinesChanged(e){return!0}onLinesDeleted(e){return!0}onLinesInserted(e){return!0}onScrollChanged(e){return e.scrollTopChanged}onZonesChanged(e){return!0}_getDecorations(e){const o=e.getDecorationsInViewport(),t=[];let d=0;for(let r=0,l=o.length;r<l;r++){const n=o[r],s=n.options.linesDecorationsClassName,i=n.options.zIndex;s&&(t[d++]=new v(n.range.startLineNumber,n.range.endLineNumber,s,n.options.linesDecorationsTooltip??null,i));const a=n.options.firstLineDecorationClassName;a&&(t[d++]=new v(n.range.startLineNumber,n.range.startLineNumber,a,n.options.linesDecorationsTooltip??null,i))}return t}prepareRender(e){const o=e.visibleRange.startLineNumber,t=e.visibleRange.endLineNumber,d=this._render(o,t,this._getDecorations(e)),r=this._decorationsLeft.toString(),l=this._decorationsWidth.toString(),n='" style="left:'+r+"px;width:"+l+'px;"></div>',s=[];for(let i=o;i<=t;i++){const a=i-o,b=d[a].getDecorations();let p="";for(const c of b){let u='<div class="cldr '+c.className;c.tooltip!==null&&(u+='" title="'+c.tooltip),u+=n,p+=u}s[a]=p}this._renderResult=s}render(e,o){return this._renderResult?this._renderResult[o-e]:""}}export{R as LinesDecorationsOverlay};
+import './linesDecorations.css';
+import { DecorationToRender, DedupOverlay } from '../glyphMargin/glyphMargin.js';
+export class LinesDecorationsOverlay extends DedupOverlay {
+    constructor(context) {
+        super();
+        this._context = context;
+        const options = this._context.configuration.options;
+        const layoutInfo = options.get(148);
+        this._decorationsLeft = layoutInfo.decorationsLeft;
+        this._decorationsWidth = layoutInfo.decorationsWidth;
+        this._renderResult = null;
+        this._context.addEventHandler(this);
+    }
+    dispose() {
+        this._context.removeEventHandler(this);
+        this._renderResult = null;
+        super.dispose();
+    }
+    onConfigurationChanged(e) {
+        const options = this._context.configuration.options;
+        const layoutInfo = options.get(148);
+        this._decorationsLeft = layoutInfo.decorationsLeft;
+        this._decorationsWidth = layoutInfo.decorationsWidth;
+        return true;
+    }
+    onDecorationsChanged(e) {
+        return true;
+    }
+    onFlushed(e) {
+        return true;
+    }
+    onLinesChanged(e) {
+        return true;
+    }
+    onLinesDeleted(e) {
+        return true;
+    }
+    onLinesInserted(e) {
+        return true;
+    }
+    onScrollChanged(e) {
+        return e.scrollTopChanged;
+    }
+    onZonesChanged(e) {
+        return true;
+    }
+    _getDecorations(ctx) {
+        const decorations = ctx.getDecorationsInViewport();
+        const r = [];
+        let rLen = 0;
+        for (let i = 0, len = decorations.length; i < len; i++) {
+            const d = decorations[i];
+            const linesDecorationsClassName = d.options.linesDecorationsClassName;
+            const zIndex = d.options.zIndex;
+            if (linesDecorationsClassName) {
+                r[rLen++] = new DecorationToRender(d.range.startLineNumber, d.range.endLineNumber, linesDecorationsClassName, d.options.linesDecorationsTooltip ?? null, zIndex);
+            }
+            const firstLineDecorationClassName = d.options.firstLineDecorationClassName;
+            if (firstLineDecorationClassName) {
+                r[rLen++] = new DecorationToRender(d.range.startLineNumber, d.range.startLineNumber, firstLineDecorationClassName, d.options.linesDecorationsTooltip ?? null, zIndex);
+            }
+        }
+        return r;
+    }
+    prepareRender(ctx) {
+        const visibleStartLineNumber = ctx.visibleRange.startLineNumber;
+        const visibleEndLineNumber = ctx.visibleRange.endLineNumber;
+        const toRender = this._render(visibleStartLineNumber, visibleEndLineNumber, this._getDecorations(ctx));
+        const left = this._decorationsLeft.toString();
+        const width = this._decorationsWidth.toString();
+        const common = '" style="left:' + left + 'px;width:' + width + 'px;"></div>';
+        const output = [];
+        for (let lineNumber = visibleStartLineNumber; lineNumber <= visibleEndLineNumber; lineNumber++) {
+            const lineIndex = lineNumber - visibleStartLineNumber;
+            const decorations = toRender[lineIndex].getDecorations();
+            let lineOutput = '';
+            for (const decoration of decorations) {
+                let addition = '<div class="cldr ' + decoration.className;
+                if (decoration.tooltip !== null) {
+                    addition += '" title="' + decoration.tooltip;
+                }
+                addition += common;
+                lineOutput += addition;
+            }
+            output[lineIndex] = lineOutput;
+        }
+        this._renderResult = output;
+    }
+    render(startLineNumber, lineNumber) {
+        if (!this._renderResult) {
+            return '';
+        }
+        return this._renderResult[lineNumber - startLineNumber];
+    }
+}

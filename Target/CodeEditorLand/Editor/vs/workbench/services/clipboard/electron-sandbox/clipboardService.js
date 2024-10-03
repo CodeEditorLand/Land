@@ -1,3 +1,81 @@
-var d=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var c=(o,r,e,t)=>{for(var s=t>1?void 0:t?m(r,e):r,n=o.length-1,a;n>=0;n--)(a=o[n])&&(s=(t?a(r,e,s):a(s))||s);return t&&s&&d(r,e,s),s},f=(o,r)=>(e,t)=>r(e,t,o);import{IClipboardService as p}from"../../../../platform/clipboard/common/clipboardService.js";import{URI as l}from"../../../../base/common/uri.js";import{isMacintosh as u}from"../../../../base/common/platform.js";import{InstantiationType as v,registerSingleton as T}from"../../../../platform/instantiation/common/extensions.js";import{INativeHostService as I}from"../../../../platform/native/common/native.js";import{VSBuffer as h}from"../../../../base/common/buffer.js";let i=class{constructor(r){this.nativeHostService=r}static FILE_FORMAT="code/file-list";async readImage(){return this.nativeHostService.readImage()}async writeText(r,e){return this.nativeHostService.writeClipboardText(r,e)}async readText(r){return this.nativeHostService.readClipboardText(r)}async readFindText(){return u?this.nativeHostService.readClipboardFindText():""}async writeFindText(r){if(u)return this.nativeHostService.writeClipboardFindText(r)}async writeResources(r){if(r.length)return this.nativeHostService.writeClipboardBuffer(i.FILE_FORMAT,this.resourcesToBuffer(r))}async readResources(){return this.bufferToResources(await this.nativeHostService.readClipboardBuffer(i.FILE_FORMAT))}async hasResources(){return this.nativeHostService.hasClipboard(i.FILE_FORMAT)}resourcesToBuffer(r){return h.fromString(r.map(e=>e.toString()).join(`
-`))}bufferToResources(r){if(!r)return[];const e=r.toString();if(!e)return[];try{return e.split(`
-`).map(t=>l.parse(t))}catch{return[]}}};i=c([f(0,I)],i),T(p,i,v.Delayed);export{i as NativeClipboardService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var NativeClipboardService_1;
+import { IClipboardService } from '../../../../platform/clipboard/common/clipboardService.js';
+import { URI } from '../../../../base/common/uri.js';
+import { isMacintosh } from '../../../../base/common/platform.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { VSBuffer } from '../../../../base/common/buffer.js';
+let NativeClipboardService = class NativeClipboardService {
+    static { NativeClipboardService_1 = this; }
+    static { this.FILE_FORMAT = 'code/file-list'; }
+    constructor(nativeHostService) {
+        this.nativeHostService = nativeHostService;
+    }
+    async readImage() {
+        return this.nativeHostService.readImage();
+    }
+    async writeText(text, type) {
+        return this.nativeHostService.writeClipboardText(text, type);
+    }
+    async readText(type) {
+        return this.nativeHostService.readClipboardText(type);
+    }
+    async readFindText() {
+        if (isMacintosh) {
+            return this.nativeHostService.readClipboardFindText();
+        }
+        return '';
+    }
+    async writeFindText(text) {
+        if (isMacintosh) {
+            return this.nativeHostService.writeClipboardFindText(text);
+        }
+    }
+    async writeResources(resources) {
+        if (resources.length) {
+            return this.nativeHostService.writeClipboardBuffer(NativeClipboardService_1.FILE_FORMAT, this.resourcesToBuffer(resources));
+        }
+    }
+    async readResources() {
+        return this.bufferToResources(await this.nativeHostService.readClipboardBuffer(NativeClipboardService_1.FILE_FORMAT));
+    }
+    async hasResources() {
+        return this.nativeHostService.hasClipboard(NativeClipboardService_1.FILE_FORMAT);
+    }
+    resourcesToBuffer(resources) {
+        return VSBuffer.fromString(resources.map(r => r.toString()).join('\n'));
+    }
+    bufferToResources(buffer) {
+        if (!buffer) {
+            return [];
+        }
+        const bufferValue = buffer.toString();
+        if (!bufferValue) {
+            return [];
+        }
+        try {
+            return bufferValue.split('\n').map(f => URI.parse(f));
+        }
+        catch (error) {
+            return [];
+        }
+    }
+};
+NativeClipboardService = NativeClipboardService_1 = __decorate([
+    __param(0, INativeHostService),
+    __metadata("design:paramtypes", [Object])
+], NativeClipboardService);
+export { NativeClipboardService };
+registerSingleton(IClipboardService, NativeClipboardService, 1);

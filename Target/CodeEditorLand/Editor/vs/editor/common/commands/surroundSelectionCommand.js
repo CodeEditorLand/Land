@@ -1,1 +1,34 @@
-import{Range as i}from"../core/range.js";import"../core/position.js";import{Selection as a}from"../core/selection.js";import"../editorCommon.js";import"../model.js";class S{_range;_charBeforeSelection;_charAfterSelection;constructor(r,e,n){this._range=r,this._charBeforeSelection=e,this._charAfterSelection=n}getEditOperations(r,e){e.addTrackedEditOperation(new i(this._range.startLineNumber,this._range.startColumn,this._range.startLineNumber,this._range.startColumn),this._charBeforeSelection),e.addTrackedEditOperation(new i(this._range.endLineNumber,this._range.endColumn,this._range.endLineNumber,this._range.endColumn),this._charAfterSelection)}computeCursorState(r,e){const n=e.getInverseEditOperations(),t=n[0].range,o=n[1].range;return new a(t.endLineNumber,t.endColumn,o.endLineNumber,o.endColumn-this._charAfterSelection.length)}}class f{constructor(r,e,n){this._position=r;this._text=e;this._charAfter=n}getEditOperations(r,e){e.addTrackedEditOperation(new i(this._position.lineNumber,this._position.column,this._position.lineNumber,this._position.column),this._text+this._charAfter)}computeCursorState(r,e){const t=e.getInverseEditOperations()[0].range;return new a(t.endLineNumber,t.startColumn,t.endLineNumber,t.endColumn-this._charAfter.length)}}export{f as CompositionSurroundSelectionCommand,S as SurroundSelectionCommand};
+import { Range } from '../core/range.js';
+import { Selection } from '../core/selection.js';
+export class SurroundSelectionCommand {
+    constructor(range, charBeforeSelection, charAfterSelection) {
+        this._range = range;
+        this._charBeforeSelection = charBeforeSelection;
+        this._charAfterSelection = charAfterSelection;
+    }
+    getEditOperations(model, builder) {
+        builder.addTrackedEditOperation(new Range(this._range.startLineNumber, this._range.startColumn, this._range.startLineNumber, this._range.startColumn), this._charBeforeSelection);
+        builder.addTrackedEditOperation(new Range(this._range.endLineNumber, this._range.endColumn, this._range.endLineNumber, this._range.endColumn), this._charAfterSelection);
+    }
+    computeCursorState(model, helper) {
+        const inverseEditOperations = helper.getInverseEditOperations();
+        const firstOperationRange = inverseEditOperations[0].range;
+        const secondOperationRange = inverseEditOperations[1].range;
+        return new Selection(firstOperationRange.endLineNumber, firstOperationRange.endColumn, secondOperationRange.endLineNumber, secondOperationRange.endColumn - this._charAfterSelection.length);
+    }
+}
+export class CompositionSurroundSelectionCommand {
+    constructor(_position, _text, _charAfter) {
+        this._position = _position;
+        this._text = _text;
+        this._charAfter = _charAfter;
+    }
+    getEditOperations(model, builder) {
+        builder.addTrackedEditOperation(new Range(this._position.lineNumber, this._position.column, this._position.lineNumber, this._position.column), this._text + this._charAfter);
+    }
+    computeCursorState(model, helper) {
+        const inverseEditOperations = helper.getInverseEditOperations();
+        const opRange = inverseEditOperations[0].range;
+        return new Selection(opRange.endLineNumber, opRange.startColumn, opRange.endLineNumber, opRange.endColumn - this._charAfter.length);
+    }
+}

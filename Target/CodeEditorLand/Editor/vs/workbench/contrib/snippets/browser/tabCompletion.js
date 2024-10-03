@@ -1,1 +1,174 @@
-var v=Object.defineProperty;var C=Object.getOwnPropertyDescriptor;var h=(a,e,t,n)=>{for(var o=n>1?void 0:n?C(e,t):e,s=a.length-1,i;s>=0;s--)(i=a[s])&&(o=(n?i(e,t,o):i(o))||o);return n&&o&&v(e,t,o),o},d=(a,e)=>(t,n)=>e(t,n,a);import{KeyCode as b}from"../../../../base/common/keyCodes.js";import{RawContextKey as I,IContextKeyService as y,ContextKeyExpr as x}from"../../../../platform/contextkey/common/contextkey.js";import{KeybindingWeight as E}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{ISnippetsService as P}from"./snippets.js";import{getNonWhitespacePrefix as L}from"./snippetsService.js";import"../../../../base/common/lifecycle.js";import"../../../../editor/common/editorCommon.js";import{Range as m}from"../../../../editor/common/core/range.js";import{registerEditorContribution as K,EditorCommand as D,registerEditorCommand as w,EditorContributionInstantiation as F}from"../../../../editor/browser/editorExtensions.js";import{SnippetController2 as f}from"../../../../editor/contrib/snippet/browser/snippetController2.js";import{showSimpleSuggestions as M}from"../../../../editor/contrib/suggest/browser/suggest.js";import{EditorContextKeys as g}from"../../../../editor/common/editorContextKeys.js";import"../../../../editor/browser/editorBrowser.js";import"./snippetsFile.js";import{SnippetCompletion as N}from"./snippetCompletionProvider.js";import{EditorOption as u}from"../../../../editor/common/config/editorOptions.js";import{IClipboardService as T}from"../../../../platform/clipboard/common/clipboardService.js";import{EditorState as k,CodeEditorStateFlag as _}from"../../../../editor/contrib/editorState/browser/editorState.js";import{ILanguageFeaturesService as R}from"../../../../editor/common/services/languageFeatures.js";import"../../../../editor/common/languages.js";let r=class{constructor(e,t,n,o,s){this._editor=e;this._snippetService=t;this._clipboardService=n;this._languageFeaturesService=o;this._hasSnippets=r.ContextKey.bindTo(s),this._configListener=this._editor.onDidChangeConfiguration(i=>{i.hasChanged(u.tabCompletion)&&this._update()}),this._update()}static ID="editor.tabCompletionController";static ContextKey=new I("hasSnippetCompletions",void 0);static get(e){return e.getContribution(r.ID)}_hasSnippets;_configListener;_enabled;_selectionListener;_activeSnippets=[];_completionProvider;dispose(){this._configListener.dispose(),this._selectionListener?.dispose()}_update(){const e=this._editor.getOption(u.tabCompletion)==="onlySnippets";this._enabled!==e&&(this._enabled=e,this._enabled?(this._selectionListener=this._editor.onDidChangeCursorSelection(t=>this._updateSnippets()),this._editor.getModel()&&this._updateSnippets()):this._selectionListener?.dispose())}_updateSnippets(){if(this._activeSnippets=[],this._completionProvider?.dispose(),!this._editor.hasModel())return;const e=this._editor.getSelection(),t=this._editor.getModel();t.tokenization.tokenizeIfCheap(e.positionLineNumber);const n=t.getLanguageIdAtPosition(e.positionLineNumber,e.positionColumn),o=this._snippetService.getSnippetsSync(n);if(!o){this._hasSnippets.set(!1);return}if(m.isEmpty(e)){const i=L(t,e.getPosition());if(i)for(const p of o)i.endsWith(p.prefix)&&this._activeSnippets.push(p)}else if(!m.spansMultipleLines(e)&&t.getValueLengthInRange(e)<=100){const i=t.getValueInRange(e);if(i)for(const p of o)i===p.prefix&&this._activeSnippets.push(p)}const s=this._activeSnippets.length;if(s===0)this._hasSnippets.set(!1);else if(s===1)this._hasSnippets.set(!0);else{this._hasSnippets.set(!0),this._completionProvider={_debugDisplayName:"tabCompletion",dispose:()=>{i.dispose()},provideCompletionItems:(p,l)=>p!==t||!e.containsPosition(l)?void 0:{suggestions:this._activeSnippets.map(c=>{const S=m.fromPositions(l.delta(0,-c.prefix.length),l);return new N(c,S)})}};const i=this._languageFeaturesService.completionProvider.register({language:t.getLanguageId(),pattern:t.uri.fsPath,scheme:t.uri.scheme},this._completionProvider)}}async performSnippetCompletions(){if(this._editor.hasModel())if(this._activeSnippets.length===1){const[e]=this._activeSnippets;let t;if(e.needsClipboard){const n=new k(this._editor,_.Value|_.Position);if(t=await this._clipboardService.readText(),!n.validate(this._editor))return}f.get(this._editor)?.insert(e.codeSnippet,{overwriteBefore:e.prefix.length,overwriteAfter:0,clipboardText:t})}else this._activeSnippets.length>1&&this._completionProvider&&M(this._editor,this._completionProvider)}};r=h([d(1,P),d(2,T),d(3,R),d(4,y)],r),K(r.ID,r,F.Eager);const O=D.bindToContribution(r.get);w(new O({id:"insertSnippet",precondition:r.ContextKey,handler:a=>a.performSnippetCompletions(),kbOpts:{weight:E.EditorContrib,kbExpr:x.and(g.editorTextFocus,g.tabDoesNotMoveFocus,f.InSnippetMode.toNegated()),primary:b.Tab}}));export{r as TabCompletionController};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var TabCompletionController_1;
+import { RawContextKey, IContextKeyService, ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { ISnippetsService } from './snippets.js';
+import { getNonWhitespacePrefix } from './snippetsService.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { registerEditorContribution, EditorCommand, registerEditorCommand } from '../../../../editor/browser/editorExtensions.js';
+import { SnippetController2 } from '../../../../editor/contrib/snippet/browser/snippetController2.js';
+import { showSimpleSuggestions } from '../../../../editor/contrib/suggest/browser/suggest.js';
+import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
+import { SnippetCompletion } from './snippetCompletionProvider.js';
+import { IClipboardService } from '../../../../platform/clipboard/common/clipboardService.js';
+import { EditorState } from '../../../../editor/contrib/editorState/browser/editorState.js';
+import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
+let TabCompletionController = class TabCompletionController {
+    static { TabCompletionController_1 = this; }
+    static { this.ID = 'editor.tabCompletionController'; }
+    static { this.ContextKey = new RawContextKey('hasSnippetCompletions', undefined); }
+    static get(editor) {
+        return editor.getContribution(TabCompletionController_1.ID);
+    }
+    constructor(_editor, _snippetService, _clipboardService, _languageFeaturesService, contextKeyService) {
+        this._editor = _editor;
+        this._snippetService = _snippetService;
+        this._clipboardService = _clipboardService;
+        this._languageFeaturesService = _languageFeaturesService;
+        this._activeSnippets = [];
+        this._hasSnippets = TabCompletionController_1.ContextKey.bindTo(contextKeyService);
+        this._configListener = this._editor.onDidChangeConfiguration(e => {
+            if (e.hasChanged(126)) {
+                this._update();
+            }
+        });
+        this._update();
+    }
+    dispose() {
+        this._configListener.dispose();
+        this._selectionListener?.dispose();
+    }
+    _update() {
+        const enabled = this._editor.getOption(126) === 'onlySnippets';
+        if (this._enabled !== enabled) {
+            this._enabled = enabled;
+            if (!this._enabled) {
+                this._selectionListener?.dispose();
+            }
+            else {
+                this._selectionListener = this._editor.onDidChangeCursorSelection(e => this._updateSnippets());
+                if (this._editor.getModel()) {
+                    this._updateSnippets();
+                }
+            }
+        }
+    }
+    _updateSnippets() {
+        this._activeSnippets = [];
+        this._completionProvider?.dispose();
+        if (!this._editor.hasModel()) {
+            return;
+        }
+        const selection = this._editor.getSelection();
+        const model = this._editor.getModel();
+        model.tokenization.tokenizeIfCheap(selection.positionLineNumber);
+        const id = model.getLanguageIdAtPosition(selection.positionLineNumber, selection.positionColumn);
+        const snippets = this._snippetService.getSnippetsSync(id);
+        if (!snippets) {
+            this._hasSnippets.set(false);
+            return;
+        }
+        if (Range.isEmpty(selection)) {
+            const prefix = getNonWhitespacePrefix(model, selection.getPosition());
+            if (prefix) {
+                for (const snippet of snippets) {
+                    if (prefix.endsWith(snippet.prefix)) {
+                        this._activeSnippets.push(snippet);
+                    }
+                }
+            }
+        }
+        else if (!Range.spansMultipleLines(selection) && model.getValueLengthInRange(selection) <= 100) {
+            const selected = model.getValueInRange(selection);
+            if (selected) {
+                for (const snippet of snippets) {
+                    if (selected === snippet.prefix) {
+                        this._activeSnippets.push(snippet);
+                    }
+                }
+            }
+        }
+        const len = this._activeSnippets.length;
+        if (len === 0) {
+            this._hasSnippets.set(false);
+        }
+        else if (len === 1) {
+            this._hasSnippets.set(true);
+        }
+        else {
+            this._hasSnippets.set(true);
+            this._completionProvider = {
+                _debugDisplayName: 'tabCompletion',
+                dispose: () => {
+                    registration.dispose();
+                },
+                provideCompletionItems: (_model, position) => {
+                    if (_model !== model || !selection.containsPosition(position)) {
+                        return;
+                    }
+                    const suggestions = this._activeSnippets.map(snippet => {
+                        const range = Range.fromPositions(position.delta(0, -snippet.prefix.length), position);
+                        return new SnippetCompletion(snippet, range);
+                    });
+                    return { suggestions };
+                }
+            };
+            const registration = this._languageFeaturesService.completionProvider.register({ language: model.getLanguageId(), pattern: model.uri.fsPath, scheme: model.uri.scheme }, this._completionProvider);
+        }
+    }
+    async performSnippetCompletions() {
+        if (!this._editor.hasModel()) {
+            return;
+        }
+        if (this._activeSnippets.length === 1) {
+            const [snippet] = this._activeSnippets;
+            let clipboardText;
+            if (snippet.needsClipboard) {
+                const state = new EditorState(this._editor, 1 | 4);
+                clipboardText = await this._clipboardService.readText();
+                if (!state.validate(this._editor)) {
+                    return;
+                }
+            }
+            SnippetController2.get(this._editor)?.insert(snippet.codeSnippet, {
+                overwriteBefore: snippet.prefix.length, overwriteAfter: 0,
+                clipboardText
+            });
+        }
+        else if (this._activeSnippets.length > 1) {
+            if (this._completionProvider) {
+                showSimpleSuggestions(this._editor, this._completionProvider);
+            }
+        }
+    }
+};
+TabCompletionController = TabCompletionController_1 = __decorate([
+    __param(1, ISnippetsService),
+    __param(2, IClipboardService),
+    __param(3, ILanguageFeaturesService),
+    __param(4, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], TabCompletionController);
+export { TabCompletionController };
+registerEditorContribution(TabCompletionController.ID, TabCompletionController, 0);
+const TabCompletionCommand = EditorCommand.bindToContribution(TabCompletionController.get);
+registerEditorCommand(new TabCompletionCommand({
+    id: 'insertSnippet',
+    precondition: TabCompletionController.ContextKey,
+    handler: x => x.performSnippetCompletions(),
+    kbOpts: {
+        weight: 100,
+        kbExpr: ContextKeyExpr.and(EditorContextKeys.editorTextFocus, EditorContextKeys.tabDoesNotMoveFocus, SnippetController2.InSnippetMode.toNegated()),
+        primary: 2
+    }
+}));

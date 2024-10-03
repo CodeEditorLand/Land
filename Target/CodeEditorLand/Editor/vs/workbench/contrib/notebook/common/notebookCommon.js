@@ -1,2 +1,426 @@
-import{VSBuffer as y}from"../../../../base/common/buffer.js";import"../../../../base/common/cancellation.js";import"../../../../base/common/diff/diff.js";import"../../../../base/common/event.js";import*as m from"../../../../base/common/glob.js";import"../../../../base/common/htmlContent.js";import{Iterable as v}from"../../../../base/common/iterator.js";import"../../../../base/common/lifecycle.js";import{Mimes as b}from"../../../../base/common/mime.js";import{Schemas as I}from"../../../../base/common/network.js";import{basename as x}from"../../../../base/common/path.js";import{isWindows as M}from"../../../../base/common/platform.js";import"../../../../base/common/sequence.js";import"../../../../base/common/themables.js";import"../../../../base/common/uri.js";import"../../../../editor/common/core/range.js";import"../../../../editor/common/diff/legacyLinesDiffComputer.js";import"../../../../editor/common/editorCommon.js";import"../../../../editor/common/languages.js";import"../../../../editor/common/model.js";import"../../../../platform/accessibility/common/accessibility.js";import{RawContextKey as h}from"../../../../platform/contextkey/common/contextkey.js";import"../../../../platform/extensions/common/extensions.js";import"../../../../platform/files/common/files.js";import"../../../../platform/undoRedo/common/undoRedo.js";import"../../../common/editor.js";import"./model/notebookTextModel.js";import"./notebookExecutionStateService.js";import"./notebookKernelService.js";import"./notebookRange.js";import"../../../services/editor/common/editorResolverService.js";import{generateMetadataUri as O,generate as D,parseMetadataUri as R,parse as N}from"../../../services/notebook/common/notebookDocumentService.js";import"../../../services/workingCopy/common/workingCopy.js";const rt="workbench.editor.notebook",lt="workbench.editor.notebookTextDiffEditor",it="workbench.editor.notebookMultiTextDiffEditor",dt="workbench.editor.interactive",st="workbench.editor.repl",ut="replNotebook.input.execute";var S=(e=>(e[e.Markup=1]="Markup",e[e.Code=2]="Code",e))(S||{});const T=["application/json","application/javascript","text/html","image/svg+xml",b.latex,b.markdown,"image/png","image/jpeg",b.text],pt=[b.latex,b.markdown,"application/json","text/html","image/svg+xml","image/png","image/jpeg",b.text],ct=new Map([["ms-toolsai.jupyter",new Set(["jupyter-notebook","interactive"])],["ms-toolsai.jupyter-renderers",new Set(["jupyter-notebook","interactive"])]]),mt="_notAvailable";var w=(e=>(e[e.Running=1]="Running",e[e.Idle=2]="Idle",e))(w||{}),P=(o=>(o[o.Unconfirmed=1]="Unconfirmed",o[o.Pending=2]="Pending",o[o.Executing=3]="Executing",o))(P||{}),U=(o=>(o[o.Unconfirmed=1]="Unconfirmed",o[o.Pending=2]="Pending",o[o.Executing=3]="Executing",o))(U||{}),L=(a=>(a[a.WithHardKernelDependency=0]="WithHardKernelDependency",a[a.WithOptionalKernelDependency=1]="WithOptionalKernelDependency",a[a.Pure=2]="Pure",a[a.Never=3]="Never",a))(L||{}),A=(o=>(o.Always="always",o.Never="never",o.Optional="optional",o))(A||{}),B=(i=>(i[i.ModelChange=1]="ModelChange",i[i.Move=2]="Move",i[i.ChangeCellLanguage=5]="ChangeCellLanguage",i[i.Initialize=6]="Initialize",i[i.ChangeCellMetadata=7]="ChangeCellMetadata",i[i.Output=8]="Output",i[i.OutputItem=9]="OutputItem",i[i.ChangeCellContent=10]="ChangeCellContent",i[i.ChangeDocumentMetadata=11]="ChangeDocumentMetadata",i[i.ChangeCellInternalMetadata=12]="ChangeCellInternalMetadata",i[i.ChangeCellMime=13]="ChangeCellMime",i[i.Unknown=100]="Unknown",i))(B||{}),_=(e=>(e[e.Handle=0]="Handle",e[e.Index=1]="Index",e))(_||{}),F=(r=>(r[r.Replace=1]="Replace",r[r.Output=2]="Output",r[r.Metadata=3]="Metadata",r[r.CellLanguage=4]="CellLanguage",r[r.DocumentMetadata=5]="DocumentMetadata",r[r.Move=6]="Move",r[r.OutputItems=7]="OutputItems",r[r.PartialMetadata=8]="PartialMetadata",r[r.PartialInternalMetadata=9]="PartialInternalMetadata",r))(F||{}),W;(o=>{o.scheme=I.vscodeNotebookMetadata;function n(a){return O(a)}o.generate=n;function e(a){return R(a)}o.parse=e})(W||={});var V;(u=>{u.scheme=I.vscodeNotebookCell;function n(s,r){return D(s,r)}u.generate=n;function e(s){return N(s)}u.parse=e;function o(s,r){return s.with({scheme:I.vscodeNotebookCellOutput,fragment:`op${r??""},${s.scheme!==I.file?s.scheme:""}`})}u.generateCellOutputUri=o;function a(s){if(s.scheme!==I.vscodeNotebookCellOutput)return;const r=/^op([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?\,(.*)$/i.exec(s.fragment);if(!r)return;const p=r[1]&&r[1]!==""?r[1]:void 0,c=r[2];return{outputId:p,notebook:s.with({scheme:c||I.file,fragment:null})}}u.parseCellOutputUri=a;function d(s,r,p){return u.generate(s,r).with({scheme:p})}u.generateCellPropertyUri=d;function l(s,r){if(s.scheme===r)return u.parse(s.with({scheme:u.scheme}))}u.parseCellPropertyUri=l})(V||={});const g=t=>M?t.replace(/\//g,"\\"):t;class bt{constructor(n=[],e=T){this.defaultOrder=e;this.order=[...new Set(n)].map(o=>({pattern:o,matches:m.parse(g(o))}))}order;sort(n){const e=new Map(v.map(n,a=>[a,g(a)]));let o=[];for(const{matches:a}of this.order)for(const[d,l]of e)if(a(l)){o.push(d),e.delete(d);break}return e.size&&(o=o.concat([...e.keys()].sort((a,d)=>this.defaultOrder.indexOf(a)-this.defaultOrder.indexOf(d)))),o}prioritize(n,e){const o=this.findIndex(n);if(o===-1){this.order.unshift({pattern:n,matches:m.parse(g(n))});return}const a=new Set(e.map(l=>this.findIndex(l,o)));a.delete(-1);const d=Array.from(a).sort();this.order.splice(o+1,0,...d.map(l=>this.order[l]));for(let l=d.length-1;l>=0;l--)this.order.splice(d[l],1)}toArray(){return this.order.map(n=>n.pattern)}findIndex(n,e=this.order.length){const o=g(n);for(let a=0;a<e;a++)if(this.order[a].matches(o))return a;return-1}}function It(t,n,e,o=(a,d)=>a===d){const a=[];function d(s,r,p){if(r===0&&p.length===0)return;const c=a[a.length-1];c&&c.start+c.deleteCount===s?(c.deleteCount+=r,c.toInsert.push(...p)):a.push({start:s,deleteCount:r,toInsert:p})}let l=0,u=0;for(;;){if(l===t.length){d(l,0,n.slice(u));break}if(u===n.length){d(l,t.length-l,[]);break}const s=t[l],r=n[u];if(o(s,r)){l+=1,u+=1;continue}e(r)?(d(l,1,[]),l+=1):(d(l,0,[r]),u+=1)}return a}const gt=new h("notebookEditorCursorAtBoundary","none"),ft=new h("notebookEditorCursorAtLineBoundary","none");var H=(e=>(e.default="default",e.option="option",e))(H||{}),K=(o=>(o.Cells="cells",o.Text="text",o.None="none",o))(K||{});function E(t){const n=t;return!!((typeof n.include=="string"||m.isRelativePattern(n.include))&&(typeof n.exclude=="string"||m.isRelativePattern(n.exclude)))}function Ct(t,n,e){if(Array.isArray(t.viewType)&&t.viewType.indexOf(n)>=0||t.viewType===n)return!0;if(t.filenamePattern){const o=E(t.filenamePattern)?t.filenamePattern.include:t.filenamePattern,a=E(t.filenamePattern)?t.filenamePattern.exclude:void 0;if(m.match(o,x(e.fsPath).toLowerCase()))return!(a&&m.match(a,x(e.fsPath).toLowerCase()))}return!1}const yt={displayOrder:"notebook.displayOrder",cellToolbarLocation:"notebook.cellToolbarLocation",cellToolbarVisibility:"notebook.cellToolbarVisibility",showCellStatusBar:"notebook.showCellStatusBar",textDiffEditorPreview:"notebook.diff.enablePreview",diffOverviewRuler:"notebook.diff.overviewRuler",experimentalInsertToolbarAlignment:"notebook.experimental.insertToolbarAlignment",compactView:"notebook.compactView",focusIndicator:"notebook.cellFocusIndicator",insertToolbarLocation:"notebook.insertToolbarLocation",globalToolbar:"notebook.globalToolbar",stickyScrollEnabled:"notebook.stickyScroll.enabled",stickyScrollMode:"notebook.stickyScroll.mode",undoRedoPerCell:"notebook.undoRedoPerCell",consolidatedOutputButton:"notebook.consolidatedOutputButton",showFoldingControls:"notebook.showFoldingControls",dragAndDropEnabled:"notebook.dragAndDropEnabled",cellEditorOptionsCustomizations:"notebook.editorOptionsCustomizations",consolidatedRunButton:"notebook.consolidatedRunButton",openGettingStarted:"notebook.experimental.openGettingStarted",globalToolbarShowLabel:"notebook.globalToolbarShowLabel",markupFontSize:"notebook.markup.fontSize",markdownLineHeight:"notebook.markdown.lineHeight",interactiveWindowCollapseCodeCells:"interactiveWindow.collapseCellInputCode",outputScrollingDeprecated:"notebook.experimental.outputScrolling",outputScrolling:"notebook.output.scrolling",textOutputLineLimit:"notebook.output.textLineLimit",LinkifyOutputFilePaths:"notebook.output.linkifyFilePaths",minimalErrorRendering:"notebook.output.minimalErrorRendering",formatOnSave:"notebook.formatOnSave.enabled",insertFinalNewline:"notebook.insertFinalNewline",defaultFormatter:"notebook.defaultFormatter",formatOnCellExecution:"notebook.formatOnCellExecution",codeActionsOnSave:"notebook.codeActionsOnSave",outputWordWrap:"notebook.output.wordWrap",outputLineHeightDeprecated:"notebook.outputLineHeight",outputLineHeight:"notebook.output.lineHeight",outputFontSizeDeprecated:"notebook.outputFontSize",outputFontSize:"notebook.output.fontSize",outputFontFamilyDeprecated:"notebook.outputFontFamily",outputFontFamily:"notebook.output.fontFamily",findFilters:"notebook.find.filters",logging:"notebook.logging",confirmDeleteRunningCell:"notebook.confirmDeleteRunningCell",remoteSaving:"notebook.experimental.remoteSave",gotoSymbolsAllSymbols:"notebook.gotoSymbols.showAllSymbols",outlineShowMarkdownHeadersOnly:"notebook.outline.showMarkdownHeadersOnly",outlineShowCodeCells:"notebook.outline.showCodeCells",outlineShowCodeCellSymbols:"notebook.outline.showCodeCellSymbols",breadcrumbsShowCodeCells:"notebook.breadcrumbs.showCodeCells",scrollToRevealCell:"notebook.scrolling.revealNextCellOnExecute",cellChat:"notebook.experimental.cellChat",cellGenerate:"notebook.experimental.generate",notebookVariablesView:"notebook.experimental.variablesView",InteractiveWindowPromptToSave:"interactiveWindow.promptToSaveOnClose",cellFailureDiagnostics:"notebook.cellFailureDiagnostics",outputBackupSizeLimit:"notebook.backup.sizeLimit",multiCursor:"notebook.multiCursor.enabled"};var z=(e=>(e[e.Left=1]="Left",e[e.Right=2]="Right",e))(z||{});class C{static _prefix="notebook/";static create(n,e){return`${C._prefix}${n}/${e??n}`}static parse(n){if(n.startsWith(C._prefix)){const e=n.substring(C._prefix.length).split("/");if(e.length===2)return{notebookType:e[0],viewType:e[1]}}}}function kt(t){return["application/vnd.code.notebook.stdout","application/vnd.code.notebook.stderr"].includes(t)}const j=new TextDecoder;function xt(t){const n=[];let e=!1;for(const l of t)(n.length===0||e)&&(n.push(l),e=!0);let o=G(n);const a=y.concat(n.map(l=>y.wrap(l))),d=J(a);return o=o||d.byteLength!==a.byteLength,{data:d,didCompression:o}}const f="\x1B[A",k=f.split("").map(t=>t.charCodeAt(0)),$=10;function G(t){let n=!1;return t.forEach((e,o)=>{if(o===0||e.length<f.length)return;const a=t[o-1],d=e.subarray(0,f.length);if(d[0]===k[0]&&d[1]===k[1]&&d[2]===k[2]){const l=a.lastIndexOf($);if(l===-1)return;n=!0,t[o-1]=a.subarray(0,l),t[o]=e.subarray(f.length)}}),n}function Y(t){let n=t;do t=n,n=t.replace(/[^\n]\x08/gm,"");while(n.length<t.length);return t}function X(t){for(t=t.replace(/\r+\n/gm,`
-`);t.search(/\r[^$]/g)>-1;){const n=t.match(/^(.*)\r+/m)[1];let e=t.match(/\r+(.*)$/m)[1];e=e+n.slice(e.length,n.length),t=t.replace(/\r+.*$/m,"\r").replace(/^.*\r/m,e)}return t}const q=8,Q=13;function J(t){return!t.buffer.includes(q)&&!t.buffer.includes(Q)?t:y.fromString(X(Y(j.decode(t.buffer))))}export{pt as ACCESSIBLE_NOTEBOOK_DISPLAY_ORDER,F as CellEditType,S as CellKind,z as CellStatusbarAlignment,V as CellUri,ut as EXECUTE_REPL_COMMAND_ID,dt as INTERACTIVE_WINDOW_EDITOR_ID,f as MOVE_CURSOR_1_LINE_COMMAND,bt as MimeTypeDisplayOrder,lt as NOTEBOOK_DIFF_EDITOR_ID,T as NOTEBOOK_DISPLAY_ORDER,gt as NOTEBOOK_EDITOR_CURSOR_BOUNDARY,ft as NOTEBOOK_EDITOR_CURSOR_LINE_BOUNDARY,rt as NOTEBOOK_EDITOR_ID,it as NOTEBOOK_MULTI_DIFF_EDITOR_ID,P as NotebookCellExecutionState,B as NotebookCellsChangeType,H as NotebookEditorPriority,U as NotebookExecutionState,K as NotebookFindScopeType,W as NotebookMetadataUri,L as NotebookRendererMatch,w as NotebookRunState,yt as NotebookSetting,C as NotebookWorkingCopyTypeIdentifier,ct as RENDERER_EQUIVALENT_EXTENSIONS,mt as RENDERER_NOT_AVAILABLE,st as REPL_EDITOR_ID,A as RendererMessagingSpec,_ as SelectionStateType,xt as compressOutputItemStreams,It as diff,E as isDocumentExcludePattern,kt as isTextStreamMime,Ct as notebookDocumentFilterMatch};
+import { VSBuffer } from '../../../../base/common/buffer.js';
+import * as glob from '../../../../base/common/glob.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { Mimes } from '../../../../base/common/mime.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { basename } from '../../../../base/common/path.js';
+import { isWindows } from '../../../../base/common/platform.js';
+import { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { generateMetadataUri, generate as generateUri, parseMetadataUri, parse as parseUri } from '../../../services/notebook/common/notebookDocumentService.js';
+export const NOTEBOOK_EDITOR_ID = 'workbench.editor.notebook';
+export const NOTEBOOK_DIFF_EDITOR_ID = 'workbench.editor.notebookTextDiffEditor';
+export const NOTEBOOK_MULTI_DIFF_EDITOR_ID = 'workbench.editor.notebookMultiTextDiffEditor';
+export const INTERACTIVE_WINDOW_EDITOR_ID = 'workbench.editor.interactive';
+export const REPL_EDITOR_ID = 'workbench.editor.repl';
+export const EXECUTE_REPL_COMMAND_ID = 'replNotebook.input.execute';
+export var CellKind;
+(function (CellKind) {
+    CellKind[CellKind["Markup"] = 1] = "Markup";
+    CellKind[CellKind["Code"] = 2] = "Code";
+})(CellKind || (CellKind = {}));
+export const NOTEBOOK_DISPLAY_ORDER = [
+    'application/json',
+    'application/javascript',
+    'text/html',
+    'image/svg+xml',
+    Mimes.latex,
+    Mimes.markdown,
+    'image/png',
+    'image/jpeg',
+    Mimes.text
+];
+export const ACCESSIBLE_NOTEBOOK_DISPLAY_ORDER = [
+    Mimes.latex,
+    Mimes.markdown,
+    'application/json',
+    'text/html',
+    'image/svg+xml',
+    'image/png',
+    'image/jpeg',
+    Mimes.text,
+];
+export const RENDERER_EQUIVALENT_EXTENSIONS = new Map([
+    ['ms-toolsai.jupyter', new Set(['jupyter-notebook', 'interactive'])],
+    ['ms-toolsai.jupyter-renderers', new Set(['jupyter-notebook', 'interactive'])],
+]);
+export const RENDERER_NOT_AVAILABLE = '_notAvailable';
+export var NotebookRunState;
+(function (NotebookRunState) {
+    NotebookRunState[NotebookRunState["Running"] = 1] = "Running";
+    NotebookRunState[NotebookRunState["Idle"] = 2] = "Idle";
+})(NotebookRunState || (NotebookRunState = {}));
+export var NotebookCellExecutionState;
+(function (NotebookCellExecutionState) {
+    NotebookCellExecutionState[NotebookCellExecutionState["Unconfirmed"] = 1] = "Unconfirmed";
+    NotebookCellExecutionState[NotebookCellExecutionState["Pending"] = 2] = "Pending";
+    NotebookCellExecutionState[NotebookCellExecutionState["Executing"] = 3] = "Executing";
+})(NotebookCellExecutionState || (NotebookCellExecutionState = {}));
+export var NotebookExecutionState;
+(function (NotebookExecutionState) {
+    NotebookExecutionState[NotebookExecutionState["Unconfirmed"] = 1] = "Unconfirmed";
+    NotebookExecutionState[NotebookExecutionState["Pending"] = 2] = "Pending";
+    NotebookExecutionState[NotebookExecutionState["Executing"] = 3] = "Executing";
+})(NotebookExecutionState || (NotebookExecutionState = {}));
+export var NotebookCellsChangeType;
+(function (NotebookCellsChangeType) {
+    NotebookCellsChangeType[NotebookCellsChangeType["ModelChange"] = 1] = "ModelChange";
+    NotebookCellsChangeType[NotebookCellsChangeType["Move"] = 2] = "Move";
+    NotebookCellsChangeType[NotebookCellsChangeType["ChangeCellLanguage"] = 5] = "ChangeCellLanguage";
+    NotebookCellsChangeType[NotebookCellsChangeType["Initialize"] = 6] = "Initialize";
+    NotebookCellsChangeType[NotebookCellsChangeType["ChangeCellMetadata"] = 7] = "ChangeCellMetadata";
+    NotebookCellsChangeType[NotebookCellsChangeType["Output"] = 8] = "Output";
+    NotebookCellsChangeType[NotebookCellsChangeType["OutputItem"] = 9] = "OutputItem";
+    NotebookCellsChangeType[NotebookCellsChangeType["ChangeCellContent"] = 10] = "ChangeCellContent";
+    NotebookCellsChangeType[NotebookCellsChangeType["ChangeDocumentMetadata"] = 11] = "ChangeDocumentMetadata";
+    NotebookCellsChangeType[NotebookCellsChangeType["ChangeCellInternalMetadata"] = 12] = "ChangeCellInternalMetadata";
+    NotebookCellsChangeType[NotebookCellsChangeType["ChangeCellMime"] = 13] = "ChangeCellMime";
+    NotebookCellsChangeType[NotebookCellsChangeType["Unknown"] = 100] = "Unknown";
+})(NotebookCellsChangeType || (NotebookCellsChangeType = {}));
+export var SelectionStateType;
+(function (SelectionStateType) {
+    SelectionStateType[SelectionStateType["Handle"] = 0] = "Handle";
+    SelectionStateType[SelectionStateType["Index"] = 1] = "Index";
+})(SelectionStateType || (SelectionStateType = {}));
+export var NotebookMetadataUri;
+(function (NotebookMetadataUri) {
+    NotebookMetadataUri.scheme = Schemas.vscodeNotebookMetadata;
+    function generate(notebook) {
+        return generateMetadataUri(notebook);
+    }
+    NotebookMetadataUri.generate = generate;
+    function parse(metadata) {
+        return parseMetadataUri(metadata);
+    }
+    NotebookMetadataUri.parse = parse;
+})(NotebookMetadataUri || (NotebookMetadataUri = {}));
+export var CellUri;
+(function (CellUri) {
+    CellUri.scheme = Schemas.vscodeNotebookCell;
+    function generate(notebook, handle) {
+        return generateUri(notebook, handle);
+    }
+    CellUri.generate = generate;
+    function parse(cell) {
+        return parseUri(cell);
+    }
+    CellUri.parse = parse;
+    function generateCellOutputUri(notebook, outputId) {
+        return notebook.with({
+            scheme: Schemas.vscodeNotebookCellOutput,
+            fragment: `op${outputId ?? ''},${notebook.scheme !== Schemas.file ? notebook.scheme : ''}`
+        });
+    }
+    CellUri.generateCellOutputUri = generateCellOutputUri;
+    function parseCellOutputUri(uri) {
+        if (uri.scheme !== Schemas.vscodeNotebookCellOutput) {
+            return;
+        }
+        const match = /^op([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?\,(.*)$/i.exec(uri.fragment);
+        if (!match) {
+            return undefined;
+        }
+        const outputId = (match[1] && match[1] !== '') ? match[1] : undefined;
+        const scheme = match[2];
+        return {
+            outputId,
+            notebook: uri.with({
+                scheme: scheme || Schemas.file,
+                fragment: null
+            })
+        };
+    }
+    CellUri.parseCellOutputUri = parseCellOutputUri;
+    function generateCellPropertyUri(notebook, handle, scheme) {
+        return CellUri.generate(notebook, handle).with({ scheme: scheme });
+    }
+    CellUri.generateCellPropertyUri = generateCellPropertyUri;
+    function parseCellPropertyUri(uri, propertyScheme) {
+        if (uri.scheme !== propertyScheme) {
+            return undefined;
+        }
+        return CellUri.parse(uri.with({ scheme: CellUri.scheme }));
+    }
+    CellUri.parseCellPropertyUri = parseCellPropertyUri;
+})(CellUri || (CellUri = {}));
+const normalizeSlashes = (str) => isWindows ? str.replace(/\//g, '\\') : str;
+export class MimeTypeDisplayOrder {
+    constructor(initialValue = [], defaultOrder = NOTEBOOK_DISPLAY_ORDER) {
+        this.defaultOrder = defaultOrder;
+        this.order = [...new Set(initialValue)].map(pattern => ({
+            pattern,
+            matches: glob.parse(normalizeSlashes(pattern))
+        }));
+    }
+    sort(mimetypes) {
+        const remaining = new Map(Iterable.map(mimetypes, m => [m, normalizeSlashes(m)]));
+        let sorted = [];
+        for (const { matches } of this.order) {
+            for (const [original, normalized] of remaining) {
+                if (matches(normalized)) {
+                    sorted.push(original);
+                    remaining.delete(original);
+                    break;
+                }
+            }
+        }
+        if (remaining.size) {
+            sorted = sorted.concat([...remaining.keys()].sort((a, b) => this.defaultOrder.indexOf(a) - this.defaultOrder.indexOf(b)));
+        }
+        return sorted;
+    }
+    prioritize(chosenMimetype, otherMimetypes) {
+        const chosenIndex = this.findIndex(chosenMimetype);
+        if (chosenIndex === -1) {
+            this.order.unshift({ pattern: chosenMimetype, matches: glob.parse(normalizeSlashes(chosenMimetype)) });
+            return;
+        }
+        const uniqueIndicies = new Set(otherMimetypes.map(m => this.findIndex(m, chosenIndex)));
+        uniqueIndicies.delete(-1);
+        const otherIndices = Array.from(uniqueIndicies).sort();
+        this.order.splice(chosenIndex + 1, 0, ...otherIndices.map(i => this.order[i]));
+        for (let oi = otherIndices.length - 1; oi >= 0; oi--) {
+            this.order.splice(otherIndices[oi], 1);
+        }
+    }
+    toArray() {
+        return this.order.map(o => o.pattern);
+    }
+    findIndex(mimeType, maxIndex = this.order.length) {
+        const normalized = normalizeSlashes(mimeType);
+        for (let i = 0; i < maxIndex; i++) {
+            if (this.order[i].matches(normalized)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+}
+export function diff(before, after, contains, equal = (a, b) => a === b) {
+    const result = [];
+    function pushSplice(start, deleteCount, toInsert) {
+        if (deleteCount === 0 && toInsert.length === 0) {
+            return;
+        }
+        const latest = result[result.length - 1];
+        if (latest && latest.start + latest.deleteCount === start) {
+            latest.deleteCount += deleteCount;
+            latest.toInsert.push(...toInsert);
+        }
+        else {
+            result.push({ start, deleteCount, toInsert });
+        }
+    }
+    let beforeIdx = 0;
+    let afterIdx = 0;
+    while (true) {
+        if (beforeIdx === before.length) {
+            pushSplice(beforeIdx, 0, after.slice(afterIdx));
+            break;
+        }
+        if (afterIdx === after.length) {
+            pushSplice(beforeIdx, before.length - beforeIdx, []);
+            break;
+        }
+        const beforeElement = before[beforeIdx];
+        const afterElement = after[afterIdx];
+        if (equal(beforeElement, afterElement)) {
+            beforeIdx += 1;
+            afterIdx += 1;
+            continue;
+        }
+        if (contains(afterElement)) {
+            pushSplice(beforeIdx, 1, []);
+            beforeIdx += 1;
+        }
+        else {
+            pushSplice(beforeIdx, 0, [afterElement]);
+            afterIdx += 1;
+        }
+    }
+    return result;
+}
+export const NOTEBOOK_EDITOR_CURSOR_BOUNDARY = new RawContextKey('notebookEditorCursorAtBoundary', 'none');
+export const NOTEBOOK_EDITOR_CURSOR_LINE_BOUNDARY = new RawContextKey('notebookEditorCursorAtLineBoundary', 'none');
+export var NotebookEditorPriority;
+(function (NotebookEditorPriority) {
+    NotebookEditorPriority["default"] = "default";
+    NotebookEditorPriority["option"] = "option";
+})(NotebookEditorPriority || (NotebookEditorPriority = {}));
+export var NotebookFindScopeType;
+(function (NotebookFindScopeType) {
+    NotebookFindScopeType["Cells"] = "cells";
+    NotebookFindScopeType["Text"] = "text";
+    NotebookFindScopeType["None"] = "none";
+})(NotebookFindScopeType || (NotebookFindScopeType = {}));
+export function isDocumentExcludePattern(filenamePattern) {
+    const arg = filenamePattern;
+    if ((typeof arg.include === 'string' || glob.isRelativePattern(arg.include))
+        && (typeof arg.exclude === 'string' || glob.isRelativePattern(arg.exclude))) {
+        return true;
+    }
+    return false;
+}
+export function notebookDocumentFilterMatch(filter, viewType, resource) {
+    if (Array.isArray(filter.viewType) && filter.viewType.indexOf(viewType) >= 0) {
+        return true;
+    }
+    if (filter.viewType === viewType) {
+        return true;
+    }
+    if (filter.filenamePattern) {
+        const filenamePattern = isDocumentExcludePattern(filter.filenamePattern) ? filter.filenamePattern.include : filter.filenamePattern;
+        const excludeFilenamePattern = isDocumentExcludePattern(filter.filenamePattern) ? filter.filenamePattern.exclude : undefined;
+        if (glob.match(filenamePattern, basename(resource.fsPath).toLowerCase())) {
+            if (excludeFilenamePattern) {
+                if (glob.match(excludeFilenamePattern, basename(resource.fsPath).toLowerCase())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+    return false;
+}
+export const NotebookSetting = {
+    displayOrder: 'notebook.displayOrder',
+    cellToolbarLocation: 'notebook.cellToolbarLocation',
+    cellToolbarVisibility: 'notebook.cellToolbarVisibility',
+    showCellStatusBar: 'notebook.showCellStatusBar',
+    textDiffEditorPreview: 'notebook.diff.enablePreview',
+    diffOverviewRuler: 'notebook.diff.overviewRuler',
+    experimentalInsertToolbarAlignment: 'notebook.experimental.insertToolbarAlignment',
+    compactView: 'notebook.compactView',
+    focusIndicator: 'notebook.cellFocusIndicator',
+    insertToolbarLocation: 'notebook.insertToolbarLocation',
+    globalToolbar: 'notebook.globalToolbar',
+    stickyScrollEnabled: 'notebook.stickyScroll.enabled',
+    stickyScrollMode: 'notebook.stickyScroll.mode',
+    undoRedoPerCell: 'notebook.undoRedoPerCell',
+    consolidatedOutputButton: 'notebook.consolidatedOutputButton',
+    showFoldingControls: 'notebook.showFoldingControls',
+    dragAndDropEnabled: 'notebook.dragAndDropEnabled',
+    cellEditorOptionsCustomizations: 'notebook.editorOptionsCustomizations',
+    consolidatedRunButton: 'notebook.consolidatedRunButton',
+    openGettingStarted: 'notebook.experimental.openGettingStarted',
+    globalToolbarShowLabel: 'notebook.globalToolbarShowLabel',
+    markupFontSize: 'notebook.markup.fontSize',
+    markdownLineHeight: 'notebook.markdown.lineHeight',
+    interactiveWindowCollapseCodeCells: 'interactiveWindow.collapseCellInputCode',
+    outputScrollingDeprecated: 'notebook.experimental.outputScrolling',
+    outputScrolling: 'notebook.output.scrolling',
+    textOutputLineLimit: 'notebook.output.textLineLimit',
+    LinkifyOutputFilePaths: 'notebook.output.linkifyFilePaths',
+    minimalErrorRendering: 'notebook.output.minimalErrorRendering',
+    formatOnSave: 'notebook.formatOnSave.enabled',
+    insertFinalNewline: 'notebook.insertFinalNewline',
+    defaultFormatter: 'notebook.defaultFormatter',
+    formatOnCellExecution: 'notebook.formatOnCellExecution',
+    codeActionsOnSave: 'notebook.codeActionsOnSave',
+    outputWordWrap: 'notebook.output.wordWrap',
+    outputLineHeightDeprecated: 'notebook.outputLineHeight',
+    outputLineHeight: 'notebook.output.lineHeight',
+    outputFontSizeDeprecated: 'notebook.outputFontSize',
+    outputFontSize: 'notebook.output.fontSize',
+    outputFontFamilyDeprecated: 'notebook.outputFontFamily',
+    outputFontFamily: 'notebook.output.fontFamily',
+    findFilters: 'notebook.find.filters',
+    logging: 'notebook.logging',
+    confirmDeleteRunningCell: 'notebook.confirmDeleteRunningCell',
+    remoteSaving: 'notebook.experimental.remoteSave',
+    gotoSymbolsAllSymbols: 'notebook.gotoSymbols.showAllSymbols',
+    outlineShowMarkdownHeadersOnly: 'notebook.outline.showMarkdownHeadersOnly',
+    outlineShowCodeCells: 'notebook.outline.showCodeCells',
+    outlineShowCodeCellSymbols: 'notebook.outline.showCodeCellSymbols',
+    breadcrumbsShowCodeCells: 'notebook.breadcrumbs.showCodeCells',
+    scrollToRevealCell: 'notebook.scrolling.revealNextCellOnExecute',
+    cellChat: 'notebook.experimental.cellChat',
+    cellGenerate: 'notebook.experimental.generate',
+    notebookVariablesView: 'notebook.experimental.variablesView',
+    InteractiveWindowPromptToSave: 'interactiveWindow.promptToSaveOnClose',
+    cellFailureDiagnostics: 'notebook.cellFailureDiagnostics',
+    outputBackupSizeLimit: 'notebook.backup.sizeLimit',
+    multiCursor: 'notebook.multiCursor.enabled',
+};
+export class NotebookWorkingCopyTypeIdentifier {
+    static { this._prefix = 'notebook/'; }
+    static create(notebookType, viewType) {
+        return `${NotebookWorkingCopyTypeIdentifier._prefix}${notebookType}/${viewType ?? notebookType}`;
+    }
+    static parse(candidate) {
+        if (candidate.startsWith(NotebookWorkingCopyTypeIdentifier._prefix)) {
+            const split = candidate.substring(NotebookWorkingCopyTypeIdentifier._prefix.length).split('/');
+            if (split.length === 2) {
+                return { notebookType: split[0], viewType: split[1] };
+            }
+        }
+        return undefined;
+    }
+}
+export function isTextStreamMime(mimeType) {
+    return ['application/vnd.code.notebook.stdout', 'application/vnd.code.notebook.stderr'].includes(mimeType);
+}
+const textDecoder = new TextDecoder();
+export function compressOutputItemStreams(outputs) {
+    const buffers = [];
+    let startAppending = false;
+    for (const output of outputs) {
+        if ((buffers.length === 0 || startAppending)) {
+            buffers.push(output);
+            startAppending = true;
+        }
+    }
+    let didCompression = compressStreamBuffer(buffers);
+    const concatenated = VSBuffer.concat(buffers.map(buffer => VSBuffer.wrap(buffer)));
+    const data = formatStreamText(concatenated);
+    didCompression = didCompression || data.byteLength !== concatenated.byteLength;
+    return { data, didCompression };
+}
+export const MOVE_CURSOR_1_LINE_COMMAND = `${String.fromCharCode(27)}[A`;
+const MOVE_CURSOR_1_LINE_COMMAND_BYTES = MOVE_CURSOR_1_LINE_COMMAND.split('').map(c => c.charCodeAt(0));
+const LINE_FEED = 10;
+function compressStreamBuffer(streams) {
+    let didCompress = false;
+    streams.forEach((stream, index) => {
+        if (index === 0 || stream.length < MOVE_CURSOR_1_LINE_COMMAND.length) {
+            return;
+        }
+        const previousStream = streams[index - 1];
+        const command = stream.subarray(0, MOVE_CURSOR_1_LINE_COMMAND.length);
+        if (command[0] === MOVE_CURSOR_1_LINE_COMMAND_BYTES[0] && command[1] === MOVE_CURSOR_1_LINE_COMMAND_BYTES[1] && command[2] === MOVE_CURSOR_1_LINE_COMMAND_BYTES[2]) {
+            const lastIndexOfLineFeed = previousStream.lastIndexOf(LINE_FEED);
+            if (lastIndexOfLineFeed === -1) {
+                return;
+            }
+            didCompress = true;
+            streams[index - 1] = previousStream.subarray(0, lastIndexOfLineFeed);
+            streams[index] = stream.subarray(MOVE_CURSOR_1_LINE_COMMAND.length);
+        }
+    });
+    return didCompress;
+}
+function fixBackspace(txt) {
+    let tmp = txt;
+    do {
+        txt = tmp;
+        tmp = txt.replace(/[^\n]\x08/gm, '');
+    } while (tmp.length < txt.length);
+    return txt;
+}
+function fixCarriageReturn(txt) {
+    txt = txt.replace(/\r+\n/gm, '\n');
+    while (txt.search(/\r[^$]/g) > -1) {
+        const base = txt.match(/^(.*)\r+/m)[1];
+        let insert = txt.match(/\r+(.*)$/m)[1];
+        insert = insert + base.slice(insert.length, base.length);
+        txt = txt.replace(/\r+.*$/m, '\r').replace(/^.*\r/m, insert);
+    }
+    return txt;
+}
+const BACKSPACE_CHARACTER = '\b'.charCodeAt(0);
+const CARRIAGE_RETURN_CHARACTER = '\r'.charCodeAt(0);
+function formatStreamText(buffer) {
+    if (!buffer.buffer.includes(BACKSPACE_CHARACTER) && !buffer.buffer.includes(CARRIAGE_RETURN_CHARACTER)) {
+        return buffer;
+    }
+    return VSBuffer.fromString(fixCarriageReturn(fixBackspace(textDecoder.decode(buffer.buffer))));
+}

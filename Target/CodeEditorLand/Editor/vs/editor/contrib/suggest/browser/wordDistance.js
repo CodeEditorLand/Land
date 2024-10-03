@@ -1,1 +1,56 @@
-import{binarySearch as w,isFalsyOrEmpty as I}from"../../../../base/common/arrays.js";import"../../../browser/editorBrowser.js";import{EditorOption as P}from"../../../common/config/editorOptions.js";import"../../../common/core/position.js";import{Range as c}from"../../../common/core/range.js";import{CompletionItemKind as R}from"../../../common/languages.js";import"../../../common/services/editorWorker.js";import{BracketSelectionRangeProvider as y}from"../../smartSelect/browser/bracketSelections.js";class o{static None=new class extends o{distance(){return 0}};static async create(m,e){if(!e.getOption(P.suggest).localityBonus||!e.hasModel())return o.None;const t=e.getModel(),s=e.getPosition();if(!m.canComputeWordRanges(t.uri))return o.None;const[n]=await new y().provideSelectionRanges(t,[s]);if(n.length===0)return o.None;const a=await m.computeWordRanges(t.uri,n[0].range);if(!a)return o.None;const d=t.getWordUntilPosition(s);return delete a[d.word],new class extends o{distance(p,r){if(!s.equals(e.getPosition()))return 0;if(r.kind===R.Keyword)return 2<<20;const f=typeof r.label=="string"?r.label:r.label.label,i=a[f];if(I(i))return 2<<20;const l=w(i,c.fromPositions(p),c.compareRangesUsingStarts),u=l>=0?i[l]:i[Math.max(0,~l-1)];let g=n.length;for(const b of n){if(!c.containsRange(b.range,u))break;g-=1}return g}}}}export{o as WordDistance};
+import { binarySearch, isFalsyOrEmpty } from '../../../../base/common/arrays.js';
+import { Range } from '../../../common/core/range.js';
+import { BracketSelectionRangeProvider } from '../../smartSelect/browser/bracketSelections.js';
+export class WordDistance {
+    static { this.None = new class extends WordDistance {
+        distance() { return 0; }
+    }; }
+    static async create(service, editor) {
+        if (!editor.getOption(121).localityBonus) {
+            return WordDistance.None;
+        }
+        if (!editor.hasModel()) {
+            return WordDistance.None;
+        }
+        const model = editor.getModel();
+        const position = editor.getPosition();
+        if (!service.canComputeWordRanges(model.uri)) {
+            return WordDistance.None;
+        }
+        const [ranges] = await new BracketSelectionRangeProvider().provideSelectionRanges(model, [position]);
+        if (ranges.length === 0) {
+            return WordDistance.None;
+        }
+        const wordRanges = await service.computeWordRanges(model.uri, ranges[0].range);
+        if (!wordRanges) {
+            return WordDistance.None;
+        }
+        const wordUntilPos = model.getWordUntilPosition(position);
+        delete wordRanges[wordUntilPos.word];
+        return new class extends WordDistance {
+            distance(anchor, item) {
+                if (!position.equals(editor.getPosition())) {
+                    return 0;
+                }
+                if (item.kind === 17) {
+                    return 2 << 20;
+                }
+                const word = typeof item.label === 'string' ? item.label : item.label.label;
+                const wordLines = wordRanges[word];
+                if (isFalsyOrEmpty(wordLines)) {
+                    return 2 << 20;
+                }
+                const idx = binarySearch(wordLines, Range.fromPositions(anchor), Range.compareRangesUsingStarts);
+                const bestWordRange = idx >= 0 ? wordLines[idx] : wordLines[Math.max(0, ~idx - 1)];
+                let blockDistance = ranges.length;
+                for (const range of ranges) {
+                    if (!Range.containsRange(range.range, bestWordRange)) {
+                        break;
+                    }
+                    blockDistance -= 1;
+                }
+                return blockDistance;
+            }
+        };
+    }
+}

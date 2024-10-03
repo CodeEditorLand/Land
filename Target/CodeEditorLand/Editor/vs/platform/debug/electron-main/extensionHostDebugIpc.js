@@ -1,1 +1,88 @@
-import{createServer as x}from"net";import"../common/extensionHostDebug.js";import{ExtensionHostDebugBroadcastChannel as I}from"../common/extensionHostDebugIpc.js";import{OPTIONS as h,parseArgs as E}from"../../environment/node/argv.js";import{OpenContext as b}from"../../windows/electron-main/windows.js";class T extends I{constructor(d){super();this.windowsMainService=d}call(d,c,n){return c==="openExtensionDevelopmentHostWindow"?this.openExtensionDevelopmentHostWindow(n[0],n[1]):super.call(d,c,n)}async openExtensionDevelopmentHostWindow(d,c){const n=E(d,h);n.debugRenderer=c;const m=n.extensionDevelopmentPath;if(!m)return{success:!1};const[v]=await this.windowsMainService.openExtensionDevelopmentHostWindow(m,{context:b.API,cli:n,forceProfile:n.profile,forceTempProfile:n["profile-temp"]});if(!c)return{success:!0};const l=v.win;if(!l)return{success:!0};const r=l.webContents.debugger;let w=r.isAttached()?1/0:0;const p=x(s=>{w++===0&&r.attach();let f=!1;const u=a=>{f||s.write(JSON.stringify(a)+"\0")},g=(a,i,e,o)=>u({method:i,params:e,sessionId:o});l.on("close",()=>{r.removeListener("message",g),s.end(),f=!0}),r.addListener("message",g);let t=Buffer.alloc(0);s.on("data",a=>{t=Buffer.concat([t,a]);for(let i=t.indexOf(0);i!==-1;i=t.indexOf(0)){let e;try{const o=t.slice(0,i).toString("utf8");t=t.slice(i+1),e=JSON.parse(o)}catch{}r.sendCommand(e.method,e.params,e.sessionId).then(o=>u({id:e.id,sessionId:e.sessionId,result:o})).catch(o=>u({id:e.id,sessionId:e.sessionId,error:{code:0,message:o.message}}))}}),s.on("error",a=>{}),s.on("close",()=>{f=!0,--w===0&&r.detach()})});return await new Promise(s=>p.listen(0,s)),l.on("close",()=>p.close()),{rendererDebugPort:p.address().port,success:!0}}}export{T as ElectronExtensionHostDebugBroadcastChannel};
+import { createServer } from 'net';
+import { ExtensionHostDebugBroadcastChannel } from '../common/extensionHostDebugIpc.js';
+import { OPTIONS, parseArgs } from '../../environment/node/argv.js';
+export class ElectronExtensionHostDebugBroadcastChannel extends ExtensionHostDebugBroadcastChannel {
+    constructor(windowsMainService) {
+        super();
+        this.windowsMainService = windowsMainService;
+    }
+    call(ctx, command, arg) {
+        if (command === 'openExtensionDevelopmentHostWindow') {
+            return this.openExtensionDevelopmentHostWindow(arg[0], arg[1]);
+        }
+        else {
+            return super.call(ctx, command, arg);
+        }
+    }
+    async openExtensionDevelopmentHostWindow(args, debugRenderer) {
+        const pargs = parseArgs(args, OPTIONS);
+        pargs.debugRenderer = debugRenderer;
+        const extDevPaths = pargs.extensionDevelopmentPath;
+        if (!extDevPaths) {
+            return { success: false };
+        }
+        const [codeWindow] = await this.windowsMainService.openExtensionDevelopmentHostWindow(extDevPaths, {
+            context: 5,
+            cli: pargs,
+            forceProfile: pargs.profile,
+            forceTempProfile: pargs['profile-temp']
+        });
+        if (!debugRenderer) {
+            return { success: true };
+        }
+        const win = codeWindow.win;
+        if (!win) {
+            return { success: true };
+        }
+        const debug = win.webContents.debugger;
+        let listeners = debug.isAttached() ? Infinity : 0;
+        const server = createServer(listener => {
+            if (listeners++ === 0) {
+                debug.attach();
+            }
+            let closed = false;
+            const writeMessage = (message) => {
+                if (!closed) {
+                    listener.write(JSON.stringify(message) + '\0');
+                }
+            };
+            const onMessage = (_event, method, params, sessionId) => writeMessage(({ method, params, sessionId }));
+            win.on('close', () => {
+                debug.removeListener('message', onMessage);
+                listener.end();
+                closed = true;
+            });
+            debug.addListener('message', onMessage);
+            let buf = Buffer.alloc(0);
+            listener.on('data', data => {
+                buf = Buffer.concat([buf, data]);
+                for (let delimiter = buf.indexOf(0); delimiter !== -1; delimiter = buf.indexOf(0)) {
+                    let data;
+                    try {
+                        const contents = buf.slice(0, delimiter).toString('utf8');
+                        buf = buf.slice(delimiter + 1);
+                        data = JSON.parse(contents);
+                    }
+                    catch (e) {
+                        console.error('error reading cdp line', e);
+                    }
+                    debug.sendCommand(data.method, data.params, data.sessionId)
+                        .then((result) => writeMessage({ id: data.id, sessionId: data.sessionId, result }))
+                        .catch((error) => writeMessage({ id: data.id, sessionId: data.sessionId, error: { code: 0, message: error.message } }));
+                }
+            });
+            listener.on('error', err => {
+                console.error('error on cdp pipe:', err);
+            });
+            listener.on('close', () => {
+                closed = true;
+                if (--listeners === 0) {
+                    debug.detach();
+                }
+            });
+        });
+        await new Promise(r => server.listen(0, r));
+        win.on('close', () => server.close());
+        return { rendererDebugPort: server.address().port, success: true };
+    }
+}

@@ -1,1 +1,29 @@
-import"./position.js";import{Range as t}from"./range.js";class g{static insert(e,r){return{range:new t(e.lineNumber,e.column,e.lineNumber,e.column),text:r,forceMoveMarkers:!0}}static delete(e){return{range:e,text:null}}static replace(e,r){return{range:e,text:r}}static replaceMove(e,r){return{range:e,text:r,forceMoveMarkers:!0}}}export{g as EditOperation};
+import { Range } from './range.js';
+export class EditOperation {
+    static insert(position, text) {
+        return {
+            range: new Range(position.lineNumber, position.column, position.lineNumber, position.column),
+            text: text,
+            forceMoveMarkers: true
+        };
+    }
+    static delete(range) {
+        return {
+            range: range,
+            text: null
+        };
+    }
+    static replace(range, text) {
+        return {
+            range: range,
+            text: text
+        };
+    }
+    static replaceMove(range, text) {
+        return {
+            range: range,
+            text: text,
+            forceMoveMarkers: true
+        };
+    }
+}

@@ -1,1 +1,121 @@
-import{insert as a}from"../../../base/common/arrays.js";import{ThrottledDelayer as o}from"../../../base/common/async.js";import{onUnexpectedError as n}from"../../../base/common/errors.js";import{Emitter as c}from"../../../base/common/event.js";import{removeTrailingPathSeparator as v}from"../../../base/common/extpath.js";import{Disposable as u,toDisposable as h}from"../../../base/common/lifecycle.js";import{normalize as g}from"../../../base/common/path.js";import"../../../base/common/uri.js";import"./files.js";import{isRecursiveWatchRequest as d,reviveFileChanges as l}from"./watcher.js";import{LogLevel as s}from"../../log/common/log.js";class T extends u{constructor(e,r){super();this.logService=e;this.options=r}_onDidChangeFile=this._register(new c);onDidChangeFile=this._onDidChangeFile.event;_onDidWatchError=this._register(new c);onDidWatchError=this._onDidWatchError.event;watch(e,r){return r.recursive||this.options?.watcher?.forceUniversal?this.watchUniversal(e,r):this.watchNonRecursive(e,r)}universalWatcher;universalWatchRequests=[];universalWatchRequestDelayer=this._register(new o(0));watchUniversal(e,r){const t=this.toWatchRequest(e,r),i=a(this.universalWatchRequests,t);return this.refreshUniversalWatchers(),h(()=>{i(),this.refreshUniversalWatchers()})}toWatchRequest(e,r){const t={path:this.toWatchPath(e),excludes:r.excludes,includes:r.includes,recursive:r.recursive,filter:r.filter,correlationId:r.correlationId};if(d(t)){const i=this.options?.watcher?.recursive?.usePolling;i===!0?t.pollingInterval=this.options?.watcher?.recursive?.pollingInterval??5e3:Array.isArray(i)&&i.includes(t.path)&&(t.pollingInterval=this.options?.watcher?.recursive?.pollingInterval??5e3)}return t}refreshUniversalWatchers(){this.universalWatchRequestDelayer.trigger(()=>this.doRefreshUniversalWatchers()).catch(e=>n(e))}doRefreshUniversalWatchers(){return this.universalWatcher||(this.universalWatcher=this._register(this.createUniversalWatcher(e=>this._onDidChangeFile.fire(l(e)),e=>this.onWatcherLogMessage(e),this.logService.getLevel()===s.Trace)),this._register(this.logService.onDidChangeLogLevel(()=>{this.universalWatcher?.setVerboseLogging(this.logService.getLevel()===s.Trace)}))),this.universalWatcher.watch(this.universalWatchRequests)}nonRecursiveWatcher;nonRecursiveWatchRequests=[];nonRecursiveWatchRequestDelayer=this._register(new o(0));watchNonRecursive(e,r){const t={path:this.toWatchPath(e),excludes:r.excludes,includes:r.includes,recursive:!1,filter:r.filter,correlationId:r.correlationId},i=a(this.nonRecursiveWatchRequests,t);return this.refreshNonRecursiveWatchers(),h(()=>{i(),this.refreshNonRecursiveWatchers()})}refreshNonRecursiveWatchers(){this.nonRecursiveWatchRequestDelayer.trigger(()=>this.doRefreshNonRecursiveWatchers()).catch(e=>n(e))}doRefreshNonRecursiveWatchers(){return this.nonRecursiveWatcher||(this.nonRecursiveWatcher=this._register(this.createNonRecursiveWatcher(e=>this._onDidChangeFile.fire(l(e)),e=>this.onWatcherLogMessage(e),this.logService.getLevel()===s.Trace)),this._register(this.logService.onDidChangeLogLevel(()=>{this.nonRecursiveWatcher?.setVerboseLogging(this.logService.getLevel()===s.Trace)}))),this.nonRecursiveWatcher.watch(this.nonRecursiveWatchRequests)}onWatcherLogMessage(e){e.type==="error"&&this._onDidWatchError.fire(e.message),this.logWatcherMessage(e)}logWatcherMessage(e){this.logService[e.type](e.message)}toFilePath(e){return g(e.fsPath)}toWatchPath(e){const r=this.toFilePath(e);return v(r)}}export{T as AbstractDiskFileSystemProvider};
+import { insert } from '../../../base/common/arrays.js';
+import { ThrottledDelayer } from '../../../base/common/async.js';
+import { onUnexpectedError } from '../../../base/common/errors.js';
+import { Emitter } from '../../../base/common/event.js';
+import { removeTrailingPathSeparator } from '../../../base/common/extpath.js';
+import { Disposable, toDisposable } from '../../../base/common/lifecycle.js';
+import { normalize } from '../../../base/common/path.js';
+import { isRecursiveWatchRequest, reviveFileChanges } from './watcher.js';
+import { LogLevel } from '../../log/common/log.js';
+export class AbstractDiskFileSystemProvider extends Disposable {
+    constructor(logService, options) {
+        super();
+        this.logService = logService;
+        this.options = options;
+        this._onDidChangeFile = this._register(new Emitter());
+        this.onDidChangeFile = this._onDidChangeFile.event;
+        this._onDidWatchError = this._register(new Emitter());
+        this.onDidWatchError = this._onDidWatchError.event;
+        this.universalWatchRequests = [];
+        this.universalWatchRequestDelayer = this._register(new ThrottledDelayer(0));
+        this.nonRecursiveWatchRequests = [];
+        this.nonRecursiveWatchRequestDelayer = this._register(new ThrottledDelayer(0));
+    }
+    watch(resource, opts) {
+        if (opts.recursive || this.options?.watcher?.forceUniversal) {
+            return this.watchUniversal(resource, opts);
+        }
+        return this.watchNonRecursive(resource, opts);
+    }
+    watchUniversal(resource, opts) {
+        const request = this.toWatchRequest(resource, opts);
+        const remove = insert(this.universalWatchRequests, request);
+        this.refreshUniversalWatchers();
+        return toDisposable(() => {
+            remove();
+            this.refreshUniversalWatchers();
+        });
+    }
+    toWatchRequest(resource, opts) {
+        const request = {
+            path: this.toWatchPath(resource),
+            excludes: opts.excludes,
+            includes: opts.includes,
+            recursive: opts.recursive,
+            filter: opts.filter,
+            correlationId: opts.correlationId
+        };
+        if (isRecursiveWatchRequest(request)) {
+            const usePolling = this.options?.watcher?.recursive?.usePolling;
+            if (usePolling === true) {
+                request.pollingInterval = this.options?.watcher?.recursive?.pollingInterval ?? 5000;
+            }
+            else if (Array.isArray(usePolling)) {
+                if (usePolling.includes(request.path)) {
+                    request.pollingInterval = this.options?.watcher?.recursive?.pollingInterval ?? 5000;
+                }
+            }
+        }
+        return request;
+    }
+    refreshUniversalWatchers() {
+        this.universalWatchRequestDelayer.trigger(() => {
+            return this.doRefreshUniversalWatchers();
+        }).catch(error => onUnexpectedError(error));
+    }
+    doRefreshUniversalWatchers() {
+        if (!this.universalWatcher) {
+            this.universalWatcher = this._register(this.createUniversalWatcher(changes => this._onDidChangeFile.fire(reviveFileChanges(changes)), msg => this.onWatcherLogMessage(msg), this.logService.getLevel() === LogLevel.Trace));
+            this._register(this.logService.onDidChangeLogLevel(() => {
+                this.universalWatcher?.setVerboseLogging(this.logService.getLevel() === LogLevel.Trace);
+            }));
+        }
+        return this.universalWatcher.watch(this.universalWatchRequests);
+    }
+    watchNonRecursive(resource, opts) {
+        const request = {
+            path: this.toWatchPath(resource),
+            excludes: opts.excludes,
+            includes: opts.includes,
+            recursive: false,
+            filter: opts.filter,
+            correlationId: opts.correlationId
+        };
+        const remove = insert(this.nonRecursiveWatchRequests, request);
+        this.refreshNonRecursiveWatchers();
+        return toDisposable(() => {
+            remove();
+            this.refreshNonRecursiveWatchers();
+        });
+    }
+    refreshNonRecursiveWatchers() {
+        this.nonRecursiveWatchRequestDelayer.trigger(() => {
+            return this.doRefreshNonRecursiveWatchers();
+        }).catch(error => onUnexpectedError(error));
+    }
+    doRefreshNonRecursiveWatchers() {
+        if (!this.nonRecursiveWatcher) {
+            this.nonRecursiveWatcher = this._register(this.createNonRecursiveWatcher(changes => this._onDidChangeFile.fire(reviveFileChanges(changes)), msg => this.onWatcherLogMessage(msg), this.logService.getLevel() === LogLevel.Trace));
+            this._register(this.logService.onDidChangeLogLevel(() => {
+                this.nonRecursiveWatcher?.setVerboseLogging(this.logService.getLevel() === LogLevel.Trace);
+            }));
+        }
+        return this.nonRecursiveWatcher.watch(this.nonRecursiveWatchRequests);
+    }
+    onWatcherLogMessage(msg) {
+        if (msg.type === 'error') {
+            this._onDidWatchError.fire(msg.message);
+        }
+        this.logWatcherMessage(msg);
+    }
+    logWatcherMessage(msg) {
+        this.logService[msg.type](msg.message);
+    }
+    toFilePath(resource) {
+        return normalize(resource.fsPath);
+    }
+    toWatchPath(resource) {
+        const filePath = this.toFilePath(resource);
+        return removeTrailingPathSeparator(filePath);
+    }
+}

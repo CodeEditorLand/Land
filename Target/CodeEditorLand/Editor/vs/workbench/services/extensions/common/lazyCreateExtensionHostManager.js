@@ -1,1 +1,171 @@
-var h=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var c=(a,n,t,i)=>{for(var e=i>1?void 0:i?p(n,t):n,s=a.length-1,r;s>=0;s--)(r=a[s])&&(e=(i?r(n,t,e):r(e))||e);return i&&e&&h(n,t,e),e},l=(a,n)=>(t,i)=>n(t,i,a);import{Barrier as _}from"../../../../base/common/async.js";import{Emitter as d}from"../../../../base/common/event.js";import{Disposable as m}from"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import"../../../../platform/extensions/common/extensions.js";import{IInstantiationService as v}from"../../../../platform/instantiation/common/instantiation.js";import{ILogService as E}from"../../../../platform/log/common/log.js";import{RemoteAuthorityResolverErrorCode as x}from"../../../../platform/remote/common/remoteAuthorityResolver.js";import"./extensionHostKind.js";import{ExtensionHostManager as g,friendlyExtHostName as f}from"./extensionHostManager.js";import"./extensionHostManagers.js";import"./extensionHostProtocol.js";import"./extensionHostProxy.js";import"./extensionRunningLocation.js";import{ActivationKind as y,ExtensionHostExtensions as I}from"./extensions.js";import"./rpcProtocol.js";let o=class extends m{constructor(t,i,e,s){super();this._internalExtensionService=i;this._instantiationService=e;this._logService=s;this._extensionHost=t,this.onDidExit=t.onExit,this._startCalled=new _,this._actual=null,this._lazyStartExtensions=null}onDidExit;_onDidChangeResponsiveState=this._register(new d);onDidChangeResponsiveState=this._onDidChangeResponsiveState.event;_extensionHost;_startCalled;_actual;_lazyStartExtensions;get pid(){return this._actual?this._actual.pid:null}get kind(){return this._extensionHost.runningLocation.kind}get startup(){return this._extensionHost.startup}get friendyName(){return f(this.kind,this.pid)}_createActual(t){return this._logService.info(`Creating lazy extension host (${this.friendyName}). Reason: ${t}`),this._actual=this._register(this._instantiationService.createInstance(g,this._extensionHost,[],this._internalExtensionService)),this._register(this._actual.onDidChangeResponsiveState(i=>this._onDidChangeResponsiveState.fire(i))),this._actual}async _getOrCreateActualAndStart(t){if(this._actual)return this._actual;const i=this._createActual(t);return await i.start(this._lazyStartExtensions.versionId,this._lazyStartExtensions.allExtensions,this._lazyStartExtensions.myExtensions),i}async ready(){await this._startCalled.wait(),this._actual&&await this._actual.ready()}async disconnect(){await this._actual?.disconnect()}representsRunningLocation(t){return this._extensionHost.runningLocation.equals(t)}async deltaExtensions(t){if(await this._startCalled.wait(),this._actual)return this._actual.deltaExtensions(t);if(this._lazyStartExtensions.delta(t),t.myToAdd.length>0){await this._createActual(`contains ${t.myToAdd.length} new extension(s) (installed or enabled): ${t.myToAdd.map(e=>e.value)}`).start(this._lazyStartExtensions.versionId,this._lazyStartExtensions.allExtensions,this._lazyStartExtensions.myExtensions);return}}containsExtension(t){return this._extensionHost.extensions?.containsExtension(t)??!1}async activate(t,i){return await this._startCalled.wait(),this._actual?this._actual.activate(t,i):!1}async activateByEvent(t,i){if(i===y.Immediate)return this._actual?this._actual.activateByEvent(t,i):void 0;if(await this._startCalled.wait(),this._actual)return this._actual.activateByEvent(t,i)}activationEventIsDone(t){return this._startCalled.isOpen()?this._actual?this._actual.activationEventIsDone(t):!0:!1}async getInspectPort(t){return await this._startCalled.wait(),this._actual?.getInspectPort(t)}async resolveAuthority(t,i){return await this._startCalled.wait(),this._actual?this._actual.resolveAuthority(t,i):{type:"error",error:{message:"Cannot resolve authority",code:x.Unknown,detail:void 0}}}async getCanonicalURI(t,i){if(await this._startCalled.wait(),this._actual)return this._actual.getCanonicalURI(t,i);throw new Error("Cannot resolve canonical URI")}async start(t,i,e){if(e.length>0){const r=this._createActual(`contains ${e.length} extension(s): ${e.map(u=>u.value)}.`).start(t,i,e);return this._startCalled.open(),r}this._lazyStartExtensions=new I(t,i,e),this._startCalled.open()}async extensionTestsExecute(){return await this._startCalled.wait(),(await this._getOrCreateActualAndStart("execute tests.")).extensionTestsExecute()}async setRemoteEnvironment(t){if(await this._startCalled.wait(),this._actual)return this._actual.setRemoteEnvironment(t)}};o=c([l(2,v),l(3,E)],o);export{o as LazyCreateExtensionHostManager};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Barrier } from '../../../../base/common/async.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { RemoteAuthorityResolverErrorCode } from '../../../../platform/remote/common/remoteAuthorityResolver.js';
+import { ExtensionHostManager, friendlyExtHostName } from './extensionHostManager.js';
+import { ExtensionHostExtensions } from './extensions.js';
+let LazyCreateExtensionHostManager = class LazyCreateExtensionHostManager extends Disposable {
+    get pid() {
+        if (this._actual) {
+            return this._actual.pid;
+        }
+        return null;
+    }
+    get kind() {
+        return this._extensionHost.runningLocation.kind;
+    }
+    get startup() {
+        return this._extensionHost.startup;
+    }
+    get friendyName() {
+        return friendlyExtHostName(this.kind, this.pid);
+    }
+    constructor(extensionHost, _internalExtensionService, _instantiationService, _logService) {
+        super();
+        this._internalExtensionService = _internalExtensionService;
+        this._instantiationService = _instantiationService;
+        this._logService = _logService;
+        this._onDidChangeResponsiveState = this._register(new Emitter());
+        this.onDidChangeResponsiveState = this._onDidChangeResponsiveState.event;
+        this._extensionHost = extensionHost;
+        this.onDidExit = extensionHost.onExit;
+        this._startCalled = new Barrier();
+        this._actual = null;
+        this._lazyStartExtensions = null;
+    }
+    _createActual(reason) {
+        this._logService.info(`Creating lazy extension host (${this.friendyName}). Reason: ${reason}`);
+        this._actual = this._register(this._instantiationService.createInstance(ExtensionHostManager, this._extensionHost, [], this._internalExtensionService));
+        this._register(this._actual.onDidChangeResponsiveState((e) => this._onDidChangeResponsiveState.fire(e)));
+        return this._actual;
+    }
+    async _getOrCreateActualAndStart(reason) {
+        if (this._actual) {
+            return this._actual;
+        }
+        const actual = this._createActual(reason);
+        await actual.start(this._lazyStartExtensions.versionId, this._lazyStartExtensions.allExtensions, this._lazyStartExtensions.myExtensions);
+        return actual;
+    }
+    async ready() {
+        await this._startCalled.wait();
+        if (this._actual) {
+            await this._actual.ready();
+        }
+    }
+    async disconnect() {
+        await this._actual?.disconnect();
+    }
+    representsRunningLocation(runningLocation) {
+        return this._extensionHost.runningLocation.equals(runningLocation);
+    }
+    async deltaExtensions(extensionsDelta) {
+        await this._startCalled.wait();
+        if (this._actual) {
+            return this._actual.deltaExtensions(extensionsDelta);
+        }
+        this._lazyStartExtensions.delta(extensionsDelta);
+        if (extensionsDelta.myToAdd.length > 0) {
+            const actual = this._createActual(`contains ${extensionsDelta.myToAdd.length} new extension(s) (installed or enabled): ${extensionsDelta.myToAdd.map(extId => extId.value)}`);
+            await actual.start(this._lazyStartExtensions.versionId, this._lazyStartExtensions.allExtensions, this._lazyStartExtensions.myExtensions);
+            return;
+        }
+    }
+    containsExtension(extensionId) {
+        return this._extensionHost.extensions?.containsExtension(extensionId) ?? false;
+    }
+    async activate(extension, reason) {
+        await this._startCalled.wait();
+        if (this._actual) {
+            return this._actual.activate(extension, reason);
+        }
+        return false;
+    }
+    async activateByEvent(activationEvent, activationKind) {
+        if (activationKind === 1) {
+            if (this._actual) {
+                return this._actual.activateByEvent(activationEvent, activationKind);
+            }
+            return;
+        }
+        await this._startCalled.wait();
+        if (this._actual) {
+            return this._actual.activateByEvent(activationEvent, activationKind);
+        }
+    }
+    activationEventIsDone(activationEvent) {
+        if (!this._startCalled.isOpen()) {
+            return false;
+        }
+        if (this._actual) {
+            return this._actual.activationEventIsDone(activationEvent);
+        }
+        return true;
+    }
+    async getInspectPort(tryEnableInspector) {
+        await this._startCalled.wait();
+        return this._actual?.getInspectPort(tryEnableInspector);
+    }
+    async resolveAuthority(remoteAuthority, resolveAttempt) {
+        await this._startCalled.wait();
+        if (this._actual) {
+            return this._actual.resolveAuthority(remoteAuthority, resolveAttempt);
+        }
+        return {
+            type: 'error',
+            error: {
+                message: `Cannot resolve authority`,
+                code: RemoteAuthorityResolverErrorCode.Unknown,
+                detail: undefined
+            }
+        };
+    }
+    async getCanonicalURI(remoteAuthority, uri) {
+        await this._startCalled.wait();
+        if (this._actual) {
+            return this._actual.getCanonicalURI(remoteAuthority, uri);
+        }
+        throw new Error(`Cannot resolve canonical URI`);
+    }
+    async start(extensionRegistryVersionId, allExtensions, myExtensions) {
+        if (myExtensions.length > 0) {
+            const actual = this._createActual(`contains ${myExtensions.length} extension(s): ${myExtensions.map(extId => extId.value)}.`);
+            const result = actual.start(extensionRegistryVersionId, allExtensions, myExtensions);
+            this._startCalled.open();
+            return result;
+        }
+        this._lazyStartExtensions = new ExtensionHostExtensions(extensionRegistryVersionId, allExtensions, myExtensions);
+        this._startCalled.open();
+    }
+    async extensionTestsExecute() {
+        await this._startCalled.wait();
+        const actual = await this._getOrCreateActualAndStart(`execute tests.`);
+        return actual.extensionTestsExecute();
+    }
+    async setRemoteEnvironment(env) {
+        await this._startCalled.wait();
+        if (this._actual) {
+            return this._actual.setRemoteEnvironment(env);
+        }
+    }
+};
+LazyCreateExtensionHostManager = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], LazyCreateExtensionHostManager);
+export { LazyCreateExtensionHostManager };

@@ -1,1 +1,232 @@
-var G=Object.defineProperty;var V=Object.getOwnPropertyDescriptor;var l=(c,n,i,r)=>{for(var e=r>1?void 0:r?V(n,i):n,s=c.length-1,o;s>=0;s--)(o=c[s])&&(e=(r?o(n,i,e):o(e))||e);return r&&e&&G(n,i,e),e},t=(c,n)=>(i,r)=>n(i,r,c);import*as w from"../../../../nls.js";import{Registry as N}from"../../../../platform/registry/common/platform.js";import{IRemoteAgentService as W,remoteConnectionLatencyMeasurer as R}from"../../../services/remote/common/remoteAgentService.js";import{Disposable as E}from"../../../../base/common/lifecycle.js";import{isMacintosh as Y,isWindows as j}from"../../../../base/common/platform.js";import{KeyMod as m,KeyChord as z,KeyCode as f}from"../../../../base/common/keyCodes.js";import{KeybindingsRegistry as I,KeybindingWeight as b}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{WorkbenchPhase as L,Extensions as J,registerWorkbenchContribution2 as x}from"../../../common/contributions.js";import{ILifecycleService as Q,LifecyclePhase as A}from"../../../services/lifecycle/common/lifecycle.js";import{ILabelService as X}from"../../../../platform/label/common/label.js";import{ICommandService as Z}from"../../../../platform/commands/common/commands.js";import{Schemas as q}from"../../../../base/common/network.js";import{IExtensionService as U}from"../../../services/extensions/common/extensions.js";import{ipcRenderer as y}from"../../../../base/parts/sandbox/electron-sandbox/globals.js";import"../../../../platform/diagnostics/common/diagnostics.js";import{INativeWorkbenchEnvironmentService as ee}from"../../../services/environment/electron-sandbox/environmentService.js";import{PersistentConnectionEventType as oe}from"../../../../platform/remote/common/remoteAgentConnection.js";import{IConfigurationService as P}from"../../../../platform/configuration/common/configuration.js";import{Extensions as te}from"../../../../platform/configuration/common/configurationRegistry.js";import{IRemoteAuthorityResolverService as B}from"../../../../platform/remote/common/remoteAuthorityResolver.js";import{OpenLocalFileFolderCommand as D,OpenLocalFileCommand as K,OpenLocalFolderCommand as T,SaveLocalFileCommand as F,RemoteFileDialogContext as v}from"../../../services/dialogs/browser/simpleFileDialog.js";import{IWorkspaceContextService as ne,WorkbenchState as re}from"../../../../platform/workspace/common/workspace.js";import{TELEMETRY_SETTING_ID as ie}from"../../../../platform/telemetry/common/telemetry.js";import{getTelemetryLevel as ae}from"../../../../platform/telemetry/common/telemetryUtils.js";import{IContextKeyService as se,RawContextKey as ce}from"../../../../platform/contextkey/common/contextkey.js";import{INativeHostService as le}from"../../../../platform/native/common/native.js";import{IStorageService as me,StorageScope as M,StorageTarget as de}from"../../../../platform/storage/common/storage.js";let p=class{constructor(n,i){y.on("vscode:getDiagnosticInfo",(r,e)=>{const s=n.getConnection();if(s){const o=i.getHostLabel(q.vscodeRemote,s.remoteAuthority);n.getDiagnosticInfo(e.args).then(a=>{a&&(a.hostName=o,R.latency?.high&&(a.latency={average:R.latency.average,current:R.latency.current})),y.send(e.replyChannel,a)}).catch(a=>{const u=a&&a.message?`Connection to '${o}' could not be established  ${a.message}`:`Connection to '${o}' could not be established `;y.send(e.replyChannel,{hostName:o,errorMessage:u})})}else y.send(e.replyChannel)})}};p=l([t(0,W),t(1,X)],p);let C=class{constructor(n,i,r){const e=n.getConnection();e&&e.onDidStateChange(async s=>{if(s.type===oe.ConnectionGain){const o=await i.resolveAuthority(e.remoteAuthority);o.options&&o.options.extensionHostEnv&&await r.setRemoteEnvironment(o.options.extensionHostEnv)}})}};C=l([t(0,W),t(1,B),t(2,U)],C);let d=class extends E{constructor(i,r){super();this.remoteAgentService=i;this.configurationService=r;this.updateRemoteTelemetryEnablement(),this._register(r.onDidChangeConfiguration(e=>{e.affectsConfiguration(ie)&&this.updateRemoteTelemetryEnablement()}))}static ID="workbench.contrib.remoteTelemetryEnablementUpdater";updateRemoteTelemetryEnablement(){return this.remoteAgentService.updateTelemetryLevel(ae(this.configurationService))}};d=l([t(0,W),t(1,P)],d);let h=class extends E{static ID="workbench.contrib.remoteEmptyWorkbenchPresentation";constructor(n,i,r,e,s){super();function o(){const O=r.getValue("workbench.startupEditor");return O!=="welcomePage"&&O!=="welcomePageInEmptyWorkbench"}function a(){return o()}const{remoteAuthority:u,filesToDiff:S,filesToMerge:k,filesToOpenOrCreate:_,filesToWait:$}=n;u&&s.getWorkbenchState()===re.EMPTY&&!S?.length&&!k?.length&&!_?.length&&!$&&i.resolveAuthority(u).then(()=>{o()&&e.executeCommand("workbench.view.explorer"),a()&&e.executeCommand("workbench.action.terminal.toggleTerminal")})}};h=l([t(0,ee),t(1,B),t(2,P),t(3,Z),t(4,ne)],h);let g=class extends E{static ID="workbench.contrib.wslContextKeyInitializer";constructor(n,i,r,e){super();const s="wslFeatureInstalled",o="remote.wslFeatureInstalled",a=r.getBoolean(o,M.APPLICATION,void 0),S=new ce(s,!!a,w.localize("wslFeatureInstalled","Whether the platform has the WSL feature installed")).bindTo(n);a===void 0&&e.when(A.Eventually).then(async()=>{i.hasWSLFeatureInstalled().then(k=>{k&&(S.set(!0),r.store(o,!0,M.APPLICATION,de.MACHINE))})})}};g=l([t(0,se),t(1,le),t(2,me),t(3,Q)],g);const H=N.as(J.Workbench);H.registerWorkbenchContribution(p,A.Eventually),H.registerWorkbenchContribution(C,A.Eventually),x(d.ID,d,L.BlockRestore),x(h.ID,h,L.BlockRestore),j&&x(g.ID,g,L.BlockRestore),N.as(te.Configuration).registerConfiguration({id:"remote",title:w.localize("remote","Remote"),type:"object",properties:{"remote.downloadExtensionsLocally":{type:"boolean",markdownDescription:w.localize("remote.downloadExtensionsLocally","When enabled extensions are downloaded locally and installed on remote."),default:!1}}}),Y?I.registerCommandAndKeybindingRule({id:D.ID,weight:b.WorkbenchContrib,primary:m.CtrlCmd|f.KeyO,when:v,metadata:{description:D.LABEL,args:[]},handler:D.handler()}):(I.registerCommandAndKeybindingRule({id:K.ID,weight:b.WorkbenchContrib,primary:m.CtrlCmd|f.KeyO,when:v,metadata:{description:K.LABEL,args:[]},handler:K.handler()}),I.registerCommandAndKeybindingRule({id:T.ID,weight:b.WorkbenchContrib,primary:z(m.CtrlCmd|f.KeyK,m.CtrlCmd|f.KeyO),when:v,metadata:{description:T.LABEL,args:[]},handler:T.handler()})),I.registerCommandAndKeybindingRule({id:F.ID,weight:b.WorkbenchContrib,primary:m.CtrlCmd|m.Shift|f.KeyS,when:v,metadata:{description:F.LABEL,args:[]},handler:F.handler()});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as nls from '../../../../nls.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { IRemoteAgentService, remoteConnectionLatencyMeasurer } from '../../../services/remote/common/remoteAgentService.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { isMacintosh, isWindows } from '../../../../base/common/platform.js';
+import { KeyChord } from '../../../../base/common/keyCodes.js';
+import { KeybindingsRegistry } from '../../../../platform/keybinding/common/keybindingsRegistry.js';
+import { Extensions as WorkbenchContributionsExtensions, registerWorkbenchContribution2 } from '../../../common/contributions.js';
+import { ILifecycleService } from '../../../services/lifecycle/common/lifecycle.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { ipcRenderer } from '../../../../base/parts/sandbox/electron-sandbox/globals.js';
+import { INativeWorkbenchEnvironmentService } from '../../../services/environment/electron-sandbox/environmentService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { Extensions as ConfigurationExtensions } from '../../../../platform/configuration/common/configurationRegistry.js';
+import { IRemoteAuthorityResolverService } from '../../../../platform/remote/common/remoteAuthorityResolver.js';
+import { OpenLocalFileFolderCommand, OpenLocalFileCommand, OpenLocalFolderCommand, SaveLocalFileCommand, RemoteFileDialogContext } from '../../../services/dialogs/browser/simpleFileDialog.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { TELEMETRY_SETTING_ID } from '../../../../platform/telemetry/common/telemetry.js';
+import { getTelemetryLevel } from '../../../../platform/telemetry/common/telemetryUtils.js';
+import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+let RemoteAgentDiagnosticListener = class RemoteAgentDiagnosticListener {
+    constructor(remoteAgentService, labelService) {
+        ipcRenderer.on('vscode:getDiagnosticInfo', (event, request) => {
+            const connection = remoteAgentService.getConnection();
+            if (connection) {
+                const hostName = labelService.getHostLabel(Schemas.vscodeRemote, connection.remoteAuthority);
+                remoteAgentService.getDiagnosticInfo(request.args)
+                    .then(info => {
+                    if (info) {
+                        info.hostName = hostName;
+                        if (remoteConnectionLatencyMeasurer.latency?.high) {
+                            info.latency = {
+                                average: remoteConnectionLatencyMeasurer.latency.average,
+                                current: remoteConnectionLatencyMeasurer.latency.current
+                            };
+                        }
+                    }
+                    ipcRenderer.send(request.replyChannel, info);
+                })
+                    .catch(e => {
+                    const errorMessage = e && e.message ? `Connection to '${hostName}' could not be established  ${e.message}` : `Connection to '${hostName}' could not be established `;
+                    ipcRenderer.send(request.replyChannel, { hostName, errorMessage });
+                });
+            }
+            else {
+                ipcRenderer.send(request.replyChannel);
+            }
+        });
+    }
+};
+RemoteAgentDiagnosticListener = __decorate([
+    __param(0, IRemoteAgentService),
+    __param(1, ILabelService),
+    __metadata("design:paramtypes", [Object, Object])
+], RemoteAgentDiagnosticListener);
+let RemoteExtensionHostEnvironmentUpdater = class RemoteExtensionHostEnvironmentUpdater {
+    constructor(remoteAgentService, remoteResolverService, extensionService) {
+        const connection = remoteAgentService.getConnection();
+        if (connection) {
+            connection.onDidStateChange(async (e) => {
+                if (e.type === 4) {
+                    const resolveResult = await remoteResolverService.resolveAuthority(connection.remoteAuthority);
+                    if (resolveResult.options && resolveResult.options.extensionHostEnv) {
+                        await extensionService.setRemoteEnvironment(resolveResult.options.extensionHostEnv);
+                    }
+                }
+            });
+        }
+    }
+};
+RemoteExtensionHostEnvironmentUpdater = __decorate([
+    __param(0, IRemoteAgentService),
+    __param(1, IRemoteAuthorityResolverService),
+    __param(2, IExtensionService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], RemoteExtensionHostEnvironmentUpdater);
+let RemoteTelemetryEnablementUpdater = class RemoteTelemetryEnablementUpdater extends Disposable {
+    static { this.ID = 'workbench.contrib.remoteTelemetryEnablementUpdater'; }
+    constructor(remoteAgentService, configurationService) {
+        super();
+        this.remoteAgentService = remoteAgentService;
+        this.configurationService = configurationService;
+        this.updateRemoteTelemetryEnablement();
+        this._register(configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration(TELEMETRY_SETTING_ID)) {
+                this.updateRemoteTelemetryEnablement();
+            }
+        }));
+    }
+    updateRemoteTelemetryEnablement() {
+        return this.remoteAgentService.updateTelemetryLevel(getTelemetryLevel(this.configurationService));
+    }
+};
+RemoteTelemetryEnablementUpdater = __decorate([
+    __param(0, IRemoteAgentService),
+    __param(1, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object])
+], RemoteTelemetryEnablementUpdater);
+let RemoteEmptyWorkbenchPresentation = class RemoteEmptyWorkbenchPresentation extends Disposable {
+    static { this.ID = 'workbench.contrib.remoteEmptyWorkbenchPresentation'; }
+    constructor(environmentService, remoteAuthorityResolverService, configurationService, commandService, contextService) {
+        super();
+        function shouldShowExplorer() {
+            const startupEditor = configurationService.getValue('workbench.startupEditor');
+            return startupEditor !== 'welcomePage' && startupEditor !== 'welcomePageInEmptyWorkbench';
+        }
+        function shouldShowTerminal() {
+            return shouldShowExplorer();
+        }
+        const { remoteAuthority, filesToDiff, filesToMerge, filesToOpenOrCreate, filesToWait } = environmentService;
+        if (remoteAuthority && contextService.getWorkbenchState() === 1 && !filesToDiff?.length && !filesToMerge?.length && !filesToOpenOrCreate?.length && !filesToWait) {
+            remoteAuthorityResolverService.resolveAuthority(remoteAuthority).then(() => {
+                if (shouldShowExplorer()) {
+                    commandService.executeCommand('workbench.view.explorer');
+                }
+                if (shouldShowTerminal()) {
+                    commandService.executeCommand('workbench.action.terminal.toggleTerminal');
+                }
+            });
+        }
+    }
+};
+RemoteEmptyWorkbenchPresentation = __decorate([
+    __param(0, INativeWorkbenchEnvironmentService),
+    __param(1, IRemoteAuthorityResolverService),
+    __param(2, IConfigurationService),
+    __param(3, ICommandService),
+    __param(4, IWorkspaceContextService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], RemoteEmptyWorkbenchPresentation);
+let WSLContextKeyInitializer = class WSLContextKeyInitializer extends Disposable {
+    static { this.ID = 'workbench.contrib.wslContextKeyInitializer'; }
+    constructor(contextKeyService, nativeHostService, storageService, lifecycleService) {
+        super();
+        const contextKeyId = 'wslFeatureInstalled';
+        const storageKey = 'remote.wslFeatureInstalled';
+        const defaultValue = storageService.getBoolean(storageKey, -1, undefined);
+        const hasWSLFeatureContext = new RawContextKey(contextKeyId, !!defaultValue, nls.localize('wslFeatureInstalled', "Whether the platform has the WSL feature installed"));
+        const contextKey = hasWSLFeatureContext.bindTo(contextKeyService);
+        if (defaultValue === undefined) {
+            lifecycleService.when(4).then(async () => {
+                nativeHostService.hasWSLFeatureInstalled().then(res => {
+                    if (res) {
+                        contextKey.set(true);
+                        storageService.store(storageKey, true, -1, 1);
+                    }
+                });
+            });
+        }
+    }
+};
+WSLContextKeyInitializer = __decorate([
+    __param(0, IContextKeyService),
+    __param(1, INativeHostService),
+    __param(2, IStorageService),
+    __param(3, ILifecycleService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], WSLContextKeyInitializer);
+const workbenchContributionsRegistry = Registry.as(WorkbenchContributionsExtensions.Workbench);
+workbenchContributionsRegistry.registerWorkbenchContribution(RemoteAgentDiagnosticListener, 4);
+workbenchContributionsRegistry.registerWorkbenchContribution(RemoteExtensionHostEnvironmentUpdater, 4);
+registerWorkbenchContribution2(RemoteTelemetryEnablementUpdater.ID, RemoteTelemetryEnablementUpdater, 2);
+registerWorkbenchContribution2(RemoteEmptyWorkbenchPresentation.ID, RemoteEmptyWorkbenchPresentation, 2);
+if (isWindows) {
+    registerWorkbenchContribution2(WSLContextKeyInitializer.ID, WSLContextKeyInitializer, 2);
+}
+Registry.as(ConfigurationExtensions.Configuration)
+    .registerConfiguration({
+    id: 'remote',
+    title: nls.localize('remote', "Remote"),
+    type: 'object',
+    properties: {
+        'remote.downloadExtensionsLocally': {
+            type: 'boolean',
+            markdownDescription: nls.localize('remote.downloadExtensionsLocally', "When enabled extensions are downloaded locally and installed on remote."),
+            default: false
+        },
+    }
+});
+if (isMacintosh) {
+    KeybindingsRegistry.registerCommandAndKeybindingRule({
+        id: OpenLocalFileFolderCommand.ID,
+        weight: 200,
+        primary: 2048 | 45,
+        when: RemoteFileDialogContext,
+        metadata: { description: OpenLocalFileFolderCommand.LABEL, args: [] },
+        handler: OpenLocalFileFolderCommand.handler()
+    });
+}
+else {
+    KeybindingsRegistry.registerCommandAndKeybindingRule({
+        id: OpenLocalFileCommand.ID,
+        weight: 200,
+        primary: 2048 | 45,
+        when: RemoteFileDialogContext,
+        metadata: { description: OpenLocalFileCommand.LABEL, args: [] },
+        handler: OpenLocalFileCommand.handler()
+    });
+    KeybindingsRegistry.registerCommandAndKeybindingRule({
+        id: OpenLocalFolderCommand.ID,
+        weight: 200,
+        primary: KeyChord(2048 | 41, 2048 | 45),
+        when: RemoteFileDialogContext,
+        metadata: { description: OpenLocalFolderCommand.LABEL, args: [] },
+        handler: OpenLocalFolderCommand.handler()
+    });
+}
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: SaveLocalFileCommand.ID,
+    weight: 200,
+    primary: 2048 | 1024 | 49,
+    when: RemoteFileDialogContext,
+    metadata: { description: SaveLocalFileCommand.LABEL, args: [] },
+    handler: SaveLocalFileCommand.handler()
+});

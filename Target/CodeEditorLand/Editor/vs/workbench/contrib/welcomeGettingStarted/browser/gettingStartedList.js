@@ -1,1 +1,94 @@
-import{Disposable as m}from"../../../../base/common/lifecycle.js";import{$ as o}from"../../../../base/browser/dom.js";import{DomScrollableElement as a}from"../../../../base/browser/ui/scrollbar/scrollableElement.js";import{Emitter as p}from"../../../../base/common/event.js";import"../../../../platform/contextkey/common/contextkey.js";import{equals as c}from"../../../../base/common/arrays.js";class K extends m{constructor(e){super();this.options=e;this.contextService=e.contextService,this.entries=void 0,this.itemCount=0,this.list=o("ul"),this.scrollbar=this._register(new a(this.list,{})),this._register(this.onDidChangeEntries(()=>this.scrollbar.scanDomNode())),this.domElement=o(".index-list."+e.klass,{},o("h2",{},e.title),this.scrollbar.getDomNode()),this._register(this.contextService.onDidChangeContext(i=>{i.affectsSome(this.contextKeysToWatch)&&this.rerender()}))}_onDidChangeEntries=new p;onDidChangeEntries=this._onDidChangeEntries.event;domElement;list;scrollbar;entries;lastRendered;itemCount;isDisposed=!1;contextService;contextKeysToWatch=new Set;getDomElement(){return this.domElement}layout(e){this.scrollbar.scanDomNode()}onDidChange(e){this._register(this.onDidChangeEntries(e))}register(e){this.isDisposed?e.dispose():this._register(e)}dispose(){this.isDisposed=!0,super.dispose()}setLimit(e){this.options.limit=e,this.setEntries(this.entries)}rerender(){this.setEntries(this.entries)}setEntries(e){let i=e??[];this.itemCount=0;const n=this.options.rankElement;n&&(i=i.filter(t=>n(t)!==null),i.sort((t,r)=>n(r)-n(t)));const l=i.filter(t=>!t.when||this.contextService.contextMatchesRules(t.when)),s=l.slice(0,this.options.limit),h=s.map(t=>t.id);if(!(this.entries===e&&c(h,this.lastRendered))){for(this.entries=e,this.contextKeysToWatch.clear(),i.forEach(t=>{t.when?.keys()?.forEach(d=>this.contextKeysToWatch.add(d))}),this.lastRendered=h,this.itemCount=s.length;this.list.firstChild;)this.list.firstChild.remove();this.itemCount=s.length;for(const t of s){const r=this.options.renderElement(t);this.list.appendChild(r)}l.length>s.length&&this.options.more?this.list.appendChild(this.options.more):e!==void 0&&this.itemCount===0&&this.options.empty?this.list.appendChild(this.options.empty):this.options.footer&&this.list.appendChild(this.options.footer),this._onDidChangeEntries.fire()}}}export{K as GettingStartedIndexList};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { $ } from '../../../../base/browser/dom.js';
+import { DomScrollableElement } from '../../../../base/browser/ui/scrollbar/scrollableElement.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { equals } from '../../../../base/common/arrays.js';
+export class GettingStartedIndexList extends Disposable {
+    constructor(options) {
+        super();
+        this.options = options;
+        this._onDidChangeEntries = new Emitter();
+        this.onDidChangeEntries = this._onDidChangeEntries.event;
+        this.isDisposed = false;
+        this.contextKeysToWatch = new Set();
+        this.contextService = options.contextService;
+        this.entries = undefined;
+        this.itemCount = 0;
+        this.list = $('ul');
+        this.scrollbar = this._register(new DomScrollableElement(this.list, {}));
+        this._register(this.onDidChangeEntries(() => this.scrollbar.scanDomNode()));
+        this.domElement = $('.index-list.' + options.klass, {}, $('h2', {}, options.title), this.scrollbar.getDomNode());
+        this._register(this.contextService.onDidChangeContext(e => {
+            if (e.affectsSome(this.contextKeysToWatch)) {
+                this.rerender();
+            }
+        }));
+    }
+    getDomElement() {
+        return this.domElement;
+    }
+    layout(size) {
+        this.scrollbar.scanDomNode();
+    }
+    onDidChange(listener) {
+        this._register(this.onDidChangeEntries(listener));
+    }
+    register(d) { if (this.isDisposed) {
+        d.dispose();
+    }
+    else {
+        this._register(d);
+    } }
+    dispose() {
+        this.isDisposed = true;
+        super.dispose();
+    }
+    setLimit(limit) {
+        this.options.limit = limit;
+        this.setEntries(this.entries);
+    }
+    rerender() {
+        this.setEntries(this.entries);
+    }
+    setEntries(entries) {
+        let entryList = entries ?? [];
+        this.itemCount = 0;
+        const ranker = this.options.rankElement;
+        if (ranker) {
+            entryList = entryList.filter(e => ranker(e) !== null);
+            entryList.sort((a, b) => ranker(b) - ranker(a));
+        }
+        const activeEntries = entryList.filter(e => !e.when || this.contextService.contextMatchesRules(e.when));
+        const limitedEntries = activeEntries.slice(0, this.options.limit);
+        const toRender = limitedEntries.map(e => e.id);
+        if (this.entries === entries && equals(toRender, this.lastRendered)) {
+            return;
+        }
+        this.entries = entries;
+        this.contextKeysToWatch.clear();
+        entryList.forEach(e => {
+            const keys = e.when?.keys();
+            keys?.forEach(key => this.contextKeysToWatch.add(key));
+        });
+        this.lastRendered = toRender;
+        this.itemCount = limitedEntries.length;
+        while (this.list.firstChild) {
+            this.list.firstChild.remove();
+        }
+        this.itemCount = limitedEntries.length;
+        for (const entry of limitedEntries) {
+            const rendered = this.options.renderElement(entry);
+            this.list.appendChild(rendered);
+        }
+        if (activeEntries.length > limitedEntries.length && this.options.more) {
+            this.list.appendChild(this.options.more);
+        }
+        else if (entries !== undefined && this.itemCount === 0 && this.options.empty) {
+            this.list.appendChild(this.options.empty);
+        }
+        else if (this.options.footer) {
+            this.list.appendChild(this.options.footer);
+        }
+        this._onDidChangeEntries.fire();
+    }
+}

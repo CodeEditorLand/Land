@@ -1,1 +1,28 @@
-import"../../../../base/common/actions.js";import{binarySearch as r}from"../../../../base/common/arrays.js";import"../../../../base/common/event.js";import"../../../../base/common/uri.js";import"../../../../editor/common/core/position.js";import"../../../../editor/common/model.js";import{createDecorator as n}from"../../../../platform/instantiation/common/instantiation.js";import"./testTypes.js";class b{value=[];push(i){const e=r(this.value,i,(t,o)=>t.line-o.line);this.value.splice(e<0?~e:e,0,i)}*lines(){if(!this.value.length)return;let i=0,e=this.value[0].line;for(let t=1;t<this.value.length;t++){const o=this.value[t];o.line!==e&&(yield[e,this.value.slice(i,t)],e=o.line,i=t)}yield[e,this.value.slice(i)]}}const y=n("testingDecorationService");export{y as ITestingDecorationsService,b as TestDecorations};
+import { binarySearch } from '../../../../base/common/arrays.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export class TestDecorations {
+    constructor() {
+        this.value = [];
+    }
+    push(value) {
+        const searchIndex = binarySearch(this.value, value, (a, b) => a.line - b.line);
+        this.value.splice(searchIndex < 0 ? ~searchIndex : searchIndex, 0, value);
+    }
+    *lines() {
+        if (!this.value.length) {
+            return;
+        }
+        let startIndex = 0;
+        let startLine = this.value[0].line;
+        for (let i = 1; i < this.value.length; i++) {
+            const v = this.value[i];
+            if (v.line !== startLine) {
+                yield [startLine, this.value.slice(startIndex, i)];
+                startLine = v.line;
+                startIndex = i;
+            }
+        }
+        yield [startLine, this.value.slice(startIndex)];
+    }
+}
+export const ITestingDecorationsService = createDecorator('testingDecorationService');

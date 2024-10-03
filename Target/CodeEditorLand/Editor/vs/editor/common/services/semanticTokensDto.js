@@ -1,1 +1,118 @@
-import{VSBuffer as b}from"../../../base/common/buffer.js";import*as s from"../../../base/common/platform.js";var p=(e=>(e[e.Full=1]="Full",e[e.Delta=2]="Delta",e))(p||{});function c(n){for(let t=0,e=n.length;t<e;t+=4){const a=n[t+0],d=n[t+1],o=n[t+2],l=n[t+3];n[t+0]=l,n[t+1]=o,n[t+2]=d,n[t+3]=a}}function S(n){const t=new Uint8Array(n.buffer,n.byteOffset,n.length*4);return s.isLittleEndian()||c(t),b.wrap(t)}function g(n){const t=n.buffer;if(s.isLittleEndian()||c(t),t.byteOffset%4===0)return new Uint32Array(t.buffer,t.byteOffset,t.length/4);{const e=new Uint8Array(t.byteLength);return e.set(t),new Uint32Array(e.buffer,e.byteOffset,e.length/4)}}function D(n){const t=new Uint32Array(h(n));let e=0;if(t[e++]=n.id,n.type==="full")t[e++]=1,t[e++]=n.data.length,t.set(n.data,e),e+=n.data.length;else{t[e++]=2,t[e++]=n.deltas.length;for(const a of n.deltas)t[e++]=a.start,t[e++]=a.deleteCount,a.data?(t[e++]=a.data.length,t.set(a.data,e),e+=a.data.length):t[e++]=0}return S(t)}function h(n){let t=0;if(t+=2,n.type==="full")t+=1+n.data.length;else{t+=1,t+=3*n.deltas.length;for(const e of n.deltas)e.data&&(t+=e.data.length)}return t}function A(n){const t=g(n);let e=0;const a=t[e++];if(t[e++]===1){const r=t[e++],f=t.subarray(e,e+r);return e+=r,{id:a,type:"full",data:f}}const o=t[e++],l=[];for(let r=0;r<o;r++){const f=t[e++],y=t[e++],i=t[e++];let u;i>0&&(u=t.subarray(e,e+i),e+=i),l[r]={start:f,deleteCount:y,data:u}}return{id:a,type:"delta",deltas:l}}export{A as decodeSemanticTokensDto,D as encodeSemanticTokensDto};
+import { VSBuffer } from '../../../base/common/buffer.js';
+import * as platform from '../../../base/common/platform.js';
+function reverseEndianness(arr) {
+    for (let i = 0, len = arr.length; i < len; i += 4) {
+        const b0 = arr[i + 0];
+        const b1 = arr[i + 1];
+        const b2 = arr[i + 2];
+        const b3 = arr[i + 3];
+        arr[i + 0] = b3;
+        arr[i + 1] = b2;
+        arr[i + 2] = b1;
+        arr[i + 3] = b0;
+    }
+}
+function toLittleEndianBuffer(arr) {
+    const uint8Arr = new Uint8Array(arr.buffer, arr.byteOffset, arr.length * 4);
+    if (!platform.isLittleEndian()) {
+        reverseEndianness(uint8Arr);
+    }
+    return VSBuffer.wrap(uint8Arr);
+}
+function fromLittleEndianBuffer(buff) {
+    const uint8Arr = buff.buffer;
+    if (!platform.isLittleEndian()) {
+        reverseEndianness(uint8Arr);
+    }
+    if (uint8Arr.byteOffset % 4 === 0) {
+        return new Uint32Array(uint8Arr.buffer, uint8Arr.byteOffset, uint8Arr.length / 4);
+    }
+    else {
+        const data = new Uint8Array(uint8Arr.byteLength);
+        data.set(uint8Arr);
+        return new Uint32Array(data.buffer, data.byteOffset, data.length / 4);
+    }
+}
+export function encodeSemanticTokensDto(semanticTokens) {
+    const dest = new Uint32Array(encodeSemanticTokensDtoSize(semanticTokens));
+    let offset = 0;
+    dest[offset++] = semanticTokens.id;
+    if (semanticTokens.type === 'full') {
+        dest[offset++] = 1;
+        dest[offset++] = semanticTokens.data.length;
+        dest.set(semanticTokens.data, offset);
+        offset += semanticTokens.data.length;
+    }
+    else {
+        dest[offset++] = 2;
+        dest[offset++] = semanticTokens.deltas.length;
+        for (const delta of semanticTokens.deltas) {
+            dest[offset++] = delta.start;
+            dest[offset++] = delta.deleteCount;
+            if (delta.data) {
+                dest[offset++] = delta.data.length;
+                dest.set(delta.data, offset);
+                offset += delta.data.length;
+            }
+            else {
+                dest[offset++] = 0;
+            }
+        }
+    }
+    return toLittleEndianBuffer(dest);
+}
+function encodeSemanticTokensDtoSize(semanticTokens) {
+    let result = 0;
+    result += (+1
+        + 1);
+    if (semanticTokens.type === 'full') {
+        result += (+1
+            + semanticTokens.data.length);
+    }
+    else {
+        result += (+1);
+        result += (+1
+            + 1
+            + 1) * semanticTokens.deltas.length;
+        for (const delta of semanticTokens.deltas) {
+            if (delta.data) {
+                result += delta.data.length;
+            }
+        }
+    }
+    return result;
+}
+export function decodeSemanticTokensDto(_buff) {
+    const src = fromLittleEndianBuffer(_buff);
+    let offset = 0;
+    const id = src[offset++];
+    const type = src[offset++];
+    if (type === 1) {
+        const length = src[offset++];
+        const data = src.subarray(offset, offset + length);
+        offset += length;
+        return {
+            id: id,
+            type: 'full',
+            data: data
+        };
+    }
+    const deltaCount = src[offset++];
+    const deltas = [];
+    for (let i = 0; i < deltaCount; i++) {
+        const start = src[offset++];
+        const deleteCount = src[offset++];
+        const length = src[offset++];
+        let data;
+        if (length > 0) {
+            data = src.subarray(offset, offset + length);
+            offset += length;
+        }
+        deltas[i] = { start, deleteCount, data };
+    }
+    return {
+        id: id,
+        type: 'delta',
+        deltas: deltas
+    };
+}

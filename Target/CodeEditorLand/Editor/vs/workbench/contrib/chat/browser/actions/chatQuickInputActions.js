@@ -1,1 +1,166 @@
-import{Codicon as C}from"../../../../../base/common/codicons.js";import{KeyCode as g,KeyMod as o}from"../../../../../base/common/keyCodes.js";import{ICodeEditorService as k}from"../../../../../editor/browser/services/codeEditorService.js";import{Selection as m}from"../../../../../editor/common/core/selection.js";import{localize as l,localize2 as c}from"../../../../../nls.js";import{Action2 as r,MenuId as d,registerAction2 as n}from"../../../../../platform/actions/common/actions.js";import"../../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as f}from"../../../../../platform/keybinding/common/keybindingsRegistry.js";import{CHAT_CATEGORY as a}from"./chatActions.js";import{IQuickChatService as s}from"../chat.js";import{CONTEXT_CHAT_ENABLED as y}from"../../common/chatContextKeys.js";import{InlineChatController as v}from"../../../inlineChat/browser/inlineChatController.js";const S="workbench.action.quickchat.toggle";function G(){n(q),n(A),n(class extends r{constructor(){super({id:"workbench.action.quickchat.openInChatView",title:c("chat.openInChatView.label","Open in Chat View"),f1:!1,category:a,icon:C.commentDiscussion,menu:{id:d.ChatInputSide,group:"navigation",order:10}})}run(t){t.get(s).openInChatView()}}),n(class extends r{constructor(){super({id:"workbench.action.quickchat.close",title:c("chat.closeQuickChat.label","Close Quick Chat"),f1:!1,category:a,icon:C.close,menu:{id:d.ChatInputSide,group:"navigation",order:20}})}run(t){t.get(s).close()}}),n(class extends r{constructor(){super({id:"workbench.action.quickchat.launchInlineChat",title:c("chat.launchInlineChat.label","Launch Inline Chat"),f1:!1,category:a})}async run(t){const e=t.get(s),h=t.get(k);e.focused&&e.close();const i=h.getActiveCodeEditor();if(!i)return;const p=v.get(i);p&&(await p.run(),p.focus())}})}class q extends r{constructor(){super({id:S,title:c("quickChat","Quick Chat"),precondition:y,icon:C.commentDiscussion,f1:!1,category:a,keybinding:{weight:f.WorkbenchContrib,primary:o.CtrlCmd|o.Shift|g.KeyI,linux:{primary:o.CtrlCmd|o.Shift|o.Alt|g.KeyI}},menu:{id:d.ChatCommandCenter,group:"c_quickChat",order:5},metadata:{description:l("toggle.desc","Toggle the quick chat"),args:[{name:"args",schema:{anyOf:[{type:"object",required:["query"],properties:{query:{description:l("toggle.query","The query to open the quick chat with"),type:"string"},isPartialQuery:{description:l("toggle.isPartialQuery","Whether the query is partial; it will wait for more user input"),type:"boolean"}}},{type:"string",description:l("toggle.query","The query to open the quick chat with")}]}}]}})}run(t,e){const h=t.get(s);let i;switch(typeof e){case"string":i={query:e};break;case"object":i=e;break}i?.query&&(i.selection=new m(1,i.query.length+1,1,i.query.length+1)),h.toggle(i)}}class A extends r{constructor(){super({id:"workbench.action.openQuickChat",category:a,title:c("interactiveSession.open","Open Quick Chat"),f1:!0})}run(t,e){t.get(s).toggle(e?{query:e,selection:new m(1,e.length+1,1,e.length+1)}:void 0)}}export{S as ASK_QUICK_QUESTION_ACTION_ID,G as registerQuickChatActions};
+import { Codicon } from '../../../../../base/common/codicons.js';
+import { ICodeEditorService } from '../../../../../editor/browser/services/codeEditorService.js';
+import { Selection } from '../../../../../editor/common/core/selection.js';
+import { localize, localize2 } from '../../../../../nls.js';
+import { Action2, MenuId, registerAction2 } from '../../../../../platform/actions/common/actions.js';
+import { CHAT_CATEGORY } from './chatActions.js';
+import { IQuickChatService } from '../chat.js';
+import { CONTEXT_CHAT_ENABLED } from '../../common/chatContextKeys.js';
+import { InlineChatController } from '../../../inlineChat/browser/inlineChatController.js';
+export const ASK_QUICK_QUESTION_ACTION_ID = 'workbench.action.quickchat.toggle';
+export function registerQuickChatActions() {
+    registerAction2(QuickChatGlobalAction);
+    registerAction2(AskQuickChatAction);
+    registerAction2(class OpenInChatViewAction extends Action2 {
+        constructor() {
+            super({
+                id: 'workbench.action.quickchat.openInChatView',
+                title: localize2('chat.openInChatView.label', "Open in Chat View"),
+                f1: false,
+                category: CHAT_CATEGORY,
+                icon: Codicon.commentDiscussion,
+                menu: {
+                    id: MenuId.ChatInputSide,
+                    group: 'navigation',
+                    order: 10
+                }
+            });
+        }
+        run(accessor) {
+            const quickChatService = accessor.get(IQuickChatService);
+            quickChatService.openInChatView();
+        }
+    });
+    registerAction2(class CloseQuickChatAction extends Action2 {
+        constructor() {
+            super({
+                id: 'workbench.action.quickchat.close',
+                title: localize2('chat.closeQuickChat.label', "Close Quick Chat"),
+                f1: false,
+                category: CHAT_CATEGORY,
+                icon: Codicon.close,
+                menu: {
+                    id: MenuId.ChatInputSide,
+                    group: 'navigation',
+                    order: 20
+                }
+            });
+        }
+        run(accessor) {
+            const quickChatService = accessor.get(IQuickChatService);
+            quickChatService.close();
+        }
+    });
+    registerAction2(class LaunchInlineChatFromQuickChatAction extends Action2 {
+        constructor() {
+            super({
+                id: 'workbench.action.quickchat.launchInlineChat',
+                title: localize2('chat.launchInlineChat.label', "Launch Inline Chat"),
+                f1: false,
+                category: CHAT_CATEGORY
+            });
+        }
+        async run(accessor) {
+            const quickChatService = accessor.get(IQuickChatService);
+            const codeEditorService = accessor.get(ICodeEditorService);
+            if (quickChatService.focused) {
+                quickChatService.close();
+            }
+            const codeEditor = codeEditorService.getActiveCodeEditor();
+            if (!codeEditor) {
+                return;
+            }
+            const controller = InlineChatController.get(codeEditor);
+            if (!controller) {
+                return;
+            }
+            await controller.run();
+            controller.focus();
+        }
+    });
+}
+class QuickChatGlobalAction extends Action2 {
+    constructor() {
+        super({
+            id: ASK_QUICK_QUESTION_ACTION_ID,
+            title: localize2('quickChat', 'Quick Chat'),
+            precondition: CONTEXT_CHAT_ENABLED,
+            icon: Codicon.commentDiscussion,
+            f1: false,
+            category: CHAT_CATEGORY,
+            keybinding: {
+                weight: 200,
+                primary: 2048 | 1024 | 39,
+                linux: {
+                    primary: 2048 | 1024 | 512 | 39
+                }
+            },
+            menu: {
+                id: MenuId.ChatCommandCenter,
+                group: 'c_quickChat',
+                order: 5
+            },
+            metadata: {
+                description: localize('toggle.desc', 'Toggle the quick chat'),
+                args: [{
+                        name: 'args',
+                        schema: {
+                            anyOf: [
+                                {
+                                    type: 'object',
+                                    required: ['query'],
+                                    properties: {
+                                        query: {
+                                            description: localize('toggle.query', "The query to open the quick chat with"),
+                                            type: 'string'
+                                        },
+                                        isPartialQuery: {
+                                            description: localize('toggle.isPartialQuery', "Whether the query is partial; it will wait for more user input"),
+                                            type: 'boolean'
+                                        }
+                                    },
+                                },
+                                {
+                                    type: 'string',
+                                    description: localize('toggle.query', "The query to open the quick chat with")
+                                }
+                            ]
+                        }
+                    }]
+            },
+        });
+    }
+    run(accessor, query) {
+        const quickChatService = accessor.get(IQuickChatService);
+        let options;
+        switch (typeof query) {
+            case 'string':
+                options = { query };
+                break;
+            case 'object':
+                options = query;
+                break;
+        }
+        if (options?.query) {
+            options.selection = new Selection(1, options.query.length + 1, 1, options.query.length + 1);
+        }
+        quickChatService.toggle(options);
+    }
+}
+class AskQuickChatAction extends Action2 {
+    constructor() {
+        super({
+            id: `workbench.action.openQuickChat`,
+            category: CHAT_CATEGORY,
+            title: localize2('interactiveSession.open', "Open Quick Chat"),
+            f1: true
+        });
+    }
+    run(accessor, query) {
+        const quickChatService = accessor.get(IQuickChatService);
+        quickChatService.toggle(query ? {
+            query,
+            selection: new Selection(1, query.length + 1, 1, query.length + 1)
+        } : undefined);
+    }
+}

@@ -1,1 +1,35 @@
-import{CharCode as t}from"../../../base/common/charCode.js";var u=(e=>(e[e.Unknown=0]="Unknown",e[e.Invalid=3]="Invalid",e[e.LF=1]="LF",e[e.CRLF=2]="CRLF",e))(u||{});function C(o){let r=0,i=0,l=0,e=0;for(let n=0,f=o.length;n<f;n++){const a=o.charCodeAt(n);a===t.CarriageReturn?(r===0&&(i=n),r++,n+1<f&&o.charCodeAt(n+1)===t.LineFeed?(e|=2,n++):e|=3,l=n+1):a===t.LineFeed&&(e|=1,r===0&&(i=n),r++,l=n+1)}return r===0&&(i=o.length),[r,i,o.length-l,e]}export{u as StringEOL,C as countEOL};
+export function countEOL(text) {
+    let eolCount = 0;
+    let firstLineLength = 0;
+    let lastLineStart = 0;
+    let eol = 0;
+    for (let i = 0, len = text.length; i < len; i++) {
+        const chr = text.charCodeAt(i);
+        if (chr === 13) {
+            if (eolCount === 0) {
+                firstLineLength = i;
+            }
+            eolCount++;
+            if (i + 1 < len && text.charCodeAt(i + 1) === 10) {
+                eol |= 2;
+                i++;
+            }
+            else {
+                eol |= 3;
+            }
+            lastLineStart = i + 1;
+        }
+        else if (chr === 10) {
+            eol |= 1;
+            if (eolCount === 0) {
+                firstLineLength = i;
+            }
+            eolCount++;
+            lastLineStart = i + 1;
+        }
+    }
+    if (eolCount === 0) {
+        firstLineLength = text.length;
+    }
+    return [eolCount, firstLineLength, text.length - lastLineStart, eol];
+}

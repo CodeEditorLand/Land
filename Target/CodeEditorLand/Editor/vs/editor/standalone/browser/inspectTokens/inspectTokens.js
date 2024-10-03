@@ -1,1 +1,238 @@
-var y=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var _=(s,t,e,o)=>{for(var n=o>1?void 0:o?b(t,e):t,g=s.length-1,r;g>=0;g--)(r=s[g])&&(n=(o?r(t,e,n):r(n))||n);return o&&n&&y(t,e,n),n},k=(s,t)=>(e,o)=>t(e,o,s);import"./inspectTokens.css";import{$ as i,append as c,reset as L}from"../../../../base/browser/dom.js";import{CharCode as I}from"../../../../base/common/charCode.js";import{Color as v}from"../../../../base/common/color.js";import{KeyCode as E}from"../../../../base/common/keyCodes.js";import{Disposable as C}from"../../../../base/common/lifecycle.js";import{ContentWidgetPositionPreference as T}from"../../../browser/editorBrowser.js";import{EditorAction as z,registerEditorAction as x,registerEditorContribution as M,EditorContributionInstantiation as D}from"../../../browser/editorExtensions.js";import"../../../common/core/position.js";import"../../../common/editorCommon.js";import"../../../common/model.js";import{TokenizationRegistry as f}from"../../../common/languages.js";import{FontStyle as p,StandardTokenType as h,TokenMetadata as l}from"../../../common/encodedTokenAttributes.js";import{NullState as w,nullTokenize as A,nullTokenizeEncoded as N}from"../../../common/languages/nullTokenize.js";import{ILanguageService as P}from"../../../common/languages/language.js";import{IStandaloneThemeService as W}from"../../common/standaloneTheme.js";import{InspectTokensNLS as B}from"../../../common/standaloneStrings.js";let u=class extends C{static ID="editor.contrib.inspectTokens";static get(t){return t.getContribution(u.ID)}_editor;_languageService;_widget;constructor(t,e,o){super(),this._editor=t,this._languageService=o,this._widget=null,this._register(this._editor.onDidChangeModel(n=>this.stop())),this._register(this._editor.onDidChangeModelLanguage(n=>this.stop())),this._register(f.onDidChange(n=>this.stop())),this._register(this._editor.onKeyUp(n=>n.keyCode===E.Escape&&this.stop()))}dispose(){this.stop(),super.dispose()}launch(){this._widget||this._editor.hasModel()&&(this._widget=new S(this._editor,this._languageService))}stop(){this._widget&&(this._widget.dispose(),this._widget=null)}};u=_([k(1,W),k(2,P)],u);class $ extends z{constructor(){super({id:"editor.action.inspectTokens",label:B.inspectTokensAction,alias:"Developer: Inspect Tokens",precondition:void 0})}run(t,e){u.get(e)?.launch()}}function F(s){let t="";for(let e=0,o=s.length;e<o;e++){const n=s.charCodeAt(e);switch(n){case I.Tab:t+="\u2192";break;case I.Space:t+="\xB7";break;default:t+=String.fromCharCode(n)}}return t}function O(s,t){const e=f.get(t);if(e)return e;const o=s.encodeLanguageId(t);return{getInitialState:()=>w,tokenize:(n,g,r)=>A(t,r),tokenizeEncoded:(n,g,r)=>N(o,r)}}class S extends C{static _ID="editor.contrib.inspectTokensWidget";allowEditorOverflow=!0;_editor;_languageService;_tokenizationSupport;_model;_domNode;constructor(t,e){super(),this._editor=t,this._languageService=e,this._model=this._editor.getModel(),this._domNode=document.createElement("div"),this._domNode.className="tokens-inspect-widget",this._tokenizationSupport=O(this._languageService.languageIdCodec,this._model.getLanguageId()),this._compute(this._editor.getPosition()),this._register(this._editor.onDidChangeCursorPosition(o=>this._compute(this._editor.getPosition()))),this._editor.addContentWidget(this)}dispose(){this._editor.removeContentWidget(this),super.dispose()}getId(){return S._ID}_compute(t){const e=this._getTokensAtLine(t.lineNumber);let o=0;for(let a=e.tokens1.length-1;a>=0;a--){const m=e.tokens1[a];if(t.column-1>=m.offset){o=a;break}}let n=0;for(let a=e.tokens2.length>>>1;a>=0;a--)if(t.column-1>=e.tokens2[a<<1]){n=a;break}const g=this._model.getLineContent(t.lineNumber);let r="";if(o<e.tokens1.length){const a=e.tokens1[o].offset,m=o+1<e.tokens1.length?e.tokens1[o+1].offset:g.length;r=g.substring(a,m)}L(this._domNode,i("h2.tm-token",void 0,F(r),i("span.tm-token-length",void 0,`${r.length} ${r.length===1?"char":"chars"}`))),c(this._domNode,i("hr.tokens-inspect-separator",{style:"clear:both"}));const d=(n<<1)+1<e.tokens2.length?this._decodeMetadata(e.tokens2[(n<<1)+1]):null;c(this._domNode,i("table.tm-metadata-table",void 0,i("tbody",void 0,i("tr",void 0,i("td.tm-metadata-key",void 0,"language"),i("td.tm-metadata-value",void 0,`${d?d.languageId:"-?-"}`)),i("tr",void 0,i("td.tm-metadata-key",void 0,"token type"),i("td.tm-metadata-value",void 0,`${d?this._tokenTypeToString(d.tokenType):"-?-"}`)),i("tr",void 0,i("td.tm-metadata-key",void 0,"font style"),i("td.tm-metadata-value",void 0,`${d?this._fontStyleToString(d.fontStyle):"-?-"}`)),i("tr",void 0,i("td.tm-metadata-key",void 0,"foreground"),i("td.tm-metadata-value",void 0,`${d?v.Format.CSS.formatHex(d.foreground):"-?-"}`)),i("tr",void 0,i("td.tm-metadata-key",void 0,"background"),i("td.tm-metadata-value",void 0,`${d?v.Format.CSS.formatHex(d.background):"-?-"}`))))),c(this._domNode,i("hr.tokens-inspect-separator")),o<e.tokens1.length&&c(this._domNode,i("span.tm-token-type",void 0,e.tokens1[o].type)),this._editor.layoutContentWidget(this)}_decodeMetadata(t){const e=f.getColorMap(),o=l.getLanguageId(t),n=l.getTokenType(t),g=l.getFontStyle(t),r=l.getForeground(t),d=l.getBackground(t);return{languageId:this._languageService.languageIdCodec.decodeLanguageId(o),tokenType:n,fontStyle:g,foreground:e[r],background:e[d]}}_tokenTypeToString(t){switch(t){case h.Other:return"Other";case h.Comment:return"Comment";case h.String:return"String";case h.RegEx:return"RegEx";default:return"??"}}_fontStyleToString(t){let e="";return t&p.Italic&&(e+="italic "),t&p.Bold&&(e+="bold "),t&p.Underline&&(e+="underline "),t&p.Strikethrough&&(e+="strikethrough "),e.length===0&&(e="---"),e}_getTokensAtLine(t){const e=this._getStateBeforeLine(t),o=this._tokenizationSupport.tokenize(this._model.getLineContent(t),!0,e),n=this._tokenizationSupport.tokenizeEncoded(this._model.getLineContent(t),!0,e);return{startState:e,tokens1:o.tokens,tokens2:n.tokens,endState:o.endState}}_getStateBeforeLine(t){let e=this._tokenizationSupport.getInitialState();for(let o=1;o<t;o++)e=this._tokenizationSupport.tokenize(this._model.getLineContent(o),!0,e).endState;return e}getDomNode(){return this._domNode}getPosition(){return{position:this._editor.getPosition(),preference:[T.BELOW,T.ABOVE]}}}M(u.ID,u,D.Lazy),x($);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var InspectTokensController_1;
+import './inspectTokens.css';
+import { $, append, reset } from '../../../../base/browser/dom.js';
+import { Color } from '../../../../base/common/color.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { EditorAction, registerEditorAction, registerEditorContribution } from '../../../browser/editorExtensions.js';
+import { TokenizationRegistry } from '../../../common/languages.js';
+import { TokenMetadata } from '../../../common/encodedTokenAttributes.js';
+import { NullState, nullTokenize, nullTokenizeEncoded } from '../../../common/languages/nullTokenize.js';
+import { ILanguageService } from '../../../common/languages/language.js';
+import { IStandaloneThemeService } from '../../common/standaloneTheme.js';
+import { InspectTokensNLS } from '../../../common/standaloneStrings.js';
+let InspectTokensController = class InspectTokensController extends Disposable {
+    static { InspectTokensController_1 = this; }
+    static { this.ID = 'editor.contrib.inspectTokens'; }
+    static get(editor) {
+        return editor.getContribution(InspectTokensController_1.ID);
+    }
+    constructor(editor, standaloneColorService, languageService) {
+        super();
+        this._editor = editor;
+        this._languageService = languageService;
+        this._widget = null;
+        this._register(this._editor.onDidChangeModel((e) => this.stop()));
+        this._register(this._editor.onDidChangeModelLanguage((e) => this.stop()));
+        this._register(TokenizationRegistry.onDidChange((e) => this.stop()));
+        this._register(this._editor.onKeyUp((e) => e.keyCode === 9 && this.stop()));
+    }
+    dispose() {
+        this.stop();
+        super.dispose();
+    }
+    launch() {
+        if (this._widget) {
+            return;
+        }
+        if (!this._editor.hasModel()) {
+            return;
+        }
+        this._widget = new InspectTokensWidget(this._editor, this._languageService);
+    }
+    stop() {
+        if (this._widget) {
+            this._widget.dispose();
+            this._widget = null;
+        }
+    }
+};
+InspectTokensController = InspectTokensController_1 = __decorate([
+    __param(1, IStandaloneThemeService),
+    __param(2, ILanguageService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], InspectTokensController);
+class InspectTokens extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.inspectTokens',
+            label: InspectTokensNLS.inspectTokensAction,
+            alias: 'Developer: Inspect Tokens',
+            precondition: undefined
+        });
+    }
+    run(accessor, editor) {
+        const controller = InspectTokensController.get(editor);
+        controller?.launch();
+    }
+}
+function renderTokenText(tokenText) {
+    let result = '';
+    for (let charIndex = 0, len = tokenText.length; charIndex < len; charIndex++) {
+        const charCode = tokenText.charCodeAt(charIndex);
+        switch (charCode) {
+            case 9:
+                result += '\u2192';
+                break;
+            case 32:
+                result += '\u00B7';
+                break;
+            default:
+                result += String.fromCharCode(charCode);
+        }
+    }
+    return result;
+}
+function getSafeTokenizationSupport(languageIdCodec, languageId) {
+    const tokenizationSupport = TokenizationRegistry.get(languageId);
+    if (tokenizationSupport) {
+        return tokenizationSupport;
+    }
+    const encodedLanguageId = languageIdCodec.encodeLanguageId(languageId);
+    return {
+        getInitialState: () => NullState,
+        tokenize: (line, hasEOL, state) => nullTokenize(languageId, state),
+        tokenizeEncoded: (line, hasEOL, state) => nullTokenizeEncoded(encodedLanguageId, state)
+    };
+}
+class InspectTokensWidget extends Disposable {
+    static { this._ID = 'editor.contrib.inspectTokensWidget'; }
+    constructor(editor, languageService) {
+        super();
+        this.allowEditorOverflow = true;
+        this._editor = editor;
+        this._languageService = languageService;
+        this._model = this._editor.getModel();
+        this._domNode = document.createElement('div');
+        this._domNode.className = 'tokens-inspect-widget';
+        this._tokenizationSupport = getSafeTokenizationSupport(this._languageService.languageIdCodec, this._model.getLanguageId());
+        this._compute(this._editor.getPosition());
+        this._register(this._editor.onDidChangeCursorPosition((e) => this._compute(this._editor.getPosition())));
+        this._editor.addContentWidget(this);
+    }
+    dispose() {
+        this._editor.removeContentWidget(this);
+        super.dispose();
+    }
+    getId() {
+        return InspectTokensWidget._ID;
+    }
+    _compute(position) {
+        const data = this._getTokensAtLine(position.lineNumber);
+        let token1Index = 0;
+        for (let i = data.tokens1.length - 1; i >= 0; i--) {
+            const t = data.tokens1[i];
+            if (position.column - 1 >= t.offset) {
+                token1Index = i;
+                break;
+            }
+        }
+        let token2Index = 0;
+        for (let i = (data.tokens2.length >>> 1); i >= 0; i--) {
+            if (position.column - 1 >= data.tokens2[(i << 1)]) {
+                token2Index = i;
+                break;
+            }
+        }
+        const lineContent = this._model.getLineContent(position.lineNumber);
+        let tokenText = '';
+        if (token1Index < data.tokens1.length) {
+            const tokenStartIndex = data.tokens1[token1Index].offset;
+            const tokenEndIndex = token1Index + 1 < data.tokens1.length ? data.tokens1[token1Index + 1].offset : lineContent.length;
+            tokenText = lineContent.substring(tokenStartIndex, tokenEndIndex);
+        }
+        reset(this._domNode, $('h2.tm-token', undefined, renderTokenText(tokenText), $('span.tm-token-length', undefined, `${tokenText.length} ${tokenText.length === 1 ? 'char' : 'chars'}`)));
+        append(this._domNode, $('hr.tokens-inspect-separator', { 'style': 'clear:both' }));
+        const metadata = (token2Index << 1) + 1 < data.tokens2.length ? this._decodeMetadata(data.tokens2[(token2Index << 1) + 1]) : null;
+        append(this._domNode, $('table.tm-metadata-table', undefined, $('tbody', undefined, $('tr', undefined, $('td.tm-metadata-key', undefined, 'language'), $('td.tm-metadata-value', undefined, `${metadata ? metadata.languageId : '-?-'}`)), $('tr', undefined, $('td.tm-metadata-key', undefined, 'token type'), $('td.tm-metadata-value', undefined, `${metadata ? this._tokenTypeToString(metadata.tokenType) : '-?-'}`)), $('tr', undefined, $('td.tm-metadata-key', undefined, 'font style'), $('td.tm-metadata-value', undefined, `${metadata ? this._fontStyleToString(metadata.fontStyle) : '-?-'}`)), $('tr', undefined, $('td.tm-metadata-key', undefined, 'foreground'), $('td.tm-metadata-value', undefined, `${metadata ? Color.Format.CSS.formatHex(metadata.foreground) : '-?-'}`)), $('tr', undefined, $('td.tm-metadata-key', undefined, 'background'), $('td.tm-metadata-value', undefined, `${metadata ? Color.Format.CSS.formatHex(metadata.background) : '-?-'}`)))));
+        append(this._domNode, $('hr.tokens-inspect-separator'));
+        if (token1Index < data.tokens1.length) {
+            append(this._domNode, $('span.tm-token-type', undefined, data.tokens1[token1Index].type));
+        }
+        this._editor.layoutContentWidget(this);
+    }
+    _decodeMetadata(metadata) {
+        const colorMap = TokenizationRegistry.getColorMap();
+        const languageId = TokenMetadata.getLanguageId(metadata);
+        const tokenType = TokenMetadata.getTokenType(metadata);
+        const fontStyle = TokenMetadata.getFontStyle(metadata);
+        const foreground = TokenMetadata.getForeground(metadata);
+        const background = TokenMetadata.getBackground(metadata);
+        return {
+            languageId: this._languageService.languageIdCodec.decodeLanguageId(languageId),
+            tokenType: tokenType,
+            fontStyle: fontStyle,
+            foreground: colorMap[foreground],
+            background: colorMap[background]
+        };
+    }
+    _tokenTypeToString(tokenType) {
+        switch (tokenType) {
+            case 0: return 'Other';
+            case 1: return 'Comment';
+            case 2: return 'String';
+            case 3: return 'RegEx';
+            default: return '??';
+        }
+    }
+    _fontStyleToString(fontStyle) {
+        let r = '';
+        if (fontStyle & 1) {
+            r += 'italic ';
+        }
+        if (fontStyle & 2) {
+            r += 'bold ';
+        }
+        if (fontStyle & 4) {
+            r += 'underline ';
+        }
+        if (fontStyle & 8) {
+            r += 'strikethrough ';
+        }
+        if (r.length === 0) {
+            r = '---';
+        }
+        return r;
+    }
+    _getTokensAtLine(lineNumber) {
+        const stateBeforeLine = this._getStateBeforeLine(lineNumber);
+        const tokenizationResult1 = this._tokenizationSupport.tokenize(this._model.getLineContent(lineNumber), true, stateBeforeLine);
+        const tokenizationResult2 = this._tokenizationSupport.tokenizeEncoded(this._model.getLineContent(lineNumber), true, stateBeforeLine);
+        return {
+            startState: stateBeforeLine,
+            tokens1: tokenizationResult1.tokens,
+            tokens2: tokenizationResult2.tokens,
+            endState: tokenizationResult1.endState
+        };
+    }
+    _getStateBeforeLine(lineNumber) {
+        let state = this._tokenizationSupport.getInitialState();
+        for (let i = 1; i < lineNumber; i++) {
+            const tokenizationResult = this._tokenizationSupport.tokenize(this._model.getLineContent(i), true, state);
+            state = tokenizationResult.endState;
+        }
+        return state;
+    }
+    getDomNode() {
+        return this._domNode;
+    }
+    getPosition() {
+        return {
+            position: this._editor.getPosition(),
+            preference: [2, 1]
+        };
+    }
+}
+registerEditorContribution(InspectTokensController.ID, InspectTokensController, 4);
+registerEditorAction(InspectTokens);

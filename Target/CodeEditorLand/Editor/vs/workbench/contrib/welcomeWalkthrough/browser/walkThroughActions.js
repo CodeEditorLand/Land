@@ -1,1 +1,56 @@
-import{IEditorService as r}from"../../../services/editor/common/editorService.js";import{WalkThroughPart as t,WALK_THROUGH_FOCUS as n}from"./walkThroughPart.js";import{KeybindingWeight as i}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{EditorContextKeys as a}from"../../../../editor/common/editorContextKeys.js";import{ContextKeyExpr as d}from"../../../../platform/contextkey/common/contextkey.js";import{KeyCode as c}from"../../../../base/common/keyCodes.js";const l={id:"workbench.action.interactivePlayground.arrowUp",weight:i.WorkbenchContrib,when:d.and(n,a.editorTextFocus.toNegated()),primary:c.UpArrow,handler:o=>{const e=o.get(r).activeEditorPane;e instanceof t&&e.arrowUp()}},u={id:"workbench.action.interactivePlayground.arrowDown",weight:i.WorkbenchContrib,when:d.and(n,a.editorTextFocus.toNegated()),primary:c.DownArrow,handler:o=>{const e=o.get(r).activeEditorPane;e instanceof t&&e.arrowDown()}},y={id:"workbench.action.interactivePlayground.pageUp",weight:i.WorkbenchContrib,when:d.and(n,a.editorTextFocus.toNegated()),primary:c.PageUp,handler:o=>{const e=o.get(r).activeEditorPane;e instanceof t&&e.pageUp()}},P={id:"workbench.action.interactivePlayground.pageDown",weight:i.WorkbenchContrib,when:d.and(n,a.editorTextFocus.toNegated()),primary:c.PageDown,handler:o=>{const e=o.get(r).activeEditorPane;e instanceof t&&e.pageDown()}};export{u as WalkThroughArrowDown,l as WalkThroughArrowUp,P as WalkThroughPageDown,y as WalkThroughPageUp};
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { WalkThroughPart, WALK_THROUGH_FOCUS } from './walkThroughPart.js';
+import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+export const WalkThroughArrowUp = {
+    id: 'workbench.action.interactivePlayground.arrowUp',
+    weight: 200,
+    when: ContextKeyExpr.and(WALK_THROUGH_FOCUS, EditorContextKeys.editorTextFocus.toNegated()),
+    primary: 16,
+    handler: accessor => {
+        const editorService = accessor.get(IEditorService);
+        const activeEditorPane = editorService.activeEditorPane;
+        if (activeEditorPane instanceof WalkThroughPart) {
+            activeEditorPane.arrowUp();
+        }
+    }
+};
+export const WalkThroughArrowDown = {
+    id: 'workbench.action.interactivePlayground.arrowDown',
+    weight: 200,
+    when: ContextKeyExpr.and(WALK_THROUGH_FOCUS, EditorContextKeys.editorTextFocus.toNegated()),
+    primary: 18,
+    handler: accessor => {
+        const editorService = accessor.get(IEditorService);
+        const activeEditorPane = editorService.activeEditorPane;
+        if (activeEditorPane instanceof WalkThroughPart) {
+            activeEditorPane.arrowDown();
+        }
+    }
+};
+export const WalkThroughPageUp = {
+    id: 'workbench.action.interactivePlayground.pageUp',
+    weight: 200,
+    when: ContextKeyExpr.and(WALK_THROUGH_FOCUS, EditorContextKeys.editorTextFocus.toNegated()),
+    primary: 11,
+    handler: accessor => {
+        const editorService = accessor.get(IEditorService);
+        const activeEditorPane = editorService.activeEditorPane;
+        if (activeEditorPane instanceof WalkThroughPart) {
+            activeEditorPane.pageUp();
+        }
+    }
+};
+export const WalkThroughPageDown = {
+    id: 'workbench.action.interactivePlayground.pageDown',
+    weight: 200,
+    when: ContextKeyExpr.and(WALK_THROUGH_FOCUS, EditorContextKeys.editorTextFocus.toNegated()),
+    primary: 12,
+    handler: accessor => {
+        const editorService = accessor.get(IEditorService);
+        const activeEditorPane = editorService.activeEditorPane;
+        if (activeEditorPane instanceof WalkThroughPart) {
+            activeEditorPane.pageDown();
+        }
+    }
+};

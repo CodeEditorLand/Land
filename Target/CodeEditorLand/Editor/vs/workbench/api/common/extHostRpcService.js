@@ -1,1 +1,11 @@
-import"../../services/extensions/common/proxyIdentifier.js";import{createDecorator as i}from"../../../platform/instantiation/common/instantiation.js";const a=i("IExtHostRpcService");class x{_serviceBrand;getProxy;set;dispose;assertRegistered;drain;constructor(e){this.getProxy=e.getProxy.bind(e),this.set=e.set.bind(e),this.dispose=e.dispose.bind(e),this.assertRegistered=e.assertRegistered.bind(e),this.drain=e.drain.bind(e)}}export{x as ExtHostRpcService,a as IExtHostRpcService};
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+export const IExtHostRpcService = createDecorator('IExtHostRpcService');
+export class ExtHostRpcService {
+    constructor(rpcProtocol) {
+        this.getProxy = rpcProtocol.getProxy.bind(rpcProtocol);
+        this.set = rpcProtocol.set.bind(rpcProtocol);
+        this.dispose = rpcProtocol.dispose.bind(rpcProtocol);
+        this.assertRegistered = rpcProtocol.assertRegistered.bind(rpcProtocol);
+        this.drain = rpcProtocol.drain.bind(rpcProtocol);
+    }
+}

@@ -1,1 +1,52 @@
-import{constants as l,promises as y}from"fs";import{join as s}from"../common/path.js";import{env as e}from"../common/process.js";const i="XDG_SESSION_TYPE",p="WAYLAND_DISPLAY",c="XDG_RUNTIME_DIR";var D=(n=>(n.Wayland="wayland",n.XWayland="xwayland",n.X11="x11",n.Unknown="unknown",n))(D||{});async function w(a){const o=e[i];if(o)return o==="wayland"||o==="x11"?o:"unknown";if(e[p]){const r=e[c];if(r){const n=s(r,"wayland-0");try{return await y.access(n,l.R_OK),"wayland"}catch(t){return a(t),"unknown"}}else return"unknown"}else return"x11"}function S(a,o){if(o)switch(o){case"auto":return a;case"x11":return a==="wayland"?"xwayland":"x11";case"wayland":return"wayland";default:return"unknown"}else return a==="wayland"?"xwayland":"x11"}export{S as getCodeDisplayProtocol,w as getDisplayProtocol};
+import { constants as FSConstants, promises as FSPromises } from 'fs';
+import { join } from '../common/path.js';
+import { env } from '../common/process.js';
+const XDG_SESSION_TYPE = 'XDG_SESSION_TYPE';
+const WAYLAND_DISPLAY = 'WAYLAND_DISPLAY';
+const XDG_RUNTIME_DIR = 'XDG_RUNTIME_DIR';
+export async function getDisplayProtocol(errorLogger) {
+    const xdgSessionType = env[XDG_SESSION_TYPE];
+    if (xdgSessionType) {
+        return xdgSessionType === "wayland" || xdgSessionType === "x11" ? xdgSessionType : "unknown";
+    }
+    else {
+        const waylandDisplay = env[WAYLAND_DISPLAY];
+        if (!waylandDisplay) {
+            return "x11";
+        }
+        else {
+            const xdgRuntimeDir = env[XDG_RUNTIME_DIR];
+            if (!xdgRuntimeDir) {
+                return "unknown";
+            }
+            else {
+                const waylandServerPipe = join(xdgRuntimeDir, 'wayland-0');
+                try {
+                    await FSPromises.access(waylandServerPipe, FSConstants.R_OK);
+                    return "wayland";
+                }
+                catch (err) {
+                    errorLogger(err);
+                    return "unknown";
+                }
+            }
+        }
+    }
+}
+export function getCodeDisplayProtocol(displayProtocol, ozonePlatform) {
+    if (!ozonePlatform) {
+        return displayProtocol === "wayland" ? "xwayland" : "x11";
+    }
+    else {
+        switch (ozonePlatform) {
+            case 'auto':
+                return displayProtocol;
+            case 'x11':
+                return displayProtocol === "wayland" ? "xwayland" : "x11";
+            case 'wayland':
+                return "wayland";
+            default:
+                return "unknown";
+        }
+    }
+}

@@ -1,1 +1,253 @@
-import{BaseObservable as p,_setDerivedOpts as m}from"./base.js";import{DebugNameData as s}from"./debugName.js";import{DisposableStore as l,assertFn as c,onBugIndicatingError as v,strictEquals as o}from"./commonFacade/deps.js";import{getLogger as b}from"./logging.js";function U(n,r){return r!==void 0?new u(new s(n,void 0,r),r,void 0,void 0,void 0,o):new u(new s(void 0,void 0,n),n,void 0,void 0,void 0,o)}function H(n,r,e){return new T(new s(n,void 0,r),r,void 0,void 0,void 0,o,e)}function f(n,r){return new u(new s(n.owner,n.debugName,n.debugReferenceFn),r,void 0,void 0,n.onLastObserverRemoved,n.equalsFn??o)}m(f);function F(n,r){return new u(new s(n.owner,n.debugName,void 0),r,n.createEmptyChangeSummary,n.handleChange,void 0,n.equalityComparer??o)}function M(n,r){let e,t;r===void 0?(e=n,t=void 0):(t=n,e=r);const a=new l;return new u(new s(t,void 0,e),i=>(a.clear(),e(i,a)),void 0,void 0,()=>a.dispose(),o)}function W(n,r){let e,t;r===void 0?(e=n,t=void 0):(t=n,e=r);let a;return new u(new s(t,void 0,e),i=>{a?a.clear():a=new l;const d=e(i);return d&&a.add(d),d},void 0,void 0,()=>{a&&(a.dispose(),a=void 0)},o)}var g=(a=>(a[a.initial=0]="initial",a[a.dependenciesMightHaveChanged=1]="dependenciesMightHaveChanged",a[a.stale=2]="stale",a[a.upToDate=3]="upToDate",a))(g||{});class u extends p{constructor(e,t,a,i,d=void 0,h){super();this._debugNameData=e;this._computeFn=t;this.createChangeSummary=a;this._handleChange=i;this._handleLastObserverRemoved=d;this._equalityComparator=h;this.changeSummary=this.createChangeSummary?.(),b()?.handleDerivedCreated(this)}state=0;value=void 0;updateCount=0;dependencies=new Set;dependenciesToBeRemoved=new Set;changeSummary=void 0;get debugName(){return this._debugNameData.getDebugName(this)??"(anonymous)"}onLastObserverRemoved(){this.state=0,this.value=void 0;for(const e of this.dependencies)e.removeObserver(this);this.dependencies.clear(),this._handleLastObserverRemoved?.()}get(){if(this.observers.size===0){const e=this._computeFn(this,this.createChangeSummary?.());return this.onLastObserverRemoved(),e}else{do{if(this.state===1){for(const e of this.dependencies)if(e.reportChanges(),this.state===2)break}this.state===1&&(this.state=3),this._recomputeIfNeeded()}while(this.state!==3);return this.value}}_recomputeIfNeeded(){if(this.state===3)return;const e=this.dependenciesToBeRemoved;this.dependenciesToBeRemoved=this.dependencies,this.dependencies=e;const t=this.state!==0,a=this.value;this.state=3;let i=!1;try{const d=this.changeSummary;this.changeSummary=this.createChangeSummary?.();try{this.value=this._computeFn(this,d)}finally{for(const h of this.dependenciesToBeRemoved)h.removeObserver(this);this.dependenciesToBeRemoved.clear()}i=t&&!this._equalityComparator(a,this.value),b()?.handleDerivedRecomputed(this,{oldValue:a,newValue:this.value,change:void 0,didChange:i,hadValue:t})}catch(d){v(d)}if(i)for(const d of this.observers)d.handleChange(this,void 0)}toString(){return`LazyDerived<${this.debugName}>`}beginUpdate(e){this.updateCount++;const t=this.updateCount===1;if(this.state===3&&(this.state=1,!t))for(const a of this.observers)a.handlePossibleChange(this);if(t)for(const a of this.observers)a.beginUpdate(this)}endUpdate(e){if(this.updateCount--,this.updateCount===0){const t=[...this.observers];for(const a of t)a.endUpdate(this)}c(()=>this.updateCount>=0)}handlePossibleChange(e){if(this.state===3&&this.dependencies.has(e)&&!this.dependenciesToBeRemoved.has(e)){this.state=1;for(const t of this.observers)t.handlePossibleChange(this)}}handleChange(e,t){if(this.dependencies.has(e)&&!this.dependenciesToBeRemoved.has(e)){let a=!1;try{a=this._handleChange?this._handleChange({changedObservable:e,change:t,didChange:d=>d===e},this.changeSummary):!0}catch(d){v(d)}const i=this.state===3;if(a&&(this.state===1||i)&&(this.state=2,i))for(const d of this.observers)d.handlePossibleChange(this)}}readObservable(e){e.addObserver(this);const t=e.get();return this.dependencies.add(e),this.dependenciesToBeRemoved.delete(e),t}addObserver(e){const t=!this.observers.has(e)&&this.updateCount>0;super.addObserver(e),t&&e.beginUpdate(this)}removeObserver(e){const t=this.observers.has(e)&&this.updateCount>0;super.removeObserver(e),t&&e.endUpdate(this)}}class T extends u{constructor(e,t,a,i,d=void 0,h,C){super(e,t,a,i,d,h);this.set=C}}export{u as Derived,T as DerivedWithSetter,U as derived,W as derivedDisposable,F as derivedHandleChanges,f as derivedOpts,H as derivedWithSetter,M as derivedWithStore};
+import { BaseObservable, _setDerivedOpts, } from './base.js';
+import { DebugNameData } from './debugName.js';
+import { DisposableStore, assertFn, onBugIndicatingError, strictEquals } from './commonFacade/deps.js';
+import { getLogger } from './logging.js';
+export function derived(computeFnOrOwner, computeFn) {
+    if (computeFn !== undefined) {
+        return new Derived(new DebugNameData(computeFnOrOwner, undefined, computeFn), computeFn, undefined, undefined, undefined, strictEquals);
+    }
+    return new Derived(new DebugNameData(undefined, undefined, computeFnOrOwner), computeFnOrOwner, undefined, undefined, undefined, strictEquals);
+}
+export function derivedWithSetter(owner, computeFn, setter) {
+    return new DerivedWithSetter(new DebugNameData(owner, undefined, computeFn), computeFn, undefined, undefined, undefined, strictEquals, setter);
+}
+export function derivedOpts(options, computeFn) {
+    return new Derived(new DebugNameData(options.owner, options.debugName, options.debugReferenceFn), computeFn, undefined, undefined, options.onLastObserverRemoved, options.equalsFn ?? strictEquals);
+}
+_setDerivedOpts(derivedOpts);
+export function derivedHandleChanges(options, computeFn) {
+    return new Derived(new DebugNameData(options.owner, options.debugName, undefined), computeFn, options.createEmptyChangeSummary, options.handleChange, undefined, options.equalityComparer ?? strictEquals);
+}
+export function derivedWithStore(computeFnOrOwner, computeFnOrUndefined) {
+    let computeFn;
+    let owner;
+    if (computeFnOrUndefined === undefined) {
+        computeFn = computeFnOrOwner;
+        owner = undefined;
+    }
+    else {
+        owner = computeFnOrOwner;
+        computeFn = computeFnOrUndefined;
+    }
+    const store = new DisposableStore();
+    return new Derived(new DebugNameData(owner, undefined, computeFn), r => {
+        store.clear();
+        return computeFn(r, store);
+    }, undefined, undefined, () => store.dispose(), strictEquals);
+}
+export function derivedDisposable(computeFnOrOwner, computeFnOrUndefined) {
+    let computeFn;
+    let owner;
+    if (computeFnOrUndefined === undefined) {
+        computeFn = computeFnOrOwner;
+        owner = undefined;
+    }
+    else {
+        owner = computeFnOrOwner;
+        computeFn = computeFnOrUndefined;
+    }
+    let store = undefined;
+    return new Derived(new DebugNameData(owner, undefined, computeFn), r => {
+        if (!store) {
+            store = new DisposableStore();
+        }
+        else {
+            store.clear();
+        }
+        const result = computeFn(r);
+        if (result) {
+            store.add(result);
+        }
+        return result;
+    }, undefined, undefined, () => {
+        if (store) {
+            store.dispose();
+            store = undefined;
+        }
+    }, strictEquals);
+}
+export class Derived extends BaseObservable {
+    get debugName() {
+        return this._debugNameData.getDebugName(this) ?? '(anonymous)';
+    }
+    constructor(_debugNameData, _computeFn, createChangeSummary, _handleChange, _handleLastObserverRemoved = undefined, _equalityComparator) {
+        super();
+        this._debugNameData = _debugNameData;
+        this._computeFn = _computeFn;
+        this.createChangeSummary = createChangeSummary;
+        this._handleChange = _handleChange;
+        this._handleLastObserverRemoved = _handleLastObserverRemoved;
+        this._equalityComparator = _equalityComparator;
+        this.state = 0;
+        this.value = undefined;
+        this.updateCount = 0;
+        this.dependencies = new Set();
+        this.dependenciesToBeRemoved = new Set();
+        this.changeSummary = undefined;
+        this.changeSummary = this.createChangeSummary?.();
+        getLogger()?.handleDerivedCreated(this);
+    }
+    onLastObserverRemoved() {
+        this.state = 0;
+        this.value = undefined;
+        for (const d of this.dependencies) {
+            d.removeObserver(this);
+        }
+        this.dependencies.clear();
+        this._handleLastObserverRemoved?.();
+    }
+    get() {
+        if (this.observers.size === 0) {
+            const result = this._computeFn(this, this.createChangeSummary?.());
+            this.onLastObserverRemoved();
+            return result;
+        }
+        else {
+            do {
+                if (this.state === 1) {
+                    for (const d of this.dependencies) {
+                        d.reportChanges();
+                        if (this.state === 2) {
+                            break;
+                        }
+                    }
+                }
+                if (this.state === 1) {
+                    this.state = 3;
+                }
+                this._recomputeIfNeeded();
+            } while (this.state !== 3);
+            return this.value;
+        }
+    }
+    _recomputeIfNeeded() {
+        if (this.state === 3) {
+            return;
+        }
+        const emptySet = this.dependenciesToBeRemoved;
+        this.dependenciesToBeRemoved = this.dependencies;
+        this.dependencies = emptySet;
+        const hadValue = this.state !== 0;
+        const oldValue = this.value;
+        this.state = 3;
+        let didChange = false;
+        try {
+            const changeSummary = this.changeSummary;
+            this.changeSummary = this.createChangeSummary?.();
+            try {
+                this.value = this._computeFn(this, changeSummary);
+            }
+            finally {
+                for (const o of this.dependenciesToBeRemoved) {
+                    o.removeObserver(this);
+                }
+                this.dependenciesToBeRemoved.clear();
+            }
+            didChange = hadValue && !(this._equalityComparator(oldValue, this.value));
+            getLogger()?.handleDerivedRecomputed(this, {
+                oldValue,
+                newValue: this.value,
+                change: undefined,
+                didChange,
+                hadValue,
+            });
+        }
+        catch (e) {
+            onBugIndicatingError(e);
+        }
+        if (didChange) {
+            for (const r of this.observers) {
+                r.handleChange(this, undefined);
+            }
+        }
+    }
+    toString() {
+        return `LazyDerived<${this.debugName}>`;
+    }
+    beginUpdate(_observable) {
+        this.updateCount++;
+        const propagateBeginUpdate = this.updateCount === 1;
+        if (this.state === 3) {
+            this.state = 1;
+            if (!propagateBeginUpdate) {
+                for (const r of this.observers) {
+                    r.handlePossibleChange(this);
+                }
+            }
+        }
+        if (propagateBeginUpdate) {
+            for (const r of this.observers) {
+                r.beginUpdate(this);
+            }
+        }
+    }
+    endUpdate(_observable) {
+        this.updateCount--;
+        if (this.updateCount === 0) {
+            const observers = [...this.observers];
+            for (const r of observers) {
+                r.endUpdate(this);
+            }
+        }
+        assertFn(() => this.updateCount >= 0);
+    }
+    handlePossibleChange(observable) {
+        if (this.state === 3 && this.dependencies.has(observable) && !this.dependenciesToBeRemoved.has(observable)) {
+            this.state = 1;
+            for (const r of this.observers) {
+                r.handlePossibleChange(this);
+            }
+        }
+    }
+    handleChange(observable, change) {
+        if (this.dependencies.has(observable) && !this.dependenciesToBeRemoved.has(observable)) {
+            let shouldReact = false;
+            try {
+                shouldReact = this._handleChange ? this._handleChange({
+                    changedObservable: observable,
+                    change,
+                    didChange: (o) => o === observable,
+                }, this.changeSummary) : true;
+            }
+            catch (e) {
+                onBugIndicatingError(e);
+            }
+            const wasUpToDate = this.state === 3;
+            if (shouldReact && (this.state === 1 || wasUpToDate)) {
+                this.state = 2;
+                if (wasUpToDate) {
+                    for (const r of this.observers) {
+                        r.handlePossibleChange(this);
+                    }
+                }
+            }
+        }
+    }
+    readObservable(observable) {
+        observable.addObserver(this);
+        const value = observable.get();
+        this.dependencies.add(observable);
+        this.dependenciesToBeRemoved.delete(observable);
+        return value;
+    }
+    addObserver(observer) {
+        const shouldCallBeginUpdate = !this.observers.has(observer) && this.updateCount > 0;
+        super.addObserver(observer);
+        if (shouldCallBeginUpdate) {
+            observer.beginUpdate(this);
+        }
+    }
+    removeObserver(observer) {
+        const shouldCallEndUpdate = this.observers.has(observer) && this.updateCount > 0;
+        super.removeObserver(observer);
+        if (shouldCallEndUpdate) {
+            observer.endUpdate(this);
+        }
+    }
+}
+export class DerivedWithSetter extends Derived {
+    constructor(debugNameData, computeFn, createChangeSummary, handleChange, handleLastObserverRemoved = undefined, equalityComparator, set) {
+        super(debugNameData, computeFn, createChangeSummary, handleChange, handleLastObserverRemoved, equalityComparator);
+        this.set = set;
+    }
+}

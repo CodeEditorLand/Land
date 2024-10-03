@@ -1,1 +1,78 @@
-import{InstantiationType as s,registerSingleton as a}from"../../../../platform/instantiation/common/extensions.js";import{createDecorator as d}from"../../../../platform/instantiation/common/instantiation.js";import{Emitter as i,Event as m}from"../../../../base/common/event.js";import{ProcessPropertyType as l}from"../../../../platform/terminal/common/terminal.js";import{Disposable as p}from"../../../../base/common/lifecycle.js";const c=d("embedderTerminalService");class y{_onDidCreateTerminal=new i;onDidCreateTerminal=m.buffer(this._onDidCreateTerminal.event);createTerminal(t){const e={name:t.name,isFeatureTerminal:!0,customPtyImplementation(r,n,h){return new P(r,t.pty)}};this._onDidCreateTerminal.fire(e)}}class P extends p{constructor(e,r){super();this.id=e;this._pty=r,this.onProcessData=this._pty.onDidWrite,this._pty.onDidClose&&this._register(this._pty.onDidClose(n=>this._onProcessExit.fire(n||void 0))),this._pty.onDidChangeName&&this._register(this._pty.onDidChangeName(n=>this._onDidChangeProperty.fire({type:l.Title,value:n})))}_pty;shouldPersist=!1;onProcessData;_onProcessReady=this._register(new i);onProcessReady=this._onProcessReady.event;_onDidChangeProperty=this._register(new i);onDidChangeProperty=this._onDidChangeProperty.event;_onProcessExit=this._register(new i);onProcessExit=this._onProcessExit.event;async start(){this._onProcessReady.fire({pid:-1,cwd:"",windowsPty:void 0}),this._pty.open()}shutdown(){this._pty.close()}input(){}async processBinary(){}resize(){}clearBuffer(){}acknowledgeDataEvent(){}async setUnicodeVersion(){}async getInitialCwd(){return""}async getCwd(){return""}refreshProperty(e){throw new Error(`refreshProperty is not suppported in EmbedderTerminalProcess. property: ${e}`)}updateProperty(e,r){throw new Error(`updateProperty is not suppported in EmbedderTerminalProcess. property: ${e}, value: ${r}`)}}a(c,y,s.Delayed);export{c as IEmbedderTerminalService};
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+export const IEmbedderTerminalService = createDecorator('embedderTerminalService');
+class EmbedderTerminalService {
+    constructor() {
+        this._onDidCreateTerminal = new Emitter();
+        this.onDidCreateTerminal = Event.buffer(this._onDidCreateTerminal.event);
+    }
+    createTerminal(options) {
+        const slc = {
+            name: options.name,
+            isFeatureTerminal: true,
+            customPtyImplementation(terminalId, cols, rows) {
+                return new EmbedderTerminalProcess(terminalId, options.pty);
+            },
+        };
+        this._onDidCreateTerminal.fire(slc);
+    }
+}
+class EmbedderTerminalProcess extends Disposable {
+    constructor(id, pty) {
+        super();
+        this.id = id;
+        this.shouldPersist = false;
+        this._onProcessReady = this._register(new Emitter());
+        this.onProcessReady = this._onProcessReady.event;
+        this._onDidChangeProperty = this._register(new Emitter());
+        this.onDidChangeProperty = this._onDidChangeProperty.event;
+        this._onProcessExit = this._register(new Emitter());
+        this.onProcessExit = this._onProcessExit.event;
+        this._pty = pty;
+        this.onProcessData = this._pty.onDidWrite;
+        if (this._pty.onDidClose) {
+            this._register(this._pty.onDidClose(e => this._onProcessExit.fire(e || undefined)));
+        }
+        if (this._pty.onDidChangeName) {
+            this._register(this._pty.onDidChangeName(e => this._onDidChangeProperty.fire({
+                type: "title",
+                value: e
+            })));
+        }
+    }
+    async start() {
+        this._onProcessReady.fire({ pid: -1, cwd: '', windowsPty: undefined });
+        this._pty.open();
+        return undefined;
+    }
+    shutdown() {
+        this._pty.close();
+    }
+    input() {
+    }
+    async processBinary() {
+    }
+    resize() {
+    }
+    clearBuffer() {
+    }
+    acknowledgeDataEvent() {
+    }
+    async setUnicodeVersion() {
+    }
+    async getInitialCwd() {
+        return '';
+    }
+    async getCwd() {
+        return '';
+    }
+    refreshProperty(property) {
+        throw new Error(`refreshProperty is not suppported in EmbedderTerminalProcess. property: ${property}`);
+    }
+    updateProperty(property, value) {
+        throw new Error(`updateProperty is not suppported in EmbedderTerminalProcess. property: ${property}, value: ${value}`);
+    }
+}
+registerSingleton(IEmbedderTerminalService, EmbedderTerminalService, 1);

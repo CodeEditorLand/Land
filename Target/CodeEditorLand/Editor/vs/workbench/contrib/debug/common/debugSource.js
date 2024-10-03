@@ -1,1 +1,120 @@
-import*as l from"../../../../nls.js";import{URI as u}from"../../../../base/common/uri.js";import{normalize as g,isAbsolute as p}from"../../../../base/common/path.js";import*as f from"../../../../base/common/resources.js";import{DEBUG_SCHEME as s}from"./debug.js";import"../../../../editor/common/core/range.js";import{SIDE_GROUP as d,ACTIVE_GROUP as h}from"../../../services/editor/common/editorService.js";import{Schemas as b}from"../../../../base/common/network.js";import{isUri as I}from"./debugUtils.js";import"../../../common/editor.js";import{TextEditorSelectionRevealType as S}from"../../../../platform/editor/common/editor.js";import"../../../../platform/uriIdentity/common/uriIdentity.js";import"../../../../platform/log/common/log.js";const m=l.localize("unknownSource","Unknown Source");class T{uri;available;raw;constructor(e,r,i,n){let o;e?(this.raw=e,o=this.raw.path||this.raw.name||"",this.available=!0):(this.raw={name:m},this.available=!1,o=`${s}:${m}`),this.uri=v(this.raw,o,r,i,n)}get name(){return this.raw.name||f.basenameOrAuthority(this.uri)}get origin(){return this.raw.origin}get presentationHint(){return this.raw.presentationHint}get reference(){return this.raw.sourceReference}get inMemory(){return this.uri.scheme===s}openInEditor(e,r,i,n,o){return this.available?e.openEditor({resource:this.uri,description:this.origin,options:{preserveFocus:i,selection:r,revealIfOpened:!0,selectionRevealType:S.CenterIfOutsideViewport,pinned:o}},n?d:h):Promise.resolve(void 0)}static getEncodedDebugData(e){let r,i,n;switch(e.scheme){case b.file:r=g(e.fsPath);break;case s:if(r=e.path,e.query){const o=e.query.split("&");for(const t of o){const c=t.split("=");if(c.length===2)switch(c[0]){case"session":n=c[1];break;case"ref":i=parseInt(c[1]);break}}}break;default:r=e.toString();break}return{name:f.basenameOrAuthority(e),path:r,sourceReference:i,sessionId:n}}}function v(a,e,r,i,n){const o=t=>typeof a.sourceReference=="number"&&a.sourceReference>0?u.from({scheme:s,path:t?.replace(/^\/+/g,"/"),query:`session=${r}&ref=${a.sourceReference}`}):t&&I(t)?i.asCanonicalUri(u.parse(t)):t&&p(t)?i.asCanonicalUri(u.file(t)):i.asCanonicalUri(u.from({scheme:s,path:t,query:`session=${r}`}));try{return o(e)}catch{return n.error("Invalid path from debug adapter: "+e),o("/invalidDebugSource")}}export{T as Source,m as UNKNOWN_SOURCE_LABEL,v as getUriFromSource};
+import * as nls from '../../../../nls.js';
+import { URI } from '../../../../base/common/uri.js';
+import { normalize, isAbsolute } from '../../../../base/common/path.js';
+import * as resources from '../../../../base/common/resources.js';
+import { DEBUG_SCHEME } from './debug.js';
+import { SIDE_GROUP, ACTIVE_GROUP } from '../../../services/editor/common/editorService.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { isUri } from './debugUtils.js';
+export const UNKNOWN_SOURCE_LABEL = nls.localize('unknownSource', "Unknown Source");
+export class Source {
+    constructor(raw_, sessionId, uriIdentityService, logService) {
+        let path;
+        if (raw_) {
+            this.raw = raw_;
+            path = this.raw.path || this.raw.name || '';
+            this.available = true;
+        }
+        else {
+            this.raw = { name: UNKNOWN_SOURCE_LABEL };
+            this.available = false;
+            path = `${DEBUG_SCHEME}:${UNKNOWN_SOURCE_LABEL}`;
+        }
+        this.uri = getUriFromSource(this.raw, path, sessionId, uriIdentityService, logService);
+    }
+    get name() {
+        return this.raw.name || resources.basenameOrAuthority(this.uri);
+    }
+    get origin() {
+        return this.raw.origin;
+    }
+    get presentationHint() {
+        return this.raw.presentationHint;
+    }
+    get reference() {
+        return this.raw.sourceReference;
+    }
+    get inMemory() {
+        return this.uri.scheme === DEBUG_SCHEME;
+    }
+    openInEditor(editorService, selection, preserveFocus, sideBySide, pinned) {
+        return !this.available ? Promise.resolve(undefined) : editorService.openEditor({
+            resource: this.uri,
+            description: this.origin,
+            options: {
+                preserveFocus,
+                selection,
+                revealIfOpened: true,
+                selectionRevealType: 1,
+                pinned
+            }
+        }, sideBySide ? SIDE_GROUP : ACTIVE_GROUP);
+    }
+    static getEncodedDebugData(modelUri) {
+        let path;
+        let sourceReference;
+        let sessionId;
+        switch (modelUri.scheme) {
+            case Schemas.file:
+                path = normalize(modelUri.fsPath);
+                break;
+            case DEBUG_SCHEME:
+                path = modelUri.path;
+                if (modelUri.query) {
+                    const keyvalues = modelUri.query.split('&');
+                    for (const keyvalue of keyvalues) {
+                        const pair = keyvalue.split('=');
+                        if (pair.length === 2) {
+                            switch (pair[0]) {
+                                case 'session':
+                                    sessionId = pair[1];
+                                    break;
+                                case 'ref':
+                                    sourceReference = parseInt(pair[1]);
+                                    break;
+                            }
+                        }
+                    }
+                }
+                break;
+            default:
+                path = modelUri.toString();
+                break;
+        }
+        return {
+            name: resources.basenameOrAuthority(modelUri),
+            path,
+            sourceReference,
+            sessionId
+        };
+    }
+}
+export function getUriFromSource(raw, path, sessionId, uriIdentityService, logService) {
+    const _getUriFromSource = (path) => {
+        if (typeof raw.sourceReference === 'number' && raw.sourceReference > 0) {
+            return URI.from({
+                scheme: DEBUG_SCHEME,
+                path: path?.replace(/^\/+/g, '/'),
+                query: `session=${sessionId}&ref=${raw.sourceReference}`
+            });
+        }
+        if (path && isUri(path)) {
+            return uriIdentityService.asCanonicalUri(URI.parse(path));
+        }
+        if (path && isAbsolute(path)) {
+            return uriIdentityService.asCanonicalUri(URI.file(path));
+        }
+        return uriIdentityService.asCanonicalUri(URI.from({
+            scheme: DEBUG_SCHEME,
+            path,
+            query: `session=${sessionId}`
+        }));
+    };
+    try {
+        return _getUriFromSource(path);
+    }
+    catch (err) {
+        logService.error('Invalid path from debug adapter: ' + path);
+        return _getUriFromSource('/invalidDebugSource');
+    }
+}

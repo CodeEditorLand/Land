@@ -1,1 +1,28 @@
-var b=Object.defineProperty;var k=Object.getOwnPropertyDescriptor;var s=(n,e,t,o)=>{for(var r=o>1?void 0:o?k(e,t):e,c=n.length-1,m;c>=0;c--)(m=n[c])&&(r=(o?m(e,t,r):m(r))||r);return o&&r&&b(e,t,r),r},a=(n,e)=>(t,o)=>e(t,o,n);import{registerSingleton as p,InstantiationType as u}from"../../../../platform/instantiation/common/extensions.js";import{WorkbenchPhase as I,registerWorkbenchContribution2 as h}from"../../../common/contributions.js";import{TreeSitterTextModelService as l}from"../../../../editor/browser/services/treeSitter/treeSitterParserService.js";import{ITreeSitterParserService as S}from"../../../../editor/common/services/treeSitterParserService.js";import{ITreeSitterTokenizationFeature as T}from"./treeSitterTokenizationFeature.js";let i=class{static ID="workbench.contrib.treeSitterTokenizationInstantiator";constructor(e,t){}};i=s([a(0,S),a(1,T)],i),p(S,l,u.Eager),h(i.ID,i,I.BlockRestore);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { registerWorkbenchContribution2 } from '../../../common/contributions.js';
+import { TreeSitterTextModelService } from '../../../../editor/browser/services/treeSitter/treeSitterParserService.js';
+import { ITreeSitterParserService } from '../../../../editor/common/services/treeSitterParserService.js';
+import { ITreeSitterTokenizationFeature } from './treeSitterTokenizationFeature.js';
+let TreeSitterTokenizationInstantiator = class TreeSitterTokenizationInstantiator {
+    static { this.ID = 'workbench.contrib.treeSitterTokenizationInstantiator'; }
+    constructor(_treeSitterTokenizationService, _treeSitterTokenizationFeature) { }
+};
+TreeSitterTokenizationInstantiator = __decorate([
+    __param(0, ITreeSitterParserService),
+    __param(1, ITreeSitterTokenizationFeature),
+    __metadata("design:paramtypes", [Object, Object])
+], TreeSitterTokenizationInstantiator);
+registerSingleton(ITreeSitterParserService, TreeSitterTextModelService, 0);
+registerWorkbenchContribution2(TreeSitterTokenizationInstantiator.ID, TreeSitterTokenizationInstantiator, 2);

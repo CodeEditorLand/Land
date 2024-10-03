@@ -1,1 +1,550 @@
-var q=Object.defineProperty;var J=Object.getOwnPropertyDescriptor;var P=(v,h,i,t)=>{for(var o=t>1?void 0:t?J(h,i):h,r=v.length-1,s;r>=0;r--)(s=v[r])&&(o=(t?s(h,i,o):s(o))||o);return t&&o&&q(h,i,o),o},y=(v,h)=>(i,t)=>h(i,t,v);import{getWindow as Q,h as C}from"../../../../base/browser/dom.js";import"../../../../base/browser/ui/sash/sash.js";import{findLast as X}from"../../../../base/common/arraysFind.js";import{BugIndicatingError as Y,onUnexpectedError as W}from"../../../../base/common/errors.js";import{Event as R}from"../../../../base/common/event.js";import{readHotReloadableExport as p}from"../../../../base/common/hotReloadHelpers.js";import{toDisposable as z}from"../../../../base/common/lifecycle.js";import{autorun as A,autorunWithStore as x,derived as M,derivedDisposable as _,disposableObservableValue as $,observableFromEvent as ii,observableValue as T,recomputeInitiallyAndOnChange as ei,subtransaction as ti,transaction as B}from"../../../../base/common/observable.js";import{AccessibilitySignal as I,IAccessibilitySignalService as oi}from"../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";import{IContextKeyService as F}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as ri}from"../../../../platform/instantiation/common/instantiation.js";import{ServiceCollection as ni}from"../../../../platform/instantiation/common/serviceCollection.js";import{bindContextKey as m}from"../../../../platform/observable/common/platformObservableUtils.js";import{IEditorProgressService as si}from"../../../../platform/progress/common/progress.js";import"../../../common/config/editorOptions.js";import"../../../common/core/dimension.js";import{Position as di}from"../../../common/core/position.js";import{Range as ai}from"../../../common/core/range.js";import{CursorChangeReason as fi}from"../../../common/cursorEvents.js";import"../../../common/diff/legacyLinesDiffComputer.js";import"../../../common/diff/rangeMapping.js";import{EditorType as li}from"../../../common/editorCommon.js";import{EditorContextKeys as l}from"../../../common/editorContextKeys.js";import"../../../common/model.js";import"../../config/editorConfiguration.js";import"../../editorBrowser.js";import{EditorExtensionsRegistry as hi}from"../../editorExtensions.js";import{ICodeEditorService as gi}from"../../services/codeEditorService.js";import{StableEditorScrollState as ci}from"../../stableEditorScroll.js";import{CodeEditorWidget as mi}from"../codeEditor/codeEditorWidget.js";import{AccessibleDiffViewer as ui,AccessibleDiffViewerModelFromEditors as pi}from"./components/accessibleDiffViewer.js";import{DiffEditorDecorations as _i}from"./components/diffEditorDecorations.js";import{DiffEditorEditors as vi}from"./components/diffEditorEditors.js";import{DiffEditorSash as Si,SashLayout as bi}from"./components/diffEditorSash.js";import{DiffEditorViewZones as Ei}from"./components/diffEditorViewZones/diffEditorViewZones.js";import{DelegatingEditor as yi}from"./delegatingEditorImpl.js";import{DiffEditorOptions as Ii}from"./diffEditorOptions.js";import{DiffEditorViewModel as Di}from"./diffEditorViewModel.js";import{DiffEditorGutter as wi}from"./features/gutterFeature.js";import{HideUnchangedRegionsFeature as Mi}from"./features/hideUnchangedRegionsFeature.js";import{MovedBlocksLinesFeature as Ci}from"./features/movedBlocksLinesFeature.js";import{OverviewRulerFeature as K}from"./features/overviewRulerFeature.js";import{RevertButtonsFeature as Ri}from"./features/revertButtonsFeature.js";import"./style.css";import{ObservableElementSizeObserver as Vi,RefCounted as H,applyStyle as U,applyViewZones as Z,translatePosition as k}from"./utils.js";let V=class extends yi{constructor(i,t,o,r,s,d,a,b){super();this._domElement=i;this._parentContextKeyService=r;this._parentInstantiationService=s;this._accessibilitySignalService=a;this._editorProgressService=b;d.willCreateDiffEditor(),this._contextKeyService.createKey("isInDiffEditor",!0),this._domElement.appendChild(this.elements.root),this._register(z(()=>this.elements.root.remove())),this._rootSizeObserver=this._register(new Vi(this.elements.root,t.dimension)),this._rootSizeObserver.setAutomaticLayout(t.automaticLayout??!1),this._options=this._instantiationService.createInstance(Ii,t),this._register(A(e=>{this._options.setWidth(this._rootSizeObserver.width.read(e))})),this._contextKeyService.createKey(l.isEmbeddedDiffEditor.key,!1),this._register(m(l.isEmbeddedDiffEditor,this._contextKeyService,e=>this._options.isInEmbeddedEditor.read(e))),this._register(m(l.comparingMovedCode,this._contextKeyService,e=>!!this._diffModel.read(e)?.movedTextToCompare.read(e))),this._register(m(l.diffEditorRenderSideBySideInlineBreakpointReached,this._contextKeyService,e=>this._options.couldShowInlineViewBecauseOfSize.read(e))),this._register(m(l.diffEditorInlineMode,this._contextKeyService,e=>!this._options.renderSideBySide.read(e))),this._register(m(l.hasChanges,this._contextKeyService,e=>(this._diffModel.read(e)?.diff.read(e)?.mappings.length??0)>0)),this._editors=this._register(this._instantiationService.createInstance(vi,this.elements.original,this.elements.modified,this._options,o,(e,n,f,w)=>this._createInnerEditor(e,n,f,w))),this._register(m(l.diffEditorOriginalWritable,this._contextKeyService,e=>this._options.originalEditable.read(e))),this._register(m(l.diffEditorModifiedWritable,this._contextKeyService,e=>!this._options.readOnly.read(e))),this._register(m(l.diffEditorOriginalUri,this._contextKeyService,e=>this._diffModel.read(e)?.model.original.uri.toString()??"")),this._register(m(l.diffEditorModifiedUri,this._contextKeyService,e=>this._diffModel.read(e)?.model.modified.uri.toString()??"")),this._overviewRulerPart=_(this,e=>this._options.renderOverviewRuler.read(e)?this._instantiationService.createInstance(p(K,e),this._editors,this.elements.root,this._diffModel,this._rootSizeObserver.width,this._rootSizeObserver.height,this._layoutInfo.map(n=>n.modifiedEditor)):void 0).recomputeInitiallyAndOnChange(this._store);const g={height:this._rootSizeObserver.height,width:this._rootSizeObserver.width.map((e,n)=>e-(this._overviewRulerPart.read(n)?.width??0))};this._sashLayout=new bi(this._options,g),this._sash=_(this,e=>{const n=this._options.renderSideBySide.read(e);return this.elements.root.classList.toggle("side-by-side",n),n?new Si(this.elements.root,g,this._options.enableSplitViewResizing,this._boundarySashes,this._sashLayout.sashLeft,()=>this._sashLayout.resetSash()):void 0}).recomputeInitiallyAndOnChange(this._store);const c=_(this,e=>this._instantiationService.createInstance(p(Mi,e),this._editors,this._diffModel,this._options)).recomputeInitiallyAndOnChange(this._store);_(this,e=>this._instantiationService.createInstance(p(_i,e),this._editors,this._diffModel,this._options,this)).recomputeInitiallyAndOnChange(this._store);const S=new Set,E=new Set;let D=!1;const u=_(this,e=>this._instantiationService.createInstance(p(Ei,e),Q(this._domElement),this._editors,this._diffModel,this._options,this,()=>D||c.get().isUpdatingHiddenAreas,S,E)).recomputeInitiallyAndOnChange(this._store),L=M(this,e=>{const n=u.read(e).viewZones.read(e).orig,f=c.read(e).viewZones.read(e).origViewZones;return n.concat(f)}),G=M(this,e=>{const n=u.read(e).viewZones.read(e).mod,f=c.read(e).viewZones.read(e).modViewZones;return n.concat(f)});this._register(Z(this._editors.original,L,e=>{D=e},S));let O;this._register(Z(this._editors.modified,G,e=>{D=e,D?O=ci.capture(this._editors.modified):(O?.restore(this._editors.modified),O=void 0)},E)),this._accessibleDiffViewer=_(this,e=>this._instantiationService.createInstance(p(ui,e),this.elements.accessibleDiffViewer,this._accessibleDiffViewerVisible,(n,f)=>this._accessibleDiffViewerShouldBeVisible.set(n,f),this._options.onlyShowAccessibleDiffViewer.map(n=>!n),this._rootSizeObserver.width,this._rootSizeObserver.height,this._diffModel.map((n,f)=>n?.diff.read(f)?.mappings.map(w=>w.lineRangeMapping)),new pi(this._editors))).recomputeInitiallyAndOnChange(this._store);const N=this._accessibleDiffViewerVisible.map(e=>e?"hidden":"visible");this._register(U(this.elements.modified,{visibility:N})),this._register(U(this.elements.original,{visibility:N})),this._createDiffEditorContributions(),d.addDiffEditor(this),this._gutter=_(this,e=>this._options.shouldRenderGutterMenu.read(e)?this._instantiationService.createInstance(p(wi,e),this.elements.root,this._diffModel,this._editors,this._options,this._sashLayout,this._boundarySashes):void 0),this._register(ei(this._layoutInfo)),_(this,e=>new(p(Ci,e))(this.elements.root,this._diffModel,this._layoutInfo.map(n=>n.originalEditor),this._layoutInfo.map(n=>n.modifiedEditor),this._editors)).recomputeInitiallyAndOnChange(this._store,e=>{this._movedBlocksLinesPart.set(e,void 0)}),this._register(R.runAndSubscribe(this._editors.modified.onDidChangeCursorPosition,e=>this._handleCursorPositionChange(e,!0))),this._register(R.runAndSubscribe(this._editors.original.onDidChangeCursorPosition,e=>this._handleCursorPositionChange(e,!1)));const j=this._diffModel.map(this,(e,n)=>{if(e)return e.diff.read(n)===void 0&&!e.isDiffUpToDate.read(n)});this._register(x((e,n)=>{if(j.read(e)===!0){const f=this._editorProgressService.show(!0,1e3);n.add(z(()=>f.done()))}})),this._register(x((e,n)=>{n.add(new(p(Ri,e))(this._editors,this._diffModel,this._options,this))})),this._register(x((e,n)=>{const f=this._diffModel.read(e);if(f)for(const w of[f.model.original,f.model.modified])n.add(w.onWillDispose(Oi=>{W(new Y("TextModel got disposed before DiffEditorWidget model got reset")),this.setModel(null)}))})),this._register(A(e=>{this._options.setModel(this._diffModel.read(e))}))}static ENTIRE_DIFF_OVERVIEW_WIDTH=K.ENTIRE_DIFF_OVERVIEW_WIDTH;elements=C("div.monaco-diff-editor.side-by-side",{style:{position:"relative",height:"100%"}},[C("div.editor.original@original",{style:{position:"absolute",height:"100%"}}),C("div.editor.modified@modified",{style:{position:"absolute",height:"100%"}}),C("div.accessibleDiffViewer@accessibleDiffViewer",{style:{position:"absolute",height:"100%"}})]);_diffModelSrc=this._register($(this,void 0));_diffModel=M(this,i=>this._diffModelSrc.read(i)?.object);onDidChangeModel=R.fromObservableLight(this._diffModel);get onDidContentSizeChange(){return this._editors.onDidContentSizeChange}_contextKeyService=this._register(this._parentContextKeyService.createScoped(this._domElement));_instantiationService=this._register(this._parentInstantiationService.createChild(new ni([F,this._contextKeyService])));_rootSizeObserver;_sashLayout;_sash;_boundarySashes=T(this,void 0);_accessibleDiffViewerShouldBeVisible=T(this,!1);_accessibleDiffViewerVisible=M(this,i=>this._options.onlyShowAccessibleDiffViewer.read(i)?!0:this._accessibleDiffViewerShouldBeVisible.read(i));_accessibleDiffViewer;_options;_editors;_overviewRulerPart;_movedBlocksLinesPart=T(this,void 0);_gutter;get collapseUnchangedRegions(){return this._options.hideUnchangedRegions.get()}getViewWidth(){return this._rootSizeObserver.width.get()}getContentHeight(){return this._editors.modified.getContentHeight()}_createInnerEditor(i,t,o,r){return i.createInstance(mi,t,o,r)}_layoutInfo=M(this,i=>{const t=this._rootSizeObserver.width.read(i),o=this._rootSizeObserver.height.read(i);this._rootSizeObserver.automaticLayout?this.elements.root.style.height="100%":this.elements.root.style.height=o+"px";const r=this._sash.read(i),s=this._gutter.read(i),d=s?.width.read(i)??0,a=this._overviewRulerPart.read(i)?.width??0;let b,g,c,S,E;if(!!r){const u=r.sashLeft.read(i),L=this._movedBlocksLinesPart.read(i)?.width.read(i)??0;b=0,g=u-d-L,E=u-d,c=u,S=t-c-a}else{E=0;const u=this._options.inlineViewHideOriginalLineNumbers.read(i);b=d,u?g=0:g=Math.max(5,this._editors.originalObs.layoutInfoDecorationsLeft.read(i)),c=d+g,S=t-c-a}return this.elements.original.style.left=b+"px",this.elements.original.style.width=g+"px",this._editors.original.layout({width:g,height:o},!0),s?.layout(E),this.elements.modified.style.left=c+"px",this.elements.modified.style.width=S+"px",this._editors.modified.layout({width:S,height:o},!0),{modifiedEditor:this._editors.modified.getLayoutInfo(),originalEditor:this._editors.original.getLayoutInfo()}});_createDiffEditorContributions(){const i=hi.getDiffEditorContributions();for(const t of i)try{this._register(this._instantiationService.createInstance(t.ctor,this))}catch(o){W(o)}}get _targetEditor(){return this._editors.modified}getEditorType(){return li.IDiffEditor}onVisible(){this._editors.original.onVisible(),this._editors.modified.onVisible()}onHide(){this._editors.original.onHide(),this._editors.modified.onHide()}layout(i){this._rootSizeObserver.observe(i)}hasTextFocus(){return this._editors.original.hasTextFocus()||this._editors.modified.hasTextFocus()}saveViewState(){const i=this._editors.original.saveViewState(),t=this._editors.modified.saveViewState();return{original:i,modified:t,modelState:this._diffModel.get()?.serializeState()}}restoreViewState(i){if(i&&i.original&&i.modified){const t=i;this._editors.original.restoreViewState(t.original),this._editors.modified.restoreViewState(t.modified),t.modelState&&this._diffModel.get()?.restoreSerializedState(t.modelState)}}handleInitialized(){this._editors.original.handleInitialized(),this._editors.modified.handleInitialized()}createViewModel(i){return this._instantiationService.createInstance(Di,i,this._options)}getModel(){return this._diffModel.get()?.model??null}setModel(i){const t=i?"model"in i?H.create(i).createNewRef(this):H.create(this.createViewModel(i),this):null;this.setDiffModel(t)}setDiffModel(i,t){const o=this._diffModel.get();!i&&o&&this._accessibleDiffViewer.get().close(),this._diffModel.get()!==i?.object&&ti(t,r=>{const s=i?.object;ii.batchEventsGlobally(r,()=>{this._editors.original.setModel(s?s.model.original:null),this._editors.modified.setModel(s?s.model.modified:null)});const d=this._diffModelSrc.get()?.createNewRef(this);this._diffModelSrc.set(i?.createNewRef(this),r),setTimeout(()=>{d?.dispose()},0)})}updateOptions(i){this._options.updateOptions(i)}getContainerDomNode(){return this._domElement}getOriginalEditor(){return this._editors.original}getModifiedEditor(){return this._editors.modified}setBoundarySashes(i){this._boundarySashes.set(i,void 0)}_diffValue=this._diffModel.map((i,t)=>i?.diff.read(t));onDidUpdateDiff=R.fromObservableLight(this._diffValue);get ignoreTrimWhitespace(){return this._options.ignoreTrimWhitespace.get()}get maxComputationTime(){return this._options.maxComputationTimeMs.get()}get renderSideBySide(){return this._options.renderSideBySide.get()}getLineChanges(){const i=this._diffModel.get()?.diff.get();return i?Li(i):null}getDiffComputationResult(){const i=this._diffModel.get()?.diff.get();return i?{changes:this.getLineChanges(),changes2:i.mappings.map(t=>t.lineRangeMapping),identical:i.identical,quitEarly:i.quitEarly}:null}revert(i){const t=this._diffModel.get();!t||!t.isDiffUpToDate.get()||this._editors.modified.executeEdits("diffEditor",[{range:i.modified.toExclusiveRange(),text:t.model.original.getValueInRange(i.original.toExclusiveRange())}])}revertRangeMappings(i){const t=this._diffModel.get();if(!t||!t.isDiffUpToDate.get())return;const o=i.map(r=>({range:r.modifiedRange,text:t.model.original.getValueInRange(r.originalRange)}));this._editors.modified.executeEdits("diffEditor",o)}_goTo(i){this._editors.modified.setPosition(new di(i.lineRangeMapping.modified.startLineNumber,1)),this._editors.modified.revealRangeInCenter(i.lineRangeMapping.modified.toExclusiveRange())}goToDiff(i){const t=this._diffModel.get()?.diff.get()?.mappings;if(!t||t.length===0)return;const o=this._editors.modified.getPosition().lineNumber;let r;i==="next"?r=t.find(s=>s.lineRangeMapping.modified.startLineNumber>o)??t[0]:r=X(t,s=>s.lineRangeMapping.modified.startLineNumber<o)??t[t.length-1],this._goTo(r),r.lineRangeMapping.modified.isEmpty?this._accessibilitySignalService.playSignal(I.diffLineDeleted,{source:"diffEditor.goToDiff"}):r.lineRangeMapping.original.isEmpty?this._accessibilitySignalService.playSignal(I.diffLineInserted,{source:"diffEditor.goToDiff"}):r&&this._accessibilitySignalService.playSignal(I.diffLineModified,{source:"diffEditor.goToDiff"})}revealFirstDiff(){const i=this._diffModel.get();i&&this.waitForDiff().then(()=>{const t=i.diff.get()?.mappings;!t||t.length===0||this._goTo(t[0])})}accessibleDiffViewerNext(){this._accessibleDiffViewer.get().next()}accessibleDiffViewerPrev(){this._accessibleDiffViewer.get().prev()}async waitForDiff(){const i=this._diffModel.get();i&&await i.waitForDiff()}mapToOtherSide(){const i=this._editors.modified.hasWidgetFocus(),t=i?this._editors.modified:this._editors.original,o=i?this._editors.original:this._editors.modified;let r;const s=t.getSelection();if(s){const d=this._diffModel.get()?.diff.get()?.mappings.map(a=>i?a.lineRangeMapping.flip():a.lineRangeMapping);if(d){const a=k(s.getStartPosition(),d),b=k(s.getEndPosition(),d);r=ai.plusRange(a,b)}}return{destination:o,destinationSelection:r}}switchSide(){const{destination:i,destinationSelection:t}=this.mapToOtherSide();i.focus(),t&&i.setSelection(t)}exitCompareMove(){const i=this._diffModel.get();i&&i.movedTextToCompare.set(void 0,void 0)}collapseAllUnchangedRegions(){const i=this._diffModel.get()?.unchangedRegions.get();i&&B(t=>{for(const o of i)o.collapseAll(t)})}showAllUnchangedRegions(){const i=this._diffModel.get()?.unchangedRegions.get();i&&B(t=>{for(const o of i)o.showAll(t)})}_handleCursorPositionChange(i,t){if(i?.reason===fi.Explicit){const o=this._diffModel.get()?.diff.get()?.mappings.find(r=>t?r.lineRangeMapping.modified.contains(i.position.lineNumber):r.lineRangeMapping.original.contains(i.position.lineNumber));o?.lineRangeMapping.modified.isEmpty?this._accessibilitySignalService.playSignal(I.diffLineDeleted,{source:"diffEditor.cursorPositionChanged"}):o?.lineRangeMapping.original.isEmpty?this._accessibilitySignalService.playSignal(I.diffLineInserted,{source:"diffEditor.cursorPositionChanged"}):o&&this._accessibilitySignalService.playSignal(I.diffLineModified,{source:"diffEditor.cursorPositionChanged"})}}};V=P([y(3,F),y(4,ri),y(5,gi),y(6,oi),y(7,si)],V);function Li(v){return v.mappings.map(h=>{const i=h.lineRangeMapping;let t,o,r,s,d=i.innerChanges;return i.original.isEmpty?(t=i.original.startLineNumber-1,o=0,d=void 0):(t=i.original.startLineNumber,o=i.original.endLineNumberExclusive-1),i.modified.isEmpty?(r=i.modified.startLineNumber-1,s=0,d=void 0):(r=i.modified.startLineNumber,s=i.modified.endLineNumberExclusive-1),{originalStartLineNumber:t,originalEndLineNumber:o,modifiedStartLineNumber:r,modifiedEndLineNumber:s,charChanges:d?.map(a=>({originalStartLineNumber:a.originalRange.startLineNumber,originalStartColumn:a.originalRange.startColumn,originalEndLineNumber:a.originalRange.endLineNumber,originalEndColumn:a.originalRange.endColumn,modifiedStartLineNumber:a.modifiedRange.startLineNumber,modifiedStartColumn:a.modifiedRange.startColumn,modifiedEndLineNumber:a.modifiedRange.endLineNumber,modifiedEndColumn:a.modifiedRange.endColumn}))}})}export{V as DiffEditorWidget};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { getWindow, h } from '../../../../base/browser/dom.js';
+import { findLast } from '../../../../base/common/arraysFind.js';
+import { BugIndicatingError, onUnexpectedError } from '../../../../base/common/errors.js';
+import { Event } from '../../../../base/common/event.js';
+import { readHotReloadableExport } from '../../../../base/common/hotReloadHelpers.js';
+import { toDisposable } from '../../../../base/common/lifecycle.js';
+import { autorun, autorunWithStore, derived, derivedDisposable, disposableObservableValue, observableFromEvent, observableValue, recomputeInitiallyAndOnChange, subtransaction, transaction } from '../../../../base/common/observable.js';
+import { AccessibilitySignal, IAccessibilitySignalService } from '../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { bindContextKey } from '../../../../platform/observable/common/platformObservableUtils.js';
+import { IEditorProgressService } from '../../../../platform/progress/common/progress.js';
+import { Position } from '../../../common/core/position.js';
+import { Range } from '../../../common/core/range.js';
+import { EditorType } from '../../../common/editorCommon.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import { EditorExtensionsRegistry } from '../../editorExtensions.js';
+import { ICodeEditorService } from '../../services/codeEditorService.js';
+import { StableEditorScrollState } from '../../stableEditorScroll.js';
+import { CodeEditorWidget } from '../codeEditor/codeEditorWidget.js';
+import { AccessibleDiffViewer, AccessibleDiffViewerModelFromEditors } from './components/accessibleDiffViewer.js';
+import { DiffEditorDecorations } from './components/diffEditorDecorations.js';
+import { DiffEditorEditors } from './components/diffEditorEditors.js';
+import { DiffEditorSash, SashLayout } from './components/diffEditorSash.js';
+import { DiffEditorViewZones } from './components/diffEditorViewZones/diffEditorViewZones.js';
+import { DelegatingEditor } from './delegatingEditorImpl.js';
+import { DiffEditorOptions } from './diffEditorOptions.js';
+import { DiffEditorViewModel } from './diffEditorViewModel.js';
+import { DiffEditorGutter } from './features/gutterFeature.js';
+import { HideUnchangedRegionsFeature } from './features/hideUnchangedRegionsFeature.js';
+import { MovedBlocksLinesFeature } from './features/movedBlocksLinesFeature.js';
+import { OverviewRulerFeature } from './features/overviewRulerFeature.js';
+import { RevertButtonsFeature } from './features/revertButtonsFeature.js';
+import './style.css';
+import { ObservableElementSizeObserver, RefCounted, applyStyle, applyViewZones, translatePosition } from './utils.js';
+let DiffEditorWidget = class DiffEditorWidget extends DelegatingEditor {
+    static { this.ENTIRE_DIFF_OVERVIEW_WIDTH = OverviewRulerFeature.ENTIRE_DIFF_OVERVIEW_WIDTH; }
+    get onDidContentSizeChange() { return this._editors.onDidContentSizeChange; }
+    get collapseUnchangedRegions() { return this._options.hideUnchangedRegions.get(); }
+    constructor(_domElement, options, codeEditorWidgetOptions, _parentContextKeyService, _parentInstantiationService, codeEditorService, _accessibilitySignalService, _editorProgressService) {
+        super();
+        this._domElement = _domElement;
+        this._parentContextKeyService = _parentContextKeyService;
+        this._parentInstantiationService = _parentInstantiationService;
+        this._accessibilitySignalService = _accessibilitySignalService;
+        this._editorProgressService = _editorProgressService;
+        this.elements = h('div.monaco-diff-editor.side-by-side', { style: { position: 'relative', height: '100%' } }, [
+            h('div.editor.original@original', { style: { position: 'absolute', height: '100%', } }),
+            h('div.editor.modified@modified', { style: { position: 'absolute', height: '100%', } }),
+            h('div.accessibleDiffViewer@accessibleDiffViewer', { style: { position: 'absolute', height: '100%' } }),
+        ]);
+        this._diffModelSrc = this._register(disposableObservableValue(this, undefined));
+        this._diffModel = derived(this, reader => this._diffModelSrc.read(reader)?.object);
+        this.onDidChangeModel = Event.fromObservableLight(this._diffModel);
+        this._contextKeyService = this._register(this._parentContextKeyService.createScoped(this._domElement));
+        this._instantiationService = this._register(this._parentInstantiationService.createChild(new ServiceCollection([IContextKeyService, this._contextKeyService])));
+        this._boundarySashes = observableValue(this, undefined);
+        this._accessibleDiffViewerShouldBeVisible = observableValue(this, false);
+        this._accessibleDiffViewerVisible = derived(this, reader => this._options.onlyShowAccessibleDiffViewer.read(reader)
+            ? true
+            : this._accessibleDiffViewerShouldBeVisible.read(reader));
+        this._movedBlocksLinesPart = observableValue(this, undefined);
+        this._layoutInfo = derived(this, reader => {
+            const fullWidth = this._rootSizeObserver.width.read(reader);
+            const fullHeight = this._rootSizeObserver.height.read(reader);
+            if (this._rootSizeObserver.automaticLayout) {
+                this.elements.root.style.height = '100%';
+            }
+            else {
+                this.elements.root.style.height = fullHeight + 'px';
+            }
+            const sash = this._sash.read(reader);
+            const gutter = this._gutter.read(reader);
+            const gutterWidth = gutter?.width.read(reader) ?? 0;
+            const overviewRulerPartWidth = this._overviewRulerPart.read(reader)?.width ?? 0;
+            let originalLeft, originalWidth, modifiedLeft, modifiedWidth, gutterLeft;
+            const sideBySide = !!sash;
+            if (sideBySide) {
+                const sashLeft = sash.sashLeft.read(reader);
+                const movedBlocksLinesWidth = this._movedBlocksLinesPart.read(reader)?.width.read(reader) ?? 0;
+                originalLeft = 0;
+                originalWidth = sashLeft - gutterWidth - movedBlocksLinesWidth;
+                gutterLeft = sashLeft - gutterWidth;
+                modifiedLeft = sashLeft;
+                modifiedWidth = fullWidth - modifiedLeft - overviewRulerPartWidth;
+            }
+            else {
+                gutterLeft = 0;
+                const shouldHideOriginalLineNumbers = this._options.inlineViewHideOriginalLineNumbers.read(reader);
+                originalLeft = gutterWidth;
+                if (shouldHideOriginalLineNumbers) {
+                    originalWidth = 0;
+                }
+                else {
+                    originalWidth = Math.max(5, this._editors.originalObs.layoutInfoDecorationsLeft.read(reader));
+                }
+                modifiedLeft = gutterWidth + originalWidth;
+                modifiedWidth = fullWidth - modifiedLeft - overviewRulerPartWidth;
+            }
+            this.elements.original.style.left = originalLeft + 'px';
+            this.elements.original.style.width = originalWidth + 'px';
+            this._editors.original.layout({ width: originalWidth, height: fullHeight }, true);
+            gutter?.layout(gutterLeft);
+            this.elements.modified.style.left = modifiedLeft + 'px';
+            this.elements.modified.style.width = modifiedWidth + 'px';
+            this._editors.modified.layout({ width: modifiedWidth, height: fullHeight }, true);
+            return {
+                modifiedEditor: this._editors.modified.getLayoutInfo(),
+                originalEditor: this._editors.original.getLayoutInfo(),
+            };
+        });
+        this._diffValue = this._diffModel.map((m, r) => m?.diff.read(r));
+        this.onDidUpdateDiff = Event.fromObservableLight(this._diffValue);
+        codeEditorService.willCreateDiffEditor();
+        this._contextKeyService.createKey('isInDiffEditor', true);
+        this._domElement.appendChild(this.elements.root);
+        this._register(toDisposable(() => this.elements.root.remove()));
+        this._rootSizeObserver = this._register(new ObservableElementSizeObserver(this.elements.root, options.dimension));
+        this._rootSizeObserver.setAutomaticLayout(options.automaticLayout ?? false);
+        this._options = this._instantiationService.createInstance(DiffEditorOptions, options);
+        this._register(autorun(reader => {
+            this._options.setWidth(this._rootSizeObserver.width.read(reader));
+        }));
+        this._contextKeyService.createKey(EditorContextKeys.isEmbeddedDiffEditor.key, false);
+        this._register(bindContextKey(EditorContextKeys.isEmbeddedDiffEditor, this._contextKeyService, reader => this._options.isInEmbeddedEditor.read(reader)));
+        this._register(bindContextKey(EditorContextKeys.comparingMovedCode, this._contextKeyService, reader => !!this._diffModel.read(reader)?.movedTextToCompare.read(reader)));
+        this._register(bindContextKey(EditorContextKeys.diffEditorRenderSideBySideInlineBreakpointReached, this._contextKeyService, reader => this._options.couldShowInlineViewBecauseOfSize.read(reader)));
+        this._register(bindContextKey(EditorContextKeys.diffEditorInlineMode, this._contextKeyService, reader => !this._options.renderSideBySide.read(reader)));
+        this._register(bindContextKey(EditorContextKeys.hasChanges, this._contextKeyService, reader => (this._diffModel.read(reader)?.diff.read(reader)?.mappings.length ?? 0) > 0));
+        this._editors = this._register(this._instantiationService.createInstance(DiffEditorEditors, this.elements.original, this.elements.modified, this._options, codeEditorWidgetOptions, (i, c, o, o2) => this._createInnerEditor(i, c, o, o2)));
+        this._register(bindContextKey(EditorContextKeys.diffEditorOriginalWritable, this._contextKeyService, reader => this._options.originalEditable.read(reader)));
+        this._register(bindContextKey(EditorContextKeys.diffEditorModifiedWritable, this._contextKeyService, reader => !this._options.readOnly.read(reader)));
+        this._register(bindContextKey(EditorContextKeys.diffEditorOriginalUri, this._contextKeyService, reader => this._diffModel.read(reader)?.model.original.uri.toString() ?? ''));
+        this._register(bindContextKey(EditorContextKeys.diffEditorModifiedUri, this._contextKeyService, reader => this._diffModel.read(reader)?.model.modified.uri.toString() ?? ''));
+        this._overviewRulerPart = derivedDisposable(this, reader => !this._options.renderOverviewRuler.read(reader)
+            ? undefined
+            : this._instantiationService.createInstance(readHotReloadableExport(OverviewRulerFeature, reader), this._editors, this.elements.root, this._diffModel, this._rootSizeObserver.width, this._rootSizeObserver.height, this._layoutInfo.map(i => i.modifiedEditor))).recomputeInitiallyAndOnChange(this._store);
+        const dimensions = {
+            height: this._rootSizeObserver.height,
+            width: this._rootSizeObserver.width.map((w, reader) => w - (this._overviewRulerPart.read(reader)?.width ?? 0)),
+        };
+        this._sashLayout = new SashLayout(this._options, dimensions);
+        this._sash = derivedDisposable(this, reader => {
+            const showSash = this._options.renderSideBySide.read(reader);
+            this.elements.root.classList.toggle('side-by-side', showSash);
+            return !showSash ? undefined : new DiffEditorSash(this.elements.root, dimensions, this._options.enableSplitViewResizing, this._boundarySashes, this._sashLayout.sashLeft, () => this._sashLayout.resetSash());
+        }).recomputeInitiallyAndOnChange(this._store);
+        const unchangedRangesFeature = derivedDisposable(this, reader => this._instantiationService.createInstance(readHotReloadableExport(HideUnchangedRegionsFeature, reader), this._editors, this._diffModel, this._options)).recomputeInitiallyAndOnChange(this._store);
+        derivedDisposable(this, reader => this._instantiationService.createInstance(readHotReloadableExport(DiffEditorDecorations, reader), this._editors, this._diffModel, this._options, this)).recomputeInitiallyAndOnChange(this._store);
+        const origViewZoneIdsToIgnore = new Set();
+        const modViewZoneIdsToIgnore = new Set();
+        let isUpdatingViewZones = false;
+        const viewZoneManager = derivedDisposable(this, reader => this._instantiationService.createInstance(readHotReloadableExport(DiffEditorViewZones, reader), getWindow(this._domElement), this._editors, this._diffModel, this._options, this, () => isUpdatingViewZones || unchangedRangesFeature.get().isUpdatingHiddenAreas, origViewZoneIdsToIgnore, modViewZoneIdsToIgnore)).recomputeInitiallyAndOnChange(this._store);
+        const originalViewZones = derived(this, (reader) => {
+            const orig = viewZoneManager.read(reader).viewZones.read(reader).orig;
+            const orig2 = unchangedRangesFeature.read(reader).viewZones.read(reader).origViewZones;
+            return orig.concat(orig2);
+        });
+        const modifiedViewZones = derived(this, (reader) => {
+            const mod = viewZoneManager.read(reader).viewZones.read(reader).mod;
+            const mod2 = unchangedRangesFeature.read(reader).viewZones.read(reader).modViewZones;
+            return mod.concat(mod2);
+        });
+        this._register(applyViewZones(this._editors.original, originalViewZones, isUpdatingOrigViewZones => {
+            isUpdatingViewZones = isUpdatingOrigViewZones;
+        }, origViewZoneIdsToIgnore));
+        let scrollState;
+        this._register(applyViewZones(this._editors.modified, modifiedViewZones, isUpdatingModViewZones => {
+            isUpdatingViewZones = isUpdatingModViewZones;
+            if (isUpdatingViewZones) {
+                scrollState = StableEditorScrollState.capture(this._editors.modified);
+            }
+            else {
+                scrollState?.restore(this._editors.modified);
+                scrollState = undefined;
+            }
+        }, modViewZoneIdsToIgnore));
+        this._accessibleDiffViewer = derivedDisposable(this, reader => this._instantiationService.createInstance(readHotReloadableExport(AccessibleDiffViewer, reader), this.elements.accessibleDiffViewer, this._accessibleDiffViewerVisible, (visible, tx) => this._accessibleDiffViewerShouldBeVisible.set(visible, tx), this._options.onlyShowAccessibleDiffViewer.map(v => !v), this._rootSizeObserver.width, this._rootSizeObserver.height, this._diffModel.map((m, r) => m?.diff.read(r)?.mappings.map(m => m.lineRangeMapping)), new AccessibleDiffViewerModelFromEditors(this._editors))).recomputeInitiallyAndOnChange(this._store);
+        const visibility = this._accessibleDiffViewerVisible.map(v => v ? 'hidden' : 'visible');
+        this._register(applyStyle(this.elements.modified, { visibility }));
+        this._register(applyStyle(this.elements.original, { visibility }));
+        this._createDiffEditorContributions();
+        codeEditorService.addDiffEditor(this);
+        this._gutter = derivedDisposable(this, reader => {
+            return this._options.shouldRenderGutterMenu.read(reader)
+                ? this._instantiationService.createInstance(readHotReloadableExport(DiffEditorGutter, reader), this.elements.root, this._diffModel, this._editors, this._options, this._sashLayout, this._boundarySashes)
+                : undefined;
+        });
+        this._register(recomputeInitiallyAndOnChange(this._layoutInfo));
+        derivedDisposable(this, reader => new (readHotReloadableExport(MovedBlocksLinesFeature, reader))(this.elements.root, this._diffModel, this._layoutInfo.map(i => i.originalEditor), this._layoutInfo.map(i => i.modifiedEditor), this._editors)).recomputeInitiallyAndOnChange(this._store, value => {
+            this._movedBlocksLinesPart.set(value, undefined);
+        });
+        this._register(Event.runAndSubscribe(this._editors.modified.onDidChangeCursorPosition, e => this._handleCursorPositionChange(e, true)));
+        this._register(Event.runAndSubscribe(this._editors.original.onDidChangeCursorPosition, e => this._handleCursorPositionChange(e, false)));
+        const isInitializingDiff = this._diffModel.map(this, (m, reader) => {
+            if (!m) {
+                return undefined;
+            }
+            return m.diff.read(reader) === undefined && !m.isDiffUpToDate.read(reader);
+        });
+        this._register(autorunWithStore((reader, store) => {
+            if (isInitializingDiff.read(reader) === true) {
+                const r = this._editorProgressService.show(true, 1000);
+                store.add(toDisposable(() => r.done()));
+            }
+        }));
+        this._register(autorunWithStore((reader, store) => {
+            store.add(new (readHotReloadableExport(RevertButtonsFeature, reader))(this._editors, this._diffModel, this._options, this));
+        }));
+        this._register(autorunWithStore((reader, store) => {
+            const model = this._diffModel.read(reader);
+            if (!model) {
+                return;
+            }
+            for (const m of [model.model.original, model.model.modified]) {
+                store.add(m.onWillDispose(e => {
+                    onUnexpectedError(new BugIndicatingError('TextModel got disposed before DiffEditorWidget model got reset'));
+                    this.setModel(null);
+                }));
+            }
+        }));
+        this._register(autorun(reader => {
+            this._options.setModel(this._diffModel.read(reader));
+        }));
+    }
+    getViewWidth() {
+        return this._rootSizeObserver.width.get();
+    }
+    getContentHeight() {
+        return this._editors.modified.getContentHeight();
+    }
+    _createInnerEditor(instantiationService, container, options, editorWidgetOptions) {
+        const editor = instantiationService.createInstance(CodeEditorWidget, container, options, editorWidgetOptions);
+        return editor;
+    }
+    _createDiffEditorContributions() {
+        const contributions = EditorExtensionsRegistry.getDiffEditorContributions();
+        for (const desc of contributions) {
+            try {
+                this._register(this._instantiationService.createInstance(desc.ctor, this));
+            }
+            catch (err) {
+                onUnexpectedError(err);
+            }
+        }
+    }
+    get _targetEditor() { return this._editors.modified; }
+    getEditorType() { return EditorType.IDiffEditor; }
+    onVisible() {
+        this._editors.original.onVisible();
+        this._editors.modified.onVisible();
+    }
+    onHide() {
+        this._editors.original.onHide();
+        this._editors.modified.onHide();
+    }
+    layout(dimension) {
+        this._rootSizeObserver.observe(dimension);
+    }
+    hasTextFocus() { return this._editors.original.hasTextFocus() || this._editors.modified.hasTextFocus(); }
+    saveViewState() {
+        const originalViewState = this._editors.original.saveViewState();
+        const modifiedViewState = this._editors.modified.saveViewState();
+        return {
+            original: originalViewState,
+            modified: modifiedViewState,
+            modelState: this._diffModel.get()?.serializeState(),
+        };
+    }
+    restoreViewState(s) {
+        if (s && s.original && s.modified) {
+            const diffEditorState = s;
+            this._editors.original.restoreViewState(diffEditorState.original);
+            this._editors.modified.restoreViewState(diffEditorState.modified);
+            if (diffEditorState.modelState) {
+                this._diffModel.get()?.restoreSerializedState(diffEditorState.modelState);
+            }
+        }
+    }
+    handleInitialized() {
+        this._editors.original.handleInitialized();
+        this._editors.modified.handleInitialized();
+    }
+    createViewModel(model) {
+        return this._instantiationService.createInstance(DiffEditorViewModel, model, this._options);
+    }
+    getModel() { return this._diffModel.get()?.model ?? null; }
+    setModel(model) {
+        const vm = !model ? null
+            : ('model' in model) ? RefCounted.create(model).createNewRef(this)
+                : RefCounted.create(this.createViewModel(model), this);
+        this.setDiffModel(vm);
+    }
+    setDiffModel(viewModel, tx) {
+        const currentModel = this._diffModel.get();
+        if (!viewModel && currentModel) {
+            this._accessibleDiffViewer.get().close();
+        }
+        if (this._diffModel.get() !== viewModel?.object) {
+            subtransaction(tx, tx => {
+                const vm = viewModel?.object;
+                observableFromEvent.batchEventsGlobally(tx, () => {
+                    this._editors.original.setModel(vm ? vm.model.original : null);
+                    this._editors.modified.setModel(vm ? vm.model.modified : null);
+                });
+                const prevValueRef = this._diffModelSrc.get()?.createNewRef(this);
+                this._diffModelSrc.set(viewModel?.createNewRef(this), tx);
+                setTimeout(() => {
+                    prevValueRef?.dispose();
+                }, 0);
+            });
+        }
+    }
+    updateOptions(changedOptions) {
+        this._options.updateOptions(changedOptions);
+    }
+    getContainerDomNode() { return this._domElement; }
+    getOriginalEditor() { return this._editors.original; }
+    getModifiedEditor() { return this._editors.modified; }
+    setBoundarySashes(sashes) {
+        this._boundarySashes.set(sashes, undefined);
+    }
+    get ignoreTrimWhitespace() { return this._options.ignoreTrimWhitespace.get(); }
+    get maxComputationTime() { return this._options.maxComputationTimeMs.get(); }
+    get renderSideBySide() { return this._options.renderSideBySide.get(); }
+    getLineChanges() {
+        const diffState = this._diffModel.get()?.diff.get();
+        if (!diffState) {
+            return null;
+        }
+        return toLineChanges(diffState);
+    }
+    getDiffComputationResult() {
+        const diffState = this._diffModel.get()?.diff.get();
+        if (!diffState) {
+            return null;
+        }
+        return {
+            changes: this.getLineChanges(),
+            changes2: diffState.mappings.map(m => m.lineRangeMapping),
+            identical: diffState.identical,
+            quitEarly: diffState.quitEarly,
+        };
+    }
+    revert(diff) {
+        const model = this._diffModel.get();
+        if (!model || !model.isDiffUpToDate.get()) {
+            return;
+        }
+        this._editors.modified.executeEdits('diffEditor', [
+            {
+                range: diff.modified.toExclusiveRange(),
+                text: model.model.original.getValueInRange(diff.original.toExclusiveRange())
+            }
+        ]);
+    }
+    revertRangeMappings(diffs) {
+        const model = this._diffModel.get();
+        if (!model || !model.isDiffUpToDate.get()) {
+            return;
+        }
+        const changes = diffs.map(c => ({
+            range: c.modifiedRange,
+            text: model.model.original.getValueInRange(c.originalRange)
+        }));
+        this._editors.modified.executeEdits('diffEditor', changes);
+    }
+    _goTo(diff) {
+        this._editors.modified.setPosition(new Position(diff.lineRangeMapping.modified.startLineNumber, 1));
+        this._editors.modified.revealRangeInCenter(diff.lineRangeMapping.modified.toExclusiveRange());
+    }
+    goToDiff(target) {
+        const diffs = this._diffModel.get()?.diff.get()?.mappings;
+        if (!diffs || diffs.length === 0) {
+            return;
+        }
+        const curLineNumber = this._editors.modified.getPosition().lineNumber;
+        let diff;
+        if (target === 'next') {
+            diff = diffs.find(d => d.lineRangeMapping.modified.startLineNumber > curLineNumber) ?? diffs[0];
+        }
+        else {
+            diff = findLast(diffs, d => d.lineRangeMapping.modified.startLineNumber < curLineNumber) ?? diffs[diffs.length - 1];
+        }
+        this._goTo(diff);
+        if (diff.lineRangeMapping.modified.isEmpty) {
+            this._accessibilitySignalService.playSignal(AccessibilitySignal.diffLineDeleted, { source: 'diffEditor.goToDiff' });
+        }
+        else if (diff.lineRangeMapping.original.isEmpty) {
+            this._accessibilitySignalService.playSignal(AccessibilitySignal.diffLineInserted, { source: 'diffEditor.goToDiff' });
+        }
+        else if (diff) {
+            this._accessibilitySignalService.playSignal(AccessibilitySignal.diffLineModified, { source: 'diffEditor.goToDiff' });
+        }
+    }
+    revealFirstDiff() {
+        const diffModel = this._diffModel.get();
+        if (!diffModel) {
+            return;
+        }
+        this.waitForDiff().then(() => {
+            const diffs = diffModel.diff.get()?.mappings;
+            if (!diffs || diffs.length === 0) {
+                return;
+            }
+            this._goTo(diffs[0]);
+        });
+    }
+    accessibleDiffViewerNext() { this._accessibleDiffViewer.get().next(); }
+    accessibleDiffViewerPrev() { this._accessibleDiffViewer.get().prev(); }
+    async waitForDiff() {
+        const diffModel = this._diffModel.get();
+        if (!diffModel) {
+            return;
+        }
+        await diffModel.waitForDiff();
+    }
+    mapToOtherSide() {
+        const isModifiedFocus = this._editors.modified.hasWidgetFocus();
+        const source = isModifiedFocus ? this._editors.modified : this._editors.original;
+        const destination = isModifiedFocus ? this._editors.original : this._editors.modified;
+        let destinationSelection;
+        const sourceSelection = source.getSelection();
+        if (sourceSelection) {
+            const mappings = this._diffModel.get()?.diff.get()?.mappings.map(m => isModifiedFocus ? m.lineRangeMapping.flip() : m.lineRangeMapping);
+            if (mappings) {
+                const newRange1 = translatePosition(sourceSelection.getStartPosition(), mappings);
+                const newRange2 = translatePosition(sourceSelection.getEndPosition(), mappings);
+                destinationSelection = Range.plusRange(newRange1, newRange2);
+            }
+        }
+        return { destination, destinationSelection };
+    }
+    switchSide() {
+        const { destination, destinationSelection } = this.mapToOtherSide();
+        destination.focus();
+        if (destinationSelection) {
+            destination.setSelection(destinationSelection);
+        }
+    }
+    exitCompareMove() {
+        const model = this._diffModel.get();
+        if (!model) {
+            return;
+        }
+        model.movedTextToCompare.set(undefined, undefined);
+    }
+    collapseAllUnchangedRegions() {
+        const unchangedRegions = this._diffModel.get()?.unchangedRegions.get();
+        if (!unchangedRegions) {
+            return;
+        }
+        transaction(tx => {
+            for (const region of unchangedRegions) {
+                region.collapseAll(tx);
+            }
+        });
+    }
+    showAllUnchangedRegions() {
+        const unchangedRegions = this._diffModel.get()?.unchangedRegions.get();
+        if (!unchangedRegions) {
+            return;
+        }
+        transaction(tx => {
+            for (const region of unchangedRegions) {
+                region.showAll(tx);
+            }
+        });
+    }
+    _handleCursorPositionChange(e, isModifiedEditor) {
+        if (e?.reason === 3) {
+            const diff = this._diffModel.get()?.diff.get()?.mappings.find(m => isModifiedEditor ? m.lineRangeMapping.modified.contains(e.position.lineNumber) : m.lineRangeMapping.original.contains(e.position.lineNumber));
+            if (diff?.lineRangeMapping.modified.isEmpty) {
+                this._accessibilitySignalService.playSignal(AccessibilitySignal.diffLineDeleted, { source: 'diffEditor.cursorPositionChanged' });
+            }
+            else if (diff?.lineRangeMapping.original.isEmpty) {
+                this._accessibilitySignalService.playSignal(AccessibilitySignal.diffLineInserted, { source: 'diffEditor.cursorPositionChanged' });
+            }
+            else if (diff) {
+                this._accessibilitySignalService.playSignal(AccessibilitySignal.diffLineModified, { source: 'diffEditor.cursorPositionChanged' });
+            }
+        }
+    }
+};
+DiffEditorWidget = __decorate([
+    __param(3, IContextKeyService),
+    __param(4, IInstantiationService),
+    __param(5, ICodeEditorService),
+    __param(6, IAccessibilitySignalService),
+    __param(7, IEditorProgressService),
+    __metadata("design:paramtypes", [HTMLElement, Object, Object, Object, Object, Object, Object, Object])
+], DiffEditorWidget);
+export { DiffEditorWidget };
+function toLineChanges(state) {
+    return state.mappings.map(x => {
+        const m = x.lineRangeMapping;
+        let originalStartLineNumber;
+        let originalEndLineNumber;
+        let modifiedStartLineNumber;
+        let modifiedEndLineNumber;
+        let innerChanges = m.innerChanges;
+        if (m.original.isEmpty) {
+            originalStartLineNumber = m.original.startLineNumber - 1;
+            originalEndLineNumber = 0;
+            innerChanges = undefined;
+        }
+        else {
+            originalStartLineNumber = m.original.startLineNumber;
+            originalEndLineNumber = m.original.endLineNumberExclusive - 1;
+        }
+        if (m.modified.isEmpty) {
+            modifiedStartLineNumber = m.modified.startLineNumber - 1;
+            modifiedEndLineNumber = 0;
+            innerChanges = undefined;
+        }
+        else {
+            modifiedStartLineNumber = m.modified.startLineNumber;
+            modifiedEndLineNumber = m.modified.endLineNumberExclusive - 1;
+        }
+        return {
+            originalStartLineNumber,
+            originalEndLineNumber,
+            modifiedStartLineNumber,
+            modifiedEndLineNumber,
+            charChanges: innerChanges?.map(m => ({
+                originalStartLineNumber: m.originalRange.startLineNumber,
+                originalStartColumn: m.originalRange.startColumn,
+                originalEndLineNumber: m.originalRange.endLineNumber,
+                originalEndColumn: m.originalRange.endColumn,
+                modifiedStartLineNumber: m.modifiedRange.startLineNumber,
+                modifiedStartColumn: m.modifiedRange.startColumn,
+                modifiedEndLineNumber: m.modifiedRange.endLineNumber,
+                modifiedEndColumn: m.modifiedRange.endColumn,
+            }))
+        };
+    });
+}

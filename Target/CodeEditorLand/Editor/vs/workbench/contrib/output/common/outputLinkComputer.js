@@ -1,1 +1,122 @@
-import"../../../../editor/common/languages.js";import{URI as k}from"../../../../base/common/uri.js";import*as I from"../../../../base/common/extpath.js";import*as P from"../../../../base/common/resources.js";import*as c from"../../../../base/common/strings.js";import{Range as S}from"../../../../editor/common/core/range.js";import{isWindows as v}from"../../../../base/common/platform.js";import{Schemas as f}from"../../../../base/common/network.js";import"../../../../base/common/worker/simpleWorker.js";import{WorkerTextModelSyncServer as C}from"../../../../editor/common/services/textModelSync/textModelSync.impl.js";class m{_requestHandlerBrand;workerTextModelSyncServer=new C;patterns=new Map;constructor(e){this.workerTextModelSyncServer.bindToServer(e)}$setWorkspaceFolders(e){this.computePatterns(e)}computePatterns(e){const n=e.sort((r,o)=>o.length-r.length).map(r=>k.parse(r));for(const r of n){const o=m.createPatterns(r);this.patterns.set(r,o)}}getModel(e){return this.workerTextModelSyncServer.getModel(e)}$computeLinks(e){const n=this.getModel(e);if(!n)return[];const r=[],o=c.splitLines(n.getValue());for(const[s,i]of this.patterns){const a={toResource:t=>typeof t=="string"?P.joinPath(s,t):null};for(let t=0,u=o.length;t<u;t++)r.push(...m.detectLinks(o[t],t+1,i,a))}return r}static createPatterns(e){const n=[],r=e.scheme===f.file?e.fsPath:e.path,o=[r];v&&e.scheme===f.file&&o.push(I.toSlashes(r));for(const s of o){const i=`[^\\s\\(\\):<>'"]`,t=`${`(?:${i}| ${i})`}+\\.${i}+`,u=`${i}+`;n.push(new RegExp(c.escapeRegExpCharacters(s)+`(${t}) on line ((\\d+)(, column (\\d+))?)`,"gi")),n.push(new RegExp(c.escapeRegExpCharacters(s)+`(${t}):line ((\\d+)(, column (\\d+))?)`,"gi")),n.push(new RegExp(c.escapeRegExpCharacters(s)+`(${t})(\\s?\\((\\d+)(,(\\d+))?)\\)`,"gi")),n.push(new RegExp(c.escapeRegExpCharacters(s)+`(${u})(:(\\d+))?(:(\\d+))?`,"gi"))}return n}static detectLinks(e,n,r,o){const s=[];return r.forEach(i=>{i.lastIndex=0;let a,t=0;for(;(a=i.exec(e))!==null;){const u=c.rtrim(a[1],".").replace(/\\/g,"/");let p;try{const l=o.toResource(u);l&&(p=l.toString())}catch{continue}if(a[3]){const l=a[3];if(a[5]){const x=a[5];p=c.format("{0}#{1},{2}",p,l,x)}else p=c.format("{0}#{1}",p,l)}const h=c.rtrim(a[0],"."),d=e.indexOf(h,t);t=d+h.length;const g={startColumn:d+1,startLineNumber:n,endColumn:d+1+h.length,endLineNumber:n};if(s.some(l=>S.areIntersectingOrTouching(l.range,g)))return;s.push({range:g,url:p})}}),s}}function O(R){return new m(R)}export{m as OutputLinkComputer,O as create};
+import { URI } from '../../../../base/common/uri.js';
+import * as extpath from '../../../../base/common/extpath.js';
+import * as resources from '../../../../base/common/resources.js';
+import * as strings from '../../../../base/common/strings.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { isWindows } from '../../../../base/common/platform.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { WorkerTextModelSyncServer } from '../../../../editor/common/services/textModelSync/textModelSync.impl.js';
+export class OutputLinkComputer {
+    constructor(workerServer) {
+        this.workerTextModelSyncServer = new WorkerTextModelSyncServer();
+        this.patterns = new Map();
+        this.workerTextModelSyncServer.bindToServer(workerServer);
+    }
+    $setWorkspaceFolders(workspaceFolders) {
+        this.computePatterns(workspaceFolders);
+    }
+    computePatterns(_workspaceFolders) {
+        const workspaceFolders = _workspaceFolders
+            .sort((resourceStrA, resourceStrB) => resourceStrB.length - resourceStrA.length)
+            .map(resourceStr => URI.parse(resourceStr));
+        for (const workspaceFolder of workspaceFolders) {
+            const patterns = OutputLinkComputer.createPatterns(workspaceFolder);
+            this.patterns.set(workspaceFolder, patterns);
+        }
+    }
+    getModel(uri) {
+        return this.workerTextModelSyncServer.getModel(uri);
+    }
+    $computeLinks(uri) {
+        const model = this.getModel(uri);
+        if (!model) {
+            return [];
+        }
+        const links = [];
+        const lines = strings.splitLines(model.getValue());
+        for (const [folderUri, folderPatterns] of this.patterns) {
+            const resourceCreator = {
+                toResource: (folderRelativePath) => {
+                    if (typeof folderRelativePath === 'string') {
+                        return resources.joinPath(folderUri, folderRelativePath);
+                    }
+                    return null;
+                }
+            };
+            for (let i = 0, len = lines.length; i < len; i++) {
+                links.push(...OutputLinkComputer.detectLinks(lines[i], i + 1, folderPatterns, resourceCreator));
+            }
+        }
+        return links;
+    }
+    static createPatterns(workspaceFolder) {
+        const patterns = [];
+        const workspaceFolderPath = workspaceFolder.scheme === Schemas.file ? workspaceFolder.fsPath : workspaceFolder.path;
+        const workspaceFolderVariants = [workspaceFolderPath];
+        if (isWindows && workspaceFolder.scheme === Schemas.file) {
+            workspaceFolderVariants.push(extpath.toSlashes(workspaceFolderPath));
+        }
+        for (const workspaceFolderVariant of workspaceFolderVariants) {
+            const validPathCharacterPattern = '[^\\s\\(\\):<>\'"]';
+            const validPathCharacterOrSpacePattern = `(?:${validPathCharacterPattern}| ${validPathCharacterPattern})`;
+            const pathPattern = `${validPathCharacterOrSpacePattern}+\\.${validPathCharacterPattern}+`;
+            const strictPathPattern = `${validPathCharacterPattern}+`;
+            patterns.push(new RegExp(strings.escapeRegExpCharacters(workspaceFolderVariant) + `(${pathPattern}) on line ((\\d+)(, column (\\d+))?)`, 'gi'));
+            patterns.push(new RegExp(strings.escapeRegExpCharacters(workspaceFolderVariant) + `(${pathPattern}):line ((\\d+)(, column (\\d+))?)`, 'gi'));
+            patterns.push(new RegExp(strings.escapeRegExpCharacters(workspaceFolderVariant) + `(${pathPattern})(\\s?\\((\\d+)(,(\\d+))?)\\)`, 'gi'));
+            patterns.push(new RegExp(strings.escapeRegExpCharacters(workspaceFolderVariant) + `(${strictPathPattern})(:(\\d+))?(:(\\d+))?`, 'gi'));
+        }
+        return patterns;
+    }
+    static detectLinks(line, lineIndex, patterns, resourceCreator) {
+        const links = [];
+        patterns.forEach(pattern => {
+            pattern.lastIndex = 0;
+            let match;
+            let offset = 0;
+            while ((match = pattern.exec(line)) !== null) {
+                const folderRelativePath = strings.rtrim(match[1], '.').replace(/\\/g, '/');
+                let resourceString;
+                try {
+                    const resource = resourceCreator.toResource(folderRelativePath);
+                    if (resource) {
+                        resourceString = resource.toString();
+                    }
+                }
+                catch (error) {
+                    continue;
+                }
+                if (match[3]) {
+                    const lineNumber = match[3];
+                    if (match[5]) {
+                        const columnNumber = match[5];
+                        resourceString = strings.format('{0}#{1},{2}', resourceString, lineNumber, columnNumber);
+                    }
+                    else {
+                        resourceString = strings.format('{0}#{1}', resourceString, lineNumber);
+                    }
+                }
+                const fullMatch = strings.rtrim(match[0], '.');
+                const index = line.indexOf(fullMatch, offset);
+                offset = index + fullMatch.length;
+                const linkRange = {
+                    startColumn: index + 1,
+                    startLineNumber: lineIndex,
+                    endColumn: index + 1 + fullMatch.length,
+                    endLineNumber: lineIndex
+                };
+                if (links.some(link => Range.areIntersectingOrTouching(link.range, linkRange))) {
+                    return;
+                }
+                links.push({
+                    range: linkRange,
+                    url: resourceString
+                });
+            }
+        });
+        return links;
+    }
+}
+export function create(workerServer) {
+    return new OutputLinkComputer(workerServer);
+}

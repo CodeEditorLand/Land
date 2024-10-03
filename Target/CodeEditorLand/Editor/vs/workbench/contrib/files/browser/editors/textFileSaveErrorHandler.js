@@ -1,1 +1,370 @@
-var q=Object.defineProperty;var G=Object.getOwnPropertyDescriptor;var u=(s,r,e,i)=>{for(var t=i>1?void 0:i?G(r,e):r,a=s.length-1,o;a>=0;a--)(o=s[a])&&(t=(i?o(r,e,t):o(t))||t);return i&&t&&q(r,e,t),t},c=(s,r)=>(e,i)=>r(e,i,s);import{localize as n}from"../../../../../nls.js";import{toErrorMessage as $}from"../../../../../base/common/errorMessage.js";import{basename as p,isEqual as z}from"../../../../../base/common/resources.js";import{Action as v}from"../../../../../base/common/actions.js";import{URI as V}from"../../../../../base/common/uri.js";import{FileOperationResult as T}from"../../../../../platform/files/common/files.js";import{ITextFileService as j}from"../../../../services/textfile/common/textfiles.js";import{IInstantiationService as L}from"../../../../../platform/instantiation/common/instantiation.js";import{dispose as C,Disposable as J}from"../../../../../base/common/lifecycle.js";import"../../../../common/contributions.js";import{ITextModelService as Q}from"../../../../../editor/common/services/resolverService.js";import{ResourceMap as Z}from"../../../../../base/common/map.js";import{DiffEditorInput as ee}from"../../../../common/editor/diffEditorInput.js";import{IContextKeyService as ie,RawContextKey as te}from"../../../../../platform/contextkey/common/contextkey.js";import{TextFileContentProvider as A}from"../../common/files.js";import{FileEditorInput as re}from"./fileEditorInput.js";import{SAVE_FILE_AS_LABEL as oe}from"../fileConstants.js";import{INotificationService as _,Severity as N}from"../../../../../platform/notification/common/notification.js";import{IOpenerService as se}from"../../../../../platform/opener/common/opener.js";import{IStorageService as U,StorageScope as W,StorageTarget as ne}from"../../../../../platform/storage/common/storage.js";import{IProductService as ae}from"../../../../../platform/product/common/productService.js";import{Event as H}from"../../../../../base/common/event.js";import{IEditorService as g}from"../../../../services/editor/common/editorService.js";import{isWindows as w}from"../../../../../base/common/platform.js";import{Schemas as ce}from"../../../../../base/common/network.js";import{IPreferencesService as de}from"../../../../services/preferences/common/preferences.js";import{SaveReason as S,SideBySideEditor as le}from"../../../../common/editor.js";import{hash as K}from"../../../../../base/common/hash.js";const ve="saveConflictResolutionContext",P="conflictResolution",M="learnMoreDirtyWriteError",X=n("userGuide","Use the actions in the editor tool bar to either undo your changes or overwrite the content of the file with your changes.");let x=class extends J{constructor(e,i,t,a,o,d,l){super();this.notificationService=e;this.textFileService=i;this.contextKeyService=t;this.editorService=a;this.instantiationService=d;this.storageService=l;const f=this._register(d.createInstance(A));this._register(o.registerTextModelContentProvider(P,f)),this.textFileService.files.saveErrorHandler=this,this.registerListeners()}static ID="workbench.contrib.textFileSaveErrorHandler";messages=new Z;conflictResolutionContext=new te(ve,!1,!0).bindTo(this.contextKeyService);activeConflictResolutionResource=void 0;registerListeners(){this._register(this.textFileService.files.onDidSave(e=>this.onFileSavedOrReverted(e.model.resource))),this._register(this.textFileService.files.onDidRevert(e=>this.onFileSavedOrReverted(e.resource))),this._register(this.editorService.onDidActiveEditorChange(()=>this.onActiveEditorChanged()))}onActiveEditorChanged(){let e=!1,i;const t=this.editorService.activeEditor;t instanceof ee&&t.original.resource?.scheme===P&&(e=!0,i=t.modified.resource),this.conflictResolutionContext.set(e),this.activeConflictResolutionResource=i}onFileSavedOrReverted(e){const i=this.messages.get(e);i&&(i.close(),this.messages.delete(e))}onSaveError(e,i,t){const a=e,o=i.resource;let d;const l=[],f=[];if(a.fileOperationResult===T.FILE_MODIFIED_SINCE)if(this.activeConflictResolutionResource&&z(this.activeConflictResolutionResource,i.resource)){if(this.storageService.getBoolean(M,W.APPLICATION))return;d=X,l.push(this.instantiationService.createInstance(m)),f.push(this.instantiationService.createInstance(I))}else d=n("staleSaveError","Failed to save '{0}': The content of the file is newer. Please compare your version with the file contents or overwrite the content of the file with your changes.",p(o)),l.push(this.instantiationService.createInstance(h,i)),l.push(this.instantiationService.createInstance(Ie,i,t)),f.push(this.instantiationService.createInstance(y));else{const R=a.fileOperationResult===T.FILE_WRITE_LOCKED,F=R&&a.options?.unlock,D=a.fileOperationResult===T.FILE_PERMISSION_DENIED,O=o.scheme===ce.file;O&&(D||F)?l.push(this.instantiationService.createInstance(ue,i,t,!!F)):R?l.push(this.instantiationService.createInstance(me,i,t)):l.push(this.instantiationService.createInstance(fe,i,t)),l.push(this.instantiationService.createInstance(E,i)),l.push(this.instantiationService.createInstance(Se,i)),R?F&&O?d=w?n("readonlySaveErrorAdmin","Failed to save '{0}': File is read-only. Select 'Overwrite as Admin' to retry as administrator.",p(o)):n("readonlySaveErrorSudo","Failed to save '{0}': File is read-only. Select 'Overwrite as Sudo' to retry as superuser.",p(o)):d=n("readonlySaveError","Failed to save '{0}': File is read-only. Select 'Overwrite' to attempt to make it writeable.",p(o)):O&&D?d=w?n("permissionDeniedSaveError","Failed to save '{0}': Insufficient permissions. Select 'Retry as Admin' to retry as administrator.",p(o)):n("permissionDeniedSaveErrorSudo","Failed to save '{0}': Insufficient permissions. Select 'Retry as Sudo' to retry as superuser.",p(o)):d=n({key:"genericSaveError",comment:["{0} is the resource that failed to save and {1} the error message"]},"Failed to save '{0}': {1}",p(o),$(e,!1))}const Y={primary:l,secondary:f},k=this.notificationService.notify({id:`${K(i.resource.toString())}`,severity:N.Error,message:d,actions:Y});H.once(k.onDidClose)(()=>{C(l),C(f)}),this.messages.set(i.resource,k)}dispose(){super.dispose(),this.messages.clear()}};x=u([c(0,_),c(1,j),c(2,ie),c(3,g),c(4,Q),c(5,L),c(6,U)],x);const b=[];function pe(){for(;b.length>0;)b.pop()?.close()}let m=class extends v{constructor(e){super("workbench.files.action.resolveConflictLearnMore",n("learnMore","Learn More"));this.openerService=e}async run(){await this.openerService.open(V.parse("https://go.microsoft.com/fwlink/?linkid=868264"))}};m=u([c(0,se)],m);let I=class extends v{constructor(e){super("workbench.files.action.resolveConflictLearnMoreDoNotShowAgain",n("dontShowAgain","Don't Show Again"));this.storageService=e}async run(e){this.storageService.store(M,!0,W.APPLICATION,ne.USER),e.dispose()}};I=u([c(0,U)],I);let h=class extends v{constructor(e,i,t,a,o){super("workbench.files.action.resolveConflict",n("compareChanges","Compare"));this.model=e;this.editorService=i;this.notificationService=t;this.instantiationService=a;this.productService=o}async run(){if(!this.model.isDisposed()){const e=this.model.resource,i=p(e),t=n("saveConflictDiffLabel","{0} (in file) \u2194 {1} (in {2}) - Resolve save conflict",i,i,this.productService.nameLong);await A.open(e,P,t,this.editorService,{pinned:!0});const a={primary:[this.instantiationService.createInstance(m)]},o=this.notificationService.notify({id:`${K(e.toString())}`,severity:N.Info,message:X,actions:a,neverShowAgain:{id:M,isSecondary:!0}});H.once(o.onDidClose)(()=>C(a.primary)),b.push(o)}}};h=u([c(1,g),c(2,_),c(3,L),c(4,ae)],h);class ue extends v{constructor(e,i,t){super("workbench.files.action.saveModelElevated",t?w?n("overwriteElevated","Overwrite as Admin..."):n("overwriteElevatedSudo","Overwrite as Sudo..."):w?n("saveElevated","Retry as Admin..."):n("saveElevatedSudo","Retry as Sudo..."));this.model=e;this.options=i;this.triedToUnlock=t}async run(){this.model.isDisposed()||await this.model.save({...this.options,writeElevated:!0,writeUnlock:this.triedToUnlock,reason:S.EXPLICIT})}}class fe extends v{constructor(e,i){super("workbench.files.action.saveModel",n("retry","Retry"));this.model=e;this.options=i}async run(){this.model.isDisposed()||await this.model.save({...this.options,reason:S.EXPLICIT})}}class Se extends v{constructor(e){super("workbench.files.action.revertModel",n("revert","Revert"));this.model=e}async run(){this.model.isDisposed()||await this.model.revert()}}let E=class extends v{constructor(e,i){super("workbench.files.action.saveModelAs",oe.value);this.model=e;this.editorService=i}async run(){if(!this.model.isDisposed()){const e=this.findEditor();e&&await this.editorService.save(e,{saveAs:!0,reason:S.EXPLICIT})}}findEditor(){let e;const i=this.editorService.findEditors(this.model.resource,{supportSideBySide:le.PRIMARY});for(const t of i)if(t.editor instanceof re){e=t;break}else e||(e=t);return e}};E=u([c(1,g)],E);class me extends v{constructor(e,i){super("workbench.files.action.unlock",n("overwrite","Overwrite"));this.model=e;this.options=i}async run(){this.model.isDisposed()||await this.model.save({...this.options,writeUnlock:!0,reason:S.EXPLICIT})}}class Ie extends v{constructor(e,i){super("workbench.files.action.saveIgnoreModifiedSince",n("overwrite","Overwrite"));this.model=e;this.options=i}async run(){this.model.isDisposed()||await this.model.save({...this.options,ignoreModifiedSince:!0,reason:S.EXPLICIT})}}let y=class extends v{constructor(e){super("workbench.files.action.configureSaveConflict",n("configure","Configure"));this.preferencesService=e}async run(){this.preferencesService.openSettings({query:"files.saveConflictResolution"})}};y=u([c(0,de)],y);const si=(s,r)=>B(s,r,!0),ni=(s,r)=>B(s,r,!1);async function B(s,r,e){const i=s.get(g),t=i.activeEditorPane;if(!t)return;const a=t.input,o=t.group;if(pe(),e){const d={ignoreModifiedSince:!0,reason:S.EXPLICIT};await i.save({editor:a,groupId:o.id},d)}else await i.revert({editor:a,groupId:o.id});return await i.openEditor({resource:r},o),o.closeEditor(a)}export{ve as CONFLICT_RESOLUTION_CONTEXT,P as CONFLICT_RESOLUTION_SCHEME,x as TextFileSaveErrorHandler,si as acceptLocalChangesCommand,ni as revertLocalChangesCommand};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { localize } from '../../../../../nls.js';
+import { toErrorMessage } from '../../../../../base/common/errorMessage.js';
+import { basename, isEqual } from '../../../../../base/common/resources.js';
+import { Action } from '../../../../../base/common/actions.js';
+import { URI } from '../../../../../base/common/uri.js';
+import { ITextFileService } from '../../../../services/textfile/common/textfiles.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { dispose, Disposable } from '../../../../../base/common/lifecycle.js';
+import { ITextModelService } from '../../../../../editor/common/services/resolverService.js';
+import { ResourceMap } from '../../../../../base/common/map.js';
+import { DiffEditorInput } from '../../../../common/editor/diffEditorInput.js';
+import { IContextKeyService, RawContextKey } from '../../../../../platform/contextkey/common/contextkey.js';
+import { TextFileContentProvider } from '../../common/files.js';
+import { FileEditorInput } from './fileEditorInput.js';
+import { SAVE_FILE_AS_LABEL } from '../fileConstants.js';
+import { INotificationService, Severity } from '../../../../../platform/notification/common/notification.js';
+import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
+import { IStorageService } from '../../../../../platform/storage/common/storage.js';
+import { IProductService } from '../../../../../platform/product/common/productService.js';
+import { Event } from '../../../../../base/common/event.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+import { isWindows } from '../../../../../base/common/platform.js';
+import { Schemas } from '../../../../../base/common/network.js';
+import { IPreferencesService } from '../../../../services/preferences/common/preferences.js';
+import { SideBySideEditor } from '../../../../common/editor.js';
+import { hash } from '../../../../../base/common/hash.js';
+export const CONFLICT_RESOLUTION_CONTEXT = 'saveConflictResolutionContext';
+export const CONFLICT_RESOLUTION_SCHEME = 'conflictResolution';
+const LEARN_MORE_DIRTY_WRITE_IGNORE_KEY = 'learnMoreDirtyWriteError';
+const conflictEditorHelp = localize('userGuide', "Use the actions in the editor tool bar to either undo your changes or overwrite the content of the file with your changes.");
+let TextFileSaveErrorHandler = class TextFileSaveErrorHandler extends Disposable {
+    static { this.ID = 'workbench.contrib.textFileSaveErrorHandler'; }
+    constructor(notificationService, textFileService, contextKeyService, editorService, textModelService, instantiationService, storageService) {
+        super();
+        this.notificationService = notificationService;
+        this.textFileService = textFileService;
+        this.contextKeyService = contextKeyService;
+        this.editorService = editorService;
+        this.instantiationService = instantiationService;
+        this.storageService = storageService;
+        this.messages = new ResourceMap();
+        this.conflictResolutionContext = new RawContextKey(CONFLICT_RESOLUTION_CONTEXT, false, true).bindTo(this.contextKeyService);
+        this.activeConflictResolutionResource = undefined;
+        const provider = this._register(instantiationService.createInstance(TextFileContentProvider));
+        this._register(textModelService.registerTextModelContentProvider(CONFLICT_RESOLUTION_SCHEME, provider));
+        this.textFileService.files.saveErrorHandler = this;
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.textFileService.files.onDidSave(e => this.onFileSavedOrReverted(e.model.resource)));
+        this._register(this.textFileService.files.onDidRevert(model => this.onFileSavedOrReverted(model.resource)));
+        this._register(this.editorService.onDidActiveEditorChange(() => this.onActiveEditorChanged()));
+    }
+    onActiveEditorChanged() {
+        let isActiveEditorSaveConflictResolution = false;
+        let activeConflictResolutionResource;
+        const activeInput = this.editorService.activeEditor;
+        if (activeInput instanceof DiffEditorInput) {
+            const resource = activeInput.original.resource;
+            if (resource?.scheme === CONFLICT_RESOLUTION_SCHEME) {
+                isActiveEditorSaveConflictResolution = true;
+                activeConflictResolutionResource = activeInput.modified.resource;
+            }
+        }
+        this.conflictResolutionContext.set(isActiveEditorSaveConflictResolution);
+        this.activeConflictResolutionResource = activeConflictResolutionResource;
+    }
+    onFileSavedOrReverted(resource) {
+        const messageHandle = this.messages.get(resource);
+        if (messageHandle) {
+            messageHandle.close();
+            this.messages.delete(resource);
+        }
+    }
+    onSaveError(error, model, options) {
+        const fileOperationError = error;
+        const resource = model.resource;
+        let message;
+        const primaryActions = [];
+        const secondaryActions = [];
+        if (fileOperationError.fileOperationResult === 3) {
+            if (this.activeConflictResolutionResource && isEqual(this.activeConflictResolutionResource, model.resource)) {
+                if (this.storageService.getBoolean(LEARN_MORE_DIRTY_WRITE_IGNORE_KEY, -1)) {
+                    return;
+                }
+                message = conflictEditorHelp;
+                primaryActions.push(this.instantiationService.createInstance(ResolveConflictLearnMoreAction));
+                secondaryActions.push(this.instantiationService.createInstance(DoNotShowResolveConflictLearnMoreAction));
+            }
+            else {
+                message = localize('staleSaveError', "Failed to save '{0}': The content of the file is newer. Please compare your version with the file contents or overwrite the content of the file with your changes.", basename(resource));
+                primaryActions.push(this.instantiationService.createInstance(ResolveSaveConflictAction, model));
+                primaryActions.push(this.instantiationService.createInstance(SaveModelIgnoreModifiedSinceAction, model, options));
+                secondaryActions.push(this.instantiationService.createInstance(ConfigureSaveConflictAction));
+            }
+        }
+        else {
+            const isWriteLocked = fileOperationError.fileOperationResult === 5;
+            const triedToUnlock = isWriteLocked && fileOperationError.options?.unlock;
+            const isPermissionDenied = fileOperationError.fileOperationResult === 6;
+            const canSaveElevated = resource.scheme === Schemas.file;
+            if (canSaveElevated && (isPermissionDenied || triedToUnlock)) {
+                primaryActions.push(this.instantiationService.createInstance(SaveModelElevatedAction, model, options, !!triedToUnlock));
+            }
+            else if (isWriteLocked) {
+                primaryActions.push(this.instantiationService.createInstance(UnlockModelAction, model, options));
+            }
+            else {
+                primaryActions.push(this.instantiationService.createInstance(RetrySaveModelAction, model, options));
+            }
+            primaryActions.push(this.instantiationService.createInstance(SaveModelAsAction, model));
+            primaryActions.push(this.instantiationService.createInstance(RevertModelAction, model));
+            if (isWriteLocked) {
+                if (triedToUnlock && canSaveElevated) {
+                    message = isWindows ? localize('readonlySaveErrorAdmin', "Failed to save '{0}': File is read-only. Select 'Overwrite as Admin' to retry as administrator.", basename(resource)) : localize('readonlySaveErrorSudo', "Failed to save '{0}': File is read-only. Select 'Overwrite as Sudo' to retry as superuser.", basename(resource));
+                }
+                else {
+                    message = localize('readonlySaveError', "Failed to save '{0}': File is read-only. Select 'Overwrite' to attempt to make it writeable.", basename(resource));
+                }
+            }
+            else if (canSaveElevated && isPermissionDenied) {
+                message = isWindows ? localize('permissionDeniedSaveError', "Failed to save '{0}': Insufficient permissions. Select 'Retry as Admin' to retry as administrator.", basename(resource)) : localize('permissionDeniedSaveErrorSudo', "Failed to save '{0}': Insufficient permissions. Select 'Retry as Sudo' to retry as superuser.", basename(resource));
+            }
+            else {
+                message = localize({ key: 'genericSaveError', comment: ['{0} is the resource that failed to save and {1} the error message'] }, "Failed to save '{0}': {1}", basename(resource), toErrorMessage(error, false));
+            }
+        }
+        const actions = { primary: primaryActions, secondary: secondaryActions };
+        const handle = this.notificationService.notify({
+            id: `${hash(model.resource.toString())}`,
+            severity: Severity.Error,
+            message,
+            actions
+        });
+        Event.once(handle.onDidClose)(() => { dispose(primaryActions); dispose(secondaryActions); });
+        this.messages.set(model.resource, handle);
+    }
+    dispose() {
+        super.dispose();
+        this.messages.clear();
+    }
+};
+TextFileSaveErrorHandler = __decorate([
+    __param(0, INotificationService),
+    __param(1, ITextFileService),
+    __param(2, IContextKeyService),
+    __param(3, IEditorService),
+    __param(4, ITextModelService),
+    __param(5, IInstantiationService),
+    __param(6, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], TextFileSaveErrorHandler);
+export { TextFileSaveErrorHandler };
+const pendingResolveSaveConflictMessages = [];
+function clearPendingResolveSaveConflictMessages() {
+    while (pendingResolveSaveConflictMessages.length > 0) {
+        const item = pendingResolveSaveConflictMessages.pop();
+        item?.close();
+    }
+}
+let ResolveConflictLearnMoreAction = class ResolveConflictLearnMoreAction extends Action {
+    constructor(openerService) {
+        super('workbench.files.action.resolveConflictLearnMore', localize('learnMore', "Learn More"));
+        this.openerService = openerService;
+    }
+    async run() {
+        await this.openerService.open(URI.parse('https://go.microsoft.com/fwlink/?linkid=868264'));
+    }
+};
+ResolveConflictLearnMoreAction = __decorate([
+    __param(0, IOpenerService),
+    __metadata("design:paramtypes", [Object])
+], ResolveConflictLearnMoreAction);
+let DoNotShowResolveConflictLearnMoreAction = class DoNotShowResolveConflictLearnMoreAction extends Action {
+    constructor(storageService) {
+        super('workbench.files.action.resolveConflictLearnMoreDoNotShowAgain', localize('dontShowAgain', "Don't Show Again"));
+        this.storageService = storageService;
+    }
+    async run(notification) {
+        this.storageService.store(LEARN_MORE_DIRTY_WRITE_IGNORE_KEY, true, -1, 0);
+        notification.dispose();
+    }
+};
+DoNotShowResolveConflictLearnMoreAction = __decorate([
+    __param(0, IStorageService),
+    __metadata("design:paramtypes", [Object])
+], DoNotShowResolveConflictLearnMoreAction);
+let ResolveSaveConflictAction = class ResolveSaveConflictAction extends Action {
+    constructor(model, editorService, notificationService, instantiationService, productService) {
+        super('workbench.files.action.resolveConflict', localize('compareChanges', "Compare"));
+        this.model = model;
+        this.editorService = editorService;
+        this.notificationService = notificationService;
+        this.instantiationService = instantiationService;
+        this.productService = productService;
+    }
+    async run() {
+        if (!this.model.isDisposed()) {
+            const resource = this.model.resource;
+            const name = basename(resource);
+            const editorLabel = localize('saveConflictDiffLabel', "{0} (in file) ↔ {1} (in {2}) - Resolve save conflict", name, name, this.productService.nameLong);
+            await TextFileContentProvider.open(resource, CONFLICT_RESOLUTION_SCHEME, editorLabel, this.editorService, { pinned: true });
+            const actions = { primary: [this.instantiationService.createInstance(ResolveConflictLearnMoreAction)] };
+            const handle = this.notificationService.notify({
+                id: `${hash(resource.toString())}`,
+                severity: Severity.Info,
+                message: conflictEditorHelp,
+                actions,
+                neverShowAgain: { id: LEARN_MORE_DIRTY_WRITE_IGNORE_KEY, isSecondary: true }
+            });
+            Event.once(handle.onDidClose)(() => dispose(actions.primary));
+            pendingResolveSaveConflictMessages.push(handle);
+        }
+    }
+};
+ResolveSaveConflictAction = __decorate([
+    __param(1, IEditorService),
+    __param(2, INotificationService),
+    __param(3, IInstantiationService),
+    __param(4, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], ResolveSaveConflictAction);
+class SaveModelElevatedAction extends Action {
+    constructor(model, options, triedToUnlock) {
+        super('workbench.files.action.saveModelElevated', triedToUnlock ? isWindows ? localize('overwriteElevated', "Overwrite as Admin...") : localize('overwriteElevatedSudo', "Overwrite as Sudo...") : isWindows ? localize('saveElevated', "Retry as Admin...") : localize('saveElevatedSudo', "Retry as Sudo..."));
+        this.model = model;
+        this.options = options;
+        this.triedToUnlock = triedToUnlock;
+    }
+    async run() {
+        if (!this.model.isDisposed()) {
+            await this.model.save({
+                ...this.options,
+                writeElevated: true,
+                writeUnlock: this.triedToUnlock,
+                reason: 1
+            });
+        }
+    }
+}
+class RetrySaveModelAction extends Action {
+    constructor(model, options) {
+        super('workbench.files.action.saveModel', localize('retry', "Retry"));
+        this.model = model;
+        this.options = options;
+    }
+    async run() {
+        if (!this.model.isDisposed()) {
+            await this.model.save({ ...this.options, reason: 1 });
+        }
+    }
+}
+class RevertModelAction extends Action {
+    constructor(model) {
+        super('workbench.files.action.revertModel', localize('revert', "Revert"));
+        this.model = model;
+    }
+    async run() {
+        if (!this.model.isDisposed()) {
+            await this.model.revert();
+        }
+    }
+}
+let SaveModelAsAction = class SaveModelAsAction extends Action {
+    constructor(model, editorService) {
+        super('workbench.files.action.saveModelAs', SAVE_FILE_AS_LABEL.value);
+        this.model = model;
+        this.editorService = editorService;
+    }
+    async run() {
+        if (!this.model.isDisposed()) {
+            const editor = this.findEditor();
+            if (editor) {
+                await this.editorService.save(editor, { saveAs: true, reason: 1 });
+            }
+        }
+    }
+    findEditor() {
+        let preferredMatchingEditor;
+        const editors = this.editorService.findEditors(this.model.resource, { supportSideBySide: SideBySideEditor.PRIMARY });
+        for (const identifier of editors) {
+            if (identifier.editor instanceof FileEditorInput) {
+                preferredMatchingEditor = identifier;
+                break;
+            }
+            else if (!preferredMatchingEditor) {
+                preferredMatchingEditor = identifier;
+            }
+        }
+        return preferredMatchingEditor;
+    }
+};
+SaveModelAsAction = __decorate([
+    __param(1, IEditorService),
+    __metadata("design:paramtypes", [Object, Object])
+], SaveModelAsAction);
+class UnlockModelAction extends Action {
+    constructor(model, options) {
+        super('workbench.files.action.unlock', localize('overwrite', "Overwrite"));
+        this.model = model;
+        this.options = options;
+    }
+    async run() {
+        if (!this.model.isDisposed()) {
+            await this.model.save({ ...this.options, writeUnlock: true, reason: 1 });
+        }
+    }
+}
+class SaveModelIgnoreModifiedSinceAction extends Action {
+    constructor(model, options) {
+        super('workbench.files.action.saveIgnoreModifiedSince', localize('overwrite', "Overwrite"));
+        this.model = model;
+        this.options = options;
+    }
+    async run() {
+        if (!this.model.isDisposed()) {
+            await this.model.save({ ...this.options, ignoreModifiedSince: true, reason: 1 });
+        }
+    }
+}
+let ConfigureSaveConflictAction = class ConfigureSaveConflictAction extends Action {
+    constructor(preferencesService) {
+        super('workbench.files.action.configureSaveConflict', localize('configure', "Configure"));
+        this.preferencesService = preferencesService;
+    }
+    async run() {
+        this.preferencesService.openSettings({ query: 'files.saveConflictResolution' });
+    }
+};
+ConfigureSaveConflictAction = __decorate([
+    __param(0, IPreferencesService),
+    __metadata("design:paramtypes", [Object])
+], ConfigureSaveConflictAction);
+export const acceptLocalChangesCommand = (accessor, resource) => {
+    return acceptOrRevertLocalChangesCommand(accessor, resource, true);
+};
+export const revertLocalChangesCommand = (accessor, resource) => {
+    return acceptOrRevertLocalChangesCommand(accessor, resource, false);
+};
+async function acceptOrRevertLocalChangesCommand(accessor, resource, accept) {
+    const editorService = accessor.get(IEditorService);
+    const editorPane = editorService.activeEditorPane;
+    if (!editorPane) {
+        return;
+    }
+    const editor = editorPane.input;
+    const group = editorPane.group;
+    clearPendingResolveSaveConflictMessages();
+    if (accept) {
+        const options = { ignoreModifiedSince: true, reason: 1 };
+        await editorService.save({ editor, groupId: group.id }, options);
+    }
+    else {
+        await editorService.revert({ editor, groupId: group.id });
+    }
+    await editorService.openEditor({ resource }, group);
+    return group.closeEditor(editor);
+}

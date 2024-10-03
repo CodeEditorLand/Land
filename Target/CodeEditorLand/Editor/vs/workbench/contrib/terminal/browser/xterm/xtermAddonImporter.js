@@ -1,1 +1,34 @@
-import{importAMDNodeModule as o}from"../../../../../amdX.js";const a=new Map;class n{async importAddon(d){let e=a.get(d);if(!e){switch(d){case"clipboard":e=(await o("@xterm/addon-clipboard","lib/addon-clipboard.js")).ClipboardAddon;break;case"image":e=(await o("@xterm/addon-image","lib/addon-image.js")).ImageAddon;break;case"search":e=(await o("@xterm/addon-search","lib/addon-search.js")).SearchAddon;break;case"serialize":e=(await o("@xterm/addon-serialize","lib/addon-serialize.js")).SerializeAddon;break;case"unicode11":e=(await o("@xterm/addon-unicode11","lib/addon-unicode11.js")).Unicode11Addon;break;case"webgl":e=(await o("@xterm/addon-webgl","lib/addon-webgl.js")).WebglAddon;break}if(!e)throw new Error(`Could not load addon ${d}`);a.set(d,e)}return e}}export{n as XtermAddonImporter};
+import { importAMDNodeModule } from '../../../../../amdX.js';
+const importedAddons = new Map();
+export class XtermAddonImporter {
+    async importAddon(name) {
+        let addon = importedAddons.get(name);
+        if (!addon) {
+            switch (name) {
+                case 'clipboard':
+                    addon = (await importAMDNodeModule('@xterm/addon-clipboard', 'lib/addon-clipboard.js')).ClipboardAddon;
+                    break;
+                case 'image':
+                    addon = (await importAMDNodeModule('@xterm/addon-image', 'lib/addon-image.js')).ImageAddon;
+                    break;
+                case 'search':
+                    addon = (await importAMDNodeModule('@xterm/addon-search', 'lib/addon-search.js')).SearchAddon;
+                    break;
+                case 'serialize':
+                    addon = (await importAMDNodeModule('@xterm/addon-serialize', 'lib/addon-serialize.js')).SerializeAddon;
+                    break;
+                case 'unicode11':
+                    addon = (await importAMDNodeModule('@xterm/addon-unicode11', 'lib/addon-unicode11.js')).Unicode11Addon;
+                    break;
+                case 'webgl':
+                    addon = (await importAMDNodeModule('@xterm/addon-webgl', 'lib/addon-webgl.js')).WebglAddon;
+                    break;
+            }
+            if (!addon) {
+                throw new Error(`Could not load addon ${name}`);
+            }
+            importedAddons.set(name, addon);
+        }
+        return addon;
+    }
+}

@@ -1,2 +1,158 @@
-import{commonPrefixLength as h,commonSuffixLength as g}from"../../../../../base/common/strings.js";import"../../../../common/core/position.js";import"../../../../common/core/range.js";import"../screenReaderUtils.js";const s=!1;class a{constructor(e,t,i,n,l){this.value=e;this.selectionStart=t;this.selectionEnd=i;this.selection=n;this.newlineCountBeforeSelection=l}static EMPTY=new a("",0,0,null,void 0);toString(){return`[ <${this.value}>, selectionStart: ${this.selectionStart}, selectionEnd: ${this.selectionEnd}]`}static readFromTextArea(e,t){const i=e.getValue(),n=e.getSelectionStart(),l=e.getSelectionEnd();let o;if(t){const c=i.substring(0,n),r=t.value.substring(0,t.selectionStart);c===r&&(o=t.newlineCountBeforeSelection)}return new a(i,n,l,null,o)}collapseSelection(){return this.selectionStart===this.value.length?this:new a(this.value,this.value.length,this.value.length,null,void 0)}writeToTextArea(e,t,i){t.setValue(e,this.value),i&&t.setSelectionRange(e,this.selectionStart,this.selectionEnd)}deduceEditorPosition(e){if(e<=this.selectionStart){const n=this.value.substring(e,this.selectionStart);return this._finishDeduceEditorPosition(this.selection?.getStartPosition()??null,n,-1)}if(e>=this.selectionEnd){const n=this.value.substring(this.selectionEnd,e);return this._finishDeduceEditorPosition(this.selection?.getEndPosition()??null,n,1)}const t=this.value.substring(this.selectionStart,e);if(t.indexOf("\u2026")===-1)return this._finishDeduceEditorPosition(this.selection?.getStartPosition()??null,t,1);const i=this.value.substring(e,this.selectionEnd);return this._finishDeduceEditorPosition(this.selection?.getEndPosition()??null,i,-1)}_finishDeduceEditorPosition(e,t,i){let n=0,l=-1;for(;(l=t.indexOf(`
-`,l+1))!==-1;)n++;return[e,i*t.length,n]}static deduceInput(e,t,i){if(!e)return{text:"",replacePrevCharCnt:0,replaceNextCharCnt:0,positionDelta:0};const n=Math.min(h(e.value,t.value),e.selectionStart,t.selectionStart),l=Math.min(g(e.value,t.value),e.value.length-e.selectionEnd,t.value.length-t.selectionEnd),o=e.value.substring(n,e.value.length-l),c=t.value.substring(n,t.value.length-l),r=e.selectionStart-n,d=e.selectionEnd-n,u=t.selectionStart-n,E=t.selectionEnd-n;if(u===E){const S=e.selectionStart-n;return{text:c,replacePrevCharCnt:S,replaceNextCharCnt:0,positionDelta:0}}const p=d-r;return{text:c,replacePrevCharCnt:p,replaceNextCharCnt:0,positionDelta:0}}static deduceAndroidCompositionInput(e,t){if(!e)return{text:"",replacePrevCharCnt:0,replaceNextCharCnt:0,positionDelta:0};if(e.value===t.value)return{text:"",replacePrevCharCnt:0,replaceNextCharCnt:0,positionDelta:t.selectionEnd-e.selectionEnd};const i=Math.min(h(e.value,t.value),e.selectionEnd),n=Math.min(g(e.value,t.value),e.value.length-e.selectionEnd),l=e.value.substring(i,e.value.length-n),o=t.value.substring(i,t.value.length-n),c=e.selectionStart-i,r=e.selectionEnd-i,d=t.selectionStart-i,u=t.selectionEnd-i;return{text:o,replacePrevCharCnt:r,replaceNextCharCnt:l.length-r,positionDelta:u-o.length}}static fromScreenReaderContentState(e){return new a(e.value,e.selectionStart,e.selectionEnd,e.selection,e.newlineCountBeforeSelection)}}export{a as TextAreaState,s as _debugComposition};
+import { commonPrefixLength, commonSuffixLength } from '../../../../../base/common/strings.js';
+export const _debugComposition = false;
+export class TextAreaState {
+    static { this.EMPTY = new TextAreaState('', 0, 0, null, undefined); }
+    constructor(value, selectionStart, selectionEnd, selection, newlineCountBeforeSelection) {
+        this.value = value;
+        this.selectionStart = selectionStart;
+        this.selectionEnd = selectionEnd;
+        this.selection = selection;
+        this.newlineCountBeforeSelection = newlineCountBeforeSelection;
+    }
+    toString() {
+        return `[ <${this.value}>, selectionStart: ${this.selectionStart}, selectionEnd: ${this.selectionEnd}]`;
+    }
+    static readFromTextArea(textArea, previousState) {
+        const value = textArea.getValue();
+        const selectionStart = textArea.getSelectionStart();
+        const selectionEnd = textArea.getSelectionEnd();
+        let newlineCountBeforeSelection = undefined;
+        if (previousState) {
+            const valueBeforeSelectionStart = value.substring(0, selectionStart);
+            const previousValueBeforeSelectionStart = previousState.value.substring(0, previousState.selectionStart);
+            if (valueBeforeSelectionStart === previousValueBeforeSelectionStart) {
+                newlineCountBeforeSelection = previousState.newlineCountBeforeSelection;
+            }
+        }
+        return new TextAreaState(value, selectionStart, selectionEnd, null, newlineCountBeforeSelection);
+    }
+    collapseSelection() {
+        if (this.selectionStart === this.value.length) {
+            return this;
+        }
+        return new TextAreaState(this.value, this.value.length, this.value.length, null, undefined);
+    }
+    writeToTextArea(reason, textArea, select) {
+        if (_debugComposition) {
+            console.log(`writeToTextArea ${reason}: ${this.toString()}`);
+        }
+        textArea.setValue(reason, this.value);
+        if (select) {
+            textArea.setSelectionRange(reason, this.selectionStart, this.selectionEnd);
+        }
+    }
+    deduceEditorPosition(offset) {
+        if (offset <= this.selectionStart) {
+            const str = this.value.substring(offset, this.selectionStart);
+            return this._finishDeduceEditorPosition(this.selection?.getStartPosition() ?? null, str, -1);
+        }
+        if (offset >= this.selectionEnd) {
+            const str = this.value.substring(this.selectionEnd, offset);
+            return this._finishDeduceEditorPosition(this.selection?.getEndPosition() ?? null, str, 1);
+        }
+        const str1 = this.value.substring(this.selectionStart, offset);
+        if (str1.indexOf(String.fromCharCode(8230)) === -1) {
+            return this._finishDeduceEditorPosition(this.selection?.getStartPosition() ?? null, str1, 1);
+        }
+        const str2 = this.value.substring(offset, this.selectionEnd);
+        return this._finishDeduceEditorPosition(this.selection?.getEndPosition() ?? null, str2, -1);
+    }
+    _finishDeduceEditorPosition(anchor, deltaText, signum) {
+        let lineFeedCnt = 0;
+        let lastLineFeedIndex = -1;
+        while ((lastLineFeedIndex = deltaText.indexOf('\n', lastLineFeedIndex + 1)) !== -1) {
+            lineFeedCnt++;
+        }
+        return [anchor, signum * deltaText.length, lineFeedCnt];
+    }
+    static deduceInput(previousState, currentState, couldBeEmojiInput) {
+        if (!previousState) {
+            return {
+                text: '',
+                replacePrevCharCnt: 0,
+                replaceNextCharCnt: 0,
+                positionDelta: 0
+            };
+        }
+        if (_debugComposition) {
+            console.log('------------------------deduceInput');
+            console.log(`PREVIOUS STATE: ${previousState.toString()}`);
+            console.log(`CURRENT STATE: ${currentState.toString()}`);
+        }
+        const prefixLength = Math.min(commonPrefixLength(previousState.value, currentState.value), previousState.selectionStart, currentState.selectionStart);
+        const suffixLength = Math.min(commonSuffixLength(previousState.value, currentState.value), previousState.value.length - previousState.selectionEnd, currentState.value.length - currentState.selectionEnd);
+        const previousValue = previousState.value.substring(prefixLength, previousState.value.length - suffixLength);
+        const currentValue = currentState.value.substring(prefixLength, currentState.value.length - suffixLength);
+        const previousSelectionStart = previousState.selectionStart - prefixLength;
+        const previousSelectionEnd = previousState.selectionEnd - prefixLength;
+        const currentSelectionStart = currentState.selectionStart - prefixLength;
+        const currentSelectionEnd = currentState.selectionEnd - prefixLength;
+        if (_debugComposition) {
+            console.log(`AFTER DIFFING PREVIOUS STATE: <${previousValue}>, selectionStart: ${previousSelectionStart}, selectionEnd: ${previousSelectionEnd}`);
+            console.log(`AFTER DIFFING CURRENT STATE: <${currentValue}>, selectionStart: ${currentSelectionStart}, selectionEnd: ${currentSelectionEnd}`);
+        }
+        if (currentSelectionStart === currentSelectionEnd) {
+            const replacePreviousCharacters = (previousState.selectionStart - prefixLength);
+            if (_debugComposition) {
+                console.log(`REMOVE PREVIOUS: ${replacePreviousCharacters} chars`);
+            }
+            return {
+                text: currentValue,
+                replacePrevCharCnt: replacePreviousCharacters,
+                replaceNextCharCnt: 0,
+                positionDelta: 0
+            };
+        }
+        const replacePreviousCharacters = previousSelectionEnd - previousSelectionStart;
+        return {
+            text: currentValue,
+            replacePrevCharCnt: replacePreviousCharacters,
+            replaceNextCharCnt: 0,
+            positionDelta: 0
+        };
+    }
+    static deduceAndroidCompositionInput(previousState, currentState) {
+        if (!previousState) {
+            return {
+                text: '',
+                replacePrevCharCnt: 0,
+                replaceNextCharCnt: 0,
+                positionDelta: 0
+            };
+        }
+        if (_debugComposition) {
+            console.log('------------------------deduceAndroidCompositionInput');
+            console.log(`PREVIOUS STATE: ${previousState.toString()}`);
+            console.log(`CURRENT STATE: ${currentState.toString()}`);
+        }
+        if (previousState.value === currentState.value) {
+            return {
+                text: '',
+                replacePrevCharCnt: 0,
+                replaceNextCharCnt: 0,
+                positionDelta: currentState.selectionEnd - previousState.selectionEnd
+            };
+        }
+        const prefixLength = Math.min(commonPrefixLength(previousState.value, currentState.value), previousState.selectionEnd);
+        const suffixLength = Math.min(commonSuffixLength(previousState.value, currentState.value), previousState.value.length - previousState.selectionEnd);
+        const previousValue = previousState.value.substring(prefixLength, previousState.value.length - suffixLength);
+        const currentValue = currentState.value.substring(prefixLength, currentState.value.length - suffixLength);
+        const previousSelectionStart = previousState.selectionStart - prefixLength;
+        const previousSelectionEnd = previousState.selectionEnd - prefixLength;
+        const currentSelectionStart = currentState.selectionStart - prefixLength;
+        const currentSelectionEnd = currentState.selectionEnd - prefixLength;
+        if (_debugComposition) {
+            console.log(`AFTER DIFFING PREVIOUS STATE: <${previousValue}>, selectionStart: ${previousSelectionStart}, selectionEnd: ${previousSelectionEnd}`);
+            console.log(`AFTER DIFFING CURRENT STATE: <${currentValue}>, selectionStart: ${currentSelectionStart}, selectionEnd: ${currentSelectionEnd}`);
+        }
+        return {
+            text: currentValue,
+            replacePrevCharCnt: previousSelectionEnd,
+            replaceNextCharCnt: previousValue.length - previousSelectionEnd,
+            positionDelta: currentSelectionEnd - currentValue.length
+        };
+    }
+    static fromScreenReaderContentState(screenReaderContentState) {
+        return new TextAreaState(screenReaderContentState.value, screenReaderContentState.selectionStart, screenReaderContentState.selectionEnd, screenReaderContentState.selection, screenReaderContentState.newlineCountBeforeSelection);
+    }
+}

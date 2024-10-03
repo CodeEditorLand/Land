@@ -1,1 +1,16 @@
-import{createDecorator as i}from"../../instantiation/common/instantiation.js";import"../../../base/common/event.js";import{localize as r}from"../../../nls.js";const y=i("IRemoteTunnelService"),I={active:!1};var c;(n=>(n.disconnected=e=>({type:"disconnected",onTokenFailed:e}),n.connected=(e,t)=>({type:"connected",info:e,serviceInstallFailed:t}),n.connecting=e=>({type:"connecting",progress:e}),n.uninitialized={type:"uninitialized"}))(c||={});const o="remote.tunnels.access",v=o+".hostNameOverride",g=o+".preventSleep",x="remoteTunnelService",S=r("remoteTunnelLog","Remote Tunnel Service");export{v as CONFIGURATION_KEY_HOST_NAME,o as CONFIGURATION_KEY_PREFIX,g as CONFIGURATION_KEY_PREVENT_SLEEP,I as INACTIVE_TUNNEL_MODE,y as IRemoteTunnelService,S as LOGGER_NAME,x as LOG_ID,c as TunnelStates};
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { localize } from '../../../nls.js';
+export const IRemoteTunnelService = createDecorator('IRemoteTunnelService');
+export const INACTIVE_TUNNEL_MODE = { active: false };
+export var TunnelStates;
+(function (TunnelStates) {
+    TunnelStates.disconnected = (onTokenFailed) => ({ type: 'disconnected', onTokenFailed });
+    TunnelStates.connected = (info, serviceInstallFailed) => ({ type: 'connected', info, serviceInstallFailed });
+    TunnelStates.connecting = (progress) => ({ type: 'connecting', progress });
+    TunnelStates.uninitialized = { type: 'uninitialized' };
+})(TunnelStates || (TunnelStates = {}));
+export const CONFIGURATION_KEY_PREFIX = 'remote.tunnels.access';
+export const CONFIGURATION_KEY_HOST_NAME = CONFIGURATION_KEY_PREFIX + '.hostNameOverride';
+export const CONFIGURATION_KEY_PREVENT_SLEEP = CONFIGURATION_KEY_PREFIX + '.preventSleep';
+export const LOG_ID = 'remoteTunnelService';
+export const LOGGER_NAME = localize('remoteTunnelLog', "Remote Tunnel Service");

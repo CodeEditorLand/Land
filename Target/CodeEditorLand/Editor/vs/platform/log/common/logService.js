@@ -1,1 +1,36 @@
-import{Disposable as o}from"../../../base/common/lifecycle.js";import"../../../base/common/event.js";import{MultiplexLogger as i}from"./log.js";class h extends o{logger;constructor(e,r=[]){super(),this.logger=new i([e,...r]),this._register(e.onDidChangeLogLevel(g=>this.setLevel(g)))}get onDidChangeLogLevel(){return this.logger.onDidChangeLogLevel}setLevel(e){this.logger.setLevel(e)}getLevel(){return this.logger.getLevel()}trace(e,...r){this.logger.trace(e,...r)}debug(e,...r){this.logger.debug(e,...r)}info(e,...r){this.logger.info(e,...r)}warn(e,...r){this.logger.warn(e,...r)}error(e,...r){this.logger.error(e,...r)}flush(){this.logger.flush()}}export{h as LogService};
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { MultiplexLogger } from './log.js';
+export class LogService extends Disposable {
+    constructor(primaryLogger, otherLoggers = []) {
+        super();
+        this.logger = new MultiplexLogger([primaryLogger, ...otherLoggers]);
+        this._register(primaryLogger.onDidChangeLogLevel(level => this.setLevel(level)));
+    }
+    get onDidChangeLogLevel() {
+        return this.logger.onDidChangeLogLevel;
+    }
+    setLevel(level) {
+        this.logger.setLevel(level);
+    }
+    getLevel() {
+        return this.logger.getLevel();
+    }
+    trace(message, ...args) {
+        this.logger.trace(message, ...args);
+    }
+    debug(message, ...args) {
+        this.logger.debug(message, ...args);
+    }
+    info(message, ...args) {
+        this.logger.info(message, ...args);
+    }
+    warn(message, ...args) {
+        this.logger.warn(message, ...args);
+    }
+    error(message, ...args) {
+        this.logger.error(message, ...args);
+    }
+    flush() {
+        this.logger.flush();
+    }
+}

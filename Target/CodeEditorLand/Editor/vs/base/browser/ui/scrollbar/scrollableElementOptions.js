@@ -1,1 +1,1 @@
-import"../../../common/scrollable.js";
+export {};

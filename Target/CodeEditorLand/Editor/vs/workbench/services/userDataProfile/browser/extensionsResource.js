@@ -1,1 +1,355 @@
-var G=Object.defineProperty;var U=Object.getOwnPropertyDescriptor;var I=(p,n,i,e)=>{for(var s=e>1?void 0:e?U(n,i):n,r=p.length-1,a;r>=0;r--)(a=p[r])&&(s=(e?a(n,i,s):a(s))||s);return e&&s&&G(n,i,s),s},f=(p,n)=>(i,e)=>n(i,e,p);import{CancellationToken as w}from"../../../../base/common/cancellation.js";import{Codicon as k}from"../../../../base/common/codicons.js";import{DisposableStore as z}from"../../../../base/common/lifecycle.js";import{localize as u}from"../../../../nls.js";import{GlobalExtensionEnablementService as A}from"../../../../platform/extensionManagement/common/extensionEnablementService.js";import{EXTENSION_INSTALL_SKIP_WALKTHROUGH_CONTEXT as D,IExtensionGalleryService as C,IExtensionManagementService as R,IGlobalExtensionEnablementService as O}from"../../../../platform/extensionManagement/common/extensionManagement.js";import{areSameExtensions as g}from"../../../../platform/extensionManagement/common/extensionManagementUtil.js";import{ExtensionType as B}from"../../../../platform/extensions/common/extensions.js";import{IInstantiationService as b}from"../../../../platform/instantiation/common/instantiation.js";import{ServiceCollection as F}from"../../../../platform/instantiation/common/serviceCollection.js";import{ILogService as L}from"../../../../platform/log/common/log.js";import{IStorageService as $}from"../../../../platform/storage/common/storage.js";import{ProfileResourceType as y}from"../../../../platform/userDataProfile/common/userDataProfile.js";import{IUserDataProfileStorageService as V}from"../../../../platform/userDataProfile/common/userDataProfileStorageService.js";import{TreeItemCollapsibleState as T}from"../../../common/views.js";import{IUserDataProfileService as _}from"../common/userDataProfile.js";let h=class{constructor(n,i,e,s,r){this.userDataProfileService=n;this.extensionManagementService=i;this.extensionGalleryService=e;this.extensionEnablementService=s;this.logService=r}async initialize(n){const i=JSON.parse(n),e=await this.extensionManagementService.getInstalled(void 0,this.userDataProfileService.currentProfile.extensionsResource),s=[],r=[];for(const o of i){const c=this.extensionEnablementService.getDisabledExtensions().some(m=>g(m,o.identifier)),l=e.find(m=>g(m.identifier,o.identifier));(!l||!l.isBuiltin&&l.preRelease!==o.preRelease)&&r.push(o),c!==!!o.disabled&&s.push({extension:o.identifier,enable:!o.disabled})}const a=e.filter(o=>!o.isBuiltin&&!i.some(({identifier:c})=>g(c,o.identifier)));for(const{extension:o,enable:c}of s)c?(this.logService.trace("Initializing Profile: Enabling extension...",o.id),await this.extensionEnablementService.enableExtension(o),this.logService.info("Initializing Profile: Enabled extension...",o.id)):(this.logService.trace("Initializing Profile: Disabling extension...",o.id),await this.extensionEnablementService.disableExtension(o),this.logService.info("Initializing Profile: Disabled extension...",o.id));if(r.length){const o=await this.extensionGalleryService.getExtensions(r.map(c=>({...c.identifier,version:c.version,hasPreRelease:c.version?void 0:c.preRelease})),w.None);await Promise.all(r.map(async c=>{const l=o.find(m=>g(m.identifier,c.identifier));l&&(await this.extensionManagementService.canInstall(l)?(this.logService.trace("Initializing Profile: Installing extension...",l.identifier.id,l.version),await this.extensionManagementService.installFromGallery(l,{isMachineScoped:!1,donotIncludePackAndDependencies:!0,installGivenVersion:!!c.version,installPreReleaseVersion:c.preRelease,profileLocation:this.userDataProfileService.currentProfile.extensionsResource,context:{[D]:!0}}),this.logService.info("Initializing Profile: Installed extension...",l.identifier.id,l.version)):this.logService.info("Initializing Profile: Skipped installing extension because it cannot be installed.",l.identifier.id))}))}a.length&&await Promise.all(a.map(o=>this.extensionManagementService.uninstall(o)))}};h=I([f(0,_),f(1,R),f(2,C),f(3,O),f(4,L)],h);let S=class{constructor(n,i,e,s,r){this.extensionManagementService=n;this.extensionGalleryService=i;this.userDataProfileStorageService=e;this.instantiationService=s;this.logService=r}async getContent(n,i){const e=await this.getLocalExtensions(n);return this.toContent(e,i)}toContent(n,i){return JSON.stringify(i?.length?n.filter(e=>!i.includes(e.identifier.id.toLowerCase())):n)}async apply(n,i,e,s){return this.withProfileScopedServices(i,async r=>{const a=await this.getProfileExtensions(n),o=await this.extensionManagementService.getInstalled(void 0,i.extensionsResource),c=[],l=[];for(const t of a){const x=r.getDisabledExtensions().some(v=>g(v,t.identifier)),d=o.find(v=>g(v.identifier,t.identifier));(!d||!d.isBuiltin&&d.preRelease!==t.preRelease)&&l.push(t),x!==!!t.disabled&&c.push({extension:t.identifier,enable:!t.disabled})}const m=o.filter(t=>!t.isBuiltin&&!a.some(({identifier:x})=>g(x,t.identifier))&&!t.isApplicationScoped);for(const{extension:t,enable:x}of c)x?(this.logService.trace(`Importing Profile (${i.name}): Enabling extension...`,t.id),await r.enableExtension(t),this.logService.info(`Importing Profile (${i.name}): Enabled extension...`,t.id)):(this.logService.trace(`Importing Profile (${i.name}): Disabling extension...`,t.id),await r.disableExtension(t),this.logService.info(`Importing Profile (${i.name}): Disabled extension...`,t.id));if(l.length){this.logService.info(`Importing Profile (${i.name}): Started installing extensions.`);const t=await this.extensionGalleryService.getExtensions(l.map(d=>({...d.identifier,version:d.version,hasPreRelease:d.version?void 0:d.preRelease})),w.None),x=[];if(await Promise.all(l.map(async d=>{const v=t.find(N=>g(N.identifier,d.identifier));v&&(await this.extensionManagementService.canInstall(v)?x.push({extension:v,options:{isMachineScoped:!1,donotIncludePackAndDependencies:!0,installGivenVersion:!!d.version,installPreReleaseVersion:d.preRelease,profileLocation:i.extensionsResource,context:{[D]:!0}}}):this.logService.info(`Importing Profile (${i.name}): Skipped installing extension because it cannot be installed.`,v.identifier.id))})),x.length)if(s)for(const d of x){if(s.isCancellationRequested)return;e?.(u("installingExtension","Installing extension {0}...",d.extension.displayName??d.extension.identifier.id)),await this.extensionManagementService.installFromGallery(d.extension,d.options)}else await this.extensionManagementService.installGalleryExtensions(x);this.logService.info(`Importing Profile (${i.name}): Finished installing extensions.`)}m.length&&await Promise.all(m.map(t=>this.extensionManagementService.uninstall(t)))})}async copy(n,i,e){await this.extensionManagementService.copyExtensions(n.extensionsResource,i.extensionsResource);const s=await this.withProfileScopedServices(n,async r=>r.getDisabledExtensions());if(e){const r=await this.extensionManagementService.getInstalled(B.User,i.extensionsResource);for(const a of r)s.push(a.identifier)}await this.withProfileScopedServices(i,async r=>Promise.all(s.map(a=>r.disableExtension(a))))}async getLocalExtensions(n){return this.withProfileScopedServices(n,async i=>{const e=new Map,s=await this.extensionManagementService.getInstalled(void 0,n.extensionsResource),r=i.getDisabledExtensions();for(const a of s){const{identifier:o,preRelease:c}=a,l=r.some(x=>g(x,o));if(a.isBuiltin&&!l||!a.isBuiltin&&!a.identifier.uuid)continue;e.get(o.id.toLowerCase())?.disabled&&e.delete(o.id.toLowerCase());const t={identifier:o,displayName:a.manifest.displayName};l&&(t.disabled=!0),!a.isBuiltin&&a.pinned&&(t.version=a.manifest.version),!t.version&&c&&(t.preRelease=!0),t.applicationScoped=a.isApplicationScoped,e.set(t.identifier.id.toLowerCase(),t)}return[...e.values()]})}async getProfileExtensions(n){return JSON.parse(n)}async withProfileScopedServices(n,i){return this.userDataProfileStorageService.withProfileScopedStorageService(n,async e=>{const s=new z,r=s.add(this.instantiationService.createChild(new F([$,e]))),a=s.add(r.createInstance(A));try{return await i(a)}finally{s.dispose()}})}};S=I([f(0,R),f(1,C),f(2,V),f(3,b),f(4,L)],S);class M{type=y.Extensions;handle=y.Extensions;label={label:u("extensions","Extensions")};collapsibleState=T.Expanded;contextValue=y.Extensions;checkbox;excludedExtensions=new Set;async getChildren(){const n=(await this.getExtensions()).sort((e,s)=>(e.displayName??e.identifier.id).localeCompare(s.displayName??s.identifier.id)),i=this;return n.map(e=>({...e,handle:e.identifier.id.toLowerCase(),parent:this,label:{label:e.displayName||e.identifier.id},description:e.applicationScoped?u("all profiles and disabled","All Profiles"):void 0,collapsibleState:T.None,checkbox:i.checkbox?{get isChecked(){return!i.excludedExtensions.has(e.identifier.id.toLowerCase())},set isChecked(s){s?i.excludedExtensions.delete(e.identifier.id.toLowerCase()):i.excludedExtensions.add(e.identifier.id.toLowerCase())},tooltip:u("exclude","Select {0} Extension",e.displayName||e.identifier.id),accessibilityInformation:{label:u("exclude","Select {0} Extension",e.displayName||e.identifier.id)}}:void 0,themeIcon:k.extensions,command:{id:"extension.open",title:"",arguments:[e.identifier.id,void 0,!0]}}))}async hasContent(){return(await this.getExtensions()).length>0}}let P=class extends M{constructor(i,e){super();this.profile=i;this.instantiationService=e}isFromDefaultProfile(){return!this.profile.isDefault&&!!this.profile.useDefaultFlags?.extensions}getExtensions(){return this.instantiationService.createInstance(S).getLocalExtensions(this.profile)}async getContent(){return this.instantiationService.createInstance(S).getContent(this.profile,[...this.excludedExtensions.values()])}};P=I([f(1,b)],P);let E=class extends M{constructor(i,e){super();this.content=i;this.instantiationService=e}isFromDefaultProfile(){return!1}getExtensions(){return this.instantiationService.createInstance(S).getProfileExtensions(this.content)}async getContent(){const i=this.instantiationService.createInstance(S),e=await i.getProfileExtensions(this.content);return i.toContent(e,[...this.excludedExtensions.values()])}};E=I([f(1,b)],E);export{S as ExtensionsResource,P as ExtensionsResourceExportTreeItem,E as ExtensionsResourceImportTreeItem,h as ExtensionsResourceInitializer,M as ExtensionsResourceTreeItem};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { localize } from '../../../../nls.js';
+import { GlobalExtensionEnablementService } from '../../../../platform/extensionManagement/common/extensionEnablementService.js';
+import { EXTENSION_INSTALL_SKIP_WALKTHROUGH_CONTEXT, IExtensionGalleryService, IExtensionManagementService, IGlobalExtensionEnablementService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { areSameExtensions } from '../../../../platform/extensionManagement/common/extensionManagementUtil.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IUserDataProfileStorageService } from '../../../../platform/userDataProfile/common/userDataProfileStorageService.js';
+import { TreeItemCollapsibleState } from '../../../common/views.js';
+import { IUserDataProfileService } from '../common/userDataProfile.js';
+let ExtensionsResourceInitializer = class ExtensionsResourceInitializer {
+    constructor(userDataProfileService, extensionManagementService, extensionGalleryService, extensionEnablementService, logService) {
+        this.userDataProfileService = userDataProfileService;
+        this.extensionManagementService = extensionManagementService;
+        this.extensionGalleryService = extensionGalleryService;
+        this.extensionEnablementService = extensionEnablementService;
+        this.logService = logService;
+    }
+    async initialize(content) {
+        const profileExtensions = JSON.parse(content);
+        const installedExtensions = await this.extensionManagementService.getInstalled(undefined, this.userDataProfileService.currentProfile.extensionsResource);
+        const extensionsToEnableOrDisable = [];
+        const extensionsToInstall = [];
+        for (const e of profileExtensions) {
+            const isDisabled = this.extensionEnablementService.getDisabledExtensions().some(disabledExtension => areSameExtensions(disabledExtension, e.identifier));
+            const installedExtension = installedExtensions.find(installed => areSameExtensions(installed.identifier, e.identifier));
+            if (!installedExtension || (!installedExtension.isBuiltin && installedExtension.preRelease !== e.preRelease)) {
+                extensionsToInstall.push(e);
+            }
+            if (isDisabled !== !!e.disabled) {
+                extensionsToEnableOrDisable.push({ extension: e.identifier, enable: !e.disabled });
+            }
+        }
+        const extensionsToUninstall = installedExtensions.filter(extension => !extension.isBuiltin && !profileExtensions.some(({ identifier }) => areSameExtensions(identifier, extension.identifier)));
+        for (const { extension, enable } of extensionsToEnableOrDisable) {
+            if (enable) {
+                this.logService.trace(`Initializing Profile: Enabling extension...`, extension.id);
+                await this.extensionEnablementService.enableExtension(extension);
+                this.logService.info(`Initializing Profile: Enabled extension...`, extension.id);
+            }
+            else {
+                this.logService.trace(`Initializing Profile: Disabling extension...`, extension.id);
+                await this.extensionEnablementService.disableExtension(extension);
+                this.logService.info(`Initializing Profile: Disabled extension...`, extension.id);
+            }
+        }
+        if (extensionsToInstall.length) {
+            const galleryExtensions = await this.extensionGalleryService.getExtensions(extensionsToInstall.map(e => ({ ...e.identifier, version: e.version, hasPreRelease: e.version ? undefined : e.preRelease })), CancellationToken.None);
+            await Promise.all(extensionsToInstall.map(async (e) => {
+                const extension = galleryExtensions.find(galleryExtension => areSameExtensions(galleryExtension.identifier, e.identifier));
+                if (!extension) {
+                    return;
+                }
+                if (await this.extensionManagementService.canInstall(extension)) {
+                    this.logService.trace(`Initializing Profile: Installing extension...`, extension.identifier.id, extension.version);
+                    await this.extensionManagementService.installFromGallery(extension, {
+                        isMachineScoped: false,
+                        donotIncludePackAndDependencies: true,
+                        installGivenVersion: !!e.version,
+                        installPreReleaseVersion: e.preRelease,
+                        profileLocation: this.userDataProfileService.currentProfile.extensionsResource,
+                        context: { [EXTENSION_INSTALL_SKIP_WALKTHROUGH_CONTEXT]: true }
+                    });
+                    this.logService.info(`Initializing Profile: Installed extension...`, extension.identifier.id, extension.version);
+                }
+                else {
+                    this.logService.info(`Initializing Profile: Skipped installing extension because it cannot be installed.`, extension.identifier.id);
+                }
+            }));
+        }
+        if (extensionsToUninstall.length) {
+            await Promise.all(extensionsToUninstall.map(e => this.extensionManagementService.uninstall(e)));
+        }
+    }
+};
+ExtensionsResourceInitializer = __decorate([
+    __param(0, IUserDataProfileService),
+    __param(1, IExtensionManagementService),
+    __param(2, IExtensionGalleryService),
+    __param(3, IGlobalExtensionEnablementService),
+    __param(4, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], ExtensionsResourceInitializer);
+export { ExtensionsResourceInitializer };
+let ExtensionsResource = class ExtensionsResource {
+    constructor(extensionManagementService, extensionGalleryService, userDataProfileStorageService, instantiationService, logService) {
+        this.extensionManagementService = extensionManagementService;
+        this.extensionGalleryService = extensionGalleryService;
+        this.userDataProfileStorageService = userDataProfileStorageService;
+        this.instantiationService = instantiationService;
+        this.logService = logService;
+    }
+    async getContent(profile, exclude) {
+        const extensions = await this.getLocalExtensions(profile);
+        return this.toContent(extensions, exclude);
+    }
+    toContent(extensions, exclude) {
+        return JSON.stringify(exclude?.length ? extensions.filter(e => !exclude.includes(e.identifier.id.toLowerCase())) : extensions);
+    }
+    async apply(content, profile, progress, token) {
+        return this.withProfileScopedServices(profile, async (extensionEnablementService) => {
+            const profileExtensions = await this.getProfileExtensions(content);
+            const installedExtensions = await this.extensionManagementService.getInstalled(undefined, profile.extensionsResource);
+            const extensionsToEnableOrDisable = [];
+            const extensionsToInstall = [];
+            for (const e of profileExtensions) {
+                const isDisabled = extensionEnablementService.getDisabledExtensions().some(disabledExtension => areSameExtensions(disabledExtension, e.identifier));
+                const installedExtension = installedExtensions.find(installed => areSameExtensions(installed.identifier, e.identifier));
+                if (!installedExtension || (!installedExtension.isBuiltin && installedExtension.preRelease !== e.preRelease)) {
+                    extensionsToInstall.push(e);
+                }
+                if (isDisabled !== !!e.disabled) {
+                    extensionsToEnableOrDisable.push({ extension: e.identifier, enable: !e.disabled });
+                }
+            }
+            const extensionsToUninstall = installedExtensions.filter(extension => !extension.isBuiltin && !profileExtensions.some(({ identifier }) => areSameExtensions(identifier, extension.identifier)) && !extension.isApplicationScoped);
+            for (const { extension, enable } of extensionsToEnableOrDisable) {
+                if (enable) {
+                    this.logService.trace(`Importing Profile (${profile.name}): Enabling extension...`, extension.id);
+                    await extensionEnablementService.enableExtension(extension);
+                    this.logService.info(`Importing Profile (${profile.name}): Enabled extension...`, extension.id);
+                }
+                else {
+                    this.logService.trace(`Importing Profile (${profile.name}): Disabling extension...`, extension.id);
+                    await extensionEnablementService.disableExtension(extension);
+                    this.logService.info(`Importing Profile (${profile.name}): Disabled extension...`, extension.id);
+                }
+            }
+            if (extensionsToInstall.length) {
+                this.logService.info(`Importing Profile (${profile.name}): Started installing extensions.`);
+                const galleryExtensions = await this.extensionGalleryService.getExtensions(extensionsToInstall.map(e => ({ ...e.identifier, version: e.version, hasPreRelease: e.version ? undefined : e.preRelease })), CancellationToken.None);
+                const installExtensionInfos = [];
+                await Promise.all(extensionsToInstall.map(async (e) => {
+                    const extension = galleryExtensions.find(galleryExtension => areSameExtensions(galleryExtension.identifier, e.identifier));
+                    if (!extension) {
+                        return;
+                    }
+                    if (await this.extensionManagementService.canInstall(extension)) {
+                        installExtensionInfos.push({
+                            extension,
+                            options: {
+                                isMachineScoped: false,
+                                donotIncludePackAndDependencies: true,
+                                installGivenVersion: !!e.version,
+                                installPreReleaseVersion: e.preRelease,
+                                profileLocation: profile.extensionsResource,
+                                context: { [EXTENSION_INSTALL_SKIP_WALKTHROUGH_CONTEXT]: true }
+                            }
+                        });
+                    }
+                    else {
+                        this.logService.info(`Importing Profile (${profile.name}): Skipped installing extension because it cannot be installed.`, extension.identifier.id);
+                    }
+                }));
+                if (installExtensionInfos.length) {
+                    if (token) {
+                        for (const installExtensionInfo of installExtensionInfos) {
+                            if (token.isCancellationRequested) {
+                                return;
+                            }
+                            progress?.(localize('installingExtension', "Installing extension {0}...", installExtensionInfo.extension.displayName ?? installExtensionInfo.extension.identifier.id));
+                            await this.extensionManagementService.installFromGallery(installExtensionInfo.extension, installExtensionInfo.options);
+                        }
+                    }
+                    else {
+                        await this.extensionManagementService.installGalleryExtensions(installExtensionInfos);
+                    }
+                }
+                this.logService.info(`Importing Profile (${profile.name}): Finished installing extensions.`);
+            }
+            if (extensionsToUninstall.length) {
+                await Promise.all(extensionsToUninstall.map(e => this.extensionManagementService.uninstall(e)));
+            }
+        });
+    }
+    async copy(from, to, disableExtensions) {
+        await this.extensionManagementService.copyExtensions(from.extensionsResource, to.extensionsResource);
+        const extensionsToDisable = await this.withProfileScopedServices(from, async (extensionEnablementService) => extensionEnablementService.getDisabledExtensions());
+        if (disableExtensions) {
+            const extensions = await this.extensionManagementService.getInstalled(1, to.extensionsResource);
+            for (const extension of extensions) {
+                extensionsToDisable.push(extension.identifier);
+            }
+        }
+        await this.withProfileScopedServices(to, async (extensionEnablementService) => Promise.all(extensionsToDisable.map(extension => extensionEnablementService.disableExtension(extension))));
+    }
+    async getLocalExtensions(profile) {
+        return this.withProfileScopedServices(profile, async (extensionEnablementService) => {
+            const result = new Map();
+            const installedExtensions = await this.extensionManagementService.getInstalled(undefined, profile.extensionsResource);
+            const disabledExtensions = extensionEnablementService.getDisabledExtensions();
+            for (const extension of installedExtensions) {
+                const { identifier, preRelease } = extension;
+                const disabled = disabledExtensions.some(disabledExtension => areSameExtensions(disabledExtension, identifier));
+                if (extension.isBuiltin && !disabled) {
+                    continue;
+                }
+                if (!extension.isBuiltin) {
+                    if (!extension.identifier.uuid) {
+                        continue;
+                    }
+                }
+                const existing = result.get(identifier.id.toLowerCase());
+                if (existing?.disabled) {
+                    result.delete(identifier.id.toLowerCase());
+                }
+                const profileExtension = { identifier, displayName: extension.manifest.displayName };
+                if (disabled) {
+                    profileExtension.disabled = true;
+                }
+                if (!extension.isBuiltin && extension.pinned) {
+                    profileExtension.version = extension.manifest.version;
+                }
+                if (!profileExtension.version && preRelease) {
+                    profileExtension.preRelease = true;
+                }
+                profileExtension.applicationScoped = extension.isApplicationScoped;
+                result.set(profileExtension.identifier.id.toLowerCase(), profileExtension);
+            }
+            return [...result.values()];
+        });
+    }
+    async getProfileExtensions(content) {
+        return JSON.parse(content);
+    }
+    async withProfileScopedServices(profile, fn) {
+        return this.userDataProfileStorageService.withProfileScopedStorageService(profile, async (storageService) => {
+            const disposables = new DisposableStore();
+            const instantiationService = disposables.add(this.instantiationService.createChild(new ServiceCollection([IStorageService, storageService])));
+            const extensionEnablementService = disposables.add(instantiationService.createInstance(GlobalExtensionEnablementService));
+            try {
+                return await fn(extensionEnablementService);
+            }
+            finally {
+                disposables.dispose();
+            }
+        });
+    }
+};
+ExtensionsResource = __decorate([
+    __param(0, IExtensionManagementService),
+    __param(1, IExtensionGalleryService),
+    __param(2, IUserDataProfileStorageService),
+    __param(3, IInstantiationService),
+    __param(4, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], ExtensionsResource);
+export { ExtensionsResource };
+export class ExtensionsResourceTreeItem {
+    constructor() {
+        this.type = "extensions";
+        this.handle = "extensions";
+        this.label = { label: localize('extensions', "Extensions") };
+        this.collapsibleState = TreeItemCollapsibleState.Expanded;
+        this.contextValue = "extensions";
+        this.excludedExtensions = new Set();
+    }
+    async getChildren() {
+        const extensions = (await this.getExtensions()).sort((a, b) => (a.displayName ?? a.identifier.id).localeCompare(b.displayName ?? b.identifier.id));
+        const that = this;
+        return extensions.map(e => ({
+            ...e,
+            handle: e.identifier.id.toLowerCase(),
+            parent: this,
+            label: { label: e.displayName || e.identifier.id },
+            description: e.applicationScoped ? localize('all profiles and disabled', "All Profiles") : undefined,
+            collapsibleState: TreeItemCollapsibleState.None,
+            checkbox: that.checkbox ? {
+                get isChecked() { return !that.excludedExtensions.has(e.identifier.id.toLowerCase()); },
+                set isChecked(value) {
+                    if (value) {
+                        that.excludedExtensions.delete(e.identifier.id.toLowerCase());
+                    }
+                    else {
+                        that.excludedExtensions.add(e.identifier.id.toLowerCase());
+                    }
+                },
+                tooltip: localize('exclude', "Select {0} Extension", e.displayName || e.identifier.id),
+                accessibilityInformation: {
+                    label: localize('exclude', "Select {0} Extension", e.displayName || e.identifier.id),
+                }
+            } : undefined,
+            themeIcon: Codicon.extensions,
+            command: {
+                id: 'extension.open',
+                title: '',
+                arguments: [e.identifier.id, undefined, true]
+            }
+        }));
+    }
+    async hasContent() {
+        const extensions = await this.getExtensions();
+        return extensions.length > 0;
+    }
+}
+let ExtensionsResourceExportTreeItem = class ExtensionsResourceExportTreeItem extends ExtensionsResourceTreeItem {
+    constructor(profile, instantiationService) {
+        super();
+        this.profile = profile;
+        this.instantiationService = instantiationService;
+    }
+    isFromDefaultProfile() {
+        return !this.profile.isDefault && !!this.profile.useDefaultFlags?.extensions;
+    }
+    getExtensions() {
+        return this.instantiationService.createInstance(ExtensionsResource).getLocalExtensions(this.profile);
+    }
+    async getContent() {
+        return this.instantiationService.createInstance(ExtensionsResource).getContent(this.profile, [...this.excludedExtensions.values()]);
+    }
+};
+ExtensionsResourceExportTreeItem = __decorate([
+    __param(1, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object])
+], ExtensionsResourceExportTreeItem);
+export { ExtensionsResourceExportTreeItem };
+let ExtensionsResourceImportTreeItem = class ExtensionsResourceImportTreeItem extends ExtensionsResourceTreeItem {
+    constructor(content, instantiationService) {
+        super();
+        this.content = content;
+        this.instantiationService = instantiationService;
+    }
+    isFromDefaultProfile() {
+        return false;
+    }
+    getExtensions() {
+        return this.instantiationService.createInstance(ExtensionsResource).getProfileExtensions(this.content);
+    }
+    async getContent() {
+        const extensionsResource = this.instantiationService.createInstance(ExtensionsResource);
+        const extensions = await extensionsResource.getProfileExtensions(this.content);
+        return extensionsResource.toContent(extensions, [...this.excludedExtensions.values()]);
+    }
+};
+ExtensionsResourceImportTreeItem = __decorate([
+    __param(1, IInstantiationService),
+    __metadata("design:paramtypes", [String, Object])
+], ExtensionsResourceImportTreeItem);
+export { ExtensionsResourceImportTreeItem };

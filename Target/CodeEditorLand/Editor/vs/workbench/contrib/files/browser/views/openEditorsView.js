@@ -1,1 +1,800 @@
-var ie=Object.defineProperty;var re=Object.getOwnPropertyDescriptor;var G=(c,i,e,t)=>{for(var o=t>1?void 0:t?re(i,e):i,n=c.length-1,r;n>=0;n--)(r=c[n])&&(o=(t?r(i,e,o):r(o))||o);return t&&o&&ie(i,e,o),o},l=(c,i)=>(e,t)=>i(e,t,c);import"./media/openeditors.css";import*as v from"../../../../../nls.js";import{RunOnceScheduler as oe}from"../../../../../base/common/async.js";import{ActionRunner as ne}from"../../../../../base/common/actions.js";import*as m from"../../../../../base/browser/dom.js";import{IContextMenuService as se}from"../../../../../platform/contextview/browser/contextView.js";import{IInstantiationService as V}from"../../../../../platform/instantiation/common/instantiation.js";import{IEditorGroupsService as P,GroupsOrder as de,GroupOrientation as R}from"../../../../services/editor/common/editorGroupsService.js";import{IConfigurationService as ae}from"../../../../../platform/configuration/common/configuration.js";import{IKeybindingService as ce}from"../../../../../platform/keybinding/common/keybinding.js";import{Verbosity as N,EditorResourceAccessor as H,SideBySideEditor as le,GroupModelChangeKind as h,preventEditorClose as ue,EditorCloseMethod as pe}from"../../../../common/editor.js";import"../../../../common/editor/editorInput.js";import{SaveAllInGroupAction as w,CloseGroupAction as M}from"../fileActions.js";import{OpenEditorsFocusedContext as he,ExplorerFocusedContext as fe,OpenEditor as a}from"../../common/files.js";import{CloseAllEditorsAction as K,CloseEditorAction as _,UnpinEditorAction as k}from"../../../../browser/parts/editor/editorActions.js";import{IContextKeyService as ve,ContextKeyExpr as I}from"../../../../../platform/contextkey/common/contextkey.js";import{IThemeService as me}from"../../../../../platform/theme/common/themeService.js";import{asCssVariable as B,badgeBackground as ge,badgeForeground as Ee,contrastBorder as Ie}from"../../../../../platform/theme/common/colorRegistry.js";import{WorkbenchList as Se}from"../../../../../platform/list/browser/listService.js";import{ListDragOverEffectPosition as F,ListDragOverEffectType as z}from"../../../../../base/browser/ui/list/list.js";import{ResourceLabels as ye}from"../../../../browser/labels.js";import{ActionBar as U}from"../../../../../base/browser/ui/actionbar/actionbar.js";import{ITelemetryService as be}from"../../../../../platform/telemetry/common/telemetry.js";import{DisposableMap as De,dispose as Oe}from"../../../../../base/common/lifecycle.js";import{MenuId as g,Action2 as b,registerAction2 as D,MenuRegistry as Ce}from"../../../../../platform/actions/common/actions.js";import{OpenEditorsDirtyEditorContext as Te,OpenEditorsGroupContext as Le,OpenEditorsReadonlyEditorContext as Ae,SAVE_ALL_LABEL as xe,SAVE_ALL_COMMAND_ID as Ge,NEW_UNTITLED_FILE_COMMAND_ID as Re,OpenEditorsSelectedFileOrUntitledContext as we}from"../fileConstants.js";import{ResourceContextKey as Me,MultipleEditorGroupsContext as _e}from"../../../../common/contextkeys.js";import{CodeDataTransfers as ke,containsDragType as Be}from"../../../../../platform/dnd/browser/dnd.js";import{ResourcesDropHandler as Fe,fillEditorsDragData as Ve}from"../../../../browser/dnd.js";import{ViewPane as Pe}from"../../../../browser/parts/views/viewPane.js";import"../../../../browser/parts/views/viewsViewlet.js";import{DataTransfers as Ne}from"../../../../../base/browser/dnd.js";import{memoize as He}from"../../../../../base/common/decorators.js";import{ElementsDragAndDropData as W,ListViewTargetSector as f,NativeDragAndDropData as Ke}from"../../../../../base/browser/ui/list/listView.js";import{IWorkingCopyService as ze}from"../../../../services/workingCopy/common/workingCopyService.js";import{WorkingCopyCapabilities as Ue}from"../../../../services/workingCopy/common/workingCopy.js";import{IFilesConfigurationService as We}from"../../../../services/filesConfiguration/common/filesConfigurationService.js";import{IViewDescriptorService as qe}from"../../../../common/views.js";import{IOpenerService as $e}from"../../../../../platform/opener/common/opener.js";import{Orientation as q}from"../../../../../base/browser/ui/splitview/splitview.js";import"../../../../../base/browser/ui/list/listWidget.js";import{compareFileNamesDefault as $}from"../../../../../base/common/comparers.js";import{Codicon as O}from"../../../../../base/common/codicons.js";import{KeyCode as Y,KeyMod as C}from"../../../../../base/common/keyCodes.js";import{KeybindingWeight as Ye}from"../../../../../platform/keybinding/common/keybindingsRegistry.js";import{ICommandService as j}from"../../../../../platform/commands/common/commands.js";import{Schemas as S}from"../../../../../base/common/network.js";import{extUriIgnorePathCase as X}from"../../../../../base/common/resources.js";import"../../../../../platform/action/common/action.js";import{mainWindow as je}from"../../../../../base/browser/window.js";import{EditorGroupView as Z}from"../../../../browser/parts/editor/editorGroupView.js";import{IHoverService as Xe}from"../../../../../platform/hover/browser/hover.js";import{IFileService as Ze}from"../../../../../platform/files/common/files.js";const T=m.$;let u=class extends Pe{constructor(e,t,o,n,r,s,d,p,E,Q,ee,tt,it,te,rt){super(e,d,n,s,p,o,t,te,E,Q,ee);this.editorGroupService=r;this.workingCopyService=tt;this.filesConfigurationService=it;this.fileService=rt;this.structuralRefreshDelay=0,this.sortOrder=s.getValue("explorer.openEditors.sortOrder"),this.registerUpdateEvents(),this._register(this.configurationService.onDidChangeConfiguration(x=>this.onConfigurationChange(x))),this._register(this.workingCopyService.onDidChangeDirty(x=>this.updateDirtyIndicator(x)))}static DEFAULT_VISIBLE_OPEN_EDITORS=9;static DEFAULT_MIN_VISIBLE_OPEN_EDITORS=0;static ID="workbench.explorer.openEditorsView";static NAME=v.localize2({key:"openEditors",comment:["Open is an adjective"]},"Open Editors");dirtyCountElement;listRefreshScheduler;structuralRefreshDelay;dnd;list;listLabels;needsRefresh=!1;elements=[];sortOrder;blockFocusActiveEditorTracking=!1;registerUpdateEvents(){const e=()=>{if(!this.isBodyVisible()||!this.list){this.needsRefresh=!0;return}this.listRefreshScheduler?.schedule(this.structuralRefreshDelay)},t=this._register(new De),o=n=>{const r=n.onDidModelChange(s=>{if(this.listRefreshScheduler?.isScheduled())return;if(!this.isBodyVisible()||!this.list){this.needsRefresh=!0;return}const d=this.getIndex(n,s.editor);switch(s.kind){case h.EDITOR_ACTIVE:this.focusActiveEditor();break;case h.GROUP_INDEX:case h.GROUP_LABEL:d>=0&&this.list.splice(d,1,[n]);break;case h.EDITOR_DIRTY:case h.EDITOR_STICKY:case h.EDITOR_CAPABILITIES:case h.EDITOR_PIN:case h.EDITOR_LABEL:this.list.splice(d,1,[new a(s.editor,n)]),this.focusActiveEditor();break;case h.EDITOR_OPEN:case h.EDITOR_MOVE:case h.EDITOR_CLOSE:e();break}});t.set(n.id,r)};this.editorGroupService.groups.forEach(n=>o(n)),this._register(this.editorGroupService.onDidAddGroup(n=>{o(n),e()})),this._register(this.editorGroupService.onDidMoveGroup(()=>e())),this._register(this.editorGroupService.onDidChangeActiveGroup(()=>this.focusActiveEditor())),this._register(this.editorGroupService.onDidRemoveGroup(n=>{t.deleteAndDispose(n.id),e()}))}renderHeaderTitle(e){super.renderHeaderTitle(e,this.title);const t=m.append(e,T(".open-editors-dirty-count-container"));this.dirtyCountElement=m.append(t,T(".dirty-count.monaco-count-badge.long")),this.dirtyCountElement.style.backgroundColor=B(ge),this.dirtyCountElement.style.color=B(Ee),this.dirtyCountElement.style.border=`1px solid ${B(Ie)}`,this.updateDirtyIndicator()}renderBody(e){super.renderBody(e),e.classList.add("open-editors"),e.classList.add("show-file-icons");const t=new y;this.list&&this.list.dispose(),this.listLabels&&this.listLabels.clear(),this.dnd=new J(this.sortOrder,this.instantiationService,this.editorGroupService),this.listLabels=this.instantiationService.createInstance(ye,{onDidChangeVisibility:this.onDidChangeBodyVisibility}),this.list=this.instantiationService.createInstance(Se,"OpenEditors",e,t,[new L(this.keybindingService,this.instantiationService),new A(this.listLabels,this.instantiationService,this.keybindingService,this.configurationService)],{identityProvider:{getId:r=>r instanceof a?r.getId():r.id.toString()},dnd:this.dnd,overrideStyles:this.getLocationBasedColors().listOverrideStyles,accessibilityProvider:new Qe}),this._register(this.list),this._register(this.listLabels);let o=[];this.listRefreshScheduler=this._register(new oe(()=>{if(!this.list)return;o=Oe(o);const r=this.list.length,s=this.getElements();this.list.splice(0,this.list.length,s),this.focusActiveEditor(),r!==this.list.length&&this.updateSize(),this.needsRefresh=!1,(this.sortOrder==="alphabetical"||this.sortOrder==="fullPath")&&s.forEach(d=>{d instanceof a&&o.push(d.editor.onDidChangeLabel(()=>this.listRefreshScheduler?.schedule()))})},this.structuralRefreshDelay)),this.updateSize(),this.handleContextKeys(),this._register(this.list.onContextMenu(r=>this.onListContextMenu(r))),this._register(this.list.onMouseMiddleClick(r=>{if(r&&r.element instanceof a){if(ue(r.element.group,r.element.editor,pe.MOUSE,this.editorGroupService.partOptions))return;r.element.group.closeEditor(r.element.editor,{preserveFocus:!0})}})),this._register(this.list.onDidOpen(r=>{const s=r.element;if(s)if(s instanceof a){if(m.isMouseEvent(r.browserEvent)&&r.browserEvent.button===1)return;this.withActiveEditorFocusTrackingDisabled(()=>{this.openEditor(s,{preserveFocus:r.editorOptions.preserveFocus,pinned:r.editorOptions.pinned,sideBySide:r.sideBySide})})}else this.withActiveEditorFocusTrackingDisabled(()=>{this.editorGroupService.activateGroup(s),r.editorOptions.preserveFocus||s.focus()});else return})),this.listRefreshScheduler.schedule(0),this._register(this.onDidChangeBodyVisibility(r=>{r&&this.needsRefresh&&this.listRefreshScheduler?.schedule(0)}));const n=this.viewDescriptorService.getViewContainerModel(this.viewDescriptorService.getViewContainerByViewId(this.id));this._register(n.onDidChangeAllViewDescriptors(()=>{this.updateSize()}))}handleContextKeys(){if(!this.list)return;he.bindTo(this.list.contextKeyService),fe.bindTo(this.list.contextKeyService);const e=Le.bindTo(this.contextKeyService),t=Te.bindTo(this.contextKeyService),o=Ae.bindTo(this.contextKeyService),n=we.bindTo(this.contextKeyService),r=this.instantiationService.createInstance(Me);this._register(r),this._register(this.list.onDidChangeFocus(s=>{r.reset(),e.reset(),t.reset(),o.reset();const d=s.elements.length?s.elements[0]:void 0;if(d instanceof a){const p=d.getResource();t.set(d.editor.isDirty()&&!d.editor.isSaving()),o.set(!!d.editor.isReadonly()),r.set(p??null)}else d&&e.set(!0)})),this._register(this.list.onDidChangeSelection(s=>{const d=s.elements.every(p=>{if(p instanceof a){const E=p.getResource();return E&&(E.scheme===S.untitled||this.fileService.hasProvider(E))}return!1});n.set(d)}))}focus(){super.focus(),this.list?.domFocus()}layoutBody(e,t){super.layoutBody(e,t),this.list?.layout(e,t)}get showGroups(){return this.editorGroupService.groups.length>1}getElements(){return this.elements=[],this.editorGroupService.getGroups(de.GRID_APPEARANCE).forEach(e=>{this.showGroups&&this.elements.push(e);let t=e.editors.map(o=>new a(o,e));this.sortOrder==="alphabetical"?t=t.sort((o,n)=>$(o.editor.getName(),n.editor.getName())):this.sortOrder==="fullPath"&&(t=t.sort((o,n)=>{const r=o.editor.resource,s=n.editor.resource;if(r===void 0&&s===void 0)return $(o.editor.getName(),n.editor.getName());if(r===void 0)return-1;if(s===void 0)return 1;{const d=r.scheme,p=s.scheme;return d!==S.file&&p!==S.file?X.compare(r,s):d!==S.file?-1:p!==S.file?1:X.compare(r,s)}})),this.elements.push(...t)}),this.elements}getIndex(e,t){return t?this.elements.findIndex(o=>o instanceof a&&o.editor===t&&o.group.id===e.id):this.elements.findIndex(o=>!(o instanceof a)&&o.id===e.id)}openEditor(e,t){e&&(this.telemetryService.publicLog2("workbenchActionExecuted",{id:"workbench.files.openFile",from:"openEditors"}),t.sideBySide&&t.preserveFocus||this.editorGroupService.activateGroup(e.group),(t.sideBySide?this.editorGroupService.sideGroup:e.group).openEditor(e.editor,t))}onListContextMenu(e){if(!e.element)return;const t=e.element;this.contextMenuService.showContextMenu({menuId:g.OpenEditorsContext,menuActionOptions:{shouldForwardArgs:!0,arg:t instanceof a?H.getOriginalUri(t.editor):{}},contextKeyService:this.list?.contextKeyService,getAnchor:()=>e.anchor,getActionsContext:()=>t instanceof a?{groupId:t.groupId,editorIndex:t.group.getIndexOfEditor(t.editor)}:{groupId:t.id}})}withActiveEditorFocusTrackingDisabled(e){this.blockFocusActiveEditorTracking=!0;try{e()}finally{this.blockFocusActiveEditorTracking=!1}}focusActiveEditor(){if(!(!this.list||this.blockFocusActiveEditorTracking)){if(this.list.length&&this.editorGroupService.activeGroup){const e=this.getIndex(this.editorGroupService.activeGroup,this.editorGroupService.activeGroup.activeEditor);if(e>=0){try{this.list.setFocus([e]),this.list.setSelection([e]),this.list.reveal(e)}catch{}return}}this.list.setFocus([]),this.list.setSelection([])}}onConfigurationChange(e){e.affectsConfiguration("explorer.openEditors")&&this.updateSize(),(e.affectsConfiguration("explorer.decorations")||e.affectsConfiguration("explorer.openEditors.sortOrder"))&&(this.sortOrder=this.configurationService.getValue("explorer.openEditors.sortOrder"),this.dnd&&(this.dnd.sortOrder=this.sortOrder),this.listRefreshScheduler?.schedule())}updateSize(){this.minimumBodySize=this.orientation===q.VERTICAL?this.getMinExpandedBodySize():170,this.maximumBodySize=this.orientation===q.VERTICAL?this.getMaxExpandedBodySize():Number.POSITIVE_INFINITY}updateDirtyIndicator(e){if(e&&e.isDirty()&&!(e.capabilities&Ue.Untitled)&&this.filesConfigurationService.hasShortAutoSaveDelay(e.resource))return;const t=this.workingCopyService.dirtyCount;t===0?this.dirtyCountElement.classList.add("hidden"):(this.dirtyCountElement.textContent=v.localize("dirtyCounter","{0} unsaved",t),this.dirtyCountElement.classList.remove("hidden"))}get elementCount(){return this.editorGroupService.groups.map(e=>e.count).reduce((e,t)=>e+t,this.showGroups?this.editorGroupService.groups.length:0)}getMaxExpandedBodySize(){let e=this.configurationService.getValue("explorer.openEditors.minVisible");return typeof e!="number"&&(e=u.DEFAULT_MIN_VISIBLE_OPEN_EDITORS),this.viewDescriptorService.getViewContainerModel(this.viewDescriptorService.getViewContainerByViewId(this.id)).visibleViewDescriptors.length<=1?Number.POSITIVE_INFINITY:Math.max(this.elementCount,e)*y.ITEM_HEIGHT}getMinExpandedBodySize(){let e=this.configurationService.getValue("explorer.openEditors.visible");return typeof e!="number"&&(e=u.DEFAULT_VISIBLE_OPEN_EDITORS),this.computeMinExpandedBodySize(e)}computeMinExpandedBodySize(e=u.DEFAULT_VISIBLE_OPEN_EDITORS){return Math.min(Math.max(e,1),this.elementCount)*y.ITEM_HEIGHT}setStructuralRefreshDelay(e){this.structuralRefreshDelay=e}getOptimalWidth(){if(!this.list)return super.getOptimalWidth();const e=this.list.getHTMLElement(),t=[].slice.call(e.querySelectorAll(".open-editor > a"));return m.getLargestChildWidth(e,t)}};u=G([l(1,V),l(2,qe),l(3,se),l(4,P),l(5,ae),l(6,ce),l(7,ve),l(8,me),l(9,be),l(10,Xe),l(11,ze),l(12,We),l(13,$e),l(14,Ze)],u);class Je extends ne{editor;async run(i){if(this.editor)return super.run(i,{groupId:this.editor.groupId,editorIndex:this.editor.group.getIndexOfEditor(this.editor.editor)})}}class y{static ITEM_HEIGHT=22;getHeight(i){return y.ITEM_HEIGHT}getTemplateId(i){return i instanceof a?A.ID:L.ID}}class L{constructor(i,e){this.keybindingService=i;this.instantiationService=e}static ID="editorgroup";get templateId(){return L.ID}renderTemplate(i){const e=Object.create(null);e.root=m.append(i,T(".editor-group")),e.name=m.append(e.root,T("span.name")),e.actionBar=new U(i);const t=this.instantiationService.createInstance(w,w.ID,w.LABEL),o=this.keybindingService.lookupKeybinding(t.id);e.actionBar.push(t,{icon:!0,label:!1,keybinding:o?o.getLabel():void 0});const n=this.instantiationService.createInstance(M,M.ID,M.LABEL),r=this.keybindingService.lookupKeybinding(n.id);return e.actionBar.push(n,{icon:!0,label:!1,keybinding:r?r.getLabel():void 0}),e}renderElement(i,e,t){t.editorGroup=i,t.name.textContent=i.label,t.actionBar.context={groupId:i.id}}disposeTemplate(i){i.actionBar.dispose()}}class A{constructor(i,e,t,o){this.labels=i;this.instantiationService=e;this.keybindingService=t;this.configurationService=o}static ID="openeditor";closeEditorAction=this.instantiationService.createInstance(_,_.ID,_.LABEL);unpinEditorAction=this.instantiationService.createInstance(k,k.ID,k.LABEL);get templateId(){return A.ID}renderTemplate(i){const e=Object.create(null);return e.container=i,e.actionRunner=new Je,e.actionBar=new U(i,{actionRunner:e.actionRunner}),e.root=this.labels.create(i),e}renderElement(i,e,t){const o=i.editor;t.actionRunner.editor=i,t.container.classList.toggle("dirty",o.isDirty()&&!o.isSaving()),t.container.classList.toggle("sticky",i.isSticky()),t.root.setResource({resource:H.getOriginalUri(o,{supportSideBySide:le.BOTH}),name:o.getName(),description:o.getDescription(N.MEDIUM)},{italic:i.isPreview(),extraClasses:["open-editor"].concat(i.editor.getLabelExtraClasses()),fileDecorations:this.configurationService.getValue().explorer.decorations,title:o.getTitle(N.LONG),icon:o.getIcon()});const n=i.isSticky()?this.unpinEditorAction:this.closeEditorAction;t.actionBar.hasAction(n)||(t.actionBar.isEmpty()||t.actionBar.clear(),t.actionBar.push(n,{icon:!0,label:!1,keybinding:this.keybindingService.lookupKeybinding(n.id)?.getLabel()}))}disposeTemplate(i){i.actionBar.dispose(),i.root.dispose(),i.actionRunner.dispose()}}class J{constructor(i,e,t){this.instantiationService=e;this.editorGroupService=t;this._sortOrder=i}_sortOrder;set sortOrder(i){this._sortOrder=i}get dropHandler(){return this.instantiationService.createInstance(Fe,{allowWorkspaceOpen:!1})}getDragURI(i){if(i instanceof a){const e=i.getResource();if(e)return e.toString()}return null}getDragLabel(i){if(i.length>1)return String(i.length);const e=i[0];return e instanceof a?e.editor.getName():e.label}onDragStart(i,e){const t=i.elements,o=[];if(t)for(const n of t)n instanceof a&&o.push(n);o.length&&this.instantiationService.invokeFunction(Ve,o,e)}onDragOver(i,e,t,o,n){if(i instanceof Ke&&!Be(n,Ne.FILES,ke.FILES))return!1;if(this._sortOrder!=="editorOrder")return i instanceof W?!1:{accept:!0,effect:{type:z.Move},feedback:[-1]};let r;switch(o){case f.TOP:case f.CENTER_TOP:r=t===0&&e instanceof Z?F.After:F.Before;break;case f.CENTER_BOTTOM:case f.BOTTOM:r=F.After;break}return{accept:!0,effect:{type:z.Move,position:r},feedback:[t]}}drop(i,e,t,o,n){let r=e instanceof a?e.group:e||this.editorGroupService.groups[this.editorGroupService.count-1],s=e instanceof a?e.group.getIndexOfEditor(e.editor):0;switch(o){case f.TOP:case f.CENTER_TOP:e instanceof Z&&r.index!==0&&(r=this.editorGroupService.groups[r.index-1],s=r.count);break;case f.BOTTOM:case f.CENTER_BOTTOM:e instanceof a&&s++;break}if(i instanceof W){for(const d of i.elements){const p=d.group.getIndexOfEditor(d.editor);d.group===r&&p<s&&s--,d.group.moveEditor(d.editor,r,{index:s,preserveFocus:!0}),s++}this.editorGroupService.activateGroup(r)}else this.dropHandler.handleDrop(n,je,()=>r,()=>r.focus(),{index:s})}dispose(){}}G([He],J.prototype,"dropHandler",1);class Qe{getWidgetAriaLabel(){return v.localize("openEditors","Open Editors")}getAriaLabel(i){return i instanceof a?`${i.editor.getName()}, ${i.editor.getDescription()}`:i.ariaLabel}}const et="workbench.action.toggleEditorGroupLayout";D(class extends b{constructor(){super({id:"workbench.action.toggleEditorGroupLayout",title:v.localize2("flipLayout","Toggle Vertical/Horizontal Editor Layout"),f1:!0,keybinding:{primary:C.Shift|C.Alt|Y.Digit0,mac:{primary:C.CtrlCmd|C.Alt|Y.Digit0},weight:Ye.WorkbenchContrib},icon:O.editorLayout,menu:{id:g.ViewTitle,group:"navigation",when:I.and(I.equals("view",u.ID),_e),order:10}})}async run(c){const i=c.get(P),e=i.orientation===R.VERTICAL?R.HORIZONTAL:R.VERTICAL;i.setGroupOrientation(e),i.activeGroup.focus()}}),Ce.appendMenuItem(g.MenubarLayoutMenu,{group:"5_flip",command:{id:et,title:{...v.localize2("miToggleEditorLayoutWithoutMnemonic","Flip Layout"),mnemonicTitle:v.localize({key:"miToggleEditorLayout",comment:["&& denotes a mnemonic"]},"Flip &&Layout")}},order:1}),D(class extends b{constructor(){super({id:"workbench.action.files.saveAll",title:xe,f1:!0,icon:O.saveAll,menu:{id:g.ViewTitle,group:"navigation",when:I.equals("view",u.ID),order:20}})}async run(c){await c.get(j).executeCommand(Ge)}}),D(class extends b{constructor(){super({id:"openEditors.closeAll",title:K.LABEL,f1:!1,icon:O.closeAll,menu:{id:g.ViewTitle,group:"navigation",when:I.equals("view",u.ID),order:30}})}async run(c){const i=c.get(V),e=new K;await i.invokeFunction(t=>e.run(t))}}),D(class extends b{constructor(){super({id:"openEditors.newUntitledFile",title:v.localize2("newUntitledFile","New Untitled Text File"),f1:!1,icon:O.newFile,menu:{id:g.ViewTitle,group:"navigation",when:I.equals("view",u.ID),order:5}})}async run(c){await c.get(j).executeCommand(Re)}});export{u as OpenEditorsView};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var OpenEditorsView_1;
+import './media/openeditors.css';
+import * as nls from '../../../../../nls.js';
+import { RunOnceScheduler } from '../../../../../base/common/async.js';
+import { ActionRunner } from '../../../../../base/common/actions.js';
+import * as dom from '../../../../../base/browser/dom.js';
+import { IContextMenuService } from '../../../../../platform/contextview/browser/contextView.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { IEditorGroupsService } from '../../../../services/editor/common/editorGroupsService.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { IKeybindingService } from '../../../../../platform/keybinding/common/keybinding.js';
+import { EditorResourceAccessor, SideBySideEditor, preventEditorClose, EditorCloseMethod } from '../../../../common/editor.js';
+import { SaveAllInGroupAction, CloseGroupAction } from '../fileActions.js';
+import { OpenEditorsFocusedContext, ExplorerFocusedContext, OpenEditor } from '../../common/files.js';
+import { CloseAllEditorsAction, CloseEditorAction, UnpinEditorAction } from '../../../../browser/parts/editor/editorActions.js';
+import { IContextKeyService, ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
+import { IThemeService } from '../../../../../platform/theme/common/themeService.js';
+import { asCssVariable, badgeBackground, badgeForeground, contrastBorder } from '../../../../../platform/theme/common/colorRegistry.js';
+import { WorkbenchList } from '../../../../../platform/list/browser/listService.js';
+import { ResourceLabels } from '../../../../browser/labels.js';
+import { ActionBar } from '../../../../../base/browser/ui/actionbar/actionbar.js';
+import { ITelemetryService } from '../../../../../platform/telemetry/common/telemetry.js';
+import { DisposableMap, dispose } from '../../../../../base/common/lifecycle.js';
+import { MenuId, Action2, registerAction2, MenuRegistry } from '../../../../../platform/actions/common/actions.js';
+import { OpenEditorsDirtyEditorContext, OpenEditorsGroupContext, OpenEditorsReadonlyEditorContext, SAVE_ALL_LABEL, SAVE_ALL_COMMAND_ID, NEW_UNTITLED_FILE_COMMAND_ID, OpenEditorsSelectedFileOrUntitledContext } from '../fileConstants.js';
+import { ResourceContextKey, MultipleEditorGroupsContext } from '../../../../common/contextkeys.js';
+import { CodeDataTransfers, containsDragType } from '../../../../../platform/dnd/browser/dnd.js';
+import { ResourcesDropHandler, fillEditorsDragData } from '../../../../browser/dnd.js';
+import { ViewPane } from '../../../../browser/parts/views/viewPane.js';
+import { DataTransfers } from '../../../../../base/browser/dnd.js';
+import { memoize } from '../../../../../base/common/decorators.js';
+import { ElementsDragAndDropData, NativeDragAndDropData } from '../../../../../base/browser/ui/list/listView.js';
+import { IWorkingCopyService } from '../../../../services/workingCopy/common/workingCopyService.js';
+import { IFilesConfigurationService } from '../../../../services/filesConfiguration/common/filesConfigurationService.js';
+import { IViewDescriptorService } from '../../../../common/views.js';
+import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
+import { compareFileNamesDefault } from '../../../../../base/common/comparers.js';
+import { Codicon } from '../../../../../base/common/codicons.js';
+import { ICommandService } from '../../../../../platform/commands/common/commands.js';
+import { Schemas } from '../../../../../base/common/network.js';
+import { extUriIgnorePathCase } from '../../../../../base/common/resources.js';
+import { mainWindow } from '../../../../../base/browser/window.js';
+import { EditorGroupView } from '../../../../browser/parts/editor/editorGroupView.js';
+import { IHoverService } from '../../../../../platform/hover/browser/hover.js';
+import { IFileService } from '../../../../../platform/files/common/files.js';
+const $ = dom.$;
+let OpenEditorsView = class OpenEditorsView extends ViewPane {
+    static { OpenEditorsView_1 = this; }
+    static { this.DEFAULT_VISIBLE_OPEN_EDITORS = 9; }
+    static { this.DEFAULT_MIN_VISIBLE_OPEN_EDITORS = 0; }
+    static { this.ID = 'workbench.explorer.openEditorsView'; }
+    static { this.NAME = nls.localize2({ key: 'openEditors', comment: ['Open is an adjective'] }, "Open Editors"); }
+    constructor(options, instantiationService, viewDescriptorService, contextMenuService, editorGroupService, configurationService, keybindingService, contextKeyService, themeService, telemetryService, hoverService, workingCopyService, filesConfigurationService, openerService, fileService) {
+        super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService, hoverService);
+        this.editorGroupService = editorGroupService;
+        this.workingCopyService = workingCopyService;
+        this.filesConfigurationService = filesConfigurationService;
+        this.fileService = fileService;
+        this.needsRefresh = false;
+        this.elements = [];
+        this.blockFocusActiveEditorTracking = false;
+        this.structuralRefreshDelay = 0;
+        this.sortOrder = configurationService.getValue('explorer.openEditors.sortOrder');
+        this.registerUpdateEvents();
+        this._register(this.configurationService.onDidChangeConfiguration(e => this.onConfigurationChange(e)));
+        this._register(this.workingCopyService.onDidChangeDirty(workingCopy => this.updateDirtyIndicator(workingCopy)));
+    }
+    registerUpdateEvents() {
+        const updateWholeList = () => {
+            if (!this.isBodyVisible() || !this.list) {
+                this.needsRefresh = true;
+                return;
+            }
+            this.listRefreshScheduler?.schedule(this.structuralRefreshDelay);
+        };
+        const groupDisposables = this._register(new DisposableMap());
+        const addGroupListener = (group) => {
+            const groupModelChangeListener = group.onDidModelChange(e => {
+                if (this.listRefreshScheduler?.isScheduled()) {
+                    return;
+                }
+                if (!this.isBodyVisible() || !this.list) {
+                    this.needsRefresh = true;
+                    return;
+                }
+                const index = this.getIndex(group, e.editor);
+                switch (e.kind) {
+                    case 8:
+                        this.focusActiveEditor();
+                        break;
+                    case 1:
+                    case 2:
+                        if (index >= 0) {
+                            this.list.splice(index, 1, [group]);
+                        }
+                        break;
+                    case 14:
+                    case 13:
+                    case 10:
+                    case 11:
+                    case 9:
+                        this.list.splice(index, 1, [new OpenEditor(e.editor, group)]);
+                        this.focusActiveEditor();
+                        break;
+                    case 5:
+                    case 7:
+                    case 6:
+                        updateWholeList();
+                        break;
+                }
+            });
+            groupDisposables.set(group.id, groupModelChangeListener);
+        };
+        this.editorGroupService.groups.forEach(g => addGroupListener(g));
+        this._register(this.editorGroupService.onDidAddGroup(group => {
+            addGroupListener(group);
+            updateWholeList();
+        }));
+        this._register(this.editorGroupService.onDidMoveGroup(() => updateWholeList()));
+        this._register(this.editorGroupService.onDidChangeActiveGroup(() => this.focusActiveEditor()));
+        this._register(this.editorGroupService.onDidRemoveGroup(group => {
+            groupDisposables.deleteAndDispose(group.id);
+            updateWholeList();
+        }));
+    }
+    renderHeaderTitle(container) {
+        super.renderHeaderTitle(container, this.title);
+        const count = dom.append(container, $('.open-editors-dirty-count-container'));
+        this.dirtyCountElement = dom.append(count, $('.dirty-count.monaco-count-badge.long'));
+        this.dirtyCountElement.style.backgroundColor = asCssVariable(badgeBackground);
+        this.dirtyCountElement.style.color = asCssVariable(badgeForeground);
+        this.dirtyCountElement.style.border = `1px solid ${asCssVariable(contrastBorder)}`;
+        this.updateDirtyIndicator();
+    }
+    renderBody(container) {
+        super.renderBody(container);
+        container.classList.add('open-editors');
+        container.classList.add('show-file-icons');
+        const delegate = new OpenEditorsDelegate();
+        if (this.list) {
+            this.list.dispose();
+        }
+        if (this.listLabels) {
+            this.listLabels.clear();
+        }
+        this.dnd = new OpenEditorsDragAndDrop(this.sortOrder, this.instantiationService, this.editorGroupService);
+        this.listLabels = this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility });
+        this.list = this.instantiationService.createInstance(WorkbenchList, 'OpenEditors', container, delegate, [
+            new EditorGroupRenderer(this.keybindingService, this.instantiationService),
+            new OpenEditorRenderer(this.listLabels, this.instantiationService, this.keybindingService, this.configurationService)
+        ], {
+            identityProvider: { getId: (element) => element instanceof OpenEditor ? element.getId() : element.id.toString() },
+            dnd: this.dnd,
+            overrideStyles: this.getLocationBasedColors().listOverrideStyles,
+            accessibilityProvider: new OpenEditorsAccessibilityProvider()
+        });
+        this._register(this.list);
+        this._register(this.listLabels);
+        let labelChangeListeners = [];
+        this.listRefreshScheduler = this._register(new RunOnceScheduler(() => {
+            if (!this.list) {
+                return;
+            }
+            labelChangeListeners = dispose(labelChangeListeners);
+            const previousLength = this.list.length;
+            const elements = this.getElements();
+            this.list.splice(0, this.list.length, elements);
+            this.focusActiveEditor();
+            if (previousLength !== this.list.length) {
+                this.updateSize();
+            }
+            this.needsRefresh = false;
+            if (this.sortOrder === 'alphabetical' || this.sortOrder === 'fullPath') {
+                elements.forEach(e => {
+                    if (e instanceof OpenEditor) {
+                        labelChangeListeners.push(e.editor.onDidChangeLabel(() => this.listRefreshScheduler?.schedule()));
+                    }
+                });
+            }
+        }, this.structuralRefreshDelay));
+        this.updateSize();
+        this.handleContextKeys();
+        this._register(this.list.onContextMenu(e => this.onListContextMenu(e)));
+        this._register(this.list.onMouseMiddleClick(e => {
+            if (e && e.element instanceof OpenEditor) {
+                if (preventEditorClose(e.element.group, e.element.editor, EditorCloseMethod.MOUSE, this.editorGroupService.partOptions)) {
+                    return;
+                }
+                e.element.group.closeEditor(e.element.editor, { preserveFocus: true });
+            }
+        }));
+        this._register(this.list.onDidOpen(e => {
+            const element = e.element;
+            if (!element) {
+                return;
+            }
+            else if (element instanceof OpenEditor) {
+                if (dom.isMouseEvent(e.browserEvent) && e.browserEvent.button === 1) {
+                    return;
+                }
+                this.withActiveEditorFocusTrackingDisabled(() => {
+                    this.openEditor(element, { preserveFocus: e.editorOptions.preserveFocus, pinned: e.editorOptions.pinned, sideBySide: e.sideBySide });
+                });
+            }
+            else {
+                this.withActiveEditorFocusTrackingDisabled(() => {
+                    this.editorGroupService.activateGroup(element);
+                    if (!e.editorOptions.preserveFocus) {
+                        element.focus();
+                    }
+                });
+            }
+        }));
+        this.listRefreshScheduler.schedule(0);
+        this._register(this.onDidChangeBodyVisibility(visible => {
+            if (visible && this.needsRefresh) {
+                this.listRefreshScheduler?.schedule(0);
+            }
+        }));
+        const containerModel = this.viewDescriptorService.getViewContainerModel(this.viewDescriptorService.getViewContainerByViewId(this.id));
+        this._register(containerModel.onDidChangeAllViewDescriptors(() => {
+            this.updateSize();
+        }));
+    }
+    handleContextKeys() {
+        if (!this.list) {
+            return;
+        }
+        OpenEditorsFocusedContext.bindTo(this.list.contextKeyService);
+        ExplorerFocusedContext.bindTo(this.list.contextKeyService);
+        const groupFocusedContext = OpenEditorsGroupContext.bindTo(this.contextKeyService);
+        const dirtyEditorFocusedContext = OpenEditorsDirtyEditorContext.bindTo(this.contextKeyService);
+        const readonlyEditorFocusedContext = OpenEditorsReadonlyEditorContext.bindTo(this.contextKeyService);
+        const openEditorsSelectedFileOrUntitledContext = OpenEditorsSelectedFileOrUntitledContext.bindTo(this.contextKeyService);
+        const resourceContext = this.instantiationService.createInstance(ResourceContextKey);
+        this._register(resourceContext);
+        this._register(this.list.onDidChangeFocus(e => {
+            resourceContext.reset();
+            groupFocusedContext.reset();
+            dirtyEditorFocusedContext.reset();
+            readonlyEditorFocusedContext.reset();
+            const element = e.elements.length ? e.elements[0] : undefined;
+            if (element instanceof OpenEditor) {
+                const resource = element.getResource();
+                dirtyEditorFocusedContext.set(element.editor.isDirty() && !element.editor.isSaving());
+                readonlyEditorFocusedContext.set(!!element.editor.isReadonly());
+                resourceContext.set(resource ?? null);
+            }
+            else if (!!element) {
+                groupFocusedContext.set(true);
+            }
+        }));
+        this._register(this.list.onDidChangeSelection(e => {
+            const selectedAreFileOrUntitled = e.elements.every(e => {
+                if (e instanceof OpenEditor) {
+                    const resource = e.getResource();
+                    return resource && (resource.scheme === Schemas.untitled || this.fileService.hasProvider(resource));
+                }
+                return false;
+            });
+            openEditorsSelectedFileOrUntitledContext.set(selectedAreFileOrUntitled);
+        }));
+    }
+    focus() {
+        super.focus();
+        this.list?.domFocus();
+    }
+    layoutBody(height, width) {
+        super.layoutBody(height, width);
+        this.list?.layout(height, width);
+    }
+    get showGroups() {
+        return this.editorGroupService.groups.length > 1;
+    }
+    getElements() {
+        this.elements = [];
+        this.editorGroupService.getGroups(2).forEach(g => {
+            if (this.showGroups) {
+                this.elements.push(g);
+            }
+            let editors = g.editors.map(ei => new OpenEditor(ei, g));
+            if (this.sortOrder === 'alphabetical') {
+                editors = editors.sort((first, second) => compareFileNamesDefault(first.editor.getName(), second.editor.getName()));
+            }
+            else if (this.sortOrder === 'fullPath') {
+                editors = editors.sort((first, second) => {
+                    const firstResource = first.editor.resource;
+                    const secondResource = second.editor.resource;
+                    if (firstResource === undefined && secondResource === undefined) {
+                        return compareFileNamesDefault(first.editor.getName(), second.editor.getName());
+                    }
+                    else if (firstResource === undefined) {
+                        return -1;
+                    }
+                    else if (secondResource === undefined) {
+                        return 1;
+                    }
+                    else {
+                        const firstScheme = firstResource.scheme;
+                        const secondScheme = secondResource.scheme;
+                        if (firstScheme !== Schemas.file && secondScheme !== Schemas.file) {
+                            return extUriIgnorePathCase.compare(firstResource, secondResource);
+                        }
+                        else if (firstScheme !== Schemas.file) {
+                            return -1;
+                        }
+                        else if (secondScheme !== Schemas.file) {
+                            return 1;
+                        }
+                        else {
+                            return extUriIgnorePathCase.compare(firstResource, secondResource);
+                        }
+                    }
+                });
+            }
+            this.elements.push(...editors);
+        });
+        return this.elements;
+    }
+    getIndex(group, editor) {
+        if (!editor) {
+            return this.elements.findIndex(e => !(e instanceof OpenEditor) && e.id === group.id);
+        }
+        return this.elements.findIndex(e => e instanceof OpenEditor && e.editor === editor && e.group.id === group.id);
+    }
+    openEditor(element, options) {
+        if (element) {
+            this.telemetryService.publicLog2('workbenchActionExecuted', { id: 'workbench.files.openFile', from: 'openEditors' });
+            const preserveActivateGroup = options.sideBySide && options.preserveFocus;
+            if (!preserveActivateGroup) {
+                this.editorGroupService.activateGroup(element.group);
+            }
+            const targetGroup = options.sideBySide ? this.editorGroupService.sideGroup : element.group;
+            targetGroup.openEditor(element.editor, options);
+        }
+    }
+    onListContextMenu(e) {
+        if (!e.element) {
+            return;
+        }
+        const element = e.element;
+        this.contextMenuService.showContextMenu({
+            menuId: MenuId.OpenEditorsContext,
+            menuActionOptions: { shouldForwardArgs: true, arg: element instanceof OpenEditor ? EditorResourceAccessor.getOriginalUri(element.editor) : {} },
+            contextKeyService: this.list?.contextKeyService,
+            getAnchor: () => e.anchor,
+            getActionsContext: () => element instanceof OpenEditor ? { groupId: element.groupId, editorIndex: element.group.getIndexOfEditor(element.editor) } : { groupId: element.id }
+        });
+    }
+    withActiveEditorFocusTrackingDisabled(fn) {
+        this.blockFocusActiveEditorTracking = true;
+        try {
+            fn();
+        }
+        finally {
+            this.blockFocusActiveEditorTracking = false;
+        }
+    }
+    focusActiveEditor() {
+        if (!this.list || this.blockFocusActiveEditorTracking) {
+            return;
+        }
+        if (this.list.length && this.editorGroupService.activeGroup) {
+            const index = this.getIndex(this.editorGroupService.activeGroup, this.editorGroupService.activeGroup.activeEditor);
+            if (index >= 0) {
+                try {
+                    this.list.setFocus([index]);
+                    this.list.setSelection([index]);
+                    this.list.reveal(index);
+                }
+                catch (e) {
+                }
+                return;
+            }
+        }
+        this.list.setFocus([]);
+        this.list.setSelection([]);
+    }
+    onConfigurationChange(event) {
+        if (event.affectsConfiguration('explorer.openEditors')) {
+            this.updateSize();
+        }
+        if (event.affectsConfiguration('explorer.decorations') || event.affectsConfiguration('explorer.openEditors.sortOrder')) {
+            this.sortOrder = this.configurationService.getValue('explorer.openEditors.sortOrder');
+            if (this.dnd) {
+                this.dnd.sortOrder = this.sortOrder;
+            }
+            this.listRefreshScheduler?.schedule();
+        }
+    }
+    updateSize() {
+        this.minimumBodySize = this.orientation === 0 ? this.getMinExpandedBodySize() : 170;
+        this.maximumBodySize = this.orientation === 0 ? this.getMaxExpandedBodySize() : Number.POSITIVE_INFINITY;
+    }
+    updateDirtyIndicator(workingCopy) {
+        if (workingCopy) {
+            const gotDirty = workingCopy.isDirty();
+            if (gotDirty && !(workingCopy.capabilities & 2) && this.filesConfigurationService.hasShortAutoSaveDelay(workingCopy.resource)) {
+                return;
+            }
+        }
+        const dirty = this.workingCopyService.dirtyCount;
+        if (dirty === 0) {
+            this.dirtyCountElement.classList.add('hidden');
+        }
+        else {
+            this.dirtyCountElement.textContent = nls.localize('dirtyCounter', "{0} unsaved", dirty);
+            this.dirtyCountElement.classList.remove('hidden');
+        }
+    }
+    get elementCount() {
+        return this.editorGroupService.groups.map(g => g.count)
+            .reduce((first, second) => first + second, this.showGroups ? this.editorGroupService.groups.length : 0);
+    }
+    getMaxExpandedBodySize() {
+        let minVisibleOpenEditors = this.configurationService.getValue('explorer.openEditors.minVisible');
+        if (typeof minVisibleOpenEditors !== 'number') {
+            minVisibleOpenEditors = OpenEditorsView_1.DEFAULT_MIN_VISIBLE_OPEN_EDITORS;
+        }
+        const containerModel = this.viewDescriptorService.getViewContainerModel(this.viewDescriptorService.getViewContainerByViewId(this.id));
+        if (containerModel.visibleViewDescriptors.length <= 1) {
+            return Number.POSITIVE_INFINITY;
+        }
+        return (Math.max(this.elementCount, minVisibleOpenEditors)) * OpenEditorsDelegate.ITEM_HEIGHT;
+    }
+    getMinExpandedBodySize() {
+        let visibleOpenEditors = this.configurationService.getValue('explorer.openEditors.visible');
+        if (typeof visibleOpenEditors !== 'number') {
+            visibleOpenEditors = OpenEditorsView_1.DEFAULT_VISIBLE_OPEN_EDITORS;
+        }
+        return this.computeMinExpandedBodySize(visibleOpenEditors);
+    }
+    computeMinExpandedBodySize(visibleOpenEditors = OpenEditorsView_1.DEFAULT_VISIBLE_OPEN_EDITORS) {
+        const itemsToShow = Math.min(Math.max(visibleOpenEditors, 1), this.elementCount);
+        return itemsToShow * OpenEditorsDelegate.ITEM_HEIGHT;
+    }
+    setStructuralRefreshDelay(delay) {
+        this.structuralRefreshDelay = delay;
+    }
+    getOptimalWidth() {
+        if (!this.list) {
+            return super.getOptimalWidth();
+        }
+        const parentNode = this.list.getHTMLElement();
+        const childNodes = [].slice.call(parentNode.querySelectorAll('.open-editor > a'));
+        return dom.getLargestChildWidth(parentNode, childNodes);
+    }
+};
+OpenEditorsView = OpenEditorsView_1 = __decorate([
+    __param(1, IInstantiationService),
+    __param(2, IViewDescriptorService),
+    __param(3, IContextMenuService),
+    __param(4, IEditorGroupsService),
+    __param(5, IConfigurationService),
+    __param(6, IKeybindingService),
+    __param(7, IContextKeyService),
+    __param(8, IThemeService),
+    __param(9, ITelemetryService),
+    __param(10, IHoverService),
+    __param(11, IWorkingCopyService),
+    __param(12, IFilesConfigurationService),
+    __param(13, IOpenerService),
+    __param(14, IFileService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], OpenEditorsView);
+export { OpenEditorsView };
+class OpenEditorActionRunner extends ActionRunner {
+    async run(action) {
+        if (!this.editor) {
+            return;
+        }
+        return super.run(action, { groupId: this.editor.groupId, editorIndex: this.editor.group.getIndexOfEditor(this.editor.editor) });
+    }
+}
+class OpenEditorsDelegate {
+    static { this.ITEM_HEIGHT = 22; }
+    getHeight(_element) {
+        return OpenEditorsDelegate.ITEM_HEIGHT;
+    }
+    getTemplateId(element) {
+        if (element instanceof OpenEditor) {
+            return OpenEditorRenderer.ID;
+        }
+        return EditorGroupRenderer.ID;
+    }
+}
+class EditorGroupRenderer {
+    static { this.ID = 'editorgroup'; }
+    constructor(keybindingService, instantiationService) {
+        this.keybindingService = keybindingService;
+        this.instantiationService = instantiationService;
+    }
+    get templateId() {
+        return EditorGroupRenderer.ID;
+    }
+    renderTemplate(container) {
+        const editorGroupTemplate = Object.create(null);
+        editorGroupTemplate.root = dom.append(container, $('.editor-group'));
+        editorGroupTemplate.name = dom.append(editorGroupTemplate.root, $('span.name'));
+        editorGroupTemplate.actionBar = new ActionBar(container);
+        const saveAllInGroupAction = this.instantiationService.createInstance(SaveAllInGroupAction, SaveAllInGroupAction.ID, SaveAllInGroupAction.LABEL);
+        const saveAllInGroupKey = this.keybindingService.lookupKeybinding(saveAllInGroupAction.id);
+        editorGroupTemplate.actionBar.push(saveAllInGroupAction, { icon: true, label: false, keybinding: saveAllInGroupKey ? saveAllInGroupKey.getLabel() : undefined });
+        const closeGroupAction = this.instantiationService.createInstance(CloseGroupAction, CloseGroupAction.ID, CloseGroupAction.LABEL);
+        const closeGroupActionKey = this.keybindingService.lookupKeybinding(closeGroupAction.id);
+        editorGroupTemplate.actionBar.push(closeGroupAction, { icon: true, label: false, keybinding: closeGroupActionKey ? closeGroupActionKey.getLabel() : undefined });
+        return editorGroupTemplate;
+    }
+    renderElement(editorGroup, _index, templateData) {
+        templateData.editorGroup = editorGroup;
+        templateData.name.textContent = editorGroup.label;
+        templateData.actionBar.context = { groupId: editorGroup.id };
+    }
+    disposeTemplate(templateData) {
+        templateData.actionBar.dispose();
+    }
+}
+class OpenEditorRenderer {
+    static { this.ID = 'openeditor'; }
+    constructor(labels, instantiationService, keybindingService, configurationService) {
+        this.labels = labels;
+        this.instantiationService = instantiationService;
+        this.keybindingService = keybindingService;
+        this.configurationService = configurationService;
+        this.closeEditorAction = this.instantiationService.createInstance(CloseEditorAction, CloseEditorAction.ID, CloseEditorAction.LABEL);
+        this.unpinEditorAction = this.instantiationService.createInstance(UnpinEditorAction, UnpinEditorAction.ID, UnpinEditorAction.LABEL);
+    }
+    get templateId() {
+        return OpenEditorRenderer.ID;
+    }
+    renderTemplate(container) {
+        const editorTemplate = Object.create(null);
+        editorTemplate.container = container;
+        editorTemplate.actionRunner = new OpenEditorActionRunner();
+        editorTemplate.actionBar = new ActionBar(container, { actionRunner: editorTemplate.actionRunner });
+        editorTemplate.root = this.labels.create(container);
+        return editorTemplate;
+    }
+    renderElement(openedEditor, _index, templateData) {
+        const editor = openedEditor.editor;
+        templateData.actionRunner.editor = openedEditor;
+        templateData.container.classList.toggle('dirty', editor.isDirty() && !editor.isSaving());
+        templateData.container.classList.toggle('sticky', openedEditor.isSticky());
+        templateData.root.setResource({
+            resource: EditorResourceAccessor.getOriginalUri(editor, { supportSideBySide: SideBySideEditor.BOTH }),
+            name: editor.getName(),
+            description: editor.getDescription(1)
+        }, {
+            italic: openedEditor.isPreview(),
+            extraClasses: ['open-editor'].concat(openedEditor.editor.getLabelExtraClasses()),
+            fileDecorations: this.configurationService.getValue().explorer.decorations,
+            title: editor.getTitle(2),
+            icon: editor.getIcon()
+        });
+        const editorAction = openedEditor.isSticky() ? this.unpinEditorAction : this.closeEditorAction;
+        if (!templateData.actionBar.hasAction(editorAction)) {
+            if (!templateData.actionBar.isEmpty()) {
+                templateData.actionBar.clear();
+            }
+            templateData.actionBar.push(editorAction, { icon: true, label: false, keybinding: this.keybindingService.lookupKeybinding(editorAction.id)?.getLabel() });
+        }
+    }
+    disposeTemplate(templateData) {
+        templateData.actionBar.dispose();
+        templateData.root.dispose();
+        templateData.actionRunner.dispose();
+    }
+}
+class OpenEditorsDragAndDrop {
+    set sortOrder(value) {
+        this._sortOrder = value;
+    }
+    constructor(sortOrder, instantiationService, editorGroupService) {
+        this.instantiationService = instantiationService;
+        this.editorGroupService = editorGroupService;
+        this._sortOrder = sortOrder;
+    }
+    get dropHandler() {
+        return this.instantiationService.createInstance(ResourcesDropHandler, { allowWorkspaceOpen: false });
+    }
+    getDragURI(element) {
+        if (element instanceof OpenEditor) {
+            const resource = element.getResource();
+            if (resource) {
+                return resource.toString();
+            }
+        }
+        return null;
+    }
+    getDragLabel(elements) {
+        if (elements.length > 1) {
+            return String(elements.length);
+        }
+        const element = elements[0];
+        return element instanceof OpenEditor ? element.editor.getName() : element.label;
+    }
+    onDragStart(data, originalEvent) {
+        const items = data.elements;
+        const editors = [];
+        if (items) {
+            for (const item of items) {
+                if (item instanceof OpenEditor) {
+                    editors.push(item);
+                }
+            }
+        }
+        if (editors.length) {
+            this.instantiationService.invokeFunction(fillEditorsDragData, editors, originalEvent);
+        }
+    }
+    onDragOver(data, _targetElement, _targetIndex, targetSector, originalEvent) {
+        if (data instanceof NativeDragAndDropData) {
+            if (!containsDragType(originalEvent, DataTransfers.FILES, CodeDataTransfers.FILES)) {
+                return false;
+            }
+        }
+        if (this._sortOrder !== 'editorOrder') {
+            if (data instanceof ElementsDragAndDropData) {
+                return false;
+            }
+            else {
+                return { accept: true, effect: { type: 1 }, feedback: [-1] };
+            }
+        }
+        let dropEffectPosition = undefined;
+        switch (targetSector) {
+            case 0:
+            case 1:
+                dropEffectPosition = (_targetIndex === 0 && _targetElement instanceof EditorGroupView) ? "drop-target-after" : "drop-target-before";
+                break;
+            case 2:
+            case 3:
+                dropEffectPosition = "drop-target-after";
+                break;
+        }
+        return { accept: true, effect: { type: 1, position: dropEffectPosition }, feedback: [_targetIndex] };
+    }
+    drop(data, targetElement, _targetIndex, targetSector, originalEvent) {
+        let group = targetElement instanceof OpenEditor ? targetElement.group : targetElement || this.editorGroupService.groups[this.editorGroupService.count - 1];
+        let targetEditorIndex = targetElement instanceof OpenEditor ? targetElement.group.getIndexOfEditor(targetElement.editor) : 0;
+        switch (targetSector) {
+            case 0:
+            case 1:
+                if (targetElement instanceof EditorGroupView && group.index !== 0) {
+                    group = this.editorGroupService.groups[group.index - 1];
+                    targetEditorIndex = group.count;
+                }
+                break;
+            case 3:
+            case 2:
+                if (targetElement instanceof OpenEditor) {
+                    targetEditorIndex++;
+                }
+                break;
+        }
+        if (data instanceof ElementsDragAndDropData) {
+            for (const oe of data.elements) {
+                const sourceEditorIndex = oe.group.getIndexOfEditor(oe.editor);
+                if (oe.group === group && sourceEditorIndex < targetEditorIndex) {
+                    targetEditorIndex--;
+                }
+                oe.group.moveEditor(oe.editor, group, { index: targetEditorIndex, preserveFocus: true });
+                targetEditorIndex++;
+            }
+            this.editorGroupService.activateGroup(group);
+        }
+        else {
+            this.dropHandler.handleDrop(originalEvent, mainWindow, () => group, () => group.focus(), { index: targetEditorIndex });
+        }
+    }
+    dispose() { }
+}
+__decorate([
+    memoize,
+    __metadata("design:type", ResourcesDropHandler),
+    __metadata("design:paramtypes", [])
+], OpenEditorsDragAndDrop.prototype, "dropHandler", null);
+class OpenEditorsAccessibilityProvider {
+    getWidgetAriaLabel() {
+        return nls.localize('openEditors', "Open Editors");
+    }
+    getAriaLabel(element) {
+        if (element instanceof OpenEditor) {
+            return `${element.editor.getName()}, ${element.editor.getDescription()}`;
+        }
+        return element.ariaLabel;
+    }
+}
+const toggleEditorGroupLayoutId = 'workbench.action.toggleEditorGroupLayout';
+registerAction2(class extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.toggleEditorGroupLayout',
+            title: nls.localize2('flipLayout', "Toggle Vertical/Horizontal Editor Layout"),
+            f1: true,
+            keybinding: {
+                primary: 1024 | 512 | 21,
+                mac: { primary: 2048 | 512 | 21 },
+                weight: 200
+            },
+            icon: Codicon.editorLayout,
+            menu: {
+                id: MenuId.ViewTitle,
+                group: 'navigation',
+                when: ContextKeyExpr.and(ContextKeyExpr.equals('view', OpenEditorsView.ID), MultipleEditorGroupsContext),
+                order: 10
+            }
+        });
+    }
+    async run(accessor) {
+        const editorGroupService = accessor.get(IEditorGroupsService);
+        const newOrientation = (editorGroupService.orientation === 1) ? 0 : 1;
+        editorGroupService.setGroupOrientation(newOrientation);
+        editorGroupService.activeGroup.focus();
+    }
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarLayoutMenu, {
+    group: '5_flip',
+    command: {
+        id: toggleEditorGroupLayoutId,
+        title: {
+            ...nls.localize2('miToggleEditorLayoutWithoutMnemonic', "Flip Layout"),
+            mnemonicTitle: nls.localize({ key: 'miToggleEditorLayout', comment: ['&& denotes a mnemonic'] }, "Flip &&Layout")
+        }
+    },
+    order: 1
+});
+registerAction2(class extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.files.saveAll',
+            title: SAVE_ALL_LABEL,
+            f1: true,
+            icon: Codicon.saveAll,
+            menu: {
+                id: MenuId.ViewTitle,
+                group: 'navigation',
+                when: ContextKeyExpr.equals('view', OpenEditorsView.ID),
+                order: 20
+            }
+        });
+    }
+    async run(accessor) {
+        const commandService = accessor.get(ICommandService);
+        await commandService.executeCommand(SAVE_ALL_COMMAND_ID);
+    }
+});
+registerAction2(class extends Action2 {
+    constructor() {
+        super({
+            id: 'openEditors.closeAll',
+            title: CloseAllEditorsAction.LABEL,
+            f1: false,
+            icon: Codicon.closeAll,
+            menu: {
+                id: MenuId.ViewTitle,
+                group: 'navigation',
+                when: ContextKeyExpr.equals('view', OpenEditorsView.ID),
+                order: 30
+            }
+        });
+    }
+    async run(accessor) {
+        const instantiationService = accessor.get(IInstantiationService);
+        const closeAll = new CloseAllEditorsAction();
+        await instantiationService.invokeFunction(accessor => closeAll.run(accessor));
+    }
+});
+registerAction2(class extends Action2 {
+    constructor() {
+        super({
+            id: 'openEditors.newUntitledFile',
+            title: nls.localize2('newUntitledFile', "New Untitled Text File"),
+            f1: false,
+            icon: Codicon.newFile,
+            menu: {
+                id: MenuId.ViewTitle,
+                group: 'navigation',
+                when: ContextKeyExpr.equals('view', OpenEditorsView.ID),
+                order: 5
+            }
+        });
+    }
+    async run(accessor) {
+        const commandService = accessor.get(ICommandService);
+        await commandService.executeCommand(NEW_UNTITLED_FILE_COMMAND_ID);
+    }
+});

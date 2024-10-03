@@ -1,1 +1,91 @@
-import*as o from"../../../../nls.js";import*as r from"../../../../base/common/objects.js";import"../../../../base/common/jsonSchema.js";import{ProblemMatcherRegistry as m}from"./problemMatcher.js";import f from"./jsonSchemaCommon.js";const s={oneOf:[{allOf:[{type:"object",required:["version"],properties:{version:{type:"string",enum:["0.1.0"],deprecationMessage:o.localize("JsonSchema.version.deprecated","Task version 0.1.0 is deprecated. Please use 2.0.0"),description:o.localize("JsonSchema.version","The config's version number")},_runner:{deprecationMessage:o.localize("JsonSchema._runner","The runner has graduated. Use the official runner property")},runner:{type:"string",enum:["process","terminal"],default:"process",description:o.localize("JsonSchema.runner","Defines whether the task is executed as a process and the output is shown in the output window or inside the terminal.")},windows:{$ref:"#/definitions/taskRunnerConfiguration",description:o.localize("JsonSchema.windows","Windows specific command configuration")},osx:{$ref:"#/definitions/taskRunnerConfiguration",description:o.localize("JsonSchema.mac","Mac specific command configuration")},linux:{$ref:"#/definitions/taskRunnerConfiguration",description:o.localize("JsonSchema.linux","Linux specific command configuration")}}},{$ref:"#/definitions/taskRunnerConfiguration"}]}]},a={type:"boolean",default:!0,description:o.localize("JsonSchema.shell","Specifies whether the command is a shell command or an external program. Defaults to false if omitted.")};s.definitions=r.deepClone(f.definitions);const n=s.definitions;n.commandConfiguration.properties.isShellCommand=r.deepClone(a),n.taskDescription.properties.isShellCommand=r.deepClone(a),n.taskRunnerConfiguration.properties.isShellCommand=r.deepClone(a),Object.getOwnPropertyNames(n).forEach(e=>{const i=e+"1";n[i]=n[e],delete n[e]});function c(e){Array.isArray(e)?e.forEach(c):typeof e=="object"&&(e.$ref&&(e.$ref=e.$ref+"1"),Object.getOwnPropertyNames(e).forEach(i=>{const t=e[i];(Array.isArray(t)||typeof t=="object")&&c(t)}))}c(s),m.onReady().then(()=>{try{const e=m.keys().map(i=>"$"+i);n.problemMatcherType1.oneOf[0].enum=e,n.problemMatcherType1.oneOf[2].items.anyOf[1].enum=e}catch{}});var u=s;export{u as default};
+import * as nls from '../../../../nls.js';
+import * as Objects from '../../../../base/common/objects.js';
+import { ProblemMatcherRegistry } from './problemMatcher.js';
+import commonSchema from './jsonSchemaCommon.js';
+const schema = {
+    oneOf: [
+        {
+            allOf: [
+                {
+                    type: 'object',
+                    required: ['version'],
+                    properties: {
+                        version: {
+                            type: 'string',
+                            enum: ['0.1.0'],
+                            deprecationMessage: nls.localize('JsonSchema.version.deprecated', 'Task version 0.1.0 is deprecated. Please use 2.0.0'),
+                            description: nls.localize('JsonSchema.version', 'The config\'s version number')
+                        },
+                        _runner: {
+                            deprecationMessage: nls.localize('JsonSchema._runner', 'The runner has graduated. Use the official runner property')
+                        },
+                        runner: {
+                            type: 'string',
+                            enum: ['process', 'terminal'],
+                            default: 'process',
+                            description: nls.localize('JsonSchema.runner', 'Defines whether the task is executed as a process and the output is shown in the output window or inside the terminal.')
+                        },
+                        windows: {
+                            $ref: '#/definitions/taskRunnerConfiguration',
+                            description: nls.localize('JsonSchema.windows', 'Windows specific command configuration')
+                        },
+                        osx: {
+                            $ref: '#/definitions/taskRunnerConfiguration',
+                            description: nls.localize('JsonSchema.mac', 'Mac specific command configuration')
+                        },
+                        linux: {
+                            $ref: '#/definitions/taskRunnerConfiguration',
+                            description: nls.localize('JsonSchema.linux', 'Linux specific command configuration')
+                        }
+                    }
+                },
+                {
+                    $ref: '#/definitions/taskRunnerConfiguration'
+                }
+            ]
+        }
+    ]
+};
+const shellCommand = {
+    type: 'boolean',
+    default: true,
+    description: nls.localize('JsonSchema.shell', 'Specifies whether the command is a shell command or an external program. Defaults to false if omitted.')
+};
+schema.definitions = Objects.deepClone(commonSchema.definitions);
+const definitions = schema.definitions;
+definitions['commandConfiguration']['properties']['isShellCommand'] = Objects.deepClone(shellCommand);
+definitions['taskDescription']['properties']['isShellCommand'] = Objects.deepClone(shellCommand);
+definitions['taskRunnerConfiguration']['properties']['isShellCommand'] = Objects.deepClone(shellCommand);
+Object.getOwnPropertyNames(definitions).forEach(key => {
+    const newKey = key + '1';
+    definitions[newKey] = definitions[key];
+    delete definitions[key];
+});
+function fixReferences(literal) {
+    if (Array.isArray(literal)) {
+        literal.forEach(fixReferences);
+    }
+    else if (typeof literal === 'object') {
+        if (literal['$ref']) {
+            literal['$ref'] = literal['$ref'] + '1';
+        }
+        Object.getOwnPropertyNames(literal).forEach(property => {
+            const value = literal[property];
+            if (Array.isArray(value) || typeof value === 'object') {
+                fixReferences(value);
+            }
+        });
+    }
+}
+fixReferences(schema);
+ProblemMatcherRegistry.onReady().then(() => {
+    try {
+        const matcherIds = ProblemMatcherRegistry.keys().map(key => '$' + key);
+        definitions.problemMatcherType1.oneOf[0].enum = matcherIds;
+        definitions.problemMatcherType1.oneOf[2].items.anyOf[1].enum = matcherIds;
+    }
+    catch (err) {
+        console.log('Installing problem matcher ids failed');
+    }
+});
+export default schema;

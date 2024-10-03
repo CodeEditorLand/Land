@@ -1,1 +1,116 @@
-import{URI as S}from"../../../../base/common/uri.js";import{localize as s,localize2 as f}from"../../../../nls.js";import"../../../../platform/instantiation/common/instantiation.js";import{IProductService as v}from"../../../../platform/product/common/productService.js";import"../../../../platform/quickinput/common/quickInput.js";import{IStorageService as k,StorageScope as l,StorageTarget as y}from"../../../../platform/storage/common/storage.js";import"../../../../platform/telemetry/common/telemetry.js";import{IEditorService as P}from"../../../services/editor/common/editorService.js";import{IBrowserWorkbenchEnvironmentService as h}from"../../../services/environment/browser/environmentService.js";const D=S.parse("trustedDomains:/Trusted Domains"),g="http.linkProtectionTrustedDomains",A="http.linkProtectionTrustedDomainsContent",G={id:"workbench.action.manageTrustedDomain",description:{description:f("trustedDomain.manageTrustedDomain","Manage Trusted Domains"),args:[]},handler:async t=>{t.get(P).openEditor({resource:D,languageId:"jsonc",options:{pinned:!0}})}};async function J(t,r,o,d,n,a,u){const p=S.parse(r),c=p.authority.split("."),T=c.slice(c.length-2).join("."),I="*."+T,i=[];if(i.push({type:"item",label:s("trustedDomain.trustDomain","Trust {0}",r),id:"trust",toTrust:r,picked:!0}),c.length===4&&c.every(e=>Number.isInteger(+e)||Number.isInteger(+e.split(":")[0]))){if(p.authority.includes(":")){const e=p.authority.split(":")[0];i.push({type:"item",label:s("trustedDomain.trustAllPorts","Trust {0} on all ports",e),toTrust:e+":*",id:"trust"})}}else i.push({type:"item",label:s("trustedDomain.trustSubDomain","Trust {0} and all its subdomains",T),toTrust:I,id:"trust"});i.push({type:"item",label:s("trustedDomain.trustAllDomains","Trust all domains (disables link protection)"),toTrust:"*",id:"trust"}),i.push({type:"item",label:s("trustedDomain.manageTrustedDomains","Manage Trusted Domains"),id:"manage"});const m=await d.pick(i,{activeItem:i[0]});if(m&&m.id)switch(m.id){case"manage":return await a.openEditor({resource:D.with({fragment:o.toString()}),languageId:"jsonc",options:{pinned:!0}}),t;case"trust":{const e=m.toTrust;if(t.indexOf(e)===-1)return n.remove(A,l.APPLICATION),n.store(g,JSON.stringify([...t,e]),l.APPLICATION,y.USER),[...t,e]}}return[]}async function K(t){const{defaultTrustedDomains:r,trustedDomains:o}=E(t);return{defaultTrustedDomains:r,trustedDomains:o}}function E(t){const r=t.get(k),o=t.get(v),d=t.get(h),n=[...o.linkProtectionTrustedDomains??[],...d.options?.additionalTrustedDomains??[]];let a=[];try{const u=r.get(g,l.APPLICATION);u&&(a=JSON.parse(u))}catch{}return{defaultTrustedDomains:n,trustedDomains:a}}export{A as TRUSTED_DOMAINS_CONTENT_STORAGE_KEY,g as TRUSTED_DOMAINS_STORAGE_KEY,J as configureOpenerTrustedDomainsHandler,G as manageTrustedDomainSettingsCommand,E as readStaticTrustedDomains,K as readTrustedDomains};
+import { URI } from '../../../../base/common/uri.js';
+import { localize, localize2 } from '../../../../nls.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IBrowserWorkbenchEnvironmentService } from '../../../services/environment/browser/environmentService.js';
+const TRUSTED_DOMAINS_URI = URI.parse('trustedDomains:/Trusted Domains');
+export const TRUSTED_DOMAINS_STORAGE_KEY = 'http.linkProtectionTrustedDomains';
+export const TRUSTED_DOMAINS_CONTENT_STORAGE_KEY = 'http.linkProtectionTrustedDomainsContent';
+export const manageTrustedDomainSettingsCommand = {
+    id: 'workbench.action.manageTrustedDomain',
+    description: {
+        description: localize2('trustedDomain.manageTrustedDomain', 'Manage Trusted Domains'),
+        args: []
+    },
+    handler: async (accessor) => {
+        const editorService = accessor.get(IEditorService);
+        editorService.openEditor({ resource: TRUSTED_DOMAINS_URI, languageId: 'jsonc', options: { pinned: true } });
+        return;
+    }
+};
+export async function configureOpenerTrustedDomainsHandler(trustedDomains, domainToConfigure, resource, quickInputService, storageService, editorService, telemetryService) {
+    const parsedDomainToConfigure = URI.parse(domainToConfigure);
+    const toplevelDomainSegements = parsedDomainToConfigure.authority.split('.');
+    const domainEnd = toplevelDomainSegements.slice(toplevelDomainSegements.length - 2).join('.');
+    const topLevelDomain = '*.' + domainEnd;
+    const options = [];
+    options.push({
+        type: 'item',
+        label: localize('trustedDomain.trustDomain', 'Trust {0}', domainToConfigure),
+        id: 'trust',
+        toTrust: domainToConfigure,
+        picked: true
+    });
+    const isIP = toplevelDomainSegements.length === 4 &&
+        toplevelDomainSegements.every(segment => Number.isInteger(+segment) || Number.isInteger(+segment.split(':')[0]));
+    if (isIP) {
+        if (parsedDomainToConfigure.authority.includes(':')) {
+            const base = parsedDomainToConfigure.authority.split(':')[0];
+            options.push({
+                type: 'item',
+                label: localize('trustedDomain.trustAllPorts', 'Trust {0} on all ports', base),
+                toTrust: base + ':*',
+                id: 'trust'
+            });
+        }
+    }
+    else {
+        options.push({
+            type: 'item',
+            label: localize('trustedDomain.trustSubDomain', 'Trust {0} and all its subdomains', domainEnd),
+            toTrust: topLevelDomain,
+            id: 'trust'
+        });
+    }
+    options.push({
+        type: 'item',
+        label: localize('trustedDomain.trustAllDomains', 'Trust all domains (disables link protection)'),
+        toTrust: '*',
+        id: 'trust'
+    });
+    options.push({
+        type: 'item',
+        label: localize('trustedDomain.manageTrustedDomains', 'Manage Trusted Domains'),
+        id: 'manage'
+    });
+    const pickedResult = await quickInputService.pick(options, { activeItem: options[0] });
+    if (pickedResult && pickedResult.id) {
+        switch (pickedResult.id) {
+            case 'manage':
+                await editorService.openEditor({
+                    resource: TRUSTED_DOMAINS_URI.with({ fragment: resource.toString() }),
+                    languageId: 'jsonc',
+                    options: { pinned: true }
+                });
+                return trustedDomains;
+            case 'trust': {
+                const itemToTrust = pickedResult.toTrust;
+                if (trustedDomains.indexOf(itemToTrust) === -1) {
+                    storageService.remove(TRUSTED_DOMAINS_CONTENT_STORAGE_KEY, -1);
+                    storageService.store(TRUSTED_DOMAINS_STORAGE_KEY, JSON.stringify([...trustedDomains, itemToTrust]), -1, 0);
+                    return [...trustedDomains, itemToTrust];
+                }
+            }
+        }
+    }
+    return [];
+}
+export async function readTrustedDomains(accessor) {
+    const { defaultTrustedDomains, trustedDomains } = readStaticTrustedDomains(accessor);
+    return {
+        defaultTrustedDomains,
+        trustedDomains,
+    };
+}
+export function readStaticTrustedDomains(accessor) {
+    const storageService = accessor.get(IStorageService);
+    const productService = accessor.get(IProductService);
+    const environmentService = accessor.get(IBrowserWorkbenchEnvironmentService);
+    const defaultTrustedDomains = [
+        ...productService.linkProtectionTrustedDomains ?? [],
+        ...environmentService.options?.additionalTrustedDomains ?? []
+    ];
+    let trustedDomains = [];
+    try {
+        const trustedDomainsSrc = storageService.get(TRUSTED_DOMAINS_STORAGE_KEY, -1);
+        if (trustedDomainsSrc) {
+            trustedDomains = JSON.parse(trustedDomainsSrc);
+        }
+    }
+    catch (err) { }
+    return {
+        defaultTrustedDomains,
+        trustedDomains,
+    };
+}

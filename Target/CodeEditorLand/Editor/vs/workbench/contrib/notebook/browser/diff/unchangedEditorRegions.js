@@ -1,1 +1,35 @@
-import{Emitter as d}from"../../../../../base/common/event.js";import{DisposableStore as a}from"../../../../../base/common/lifecycle.js";import"../../../../../platform/configuration/common/configuration.js";function h(n){return g(n)}function g(n){const o=new a,t=o.add(new d),e={options:{enabled:n.getValue("diffEditor.hideUnchangedRegions.enabled"),minimumLineCount:n.getValue("diffEditor.hideUnchangedRegions.minimumLineCount"),contextLineCount:n.getValue("diffEditor.hideUnchangedRegions.contextLineCount"),revealLineCount:n.getValue("diffEditor.hideUnchangedRegions.revealLineCount")},onDidChangeEnablement:t.event.bind(t),dispose:()=>o.dispose()};return o.add(n.onDidChangeConfiguration(i=>{i.affectsConfiguration("diffEditor.hideUnchangedRegions.minimumLineCount")&&(e.options.minimumLineCount=n.getValue("diffEditor.hideUnchangedRegions.minimumLineCount")),i.affectsConfiguration("diffEditor.hideUnchangedRegions.contextLineCount")&&(e.options.contextLineCount=n.getValue("diffEditor.hideUnchangedRegions.contextLineCount")),i.affectsConfiguration("diffEditor.hideUnchangedRegions.revealLineCount")&&(e.options.revealLineCount=n.getValue("diffEditor.hideUnchangedRegions.revealLineCount")),i.affectsConfiguration("diffEditor.hideUnchangedRegions.enabled")&&(e.options.enabled=n.getValue("diffEditor.hideUnchangedRegions.enabled"),t.fire(e.options.enabled))})),e}export{h as getUnchangedRegionSettings};
+import { Emitter } from '../../../../../base/common/event.js';
+import { DisposableStore } from '../../../../../base/common/lifecycle.js';
+export function getUnchangedRegionSettings(configurationService) {
+    return createHideUnchangedRegionOptions(configurationService);
+}
+function createHideUnchangedRegionOptions(configurationService) {
+    const disposables = new DisposableStore();
+    const unchangedRegionsEnablementEmitter = disposables.add(new Emitter());
+    const result = {
+        options: {
+            enabled: configurationService.getValue('diffEditor.hideUnchangedRegions.enabled'),
+            minimumLineCount: configurationService.getValue('diffEditor.hideUnchangedRegions.minimumLineCount'),
+            contextLineCount: configurationService.getValue('diffEditor.hideUnchangedRegions.contextLineCount'),
+            revealLineCount: configurationService.getValue('diffEditor.hideUnchangedRegions.revealLineCount'),
+        },
+        onDidChangeEnablement: unchangedRegionsEnablementEmitter.event.bind(unchangedRegionsEnablementEmitter),
+        dispose: () => disposables.dispose()
+    };
+    disposables.add(configurationService.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('diffEditor.hideUnchangedRegions.minimumLineCount')) {
+            result.options.minimumLineCount = configurationService.getValue('diffEditor.hideUnchangedRegions.minimumLineCount');
+        }
+        if (e.affectsConfiguration('diffEditor.hideUnchangedRegions.contextLineCount')) {
+            result.options.contextLineCount = configurationService.getValue('diffEditor.hideUnchangedRegions.contextLineCount');
+        }
+        if (e.affectsConfiguration('diffEditor.hideUnchangedRegions.revealLineCount')) {
+            result.options.revealLineCount = configurationService.getValue('diffEditor.hideUnchangedRegions.revealLineCount');
+        }
+        if (e.affectsConfiguration('diffEditor.hideUnchangedRegions.enabled')) {
+            result.options.enabled = configurationService.getValue('diffEditor.hideUnchangedRegions.enabled');
+            unchangedRegionsEnablementEmitter.fire(result.options.enabled);
+        }
+    }));
+    return result;
+}

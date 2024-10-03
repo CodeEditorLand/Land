@@ -1,1 +1,31 @@
-import"./media/sidebarpart.css";import{localize2 as t}from"../../../../nls.js";import{Action2 as c,registerAction2 as n}from"../../../../platform/actions/common/actions.js";import{IWorkbenchLayoutService as s,Parts as o}from"../../../services/layout/browser/layoutService.js";import{KeyMod as m,KeyCode as a}from"../../../../base/common/keyCodes.js";import"../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as p}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{Categories as d}from"../../../../platform/action/common/actionCommonCategories.js";import{IPaneCompositePartService as f}from"../../../services/panecomposite/browser/panecomposite.js";import{ViewContainerLocation as S}from"../../../common/views.js";class l extends c{constructor(){super({id:"workbench.action.focusSideBar",title:t("focusSideBar","Focus into Primary Side Bar"),category:d.View,f1:!0,keybinding:{weight:p.WorkbenchContrib,when:null,primary:m.CtrlCmd|a.Digit0}})}async run(e){const i=e.get(s),r=e.get(f);i.isVisible(o.SIDEBAR_PART)||i.setPartHidden(!1,o.SIDEBAR_PART),r.getActivePaneComposite(S.Sidebar)?.focus()}}n(l);export{l as FocusSideBarAction};
+import './media/sidebarpart.css';
+import { localize2 } from '../../../../nls.js';
+import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
+import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
+import { IPaneCompositePartService } from '../../../services/panecomposite/browser/panecomposite.js';
+export class FocusSideBarAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.focusSideBar',
+            title: localize2('focusSideBar', 'Focus into Primary Side Bar'),
+            category: Categories.View,
+            f1: true,
+            keybinding: {
+                weight: 200,
+                when: null,
+                primary: 2048 | 21
+            }
+        });
+    }
+    async run(accessor) {
+        const layoutService = accessor.get(IWorkbenchLayoutService);
+        const paneCompositeService = accessor.get(IPaneCompositePartService);
+        if (!layoutService.isVisible("workbench.parts.sidebar")) {
+            layoutService.setPartHidden(false, "workbench.parts.sidebar");
+        }
+        const viewlet = paneCompositeService.getActivePaneComposite(0);
+        viewlet?.focus();
+    }
+}
+registerAction2(FocusSideBarAction);

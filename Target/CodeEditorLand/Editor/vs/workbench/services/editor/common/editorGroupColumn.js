@@ -1,1 +1,22 @@
-import"../../../../platform/configuration/common/configuration.js";import"../../../common/editor.js";import{GroupsOrder as e,preferredSideBySideGroupDirection as I}from"./editorGroupsService.js";import{ACTIVE_GROUP as u,SIDE_GROUP as G}from"./editorService.js";function m(o,t,r=u){if(r===u||r===G)return r;let p=o.getGroups(e.GRID_APPEARANCE)[r];if(!p&&r<9){for(let i=0;i<=r;i++){const E=o.getGroups(e.GRID_APPEARANCE);E[i]||o.addGroup(E[i-1],I(t))}p=o.getGroups(e.GRID_APPEARANCE)[r]}return p?.id??G}function T(o,t){const r=typeof t=="number"?o.getGroup(t):t;return o.getGroups(e.GRID_APPEARANCE).indexOf(r??o.activeGroup)}export{m as columnToEditorGroup,T as editorGroupToColumn};
+import { preferredSideBySideGroupDirection } from './editorGroupsService.js';
+import { ACTIVE_GROUP, SIDE_GROUP } from './editorService.js';
+export function columnToEditorGroup(editorGroupService, configurationService, column = ACTIVE_GROUP) {
+    if (column === ACTIVE_GROUP || column === SIDE_GROUP) {
+        return column;
+    }
+    let groupInColumn = editorGroupService.getGroups(2)[column];
+    if (!groupInColumn && column < 9) {
+        for (let i = 0; i <= column; i++) {
+            const editorGroups = editorGroupService.getGroups(2);
+            if (!editorGroups[i]) {
+                editorGroupService.addGroup(editorGroups[i - 1], preferredSideBySideGroupDirection(configurationService));
+            }
+        }
+        groupInColumn = editorGroupService.getGroups(2)[column];
+    }
+    return groupInColumn?.id ?? SIDE_GROUP;
+}
+export function editorGroupToColumn(editorGroupService, editorGroup) {
+    const group = (typeof editorGroup === 'number') ? editorGroupService.getGroup(editorGroup) : editorGroup;
+    return editorGroupService.getGroups(2).indexOf(group ?? editorGroupService.activeGroup);
+}

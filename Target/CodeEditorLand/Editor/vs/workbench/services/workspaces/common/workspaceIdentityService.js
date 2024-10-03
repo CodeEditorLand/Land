@@ -1,1 +1,116 @@
-var u=Object.defineProperty;var F=Object.getOwnPropertyDescriptor;var m=(a,s,i,r)=>{for(var t=r>1?void 0:r?F(s,i):s,c=a.length-1,d;c>=0;c--)(d=a[c])&&(t=(r?d(s,i,t):d(t))||t);return r&&t&&u(s,i,t),t},I=(a,s)=>(i,r)=>s(i,r,a);import{VSBuffer as g}from"../../../../base/common/buffer.js";import"../../../../base/common/cancellation.js";import{isEqualOrParent as W,joinPath as v,relativePath as w}from"../../../../base/common/resources.js";import{URI as S}from"../../../../base/common/uri.js";import{InstantiationType as h,registerSingleton as C}from"../../../../platform/instantiation/common/extensions.js";import{createDecorator as U}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/userDataSync/common/userDataSync.js";import{EditSessionIdentityMatch as P,IEditSessionIdentityService as x}from"../../../../platform/workspace/common/editSessions.js";import{IWorkspaceContextService as T}from"../../../../platform/workspace/common/workspace.js";const E=U("IWorkspaceIdentityService");let l=class{constructor(s,i){this.workspaceContextService=s;this.editSessionIdentityService=i}async getWorkspaceStateFolders(s){const i=[];for(const r of this.workspaceContextService.getWorkspace().folders){const t=await this.editSessionIdentityService.getEditSessionIdentifier(r,s);t&&i.push({resourceUri:r.uri.toString(),workspaceFolderIdentity:t})}return i}async matches(s,i){const r={},t={};for(const e of s)t[e.workspaceFolderIdentity]=e.resourceUri;const c=new Map;for(const e of this.workspaceContextService.getWorkspace().folders){const n=await this.editSessionIdentityService.getEditSessionIdentifier(e,i);n&&c.set(e,n)}for(const[e,n]of c.entries()){const o=t[n];if(o){r[o]=e.uri.toString();continue}let p=!1;for(const[f,y]of Object.entries(t))if(await this.editSessionIdentityService.provideEditSessionIdentityMatch(e,n,f,i)===P.Complete){r[y]=e.uri.toString(),p=!0;break}if(!p)return!1}const d=e=>{for(const n of Object.keys(r)){const o=S.parse(n);if(W(o,e)){const p=r[n],f=w(o,e);if(f)return v(S.parse(p),f)}}return e},k=(e,n=0)=>{if(!e||n>200||e instanceof g||e instanceof Uint8Array)return e;if(S.isUri(e))return d(e);if(Array.isArray(e))for(let o=0;o<e.length;++o)e[o]=k(e[o],n+1);else for(const o in e)Object.hasOwnProperty.call(e,o)&&(e[o]=k(e[o],n+1));return e};return k}};l=m([I(0,T),I(1,x)],l),C(E,l,h.Delayed);export{E as IWorkspaceIdentityService,l as WorkspaceIdentityService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { VSBuffer } from '../../../../base/common/buffer.js';
+import { isEqualOrParent, joinPath, relativePath } from '../../../../base/common/resources.js';
+import { URI } from '../../../../base/common/uri.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { EditSessionIdentityMatch, IEditSessionIdentityService } from '../../../../platform/workspace/common/editSessions.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+export const IWorkspaceIdentityService = createDecorator('IWorkspaceIdentityService');
+let WorkspaceIdentityService = class WorkspaceIdentityService {
+    constructor(workspaceContextService, editSessionIdentityService) {
+        this.workspaceContextService = workspaceContextService;
+        this.editSessionIdentityService = editSessionIdentityService;
+    }
+    async getWorkspaceStateFolders(cancellationToken) {
+        const workspaceStateFolders = [];
+        for (const workspaceFolder of this.workspaceContextService.getWorkspace().folders) {
+            const workspaceFolderIdentity = await this.editSessionIdentityService.getEditSessionIdentifier(workspaceFolder, cancellationToken);
+            if (!workspaceFolderIdentity) {
+                continue;
+            }
+            workspaceStateFolders.push({ resourceUri: workspaceFolder.uri.toString(), workspaceFolderIdentity });
+        }
+        return workspaceStateFolders;
+    }
+    async matches(incomingWorkspaceFolders, cancellationToken) {
+        const incomingToCurrentWorkspaceFolderUris = {};
+        const incomingIdentitiesToIncomingWorkspaceFolders = {};
+        for (const workspaceFolder of incomingWorkspaceFolders) {
+            incomingIdentitiesToIncomingWorkspaceFolders[workspaceFolder.workspaceFolderIdentity] = workspaceFolder.resourceUri;
+        }
+        const currentWorkspaceFoldersToIdentities = new Map();
+        for (const workspaceFolder of this.workspaceContextService.getWorkspace().folders) {
+            const workspaceFolderIdentity = await this.editSessionIdentityService.getEditSessionIdentifier(workspaceFolder, cancellationToken);
+            if (!workspaceFolderIdentity) {
+                continue;
+            }
+            currentWorkspaceFoldersToIdentities.set(workspaceFolder, workspaceFolderIdentity);
+        }
+        for (const [currentWorkspaceFolder, currentWorkspaceFolderIdentity] of currentWorkspaceFoldersToIdentities.entries()) {
+            const incomingWorkspaceFolder = incomingIdentitiesToIncomingWorkspaceFolders[currentWorkspaceFolderIdentity];
+            if (incomingWorkspaceFolder) {
+                incomingToCurrentWorkspaceFolderUris[incomingWorkspaceFolder] = currentWorkspaceFolder.uri.toString();
+                continue;
+            }
+            let hasCompleteMatch = false;
+            for (const [incomingIdentity, incomingFolder] of Object.entries(incomingIdentitiesToIncomingWorkspaceFolders)) {
+                if (await this.editSessionIdentityService.provideEditSessionIdentityMatch(currentWorkspaceFolder, currentWorkspaceFolderIdentity, incomingIdentity, cancellationToken) === EditSessionIdentityMatch.Complete) {
+                    incomingToCurrentWorkspaceFolderUris[incomingFolder] = currentWorkspaceFolder.uri.toString();
+                    hasCompleteMatch = true;
+                    break;
+                }
+            }
+            if (hasCompleteMatch) {
+                continue;
+            }
+            return false;
+        }
+        const convertUri = (uriToConvert) => {
+            for (const incomingFolderUriKey of Object.keys(incomingToCurrentWorkspaceFolderUris)) {
+                const incomingFolderUri = URI.parse(incomingFolderUriKey);
+                if (isEqualOrParent(incomingFolderUri, uriToConvert)) {
+                    const currentWorkspaceFolderUri = incomingToCurrentWorkspaceFolderUris[incomingFolderUriKey];
+                    const relativeFilePath = relativePath(incomingFolderUri, uriToConvert);
+                    if (relativeFilePath) {
+                        return joinPath(URI.parse(currentWorkspaceFolderUri), relativeFilePath);
+                    }
+                }
+            }
+            return uriToConvert;
+        };
+        const uriReplacer = (obj, depth = 0) => {
+            if (!obj || depth > 200) {
+                return obj;
+            }
+            if (obj instanceof VSBuffer || obj instanceof Uint8Array) {
+                return obj;
+            }
+            if (URI.isUri(obj)) {
+                return convertUri(obj);
+            }
+            if (Array.isArray(obj)) {
+                for (let i = 0; i < obj.length; ++i) {
+                    obj[i] = uriReplacer(obj[i], depth + 1);
+                }
+            }
+            else {
+                for (const key in obj) {
+                    if (Object.hasOwnProperty.call(obj, key)) {
+                        obj[key] = uriReplacer(obj[key], depth + 1);
+                    }
+                }
+            }
+            return obj;
+        };
+        return uriReplacer;
+    }
+};
+WorkspaceIdentityService = __decorate([
+    __param(0, IWorkspaceContextService),
+    __param(1, IEditSessionIdentityService),
+    __metadata("design:paramtypes", [Object, Object])
+], WorkspaceIdentityService);
+export { WorkspaceIdentityService };
+registerSingleton(IWorkspaceIdentityService, WorkspaceIdentityService, 1);

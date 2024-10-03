@@ -1,1 +1,52 @@
-import{OffsetRange as k}from"../core/offsetRange.js";class a{constructor(e){this._tokenInfo=e}static create(e){return new a(e)}forEach(e){let t=0;for(const n of this._tokenInfo){const o=new k(t,t+n.length);e(o,n),t+=n.length}}slice(e){const t=[];let n=0;for(const o of this._tokenInfo){const r=n,s=r+o.length;if(s>e.start){if(r>=e.endExclusive)break;const f=Math.max(0,e.start-r),i=Math.max(0,s-e.endExclusive);t.push(new l(o.length-f-i,o.metadata))}n+=o.length}return a.create(t)}}class l{constructor(e,t){this.length=e;this.metadata=t}}class d{_tokens=[];add(e,t){this._tokens.push(new l(e,t))}build(){return a.create(this._tokens)}}export{a as TokenArray,d as TokenArrayBuilder,l as TokenInfo};
+import { OffsetRange } from '../core/offsetRange.js';
+export class TokenArray {
+    static create(tokenInfo) {
+        return new TokenArray(tokenInfo);
+    }
+    constructor(_tokenInfo) {
+        this._tokenInfo = _tokenInfo;
+    }
+    forEach(cb) {
+        let lengthSum = 0;
+        for (const tokenInfo of this._tokenInfo) {
+            const range = new OffsetRange(lengthSum, lengthSum + tokenInfo.length);
+            cb(range, tokenInfo);
+            lengthSum += tokenInfo.length;
+        }
+    }
+    slice(range) {
+        const result = [];
+        let lengthSum = 0;
+        for (const tokenInfo of this._tokenInfo) {
+            const tokenStart = lengthSum;
+            const tokenEndEx = tokenStart + tokenInfo.length;
+            if (tokenEndEx > range.start) {
+                if (tokenStart >= range.endExclusive) {
+                    break;
+                }
+                const deltaBefore = Math.max(0, range.start - tokenStart);
+                const deltaAfter = Math.max(0, tokenEndEx - range.endExclusive);
+                result.push(new TokenInfo(tokenInfo.length - deltaBefore - deltaAfter, tokenInfo.metadata));
+            }
+            lengthSum += tokenInfo.length;
+        }
+        return TokenArray.create(result);
+    }
+}
+export class TokenInfo {
+    constructor(length, metadata) {
+        this.length = length;
+        this.metadata = metadata;
+    }
+}
+export class TokenArrayBuilder {
+    constructor() {
+        this._tokens = [];
+    }
+    add(length, metadata) {
+        this._tokens.push(new TokenInfo(length, metadata));
+    }
+    build() {
+        return TokenArray.create(this._tokens);
+    }
+}

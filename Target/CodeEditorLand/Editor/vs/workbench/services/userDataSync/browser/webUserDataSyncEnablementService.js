@@ -1,1 +1,40 @@
-import{InstantiationType as n,registerSingleton as t}from"../../../../platform/instantiation/common/extensions.js";import{IUserDataSyncEnablementService as i,SyncResource as r}from"../../../../platform/userDataSync/common/userDataSync.js";import{UserDataSyncEnablementService as s}from"./userDataSyncEnablementService.js";class o extends s{enabled=void 0;canToggleEnablement(){return this.isTrusted()&&super.canToggleEnablement()}isEnabled(){return this.isTrusted()?(this.enabled===void 0&&(this.enabled=this.workbenchEnvironmentService.options?.settingsSyncOptions?.enabled),this.enabled===void 0&&(this.enabled=super.isEnabled()),this.enabled):!1}setEnablement(e){e&&!this.canToggleEnablement()||this.enabled!==e&&(this.enabled=e,super.setEnablement(e))}getResourceSyncStateVersion(e){return e===r.Extensions?this.workbenchEnvironmentService.options?.settingsSyncOptions?.extensionsSyncStateVersion:void 0}isTrusted(){return!!this.workbenchEnvironmentService.options?.workspaceProvider?.trusted}}t(i,o,n.Delayed);export{o as WebUserDataSyncEnablementService};
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IUserDataSyncEnablementService } from '../../../../platform/userDataSync/common/userDataSync.js';
+import { UserDataSyncEnablementService } from './userDataSyncEnablementService.js';
+export class WebUserDataSyncEnablementService extends UserDataSyncEnablementService {
+    constructor() {
+        super(...arguments);
+        this.enabled = undefined;
+    }
+    canToggleEnablement() {
+        return this.isTrusted() && super.canToggleEnablement();
+    }
+    isEnabled() {
+        if (!this.isTrusted()) {
+            return false;
+        }
+        if (this.enabled === undefined) {
+            this.enabled = this.workbenchEnvironmentService.options?.settingsSyncOptions?.enabled;
+        }
+        if (this.enabled === undefined) {
+            this.enabled = super.isEnabled();
+        }
+        return this.enabled;
+    }
+    setEnablement(enabled) {
+        if (enabled && !this.canToggleEnablement()) {
+            return;
+        }
+        if (this.enabled !== enabled) {
+            this.enabled = enabled;
+            super.setEnablement(enabled);
+        }
+    }
+    getResourceSyncStateVersion(resource) {
+        return resource === "extensions" ? this.workbenchEnvironmentService.options?.settingsSyncOptions?.extensionsSyncStateVersion : undefined;
+    }
+    isTrusted() {
+        return !!this.workbenchEnvironmentService.options?.workspaceProvider?.trusted;
+    }
+}
+registerSingleton(IUserDataSyncEnablementService, WebUserDataSyncEnablementService, 1);

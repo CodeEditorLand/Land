@@ -1,1 +1,74 @@
-var I=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var c=(o,e,i,t)=>{for(var r=t>1?void 0:t?v(e,i):e,n=o.length-1,s;n>=0;n--)(s=o[n])&&(r=(t?s(e,i,r):s(r))||r);return t&&r&&I(e,i,r),r},d=(o,e)=>(i,t)=>e(i,t,o);import{insert as l}from"../../../../base/common/arrays.js";import"../../../../base/common/cancellation.js";import{toDisposable as p}from"../../../../base/common/lifecycle.js";import{InstantiationType as S,registerSingleton as m}from"../../../../platform/instantiation/common/extensions.js";import{ILogService as h}from"../../../../platform/log/common/log.js";import{IEditSessionIdentityService as f}from"../../../../platform/workspace/common/editSessions.js";import"../../../../platform/workspace/common/workspace.js";import{IExtensionService as y}from"../../extensions/common/extensions.js";let a=class{constructor(e,i){this._extensionService=e;this._logService=i}_serviceBrand;_editSessionIdentifierProviders=new Map;registerEditSessionIdentityProvider(e){if(this._editSessionIdentifierProviders.get(e.scheme))throw new Error(`A provider has already been registered for scheme ${e.scheme}`);return this._editSessionIdentifierProviders.set(e.scheme,e),p(()=>{this._editSessionIdentifierProviders.delete(e.scheme)})}async getEditSessionIdentifier(e,i){const{scheme:t}=e.uri,r=await this.activateProvider(t);return this._logService.trace(`EditSessionIdentityProvider for scheme ${t} available: ${!!r}`),r?.getEditSessionIdentifier(e,i)}async provideEditSessionIdentityMatch(e,i,t,r){const{scheme:n}=e.uri,s=await this.activateProvider(n);return this._logService.trace(`EditSessionIdentityProvider for scheme ${n} available: ${!!s}`),s?.provideEditSessionIdentityMatch?.(e,i,t,r)}async onWillCreateEditSessionIdentity(e,i){this._logService.debug("Running onWillCreateEditSessionIdentity participants...");for(const t of this._participants)await t.participate(e,i);this._logService.debug(`Done running ${this._participants.length} onWillCreateEditSessionIdentity participants.`)}_participants=[];addEditSessionIdentityCreateParticipant(e){const i=l(this._participants,e);return p(()=>i())}async activateProvider(e){const i=e==="vscode-remote"?"file":e,t=this._editSessionIdentifierProviders.get(e);return t||(await this._extensionService.activateByEvent(`onEditSession:${i}`),this._editSessionIdentifierProviders.get(e))}};a=c([d(0,y),d(1,h)],a),m(f,a,S.Delayed);export{a as EditSessionIdentityService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { insert } from '../../../../base/common/arrays.js';
+import { toDisposable } from '../../../../base/common/lifecycle.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IEditSessionIdentityService } from '../../../../platform/workspace/common/editSessions.js';
+import { IExtensionService } from '../../extensions/common/extensions.js';
+let EditSessionIdentityService = class EditSessionIdentityService {
+    constructor(_extensionService, _logService) {
+        this._extensionService = _extensionService;
+        this._logService = _logService;
+        this._editSessionIdentifierProviders = new Map();
+        this._participants = [];
+    }
+    registerEditSessionIdentityProvider(provider) {
+        if (this._editSessionIdentifierProviders.get(provider.scheme)) {
+            throw new Error(`A provider has already been registered for scheme ${provider.scheme}`);
+        }
+        this._editSessionIdentifierProviders.set(provider.scheme, provider);
+        return toDisposable(() => {
+            this._editSessionIdentifierProviders.delete(provider.scheme);
+        });
+    }
+    async getEditSessionIdentifier(workspaceFolder, token) {
+        const { scheme } = workspaceFolder.uri;
+        const provider = await this.activateProvider(scheme);
+        this._logService.trace(`EditSessionIdentityProvider for scheme ${scheme} available: ${!!provider}`);
+        return provider?.getEditSessionIdentifier(workspaceFolder, token);
+    }
+    async provideEditSessionIdentityMatch(workspaceFolder, identity1, identity2, cancellationToken) {
+        const { scheme } = workspaceFolder.uri;
+        const provider = await this.activateProvider(scheme);
+        this._logService.trace(`EditSessionIdentityProvider for scheme ${scheme} available: ${!!provider}`);
+        return provider?.provideEditSessionIdentityMatch?.(workspaceFolder, identity1, identity2, cancellationToken);
+    }
+    async onWillCreateEditSessionIdentity(workspaceFolder, cancellationToken) {
+        this._logService.debug('Running onWillCreateEditSessionIdentity participants...');
+        for (const participant of this._participants) {
+            await participant.participate(workspaceFolder, cancellationToken);
+        }
+        this._logService.debug(`Done running ${this._participants.length} onWillCreateEditSessionIdentity participants.`);
+    }
+    addEditSessionIdentityCreateParticipant(participant) {
+        const dispose = insert(this._participants, participant);
+        return toDisposable(() => dispose());
+    }
+    async activateProvider(scheme) {
+        const transformedScheme = scheme === 'vscode-remote' ? 'file' : scheme;
+        const provider = this._editSessionIdentifierProviders.get(scheme);
+        if (provider) {
+            return provider;
+        }
+        await this._extensionService.activateByEvent(`onEditSession:${transformedScheme}`);
+        return this._editSessionIdentifierProviders.get(scheme);
+    }
+};
+EditSessionIdentityService = __decorate([
+    __param(0, IExtensionService),
+    __param(1, ILogService),
+    __metadata("design:paramtypes", [Object, Object])
+], EditSessionIdentityService);
+export { EditSessionIdentityService };
+registerSingleton(IEditSessionIdentityService, EditSessionIdentityService, 1);

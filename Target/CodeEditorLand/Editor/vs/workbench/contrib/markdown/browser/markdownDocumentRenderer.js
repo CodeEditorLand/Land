@@ -1,4 +1,12 @@
-import{basicMarkupHtmlTags as b,hookDomPurifyHrefAndSrcSanitizer as x}from"../../../../base/browser/dom.js";import*as k from"../../../../base/browser/dompurify/dompurify.js";import{allowedMarkdownAttr as y}from"../../../../base/browser/markdownRenderer.js";import"../../../../base/common/cancellation.js";import*as w from"../../../../base/common/marked/marked.js";import{Schemas as h}from"../../../../base/common/network.js";import{escape as v}from"../../../../base/common/strings.js";import"../../../../editor/common/languages/language.js";import{tokenizeToString as E}from"../../../../editor/common/languages/textToHtmlTokenizer.js";import"../../../services/extensions/common/extensions.js";import{markedGfmHeadingIdPlugin as L}from"./markedGfmHeadingIdPlugin.js";const W=`
+import { basicMarkupHtmlTags, hookDomPurifyHrefAndSrcSanitizer } from '../../../../base/browser/dom.js';
+import * as dompurify from '../../../../base/browser/dompurify/dompurify.js';
+import { allowedMarkdownAttr } from '../../../../base/browser/markdownRenderer.js';
+import * as marked from '../../../../base/common/marked/marked.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { escape } from '../../../../base/common/strings.js';
+import { tokenizeToString } from '../../../../editor/common/languages/textToHtmlTokenizer.js';
+import { markedGfmHeadingIdPlugin } from './markedGfmHeadingIdPlugin.js';
+export const DEFAULT_MARKDOWN_STYLES = `
 body {
 	padding: 10px 20px;
 	line-height: 22px;
@@ -138,5 +146,128 @@ pre code {
 		forced-color-adjust: none;
 	}
 }
-`,M=[h.http,h.https,h.command];function T(d,n){const r=x(M,!0);try{return k.sanitize(d,{ALLOWED_TAGS:[...b,"checkbox","checklist"],ALLOWED_ATTR:[...y,"data-command","name","id","role","tabindex","x-dispatch","required","checked","placeholder","when-checked","checked-on"],...n?{ALLOW_UNKNOWN_PROTOCOLS:!0}:{}})}finally{r.dispose()}}async function q(d,n,r,t){const i=await new w.Marked(u.markedHighlight({async:!0,async highlight(c,a){if(typeof a!="string")return v(c);if(await n.whenInstalledExtensionsRegistered(),t?.token?.isCancellationRequested)return"";const l=r.getLanguageIdByLanguageName(a)??r.getLanguageIdByLanguageName(a.split(/\s+|:|,|(?!^)\{|\?]/,1)[0]);return E(r,c,l)}}),L(),...t?.markedExtensions??[]).parse(d,{async:!0});return t?.shouldSanitize??!0?T(i,t?.allowUnknownProtocols??!1):i}var u;(S=>{function d(e){if(typeof e=="function"&&(e={highlight:e}),!e||typeof e.highlight!="function")throw new Error("Must provide highlight function");return{async:!!e.async,walkTokens(o){if(o.type!=="code")return;const s=n(o.lang);if(e.async)return Promise.resolve(e.highlight(o.text,s,o.lang||"")).then(r(o));const g=e.highlight(o.text,s,o.lang||"");if(g instanceof Promise)throw new Error("markedHighlight is not set to async but the highlight function is async. Set the async option to true on markedHighlight to await the async highlight function.");r(o)(g)},renderer:{code({text:o,lang:s,escaped:g}){const f=s?` class="language-${p(s)}"`:"";return o=o.replace(/\n$/,""),`<pre><code${f}>${g?o:p(o,!0)}
-</code></pre>`}}}}S.markedHighlight=d;function n(e){return(e||"").match(/\S*/)[0]}function r(e){return o=>{typeof o=="string"&&o!==e.text&&(e.escaped=!0,e.text=o)}}const t=/[&<>"']/,m=new RegExp(t.source,"g"),i=/[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/,c=new RegExp(i.source,"g"),a={"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"},l=e=>a[e];function p(e,o){if(o){if(t.test(e))return e.replace(m,l)}else if(i.test(e))return e.replace(c,l);return e}})(u||={});export{W as DEFAULT_MARKDOWN_STYLES,q as renderMarkdownDocument};
+`;
+const allowedProtocols = [Schemas.http, Schemas.https, Schemas.command];
+function sanitize(documentContent, allowUnknownProtocols) {
+    const hook = hookDomPurifyHrefAndSrcSanitizer(allowedProtocols, true);
+    try {
+        return dompurify.sanitize(documentContent, {
+            ...{
+                ALLOWED_TAGS: [
+                    ...basicMarkupHtmlTags,
+                    'checkbox',
+                    'checklist',
+                ],
+                ALLOWED_ATTR: [
+                    ...allowedMarkdownAttr,
+                    'data-command', 'name', 'id', 'role', 'tabindex',
+                    'x-dispatch',
+                    'required', 'checked', 'placeholder', 'when-checked', 'checked-on',
+                ],
+            },
+            ...(allowUnknownProtocols ? { ALLOW_UNKNOWN_PROTOCOLS: true } : {}),
+        });
+    }
+    finally {
+        hook.dispose();
+    }
+}
+export async function renderMarkdownDocument(text, extensionService, languageService, options) {
+    const m = new marked.Marked(MarkedHighlight.markedHighlight({
+        async: true,
+        async highlight(code, lang) {
+            if (typeof lang !== 'string') {
+                return escape(code);
+            }
+            await extensionService.whenInstalledExtensionsRegistered();
+            if (options?.token?.isCancellationRequested) {
+                return '';
+            }
+            const languageId = languageService.getLanguageIdByLanguageName(lang) ?? languageService.getLanguageIdByLanguageName(lang.split(/\s+|:|,|(?!^)\{|\?]/, 1)[0]);
+            return tokenizeToString(languageService, code, languageId);
+        }
+    }), markedGfmHeadingIdPlugin(), ...(options?.markedExtensions ?? []));
+    const raw = await m.parse(text, { async: true });
+    if (options?.shouldSanitize ?? true) {
+        return sanitize(raw, options?.allowUnknownProtocols ?? false);
+    }
+    else {
+        return raw;
+    }
+}
+var MarkedHighlight;
+(function (MarkedHighlight) {
+    function markedHighlight(options) {
+        if (typeof options === 'function') {
+            options = {
+                highlight: options,
+            };
+        }
+        if (!options || typeof options.highlight !== 'function') {
+            throw new Error('Must provide highlight function');
+        }
+        return {
+            async: !!options.async,
+            walkTokens(token) {
+                if (token.type !== 'code') {
+                    return;
+                }
+                const lang = getLang(token.lang);
+                if (options.async) {
+                    return Promise.resolve(options.highlight(token.text, lang, token.lang || '')).then(updateToken(token));
+                }
+                const code = options.highlight(token.text, lang, token.lang || '');
+                if (code instanceof Promise) {
+                    throw new Error('markedHighlight is not set to async but the highlight function is async. Set the async option to true on markedHighlight to await the async highlight function.');
+                }
+                updateToken(token)(code);
+            },
+            renderer: {
+                code({ text, lang, escaped }) {
+                    const classAttr = lang
+                        ? ` class="language-${escape(lang)}"`
+                        : '';
+                    text = text.replace(/\n$/, '');
+                    return `<pre><code${classAttr}>${escaped ? text : escape(text, true)}\n</code></pre>`;
+                },
+            },
+        };
+    }
+    MarkedHighlight.markedHighlight = markedHighlight;
+    function getLang(lang) {
+        return (lang || '').match(/\S*/)[0];
+    }
+    function updateToken(token) {
+        return (code) => {
+            if (typeof code === 'string' && code !== token.text) {
+                token.escaped = true;
+                token.text = code;
+            }
+        };
+    }
+    const escapeTest = /[&<>"']/;
+    const escapeReplace = new RegExp(escapeTest.source, 'g');
+    const escapeTestNoEncode = /[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/;
+    const escapeReplaceNoEncode = new RegExp(escapeTestNoEncode.source, 'g');
+    const escapeReplacement = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        [`'`]: '&#39;',
+    };
+    const getEscapeReplacement = (ch) => escapeReplacement[ch];
+    function escape(html, encode) {
+        if (encode) {
+            if (escapeTest.test(html)) {
+                return html.replace(escapeReplace, getEscapeReplacement);
+            }
+        }
+        else {
+            if (escapeTestNoEncode.test(html)) {
+                return html.replace(escapeReplaceNoEncode, getEscapeReplacement);
+            }
+        }
+        return html;
+    }
+})(MarkedHighlight || (MarkedHighlight = {}));

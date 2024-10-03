@@ -1,1 +1,603 @@
-var K=Object.defineProperty;var A=Object.getOwnPropertyDescriptor;var M=(d,e,t,o)=>{for(var i=o>1?void 0:o?A(e,t):e,n=d.length-1,s;n>=0;n--)(s=d[n])&&(i=(o?s(e,t,i):s(i))||i);return o&&i&&K(e,t,i),i},g=(d,e)=>(t,o)=>e(t,o,d);import{TimeoutTimer as W}from"../../../../base/common/async.js";import{CancellationTokenSource as N}from"../../../../base/common/cancellation.js";import{onUnexpectedError as z}from"../../../../base/common/errors.js";import{Emitter as T}from"../../../../base/common/event.js";import{DisposableStore as w,dispose as x}from"../../../../base/common/lifecycle.js";import{getLeadingWhitespace as k,isHighSurrogate as B,isLowSurrogate as q}from"../../../../base/common/strings.js";import"../../../browser/editorBrowser.js";import{EditorOption as a}from"../../../common/config/editorOptions.js";import{CursorChangeReason as f}from"../../../common/cursorEvents.js";import"../../../common/core/position.js";import{Selection as Q}from"../../../common/core/selection.js";import"../../../common/model.js";import{CompletionItemKind as r,CompletionTriggerKind as _}from"../../../common/languages.js";import{IEditorWorkerService as V}from"../../../common/services/editorWorker.js";import{WordDistance as R}from"./wordDistance.js";import{IClipboardService as U}from"../../../../platform/clipboard/common/clipboardService.js";import{IConfigurationService as j}from"../../../../platform/configuration/common/configuration.js";import{IContextKeyService as G}from"../../../../platform/contextkey/common/contextkey.js";import{ILogService as H}from"../../../../platform/log/common/log.js";import{ITelemetryService as J}from"../../../../platform/telemetry/common/telemetry.js";import{CompletionModel as $}from"./completionModel.js";import{CompletionOptions as X,getSnippetSuggestSupport as Y,provideSuggestionItems as Z,QuickSuggestionsOptions as C,SnippetSortOrder as b}from"./suggest.js";import"../../../common/core/wordHelper.js";import{ILanguageFeaturesService as ee}from"../../../common/services/languageFeatures.js";import{FuzzyScoreOptions as te}from"../../../../base/common/filters.js";import{assertType as E}from"../../../../base/common/types.js";import{InlineCompletionContextKeys as D}from"../../inlineCompletions/browser/controller/inlineCompletionContextKeys.js";import{SnippetController2 as ie}from"../../snippet/browser/snippetController2.js";import{IEnvironmentService as oe}from"../../../../platform/environment/common/environment.js";class l{static shouldAutoTrigger(e){if(!e.hasModel())return!1;const t=e.getModel(),o=e.getPosition();t.tokenization.tokenizeIfCheap(o.lineNumber);const i=t.getWordAtPosition(o);return!(!i||i.endColumn!==o.column&&i.startColumn+1!==o.column||!isNaN(Number(i.word)))}lineNumber;column;leadingLineContent;leadingWord;triggerOptions;constructor(e,t,o){this.leadingLineContent=e.getLineContent(t.lineNumber).substr(0,t.column-1),this.leadingWord=e.getWordUntilPosition(t),this.lineNumber=t.lineNumber,this.column=t.column,this.triggerOptions=o}}var re=(o=>(o[o.Idle=0]="Idle",o[o.Manual=1]="Manual",o[o.Auto=2]="Auto",o))(re||{});function ne(d,e,t){if(!e.getContextKeyValue(D.inlineSuggestionVisible.key))return!0;const o=e.getContextKeyValue(D.suppressSuggestions.key);return o!==void 0?!o:!d.getOption(a.inlineSuggest).suppressSuggestions}function se(d,e,t){if(!e.getContextKeyValue("inlineSuggestionVisible"))return!0;const o=e.getContextKeyValue(D.suppressSuggestions.key);return o!==void 0?!o:!d.getOption(a.inlineSuggest).suppressSuggestions}let h=class{constructor(e,t,o,i,n,s,c,m,O){this._editor=e;this._editorWorkerService=t;this._clipboardService=o;this._telemetryService=i;this._logService=n;this._contextKeyService=s;this._configurationService=c;this._languageFeaturesService=m;this._envService=O;this._currentSelection=this._editor.getSelection()||new Q(1,1,1,1),this._toDispose.add(this._editor.onDidChangeModel(()=>{this._updateTriggerCharacters(),this.cancel()})),this._toDispose.add(this._editor.onDidChangeModelLanguage(()=>{this._updateTriggerCharacters(),this.cancel()})),this._toDispose.add(this._editor.onDidChangeConfiguration(()=>{this._updateTriggerCharacters()})),this._toDispose.add(this._languageFeaturesService.completionProvider.onDidChange(()=>{this._updateTriggerCharacters(),this._updateActiveSuggestSession()}));let u=!1;this._toDispose.add(this._editor.onDidCompositionStart(()=>{u=!0})),this._toDispose.add(this._editor.onDidCompositionEnd(()=>{u=!1,this._onCompositionEnd()})),this._toDispose.add(this._editor.onDidChangeCursorSelection(S=>{u||this._onCursorChange(S)})),this._toDispose.add(this._editor.onDidChangeModelContent(()=>{!u&&this._triggerState!==void 0&&this._refilterCompletionItems()})),this._updateTriggerCharacters()}_toDispose=new w;_triggerCharacterListener=new w;_triggerQuickSuggest=new W;_triggerState=void 0;_requestToken;_context;_currentSelection;_completionModel;_completionDisposables=new w;_onDidCancel=new T;_onDidTrigger=new T;_onDidSuggest=new T;onDidCancel=this._onDidCancel.event;onDidTrigger=this._onDidTrigger.event;onDidSuggest=this._onDidSuggest.event;dispose(){x(this._triggerCharacterListener),x([this._onDidCancel,this._onDidSuggest,this._onDidTrigger,this._triggerQuickSuggest]),this._toDispose.dispose(),this._completionDisposables.dispose(),this.cancel()}_updateTriggerCharacters(){if(this._triggerCharacterListener.clear(),this._editor.getOption(a.readOnly)||!this._editor.hasModel()||!this._editor.getOption(a.suggestOnTriggerCharacters))return;const e=new Map;for(const o of this._languageFeaturesService.completionProvider.all(this._editor.getModel()))for(const i of o.triggerCharacters||[]){let n=e.get(i);if(!n){n=new Set;const s=Y();s&&n.add(s),e.set(i,n)}n.add(o)}const t=o=>{if(!se(this._editor,this._contextKeyService,this._configurationService)||l.shouldAutoTrigger(this._editor))return;if(!o){const s=this._editor.getPosition();o=this._editor.getModel().getLineContent(s.lineNumber).substr(0,s.column-1)}let i="";q(o.charCodeAt(o.length-1))?B(o.charCodeAt(o.length-2))&&(i=o.substr(o.length-2)):i=o.charAt(o.length-1);const n=e.get(i);if(n){const s=new Map;if(this._completionModel)for(const[c,m]of this._completionModel.getItemsByProvider())n.has(c)||s.set(c,m);this.trigger({auto:!0,triggerKind:_.TriggerCharacter,triggerCharacter:i,retrigger:!!this._completionModel,clipboardText:this._completionModel?.clipboardText,completionOptions:{providerFilter:n,providerItemsToReuse:s}})}};this._triggerCharacterListener.add(this._editor.onDidType(t)),this._triggerCharacterListener.add(this._editor.onDidCompositionEnd(()=>t()))}get state(){return this._triggerState?this._triggerState.auto?2:1:0}cancel(e=!1){this._triggerState!==void 0&&(this._triggerQuickSuggest.cancel(),this._requestToken?.cancel(),this._requestToken=void 0,this._triggerState=void 0,this._completionModel=void 0,this._context=void 0,this._onDidCancel.fire({retrigger:e}))}clear(){this._completionDisposables.clear()}_updateActiveSuggestSession(){this._triggerState!==void 0&&(!this._editor.hasModel()||!this._languageFeaturesService.completionProvider.has(this._editor.getModel())?this.cancel():this.trigger({auto:this._triggerState.auto,retrigger:!0}))}_onCursorChange(e){if(!this._editor.hasModel())return;const t=this._currentSelection;if(this._currentSelection=this._editor.getSelection(),!e.selection.isEmpty()||e.reason!==f.NotSet&&e.reason!==f.Explicit||e.source!=="keyboard"&&e.source!=="deleteLeft"){this.cancel();return}this._triggerState===void 0&&e.reason===f.NotSet?(t.containsRange(this._currentSelection)||t.getEndPosition().isBeforeOrEqual(this._currentSelection.getPosition()))&&this._doTriggerQuickSuggest():this._triggerState!==void 0&&e.reason===f.Explicit&&this._refilterCompletionItems()}_onCompositionEnd(){this._triggerState===void 0?this._doTriggerQuickSuggest():this._refilterCompletionItems()}_doTriggerQuickSuggest(){C.isAllOff(this._editor.getOption(a.quickSuggestions))||this._editor.getOption(a.suggest).snippetsPreventQuickSuggestions&&ie.get(this._editor)?.isInSnippet()||(this.cancel(),this._triggerQuickSuggest.cancelAndSet(()=>{if(this._triggerState!==void 0||!l.shouldAutoTrigger(this._editor)||!this._editor.hasModel()||!this._editor.hasWidgetFocus())return;const e=this._editor.getModel(),t=this._editor.getPosition(),o=this._editor.getOption(a.quickSuggestions);if(!C.isAllOff(o)){if(!C.isAllOn(o)){e.tokenization.tokenizeIfCheap(t.lineNumber);const i=e.tokenization.getLineTokens(t.lineNumber),n=i.getStandardTokenType(i.findTokenIndexAtOffset(Math.max(t.column-1-1,0)));if(C.valueFor(o,n)!=="on")return}ne(this._editor,this._contextKeyService,this._configurationService)&&this._languageFeaturesService.completionProvider.has(e)&&this.trigger({auto:!0})}},this._editor.getOption(a.quickSuggestionsDelay)))}_refilterCompletionItems(){E(this._editor.hasModel()),E(this._triggerState!==void 0);const e=this._editor.getModel(),t=this._editor.getPosition(),o=new l(e,t,{...this._triggerState,refilter:!0});this._onNewContext(o)}trigger(e){if(!this._editor.hasModel())return;const t=this._editor.getModel(),o=new l(t,this._editor.getPosition(),e);this.cancel(e.retrigger),this._triggerState=e,this._onDidTrigger.fire({auto:e.auto,shy:e.shy??!1,position:this._editor.getPosition()}),this._context=o;let i={triggerKind:e.triggerKind??_.Invoke};e.triggerCharacter&&(i={triggerKind:_.TriggerCharacter,triggerCharacter:e.triggerCharacter}),this._requestToken=new N;const n=this._editor.getOption(a.snippetSuggestions);let s=b.Inline;switch(n){case"top":s=b.Top;break;case"bottom":s=b.Bottom;break}const{itemKind:c,showDeprecated:m}=h.createSuggestFilter(this._editor),O=new X(s,e.completionOptions?.kindFilter??c,e.completionOptions?.providerFilter,e.completionOptions?.providerItemsToReuse,m),u=R.create(this._editorWorkerService,this._editor),S=Z(this._languageFeaturesService.completionProvider,t,this._editor.getPosition(),O,i,this._requestToken.token);Promise.all([S,u]).then(async([p,P])=>{if(this._requestToken?.dispose(),!this._editor.hasModel())return;let v=e?.clipboardText;if(!v&&p.needsClipboard&&(v=await this._clipboardService.readText()),this._triggerState===void 0)return;const F=this._editor.getModel(),y=new l(F,this._editor.getPosition(),e),L={...te.default,firstMatchCanBeWeak:!this._editor.getOption(a.suggest).matchOnWordStartOnly};if(this._completionModel=new $(p.items,this._context.column,{leadingLineContent:y.leadingLineContent,characterCountDelta:y.column-this._context.column},P,this._editor.getOption(a.suggest),this._editor.getOption(a.snippetSuggestions),L,v),this._completionDisposables.add(p.disposable),this._onNewContext(y),this._reportDurationsTelemetry(p.durations),!this._envService.isBuilt||this._envService.isExtensionDevelopment)for(const I of p.items)I.isInvalid&&this._logService.warn(`[suggest] did IGNORE invalid completion item from ${I.provider._debugDisplayName}`,I.completion)}).catch(z)}_telemetryGate=0;_reportDurationsTelemetry(e){this._telemetryGate++%230===0&&setTimeout(()=>{this._telemetryService.publicLog2("suggest.durations.json",{data:JSON.stringify(e)}),this._logService.debug("suggest.durations.json",e)})}static createSuggestFilter(e){const t=new Set;e.getOption(a.snippetSuggestions)==="none"&&t.add(r.Snippet);const i=e.getOption(a.suggest);return i.showMethods||t.add(r.Method),i.showFunctions||t.add(r.Function),i.showConstructors||t.add(r.Constructor),i.showFields||t.add(r.Field),i.showVariables||t.add(r.Variable),i.showClasses||t.add(r.Class),i.showStructs||t.add(r.Struct),i.showInterfaces||t.add(r.Interface),i.showModules||t.add(r.Module),i.showProperties||t.add(r.Property),i.showEvents||t.add(r.Event),i.showOperators||t.add(r.Operator),i.showUnits||t.add(r.Unit),i.showValues||t.add(r.Value),i.showConstants||t.add(r.Constant),i.showEnums||t.add(r.Enum),i.showEnumMembers||t.add(r.EnumMember),i.showKeywords||t.add(r.Keyword),i.showWords||t.add(r.Text),i.showColors||t.add(r.Color),i.showFiles||t.add(r.File),i.showReferences||t.add(r.Reference),i.showColors||t.add(r.Customcolor),i.showFolders||t.add(r.Folder),i.showTypeParameters||t.add(r.TypeParameter),i.showSnippets||t.add(r.Snippet),i.showUsers||t.add(r.User),i.showIssues||t.add(r.Issue),{itemKind:t,showDeprecated:i.showDeprecated}}_onNewContext(e){if(this._context){if(e.lineNumber!==this._context.lineNumber){this.cancel();return}if(k(e.leadingLineContent)!==k(this._context.leadingLineContent)){this.cancel();return}if(e.column<this._context.column){e.leadingWord.word?this.trigger({auto:this._context.triggerOptions.auto,retrigger:!0}):this.cancel();return}if(this._completionModel){if(e.leadingWord.word.length!==0&&e.leadingWord.startColumn>this._context.leadingWord.startColumn){if(l.shouldAutoTrigger(this._editor)&&this._context){const o=this._completionModel.getItemsByProvider();this.trigger({auto:this._context.triggerOptions.auto,retrigger:!0,clipboardText:this._completionModel.clipboardText,completionOptions:{providerItemsToReuse:o}})}return}if(e.column>this._context.column&&this._completionModel.getIncompleteProvider().size>0&&e.leadingWord.word.length!==0){const t=new Map,o=new Set;for(const[i,n]of this._completionModel.getItemsByProvider())n.length>0&&n[0].container.incomplete?o.add(i):t.set(i,n);this.trigger({auto:this._context.triggerOptions.auto,triggerKind:_.TriggerForIncompleteCompletions,retrigger:!0,clipboardText:this._completionModel.clipboardText,completionOptions:{providerFilter:o,providerItemsToReuse:t}})}else{const t=this._completionModel.lineContext;let o=!1;if(this._completionModel.lineContext={leadingLineContent:e.leadingLineContent,characterCountDelta:e.column-this._context.column},this._completionModel.items.length===0){const i=l.shouldAutoTrigger(this._editor);if(!this._context){this.cancel();return}if(i&&this._context.leadingWord.endColumn<e.leadingWord.startColumn){this.trigger({auto:this._context.triggerOptions.auto,retrigger:!0});return}if(this._context.triggerOptions.auto){this.cancel();return}else if(this._completionModel.lineContext=t,o=this._completionModel.items.length>0,o&&e.leadingWord.word.length===0){this.cancel();return}}this._onDidSuggest.fire({completionModel:this._completionModel,triggerOptions:e.triggerOptions,isFrozen:o})}}}}};h=M([g(1,V),g(2,U),g(3,J),g(4,H),g(5,G),g(6,j),g(7,ee),g(8,oe)],h);export{l as LineContext,re as State,h as SuggestModel};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SuggestModel_1;
+import { TimeoutTimer } from '../../../../base/common/async.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { DisposableStore, dispose } from '../../../../base/common/lifecycle.js';
+import { getLeadingWhitespace, isHighSurrogate, isLowSurrogate } from '../../../../base/common/strings.js';
+import { Selection } from '../../../common/core/selection.js';
+import { IEditorWorkerService } from '../../../common/services/editorWorker.js';
+import { WordDistance } from './wordDistance.js';
+import { IClipboardService } from '../../../../platform/clipboard/common/clipboardService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { CompletionModel } from './completionModel.js';
+import { CompletionOptions, getSnippetSuggestSupport, provideSuggestionItems, QuickSuggestionsOptions } from './suggest.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { FuzzyScoreOptions } from '../../../../base/common/filters.js';
+import { assertType } from '../../../../base/common/types.js';
+import { InlineCompletionContextKeys } from '../../inlineCompletions/browser/controller/inlineCompletionContextKeys.js';
+import { SnippetController2 } from '../../snippet/browser/snippetController2.js';
+import { IEnvironmentService } from '../../../../platform/environment/common/environment.js';
+export class LineContext {
+    static shouldAutoTrigger(editor) {
+        if (!editor.hasModel()) {
+            return false;
+        }
+        const model = editor.getModel();
+        const pos = editor.getPosition();
+        model.tokenization.tokenizeIfCheap(pos.lineNumber);
+        const word = model.getWordAtPosition(pos);
+        if (!word) {
+            return false;
+        }
+        if (word.endColumn !== pos.column &&
+            word.startColumn + 1 !== pos.column) {
+            return false;
+        }
+        if (!isNaN(Number(word.word))) {
+            return false;
+        }
+        return true;
+    }
+    constructor(model, position, triggerOptions) {
+        this.leadingLineContent = model.getLineContent(position.lineNumber).substr(0, position.column - 1);
+        this.leadingWord = model.getWordUntilPosition(position);
+        this.lineNumber = position.lineNumber;
+        this.column = position.column;
+        this.triggerOptions = triggerOptions;
+    }
+}
+function canShowQuickSuggest(editor, contextKeyService, configurationService) {
+    if (!Boolean(contextKeyService.getContextKeyValue(InlineCompletionContextKeys.inlineSuggestionVisible.key))) {
+        return true;
+    }
+    const suppressSuggestions = contextKeyService.getContextKeyValue(InlineCompletionContextKeys.suppressSuggestions.key);
+    if (suppressSuggestions !== undefined) {
+        return !suppressSuggestions;
+    }
+    return !editor.getOption(64).suppressSuggestions;
+}
+function canShowSuggestOnTriggerCharacters(editor, contextKeyService, configurationService) {
+    if (!Boolean(contextKeyService.getContextKeyValue('inlineSuggestionVisible'))) {
+        return true;
+    }
+    const suppressSuggestions = contextKeyService.getContextKeyValue(InlineCompletionContextKeys.suppressSuggestions.key);
+    if (suppressSuggestions !== undefined) {
+        return !suppressSuggestions;
+    }
+    return !editor.getOption(64).suppressSuggestions;
+}
+let SuggestModel = SuggestModel_1 = class SuggestModel {
+    constructor(_editor, _editorWorkerService, _clipboardService, _telemetryService, _logService, _contextKeyService, _configurationService, _languageFeaturesService, _envService) {
+        this._editor = _editor;
+        this._editorWorkerService = _editorWorkerService;
+        this._clipboardService = _clipboardService;
+        this._telemetryService = _telemetryService;
+        this._logService = _logService;
+        this._contextKeyService = _contextKeyService;
+        this._configurationService = _configurationService;
+        this._languageFeaturesService = _languageFeaturesService;
+        this._envService = _envService;
+        this._toDispose = new DisposableStore();
+        this._triggerCharacterListener = new DisposableStore();
+        this._triggerQuickSuggest = new TimeoutTimer();
+        this._triggerState = undefined;
+        this._completionDisposables = new DisposableStore();
+        this._onDidCancel = new Emitter();
+        this._onDidTrigger = new Emitter();
+        this._onDidSuggest = new Emitter();
+        this.onDidCancel = this._onDidCancel.event;
+        this.onDidTrigger = this._onDidTrigger.event;
+        this.onDidSuggest = this._onDidSuggest.event;
+        this._telemetryGate = 0;
+        this._currentSelection = this._editor.getSelection() || new Selection(1, 1, 1, 1);
+        this._toDispose.add(this._editor.onDidChangeModel(() => {
+            this._updateTriggerCharacters();
+            this.cancel();
+        }));
+        this._toDispose.add(this._editor.onDidChangeModelLanguage(() => {
+            this._updateTriggerCharacters();
+            this.cancel();
+        }));
+        this._toDispose.add(this._editor.onDidChangeConfiguration(() => {
+            this._updateTriggerCharacters();
+        }));
+        this._toDispose.add(this._languageFeaturesService.completionProvider.onDidChange(() => {
+            this._updateTriggerCharacters();
+            this._updateActiveSuggestSession();
+        }));
+        let editorIsComposing = false;
+        this._toDispose.add(this._editor.onDidCompositionStart(() => {
+            editorIsComposing = true;
+        }));
+        this._toDispose.add(this._editor.onDidCompositionEnd(() => {
+            editorIsComposing = false;
+            this._onCompositionEnd();
+        }));
+        this._toDispose.add(this._editor.onDidChangeCursorSelection(e => {
+            if (!editorIsComposing) {
+                this._onCursorChange(e);
+            }
+        }));
+        this._toDispose.add(this._editor.onDidChangeModelContent(() => {
+            if (!editorIsComposing && this._triggerState !== undefined) {
+                this._refilterCompletionItems();
+            }
+        }));
+        this._updateTriggerCharacters();
+    }
+    dispose() {
+        dispose(this._triggerCharacterListener);
+        dispose([this._onDidCancel, this._onDidSuggest, this._onDidTrigger, this._triggerQuickSuggest]);
+        this._toDispose.dispose();
+        this._completionDisposables.dispose();
+        this.cancel();
+    }
+    _updateTriggerCharacters() {
+        this._triggerCharacterListener.clear();
+        if (this._editor.getOption(94)
+            || !this._editor.hasModel()
+            || !this._editor.getOption(124)) {
+            return;
+        }
+        const supportsByTriggerCharacter = new Map();
+        for (const support of this._languageFeaturesService.completionProvider.all(this._editor.getModel())) {
+            for (const ch of support.triggerCharacters || []) {
+                let set = supportsByTriggerCharacter.get(ch);
+                if (!set) {
+                    set = new Set();
+                    const suggestSupport = getSnippetSuggestSupport();
+                    if (suggestSupport) {
+                        set.add(suggestSupport);
+                    }
+                    supportsByTriggerCharacter.set(ch, set);
+                }
+                set.add(support);
+            }
+        }
+        const checkTriggerCharacter = (text) => {
+            if (!canShowSuggestOnTriggerCharacters(this._editor, this._contextKeyService, this._configurationService)) {
+                return;
+            }
+            if (LineContext.shouldAutoTrigger(this._editor)) {
+                return;
+            }
+            if (!text) {
+                const position = this._editor.getPosition();
+                const model = this._editor.getModel();
+                text = model.getLineContent(position.lineNumber).substr(0, position.column - 1);
+            }
+            let lastChar = '';
+            if (isLowSurrogate(text.charCodeAt(text.length - 1))) {
+                if (isHighSurrogate(text.charCodeAt(text.length - 2))) {
+                    lastChar = text.substr(text.length - 2);
+                }
+            }
+            else {
+                lastChar = text.charAt(text.length - 1);
+            }
+            const supports = supportsByTriggerCharacter.get(lastChar);
+            if (supports) {
+                const providerItemsToReuse = new Map();
+                if (this._completionModel) {
+                    for (const [provider, items] of this._completionModel.getItemsByProvider()) {
+                        if (!supports.has(provider)) {
+                            providerItemsToReuse.set(provider, items);
+                        }
+                    }
+                }
+                this.trigger({
+                    auto: true,
+                    triggerKind: 1,
+                    triggerCharacter: lastChar,
+                    retrigger: Boolean(this._completionModel),
+                    clipboardText: this._completionModel?.clipboardText,
+                    completionOptions: { providerFilter: supports, providerItemsToReuse }
+                });
+            }
+        };
+        this._triggerCharacterListener.add(this._editor.onDidType(checkTriggerCharacter));
+        this._triggerCharacterListener.add(this._editor.onDidCompositionEnd(() => checkTriggerCharacter()));
+    }
+    get state() {
+        if (!this._triggerState) {
+            return 0;
+        }
+        else if (!this._triggerState.auto) {
+            return 1;
+        }
+        else {
+            return 2;
+        }
+    }
+    cancel(retrigger = false) {
+        if (this._triggerState !== undefined) {
+            this._triggerQuickSuggest.cancel();
+            this._requestToken?.cancel();
+            this._requestToken = undefined;
+            this._triggerState = undefined;
+            this._completionModel = undefined;
+            this._context = undefined;
+            this._onDidCancel.fire({ retrigger });
+        }
+    }
+    clear() {
+        this._completionDisposables.clear();
+    }
+    _updateActiveSuggestSession() {
+        if (this._triggerState !== undefined) {
+            if (!this._editor.hasModel() || !this._languageFeaturesService.completionProvider.has(this._editor.getModel())) {
+                this.cancel();
+            }
+            else {
+                this.trigger({ auto: this._triggerState.auto, retrigger: true });
+            }
+        }
+    }
+    _onCursorChange(e) {
+        if (!this._editor.hasModel()) {
+            return;
+        }
+        const prevSelection = this._currentSelection;
+        this._currentSelection = this._editor.getSelection();
+        if (!e.selection.isEmpty()
+            || (e.reason !== 0 && e.reason !== 3)
+            || (e.source !== 'keyboard' && e.source !== 'deleteLeft')) {
+            this.cancel();
+            return;
+        }
+        if (this._triggerState === undefined && e.reason === 0) {
+            if (prevSelection.containsRange(this._currentSelection) || prevSelection.getEndPosition().isBeforeOrEqual(this._currentSelection.getPosition())) {
+                this._doTriggerQuickSuggest();
+            }
+        }
+        else if (this._triggerState !== undefined && e.reason === 3) {
+            this._refilterCompletionItems();
+        }
+    }
+    _onCompositionEnd() {
+        if (this._triggerState === undefined) {
+            this._doTriggerQuickSuggest();
+        }
+        else {
+            this._refilterCompletionItems();
+        }
+    }
+    _doTriggerQuickSuggest() {
+        if (QuickSuggestionsOptions.isAllOff(this._editor.getOption(92))) {
+            return;
+        }
+        if (this._editor.getOption(121).snippetsPreventQuickSuggestions && SnippetController2.get(this._editor)?.isInSnippet()) {
+            return;
+        }
+        this.cancel();
+        this._triggerQuickSuggest.cancelAndSet(() => {
+            if (this._triggerState !== undefined) {
+                return;
+            }
+            if (!LineContext.shouldAutoTrigger(this._editor)) {
+                return;
+            }
+            if (!this._editor.hasModel() || !this._editor.hasWidgetFocus()) {
+                return;
+            }
+            const model = this._editor.getModel();
+            const pos = this._editor.getPosition();
+            const config = this._editor.getOption(92);
+            if (QuickSuggestionsOptions.isAllOff(config)) {
+                return;
+            }
+            if (!QuickSuggestionsOptions.isAllOn(config)) {
+                model.tokenization.tokenizeIfCheap(pos.lineNumber);
+                const lineTokens = model.tokenization.getLineTokens(pos.lineNumber);
+                const tokenType = lineTokens.getStandardTokenType(lineTokens.findTokenIndexAtOffset(Math.max(pos.column - 1 - 1, 0)));
+                if (QuickSuggestionsOptions.valueFor(config, tokenType) !== 'on') {
+                    return;
+                }
+            }
+            if (!canShowQuickSuggest(this._editor, this._contextKeyService, this._configurationService)) {
+                return;
+            }
+            if (!this._languageFeaturesService.completionProvider.has(model)) {
+                return;
+            }
+            this.trigger({ auto: true });
+        }, this._editor.getOption(93));
+    }
+    _refilterCompletionItems() {
+        assertType(this._editor.hasModel());
+        assertType(this._triggerState !== undefined);
+        const model = this._editor.getModel();
+        const position = this._editor.getPosition();
+        const ctx = new LineContext(model, position, { ...this._triggerState, refilter: true });
+        this._onNewContext(ctx);
+    }
+    trigger(options) {
+        if (!this._editor.hasModel()) {
+            return;
+        }
+        const model = this._editor.getModel();
+        const ctx = new LineContext(model, this._editor.getPosition(), options);
+        this.cancel(options.retrigger);
+        this._triggerState = options;
+        this._onDidTrigger.fire({ auto: options.auto, shy: options.shy ?? false, position: this._editor.getPosition() });
+        this._context = ctx;
+        let suggestCtx = { triggerKind: options.triggerKind ?? 0 };
+        if (options.triggerCharacter) {
+            suggestCtx = {
+                triggerKind: 1,
+                triggerCharacter: options.triggerCharacter
+            };
+        }
+        this._requestToken = new CancellationTokenSource();
+        const snippetSuggestions = this._editor.getOption(115);
+        let snippetSortOrder = 1;
+        switch (snippetSuggestions) {
+            case 'top':
+                snippetSortOrder = 0;
+                break;
+            case 'bottom':
+                snippetSortOrder = 2;
+                break;
+        }
+        const { itemKind: itemKindFilter, showDeprecated } = SuggestModel_1.createSuggestFilter(this._editor);
+        const completionOptions = new CompletionOptions(snippetSortOrder, options.completionOptions?.kindFilter ?? itemKindFilter, options.completionOptions?.providerFilter, options.completionOptions?.providerItemsToReuse, showDeprecated);
+        const wordDistance = WordDistance.create(this._editorWorkerService, this._editor);
+        const completions = provideSuggestionItems(this._languageFeaturesService.completionProvider, model, this._editor.getPosition(), completionOptions, suggestCtx, this._requestToken.token);
+        Promise.all([completions, wordDistance]).then(async ([completions, wordDistance]) => {
+            this._requestToken?.dispose();
+            if (!this._editor.hasModel()) {
+                return;
+            }
+            let clipboardText = options?.clipboardText;
+            if (!clipboardText && completions.needsClipboard) {
+                clipboardText = await this._clipboardService.readText();
+            }
+            if (this._triggerState === undefined) {
+                return;
+            }
+            const model = this._editor.getModel();
+            const ctx = new LineContext(model, this._editor.getPosition(), options);
+            const fuzzySearchOptions = {
+                ...FuzzyScoreOptions.default,
+                firstMatchCanBeWeak: !this._editor.getOption(121).matchOnWordStartOnly
+            };
+            this._completionModel = new CompletionModel(completions.items, this._context.column, {
+                leadingLineContent: ctx.leadingLineContent,
+                characterCountDelta: ctx.column - this._context.column
+            }, wordDistance, this._editor.getOption(121), this._editor.getOption(115), fuzzySearchOptions, clipboardText);
+            this._completionDisposables.add(completions.disposable);
+            this._onNewContext(ctx);
+            this._reportDurationsTelemetry(completions.durations);
+            if (!this._envService.isBuilt || this._envService.isExtensionDevelopment) {
+                for (const item of completions.items) {
+                    if (item.isInvalid) {
+                        this._logService.warn(`[suggest] did IGNORE invalid completion item from ${item.provider._debugDisplayName}`, item.completion);
+                    }
+                }
+            }
+        }).catch(onUnexpectedError);
+    }
+    _reportDurationsTelemetry(durations) {
+        if (this._telemetryGate++ % 230 !== 0) {
+            return;
+        }
+        setTimeout(() => {
+            this._telemetryService.publicLog2('suggest.durations.json', { data: JSON.stringify(durations) });
+            this._logService.debug('suggest.durations.json', durations);
+        });
+    }
+    static createSuggestFilter(editor) {
+        const result = new Set();
+        const snippetSuggestions = editor.getOption(115);
+        if (snippetSuggestions === 'none') {
+            result.add(27);
+        }
+        const suggestOptions = editor.getOption(121);
+        if (!suggestOptions.showMethods) {
+            result.add(0);
+        }
+        if (!suggestOptions.showFunctions) {
+            result.add(1);
+        }
+        if (!suggestOptions.showConstructors) {
+            result.add(2);
+        }
+        if (!suggestOptions.showFields) {
+            result.add(3);
+        }
+        if (!suggestOptions.showVariables) {
+            result.add(4);
+        }
+        if (!suggestOptions.showClasses) {
+            result.add(5);
+        }
+        if (!suggestOptions.showStructs) {
+            result.add(6);
+        }
+        if (!suggestOptions.showInterfaces) {
+            result.add(7);
+        }
+        if (!suggestOptions.showModules) {
+            result.add(8);
+        }
+        if (!suggestOptions.showProperties) {
+            result.add(9);
+        }
+        if (!suggestOptions.showEvents) {
+            result.add(10);
+        }
+        if (!suggestOptions.showOperators) {
+            result.add(11);
+        }
+        if (!suggestOptions.showUnits) {
+            result.add(12);
+        }
+        if (!suggestOptions.showValues) {
+            result.add(13);
+        }
+        if (!suggestOptions.showConstants) {
+            result.add(14);
+        }
+        if (!suggestOptions.showEnums) {
+            result.add(15);
+        }
+        if (!suggestOptions.showEnumMembers) {
+            result.add(16);
+        }
+        if (!suggestOptions.showKeywords) {
+            result.add(17);
+        }
+        if (!suggestOptions.showWords) {
+            result.add(18);
+        }
+        if (!suggestOptions.showColors) {
+            result.add(19);
+        }
+        if (!suggestOptions.showFiles) {
+            result.add(20);
+        }
+        if (!suggestOptions.showReferences) {
+            result.add(21);
+        }
+        if (!suggestOptions.showColors) {
+            result.add(22);
+        }
+        if (!suggestOptions.showFolders) {
+            result.add(23);
+        }
+        if (!suggestOptions.showTypeParameters) {
+            result.add(24);
+        }
+        if (!suggestOptions.showSnippets) {
+            result.add(27);
+        }
+        if (!suggestOptions.showUsers) {
+            result.add(25);
+        }
+        if (!suggestOptions.showIssues) {
+            result.add(26);
+        }
+        return { itemKind: result, showDeprecated: suggestOptions.showDeprecated };
+    }
+    _onNewContext(ctx) {
+        if (!this._context) {
+            return;
+        }
+        if (ctx.lineNumber !== this._context.lineNumber) {
+            this.cancel();
+            return;
+        }
+        if (getLeadingWhitespace(ctx.leadingLineContent) !== getLeadingWhitespace(this._context.leadingLineContent)) {
+            this.cancel();
+            return;
+        }
+        if (ctx.column < this._context.column) {
+            if (ctx.leadingWord.word) {
+                this.trigger({ auto: this._context.triggerOptions.auto, retrigger: true });
+            }
+            else {
+                this.cancel();
+            }
+            return;
+        }
+        if (!this._completionModel) {
+            return;
+        }
+        if (ctx.leadingWord.word.length !== 0 && ctx.leadingWord.startColumn > this._context.leadingWord.startColumn) {
+            const shouldAutoTrigger = LineContext.shouldAutoTrigger(this._editor);
+            if (shouldAutoTrigger && this._context) {
+                const map = this._completionModel.getItemsByProvider();
+                this.trigger({
+                    auto: this._context.triggerOptions.auto,
+                    retrigger: true,
+                    clipboardText: this._completionModel.clipboardText,
+                    completionOptions: { providerItemsToReuse: map }
+                });
+            }
+            return;
+        }
+        if (ctx.column > this._context.column && this._completionModel.getIncompleteProvider().size > 0 && ctx.leadingWord.word.length !== 0) {
+            const providerItemsToReuse = new Map();
+            const providerFilter = new Set();
+            for (const [provider, items] of this._completionModel.getItemsByProvider()) {
+                if (items.length > 0 && items[0].container.incomplete) {
+                    providerFilter.add(provider);
+                }
+                else {
+                    providerItemsToReuse.set(provider, items);
+                }
+            }
+            this.trigger({
+                auto: this._context.triggerOptions.auto,
+                triggerKind: 2,
+                retrigger: true,
+                clipboardText: this._completionModel.clipboardText,
+                completionOptions: { providerFilter, providerItemsToReuse }
+            });
+        }
+        else {
+            const oldLineContext = this._completionModel.lineContext;
+            let isFrozen = false;
+            this._completionModel.lineContext = {
+                leadingLineContent: ctx.leadingLineContent,
+                characterCountDelta: ctx.column - this._context.column
+            };
+            if (this._completionModel.items.length === 0) {
+                const shouldAutoTrigger = LineContext.shouldAutoTrigger(this._editor);
+                if (!this._context) {
+                    this.cancel();
+                    return;
+                }
+                if (shouldAutoTrigger && this._context.leadingWord.endColumn < ctx.leadingWord.startColumn) {
+                    this.trigger({ auto: this._context.triggerOptions.auto, retrigger: true });
+                    return;
+                }
+                if (!this._context.triggerOptions.auto) {
+                    this._completionModel.lineContext = oldLineContext;
+                    isFrozen = this._completionModel.items.length > 0;
+                    if (isFrozen && ctx.leadingWord.word.length === 0) {
+                        this.cancel();
+                        return;
+                    }
+                }
+                else {
+                    this.cancel();
+                    return;
+                }
+            }
+            this._onDidSuggest.fire({
+                completionModel: this._completionModel,
+                triggerOptions: ctx.triggerOptions,
+                isFrozen,
+            });
+        }
+    }
+};
+SuggestModel = SuggestModel_1 = __decorate([
+    __param(1, IEditorWorkerService),
+    __param(2, IClipboardService),
+    __param(3, ITelemetryService),
+    __param(4, ILogService),
+    __param(5, IContextKeyService),
+    __param(6, IConfigurationService),
+    __param(7, ILanguageFeaturesService),
+    __param(8, IEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], SuggestModel);
+export { SuggestModel };

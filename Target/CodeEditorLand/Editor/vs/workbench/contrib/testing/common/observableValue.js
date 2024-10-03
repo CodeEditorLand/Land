@@ -1,1 +1,29 @@
-import{Emitter as l,Event as s}from"../../../../base/common/event.js";import{Disposable as o}from"../../../../base/common/lifecycle.js";import"./storedValue.js";const b=a=>({onDidChange:s.None,value:a});class r extends o{constructor(e){super();this._value=e}changeEmitter=this._register(new l);onDidChange=this.changeEmitter.event;get value(){return this._value}set value(e){e!==this._value&&(this._value=e,this.changeEmitter.fire(e))}static stored(e,i){const t=new r(e.get(i));return t._register(e),t._register(t.onDidChange(n=>e.store(n))),t}}export{r as MutableObservableValue,b as staticObservableValue};
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+export const staticObservableValue = (value) => ({
+    onDidChange: Event.None,
+    value,
+});
+export class MutableObservableValue extends Disposable {
+    get value() {
+        return this._value;
+    }
+    set value(v) {
+        if (v !== this._value) {
+            this._value = v;
+            this.changeEmitter.fire(v);
+        }
+    }
+    static stored(stored, defaultValue) {
+        const o = new MutableObservableValue(stored.get(defaultValue));
+        o._register(stored);
+        o._register(o.onDidChange(value => stored.store(value)));
+        return o;
+    }
+    constructor(_value) {
+        super();
+        this._value = _value;
+        this.changeEmitter = this._register(new Emitter());
+        this.onDidChange = this.changeEmitter.event;
+    }
+}

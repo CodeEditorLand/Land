@@ -1,1 +1,131 @@
-import"../../../base/common/event.js";import{ScanCode as i,ScanCodeUtils as y}from"../../../base/common/keyCodes.js";import{createDecorator as u}from"../../instantiation/common/instantiation.js";import"../../keybinding/common/keybinding.js";import"./keyboardMapper.js";const b=u("keyboardLayoutService");function M(e,o){return!e||!o?!1:!!(e.name&&o.name&&e.name===o.name||e.id&&o.id&&e.id===o.id||e.model&&o.model&&e.model===o.model&&e.layout===o.layout)}function w(e){if(!e)return{label:"",description:""};if(e.name)return{label:e.text,description:""};if(e.id){const t=e;return t.localizedName?{label:t.localizedName,description:""}:/^com\.apple\.keylayout\./.test(t.id)?{label:t.id.replace(/^com\.apple\.keylayout\./,"").replace(/-/," "),description:""}:/^.*inputmethod\./.test(t.id)?{label:t.id.replace(/^.*inputmethod\./,"").replace(/[-\.]/," "),description:`Input Method (${t.lang})`}:{label:t.lang,description:""}}return{label:e.layout,description:""}}function x(e){return e.name?e.name:e.id?e.id:e.layout}function d(e,o){return!e&&!o?!0:!e||!o?!1:e.vkey===o.vkey&&e.value===o.value&&e.withShift===o.withShift&&e.withAltGr===o.withAltGr&&e.withShiftAltGr===o.withShiftAltGr}function h(e,o){if(!e&&!o)return!0;if(!e||!o)return!1;for(let t=0;t<i.MAX_VALUE;t++){const n=y.toString(t),r=e[n],a=o[n];if(!d(r,a))return!1}return!0}function p(e,o){return!e&&!o?!0:!e||!o?!1:e.value===o.value&&e.withShift===o.withShift&&e.withAltGr===o.withAltGr&&e.withShiftAltGr===o.withShiftAltGr}function m(e,o){if(!e&&!o)return!0;if(!e||!o)return!1;for(let t=0;t<i.MAX_VALUE;t++){const n=y.toString(t),r=e[n],a=o[n];if(!p(r,a))return!1}return!0}export{b as IKeyboardLayoutService,M as areKeyboardLayoutsEqual,x as getKeyboardLayoutId,m as macLinuxKeyboardMappingEquals,w as parseKeyboardLayoutDescription,h as windowsKeyboardMappingEquals};
+import { ScanCodeUtils } from '../../../base/common/keyCodes.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const IKeyboardLayoutService = createDecorator('keyboardLayoutService');
+export function areKeyboardLayoutsEqual(a, b) {
+    if (!a || !b) {
+        return false;
+    }
+    if (a.name && b.name && a.name === b.name) {
+        return true;
+    }
+    if (a.id && b.id && a.id === b.id) {
+        return true;
+    }
+    if (a.model &&
+        b.model &&
+        a.model === b.model &&
+        a.layout === b.layout) {
+        return true;
+    }
+    return false;
+}
+export function parseKeyboardLayoutDescription(layout) {
+    if (!layout) {
+        return { label: '', description: '' };
+    }
+    if (layout.name) {
+        const windowsLayout = layout;
+        return {
+            label: windowsLayout.text,
+            description: ''
+        };
+    }
+    if (layout.id) {
+        const macLayout = layout;
+        if (macLayout.localizedName) {
+            return {
+                label: macLayout.localizedName,
+                description: ''
+            };
+        }
+        if (/^com\.apple\.keylayout\./.test(macLayout.id)) {
+            return {
+                label: macLayout.id.replace(/^com\.apple\.keylayout\./, '').replace(/-/, ' '),
+                description: ''
+            };
+        }
+        if (/^.*inputmethod\./.test(macLayout.id)) {
+            return {
+                label: macLayout.id.replace(/^.*inputmethod\./, '').replace(/[-\.]/, ' '),
+                description: `Input Method (${macLayout.lang})`
+            };
+        }
+        return {
+            label: macLayout.lang,
+            description: ''
+        };
+    }
+    const linuxLayout = layout;
+    return {
+        label: linuxLayout.layout,
+        description: ''
+    };
+}
+export function getKeyboardLayoutId(layout) {
+    if (layout.name) {
+        return layout.name;
+    }
+    if (layout.id) {
+        return layout.id;
+    }
+    return layout.layout;
+}
+function windowsKeyMappingEquals(a, b) {
+    if (!a && !b) {
+        return true;
+    }
+    if (!a || !b) {
+        return false;
+    }
+    return (a.vkey === b.vkey
+        && a.value === b.value
+        && a.withShift === b.withShift
+        && a.withAltGr === b.withAltGr
+        && a.withShiftAltGr === b.withShiftAltGr);
+}
+export function windowsKeyboardMappingEquals(a, b) {
+    if (!a && !b) {
+        return true;
+    }
+    if (!a || !b) {
+        return false;
+    }
+    for (let scanCode = 0; scanCode < 193; scanCode++) {
+        const strScanCode = ScanCodeUtils.toString(scanCode);
+        const aEntry = a[strScanCode];
+        const bEntry = b[strScanCode];
+        if (!windowsKeyMappingEquals(aEntry, bEntry)) {
+            return false;
+        }
+    }
+    return true;
+}
+function macLinuxKeyMappingEquals(a, b) {
+    if (!a && !b) {
+        return true;
+    }
+    if (!a || !b) {
+        return false;
+    }
+    return (a.value === b.value
+        && a.withShift === b.withShift
+        && a.withAltGr === b.withAltGr
+        && a.withShiftAltGr === b.withShiftAltGr);
+}
+export function macLinuxKeyboardMappingEquals(a, b) {
+    if (!a && !b) {
+        return true;
+    }
+    if (!a || !b) {
+        return false;
+    }
+    for (let scanCode = 0; scanCode < 193; scanCode++) {
+        const strScanCode = ScanCodeUtils.toString(scanCode);
+        const aEntry = a[strScanCode];
+        const bEntry = b[strScanCode];
+        if (!macLinuxKeyMappingEquals(aEntry, bEntry)) {
+            return false;
+        }
+    }
+    return true;
+}

@@ -1,1 +1,93 @@
-var v=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var S=(a,e,i,t)=>{for(var r=t>1?void 0:t?p(e,i):e,o=a.length-1,s;o>=0;o--)(s=a[o])&&(r=(t?s(e,i,r):s(r))||r);return t&&r&&v(e,i,r),r},n=(a,e)=>(i,t)=>e(i,t,a);import{Action as m}from"../../../../base/common/actions.js";import{onUnexpectedError as g}from"../../../../base/common/errors.js";import{isDefined as h}from"../../../../base/common/types.js";import{localize as l}from"../../../../nls.js";import{ConfigurationTarget as u,IConfigurationService as y}from"../../../../platform/configuration/common/configuration.js";import{INotificationService as k,Severity as I}from"../../../../platform/notification/common/notification.js";import{IOpenerService as P}from"../../../../platform/opener/common/opener.js";import{Registry as C}from"../../../../platform/registry/common/platform.js";import{IStorageService as E,StorageScope as b,StorageTarget as x}from"../../../../platform/storage/common/storage.js";import{Extensions as W}from"../../../common/contributions.js";import{IExtensionsWorkbenchService as w}from"../../extensions/common/extensions.js";import{EnablementState as f}from"../../../services/extensionManagement/common/extensionManagement.js";import{LifecyclePhase as z}from"../../../services/lifecycle/common/lifecycle.js";let c=class{constructor(e,i,t,r,o){this.configurationService=e;this.extensionsWorkbenchService=i;this.storageService=t;this.notificationService=r;this.openerService=o;this.init().catch(g)}async init(){const e="coenraads.bracket-pair-colorizer";await this.extensionsWorkbenchService.queryLocal();const i=this.extensionsWorkbenchService.installed.find(d=>d.identifier.id===e);if(!i||i.enablementState!==f.EnabledGlobally&&i.enablementState!==f.EnabledWorkspace)return;const t=await this.getState();if(t.disablementLog.some(d=>d.extensionId===e))return;t.disablementLog.push({extensionId:e,disablementDateTime:new Date().getTime()}),await this.setState(t),await this.extensionsWorkbenchService.setEnablement(i,f.DisabledGlobally);const o="editor.bracketPairColorization.enabled",s=!!this.configurationService.inspect(o).user;this.notificationService.notify({message:l("bracketPairColorizer.notification","The extension 'Bracket pair Colorizer' got disabled because it was deprecated."),severity:I.Info,actions:{primary:[new m("",l("bracketPairColorizer.notification.action.uninstall","Uninstall Extension"),void 0,void 0,()=>{this.extensionsWorkbenchService.uninstall(i)})],secondary:[s?void 0:new m("",l("bracketPairColorizer.notification.action.enableNative","Enable Native Bracket Pair Colorization"),void 0,void 0,()=>{this.configurationService.updateValue(o,!0,u.USER)}),new m("",l("bracketPairColorizer.notification.action.showMoreInfo","More Info"),void 0,void 0,()=>{this.openerService.open("https://github.com/microsoft/vscode/issues/155179")})].filter(h)}})}storageKey="deprecatedExtensionMigrator.state";async getState(){const e=await this.storageService.get(this.storageKey,b.APPLICATION,"");return e===""?{disablementLog:[]}:JSON.parse(e)}async setState(e){const i=JSON.stringify(e);await this.storageService.store(this.storageKey,i,b.APPLICATION,x.USER)}};c=S([n(0,y),n(1,w),n(2,E),n(3,k),n(4,P)],c),C.as(W.Workbench).registerWorkbenchContribution(c,z.Restored);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Action } from '../../../../base/common/actions.js';
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+import { isDefined } from '../../../../base/common/types.js';
+import { localize } from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+import { IExtensionsWorkbenchService } from '../../extensions/common/extensions.js';
+let DeprecatedExtensionMigratorContribution = class DeprecatedExtensionMigratorContribution {
+    constructor(configurationService, extensionsWorkbenchService, storageService, notificationService, openerService) {
+        this.configurationService = configurationService;
+        this.extensionsWorkbenchService = extensionsWorkbenchService;
+        this.storageService = storageService;
+        this.notificationService = notificationService;
+        this.openerService = openerService;
+        this.storageKey = 'deprecatedExtensionMigrator.state';
+        this.init().catch(onUnexpectedError);
+    }
+    async init() {
+        const bracketPairColorizerId = 'coenraads.bracket-pair-colorizer';
+        await this.extensionsWorkbenchService.queryLocal();
+        const extension = this.extensionsWorkbenchService.installed.find(e => e.identifier.id === bracketPairColorizerId);
+        if (!extension ||
+            ((extension.enablementState !== 9) &&
+                (extension.enablementState !== 10))) {
+            return;
+        }
+        const state = await this.getState();
+        const disablementLogEntry = state.disablementLog.some(d => d.extensionId === bracketPairColorizerId);
+        if (disablementLogEntry) {
+            return;
+        }
+        state.disablementLog.push({ extensionId: bracketPairColorizerId, disablementDateTime: new Date().getTime() });
+        await this.setState(state);
+        await this.extensionsWorkbenchService.setEnablement(extension, 7);
+        const nativeBracketPairColorizationEnabledKey = 'editor.bracketPairColorization.enabled';
+        const bracketPairColorizationEnabled = !!this.configurationService.inspect(nativeBracketPairColorizationEnabledKey).user;
+        this.notificationService.notify({
+            message: localize('bracketPairColorizer.notification', "The extension 'Bracket pair Colorizer' got disabled because it was deprecated."),
+            severity: Severity.Info,
+            actions: {
+                primary: [
+                    new Action('', localize('bracketPairColorizer.notification.action.uninstall', "Uninstall Extension"), undefined, undefined, () => {
+                        this.extensionsWorkbenchService.uninstall(extension);
+                    }),
+                ],
+                secondary: [
+                    !bracketPairColorizationEnabled ? new Action('', localize('bracketPairColorizer.notification.action.enableNative', "Enable Native Bracket Pair Colorization"), undefined, undefined, () => {
+                        this.configurationService.updateValue(nativeBracketPairColorizationEnabledKey, true, 2);
+                    }) : undefined,
+                    new Action('', localize('bracketPairColorizer.notification.action.showMoreInfo', "More Info"), undefined, undefined, () => {
+                        this.openerService.open('https://github.com/microsoft/vscode/issues/155179');
+                    }),
+                ].filter(isDefined),
+            }
+        });
+    }
+    async getState() {
+        const jsonStr = await this.storageService.get(this.storageKey, -1, '');
+        if (jsonStr === '') {
+            return { disablementLog: [] };
+        }
+        return JSON.parse(jsonStr);
+    }
+    async setState(state) {
+        const json = JSON.stringify(state);
+        await this.storageService.store(this.storageKey, json, -1, 0);
+    }
+};
+DeprecatedExtensionMigratorContribution = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, IExtensionsWorkbenchService),
+    __param(2, IStorageService),
+    __param(3, INotificationService),
+    __param(4, IOpenerService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], DeprecatedExtensionMigratorContribution);
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(DeprecatedExtensionMigratorContribution, 3);

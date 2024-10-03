@@ -1,1 +1,49 @@
-var p=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var c=(r,i,e,t)=>{for(var n=t>1?void 0:t?h(i,e):i,o=r.length-1,a;o>=0;o--)(a=r[o])&&(n=(t?a(i,e,n):a(n))||n);return t&&n&&p(i,e,n),n},m=(r,i)=>(e,t)=>i(e,t,r);import*as l from"../../../../base/browser/dom.js";import{HoverAction as b}from"../../../../base/browser/ui/hover/hoverWidget.js";import{Disposable as v}from"../../../../base/common/lifecycle.js";import"./hoverTypes.js";import{IKeybindingService as u}from"../../../../platform/keybinding/common/keybinding.js";const d=l.$;let s=class extends v{constructor(e){super();this._keybindingService=e;this.hoverElement=d("div.hover-row.status-bar"),this.hoverElement.tabIndex=0,this.actionsElement=l.append(this.hoverElement,d("div.actions"))}hoverElement;actions=[];actionsElement;_hasContent=!1;get hasContent(){return this._hasContent}addAction(e){const t=this._keybindingService.lookupKeybinding(e.commandId),n=t?t.getLabel():null;this._hasContent=!0;const o=this._register(b.render(this.actionsElement,e,n));return this.actions.push(o),o}append(e){const t=l.append(this.actionsElement,e);return this._hasContent=!0,t}};s=c([m(0,u)],s);export{s as EditorHoverStatusBar};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../base/browser/dom.js';
+import { HoverAction } from '../../../../base/browser/ui/hover/hoverWidget.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+const $ = dom.$;
+let EditorHoverStatusBar = class EditorHoverStatusBar extends Disposable {
+    get hasContent() {
+        return this._hasContent;
+    }
+    constructor(_keybindingService) {
+        super();
+        this._keybindingService = _keybindingService;
+        this.actions = [];
+        this._hasContent = false;
+        this.hoverElement = $('div.hover-row.status-bar');
+        this.hoverElement.tabIndex = 0;
+        this.actionsElement = dom.append(this.hoverElement, $('div.actions'));
+    }
+    addAction(actionOptions) {
+        const keybinding = this._keybindingService.lookupKeybinding(actionOptions.commandId);
+        const keybindingLabel = keybinding ? keybinding.getLabel() : null;
+        this._hasContent = true;
+        const action = this._register(HoverAction.render(this.actionsElement, actionOptions, keybindingLabel));
+        this.actions.push(action);
+        return action;
+    }
+    append(element) {
+        const result = dom.append(this.actionsElement, element);
+        this._hasContent = true;
+        return result;
+    }
+};
+EditorHoverStatusBar = __decorate([
+    __param(0, IKeybindingService),
+    __metadata("design:paramtypes", [Object])
+], EditorHoverStatusBar);
+export { EditorHoverStatusBar };

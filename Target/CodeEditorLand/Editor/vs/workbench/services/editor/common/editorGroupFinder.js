@@ -1,1 +1,123 @@
-import{IConfigurationService as v}from"../../../../platform/configuration/common/configuration.js";import{EditorActivation as l}from"../../../../platform/editor/common/editor.js";import"../../../../platform/instantiation/common/instantiation.js";import{isEditorInputWithOptions as O,isEditorInput as P,EditorInputCapabilities as U}from"../../../common/editor.js";import"../../../common/editor/editorInput.js";import{GroupsOrder as E,preferredSideBySideGroupDirection as I,IEditorGroupsService as m}from"./editorGroupsService.js";import{AUX_WINDOW_GROUP as W,SIDE_GROUP as a}from"./editorService.js";function V(o,t,i){const u=o.get(m),r=o.get(v),d=_(t,i,u,r);return d instanceof Promise?d.then(p=>G(p,t,i,u)):G(d,t,i,u)}function G(o,t,i,u){let r;return u.activeGroup!==o&&t.options&&!t.options.inactive&&t.options.preserveFocus&&typeof t.options.activation!="number"&&i!==a&&(r=l.ACTIVATE),[o,r]}function _(o,t,i,u){let r;const d=O(o)?o.editor:o,p=o.options;if(t&&typeof t!="number")r=t;else if(typeof t=="number"&&t>=0)r=i.getGroup(t);else if(t===a){const n=I(u);let e=i.findGroup({direction:n});(!e||c(e,d))&&(e=i.addGroup(i.activeGroup,n)),r=e}else if(t===W)r=i.createAuxiliaryEditorPart().then(n=>n.activeGroup);else if(!p||typeof p.index!="number"){const n=i.getGroups(E.MOST_RECENTLY_ACTIVE);if(p?.revealIfVisible){for(const e of n)if(y(e,d)){r=e;break}}if(!r&&(p?.revealIfOpened||u.getValue("workbench.editor.revealIfOpen")||P(d)&&d.hasCapability(U.Singleton))){let e,s;for(const f of n)if(A(f,d)&&(s||(s=f),!e&&f.isActive(d)&&(e=f)),s&&e)break;r=e||s}}if(!r){let n=i.activeGroup;if(c(n,d)){for(const e of i.getGroups(E.MOST_RECENTLY_ACTIVE))if(!c(e,d)){n=e;break}c(n,d)?r=i.addGroup(n,I(u)):r=n}else r=n}return r}function c(o,t){return!(!o.isLocked||A(o,t))}function y(o,t){return o.activeEditor?o.activeEditor.matches(t):!1}function A(o,t){for(const i of o.editors)if(i.matches(t))return!0;return!1}export{V as findGroup};
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { EditorActivation } from '../../../../platform/editor/common/editor.js';
+import { isEditorInputWithOptions, isEditorInput } from '../../../common/editor.js';
+import { preferredSideBySideGroupDirection, IEditorGroupsService } from './editorGroupsService.js';
+import { AUX_WINDOW_GROUP, SIDE_GROUP } from './editorService.js';
+export function findGroup(accessor, editor, preferredGroup) {
+    const editorGroupService = accessor.get(IEditorGroupsService);
+    const configurationService = accessor.get(IConfigurationService);
+    const group = doFindGroup(editor, preferredGroup, editorGroupService, configurationService);
+    if (group instanceof Promise) {
+        return group.then(group => handleGroupActivation(group, editor, preferredGroup, editorGroupService));
+    }
+    return handleGroupActivation(group, editor, preferredGroup, editorGroupService);
+}
+function handleGroupActivation(group, editor, preferredGroup, editorGroupService) {
+    let activation = undefined;
+    if (editorGroupService.activeGroup !== group &&
+        editor.options && !editor.options.inactive &&
+        editor.options.preserveFocus &&
+        typeof editor.options.activation !== 'number' &&
+        preferredGroup !== SIDE_GROUP) {
+        activation = EditorActivation.ACTIVATE;
+    }
+    return [group, activation];
+}
+function doFindGroup(input, preferredGroup, editorGroupService, configurationService) {
+    let group;
+    const editor = isEditorInputWithOptions(input) ? input.editor : input;
+    const options = input.options;
+    if (preferredGroup && typeof preferredGroup !== 'number') {
+        group = preferredGroup;
+    }
+    else if (typeof preferredGroup === 'number' && preferredGroup >= 0) {
+        group = editorGroupService.getGroup(preferredGroup);
+    }
+    else if (preferredGroup === SIDE_GROUP) {
+        const direction = preferredSideBySideGroupDirection(configurationService);
+        let candidateGroup = editorGroupService.findGroup({ direction });
+        if (!candidateGroup || isGroupLockedForEditor(candidateGroup, editor)) {
+            candidateGroup = editorGroupService.addGroup(editorGroupService.activeGroup, direction);
+        }
+        group = candidateGroup;
+    }
+    else if (preferredGroup === AUX_WINDOW_GROUP) {
+        group = editorGroupService.createAuxiliaryEditorPart().then(group => group.activeGroup);
+    }
+    else if (!options || typeof options.index !== 'number') {
+        const groupsByLastActive = editorGroupService.getGroups(1);
+        if (options?.revealIfVisible) {
+            for (const lastActiveGroup of groupsByLastActive) {
+                if (isActive(lastActiveGroup, editor)) {
+                    group = lastActiveGroup;
+                    break;
+                }
+            }
+        }
+        if (!group) {
+            if (options?.revealIfOpened || configurationService.getValue('workbench.editor.revealIfOpen') || (isEditorInput(editor) && editor.hasCapability(8))) {
+                let groupWithInputActive = undefined;
+                let groupWithInputOpened = undefined;
+                for (const group of groupsByLastActive) {
+                    if (isOpened(group, editor)) {
+                        if (!groupWithInputOpened) {
+                            groupWithInputOpened = group;
+                        }
+                        if (!groupWithInputActive && group.isActive(editor)) {
+                            groupWithInputActive = group;
+                        }
+                    }
+                    if (groupWithInputOpened && groupWithInputActive) {
+                        break;
+                    }
+                }
+                group = groupWithInputActive || groupWithInputOpened;
+            }
+        }
+    }
+    if (!group) {
+        let candidateGroup = editorGroupService.activeGroup;
+        if (isGroupLockedForEditor(candidateGroup, editor)) {
+            for (const group of editorGroupService.getGroups(1)) {
+                if (isGroupLockedForEditor(group, editor)) {
+                    continue;
+                }
+                candidateGroup = group;
+                break;
+            }
+            if (isGroupLockedForEditor(candidateGroup, editor)) {
+                group = editorGroupService.addGroup(candidateGroup, preferredSideBySideGroupDirection(configurationService));
+            }
+            else {
+                group = candidateGroup;
+            }
+        }
+        else {
+            group = candidateGroup;
+        }
+    }
+    return group;
+}
+function isGroupLockedForEditor(group, editor) {
+    if (!group.isLocked) {
+        return false;
+    }
+    if (isOpened(group, editor)) {
+        return false;
+    }
+    return true;
+}
+function isActive(group, editor) {
+    if (!group.activeEditor) {
+        return false;
+    }
+    return group.activeEditor.matches(editor);
+}
+function isOpened(group, editor) {
+    for (const typedEditor of group.editors) {
+        if (typedEditor.matches(editor)) {
+            return true;
+        }
+    }
+    return false;
+}

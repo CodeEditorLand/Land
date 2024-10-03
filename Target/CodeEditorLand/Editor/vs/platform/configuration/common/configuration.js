@@ -1,1 +1,134 @@
-import"../../../base/common/event.js";import*as l from"../../../base/common/types.js";import{URI as f}from"../../../base/common/uri.js";import{createDecorator as g}from"../../instantiation/common/instantiation.js";import"../../workspace/common/workspace.js";const R=g("configurationService");function S(e){return e&&typeof e=="object"&&(!e.overrideIdentifier||typeof e.overrideIdentifier=="string")&&(!e.resource||e.resource instanceof f)}function x(e){return e&&typeof e=="object"&&(!e.overrideIdentifiers||Array.isArray(e.overrideIdentifiers))&&!e.overrideIdentifier&&(!e.resource||e.resource instanceof f)}var p=(n=>(n[n.APPLICATION=1]="APPLICATION",n[n.USER=2]="USER",n[n.USER_LOCAL=3]="USER_LOCAL",n[n.USER_REMOTE=4]="USER_REMOTE",n[n.WORKSPACE=5]="WORKSPACE",n[n.WORKSPACE_FOLDER=6]="WORKSPACE_FOLDER",n[n.DEFAULT=7]="DEFAULT",n[n.MEMORY=8]="MEMORY",n))(p||{});function U(e){switch(e){case 1:return"APPLICATION";case 2:return"USER";case 3:return"USER_LOCAL";case 4:return"USER_REMOTE";case 5:return"WORKSPACE";case 6:return"WORKSPACE_FOLDER";case 7:return"DEFAULT";case 8:return"MEMORY"}}function A(e){return e.applicationValue!==void 0||e.userValue!==void 0||e.userLocalValue!==void 0||e.userRemoteValue!==void 0||e.workspaceValue!==void 0||e.workspaceFolderValue!==void 0}function L(e,o){const i=Object.create(null);for(const r in e)y(i,r,e[r],o);return i}function y(e,o,i,r){const a=o.split("."),d=a.pop();let t=e;for(let s=0;s<a.length;s++){const n=a[s];let u=t[n];switch(typeof u){case"undefined":u=t[n]=Object.create(null);break;case"object":if(u===null){r(`Ignoring ${o} as ${a.slice(0,s+1).join(".")} is null`);return}break;default:r(`Ignoring ${o} as ${a.slice(0,s+1).join(".")} is ${JSON.stringify(u)}`);return}t=u}if(typeof t=="object"&&t!==null)try{t[d]=i}catch{r(`Ignoring ${o} as ${a.join(".")} is ${JSON.stringify(t)}`)}else r(`Ignoring ${o} as ${a.join(".")} is ${JSON.stringify(t)}`)}function j(e,o){const i=o.split(".");c(e,i)}function c(e,o){const i=o.shift();if(o.length===0){delete e[i];return}if(Object.keys(e).indexOf(i)!==-1){const r=e[i];typeof r=="object"&&!Array.isArray(r)&&(c(r,o),Object.keys(r).length===0&&delete e[i])}}function P(e,o,i){function r(t,s){let n=t;for(const u of s){if(typeof n!="object"||n===null)return;n=n[u]}return n}const a=o.split("."),d=r(e,a);return typeof d>"u"?i:d}function I(e,o,i){Object.keys(o).forEach(r=>{r!=="__proto__"&&(r in e?l.isObject(e[r])&&l.isObject(o[r])?I(e[r],o[r],i):i&&(e[r]=o[r]):e[r]=o[r])})}function M(e){return e.replace(/[\[\]]/g,"")}export{p as ConfigurationTarget,U as ConfigurationTargetToString,R as IConfigurationService,y as addToValueTree,P as getConfigurationValue,M as getLanguageTagSettingPlainKey,S as isConfigurationOverrides,x as isConfigurationUpdateOverrides,A as isConfigured,I as merge,j as removeFromValueTree,L as toValuesTree};
+import * as types from '../../../base/common/types.js';
+import { URI } from '../../../base/common/uri.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const IConfigurationService = createDecorator('configurationService');
+export function isConfigurationOverrides(thing) {
+    return thing
+        && typeof thing === 'object'
+        && (!thing.overrideIdentifier || typeof thing.overrideIdentifier === 'string')
+        && (!thing.resource || thing.resource instanceof URI);
+}
+export function isConfigurationUpdateOverrides(thing) {
+    return thing
+        && typeof thing === 'object'
+        && (!thing.overrideIdentifiers || Array.isArray(thing.overrideIdentifiers))
+        && !thing.overrideIdentifier
+        && (!thing.resource || thing.resource instanceof URI);
+}
+export function ConfigurationTargetToString(configurationTarget) {
+    switch (configurationTarget) {
+        case 1: return 'APPLICATION';
+        case 2: return 'USER';
+        case 3: return 'USER_LOCAL';
+        case 4: return 'USER_REMOTE';
+        case 5: return 'WORKSPACE';
+        case 6: return 'WORKSPACE_FOLDER';
+        case 7: return 'DEFAULT';
+        case 8: return 'MEMORY';
+    }
+}
+export function isConfigured(configValue) {
+    return configValue.applicationValue !== undefined ||
+        configValue.userValue !== undefined ||
+        configValue.userLocalValue !== undefined ||
+        configValue.userRemoteValue !== undefined ||
+        configValue.workspaceValue !== undefined ||
+        configValue.workspaceFolderValue !== undefined;
+}
+export function toValuesTree(properties, conflictReporter) {
+    const root = Object.create(null);
+    for (const key in properties) {
+        addToValueTree(root, key, properties[key], conflictReporter);
+    }
+    return root;
+}
+export function addToValueTree(settingsTreeRoot, key, value, conflictReporter) {
+    const segments = key.split('.');
+    const last = segments.pop();
+    let curr = settingsTreeRoot;
+    for (let i = 0; i < segments.length; i++) {
+        const s = segments[i];
+        let obj = curr[s];
+        switch (typeof obj) {
+            case 'undefined':
+                obj = curr[s] = Object.create(null);
+                break;
+            case 'object':
+                if (obj === null) {
+                    conflictReporter(`Ignoring ${key} as ${segments.slice(0, i + 1).join('.')} is null`);
+                    return;
+                }
+                break;
+            default:
+                conflictReporter(`Ignoring ${key} as ${segments.slice(0, i + 1).join('.')} is ${JSON.stringify(obj)}`);
+                return;
+        }
+        curr = obj;
+    }
+    if (typeof curr === 'object' && curr !== null) {
+        try {
+            curr[last] = value;
+        }
+        catch (e) {
+            conflictReporter(`Ignoring ${key} as ${segments.join('.')} is ${JSON.stringify(curr)}`);
+        }
+    }
+    else {
+        conflictReporter(`Ignoring ${key} as ${segments.join('.')} is ${JSON.stringify(curr)}`);
+    }
+}
+export function removeFromValueTree(valueTree, key) {
+    const segments = key.split('.');
+    doRemoveFromValueTree(valueTree, segments);
+}
+function doRemoveFromValueTree(valueTree, segments) {
+    const first = segments.shift();
+    if (segments.length === 0) {
+        delete valueTree[first];
+        return;
+    }
+    if (Object.keys(valueTree).indexOf(first) !== -1) {
+        const value = valueTree[first];
+        if (typeof value === 'object' && !Array.isArray(value)) {
+            doRemoveFromValueTree(value, segments);
+            if (Object.keys(value).length === 0) {
+                delete valueTree[first];
+            }
+        }
+    }
+}
+export function getConfigurationValue(config, settingPath, defaultValue) {
+    function accessSetting(config, path) {
+        let current = config;
+        for (const component of path) {
+            if (typeof current !== 'object' || current === null) {
+                return undefined;
+            }
+            current = current[component];
+        }
+        return current;
+    }
+    const path = settingPath.split('.');
+    const result = accessSetting(config, path);
+    return typeof result === 'undefined' ? defaultValue : result;
+}
+export function merge(base, add, overwrite) {
+    Object.keys(add).forEach(key => {
+        if (key !== '__proto__') {
+            if (key in base) {
+                if (types.isObject(base[key]) && types.isObject(add[key])) {
+                    merge(base[key], add[key], overwrite);
+                }
+                else if (overwrite) {
+                    base[key] = add[key];
+                }
+            }
+            else {
+                base[key] = add[key];
+            }
+        }
+    });
+}
+export function getLanguageTagSettingPlainKey(settingKey) {
+    return settingKey.replace(/[\[\]]/g, '');
+}

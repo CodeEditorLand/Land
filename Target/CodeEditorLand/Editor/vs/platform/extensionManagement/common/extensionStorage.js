@@ -1,1 +1,185 @@
-var E=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var S=(d,a,t,e)=>{for(var n=e>1?void 0:e?h(a,t):a,i=d.length-1,o;i>=0;i--)(o=d[i])&&(n=(e?o(a,t,n):o(n))||n);return e&&n&&E(a,t,n),n},I=(d,a)=>(t,e)=>a(t,e,d);import{createDecorator as x}from"../../instantiation/common/instantiation.js";import{Emitter as f}from"../../../base/common/event.js";import{Disposable as u,DisposableStore as v}from"../../../base/common/lifecycle.js";import{IStorageService as m,StorageScope as r,StorageTarget as y}from"../../storage/common/storage.js";import{adoptToGalleryExtensionId as p,areSameExtensions as L,getExtensionId as K}from"./extensionManagementUtil.js";import{IProductService as C}from"../../product/common/productService.js";import{distinct as F}from"../../../base/common/arrays.js";import{ILogService as O}from"../../log/common/log.js";import"../../extensions/common/extensions.js";import{isString as T}from"../../../base/common/types.js";import"../../../base/common/collections.js";import"./extensionManagement.js";const Y=x("IExtensionStorageService"),W=/^extensionKeys\/([^.]+\..+)@(\d+\.\d+\.\d+(-.*)?)$/;let s=class extends u{constructor(t,e,n){super();this.storageService=t;this.productService=e;this.logService=n;this.extensionsWithKeysForSync=s.readAllExtensionsWithKeysForSync(t),this._register(this.storageService.onDidChangeValue(r.PROFILE,void 0,this._register(new v))(i=>this.onDidChangeStorageValue(i)))}_serviceBrand;static LARGE_STATE_WARNING_THRESHOLD=512*1024;static toKey(t){return`extensionKeys/${p(t.id)}@${t.version}`}static fromKey(t){const e=W.exec(t);if(e&&e[1])return{id:e[1],version:e[2]}}static async removeOutdatedExtensionVersions(t,e){const n=await t.getInstalled(),i=[];for(const[o,g]of s.readAllExtensionsWithKeysForSync(e)){const l=n.find(c=>L(c.identifier,{id:o}))?.manifest.version;for(const c of g)l!==c&&i.push(s.toKey({id:o,version:c}))}for(const o of i)e.remove(o,r.PROFILE)}static readAllExtensionsWithKeysForSync(t){const e=new Map,n=t.keys(r.PROFILE,y.MACHINE);for(const i of n){const o=s.fromKey(i);if(o){let g=e.get(o.id.toLowerCase());g||e.set(o.id.toLowerCase(),g=[]),g.push(o.version)}}return e}_onDidChangeExtensionStorageToSync=this._register(new f);onDidChangeExtensionStorageToSync=this._onDidChangeExtensionStorageToSync.event;extensionsWithKeysForSync;onDidChangeStorageValue(t){if(this.extensionsWithKeysForSync.has(t.key.toLowerCase())){this._onDidChangeExtensionStorageToSync.fire();return}const e=s.fromKey(t.key);if(e){if(this.storageService.get(t.key,r.PROFILE)===void 0)this.extensionsWithKeysForSync.delete(e.id.toLowerCase());else{let n=this.extensionsWithKeysForSync.get(e.id.toLowerCase());n||this.extensionsWithKeysForSync.set(e.id.toLowerCase(),n=[]),n.push(e.version),this._onDidChangeExtensionStorageToSync.fire()}return}}getExtensionId(t){if(T(t))return t;const e=t.manifest?t.manifest.publisher:t.publisher,n=t.manifest?t.manifest.name:t.name;return K(e,n)}getExtensionState(t,e){const n=this.getExtensionId(t),i=this.getExtensionStateRaw(t,e);if(i)try{return JSON.parse(i)}catch(o){this.logService.error(`[mainThreadStorage] unexpected error parsing storage contents (extensionId: ${n}, global: ${e}): ${o}`)}}getExtensionStateRaw(t,e){const n=this.getExtensionId(t),i=this.storageService.get(n,e?r.PROFILE:r.WORKSPACE);return i&&i?.length>s.LARGE_STATE_WARNING_THRESHOLD&&this.logService.warn(`[mainThreadStorage] large extension state detected (extensionId: ${n}, global: ${e}): ${i.length/1024}kb. Consider to use 'storageUri' or 'globalStorageUri' to store this data on disk instead.`),i}setExtensionState(t,e,n){const i=this.getExtensionId(t);e===void 0?this.storageService.remove(i,n?r.PROFILE:r.WORKSPACE):this.storageService.store(i,JSON.stringify(e),n?r.PROFILE:r.WORKSPACE,y.MACHINE)}setKeysForSync(t,e){this.storageService.store(s.toKey(t),JSON.stringify(e),r.PROFILE,y.MACHINE)}getKeysForSync(t){const e=this.productService.extensionSyncedKeys?.[t.id.toLowerCase()],n=this.storageService.get(s.toKey(t),r.PROFILE),i=n?JSON.parse(n):void 0;return i&&e?F([...i,...e]):i||e}addToMigrationList(t,e){if(t!==e){const n=this.migrationList.filter(i=>!i.includes(t)&&!i.includes(e));n.push([t,e]),this.migrationList=n}}getSourceExtensionToMigrate(t){const e=this.migrationList.find(([,n])=>t===n);return e?e[0]:void 0}get migrationList(){const t=this.storageService.get("extensionStorage.migrationList",r.APPLICATION,"[]");try{const e=JSON.parse(t);if(Array.isArray(e))return e}catch{}return[]}set migrationList(t){t.length?this.storageService.store("extensionStorage.migrationList",JSON.stringify(t),r.APPLICATION,y.MACHINE):this.storageService.remove("extensionStorage.migrationList",r.APPLICATION)}};s=S([I(0,m),I(1,C),I(2,O)],s);export{s as ExtensionStorageService,Y as IExtensionStorageService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ExtensionStorageService_1;
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { Emitter } from '../../../base/common/event.js';
+import { Disposable, DisposableStore } from '../../../base/common/lifecycle.js';
+import { IStorageService } from '../../storage/common/storage.js';
+import { adoptToGalleryExtensionId, areSameExtensions, getExtensionId } from './extensionManagementUtil.js';
+import { IProductService } from '../../product/common/productService.js';
+import { distinct } from '../../../base/common/arrays.js';
+import { ILogService } from '../../log/common/log.js';
+import { isString } from '../../../base/common/types.js';
+export const IExtensionStorageService = createDecorator('IExtensionStorageService');
+const EXTENSION_KEYS_ID_VERSION_REGEX = /^extensionKeys\/([^.]+\..+)@(\d+\.\d+\.\d+(-.*)?)$/;
+let ExtensionStorageService = class ExtensionStorageService extends Disposable {
+    static { ExtensionStorageService_1 = this; }
+    static { this.LARGE_STATE_WARNING_THRESHOLD = 512 * 1024; }
+    static toKey(extension) {
+        return `extensionKeys/${adoptToGalleryExtensionId(extension.id)}@${extension.version}`;
+    }
+    static fromKey(key) {
+        const matches = EXTENSION_KEYS_ID_VERSION_REGEX.exec(key);
+        if (matches && matches[1]) {
+            return { id: matches[1], version: matches[2] };
+        }
+        return undefined;
+    }
+    static async removeOutdatedExtensionVersions(extensionManagementService, storageService) {
+        const extensions = await extensionManagementService.getInstalled();
+        const extensionVersionsToRemove = [];
+        for (const [id, versions] of ExtensionStorageService_1.readAllExtensionsWithKeysForSync(storageService)) {
+            const extensionVersion = extensions.find(e => areSameExtensions(e.identifier, { id }))?.manifest.version;
+            for (const version of versions) {
+                if (extensionVersion !== version) {
+                    extensionVersionsToRemove.push(ExtensionStorageService_1.toKey({ id, version }));
+                }
+            }
+        }
+        for (const key of extensionVersionsToRemove) {
+            storageService.remove(key, 0);
+        }
+    }
+    static readAllExtensionsWithKeysForSync(storageService) {
+        const extensionsWithKeysForSync = new Map();
+        const keys = storageService.keys(0, 1);
+        for (const key of keys) {
+            const extensionIdWithVersion = ExtensionStorageService_1.fromKey(key);
+            if (extensionIdWithVersion) {
+                let versions = extensionsWithKeysForSync.get(extensionIdWithVersion.id.toLowerCase());
+                if (!versions) {
+                    extensionsWithKeysForSync.set(extensionIdWithVersion.id.toLowerCase(), versions = []);
+                }
+                versions.push(extensionIdWithVersion.version);
+            }
+        }
+        return extensionsWithKeysForSync;
+    }
+    constructor(storageService, productService, logService) {
+        super();
+        this.storageService = storageService;
+        this.productService = productService;
+        this.logService = logService;
+        this._onDidChangeExtensionStorageToSync = this._register(new Emitter());
+        this.onDidChangeExtensionStorageToSync = this._onDidChangeExtensionStorageToSync.event;
+        this.extensionsWithKeysForSync = ExtensionStorageService_1.readAllExtensionsWithKeysForSync(storageService);
+        this._register(this.storageService.onDidChangeValue(0, undefined, this._register(new DisposableStore()))(e => this.onDidChangeStorageValue(e)));
+    }
+    onDidChangeStorageValue(e) {
+        if (this.extensionsWithKeysForSync.has(e.key.toLowerCase())) {
+            this._onDidChangeExtensionStorageToSync.fire();
+            return;
+        }
+        const extensionIdWithVersion = ExtensionStorageService_1.fromKey(e.key);
+        if (extensionIdWithVersion) {
+            if (this.storageService.get(e.key, 0) === undefined) {
+                this.extensionsWithKeysForSync.delete(extensionIdWithVersion.id.toLowerCase());
+            }
+            else {
+                let versions = this.extensionsWithKeysForSync.get(extensionIdWithVersion.id.toLowerCase());
+                if (!versions) {
+                    this.extensionsWithKeysForSync.set(extensionIdWithVersion.id.toLowerCase(), versions = []);
+                }
+                versions.push(extensionIdWithVersion.version);
+                this._onDidChangeExtensionStorageToSync.fire();
+            }
+            return;
+        }
+    }
+    getExtensionId(extension) {
+        if (isString(extension)) {
+            return extension;
+        }
+        const publisher = extension.manifest ? extension.manifest.publisher : extension.publisher;
+        const name = extension.manifest ? extension.manifest.name : extension.name;
+        return getExtensionId(publisher, name);
+    }
+    getExtensionState(extension, global) {
+        const extensionId = this.getExtensionId(extension);
+        const jsonValue = this.getExtensionStateRaw(extension, global);
+        if (jsonValue) {
+            try {
+                return JSON.parse(jsonValue);
+            }
+            catch (error) {
+                this.logService.error(`[mainThreadStorage] unexpected error parsing storage contents (extensionId: ${extensionId}, global: ${global}): ${error}`);
+            }
+        }
+        return undefined;
+    }
+    getExtensionStateRaw(extension, global) {
+        const extensionId = this.getExtensionId(extension);
+        const rawState = this.storageService.get(extensionId, global ? 0 : 1);
+        if (rawState && rawState?.length > ExtensionStorageService_1.LARGE_STATE_WARNING_THRESHOLD) {
+            this.logService.warn(`[mainThreadStorage] large extension state detected (extensionId: ${extensionId}, global: ${global}): ${rawState.length / 1024}kb. Consider to use 'storageUri' or 'globalStorageUri' to store this data on disk instead.`);
+        }
+        return rawState;
+    }
+    setExtensionState(extension, state, global) {
+        const extensionId = this.getExtensionId(extension);
+        if (state === undefined) {
+            this.storageService.remove(extensionId, global ? 0 : 1);
+        }
+        else {
+            this.storageService.store(extensionId, JSON.stringify(state), global ? 0 : 1, 1);
+        }
+    }
+    setKeysForSync(extensionIdWithVersion, keys) {
+        this.storageService.store(ExtensionStorageService_1.toKey(extensionIdWithVersion), JSON.stringify(keys), 0, 1);
+    }
+    getKeysForSync(extensionIdWithVersion) {
+        const extensionKeysForSyncFromProduct = this.productService.extensionSyncedKeys?.[extensionIdWithVersion.id.toLowerCase()];
+        const extensionKeysForSyncFromStorageValue = this.storageService.get(ExtensionStorageService_1.toKey(extensionIdWithVersion), 0);
+        const extensionKeysForSyncFromStorage = extensionKeysForSyncFromStorageValue ? JSON.parse(extensionKeysForSyncFromStorageValue) : undefined;
+        return extensionKeysForSyncFromStorage && extensionKeysForSyncFromProduct
+            ? distinct([...extensionKeysForSyncFromStorage, ...extensionKeysForSyncFromProduct])
+            : (extensionKeysForSyncFromStorage || extensionKeysForSyncFromProduct);
+    }
+    addToMigrationList(from, to) {
+        if (from !== to) {
+            const migrationList = this.migrationList.filter(entry => !entry.includes(from) && !entry.includes(to));
+            migrationList.push([from, to]);
+            this.migrationList = migrationList;
+        }
+    }
+    getSourceExtensionToMigrate(toExtensionId) {
+        const entry = this.migrationList.find(([, to]) => toExtensionId === to);
+        return entry ? entry[0] : undefined;
+    }
+    get migrationList() {
+        const value = this.storageService.get('extensionStorage.migrationList', -1, '[]');
+        try {
+            const migrationList = JSON.parse(value);
+            if (Array.isArray(migrationList)) {
+                return migrationList;
+            }
+        }
+        catch (error) { }
+        return [];
+    }
+    set migrationList(migrationList) {
+        if (migrationList.length) {
+            this.storageService.store('extensionStorage.migrationList', JSON.stringify(migrationList), -1, 1);
+        }
+        else {
+            this.storageService.remove('extensionStorage.migrationList', -1);
+        }
+    }
+};
+ExtensionStorageService = ExtensionStorageService_1 = __decorate([
+    __param(0, IStorageService),
+    __param(1, IProductService),
+    __param(2, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], ExtensionStorageService);
+export { ExtensionStorageService };

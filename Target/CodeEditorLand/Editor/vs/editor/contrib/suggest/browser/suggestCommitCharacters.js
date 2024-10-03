@@ -1,1 +1,49 @@
-import{isNonEmptyArray as r}from"../../../../base/common/arrays.js";import{DisposableStore as d}from"../../../../base/common/lifecycle.js";import"../../../browser/editorBrowser.js";import{EditorOption as c}from"../../../common/config/editorOptions.js";import{CharacterSet as n}from"../../../common/core/characterClassifier.js";import{State as h}from"./suggestModel.js";import"./suggestWidget.js";class y{_disposables=new d;_active;constructor(t,e,i,o){this._disposables.add(i.onDidSuggest(s=>{s.completionModel.items.length===0&&this.reset()})),this._disposables.add(i.onDidCancel(s=>{this.reset()})),this._disposables.add(e.onDidShow(()=>this._onItem(e.getFocusedItem()))),this._disposables.add(e.onDidFocus(this._onItem,this)),this._disposables.add(e.onDidHide(this.reset,this)),this._disposables.add(t.onWillType(s=>{if(this._active&&!e.isFrozen()&&i.state!==h.Idle){const a=s.charCodeAt(s.length-1);this._active.acceptCharacters.has(a)&&t.getOption(c.acceptSuggestionOnCommitCharacter)&&o(this._active.item)}}))}_onItem(t){if(!t||!r(t.item.completion.commitCharacters)){this.reset();return}if(this._active&&this._active.item.item===t.item)return;const e=new n;for(const i of t.item.completion.commitCharacters)i.length>0&&e.add(i.charCodeAt(0));this._active={acceptCharacters:e,item:t}}reset(){this._active=void 0}dispose(){this._disposables.dispose()}}export{y as CommitCharacterController};
+import { isNonEmptyArray } from '../../../../base/common/arrays.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { CharacterSet } from '../../../common/core/characterClassifier.js';
+export class CommitCharacterController {
+    constructor(editor, widget, model, accept) {
+        this._disposables = new DisposableStore();
+        this._disposables.add(model.onDidSuggest(e => {
+            if (e.completionModel.items.length === 0) {
+                this.reset();
+            }
+        }));
+        this._disposables.add(model.onDidCancel(e => {
+            this.reset();
+        }));
+        this._disposables.add(widget.onDidShow(() => this._onItem(widget.getFocusedItem())));
+        this._disposables.add(widget.onDidFocus(this._onItem, this));
+        this._disposables.add(widget.onDidHide(this.reset, this));
+        this._disposables.add(editor.onWillType(text => {
+            if (this._active && !widget.isFrozen() && model.state !== 0) {
+                const ch = text.charCodeAt(text.length - 1);
+                if (this._active.acceptCharacters.has(ch) && editor.getOption(0)) {
+                    accept(this._active.item);
+                }
+            }
+        }));
+    }
+    _onItem(selected) {
+        if (!selected || !isNonEmptyArray(selected.item.completion.commitCharacters)) {
+            this.reset();
+            return;
+        }
+        if (this._active && this._active.item.item === selected.item) {
+            return;
+        }
+        const acceptCharacters = new CharacterSet();
+        for (const ch of selected.item.completion.commitCharacters) {
+            if (ch.length > 0) {
+                acceptCharacters.add(ch.charCodeAt(0));
+            }
+        }
+        this._active = { acceptCharacters, item: selected };
+    }
+    reset() {
+        this._active = undefined;
+    }
+    dispose() {
+        this._disposables.dispose();
+    }
+}

@@ -1,1 +1,22 @@
-class t{static count=0;_proxyIdentifierBrand=void 0;sid;nid;constructor(e){this.sid=e,this.nid=++t.count}}const r=[];function n(i){const e=new t(i);return r[e.nid]=e,e}function o(i){return r[i].sid}class s{constructor(e){this.value=e}}export{t as ProxyIdentifier,s as SerializableObjectWithBuffers,n as createProxyIdentifier,o as getStringIdentifierForProxy};
+export class ProxyIdentifier {
+    static { this.count = 0; }
+    constructor(sid) {
+        this._proxyIdentifierBrand = undefined;
+        this.sid = sid;
+        this.nid = (++ProxyIdentifier.count);
+    }
+}
+const identifiers = [];
+export function createProxyIdentifier(identifier) {
+    const result = new ProxyIdentifier(identifier);
+    identifiers[result.nid] = result;
+    return result;
+}
+export function getStringIdentifierForProxy(nid) {
+    return identifiers[nid].sid;
+}
+export class SerializableObjectWithBuffers {
+    constructor(value) {
+        this.value = value;
+    }
+}

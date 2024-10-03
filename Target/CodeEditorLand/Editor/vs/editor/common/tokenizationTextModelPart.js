@@ -1,1 +1,10 @@
-import{OffsetEdit as o}from"./core/offsetEdit.js";import"./core/offsetRange.js";import"./core/range.js";import"./encodedTokenAttributes.js";import"./tokens/lineTokens.js";import"./tokens/sparseMultilineTokens.js";class i{constructor(n,e){this.lineEdit=n;this.additionalLines=e}static replace(n,e){return new i(o.replace(n,e),null)}}var t=(e=>(e[e.InProgress=1]="InProgress",e[e.Completed=2]="Completed",e))(t||{});export{t as BackgroundTokenizationState,i as LineEditWithAdditionalLines};
+import { OffsetEdit } from './core/offsetEdit.js';
+export class LineEditWithAdditionalLines {
+    static replace(range, text) {
+        return new LineEditWithAdditionalLines(OffsetEdit.replace(range, text), null);
+    }
+    constructor(lineEdit, additionalLines) {
+        this.lineEdit = lineEdit;
+        this.additionalLines = additionalLines;
+    }
+}

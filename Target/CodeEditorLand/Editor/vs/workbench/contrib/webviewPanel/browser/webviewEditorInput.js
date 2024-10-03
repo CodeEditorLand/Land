@@ -1,1 +1,87 @@
-import"../../../../base/browser/window.js";import{Schemas as o}from"../../../../base/common/network.js";import{URI as s}from"../../../../base/common/uri.js";import{generateUuid as d}from"../../../../base/common/uuid.js";import"../../../../platform/contextkey/common/contextkey.js";import{EditorInputCapabilities as r}from"../../../common/editor.js";import{EditorInput as p}from"../../../common/editor/editorInput.js";import"../../webview/browser/webview.js";import"./webviewIconManager.js";class n extends p{constructor(e,i,t){super();this._iconManager=t;this.viewType=e.viewType,this.providedId=e.providedId,this._name=e.name,this._webview=i}static typeId="workbench.editors.webviewInput";get typeId(){return n.typeId}get editorId(){return this.viewType}get capabilities(){return r.Readonly|r.Singleton|r.CanDropIntoEditor}_resourceId=d();_name;_iconPath;_group;_webview;_hasTransfered=!1;get resource(){return s.from({scheme:o.webviewPanel,path:`webview-panel/webview-${this._resourceId}`})}viewType;providedId;dispose(){this.isDisposed()||this._hasTransfered||this._webview?.dispose(),super.dispose()}getName(){return this._name}getTitle(e){return this.getName()}getDescription(){}setName(e){this._name=e,this.webview.setTitle(e),this._onDidChangeLabel.fire()}get webview(){return this._webview}get extension(){return this.webview.extension}get iconPath(){return this._iconPath}set iconPath(e){this._iconPath=e,this._iconManager.setIcons(this._resourceId,e)}matches(e){return super.matches(e)||e===this}get group(){return this._group}updateGroup(e){this._group=e}transfer(e){if(!this._hasTransfered)return this._hasTransfered=!0,e._webview=this._webview,e}claim(e,i,t){return this._webview.claim(e,i,t)}}export{n as WebviewInput};
+import { Schemas } from '../../../../base/common/network.js';
+import { URI } from '../../../../base/common/uri.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
+import { EditorInput } from '../../../common/editor/editorInput.js';
+export class WebviewInput extends EditorInput {
+    static { this.typeId = 'workbench.editors.webviewInput'; }
+    get typeId() {
+        return WebviewInput.typeId;
+    }
+    get editorId() {
+        return this.viewType;
+    }
+    get capabilities() {
+        return 2 | 8 | 128;
+    }
+    get resource() {
+        return URI.from({
+            scheme: Schemas.webviewPanel,
+            path: `webview-panel/webview-${this._resourceId}`
+        });
+    }
+    constructor(init, webview, _iconManager) {
+        super();
+        this._iconManager = _iconManager;
+        this._resourceId = generateUuid();
+        this._hasTransfered = false;
+        this.viewType = init.viewType;
+        this.providedId = init.providedId;
+        this._name = init.name;
+        this._webview = webview;
+    }
+    dispose() {
+        if (!this.isDisposed()) {
+            if (!this._hasTransfered) {
+                this._webview?.dispose();
+            }
+        }
+        super.dispose();
+    }
+    getName() {
+        return this._name;
+    }
+    getTitle(_verbosity) {
+        return this.getName();
+    }
+    getDescription() {
+        return undefined;
+    }
+    setName(value) {
+        this._name = value;
+        this.webview.setTitle(value);
+        this._onDidChangeLabel.fire();
+    }
+    get webview() {
+        return this._webview;
+    }
+    get extension() {
+        return this.webview.extension;
+    }
+    get iconPath() {
+        return this._iconPath;
+    }
+    set iconPath(value) {
+        this._iconPath = value;
+        this._iconManager.setIcons(this._resourceId, value);
+    }
+    matches(other) {
+        return super.matches(other) || other === this;
+    }
+    get group() {
+        return this._group;
+    }
+    updateGroup(group) {
+        this._group = group;
+    }
+    transfer(other) {
+        if (this._hasTransfered) {
+            return undefined;
+        }
+        this._hasTransfered = true;
+        other._webview = this._webview;
+        return other;
+    }
+    claim(claimant, targetWindow, scopedContextKeyService) {
+        return this._webview.claim(claimant, targetWindow, scopedContextKeyService);
+    }
+}

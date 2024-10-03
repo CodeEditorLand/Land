@@ -1,1 +1,409 @@
-var _=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var f=(g,e,t,r)=>{for(var i=r>1?void 0:r?D(e,t):e,n=g.length-1,a;n>=0;n--)(a=g[n])&&(i=(r?a(e,t,i):a(i))||i);return r&&i&&_(e,t,i),i},c=(g,e)=>(t,r)=>e(t,r,g);import{CancellationTokenSource as V}from"../../../../base/common/cancellation.js";import{HierarchicalKind as T}from"../../../../base/common/hierarchicalKind.js";import{Disposable as k}from"../../../../base/common/lifecycle.js";import{StopWatch as K}from"../../../../base/common/stopwatch.js";import*as H from"../../../../base/common/strings.js";import{isCodeEditor as j}from"../../../../editor/browser/editorBrowser.js";import{ICodeEditorService as S}from"../../../../editor/browser/services/codeEditorService.js";import{trimTrailingWhitespace as U}from"../../../../editor/common/commands/trimTrailingWhitespaceCommand.js";import{EditOperation as w}from"../../../../editor/common/core/editOperation.js";import{Position as R}from"../../../../editor/common/core/position.js";import{Range as q}from"../../../../editor/common/core/range.js";import"../../../../editor/common/core/selection.js";import{CodeActionTriggerType as B}from"../../../../editor/common/languages.js";import"../../../../editor/common/model.js";import{ILanguageFeaturesService as X}from"../../../../editor/common/services/languageFeatures.js";import{ApplyCodeActionReason as z,applyCodeAction as G,getCodeActions as Q}from"../../../../editor/contrib/codeAction/browser/codeAction.js";import{CodeActionKind as F,CodeActionTriggerSource as $}from"../../../../editor/contrib/codeAction/common/types.js";import{FormattingMode as L,formatDocumentRangesWithSelectedProvider as J,formatDocumentWithSelectedProvider as N}from"../../../../editor/contrib/format/browser/format.js";import{SnippetController2 as Y}from"../../../../editor/contrib/snippet/browser/snippetController2.js";import{localize as M}from"../../../../nls.js";import{IConfigurationService as m}from"../../../../platform/configuration/common/configuration.js";import"../../../../platform/extensions/common/extensions.js";import{IInstantiationService as O}from"../../../../platform/instantiation/common/instantiation.js";import{Progress as W}from"../../../../platform/progress/common/progress.js";import{Registry as Z}from"../../../../platform/registry/common/platform.js";import{ITelemetryService as ee}from"../../../../platform/telemetry/common/telemetry.js";import{Extensions as te}from"../../../common/contributions.js";import{SaveReason as p}from"../../../common/editor.js";import{getModifiedRanges as ie}from"../../format/browser/formatModified.js";import{IEditorService as re}from"../../../services/editor/common/editorService.js";import{IHostService as oe}from"../../../services/host/browser/host.js";import{LifecyclePhase as ne}from"../../../services/lifecycle/common/lifecycle.js";import{ITextFileService as ae}from"../../../services/textfile/common/textfiles.js";let h=class{constructor(e,t){this.configurationService=e;this.codeEditorService=t}async participate(e,t){if(!e.textEditorModel)return;const r=this.configurationService.getValue("files.trimTrailingWhitespace",{overrideIdentifier:e.textEditorModel.getLanguageId(),resource:e.resource}),i=this.configurationService.getValue("files.trimTrailingWhitespaceInRegexAndStrings",{overrideIdentifier:e.textEditorModel.getLanguageId(),resource:e.resource});r&&this.doTrimTrailingWhitespace(e.textEditorModel,t.reason===p.AUTO,i)}doTrimTrailingWhitespace(e,t,r){let i=[],n=[];const a=b(e,this.codeEditorService);if(a&&(i=a.getSelections(),t)){n=i.map(s=>s.getPosition());const o=Y.get(a)?.getSessionEnclosingRange();if(o)for(let s=o.startLineNumber;s<=o.endLineNumber;s++)n.push(new R(s,e.getLineMaxColumn(s)))}const d=U(e,n,r);d.length&&e.pushEditOperations(i,d,o=>i)}};h=f([c(0,m),c(1,S)],h);function b(g,e){let t=null;if(g.isAttachedToEditor()){for(const r of e.listCodeEditors())if(r.hasModel()&&r.getModel()===g){if(r.hasTextFocus())return r;t=r}}return t}let I=class{constructor(e,t){this.configurationService=e;this.codeEditorService=t}async participate(e,t){e.textEditorModel&&this.configurationService.getValue("files.insertFinalNewline",{overrideIdentifier:e.textEditorModel.getLanguageId(),resource:e.resource})&&this.doInsertFinalNewLine(e.textEditorModel)}doInsertFinalNewLine(e){const t=e.getLineCount(),r=e.getLineContent(t),i=H.lastNonWhitespaceIndex(r)===-1;if(!t||i)return;const n=[w.insert(new R(t,e.getLineMaxColumn(t)),e.getEOL())],a=b(e,this.codeEditorService);a?a.executeEdits("insertFinalNewLine",n,a.getSelections()):e.pushEditOperations([],n,()=>null)}};I=f([c(0,m),c(1,S)],I);let y=class{constructor(e,t){this.configurationService=e;this.codeEditorService=t}async participate(e,t){e.textEditorModel&&this.configurationService.getValue("files.trimFinalNewlines",{overrideIdentifier:e.textEditorModel.getLanguageId(),resource:e.resource})&&this.doTrimFinalNewLines(e.textEditorModel,t.reason===p.AUTO)}findLastNonEmptyLine(e){for(let t=e.getLineCount();t>=1;t--)if(e.getLineLength(t)>0)return t;return 0}doTrimFinalNewLines(e,t){const r=e.getLineCount();if(r===1)return;let i=[],n=0;const a=b(e,this.codeEditorService);if(a&&(i=a.getSelections(),t))for(let l=0,u=i.length;l<u;l++){const E=i[l].positionLineNumber;E>n&&(n=E)}const d=this.findLastNonEmptyLine(e),o=Math.max(d+1,n+1),s=e.validateRange(new q(o,1,r,e.getLineMaxColumn(r)));s.isEmpty()||(e.pushEditOperations(i,[w.delete(s)],l=>i),a?.setSelections(i))}};y=f([c(0,m),c(1,S)],y);let x=class{constructor(e,t,r){this.configurationService=e;this.codeEditorService=t;this.instantiationService=r}async participate(e,t,r,i){if(!e.textEditorModel||t.reason===p.AUTO)return;const n=e.textEditorModel,a={overrideIdentifier:n.getLanguageId(),resource:n.uri},d=new W(u=>{r.report({message:M({key:"formatting2",comment:["[configure]({1}) is a link. Only translate `configure`. Do not change brackets and parentheses or {1}"]},"Running '{0}' Formatter ([configure]({1})).",u.displayName||u.extensionId&&u.extensionId.value||"???","command:workbench.action.openSettings?%5B%22editor.formatOnSave%22%5D")})});if(!this.configurationService.getValue("editor.formatOnSave",a))return;const s=b(n,this.codeEditorService)||n,l=this.configurationService.getValue("editor.formatOnSaveMode",a);if(l==="file")await this.instantiationService.invokeFunction(N,s,L.Silent,d,i);else{const u=await this.instantiationService.invokeFunction(ie,j(s)?s.getModel():s);u===null&&l==="modificationsIfAvailable"?await this.instantiationService.invokeFunction(N,s,L.Silent,d,i):u&&await this.instantiationService.invokeFunction(J,s,u,L.Silent,d,i,!1)}}};x=f([c(0,m),c(1,S),c(2,O)],x);let C=class extends k{constructor(t,r,i,n,a,d,o){super();this.configurationService=t;this.instantiationService=r;this.languageFeaturesService=i;this.hostService=n;this.editorService=a;this.codeEditorService=d;this.telemetryService=o;this._register(this.hostService.onDidChangeFocus(()=>{this.triggerCodeActionsCommand()})),this._register(this.editorService.onDidActiveEditorChange(()=>{this.triggerCodeActionsCommand()}))}async triggerCodeActionsCommand(){if(this.configurationService.getValue("editor.codeActions.triggerOnFocusChange")&&this.configurationService.getValue("files.autoSave")==="afterDelay"){const t=this.codeEditorService.getActiveCodeEditor()?.getModel();if(!t)return;const r={overrideIdentifier:t.getLanguageId(),resource:t.uri},i=this.configurationService.getValue("editor.codeActionsOnSave",r);if(!i||Array.isArray(i))return;const n=Object.keys(i).filter(o=>i[o]&&i[o]==="always"&&F.Source.contains(new T(o))),a=new V,d=[];for(const o of n)d.push(new T(o));await this.applyOnSaveActions(t,d,[],W.None,a.token)}}async participate(t,r,i,n){if(!t.textEditorModel)return;const a=t.textEditorModel,d={overrideIdentifier:a.getLanguageId(),resource:a.uri},o=this.configurationService.getValue("editor.codeActionsOnSave",d);if(!o||r.reason===p.AUTO||r.reason!==p.EXPLICIT&&Array.isArray(o))return;const s=Array.isArray(o)?o:Object.keys(o).filter(v=>o[v]&&o[v]!=="never"),l=this.createCodeActionsOnSave(s);if(Array.isArray(o)||l.sort((v,P)=>F.SourceFixAll.contains(v)?F.SourceFixAll.contains(P)?0:-1:F.SourceFixAll.contains(P)?1:0),!l.length)return;const u=Array.isArray(o)?[]:Object.keys(o).filter(v=>o[v]==="never"||!1).map(v=>new T(v));i.report({message:M("codeaction","Quick Fixes")});const E=Array.isArray(o)?l:l.filter(v=>o[v.value]==="always"||(o[v.value]==="explicit"||o[v.value]===!0)&&r.reason===p.EXPLICIT);await this.applyOnSaveActions(a,E,u,i,n)}createCodeActionsOnSave(t){const r=t.map(i=>new T(i));return r.filter(i=>r.every(n=>n.equals(i)||!n.contains(i)))}async applyOnSaveActions(t,r,i,n,a){const d=new class{_names=new Set;_report(){n.report({message:M({key:"codeaction.get2",comment:["[configure]({1}) is a link. Only translate `configure`. Do not change brackets and parentheses or {1}"]},"Getting code actions from '{0}' ([configure]({1})).",[...this._names].map(o=>`'${o}'`).join(", "),"command:workbench.action.openSettings?%5B%22editor.codeActionsOnSave%22%5D")})}report(o){o.displayName&&!this._names.has(o.displayName)&&(this._names.add(o.displayName),this._report())}};for(const o of r){const s=new K,l=await this.getActionsToRun(t,o,i,d,a);if(this.telemetryService.publicLog2("codeAction.appliedOnSave",{codeAction:o.value,duration:s.elapsed()}),a.isCancellationRequested){l.dispose();return}try{for(const u of l.validActions)if(n.report({message:M("codeAction.apply","Applying code action '{0}'.",u.action.title)}),await this.instantiationService.invokeFunction(G,u,z.OnSave,{},a),a.isCancellationRequested)return}catch{}finally{l.dispose()}}}getActionsToRun(t,r,i,n,a){return Q(this.languageFeaturesService.codeActionProvider,t,t.getFullModelRange(),{type:B.Auto,triggerAction:$.OnSave,filter:{include:r,excludes:i,includeSourceActions:!0}},n,a)}};C=f([c(0,m),c(1,O),c(2,X),c(3,oe),c(4,re),c(5,S),c(6,ee)],C);let A=class extends k{constructor(t,r){super();this.instantiationService=t;this.textFileService=r;this.registerSaveParticipants()}registerSaveParticipants(){this._register(this.textFileService.files.addSaveParticipant(this.instantiationService.createInstance(h))),this._register(this.textFileService.files.addSaveParticipant(this.instantiationService.createInstance(C))),this._register(this.textFileService.files.addSaveParticipant(this.instantiationService.createInstance(x))),this._register(this.textFileService.files.addSaveParticipant(this.instantiationService.createInstance(I))),this._register(this.textFileService.files.addSaveParticipant(this.instantiationService.createInstance(y)))}};A=f([c(0,O),c(1,ae)],A);const se=Z.as(te.Workbench);se.registerWorkbenchContribution(A,ne.Restored);export{I as FinalNewLineParticipant,A as SaveParticipantsContribution,y as TrimFinalNewLinesParticipant,h as TrimWhitespaceParticipant};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { HierarchicalKind } from '../../../../base/common/hierarchicalKind.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { StopWatch } from '../../../../base/common/stopwatch.js';
+import * as strings from '../../../../base/common/strings.js';
+import { isCodeEditor } from '../../../../editor/browser/editorBrowser.js';
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { trimTrailingWhitespace } from '../../../../editor/common/commands/trimTrailingWhitespaceCommand.js';
+import { EditOperation } from '../../../../editor/common/core/editOperation.js';
+import { Position } from '../../../../editor/common/core/position.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
+import { ApplyCodeActionReason, applyCodeAction, getCodeActions } from '../../../../editor/contrib/codeAction/browser/codeAction.js';
+import { CodeActionKind, CodeActionTriggerSource } from '../../../../editor/contrib/codeAction/common/types.js';
+import { formatDocumentRangesWithSelectedProvider, formatDocumentWithSelectedProvider } from '../../../../editor/contrib/format/browser/format.js';
+import { SnippetController2 } from '../../../../editor/contrib/snippet/browser/snippetController2.js';
+import { localize } from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { Progress } from '../../../../platform/progress/common/progress.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { Extensions as WorkbenchContributionsExtensions } from '../../../common/contributions.js';
+import { getModifiedRanges } from '../../format/browser/formatModified.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
+let TrimWhitespaceParticipant = class TrimWhitespaceParticipant {
+    constructor(configurationService, codeEditorService) {
+        this.configurationService = configurationService;
+        this.codeEditorService = codeEditorService;
+    }
+    async participate(model, context) {
+        if (!model.textEditorModel) {
+            return;
+        }
+        const trimTrailingWhitespaceOption = this.configurationService.getValue('files.trimTrailingWhitespace', { overrideIdentifier: model.textEditorModel.getLanguageId(), resource: model.resource });
+        const trimInRegexAndStrings = this.configurationService.getValue('files.trimTrailingWhitespaceInRegexAndStrings', { overrideIdentifier: model.textEditorModel.getLanguageId(), resource: model.resource });
+        if (trimTrailingWhitespaceOption) {
+            this.doTrimTrailingWhitespace(model.textEditorModel, context.reason === 2, trimInRegexAndStrings);
+        }
+    }
+    doTrimTrailingWhitespace(model, isAutoSaved, trimInRegexesAndStrings) {
+        let prevSelection = [];
+        let cursors = [];
+        const editor = findEditor(model, this.codeEditorService);
+        if (editor) {
+            prevSelection = editor.getSelections();
+            if (isAutoSaved) {
+                cursors = prevSelection.map(s => s.getPosition());
+                const snippetsRange = SnippetController2.get(editor)?.getSessionEnclosingRange();
+                if (snippetsRange) {
+                    for (let lineNumber = snippetsRange.startLineNumber; lineNumber <= snippetsRange.endLineNumber; lineNumber++) {
+                        cursors.push(new Position(lineNumber, model.getLineMaxColumn(lineNumber)));
+                    }
+                }
+            }
+        }
+        const ops = trimTrailingWhitespace(model, cursors, trimInRegexesAndStrings);
+        if (!ops.length) {
+            return;
+        }
+        model.pushEditOperations(prevSelection, ops, (_edits) => prevSelection);
+    }
+};
+TrimWhitespaceParticipant = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, ICodeEditorService),
+    __metadata("design:paramtypes", [Object, Object])
+], TrimWhitespaceParticipant);
+export { TrimWhitespaceParticipant };
+function findEditor(model, codeEditorService) {
+    let candidate = null;
+    if (model.isAttachedToEditor()) {
+        for (const editor of codeEditorService.listCodeEditors()) {
+            if (editor.hasModel() && editor.getModel() === model) {
+                if (editor.hasTextFocus()) {
+                    return editor;
+                }
+                candidate = editor;
+            }
+        }
+    }
+    return candidate;
+}
+let FinalNewLineParticipant = class FinalNewLineParticipant {
+    constructor(configurationService, codeEditorService) {
+        this.configurationService = configurationService;
+        this.codeEditorService = codeEditorService;
+    }
+    async participate(model, context) {
+        if (!model.textEditorModel) {
+            return;
+        }
+        if (this.configurationService.getValue('files.insertFinalNewline', { overrideIdentifier: model.textEditorModel.getLanguageId(), resource: model.resource })) {
+            this.doInsertFinalNewLine(model.textEditorModel);
+        }
+    }
+    doInsertFinalNewLine(model) {
+        const lineCount = model.getLineCount();
+        const lastLine = model.getLineContent(lineCount);
+        const lastLineIsEmptyOrWhitespace = strings.lastNonWhitespaceIndex(lastLine) === -1;
+        if (!lineCount || lastLineIsEmptyOrWhitespace) {
+            return;
+        }
+        const edits = [EditOperation.insert(new Position(lineCount, model.getLineMaxColumn(lineCount)), model.getEOL())];
+        const editor = findEditor(model, this.codeEditorService);
+        if (editor) {
+            editor.executeEdits('insertFinalNewLine', edits, editor.getSelections());
+        }
+        else {
+            model.pushEditOperations([], edits, () => null);
+        }
+    }
+};
+FinalNewLineParticipant = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, ICodeEditorService),
+    __metadata("design:paramtypes", [Object, Object])
+], FinalNewLineParticipant);
+export { FinalNewLineParticipant };
+let TrimFinalNewLinesParticipant = class TrimFinalNewLinesParticipant {
+    constructor(configurationService, codeEditorService) {
+        this.configurationService = configurationService;
+        this.codeEditorService = codeEditorService;
+    }
+    async participate(model, context) {
+        if (!model.textEditorModel) {
+            return;
+        }
+        if (this.configurationService.getValue('files.trimFinalNewlines', { overrideIdentifier: model.textEditorModel.getLanguageId(), resource: model.resource })) {
+            this.doTrimFinalNewLines(model.textEditorModel, context.reason === 2);
+        }
+    }
+    findLastNonEmptyLine(model) {
+        for (let lineNumber = model.getLineCount(); lineNumber >= 1; lineNumber--) {
+            const lineLength = model.getLineLength(lineNumber);
+            if (lineLength > 0) {
+                return lineNumber;
+            }
+        }
+        return 0;
+    }
+    doTrimFinalNewLines(model, isAutoSaved) {
+        const lineCount = model.getLineCount();
+        if (lineCount === 1) {
+            return;
+        }
+        let prevSelection = [];
+        let cannotTouchLineNumber = 0;
+        const editor = findEditor(model, this.codeEditorService);
+        if (editor) {
+            prevSelection = editor.getSelections();
+            if (isAutoSaved) {
+                for (let i = 0, len = prevSelection.length; i < len; i++) {
+                    const positionLineNumber = prevSelection[i].positionLineNumber;
+                    if (positionLineNumber > cannotTouchLineNumber) {
+                        cannotTouchLineNumber = positionLineNumber;
+                    }
+                }
+            }
+        }
+        const lastNonEmptyLine = this.findLastNonEmptyLine(model);
+        const deleteFromLineNumber = Math.max(lastNonEmptyLine + 1, cannotTouchLineNumber + 1);
+        const deletionRange = model.validateRange(new Range(deleteFromLineNumber, 1, lineCount, model.getLineMaxColumn(lineCount)));
+        if (deletionRange.isEmpty()) {
+            return;
+        }
+        model.pushEditOperations(prevSelection, [EditOperation.delete(deletionRange)], _edits => prevSelection);
+        editor?.setSelections(prevSelection);
+    }
+};
+TrimFinalNewLinesParticipant = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, ICodeEditorService),
+    __metadata("design:paramtypes", [Object, Object])
+], TrimFinalNewLinesParticipant);
+export { TrimFinalNewLinesParticipant };
+let FormatOnSaveParticipant = class FormatOnSaveParticipant {
+    constructor(configurationService, codeEditorService, instantiationService) {
+        this.configurationService = configurationService;
+        this.codeEditorService = codeEditorService;
+        this.instantiationService = instantiationService;
+    }
+    async participate(model, context, progress, token) {
+        if (!model.textEditorModel) {
+            return;
+        }
+        if (context.reason === 2) {
+            return undefined;
+        }
+        const textEditorModel = model.textEditorModel;
+        const overrides = { overrideIdentifier: textEditorModel.getLanguageId(), resource: textEditorModel.uri };
+        const nestedProgress = new Progress(provider => {
+            progress.report({
+                message: localize({ key: 'formatting2', comment: ['[configure]({1}) is a link. Only translate `configure`. Do not change brackets and parentheses or {1}'] }, "Running '{0}' Formatter ([configure]({1})).", provider.displayName || provider.extensionId && provider.extensionId.value || '???', 'command:workbench.action.openSettings?%5B%22editor.formatOnSave%22%5D')
+            });
+        });
+        const enabled = this.configurationService.getValue('editor.formatOnSave', overrides);
+        if (!enabled) {
+            return undefined;
+        }
+        const editorOrModel = findEditor(textEditorModel, this.codeEditorService) || textEditorModel;
+        const mode = this.configurationService.getValue('editor.formatOnSaveMode', overrides);
+        if (mode === 'file') {
+            await this.instantiationService.invokeFunction(formatDocumentWithSelectedProvider, editorOrModel, 2, nestedProgress, token);
+        }
+        else {
+            const ranges = await this.instantiationService.invokeFunction(getModifiedRanges, isCodeEditor(editorOrModel) ? editorOrModel.getModel() : editorOrModel);
+            if (ranges === null && mode === 'modificationsIfAvailable') {
+                await this.instantiationService.invokeFunction(formatDocumentWithSelectedProvider, editorOrModel, 2, nestedProgress, token);
+            }
+            else if (ranges) {
+                await this.instantiationService.invokeFunction(formatDocumentRangesWithSelectedProvider, editorOrModel, ranges, 2, nestedProgress, token, false);
+            }
+        }
+    }
+};
+FormatOnSaveParticipant = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, ICodeEditorService),
+    __param(2, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], FormatOnSaveParticipant);
+let CodeActionOnSaveParticipant = class CodeActionOnSaveParticipant extends Disposable {
+    constructor(configurationService, instantiationService, languageFeaturesService, hostService, editorService, codeEditorService, telemetryService) {
+        super();
+        this.configurationService = configurationService;
+        this.instantiationService = instantiationService;
+        this.languageFeaturesService = languageFeaturesService;
+        this.hostService = hostService;
+        this.editorService = editorService;
+        this.codeEditorService = codeEditorService;
+        this.telemetryService = telemetryService;
+        this._register(this.hostService.onDidChangeFocus(() => { this.triggerCodeActionsCommand(); }));
+        this._register(this.editorService.onDidActiveEditorChange(() => { this.triggerCodeActionsCommand(); }));
+    }
+    async triggerCodeActionsCommand() {
+        if (this.configurationService.getValue('editor.codeActions.triggerOnFocusChange') && this.configurationService.getValue('files.autoSave') === 'afterDelay') {
+            const model = this.codeEditorService.getActiveCodeEditor()?.getModel();
+            if (!model) {
+                return undefined;
+            }
+            const settingsOverrides = { overrideIdentifier: model.getLanguageId(), resource: model.uri };
+            const setting = this.configurationService.getValue('editor.codeActionsOnSave', settingsOverrides);
+            if (!setting) {
+                return undefined;
+            }
+            if (Array.isArray(setting)) {
+                return undefined;
+            }
+            const settingItems = Object.keys(setting).filter(x => setting[x] && setting[x] === 'always' && CodeActionKind.Source.contains(new HierarchicalKind(x)));
+            const cancellationTokenSource = new CancellationTokenSource();
+            const codeActionKindList = [];
+            for (const item of settingItems) {
+                codeActionKindList.push(new HierarchicalKind(item));
+            }
+            await this.applyOnSaveActions(model, codeActionKindList, [], Progress.None, cancellationTokenSource.token);
+        }
+    }
+    async participate(model, context, progress, token) {
+        if (!model.textEditorModel) {
+            return;
+        }
+        const textEditorModel = model.textEditorModel;
+        const settingsOverrides = { overrideIdentifier: textEditorModel.getLanguageId(), resource: textEditorModel.uri };
+        const setting = this.configurationService.getValue('editor.codeActionsOnSave', settingsOverrides);
+        if (!setting) {
+            return undefined;
+        }
+        if (context.reason === 2) {
+            return undefined;
+        }
+        if (context.reason !== 1 && Array.isArray(setting)) {
+            return undefined;
+        }
+        const settingItems = Array.isArray(setting)
+            ? setting
+            : Object.keys(setting).filter(x => setting[x] && setting[x] !== 'never');
+        const codeActionsOnSave = this.createCodeActionsOnSave(settingItems);
+        if (!Array.isArray(setting)) {
+            codeActionsOnSave.sort((a, b) => {
+                if (CodeActionKind.SourceFixAll.contains(a)) {
+                    if (CodeActionKind.SourceFixAll.contains(b)) {
+                        return 0;
+                    }
+                    return -1;
+                }
+                if (CodeActionKind.SourceFixAll.contains(b)) {
+                    return 1;
+                }
+                return 0;
+            });
+        }
+        if (!codeActionsOnSave.length) {
+            return undefined;
+        }
+        const excludedActions = Array.isArray(setting)
+            ? []
+            : Object.keys(setting)
+                .filter(x => setting[x] === 'never' || false)
+                .map(x => new HierarchicalKind(x));
+        progress.report({ message: localize('codeaction', "Quick Fixes") });
+        const filteredSaveList = Array.isArray(setting) ? codeActionsOnSave : codeActionsOnSave.filter(x => setting[x.value] === 'always' || ((setting[x.value] === 'explicit' || setting[x.value] === true) && context.reason === 1));
+        await this.applyOnSaveActions(textEditorModel, filteredSaveList, excludedActions, progress, token);
+    }
+    createCodeActionsOnSave(settingItems) {
+        const kinds = settingItems.map(x => new HierarchicalKind(x));
+        return kinds.filter(kind => {
+            return kinds.every(otherKind => otherKind.equals(kind) || !otherKind.contains(kind));
+        });
+    }
+    async applyOnSaveActions(model, codeActionsOnSave, excludes, progress, token) {
+        const getActionProgress = new class {
+            constructor() {
+                this._names = new Set();
+            }
+            _report() {
+                progress.report({
+                    message: localize({ key: 'codeaction.get2', comment: ['[configure]({1}) is a link. Only translate `configure`. Do not change brackets and parentheses or {1}'] }, "Getting code actions from '{0}' ([configure]({1})).", [...this._names].map(name => `'${name}'`).join(', '), 'command:workbench.action.openSettings?%5B%22editor.codeActionsOnSave%22%5D')
+                });
+            }
+            report(provider) {
+                if (provider.displayName && !this._names.has(provider.displayName)) {
+                    this._names.add(provider.displayName);
+                    this._report();
+                }
+            }
+        };
+        for (const codeActionKind of codeActionsOnSave) {
+            const sw = new StopWatch();
+            const actionsToRun = await this.getActionsToRun(model, codeActionKind, excludes, getActionProgress, token);
+            this.telemetryService.publicLog2('codeAction.appliedOnSave', {
+                codeAction: codeActionKind.value,
+                duration: sw.elapsed()
+            });
+            if (token.isCancellationRequested) {
+                actionsToRun.dispose();
+                return;
+            }
+            try {
+                for (const action of actionsToRun.validActions) {
+                    progress.report({ message: localize('codeAction.apply', "Applying code action '{0}'.", action.action.title) });
+                    await this.instantiationService.invokeFunction(applyCodeAction, action, ApplyCodeActionReason.OnSave, {}, token);
+                    if (token.isCancellationRequested) {
+                        return;
+                    }
+                }
+            }
+            catch {
+            }
+            finally {
+                actionsToRun.dispose();
+            }
+        }
+    }
+    getActionsToRun(model, codeActionKind, excludes, progress, token) {
+        return getCodeActions(this.languageFeaturesService.codeActionProvider, model, model.getFullModelRange(), {
+            type: 2,
+            triggerAction: CodeActionTriggerSource.OnSave,
+            filter: { include: codeActionKind, excludes: excludes, includeSourceActions: true },
+        }, progress, token);
+    }
+};
+CodeActionOnSaveParticipant = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, IInstantiationService),
+    __param(2, ILanguageFeaturesService),
+    __param(3, IHostService),
+    __param(4, IEditorService),
+    __param(5, ICodeEditorService),
+    __param(6, ITelemetryService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], CodeActionOnSaveParticipant);
+let SaveParticipantsContribution = class SaveParticipantsContribution extends Disposable {
+    constructor(instantiationService, textFileService) {
+        super();
+        this.instantiationService = instantiationService;
+        this.textFileService = textFileService;
+        this.registerSaveParticipants();
+    }
+    registerSaveParticipants() {
+        this._register(this.textFileService.files.addSaveParticipant(this.instantiationService.createInstance(TrimWhitespaceParticipant)));
+        this._register(this.textFileService.files.addSaveParticipant(this.instantiationService.createInstance(CodeActionOnSaveParticipant)));
+        this._register(this.textFileService.files.addSaveParticipant(this.instantiationService.createInstance(FormatOnSaveParticipant)));
+        this._register(this.textFileService.files.addSaveParticipant(this.instantiationService.createInstance(FinalNewLineParticipant)));
+        this._register(this.textFileService.files.addSaveParticipant(this.instantiationService.createInstance(TrimFinalNewLinesParticipant)));
+    }
+};
+SaveParticipantsContribution = __decorate([
+    __param(0, IInstantiationService),
+    __param(1, ITextFileService),
+    __metadata("design:paramtypes", [Object, Object])
+], SaveParticipantsContribution);
+export { SaveParticipantsContribution };
+const workbenchContributionsRegistry = Registry.as(WorkbenchContributionsExtensions.Workbench);
+workbenchContributionsRegistry.registerWorkbenchContribution(SaveParticipantsContribution, 3);

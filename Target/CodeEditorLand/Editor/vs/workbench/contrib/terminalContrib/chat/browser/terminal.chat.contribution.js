@@ -1,1 +1,12 @@
-import{registerTerminalContribution as t}from"../../../terminal/browser/terminalExtensions.js";import{TerminalInlineChatAccessibleView as o}from"./terminalChatAccessibleView.js";import{TerminalChatController as r}from"./terminalChatController.js";t(r.ID,r,!1),e.register(new o),e.register(new m),n(i.Id,i,l.AfterRestored);import"./terminalChatActions.js";import{AccessibleViewRegistry as e}from"../../../../../platform/accessibility/browser/accessibleViewRegistry.js";import{TerminalChatAccessibilityHelp as m}from"./terminalChatAccessibilityHelp.js";import{registerWorkbenchContribution2 as n,WorkbenchPhase as l}from"../../../../common/contributions.js";import{TerminalChatEnabler as i}from"./terminalChatEnabler.js";
+import { registerTerminalContribution } from '../../../terminal/browser/terminalExtensions.js';
+import { TerminalInlineChatAccessibleView } from './terminalChatAccessibleView.js';
+import { TerminalChatController } from './terminalChatController.js';
+registerTerminalContribution(TerminalChatController.ID, TerminalChatController, false);
+AccessibleViewRegistry.register(new TerminalInlineChatAccessibleView());
+AccessibleViewRegistry.register(new TerminalChatAccessibilityHelp());
+registerWorkbenchContribution2(TerminalChatEnabler.Id, TerminalChatEnabler, 3);
+import './terminalChatActions.js';
+import { AccessibleViewRegistry } from '../../../../../platform/accessibility/browser/accessibleViewRegistry.js';
+import { TerminalChatAccessibilityHelp } from './terminalChatAccessibilityHelp.js';
+import { registerWorkbenchContribution2 } from '../../../../common/contributions.js';
+import { TerminalChatEnabler } from './terminalChatEnabler.js';

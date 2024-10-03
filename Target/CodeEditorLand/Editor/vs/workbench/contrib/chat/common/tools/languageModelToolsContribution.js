@@ -1,1 +1,165 @@
-var g=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var m=(s,i,n,a)=>{for(var r=a>1?void 0:a?b(i,n):i,t=s.length-1,e;t>=0;t--)(e=s[t])&&(r=(a?e(i,n,r):e(r))||r);return a&&r&&g(i,n,r),r},h=(s,i)=>(n,a)=>i(n,a,s);import"../../../../../base/common/jsonSchema.js";import{DisposableMap as w}from"../../../../../base/common/lifecycle.js";import{joinPath as c}from"../../../../../base/common/resources.js";import{ThemeIcon as I}from"../../../../../base/common/themables.js";import{localize as o}from"../../../../../nls.js";import{ContextKeyExpr as v}from"../../../../../platform/contextkey/common/contextkey.js";import"../../../../../platform/extensions/common/extensions.js";import{ILogService as x}from"../../../../../platform/log/common/log.js";import"../../../../common/contributions.js";import{ILanguageModelToolsService as k}from"../languageModelToolsService.js";import*as T from"../../../../services/extensions/common/extensionsRegistry.js";const D=T.ExtensionsRegistry.registerExtensionPoint({extensionPoint:"languageModelTools",activationEventsGenerator:(s,i)=>{for(const n of s)i.push(`onLanguageModelTool:${n.id}`)},jsonSchema:{description:o("vscode.extension.contributes.tools","Contributes a tool that can be invoked by a language model."),type:"array",items:{additionalProperties:!1,type:"object",defaultSnippets:[{body:{name:"",description:""}}],required:["id","modelDescription"],properties:{id:{description:o("toolId","A unique id for this tool."),type:"string",pattern:"^[\\w-]+$"},name:{description:o("toolName","If {0} is enabled for this tool, the user may use '#' with this name to invoke the tool in a query. Otherwise, the name is not required. Name must not contain whitespace.","`canBeInvokedManually`"),type:"string",pattern:"^[\\w-]+$"},displayName:{description:o("toolDisplayName","A human-readable name for this tool that may be used to describe it in the UI."),type:"string"},userDescription:{description:o("toolUserDescription","A description of this tool that may be shown to the user."),type:"string"},modelDescription:{description:o("toolModelDescription","A description of this tool that may be passed to a language model."),type:"string"},parametersSchema:{description:o("parametersSchema","A JSON schema for the parameters this tool accepts."),type:"object",$ref:"http://json-schema.org/draft-07/schema#"},canBeInvokedManually:{description:o("canBeInvokedManually","Whether this tool can be invoked manually by the user through the chat UX."),type:"boolean"},icon:{description:o("icon","An icon that represents this tool. Either a file path, an object with file paths for dark and light themes, or a theme icon reference, like `\\$(zap)`"),anyOf:[{type:"string"},{type:"object",properties:{light:{description:o("icon.light","Icon path when a light theme is used"),type:"string"},dark:{description:o("icon.dark","Icon path when a dark theme is used"),type:"string"}}}]},when:{markdownDescription:o("condition","Condition which must be true for this tool to be enabled. Note that a tool may still be invoked by another extension even when its `when` condition is false."),type:"string"},supportedContentTypes:{markdownDescription:o("contentTypes","The list of content types that this tool can return. It's required that tools support `text/plain`, and that is assumed even if not specified here. Another example could be the contentType exported by the `@vscode/prompt-tsx` library."),type:"array",items:{type:"string"}},requiresConfirmation:{description:o("requiresConfirmation","Whether this tool requires user confirmation before being executed."),type:"boolean"}}}}});function u(s,i){return`${s.value}/${i}`}let d=class{static ID="workbench.contrib.toolsExtensionPointHandler";_registrationDisposables=new w;constructor(i,n){D.setHandler((a,r)=>{for(const t of r.added)for(const e of t.value){if(!e.id||!e.modelDescription){n.error(`Extension '${t.description.identifier.value}' CANNOT register tool without name and modelDescription: ${JSON.stringify(e)}`);continue}if(!e.id.match(/^[\w-]+$/)){n.error(`Extension '${t.description.identifier.value}' CANNOT register tool with invalid id: ${e.id}. The id must match /^[\\w-]+$/.`);continue}if(e.canBeInvokedManually&&!e.name){n.error(`Extension '${t.description.identifier.value}' CANNOT register tool with 'canBeInvokedManually' set without a name: ${JSON.stringify(e)}`);continue}const p=e.icon;let l;typeof p=="string"?l=I.fromString(p)??{dark:c(t.description.extensionLocation,p),light:c(t.description.extensionLocation,p)}:p&&(l={dark:c(t.description.extensionLocation,p.dark),light:c(t.description.extensionLocation,p.light)});const f={...e,icon:l,when:e.when?v.deserialize(e.when):void 0,supportedContentTypes:e.supportedContentTypes?e.supportedContentTypes:[]},y=i.registerToolData(f);this._registrationDisposables.set(u(t.description.identifier,e.id),y)}for(const t of r.removed)for(const e of t.value)this._registrationDisposables.deleteAndDispose(u(t.description.identifier,e.id))})}};d=m([h(0,k),h(1,x)],d);export{d as LanguageModelToolsExtensionPointHandler};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { DisposableMap } from '../../../../../base/common/lifecycle.js';
+import { joinPath } from '../../../../../base/common/resources.js';
+import { ThemeIcon } from '../../../../../base/common/themables.js';
+import { localize } from '../../../../../nls.js';
+import { ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
+import { ILogService } from '../../../../../platform/log/common/log.js';
+import { ILanguageModelToolsService } from '../languageModelToolsService.js';
+import * as extensionsRegistry from '../../../../services/extensions/common/extensionsRegistry.js';
+const languageModelToolsExtensionPoint = extensionsRegistry.ExtensionsRegistry.registerExtensionPoint({
+    extensionPoint: 'languageModelTools',
+    activationEventsGenerator: (contributions, result) => {
+        for (const contrib of contributions) {
+            result.push(`onLanguageModelTool:${contrib.id}`);
+        }
+    },
+    jsonSchema: {
+        description: localize('vscode.extension.contributes.tools', 'Contributes a tool that can be invoked by a language model.'),
+        type: 'array',
+        items: {
+            additionalProperties: false,
+            type: 'object',
+            defaultSnippets: [{ body: { name: '', description: '' } }],
+            required: ['id', 'modelDescription'],
+            properties: {
+                id: {
+                    description: localize('toolId', "A unique id for this tool."),
+                    type: 'string',
+                    pattern: '^[\\w-]+$'
+                },
+                name: {
+                    description: localize('toolName', "If {0} is enabled for this tool, the user may use '#' with this name to invoke the tool in a query. Otherwise, the name is not required. Name must not contain whitespace.", '`canBeInvokedManually`'),
+                    type: 'string',
+                    pattern: '^[\\w-]+$'
+                },
+                displayName: {
+                    description: localize('toolDisplayName', "A human-readable name for this tool that may be used to describe it in the UI."),
+                    type: 'string'
+                },
+                userDescription: {
+                    description: localize('toolUserDescription', "A description of this tool that may be shown to the user."),
+                    type: 'string'
+                },
+                modelDescription: {
+                    description: localize('toolModelDescription', "A description of this tool that may be passed to a language model."),
+                    type: 'string'
+                },
+                parametersSchema: {
+                    description: localize('parametersSchema', "A JSON schema for the parameters this tool accepts."),
+                    type: 'object',
+                    $ref: 'http://json-schema.org/draft-07/schema#'
+                },
+                canBeInvokedManually: {
+                    description: localize('canBeInvokedManually', "Whether this tool can be invoked manually by the user through the chat UX."),
+                    type: 'boolean'
+                },
+                icon: {
+                    description: localize('icon', "An icon that represents this tool. Either a file path, an object with file paths for dark and light themes, or a theme icon reference, like `\\$(zap)`"),
+                    anyOf: [{
+                            type: 'string'
+                        },
+                        {
+                            type: 'object',
+                            properties: {
+                                light: {
+                                    description: localize('icon.light', 'Icon path when a light theme is used'),
+                                    type: 'string'
+                                },
+                                dark: {
+                                    description: localize('icon.dark', 'Icon path when a dark theme is used'),
+                                    type: 'string'
+                                }
+                            }
+                        }]
+                },
+                when: {
+                    markdownDescription: localize('condition', "Condition which must be true for this tool to be enabled. Note that a tool may still be invoked by another extension even when its `when` condition is false."),
+                    type: 'string'
+                },
+                supportedContentTypes: {
+                    markdownDescription: localize('contentTypes', "The list of content types that this tool can return. It's required that tools support `text/plain`, and that is assumed even if not specified here. Another example could be the contentType exported by the `@vscode/prompt-tsx` library."),
+                    type: 'array',
+                    items: {
+                        type: 'string'
+                    }
+                },
+                requiresConfirmation: {
+                    description: localize('requiresConfirmation', "Whether this tool requires user confirmation before being executed."),
+                    type: 'boolean'
+                }
+            }
+        }
+    }
+});
+function toToolKey(extensionIdentifier, toolName) {
+    return `${extensionIdentifier.value}/${toolName}`;
+}
+let LanguageModelToolsExtensionPointHandler = class LanguageModelToolsExtensionPointHandler {
+    static { this.ID = 'workbench.contrib.toolsExtensionPointHandler'; }
+    constructor(languageModelToolsService, logService) {
+        this._registrationDisposables = new DisposableMap();
+        languageModelToolsExtensionPoint.setHandler((extensions, delta) => {
+            for (const extension of delta.added) {
+                for (const rawTool of extension.value) {
+                    if (!rawTool.id || !rawTool.modelDescription) {
+                        logService.error(`Extension '${extension.description.identifier.value}' CANNOT register tool without name and modelDescription: ${JSON.stringify(rawTool)}`);
+                        continue;
+                    }
+                    if (!rawTool.id.match(/^[\w-]+$/)) {
+                        logService.error(`Extension '${extension.description.identifier.value}' CANNOT register tool with invalid id: ${rawTool.id}. The id must match /^[\\w-]+$/.`);
+                        continue;
+                    }
+                    if (rawTool.canBeInvokedManually && !rawTool.name) {
+                        logService.error(`Extension '${extension.description.identifier.value}' CANNOT register tool with 'canBeInvokedManually' set without a name: ${JSON.stringify(rawTool)}`);
+                        continue;
+                    }
+                    const rawIcon = rawTool.icon;
+                    let icon;
+                    if (typeof rawIcon === 'string') {
+                        icon = ThemeIcon.fromString(rawIcon) ?? {
+                            dark: joinPath(extension.description.extensionLocation, rawIcon),
+                            light: joinPath(extension.description.extensionLocation, rawIcon)
+                        };
+                    }
+                    else if (rawIcon) {
+                        icon = {
+                            dark: joinPath(extension.description.extensionLocation, rawIcon.dark),
+                            light: joinPath(extension.description.extensionLocation, rawIcon.light)
+                        };
+                    }
+                    const tool = {
+                        ...rawTool,
+                        icon,
+                        when: rawTool.when ? ContextKeyExpr.deserialize(rawTool.when) : undefined,
+                        supportedContentTypes: rawTool.supportedContentTypes ? rawTool.supportedContentTypes : [],
+                    };
+                    const disposable = languageModelToolsService.registerToolData(tool);
+                    this._registrationDisposables.set(toToolKey(extension.description.identifier, rawTool.id), disposable);
+                }
+            }
+            for (const extension of delta.removed) {
+                for (const tool of extension.value) {
+                    this._registrationDisposables.deleteAndDispose(toToolKey(extension.description.identifier, tool.id));
+                }
+            }
+        });
+    }
+};
+LanguageModelToolsExtensionPointHandler = __decorate([
+    __param(0, ILanguageModelToolsService),
+    __param(1, ILogService),
+    __metadata("design:paramtypes", [Object, Object])
+], LanguageModelToolsExtensionPointHandler);
+export { LanguageModelToolsExtensionPointHandler };

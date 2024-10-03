@@ -1,1 +1,75 @@
-var l=Object.defineProperty;var n=Object.getOwnPropertyDescriptor;var p=(i,o,e,r)=>{for(var t=r>1?void 0:r?n(o,e):o,s=i.length-1,L;s>=0;s--)(L=i[s])&&(t=(r?L(o,e,t):L(t))||t);return r&&t&&l(o,e,t),t},a=(i,o)=>(e,r)=>o(e,r,i);import{AbstractMessageLogger as v,AbstractLoggerService as h}from"../../../platform/log/common/log.js";import{MainContext as d}from"./extHost.protocol.js";import{IExtHostInitDataService as c}from"./extHostInitDataService.js";import{IExtHostRpcService as f}from"./extHostRpcService.js";import{URI as m}from"../../../base/common/uri.js";import{revive as x}from"../../../base/common/marshalling.js";let g=class extends h{_proxy;constructor(o,e){super(e.logLevel,e.logsLocation,e.loggers.map(r=>x(r))),this._proxy=o.getProxy(d.MainThreadLogger)}$setLogLevel(o,e){e?this.setLogLevel(m.revive(e),o):this.setLogLevel(o)}setVisibility(o,e){super.setVisibility(o,e),this._proxy.$setVisibility(o,e)}doCreateLogger(o,e,r){return new y(this._proxy,o,e,r)}};g=p([a(0,f),a(1,c)],g);class y extends v{constructor(e,r,t,s){super(s?.logLevel==="always");this.proxy=e;this.file=r;this.setLevel(t),this.proxy.$createLogger(r,s).then(()=>{this.doLog(this.buffer),this.isLoggerCreated=!0})}isLoggerCreated=!1;buffer=[];log(e,r){const t=[[e,r]];this.isLoggerCreated?this.doLog(t):this.buffer.push(...t)}doLog(e){this.proxy.$log(this.file,e)}flush(){this.proxy.$flush(this.file)}}export{g as ExtHostLoggerService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { AbstractMessageLogger, AbstractLoggerService } from '../../../platform/log/common/log.js';
+import { MainContext } from './extHost.protocol.js';
+import { IExtHostInitDataService } from './extHostInitDataService.js';
+import { IExtHostRpcService } from './extHostRpcService.js';
+import { URI } from '../../../base/common/uri.js';
+import { revive } from '../../../base/common/marshalling.js';
+let ExtHostLoggerService = class ExtHostLoggerService extends AbstractLoggerService {
+    constructor(rpc, initData) {
+        super(initData.logLevel, initData.logsLocation, initData.loggers.map(logger => revive(logger)));
+        this._proxy = rpc.getProxy(MainContext.MainThreadLogger);
+    }
+    $setLogLevel(logLevel, resource) {
+        if (resource) {
+            this.setLogLevel(URI.revive(resource), logLevel);
+        }
+        else {
+            this.setLogLevel(logLevel);
+        }
+    }
+    setVisibility(resource, visibility) {
+        super.setVisibility(resource, visibility);
+        this._proxy.$setVisibility(resource, visibility);
+    }
+    doCreateLogger(resource, logLevel, options) {
+        return new Logger(this._proxy, resource, logLevel, options);
+    }
+};
+ExtHostLoggerService = __decorate([
+    __param(0, IExtHostRpcService),
+    __param(1, IExtHostInitDataService),
+    __metadata("design:paramtypes", [Object, Object])
+], ExtHostLoggerService);
+export { ExtHostLoggerService };
+class Logger extends AbstractMessageLogger {
+    constructor(proxy, file, logLevel, loggerOptions) {
+        super(loggerOptions?.logLevel === 'always');
+        this.proxy = proxy;
+        this.file = file;
+        this.isLoggerCreated = false;
+        this.buffer = [];
+        this.setLevel(logLevel);
+        this.proxy.$createLogger(file, loggerOptions)
+            .then(() => {
+            this.doLog(this.buffer);
+            this.isLoggerCreated = true;
+        });
+    }
+    log(level, message) {
+        const messages = [[level, message]];
+        if (this.isLoggerCreated) {
+            this.doLog(messages);
+        }
+        else {
+            this.buffer.push(...messages);
+        }
+    }
+    doLog(messages) {
+        this.proxy.$log(this.file, messages);
+    }
+    flush() {
+        this.proxy.$flush(this.file);
+    }
+}

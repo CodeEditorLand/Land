@@ -1,5 +1,268 @@
-var I=Object.defineProperty;var E=Object.getOwnPropertyDescriptor;var y=(v,e,o,i)=>{for(var s=i>1?void 0:i?E(e,o):e,n=v.length-1,r;n>=0;n--)(r=v[n])&&(s=(i?r(e,o,s):r(s))||s);return i&&s&&I(e,o,s),s},u=(v,e)=>(o,i)=>e(o,i,v);import{getWindow as w}from"../../../../base/browser/dom.js";import{StandardKeyboardEvent as T}from"../../../../base/browser/keyboardEvent.js";import{getDefaultHoverDelegate as D}from"../../../../base/browser/ui/hover/hoverDelegateFactory.js";import{KeyCode as g}from"../../../../base/common/keyCodes.js";import"../../../../base/common/lifecycle.js";import{Schemas as N}from"../../../../base/common/network.js";import*as h from"../../../../base/common/path.js";import*as m from"../../../../base/common/platform.js";import{URI as b}from"../../../../base/common/uri.js";import{localize as f}from"../../../../nls.js";import{IConfigurationService as H}from"../../../../platform/configuration/common/configuration.js";import{IFileService as C}from"../../../../platform/files/common/files.js";import{IHoverService as P}from"../../../../platform/hover/browser/hover.js";import{IOpenerService as _}from"../../../../platform/opener/common/opener.js";import{ITunnelService as M}from"../../../../platform/tunnel/common/tunnel.js";import"../../../../platform/workspace/common/workspace.js";import"../common/debug.js";import{IEditorService as R}from"../../../services/editor/common/editorService.js";import{IWorkbenchEnvironmentService as W}from"../../../services/environment/common/environmentService.js";import{IPathService as A}from"../../../services/path/common/pathService.js";const S="\\u0000-\\u0020\\u007f-\\u009f",O=new RegExp("(?:[a-zA-Z][a-zA-Z0-9+.-]{2,}:\\/\\/|data:|www\\.)[^\\s"+S+'"]{2,}[^\\s'+S+`"')}\\],:;.!?]`,"ug"),K=/(?:[a-zA-Z]:(?:(?:\\|\/)[\w\.-]*)+)/,x=/(?:(?:\~|\.)(?:(?:\\|\/)[\w\.-]*)+)/,B=new RegExp(`(${K.source}|${x.source})`),U=/((?:\~|\.)?(?:\/[\w\.-]*)+)/,F=/(?:\:([\d]+))?(?:\:([\d]+))?/,z=new RegExp(`${m.isWindows?B.source:U.source}${F.source}`,"g"),$=/:([\d]+)(?::([\d]+))?$/,X=2e3;var G=(i=>(i[i.Rich=0]="Rich",i[i.Basic=1]="Basic",i[i.None=2]="None",i))(G||{});let L=class{constructor(e,o,i,s,n,r,a,t){this.editorService=e;this.fileService=o;this.openerService=i;this.pathService=s;this.tunnelService=n;this.environmentService=r;this.configurationService=a;this.hoverService=t}linkify(e,o,i,s,n){return this._linkify(e,o,i,s,n)}_linkify(e,o,i,s,n,r){if(o){const t=e.split(`
-`);for(let l=0;l<t.length-1;l++)t[l]=t[l]+`
-`;t[t.length-1]||t.pop();const c=t.map(l=>this._linkify(l,!1,i,s,n,r));if(c.length===1)return c[0];const p=document.createElement("span");return c.forEach(l=>p.appendChild(l)),p}const a=document.createElement("span");for(const t of this.detectLinks(e))try{switch(t.kind){case"text":a.appendChild(r?this.linkifyLocation(t.value,r.locationReference,r.session,n):document.createTextNode(t.value));break;case"web":a.appendChild(this.createWebLink(s?e:void 0,t.value,n));break;case"path":{const c=t.captures[0],p=t.captures[1]?Number(t.captures[1]):0,l=t.captures[2]?Number(t.captures[2]):0;a.appendChild(this.createPathLink(s?e:void 0,t.value,c,p,l,i,n));break}}}catch{a.appendChild(document.createTextNode(t.value))}return a}linkifyLocation(e,o,i,s){const n=this.createLink(e);return this.decorateLink(n,void 0,e,s,async r=>{const a=await i.resolveLocationReference(o);await a.source.openInEditor(this.editorService,{startLineNumber:a.line,startColumn:a.column,endLineNumber:a.endLine??a.line,endColumn:a.endColumn??a.column},r)}),n}makeReferencedLinkDetector(e,o){return{linkify:(i,s,n,r,a)=>this._linkify(i,s,n,r,a,{locationReference:e,session:o}),linkifyLocation:this.linkifyLocation.bind(this)}}createWebLink(e,o,i){const s=this.createLink(o);let n=b.parse(o);const r=$.exec(n.path);return r&&(n=n.with({path:n.path.slice(0,r.index),fragment:`L${r[0].slice(1)}`})),this.decorateLink(s,n,e,i,async()=>{if(n.scheme===N.file){const a=n.fsPath,t=await this.pathService.path,c=h.normalize(t.sep===h.posix.sep&&m.isWindows?a.replace(/\\/g,h.posix.sep):a),p=b.parse(c);if(!await this.fileService.exists(p))return;await this.editorService.openEditor({resource:p,options:{pinned:!0,selection:r?{startLineNumber:+r[1],startColumn:+r[2]}:void 0}});return}this.openerService.open(o,{allowTunneling:!!this.environmentService.remoteAuthority&&this.configurationService.getValue("remote.forwardOnOpen")})}),s}createPathLink(e,o,i,s,n,r,a){if(i[0]==="/"&&i[1]==="/")return document.createTextNode(o);const t={selection:{startLineNumber:s,startColumn:n}};if(i[0]==="."){if(!r)return document.createTextNode(o);const l=r.toResource(i),d=this.createLink(o);return this.decorateLink(d,l,e,a,k=>this.editorService.openEditor({resource:l,options:{...t,preserveFocus:k}})),d}if(i[0]==="~"){const l=this.pathService.resolvedUserHome;l&&(i=h.join(l.fsPath,i.substring(1)))}const c=this.createLink(o);c.tabIndex=0;const p=b.file(h.normalize(i));return this.fileService.stat(p).then(l=>{l.isDirectory||this.decorateLink(c,p,e,a,d=>this.editorService.openEditor({resource:p,options:{...t,preserveFocus:d}}))}).catch(()=>{}),c}createLink(e){const o=document.createElement("a");return o.textContent=e,o}decorateLink(e,o,i,s,n){e.classList.add("link");const r=o&&this.tunnelService.canTunnel(o)?f("followForwardedLink","follow link using forwarded port"):f("followLink","follow link"),a=e.ariaLabel=i?m.isMacintosh?f("fileLinkWithPathMac",`Cmd + click to {0}
-{1}`,r,i):f("fileLinkWithPath",`Ctrl + click to {0}
-{1}`,r,i):m.isMacintosh?f("fileLinkMac","Cmd + click to {0}",r):f("fileLink","Ctrl + click to {0}",r);s?.type===0?s.store.add(this.hoverService.setupManagedHover(D("element"),e,a)):s?.type!==2&&(e.title=a),e.onmousemove=t=>{e.classList.toggle("pointer",m.isMacintosh?t.metaKey:t.ctrlKey)},e.onmouseleave=()=>e.classList.remove("pointer"),e.onclick=t=>{const c=w(e).getSelection();!c||c.type==="Range"||(m.isMacintosh?t.metaKey:t.ctrlKey)&&(t.preventDefault(),t.stopImmediatePropagation(),n(!1))},e.onkeydown=t=>{const c=new T(t);(c.keyCode===g.Enter||c.keyCode===g.Space)&&(c.preventDefault(),c.stopPropagation(),n(c.keyCode===g.Space))}}detectLinks(e){if(e.length>X)return[{kind:"text",value:e,captures:[]}];const o=[O,z],i=["web","path"],s=[],n=(r,a)=>{if(a>=o.length){s.push({value:r,kind:"text",captures:[]});return}const t=o[a];let c=0,p;for(t.lastIndex=0;(p=t.exec(r))!==null;){const d=r.substring(c,p.index);d&&n(d,a+1);const k=p[0];s.push({value:k,kind:i[a],captures:p.slice(1)}),c=p.index+k.length}const l=r.substring(c);l&&n(l,a+1)};return n(e,0),s}};L=y([u(0,R),u(1,C),u(2,_),u(3,A),u(4,M),u(5,W),u(6,H),u(7,P)],L);export{G as DebugLinkHoverBehavior,L as LinkDetector};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { getWindow } from '../../../../base/browser/dom.js';
+import { StandardKeyboardEvent } from '../../../../base/browser/keyboardEvent.js';
+import { getDefaultHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { Schemas } from '../../../../base/common/network.js';
+import * as osPath from '../../../../base/common/path.js';
+import * as platform from '../../../../base/common/platform.js';
+import { URI } from '../../../../base/common/uri.js';
+import { localize } from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IHoverService } from '../../../../platform/hover/browser/hover.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { ITunnelService } from '../../../../platform/tunnel/common/tunnel.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
+import { IPathService } from '../../../services/path/common/pathService.js';
+const CONTROL_CODES = '\\u0000-\\u0020\\u007f-\\u009f';
+const WEB_LINK_REGEX = new RegExp('(?:[a-zA-Z][a-zA-Z0-9+.-]{2,}:\\/\\/|data:|www\\.)[^\\s' + CONTROL_CODES + '"]{2,}[^\\s' + CONTROL_CODES + '"\')}\\],:;.!?]', 'ug');
+const WIN_ABSOLUTE_PATH = /(?:[a-zA-Z]:(?:(?:\\|\/)[\w\.-]*)+)/;
+const WIN_RELATIVE_PATH = /(?:(?:\~|\.)(?:(?:\\|\/)[\w\.-]*)+)/;
+const WIN_PATH = new RegExp(`(${WIN_ABSOLUTE_PATH.source}|${WIN_RELATIVE_PATH.source})`);
+const POSIX_PATH = /((?:\~|\.)?(?:\/[\w\.-]*)+)/;
+const LINE_COLUMN = /(?:\:([\d]+))?(?:\:([\d]+))?/;
+const PATH_LINK_REGEX = new RegExp(`${platform.isWindows ? WIN_PATH.source : POSIX_PATH.source}${LINE_COLUMN.source}`, 'g');
+const LINE_COLUMN_REGEX = /:([\d]+)(?::([\d]+))?$/;
+const MAX_LENGTH = 2000;
+let LinkDetector = class LinkDetector {
+    constructor(editorService, fileService, openerService, pathService, tunnelService, environmentService, configurationService, hoverService) {
+        this.editorService = editorService;
+        this.fileService = fileService;
+        this.openerService = openerService;
+        this.pathService = pathService;
+        this.tunnelService = tunnelService;
+        this.environmentService = environmentService;
+        this.configurationService = configurationService;
+        this.hoverService = hoverService;
+    }
+    linkify(text, splitLines, workspaceFolder, includeFulltext, hoverBehavior) {
+        return this._linkify(text, splitLines, workspaceFolder, includeFulltext, hoverBehavior);
+    }
+    _linkify(text, splitLines, workspaceFolder, includeFulltext, hoverBehavior, defaultRef) {
+        if (splitLines) {
+            const lines = text.split('\n');
+            for (let i = 0; i < lines.length - 1; i++) {
+                lines[i] = lines[i] + '\n';
+            }
+            if (!lines[lines.length - 1]) {
+                lines.pop();
+            }
+            const elements = lines.map(line => this._linkify(line, false, workspaceFolder, includeFulltext, hoverBehavior, defaultRef));
+            if (elements.length === 1) {
+                return elements[0];
+            }
+            const container = document.createElement('span');
+            elements.forEach(e => container.appendChild(e));
+            return container;
+        }
+        const container = document.createElement('span');
+        for (const part of this.detectLinks(text)) {
+            try {
+                switch (part.kind) {
+                    case 'text':
+                        container.appendChild(defaultRef ? this.linkifyLocation(part.value, defaultRef.locationReference, defaultRef.session, hoverBehavior) : document.createTextNode(part.value));
+                        break;
+                    case 'web':
+                        container.appendChild(this.createWebLink(includeFulltext ? text : undefined, part.value, hoverBehavior));
+                        break;
+                    case 'path': {
+                        const path = part.captures[0];
+                        const lineNumber = part.captures[1] ? Number(part.captures[1]) : 0;
+                        const columnNumber = part.captures[2] ? Number(part.captures[2]) : 0;
+                        container.appendChild(this.createPathLink(includeFulltext ? text : undefined, part.value, path, lineNumber, columnNumber, workspaceFolder, hoverBehavior));
+                        break;
+                    }
+                }
+            }
+            catch (e) {
+                container.appendChild(document.createTextNode(part.value));
+            }
+        }
+        return container;
+    }
+    linkifyLocation(text, locationReference, session, hoverBehavior) {
+        const link = this.createLink(text);
+        this.decorateLink(link, undefined, text, hoverBehavior, async (preserveFocus) => {
+            const location = await session.resolveLocationReference(locationReference);
+            await location.source.openInEditor(this.editorService, {
+                startLineNumber: location.line,
+                startColumn: location.column,
+                endLineNumber: location.endLine ?? location.line,
+                endColumn: location.endColumn ?? location.column,
+            }, preserveFocus);
+        });
+        return link;
+    }
+    makeReferencedLinkDetector(locationReference, session) {
+        return {
+            linkify: (text, splitLines, workspaceFolder, includeFulltext, hoverBehavior) => this._linkify(text, splitLines, workspaceFolder, includeFulltext, hoverBehavior, { locationReference, session }),
+            linkifyLocation: this.linkifyLocation.bind(this),
+        };
+    }
+    createWebLink(fulltext, url, hoverBehavior) {
+        const link = this.createLink(url);
+        let uri = URI.parse(url);
+        const lineCol = LINE_COLUMN_REGEX.exec(uri.path);
+        if (lineCol) {
+            uri = uri.with({
+                path: uri.path.slice(0, lineCol.index),
+                fragment: `L${lineCol[0].slice(1)}`
+            });
+        }
+        this.decorateLink(link, uri, fulltext, hoverBehavior, async () => {
+            if (uri.scheme === Schemas.file) {
+                const fsPath = uri.fsPath;
+                const path = await this.pathService.path;
+                const fileUrl = osPath.normalize(((path.sep === osPath.posix.sep) && platform.isWindows) ? fsPath.replace(/\\/g, osPath.posix.sep) : fsPath);
+                const fileUri = URI.parse(fileUrl);
+                const exists = await this.fileService.exists(fileUri);
+                if (!exists) {
+                    return;
+                }
+                await this.editorService.openEditor({
+                    resource: fileUri,
+                    options: {
+                        pinned: true,
+                        selection: lineCol ? { startLineNumber: +lineCol[1], startColumn: +lineCol[2] } : undefined,
+                    },
+                });
+                return;
+            }
+            this.openerService.open(url, { allowTunneling: (!!this.environmentService.remoteAuthority && this.configurationService.getValue('remote.forwardOnOpen')) });
+        });
+        return link;
+    }
+    createPathLink(fulltext, text, path, lineNumber, columnNumber, workspaceFolder, hoverBehavior) {
+        if (path[0] === '/' && path[1] === '/') {
+            return document.createTextNode(text);
+        }
+        const options = { selection: { startLineNumber: lineNumber, startColumn: columnNumber } };
+        if (path[0] === '.') {
+            if (!workspaceFolder) {
+                return document.createTextNode(text);
+            }
+            const uri = workspaceFolder.toResource(path);
+            const link = this.createLink(text);
+            this.decorateLink(link, uri, fulltext, hoverBehavior, (preserveFocus) => this.editorService.openEditor({ resource: uri, options: { ...options, preserveFocus } }));
+            return link;
+        }
+        if (path[0] === '~') {
+            const userHome = this.pathService.resolvedUserHome;
+            if (userHome) {
+                path = osPath.join(userHome.fsPath, path.substring(1));
+            }
+        }
+        const link = this.createLink(text);
+        link.tabIndex = 0;
+        const uri = URI.file(osPath.normalize(path));
+        this.fileService.stat(uri).then(stat => {
+            if (stat.isDirectory) {
+                return;
+            }
+            this.decorateLink(link, uri, fulltext, hoverBehavior, (preserveFocus) => this.editorService.openEditor({ resource: uri, options: { ...options, preserveFocus } }));
+        }).catch(() => {
+        });
+        return link;
+    }
+    createLink(text) {
+        const link = document.createElement('a');
+        link.textContent = text;
+        return link;
+    }
+    decorateLink(link, uri, fulltext, hoverBehavior, onClick) {
+        link.classList.add('link');
+        const followLink = uri && this.tunnelService.canTunnel(uri) ? localize('followForwardedLink', "follow link using forwarded port") : localize('followLink', "follow link");
+        const title = link.ariaLabel = fulltext
+            ? (platform.isMacintosh ? localize('fileLinkWithPathMac', "Cmd + click to {0}\n{1}", followLink, fulltext) : localize('fileLinkWithPath', "Ctrl + click to {0}\n{1}", followLink, fulltext))
+            : (platform.isMacintosh ? localize('fileLinkMac', "Cmd + click to {0}", followLink) : localize('fileLink', "Ctrl + click to {0}", followLink));
+        if (hoverBehavior?.type === 0) {
+            hoverBehavior.store.add(this.hoverService.setupManagedHover(getDefaultHoverDelegate('element'), link, title));
+        }
+        else if (hoverBehavior?.type !== 2) {
+            link.title = title;
+        }
+        link.onmousemove = (event) => { link.classList.toggle('pointer', platform.isMacintosh ? event.metaKey : event.ctrlKey); };
+        link.onmouseleave = () => link.classList.remove('pointer');
+        link.onclick = (event) => {
+            const selection = getWindow(link).getSelection();
+            if (!selection || selection.type === 'Range') {
+                return;
+            }
+            if (!(platform.isMacintosh ? event.metaKey : event.ctrlKey)) {
+                return;
+            }
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            onClick(false);
+        };
+        link.onkeydown = e => {
+            const event = new StandardKeyboardEvent(e);
+            if (event.keyCode === 3 || event.keyCode === 10) {
+                event.preventDefault();
+                event.stopPropagation();
+                onClick(event.keyCode === 10);
+            }
+        };
+    }
+    detectLinks(text) {
+        if (text.length > MAX_LENGTH) {
+            return [{ kind: 'text', value: text, captures: [] }];
+        }
+        const regexes = [WEB_LINK_REGEX, PATH_LINK_REGEX];
+        const kinds = ['web', 'path'];
+        const result = [];
+        const splitOne = (text, regexIndex) => {
+            if (regexIndex >= regexes.length) {
+                result.push({ value: text, kind: 'text', captures: [] });
+                return;
+            }
+            const regex = regexes[regexIndex];
+            let currentIndex = 0;
+            let match;
+            regex.lastIndex = 0;
+            while ((match = regex.exec(text)) !== null) {
+                const stringBeforeMatch = text.substring(currentIndex, match.index);
+                if (stringBeforeMatch) {
+                    splitOne(stringBeforeMatch, regexIndex + 1);
+                }
+                const value = match[0];
+                result.push({
+                    value: value,
+                    kind: kinds[regexIndex],
+                    captures: match.slice(1)
+                });
+                currentIndex = match.index + value.length;
+            }
+            const stringAfterMatches = text.substring(currentIndex);
+            if (stringAfterMatches) {
+                splitOne(stringAfterMatches, regexIndex + 1);
+            }
+        };
+        splitOne(text, 0);
+        return result;
+    }
+};
+LinkDetector = __decorate([
+    __param(0, IEditorService),
+    __param(1, IFileService),
+    __param(2, IOpenerService),
+    __param(3, IPathService),
+    __param(4, ITunnelService),
+    __param(5, IWorkbenchEnvironmentService),
+    __param(6, IConfigurationService),
+    __param(7, IHoverService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], LinkDetector);
+export { LinkDetector };

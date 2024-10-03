@@ -1,1 +1,56 @@
-var u=Object.defineProperty;var g=Object.getOwnPropertyDescriptor;var f=(a,o,t,i)=>{for(var e=i>1?void 0:i?g(o,t):o,n=a.length-1,r;n>=0;n--)(r=a[n])&&(e=(i?r(o,t,e):r(e))||e);return i&&e&&u(o,t,e),e},l=(a,o)=>(t,i)=>o(t,i,a);import{Disposable as m}from"../../../../../base/common/lifecycle.js";import{IConfigurationService as I}from"../../../../../platform/configuration/common/configuration.js";import"../../../../../platform/terminal/common/terminal.js";import{registerWorkbenchContribution2 as h,WorkbenchPhase as d}from"../../../../common/contributions.js";import{ITerminalInstanceService as R}from"../../../terminal/browser/terminal.js";import{TERMINAL_CONFIG_SECTION as p}from"../../../terminal/common/terminal.js";import{TerminalAutoRepliesSettingId as k}from"../common/terminalAutoRepliesConfiguration.js";let s=class extends m{constructor(t,i){super();this._configurationService=t;for(const e of i.getRegisteredBackends())this._installListenersOnBackend(e);this._register(i.onDidRegisterBackend(async e=>this._installListenersOnBackend(e)))}static ID="terminalAutoReplies";_installListenersOnBackend(t){const i=this._configurationService.getValue(p);for(const e of Object.keys(i.autoReplies)){const n=i.autoReplies[e];n&&t.installAutoReply(e,n)}this._register(this._configurationService.onDidChangeConfiguration(async e=>{if(e.affectsConfiguration(k.AutoReplies)){t.uninstallAllAutoReplies();const n=this._configurationService.getValue(p);for(const r of Object.keys(n.autoReplies)){const c=n.autoReplies[r];c&&t.installAutoReply(r,c)}}}))}};s=f([l(0,I),l(1,R)],s),h(s.ID,s,d.AfterRestored);export{s as TerminalAutoRepliesContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { registerWorkbenchContribution2 } from '../../../../common/contributions.js';
+import { ITerminalInstanceService } from '../../../terminal/browser/terminal.js';
+import { TERMINAL_CONFIG_SECTION } from '../../../terminal/common/terminal.js';
+let TerminalAutoRepliesContribution = class TerminalAutoRepliesContribution extends Disposable {
+    static { this.ID = 'terminalAutoReplies'; }
+    constructor(_configurationService, terminalInstanceService) {
+        super();
+        this._configurationService = _configurationService;
+        for (const backend of terminalInstanceService.getRegisteredBackends()) {
+            this._installListenersOnBackend(backend);
+        }
+        this._register(terminalInstanceService.onDidRegisterBackend(async (e) => this._installListenersOnBackend(e)));
+    }
+    _installListenersOnBackend(backend) {
+        const initialConfig = this._configurationService.getValue(TERMINAL_CONFIG_SECTION);
+        for (const match of Object.keys(initialConfig.autoReplies)) {
+            const reply = initialConfig.autoReplies[match];
+            if (reply) {
+                backend.installAutoReply(match, reply);
+            }
+        }
+        this._register(this._configurationService.onDidChangeConfiguration(async (e) => {
+            if (e.affectsConfiguration("terminal.integrated.autoReplies")) {
+                backend.uninstallAllAutoReplies();
+                const config = this._configurationService.getValue(TERMINAL_CONFIG_SECTION);
+                for (const match of Object.keys(config.autoReplies)) {
+                    const reply = config.autoReplies[match];
+                    if (reply) {
+                        backend.installAutoReply(match, reply);
+                    }
+                }
+            }
+        }));
+    }
+};
+TerminalAutoRepliesContribution = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, ITerminalInstanceService),
+    __metadata("design:paramtypes", [Object, Object])
+], TerminalAutoRepliesContribution);
+export { TerminalAutoRepliesContribution };
+registerWorkbenchContribution2(TerminalAutoRepliesContribution.ID, TerminalAutoRepliesContribution, 3);

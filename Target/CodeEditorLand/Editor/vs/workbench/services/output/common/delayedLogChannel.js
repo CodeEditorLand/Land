@@ -1,1 +1,30 @@
-var p=Object.defineProperty;var I=Object.getOwnPropertyDescriptor;var l=(o,r,e,i)=>{for(var g=i>1?void 0:i?I(r,e):r,s=o.length-1,v;s>=0;s--)(v=o[s])&&(g=(i?v(r,e,g):v(g))||g);return i&&g&&p(r,e,g),g},c=(o,r)=>(e,i)=>r(e,i,o);import{ILoggerService as L,log as m}from"../../../../platform/log/common/log.js";import"../../../../base/common/uri.js";let t=class{constructor(r,e,i,g){this.file=i;this.loggerService=g;this.logger=g.createLogger(i,{name:e,id:r,hidden:!0})}logger;log(r,e){this.loggerService.setVisibility(this.file,!0),m(this.logger,r,e)}};t=l([c(3,L)],t);export{t as DelayedLogChannel};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ILoggerService, log } from '../../../../platform/log/common/log.js';
+import { URI } from '../../../../base/common/uri.js';
+let DelayedLogChannel = class DelayedLogChannel {
+    constructor(id, name, file, loggerService) {
+        this.file = file;
+        this.loggerService = loggerService;
+        this.logger = loggerService.createLogger(file, { name, id, hidden: true });
+    }
+    log(level, message) {
+        this.loggerService.setVisibility(this.file, true);
+        log(this.logger, level, message);
+    }
+};
+DelayedLogChannel = __decorate([
+    __param(3, ILoggerService),
+    __metadata("design:paramtypes", [String, String, URI, Object])
+], DelayedLogChannel);
+export { DelayedLogChannel };

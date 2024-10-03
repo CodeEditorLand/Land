@@ -1,1 +1,223 @@
-var R=Object.defineProperty;var M=Object.getOwnPropertyDescriptor;var T=(l,c,t,r)=>{for(var e=r>1?void 0:r?M(c,t):c,o=l.length-1,s;o>=0;o--)(s=l[o])&&(e=(r?s(c,t,e):s(e))||e);return r&&e&&R(c,t,e),e},g=(l,c)=>(t,r)=>c(t,r,l);import{Emitter as q,Event as O}from"../../../../base/common/event.js";import{Disposable as b,DisposableMap as z,DisposableStore as w}from"../../../../base/common/lifecycle.js";import{FileAccess as Q}from"../../../../base/common/network.js";import{LazyTokenizationSupport as F,TreeSitterTokenizationRegistry as D}from"../../../../editor/common/languages.js";import"../../../../editor/common/model.js";import{EDITOR_EXPERIMENTAL_PREFER_TREESITTER as E,ITreeSitterParserService as U}from"../../../../editor/common/services/treeSitterParserService.js";import"../../../../editor/common/textModelEvents.js";import{ColumnRange as S}from"../../../../editor/contrib/inlineCompletions/browser/utils.js";import{IConfigurationService as N}from"../../../../platform/configuration/common/configuration.js";import{IFileService as B}from"../../../../platform/files/common/files.js";import{InstantiationType as G,registerSingleton as V}from"../../../../platform/instantiation/common/extensions.js";import{createDecorator as W,IInstantiationService as X}from"../../../../platform/instantiation/common/instantiation.js";import{IThemeService as $}from"../../../../platform/theme/common/themeService.js";import{findMetadata as j}from"../../themes/common/colorThemeData.js";import{ILanguageService as H}from"../../../../editor/common/languages/language.js";const J=["typescript"],K=W("treeSitterTokenizationFeature");let f=class extends b{constructor(t,r,e,o){super();this._languageService=t;this._configurationService=r;this._instantiationService=e;this._fileService=o;this._handleGrammarsExtPoint(),this._register(this._configurationService.onDidChangeConfiguration(s=>{s.affectsConfiguration(E)&&this._handleGrammarsExtPoint()}))}_serviceBrand;_tokenizersRegistrations=new z;_getSetting(){return this._configurationService.getValue(E)||[]}_handleGrammarsExtPoint(){const t=this._getSetting();for(const e of t)if(J.includes(e)&&!this._tokenizersRegistrations.has(e)){const o=new F(()=>this._createTokenizationSupport(e)),s=new w;s.add(o),s.add(D.registerFactory(e,o)),this._tokenizersRegistrations.set(e,s),D.getOrCreate(e)}const r=[...this._tokenizersRegistrations.keys()].filter(e=>!t.includes(e));for(const e of r)this._tokenizersRegistrations.deleteAndDispose(e)}async _fetchQueries(t){const r=`vs/editor/common/languages/highlights/${t}.scm`;return(await this._fileService.readFile(Q.asFileUri(r))).value.toString()}async _createTokenizationSupport(t){const r=await this._fetchQueries(t);return this._instantiationService.createInstance(h,r,t,this._languageService.languageIdCodec)}};f=T([g(0,H),g(1,N),g(2,X),g(3,B)],f);let h=class extends b{constructor(t,r,e,o,s){super();this._queries=t;this._languageId=r;this._languageIdCodec=e;this._treeSitterService=o;this._themeService=s;this._register(O.runAndSubscribe(this._themeService.onDidColorThemeChange,()=>this.reset())),this._register(this._treeSitterService.onDidUpdateTree(i=>{const n=i.textModel.getLineCount();this._onDidChangeTokens.fire({textModel:i.textModel,changes:{semanticTokensApplied:!1,ranges:i.ranges.map(d=>({fromLineNumber:d.startLineNumber,toLineNumber:d.endLineNumber<n?d.endLineNumber:n}))}})}))}_query;_onDidChangeTokens=new q;onDidChangeTokens=this._onDidChangeTokens.event;_colorThemeData;_languageAddedListener;_getTree(t){return this._treeSitterService.getParseResult(t)}_ensureQuery(){if(!this._query){const t=this._treeSitterService.getOrInitLanguage(this._languageId);if(!t){this._languageAddedListener||(this._languageAddedListener=this._register(O.onceIf(this._treeSitterService.onDidAddLanguage,r=>r.id===this._languageId)(r=>{this._query=r.language.query(this._queries)})));return}this._query=t.query(this._queries)}return this._query}reset(){this._colorThemeData=this._themeService.getColorTheme()}captureAtPosition(t,r,e){const o=this._getTree(e);return this._captureAtRange(t,new S(r,r),o?.tree)}captureAtPositionTree(t,r,e){return this._captureAtRange(t,new S(r,r),e)}_captureAtRange(t,r,e){const o=this._ensureQuery();return!e||!o?[]:o.captures(e.rootNode,{startPosition:{row:t-1,column:r.startColumn-1},endPosition:{row:t-1,column:r.endColumnExclusive}})}tokenizeEncoded(t,r){const e=r.getLineMaxColumn(t),o=this._getTree(r),s=this._captureAtRange(t,new S(1,e),o?.tree);if(s.length===0)return;const i=Array(s.length);i.fill({endOffset:0,scopes:[]});let n=0;const d=r.getOffsetAt({lineNumber:t,column:1}),m=()=>{i.push({endOffset:0,scopes:[]})},L=this._languageIdCodec.encodeLanguageId(this._languageId);for(let u=0;u<s.length;u++){const a=s[u],y=a.node.endIndex<d+e?a.node.endIndex:d+e,k=a.node.startIndex<d?d:a.node.startIndex,v=y-d;let p;const C=y-k;u>0?p=i[n-1].endOffset:p=k-d-1;const I=v-C;p>=0&&p<I&&(i[n]={endOffset:I,scopes:[]},n++,m());const P=()=>{i[n]={endOffset:v,scopes:[a.name]},n++};if(p>=v){const A=n>=2?i[n-2].endOffset:0,x=i[n-1].endOffset;A+C===x?i[n-1].scopes[i[n-1].scopes.length-1]=a.name:(i[n-1].endOffset=I,P(),m(),i[n].endOffset=x,i[n].scopes=i[n-2].scopes,n++)}else P()}s[s.length-1].node.endPosition.column+1<e&&(m(),i[n].endOffset=e-1,n++);const _=new Uint32Array(n*2);for(let u=0;u<n;u++){const a=i[u];if(a.endOffset===0&&a.scopes.length===0)break;_[u*2]=a.endOffset,_[u*2+1]=j(this._colorThemeData,a.scopes,L)}return _}dispose(){super.dispose(),this._query?.delete(),this._query=void 0}};h=T([g(3,U),g(4,$)],h),V(K,f,G.Eager);export{K as ITreeSitterTokenizationFeature};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { Disposable, DisposableMap, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { FileAccess } from '../../../../base/common/network.js';
+import { LazyTokenizationSupport, TreeSitterTokenizationRegistry } from '../../../../editor/common/languages.js';
+import { EDITOR_EXPERIMENTAL_PREFER_TREESITTER, ITreeSitterParserService } from '../../../../editor/common/services/treeSitterParserService.js';
+import { ColumnRange } from '../../../../editor/contrib/inlineCompletions/browser/utils.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { createDecorator, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { findMetadata } from '../../themes/common/colorThemeData.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+const ALLOWED_SUPPORT = ['typescript'];
+export const ITreeSitterTokenizationFeature = createDecorator('treeSitterTokenizationFeature');
+let TreeSitterTokenizationFeature = class TreeSitterTokenizationFeature extends Disposable {
+    constructor(_languageService, _configurationService, _instantiationService, _fileService) {
+        super();
+        this._languageService = _languageService;
+        this._configurationService = _configurationService;
+        this._instantiationService = _instantiationService;
+        this._fileService = _fileService;
+        this._tokenizersRegistrations = new DisposableMap();
+        this._handleGrammarsExtPoint();
+        this._register(this._configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration(EDITOR_EXPERIMENTAL_PREFER_TREESITTER)) {
+                this._handleGrammarsExtPoint();
+            }
+        }));
+    }
+    _getSetting() {
+        return this._configurationService.getValue(EDITOR_EXPERIMENTAL_PREFER_TREESITTER) || [];
+    }
+    _handleGrammarsExtPoint() {
+        const setting = this._getSetting();
+        for (const languageId of setting) {
+            if (ALLOWED_SUPPORT.includes(languageId) && !this._tokenizersRegistrations.has(languageId)) {
+                const lazyTokenizationSupport = new LazyTokenizationSupport(() => this._createTokenizationSupport(languageId));
+                const disposableStore = new DisposableStore();
+                disposableStore.add(lazyTokenizationSupport);
+                disposableStore.add(TreeSitterTokenizationRegistry.registerFactory(languageId, lazyTokenizationSupport));
+                this._tokenizersRegistrations.set(languageId, disposableStore);
+                TreeSitterTokenizationRegistry.getOrCreate(languageId);
+            }
+        }
+        const languagesToUnregister = [...this._tokenizersRegistrations.keys()].filter(languageId => !setting.includes(languageId));
+        for (const languageId of languagesToUnregister) {
+            this._tokenizersRegistrations.deleteAndDispose(languageId);
+        }
+    }
+    async _fetchQueries(newLanguage) {
+        const languageLocation = `vs/editor/common/languages/highlights/${newLanguage}.scm`;
+        const query = await this._fileService.readFile(FileAccess.asFileUri(languageLocation));
+        return query.value.toString();
+    }
+    async _createTokenizationSupport(languageId) {
+        const queries = await this._fetchQueries(languageId);
+        return this._instantiationService.createInstance(TreeSitterTokenizationSupport, queries, languageId, this._languageService.languageIdCodec);
+    }
+};
+TreeSitterTokenizationFeature = __decorate([
+    __param(0, ILanguageService),
+    __param(1, IConfigurationService),
+    __param(2, IInstantiationService),
+    __param(3, IFileService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], TreeSitterTokenizationFeature);
+let TreeSitterTokenizationSupport = class TreeSitterTokenizationSupport extends Disposable {
+    constructor(_queries, _languageId, _languageIdCodec, _treeSitterService, _themeService) {
+        super();
+        this._queries = _queries;
+        this._languageId = _languageId;
+        this._languageIdCodec = _languageIdCodec;
+        this._treeSitterService = _treeSitterService;
+        this._themeService = _themeService;
+        this._onDidChangeTokens = new Emitter();
+        this.onDidChangeTokens = this._onDidChangeTokens.event;
+        this._register(Event.runAndSubscribe(this._themeService.onDidColorThemeChange, () => this.reset()));
+        this._register(this._treeSitterService.onDidUpdateTree((e) => {
+            const maxLine = e.textModel.getLineCount();
+            this._onDidChangeTokens.fire({
+                textModel: e.textModel,
+                changes: {
+                    semanticTokensApplied: false,
+                    ranges: e.ranges.map(range => ({ fromLineNumber: range.startLineNumber, toLineNumber: range.endLineNumber < maxLine ? range.endLineNumber : maxLine })),
+                }
+            });
+        }));
+    }
+    _getTree(textModel) {
+        return this._treeSitterService.getParseResult(textModel);
+    }
+    _ensureQuery() {
+        if (!this._query) {
+            const language = this._treeSitterService.getOrInitLanguage(this._languageId);
+            if (!language) {
+                if (!this._languageAddedListener) {
+                    this._languageAddedListener = this._register(Event.onceIf(this._treeSitterService.onDidAddLanguage, e => e.id === this._languageId)((e) => {
+                        this._query = e.language.query(this._queries);
+                    }));
+                }
+                return;
+            }
+            this._query = language.query(this._queries);
+        }
+        return this._query;
+    }
+    reset() {
+        this._colorThemeData = this._themeService.getColorTheme();
+    }
+    captureAtPosition(lineNumber, column, textModel) {
+        const tree = this._getTree(textModel);
+        const captures = this._captureAtRange(lineNumber, new ColumnRange(column, column), tree?.tree);
+        return captures;
+    }
+    captureAtPositionTree(lineNumber, column, tree) {
+        const captures = this._captureAtRange(lineNumber, new ColumnRange(column, column), tree);
+        return captures;
+    }
+    _captureAtRange(lineNumber, columnRange, tree) {
+        const query = this._ensureQuery();
+        if (!tree || !query) {
+            return [];
+        }
+        return query.captures(tree.rootNode, { startPosition: { row: lineNumber - 1, column: columnRange.startColumn - 1 }, endPosition: { row: lineNumber - 1, column: columnRange.endColumnExclusive } });
+    }
+    tokenizeEncoded(lineNumber, textModel) {
+        const lineLength = textModel.getLineMaxColumn(lineNumber);
+        const tree = this._getTree(textModel);
+        const captures = this._captureAtRange(lineNumber, new ColumnRange(1, lineLength), tree?.tree);
+        if (captures.length === 0) {
+            return undefined;
+        }
+        const endOffsetsAndScopes = Array(captures.length);
+        endOffsetsAndScopes.fill({ endOffset: 0, scopes: [] });
+        let tokenIndex = 0;
+        const lineStartOffset = textModel.getOffsetAt({ lineNumber: lineNumber, column: 1 });
+        const increaseSizeOfTokensByOneToken = () => {
+            endOffsetsAndScopes.push({ endOffset: 0, scopes: [] });
+        };
+        const encodedLanguageId = this._languageIdCodec.encodeLanguageId(this._languageId);
+        for (let captureIndex = 0; captureIndex < captures.length; captureIndex++) {
+            const capture = captures[captureIndex];
+            const tokenEndIndex = capture.node.endIndex < lineStartOffset + lineLength ? capture.node.endIndex : lineStartOffset + lineLength;
+            const tokenStartIndex = capture.node.startIndex < lineStartOffset ? lineStartOffset : capture.node.startIndex;
+            const lineRelativeOffset = tokenEndIndex - lineStartOffset;
+            let previousTokenEnd;
+            const currentTokenLength = tokenEndIndex - tokenStartIndex;
+            if (captureIndex > 0) {
+                previousTokenEnd = endOffsetsAndScopes[(tokenIndex - 1)].endOffset;
+            }
+            else {
+                previousTokenEnd = tokenStartIndex - lineStartOffset - 1;
+            }
+            const intermediateTokenOffset = lineRelativeOffset - currentTokenLength;
+            if ((previousTokenEnd >= 0) && (previousTokenEnd < intermediateTokenOffset)) {
+                endOffsetsAndScopes[tokenIndex] = { endOffset: intermediateTokenOffset, scopes: [] };
+                tokenIndex++;
+                increaseSizeOfTokensByOneToken();
+            }
+            const addCurrentTokenToArray = () => {
+                endOffsetsAndScopes[tokenIndex] = { endOffset: lineRelativeOffset, scopes: [capture.name] };
+                tokenIndex++;
+            };
+            if (previousTokenEnd >= lineRelativeOffset) {
+                const previousTokenStartOffset = ((tokenIndex >= 2) ? endOffsetsAndScopes[tokenIndex - 2].endOffset : 0);
+                const originalPreviousTokenEndOffset = endOffsetsAndScopes[tokenIndex - 1].endOffset;
+                if ((previousTokenStartOffset + currentTokenLength) === originalPreviousTokenEndOffset) {
+                    endOffsetsAndScopes[tokenIndex - 1].scopes[endOffsetsAndScopes[tokenIndex - 1].scopes.length - 1] = capture.name;
+                }
+                else {
+                    endOffsetsAndScopes[tokenIndex - 1].endOffset = intermediateTokenOffset;
+                    addCurrentTokenToArray();
+                    increaseSizeOfTokensByOneToken();
+                    endOffsetsAndScopes[tokenIndex].endOffset = originalPreviousTokenEndOffset;
+                    endOffsetsAndScopes[tokenIndex].scopes = endOffsetsAndScopes[tokenIndex - 2].scopes;
+                    tokenIndex++;
+                }
+            }
+            else {
+                addCurrentTokenToArray();
+            }
+        }
+        if (captures[captures.length - 1].node.endPosition.column + 1 < lineLength) {
+            increaseSizeOfTokensByOneToken();
+            endOffsetsAndScopes[tokenIndex].endOffset = lineLength - 1;
+            tokenIndex++;
+        }
+        const tokens = new Uint32Array((tokenIndex) * 2);
+        for (let i = 0; i < tokenIndex; i++) {
+            const token = endOffsetsAndScopes[i];
+            if (token.endOffset === 0 && token.scopes.length === 0) {
+                break;
+            }
+            tokens[i * 2] = token.endOffset;
+            tokens[i * 2 + 1] = findMetadata(this._colorThemeData, token.scopes, encodedLanguageId);
+        }
+        return tokens;
+    }
+    dispose() {
+        super.dispose();
+        this._query?.delete();
+        this._query = undefined;
+    }
+};
+TreeSitterTokenizationSupport = __decorate([
+    __param(3, ITreeSitterParserService),
+    __param(4, IThemeService),
+    __metadata("design:paramtypes", [String, String, Object, Object, Object])
+], TreeSitterTokenizationSupport);
+registerSingleton(ITreeSitterTokenizationFeature, TreeSitterTokenizationFeature, 0);

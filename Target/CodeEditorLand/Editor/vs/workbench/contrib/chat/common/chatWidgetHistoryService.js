@@ -1,1 +1,56 @@
-var v=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var y=(r,t,e,i)=>{for(var o=i>1?void 0:i?m(t,e):t,s=r.length-1,n;s>=0;s--)(n=r[s])&&(o=(i?n(t,e,o):n(o))||o);return i&&o&&v(t,e,o),o},h=(r,t)=>(e,i)=>t(e,i,r);import{Emitter as c}from"../../../../base/common/event.js";import{createDecorator as d}from"../../../../platform/instantiation/common/instantiation.js";import{IStorageService as C,StorageScope as H,StorageTarget as g}from"../../../../platform/storage/common/storage.js";import{Memento as p}from"../../../common/memento.js";import{ChatAgentLocation as I}from"./chatAgents.js";import{CHAT_PROVIDER_ID as S}from"./chatParticipantContribTypes.js";const L=d("IChatWidgetHistoryService");let a=class{_serviceBrand;memento;viewState;_onDidClearHistory=new c;onDidClearHistory=this._onDidClearHistory.event;constructor(t){this.memento=new p("interactive-session",t);const e=this.memento.getMemento(H.WORKSPACE,g.MACHINE);for(const i in e.history)e.history[i]=e.history[i].map(o=>typeof o=="string"?{text:o}:o);this.viewState=e}getHistory(t){const e=this.getKey(t);return this.viewState.history?.[e]??[]}getKey(t){return t===I.Panel?S:t}saveHistory(t,e){this.viewState.history||(this.viewState.history={});const i=this.getKey(t);this.viewState.history[i]=e,this.memento.saveMemento()}clearHistory(){this.viewState.history={},this.memento.saveMemento(),this._onDidClearHistory.fire()}};a=y([h(0,C)],a);export{a as ChatWidgetHistoryService,L as IChatWidgetHistoryService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter } from '../../../../base/common/event.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { Memento } from '../../../common/memento.js';
+import { ChatAgentLocation } from './chatAgents.js';
+import { CHAT_PROVIDER_ID } from './chatParticipantContribTypes.js';
+export const IChatWidgetHistoryService = createDecorator('IChatWidgetHistoryService');
+let ChatWidgetHistoryService = class ChatWidgetHistoryService {
+    constructor(storageService) {
+        this._onDidClearHistory = new Emitter();
+        this.onDidClearHistory = this._onDidClearHistory.event;
+        this.memento = new Memento('interactive-session', storageService);
+        const loadedState = this.memento.getMemento(1, 1);
+        for (const provider in loadedState.history) {
+            loadedState.history[provider] = loadedState.history[provider].map(entry => typeof entry === 'string' ? { text: entry } : entry);
+        }
+        this.viewState = loadedState;
+    }
+    getHistory(location) {
+        const key = this.getKey(location);
+        return this.viewState.history?.[key] ?? [];
+    }
+    getKey(location) {
+        return location === ChatAgentLocation.Panel ? CHAT_PROVIDER_ID : location;
+    }
+    saveHistory(location, history) {
+        if (!this.viewState.history) {
+            this.viewState.history = {};
+        }
+        const key = this.getKey(location);
+        this.viewState.history[key] = history;
+        this.memento.saveMemento();
+    }
+    clearHistory() {
+        this.viewState.history = {};
+        this.memento.saveMemento();
+        this._onDidClearHistory.fire();
+    }
+};
+ChatWidgetHistoryService = __decorate([
+    __param(0, IStorageService),
+    __metadata("design:paramtypes", [Object])
+], ChatWidgetHistoryService);
+export { ChatWidgetHistoryService };

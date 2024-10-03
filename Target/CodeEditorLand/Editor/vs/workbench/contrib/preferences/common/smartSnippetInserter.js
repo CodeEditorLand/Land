@@ -1,2 +1,123 @@
-import{createScanner as k,SyntaxKind as o}from"../../../../base/common/json.js";import{Position as g}from"../../../../editor/common/core/position.js";import{Range as B}from"../../../../editor/common/core/range.js";import"../../../../editor/common/model.js";class m{static hasOpenBrace(e){for(;e.scan()!==o.EOF;)if(e.getToken()===o.OpenBraceToken)return!0;return!1}static offsetToPosition(e,c){let p=0;const S=e.getEOL().length,n=e.getLineCount();for(let r=1;r<=n;r++){const f=e.getLineLength(r)+S,i=p+f;if(i>c)return new g(r,c-p+1);p=i}return new g(n,e.getLineMaxColumn(n))}static insertSnippet(e,c){const p=e.getValueLengthInRange(new B(1,1,c.lineNumber,c.column));let S;(t=>(t[t.INVALID=0]="INVALID",t[t.AFTER_OBJECT=1]="AFTER_OBJECT",t[t.BEFORE_OBJECT=2]="BEFORE_OBJECT"))(S||={});let n=0,r=-1,f=0;const i=k(e.getValue());let T=0,I=0;const l=(a,u)=>{u!==0&&T===1&&I===0?(n=u,r=a,f=u):n!==0&&(n=0,r=i.getTokenOffset())};for(;i.scan()!==o.EOF;){const a=i.getPosition(),u=i.getToken();let s=!1;switch(u){case o.OpenBracketToken:s=!0,T++,l(a,2);break;case o.CloseBracketToken:s=!0,T--,l(a,0);break;case o.CommaToken:s=!0,l(a,2);break;case o.OpenBraceToken:s=!0,I++,l(a,0);break;case o.CloseBraceToken:s=!0,I--,l(a,1);break;case o.Trivia:case o.LineBreakTrivia:s=!0}if(a>=p&&(n!==0||r!==-1)){let t,L;return n!==0?(t=s?a:i.getTokenOffset(),L=n):(t=r,L=f),L===1?{position:this.offsetToPosition(e,t),prepend:",",append:""}:(i.setPosition(t),{position:this.offsetToPosition(e,t),prepend:"",append:this.hasOpenBrace(i)?",":""})}}const O=e.getLineCount();return{position:new g(O,e.getLineMaxColumn(O)),prepend:`
-[`,append:"]"}}}export{m as SmartSnippetInserter};
+import { createScanner as createJSONScanner } from '../../../../base/common/json.js';
+import { Position } from '../../../../editor/common/core/position.js';
+import { Range } from '../../../../editor/common/core/range.js';
+export class SmartSnippetInserter {
+    static hasOpenBrace(scanner) {
+        while (scanner.scan() !== 17) {
+            const kind = scanner.getToken();
+            if (kind === 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+    static offsetToPosition(model, offset) {
+        let offsetBeforeLine = 0;
+        const eolLength = model.getEOL().length;
+        const lineCount = model.getLineCount();
+        for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
+            const lineTotalLength = model.getLineLength(lineNumber) + eolLength;
+            const offsetAfterLine = offsetBeforeLine + lineTotalLength;
+            if (offsetAfterLine > offset) {
+                return new Position(lineNumber, offset - offsetBeforeLine + 1);
+            }
+            offsetBeforeLine = offsetAfterLine;
+        }
+        return new Position(lineCount, model.getLineMaxColumn(lineCount));
+    }
+    static insertSnippet(model, _position) {
+        const desiredPosition = model.getValueLengthInRange(new Range(1, 1, _position.lineNumber, _position.column));
+        let State;
+        (function (State) {
+            State[State["INVALID"] = 0] = "INVALID";
+            State[State["AFTER_OBJECT"] = 1] = "AFTER_OBJECT";
+            State[State["BEFORE_OBJECT"] = 2] = "BEFORE_OBJECT";
+        })(State || (State = {}));
+        let currentState = State.INVALID;
+        let lastValidPos = -1;
+        let lastValidState = State.INVALID;
+        const scanner = createJSONScanner(model.getValue());
+        let arrayLevel = 0;
+        let objLevel = 0;
+        const checkRangeStatus = (pos, state) => {
+            if (state !== State.INVALID && arrayLevel === 1 && objLevel === 0) {
+                currentState = state;
+                lastValidPos = pos;
+                lastValidState = state;
+            }
+            else {
+                if (currentState !== State.INVALID) {
+                    currentState = State.INVALID;
+                    lastValidPos = scanner.getTokenOffset();
+                }
+            }
+        };
+        while (scanner.scan() !== 17) {
+            const currentPos = scanner.getPosition();
+            const kind = scanner.getToken();
+            let goodKind = false;
+            switch (kind) {
+                case 3:
+                    goodKind = true;
+                    arrayLevel++;
+                    checkRangeStatus(currentPos, State.BEFORE_OBJECT);
+                    break;
+                case 4:
+                    goodKind = true;
+                    arrayLevel--;
+                    checkRangeStatus(currentPos, State.INVALID);
+                    break;
+                case 5:
+                    goodKind = true;
+                    checkRangeStatus(currentPos, State.BEFORE_OBJECT);
+                    break;
+                case 1:
+                    goodKind = true;
+                    objLevel++;
+                    checkRangeStatus(currentPos, State.INVALID);
+                    break;
+                case 2:
+                    goodKind = true;
+                    objLevel--;
+                    checkRangeStatus(currentPos, State.AFTER_OBJECT);
+                    break;
+                case 15:
+                case 14:
+                    goodKind = true;
+            }
+            if (currentPos >= desiredPosition && (currentState !== State.INVALID || lastValidPos !== -1)) {
+                let acceptPosition;
+                let acceptState;
+                if (currentState !== State.INVALID) {
+                    acceptPosition = (goodKind ? currentPos : scanner.getTokenOffset());
+                    acceptState = currentState;
+                }
+                else {
+                    acceptPosition = lastValidPos;
+                    acceptState = lastValidState;
+                }
+                if (acceptState === State.AFTER_OBJECT) {
+                    return {
+                        position: this.offsetToPosition(model, acceptPosition),
+                        prepend: ',',
+                        append: ''
+                    };
+                }
+                else {
+                    scanner.setPosition(acceptPosition);
+                    return {
+                        position: this.offsetToPosition(model, acceptPosition),
+                        prepend: '',
+                        append: this.hasOpenBrace(scanner) ? ',' : ''
+                    };
+                }
+            }
+        }
+        const modelLineCount = model.getLineCount();
+        return {
+            position: new Position(modelLineCount, model.getLineMaxColumn(modelLineCount)),
+            prepend: '\n[',
+            append: ']'
+        };
+    }
+}

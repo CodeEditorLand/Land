@@ -1,1 +1,56 @@
-var w=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var h=(r,i,e,t)=>{for(var n=t>1?void 0:t?v(i,e):i,s=r.length-1,o;s>=0;s--)(o=r[s])&&(n=(t?o(i,e,n):o(n))||n);return t&&n&&w(i,e,n),n},p=(r,i)=>(e,t)=>i(e,t,r);import*as a from"../../../../../base/browser/dom.js";import"./media/chatConfirmationWidget.css";import{Button as C}from"../../../../../base/browser/ui/button/button.js";import{Emitter as I}from"../../../../../base/common/event.js";import{MarkdownString as f}from"../../../../../base/common/htmlContent.js";import{Disposable as S}from"../../../../../base/common/lifecycle.js";import{MarkdownRenderer as _}from"../../../../../editor/browser/widget/markdownRenderer/browser/markdownRenderer.js";import{IInstantiationService as k}from"../../../../../platform/instantiation/common/instantiation.js";import{defaultButtonStyles as b}from"../../../../../platform/theme/browser/defaultStyles.js";let d=class extends S{constructor(e,t,n,s){super();this.instantiationService=s;const o=a.h(".chat-confirmation-widget@root",[a.h(".chat-confirmation-widget-title@title"),a.h(".chat-confirmation-widget-message@message"),a.h(".chat-confirmation-buttons-container@buttonsContainer")]);this._domNode=o.root;const c=this._register(this.instantiationService.createInstance(_,{})),g=this._register(c.render(new f(e)));o.title.appendChild(g.element);const u=this._register(c.render(typeof t=="string"?new f(t):t));o.message.appendChild(u.element),n.forEach(m=>{const l=new C(o.buttonsContainer,{...b,secondary:m.isSecondary});l.label=m.label,this._register(l.onDidClick(()=>this._onDidClick.fire(m)))})}_onDidClick=this._register(new I);get onDidClick(){return this._onDidClick.event}_domNode;get domNode(){return this._domNode}setShowButtons(e){this.domNode.classList.toggle("hideButtons",!e)}};d=h([p(3,k)],d);export{d as ChatConfirmationWidget};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../../base/browser/dom.js';
+import './media/chatConfirmationWidget.css';
+import { Button } from '../../../../../base/browser/ui/button/button.js';
+import { Emitter } from '../../../../../base/common/event.js';
+import { MarkdownString } from '../../../../../base/common/htmlContent.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { MarkdownRenderer } from '../../../../../editor/browser/widget/markdownRenderer/browser/markdownRenderer.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { defaultButtonStyles } from '../../../../../platform/theme/browser/defaultStyles.js';
+let ChatConfirmationWidget = class ChatConfirmationWidget extends Disposable {
+    get onDidClick() { return this._onDidClick.event; }
+    get domNode() {
+        return this._domNode;
+    }
+    setShowButtons(showButton) {
+        this.domNode.classList.toggle('hideButtons', !showButton);
+    }
+    constructor(title, message, buttons, instantiationService) {
+        super();
+        this.instantiationService = instantiationService;
+        this._onDidClick = this._register(new Emitter());
+        const elements = dom.h('.chat-confirmation-widget@root', [
+            dom.h('.chat-confirmation-widget-title@title'),
+            dom.h('.chat-confirmation-widget-message@message'),
+            dom.h('.chat-confirmation-buttons-container@buttonsContainer'),
+        ]);
+        this._domNode = elements.root;
+        const renderer = this._register(this.instantiationService.createInstance(MarkdownRenderer, {}));
+        const renderedTitle = this._register(renderer.render(new MarkdownString(title)));
+        elements.title.appendChild(renderedTitle.element);
+        const renderedMessage = this._register(renderer.render(typeof message === 'string' ? new MarkdownString(message) : message));
+        elements.message.appendChild(renderedMessage.element);
+        buttons.forEach(buttonData => {
+            const button = new Button(elements.buttonsContainer, { ...defaultButtonStyles, secondary: buttonData.isSecondary });
+            button.label = buttonData.label;
+            this._register(button.onDidClick(() => this._onDidClick.fire(buttonData)));
+        });
+    }
+};
+ChatConfirmationWidget = __decorate([
+    __param(3, IInstantiationService),
+    __metadata("design:paramtypes", [String, Object, Array, Object])
+], ChatConfirmationWidget);
+export { ChatConfirmationWidget };

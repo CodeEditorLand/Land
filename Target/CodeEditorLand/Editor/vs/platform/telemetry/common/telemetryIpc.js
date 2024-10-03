@@ -1,1 +1,25 @@
-import"../../../base/common/event.js";import"../../../base/parts/ipc/common/ipc.js";import"./telemetryUtils.js";class h{constructor(e){this.appenders=e}listen(e,r){throw new Error(`Event not found: ${r}`)}call(e,r,{eventName:n,data:l}){return this.appenders.forEach(o=>o.log(n,l)),Promise.resolve(null)}}class u{constructor(e){this.channel=e}log(e,r){return this.channel.call("log",{eventName:e,data:r}).then(void 0,n=>"Failed to log telemetry: undefined"),Promise.resolve(null)}flush(){return Promise.resolve()}}export{h as TelemetryAppenderChannel,u as TelemetryAppenderClient};
+export class TelemetryAppenderChannel {
+    constructor(appenders) {
+        this.appenders = appenders;
+    }
+    listen(_, event) {
+        throw new Error(`Event not found: ${event}`);
+    }
+    call(_, command, { eventName, data }) {
+        this.appenders.forEach(a => a.log(eventName, data));
+        return Promise.resolve(null);
+    }
+}
+export class TelemetryAppenderClient {
+    constructor(channel) {
+        this.channel = channel;
+    }
+    log(eventName, data) {
+        this.channel.call('log', { eventName, data })
+            .then(undefined, err => `Failed to log telemetry: ${console.warn(err)}`);
+        return Promise.resolve(null);
+    }
+    flush() {
+        return Promise.resolve();
+    }
+}

@@ -1,1 +1,141 @@
-var v;(B=>{const r={total:0,min:Number.MAX_VALUE,max:0},c={...r},d={...r},p={...r};let a=0,k;(t=>(t[t.Before=0]="Before",t[t.InProgress=1]="InProgress",t[t.Finished=2]="Finished"))(k||={});const e={keydown:0,input:0,render:0};function E(){s(),performance.mark("inputlatency/start"),performance.mark("keydown/start"),e.keydown=1,queueMicrotask(y)}B.onKeyDown=E;function y(){e.keydown===1&&(performance.mark("keydown/end"),e.keydown=2)}function I(){performance.mark("input/start"),e.input=1,l()}B.onBeforeInput=I;function w(){e.input===0&&I(),queueMicrotask(M)}B.onInput=w;function M(){e.input===1&&(performance.mark("input/end"),e.input=2)}function g(){s()}B.onKeyUp=g;function x(){s()}B.onSelectionChange=x;function C(){e.keydown===2&&e.input===2&&e.render===0&&(performance.mark("render/start"),e.render=1,queueMicrotask(h),l())}B.onRenderStart=C;function h(){e.render===1&&(performance.mark("render/end"),e.render=2)}function l(){setTimeout(s)}function s(){e.keydown===2&&e.input===2&&e.render===2&&(performance.mark("inputlatency/end"),performance.measure("keydown","keydown/start","keydown/end"),performance.measure("input","input/start","input/end"),performance.measure("render","render/start","render/end"),performance.measure("inputlatency","inputlatency/start","inputlatency/end"),u("keydown",r),u("input",c),u("render",d),u("inputlatency",p),a++,P())}function u(n,o){const f=performance.getEntriesByName(n)[0].duration;o.total+=f,o.min=Math.min(o.min,f),o.max=Math.max(o.max,f)}function P(){performance.clearMarks("keydown/start"),performance.clearMarks("keydown/end"),performance.clearMarks("input/start"),performance.clearMarks("input/end"),performance.clearMarks("render/start"),performance.clearMarks("render/end"),performance.clearMarks("inputlatency/start"),performance.clearMarks("inputlatency/end"),performance.clearMeasures("keydown"),performance.clearMeasures("input"),performance.clearMeasures("render"),performance.clearMeasures("inputlatency"),e.keydown=0,e.input=0,e.render=0}function F(){if(a===0)return;const n={keydown:i(r),input:i(c),render:i(d),total:i(p),sampleCount:a};return m(r),m(c),m(d),m(p),a=0,n}B.getAndClearMeasurements=F;function i(n){return{average:n.total/a,max:n.max,min:n.min}}function m(n){n.total=0,n.min=Number.MAX_VALUE,n.max=0}})(v||={});export{v as inputLatency};
+export var inputLatency;
+(function (inputLatency) {
+    const totalKeydownTime = { total: 0, min: Number.MAX_VALUE, max: 0 };
+    const totalInputTime = { ...totalKeydownTime };
+    const totalRenderTime = { ...totalKeydownTime };
+    const totalInputLatencyTime = { ...totalKeydownTime };
+    let measurementsCount = 0;
+    const state = {
+        keydown: 0,
+        input: 0,
+        render: 0,
+    };
+    function onKeyDown() {
+        recordIfFinished();
+        performance.mark('inputlatency/start');
+        performance.mark('keydown/start');
+        state.keydown = 1;
+        queueMicrotask(markKeyDownEnd);
+    }
+    inputLatency.onKeyDown = onKeyDown;
+    function markKeyDownEnd() {
+        if (state.keydown === 1) {
+            performance.mark('keydown/end');
+            state.keydown = 2;
+        }
+    }
+    function onBeforeInput() {
+        performance.mark('input/start');
+        state.input = 1;
+        scheduleRecordIfFinishedTask();
+    }
+    inputLatency.onBeforeInput = onBeforeInput;
+    function onInput() {
+        if (state.input === 0) {
+            onBeforeInput();
+        }
+        queueMicrotask(markInputEnd);
+    }
+    inputLatency.onInput = onInput;
+    function markInputEnd() {
+        if (state.input === 1) {
+            performance.mark('input/end');
+            state.input = 2;
+        }
+    }
+    function onKeyUp() {
+        recordIfFinished();
+    }
+    inputLatency.onKeyUp = onKeyUp;
+    function onSelectionChange() {
+        recordIfFinished();
+    }
+    inputLatency.onSelectionChange = onSelectionChange;
+    function onRenderStart() {
+        if (state.keydown === 2 && state.input === 2 && state.render === 0) {
+            performance.mark('render/start');
+            state.render = 1;
+            queueMicrotask(markRenderEnd);
+            scheduleRecordIfFinishedTask();
+        }
+    }
+    inputLatency.onRenderStart = onRenderStart;
+    function markRenderEnd() {
+        if (state.render === 1) {
+            performance.mark('render/end');
+            state.render = 2;
+        }
+    }
+    function scheduleRecordIfFinishedTask() {
+        setTimeout(recordIfFinished);
+    }
+    function recordIfFinished() {
+        if (state.keydown === 2 && state.input === 2 && state.render === 2) {
+            performance.mark('inputlatency/end');
+            performance.measure('keydown', 'keydown/start', 'keydown/end');
+            performance.measure('input', 'input/start', 'input/end');
+            performance.measure('render', 'render/start', 'render/end');
+            performance.measure('inputlatency', 'inputlatency/start', 'inputlatency/end');
+            addMeasure('keydown', totalKeydownTime);
+            addMeasure('input', totalInputTime);
+            addMeasure('render', totalRenderTime);
+            addMeasure('inputlatency', totalInputLatencyTime);
+            measurementsCount++;
+            reset();
+        }
+    }
+    function addMeasure(entryName, cumulativeMeasurement) {
+        const duration = performance.getEntriesByName(entryName)[0].duration;
+        cumulativeMeasurement.total += duration;
+        cumulativeMeasurement.min = Math.min(cumulativeMeasurement.min, duration);
+        cumulativeMeasurement.max = Math.max(cumulativeMeasurement.max, duration);
+    }
+    function reset() {
+        performance.clearMarks('keydown/start');
+        performance.clearMarks('keydown/end');
+        performance.clearMarks('input/start');
+        performance.clearMarks('input/end');
+        performance.clearMarks('render/start');
+        performance.clearMarks('render/end');
+        performance.clearMarks('inputlatency/start');
+        performance.clearMarks('inputlatency/end');
+        performance.clearMeasures('keydown');
+        performance.clearMeasures('input');
+        performance.clearMeasures('render');
+        performance.clearMeasures('inputlatency');
+        state.keydown = 0;
+        state.input = 0;
+        state.render = 0;
+    }
+    function getAndClearMeasurements() {
+        if (measurementsCount === 0) {
+            return undefined;
+        }
+        const result = {
+            keydown: cumulativeToFinalMeasurement(totalKeydownTime),
+            input: cumulativeToFinalMeasurement(totalInputTime),
+            render: cumulativeToFinalMeasurement(totalRenderTime),
+            total: cumulativeToFinalMeasurement(totalInputLatencyTime),
+            sampleCount: measurementsCount
+        };
+        clearCumulativeMeasurement(totalKeydownTime);
+        clearCumulativeMeasurement(totalInputTime);
+        clearCumulativeMeasurement(totalRenderTime);
+        clearCumulativeMeasurement(totalInputLatencyTime);
+        measurementsCount = 0;
+        return result;
+    }
+    inputLatency.getAndClearMeasurements = getAndClearMeasurements;
+    function cumulativeToFinalMeasurement(cumulative) {
+        return {
+            average: cumulative.total / measurementsCount,
+            max: cumulative.max,
+            min: cumulative.min,
+        };
+    }
+    function clearCumulativeMeasurement(cumulative) {
+        cumulative.total = 0;
+        cumulative.min = Number.MAX_VALUE;
+        cumulative.max = 0;
+    }
+})(inputLatency || (inputLatency = {}));

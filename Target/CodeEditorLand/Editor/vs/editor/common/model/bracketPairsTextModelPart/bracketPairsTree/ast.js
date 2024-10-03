@@ -1,1 +1,466 @@
-import{BugIndicatingError as k}from"../../../../../base/common/errors.js";import{CursorColumns as B}from"../../../core/cursorColumns.js";import"../../../languages/supports/languageBracketsConfiguration.js";import"../../../model.js";import{lengthAdd as d,lengthGetLineCount as C,lengthToObj as L,lengthZero as _}from"./length.js";import{SmallImmutableSet as o}from"./smallImmutableSet.js";import"./tokenizer.js";var w=(n=>(n[n.Text=0]="Text",n[n.Bracket=1]="Bracket",n[n.Pair=2]="Pair",n[n.UnexpectedClosingBracket=3]="UnexpectedClosingBracket",n[n.List=4]="List",n))(w||{});class m{_length;get length(){return this._length}constructor(l){this._length=l}}class u extends m{constructor(e,t,i,n,s){super(e);this.openingBracket=t;this.child=i;this.closingBracket=n;this.missingOpeningBracketIds=s}static create(e,t,i){let n=e.length;return t&&(n=d(n,t.length)),i&&(n=d(n,i.length)),new u(n,e,t,i,t?t.missingOpeningBracketIds:o.getEmpty())}get kind(){return 2}get listHeight(){return 0}get childrenLength(){return 3}getChild(e){switch(e){case 0:return this.openingBracket;case 1:return this.child;case 2:return this.closingBracket}throw new Error("Invalid child index")}get children(){const e=[];return e.push(this.openingBracket),this.child&&e.push(this.child),this.closingBracket&&e.push(this.closingBracket),e}canBeReused(e){return!(this.closingBracket===null||e.intersects(this.missingOpeningBracketIds))}flattenLists(){return u.create(this.openingBracket.flattenLists(),this.child&&this.child.flattenLists(),this.closingBracket&&this.closingBracket.flattenLists())}deepClone(){return new u(this.length,this.openingBracket.deepClone(),this.child&&this.child.deepClone(),this.closingBracket&&this.closingBracket.deepClone(),this.missingOpeningBracketIds)}computeMinIndentation(e,t){return this.child?this.child.computeMinIndentation(d(e,this.openingBracket.length),t):Number.MAX_SAFE_INTEGER}}class p extends m{constructor(e,t,i){super(e);this.listHeight=t;this._missingOpeningBracketIds=i}static create23(e,t,i,n=!1){let s=e.length,r=e.missingOpeningBracketIds;if(e.listHeight!==t.listHeight)throw new Error("Invalid list heights");if(s=d(s,t.length),r=r.merge(t.missingOpeningBracketIds),i){if(e.listHeight!==i.listHeight)throw new Error("Invalid list heights");s=d(s,i.length),r=r.merge(i.missingOpeningBracketIds)}return n?new O(s,e.listHeight+1,e,t,i,r):new a(s,e.listHeight+1,e,t,i,r)}static create(e,t=!1){if(e.length===0)return this.getEmpty();{let i=e[0].length,n=e[0].missingOpeningBracketIds;for(let s=1;s<e.length;s++)i=d(i,e[s].length),n=n.merge(e[s].missingOpeningBracketIds);return t?new I(i,e[0].listHeight+1,e,n):new c(i,e[0].listHeight+1,e,n)}}static getEmpty(){return new I(_,0,[],o.getEmpty())}get kind(){return 4}get missingOpeningBracketIds(){return this._missingOpeningBracketIds}cachedMinIndentation=-1;throwIfImmutable(){}makeLastElementMutable(){this.throwIfImmutable();const e=this.childrenLength;if(e===0)return;const t=this.getChild(e-1),i=t.kind===4?t.toMutable():t;return t!==i&&this.setChild(e-1,i),i}makeFirstElementMutable(){if(this.throwIfImmutable(),this.childrenLength===0)return;const t=this.getChild(0),i=t.kind===4?t.toMutable():t;return t!==i&&this.setChild(0,i),i}canBeReused(e){if(e.intersects(this.missingOpeningBracketIds)||this.childrenLength===0)return!1;let t=this;for(;t.kind===4;){const i=t.childrenLength;if(i===0)throw new k;t=t.getChild(i-1)}return t.canBeReused(e)}handleChildrenChanged(){this.throwIfImmutable();const e=this.childrenLength;let t=this.getChild(0).length,i=this.getChild(0).missingOpeningBracketIds;for(let n=1;n<e;n++){const s=this.getChild(n);t=d(t,s.length),i=i.merge(s.missingOpeningBracketIds)}this._length=t,this._missingOpeningBracketIds=i,this.cachedMinIndentation=-1}flattenLists(){const e=[];for(const t of this.children){const i=t.flattenLists();i.kind===4?e.push(...i.children):e.push(i)}return p.create(e)}computeMinIndentation(e,t){if(this.cachedMinIndentation!==-1)return this.cachedMinIndentation;let i=Number.MAX_SAFE_INTEGER,n=e;for(let s=0;s<this.childrenLength;s++){const r=this.getChild(s);r&&(i=Math.min(i,r.computeMinIndentation(n,t)),n=d(n,r.length))}return this.cachedMinIndentation=i,i}}class a extends p{constructor(e,t,i,n,s,r){super(e,t,r);this._item1=i;this._item2=n;this._item3=s}get childrenLength(){return this._item3!==null?3:2}getChild(e){switch(e){case 0:return this._item1;case 1:return this._item2;case 2:return this._item3}throw new Error("Invalid child index")}setChild(e,t){switch(e){case 0:this._item1=t;return;case 1:this._item2=t;return;case 2:this._item3=t;return}throw new Error("Invalid child index")}get children(){return this._item3?[this._item1,this._item2,this._item3]:[this._item1,this._item2]}get item1(){return this._item1}get item2(){return this._item2}get item3(){return this._item3}deepClone(){return new a(this.length,this.listHeight,this._item1.deepClone(),this._item2.deepClone(),this._item3?this._item3.deepClone():null,this.missingOpeningBracketIds)}appendChildOfSameHeight(e){if(this._item3)throw new Error("Cannot append to a full (2,3) tree node");this.throwIfImmutable(),this._item3=e,this.handleChildrenChanged()}unappendChild(){if(!this._item3)throw new Error("Cannot remove from a non-full (2,3) tree node");this.throwIfImmutable();const e=this._item3;return this._item3=null,this.handleChildrenChanged(),e}prependChildOfSameHeight(e){if(this._item3)throw new Error("Cannot prepend to a full (2,3) tree node");this.throwIfImmutable(),this._item3=this._item2,this._item2=this._item1,this._item1=e,this.handleChildrenChanged()}unprependChild(){if(!this._item3)throw new Error("Cannot remove from a non-full (2,3) tree node");this.throwIfImmutable();const e=this._item1;return this._item1=this._item2,this._item2=this._item3,this._item3=null,this.handleChildrenChanged(),e}toMutable(){return this}}class O extends a{toMutable(){return new a(this.length,this.listHeight,this.item1,this.item2,this.item3,this.missingOpeningBracketIds)}throwIfImmutable(){throw new Error("this instance is immutable")}}class c extends p{constructor(e,t,i,n){super(e,t,n);this._children=i}get childrenLength(){return this._children.length}getChild(e){return this._children[e]}setChild(e,t){this._children[e]=t}get children(){return this._children}deepClone(){const e=new Array(this._children.length);for(let t=0;t<this._children.length;t++)e[t]=this._children[t].deepClone();return new c(this.length,this.listHeight,e,this.missingOpeningBracketIds)}appendChildOfSameHeight(e){this.throwIfImmutable(),this._children.push(e),this.handleChildrenChanged()}unappendChild(){this.throwIfImmutable();const e=this._children.pop();return this.handleChildrenChanged(),e}prependChildOfSameHeight(e){this.throwIfImmutable(),this._children.unshift(e),this.handleChildrenChanged()}unprependChild(){this.throwIfImmutable();const e=this._children.shift();return this.handleChildrenChanged(),e}toMutable(){return this}}class I extends c{toMutable(){return new c(this.length,this.listHeight,[...this.children],this.missingOpeningBracketIds)}throwIfImmutable(){throw new Error("this instance is immutable")}}const S=[];class g extends m{get listHeight(){return 0}get childrenLength(){return 0}getChild(l){return null}get children(){return S}flattenLists(){return this}deepClone(){return this}}class X extends g{get kind(){return 0}get missingOpeningBracketIds(){return o.getEmpty()}canBeReused(l){return!0}computeMinIndentation(l,e){const t=L(l),i=(t.columnCount===0?t.lineCount:t.lineCount+1)+1,n=C(d(l,this.length))+1;let s=Number.MAX_SAFE_INTEGER;for(let r=i;r<=n;r++){const b=e.getLineFirstNonWhitespaceColumn(r),N=e.getLineContent(r);if(b===0)continue;const A=B.visibleColumnFromColumn(N,b,e.getOptions().tabSize);s=Math.min(s,A)}return s}}class f extends g{constructor(e,t,i){super(e);this.bracketInfo=t;this.bracketIds=i}static create(e,t,i){return new f(e,t,i)}get kind(){return 1}get missingOpeningBracketIds(){return o.getEmpty()}get text(){return this.bracketInfo.bracketText}get languageId(){return this.bracketInfo.languageId}canBeReused(e){return!1}computeMinIndentation(e,t){return Number.MAX_SAFE_INTEGER}}class P extends g{get kind(){return 3}missingOpeningBracketIds;constructor(l,e){super(e),this.missingOpeningBracketIds=l}canBeReused(l){return!l.intersects(this.missingOpeningBracketIds)}computeMinIndentation(l,e){return Number.MAX_SAFE_INTEGER}}export{w as AstNodeKind,f as BracketAstNode,P as InvalidBracketAstNode,p as ListAstNode,u as PairAstNode,X as TextAstNode};
+import { BugIndicatingError } from '../../../../../base/common/errors.js';
+import { CursorColumns } from '../../../core/cursorColumns.js';
+import { lengthAdd, lengthGetLineCount, lengthToObj, lengthZero } from './length.js';
+import { SmallImmutableSet } from './smallImmutableSet.js';
+class BaseAstNode {
+    get length() {
+        return this._length;
+    }
+    constructor(length) {
+        this._length = length;
+    }
+}
+export class PairAstNode extends BaseAstNode {
+    static create(openingBracket, child, closingBracket) {
+        let length = openingBracket.length;
+        if (child) {
+            length = lengthAdd(length, child.length);
+        }
+        if (closingBracket) {
+            length = lengthAdd(length, closingBracket.length);
+        }
+        return new PairAstNode(length, openingBracket, child, closingBracket, child ? child.missingOpeningBracketIds : SmallImmutableSet.getEmpty());
+    }
+    get kind() {
+        return 2;
+    }
+    get listHeight() {
+        return 0;
+    }
+    get childrenLength() {
+        return 3;
+    }
+    getChild(idx) {
+        switch (idx) {
+            case 0: return this.openingBracket;
+            case 1: return this.child;
+            case 2: return this.closingBracket;
+        }
+        throw new Error('Invalid child index');
+    }
+    get children() {
+        const result = [];
+        result.push(this.openingBracket);
+        if (this.child) {
+            result.push(this.child);
+        }
+        if (this.closingBracket) {
+            result.push(this.closingBracket);
+        }
+        return result;
+    }
+    constructor(length, openingBracket, child, closingBracket, missingOpeningBracketIds) {
+        super(length);
+        this.openingBracket = openingBracket;
+        this.child = child;
+        this.closingBracket = closingBracket;
+        this.missingOpeningBracketIds = missingOpeningBracketIds;
+    }
+    canBeReused(openBracketIds) {
+        if (this.closingBracket === null) {
+            return false;
+        }
+        if (openBracketIds.intersects(this.missingOpeningBracketIds)) {
+            return false;
+        }
+        return true;
+    }
+    flattenLists() {
+        return PairAstNode.create(this.openingBracket.flattenLists(), this.child && this.child.flattenLists(), this.closingBracket && this.closingBracket.flattenLists());
+    }
+    deepClone() {
+        return new PairAstNode(this.length, this.openingBracket.deepClone(), this.child && this.child.deepClone(), this.closingBracket && this.closingBracket.deepClone(), this.missingOpeningBracketIds);
+    }
+    computeMinIndentation(offset, textModel) {
+        return this.child ? this.child.computeMinIndentation(lengthAdd(offset, this.openingBracket.length), textModel) : Number.MAX_SAFE_INTEGER;
+    }
+}
+export class ListAstNode extends BaseAstNode {
+    static create23(item1, item2, item3, immutable = false) {
+        let length = item1.length;
+        let missingBracketIds = item1.missingOpeningBracketIds;
+        if (item1.listHeight !== item2.listHeight) {
+            throw new Error('Invalid list heights');
+        }
+        length = lengthAdd(length, item2.length);
+        missingBracketIds = missingBracketIds.merge(item2.missingOpeningBracketIds);
+        if (item3) {
+            if (item1.listHeight !== item3.listHeight) {
+                throw new Error('Invalid list heights');
+            }
+            length = lengthAdd(length, item3.length);
+            missingBracketIds = missingBracketIds.merge(item3.missingOpeningBracketIds);
+        }
+        return immutable
+            ? new Immutable23ListAstNode(length, item1.listHeight + 1, item1, item2, item3, missingBracketIds)
+            : new TwoThreeListAstNode(length, item1.listHeight + 1, item1, item2, item3, missingBracketIds);
+    }
+    static create(items, immutable = false) {
+        if (items.length === 0) {
+            return this.getEmpty();
+        }
+        else {
+            let length = items[0].length;
+            let unopenedBrackets = items[0].missingOpeningBracketIds;
+            for (let i = 1; i < items.length; i++) {
+                length = lengthAdd(length, items[i].length);
+                unopenedBrackets = unopenedBrackets.merge(items[i].missingOpeningBracketIds);
+            }
+            return immutable
+                ? new ImmutableArrayListAstNode(length, items[0].listHeight + 1, items, unopenedBrackets)
+                : new ArrayListAstNode(length, items[0].listHeight + 1, items, unopenedBrackets);
+        }
+    }
+    static getEmpty() {
+        return new ImmutableArrayListAstNode(lengthZero, 0, [], SmallImmutableSet.getEmpty());
+    }
+    get kind() {
+        return 4;
+    }
+    get missingOpeningBracketIds() {
+        return this._missingOpeningBracketIds;
+    }
+    constructor(length, listHeight, _missingOpeningBracketIds) {
+        super(length);
+        this.listHeight = listHeight;
+        this._missingOpeningBracketIds = _missingOpeningBracketIds;
+        this.cachedMinIndentation = -1;
+    }
+    throwIfImmutable() {
+    }
+    makeLastElementMutable() {
+        this.throwIfImmutable();
+        const childCount = this.childrenLength;
+        if (childCount === 0) {
+            return undefined;
+        }
+        const lastChild = this.getChild(childCount - 1);
+        const mutable = lastChild.kind === 4 ? lastChild.toMutable() : lastChild;
+        if (lastChild !== mutable) {
+            this.setChild(childCount - 1, mutable);
+        }
+        return mutable;
+    }
+    makeFirstElementMutable() {
+        this.throwIfImmutable();
+        const childCount = this.childrenLength;
+        if (childCount === 0) {
+            return undefined;
+        }
+        const firstChild = this.getChild(0);
+        const mutable = firstChild.kind === 4 ? firstChild.toMutable() : firstChild;
+        if (firstChild !== mutable) {
+            this.setChild(0, mutable);
+        }
+        return mutable;
+    }
+    canBeReused(openBracketIds) {
+        if (openBracketIds.intersects(this.missingOpeningBracketIds)) {
+            return false;
+        }
+        if (this.childrenLength === 0) {
+            return false;
+        }
+        let lastChild = this;
+        while (lastChild.kind === 4) {
+            const lastLength = lastChild.childrenLength;
+            if (lastLength === 0) {
+                throw new BugIndicatingError();
+            }
+            lastChild = lastChild.getChild(lastLength - 1);
+        }
+        return lastChild.canBeReused(openBracketIds);
+    }
+    handleChildrenChanged() {
+        this.throwIfImmutable();
+        const count = this.childrenLength;
+        let length = this.getChild(0).length;
+        let unopenedBrackets = this.getChild(0).missingOpeningBracketIds;
+        for (let i = 1; i < count; i++) {
+            const child = this.getChild(i);
+            length = lengthAdd(length, child.length);
+            unopenedBrackets = unopenedBrackets.merge(child.missingOpeningBracketIds);
+        }
+        this._length = length;
+        this._missingOpeningBracketIds = unopenedBrackets;
+        this.cachedMinIndentation = -1;
+    }
+    flattenLists() {
+        const items = [];
+        for (const c of this.children) {
+            const normalized = c.flattenLists();
+            if (normalized.kind === 4) {
+                items.push(...normalized.children);
+            }
+            else {
+                items.push(normalized);
+            }
+        }
+        return ListAstNode.create(items);
+    }
+    computeMinIndentation(offset, textModel) {
+        if (this.cachedMinIndentation !== -1) {
+            return this.cachedMinIndentation;
+        }
+        let minIndentation = Number.MAX_SAFE_INTEGER;
+        let childOffset = offset;
+        for (let i = 0; i < this.childrenLength; i++) {
+            const child = this.getChild(i);
+            if (child) {
+                minIndentation = Math.min(minIndentation, child.computeMinIndentation(childOffset, textModel));
+                childOffset = lengthAdd(childOffset, child.length);
+            }
+        }
+        this.cachedMinIndentation = minIndentation;
+        return minIndentation;
+    }
+}
+class TwoThreeListAstNode extends ListAstNode {
+    get childrenLength() {
+        return this._item3 !== null ? 3 : 2;
+    }
+    getChild(idx) {
+        switch (idx) {
+            case 0: return this._item1;
+            case 1: return this._item2;
+            case 2: return this._item3;
+        }
+        throw new Error('Invalid child index');
+    }
+    setChild(idx, node) {
+        switch (idx) {
+            case 0:
+                this._item1 = node;
+                return;
+            case 1:
+                this._item2 = node;
+                return;
+            case 2:
+                this._item3 = node;
+                return;
+        }
+        throw new Error('Invalid child index');
+    }
+    get children() {
+        return this._item3 ? [this._item1, this._item2, this._item3] : [this._item1, this._item2];
+    }
+    get item1() {
+        return this._item1;
+    }
+    get item2() {
+        return this._item2;
+    }
+    get item3() {
+        return this._item3;
+    }
+    constructor(length, listHeight, _item1, _item2, _item3, missingOpeningBracketIds) {
+        super(length, listHeight, missingOpeningBracketIds);
+        this._item1 = _item1;
+        this._item2 = _item2;
+        this._item3 = _item3;
+    }
+    deepClone() {
+        return new TwoThreeListAstNode(this.length, this.listHeight, this._item1.deepClone(), this._item2.deepClone(), this._item3 ? this._item3.deepClone() : null, this.missingOpeningBracketIds);
+    }
+    appendChildOfSameHeight(node) {
+        if (this._item3) {
+            throw new Error('Cannot append to a full (2,3) tree node');
+        }
+        this.throwIfImmutable();
+        this._item3 = node;
+        this.handleChildrenChanged();
+    }
+    unappendChild() {
+        if (!this._item3) {
+            throw new Error('Cannot remove from a non-full (2,3) tree node');
+        }
+        this.throwIfImmutable();
+        const result = this._item3;
+        this._item3 = null;
+        this.handleChildrenChanged();
+        return result;
+    }
+    prependChildOfSameHeight(node) {
+        if (this._item3) {
+            throw new Error('Cannot prepend to a full (2,3) tree node');
+        }
+        this.throwIfImmutable();
+        this._item3 = this._item2;
+        this._item2 = this._item1;
+        this._item1 = node;
+        this.handleChildrenChanged();
+    }
+    unprependChild() {
+        if (!this._item3) {
+            throw new Error('Cannot remove from a non-full (2,3) tree node');
+        }
+        this.throwIfImmutable();
+        const result = this._item1;
+        this._item1 = this._item2;
+        this._item2 = this._item3;
+        this._item3 = null;
+        this.handleChildrenChanged();
+        return result;
+    }
+    toMutable() {
+        return this;
+    }
+}
+class Immutable23ListAstNode extends TwoThreeListAstNode {
+    toMutable() {
+        return new TwoThreeListAstNode(this.length, this.listHeight, this.item1, this.item2, this.item3, this.missingOpeningBracketIds);
+    }
+    throwIfImmutable() {
+        throw new Error('this instance is immutable');
+    }
+}
+class ArrayListAstNode extends ListAstNode {
+    get childrenLength() {
+        return this._children.length;
+    }
+    getChild(idx) {
+        return this._children[idx];
+    }
+    setChild(idx, child) {
+        this._children[idx] = child;
+    }
+    get children() {
+        return this._children;
+    }
+    constructor(length, listHeight, _children, missingOpeningBracketIds) {
+        super(length, listHeight, missingOpeningBracketIds);
+        this._children = _children;
+    }
+    deepClone() {
+        const children = new Array(this._children.length);
+        for (let i = 0; i < this._children.length; i++) {
+            children[i] = this._children[i].deepClone();
+        }
+        return new ArrayListAstNode(this.length, this.listHeight, children, this.missingOpeningBracketIds);
+    }
+    appendChildOfSameHeight(node) {
+        this.throwIfImmutable();
+        this._children.push(node);
+        this.handleChildrenChanged();
+    }
+    unappendChild() {
+        this.throwIfImmutable();
+        const item = this._children.pop();
+        this.handleChildrenChanged();
+        return item;
+    }
+    prependChildOfSameHeight(node) {
+        this.throwIfImmutable();
+        this._children.unshift(node);
+        this.handleChildrenChanged();
+    }
+    unprependChild() {
+        this.throwIfImmutable();
+        const item = this._children.shift();
+        this.handleChildrenChanged();
+        return item;
+    }
+    toMutable() {
+        return this;
+    }
+}
+class ImmutableArrayListAstNode extends ArrayListAstNode {
+    toMutable() {
+        return new ArrayListAstNode(this.length, this.listHeight, [...this.children], this.missingOpeningBracketIds);
+    }
+    throwIfImmutable() {
+        throw new Error('this instance is immutable');
+    }
+}
+const emptyArray = [];
+class ImmutableLeafAstNode extends BaseAstNode {
+    get listHeight() {
+        return 0;
+    }
+    get childrenLength() {
+        return 0;
+    }
+    getChild(idx) {
+        return null;
+    }
+    get children() {
+        return emptyArray;
+    }
+    flattenLists() {
+        return this;
+    }
+    deepClone() {
+        return this;
+    }
+}
+export class TextAstNode extends ImmutableLeafAstNode {
+    get kind() {
+        return 0;
+    }
+    get missingOpeningBracketIds() {
+        return SmallImmutableSet.getEmpty();
+    }
+    canBeReused(_openedBracketIds) {
+        return true;
+    }
+    computeMinIndentation(offset, textModel) {
+        const start = lengthToObj(offset);
+        const startLineNumber = (start.columnCount === 0 ? start.lineCount : start.lineCount + 1) + 1;
+        const endLineNumber = lengthGetLineCount(lengthAdd(offset, this.length)) + 1;
+        let result = Number.MAX_SAFE_INTEGER;
+        for (let lineNumber = startLineNumber; lineNumber <= endLineNumber; lineNumber++) {
+            const firstNonWsColumn = textModel.getLineFirstNonWhitespaceColumn(lineNumber);
+            const lineContent = textModel.getLineContent(lineNumber);
+            if (firstNonWsColumn === 0) {
+                continue;
+            }
+            const visibleColumn = CursorColumns.visibleColumnFromColumn(lineContent, firstNonWsColumn, textModel.getOptions().tabSize);
+            result = Math.min(result, visibleColumn);
+        }
+        return result;
+    }
+}
+export class BracketAstNode extends ImmutableLeafAstNode {
+    static create(length, bracketInfo, bracketIds) {
+        const node = new BracketAstNode(length, bracketInfo, bracketIds);
+        return node;
+    }
+    get kind() {
+        return 1;
+    }
+    get missingOpeningBracketIds() {
+        return SmallImmutableSet.getEmpty();
+    }
+    constructor(length, bracketInfo, bracketIds) {
+        super(length);
+        this.bracketInfo = bracketInfo;
+        this.bracketIds = bracketIds;
+    }
+    get text() {
+        return this.bracketInfo.bracketText;
+    }
+    get languageId() {
+        return this.bracketInfo.languageId;
+    }
+    canBeReused(_openedBracketIds) {
+        return false;
+    }
+    computeMinIndentation(offset, textModel) {
+        return Number.MAX_SAFE_INTEGER;
+    }
+}
+export class InvalidBracketAstNode extends ImmutableLeafAstNode {
+    get kind() {
+        return 3;
+    }
+    constructor(closingBrackets, length) {
+        super(length);
+        this.missingOpeningBracketIds = closingBrackets;
+    }
+    canBeReused(openedBracketIds) {
+        return !openedBracketIds.intersects(this.missingOpeningBracketIds);
+    }
+    computeMinIndentation(offset, textModel) {
+        return Number.MAX_SAFE_INTEGER;
+    }
+}

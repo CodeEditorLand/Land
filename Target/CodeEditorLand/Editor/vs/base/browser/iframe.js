@@ -1,1 +1,88 @@
-const c=new WeakMap;function u(i){if(!i.parent||i.parent===i)return null;try{const e=i.location,n=i.parent.location;if(e.origin!=="null"&&n.origin!=="null"&&e.origin!==n.origin)return null}catch{return null}return i.parent}class d{static getSameOriginWindowChain(e){let n=c.get(e);if(!n){n=[],c.set(e,n);let t=e,r;do r=u(t),r?n.push({window:new WeakRef(t),iframeElement:t.frameElement||null}):n.push({window:new WeakRef(t),iframeElement:null}),t=r;while(t)}return n.slice(0)}static getPositionOfChildWindowRelativeToAncestorWindow(e,n){if(!n||e===n)return{top:0,left:0};let t=0,r=0;const o=this.getSameOriginWindowChain(e);for(const a of o){const l=a.window.deref();if(t+=l?.scrollY??0,r+=l?.scrollX??0,l===n||!a.iframeElement)break;const s=a.iframeElement.getBoundingClientRect();t+=s.top,r+=s.left}return{top:t,left:r}}}async function f(i,e){if(!crypto.subtle)throw new Error("'crypto.subtle' is not available so webviews will not work. This is likely because the editor is not running in a secure context (https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).");const n=JSON.stringify({parentOrigin:i,salt:e}),r=new TextEncoder().encode(n),o=await crypto.subtle.digest("sha-256",r);return w(o)}function w(i){const n=Array.from(new Uint8Array(i)).map(t=>t.toString(16).padStart(2,"0")).join("");return BigInt(`0x${n}`).toString(32).padStart(52,"0")}export{d as IframeUtils,f as parentOriginHash};
+const sameOriginWindowChainCache = new WeakMap();
+function getParentWindowIfSameOrigin(w) {
+    if (!w.parent || w.parent === w) {
+        return null;
+    }
+    try {
+        const location = w.location;
+        const parentLocation = w.parent.location;
+        if (location.origin !== 'null' && parentLocation.origin !== 'null' && location.origin !== parentLocation.origin) {
+            return null;
+        }
+    }
+    catch (e) {
+        return null;
+    }
+    return w.parent;
+}
+export class IframeUtils {
+    static getSameOriginWindowChain(targetWindow) {
+        let windowChainCache = sameOriginWindowChainCache.get(targetWindow);
+        if (!windowChainCache) {
+            windowChainCache = [];
+            sameOriginWindowChainCache.set(targetWindow, windowChainCache);
+            let w = targetWindow;
+            let parent;
+            do {
+                parent = getParentWindowIfSameOrigin(w);
+                if (parent) {
+                    windowChainCache.push({
+                        window: new WeakRef(w),
+                        iframeElement: w.frameElement || null
+                    });
+                }
+                else {
+                    windowChainCache.push({
+                        window: new WeakRef(w),
+                        iframeElement: null
+                    });
+                }
+                w = parent;
+            } while (w);
+        }
+        return windowChainCache.slice(0);
+    }
+    static getPositionOfChildWindowRelativeToAncestorWindow(childWindow, ancestorWindow) {
+        if (!ancestorWindow || childWindow === ancestorWindow) {
+            return {
+                top: 0,
+                left: 0
+            };
+        }
+        let top = 0, left = 0;
+        const windowChain = this.getSameOriginWindowChain(childWindow);
+        for (const windowChainEl of windowChain) {
+            const windowInChain = windowChainEl.window.deref();
+            top += windowInChain?.scrollY ?? 0;
+            left += windowInChain?.scrollX ?? 0;
+            if (windowInChain === ancestorWindow) {
+                break;
+            }
+            if (!windowChainEl.iframeElement) {
+                break;
+            }
+            const boundingRect = windowChainEl.iframeElement.getBoundingClientRect();
+            top += boundingRect.top;
+            left += boundingRect.left;
+        }
+        return {
+            top: top,
+            left: left
+        };
+    }
+}
+export async function parentOriginHash(parentOrigin, salt) {
+    if (!crypto.subtle) {
+        throw new Error(`'crypto.subtle' is not available so webviews will not work. This is likely because the editor is not running in a secure context (https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).`);
+    }
+    const strData = JSON.stringify({ parentOrigin, salt });
+    const encoder = new TextEncoder();
+    const arrData = encoder.encode(strData);
+    const hash = await crypto.subtle.digest('sha-256', arrData);
+    return sha256AsBase32(hash);
+}
+function sha256AsBase32(bytes) {
+    const array = Array.from(new Uint8Array(bytes));
+    const hexArray = array.map(b => b.toString(16).padStart(2, '0')).join('');
+    return BigInt(`0x${hexArray}`).toString(32).padStart(52, '0');
+}

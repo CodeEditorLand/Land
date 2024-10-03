@@ -1,1 +1,89 @@
-import"../common/polyfillNestedWorker.protocol.js";const c=function(o){const a=g=>{globalThis.removeEventListener("message",a);const r=g.data;Object.defineProperties(globalThis,{postMessage:{value(s,n){r.postMessage(s,n)}},onmessage:{get(){return r.onmessage},set(s){r.onmessage=s}}}),r.addEventListener("message",s=>{globalThis.dispatchEvent(new MessageEvent("message",{data:s.data,ports:s.ports?[...s.ports]:void 0}))}),r.start(),globalThis.Worker=class{constructor(){throw new TypeError("Nested workers from within nested worker are NOT supported.")}},importScripts(o)};globalThis.addEventListener("message",a)}.toString();class M extends EventTarget{onmessage=null;onmessageerror=null;onerror=null;terminate;postMessage;constructor(o,a,g){super();const r=`((${c})('${a}'))`,s=new Blob([r],{type:"application/javascript"}),n=URL.createObjectURL(s),e=new MessageChannel,p=n,d={type:"_newWorker",id:p,port:e.port2,url:n,options:g};o(d,[e.port2]),this.postMessage=e.port1.postMessage.bind(e.port1),this.terminate=()=>{o({type:"_terminateWorker",id:p}),URL.revokeObjectURL(n),e.port1.close(),e.port2.close()},Object.defineProperties(this,{onmessage:{get(){return e.port1.onmessage},set(t){e.port1.onmessage=t}},onmessageerror:{get(){return e.port1.onmessageerror},set(t){e.port1.onmessageerror=t}}}),e.port1.addEventListener("messageerror",t=>{const i=new MessageEvent("messageerror",{data:t.data});this.dispatchEvent(i)}),e.port1.addEventListener("message",t=>{const i=new MessageEvent("message",{data:t.data});this.dispatchEvent(i)}),e.port1.start()}}export{M as NestedWorker};
+const _bootstrapFnSource = (function _bootstrapFn(workerUrl) {
+    const listener = (event) => {
+        globalThis.removeEventListener('message', listener);
+        const port = event.data;
+        Object.defineProperties(globalThis, {
+            'postMessage': {
+                value(data, transferOrOptions) {
+                    port.postMessage(data, transferOrOptions);
+                }
+            },
+            'onmessage': {
+                get() {
+                    return port.onmessage;
+                },
+                set(value) {
+                    port.onmessage = value;
+                }
+            }
+        });
+        port.addEventListener('message', msg => {
+            globalThis.dispatchEvent(new MessageEvent('message', { data: msg.data, ports: msg.ports ? [...msg.ports] : undefined }));
+        });
+        port.start();
+        globalThis.Worker = class {
+            constructor() { throw new TypeError('Nested workers from within nested worker are NOT supported.'); }
+        };
+        importScripts(workerUrl);
+    };
+    globalThis.addEventListener('message', listener);
+}).toString();
+export class NestedWorker extends EventTarget {
+    constructor(nativePostMessage, stringOrUrl, options) {
+        super();
+        this.onmessage = null;
+        this.onmessageerror = null;
+        this.onerror = null;
+        const bootstrap = `((${_bootstrapFnSource})('${stringOrUrl}'))`;
+        const blob = new Blob([bootstrap], { type: 'application/javascript' });
+        const blobUrl = URL.createObjectURL(blob);
+        const channel = new MessageChannel();
+        const id = blobUrl;
+        const msg = {
+            type: '_newWorker',
+            id,
+            port: channel.port2,
+            url: blobUrl,
+            options,
+        };
+        nativePostMessage(msg, [channel.port2]);
+        this.postMessage = channel.port1.postMessage.bind(channel.port1);
+        this.terminate = () => {
+            const msg = {
+                type: '_terminateWorker',
+                id
+            };
+            nativePostMessage(msg);
+            URL.revokeObjectURL(blobUrl);
+            channel.port1.close();
+            channel.port2.close();
+        };
+        Object.defineProperties(this, {
+            'onmessage': {
+                get() {
+                    return channel.port1.onmessage;
+                },
+                set(value) {
+                    channel.port1.onmessage = value;
+                }
+            },
+            'onmessageerror': {
+                get() {
+                    return channel.port1.onmessageerror;
+                },
+                set(value) {
+                    channel.port1.onmessageerror = value;
+                }
+            },
+        });
+        channel.port1.addEventListener('messageerror', evt => {
+            const msgEvent = new MessageEvent('messageerror', { data: evt.data });
+            this.dispatchEvent(msgEvent);
+        });
+        channel.port1.addEventListener('message', evt => {
+            const msgEvent = new MessageEvent('message', { data: evt.data });
+            this.dispatchEvent(msgEvent);
+        });
+        channel.port1.start();
+    }
+}

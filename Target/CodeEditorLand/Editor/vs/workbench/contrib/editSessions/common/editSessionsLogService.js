@@ -1,1 +1,47 @@
-var m=Object.defineProperty;var c=Object.getOwnPropertyDescriptor;var l=(i,r,e,g)=>{for(var o=g>1?void 0:g?c(r,e):r,n=i.length-1,s;n>=0;n--)(s=i[n])&&(o=(g?s(r,e,o):s(o))||o);return g&&o&&m(r,e,o),o},a=(i,r)=>(e,g)=>r(e,g,i);import{joinPath as h}from"../../../../base/common/resources.js";import{localize as v}from"../../../../nls.js";import{IEnvironmentService as f}from"../../../../platform/environment/common/environment.js";import{AbstractLogger as p,ILoggerService as u}from"../../../../platform/log/common/log.js";import{editSessionsLogId as d}from"./editSessions.js";let t=class extends p{logger;constructor(r,e){super(),this.logger=this._register(r.createLogger(h(e.logsHome,`${d}.log`),{id:d,name:v("cloudChangesLog","Cloud Changes")}))}trace(r,...e){this.logger.trace(r,...e)}debug(r,...e){this.logger.debug(r,...e)}info(r,...e){this.logger.info(r,...e)}warn(r,...e){this.logger.warn(r,...e)}error(r,...e){this.logger.error(r,...e)}flush(){this.logger.flush()}};t=l([a(0,u),a(1,f)],t);export{t as EditSessionsLogService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { joinPath } from '../../../../base/common/resources.js';
+import { localize } from '../../../../nls.js';
+import { IEnvironmentService } from '../../../../platform/environment/common/environment.js';
+import { AbstractLogger, ILoggerService } from '../../../../platform/log/common/log.js';
+import { editSessionsLogId } from './editSessions.js';
+let EditSessionsLogService = class EditSessionsLogService extends AbstractLogger {
+    constructor(loggerService, environmentService) {
+        super();
+        this.logger = this._register(loggerService.createLogger(joinPath(environmentService.logsHome, `${editSessionsLogId}.log`), { id: editSessionsLogId, name: localize('cloudChangesLog', "Cloud Changes") }));
+    }
+    trace(message, ...args) {
+        this.logger.trace(message, ...args);
+    }
+    debug(message, ...args) {
+        this.logger.debug(message, ...args);
+    }
+    info(message, ...args) {
+        this.logger.info(message, ...args);
+    }
+    warn(message, ...args) {
+        this.logger.warn(message, ...args);
+    }
+    error(message, ...args) {
+        this.logger.error(message, ...args);
+    }
+    flush() {
+        this.logger.flush();
+    }
+};
+EditSessionsLogService = __decorate([
+    __param(0, ILoggerService),
+    __param(1, IEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object])
+], EditSessionsLogService);
+export { EditSessionsLogService };

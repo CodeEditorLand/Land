@@ -1,1 +1,53 @@
-import"../languageConfiguration.js";var r=(n=>(n[n.INCREASE_MASK=1]="INCREASE_MASK",n[n.DECREASE_MASK=2]="DECREASE_MASK",n[n.INDENT_NEXTLINE_MASK=4]="INDENT_NEXTLINE_MASK",n[n.UNINDENT_MASK=8]="UNINDENT_MASK",n))(r||{});function i(s){return s.global&&(s.lastIndex=0),!0}class l{_indentationRules;constructor(e){this._indentationRules=e}shouldIncrease(e){return!!(this._indentationRules&&this._indentationRules.increaseIndentPattern&&i(this._indentationRules.increaseIndentPattern)&&this._indentationRules.increaseIndentPattern.test(e))}shouldDecrease(e){return!!(this._indentationRules&&this._indentationRules.decreaseIndentPattern&&i(this._indentationRules.decreaseIndentPattern)&&this._indentationRules.decreaseIndentPattern.test(e))}shouldIndentNextLine(e){return!!(this._indentationRules&&this._indentationRules.indentNextLinePattern&&i(this._indentationRules.indentNextLinePattern)&&this._indentationRules.indentNextLinePattern.test(e))}shouldIgnore(e){return!!(this._indentationRules&&this._indentationRules.unIndentedLinePattern&&i(this._indentationRules.unIndentedLinePattern)&&this._indentationRules.unIndentedLinePattern.test(e))}getIndentMetadata(e){let t=0;return this.shouldIncrease(e)&&(t+=1),this.shouldDecrease(e)&&(t+=2),this.shouldIndentNextLine(e)&&(t+=4),this.shouldIgnore(e)&&(t+=8),t}}export{r as IndentConsts,l as IndentRulesSupport};
+function resetGlobalRegex(reg) {
+    if (reg.global) {
+        reg.lastIndex = 0;
+    }
+    return true;
+}
+export class IndentRulesSupport {
+    constructor(indentationRules) {
+        this._indentationRules = indentationRules;
+    }
+    shouldIncrease(text) {
+        if (this._indentationRules) {
+            if (this._indentationRules.increaseIndentPattern && resetGlobalRegex(this._indentationRules.increaseIndentPattern) && this._indentationRules.increaseIndentPattern.test(text)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    shouldDecrease(text) {
+        if (this._indentationRules && this._indentationRules.decreaseIndentPattern && resetGlobalRegex(this._indentationRules.decreaseIndentPattern) && this._indentationRules.decreaseIndentPattern.test(text)) {
+            return true;
+        }
+        return false;
+    }
+    shouldIndentNextLine(text) {
+        if (this._indentationRules && this._indentationRules.indentNextLinePattern && resetGlobalRegex(this._indentationRules.indentNextLinePattern) && this._indentationRules.indentNextLinePattern.test(text)) {
+            return true;
+        }
+        return false;
+    }
+    shouldIgnore(text) {
+        if (this._indentationRules && this._indentationRules.unIndentedLinePattern && resetGlobalRegex(this._indentationRules.unIndentedLinePattern) && this._indentationRules.unIndentedLinePattern.test(text)) {
+            return true;
+        }
+        return false;
+    }
+    getIndentMetadata(text) {
+        let ret = 0;
+        if (this.shouldIncrease(text)) {
+            ret += 1;
+        }
+        if (this.shouldDecrease(text)) {
+            ret += 2;
+        }
+        if (this.shouldIndentNextLine(text)) {
+            ret += 4;
+        }
+        if (this.shouldIgnore(text)) {
+            ret += 8;
+        }
+        return ret;
+    }
+}

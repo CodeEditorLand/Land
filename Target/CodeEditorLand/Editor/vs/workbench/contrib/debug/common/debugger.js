@@ -1,5 +1,259 @@
-var m=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var f=(c,t,e,r)=>{for(var n=r>1?void 0:r?v(t,e):t,i=c.length-1,u;i>=0;i--)(u=c[i])&&(n=(r?u(t,e,n):u(n))||n);return r&&n&&m(t,e,n),n},d=(c,t)=>(e,r)=>t(e,r,c);import*as g from"../../../../nls.js";import{isObject as p}from"../../../../base/common/types.js";import"../../../../base/common/jsonSchema.js";import"../../../../platform/workspace/common/workspace.js";import{IDebugService as C,debuggerDisabledMessage as y,DebugConfigurationProviderTriggerKind as S}from"./debug.js";import{IConfigurationService as I}from"../../../../platform/configuration/common/configuration.js";import{IConfigurationResolverService as x}from"../../../services/configurationResolver/common/configurationResolver.js";import*as D from"../../../services/configurationResolver/common/configurationResolverUtils.js";import{ITextResourcePropertiesService as E}from"../../../../editor/common/services/textResourceConfiguration.js";import{URI as M}from"../../../../base/common/uri.js";import{Schemas as P}from"../../../../base/common/network.js";import{isDebuggerMainContribution as W}from"./debugUtils.js";import"../../../../platform/extensions/common/extensions.js";import"../../../../platform/telemetry/common/telemetry.js";import{cleanRemoteAuthority as R}from"../../../../platform/telemetry/common/telemetryUtils.js";import{IWorkbenchEnvironmentService as $}from"../../../services/environment/common/environmentService.js";import{ContextKeyExpr as l,IContextKeyService as O}from"../../../../platform/contextkey/common/contextkey.js";import{filter as T}from"../../../../base/common/objects.js";let b=class{constructor(t,e,r,n,i,u,s,o,a){this.adapterManager=t;this.configurationService=n;this.resourcePropertiesService=i;this.configurationResolverService=u;this.environmentService=s;this.debugService=o;this.contextKeyService=a;this.debuggerContribution={type:e.type},this.merge(e,r),this.debuggerWhen=typeof this.debuggerContribution.when=="string"?l.deserialize(this.debuggerContribution.when):void 0,this.debuggerHiddenWhen=typeof this.debuggerContribution.hiddenWhen=="string"?l.deserialize(this.debuggerContribution.hiddenWhen):void 0}debuggerContribution;mergedExtensionDescriptions=[];mainExtensionDescription;debuggerWhen;debuggerHiddenWhen;merge(t,e){function r(n,i,u,s=0){return p(n)?(p(i)&&Object.keys(i).forEach(o=>{o!=="__proto__"&&(p(n[o])&&p(i[o])?r(n[o],i[o],u,s+1):o in n?u&&(s===0&&o==="type"||(n[o]=i[o])):n[o]=i[o])}),n):i}this.mergedExtensionDescriptions.indexOf(e)<0&&(this.mergedExtensionDescriptions.push(e),r(this.debuggerContribution,t,e.isBuiltin),W(t)&&(this.mainExtensionDescription=e))}async startDebugging(t,e){const r=this.debugService.getModel().getSession(e);return await this.debugService.startDebugging(void 0,t,{parentSession:r},void 0)}async createDebugAdapter(t){await this.adapterManager.activateDebuggers("onDebugAdapterProtocolTracker",this.type);const e=this.adapterManager.createDebugAdapter(t);if(e)return Promise.resolve(e);throw new Error(g.localize("cannot.find.da","Cannot find debug adapter for type '{0}'.",this.type))}async substituteVariables(t,e){const r=await this.adapterManager.substituteVariables(this.type,t,e);return await this.configurationResolverService.resolveWithInteractionReplace(t,r,"launch",this.variables,r.__configurationTarget)}runInTerminal(t,e){return this.adapterManager.runInTerminal(this.type,t,e)}get label(){return this.debuggerContribution.label||this.debuggerContribution.type}get type(){return this.debuggerContribution.type}get variables(){return this.debuggerContribution.variables}get configurationSnippets(){return this.debuggerContribution.configurationSnippets}get languages(){return this.debuggerContribution.languages}get when(){return this.debuggerWhen}get hiddenWhen(){return this.debuggerHiddenWhen}get enabled(){return!this.debuggerWhen||this.contextKeyService.contextMatchesRules(this.debuggerWhen)}get isHiddenFromDropdown(){return this.debuggerHiddenWhen?this.contextKeyService.contextMatchesRules(this.debuggerHiddenWhen):!1}get strings(){return this.debuggerContribution.strings??this.debuggerContribution.uiMessages}interestedInLanguage(t){return!!(this.languages&&this.languages.indexOf(t)>=0)}hasInitialConfiguration(){return!!this.debuggerContribution.initialConfigurations}hasDynamicConfigurationProviders(){return this.debugService.getConfigurationManager().hasDebugConfigurationProvider(this.type,S.Dynamic)}hasConfigurationProvider(){return this.debugService.getConfigurationManager().hasDebugConfigurationProvider(this.type)}getInitialConfigurationContent(t){let e=this.debuggerContribution.initialConfigurations||[];t&&(e=e.concat(t));const r=this.resourcePropertiesService.getEOL(M.from({scheme:P.untitled,path:"1"}))===`\r
-`?`\r
-`:`
-`,n=JSON.stringify(e,null,"	").split(`
-`).map(h=>"	"+h).join(r).trim(),i=g.localize("launch.config.comment1","Use IntelliSense to learn about possible attributes."),u=g.localize("launch.config.comment2","Hover to view descriptions of existing attributes."),s=g.localize("launch.config.comment3","For more information, visit: {0}","https://go.microsoft.com/fwlink/?linkid=830387");let o=["{",`	// ${i}`,`	// ${u}`,`	// ${s}`,'	"version": "0.2.0",',`	"configurations": ${n}`,"}"].join(r);const a=this.configurationService.getValue();return a.editor&&a.editor.insertSpaces&&(o=o.replace(new RegExp("	","g")," ".repeat(a.editor.tabSize))),Promise.resolve(o)}getMainExtensionDescriptor(){return this.mainExtensionDescription||this.mergedExtensionDescriptions[0]}getCustomTelemetryEndpoint(){const t=this.debuggerContribution.aiKey;if(!t)return;const e=R(this.environmentService.remoteAuthority)!=="other";return{id:`${this.getMainExtensionDescriptor().publisher}.${this.type}`,aiKey:t,sendErrorTelemetry:e}}getSchemaAttributes(t){return this.debuggerContribution.configurationAttributes?Object.keys(this.debuggerContribution.configurationAttributes).map(e=>{const r=`${this.type}:${e}`,n=`${this.type}:${e}:platform`,i=this.debuggerContribution.configurationAttributes[e],u=["name","type","request"];i.required=i.required&&i.required.length?u.concat(i.required):u,i.additionalProperties=!1,i.type="object",i.properties||(i.properties={});const s=i.properties;s.type={enum:[this.type],enumDescriptions:[this.label],description:g.localize("debugType","Type of configuration."),pattern:"^(?!node2)",deprecationMessage:this.debuggerContribution.deprecated||(this.enabled?void 0:y(this.type)),doNotSuggest:!!this.debuggerContribution.deprecated,errorMessage:g.localize("debugTypeNotRecognised","The debug type is not recognized. Make sure that you have a corresponding debug extension installed and that it is enabled."),patternErrorMessage:g.localize("node2NotSupported",'"node2" is no longer supported, use "node" instead and set the "protocol" attribute to "inspector".')},s.request={enum:[e],description:g.localize("debugRequest",'Request type of configuration. Can be "launch" or "attach".')};for(const a in t.common.properties)s[a]={$ref:`#/definitions/common/properties/${a}`};Object.keys(s).forEach(a=>{D.applyDeprecatedVariableMessage(s[a])}),t[r]={...i},t[n]={type:"object",additionalProperties:!1,properties:T(s,a=>a!=="type"&&a!=="request"&&a!=="name")};const o={...i};return o.properties={...s,windows:{$ref:`#/definitions/${n}`,description:g.localize("debugWindowsConfiguration","Windows specific launch configuration attributes.")},osx:{$ref:`#/definitions/${n}`,description:g.localize("debugOSXConfiguration","OS X specific launch configuration attributes.")},linux:{$ref:`#/definitions/${n}`,description:g.localize("debugLinuxConfiguration","Linux specific launch configuration attributes.")}},o}):null}};b=f([d(3,I),d(4,E),d(5,x),d(6,$),d(7,C),d(8,O)],b);export{b as Debugger};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as nls from '../../../../nls.js';
+import { isObject } from '../../../../base/common/types.js';
+import { IDebugService, debuggerDisabledMessage, DebugConfigurationProviderTriggerKind } from './debug.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IConfigurationResolverService } from '../../../services/configurationResolver/common/configurationResolver.js';
+import * as ConfigurationResolverUtils from '../../../services/configurationResolver/common/configurationResolverUtils.js';
+import { ITextResourcePropertiesService } from '../../../../editor/common/services/textResourceConfiguration.js';
+import { URI } from '../../../../base/common/uri.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { isDebuggerMainContribution } from './debugUtils.js';
+import { cleanRemoteAuthority } from '../../../../platform/telemetry/common/telemetryUtils.js';
+import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
+import { ContextKeyExpr, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { filter } from '../../../../base/common/objects.js';
+let Debugger = class Debugger {
+    constructor(adapterManager, dbgContribution, extensionDescription, configurationService, resourcePropertiesService, configurationResolverService, environmentService, debugService, contextKeyService) {
+        this.adapterManager = adapterManager;
+        this.configurationService = configurationService;
+        this.resourcePropertiesService = resourcePropertiesService;
+        this.configurationResolverService = configurationResolverService;
+        this.environmentService = environmentService;
+        this.debugService = debugService;
+        this.contextKeyService = contextKeyService;
+        this.mergedExtensionDescriptions = [];
+        this.debuggerContribution = { type: dbgContribution.type };
+        this.merge(dbgContribution, extensionDescription);
+        this.debuggerWhen = typeof this.debuggerContribution.when === 'string' ? ContextKeyExpr.deserialize(this.debuggerContribution.when) : undefined;
+        this.debuggerHiddenWhen = typeof this.debuggerContribution.hiddenWhen === 'string' ? ContextKeyExpr.deserialize(this.debuggerContribution.hiddenWhen) : undefined;
+    }
+    merge(otherDebuggerContribution, extensionDescription) {
+        function mixin(destination, source, overwrite, level = 0) {
+            if (!isObject(destination)) {
+                return source;
+            }
+            if (isObject(source)) {
+                Object.keys(source).forEach(key => {
+                    if (key !== '__proto__') {
+                        if (isObject(destination[key]) && isObject(source[key])) {
+                            mixin(destination[key], source[key], overwrite, level + 1);
+                        }
+                        else {
+                            if (key in destination) {
+                                if (overwrite) {
+                                    if (level === 0 && key === 'type') {
+                                    }
+                                    else {
+                                        destination[key] = source[key];
+                                    }
+                                }
+                            }
+                            else {
+                                destination[key] = source[key];
+                            }
+                        }
+                    }
+                });
+            }
+            return destination;
+        }
+        if (this.mergedExtensionDescriptions.indexOf(extensionDescription) < 0) {
+            this.mergedExtensionDescriptions.push(extensionDescription);
+            mixin(this.debuggerContribution, otherDebuggerContribution, extensionDescription.isBuiltin);
+            if (isDebuggerMainContribution(otherDebuggerContribution)) {
+                this.mainExtensionDescription = extensionDescription;
+            }
+        }
+    }
+    async startDebugging(configuration, parentSessionId) {
+        const parentSession = this.debugService.getModel().getSession(parentSessionId);
+        return await this.debugService.startDebugging(undefined, configuration, { parentSession }, undefined);
+    }
+    async createDebugAdapter(session) {
+        await this.adapterManager.activateDebuggers('onDebugAdapterProtocolTracker', this.type);
+        const da = this.adapterManager.createDebugAdapter(session);
+        if (da) {
+            return Promise.resolve(da);
+        }
+        throw new Error(nls.localize('cannot.find.da', "Cannot find debug adapter for type '{0}'.", this.type));
+    }
+    async substituteVariables(folder, config) {
+        const substitutedConfig = await this.adapterManager.substituteVariables(this.type, folder, config);
+        return await this.configurationResolverService.resolveWithInteractionReplace(folder, substitutedConfig, 'launch', this.variables, substitutedConfig.__configurationTarget);
+    }
+    runInTerminal(args, sessionId) {
+        return this.adapterManager.runInTerminal(this.type, args, sessionId);
+    }
+    get label() {
+        return this.debuggerContribution.label || this.debuggerContribution.type;
+    }
+    get type() {
+        return this.debuggerContribution.type;
+    }
+    get variables() {
+        return this.debuggerContribution.variables;
+    }
+    get configurationSnippets() {
+        return this.debuggerContribution.configurationSnippets;
+    }
+    get languages() {
+        return this.debuggerContribution.languages;
+    }
+    get when() {
+        return this.debuggerWhen;
+    }
+    get hiddenWhen() {
+        return this.debuggerHiddenWhen;
+    }
+    get enabled() {
+        return !this.debuggerWhen || this.contextKeyService.contextMatchesRules(this.debuggerWhen);
+    }
+    get isHiddenFromDropdown() {
+        if (!this.debuggerHiddenWhen) {
+            return false;
+        }
+        return this.contextKeyService.contextMatchesRules(this.debuggerHiddenWhen);
+    }
+    get strings() {
+        return this.debuggerContribution.strings ?? this.debuggerContribution.uiMessages;
+    }
+    interestedInLanguage(languageId) {
+        return !!(this.languages && this.languages.indexOf(languageId) >= 0);
+    }
+    hasInitialConfiguration() {
+        return !!this.debuggerContribution.initialConfigurations;
+    }
+    hasDynamicConfigurationProviders() {
+        return this.debugService.getConfigurationManager().hasDebugConfigurationProvider(this.type, DebugConfigurationProviderTriggerKind.Dynamic);
+    }
+    hasConfigurationProvider() {
+        return this.debugService.getConfigurationManager().hasDebugConfigurationProvider(this.type);
+    }
+    getInitialConfigurationContent(initialConfigs) {
+        let initialConfigurations = this.debuggerContribution.initialConfigurations || [];
+        if (initialConfigs) {
+            initialConfigurations = initialConfigurations.concat(initialConfigs);
+        }
+        const eol = this.resourcePropertiesService.getEOL(URI.from({ scheme: Schemas.untitled, path: '1' })) === '\r\n' ? '\r\n' : '\n';
+        const configs = JSON.stringify(initialConfigurations, null, '\t').split('\n').map(line => '\t' + line).join(eol).trim();
+        const comment1 = nls.localize('launch.config.comment1', "Use IntelliSense to learn about possible attributes.");
+        const comment2 = nls.localize('launch.config.comment2', "Hover to view descriptions of existing attributes.");
+        const comment3 = nls.localize('launch.config.comment3', "For more information, visit: {0}", 'https://go.microsoft.com/fwlink/?linkid=830387');
+        let content = [
+            '{',
+            `\t// ${comment1}`,
+            `\t// ${comment2}`,
+            `\t// ${comment3}`,
+            `\t"version": "0.2.0",`,
+            `\t"configurations": ${configs}`,
+            '}'
+        ].join(eol);
+        const editorConfig = this.configurationService.getValue();
+        if (editorConfig.editor && editorConfig.editor.insertSpaces) {
+            content = content.replace(new RegExp('\t', 'g'), ' '.repeat(editorConfig.editor.tabSize));
+        }
+        return Promise.resolve(content);
+    }
+    getMainExtensionDescriptor() {
+        return this.mainExtensionDescription || this.mergedExtensionDescriptions[0];
+    }
+    getCustomTelemetryEndpoint() {
+        const aiKey = this.debuggerContribution.aiKey;
+        if (!aiKey) {
+            return undefined;
+        }
+        const sendErrorTelemtry = cleanRemoteAuthority(this.environmentService.remoteAuthority) !== 'other';
+        return {
+            id: `${this.getMainExtensionDescriptor().publisher}.${this.type}`,
+            aiKey,
+            sendErrorTelemetry: sendErrorTelemtry
+        };
+    }
+    getSchemaAttributes(definitions) {
+        if (!this.debuggerContribution.configurationAttributes) {
+            return null;
+        }
+        return Object.keys(this.debuggerContribution.configurationAttributes).map(request => {
+            const definitionId = `${this.type}:${request}`;
+            const platformSpecificDefinitionId = `${this.type}:${request}:platform`;
+            const attributes = this.debuggerContribution.configurationAttributes[request];
+            const defaultRequired = ['name', 'type', 'request'];
+            attributes.required = attributes.required && attributes.required.length ? defaultRequired.concat(attributes.required) : defaultRequired;
+            attributes.additionalProperties = false;
+            attributes.type = 'object';
+            if (!attributes.properties) {
+                attributes.properties = {};
+            }
+            const properties = attributes.properties;
+            properties['type'] = {
+                enum: [this.type],
+                enumDescriptions: [this.label],
+                description: nls.localize('debugType', "Type of configuration."),
+                pattern: '^(?!node2)',
+                deprecationMessage: this.debuggerContribution.deprecated || (this.enabled ? undefined : debuggerDisabledMessage(this.type)),
+                doNotSuggest: !!this.debuggerContribution.deprecated,
+                errorMessage: nls.localize('debugTypeNotRecognised', "The debug type is not recognized. Make sure that you have a corresponding debug extension installed and that it is enabled."),
+                patternErrorMessage: nls.localize('node2NotSupported', "\"node2\" is no longer supported, use \"node\" instead and set the \"protocol\" attribute to \"inspector\".")
+            };
+            properties['request'] = {
+                enum: [request],
+                description: nls.localize('debugRequest', "Request type of configuration. Can be \"launch\" or \"attach\"."),
+            };
+            for (const prop in definitions['common'].properties) {
+                properties[prop] = {
+                    $ref: `#/definitions/common/properties/${prop}`
+                };
+            }
+            Object.keys(properties).forEach(name => {
+                ConfigurationResolverUtils.applyDeprecatedVariableMessage(properties[name]);
+            });
+            definitions[definitionId] = { ...attributes };
+            definitions[platformSpecificDefinitionId] = {
+                type: 'object',
+                additionalProperties: false,
+                properties: filter(properties, key => key !== 'type' && key !== 'request' && key !== 'name')
+            };
+            const attributesCopy = { ...attributes };
+            attributesCopy.properties = {
+                ...properties,
+                ...{
+                    windows: {
+                        $ref: `#/definitions/${platformSpecificDefinitionId}`,
+                        description: nls.localize('debugWindowsConfiguration', "Windows specific launch configuration attributes."),
+                    },
+                    osx: {
+                        $ref: `#/definitions/${platformSpecificDefinitionId}`,
+                        description: nls.localize('debugOSXConfiguration', "OS X specific launch configuration attributes."),
+                    },
+                    linux: {
+                        $ref: `#/definitions/${platformSpecificDefinitionId}`,
+                        description: nls.localize('debugLinuxConfiguration', "Linux specific launch configuration attributes."),
+                    }
+                }
+            };
+            return attributesCopy;
+        });
+    }
+};
+Debugger = __decorate([
+    __param(3, IConfigurationService),
+    __param(4, ITextResourcePropertiesService),
+    __param(5, IConfigurationResolverService),
+    __param(6, IWorkbenchEnvironmentService),
+    __param(7, IDebugService),
+    __param(8, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], Debugger);
+export { Debugger };

@@ -1,1 +1,424 @@
-var I=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var _=(o,r,e,t)=>{for(var i=t>1?void 0:t?w(r,e):r,n=o.length-1,s;n>=0;n--)(s=o[n])&&(i=(t?s(r,e,i):s(i))||i);return t&&i&&I(r,e,i),i},l=(o,r)=>(e,t)=>r(e,t,o);import"../../../../base/browser/dom.js";import{Color as T}from"../../../../base/common/color.js";import{Emitter as C}from"../../../../base/common/event.js";import{DisposableStore as E}from"../../../../base/common/lifecycle.js";import{MouseTargetType as b}from"../../../../editor/browser/editorBrowser.js";import"../../../../editor/common/core/position.js";import{Range as m}from"../../../../editor/common/core/range.js";import*as a from"../../../../editor/common/languages.js";import{ZoneWidget as N}from"../../../../editor/contrib/zoneWidget/browser/zoneWidget.js";import{IContextKeyService as f}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as D}from"../../../../platform/instantiation/common/instantiation.js";import{IThemeService as L}from"../../../../platform/theme/common/themeService.js";import{CommentGlyphWidget as W}from"./commentGlyphWidget.js";import{ICommentService as x}from"./commentService.js";import"../common/commentThreadWidget.js";import{EDITOR_FONT_DEFAULTS as P,EditorOption as c}from"../../../../editor/common/config/editorOptions.js";import{ServiceCollection as O}from"../../../../platform/instantiation/common/serviceCollection.js";import{CommentThreadWidget as R}from"./commentThreadWidget.js";import"../../notebook/common/notebookRange.js";import{commentThreadStateBackgroundColorVar as G,commentThreadStateColorVar as M,getCommentThreadStateBorderColor as F}from"./commentColors.js";import{peekViewBorder as k}from"../../../../editor/contrib/peekView/browser/peekView.js";import{IConfigurationService as A}from"../../../../platform/configuration/common/configuration.js";import{StableEditorScrollState as Z}from"../../../../editor/browser/stableEditorScroll.js";function v(o,r){return F(o,r)??r.getColor(k)}var H=(t=>(t[t.None=0]="None",t[t.Widget=1]="Widget",t[t.Editor=2]="Editor",t))(H||{});function Se(o){const r=o.target.range;if(!r||!o.event.leftButton||o.target.type!==b.GUTTER_LINE_DECORATIONS)return null;const e=o.target.detail;return e.offsetX-e.glyphMarginWidth-e.lineNumbersWidth-e.glyphMarginLeft>20?null:{lineNumber:r.startLineNumber}}function ye(o,r){if(!o)return null;const{lineNumber:e}=o;return r.target.range?e:null}function Ie(o,r){if(!o)return null;const{lineNumber:e}=o,t=r.target.range;return!t||t.startLineNumber!==e||r.target.type!==b.GUTTER_LINE_DECORATIONS?null:e}let p=class extends N{constructor(e,t,i,n,s,d,h,u,S,q){super(e,{keepEditorSelection:!0,isAccessible:!0});this._uniqueOwner=t;this._commentThread=i;this._pendingComment=n;this._pendingEdits=s;this.themeService=h;this.commentService=u;this.configurationService=q;this._contextKeyService=S.createScoped(this.domNode),this._scopedInstantiationService=this._globalToDispose.add(d.createChild(new O([f,this._contextKeyService])));const g=this.commentService.getCommentController(this._uniqueOwner);g&&(this._commentOptions=g.options),this._initialCollapsibleState=n?a.CommentThreadCollapsibleState.Expanded:i.initialCollapsibleState,i.initialCollapsibleState=this._initialCollapsibleState,this._commentThreadDisposables=[],this.create(),this._globalToDispose.add(this.themeService.onDidColorThemeChange(this._applyTheme,this)),this._globalToDispose.add(this.editor.onDidChangeConfiguration(y=>{y.hasChanged(c.fontInfo)&&this._applyTheme(this.themeService.getColorTheme())})),this._applyTheme(this.themeService.getColorTheme())}_commentThreadWidget;_onDidClose=new C;_onDidCreateThread=new C;_isExpanded;_initialCollapsibleState;_commentGlyph;_globalToDispose=new E;_commentThreadDisposables=[];_contextKeyService;_scopedInstantiationService;get uniqueOwner(){return this._uniqueOwner}get commentThread(){return this._commentThread}get expanded(){return this._isExpanded}_commentOptions;get onDidClose(){return this._onDidClose.event}get onDidCreateThread(){return this._onDidCreateThread.event}getPosition(){if(this.position)return this.position;if(this._commentGlyph)return this._commentGlyph.getPosition().position??void 0}revealRange(){}reveal(e,t=0){this.makeVisible(e,t);const i=this._commentThread.comments?.find(n=>n.uniqueIdInThread===e);this.commentService.setActiveCommentAndThread(this.uniqueOwner,{thread:this._commentThread,comment:i})}_expandAndShowZoneWidget(){this._isExpanded||this.show(this.arrowPosition(this._commentThread.range),2)}_setFocus(e,t){t===1?this._commentThreadWidget.focus(e):t===2&&this._commentThreadWidget.focusCommentEditor()}_goToComment(e,t){const i=this.editor.getLayoutInfo().height,n=this._commentThreadWidget.getCommentCoords(e);if(n){let s=1;if(this._commentThread.range){const d=n.thread,h=n.comment;s=this.editor.getTopForLineNumber(this._commentThread.range.startLineNumber)-i/2+h.top-d.top}this.editor.setScrollTop(s),this._setFocus(e,t)}else this._goToThread(t)}_goToThread(e){const t=this._commentThread.range?new m(this._commentThread.range.startLineNumber,this._commentThread.range.startColumn,this._commentThread.range.endLineNumber+1,1):new m(1,1,1,1);this.editor.revealRangeInCenter(t),this._setFocus(void 0,e)}makeVisible(e,t=0){this._expandAndShowZoneWidget(),e!==void 0?this._goToComment(e,t):this._goToThread(t)}getPendingComments(){return{newComment:this._commentThreadWidget.getPendingComment(),edits:this._commentThreadWidget.getPendingEdits()}}setPendingComment(e){this._pendingComment=e,this.expand(),this._commentThreadWidget.setPendingComment(e)}_fillContainer(e){this.setCssClass("review-widget"),this._commentThreadWidget=this._scopedInstantiationService.createInstance(R,e,this.editor,this._uniqueOwner,this.editor.getModel().uri,this._contextKeyService,this._scopedInstantiationService,this._commentThread,this._pendingComment,this._pendingEdits,{editor:this.editor,codeBlockFontSize:"",codeBlockFontFamily:this.configurationService.getValue("editor").fontFamily||P.fontFamily},this._commentOptions,{actionRunner:async()=>{if(!this._commentThread.comments||!this._commentThread.comments.length){const t=this.getPosition();if(t){const i=this._commentThread.range;if(!i)return;let n;if(t.lineNumber!==i.endLineNumber){const s=t.lineNumber-i.endLineNumber;n=new m(i.startLineNumber+s,i.startColumn,i.endLineNumber+s,i.endColumn)}else n=new m(i.startLineNumber,i.startColumn,i.endLineNumber,i.endColumn);await this.commentService.updateCommentThreadTemplate(this.uniqueOwner,this._commentThread.commentThreadHandle,n)}}},collapse:()=>{this.collapse()}}),this._disposables.add(this._commentThreadWidget)}arrowPosition(e){if(e)return{lineNumber:e.endLineNumber,column:e.endLineNumber===e.startLineNumber?(e.startColumn+e.endColumn+1)/2:1}}deleteCommentThread(){this.dispose(),this.commentService.disposeCommentThread(this.uniqueOwner,this._commentThread.threadId)}collapse(){this._commentThread.collapsibleState=a.CommentThreadCollapsibleState.Collapsed}expand(e){this._commentThread.collapsibleState=a.CommentThreadCollapsibleState.Expanded,e&&this.commentService.setActiveCommentAndThread(this.uniqueOwner,{thread:this._commentThread})}getGlyphPosition(){return this._commentGlyph?this._commentGlyph.getPosition().position.lineNumber:0}async update(e){this._commentThread!==e&&(this._commentThreadDisposables.forEach(n=>n.dispose()),this._commentThread=e,this._commentThreadDisposables=[],this.bindCommentThreadListeners()),await this._commentThreadWidget.updateCommentThread(e);const t=this._commentThread.range?.endLineNumber??1;let i=!1;this._commentGlyph&&(this._commentGlyph.setThreadState(e.state),this._commentGlyph.getPosition().position.lineNumber!==t&&(i=!0,this._commentGlyph.setLineNumber(t))),i&&this._isExpanded||this._commentThread.collapsibleState===a.CommentThreadCollapsibleState.Expanded&&!this._isExpanded?this.show(this.arrowPosition(this._commentThread.range),2):this._commentThread.collapsibleState!==a.CommentThreadCollapsibleState.Expanded&&this.hide()}_onWidth(e){this._commentThreadWidget.layout(e)}_doLayout(e,t){this._commentThreadWidget.layout(t)}async display(e,t){e&&(this._commentGlyph=new W(this.editor,e?.endLineNumber??-1),this._commentGlyph.setThreadState(this._commentThread.state),this._globalToDispose.add(this._commentGlyph.onDidChangeLineNumber(async i=>{if(!this._commentThread.range)return;const n=i-this._commentThread.range.endLineNumber,s=new m(this._commentThread.range.startLineNumber+n,this._commentThread.range.startColumn,this._commentThread.range.endLineNumber+n,this._commentThread.range.endColumn);this._commentThread.range=s}))),await this._commentThreadWidget.display(this.editor.getOption(c.lineHeight),t),this._disposables.add(this._commentThreadWidget.onDidResize(i=>{this._refresh(i)})),(this._commentThread.collapsibleState===a.CommentThreadCollapsibleState.Expanded||e===void 0)&&this.show(this.arrowPosition(e),2),t&&this.makeVisible(),this.bindCommentThreadListeners()}bindCommentThreadListeners(){if(this._commentThreadDisposables.push(this._commentThread.onDidChangeComments(async e=>{await this.update(this._commentThread)})),this._commentThreadDisposables.push(this._commentThread.onDidChangeCollapsibleState(e=>{if(e===a.CommentThreadCollapsibleState.Expanded&&!this._isExpanded){this.show(this.arrowPosition(this._commentThread.range),2),this._commentThreadWidget.ensureFocusIntoNewEditingComment();return}if(e===a.CommentThreadCollapsibleState.Collapsed&&this._isExpanded){this.hide();return}})),this._initialCollapsibleState===void 0){const e=this._commentThread.onDidChangeInitialCollapsibleState(t=>{this._initialCollapsibleState=t,this._commentThread.collapsibleState=this._initialCollapsibleState,e.dispose()});this._commentThreadDisposables.push(e)}this._commentThreadDisposables.push(this._commentThread.onDidChangeState(()=>{const e=v(this._commentThread.state,this.themeService.getColorTheme())||T.transparent;this.style({frameColor:e,arrowColor:e}),this.container?.style.setProperty(M,`${e}`),this.container?.style.setProperty(G,`${e.transparent(.1)}`)}))}async submitComment(){return this._commentThreadWidget.submitComment()}_refresh(e){if(this._isExpanded===void 0&&e.height===0&&e.width===0){this.commentThread.collapsibleState=a.CommentThreadCollapsibleState.Collapsed;return}if(this._isExpanded){this._commentThreadWidget.layout();const t=Math.ceil(this.editor.getOption(c.lineHeight)*1.2),i=this.editor.getOption(c.lineHeight),n=Math.round(i/3),s=Math.round(i/9)*2,d=Math.ceil((t+e.height+n+s+8)/i);if(this._viewZone?.heightInLines===d)return;const h=this.getPosition();this._viewZone&&h&&h.lineNumber!==this._viewZone.afterLineNumber&&this._viewZone.afterLineNumber!==0&&(this._viewZone.afterLineNumber=h.lineNumber);const u=Z.capture(this.editor);this._relayout(d),u.restore(this.editor)}}_applyTheme(e){const t=v(this._commentThread.state,this.themeService.getColorTheme())||T.transparent;this.style({arrowColor:t,frameColor:t});const i=this.editor.getOption(c.fontInfo);this._commentThreadWidget.applyTheme(e,i)}show(e,t){const i=this._commentGlyph?.getPosition();let n=m.isIRange(e)?e:e?m.fromPositions(e):void 0;if(i?.position&&n&&i.position.lineNumber!==n.endLineNumber){const s=i.position.lineNumber-n.endLineNumber;n=new m(n.startLineNumber+s,n.startColumn,n.endLineNumber+s,n.endColumn)}this._isExpanded=!0,super.show(n??new m(0,0,0,0),t),this._commentThread.collapsibleState=a.CommentThreadCollapsibleState.Expanded,this._refresh(this._commentThreadWidget.getDimensions())}hide(){this._isExpanded&&(this._isExpanded=!1,this.editor.hasWidgetFocus()&&this.editor.focus(),(!this._commentThread.comments||!this._commentThread.comments.length)&&this.deleteCommentThread()),super.hide()}dispose(){super.dispose(),this._commentGlyph&&(this._commentGlyph.dispose(),this._commentGlyph=void 0),this._globalToDispose.dispose(),this._commentThreadDisposables.forEach(e=>e.dispose()),this._onDidClose.fire(void 0)}};p=_([l(5,D),l(6,L),l(7,x),l(8,f),l(9,A)],p);export{H as CommentWidgetFocus,p as ReviewZoneWidget,ye as isMouseUpEventDragFromMouseDown,Ie as isMouseUpEventMatchMouseDown,Se as parseMouseDownInfoFromEvent};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Color } from '../../../../base/common/color.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import * as languages from '../../../../editor/common/languages.js';
+import { ZoneWidget } from '../../../../editor/contrib/zoneWidget/browser/zoneWidget.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { CommentGlyphWidget } from './commentGlyphWidget.js';
+import { ICommentService } from './commentService.js';
+import { EDITOR_FONT_DEFAULTS } from '../../../../editor/common/config/editorOptions.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { CommentThreadWidget } from './commentThreadWidget.js';
+import { commentThreadStateBackgroundColorVar, commentThreadStateColorVar, getCommentThreadStateBorderColor } from './commentColors.js';
+import { peekViewBorder } from '../../../../editor/contrib/peekView/browser/peekView.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { StableEditorScrollState } from '../../../../editor/browser/stableEditorScroll.js';
+function getCommentThreadWidgetStateColor(thread, theme) {
+    return getCommentThreadStateBorderColor(thread, theme) ?? theme.getColor(peekViewBorder);
+}
+export var CommentWidgetFocus;
+(function (CommentWidgetFocus) {
+    CommentWidgetFocus[CommentWidgetFocus["None"] = 0] = "None";
+    CommentWidgetFocus[CommentWidgetFocus["Widget"] = 1] = "Widget";
+    CommentWidgetFocus[CommentWidgetFocus["Editor"] = 2] = "Editor";
+})(CommentWidgetFocus || (CommentWidgetFocus = {}));
+export function parseMouseDownInfoFromEvent(e) {
+    const range = e.target.range;
+    if (!range) {
+        return null;
+    }
+    if (!e.event.leftButton) {
+        return null;
+    }
+    if (e.target.type !== 4) {
+        return null;
+    }
+    const data = e.target.detail;
+    const gutterOffsetX = data.offsetX - data.glyphMarginWidth - data.lineNumbersWidth - data.glyphMarginLeft;
+    if (gutterOffsetX > 20) {
+        return null;
+    }
+    return { lineNumber: range.startLineNumber };
+}
+export function isMouseUpEventDragFromMouseDown(mouseDownInfo, e) {
+    if (!mouseDownInfo) {
+        return null;
+    }
+    const { lineNumber } = mouseDownInfo;
+    const range = e.target.range;
+    if (!range) {
+        return null;
+    }
+    return lineNumber;
+}
+export function isMouseUpEventMatchMouseDown(mouseDownInfo, e) {
+    if (!mouseDownInfo) {
+        return null;
+    }
+    const { lineNumber } = mouseDownInfo;
+    const range = e.target.range;
+    if (!range || range.startLineNumber !== lineNumber) {
+        return null;
+    }
+    if (e.target.type !== 4) {
+        return null;
+    }
+    return lineNumber;
+}
+let ReviewZoneWidget = class ReviewZoneWidget extends ZoneWidget {
+    get uniqueOwner() {
+        return this._uniqueOwner;
+    }
+    get commentThread() {
+        return this._commentThread;
+    }
+    get expanded() {
+        return this._isExpanded;
+    }
+    constructor(editor, _uniqueOwner, _commentThread, _pendingComment, _pendingEdits, instantiationService, themeService, commentService, contextKeyService, configurationService) {
+        super(editor, { keepEditorSelection: true, isAccessible: true });
+        this._uniqueOwner = _uniqueOwner;
+        this._commentThread = _commentThread;
+        this._pendingComment = _pendingComment;
+        this._pendingEdits = _pendingEdits;
+        this.themeService = themeService;
+        this.commentService = commentService;
+        this.configurationService = configurationService;
+        this._onDidClose = new Emitter();
+        this._onDidCreateThread = new Emitter();
+        this._globalToDispose = new DisposableStore();
+        this._commentThreadDisposables = [];
+        this._contextKeyService = contextKeyService.createScoped(this.domNode);
+        this._scopedInstantiationService = this._globalToDispose.add(instantiationService.createChild(new ServiceCollection([IContextKeyService, this._contextKeyService])));
+        const controller = this.commentService.getCommentController(this._uniqueOwner);
+        if (controller) {
+            this._commentOptions = controller.options;
+        }
+        this._initialCollapsibleState = _pendingComment ? languages.CommentThreadCollapsibleState.Expanded : _commentThread.initialCollapsibleState;
+        _commentThread.initialCollapsibleState = this._initialCollapsibleState;
+        this._commentThreadDisposables = [];
+        this.create();
+        this._globalToDispose.add(this.themeService.onDidColorThemeChange(this._applyTheme, this));
+        this._globalToDispose.add(this.editor.onDidChangeConfiguration(e => {
+            if (e.hasChanged(52)) {
+                this._applyTheme(this.themeService.getColorTheme());
+            }
+        }));
+        this._applyTheme(this.themeService.getColorTheme());
+    }
+    get onDidClose() {
+        return this._onDidClose.event;
+    }
+    get onDidCreateThread() {
+        return this._onDidCreateThread.event;
+    }
+    getPosition() {
+        if (this.position) {
+            return this.position;
+        }
+        if (this._commentGlyph) {
+            return this._commentGlyph.getPosition().position ?? undefined;
+        }
+        return undefined;
+    }
+    revealRange() {
+    }
+    reveal(commentUniqueId, focus = CommentWidgetFocus.None) {
+        this.makeVisible(commentUniqueId, focus);
+        const comment = this._commentThread.comments?.find(comment => comment.uniqueIdInThread === commentUniqueId);
+        this.commentService.setActiveCommentAndThread(this.uniqueOwner, { thread: this._commentThread, comment });
+    }
+    _expandAndShowZoneWidget() {
+        if (!this._isExpanded) {
+            this.show(this.arrowPosition(this._commentThread.range), 2);
+        }
+    }
+    _setFocus(commentUniqueId, focus) {
+        if (focus === CommentWidgetFocus.Widget) {
+            this._commentThreadWidget.focus(commentUniqueId);
+        }
+        else if (focus === CommentWidgetFocus.Editor) {
+            this._commentThreadWidget.focusCommentEditor();
+        }
+    }
+    _goToComment(commentUniqueId, focus) {
+        const height = this.editor.getLayoutInfo().height;
+        const coords = this._commentThreadWidget.getCommentCoords(commentUniqueId);
+        if (coords) {
+            let scrollTop = 1;
+            if (this._commentThread.range) {
+                const commentThreadCoords = coords.thread;
+                const commentCoords = coords.comment;
+                scrollTop = this.editor.getTopForLineNumber(this._commentThread.range.startLineNumber) - height / 2 + commentCoords.top - commentThreadCoords.top;
+            }
+            this.editor.setScrollTop(scrollTop);
+            this._setFocus(commentUniqueId, focus);
+        }
+        else {
+            this._goToThread(focus);
+        }
+    }
+    _goToThread(focus) {
+        const rangeToReveal = this._commentThread.range
+            ? new Range(this._commentThread.range.startLineNumber, this._commentThread.range.startColumn, this._commentThread.range.endLineNumber + 1, 1)
+            : new Range(1, 1, 1, 1);
+        this.editor.revealRangeInCenter(rangeToReveal);
+        this._setFocus(undefined, focus);
+    }
+    makeVisible(commentUniqueId, focus = CommentWidgetFocus.None) {
+        this._expandAndShowZoneWidget();
+        if (commentUniqueId !== undefined) {
+            this._goToComment(commentUniqueId, focus);
+        }
+        else {
+            this._goToThread(focus);
+        }
+    }
+    getPendingComments() {
+        return {
+            newComment: this._commentThreadWidget.getPendingComment(),
+            edits: this._commentThreadWidget.getPendingEdits()
+        };
+    }
+    setPendingComment(comment) {
+        this._pendingComment = comment;
+        this.expand();
+        this._commentThreadWidget.setPendingComment(comment);
+    }
+    _fillContainer(container) {
+        this.setCssClass('review-widget');
+        this._commentThreadWidget = this._scopedInstantiationService.createInstance(CommentThreadWidget, container, this.editor, this._uniqueOwner, this.editor.getModel().uri, this._contextKeyService, this._scopedInstantiationService, this._commentThread, this._pendingComment, this._pendingEdits, { editor: this.editor, codeBlockFontSize: '', codeBlockFontFamily: this.configurationService.getValue('editor').fontFamily || EDITOR_FONT_DEFAULTS.fontFamily }, this._commentOptions, {
+            actionRunner: async () => {
+                if (!this._commentThread.comments || !this._commentThread.comments.length) {
+                    const newPosition = this.getPosition();
+                    if (newPosition) {
+                        const originalRange = this._commentThread.range;
+                        if (!originalRange) {
+                            return;
+                        }
+                        let range;
+                        if (newPosition.lineNumber !== originalRange.endLineNumber) {
+                            const distance = newPosition.lineNumber - originalRange.endLineNumber;
+                            range = new Range(originalRange.startLineNumber + distance, originalRange.startColumn, originalRange.endLineNumber + distance, originalRange.endColumn);
+                        }
+                        else {
+                            range = new Range(originalRange.startLineNumber, originalRange.startColumn, originalRange.endLineNumber, originalRange.endColumn);
+                        }
+                        await this.commentService.updateCommentThreadTemplate(this.uniqueOwner, this._commentThread.commentThreadHandle, range);
+                    }
+                }
+            },
+            collapse: () => {
+                this.collapse();
+            }
+        });
+        this._disposables.add(this._commentThreadWidget);
+    }
+    arrowPosition(range) {
+        if (!range) {
+            return undefined;
+        }
+        return { lineNumber: range.endLineNumber, column: range.endLineNumber === range.startLineNumber ? (range.startColumn + range.endColumn + 1) / 2 : 1 };
+    }
+    deleteCommentThread() {
+        this.dispose();
+        this.commentService.disposeCommentThread(this.uniqueOwner, this._commentThread.threadId);
+    }
+    collapse() {
+        this._commentThread.collapsibleState = languages.CommentThreadCollapsibleState.Collapsed;
+    }
+    expand(setActive) {
+        this._commentThread.collapsibleState = languages.CommentThreadCollapsibleState.Expanded;
+        if (setActive) {
+            this.commentService.setActiveCommentAndThread(this.uniqueOwner, { thread: this._commentThread });
+        }
+    }
+    getGlyphPosition() {
+        if (this._commentGlyph) {
+            return this._commentGlyph.getPosition().position.lineNumber;
+        }
+        return 0;
+    }
+    async update(commentThread) {
+        if (this._commentThread !== commentThread) {
+            this._commentThreadDisposables.forEach(disposable => disposable.dispose());
+            this._commentThread = commentThread;
+            this._commentThreadDisposables = [];
+            this.bindCommentThreadListeners();
+        }
+        await this._commentThreadWidget.updateCommentThread(commentThread);
+        const lineNumber = this._commentThread.range?.endLineNumber ?? 1;
+        let shouldMoveWidget = false;
+        if (this._commentGlyph) {
+            this._commentGlyph.setThreadState(commentThread.state);
+            if (this._commentGlyph.getPosition().position.lineNumber !== lineNumber) {
+                shouldMoveWidget = true;
+                this._commentGlyph.setLineNumber(lineNumber);
+            }
+        }
+        if ((shouldMoveWidget && this._isExpanded) || (this._commentThread.collapsibleState === languages.CommentThreadCollapsibleState.Expanded && !this._isExpanded)) {
+            this.show(this.arrowPosition(this._commentThread.range), 2);
+        }
+        else if (this._commentThread.collapsibleState !== languages.CommentThreadCollapsibleState.Expanded) {
+            this.hide();
+        }
+    }
+    _onWidth(widthInPixel) {
+        this._commentThreadWidget.layout(widthInPixel);
+    }
+    _doLayout(heightInPixel, widthInPixel) {
+        this._commentThreadWidget.layout(widthInPixel);
+    }
+    async display(range, shouldReveal) {
+        if (range) {
+            this._commentGlyph = new CommentGlyphWidget(this.editor, range?.endLineNumber ?? -1);
+            this._commentGlyph.setThreadState(this._commentThread.state);
+            this._globalToDispose.add(this._commentGlyph.onDidChangeLineNumber(async (e) => {
+                if (!this._commentThread.range) {
+                    return;
+                }
+                const shift = e - (this._commentThread.range.endLineNumber);
+                const newRange = new Range(this._commentThread.range.startLineNumber + shift, this._commentThread.range.startColumn, this._commentThread.range.endLineNumber + shift, this._commentThread.range.endColumn);
+                this._commentThread.range = newRange;
+            }));
+        }
+        await this._commentThreadWidget.display(this.editor.getOption(69), shouldReveal);
+        this._disposables.add(this._commentThreadWidget.onDidResize(dimension => {
+            this._refresh(dimension);
+        }));
+        if ((this._commentThread.collapsibleState === languages.CommentThreadCollapsibleState.Expanded) || (range === undefined)) {
+            this.show(this.arrowPosition(range), 2);
+        }
+        if (shouldReveal) {
+            this.makeVisible();
+        }
+        this.bindCommentThreadListeners();
+    }
+    bindCommentThreadListeners() {
+        this._commentThreadDisposables.push(this._commentThread.onDidChangeComments(async (_) => {
+            await this.update(this._commentThread);
+        }));
+        this._commentThreadDisposables.push(this._commentThread.onDidChangeCollapsibleState(state => {
+            if (state === languages.CommentThreadCollapsibleState.Expanded && !this._isExpanded) {
+                this.show(this.arrowPosition(this._commentThread.range), 2);
+                this._commentThreadWidget.ensureFocusIntoNewEditingComment();
+                return;
+            }
+            if (state === languages.CommentThreadCollapsibleState.Collapsed && this._isExpanded) {
+                this.hide();
+                return;
+            }
+        }));
+        if (this._initialCollapsibleState === undefined) {
+            const onDidChangeInitialCollapsibleState = this._commentThread.onDidChangeInitialCollapsibleState(state => {
+                this._initialCollapsibleState = state;
+                this._commentThread.collapsibleState = this._initialCollapsibleState;
+                onDidChangeInitialCollapsibleState.dispose();
+            });
+            this._commentThreadDisposables.push(onDidChangeInitialCollapsibleState);
+        }
+        this._commentThreadDisposables.push(this._commentThread.onDidChangeState(() => {
+            const borderColor = getCommentThreadWidgetStateColor(this._commentThread.state, this.themeService.getColorTheme()) || Color.transparent;
+            this.style({
+                frameColor: borderColor,
+                arrowColor: borderColor,
+            });
+            this.container?.style.setProperty(commentThreadStateColorVar, `${borderColor}`);
+            this.container?.style.setProperty(commentThreadStateBackgroundColorVar, `${borderColor.transparent(.1)}`);
+        }));
+    }
+    async submitComment() {
+        return this._commentThreadWidget.submitComment();
+    }
+    _refresh(dimensions) {
+        if ((this._isExpanded === undefined) && (dimensions.height === 0) && (dimensions.width === 0)) {
+            this.commentThread.collapsibleState = languages.CommentThreadCollapsibleState.Collapsed;
+            return;
+        }
+        if (this._isExpanded) {
+            this._commentThreadWidget.layout();
+            const headHeight = Math.ceil(this.editor.getOption(69) * 1.2);
+            const lineHeight = this.editor.getOption(69);
+            const arrowHeight = Math.round(lineHeight / 3);
+            const frameThickness = Math.round(lineHeight / 9) * 2;
+            const computedLinesNumber = Math.ceil((headHeight + dimensions.height + arrowHeight + frameThickness + 8) / lineHeight);
+            if (this._viewZone?.heightInLines === computedLinesNumber) {
+                return;
+            }
+            const currentPosition = this.getPosition();
+            if (this._viewZone && currentPosition && currentPosition.lineNumber !== this._viewZone.afterLineNumber && this._viewZone.afterLineNumber !== 0) {
+                this._viewZone.afterLineNumber = currentPosition.lineNumber;
+            }
+            const capture = StableEditorScrollState.capture(this.editor);
+            this._relayout(computedLinesNumber);
+            capture.restore(this.editor);
+        }
+    }
+    _applyTheme(theme) {
+        const borderColor = getCommentThreadWidgetStateColor(this._commentThread.state, this.themeService.getColorTheme()) || Color.transparent;
+        this.style({
+            arrowColor: borderColor,
+            frameColor: borderColor
+        });
+        const fontInfo = this.editor.getOption(52);
+        this._commentThreadWidget.applyTheme(theme, fontInfo);
+    }
+    show(rangeOrPos, heightInLines) {
+        const glyphPosition = this._commentGlyph?.getPosition();
+        let range = Range.isIRange(rangeOrPos) ? rangeOrPos : (rangeOrPos ? Range.fromPositions(rangeOrPos) : undefined);
+        if (glyphPosition?.position && range && glyphPosition.position.lineNumber !== range.endLineNumber) {
+            const distance = glyphPosition.position.lineNumber - range.endLineNumber;
+            range = new Range(range.startLineNumber + distance, range.startColumn, range.endLineNumber + distance, range.endColumn);
+        }
+        this._isExpanded = true;
+        super.show(range ?? new Range(0, 0, 0, 0), heightInLines);
+        this._commentThread.collapsibleState = languages.CommentThreadCollapsibleState.Expanded;
+        this._refresh(this._commentThreadWidget.getDimensions());
+    }
+    hide() {
+        if (this._isExpanded) {
+            this._isExpanded = false;
+            if (this.editor.hasWidgetFocus()) {
+                this.editor.focus();
+            }
+            if (!this._commentThread.comments || !this._commentThread.comments.length) {
+                this.deleteCommentThread();
+            }
+        }
+        super.hide();
+    }
+    dispose() {
+        super.dispose();
+        if (this._commentGlyph) {
+            this._commentGlyph.dispose();
+            this._commentGlyph = undefined;
+        }
+        this._globalToDispose.dispose();
+        this._commentThreadDisposables.forEach(global => global.dispose());
+        this._onDidClose.fire(undefined);
+    }
+};
+ReviewZoneWidget = __decorate([
+    __param(5, IInstantiationService),
+    __param(6, IThemeService),
+    __param(7, ICommentService),
+    __param(8, IContextKeyService),
+    __param(9, IConfigurationService),
+    __metadata("design:paramtypes", [Object, String, Object, Object, Object, Object, Object, Object, Object, Object])
+], ReviewZoneWidget);
+export { ReviewZoneWidget };

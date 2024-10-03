@@ -1,1 +1,80 @@
-var h=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var d=(o,i,e,t)=>{for(var r=t>1?void 0:t?p(i,e):i,s=o.length-1,a;s>=0;s--)(a=o[s])&&(r=(t?a(i,e,r):a(r))||r);return t&&r&&h(i,e,r),r},n=(o,i)=>(e,t)=>i(e,t,o);import{Disposable as v}from"../../../base/common/lifecycle.js";import{extHostNamedCustomer as m}from"../../services/extensions/common/extHostCustomers.js";import{ExtHostContext as l,MainContext as u}from"../common/extHost.protocol.js";import{ILogService as w}from"../../../platform/log/common/log.js";import{SequencerByKey as f}from"../../../base/common/async.js";import{ISecretStorageService as y}from"../../../platform/secrets/common/secrets.js";import{IBrowserWorkbenchEnvironmentService as P}from"../../services/environment/browser/environmentService.js";let c=class extends v{constructor(e,t,r,s){super();this.secretStorageService=t;this.logService=r;this._proxy=e.getProxy(l.ExtHostSecretState),this._register(this.secretStorageService.onDidChangeSecret(a=>{try{const{extensionId:S,key:g}=this.parseKey(a);S&&g&&this._proxy.$onDidChangePassword({extensionId:S,key:g})}catch{}}))}_proxy;_sequencer=new f;$getPassword(e,t){return this.logService.trace(`[mainThreadSecretState] Getting password for ${e} extension: `,t),this._sequencer.queue(e,()=>this.doGetPassword(e,t))}async doGetPassword(e,t){const r=this.getKey(e,t),s=await this.secretStorageService.get(r);return this.logService.trace(`[mainThreadSecretState] ${s?"P":"No p"}assword found for: `,e,t),s}$setPassword(e,t,r){return this.logService.trace(`[mainThreadSecretState] Setting password for ${e} extension: `,t),this._sequencer.queue(e,()=>this.doSetPassword(e,t,r))}async doSetPassword(e,t,r){const s=this.getKey(e,t);await this.secretStorageService.set(s,r),this.logService.trace("[mainThreadSecretState] Password set for: ",e,t)}$deletePassword(e,t){return this.logService.trace(`[mainThreadSecretState] Deleting password for ${e} extension: `,t),this._sequencer.queue(e,()=>this.doDeletePassword(e,t))}async doDeletePassword(e,t){const r=this.getKey(e,t);await this.secretStorageService.delete(r),this.logService.trace("[mainThreadSecretState] Password deleted for: ",e,t)}getKey(e,t){return JSON.stringify({extensionId:e,key:t})}parseKey(e){return JSON.parse(e)}};c=d([m(u.MainThreadSecretState),n(1,y),n(2,w),n(3,P)],c);export{c as MainThreadSecretState};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+import { ExtHostContext, MainContext } from '../common/extHost.protocol.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { SequencerByKey } from '../../../base/common/async.js';
+import { ISecretStorageService } from '../../../platform/secrets/common/secrets.js';
+import { IBrowserWorkbenchEnvironmentService } from '../../services/environment/browser/environmentService.js';
+let MainThreadSecretState = class MainThreadSecretState extends Disposable {
+    constructor(extHostContext, secretStorageService, logService, environmentService) {
+        super();
+        this.secretStorageService = secretStorageService;
+        this.logService = logService;
+        this._sequencer = new SequencerByKey();
+        this._proxy = extHostContext.getProxy(ExtHostContext.ExtHostSecretState);
+        this._register(this.secretStorageService.onDidChangeSecret((e) => {
+            try {
+                const { extensionId, key } = this.parseKey(e);
+                if (extensionId && key) {
+                    this._proxy.$onDidChangePassword({ extensionId, key });
+                }
+            }
+            catch (e) {
+            }
+        }));
+    }
+    $getPassword(extensionId, key) {
+        this.logService.trace(`[mainThreadSecretState] Getting password for ${extensionId} extension: `, key);
+        return this._sequencer.queue(extensionId, () => this.doGetPassword(extensionId, key));
+    }
+    async doGetPassword(extensionId, key) {
+        const fullKey = this.getKey(extensionId, key);
+        const password = await this.secretStorageService.get(fullKey);
+        this.logService.trace(`[mainThreadSecretState] ${password ? 'P' : 'No p'}assword found for: `, extensionId, key);
+        return password;
+    }
+    $setPassword(extensionId, key, value) {
+        this.logService.trace(`[mainThreadSecretState] Setting password for ${extensionId} extension: `, key);
+        return this._sequencer.queue(extensionId, () => this.doSetPassword(extensionId, key, value));
+    }
+    async doSetPassword(extensionId, key, value) {
+        const fullKey = this.getKey(extensionId, key);
+        await this.secretStorageService.set(fullKey, value);
+        this.logService.trace('[mainThreadSecretState] Password set for: ', extensionId, key);
+    }
+    $deletePassword(extensionId, key) {
+        this.logService.trace(`[mainThreadSecretState] Deleting password for ${extensionId} extension: `, key);
+        return this._sequencer.queue(extensionId, () => this.doDeletePassword(extensionId, key));
+    }
+    async doDeletePassword(extensionId, key) {
+        const fullKey = this.getKey(extensionId, key);
+        await this.secretStorageService.delete(fullKey);
+        this.logService.trace('[mainThreadSecretState] Password deleted for: ', extensionId, key);
+    }
+    getKey(extensionId, key) {
+        return JSON.stringify({ extensionId, key });
+    }
+    parseKey(key) {
+        return JSON.parse(key);
+    }
+};
+MainThreadSecretState = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadSecretState),
+    __param(1, ISecretStorageService),
+    __param(2, ILogService),
+    __param(3, IBrowserWorkbenchEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], MainThreadSecretState);
+export { MainThreadSecretState };

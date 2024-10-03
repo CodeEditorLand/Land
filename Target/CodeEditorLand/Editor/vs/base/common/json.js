@@ -1,3 +1,886 @@
-var V=(m=>(m[m.None=0]="None",m[m.UnexpectedEndOfComment=1]="UnexpectedEndOfComment",m[m.UnexpectedEndOfString=2]="UnexpectedEndOfString",m[m.UnexpectedEndOfNumber=3]="UnexpectedEndOfNumber",m[m.InvalidUnicode=4]="InvalidUnicode",m[m.InvalidEscapeCharacter=5]="InvalidEscapeCharacter",m[m.InvalidCharacter=6]="InvalidCharacter",m))(V||{}),_=(o=>(o[o.OpenBraceToken=1]="OpenBraceToken",o[o.CloseBraceToken=2]="CloseBraceToken",o[o.OpenBracketToken=3]="OpenBracketToken",o[o.CloseBracketToken=4]="CloseBracketToken",o[o.CommaToken=5]="CommaToken",o[o.ColonToken=6]="ColonToken",o[o.NullKeyword=7]="NullKeyword",o[o.TrueKeyword=8]="TrueKeyword",o[o.FalseKeyword=9]="FalseKeyword",o[o.StringLiteral=10]="StringLiteral",o[o.NumericLiteral=11]="NumericLiteral",o[o.LineCommentTrivia=12]="LineCommentTrivia",o[o.BlockCommentTrivia=13]="BlockCommentTrivia",o[o.LineBreakTrivia=14]="LineBreakTrivia",o[o.Trivia=15]="Trivia",o[o.Unknown=16]="Unknown",o[o.EOF=17]="EOF",o))(_||{}),D=(u=>(u[u.InvalidSymbol=1]="InvalidSymbol",u[u.InvalidNumberFormat=2]="InvalidNumberFormat",u[u.PropertyNameExpected=3]="PropertyNameExpected",u[u.ValueExpected=4]="ValueExpected",u[u.ColonExpected=5]="ColonExpected",u[u.CommaExpected=6]="CommaExpected",u[u.CloseBraceExpected=7]="CloseBraceExpected",u[u.CloseBracketExpected=8]="CloseBracketExpected",u[u.EndOfFileExpected=9]="EndOfFileExpected",u[u.InvalidCommentToken=10]="InvalidCommentToken",u[u.UnexpectedEndOfComment=11]="UnexpectedEndOfComment",u[u.UnexpectedEndOfString=12]="UnexpectedEndOfString",u[u.UnexpectedEndOfNumber=13]="UnexpectedEndOfNumber",u[u.InvalidUnicode=14]="InvalidUnicode",u[u.InvalidEscapeCharacter=15]="InvalidEscapeCharacter",u[u.InvalidCharacter=16]="InvalidCharacter",u))(D||{}),O;(c=>c.DEFAULT={allowTrailingComma:!0})(O||={});function J(r,c=!1){let n=0;const t=r.length;let l="",s=0,b=16,m=0;function i(a){let u=0,o=0;for(;u<a;){const p=r.charCodeAt(n);if(p>=48&&p<=57)o=o*16+p-48;else if(p>=65&&p<=70)o=o*16+p-65+10;else if(p>=97&&p<=102)o=o*16+p-97+10;else break;n++,u++}return u<a&&(o=-1),o}function f(a){n=a,l="",s=0,b=16,m=0}function x(){const a=n;if(r.charCodeAt(n)===48)n++;else for(n++;n<r.length&&T(r.charCodeAt(n));)n++;if(n<r.length&&r.charCodeAt(n)===46)if(n++,n<r.length&&T(r.charCodeAt(n)))for(n++;n<r.length&&T(r.charCodeAt(n));)n++;else return m=3,r.substring(a,n);let u=n;if(n<r.length&&(r.charCodeAt(n)===69||r.charCodeAt(n)===101))if(n++,(n<r.length&&r.charCodeAt(n)===43||r.charCodeAt(n)===45)&&n++,n<r.length&&T(r.charCodeAt(n))){for(n++;n<r.length&&T(r.charCodeAt(n));)n++;u=n}else m=3;return r.substring(a,u)}function y(){let a="",u=n;for(;;){if(n>=t){a+=r.substring(u,n),m=2;break}const o=r.charCodeAt(n);if(o===34){a+=r.substring(u,n),n++;break}if(o===92){if(a+=r.substring(u,n),n++,n>=t){m=2;break}switch(r.charCodeAt(n++)){case 34:a+='"';break;case 92:a+="\\";break;case 47:a+="/";break;case 98:a+="\b";break;case 102:a+="\f";break;case 110:a+=`
-`;break;case 114:a+="\r";break;case 116:a+="	";break;case 117:{const S=i(4);S>=0?a+=String.fromCharCode(S):m=4;break}default:m=5}u=n;continue}if(o>=0&&o<=31)if(N(o)){a+=r.substring(u,n),m=2;break}else m=6;n++}return a}function k(){if(l="",m=0,s=n,n>=t)return s=t,b=17;let a=r.charCodeAt(n);if(v(a)){do n++,l+=String.fromCharCode(a),a=r.charCodeAt(n);while(v(a));return b=15}if(N(a))return n++,l+=String.fromCharCode(a),a===13&&r.charCodeAt(n)===10&&(n++,l+=`
-`),b=14;switch(a){case 123:return n++,b=1;case 125:return n++,b=2;case 91:return n++,b=3;case 93:return n++,b=4;case 58:return n++,b=6;case 44:return n++,b=5;case 34:return n++,l=y(),b=10;case 47:{const u=n-1;if(r.charCodeAt(n+1)===47){for(n+=2;n<t&&!N(r.charCodeAt(n));)n++;return l=r.substring(u,n),b=12}if(r.charCodeAt(n+1)===42){n+=2;const o=t-1;let p=!1;for(;n<o;){if(r.charCodeAt(n)===42&&r.charCodeAt(n+1)===47){n+=2,p=!0;break}n++}return p||(n++,m=1),l=r.substring(u,n),b=13}return l+=String.fromCharCode(a),n++,b=16}case 45:if(l+=String.fromCharCode(a),n++,n===t||!T(r.charCodeAt(n)))return b=16;case 48:case 49:case 50:case 51:case 52:case 53:case 54:case 55:case 56:case 57:return l+=x(),b=11;default:for(;n<t&&A(a);)n++,a=r.charCodeAt(n);if(s!==n){switch(l=r.substring(s,n),l){case"true":return b=8;case"false":return b=9;case"null":return b=7}return b=16}return l+=String.fromCharCode(a),n++,b=16}}function A(a){if(v(a)||N(a))return!1;switch(a){case 125:case 93:case 123:case 91:case 34:case 58:case 44:case 47:return!1}return!0}function B(){let a;do a=k();while(a>=12&&a<=15);return a}return{setPosition:f,getPosition:()=>n,scan:c?B:k,getToken:()=>b,getTokenValue:()=>l,getTokenOffset:()=>s,getTokenLength:()=>n-s,getTokenError:()=>m}}function v(r){return r===32||r===9||r===11||r===12||r===160||r===5760||r>=8192&&r<=8203||r===8239||r===8287||r===12288||r===65279}function N(r){return r===10||r===13||r===8232||r===8233}function T(r){return r>=48&&r<=57}var Q=(e=>(e[e.nullCharacter=0]="nullCharacter",e[e.maxAsciiCharacter=127]="maxAsciiCharacter",e[e.lineFeed=10]="lineFeed",e[e.carriageReturn=13]="carriageReturn",e[e.lineSeparator=8232]="lineSeparator",e[e.paragraphSeparator=8233]="paragraphSeparator",e[e.nextLine=133]="nextLine",e[e.space=32]="space",e[e.nonBreakingSpace=160]="nonBreakingSpace",e[e.enQuad=8192]="enQuad",e[e.emQuad=8193]="emQuad",e[e.enSpace=8194]="enSpace",e[e.emSpace=8195]="emSpace",e[e.threePerEmSpace=8196]="threePerEmSpace",e[e.fourPerEmSpace=8197]="fourPerEmSpace",e[e.sixPerEmSpace=8198]="sixPerEmSpace",e[e.figureSpace=8199]="figureSpace",e[e.punctuationSpace=8200]="punctuationSpace",e[e.thinSpace=8201]="thinSpace",e[e.hairSpace=8202]="hairSpace",e[e.zeroWidthSpace=8203]="zeroWidthSpace",e[e.narrowNoBreakSpace=8239]="narrowNoBreakSpace",e[e.ideographicSpace=12288]="ideographicSpace",e[e.mathematicalSpace=8287]="mathematicalSpace",e[e.ogham=5760]="ogham",e[e._=95]="_",e[e.$=36]="$",e[e._0=48]="_0",e[e._1=49]="_1",e[e._2=50]="_2",e[e._3=51]="_3",e[e._4=52]="_4",e[e._5=53]="_5",e[e._6=54]="_6",e[e._7=55]="_7",e[e._8=56]="_8",e[e._9=57]="_9",e[e.a=97]="a",e[e.b=98]="b",e[e.c=99]="c",e[e.d=100]="d",e[e.e=101]="e",e[e.f=102]="f",e[e.g=103]="g",e[e.h=104]="h",e[e.i=105]="i",e[e.j=106]="j",e[e.k=107]="k",e[e.l=108]="l",e[e.m=109]="m",e[e.n=110]="n",e[e.o=111]="o",e[e.p=112]="p",e[e.q=113]="q",e[e.r=114]="r",e[e.s=115]="s",e[e.t=116]="t",e[e.u=117]="u",e[e.v=118]="v",e[e.w=119]="w",e[e.x=120]="x",e[e.y=121]="y",e[e.z=122]="z",e[e.A=65]="A",e[e.B=66]="B",e[e.C=67]="C",e[e.D=68]="D",e[e.E=69]="E",e[e.F=70]="F",e[e.G=71]="G",e[e.H=72]="H",e[e.I=73]="I",e[e.J=74]="J",e[e.K=75]="K",e[e.L=76]="L",e[e.M=77]="M",e[e.N=78]="N",e[e.O=79]="O",e[e.P=80]="P",e[e.Q=81]="Q",e[e.R=82]="R",e[e.S=83]="S",e[e.T=84]="T",e[e.U=85]="U",e[e.V=86]="V",e[e.W=87]="W",e[e.X=88]="X",e[e.Y=89]="Y",e[e.Z=90]="Z",e[e.ampersand=38]="ampersand",e[e.asterisk=42]="asterisk",e[e.at=64]="at",e[e.backslash=92]="backslash",e[e.bar=124]="bar",e[e.caret=94]="caret",e[e.closeBrace=125]="closeBrace",e[e.closeBracket=93]="closeBracket",e[e.closeParen=41]="closeParen",e[e.colon=58]="colon",e[e.comma=44]="comma",e[e.dot=46]="dot",e[e.doubleQuote=34]="doubleQuote",e[e.equals=61]="equals",e[e.exclamation=33]="exclamation",e[e.greaterThan=62]="greaterThan",e[e.lessThan=60]="lessThan",e[e.minus=45]="minus",e[e.openBrace=123]="openBrace",e[e.openBracket=91]="openBracket",e[e.openParen=40]="openParen",e[e.percent=37]="percent",e[e.plus=43]="plus",e[e.question=63]="question",e[e.semicolon=59]="semicolon",e[e.singleQuote=39]="singleQuote",e[e.slash=47]="slash",e[e.tilde=126]="tilde",e[e.backspace=8]="backspace",e[e.formFeed=12]="formFeed",e[e.byteOrderMark=65279]="byteOrderMark",e[e.tab=9]="tab",e[e.verticalTab=11]="verticalTab",e))(Q||{});function z(r,c){const n=[],t=new Object;let l;const s={value:{},offset:0,length:0,type:"object",parent:void 0};let b=!1;function m(i,f,x,y){s.value=i,s.offset=f,s.length=x,s.type=y,s.colonOffset=void 0,l=s}try{K(r,{onObjectBegin:(i,f)=>{if(c<=i)throw t;l=void 0,b=c>i,n.push("")},onObjectProperty:(i,f,x)=>{if(c<f||(m(i,f,x,"property"),n[n.length-1]=i,c<=f+x))throw t},onObjectEnd:(i,f)=>{if(c<=i)throw t;l=void 0,n.pop()},onArrayBegin:(i,f)=>{if(c<=i)throw t;l=void 0,n.push(0)},onArrayEnd:(i,f)=>{if(c<=i)throw t;l=void 0,n.pop()},onLiteralValue:(i,f,x)=>{if(c<f||(m(i,f,x,F(i)),c<=f+x))throw t},onSeparator:(i,f,x)=>{if(c<=f)throw t;if(i===":"&&l&&l.type==="property")l.colonOffset=f,b=!1,l=void 0;else if(i===","){const y=n[n.length-1];typeof y=="number"?n[n.length-1]=y+1:(b=!0,n[n.length-1]=""),l=void 0}}})}catch(i){if(i!==t)throw i}return{path:n,previousNode:l,isAtPropertyKey:b,matches:i=>{let f=0;for(let x=0;f<i.length&&x<n.length;x++)if(i[f]===n[x]||i[f]==="*")f++;else if(i[f]!=="**")return!1;return f===i.length}}}function M(r,c=[],n=O.DEFAULT){let t=null,l=[];const s=[];function b(i){Array.isArray(l)?l.push(i):t!==null&&(l[t]=i)}return K(r,{onObjectBegin:()=>{const i={};b(i),s.push(l),l=i,t=null},onObjectProperty:i=>{t=i},onObjectEnd:()=>{l=s.pop()},onArrayBegin:()=>{const i=[];b(i),s.push(l),l=i,t=null},onArrayEnd:()=>{l=s.pop()},onLiteralValue:b,onError:(i,f,x)=>{c.push({error:i,offset:f,length:x})}},n),l[0]}function H(r,c=[],n=O.DEFAULT){let t={type:"array",offset:-1,length:-1,children:[],parent:void 0};function l(i){t.type==="property"&&(t.length=i-t.offset,t=t.parent)}function s(i){return t.children.push(i),i}K(r,{onObjectBegin:i=>{t=s({type:"object",offset:i,length:-1,parent:t,children:[]})},onObjectProperty:(i,f,x)=>{t=s({type:"property",offset:f,length:-1,parent:t,children:[]}),t.children.push({type:"string",value:i,offset:f,length:x,parent:t})},onObjectEnd:(i,f)=>{t.length=i+f-t.offset,t=t.parent,l(i+f)},onArrayBegin:(i,f)=>{t=s({type:"array",offset:i,length:-1,parent:t,children:[]})},onArrayEnd:(i,f)=>{t.length=i+f-t.offset,t=t.parent,l(i+f)},onLiteralValue:(i,f,x)=>{s({type:F(i),offset:f,length:x,parent:t,value:i}),l(f+x)},onSeparator:(i,f,x)=>{t.type==="property"&&(i===":"?t.colonOffset=f:i===","&&l(f))},onError:(i,f,x)=>{c.push({error:i,offset:f,length:x})}},n);const m=t.children[0];return m&&delete m.parent,m}function G(r,c){if(!r)return;let n=r;for(const t of c)if(typeof t=="string"){if(n.type!=="object"||!Array.isArray(n.children))return;let l=!1;for(const s of n.children)if(Array.isArray(s.children)&&s.children[0].value===t){n=s.children[1],l=!0;break}if(!l)return}else{const l=t;if(n.type!=="array"||l<0||!Array.isArray(n.children)||l>=n.children.length)return;n=n.children[l]}return n}function R(r){if(!r.parent||!r.parent.children)return[];const c=R(r.parent);if(r.parent.type==="property"){const n=r.parent.children[0].value;c.push(n)}else if(r.parent.type==="array"){const n=r.parent.children.indexOf(r);n!==-1&&c.push(n)}return c}function P(r){switch(r.type){case"array":return r.children.map(P);case"object":{const c=Object.create(null);for(const n of r.children){const t=n.children[1];t&&(c[n.children[0].value]=P(t))}return c}case"null":case"string":case"number":case"boolean":return r.value;default:return}}function W(r,c,n=!1){return c>=r.offset&&c<r.offset+r.length||n&&c===r.offset+r.length}function q(r,c,n=!1){if(W(r,c,n)){const t=r.children;if(Array.isArray(t))for(let l=0;l<t.length&&t[l].offset<=c;l++){const s=q(t[l],c,n);if(s)return s}return r}}function K(r,c,n=O.DEFAULT){const t=J(r,!1);function l(g){return g?()=>g(t.getTokenOffset(),t.getTokenLength()):()=>!0}function s(g){return g?d=>g(d,t.getTokenOffset(),t.getTokenLength()):()=>!0}const b=l(c.onObjectBegin),m=s(c.onObjectProperty),i=l(c.onObjectEnd),f=l(c.onArrayBegin),x=l(c.onArrayEnd),y=s(c.onLiteralValue),k=s(c.onSeparator),A=l(c.onComment),B=s(c.onError),a=n&&n.disallowComments,u=n&&n.allowTrailingComma;function o(){for(;;){const g=t.scan();switch(t.getTokenError()){case 4:p(14);break;case 5:p(15);break;case 3:p(13);break;case 1:a||p(11);break;case 2:p(12);break;case 6:p(16);break}switch(g){case 12:case 13:a?p(10):A();break;case 16:p(1);break;case 15:case 14:break;default:return g}}}function p(g,d=[],L=[]){if(B(g),d.length+L.length>0){let E=t.getToken();for(;E!==17;){if(d.indexOf(E)!==-1){o();break}else if(L.indexOf(E)!==-1)break;E=o()}}}function S(g){const d=t.getTokenValue();return g?y(d):m(d),o(),!0}function U(){switch(t.getToken()){case 11:{let g=0;try{g=JSON.parse(t.getTokenValue()),typeof g!="number"&&(p(2),g=0)}catch{p(2)}y(g);break}case 7:y(null);break;case 8:y(!0);break;case 9:y(!1);break;default:return!1}return o(),!0}function h(){return t.getToken()!==10?(p(3,[],[2,5]),!1):(S(!1),t.getToken()===6?(k(":"),o(),w()||p(4,[],[2,5])):p(5,[],[2,5]),!0)}function j(){b(),o();let g=!1;for(;t.getToken()!==2&&t.getToken()!==17;){if(t.getToken()===5){if(g||p(4,[],[]),k(","),o(),t.getToken()===2&&u)break}else g&&p(6,[],[]);h()||p(4,[],[2,5]),g=!0}return i(),t.getToken()!==2?p(7,[2],[]):o(),!0}function I(){f(),o();let g=!1;for(;t.getToken()!==4&&t.getToken()!==17;){if(t.getToken()===5){if(g||p(4,[],[]),k(","),o(),t.getToken()===4&&u)break}else g&&p(6,[],[]);w()||p(4,[],[4,5]),g=!0}return x(),t.getToken()!==4?p(8,[4],[]):o(),!0}function w(){switch(t.getToken()){case 3:return I();case 1:return j();case 10:return S(!0);default:return U()}}return o(),t.getToken()===17?n.allowEmptyContent?!0:(p(4,[],[]),!1):w()?(t.getToken()!==17&&p(9,[],[]),!0):(p(4,[],[]),!1)}function F(r){switch(typeof r){case"boolean":return"boolean";case"number":return"number";case"string":return"string";case"object":{if(r){if(Array.isArray(r))return"array"}else return"null";return"object"}default:return"null"}}export{D as ParseErrorCode,O as ParseOptions,V as ScanError,_ as SyntaxKind,W as contains,J as createScanner,G as findNodeAtLocation,q as findNodeAtOffset,z as getLocation,R as getNodePath,F as getNodeType,P as getNodeValue,M as parse,H as parseTree,K as visit};
+export var ParseOptions;
+(function (ParseOptions) {
+    ParseOptions.DEFAULT = {
+        allowTrailingComma: true
+    };
+})(ParseOptions || (ParseOptions = {}));
+export function createScanner(text, ignoreTrivia = false) {
+    let pos = 0;
+    const len = text.length;
+    let value = '';
+    let tokenOffset = 0;
+    let token = 16;
+    let scanError = 0;
+    function scanHexDigits(count) {
+        let digits = 0;
+        let hexValue = 0;
+        while (digits < count) {
+            const ch = text.charCodeAt(pos);
+            if (ch >= 48 && ch <= 57) {
+                hexValue = hexValue * 16 + ch - 48;
+            }
+            else if (ch >= 65 && ch <= 70) {
+                hexValue = hexValue * 16 + ch - 65 + 10;
+            }
+            else if (ch >= 97 && ch <= 102) {
+                hexValue = hexValue * 16 + ch - 97 + 10;
+            }
+            else {
+                break;
+            }
+            pos++;
+            digits++;
+        }
+        if (digits < count) {
+            hexValue = -1;
+        }
+        return hexValue;
+    }
+    function setPosition(newPosition) {
+        pos = newPosition;
+        value = '';
+        tokenOffset = 0;
+        token = 16;
+        scanError = 0;
+    }
+    function scanNumber() {
+        const start = pos;
+        if (text.charCodeAt(pos) === 48) {
+            pos++;
+        }
+        else {
+            pos++;
+            while (pos < text.length && isDigit(text.charCodeAt(pos))) {
+                pos++;
+            }
+        }
+        if (pos < text.length && text.charCodeAt(pos) === 46) {
+            pos++;
+            if (pos < text.length && isDigit(text.charCodeAt(pos))) {
+                pos++;
+                while (pos < text.length && isDigit(text.charCodeAt(pos))) {
+                    pos++;
+                }
+            }
+            else {
+                scanError = 3;
+                return text.substring(start, pos);
+            }
+        }
+        let end = pos;
+        if (pos < text.length && (text.charCodeAt(pos) === 69 || text.charCodeAt(pos) === 101)) {
+            pos++;
+            if (pos < text.length && text.charCodeAt(pos) === 43 || text.charCodeAt(pos) === 45) {
+                pos++;
+            }
+            if (pos < text.length && isDigit(text.charCodeAt(pos))) {
+                pos++;
+                while (pos < text.length && isDigit(text.charCodeAt(pos))) {
+                    pos++;
+                }
+                end = pos;
+            }
+            else {
+                scanError = 3;
+            }
+        }
+        return text.substring(start, end);
+    }
+    function scanString() {
+        let result = '', start = pos;
+        while (true) {
+            if (pos >= len) {
+                result += text.substring(start, pos);
+                scanError = 2;
+                break;
+            }
+            const ch = text.charCodeAt(pos);
+            if (ch === 34) {
+                result += text.substring(start, pos);
+                pos++;
+                break;
+            }
+            if (ch === 92) {
+                result += text.substring(start, pos);
+                pos++;
+                if (pos >= len) {
+                    scanError = 2;
+                    break;
+                }
+                const ch2 = text.charCodeAt(pos++);
+                switch (ch2) {
+                    case 34:
+                        result += '\"';
+                        break;
+                    case 92:
+                        result += '\\';
+                        break;
+                    case 47:
+                        result += '/';
+                        break;
+                    case 98:
+                        result += '\b';
+                        break;
+                    case 102:
+                        result += '\f';
+                        break;
+                    case 110:
+                        result += '\n';
+                        break;
+                    case 114:
+                        result += '\r';
+                        break;
+                    case 116:
+                        result += '\t';
+                        break;
+                    case 117: {
+                        const ch3 = scanHexDigits(4);
+                        if (ch3 >= 0) {
+                            result += String.fromCharCode(ch3);
+                        }
+                        else {
+                            scanError = 4;
+                        }
+                        break;
+                    }
+                    default:
+                        scanError = 5;
+                }
+                start = pos;
+                continue;
+            }
+            if (ch >= 0 && ch <= 0x1F) {
+                if (isLineBreak(ch)) {
+                    result += text.substring(start, pos);
+                    scanError = 2;
+                    break;
+                }
+                else {
+                    scanError = 6;
+                }
+            }
+            pos++;
+        }
+        return result;
+    }
+    function scanNext() {
+        value = '';
+        scanError = 0;
+        tokenOffset = pos;
+        if (pos >= len) {
+            tokenOffset = len;
+            return token = 17;
+        }
+        let code = text.charCodeAt(pos);
+        if (isWhitespace(code)) {
+            do {
+                pos++;
+                value += String.fromCharCode(code);
+                code = text.charCodeAt(pos);
+            } while (isWhitespace(code));
+            return token = 15;
+        }
+        if (isLineBreak(code)) {
+            pos++;
+            value += String.fromCharCode(code);
+            if (code === 13 && text.charCodeAt(pos) === 10) {
+                pos++;
+                value += '\n';
+            }
+            return token = 14;
+        }
+        switch (code) {
+            case 123:
+                pos++;
+                return token = 1;
+            case 125:
+                pos++;
+                return token = 2;
+            case 91:
+                pos++;
+                return token = 3;
+            case 93:
+                pos++;
+                return token = 4;
+            case 58:
+                pos++;
+                return token = 6;
+            case 44:
+                pos++;
+                return token = 5;
+            case 34:
+                pos++;
+                value = scanString();
+                return token = 10;
+            case 47: {
+                const start = pos - 1;
+                if (text.charCodeAt(pos + 1) === 47) {
+                    pos += 2;
+                    while (pos < len) {
+                        if (isLineBreak(text.charCodeAt(pos))) {
+                            break;
+                        }
+                        pos++;
+                    }
+                    value = text.substring(start, pos);
+                    return token = 12;
+                }
+                if (text.charCodeAt(pos + 1) === 42) {
+                    pos += 2;
+                    const safeLength = len - 1;
+                    let commentClosed = false;
+                    while (pos < safeLength) {
+                        const ch = text.charCodeAt(pos);
+                        if (ch === 42 && text.charCodeAt(pos + 1) === 47) {
+                            pos += 2;
+                            commentClosed = true;
+                            break;
+                        }
+                        pos++;
+                    }
+                    if (!commentClosed) {
+                        pos++;
+                        scanError = 1;
+                    }
+                    value = text.substring(start, pos);
+                    return token = 13;
+                }
+                value += String.fromCharCode(code);
+                pos++;
+                return token = 16;
+            }
+            case 45:
+                value += String.fromCharCode(code);
+                pos++;
+                if (pos === len || !isDigit(text.charCodeAt(pos))) {
+                    return token = 16;
+                }
+            case 48:
+            case 49:
+            case 50:
+            case 51:
+            case 52:
+            case 53:
+            case 54:
+            case 55:
+            case 56:
+            case 57:
+                value += scanNumber();
+                return token = 11;
+            default:
+                while (pos < len && isUnknownContentCharacter(code)) {
+                    pos++;
+                    code = text.charCodeAt(pos);
+                }
+                if (tokenOffset !== pos) {
+                    value = text.substring(tokenOffset, pos);
+                    switch (value) {
+                        case 'true': return token = 8;
+                        case 'false': return token = 9;
+                        case 'null': return token = 7;
+                    }
+                    return token = 16;
+                }
+                value += String.fromCharCode(code);
+                pos++;
+                return token = 16;
+        }
+    }
+    function isUnknownContentCharacter(code) {
+        if (isWhitespace(code) || isLineBreak(code)) {
+            return false;
+        }
+        switch (code) {
+            case 125:
+            case 93:
+            case 123:
+            case 91:
+            case 34:
+            case 58:
+            case 44:
+            case 47:
+                return false;
+        }
+        return true;
+    }
+    function scanNextNonTrivia() {
+        let result;
+        do {
+            result = scanNext();
+        } while (result >= 12 && result <= 15);
+        return result;
+    }
+    return {
+        setPosition: setPosition,
+        getPosition: () => pos,
+        scan: ignoreTrivia ? scanNextNonTrivia : scanNext,
+        getToken: () => token,
+        getTokenValue: () => value,
+        getTokenOffset: () => tokenOffset,
+        getTokenLength: () => pos - tokenOffset,
+        getTokenError: () => scanError
+    };
+}
+function isWhitespace(ch) {
+    return ch === 32 || ch === 9 || ch === 11 || ch === 12 ||
+        ch === 160 || ch === 5760 || ch >= 8192 && ch <= 8203 ||
+        ch === 8239 || ch === 8287 || ch === 12288 || ch === 65279;
+}
+function isLineBreak(ch) {
+    return ch === 10 || ch === 13 || ch === 8232 || ch === 8233;
+}
+function isDigit(ch) {
+    return ch >= 48 && ch <= 57;
+}
+export function getLocation(text, position) {
+    const segments = [];
+    const earlyReturnException = new Object();
+    let previousNode = undefined;
+    const previousNodeInst = {
+        value: {},
+        offset: 0,
+        length: 0,
+        type: 'object',
+        parent: undefined
+    };
+    let isAtPropertyKey = false;
+    function setPreviousNode(value, offset, length, type) {
+        previousNodeInst.value = value;
+        previousNodeInst.offset = offset;
+        previousNodeInst.length = length;
+        previousNodeInst.type = type;
+        previousNodeInst.colonOffset = undefined;
+        previousNode = previousNodeInst;
+    }
+    try {
+        visit(text, {
+            onObjectBegin: (offset, length) => {
+                if (position <= offset) {
+                    throw earlyReturnException;
+                }
+                previousNode = undefined;
+                isAtPropertyKey = position > offset;
+                segments.push('');
+            },
+            onObjectProperty: (name, offset, length) => {
+                if (position < offset) {
+                    throw earlyReturnException;
+                }
+                setPreviousNode(name, offset, length, 'property');
+                segments[segments.length - 1] = name;
+                if (position <= offset + length) {
+                    throw earlyReturnException;
+                }
+            },
+            onObjectEnd: (offset, length) => {
+                if (position <= offset) {
+                    throw earlyReturnException;
+                }
+                previousNode = undefined;
+                segments.pop();
+            },
+            onArrayBegin: (offset, length) => {
+                if (position <= offset) {
+                    throw earlyReturnException;
+                }
+                previousNode = undefined;
+                segments.push(0);
+            },
+            onArrayEnd: (offset, length) => {
+                if (position <= offset) {
+                    throw earlyReturnException;
+                }
+                previousNode = undefined;
+                segments.pop();
+            },
+            onLiteralValue: (value, offset, length) => {
+                if (position < offset) {
+                    throw earlyReturnException;
+                }
+                setPreviousNode(value, offset, length, getNodeType(value));
+                if (position <= offset + length) {
+                    throw earlyReturnException;
+                }
+            },
+            onSeparator: (sep, offset, length) => {
+                if (position <= offset) {
+                    throw earlyReturnException;
+                }
+                if (sep === ':' && previousNode && previousNode.type === 'property') {
+                    previousNode.colonOffset = offset;
+                    isAtPropertyKey = false;
+                    previousNode = undefined;
+                }
+                else if (sep === ',') {
+                    const last = segments[segments.length - 1];
+                    if (typeof last === 'number') {
+                        segments[segments.length - 1] = last + 1;
+                    }
+                    else {
+                        isAtPropertyKey = true;
+                        segments[segments.length - 1] = '';
+                    }
+                    previousNode = undefined;
+                }
+            }
+        });
+    }
+    catch (e) {
+        if (e !== earlyReturnException) {
+            throw e;
+        }
+    }
+    return {
+        path: segments,
+        previousNode,
+        isAtPropertyKey,
+        matches: (pattern) => {
+            let k = 0;
+            for (let i = 0; k < pattern.length && i < segments.length; i++) {
+                if (pattern[k] === segments[i] || pattern[k] === '*') {
+                    k++;
+                }
+                else if (pattern[k] !== '**') {
+                    return false;
+                }
+            }
+            return k === pattern.length;
+        }
+    };
+}
+export function parse(text, errors = [], options = ParseOptions.DEFAULT) {
+    let currentProperty = null;
+    let currentParent = [];
+    const previousParents = [];
+    function onValue(value) {
+        if (Array.isArray(currentParent)) {
+            currentParent.push(value);
+        }
+        else if (currentProperty !== null) {
+            currentParent[currentProperty] = value;
+        }
+    }
+    const visitor = {
+        onObjectBegin: () => {
+            const object = {};
+            onValue(object);
+            previousParents.push(currentParent);
+            currentParent = object;
+            currentProperty = null;
+        },
+        onObjectProperty: (name) => {
+            currentProperty = name;
+        },
+        onObjectEnd: () => {
+            currentParent = previousParents.pop();
+        },
+        onArrayBegin: () => {
+            const array = [];
+            onValue(array);
+            previousParents.push(currentParent);
+            currentParent = array;
+            currentProperty = null;
+        },
+        onArrayEnd: () => {
+            currentParent = previousParents.pop();
+        },
+        onLiteralValue: onValue,
+        onError: (error, offset, length) => {
+            errors.push({ error, offset, length });
+        }
+    };
+    visit(text, visitor, options);
+    return currentParent[0];
+}
+export function parseTree(text, errors = [], options = ParseOptions.DEFAULT) {
+    let currentParent = { type: 'array', offset: -1, length: -1, children: [], parent: undefined };
+    function ensurePropertyComplete(endOffset) {
+        if (currentParent.type === 'property') {
+            currentParent.length = endOffset - currentParent.offset;
+            currentParent = currentParent.parent;
+        }
+    }
+    function onValue(valueNode) {
+        currentParent.children.push(valueNode);
+        return valueNode;
+    }
+    const visitor = {
+        onObjectBegin: (offset) => {
+            currentParent = onValue({ type: 'object', offset, length: -1, parent: currentParent, children: [] });
+        },
+        onObjectProperty: (name, offset, length) => {
+            currentParent = onValue({ type: 'property', offset, length: -1, parent: currentParent, children: [] });
+            currentParent.children.push({ type: 'string', value: name, offset, length, parent: currentParent });
+        },
+        onObjectEnd: (offset, length) => {
+            currentParent.length = offset + length - currentParent.offset;
+            currentParent = currentParent.parent;
+            ensurePropertyComplete(offset + length);
+        },
+        onArrayBegin: (offset, length) => {
+            currentParent = onValue({ type: 'array', offset, length: -1, parent: currentParent, children: [] });
+        },
+        onArrayEnd: (offset, length) => {
+            currentParent.length = offset + length - currentParent.offset;
+            currentParent = currentParent.parent;
+            ensurePropertyComplete(offset + length);
+        },
+        onLiteralValue: (value, offset, length) => {
+            onValue({ type: getNodeType(value), offset, length, parent: currentParent, value });
+            ensurePropertyComplete(offset + length);
+        },
+        onSeparator: (sep, offset, length) => {
+            if (currentParent.type === 'property') {
+                if (sep === ':') {
+                    currentParent.colonOffset = offset;
+                }
+                else if (sep === ',') {
+                    ensurePropertyComplete(offset);
+                }
+            }
+        },
+        onError: (error, offset, length) => {
+            errors.push({ error, offset, length });
+        }
+    };
+    visit(text, visitor, options);
+    const result = currentParent.children[0];
+    if (result) {
+        delete result.parent;
+    }
+    return result;
+}
+export function findNodeAtLocation(root, path) {
+    if (!root) {
+        return undefined;
+    }
+    let node = root;
+    for (const segment of path) {
+        if (typeof segment === 'string') {
+            if (node.type !== 'object' || !Array.isArray(node.children)) {
+                return undefined;
+            }
+            let found = false;
+            for (const propertyNode of node.children) {
+                if (Array.isArray(propertyNode.children) && propertyNode.children[0].value === segment) {
+                    node = propertyNode.children[1];
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return undefined;
+            }
+        }
+        else {
+            const index = segment;
+            if (node.type !== 'array' || index < 0 || !Array.isArray(node.children) || index >= node.children.length) {
+                return undefined;
+            }
+            node = node.children[index];
+        }
+    }
+    return node;
+}
+export function getNodePath(node) {
+    if (!node.parent || !node.parent.children) {
+        return [];
+    }
+    const path = getNodePath(node.parent);
+    if (node.parent.type === 'property') {
+        const key = node.parent.children[0].value;
+        path.push(key);
+    }
+    else if (node.parent.type === 'array') {
+        const index = node.parent.children.indexOf(node);
+        if (index !== -1) {
+            path.push(index);
+        }
+    }
+    return path;
+}
+export function getNodeValue(node) {
+    switch (node.type) {
+        case 'array':
+            return node.children.map(getNodeValue);
+        case 'object': {
+            const obj = Object.create(null);
+            for (const prop of node.children) {
+                const valueNode = prop.children[1];
+                if (valueNode) {
+                    obj[prop.children[0].value] = getNodeValue(valueNode);
+                }
+            }
+            return obj;
+        }
+        case 'null':
+        case 'string':
+        case 'number':
+        case 'boolean':
+            return node.value;
+        default:
+            return undefined;
+    }
+}
+export function contains(node, offset, includeRightBound = false) {
+    return (offset >= node.offset && offset < (node.offset + node.length)) || includeRightBound && (offset === (node.offset + node.length));
+}
+export function findNodeAtOffset(node, offset, includeRightBound = false) {
+    if (contains(node, offset, includeRightBound)) {
+        const children = node.children;
+        if (Array.isArray(children)) {
+            for (let i = 0; i < children.length && children[i].offset <= offset; i++) {
+                const item = findNodeAtOffset(children[i], offset, includeRightBound);
+                if (item) {
+                    return item;
+                }
+            }
+        }
+        return node;
+    }
+    return undefined;
+}
+export function visit(text, visitor, options = ParseOptions.DEFAULT) {
+    const _scanner = createScanner(text, false);
+    function toNoArgVisit(visitFunction) {
+        return visitFunction ? () => visitFunction(_scanner.getTokenOffset(), _scanner.getTokenLength()) : () => true;
+    }
+    function toOneArgVisit(visitFunction) {
+        return visitFunction ? (arg) => visitFunction(arg, _scanner.getTokenOffset(), _scanner.getTokenLength()) : () => true;
+    }
+    const onObjectBegin = toNoArgVisit(visitor.onObjectBegin), onObjectProperty = toOneArgVisit(visitor.onObjectProperty), onObjectEnd = toNoArgVisit(visitor.onObjectEnd), onArrayBegin = toNoArgVisit(visitor.onArrayBegin), onArrayEnd = toNoArgVisit(visitor.onArrayEnd), onLiteralValue = toOneArgVisit(visitor.onLiteralValue), onSeparator = toOneArgVisit(visitor.onSeparator), onComment = toNoArgVisit(visitor.onComment), onError = toOneArgVisit(visitor.onError);
+    const disallowComments = options && options.disallowComments;
+    const allowTrailingComma = options && options.allowTrailingComma;
+    function scanNext() {
+        while (true) {
+            const token = _scanner.scan();
+            switch (_scanner.getTokenError()) {
+                case 4:
+                    handleError(14);
+                    break;
+                case 5:
+                    handleError(15);
+                    break;
+                case 3:
+                    handleError(13);
+                    break;
+                case 1:
+                    if (!disallowComments) {
+                        handleError(11);
+                    }
+                    break;
+                case 2:
+                    handleError(12);
+                    break;
+                case 6:
+                    handleError(16);
+                    break;
+            }
+            switch (token) {
+                case 12:
+                case 13:
+                    if (disallowComments) {
+                        handleError(10);
+                    }
+                    else {
+                        onComment();
+                    }
+                    break;
+                case 16:
+                    handleError(1);
+                    break;
+                case 15:
+                case 14:
+                    break;
+                default:
+                    return token;
+            }
+        }
+    }
+    function handleError(error, skipUntilAfter = [], skipUntil = []) {
+        onError(error);
+        if (skipUntilAfter.length + skipUntil.length > 0) {
+            let token = _scanner.getToken();
+            while (token !== 17) {
+                if (skipUntilAfter.indexOf(token) !== -1) {
+                    scanNext();
+                    break;
+                }
+                else if (skipUntil.indexOf(token) !== -1) {
+                    break;
+                }
+                token = scanNext();
+            }
+        }
+    }
+    function parseString(isValue) {
+        const value = _scanner.getTokenValue();
+        if (isValue) {
+            onLiteralValue(value);
+        }
+        else {
+            onObjectProperty(value);
+        }
+        scanNext();
+        return true;
+    }
+    function parseLiteral() {
+        switch (_scanner.getToken()) {
+            case 11: {
+                let value = 0;
+                try {
+                    value = JSON.parse(_scanner.getTokenValue());
+                    if (typeof value !== 'number') {
+                        handleError(2);
+                        value = 0;
+                    }
+                }
+                catch (e) {
+                    handleError(2);
+                }
+                onLiteralValue(value);
+                break;
+            }
+            case 7:
+                onLiteralValue(null);
+                break;
+            case 8:
+                onLiteralValue(true);
+                break;
+            case 9:
+                onLiteralValue(false);
+                break;
+            default:
+                return false;
+        }
+        scanNext();
+        return true;
+    }
+    function parseProperty() {
+        if (_scanner.getToken() !== 10) {
+            handleError(3, [], [2, 5]);
+            return false;
+        }
+        parseString(false);
+        if (_scanner.getToken() === 6) {
+            onSeparator(':');
+            scanNext();
+            if (!parseValue()) {
+                handleError(4, [], [2, 5]);
+            }
+        }
+        else {
+            handleError(5, [], [2, 5]);
+        }
+        return true;
+    }
+    function parseObject() {
+        onObjectBegin();
+        scanNext();
+        let needsComma = false;
+        while (_scanner.getToken() !== 2 && _scanner.getToken() !== 17) {
+            if (_scanner.getToken() === 5) {
+                if (!needsComma) {
+                    handleError(4, [], []);
+                }
+                onSeparator(',');
+                scanNext();
+                if (_scanner.getToken() === 2 && allowTrailingComma) {
+                    break;
+                }
+            }
+            else if (needsComma) {
+                handleError(6, [], []);
+            }
+            if (!parseProperty()) {
+                handleError(4, [], [2, 5]);
+            }
+            needsComma = true;
+        }
+        onObjectEnd();
+        if (_scanner.getToken() !== 2) {
+            handleError(7, [2], []);
+        }
+        else {
+            scanNext();
+        }
+        return true;
+    }
+    function parseArray() {
+        onArrayBegin();
+        scanNext();
+        let needsComma = false;
+        while (_scanner.getToken() !== 4 && _scanner.getToken() !== 17) {
+            if (_scanner.getToken() === 5) {
+                if (!needsComma) {
+                    handleError(4, [], []);
+                }
+                onSeparator(',');
+                scanNext();
+                if (_scanner.getToken() === 4 && allowTrailingComma) {
+                    break;
+                }
+            }
+            else if (needsComma) {
+                handleError(6, [], []);
+            }
+            if (!parseValue()) {
+                handleError(4, [], [4, 5]);
+            }
+            needsComma = true;
+        }
+        onArrayEnd();
+        if (_scanner.getToken() !== 4) {
+            handleError(8, [4], []);
+        }
+        else {
+            scanNext();
+        }
+        return true;
+    }
+    function parseValue() {
+        switch (_scanner.getToken()) {
+            case 3:
+                return parseArray();
+            case 1:
+                return parseObject();
+            case 10:
+                return parseString(true);
+            default:
+                return parseLiteral();
+        }
+    }
+    scanNext();
+    if (_scanner.getToken() === 17) {
+        if (options.allowEmptyContent) {
+            return true;
+        }
+        handleError(4, [], []);
+        return false;
+    }
+    if (!parseValue()) {
+        handleError(4, [], []);
+        return false;
+    }
+    if (_scanner.getToken() !== 17) {
+        handleError(9, [], []);
+    }
+    return true;
+}
+export function getNodeType(value) {
+    switch (typeof value) {
+        case 'boolean': return 'boolean';
+        case 'number': return 'number';
+        case 'string': return 'string';
+        case 'object': {
+            if (!value) {
+                return 'null';
+            }
+            else if (Array.isArray(value)) {
+                return 'array';
+            }
+            return 'object';
+        }
+        default: return 'null';
+    }
+}

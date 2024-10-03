@@ -1,1 +1,2 @@
-import{createDecorator as e}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../base/common/uri.js";import"../../../../base/common/buffer.js";import"../../../../platform/files/common/files.js";const m=e("elevatedFileService");export{m as IElevatedFileService};
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export const IElevatedFileService = createDecorator('elevatedFileService');

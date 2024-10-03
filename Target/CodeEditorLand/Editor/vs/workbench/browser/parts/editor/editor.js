@@ -1,1 +1,141 @@
-import"../../../common/editor.js";import"../../../common/editor/editorInput.js";import"../../../services/editor/common/editorGroupsService.js";import"../../../../base/common/lifecycle.js";import{Dimension as s}from"../../../../base/browser/dom.js";import"../../../../base/common/event.js";import"../../../../platform/configuration/common/configuration.js";import"../../../../platform/theme/common/themeService.js";import"../../../../base/browser/ui/grid/grid.js";import"../../../services/editor/common/editorService.js";import{isObject as I}from"../../../../base/common/types.js";import"../../../../platform/editor/common/editor.js";import"../../../../platform/window/common/window.js";import{BooleanVerifier as o,EnumVerifier as t,NumberVerifier as d,ObjectVerifier as l,SetVerifier as w,verifyObject as E}from"../../../../base/common/verifier.js";import"../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js";import"../../../../platform/contextkey/common/contextkey.js";const ce=new s(220,70),Ie=new s(Number.POSITIVE_INFINITY,Number.POSITIVE_INFINITY),e={showTabs:"multiple",highlightModifiedTabs:!1,tabActionLocation:"right",tabActionCloseVisibility:!0,tabActionUnpinVisibility:!0,alwaysShowEditorActions:!1,tabSizing:"fit",tabSizingFixedMinWidth:50,tabSizingFixedMaxWidth:160,pinnedTabSizing:"normal",pinnedTabsOnSeparateRow:!1,tabHeight:"default",preventPinnedEditorClose:"keyboardAndMouse",titleScrollbarSizing:"default",focusRecentEditorAfterClose:!0,showIcons:!0,hasIcons:!0,enablePreview:!0,openPositioning:"right",openSideBySideDirection:"right",closeEmptyGroups:!0,labelFormat:"default",splitSizing:"auto",splitOnDragAndDrop:!0,dragToOpenWindow:!0,centeredLayoutFixedWidth:!1,doubleClickTabToToggleEditorGroupSizes:"expand",editorActionsLocation:"default",wrapTabs:!1,enablePreviewFromQuickOpen:!1,scrollToSwitchTabs:!1,enablePreviewFromCodeNavigation:!1,closeOnFileDelete:!1,mouseBackForwardToNavigate:!0,restoreViewState:!0,splitInGroupLayout:"horizontal",revealIfOpen:!1,get limit(){return{enabled:!1,value:10,perEditorGroup:!1,excludeDirty:!1}},get decorations(){return{badges:!0,colors:!0}},get autoLockGroups(){return new Set}};function we(i){return i.affectsConfiguration("workbench.editor")||i.affectsConfiguration("workbench.iconTheme")||i.affectsConfiguration("window.density")}function Ee(i,a){const r={...e,hasIcons:a.getFileIconTheme().hasFileIcons},n=i.getValue();if(n?.workbench?.editor)if(Object.assign(r,n.workbench.editor),I(n.workbench.editor.autoLockGroups)){r.autoLockGroups=e.autoLockGroups;for(const[u,c]of Object.entries(n.workbench.editor.autoLockGroups))c===!0&&r.autoLockGroups.add(u)}else r.autoLockGroups=e.autoLockGroups;const p=i.getValue();return p?.window?.density?.editorTabHeight&&(r.tabHeight=p.window.density.editorTabHeight),f(r)}function f(i){return typeof i.showTabs=="boolean"&&(i.showTabs=i.showTabs?"multiple":"single"),E({wrapTabs:new o(e.wrapTabs),scrollToSwitchTabs:new o(e.scrollToSwitchTabs),highlightModifiedTabs:new o(e.highlightModifiedTabs),tabActionCloseVisibility:new o(e.tabActionCloseVisibility),tabActionUnpinVisibility:new o(e.tabActionUnpinVisibility),alwaysShowEditorActions:new o(e.alwaysShowEditorActions),pinnedTabsOnSeparateRow:new o(e.pinnedTabsOnSeparateRow),focusRecentEditorAfterClose:new o(e.focusRecentEditorAfterClose),showIcons:new o(e.showIcons),enablePreview:new o(e.enablePreview),enablePreviewFromQuickOpen:new o(e.enablePreviewFromQuickOpen),enablePreviewFromCodeNavigation:new o(e.enablePreviewFromCodeNavigation),closeOnFileDelete:new o(e.closeOnFileDelete),closeEmptyGroups:new o(e.closeEmptyGroups),revealIfOpen:new o(e.revealIfOpen),mouseBackForwardToNavigate:new o(e.mouseBackForwardToNavigate),restoreViewState:new o(e.restoreViewState),splitOnDragAndDrop:new o(e.splitOnDragAndDrop),dragToOpenWindow:new o(e.dragToOpenWindow),centeredLayoutFixedWidth:new o(e.centeredLayoutFixedWidth),hasIcons:new o(e.hasIcons),tabSizingFixedMinWidth:new d(e.tabSizingFixedMinWidth),tabSizingFixedMaxWidth:new d(e.tabSizingFixedMaxWidth),showTabs:new t(e.showTabs,["multiple","single","none"]),tabActionLocation:new t(e.tabActionLocation,["left","right"]),tabSizing:new t(e.tabSizing,["fit","shrink","fixed"]),pinnedTabSizing:new t(e.pinnedTabSizing,["normal","compact","shrink"]),tabHeight:new t(e.tabHeight,["default","compact"]),preventPinnedEditorClose:new t(e.preventPinnedEditorClose,["keyboardAndMouse","keyboard","mouse","never"]),titleScrollbarSizing:new t(e.titleScrollbarSizing,["default","large"]),openPositioning:new t(e.openPositioning,["left","right","first","last"]),openSideBySideDirection:new t(e.openSideBySideDirection,["right","down"]),labelFormat:new t(e.labelFormat,["default","short","medium","long"]),splitInGroupLayout:new t(e.splitInGroupLayout,["vertical","horizontal"]),splitSizing:new t(e.splitSizing,["distribute","split","auto"]),doubleClickTabToToggleEditorGroupSizes:new t(e.doubleClickTabToToggleEditorGroupSizes,["maximize","expand","off"]),editorActionsLocation:new t(e.editorActionsLocation,["default","titleBar","hidden"]),autoLockGroups:new w(e.autoLockGroups),limit:new l(e.limit,{enabled:new o(e.limit.enabled),value:new d(e.limit.value),perEditorGroup:new o(e.limit.perEditorGroup),excludeDirty:new o(e.limit.excludeDirty)}),decorations:new l(e.decorations,{badges:new o(e.decorations.badges),colors:new o(e.decorations.colors)})},i)}function fe(i,a,r){return!a||!i.activeEditor||a.matches(i.activeEditor)?{...r,viewState:i.activeEditorPane?.getViewState()}:r||Object.create(null)}export{Ie as DEFAULT_EDITOR_MAX_DIMENSIONS,ce as DEFAULT_EDITOR_MIN_DIMENSIONS,e as DEFAULT_EDITOR_PART_OPTIONS,fe as fillActiveEditorViewState,Ee as getEditorPartOptions,we as impactsEditorPartOptions};
+import { Dimension } from '../../../../base/browser/dom.js';
+import { isObject } from '../../../../base/common/types.js';
+import { BooleanVerifier, EnumVerifier, NumberVerifier, ObjectVerifier, SetVerifier, verifyObject } from '../../../../base/common/verifier.js';
+export const DEFAULT_EDITOR_MIN_DIMENSIONS = new Dimension(220, 70);
+export const DEFAULT_EDITOR_MAX_DIMENSIONS = new Dimension(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+export const DEFAULT_EDITOR_PART_OPTIONS = {
+    showTabs: 'multiple',
+    highlightModifiedTabs: false,
+    tabActionLocation: 'right',
+    tabActionCloseVisibility: true,
+    tabActionUnpinVisibility: true,
+    alwaysShowEditorActions: false,
+    tabSizing: 'fit',
+    tabSizingFixedMinWidth: 50,
+    tabSizingFixedMaxWidth: 160,
+    pinnedTabSizing: 'normal',
+    pinnedTabsOnSeparateRow: false,
+    tabHeight: 'default',
+    preventPinnedEditorClose: 'keyboardAndMouse',
+    titleScrollbarSizing: 'default',
+    focusRecentEditorAfterClose: true,
+    showIcons: true,
+    hasIcons: true,
+    enablePreview: true,
+    openPositioning: 'right',
+    openSideBySideDirection: 'right',
+    closeEmptyGroups: true,
+    labelFormat: 'default',
+    splitSizing: 'auto',
+    splitOnDragAndDrop: true,
+    dragToOpenWindow: true,
+    centeredLayoutFixedWidth: false,
+    doubleClickTabToToggleEditorGroupSizes: 'expand',
+    editorActionsLocation: 'default',
+    wrapTabs: false,
+    enablePreviewFromQuickOpen: false,
+    scrollToSwitchTabs: false,
+    enablePreviewFromCodeNavigation: false,
+    closeOnFileDelete: false,
+    mouseBackForwardToNavigate: true,
+    restoreViewState: true,
+    splitInGroupLayout: 'horizontal',
+    revealIfOpen: false,
+    get limit() { return { enabled: false, value: 10, perEditorGroup: false, excludeDirty: false }; },
+    get decorations() { return { badges: true, colors: true }; },
+    get autoLockGroups() { return new Set(); }
+};
+export function impactsEditorPartOptions(event) {
+    return event.affectsConfiguration('workbench.editor') || event.affectsConfiguration('workbench.iconTheme') || event.affectsConfiguration('window.density');
+}
+export function getEditorPartOptions(configurationService, themeService) {
+    const options = {
+        ...DEFAULT_EDITOR_PART_OPTIONS,
+        hasIcons: themeService.getFileIconTheme().hasFileIcons
+    };
+    const config = configurationService.getValue();
+    if (config?.workbench?.editor) {
+        Object.assign(options, config.workbench.editor);
+        if (isObject(config.workbench.editor.autoLockGroups)) {
+            options.autoLockGroups = DEFAULT_EDITOR_PART_OPTIONS.autoLockGroups;
+            for (const [editorId, enablement] of Object.entries(config.workbench.editor.autoLockGroups)) {
+                if (enablement === true) {
+                    options.autoLockGroups.add(editorId);
+                }
+            }
+        }
+        else {
+            options.autoLockGroups = DEFAULT_EDITOR_PART_OPTIONS.autoLockGroups;
+        }
+    }
+    const windowConfig = configurationService.getValue();
+    if (windowConfig?.window?.density?.editorTabHeight) {
+        options.tabHeight = windowConfig.window.density.editorTabHeight;
+    }
+    return validateEditorPartOptions(options);
+}
+function validateEditorPartOptions(options) {
+    if (typeof options.showTabs === 'boolean') {
+        options.showTabs = options.showTabs ? 'multiple' : 'single';
+    }
+    return verifyObject({
+        'wrapTabs': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['wrapTabs']),
+        'scrollToSwitchTabs': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['scrollToSwitchTabs']),
+        'highlightModifiedTabs': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['highlightModifiedTabs']),
+        'tabActionCloseVisibility': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['tabActionCloseVisibility']),
+        'tabActionUnpinVisibility': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['tabActionUnpinVisibility']),
+        'alwaysShowEditorActions': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['alwaysShowEditorActions']),
+        'pinnedTabsOnSeparateRow': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['pinnedTabsOnSeparateRow']),
+        'focusRecentEditorAfterClose': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['focusRecentEditorAfterClose']),
+        'showIcons': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['showIcons']),
+        'enablePreview': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['enablePreview']),
+        'enablePreviewFromQuickOpen': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['enablePreviewFromQuickOpen']),
+        'enablePreviewFromCodeNavigation': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['enablePreviewFromCodeNavigation']),
+        'closeOnFileDelete': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['closeOnFileDelete']),
+        'closeEmptyGroups': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['closeEmptyGroups']),
+        'revealIfOpen': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['revealIfOpen']),
+        'mouseBackForwardToNavigate': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['mouseBackForwardToNavigate']),
+        'restoreViewState': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['restoreViewState']),
+        'splitOnDragAndDrop': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['splitOnDragAndDrop']),
+        'dragToOpenWindow': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['dragToOpenWindow']),
+        'centeredLayoutFixedWidth': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['centeredLayoutFixedWidth']),
+        'hasIcons': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['hasIcons']),
+        'tabSizingFixedMinWidth': new NumberVerifier(DEFAULT_EDITOR_PART_OPTIONS['tabSizingFixedMinWidth']),
+        'tabSizingFixedMaxWidth': new NumberVerifier(DEFAULT_EDITOR_PART_OPTIONS['tabSizingFixedMaxWidth']),
+        'showTabs': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['showTabs'], ['multiple', 'single', 'none']),
+        'tabActionLocation': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['tabActionLocation'], ['left', 'right']),
+        'tabSizing': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['tabSizing'], ['fit', 'shrink', 'fixed']),
+        'pinnedTabSizing': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['pinnedTabSizing'], ['normal', 'compact', 'shrink']),
+        'tabHeight': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['tabHeight'], ['default', 'compact']),
+        'preventPinnedEditorClose': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['preventPinnedEditorClose'], ['keyboardAndMouse', 'keyboard', 'mouse', 'never']),
+        'titleScrollbarSizing': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['titleScrollbarSizing'], ['default', 'large']),
+        'openPositioning': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['openPositioning'], ['left', 'right', 'first', 'last']),
+        'openSideBySideDirection': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['openSideBySideDirection'], ['right', 'down']),
+        'labelFormat': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['labelFormat'], ['default', 'short', 'medium', 'long']),
+        'splitInGroupLayout': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['splitInGroupLayout'], ['vertical', 'horizontal']),
+        'splitSizing': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['splitSizing'], ['distribute', 'split', 'auto']),
+        'doubleClickTabToToggleEditorGroupSizes': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['doubleClickTabToToggleEditorGroupSizes'], ['maximize', 'expand', 'off']),
+        'editorActionsLocation': new EnumVerifier(DEFAULT_EDITOR_PART_OPTIONS['editorActionsLocation'], ['default', 'titleBar', 'hidden']),
+        'autoLockGroups': new SetVerifier(DEFAULT_EDITOR_PART_OPTIONS['autoLockGroups']),
+        'limit': new ObjectVerifier(DEFAULT_EDITOR_PART_OPTIONS['limit'], {
+            'enabled': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['limit']['enabled']),
+            'value': new NumberVerifier(DEFAULT_EDITOR_PART_OPTIONS['limit']['value']),
+            'perEditorGroup': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['limit']['perEditorGroup']),
+            'excludeDirty': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['limit']['excludeDirty'])
+        }),
+        'decorations': new ObjectVerifier(DEFAULT_EDITOR_PART_OPTIONS['decorations'], {
+            'badges': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['decorations']['badges']),
+            'colors': new BooleanVerifier(DEFAULT_EDITOR_PART_OPTIONS['decorations']['colors'])
+        }),
+    }, options);
+}
+export function fillActiveEditorViewState(group, expectedActiveEditor, presetOptions) {
+    if (!expectedActiveEditor || !group.activeEditor || expectedActiveEditor.matches(group.activeEditor)) {
+        const options = {
+            ...presetOptions,
+            viewState: group.activeEditorPane?.getViewState()
+        };
+        return options;
+    }
+    return presetOptions || Object.create(null);
+}

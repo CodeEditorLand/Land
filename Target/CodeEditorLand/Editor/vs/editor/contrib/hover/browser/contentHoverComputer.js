@@ -1,1 +1,62 @@
-import{coalesce as l}from"../../../../base/common/arrays.js";import"../../../../base/common/cancellation.js";import"../../../browser/editorBrowser.js";import"../../../common/model.js";import"./hoverOperation.js";import{HoverAnchorType as p}from"./hoverTypes.js";import{AsyncIterableObject as a}from"../../../../base/common/async.js";class s{constructor(r,e){this._editor=r;this._participants=e}static _getLineDecorations(r,e){if(e.type!==p.Range&&!e.supportsMarkerHover)return[];const t=r.getModel(),o=e.range.startLineNumber;if(o>t.getLineCount())return[];const n=t.getLineMaxColumn(o);return r.getLineDecorations(o).filter(i=>{if(i.options.isWholeLine)return!0;const c=i.range.startLineNumber===o?i.range.startColumn:1,u=i.range.endLineNumber===o?i.range.endColumn:n;if(i.options.showIfCollapsed){if(c>e.range.startColumn+1||e.range.endColumn-1>u)return!1}else if(c>e.range.startColumn||e.range.endColumn>u)return!1;return!0})}computeAsync(r,e){const t=r.anchor;if(!this._editor.hasModel()||!t)return a.EMPTY;const o=s._getLineDecorations(this._editor,t);return a.merge(this._participants.map(n=>n.computeAsync?n.computeAsync(t,o,e):a.EMPTY))}computeSync(r){if(!this._editor.hasModel())return[];const e=r.anchor,t=s._getLineDecorations(this._editor,e);let o=[];for(const n of this._participants)o=o.concat(n.computeSync(e,t));return l(o)}}export{s as ContentHoverComputer};
+import { coalesce } from '../../../../base/common/arrays.js';
+import { AsyncIterableObject } from '../../../../base/common/async.js';
+export class ContentHoverComputer {
+    constructor(_editor, _participants) {
+        this._editor = _editor;
+        this._participants = _participants;
+    }
+    static _getLineDecorations(editor, anchor) {
+        if (anchor.type !== 1 && !anchor.supportsMarkerHover) {
+            return [];
+        }
+        const model = editor.getModel();
+        const lineNumber = anchor.range.startLineNumber;
+        if (lineNumber > model.getLineCount()) {
+            return [];
+        }
+        const maxColumn = model.getLineMaxColumn(lineNumber);
+        return editor.getLineDecorations(lineNumber).filter((d) => {
+            if (d.options.isWholeLine) {
+                return true;
+            }
+            const startColumn = (d.range.startLineNumber === lineNumber) ? d.range.startColumn : 1;
+            const endColumn = (d.range.endLineNumber === lineNumber) ? d.range.endColumn : maxColumn;
+            if (d.options.showIfCollapsed) {
+                if (startColumn > anchor.range.startColumn + 1 || anchor.range.endColumn - 1 > endColumn) {
+                    return false;
+                }
+            }
+            else {
+                if (startColumn > anchor.range.startColumn || anchor.range.endColumn > endColumn) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+    computeAsync(options, token) {
+        const anchor = options.anchor;
+        if (!this._editor.hasModel() || !anchor) {
+            return AsyncIterableObject.EMPTY;
+        }
+        const lineDecorations = ContentHoverComputer._getLineDecorations(this._editor, anchor);
+        return AsyncIterableObject.merge(this._participants.map((participant) => {
+            if (!participant.computeAsync) {
+                return AsyncIterableObject.EMPTY;
+            }
+            return participant.computeAsync(anchor, lineDecorations, token);
+        }));
+    }
+    computeSync(options) {
+        if (!this._editor.hasModel()) {
+            return [];
+        }
+        const anchor = options.anchor;
+        const lineDecorations = ContentHoverComputer._getLineDecorations(this._editor, anchor);
+        let result = [];
+        for (const participant of this._participants) {
+            result = result.concat(participant.computeSync(anchor, lineDecorations));
+        }
+        return coalesce(result);
+    }
+}

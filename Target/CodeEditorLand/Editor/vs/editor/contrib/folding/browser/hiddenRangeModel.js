@@ -1,1 +1,117 @@
-import{findFirstIdxMonotonousOrArrLen as u}from"../../../../base/common/arraysFind.js";import{Emitter as p}from"../../../../base/common/event.js";import"../../../../base/common/lifecycle.js";import{Range as f}from"../../../common/core/range.js";import"../../../common/core/selection.js";import"../../../common/textModelEvents.js";import{countEOL as m}from"../../../common/core/eolCounter.js";import"./foldingModel.js";class j{_foldingModel;_hiddenRanges;_foldingModelListener;_updateEventEmitter=new p;_hasLineChanges=!1;get onDidChange(){return this._updateEventEmitter.event}get hiddenRanges(){return this._hiddenRanges}constructor(e){this._foldingModel=e,this._foldingModelListener=e.onDidChange(n=>this.updateHiddenRanges()),this._hiddenRanges=[],e.regions.length&&this.updateHiddenRanges()}notifyChangeModelContent(e){this._hiddenRanges.length&&!this._hasLineChanges&&(this._hasLineChanges=e.changes.some(n=>n.range.endLineNumber!==n.range.startLineNumber||m(n.text)[0]!==0))}updateHiddenRanges(){let e=!1;const n=[];let s=0,t=0,l=Number.MAX_VALUE,d=-1;const o=this._foldingModel.regions;for(;s<o.length;s++){if(!o.isCollapsed(s))continue;const i=o.getStartLineNumber(s)+1,a=o.getEndLineNumber(s);l<=i&&a<=d||(!e&&t<this._hiddenRanges.length&&this._hiddenRanges[t].startLineNumber===i&&this._hiddenRanges[t].endLineNumber===a?(n.push(this._hiddenRanges[t]),t++):(e=!0,n.push(new f(i,1,a,1))),l=i,d=a)}(this._hasLineChanges||e||t<this._hiddenRanges.length)&&this.applyHiddenRanges(n)}applyHiddenRanges(e){this._hiddenRanges=e,this._hasLineChanges=!1,this._updateEventEmitter.fire(e)}hasRanges(){return this._hiddenRanges.length>0}isHidden(e){return g(this._hiddenRanges,e)!==null}adjustSelections(e){let n=!1;const s=this._foldingModel.textModel;let t=null;const l=d=>((!t||!R(d,t))&&(t=g(this._hiddenRanges,d)),t?t.startLineNumber-1:null);for(let d=0,o=e.length;d<o;d++){let i=e[d];const a=l(i.startLineNumber);a&&(i=i.setStartPosition(a,s.getLineMaxColumn(a)),n=!0);const h=l(i.endLineNumber);h&&(i=i.setEndPosition(h,s.getLineMaxColumn(h)),n=!0),e[d]=i}return n}dispose(){this.hiddenRanges.length>0&&(this._hiddenRanges=[],this._updateEventEmitter.fire(this._hiddenRanges)),this._foldingModelListener&&(this._foldingModelListener.dispose(),this._foldingModelListener=null)}}function R(r,e){return r>=e.startLineNumber&&r<=e.endLineNumber}function g(r,e){const n=u(r,s=>e<s.startLineNumber)-1;return n>=0&&r[n].endLineNumber>=e?r[n]:null}export{j as HiddenRangeModel};
+import { findFirstIdxMonotonousOrArrLen } from '../../../../base/common/arraysFind.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Range } from '../../../common/core/range.js';
+import { countEOL } from '../../../common/core/eolCounter.js';
+export class HiddenRangeModel {
+    get onDidChange() { return this._updateEventEmitter.event; }
+    get hiddenRanges() { return this._hiddenRanges; }
+    constructor(model) {
+        this._updateEventEmitter = new Emitter();
+        this._hasLineChanges = false;
+        this._foldingModel = model;
+        this._foldingModelListener = model.onDidChange(_ => this.updateHiddenRanges());
+        this._hiddenRanges = [];
+        if (model.regions.length) {
+            this.updateHiddenRanges();
+        }
+    }
+    notifyChangeModelContent(e) {
+        if (this._hiddenRanges.length && !this._hasLineChanges) {
+            this._hasLineChanges = e.changes.some(change => {
+                return change.range.endLineNumber !== change.range.startLineNumber || countEOL(change.text)[0] !== 0;
+            });
+        }
+    }
+    updateHiddenRanges() {
+        let updateHiddenAreas = false;
+        const newHiddenAreas = [];
+        let i = 0;
+        let k = 0;
+        let lastCollapsedStart = Number.MAX_VALUE;
+        let lastCollapsedEnd = -1;
+        const ranges = this._foldingModel.regions;
+        for (; i < ranges.length; i++) {
+            if (!ranges.isCollapsed(i)) {
+                continue;
+            }
+            const startLineNumber = ranges.getStartLineNumber(i) + 1;
+            const endLineNumber = ranges.getEndLineNumber(i);
+            if (lastCollapsedStart <= startLineNumber && endLineNumber <= lastCollapsedEnd) {
+                continue;
+            }
+            if (!updateHiddenAreas && k < this._hiddenRanges.length && this._hiddenRanges[k].startLineNumber === startLineNumber && this._hiddenRanges[k].endLineNumber === endLineNumber) {
+                newHiddenAreas.push(this._hiddenRanges[k]);
+                k++;
+            }
+            else {
+                updateHiddenAreas = true;
+                newHiddenAreas.push(new Range(startLineNumber, 1, endLineNumber, 1));
+            }
+            lastCollapsedStart = startLineNumber;
+            lastCollapsedEnd = endLineNumber;
+        }
+        if (this._hasLineChanges || updateHiddenAreas || k < this._hiddenRanges.length) {
+            this.applyHiddenRanges(newHiddenAreas);
+        }
+    }
+    applyHiddenRanges(newHiddenAreas) {
+        this._hiddenRanges = newHiddenAreas;
+        this._hasLineChanges = false;
+        this._updateEventEmitter.fire(newHiddenAreas);
+    }
+    hasRanges() {
+        return this._hiddenRanges.length > 0;
+    }
+    isHidden(line) {
+        return findRange(this._hiddenRanges, line) !== null;
+    }
+    adjustSelections(selections) {
+        let hasChanges = false;
+        const editorModel = this._foldingModel.textModel;
+        let lastRange = null;
+        const adjustLine = (line) => {
+            if (!lastRange || !isInside(line, lastRange)) {
+                lastRange = findRange(this._hiddenRanges, line);
+            }
+            if (lastRange) {
+                return lastRange.startLineNumber - 1;
+            }
+            return null;
+        };
+        for (let i = 0, len = selections.length; i < len; i++) {
+            let selection = selections[i];
+            const adjustedStartLine = adjustLine(selection.startLineNumber);
+            if (adjustedStartLine) {
+                selection = selection.setStartPosition(adjustedStartLine, editorModel.getLineMaxColumn(adjustedStartLine));
+                hasChanges = true;
+            }
+            const adjustedEndLine = adjustLine(selection.endLineNumber);
+            if (adjustedEndLine) {
+                selection = selection.setEndPosition(adjustedEndLine, editorModel.getLineMaxColumn(adjustedEndLine));
+                hasChanges = true;
+            }
+            selections[i] = selection;
+        }
+        return hasChanges;
+    }
+    dispose() {
+        if (this.hiddenRanges.length > 0) {
+            this._hiddenRanges = [];
+            this._updateEventEmitter.fire(this._hiddenRanges);
+        }
+        if (this._foldingModelListener) {
+            this._foldingModelListener.dispose();
+            this._foldingModelListener = null;
+        }
+    }
+}
+function isInside(line, range) {
+    return line >= range.startLineNumber && line <= range.endLineNumber;
+}
+function findRange(ranges, line) {
+    const i = findFirstIdxMonotonousOrArrLen(ranges, r => line < r.startLineNumber) - 1;
+    if (i >= 0 && ranges[i].endLineNumber >= line) {
+        return ranges[i];
+    }
+    return null;
+}

@@ -1,1 +1,99 @@
-import{escapeRegExpCharacters as m}from"../../../../../base/common/strings.js";import"../../../languages/languageConfigurationRegistry.js";import"../../../languages/supports/languageBracketsConfiguration.js";import{BracketAstNode as l}from"./ast.js";import{toLength as p}from"./length.js";import{identityKeyProvider as u,SmallImmutableSet as d}from"./smallImmutableSet.js";import{Token as T,TokenKind as c}from"./tokenizer.js";class k{constructor(e){this.map=e}static createFromLanguage(e,t){function r(n){return t.getKey(`${n.languageId}:::${n.bracketText}`)}const i=new Map;for(const n of e.bracketsNew.openingBrackets){const o=p(0,n.bracketText.length),a=r(n),g=d.getEmpty().add(a,u);i.set(n.bracketText,new T(o,c.OpeningBracket,a,g,l.create(o,n,g)))}for(const n of e.bracketsNew.closingBrackets){const o=p(0,n.bracketText.length);let a=d.getEmpty();const g=n.getOpeningBrackets();for(const f of g)a=a.add(r(f),u);i.set(n.bracketText,new T(o,c.ClosingBracket,r(g[0]),a,l.create(o,n,a)))}return new k(i)}hasRegExp=!1;_regExpGlobal=null;getRegExpStr(){if(this.isEmpty)return null;{const e=[...this.map.keys()];return e.sort(),e.reverse(),e.map(t=>B(t)).join("|")}}get regExpGlobal(){if(!this.hasRegExp){const e=this.getRegExpStr();this._regExpGlobal=e?new RegExp(e,"gi"):null,this.hasRegExp=!0}return this._regExpGlobal}getToken(e){return this.map.get(e.toLowerCase())}findClosingTokenText(e){for(const[t,r]of this.map)if(r.kind===c.ClosingBracket&&r.bracketIds.intersects(e))return t}get isEmpty(){return this.map.size===0}}function B(s){let e=m(s);return/^[\w ]+/.test(s)&&(e=`\\b${e}`),/[\w ]+$/.test(s)&&(e=`${e}\\b`),e}class K{constructor(e,t){this.denseKeyProvider=e;this.getLanguageConfiguration=t}languageIdToBracketTokens=new Map;didLanguageChange(e){return this.languageIdToBracketTokens.has(e)}getSingleLanguageBracketTokens(e){let t=this.languageIdToBracketTokens.get(e);return t||(t=k.createFromLanguage(this.getLanguageConfiguration(e),this.denseKeyProvider),this.languageIdToBracketTokens.set(e,t)),t}getToken(e,t){return this.getSingleLanguageBracketTokens(t).getToken(e)}}export{k as BracketTokens,K as LanguageAgnosticBracketTokens};
+import { escapeRegExpCharacters } from '../../../../../base/common/strings.js';
+import { BracketAstNode } from './ast.js';
+import { toLength } from './length.js';
+import { identityKeyProvider, SmallImmutableSet } from './smallImmutableSet.js';
+import { Token } from './tokenizer.js';
+export class BracketTokens {
+    static createFromLanguage(configuration, denseKeyProvider) {
+        function getId(bracketInfo) {
+            return denseKeyProvider.getKey(`${bracketInfo.languageId}:::${bracketInfo.bracketText}`);
+        }
+        const map = new Map();
+        for (const openingBracket of configuration.bracketsNew.openingBrackets) {
+            const length = toLength(0, openingBracket.bracketText.length);
+            const openingTextId = getId(openingBracket);
+            const bracketIds = SmallImmutableSet.getEmpty().add(openingTextId, identityKeyProvider);
+            map.set(openingBracket.bracketText, new Token(length, 1, openingTextId, bracketIds, BracketAstNode.create(length, openingBracket, bracketIds)));
+        }
+        for (const closingBracket of configuration.bracketsNew.closingBrackets) {
+            const length = toLength(0, closingBracket.bracketText.length);
+            let bracketIds = SmallImmutableSet.getEmpty();
+            const closingBrackets = closingBracket.getOpeningBrackets();
+            for (const bracket of closingBrackets) {
+                bracketIds = bracketIds.add(getId(bracket), identityKeyProvider);
+            }
+            map.set(closingBracket.bracketText, new Token(length, 2, getId(closingBrackets[0]), bracketIds, BracketAstNode.create(length, closingBracket, bracketIds)));
+        }
+        return new BracketTokens(map);
+    }
+    constructor(map) {
+        this.map = map;
+        this.hasRegExp = false;
+        this._regExpGlobal = null;
+    }
+    getRegExpStr() {
+        if (this.isEmpty) {
+            return null;
+        }
+        else {
+            const keys = [...this.map.keys()];
+            keys.sort();
+            keys.reverse();
+            return keys.map(k => prepareBracketForRegExp(k)).join('|');
+        }
+    }
+    get regExpGlobal() {
+        if (!this.hasRegExp) {
+            const regExpStr = this.getRegExpStr();
+            this._regExpGlobal = regExpStr ? new RegExp(regExpStr, 'gi') : null;
+            this.hasRegExp = true;
+        }
+        return this._regExpGlobal;
+    }
+    getToken(value) {
+        return this.map.get(value.toLowerCase());
+    }
+    findClosingTokenText(openingBracketIds) {
+        for (const [closingText, info] of this.map) {
+            if (info.kind === 2 && info.bracketIds.intersects(openingBracketIds)) {
+                return closingText;
+            }
+        }
+        return undefined;
+    }
+    get isEmpty() {
+        return this.map.size === 0;
+    }
+}
+function prepareBracketForRegExp(str) {
+    let escaped = escapeRegExpCharacters(str);
+    if (/^[\w ]+/.test(str)) {
+        escaped = `\\b${escaped}`;
+    }
+    if (/[\w ]+$/.test(str)) {
+        escaped = `${escaped}\\b`;
+    }
+    return escaped;
+}
+export class LanguageAgnosticBracketTokens {
+    constructor(denseKeyProvider, getLanguageConfiguration) {
+        this.denseKeyProvider = denseKeyProvider;
+        this.getLanguageConfiguration = getLanguageConfiguration;
+        this.languageIdToBracketTokens = new Map();
+    }
+    didLanguageChange(languageId) {
+        return this.languageIdToBracketTokens.has(languageId);
+    }
+    getSingleLanguageBracketTokens(languageId) {
+        let singleLanguageBracketTokens = this.languageIdToBracketTokens.get(languageId);
+        if (!singleLanguageBracketTokens) {
+            singleLanguageBracketTokens = BracketTokens.createFromLanguage(this.getLanguageConfiguration(languageId), this.denseKeyProvider);
+            this.languageIdToBracketTokens.set(languageId, singleLanguageBracketTokens);
+        }
+        return singleLanguageBracketTokens;
+    }
+    getToken(value, languageId) {
+        const singleLanguageBracketTokens = this.getSingleLanguageBracketTokens(languageId);
+        return singleLanguageBracketTokens.getToken(value);
+    }
+}

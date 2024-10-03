@@ -1,1 +1,134 @@
-import{forEachAdjacent as f}from"../../../../../base/common/arrays.js";import{BugIndicatingError as o}from"../../../../../base/common/errors.js";import{OffsetRange as r}from"../../../core/offsetRange.js";class a{constructor(e,t){this.diffs=e;this.hitTimeout=t}static trivial(e,t){return new a([new n(r.ofLength(e.length),r.ofLength(t.length))],!1)}static trivialTimedOut(e,t){return new a([new n(r.ofLength(e.length),r.ofLength(t.length))],!0)}}class n{constructor(e,t){this.seq1Range=e;this.seq2Range=t}static invert(e,t){const i=[];return f(e,(u,l)=>{i.push(n.fromOffsetPairs(u?u.getEndExclusives():s.zero,l?l.getStarts():new s(t,(u?u.seq2Range.endExclusive-u.seq1Range.endExclusive:0)+t)))}),i}static fromOffsetPairs(e,t){return new n(new r(e.offset1,t.offset1),new r(e.offset2,t.offset2))}static assertSorted(e){let t;for(const i of e){if(t&&!(t.seq1Range.endExclusive<=i.seq1Range.start&&t.seq2Range.endExclusive<=i.seq2Range.start))throw new o("Sequence diffs must be sorted");t=i}}swap(){return new n(this.seq2Range,this.seq1Range)}toString(){return`${this.seq1Range} <-> ${this.seq2Range}`}join(e){return new n(this.seq1Range.join(e.seq1Range),this.seq2Range.join(e.seq2Range))}delta(e){return e===0?this:new n(this.seq1Range.delta(e),this.seq2Range.delta(e))}deltaStart(e){return e===0?this:new n(this.seq1Range.deltaStart(e),this.seq2Range.deltaStart(e))}deltaEnd(e){return e===0?this:new n(this.seq1Range.deltaEnd(e),this.seq2Range.deltaEnd(e))}intersectsOrTouches(e){return this.seq1Range.intersectsOrTouches(e.seq1Range)||this.seq2Range.intersectsOrTouches(e.seq2Range)}intersect(e){const t=this.seq1Range.intersect(e.seq1Range),i=this.seq2Range.intersect(e.seq2Range);if(!(!t||!i))return new n(t,i)}getStarts(){return new s(this.seq1Range.start,this.seq2Range.start)}getEndExclusives(){return new s(this.seq1Range.endExclusive,this.seq2Range.endExclusive)}}class s{constructor(e,t){this.offset1=e;this.offset2=t}static zero=new s(0,0);static max=new s(Number.MAX_SAFE_INTEGER,Number.MAX_SAFE_INTEGER);toString(){return`${this.offset1} <-> ${this.offset2}`}delta(e){return e===0?this:new s(this.offset1+e,this.offset2+e)}equals(e){return this.offset1===e.offset1&&this.offset2===e.offset2}}class c{static instance=new c;isValid(){return!0}}class h{constructor(e){this.timeout=e;if(e<=0)throw new o("timeout must be positive")}startTime=Date.now();valid=!0;isValid(){return!(Date.now()-this.startTime<this.timeout)&&this.valid&&(this.valid=!1),this.valid}disable(){this.timeout=Number.MAX_SAFE_INTEGER,this.isValid=()=>!0,this.valid=!0}}export{h as DateTimeout,a as DiffAlgorithmResult,c as InfiniteTimeout,s as OffsetPair,n as SequenceDiff};
+import { forEachAdjacent } from '../../../../../base/common/arrays.js';
+import { BugIndicatingError } from '../../../../../base/common/errors.js';
+import { OffsetRange } from '../../../core/offsetRange.js';
+export class DiffAlgorithmResult {
+    static trivial(seq1, seq2) {
+        return new DiffAlgorithmResult([new SequenceDiff(OffsetRange.ofLength(seq1.length), OffsetRange.ofLength(seq2.length))], false);
+    }
+    static trivialTimedOut(seq1, seq2) {
+        return new DiffAlgorithmResult([new SequenceDiff(OffsetRange.ofLength(seq1.length), OffsetRange.ofLength(seq2.length))], true);
+    }
+    constructor(diffs, hitTimeout) {
+        this.diffs = diffs;
+        this.hitTimeout = hitTimeout;
+    }
+}
+export class SequenceDiff {
+    static invert(sequenceDiffs, doc1Length) {
+        const result = [];
+        forEachAdjacent(sequenceDiffs, (a, b) => {
+            result.push(SequenceDiff.fromOffsetPairs(a ? a.getEndExclusives() : OffsetPair.zero, b ? b.getStarts() : new OffsetPair(doc1Length, (a ? a.seq2Range.endExclusive - a.seq1Range.endExclusive : 0) + doc1Length)));
+        });
+        return result;
+    }
+    static fromOffsetPairs(start, endExclusive) {
+        return new SequenceDiff(new OffsetRange(start.offset1, endExclusive.offset1), new OffsetRange(start.offset2, endExclusive.offset2));
+    }
+    static assertSorted(sequenceDiffs) {
+        let last = undefined;
+        for (const cur of sequenceDiffs) {
+            if (last) {
+                if (!(last.seq1Range.endExclusive <= cur.seq1Range.start && last.seq2Range.endExclusive <= cur.seq2Range.start)) {
+                    throw new BugIndicatingError('Sequence diffs must be sorted');
+                }
+            }
+            last = cur;
+        }
+    }
+    constructor(seq1Range, seq2Range) {
+        this.seq1Range = seq1Range;
+        this.seq2Range = seq2Range;
+    }
+    swap() {
+        return new SequenceDiff(this.seq2Range, this.seq1Range);
+    }
+    toString() {
+        return `${this.seq1Range} <-> ${this.seq2Range}`;
+    }
+    join(other) {
+        return new SequenceDiff(this.seq1Range.join(other.seq1Range), this.seq2Range.join(other.seq2Range));
+    }
+    delta(offset) {
+        if (offset === 0) {
+            return this;
+        }
+        return new SequenceDiff(this.seq1Range.delta(offset), this.seq2Range.delta(offset));
+    }
+    deltaStart(offset) {
+        if (offset === 0) {
+            return this;
+        }
+        return new SequenceDiff(this.seq1Range.deltaStart(offset), this.seq2Range.deltaStart(offset));
+    }
+    deltaEnd(offset) {
+        if (offset === 0) {
+            return this;
+        }
+        return new SequenceDiff(this.seq1Range.deltaEnd(offset), this.seq2Range.deltaEnd(offset));
+    }
+    intersectsOrTouches(other) {
+        return this.seq1Range.intersectsOrTouches(other.seq1Range) || this.seq2Range.intersectsOrTouches(other.seq2Range);
+    }
+    intersect(other) {
+        const i1 = this.seq1Range.intersect(other.seq1Range);
+        const i2 = this.seq2Range.intersect(other.seq2Range);
+        if (!i1 || !i2) {
+            return undefined;
+        }
+        return new SequenceDiff(i1, i2);
+    }
+    getStarts() {
+        return new OffsetPair(this.seq1Range.start, this.seq2Range.start);
+    }
+    getEndExclusives() {
+        return new OffsetPair(this.seq1Range.endExclusive, this.seq2Range.endExclusive);
+    }
+}
+export class OffsetPair {
+    static { this.zero = new OffsetPair(0, 0); }
+    static { this.max = new OffsetPair(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER); }
+    constructor(offset1, offset2) {
+        this.offset1 = offset1;
+        this.offset2 = offset2;
+    }
+    toString() {
+        return `${this.offset1} <-> ${this.offset2}`;
+    }
+    delta(offset) {
+        if (offset === 0) {
+            return this;
+        }
+        return new OffsetPair(this.offset1 + offset, this.offset2 + offset);
+    }
+    equals(other) {
+        return this.offset1 === other.offset1 && this.offset2 === other.offset2;
+    }
+}
+export class InfiniteTimeout {
+    static { this.instance = new InfiniteTimeout(); }
+    isValid() {
+        return true;
+    }
+}
+export class DateTimeout {
+    constructor(timeout) {
+        this.timeout = timeout;
+        this.startTime = Date.now();
+        this.valid = true;
+        if (timeout <= 0) {
+            throw new BugIndicatingError('timeout must be positive');
+        }
+    }
+    isValid() {
+        const valid = Date.now() - this.startTime < this.timeout;
+        if (!valid && this.valid) {
+            this.valid = false;
+        }
+        return this.valid;
+    }
+    disable() {
+        this.timeout = Number.MAX_SAFE_INTEGER;
+        this.isValid = () => true;
+        this.valid = true;
+    }
+}

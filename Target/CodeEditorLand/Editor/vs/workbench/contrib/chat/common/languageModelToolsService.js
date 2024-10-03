@@ -1,1 +1,158 @@
-var v=Object.defineProperty;var y=Object.getOwnPropertyDescriptor;var T=(a,r,e,o)=>{for(var n=o>1?void 0:o?y(r,e):r,t=a.length-1,i;t>=0;t--)(i=a[t])&&(n=(o?i(r,e,n):i(n))||n);return o&&n&&v(r,e,n),n},s=(a,r)=>(e,o)=>r(e,o,a);import{RunOnceScheduler as x}from"../../../../base/common/async.js";import"../../../../base/common/cancellation.js";import{CancellationError as _}from"../../../../base/common/errors.js";import{Emitter as w}from"../../../../base/common/event.js";import"../../../../base/common/htmlContent.js";import{Iterable as f}from"../../../../base/common/iterator.js";import"../../../../base/common/jsonSchema.js";import{Disposable as S,toDisposable as g}from"../../../../base/common/lifecycle.js";import"../../../../base/common/themables.js";import"../../../../base/common/uri.js";import{localize as c}from"../../../../nls.js";import{IContextKeyService as k}from"../../../../platform/contextkey/common/contextkey.js";import{createDecorator as D}from"../../../../platform/instantiation/common/instantiation.js";import{IExtensionService as M}from"../../../services/extensions/common/extensions.js";import"./chatModel.js";import{ChatToolInvocation as E}from"./chatProgressTypes/chatToolInvocation.js";import{IChatService as b}from"./chatService.js";const re=D("ILanguageModelToolsService");let l=class extends S{constructor(e,o,n){super();this._extensionService=e;this._contextKeyService=o;this._chatService=n;this._register(this._contextKeyService.onDidChangeContext(t=>{t.affectsSome(this._toolContextKeys)&&this._onDidChangeToolsScheduler.schedule()}))}_serviceBrand;_onDidChangeTools=new w;onDidChangeTools=this._onDidChangeTools.event;_onDidChangeToolsScheduler=new x(()=>this._onDidChangeTools.fire(),750);_tools=new Map;_toolContextKeys=new Set;registerToolData(e){if(this._tools.has(e.id))throw new Error(`Tool "${e.id}" is already registered.`);return e.supportedContentTypes.includes("text/plain")||e.supportedContentTypes.push("text/plain"),this._tools.set(e.id,{data:e}),this._onDidChangeToolsScheduler.schedule(),e.when?.keys().forEach(o=>this._toolContextKeys.add(o)),g(()=>{this._tools.delete(e.id),this._refreshAllToolContextKeys(),this._onDidChangeToolsScheduler.schedule()})}_refreshAllToolContextKeys(){this._toolContextKeys.clear();for(const e of this._tools.values())e.data.when?.keys().forEach(o=>this._toolContextKeys.add(o))}registerToolImplementation(e,o){const n=this._tools.get(e);if(!n)throw new Error(`Tool "${e}" was not contributed.`);if(n.impl)throw new Error(`Tool "${e}" already has an implementation.`);return n.impl=o,g(()=>{n.impl=void 0})}getTools(){const e=f.map(this._tools.values(),o=>o.data);return f.filter(e,o=>!o.when||this._contextKeyService.contextMatchesRules(o.when))}getTool(e){return this._getToolEntry(e)?.data}_getToolEntry(e){const o=this._tools.get(e);if(o&&(!o.data.when||this._contextKeyService.contextMatchesRules(o.data.when)))return o}getToolByName(e){for(const o of this.getTools())if(o.name===e)return o}async invokeTool(e,o,n){let t=this._tools.get(e.toolId);if(!t)throw new Error(`Tool ${e.toolId} was not contributed`);if(!t.impl&&(await this._extensionService.activateByEvent(`onLanguageModelTool:${e.toolId}`),t=this._tools.get(e.toolId),!t?.impl))throw new Error(`Tool ${e.toolId} does not have an implementation registered.`);let i;if(e.context){const d=this._chatService.getSession(e.context?.sessionId),m=d.getRequests().at(-1),p=m.response?.agent?.fullName??"",I=async()=>{if(t.data.requiresConfirmation)return await t.impl.provideToolConfirmationMessages(p,e.parameters,n)??{title:c("toolConfirmTitle","Use {0}?",`"${t.data.displayName??t.data.id}"`),message:c("toolConfirmMessage","{0} will use {1}.",p,`"${t.data.displayName??t.data.id}"`)}},[h,u]=await Promise.all([t.impl.provideToolInvocationMessage(e.parameters,n),I()]),C=c("toolInvocationMessage","Using {0}",`"${t.data.displayName??t.data.id}"`);if(i=new E(h??C,u),n.onCancellationRequested(()=>{i.confirmed.complete(!1)}),d.acceptResponseProgress(m,i),t.data.requiresConfirmation&&!await i.confirmed.p)throw new _}try{return t.impl.invoke(e,o,n)}finally{i?.complete()}}};l=T([s(0,M),s(1,k),s(2,b)],l);export{re as ILanguageModelToolsService,l as LanguageModelToolsService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { RunOnceScheduler } from '../../../../base/common/async.js';
+import { CancellationError } from '../../../../base/common/errors.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { Disposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { localize } from '../../../../nls.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { ChatToolInvocation } from './chatProgressTypes/chatToolInvocation.js';
+import { IChatService } from './chatService.js';
+export const ILanguageModelToolsService = createDecorator('ILanguageModelToolsService');
+let LanguageModelToolsService = class LanguageModelToolsService extends Disposable {
+    constructor(_extensionService, _contextKeyService, _chatService) {
+        super();
+        this._extensionService = _extensionService;
+        this._contextKeyService = _contextKeyService;
+        this._chatService = _chatService;
+        this._onDidChangeTools = new Emitter();
+        this.onDidChangeTools = this._onDidChangeTools.event;
+        this._onDidChangeToolsScheduler = new RunOnceScheduler(() => this._onDidChangeTools.fire(), 750);
+        this._tools = new Map();
+        this._toolContextKeys = new Set();
+        this._register(this._contextKeyService.onDidChangeContext(e => {
+            if (e.affectsSome(this._toolContextKeys)) {
+                this._onDidChangeToolsScheduler.schedule();
+            }
+        }));
+    }
+    registerToolData(toolData) {
+        if (this._tools.has(toolData.id)) {
+            throw new Error(`Tool "${toolData.id}" is already registered.`);
+        }
+        if (!toolData.supportedContentTypes.includes('text/plain')) {
+            toolData.supportedContentTypes.push('text/plain');
+        }
+        this._tools.set(toolData.id, { data: toolData });
+        this._onDidChangeToolsScheduler.schedule();
+        toolData.when?.keys().forEach(key => this._toolContextKeys.add(key));
+        return toDisposable(() => {
+            this._tools.delete(toolData.id);
+            this._refreshAllToolContextKeys();
+            this._onDidChangeToolsScheduler.schedule();
+        });
+    }
+    _refreshAllToolContextKeys() {
+        this._toolContextKeys.clear();
+        for (const tool of this._tools.values()) {
+            tool.data.when?.keys().forEach(key => this._toolContextKeys.add(key));
+        }
+    }
+    registerToolImplementation(id, tool) {
+        const entry = this._tools.get(id);
+        if (!entry) {
+            throw new Error(`Tool "${id}" was not contributed.`);
+        }
+        if (entry.impl) {
+            throw new Error(`Tool "${id}" already has an implementation.`);
+        }
+        entry.impl = tool;
+        return toDisposable(() => {
+            entry.impl = undefined;
+        });
+    }
+    getTools() {
+        const toolDatas = Iterable.map(this._tools.values(), i => i.data);
+        return Iterable.filter(toolDatas, toolData => !toolData.when || this._contextKeyService.contextMatchesRules(toolData.when));
+    }
+    getTool(id) {
+        return this._getToolEntry(id)?.data;
+    }
+    _getToolEntry(id) {
+        const entry = this._tools.get(id);
+        if (entry && (!entry.data.when || this._contextKeyService.contextMatchesRules(entry.data.when))) {
+            return entry;
+        }
+        else {
+            return undefined;
+        }
+    }
+    getToolByName(name) {
+        for (const toolData of this.getTools()) {
+            if (toolData.name === name) {
+                return toolData;
+            }
+        }
+        return undefined;
+    }
+    async invokeTool(dto, countTokens, token) {
+        let tool = this._tools.get(dto.toolId);
+        if (!tool) {
+            throw new Error(`Tool ${dto.toolId} was not contributed`);
+        }
+        if (!tool.impl) {
+            await this._extensionService.activateByEvent(`onLanguageModelTool:${dto.toolId}`);
+            tool = this._tools.get(dto.toolId);
+            if (!tool?.impl) {
+                throw new Error(`Tool ${dto.toolId} does not have an implementation registered.`);
+            }
+        }
+        let toolInvocation;
+        if (dto.context) {
+            const model = this._chatService.getSession(dto.context?.sessionId);
+            const request = model.getRequests().at(-1);
+            const participantName = request.response?.agent?.fullName ?? '';
+            const getConfirmationMessages = async () => {
+                if (!tool.data.requiresConfirmation) {
+                    return undefined;
+                }
+                return (await tool.impl.provideToolConfirmationMessages(participantName, dto.parameters, token)) ?? {
+                    title: localize('toolConfirmTitle', "Use {0}?", `"${tool.data.displayName ?? tool.data.id}"`),
+                    message: localize('toolConfirmMessage', "{0} will use {1}.", participantName, `"${tool.data.displayName ?? tool.data.id}"`),
+                };
+            };
+            const [invocationMessage, confirmationMessages] = await Promise.all([
+                tool.impl.provideToolInvocationMessage(dto.parameters, token),
+                getConfirmationMessages()
+            ]);
+            const defaultMessage = localize('toolInvocationMessage', "Using {0}", `"${tool.data.displayName ?? tool.data.id}"`);
+            toolInvocation = new ChatToolInvocation(invocationMessage ?? defaultMessage, confirmationMessages);
+            token.onCancellationRequested(() => {
+                toolInvocation.confirmed.complete(false);
+            });
+            model.acceptResponseProgress(request, toolInvocation);
+            if (tool.data.requiresConfirmation) {
+                const userConfirmed = await toolInvocation.confirmed.p;
+                if (!userConfirmed) {
+                    throw new CancellationError();
+                }
+            }
+        }
+        try {
+            return tool.impl.invoke(dto, countTokens, token);
+        }
+        finally {
+            toolInvocation?.complete();
+        }
+    }
+};
+LanguageModelToolsService = __decorate([
+    __param(0, IExtensionService),
+    __param(1, IContextKeyService),
+    __param(2, IChatService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], LanguageModelToolsService);
+export { LanguageModelToolsService };

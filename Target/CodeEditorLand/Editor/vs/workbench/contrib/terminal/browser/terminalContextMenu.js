@@ -1,1 +1,39 @@
-import{StandardMouseEvent as d}from"../../../../base/browser/mouseEvent.js";import{ActionRunner as u}from"../../../../base/common/actions.js";import{asArray as l}from"../../../../base/common/arrays.js";import{MarshalledId as p}from"../../../../base/common/marshallingIds.js";import"../../../../base/common/types.js";import{createAndFillInContextMenuActions as A}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import"../../../../platform/actions/common/actions.js";import"../../../../platform/contextview/browser/contextView.js";import"./terminal.js";import"../common/terminal.js";class a{instanceId;constructor(e){this.instanceId=e.instanceId}toJSON(){return{$mid:p.TerminalContext,instanceId:this.instanceId}}}class f extends u{async runAction(e,n){if(Array.isArray(n)&&n.every(r=>r instanceof a)){await e.run(n?.[0],n);return}return super.runAction(e,n)}}function J(t,e,n,r,s,i){const c=new d(t,e),o=[];A(r,{shouldForwardArgs:!0},o),i&&o.push(...i);const m=n?l(n).map(I=>new a(I)):[];s.showContextMenu({actionRunner:new f,getAnchor:()=>c,getActions:()=>o,getActionsContext:()=>m})}export{a as InstanceContext,f as TerminalContextActionRunner,J as openContextMenu};
+import { StandardMouseEvent } from '../../../../base/browser/mouseEvent.js';
+import { ActionRunner } from '../../../../base/common/actions.js';
+import { asArray } from '../../../../base/common/arrays.js';
+import { createAndFillInContextMenuActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+export class InstanceContext {
+    constructor(instance) {
+        this.instanceId = instance.instanceId;
+    }
+    toJSON() {
+        return {
+            $mid: 15,
+            instanceId: this.instanceId
+        };
+    }
+}
+export class TerminalContextActionRunner extends ActionRunner {
+    async runAction(action, context) {
+        if (Array.isArray(context) && context.every(e => e instanceof InstanceContext)) {
+            await action.run(context?.[0], context);
+            return;
+        }
+        return super.runAction(action, context);
+    }
+}
+export function openContextMenu(targetWindow, event, contextInstances, menu, contextMenuService, extraActions) {
+    const standardEvent = new StandardMouseEvent(targetWindow, event);
+    const actions = [];
+    createAndFillInContextMenuActions(menu, { shouldForwardArgs: true }, actions);
+    if (extraActions) {
+        actions.push(...extraActions);
+    }
+    const context = contextInstances ? asArray(contextInstances).map(e => new InstanceContext(e)) : [];
+    contextMenuService.showContextMenu({
+        actionRunner: new TerminalContextActionRunner(),
+        getAnchor: () => standardEvent,
+        getActions: () => actions,
+        getActionsContext: () => context,
+    });
+}

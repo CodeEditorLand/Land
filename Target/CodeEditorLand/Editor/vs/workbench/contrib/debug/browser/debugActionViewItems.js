@@ -1,1 +1,330 @@
-var A=Object.defineProperty;var B=Object.getOwnPropertyDescriptor;var f=(g,u,e,t)=>{for(var s=t>1?void 0:t?B(u,e):u,r=g.length-1,i;r>=0;r--)(i=g[r])&&(s=(t?i(u,e,s):i(s))||s);return t&&s&&A(u,e,s),s},c=(g,u)=>(e,t)=>u(e,t,g);import*as h from"../../../../nls.js";import"../../../../base/common/actions.js";import{KeyCode as S}from"../../../../base/common/keyCodes.js";import*as a from"../../../../base/browser/dom.js";import{StandardKeyboardEvent as m}from"../../../../base/browser/keyboardEvent.js";import{SelectBox as T}from"../../../../base/browser/ui/selectBox/selectBox.js";import{IConfigurationService as y}from"../../../../platform/configuration/common/configuration.js";import{ICommandService as k}from"../../../../platform/commands/common/commands.js";import{IDebugService as I,State as w}from"../common/debug.js";import{ThemeIcon as K}from"../../../../base/common/themables.js";import{selectBorder as D,selectBackground as M,asCssVariable as v}from"../../../../platform/theme/common/colorRegistry.js";import{IContextViewService as C}from"../../../../platform/contextview/browser/contextView.js";import{IWorkspaceContextService as P,WorkbenchState as R}from"../../../../platform/workspace/common/workspace.js";import{dispose as x}from"../../../../base/common/lifecycle.js";import{ADD_CONFIGURATION_ID as _}from"./debugCommands.js";import{BaseActionViewItem as W,SelectActionViewItem as N}from"../../../../base/browser/ui/actionbar/actionViewItems.js";import{debugStart as H}from"./debugIcons.js";import{IKeybindingService as $}from"../../../../platform/keybinding/common/keybinding.js";import{defaultSelectBoxStyles as O}from"../../../../platform/theme/browser/defaultStyles.js";import{getDefaultHoverDelegate as z}from"../../../../base/browser/ui/hover/hoverDelegateFactory.js";import{IHoverService as F}from"../../../../platform/hover/browser/hover.js";import{AccessibilityVerbositySettingId as U}from"../../accessibility/browser/accessibilityConfiguration.js";import{AccessibilityCommandId as V}from"../../accessibility/common/accessibilityCommands.js";import{IContextKeyService as q}from"../../../../platform/contextkey/common/contextkey.js";const L=a.$;let p=class extends W{constructor(e,t,s,r,i,o,d,n,l,E,G){super(e,t,s);this.context=e;this.debugService=r;this.configurationService=i;this.commandService=o;this.contextService=d;this.keybindingService=l;this.hoverService=E;this.contextKeyService=G;this.toDispose=[],this.selectBox=new T([],-1,n,O,{ariaLabel:h.localize("debugLaunchConfigurations","Debug Launch Configurations")}),this.selectBox.setFocusable(!1),this.toDispose.push(this.selectBox),this.registerListeners()}static SEPARATOR="\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500";container;start;selectBox;debugOptions=[];toDispose;selected=0;providers=[];registerListeners(){this.toDispose.push(this.configurationService.onDidChangeConfiguration(e=>{e.affectsConfiguration("launch")&&this.updateOptions()})),this.toDispose.push(this.debugService.getConfigurationManager().onDidSelectConfiguration(()=>{this.updateOptions()}))}render(e){this.container=e,e.classList.add("start-debug-action-item"),this.start=a.append(e,L(K.asCSSSelector(H)));const t=this.keybindingService.lookupKeybinding(this.action.id)?.getLabel(),s=t?` (${t})`:"",r=this.action.label+s;this.toDispose.push(this.hoverService.setupManagedHover(z("mouse"),this.start,r)),this.start.setAttribute("role","button"),this._setAriaLabel(r),this.toDispose.push(a.addDisposableListener(this.start,a.EventType.CLICK,()=>{this.start.blur(),this.debugService.state!==w.Initializing&&this.actionRunner.run(this.action,this.context)})),this.toDispose.push(a.addDisposableListener(this.start,a.EventType.MOUSE_DOWN,n=>{this.action.enabled&&n.button===0&&this.start.classList.add("active")})),this.toDispose.push(a.addDisposableListener(this.start,a.EventType.MOUSE_UP,()=>{this.start.classList.remove("active")})),this.toDispose.push(a.addDisposableListener(this.start,a.EventType.MOUSE_OUT,()=>{this.start.classList.remove("active")})),this.toDispose.push(a.addDisposableListener(this.start,a.EventType.KEY_DOWN,n=>{const l=new m(n);l.equals(S.RightArrow)&&(this.start.tabIndex=-1,this.selectBox.focus(),l.stopPropagation())})),this.toDispose.push(this.selectBox.onDidSelect(async n=>{const l=this.debugOptions[n.index];(l.handler?await l.handler():!1)?this.selected=n.index:this.selectBox.select(this.selected)}));const i=L(".configuration");this.selectBox.render(a.append(e,i)),this.toDispose.push(a.addDisposableListener(i,a.EventType.KEY_DOWN,n=>{const l=new m(n);l.equals(S.LeftArrow)&&(this.selectBox.setFocusable(!1),this.start.tabIndex=0,this.start.focus(),l.stopPropagation())})),this.container.style.border=`1px solid ${v(D)}`,i.style.borderLeft=`1px solid ${v(D)}`,this.container.style.backgroundColor=v(M);const o=this.debugService.getConfigurationManager(),d=()=>o.getDynamicProviders().then(n=>{n.length!==this.providers.length&&(this.providers=n,this.updateOptions())});this.toDispose.push(o.onDidChangeConfigurationProviders(d)),d(),this.updateOptions()}setActionContext(e){this.context=e}isEnabled(){return!0}focus(e){e?this.selectBox.focus():(this.start.tabIndex=0,this.start.focus())}blur(){this.start.tabIndex=-1,this.selectBox.blur(),this.container.blur()}setFocusable(e){e?this.start.tabIndex=0:(this.start.tabIndex=-1,this.selectBox.setFocusable(!1))}dispose(){this.toDispose=x(this.toDispose),super.dispose()}updateOptions(){this.selected=0,this.debugOptions=[];const e=this.debugService.getConfigurationManager(),t=this.contextService.getWorkbenchState()===R.WORKSPACE;let s;const r=[];e.getAllConfigurations().forEach(({launch:i,name:o,presentation:d})=>{s!==d?.group&&(s=d?.group,this.debugOptions.length&&(this.debugOptions.push({label:p.SEPARATOR,handler:()=>Promise.resolve(!1)}),r.push(this.debugOptions.length-1))),o===e.selectedConfiguration.name&&i===e.selectedConfiguration.launch&&(this.selected=this.debugOptions.length);const n=t?`${o} (${i.name})`:o;this.debugOptions.push({label:n,handler:async()=>(await e.selectConfiguration(i,o),!0)})}),e.getRecentDynamicConfigurations().slice(0,3).forEach(({name:i,type:o})=>{o===e.selectedConfiguration.type&&e.selectedConfiguration.name===i&&(this.selected=this.debugOptions.length),this.debugOptions.push({label:i,handler:async()=>(await e.selectConfiguration(void 0,i,void 0,{type:o}),!0)})}),this.debugOptions.length===0&&this.debugOptions.push({label:h.localize("noConfigurations","No Configurations"),handler:async()=>!1}),this.debugOptions.push({label:p.SEPARATOR,handler:()=>Promise.resolve(!1)}),r.push(this.debugOptions.length-1),this.providers.forEach(i=>{this.debugOptions.push({label:`${i.label}...`,handler:async()=>{const o=await i.pick();return o?(await e.selectConfiguration(o.launch,o.config.name,o.config,{type:i.type}),!0):!1}})}),e.getLaunches().filter(i=>!i.hidden).forEach(i=>{const o=t?h.localize("addConfigTo","Add Config ({0})...",i.name):h.localize("addConfiguration","Add Configuration...");this.debugOptions.push({label:o,handler:async()=>(await this.commandService.executeCommand(_,i.uri.toString()),!1)})}),this.selectBox.setOptions(this.debugOptions.map((i,o)=>({text:i.label,isDisabled:r.indexOf(o)!==-1})),this.selected)}_setAriaLabel(e){let t=e,s;this.configurationService.getValue(U.Debug)&&(s=this.keybindingService.lookupKeybinding(V.OpenAccessibilityHelp,this.contextKeyService)?.getLabel()??void 0),s?t=h.localize("commentLabelWithKeybinding","{0}, use ({1}) for accessibility help",t,s):t=h.localize("commentLabelWithKeybindingNoKeybinding","{0}, run the command Open Accessibility Help which is currently not triggerable via keybinding.",t),this.start.ariaLabel=t}};p=f([c(3,I),c(4,y),c(5,k),c(6,P),c(7,C),c(8,$),c(9,F),c(10,q)],p);let b=class extends N{constructor(e,t,s,r,i){super(null,e,[],-1,r,O,{ariaLabel:h.localize("debugSession","Debug Session")});this.debugService=s;this.configurationService=i;this._register(this.debugService.getViewModel().onDidFocusSession(()=>{const d=this.getSelectedSession();if(d){const n=this.getSessions().indexOf(d);this.select(n)}})),this._register(this.debugService.onDidNewSession(d=>{const n=[];n.push(d.onDidChangeName(()=>this.update())),n.push(d.onDidEndAdapter(()=>x(n))),this.update()})),this.getSessions().forEach(d=>{this._register(d.onDidChangeName(()=>this.update()))}),this._register(this.debugService.onDidEndSession(()=>this.update()));const o=t?this.mapFocusedSessionToSelected(t):void 0;this.update(o)}getActionContext(e,t){return this.getSessions()[t]}update(e){e||(e=this.getSelectedSession());const t=this.getSessions(),s=t.map(r=>{const i=r.getLabel();return r.parentSession?`\xA0\xA0${i}`:i});this.setOptions(s.map(r=>({text:r})),e?t.indexOf(e):void 0)}getSelectedSession(){const e=this.debugService.getViewModel().focusedSession;return e?this.mapFocusedSessionToSelected(e):void 0}getSessions(){const e=this.configurationService.getValue("debug").showSubSessionsInToolBar,t=this.debugService.getModel().getSessions();return e?t:t.filter(s=>!s.parentSession)}mapFocusedSessionToSelected(e){const t=this.configurationService.getValue("debug").showSubSessionsInToolBar;for(;e.parentSession&&!t;)e=e.parentSession;return e}};b=f([c(2,I),c(3,C),c(4,y)],b);export{b as FocusSessionActionViewItem,p as StartDebugActionViewItem};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var StartDebugActionViewItem_1;
+import * as nls from '../../../../nls.js';
+import * as dom from '../../../../base/browser/dom.js';
+import { StandardKeyboardEvent } from '../../../../base/browser/keyboardEvent.js';
+import { SelectBox } from '../../../../base/browser/ui/selectBox/selectBox.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IDebugService } from '../common/debug.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { selectBorder, selectBackground, asCssVariable } from '../../../../platform/theme/common/colorRegistry.js';
+import { IContextViewService } from '../../../../platform/contextview/browser/contextView.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { dispose } from '../../../../base/common/lifecycle.js';
+import { ADD_CONFIGURATION_ID } from './debugCommands.js';
+import { BaseActionViewItem, SelectActionViewItem } from '../../../../base/browser/ui/actionbar/actionViewItems.js';
+import { debugStart } from './debugIcons.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { defaultSelectBoxStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+import { getDefaultHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { IHoverService } from '../../../../platform/hover/browser/hover.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+const $ = dom.$;
+let StartDebugActionViewItem = class StartDebugActionViewItem extends BaseActionViewItem {
+    static { StartDebugActionViewItem_1 = this; }
+    static { this.SEPARATOR = '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500'; }
+    constructor(context, action, options, debugService, configurationService, commandService, contextService, contextViewService, keybindingService, hoverService, contextKeyService) {
+        super(context, action, options);
+        this.context = context;
+        this.debugService = debugService;
+        this.configurationService = configurationService;
+        this.commandService = commandService;
+        this.contextService = contextService;
+        this.keybindingService = keybindingService;
+        this.hoverService = hoverService;
+        this.contextKeyService = contextKeyService;
+        this.debugOptions = [];
+        this.selected = 0;
+        this.providers = [];
+        this.toDispose = [];
+        this.selectBox = new SelectBox([], -1, contextViewService, defaultSelectBoxStyles, { ariaLabel: nls.localize('debugLaunchConfigurations', 'Debug Launch Configurations') });
+        this.selectBox.setFocusable(false);
+        this.toDispose.push(this.selectBox);
+        this.registerListeners();
+    }
+    registerListeners() {
+        this.toDispose.push(this.configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('launch')) {
+                this.updateOptions();
+            }
+        }));
+        this.toDispose.push(this.debugService.getConfigurationManager().onDidSelectConfiguration(() => {
+            this.updateOptions();
+        }));
+    }
+    render(container) {
+        this.container = container;
+        container.classList.add('start-debug-action-item');
+        this.start = dom.append(container, $(ThemeIcon.asCSSSelector(debugStart)));
+        const keybinding = this.keybindingService.lookupKeybinding(this.action.id)?.getLabel();
+        const keybindingLabel = keybinding ? ` (${keybinding})` : '';
+        const title = this.action.label + keybindingLabel;
+        this.toDispose.push(this.hoverService.setupManagedHover(getDefaultHoverDelegate('mouse'), this.start, title));
+        this.start.setAttribute('role', 'button');
+        this._setAriaLabel(title);
+        this.toDispose.push(dom.addDisposableListener(this.start, dom.EventType.CLICK, () => {
+            this.start.blur();
+            if (this.debugService.state !== 1) {
+                this.actionRunner.run(this.action, this.context);
+            }
+        }));
+        this.toDispose.push(dom.addDisposableListener(this.start, dom.EventType.MOUSE_DOWN, (e) => {
+            if (this.action.enabled && e.button === 0) {
+                this.start.classList.add('active');
+            }
+        }));
+        this.toDispose.push(dom.addDisposableListener(this.start, dom.EventType.MOUSE_UP, () => {
+            this.start.classList.remove('active');
+        }));
+        this.toDispose.push(dom.addDisposableListener(this.start, dom.EventType.MOUSE_OUT, () => {
+            this.start.classList.remove('active');
+        }));
+        this.toDispose.push(dom.addDisposableListener(this.start, dom.EventType.KEY_DOWN, (e) => {
+            const event = new StandardKeyboardEvent(e);
+            if (event.equals(17)) {
+                this.start.tabIndex = -1;
+                this.selectBox.focus();
+                event.stopPropagation();
+            }
+        }));
+        this.toDispose.push(this.selectBox.onDidSelect(async (e) => {
+            const target = this.debugOptions[e.index];
+            const shouldBeSelected = target.handler ? await target.handler() : false;
+            if (shouldBeSelected) {
+                this.selected = e.index;
+            }
+            else {
+                this.selectBox.select(this.selected);
+            }
+        }));
+        const selectBoxContainer = $('.configuration');
+        this.selectBox.render(dom.append(container, selectBoxContainer));
+        this.toDispose.push(dom.addDisposableListener(selectBoxContainer, dom.EventType.KEY_DOWN, (e) => {
+            const event = new StandardKeyboardEvent(e);
+            if (event.equals(15)) {
+                this.selectBox.setFocusable(false);
+                this.start.tabIndex = 0;
+                this.start.focus();
+                event.stopPropagation();
+            }
+        }));
+        this.container.style.border = `1px solid ${asCssVariable(selectBorder)}`;
+        selectBoxContainer.style.borderLeft = `1px solid ${asCssVariable(selectBorder)}`;
+        this.container.style.backgroundColor = asCssVariable(selectBackground);
+        const configManager = this.debugService.getConfigurationManager();
+        const updateDynamicConfigs = () => configManager.getDynamicProviders().then(providers => {
+            if (providers.length !== this.providers.length) {
+                this.providers = providers;
+                this.updateOptions();
+            }
+        });
+        this.toDispose.push(configManager.onDidChangeConfigurationProviders(updateDynamicConfigs));
+        updateDynamicConfigs();
+        this.updateOptions();
+    }
+    setActionContext(context) {
+        this.context = context;
+    }
+    isEnabled() {
+        return true;
+    }
+    focus(fromRight) {
+        if (fromRight) {
+            this.selectBox.focus();
+        }
+        else {
+            this.start.tabIndex = 0;
+            this.start.focus();
+        }
+    }
+    blur() {
+        this.start.tabIndex = -1;
+        this.selectBox.blur();
+        this.container.blur();
+    }
+    setFocusable(focusable) {
+        if (focusable) {
+            this.start.tabIndex = 0;
+        }
+        else {
+            this.start.tabIndex = -1;
+            this.selectBox.setFocusable(false);
+        }
+    }
+    dispose() {
+        this.toDispose = dispose(this.toDispose);
+        super.dispose();
+    }
+    updateOptions() {
+        this.selected = 0;
+        this.debugOptions = [];
+        const manager = this.debugService.getConfigurationManager();
+        const inWorkspace = this.contextService.getWorkbenchState() === 3;
+        let lastGroup;
+        const disabledIdxs = [];
+        manager.getAllConfigurations().forEach(({ launch, name, presentation }) => {
+            if (lastGroup !== presentation?.group) {
+                lastGroup = presentation?.group;
+                if (this.debugOptions.length) {
+                    this.debugOptions.push({ label: StartDebugActionViewItem_1.SEPARATOR, handler: () => Promise.resolve(false) });
+                    disabledIdxs.push(this.debugOptions.length - 1);
+                }
+            }
+            if (name === manager.selectedConfiguration.name && launch === manager.selectedConfiguration.launch) {
+                this.selected = this.debugOptions.length;
+            }
+            const label = inWorkspace ? `${name} (${launch.name})` : name;
+            this.debugOptions.push({
+                label, handler: async () => {
+                    await manager.selectConfiguration(launch, name);
+                    return true;
+                }
+            });
+        });
+        manager.getRecentDynamicConfigurations().slice(0, 3).forEach(({ name, type }) => {
+            if (type === manager.selectedConfiguration.type && manager.selectedConfiguration.name === name) {
+                this.selected = this.debugOptions.length;
+            }
+            this.debugOptions.push({
+                label: name,
+                handler: async () => {
+                    await manager.selectConfiguration(undefined, name, undefined, { type });
+                    return true;
+                }
+            });
+        });
+        if (this.debugOptions.length === 0) {
+            this.debugOptions.push({ label: nls.localize('noConfigurations', "No Configurations"), handler: async () => false });
+        }
+        this.debugOptions.push({ label: StartDebugActionViewItem_1.SEPARATOR, handler: () => Promise.resolve(false) });
+        disabledIdxs.push(this.debugOptions.length - 1);
+        this.providers.forEach(p => {
+            this.debugOptions.push({
+                label: `${p.label}...`,
+                handler: async () => {
+                    const picked = await p.pick();
+                    if (picked) {
+                        await manager.selectConfiguration(picked.launch, picked.config.name, picked.config, { type: p.type });
+                        return true;
+                    }
+                    return false;
+                }
+            });
+        });
+        manager.getLaunches().filter(l => !l.hidden).forEach(l => {
+            const label = inWorkspace ? nls.localize("addConfigTo", "Add Config ({0})...", l.name) : nls.localize('addConfiguration', "Add Configuration...");
+            this.debugOptions.push({
+                label, handler: async () => {
+                    await this.commandService.executeCommand(ADD_CONFIGURATION_ID, l.uri.toString());
+                    return false;
+                }
+            });
+        });
+        this.selectBox.setOptions(this.debugOptions.map((data, index) => ({ text: data.label, isDisabled: disabledIdxs.indexOf(index) !== -1 })), this.selected);
+    }
+    _setAriaLabel(title) {
+        let ariaLabel = title;
+        let keybinding;
+        const verbose = this.configurationService.getValue("accessibility.verbosity.debug");
+        if (verbose) {
+            keybinding = this.keybindingService.lookupKeybinding("editor.action.accessibilityHelp", this.contextKeyService)?.getLabel() ?? undefined;
+        }
+        if (keybinding) {
+            ariaLabel = nls.localize('commentLabelWithKeybinding', "{0}, use ({1}) for accessibility help", ariaLabel, keybinding);
+        }
+        else {
+            ariaLabel = nls.localize('commentLabelWithKeybindingNoKeybinding', "{0}, run the command Open Accessibility Help which is currently not triggerable via keybinding.", ariaLabel);
+        }
+        this.start.ariaLabel = ariaLabel;
+    }
+};
+StartDebugActionViewItem = StartDebugActionViewItem_1 = __decorate([
+    __param(3, IDebugService),
+    __param(4, IConfigurationService),
+    __param(5, ICommandService),
+    __param(6, IWorkspaceContextService),
+    __param(7, IContextViewService),
+    __param(8, IKeybindingService),
+    __param(9, IHoverService),
+    __param(10, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], StartDebugActionViewItem);
+export { StartDebugActionViewItem };
+let FocusSessionActionViewItem = class FocusSessionActionViewItem extends SelectActionViewItem {
+    constructor(action, session, debugService, contextViewService, configurationService) {
+        super(null, action, [], -1, contextViewService, defaultSelectBoxStyles, { ariaLabel: nls.localize('debugSession', 'Debug Session') });
+        this.debugService = debugService;
+        this.configurationService = configurationService;
+        this._register(this.debugService.getViewModel().onDidFocusSession(() => {
+            const session = this.getSelectedSession();
+            if (session) {
+                const index = this.getSessions().indexOf(session);
+                this.select(index);
+            }
+        }));
+        this._register(this.debugService.onDidNewSession(session => {
+            const sessionListeners = [];
+            sessionListeners.push(session.onDidChangeName(() => this.update()));
+            sessionListeners.push(session.onDidEndAdapter(() => dispose(sessionListeners)));
+            this.update();
+        }));
+        this.getSessions().forEach(session => {
+            this._register(session.onDidChangeName(() => this.update()));
+        });
+        this._register(this.debugService.onDidEndSession(() => this.update()));
+        const selectedSession = session ? this.mapFocusedSessionToSelected(session) : undefined;
+        this.update(selectedSession);
+    }
+    getActionContext(_, index) {
+        return this.getSessions()[index];
+    }
+    update(session) {
+        if (!session) {
+            session = this.getSelectedSession();
+        }
+        const sessions = this.getSessions();
+        const names = sessions.map(s => {
+            const label = s.getLabel();
+            if (s.parentSession) {
+                return `\u00A0\u00A0${label}`;
+            }
+            return label;
+        });
+        this.setOptions(names.map((data) => ({ text: data })), session ? sessions.indexOf(session) : undefined);
+    }
+    getSelectedSession() {
+        const session = this.debugService.getViewModel().focusedSession;
+        return session ? this.mapFocusedSessionToSelected(session) : undefined;
+    }
+    getSessions() {
+        const showSubSessions = this.configurationService.getValue('debug').showSubSessionsInToolBar;
+        const sessions = this.debugService.getModel().getSessions();
+        return showSubSessions ? sessions : sessions.filter(s => !s.parentSession);
+    }
+    mapFocusedSessionToSelected(focusedSession) {
+        const showSubSessions = this.configurationService.getValue('debug').showSubSessionsInToolBar;
+        while (focusedSession.parentSession && !showSubSessions) {
+            focusedSession = focusedSession.parentSession;
+        }
+        return focusedSession;
+    }
+};
+FocusSessionActionViewItem = __decorate([
+    __param(2, IDebugService),
+    __param(3, IContextViewService),
+    __param(4, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], FocusSessionActionViewItem);
+export { FocusSessionActionViewItem };

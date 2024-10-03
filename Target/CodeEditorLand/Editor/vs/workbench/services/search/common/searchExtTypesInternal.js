@@ -1,1 +1,1 @@
-import"./searchExtTypes.js";
+export {};

@@ -1,1 +1,253 @@
-import*as x from"../../../../base/common/strings.js";import*as B from"../../core/stringBuilder.js";import{Range as m}from"../../core/range.js";import"../languageConfiguration.js";class f{_richEditBracketBrand=void 0;languageId;index;open;close;forwardRegex;reversedRegex;_openSet;_closeSet;constructor(t,r,n,e,o,s){this.languageId=t,this.index=r,this.open=n,this.close=e,this.forwardRegex=o,this.reversedRegex=s,this._openSet=f._toSet(this.open),this._closeSet=f._toSet(this.close)}isOpen(t){return this._openSet.has(t)}isClose(t){return this._closeSet.has(t)}static _toSet(t){const r=new Set;for(const n of t)r.add(n);return r}}function b(i){const t=i.length;i=i.map(s=>[s[0].toLowerCase(),s[1].toLowerCase()]);const r=[];for(let s=0;s<t;s++)r[s]=s;const n=(s,c)=>{const[a,l]=s,[g,u]=c;return a===g||a===u||l===g||l===u},e=(s,c)=>{const a=Math.min(s,c),l=Math.max(s,c);for(let g=0;g<t;g++)r[g]===l&&(r[g]=a)};for(let s=0;s<t;s++){const c=i[s];for(let a=s+1;a<t;a++){const l=i[a];n(c,l)&&e(r[s],r[a])}}const o=[];for(let s=0;s<t;s++){const c=[],a=[];for(let l=0;l<t;l++)if(r[l]===s){const[g,u]=i[l];c.push(g),a.push(u)}c.length>0&&o.push({open:c,close:a})}return o}class L{_richEditBracketsBrand=void 0;brackets;forwardRegex;reversedRegex;maxBracketLength;textIsBracket;textIsOpenBracket;constructor(t,r){const n=b(r);this.brackets=n.map((e,o)=>new f(t,o,e.open,e.close,E(e.open,e.close,n,o),v(e.open,e.close,n,o))),this.forwardRegex=I(this.brackets),this.reversedRegex=S(this.brackets),this.textIsBracket={},this.textIsOpenBracket={},this.maxBracketLength=0;for(const e of this.brackets){for(const o of e.open)this.textIsBracket[o]=e,this.textIsOpenBracket[o]=!0,this.maxBracketLength=Math.max(this.maxBracketLength,o.length);for(const o of e.close)this.textIsBracket[o]=e,this.textIsOpenBracket[o]=!1,this.maxBracketLength=Math.max(this.maxBracketLength,o.length)}}}function R(i,t,r,n){for(let e=0,o=t.length;e<o;e++){if(e===r)continue;const s=t[e];for(const c of s.open)c.indexOf(i)>=0&&n.push(c);for(const c of s.close)c.indexOf(i)>=0&&n.push(c)}}function k(i,t){return i.length-t.length}function p(i){if(i.length<=1)return i;const t=[],r=new Set;for(const n of i)r.has(n)||(t.push(n),r.add(n));return t}function E(i,t,r,n){let e=[];e=e.concat(i),e=e.concat(t);for(let o=0,s=e.length;o<s;o++)R(e[o],r,n,e);return e=p(e),e.sort(k),e.reverse(),h(e)}function v(i,t,r,n){let e=[];e=e.concat(i),e=e.concat(t);for(let o=0,s=e.length;o<s;o++)R(e[o],r,n,e);return e=p(e),e.sort(k),e.reverse(),h(e.map(d))}function I(i){let t=[];for(const r of i){for(const n of r.open)t.push(n);for(const n of r.close)t.push(n)}return t=p(t),h(t)}function S(i){let t=[];for(const r of i){for(const n of r.open)t.push(n);for(const n of r.close)t.push(n)}return t=p(t),h(t.map(d))}function y(i){const t=/^[\w ]+$/.test(i);return i=x.escapeRegExpCharacters(i),t?`\\b${i}\\b`:i}function h(i,t){const r=`(${i.map(y).join(")|(")})`;return x.createRegExp(r,!0,t)}const d=function(){function i(n){const e=new Uint16Array(n.length);let o=0;for(let s=n.length-1;s>=0;s--)e[o++]=n.charCodeAt(s);return B.getPlatformTextDecoder().decode(e)}let t=null,r=null;return function(e){return t!==e&&(t=e,r=i(t)),r}}();class P{static _findPrevBracketInText(t,r,n,e){const o=n.match(t);if(!o)return null;const s=n.length-(o.index||0),c=o[0].length,a=e+s;return new m(r,a-c+1,r,a+1)}static findPrevBracketInRange(t,r,n,e,o){const c=d(n).substring(n.length-o,n.length-e);return this._findPrevBracketInText(t,r,c,e)}static findNextBracketInText(t,r,n,e){const o=n.match(t);if(!o)return null;const s=o.index||0,c=o[0].length;if(c===0)return null;const a=e+s;return new m(r,a+1,r,a+1+c)}static findNextBracketInRange(t,r,n,e,o){const s=n.substring(e,o);return this.findNextBracketInText(t,r,s,e)}}export{P as BracketsUtils,f as RichEditBracket,L as RichEditBrackets,h as createBracketOrRegExp};
+import * as strings from '../../../../base/common/strings.js';
+import * as stringBuilder from '../../core/stringBuilder.js';
+import { Range } from '../../core/range.js';
+export class RichEditBracket {
+    constructor(languageId, index, open, close, forwardRegex, reversedRegex) {
+        this._richEditBracketBrand = undefined;
+        this.languageId = languageId;
+        this.index = index;
+        this.open = open;
+        this.close = close;
+        this.forwardRegex = forwardRegex;
+        this.reversedRegex = reversedRegex;
+        this._openSet = RichEditBracket._toSet(this.open);
+        this._closeSet = RichEditBracket._toSet(this.close);
+    }
+    isOpen(text) {
+        return this._openSet.has(text);
+    }
+    isClose(text) {
+        return this._closeSet.has(text);
+    }
+    static _toSet(arr) {
+        const result = new Set();
+        for (const element of arr) {
+            result.add(element);
+        }
+        return result;
+    }
+}
+function groupFuzzyBrackets(brackets) {
+    const N = brackets.length;
+    brackets = brackets.map(b => [b[0].toLowerCase(), b[1].toLowerCase()]);
+    const group = [];
+    for (let i = 0; i < N; i++) {
+        group[i] = i;
+    }
+    const areOverlapping = (a, b) => {
+        const [aOpen, aClose] = a;
+        const [bOpen, bClose] = b;
+        return (aOpen === bOpen || aOpen === bClose || aClose === bOpen || aClose === bClose);
+    };
+    const mergeGroups = (g1, g2) => {
+        const newG = Math.min(g1, g2);
+        const oldG = Math.max(g1, g2);
+        for (let i = 0; i < N; i++) {
+            if (group[i] === oldG) {
+                group[i] = newG;
+            }
+        }
+    };
+    for (let i = 0; i < N; i++) {
+        const a = brackets[i];
+        for (let j = i + 1; j < N; j++) {
+            const b = brackets[j];
+            if (areOverlapping(a, b)) {
+                mergeGroups(group[i], group[j]);
+            }
+        }
+    }
+    const result = [];
+    for (let g = 0; g < N; g++) {
+        const currentOpen = [];
+        const currentClose = [];
+        for (let i = 0; i < N; i++) {
+            if (group[i] === g) {
+                const [open, close] = brackets[i];
+                currentOpen.push(open);
+                currentClose.push(close);
+            }
+        }
+        if (currentOpen.length > 0) {
+            result.push({
+                open: currentOpen,
+                close: currentClose
+            });
+        }
+    }
+    return result;
+}
+export class RichEditBrackets {
+    constructor(languageId, _brackets) {
+        this._richEditBracketsBrand = undefined;
+        const brackets = groupFuzzyBrackets(_brackets);
+        this.brackets = brackets.map((b, index) => {
+            return new RichEditBracket(languageId, index, b.open, b.close, getRegexForBracketPair(b.open, b.close, brackets, index), getReversedRegexForBracketPair(b.open, b.close, brackets, index));
+        });
+        this.forwardRegex = getRegexForBrackets(this.brackets);
+        this.reversedRegex = getReversedRegexForBrackets(this.brackets);
+        this.textIsBracket = {};
+        this.textIsOpenBracket = {};
+        this.maxBracketLength = 0;
+        for (const bracket of this.brackets) {
+            for (const open of bracket.open) {
+                this.textIsBracket[open] = bracket;
+                this.textIsOpenBracket[open] = true;
+                this.maxBracketLength = Math.max(this.maxBracketLength, open.length);
+            }
+            for (const close of bracket.close) {
+                this.textIsBracket[close] = bracket;
+                this.textIsOpenBracket[close] = false;
+                this.maxBracketLength = Math.max(this.maxBracketLength, close.length);
+            }
+        }
+    }
+}
+function collectSuperstrings(str, brackets, currentIndex, dest) {
+    for (let i = 0, len = brackets.length; i < len; i++) {
+        if (i === currentIndex) {
+            continue;
+        }
+        const bracket = brackets[i];
+        for (const open of bracket.open) {
+            if (open.indexOf(str) >= 0) {
+                dest.push(open);
+            }
+        }
+        for (const close of bracket.close) {
+            if (close.indexOf(str) >= 0) {
+                dest.push(close);
+            }
+        }
+    }
+}
+function lengthcmp(a, b) {
+    return a.length - b.length;
+}
+function unique(arr) {
+    if (arr.length <= 1) {
+        return arr;
+    }
+    const result = [];
+    const seen = new Set();
+    for (const element of arr) {
+        if (seen.has(element)) {
+            continue;
+        }
+        result.push(element);
+        seen.add(element);
+    }
+    return result;
+}
+function getRegexForBracketPair(open, close, brackets, currentIndex) {
+    let pieces = [];
+    pieces = pieces.concat(open);
+    pieces = pieces.concat(close);
+    for (let i = 0, len = pieces.length; i < len; i++) {
+        collectSuperstrings(pieces[i], brackets, currentIndex, pieces);
+    }
+    pieces = unique(pieces);
+    pieces.sort(lengthcmp);
+    pieces.reverse();
+    return createBracketOrRegExp(pieces);
+}
+function getReversedRegexForBracketPair(open, close, brackets, currentIndex) {
+    let pieces = [];
+    pieces = pieces.concat(open);
+    pieces = pieces.concat(close);
+    for (let i = 0, len = pieces.length; i < len; i++) {
+        collectSuperstrings(pieces[i], brackets, currentIndex, pieces);
+    }
+    pieces = unique(pieces);
+    pieces.sort(lengthcmp);
+    pieces.reverse();
+    return createBracketOrRegExp(pieces.map(toReversedString));
+}
+function getRegexForBrackets(brackets) {
+    let pieces = [];
+    for (const bracket of brackets) {
+        for (const open of bracket.open) {
+            pieces.push(open);
+        }
+        for (const close of bracket.close) {
+            pieces.push(close);
+        }
+    }
+    pieces = unique(pieces);
+    return createBracketOrRegExp(pieces);
+}
+function getReversedRegexForBrackets(brackets) {
+    let pieces = [];
+    for (const bracket of brackets) {
+        for (const open of bracket.open) {
+            pieces.push(open);
+        }
+        for (const close of bracket.close) {
+            pieces.push(close);
+        }
+    }
+    pieces = unique(pieces);
+    return createBracketOrRegExp(pieces.map(toReversedString));
+}
+function prepareBracketForRegExp(str) {
+    const insertWordBoundaries = (/^[\w ]+$/.test(str));
+    str = strings.escapeRegExpCharacters(str);
+    return (insertWordBoundaries ? `\\b${str}\\b` : str);
+}
+export function createBracketOrRegExp(pieces, options) {
+    const regexStr = `(${pieces.map(prepareBracketForRegExp).join(')|(')})`;
+    return strings.createRegExp(regexStr, true, options);
+}
+const toReversedString = (function () {
+    function reverse(str) {
+        const arr = new Uint16Array(str.length);
+        let offset = 0;
+        for (let i = str.length - 1; i >= 0; i--) {
+            arr[offset++] = str.charCodeAt(i);
+        }
+        return stringBuilder.getPlatformTextDecoder().decode(arr);
+    }
+    let lastInput = null;
+    let lastOutput = null;
+    return function toReversedString(str) {
+        if (lastInput !== str) {
+            lastInput = str;
+            lastOutput = reverse(lastInput);
+        }
+        return lastOutput;
+    };
+})();
+export class BracketsUtils {
+    static _findPrevBracketInText(reversedBracketRegex, lineNumber, reversedText, offset) {
+        const m = reversedText.match(reversedBracketRegex);
+        if (!m) {
+            return null;
+        }
+        const matchOffset = reversedText.length - (m.index || 0);
+        const matchLength = m[0].length;
+        const absoluteMatchOffset = offset + matchOffset;
+        return new Range(lineNumber, absoluteMatchOffset - matchLength + 1, lineNumber, absoluteMatchOffset + 1);
+    }
+    static findPrevBracketInRange(reversedBracketRegex, lineNumber, lineText, startOffset, endOffset) {
+        const reversedLineText = toReversedString(lineText);
+        const reversedSubstr = reversedLineText.substring(lineText.length - endOffset, lineText.length - startOffset);
+        return this._findPrevBracketInText(reversedBracketRegex, lineNumber, reversedSubstr, startOffset);
+    }
+    static findNextBracketInText(bracketRegex, lineNumber, text, offset) {
+        const m = text.match(bracketRegex);
+        if (!m) {
+            return null;
+        }
+        const matchOffset = m.index || 0;
+        const matchLength = m[0].length;
+        if (matchLength === 0) {
+            return null;
+        }
+        const absoluteMatchOffset = offset + matchOffset;
+        return new Range(lineNumber, absoluteMatchOffset + 1, lineNumber, absoluteMatchOffset + 1 + matchLength);
+    }
+    static findNextBracketInRange(bracketRegex, lineNumber, lineText, startOffset, endOffset) {
+        const substr = lineText.substring(startOffset, endOffset);
+        return this.findNextBracketInText(bracketRegex, lineNumber, substr, startOffset);
+    }
+}

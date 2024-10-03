@@ -1,1 +1,89 @@
-var f=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var u=(r,s,t,n)=>{for(var a=n>1?void 0:n?S(s,t):s,o=r.length-1,d;o>=0;o--)(d=r[o])&&(a=(n?d(s,t,a):d(a))||a);return n&&a&&f(s,t,a),a},h=(r,s)=>(t,n)=>s(t,n,r);import{Event as p}from"../../../base/common/event.js";import{Disposable as y,toDisposable as T}from"../../../base/common/lifecycle.js";import{URI as D}from"../../../base/common/uri.js";import{TerminalCapability as m}from"../../../platform/terminal/common/capabilities/capabilities.js";import{ExtHostContext as g,MainContext as b}from"../common/extHost.protocol.js";import{ITerminalService as w}from"../../contrib/terminal/browser/terminal.js";import{IWorkbenchEnvironmentService as H}from"../../services/environment/common/environmentService.js";import{extHostNamedCustomer as $}from"../../services/extensions/common/extHostCustomers.js";import{TerminalShellExecutionCommandLineConfidence as C}from"../common/extHostTypes.js";let c=class extends y{constructor(t,n,a){super();this._terminalService=n;this._proxy=t.getProxy(g.ExtHostTerminalShellIntegration);const o=new Map;this._register(T(()=>{for(const e of o.values())e.dispose()}));const d=this._store.add(this._terminalService.createOnInstanceEvent(e=>p.map(p.filter(e.capabilities.onDidAddCapabilityType,i=>i===m.CommandDetection),()=>e))).event;this._store.add(d(e=>this._proxy.$shellIntegrationChange(e.instanceId)));const x=this._store.add(this._terminalService.createOnInstanceCapabilityEvent(m.CommandDetection,e=>e.onCommandExecuted));let l;this._store.add(x.event(e=>{if(e.data===l)return;l=e.data;const i=e.instance.instanceId;this._proxy.$shellExecutionStart(i,e.data.command,v(e.data),e.data.isTrusted,this._convertCwdToUri(e.data.cwd)),o.get(i)?.dispose(),o.set(i,p.accumulate(e.instance.onData,50,this._store)(E=>this._proxy.$shellExecutionData(i,E.join(""))))}));const I=this._store.add(this._terminalService.createOnInstanceCapabilityEvent(m.CommandDetection,e=>e.onCommandFinished));this._store.add(I.event(e=>{l=void 0;const i=e.instance.instanceId;o.get(i)?.dispose(),setTimeout(()=>{this._proxy.$shellExecutionEnd(i,e.data.command,v(e.data),e.data.isTrusted,e.data.exitCode)})}));const _=this._store.add(this._terminalService.createOnInstanceCapabilityEvent(m.CwdDetection,e=>e.onDidChangeCwd));this._store.add(_.event(e=>{this._proxy.$cwdChange(e.instance.instanceId,this._convertCwdToUri(e.data))})),this._store.add(this._terminalService.onDidDisposeInstance(e=>this._proxy.$closeTerminal(e.instanceId)))}_proxy;$executeCommand(t,n){this._terminalService.getInstanceFromId(t)?.runCommand(n,!0)}_convertCwdToUri(t){return t?D.file(t):void 0}};c=u([$(b.MainThreadTerminalShellIntegration),h(1,w),h(2,H)],c);function v(r){switch(r.commandLineConfidence){case"high":return C.High;case"medium":return C.Medium;case"low":default:return C.Low}}export{c as MainThreadTerminalShellIntegration};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Event } from '../../../base/common/event.js';
+import { Disposable, toDisposable } from '../../../base/common/lifecycle.js';
+import { URI } from '../../../base/common/uri.js';
+import { ExtHostContext, MainContext } from '../common/extHost.protocol.js';
+import { ITerminalService } from '../../contrib/terminal/browser/terminal.js';
+import { IWorkbenchEnvironmentService } from '../../services/environment/common/environmentService.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+import { TerminalShellExecutionCommandLineConfidence } from '../common/extHostTypes.js';
+let MainThreadTerminalShellIntegration = class MainThreadTerminalShellIntegration extends Disposable {
+    constructor(extHostContext, _terminalService, workbenchEnvironmentService) {
+        super();
+        this._terminalService = _terminalService;
+        this._proxy = extHostContext.getProxy(ExtHostContext.ExtHostTerminalShellIntegration);
+        const instanceDataListeners = new Map();
+        this._register(toDisposable(() => {
+            for (const listener of instanceDataListeners.values()) {
+                listener.dispose();
+            }
+        }));
+        const onDidAddCommandDetection = this._store.add(this._terminalService.createOnInstanceEvent(instance => {
+            return Event.map(Event.filter(instance.capabilities.onDidAddCapabilityType, e => {
+                return e === 2;
+            }), () => instance);
+        })).event;
+        this._store.add(onDidAddCommandDetection(e => this._proxy.$shellIntegrationChange(e.instanceId)));
+        const commandDetectionStartEvent = this._store.add(this._terminalService.createOnInstanceCapabilityEvent(2, e => e.onCommandExecuted));
+        let currentCommand;
+        this._store.add(commandDetectionStartEvent.event(e => {
+            if (e.data === currentCommand) {
+                return;
+            }
+            currentCommand = e.data;
+            const instanceId = e.instance.instanceId;
+            this._proxy.$shellExecutionStart(instanceId, e.data.command, convertToExtHostCommandLineConfidence(e.data), e.data.isTrusted, this._convertCwdToUri(e.data.cwd));
+            instanceDataListeners.get(instanceId)?.dispose();
+            instanceDataListeners.set(instanceId, Event.accumulate(e.instance.onData, 50, this._store)(events => this._proxy.$shellExecutionData(instanceId, events.join(''))));
+        }));
+        const commandDetectionEndEvent = this._store.add(this._terminalService.createOnInstanceCapabilityEvent(2, e => e.onCommandFinished));
+        this._store.add(commandDetectionEndEvent.event(e => {
+            currentCommand = undefined;
+            const instanceId = e.instance.instanceId;
+            instanceDataListeners.get(instanceId)?.dispose();
+            setTimeout(() => {
+                this._proxy.$shellExecutionEnd(instanceId, e.data.command, convertToExtHostCommandLineConfidence(e.data), e.data.isTrusted, e.data.exitCode);
+            });
+        }));
+        const cwdChangeEvent = this._store.add(this._terminalService.createOnInstanceCapabilityEvent(0, e => e.onDidChangeCwd));
+        this._store.add(cwdChangeEvent.event(e => {
+            this._proxy.$cwdChange(e.instance.instanceId, this._convertCwdToUri(e.data));
+        }));
+        this._store.add(this._terminalService.onDidDisposeInstance(e => this._proxy.$closeTerminal(e.instanceId)));
+    }
+    $executeCommand(terminalId, commandLine) {
+        this._terminalService.getInstanceFromId(terminalId)?.runCommand(commandLine, true);
+    }
+    _convertCwdToUri(cwd) {
+        return cwd ? URI.file(cwd) : undefined;
+    }
+};
+MainThreadTerminalShellIntegration = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadTerminalShellIntegration),
+    __param(1, ITerminalService),
+    __param(2, IWorkbenchEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], MainThreadTerminalShellIntegration);
+export { MainThreadTerminalShellIntegration };
+function convertToExtHostCommandLineConfidence(command) {
+    switch (command.commandLineConfidence) {
+        case 'high':
+            return TerminalShellExecutionCommandLineConfidence.High;
+        case 'medium':
+            return TerminalShellExecutionCommandLineConfidence.Medium;
+        case 'low':
+        default:
+            return TerminalShellExecutionCommandLineConfidence.Low;
+    }
+}

@@ -1,1 +1,166 @@
-import{Emitter as s}from"./event.js";import{Disposable as a}from"./lifecycle.js";import*as c from"../../nls.js";class h extends a{_onDidChange=this._register(new s);onDidChange=this._onDidChange.event;_id;_label;_tooltip;_cssClass;_enabled=!0;_checked;_actionCallback;constructor(e,n="",i="",o=!0,d){super(),this._id=e,this._label=n,this._cssClass=i,this._enabled=o,this._actionCallback=d}get id(){return this._id}get label(){return this._label}set label(e){this._setLabel(e)}_setLabel(e){this._label!==e&&(this._label=e,this._onDidChange.fire({label:e}))}get tooltip(){return this._tooltip||""}set tooltip(e){this._setTooltip(e)}_setTooltip(e){this._tooltip!==e&&(this._tooltip=e,this._onDidChange.fire({tooltip:e}))}get class(){return this._cssClass}set class(e){this._setClass(e)}_setClass(e){this._cssClass!==e&&(this._cssClass=e,this._onDidChange.fire({class:e}))}get enabled(){return this._enabled}set enabled(e){this._setEnabled(e)}_setEnabled(e){this._enabled!==e&&(this._enabled=e,this._onDidChange.fire({enabled:e}))}get checked(){return this._checked}set checked(e){this._setChecked(e)}_setChecked(e){this._checked!==e&&(this._checked=e,this._onDidChange.fire({checked:e}))}async run(e,n){this._actionCallback&&await this._actionCallback(e)}}class y extends a{_onWillRun=this._register(new s);onWillRun=this._onWillRun.event;_onDidRun=this._register(new s);onDidRun=this._onDidRun.event;async run(e,n){if(!e.enabled)return;this._onWillRun.fire({action:e});let i;try{await this.runAction(e,n)}catch(o){i=o}this._onDidRun.fire({action:e,error:i})}async runAction(e,n){await e.run(n)}}class r{static join(...e){let n=[];for(const i of e)i.length&&(n.length?n=[...n,new r,...i]:n=i);return n}static ID="vs.actions.separator";id=r.ID;label="";tooltip="";class="separator";enabled=!1;checked=!1;async run(){}}class f{id;label;class;tooltip="";enabled=!0;checked=void 0;_actions;get actions(){return this._actions}constructor(e,n,i,o){this.id=e,this.label=n,this.class=o,this._actions=i}async run(){}}class l extends h{static ID="vs.actions.empty";constructor(){super(l.ID,c.localize("submenu.empty","(empty)"),void 0,!1)}}function _(t){return{id:t.id,label:t.label,tooltip:t.tooltip??t.label,class:t.class,enabled:t.enabled??!0,checked:t.checked,run:async(...e)=>t.run(...e)}}export{h as Action,y as ActionRunner,l as EmptySubmenuAction,r as Separator,f as SubmenuAction,_ as toAction};
+import { Emitter } from './event.js';
+import { Disposable } from './lifecycle.js';
+import * as nls from '../../nls.js';
+export class Action extends Disposable {
+    constructor(id, label = '', cssClass = '', enabled = true, actionCallback) {
+        super();
+        this._onDidChange = this._register(new Emitter());
+        this.onDidChange = this._onDidChange.event;
+        this._enabled = true;
+        this._id = id;
+        this._label = label;
+        this._cssClass = cssClass;
+        this._enabled = enabled;
+        this._actionCallback = actionCallback;
+    }
+    get id() {
+        return this._id;
+    }
+    get label() {
+        return this._label;
+    }
+    set label(value) {
+        this._setLabel(value);
+    }
+    _setLabel(value) {
+        if (this._label !== value) {
+            this._label = value;
+            this._onDidChange.fire({ label: value });
+        }
+    }
+    get tooltip() {
+        return this._tooltip || '';
+    }
+    set tooltip(value) {
+        this._setTooltip(value);
+    }
+    _setTooltip(value) {
+        if (this._tooltip !== value) {
+            this._tooltip = value;
+            this._onDidChange.fire({ tooltip: value });
+        }
+    }
+    get class() {
+        return this._cssClass;
+    }
+    set class(value) {
+        this._setClass(value);
+    }
+    _setClass(value) {
+        if (this._cssClass !== value) {
+            this._cssClass = value;
+            this._onDidChange.fire({ class: value });
+        }
+    }
+    get enabled() {
+        return this._enabled;
+    }
+    set enabled(value) {
+        this._setEnabled(value);
+    }
+    _setEnabled(value) {
+        if (this._enabled !== value) {
+            this._enabled = value;
+            this._onDidChange.fire({ enabled: value });
+        }
+    }
+    get checked() {
+        return this._checked;
+    }
+    set checked(value) {
+        this._setChecked(value);
+    }
+    _setChecked(value) {
+        if (this._checked !== value) {
+            this._checked = value;
+            this._onDidChange.fire({ checked: value });
+        }
+    }
+    async run(event, data) {
+        if (this._actionCallback) {
+            await this._actionCallback(event);
+        }
+    }
+}
+export class ActionRunner extends Disposable {
+    constructor() {
+        super(...arguments);
+        this._onWillRun = this._register(new Emitter());
+        this.onWillRun = this._onWillRun.event;
+        this._onDidRun = this._register(new Emitter());
+        this.onDidRun = this._onDidRun.event;
+    }
+    async run(action, context) {
+        if (!action.enabled) {
+            return;
+        }
+        this._onWillRun.fire({ action });
+        let error = undefined;
+        try {
+            await this.runAction(action, context);
+        }
+        catch (e) {
+            error = e;
+        }
+        this._onDidRun.fire({ action, error });
+    }
+    async runAction(action, context) {
+        await action.run(context);
+    }
+}
+export class Separator {
+    constructor() {
+        this.id = Separator.ID;
+        this.label = '';
+        this.tooltip = '';
+        this.class = 'separator';
+        this.enabled = false;
+        this.checked = false;
+    }
+    static join(...actionLists) {
+        let out = [];
+        for (const list of actionLists) {
+            if (!list.length) {
+            }
+            else if (out.length) {
+                out = [...out, new Separator(), ...list];
+            }
+            else {
+                out = list;
+            }
+        }
+        return out;
+    }
+    static { this.ID = 'vs.actions.separator'; }
+    async run() { }
+}
+export class SubmenuAction {
+    get actions() { return this._actions; }
+    constructor(id, label, actions, cssClass) {
+        this.tooltip = '';
+        this.enabled = true;
+        this.checked = undefined;
+        this.id = id;
+        this.label = label;
+        this.class = cssClass;
+        this._actions = actions;
+    }
+    async run() { }
+}
+export class EmptySubmenuAction extends Action {
+    static { this.ID = 'vs.actions.empty'; }
+    constructor() {
+        super(EmptySubmenuAction.ID, nls.localize('submenu.empty', '(empty)'), undefined, false);
+    }
+}
+export function toAction(props) {
+    return {
+        id: props.id,
+        label: props.label,
+        tooltip: props.tooltip ?? props.label,
+        class: props.class,
+        enabled: props.enabled ?? true,
+        checked: props.checked,
+        run: async (...args) => props.run(...args),
+    };
+}

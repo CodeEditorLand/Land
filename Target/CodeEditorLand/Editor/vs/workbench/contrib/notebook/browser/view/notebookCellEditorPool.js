@@ -1,1 +1,122 @@
-var h=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var p=(n,s,i,o)=>{for(var e=o>1?void 0:o?u(s,i):s,t=n.length-1,d;t>=0;t--)(d=n[t])&&(e=(o?d(s,i,e):d(e))||e);return o&&e&&h(s,i,e),e},a=(n,s)=>(i,o)=>s(i,o,n);import*as c from"../../../../../base/browser/dom.js";import{createCancelablePromise as v}from"../../../../../base/common/async.js";import{Disposable as _,DisposableStore as f,MutableDisposable as m}from"../../../../../base/common/lifecycle.js";import{CodeEditorWidget as C}from"../../../../../editor/browser/widget/codeEditor/codeEditorWidget.js";import{EditorContextKeys as S}from"../../../../../editor/common/editorContextKeys.js";import{ITextModelService as E}from"../../../../../editor/common/services/resolverService.js";import{IConfigurationService as b}from"../../../../../platform/configuration/common/configuration.js";import{IContextKeyService as M}from"../../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as D}from"../../../../../platform/instantiation/common/instantiation.js";import{ServiceCollection as g}from"../../../../../platform/instantiation/common/serviceCollection.js";import{CellFocusMode as y}from"../notebookBrowser.js";import{CellEditorOptions as I}from"./cellParts/cellEditorOptions.js";let l=class extends _{constructor(i,o,e,t,d){super();this.notebookEditor=i;this.contextKeyServiceProvider=o;this.textModelService=e;this._configurationService=t;this._instantiationService=d;this._focusedEditorDOM=this.notebookEditor.getDomNode().appendChild(c.$(".cell-editor-part-cache")),this._focusedEditorDOM.style.position="absolute",this._focusedEditorDOM.style.top="-50000px",this._focusedEditorDOM.style.width="1px",this._focusedEditorDOM.style.height="1px"}_focusedEditorDOM;_editorDisposable=this._register(new m);_editorContextKeyService;_editor;_focusEditorCancellablePromise;_isInitialized=!1;_isDisposed=!1;_initializeEditor(i){this._editorContextKeyService=this._register(this.contextKeyServiceProvider(this._focusedEditorDOM));const o=c.prepend(this._focusedEditorDOM,c.$(".cell-editor-container")),e=this._register(this._instantiationService.createChild(new g([M,this._editorContextKeyService])));S.inCompositeEditor.bindTo(this._editorContextKeyService).set(!0);const t=new I(this.notebookEditor.getBaseCellEditorOptions(i.language),this.notebookEditor.notebookOptions,this._configurationService);this._editor=this._register(e.createInstance(C,o,{...t.getDefaultValue(),dimension:{width:0,height:0},scrollbar:{vertical:"hidden",horizontal:"auto",handleMouseWheel:!1,useShadows:!1}},{contributions:this.notebookEditor.creationOptions.cellEditorContributions})),this._isInitialized=!0}preserveFocusedEditor(i){this._isInitialized||this._initializeEditor(i),this._editorDisposable.clear(),this._focusEditorCancellablePromise?.cancel(),this._focusEditorCancellablePromise=v(async o=>{const e=await this.textModelService.createModelReference(i.uri);if(this._isDisposed||o.isCancellationRequested){e.dispose();return}const t=new f;t.add(e),this._editor.setModel(e.object.textEditorModel),this._editor.setSelections(i.getSelections()),this._editor.focus();const d=()=>{const r=this._editor.getSelections();r&&i.setSelections(r),this.notebookEditor.revealInView(i),this._editor.setModel(null),e.dispose()};t.add(this._editor.onDidChangeModelContent(r=>{d()})),t.add(this._editor.onDidChangeCursorSelection(r=>{(r.source==="keyboard"||r.source==="mouse")&&d()})),t.add(this.notebookEditor.onDidChangeActiveEditor(()=>{const r=this.notebookEditor.getActiveCell();(r!==i||r.focusMode!==y.Editor)&&(this._editorDisposable.clear(),this._editor.setModel(null),e.dispose())})),this._editorDisposable.value=t})}dispose(){this._isDisposed=!0,this._focusEditorCancellablePromise?.cancel(),super.dispose()}};l=p([a(2,E),a(3,b),a(4,D)],l);export{l as NotebookCellEditorPool};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as DOM from '../../../../../base/browser/dom.js';
+import { createCancelablePromise } from '../../../../../base/common/async.js';
+import { Disposable, DisposableStore, MutableDisposable } from '../../../../../base/common/lifecycle.js';
+import { CodeEditorWidget } from '../../../../../editor/browser/widget/codeEditor/codeEditorWidget.js';
+import { EditorContextKeys } from '../../../../../editor/common/editorContextKeys.js';
+import { ITextModelService } from '../../../../../editor/common/services/resolverService.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { ServiceCollection } from '../../../../../platform/instantiation/common/serviceCollection.js';
+import { CellFocusMode } from '../notebookBrowser.js';
+import { CellEditorOptions } from './cellParts/cellEditorOptions.js';
+let NotebookCellEditorPool = class NotebookCellEditorPool extends Disposable {
+    constructor(notebookEditor, contextKeyServiceProvider, textModelService, _configurationService, _instantiationService) {
+        super();
+        this.notebookEditor = notebookEditor;
+        this.contextKeyServiceProvider = contextKeyServiceProvider;
+        this.textModelService = textModelService;
+        this._configurationService = _configurationService;
+        this._instantiationService = _instantiationService;
+        this._editorDisposable = this._register(new MutableDisposable());
+        this._isInitialized = false;
+        this._isDisposed = false;
+        this._focusedEditorDOM = this.notebookEditor.getDomNode().appendChild(DOM.$('.cell-editor-part-cache'));
+        this._focusedEditorDOM.style.position = 'absolute';
+        this._focusedEditorDOM.style.top = '-50000px';
+        this._focusedEditorDOM.style.width = '1px';
+        this._focusedEditorDOM.style.height = '1px';
+    }
+    _initializeEditor(cell) {
+        this._editorContextKeyService = this._register(this.contextKeyServiceProvider(this._focusedEditorDOM));
+        const editorContainer = DOM.prepend(this._focusedEditorDOM, DOM.$('.cell-editor-container'));
+        const editorInstaService = this._register(this._instantiationService.createChild(new ServiceCollection([IContextKeyService, this._editorContextKeyService])));
+        EditorContextKeys.inCompositeEditor.bindTo(this._editorContextKeyService).set(true);
+        const editorOptions = new CellEditorOptions(this.notebookEditor.getBaseCellEditorOptions(cell.language), this.notebookEditor.notebookOptions, this._configurationService);
+        this._editor = this._register(editorInstaService.createInstance(CodeEditorWidget, editorContainer, {
+            ...editorOptions.getDefaultValue(),
+            dimension: {
+                width: 0,
+                height: 0
+            },
+            scrollbar: {
+                vertical: 'hidden',
+                horizontal: 'auto',
+                handleMouseWheel: false,
+                useShadows: false,
+            },
+        }, {
+            contributions: this.notebookEditor.creationOptions.cellEditorContributions
+        }));
+        this._isInitialized = true;
+    }
+    preserveFocusedEditor(cell) {
+        if (!this._isInitialized) {
+            this._initializeEditor(cell);
+        }
+        this._editorDisposable.clear();
+        this._focusEditorCancellablePromise?.cancel();
+        this._focusEditorCancellablePromise = createCancelablePromise(async (token) => {
+            const ref = await this.textModelService.createModelReference(cell.uri);
+            if (this._isDisposed || token.isCancellationRequested) {
+                ref.dispose();
+                return;
+            }
+            const editorDisposable = new DisposableStore();
+            editorDisposable.add(ref);
+            this._editor.setModel(ref.object.textEditorModel);
+            this._editor.setSelections(cell.getSelections());
+            this._editor.focus();
+            const _update = () => {
+                const editorSelections = this._editor.getSelections();
+                if (editorSelections) {
+                    cell.setSelections(editorSelections);
+                }
+                this.notebookEditor.revealInView(cell);
+                this._editor.setModel(null);
+                ref.dispose();
+            };
+            editorDisposable.add(this._editor.onDidChangeModelContent((e) => {
+                _update();
+            }));
+            editorDisposable.add(this._editor.onDidChangeCursorSelection(e => {
+                if (e.source === 'keyboard' || e.source === 'mouse') {
+                    _update();
+                }
+            }));
+            editorDisposable.add(this.notebookEditor.onDidChangeActiveEditor(() => {
+                const latestActiveCell = this.notebookEditor.getActiveCell();
+                if (latestActiveCell !== cell || latestActiveCell.focusMode !== CellFocusMode.Editor) {
+                    this._editorDisposable.clear();
+                    this._editor.setModel(null);
+                    ref.dispose();
+                }
+            }));
+            this._editorDisposable.value = editorDisposable;
+        });
+    }
+    dispose() {
+        this._isDisposed = true;
+        this._focusEditorCancellablePromise?.cancel();
+        super.dispose();
+    }
+};
+NotebookCellEditorPool = __decorate([
+    __param(2, ITextModelService),
+    __param(3, IConfigurationService),
+    __param(4, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Function, Object, Object, Object])
+], NotebookCellEditorPool);
+export { NotebookCellEditorPool };

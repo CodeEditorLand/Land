@@ -1,2 +1,70 @@
-import{renderStringAsPlaintext as m}from"../../../../base/browser/markdownRenderer.js";import"../../../../base/common/htmlContent.js";import{toDisposable as p}from"../../../../base/common/lifecycle.js";import{GraphemeIterator as x,forAnsiStringParts as P,removeAnsiEscapeCodes as u}from"../../../../base/common/strings.js";import"./media/testMessageColorizer.css";import"../../../../editor/browser/widget/codeEditor/codeEditorWidget.js";import{Position as d}from"../../../../editor/common/core/position.js";import{Range as h}from"../../../../editor/common/core/range.js";const C=/^\x1b\[([0-9]+)m$/;var I=(r=>(r.Prefix="tstm-ansidec-",r.ForegroundPrefix="tstm-ansidec-fg",r.BackgroundPrefix="tstm-ansidec-bg",r.Bold="tstm-ansidec-1",r.Faint="tstm-ansidec-2",r.Italic="tstm-ansidec-3",r.Underline="tstm-ansidec-4",r))(I||{});const N=i=>typeof i=="string"?u(i):m(i),T=(i,l)=>{const a=[];return l.changeDecorations(g=>{let o=new d(1,1),e=[];for(const n of P(i))if(n.isCode){const r=C.exec(n.str)?.[1];if(!r)continue;const s=Number(r);s===0?e.length=0:s===22?e=e.filter(t=>t!=="tstm-ansidec-1"&&t!=="tstm-ansidec-3"):s===23?e=e.filter(t=>t!=="tstm-ansidec-3"):s===24?e=e.filter(t=>t!=="tstm-ansidec-4"):s>=30&&s<=39||s>=90&&s<=99?(e=e.filter(t=>!t.startsWith("tstm-ansidec-fg")),e.push("tstm-ansidec-fg"+r)):s>=40&&s<=49||s>=100&&s<=109?(e=e.filter(t=>!t.startsWith("tstm-ansidec-bg")),e.push("tstm-ansidec-bg"+r)):e.push("tstm-ansidec-"+r)}else{let r=o.lineNumber,s=o.column;const t=new x(n.str);for(let c=0;!t.eol();c+=t.nextGraphemeLength())n.str[c]===`
-`?(r++,s=1):s++;const f=new d(r,s);e.length&&a.push(g.addDecoration(h.fromPositions(o,f),{inlineClassName:e.join(" "),description:"test-message-colorized"})),o=f}}),p(()=>l.removeDecorations(a))};export{T as colorizeTestMessageInEditor,N as renderTestMessageAsText};
+import { renderStringAsPlaintext } from '../../../../base/browser/markdownRenderer.js';
+import { toDisposable } from '../../../../base/common/lifecycle.js';
+import { GraphemeIterator, forAnsiStringParts, removeAnsiEscapeCodes } from '../../../../base/common/strings.js';
+import './media/testMessageColorizer.css';
+import { Position } from '../../../../editor/common/core/position.js';
+import { Range } from '../../../../editor/common/core/range.js';
+const colorAttrRe = /^\x1b\[([0-9]+)m$/;
+export const renderTestMessageAsText = (tm) => typeof tm === 'string' ? removeAnsiEscapeCodes(tm) : renderStringAsPlaintext(tm);
+export const colorizeTestMessageInEditor = (message, editor) => {
+    const decos = [];
+    editor.changeDecorations(changeAccessor => {
+        let start = new Position(1, 1);
+        let cls = [];
+        for (const part of forAnsiStringParts(message)) {
+            if (part.isCode) {
+                const colorAttr = colorAttrRe.exec(part.str)?.[1];
+                if (!colorAttr) {
+                    continue;
+                }
+                const n = Number(colorAttr);
+                if (n === 0) {
+                    cls.length = 0;
+                }
+                else if (n === 22) {
+                    cls = cls.filter(c => c !== "tstm-ansidec-1" && c !== "tstm-ansidec-3");
+                }
+                else if (n === 23) {
+                    cls = cls.filter(c => c !== "tstm-ansidec-3");
+                }
+                else if (n === 24) {
+                    cls = cls.filter(c => c !== "tstm-ansidec-4");
+                }
+                else if ((n >= 30 && n <= 39) || (n >= 90 && n <= 99)) {
+                    cls = cls.filter(c => !c.startsWith("tstm-ansidec-fg"));
+                    cls.push("tstm-ansidec-fg" + colorAttr);
+                }
+                else if ((n >= 40 && n <= 49) || (n >= 100 && n <= 109)) {
+                    cls = cls.filter(c => !c.startsWith("tstm-ansidec-bg"));
+                    cls.push("tstm-ansidec-bg" + colorAttr);
+                }
+                else {
+                    cls.push("tstm-ansidec-" + colorAttr);
+                }
+            }
+            else {
+                let line = start.lineNumber;
+                let col = start.column;
+                const graphemes = new GraphemeIterator(part.str);
+                for (let i = 0; !graphemes.eol(); i += graphemes.nextGraphemeLength()) {
+                    if (part.str[i] === '\n') {
+                        line++;
+                        col = 1;
+                    }
+                    else {
+                        col++;
+                    }
+                }
+                const end = new Position(line, col);
+                if (cls.length) {
+                    decos.push(changeAccessor.addDecoration(Range.fromPositions(start, end), {
+                        inlineClassName: cls.join(' '),
+                        description: 'test-message-colorized',
+                    }));
+                }
+                start = end;
+            }
+        }
+    });
+    return toDisposable(() => editor.removeDecorations(decos));
+};

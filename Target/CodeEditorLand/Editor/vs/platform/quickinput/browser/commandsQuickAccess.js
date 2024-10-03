@@ -1,1 +1,337 @@
-var T=Object.defineProperty;var F=Object.getOwnPropertyDescriptor;var b=(I,u,e,a)=>{for(var t=a>1?void 0:a?F(u,e):u,n=I.length-1,s;n>=0;n--)(s=I[n])&&(t=(a?s(u,e,t):s(t))||t);return a&&t&&T(u,e,t),t},l=(I,u)=>(e,a)=>u(e,a,I);import"../../../base/common/actions.js";import"../../../base/common/cancellation.js";import{toErrorMessage as Q}from"../../../base/common/errorMessage.js";import{isCancellationError as O}from"../../../base/common/errors.js";import{matchesContiguousSubString as A,matchesPrefix as w,matchesWords as x,or as D}from"../../../base/common/filters.js";import{createSingleCallFunction as U}from"../../../base/common/functional.js";import{Disposable as W}from"../../../base/common/lifecycle.js";import{LRUCache as L}from"../../../base/common/map.js";import{TfIdfCalculator as N,normalizeTfIdfScores as K}from"../../../base/common/tfIdf.js";import{localize as g}from"../../../nls.js";import"../../action/common/action.js";import{ICommandService as z}from"../../commands/common/commands.js";import{IConfigurationService as M}from"../../configuration/common/configuration.js";import{IDialogService as Y}from"../../dialogs/common/dialogs.js";import{IInstantiationService as H}from"../../instantiation/common/instantiation.js";import{IKeybindingService as $}from"../../keybinding/common/keybinding.js";import{ILogService as q}from"../../log/common/log.js";import{PickerQuickAccessProvider as X}from"./pickerQuickAccess.js";import"../common/quickAccess.js";import"../common/quickInput.js";import{IStorageService as G,StorageScope as k,StorageTarget as R,WillSaveStateReason as J}from"../../storage/common/storage.js";import{ITelemetryService as V}from"../../telemetry/common/telemetry.js";let d=class extends X{constructor(e,a,t,n,s,S){super(d.PREFIX,e);this.instantiationService=a;this.keybindingService=t;this.commandService=n;this.telemetryService=s;this.dialogService=S;this.options=e}static PREFIX=">";static TFIDF_THRESHOLD=.5;static TFIDF_MAX_RESULTS=5;static WORD_FILTER=D(w,x,A);commandsHistory=this._register(this.instantiationService.createInstance(r));options;async _getPicks(e,a,t,n){const s=await this.getCommandPicks(t);if(t.isCancellationRequested)return[];const S=U(()=>{const i=new N;i.updateDocuments(s.map(c=>({key:c.commandId,textChunks:[this.getTfIdfChunk(c)]})));const o=i.calculateScores(e,t);return K(o).filter(c=>c.score>d.TFIDF_THRESHOLD).slice(0,d.TFIDF_MAX_RESULTS)}),m=[];for(const i of s){const o=d.WORD_FILTER(e,i.label)??void 0,c=i.commandAlias?d.WORD_FILTER(e,i.commandAlias)??void 0:void 0;if(o||c)i.highlights={label:o,detail:this.options.showAlias?c:void 0},m.push(i);else if(e===i.commandId)m.push(i);else if(e.length>=3){const h=S();if(t.isCancellationRequested)return[];const p=h.find(C=>C.key===i.commandId);p&&(i.tfIdfScore=p.score,m.push(i))}}const E=new Map;for(const i of m){const o=E.get(i.label);o?(i.description=i.commandId,o.description=o.commandId):E.set(i.label,i)}m.sort((i,o)=>{if(i.tfIdfScore&&o.tfIdfScore)return i.tfIdfScore===o.tfIdfScore?i.label.localeCompare(o.label):o.tfIdfScore-i.tfIdfScore;if(i.tfIdfScore)return 1;if(o.tfIdfScore)return-1;const c=this.commandsHistory.peek(i.commandId),h=this.commandsHistory.peek(o.commandId);if(c&&h)return c>h?-1:1;if(c)return-1;if(h)return 1;if(this.options.suggestedCommandIds){const p=this.options.suggestedCommandIds.has(i.commandId),C=this.options.suggestedCommandIds.has(o.commandId);if(p&&C)return 0;if(p)return-1;if(C)return 1}return i.label.localeCompare(o.label)});const f=[];let v=!1,y=!0,P=!!this.options.suggestedCommandIds;for(let i=0;i<m.length;i++){const o=m[i];i===0&&this.commandsHistory.peek(o.commandId)&&(f.push({type:"separator",label:g("recentlyUsed","recently used")}),v=!0),y&&o.tfIdfScore!==void 0&&(f.push({type:"separator",label:g("suggested","similar commands")}),y=!1),P&&o.tfIdfScore===void 0&&!this.commandsHistory.peek(o.commandId)&&this.options.suggestedCommandIds?.has(o.commandId)&&(f.push({type:"separator",label:g("commonlyUsed","commonly used")}),v=!0,P=!1),v&&o.tfIdfScore===void 0&&!this.commandsHistory.peek(o.commandId)&&!this.options.suggestedCommandIds?.has(o.commandId)&&(f.push({type:"separator",label:g("morecCommands","other commands")}),v=!1),f.push(this.toCommandPick(o,n))}return this.hasAdditionalCommandPicks(e,t)?{picks:f,additionalPicks:(async()=>{const i=await this.getAdditionalCommandPicks(s,m,e,t);if(t.isCancellationRequested)return[];const o=i.map(c=>this.toCommandPick(c,n));return y&&o[0]?.type!=="separator"&&o.unshift({type:"separator",label:g("suggested","similar commands")}),o})()}:f}toCommandPick(e,a){if(e.type==="separator")return e;const t=this.keybindingService.lookupKeybinding(e.commandId),n=t?g("commandPickAriaLabelWithKeybinding","{0}, {1}",e.label,t.getAriaLabel()):e.label;return{...e,ariaLabel:n,detail:this.options.showAlias&&e.commandAlias!==e.label?e.commandAlias:void 0,keybinding:t,accept:async()=>{this.commandsHistory.push(e.commandId),this.telemetryService.publicLog2("workbenchActionExecuted",{id:e.commandId,from:a?.from??"quick open"});try{e.args?.length?await this.commandService.executeCommand(e.commandId,...e.args):await this.commandService.executeCommand(e.commandId)}catch(s){O(s)||this.dialogService.error(g("canNotRun","Command '{0}' resulted in an error",e.label),Q(s))}}}}getTfIdfChunk({label:e,commandAlias:a,commandDescription:t}){let n=e;return a&&a!==e&&(n+=` - ${a}`),t&&t.value!==e&&(n+=` - ${t.value===t.original?t.value:`${t.value} (${t.original})`}`),n}};d=b([l(1,H),l(2,$),l(3,z),l(4,V),l(5,Y)],d);let r=class extends W{constructor(e,a,t){super();this.storageService=e;this.configurationService=a;this.logService=t;this.updateConfiguration(),this.load(),this.registerListeners()}static DEFAULT_COMMANDS_HISTORY_LENGTH=50;static PREF_KEY_CACHE="commandPalette.mru.cache";static PREF_KEY_COUNTER="commandPalette.mru.counter";static cache;static counter=1;static hasChanges=!1;configuredCommandsHistoryLength=0;registerListeners(){this._register(this.configurationService.onDidChangeConfiguration(e=>this.updateConfiguration(e))),this._register(this.storageService.onWillSaveState(e=>{e.reason===J.SHUTDOWN&&this.saveState()}))}updateConfiguration(e){e&&!e.affectsConfiguration("workbench.commandPalette.history")||(this.configuredCommandsHistoryLength=r.getConfiguredCommandHistoryLength(this.configurationService),r.cache&&r.cache.limit!==this.configuredCommandsHistoryLength&&(r.cache.limit=this.configuredCommandsHistoryLength,r.hasChanges=!0))}load(){const e=this.storageService.get(r.PREF_KEY_CACHE,k.PROFILE);let a;if(e)try{a=JSON.parse(e)}catch(n){this.logService.error(`[CommandsHistory] invalid data: ${n}`)}const t=r.cache=new L(this.configuredCommandsHistoryLength,1);if(a){let n;a.usesLRU?n=a.entries:n=a.entries.sort((s,S)=>s.value-S.value),n.forEach(s=>t.set(s.key,s.value))}r.counter=this.storageService.getNumber(r.PREF_KEY_COUNTER,k.PROFILE,r.counter)}push(e){r.cache&&(r.cache.set(e,r.counter++),r.hasChanges=!0)}peek(e){return r.cache?.peek(e)}saveState(){if(!r.cache||!r.hasChanges)return;const e={usesLRU:!0,entries:[]};r.cache.forEach((a,t)=>e.entries.push({key:t,value:a})),this.storageService.store(r.PREF_KEY_CACHE,JSON.stringify(e),k.PROFILE,R.USER),this.storageService.store(r.PREF_KEY_COUNTER,r.counter,k.PROFILE,R.USER),r.hasChanges=!1}static getConfiguredCommandHistoryLength(e){const t=e.getValue().workbench?.commandPalette?.history;return typeof t=="number"?t:r.DEFAULT_COMMANDS_HISTORY_LENGTH}static clearHistory(e,a){const t=r.getConfiguredCommandHistoryLength(e);r.cache=new L(t),r.counter=1,r.hasChanges=!0}};r=b([l(0,G),l(1,M),l(2,q)],r);export{d as AbstractCommandsQuickAccessProvider,r as CommandsHistory};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var AbstractCommandsQuickAccessProvider_1, CommandsHistory_1;
+import { toErrorMessage } from '../../../base/common/errorMessage.js';
+import { isCancellationError } from '../../../base/common/errors.js';
+import { matchesContiguousSubString, matchesPrefix, matchesWords, or } from '../../../base/common/filters.js';
+import { createSingleCallFunction } from '../../../base/common/functional.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { LRUCache } from '../../../base/common/map.js';
+import { TfIdfCalculator, normalizeTfIdfScores } from '../../../base/common/tfIdf.js';
+import { localize } from '../../../nls.js';
+import { ICommandService } from '../../commands/common/commands.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { IDialogService } from '../../dialogs/common/dialogs.js';
+import { IInstantiationService } from '../../instantiation/common/instantiation.js';
+import { IKeybindingService } from '../../keybinding/common/keybinding.js';
+import { ILogService } from '../../log/common/log.js';
+import { PickerQuickAccessProvider } from './pickerQuickAccess.js';
+import { IStorageService, WillSaveStateReason } from '../../storage/common/storage.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+let AbstractCommandsQuickAccessProvider = class AbstractCommandsQuickAccessProvider extends PickerQuickAccessProvider {
+    static { AbstractCommandsQuickAccessProvider_1 = this; }
+    static { this.PREFIX = '>'; }
+    static { this.TFIDF_THRESHOLD = 0.5; }
+    static { this.TFIDF_MAX_RESULTS = 5; }
+    static { this.WORD_FILTER = or(matchesPrefix, matchesWords, matchesContiguousSubString); }
+    constructor(options, instantiationService, keybindingService, commandService, telemetryService, dialogService) {
+        super(AbstractCommandsQuickAccessProvider_1.PREFIX, options);
+        this.instantiationService = instantiationService;
+        this.keybindingService = keybindingService;
+        this.commandService = commandService;
+        this.telemetryService = telemetryService;
+        this.dialogService = dialogService;
+        this.commandsHistory = this._register(this.instantiationService.createInstance(CommandsHistory));
+        this.options = options;
+    }
+    async _getPicks(filter, _disposables, token, runOptions) {
+        const allCommandPicks = await this.getCommandPicks(token);
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        const runTfidf = createSingleCallFunction(() => {
+            const tfidf = new TfIdfCalculator();
+            tfidf.updateDocuments(allCommandPicks.map(commandPick => ({
+                key: commandPick.commandId,
+                textChunks: [this.getTfIdfChunk(commandPick)]
+            })));
+            const result = tfidf.calculateScores(filter, token);
+            return normalizeTfIdfScores(result)
+                .filter(score => score.score > AbstractCommandsQuickAccessProvider_1.TFIDF_THRESHOLD)
+                .slice(0, AbstractCommandsQuickAccessProvider_1.TFIDF_MAX_RESULTS);
+        });
+        const filteredCommandPicks = [];
+        for (const commandPick of allCommandPicks) {
+            const labelHighlights = AbstractCommandsQuickAccessProvider_1.WORD_FILTER(filter, commandPick.label) ?? undefined;
+            const aliasHighlights = commandPick.commandAlias ? AbstractCommandsQuickAccessProvider_1.WORD_FILTER(filter, commandPick.commandAlias) ?? undefined : undefined;
+            if (labelHighlights || aliasHighlights) {
+                commandPick.highlights = {
+                    label: labelHighlights,
+                    detail: this.options.showAlias ? aliasHighlights : undefined
+                };
+                filteredCommandPicks.push(commandPick);
+            }
+            else if (filter === commandPick.commandId) {
+                filteredCommandPicks.push(commandPick);
+            }
+            else if (filter.length >= 3) {
+                const tfidf = runTfidf();
+                if (token.isCancellationRequested) {
+                    return [];
+                }
+                const tfidfScore = tfidf.find(score => score.key === commandPick.commandId);
+                if (tfidfScore) {
+                    commandPick.tfIdfScore = tfidfScore.score;
+                    filteredCommandPicks.push(commandPick);
+                }
+            }
+        }
+        const mapLabelToCommand = new Map();
+        for (const commandPick of filteredCommandPicks) {
+            const existingCommandForLabel = mapLabelToCommand.get(commandPick.label);
+            if (existingCommandForLabel) {
+                commandPick.description = commandPick.commandId;
+                existingCommandForLabel.description = existingCommandForLabel.commandId;
+            }
+            else {
+                mapLabelToCommand.set(commandPick.label, commandPick);
+            }
+        }
+        filteredCommandPicks.sort((commandPickA, commandPickB) => {
+            if (commandPickA.tfIdfScore && commandPickB.tfIdfScore) {
+                if (commandPickA.tfIdfScore === commandPickB.tfIdfScore) {
+                    return commandPickA.label.localeCompare(commandPickB.label);
+                }
+                return commandPickB.tfIdfScore - commandPickA.tfIdfScore;
+            }
+            else if (commandPickA.tfIdfScore) {
+                return 1;
+            }
+            else if (commandPickB.tfIdfScore) {
+                return -1;
+            }
+            const commandACounter = this.commandsHistory.peek(commandPickA.commandId);
+            const commandBCounter = this.commandsHistory.peek(commandPickB.commandId);
+            if (commandACounter && commandBCounter) {
+                return commandACounter > commandBCounter ? -1 : 1;
+            }
+            if (commandACounter) {
+                return -1;
+            }
+            if (commandBCounter) {
+                return 1;
+            }
+            if (this.options.suggestedCommandIds) {
+                const commandASuggestion = this.options.suggestedCommandIds.has(commandPickA.commandId);
+                const commandBSuggestion = this.options.suggestedCommandIds.has(commandPickB.commandId);
+                if (commandASuggestion && commandBSuggestion) {
+                    return 0;
+                }
+                if (commandASuggestion) {
+                    return -1;
+                }
+                if (commandBSuggestion) {
+                    return 1;
+                }
+            }
+            return commandPickA.label.localeCompare(commandPickB.label);
+        });
+        const commandPicks = [];
+        let addOtherSeparator = false;
+        let addSuggestedSeparator = true;
+        let addCommonlyUsedSeparator = !!this.options.suggestedCommandIds;
+        for (let i = 0; i < filteredCommandPicks.length; i++) {
+            const commandPick = filteredCommandPicks[i];
+            if (i === 0 && this.commandsHistory.peek(commandPick.commandId)) {
+                commandPicks.push({ type: 'separator', label: localize('recentlyUsed', "recently used") });
+                addOtherSeparator = true;
+            }
+            if (addSuggestedSeparator && commandPick.tfIdfScore !== undefined) {
+                commandPicks.push({ type: 'separator', label: localize('suggested', "similar commands") });
+                addSuggestedSeparator = false;
+            }
+            if (addCommonlyUsedSeparator && commandPick.tfIdfScore === undefined && !this.commandsHistory.peek(commandPick.commandId) && this.options.suggestedCommandIds?.has(commandPick.commandId)) {
+                commandPicks.push({ type: 'separator', label: localize('commonlyUsed', "commonly used") });
+                addOtherSeparator = true;
+                addCommonlyUsedSeparator = false;
+            }
+            if (addOtherSeparator && commandPick.tfIdfScore === undefined && !this.commandsHistory.peek(commandPick.commandId) && !this.options.suggestedCommandIds?.has(commandPick.commandId)) {
+                commandPicks.push({ type: 'separator', label: localize('morecCommands', "other commands") });
+                addOtherSeparator = false;
+            }
+            commandPicks.push(this.toCommandPick(commandPick, runOptions));
+        }
+        if (!this.hasAdditionalCommandPicks(filter, token)) {
+            return commandPicks;
+        }
+        return {
+            picks: commandPicks,
+            additionalPicks: (async () => {
+                const additionalCommandPicks = await this.getAdditionalCommandPicks(allCommandPicks, filteredCommandPicks, filter, token);
+                if (token.isCancellationRequested) {
+                    return [];
+                }
+                const commandPicks = additionalCommandPicks.map(commandPick => this.toCommandPick(commandPick, runOptions));
+                if (addSuggestedSeparator && commandPicks[0]?.type !== 'separator') {
+                    commandPicks.unshift({ type: 'separator', label: localize('suggested', "similar commands") });
+                }
+                return commandPicks;
+            })()
+        };
+    }
+    toCommandPick(commandPick, runOptions) {
+        if (commandPick.type === 'separator') {
+            return commandPick;
+        }
+        const keybinding = this.keybindingService.lookupKeybinding(commandPick.commandId);
+        const ariaLabel = keybinding ?
+            localize('commandPickAriaLabelWithKeybinding', "{0}, {1}", commandPick.label, keybinding.getAriaLabel()) :
+            commandPick.label;
+        return {
+            ...commandPick,
+            ariaLabel,
+            detail: this.options.showAlias && commandPick.commandAlias !== commandPick.label ? commandPick.commandAlias : undefined,
+            keybinding,
+            accept: async () => {
+                this.commandsHistory.push(commandPick.commandId);
+                this.telemetryService.publicLog2('workbenchActionExecuted', {
+                    id: commandPick.commandId,
+                    from: runOptions?.from ?? 'quick open'
+                });
+                try {
+                    commandPick.args?.length
+                        ? await this.commandService.executeCommand(commandPick.commandId, ...commandPick.args)
+                        : await this.commandService.executeCommand(commandPick.commandId);
+                }
+                catch (error) {
+                    if (!isCancellationError(error)) {
+                        this.dialogService.error(localize('canNotRun', "Command '{0}' resulted in an error", commandPick.label), toErrorMessage(error));
+                    }
+                }
+            }
+        };
+    }
+    getTfIdfChunk({ label, commandAlias, commandDescription }) {
+        let chunk = label;
+        if (commandAlias && commandAlias !== label) {
+            chunk += ` - ${commandAlias}`;
+        }
+        if (commandDescription && commandDescription.value !== label) {
+            chunk += ` - ${commandDescription.value === commandDescription.original ? commandDescription.value : `${commandDescription.value} (${commandDescription.original})`}`;
+        }
+        return chunk;
+    }
+};
+AbstractCommandsQuickAccessProvider = AbstractCommandsQuickAccessProvider_1 = __decorate([
+    __param(1, IInstantiationService),
+    __param(2, IKeybindingService),
+    __param(3, ICommandService),
+    __param(4, ITelemetryService),
+    __param(5, IDialogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], AbstractCommandsQuickAccessProvider);
+export { AbstractCommandsQuickAccessProvider };
+let CommandsHistory = class CommandsHistory extends Disposable {
+    static { CommandsHistory_1 = this; }
+    static { this.DEFAULT_COMMANDS_HISTORY_LENGTH = 50; }
+    static { this.PREF_KEY_CACHE = 'commandPalette.mru.cache'; }
+    static { this.PREF_KEY_COUNTER = 'commandPalette.mru.counter'; }
+    static { this.counter = 1; }
+    static { this.hasChanges = false; }
+    constructor(storageService, configurationService, logService) {
+        super();
+        this.storageService = storageService;
+        this.configurationService = configurationService;
+        this.logService = logService;
+        this.configuredCommandsHistoryLength = 0;
+        this.updateConfiguration();
+        this.load();
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.configurationService.onDidChangeConfiguration(e => this.updateConfiguration(e)));
+        this._register(this.storageService.onWillSaveState(e => {
+            if (e.reason === WillSaveStateReason.SHUTDOWN) {
+                this.saveState();
+            }
+        }));
+    }
+    updateConfiguration(e) {
+        if (e && !e.affectsConfiguration('workbench.commandPalette.history')) {
+            return;
+        }
+        this.configuredCommandsHistoryLength = CommandsHistory_1.getConfiguredCommandHistoryLength(this.configurationService);
+        if (CommandsHistory_1.cache && CommandsHistory_1.cache.limit !== this.configuredCommandsHistoryLength) {
+            CommandsHistory_1.cache.limit = this.configuredCommandsHistoryLength;
+            CommandsHistory_1.hasChanges = true;
+        }
+    }
+    load() {
+        const raw = this.storageService.get(CommandsHistory_1.PREF_KEY_CACHE, 0);
+        let serializedCache;
+        if (raw) {
+            try {
+                serializedCache = JSON.parse(raw);
+            }
+            catch (error) {
+                this.logService.error(`[CommandsHistory] invalid data: ${error}`);
+            }
+        }
+        const cache = CommandsHistory_1.cache = new LRUCache(this.configuredCommandsHistoryLength, 1);
+        if (serializedCache) {
+            let entries;
+            if (serializedCache.usesLRU) {
+                entries = serializedCache.entries;
+            }
+            else {
+                entries = serializedCache.entries.sort((a, b) => a.value - b.value);
+            }
+            entries.forEach(entry => cache.set(entry.key, entry.value));
+        }
+        CommandsHistory_1.counter = this.storageService.getNumber(CommandsHistory_1.PREF_KEY_COUNTER, 0, CommandsHistory_1.counter);
+    }
+    push(commandId) {
+        if (!CommandsHistory_1.cache) {
+            return;
+        }
+        CommandsHistory_1.cache.set(commandId, CommandsHistory_1.counter++);
+        CommandsHistory_1.hasChanges = true;
+    }
+    peek(commandId) {
+        return CommandsHistory_1.cache?.peek(commandId);
+    }
+    saveState() {
+        if (!CommandsHistory_1.cache) {
+            return;
+        }
+        if (!CommandsHistory_1.hasChanges) {
+            return;
+        }
+        const serializedCache = { usesLRU: true, entries: [] };
+        CommandsHistory_1.cache.forEach((value, key) => serializedCache.entries.push({ key, value }));
+        this.storageService.store(CommandsHistory_1.PREF_KEY_CACHE, JSON.stringify(serializedCache), 0, 0);
+        this.storageService.store(CommandsHistory_1.PREF_KEY_COUNTER, CommandsHistory_1.counter, 0, 0);
+        CommandsHistory_1.hasChanges = false;
+    }
+    static getConfiguredCommandHistoryLength(configurationService) {
+        const config = configurationService.getValue();
+        const configuredCommandHistoryLength = config.workbench?.commandPalette?.history;
+        if (typeof configuredCommandHistoryLength === 'number') {
+            return configuredCommandHistoryLength;
+        }
+        return CommandsHistory_1.DEFAULT_COMMANDS_HISTORY_LENGTH;
+    }
+    static clearHistory(configurationService, storageService) {
+        const commandHistoryLength = CommandsHistory_1.getConfiguredCommandHistoryLength(configurationService);
+        CommandsHistory_1.cache = new LRUCache(commandHistoryLength);
+        CommandsHistory_1.counter = 1;
+        CommandsHistory_1.hasChanges = true;
+    }
+};
+CommandsHistory = CommandsHistory_1 = __decorate([
+    __param(0, IStorageService),
+    __param(1, IConfigurationService),
+    __param(2, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], CommandsHistory);
+export { CommandsHistory };

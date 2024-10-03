@@ -1,1 +1,98 @@
-var d=Object.defineProperty;var l=Object.getOwnPropertyDescriptor;var c=(n,r,e,s)=>{for(var i=s>1?void 0:s?l(r,e):r,t=n.length-1,h;t>=0;t--)(h=n[t])&&(i=(s?h(r,e,i):h(i))||i);return s&&i&&d(r,e,i),i},a=(n,r)=>(e,s)=>r(e,s,n);import{parse as m}from"../../../base/common/path.js";import{debounce as p,throttle as f}from"../../../base/common/decorators.js";import{Emitter as g}from"../../../base/common/event.js";import{Disposable as v}from"../../../base/common/lifecycle.js";import"../../../base/common/processes.js";import{listProcesses as _}from"../../../base/node/ps.js";import{ILogService as u}from"../../log/common/log.js";var b=(e=>(e[e.InactiveThrottleDuration=5e3]="InactiveThrottleDuration",e[e.ActiveDebounceDuration=1e3]="ActiveDebounceDuration",e))(b||{});const C=[];let o=class extends v{constructor(e,s){super();this._pid=e;this._logService=s}_hasChildProcesses=!1;set hasChildProcesses(e){this._hasChildProcesses!==e&&(this._hasChildProcesses=e,this._logService.debug("ChildProcessMonitor: Has child processes changed",e),this._onDidChangeHasChildProcesses.fire(e))}get hasChildProcesses(){return this._hasChildProcesses}_onDidChangeHasChildProcesses=this._register(new g);onDidChangeHasChildProcesses=this._onDidChangeHasChildProcesses.event;handleInput(){this._refreshActive()}handleOutput(){this._refreshInactive()}async _refreshActive(){if(!this._store.isDisposed)try{const e=await _(this._pid);this.hasChildProcesses=this._processContainsChildren(e)}catch(e){this._logService.debug("ChildProcessMonitor: Fetching process tree failed",e)}}_refreshInactive(){this._refreshActive()}_processContainsChildren(e){if(!e.children)return!1;if(e.children.length===1){const s=e.children[0];let i;if(s.cmd.startsWith('"'))i=s.cmd.substring(1,s.cmd.indexOf('"',1));else{const t=s.cmd.indexOf(" ");t===-1?i=s.cmd:i=s.cmd.substring(0,t)}return C.indexOf(m(i).name)===-1}return e.children.length>0}};c([p(1e3)],o.prototype,"_refreshActive",1),c([f(5e3)],o.prototype,"_refreshInactive",1),o=c([a(1,u)],o);export{o as ChildProcessMonitor,C as ignoreProcessNames};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { parse } from '../../../base/common/path.js';
+import { debounce, throttle } from '../../../base/common/decorators.js';
+import { Emitter } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { listProcesses } from '../../../base/node/ps.js';
+import { ILogService } from '../../log/common/log.js';
+export const ignoreProcessNames = [];
+let ChildProcessMonitor = class ChildProcessMonitor extends Disposable {
+    set hasChildProcesses(value) {
+        if (this._hasChildProcesses !== value) {
+            this._hasChildProcesses = value;
+            this._logService.debug('ChildProcessMonitor: Has child processes changed', value);
+            this._onDidChangeHasChildProcesses.fire(value);
+        }
+    }
+    get hasChildProcesses() { return this._hasChildProcesses; }
+    constructor(_pid, _logService) {
+        super();
+        this._pid = _pid;
+        this._logService = _logService;
+        this._hasChildProcesses = false;
+        this._onDidChangeHasChildProcesses = this._register(new Emitter());
+        this.onDidChangeHasChildProcesses = this._onDidChangeHasChildProcesses.event;
+    }
+    handleInput() {
+        this._refreshActive();
+    }
+    handleOutput() {
+        this._refreshInactive();
+    }
+    async _refreshActive() {
+        if (this._store.isDisposed) {
+            return;
+        }
+        try {
+            const processItem = await listProcesses(this._pid);
+            this.hasChildProcesses = this._processContainsChildren(processItem);
+        }
+        catch (e) {
+            this._logService.debug('ChildProcessMonitor: Fetching process tree failed', e);
+        }
+    }
+    _refreshInactive() {
+        this._refreshActive();
+    }
+    _processContainsChildren(processItem) {
+        if (!processItem.children) {
+            return false;
+        }
+        if (processItem.children.length === 1) {
+            const item = processItem.children[0];
+            let cmd;
+            if (item.cmd.startsWith(`"`)) {
+                cmd = item.cmd.substring(1, item.cmd.indexOf(`"`, 1));
+            }
+            else {
+                const spaceIndex = item.cmd.indexOf(` `);
+                if (spaceIndex === -1) {
+                    cmd = item.cmd;
+                }
+                else {
+                    cmd = item.cmd.substring(0, spaceIndex);
+                }
+            }
+            return ignoreProcessNames.indexOf(parse(cmd).name) === -1;
+        }
+        return processItem.children.length > 0;
+    }
+};
+__decorate([
+    debounce(1000),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], ChildProcessMonitor.prototype, "_refreshActive", null);
+__decorate([
+    throttle(5000),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ChildProcessMonitor.prototype, "_refreshInactive", null);
+ChildProcessMonitor = __decorate([
+    __param(1, ILogService),
+    __metadata("design:paramtypes", [Number, Object])
+], ChildProcessMonitor);
+export { ChildProcessMonitor };

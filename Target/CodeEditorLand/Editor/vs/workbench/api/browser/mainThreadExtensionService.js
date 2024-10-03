@@ -1,1 +1,257 @@
-var I=Object.defineProperty;var R=Object.getOwnPropertyDescriptor;var p=(o,e,t,n)=>{for(var i=n>1?void 0:n?R(e,t):e,r=o.length-1,c;r>=0;r--)(c=o[r])&&(i=(n?c(e,t,i):c(i))||i);return n&&i&&I(e,t,i),i},a=(o,e)=>(t,n)=>e(t,n,o);import{Action as v}from"../../../base/common/actions.js";import"../../../base/common/buffer.js";import{CancellationToken as w}from"../../../base/common/cancellation.js";import{transformErrorFromSerialization as f}from"../../../base/common/errors.js";import{FileAccess as k}from"../../../base/common/network.js";import l from"../../../base/common/severity.js";import{URI as S}from"../../../base/common/uri.js";import{localize as s}from"../../../nls.js";import{ICommandService as C}from"../../../platform/commands/common/commands.js";import"../../../platform/extensionManagement/common/extensionManagement.js";import{areSameExtensions as P}from"../../../platform/extensionManagement/common/extensionManagementUtil.js";import"../../../platform/extensions/common/extensions.js";import{INotificationService as A}from"../../../platform/notification/common/notification.js";import{ManagedRemoteConnection as H,RemoteConnectionType as W,WebSocketRemoteConnection as D}from"../../../platform/remote/common/remoteAuthorityResolver.js";import{ExtHostContext as $,MainContext as u}from"../common/extHost.protocol.js";import{IExtensionsWorkbenchService as g}from"../../contrib/extensions/common/extensions.js";import{IWorkbenchEnvironmentService as N}from"../../services/environment/common/environmentService.js";import{EnablementState as m,IWorkbenchExtensionEnablementService as M}from"../../services/extensionManagement/common/extensionManagement.js";import{ExtensionHostKind as y}from"../../services/extensions/common/extensionHostKind.js";import"../../services/extensions/common/extensionHostProtocol.js";import"../../services/extensions/common/extensionHostProxy.js";import{IExtensionService as T}from"../../services/extensions/common/extensions.js";import{extHostNamedCustomer as B}from"../../services/extensions/common/extHostCustomers.js";import"../../services/extensions/common/proxyIdentifier.js";import{IHostService as U}from"../../services/host/browser/host.js";import{ITimerService as K}from"../../services/timer/browser/timerService.js";let d=class{constructor(e,t,n,i,r,c,_,x,E){this._extensionService=t;this._notificationService=n;this._extensionsWorkbenchService=i;this._hostService=r;this._extensionEnablementService=c;this._timerService=_;this._commandService=x;this._environmentService=E;this._extensionHostKind=e.extensionHostKind;const h=e;this._internalExtensionService=h.internalExtensionService,h._setExtensionHostProxy(new z(e.getProxy($.ExtHostExtensionService))),h._setAllMainProxyIdentifiers(Object.keys(u).map(b=>u[b]))}_extensionHostKind;_internalExtensionService;dispose(){}$getExtension(e){return this._extensionService.getExtension(e)}$activateExtension(e,t){return this._internalExtensionService._activateById(e,t)}async $onWillActivateExtension(e){this._internalExtensionService._onWillActivateExtension(e)}$onDidActivateExtension(e,t,n,i,r){this._internalExtensionService._onDidActivateExtension(e,t,n,i,r)}$onExtensionRuntimeError(e,t){const n=f(t);this._internalExtensionService._onExtensionRuntimeError(e,n)}async $onExtensionActivationError(e,t,n){const i=f(t);if(this._internalExtensionService._onDidActivateExtensionError(e,i),n){const c=await this._extensionService.getExtension(e.value);if(c){const x=(await this._extensionsWorkbenchService.queryLocal()).find(E=>P(E.identifier,{id:n.dependency}));if(x?.local){await this._handleMissingInstalledDependency(c,x.local);return}else{await this._handleMissingNotInstalledDependency(c,n.dependency);return}}}if(!this._environmentService.isBuilt||this._environmentService.isExtensionDevelopment){this._notificationService.error(i);return}}async _handleMissingInstalledDependency(e,t){const n=e.displayName||e.name;if(this._extensionEnablementService.isEnabled(t))this._notificationService.notify({severity:l.Error,message:s("reload window","Cannot activate the '{0}' extension because it depends on the '{1}' extension, which is not loaded. Would you like to reload the window to load the extension?",n,t.manifest.displayName||t.manifest.name),actions:{primary:[new v("reload",s("reload","Reload Window"),"",!0,()=>this._hostService.reload())]}});else{const i=this._extensionEnablementService.getEnablementState(t);i===m.DisabledByVirtualWorkspace?this._notificationService.notify({severity:l.Error,message:s("notSupportedInWorkspace","Cannot activate the '{0}' extension because it depends on the '{1}' extension which is not supported in the current workspace",n,t.manifest.displayName||t.manifest.name)}):i===m.DisabledByTrustRequirement?this._notificationService.notify({severity:l.Error,message:s("restrictedMode","Cannot activate the '{0}' extension because it depends on the '{1}' extension which is not supported in Restricted Mode",n,t.manifest.displayName||t.manifest.name),actions:{primary:[new v("manageWorkspaceTrust",s("manageWorkspaceTrust","Manage Workspace Trust"),"",!0,()=>this._commandService.executeCommand("workbench.trust.manage"))]}}):this._extensionEnablementService.canChangeEnablement(t)?this._notificationService.notify({severity:l.Error,message:s("disabledDep","Cannot activate the '{0}' extension because it depends on the '{1}' extension which is disabled. Would you like to enable the extension and reload the window?",n,t.manifest.displayName||t.manifest.name),actions:{primary:[new v("enable",s("enable dep","Enable and Reload"),"",!0,()=>this._extensionEnablementService.setEnablement([t],i===m.DisabledGlobally?m.EnabledGlobally:m.EnabledWorkspace).then(()=>this._hostService.reload(),r=>this._notificationService.error(r)))]}}):this._notificationService.notify({severity:l.Error,message:s("disabledDepNoAction","Cannot activate the '{0}' extension because it depends on the '{1}' extension which is disabled.",n,t.manifest.displayName||t.manifest.name)})}}async _handleMissingNotInstalledDependency(e,t){const n=e.displayName||e.name;let i=null;try{i=(await this._extensionsWorkbenchService.getExtensions([{id:t}],w.None))[0]}catch{}i?this._notificationService.notify({severity:l.Error,message:s("uninstalledDep","Cannot activate the '{0}' extension because it depends on the '{1}' extension from '{2}', which is not installed. Would you like to install the extension and reload the window?",n,i.displayName,i.publisherDisplayName),actions:{primary:[new v("install",s("install missing dep","Install and Reload"),"",!0,()=>this._extensionsWorkbenchService.install(i).then(()=>this._hostService.reload(),r=>this._notificationService.error(r)))]}}):this._notificationService.error(s("unknownDep","Cannot activate the '{0}' extension because it depends on an unknown '{1}' extension.",n,t))}async $setPerformanceMarks(e){this._extensionHostKind===y.LocalProcess?this._timerService.setPerformanceMarks("localExtHost",e):this._extensionHostKind===y.LocalWebWorker?this._timerService.setPerformanceMarks("workerExtHost",e):this._timerService.setPerformanceMarks("remoteExtHost",e)}async $asBrowserUri(e){return k.uriToBrowserUri(S.revive(e))}};d=p([B(u.MainThreadExtensionService),a(1,T),a(2,A),a(3,g),a(4,U),a(5,M),a(6,K),a(7,C),a(8,N)],d);class z{constructor(e){this._actual=e}async resolveAuthority(e,t){return L(await this._actual.$resolveAuthority(e,t))}async getCanonicalURI(e,t){const n=await this._actual.$getCanonicalURI(e,t);return n&&S.revive(n)}startExtensionHost(e){return this._actual.$startExtensionHost(e)}extensionTestsExecute(){return this._actual.$extensionTestsExecute()}activateByEvent(e,t){return this._actual.$activateByEvent(e,t)}activate(e,t){return this._actual.$activate(e,t)}setRemoteEnvironment(e){return this._actual.$setRemoteEnvironment(e)}updateRemoteConnectionData(e){return this._actual.$updateRemoteConnectionData(e)}deltaExtensions(e){return this._actual.$deltaExtensions(e)}test_latency(e){return this._actual.$test_latency(e)}test_up(e){return this._actual.$test_up(e)}test_down(e){return this._actual.$test_down(e)}}function L(o){return o.type==="ok"?{type:"ok",value:{...o.value,authority:V(o.value.authority)}}:o}function V(o){return{...o,connectTo:q(o.connectTo)}}function q(o){return o.type===W.WebSocket?new D(o.host,o.port):new H(o.id)}export{d as MainThreadExtensionService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Action } from '../../../base/common/actions.js';
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { transformErrorFromSerialization } from '../../../base/common/errors.js';
+import { FileAccess } from '../../../base/common/network.js';
+import Severity from '../../../base/common/severity.js';
+import { URI } from '../../../base/common/uri.js';
+import { localize } from '../../../nls.js';
+import { ICommandService } from '../../../platform/commands/common/commands.js';
+import { areSameExtensions } from '../../../platform/extensionManagement/common/extensionManagementUtil.js';
+import { INotificationService } from '../../../platform/notification/common/notification.js';
+import { ManagedRemoteConnection, WebSocketRemoteConnection } from '../../../platform/remote/common/remoteAuthorityResolver.js';
+import { ExtHostContext, MainContext } from '../common/extHost.protocol.js';
+import { IExtensionsWorkbenchService } from '../../contrib/extensions/common/extensions.js';
+import { IWorkbenchEnvironmentService } from '../../services/environment/common/environmentService.js';
+import { IWorkbenchExtensionEnablementService } from '../../services/extensionManagement/common/extensionManagement.js';
+import { IExtensionService } from '../../services/extensions/common/extensions.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+import { IHostService } from '../../services/host/browser/host.js';
+import { ITimerService } from '../../services/timer/browser/timerService.js';
+let MainThreadExtensionService = class MainThreadExtensionService {
+    constructor(extHostContext, _extensionService, _notificationService, _extensionsWorkbenchService, _hostService, _extensionEnablementService, _timerService, _commandService, _environmentService) {
+        this._extensionService = _extensionService;
+        this._notificationService = _notificationService;
+        this._extensionsWorkbenchService = _extensionsWorkbenchService;
+        this._hostService = _hostService;
+        this._extensionEnablementService = _extensionEnablementService;
+        this._timerService = _timerService;
+        this._commandService = _commandService;
+        this._environmentService = _environmentService;
+        this._extensionHostKind = extHostContext.extensionHostKind;
+        const internalExtHostContext = extHostContext;
+        this._internalExtensionService = internalExtHostContext.internalExtensionService;
+        internalExtHostContext._setExtensionHostProxy(new ExtensionHostProxy(extHostContext.getProxy(ExtHostContext.ExtHostExtensionService)));
+        internalExtHostContext._setAllMainProxyIdentifiers(Object.keys(MainContext).map((key) => MainContext[key]));
+    }
+    dispose() {
+    }
+    $getExtension(extensionId) {
+        return this._extensionService.getExtension(extensionId);
+    }
+    $activateExtension(extensionId, reason) {
+        return this._internalExtensionService._activateById(extensionId, reason);
+    }
+    async $onWillActivateExtension(extensionId) {
+        this._internalExtensionService._onWillActivateExtension(extensionId);
+    }
+    $onDidActivateExtension(extensionId, codeLoadingTime, activateCallTime, activateResolvedTime, activationReason) {
+        this._internalExtensionService._onDidActivateExtension(extensionId, codeLoadingTime, activateCallTime, activateResolvedTime, activationReason);
+    }
+    $onExtensionRuntimeError(extensionId, data) {
+        const error = transformErrorFromSerialization(data);
+        this._internalExtensionService._onExtensionRuntimeError(extensionId, error);
+        console.error(`[${extensionId.value}]${error.message}`);
+        console.error(error.stack);
+    }
+    async $onExtensionActivationError(extensionId, data, missingExtensionDependency) {
+        const error = transformErrorFromSerialization(data);
+        this._internalExtensionService._onDidActivateExtensionError(extensionId, error);
+        if (missingExtensionDependency) {
+            const extension = await this._extensionService.getExtension(extensionId.value);
+            if (extension) {
+                const local = await this._extensionsWorkbenchService.queryLocal();
+                const installedDependency = local.find(i => areSameExtensions(i.identifier, { id: missingExtensionDependency.dependency }));
+                if (installedDependency?.local) {
+                    await this._handleMissingInstalledDependency(extension, installedDependency.local);
+                    return;
+                }
+                else {
+                    await this._handleMissingNotInstalledDependency(extension, missingExtensionDependency.dependency);
+                    return;
+                }
+            }
+        }
+        const isDev = !this._environmentService.isBuilt || this._environmentService.isExtensionDevelopment;
+        if (isDev) {
+            this._notificationService.error(error);
+            return;
+        }
+        console.error(error.message);
+    }
+    async _handleMissingInstalledDependency(extension, missingInstalledDependency) {
+        const extName = extension.displayName || extension.name;
+        if (this._extensionEnablementService.isEnabled(missingInstalledDependency)) {
+            this._notificationService.notify({
+                severity: Severity.Error,
+                message: localize('reload window', "Cannot activate the '{0}' extension because it depends on the '{1}' extension, which is not loaded. Would you like to reload the window to load the extension?", extName, missingInstalledDependency.manifest.displayName || missingInstalledDependency.manifest.name),
+                actions: {
+                    primary: [new Action('reload', localize('reload', "Reload Window"), '', true, () => this._hostService.reload())]
+                }
+            });
+        }
+        else {
+            const enablementState = this._extensionEnablementService.getEnablementState(missingInstalledDependency);
+            if (enablementState === 4) {
+                this._notificationService.notify({
+                    severity: Severity.Error,
+                    message: localize('notSupportedInWorkspace', "Cannot activate the '{0}' extension because it depends on the '{1}' extension which is not supported in the current workspace", extName, missingInstalledDependency.manifest.displayName || missingInstalledDependency.manifest.name),
+                });
+            }
+            else if (enablementState === 0) {
+                this._notificationService.notify({
+                    severity: Severity.Error,
+                    message: localize('restrictedMode', "Cannot activate the '{0}' extension because it depends on the '{1}' extension which is not supported in Restricted Mode", extName, missingInstalledDependency.manifest.displayName || missingInstalledDependency.manifest.name),
+                    actions: {
+                        primary: [new Action('manageWorkspaceTrust', localize('manageWorkspaceTrust', "Manage Workspace Trust"), '', true, () => this._commandService.executeCommand('workbench.trust.manage'))]
+                    }
+                });
+            }
+            else if (this._extensionEnablementService.canChangeEnablement(missingInstalledDependency)) {
+                this._notificationService.notify({
+                    severity: Severity.Error,
+                    message: localize('disabledDep', "Cannot activate the '{0}' extension because it depends on the '{1}' extension which is disabled. Would you like to enable the extension and reload the window?", extName, missingInstalledDependency.manifest.displayName || missingInstalledDependency.manifest.name),
+                    actions: {
+                        primary: [new Action('enable', localize('enable dep', "Enable and Reload"), '', true, () => this._extensionEnablementService.setEnablement([missingInstalledDependency], enablementState === 7 ? 9 : 10)
+                                .then(() => this._hostService.reload(), e => this._notificationService.error(e)))]
+                    }
+                });
+            }
+            else {
+                this._notificationService.notify({
+                    severity: Severity.Error,
+                    message: localize('disabledDepNoAction', "Cannot activate the '{0}' extension because it depends on the '{1}' extension which is disabled.", extName, missingInstalledDependency.manifest.displayName || missingInstalledDependency.manifest.name),
+                });
+            }
+        }
+    }
+    async _handleMissingNotInstalledDependency(extension, missingDependency) {
+        const extName = extension.displayName || extension.name;
+        let dependencyExtension = null;
+        try {
+            dependencyExtension = (await this._extensionsWorkbenchService.getExtensions([{ id: missingDependency }], CancellationToken.None))[0];
+        }
+        catch (err) {
+        }
+        if (dependencyExtension) {
+            this._notificationService.notify({
+                severity: Severity.Error,
+                message: localize('uninstalledDep', "Cannot activate the '{0}' extension because it depends on the '{1}' extension from '{2}', which is not installed. Would you like to install the extension and reload the window?", extName, dependencyExtension.displayName, dependencyExtension.publisherDisplayName),
+                actions: {
+                    primary: [new Action('install', localize('install missing dep', "Install and Reload"), '', true, () => this._extensionsWorkbenchService.install(dependencyExtension)
+                            .then(() => this._hostService.reload(), e => this._notificationService.error(e)))]
+                }
+            });
+        }
+        else {
+            this._notificationService.error(localize('unknownDep', "Cannot activate the '{0}' extension because it depends on an unknown '{1}' extension.", extName, missingDependency));
+        }
+    }
+    async $setPerformanceMarks(marks) {
+        if (this._extensionHostKind === 1) {
+            this._timerService.setPerformanceMarks('localExtHost', marks);
+        }
+        else if (this._extensionHostKind === 2) {
+            this._timerService.setPerformanceMarks('workerExtHost', marks);
+        }
+        else {
+            this._timerService.setPerformanceMarks('remoteExtHost', marks);
+        }
+    }
+    async $asBrowserUri(uri) {
+        return FileAccess.uriToBrowserUri(URI.revive(uri));
+    }
+};
+MainThreadExtensionService = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadExtensionService),
+    __param(1, IExtensionService),
+    __param(2, INotificationService),
+    __param(3, IExtensionsWorkbenchService),
+    __param(4, IHostService),
+    __param(5, IWorkbenchExtensionEnablementService),
+    __param(6, ITimerService),
+    __param(7, ICommandService),
+    __param(8, IWorkbenchEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], MainThreadExtensionService);
+export { MainThreadExtensionService };
+class ExtensionHostProxy {
+    constructor(_actual) {
+        this._actual = _actual;
+    }
+    async resolveAuthority(remoteAuthority, resolveAttempt) {
+        const resolved = reviveResolveAuthorityResult(await this._actual.$resolveAuthority(remoteAuthority, resolveAttempt));
+        return resolved;
+    }
+    async getCanonicalURI(remoteAuthority, uri) {
+        const uriComponents = await this._actual.$getCanonicalURI(remoteAuthority, uri);
+        return (uriComponents ? URI.revive(uriComponents) : uriComponents);
+    }
+    startExtensionHost(extensionsDelta) {
+        return this._actual.$startExtensionHost(extensionsDelta);
+    }
+    extensionTestsExecute() {
+        return this._actual.$extensionTestsExecute();
+    }
+    activateByEvent(activationEvent, activationKind) {
+        return this._actual.$activateByEvent(activationEvent, activationKind);
+    }
+    activate(extensionId, reason) {
+        return this._actual.$activate(extensionId, reason);
+    }
+    setRemoteEnvironment(env) {
+        return this._actual.$setRemoteEnvironment(env);
+    }
+    updateRemoteConnectionData(connectionData) {
+        return this._actual.$updateRemoteConnectionData(connectionData);
+    }
+    deltaExtensions(extensionsDelta) {
+        return this._actual.$deltaExtensions(extensionsDelta);
+    }
+    test_latency(n) {
+        return this._actual.$test_latency(n);
+    }
+    test_up(b) {
+        return this._actual.$test_up(b);
+    }
+    test_down(size) {
+        return this._actual.$test_down(size);
+    }
+}
+function reviveResolveAuthorityResult(result) {
+    if (result.type === 'ok') {
+        return {
+            type: 'ok',
+            value: {
+                ...result.value,
+                authority: reviveResolvedAuthority(result.value.authority),
+            }
+        };
+    }
+    else {
+        return result;
+    }
+}
+function reviveResolvedAuthority(resolvedAuthority) {
+    return {
+        ...resolvedAuthority,
+        connectTo: reviveConnection(resolvedAuthority.connectTo),
+    };
+}
+function reviveConnection(connection) {
+    if (connection.type === 0) {
+        return new WebSocketRemoteConnection(connection.host, connection.port);
+    }
+    return new ManagedRemoteConnection(connection.id);
+}

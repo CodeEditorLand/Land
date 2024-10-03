@@ -1,1 +1,22 @@
-import"../../dnd.js";import"../../keyboardEvent.js";import"../../mouseEvent.js";import"../../touch.js";import"./listView.js";import"../../../common/lifecycle.js";var a=(e=>(e[e.Copy=0]="Copy",e[e.Move=1]="Move",e))(a||{}),i=(n=>(n.Over="drop-target",n.Before="drop-target-before",n.After="drop-target-after",n))(i||{});const b={reject(){return{accept:!1}},accept(){return{accept:!0}}};class f extends Error{constructor(t,e){super(`ListError [${t}] ${e}`)}}class E{cache=new WeakMap;getHeight(t){return this.cache.get(t)??this.estimateHeight(t)}setDynamicHeight(t,e){e>0&&this.cache.set(t,e)}}export{E as CachedListVirtualDelegate,i as ListDragOverEffectPosition,a as ListDragOverEffectType,b as ListDragOverReactions,f as ListError};
+export const ListDragOverReactions = {
+    reject() { return { accept: false }; },
+    accept() { return { accept: true }; },
+};
+export class ListError extends Error {
+    constructor(user, message) {
+        super(`ListError [${user}] ${message}`);
+    }
+}
+export class CachedListVirtualDelegate {
+    constructor() {
+        this.cache = new WeakMap();
+    }
+    getHeight(element) {
+        return this.cache.get(element) ?? this.estimateHeight(element);
+    }
+    setDynamicHeight(element, height) {
+        if (height > 0) {
+            this.cache.set(element, height);
+        }
+    }
+}

@@ -1,1 +1,39 @@
-var u=Object.defineProperty;var x=Object.getOwnPropertyDescriptor;var a=(i,o,e,n)=>{for(var t=n>1?void 0:n?x(o,e):o,s=i.length-1,c;s>=0;s--)(c=i[s])&&(t=(n?c(o,e,t):c(t))||t);return n&&t&&u(o,e,t),t},g=(i,o)=>(e,n)=>o(e,n,i);import{Extensions as f}from"../../../../platform/configuration/common/configurationRegistry.js";import{IInstantiationService as p}from"../../../../platform/instantiation/common/instantiation.js";import{Registry as m}from"../../../../platform/registry/common/platform.js";import{Extensions as C}from"../../../common/contributions.js";import{codeActionsExtensionPointDescriptor as I}from"../common/codeActionsExtensionPoint.js";import{documentationExtensionPointDescriptor as P}from"../common/documentationExtensionPoint.js";import{ExtensionsRegistry as E}from"../../../services/extensions/common/extensionsRegistry.js";import{LifecyclePhase as d}from"../../../services/lifecycle/common/lifecycle.js";import{CodeActionsContribution as y,editorConfiguration as R,notebookEditorConfiguration as A}from"./codeActionsContribution.js";import{CodeActionDocumentationContribution as b}from"./documentationContribution.js";const D=E.registerExtensionPoint(I),l=E.registerExtensionPoint(P);m.as(f.Configuration).registerConfiguration(R),m.as(f.Configuration).registerConfiguration(A);let r=class{constructor(o){o.createInstance(y,D),o.createInstance(b,l)}};r=a([g(0,p)],r),m.as(C.Workbench).registerWorkbenchContribution(r,d.Eventually);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Extensions } from '../../../../platform/configuration/common/configurationRegistry.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+import { codeActionsExtensionPointDescriptor } from '../common/codeActionsExtensionPoint.js';
+import { documentationExtensionPointDescriptor } from '../common/documentationExtensionPoint.js';
+import { ExtensionsRegistry } from '../../../services/extensions/common/extensionsRegistry.js';
+import { CodeActionsContribution, editorConfiguration, notebookEditorConfiguration } from './codeActionsContribution.js';
+import { CodeActionDocumentationContribution } from './documentationContribution.js';
+const codeActionsExtensionPoint = ExtensionsRegistry.registerExtensionPoint(codeActionsExtensionPointDescriptor);
+const documentationExtensionPoint = ExtensionsRegistry.registerExtensionPoint(documentationExtensionPointDescriptor);
+Registry.as(Extensions.Configuration)
+    .registerConfiguration(editorConfiguration);
+Registry.as(Extensions.Configuration)
+    .registerConfiguration(notebookEditorConfiguration);
+let WorkbenchConfigurationContribution = class WorkbenchConfigurationContribution {
+    constructor(instantiationService) {
+        instantiationService.createInstance(CodeActionsContribution, codeActionsExtensionPoint);
+        instantiationService.createInstance(CodeActionDocumentationContribution, documentationExtensionPoint);
+    }
+};
+WorkbenchConfigurationContribution = __decorate([
+    __param(0, IInstantiationService),
+    __metadata("design:paramtypes", [Object])
+], WorkbenchConfigurationContribution);
+Registry.as(WorkbenchExtensions.Workbench)
+    .registerWorkbenchContribution(WorkbenchConfigurationContribution, 4);

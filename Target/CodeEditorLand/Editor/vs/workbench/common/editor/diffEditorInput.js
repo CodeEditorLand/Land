@@ -1,1 +1,187 @@
-var b=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var g=(f,o,e,i)=>{for(var r=i>1?void 0:i?T(o,e):o,n=f.length-1,d;n>=0;n--)(d=f[n])&&(r=(i?d(o,e,r):d(r))||r);return i&&r&&b(o,e,r),r},h=(f,o)=>(e,i)=>o(e,i,f);import{localize as y}from"../../../nls.js";import{AbstractSideBySideEditorInputSerializer as v,SideBySideEditorInput as O}from"./sideBySideEditorInput.js";import"./editorInput.js";import"./editorModel.js";import{TEXT_DIFF_EDITOR_ID as S,BINARY_DIFF_EDITOR_ID as N,Verbosity as t,isResourceDiffEditorInput as L,EditorInputCapabilities as R}from"../editor.js";import{BaseTextEditorModel as I}from"./textEditorModel.js";import{DiffEditorModel as U}from"./diffEditorModel.js";import{TextDiffEditorModel as B}from"./textDiffEditorModel.js";import"../../../platform/instantiation/common/instantiation.js";import{IEditorService as $}from"../../services/editor/common/editorService.js";import{shorten as w}from"../../../base/common/labels.js";import{isResolvedEditorModel as D}from"../../../platform/editor/common/editor.js";let s=class extends O{constructor(e,i,r,n,d,p){super(e,i,r,n,p);this.original=r;this.modified=n;this.forceOpenAsBinary=d}static ID="workbench.editors.diffEditorInput";get typeId(){return s.ID}get editorId(){return this.modified.editorId===this.original.editorId?this.modified.editorId:void 0}get capabilities(){let e=super.capabilities;return this.labels.forceDescription&&(e|=R.ForceDescription),e}cachedModel=void 0;labels=this.computeLabels();computeLabels(){let e,i=!1;if(this.preferredName)e=this.preferredName;else{const a=this.original.getName(),l=this.modified.getName();e=y("sideBySideLabels","{0} \u2194 {1}",a,l),i=a===l}let r,n,d;if(this.preferredDescription)r=this.preferredDescription,n=this.preferredDescription,d=this.preferredDescription;else{r=this.computeLabel(this.original.getDescription(t.SHORT),this.modified.getDescription(t.SHORT)),d=this.computeLabel(this.original.getDescription(t.LONG),this.modified.getDescription(t.LONG));const a=this.original.getDescription(t.MEDIUM),l=this.modified.getDescription(t.MEDIUM);if(typeof a=="string"&&typeof l=="string"&&(a||l)){const[E,M]=w([a,l]);n=this.computeLabel(E,M)}}let p=this.computeLabel(this.original.getTitle(t.SHORT)??this.original.getName(),this.modified.getTitle(t.SHORT)??this.modified.getName()," \u2194 "),u=this.computeLabel(this.original.getTitle(t.MEDIUM)??this.original.getName(),this.modified.getTitle(t.MEDIUM)??this.modified.getName()," \u2194 "),m=this.computeLabel(this.original.getTitle(t.LONG)??this.original.getName(),this.modified.getTitle(t.LONG)??this.modified.getName()," \u2194 ");const c=this.getPreferredTitle();return c&&(p=`${c} (${p})`,u=`${c} (${u})`,m=`${c} (${m})`),{name:e,shortDescription:r,mediumDescription:n,longDescription:d,forceDescription:i,shortTitle:p,mediumTitle:u,longTitle:m}}computeLabel(e,i,r=" - "){if(!(!e||!i))return e===i?i:`${e}${r}${i}`}getName(){return this.labels.name}getDescription(e=t.MEDIUM){switch(e){case t.SHORT:return this.labels.shortDescription;case t.LONG:return this.labels.longDescription;case t.MEDIUM:default:return this.labels.mediumDescription}}getTitle(e){switch(e){case t.SHORT:return this.labels.shortTitle;case t.LONG:return this.labels.longTitle;default:case t.MEDIUM:return this.labels.mediumTitle}}async resolve(){const e=await this.createModel();return this.cachedModel?.dispose(),this.cachedModel=e,this.cachedModel}prefersEditorPane(e){return this.forceOpenAsBinary?e.find(i=>i.typeId===N):e.find(i=>i.typeId===S)}async createModel(){const[e,i]=await Promise.all([this.original.resolve(),this.modified.resolve()]);return i instanceof I&&e instanceof I?new B(e,i):new U(D(e)?e:void 0,D(i)?i:void 0)}toUntyped(e){const i=super.toUntyped(e);if(i)return{...i,modified:i.primary,original:i.secondary}}matches(e){return this===e?!0:e instanceof s?this.modified.matches(e.modified)&&this.original.matches(e.original)&&e.forceOpenAsBinary===this.forceOpenAsBinary:L(e)?this.modified.matches(e.modified)&&this.original.matches(e.original):!1}dispose(){this.cachedModel&&(this.cachedModel.dispose(),this.cachedModel=void 0),super.dispose()}};s=g([h(5,$)],s);class re extends v{createEditorInput(o,e,i,r,n){return o.createInstance(s,e,i,r,n,void 0)}}export{s as DiffEditorInput,re as DiffEditorInputSerializer};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var DiffEditorInput_1;
+import { localize } from '../../../nls.js';
+import { AbstractSideBySideEditorInputSerializer, SideBySideEditorInput } from './sideBySideEditorInput.js';
+import { EditorInput } from './editorInput.js';
+import { TEXT_DIFF_EDITOR_ID, BINARY_DIFF_EDITOR_ID, isResourceDiffEditorInput } from '../editor.js';
+import { BaseTextEditorModel } from './textEditorModel.js';
+import { DiffEditorModel } from './diffEditorModel.js';
+import { TextDiffEditorModel } from './textDiffEditorModel.js';
+import { IEditorService } from '../../services/editor/common/editorService.js';
+import { shorten } from '../../../base/common/labels.js';
+import { isResolvedEditorModel } from '../../../platform/editor/common/editor.js';
+let DiffEditorInput = class DiffEditorInput extends SideBySideEditorInput {
+    static { DiffEditorInput_1 = this; }
+    static { this.ID = 'workbench.editors.diffEditorInput'; }
+    get typeId() {
+        return DiffEditorInput_1.ID;
+    }
+    get editorId() {
+        return this.modified.editorId === this.original.editorId ? this.modified.editorId : undefined;
+    }
+    get capabilities() {
+        let capabilities = super.capabilities;
+        if (this.labels.forceDescription) {
+            capabilities |= 64;
+        }
+        return capabilities;
+    }
+    constructor(preferredName, preferredDescription, original, modified, forceOpenAsBinary, editorService) {
+        super(preferredName, preferredDescription, original, modified, editorService);
+        this.original = original;
+        this.modified = modified;
+        this.forceOpenAsBinary = forceOpenAsBinary;
+        this.cachedModel = undefined;
+        this.labels = this.computeLabels();
+    }
+    computeLabels() {
+        let name;
+        let forceDescription = false;
+        if (this.preferredName) {
+            name = this.preferredName;
+        }
+        else {
+            const originalName = this.original.getName();
+            const modifiedName = this.modified.getName();
+            name = localize('sideBySideLabels', "{0} ↔ {1}", originalName, modifiedName);
+            forceDescription = originalName === modifiedName;
+        }
+        let shortDescription;
+        let mediumDescription;
+        let longDescription;
+        if (this.preferredDescription) {
+            shortDescription = this.preferredDescription;
+            mediumDescription = this.preferredDescription;
+            longDescription = this.preferredDescription;
+        }
+        else {
+            shortDescription = this.computeLabel(this.original.getDescription(0), this.modified.getDescription(0));
+            longDescription = this.computeLabel(this.original.getDescription(2), this.modified.getDescription(2));
+            const originalMediumDescription = this.original.getDescription(1);
+            const modifiedMediumDescription = this.modified.getDescription(1);
+            if ((typeof originalMediumDescription === 'string' && typeof modifiedMediumDescription === 'string') &&
+                (originalMediumDescription || modifiedMediumDescription)) {
+                const [shortenedOriginalMediumDescription, shortenedModifiedMediumDescription] = shorten([originalMediumDescription, modifiedMediumDescription]);
+                mediumDescription = this.computeLabel(shortenedOriginalMediumDescription, shortenedModifiedMediumDescription);
+            }
+        }
+        let shortTitle = this.computeLabel(this.original.getTitle(0) ?? this.original.getName(), this.modified.getTitle(0) ?? this.modified.getName(), ' ↔ ');
+        let mediumTitle = this.computeLabel(this.original.getTitle(1) ?? this.original.getName(), this.modified.getTitle(1) ?? this.modified.getName(), ' ↔ ');
+        let longTitle = this.computeLabel(this.original.getTitle(2) ?? this.original.getName(), this.modified.getTitle(2) ?? this.modified.getName(), ' ↔ ');
+        const preferredTitle = this.getPreferredTitle();
+        if (preferredTitle) {
+            shortTitle = `${preferredTitle} (${shortTitle})`;
+            mediumTitle = `${preferredTitle} (${mediumTitle})`;
+            longTitle = `${preferredTitle} (${longTitle})`;
+        }
+        return { name, shortDescription, mediumDescription, longDescription, forceDescription, shortTitle, mediumTitle, longTitle };
+    }
+    computeLabel(originalLabel, modifiedLabel, separator = ' - ') {
+        if (!originalLabel || !modifiedLabel) {
+            return undefined;
+        }
+        if (originalLabel === modifiedLabel) {
+            return modifiedLabel;
+        }
+        return `${originalLabel}${separator}${modifiedLabel}`;
+    }
+    getName() {
+        return this.labels.name;
+    }
+    getDescription(verbosity = 1) {
+        switch (verbosity) {
+            case 0:
+                return this.labels.shortDescription;
+            case 2:
+                return this.labels.longDescription;
+            case 1:
+            default:
+                return this.labels.mediumDescription;
+        }
+    }
+    getTitle(verbosity) {
+        switch (verbosity) {
+            case 0:
+                return this.labels.shortTitle;
+            case 2:
+                return this.labels.longTitle;
+            default:
+            case 1:
+                return this.labels.mediumTitle;
+        }
+    }
+    async resolve() {
+        const resolvedModel = await this.createModel();
+        this.cachedModel?.dispose();
+        this.cachedModel = resolvedModel;
+        return this.cachedModel;
+    }
+    prefersEditorPane(editorPanes) {
+        if (this.forceOpenAsBinary) {
+            return editorPanes.find(editorPane => editorPane.typeId === BINARY_DIFF_EDITOR_ID);
+        }
+        return editorPanes.find(editorPane => editorPane.typeId === TEXT_DIFF_EDITOR_ID);
+    }
+    async createModel() {
+        const [originalEditorModel, modifiedEditorModel] = await Promise.all([
+            this.original.resolve(),
+            this.modified.resolve()
+        ]);
+        if (modifiedEditorModel instanceof BaseTextEditorModel && originalEditorModel instanceof BaseTextEditorModel) {
+            return new TextDiffEditorModel(originalEditorModel, modifiedEditorModel);
+        }
+        return new DiffEditorModel(isResolvedEditorModel(originalEditorModel) ? originalEditorModel : undefined, isResolvedEditorModel(modifiedEditorModel) ? modifiedEditorModel : undefined);
+    }
+    toUntyped(options) {
+        const untyped = super.toUntyped(options);
+        if (untyped) {
+            return {
+                ...untyped,
+                modified: untyped.primary,
+                original: untyped.secondary
+            };
+        }
+        return undefined;
+    }
+    matches(otherInput) {
+        if (this === otherInput) {
+            return true;
+        }
+        if (otherInput instanceof DiffEditorInput_1) {
+            return this.modified.matches(otherInput.modified) && this.original.matches(otherInput.original) && otherInput.forceOpenAsBinary === this.forceOpenAsBinary;
+        }
+        if (isResourceDiffEditorInput(otherInput)) {
+            return this.modified.matches(otherInput.modified) && this.original.matches(otherInput.original);
+        }
+        return false;
+    }
+    dispose() {
+        if (this.cachedModel) {
+            this.cachedModel.dispose();
+            this.cachedModel = undefined;
+        }
+        super.dispose();
+    }
+};
+DiffEditorInput = DiffEditorInput_1 = __decorate([
+    __param(5, IEditorService),
+    __metadata("design:paramtypes", [Object, Object, EditorInput,
+        EditorInput, Object, Object])
+], DiffEditorInput);
+export { DiffEditorInput };
+export class DiffEditorInputSerializer extends AbstractSideBySideEditorInputSerializer {
+    createEditorInput(instantiationService, name, description, secondaryInput, primaryInput) {
+        return instantiationService.createInstance(DiffEditorInput, name, description, secondaryInput, primaryInput, undefined);
+    }
+}

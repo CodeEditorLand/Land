@@ -1,1 +1,186 @@
-import{createFastDomNode as u}from"../../../base/browser/fastDomNode.js";import{applyFontInfo as s}from"../config/domFontInfo.js";import"./dynamicViewOverlay.js";import{VisibleLinesCollection as p}from"./viewLayer.js";import{ViewPart as m}from"./viewPart.js";import"../../common/core/stringBuilder.js";import"./renderingContext.js";import"../../common/viewModel/viewContext.js";import"../../common/viewEvents.js";import"../../common/viewLayout/viewLinesViewportData.js";import{EditorOption as o}from"../../common/config/editorOptions.js";class v extends m{_visibleLines;domNode;_dynamicOverlays=[];_isFocused=!1;constructor(e){super(e),this._visibleLines=new p({createLine:()=>new g(this._dynamicOverlays)}),this.domNode=this._visibleLines.domNode;const n=this._context.configuration.options.get(o.fontInfo);s(this.domNode,n),this.domNode.setClassName("view-overlays")}shouldRender(){if(super.shouldRender())return!0;for(let e=0,t=this._dynamicOverlays.length;e<t;e++)if(this._dynamicOverlays[e].shouldRender())return!0;return!1}dispose(){super.dispose();for(let e=0,t=this._dynamicOverlays.length;e<t;e++)this._dynamicOverlays[e].dispose();this._dynamicOverlays=[]}getDomNode(){return this.domNode}addDynamicOverlay(e){this._dynamicOverlays.push(e)}onConfigurationChanged(e){this._visibleLines.onConfigurationChanged(e);const n=this._context.configuration.options.get(o.fontInfo);return s(this.domNode,n),!0}onFlushed(e){return this._visibleLines.onFlushed(e)}onFocusChanged(e){return this._isFocused=e.isFocused,!0}onLinesChanged(e){return this._visibleLines.onLinesChanged(e)}onLinesDeleted(e){return this._visibleLines.onLinesDeleted(e)}onLinesInserted(e){return this._visibleLines.onLinesInserted(e)}onScrollChanged(e){return this._visibleLines.onScrollChanged(e)||!0}onTokensChanged(e){return this._visibleLines.onTokensChanged(e)}onZonesChanged(e){return this._visibleLines.onZonesChanged(e)}prepareRender(e){const t=this._dynamicOverlays.filter(n=>n.shouldRender());for(let n=0,l=t.length;n<l;n++){const i=t[n];i.prepareRender(e),i.onDidRender()}}render(e){this._viewOverlaysRender(e),this.domNode.toggleClassName("focused",this._isFocused)}_viewOverlaysRender(e){this._visibleLines.renderLines(e.viewportData)}}class g{_dynamicOverlays;_domNode;_renderedContent;constructor(e){this._dynamicOverlays=e,this._domNode=null,this._renderedContent=null}getDomNode(){return this._domNode?this._domNode.domNode:null}setDomNode(e){this._domNode=u(e)}onContentChanged(){}onTokensChanged(){}renderLine(e,t,n,l,i){let r="";for(let a=0,c=this._dynamicOverlays.length;a<c;a++){const h=this._dynamicOverlays[a];r+=h.render(l.startLineNumber,e)}return this._renderedContent===r?!1:(this._renderedContent=r,i.appendString('<div style="top:'),i.appendString(String(t)),i.appendString("px;height:"),i.appendString(String(n)),i.appendString('px;">'),i.appendString(r),i.appendString("</div>"),!0)}layoutLine(e,t,n){this._domNode&&(this._domNode.setTop(t),this._domNode.setHeight(n))}}class T extends v{_contentWidth;constructor(e){super(e);const n=this._context.configuration.options.get(o.layoutInfo);this._contentWidth=n.contentWidth,this.domNode.setHeight(0)}onConfigurationChanged(e){const n=this._context.configuration.options.get(o.layoutInfo);return this._contentWidth=n.contentWidth,super.onConfigurationChanged(e)||!0}onScrollChanged(e){return super.onScrollChanged(e)||e.scrollWidthChanged}_viewOverlaysRender(e){super._viewOverlaysRender(e),this.domNode.setWidth(Math.max(e.scrollWidth,this._contentWidth))}}class M extends v{_contentLeft;constructor(e){super(e);const t=this._context.configuration.options,n=t.get(o.layoutInfo);this._contentLeft=n.contentLeft,this.domNode.setClassName("margin-view-overlays"),this.domNode.setWidth(1),s(this.domNode,t.get(o.fontInfo))}onConfigurationChanged(e){const t=this._context.configuration.options;s(this.domNode,t.get(o.fontInfo));const n=t.get(o.layoutInfo);return this._contentLeft=n.contentLeft,super.onConfigurationChanged(e)||!0}onScrollChanged(e){return super.onScrollChanged(e)||e.scrollHeightChanged}_viewOverlaysRender(e){super._viewOverlaysRender(e);const t=Math.min(e.scrollHeight,1e6);this.domNode.setHeight(t),this.domNode.setWidth(this._contentLeft)}}export{T as ContentViewOverlays,M as MarginViewOverlays,g as ViewOverlayLine,v as ViewOverlays};
+import { createFastDomNode } from '../../../base/browser/fastDomNode.js';
+import { applyFontInfo } from '../config/domFontInfo.js';
+import { VisibleLinesCollection } from './viewLayer.js';
+import { ViewPart } from './viewPart.js';
+export class ViewOverlays extends ViewPart {
+    constructor(context) {
+        super(context);
+        this._dynamicOverlays = [];
+        this._isFocused = false;
+        this._visibleLines = new VisibleLinesCollection({
+            createLine: () => new ViewOverlayLine(this._dynamicOverlays)
+        });
+        this.domNode = this._visibleLines.domNode;
+        const options = this._context.configuration.options;
+        const fontInfo = options.get(52);
+        applyFontInfo(this.domNode, fontInfo);
+        this.domNode.setClassName('view-overlays');
+    }
+    shouldRender() {
+        if (super.shouldRender()) {
+            return true;
+        }
+        for (let i = 0, len = this._dynamicOverlays.length; i < len; i++) {
+            const dynamicOverlay = this._dynamicOverlays[i];
+            if (dynamicOverlay.shouldRender()) {
+                return true;
+            }
+        }
+        return false;
+    }
+    dispose() {
+        super.dispose();
+        for (let i = 0, len = this._dynamicOverlays.length; i < len; i++) {
+            const dynamicOverlay = this._dynamicOverlays[i];
+            dynamicOverlay.dispose();
+        }
+        this._dynamicOverlays = [];
+    }
+    getDomNode() {
+        return this.domNode;
+    }
+    addDynamicOverlay(overlay) {
+        this._dynamicOverlays.push(overlay);
+    }
+    onConfigurationChanged(e) {
+        this._visibleLines.onConfigurationChanged(e);
+        const options = this._context.configuration.options;
+        const fontInfo = options.get(52);
+        applyFontInfo(this.domNode, fontInfo);
+        return true;
+    }
+    onFlushed(e) {
+        return this._visibleLines.onFlushed(e);
+    }
+    onFocusChanged(e) {
+        this._isFocused = e.isFocused;
+        return true;
+    }
+    onLinesChanged(e) {
+        return this._visibleLines.onLinesChanged(e);
+    }
+    onLinesDeleted(e) {
+        return this._visibleLines.onLinesDeleted(e);
+    }
+    onLinesInserted(e) {
+        return this._visibleLines.onLinesInserted(e);
+    }
+    onScrollChanged(e) {
+        return this._visibleLines.onScrollChanged(e) || true;
+    }
+    onTokensChanged(e) {
+        return this._visibleLines.onTokensChanged(e);
+    }
+    onZonesChanged(e) {
+        return this._visibleLines.onZonesChanged(e);
+    }
+    prepareRender(ctx) {
+        const toRender = this._dynamicOverlays.filter(overlay => overlay.shouldRender());
+        for (let i = 0, len = toRender.length; i < len; i++) {
+            const dynamicOverlay = toRender[i];
+            dynamicOverlay.prepareRender(ctx);
+            dynamicOverlay.onDidRender();
+        }
+    }
+    render(ctx) {
+        this._viewOverlaysRender(ctx);
+        this.domNode.toggleClassName('focused', this._isFocused);
+    }
+    _viewOverlaysRender(ctx) {
+        this._visibleLines.renderLines(ctx.viewportData);
+    }
+}
+export class ViewOverlayLine {
+    constructor(dynamicOverlays) {
+        this._dynamicOverlays = dynamicOverlays;
+        this._domNode = null;
+        this._renderedContent = null;
+    }
+    getDomNode() {
+        if (!this._domNode) {
+            return null;
+        }
+        return this._domNode.domNode;
+    }
+    setDomNode(domNode) {
+        this._domNode = createFastDomNode(domNode);
+    }
+    onContentChanged() {
+    }
+    onTokensChanged() {
+    }
+    renderLine(lineNumber, deltaTop, lineHeight, viewportData, sb) {
+        let result = '';
+        for (let i = 0, len = this._dynamicOverlays.length; i < len; i++) {
+            const dynamicOverlay = this._dynamicOverlays[i];
+            result += dynamicOverlay.render(viewportData.startLineNumber, lineNumber);
+        }
+        if (this._renderedContent === result) {
+            return false;
+        }
+        this._renderedContent = result;
+        sb.appendString('<div style="top:');
+        sb.appendString(String(deltaTop));
+        sb.appendString('px;height:');
+        sb.appendString(String(lineHeight));
+        sb.appendString('px;">');
+        sb.appendString(result);
+        sb.appendString('</div>');
+        return true;
+    }
+    layoutLine(lineNumber, deltaTop, lineHeight) {
+        if (this._domNode) {
+            this._domNode.setTop(deltaTop);
+            this._domNode.setHeight(lineHeight);
+        }
+    }
+}
+export class ContentViewOverlays extends ViewOverlays {
+    constructor(context) {
+        super(context);
+        const options = this._context.configuration.options;
+        const layoutInfo = options.get(148);
+        this._contentWidth = layoutInfo.contentWidth;
+        this.domNode.setHeight(0);
+    }
+    onConfigurationChanged(e) {
+        const options = this._context.configuration.options;
+        const layoutInfo = options.get(148);
+        this._contentWidth = layoutInfo.contentWidth;
+        return super.onConfigurationChanged(e) || true;
+    }
+    onScrollChanged(e) {
+        return super.onScrollChanged(e) || e.scrollWidthChanged;
+    }
+    _viewOverlaysRender(ctx) {
+        super._viewOverlaysRender(ctx);
+        this.domNode.setWidth(Math.max(ctx.scrollWidth, this._contentWidth));
+    }
+}
+export class MarginViewOverlays extends ViewOverlays {
+    constructor(context) {
+        super(context);
+        const options = this._context.configuration.options;
+        const layoutInfo = options.get(148);
+        this._contentLeft = layoutInfo.contentLeft;
+        this.domNode.setClassName('margin-view-overlays');
+        this.domNode.setWidth(1);
+        applyFontInfo(this.domNode, options.get(52));
+    }
+    onConfigurationChanged(e) {
+        const options = this._context.configuration.options;
+        applyFontInfo(this.domNode, options.get(52));
+        const layoutInfo = options.get(148);
+        this._contentLeft = layoutInfo.contentLeft;
+        return super.onConfigurationChanged(e) || true;
+    }
+    onScrollChanged(e) {
+        return super.onScrollChanged(e) || e.scrollHeightChanged;
+    }
+    _viewOverlaysRender(ctx) {
+        super._viewOverlaysRender(ctx);
+        const height = Math.min(ctx.scrollHeight, 1000000);
+        this.domNode.setHeight(height);
+        this.domNode.setWidth(this._contentLeft);
+    }
+}

@@ -1,2 +1,437 @@
-import*as d from"path";import*as u from"original-fs";import*as N from"os";import{configurePortable as O}from"./bootstrap-node.js";import{bootstrapESM as k}from"./bootstrap-esm.js";import{fileURLToPath as T}from"url";import{app as o,protocol as R,crashReporter as I,Menu as j,contentTracing as U}from"electron";import V from"minimist";import{product as t}from"./bootstrap-meta.js";import{parse as F}from"./vs/base/common/jsonc.js";import{getUserDataPath as _}from"./vs/platform/environment/node/userDataPath.js";import*as m from"./vs/base/common/performance.js";import{resolveNLSConfiguration as P}from"./vs/base/node/nls.js";import{getUNCHost as M,addUNCHostToAllowlist as $}from"./vs/base/node/unc.js";import"./vs/nls.js";import"./vs/platform/environment/common/argv.js";const C=d.dirname(T(import.meta.url));m.mark("code/didStartMain");const x=O(t),c=Z(),y=W(c);c.sandbox&&!c["disable-chromium-sandbox"]&&!y["disable-chromium-sandbox"]?o.enableSandbox():o.commandLine.hasSwitch("no-sandbox")&&!o.commandLine.hasSwitch("disable-gpu-sandbox")?o.commandLine.appendSwitch("disable-gpu-sandbox"):(o.commandLine.appendSwitch("no-sandbox"),o.commandLine.appendSwitch("disable-gpu-sandbox"));const g=_(c,t.nameShort??"code-oss-dev");if(process.platform==="win32"){const e=M(g);e&&$(e)}o.setPath("userData",g);const D=X();j.setApplicationMenu(null),m.mark("code/willStartCrashReporter"),(c["crash-reporter-directory"]||y["enable-crash-reporter"]&&!c["disable-crash-reporter"])&&q(),m.mark("code/didStartCrashReporter"),x&&x.isPortable&&o.setAppLogsPath(d.join(g,"logs")),R.registerSchemesAsPrivileged([{scheme:"vscode-webview",privileges:{standard:!0,secure:!0,supportFetchAPI:!0,corsEnabled:!0,allowServiceWorkers:!0,codeCache:!0}},{scheme:"vscode-file",privileges:{secure:!0,standard:!0,supportFetchAPI:!0,corsEnabled:!0,codeCache:!0}}]),Q();let S;const w=E((o.getPreferredSystemLanguages()?.[0]??"en").toLowerCase()),h=ee(y);if(h&&(S=P({userLocale:h,osLocale:w,commit:t.commit,userDataPath:g,nlsMetadataPath:C})),process.platform==="win32"||process.platform==="linux"){const e=!h||h==="qps-ploc"?"en":h;o.commandLine.appendSwitch("lang",e)}o.once("ready",function(){if(c.trace){const e={categoryFilter:c["trace-category-filter"]||"*",traceOptions:c["trace-options"]||"record-until-full,enable-sampling"};U.startRecording(e).finally(()=>A())}else A()});async function A(){m.mark("code/mainAppReady");try{const[,e]=await Promise.all([Y(D),K()]);await H(D,e)}catch{}}async function H(e,r){process.env.VSCODE_NLS_CONFIG=JSON.stringify(r),process.env.VSCODE_CODE_CACHE_PATH=e||"",await k(),m.mark("code/willLoadMainBundle"),await import("./vs/code/electron-main/main.js"),m.mark("code/didLoadMainBundle")}function W(e){const r=["disable-hardware-acceleration","force-color-profile","disable-lcd-text","proxy-bypass-list"];process.platform==="linux"&&(r.push("force-renderer-accessibility"),r.push("password-store"));const s=["enable-proposed-api","log-level","use-inmemory-secretstorage"],f=z();Object.keys(f).forEach(i=>{const n=f[i];if(r.indexOf(i)!==-1){if(n===!0||n==="true")i==="disable-hardware-acceleration"?o.disableHardwareAcceleration():o.commandLine.appendSwitch(i);else if(typeof n=="string"&&n)if(i==="password-store"){let a=n;(n==="gnome"||n==="gnome-keyring")&&(a="gnome-libsecret"),o.commandLine.appendSwitch(i,a)}else o.commandLine.appendSwitch(i,n)}else if(s.indexOf(i)!==-1)switch(i){case"enable-proposed-api":Array.isArray(n)&&n.forEach(a=>a&&typeof a=="string"&&process.argv.push("--enable-proposed-api",a));break;case"log-level":if(typeof n=="string")process.argv.push("--log",n);else if(Array.isArray(n))for(const a of n)process.argv.push("--log",a);break;case"use-inmemory-secretstorage":n&&process.argv.push("--use-inmemory-secretstorage");break}});const p=`CalculateNativeWinOcclusion,${o.commandLine.getSwitchValue("disable-features")}`;o.commandLine.appendSwitch("disable-features",p);const l=`FontMatchingCTMigration,${o.commandLine.getSwitchValue("disable-blink-features")}`;o.commandLine.appendSwitch("disable-blink-features",l);const b=J(e);return b&&o.commandLine.appendSwitch("js-flags",b),f}function z(){const e=G();let r;try{r=F(u.readFileSync(e).toString())}catch(s){s&&s.code==="ENOENT"&&B(e)}return r||(r={}),r}function B(e){try{const r=d.dirname(e);u.existsSync(r)||u.mkdirSync(r);const s=["// This configuration file allows you to pass permanent command line arguments to VS Code.","// Only a subset of arguments is currently supported to reduce the likelihood of breaking","// the installation.","//","// PLEASE DO NOT CHANGE WITHOUT UNDERSTANDING THE IMPACT","//","// NOTE: Changing this file requires a restart of VS Code.","{","	// Use software rendering instead of hardware accelerated rendering.","	// This can help in cases where you see rendering issues in VS Code.",'	// "disable-hardware-acceleration": true',"}"];u.writeFileSync(e,s.join(`
-`))}catch{}}function G(){const e=process.env.VSCODE_PORTABLE;if(e)return d.join(e,"argv.json");let r=t.dataFolderName;return process.env.VSCODE_DEV&&(r=`${r}-dev`),d.join(N.homedir(),r,"argv.json")}function q(){let e=c["crash-reporter-directory"],r="";if(e){if(e=d.normalize(e),d.isAbsolute(e)||o.exit(1),!u.existsSync(e))try{u.mkdirSync(e,{recursive:!0})}catch{o.exit(1)}o.setPath("crashDumps",e)}else{const l=t.appCenter;if(l){const b=process.platform==="win32",i=process.platform==="linux",n=process.platform==="darwin",a=y["crash-reporter-id"];if(a&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(a)){if(b)switch(process.arch){case"x64":r=l["win32-x64"];break;case"arm64":r=l["win32-arm64"];break}else if(n)if(t.darwinUniversalAssetId)r=l["darwin-universal"];else switch(process.arch){case"x64":r=l.darwin;break;case"arm64":r=l["darwin-arm64"];break}else i&&(r=l["linux-x64"]);r=r.concat("&uid=",a,"&iid=",a,"&sid=",a);const v=process.argv,L=v.indexOf("--");L===-1?v.push("--crash-reporter-id",a):v.splice(L,0,"--crash-reporter-id",a)}}}const s=(t.crashReporter?t.crashReporter.productName:void 0)||t.nameShort,f=(t.crashReporter?t.crashReporter.companyName:void 0)||"Microsoft",p=!!(!process.env.VSCODE_DEV&&r&&!e);I.start({companyName:f,productName:process.env.VSCODE_DEV?`${s} Dev`:s,submitURL:r,uploadToServer:p,compress:!0})}function J(e){const r=[];return e["js-flags"]&&r.push(e["js-flags"]),r.length>0?r.join(" "):null}function Z(){return V(process.argv,{string:["user-data-dir","locale","js-flags","crash-reporter-directory"],boolean:["disable-chromium-sandbox"],default:{sandbox:!0},alias:{"no-sandbox":"sandbox"}})}function Q(){const e=[];globalThis.macOpenFiles=e,o.on("open-file",function(f,p){e.push(p)});const r=[],s=function(f,p){f.preventDefault(),r.push(p)};o.on("will-finish-launching",function(){o.on("open-url",s)}),globalThis.getOpenUrls=function(){return o.removeListener("open-url",s),r}}function X(){if(process.argv.indexOf("--no-cached-data")>0||process.env.VSCODE_DEV)return;const e=t.commit;if(e)return d.join(g,"CachedData",e)}async function Y(e){if(typeof e=="string")try{return await u.promises.mkdir(e,{recursive:!0}),e}catch{}}function E(e){if(e.startsWith("zh")){const r=e.split("-")[1];return["hans","cn","sg","my"].includes(r)?"zh-cn":"zh-tw"}return e}async function K(){const e=S?await S:void 0;if(e)return e;let r=o.getLocale();return r?(r=E(r.toLowerCase()),P({userLocale:r,osLocale:w,commit:t.commit,userDataPath:g,nlsMetadataPath:C})):{userLocale:"en",osLocale:w,resolvedLanguage:"en",defaultMessagesFile:d.join(C,"nls.messages.json"),locale:"en",availableLanguages:{}}}function ee(e){const r=c.locale;return r?r.toLowerCase():typeof e?.locale=="string"?e.locale.toLowerCase():void 0}
+import * as path from 'path';
+import * as fs from 'original-fs';
+import * as os from 'os';
+import { configurePortable } from './bootstrap-node.js';
+import { bootstrapESM } from './bootstrap-esm.js';
+import { fileURLToPath } from 'url';
+import { app, protocol, crashReporter, Menu, contentTracing } from 'electron';
+import minimist from 'minimist';
+import { product } from './bootstrap-meta.js';
+import { parse } from './vs/base/common/jsonc.js';
+import { getUserDataPath } from './vs/platform/environment/node/userDataPath.js';
+import * as perf from './vs/base/common/performance.js';
+import { resolveNLSConfiguration } from './vs/base/node/nls.js';
+import { getUNCHost, addUNCHostToAllowlist } from './vs/base/node/unc.js';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+perf.mark('code/didStartMain');
+const portable = configurePortable(product);
+const args = parseCLIArgs();
+const argvConfig = configureCommandlineSwitchesSync(args);
+if (args['sandbox'] &&
+    !args['disable-chromium-sandbox'] &&
+    !argvConfig['disable-chromium-sandbox']) {
+    app.enableSandbox();
+}
+else if (app.commandLine.hasSwitch('no-sandbox') &&
+    !app.commandLine.hasSwitch('disable-gpu-sandbox')) {
+    app.commandLine.appendSwitch('disable-gpu-sandbox');
+}
+else {
+    app.commandLine.appendSwitch('no-sandbox');
+    app.commandLine.appendSwitch('disable-gpu-sandbox');
+}
+const userDataPath = getUserDataPath(args, product.nameShort ?? 'code-oss-dev');
+if (process.platform === 'win32') {
+    const userDataUNCHost = getUNCHost(userDataPath);
+    if (userDataUNCHost) {
+        addUNCHostToAllowlist(userDataUNCHost);
+    }
+}
+app.setPath('userData', userDataPath);
+const codeCachePath = getCodeCachePath();
+Menu.setApplicationMenu(null);
+perf.mark('code/willStartCrashReporter');
+if (args['crash-reporter-directory'] || (argvConfig['enable-crash-reporter'] && !args['disable-crash-reporter'])) {
+    configureCrashReporter();
+}
+perf.mark('code/didStartCrashReporter');
+if (portable && portable.isPortable) {
+    app.setAppLogsPath(path.join(userDataPath, 'logs'));
+}
+protocol.registerSchemesAsPrivileged([
+    {
+        scheme: 'vscode-webview',
+        privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, allowServiceWorkers: true, codeCache: true }
+    },
+    {
+        scheme: 'vscode-file',
+        privileges: { secure: true, standard: true, supportFetchAPI: true, corsEnabled: true, codeCache: true }
+    }
+]);
+registerListeners();
+let nlsConfigurationPromise = undefined;
+const osLocale = processZhLocale((app.getPreferredSystemLanguages()?.[0] ?? 'en').toLowerCase());
+const userLocale = getUserDefinedLocale(argvConfig);
+if (userLocale) {
+    nlsConfigurationPromise = resolveNLSConfiguration({
+        userLocale,
+        osLocale,
+        commit: product.commit,
+        userDataPath,
+        nlsMetadataPath: __dirname
+    });
+}
+if (process.platform === 'win32' || process.platform === 'linux') {
+    const electronLocale = (!userLocale || userLocale === 'qps-ploc') ? 'en' : userLocale;
+    app.commandLine.appendSwitch('lang', electronLocale);
+}
+app.once('ready', function () {
+    if (args['trace']) {
+        const traceOptions = {
+            categoryFilter: args['trace-category-filter'] || '*',
+            traceOptions: args['trace-options'] || 'record-until-full,enable-sampling'
+        };
+        contentTracing.startRecording(traceOptions).finally(() => onReady());
+    }
+    else {
+        onReady();
+    }
+});
+async function onReady() {
+    perf.mark('code/mainAppReady');
+    try {
+        const [, nlsConfig] = await Promise.all([
+            mkdirpIgnoreError(codeCachePath),
+            resolveNlsConfiguration()
+        ]);
+        await startup(codeCachePath, nlsConfig);
+    }
+    catch (error) {
+        console.error(error);
+    }
+}
+async function startup(codeCachePath, nlsConfig) {
+    process.env['VSCODE_NLS_CONFIG'] = JSON.stringify(nlsConfig);
+    process.env['VSCODE_CODE_CACHE_PATH'] = codeCachePath || '';
+    await bootstrapESM();
+    perf.mark('code/willLoadMainBundle');
+    await import('./vs/code/electron-main/main.js');
+    perf.mark('code/didLoadMainBundle');
+}
+function configureCommandlineSwitchesSync(cliArgs) {
+    const SUPPORTED_ELECTRON_SWITCHES = [
+        'disable-hardware-acceleration',
+        'force-color-profile',
+        'disable-lcd-text',
+        'proxy-bypass-list'
+    ];
+    if (process.platform === 'linux') {
+        SUPPORTED_ELECTRON_SWITCHES.push('force-renderer-accessibility');
+        SUPPORTED_ELECTRON_SWITCHES.push('password-store');
+    }
+    const SUPPORTED_MAIN_PROCESS_SWITCHES = [
+        'enable-proposed-api',
+        'log-level',
+        'use-inmemory-secretstorage'
+    ];
+    const argvConfig = readArgvConfigSync();
+    Object.keys(argvConfig).forEach(argvKey => {
+        const argvValue = argvConfig[argvKey];
+        if (SUPPORTED_ELECTRON_SWITCHES.indexOf(argvKey) !== -1) {
+            if (argvValue === true || argvValue === 'true') {
+                if (argvKey === 'disable-hardware-acceleration') {
+                    app.disableHardwareAcceleration();
+                }
+                else {
+                    app.commandLine.appendSwitch(argvKey);
+                }
+            }
+            else if (typeof argvValue === 'string' && argvValue) {
+                if (argvKey === 'password-store') {
+                    let migratedArgvValue = argvValue;
+                    if (argvValue === 'gnome' || argvValue === 'gnome-keyring') {
+                        migratedArgvValue = 'gnome-libsecret';
+                    }
+                    app.commandLine.appendSwitch(argvKey, migratedArgvValue);
+                }
+                else {
+                    app.commandLine.appendSwitch(argvKey, argvValue);
+                }
+            }
+        }
+        else if (SUPPORTED_MAIN_PROCESS_SWITCHES.indexOf(argvKey) !== -1) {
+            switch (argvKey) {
+                case 'enable-proposed-api':
+                    if (Array.isArray(argvValue)) {
+                        argvValue.forEach(id => id && typeof id === 'string' && process.argv.push('--enable-proposed-api', id));
+                    }
+                    else {
+                        console.error(`Unexpected value for \`enable-proposed-api\` in argv.json. Expected array of extension ids.`);
+                    }
+                    break;
+                case 'log-level':
+                    if (typeof argvValue === 'string') {
+                        process.argv.push('--log', argvValue);
+                    }
+                    else if (Array.isArray(argvValue)) {
+                        for (const value of argvValue) {
+                            process.argv.push('--log', value);
+                        }
+                    }
+                    break;
+                case 'use-inmemory-secretstorage':
+                    if (argvValue) {
+                        process.argv.push('--use-inmemory-secretstorage');
+                    }
+                    break;
+            }
+        }
+    });
+    const featuresToDisable = `CalculateNativeWinOcclusion,${app.commandLine.getSwitchValue('disable-features')}`;
+    app.commandLine.appendSwitch('disable-features', featuresToDisable);
+    const blinkFeaturesToDisable = `FontMatchingCTMigration,${app.commandLine.getSwitchValue('disable-blink-features')}`;
+    app.commandLine.appendSwitch('disable-blink-features', blinkFeaturesToDisable);
+    const jsFlags = getJSFlags(cliArgs);
+    if (jsFlags) {
+        app.commandLine.appendSwitch('js-flags', jsFlags);
+    }
+    return argvConfig;
+}
+function readArgvConfigSync() {
+    const argvConfigPath = getArgvConfigPath();
+    let argvConfig = undefined;
+    try {
+        argvConfig = parse(fs.readFileSync(argvConfigPath).toString());
+    }
+    catch (error) {
+        if (error && error.code === 'ENOENT') {
+            createDefaultArgvConfigSync(argvConfigPath);
+        }
+        else {
+            console.warn(`Unable to read argv.json configuration file in ${argvConfigPath}, falling back to defaults (${error})`);
+        }
+    }
+    if (!argvConfig) {
+        argvConfig = {};
+    }
+    return argvConfig;
+}
+function createDefaultArgvConfigSync(argvConfigPath) {
+    try {
+        const argvConfigPathDirname = path.dirname(argvConfigPath);
+        if (!fs.existsSync(argvConfigPathDirname)) {
+            fs.mkdirSync(argvConfigPathDirname);
+        }
+        const defaultArgvConfigContent = [
+            '// This configuration file allows you to pass permanent command line arguments to VS Code.',
+            '// Only a subset of arguments is currently supported to reduce the likelihood of breaking',
+            '// the installation.',
+            '//',
+            '// PLEASE DO NOT CHANGE WITHOUT UNDERSTANDING THE IMPACT',
+            '//',
+            '// NOTE: Changing this file requires a restart of VS Code.',
+            '{',
+            '	// Use software rendering instead of hardware accelerated rendering.',
+            '	// This can help in cases where you see rendering issues in VS Code.',
+            '	// "disable-hardware-acceleration": true',
+            '}'
+        ];
+        fs.writeFileSync(argvConfigPath, defaultArgvConfigContent.join('\n'));
+    }
+    catch (error) {
+        console.error(`Unable to create argv.json configuration file in ${argvConfigPath}, falling back to defaults (${error})`);
+    }
+}
+function getArgvConfigPath() {
+    const vscodePortable = process.env['VSCODE_PORTABLE'];
+    if (vscodePortable) {
+        return path.join(vscodePortable, 'argv.json');
+    }
+    let dataFolderName = product.dataFolderName;
+    if (process.env['VSCODE_DEV']) {
+        dataFolderName = `${dataFolderName}-dev`;
+    }
+    return path.join(os.homedir(), dataFolderName, 'argv.json');
+}
+function configureCrashReporter() {
+    let crashReporterDirectory = args['crash-reporter-directory'];
+    let submitURL = '';
+    if (crashReporterDirectory) {
+        crashReporterDirectory = path.normalize(crashReporterDirectory);
+        if (!path.isAbsolute(crashReporterDirectory)) {
+            console.error(`The path '${crashReporterDirectory}' specified for --crash-reporter-directory must be absolute.`);
+            app.exit(1);
+        }
+        if (!fs.existsSync(crashReporterDirectory)) {
+            try {
+                fs.mkdirSync(crashReporterDirectory, { recursive: true });
+            }
+            catch (error) {
+                console.error(`The path '${crashReporterDirectory}' specified for --crash-reporter-directory does not seem to exist or cannot be created.`);
+                app.exit(1);
+            }
+        }
+        console.log(`Found --crash-reporter-directory argument. Setting crashDumps directory to be '${crashReporterDirectory}'`);
+        app.setPath('crashDumps', crashReporterDirectory);
+    }
+    else {
+        const appCenter = product.appCenter;
+        if (appCenter) {
+            const isWindows = (process.platform === 'win32');
+            const isLinux = (process.platform === 'linux');
+            const isDarwin = (process.platform === 'darwin');
+            const crashReporterId = argvConfig['crash-reporter-id'];
+            const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (crashReporterId && uuidPattern.test(crashReporterId)) {
+                if (isWindows) {
+                    switch (process.arch) {
+                        case 'x64':
+                            submitURL = appCenter['win32-x64'];
+                            break;
+                        case 'arm64':
+                            submitURL = appCenter['win32-arm64'];
+                            break;
+                    }
+                }
+                else if (isDarwin) {
+                    if (product.darwinUniversalAssetId) {
+                        submitURL = appCenter['darwin-universal'];
+                    }
+                    else {
+                        switch (process.arch) {
+                            case 'x64':
+                                submitURL = appCenter['darwin'];
+                                break;
+                            case 'arm64':
+                                submitURL = appCenter['darwin-arm64'];
+                                break;
+                        }
+                    }
+                }
+                else if (isLinux) {
+                    submitURL = appCenter['linux-x64'];
+                }
+                submitURL = submitURL.concat('&uid=', crashReporterId, '&iid=', crashReporterId, '&sid=', crashReporterId);
+                const argv = process.argv;
+                const endOfArgsMarkerIndex = argv.indexOf('--');
+                if (endOfArgsMarkerIndex === -1) {
+                    argv.push('--crash-reporter-id', crashReporterId);
+                }
+                else {
+                    argv.splice(endOfArgsMarkerIndex, 0, '--crash-reporter-id', crashReporterId);
+                }
+            }
+        }
+    }
+    const productName = (product.crashReporter ? product.crashReporter.productName : undefined) || product.nameShort;
+    const companyName = (product.crashReporter ? product.crashReporter.companyName : undefined) || 'Microsoft';
+    const uploadToServer = Boolean(!process.env['VSCODE_DEV'] && submitURL && !crashReporterDirectory);
+    crashReporter.start({
+        companyName,
+        productName: process.env['VSCODE_DEV'] ? `${productName} Dev` : productName,
+        submitURL,
+        uploadToServer,
+        compress: true
+    });
+}
+function getJSFlags(cliArgs) {
+    const jsFlags = [];
+    if (cliArgs['js-flags']) {
+        jsFlags.push(cliArgs['js-flags']);
+    }
+    return jsFlags.length > 0 ? jsFlags.join(' ') : null;
+}
+function parseCLIArgs() {
+    return minimist(process.argv, {
+        string: [
+            'user-data-dir',
+            'locale',
+            'js-flags',
+            'crash-reporter-directory'
+        ],
+        boolean: [
+            'disable-chromium-sandbox',
+        ],
+        default: {
+            'sandbox': true
+        },
+        alias: {
+            'no-sandbox': 'sandbox'
+        }
+    });
+}
+function registerListeners() {
+    const macOpenFiles = [];
+    globalThis['macOpenFiles'] = macOpenFiles;
+    app.on('open-file', function (event, path) {
+        macOpenFiles.push(path);
+    });
+    const openUrls = [];
+    const onOpenUrl = function (event, url) {
+        event.preventDefault();
+        openUrls.push(url);
+    };
+    app.on('will-finish-launching', function () {
+        app.on('open-url', onOpenUrl);
+    });
+    globalThis['getOpenUrls'] = function () {
+        app.removeListener('open-url', onOpenUrl);
+        return openUrls;
+    };
+}
+function getCodeCachePath() {
+    if (process.argv.indexOf('--no-cached-data') > 0) {
+        return undefined;
+    }
+    if (process.env['VSCODE_DEV']) {
+        return undefined;
+    }
+    const commit = product.commit;
+    if (!commit) {
+        return undefined;
+    }
+    return path.join(userDataPath, 'CachedData', commit);
+}
+async function mkdirpIgnoreError(dir) {
+    if (typeof dir === 'string') {
+        try {
+            await fs.promises.mkdir(dir, { recursive: true });
+            return dir;
+        }
+        catch (error) {
+        }
+    }
+    return undefined;
+}
+function processZhLocale(appLocale) {
+    if (appLocale.startsWith('zh')) {
+        const region = appLocale.split('-')[1];
+        if (['hans', 'cn', 'sg', 'my'].includes(region)) {
+            return 'zh-cn';
+        }
+        return 'zh-tw';
+    }
+    return appLocale;
+}
+async function resolveNlsConfiguration() {
+    const nlsConfiguration = nlsConfigurationPromise ? await nlsConfigurationPromise : undefined;
+    if (nlsConfiguration) {
+        return nlsConfiguration;
+    }
+    let userLocale = app.getLocale();
+    if (!userLocale) {
+        return {
+            userLocale: 'en',
+            osLocale,
+            resolvedLanguage: 'en',
+            defaultMessagesFile: path.join(__dirname, 'nls.messages.json'),
+            locale: 'en',
+            availableLanguages: {}
+        };
+    }
+    userLocale = processZhLocale(userLocale.toLowerCase());
+    return resolveNLSConfiguration({
+        userLocale,
+        osLocale,
+        commit: product.commit,
+        userDataPath,
+        nlsMetadataPath: __dirname
+    });
+}
+function getUserDefinedLocale(argvConfig) {
+    const locale = args['locale'];
+    if (locale) {
+        return locale.toLowerCase();
+    }
+    return typeof argvConfig?.locale === 'string' ? argvConfig.locale.toLowerCase() : undefined;
+}

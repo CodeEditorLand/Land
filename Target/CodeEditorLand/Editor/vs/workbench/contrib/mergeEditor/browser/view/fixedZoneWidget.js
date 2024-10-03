@@ -1,1 +1,39 @@
-import{h as n}from"../../../../../base/browser/dom.js";import{Disposable as s}from"../../../../../base/common/lifecycle.js";import"../../../../../editor/browser/editorBrowser.js";import{Event as a}from"../../../../../base/common/event.js";class t extends s{constructor(h,o,i,d,r){super();this.editor=h;this.viewZoneId=o.addZone({domNode:document.createElement("div"),afterLineNumber:i,heightInPx:d,ordinal:50001,onComputedHeight:e=>{this.widgetDomNode.style.height=`${e}px`},onDomNodeTop:e=>{this.widgetDomNode.style.top=`${e}px`}}),r.push(this.viewZoneId),this._register(a.runAndSubscribe(this.editor.onDidLayoutChange,()=>{this.widgetDomNode.style.left=this.editor.getLayoutInfo().contentLeft+"px"})),this.editor.addOverlayWidget(this.overlayWidget),this._register({dispose:()=>{this.editor.removeOverlayWidget(this.overlayWidget)}})}static counter=0;overlayWidgetId=`fixedZoneWidget-${t.counter++}`;viewZoneId;widgetDomNode=n("div.fixed-zone-widget").root;overlayWidget={getId:()=>this.overlayWidgetId,getDomNode:()=>this.widgetDomNode,getPosition:()=>null}}export{t as FixedZoneWidget};
+import { h } from '../../../../../base/browser/dom.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { Event } from '../../../../../base/common/event.js';
+export class FixedZoneWidget extends Disposable {
+    static { this.counter = 0; }
+    constructor(editor, viewZoneAccessor, afterLineNumber, height, viewZoneIdsToCleanUp) {
+        super();
+        this.editor = editor;
+        this.overlayWidgetId = `fixedZoneWidget-${FixedZoneWidget.counter++}`;
+        this.widgetDomNode = h('div.fixed-zone-widget').root;
+        this.overlayWidget = {
+            getId: () => this.overlayWidgetId,
+            getDomNode: () => this.widgetDomNode,
+            getPosition: () => null
+        };
+        this.viewZoneId = viewZoneAccessor.addZone({
+            domNode: document.createElement('div'),
+            afterLineNumber: afterLineNumber,
+            heightInPx: height,
+            ordinal: 50000 + 1,
+            onComputedHeight: (height) => {
+                this.widgetDomNode.style.height = `${height}px`;
+            },
+            onDomNodeTop: (top) => {
+                this.widgetDomNode.style.top = `${top}px`;
+            }
+        });
+        viewZoneIdsToCleanUp.push(this.viewZoneId);
+        this._register(Event.runAndSubscribe(this.editor.onDidLayoutChange, () => {
+            this.widgetDomNode.style.left = this.editor.getLayoutInfo().contentLeft + 'px';
+        }));
+        this.editor.addOverlayWidget(this.overlayWidget);
+        this._register({
+            dispose: () => {
+                this.editor.removeOverlayWidget(this.overlayWidget);
+            },
+        });
+    }
+}

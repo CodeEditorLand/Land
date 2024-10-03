@@ -1,3 +1,66 @@
-import{Range as g}from"../../../../editor/common/core/range.js";import"../../../../editor/common/model.js";import{TextSearchMatch as M}from"./search.js";function l(e,o,n){const a=e[0].range.startLineNumber,i=e[e.length-1].range.endLineNumber,r=[];for(let t=a;t<=i;t++)r.push(o.getLineContent(t));return new M(r.join(`
-`)+`
-`,e.map(t=>new g(t.range.startLineNumber-1,t.range.startColumn-1,t.range.endLineNumber-1,t.range.endColumn-1)),n)}function N(e,o,n){let a=-1;const i=[];let r=[];return e.forEach(t=>{t.range.startLineNumber!==a&&(r=[],i.push(r)),r.push(t),a=t.range.endLineNumber}),i.map(t=>l(t,o,n))}function R(e,o,n){const a=[];let i=-1;for(let r=0;r<e.length;r++){const{start:t,end:u}=x(e[r]);if(typeof n.surroundingContext=="number"&&n.surroundingContext>0){const s=Math.max(i+1,t-n.surroundingContext);for(let c=s;c<t;c++)a.push({text:o.getLineContent(c+1),lineNumber:c+1})}a.push(e[r]);const h=e[r+1],d=h?x(h).start:Number.MAX_VALUE;if(typeof n.surroundingContext=="number"&&n.surroundingContext>0){const s=Math.min(d-1,u+n.surroundingContext,o.getLineCount()-1);for(let c=u+1;c<=s;c++)a.push({text:o.getLineContent(c+1),lineNumber:c+1})}i=u}return a}function x(e){const o=e.rangeLocations.map(i=>i.source),n=o[0].startLineNumber,a=o[o.length-1].endLineNumber;return{start:n,end:a}}export{N as editorMatchesToTextSearchResults,R as getTextSearchMatchWithModelContext};
+import { Range } from '../../../../editor/common/core/range.js';
+import { TextSearchMatch } from './search.js';
+function editorMatchToTextSearchResult(matches, model, previewOptions) {
+    const firstLine = matches[0].range.startLineNumber;
+    const lastLine = matches[matches.length - 1].range.endLineNumber;
+    const lineTexts = [];
+    for (let i = firstLine; i <= lastLine; i++) {
+        lineTexts.push(model.getLineContent(i));
+    }
+    return new TextSearchMatch(lineTexts.join('\n') + '\n', matches.map(m => new Range(m.range.startLineNumber - 1, m.range.startColumn - 1, m.range.endLineNumber - 1, m.range.endColumn - 1)), previewOptions);
+}
+export function editorMatchesToTextSearchResults(matches, model, previewOptions) {
+    let previousEndLine = -1;
+    const groupedMatches = [];
+    let currentMatches = [];
+    matches.forEach((match) => {
+        if (match.range.startLineNumber !== previousEndLine) {
+            currentMatches = [];
+            groupedMatches.push(currentMatches);
+        }
+        currentMatches.push(match);
+        previousEndLine = match.range.endLineNumber;
+    });
+    return groupedMatches.map(sameLineMatches => {
+        return editorMatchToTextSearchResult(sameLineMatches, model, previewOptions);
+    });
+}
+export function getTextSearchMatchWithModelContext(matches, model, query) {
+    const results = [];
+    let prevLine = -1;
+    for (let i = 0; i < matches.length; i++) {
+        const { start: matchStartLine, end: matchEndLine } = getMatchStartEnd(matches[i]);
+        if (typeof query.surroundingContext === 'number' && query.surroundingContext > 0) {
+            const beforeContextStartLine = Math.max(prevLine + 1, matchStartLine - query.surroundingContext);
+            for (let b = beforeContextStartLine; b < matchStartLine; b++) {
+                results.push({
+                    text: model.getLineContent(b + 1),
+                    lineNumber: b + 1
+                });
+            }
+        }
+        results.push(matches[i]);
+        const nextMatch = matches[i + 1];
+        const nextMatchStartLine = nextMatch ? getMatchStartEnd(nextMatch).start : Number.MAX_VALUE;
+        if (typeof query.surroundingContext === 'number' && query.surroundingContext > 0) {
+            const afterContextToLine = Math.min(nextMatchStartLine - 1, matchEndLine + query.surroundingContext, model.getLineCount() - 1);
+            for (let a = matchEndLine + 1; a <= afterContextToLine; a++) {
+                results.push({
+                    text: model.getLineContent(a + 1),
+                    lineNumber: a + 1
+                });
+            }
+        }
+        prevLine = matchEndLine;
+    }
+    return results;
+}
+function getMatchStartEnd(match) {
+    const matchRanges = match.rangeLocations.map(e => e.source);
+    const matchStartLine = matchRanges[0].startLineNumber;
+    const matchEndLine = matchRanges[matchRanges.length - 1].endLineNumber;
+    return {
+        start: matchStartLine,
+        end: matchEndLine
+    };
+}

@@ -1,1 +1,261 @@
-var S=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var g=(u,i,e,t)=>{for(var o=t>1?void 0:t?v(i,e):i,r=u.length-1,a;r>=0;r--)(a=u[r])&&(o=(t?a(i,e,o):a(o))||o);return t&&o&&S(i,e,o),o},n=(u,i)=>(e,t)=>i(e,t,u);import{localize as b}from"../../../../nls.js";import"../../../../base/common/uri.js";import{distinct as R,deepClone as O}from"../../../../base/common/objects.js";import{Emitter as C,Event as T}from"../../../../base/common/event.js";import{isObject as P,assertIsDefined as y}from"../../../../base/common/types.js";import{MutableDisposable as L}from"../../../../base/common/lifecycle.js";import"../../../../editor/browser/editorBrowser.js";import{EditorPaneSelectionCompareResult as c,EditorPaneSelectionChangeReason as l}from"../../../common/editor.js";import"../../../common/editor/editorInput.js";import{computeEditorAriaLabel as D}from"../../editor.js";import{AbstractEditorWithViewState as x}from"./editorWithViewState.js";import"../../../../editor/common/editorCommon.js";import"../../../../editor/common/core/selection.js";import{IStorageService as M}from"../../../../platform/storage/common/storage.js";import{IInstantiationService as A}from"../../../../platform/instantiation/common/instantiation.js";import{ITelemetryService as _}from"../../../../platform/telemetry/common/telemetry.js";import{IThemeService as w}from"../../../../platform/theme/common/themeService.js";import{ITextResourceConfigurationService as N}from"../../../../editor/common/services/textResourceConfiguration.js";import"../../../../editor/common/config/editorOptions.js";import{IEditorGroupsService as V}from"../../../services/editor/common/editorGroupsService.js";import"../../../../base/common/cancellation.js";import{IEditorService as F}from"../../../services/editor/common/editorService.js";import{TextEditorSelectionRevealType as G,TextEditorSelectionSource as h}from"../../../../platform/editor/common/editor.js";import"../../../../editor/common/cursorEvents.js";import{IFileService as H}from"../../../../platform/files/common/files.js";import"../../../../base/common/htmlContent.js";let d=class extends x{constructor(e,t,o,r,a,f,E,m,I,W){super(e,t,d.VIEW_STATE_PREFERENCE_KEY,o,r,a,f,E,m,I);this.fileService=W;this._register(this.textResourceConfigurationService.onDidChangeConfiguration(s=>this.handleConfigurationChangeEvent(s))),this._register(T.any(this.editorGroupService.onDidAddGroup,this.editorGroupService.onDidRemoveGroup)(()=>{const s=this.computeAriaLabel();this.editorContainer?.setAttribute("aria-label",s),this.updateEditorControlOptions({ariaLabel:s})})),this._register(this.fileService.onDidChangeFileSystemProviderCapabilities(s=>this.onDidChangeFileSystemProvider(s.scheme))),this._register(this.fileService.onDidChangeFileSystemProviderRegistrations(s=>this.onDidChangeFileSystemProvider(s.scheme)))}static VIEW_STATE_PREFERENCE_KEY="textEditorViewState";_onDidChangeSelection=this._register(new C);onDidChangeSelection=this._onDidChangeSelection.event;_onDidChangeScroll=this._register(new C);onDidChangeScroll=this._onDidChangeScroll.event;editorContainer;hasPendingConfigurationChange;lastAppliedEditorOptions;inputListener=this._register(new L);handleConfigurationChangeEvent(e){const t=this.getActiveResource();this.shouldHandleConfigurationChangeEvent(e,t)&&(this.isVisible()?this.updateEditorConfiguration(t):this.hasPendingConfigurationChange=!0)}shouldHandleConfigurationChangeEvent(e,t){return e.affectsConfiguration(t,"editor")||e.affectsConfiguration(t,"problems.visibility")}consumePendingConfigurationChangeEvent(){this.hasPendingConfigurationChange&&(this.updateEditorConfiguration(),this.hasPendingConfigurationChange=!1)}computeConfiguration(e){const t=P(e.editor)?O(e.editor):Object.create(null);return Object.assign(t,this.getConfigurationOverrides(e)),t.ariaLabel=this.computeAriaLabel(),t}computeAriaLabel(){return this.input?D(this.input,void 0,this.group,this.editorGroupService.count):b("editor","Editor")}onDidChangeFileSystemProvider(e){this.input&&this.getActiveResource()?.scheme===e&&this.updateReadonly(this.input)}onDidChangeInputCapabilities(e){this.input===e&&this.updateReadonly(e)}updateReadonly(e){this.updateEditorControlOptions({...this.getReadonlyConfiguration(e.isReadonly())})}getReadonlyConfiguration(e){return{readOnly:!!e,readOnlyMessage:typeof e!="boolean"?e:void 0}}getConfigurationOverrides(e){return{overviewRulerLanes:3,lineNumbersMinChars:3,fixedOverflowWidgets:!0,...this.getReadonlyConfiguration(this.input?.isReadonly()),renderValidationDecorations:e.problems?.visibility!==!1?"on":"off"}}createEditor(e){this.editorContainer=e,this.createEditorControl(e,this.computeConfiguration(this.textResourceConfigurationService.getValue(this.getActiveResource()))),this.registerCodeEditorListeners()}registerCodeEditorListeners(){const e=this.getMainControl();e&&(this._register(e.onDidChangeModelLanguage(()=>this.updateEditorConfiguration())),this._register(e.onDidChangeModel(()=>this.updateEditorConfiguration())),this._register(e.onDidChangeCursorPosition(t=>this._onDidChangeSelection.fire({reason:this.toEditorPaneSelectionChangeReason(t)}))),this._register(e.onDidChangeModelContent(()=>this._onDidChangeSelection.fire({reason:l.EDIT}))),this._register(e.onDidScrollChange(()=>this._onDidChangeScroll.fire())))}toEditorPaneSelectionChangeReason(e){switch(e.source){case h.PROGRAMMATIC:return l.PROGRAMMATIC;case h.NAVIGATION:return l.NAVIGATION;case h.JUMP:return l.JUMP;default:return l.USER}}getSelection(){const e=this.getMainControl();if(e){const t=e.getSelection();if(t)return new p(t)}}async setInput(e,t,o,r){await super.setInput(e,t,o,r),this.inputListener.value=e.onDidChangeCapabilities(()=>this.onDidChangeInputCapabilities(e)),this.updateEditorConfiguration(),y(this.editorContainer).setAttribute("aria-label",this.computeAriaLabel())}clearInput(){this.inputListener.clear(),super.clearInput()}getScrollPosition(){const e=this.getMainControl();if(!e)throw new Error("Control has not yet been initialized");return{scrollTop:e.getScrollTop()-e.getTopForLineNumber(1),scrollLeft:e.getScrollLeft()}}setScrollPosition(e){const t=this.getMainControl();if(!t)throw new Error("Control has not yet been initialized");t.setScrollTop(e.scrollTop),e.scrollLeft&&t.setScrollLeft(e.scrollLeft)}setEditorVisible(e){e&&this.consumePendingConfigurationChangeEvent(),super.setEditorVisible(e)}toEditorViewStateResource(e){return e.resource}updateEditorConfiguration(e=this.getActiveResource()){let t;if(e&&(t=this.textResourceConfigurationService.getValue(e)),!t)return;const o=this.computeConfiguration(t);let r=o;this.lastAppliedEditorOptions&&(r=R(this.lastAppliedEditorOptions,r)),Object.keys(r).length>0&&(this.lastAppliedEditorOptions=o,this.updateEditorControlOptions(r))}getActiveResource(){const e=this.getMainControl();if(e){const t=e.getModel();if(t)return t.uri}if(this.input)return this.input.resource}dispose(){this.lastAppliedEditorOptions=void 0,super.dispose()}};d=g([n(2,_),n(3,A),n(4,M),n(5,N),n(6,w),n(7,F),n(8,V),n(9,H)],d);class p{constructor(i){this.textSelection=i}static TEXT_EDITOR_SELECTION_THRESHOLD=10;compare(i){if(!(i instanceof p))return c.DIFFERENT;const e=Math.min(this.textSelection.selectionStartLineNumber,this.textSelection.positionLineNumber),t=Math.min(i.textSelection.selectionStartLineNumber,i.textSelection.positionLineNumber);return e===t?c.IDENTICAL:Math.abs(e-t)<p.TEXT_EDITOR_SELECTION_THRESHOLD?c.SIMILAR:c.DIFFERENT}restore(i){return{...i,selection:this.textSelection,selectionRevealType:G.CenterIfOutsideViewport}}log(){return`line: ${this.textSelection.startLineNumber}-${this.textSelection.endLineNumber}, col:  ${this.textSelection.startColumn}-${this.textSelection.endColumn}`}}export{d as AbstractTextEditor,p as TextEditorPaneSelection};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var AbstractTextEditor_1;
+import { localize } from '../../../../nls.js';
+import { distinct, deepClone } from '../../../../base/common/objects.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { isObject, assertIsDefined } from '../../../../base/common/types.js';
+import { MutableDisposable } from '../../../../base/common/lifecycle.js';
+import { computeEditorAriaLabel } from '../../editor.js';
+import { AbstractEditorWithViewState } from './editorWithViewState.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { ITextResourceConfigurationService } from '../../../../editor/common/services/textResourceConfiguration.js';
+import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+let AbstractTextEditor = class AbstractTextEditor extends AbstractEditorWithViewState {
+    static { AbstractTextEditor_1 = this; }
+    static { this.VIEW_STATE_PREFERENCE_KEY = 'textEditorViewState'; }
+    constructor(id, group, telemetryService, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService, fileService) {
+        super(id, group, AbstractTextEditor_1.VIEW_STATE_PREFERENCE_KEY, telemetryService, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService);
+        this.fileService = fileService;
+        this._onDidChangeSelection = this._register(new Emitter());
+        this.onDidChangeSelection = this._onDidChangeSelection.event;
+        this._onDidChangeScroll = this._register(new Emitter());
+        this.onDidChangeScroll = this._onDidChangeScroll.event;
+        this.inputListener = this._register(new MutableDisposable());
+        this._register(this.textResourceConfigurationService.onDidChangeConfiguration(e => this.handleConfigurationChangeEvent(e)));
+        this._register(Event.any(this.editorGroupService.onDidAddGroup, this.editorGroupService.onDidRemoveGroup)(() => {
+            const ariaLabel = this.computeAriaLabel();
+            this.editorContainer?.setAttribute('aria-label', ariaLabel);
+            this.updateEditorControlOptions({ ariaLabel });
+        }));
+        this._register(this.fileService.onDidChangeFileSystemProviderCapabilities(e => this.onDidChangeFileSystemProvider(e.scheme)));
+        this._register(this.fileService.onDidChangeFileSystemProviderRegistrations(e => this.onDidChangeFileSystemProvider(e.scheme)));
+    }
+    handleConfigurationChangeEvent(e) {
+        const resource = this.getActiveResource();
+        if (!this.shouldHandleConfigurationChangeEvent(e, resource)) {
+            return;
+        }
+        if (this.isVisible()) {
+            this.updateEditorConfiguration(resource);
+        }
+        else {
+            this.hasPendingConfigurationChange = true;
+        }
+    }
+    shouldHandleConfigurationChangeEvent(e, resource) {
+        return e.affectsConfiguration(resource, 'editor') || e.affectsConfiguration(resource, 'problems.visibility');
+    }
+    consumePendingConfigurationChangeEvent() {
+        if (this.hasPendingConfigurationChange) {
+            this.updateEditorConfiguration();
+            this.hasPendingConfigurationChange = false;
+        }
+    }
+    computeConfiguration(configuration) {
+        const editorConfiguration = isObject(configuration.editor) ? deepClone(configuration.editor) : Object.create(null);
+        Object.assign(editorConfiguration, this.getConfigurationOverrides(configuration));
+        editorConfiguration.ariaLabel = this.computeAriaLabel();
+        return editorConfiguration;
+    }
+    computeAriaLabel() {
+        return this.input ? computeEditorAriaLabel(this.input, undefined, this.group, this.editorGroupService.count) : localize('editor', "Editor");
+    }
+    onDidChangeFileSystemProvider(scheme) {
+        if (!this.input) {
+            return;
+        }
+        if (this.getActiveResource()?.scheme === scheme) {
+            this.updateReadonly(this.input);
+        }
+    }
+    onDidChangeInputCapabilities(input) {
+        if (this.input === input) {
+            this.updateReadonly(input);
+        }
+    }
+    updateReadonly(input) {
+        this.updateEditorControlOptions({ ...this.getReadonlyConfiguration(input.isReadonly()) });
+    }
+    getReadonlyConfiguration(isReadonly) {
+        return {
+            readOnly: !!isReadonly,
+            readOnlyMessage: typeof isReadonly !== 'boolean' ? isReadonly : undefined
+        };
+    }
+    getConfigurationOverrides(configuration) {
+        return {
+            overviewRulerLanes: 3,
+            lineNumbersMinChars: 3,
+            fixedOverflowWidgets: true,
+            ...this.getReadonlyConfiguration(this.input?.isReadonly()),
+            renderValidationDecorations: configuration.problems?.visibility !== false ? 'on' : 'off'
+        };
+    }
+    createEditor(parent) {
+        this.editorContainer = parent;
+        this.createEditorControl(parent, this.computeConfiguration(this.textResourceConfigurationService.getValue(this.getActiveResource())));
+        this.registerCodeEditorListeners();
+    }
+    registerCodeEditorListeners() {
+        const mainControl = this.getMainControl();
+        if (mainControl) {
+            this._register(mainControl.onDidChangeModelLanguage(() => this.updateEditorConfiguration()));
+            this._register(mainControl.onDidChangeModel(() => this.updateEditorConfiguration()));
+            this._register(mainControl.onDidChangeCursorPosition(e => this._onDidChangeSelection.fire({ reason: this.toEditorPaneSelectionChangeReason(e) })));
+            this._register(mainControl.onDidChangeModelContent(() => this._onDidChangeSelection.fire({ reason: 3 })));
+            this._register(mainControl.onDidScrollChange(() => this._onDidChangeScroll.fire()));
+        }
+    }
+    toEditorPaneSelectionChangeReason(e) {
+        switch (e.source) {
+            case "api": return 1;
+            case "code.navigation": return 4;
+            case "code.jump": return 5;
+            default: return 2;
+        }
+    }
+    getSelection() {
+        const mainControl = this.getMainControl();
+        if (mainControl) {
+            const selection = mainControl.getSelection();
+            if (selection) {
+                return new TextEditorPaneSelection(selection);
+            }
+        }
+        return undefined;
+    }
+    async setInput(input, options, context, token) {
+        await super.setInput(input, options, context, token);
+        this.inputListener.value = input.onDidChangeCapabilities(() => this.onDidChangeInputCapabilities(input));
+        this.updateEditorConfiguration();
+        const editorContainer = assertIsDefined(this.editorContainer);
+        editorContainer.setAttribute('aria-label', this.computeAriaLabel());
+    }
+    clearInput() {
+        this.inputListener.clear();
+        super.clearInput();
+    }
+    getScrollPosition() {
+        const editor = this.getMainControl();
+        if (!editor) {
+            throw new Error('Control has not yet been initialized');
+        }
+        return {
+            scrollTop: editor.getScrollTop() - editor.getTopForLineNumber(1),
+            scrollLeft: editor.getScrollLeft(),
+        };
+    }
+    setScrollPosition(scrollPosition) {
+        const editor = this.getMainControl();
+        if (!editor) {
+            throw new Error('Control has not yet been initialized');
+        }
+        editor.setScrollTop(scrollPosition.scrollTop);
+        if (scrollPosition.scrollLeft) {
+            editor.setScrollLeft(scrollPosition.scrollLeft);
+        }
+    }
+    setEditorVisible(visible) {
+        if (visible) {
+            this.consumePendingConfigurationChangeEvent();
+        }
+        super.setEditorVisible(visible);
+    }
+    toEditorViewStateResource(input) {
+        return input.resource;
+    }
+    updateEditorConfiguration(resource = this.getActiveResource()) {
+        let configuration = undefined;
+        if (resource) {
+            configuration = this.textResourceConfigurationService.getValue(resource);
+        }
+        if (!configuration) {
+            return;
+        }
+        const editorConfiguration = this.computeConfiguration(configuration);
+        let editorSettingsToApply = editorConfiguration;
+        if (this.lastAppliedEditorOptions) {
+            editorSettingsToApply = distinct(this.lastAppliedEditorOptions, editorSettingsToApply);
+        }
+        if (Object.keys(editorSettingsToApply).length > 0) {
+            this.lastAppliedEditorOptions = editorConfiguration;
+            this.updateEditorControlOptions(editorSettingsToApply);
+        }
+    }
+    getActiveResource() {
+        const mainControl = this.getMainControl();
+        if (mainControl) {
+            const model = mainControl.getModel();
+            if (model) {
+                return model.uri;
+            }
+        }
+        if (this.input) {
+            return this.input.resource;
+        }
+        return undefined;
+    }
+    dispose() {
+        this.lastAppliedEditorOptions = undefined;
+        super.dispose();
+    }
+};
+AbstractTextEditor = AbstractTextEditor_1 = __decorate([
+    __param(2, ITelemetryService),
+    __param(3, IInstantiationService),
+    __param(4, IStorageService),
+    __param(5, ITextResourceConfigurationService),
+    __param(6, IThemeService),
+    __param(7, IEditorService),
+    __param(8, IEditorGroupsService),
+    __param(9, IFileService),
+    __metadata("design:paramtypes", [String, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], AbstractTextEditor);
+export { AbstractTextEditor };
+export class TextEditorPaneSelection {
+    static { this.TEXT_EDITOR_SELECTION_THRESHOLD = 10; }
+    constructor(textSelection) {
+        this.textSelection = textSelection;
+    }
+    compare(other) {
+        if (!(other instanceof TextEditorPaneSelection)) {
+            return 3;
+        }
+        const thisLineNumber = Math.min(this.textSelection.selectionStartLineNumber, this.textSelection.positionLineNumber);
+        const otherLineNumber = Math.min(other.textSelection.selectionStartLineNumber, other.textSelection.positionLineNumber);
+        if (thisLineNumber === otherLineNumber) {
+            return 1;
+        }
+        if (Math.abs(thisLineNumber - otherLineNumber) < TextEditorPaneSelection.TEXT_EDITOR_SELECTION_THRESHOLD) {
+            return 2;
+        }
+        return 3;
+    }
+    restore(options) {
+        const textEditorOptions = {
+            ...options,
+            selection: this.textSelection,
+            selectionRevealType: 1
+        };
+        return textEditorOptions;
+    }
+    log() {
+        return `line: ${this.textSelection.startLineNumber}-${this.textSelection.endLineNumber}, col:  ${this.textSelection.startColumn}-${this.textSelection.endColumn}`;
+    }
+}

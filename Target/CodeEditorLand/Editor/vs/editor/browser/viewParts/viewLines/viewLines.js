@@ -1,1 +1,622 @@
-import"../../../../base/browser/fastDomNode.js";import{MOUSE_CURSOR_TEXT_CSS_CLASS_NAME as W}from"../../../../base/browser/ui/mouseCursor/mouseCursor.js";import{RunOnceScheduler as S}from"../../../../base/common/async.js";import*as H from"../../../../base/common/platform.js";import{Constants as F}from"../../../../base/common/uint.js";import"./viewLines.css";import{applyFontInfo as C}from"../../config/domFontInfo.js";import{HorizontalPosition as O,HorizontalRange as I,LineVisibleRanges as D}from"../../view/renderingContext.js";import{VisibleLinesCollection as z}from"../../view/viewLayer.js";import{PartFingerprint as P,PartFingerprints as k,ViewPart as q}from"../../view/viewPart.js";import{DomReadingContext as w}from"./domReadingContext.js";import{ViewLine as x}from"./viewLine.js";import{EditorOption as a}from"../../../common/config/editorOptions.js";import{Position as R}from"../../../common/core/position.js";import{Range as V}from"../../../common/core/range.js";import"../../../common/core/selection.js";import{ScrollType as A}from"../../../common/editorCommon.js";import*as m from"../../../common/viewEvents.js";import"../../../common/viewLayout/viewLinesViewportData.js";import"../../../common/viewModel.js";import"../../../common/viewModel/viewContext.js";import{ViewLineOptions as M}from"./viewLineOptions.js";class U{_currentVisibleRange;constructor(){this._currentVisibleRange=new V(1,1,1,1)}getCurrentVisibleRange(){return this._currentVisibleRange}setCurrentVisibleRange(e){this._currentVisibleRange=e}}class X{constructor(e,t,n,i,o,s,r){this.minimalReveal=e;this.lineNumber=t;this.startColumn=n;this.endColumn=i;this.startScrollTop=o;this.stopScrollTop=s;this.scrollType=r;this.minLineNumber=t,this.maxLineNumber=t}type="range";minLineNumber;maxLineNumber}class Y{constructor(e,t,n,i,o){this.minimalReveal=e;this.selections=t;this.startScrollTop=n;this.stopScrollTop=i;this.scrollType=o;let s=t[0].startLineNumber,r=t[0].endLineNumber;for(let u=1,h=t.length;u<h;u++){const d=t[u];s=Math.min(s,d.startLineNumber),r=Math.max(r,d.endLineNumber)}this.minLineNumber=s,this.maxLineNumber=r}type="selections";minLineNumber;maxLineNumber}class T extends q{static HORIZONTAL_EXTRA_PX=30;_linesContent;_textRangeRestingSpot;_visibleLines;domNode;_lineHeight;_typicalHalfwidthCharacterWidth;_isViewportWrapping;_revealHorizontalRightPadding;_cursorSurroundingLines;_cursorSurroundingLinesStyle;_canUseLayerHinting;_viewLineOptions;_maxLineWidth;_asyncUpdateLineWidths;_asyncCheckMonospaceFontAssumptions;_horizontalRevealRequest;_lastRenderedData;_stickyScrollEnabled;_maxNumberStickyLines;constructor(e,t){super(e);const n=this._context.configuration,i=this._context.configuration.options,o=i.get(a.fontInfo),s=i.get(a.wrappingInfo);this._lineHeight=i.get(a.lineHeight),this._typicalHalfwidthCharacterWidth=o.typicalHalfwidthCharacterWidth,this._isViewportWrapping=s.isViewportWrapping,this._revealHorizontalRightPadding=i.get(a.revealHorizontalRightPadding),this._cursorSurroundingLines=i.get(a.cursorSurroundingLines),this._cursorSurroundingLinesStyle=i.get(a.cursorSurroundingLinesStyle),this._canUseLayerHinting=!i.get(a.disableLayerHinting),this._viewLineOptions=new M(n,this._context.theme.type),this._linesContent=t,this._textRangeRestingSpot=document.createElement("div"),this._visibleLines=new z({createLine:()=>new x(this._viewLineOptions)}),this.domNode=this._visibleLines.domNode,k.write(this.domNode,P.ViewLines),this.domNode.setClassName(`view-lines ${W}`),C(this.domNode,o),this._maxLineWidth=0,this._asyncUpdateLineWidths=new S(()=>{this._updateLineWidthsSlow()},200),this._asyncCheckMonospaceFontAssumptions=new S(()=>{this._checkMonospaceFontAssumptions()},2e3),this._lastRenderedData=new U,this._horizontalRevealRequest=null,this._stickyScrollEnabled=i.get(a.stickyScroll).enabled,this._maxNumberStickyLines=i.get(a.stickyScroll).maxLineCount}dispose(){this._asyncUpdateLineWidths.dispose(),this._asyncCheckMonospaceFontAssumptions.dispose(),super.dispose()}getDomNode(){return this.domNode}onConfigurationChanged(e){this._visibleLines.onConfigurationChanged(e),e.hasChanged(a.wrappingInfo)&&(this._maxLineWidth=0);const t=this._context.configuration.options,n=t.get(a.fontInfo),i=t.get(a.wrappingInfo);return this._lineHeight=t.get(a.lineHeight),this._typicalHalfwidthCharacterWidth=n.typicalHalfwidthCharacterWidth,this._isViewportWrapping=i.isViewportWrapping,this._revealHorizontalRightPadding=t.get(a.revealHorizontalRightPadding),this._cursorSurroundingLines=t.get(a.cursorSurroundingLines),this._cursorSurroundingLinesStyle=t.get(a.cursorSurroundingLinesStyle),this._canUseLayerHinting=!t.get(a.disableLayerHinting),this._stickyScrollEnabled=t.get(a.stickyScroll).enabled,this._maxNumberStickyLines=t.get(a.stickyScroll).maxLineCount,C(this.domNode,n),this._onOptionsMaybeChanged(),e.hasChanged(a.layoutInfo)&&(this._maxLineWidth=0),!0}_onOptionsMaybeChanged(){const e=this._context.configuration,t=new M(e,this._context.theme.type);if(!this._viewLineOptions.equals(t)){this._viewLineOptions=t;const n=this._visibleLines.getStartLineNumber(),i=this._visibleLines.getEndLineNumber();for(let o=n;o<=i;o++)this._visibleLines.getVisibleLine(o).onOptionsChanged(this._viewLineOptions);return!0}return!1}onCursorStateChanged(e){const t=this._visibleLines.getStartLineNumber(),n=this._visibleLines.getEndLineNumber();let i=!1;for(let o=t;o<=n;o++)i=this._visibleLines.getVisibleLine(o).onSelectionChanged()||i;return i}onDecorationsChanged(e){{const t=this._visibleLines.getStartLineNumber(),n=this._visibleLines.getEndLineNumber();for(let i=t;i<=n;i++)this._visibleLines.getVisibleLine(i).onDecorationsChanged()}return!0}onFlushed(e){const t=this._visibleLines.onFlushed(e);return this._maxLineWidth=0,t}onLinesChanged(e){return this._visibleLines.onLinesChanged(e)}onLinesDeleted(e){return this._visibleLines.onLinesDeleted(e)}onLinesInserted(e){return this._visibleLines.onLinesInserted(e)}onRevealRangeRequest(e){const t=this._computeScrollTopToRevealRange(this._context.viewLayout.getFutureViewport(),e.source,e.minimalReveal,e.range,e.selections,e.verticalType);if(t===-1)return!1;let n=this._context.viewLayout.validateScrollPosition({scrollTop:t});e.revealHorizontal?e.range&&e.range.startLineNumber!==e.range.endLineNumber?n={scrollTop:n.scrollTop,scrollLeft:0}:e.range?this._horizontalRevealRequest=new X(e.minimalReveal,e.range.startLineNumber,e.range.startColumn,e.range.endColumn,this._context.viewLayout.getCurrentScrollTop(),n.scrollTop,e.scrollType):e.selections&&e.selections.length>0&&(this._horizontalRevealRequest=new Y(e.minimalReveal,e.selections,this._context.viewLayout.getCurrentScrollTop(),n.scrollTop,e.scrollType)):this._horizontalRevealRequest=null;const o=Math.abs(this._context.viewLayout.getCurrentScrollTop()-n.scrollTop)<=this._lineHeight?A.Immediate:e.scrollType;return this._context.viewModel.viewLayout.setScrollPosition(n,o),!0}onScrollChanged(e){if(this._horizontalRevealRequest&&e.scrollLeftChanged&&(this._horizontalRevealRequest=null),this._horizontalRevealRequest&&e.scrollTopChanged){const t=Math.min(this._horizontalRevealRequest.startScrollTop,this._horizontalRevealRequest.stopScrollTop),n=Math.max(this._horizontalRevealRequest.startScrollTop,this._horizontalRevealRequest.stopScrollTop);(e.scrollTop<t||e.scrollTop>n)&&(this._horizontalRevealRequest=null)}return this.domNode.setWidth(e.scrollWidth),this._visibleLines.onScrollChanged(e)||!0}onTokensChanged(e){return this._visibleLines.onTokensChanged(e)}onZonesChanged(e){return this._context.viewModel.viewLayout.setMaxLineWidth(this._maxLineWidth),this._visibleLines.onZonesChanged(e)}onThemeChanged(e){return this._onOptionsMaybeChanged()}getPositionFromDOMInfo(e,t){const n=this._getViewLineDomNode(e);if(n===null)return null;const i=this._getLineNumberFor(n);if(i===-1||i<1||i>this._context.viewModel.getLineCount())return null;if(this._context.viewModel.getLineMaxColumn(i)===1)return new R(i,1);const o=this._visibleLines.getStartLineNumber(),s=this._visibleLines.getEndLineNumber();if(i<o||i>s)return null;let r=this._visibleLines.getVisibleLine(i).getColumnOfNodeOffset(e,t);const u=this._context.viewModel.getLineMinColumn(i);return r<u&&(r=u),new R(i,r)}_getViewLineDomNode(e){for(;e&&e.nodeType===1;){if(e.className===x.CLASS_NAME)return e;e=e.parentElement}return null}_getLineNumberFor(e){const t=this._visibleLines.getStartLineNumber(),n=this._visibleLines.getEndLineNumber();for(let i=t;i<=n;i++){const o=this._visibleLines.getVisibleLine(i);if(e===o.getDomNode())return i}return-1}getLineWidth(e){const t=this._visibleLines.getStartLineNumber(),n=this._visibleLines.getEndLineNumber();if(e<t||e>n)return-1;const i=new w(this.domNode.domNode,this._textRangeRestingSpot),o=this._visibleLines.getVisibleLine(e).getWidth(i);return this._updateLineWidthsSlowIfDomDidLayout(i),o}linesVisibleRangesForRange(e,t){if(this.shouldRender())return null;const n=e.endLineNumber,i=V.intersectRanges(e,this._lastRenderedData.getCurrentVisibleRange());if(!i)return null;const o=[];let s=0;const r=new w(this.domNode.domNode,this._textRangeRestingSpot);let u=0;t&&(u=this._context.viewModel.coordinatesConverter.convertViewPositionToModelPosition(new R(i.startLineNumber,1)).lineNumber);const h=this._visibleLines.getStartLineNumber(),d=this._visibleLines.getEndLineNumber();for(let l=i.startLineNumber;l<=i.endLineNumber;l++){if(l<h||l>d)continue;const c=l===i.startLineNumber?i.startColumn:1,f=l!==i.endLineNumber,_=f?this._context.viewModel.getLineMaxColumn(l):i.endColumn,L=this._visibleLines.getVisibleLine(l).getVisibleRangesForRange(l,c,_,r);if(L){if(t&&l<n){const b=u;u=this._context.viewModel.coordinatesConverter.convertViewPositionToModelPosition(new R(l+1,1)).lineNumber,b!==u&&(L.ranges[L.ranges.length-1].width+=this._typicalHalfwidthCharacterWidth)}o[s++]=new D(L.outsideRenderedLine,l,I.from(L.ranges),f)}}return this._updateLineWidthsSlowIfDomDidLayout(r),s===0?null:o}_visibleRangesForLineRange(e,t,n){if(this.shouldRender()||e<this._visibleLines.getStartLineNumber()||e>this._visibleLines.getEndLineNumber())return null;const i=new w(this.domNode.domNode,this._textRangeRestingSpot),o=this._visibleLines.getVisibleLine(e).getVisibleRangesForRange(e,t,n,i);return this._updateLineWidthsSlowIfDomDidLayout(i),o}visibleRangeForPosition(e){const t=this._visibleRangesForLineRange(e.lineNumber,e.column,e.column);return t?new O(t.outsideRenderedLine,t.ranges[0].left):null}updateLineWidths(){this._updateLineWidths(!1)}_updateLineWidthsFast(){return this._updateLineWidths(!0)}_updateLineWidthsSlow(){this._updateLineWidths(!1)}_updateLineWidthsSlowIfDomDidLayout(e){e.didDomLayout&&(this._asyncUpdateLineWidths.isScheduled()||(this._asyncUpdateLineWidths.cancel(),this._updateLineWidthsSlow()))}_updateLineWidths(e){const t=this._visibleLines.getStartLineNumber(),n=this._visibleLines.getEndLineNumber();let i=1,o=!0;for(let s=t;s<=n;s++){const r=this._visibleLines.getVisibleLine(s);if(e&&!r.getWidthIsFast()){o=!1;continue}i=Math.max(i,r.getWidth(null))}return o&&t===1&&n===this._context.viewModel.getLineCount()&&(this._maxLineWidth=0),this._ensureMaxLineWidth(i),o}_checkMonospaceFontAssumptions(){let e=-1,t=-1;const n=this._visibleLines.getStartLineNumber(),i=this._visibleLines.getEndLineNumber();for(let o=n;o<=i;o++){const s=this._visibleLines.getVisibleLine(o);if(s.needsMonospaceFontCheck()){const r=s.getWidth(null);r>t&&(t=r,e=o)}}if(e!==-1&&!this._visibleLines.getVisibleLine(e).monospaceAssumptionsAreValid())for(let o=n;o<=i;o++)this._visibleLines.getVisibleLine(o).onMonospaceAssumptionsInvalidated()}prepareRender(){throw new Error("Not supported")}render(){throw new Error("Not supported")}renderText(e){if(this._visibleLines.renderLines(e),this._lastRenderedData.setCurrentVisibleRange(e.visibleRange),this.domNode.setWidth(this._context.viewLayout.getScrollWidth()),this.domNode.setHeight(Math.min(this._context.viewLayout.getScrollHeight(),1e6)),this._horizontalRevealRequest){const n=this._horizontalRevealRequest;if(e.startLineNumber<=n.minLineNumber&&n.maxLineNumber<=e.endLineNumber){this._horizontalRevealRequest=null,this.onDidRender();const i=this._computeScrollLeftToReveal(n);i&&(this._isViewportWrapping||this._ensureMaxLineWidth(i.maxHorizontalOffset),this._context.viewModel.viewLayout.setScrollPosition({scrollLeft:i.scrollLeft},n.scrollType))}}if(this._updateLineWidthsFast()?this._asyncUpdateLineWidths.cancel():this._asyncUpdateLineWidths.schedule(),H.isLinux&&!this._asyncCheckMonospaceFontAssumptions.isScheduled()){const n=this._visibleLines.getStartLineNumber(),i=this._visibleLines.getEndLineNumber();for(let o=n;o<=i;o++)if(this._visibleLines.getVisibleLine(o).needsMonospaceFontCheck()){this._asyncCheckMonospaceFontAssumptions.schedule();break}}this._linesContent.setLayerHinting(this._canUseLayerHinting),this._linesContent.setContain("strict");const t=this._context.viewLayout.getCurrentScrollTop()-e.bigNumbersDelta;this._linesContent.setTop(-t),this._linesContent.setLeft(-this._context.viewLayout.getCurrentScrollLeft())}_ensureMaxLineWidth(e){const t=Math.ceil(e);this._maxLineWidth<t&&(this._maxLineWidth=t,this._context.viewModel.viewLayout.setMaxLineWidth(this._maxLineWidth))}_computeScrollTopToRevealRange(e,t,n,i,o,s){const r=e.top,u=e.height,h=r+u;let d,l,c;if(o&&o.length>0){let p=o[0].startLineNumber,v=o[0].endLineNumber;for(let g=1,E=o.length;g<E;g++){const y=o[g];p=Math.min(p,y.startLineNumber),v=Math.max(v,y.endLineNumber)}d=!1,l=this._context.viewLayout.getVerticalOffsetForLineNumber(p),c=this._context.viewLayout.getVerticalOffsetForLineNumber(v)+this._lineHeight}else if(i)d=!0,l=this._context.viewLayout.getVerticalOffsetForLineNumber(i.startLineNumber),c=this._context.viewLayout.getVerticalOffsetForLineNumber(i.endLineNumber)+this._lineHeight;else return-1;const f=(t==="mouse"||n)&&this._cursorSurroundingLinesStyle==="default";let _=0,L=0;if(f)n||(_=this._lineHeight);else{const p=u/this._lineHeight,v=Math.max(this._cursorSurroundingLines,this._stickyScrollEnabled?this._maxNumberStickyLines:0),g=Math.min(p/2,v);_=g*this._lineHeight,L=Math.max(0,g-1)*this._lineHeight}n||(s===m.VerticalRevealType.Simple||s===m.VerticalRevealType.Bottom)&&(L+=this._lineHeight),l-=_,c+=L;let b;if(c-l>u){if(!d)return-1;b=l}else if(s===m.VerticalRevealType.NearTop||s===m.VerticalRevealType.NearTopIfOutsideViewport)if(s===m.VerticalRevealType.NearTopIfOutsideViewport&&r<=l&&c<=h)b=r;else{const p=Math.max(5*this._lineHeight,u*.2),v=l-p,g=c-u;b=Math.max(g,v)}else if(s===m.VerticalRevealType.Center||s===m.VerticalRevealType.CenterIfOutsideViewport)if(s===m.VerticalRevealType.CenterIfOutsideViewport&&r<=l&&c<=h)b=r;else{const p=(l+c)/2;b=Math.max(0,p-u/2)}else b=this._computeMinimumScrolling(r,h,l,c,s===m.VerticalRevealType.Top,s===m.VerticalRevealType.Bottom);return b}_computeScrollLeftToReveal(e){const t=this._context.viewLayout.getCurrentViewport(),n=this._context.configuration.options.get(a.layoutInfo),i=t.left,o=i+t.width-n.verticalScrollbarWidth;let s=F.MAX_SAFE_SMALL_INTEGER,r=0;if(e.type==="range"){const h=this._visibleRangesForLineRange(e.lineNumber,e.startColumn,e.endColumn);if(!h)return null;for(const d of h.ranges)s=Math.min(s,Math.round(d.left)),r=Math.max(r,Math.round(d.left+d.width))}else for(const h of e.selections){if(h.startLineNumber!==h.endLineNumber)return null;const d=this._visibleRangesForLineRange(h.startLineNumber,h.startColumn,h.endColumn);if(!d)return null;for(const l of d.ranges)s=Math.min(s,Math.round(l.left)),r=Math.max(r,Math.round(l.left+l.width))}return e.minimalReveal||(s=Math.max(0,s-T.HORIZONTAL_EXTRA_PX),r+=this._revealHorizontalRightPadding),e.type==="selections"&&r-s>t.width?null:{scrollLeft:this._computeMinimumScrolling(i,o,s,r),maxHorizontalOffset:r}}_computeMinimumScrolling(e,t,n,i,o,s){e=e|0,t=t|0,n=n|0,i=i|0,o=!!o,s=!!s;const r=t-e;if(i-n<r){if(o)return n;if(s)return Math.max(0,i-r);if(n<e)return n;if(i>t)return Math.max(0,i-r)}else return n;return e}}export{T as ViewLines};
+import { MOUSE_CURSOR_TEXT_CSS_CLASS_NAME } from '../../../../base/browser/ui/mouseCursor/mouseCursor.js';
+import { RunOnceScheduler } from '../../../../base/common/async.js';
+import * as platform from '../../../../base/common/platform.js';
+import './viewLines.css';
+import { applyFontInfo } from '../../config/domFontInfo.js';
+import { HorizontalPosition, HorizontalRange, LineVisibleRanges } from '../../view/renderingContext.js';
+import { VisibleLinesCollection } from '../../view/viewLayer.js';
+import { PartFingerprints, ViewPart } from '../../view/viewPart.js';
+import { DomReadingContext } from './domReadingContext.js';
+import { ViewLine } from './viewLine.js';
+import { Position } from '../../../common/core/position.js';
+import { Range } from '../../../common/core/range.js';
+import { ViewLineOptions } from './viewLineOptions.js';
+class LastRenderedData {
+    constructor() {
+        this._currentVisibleRange = new Range(1, 1, 1, 1);
+    }
+    getCurrentVisibleRange() {
+        return this._currentVisibleRange;
+    }
+    setCurrentVisibleRange(currentVisibleRange) {
+        this._currentVisibleRange = currentVisibleRange;
+    }
+}
+class HorizontalRevealRangeRequest {
+    constructor(minimalReveal, lineNumber, startColumn, endColumn, startScrollTop, stopScrollTop, scrollType) {
+        this.minimalReveal = minimalReveal;
+        this.lineNumber = lineNumber;
+        this.startColumn = startColumn;
+        this.endColumn = endColumn;
+        this.startScrollTop = startScrollTop;
+        this.stopScrollTop = stopScrollTop;
+        this.scrollType = scrollType;
+        this.type = 'range';
+        this.minLineNumber = lineNumber;
+        this.maxLineNumber = lineNumber;
+    }
+}
+class HorizontalRevealSelectionsRequest {
+    constructor(minimalReveal, selections, startScrollTop, stopScrollTop, scrollType) {
+        this.minimalReveal = minimalReveal;
+        this.selections = selections;
+        this.startScrollTop = startScrollTop;
+        this.stopScrollTop = stopScrollTop;
+        this.scrollType = scrollType;
+        this.type = 'selections';
+        let minLineNumber = selections[0].startLineNumber;
+        let maxLineNumber = selections[0].endLineNumber;
+        for (let i = 1, len = selections.length; i < len; i++) {
+            const selection = selections[i];
+            minLineNumber = Math.min(minLineNumber, selection.startLineNumber);
+            maxLineNumber = Math.max(maxLineNumber, selection.endLineNumber);
+        }
+        this.minLineNumber = minLineNumber;
+        this.maxLineNumber = maxLineNumber;
+    }
+}
+export class ViewLines extends ViewPart {
+    static { this.HORIZONTAL_EXTRA_PX = 30; }
+    constructor(context, linesContent) {
+        super(context);
+        const conf = this._context.configuration;
+        const options = this._context.configuration.options;
+        const fontInfo = options.get(52);
+        const wrappingInfo = options.get(149);
+        this._lineHeight = options.get(69);
+        this._typicalHalfwidthCharacterWidth = fontInfo.typicalHalfwidthCharacterWidth;
+        this._isViewportWrapping = wrappingInfo.isViewportWrapping;
+        this._revealHorizontalRightPadding = options.get(103);
+        this._cursorSurroundingLines = options.get(29);
+        this._cursorSurroundingLinesStyle = options.get(30);
+        this._canUseLayerHinting = !options.get(32);
+        this._viewLineOptions = new ViewLineOptions(conf, this._context.theme.type);
+        this._linesContent = linesContent;
+        this._textRangeRestingSpot = document.createElement('div');
+        this._visibleLines = new VisibleLinesCollection({
+            createLine: () => new ViewLine(this._viewLineOptions),
+        });
+        this.domNode = this._visibleLines.domNode;
+        PartFingerprints.write(this.domNode, 8);
+        this.domNode.setClassName(`view-lines ${MOUSE_CURSOR_TEXT_CSS_CLASS_NAME}`);
+        applyFontInfo(this.domNode, fontInfo);
+        this._maxLineWidth = 0;
+        this._asyncUpdateLineWidths = new RunOnceScheduler(() => {
+            this._updateLineWidthsSlow();
+        }, 200);
+        this._asyncCheckMonospaceFontAssumptions = new RunOnceScheduler(() => {
+            this._checkMonospaceFontAssumptions();
+        }, 2000);
+        this._lastRenderedData = new LastRenderedData();
+        this._horizontalRevealRequest = null;
+        this._stickyScrollEnabled = options.get(118).enabled;
+        this._maxNumberStickyLines = options.get(118).maxLineCount;
+    }
+    dispose() {
+        this._asyncUpdateLineWidths.dispose();
+        this._asyncCheckMonospaceFontAssumptions.dispose();
+        super.dispose();
+    }
+    getDomNode() {
+        return this.domNode;
+    }
+    onConfigurationChanged(e) {
+        this._visibleLines.onConfigurationChanged(e);
+        if (e.hasChanged(149)) {
+            this._maxLineWidth = 0;
+        }
+        const options = this._context.configuration.options;
+        const fontInfo = options.get(52);
+        const wrappingInfo = options.get(149);
+        this._lineHeight = options.get(69);
+        this._typicalHalfwidthCharacterWidth = fontInfo.typicalHalfwidthCharacterWidth;
+        this._isViewportWrapping = wrappingInfo.isViewportWrapping;
+        this._revealHorizontalRightPadding = options.get(103);
+        this._cursorSurroundingLines = options.get(29);
+        this._cursorSurroundingLinesStyle = options.get(30);
+        this._canUseLayerHinting = !options.get(32);
+        this._stickyScrollEnabled = options.get(118).enabled;
+        this._maxNumberStickyLines = options.get(118).maxLineCount;
+        applyFontInfo(this.domNode, fontInfo);
+        this._onOptionsMaybeChanged();
+        if (e.hasChanged(148)) {
+            this._maxLineWidth = 0;
+        }
+        return true;
+    }
+    _onOptionsMaybeChanged() {
+        const conf = this._context.configuration;
+        const newViewLineOptions = new ViewLineOptions(conf, this._context.theme.type);
+        if (!this._viewLineOptions.equals(newViewLineOptions)) {
+            this._viewLineOptions = newViewLineOptions;
+            const startLineNumber = this._visibleLines.getStartLineNumber();
+            const endLineNumber = this._visibleLines.getEndLineNumber();
+            for (let lineNumber = startLineNumber; lineNumber <= endLineNumber; lineNumber++) {
+                const line = this._visibleLines.getVisibleLine(lineNumber);
+                line.onOptionsChanged(this._viewLineOptions);
+            }
+            return true;
+        }
+        return false;
+    }
+    onCursorStateChanged(e) {
+        const rendStartLineNumber = this._visibleLines.getStartLineNumber();
+        const rendEndLineNumber = this._visibleLines.getEndLineNumber();
+        let r = false;
+        for (let lineNumber = rendStartLineNumber; lineNumber <= rendEndLineNumber; lineNumber++) {
+            r = this._visibleLines.getVisibleLine(lineNumber).onSelectionChanged() || r;
+        }
+        return r;
+    }
+    onDecorationsChanged(e) {
+        if (true) {
+            const rendStartLineNumber = this._visibleLines.getStartLineNumber();
+            const rendEndLineNumber = this._visibleLines.getEndLineNumber();
+            for (let lineNumber = rendStartLineNumber; lineNumber <= rendEndLineNumber; lineNumber++) {
+                this._visibleLines.getVisibleLine(lineNumber).onDecorationsChanged();
+            }
+        }
+        return true;
+    }
+    onFlushed(e) {
+        const shouldRender = this._visibleLines.onFlushed(e);
+        this._maxLineWidth = 0;
+        return shouldRender;
+    }
+    onLinesChanged(e) {
+        return this._visibleLines.onLinesChanged(e);
+    }
+    onLinesDeleted(e) {
+        return this._visibleLines.onLinesDeleted(e);
+    }
+    onLinesInserted(e) {
+        return this._visibleLines.onLinesInserted(e);
+    }
+    onRevealRangeRequest(e) {
+        const desiredScrollTop = this._computeScrollTopToRevealRange(this._context.viewLayout.getFutureViewport(), e.source, e.minimalReveal, e.range, e.selections, e.verticalType);
+        if (desiredScrollTop === -1) {
+            return false;
+        }
+        let newScrollPosition = this._context.viewLayout.validateScrollPosition({ scrollTop: desiredScrollTop });
+        if (e.revealHorizontal) {
+            if (e.range && e.range.startLineNumber !== e.range.endLineNumber) {
+                newScrollPosition = {
+                    scrollTop: newScrollPosition.scrollTop,
+                    scrollLeft: 0
+                };
+            }
+            else if (e.range) {
+                this._horizontalRevealRequest = new HorizontalRevealRangeRequest(e.minimalReveal, e.range.startLineNumber, e.range.startColumn, e.range.endColumn, this._context.viewLayout.getCurrentScrollTop(), newScrollPosition.scrollTop, e.scrollType);
+            }
+            else if (e.selections && e.selections.length > 0) {
+                this._horizontalRevealRequest = new HorizontalRevealSelectionsRequest(e.minimalReveal, e.selections, this._context.viewLayout.getCurrentScrollTop(), newScrollPosition.scrollTop, e.scrollType);
+            }
+        }
+        else {
+            this._horizontalRevealRequest = null;
+        }
+        const scrollTopDelta = Math.abs(this._context.viewLayout.getCurrentScrollTop() - newScrollPosition.scrollTop);
+        const scrollType = (scrollTopDelta <= this._lineHeight ? 1 : e.scrollType);
+        this._context.viewModel.viewLayout.setScrollPosition(newScrollPosition, scrollType);
+        return true;
+    }
+    onScrollChanged(e) {
+        if (this._horizontalRevealRequest && e.scrollLeftChanged) {
+            this._horizontalRevealRequest = null;
+        }
+        if (this._horizontalRevealRequest && e.scrollTopChanged) {
+            const min = Math.min(this._horizontalRevealRequest.startScrollTop, this._horizontalRevealRequest.stopScrollTop);
+            const max = Math.max(this._horizontalRevealRequest.startScrollTop, this._horizontalRevealRequest.stopScrollTop);
+            if (e.scrollTop < min || e.scrollTop > max) {
+                this._horizontalRevealRequest = null;
+            }
+        }
+        this.domNode.setWidth(e.scrollWidth);
+        return this._visibleLines.onScrollChanged(e) || true;
+    }
+    onTokensChanged(e) {
+        return this._visibleLines.onTokensChanged(e);
+    }
+    onZonesChanged(e) {
+        this._context.viewModel.viewLayout.setMaxLineWidth(this._maxLineWidth);
+        return this._visibleLines.onZonesChanged(e);
+    }
+    onThemeChanged(e) {
+        return this._onOptionsMaybeChanged();
+    }
+    getPositionFromDOMInfo(spanNode, offset) {
+        const viewLineDomNode = this._getViewLineDomNode(spanNode);
+        if (viewLineDomNode === null) {
+            return null;
+        }
+        const lineNumber = this._getLineNumberFor(viewLineDomNode);
+        if (lineNumber === -1) {
+            return null;
+        }
+        if (lineNumber < 1 || lineNumber > this._context.viewModel.getLineCount()) {
+            return null;
+        }
+        if (this._context.viewModel.getLineMaxColumn(lineNumber) === 1) {
+            return new Position(lineNumber, 1);
+        }
+        const rendStartLineNumber = this._visibleLines.getStartLineNumber();
+        const rendEndLineNumber = this._visibleLines.getEndLineNumber();
+        if (lineNumber < rendStartLineNumber || lineNumber > rendEndLineNumber) {
+            return null;
+        }
+        let column = this._visibleLines.getVisibleLine(lineNumber).getColumnOfNodeOffset(spanNode, offset);
+        const minColumn = this._context.viewModel.getLineMinColumn(lineNumber);
+        if (column < minColumn) {
+            column = minColumn;
+        }
+        return new Position(lineNumber, column);
+    }
+    _getViewLineDomNode(node) {
+        while (node && node.nodeType === 1) {
+            if (node.className === ViewLine.CLASS_NAME) {
+                return node;
+            }
+            node = node.parentElement;
+        }
+        return null;
+    }
+    _getLineNumberFor(domNode) {
+        const startLineNumber = this._visibleLines.getStartLineNumber();
+        const endLineNumber = this._visibleLines.getEndLineNumber();
+        for (let lineNumber = startLineNumber; lineNumber <= endLineNumber; lineNumber++) {
+            const line = this._visibleLines.getVisibleLine(lineNumber);
+            if (domNode === line.getDomNode()) {
+                return lineNumber;
+            }
+        }
+        return -1;
+    }
+    getLineWidth(lineNumber) {
+        const rendStartLineNumber = this._visibleLines.getStartLineNumber();
+        const rendEndLineNumber = this._visibleLines.getEndLineNumber();
+        if (lineNumber < rendStartLineNumber || lineNumber > rendEndLineNumber) {
+            return -1;
+        }
+        const context = new DomReadingContext(this.domNode.domNode, this._textRangeRestingSpot);
+        const result = this._visibleLines.getVisibleLine(lineNumber).getWidth(context);
+        this._updateLineWidthsSlowIfDomDidLayout(context);
+        return result;
+    }
+    linesVisibleRangesForRange(_range, includeNewLines) {
+        if (this.shouldRender()) {
+            return null;
+        }
+        const originalEndLineNumber = _range.endLineNumber;
+        const range = Range.intersectRanges(_range, this._lastRenderedData.getCurrentVisibleRange());
+        if (!range) {
+            return null;
+        }
+        const visibleRanges = [];
+        let visibleRangesLen = 0;
+        const domReadingContext = new DomReadingContext(this.domNode.domNode, this._textRangeRestingSpot);
+        let nextLineModelLineNumber = 0;
+        if (includeNewLines) {
+            nextLineModelLineNumber = this._context.viewModel.coordinatesConverter.convertViewPositionToModelPosition(new Position(range.startLineNumber, 1)).lineNumber;
+        }
+        const rendStartLineNumber = this._visibleLines.getStartLineNumber();
+        const rendEndLineNumber = this._visibleLines.getEndLineNumber();
+        for (let lineNumber = range.startLineNumber; lineNumber <= range.endLineNumber; lineNumber++) {
+            if (lineNumber < rendStartLineNumber || lineNumber > rendEndLineNumber) {
+                continue;
+            }
+            const startColumn = lineNumber === range.startLineNumber ? range.startColumn : 1;
+            const continuesInNextLine = lineNumber !== range.endLineNumber;
+            const endColumn = continuesInNextLine ? this._context.viewModel.getLineMaxColumn(lineNumber) : range.endColumn;
+            const visibleRangesForLine = this._visibleLines.getVisibleLine(lineNumber).getVisibleRangesForRange(lineNumber, startColumn, endColumn, domReadingContext);
+            if (!visibleRangesForLine) {
+                continue;
+            }
+            if (includeNewLines && lineNumber < originalEndLineNumber) {
+                const currentLineModelLineNumber = nextLineModelLineNumber;
+                nextLineModelLineNumber = this._context.viewModel.coordinatesConverter.convertViewPositionToModelPosition(new Position(lineNumber + 1, 1)).lineNumber;
+                if (currentLineModelLineNumber !== nextLineModelLineNumber) {
+                    visibleRangesForLine.ranges[visibleRangesForLine.ranges.length - 1].width += this._typicalHalfwidthCharacterWidth;
+                }
+            }
+            visibleRanges[visibleRangesLen++] = new LineVisibleRanges(visibleRangesForLine.outsideRenderedLine, lineNumber, HorizontalRange.from(visibleRangesForLine.ranges), continuesInNextLine);
+        }
+        this._updateLineWidthsSlowIfDomDidLayout(domReadingContext);
+        if (visibleRangesLen === 0) {
+            return null;
+        }
+        return visibleRanges;
+    }
+    _visibleRangesForLineRange(lineNumber, startColumn, endColumn) {
+        if (this.shouldRender()) {
+            return null;
+        }
+        if (lineNumber < this._visibleLines.getStartLineNumber() || lineNumber > this._visibleLines.getEndLineNumber()) {
+            return null;
+        }
+        const domReadingContext = new DomReadingContext(this.domNode.domNode, this._textRangeRestingSpot);
+        const result = this._visibleLines.getVisibleLine(lineNumber).getVisibleRangesForRange(lineNumber, startColumn, endColumn, domReadingContext);
+        this._updateLineWidthsSlowIfDomDidLayout(domReadingContext);
+        return result;
+    }
+    visibleRangeForPosition(position) {
+        const visibleRanges = this._visibleRangesForLineRange(position.lineNumber, position.column, position.column);
+        if (!visibleRanges) {
+            return null;
+        }
+        return new HorizontalPosition(visibleRanges.outsideRenderedLine, visibleRanges.ranges[0].left);
+    }
+    updateLineWidths() {
+        this._updateLineWidths(false);
+    }
+    _updateLineWidthsFast() {
+        return this._updateLineWidths(true);
+    }
+    _updateLineWidthsSlow() {
+        this._updateLineWidths(false);
+    }
+    _updateLineWidthsSlowIfDomDidLayout(domReadingContext) {
+        if (!domReadingContext.didDomLayout) {
+            return;
+        }
+        if (this._asyncUpdateLineWidths.isScheduled()) {
+            return;
+        }
+        this._asyncUpdateLineWidths.cancel();
+        this._updateLineWidthsSlow();
+    }
+    _updateLineWidths(fast) {
+        const rendStartLineNumber = this._visibleLines.getStartLineNumber();
+        const rendEndLineNumber = this._visibleLines.getEndLineNumber();
+        let localMaxLineWidth = 1;
+        let allWidthsComputed = true;
+        for (let lineNumber = rendStartLineNumber; lineNumber <= rendEndLineNumber; lineNumber++) {
+            const visibleLine = this._visibleLines.getVisibleLine(lineNumber);
+            if (fast && !visibleLine.getWidthIsFast()) {
+                allWidthsComputed = false;
+                continue;
+            }
+            localMaxLineWidth = Math.max(localMaxLineWidth, visibleLine.getWidth(null));
+        }
+        if (allWidthsComputed && rendStartLineNumber === 1 && rendEndLineNumber === this._context.viewModel.getLineCount()) {
+            this._maxLineWidth = 0;
+        }
+        this._ensureMaxLineWidth(localMaxLineWidth);
+        return allWidthsComputed;
+    }
+    _checkMonospaceFontAssumptions() {
+        let longestLineNumber = -1;
+        let longestWidth = -1;
+        const rendStartLineNumber = this._visibleLines.getStartLineNumber();
+        const rendEndLineNumber = this._visibleLines.getEndLineNumber();
+        for (let lineNumber = rendStartLineNumber; lineNumber <= rendEndLineNumber; lineNumber++) {
+            const visibleLine = this._visibleLines.getVisibleLine(lineNumber);
+            if (visibleLine.needsMonospaceFontCheck()) {
+                const lineWidth = visibleLine.getWidth(null);
+                if (lineWidth > longestWidth) {
+                    longestWidth = lineWidth;
+                    longestLineNumber = lineNumber;
+                }
+            }
+        }
+        if (longestLineNumber === -1) {
+            return;
+        }
+        if (!this._visibleLines.getVisibleLine(longestLineNumber).monospaceAssumptionsAreValid()) {
+            for (let lineNumber = rendStartLineNumber; lineNumber <= rendEndLineNumber; lineNumber++) {
+                const visibleLine = this._visibleLines.getVisibleLine(lineNumber);
+                visibleLine.onMonospaceAssumptionsInvalidated();
+            }
+        }
+    }
+    prepareRender() {
+        throw new Error('Not supported');
+    }
+    render() {
+        throw new Error('Not supported');
+    }
+    renderText(viewportData) {
+        this._visibleLines.renderLines(viewportData);
+        this._lastRenderedData.setCurrentVisibleRange(viewportData.visibleRange);
+        this.domNode.setWidth(this._context.viewLayout.getScrollWidth());
+        this.domNode.setHeight(Math.min(this._context.viewLayout.getScrollHeight(), 1000000));
+        if (this._horizontalRevealRequest) {
+            const horizontalRevealRequest = this._horizontalRevealRequest;
+            if (viewportData.startLineNumber <= horizontalRevealRequest.minLineNumber && horizontalRevealRequest.maxLineNumber <= viewportData.endLineNumber) {
+                this._horizontalRevealRequest = null;
+                this.onDidRender();
+                const newScrollLeft = this._computeScrollLeftToReveal(horizontalRevealRequest);
+                if (newScrollLeft) {
+                    if (!this._isViewportWrapping) {
+                        this._ensureMaxLineWidth(newScrollLeft.maxHorizontalOffset);
+                    }
+                    this._context.viewModel.viewLayout.setScrollPosition({
+                        scrollLeft: newScrollLeft.scrollLeft
+                    }, horizontalRevealRequest.scrollType);
+                }
+            }
+        }
+        if (!this._updateLineWidthsFast()) {
+            this._asyncUpdateLineWidths.schedule();
+        }
+        else {
+            this._asyncUpdateLineWidths.cancel();
+        }
+        if (platform.isLinux && !this._asyncCheckMonospaceFontAssumptions.isScheduled()) {
+            const rendStartLineNumber = this._visibleLines.getStartLineNumber();
+            const rendEndLineNumber = this._visibleLines.getEndLineNumber();
+            for (let lineNumber = rendStartLineNumber; lineNumber <= rendEndLineNumber; lineNumber++) {
+                const visibleLine = this._visibleLines.getVisibleLine(lineNumber);
+                if (visibleLine.needsMonospaceFontCheck()) {
+                    this._asyncCheckMonospaceFontAssumptions.schedule();
+                    break;
+                }
+            }
+        }
+        this._linesContent.setLayerHinting(this._canUseLayerHinting);
+        this._linesContent.setContain('strict');
+        const adjustedScrollTop = this._context.viewLayout.getCurrentScrollTop() - viewportData.bigNumbersDelta;
+        this._linesContent.setTop(-adjustedScrollTop);
+        this._linesContent.setLeft(-this._context.viewLayout.getCurrentScrollLeft());
+    }
+    _ensureMaxLineWidth(lineWidth) {
+        const iLineWidth = Math.ceil(lineWidth);
+        if (this._maxLineWidth < iLineWidth) {
+            this._maxLineWidth = iLineWidth;
+            this._context.viewModel.viewLayout.setMaxLineWidth(this._maxLineWidth);
+        }
+    }
+    _computeScrollTopToRevealRange(viewport, source, minimalReveal, range, selections, verticalType) {
+        const viewportStartY = viewport.top;
+        const viewportHeight = viewport.height;
+        const viewportEndY = viewportStartY + viewportHeight;
+        let boxIsSingleRange;
+        let boxStartY;
+        let boxEndY;
+        if (selections && selections.length > 0) {
+            let minLineNumber = selections[0].startLineNumber;
+            let maxLineNumber = selections[0].endLineNumber;
+            for (let i = 1, len = selections.length; i < len; i++) {
+                const selection = selections[i];
+                minLineNumber = Math.min(minLineNumber, selection.startLineNumber);
+                maxLineNumber = Math.max(maxLineNumber, selection.endLineNumber);
+            }
+            boxIsSingleRange = false;
+            boxStartY = this._context.viewLayout.getVerticalOffsetForLineNumber(minLineNumber);
+            boxEndY = this._context.viewLayout.getVerticalOffsetForLineNumber(maxLineNumber) + this._lineHeight;
+        }
+        else if (range) {
+            boxIsSingleRange = true;
+            boxStartY = this._context.viewLayout.getVerticalOffsetForLineNumber(range.startLineNumber);
+            boxEndY = this._context.viewLayout.getVerticalOffsetForLineNumber(range.endLineNumber) + this._lineHeight;
+        }
+        else {
+            return -1;
+        }
+        const shouldIgnoreScrollOff = (source === 'mouse' || minimalReveal) && this._cursorSurroundingLinesStyle === 'default';
+        let paddingTop = 0;
+        let paddingBottom = 0;
+        if (!shouldIgnoreScrollOff) {
+            const maxLinesInViewport = (viewportHeight / this._lineHeight);
+            const surroundingLines = Math.max(this._cursorSurroundingLines, this._stickyScrollEnabled ? this._maxNumberStickyLines : 0);
+            const context = Math.min(maxLinesInViewport / 2, surroundingLines);
+            paddingTop = context * this._lineHeight;
+            paddingBottom = Math.max(0, (context - 1)) * this._lineHeight;
+        }
+        else {
+            if (!minimalReveal) {
+                paddingTop = this._lineHeight;
+            }
+        }
+        if (!minimalReveal) {
+            if (verticalType === 0 || verticalType === 4) {
+                paddingBottom += this._lineHeight;
+            }
+        }
+        boxStartY -= paddingTop;
+        boxEndY += paddingBottom;
+        let newScrollTop;
+        if (boxEndY - boxStartY > viewportHeight) {
+            if (!boxIsSingleRange) {
+                return -1;
+            }
+            newScrollTop = boxStartY;
+        }
+        else if (verticalType === 5 || verticalType === 6) {
+            if (verticalType === 6 && viewportStartY <= boxStartY && boxEndY <= viewportEndY) {
+                newScrollTop = viewportStartY;
+            }
+            else {
+                const desiredGapAbove = Math.max(5 * this._lineHeight, viewportHeight * 0.2);
+                const desiredScrollTop = boxStartY - desiredGapAbove;
+                const minScrollTop = boxEndY - viewportHeight;
+                newScrollTop = Math.max(minScrollTop, desiredScrollTop);
+            }
+        }
+        else if (verticalType === 1 || verticalType === 2) {
+            if (verticalType === 2 && viewportStartY <= boxStartY && boxEndY <= viewportEndY) {
+                newScrollTop = viewportStartY;
+            }
+            else {
+                const boxMiddleY = (boxStartY + boxEndY) / 2;
+                newScrollTop = Math.max(0, boxMiddleY - viewportHeight / 2);
+            }
+        }
+        else {
+            newScrollTop = this._computeMinimumScrolling(viewportStartY, viewportEndY, boxStartY, boxEndY, verticalType === 3, verticalType === 4);
+        }
+        return newScrollTop;
+    }
+    _computeScrollLeftToReveal(horizontalRevealRequest) {
+        const viewport = this._context.viewLayout.getCurrentViewport();
+        const layoutInfo = this._context.configuration.options.get(148);
+        const viewportStartX = viewport.left;
+        const viewportEndX = viewportStartX + viewport.width - layoutInfo.verticalScrollbarWidth;
+        let boxStartX = 1073741824;
+        let boxEndX = 0;
+        if (horizontalRevealRequest.type === 'range') {
+            const visibleRanges = this._visibleRangesForLineRange(horizontalRevealRequest.lineNumber, horizontalRevealRequest.startColumn, horizontalRevealRequest.endColumn);
+            if (!visibleRanges) {
+                return null;
+            }
+            for (const visibleRange of visibleRanges.ranges) {
+                boxStartX = Math.min(boxStartX, Math.round(visibleRange.left));
+                boxEndX = Math.max(boxEndX, Math.round(visibleRange.left + visibleRange.width));
+            }
+        }
+        else {
+            for (const selection of horizontalRevealRequest.selections) {
+                if (selection.startLineNumber !== selection.endLineNumber) {
+                    return null;
+                }
+                const visibleRanges = this._visibleRangesForLineRange(selection.startLineNumber, selection.startColumn, selection.endColumn);
+                if (!visibleRanges) {
+                    return null;
+                }
+                for (const visibleRange of visibleRanges.ranges) {
+                    boxStartX = Math.min(boxStartX, Math.round(visibleRange.left));
+                    boxEndX = Math.max(boxEndX, Math.round(visibleRange.left + visibleRange.width));
+                }
+            }
+        }
+        if (!horizontalRevealRequest.minimalReveal) {
+            boxStartX = Math.max(0, boxStartX - ViewLines.HORIZONTAL_EXTRA_PX);
+            boxEndX += this._revealHorizontalRightPadding;
+        }
+        if (horizontalRevealRequest.type === 'selections' && boxEndX - boxStartX > viewport.width) {
+            return null;
+        }
+        const newScrollLeft = this._computeMinimumScrolling(viewportStartX, viewportEndX, boxStartX, boxEndX);
+        return {
+            scrollLeft: newScrollLeft,
+            maxHorizontalOffset: boxEndX
+        };
+    }
+    _computeMinimumScrolling(viewportStart, viewportEnd, boxStart, boxEnd, revealAtStart, revealAtEnd) {
+        viewportStart = viewportStart | 0;
+        viewportEnd = viewportEnd | 0;
+        boxStart = boxStart | 0;
+        boxEnd = boxEnd | 0;
+        revealAtStart = !!revealAtStart;
+        revealAtEnd = !!revealAtEnd;
+        const viewportLength = viewportEnd - viewportStart;
+        const boxLength = boxEnd - boxStart;
+        if (boxLength < viewportLength) {
+            if (revealAtStart) {
+                return boxStart;
+            }
+            if (revealAtEnd) {
+                return Math.max(0, boxEnd - viewportLength);
+            }
+            if (boxStart < viewportStart) {
+                return boxStart;
+            }
+            else if (boxEnd > viewportEnd) {
+                return Math.max(0, boxEnd - viewportLength);
+            }
+        }
+        else {
+            return boxStart;
+        }
+        return viewportStart;
+    }
+}

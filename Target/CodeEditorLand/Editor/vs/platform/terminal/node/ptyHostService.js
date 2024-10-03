@@ -1,1 +1,344 @@
-var S=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var p=(c,a,e,t)=>{for(var s=t>1?void 0:t?T(a,e):a,i=c.length-1,r;i>=0;i--)(r=c[i])&&(s=(t?r(a,e,s):r(s))||s);return t&&s&&S(a,e,s),s},l=(c,a)=>(e,t)=>a(e,t,c);import{Emitter as n,Event as R}from"../../../base/common/event.js";import{Disposable as H,toDisposable as x}from"../../../base/common/lifecycle.js";import{OS as w,isWindows as C}from"../../../base/common/platform.js";import{ProxyChannel as y}from"../../../base/parts/ipc/common/ipc.js";import{IConfigurationService as E}from"../../configuration/common/configuration.js";import{ILogService as D,ILoggerService as q,LogLevel as L}from"../../log/common/log.js";import{RemoteLoggerChannelClient as V}from"../../log/common/logIpc.js";import{getResolvedShellEnv as A}from"../../shell/node/shellEnv.js";import"../common/capabilities/capabilities.js";import{RequestStore as M}from"../common/requestStore.js";import{HeartbeatConstants as o,TerminalIpcChannels as u,TerminalSettingId as _}from"../common/terminal.js";import{registerTerminalPlatformConfiguration as N}from"../common/terminalPlatformConfiguration.js";import"../common/terminalProcess.js";import"./ptyHost.js";import{detectAvailableProfiles as F}from"./terminalProfiles.js";import"../../../base/common/performance.js";import{getSystemShell as B}from"../../../base/node/shell.js";import{StopWatch as W}from"../../../base/common/stopwatch.js";var k=(a=>(a[a.MaxRestarts=5]="MaxRestarts",a))(k||{});let h=class extends H{constructor(e,t,s,i){super();this._ptyHostStarter=e;this._configurationService=t;this._logService=s;this._loggerService=i;N(),this._register(this._ptyHostStarter),this._register(x(()=>this._disposePtyHost())),this._resolveVariablesRequestStore=this._register(new M(void 0,this._logService)),this._register(this._resolveVariablesRequestStore.onCreateRequest(this._onPtyHostRequestResolveVariables.fire,this._onPtyHostRequestResolveVariables)),this._ptyHostStarter.onRequestConnection&&this._register(R.once(this._ptyHostStarter.onRequestConnection)(()=>this._ensurePtyHost())),this._ptyHostStarter.onWillShutdown&&this._register(this._ptyHostStarter.onWillShutdown(()=>this._wasQuitRequested=!0))}__connection;__proxy;get _connection(){return this._ensurePtyHost(),this.__connection}get _proxy(){return this._ensurePtyHost(),this.__proxy}get _optionalProxy(){return this.__proxy}_ensurePtyHost(){this.__connection||this._startPtyHost()}_resolveVariablesRequestStore;_wasQuitRequested=!1;_restartCount=0;_isResponsive=!0;_heartbeatFirstTimeout;_heartbeatSecondTimeout;_onPtyHostExit=this._register(new n);onPtyHostExit=this._onPtyHostExit.event;_onPtyHostStart=this._register(new n);onPtyHostStart=this._onPtyHostStart.event;_onPtyHostUnresponsive=this._register(new n);onPtyHostUnresponsive=this._onPtyHostUnresponsive.event;_onPtyHostResponsive=this._register(new n);onPtyHostResponsive=this._onPtyHostResponsive.event;_onPtyHostRequestResolveVariables=this._register(new n);onPtyHostRequestResolveVariables=this._onPtyHostRequestResolveVariables.event;_onProcessData=this._register(new n);onProcessData=this._onProcessData.event;_onProcessReady=this._register(new n);onProcessReady=this._onProcessReady.event;_onProcessReplay=this._register(new n);onProcessReplay=this._onProcessReplay.event;_onProcessOrphanQuestion=this._register(new n);onProcessOrphanQuestion=this._onProcessOrphanQuestion.event;_onDidRequestDetach=this._register(new n);onDidRequestDetach=this._onDidRequestDetach.event;_onDidChangeProperty=this._register(new n);onDidChangeProperty=this._onDidChangeProperty.event;_onProcessExit=this._register(new n);onProcessExit=this._onProcessExit.event;get _ignoreProcessNames(){return this._configurationService.getValue(_.IgnoreProcessNames)}async _refreshIgnoreProcessNames(){return this._optionalProxy?.refreshIgnoreProcessNames?.(this._ignoreProcessNames)}async _resolveShellEnv(){if(C)return process.env;try{return await A(this._configurationService,this._logService,{_:[]},process.env)}catch(e){return this._logService.error("ptyHost was unable to resolve shell environment",e),{}}}_startPtyHost(){const e=this._ptyHostStarter.start(),t=e.client;this._logService.getLevel()===L.Trace&&this._logService.trace("PtyHostService#_startPtyHost",new Error().stack?.replace(/^Error/,"")),y.toService(t.getChannel(u.Heartbeat)).onBeat(()=>this._handleHeartbeat()),this._handleHeartbeat(!0),this._register(e.onDidProcessExit(r=>{this._onPtyHostExit.fire(r.code),!this._wasQuitRequested&&!this._store.isDisposed&&(this._restartCount<=5?(this._logService.error(`ptyHost terminated unexpectedly with code ${r.code}`),this._restartCount++,this.restartPtyHost()):this._logService.error(`ptyHost terminated unexpectedly with code ${r.code}, giving up`))}));const i=y.toService(t.getChannel(u.PtyHost));return this._register(i.onProcessData(r=>this._onProcessData.fire(r))),this._register(i.onProcessReady(r=>this._onProcessReady.fire(r))),this._register(i.onProcessExit(r=>this._onProcessExit.fire(r))),this._register(i.onDidChangeProperty(r=>this._onDidChangeProperty.fire(r))),this._register(i.onProcessReplay(r=>this._onProcessReplay.fire(r))),this._register(i.onProcessOrphanQuestion(r=>this._onProcessOrphanQuestion.fire(r))),this._register(i.onDidRequestDetach(r=>this._onDidRequestDetach.fire(r))),this._register(new V(this._loggerService,t.getChannel(u.Logger))),this.__connection=e,this.__proxy=i,this._onPtyHostStart.fire(),this._register(this._configurationService.onDidChangeConfiguration(async r=>{r.affectsConfiguration(_.IgnoreProcessNames)&&await this._refreshIgnoreProcessNames()})),this._refreshIgnoreProcessNames(),[e,i]}async createProcess(e,t,s,i,r,m,P,v,d,g,f){const I=setTimeout(()=>this._handleUnresponsiveCreateProcess(),o.CreateProcessTimeout),b=await this._proxy.createProcess(e,t,s,i,r,m,P,v,d,g,f);return clearTimeout(I),b}updateTitle(e,t,s){return this._proxy.updateTitle(e,t,s)}updateIcon(e,t,s,i){return this._proxy.updateIcon(e,t,s,i)}attachToProcess(e){return this._proxy.attachToProcess(e)}detachFromProcess(e,t){return this._proxy.detachFromProcess(e,t)}shutdownAll(){return this._proxy.shutdownAll()}listProcesses(){return this._proxy.listProcesses()}async getPerformanceMarks(){return this._optionalProxy?.getPerformanceMarks()??[]}async reduceConnectionGraceTime(){return this._optionalProxy?.reduceConnectionGraceTime()}start(e){return this._proxy.start(e)}shutdown(e,t){return this._proxy.shutdown(e,t)}input(e,t){return this._proxy.input(e,t)}processBinary(e,t){return this._proxy.processBinary(e,t)}resize(e,t,s){return this._proxy.resize(e,t,s)}clearBuffer(e){return this._proxy.clearBuffer(e)}acknowledgeDataEvent(e,t){return this._proxy.acknowledgeDataEvent(e,t)}setUnicodeVersion(e,t){return this._proxy.setUnicodeVersion(e,t)}getInitialCwd(e){return this._proxy.getInitialCwd(e)}getCwd(e){return this._proxy.getCwd(e)}async getLatency(){const e=new W,t=await this._proxy.getLatency();return e.stop(),[{label:"ptyhostservice<->ptyhost",latency:e.elapsed()},...t]}orphanQuestionReply(e){return this._proxy.orphanQuestionReply(e)}installAutoReply(e,t){return this._proxy.installAutoReply(e,t)}uninstallAllAutoReplies(){return this._proxy.uninstallAllAutoReplies()}getDefaultSystemShell(e){return this._optionalProxy?.getDefaultSystemShell(e)??B(e??w,process.env)}async getProfiles(e,t,s,i=!1){const r=await this._resolveShellEnv();return F(t,s,i,this._configurationService,r,void 0,this._logService,this._resolveVariables.bind(this,e))}async getEnvironment(){return this.__proxy?this._proxy.getEnvironment():{...process.env}}getWslPath(e,t){return this._proxy.getWslPath(e,t)}getRevivedPtyNewId(e,t){return this._proxy.getRevivedPtyNewId(e,t)}setTerminalLayoutInfo(e){return this._proxy.setTerminalLayoutInfo(e)}async getTerminalLayoutInfo(e){return this._optionalProxy?.getTerminalLayoutInfo(e)}async requestDetachInstance(e,t){return this._proxy.requestDetachInstance(e,t)}async acceptDetachInstanceReply(e,t){return this._proxy.acceptDetachInstanceReply(e,t)}async freePortKillProcess(e){if(!this._proxy.freePortKillProcess)throw new Error("freePortKillProcess does not exist on the pty proxy");return this._proxy.freePortKillProcess(e)}async serializeTerminalState(e){return this._proxy.serializeTerminalState(e)}async reviveTerminalProcesses(e,t,s){return this._proxy.reviveTerminalProcesses(e,t,s)}async refreshProperty(e,t){return this._proxy.refreshProperty(e,t)}async updateProperty(e,t,s){return this._proxy.updateProperty(e,t,s)}async restartPtyHost(){this._disposePtyHost(),this._isResponsive=!0,this._startPtyHost()}_disposePtyHost(){this._proxy.shutdownAll(),this._connection.store.dispose()}_handleHeartbeat(e){this._clearHeartbeatTimeouts(),this._heartbeatFirstTimeout=setTimeout(()=>this._handleHeartbeatFirstTimeout(),e?o.ConnectingBeatInterval:o.BeatInterval*o.FirstWaitMultiplier),this._isResponsive||(this._isResponsive=!0,this._onPtyHostResponsive.fire())}_handleHeartbeatFirstTimeout(){this._logService.warn(`No ptyHost heartbeat after ${o.BeatInterval*o.FirstWaitMultiplier/1e3} seconds`),this._heartbeatFirstTimeout=void 0,this._heartbeatSecondTimeout=setTimeout(()=>this._handleHeartbeatSecondTimeout(),o.BeatInterval*o.SecondWaitMultiplier)}_handleHeartbeatSecondTimeout(){this._logService.error(`No ptyHost heartbeat after ${(o.BeatInterval*o.FirstWaitMultiplier+o.BeatInterval*o.FirstWaitMultiplier)/1e3} seconds`),this._heartbeatSecondTimeout=void 0,this._isResponsive&&(this._isResponsive=!1,this._onPtyHostUnresponsive.fire())}_handleUnresponsiveCreateProcess(){this._clearHeartbeatTimeouts(),this._logService.error(`No ptyHost response to createProcess after ${o.CreateProcessTimeout/1e3} seconds`),this._isResponsive&&(this._isResponsive=!1,this._onPtyHostUnresponsive.fire())}_clearHeartbeatTimeouts(){this._heartbeatFirstTimeout&&(clearTimeout(this._heartbeatFirstTimeout),this._heartbeatFirstTimeout=void 0),this._heartbeatSecondTimeout&&(clearTimeout(this._heartbeatSecondTimeout),this._heartbeatSecondTimeout=void 0)}_resolveVariables(e,t){return this._resolveVariablesRequestStore.createRequest({workspaceId:e,originalText:t})}async acceptPtyHostResolvedVariables(e,t){this._resolveVariablesRequestStore.acceptReply(e,t)}};h=p([l(1,E),l(2,D),l(3,q)],h);export{h as PtyHostService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter, Event } from '../../../base/common/event.js';
+import { Disposable, toDisposable } from '../../../base/common/lifecycle.js';
+import { OS, isWindows } from '../../../base/common/platform.js';
+import { ProxyChannel } from '../../../base/parts/ipc/common/ipc.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { ILogService, ILoggerService, LogLevel } from '../../log/common/log.js';
+import { RemoteLoggerChannelClient } from '../../log/common/logIpc.js';
+import { getResolvedShellEnv } from '../../shell/node/shellEnv.js';
+import { RequestStore } from '../common/requestStore.js';
+import { HeartbeatConstants, TerminalIpcChannels } from '../common/terminal.js';
+import { registerTerminalPlatformConfiguration } from '../common/terminalPlatformConfiguration.js';
+import { detectAvailableProfiles } from './terminalProfiles.js';
+import { getSystemShell } from '../../../base/node/shell.js';
+import { StopWatch } from '../../../base/common/stopwatch.js';
+var Constants;
+(function (Constants) {
+    Constants[Constants["MaxRestarts"] = 5] = "MaxRestarts";
+})(Constants || (Constants = {}));
+let PtyHostService = class PtyHostService extends Disposable {
+    get _connection() {
+        this._ensurePtyHost();
+        return this.__connection;
+    }
+    get _proxy() {
+        this._ensurePtyHost();
+        return this.__proxy;
+    }
+    get _optionalProxy() {
+        return this.__proxy;
+    }
+    _ensurePtyHost() {
+        if (!this.__connection) {
+            this._startPtyHost();
+        }
+    }
+    constructor(_ptyHostStarter, _configurationService, _logService, _loggerService) {
+        super();
+        this._ptyHostStarter = _ptyHostStarter;
+        this._configurationService = _configurationService;
+        this._logService = _logService;
+        this._loggerService = _loggerService;
+        this._wasQuitRequested = false;
+        this._restartCount = 0;
+        this._isResponsive = true;
+        this._onPtyHostExit = this._register(new Emitter());
+        this.onPtyHostExit = this._onPtyHostExit.event;
+        this._onPtyHostStart = this._register(new Emitter());
+        this.onPtyHostStart = this._onPtyHostStart.event;
+        this._onPtyHostUnresponsive = this._register(new Emitter());
+        this.onPtyHostUnresponsive = this._onPtyHostUnresponsive.event;
+        this._onPtyHostResponsive = this._register(new Emitter());
+        this.onPtyHostResponsive = this._onPtyHostResponsive.event;
+        this._onPtyHostRequestResolveVariables = this._register(new Emitter());
+        this.onPtyHostRequestResolveVariables = this._onPtyHostRequestResolveVariables.event;
+        this._onProcessData = this._register(new Emitter());
+        this.onProcessData = this._onProcessData.event;
+        this._onProcessReady = this._register(new Emitter());
+        this.onProcessReady = this._onProcessReady.event;
+        this._onProcessReplay = this._register(new Emitter());
+        this.onProcessReplay = this._onProcessReplay.event;
+        this._onProcessOrphanQuestion = this._register(new Emitter());
+        this.onProcessOrphanQuestion = this._onProcessOrphanQuestion.event;
+        this._onDidRequestDetach = this._register(new Emitter());
+        this.onDidRequestDetach = this._onDidRequestDetach.event;
+        this._onDidChangeProperty = this._register(new Emitter());
+        this.onDidChangeProperty = this._onDidChangeProperty.event;
+        this._onProcessExit = this._register(new Emitter());
+        this.onProcessExit = this._onProcessExit.event;
+        registerTerminalPlatformConfiguration();
+        this._register(this._ptyHostStarter);
+        this._register(toDisposable(() => this._disposePtyHost()));
+        this._resolveVariablesRequestStore = this._register(new RequestStore(undefined, this._logService));
+        this._register(this._resolveVariablesRequestStore.onCreateRequest(this._onPtyHostRequestResolveVariables.fire, this._onPtyHostRequestResolveVariables));
+        if (this._ptyHostStarter.onRequestConnection) {
+            this._register(Event.once(this._ptyHostStarter.onRequestConnection)(() => this._ensurePtyHost()));
+        }
+        if (this._ptyHostStarter.onWillShutdown) {
+            this._register(this._ptyHostStarter.onWillShutdown(() => this._wasQuitRequested = true));
+        }
+    }
+    get _ignoreProcessNames() {
+        return this._configurationService.getValue("terminal.integrated.ignoreProcessNames");
+    }
+    async _refreshIgnoreProcessNames() {
+        return this._optionalProxy?.refreshIgnoreProcessNames?.(this._ignoreProcessNames);
+    }
+    async _resolveShellEnv() {
+        if (isWindows) {
+            return process.env;
+        }
+        try {
+            return await getResolvedShellEnv(this._configurationService, this._logService, { _: [] }, process.env);
+        }
+        catch (error) {
+            this._logService.error('ptyHost was unable to resolve shell environment', error);
+            return {};
+        }
+    }
+    _startPtyHost() {
+        const connection = this._ptyHostStarter.start();
+        const client = connection.client;
+        if (this._logService.getLevel() === LogLevel.Trace) {
+            this._logService.trace('PtyHostService#_startPtyHost', new Error().stack?.replace(/^Error/, ''));
+        }
+        const heartbeatService = ProxyChannel.toService(client.getChannel(TerminalIpcChannels.Heartbeat));
+        heartbeatService.onBeat(() => this._handleHeartbeat());
+        this._handleHeartbeat(true);
+        this._register(connection.onDidProcessExit(e => {
+            this._onPtyHostExit.fire(e.code);
+            if (!this._wasQuitRequested && !this._store.isDisposed) {
+                if (this._restartCount <= Constants.MaxRestarts) {
+                    this._logService.error(`ptyHost terminated unexpectedly with code ${e.code}`);
+                    this._restartCount++;
+                    this.restartPtyHost();
+                }
+                else {
+                    this._logService.error(`ptyHost terminated unexpectedly with code ${e.code}, giving up`);
+                }
+            }
+        }));
+        const proxy = ProxyChannel.toService(client.getChannel(TerminalIpcChannels.PtyHost));
+        this._register(proxy.onProcessData(e => this._onProcessData.fire(e)));
+        this._register(proxy.onProcessReady(e => this._onProcessReady.fire(e)));
+        this._register(proxy.onProcessExit(e => this._onProcessExit.fire(e)));
+        this._register(proxy.onDidChangeProperty(e => this._onDidChangeProperty.fire(e)));
+        this._register(proxy.onProcessReplay(e => this._onProcessReplay.fire(e)));
+        this._register(proxy.onProcessOrphanQuestion(e => this._onProcessOrphanQuestion.fire(e)));
+        this._register(proxy.onDidRequestDetach(e => this._onDidRequestDetach.fire(e)));
+        this._register(new RemoteLoggerChannelClient(this._loggerService, client.getChannel(TerminalIpcChannels.Logger)));
+        this.__connection = connection;
+        this.__proxy = proxy;
+        this._onPtyHostStart.fire();
+        this._register(this._configurationService.onDidChangeConfiguration(async (e) => {
+            if (e.affectsConfiguration("terminal.integrated.ignoreProcessNames")) {
+                await this._refreshIgnoreProcessNames();
+            }
+        }));
+        this._refreshIgnoreProcessNames();
+        return [connection, proxy];
+    }
+    async createProcess(shellLaunchConfig, cwd, cols, rows, unicodeVersion, env, executableEnv, options, shouldPersist, workspaceId, workspaceName) {
+        const timeout = setTimeout(() => this._handleUnresponsiveCreateProcess(), HeartbeatConstants.CreateProcessTimeout);
+        const id = await this._proxy.createProcess(shellLaunchConfig, cwd, cols, rows, unicodeVersion, env, executableEnv, options, shouldPersist, workspaceId, workspaceName);
+        clearTimeout(timeout);
+        return id;
+    }
+    updateTitle(id, title, titleSource) {
+        return this._proxy.updateTitle(id, title, titleSource);
+    }
+    updateIcon(id, userInitiated, icon, color) {
+        return this._proxy.updateIcon(id, userInitiated, icon, color);
+    }
+    attachToProcess(id) {
+        return this._proxy.attachToProcess(id);
+    }
+    detachFromProcess(id, forcePersist) {
+        return this._proxy.detachFromProcess(id, forcePersist);
+    }
+    shutdownAll() {
+        return this._proxy.shutdownAll();
+    }
+    listProcesses() {
+        return this._proxy.listProcesses();
+    }
+    async getPerformanceMarks() {
+        return this._optionalProxy?.getPerformanceMarks() ?? [];
+    }
+    async reduceConnectionGraceTime() {
+        return this._optionalProxy?.reduceConnectionGraceTime();
+    }
+    start(id) {
+        return this._proxy.start(id);
+    }
+    shutdown(id, immediate) {
+        return this._proxy.shutdown(id, immediate);
+    }
+    input(id, data) {
+        return this._proxy.input(id, data);
+    }
+    processBinary(id, data) {
+        return this._proxy.processBinary(id, data);
+    }
+    resize(id, cols, rows) {
+        return this._proxy.resize(id, cols, rows);
+    }
+    clearBuffer(id) {
+        return this._proxy.clearBuffer(id);
+    }
+    acknowledgeDataEvent(id, charCount) {
+        return this._proxy.acknowledgeDataEvent(id, charCount);
+    }
+    setUnicodeVersion(id, version) {
+        return this._proxy.setUnicodeVersion(id, version);
+    }
+    getInitialCwd(id) {
+        return this._proxy.getInitialCwd(id);
+    }
+    getCwd(id) {
+        return this._proxy.getCwd(id);
+    }
+    async getLatency() {
+        const sw = new StopWatch();
+        const results = await this._proxy.getLatency();
+        sw.stop();
+        return [
+            {
+                label: 'ptyhostservice<->ptyhost',
+                latency: sw.elapsed()
+            },
+            ...results
+        ];
+    }
+    orphanQuestionReply(id) {
+        return this._proxy.orphanQuestionReply(id);
+    }
+    installAutoReply(match, reply) {
+        return this._proxy.installAutoReply(match, reply);
+    }
+    uninstallAllAutoReplies() {
+        return this._proxy.uninstallAllAutoReplies();
+    }
+    getDefaultSystemShell(osOverride) {
+        return this._optionalProxy?.getDefaultSystemShell(osOverride) ?? getSystemShell(osOverride ?? OS, process.env);
+    }
+    async getProfiles(workspaceId, profiles, defaultProfile, includeDetectedProfiles = false) {
+        const shellEnv = await this._resolveShellEnv();
+        return detectAvailableProfiles(profiles, defaultProfile, includeDetectedProfiles, this._configurationService, shellEnv, undefined, this._logService, this._resolveVariables.bind(this, workspaceId));
+    }
+    async getEnvironment() {
+        if (!this.__proxy) {
+            return { ...process.env };
+        }
+        return this._proxy.getEnvironment();
+    }
+    getWslPath(original, direction) {
+        return this._proxy.getWslPath(original, direction);
+    }
+    getRevivedPtyNewId(workspaceId, id) {
+        return this._proxy.getRevivedPtyNewId(workspaceId, id);
+    }
+    setTerminalLayoutInfo(args) {
+        return this._proxy.setTerminalLayoutInfo(args);
+    }
+    async getTerminalLayoutInfo(args) {
+        return this._optionalProxy?.getTerminalLayoutInfo(args);
+    }
+    async requestDetachInstance(workspaceId, instanceId) {
+        return this._proxy.requestDetachInstance(workspaceId, instanceId);
+    }
+    async acceptDetachInstanceReply(requestId, persistentProcessId) {
+        return this._proxy.acceptDetachInstanceReply(requestId, persistentProcessId);
+    }
+    async freePortKillProcess(port) {
+        if (!this._proxy.freePortKillProcess) {
+            throw new Error('freePortKillProcess does not exist on the pty proxy');
+        }
+        return this._proxy.freePortKillProcess(port);
+    }
+    async serializeTerminalState(ids) {
+        return this._proxy.serializeTerminalState(ids);
+    }
+    async reviveTerminalProcesses(workspaceId, state, dateTimeFormatLocate) {
+        return this._proxy.reviveTerminalProcesses(workspaceId, state, dateTimeFormatLocate);
+    }
+    async refreshProperty(id, property) {
+        return this._proxy.refreshProperty(id, property);
+    }
+    async updateProperty(id, property, value) {
+        return this._proxy.updateProperty(id, property, value);
+    }
+    async restartPtyHost() {
+        this._disposePtyHost();
+        this._isResponsive = true;
+        this._startPtyHost();
+    }
+    _disposePtyHost() {
+        this._proxy.shutdownAll();
+        this._connection.store.dispose();
+    }
+    _handleHeartbeat(isConnecting) {
+        this._clearHeartbeatTimeouts();
+        this._heartbeatFirstTimeout = setTimeout(() => this._handleHeartbeatFirstTimeout(), isConnecting ? HeartbeatConstants.ConnectingBeatInterval : (HeartbeatConstants.BeatInterval * HeartbeatConstants.FirstWaitMultiplier));
+        if (!this._isResponsive) {
+            this._isResponsive = true;
+            this._onPtyHostResponsive.fire();
+        }
+    }
+    _handleHeartbeatFirstTimeout() {
+        this._logService.warn(`No ptyHost heartbeat after ${HeartbeatConstants.BeatInterval * HeartbeatConstants.FirstWaitMultiplier / 1000} seconds`);
+        this._heartbeatFirstTimeout = undefined;
+        this._heartbeatSecondTimeout = setTimeout(() => this._handleHeartbeatSecondTimeout(), HeartbeatConstants.BeatInterval * HeartbeatConstants.SecondWaitMultiplier);
+    }
+    _handleHeartbeatSecondTimeout() {
+        this._logService.error(`No ptyHost heartbeat after ${(HeartbeatConstants.BeatInterval * HeartbeatConstants.FirstWaitMultiplier + HeartbeatConstants.BeatInterval * HeartbeatConstants.FirstWaitMultiplier) / 1000} seconds`);
+        this._heartbeatSecondTimeout = undefined;
+        if (this._isResponsive) {
+            this._isResponsive = false;
+            this._onPtyHostUnresponsive.fire();
+        }
+    }
+    _handleUnresponsiveCreateProcess() {
+        this._clearHeartbeatTimeouts();
+        this._logService.error(`No ptyHost response to createProcess after ${HeartbeatConstants.CreateProcessTimeout / 1000} seconds`);
+        if (this._isResponsive) {
+            this._isResponsive = false;
+            this._onPtyHostUnresponsive.fire();
+        }
+    }
+    _clearHeartbeatTimeouts() {
+        if (this._heartbeatFirstTimeout) {
+            clearTimeout(this._heartbeatFirstTimeout);
+            this._heartbeatFirstTimeout = undefined;
+        }
+        if (this._heartbeatSecondTimeout) {
+            clearTimeout(this._heartbeatSecondTimeout);
+            this._heartbeatSecondTimeout = undefined;
+        }
+    }
+    _resolveVariables(workspaceId, text) {
+        return this._resolveVariablesRequestStore.createRequest({ workspaceId, originalText: text });
+    }
+    async acceptPtyHostResolvedVariables(requestId, resolved) {
+        this._resolveVariablesRequestStore.acceptReply(requestId, resolved);
+    }
+};
+PtyHostService = __decorate([
+    __param(1, IConfigurationService),
+    __param(2, ILogService),
+    __param(3, ILoggerService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], PtyHostService);
+export { PtyHostService };

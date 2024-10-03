@@ -1,1 +1,390 @@
-import*as s from"fs";import{tmpdir as k}from"os";import{promisify as u}from"util";import{ResourceQueue as L,timeout as C}from"../common/async.js";import{isEqualOrParent as W,isRootOrDriveLetter as w,randomPath as N}from"../common/extpath.js";import{normalizeNFC as h}from"../common/normalization.js";import{join as l}from"../common/path.js";import{isLinux as U,isMacintosh as b,isWindows as P}from"../common/platform.js";import{extUriBiasedIgnorePathCase as R}from"../common/resources.js";import{URI as A}from"../common/uri.js";var M=(i=>(i[i.UNLINK=0]="UNLINK",i[i.MOVE=1]="MOVE",i))(M||{});async function F(r,e=0,i){if(w(r))throw new Error("rimraf - will refuse to recursively delete root");return e===0?g(r):B(r,i)}async function B(r,e=N(k())){try{try{await s.promises.rename(r,e)}catch(i){return i.code==="ENOENT"?void 0:g(r)}g(e).catch(i=>{})}catch(i){if(i.code!=="ENOENT")throw i}}async function g(r){return s.promises.rm(r,{recursive:!0,force:!0,maxRetries:3})}function tr(r){if(w(r))throw new Error("rimraf - will refuse to recursively delete root");s.rmSync(r,{recursive:!0,force:!0,maxRetries:3})}async function d(r,e){return v(await(e?T(r):s.promises.readdir(r)))}async function T(r){try{return await s.promises.readdir(r,{withFileTypes:!0})}catch{}const e=[],i=await d(r);for(const t of i){let o=!1,n=!1,a=!1;try{const c=await s.promises.lstat(l(r,t));o=c.isFile(),n=c.isDirectory(),a=c.isSymbolicLink()}catch{}e.push({name:t,isFile:()=>o,isDirectory:()=>n,isSymbolicLink:()=>a})}return e}function nr(r){return v(s.readdirSync(r))}function v(r){return r.map(e=>typeof e=="string"?b?h(e):e:(e.name=b?h(e.name):e.name,e))}async function j(r){const e=await d(r),i=[];for(const t of e)await m.existsDirectory(l(r,t))&&i.push(t);return i}function sr(r,e=1e3){return new Promise(i=>{let t=!1;const o=setInterval(()=>{t||(t=!0,s.access(r,n=>{t=!1,n&&(clearInterval(o),i(void 0))}))},e)})}var m;(t=>{async function r(o){let n;try{if(n=await s.promises.lstat(o),!n.isSymbolicLink())return{stat:n}}catch{}try{return{stat:await s.promises.stat(o),symbolicLink:n?.isSymbolicLink()?{dangling:!1}:void 0}}catch(a){if(a.code==="ENOENT"&&n)return{stat:n,symbolicLink:{dangling:!0}};if(P&&a.code==="EACCES")try{return{stat:await s.promises.stat(await s.promises.readlink(o)),symbolicLink:{dangling:!1}}}catch(c){if(c.code==="ENOENT"&&n)return{stat:n,symbolicLink:{dangling:!0}};throw c}throw a}}t.stat=r;async function e(o){try{const{stat:n,symbolicLink:a}=await t.stat(o);return n.isFile()&&a?.dangling!==!0}catch{}return!1}t.existsFile=e;async function i(o){try{const{stat:n,symbolicLink:a}=await t.stat(o);return n.isDirectory()&&a?.dangling!==!0}catch{}return!1}t.existsDirectory=i})(m||={});const K=new L;function V(r,e,i){return K.queueFor(A.file(r),()=>{const t=S(i);return new Promise((o,n)=>q(r,e,t,a=>a?n(a):o()))},R)}let p=!0;function I(r){p=r}function q(r,e,i,t){if(!p)return s.writeFile(r,e,{mode:i.mode,flag:i.flag},t);s.open(r,i.flag,i.mode,(o,n)=>{if(o)return t(o);s.writeFile(n,e,a=>{if(a)return s.close(n,()=>t(a));s.fdatasync(n,c=>(c&&I(!1),s.close(n,f=>t(f))))})})}function or(r,e,i){const t=S(i);if(!p)return s.writeFileSync(r,e,{mode:t.mode,flag:t.flag});const o=s.openSync(r,t.flag,t.mode);try{s.writeFileSync(o,e);try{s.fdatasyncSync(o)}catch{I(!1)}}finally{s.closeSync(o)}}function S(r){return r?{mode:typeof r.mode=="number"?r.mode:438,flag:typeof r.flag=="string"?r.flag:"w"}:{mode:438,flag:"w"}}async function Q(r,e,i=6e4){if(r!==e)try{P&&typeof i=="number"?await D(r,e,Date.now(),i):await s.promises.rename(r,e)}catch(t){if(r.toLowerCase()!==e.toLowerCase()&&t.code==="EXDEV"||r.endsWith("."))await E(r,e,{preserveSymlinks:!1}),await F(r,1);else throw t}}async function D(r,e,i,t,o=0){try{return await s.promises.rename(r,e)}catch(n){if(n.code!=="EACCES"&&n.code!=="EPERM"&&n.code!=="EBUSY"||Date.now()-i>=t)throw n;if(o===0){let a=!1;try{const{stat:c}=await m.stat(e);c.isFile()||(a=!0)}catch{}if(a)throw n}return await C(Math.min(100,o*10)),D(r,e,i,t,o+1)}}async function E(r,e,i){return x(r,e,{root:{source:r,target:e},options:i,handledSourcePaths:new Set})}const O=511;async function x(r,e,i){if(i.handledSourcePaths.has(r))return;i.handledSourcePaths.add(r);const{stat:t,symbolicLink:o}=await m.stat(r);if(o){if(i.options.preserveSymlinks)try{return await $(r,e,i)}catch{}if(o.dangling)return}return t.isDirectory()?Y(r,e,t.mode&O,i):_(r,e,t.mode&O)}async function Y(r,e,i,t){await s.promises.mkdir(e,{recursive:!0,mode:i});const o=await d(r);for(const n of o)await x(l(r,n),l(e,n),t)}async function _(r,e,i){await s.promises.copyFile(r,e),await s.promises.chmod(e,i)}async function $(r,e,i){let t=await s.promises.readlink(r);W(t,i.root.source,!U)&&(t=l(i.root.target,t.substr(i.root.source.length+1))),await s.promises.symlink(t,e)}const ar=new class{get read(){return(r,e,i,t,o)=>new Promise((n,a)=>{s.read(r,e,i,t,o,(c,f,y)=>c?a(c):n({bytesRead:f,buffer:y}))})}get write(){return(r,e,i,t,o)=>new Promise((n,a)=>{s.write(r,e,i,t,o,(c,f,y)=>c?a(c):n({bytesWritten:f,buffer:y}))})}get fdatasync(){return u(s.fdatasync)}get open(){return u(s.open)}get close(){return u(s.close)}get realpath(){return u(s.realpath)}async exists(r){try{return await s.promises.access(r),!0}catch{return!1}}get readdir(){return d}get readDirsInDir(){return j}get writeFile(){return V}get rm(){return F}get rename(){return Q}get copy(){return E}};export{ar as Promises,M as RimRafMode,m as SymlinkSupport,I as configureFlushOnWrite,nr as readdirSync,tr as rimrafSync,sr as whenDeleted,or as writeFileSync};
+import * as fs from 'fs';
+import { tmpdir } from 'os';
+import { promisify } from 'util';
+import { ResourceQueue, timeout } from '../common/async.js';
+import { isEqualOrParent, isRootOrDriveLetter, randomPath } from '../common/extpath.js';
+import { normalizeNFC } from '../common/normalization.js';
+import { join } from '../common/path.js';
+import { isLinux, isMacintosh, isWindows } from '../common/platform.js';
+import { extUriBiasedIgnorePathCase } from '../common/resources.js';
+import { URI } from '../common/uri.js';
+export var RimRafMode;
+(function (RimRafMode) {
+    RimRafMode[RimRafMode["UNLINK"] = 0] = "UNLINK";
+    RimRafMode[RimRafMode["MOVE"] = 1] = "MOVE";
+})(RimRafMode || (RimRafMode = {}));
+async function rimraf(path, mode = RimRafMode.UNLINK, moveToPath) {
+    if (isRootOrDriveLetter(path)) {
+        throw new Error('rimraf - will refuse to recursively delete root');
+    }
+    if (mode === RimRafMode.UNLINK) {
+        return rimrafUnlink(path);
+    }
+    return rimrafMove(path, moveToPath);
+}
+async function rimrafMove(path, moveToPath = randomPath(tmpdir())) {
+    try {
+        try {
+            await fs.promises.rename(path, moveToPath);
+        }
+        catch (error) {
+            if (error.code === 'ENOENT') {
+                return;
+            }
+            return rimrafUnlink(path);
+        }
+        rimrafUnlink(moveToPath).catch(error => { });
+    }
+    catch (error) {
+        if (error.code !== 'ENOENT') {
+            throw error;
+        }
+    }
+}
+async function rimrafUnlink(path) {
+    return fs.promises.rm(path, { recursive: true, force: true, maxRetries: 3 });
+}
+export function rimrafSync(path) {
+    if (isRootOrDriveLetter(path)) {
+        throw new Error('rimraf - will refuse to recursively delete root');
+    }
+    fs.rmSync(path, { recursive: true, force: true, maxRetries: 3 });
+}
+async function readdir(path, options) {
+    return handleDirectoryChildren(await (options ? safeReaddirWithFileTypes(path) : fs.promises.readdir(path)));
+}
+async function safeReaddirWithFileTypes(path) {
+    try {
+        return await fs.promises.readdir(path, { withFileTypes: true });
+    }
+    catch (error) {
+        console.warn('[node.js fs] readdir with filetypes failed with error: ', error);
+    }
+    const result = [];
+    const children = await readdir(path);
+    for (const child of children) {
+        let isFile = false;
+        let isDirectory = false;
+        let isSymbolicLink = false;
+        try {
+            const lstat = await fs.promises.lstat(join(path, child));
+            isFile = lstat.isFile();
+            isDirectory = lstat.isDirectory();
+            isSymbolicLink = lstat.isSymbolicLink();
+        }
+        catch (error) {
+            console.warn('[node.js fs] unexpected error from lstat after readdir: ', error);
+        }
+        result.push({
+            name: child,
+            isFile: () => isFile,
+            isDirectory: () => isDirectory,
+            isSymbolicLink: () => isSymbolicLink
+        });
+    }
+    return result;
+}
+export function readdirSync(path) {
+    return handleDirectoryChildren(fs.readdirSync(path));
+}
+function handleDirectoryChildren(children) {
+    return children.map(child => {
+        if (typeof child === 'string') {
+            return isMacintosh ? normalizeNFC(child) : child;
+        }
+        child.name = isMacintosh ? normalizeNFC(child.name) : child.name;
+        return child;
+    });
+}
+async function readDirsInDir(dirPath) {
+    const children = await readdir(dirPath);
+    const directories = [];
+    for (const child of children) {
+        if (await SymlinkSupport.existsDirectory(join(dirPath, child))) {
+            directories.push(child);
+        }
+    }
+    return directories;
+}
+export function whenDeleted(path, intervalMs = 1000) {
+    return new Promise(resolve => {
+        let running = false;
+        const interval = setInterval(() => {
+            if (!running) {
+                running = true;
+                fs.access(path, err => {
+                    running = false;
+                    if (err) {
+                        clearInterval(interval);
+                        resolve(undefined);
+                    }
+                });
+            }
+        }, intervalMs);
+    });
+}
+export var SymlinkSupport;
+(function (SymlinkSupport) {
+    async function stat(path) {
+        let lstats;
+        try {
+            lstats = await fs.promises.lstat(path);
+            if (!lstats.isSymbolicLink()) {
+                return { stat: lstats };
+            }
+        }
+        catch (error) {
+        }
+        try {
+            const stats = await fs.promises.stat(path);
+            return { stat: stats, symbolicLink: lstats?.isSymbolicLink() ? { dangling: false } : undefined };
+        }
+        catch (error) {
+            if (error.code === 'ENOENT' && lstats) {
+                return { stat: lstats, symbolicLink: { dangling: true } };
+            }
+            if (isWindows && error.code === 'EACCES') {
+                try {
+                    const stats = await fs.promises.stat(await fs.promises.readlink(path));
+                    return { stat: stats, symbolicLink: { dangling: false } };
+                }
+                catch (error) {
+                    if (error.code === 'ENOENT' && lstats) {
+                        return { stat: lstats, symbolicLink: { dangling: true } };
+                    }
+                    throw error;
+                }
+            }
+            throw error;
+        }
+    }
+    SymlinkSupport.stat = stat;
+    async function existsFile(path) {
+        try {
+            const { stat, symbolicLink } = await SymlinkSupport.stat(path);
+            return stat.isFile() && symbolicLink?.dangling !== true;
+        }
+        catch (error) {
+        }
+        return false;
+    }
+    SymlinkSupport.existsFile = existsFile;
+    async function existsDirectory(path) {
+        try {
+            const { stat, symbolicLink } = await SymlinkSupport.stat(path);
+            return stat.isDirectory() && symbolicLink?.dangling !== true;
+        }
+        catch (error) {
+        }
+        return false;
+    }
+    SymlinkSupport.existsDirectory = existsDirectory;
+})(SymlinkSupport || (SymlinkSupport = {}));
+const writeQueues = new ResourceQueue();
+function writeFile(path, data, options) {
+    return writeQueues.queueFor(URI.file(path), () => {
+        const ensuredOptions = ensureWriteOptions(options);
+        return new Promise((resolve, reject) => doWriteFileAndFlush(path, data, ensuredOptions, error => error ? reject(error) : resolve()));
+    }, extUriBiasedIgnorePathCase);
+}
+let canFlush = true;
+export function configureFlushOnWrite(enabled) {
+    canFlush = enabled;
+}
+function doWriteFileAndFlush(path, data, options, callback) {
+    if (!canFlush) {
+        return fs.writeFile(path, data, { mode: options.mode, flag: options.flag }, callback);
+    }
+    fs.open(path, options.flag, options.mode, (openError, fd) => {
+        if (openError) {
+            return callback(openError);
+        }
+        fs.writeFile(fd, data, writeError => {
+            if (writeError) {
+                return fs.close(fd, () => callback(writeError));
+            }
+            fs.fdatasync(fd, (syncError) => {
+                if (syncError) {
+                    console.warn('[node.js fs] fdatasync is now disabled for this session because it failed: ', syncError);
+                    configureFlushOnWrite(false);
+                }
+                return fs.close(fd, closeError => callback(closeError));
+            });
+        });
+    });
+}
+export function writeFileSync(path, data, options) {
+    const ensuredOptions = ensureWriteOptions(options);
+    if (!canFlush) {
+        return fs.writeFileSync(path, data, { mode: ensuredOptions.mode, flag: ensuredOptions.flag });
+    }
+    const fd = fs.openSync(path, ensuredOptions.flag, ensuredOptions.mode);
+    try {
+        fs.writeFileSync(fd, data);
+        try {
+            fs.fdatasyncSync(fd);
+        }
+        catch (syncError) {
+            console.warn('[node.js fs] fdatasyncSync is now disabled for this session because it failed: ', syncError);
+            configureFlushOnWrite(false);
+        }
+    }
+    finally {
+        fs.closeSync(fd);
+    }
+}
+function ensureWriteOptions(options) {
+    if (!options) {
+        return { mode: 0o666, flag: 'w' };
+    }
+    return {
+        mode: typeof options.mode === 'number' ? options.mode : 0o666,
+        flag: typeof options.flag === 'string' ? options.flag : 'w'
+    };
+}
+async function rename(source, target, windowsRetryTimeout = 60000) {
+    if (source === target) {
+        return;
+    }
+    try {
+        if (isWindows && typeof windowsRetryTimeout === 'number') {
+            await renameWithRetry(source, target, Date.now(), windowsRetryTimeout);
+        }
+        else {
+            await fs.promises.rename(source, target);
+        }
+    }
+    catch (error) {
+        if (source.toLowerCase() !== target.toLowerCase() && error.code === 'EXDEV' || source.endsWith('.')) {
+            await copy(source, target, { preserveSymlinks: false });
+            await rimraf(source, RimRafMode.MOVE);
+        }
+        else {
+            throw error;
+        }
+    }
+}
+async function renameWithRetry(source, target, startTime, retryTimeout, attempt = 0) {
+    try {
+        return await fs.promises.rename(source, target);
+    }
+    catch (error) {
+        if (error.code !== 'EACCES' && error.code !== 'EPERM' && error.code !== 'EBUSY') {
+            throw error;
+        }
+        if (Date.now() - startTime >= retryTimeout) {
+            console.error(`[node.js fs] rename failed after ${attempt} retries with error: ${error}`);
+            throw error;
+        }
+        if (attempt === 0) {
+            let abortRetry = false;
+            try {
+                const { stat } = await SymlinkSupport.stat(target);
+                if (!stat.isFile()) {
+                    abortRetry = true;
+                }
+            }
+            catch (error) {
+            }
+            if (abortRetry) {
+                throw error;
+            }
+        }
+        await timeout(Math.min(100, attempt * 10));
+        return renameWithRetry(source, target, startTime, retryTimeout, attempt + 1);
+    }
+}
+async function copy(source, target, options) {
+    return doCopy(source, target, { root: { source, target }, options, handledSourcePaths: new Set() });
+}
+const COPY_MODE_MASK = 0o777;
+async function doCopy(source, target, payload) {
+    if (payload.handledSourcePaths.has(source)) {
+        return;
+    }
+    else {
+        payload.handledSourcePaths.add(source);
+    }
+    const { stat, symbolicLink } = await SymlinkSupport.stat(source);
+    if (symbolicLink) {
+        if (payload.options.preserveSymlinks) {
+            try {
+                return await doCopySymlink(source, target, payload);
+            }
+            catch (error) {
+            }
+        }
+        if (symbolicLink.dangling) {
+            return;
+        }
+    }
+    if (stat.isDirectory()) {
+        return doCopyDirectory(source, target, stat.mode & COPY_MODE_MASK, payload);
+    }
+    else {
+        return doCopyFile(source, target, stat.mode & COPY_MODE_MASK);
+    }
+}
+async function doCopyDirectory(source, target, mode, payload) {
+    await fs.promises.mkdir(target, { recursive: true, mode });
+    const files = await readdir(source);
+    for (const file of files) {
+        await doCopy(join(source, file), join(target, file), payload);
+    }
+}
+async function doCopyFile(source, target, mode) {
+    await fs.promises.copyFile(source, target);
+    await fs.promises.chmod(target, mode);
+}
+async function doCopySymlink(source, target, payload) {
+    let linkTarget = await fs.promises.readlink(source);
+    if (isEqualOrParent(linkTarget, payload.root.source, !isLinux)) {
+        linkTarget = join(payload.root.target, linkTarget.substr(payload.root.source.length + 1));
+    }
+    await fs.promises.symlink(linkTarget, target);
+}
+export const Promises = new class {
+    get read() {
+        return (fd, buffer, offset, length, position) => {
+            return new Promise((resolve, reject) => {
+                fs.read(fd, buffer, offset, length, position, (err, bytesRead, buffer) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve({ bytesRead, buffer });
+                });
+            });
+        };
+    }
+    get write() {
+        return (fd, buffer, offset, length, position) => {
+            return new Promise((resolve, reject) => {
+                fs.write(fd, buffer, offset, length, position, (err, bytesWritten, buffer) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve({ bytesWritten, buffer });
+                });
+            });
+        };
+    }
+    get fdatasync() { return promisify(fs.fdatasync); }
+    get open() { return promisify(fs.open); }
+    get close() { return promisify(fs.close); }
+    get realpath() { return promisify(fs.realpath); }
+    async exists(path) {
+        try {
+            await fs.promises.access(path);
+            return true;
+        }
+        catch {
+            return false;
+        }
+    }
+    get readdir() { return readdir; }
+    get readDirsInDir() { return readDirsInDir; }
+    get writeFile() { return writeFile; }
+    get rm() { return rimraf; }
+    get rename() { return rename; }
+    get copy() { return copy; }
+};

@@ -1,1 +1,91 @@
-import{bufferToStream as i,VSBuffer as u}from"../../../common/buffer.js";import"../../../common/cancellation.js";import{canceled as o}from"../../../common/errors.js";import{OfflineError as c}from"../common/request.js";async function R(e,r){if(r.isCancellationRequested)throw o();const a=new AbortController,t=r.onCancellationRequested(()=>a.abort()),n=e.timeout?AbortSignal.any([a.signal,AbortSignal.timeout(e.timeout)]):a.signal;try{const s=await fetch(e.url||"",{method:e.type||"GET",headers:f(e),body:e.data,signal:n});return{res:{statusCode:s.status,headers:d(s)},stream:i(u.wrap(new Uint8Array(await s.arrayBuffer())))}}catch(s){throw navigator.onLine?s?.name==="AbortError"?o():s?.name==="TimeoutError"?new Error(`Fetch timeout: ${e.timeout}ms`):s:new c}finally{t.dispose()}}function f(e){if(e.headers||e.user||e.password||e.proxyAuthorization){const r=new Headers;e:for(const a in e.headers){switch(a.toLowerCase()){case"user-agent":case"accept-encoding":case"content-length":continue e}const t=e.headers[a];if(typeof t=="string")r.set(a,t);else if(Array.isArray(t))for(const n of t)r.append(a,n)}return(e.user||e.password)&&r.set("Authorization","Basic "+btoa(`${e.user||""}:${e.password||""}`)),e.proxyAuthorization&&r.set("Proxy-Authorization",e.proxyAuthorization),r}}function d(e){const r=Object.create(null);return e.headers.forEach((a,t)=>{r[t]?Array.isArray(r[t])?r[t].push(a):r[t]=[r[t],a]:r[t]=a}),r}export{R as request};
+import { bufferToStream, VSBuffer } from '../../../common/buffer.js';
+import { canceled } from '../../../common/errors.js';
+import { OfflineError } from '../common/request.js';
+export async function request(options, token) {
+    if (token.isCancellationRequested) {
+        throw canceled();
+    }
+    const cancellation = new AbortController();
+    const disposable = token.onCancellationRequested(() => cancellation.abort());
+    const signal = options.timeout ? AbortSignal.any([
+        cancellation.signal,
+        AbortSignal.timeout(options.timeout),
+    ]) : cancellation.signal;
+    try {
+        const res = await fetch(options.url || '', {
+            method: options.type || 'GET',
+            headers: getRequestHeaders(options),
+            body: options.data,
+            signal,
+        });
+        return {
+            res: {
+                statusCode: res.status,
+                headers: getResponseHeaders(res),
+            },
+            stream: bufferToStream(VSBuffer.wrap(new Uint8Array(await res.arrayBuffer()))),
+        };
+    }
+    catch (err) {
+        if (!navigator.onLine) {
+            throw new OfflineError();
+        }
+        if (err?.name === 'AbortError') {
+            throw canceled();
+        }
+        if (err?.name === 'TimeoutError') {
+            throw new Error(`Fetch timeout: ${options.timeout}ms`);
+        }
+        throw err;
+    }
+    finally {
+        disposable.dispose();
+    }
+}
+function getRequestHeaders(options) {
+    if (options.headers || options.user || options.password || options.proxyAuthorization) {
+        const headers = new Headers();
+        outer: for (const k in options.headers) {
+            switch (k.toLowerCase()) {
+                case 'user-agent':
+                case 'accept-encoding':
+                case 'content-length':
+                    continue outer;
+            }
+            const header = options.headers[k];
+            if (typeof header === 'string') {
+                headers.set(k, header);
+            }
+            else if (Array.isArray(header)) {
+                for (const h of header) {
+                    headers.append(k, h);
+                }
+            }
+        }
+        if (options.user || options.password) {
+            headers.set('Authorization', 'Basic ' + btoa(`${options.user || ''}:${options.password || ''}`));
+        }
+        if (options.proxyAuthorization) {
+            headers.set('Proxy-Authorization', options.proxyAuthorization);
+        }
+        return headers;
+    }
+    return undefined;
+}
+function getResponseHeaders(res) {
+    const headers = Object.create(null);
+    res.headers.forEach((value, key) => {
+        if (headers[key]) {
+            if (Array.isArray(headers[key])) {
+                headers[key].push(value);
+            }
+            else {
+                headers[key] = [headers[key], value];
+            }
+        }
+        else {
+            headers[key] = value;
+        }
+    });
+    return headers;
+}

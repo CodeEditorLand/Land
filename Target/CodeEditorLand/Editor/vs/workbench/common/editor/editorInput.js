@@ -1,1 +1,105 @@
-import{Emitter as t}from"../../../base/common/event.js";import"../../../base/common/uri.js";import{EditorInputCapabilities as r,Verbosity as n,EditorResourceAccessor as o,AbstractEditorInput as s,isEditorInput as d}from"../editor.js";import{isEqual as a}from"../../../base/common/resources.js";import"../../../platform/dialogs/common/dialogs.js";import"../../../base/common/htmlContent.js";import"../../../base/common/lifecycle.js";import"../../../base/common/themables.js";class O extends s{_onDidChangeDirty=this._register(new t);_onDidChangeLabel=this._register(new t);_onDidChangeCapabilities=this._register(new t);_onWillDispose=this._register(new t);onDidChangeDirty=this._onDidChangeDirty.event;onDidChangeLabel=this._onDidChangeLabel.event;onDidChangeCapabilities=this._onDidChangeCapabilities.event;onWillDispose=this._onWillDispose.event;closeHandler;get editorId(){}get capabilities(){return r.Readonly}hasCapability(e){return e===r.None?this.capabilities===r.None:(this.capabilities&e)!==0}isReadonly(){return this.hasCapability(r.Readonly)}getName(){return`Editor ${this.typeId}`}getDescription(e){}getTitle(e){return this.getName()}getLabelExtraClasses(){return[]}getAriaLabel(){return this.getTitle(n.SHORT)}getIcon(){}getTelemetryDescriptor(){return{typeId:this.typeId}}isDirty(){return!1}isModified(){return this.isDirty()}isSaving(){return!1}async resolve(){return null}async save(e,i){return this}async saveAs(e,i){return this}async revert(e,i){}async rename(e,i){}copy(){return this}canMove(e,i){return!0}matches(e){if(d(e))return this===e;const i=e.options?.override;return this.editorId!==i&&i!==void 0&&this.editorId!==void 0?!1:a(this.resource,o.getCanonicalUri(e))}prefersEditorPane(e){return e.at(0)}toUntyped(e){}isDisposed(){return this._store.isDisposed}dispose(){this.isDisposed()||this._onWillDispose.fire(),super.dispose()}}export{O as EditorInput};
+import { Emitter } from '../../../base/common/event.js';
+import { EditorResourceAccessor, AbstractEditorInput, isEditorInput } from '../editor.js';
+import { isEqual } from '../../../base/common/resources.js';
+export class EditorInput extends AbstractEditorInput {
+    constructor() {
+        super(...arguments);
+        this._onDidChangeDirty = this._register(new Emitter());
+        this._onDidChangeLabel = this._register(new Emitter());
+        this._onDidChangeCapabilities = this._register(new Emitter());
+        this._onWillDispose = this._register(new Emitter());
+        this.onDidChangeDirty = this._onDidChangeDirty.event;
+        this.onDidChangeLabel = this._onDidChangeLabel.event;
+        this.onDidChangeCapabilities = this._onDidChangeCapabilities.event;
+        this.onWillDispose = this._onWillDispose.event;
+    }
+    get editorId() {
+        return undefined;
+    }
+    get capabilities() {
+        return 2;
+    }
+    hasCapability(capability) {
+        if (capability === 0) {
+            return this.capabilities === 0;
+        }
+        return (this.capabilities & capability) !== 0;
+    }
+    isReadonly() {
+        return this.hasCapability(2);
+    }
+    getName() {
+        return `Editor ${this.typeId}`;
+    }
+    getDescription(verbosity) {
+        return undefined;
+    }
+    getTitle(verbosity) {
+        return this.getName();
+    }
+    getLabelExtraClasses() {
+        return [];
+    }
+    getAriaLabel() {
+        return this.getTitle(0);
+    }
+    getIcon() {
+        return undefined;
+    }
+    getTelemetryDescriptor() {
+        return { typeId: this.typeId };
+    }
+    isDirty() {
+        return false;
+    }
+    isModified() {
+        return this.isDirty();
+    }
+    isSaving() {
+        return false;
+    }
+    async resolve() {
+        return null;
+    }
+    async save(group, options) {
+        return this;
+    }
+    async saveAs(group, options) {
+        return this;
+    }
+    async revert(group, options) { }
+    async rename(group, target) {
+        return undefined;
+    }
+    copy() {
+        return this;
+    }
+    canMove(sourceGroup, targetGroup) {
+        return true;
+    }
+    matches(otherInput) {
+        if (isEditorInput(otherInput)) {
+            return this === otherInput;
+        }
+        const otherInputEditorId = otherInput.options?.override;
+        if (this.editorId !== otherInputEditorId && otherInputEditorId !== undefined && this.editorId !== undefined) {
+            return false;
+        }
+        return isEqual(this.resource, EditorResourceAccessor.getCanonicalUri(otherInput));
+    }
+    prefersEditorPane(editorPanes) {
+        return editorPanes.at(0);
+    }
+    toUntyped(options) {
+        return undefined;
+    }
+    isDisposed() {
+        return this._store.isDisposed;
+    }
+    dispose() {
+        if (!this.isDisposed()) {
+            this._onWillDispose.fire();
+        }
+        super.dispose();
+    }
+}

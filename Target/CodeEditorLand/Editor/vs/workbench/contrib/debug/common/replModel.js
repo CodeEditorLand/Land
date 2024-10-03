@@ -1,6 +1,288 @@
-import{Emitter as g}from"../../../../base/common/event.js";import f from"../../../../base/common/severity.js";import{isObject as h,isString as R}from"../../../../base/common/types.js";import{generateUuid as p}from"../../../../base/common/uuid.js";import*as C from"../../../../nls.js";import"../../../../platform/configuration/common/configuration.js";import"./debug.js";import{ExpressionContainer as S}from"./debugModel.js";const E=1e4;let D=0;const c=()=>`topReplElement:${D++}`;class d{constructor(e,t,n,i,r,a){this.session=e;this.id=t;this.value=n;this.severity=i;this.sourceData=r;this.expression=a}_count=1;_onDidChangeCount=new g;toString(e=!1){let t=this.value;for(let i=1;i<this.count;i++)t+=(t.endsWith(`
-`)?"":`
-`)+this.value;const n=this.sourceData&&e?` ${this.sourceData.source.name}`:"";return t+n}getId(){return this.id}getChildren(){return this.expression?.getChildren()||Promise.resolve([])}set count(e){this._count=e,this._onDidChangeCount.fire()}get count(){return this._count}get onDidChangeCount(){return this._onDidChangeCount.event}get hasChildren(){return!!this.expression?.hasChildren}}class y{constructor(e,t,n,i){this.session=e;this.expression=t;this.severity=n;this.sourceData=i;this.hasChildren=t.hasChildren}hasChildren;id=p();getSession(){return this.session}getChildren(){return this.expression.getChildren()}toString(){return this.expression.toString()}getId(){return this.id}}class u{constructor(e,t,n,i,r){this.id=e;this.name=t;this.valueObj=n;this.sourceData=i;this.annotation=r}static MAX_CHILDREN=1e3;getId(){return this.id}getSession(){}get value(){return this.valueObj===null?"null":Array.isArray(this.valueObj)?`Array[${this.valueObj.length}]`:h(this.valueObj)?"Object":R(this.valueObj)?`"${this.valueObj}"`:String(this.valueObj)||""}get hasChildren(){return Array.isArray(this.valueObj)&&this.valueObj.length>0||h(this.valueObj)&&Object.getOwnPropertyNames(this.valueObj).length>0}evaluateLazy(){throw new Error("Method not implemented.")}getChildren(){let e=[];return Array.isArray(this.valueObj)?e=this.valueObj.slice(0,u.MAX_CHILDREN).map((t,n)=>new u(`${this.id}:${n}`,String(n),t)):h(this.valueObj)&&(e=Object.getOwnPropertyNames(this.valueObj).slice(0,u.MAX_CHILDREN).map((t,n)=>new u(`${this.id}:${n}`,t,this.valueObj[t]))),Promise.resolve(e)}toString(){return`${this.name}
-${this.value}`}}class x{constructor(e){this.value=e;this.id=p()}id;toString(){return this.value}getId(){return this.id}}class O extends S{constructor(t){super(void 0,void 0,0,p());this.originalExpression=t}_available=!0;get available(){return this._available}async evaluateExpression(t,n,i,r){const a=await super.evaluateExpression(t,n,i,r);return this._available=a,a}toString(){return`${this.value}`}}class o{constructor(e,t,n,i){this.session=e;this.name=t;this.autoExpand=n;this.sourceData=i;this.id=`replGroup:${o.COUNTER++}`}children=[];id;ended=!1;static COUNTER=0;get hasChildren(){return!0}getId(){return this.id}toString(e=!1){const t=e&&this.sourceData?` ${this.sourceData.source.name}`:"";return this.name+t}addChild(e){const t=this.children.length?this.children[this.children.length-1]:void 0;t instanceof o&&!t.hasEnded?t.addChild(e):this.children.push(e)}getChildren(){return this.children}end(){const e=this.children.length?this.children[this.children.length-1]:void 0;e instanceof o&&!e.hasEnded?e.end():this.ended=!0}get hasEnded(){return this.ended}}function j(s,e){return!s&&!e?!0:s&&e?s.column===e.column&&s.lineNumber===e.lineNumber&&s.source.uri.toString()===e.source.uri.toString():!1}class v{constructor(e){this.configurationService=e}replElements=[];_onDidChangeElements=new g;onDidChangeElements=this._onDidChangeElements.event;getReplElements(){return this.replElements}async addReplExpression(e,t,n){this.addReplElement(new x(n));const i=new O(n);await i.evaluateExpression(n,e,t,"repl"),this.addReplElement(i)}appendToRepl(e,{output:t,expression:n,sev:i,source:r}){const a="\x1B[2J",m=t.lastIndexOf(a);if(m!==-1&&(this.removeReplExpressions(),this.appendToRepl(e,{output:C.localize("consoleCleared","Console was cleared"),sev:f.Ignore}),t=t.substring(m+a.length)),n){this.addReplElement(t?new d(e,c(),t,i,r,n):new y(e,n,i,r));return}const l=this.replElements.length?this.replElements[this.replElements.length-1]:void 0;if(l instanceof d&&l.severity===i){const I=this.configurationService.getValue("debug");if(l.value===t&&j(l.sourceData,r)&&I.console.collapseIdenticalLines){l.count++;return}if(!l.value.endsWith(`
-`)&&!l.value.endsWith(`\r
-`)&&l.count===1){this.replElements[this.replElements.length-1]=new d(e,c(),l.value+t,i,r),this._onDidChangeElements.fire(void 0);return}}const b=new d(e,c(),t,i,r);this.addReplElement(b)}startGroup(e,t,n,i){const r=new o(e,t,n,i);this.addReplElement(r)}endGroup(){const e=this.replElements[this.replElements.length-1];e instanceof o&&e.end()}addReplElement(e){const t=this.replElements.length?this.replElements[this.replElements.length-1]:void 0;t instanceof o&&!t.hasEnded?t.addChild(e):(this.replElements.push(e),this.replElements.length>E&&this.replElements.splice(0,this.replElements.length-E)),this._onDidChangeElements.fire(e)}removeReplExpressions(){this.replElements.length>0&&(this.replElements=[],this._onDidChangeElements.fire(void 0))}clone(){const e=new v(this.configurationService);return e.replElements=this.replElements.slice(),e}}export{u as RawObjectReplElement,x as ReplEvaluationInput,O as ReplEvaluationResult,o as ReplGroup,v as ReplModel,d as ReplOutputElement,y as ReplVariableElement};
+import { Emitter } from '../../../../base/common/event.js';
+import severity from '../../../../base/common/severity.js';
+import { isObject, isString } from '../../../../base/common/types.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
+import * as nls from '../../../../nls.js';
+import { ExpressionContainer } from './debugModel.js';
+const MAX_REPL_LENGTH = 10000;
+let topReplElementCounter = 0;
+const getUniqueId = () => `topReplElement:${topReplElementCounter++}`;
+export class ReplOutputElement {
+    constructor(session, id, value, severity, sourceData, expression) {
+        this.session = session;
+        this.id = id;
+        this.value = value;
+        this.severity = severity;
+        this.sourceData = sourceData;
+        this.expression = expression;
+        this._count = 1;
+        this._onDidChangeCount = new Emitter();
+    }
+    toString(includeSource = false) {
+        let valueRespectCount = this.value;
+        for (let i = 1; i < this.count; i++) {
+            valueRespectCount += (valueRespectCount.endsWith('\n') ? '' : '\n') + this.value;
+        }
+        const sourceStr = (this.sourceData && includeSource) ? ` ${this.sourceData.source.name}` : '';
+        return valueRespectCount + sourceStr;
+    }
+    getId() {
+        return this.id;
+    }
+    getChildren() {
+        return this.expression?.getChildren() || Promise.resolve([]);
+    }
+    set count(value) {
+        this._count = value;
+        this._onDidChangeCount.fire();
+    }
+    get count() {
+        return this._count;
+    }
+    get onDidChangeCount() {
+        return this._onDidChangeCount.event;
+    }
+    get hasChildren() {
+        return !!this.expression?.hasChildren;
+    }
+}
+export class ReplVariableElement {
+    constructor(session, expression, severity, sourceData) {
+        this.session = session;
+        this.expression = expression;
+        this.severity = severity;
+        this.sourceData = sourceData;
+        this.id = generateUuid();
+        this.hasChildren = expression.hasChildren;
+    }
+    getSession() {
+        return this.session;
+    }
+    getChildren() {
+        return this.expression.getChildren();
+    }
+    toString() {
+        return this.expression.toString();
+    }
+    getId() {
+        return this.id;
+    }
+}
+export class RawObjectReplElement {
+    static { this.MAX_CHILDREN = 1000; }
+    constructor(id, name, valueObj, sourceData, annotation) {
+        this.id = id;
+        this.name = name;
+        this.valueObj = valueObj;
+        this.sourceData = sourceData;
+        this.annotation = annotation;
+    }
+    getId() {
+        return this.id;
+    }
+    getSession() {
+        return undefined;
+    }
+    get value() {
+        if (this.valueObj === null) {
+            return 'null';
+        }
+        else if (Array.isArray(this.valueObj)) {
+            return `Array[${this.valueObj.length}]`;
+        }
+        else if (isObject(this.valueObj)) {
+            return 'Object';
+        }
+        else if (isString(this.valueObj)) {
+            return `"${this.valueObj}"`;
+        }
+        return String(this.valueObj) || '';
+    }
+    get hasChildren() {
+        return (Array.isArray(this.valueObj) && this.valueObj.length > 0) || (isObject(this.valueObj) && Object.getOwnPropertyNames(this.valueObj).length > 0);
+    }
+    evaluateLazy() {
+        throw new Error('Method not implemented.');
+    }
+    getChildren() {
+        let result = [];
+        if (Array.isArray(this.valueObj)) {
+            result = this.valueObj.slice(0, RawObjectReplElement.MAX_CHILDREN)
+                .map((v, index) => new RawObjectReplElement(`${this.id}:${index}`, String(index), v));
+        }
+        else if (isObject(this.valueObj)) {
+            result = Object.getOwnPropertyNames(this.valueObj).slice(0, RawObjectReplElement.MAX_CHILDREN)
+                .map((key, index) => new RawObjectReplElement(`${this.id}:${index}`, key, this.valueObj[key]));
+        }
+        return Promise.resolve(result);
+    }
+    toString() {
+        return `${this.name}\n${this.value}`;
+    }
+}
+export class ReplEvaluationInput {
+    constructor(value) {
+        this.value = value;
+        this.id = generateUuid();
+    }
+    toString() {
+        return this.value;
+    }
+    getId() {
+        return this.id;
+    }
+}
+export class ReplEvaluationResult extends ExpressionContainer {
+    get available() {
+        return this._available;
+    }
+    constructor(originalExpression) {
+        super(undefined, undefined, 0, generateUuid());
+        this.originalExpression = originalExpression;
+        this._available = true;
+    }
+    async evaluateExpression(expression, session, stackFrame, context) {
+        const result = await super.evaluateExpression(expression, session, stackFrame, context);
+        this._available = result;
+        return result;
+    }
+    toString() {
+        return `${this.value}`;
+    }
+}
+export class ReplGroup {
+    static { this.COUNTER = 0; }
+    constructor(session, name, autoExpand, sourceData) {
+        this.session = session;
+        this.name = name;
+        this.autoExpand = autoExpand;
+        this.sourceData = sourceData;
+        this.children = [];
+        this.ended = false;
+        this.id = `replGroup:${ReplGroup.COUNTER++}`;
+    }
+    get hasChildren() {
+        return true;
+    }
+    getId() {
+        return this.id;
+    }
+    toString(includeSource = false) {
+        const sourceStr = (includeSource && this.sourceData) ? ` ${this.sourceData.source.name}` : '';
+        return this.name + sourceStr;
+    }
+    addChild(child) {
+        const lastElement = this.children.length ? this.children[this.children.length - 1] : undefined;
+        if (lastElement instanceof ReplGroup && !lastElement.hasEnded) {
+            lastElement.addChild(child);
+        }
+        else {
+            this.children.push(child);
+        }
+    }
+    getChildren() {
+        return this.children;
+    }
+    end() {
+        const lastElement = this.children.length ? this.children[this.children.length - 1] : undefined;
+        if (lastElement instanceof ReplGroup && !lastElement.hasEnded) {
+            lastElement.end();
+        }
+        else {
+            this.ended = true;
+        }
+    }
+    get hasEnded() {
+        return this.ended;
+    }
+}
+function areSourcesEqual(first, second) {
+    if (!first && !second) {
+        return true;
+    }
+    if (first && second) {
+        return first.column === second.column && first.lineNumber === second.lineNumber && first.source.uri.toString() === second.source.uri.toString();
+    }
+    return false;
+}
+export class ReplModel {
+    constructor(configurationService) {
+        this.configurationService = configurationService;
+        this.replElements = [];
+        this._onDidChangeElements = new Emitter();
+        this.onDidChangeElements = this._onDidChangeElements.event;
+    }
+    getReplElements() {
+        return this.replElements;
+    }
+    async addReplExpression(session, stackFrame, expression) {
+        this.addReplElement(new ReplEvaluationInput(expression));
+        const result = new ReplEvaluationResult(expression);
+        await result.evaluateExpression(expression, session, stackFrame, 'repl');
+        this.addReplElement(result);
+    }
+    appendToRepl(session, { output, expression, sev, source }) {
+        const clearAnsiSequence = '\u001b[2J';
+        const clearAnsiIndex = output.lastIndexOf(clearAnsiSequence);
+        if (clearAnsiIndex !== -1) {
+            this.removeReplExpressions();
+            this.appendToRepl(session, { output: nls.localize('consoleCleared', "Console was cleared"), sev: severity.Ignore });
+            output = output.substring(clearAnsiIndex + clearAnsiSequence.length);
+        }
+        if (expression) {
+            this.addReplElement(output
+                ? new ReplOutputElement(session, getUniqueId(), output, sev, source, expression)
+                : new ReplVariableElement(session, expression, sev, source));
+            return;
+        }
+        const previousElement = this.replElements.length ? this.replElements[this.replElements.length - 1] : undefined;
+        if (previousElement instanceof ReplOutputElement && previousElement.severity === sev) {
+            const config = this.configurationService.getValue('debug');
+            if (previousElement.value === output && areSourcesEqual(previousElement.sourceData, source) && config.console.collapseIdenticalLines) {
+                previousElement.count++;
+                return;
+            }
+            if (!previousElement.value.endsWith('\n') && !previousElement.value.endsWith('\r\n') && previousElement.count === 1) {
+                this.replElements[this.replElements.length - 1] = new ReplOutputElement(session, getUniqueId(), previousElement.value + output, sev, source);
+                this._onDidChangeElements.fire(undefined);
+                return;
+            }
+        }
+        const element = new ReplOutputElement(session, getUniqueId(), output, sev, source);
+        this.addReplElement(element);
+    }
+    startGroup(session, name, autoExpand, sourceData) {
+        const group = new ReplGroup(session, name, autoExpand, sourceData);
+        this.addReplElement(group);
+    }
+    endGroup() {
+        const lastElement = this.replElements[this.replElements.length - 1];
+        if (lastElement instanceof ReplGroup) {
+            lastElement.end();
+        }
+    }
+    addReplElement(newElement) {
+        const lastElement = this.replElements.length ? this.replElements[this.replElements.length - 1] : undefined;
+        if (lastElement instanceof ReplGroup && !lastElement.hasEnded) {
+            lastElement.addChild(newElement);
+        }
+        else {
+            this.replElements.push(newElement);
+            if (this.replElements.length > MAX_REPL_LENGTH) {
+                this.replElements.splice(0, this.replElements.length - MAX_REPL_LENGTH);
+            }
+        }
+        this._onDidChangeElements.fire(newElement);
+    }
+    removeReplExpressions() {
+        if (this.replElements.length > 0) {
+            this.replElements = [];
+            this._onDidChangeElements.fire(undefined);
+        }
+    }
+    clone() {
+        const newRepl = new ReplModel(this.configurationService);
+        newRepl.replElements = this.replElements.slice();
+        return newRepl;
+    }
+}

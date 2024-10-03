@@ -1,12 +1,178 @@
-import{isRecursiveWatchRequest as I,requestFilterToString as w}from"../../common/watcher.js";import"./nodejs/nodejsWatcher.js";import"./parcel/parcelWatcher.js";function k(s,i,t,n){const e=[],r=R(s.filter(a=>I(a))),c=r.filter(a=>t.isSuspended(a)===!1),o=r.filter(a=>t.isSuspended(a)==="polling"),g=r.filter(a=>t.isSuspended(a)===!0),u=P(r,t),l=m(t),d=R(s.filter(a=>!I(a))),x=d.filter(a=>n.isSuspended(a)===!1),y=d.filter(a=>n.isSuspended(a)==="polling"),J=d.filter(a=>n.isSuspended(a)===!0),h=P(d,n),p=N(n);e.push("[Summary]"),e.push(`- Recursive Requests:     total: ${r.length}, suspended: ${u.suspended}, polling: ${u.polling}, failed: ${i}`),e.push(`- Non-Recursive Requests: total: ${d.length}, suspended: ${h.suspended}, polling: ${h.polling}`),e.push(`- Recursive Watchers:     total: ${t.watchers.size}, active: ${l.active}, failed: ${l.failed}, stopped: ${l.stopped}`),e.push(`- Non-Recursive Watchers: total: ${n.watchers.size}, active: ${p.active}, failed: ${p.failed}, reusing: ${p.reusing}`),e.push(`- I/O Handles Impact:     total: ${u.polling+h.polling+l.active+p.active}`),e.push(`
-[Recursive Requests (${r.length}, suspended: ${u.suspended}, polling: ${u.polling})]:`);const $=[];for(const a of[c,o,g].flat())b($,a,t);e.push(...f($));const W=[];E(W,t),e.push(...f(W)),e.push(`
-[Non-Recursive Requests (${d.length}, suspended: ${h.suspended}, polling: ${h.polling})]:`);const S=[];for(const a of[x,y,J].flat())b(S,a,n);e.push(...f(S));const q=[];return D(q,n),e.push(...f(q)),`
-
-[File Watcher] request stats:
-
-${e.join(`
-`)}
-
-`}function f(s){let i=0;for(const t of s)i=Math.max(i,t.split("	")[0].length);for(let t=0;t<s.length;t++){const e=s[t].split("	");if(e.length===2){const r=" ".repeat(i-e[0].length);s[t]=`${e[0]}${r}	${e[1]}`}}return s}function P(s,i){let t=0,n=0;for(const e of s){const r=i.isSuspended(e);r!==!1&&(n++,r==="polling"&&t++)}return{suspended:n,polling:t}}function m(s){let i=0,t=0,n=0;for(const e of s.watchers.values())!e.failed&&!e.stopped&&i++,e.failed&&t++,e.stopped&&n++;return{active:i,failed:t,stopped:n}}function N(s){let i=0,t=0,n=0;for(const e of s.watchers)!e.instance.failed&&!e.instance.isReusingRecursiveWatcher&&i++,e.instance.failed&&t++,e.instance.isReusingRecursiveWatcher&&n++;return{active:i,failed:t,reusing:n}}function R(s){return s.sort((i,t)=>{const n=U(i)?i.path:i.request.path,e=U(t)?t.path:t.request.path,r=Math.min(n.length,e.length);for(let c=0;c<r;c++)if(n[c]!==e[c])return n[c]<e[c]?-1:1;return n.length-e.length}),s}function U(s){return typeof s?.path=="string"}function b(s,i,t){const n=[],e=t.isSuspended(i);e!==!1&&(e==="polling"?n.push("[SUSPENDED <polling>]"):n.push("[SUSPENDED <non-polling>]")),s.push(` ${i.path}	${n.length>0?n.join(" ")+" ":""}(${v(i)})`)}function v(s){return`excludes: ${s.excludes.length>0?s.excludes:"<none>"}, includes: ${s.includes&&s.includes.length>0?JSON.stringify(s.includes):"<all>"}, filter: ${w(s.filter)}, correlationId: ${typeof s.correlationId=="number"?s.correlationId:"<none>"}`}function E(s,i){const t=R(Array.from(i.watchers.values())),{active:n,failed:e,stopped:r}=m(i);s.push(`
-[Recursive Watchers (${t.length}, active: ${n}, failed: ${e}, stopped: ${r})]:`);for(const c of t){const o=[];c.failed&&o.push("[FAILED]"),c.stopped&&o.push("[STOPPED]"),c.subscriptionsCount>0&&o.push(`[SUBSCRIBED:${c.subscriptionsCount}]`),c.restarts>0&&o.push(`[RESTARTED:${c.restarts}]`),s.push(` ${c.request.path}	${o.length>0?o.join(" ")+" ":""}(${v(c.request)})`)}}function D(s,i){const t=R(Array.from(i.watchers.values())),n=t.filter(u=>!u.instance.failed&&!u.instance.isReusingRecursiveWatcher),e=t.filter(u=>u.instance.failed),r=t.filter(u=>u.instance.isReusingRecursiveWatcher),{active:c,failed:o,reusing:g}=N(i);s.push(`
-[Non-Recursive Watchers (${t.length}, active: ${c}, failed: ${o}, reusing: ${g})]:`);for(const u of[n,e,r].flat()){const l=[];u.instance.failed&&l.push("[FAILED]"),u.instance.isReusingRecursiveWatcher&&l.push("[REUSING]"),s.push(` ${u.request.path}	${l.length>0?l.join(" ")+" ":""}(${v(u.request)})`)}}export{k as computeStats};
+import { isRecursiveWatchRequest, requestFilterToString } from '../../common/watcher.js';
+export function computeStats(requests, failedRecursiveRequests, recursiveWatcher, nonRecursiveWatcher) {
+    const lines = [];
+    const allRecursiveRequests = sortByPathPrefix(requests.filter(request => isRecursiveWatchRequest(request)));
+    const nonSuspendedRecursiveRequests = allRecursiveRequests.filter(request => recursiveWatcher.isSuspended(request) === false);
+    const suspendedPollingRecursiveRequests = allRecursiveRequests.filter(request => recursiveWatcher.isSuspended(request) === 'polling');
+    const suspendedNonPollingRecursiveRequests = allRecursiveRequests.filter(request => recursiveWatcher.isSuspended(request) === true);
+    const recursiveRequestsStatus = computeRequestStatus(allRecursiveRequests, recursiveWatcher);
+    const recursiveWatcherStatus = computeRecursiveWatchStatus(recursiveWatcher);
+    const allNonRecursiveRequests = sortByPathPrefix(requests.filter(request => !isRecursiveWatchRequest(request)));
+    const nonSuspendedNonRecursiveRequests = allNonRecursiveRequests.filter(request => nonRecursiveWatcher.isSuspended(request) === false);
+    const suspendedPollingNonRecursiveRequests = allNonRecursiveRequests.filter(request => nonRecursiveWatcher.isSuspended(request) === 'polling');
+    const suspendedNonPollingNonRecursiveRequests = allNonRecursiveRequests.filter(request => nonRecursiveWatcher.isSuspended(request) === true);
+    const nonRecursiveRequestsStatus = computeRequestStatus(allNonRecursiveRequests, nonRecursiveWatcher);
+    const nonRecursiveWatcherStatus = computeNonRecursiveWatchStatus(nonRecursiveWatcher);
+    lines.push('[Summary]');
+    lines.push(`- Recursive Requests:     total: ${allRecursiveRequests.length}, suspended: ${recursiveRequestsStatus.suspended}, polling: ${recursiveRequestsStatus.polling}, failed: ${failedRecursiveRequests}`);
+    lines.push(`- Non-Recursive Requests: total: ${allNonRecursiveRequests.length}, suspended: ${nonRecursiveRequestsStatus.suspended}, polling: ${nonRecursiveRequestsStatus.polling}`);
+    lines.push(`- Recursive Watchers:     total: ${recursiveWatcher.watchers.size}, active: ${recursiveWatcherStatus.active}, failed: ${recursiveWatcherStatus.failed}, stopped: ${recursiveWatcherStatus.stopped}`);
+    lines.push(`- Non-Recursive Watchers: total: ${nonRecursiveWatcher.watchers.size}, active: ${nonRecursiveWatcherStatus.active}, failed: ${nonRecursiveWatcherStatus.failed}, reusing: ${nonRecursiveWatcherStatus.reusing}`);
+    lines.push(`- I/O Handles Impact:     total: ${recursiveRequestsStatus.polling + nonRecursiveRequestsStatus.polling + recursiveWatcherStatus.active + nonRecursiveWatcherStatus.active}`);
+    lines.push(`\n[Recursive Requests (${allRecursiveRequests.length}, suspended: ${recursiveRequestsStatus.suspended}, polling: ${recursiveRequestsStatus.polling})]:`);
+    const recursiveRequestLines = [];
+    for (const request of [nonSuspendedRecursiveRequests, suspendedPollingRecursiveRequests, suspendedNonPollingRecursiveRequests].flat()) {
+        fillRequestStats(recursiveRequestLines, request, recursiveWatcher);
+    }
+    lines.push(...alignTextColumns(recursiveRequestLines));
+    const recursiveWatcheLines = [];
+    fillRecursiveWatcherStats(recursiveWatcheLines, recursiveWatcher);
+    lines.push(...alignTextColumns(recursiveWatcheLines));
+    lines.push(`\n[Non-Recursive Requests (${allNonRecursiveRequests.length}, suspended: ${nonRecursiveRequestsStatus.suspended}, polling: ${nonRecursiveRequestsStatus.polling})]:`);
+    const nonRecursiveRequestLines = [];
+    for (const request of [nonSuspendedNonRecursiveRequests, suspendedPollingNonRecursiveRequests, suspendedNonPollingNonRecursiveRequests].flat()) {
+        fillRequestStats(nonRecursiveRequestLines, request, nonRecursiveWatcher);
+    }
+    lines.push(...alignTextColumns(nonRecursiveRequestLines));
+    const nonRecursiveWatcheLines = [];
+    fillNonRecursiveWatcherStats(nonRecursiveWatcheLines, nonRecursiveWatcher);
+    lines.push(...alignTextColumns(nonRecursiveWatcheLines));
+    return `\n\n[File Watcher] request stats:\n\n${lines.join('\n')}\n\n`;
+}
+function alignTextColumns(lines) {
+    let maxLength = 0;
+    for (const line of lines) {
+        maxLength = Math.max(maxLength, line.split('\t')[0].length);
+    }
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const parts = line.split('\t');
+        if (parts.length === 2) {
+            const padding = ' '.repeat(maxLength - parts[0].length);
+            lines[i] = `${parts[0]}${padding}\t${parts[1]}`;
+        }
+    }
+    return lines;
+}
+function computeRequestStatus(requests, watcher) {
+    let polling = 0;
+    let suspended = 0;
+    for (const request of requests) {
+        const isSuspended = watcher.isSuspended(request);
+        if (isSuspended === false) {
+            continue;
+        }
+        suspended++;
+        if (isSuspended === 'polling') {
+            polling++;
+        }
+    }
+    return { suspended, polling };
+}
+function computeRecursiveWatchStatus(recursiveWatcher) {
+    let active = 0;
+    let failed = 0;
+    let stopped = 0;
+    for (const watcher of recursiveWatcher.watchers.values()) {
+        if (!watcher.failed && !watcher.stopped) {
+            active++;
+        }
+        if (watcher.failed) {
+            failed++;
+        }
+        if (watcher.stopped) {
+            stopped++;
+        }
+    }
+    return { active, failed, stopped };
+}
+function computeNonRecursiveWatchStatus(nonRecursiveWatcher) {
+    let active = 0;
+    let failed = 0;
+    let reusing = 0;
+    for (const watcher of nonRecursiveWatcher.watchers) {
+        if (!watcher.instance.failed && !watcher.instance.isReusingRecursiveWatcher) {
+            active++;
+        }
+        if (watcher.instance.failed) {
+            failed++;
+        }
+        if (watcher.instance.isReusingRecursiveWatcher) {
+            reusing++;
+        }
+    }
+    return { active, failed, reusing };
+}
+function sortByPathPrefix(requests) {
+    requests.sort((r1, r2) => {
+        const p1 = isUniversalWatchRequest(r1) ? r1.path : r1.request.path;
+        const p2 = isUniversalWatchRequest(r2) ? r2.path : r2.request.path;
+        const minLength = Math.min(p1.length, p2.length);
+        for (let i = 0; i < minLength; i++) {
+            if (p1[i] !== p2[i]) {
+                return (p1[i] < p2[i]) ? -1 : 1;
+            }
+        }
+        return p1.length - p2.length;
+    });
+    return requests;
+}
+function isUniversalWatchRequest(obj) {
+    const candidate = obj;
+    return typeof candidate?.path === 'string';
+}
+function fillRequestStats(lines, request, watcher) {
+    const decorations = [];
+    const suspended = watcher.isSuspended(request);
+    if (suspended !== false) {
+        if (suspended === 'polling') {
+            decorations.push('[SUSPENDED <polling>]');
+        }
+        else {
+            decorations.push('[SUSPENDED <non-polling>]');
+        }
+    }
+    lines.push(` ${request.path}\t${decorations.length > 0 ? decorations.join(' ') + ' ' : ''}(${requestDetailsToString(request)})`);
+}
+function requestDetailsToString(request) {
+    return `excludes: ${request.excludes.length > 0 ? request.excludes : '<none>'}, includes: ${request.includes && request.includes.length > 0 ? JSON.stringify(request.includes) : '<all>'}, filter: ${requestFilterToString(request.filter)}, correlationId: ${typeof request.correlationId === 'number' ? request.correlationId : '<none>'}`;
+}
+function fillRecursiveWatcherStats(lines, recursiveWatcher) {
+    const watchers = sortByPathPrefix(Array.from(recursiveWatcher.watchers.values()));
+    const { active, failed, stopped } = computeRecursiveWatchStatus(recursiveWatcher);
+    lines.push(`\n[Recursive Watchers (${watchers.length}, active: ${active}, failed: ${failed}, stopped: ${stopped})]:`);
+    for (const watcher of watchers) {
+        const decorations = [];
+        if (watcher.failed) {
+            decorations.push('[FAILED]');
+        }
+        if (watcher.stopped) {
+            decorations.push('[STOPPED]');
+        }
+        if (watcher.subscriptionsCount > 0) {
+            decorations.push(`[SUBSCRIBED:${watcher.subscriptionsCount}]`);
+        }
+        if (watcher.restarts > 0) {
+            decorations.push(`[RESTARTED:${watcher.restarts}]`);
+        }
+        lines.push(` ${watcher.request.path}\t${decorations.length > 0 ? decorations.join(' ') + ' ' : ''}(${requestDetailsToString(watcher.request)})`);
+    }
+}
+function fillNonRecursiveWatcherStats(lines, nonRecursiveWatcher) {
+    const allWatchers = sortByPathPrefix(Array.from(nonRecursiveWatcher.watchers.values()));
+    const activeWatchers = allWatchers.filter(watcher => !watcher.instance.failed && !watcher.instance.isReusingRecursiveWatcher);
+    const failedWatchers = allWatchers.filter(watcher => watcher.instance.failed);
+    const reusingWatchers = allWatchers.filter(watcher => watcher.instance.isReusingRecursiveWatcher);
+    const { active, failed, reusing } = computeNonRecursiveWatchStatus(nonRecursiveWatcher);
+    lines.push(`\n[Non-Recursive Watchers (${allWatchers.length}, active: ${active}, failed: ${failed}, reusing: ${reusing})]:`);
+    for (const watcher of [activeWatchers, failedWatchers, reusingWatchers].flat()) {
+        const decorations = [];
+        if (watcher.instance.failed) {
+            decorations.push('[FAILED]');
+        }
+        if (watcher.instance.isReusingRecursiveWatcher) {
+            decorations.push('[REUSING]');
+        }
+        lines.push(` ${watcher.request.path}\t${decorations.length > 0 ? decorations.join(' ') + ' ' : ''}(${requestDetailsToString(watcher.request)})`);
+    }
+}

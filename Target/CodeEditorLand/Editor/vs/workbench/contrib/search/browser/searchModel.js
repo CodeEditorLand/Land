@@ -1,6 +1,2233 @@
-var Fe=Object.defineProperty;var we=Object.getOwnPropertyDescriptor;var f=(n,s,e,t)=>{for(var r=t>1?void 0:t?we(s,e):s,i=n.length-1,o;i>=0;i--)(o=n[i])&&(r=(t?o(s,e,r):o(r))||r);return t&&r&&Fe(s,e,r),r},c=(n,s)=>(e,t)=>s(e,t,n);import{RunOnceScheduler as te}from"../../../../base/common/async.js";import{CancellationToken as Te,CancellationTokenSource as re}from"../../../../base/common/cancellation.js";import{compareFileExtensions as ie,compareFileNames as L,comparePaths as se}from"../../../../base/common/comparers.js";import{memoize as Ee}from"../../../../base/common/decorators.js";import*as Pe from"../../../../base/common/errors.js";import{Emitter as R,Event as ke,PauseableEmitter as oe}from"../../../../base/common/event.js";import{Lazy as H}from"../../../../base/common/lazy.js";import{Disposable as D,DisposableStore as De}from"../../../../base/common/lifecycle.js";import{ResourceMap as W}from"../../../../base/common/map.js";import{Schemas as G}from"../../../../base/common/network.js";import{lcut as We}from"../../../../base/common/strings.js";import{TernarySearchTree as Q}from"../../../../base/common/ternarySearchTree.js";import{URI as Ne}from"../../../../base/common/uri.js";import{Range as X}from"../../../../editor/common/core/range.js";import{FindMatch as Ae,MinimapPosition as ae,OverviewRulerLane as ne,TrackedRangeStickiness as j}from"../../../../editor/common/model.js";import{ModelDecorationOptions as K}from"../../../../editor/common/model/textModel.js";import{IModelService as J}from"../../../../editor/common/services/model.js";import{IConfigurationService as Ue}from"../../../../platform/configuration/common/configuration.js";import"../../../../platform/files/common/files.js";import{createDecorator as Le,IInstantiationService as I}from"../../../../platform/instantiation/common/instantiation.js";import{ILabelService as N}from"../../../../platform/label/common/label.js";import{ILogService as He}from"../../../../platform/log/common/log.js";import"../../../../platform/progress/common/progress.js";import{ITelemetryService as Qe}from"../../../../platform/telemetry/common/telemetry.js";import{minimapFindMatch as he,overviewRulerFindMatchForeground as le}from"../../../../platform/theme/common/colorRegistry.js";import{themeColorFromId as q}from"../../../../platform/theme/common/themeService.js";import{IUriIdentityService as F}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{FindMatchDecorationModel as qe}from"../../notebook/browser/contrib/find/findMatchDecorationModel.js";import"../../notebook/browser/notebookBrowser.js";import{NotebookEditorWidget as Oe}from"../../notebook/browser/notebookEditorWidget.js";import{INotebookEditorService as ce}from"../../notebook/browser/services/notebookEditorService.js";import{NotebookCellsChangeType as de}from"../../notebook/common/notebookCommon.js";import{IReplaceService as w}from"./replace.js";import{contentMatchesToTextSearchMatches as ze,webviewMatchesToTextSearchMatches as $e,isINotebookFileMatchWithModel as ue,isINotebookCellMatchWithModel as Ve,getIDFromINotebookCellMatch as Ge}from"./notebookSearch/searchNotebookHelpers.js";import{INotebookSearchService as Xe}from"../common/notebookSearch.js";import{rawCellPrefix as pe,isINotebookFileMatchNoModel as Me}from"../common/searchNotebookHelpers.js";import{ReplacePattern as ge}from"../../../services/search/common/replace.js";import{DEFAULT_MAX_SEARCH_RESULTS as fe,ISearchService as je,OneLineRange as Ke,QueryType as Je,resultIsMatch as O,SearchCompletionExitCode as Ye,SearchSortOrder as v}from"../../../services/search/common/search.js";import{getTextSearchMatchWithModelContext as _e,editorMatchesToTextSearchResults as Ze}from"../../../services/search/common/searchHelpers.js";import{CellSearchModel as Be}from"../common/cellSearchModel.js";import{CellFindMatchModel as et}from"../../notebook/browser/contrib/find/findModel.js";import{coalesce as ve}from"../../../../base/common/arrays.js";const $=class ${constructor(s,e,t,r,i){this._parent=s;this._fullPreviewLines=e;this.aiContributed=i;this._oneLinePreviewText=e[t.startLineNumber];const o=t.startLineNumber===t.endLineNumber?t.endColumn:this._oneLinePreviewText.length;this._rangeInPreviewText=new Ke(1,t.startColumn+1,o+1),this._range=new X(r.startLineNumber+1,r.startColumn+1,r.endLineNumber+1,r.endColumn+1),this._fullPreviewRange=t,this._id=this._parent.id()+">"+this._range+this.getMatchString()}static MAX_PREVIEW_CHARS=250;_id;_range;_oneLinePreviewText;_rangeInPreviewText;_fullPreviewRange;id(){return this._id}parent(){return this._parent}text(){return this._oneLinePreviewText}range(){return this._range}preview(){const s=this._oneLinePreviewText.substring(0,this._rangeInPreviewText.startColumn-1),e=We(s,26,"\u2026");let t=this.getMatchString(),r=this._oneLinePreviewText.substring(this._rangeInPreviewText.endColumn-1),i=$.MAX_PREVIEW_CHARS-e.length;return t=t.substr(0,i),i-=t.length,r=r.substr(0,i),{before:e,fullBefore:s,inside:t,after:r}}get replaceString(){const s=this.parent().parent().searchModel;if(!s.replacePattern)throw new Error("searchModel.replacePattern must be set before accessing replaceString");const e=this.fullMatchText();let t=s.replacePattern.getReplaceString(e,s.preserveCase);if(t!==null)return t;const r=e.replace(/\r\n/g,`
-`);if(r!==e&&(t=s.replacePattern.getReplaceString(r,s.preserveCase),t!==null))return t;const i=this.fullMatchText(!0);if(t=s.replacePattern.getReplaceString(i,s.preserveCase),t!==null)return t;const o=i.replace(/\r\n/g,`
-`);return o!==i&&(t=s.replacePattern.getReplaceString(o,s.preserveCase),t!==null)?t:s.replacePattern.pattern}fullMatchText(s=!1){let e;return s?e=this._fullPreviewLines:(e=this._fullPreviewLines.slice(this._fullPreviewRange.startLineNumber,this._fullPreviewRange.endLineNumber+1),e[e.length-1]=e[e.length-1].slice(0,this._fullPreviewRange.endColumn),e[0]=e[0].slice(this._fullPreviewRange.startColumn)),e.join(`
-`)}rangeInPreview(){return{...this._fullPreviewRange,startColumn:this._fullPreviewRange.startColumn+1,endColumn:this._fullPreviewRange.endColumn+1}}fullPreviewLines(){return this._fullPreviewLines.slice(this._fullPreviewRange.startLineNumber,this._fullPreviewRange.endLineNumber+1)}getMatchString(){return this._oneLinePreviewText.substring(this._rangeInPreviewText.startColumn-1,this._rangeInPreviewText.endColumn-1)}isReadonly(){return this.aiContributed}};f([Ee],$.prototype,"preview",1);let C=$;class Se{constructor(s,e,t){this._parent=s;this._cell=e;this._cellIndex=t;this._contentMatches=new Map,this._webviewMatches=new Map,this._context=new Map}_contentMatches;_webviewMatches;_context;hasCellViewModel(){return!(this._cell instanceof Be)}get context(){return new Map(this._context)}matches(){return[...this._contentMatches.values(),...this._webviewMatches.values()]}get contentMatches(){return Array.from(this._contentMatches.values())}get webviewMatches(){return Array.from(this._webviewMatches.values())}remove(s){Array.isArray(s)||(s=[s]);for(const e of s)this._contentMatches.delete(e.id()),this._webviewMatches.delete(e.id())}clearAllMatches(){this._contentMatches.clear(),this._webviewMatches.clear()}addContentMatches(s){be(s,this).forEach(t=>{this._contentMatches.set(t.id(),t)}),this.addContext(s)}addContext(s){this.cell&&this.cell.resolveTextModel().then(e=>{_e(s,e,this.parent.parent().query).filter(i=>!O(i)).map(i=>({...i,lineNumber:i.lineNumber+1})).forEach(i=>{this._context.set(i.lineNumber,i.text)})})}addWebviewMatches(s){be(s,this).forEach(t=>{this._webviewMatches.set(t.id(),t)})}setCellModel(s){this._cell=s}get parent(){return this._parent}get id(){return this._cell?.id??`${pe}${this.cellIndex}`}get cellIndex(){return this._cellIndex}get cell(){return this._cell}}class b extends C{constructor(e,t,r,i,o){super(e.parent,t,r,i,!1);this._cellParent=e;this._id=this._parent.id()+">"+this._cellParent.cellIndex+(o?"_"+o:"")+"_"+this.notebookMatchTypeString()+this._range+this.getMatchString(),this._webviewIndex=o}_webviewIndex;parent(){return this._cellParent.parent}get cellParent(){return this._cellParent}notebookMatchTypeString(){return this.isWebviewMatch()?"webview":"content"}isWebviewMatch(){return this._webviewIndex!==void 0}isReadonly(){return super.isReadonly()||!this._cellParent.hasCellViewModel()||this.isWebviewMatch()}get cellIndex(){return this._cellParent.cellIndex}get webviewIndex(){return this._webviewIndex}get cell(){return this._cellParent.cell}}let p=class extends D{constructor(e,t,r,i,o,a,h,l,u,d,_){super();this._query=e;this._previewOptions=t;this._maxResults=r;this._parent=i;this.rawMatch=o;this._closestRoot=a;this.searchInstanceID=h;this.modelService=l;this.replaceService=u;this.notebookEditorService=_;this._resource=this.rawMatch.resource,this._textMatches=new Map,this._removedTextMatches=new Set,this._updateScheduler=new te(this.updateMatchesForModel.bind(this),250),this._name=new H(()=>d.getUriBasenameLabel(this.resource)),this._cellMatches=new Map,this._notebookUpdateScheduler=new te(this.updateMatchesForEditorWidget.bind(this),250)}static _CURRENT_FIND_MATCH=K.register({description:"search-current-find-match",stickiness:j.NeverGrowsWhenTypingAtEdges,zIndex:13,className:"currentFindMatch",overviewRuler:{color:q(le),position:ne.Center},minimap:{color:q(he),position:ae.Inline}});static _FIND_MATCH=K.register({description:"search-find-match",stickiness:j.NeverGrowsWhenTypingAtEdges,className:"findMatch",overviewRuler:{color:q(le),position:ne.Center},minimap:{color:q(he),position:ae.Inline}});static getDecorationOption(e){return e?p._CURRENT_FIND_MATCH:p._FIND_MATCH}_onChange=this._register(new R);onChange=this._onChange.event;_onDispose=this._register(new R);onDispose=this._onDispose.event;_resource;_fileStat;_model=null;_modelListener=null;_textMatches;_cellMatches;_removedTextMatches;_selectedMatch=null;_name;_updateScheduler;_modelDecorations=[];_context=new Map;get context(){return new Map(this._context)}get cellContext(){const e=new Map;return this._cellMatches.forEach(t=>{e.set(t.id,t.context)}),e}_notebookEditorWidget=null;_editorWidgetListener=null;_notebookUpdateScheduler;_findMatchDecorationModel;_lastEditorWidgetIdForUpdate;addWebviewMatchesToCell(e,t){const r=this.getCellMatch(e);r!==void 0&&r.addWebviewMatches(t)}addContentMatchesToCell(e,t){const r=this.getCellMatch(e);r!==void 0&&r.addContentMatches(t)}getCellMatch(e){return this._cellMatches.get(e)}addCellMatch(e){const t=new Se(this,Ve(e)?e.cell:void 0,e.index);this._cellMatches.set(t.id,t),this.addWebviewMatchesToCell(t.id,e.webviewResults),this.addContentMatchesToCell(t.id,e.contentResults)}get closestRoot(){return this._closestRoot}hasReadonlyMatches(){return this.matches().some(e=>e.isReadonly())}createMatches(e){const t=this.modelService.getModel(this._resource);if(t&&!e)this.bindModel(t),this.updateMatchesForModel();else{const r=this.notebookEditorService.retrieveExistingWidgetFromURI(this.resource);r?.value&&this.bindNotebookEditorWidget(r.value),this.rawMatch.results&&this.rawMatch.results.filter(O).forEach(i=>{ee(i,this,e).forEach(o=>this.add(o))}),(ue(this.rawMatch)||Me(this.rawMatch))&&(this.rawMatch.cellResults?.forEach(i=>this.addCellMatch(i)),this.setNotebookFindMatchDecorationsUsingCellMatches(this.cellMatches()),this._onChange.fire({forceUpdateModel:!0})),this.addContext(this.rawMatch.results)}}bindModel(e){this._model=e,this._modelListener=this._model.onDidChangeContent(()=>{this._updateScheduler.schedule()}),this._model.onWillDispose(()=>this.onModelWillDispose()),this.updateHighlights()}onModelWillDispose(){this.updateMatchesForModel(),this.unbindModel()}unbindModel(){this._model&&(this._updateScheduler.cancel(),this._model.changeDecorations(e=>{this._modelDecorations=e.deltaDecorations(this._modelDecorations,[])}),this._model=null,this._modelListener.dispose())}updateMatchesForModel(){if(!this._model)return;this._textMatches=new Map;const e=this._query.isWordMatch&&this._query.wordSeparators?this._query.wordSeparators:null,t=this._model.findMatches(this._query.pattern,this._model.getFullModelRange(),!!this._query.isRegExp,!!this._query.isCaseSensitive,e,!1,this._maxResults??fe);this.updateMatches(t,!0,this._model,!1)}async updatesMatchesForLineAfterReplace(e,t){if(!this._model)return;const r={startLineNumber:e,startColumn:this._model.getLineMinColumn(e),endLineNumber:e,endColumn:this._model.getLineMaxColumn(e)};Array.from(this._textMatches.values()).filter(h=>h.range().startLineNumber===e).forEach(h=>this._textMatches.delete(h.id()));const o=this._query.isWordMatch&&this._query.wordSeparators?this._query.wordSeparators:null,a=this._model.findMatches(this._query.pattern,r,!!this._query.isRegExp,!!this._query.isCaseSensitive,o,!1,this._maxResults??fe);this.updateMatches(a,t,this._model,!1)}updateMatches(e,t,r,i){const o=Ze(e,r,this._previewOptions);o.forEach(a=>{ee(a,this,i).forEach(h=>{this._removedTextMatches.has(h.id())||(this.add(h),this.isMatchSelected(h)&&(this._selectedMatch=h))})}),this.addContext(_e(o,r,this.parent().parent().query)),this._onChange.fire({forceUpdateModel:t}),this.updateHighlights()}updateHighlights(){this._model&&this._model.changeDecorations(e=>{const t=this.parent().showHighlights?this.matches().map(r=>({range:r.range(),options:p.getDecorationOption(this.isMatchSelected(r))})):[];this._modelDecorations=e.deltaDecorations(this._modelDecorations,t)})}id(){return this.resource.toString()}parent(){return this._parent}get hasChildren(){return this._textMatches.size>0||this._cellMatches.size>0}matches(){const e=Array.from(this._cellMatches.values()).flatMap(t=>t.matches());return[...this._textMatches.values(),...e]}textMatches(){return Array.from(this._textMatches.values())}cellMatches(){return Array.from(this._cellMatches.values())}remove(e){Array.isArray(e)||(e=[e]);for(const t of e)this.removeMatch(t),this._removedTextMatches.add(t.id());this._onChange.fire({didRemove:!0})}replaceQ=Promise.resolve();async replace(e){return this.replaceQ=this.replaceQ.finally(async()=>{await this.replaceService.replace(e),await this.updatesMatchesForLineAfterReplace(e.range().startLineNumber,!1)})}setSelectedMatch(e){if(e){if(!this.isMatchSelected(e)&&e instanceof b){this._selectedMatch=e;return}if(!this._textMatches.has(e.id())||this.isMatchSelected(e))return}this._selectedMatch=e,this.updateHighlights()}getSelectedMatch(){return this._selectedMatch}isMatchSelected(e){return!!this._selectedMatch&&this._selectedMatch.id()===e.id()}count(){return this.matches().length}get resource(){return this._resource}name(){return this._name.value}addContext(e){return e?e.filter(r=>!O(r)).forEach(r=>this._context.set(r.lineNumber,r.text)):void 0}add(e,t){this._textMatches.set(e.id(),e),t&&this._onChange.fire({forceUpdateModel:!0})}removeMatch(e){e instanceof b?(e.cellParent.remove(e),e.cellParent.matches().length===0&&this._cellMatches.delete(e.cellParent.id)):this._textMatches.delete(e.id()),this.isMatchSelected(e)?(this.setSelectedMatch(null),this._findMatchDecorationModel?.clearCurrentFindMatchDecoration()):this.updateHighlights(),e instanceof b&&this.setNotebookFindMatchDecorationsUsingCellMatches(this.cellMatches())}async resolveFileStat(e){this._fileStat=await e.stat(this.resource).catch(()=>{})}get fileStat(){return this._fileStat}set fileStat(e){this._fileStat=e}dispose(){this.setSelectedMatch(null),this.unbindModel(),this.unbindNotebookEditorWidget(),this._onDispose.fire(),super.dispose()}hasOnlyReadOnlyMatches(){return this.matches().every(e=>e.isReadonly())}bindNotebookEditorWidget(e){this._notebookEditorWidget!==e&&(this._notebookEditorWidget=e,this._editorWidgetListener=this._notebookEditorWidget.textModel?.onDidChangeContent(t=>{t.rawEvents.some(r=>r.kind===de.ChangeCellContent||r.kind===de.ModelChange)&&this._notebookUpdateScheduler.schedule()})??null,this._addNotebookHighlights())}unbindNotebookEditorWidget(e){e&&this._notebookEditorWidget!==e||(this._notebookEditorWidget&&(this._notebookUpdateScheduler.cancel(),this._editorWidgetListener?.dispose()),this._removeNotebookHighlights(),this._notebookEditorWidget=null)}updateNotebookHighlights(){this.parent().showHighlights?(this._addNotebookHighlights(),this.setNotebookFindMatchDecorationsUsingCellMatches(Array.from(this._cellMatches.values()))):this._removeNotebookHighlights()}_addNotebookHighlights(){this._notebookEditorWidget&&(this._findMatchDecorationModel?.stopWebviewFind(),this._findMatchDecorationModel?.dispose(),this._findMatchDecorationModel=new qe(this._notebookEditorWidget,this.searchInstanceID),this._selectedMatch instanceof b&&this.highlightCurrentFindMatchDecoration(this._selectedMatch))}_removeNotebookHighlights(){this._findMatchDecorationModel&&(this._findMatchDecorationModel?.stopWebviewFind(),this._findMatchDecorationModel?.dispose(),this._findMatchDecorationModel=void 0)}updateNotebookMatches(e,t){if(!this._notebookEditorWidget)return;const r=new Map(this._cellMatches);this._notebookEditorWidget.getId()!==this._lastEditorWidgetIdForUpdate&&(this._cellMatches.clear(),this._lastEditorWidgetIdForUpdate=this._notebookEditorWidget.getId()),e.forEach(i=>{let o=this._cellMatches.get(i.cell.id);if(this._notebookEditorWidget&&!o){const h=this._notebookEditorWidget.getCellIndex(i.cell),l=r.get(`${pe}${h}`);l&&(l.setCellModel(i.cell),l.clearAllMatches(),o=l)}o?.clearAllMatches();const a=o??new Se(this,i.cell,i.index);a.addContentMatches(ze(i.contentMatches,i.cell)),a.addWebviewMatches($e(i.webviewMatches)),this._cellMatches.set(a.id,a)}),this._findMatchDecorationModel?.setAllFindMatchesDecorations(e),this._selectedMatch instanceof b&&this.highlightCurrentFindMatchDecoration(this._selectedMatch),this._onChange.fire({forceUpdateModel:t})}setNotebookFindMatchDecorationsUsingCellMatches(e){if(!this._findMatchDecorationModel)return;const t=ve(e.map(r=>{const i=ve(r.webviewMatches.map(a=>{if(a.webviewIndex)return{index:a.webviewIndex}}));if(!r.cell)return;const o=r.contentMatches.map(a=>new Ae(a.range(),[a.text()]));return new et(r.cell,r.cellIndex,o,i)}));try{this._findMatchDecorationModel.setAllFindMatchesDecorations(t)}catch{}}async updateMatchesForEditorWidget(){if(!this._notebookEditorWidget)return;this._textMatches=new Map;const e=this._query.isWordMatch&&this._query.wordSeparators?this._query.wordSeparators:null,t=await this._notebookEditorWidget.find(this._query.pattern,{regex:this._query.isRegExp,wholeWord:this._query.isWordMatch,caseSensitive:this._query.isCaseSensitive,wordSeparators:e??void 0,includeMarkupInput:this._query.notebookInfo?.isInNotebookMarkdownInput,includeMarkupPreview:this._query.notebookInfo?.isInNotebookMarkdownPreview,includeCodeInput:this._query.notebookInfo?.isInNotebookCellInput,includeOutput:this._query.notebookInfo?.isInNotebookCellOutput},Te.None,!1,!0,this.searchInstanceID);this.updateNotebookMatches(t,!0)}async showMatch(e){const t=await this.highlightCurrentFindMatchDecoration(e);this.setSelectedMatch(e),this.revealCellRange(e,t)}async highlightCurrentFindMatchDecoration(e){return!this._findMatchDecorationModel||!e.cell?null:e.webviewIndex===void 0?this._findMatchDecorationModel.highlightCurrentFindMatchDecorationInCell(e.cell,e.range()):this._findMatchDecorationModel.highlightCurrentFindMatchDecorationInWebview(e.cell,e.webviewIndex)}revealCellRange(e,t){!this._notebookEditorWidget||!e.cell||(e.webviewIndex!==void 0?this._notebookEditorWidget.getCellIndex(e.cell)!==void 0&&this._notebookEditorWidget.revealCellOffsetInCenter(e.cell,t??0):(e.cell.updateEditState(e.cell.getEditState(),"focusNotebookCell"),this._notebookEditorWidget.setCellEditorSelection(e.cell,e.range()),this._notebookEditorWidget.revealRangeInCenterIfOutsideViewportAsync(e.cell,e.range())))}};p=f([c(7,J),c(8,w),c(9,N),c(10,ce)],p);let g=class extends D{constructor(e,t,r,i,o,a,h,l,u,d,_){super();this._resource=e;this._id=t;this._index=r;this._query=i;this._parent=o;this._searchResult=a;this._closestRoot=h;this.replaceService=l;this.instantiationService=u;this.uriIdentityService=_;this._fileMatches=new W,this._folderMatches=new W,this._folderMatchesMap=Q.forUris(M=>this.uriIdentityService.extUri.ignorePathCasing(M)),this._unDisposedFileMatches=new W,this._unDisposedFolderMatches=new W,this._name=new H(()=>this.resource?d.getUriBasenameLabel(this.resource):"")}_onChange=this._register(new R);onChange=this._onChange.event;_onDispose=this._register(new R);onDispose=this._onDispose.event;_fileMatches;_folderMatches;_folderMatchesMap;_unDisposedFileMatches;_unDisposedFolderMatches;_replacingAll=!1;_name;get searchModel(){return this._searchResult.searchModel}get showHighlights(){return this._parent.showHighlights}get closestRoot(){return this._closestRoot}set replacingAll(e){this._replacingAll=e}id(){return this._id}get resource(){return this._resource}index(){return this._index}name(){return this._name.value}parent(){return this._parent}get hasChildren(){return this._fileMatches.size>0||this._folderMatches.size>0}bindModel(e){const t=this._fileMatches.get(e.uri);t?t.bindModel(e):this.getFolderMatch(e.uri)?.getDownstreamFileMatch(e.uri)?.bindModel(e)}async bindNotebookEditorWidget(e,t){const r=this._fileMatches.get(t);if(r)r.bindNotebookEditorWidget(e),await r.updateMatchesForEditorWidget();else{const i=this.folderMatchesIterator();for(const o of i)await o.bindNotebookEditorWidget(e,t)}}unbindNotebookEditorWidget(e,t){const r=this._fileMatches.get(t);if(r)r.unbindNotebookEditorWidget(e);else{const i=this.folderMatchesIterator();for(const o of i)o.unbindNotebookEditorWidget(e,t)}}createIntermediateFolderMatch(e,t,r,i,o){const a=this._register(this.instantiationService.createInstance(x,e,t,r,i,this,this._searchResult,o));return this.configureIntermediateMatch(a),this.doAddFolder(a),a}configureIntermediateMatch(e){const t=e.onChange(r=>this.onFolderChange(e,r));this._register(e.onDispose(()=>t.dispose()))}clear(e=!1){const t=this.allDownstreamFileMatches();this.disposeMatches(),this._onChange.fire({elements:t,removed:!0,added:!1,clearingAll:e})}remove(e){Array.isArray(e)||(e=[e]);const t=Re(e);this.doRemoveFile(t)}async replace(e){return this.replaceService.replace([e]).then(()=>{this.doRemoveFile([e],!0,!0,!0)})}replaceAll(){const e=this.matches();return this.batchReplace(e)}matches(){return[...this.fileMatchesIterator(),...this.folderMatchesIterator()]}fileMatchesIterator(){return this._fileMatches.values()}folderMatchesIterator(){return this._folderMatches.values()}isEmpty(){return this.fileCount()+this.folderCount()===0}getDownstreamFileMatch(e){const t=this._fileMatches.get(e);if(t)return t;const i=this.getFolderMatch(e)?.getDownstreamFileMatch(e);return i||null}allDownstreamFileMatches(){let e=[];const t=this.folderMatchesIterator();for(const r of t)e=e.concat(r.allDownstreamFileMatches());return[...this.fileMatchesIterator(),...e]}fileCount(){return this._fileMatches.size}folderCount(){return this._folderMatches.size}count(){return this.fileCount()+this.folderCount()}recursiveFileCount(){return this.allDownstreamFileMatches().length}recursiveMatchCount(){return this.allDownstreamFileMatches().reduce((e,t)=>e+t.count(),0)}get query(){return this._query}addFileMatch(e,t,r,i){const o=[],a=[];e.forEach(l=>{const u=this.getDownstreamFileMatch(l.resource);if(u)l.results&&l.results.filter(O).forEach(d=>{ee(d,u,i).forEach(_=>u.add(_))}),(ue(l)||Me(l))&&l.cellResults?.forEach(d=>{const _=u.getCellMatch(Ge(d));_?(_.addContentMatches(d.contentResults),_.addWebviewMatches(d.webviewResults)):u.addCellMatch(d)}),a.push(u),l.results&&l.results.length>0&&u.addContext(l.results);else if(this instanceof T||this instanceof E){const d=this.createAndConfigureFileMatch(l,r);o.push(d)}});const h=[...o,...a];!t&&h.length&&this._onChange.fire({elements:h,added:!!o.length})}doAddFile(e){this._fileMatches.set(e.resource,e),this._unDisposedFileMatches.has(e.resource)&&this._unDisposedFileMatches.delete(e.resource)}hasOnlyReadOnlyMatches(){return Array.from(this._fileMatches.values()).every(e=>e.hasOnlyReadOnlyMatches())}uriHasParent(e,t){return this.uriIdentityService.extUri.isEqualOrParent(t,e)&&!this.uriIdentityService.extUri.isEqual(t,e)}isInParentChain(e){let t=this;for(;t instanceof g;){if(t.id()===e.id())return!0;t=t.parent()}return!1}getFolderMatch(e){return this._folderMatchesMap.findSubstr(e)}doAddFolder(e){if(this instanceof x&&!this.uriHasParent(this.resource,e.resource))throw Error(`${e.resource} does not belong as a child of ${this.resource}`);if(this.isInParentChain(e))throw Error(`${e.resource} is a parent of ${this.resource}`);this._folderMatches.set(e.resource,e),this._folderMatchesMap.set(e.resource,e),this._unDisposedFolderMatches.has(e.resource)&&this._unDisposedFolderMatches.delete(e.resource)}async batchReplace(e){const t=Re(e);await this.replaceService.replace(t),this.doRemoveFile(t,!0,!0,!0)}onFileChange(e,t=!1){let r=!1;this._fileMatches.has(e.resource)||(this.doAddFile(e),r=!0),e.count()===0&&(this.doRemoveFile([e],!1,!1),r=!1,t=!0),this._replacingAll||this._onChange.fire({elements:[e],added:r,removed:t})}onFolderChange(e,t){this._folderMatches.has(e.resource)||this.doAddFolder(e),e.isEmpty()&&(this._folderMatches.delete(e.resource),e.dispose()),this._onChange.fire(t)}doRemoveFile(e,t=!0,r=!0,i=!1){const o=[];for(const a of e)if(this._fileMatches.get(a.resource)){if(i&&a.hasReadonlyMatches())continue;this._fileMatches.delete(a.resource),t?a.dispose():this._unDisposedFileMatches.set(a.resource,a),o.push(a)}else{const h=this.getFolderMatch(a.resource);if(h)h.doRemoveFile([a],t,r);else throw Error(`FileMatch ${a.resource} is not located within FolderMatch ${this.resource}`)}r&&this._onChange.fire({elements:o,removed:!0})}disposeMatches(){[...this._fileMatches.values()].forEach(e=>e.dispose()),[...this._folderMatches.values()].forEach(e=>e.disposeMatches()),[...this._unDisposedFileMatches.values()].forEach(e=>e.dispose()),[...this._unDisposedFolderMatches.values()].forEach(e=>e.disposeMatches()),this._fileMatches.clear(),this._folderMatches.clear(),this._unDisposedFileMatches.clear(),this._unDisposedFolderMatches.clear()}dispose(){this.disposeMatches(),this._onDispose.fire(),super.dispose()}};g=f([c(7,w),c(8,I),c(9,N),c(10,F)],g);let x=class extends g{_normalizedResource;constructor(s,e,t,r,i,o,a,h,l,u,d){super(s,e,t,r,i,o,a,h,l,u,d),this._normalizedResource=new H(()=>this.uriIdentityService.extUri.removeTrailingPathSeparator(this.uriIdentityService.extUri.normalizePath(this.resource)))}get resource(){return this._resource}get normalizedResource(){return this._normalizedResource.value}};x=f([c(7,w),c(8,I),c(9,N),c(10,F)],x);let T=class extends x{constructor(e,t,r,i,o,a,h,l,u,d){super(e,t,r,i,o,o.parent(),null,h,l,u,d);this._ai=a}normalizedUriParent(e){return this.uriIdentityService.extUri.normalizePath(this.uriIdentityService.extUri.dirname(e))}uriEquals(e,t){return this.uriIdentityService.extUri.isEqual(e,t)}createFileMatch(e,t,r,i,o,a,h){const l=this.instantiationService.createInstance(p,e,t,r,i,o,a,h);l.createMatches(this._ai),i.doAddFile(l);const u=l.onChange(({didRemove:d})=>i.onFileChange(l,d));return this._register(l.onDispose(()=>u.dispose())),l}createAndConfigureFileMatch(e,t){if(!this.uriHasParent(this.resource,e.resource))throw Error(`${e.resource} is not a descendant of ${this.resource}`);const r=[];let i=this.normalizedUriParent(e.resource);for(;!this.uriEquals(this.normalizedResource,i);){r.unshift(i);const h=i;if(i=this.uriIdentityService.extUri.removeTrailingPathSeparator(this.normalizedUriParent(i)),this.uriEquals(h,i))throw Error(`${e.resource} is not correctly configured as a child of ${this.normalizedResource}`)}const o=this.closestRoot??this;let a=this;for(let h=0;h<r.length;h++){let l=a.getFolderMatch(r[h]);l||(l=a.createIntermediateFolderMatch(r[h],r[h].toString(),-1,this._query,o)),a=l}return this.createFileMatch(this._query.contentPattern,this._query.previewOptions,this._query.maxResults,a,e,o,t)}};T=f([c(6,w),c(7,I),c(8,N),c(9,F)],T);let E=class extends g{constructor(s,e,t,r,i,o,a,h){super(null,s,e,t,r,r.parent(),null,i,o,a,h)}createAndConfigureFileMatch(s,e){const t=this._register(this.instantiationService.createInstance(p,this._query.contentPattern,this._query.previewOptions,this._query.maxResults,this,s,null,e));t.createMatches(!1),this.doAddFile(t);const r=t.onChange(({didRemove:i})=>this.onFileChange(t,i));return this._register(t.onDispose(()=>r.dispose())),t}};E=f([c(4,w),c(5,I),c(6,N),c(7,F)],E);let m=class extends D{constructor(e,t,r,i,o){super();this._allowOtherResults=e;this._parent=t;this._id=r;this.instantiationService=i;this.uriIdentityService=o;this._rangeHighlightDecorations=this.instantiationService.createInstance(y),this._register(this.onChange(a=>{a.removed&&(this._isDirty=!this.isEmpty())}))}_onChange=this._register(new R);onChange=this._onChange.event;_isDirty=!1;_showHighlights=!1;_query=null;_rangeHighlightDecorations;disposePastResults=()=>Promise.resolve();_folderMatches=[];_otherFilesMatch=null;_folderMatchesMap=Q.forUris(e=>this.uriIdentityService.extUri.ignorePathCasing(e));resource=null;hidden=!1;cachedSearchComplete;hide(){this.hidden=!0,this.clear()}get isAIContributed(){return this.id()===B}id(){return this._id}parent(){return this._parent}get hasChildren(){return this._folderMatches.length>0}name(){return this._id===B?"AI":"Text"}get isDirty(){return this._isDirty}getFolderMatch(e){const t=this._folderMatchesMap.findSubstr(e);return!t&&this._allowOtherResults&&this._otherFilesMatch?this._otherFilesMatch:t}add(e,t,r,i=!1){const{byFolder:o,other:a}=this.groupFilesByFolder(e);o.forEach(h=>{if(!h.length)return;this.getFolderMatch(h[0].resource)?.addFileMatch(h,i,t,this.isAIContributed)}),r||this._otherFilesMatch?.addFileMatch(a,i,t,!1),this.disposePastResults()}remove(e,t=!1){Array.isArray(e)||(e=[e]),e.forEach(a=>{a instanceof g&&a.clear()});const r=e.filter(a=>a instanceof p),{byFolder:i,other:o}=this.groupFilesByFolder(r);i.forEach(a=>{a.length&&this.getFolderMatch(a[0].resource)?.remove(a)}),o.length&&this.getFolderMatch(o[0].resource)?.remove(o)}groupFilesByFolder(e){const t=new W,r=[];return this._folderMatches.forEach(i=>t.set(i.resource,[])),e.forEach(i=>{const o=this.getFolderMatch(i.resource);if(!o)return;const a=o.resource;a?t.get(a).push(i):r.push(i)}),{byFolder:t,other:r}}isEmpty(){return this.folderMatches().every(e=>e.isEmpty())}findFolderSubstr(e){return this._folderMatchesMap.findSubstr(e)}get query(){return this._query}set query(e){const t=this.folderMatches();this.disposePastResults=async()=>{t.forEach(r=>r.clear()),t.forEach(r=>r.dispose()),this._isDirty=!1},this.cachedSearchComplete=void 0,this._rangeHighlightDecorations.removeHighlightRange(),this._folderMatchesMap=Q.forUris(r=>this.uriIdentityService.extUri.ignorePathCasing(r)),e&&(this._folderMatches=(e&&e.folderQueries||[]).map(r=>r.folder).map((r,i)=>this._createBaseFolderMatch(r,r.toString(),i,e,this.isAIContributed)),this._folderMatches.forEach(r=>this._folderMatchesMap.set(r.resource,r)),this._allowOtherResults&&(this._otherFilesMatch=this._createBaseFolderMatch(null,"otherFiles",this._folderMatches.length+1,e,this.isAIContributed)),this._query=e)}_createBaseFolderMatch(e,t,r,i,o){let a;e?a=this._register(this.instantiationService.createInstance(T,e,t,r,i,this,o)):a=this._register(this.instantiationService.createInstance(E,t,r,i,this));const h=a.onChange(l=>this._onChange.fire(l));return this._register(a.onDispose(()=>h.dispose())),a}folderMatches(){return this._otherFilesMatch&&this._allowOtherResults?[...this._folderMatches,this._otherFilesMatch]:this._folderMatches}disposeMatches(){this.folderMatches().forEach(e=>e.dispose()),this._folderMatches=[],this._folderMatchesMap=Q.forUris(e=>this.uriIdentityService.extUri.ignorePathCasing(e)),this._rangeHighlightDecorations.removeHighlightRange()}matches(){const e=[];return this.folderMatches().forEach(t=>{e.push(t.allDownstreamFileMatches())}),[].concat(...e)}get showHighlights(){return this._showHighlights}toggleHighlights(e){if(this._showHighlights===e)return;this._showHighlights=e;let t=null;this.matches().forEach(r=>{r.updateHighlights(),r.updateNotebookHighlights(),t||(t=r.getSelectedMatch())}),this._showHighlights&&t?this._rangeHighlightDecorations.highlightRange(t.parent().resource,t.range()):this._rangeHighlightDecorations.removeHighlightRange()}get rangeHighlightDecorations(){return this._rangeHighlightDecorations}fileCount(){return this.folderMatches().reduce((e,t)=>e+t.recursiveFileCount(),0)}count(){return this.matches().reduce((e,t)=>e+t.count(),0)}clear(){this.folderMatches().forEach(e=>e.clear(!0)),this.disposeMatches(),this._folderMatches=[],this._otherFilesMatch=null,this.cachedSearchComplete=void 0}async dispose(){this._rangeHighlightDecorations.dispose(),this.disposeMatches(),super.dispose(),await this.disposePastResults()}};m=f([c(3,I),c(4,F)],m);let A=class extends m{constructor(e,t,r,i,o,a){super(e,t,r,i,o);this.replaceService=a}replace(e){return this.getFolderMatch(e.resource)?.replace(e)??Promise.resolve()}replaceAll(e){return this.replacingAll=!0,this.replaceService.replace(this.matches(),e).then(()=>{this.replacingAll=!1,this.clear()},()=>{this.replacingAll=!1})}set replacingAll(e){this.folderMatches().forEach(t=>{t.replacingAll=e})}};A=f([c(3,I),c(4,F),c(5,w)],A);let Y=-1,Z=-1;function tt(n,s,e=v.Default){if(n instanceof p&&s instanceof g)return 1;if(s instanceof p&&n instanceof g)return-1;if(n instanceof g&&s instanceof g){if(Y=n.index(),Z=s.index(),Y!==-1&&Z!==-1)return Y-Z;switch(e){case v.CountDescending:return s.count()-n.count();case v.CountAscending:return n.count()-s.count();case v.Type:return ie(n.name(),s.name());case v.FileNames:return L(n.name(),s.name());default:return!n.resource||!s.resource?0:se(n.resource.fsPath,s.resource.fsPath)||L(n.name(),s.name())}}if(n instanceof p&&s instanceof p)switch(e){case v.CountDescending:return s.count()-n.count();case v.CountAscending:return n.count()-s.count();case v.Type:return ie(n.name(),s.name());case v.FileNames:return L(n.name(),s.name());case v.Modified:{const t=n.fileStat,r=s.fileStat;if(t&&r)return r.mtime-t.mtime}default:return se(n.resource.fsPath,s.resource.fsPath)||L(n.name(),s.name())}return n instanceof b&&s instanceof b?rt(n,s):n instanceof C&&s instanceof C?X.compareRangesUsingStarts(n.range(),s.range()):0}function rt(n,s){return n.cellIndex===s.cellIndex?n.webviewIndex!==void 0&&s.webviewIndex!==void 0?n.webviewIndex-s.webviewIndex:n.webviewIndex===void 0&&s.webviewIndex===void 0?X.compareRangesUsingStarts(n.range(),s.range()):n.webviewIndex!==void 0?1:-1:n.cellIndex<s.cellIndex?-1:1}function Sr(n,s,e=v.Default){const t=Ie(n),r=Ie(s);let i=t.length-1,o=r.length-1;for(;i>=0&&o>=0;){if(t[i].id()!==r[o].id())return tt(t[i],r[o],e);i--,o--}const a=i===0,h=o===0;return a&&!h?1:!a&&h?-1:0}function Ie(n){const s=[];let e=n;for(;!(e instanceof m);)s.push(e),e=e.parent();return s}const it="plainTextSearch",B="aiTextSearch";let P=class extends D{constructor(e,t,r,i){super();this.searchModel=e;this.instantiationService=t;this.modelService=r;this.notebookEditorService=i;this._plainTextSearchResult=this._register(this.instantiationService.createInstance(A,!0,this,it)),this._aiTextSearchResult=this._register(this.instantiationService.createInstance(m,!0,this,B)),this._register(this._plainTextSearchResult.onChange(o=>this._onChange.fire(o))),this._register(this._aiTextSearchResult.onChange(o=>this._onChange.fire(o))),this.modelService.getModels().forEach(o=>this.onModelAdded(o)),this._register(this.modelService.onModelAdded(o=>this.onModelAdded(o))),this._register(this.notebookEditorService.onDidAddNotebookEditor(o=>{o instanceof Oe&&this.onDidAddNotebookEditorWidget(o)}))}_onChange=this._register(new oe({merge:Ce}));onChange=this._onChange.event;_onWillChangeModelListener;_onDidChangeModelListener;_plainTextSearchResult;_aiTextSearchResult;get plainTextSearchResult(){return this._plainTextSearchResult}get aiTextSearchResult(){return this._aiTextSearchResult}get children(){return this.textSearchResults}get hasChildren(){return!0}get textSearchResults(){return[this._plainTextSearchResult,this._aiTextSearchResult]}async batchReplace(e){try{this._onChange.pause(),await Promise.all(e.map(async t=>{const r=t.parent();(r instanceof g||r instanceof p)&&me(r,e)||(t instanceof p?await t.parent().replace(t):t instanceof C?await t.parent().replace(t):t instanceof g&&await t.replaceAll())}))}finally{this._onChange.resume()}}batchRemove(e){const t=[];try{this._onChange.pause(),e.forEach(r=>{me(r,t)||(r instanceof m?r.hide():(r.parent().remove(r),t.push(r)))})}finally{this._onChange.resume()}}get isDirty(){return this._aiTextSearchResult.isDirty||this._plainTextSearchResult.isDirty}get query(){return this._plainTextSearchResult.query}set query(e){this._plainTextSearchResult.query=e,this._aiTextSearchResult.query=e}onDidAddNotebookEditorWidget(e){this._onWillChangeModelListener?.dispose(),this._onWillChangeModelListener=e.onWillChangeModel(t=>{t&&this.onNotebookEditorWidgetRemoved(e,t?.uri)}),this._onDidChangeModelListener?.dispose(),this._onDidChangeModelListener=e.onDidAttachViewModel(()=>{e.hasModel()&&this.onNotebookEditorWidgetAdded(e,e.textModel.uri)})}folderMatches(e=!1){return e?this._aiTextSearchResult.folderMatches():this._plainTextSearchResult.folderMatches()}onModelAdded(e){this._plainTextSearchResult.findFolderSubstr(e.uri)?.bindModel(e)}async onNotebookEditorWidgetAdded(e,t){await this._plainTextSearchResult.findFolderSubstr(t)?.bindNotebookEditorWidget(e,t)}onNotebookEditorWidgetRemoved(e,t){this._plainTextSearchResult.findFolderSubstr(t)?.unbindNotebookEditorWidget(e,t)}add(e,t,r,i=!1){this._plainTextSearchResult.hidden=!1,this._aiTextSearchResult.hidden=!1,r?this._aiTextSearchResult.add(e,t,r,i):this._plainTextSearchResult.add(e,t,r,i)}clear(){this._aiTextSearchResult.clear(),this._plainTextSearchResult.clear()}remove(e,t=!1){t&&this._aiTextSearchResult.remove(e,t),this._plainTextSearchResult.remove(e,t)}replace(e){return this._plainTextSearchResult.replace(e)}matches(e){return e===void 0?this._plainTextSearchResult.matches().concat(this._aiTextSearchResult.matches()):e===!0?this._aiTextSearchResult.matches():this._plainTextSearchResult.matches()}isEmpty(){return this._plainTextSearchResult.isEmpty()&&this._aiTextSearchResult.isEmpty()}fileCount(){return this._plainTextSearchResult.fileCount()+this._aiTextSearchResult.fileCount()}count(){return this._plainTextSearchResult.count()+this._aiTextSearchResult.count()}setCachedSearchComplete(e,t){t?this._aiTextSearchResult.cachedSearchComplete=e:this._plainTextSearchResult.cachedSearchComplete=e}getCachedSearchComplete(e){return e?this._aiTextSearchResult.cachedSearchComplete:this._plainTextSearchResult.cachedSearchComplete}toggleHighlights(e,t=!1){t?this._aiTextSearchResult.toggleHighlights(e):this._plainTextSearchResult.toggleHighlights(e)}getRangeHighlightDecorations(e=!1){return e?this._aiTextSearchResult.rangeHighlightDecorations:this._plainTextSearchResult.rangeHighlightDecorations}replaceAll(e){return this._plainTextSearchResult.replaceAll(e)}async dispose(){this._aiTextSearchResult?.dispose(),this._plainTextSearchResult?.dispose(),this._onWillChangeModelListener?.dispose(),this._onDidChangeModelListener?.dispose(),super.dispose()}};P=f([c(1,I),c(2,J),c(3,ce)],P);var st=(e=>(e[e.PANEL=0]="PANEL",e[e.QUICK_ACCESS=1]="QUICK_ACCESS",e))(st||{});let U=class extends D{constructor(e,t,r,i,o,a){super();this.searchService=e;this.telemetryService=t;this.configurationService=r;this.instantiationService=i;this.logService=o;this.notebookSearchService=a;this._searchResult=this.instantiationService.createInstance(P,this),this._register(this._searchResult.onChange(h=>this._onSearchResultChanged.fire(h))),this._aiTextResultProviderName=new H(async()=>this.searchService.getAIName())}_searchResult;_searchQuery=null;_replaceActive=!1;_replaceString=null;_replacePattern=null;_preserveCase=!1;_startStreamDelay=Promise.resolve();_resultQueue=[];_aiResultQueue=[];_onReplaceTermChanged=this._register(new R);onReplaceTermChanged=this._onReplaceTermChanged.event;_onSearchResultChanged=this._register(new oe({merge:Ce}));onSearchResultChanged=this._onSearchResultChanged.event;currentCancelTokenSource=null;currentAICancelTokenSource=null;searchCancelledForNewSearch=!1;aiSearchCancelledForNewSearch=!1;location=0;_aiTextResultProviderName;async getAITextResultProviderName(){const e=await this._aiTextResultProviderName.value;if(!e)throw Error("Fetching AI name when no provider present.");return e}isReplaceActive(){return this._replaceActive}set replaceActive(e){this._replaceActive=e}get replacePattern(){return this._replacePattern}get replaceString(){return this._replaceString||""}set preserveCase(e){this._preserveCase=e}get preserveCase(){return this._preserveCase}set replaceString(e){this._replaceString=e,this._searchQuery&&(this._replacePattern=new ge(e,this._searchQuery.contentPattern)),this._onReplaceTermChanged.fire()}get searchResult(){return this._searchResult}async addAIResults(e){if(this.hasAIResults)throw Error("AI results already exist");if(this._searchQuery)return this.aiSearch({...this._searchQuery,contentPattern:this._searchQuery.contentPattern.pattern,type:Je.aiText},e);throw Error("No search query")}aiSearch(e,t){const r=Date.now().toString(),i=new re;this.currentAICancelTokenSource=i;const o=Date.now();return this.searchService.aiTextSearch(e,i.token,async h=>{this.onSearchProgress(h,r,!1,!0),t?.(h)}).finally(()=>{i.dispose(!0)}).then(h=>(this.onSearchCompleted(h,Date.now()-o,r,!0),h),h=>{throw this.onSearchError(h,Date.now()-o,!0),h})}doSearch(e,t,r,i,o,a){const h=async S=>{t.fire(),this.onSearchProgress(S,i,!1,!1),o?.(S)},l=S=>{t.fire(),this.onSearchProgress(S,i,!0),o?.(S)},u=this.currentCancelTokenSource=new re(a),d=this.notebookSearchService.notebookSearch(e,u.token,i,h),_=this.searchService.textSearchSplitSyncAsync(r,u.token,h,d.openFilesToScan,d.allScannedFiles),M=_.syncResults.results;return M.forEach(S=>{S&&l(S)}),{asyncResults:(async()=>{const S=Date.now(),k=await _.asyncResults,V=await d.completeData,xe=Date.now()-S,ye={results:[...k.results,...V.results],messages:[...k.messages,...V.messages],limitHit:k.limitHit||V.limitHit,exit:k.exit,stats:k.stats};return this.logService.trace(`whole search time | ${xe}ms`),ye})().finally(()=>u.dispose(!0)),syncResults:M}}get hasAIResults(){return!!this.searchResult.getCachedSearchComplete(!0)||!!this.currentAICancelTokenSource&&!this.currentAICancelTokenSource.token.isCancellationRequested}get hasPlainResults(){return!!this.searchResult.getCachedSearchComplete(!1)||!!this.currentCancelTokenSource&&!this.currentCancelTokenSource.token.isCancellationRequested}search(e,t,r){this.cancelSearch(!0),this._searchQuery=e,this.searchConfig.searchOnType||this.searchResult.clear();const i=Date.now().toString();this._searchResult.query=this._searchQuery;const o=this._register(new R);this._replacePattern=new ge(this.replaceString,this._searchQuery.contentPattern),this._startStreamDelay=new Promise(M=>setTimeout(M,this.searchConfig.searchOnType?150:0));const a=this.doSearch(e,o,this._searchQuery,i,t,r),h=a.asyncResults,l=a.syncResults;t&&l.forEach(M=>{M&&t(M)});const u=Date.now();let d;const _=new Promise(M=>(d=ke.once(o.event)(M),d));Promise.race([h,_]).finally(()=>{d?.dispose(),this.telemetryService.publicLog("searchResultsFirstRender",{duration:Date.now()-u})});try{return{asyncResults:h.then(M=>(this.onSearchCompleted(M,Date.now()-u,i,!1),M),M=>{throw this.onSearchError(M,Date.now()-u,!1),M}),syncResults:l}}finally{this.telemetryService.publicLog("searchResultsFinished",{duration:Date.now()-u})}}onSearchCompleted(e,t,r,i){if(!this._searchQuery)throw new Error("onSearchCompleted must be called after a search is started");i?(this._searchResult.add(this._aiResultQueue,r,!0),this._aiResultQueue.length=0):(this._searchResult.add(this._resultQueue,r,!1),this._resultQueue.length=0),this.searchResult.setCachedSearchComplete(e,i);const o=Object.assign({},this._searchQuery.contentPattern);delete o.pattern;const a=e&&e.stats,h=this._searchQuery.folderQueries.every(d=>d.folder.scheme===G.file),l=this._searchQuery.folderQueries.every(d=>d.folder.scheme!==G.file),u=h?G.file:l?"other":"mixed";return this.telemetryService.publicLog("searchResultsShown",{count:this._searchResult.count(),fileCount:this._searchResult.fileCount(),options:o,duration:t,type:a&&a.type,scheme:u,searchOnTypeEnabled:this.searchConfig.searchOnType}),e}onSearchError(e,t,r){Pe.isCancellationError(e)&&(this.onSearchCompleted((r?this.aiSearchCancelledForNewSearch:this.searchCancelledForNewSearch)?{exit:Ye.NewSearchStarted,results:[],messages:[]}:void 0,t,"",r),r?this.aiSearchCancelledForNewSearch=!1:this.searchCancelledForNewSearch=!1)}onSearchProgress(e,t,r=!0,i=!1){const o=i?this._aiResultQueue:this._resultQueue;e.resource&&(o.push(e),r?o.length&&(this._searchResult.add(o,t,!1,!0),o.length=0):this._startStreamDelay.then(()=>{o.length&&(this._searchResult.add(o,t,i,!0),o.length=0)}))}get searchConfig(){return this.configurationService.getValue("search")}cancelSearch(e=!1){return this.currentCancelTokenSource?(this.searchCancelledForNewSearch=e,this.currentCancelTokenSource.cancel(),!0):!1}cancelAISearch(e=!1){return this.currentAICancelTokenSource?(this.aiSearchCancelledForNewSearch=e,this.currentAICancelTokenSource.cancel(),!0):!1}dispose(){this.cancelSearch(),this.cancelAISearch(),this.searchResult.dispose(),super.dispose()}};U=f([c(0,je),c(1,Qe),c(2,Ue),c(3,I),c(4,He),c(5,Xe)],U);let z=class{constructor(s){this.instantiationService=s}_searchModel=null;get searchModel(){return this._searchModel||(this._searchModel=this.instantiationService.createInstance(U)),this._searchModel}set searchModel(s){this._searchModel?.dispose(),this._searchModel=s}};z=f([c(0,I)],z);const Ir=Le("searchViewModelWorkbenchService");let y=class{constructor(s){this._modelService=s}_decorationId=null;_model=null;_modelDisposables=new De;removeHighlightRange(){if(this._model&&this._decorationId){const s=this._decorationId;this._model.changeDecorations(e=>{e.removeDecoration(s)})}this._decorationId=null}highlightRange(s,e,t=0){let r;Ne.isUri(s)?r=this._modelService.getModel(s):r=s,r&&this.doHighlightRange(r,e)}doHighlightRange(s,e){this.removeHighlightRange(),s.changeDecorations(t=>{this._decorationId=t.addDecoration(e,y._RANGE_HIGHLIGHT_DECORATION)}),this.setModel(s)}setModel(s){this._model!==s&&(this.clearModelListeners(),this._model=s,this._modelDisposables.add(this._model.onDidChangeDecorations(e=>{this.clearModelListeners(),this.removeHighlightRange(),this._model=null})),this._modelDisposables.add(this._model.onWillDispose(()=>{this.clearModelListeners(),this.removeHighlightRange(),this._model=null})))}clearModelListeners(){this._modelDisposables.clear()}dispose(){this._model&&(this.removeHighlightRange(),this._model=null),this._modelDisposables.dispose()}static _RANGE_HIGHLIGHT_DECORATION=K.register({description:"search-range-highlight",stickiness:j.NeverGrowsWhenTypingAtEdges,className:"rangeHighlight",isWholeLine:!0})};y=f([c(0,J)],y);function ee(n,s,e){const t=n.previewText.split(`
-`);return n.rangeLocations.map(r=>{const i=r.preview;return new C(s,t,i,r.source,e)})}function be(n,s){const e=[];return n.forEach(t=>{const r=t.previewText.split(`
-`);t.rangeLocations.map(i=>{const o=i.preview,a=new b(s,r,o,i.source,t.webviewIndex);e.push(a)})}),e}function me(n,s){do if(s.includes(n))return!0;while(!(n.parent()instanceof P)&&(n=n.parent()));return!1}function Re(n){const s=[],e=[];return n.forEach(t=>{t instanceof p?e.push(t):s.push(t)}),e.concat(s.map(t=>t.allDownstreamFileMatches()).flat())}function Ce(n){const s={elements:[],added:!1,removed:!1};return n.forEach(e=>{e.added&&(s.added=!0),e.removed&&(s.removed=!0),s.elements=s.elements.concat(e.elements)}),s}export{B as AI_TEXT_SEARCH_RESULT_ID,Se as CellMatch,p as FileMatch,g as FolderMatch,E as FolderMatchNoRoot,x as FolderMatchWithResource,T as FolderMatchWorkspaceRoot,Ir as ISearchViewModelWorkbenchService,C as Match,b as MatchInNotebook,it as PLAIN_TEXT_SEARCH__RESULT_ID,y as RangeHighlightDecorations,A as ReplaceableTextSearchResult,U as SearchModel,st as SearchModelLocation,P as SearchResult,z as SearchViewModelWorkbenchService,m as TextSearchResult,me as arrayContainsElementOrParent,rt as compareNotebookPos,Sr as searchComparer,tt as searchMatchComparer,be as textSearchMatchesToNotebookMatches};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var FileMatch_1, FolderMatch_1, RangeHighlightDecorations_1;
+import { RunOnceScheduler } from '../../../../base/common/async.js';
+import { CancellationToken, CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { compareFileExtensions, compareFileNames, comparePaths } from '../../../../base/common/comparers.js';
+import { memoize } from '../../../../base/common/decorators.js';
+import * as errors from '../../../../base/common/errors.js';
+import { Emitter, Event, PauseableEmitter } from '../../../../base/common/event.js';
+import { Lazy } from '../../../../base/common/lazy.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { ResourceMap } from '../../../../base/common/map.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { lcut } from '../../../../base/common/strings.js';
+import { TernarySearchTree } from '../../../../base/common/ternarySearchTree.js';
+import { URI } from '../../../../base/common/uri.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { FindMatch, OverviewRulerLane } from '../../../../editor/common/model.js';
+import { ModelDecorationOptions } from '../../../../editor/common/model/textModel.js';
+import { IModelService } from '../../../../editor/common/services/model.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { createDecorator, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { minimapFindMatch, overviewRulerFindMatchForeground } from '../../../../platform/theme/common/colorRegistry.js';
+import { themeColorFromId } from '../../../../platform/theme/common/themeService.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { FindMatchDecorationModel } from '../../notebook/browser/contrib/find/findMatchDecorationModel.js';
+import { NotebookEditorWidget } from '../../notebook/browser/notebookEditorWidget.js';
+import { INotebookEditorService } from '../../notebook/browser/services/notebookEditorService.js';
+import { NotebookCellsChangeType } from '../../notebook/common/notebookCommon.js';
+import { IReplaceService } from './replace.js';
+import { contentMatchesToTextSearchMatches, webviewMatchesToTextSearchMatches, isINotebookFileMatchWithModel, isINotebookCellMatchWithModel, getIDFromINotebookCellMatch } from './notebookSearch/searchNotebookHelpers.js';
+import { INotebookSearchService } from '../common/notebookSearch.js';
+import { rawCellPrefix, isINotebookFileMatchNoModel } from '../common/searchNotebookHelpers.js';
+import { ReplacePattern } from '../../../services/search/common/replace.js';
+import { DEFAULT_MAX_SEARCH_RESULTS, ISearchService, OneLineRange, resultIsMatch } from '../../../services/search/common/search.js';
+import { getTextSearchMatchWithModelContext, editorMatchesToTextSearchResults } from '../../../services/search/common/searchHelpers.js';
+import { CellSearchModel } from '../common/cellSearchModel.js';
+import { CellFindMatchModel } from '../../notebook/browser/contrib/find/findModel.js';
+import { coalesce } from '../../../../base/common/arrays.js';
+export class Match {
+    static { this.MAX_PREVIEW_CHARS = 250; }
+    constructor(_parent, _fullPreviewLines, _fullPreviewRange, _documentRange, aiContributed) {
+        this._parent = _parent;
+        this._fullPreviewLines = _fullPreviewLines;
+        this.aiContributed = aiContributed;
+        this._oneLinePreviewText = _fullPreviewLines[_fullPreviewRange.startLineNumber];
+        const adjustedEndCol = _fullPreviewRange.startLineNumber === _fullPreviewRange.endLineNumber ?
+            _fullPreviewRange.endColumn :
+            this._oneLinePreviewText.length;
+        this._rangeInPreviewText = new OneLineRange(1, _fullPreviewRange.startColumn + 1, adjustedEndCol + 1);
+        this._range = new Range(_documentRange.startLineNumber + 1, _documentRange.startColumn + 1, _documentRange.endLineNumber + 1, _documentRange.endColumn + 1);
+        this._fullPreviewRange = _fullPreviewRange;
+        this._id = this._parent.id() + '>' + this._range + this.getMatchString();
+    }
+    id() {
+        return this._id;
+    }
+    parent() {
+        return this._parent;
+    }
+    text() {
+        return this._oneLinePreviewText;
+    }
+    range() {
+        return this._range;
+    }
+    preview() {
+        const fullBefore = this._oneLinePreviewText.substring(0, this._rangeInPreviewText.startColumn - 1), before = lcut(fullBefore, 26, '…');
+        let inside = this.getMatchString(), after = this._oneLinePreviewText.substring(this._rangeInPreviewText.endColumn - 1);
+        let charsRemaining = Match.MAX_PREVIEW_CHARS - before.length;
+        inside = inside.substr(0, charsRemaining);
+        charsRemaining -= inside.length;
+        after = after.substr(0, charsRemaining);
+        return {
+            before,
+            fullBefore,
+            inside,
+            after,
+        };
+    }
+    get replaceString() {
+        const searchModel = this.parent().parent().searchModel;
+        if (!searchModel.replacePattern) {
+            throw new Error('searchModel.replacePattern must be set before accessing replaceString');
+        }
+        const fullMatchText = this.fullMatchText();
+        let replaceString = searchModel.replacePattern.getReplaceString(fullMatchText, searchModel.preserveCase);
+        if (replaceString !== null) {
+            return replaceString;
+        }
+        const fullMatchTextWithoutCR = fullMatchText.replace(/\r\n/g, '\n');
+        if (fullMatchTextWithoutCR !== fullMatchText) {
+            replaceString = searchModel.replacePattern.getReplaceString(fullMatchTextWithoutCR, searchModel.preserveCase);
+            if (replaceString !== null) {
+                return replaceString;
+            }
+        }
+        const contextMatchTextWithSurroundingContent = this.fullMatchText(true);
+        replaceString = searchModel.replacePattern.getReplaceString(contextMatchTextWithSurroundingContent, searchModel.preserveCase);
+        if (replaceString !== null) {
+            return replaceString;
+        }
+        const contextMatchTextWithoutCR = contextMatchTextWithSurroundingContent.replace(/\r\n/g, '\n');
+        if (contextMatchTextWithoutCR !== contextMatchTextWithSurroundingContent) {
+            replaceString = searchModel.replacePattern.getReplaceString(contextMatchTextWithoutCR, searchModel.preserveCase);
+            if (replaceString !== null) {
+                return replaceString;
+            }
+        }
+        return searchModel.replacePattern.pattern;
+    }
+    fullMatchText(includeSurrounding = false) {
+        let thisMatchPreviewLines;
+        if (includeSurrounding) {
+            thisMatchPreviewLines = this._fullPreviewLines;
+        }
+        else {
+            thisMatchPreviewLines = this._fullPreviewLines.slice(this._fullPreviewRange.startLineNumber, this._fullPreviewRange.endLineNumber + 1);
+            thisMatchPreviewLines[thisMatchPreviewLines.length - 1] = thisMatchPreviewLines[thisMatchPreviewLines.length - 1].slice(0, this._fullPreviewRange.endColumn);
+            thisMatchPreviewLines[0] = thisMatchPreviewLines[0].slice(this._fullPreviewRange.startColumn);
+        }
+        return thisMatchPreviewLines.join('\n');
+    }
+    rangeInPreview() {
+        return {
+            ...this._fullPreviewRange,
+            startColumn: this._fullPreviewRange.startColumn + 1,
+            endColumn: this._fullPreviewRange.endColumn + 1
+        };
+    }
+    fullPreviewLines() {
+        return this._fullPreviewLines.slice(this._fullPreviewRange.startLineNumber, this._fullPreviewRange.endLineNumber + 1);
+    }
+    getMatchString() {
+        return this._oneLinePreviewText.substring(this._rangeInPreviewText.startColumn - 1, this._rangeInPreviewText.endColumn - 1);
+    }
+    isReadonly() {
+        return this.aiContributed;
+    }
+}
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Object)
+], Match.prototype, "preview", null);
+export class CellMatch {
+    constructor(_parent, _cell, _cellIndex) {
+        this._parent = _parent;
+        this._cell = _cell;
+        this._cellIndex = _cellIndex;
+        this._contentMatches = new Map();
+        this._webviewMatches = new Map();
+        this._context = new Map();
+    }
+    hasCellViewModel() {
+        return !(this._cell instanceof CellSearchModel);
+    }
+    get context() {
+        return new Map(this._context);
+    }
+    matches() {
+        return [...this._contentMatches.values(), ...this._webviewMatches.values()];
+    }
+    get contentMatches() {
+        return Array.from(this._contentMatches.values());
+    }
+    get webviewMatches() {
+        return Array.from(this._webviewMatches.values());
+    }
+    remove(matches) {
+        if (!Array.isArray(matches)) {
+            matches = [matches];
+        }
+        for (const match of matches) {
+            this._contentMatches.delete(match.id());
+            this._webviewMatches.delete(match.id());
+        }
+    }
+    clearAllMatches() {
+        this._contentMatches.clear();
+        this._webviewMatches.clear();
+    }
+    addContentMatches(textSearchMatches) {
+        const contentMatches = textSearchMatchesToNotebookMatches(textSearchMatches, this);
+        contentMatches.forEach((match) => {
+            this._contentMatches.set(match.id(), match);
+        });
+        this.addContext(textSearchMatches);
+    }
+    addContext(textSearchMatches) {
+        if (!this.cell) {
+            return;
+        }
+        this.cell.resolveTextModel().then((textModel) => {
+            const textResultsWithContext = getTextSearchMatchWithModelContext(textSearchMatches, textModel, this.parent.parent().query);
+            const contexts = textResultsWithContext.filter((result => !resultIsMatch(result)));
+            contexts.map(context => ({ ...context, lineNumber: context.lineNumber + 1 }))
+                .forEach((context) => { this._context.set(context.lineNumber, context.text); });
+        });
+    }
+    addWebviewMatches(textSearchMatches) {
+        const webviewMatches = textSearchMatchesToNotebookMatches(textSearchMatches, this);
+        webviewMatches.forEach((match) => {
+            this._webviewMatches.set(match.id(), match);
+        });
+    }
+    setCellModel(cell) {
+        this._cell = cell;
+    }
+    get parent() {
+        return this._parent;
+    }
+    get id() {
+        return this._cell?.id ?? `${rawCellPrefix}${this.cellIndex}`;
+    }
+    get cellIndex() {
+        return this._cellIndex;
+    }
+    get cell() {
+        return this._cell;
+    }
+}
+export class MatchInNotebook extends Match {
+    constructor(_cellParent, _fullPreviewLines, _fullPreviewRange, _documentRange, webviewIndex) {
+        super(_cellParent.parent, _fullPreviewLines, _fullPreviewRange, _documentRange, false);
+        this._cellParent = _cellParent;
+        this._id = this._parent.id() + '>' + this._cellParent.cellIndex + (webviewIndex ? '_' + webviewIndex : '') + '_' + this.notebookMatchTypeString() + this._range + this.getMatchString();
+        this._webviewIndex = webviewIndex;
+    }
+    parent() {
+        return this._cellParent.parent;
+    }
+    get cellParent() {
+        return this._cellParent;
+    }
+    notebookMatchTypeString() {
+        return this.isWebviewMatch() ? 'webview' : 'content';
+    }
+    isWebviewMatch() {
+        return this._webviewIndex !== undefined;
+    }
+    isReadonly() {
+        return super.isReadonly() || (!this._cellParent.hasCellViewModel()) || this.isWebviewMatch();
+    }
+    get cellIndex() {
+        return this._cellParent.cellIndex;
+    }
+    get webviewIndex() {
+        return this._webviewIndex;
+    }
+    get cell() {
+        return this._cellParent.cell;
+    }
+}
+let FileMatch = class FileMatch extends Disposable {
+    static { FileMatch_1 = this; }
+    static { this._CURRENT_FIND_MATCH = ModelDecorationOptions.register({
+        description: 'search-current-find-match',
+        stickiness: 1,
+        zIndex: 13,
+        className: 'currentFindMatch',
+        overviewRuler: {
+            color: themeColorFromId(overviewRulerFindMatchForeground),
+            position: OverviewRulerLane.Center
+        },
+        minimap: {
+            color: themeColorFromId(minimapFindMatch),
+            position: 1
+        }
+    }); }
+    static { this._FIND_MATCH = ModelDecorationOptions.register({
+        description: 'search-find-match',
+        stickiness: 1,
+        className: 'findMatch',
+        overviewRuler: {
+            color: themeColorFromId(overviewRulerFindMatchForeground),
+            position: OverviewRulerLane.Center
+        },
+        minimap: {
+            color: themeColorFromId(minimapFindMatch),
+            position: 1
+        }
+    }); }
+    static getDecorationOption(selected) {
+        return (selected ? FileMatch_1._CURRENT_FIND_MATCH : FileMatch_1._FIND_MATCH);
+    }
+    get context() {
+        return new Map(this._context);
+    }
+    get cellContext() {
+        const cellContext = new Map();
+        this._cellMatches.forEach(cellMatch => {
+            cellContext.set(cellMatch.id, cellMatch.context);
+        });
+        return cellContext;
+    }
+    constructor(_query, _previewOptions, _maxResults, _parent, rawMatch, _closestRoot, searchInstanceID, modelService, replaceService, labelService, notebookEditorService) {
+        super();
+        this._query = _query;
+        this._previewOptions = _previewOptions;
+        this._maxResults = _maxResults;
+        this._parent = _parent;
+        this.rawMatch = rawMatch;
+        this._closestRoot = _closestRoot;
+        this.searchInstanceID = searchInstanceID;
+        this.modelService = modelService;
+        this.replaceService = replaceService;
+        this.notebookEditorService = notebookEditorService;
+        this._onChange = this._register(new Emitter());
+        this.onChange = this._onChange.event;
+        this._onDispose = this._register(new Emitter());
+        this.onDispose = this._onDispose.event;
+        this._model = null;
+        this._modelListener = null;
+        this._selectedMatch = null;
+        this._modelDecorations = [];
+        this._context = new Map();
+        this._notebookEditorWidget = null;
+        this._editorWidgetListener = null;
+        this.replaceQ = Promise.resolve();
+        this._resource = this.rawMatch.resource;
+        this._textMatches = new Map();
+        this._removedTextMatches = new Set();
+        this._updateScheduler = new RunOnceScheduler(this.updateMatchesForModel.bind(this), 250);
+        this._name = new Lazy(() => labelService.getUriBasenameLabel(this.resource));
+        this._cellMatches = new Map();
+        this._notebookUpdateScheduler = new RunOnceScheduler(this.updateMatchesForEditorWidget.bind(this), 250);
+    }
+    addWebviewMatchesToCell(cellID, webviewMatches) {
+        const cellMatch = this.getCellMatch(cellID);
+        if (cellMatch !== undefined) {
+            cellMatch.addWebviewMatches(webviewMatches);
+        }
+    }
+    addContentMatchesToCell(cellID, contentMatches) {
+        const cellMatch = this.getCellMatch(cellID);
+        if (cellMatch !== undefined) {
+            cellMatch.addContentMatches(contentMatches);
+        }
+    }
+    getCellMatch(cellID) {
+        return this._cellMatches.get(cellID);
+    }
+    addCellMatch(rawCell) {
+        const cellMatch = new CellMatch(this, isINotebookCellMatchWithModel(rawCell) ? rawCell.cell : undefined, rawCell.index);
+        this._cellMatches.set(cellMatch.id, cellMatch);
+        this.addWebviewMatchesToCell(cellMatch.id, rawCell.webviewResults);
+        this.addContentMatchesToCell(cellMatch.id, rawCell.contentResults);
+    }
+    get closestRoot() {
+        return this._closestRoot;
+    }
+    hasReadonlyMatches() {
+        return this.matches().some(m => m.isReadonly());
+    }
+    createMatches(isAiContributed) {
+        const model = this.modelService.getModel(this._resource);
+        if (model && !isAiContributed) {
+            this.bindModel(model);
+            this.updateMatchesForModel();
+        }
+        else {
+            const notebookEditorWidgetBorrow = this.notebookEditorService.retrieveExistingWidgetFromURI(this.resource);
+            if (notebookEditorWidgetBorrow?.value) {
+                this.bindNotebookEditorWidget(notebookEditorWidgetBorrow.value);
+            }
+            if (this.rawMatch.results) {
+                this.rawMatch.results
+                    .filter(resultIsMatch)
+                    .forEach(rawMatch => {
+                    textSearchResultToMatches(rawMatch, this, isAiContributed)
+                        .forEach(m => this.add(m));
+                });
+            }
+            if (isINotebookFileMatchWithModel(this.rawMatch) || isINotebookFileMatchNoModel(this.rawMatch)) {
+                this.rawMatch.cellResults?.forEach(cell => this.addCellMatch(cell));
+                this.setNotebookFindMatchDecorationsUsingCellMatches(this.cellMatches());
+                this._onChange.fire({ forceUpdateModel: true });
+            }
+            this.addContext(this.rawMatch.results);
+        }
+    }
+    bindModel(model) {
+        this._model = model;
+        this._modelListener = this._model.onDidChangeContent(() => {
+            this._updateScheduler.schedule();
+        });
+        this._model.onWillDispose(() => this.onModelWillDispose());
+        this.updateHighlights();
+    }
+    onModelWillDispose() {
+        this.updateMatchesForModel();
+        this.unbindModel();
+    }
+    unbindModel() {
+        if (this._model) {
+            this._updateScheduler.cancel();
+            this._model.changeDecorations((accessor) => {
+                this._modelDecorations = accessor.deltaDecorations(this._modelDecorations, []);
+            });
+            this._model = null;
+            this._modelListener.dispose();
+        }
+    }
+    updateMatchesForModel() {
+        if (!this._model) {
+            return;
+        }
+        this._textMatches = new Map();
+        const wordSeparators = this._query.isWordMatch && this._query.wordSeparators ? this._query.wordSeparators : null;
+        const matches = this._model
+            .findMatches(this._query.pattern, this._model.getFullModelRange(), !!this._query.isRegExp, !!this._query.isCaseSensitive, wordSeparators, false, this._maxResults ?? DEFAULT_MAX_SEARCH_RESULTS);
+        this.updateMatches(matches, true, this._model, false);
+    }
+    async updatesMatchesForLineAfterReplace(lineNumber, modelChange) {
+        if (!this._model) {
+            return;
+        }
+        const range = {
+            startLineNumber: lineNumber,
+            startColumn: this._model.getLineMinColumn(lineNumber),
+            endLineNumber: lineNumber,
+            endColumn: this._model.getLineMaxColumn(lineNumber)
+        };
+        const oldMatches = Array.from(this._textMatches.values()).filter(match => match.range().startLineNumber === lineNumber);
+        oldMatches.forEach(match => this._textMatches.delete(match.id()));
+        const wordSeparators = this._query.isWordMatch && this._query.wordSeparators ? this._query.wordSeparators : null;
+        const matches = this._model.findMatches(this._query.pattern, range, !!this._query.isRegExp, !!this._query.isCaseSensitive, wordSeparators, false, this._maxResults ?? DEFAULT_MAX_SEARCH_RESULTS);
+        this.updateMatches(matches, modelChange, this._model, false);
+    }
+    updateMatches(matches, modelChange, model, isAiContributed) {
+        const textSearchResults = editorMatchesToTextSearchResults(matches, model, this._previewOptions);
+        textSearchResults.forEach(textSearchResult => {
+            textSearchResultToMatches(textSearchResult, this, isAiContributed).forEach(match => {
+                if (!this._removedTextMatches.has(match.id())) {
+                    this.add(match);
+                    if (this.isMatchSelected(match)) {
+                        this._selectedMatch = match;
+                    }
+                }
+            });
+        });
+        this.addContext(getTextSearchMatchWithModelContext(textSearchResults, model, this.parent().parent().query));
+        this._onChange.fire({ forceUpdateModel: modelChange });
+        this.updateHighlights();
+    }
+    updateHighlights() {
+        if (!this._model) {
+            return;
+        }
+        this._model.changeDecorations((accessor) => {
+            const newDecorations = (this.parent().showHighlights
+                ? this.matches().map((match) => ({
+                    range: match.range(),
+                    options: FileMatch_1.getDecorationOption(this.isMatchSelected(match))
+                }))
+                : []);
+            this._modelDecorations = accessor.deltaDecorations(this._modelDecorations, newDecorations);
+        });
+    }
+    id() {
+        return this.resource.toString();
+    }
+    parent() {
+        return this._parent;
+    }
+    get hasChildren() {
+        return this._textMatches.size > 0 || this._cellMatches.size > 0;
+    }
+    matches() {
+        const cellMatches = Array.from(this._cellMatches.values()).flatMap((e) => e.matches());
+        return [...this._textMatches.values(), ...cellMatches];
+    }
+    textMatches() {
+        return Array.from(this._textMatches.values());
+    }
+    cellMatches() {
+        return Array.from(this._cellMatches.values());
+    }
+    remove(matches) {
+        if (!Array.isArray(matches)) {
+            matches = [matches];
+        }
+        for (const match of matches) {
+            this.removeMatch(match);
+            this._removedTextMatches.add(match.id());
+        }
+        this._onChange.fire({ didRemove: true });
+    }
+    async replace(toReplace) {
+        return this.replaceQ = this.replaceQ.finally(async () => {
+            await this.replaceService.replace(toReplace);
+            await this.updatesMatchesForLineAfterReplace(toReplace.range().startLineNumber, false);
+        });
+    }
+    setSelectedMatch(match) {
+        if (match) {
+            if (!this.isMatchSelected(match) && match instanceof MatchInNotebook) {
+                this._selectedMatch = match;
+                return;
+            }
+            if (!this._textMatches.has(match.id())) {
+                return;
+            }
+            if (this.isMatchSelected(match)) {
+                return;
+            }
+        }
+        this._selectedMatch = match;
+        this.updateHighlights();
+    }
+    getSelectedMatch() {
+        return this._selectedMatch;
+    }
+    isMatchSelected(match) {
+        return !!this._selectedMatch && this._selectedMatch.id() === match.id();
+    }
+    count() {
+        return this.matches().length;
+    }
+    get resource() {
+        return this._resource;
+    }
+    name() {
+        return this._name.value;
+    }
+    addContext(results) {
+        if (!results) {
+            return;
+        }
+        const contexts = results
+            .filter((result => !resultIsMatch(result)));
+        return contexts.forEach(context => this._context.set(context.lineNumber, context.text));
+    }
+    add(match, trigger) {
+        this._textMatches.set(match.id(), match);
+        if (trigger) {
+            this._onChange.fire({ forceUpdateModel: true });
+        }
+    }
+    removeMatch(match) {
+        if (match instanceof MatchInNotebook) {
+            match.cellParent.remove(match);
+            if (match.cellParent.matches().length === 0) {
+                this._cellMatches.delete(match.cellParent.id);
+            }
+        }
+        else {
+            this._textMatches.delete(match.id());
+        }
+        if (this.isMatchSelected(match)) {
+            this.setSelectedMatch(null);
+            this._findMatchDecorationModel?.clearCurrentFindMatchDecoration();
+        }
+        else {
+            this.updateHighlights();
+        }
+        if (match instanceof MatchInNotebook) {
+            this.setNotebookFindMatchDecorationsUsingCellMatches(this.cellMatches());
+        }
+    }
+    async resolveFileStat(fileService) {
+        this._fileStat = await fileService.stat(this.resource).catch(() => undefined);
+    }
+    get fileStat() {
+        return this._fileStat;
+    }
+    set fileStat(stat) {
+        this._fileStat = stat;
+    }
+    dispose() {
+        this.setSelectedMatch(null);
+        this.unbindModel();
+        this.unbindNotebookEditorWidget();
+        this._onDispose.fire();
+        super.dispose();
+    }
+    hasOnlyReadOnlyMatches() {
+        return this.matches().every(match => match.isReadonly());
+    }
+    bindNotebookEditorWidget(widget) {
+        if (this._notebookEditorWidget === widget) {
+            return;
+        }
+        this._notebookEditorWidget = widget;
+        this._editorWidgetListener = this._notebookEditorWidget.textModel?.onDidChangeContent((e) => {
+            if (!e.rawEvents.some(event => event.kind === NotebookCellsChangeType.ChangeCellContent || event.kind === NotebookCellsChangeType.ModelChange)) {
+                return;
+            }
+            this._notebookUpdateScheduler.schedule();
+        }) ?? null;
+        this._addNotebookHighlights();
+    }
+    unbindNotebookEditorWidget(widget) {
+        if (widget && this._notebookEditorWidget !== widget) {
+            return;
+        }
+        if (this._notebookEditorWidget) {
+            this._notebookUpdateScheduler.cancel();
+            this._editorWidgetListener?.dispose();
+        }
+        this._removeNotebookHighlights();
+        this._notebookEditorWidget = null;
+    }
+    updateNotebookHighlights() {
+        if (this.parent().showHighlights) {
+            this._addNotebookHighlights();
+            this.setNotebookFindMatchDecorationsUsingCellMatches(Array.from(this._cellMatches.values()));
+        }
+        else {
+            this._removeNotebookHighlights();
+        }
+    }
+    _addNotebookHighlights() {
+        if (!this._notebookEditorWidget) {
+            return;
+        }
+        this._findMatchDecorationModel?.stopWebviewFind();
+        this._findMatchDecorationModel?.dispose();
+        this._findMatchDecorationModel = new FindMatchDecorationModel(this._notebookEditorWidget, this.searchInstanceID);
+        if (this._selectedMatch instanceof MatchInNotebook) {
+            this.highlightCurrentFindMatchDecoration(this._selectedMatch);
+        }
+    }
+    _removeNotebookHighlights() {
+        if (this._findMatchDecorationModel) {
+            this._findMatchDecorationModel?.stopWebviewFind();
+            this._findMatchDecorationModel?.dispose();
+            this._findMatchDecorationModel = undefined;
+        }
+    }
+    updateNotebookMatches(matches, modelChange) {
+        if (!this._notebookEditorWidget) {
+            return;
+        }
+        const oldCellMatches = new Map(this._cellMatches);
+        if (this._notebookEditorWidget.getId() !== this._lastEditorWidgetIdForUpdate) {
+            this._cellMatches.clear();
+            this._lastEditorWidgetIdForUpdate = this._notebookEditorWidget.getId();
+        }
+        matches.forEach(match => {
+            let existingCell = this._cellMatches.get(match.cell.id);
+            if (this._notebookEditorWidget && !existingCell) {
+                const index = this._notebookEditorWidget.getCellIndex(match.cell);
+                const existingRawCell = oldCellMatches.get(`${rawCellPrefix}${index}`);
+                if (existingRawCell) {
+                    existingRawCell.setCellModel(match.cell);
+                    existingRawCell.clearAllMatches();
+                    existingCell = existingRawCell;
+                }
+            }
+            existingCell?.clearAllMatches();
+            const cell = existingCell ?? new CellMatch(this, match.cell, match.index);
+            cell.addContentMatches(contentMatchesToTextSearchMatches(match.contentMatches, match.cell));
+            cell.addWebviewMatches(webviewMatchesToTextSearchMatches(match.webviewMatches));
+            this._cellMatches.set(cell.id, cell);
+        });
+        this._findMatchDecorationModel?.setAllFindMatchesDecorations(matches);
+        if (this._selectedMatch instanceof MatchInNotebook) {
+            this.highlightCurrentFindMatchDecoration(this._selectedMatch);
+        }
+        this._onChange.fire({ forceUpdateModel: modelChange });
+    }
+    setNotebookFindMatchDecorationsUsingCellMatches(cells) {
+        if (!this._findMatchDecorationModel) {
+            return;
+        }
+        const cellFindMatch = coalesce(cells.map((cell) => {
+            const webviewMatches = coalesce(cell.webviewMatches.map((match) => {
+                if (!match.webviewIndex) {
+                    return undefined;
+                }
+                return {
+                    index: match.webviewIndex,
+                };
+            }));
+            if (!cell.cell) {
+                return undefined;
+            }
+            const findMatches = cell.contentMatches.map(match => {
+                return new FindMatch(match.range(), [match.text()]);
+            });
+            return new CellFindMatchModel(cell.cell, cell.cellIndex, findMatches, webviewMatches);
+        }));
+        try {
+            this._findMatchDecorationModel.setAllFindMatchesDecorations(cellFindMatch);
+        }
+        catch (e) {
+        }
+    }
+    async updateMatchesForEditorWidget() {
+        if (!this._notebookEditorWidget) {
+            return;
+        }
+        this._textMatches = new Map();
+        const wordSeparators = this._query.isWordMatch && this._query.wordSeparators ? this._query.wordSeparators : null;
+        const allMatches = await this._notebookEditorWidget
+            .find(this._query.pattern, {
+            regex: this._query.isRegExp,
+            wholeWord: this._query.isWordMatch,
+            caseSensitive: this._query.isCaseSensitive,
+            wordSeparators: wordSeparators ?? undefined,
+            includeMarkupInput: this._query.notebookInfo?.isInNotebookMarkdownInput,
+            includeMarkupPreview: this._query.notebookInfo?.isInNotebookMarkdownPreview,
+            includeCodeInput: this._query.notebookInfo?.isInNotebookCellInput,
+            includeOutput: this._query.notebookInfo?.isInNotebookCellOutput,
+        }, CancellationToken.None, false, true, this.searchInstanceID);
+        this.updateNotebookMatches(allMatches, true);
+    }
+    async showMatch(match) {
+        const offset = await this.highlightCurrentFindMatchDecoration(match);
+        this.setSelectedMatch(match);
+        this.revealCellRange(match, offset);
+    }
+    async highlightCurrentFindMatchDecoration(match) {
+        if (!this._findMatchDecorationModel || !match.cell) {
+            return null;
+        }
+        if (match.webviewIndex === undefined) {
+            return this._findMatchDecorationModel.highlightCurrentFindMatchDecorationInCell(match.cell, match.range());
+        }
+        else {
+            return this._findMatchDecorationModel.highlightCurrentFindMatchDecorationInWebview(match.cell, match.webviewIndex);
+        }
+    }
+    revealCellRange(match, outputOffset) {
+        if (!this._notebookEditorWidget || !match.cell) {
+            return;
+        }
+        if (match.webviewIndex !== undefined) {
+            const index = this._notebookEditorWidget.getCellIndex(match.cell);
+            if (index !== undefined) {
+                this._notebookEditorWidget.revealCellOffsetInCenter(match.cell, outputOffset ?? 0);
+            }
+        }
+        else {
+            match.cell.updateEditState(match.cell.getEditState(), 'focusNotebookCell');
+            this._notebookEditorWidget.setCellEditorSelection(match.cell, match.range());
+            this._notebookEditorWidget.revealRangeInCenterIfOutsideViewportAsync(match.cell, match.range());
+        }
+    }
+};
+FileMatch = FileMatch_1 = __decorate([
+    __param(7, IModelService),
+    __param(8, IReplaceService),
+    __param(9, ILabelService),
+    __param(10, INotebookEditorService),
+    __metadata("design:paramtypes", [Object, Object, Object, FolderMatch, Object, Object, String, Object, Object, Object, Object])
+], FileMatch);
+export { FileMatch };
+let FolderMatch = FolderMatch_1 = class FolderMatch extends Disposable {
+    constructor(_resource, _id, _index, _query, _parent, _searchResult, _closestRoot, replaceService, instantiationService, labelService, uriIdentityService) {
+        super();
+        this._resource = _resource;
+        this._id = _id;
+        this._index = _index;
+        this._query = _query;
+        this._parent = _parent;
+        this._searchResult = _searchResult;
+        this._closestRoot = _closestRoot;
+        this.replaceService = replaceService;
+        this.instantiationService = instantiationService;
+        this.uriIdentityService = uriIdentityService;
+        this._onChange = this._register(new Emitter());
+        this.onChange = this._onChange.event;
+        this._onDispose = this._register(new Emitter());
+        this.onDispose = this._onDispose.event;
+        this._replacingAll = false;
+        this._fileMatches = new ResourceMap();
+        this._folderMatches = new ResourceMap();
+        this._folderMatchesMap = TernarySearchTree.forUris(key => this.uriIdentityService.extUri.ignorePathCasing(key));
+        this._unDisposedFileMatches = new ResourceMap();
+        this._unDisposedFolderMatches = new ResourceMap();
+        this._name = new Lazy(() => this.resource ? labelService.getUriBasenameLabel(this.resource) : '');
+    }
+    get searchModel() {
+        return this._searchResult.searchModel;
+    }
+    get showHighlights() {
+        return this._parent.showHighlights;
+    }
+    get closestRoot() {
+        return this._closestRoot;
+    }
+    set replacingAll(b) {
+        this._replacingAll = b;
+    }
+    id() {
+        return this._id;
+    }
+    get resource() {
+        return this._resource;
+    }
+    index() {
+        return this._index;
+    }
+    name() {
+        return this._name.value;
+    }
+    parent() {
+        return this._parent;
+    }
+    get hasChildren() {
+        return this._fileMatches.size > 0 || this._folderMatches.size > 0;
+    }
+    bindModel(model) {
+        const fileMatch = this._fileMatches.get(model.uri);
+        if (fileMatch) {
+            fileMatch.bindModel(model);
+        }
+        else {
+            const folderMatch = this.getFolderMatch(model.uri);
+            const match = folderMatch?.getDownstreamFileMatch(model.uri);
+            match?.bindModel(model);
+        }
+    }
+    async bindNotebookEditorWidget(editor, resource) {
+        const fileMatch = this._fileMatches.get(resource);
+        if (fileMatch) {
+            fileMatch.bindNotebookEditorWidget(editor);
+            await fileMatch.updateMatchesForEditorWidget();
+        }
+        else {
+            const folderMatches = this.folderMatchesIterator();
+            for (const elem of folderMatches) {
+                await elem.bindNotebookEditorWidget(editor, resource);
+            }
+        }
+    }
+    unbindNotebookEditorWidget(editor, resource) {
+        const fileMatch = this._fileMatches.get(resource);
+        if (fileMatch) {
+            fileMatch.unbindNotebookEditorWidget(editor);
+        }
+        else {
+            const folderMatches = this.folderMatchesIterator();
+            for (const elem of folderMatches) {
+                elem.unbindNotebookEditorWidget(editor, resource);
+            }
+        }
+    }
+    createIntermediateFolderMatch(resource, id, index, query, baseWorkspaceFolder) {
+        const folderMatch = this._register(this.instantiationService.createInstance(FolderMatchWithResource, resource, id, index, query, this, this._searchResult, baseWorkspaceFolder));
+        this.configureIntermediateMatch(folderMatch);
+        this.doAddFolder(folderMatch);
+        return folderMatch;
+    }
+    configureIntermediateMatch(folderMatch) {
+        const disposable = folderMatch.onChange((event) => this.onFolderChange(folderMatch, event));
+        this._register(folderMatch.onDispose(() => disposable.dispose()));
+    }
+    clear(clearingAll = false) {
+        const changed = this.allDownstreamFileMatches();
+        this.disposeMatches();
+        this._onChange.fire({ elements: changed, removed: true, added: false, clearingAll });
+    }
+    remove(matches) {
+        if (!Array.isArray(matches)) {
+            matches = [matches];
+        }
+        const allMatches = getFileMatches(matches);
+        this.doRemoveFile(allMatches);
+    }
+    async replace(match) {
+        return this.replaceService.replace([match]).then(() => {
+            this.doRemoveFile([match], true, true, true);
+        });
+    }
+    replaceAll() {
+        const matches = this.matches();
+        return this.batchReplace(matches);
+    }
+    matches() {
+        return [...this.fileMatchesIterator(), ...this.folderMatchesIterator()];
+    }
+    fileMatchesIterator() {
+        return this._fileMatches.values();
+    }
+    folderMatchesIterator() {
+        return this._folderMatches.values();
+    }
+    isEmpty() {
+        return (this.fileCount() + this.folderCount()) === 0;
+    }
+    getDownstreamFileMatch(uri) {
+        const directChildFileMatch = this._fileMatches.get(uri);
+        if (directChildFileMatch) {
+            return directChildFileMatch;
+        }
+        const folderMatch = this.getFolderMatch(uri);
+        const match = folderMatch?.getDownstreamFileMatch(uri);
+        if (match) {
+            return match;
+        }
+        return null;
+    }
+    allDownstreamFileMatches() {
+        let recursiveChildren = [];
+        const iterator = this.folderMatchesIterator();
+        for (const elem of iterator) {
+            recursiveChildren = recursiveChildren.concat(elem.allDownstreamFileMatches());
+        }
+        return [...this.fileMatchesIterator(), ...recursiveChildren];
+    }
+    fileCount() {
+        return this._fileMatches.size;
+    }
+    folderCount() {
+        return this._folderMatches.size;
+    }
+    count() {
+        return this.fileCount() + this.folderCount();
+    }
+    recursiveFileCount() {
+        return this.allDownstreamFileMatches().length;
+    }
+    recursiveMatchCount() {
+        return this.allDownstreamFileMatches().reduce((prev, match) => prev + match.count(), 0);
+    }
+    get query() {
+        return this._query;
+    }
+    addFileMatch(raw, silent, searchInstanceID, isAiContributed) {
+        const added = [];
+        const updated = [];
+        raw.forEach(rawFileMatch => {
+            const existingFileMatch = this.getDownstreamFileMatch(rawFileMatch.resource);
+            if (existingFileMatch) {
+                if (rawFileMatch.results) {
+                    rawFileMatch
+                        .results
+                        .filter(resultIsMatch)
+                        .forEach(m => {
+                        textSearchResultToMatches(m, existingFileMatch, isAiContributed)
+                            .forEach(m => existingFileMatch.add(m));
+                    });
+                }
+                if (isINotebookFileMatchWithModel(rawFileMatch) || isINotebookFileMatchNoModel(rawFileMatch)) {
+                    rawFileMatch.cellResults?.forEach(rawCellMatch => {
+                        const existingCellMatch = existingFileMatch.getCellMatch(getIDFromINotebookCellMatch(rawCellMatch));
+                        if (existingCellMatch) {
+                            existingCellMatch.addContentMatches(rawCellMatch.contentResults);
+                            existingCellMatch.addWebviewMatches(rawCellMatch.webviewResults);
+                        }
+                        else {
+                            existingFileMatch.addCellMatch(rawCellMatch);
+                        }
+                    });
+                }
+                updated.push(existingFileMatch);
+                if (rawFileMatch.results && rawFileMatch.results.length > 0) {
+                    existingFileMatch.addContext(rawFileMatch.results);
+                }
+            }
+            else {
+                if (this instanceof FolderMatchWorkspaceRoot || this instanceof FolderMatchNoRoot) {
+                    const fileMatch = this.createAndConfigureFileMatch(rawFileMatch, searchInstanceID);
+                    added.push(fileMatch);
+                }
+            }
+        });
+        const elements = [...added, ...updated];
+        if (!silent && elements.length) {
+            this._onChange.fire({ elements, added: !!added.length });
+        }
+    }
+    doAddFile(fileMatch) {
+        this._fileMatches.set(fileMatch.resource, fileMatch);
+        if (this._unDisposedFileMatches.has(fileMatch.resource)) {
+            this._unDisposedFileMatches.delete(fileMatch.resource);
+        }
+    }
+    hasOnlyReadOnlyMatches() {
+        return Array.from(this._fileMatches.values()).every(fm => fm.hasOnlyReadOnlyMatches());
+    }
+    uriHasParent(parent, child) {
+        return this.uriIdentityService.extUri.isEqualOrParent(child, parent) && !this.uriIdentityService.extUri.isEqual(child, parent);
+    }
+    isInParentChain(folderMatch) {
+        let matchItem = this;
+        while (matchItem instanceof FolderMatch_1) {
+            if (matchItem.id() === folderMatch.id()) {
+                return true;
+            }
+            matchItem = matchItem.parent();
+        }
+        return false;
+    }
+    getFolderMatch(resource) {
+        const folderMatch = this._folderMatchesMap.findSubstr(resource);
+        return folderMatch;
+    }
+    doAddFolder(folderMatch) {
+        if (this instanceof FolderMatchWithResource && !this.uriHasParent(this.resource, folderMatch.resource)) {
+            throw Error(`${folderMatch.resource} does not belong as a child of ${this.resource}`);
+        }
+        else if (this.isInParentChain(folderMatch)) {
+            throw Error(`${folderMatch.resource} is a parent of ${this.resource}`);
+        }
+        this._folderMatches.set(folderMatch.resource, folderMatch);
+        this._folderMatchesMap.set(folderMatch.resource, folderMatch);
+        if (this._unDisposedFolderMatches.has(folderMatch.resource)) {
+            this._unDisposedFolderMatches.delete(folderMatch.resource);
+        }
+    }
+    async batchReplace(matches) {
+        const allMatches = getFileMatches(matches);
+        await this.replaceService.replace(allMatches);
+        this.doRemoveFile(allMatches, true, true, true);
+    }
+    onFileChange(fileMatch, removed = false) {
+        let added = false;
+        if (!this._fileMatches.has(fileMatch.resource)) {
+            this.doAddFile(fileMatch);
+            added = true;
+        }
+        if (fileMatch.count() === 0) {
+            this.doRemoveFile([fileMatch], false, false);
+            added = false;
+            removed = true;
+        }
+        if (!this._replacingAll) {
+            this._onChange.fire({ elements: [fileMatch], added: added, removed: removed });
+        }
+    }
+    onFolderChange(folderMatch, event) {
+        if (!this._folderMatches.has(folderMatch.resource)) {
+            this.doAddFolder(folderMatch);
+        }
+        if (folderMatch.isEmpty()) {
+            this._folderMatches.delete(folderMatch.resource);
+            folderMatch.dispose();
+        }
+        this._onChange.fire(event);
+    }
+    doRemoveFile(fileMatches, dispose = true, trigger = true, keepReadonly = false) {
+        const removed = [];
+        for (const match of fileMatches) {
+            if (this._fileMatches.get(match.resource)) {
+                if (keepReadonly && match.hasReadonlyMatches()) {
+                    continue;
+                }
+                this._fileMatches.delete(match.resource);
+                if (dispose) {
+                    match.dispose();
+                }
+                else {
+                    this._unDisposedFileMatches.set(match.resource, match);
+                }
+                removed.push(match);
+            }
+            else {
+                const folder = this.getFolderMatch(match.resource);
+                if (folder) {
+                    folder.doRemoveFile([match], dispose, trigger);
+                }
+                else {
+                    throw Error(`FileMatch ${match.resource} is not located within FolderMatch ${this.resource}`);
+                }
+            }
+        }
+        if (trigger) {
+            this._onChange.fire({ elements: removed, removed: true });
+        }
+    }
+    disposeMatches() {
+        [...this._fileMatches.values()].forEach((fileMatch) => fileMatch.dispose());
+        [...this._folderMatches.values()].forEach((folderMatch) => folderMatch.disposeMatches());
+        [...this._unDisposedFileMatches.values()].forEach((fileMatch) => fileMatch.dispose());
+        [...this._unDisposedFolderMatches.values()].forEach((folderMatch) => folderMatch.disposeMatches());
+        this._fileMatches.clear();
+        this._folderMatches.clear();
+        this._unDisposedFileMatches.clear();
+        this._unDisposedFolderMatches.clear();
+    }
+    dispose() {
+        this.disposeMatches();
+        this._onDispose.fire();
+        super.dispose();
+    }
+};
+FolderMatch = FolderMatch_1 = __decorate([
+    __param(7, IReplaceService),
+    __param(8, IInstantiationService),
+    __param(9, ILabelService),
+    __param(10, IUriIdentityService),
+    __metadata("design:paramtypes", [Object, String, Number, Object, Object, SearchResult, Object, Object, Object, Object, Object])
+], FolderMatch);
+export { FolderMatch };
+let FolderMatchWithResource = class FolderMatchWithResource extends FolderMatch {
+    constructor(_resource, _id, _index, _query, _parent, _searchResult, _closestRoot, replaceService, instantiationService, labelService, uriIdentityService) {
+        super(_resource, _id, _index, _query, _parent, _searchResult, _closestRoot, replaceService, instantiationService, labelService, uriIdentityService);
+        this._normalizedResource = new Lazy(() => this.uriIdentityService.extUri.removeTrailingPathSeparator(this.uriIdentityService.extUri.normalizePath(this.resource)));
+    }
+    get resource() {
+        return this._resource;
+    }
+    get normalizedResource() {
+        return this._normalizedResource.value;
+    }
+};
+FolderMatchWithResource = __decorate([
+    __param(7, IReplaceService),
+    __param(8, IInstantiationService),
+    __param(9, ILabelService),
+    __param(10, IUriIdentityService),
+    __metadata("design:paramtypes", [URI, String, Number, Object, Object, SearchResult, Object, Object, Object, Object, Object])
+], FolderMatchWithResource);
+export { FolderMatchWithResource };
+let FolderMatchWorkspaceRoot = class FolderMatchWorkspaceRoot extends FolderMatchWithResource {
+    constructor(_resource, _id, _index, _query, _parent, _ai, replaceService, instantiationService, labelService, uriIdentityService) {
+        super(_resource, _id, _index, _query, _parent, _parent.parent(), null, replaceService, instantiationService, labelService, uriIdentityService);
+        this._ai = _ai;
+    }
+    normalizedUriParent(uri) {
+        return this.uriIdentityService.extUri.normalizePath(this.uriIdentityService.extUri.dirname(uri));
+    }
+    uriEquals(uri1, ur2) {
+        return this.uriIdentityService.extUri.isEqual(uri1, ur2);
+    }
+    createFileMatch(query, previewOptions, maxResults, parent, rawFileMatch, closestRoot, searchInstanceID) {
+        const fileMatch = this.instantiationService.createInstance(FileMatch, query, previewOptions, maxResults, parent, rawFileMatch, closestRoot, searchInstanceID);
+        fileMatch.createMatches(this._ai);
+        parent.doAddFile(fileMatch);
+        const disposable = fileMatch.onChange(({ didRemove }) => parent.onFileChange(fileMatch, didRemove));
+        this._register(fileMatch.onDispose(() => disposable.dispose()));
+        return fileMatch;
+    }
+    createAndConfigureFileMatch(rawFileMatch, searchInstanceID) {
+        if (!this.uriHasParent(this.resource, rawFileMatch.resource)) {
+            throw Error(`${rawFileMatch.resource} is not a descendant of ${this.resource}`);
+        }
+        const fileMatchParentParts = [];
+        let uri = this.normalizedUriParent(rawFileMatch.resource);
+        while (!this.uriEquals(this.normalizedResource, uri)) {
+            fileMatchParentParts.unshift(uri);
+            const prevUri = uri;
+            uri = this.uriIdentityService.extUri.removeTrailingPathSeparator(this.normalizedUriParent(uri));
+            if (this.uriEquals(prevUri, uri)) {
+                throw Error(`${rawFileMatch.resource} is not correctly configured as a child of ${this.normalizedResource}`);
+            }
+        }
+        const root = this.closestRoot ?? this;
+        let parent = this;
+        for (let i = 0; i < fileMatchParentParts.length; i++) {
+            let folderMatch = parent.getFolderMatch(fileMatchParentParts[i]);
+            if (!folderMatch) {
+                folderMatch = parent.createIntermediateFolderMatch(fileMatchParentParts[i], fileMatchParentParts[i].toString(), -1, this._query, root);
+            }
+            parent = folderMatch;
+        }
+        return this.createFileMatch(this._query.contentPattern, this._query.previewOptions, this._query.maxResults, parent, rawFileMatch, root, searchInstanceID);
+    }
+};
+FolderMatchWorkspaceRoot = __decorate([
+    __param(6, IReplaceService),
+    __param(7, IInstantiationService),
+    __param(8, ILabelService),
+    __param(9, IUriIdentityService),
+    __metadata("design:paramtypes", [URI, String, Number, Object, TextSearchResult, Boolean, Object, Object, Object, Object])
+], FolderMatchWorkspaceRoot);
+export { FolderMatchWorkspaceRoot };
+let FolderMatchNoRoot = class FolderMatchNoRoot extends FolderMatch {
+    constructor(_id, _index, _query, _parent, replaceService, instantiationService, labelService, uriIdentityService) {
+        super(null, _id, _index, _query, _parent, _parent.parent(), null, replaceService, instantiationService, labelService, uriIdentityService);
+    }
+    createAndConfigureFileMatch(rawFileMatch, searchInstanceID) {
+        const fileMatch = this._register(this.instantiationService.createInstance(FileMatch, this._query.contentPattern, this._query.previewOptions, this._query.maxResults, this, rawFileMatch, null, searchInstanceID));
+        fileMatch.createMatches(false);
+        this.doAddFile(fileMatch);
+        const disposable = fileMatch.onChange(({ didRemove }) => this.onFileChange(fileMatch, didRemove));
+        this._register(fileMatch.onDispose(() => disposable.dispose()));
+        return fileMatch;
+    }
+};
+FolderMatchNoRoot = __decorate([
+    __param(4, IReplaceService),
+    __param(5, IInstantiationService),
+    __param(6, ILabelService),
+    __param(7, IUriIdentityService),
+    __metadata("design:paramtypes", [String, Number, Object, TextSearchResult, Object, Object, Object, Object])
+], FolderMatchNoRoot);
+export { FolderMatchNoRoot };
+let TextSearchResult = class TextSearchResult extends Disposable {
+    constructor(_allowOtherResults, _parent, _id, instantiationService, uriIdentityService) {
+        super();
+        this._allowOtherResults = _allowOtherResults;
+        this._parent = _parent;
+        this._id = _id;
+        this.instantiationService = instantiationService;
+        this.uriIdentityService = uriIdentityService;
+        this._onChange = this._register(new Emitter());
+        this.onChange = this._onChange.event;
+        this._isDirty = false;
+        this._showHighlights = false;
+        this._query = null;
+        this.disposePastResults = () => Promise.resolve();
+        this._folderMatches = [];
+        this._otherFilesMatch = null;
+        this._folderMatchesMap = TernarySearchTree.forUris(key => this.uriIdentityService.extUri.ignorePathCasing(key));
+        this.resource = null;
+        this.hidden = false;
+        this._rangeHighlightDecorations = this.instantiationService.createInstance(RangeHighlightDecorations);
+        this._register(this.onChange(e => {
+            if (e.removed) {
+                this._isDirty = !this.isEmpty();
+            }
+        }));
+    }
+    hide() {
+        this.hidden = true;
+        this.clear();
+    }
+    get isAIContributed() {
+        return this.id() === AI_TEXT_SEARCH_RESULT_ID;
+    }
+    id() {
+        return this._id;
+    }
+    parent() {
+        return this._parent;
+    }
+    get hasChildren() {
+        return this._folderMatches.length > 0;
+    }
+    name() {
+        return this._id === AI_TEXT_SEARCH_RESULT_ID ? 'AI' : 'Text';
+    }
+    get isDirty() {
+        return this._isDirty;
+    }
+    getFolderMatch(resource) {
+        const folderMatch = this._folderMatchesMap.findSubstr(resource);
+        if (!folderMatch && this._allowOtherResults && this._otherFilesMatch) {
+            return this._otherFilesMatch;
+        }
+        return folderMatch;
+    }
+    add(allRaw, searchInstanceID, ai, silent = false) {
+        const { byFolder, other } = this.groupFilesByFolder(allRaw);
+        byFolder.forEach(raw => {
+            if (!raw.length) {
+                return;
+            }
+            const folderMatch = this.getFolderMatch(raw[0].resource);
+            folderMatch?.addFileMatch(raw, silent, searchInstanceID, this.isAIContributed);
+        });
+        if (!ai) {
+            this._otherFilesMatch?.addFileMatch(other, silent, searchInstanceID, false);
+        }
+        this.disposePastResults();
+    }
+    remove(matches, ai = false) {
+        if (!Array.isArray(matches)) {
+            matches = [matches];
+        }
+        matches.forEach(m => {
+            if (m instanceof FolderMatch) {
+                m.clear();
+            }
+        });
+        const fileMatches = matches.filter(m => m instanceof FileMatch);
+        const { byFolder, other } = this.groupFilesByFolder(fileMatches);
+        byFolder.forEach(matches => {
+            if (!matches.length) {
+                return;
+            }
+            this.getFolderMatch(matches[0].resource)?.remove(matches);
+        });
+        if (other.length) {
+            this.getFolderMatch(other[0].resource)?.remove(other);
+        }
+    }
+    groupFilesByFolder(fileMatches) {
+        const rawPerFolder = new ResourceMap();
+        const otherFileMatches = [];
+        this._folderMatches.forEach(fm => rawPerFolder.set(fm.resource, []));
+        fileMatches.forEach(rawFileMatch => {
+            const folderMatch = this.getFolderMatch(rawFileMatch.resource);
+            if (!folderMatch) {
+                return;
+            }
+            const resource = folderMatch.resource;
+            if (resource) {
+                rawPerFolder.get(resource).push(rawFileMatch);
+            }
+            else {
+                otherFileMatches.push(rawFileMatch);
+            }
+        });
+        return {
+            byFolder: rawPerFolder,
+            other: otherFileMatches
+        };
+    }
+    isEmpty() {
+        return this.folderMatches().every((folderMatch) => folderMatch.isEmpty());
+    }
+    findFolderSubstr(resource) {
+        return this._folderMatchesMap.findSubstr(resource);
+    }
+    get query() {
+        return this._query;
+    }
+    set query(query) {
+        const oldFolderMatches = this.folderMatches();
+        this.disposePastResults = async () => {
+            oldFolderMatches.forEach(match => match.clear());
+            oldFolderMatches.forEach(match => match.dispose());
+            this._isDirty = false;
+        };
+        this.cachedSearchComplete = undefined;
+        this._rangeHighlightDecorations.removeHighlightRange();
+        this._folderMatchesMap = TernarySearchTree.forUris(key => this.uriIdentityService.extUri.ignorePathCasing(key));
+        if (!query) {
+            return;
+        }
+        this._folderMatches = (query && query.folderQueries || [])
+            .map(fq => fq.folder)
+            .map((resource, index) => this._createBaseFolderMatch(resource, resource.toString(), index, query, this.isAIContributed));
+        this._folderMatches.forEach(fm => this._folderMatchesMap.set(fm.resource, fm));
+        if (this._allowOtherResults) {
+            this._otherFilesMatch = this._createBaseFolderMatch(null, 'otherFiles', this._folderMatches.length + 1, query, this.isAIContributed);
+        }
+        this._query = query;
+    }
+    _createBaseFolderMatch(resource, id, index, query, ai) {
+        let folderMatch;
+        if (resource) {
+            folderMatch = this._register(this.instantiationService.createInstance(FolderMatchWorkspaceRoot, resource, id, index, query, this, ai));
+        }
+        else {
+            folderMatch = this._register(this.instantiationService.createInstance(FolderMatchNoRoot, id, index, query, this));
+        }
+        const disposable = folderMatch.onChange((event) => this._onChange.fire(event));
+        this._register(folderMatch.onDispose(() => disposable.dispose()));
+        return folderMatch;
+    }
+    folderMatches() {
+        return this._otherFilesMatch && this._allowOtherResults ?
+            [
+                ...this._folderMatches,
+                this._otherFilesMatch,
+            ] :
+            this._folderMatches;
+    }
+    disposeMatches() {
+        this.folderMatches().forEach(folderMatch => folderMatch.dispose());
+        this._folderMatches = [];
+        this._folderMatchesMap = TernarySearchTree.forUris(key => this.uriIdentityService.extUri.ignorePathCasing(key));
+        this._rangeHighlightDecorations.removeHighlightRange();
+    }
+    matches() {
+        const matches = [];
+        this.folderMatches().forEach(folderMatch => {
+            matches.push(folderMatch.allDownstreamFileMatches());
+        });
+        return [].concat(...matches);
+    }
+    get showHighlights() {
+        return this._showHighlights;
+    }
+    toggleHighlights(value) {
+        if (this._showHighlights === value) {
+            return;
+        }
+        this._showHighlights = value;
+        let selectedMatch = null;
+        this.matches().forEach((fileMatch) => {
+            fileMatch.updateHighlights();
+            fileMatch.updateNotebookHighlights();
+            if (!selectedMatch) {
+                selectedMatch = fileMatch.getSelectedMatch();
+            }
+        });
+        if (this._showHighlights && selectedMatch) {
+            this._rangeHighlightDecorations.highlightRange(selectedMatch.parent().resource, selectedMatch.range());
+        }
+        else {
+            this._rangeHighlightDecorations.removeHighlightRange();
+        }
+    }
+    get rangeHighlightDecorations() {
+        return this._rangeHighlightDecorations;
+    }
+    fileCount() {
+        return this.folderMatches().reduce((prev, match) => prev + match.recursiveFileCount(), 0);
+    }
+    count() {
+        return this.matches().reduce((prev, match) => prev + match.count(), 0);
+    }
+    clear() {
+        this.folderMatches().forEach((folderMatch) => folderMatch.clear(true));
+        this.disposeMatches();
+        this._folderMatches = [];
+        this._otherFilesMatch = null;
+        this.cachedSearchComplete = undefined;
+    }
+    async dispose() {
+        this._rangeHighlightDecorations.dispose();
+        this.disposeMatches();
+        super.dispose();
+        await this.disposePastResults();
+    }
+};
+TextSearchResult = __decorate([
+    __param(3, IInstantiationService),
+    __param(4, IUriIdentityService),
+    __metadata("design:paramtypes", [Boolean, SearchResult, String, Object, Object])
+], TextSearchResult);
+export { TextSearchResult };
+let ReplaceableTextSearchResult = class ReplaceableTextSearchResult extends TextSearchResult {
+    constructor(_allowOtherResults, parent, id, instantiationService, uriIdentityService, replaceService) {
+        super(_allowOtherResults, parent, id, instantiationService, uriIdentityService);
+        this.replaceService = replaceService;
+    }
+    replace(match) {
+        return this.getFolderMatch(match.resource)?.replace(match) ?? Promise.resolve();
+    }
+    replaceAll(progress) {
+        this.replacingAll = true;
+        const promise = this.replaceService.replace(this.matches(), progress);
+        return promise.then(() => {
+            this.replacingAll = false;
+            this.clear();
+        }, () => {
+            this.replacingAll = false;
+        });
+    }
+    set replacingAll(running) {
+        this.folderMatches().forEach((folderMatch) => {
+            folderMatch.replacingAll = running;
+        });
+    }
+};
+ReplaceableTextSearchResult = __decorate([
+    __param(3, IInstantiationService),
+    __param(4, IUriIdentityService),
+    __param(5, IReplaceService),
+    __metadata("design:paramtypes", [Boolean, SearchResult, String, Object, Object, Object])
+], ReplaceableTextSearchResult);
+export { ReplaceableTextSearchResult };
+let elemAIndex = -1;
+let elemBIndex = -1;
+export function searchMatchComparer(elementA, elementB, sortOrder = "default") {
+    if (elementA instanceof FileMatch && elementB instanceof FolderMatch) {
+        return 1;
+    }
+    if (elementB instanceof FileMatch && elementA instanceof FolderMatch) {
+        return -1;
+    }
+    if (elementA instanceof FolderMatch && elementB instanceof FolderMatch) {
+        elemAIndex = elementA.index();
+        elemBIndex = elementB.index();
+        if (elemAIndex !== -1 && elemBIndex !== -1) {
+            return elemAIndex - elemBIndex;
+        }
+        switch (sortOrder) {
+            case "countDescending":
+                return elementB.count() - elementA.count();
+            case "countAscending":
+                return elementA.count() - elementB.count();
+            case "type":
+                return compareFileExtensions(elementA.name(), elementB.name());
+            case "fileNames":
+                return compareFileNames(elementA.name(), elementB.name());
+            default:
+                if (!elementA.resource || !elementB.resource) {
+                    return 0;
+                }
+                return comparePaths(elementA.resource.fsPath, elementB.resource.fsPath) || compareFileNames(elementA.name(), elementB.name());
+        }
+    }
+    if (elementA instanceof FileMatch && elementB instanceof FileMatch) {
+        switch (sortOrder) {
+            case "countDescending":
+                return elementB.count() - elementA.count();
+            case "countAscending":
+                return elementA.count() - elementB.count();
+            case "type":
+                return compareFileExtensions(elementA.name(), elementB.name());
+            case "fileNames":
+                return compareFileNames(elementA.name(), elementB.name());
+            case "modified": {
+                const fileStatA = elementA.fileStat;
+                const fileStatB = elementB.fileStat;
+                if (fileStatA && fileStatB) {
+                    return fileStatB.mtime - fileStatA.mtime;
+                }
+            }
+            default:
+                return comparePaths(elementA.resource.fsPath, elementB.resource.fsPath) || compareFileNames(elementA.name(), elementB.name());
+        }
+    }
+    if (elementA instanceof MatchInNotebook && elementB instanceof MatchInNotebook) {
+        return compareNotebookPos(elementA, elementB);
+    }
+    if (elementA instanceof Match && elementB instanceof Match) {
+        return Range.compareRangesUsingStarts(elementA.range(), elementB.range());
+    }
+    return 0;
+}
+export function compareNotebookPos(match1, match2) {
+    if (match1.cellIndex === match2.cellIndex) {
+        if (match1.webviewIndex !== undefined && match2.webviewIndex !== undefined) {
+            return match1.webviewIndex - match2.webviewIndex;
+        }
+        else if (match1.webviewIndex === undefined && match2.webviewIndex === undefined) {
+            return Range.compareRangesUsingStarts(match1.range(), match2.range());
+        }
+        else {
+            if (match1.webviewIndex !== undefined) {
+                return 1;
+            }
+            else {
+                return -1;
+            }
+        }
+    }
+    else if (match1.cellIndex < match2.cellIndex) {
+        return -1;
+    }
+    else {
+        return 1;
+    }
+}
+export function searchComparer(elementA, elementB, sortOrder = "default") {
+    const elemAParents = createParentList(elementA);
+    const elemBParents = createParentList(elementB);
+    let i = elemAParents.length - 1;
+    let j = elemBParents.length - 1;
+    while (i >= 0 && j >= 0) {
+        if (elemAParents[i].id() !== elemBParents[j].id()) {
+            return searchMatchComparer(elemAParents[i], elemBParents[j], sortOrder);
+        }
+        i--;
+        j--;
+    }
+    const elemAAtEnd = i === 0;
+    const elemBAtEnd = j === 0;
+    if (elemAAtEnd && !elemBAtEnd) {
+        return 1;
+    }
+    else if (!elemAAtEnd && elemBAtEnd) {
+        return -1;
+    }
+    return 0;
+}
+function createParentList(element) {
+    const parentArray = [];
+    let currElement = element;
+    while (!(currElement instanceof TextSearchResult)) {
+        parentArray.push(currElement);
+        currElement = currElement.parent();
+    }
+    return parentArray;
+}
+export const PLAIN_TEXT_SEARCH__RESULT_ID = 'plainTextSearch';
+export const AI_TEXT_SEARCH_RESULT_ID = 'aiTextSearch';
+let SearchResult = class SearchResult extends Disposable {
+    constructor(searchModel, instantiationService, modelService, notebookEditorService) {
+        super();
+        this.searchModel = searchModel;
+        this.instantiationService = instantiationService;
+        this.modelService = modelService;
+        this.notebookEditorService = notebookEditorService;
+        this._onChange = this._register(new PauseableEmitter({
+            merge: mergeSearchResultEvents
+        }));
+        this.onChange = this._onChange.event;
+        this._plainTextSearchResult = this._register(this.instantiationService.createInstance(ReplaceableTextSearchResult, true, this, PLAIN_TEXT_SEARCH__RESULT_ID));
+        this._aiTextSearchResult = this._register(this.instantiationService.createInstance(TextSearchResult, true, this, AI_TEXT_SEARCH_RESULT_ID));
+        this._register(this._plainTextSearchResult.onChange((e) => this._onChange.fire(e)));
+        this._register(this._aiTextSearchResult.onChange((e) => this._onChange.fire(e)));
+        this.modelService.getModels().forEach(model => this.onModelAdded(model));
+        this._register(this.modelService.onModelAdded(model => this.onModelAdded(model)));
+        this._register(this.notebookEditorService.onDidAddNotebookEditor(widget => {
+            if (widget instanceof NotebookEditorWidget) {
+                this.onDidAddNotebookEditorWidget(widget);
+            }
+        }));
+    }
+    get plainTextSearchResult() {
+        return this._plainTextSearchResult;
+    }
+    get aiTextSearchResult() {
+        return this._aiTextSearchResult;
+    }
+    get children() {
+        return this.textSearchResults;
+    }
+    get hasChildren() {
+        return true;
+    }
+    get textSearchResults() {
+        return [this._plainTextSearchResult, this._aiTextSearchResult];
+    }
+    async batchReplace(elementsToReplace) {
+        try {
+            this._onChange.pause();
+            await Promise.all(elementsToReplace.map(async (elem) => {
+                const parent = elem.parent();
+                if ((parent instanceof FolderMatch || parent instanceof FileMatch) && arrayContainsElementOrParent(parent, elementsToReplace)) {
+                    return;
+                }
+                if (elem instanceof FileMatch) {
+                    await elem.parent().replace(elem);
+                }
+                else if (elem instanceof Match) {
+                    await elem.parent().replace(elem);
+                }
+                else if (elem instanceof FolderMatch) {
+                    await elem.replaceAll();
+                }
+            }));
+        }
+        finally {
+            this._onChange.resume();
+        }
+    }
+    batchRemove(elementsToRemove) {
+        const removedElems = [];
+        try {
+            this._onChange.pause();
+            elementsToRemove.forEach((currentElement) => {
+                if (!arrayContainsElementOrParent(currentElement, removedElems)) {
+                    if (currentElement instanceof TextSearchResult) {
+                        currentElement.hide();
+                    }
+                    else {
+                        currentElement.parent().remove(currentElement);
+                        removedElems.push(currentElement);
+                    }
+                }
+            });
+        }
+        finally {
+            this._onChange.resume();
+        }
+    }
+    get isDirty() {
+        return this._aiTextSearchResult.isDirty || this._plainTextSearchResult.isDirty;
+    }
+    get query() {
+        return this._plainTextSearchResult.query;
+    }
+    set query(query) {
+        this._plainTextSearchResult.query = query;
+        this._aiTextSearchResult.query = query;
+    }
+    onDidAddNotebookEditorWidget(widget) {
+        this._onWillChangeModelListener?.dispose();
+        this._onWillChangeModelListener = widget.onWillChangeModel((model) => {
+            if (model) {
+                this.onNotebookEditorWidgetRemoved(widget, model?.uri);
+            }
+        });
+        this._onDidChangeModelListener?.dispose();
+        this._onDidChangeModelListener = widget.onDidAttachViewModel(() => {
+            if (widget.hasModel()) {
+                this.onNotebookEditorWidgetAdded(widget, widget.textModel.uri);
+            }
+        });
+    }
+    folderMatches(ai = false) {
+        if (ai) {
+            return this._aiTextSearchResult.folderMatches();
+        }
+        return this._plainTextSearchResult.folderMatches();
+    }
+    onModelAdded(model) {
+        const folderMatch = this._plainTextSearchResult.findFolderSubstr(model.uri);
+        folderMatch?.bindModel(model);
+    }
+    async onNotebookEditorWidgetAdded(editor, resource) {
+        const folderMatch = this._plainTextSearchResult.findFolderSubstr(resource);
+        await folderMatch?.bindNotebookEditorWidget(editor, resource);
+    }
+    onNotebookEditorWidgetRemoved(editor, resource) {
+        const folderMatch = this._plainTextSearchResult.findFolderSubstr(resource);
+        folderMatch?.unbindNotebookEditorWidget(editor, resource);
+    }
+    add(allRaw, searchInstanceID, ai, silent = false) {
+        this._plainTextSearchResult.hidden = false;
+        this._aiTextSearchResult.hidden = false;
+        if (ai) {
+            this._aiTextSearchResult.add(allRaw, searchInstanceID, ai, silent);
+        }
+        else {
+            this._plainTextSearchResult.add(allRaw, searchInstanceID, ai, silent);
+        }
+    }
+    clear() {
+        this._aiTextSearchResult.clear();
+        this._plainTextSearchResult.clear();
+    }
+    remove(matches, ai = false) {
+        if (ai) {
+            this._aiTextSearchResult.remove(matches, ai);
+        }
+        this._plainTextSearchResult.remove(matches, ai);
+    }
+    replace(match) {
+        return this._plainTextSearchResult.replace(match);
+    }
+    matches(ai) {
+        if (ai === undefined) {
+            return this._plainTextSearchResult.matches().concat(this._aiTextSearchResult.matches());
+        }
+        else if (ai === true) {
+            return this._aiTextSearchResult.matches();
+        }
+        return this._plainTextSearchResult.matches();
+    }
+    isEmpty() {
+        return this._plainTextSearchResult.isEmpty() && this._aiTextSearchResult.isEmpty();
+    }
+    fileCount() {
+        return this._plainTextSearchResult.fileCount() + this._aiTextSearchResult.fileCount();
+    }
+    count() {
+        return this._plainTextSearchResult.count() + this._aiTextSearchResult.count();
+    }
+    setCachedSearchComplete(cachedSearchComplete, ai) {
+        if (ai) {
+            this._aiTextSearchResult.cachedSearchComplete = cachedSearchComplete;
+        }
+        else {
+            this._plainTextSearchResult.cachedSearchComplete = cachedSearchComplete;
+        }
+    }
+    getCachedSearchComplete(ai) {
+        if (ai) {
+            return this._aiTextSearchResult.cachedSearchComplete;
+        }
+        return this._plainTextSearchResult.cachedSearchComplete;
+    }
+    toggleHighlights(value, ai = false) {
+        if (ai) {
+            this._aiTextSearchResult.toggleHighlights(value);
+        }
+        else {
+            this._plainTextSearchResult.toggleHighlights(value);
+        }
+    }
+    getRangeHighlightDecorations(ai = false) {
+        if (ai) {
+            return this._aiTextSearchResult.rangeHighlightDecorations;
+        }
+        return this._plainTextSearchResult.rangeHighlightDecorations;
+    }
+    replaceAll(progress) {
+        return this._plainTextSearchResult.replaceAll(progress);
+    }
+    async dispose() {
+        this._aiTextSearchResult?.dispose();
+        this._plainTextSearchResult?.dispose();
+        this._onWillChangeModelListener?.dispose();
+        this._onDidChangeModelListener?.dispose();
+        super.dispose();
+    }
+};
+SearchResult = __decorate([
+    __param(1, IInstantiationService),
+    __param(2, IModelService),
+    __param(3, INotebookEditorService),
+    __metadata("design:paramtypes", [SearchModel, Object, Object, Object])
+], SearchResult);
+export { SearchResult };
+export var SearchModelLocation;
+(function (SearchModelLocation) {
+    SearchModelLocation[SearchModelLocation["PANEL"] = 0] = "PANEL";
+    SearchModelLocation[SearchModelLocation["QUICK_ACCESS"] = 1] = "QUICK_ACCESS";
+})(SearchModelLocation || (SearchModelLocation = {}));
+let SearchModel = class SearchModel extends Disposable {
+    constructor(searchService, telemetryService, configurationService, instantiationService, logService, notebookSearchService) {
+        super();
+        this.searchService = searchService;
+        this.telemetryService = telemetryService;
+        this.configurationService = configurationService;
+        this.instantiationService = instantiationService;
+        this.logService = logService;
+        this.notebookSearchService = notebookSearchService;
+        this._searchQuery = null;
+        this._replaceActive = false;
+        this._replaceString = null;
+        this._replacePattern = null;
+        this._preserveCase = false;
+        this._startStreamDelay = Promise.resolve();
+        this._resultQueue = [];
+        this._aiResultQueue = [];
+        this._onReplaceTermChanged = this._register(new Emitter());
+        this.onReplaceTermChanged = this._onReplaceTermChanged.event;
+        this._onSearchResultChanged = this._register(new PauseableEmitter({
+            merge: mergeSearchResultEvents
+        }));
+        this.onSearchResultChanged = this._onSearchResultChanged.event;
+        this.currentCancelTokenSource = null;
+        this.currentAICancelTokenSource = null;
+        this.searchCancelledForNewSearch = false;
+        this.aiSearchCancelledForNewSearch = false;
+        this.location = SearchModelLocation.PANEL;
+        this._searchResult = this.instantiationService.createInstance(SearchResult, this);
+        this._register(this._searchResult.onChange((e) => this._onSearchResultChanged.fire(e)));
+        this._aiTextResultProviderName = new Lazy(async () => this.searchService.getAIName());
+    }
+    async getAITextResultProviderName() {
+        const result = await this._aiTextResultProviderName.value;
+        if (!result) {
+            throw Error('Fetching AI name when no provider present.');
+        }
+        return result;
+    }
+    isReplaceActive() {
+        return this._replaceActive;
+    }
+    set replaceActive(replaceActive) {
+        this._replaceActive = replaceActive;
+    }
+    get replacePattern() {
+        return this._replacePattern;
+    }
+    get replaceString() {
+        return this._replaceString || '';
+    }
+    set preserveCase(value) {
+        this._preserveCase = value;
+    }
+    get preserveCase() {
+        return this._preserveCase;
+    }
+    set replaceString(replaceString) {
+        this._replaceString = replaceString;
+        if (this._searchQuery) {
+            this._replacePattern = new ReplacePattern(replaceString, this._searchQuery.contentPattern);
+        }
+        this._onReplaceTermChanged.fire();
+    }
+    get searchResult() {
+        return this._searchResult;
+    }
+    async addAIResults(onProgress) {
+        if (this.hasAIResults) {
+            throw Error('AI results already exist');
+        }
+        else {
+            if (this._searchQuery) {
+                return this.aiSearch({ ...this._searchQuery, contentPattern: this._searchQuery.contentPattern.pattern, type: 3 }, onProgress);
+            }
+            else {
+                throw Error('No search query');
+            }
+        }
+    }
+    aiSearch(query, onProgress) {
+        const searchInstanceID = Date.now().toString();
+        const tokenSource = new CancellationTokenSource();
+        this.currentAICancelTokenSource = tokenSource;
+        const start = Date.now();
+        const asyncAIResults = this.searchService.aiTextSearch(query, tokenSource.token, async (p) => {
+            this.onSearchProgress(p, searchInstanceID, false, true);
+            onProgress?.(p);
+        }).finally(() => {
+            tokenSource.dispose(true);
+        }).then(value => {
+            this.onSearchCompleted(value, Date.now() - start, searchInstanceID, true);
+            return value;
+        }, e => {
+            this.onSearchError(e, Date.now() - start, true);
+            throw e;
+        });
+        return asyncAIResults;
+    }
+    doSearch(query, progressEmitter, searchQuery, searchInstanceID, onProgress, callerToken) {
+        const asyncGenerateOnProgress = async (p) => {
+            progressEmitter.fire();
+            this.onSearchProgress(p, searchInstanceID, false, false);
+            onProgress?.(p);
+        };
+        const syncGenerateOnProgress = (p) => {
+            progressEmitter.fire();
+            this.onSearchProgress(p, searchInstanceID, true);
+            onProgress?.(p);
+        };
+        const tokenSource = this.currentCancelTokenSource = new CancellationTokenSource(callerToken);
+        const notebookResult = this.notebookSearchService.notebookSearch(query, tokenSource.token, searchInstanceID, asyncGenerateOnProgress);
+        const textResult = this.searchService.textSearchSplitSyncAsync(searchQuery, tokenSource.token, asyncGenerateOnProgress, notebookResult.openFilesToScan, notebookResult.allScannedFiles);
+        const syncResults = textResult.syncResults.results;
+        syncResults.forEach(p => { if (p) {
+            syncGenerateOnProgress(p);
+        } });
+        const getAsyncResults = async () => {
+            const searchStart = Date.now();
+            const allClosedEditorResults = await textResult.asyncResults;
+            const resolvedNotebookResults = await notebookResult.completeData;
+            const searchLength = Date.now() - searchStart;
+            const resolvedResult = {
+                results: [...allClosedEditorResults.results, ...resolvedNotebookResults.results],
+                messages: [...allClosedEditorResults.messages, ...resolvedNotebookResults.messages],
+                limitHit: allClosedEditorResults.limitHit || resolvedNotebookResults.limitHit,
+                exit: allClosedEditorResults.exit,
+                stats: allClosedEditorResults.stats,
+            };
+            this.logService.trace(`whole search time | ${searchLength}ms`);
+            return resolvedResult;
+        };
+        return {
+            asyncResults: getAsyncResults()
+                .finally(() => tokenSource.dispose(true)),
+            syncResults
+        };
+    }
+    get hasAIResults() {
+        return !!(this.searchResult.getCachedSearchComplete(true)) || (!!this.currentAICancelTokenSource && !this.currentAICancelTokenSource.token.isCancellationRequested);
+    }
+    get hasPlainResults() {
+        return !!(this.searchResult.getCachedSearchComplete(false)) || (!!this.currentCancelTokenSource && !this.currentCancelTokenSource.token.isCancellationRequested);
+    }
+    search(query, onProgress, callerToken) {
+        this.cancelSearch(true);
+        this._searchQuery = query;
+        if (!this.searchConfig.searchOnType) {
+            this.searchResult.clear();
+        }
+        const searchInstanceID = Date.now().toString();
+        this._searchResult.query = this._searchQuery;
+        const progressEmitter = this._register(new Emitter());
+        this._replacePattern = new ReplacePattern(this.replaceString, this._searchQuery.contentPattern);
+        this._startStreamDelay = new Promise(resolve => setTimeout(resolve, this.searchConfig.searchOnType ? 150 : 0));
+        const req = this.doSearch(query, progressEmitter, this._searchQuery, searchInstanceID, onProgress, callerToken);
+        const asyncResults = req.asyncResults;
+        const syncResults = req.syncResults;
+        if (onProgress) {
+            syncResults.forEach(p => {
+                if (p) {
+                    onProgress(p);
+                }
+            });
+        }
+        const start = Date.now();
+        let event;
+        const progressEmitterPromise = new Promise(resolve => {
+            event = Event.once(progressEmitter.event)(resolve);
+            return event;
+        });
+        Promise.race([asyncResults, progressEmitterPromise]).finally(() => {
+            event?.dispose();
+            this.telemetryService.publicLog('searchResultsFirstRender', { duration: Date.now() - start });
+        });
+        try {
+            return {
+                asyncResults: asyncResults.then(value => {
+                    this.onSearchCompleted(value, Date.now() - start, searchInstanceID, false);
+                    return value;
+                }, e => {
+                    this.onSearchError(e, Date.now() - start, false);
+                    throw e;
+                }),
+                syncResults
+            };
+        }
+        finally {
+            this.telemetryService.publicLog('searchResultsFinished', { duration: Date.now() - start });
+        }
+    }
+    onSearchCompleted(completed, duration, searchInstanceID, ai) {
+        if (!this._searchQuery) {
+            throw new Error('onSearchCompleted must be called after a search is started');
+        }
+        if (ai) {
+            this._searchResult.add(this._aiResultQueue, searchInstanceID, true);
+            this._aiResultQueue.length = 0;
+        }
+        else {
+            this._searchResult.add(this._resultQueue, searchInstanceID, false);
+            this._resultQueue.length = 0;
+        }
+        this.searchResult.setCachedSearchComplete(completed, ai);
+        const options = Object.assign({}, this._searchQuery.contentPattern);
+        delete options.pattern;
+        const stats = completed && completed.stats;
+        const fileSchemeOnly = this._searchQuery.folderQueries.every(fq => fq.folder.scheme === Schemas.file);
+        const otherSchemeOnly = this._searchQuery.folderQueries.every(fq => fq.folder.scheme !== Schemas.file);
+        const scheme = fileSchemeOnly ? Schemas.file :
+            otherSchemeOnly ? 'other' :
+                'mixed';
+        this.telemetryService.publicLog('searchResultsShown', {
+            count: this._searchResult.count(),
+            fileCount: this._searchResult.fileCount(),
+            options,
+            duration,
+            type: stats && stats.type,
+            scheme,
+            searchOnTypeEnabled: this.searchConfig.searchOnType
+        });
+        return completed;
+    }
+    onSearchError(e, duration, ai) {
+        if (errors.isCancellationError(e)) {
+            this.onSearchCompleted((ai ? this.aiSearchCancelledForNewSearch : this.searchCancelledForNewSearch)
+                ? { exit: 1, results: [], messages: [] }
+                : undefined, duration, '', ai);
+            if (ai) {
+                this.aiSearchCancelledForNewSearch = false;
+            }
+            else {
+                this.searchCancelledForNewSearch = false;
+            }
+        }
+    }
+    onSearchProgress(p, searchInstanceID, sync = true, ai = false) {
+        const targetQueue = ai ? this._aiResultQueue : this._resultQueue;
+        if (p.resource) {
+            targetQueue.push(p);
+            if (sync) {
+                if (targetQueue.length) {
+                    this._searchResult.add(targetQueue, searchInstanceID, false, true);
+                    targetQueue.length = 0;
+                }
+            }
+            else {
+                this._startStreamDelay.then(() => {
+                    if (targetQueue.length) {
+                        this._searchResult.add(targetQueue, searchInstanceID, ai, true);
+                        targetQueue.length = 0;
+                    }
+                });
+            }
+        }
+    }
+    get searchConfig() {
+        return this.configurationService.getValue('search');
+    }
+    cancelSearch(cancelledForNewSearch = false) {
+        if (this.currentCancelTokenSource) {
+            this.searchCancelledForNewSearch = cancelledForNewSearch;
+            this.currentCancelTokenSource.cancel();
+            return true;
+        }
+        return false;
+    }
+    cancelAISearch(cancelledForNewSearch = false) {
+        if (this.currentAICancelTokenSource) {
+            this.aiSearchCancelledForNewSearch = cancelledForNewSearch;
+            this.currentAICancelTokenSource.cancel();
+            return true;
+        }
+        return false;
+    }
+    dispose() {
+        this.cancelSearch();
+        this.cancelAISearch();
+        this.searchResult.dispose();
+        super.dispose();
+    }
+};
+SearchModel = __decorate([
+    __param(0, ISearchService),
+    __param(1, ITelemetryService),
+    __param(2, IConfigurationService),
+    __param(3, IInstantiationService),
+    __param(4, ILogService),
+    __param(5, INotebookSearchService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], SearchModel);
+export { SearchModel };
+let SearchViewModelWorkbenchService = class SearchViewModelWorkbenchService {
+    constructor(instantiationService) {
+        this.instantiationService = instantiationService;
+        this._searchModel = null;
+    }
+    get searchModel() {
+        if (!this._searchModel) {
+            this._searchModel = this.instantiationService.createInstance(SearchModel);
+        }
+        return this._searchModel;
+    }
+    set searchModel(searchModel) {
+        this._searchModel?.dispose();
+        this._searchModel = searchModel;
+    }
+};
+SearchViewModelWorkbenchService = __decorate([
+    __param(0, IInstantiationService),
+    __metadata("design:paramtypes", [Object])
+], SearchViewModelWorkbenchService);
+export { SearchViewModelWorkbenchService };
+export const ISearchViewModelWorkbenchService = createDecorator('searchViewModelWorkbenchService');
+let RangeHighlightDecorations = class RangeHighlightDecorations {
+    static { RangeHighlightDecorations_1 = this; }
+    constructor(_modelService) {
+        this._modelService = _modelService;
+        this._decorationId = null;
+        this._model = null;
+        this._modelDisposables = new DisposableStore();
+    }
+    removeHighlightRange() {
+        if (this._model && this._decorationId) {
+            const decorationId = this._decorationId;
+            this._model.changeDecorations((accessor) => {
+                accessor.removeDecoration(decorationId);
+            });
+        }
+        this._decorationId = null;
+    }
+    highlightRange(resource, range, ownerId = 0) {
+        let model;
+        if (URI.isUri(resource)) {
+            model = this._modelService.getModel(resource);
+        }
+        else {
+            model = resource;
+        }
+        if (model) {
+            this.doHighlightRange(model, range);
+        }
+    }
+    doHighlightRange(model, range) {
+        this.removeHighlightRange();
+        model.changeDecorations((accessor) => {
+            this._decorationId = accessor.addDecoration(range, RangeHighlightDecorations_1._RANGE_HIGHLIGHT_DECORATION);
+        });
+        this.setModel(model);
+    }
+    setModel(model) {
+        if (this._model !== model) {
+            this.clearModelListeners();
+            this._model = model;
+            this._modelDisposables.add(this._model.onDidChangeDecorations((e) => {
+                this.clearModelListeners();
+                this.removeHighlightRange();
+                this._model = null;
+            }));
+            this._modelDisposables.add(this._model.onWillDispose(() => {
+                this.clearModelListeners();
+                this.removeHighlightRange();
+                this._model = null;
+            }));
+        }
+    }
+    clearModelListeners() {
+        this._modelDisposables.clear();
+    }
+    dispose() {
+        if (this._model) {
+            this.removeHighlightRange();
+            this._model = null;
+        }
+        this._modelDisposables.dispose();
+    }
+    static { this._RANGE_HIGHLIGHT_DECORATION = ModelDecorationOptions.register({
+        description: 'search-range-highlight',
+        stickiness: 1,
+        className: 'rangeHighlight',
+        isWholeLine: true
+    }); }
+};
+RangeHighlightDecorations = RangeHighlightDecorations_1 = __decorate([
+    __param(0, IModelService),
+    __metadata("design:paramtypes", [Object])
+], RangeHighlightDecorations);
+export { RangeHighlightDecorations };
+function textSearchResultToMatches(rawMatch, fileMatch, isAiContributed) {
+    const previewLines = rawMatch.previewText.split('\n');
+    return rawMatch.rangeLocations.map((rangeLocation) => {
+        const previewRange = rangeLocation.preview;
+        return new Match(fileMatch, previewLines, previewRange, rangeLocation.source, isAiContributed);
+    });
+}
+export function textSearchMatchesToNotebookMatches(textSearchMatches, cell) {
+    const notebookMatches = [];
+    textSearchMatches.forEach((textSearchMatch) => {
+        const previewLines = textSearchMatch.previewText.split('\n');
+        textSearchMatch.rangeLocations.map((rangeLocation) => {
+            const previewRange = rangeLocation.preview;
+            const match = new MatchInNotebook(cell, previewLines, previewRange, rangeLocation.source, textSearchMatch.webviewIndex);
+            notebookMatches.push(match);
+        });
+    });
+    return notebookMatches;
+}
+export function arrayContainsElementOrParent(element, testArray) {
+    do {
+        if (testArray.includes(element)) {
+            return true;
+        }
+    } while (!(element.parent() instanceof SearchResult) && (element = element.parent()));
+    return false;
+}
+function getFileMatches(matches) {
+    const folderMatches = [];
+    const fileMatches = [];
+    matches.forEach((e) => {
+        if (e instanceof FileMatch) {
+            fileMatches.push(e);
+        }
+        else {
+            folderMatches.push(e);
+        }
+    });
+    return fileMatches.concat(folderMatches.map(e => e.allDownstreamFileMatches()).flat());
+}
+function mergeSearchResultEvents(events) {
+    const retEvent = {
+        elements: [],
+        added: false,
+        removed: false,
+    };
+    events.forEach((e) => {
+        if (e.added) {
+            retEvent.added = true;
+        }
+        if (e.removed) {
+            retEvent.removed = true;
+        }
+        retEvent.elements = retEvent.elements.concat(e.elements);
+    });
+    return retEvent;
+}

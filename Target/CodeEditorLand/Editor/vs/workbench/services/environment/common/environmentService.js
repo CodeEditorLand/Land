@@ -1,1 +1,3 @@
-import{refineServiceDecorator as e}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/window/common/window.js";import{IEnvironmentService as o}from"../../../../platform/environment/common/environment.js";import"../../../../base/common/uri.js";const d=e(o);export{d as IWorkbenchEnvironmentService};
+import { refineServiceDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IEnvironmentService } from '../../../../platform/environment/common/environment.js';
+export const IWorkbenchEnvironmentService = refineServiceDecorator(IEnvironmentService);

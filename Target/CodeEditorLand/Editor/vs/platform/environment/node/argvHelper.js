@@ -1,1 +1,74 @@
-import u from"assert";import"../../../base/common/platform.js";import{localize as g}from"../../../nls.js";import"../common/argv.js";import{NATIVE_CLI_COMMANDS as p,OPTIONS as m,parseArgs as f}from"./argv.js";function c(n,e){const o=(r,d)=>{},i=r=>{},s=(r,d)=>{},a=r=>({onUnknownOption:d=>{p.includes(r)},onMultipleValues:o,onEmptyValue:i,onDeprecatedOption:s,getSubcommandReporter:p.includes(r)?a:void 0}),t=f(n,m,e?{onUnknownOption:r=>{},onMultipleValues:o,onEmptyValue:i,onDeprecatedOption:s,getSubcommandReporter:a}:void 0);return t.goto&&t._.forEach(r=>u(/^(\w:)?[^:]+(:\d*){0,2}:?$/.test(r),g("gotoValidation","Arguments in `--goto` mode should be in the format of `FILE(:LINE(:CHARACTER))`."))),t}function l(n){const e=n.findIndex(o=>!/^-/.test(o));if(e>-1)return[...n.slice(0,e),...n.slice(e+1)]}function b(n){let[,...e]=n;process.env.VSCODE_DEV&&(e=l(e)||[]);const o=!O(process.env);return c(e,o)}function x(n){let[,,...e]=n;return process.env.VSCODE_DEV&&(e=l(e)||[]),c(e,!0)}function N(n,...e){const o=n.indexOf("--");return o===-1?n.push(...e):n.splice(o,0,...e),n}function O(n){return n.VSCODE_CLI==="1"}export{N as addArg,O as isLaunchedFromCli,x as parseCLIProcessArgv,b as parseMainProcessArgv};
+import assert from 'assert';
+import { localize } from '../../../nls.js';
+import { NATIVE_CLI_COMMANDS, OPTIONS, parseArgs } from './argv.js';
+function parseAndValidate(cmdLineArgs, reportWarnings) {
+    const onMultipleValues = (id, val) => {
+        console.warn(localize('multipleValues', "Option '{0}' is defined more than once. Using value '{1}'.", id, val));
+    };
+    const onEmptyValue = (id) => {
+        console.warn(localize('emptyValue', "Option '{0}' requires a non empty value. Ignoring the option.", id));
+    };
+    const onDeprecatedOption = (deprecatedOption, message) => {
+        console.warn(localize('deprecatedArgument', "Option '{0}' is deprecated: {1}", deprecatedOption, message));
+    };
+    const getSubcommandReporter = (command) => ({
+        onUnknownOption: (id) => {
+            if (!NATIVE_CLI_COMMANDS.includes(command)) {
+                console.warn(localize('unknownSubCommandOption', "Warning: '{0}' is not in the list of known options for subcommand '{1}'", id, command));
+            }
+        },
+        onMultipleValues,
+        onEmptyValue,
+        onDeprecatedOption,
+        getSubcommandReporter: NATIVE_CLI_COMMANDS.includes(command) ? getSubcommandReporter : undefined
+    });
+    const errorReporter = {
+        onUnknownOption: (id) => {
+            console.warn(localize('unknownOption', "Warning: '{0}' is not in the list of known options, but still passed to Electron/Chromium.", id));
+        },
+        onMultipleValues,
+        onEmptyValue,
+        onDeprecatedOption,
+        getSubcommandReporter
+    };
+    const args = parseArgs(cmdLineArgs, OPTIONS, reportWarnings ? errorReporter : undefined);
+    if (args.goto) {
+        args._.forEach(arg => assert(/^(\w:)?[^:]+(:\d*){0,2}:?$/.test(arg), localize('gotoValidation', "Arguments in `--goto` mode should be in the format of `FILE(:LINE(:CHARACTER))`.")));
+    }
+    return args;
+}
+function stripAppPath(argv) {
+    const index = argv.findIndex(a => !/^-/.test(a));
+    if (index > -1) {
+        return [...argv.slice(0, index), ...argv.slice(index + 1)];
+    }
+    return undefined;
+}
+export function parseMainProcessArgv(processArgv) {
+    let [, ...args] = processArgv;
+    if (process.env['VSCODE_DEV']) {
+        args = stripAppPath(args) || [];
+    }
+    const reportWarnings = !isLaunchedFromCli(process.env);
+    return parseAndValidate(args, reportWarnings);
+}
+export function parseCLIProcessArgv(processArgv) {
+    let [, , ...args] = processArgv;
+    if (process.env['VSCODE_DEV']) {
+        args = stripAppPath(args) || [];
+    }
+    return parseAndValidate(args, true);
+}
+export function addArg(argv, ...args) {
+    const endOfArgsMarkerIndex = argv.indexOf('--');
+    if (endOfArgsMarkerIndex === -1) {
+        argv.push(...args);
+    }
+    else {
+        argv.splice(endOfArgsMarkerIndex, 0, ...args);
+    }
+    return argv;
+}
+export function isLaunchedFromCli(env) {
+    return env['VSCODE_CLI'] === '1';
+}

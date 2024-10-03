@@ -1,2 +1,202 @@
-import*as b from"../../../../base/common/strings.js";import"./search.js";import{CharCode as n}from"../../../../base/common/charCode.js";import{buildReplaceStringWithCasePreserved as m}from"../../../../base/common/search.js";class P{_replacePattern;_hasParameters=!1;_regExp;_caseOpsRegExp;constructor(t,r,s){this._replacePattern=t;let e,a;typeof r=="boolean"?(a=r,this._regExp=s):(e=r,a=!!e.isRegExp,this._regExp=b.createRegExp(e.pattern,!!e.isRegExp,{matchCase:e.isCaseSensitive,wholeWord:e.isWordMatch,multiline:e.isMultiline,global:!1,unicode:!0})),a&&this.parseReplaceString(t),this._regExp.global&&(this._regExp=b.createRegExp(this._regExp.source,!0,{matchCase:!this._regExp.ignoreCase,wholeWord:!1,multiline:this._regExp.multiline,global:!1})),this._caseOpsRegExp=new RegExp(/([\s\S]*?)((?:\\[uUlL])+?|)(\$[0-9]+)([\s\S]*?)/g)}get hasParameters(){return this._hasParameters}get pattern(){return this._replacePattern}get regExp(){return this._regExp}getReplaceString(t,r){this._regExp.lastIndex=0;const s=this._regExp.exec(t);if(s){if(this.hasParameters){const e=this.replaceWithCaseOperations(t,this._regExp,this.buildReplaceString(s,r));return s[0]===t?e:e.substr(s.index,s[0].length-(t.length-e.length))}return this.buildReplaceString(s,r)}return null}replaceWithCaseOperations(t,r,s){if(!/\\[uUlL]/.test(s))return t.replace(r,s);const e=r.exec(t);if(e===null)return t.replace(r,s);let a,i="",o=0,l="";for(;(a=this._caseOpsRegExp.exec(s))!==null;){o=a.index;const c=a[0];l=c;let g=a[2];const f=a[3];if(!g){i+=c;continue}const p=e[parseInt(f.slice(1))];if(!p){i+=c;continue}const u=p.length;i+=a[1],g=g.replace(/\\/g,"");let h=0;for(;h<g.length;h++)switch(g[h]){case"U":i+=p.slice(h).toUpperCase(),h=u;break;case"u":i+=p[h].toUpperCase();break;case"L":i+=p.slice(h).toLowerCase(),h=u;break;case"l":i+=p[h].toLowerCase();break}h<u&&(i+=p.slice(h)),i+=a[4]}return i+=s.slice(o+l.length),t.replace(r,i)}buildReplaceString(t,r){return r?m(t,this._replacePattern):this._replacePattern}parseReplaceString(t){if(!t||t.length===0)return;let r=0,s="";for(let e=0,a=t.length;e<a;e++){const i=t.charCodeAt(e);if(i===n.Backslash){if(e++,e>=a)break;const o=t.charCodeAt(e);let l=null;switch(o){case n.Backslash:l="\\";break;case n.n:l=`
-`;break;case n.t:l="	";break}l&&(s+=t.substring(r,e-1)+l,r=e+1)}if(i===n.DollarSign){if(e++,e>=a)break;const o=t.charCodeAt(e);let l=null;switch(o){case n.Digit0:l="$&",this._hasParameters=!0;break;case n.BackTick:case n.SingleQuote:this._hasParameters=!0;break;default:{if(!this.between(o,n.Digit1,n.Digit9))break;if(e===t.length-1){this._hasParameters=!0;break}let c=t.charCodeAt(++e);if(!this.between(c,n.Digit0,n.Digit9)){this._hasParameters=!0,--e;break}if(e===t.length-1){this._hasParameters=!0;break}if(c=t.charCodeAt(++e),!this.between(c,n.Digit0,n.Digit9)){this._hasParameters=!0,--e;break}break}}l&&(s+=t.substring(r,e-1)+l,r=e+1)}}r!==0&&(this._replacePattern=s+t.substring(r))}between(t,r,s){return r<=t&&t<=s}}export{P as ReplacePattern};
+import * as strings from '../../../../base/common/strings.js';
+import { buildReplaceStringWithCasePreserved } from '../../../../base/common/search.js';
+export class ReplacePattern {
+    constructor(replaceString, arg2, arg3) {
+        this._hasParameters = false;
+        this._replacePattern = replaceString;
+        let searchPatternInfo;
+        let parseParameters;
+        if (typeof arg2 === 'boolean') {
+            parseParameters = arg2;
+            this._regExp = arg3;
+        }
+        else {
+            searchPatternInfo = arg2;
+            parseParameters = !!searchPatternInfo.isRegExp;
+            this._regExp = strings.createRegExp(searchPatternInfo.pattern, !!searchPatternInfo.isRegExp, { matchCase: searchPatternInfo.isCaseSensitive, wholeWord: searchPatternInfo.isWordMatch, multiline: searchPatternInfo.isMultiline, global: false, unicode: true });
+        }
+        if (parseParameters) {
+            this.parseReplaceString(replaceString);
+        }
+        if (this._regExp.global) {
+            this._regExp = strings.createRegExp(this._regExp.source, true, { matchCase: !this._regExp.ignoreCase, wholeWord: false, multiline: this._regExp.multiline, global: false });
+        }
+        this._caseOpsRegExp = new RegExp(/([\s\S]*?)((?:\\[uUlL])+?|)(\$[0-9]+)([\s\S]*?)/g);
+    }
+    get hasParameters() {
+        return this._hasParameters;
+    }
+    get pattern() {
+        return this._replacePattern;
+    }
+    get regExp() {
+        return this._regExp;
+    }
+    getReplaceString(text, preserveCase) {
+        this._regExp.lastIndex = 0;
+        const match = this._regExp.exec(text);
+        if (match) {
+            if (this.hasParameters) {
+                const replaceString = this.replaceWithCaseOperations(text, this._regExp, this.buildReplaceString(match, preserveCase));
+                if (match[0] === text) {
+                    return replaceString;
+                }
+                return replaceString.substr(match.index, match[0].length - (text.length - replaceString.length));
+            }
+            return this.buildReplaceString(match, preserveCase);
+        }
+        return null;
+    }
+    replaceWithCaseOperations(text, regex, replaceString) {
+        if (!/\\[uUlL]/.test(replaceString)) {
+            return text.replace(regex, replaceString);
+        }
+        const firstMatch = regex.exec(text);
+        if (firstMatch === null) {
+            return text.replace(regex, replaceString);
+        }
+        let patMatch;
+        let newReplaceString = '';
+        let lastIndex = 0;
+        let lastMatch = '';
+        while ((patMatch = this._caseOpsRegExp.exec(replaceString)) !== null) {
+            lastIndex = patMatch.index;
+            const fullMatch = patMatch[0];
+            lastMatch = fullMatch;
+            let caseOps = patMatch[2];
+            const money = patMatch[3];
+            if (!caseOps) {
+                newReplaceString += fullMatch;
+                continue;
+            }
+            const replacement = firstMatch[parseInt(money.slice(1))];
+            if (!replacement) {
+                newReplaceString += fullMatch;
+                continue;
+            }
+            const replacementLen = replacement.length;
+            newReplaceString += patMatch[1];
+            caseOps = caseOps.replace(/\\/g, '');
+            let i = 0;
+            for (; i < caseOps.length; i++) {
+                switch (caseOps[i]) {
+                    case 'U':
+                        newReplaceString += replacement.slice(i).toUpperCase();
+                        i = replacementLen;
+                        break;
+                    case 'u':
+                        newReplaceString += replacement[i].toUpperCase();
+                        break;
+                    case 'L':
+                        newReplaceString += replacement.slice(i).toLowerCase();
+                        i = replacementLen;
+                        break;
+                    case 'l':
+                        newReplaceString += replacement[i].toLowerCase();
+                        break;
+                }
+            }
+            if (i < replacementLen) {
+                newReplaceString += replacement.slice(i);
+            }
+            newReplaceString += patMatch[4];
+        }
+        newReplaceString += replaceString.slice(lastIndex + lastMatch.length);
+        return text.replace(regex, newReplaceString);
+    }
+    buildReplaceString(matches, preserveCase) {
+        if (preserveCase) {
+            return buildReplaceStringWithCasePreserved(matches, this._replacePattern);
+        }
+        else {
+            return this._replacePattern;
+        }
+    }
+    parseReplaceString(replaceString) {
+        if (!replaceString || replaceString.length === 0) {
+            return;
+        }
+        let substrFrom = 0, result = '';
+        for (let i = 0, len = replaceString.length; i < len; i++) {
+            const chCode = replaceString.charCodeAt(i);
+            if (chCode === 92) {
+                i++;
+                if (i >= len) {
+                    break;
+                }
+                const nextChCode = replaceString.charCodeAt(i);
+                let replaceWithCharacter = null;
+                switch (nextChCode) {
+                    case 92:
+                        replaceWithCharacter = '\\';
+                        break;
+                    case 110:
+                        replaceWithCharacter = '\n';
+                        break;
+                    case 116:
+                        replaceWithCharacter = '\t';
+                        break;
+                }
+                if (replaceWithCharacter) {
+                    result += replaceString.substring(substrFrom, i - 1) + replaceWithCharacter;
+                    substrFrom = i + 1;
+                }
+            }
+            if (chCode === 36) {
+                i++;
+                if (i >= len) {
+                    break;
+                }
+                const nextChCode = replaceString.charCodeAt(i);
+                let replaceWithCharacter = null;
+                switch (nextChCode) {
+                    case 48:
+                        replaceWithCharacter = '$&';
+                        this._hasParameters = true;
+                        break;
+                    case 96:
+                    case 39:
+                        this._hasParameters = true;
+                        break;
+                    default: {
+                        if (!this.between(nextChCode, 49, 57)) {
+                            break;
+                        }
+                        if (i === replaceString.length - 1) {
+                            this._hasParameters = true;
+                            break;
+                        }
+                        let charCode = replaceString.charCodeAt(++i);
+                        if (!this.between(charCode, 48, 57)) {
+                            this._hasParameters = true;
+                            --i;
+                            break;
+                        }
+                        if (i === replaceString.length - 1) {
+                            this._hasParameters = true;
+                            break;
+                        }
+                        charCode = replaceString.charCodeAt(++i);
+                        if (!this.between(charCode, 48, 57)) {
+                            this._hasParameters = true;
+                            --i;
+                            break;
+                        }
+                        break;
+                    }
+                }
+                if (replaceWithCharacter) {
+                    result += replaceString.substring(substrFrom, i - 1) + replaceWithCharacter;
+                    substrFrom = i + 1;
+                }
+            }
+        }
+        if (substrFrom === 0) {
+            return;
+        }
+        this._replacePattern = result + replaceString.substring(substrFrom);
+    }
+    between(value, from, to) {
+        return from <= value && value <= to;
+    }
+}

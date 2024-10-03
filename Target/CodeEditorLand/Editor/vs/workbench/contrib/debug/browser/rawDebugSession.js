@@ -1,1 +1,700 @@
-var f=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var m=(c,e,t,o)=>{for(var r=o>1?void 0:o?v(e,t):e,s=c.length-1,i;s>=0;s--)(i=c[s])&&(r=(o?i(e,t,r):i(r))||r);return o&&r&&f(e,t,r),r},l=(c,e)=>(t,o)=>e(t,o,c);import*as g from"../../../../nls.js";import{Emitter as a}from"../../../../base/common/event.js";import*as E from"../../../../base/common/objects.js";import{toAction as S}from"../../../../base/common/actions.js";import*as D from"../../../../base/common/errors.js";import{createErrorWithActions as R}from"../../../../base/common/errorMessage.js";import{formatPII as y,isUri as h}from"../common/debugUtils.js";import"../common/debug.js";import{IExtensionHostDebugService as I}from"../../../../platform/debug/common/extensionHostDebug.js";import{URI as P}from"../../../../base/common/uri.js";import{IOpenerService as w}from"../../../../platform/opener/common/opener.js";import{dispose as k}from"../../../../base/common/lifecycle.js";import"../../../../base/common/cancellation.js";import{INotificationService as A,Severity as C}from"../../../../platform/notification/common/notification.js";import{IDialogService as T}from"../../../../platform/dialogs/common/dialogs.js";import{Schemas as _}from"../../../../base/common/network.js";let b=class{constructor(e,t,o,r,s,i,u,p){this.dbgr=t;this.sessionId=o;this.name=r;this.extensionHostDebugService=s;this.openerService=i;this.notificationService=u;this.dialogSerivce=p;this.debugAdapter=e,this._capabilities=Object.create(null),this.toDispose.push(this.debugAdapter.onError(n=>{this.shutdown(n)})),this.toDispose.push(this.debugAdapter.onExit(n=>{n!==0?this.shutdown(new Error(`exit code: ${n}`)):this.shutdown()})),this.debugAdapter.onEvent(n=>{switch(n.event){case"initialized":this._readyForBreakpoints=!0,this._onDidInitialize.fire(n);break;case"loadedSource":this._onDidLoadedSource.fire(n);break;case"capabilities":if(n.body){const d=n.body.capabilities;this.mergeCapabilities(d)}break;case"stopped":this.didReceiveStoppedEvent=!0,this.stoppedSinceLastStep=!0,this._onDidStop.fire(n);break;case"continued":this.allThreadsContinued=n.body.allThreadsContinued!==!1,this._onDidContinued.fire(n);break;case"thread":this._onDidThread.fire(n);break;case"output":this._onDidOutput.fire(n);break;case"breakpoint":this._onDidBreakpoint.fire(n);break;case"terminated":this._onDidTerminateDebugee.fire(n);break;case"exited":this._onDidExitDebugee.fire(n);break;case"progressStart":this._onDidProgressStart.fire(n);break;case"progressUpdate":this._onDidProgressUpdate.fire(n);break;case"progressEnd":this._onDidProgressEnd.fire(n);break;case"invalidated":this._onDidInvalidated.fire(n);break;case"memory":this._onDidInvalidateMemory.fire(n);break;case"process":break;case"module":break;default:this._onDidCustomEvent.fire(n);break}this._onDidEvent.fire(n)}),this.debugAdapter.onRequest(n=>this.dispatchRequest(n))}allThreadsContinued=!0;_readyForBreakpoints=!1;_capabilities;debugAdapterStopped=!1;inShutdown=!1;terminated=!1;firedAdapterExitEvent=!1;startTime=0;didReceiveStoppedEvent=!1;_onDidInitialize=new a;_onDidStop=new a;_onDidContinued=new a;_onDidTerminateDebugee=new a;_onDidExitDebugee=new a;_onDidThread=new a;_onDidOutput=new a;_onDidBreakpoint=new a;_onDidLoadedSource=new a;_onDidProgressStart=new a;_onDidProgressUpdate=new a;_onDidProgressEnd=new a;_onDidInvalidated=new a;_onDidInvalidateMemory=new a;_onDidCustomEvent=new a;_onDidEvent=new a;_onDidExitAdapter=new a;debugAdapter;stoppedSinceLastStep=!1;toDispose=[];get isInShutdown(){return this.inShutdown}get onDidExitAdapter(){return this._onDidExitAdapter.event}get capabilities(){return this._capabilities}get readyForBreakpoints(){return this._readyForBreakpoints}get onDidInitialize(){return this._onDidInitialize.event}get onDidStop(){return this._onDidStop.event}get onDidContinued(){return this._onDidContinued.event}get onDidTerminateDebugee(){return this._onDidTerminateDebugee.event}get onDidExitDebugee(){return this._onDidExitDebugee.event}get onDidThread(){return this._onDidThread.event}get onDidOutput(){return this._onDidOutput.event}get onDidBreakpoint(){return this._onDidBreakpoint.event}get onDidLoadedSource(){return this._onDidLoadedSource.event}get onDidCustomEvent(){return this._onDidCustomEvent.event}get onDidProgressStart(){return this._onDidProgressStart.event}get onDidProgressUpdate(){return this._onDidProgressUpdate.event}get onDidProgressEnd(){return this._onDidProgressEnd.event}get onDidInvalidated(){return this._onDidInvalidated.event}get onDidInvalidateMemory(){return this._onDidInvalidateMemory.event}get onDidEvent(){return this._onDidEvent.event}async start(){if(!this.debugAdapter)return Promise.reject(new Error(g.localize("noDebugAdapterStart","No debug adapter, can not start debug session.")));await this.debugAdapter.startSession(),this.startTime=new Date().getTime()}async initialize(e){const t=await this.send("initialize",e,void 0,void 0,!1);return t&&this.mergeCapabilities(t.body),t}disconnect(e){const t=this.capabilities.supportTerminateDebuggee?e.terminateDebuggee:void 0,o=this.capabilities.supportTerminateDebuggee&&this.capabilities.supportSuspendDebuggee?e.suspendDebuggee:void 0;return this.shutdown(void 0,e.restart,t,o)}async launchOrAttach(e){const t=await this.send(e.request,e,void 0,void 0,!1);return t&&this.mergeCapabilities(t.body),t}terminate(e=!1){return this.capabilities.supportsTerminateRequest?this.terminated?this.disconnect({terminateDebuggee:!0,restart:e}):(this.terminated=!0,this.send("terminate",{restart:e},void 0)):Promise.reject(new Error("terminated not supported"))}restart(e){return this.capabilities.supportsRestartRequest?this.send("restart",e):Promise.reject(new Error("restart not supported"))}async next(e){this.stoppedSinceLastStep=!1;const t=await this.send("next",e);return this.stoppedSinceLastStep||this.fireSimulatedContinuedEvent(e.threadId),t}async stepIn(e){this.stoppedSinceLastStep=!1;const t=await this.send("stepIn",e);return this.stoppedSinceLastStep||this.fireSimulatedContinuedEvent(e.threadId),t}async stepOut(e){this.stoppedSinceLastStep=!1;const t=await this.send("stepOut",e);return this.stoppedSinceLastStep||this.fireSimulatedContinuedEvent(e.threadId),t}async continue(e){this.stoppedSinceLastStep=!1;const t=await this.send("continue",e);return t&&t.body&&t.body.allThreadsContinued!==void 0&&(this.allThreadsContinued=t.body.allThreadsContinued),this.stoppedSinceLastStep||this.fireSimulatedContinuedEvent(e.threadId,this.allThreadsContinued),t}pause(e){return this.send("pause",e)}terminateThreads(e){return this.capabilities.supportsTerminateThreadsRequest?this.send("terminateThreads",e):Promise.reject(new Error("terminateThreads not supported"))}setVariable(e){return this.capabilities.supportsSetVariable?this.send("setVariable",e):Promise.reject(new Error("setVariable not supported"))}setExpression(e){return this.capabilities.supportsSetExpression?this.send("setExpression",e):Promise.reject(new Error("setExpression not supported"))}async restartFrame(e,t){if(this.capabilities.supportsRestartFrame){this.stoppedSinceLastStep=!1;const o=await this.send("restartFrame",e);return this.stoppedSinceLastStep||this.fireSimulatedContinuedEvent(t),o}return Promise.reject(new Error("restartFrame not supported"))}stepInTargets(e){return this.capabilities.supportsStepInTargetsRequest?this.send("stepInTargets",e):Promise.reject(new Error("stepInTargets not supported"))}completions(e,t){return this.capabilities.supportsCompletionsRequest?this.send("completions",e,t):Promise.reject(new Error("completions not supported"))}setBreakpoints(e){return this.send("setBreakpoints",e)}setFunctionBreakpoints(e){return this.capabilities.supportsFunctionBreakpoints?this.send("setFunctionBreakpoints",e):Promise.reject(new Error("setFunctionBreakpoints not supported"))}dataBreakpointInfo(e){return this.capabilities.supportsDataBreakpoints?this.send("dataBreakpointInfo",e):Promise.reject(new Error("dataBreakpointInfo not supported"))}setDataBreakpoints(e){return this.capabilities.supportsDataBreakpoints?this.send("setDataBreakpoints",e):Promise.reject(new Error("setDataBreakpoints not supported"))}setExceptionBreakpoints(e){return this.send("setExceptionBreakpoints",e)}breakpointLocations(e){return this.capabilities.supportsBreakpointLocationsRequest?this.send("breakpointLocations",e):Promise.reject(new Error("breakpointLocations is not supported"))}configurationDone(){return this.capabilities.supportsConfigurationDoneRequest?this.send("configurationDone",null):Promise.reject(new Error("configurationDone not supported"))}stackTrace(e,t){return this.send("stackTrace",e,t)}exceptionInfo(e){return this.capabilities.supportsExceptionInfoRequest?this.send("exceptionInfo",e):Promise.reject(new Error("exceptionInfo not supported"))}scopes(e,t){return this.send("scopes",e,t)}variables(e,t){return this.send("variables",e,t)}source(e){return this.send("source",e)}locations(e){return this.send("locations",e)}loadedSources(e){return this.capabilities.supportsLoadedSourcesRequest?this.send("loadedSources",e):Promise.reject(new Error("loadedSources not supported"))}threads(){return this.send("threads",null)}evaluate(e){return this.send("evaluate",e)}async stepBack(e){if(this.capabilities.supportsStepBack){this.stoppedSinceLastStep=!1;const t=await this.send("stepBack",e);return this.stoppedSinceLastStep||this.fireSimulatedContinuedEvent(e.threadId),t}return Promise.reject(new Error("stepBack not supported"))}async reverseContinue(e){if(this.capabilities.supportsStepBack){this.stoppedSinceLastStep=!1;const t=await this.send("reverseContinue",e);return this.stoppedSinceLastStep||this.fireSimulatedContinuedEvent(e.threadId),t}return Promise.reject(new Error("reverseContinue not supported"))}gotoTargets(e){return this.capabilities.supportsGotoTargetsRequest?this.send("gotoTargets",e):Promise.reject(new Error("gotoTargets is not supported"))}async goto(e){if(this.capabilities.supportsGotoTargetsRequest){this.stoppedSinceLastStep=!1;const t=await this.send("goto",e);return this.stoppedSinceLastStep||this.fireSimulatedContinuedEvent(e.threadId),t}return Promise.reject(new Error("goto is not supported"))}async setInstructionBreakpoints(e){return this.capabilities.supportsInstructionBreakpoints?await this.send("setInstructionBreakpoints",e):Promise.reject(new Error("setInstructionBreakpoints is not supported"))}async disassemble(e){return this.capabilities.supportsDisassembleRequest?await this.send("disassemble",e):Promise.reject(new Error("disassemble is not supported"))}async readMemory(e){return this.capabilities.supportsReadMemoryRequest?await this.send("readMemory",e):Promise.reject(new Error("readMemory is not supported"))}async writeMemory(e){return this.capabilities.supportsWriteMemoryRequest?await this.send("writeMemory",e):Promise.reject(new Error("writeMemory is not supported"))}cancel(e){return this.send("cancel",e)}custom(e,t){return this.send(e,t)}async shutdown(e,t=!1,o=void 0,r=void 0){if(!this.inShutdown)if(this.inShutdown=!0,this.debugAdapter)try{const s={restart:t};typeof o=="boolean"&&(s.terminateDebuggee=o),typeof r=="boolean"&&(s.suspendDebuggee=r),await this.send("disconnect",s,void 0,e?200:2e3)}catch{}finally{await this.stopAdapter(e)}else return this.stopAdapter(e)}async stopAdapter(e){try{if(this.debugAdapter){const t=this.debugAdapter;this.debugAdapter=null,await t.stopSession(),this.debugAdapterStopped=!0}}finally{this.fireAdapterExitEvent(e)}}fireAdapterExitEvent(e){if(!this.firedAdapterExitEvent){this.firedAdapterExitEvent=!0;const t={emittedStopped:this.didReceiveStoppedEvent,sessionLengthInSeconds:(new Date().getTime()-this.startTime)/1e3};e&&!this.debugAdapterStopped&&(t.error=e),this._onDidExitAdapter.fire(t)}}async dispatchRequest(e){const t={type:"response",seq:0,command:e.command,request_seq:e.seq,success:!0},o=r=>this.debugAdapter&&this.debugAdapter.sendResponse(r);if(e.command==="launchVSCode")try{let r=await this.launchVsCode(e.arguments);if(!r.success){const{confirmed:s}=await this.dialogSerivce.confirm({type:C.Warning,message:g.localize("canNotStart","The debugger needs to open a new tab or window for the debuggee but the browser prevented this. You must give permission to continue."),primaryButton:g.localize({key:"continue",comment:["&& denotes a mnemonic"]},"&&Continue")});s?r=await this.launchVsCode(e.arguments):(t.success=!1,o(t),await this.shutdown())}t.body={rendererDebugPort:r.rendererDebugPort},o(t)}catch(r){t.success=!1,t.message=r.message,o(t)}else if(e.command==="runInTerminal")try{const r=await this.dbgr.runInTerminal(e.arguments,this.sessionId),s=t;s.body={},typeof r=="number"&&(s.body.shellProcessId=r),o(s)}catch(r){t.success=!1,t.message=r.message,o(t)}else if(e.command==="startDebugging")try{const r=e.arguments,s={...r.configuration,request:r.request,type:this.dbgr.type,name:r.configuration.name||this.name};await this.dbgr.startDebugging(s,this.sessionId)||(t.success=!1,t.message="Failed to start debugging"),o(t)}catch(r){t.success=!1,t.message=r.message,o(t)}else t.success=!1,t.message=`unknown request '${e.command}'`,o(t)}launchVsCode(e){const t=[];for(const o of e.args){const r=(o.prefix||"")+(o.path||""),s=/^--(.+)=(.+)$/.exec(r);if(s&&s.length===3){const i=s[1];let u=s[2];(i==="file-uri"||i==="folder-uri")&&!h(o.path)&&(u=h(u)?u:P.file(u).toString()),t.push(`--${i}=${u}`)}else t.push(r)}return e.env&&t.push(`--extensionEnvironment=${JSON.stringify(e.env)}`),this.extensionHostDebugService.openExtensionDevelopmentHostWindow(t,!!e.debugRenderer)}send(e,t,o,r,s=!0){return new Promise((i,u)=>{if(!this.debugAdapter){this.inShutdown?i(void 0):u(new Error(g.localize("noDebugAdapter","No debugger available found. Can not send '{0}'.",e)));return}let p;const n=this.debugAdapter.sendRequest(e,t,d=>{p?.dispose(),d.success?i(d):u(d)},r);o&&(p=o.onCancellationRequested(()=>{p.dispose(),this.capabilities.supportsCancelRequest&&this.cancel({requestId:n})}))}).then(void 0,i=>Promise.reject(this.handleErrorResponse(i,s)))}handleErrorResponse(e,t){if(e.command==="canceled"&&e.message==="canceled")return new D.CancellationError;const o=e?.body?.error,r=e?.message||"",s=o?y(o.format,!1,o.variables):r,i=o?.url;if(o&&i){const p=o.urlLabel?o.urlLabel:g.localize("moreInfo","More Info"),n=P.parse(i),d=n.scheme===_.command?"debug.moreInfo.command":"debug.moreInfo";return R(s,[S({id:d,label:p,run:()=>this.openerService.open(n,{allowCommands:!0})})])}t&&o&&o.format&&o.showUser&&this.notificationService.error(s);const u=new D.ErrorNoTelemetry(s);return u.showUser=o?.showUser,u}mergeCapabilities(e){e&&(this._capabilities=E.mixin(this._capabilities,e))}fireSimulatedContinuedEvent(e,t=!1){this._onDidContinued.fire({type:"event",event:"continued",body:{threadId:e,allThreadsContinued:t},seq:void 0})}dispose(){k(this.toDispose)}};b=m([l(4,I),l(5,w),l(6,A),l(7,T)],b);export{b as RawDebugSession};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as nls from '../../../../nls.js';
+import { Emitter } from '../../../../base/common/event.js';
+import * as objects from '../../../../base/common/objects.js';
+import { toAction } from '../../../../base/common/actions.js';
+import * as errors from '../../../../base/common/errors.js';
+import { createErrorWithActions } from '../../../../base/common/errorMessage.js';
+import { formatPII, isUri } from '../common/debugUtils.js';
+import { IExtensionHostDebugService } from '../../../../platform/debug/common/extensionHostDebug.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { dispose } from '../../../../base/common/lifecycle.js';
+import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { Schemas } from '../../../../base/common/network.js';
+let RawDebugSession = class RawDebugSession {
+    constructor(debugAdapter, dbgr, sessionId, name, extensionHostDebugService, openerService, notificationService, dialogSerivce) {
+        this.dbgr = dbgr;
+        this.sessionId = sessionId;
+        this.name = name;
+        this.extensionHostDebugService = extensionHostDebugService;
+        this.openerService = openerService;
+        this.notificationService = notificationService;
+        this.dialogSerivce = dialogSerivce;
+        this.allThreadsContinued = true;
+        this._readyForBreakpoints = false;
+        this.debugAdapterStopped = false;
+        this.inShutdown = false;
+        this.terminated = false;
+        this.firedAdapterExitEvent = false;
+        this.startTime = 0;
+        this.didReceiveStoppedEvent = false;
+        this._onDidInitialize = new Emitter();
+        this._onDidStop = new Emitter();
+        this._onDidContinued = new Emitter();
+        this._onDidTerminateDebugee = new Emitter();
+        this._onDidExitDebugee = new Emitter();
+        this._onDidThread = new Emitter();
+        this._onDidOutput = new Emitter();
+        this._onDidBreakpoint = new Emitter();
+        this._onDidLoadedSource = new Emitter();
+        this._onDidProgressStart = new Emitter();
+        this._onDidProgressUpdate = new Emitter();
+        this._onDidProgressEnd = new Emitter();
+        this._onDidInvalidated = new Emitter();
+        this._onDidInvalidateMemory = new Emitter();
+        this._onDidCustomEvent = new Emitter();
+        this._onDidEvent = new Emitter();
+        this._onDidExitAdapter = new Emitter();
+        this.stoppedSinceLastStep = false;
+        this.toDispose = [];
+        this.debugAdapter = debugAdapter;
+        this._capabilities = Object.create(null);
+        this.toDispose.push(this.debugAdapter.onError(err => {
+            this.shutdown(err);
+        }));
+        this.toDispose.push(this.debugAdapter.onExit(code => {
+            if (code !== 0) {
+                this.shutdown(new Error(`exit code: ${code}`));
+            }
+            else {
+                this.shutdown();
+            }
+        }));
+        this.debugAdapter.onEvent(event => {
+            switch (event.event) {
+                case 'initialized':
+                    this._readyForBreakpoints = true;
+                    this._onDidInitialize.fire(event);
+                    break;
+                case 'loadedSource':
+                    this._onDidLoadedSource.fire(event);
+                    break;
+                case 'capabilities':
+                    if (event.body) {
+                        const capabilities = event.body.capabilities;
+                        this.mergeCapabilities(capabilities);
+                    }
+                    break;
+                case 'stopped':
+                    this.didReceiveStoppedEvent = true;
+                    this.stoppedSinceLastStep = true;
+                    this._onDidStop.fire(event);
+                    break;
+                case 'continued':
+                    this.allThreadsContinued = event.body.allThreadsContinued === false ? false : true;
+                    this._onDidContinued.fire(event);
+                    break;
+                case 'thread':
+                    this._onDidThread.fire(event);
+                    break;
+                case 'output':
+                    this._onDidOutput.fire(event);
+                    break;
+                case 'breakpoint':
+                    this._onDidBreakpoint.fire(event);
+                    break;
+                case 'terminated':
+                    this._onDidTerminateDebugee.fire(event);
+                    break;
+                case 'exited':
+                    this._onDidExitDebugee.fire(event);
+                    break;
+                case 'progressStart':
+                    this._onDidProgressStart.fire(event);
+                    break;
+                case 'progressUpdate':
+                    this._onDidProgressUpdate.fire(event);
+                    break;
+                case 'progressEnd':
+                    this._onDidProgressEnd.fire(event);
+                    break;
+                case 'invalidated':
+                    this._onDidInvalidated.fire(event);
+                    break;
+                case 'memory':
+                    this._onDidInvalidateMemory.fire(event);
+                    break;
+                case 'process':
+                    break;
+                case 'module':
+                    break;
+                default:
+                    this._onDidCustomEvent.fire(event);
+                    break;
+            }
+            this._onDidEvent.fire(event);
+        });
+        this.debugAdapter.onRequest(request => this.dispatchRequest(request));
+    }
+    get isInShutdown() {
+        return this.inShutdown;
+    }
+    get onDidExitAdapter() {
+        return this._onDidExitAdapter.event;
+    }
+    get capabilities() {
+        return this._capabilities;
+    }
+    get readyForBreakpoints() {
+        return this._readyForBreakpoints;
+    }
+    get onDidInitialize() {
+        return this._onDidInitialize.event;
+    }
+    get onDidStop() {
+        return this._onDidStop.event;
+    }
+    get onDidContinued() {
+        return this._onDidContinued.event;
+    }
+    get onDidTerminateDebugee() {
+        return this._onDidTerminateDebugee.event;
+    }
+    get onDidExitDebugee() {
+        return this._onDidExitDebugee.event;
+    }
+    get onDidThread() {
+        return this._onDidThread.event;
+    }
+    get onDidOutput() {
+        return this._onDidOutput.event;
+    }
+    get onDidBreakpoint() {
+        return this._onDidBreakpoint.event;
+    }
+    get onDidLoadedSource() {
+        return this._onDidLoadedSource.event;
+    }
+    get onDidCustomEvent() {
+        return this._onDidCustomEvent.event;
+    }
+    get onDidProgressStart() {
+        return this._onDidProgressStart.event;
+    }
+    get onDidProgressUpdate() {
+        return this._onDidProgressUpdate.event;
+    }
+    get onDidProgressEnd() {
+        return this._onDidProgressEnd.event;
+    }
+    get onDidInvalidated() {
+        return this._onDidInvalidated.event;
+    }
+    get onDidInvalidateMemory() {
+        return this._onDidInvalidateMemory.event;
+    }
+    get onDidEvent() {
+        return this._onDidEvent.event;
+    }
+    async start() {
+        if (!this.debugAdapter) {
+            return Promise.reject(new Error(nls.localize('noDebugAdapterStart', "No debug adapter, can not start debug session.")));
+        }
+        await this.debugAdapter.startSession();
+        this.startTime = new Date().getTime();
+    }
+    async initialize(args) {
+        const response = await this.send('initialize', args, undefined, undefined, false);
+        if (response) {
+            this.mergeCapabilities(response.body);
+        }
+        return response;
+    }
+    disconnect(args) {
+        const terminateDebuggee = this.capabilities.supportTerminateDebuggee ? args.terminateDebuggee : undefined;
+        const suspendDebuggee = this.capabilities.supportTerminateDebuggee && this.capabilities.supportSuspendDebuggee ? args.suspendDebuggee : undefined;
+        return this.shutdown(undefined, args.restart, terminateDebuggee, suspendDebuggee);
+    }
+    async launchOrAttach(config) {
+        const response = await this.send(config.request, config, undefined, undefined, false);
+        if (response) {
+            this.mergeCapabilities(response.body);
+        }
+        return response;
+    }
+    terminate(restart = false) {
+        if (this.capabilities.supportsTerminateRequest) {
+            if (!this.terminated) {
+                this.terminated = true;
+                return this.send('terminate', { restart }, undefined);
+            }
+            return this.disconnect({ terminateDebuggee: true, restart });
+        }
+        return Promise.reject(new Error('terminated not supported'));
+    }
+    restart(args) {
+        if (this.capabilities.supportsRestartRequest) {
+            return this.send('restart', args);
+        }
+        return Promise.reject(new Error('restart not supported'));
+    }
+    async next(args) {
+        this.stoppedSinceLastStep = false;
+        const response = await this.send('next', args);
+        if (!this.stoppedSinceLastStep) {
+            this.fireSimulatedContinuedEvent(args.threadId);
+        }
+        return response;
+    }
+    async stepIn(args) {
+        this.stoppedSinceLastStep = false;
+        const response = await this.send('stepIn', args);
+        if (!this.stoppedSinceLastStep) {
+            this.fireSimulatedContinuedEvent(args.threadId);
+        }
+        return response;
+    }
+    async stepOut(args) {
+        this.stoppedSinceLastStep = false;
+        const response = await this.send('stepOut', args);
+        if (!this.stoppedSinceLastStep) {
+            this.fireSimulatedContinuedEvent(args.threadId);
+        }
+        return response;
+    }
+    async continue(args) {
+        this.stoppedSinceLastStep = false;
+        const response = await this.send('continue', args);
+        if (response && response.body && response.body.allThreadsContinued !== undefined) {
+            this.allThreadsContinued = response.body.allThreadsContinued;
+        }
+        if (!this.stoppedSinceLastStep) {
+            this.fireSimulatedContinuedEvent(args.threadId, this.allThreadsContinued);
+        }
+        return response;
+    }
+    pause(args) {
+        return this.send('pause', args);
+    }
+    terminateThreads(args) {
+        if (this.capabilities.supportsTerminateThreadsRequest) {
+            return this.send('terminateThreads', args);
+        }
+        return Promise.reject(new Error('terminateThreads not supported'));
+    }
+    setVariable(args) {
+        if (this.capabilities.supportsSetVariable) {
+            return this.send('setVariable', args);
+        }
+        return Promise.reject(new Error('setVariable not supported'));
+    }
+    setExpression(args) {
+        if (this.capabilities.supportsSetExpression) {
+            return this.send('setExpression', args);
+        }
+        return Promise.reject(new Error('setExpression not supported'));
+    }
+    async restartFrame(args, threadId) {
+        if (this.capabilities.supportsRestartFrame) {
+            this.stoppedSinceLastStep = false;
+            const response = await this.send('restartFrame', args);
+            if (!this.stoppedSinceLastStep) {
+                this.fireSimulatedContinuedEvent(threadId);
+            }
+            return response;
+        }
+        return Promise.reject(new Error('restartFrame not supported'));
+    }
+    stepInTargets(args) {
+        if (this.capabilities.supportsStepInTargetsRequest) {
+            return this.send('stepInTargets', args);
+        }
+        return Promise.reject(new Error('stepInTargets not supported'));
+    }
+    completions(args, token) {
+        if (this.capabilities.supportsCompletionsRequest) {
+            return this.send('completions', args, token);
+        }
+        return Promise.reject(new Error('completions not supported'));
+    }
+    setBreakpoints(args) {
+        return this.send('setBreakpoints', args);
+    }
+    setFunctionBreakpoints(args) {
+        if (this.capabilities.supportsFunctionBreakpoints) {
+            return this.send('setFunctionBreakpoints', args);
+        }
+        return Promise.reject(new Error('setFunctionBreakpoints not supported'));
+    }
+    dataBreakpointInfo(args) {
+        if (this.capabilities.supportsDataBreakpoints) {
+            return this.send('dataBreakpointInfo', args);
+        }
+        return Promise.reject(new Error('dataBreakpointInfo not supported'));
+    }
+    setDataBreakpoints(args) {
+        if (this.capabilities.supportsDataBreakpoints) {
+            return this.send('setDataBreakpoints', args);
+        }
+        return Promise.reject(new Error('setDataBreakpoints not supported'));
+    }
+    setExceptionBreakpoints(args) {
+        return this.send('setExceptionBreakpoints', args);
+    }
+    breakpointLocations(args) {
+        if (this.capabilities.supportsBreakpointLocationsRequest) {
+            return this.send('breakpointLocations', args);
+        }
+        return Promise.reject(new Error('breakpointLocations is not supported'));
+    }
+    configurationDone() {
+        if (this.capabilities.supportsConfigurationDoneRequest) {
+            return this.send('configurationDone', null);
+        }
+        return Promise.reject(new Error('configurationDone not supported'));
+    }
+    stackTrace(args, token) {
+        return this.send('stackTrace', args, token);
+    }
+    exceptionInfo(args) {
+        if (this.capabilities.supportsExceptionInfoRequest) {
+            return this.send('exceptionInfo', args);
+        }
+        return Promise.reject(new Error('exceptionInfo not supported'));
+    }
+    scopes(args, token) {
+        return this.send('scopes', args, token);
+    }
+    variables(args, token) {
+        return this.send('variables', args, token);
+    }
+    source(args) {
+        return this.send('source', args);
+    }
+    locations(args) {
+        return this.send('locations', args);
+    }
+    loadedSources(args) {
+        if (this.capabilities.supportsLoadedSourcesRequest) {
+            return this.send('loadedSources', args);
+        }
+        return Promise.reject(new Error('loadedSources not supported'));
+    }
+    threads() {
+        return this.send('threads', null);
+    }
+    evaluate(args) {
+        return this.send('evaluate', args);
+    }
+    async stepBack(args) {
+        if (this.capabilities.supportsStepBack) {
+            this.stoppedSinceLastStep = false;
+            const response = await this.send('stepBack', args);
+            if (!this.stoppedSinceLastStep) {
+                this.fireSimulatedContinuedEvent(args.threadId);
+            }
+            return response;
+        }
+        return Promise.reject(new Error('stepBack not supported'));
+    }
+    async reverseContinue(args) {
+        if (this.capabilities.supportsStepBack) {
+            this.stoppedSinceLastStep = false;
+            const response = await this.send('reverseContinue', args);
+            if (!this.stoppedSinceLastStep) {
+                this.fireSimulatedContinuedEvent(args.threadId);
+            }
+            return response;
+        }
+        return Promise.reject(new Error('reverseContinue not supported'));
+    }
+    gotoTargets(args) {
+        if (this.capabilities.supportsGotoTargetsRequest) {
+            return this.send('gotoTargets', args);
+        }
+        return Promise.reject(new Error('gotoTargets is not supported'));
+    }
+    async goto(args) {
+        if (this.capabilities.supportsGotoTargetsRequest) {
+            this.stoppedSinceLastStep = false;
+            const response = await this.send('goto', args);
+            if (!this.stoppedSinceLastStep) {
+                this.fireSimulatedContinuedEvent(args.threadId);
+            }
+            return response;
+        }
+        return Promise.reject(new Error('goto is not supported'));
+    }
+    async setInstructionBreakpoints(args) {
+        if (this.capabilities.supportsInstructionBreakpoints) {
+            return await this.send('setInstructionBreakpoints', args);
+        }
+        return Promise.reject(new Error('setInstructionBreakpoints is not supported'));
+    }
+    async disassemble(args) {
+        if (this.capabilities.supportsDisassembleRequest) {
+            return await this.send('disassemble', args);
+        }
+        return Promise.reject(new Error('disassemble is not supported'));
+    }
+    async readMemory(args) {
+        if (this.capabilities.supportsReadMemoryRequest) {
+            return await this.send('readMemory', args);
+        }
+        return Promise.reject(new Error('readMemory is not supported'));
+    }
+    async writeMemory(args) {
+        if (this.capabilities.supportsWriteMemoryRequest) {
+            return await this.send('writeMemory', args);
+        }
+        return Promise.reject(new Error('writeMemory is not supported'));
+    }
+    cancel(args) {
+        return this.send('cancel', args);
+    }
+    custom(request, args) {
+        return this.send(request, args);
+    }
+    async shutdown(error, restart = false, terminateDebuggee = undefined, suspendDebuggee = undefined) {
+        if (!this.inShutdown) {
+            this.inShutdown = true;
+            if (this.debugAdapter) {
+                try {
+                    const args = { restart };
+                    if (typeof terminateDebuggee === 'boolean') {
+                        args.terminateDebuggee = terminateDebuggee;
+                    }
+                    if (typeof suspendDebuggee === 'boolean') {
+                        args.suspendDebuggee = suspendDebuggee;
+                    }
+                    await this.send('disconnect', args, undefined, error ? 200 : 2000);
+                }
+                catch (e) {
+                }
+                finally {
+                    await this.stopAdapter(error);
+                }
+            }
+            else {
+                return this.stopAdapter(error);
+            }
+        }
+    }
+    async stopAdapter(error) {
+        try {
+            if (this.debugAdapter) {
+                const da = this.debugAdapter;
+                this.debugAdapter = null;
+                await da.stopSession();
+                this.debugAdapterStopped = true;
+            }
+        }
+        finally {
+            this.fireAdapterExitEvent(error);
+        }
+    }
+    fireAdapterExitEvent(error) {
+        if (!this.firedAdapterExitEvent) {
+            this.firedAdapterExitEvent = true;
+            const e = {
+                emittedStopped: this.didReceiveStoppedEvent,
+                sessionLengthInSeconds: (new Date().getTime() - this.startTime) / 1000
+            };
+            if (error && !this.debugAdapterStopped) {
+                e.error = error;
+            }
+            this._onDidExitAdapter.fire(e);
+        }
+    }
+    async dispatchRequest(request) {
+        const response = {
+            type: 'response',
+            seq: 0,
+            command: request.command,
+            request_seq: request.seq,
+            success: true
+        };
+        const safeSendResponse = (response) => this.debugAdapter && this.debugAdapter.sendResponse(response);
+        if (request.command === 'launchVSCode') {
+            try {
+                let result = await this.launchVsCode(request.arguments);
+                if (!result.success) {
+                    const { confirmed } = await this.dialogSerivce.confirm({
+                        type: Severity.Warning,
+                        message: nls.localize('canNotStart', "The debugger needs to open a new tab or window for the debuggee but the browser prevented this. You must give permission to continue."),
+                        primaryButton: nls.localize({ key: 'continue', comment: ['&& denotes a mnemonic'] }, "&&Continue")
+                    });
+                    if (confirmed) {
+                        result = await this.launchVsCode(request.arguments);
+                    }
+                    else {
+                        response.success = false;
+                        safeSendResponse(response);
+                        await this.shutdown();
+                    }
+                }
+                response.body = {
+                    rendererDebugPort: result.rendererDebugPort,
+                };
+                safeSendResponse(response);
+            }
+            catch (err) {
+                response.success = false;
+                response.message = err.message;
+                safeSendResponse(response);
+            }
+        }
+        else if (request.command === 'runInTerminal') {
+            try {
+                const shellProcessId = await this.dbgr.runInTerminal(request.arguments, this.sessionId);
+                const resp = response;
+                resp.body = {};
+                if (typeof shellProcessId === 'number') {
+                    resp.body.shellProcessId = shellProcessId;
+                }
+                safeSendResponse(resp);
+            }
+            catch (err) {
+                response.success = false;
+                response.message = err.message;
+                safeSendResponse(response);
+            }
+        }
+        else if (request.command === 'startDebugging') {
+            try {
+                const args = request.arguments;
+                const config = {
+                    ...args.configuration,
+                    ...{
+                        request: args.request,
+                        type: this.dbgr.type,
+                        name: args.configuration.name || this.name
+                    }
+                };
+                const success = await this.dbgr.startDebugging(config, this.sessionId);
+                if (success) {
+                    safeSendResponse(response);
+                }
+                else {
+                    response.success = false;
+                    response.message = 'Failed to start debugging';
+                    safeSendResponse(response);
+                }
+            }
+            catch (err) {
+                response.success = false;
+                response.message = err.message;
+                safeSendResponse(response);
+            }
+        }
+        else {
+            response.success = false;
+            response.message = `unknown request '${request.command}'`;
+            safeSendResponse(response);
+        }
+    }
+    launchVsCode(vscodeArgs) {
+        const args = [];
+        for (const arg of vscodeArgs.args) {
+            const a2 = (arg.prefix || '') + (arg.path || '');
+            const match = /^--(.+)=(.+)$/.exec(a2);
+            if (match && match.length === 3) {
+                const key = match[1];
+                let value = match[2];
+                if ((key === 'file-uri' || key === 'folder-uri') && !isUri(arg.path)) {
+                    value = isUri(value) ? value : URI.file(value).toString();
+                }
+                args.push(`--${key}=${value}`);
+            }
+            else {
+                args.push(a2);
+            }
+        }
+        if (vscodeArgs.env) {
+            args.push(`--extensionEnvironment=${JSON.stringify(vscodeArgs.env)}`);
+        }
+        return this.extensionHostDebugService.openExtensionDevelopmentHostWindow(args, !!vscodeArgs.debugRenderer);
+    }
+    send(command, args, token, timeout, showErrors = true) {
+        return new Promise((completeDispatch, errorDispatch) => {
+            if (!this.debugAdapter) {
+                if (this.inShutdown) {
+                    completeDispatch(undefined);
+                }
+                else {
+                    errorDispatch(new Error(nls.localize('noDebugAdapter', "No debugger available found. Can not send '{0}'.", command)));
+                }
+                return;
+            }
+            let cancelationListener;
+            const requestId = this.debugAdapter.sendRequest(command, args, (response) => {
+                cancelationListener?.dispose();
+                if (response.success) {
+                    completeDispatch(response);
+                }
+                else {
+                    errorDispatch(response);
+                }
+            }, timeout);
+            if (token) {
+                cancelationListener = token.onCancellationRequested(() => {
+                    cancelationListener.dispose();
+                    if (this.capabilities.supportsCancelRequest) {
+                        this.cancel({ requestId });
+                    }
+                });
+            }
+        }).then(undefined, err => Promise.reject(this.handleErrorResponse(err, showErrors)));
+    }
+    handleErrorResponse(errorResponse, showErrors) {
+        if (errorResponse.command === 'canceled' && errorResponse.message === 'canceled') {
+            return new errors.CancellationError();
+        }
+        const error = errorResponse?.body?.error;
+        const errorMessage = errorResponse?.message || '';
+        const userMessage = error ? formatPII(error.format, false, error.variables) : errorMessage;
+        const url = error?.url;
+        if (error && url) {
+            const label = error.urlLabel ? error.urlLabel : nls.localize('moreInfo', "More Info");
+            const uri = URI.parse(url);
+            const actionId = uri.scheme === Schemas.command ? 'debug.moreInfo.command' : 'debug.moreInfo';
+            return createErrorWithActions(userMessage, [toAction({ id: actionId, label, run: () => this.openerService.open(uri, { allowCommands: true }) })]);
+        }
+        if (showErrors && error && error.format && error.showUser) {
+            this.notificationService.error(userMessage);
+        }
+        const result = new errors.ErrorNoTelemetry(userMessage);
+        result.showUser = error?.showUser;
+        return result;
+    }
+    mergeCapabilities(capabilities) {
+        if (capabilities) {
+            this._capabilities = objects.mixin(this._capabilities, capabilities);
+        }
+    }
+    fireSimulatedContinuedEvent(threadId, allThreadsContinued = false) {
+        this._onDidContinued.fire({
+            type: 'event',
+            event: 'continued',
+            body: {
+                threadId,
+                allThreadsContinued
+            },
+            seq: undefined
+        });
+    }
+    dispose() {
+        dispose(this.toDispose);
+    }
+};
+RawDebugSession = __decorate([
+    __param(4, IExtensionHostDebugService),
+    __param(5, IOpenerService),
+    __param(6, INotificationService),
+    __param(7, IDialogService),
+    __metadata("design:paramtypes", [Object, Object, String, String, Object, Object, Object, Object])
+], RawDebugSession);
+export { RawDebugSession };

@@ -1,1 +1,525 @@
-var L=Object.defineProperty;var R=Object.getOwnPropertyDescriptor;var _=(l,s,e,t)=>{for(var o=t>1?void 0:t?R(s,e):s,i=l.length-1,n;i>=0;i--)(n=l[i])&&(o=(t?n(s,e,o):n(o))||o);return t&&o&&L(s,e,o),o},r=(l,s)=>(e,t)=>s(e,t,l);import{Emitter as h}from"../../../../../base/common/event.js";import{combinedDisposable as M,Disposable as v}from"../../../../../base/common/lifecycle.js";import{ResourceMap as b}from"../../../../../base/common/map.js";import{isEqual as I}from"../../../../../base/common/resources.js";import"../../../../../base/common/uri.js";import{generateUuid as P}from"../../../../../base/common/uuid.js";import{AccessibilitySignal as F,IAccessibilitySignalService as U}from"../../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";import{IInstantiationService as $}from"../../../../../platform/instantiation/common/instantiation.js";import{ILogService as C}from"../../../../../platform/log/common/log.js";import"../../common/model/notebookTextModel.js";import{CellEditType as E,CellUri as f,NotebookCellExecutionState as m,NotebookExecutionState as S}from"../../common/notebookCommon.js";import{CellExecutionUpdateType as u,INotebookExecutionService as A}from"../../common/notebookExecutionService.js";import{INotebookExecutionStateService as H,NotebookExecutionType as T}from"../../common/notebookExecutionStateService.js";import{INotebookKernelService as O}from"../../common/notebookKernelService.js";import{INotebookService as w}from"../../common/notebookService.js";let k=class extends v{constructor(e,t,o,i){super();this._instantiationService=e;this._logService=t;this._notebookService=o;this._accessibilitySignalService=i}_executions=new b;_notebookExecutions=new b;_notebookListeners=new b;_cellListeners=new b;_lastFailedCells=new b;_onDidChangeExecution=this._register(new h);onDidChangeExecution=this._onDidChangeExecution.event;_onDidChangeLastRunFailState=this._register(new h);onDidChangeLastRunFailState=this._onDidChangeLastRunFailState.event;getLastFailedCellForNotebook(e){const t=this._lastFailedCells.get(e);return t?.visible?t.cellHandle:void 0}forceCancelNotebookExecutions(e){const t=this._executions.get(e);if(t)for(const o of t.values())this._onCellExecutionDidComplete(e,o.cellHandle,o);this._notebookExecutions.has(e)&&this._onExecutionDidComplete(e)}getCellExecution(e){const t=f.parse(e);if(!t)throw new Error(`Not a cell URI: ${e}`);const o=this._executions.get(t.notebook);if(o)return o.get(t.handle)}getExecution(e){return this._notebookExecutions.get(e)?.[0]}getCellExecutionsForNotebook(e){const t=this._executions.get(e);return t?Array.from(t.values()):[]}getCellExecutionsByHandleForNotebook(e){const t=this._executions.get(e);return t?new Map(t.entries()):void 0}_onCellExecutionDidChange(e,t,o){this._onDidChangeExecution.fire(new y(e,t,o))}_onCellExecutionDidComplete(e,t,o,i){const n=this._executions.get(e);if(!n){this._logService.debug(`NotebookExecutionStateService#_onCellExecutionDidComplete - unknown notebook ${e.toString()}`);return}o.dispose();const a=f.generate(e,t);this._cellListeners.get(a)?.dispose(),this._cellListeners.delete(a),n.delete(t),n.size===0&&(this._executions.delete(e),this._notebookListeners.get(e)?.dispose(),this._notebookListeners.delete(e)),i!==void 0&&(i?(this._executions.size===0&&this._accessibilitySignalService.playSignal(F.notebookCellCompleted),this._clearLastFailedCell(e)):(this._accessibilitySignalService.playSignal(F.notebookCellFailed),this._setLastFailedCell(e,t))),this._onDidChangeExecution.fire(new y(e,t))}_onExecutionDidChange(e,t){this._onDidChangeExecution.fire(new N(e,t))}_onExecutionDidComplete(e){const t=this._notebookExecutions.get(e);if(!Array.isArray(t)){this._logService.debug(`NotebookExecutionStateService#_onCellExecutionDidComplete - unknown notebook ${e.toString()}`);return}this._notebookExecutions.delete(e),this._onDidChangeExecution.fire(new N(e)),t.forEach(o=>o.dispose())}createCellExecution(e,t){const o=this._notebookService.getNotebookTextModel(e);if(!o)throw new Error(`Notebook not found: ${e.toString()}`);let i=this._executions.get(e);if(!i){const a=this._instantiationService.createInstance(p,e);this._notebookListeners.set(e,a),i=new Map,this._executions.set(e,i)}let n=i.get(t);return n||(n=this._createNotebookCellExecution(o,t),i.set(t,n),n.initialize(),this._onDidChangeExecution.fire(new y(e,t,n))),n}createExecution(e){const t=this._notebookService.getNotebookTextModel(e);if(!t)throw new Error(`Notebook not found: ${e.toString()}`);if(!this._notebookListeners.has(e)){const i=this._instantiationService.createInstance(p,e);this._notebookListeners.set(e,i)}let o=this._notebookExecutions.get(e);return o||(o=this._createNotebookExecution(t),this._notebookExecutions.set(e,o),this._onDidChangeExecution.fire(new N(e,o[0]))),o[0]}_createNotebookCellExecution(e,t){const o=e.uri,i=this._instantiationService.createInstance(x,t,e),n=M(i.onDidUpdate(()=>this._onCellExecutionDidChange(o,t,i)),i.onDidComplete(a=>this._onCellExecutionDidComplete(o,t,i,a)));return this._cellListeners.set(f.generate(o,t),n),i}_createNotebookExecution(e){const t=e.uri,o=this._instantiationService.createInstance(g,e),i=M(o.onDidUpdate(()=>this._onExecutionDidChange(t,o)),o.onDidComplete(()=>this._onExecutionDidComplete(t)));return[o,i]}_setLastFailedCell(e,t){const o=this._lastFailedCells.get(e),i=this._notebookService.getNotebookTextModel(e);if(!i)return;const n={cellHandle:t,disposable:o?o.disposable:this._getFailedCellListener(i),visible:!0};this._lastFailedCells.set(e,n),this._onDidChangeLastRunFailState.fire({visible:!0,notebook:e})}_setLastFailedCellVisibility(e,t){const o=this._lastFailedCells.get(e);o&&this._lastFailedCells.set(e,{cellHandle:o.cellHandle,disposable:o.disposable,visible:t}),this._onDidChangeLastRunFailState.fire({visible:t,notebook:e})}_clearLastFailedCell(e){const t=this._lastFailedCells.get(e);t&&(t.disposable?.dispose(),this._lastFailedCells.delete(e)),this._onDidChangeLastRunFailState.fire({visible:!1,notebook:e})}_getFailedCellListener(e){return e.onWillAddRemoveCells(t=>{const o=this._lastFailedCells.get(e.uri)?.cellHandle;if(o!==void 0){const i=e.cells.findIndex(n=>n.handle===o);t.rawEvent.changes.forEach(([n,a,d])=>{a&&i>=n&&i<n+a&&this._setLastFailedCellVisibility(e.uri,!1),d.some(c=>c.handle===o)&&this._setLastFailedCellVisibility(e.uri,!0)})}})}dispose(){super.dispose(),this._executions.forEach(e=>{e.forEach(t=>t.dispose()),e.clear()}),this._executions.clear(),this._notebookExecutions.forEach(e=>{e.forEach(t=>t.dispose())}),this._notebookExecutions.clear(),this._cellListeners.forEach(e=>e.dispose()),this._notebookListeners.forEach(e=>e.dispose()),this._lastFailedCells.forEach(e=>e.disposable.dispose())}};k=_([r(0,$),r(1,C),r(2,w),r(3,U)],k);class y{constructor(s,e,t){this.notebook=s;this.cellHandle=e;this.changed=t}type=T.cell;affectsCell(s){const e=f.parse(s);return!!e&&I(this.notebook,e.notebook)&&this.cellHandle===e.handle}affectsNotebook(s){return I(this.notebook,s)}}class N{constructor(s,e){this.notebook=s;this.changed=e}type=T.notebook;affectsNotebook(s){return I(this.notebook,s)}}let p=class extends v{constructor(e,t,o,i,n,a){super();this._notebookService=t;this._notebookKernelService=o;this._notebookExecutionService=i;this._notebookExecutionStateService=n;this._logService=a;this._logService.debug(`NotebookExecution#ctor ${e.toString()}`);const d=this._notebookService.getNotebookTextModel(e);if(!d)throw new Error("Notebook not found: "+e);this._notebookModel=d,this._register(this._notebookModel.onWillAddRemoveCells(c=>this.onWillAddRemoveCells(c))),this._register(this._notebookModel.onWillDispose(()=>this.onWillDisposeDocument()))}_notebookModel;cancelAll(){this._logService.debug("NotebookExecutionListeners#cancelAll");const e=this._notebookExecutionStateService.getCellExecutionsForNotebook(this._notebookModel.uri);this._notebookExecutionService.cancelNotebookCellHandles(this._notebookModel,e.map(t=>t.cellHandle))}onWillDisposeDocument(){this._logService.debug("NotebookExecution#onWillDisposeDocument"),this.cancelAll()}onWillAddRemoveCells(e){const t=this._notebookExecutionStateService.getCellExecutionsByHandleForNotebook(this._notebookModel.uri),o=new Set,i=new Set;if(t&&e.rawEvent.changes.forEach(([n,a])=>{a&&this._notebookModel.cells.slice(n,n+a).map(c=>c.handle).forEach(c=>{const D=t.get(c);D?.state===m.Executing?o.add(c):D&&i.add(c)})}),o.size||i.size){const n=this._notebookKernelService.getSelectedOrSuggestedKernel(this._notebookModel);if(n){const d=n.implementsInterrupt?[...o]:[...o,...i];this._logService.debug(`NotebookExecution#onWillAddRemoveCells, ${JSON.stringify([...d])}`),d.length&&n.cancelNotebookCellExecution(this._notebookModel.uri,d)}}}};p=_([r(1,w),r(2,O),r(3,A),r(4,H),r(5,C)],p);function W(l,s){if(l.editType===u.Output)return{editType:E.Output,handle:l.cellHandle,append:l.append,outputs:l.outputs};if(l.editType===u.OutputItems)return{editType:E.OutputItems,items:l.items,append:l.append,outputId:l.outputId};if(l.editType===u.ExecutionState){const e={};return typeof l.executionOrder<"u"&&(e.executionOrder=l.executionOrder),typeof l.runStartTime<"u"&&(e.runStartTime=l.runStartTime),{editType:E.PartialInternalMetadata,handle:s,internalMetadata:e}}throw new Error("Unknown cell update type")}let x=class extends v{constructor(e,t,o){super();this.cellHandle=e;this._notebookModel=t;this._logService=o;this._logService.debug(`CellExecution#ctor ${this.getCellLog()}`)}_onDidUpdate=this._register(new h);onDidUpdate=this._onDidUpdate.event;_onDidComplete=this._register(new h);onDidComplete=this._onDidComplete.event;_state=m.Unconfirmed;get state(){return this._state}get notebook(){return this._notebookModel.uri}_didPause=!1;get didPause(){return this._didPause}_isPaused=!1;get isPaused(){return this._isPaused}initialize(){const e={editType:E.PartialInternalMetadata,handle:this.cellHandle,internalMetadata:{executionId:P(),runStartTime:null,runEndTime:null,lastRunSuccess:null,executionOrder:null,renderDuration:null}};this._applyExecutionEdits([e])}getCellLog(){return`${this._notebookModel.uri.toString()}, ${this.cellHandle}`}logUpdates(e){const t=e.map(o=>u[o.editType]).join(", ");this._logService.debug(`CellExecution#updateExecution ${this.getCellLog()}, [${t}]`)}confirm(){this._logService.debug(`CellExecution#confirm ${this.getCellLog()}`),this._state=m.Pending,this._onDidUpdate.fire()}update(e){this.logUpdates(e),e.some(i=>i.editType===u.ExecutionState)&&(this._state=m.Executing),!this._didPause&&e.some(i=>i.editType===u.ExecutionState&&i.didPause)&&(this._didPause=!0);const t=[...e].reverse().find(i=>i.editType===u.ExecutionState&&typeof i.isPaused=="boolean");if(t&&(this._isPaused=t.isPaused),!this._notebookModel.cells.find(i=>i.handle===this.cellHandle))this._logService.debug(`CellExecution#update, updating cell not in notebook: ${this._notebookModel.uri.toString()}, ${this.cellHandle}`);else{const i=e.map(n=>W(n,this.cellHandle));this._applyExecutionEdits(i)}e.some(i=>i.editType===u.ExecutionState)&&this._onDidUpdate.fire()}complete(e){const t=this._notebookModel.cells.find(o=>o.handle===this.cellHandle);if(!t)this._logService.debug(`CellExecution#complete, completing cell not in notebook: ${this._notebookModel.uri.toString()}, ${this.cellHandle}`);else{const o={editType:E.PartialInternalMetadata,handle:this.cellHandle,internalMetadata:{lastRunSuccess:e.lastRunSuccess,runStartTime:this._didPause?null:t.internalMetadata.runStartTime,runEndTime:this._didPause?null:e.runEndTime,error:e.error}};this._applyExecutionEdits([o])}this._onDidComplete.fire(e.lastRunSuccess)}_applyExecutionEdits(e){this._notebookModel.applyEdits(e,!0,void 0,()=>{},void 0,!1)}};x=_([r(2,C)],x);let g=class extends v{constructor(e,t){super();this._notebookModel=e;this._logService=t;this._logService.debug("NotebookExecution#ctor")}_onDidUpdate=this._register(new h);onDidUpdate=this._onDidUpdate.event;_onDidComplete=this._register(new h);onDidComplete=this._onDidComplete.event;_state=S.Unconfirmed;get state(){return this._state}get notebook(){return this._notebookModel.uri}debug(e){this._logService.debug(`${e} ${this._notebookModel.uri.toString()}`)}confirm(){this.debug("Execution#confirm"),this._state=S.Pending,this._onDidUpdate.fire()}begin(){this.debug("Execution#begin"),this._state=S.Executing,this._onDidUpdate.fire()}complete(){this.debug("Execution#begin"),this._state=S.Unconfirmed,this._onDidComplete.fire()}};g=_([r(1,C)],g);export{k as NotebookExecutionStateService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter } from '../../../../../base/common/event.js';
+import { combinedDisposable, Disposable } from '../../../../../base/common/lifecycle.js';
+import { ResourceMap } from '../../../../../base/common/map.js';
+import { isEqual } from '../../../../../base/common/resources.js';
+import { URI } from '../../../../../base/common/uri.js';
+import { generateUuid } from '../../../../../base/common/uuid.js';
+import { AccessibilitySignal, IAccessibilitySignalService } from '../../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../../../platform/log/common/log.js';
+import { NotebookTextModel } from '../../common/model/notebookTextModel.js';
+import { CellUri, NotebookCellExecutionState, NotebookExecutionState } from '../../common/notebookCommon.js';
+import { CellExecutionUpdateType, INotebookExecutionService } from '../../common/notebookExecutionService.js';
+import { INotebookExecutionStateService, NotebookExecutionType } from '../../common/notebookExecutionStateService.js';
+import { INotebookKernelService } from '../../common/notebookKernelService.js';
+import { INotebookService } from '../../common/notebookService.js';
+let NotebookExecutionStateService = class NotebookExecutionStateService extends Disposable {
+    constructor(_instantiationService, _logService, _notebookService, _accessibilitySignalService) {
+        super();
+        this._instantiationService = _instantiationService;
+        this._logService = _logService;
+        this._notebookService = _notebookService;
+        this._accessibilitySignalService = _accessibilitySignalService;
+        this._executions = new ResourceMap();
+        this._notebookExecutions = new ResourceMap();
+        this._notebookListeners = new ResourceMap();
+        this._cellListeners = new ResourceMap();
+        this._lastFailedCells = new ResourceMap();
+        this._onDidChangeExecution = this._register(new Emitter());
+        this.onDidChangeExecution = this._onDidChangeExecution.event;
+        this._onDidChangeLastRunFailState = this._register(new Emitter());
+        this.onDidChangeLastRunFailState = this._onDidChangeLastRunFailState.event;
+    }
+    getLastFailedCellForNotebook(notebook) {
+        const failedCell = this._lastFailedCells.get(notebook);
+        return failedCell?.visible ? failedCell.cellHandle : undefined;
+    }
+    forceCancelNotebookExecutions(notebookUri) {
+        const notebookCellExecutions = this._executions.get(notebookUri);
+        if (notebookCellExecutions) {
+            for (const exe of notebookCellExecutions.values()) {
+                this._onCellExecutionDidComplete(notebookUri, exe.cellHandle, exe);
+            }
+        }
+        if (this._notebookExecutions.has(notebookUri)) {
+            this._onExecutionDidComplete(notebookUri);
+        }
+    }
+    getCellExecution(cellUri) {
+        const parsed = CellUri.parse(cellUri);
+        if (!parsed) {
+            throw new Error(`Not a cell URI: ${cellUri}`);
+        }
+        const exeMap = this._executions.get(parsed.notebook);
+        if (exeMap) {
+            return exeMap.get(parsed.handle);
+        }
+        return undefined;
+    }
+    getExecution(notebook) {
+        return this._notebookExecutions.get(notebook)?.[0];
+    }
+    getCellExecutionsForNotebook(notebook) {
+        const exeMap = this._executions.get(notebook);
+        return exeMap ? Array.from(exeMap.values()) : [];
+    }
+    getCellExecutionsByHandleForNotebook(notebook) {
+        const exeMap = this._executions.get(notebook);
+        return exeMap ? new Map(exeMap.entries()) : undefined;
+    }
+    _onCellExecutionDidChange(notebookUri, cellHandle, exe) {
+        this._onDidChangeExecution.fire(new NotebookCellExecutionEvent(notebookUri, cellHandle, exe));
+    }
+    _onCellExecutionDidComplete(notebookUri, cellHandle, exe, lastRunSuccess) {
+        const notebookExecutions = this._executions.get(notebookUri);
+        if (!notebookExecutions) {
+            this._logService.debug(`NotebookExecutionStateService#_onCellExecutionDidComplete - unknown notebook ${notebookUri.toString()}`);
+            return;
+        }
+        exe.dispose();
+        const cellUri = CellUri.generate(notebookUri, cellHandle);
+        this._cellListeners.get(cellUri)?.dispose();
+        this._cellListeners.delete(cellUri);
+        notebookExecutions.delete(cellHandle);
+        if (notebookExecutions.size === 0) {
+            this._executions.delete(notebookUri);
+            this._notebookListeners.get(notebookUri)?.dispose();
+            this._notebookListeners.delete(notebookUri);
+        }
+        if (lastRunSuccess !== undefined) {
+            if (lastRunSuccess) {
+                if (this._executions.size === 0) {
+                    this._accessibilitySignalService.playSignal(AccessibilitySignal.notebookCellCompleted);
+                }
+                this._clearLastFailedCell(notebookUri);
+            }
+            else {
+                this._accessibilitySignalService.playSignal(AccessibilitySignal.notebookCellFailed);
+                this._setLastFailedCell(notebookUri, cellHandle);
+            }
+        }
+        this._onDidChangeExecution.fire(new NotebookCellExecutionEvent(notebookUri, cellHandle));
+    }
+    _onExecutionDidChange(notebookUri, exe) {
+        this._onDidChangeExecution.fire(new NotebookExecutionEvent(notebookUri, exe));
+    }
+    _onExecutionDidComplete(notebookUri) {
+        const disposables = this._notebookExecutions.get(notebookUri);
+        if (!Array.isArray(disposables)) {
+            this._logService.debug(`NotebookExecutionStateService#_onCellExecutionDidComplete - unknown notebook ${notebookUri.toString()}`);
+            return;
+        }
+        this._notebookExecutions.delete(notebookUri);
+        this._onDidChangeExecution.fire(new NotebookExecutionEvent(notebookUri));
+        disposables.forEach(d => d.dispose());
+    }
+    createCellExecution(notebookUri, cellHandle) {
+        const notebook = this._notebookService.getNotebookTextModel(notebookUri);
+        if (!notebook) {
+            throw new Error(`Notebook not found: ${notebookUri.toString()}`);
+        }
+        let notebookExecutionMap = this._executions.get(notebookUri);
+        if (!notebookExecutionMap) {
+            const listeners = this._instantiationService.createInstance(NotebookExecutionListeners, notebookUri);
+            this._notebookListeners.set(notebookUri, listeners);
+            notebookExecutionMap = new Map();
+            this._executions.set(notebookUri, notebookExecutionMap);
+        }
+        let exe = notebookExecutionMap.get(cellHandle);
+        if (!exe) {
+            exe = this._createNotebookCellExecution(notebook, cellHandle);
+            notebookExecutionMap.set(cellHandle, exe);
+            exe.initialize();
+            this._onDidChangeExecution.fire(new NotebookCellExecutionEvent(notebookUri, cellHandle, exe));
+        }
+        return exe;
+    }
+    createExecution(notebookUri) {
+        const notebook = this._notebookService.getNotebookTextModel(notebookUri);
+        if (!notebook) {
+            throw new Error(`Notebook not found: ${notebookUri.toString()}`);
+        }
+        if (!this._notebookListeners.has(notebookUri)) {
+            const listeners = this._instantiationService.createInstance(NotebookExecutionListeners, notebookUri);
+            this._notebookListeners.set(notebookUri, listeners);
+        }
+        let info = this._notebookExecutions.get(notebookUri);
+        if (!info) {
+            info = this._createNotebookExecution(notebook);
+            this._notebookExecutions.set(notebookUri, info);
+            this._onDidChangeExecution.fire(new NotebookExecutionEvent(notebookUri, info[0]));
+        }
+        return info[0];
+    }
+    _createNotebookCellExecution(notebook, cellHandle) {
+        const notebookUri = notebook.uri;
+        const exe = this._instantiationService.createInstance(CellExecution, cellHandle, notebook);
+        const disposable = combinedDisposable(exe.onDidUpdate(() => this._onCellExecutionDidChange(notebookUri, cellHandle, exe)), exe.onDidComplete(lastRunSuccess => this._onCellExecutionDidComplete(notebookUri, cellHandle, exe, lastRunSuccess)));
+        this._cellListeners.set(CellUri.generate(notebookUri, cellHandle), disposable);
+        return exe;
+    }
+    _createNotebookExecution(notebook) {
+        const notebookUri = notebook.uri;
+        const exe = this._instantiationService.createInstance(NotebookExecution, notebook);
+        const disposable = combinedDisposable(exe.onDidUpdate(() => this._onExecutionDidChange(notebookUri, exe)), exe.onDidComplete(() => this._onExecutionDidComplete(notebookUri)));
+        return [exe, disposable];
+    }
+    _setLastFailedCell(notebookURI, cellHandle) {
+        const prevLastFailedCellInfo = this._lastFailedCells.get(notebookURI);
+        const notebook = this._notebookService.getNotebookTextModel(notebookURI);
+        if (!notebook) {
+            return;
+        }
+        const newLastFailedCellInfo = {
+            cellHandle: cellHandle,
+            disposable: prevLastFailedCellInfo ? prevLastFailedCellInfo.disposable : this._getFailedCellListener(notebook),
+            visible: true
+        };
+        this._lastFailedCells.set(notebookURI, newLastFailedCellInfo);
+        this._onDidChangeLastRunFailState.fire({ visible: true, notebook: notebookURI });
+    }
+    _setLastFailedCellVisibility(notebookURI, visible) {
+        const lastFailedCellInfo = this._lastFailedCells.get(notebookURI);
+        if (lastFailedCellInfo) {
+            this._lastFailedCells.set(notebookURI, {
+                cellHandle: lastFailedCellInfo.cellHandle,
+                disposable: lastFailedCellInfo.disposable,
+                visible: visible,
+            });
+        }
+        this._onDidChangeLastRunFailState.fire({ visible: visible, notebook: notebookURI });
+    }
+    _clearLastFailedCell(notebookURI) {
+        const lastFailedCellInfo = this._lastFailedCells.get(notebookURI);
+        if (lastFailedCellInfo) {
+            lastFailedCellInfo.disposable?.dispose();
+            this._lastFailedCells.delete(notebookURI);
+        }
+        this._onDidChangeLastRunFailState.fire({ visible: false, notebook: notebookURI });
+    }
+    _getFailedCellListener(notebook) {
+        return notebook.onWillAddRemoveCells((e) => {
+            const lastFailedCell = this._lastFailedCells.get(notebook.uri)?.cellHandle;
+            if (lastFailedCell !== undefined) {
+                const lastFailedCellPos = notebook.cells.findIndex(c => c.handle === lastFailedCell);
+                e.rawEvent.changes.forEach(([start, deleteCount, addedCells]) => {
+                    if (deleteCount) {
+                        if (lastFailedCellPos >= start && lastFailedCellPos < start + deleteCount) {
+                            this._setLastFailedCellVisibility(notebook.uri, false);
+                        }
+                    }
+                    if (addedCells.some(cell => cell.handle === lastFailedCell)) {
+                        this._setLastFailedCellVisibility(notebook.uri, true);
+                    }
+                });
+            }
+        });
+    }
+    dispose() {
+        super.dispose();
+        this._executions.forEach(executionMap => {
+            executionMap.forEach(execution => execution.dispose());
+            executionMap.clear();
+        });
+        this._executions.clear();
+        this._notebookExecutions.forEach(disposables => {
+            disposables.forEach(d => d.dispose());
+        });
+        this._notebookExecutions.clear();
+        this._cellListeners.forEach(disposable => disposable.dispose());
+        this._notebookListeners.forEach(disposable => disposable.dispose());
+        this._lastFailedCells.forEach(elem => elem.disposable.dispose());
+    }
+};
+NotebookExecutionStateService = __decorate([
+    __param(0, IInstantiationService),
+    __param(1, ILogService),
+    __param(2, INotebookService),
+    __param(3, IAccessibilitySignalService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], NotebookExecutionStateService);
+export { NotebookExecutionStateService };
+class NotebookCellExecutionEvent {
+    constructor(notebook, cellHandle, changed) {
+        this.notebook = notebook;
+        this.cellHandle = cellHandle;
+        this.changed = changed;
+        this.type = NotebookExecutionType.cell;
+    }
+    affectsCell(cell) {
+        const parsedUri = CellUri.parse(cell);
+        return !!parsedUri && isEqual(this.notebook, parsedUri.notebook) && this.cellHandle === parsedUri.handle;
+    }
+    affectsNotebook(notebook) {
+        return isEqual(this.notebook, notebook);
+    }
+}
+class NotebookExecutionEvent {
+    constructor(notebook, changed) {
+        this.notebook = notebook;
+        this.changed = changed;
+        this.type = NotebookExecutionType.notebook;
+    }
+    affectsNotebook(notebook) {
+        return isEqual(this.notebook, notebook);
+    }
+}
+let NotebookExecutionListeners = class NotebookExecutionListeners extends Disposable {
+    constructor(notebook, _notebookService, _notebookKernelService, _notebookExecutionService, _notebookExecutionStateService, _logService) {
+        super();
+        this._notebookService = _notebookService;
+        this._notebookKernelService = _notebookKernelService;
+        this._notebookExecutionService = _notebookExecutionService;
+        this._notebookExecutionStateService = _notebookExecutionStateService;
+        this._logService = _logService;
+        this._logService.debug(`NotebookExecution#ctor ${notebook.toString()}`);
+        const notebookModel = this._notebookService.getNotebookTextModel(notebook);
+        if (!notebookModel) {
+            throw new Error('Notebook not found: ' + notebook);
+        }
+        this._notebookModel = notebookModel;
+        this._register(this._notebookModel.onWillAddRemoveCells(e => this.onWillAddRemoveCells(e)));
+        this._register(this._notebookModel.onWillDispose(() => this.onWillDisposeDocument()));
+    }
+    cancelAll() {
+        this._logService.debug(`NotebookExecutionListeners#cancelAll`);
+        const exes = this._notebookExecutionStateService.getCellExecutionsForNotebook(this._notebookModel.uri);
+        this._notebookExecutionService.cancelNotebookCellHandles(this._notebookModel, exes.map(exe => exe.cellHandle));
+    }
+    onWillDisposeDocument() {
+        this._logService.debug(`NotebookExecution#onWillDisposeDocument`);
+        this.cancelAll();
+    }
+    onWillAddRemoveCells(e) {
+        const notebookExes = this._notebookExecutionStateService.getCellExecutionsByHandleForNotebook(this._notebookModel.uri);
+        const executingDeletedHandles = new Set();
+        const pendingDeletedHandles = new Set();
+        if (notebookExes) {
+            e.rawEvent.changes.forEach(([start, deleteCount]) => {
+                if (deleteCount) {
+                    const deletedHandles = this._notebookModel.cells.slice(start, start + deleteCount).map(c => c.handle);
+                    deletedHandles.forEach(h => {
+                        const exe = notebookExes.get(h);
+                        if (exe?.state === NotebookCellExecutionState.Executing) {
+                            executingDeletedHandles.add(h);
+                        }
+                        else if (exe) {
+                            pendingDeletedHandles.add(h);
+                        }
+                    });
+                }
+            });
+        }
+        if (executingDeletedHandles.size || pendingDeletedHandles.size) {
+            const kernel = this._notebookKernelService.getSelectedOrSuggestedKernel(this._notebookModel);
+            if (kernel) {
+                const implementsInterrupt = kernel.implementsInterrupt;
+                const handlesToCancel = implementsInterrupt ? [...executingDeletedHandles] : [...executingDeletedHandles, ...pendingDeletedHandles];
+                this._logService.debug(`NotebookExecution#onWillAddRemoveCells, ${JSON.stringify([...handlesToCancel])}`);
+                if (handlesToCancel.length) {
+                    kernel.cancelNotebookCellExecution(this._notebookModel.uri, handlesToCancel);
+                }
+            }
+        }
+    }
+};
+NotebookExecutionListeners = __decorate([
+    __param(1, INotebookService),
+    __param(2, INotebookKernelService),
+    __param(3, INotebookExecutionService),
+    __param(4, INotebookExecutionStateService),
+    __param(5, ILogService),
+    __metadata("design:paramtypes", [URI, Object, Object, Object, Object, Object])
+], NotebookExecutionListeners);
+function updateToEdit(update, cellHandle) {
+    if (update.editType === CellExecutionUpdateType.Output) {
+        return {
+            editType: 2,
+            handle: update.cellHandle,
+            append: update.append,
+            outputs: update.outputs,
+        };
+    }
+    else if (update.editType === CellExecutionUpdateType.OutputItems) {
+        return {
+            editType: 7,
+            items: update.items,
+            append: update.append,
+            outputId: update.outputId
+        };
+    }
+    else if (update.editType === CellExecutionUpdateType.ExecutionState) {
+        const newInternalMetadata = {};
+        if (typeof update.executionOrder !== 'undefined') {
+            newInternalMetadata.executionOrder = update.executionOrder;
+        }
+        if (typeof update.runStartTime !== 'undefined') {
+            newInternalMetadata.runStartTime = update.runStartTime;
+        }
+        return {
+            editType: 9,
+            handle: cellHandle,
+            internalMetadata: newInternalMetadata
+        };
+    }
+    throw new Error('Unknown cell update type');
+}
+let CellExecution = class CellExecution extends Disposable {
+    get state() {
+        return this._state;
+    }
+    get notebook() {
+        return this._notebookModel.uri;
+    }
+    get didPause() {
+        return this._didPause;
+    }
+    get isPaused() {
+        return this._isPaused;
+    }
+    constructor(cellHandle, _notebookModel, _logService) {
+        super();
+        this.cellHandle = cellHandle;
+        this._notebookModel = _notebookModel;
+        this._logService = _logService;
+        this._onDidUpdate = this._register(new Emitter());
+        this.onDidUpdate = this._onDidUpdate.event;
+        this._onDidComplete = this._register(new Emitter());
+        this.onDidComplete = this._onDidComplete.event;
+        this._state = NotebookCellExecutionState.Unconfirmed;
+        this._didPause = false;
+        this._isPaused = false;
+        this._logService.debug(`CellExecution#ctor ${this.getCellLog()}`);
+    }
+    initialize() {
+        const startExecuteEdit = {
+            editType: 9,
+            handle: this.cellHandle,
+            internalMetadata: {
+                executionId: generateUuid(),
+                runStartTime: null,
+                runEndTime: null,
+                lastRunSuccess: null,
+                executionOrder: null,
+                renderDuration: null,
+            }
+        };
+        this._applyExecutionEdits([startExecuteEdit]);
+    }
+    getCellLog() {
+        return `${this._notebookModel.uri.toString()}, ${this.cellHandle}`;
+    }
+    logUpdates(updates) {
+        const updateTypes = updates.map(u => CellExecutionUpdateType[u.editType]).join(', ');
+        this._logService.debug(`CellExecution#updateExecution ${this.getCellLog()}, [${updateTypes}]`);
+    }
+    confirm() {
+        this._logService.debug(`CellExecution#confirm ${this.getCellLog()}`);
+        this._state = NotebookCellExecutionState.Pending;
+        this._onDidUpdate.fire();
+    }
+    update(updates) {
+        this.logUpdates(updates);
+        if (updates.some(u => u.editType === CellExecutionUpdateType.ExecutionState)) {
+            this._state = NotebookCellExecutionState.Executing;
+        }
+        if (!this._didPause && updates.some(u => u.editType === CellExecutionUpdateType.ExecutionState && u.didPause)) {
+            this._didPause = true;
+        }
+        const lastIsPausedUpdate = [...updates].reverse().find(u => u.editType === CellExecutionUpdateType.ExecutionState && typeof u.isPaused === 'boolean');
+        if (lastIsPausedUpdate) {
+            this._isPaused = lastIsPausedUpdate.isPaused;
+        }
+        const cellModel = this._notebookModel.cells.find(c => c.handle === this.cellHandle);
+        if (!cellModel) {
+            this._logService.debug(`CellExecution#update, updating cell not in notebook: ${this._notebookModel.uri.toString()}, ${this.cellHandle}`);
+        }
+        else {
+            const edits = updates.map(update => updateToEdit(update, this.cellHandle));
+            this._applyExecutionEdits(edits);
+        }
+        if (updates.some(u => u.editType === CellExecutionUpdateType.ExecutionState)) {
+            this._onDidUpdate.fire();
+        }
+    }
+    complete(completionData) {
+        const cellModel = this._notebookModel.cells.find(c => c.handle === this.cellHandle);
+        if (!cellModel) {
+            this._logService.debug(`CellExecution#complete, completing cell not in notebook: ${this._notebookModel.uri.toString()}, ${this.cellHandle}`);
+        }
+        else {
+            const edit = {
+                editType: 9,
+                handle: this.cellHandle,
+                internalMetadata: {
+                    lastRunSuccess: completionData.lastRunSuccess,
+                    runStartTime: this._didPause ? null : cellModel.internalMetadata.runStartTime,
+                    runEndTime: this._didPause ? null : completionData.runEndTime,
+                    error: completionData.error
+                }
+            };
+            this._applyExecutionEdits([edit]);
+        }
+        this._onDidComplete.fire(completionData.lastRunSuccess);
+    }
+    _applyExecutionEdits(edits) {
+        this._notebookModel.applyEdits(edits, true, undefined, () => undefined, undefined, false);
+    }
+};
+CellExecution = __decorate([
+    __param(2, ILogService),
+    __metadata("design:paramtypes", [Number, NotebookTextModel, Object])
+], CellExecution);
+let NotebookExecution = class NotebookExecution extends Disposable {
+    get state() {
+        return this._state;
+    }
+    get notebook() {
+        return this._notebookModel.uri;
+    }
+    constructor(_notebookModel, _logService) {
+        super();
+        this._notebookModel = _notebookModel;
+        this._logService = _logService;
+        this._onDidUpdate = this._register(new Emitter());
+        this.onDidUpdate = this._onDidUpdate.event;
+        this._onDidComplete = this._register(new Emitter());
+        this.onDidComplete = this._onDidComplete.event;
+        this._state = NotebookExecutionState.Unconfirmed;
+        this._logService.debug(`NotebookExecution#ctor`);
+    }
+    debug(message) {
+        this._logService.debug(`${message} ${this._notebookModel.uri.toString()}`);
+    }
+    confirm() {
+        this.debug(`Execution#confirm`);
+        this._state = NotebookExecutionState.Pending;
+        this._onDidUpdate.fire();
+    }
+    begin() {
+        this.debug(`Execution#begin`);
+        this._state = NotebookExecutionState.Executing;
+        this._onDidUpdate.fire();
+    }
+    complete() {
+        this.debug(`Execution#begin`);
+        this._state = NotebookExecutionState.Unconfirmed;
+        this._onDidComplete.fire();
+    }
+};
+NotebookExecution = __decorate([
+    __param(1, ILogService),
+    __metadata("design:paramtypes", [NotebookTextModel, Object])
+], NotebookExecution);

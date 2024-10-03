@@ -1,2 +1,109 @@
-var I=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=(t,e,n,i)=>{for(var r=i>1?void 0:i?h(e,n):e,o=t.length-1,s;o>=0;o--)(s=t[o])&&(r=(i?s(e,n,r):s(r))||r);return i&&r&&I(e,n,r),r},m=(t,e)=>(n,i)=>e(n,i,t);import{Schemas as E}from"../../../base/common/network.js";import{isWeb as w}from"../../../base/common/platform.js";import{isString as f}from"../../../base/common/types.js";import{URI as u}from"../../../base/common/uri.js";import{localize as b}from"../../../nls.js";import{CommandsRegistry as d,ICommandService as S}from"../../../platform/commands/common/commands.js";import{IExtensionGalleryService as y,IExtensionManagementService as x}from"../../../platform/extensionManagement/common/extensionManagement.js";import{ExtensionManagementCLI as C}from"../../../platform/extensionManagement/common/extensionManagementCLI.js";import{getExtensionId as M}from"../../../platform/extensionManagement/common/extensionManagementUtil.js";import"../../../platform/extensions/common/extensions.js";import{IInstantiationService as A}from"../../../platform/instantiation/common/instantiation.js";import{ServiceCollection as _}from"../../../platform/instantiation/common/serviceCollection.js";import{ILabelService as L}from"../../../platform/label/common/label.js";import{AbstractMessageLogger as O}from"../../../platform/log/common/log.js";import{IOpenerService as W}from"../../../platform/opener/common/opener.js";import"../../../platform/window/common/window.js";import{IWorkbenchEnvironmentService as P}from"../../services/environment/common/environmentService.js";import{IExtensionManagementServerService as U}from"../../services/extensionManagement/common/extensionManagement.js";import{IExtensionManifestPropertiesService as k}from"../../services/extensions/common/extensionManifestPropertiesService.js";d.registerCommand("_remoteCLI.openExternal",function(t,e){return t.get(W).open(f(e)?e:u.revive(e),{openExternal:!0,allowTunneling:!0})}),d.registerCommand("_remoteCLI.windowOpen",function(t,e,n){const i=t.get(S);return e.length?i.executeCommand("_files.windowOpen",e,n):i.executeCommand("_files.newWindow",n)}),d.registerCommand("_remoteCLI.getSystemStatus",function(t){return t.get(S).executeCommand("_issues.getSystemStatus")}),d.registerCommand("_remoteCLI.manageExtensions",async function(t,e){const n=t.get(A),r=t.get(U).remoteExtensionManagementServer?.extensionManagementService;if(!r)return;const o=[],s=new class extends O{log(a,c){o.push(c)}},v=n.createChild(new _([x,r])).createInstance(l,s);if(e.list)await v.listExtensions(!!e.list.showVersions,e.list.category,void 0);else{const a=c=>c.map(g=>f(g)?g:u.revive(g));if(Array.isArray(e.install)&&e.install.length)try{await v.installExtensions(a(e.install),[],{isMachineScoped:!0},!!e.force)}catch(c){o.push(c.message)}if(Array.isArray(e.uninstall)&&e.uninstall.length)try{await v.uninstallExtensions(a(e.uninstall),!!e.force,void 0)}catch(c){o.push(c.message)}}return o.join(`
-`)});let l=class extends C{constructor(n,i,r,o,s,v){super(n,i,r);this._extensionManifestPropertiesService=v;const a=s.remoteAuthority;this._location=a?o.getHostLabel(E.vscodeRemote,a):void 0}_location;get location(){return this._location}validateExtensionKind(n){return!this._extensionManifestPropertiesService.canExecuteOnWorkspace(n)&&!(w&&this._extensionManifestPropertiesService.canExecuteOnWeb(n))?(this.logger.info(b("cannot be installed","Cannot install the '{0}' extension because it is declared to not run in this setup.",M(n.publisher,n.name))),!1):!0}};l=p([m(1,x),m(2,y),m(3,L),m(4,P),m(5,k)],l);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Schemas } from '../../../base/common/network.js';
+import { isWeb } from '../../../base/common/platform.js';
+import { isString } from '../../../base/common/types.js';
+import { URI } from '../../../base/common/uri.js';
+import { localize } from '../../../nls.js';
+import { CommandsRegistry, ICommandService } from '../../../platform/commands/common/commands.js';
+import { IExtensionGalleryService, IExtensionManagementService } from '../../../platform/extensionManagement/common/extensionManagement.js';
+import { ExtensionManagementCLI } from '../../../platform/extensionManagement/common/extensionManagementCLI.js';
+import { getExtensionId } from '../../../platform/extensionManagement/common/extensionManagementUtil.js';
+import { IInstantiationService } from '../../../platform/instantiation/common/instantiation.js';
+import { ServiceCollection } from '../../../platform/instantiation/common/serviceCollection.js';
+import { ILabelService } from '../../../platform/label/common/label.js';
+import { AbstractMessageLogger } from '../../../platform/log/common/log.js';
+import { IOpenerService } from '../../../platform/opener/common/opener.js';
+import { IWorkbenchEnvironmentService } from '../../services/environment/common/environmentService.js';
+import { IExtensionManagementServerService } from '../../services/extensionManagement/common/extensionManagement.js';
+import { IExtensionManifestPropertiesService } from '../../services/extensions/common/extensionManifestPropertiesService.js';
+CommandsRegistry.registerCommand('_remoteCLI.openExternal', function (accessor, uri) {
+    const openerService = accessor.get(IOpenerService);
+    return openerService.open(isString(uri) ? uri : URI.revive(uri), { openExternal: true, allowTunneling: true });
+});
+CommandsRegistry.registerCommand('_remoteCLI.windowOpen', function (accessor, toOpen, options) {
+    const commandService = accessor.get(ICommandService);
+    if (!toOpen.length) {
+        return commandService.executeCommand('_files.newWindow', options);
+    }
+    return commandService.executeCommand('_files.windowOpen', toOpen, options);
+});
+CommandsRegistry.registerCommand('_remoteCLI.getSystemStatus', function (accessor) {
+    const commandService = accessor.get(ICommandService);
+    return commandService.executeCommand('_issues.getSystemStatus');
+});
+CommandsRegistry.registerCommand('_remoteCLI.manageExtensions', async function (accessor, args) {
+    const instantiationService = accessor.get(IInstantiationService);
+    const extensionManagementServerService = accessor.get(IExtensionManagementServerService);
+    const remoteExtensionManagementService = extensionManagementServerService.remoteExtensionManagementServer?.extensionManagementService;
+    if (!remoteExtensionManagementService) {
+        return;
+    }
+    const lines = [];
+    const logger = new class extends AbstractMessageLogger {
+        log(level, message) {
+            lines.push(message);
+        }
+    }();
+    const cliService = instantiationService.createChild(new ServiceCollection([IExtensionManagementService, remoteExtensionManagementService])).createInstance(RemoteExtensionManagementCLI, logger);
+    if (args.list) {
+        await cliService.listExtensions(!!args.list.showVersions, args.list.category, undefined);
+    }
+    else {
+        const revive = (inputs) => inputs.map(input => isString(input) ? input : URI.revive(input));
+        if (Array.isArray(args.install) && args.install.length) {
+            try {
+                await cliService.installExtensions(revive(args.install), [], { isMachineScoped: true }, !!args.force);
+            }
+            catch (e) {
+                lines.push(e.message);
+            }
+        }
+        if (Array.isArray(args.uninstall) && args.uninstall.length) {
+            try {
+                await cliService.uninstallExtensions(revive(args.uninstall), !!args.force, undefined);
+            }
+            catch (e) {
+                lines.push(e.message);
+            }
+        }
+    }
+    return lines.join('\n');
+});
+let RemoteExtensionManagementCLI = class RemoteExtensionManagementCLI extends ExtensionManagementCLI {
+    constructor(logger, extensionManagementService, extensionGalleryService, labelService, envService, _extensionManifestPropertiesService) {
+        super(logger, extensionManagementService, extensionGalleryService);
+        this._extensionManifestPropertiesService = _extensionManifestPropertiesService;
+        const remoteAuthority = envService.remoteAuthority;
+        this._location = remoteAuthority ? labelService.getHostLabel(Schemas.vscodeRemote, remoteAuthority) : undefined;
+    }
+    get location() {
+        return this._location;
+    }
+    validateExtensionKind(manifest) {
+        if (!this._extensionManifestPropertiesService.canExecuteOnWorkspace(manifest)
+            && !(isWeb && this._extensionManifestPropertiesService.canExecuteOnWeb(manifest))) {
+            this.logger.info(localize('cannot be installed', "Cannot install the '{0}' extension because it is declared to not run in this setup.", getExtensionId(manifest.publisher, manifest.name)));
+            return false;
+        }
+        return true;
+    }
+};
+RemoteExtensionManagementCLI = __decorate([
+    __param(1, IExtensionManagementService),
+    __param(2, IExtensionGalleryService),
+    __param(3, ILabelService),
+    __param(4, IWorkbenchEnvironmentService),
+    __param(5, IExtensionManifestPropertiesService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], RemoteExtensionManagementCLI);

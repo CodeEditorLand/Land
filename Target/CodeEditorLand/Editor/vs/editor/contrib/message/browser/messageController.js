@@ -1,1 +1,180 @@
-var _=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var h=(d,e,t,s)=>{for(var i=s>1?void 0:s?u(e,t):e,r=d.length-1,n;r>=0;r--)(n=d[r])&&(i=(s?n(e,t,i):n(i))||i);return s&&i&&_(e,t,i),i},m=(d,e)=>(t,s)=>e(t,s,d);import{renderMarkdown as v}from"../../../../base/browser/markdownRenderer.js";import{alert as f}from"../../../../base/browser/ui/aria/aria.js";import{Event as E}from"../../../../base/common/event.js";import{isMarkdownString as l}from"../../../../base/common/htmlContent.js";import{KeyCode as I}from"../../../../base/common/keyCodes.js";import{DisposableStore as L,MutableDisposable as b}from"../../../../base/common/lifecycle.js";import"./messageController.css";import{ContentWidgetPositionPreference as g}from"../../../browser/editorBrowser.js";import{EditorCommand as C,EditorContributionInstantiation as M,registerEditorCommand as y,registerEditorContribution as D}from"../../../browser/editorExtensions.js";import"../../../common/core/position.js";import{Range as S}from"../../../common/core/range.js";import{ScrollType as W}from"../../../common/editorCommon.js";import{PositionAffinity as w}from"../../../common/model.js";import{openLinkFromMarkdown as N}from"../../../browser/widget/markdownRenderer/browser/markdownRenderer.js";import*as O from"../../../../nls.js";import{IContextKeyService as T,RawContextKey as P}from"../../../../platform/contextkey/common/contextkey.js";import{KeybindingWeight as A}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{IOpenerService as V}from"../../../../platform/opener/common/opener.js";import*as a from"../../../../base/browser/dom.js";let o=class{constructor(e,t,s){this._openerService=s;this._editor=e,this._visible=o.MESSAGE_VISIBLE.bindTo(t)}static ID="editor.contrib.messageController";static MESSAGE_VISIBLE=new P("messageVisible",!1,O.localize("messageVisible","Whether the editor is currently showing an inline message"));static get(e){return e.getContribution(o.ID)}_editor;_visible;_messageWidget=new b;_messageListeners=new L;_message;_mouseOverMessage=!1;dispose(){this._message?.dispose(),this._messageListeners.dispose(),this._messageWidget.dispose(),this._visible.reset()}isVisible(){return this._visible.get()}showMessage(e,t){f(l(e)?e.value:e),this._visible.set(!0),this._messageWidget.clear(),this._messageListeners.clear(),this._message=l(e)?v(e,{actionHandler:{callback:i=>{this.closeMessage(),N(this._openerService,i,l(e)?e.isTrusted:void 0)},disposables:this._messageListeners}}):void 0,this._messageWidget.value=new c(this._editor,t,typeof e=="string"?e:this._message.element),this._messageListeners.add(E.debounce(this._editor.onDidBlurEditorText,(i,r)=>r,0)(()=>{this._mouseOverMessage||this._messageWidget.value&&a.isAncestor(a.getActiveElement(),this._messageWidget.value.getDomNode())||this.closeMessage()})),this._messageListeners.add(this._editor.onDidChangeCursorPosition(()=>this.closeMessage())),this._messageListeners.add(this._editor.onDidDispose(()=>this.closeMessage())),this._messageListeners.add(this._editor.onDidChangeModel(()=>this.closeMessage())),this._messageListeners.add(a.addDisposableListener(this._messageWidget.value.getDomNode(),a.EventType.MOUSE_ENTER,()=>this._mouseOverMessage=!0,!0)),this._messageListeners.add(a.addDisposableListener(this._messageWidget.value.getDomNode(),a.EventType.MOUSE_LEAVE,()=>this._mouseOverMessage=!1,!0));let s;this._messageListeners.add(this._editor.onMouseMove(i=>{i.target.position&&(s?s.containsPosition(i.target.position)||this.closeMessage():s=new S(t.lineNumber-3,1,i.target.position.lineNumber+3,1))}))}closeMessage(){this._visible.reset(),this._messageListeners.clear(),this._messageWidget.value&&this._messageListeners.add(c.fadeOut(this._messageWidget.value))}};o=h([m(1,T),m(2,V)],o);const k=C.bindToContribution(o.get);y(new k({id:"leaveEditorMessage",precondition:o.MESSAGE_VISIBLE,handler:d=>d.closeMessage(),kbOpts:{weight:A.EditorContrib+30,primary:I.Escape}}));class c{allowEditorOverflow=!0;suppressMouseDown=!1;_editor;_position;_domNode;static fadeOut(e){const t=()=>{e.dispose(),clearTimeout(s),e.getDomNode().removeEventListener("animationend",t)},s=setTimeout(t,110);return e.getDomNode().addEventListener("animationend",t),e.getDomNode().classList.add("fadeOut"),{dispose:t}}constructor(e,{lineNumber:t,column:s},i){this._editor=e,this._editor.revealLinesInCenterIfOutsideViewport(t,t,W.Smooth),this._position={lineNumber:t,column:s},this._domNode=document.createElement("div"),this._domNode.classList.add("monaco-editor-overlaymessage"),this._domNode.style.marginLeft="-6px";const r=document.createElement("div");r.classList.add("anchor","top"),this._domNode.appendChild(r);const n=document.createElement("div");typeof i=="string"?(n.classList.add("message"),n.textContent=i):(i.classList.add("message"),n.appendChild(i)),this._domNode.appendChild(n);const p=document.createElement("div");p.classList.add("anchor","below"),this._domNode.appendChild(p),this._editor.addContentWidget(this),this._domNode.classList.add("fadeIn")}dispose(){this._editor.removeContentWidget(this)}getId(){return"messageoverlay"}getDomNode(){return this._domNode}getPosition(){return{position:this._position,preference:[g.ABOVE,g.BELOW],positionAffinity:w.Right}}afterRender(e){this._domNode.classList.toggle("below",e===g.BELOW)}}D(o.ID,o,M.Lazy);export{o as MessageController};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var MessageController_1;
+import { renderMarkdown } from '../../../../base/browser/markdownRenderer.js';
+import { alert } from '../../../../base/browser/ui/aria/aria.js';
+import { Event } from '../../../../base/common/event.js';
+import { isMarkdownString } from '../../../../base/common/htmlContent.js';
+import { DisposableStore, MutableDisposable } from '../../../../base/common/lifecycle.js';
+import './messageController.css';
+import { EditorCommand, registerEditorCommand, registerEditorContribution } from '../../../browser/editorExtensions.js';
+import { Range } from '../../../common/core/range.js';
+import { openLinkFromMarkdown } from '../../../browser/widget/markdownRenderer/browser/markdownRenderer.js';
+import * as nls from '../../../../nls.js';
+import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import * as dom from '../../../../base/browser/dom.js';
+let MessageController = class MessageController {
+    static { MessageController_1 = this; }
+    static { this.ID = 'editor.contrib.messageController'; }
+    static { this.MESSAGE_VISIBLE = new RawContextKey('messageVisible', false, nls.localize('messageVisible', 'Whether the editor is currently showing an inline message')); }
+    static get(editor) {
+        return editor.getContribution(MessageController_1.ID);
+    }
+    constructor(editor, contextKeyService, _openerService) {
+        this._openerService = _openerService;
+        this._messageWidget = new MutableDisposable();
+        this._messageListeners = new DisposableStore();
+        this._mouseOverMessage = false;
+        this._editor = editor;
+        this._visible = MessageController_1.MESSAGE_VISIBLE.bindTo(contextKeyService);
+    }
+    dispose() {
+        this._message?.dispose();
+        this._messageListeners.dispose();
+        this._messageWidget.dispose();
+        this._visible.reset();
+    }
+    isVisible() {
+        return this._visible.get();
+    }
+    showMessage(message, position) {
+        alert(isMarkdownString(message) ? message.value : message);
+        this._visible.set(true);
+        this._messageWidget.clear();
+        this._messageListeners.clear();
+        this._message = isMarkdownString(message) ? renderMarkdown(message, {
+            actionHandler: {
+                callback: (url) => {
+                    this.closeMessage();
+                    openLinkFromMarkdown(this._openerService, url, isMarkdownString(message) ? message.isTrusted : undefined);
+                },
+                disposables: this._messageListeners
+            },
+        }) : undefined;
+        this._messageWidget.value = new MessageWidget(this._editor, position, typeof message === 'string' ? message : this._message.element);
+        this._messageListeners.add(Event.debounce(this._editor.onDidBlurEditorText, (last, event) => event, 0)(() => {
+            if (this._mouseOverMessage) {
+                return;
+            }
+            if (this._messageWidget.value && dom.isAncestor(dom.getActiveElement(), this._messageWidget.value.getDomNode())) {
+                return;
+            }
+            this.closeMessage();
+        }));
+        this._messageListeners.add(this._editor.onDidChangeCursorPosition(() => this.closeMessage()));
+        this._messageListeners.add(this._editor.onDidDispose(() => this.closeMessage()));
+        this._messageListeners.add(this._editor.onDidChangeModel(() => this.closeMessage()));
+        this._messageListeners.add(dom.addDisposableListener(this._messageWidget.value.getDomNode(), dom.EventType.MOUSE_ENTER, () => this._mouseOverMessage = true, true));
+        this._messageListeners.add(dom.addDisposableListener(this._messageWidget.value.getDomNode(), dom.EventType.MOUSE_LEAVE, () => this._mouseOverMessage = false, true));
+        let bounds;
+        this._messageListeners.add(this._editor.onMouseMove(e => {
+            if (!e.target.position) {
+                return;
+            }
+            if (!bounds) {
+                bounds = new Range(position.lineNumber - 3, 1, e.target.position.lineNumber + 3, 1);
+            }
+            else if (!bounds.containsPosition(e.target.position)) {
+                this.closeMessage();
+            }
+        }));
+    }
+    closeMessage() {
+        this._visible.reset();
+        this._messageListeners.clear();
+        if (this._messageWidget.value) {
+            this._messageListeners.add(MessageWidget.fadeOut(this._messageWidget.value));
+        }
+    }
+};
+MessageController = MessageController_1 = __decorate([
+    __param(1, IContextKeyService),
+    __param(2, IOpenerService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], MessageController);
+export { MessageController };
+const MessageCommand = EditorCommand.bindToContribution(MessageController.get);
+registerEditorCommand(new MessageCommand({
+    id: 'leaveEditorMessage',
+    precondition: MessageController.MESSAGE_VISIBLE,
+    handler: c => c.closeMessage(),
+    kbOpts: {
+        weight: 100 + 30,
+        primary: 9
+    }
+}));
+class MessageWidget {
+    static fadeOut(messageWidget) {
+        const dispose = () => {
+            messageWidget.dispose();
+            clearTimeout(handle);
+            messageWidget.getDomNode().removeEventListener('animationend', dispose);
+        };
+        const handle = setTimeout(dispose, 110);
+        messageWidget.getDomNode().addEventListener('animationend', dispose);
+        messageWidget.getDomNode().classList.add('fadeOut');
+        return { dispose };
+    }
+    constructor(editor, { lineNumber, column }, text) {
+        this.allowEditorOverflow = true;
+        this.suppressMouseDown = false;
+        this._editor = editor;
+        this._editor.revealLinesInCenterIfOutsideViewport(lineNumber, lineNumber, 0);
+        this._position = { lineNumber, column };
+        this._domNode = document.createElement('div');
+        this._domNode.classList.add('monaco-editor-overlaymessage');
+        this._domNode.style.marginLeft = '-6px';
+        const anchorTop = document.createElement('div');
+        anchorTop.classList.add('anchor', 'top');
+        this._domNode.appendChild(anchorTop);
+        const message = document.createElement('div');
+        if (typeof text === 'string') {
+            message.classList.add('message');
+            message.textContent = text;
+        }
+        else {
+            text.classList.add('message');
+            message.appendChild(text);
+        }
+        this._domNode.appendChild(message);
+        const anchorBottom = document.createElement('div');
+        anchorBottom.classList.add('anchor', 'below');
+        this._domNode.appendChild(anchorBottom);
+        this._editor.addContentWidget(this);
+        this._domNode.classList.add('fadeIn');
+    }
+    dispose() {
+        this._editor.removeContentWidget(this);
+    }
+    getId() {
+        return 'messageoverlay';
+    }
+    getDomNode() {
+        return this._domNode;
+    }
+    getPosition() {
+        return {
+            position: this._position,
+            preference: [
+                1,
+                2,
+            ],
+            positionAffinity: 1,
+        };
+    }
+    afterRender(position) {
+        this._domNode.classList.toggle('below', position === 2);
+    }
+}
+registerEditorContribution(MessageController.ID, MessageController, 4);

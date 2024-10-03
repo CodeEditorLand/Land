@@ -1,1 +1,224 @@
-import{isTypedArray as y,isObject as o,isUndefinedOrNull as l}from"./types.js";function p(t){if(!t||typeof t!="object"||t instanceof RegExp)return t;const e=Array.isArray(t)?[]:{};return Object.entries(t).forEach(([n,r])=>{e[n]=r&&typeof r=="object"?p(r):r}),e}function h(t){if(!t||typeof t!="object")return t;const e=[t];for(;e.length>0;){const n=e.shift();Object.freeze(n);for(const r in n)if(u.call(n,r)){const s=n[r];typeof s=="object"&&!Object.isFrozen(s)&&!y(s)&&e.push(s)}}return t}const u=Object.prototype.hasOwnProperty;function x(t,e){return c(t,e,new Set)}function c(t,e,n){if(l(t))return t;const r=e(t);if(typeof r<"u")return r;if(Array.isArray(t)){const s=[];for(const i of t)s.push(c(i,e,n));return s}if(o(t)){if(n.has(t))throw new Error("Cannot clone recursive data-structure");n.add(t);const s={};for(const i in t)u.call(t,i)&&(s[i]=c(t[i],e,n));return n.delete(t),s}return t}function g(t,e,n=!0){return o(t)?(o(e)&&Object.keys(e).forEach(r=>{r in t?n&&(o(t[r])&&o(e[r])?g(t[r],e[r],n):t[r]=e[r]):t[r]=e[r]}),t):e}function f(t,e){if(t===e)return!0;if(t==null||e===null||e===void 0||typeof t!=typeof e||typeof t!="object"||Array.isArray(t)!==Array.isArray(e))return!1;let n,r;if(Array.isArray(t)){if(t.length!==e.length)return!1;for(n=0;n<t.length;n++)if(!f(t[n],e[n]))return!1}else{const s=[];for(r in t)s.push(r);s.sort();const i=[];for(r in e)i.push(r);if(i.sort(),!f(s,i))return!1;for(n=0;n<s.length;n++)if(!f(t[s[n]],e[s[n]]))return!1}return!0}function A(t){const e=new Set;return JSON.stringify(t,(n,r)=>{if(o(r)||Array.isArray(r)){if(e.has(r))return"[Circular]";e.add(r)}return typeof r=="bigint"?`[BigInt ${r.toString()}]`:r})}function T(t,e){const n=Object.create(null);return!t||!e||Object.keys(e).forEach(s=>{const i=t[s],a=e[s];f(i,a)||(n[s]=a)}),n}function w(t,e){const n=e.toLowerCase(),r=Object.keys(t).find(s=>s.toLowerCase()===n);return r?t[r]:t[e]}function m(t,e){const n=Object.create(null);for(const[r,s]of Object.entries(t))e(r,s)&&(n[r]=s);return n}function d(t){let e=[];for(;Object.prototype!==t;)e=e.concat(Object.getOwnPropertyNames(t)),t=Object.getPrototypeOf(t);return e}function b(t){const e=[];for(const n of d(t))typeof t[n]=="function"&&e.push(n);return e}function k(t,e){const n=s=>function(){const i=Array.prototype.slice.call(arguments,0);return e(s,i)},r={};for(const s of t)r[s]=n(s);return r}function C(t,e){const n={};for(const[r,s]of Object.entries(t))n[r]=e(s,r);return n}export{x as cloneAndChange,k as createProxyObject,p as deepClone,h as deepFreeze,T as distinct,f as equals,m as filter,b as getAllMethodNames,d as getAllPropertyNames,w as getCaseInsensitive,C as mapValues,g as mixin,A as safeStringify};
+import { isTypedArray, isObject, isUndefinedOrNull } from './types.js';
+export function deepClone(obj) {
+    if (!obj || typeof obj !== 'object') {
+        return obj;
+    }
+    if (obj instanceof RegExp) {
+        return obj;
+    }
+    const result = Array.isArray(obj) ? [] : {};
+    Object.entries(obj).forEach(([key, value]) => {
+        result[key] = value && typeof value === 'object' ? deepClone(value) : value;
+    });
+    return result;
+}
+export function deepFreeze(obj) {
+    if (!obj || typeof obj !== 'object') {
+        return obj;
+    }
+    const stack = [obj];
+    while (stack.length > 0) {
+        const obj = stack.shift();
+        Object.freeze(obj);
+        for (const key in obj) {
+            if (_hasOwnProperty.call(obj, key)) {
+                const prop = obj[key];
+                if (typeof prop === 'object' && !Object.isFrozen(prop) && !isTypedArray(prop)) {
+                    stack.push(prop);
+                }
+            }
+        }
+    }
+    return obj;
+}
+const _hasOwnProperty = Object.prototype.hasOwnProperty;
+export function cloneAndChange(obj, changer) {
+    return _cloneAndChange(obj, changer, new Set());
+}
+function _cloneAndChange(obj, changer, seen) {
+    if (isUndefinedOrNull(obj)) {
+        return obj;
+    }
+    const changed = changer(obj);
+    if (typeof changed !== 'undefined') {
+        return changed;
+    }
+    if (Array.isArray(obj)) {
+        const r1 = [];
+        for (const e of obj) {
+            r1.push(_cloneAndChange(e, changer, seen));
+        }
+        return r1;
+    }
+    if (isObject(obj)) {
+        if (seen.has(obj)) {
+            throw new Error('Cannot clone recursive data-structure');
+        }
+        seen.add(obj);
+        const r2 = {};
+        for (const i2 in obj) {
+            if (_hasOwnProperty.call(obj, i2)) {
+                r2[i2] = _cloneAndChange(obj[i2], changer, seen);
+            }
+        }
+        seen.delete(obj);
+        return r2;
+    }
+    return obj;
+}
+export function mixin(destination, source, overwrite = true) {
+    if (!isObject(destination)) {
+        return source;
+    }
+    if (isObject(source)) {
+        Object.keys(source).forEach(key => {
+            if (key in destination) {
+                if (overwrite) {
+                    if (isObject(destination[key]) && isObject(source[key])) {
+                        mixin(destination[key], source[key], overwrite);
+                    }
+                    else {
+                        destination[key] = source[key];
+                    }
+                }
+            }
+            else {
+                destination[key] = source[key];
+            }
+        });
+    }
+    return destination;
+}
+export function equals(one, other) {
+    if (one === other) {
+        return true;
+    }
+    if (one === null || one === undefined || other === null || other === undefined) {
+        return false;
+    }
+    if (typeof one !== typeof other) {
+        return false;
+    }
+    if (typeof one !== 'object') {
+        return false;
+    }
+    if ((Array.isArray(one)) !== (Array.isArray(other))) {
+        return false;
+    }
+    let i;
+    let key;
+    if (Array.isArray(one)) {
+        if (one.length !== other.length) {
+            return false;
+        }
+        for (i = 0; i < one.length; i++) {
+            if (!equals(one[i], other[i])) {
+                return false;
+            }
+        }
+    }
+    else {
+        const oneKeys = [];
+        for (key in one) {
+            oneKeys.push(key);
+        }
+        oneKeys.sort();
+        const otherKeys = [];
+        for (key in other) {
+            otherKeys.push(key);
+        }
+        otherKeys.sort();
+        if (!equals(oneKeys, otherKeys)) {
+            return false;
+        }
+        for (i = 0; i < oneKeys.length; i++) {
+            if (!equals(one[oneKeys[i]], other[oneKeys[i]])) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+export function safeStringify(obj) {
+    const seen = new Set();
+    return JSON.stringify(obj, (key, value) => {
+        if (isObject(value) || Array.isArray(value)) {
+            if (seen.has(value)) {
+                return '[Circular]';
+            }
+            else {
+                seen.add(value);
+            }
+        }
+        if (typeof value === 'bigint') {
+            return `[BigInt ${value.toString()}]`;
+        }
+        return value;
+    });
+}
+export function distinct(base, target) {
+    const result = Object.create(null);
+    if (!base || !target) {
+        return result;
+    }
+    const targetKeys = Object.keys(target);
+    targetKeys.forEach(k => {
+        const baseValue = base[k];
+        const targetValue = target[k];
+        if (!equals(baseValue, targetValue)) {
+            result[k] = targetValue;
+        }
+    });
+    return result;
+}
+export function getCaseInsensitive(target, key) {
+    const lowercaseKey = key.toLowerCase();
+    const equivalentKey = Object.keys(target).find(k => k.toLowerCase() === lowercaseKey);
+    return equivalentKey ? target[equivalentKey] : target[key];
+}
+export function filter(obj, predicate) {
+    const result = Object.create(null);
+    for (const [key, value] of Object.entries(obj)) {
+        if (predicate(key, value)) {
+            result[key] = value;
+        }
+    }
+    return result;
+}
+export function getAllPropertyNames(obj) {
+    let res = [];
+    while (Object.prototype !== obj) {
+        res = res.concat(Object.getOwnPropertyNames(obj));
+        obj = Object.getPrototypeOf(obj);
+    }
+    return res;
+}
+export function getAllMethodNames(obj) {
+    const methods = [];
+    for (const prop of getAllPropertyNames(obj)) {
+        if (typeof obj[prop] === 'function') {
+            methods.push(prop);
+        }
+    }
+    return methods;
+}
+export function createProxyObject(methodNames, invoke) {
+    const createProxyMethod = (method) => {
+        return function () {
+            const args = Array.prototype.slice.call(arguments, 0);
+            return invoke(method, args);
+        };
+    };
+    const result = {};
+    for (const methodName of methodNames) {
+        result[methodName] = createProxyMethod(methodName);
+    }
+    return result;
+}
+export function mapValues(obj, fn) {
+    const result = {};
+    for (const [key, value] of Object.entries(obj)) {
+        result[key] = fn(value, key);
+    }
+    return result;
+}

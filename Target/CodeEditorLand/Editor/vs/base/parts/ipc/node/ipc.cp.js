@@ -1,1 +1,177 @@
-import{fork as g}from"child_process";import{createCancelablePromise as C,Delayer as b}from"../../../common/async.js";import{VSBuffer as f}from"../../../common/buffer.js";import{CancellationToken as y}from"../../../common/cancellation.js";import{isRemoteConsoleLog as D,log as x}from"../../../common/console.js";import*as P from"../../../common/errors.js";import{Emitter as h,Event as d}from"../../../common/event.js";import{dispose as E,toDisposable as I}from"../../../common/lifecycle.js";import{deepClone as T}from"../../../common/objects.js";import{createQueuedSender as R}from"../../../node/processes.js";import{removeDangerousEnvVariables as w}from"../../../common/processes.js";import{ChannelClient as q,ChannelServer as S}from"../common/ipc.js";class H extends S{constructor(s){super({send:e=>{try{process.send?.(e.buffer.toString("base64"))}catch{}},onMessage:d.fromNodeEventEmitter(process,"message",e=>f.wrap(Buffer.from(e,"base64")))},s),process.once("disconnect",()=>this.dispose())}}class J{constructor(s,e){this.modulePath=s;this.options=e;const i=e&&e.timeout?e.timeout:6e4;this.disposeDelayer=new b(i),this.child=null,this._client=null}disposeDelayer;activeRequests=new Set;child;_client;channels=new Map;_onDidProcessExit=new h;onDidProcessExit=this._onDidProcessExit.event;getChannel(s){const e=this;return{call(i,n,r){return e.requestPromise(s,i,n,r)},listen(i,n){return e.requestEvent(s,i,n)}}}requestPromise(s,e,i,n=y.None){if(!this.disposeDelayer)return Promise.reject(new Error("disposed"));if(n.isCancellationRequested)return Promise.reject(P.canceled());this.disposeDelayer.cancel();const r=this.getCachedChannel(s),o=C(c=>r.call(e,i,c)),a=n.onCancellationRequested(()=>o.cancel()),l=I(()=>o.cancel());return this.activeRequests.add(l),o.finally(()=>{a.dispose(),this.activeRequests.delete(l),this.activeRequests.size===0&&this.disposeDelayer&&this.disposeDelayer.trigger(()=>this.disposeClient())}),o}requestEvent(s,e,i){if(!this.disposeDelayer)return d.None;this.disposeDelayer.cancel();let n;const r=new h({onWillAddFirstListener:()=>{n=this.getCachedChannel(s).listen(e,i)(r.fire,r),this.activeRequests.add(n)},onDidRemoveLastListener:()=>{this.activeRequests.delete(n),n.dispose(),this.activeRequests.size===0&&this.disposeDelayer&&this.disposeDelayer.trigger(()=>this.disposeClient())}});return r.event}get client(){if(!this._client){const s=this.options&&this.options.args?this.options.args:[],e=Object.create(null);e.env={...T(process.env),VSCODE_PARENT_PID:String(process.pid)},this.options&&this.options.env&&(e.env={...e.env,...this.options.env}),this.options&&this.options.freshExecArgv&&(e.execArgv=[]),this.options&&typeof this.options.debug=="number"&&(e.execArgv=["--nolazy","--inspect="+this.options.debug]),this.options&&typeof this.options.debugBrk=="number"&&(e.execArgv=["--nolazy","--inspect-brk="+this.options.debugBrk]),e.execArgv===void 0&&(e.execArgv=process.execArgv.filter(t=>!/^--inspect(-brk)?=/.test(t)).filter(t=>!t.startsWith("--vscode-"))),w(e.env),this.child=g(this.modulePath,s,e);const i=new h,r=d.fromNodeEventEmitter(this.child,"message",t=>t)(t=>{if(D(t)){x(t,`IPC Library: ${this.options.serverName}`);return}i.fire(f.wrap(Buffer.from(t,"base64")))}),o=this.options.useQueue?R(this.child):this.child,a=t=>this.child&&this.child.connected&&o.send(t.buffer.toString("base64")),l=i.event,c={send:a,onMessage:l};this._client=new q(c);const p=()=>this.disposeClient();process.once("exit",p),this.child.on("error",t=>{}),this.child.on("exit",(t,u)=>{process.removeListener("exit",p),r.dispose(),this.activeRequests.forEach(m=>E(m)),this.activeRequests.clear(),this.disposeDelayer?.cancel(),this.disposeClient(),this._onDidProcessExit.fire({code:t,signal:u})})}return this._client}getCachedChannel(s){let e=this.channels.get(s);return e||(e=this.client.getChannel(s),this.channels.set(s,e)),e}disposeClient(){this._client&&(this.child&&(this.child.kill(),this.child=null),this._client=null,this.channels.clear())}dispose(){this._onDidProcessExit.dispose(),this.disposeDelayer?.cancel(),this.disposeDelayer=void 0,this.disposeClient(),this.activeRequests.clear()}}export{J as Client,H as Server};
+import { fork } from 'child_process';
+import { createCancelablePromise, Delayer } from '../../../common/async.js';
+import { VSBuffer } from '../../../common/buffer.js';
+import { CancellationToken } from '../../../common/cancellation.js';
+import { isRemoteConsoleLog, log } from '../../../common/console.js';
+import * as errors from '../../../common/errors.js';
+import { Emitter, Event } from '../../../common/event.js';
+import { dispose, toDisposable } from '../../../common/lifecycle.js';
+import { deepClone } from '../../../common/objects.js';
+import { createQueuedSender } from '../../../node/processes.js';
+import { removeDangerousEnvVariables } from '../../../common/processes.js';
+import { ChannelClient as IPCClient, ChannelServer as IPCServer } from '../common/ipc.js';
+export class Server extends IPCServer {
+    constructor(ctx) {
+        super({
+            send: r => {
+                try {
+                    process.send?.(r.buffer.toString('base64'));
+                }
+                catch (e) { }
+            },
+            onMessage: Event.fromNodeEventEmitter(process, 'message', msg => VSBuffer.wrap(Buffer.from(msg, 'base64')))
+        }, ctx);
+        process.once('disconnect', () => this.dispose());
+    }
+}
+export class Client {
+    constructor(modulePath, options) {
+        this.modulePath = modulePath;
+        this.options = options;
+        this.activeRequests = new Set();
+        this.channels = new Map();
+        this._onDidProcessExit = new Emitter();
+        this.onDidProcessExit = this._onDidProcessExit.event;
+        const timeout = options && options.timeout ? options.timeout : 60000;
+        this.disposeDelayer = new Delayer(timeout);
+        this.child = null;
+        this._client = null;
+    }
+    getChannel(channelName) {
+        const that = this;
+        return {
+            call(command, arg, cancellationToken) {
+                return that.requestPromise(channelName, command, arg, cancellationToken);
+            },
+            listen(event, arg) {
+                return that.requestEvent(channelName, event, arg);
+            }
+        };
+    }
+    requestPromise(channelName, name, arg, cancellationToken = CancellationToken.None) {
+        if (!this.disposeDelayer) {
+            return Promise.reject(new Error('disposed'));
+        }
+        if (cancellationToken.isCancellationRequested) {
+            return Promise.reject(errors.canceled());
+        }
+        this.disposeDelayer.cancel();
+        const channel = this.getCachedChannel(channelName);
+        const result = createCancelablePromise(token => channel.call(name, arg, token));
+        const cancellationTokenListener = cancellationToken.onCancellationRequested(() => result.cancel());
+        const disposable = toDisposable(() => result.cancel());
+        this.activeRequests.add(disposable);
+        result.finally(() => {
+            cancellationTokenListener.dispose();
+            this.activeRequests.delete(disposable);
+            if (this.activeRequests.size === 0 && this.disposeDelayer) {
+                this.disposeDelayer.trigger(() => this.disposeClient());
+            }
+        });
+        return result;
+    }
+    requestEvent(channelName, name, arg) {
+        if (!this.disposeDelayer) {
+            return Event.None;
+        }
+        this.disposeDelayer.cancel();
+        let listener;
+        const emitter = new Emitter({
+            onWillAddFirstListener: () => {
+                const channel = this.getCachedChannel(channelName);
+                const event = channel.listen(name, arg);
+                listener = event(emitter.fire, emitter);
+                this.activeRequests.add(listener);
+            },
+            onDidRemoveLastListener: () => {
+                this.activeRequests.delete(listener);
+                listener.dispose();
+                if (this.activeRequests.size === 0 && this.disposeDelayer) {
+                    this.disposeDelayer.trigger(() => this.disposeClient());
+                }
+            }
+        });
+        return emitter.event;
+    }
+    get client() {
+        if (!this._client) {
+            const args = this.options && this.options.args ? this.options.args : [];
+            const forkOpts = Object.create(null);
+            forkOpts.env = { ...deepClone(process.env), 'VSCODE_PARENT_PID': String(process.pid) };
+            if (this.options && this.options.env) {
+                forkOpts.env = { ...forkOpts.env, ...this.options.env };
+            }
+            if (this.options && this.options.freshExecArgv) {
+                forkOpts.execArgv = [];
+            }
+            if (this.options && typeof this.options.debug === 'number') {
+                forkOpts.execArgv = ['--nolazy', '--inspect=' + this.options.debug];
+            }
+            if (this.options && typeof this.options.debugBrk === 'number') {
+                forkOpts.execArgv = ['--nolazy', '--inspect-brk=' + this.options.debugBrk];
+            }
+            if (forkOpts.execArgv === undefined) {
+                forkOpts.execArgv = process.execArgv
+                    .filter(a => !/^--inspect(-brk)?=/.test(a))
+                    .filter(a => !a.startsWith('--vscode-'));
+            }
+            removeDangerousEnvVariables(forkOpts.env);
+            this.child = fork(this.modulePath, args, forkOpts);
+            const onMessageEmitter = new Emitter();
+            const onRawMessage = Event.fromNodeEventEmitter(this.child, 'message', msg => msg);
+            const rawMessageDisposable = onRawMessage(msg => {
+                if (isRemoteConsoleLog(msg)) {
+                    log(msg, `IPC Library: ${this.options.serverName}`);
+                    return;
+                }
+                onMessageEmitter.fire(VSBuffer.wrap(Buffer.from(msg, 'base64')));
+            });
+            const sender = this.options.useQueue ? createQueuedSender(this.child) : this.child;
+            const send = (r) => this.child && this.child.connected && sender.send(r.buffer.toString('base64'));
+            const onMessage = onMessageEmitter.event;
+            const protocol = { send, onMessage };
+            this._client = new IPCClient(protocol);
+            const onExit = () => this.disposeClient();
+            process.once('exit', onExit);
+            this.child.on('error', err => console.warn('IPC "' + this.options.serverName + '" errored with ' + err));
+            this.child.on('exit', (code, signal) => {
+                process.removeListener('exit', onExit);
+                rawMessageDisposable.dispose();
+                this.activeRequests.forEach(r => dispose(r));
+                this.activeRequests.clear();
+                if (code !== 0 && signal !== 'SIGTERM') {
+                    console.warn('IPC "' + this.options.serverName + '" crashed with exit code ' + code + ' and signal ' + signal);
+                }
+                this.disposeDelayer?.cancel();
+                this.disposeClient();
+                this._onDidProcessExit.fire({ code, signal });
+            });
+        }
+        return this._client;
+    }
+    getCachedChannel(name) {
+        let channel = this.channels.get(name);
+        if (!channel) {
+            channel = this.client.getChannel(name);
+            this.channels.set(name, channel);
+        }
+        return channel;
+    }
+    disposeClient() {
+        if (this._client) {
+            if (this.child) {
+                this.child.kill();
+                this.child = null;
+            }
+            this._client = null;
+            this.channels.clear();
+        }
+    }
+    dispose() {
+        this._onDidProcessExit.dispose();
+        this.disposeDelayer?.cancel();
+        this.disposeDelayer = undefined;
+        this.disposeClient();
+        this.activeRequests.clear();
+    }
+}

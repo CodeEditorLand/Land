@@ -1,1 +1,97 @@
-import"../../../../platform/environment/common/environment.js";import{ExtensionIdentifier as m}from"../../../../platform/extensions/common/extensions.js";var h=(e=>(e[e.LocalProcess=1]="LocalProcess",e[e.LocalWebWorker=2]="LocalWebWorker",e[e.Remote=3]="Remote",e))(h||{});function R(o){if(o===null)return"None";switch(o){case 1:return"LocalProcess";case 2:return"LocalWebWorker";case 3:return"Remote"}}var y=(e=>(e[e.None=0]="None",e[e.Local=1]="Local",e[e.Remote=2]="Remote",e))(y||{});function L(o){switch(o){case 0:return"None";case 1:return"Local";case 2:return"Remote"}}function W(o,i,t,e){const s=f(o,t),u=f(i,t),l=new Map,x=n=>{if(l.has(n.key))return;const c=s.get(n.key)||null,a=u.get(n.key)||null,r=new I(c,a);l.set(r.key,r)};s.forEach(n=>x(n)),u.forEach(n=>x(n));const E=new Map;return l.forEach(n=>{const c=!!n.local,a=!!n.remote,r=!!(n.local&&n.local.isUnderDevelopment),p=!!(n.remote&&n.remote.isUnderDevelopment);let d=0;r&&!p?d=1:p&&!r&&(d=2),E.set(n.key,e(n.identifier,n.kind,c,a,d))}),E}function f(o,i){const t=new Map;return o.forEach(e=>{const s=new K(e,i(e));t.set(s.key,s)}),t}class K{constructor(i,t){this.desc=i;this.kind=t}get key(){return m.toKey(this.desc.identifier)}get isUnderDevelopment(){return this.desc.isUnderDevelopment}}class I{constructor(i,t){this.local=i;this.remote=t}get key(){return this.local?this.local.key:this.remote.key}get identifier(){return this.local?this.local.desc.identifier:this.remote.desc.identifier}get kind(){return this.local?this.local.kind:this.remote.kind}}export{h as ExtensionHostKind,y as ExtensionRunningPreference,W as determineExtensionHostKinds,R as extensionHostKindToString,L as extensionRunningPreferenceToString};
+import { ExtensionIdentifier } from '../../../../platform/extensions/common/extensions.js';
+export function extensionHostKindToString(kind) {
+    if (kind === null) {
+        return 'None';
+    }
+    switch (kind) {
+        case 1: return 'LocalProcess';
+        case 2: return 'LocalWebWorker';
+        case 3: return 'Remote';
+    }
+}
+export function extensionRunningPreferenceToString(preference) {
+    switch (preference) {
+        case 0:
+            return 'None';
+        case 1:
+            return 'Local';
+        case 2:
+            return 'Remote';
+    }
+}
+export function determineExtensionHostKinds(_localExtensions, _remoteExtensions, getExtensionKind, pickExtensionHostKind) {
+    const localExtensions = toExtensionWithKind(_localExtensions, getExtensionKind);
+    const remoteExtensions = toExtensionWithKind(_remoteExtensions, getExtensionKind);
+    const allExtensions = new Map();
+    const collectExtension = (ext) => {
+        if (allExtensions.has(ext.key)) {
+            return;
+        }
+        const local = localExtensions.get(ext.key) || null;
+        const remote = remoteExtensions.get(ext.key) || null;
+        const info = new ExtensionInfo(local, remote);
+        allExtensions.set(info.key, info);
+    };
+    localExtensions.forEach((ext) => collectExtension(ext));
+    remoteExtensions.forEach((ext) => collectExtension(ext));
+    const extensionHostKinds = new Map();
+    allExtensions.forEach((ext) => {
+        const isInstalledLocally = Boolean(ext.local);
+        const isInstalledRemotely = Boolean(ext.remote);
+        const isLocallyUnderDevelopment = Boolean(ext.local && ext.local.isUnderDevelopment);
+        const isRemotelyUnderDevelopment = Boolean(ext.remote && ext.remote.isUnderDevelopment);
+        let preference = 0;
+        if (isLocallyUnderDevelopment && !isRemotelyUnderDevelopment) {
+            preference = 1;
+        }
+        else if (isRemotelyUnderDevelopment && !isLocallyUnderDevelopment) {
+            preference = 2;
+        }
+        extensionHostKinds.set(ext.key, pickExtensionHostKind(ext.identifier, ext.kind, isInstalledLocally, isInstalledRemotely, preference));
+    });
+    return extensionHostKinds;
+}
+function toExtensionWithKind(extensions, getExtensionKind) {
+    const result = new Map();
+    extensions.forEach((desc) => {
+        const ext = new ExtensionWithKind(desc, getExtensionKind(desc));
+        result.set(ext.key, ext);
+    });
+    return result;
+}
+class ExtensionWithKind {
+    constructor(desc, kind) {
+        this.desc = desc;
+        this.kind = kind;
+    }
+    get key() {
+        return ExtensionIdentifier.toKey(this.desc.identifier);
+    }
+    get isUnderDevelopment() {
+        return this.desc.isUnderDevelopment;
+    }
+}
+class ExtensionInfo {
+    constructor(local, remote) {
+        this.local = local;
+        this.remote = remote;
+    }
+    get key() {
+        if (this.local) {
+            return this.local.key;
+        }
+        return this.remote.key;
+    }
+    get identifier() {
+        if (this.local) {
+            return this.local.desc.identifier;
+        }
+        return this.remote.desc.identifier;
+    }
+    get kind() {
+        if (this.local) {
+            return this.local.kind;
+        }
+        return this.remote.kind;
+    }
+}

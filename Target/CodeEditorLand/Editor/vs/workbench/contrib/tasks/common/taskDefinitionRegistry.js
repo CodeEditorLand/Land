@@ -1,1 +1,151 @@
-import*as a from"../../../../nls.js";import"../../../../base/common/jsonSchema.js";import"../../../../base/common/collections.js";import*as c from"../../../../base/common/types.js";import*as d from"../../../../base/common/objects.js";import{ExtensionsRegistry as m}from"../../../services/extensions/common/extensionsRegistry.js";import"./tasks.js";import"../../../../platform/extensions/common/extensions.js";import{ContextKeyExpr as y}from"../../../../platform/contextkey/common/contextkey.js";import{Emitter as k}from"../../../../base/common/event.js";const u={type:"object",additionalProperties:!1,properties:{type:{type:"string",description:a.localize("TaskDefinition.description","The actual task type. Please note that types starting with a '$' are reserved for internal usage.")},required:{type:"array",items:{type:"string"}},properties:{type:"object",description:a.localize("TaskDefinition.properties","Additional properties of the task type"),additionalProperties:{$ref:"http://json-schema.org/draft-07/schema#"}},when:{type:"string",markdownDescription:a.localize("TaskDefinition.when","Condition which must be true to enable this type of task. Consider using `shellExecutionSupported`, `processExecutionSupported`, and `customExecutionSupported` as appropriate for this task definition. See the [API documentation](https://code.visualstudio.com/api/extension-guides/task-provider#when-clause) for more information."),default:""}}};var h;(i=>{function p(e,s,o){if(!e)return;const t=c.isString(e.type)?e.type:void 0;if(!t||t.length===0){o.error(a.localize("TaskTypeConfiguration.noType","The task type configuration is missing the required 'taskType' property"));return}const r=[];if(Array.isArray(e.required))for(const n of e.required)c.isString(n)&&r.push(n);return{extensionId:s.value,taskType:t,required:r,properties:e.properties?d.deepClone(e.properties):{},when:e.when?y.deserialize(e.when):void 0}}i.from=p})(h||={});const l=m.registerExtensionPoint({extensionPoint:"taskDefinitions",activationEventsGenerator:(p,i)=>{for(const e of p)e.type&&i.push(`onTaskType:${e.type}`)},jsonSchema:{description:a.localize("TaskDefinitionExtPoint","Contributes task kinds"),type:"array",items:u}});class T{taskTypes;readyPromise;_schema;_onDefinitionsChanged=new k;onDefinitionsChanged=this._onDefinitionsChanged.event;constructor(){this.taskTypes=Object.create(null),this.readyPromise=new Promise((i,e)=>{l.setHandler((s,o)=>{this._schema=void 0;try{for(const t of o.removed){const r=t.value;for(const n of r)this.taskTypes&&n.type&&this.taskTypes[n.type]&&delete this.taskTypes[n.type]}for(const t of o.added){const r=t.value;for(const n of r){const f=h.from(n,t.description.identifier,t.collector);f&&(this.taskTypes[f.taskType]=f)}}(o.removed.length>0||o.added.length>0)&&this._onDefinitionsChanged.fire()}catch{}i(void 0)})})}onReady(){return this.readyPromise}get(i){return this.taskTypes[i]}all(){return Object.keys(this.taskTypes).map(i=>this.taskTypes[i])}getJsonSchema(){if(this._schema===void 0){const i=[];for(const e of this.all()){const s={type:"object",additionalProperties:!1};e.required.length>0&&(s.required=e.required.slice(0)),e.properties!==void 0?s.properties=d.deepClone(e.properties):s.properties=Object.create(null),s.properties.type={type:"string",enum:[e.taskType]},i.push(s)}this._schema={oneOf:i}}return this._schema}}const j=new T;export{j as TaskDefinitionRegistry};
+import * as nls from '../../../../nls.js';
+import * as Types from '../../../../base/common/types.js';
+import * as Objects from '../../../../base/common/objects.js';
+import { ExtensionsRegistry } from '../../../services/extensions/common/extensionsRegistry.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { Emitter } from '../../../../base/common/event.js';
+const taskDefinitionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+        type: {
+            type: 'string',
+            description: nls.localize('TaskDefinition.description', 'The actual task type. Please note that types starting with a \'$\' are reserved for internal usage.')
+        },
+        required: {
+            type: 'array',
+            items: {
+                type: 'string'
+            }
+        },
+        properties: {
+            type: 'object',
+            description: nls.localize('TaskDefinition.properties', 'Additional properties of the task type'),
+            additionalProperties: {
+                $ref: 'http://json-schema.org/draft-07/schema#'
+            }
+        },
+        when: {
+            type: 'string',
+            markdownDescription: nls.localize('TaskDefinition.when', 'Condition which must be true to enable this type of task. Consider using `shellExecutionSupported`, `processExecutionSupported`, and `customExecutionSupported` as appropriate for this task definition. See the [API documentation](https://code.visualstudio.com/api/extension-guides/task-provider#when-clause) for more information.'),
+            default: ''
+        }
+    }
+};
+var Configuration;
+(function (Configuration) {
+    function from(value, extensionId, messageCollector) {
+        if (!value) {
+            return undefined;
+        }
+        const taskType = Types.isString(value.type) ? value.type : undefined;
+        if (!taskType || taskType.length === 0) {
+            messageCollector.error(nls.localize('TaskTypeConfiguration.noType', 'The task type configuration is missing the required \'taskType\' property'));
+            return undefined;
+        }
+        const required = [];
+        if (Array.isArray(value.required)) {
+            for (const element of value.required) {
+                if (Types.isString(element)) {
+                    required.push(element);
+                }
+            }
+        }
+        return {
+            extensionId: extensionId.value,
+            taskType, required: required,
+            properties: value.properties ? Objects.deepClone(value.properties) : {},
+            when: value.when ? ContextKeyExpr.deserialize(value.when) : undefined
+        };
+    }
+    Configuration.from = from;
+})(Configuration || (Configuration = {}));
+const taskDefinitionsExtPoint = ExtensionsRegistry.registerExtensionPoint({
+    extensionPoint: 'taskDefinitions',
+    activationEventsGenerator: (contributions, result) => {
+        for (const task of contributions) {
+            if (task.type) {
+                result.push(`onTaskType:${task.type}`);
+            }
+        }
+    },
+    jsonSchema: {
+        description: nls.localize('TaskDefinitionExtPoint', 'Contributes task kinds'),
+        type: 'array',
+        items: taskDefinitionSchema
+    }
+});
+class TaskDefinitionRegistryImpl {
+    constructor() {
+        this._onDefinitionsChanged = new Emitter();
+        this.onDefinitionsChanged = this._onDefinitionsChanged.event;
+        this.taskTypes = Object.create(null);
+        this.readyPromise = new Promise((resolve, reject) => {
+            taskDefinitionsExtPoint.setHandler((extensions, delta) => {
+                this._schema = undefined;
+                try {
+                    for (const extension of delta.removed) {
+                        const taskTypes = extension.value;
+                        for (const taskType of taskTypes) {
+                            if (this.taskTypes && taskType.type && this.taskTypes[taskType.type]) {
+                                delete this.taskTypes[taskType.type];
+                            }
+                        }
+                    }
+                    for (const extension of delta.added) {
+                        const taskTypes = extension.value;
+                        for (const taskType of taskTypes) {
+                            const type = Configuration.from(taskType, extension.description.identifier, extension.collector);
+                            if (type) {
+                                this.taskTypes[type.taskType] = type;
+                            }
+                        }
+                    }
+                    if ((delta.removed.length > 0) || (delta.added.length > 0)) {
+                        this._onDefinitionsChanged.fire();
+                    }
+                }
+                catch (error) {
+                }
+                resolve(undefined);
+            });
+        });
+    }
+    onReady() {
+        return this.readyPromise;
+    }
+    get(key) {
+        return this.taskTypes[key];
+    }
+    all() {
+        return Object.keys(this.taskTypes).map(key => this.taskTypes[key]);
+    }
+    getJsonSchema() {
+        if (this._schema === undefined) {
+            const schemas = [];
+            for (const definition of this.all()) {
+                const schema = {
+                    type: 'object',
+                    additionalProperties: false
+                };
+                if (definition.required.length > 0) {
+                    schema.required = definition.required.slice(0);
+                }
+                if (definition.properties !== undefined) {
+                    schema.properties = Objects.deepClone(definition.properties);
+                }
+                else {
+                    schema.properties = Object.create(null);
+                }
+                schema.properties.type = {
+                    type: 'string',
+                    enum: [definition.taskType]
+                };
+                schemas.push(schema);
+            }
+            this._schema = { oneOf: schemas };
+        }
+        return this._schema;
+    }
+}
+export const TaskDefinitionRegistry = new TaskDefinitionRegistryImpl();

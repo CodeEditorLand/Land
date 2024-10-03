@@ -1,1 +1,52 @@
-import{CancellationToken as p}from"../../../../base/common/cancellation.js";import{onUnexpectedExternalError as m}from"../../../../base/common/errors.js";import{assertType as g}from"../../../../base/common/types.js";import{URI as f}from"../../../../base/common/uri.js";import{Position as u}from"../../../common/core/position.js";import"../../../common/languageFeatureRegistry.js";import*as d from"../../../common/languages.js";import"../../../common/model.js";import{ILanguageFeaturesService as c}from"../../../common/services/languageFeatures.js";import{ITextModelService as x}from"../../../common/services/resolverService.js";import{CommandsRegistry as S}from"../../../../platform/commands/common/commands.js";import{RawContextKey as l}from"../../../../platform/contextkey/common/contextkey.js";const K={Visible:new l("parameterHintsVisible",!1),MultipleSignatures:new l("parameterHintsMultipleSignatures",!1)};async function y(t,i,o,n,r){const s=t.ordered(i);for(const a of s)try{const e=await a.provideSignatureHelp(i,o,r,n);if(e)return e}catch(e){m(e)}}S.registerCommand("_executeSignatureHelpProvider",async(t,...i)=>{const[o,n,r]=i;g(f.isUri(o)),g(u.isIPosition(n)),g(typeof r=="string"||!r);const s=t.get(c),a=await t.get(x).createModelReference(o);try{const e=await y(s.signatureHelpProvider,a.object.textEditorModel,u.lift(n),{triggerKind:d.SignatureHelpTriggerKind.Invoke,isRetrigger:!1,triggerCharacter:r},p.None);return e?(setTimeout(()=>e.dispose(),0),e.value):void 0}finally{a.dispose()}});export{K as Context,y as provideSignatureHelp};
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { onUnexpectedExternalError } from '../../../../base/common/errors.js';
+import { assertType } from '../../../../base/common/types.js';
+import { URI } from '../../../../base/common/uri.js';
+import { Position } from '../../../common/core/position.js';
+import * as languages from '../../../common/languages.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { ITextModelService } from '../../../common/services/resolverService.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+export const Context = {
+    Visible: new RawContextKey('parameterHintsVisible', false),
+    MultipleSignatures: new RawContextKey('parameterHintsMultipleSignatures', false),
+};
+export async function provideSignatureHelp(registry, model, position, context, token) {
+    const supports = registry.ordered(model);
+    for (const support of supports) {
+        try {
+            const result = await support.provideSignatureHelp(model, position, token, context);
+            if (result) {
+                return result;
+            }
+        }
+        catch (err) {
+            onUnexpectedExternalError(err);
+        }
+    }
+    return undefined;
+}
+CommandsRegistry.registerCommand('_executeSignatureHelpProvider', async (accessor, ...args) => {
+    const [uri, position, triggerCharacter] = args;
+    assertType(URI.isUri(uri));
+    assertType(Position.isIPosition(position));
+    assertType(typeof triggerCharacter === 'string' || !triggerCharacter);
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const ref = await accessor.get(ITextModelService).createModelReference(uri);
+    try {
+        const result = await provideSignatureHelp(languageFeaturesService.signatureHelpProvider, ref.object.textEditorModel, Position.lift(position), {
+            triggerKind: languages.SignatureHelpTriggerKind.Invoke,
+            isRetrigger: false,
+            triggerCharacter,
+        }, CancellationToken.None);
+        if (!result) {
+            return undefined;
+        }
+        setTimeout(() => result.dispose(), 0);
+        return result.value;
+    }
+    finally {
+        ref.dispose();
+    }
+});

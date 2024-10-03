@@ -1,1 +1,69 @@
-var m=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var d=(t,r,o,n)=>{for(var i=n>1?void 0:n?v(r,o):r,a=t.length-1,s;a>=0;a--)(s=t[a])&&(i=(n?s(r,o,i):s(i))||i);return n&&i&&m(r,o,i),i},c=(t,r)=>(o,n)=>r(o,n,t);import{getZoomLevel as u}from"../../../../base/browser/browser.js";import{platform as p}from"../../../../base/common/process.js";import{InstantiationType as g,registerSingleton as S}from"../../../../platform/instantiation/common/extensions.js";import{IProcessMainService as h}from"../../../../platform/issue/common/issue.js";import{IProductService as k}from"../../../../platform/product/common/productService.js";import{activeContrastBorder as f,editorBackground as B,editorForeground as b,listActiveSelectionBackground as F,listActiveSelectionForeground as I,listFocusBackground as C,listFocusForeground as P,listFocusOutline as y,listHoverBackground as H,listHoverForeground as A,scrollbarShadow as E,scrollbarSliderActiveBackground as T,scrollbarSliderBackground as x,scrollbarSliderHoverBackground as W}from"../../../../platform/theme/common/colorRegistry.js";import{IThemeService as M}from"../../../../platform/theme/common/themeService.js";import{INativeWorkbenchEnvironmentService as N}from"../../../services/environment/electron-sandbox/environmentService.js";import{IWorkbenchProcessService as w}from"../common/issue.js";import{mainWindow as D}from"../../../../base/browser/window.js";let l=class{constructor(r,o,n,i){this.processMainService=r;this.themeService=o;this.environmentService=n;this.productService=i}openProcessExplorer(){const r=this.themeService.getColorTheme(),o={pid:this.environmentService.mainPid,zoomLevel:u(D),styles:{backgroundColor:e(r,B),color:e(r,b),listHoverBackground:e(r,H),listHoverForeground:e(r,A),listFocusBackground:e(r,C),listFocusForeground:e(r,P),listFocusOutline:e(r,y),listActiveSelectionBackground:e(r,F),listActiveSelectionForeground:e(r,I),listHoverOutline:e(r,f),scrollbarShadowColor:e(r,E),scrollbarSliderActiveBackgroundColor:e(r,T),scrollbarSliderBackgroundColor:e(r,x),scrollbarSliderHoverBackgroundColor:e(r,W)},platform:p,applicationName:this.productService.applicationName};return this.processMainService.openProcessExplorer(o)}};l=d([c(0,h),c(1,M),c(2,N),c(3,k)],l);function e(t,r){const o=t.getColor(r);return o?o.toString():void 0}S(w,l,g.Delayed);export{l as ProcessService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { getZoomLevel } from '../../../../base/browser/browser.js';
+import { platform } from '../../../../base/common/process.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IProcessMainService } from '../../../../platform/issue/common/issue.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { activeContrastBorder, editorBackground, editorForeground, listActiveSelectionBackground, listActiveSelectionForeground, listFocusBackground, listFocusForeground, listFocusOutline, listHoverBackground, listHoverForeground, scrollbarShadow, scrollbarSliderActiveBackground, scrollbarSliderBackground, scrollbarSliderHoverBackground } from '../../../../platform/theme/common/colorRegistry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { INativeWorkbenchEnvironmentService } from '../../../services/environment/electron-sandbox/environmentService.js';
+import { IWorkbenchProcessService } from '../common/issue.js';
+import { mainWindow } from '../../../../base/browser/window.js';
+let ProcessService = class ProcessService {
+    constructor(processMainService, themeService, environmentService, productService) {
+        this.processMainService = processMainService;
+        this.themeService = themeService;
+        this.environmentService = environmentService;
+        this.productService = productService;
+    }
+    openProcessExplorer() {
+        const theme = this.themeService.getColorTheme();
+        const data = {
+            pid: this.environmentService.mainPid,
+            zoomLevel: getZoomLevel(mainWindow),
+            styles: {
+                backgroundColor: getColor(theme, editorBackground),
+                color: getColor(theme, editorForeground),
+                listHoverBackground: getColor(theme, listHoverBackground),
+                listHoverForeground: getColor(theme, listHoverForeground),
+                listFocusBackground: getColor(theme, listFocusBackground),
+                listFocusForeground: getColor(theme, listFocusForeground),
+                listFocusOutline: getColor(theme, listFocusOutline),
+                listActiveSelectionBackground: getColor(theme, listActiveSelectionBackground),
+                listActiveSelectionForeground: getColor(theme, listActiveSelectionForeground),
+                listHoverOutline: getColor(theme, activeContrastBorder),
+                scrollbarShadowColor: getColor(theme, scrollbarShadow),
+                scrollbarSliderActiveBackgroundColor: getColor(theme, scrollbarSliderActiveBackground),
+                scrollbarSliderBackgroundColor: getColor(theme, scrollbarSliderBackground),
+                scrollbarSliderHoverBackgroundColor: getColor(theme, scrollbarSliderHoverBackground),
+            },
+            platform: platform,
+            applicationName: this.productService.applicationName
+        };
+        return this.processMainService.openProcessExplorer(data);
+    }
+};
+ProcessService = __decorate([
+    __param(0, IProcessMainService),
+    __param(1, IThemeService),
+    __param(2, INativeWorkbenchEnvironmentService),
+    __param(3, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], ProcessService);
+export { ProcessService };
+function getColor(theme, key) {
+    const color = theme.getColor(key);
+    return color ? color.toString() : undefined;
+}
+registerSingleton(IWorkbenchProcessService, ProcessService, 1);

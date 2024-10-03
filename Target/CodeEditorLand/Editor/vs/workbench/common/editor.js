@@ -1,1 +1,396 @@
-import{localize as I}from"../../nls.js";import"../../base/common/event.js";import{assertIsDefined as O}from"../../base/common/types.js";import{URI as u}from"../../base/common/uri.js";import{Disposable as v,toDisposable as U}from"../../base/common/lifecycle.js";import"../../editor/common/editorCommon.js";import"../../platform/editor/common/editor.js";import{IInstantiationService as b}from"../../platform/instantiation/common/instantiation.js";import"../../platform/contextkey/common/contextkey.js";import{Registry as D}from"../../platform/registry/common/platform.js";import"../services/textfile/common/textfiles.js";import"../services/editor/common/editorGroupsService.js";import"./composite.js";import{FileType as l}from"../../platform/files/common/files.js";import"../../platform/window/common/window.js";import"../../base/common/resources.js";import{Schemas as T}from"../../base/common/network.js";import"../services/editor/common/editorService.js";import"../../platform/log/common/log.js";import{createErrorWithActions as h,isErrorWithActions as P}from"../../base/common/errorMessage.js";import{toAction as m}from"../../base/common/actions.js";import A from"../../base/common/severity.js";import"../services/preferences/common/preferences.js";import"./editor/editorGroupModel.js";const B={EditorPane:"workbench.contributions.editors",EditorFactory:"workbench.contributions.editor.inputFactories"},tr={id:"default",displayName:I("promptOpenWith.defaultEditor.displayName","Text Editor"),providerDisplayName:I("builtinProviderDisplayName","Built-in")},ir="workbench.editor.sidebysideEditor",or="workbench.editors.textDiffEditor",nr="workbench.editors.binaryResourceDiffEditor";var w=(d=>(d[d.PROGRAMMATIC=1]="PROGRAMMATIC",d[d.USER=2]="USER",d[d.EDIT=3]="EDIT",d[d.NAVIGATION=4]="NAVIGATION",d[d.JUMP=5]="JUMP",d))(w||{}),F=(t=>(t[t.IDENTICAL=1]="IDENTICAL",t[t.SIMILAR=2]="SIMILAR",t[t.DIFFERENT=3]="DIFFERENT",t))(F||{});function dr(i){const e=i;return!!e&&typeof e.getSelection=="function"&&!!e.onDidChangeSelection}function sr(i){const e=i;return!!e&&typeof e.getScrollPosition=="function"&&typeof e.setScrollPosition=="function"&&!!e.onDidChangeScroll}function ar(i,e,r){for(const t of r.visibleEditorPanes)if(t.group.id===e&&i.matches(t.input))return t.getViewState()}function ur(i){if(a(i))return!1;const e=i;return u.isUri(e?.resource)}function p(i){if(a(i))return!1;const e=i;return e?.original!==void 0&&e.modified!==void 0}function g(i){if(a(i))return!1;const e=i;return!e||e.resources&&!Array.isArray(e.resources)?!1:!!e.resources||!!e.multiDiffSource}function S(i){if(a(i)||p(i))return!1;const e=i;return e?.primary!==void 0&&e.secondary!==void 0}function cr(i){if(a(i))return!1;const e=i;return e?e.resource===void 0||e.resource.scheme===T.untitled||e.forceUntitled===!0:!1}function f(i){if(a(i))return!1;const e=i;return u.isUri(e?.base?.resource)&&u.isUri(e?.input1?.resource)&&u.isUri(e?.input2?.resource)&&u.isUri(e?.result?.resource)}var N=(t=>(t[t.SHORT=0]="SHORT",t[t.MEDIUM=1]="MEDIUM",t[t.LONG=2]="LONG",t))(N||{}),z=(o=>(o[o.EXPLICIT=1]="EXPLICIT",o[o.AUTO=2]="AUTO",o[o.FOCUS_CHANGE=3]="FOCUS_CHANGE",o[o.WINDOW_CHANGE=4]="WINDOW_CHANGE",o))(z||{});class L{mapIdToSaveSource=new Map;registerSource(e,r){let t=this.mapIdToSaveSource.get(e);return t||(t={source:e,label:r},this.mapIdToSaveSource.set(e,t)),t.source}getSourceLabel(e){return this.mapIdToSaveSource.get(e)?.label??e}}const Ir=new L;var W=(s=>(s[s.None=0]="None",s[s.Readonly=2]="Readonly",s[s.Untitled=4]="Untitled",s[s.Singleton=8]="Singleton",s[s.RequiresTrust=16]="RequiresTrust",s[s.CanSplitInGroup=32]="CanSplitInGroup",s[s.ForceDescription=64]="ForceDescription",s[s.CanDropIntoEditor=128]="CanDropIntoEditor",s[s.MultipleEditors=256]="MultipleEditors",s[s.Scratchpad=512]="Scratchpad",s))(W||{});class k extends v{}function a(i){return i instanceof k}function _(i){const e=i;return u.isUri(e?.preferredResource)}function C(i){const e=i;return a(e?.primary)&&a(e?.secondary)}function Y(i){const e=i;return a(e?.modified)&&a(e?.original)}function pr(i,e,r,t,o){return Z(t,[m({id:"workbench.action.openLargeFile",label:I("openLargeFile","Open Anyway"),run:()=>{const d={...r,limits:{size:Number.MAX_VALUE}};i.openEditor(e,d)}}),m({id:"workbench.action.configureEditorLargeFileConfirmation",label:I("configureEditorLargeFileConfirmation","Configure Limit"),run:()=>o.openUserSettings({query:"workbench.editorLargeFileConfirmation"})})],{forceMessage:!0,forceSeverity:A.Warning})}function M(i){return a(i?.editor)}function fr(i){const e=i;return M(i)&&e?.group!==void 0}function Er(i){const e=i;return typeof e?.groupId=="number"&&a(e.editor)}function lr(i){return typeof i?.groupId=="number"}var V=(o=>(o[o.UNKNOWN=0]="UNKNOWN",o[o.REPLACE=1]="REPLACE",o[o.MOVE=2]="MOVE",o[o.UNPIN=3]="UNPIN",o))(V||{}),H=(n=>(n[n.GROUP_ACTIVE=0]="GROUP_ACTIVE",n[n.GROUP_INDEX=1]="GROUP_INDEX",n[n.GROUP_LABEL=2]="GROUP_LABEL",n[n.GROUP_LOCKED=3]="GROUP_LOCKED",n[n.EDITORS_SELECTION=4]="EDITORS_SELECTION",n[n.EDITOR_OPEN=5]="EDITOR_OPEN",n[n.EDITOR_CLOSE=6]="EDITOR_CLOSE",n[n.EDITOR_MOVE=7]="EDITOR_MOVE",n[n.EDITOR_ACTIVE=8]="EDITOR_ACTIVE",n[n.EDITOR_LABEL=9]="EDITOR_LABEL",n[n.EDITOR_CAPABILITIES=10]="EDITOR_CAPABILITIES",n[n.EDITOR_PIN=11]="EDITOR_PIN",n[n.EDITOR_TRANSIENT=12]="EDITOR_TRANSIENT",n[n.EDITOR_STICKY=13]="EDITOR_STICKY",n[n.EDITOR_DIRTY=14]="EDITOR_DIRTY",n[n.EDITOR_WILL_DISPOSE=15]="EDITOR_WILL_DISPOSE",n))(H||{}),G=(o=>(o[o.PRIMARY=1]="PRIMARY",o[o.SECONDARY=2]="SECONDARY",o[o.BOTH=3]="BOTH",o[o.ANY=4]="ANY",o))(G||{});class q{getOriginalUri(e,r){if(!e)return;if(f(e))return R.getOriginalUri(e.result,r);if(r?.supportSideBySide){const{primary:o,secondary:d}=this.getSideEditors(e);if(o&&d){if(r?.supportSideBySide===3)return{primary:this.getOriginalUri(o,{filterByScheme:r.filterByScheme}),secondary:this.getOriginalUri(d,{filterByScheme:r.filterByScheme})};if(r?.supportSideBySide===4)return this.getOriginalUri(o,{filterByScheme:r.filterByScheme})??this.getOriginalUri(d,{filterByScheme:r.filterByScheme});e=r.supportSideBySide===1?o:d}}if(p(e)||g(e)||S(e)||f(e))return;const t=_(e)?e.preferredResource:e.resource;return!t||!r||!r.filterByScheme?t:this.filterUri(t,r.filterByScheme)}getSideEditors(e){return C(e)||S(e)?{primary:e.primary,secondary:e.secondary}:Y(e)||p(e)?{primary:e.modified,secondary:e.original}:{primary:void 0,secondary:void 0}}getCanonicalUri(e,r){if(!e)return;if(f(e))return R.getCanonicalUri(e.result,r);if(r?.supportSideBySide){const{primary:o,secondary:d}=this.getSideEditors(e);if(o&&d){if(r?.supportSideBySide===3)return{primary:this.getCanonicalUri(o,{filterByScheme:r.filterByScheme}),secondary:this.getCanonicalUri(d,{filterByScheme:r.filterByScheme})};if(r?.supportSideBySide===4)return this.getCanonicalUri(o,{filterByScheme:r.filterByScheme})??this.getCanonicalUri(d,{filterByScheme:r.filterByScheme});e=r.supportSideBySide===1?o:d}}if(p(e)||g(e)||S(e)||f(e))return;const t=e.resource;return!t||!r||!r.filterByScheme?t:this.filterUri(t,r.filterByScheme)}filterUri(e,r){if(Array.isArray(r)){if(r.some(t=>e.scheme===t))return e}else if(r===e.scheme)return e}}var j=(t=>(t[t.UNKNOWN=0]="UNKNOWN",t[t.KEYBOARD=1]="KEYBOARD",t[t.MOUSE=2]="MOUSE",t))(j||{});function Sr(i,e,r,t){if(!i.isSticky(e))return!1;switch(t.preventPinnedEditorClose){case"keyboardAndMouse":return r===2||r===1;case"mouse":return r===2;case"keyboard":return r===1}return!1}const R=new q;var X=(r=>(r[r.LEFT=0]="LEFT",r[r.RIGHT=1]="RIGHT",r))(X||{});class Q{instantiationService;fileEditorFactory;editorSerializerConstructors=new Map;editorSerializerInstances=new Map;start(e){const r=this.instantiationService=e.get(b);for(const[t,o]of this.editorSerializerConstructors)this.createEditorSerializer(t,o,r);this.editorSerializerConstructors.clear()}createEditorSerializer(e,r,t){const o=t.createInstance(r);this.editorSerializerInstances.set(e,o)}registerFileEditorFactory(e){if(this.fileEditorFactory)throw new Error("Can only register one file editor factory.");this.fileEditorFactory=e}getFileEditorFactory(){return O(this.fileEditorFactory)}registerEditorSerializer(e,r){if(this.editorSerializerConstructors.has(e)||this.editorSerializerInstances.has(e))throw new Error(`A editor serializer with type ID '${e}' was already registered.`);return this.instantiationService?this.createEditorSerializer(e,r,this.instantiationService):this.editorSerializerConstructors.set(e,r),U(()=>{this.editorSerializerConstructors.delete(e),this.editorSerializerInstances.delete(e)})}getEditorSerializer(e){return this.editorSerializerInstances.get(typeof e=="string"?e:e.typeId)}}D.add(B.EditorFactory,new Q);async function yr(i,e,r){return!i||!i.length?[]:await Promise.all(i.map(async t=>{const o=u.revive(t.fileUri);if(!o){r.info("Cannot resolve the path because it is not valid.",t);return}if(!await e.canHandleResource(o)){r.info("Cannot resolve the path because it cannot be handled",t);return}let c=t.exists,E=t.type;if(typeof c!="boolean"||typeof E!="number")try{E=(await e.stat(o)).isDirectory?l.Directory:l.Unknown,c=!0}catch(x){r.error(x),c=!1}if(!c&&t.openOnlyIfExists){r.info("Cannot resolve the path because it does not exist",t);return}if(E===l.Directory){r.info("Cannot resolve the path because it is a directory",t);return}const y={...t.options,pinned:!0};return c?{resource:o,options:y}:{resource:o,options:y,forceUntitled:!0}}))}var J=(r=>(r[r.MOST_RECENTLY_ACTIVE=0]="MOST_RECENTLY_ACTIVE",r[r.SEQUENTIAL=1]="SEQUENTIAL",r))(J||{});function $(i){const e=i;if(!e)return!1;const r=e;if(r.modified)return $(r.modified);const t=e;return!!(t.contributionsState&&t.viewState&&Array.isArray(t.cursorState))}function mr(i){return P(i)}function Z(i,e,r){const t=h(i,e);return t.forceMessage=r?.forceMessage,t.forceSeverity=r?.forceSeverity,t.allowDialog=r?.allowDialog,t}export{k as AbstractEditorInput,nr as BINARY_DIFF_EDITOR_ID,X as CloseDirection,tr as DEFAULT_EDITOR_ASSOCIATION,V as EditorCloseContext,j as EditorCloseMethod,B as EditorExtensions,W as EditorInputCapabilities,w as EditorPaneSelectionChangeReason,F as EditorPaneSelectionCompareResult,R as EditorResourceAccessor,J as EditorsOrder,H as GroupModelChangeKind,ir as SIDE_BY_SIDE_EDITOR_ID,z as SaveReason,Ir as SaveSourceRegistry,G as SideBySideEditor,or as TEXT_DIFF_EDITOR_ID,N as Verbosity,Z as createEditorOpenError,pr as createTooLargeFileError,ar as findViewStateForEditor,Y as isDiffEditorInput,lr as isEditorCommandsContext,Er as isEditorIdentifier,a as isEditorInput,M as isEditorInputWithOptions,fr as isEditorInputWithOptionsAndGroup,mr as isEditorOpenError,sr as isEditorPaneWithScrolling,dr as isEditorPaneWithSelection,p as isResourceDiffEditorInput,ur as isResourceEditorInput,f as isResourceMergeEditorInput,g as isResourceMultiDiffEditorInput,S as isResourceSideBySideEditorInput,C as isSideBySideEditorInput,$ as isTextEditorViewState,cr as isUntitledResourceEditorInput,yr as pathsToEditors,Sr as preventEditorClose};
+import { localize } from '../../nls.js';
+import { assertIsDefined } from '../../base/common/types.js';
+import { URI } from '../../base/common/uri.js';
+import { Disposable, toDisposable } from '../../base/common/lifecycle.js';
+import { IInstantiationService } from '../../platform/instantiation/common/instantiation.js';
+import { Registry } from '../../platform/registry/common/platform.js';
+import { FileType } from '../../platform/files/common/files.js';
+import { Schemas } from '../../base/common/network.js';
+import { createErrorWithActions, isErrorWithActions } from '../../base/common/errorMessage.js';
+import { toAction } from '../../base/common/actions.js';
+import Severity from '../../base/common/severity.js';
+export const EditorExtensions = {
+    EditorPane: 'workbench.contributions.editors',
+    EditorFactory: 'workbench.contributions.editor.inputFactories'
+};
+export const DEFAULT_EDITOR_ASSOCIATION = {
+    id: 'default',
+    displayName: localize('promptOpenWith.defaultEditor.displayName', "Text Editor"),
+    providerDisplayName: localize('builtinProviderDisplayName', "Built-in")
+};
+export const SIDE_BY_SIDE_EDITOR_ID = 'workbench.editor.sidebysideEditor';
+export const TEXT_DIFF_EDITOR_ID = 'workbench.editors.textDiffEditor';
+export const BINARY_DIFF_EDITOR_ID = 'workbench.editors.binaryResourceDiffEditor';
+export function isEditorPaneWithSelection(editorPane) {
+    const candidate = editorPane;
+    return !!candidate && typeof candidate.getSelection === 'function' && !!candidate.onDidChangeSelection;
+}
+export function isEditorPaneWithScrolling(editorPane) {
+    const candidate = editorPane;
+    return !!candidate && typeof candidate.getScrollPosition === 'function' && typeof candidate.setScrollPosition === 'function' && !!candidate.onDidChangeScroll;
+}
+export function findViewStateForEditor(input, group, editorService) {
+    for (const editorPane of editorService.visibleEditorPanes) {
+        if (editorPane.group.id === group && input.matches(editorPane.input)) {
+            return editorPane.getViewState();
+        }
+    }
+    return undefined;
+}
+export function isResourceEditorInput(editor) {
+    if (isEditorInput(editor)) {
+        return false;
+    }
+    const candidate = editor;
+    return URI.isUri(candidate?.resource);
+}
+export function isResourceDiffEditorInput(editor) {
+    if (isEditorInput(editor)) {
+        return false;
+    }
+    const candidate = editor;
+    return candidate?.original !== undefined && candidate.modified !== undefined;
+}
+export function isResourceMultiDiffEditorInput(editor) {
+    if (isEditorInput(editor)) {
+        return false;
+    }
+    const candidate = editor;
+    if (!candidate) {
+        return false;
+    }
+    if (candidate.resources && !Array.isArray(candidate.resources)) {
+        return false;
+    }
+    return !!candidate.resources || !!candidate.multiDiffSource;
+}
+export function isResourceSideBySideEditorInput(editor) {
+    if (isEditorInput(editor)) {
+        return false;
+    }
+    if (isResourceDiffEditorInput(editor)) {
+        return false;
+    }
+    const candidate = editor;
+    return candidate?.primary !== undefined && candidate.secondary !== undefined;
+}
+export function isUntitledResourceEditorInput(editor) {
+    if (isEditorInput(editor)) {
+        return false;
+    }
+    const candidate = editor;
+    if (!candidate) {
+        return false;
+    }
+    return candidate.resource === undefined || candidate.resource.scheme === Schemas.untitled || candidate.forceUntitled === true;
+}
+export function isResourceMergeEditorInput(editor) {
+    if (isEditorInput(editor)) {
+        return false;
+    }
+    const candidate = editor;
+    return URI.isUri(candidate?.base?.resource) && URI.isUri(candidate?.input1?.resource) && URI.isUri(candidate?.input2?.resource) && URI.isUri(candidate?.result?.resource);
+}
+class SaveSourceFactory {
+    constructor() {
+        this.mapIdToSaveSource = new Map();
+    }
+    registerSource(id, label) {
+        let sourceDescriptor = this.mapIdToSaveSource.get(id);
+        if (!sourceDescriptor) {
+            sourceDescriptor = { source: id, label };
+            this.mapIdToSaveSource.set(id, sourceDescriptor);
+        }
+        return sourceDescriptor.source;
+    }
+    getSourceLabel(source) {
+        return this.mapIdToSaveSource.get(source)?.label ?? source;
+    }
+}
+export const SaveSourceRegistry = new SaveSourceFactory();
+export class AbstractEditorInput extends Disposable {
+}
+export function isEditorInput(editor) {
+    return editor instanceof AbstractEditorInput;
+}
+function isEditorInputWithPreferredResource(editor) {
+    const candidate = editor;
+    return URI.isUri(candidate?.preferredResource);
+}
+export function isSideBySideEditorInput(editor) {
+    const candidate = editor;
+    return isEditorInput(candidate?.primary) && isEditorInput(candidate?.secondary);
+}
+export function isDiffEditorInput(editor) {
+    const candidate = editor;
+    return isEditorInput(candidate?.modified) && isEditorInput(candidate?.original);
+}
+export function createTooLargeFileError(group, input, options, message, preferencesService) {
+    return createEditorOpenError(message, [
+        toAction({
+            id: 'workbench.action.openLargeFile', label: localize('openLargeFile', "Open Anyway"), run: () => {
+                const fileEditorOptions = {
+                    ...options,
+                    limits: {
+                        size: Number.MAX_VALUE
+                    }
+                };
+                group.openEditor(input, fileEditorOptions);
+            }
+        }),
+        toAction({
+            id: 'workbench.action.configureEditorLargeFileConfirmation', label: localize('configureEditorLargeFileConfirmation', "Configure Limit"), run: () => {
+                return preferencesService.openUserSettings({ query: 'workbench.editorLargeFileConfirmation' });
+            }
+        }),
+    ], {
+        forceMessage: true,
+        forceSeverity: Severity.Warning
+    });
+}
+export function isEditorInputWithOptions(editor) {
+    const candidate = editor;
+    return isEditorInput(candidate?.editor);
+}
+export function isEditorInputWithOptionsAndGroup(editor) {
+    const candidate = editor;
+    return isEditorInputWithOptions(editor) && candidate?.group !== undefined;
+}
+export function isEditorIdentifier(identifier) {
+    const candidate = identifier;
+    return typeof candidate?.groupId === 'number' && isEditorInput(candidate.editor);
+}
+export function isEditorCommandsContext(context) {
+    const candidate = context;
+    return typeof candidate?.groupId === 'number';
+}
+export var EditorCloseContext;
+(function (EditorCloseContext) {
+    EditorCloseContext[EditorCloseContext["UNKNOWN"] = 0] = "UNKNOWN";
+    EditorCloseContext[EditorCloseContext["REPLACE"] = 1] = "REPLACE";
+    EditorCloseContext[EditorCloseContext["MOVE"] = 2] = "MOVE";
+    EditorCloseContext[EditorCloseContext["UNPIN"] = 3] = "UNPIN";
+})(EditorCloseContext || (EditorCloseContext = {}));
+export var SideBySideEditor;
+(function (SideBySideEditor) {
+    SideBySideEditor[SideBySideEditor["PRIMARY"] = 1] = "PRIMARY";
+    SideBySideEditor[SideBySideEditor["SECONDARY"] = 2] = "SECONDARY";
+    SideBySideEditor[SideBySideEditor["BOTH"] = 3] = "BOTH";
+    SideBySideEditor[SideBySideEditor["ANY"] = 4] = "ANY";
+})(SideBySideEditor || (SideBySideEditor = {}));
+class EditorResourceAccessorImpl {
+    getOriginalUri(editor, options) {
+        if (!editor) {
+            return undefined;
+        }
+        if (isResourceMergeEditorInput(editor)) {
+            return EditorResourceAccessor.getOriginalUri(editor.result, options);
+        }
+        if (options?.supportSideBySide) {
+            const { primary, secondary } = this.getSideEditors(editor);
+            if (primary && secondary) {
+                if (options?.supportSideBySide === SideBySideEditor.BOTH) {
+                    return {
+                        primary: this.getOriginalUri(primary, { filterByScheme: options.filterByScheme }),
+                        secondary: this.getOriginalUri(secondary, { filterByScheme: options.filterByScheme })
+                    };
+                }
+                else if (options?.supportSideBySide === SideBySideEditor.ANY) {
+                    return this.getOriginalUri(primary, { filterByScheme: options.filterByScheme }) ?? this.getOriginalUri(secondary, { filterByScheme: options.filterByScheme });
+                }
+                editor = options.supportSideBySide === SideBySideEditor.PRIMARY ? primary : secondary;
+            }
+        }
+        if (isResourceDiffEditorInput(editor) || isResourceMultiDiffEditorInput(editor) || isResourceSideBySideEditorInput(editor) || isResourceMergeEditorInput(editor)) {
+            return undefined;
+        }
+        const originalResource = isEditorInputWithPreferredResource(editor) ? editor.preferredResource : editor.resource;
+        if (!originalResource || !options || !options.filterByScheme) {
+            return originalResource;
+        }
+        return this.filterUri(originalResource, options.filterByScheme);
+    }
+    getSideEditors(editor) {
+        if (isSideBySideEditorInput(editor) || isResourceSideBySideEditorInput(editor)) {
+            return { primary: editor.primary, secondary: editor.secondary };
+        }
+        if (isDiffEditorInput(editor) || isResourceDiffEditorInput(editor)) {
+            return { primary: editor.modified, secondary: editor.original };
+        }
+        return { primary: undefined, secondary: undefined };
+    }
+    getCanonicalUri(editor, options) {
+        if (!editor) {
+            return undefined;
+        }
+        if (isResourceMergeEditorInput(editor)) {
+            return EditorResourceAccessor.getCanonicalUri(editor.result, options);
+        }
+        if (options?.supportSideBySide) {
+            const { primary, secondary } = this.getSideEditors(editor);
+            if (primary && secondary) {
+                if (options?.supportSideBySide === SideBySideEditor.BOTH) {
+                    return {
+                        primary: this.getCanonicalUri(primary, { filterByScheme: options.filterByScheme }),
+                        secondary: this.getCanonicalUri(secondary, { filterByScheme: options.filterByScheme })
+                    };
+                }
+                else if (options?.supportSideBySide === SideBySideEditor.ANY) {
+                    return this.getCanonicalUri(primary, { filterByScheme: options.filterByScheme }) ?? this.getCanonicalUri(secondary, { filterByScheme: options.filterByScheme });
+                }
+                editor = options.supportSideBySide === SideBySideEditor.PRIMARY ? primary : secondary;
+            }
+        }
+        if (isResourceDiffEditorInput(editor) || isResourceMultiDiffEditorInput(editor) || isResourceSideBySideEditorInput(editor) || isResourceMergeEditorInput(editor)) {
+            return undefined;
+        }
+        const canonicalResource = editor.resource;
+        if (!canonicalResource || !options || !options.filterByScheme) {
+            return canonicalResource;
+        }
+        return this.filterUri(canonicalResource, options.filterByScheme);
+    }
+    filterUri(resource, filter) {
+        if (Array.isArray(filter)) {
+            if (filter.some(scheme => resource.scheme === scheme)) {
+                return resource;
+            }
+        }
+        else {
+            if (filter === resource.scheme) {
+                return resource;
+            }
+        }
+        return undefined;
+    }
+}
+export var EditorCloseMethod;
+(function (EditorCloseMethod) {
+    EditorCloseMethod[EditorCloseMethod["UNKNOWN"] = 0] = "UNKNOWN";
+    EditorCloseMethod[EditorCloseMethod["KEYBOARD"] = 1] = "KEYBOARD";
+    EditorCloseMethod[EditorCloseMethod["MOUSE"] = 2] = "MOUSE";
+})(EditorCloseMethod || (EditorCloseMethod = {}));
+export function preventEditorClose(group, editor, method, configuration) {
+    if (!group.isSticky(editor)) {
+        return false;
+    }
+    switch (configuration.preventPinnedEditorClose) {
+        case 'keyboardAndMouse': return method === EditorCloseMethod.MOUSE || method === EditorCloseMethod.KEYBOARD;
+        case 'mouse': return method === EditorCloseMethod.MOUSE;
+        case 'keyboard': return method === EditorCloseMethod.KEYBOARD;
+    }
+    return false;
+}
+export const EditorResourceAccessor = new EditorResourceAccessorImpl();
+class EditorFactoryRegistry {
+    constructor() {
+        this.editorSerializerConstructors = new Map();
+        this.editorSerializerInstances = new Map();
+    }
+    start(accessor) {
+        const instantiationService = this.instantiationService = accessor.get(IInstantiationService);
+        for (const [key, ctor] of this.editorSerializerConstructors) {
+            this.createEditorSerializer(key, ctor, instantiationService);
+        }
+        this.editorSerializerConstructors.clear();
+    }
+    createEditorSerializer(editorTypeId, ctor, instantiationService) {
+        const instance = instantiationService.createInstance(ctor);
+        this.editorSerializerInstances.set(editorTypeId, instance);
+    }
+    registerFileEditorFactory(factory) {
+        if (this.fileEditorFactory) {
+            throw new Error('Can only register one file editor factory.');
+        }
+        this.fileEditorFactory = factory;
+    }
+    getFileEditorFactory() {
+        return assertIsDefined(this.fileEditorFactory);
+    }
+    registerEditorSerializer(editorTypeId, ctor) {
+        if (this.editorSerializerConstructors.has(editorTypeId) || this.editorSerializerInstances.has(editorTypeId)) {
+            throw new Error(`A editor serializer with type ID '${editorTypeId}' was already registered.`);
+        }
+        if (!this.instantiationService) {
+            this.editorSerializerConstructors.set(editorTypeId, ctor);
+        }
+        else {
+            this.createEditorSerializer(editorTypeId, ctor, this.instantiationService);
+        }
+        return toDisposable(() => {
+            this.editorSerializerConstructors.delete(editorTypeId);
+            this.editorSerializerInstances.delete(editorTypeId);
+        });
+    }
+    getEditorSerializer(arg1) {
+        return this.editorSerializerInstances.get(typeof arg1 === 'string' ? arg1 : arg1.typeId);
+    }
+}
+Registry.add(EditorExtensions.EditorFactory, new EditorFactoryRegistry());
+export async function pathsToEditors(paths, fileService, logService) {
+    if (!paths || !paths.length) {
+        return [];
+    }
+    return await Promise.all(paths.map(async (path) => {
+        const resource = URI.revive(path.fileUri);
+        if (!resource) {
+            logService.info('Cannot resolve the path because it is not valid.', path);
+            return undefined;
+        }
+        const canHandleResource = await fileService.canHandleResource(resource);
+        if (!canHandleResource) {
+            logService.info('Cannot resolve the path because it cannot be handled', path);
+            return undefined;
+        }
+        let exists = path.exists;
+        let type = path.type;
+        if (typeof exists !== 'boolean' || typeof type !== 'number') {
+            try {
+                type = (await fileService.stat(resource)).isDirectory ? FileType.Directory : FileType.Unknown;
+                exists = true;
+            }
+            catch (error) {
+                logService.error(error);
+                exists = false;
+            }
+        }
+        if (!exists && path.openOnlyIfExists) {
+            logService.info('Cannot resolve the path because it does not exist', path);
+            return undefined;
+        }
+        if (type === FileType.Directory) {
+            logService.info('Cannot resolve the path because it is a directory', path);
+            return undefined;
+        }
+        const options = {
+            ...path.options,
+            pinned: true
+        };
+        if (!exists) {
+            return { resource, options, forceUntitled: true };
+        }
+        return { resource, options };
+    }));
+}
+export function isTextEditorViewState(candidate) {
+    const viewState = candidate;
+    if (!viewState) {
+        return false;
+    }
+    const diffEditorViewState = viewState;
+    if (diffEditorViewState.modified) {
+        return isTextEditorViewState(diffEditorViewState.modified);
+    }
+    const codeEditorViewState = viewState;
+    return !!(codeEditorViewState.contributionsState && codeEditorViewState.viewState && Array.isArray(codeEditorViewState.cursorState));
+}
+export function isEditorOpenError(obj) {
+    return isErrorWithActions(obj);
+}
+export function createEditorOpenError(messageOrError, actions, options) {
+    const error = createErrorWithActions(messageOrError, actions);
+    error.forceMessage = options?.forceMessage;
+    error.forceSeverity = options?.forceSeverity;
+    error.allowDialog = options?.allowDialog;
+    return error;
+}

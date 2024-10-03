@@ -1,1 +1,133 @@
-import"../../base/common/scrollable.js";import"./config/editorOptions.js";import"./core/range.js";import"./core/selection.js";import"./cursorEvents.js";import"./editorCommon.js";import"./textModelEvents.js";import"../../platform/theme/common/themeService.js";var l=(e=>(e[e.ViewCompositionStart=0]="ViewCompositionStart",e[e.ViewCompositionEnd=1]="ViewCompositionEnd",e[e.ViewConfigurationChanged=2]="ViewConfigurationChanged",e[e.ViewCursorStateChanged=3]="ViewCursorStateChanged",e[e.ViewDecorationsChanged=4]="ViewDecorationsChanged",e[e.ViewFlushed=5]="ViewFlushed",e[e.ViewFocusChanged=6]="ViewFocusChanged",e[e.ViewLanguageConfigurationChanged=7]="ViewLanguageConfigurationChanged",e[e.ViewLineMappingChanged=8]="ViewLineMappingChanged",e[e.ViewLinesChanged=9]="ViewLinesChanged",e[e.ViewLinesDeleted=10]="ViewLinesDeleted",e[e.ViewLinesInserted=11]="ViewLinesInserted",e[e.ViewRevealRangeRequest=12]="ViewRevealRangeRequest",e[e.ViewScrollChanged=13]="ViewScrollChanged",e[e.ViewThemeChanged=14]="ViewThemeChanged",e[e.ViewTokensChanged=15]="ViewTokensChanged",e[e.ViewTokensColorsChanged=16]="ViewTokensColorsChanged",e[e.ViewZonesChanged=17]="ViewZonesChanged",e))(l||{});class M{type=0;constructor(){}}class D{type=1;constructor(){}}class F{type=2;_source;constructor(n){this._source=n}hasChanged(n){return this._source.hasChanged(n)}}class I{constructor(n,r,t){this.selections=n;this.modelSelections=r;this.reason=t}type=3}class k{type=4;affectsMinimap;affectsOverviewRuler;affectsGlyphMargin;affectsLineNumber;constructor(n){n?(this.affectsMinimap=n.affectsMinimap,this.affectsOverviewRuler=n.affectsOverviewRuler,this.affectsGlyphMargin=n.affectsGlyphMargin,this.affectsLineNumber=n.affectsLineNumber):(this.affectsMinimap=!0,this.affectsOverviewRuler=!0,this.affectsGlyphMargin=!0,this.affectsLineNumber=!0)}}class O{type=5;constructor(){}}class R{type=6;isFocused;constructor(n){this.isFocused=n}}class H{type=7}class W{type=8;constructor(){}}class q{constructor(n,r){this.fromLineNumber=n;this.count=r}type=9}class G{type=10;fromLineNumber;toLineNumber;constructor(n,r){this.fromLineNumber=n,this.toLineNumber=r}}class Z{type=11;fromLineNumber;toLineNumber;constructor(n,r){this.fromLineNumber=n,this.toLineNumber=r}}var a=(i=>(i[i.Simple=0]="Simple",i[i.Center=1]="Center",i[i.CenterIfOutsideViewport=2]="CenterIfOutsideViewport",i[i.Top=3]="Top",i[i.Bottom=4]="Bottom",i[i.NearTop=5]="NearTop",i[i.NearTopIfOutsideViewport=6]="NearTopIfOutsideViewport",i))(a||{});class _{constructor(n,r,t,s,c,d,i){this.source=n;this.minimalReveal=r;this.range=t;this.selections=s;this.verticalType=c;this.revealHorizontal=d;this.scrollType=i}type=12}class z{type=13;scrollWidth;scrollLeft;scrollHeight;scrollTop;scrollWidthChanged;scrollLeftChanged;scrollHeightChanged;scrollTopChanged;constructor(n){this.scrollWidth=n.scrollWidth,this.scrollLeft=n.scrollLeft,this.scrollHeight=n.scrollHeight,this.scrollTop=n.scrollTop,this.scrollWidthChanged=n.scrollWidthChanged,this.scrollLeftChanged=n.scrollLeftChanged,this.scrollHeightChanged=n.scrollHeightChanged,this.scrollTopChanged=n.scrollTopChanged}}class B{constructor(n){this.theme=n}type=14}class j{type=15;ranges;constructor(n){this.ranges=n}}class A{type=16;constructor(){}}class J{type=17;constructor(){}}export{a as VerticalRevealType,D as ViewCompositionEndEvent,M as ViewCompositionStartEvent,F as ViewConfigurationChangedEvent,I as ViewCursorStateChangedEvent,k as ViewDecorationsChangedEvent,l as ViewEventType,O as ViewFlushedEvent,R as ViewFocusChangedEvent,H as ViewLanguageConfigurationEvent,W as ViewLineMappingChangedEvent,q as ViewLinesChangedEvent,G as ViewLinesDeletedEvent,Z as ViewLinesInsertedEvent,_ as ViewRevealRangeRequestEvent,z as ViewScrollChangedEvent,B as ViewThemeChangedEvent,j as ViewTokensChangedEvent,A as ViewTokensColorsChangedEvent,J as ViewZonesChangedEvent};
+export class ViewCompositionStartEvent {
+    constructor() {
+        this.type = 0;
+    }
+}
+export class ViewCompositionEndEvent {
+    constructor() {
+        this.type = 1;
+    }
+}
+export class ViewConfigurationChangedEvent {
+    constructor(source) {
+        this.type = 2;
+        this._source = source;
+    }
+    hasChanged(id) {
+        return this._source.hasChanged(id);
+    }
+}
+export class ViewCursorStateChangedEvent {
+    constructor(selections, modelSelections, reason) {
+        this.selections = selections;
+        this.modelSelections = modelSelections;
+        this.reason = reason;
+        this.type = 3;
+    }
+}
+export class ViewDecorationsChangedEvent {
+    constructor(source) {
+        this.type = 4;
+        if (source) {
+            this.affectsMinimap = source.affectsMinimap;
+            this.affectsOverviewRuler = source.affectsOverviewRuler;
+            this.affectsGlyphMargin = source.affectsGlyphMargin;
+            this.affectsLineNumber = source.affectsLineNumber;
+        }
+        else {
+            this.affectsMinimap = true;
+            this.affectsOverviewRuler = true;
+            this.affectsGlyphMargin = true;
+            this.affectsLineNumber = true;
+        }
+    }
+}
+export class ViewFlushedEvent {
+    constructor() {
+        this.type = 5;
+    }
+}
+export class ViewFocusChangedEvent {
+    constructor(isFocused) {
+        this.type = 6;
+        this.isFocused = isFocused;
+    }
+}
+export class ViewLanguageConfigurationEvent {
+    constructor() {
+        this.type = 7;
+    }
+}
+export class ViewLineMappingChangedEvent {
+    constructor() {
+        this.type = 8;
+    }
+}
+export class ViewLinesChangedEvent {
+    constructor(fromLineNumber, count) {
+        this.fromLineNumber = fromLineNumber;
+        this.count = count;
+        this.type = 9;
+    }
+}
+export class ViewLinesDeletedEvent {
+    constructor(fromLineNumber, toLineNumber) {
+        this.type = 10;
+        this.fromLineNumber = fromLineNumber;
+        this.toLineNumber = toLineNumber;
+    }
+}
+export class ViewLinesInsertedEvent {
+    constructor(fromLineNumber, toLineNumber) {
+        this.type = 11;
+        this.fromLineNumber = fromLineNumber;
+        this.toLineNumber = toLineNumber;
+    }
+}
+export class ViewRevealRangeRequestEvent {
+    constructor(source, minimalReveal, range, selections, verticalType, revealHorizontal, scrollType) {
+        this.source = source;
+        this.minimalReveal = minimalReveal;
+        this.range = range;
+        this.selections = selections;
+        this.verticalType = verticalType;
+        this.revealHorizontal = revealHorizontal;
+        this.scrollType = scrollType;
+        this.type = 12;
+    }
+}
+export class ViewScrollChangedEvent {
+    constructor(source) {
+        this.type = 13;
+        this.scrollWidth = source.scrollWidth;
+        this.scrollLeft = source.scrollLeft;
+        this.scrollHeight = source.scrollHeight;
+        this.scrollTop = source.scrollTop;
+        this.scrollWidthChanged = source.scrollWidthChanged;
+        this.scrollLeftChanged = source.scrollLeftChanged;
+        this.scrollHeightChanged = source.scrollHeightChanged;
+        this.scrollTopChanged = source.scrollTopChanged;
+    }
+}
+export class ViewThemeChangedEvent {
+    constructor(theme) {
+        this.theme = theme;
+        this.type = 14;
+    }
+}
+export class ViewTokensChangedEvent {
+    constructor(ranges) {
+        this.type = 15;
+        this.ranges = ranges;
+    }
+}
+export class ViewTokensColorsChangedEvent {
+    constructor() {
+        this.type = 16;
+    }
+}
+export class ViewZonesChangedEvent {
+    constructor() {
+        this.type = 17;
+    }
+}

@@ -1,1 +1,176 @@
-import{revive as C}from"../../../../base/common/marshalling.js";import"../../../../base/common/themables.js";import{OffsetRange as r}from"../../../../editor/common/core/offsetRange.js";import"../../../../editor/common/core/range.js";import{reviveSerializedAgent as x}from"./chatAgents.js";import"./chatSlashCommands.js";import"./chatVariables.js";import"./languageModelToolsService.js";function Q(a){const e=a.parts.map(n=>n.promptText).join("").trimStart(),t=a.text.length-e.length;return{message:e,diff:t}}class m{constructor(e,t,n){this.range=e;this.editorRange=t;this.text=n}static Kind="text";kind=m.Kind;get promptText(){return this.text}}const y="#",f="@",g="/";class u{constructor(e,t,n,i,s){this.range=e;this.editorRange=t;this.variableName=n;this.variableArg=i;this.variableId=s}static Kind="var";kind=u.Kind;get text(){const e=this.variableArg?`:${this.variableArg}`:"";return`${y}${this.variableName}${e}`}get promptText(){return this.text}}class c{constructor(e,t,n,i,s,l){this.range=e;this.editorRange=t;this.toolName=n;this.toolId=i;this.displayName=s;this.icon=l}static Kind="tool";kind=c.Kind;get text(){return`${y}${this.toolName}`}get promptText(){return this.text}}class o{constructor(e,t,n){this.range=e;this.editorRange=t;this.agent=n}static Kind="agent";kind=o.Kind;get text(){return`${f}${this.agent.name}`}get promptText(){return""}}class d{constructor(e,t,n){this.range=e;this.editorRange=t;this.command=n}static Kind="subcommand";kind=d.Kind;get text(){return`${g}${this.command.name}`}get promptText(){return""}}class h{constructor(e,t,n){this.range=e;this.editorRange=t;this.slashCommand=n}static Kind="slash";kind=h.Kind;get text(){return`${g}${this.slashCommand.command}`}get promptText(){return`${g}${this.slashCommand.command}`}}class R{constructor(e,t,n,i,s,l,P,I){this.range=e;this.editorRange=t;this.text=n;this.id=i;this.modelDescription=s;this.data=l;this.fullName=P;this.icon=I}static Kind="dynamic";kind=R.Kind;get referenceText(){return this.text.replace(y,"")}get promptText(){return this.text}}function U(a){return{text:a.text,parts:a.parts.map(e=>{if(e.kind===m.Kind)return new m(new r(e.range.start,e.range.endExclusive),e.editorRange,e.text);if(e.kind===u.Kind)return new u(new r(e.range.start,e.range.endExclusive),e.editorRange,e.variableName,e.variableArg,e.variableId||"");if(e.kind===c.Kind)return new c(new r(e.range.start,e.range.endExclusive),e.editorRange,e.toolName,e.toolId,e.displayName,e.icon);if(e.kind===o.Kind){let t=e.agent;return t=x(t),new o(new r(e.range.start,e.range.endExclusive),e.editorRange,t)}else{if(e.kind===d.Kind)return new d(new r(e.range.start,e.range.endExclusive),e.editorRange,e.command);if(e.kind===h.Kind)return new h(new r(e.range.start,e.range.endExclusive),e.editorRange,e.slashCommand);if(e.kind===R.Kind)return new R(new r(e.range.start,e.range.endExclusive),e.editorRange,e.text,e.id,e.modelDescription,C(e.data),e.fullName,e.icon);throw new Error(`Unknown chat request part: ${e.kind}`)}})}}function z(a){const e=a.parts.find(n=>n instanceof o),t=a.parts.find(n=>n instanceof d);return{agentPart:e,commandPart:t}}function B(a,e,t,n=null,i=null){let s="";if(n&&n!==a.getDefaultAgent(e)?.id){const l=a.getAgent(n);if(!l)return;s+=`${f}${l.name} `,i&&(s+=`${g}${i} `)}return s+t}export{o as ChatRequestAgentPart,d as ChatRequestAgentSubcommandPart,R as ChatRequestDynamicVariablePart,h as ChatRequestSlashCommandPart,m as ChatRequestTextPart,c as ChatRequestToolPart,u as ChatRequestVariablePart,f as chatAgentLeader,g as chatSubcommandLeader,y as chatVariableLeader,z as extractAgentAndCommand,B as formatChatQuestion,Q as getPromptText,U as reviveParsedChatRequest};
+import { revive } from '../../../../base/common/marshalling.js';
+import { OffsetRange } from '../../../../editor/common/core/offsetRange.js';
+import { reviveSerializedAgent } from './chatAgents.js';
+export function getPromptText(request) {
+    const message = request.parts.map(r => r.promptText).join('').trimStart();
+    const diff = request.text.length - message.length;
+    return { message, diff };
+}
+export class ChatRequestTextPart {
+    static { this.Kind = 'text'; }
+    constructor(range, editorRange, text) {
+        this.range = range;
+        this.editorRange = editorRange;
+        this.text = text;
+        this.kind = ChatRequestTextPart.Kind;
+    }
+    get promptText() {
+        return this.text;
+    }
+}
+export const chatVariableLeader = '#';
+export const chatAgentLeader = '@';
+export const chatSubcommandLeader = '/';
+export class ChatRequestVariablePart {
+    static { this.Kind = 'var'; }
+    constructor(range, editorRange, variableName, variableArg, variableId) {
+        this.range = range;
+        this.editorRange = editorRange;
+        this.variableName = variableName;
+        this.variableArg = variableArg;
+        this.variableId = variableId;
+        this.kind = ChatRequestVariablePart.Kind;
+    }
+    get text() {
+        const argPart = this.variableArg ? `:${this.variableArg}` : '';
+        return `${chatVariableLeader}${this.variableName}${argPart}`;
+    }
+    get promptText() {
+        return this.text;
+    }
+}
+export class ChatRequestToolPart {
+    static { this.Kind = 'tool'; }
+    constructor(range, editorRange, toolName, toolId, displayName, icon) {
+        this.range = range;
+        this.editorRange = editorRange;
+        this.toolName = toolName;
+        this.toolId = toolId;
+        this.displayName = displayName;
+        this.icon = icon;
+        this.kind = ChatRequestToolPart.Kind;
+    }
+    get text() {
+        return `${chatVariableLeader}${this.toolName}`;
+    }
+    get promptText() {
+        return this.text;
+    }
+}
+export class ChatRequestAgentPart {
+    static { this.Kind = 'agent'; }
+    constructor(range, editorRange, agent) {
+        this.range = range;
+        this.editorRange = editorRange;
+        this.agent = agent;
+        this.kind = ChatRequestAgentPart.Kind;
+    }
+    get text() {
+        return `${chatAgentLeader}${this.agent.name}`;
+    }
+    get promptText() {
+        return '';
+    }
+}
+export class ChatRequestAgentSubcommandPart {
+    static { this.Kind = 'subcommand'; }
+    constructor(range, editorRange, command) {
+        this.range = range;
+        this.editorRange = editorRange;
+        this.command = command;
+        this.kind = ChatRequestAgentSubcommandPart.Kind;
+    }
+    get text() {
+        return `${chatSubcommandLeader}${this.command.name}`;
+    }
+    get promptText() {
+        return '';
+    }
+}
+export class ChatRequestSlashCommandPart {
+    static { this.Kind = 'slash'; }
+    constructor(range, editorRange, slashCommand) {
+        this.range = range;
+        this.editorRange = editorRange;
+        this.slashCommand = slashCommand;
+        this.kind = ChatRequestSlashCommandPart.Kind;
+    }
+    get text() {
+        return `${chatSubcommandLeader}${this.slashCommand.command}`;
+    }
+    get promptText() {
+        return `${chatSubcommandLeader}${this.slashCommand.command}`;
+    }
+}
+export class ChatRequestDynamicVariablePart {
+    static { this.Kind = 'dynamic'; }
+    constructor(range, editorRange, text, id, modelDescription, data, fullName, icon) {
+        this.range = range;
+        this.editorRange = editorRange;
+        this.text = text;
+        this.id = id;
+        this.modelDescription = modelDescription;
+        this.data = data;
+        this.fullName = fullName;
+        this.icon = icon;
+        this.kind = ChatRequestDynamicVariablePart.Kind;
+    }
+    get referenceText() {
+        return this.text.replace(chatVariableLeader, '');
+    }
+    get promptText() {
+        return this.text;
+    }
+}
+export function reviveParsedChatRequest(serialized) {
+    return {
+        text: serialized.text,
+        parts: serialized.parts.map(part => {
+            if (part.kind === ChatRequestTextPart.Kind) {
+                return new ChatRequestTextPart(new OffsetRange(part.range.start, part.range.endExclusive), part.editorRange, part.text);
+            }
+            else if (part.kind === ChatRequestVariablePart.Kind) {
+                return new ChatRequestVariablePart(new OffsetRange(part.range.start, part.range.endExclusive), part.editorRange, part.variableName, part.variableArg, part.variableId || '');
+            }
+            else if (part.kind === ChatRequestToolPart.Kind) {
+                return new ChatRequestToolPart(new OffsetRange(part.range.start, part.range.endExclusive), part.editorRange, part.toolName, part.toolId, part.displayName, part.icon);
+            }
+            else if (part.kind === ChatRequestAgentPart.Kind) {
+                let agent = part.agent;
+                agent = reviveSerializedAgent(agent);
+                return new ChatRequestAgentPart(new OffsetRange(part.range.start, part.range.endExclusive), part.editorRange, agent);
+            }
+            else if (part.kind === ChatRequestAgentSubcommandPart.Kind) {
+                return new ChatRequestAgentSubcommandPart(new OffsetRange(part.range.start, part.range.endExclusive), part.editorRange, part.command);
+            }
+            else if (part.kind === ChatRequestSlashCommandPart.Kind) {
+                return new ChatRequestSlashCommandPart(new OffsetRange(part.range.start, part.range.endExclusive), part.editorRange, part.slashCommand);
+            }
+            else if (part.kind === ChatRequestDynamicVariablePart.Kind) {
+                return new ChatRequestDynamicVariablePart(new OffsetRange(part.range.start, part.range.endExclusive), part.editorRange, part.text, part.id, part.modelDescription, revive(part.data), part.fullName, part.icon);
+            }
+            else {
+                throw new Error(`Unknown chat request part: ${part.kind}`);
+            }
+        })
+    };
+}
+export function extractAgentAndCommand(parsed) {
+    const agentPart = parsed.parts.find((r) => r instanceof ChatRequestAgentPart);
+    const commandPart = parsed.parts.find((r) => r instanceof ChatRequestAgentSubcommandPart);
+    return { agentPart, commandPart };
+}
+export function formatChatQuestion(chatAgentService, location, prompt, participant = null, command = null) {
+    let question = '';
+    if (participant && participant !== chatAgentService.getDefaultAgent(location)?.id) {
+        const agent = chatAgentService.getAgent(participant);
+        if (!agent) {
+            return undefined;
+        }
+        question += `${chatAgentLeader}${agent.name} `;
+        if (command) {
+            question += `${chatSubcommandLeader}${command} `;
+        }
+    }
+    return question + prompt;
+}

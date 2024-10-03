@@ -1,1 +1,238 @@
-import"./indentGuides.css";import{DynamicViewOverlay as A}from"../../view/dynamicViewOverlay.js";import{editorBracketHighlightingForeground1 as B,editorBracketHighlightingForeground2 as x,editorBracketHighlightingForeground3 as L,editorBracketHighlightingForeground4 as R,editorBracketHighlightingForeground5 as E,editorBracketHighlightingForeground6 as O,editorBracketPairGuideActiveBackground1 as y,editorBracketPairGuideActiveBackground2 as z,editorBracketPairGuideActiveBackground3 as V,editorBracketPairGuideActiveBackground4 as W,editorBracketPairGuideActiveBackground5 as $,editorBracketPairGuideActiveBackground6 as H,editorBracketPairGuideBackground1 as F,editorBracketPairGuideBackground2 as N,editorBracketPairGuideBackground3 as D,editorBracketPairGuideBackground4 as M,editorBracketPairGuideBackground5 as T,editorBracketPairGuideBackground6 as S,editorIndentGuide1 as Q,editorIndentGuide2 as Z,editorIndentGuide3 as q,editorIndentGuide4 as U,editorIndentGuide5 as j,editorIndentGuide6 as J,editorActiveIndentGuide1 as K,editorActiveIndentGuide2 as X,editorActiveIndentGuide3 as Y,editorActiveIndentGuide4 as ee,editorActiveIndentGuide5 as te,editorActiveIndentGuide6 as ie}from"../../../common/core/editorColorRegistry.js";import"../../view/renderingContext.js";import"../../../common/viewModel/viewContext.js";import"../../../common/viewEvents.js";import{registerThemingParticipant as ne}from"../../../../platform/theme/common/themeService.js";import{EditorOption as C}from"../../../common/config/editorOptions.js";import{Position as G}from"../../../common/core/position.js";import{ArrayQueue as oe}from"../../../../base/common/arrays.js";import"../../../../base/common/color.js";import{isDefined as I}from"../../../../base/common/types.js";import{BracketPairGuidesClassNames as re}from"../../../common/model/guidesTextModelPart.js";import{IndentGuide as de,HorizontalGuidesState as w}from"../../../common/textModelGuides.js";class Pe extends A{_context;_primaryPosition;_spaceWidth;_renderResult;_maxIndentLeft;_bracketPairGuideOptions;constructor(e){super(),this._context=e,this._primaryPosition=null;const n=this._context.configuration.options,t=n.get(C.wrappingInfo),d=n.get(C.fontInfo);this._spaceWidth=d.spaceWidth,this._maxIndentLeft=t.wrappingColumn===-1?-1:t.wrappingColumn*d.typicalHalfwidthCharacterWidth,this._bracketPairGuideOptions=n.get(C.guides),this._renderResult=null,this._context.addEventHandler(this)}dispose(){this._context.removeEventHandler(this),this._renderResult=null,super.dispose()}onConfigurationChanged(e){const n=this._context.configuration.options,t=n.get(C.wrappingInfo),d=n.get(C.fontInfo);return this._spaceWidth=d.spaceWidth,this._maxIndentLeft=t.wrappingColumn===-1?-1:t.wrappingColumn*d.typicalHalfwidthCharacterWidth,this._bracketPairGuideOptions=n.get(C.guides),!0}onCursorStateChanged(e){const t=e.selections[0].getPosition();return this._primaryPosition?.equals(t)?!1:(this._primaryPosition=t,!0)}onDecorationsChanged(e){return!0}onFlushed(e){return!0}onLinesChanged(e){return!0}onLinesDeleted(e){return!0}onLinesInserted(e){return!0}onScrollChanged(e){return e.scrollTopChanged}onZonesChanged(e){return!0}onLanguageConfigurationChanged(e){return!0}prepareRender(e){if(!this._bracketPairGuideOptions.indentation&&this._bracketPairGuideOptions.bracketPairs===!1){this._renderResult=null;return}const n=e.visibleRange.startLineNumber,t=e.visibleRange.endLineNumber,d=e.scrollWidth,g=this._primaryPosition,v=this.getGuidesByLine(n,Math.min(t+1,this._context.viewModel.getLineCount()),g),i=[];for(let o=n;o<=t;o++){const h=o-n,l=v[h];let r="";const u=e.visibleRangeForPosition(new G(o,1))?.left??0;for(const a of l){const c=a.column===-1?u+(a.visibleColumn-1)*this._spaceWidth:e.visibleRangeForPosition(new G(o,a.column)).left;if(c>d||this._maxIndentLeft>0&&c>this._maxIndentLeft)break;const m=a.horizontalLine?a.horizontalLine.top?"horizontal-top":"horizontal-bottom":"vertical",p=a.horizontalLine?(e.visibleRangeForPosition(new G(o,a.horizontalLine.endColumn))?.left??c+this._spaceWidth)-c:this._spaceWidth;r+=`<div class="core-guide ${a.className} ${m}" style="left:${c}px;width:${p}px"></div>`}i[h]=r}this._renderResult=i}getGuidesByLine(e,n,t){const d=this._bracketPairGuideOptions.bracketPairs!==!1?this._context.viewModel.getBracketGuidesInRangeByLine(e,n,t,{highlightActive:this._bracketPairGuideOptions.highlightActiveBracketPair,horizontalGuides:this._bracketPairGuideOptions.bracketPairsHorizontal===!0?w.Enabled:this._bracketPairGuideOptions.bracketPairsHorizontal==="active"?w.EnabledForActive:w.Disabled,includeInactive:this._bracketPairGuideOptions.bracketPairs===!0}):null,g=this._bracketPairGuideOptions.indentation?this._context.viewModel.getLinesIndentGuides(e,n):null;let v=0,i=0,o=0;if(this._bracketPairGuideOptions.highlightActiveIndentation!==!1&&t){const r=this._context.viewModel.getActiveIndentGuide(t.lineNumber,e,n);v=r.startLineNumber,i=r.endLineNumber,o=r.indent}const{indentSize:h}=this._context.viewModel.model.getOptions(),l=[];for(let r=e;r<=n;r++){const u=new Array;l.push(u);const a=d?d[r-e]:[],c=new oe(a),m=g?g[r-e]:0;for(let p=1;p<=m;p++){const b=(p-1)*h+1,_=(this._bracketPairGuideOptions.highlightActiveIndentation==="always"||a.length===0)&&v<=r&&r<=i&&p===o;u.push(...c.takeWhile(P=>P.visibleColumn<b)||[]);const k=c.peek();(!k||k.visibleColumn!==b||k.horizontalLine)&&u.push(new de(b,-1,`core-guide-indent lvl-${(p-1)%30}`+(_?" indent-active":""),null,-1,-1))}u.push(...c.takeWhile(p=>!0)||[])}return l}render(e,n){if(!this._renderResult)return"";const t=n-e;return t<0||t>=this._renderResult.length?"":this._renderResult[t]}}function f(s){if(!(s&&s.isTransparent()))return s}ne((s,e)=>{const n=[{bracketColor:B,guideColor:F,guideColorActive:y},{bracketColor:x,guideColor:N,guideColorActive:z},{bracketColor:L,guideColor:D,guideColorActive:V},{bracketColor:R,guideColor:M,guideColorActive:W},{bracketColor:E,guideColor:T,guideColorActive:$},{bracketColor:O,guideColor:S,guideColorActive:H}],t=new re,d=[{indentColor:Q,indentColorActive:K},{indentColor:Z,indentColorActive:X},{indentColor:q,indentColorActive:Y},{indentColor:U,indentColorActive:ee},{indentColor:j,indentColorActive:te},{indentColor:J,indentColorActive:ie}],g=n.map(i=>{const o=s.getColor(i.bracketColor),h=s.getColor(i.guideColor),l=s.getColor(i.guideColorActive),r=f(f(h)??o?.transparent(.3)),u=f(f(l)??o);if(!(!r||!u))return{guideColor:r,guideColorActive:u}}).filter(I),v=d.map(i=>{const o=s.getColor(i.indentColor),h=s.getColor(i.indentColorActive),l=f(o),r=f(h);if(!(!l||!r))return{indentColor:l,indentColorActive:r}}).filter(I);if(g.length>0){for(let i=0;i<30;i++){const o=g[i%g.length];e.addRule(`.monaco-editor .${t.getInlineClassNameOfLevel(i).replace(/ /g,".")} { --guide-color: ${o.guideColor}; --guide-color-active: ${o.guideColorActive}; }`)}e.addRule(".monaco-editor .vertical { box-shadow: 1px 0 0 0 var(--guide-color) inset; }"),e.addRule(".monaco-editor .horizontal-top { border-top: 1px solid var(--guide-color); }"),e.addRule(".monaco-editor .horizontal-bottom { border-bottom: 1px solid var(--guide-color); }"),e.addRule(`.monaco-editor .vertical.${t.activeClassName} { box-shadow: 1px 0 0 0 var(--guide-color-active) inset; }`),e.addRule(`.monaco-editor .horizontal-top.${t.activeClassName} { border-top: 1px solid var(--guide-color-active); }`),e.addRule(`.monaco-editor .horizontal-bottom.${t.activeClassName} { border-bottom: 1px solid var(--guide-color-active); }`)}if(v.length>0){for(let i=0;i<30;i++){const o=v[i%v.length];e.addRule(`.monaco-editor .lines-content .core-guide-indent.lvl-${i} { --indent-color: ${o.indentColor}; --indent-color-active: ${o.indentColorActive}; }`)}e.addRule(".monaco-editor .lines-content .core-guide-indent { box-shadow: 1px 0 0 0 var(--indent-color) inset; }"),e.addRule(".monaco-editor .lines-content .core-guide-indent.indent-active { box-shadow: 1px 0 0 0 var(--indent-color-active) inset; }")}});export{Pe as IndentGuidesOverlay};
+import './indentGuides.css';
+import { DynamicViewOverlay } from '../../view/dynamicViewOverlay.js';
+import { editorBracketHighlightingForeground1, editorBracketHighlightingForeground2, editorBracketHighlightingForeground3, editorBracketHighlightingForeground4, editorBracketHighlightingForeground5, editorBracketHighlightingForeground6, editorBracketPairGuideActiveBackground1, editorBracketPairGuideActiveBackground2, editorBracketPairGuideActiveBackground3, editorBracketPairGuideActiveBackground4, editorBracketPairGuideActiveBackground5, editorBracketPairGuideActiveBackground6, editorBracketPairGuideBackground1, editorBracketPairGuideBackground2, editorBracketPairGuideBackground3, editorBracketPairGuideBackground4, editorBracketPairGuideBackground5, editorBracketPairGuideBackground6, editorIndentGuide1, editorIndentGuide2, editorIndentGuide3, editorIndentGuide4, editorIndentGuide5, editorIndentGuide6, editorActiveIndentGuide1, editorActiveIndentGuide2, editorActiveIndentGuide3, editorActiveIndentGuide4, editorActiveIndentGuide5, editorActiveIndentGuide6 } from '../../../common/core/editorColorRegistry.js';
+import { registerThemingParticipant } from '../../../../platform/theme/common/themeService.js';
+import { Position } from '../../../common/core/position.js';
+import { ArrayQueue } from '../../../../base/common/arrays.js';
+import { isDefined } from '../../../../base/common/types.js';
+import { BracketPairGuidesClassNames } from '../../../common/model/guidesTextModelPart.js';
+import { IndentGuide, HorizontalGuidesState } from '../../../common/textModelGuides.js';
+export class IndentGuidesOverlay extends DynamicViewOverlay {
+    constructor(context) {
+        super();
+        this._context = context;
+        this._primaryPosition = null;
+        const options = this._context.configuration.options;
+        const wrappingInfo = options.get(149);
+        const fontInfo = options.get(52);
+        this._spaceWidth = fontInfo.spaceWidth;
+        this._maxIndentLeft = wrappingInfo.wrappingColumn === -1 ? -1 : (wrappingInfo.wrappingColumn * fontInfo.typicalHalfwidthCharacterWidth);
+        this._bracketPairGuideOptions = options.get(16);
+        this._renderResult = null;
+        this._context.addEventHandler(this);
+    }
+    dispose() {
+        this._context.removeEventHandler(this);
+        this._renderResult = null;
+        super.dispose();
+    }
+    onConfigurationChanged(e) {
+        const options = this._context.configuration.options;
+        const wrappingInfo = options.get(149);
+        const fontInfo = options.get(52);
+        this._spaceWidth = fontInfo.spaceWidth;
+        this._maxIndentLeft = wrappingInfo.wrappingColumn === -1 ? -1 : (wrappingInfo.wrappingColumn * fontInfo.typicalHalfwidthCharacterWidth);
+        this._bracketPairGuideOptions = options.get(16);
+        return true;
+    }
+    onCursorStateChanged(e) {
+        const selection = e.selections[0];
+        const newPosition = selection.getPosition();
+        if (!this._primaryPosition?.equals(newPosition)) {
+            this._primaryPosition = newPosition;
+            return true;
+        }
+        return false;
+    }
+    onDecorationsChanged(e) {
+        return true;
+    }
+    onFlushed(e) {
+        return true;
+    }
+    onLinesChanged(e) {
+        return true;
+    }
+    onLinesDeleted(e) {
+        return true;
+    }
+    onLinesInserted(e) {
+        return true;
+    }
+    onScrollChanged(e) {
+        return e.scrollTopChanged;
+    }
+    onZonesChanged(e) {
+        return true;
+    }
+    onLanguageConfigurationChanged(e) {
+        return true;
+    }
+    prepareRender(ctx) {
+        if (!this._bracketPairGuideOptions.indentation && this._bracketPairGuideOptions.bracketPairs === false) {
+            this._renderResult = null;
+            return;
+        }
+        const visibleStartLineNumber = ctx.visibleRange.startLineNumber;
+        const visibleEndLineNumber = ctx.visibleRange.endLineNumber;
+        const scrollWidth = ctx.scrollWidth;
+        const activeCursorPosition = this._primaryPosition;
+        const indents = this.getGuidesByLine(visibleStartLineNumber, Math.min(visibleEndLineNumber + 1, this._context.viewModel.getLineCount()), activeCursorPosition);
+        const output = [];
+        for (let lineNumber = visibleStartLineNumber; lineNumber <= visibleEndLineNumber; lineNumber++) {
+            const lineIndex = lineNumber - visibleStartLineNumber;
+            const indent = indents[lineIndex];
+            let result = '';
+            const leftOffset = ctx.visibleRangeForPosition(new Position(lineNumber, 1))?.left ?? 0;
+            for (const guide of indent) {
+                const left = guide.column === -1
+                    ? leftOffset + (guide.visibleColumn - 1) * this._spaceWidth
+                    : ctx.visibleRangeForPosition(new Position(lineNumber, guide.column)).left;
+                if (left > scrollWidth || (this._maxIndentLeft > 0 && left > this._maxIndentLeft)) {
+                    break;
+                }
+                const className = guide.horizontalLine ? (guide.horizontalLine.top ? 'horizontal-top' : 'horizontal-bottom') : 'vertical';
+                const width = guide.horizontalLine
+                    ? (ctx.visibleRangeForPosition(new Position(lineNumber, guide.horizontalLine.endColumn))?.left ?? (left + this._spaceWidth)) - left
+                    : this._spaceWidth;
+                result += `<div class="core-guide ${guide.className} ${className}" style="left:${left}px;width:${width}px"></div>`;
+            }
+            output[lineIndex] = result;
+        }
+        this._renderResult = output;
+    }
+    getGuidesByLine(visibleStartLineNumber, visibleEndLineNumber, activeCursorPosition) {
+        const bracketGuides = this._bracketPairGuideOptions.bracketPairs !== false
+            ? this._context.viewModel.getBracketGuidesInRangeByLine(visibleStartLineNumber, visibleEndLineNumber, activeCursorPosition, {
+                highlightActive: this._bracketPairGuideOptions.highlightActiveBracketPair,
+                horizontalGuides: this._bracketPairGuideOptions.bracketPairsHorizontal === true
+                    ? HorizontalGuidesState.Enabled
+                    : this._bracketPairGuideOptions.bracketPairsHorizontal === 'active'
+                        ? HorizontalGuidesState.EnabledForActive
+                        : HorizontalGuidesState.Disabled,
+                includeInactive: this._bracketPairGuideOptions.bracketPairs === true,
+            })
+            : null;
+        const indentGuides = this._bracketPairGuideOptions.indentation
+            ? this._context.viewModel.getLinesIndentGuides(visibleStartLineNumber, visibleEndLineNumber)
+            : null;
+        let activeIndentStartLineNumber = 0;
+        let activeIndentEndLineNumber = 0;
+        let activeIndentLevel = 0;
+        if (this._bracketPairGuideOptions.highlightActiveIndentation !== false && activeCursorPosition) {
+            const activeIndentInfo = this._context.viewModel.getActiveIndentGuide(activeCursorPosition.lineNumber, visibleStartLineNumber, visibleEndLineNumber);
+            activeIndentStartLineNumber = activeIndentInfo.startLineNumber;
+            activeIndentEndLineNumber = activeIndentInfo.endLineNumber;
+            activeIndentLevel = activeIndentInfo.indent;
+        }
+        const { indentSize } = this._context.viewModel.model.getOptions();
+        const result = [];
+        for (let lineNumber = visibleStartLineNumber; lineNumber <= visibleEndLineNumber; lineNumber++) {
+            const lineGuides = new Array();
+            result.push(lineGuides);
+            const bracketGuidesInLine = bracketGuides ? bracketGuides[lineNumber - visibleStartLineNumber] : [];
+            const bracketGuidesInLineQueue = new ArrayQueue(bracketGuidesInLine);
+            const indentGuidesInLine = indentGuides ? indentGuides[lineNumber - visibleStartLineNumber] : 0;
+            for (let indentLvl = 1; indentLvl <= indentGuidesInLine; indentLvl++) {
+                const indentGuide = (indentLvl - 1) * indentSize + 1;
+                const isActive = (this._bracketPairGuideOptions.highlightActiveIndentation === 'always' || bracketGuidesInLine.length === 0) &&
+                    activeIndentStartLineNumber <= lineNumber &&
+                    lineNumber <= activeIndentEndLineNumber &&
+                    indentLvl === activeIndentLevel;
+                lineGuides.push(...bracketGuidesInLineQueue.takeWhile(g => g.visibleColumn < indentGuide) || []);
+                const peeked = bracketGuidesInLineQueue.peek();
+                if (!peeked || peeked.visibleColumn !== indentGuide || peeked.horizontalLine) {
+                    lineGuides.push(new IndentGuide(indentGuide, -1, `core-guide-indent lvl-${(indentLvl - 1) % 30}` + (isActive ? ' indent-active' : ''), null, -1, -1));
+                }
+            }
+            lineGuides.push(...bracketGuidesInLineQueue.takeWhile(g => true) || []);
+        }
+        return result;
+    }
+    render(startLineNumber, lineNumber) {
+        if (!this._renderResult) {
+            return '';
+        }
+        const lineIndex = lineNumber - startLineNumber;
+        if (lineIndex < 0 || lineIndex >= this._renderResult.length) {
+            return '';
+        }
+        return this._renderResult[lineIndex];
+    }
+}
+function transparentToUndefined(color) {
+    if (color && color.isTransparent()) {
+        return undefined;
+    }
+    return color;
+}
+registerThemingParticipant((theme, collector) => {
+    const colors = [
+        { bracketColor: editorBracketHighlightingForeground1, guideColor: editorBracketPairGuideBackground1, guideColorActive: editorBracketPairGuideActiveBackground1 },
+        { bracketColor: editorBracketHighlightingForeground2, guideColor: editorBracketPairGuideBackground2, guideColorActive: editorBracketPairGuideActiveBackground2 },
+        { bracketColor: editorBracketHighlightingForeground3, guideColor: editorBracketPairGuideBackground3, guideColorActive: editorBracketPairGuideActiveBackground3 },
+        { bracketColor: editorBracketHighlightingForeground4, guideColor: editorBracketPairGuideBackground4, guideColorActive: editorBracketPairGuideActiveBackground4 },
+        { bracketColor: editorBracketHighlightingForeground5, guideColor: editorBracketPairGuideBackground5, guideColorActive: editorBracketPairGuideActiveBackground5 },
+        { bracketColor: editorBracketHighlightingForeground6, guideColor: editorBracketPairGuideBackground6, guideColorActive: editorBracketPairGuideActiveBackground6 }
+    ];
+    const colorProvider = new BracketPairGuidesClassNames();
+    const indentColors = [
+        { indentColor: editorIndentGuide1, indentColorActive: editorActiveIndentGuide1 },
+        { indentColor: editorIndentGuide2, indentColorActive: editorActiveIndentGuide2 },
+        { indentColor: editorIndentGuide3, indentColorActive: editorActiveIndentGuide3 },
+        { indentColor: editorIndentGuide4, indentColorActive: editorActiveIndentGuide4 },
+        { indentColor: editorIndentGuide5, indentColorActive: editorActiveIndentGuide5 },
+        { indentColor: editorIndentGuide6, indentColorActive: editorActiveIndentGuide6 },
+    ];
+    const colorValues = colors
+        .map(c => {
+        const bracketColor = theme.getColor(c.bracketColor);
+        const guideColor = theme.getColor(c.guideColor);
+        const guideColorActive = theme.getColor(c.guideColorActive);
+        const effectiveGuideColor = transparentToUndefined(transparentToUndefined(guideColor) ?? bracketColor?.transparent(0.3));
+        const effectiveGuideColorActive = transparentToUndefined(transparentToUndefined(guideColorActive) ?? bracketColor);
+        if (!effectiveGuideColor || !effectiveGuideColorActive) {
+            return undefined;
+        }
+        return {
+            guideColor: effectiveGuideColor,
+            guideColorActive: effectiveGuideColorActive,
+        };
+    })
+        .filter(isDefined);
+    const indentColorValues = indentColors
+        .map(c => {
+        const indentColor = theme.getColor(c.indentColor);
+        const indentColorActive = theme.getColor(c.indentColorActive);
+        const effectiveIndentColor = transparentToUndefined(indentColor);
+        const effectiveIndentColorActive = transparentToUndefined(indentColorActive);
+        if (!effectiveIndentColor || !effectiveIndentColorActive) {
+            return undefined;
+        }
+        return {
+            indentColor: effectiveIndentColor,
+            indentColorActive: effectiveIndentColorActive,
+        };
+    })
+        .filter(isDefined);
+    if (colorValues.length > 0) {
+        for (let level = 0; level < 30; level++) {
+            const colors = colorValues[level % colorValues.length];
+            collector.addRule(`.monaco-editor .${colorProvider.getInlineClassNameOfLevel(level).replace(/ /g, '.')} { --guide-color: ${colors.guideColor}; --guide-color-active: ${colors.guideColorActive}; }`);
+        }
+        collector.addRule(`.monaco-editor .vertical { box-shadow: 1px 0 0 0 var(--guide-color) inset; }`);
+        collector.addRule(`.monaco-editor .horizontal-top { border-top: 1px solid var(--guide-color); }`);
+        collector.addRule(`.monaco-editor .horizontal-bottom { border-bottom: 1px solid var(--guide-color); }`);
+        collector.addRule(`.monaco-editor .vertical.${colorProvider.activeClassName} { box-shadow: 1px 0 0 0 var(--guide-color-active) inset; }`);
+        collector.addRule(`.monaco-editor .horizontal-top.${colorProvider.activeClassName} { border-top: 1px solid var(--guide-color-active); }`);
+        collector.addRule(`.monaco-editor .horizontal-bottom.${colorProvider.activeClassName} { border-bottom: 1px solid var(--guide-color-active); }`);
+    }
+    if (indentColorValues.length > 0) {
+        for (let level = 0; level < 30; level++) {
+            const colors = indentColorValues[level % indentColorValues.length];
+            collector.addRule(`.monaco-editor .lines-content .core-guide-indent.lvl-${level} { --indent-color: ${colors.indentColor}; --indent-color-active: ${colors.indentColorActive}; }`);
+        }
+        collector.addRule(`.monaco-editor .lines-content .core-guide-indent { box-shadow: 1px 0 0 0 var(--indent-color) inset; }`);
+        collector.addRule(`.monaco-editor .lines-content .core-guide-indent.indent-active { box-shadow: 1px 0 0 0 var(--indent-color-active) inset; }`);
+    }
+});

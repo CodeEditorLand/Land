@@ -1,2 +1,1981 @@
-var me=Object.defineProperty;var ye=Object.getOwnPropertyDescriptor;var q=(b,c,e,t)=>{for(var s=t>1?void 0:t?ye(c,e):c,r=b.length-1,i;r>=0;r--)(i=b[r])&&(s=(t?i(c,e,s):i(s))||s);return t&&s&&me(c,e,s),s},d=(b,c)=>(e,t)=>c(e,t,b);import*as o from"../../../../base/browser/dom.js";import{StandardKeyboardEvent as U}from"../../../../base/browser/keyboardEvent.js";import*as N from"../../../../base/browser/ui/aria/aria.js";import{MessageType as te}from"../../../../base/browser/ui/inputbox/inputBox.js";import"../../../../base/browser/ui/list/list.js";import{ObjectTreeElementCollapseState as Y}from"../../../../base/browser/ui/tree/tree.js";import{Delayer as z,RunOnceScheduler as Ie}from"../../../../base/common/async.js";import*as O from"../../../../base/common/errors.js";import{Event as G}from"../../../../base/common/event.js";import{KeyCode as H,KeyMod as be}from"../../../../base/common/keyCodes.js";import{Disposable as Ce,DisposableStore as se}from"../../../../base/common/lifecycle.js";import*as ie from"../../../../base/common/platform.js";import*as xe from"../../../../base/common/strings.js";import{URI as Ee}from"../../../../base/common/uri.js";import*as Re from"../../../../base/common/network.js";import"./media/searchview.css";import{getCodeEditor as we,isCodeEditor as j,isDiffEditor as Me}from"../../../../editor/browser/editorBrowser.js";import{ICodeEditorService as Fe}from"../../../../editor/browser/services/codeEditorService.js";import{EmbeddedCodeEditorWidget as Pe}from"../../../../editor/browser/widget/codeEditor/embeddedCodeEditorWidget.js";import"../../../../editor/common/config/editorOptions.js";import{Selection as We}from"../../../../editor/common/core/selection.js";import"../../../../editor/common/editorCommon.js";import{CommonFindController as Te}from"../../../../editor/contrib/find/browser/findController.js";import{MultiCursorSelectionController as De}from"../../../../editor/contrib/multicursor/browser/multicursor.js";import*as n from"../../../../nls.js";import{IAccessibilityService as Ae}from"../../../../platform/accessibility/common/accessibility.js";import{MenuId as Oe}from"../../../../platform/actions/common/actions.js";import{ICommandService as He}from"../../../../platform/commands/common/commands.js";import{IConfigurationService as re}from"../../../../platform/configuration/common/configuration.js";import{IContextKeyService as ae}from"../../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as _e,IContextViewService as Ke}from"../../../../platform/contextview/browser/contextView.js";import{IDialogService as ke}from"../../../../platform/dialogs/common/dialogs.js";import{FileChangeType as Le,IFileService as Ve}from"../../../../platform/files/common/files.js";import{IInstantiationService as Ne}from"../../../../platform/instantiation/common/instantiation.js";import{ServiceCollection as ze}from"../../../../platform/instantiation/common/serviceCollection.js";import{IKeybindingService as Be}from"../../../../platform/keybinding/common/keybinding.js";import{getSelectionKeyboardEvent as B,WorkbenchCompressibleAsyncDataTree as Qe}from"../../../../platform/list/browser/listService.js";import{INotificationService as qe}from"../../../../platform/notification/common/notification.js";import{IOpenerService as Ue,withSelection as Ye}from"../../../../platform/opener/common/opener.js";import{IProgressService as Ge}from"../../../../platform/progress/common/progress.js";import{IStorageService as je,StorageScope as oe,StorageTarget as $e}from"../../../../platform/storage/common/storage.js";import{ITelemetryService as Xe}from"../../../../platform/telemetry/common/telemetry.js";import{defaultInputBoxStyles as $,defaultToggleStyles as Je}from"../../../../platform/theme/browser/defaultStyles.js";import{IThemeService as Ze}from"../../../../platform/theme/common/themeService.js";import{ThemeIcon as et}from"../../../../base/common/themables.js";import{IWorkspaceContextService as tt,WorkbenchState as _}from"../../../../platform/workspace/common/workspace.js";import{OpenFileFolderAction as st,OpenFolderAction as it}from"../../../browser/actions/workspaceActions.js";import{ResourceListDnDHandler as rt}from"../../../browser/dnd.js";import{ResourceLabels as at}from"../../../browser/labels.js";import{ViewPane as ot}from"../../../browser/parts/views/viewPane.js";import"../../../common/editor.js";import{Memento as nt}from"../../../common/memento.js";import{IViewDescriptorService as ct}from"../../../common/views.js";import{NotebookEditor as lt}from"../../notebook/browser/notebookEditor.js";import{ExcludePatternInputWidget as ht,IncludePatternInputWidget as ut}from"./patternInputWidget.js";import{appendKeyBindingLabel as dt}from"./searchActionsBase.js";import"./searchActionsFind.js";import{searchDetailsIcon as pt}from"./searchIcons.js";import{renderSearchMessage as gt}from"./searchMessage.js";import{FileMatchRenderer as ft,FolderMatchRenderer as vt,MatchRenderer as St,SearchAccessibilityProvider as mt,SearchDelegate as ne,TextSearchResultRenderer as yt}from"./searchResultsView.js";import{SearchWidget as It}from"./searchWidget.js";import*as f from"../common/constants.js";import{IReplaceService as bt}from"./replace.js";import{getOutOfWorkspaceEditorResources as Ct,SearchStateKey as xt,SearchUIState as w}from"../common/search.js";import{ISearchHistoryService as Et,SearchHistoryService as Rt}from"../common/searchHistoryService.js";import{AI_TEXT_SEARCH_RESULT_ID as Q,FileMatch as P,FolderMatch as K,FolderMatchNoRoot as wt,FolderMatchWithResource as ce,FolderMatchWorkspaceRoot as Mt,ISearchViewModelWorkbenchService as Ft,Match as S,MatchInNotebook as X,searchMatchComparer as J,SearchModelLocation as Pt,SearchResult as le,TextSearchResult as Z}from"./searchModel.js";import{createEditorFromSearchResult as Wt}from"../../searchEditor/browser/searchEditorActions.js";import{ACTIVE_GROUP as Tt,IEditorService as Dt,SIDE_GROUP as At}from"../../../services/editor/common/editorService.js";import{IPreferencesService as Ot}from"../../../services/preferences/common/preferences.js";import{QueryBuilder as Ht}from"../../../services/search/common/queryBuilder.js";import{SearchCompletionExitCode as _t,SearchSortOrder as D,TextSearchCompleteMessageType as Kt,ViewMode as kt}from"../../../services/search/common/search.js";import"../../../services/search/common/searchExtTypes.js";import{ITextFileService as Lt}from"../../../services/textfile/common/textfiles.js";import{INotebookService as Vt}from"../../notebook/common/notebookService.js";import{ILogService as Nt}from"../../../../platform/log/common/log.js";import{AccessibilitySignal as zt,IAccessibilitySignalService as Bt}from"../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";import{getDefaultHoverDelegate as he}from"../../../../base/browser/ui/hover/hoverDelegateFactory.js";import{IHoverService as Qt}from"../../../../platform/hover/browser/hover.js";const C=o.$;var qt=(e=>(e[e.SideBar=0]="SideBar",e[e.Panel=1]="Panel",e))(qt||{});const ue=n.localize("searchCanceled","Search was canceled before any results could be found - "),de=75;let A=class extends ot{constructor(e,t,s,r,i,a,l,p,h,v,u,y,E,x,I,R,M,g,F,ee,L,V,T,pe,ge,fe,ve,Gt,jt,$t){super(e,T,L,y,I,u,v,ge,F,fe,ve);this.fileService=t;this.editorService=s;this.codeEditorService=r;this.progressService=i;this.notificationService=a;this.dialogService=l;this.commandService=p;this.contextViewService=h;this.contextService=E;this.searchViewModelWorkbenchService=x;this.replaceService=R;this.textFileService=M;this.preferencesService=g;this.searchHistoryService=ee;this.accessibilityService=V;this.storageService=pe;this.notebookService=Gt;this.logService=jt;this.accessibilitySignalService=$t;this.container=o.$(".search-view"),this.viewletVisible=f.SearchContext.SearchViewVisibleKey.bindTo(this.contextKeyService),this.firstMatchFocused=f.SearchContext.FirstMatchFocusKey.bindTo(this.contextKeyService),this.fileMatchOrMatchFocused=f.SearchContext.FileMatchOrMatchFocusKey.bindTo(this.contextKeyService),this.fileMatchOrFolderMatchFocus=f.SearchContext.FileMatchOrFolderMatchFocusKey.bindTo(this.contextKeyService),this.fileMatchOrFolderMatchWithResourceFocus=f.SearchContext.FileMatchOrFolderMatchWithResourceFocusKey.bindTo(this.contextKeyService),this.fileMatchFocused=f.SearchContext.FileFocusKey.bindTo(this.contextKeyService),this.folderMatchFocused=f.SearchContext.FolderFocusKey.bindTo(this.contextKeyService),this.folderMatchWithResourceFocused=f.SearchContext.ResourceFolderFocusKey.bindTo(this.contextKeyService),this.hasSearchResultsKey=f.SearchContext.HasSearchResults.bindTo(this.contextKeyService),this.matchFocused=f.SearchContext.MatchFocusKey.bindTo(this.contextKeyService),this.searchStateKey=xt.bindTo(this.contextKeyService),this.hasSearchPatternKey=f.SearchContext.ViewHasSearchPatternKey.bindTo(this.contextKeyService),this.hasReplacePatternKey=f.SearchContext.ViewHasReplacePatternKey.bindTo(this.contextKeyService),this.hasFilePatternKey=f.SearchContext.ViewHasFilePatternKey.bindTo(this.contextKeyService),this.hasSomeCollapsibleResultKey=f.SearchContext.ViewHasSomeCollapsibleKey.bindTo(this.contextKeyService),this.treeViewKey=f.SearchContext.InTreeViewKey.bindTo(this.contextKeyService),this._register(this.contextKeyService.onDidChangeContext(m=>{const Se=f.SearchContext.hasAIResultProvider.keys();m.affectsSome(new Set(Se))&&this.refreshHasAISetting()})),this.contextKeyService=this._register(this.contextKeyService.createScoped(this.container)),f.SearchContext.SearchViewFocusedKey.bindTo(this.contextKeyService).set(!0),this.inputBoxFocused=f.SearchContext.InputBoxFocusedKey.bindTo(this.contextKeyService),this.inputPatternIncludesFocused=f.SearchContext.PatternIncludesFocusedKey.bindTo(this.contextKeyService),this.inputPatternExclusionsFocused=f.SearchContext.PatternExcludesFocusedKey.bindTo(this.contextKeyService),this.isEditableItem=f.SearchContext.IsEditableItemKey.bindTo(this.contextKeyService),this.instantiationService=this._register(this.instantiationService.createChild(new ze([ae,this.contextKeyService]))),this._register(this.configurationService.onDidChangeConfiguration(async m=>{m.affectsConfiguration("search.sortOrder")&&(this.searchConfig.sortOrder===D.Modified&&this.removeFileStats(),await this.refreshTree())})),this.viewModel=this.searchViewModelWorkbenchService.searchModel,this.queryBuilder=this.instantiationService.createInstance(Ht),this.memento=new nt(this.id,pe),this.viewletState=this.memento.getMemento(oe.WORKSPACE,$e.MACHINE),this._register(this.fileService.onDidFilesChange(m=>this.onFilesChanged(m))),this._register(this.textFileService.untitled.onWillDispose(m=>this.onUntitledDidDispose(m.resource))),this._register(this.contextService.onDidChangeWorkbenchState(()=>this.onDidChangeWorkbenchState())),this._register(this.searchHistoryService.onDidClearHistory(()=>this.clearHistory())),this._register(this.configurationService.onDidChangeConfiguration(m=>this.onConfigurationUpdated(m))),this.delayedRefresh=this._register(new z(250)),this.addToSearchHistoryDelayer=this._register(new z(2e3)),this.toggleCollapseStateDelayer=this._register(new z(100)),this.triggerQueryDelayer=this._register(new z(0)),this.treeAccessibilityProvider=this.instantiationService.createInstance(mt,this),this.isTreeLayoutViewVisible=this.viewletState["view.treeLayout"]??this.searchConfig.defaultViewMode===kt.Tree,this._refreshResultsScheduler=this._register(new Ie(this._updateResults.bind(this),80)),this._register(this.storageService.onWillSaveState(()=>{this._saveSearchHistoryService()})),this._register(this.storageService.onDidChangeValue(oe.WORKSPACE,Rt.SEARCH_HISTORY_KEY,this._register(new se))(()=>{const m=this.searchHistoryService.load();m.include&&this.inputPatternIncludes.prependHistory(m.include),m.exclude&&this.inputPatternExcludes.prependHistory(m.exclude),m.search&&this.searchWidget.prependSearchHistory(m.search),m.replace&&this.searchWidget.prependReplaceHistory(m.replace)})),this.changedWhileHidden=this.hasSearchResults()}static ACTIONS_RIGHT_CLASS_NAME="actions-right";isDisposed=!1;container;queryBuilder;viewModel;memento;viewletVisible;inputBoxFocused;inputPatternIncludesFocused;inputPatternExclusionsFocused;firstMatchFocused;fileMatchOrMatchFocused;fileMatchOrFolderMatchFocus;fileMatchOrFolderMatchWithResourceFocus;fileMatchFocused;folderMatchFocused;folderMatchWithResourceFocused;matchFocused;isEditableItem;hasSearchResultsKey;lastFocusState="input";searchStateKey;hasSearchPatternKey;hasReplacePatternKey;hasFilePatternKey;hasSomeCollapsibleResultKey;tree;treeLabels;viewletState;messagesElement;messageDisposables=new se;searchWidgetsContainerElement;searchWidget;size;queryDetails;toggleQueryDetailsButton;inputPatternExcludes;inputPatternIncludes;resultsElement;currentSelectedFileMatch;delayedRefresh;changedWhileHidden;searchWithoutFolderMessageElement;currentSearchQ=Promise.resolve();addToSearchHistoryDelayer;toggleCollapseStateDelayer;triggerQueryDelayer;pauseSearching=!1;treeAccessibilityProvider;treeViewKey;_visibleMatches=0;_refreshResultsScheduler;_onSearchResultChangedDisposable;searchDataSource;get isTreeLayoutViewVisible(){return this.treeViewKey.get()??!1}set isTreeLayoutViewVisible(e){this.treeViewKey.set(e)}async setTreeView(e){if(e!==this.isTreeLayoutViewVisible)return this.isTreeLayoutViewVisible=e,this.updateIndentStyles(this.themeService.getFileIconTheme()),this.refreshTree()}get state(){return this.searchStateKey.get()??w.Idle}set state(e){this.searchStateKey.set(e)}getContainer(){return this.container}get searchResult(){return this.viewModel&&this.viewModel.searchResult}get model(){return this.viewModel}async refreshHasAISetting(){const e=this.shouldShowAIResults();if(this.tree.hasNode(this.searchResult)){if(e&&!this.tree.hasNode(this.searchResult.aiTextSearchResult)){if(this.model.searchResult.getCachedSearchComplete(!1))return this.refreshAndUpdateCount()}else if(!e&&this.tree.hasNode(this.searchResult.aiTextSearchResult))return this.refreshAndUpdateCount()}}onDidChangeWorkbenchState(){this.contextService.getWorkbenchState()!==_.EMPTY&&this.searchWithoutFolderMessageElement&&o.hide(this.searchWithoutFolderMessageElement)}refreshInputs(){this.pauseSearching=!0,this.searchWidget.setValue(this.viewModel.searchResult.query?.contentPattern.pattern??""),this.searchWidget.setReplaceAllActionState(!1),this.searchWidget.toggleReplace(!0),this.inputPatternIncludes.setOnlySearchInOpenEditors(this.viewModel.searchResult.query?.onlyOpenEditors||!1),this.inputPatternExcludes.setUseExcludesAndIgnoreFiles(!this.viewModel.searchResult.query?.userDisabledExcludesAndIgnoreFiles||!0),this.searchIncludePattern.setValue(""),this.searchExcludePattern.setValue(""),this.pauseSearching=!1}async replaceSearchModel(e,t){let s;this.progressService.withProgress({location:this.getProgressLocation(),delay:0},a=>new Promise(l=>s=l));const r=setTimeout(()=>{this.state=w.SlowSearch},2e3);if(this._refreshResultsScheduler.schedule(),e.location=Pt.PANEL,e.replaceActive=this.viewModel.isReplaceActive(),e.replaceString=this.searchWidget.getReplaceValue(),this._onSearchResultChangedDisposable?.dispose(),this._onSearchResultChangedDisposable=this._register(e.onSearchResultChanged(async a=>this.onSearchResultsChanged(a))),this.searchViewModelWorkbenchService.searchModel=e,this.viewModel=e,this.tree.setInput(this.viewModel.searchResult),await this.onSearchResultsChanged(),this.refreshInputs(),t.then(a=>(clearTimeout(r),this.onSearchComplete(s,void 0,void 0,a)),a=>(clearTimeout(r),this.onSearchError(a,s,void 0,void 0))),this.searchConfig.collapseResults!=="alwaysCollapse"&&this.viewModel.searchResult.matches().length===1){const a=this.viewModel.searchResult.matches()[0];a.count()<50&&await this.tree.expand(a)}}renderBody(e){super.renderBody(e),this.container=o.append(e,o.$(".search-view")),this.searchWidgetsContainerElement=o.append(this.container,C(".search-widgets-container")),this.createSearchWidget(this.searchWidgetsContainerElement);const t=this.searchHistoryService.load(),s=this.viewletState["query.filePatterns"]||"",r=this.viewletState["query.folderExclusions"]||"",i=t.exclude||[],a=this.viewletState["query.folderIncludes"]||"",l=t.include||[],p=this.viewletState["query.onlyOpenEditors"]||!1,h=this.viewletState["query.queryDetailsExpanded"]||"",v=typeof this.viewletState["query.useExcludesAndIgnoreFiles"]=="boolean"?this.viewletState["query.useExcludesAndIgnoreFiles"]:!0;this.queryDetails=o.append(this.searchWidgetsContainerElement,C(".query-details"));const u=n.localize("moreSearch","Toggle Search Details");this.toggleQueryDetailsButton=o.append(this.queryDetails,C(".more"+et.asCSSSelector(pt),{tabindex:0,role:"button","aria-label":u})),this._register(this.hoverService.setupManagedHover(he("element"),this.toggleQueryDetailsButton,u)),this._register(o.addDisposableListener(this.toggleQueryDetailsButton,o.EventType.CLICK,g=>{o.EventHelper.stop(g),this.toggleQueryDetails(!this.accessibilityService.isScreenReaderOptimized())})),this._register(o.addDisposableListener(this.toggleQueryDetailsButton,o.EventType.KEY_UP,g=>{const F=new U(g);(F.equals(H.Enter)||F.equals(H.Space))&&(o.EventHelper.stop(g),this.toggleQueryDetails(!1))})),this._register(o.addDisposableListener(this.toggleQueryDetailsButton,o.EventType.KEY_DOWN,g=>{new U(g).equals(be.Shift|H.Tab)&&(this.searchWidget.isReplaceActive()?this.searchWidget.focusReplaceAllAction():this.searchWidget.isReplaceShown()?this.searchWidget.replaceInput?.focusOnPreserve():this.searchWidget.focusRegexAction(),o.EventHelper.stop(g))}));const y=o.append(this.queryDetails,C(".file-types.includes")),E=n.localize("searchScope.includes","files to include");o.append(y,C("h4",void 0,E)),this.inputPatternIncludes=this._register(this.instantiationService.createInstance(ut,y,this.contextViewService,{ariaLabel:E,placeholder:n.localize("placeholder.includes","e.g. *.ts, src/**/include"),showPlaceholderOnFocus:!0,history:l,inputBoxStyles:$})),this.inputPatternIncludes.setValue(a),this.inputPatternIncludes.setOnlySearchInOpenEditors(p),this._register(this.inputPatternIncludes.onCancel(()=>this.cancelSearch(!1))),this._register(this.inputPatternIncludes.onChangeSearchInEditorsBox(()=>this.triggerQueryChange())),this.trackInputBox(this.inputPatternIncludes.inputFocusTracker,this.inputPatternIncludesFocused);const x=o.append(this.queryDetails,C(".file-types.excludes")),I=n.localize("searchScope.excludes","files to exclude");o.append(x,C("h4",void 0,I)),this.inputPatternExcludes=this._register(this.instantiationService.createInstance(ht,x,this.contextViewService,{ariaLabel:I,placeholder:n.localize("placeholder.excludes","e.g. *.ts, src/**/exclude"),showPlaceholderOnFocus:!0,history:i,inputBoxStyles:$})),this.inputPatternExcludes.setValue(r),this.inputPatternExcludes.setUseExcludesAndIgnoreFiles(v),this._register(this.inputPatternExcludes.onCancel(()=>this.cancelSearch(!1))),this._register(this.inputPatternExcludes.onChangeIgnoreBox(()=>this.triggerQueryChange())),this.trackInputBox(this.inputPatternExcludes.inputFocusTracker,this.inputPatternExclusionsFocused);const R=()=>this.hasFilePatternKey.set(this.inputPatternIncludes.getValue().length>0||this.inputPatternExcludes.getValue().length>0);R();const M=g=>{this.triggerQueryChange({triggeredOnType:g,delay:this.searchConfig.searchOnTypeDebouncePeriod}),g&&R()};this._register(this.inputPatternIncludes.onSubmit(M)),this._register(this.inputPatternExcludes.onSubmit(M)),this.messagesElement=o.append(this.container,C(".messages.text-search-provider-messages")),this.contextService.getWorkbenchState()===_.EMPTY&&this.showSearchWithoutFolderMessage(),this.createSearchResultsView(this.container),(s!==""||r!==""||a!==""||h!==""||!v)&&this.toggleQueryDetails(!0,!0,!0),this._onSearchResultChangedDisposable=this._register(this.viewModel.onSearchResultChanged(async g=>await this.onSearchResultsChanged(g))),this._register(this.onDidChangeBodyVisibility(g=>this.onVisibilityChanged(g))),this.updateIndentStyles(this.themeService.getFileIconTheme()),this._register(this.themeService.onDidFileIconThemeChange(this.updateIndentStyles,this))}updateIndentStyles(e){this.resultsElement.classList.toggle("hide-arrows",this.isTreeLayoutViewVisible&&e.hidesExplorerArrows)}async onVisibilityChanged(e){this.viewletVisible.set(e),e?this.changedWhileHidden&&(await this.refreshAndUpdateCount(),this.changedWhileHidden=!1):this.lastFocusState="input",this.viewModel?.searchResult.toggleHighlights(e)}get searchAndReplaceWidget(){return this.searchWidget}get searchIncludePattern(){return this.inputPatternIncludes}get searchExcludePattern(){return this.inputPatternExcludes}createSearchWidget(e){const t=this.viewletState["query.contentPattern"]||"",s=this.viewletState["query.replaceText"]||"",r=this.viewletState["query.regex"]===!0,i=this.viewletState["query.wholeWords"]===!0,a=this.viewletState["query.caseSensitive"]===!0,l=this.searchHistoryService.load(),p=l.search||this.viewletState["query.searchHistory"]||[],h=l.replace||this.viewletState["query.replaceHistory"]||[],v=typeof this.viewletState["view.showReplace"]=="boolean"?this.viewletState["view.showReplace"]:!0,u=this.viewletState["query.preserveCase"]===!0,y=this.viewletState["query.isInNotebookMarkdownInput"]??!0,E=this.viewletState["query.isInNotebookMarkdownPreview"]??!0,x=this.viewletState["query.isInNotebookCellInput"]??!0,I=this.viewletState["query.isInNotebookCellOutput"]??!0;if(this.searchWidget=this._register(this.instantiationService.createInstance(It,e,{value:t,replaceValue:s,isRegex:r,isCaseSensitive:a,isWholeWords:i,searchHistory:p,replaceHistory:h,preserveCase:u,inputBoxStyles:$,toggleStyles:Je,notebookOptions:{isInNotebookMarkdownInput:y,isInNotebookMarkdownPreview:E,isInNotebookCellInput:x,isInNotebookCellOutput:I}})),!this.searchWidget.searchInput||!this.searchWidget.replaceInput){this.logService.warn(`Cannot fully create search widget. Search or replace input undefined. SearchInput: ${this.searchWidget.searchInput}, ReplaceInput: ${this.searchWidget.replaceInput}`);return}v&&this.searchWidget.toggleReplace(!0),this._register(this.searchWidget.onSearchSubmit(g=>this.triggerQueryChange(g))),this._register(this.searchWidget.onSearchCancel(({focus:g})=>this.cancelSearch(g))),this._register(this.searchWidget.searchInput.onDidOptionChange(()=>{this.triggerQueryChange()})),this._register(this.searchWidget.getNotebookFilters().onDidChange(()=>this.triggerQueryChange()));const R=()=>this.hasSearchPatternKey.set(this.searchWidget.searchInput?this.searchWidget.searchInput.getValue().length>0:!1);R(),this._register(this.searchWidget.searchInput.onDidChange(()=>R()));const M=()=>this.hasReplacePatternKey.set(this.searchWidget.getReplaceValue().length>0);M(),this._register(this.searchWidget.replaceInput.inputBox.onDidChange(()=>M())),this._register(this.searchWidget.onDidHeightChange(()=>this.reLayout())),this._register(this.searchWidget.onReplaceToggled(()=>this.reLayout())),this._register(this.searchWidget.onReplaceStateChange(async g=>{this.viewModel.replaceActive=g,await this.refreshTree()})),this._register(this.searchWidget.onPreserveCaseChange(async g=>{this.viewModel.preserveCase=g,await this.refreshTree()})),this._register(this.searchWidget.onReplaceValueChanged(()=>{this.viewModel.replaceString=this.searchWidget.getReplaceValue(),this.delayedRefresh.trigger(async()=>this.refreshTree())})),this._register(this.searchWidget.onBlur(()=>{this.toggleQueryDetailsButton.focus()})),this._register(this.searchWidget.onReplaceAll(()=>this.replaceAll())),this.trackInputBox(this.searchWidget.searchInputFocusTracker),this.trackInputBox(this.searchWidget.replaceInputFocusTracker)}shouldShowAIResults(){return!!f.SearchContext.hasAIResultProvider.getValue(this.contextKeyService)}async onConfigurationUpdated(e){if(e&&(e.affectsConfiguration("search.decorations.colors")||e.affectsConfiguration("search.decorations.badges")))return this.refreshTree()}trackInputBox(e,t){e&&(this._register(e.onDidFocus(()=>{this.lastFocusState="input",this.inputBoxFocused.set(!0),t?.set(!0)})),this._register(e.onDidBlur(()=>{this.inputBoxFocused.set(this.searchWidget.searchInputHasFocus()||this.searchWidget.replaceInputHasFocus()||this.inputPatternIncludes.inputHasFocus()||this.inputPatternExcludes.inputHasFocus()),t?.set(!1)})))}async onSearchResultsChanged(e){if(this.isVisible())return this.refreshAndUpdateCount(e);this.changedWhileHidden=!0}refreshTreePromiseSerializer=Promise.resolve();async refreshAndUpdateCount(e){return this.searchWidget.setReplaceAllActionState(!this.viewModel.searchResult.isEmpty()),this.updateSearchResultCount(this.viewModel.searchResult.query.userDisabledExcludesAndIgnoreFiles,this.viewModel.searchResult.query?.onlyOpenEditors,e?.clearingAll),this.refreshTree(e)}async refreshTree(e){return this.refreshTreePromiseSerializer=this.refreshTreePromiseSerializer.then(async()=>{!e||e.added||e.removed?this.searchConfig.sortOrder===D.Modified?await this.retrieveFileStats().then(()=>this.tree.updateChildren(void 0)):await this.tree.updateChildren(void 0):this.searchConfig.sortOrder===D.CountAscending||this.searchConfig.sortOrder===D.CountDescending?await this.tree.updateChildren(void 0):await Promise.all(e.elements.map(async t=>{await this.tree.updateChildren(t),this.tree.rerender(t)}))}),this.refreshTreePromiseSerializer}originalShouldCollapse(e){const t=this.searchConfig.collapseResults;return t==="alwaysCollapse"||!(e instanceof S)&&e.count()>10&&t!=="alwaysExpand"?Y.PreserveOrCollapsed:Y.PreserveOrExpanded}shouldCollapse(e){return this.originalShouldCollapse(e)===Y.PreserveOrCollapsed}replaceAll(){if(this.viewModel.searchResult.count()===0)return;const e=this.viewModel.searchResult.count(),t=this.viewModel.searchResult.fileCount(),s=this.searchWidget.getReplaceValue()||"",r=this.buildAfterReplaceAllMessage(e,t,s);let i,a;this.progressService.withProgress({location:this.getProgressLocation(),delay:100,total:e},p=>(a=p,new Promise(h=>i=h)));const l={title:n.localize("replaceAll.confirmation.title","Replace All"),message:this.buildReplaceAllConfirmationMessage(e,t,s),primaryButton:n.localize({key:"replaceAll.confirm.button",comment:["&& denotes a mnemonic"]},"&&Replace")};this.dialogService.confirm(l).then(p=>{p.confirmed?(this.searchWidget.setReplaceAllActionState(!1),this.viewModel.searchResult.replaceAll(a).then(()=>{i();const h=this.clearMessage();o.append(h,r),this.reLayout()},h=>{i(),O.isCancellationError(h),this.notificationService.error(h)})):i()})}buildAfterReplaceAllMessage(e,t,s){return e===1?t===1?s?n.localize("replaceAll.occurrence.file.message","Replaced {0} occurrence across {1} file with '{2}'.",e,t,s):n.localize("removeAll.occurrence.file.message","Replaced {0} occurrence across {1} file.",e,t):s?n.localize("replaceAll.occurrence.files.message","Replaced {0} occurrence across {1} files with '{2}'.",e,t,s):n.localize("removeAll.occurrence.files.message","Replaced {0} occurrence across {1} files.",e,t):t===1?s?n.localize("replaceAll.occurrences.file.message","Replaced {0} occurrences across {1} file with '{2}'.",e,t,s):n.localize("removeAll.occurrences.file.message","Replaced {0} occurrences across {1} file.",e,t):s?n.localize("replaceAll.occurrences.files.message","Replaced {0} occurrences across {1} files with '{2}'.",e,t,s):n.localize("removeAll.occurrences.files.message","Replaced {0} occurrences across {1} files.",e,t)}buildReplaceAllConfirmationMessage(e,t,s){return e===1?t===1?s?n.localize("removeAll.occurrence.file.confirmation.message","Replace {0} occurrence across {1} file with '{2}'?",e,t,s):n.localize("replaceAll.occurrence.file.confirmation.message","Replace {0} occurrence across {1} file?",e,t):s?n.localize("removeAll.occurrence.files.confirmation.message","Replace {0} occurrence across {1} files with '{2}'?",e,t,s):n.localize("replaceAll.occurrence.files.confirmation.message","Replace {0} occurrence across {1} files?",e,t):t===1?s?n.localize("removeAll.occurrences.file.confirmation.message","Replace {0} occurrences across {1} file with '{2}'?",e,t,s):n.localize("replaceAll.occurrences.file.confirmation.message","Replace {0} occurrences across {1} file?",e,t):s?n.localize("removeAll.occurrences.files.confirmation.message","Replace {0} occurrences across {1} files with '{2}'?",e,t,s):n.localize("replaceAll.occurrences.files.confirmation.message","Replace {0} occurrences across {1} files?",e,t)}clearMessage(){this.searchWithoutFolderMessageElement=void 0;const e=this.messagesElement.style.display==="none";o.clearNode(this.messagesElement),o.show(this.messagesElement),this.messageDisposables.clear();const t=o.append(this.messagesElement,C(".message"));return e&&this.reLayout(),t}createSearchResultsView(e){this.resultsElement=o.append(e,C(".results.show-file-icons.file-icon-themable-tree"));const t=this.instantiationService.createInstance(ne),s={getId(i){return i.id()}};this.searchDataSource=this.instantiationService.createInstance(k,this),this.treeLabels=this._register(this.instantiationService.createInstance(at,{onDidChangeVisibility:this.onDidChangeBodyVisibility})),this.tree=this._register(this.instantiationService.createInstance(Qe,"SearchView",this.resultsElement,t,{isIncompressible:i=>!(i instanceof K&&!(i.parent()instanceof Z)&&!(i.parent()instanceof Mt)&&!(i.parent()instanceof wt))},[this._register(this.instantiationService.createInstance(vt,this,this.treeLabels)),this._register(this.instantiationService.createInstance(ft,this,this.treeLabels)),this._register(this.instantiationService.createInstance(yt,this.treeLabels)),this._register(this.instantiationService.createInstance(St,this))],this.searchDataSource,{identityProvider:s,accessibilityProvider:this.treeAccessibilityProvider,dnd:this.instantiationService.createInstance(rt,i=>i instanceof P?i.resource:i instanceof S?Ye(i.parent().resource,i.range()):null),multipleSelectionSupport:!0,selectionNavigation:!0,overrideStyles:this.getLocationBasedColors().listOverrideStyles,paddingBottom:ne.ITEM_HEIGHT,collapseByDefault:i=>i.id()===Q?!0:this.shouldCollapse(i)})),this.tree.setInput(this.viewModel.searchResult),this._register(this.tree.onContextMenu(i=>this.onContextMenu(i)));const r=()=>this.toggleCollapseStateDelayer.trigger(()=>this.hasSomeCollapsibleResultKey.set(this.hasSomeCollapsible()));r(),this._register(this.tree.onDidChangeCollapseState(()=>r())),this._register(this.tree.onDidChangeModel(()=>r())),this._register(G.debounce(this.tree.onDidOpen,(i,a)=>a,de,!0)(i=>{if(i.element instanceof S){const a=i.element;this.currentSelectedFileMatch?.setSelectedMatch(null),this.currentSelectedFileMatch=a.parent(),this.currentSelectedFileMatch.setSelectedMatch(a),this.onFocus(a,i.editorOptions.preserveFocus,i.sideBySide,i.editorOptions.pinned)}})),this._register(G.debounce(this.tree.onDidChangeFocus,(i,a)=>a,de,!0)(()=>{const i=this.tree.getSelection(),a=this.tree.getFocus()[0];i.length>1&&a instanceof S&&this.onFocus(a,!0)})),this._register(G.any(this.tree.onDidFocus,this.tree.onDidChangeFocus)(()=>{const i=this.tree.getFocus()[0];if(this.tree.isDOMFocused()){const l=this.tree.getFirstElementChild(this.tree.getInput());this.firstMatchFocused.set(l===i),this.fileMatchOrMatchFocused.set(!!i),this.fileMatchFocused.set(i instanceof P),this.folderMatchFocused.set(i instanceof K),this.matchFocused.set(i instanceof S),this.fileMatchOrFolderMatchFocus.set(i instanceof P||i instanceof K),this.fileMatchOrFolderMatchWithResourceFocus.set(i instanceof P||i instanceof ce),this.folderMatchWithResourceFocused.set(i instanceof ce),this.lastFocusState="tree"}let a=!1;i instanceof S?a=!i.isReadonly():(i instanceof P||i instanceof K)&&(a=!i.hasOnlyReadOnlyMatches()),this.isEditableItem.set(a)})),this._register(this.tree.onDidBlur(()=>{this.firstMatchFocused.reset(),this.fileMatchOrMatchFocused.reset(),this.fileMatchFocused.reset(),this.folderMatchFocused.reset(),this.matchFocused.reset(),this.fileMatchOrFolderMatchFocus.reset(),this.fileMatchOrFolderMatchWithResourceFocus.reset(),this.folderMatchWithResourceFocused.reset(),this.isEditableItem.reset()}))}onContextMenu(e){e.browserEvent.preventDefault(),e.browserEvent.stopPropagation(),this.contextMenuService.showContextMenu({menuId:Oe.SearchContext,menuActionOptions:{shouldForwardArgs:!0},contextKeyService:this.contextKeyService,getAnchor:()=>e.anchor,getActionsContext:()=>e.element})}hasSomeCollapsible(){const e=this.getControl(),t=e.navigate();let s=t.first();do if(s&&!e.isCollapsed(s)&&(this.viewModel.hasAIResults||s.id()!==Q))return!0;while(s=t.next());return!1}async selectNextMatch(){if(!this.hasSearchResults())return;const[e]=this.tree.getSelection();e&&!(e instanceof S)&&this.tree.isCollapsed(e)&&await this.tree.expand(e);const t=this.tree.navigate(e);let s=t.next();for(s||(s=t.first());s&&!(s instanceof S);)this.tree.isCollapsed(s)&&await this.tree.expand(s),s=t.next();if(s){s===e&&this.tree.setFocus([]);const r=B(void 0,!1,!1);this.tree.setFocus([s],r),this.tree.setSelection([s],r),this.tree.reveal(s);const i=this.treeAccessibilityProvider.getAriaLabel(s);i&&N.status(i)}}async selectPreviousMatch(){if(!this.hasSearchResults())return;const[e]=this.tree.getSelection();let t=this.tree.navigate(e),s=t.previous();for(;!s||!(s instanceof S)&&!this.tree.isCollapsed(s);){const r=s?t.previous():t.last();if(!s&&!r)return;s=r}for(;s&&!(s instanceof S);){const r=t.next();if(!r)break;await this.tree.expand(s),t=this.tree.navigate(r),s=r?t.previous():t.last()}if(s){s===e&&this.tree.setFocus([]);const r=B(void 0,!1,!1);this.tree.setFocus([s],r),this.tree.setSelection([s],r),this.tree.reveal(s);const i=this.treeAccessibilityProvider.getAriaLabel(s);i&&N.status(i)}}moveFocusToResults(){this.tree.domFocus()}focus(){if(super.focus(),this.lastFocusState==="input"||!this.hasSearchResults()){const e=this.searchConfig.seedOnFocus?this.updateTextFromSelection({allowSearchOnType:!1}):!1;this.searchWidget.focus(void 0,void 0,e)}else this.tree.domFocus()}updateTextFromFindWidgetOrSelection({allowUnselectedWord:e=!0,allowSearchOnType:t=!0}){let s=this.editorService.activeTextEditorControl;if(j(s)&&!s?.hasTextFocus()){const r=Te.get(s);if(r&&r.isFindInputFocused())return this.updateTextFromFindWidget(r,{allowSearchOnType:t});s=this.codeEditorService.listCodeEditors().find(a=>a instanceof Pe&&a.getParentEditor()===s&&a.hasTextFocus())??s}return this.updateTextFromSelection({allowUnselectedWord:e,allowSearchOnType:t},s)}updateTextFromFindWidget(e,{allowSearchOnType:t=!0}){if(!this.searchConfig.seedWithNearestWord&&(o.getActiveWindow().getSelection()?.toString()??"")==="")return!1;const s=e.getState().searchString;return s===""?!1:(this.searchWidget.searchInput?.setCaseSensitive(e.getState().matchCase),this.searchWidget.searchInput?.setWholeWords(e.getState().wholeWord),this.searchWidget.searchInput?.setRegex(e.getState().isRegex),this.updateText(s,t),!0)}updateTextFromSelection({allowUnselectedWord:e=!0,allowSearchOnType:t=!0},s){const r=this.configurationService.getValue("editor").find.seedSearchStringFromSelection;if(!r||r==="never")return!1;let i=this.getSearchTextFromEditor(e,s);return i===null?!1:(this.searchWidget.searchInput?.getRegex()&&(i=xe.escapeRegExpCharacters(i)),this.updateText(i,t),!0)}updateText(e,t=!0){t&&!this.viewModel.searchResult.isDirty?this.searchWidget.setValue(e):(this.pauseSearching=!0,this.searchWidget.setValue(e),this.pauseSearching=!1)}focusNextInputBox(){if(this.searchWidget.searchInputHasFocus()){this.searchWidget.isReplaceShown()?this.searchWidget.focus(!0,!0):this.moveFocusFromSearchOrReplace();return}if(this.searchWidget.replaceInputHasFocus()){this.moveFocusFromSearchOrReplace();return}if(this.inputPatternIncludes.inputHasFocus()){this.inputPatternExcludes.focus(),this.inputPatternExcludes.select();return}if(this.inputPatternExcludes.inputHasFocus()){this.selectTreeIfNotSelected();return}}moveFocusFromSearchOrReplace(){this.showsFileTypes()?this.toggleQueryDetails(!0,this.showsFileTypes()):this.selectTreeIfNotSelected()}focusPreviousInputBox(){if(!this.searchWidget.searchInputHasFocus()){if(this.searchWidget.replaceInputHasFocus()){this.searchWidget.focus(!0);return}if(this.inputPatternIncludes.inputHasFocus()){this.searchWidget.focus(!0,!0);return}if(this.inputPatternExcludes.inputHasFocus()){this.inputPatternIncludes.focus(),this.inputPatternIncludes.select();return}if(this.tree.isDOMFocused()){this.moveFocusFromResults();return}}}moveFocusFromResults(){this.showsFileTypes()?this.toggleQueryDetails(!0,!0,!1,!0):this.searchWidget.focus(!0,!0)}reLayout(){if(this.isDisposed||!this.size)return;const e=this.searchConfig.actionsPosition;this.getContainer().classList.toggle(A.ACTIONS_RIGHT_CLASS_NAME,e==="right"),this.searchWidget.setWidth(this.size.width-28),this.inputPatternExcludes.setWidth(this.size.width-28),this.inputPatternIncludes.setWidth(this.size.width-28);const t=o.getTotalHeight(this.searchWidgetsContainerElement),s=o.getTotalHeight(this.messagesElement);this.tree.layout(this.size.height-t-s,this.size.width-28)}layoutBody(e,t){super.layoutBody(e,t),this.size=new o.Dimension(t,e),this.reLayout()}getControl(){return this.tree}allSearchFieldsClear(){return this.searchWidget.getReplaceValue()===""&&(!this.searchWidget.searchInput||this.searchWidget.searchInput.getValue()==="")}allFilePatternFieldsClear(){return this.searchExcludePattern.getValue()===""&&this.searchIncludePattern.getValue()===""}hasSearchResults(){return!this.viewModel.searchResult.isEmpty()}clearSearchResults(e=!0){this.viewModel.searchResult.clear(),this.showEmptyStage(!0),this.contextService.getWorkbenchState()===_.EMPTY&&this.showSearchWithoutFolderMessage(),e&&(this.allSearchFieldsClear()&&this.clearFilePatternFields(),this.searchWidget.clear()),this.viewModel.cancelSearch(),this.tree.ariaLabel=n.localize("emptySearch","Empty Search"),this.accessibilitySignalService.playSignal(zt.clear),this.reLayout()}clearFilePatternFields(){this.searchExcludePattern.clear(),this.searchIncludePattern.clear()}cancelSearch(e=!0){return this.viewModel.cancelSearch()?(e&&this.searchWidget.focus(),!0):!1}selectTreeIfNotSelected(){if(this.tree.getNode(void 0)&&(this.tree.domFocus(),this.tree.getSelection().length===0)){const t=B();this.tree.focusNext(void 0,void 0,t),this.tree.setSelection(this.tree.getFocus(),t)}}getSearchTextFromEditor(e,t){if(o.isAncestorOfActiveElement(this.getContainer())||(t=t??this.editorService.activeTextEditorControl,!t))return null;const s=this.searchConfig.seedWithNearestWord&&e;return Yt(s,t)}showsFileTypes(){return this.queryDetails.classList.contains("more")}toggleCaseSensitive(){this.searchWidget.searchInput?.setCaseSensitive(!this.searchWidget.searchInput.getCaseSensitive()),this.triggerQueryChange()}toggleWholeWords(){this.searchWidget.searchInput?.setWholeWords(!this.searchWidget.searchInput.getWholeWords()),this.triggerQueryChange()}toggleRegex(){this.searchWidget.searchInput?.setRegex(!this.searchWidget.searchInput.getRegex()),this.triggerQueryChange()}togglePreserveCase(){this.searchWidget.replaceInput?.setPreserveCase(!this.searchWidget.replaceInput.getPreserveCase()),this.triggerQueryChange()}setSearchParameters(e={}){typeof e.isCaseSensitive=="boolean"&&this.searchWidget.searchInput?.setCaseSensitive(e.isCaseSensitive),typeof e.matchWholeWord=="boolean"&&this.searchWidget.searchInput?.setWholeWords(e.matchWholeWord),typeof e.isRegex=="boolean"&&this.searchWidget.searchInput?.setRegex(e.isRegex),typeof e.filesToInclude=="string"&&this.searchIncludePattern.setValue(String(e.filesToInclude)),typeof e.filesToExclude=="string"&&this.searchExcludePattern.setValue(String(e.filesToExclude)),typeof e.query=="string"&&this.searchWidget.searchInput?.setValue(e.query),typeof e.replace=="string"?this.searchWidget.replaceInput?.setValue(e.replace):this.searchWidget.replaceInput&&this.searchWidget.replaceInput.getValue()!==""&&this.searchWidget.replaceInput.setValue(""),typeof e.triggerSearch=="boolean"&&e.triggerSearch&&this.triggerQueryChange(),typeof e.preserveCase=="boolean"&&this.searchWidget.replaceInput?.setPreserveCase(e.preserveCase),typeof e.useExcludeSettingsAndIgnoreFiles=="boolean"&&this.inputPatternExcludes.setUseExcludesAndIgnoreFiles(e.useExcludeSettingsAndIgnoreFiles),typeof e.onlyOpenEditors=="boolean"&&this.searchIncludePattern.setOnlySearchInOpenEditors(e.onlyOpenEditors)}toggleQueryDetails(e=!0,t,s,r){const i="more";t=typeof t>"u"?!this.queryDetails.classList.contains(i):!!t,this.viewletState["query.queryDetailsExpanded"]=t,s=!!s,t?(this.toggleQueryDetailsButton.setAttribute("aria-expanded","true"),this.queryDetails.classList.add(i),e&&(r?(this.inputPatternExcludes.focus(),this.inputPatternExcludes.select()):(this.inputPatternIncludes.focus(),this.inputPatternIncludes.select()))):(this.toggleQueryDetailsButton.setAttribute("aria-expanded","false"),this.queryDetails.classList.remove(i),e&&this.searchWidget.focus()),!s&&this.size&&this.reLayout()}searchInFolders(e=[]){this._searchWithIncludeOrExclude(!0,e)}searchOutsideOfFolders(e=[]){this._searchWithIncludeOrExclude(!1,e)}_searchWithIncludeOrExclude(e,t){if(!t.length||t.some(s=>s===".")){this.inputPatternIncludes.setValue(""),this.searchWidget.focus();return}this.showsFileTypes()||this.toggleQueryDetails(!0,!0),(e?this.inputPatternIncludes:this.inputPatternExcludes).setValue(t.join(", ")),this.searchWidget.focus(!1)}triggerQueryChange(e){const t={preserveFocus:!0,triggeredOnType:!1,delay:0,...e};if(!(t.triggeredOnType&&!this.searchConfig.searchOnType)&&!this.pauseSearching){const s=t.triggeredOnType?t.delay:0;this.triggerQueryDelayer.trigger(()=>{this._onQueryChanged(t.preserveFocus,t.triggeredOnType)},s)}}_getExcludePattern(){return this.inputPatternExcludes.getValue().trim()}_getIncludePattern(){return this.inputPatternIncludes.getValue().trim()}_onQueryChanged(e,t=!1){if(!this.searchWidget.searchInput?.inputBox.isInputValid())return;this.tree.hasNode(this.searchResult.aiTextSearchResult)&&this.tree.collapse(this.searchResult.aiTextSearchResult);const s=this.searchWidget.searchInput.getRegex(),r=this.searchWidget.getNotebookFilters().markupInput,i=this.searchWidget.getNotebookFilters().markupPreview,a=this.searchWidget.getNotebookFilters().codeInput,l=this.searchWidget.getNotebookFilters().codeOutput,p=this.searchWidget.searchInput.getWholeWords(),h=this.searchWidget.searchInput.getCaseSensitive(),v=this.searchWidget.searchInput.getValue(),u=this._getExcludePattern(),y=this._getIncludePattern(),E=this.inputPatternExcludes.useExcludesAndIgnoreFiles(),x=this.inputPatternIncludes.onlySearchInOpenEditors();if(v.length===0){this.clearSearchResults(!1),this.clearMessage();return}const I={pattern:v,isRegExp:s,isCaseSensitive:h,isWordMatch:p,notebookInfo:{isInNotebookMarkdownInput:r,isInNotebookMarkdownPreview:i,isInNotebookCellInput:a,isInNotebookCellOutput:l}},R=[{pattern:this.inputPatternExcludes.getValue()}],M=this.inputPatternIncludes.getValue(),g=I.isRegExp?1e4:1e3,F={_reason:"searchView",extraFileResources:this.instantiationService.invokeFunction(Ct),maxResults:this.searchConfig.maxResults??void 0,disregardIgnoreFiles:!E||void 0,disregardExcludeSettings:!E||void 0,onlyOpenEditors:x,excludePattern:R,includePattern:M,previewOptions:{matchLines:1,charsPerLine:g},isSmartCase:this.searchConfig.smartCase,expandPatterns:!0},ee=this.contextService.getWorkspace().folders,L=T=>{this.searchWidget.searchInput?.showMessage({content:T.message,type:te.ERROR}),this.viewModel.searchResult.clear()};let V;try{V=this.queryBuilder.text(I,ee.map(T=>T.uri),F)}catch(T){L(T);return}this.validateQuery(V).then(()=>{this.onQueryTriggered(V,F,u,y,t),e||this.searchWidget.focus(!1,void 0,!0)},L)}validateQuery(e){const t=e.folderQueries.map(s=>this.fileService.exists(s.folder).catch(()=>!1));return Promise.all(t).then(s=>{const r=e.folderQueries.filter((i,a)=>s[a]);if(!e.folderQueries.length||r.length)e.folderQueries=r;else{const i=e.folderQueries[0].folder.fsPath,a=n.localize("searchPathNotFoundError","Search path not found: {0}",i);return Promise.reject(new Error(a))}})}onQueryTriggered(e,t,s,r,i){this.addToSearchHistoryDelayer.trigger(()=>{this.searchWidget.searchInput?.onSearchSubmit(),this.inputPatternExcludes.onSearchSubmit(),this.inputPatternIncludes.onSearchSubmit()}),this.viewModel.cancelSearch(!0),this.viewModel.cancelAISearch(!0),this.currentSearchQ=this.currentSearchQ.then(()=>this.doSearch(e,s,r,i)).then(()=>{},()=>{})}async _updateResults(){if(this.state!==w.Idle)try{const e=this.viewModel.searchResult.fileCount();this._visibleMatches!==e&&(this._visibleMatches=e,await this.refreshAndUpdateCount())}finally{this._refreshResultsScheduler.schedule()}}async onSearchComplete(e,t,s,r){if(this.state=w.Idle,e(),this.onSearchResultsChanged(),this.searchConfig.collapseResults!=="alwaysCollapse"&&this.viewModel.searchResult.matches().length===1){const l=this.viewModel.searchResult.matches()[0];l.count()<50&&await this.tree.expand(l)}const a=!this.viewModel.searchResult.isEmpty();if(r?.exit!==_t.NewSearchStarted){if(a)this.viewModel.searchResult.toggleHighlights(this.isVisible()),N.status(n.localize("ariaSearchResultsStatus","Search returned {0} results in {1} files",this.viewModel.searchResult.count(),this.viewModel.searchResult.fileCount()));else{const l=!!t,p=!!s;let h;r?this.inputPatternIncludes.onlySearchInOpenEditors()?p&&l?h=n.localize("noOpenEditorResultsIncludesExcludes","No results found in open editors matching '{0}' excluding '{1}' - ",s,t):p?h=n.localize("noOpenEditorResultsIncludes","No results found in open editors matching '{0}' - ",s):l?h=n.localize("noOpenEditorResultsExcludes","No results found in open editors excluding '{0}' - ",t):h=n.localize("noOpenEditorResultsFound","No results found in open editors. Review your settings for configured exclusions and check your gitignore files - "):p&&l?h=n.localize("noResultsIncludesExcludes","No results found in '{0}' excluding '{1}' - ",s,t):p?h=n.localize("noResultsIncludes","No results found in '{0}' - ",s):l?h=n.localize("noResultsExcludes","No results found excluding '{0}' - ",t):h=n.localize("noResultsFound","No results found. Review your settings for configured exclusions and check your gitignore files - "):h=ue,N.status(h);const v=this.clearMessage();if(o.append(v,h),r)if(p||l){const u=this.messageDisposables.add(new W(n.localize("rerunSearchInAll.message","Search again in all files"),this.onSearchAgain.bind(this),this.hoverService));o.append(v,u.element)}else{const u=this.messageDisposables.add(new W(n.localize("openSettings.message","Open Settings"),this.onOpenSettings.bind(this),this.hoverService));o.append(v,u.element)}else{const u=this.messageDisposables.add(new W(n.localize("rerunSearch.message","Search again"),()=>this.triggerQueryChange({preserveFocus:!1}),this.hoverService));o.append(v,u.element)}if(r){o.append(v,C("span",void 0," - "));const u=this.messageDisposables.add(new W(n.localize("openSettings.learnMore","Learn More"),this.onLearnMore.bind(this),this.hoverService));o.append(v,u.element)}this.contextService.getWorkbenchState()===_.EMPTY&&this.showSearchWithoutFolderMessage(),this.reLayout()}if(r&&r.limitHit&&r.messages.push({type:Kt.Warning,text:n.localize("searchMaxResultsWarning","The result set only contains a subset of all matches. Be more specific in your search to narrow down the results.")}),r&&r.messages)for(const l of r.messages)this.addMessage(l);this.reLayout()}}async onSearchError(e,t,s,r,i){return this.state=w.Idle,O.isCancellationError(e)?this.onSearchComplete(t,s,r,i):(t(),this.searchWidget.searchInput?.showMessage({content:e.message,type:te.ERROR}),this.viewModel.searchResult.clear(),Promise.resolve())}async addAIResults(){const e=this._getExcludePattern(),t=this._getIncludePattern();let s;this.progressService.withProgress({location:this.getProgressLocation(),delay:0},a=>new Promise(l=>s=l)),this.searchWidget.searchInput?.clearMessage(),this.state=w.Searching,this.showEmptyStage();const r=setTimeout(()=>{this.state=w.SlowSearch},2e3);return this._visibleMatches=0,this._refreshResultsScheduler.schedule(),this.searchWidget.setReplaceAllActionState(!1),this.tree.setSelection([]),this.tree.setFocus([]),this.viewModel.replaceString=this.searchWidget.getReplaceValue(),this.viewModel.addAIResults().then(a=>(clearTimeout(r),this.onSearchComplete(s,e,t,a)),a=>(clearTimeout(r),this.onSearchError(a,s,e,t)))}doSearch(e,t,s,r){let i;this.progressService.withProgress({location:this.getProgressLocation(),delay:r?300:0},p=>new Promise(h=>i=h)),this.searchWidget.searchInput?.clearMessage(),this.state=w.Searching,this.showEmptyStage();const a=setTimeout(()=>{this.state=w.SlowSearch},2e3);return this._visibleMatches=0,this._refreshResultsScheduler.schedule(),this.searchWidget.setReplaceAllActionState(!1),this.tree.setSelection([]),this.tree.setFocus([]),this.viewModel.replaceString=this.searchWidget.getReplaceValue(),this.viewModel.search(e).asyncResults.then(p=>(clearTimeout(a),this.onSearchComplete(i,t,s,p)),p=>(clearTimeout(a),this.onSearchError(p,i,t,s)))}onOpenSettings(e){o.EventHelper.stop(e,!1),this.openSettings("@id:files.exclude,search.exclude,search.useParentIgnoreFiles,search.useGlobalIgnoreFiles,search.useIgnoreFiles")}openSettings(e){const t={query:e};return this.contextService.getWorkbenchState()!==_.EMPTY?this.preferencesService.openWorkspaceSettings(t):this.preferencesService.openUserSettings(t)}onLearnMore(){this.openerService.open(Ee.parse("https://go.microsoft.com/fwlink/?linkid=853977"))}onSearchAgain(){this.inputPatternExcludes.setValue(""),this.inputPatternIncludes.setValue(""),this.inputPatternIncludes.setOnlySearchInOpenEditors(!1),this.triggerQueryChange({preserveFocus:!1})}onEnableExcludes(){this.toggleQueryDetails(!1,!0),this.searchExcludePattern.setUseExcludesAndIgnoreFiles(!0)}onDisableSearchInOpenEditors(){this.toggleQueryDetails(!1,!0),this.inputPatternIncludes.setOnlySearchInOpenEditors(!1)}updateSearchResultCount(e,t,s=!1){const r=this.viewModel.searchResult.fileCount(),i=this.viewModel.searchResult.count();this.hasSearchResultsKey.set(r>0);const a=this.messagesElement.style.display==="none",l=this.clearMessage(),p=s?"":this.buildResultCountMessage(i,r);if(this.tree.ariaLabel=p+n.localize("forTerm"," - Search: {0}",this.searchResult.query?.contentPattern.pattern??""),o.append(l,p),r>0){if(e){const u=" - "+n.localize("useIgnoresAndExcludesDisabled","exclude settings and ignore files are disabled")+" ",y=this.messageDisposables.add(new W(n.localize("excludes.enable","enable"),this.onEnableExcludes.bind(this),this.hoverService,n.localize("useExcludesAndIgnoreFilesDescription","Use Exclude Settings and Ignore Files")));o.append(l,C("span",void 0,u,"(",y.element,")"))}if(t){const u=" - "+n.localize("onlyOpenEditors","searching only in open files")+" ",y=this.messageDisposables.add(new W(n.localize("openEditors.disable","disable"),this.onDisableSearchInOpenEditors.bind(this),this.hoverService,n.localize("disableOpenEditors","Search in entire workspace")));o.append(l,C("span",void 0,u,"(",y.element,")"))}o.append(l," - ");const h=dt(n.localize("openInEditor.tooltip","Copy current search results to an editor"),this.keybindingService.lookupKeybinding(f.SearchCommandIds.OpenInEditorCommandId)),v=this.messageDisposables.add(new W(n.localize("openInEditor.message","Open in editor"),()=>this.instantiationService.invokeFunction(Wt,this.searchResult,this.searchIncludePattern.getValue(),this.searchExcludePattern.getValue(),this.searchIncludePattern.onlySearchInOpenEditors()),this.hoverService,h));o.append(l,v.element),this.reLayout()}else a||o.hide(this.messagesElement)}addMessage(e){const t=this.messagesElement.firstChild;t&&o.append(t,gt(e,this.instantiationService,this.notificationService,this.openerService,this.commandService,this.messageDisposables,()=>this.triggerQueryChange()))}buildResultCountMessage(e,t){return e===1&&t===1?n.localize("search.file.result","{0} result in {1} file",e,t):e===1?n.localize("search.files.result","{0} result in {1} files",e,t):t===1?n.localize("search.file.results","{0} results in {1} file",e,t):n.localize("search.files.results","{0} results in {1} files",e,t)}showSearchWithoutFolderMessage(){this.searchWithoutFolderMessageElement=this.clearMessage();const e=o.append(this.searchWithoutFolderMessageElement,C("p",void 0,n.localize("searchWithoutFolder","You have not opened or specified a folder. Only open files are currently searched - "))),t=this.messageDisposables.add(new W(n.localize("openFolder","Open Folder"),()=>{this.commandService.executeCommand(ie.isMacintosh&&ie.isNative?st.ID:it.ID).catch(s=>O.onUnexpectedError(s))},this.hoverService));o.append(e,t.element)}showEmptyStage(e=!1){((this.messagesElement.firstChild?.textContent?.indexOf(ue)??-1)>-1||e||!this.configurationService.getValue().search.searchOnType)&&o.hide(this.messagesElement),o.show(this.resultsElement),this.currentSelectedFileMatch=void 0}shouldOpenInNotebookEditor(e,t){return e instanceof X||t.scheme!==Re.Schemas.untitled&&this.notebookService.getContributedNotebookTypes(t).length>0}onFocus(e,t,s,r){const i=this.configurationService.getValue().search.useReplacePreview,a=e instanceof S?e.parent().resource:e.resource;return i&&this.viewModel.isReplaceActive()&&this.viewModel.replaceString&&!this.shouldOpenInNotebookEditor(e,a)?this.replaceService.openReplacePreview(e,t,s,r):this.open(e,t,s,r,a)}async open(e,t,s,r,i){const a=Ut(e,this.viewModel),l=e instanceof S?e.parent().matches():[],p=i??(e instanceof S?e.parent().resource:e.resource);let h;const v={preserveFocus:t,pinned:r,selection:a,revealIfVisible:!0};try{h=await this.editorService.openEditor({resource:p,options:v},s?At:Tt);const u=h?.getControl();e instanceof S&&t&&j(u)?this.viewModel.searchResult.getRangeHighlightDecorations().highlightRange(u.getModel(),e.range()):this.viewModel.searchResult.getRangeHighlightDecorations().removeHighlightRange()}catch(u){O.onUnexpectedError(u);return}if(h instanceof lt){const u=e.parent();if(e instanceof S)if(e instanceof X)e.parent().showMatch(e);else{const y=h.getControl();if(y){u.bindNotebookEditorWidget(y),await u.updateMatchesForEditorWidget();const E=l.findIndex(R=>R.id()===e.id()),x=u.matches(),I=E>=x.length?x[x.length-1]:x[E];I instanceof X&&(u.showMatch(I),(!this.tree.getFocus().includes(I)||!this.tree.getSelection().includes(I))&&(this.tree.setSelection([I],B()),this.tree.setFocus([I])))}}}}openEditorWithMultiCursor(e){const t=e instanceof S?e.parent().resource:e.resource;return this.editorService.openEditor({resource:t,options:{preserveFocus:!1,pinned:!0,revealIfVisible:!0}}).then(s=>{if(s){let r=null;if(e instanceof P?r=e:e instanceof S&&(r=e.parent()),r){const i=r.matches().map(l=>new We(l.range().startLineNumber,l.range().startColumn,l.range().endLineNumber,l.range().endColumn)),a=we(s.getControl());a&&De.get(a)?.selectAllUsingSelections(i)}}this.viewModel.searchResult.getRangeHighlightDecorations().removeHighlightRange()},O.onUnexpectedError)}onUntitledDidDispose(e){if(!this.viewModel)return;let t=this.viewModel.searchResult.matches();for(let s=0,r=t.length;s<r;s++)e.toString()===t[s].resource.toString()&&this.viewModel.searchResult.remove(t[s]);t=this.viewModel.searchResult.matches(!0);for(let s=0,r=t.length;s<r;s++)e.toString()===t[s].resource.toString()&&this.viewModel.searchResult.remove(t[s])}onFilesChanged(e){if(!this.viewModel||this.searchConfig.sortOrder!==D.Modified&&!e.gotDeleted())return;const t=this.viewModel.searchResult.matches();if(e.gotDeleted()){const s=t.filter(r=>e.contains(r.resource,Le.DELETED));this.viewModel.searchResult.remove(s)}else{const s=t.filter(r=>e.contains(r.resource));s.length&&this.searchConfig.sortOrder===D.Modified&&this.updateFileStats(s).then(async()=>this.refreshTree())}}get searchConfig(){return this.configurationService.getValue("search")}clearHistory(){this.searchWidget.clearHistory(),this.inputPatternExcludes.clearHistory(),this.inputPatternIncludes.clearHistory()}saveState(){if(!this.searchWidget)return;const e=this.inputPatternExcludes?.getValue().trim()??"",t=this.inputPatternIncludes?.getValue().trim()??"",s=this.inputPatternIncludes?.onlySearchInOpenEditors()??!1,r=this.inputPatternExcludes?.useExcludesAndIgnoreFiles()??!0,i=this.viewModel.preserveCase;if(this.searchWidget.searchInput){const l=this.searchWidget.searchInput.getRegex(),p=this.searchWidget.searchInput.getWholeWords(),h=this.searchWidget.searchInput.getCaseSensitive(),v=this.searchWidget.searchInput.getValue(),u=this.searchWidget.getNotebookFilters().codeInput,y=this.searchWidget.getNotebookFilters().codeOutput,E=this.searchWidget.getNotebookFilters().markupInput,x=this.searchWidget.getNotebookFilters().markupPreview;this.viewletState["query.contentPattern"]=v,this.viewletState["query.regex"]=l,this.viewletState["query.wholeWords"]=p,this.viewletState["query.caseSensitive"]=h,this.viewletState["query.isInNotebookMarkdownInput"]=E,this.viewletState["query.isInNotebookMarkdownPreview"]=x,this.viewletState["query.isInNotebookCellInput"]=u,this.viewletState["query.isInNotebookCellOutput"]=y}this.viewletState["query.folderExclusions"]=e,this.viewletState["query.folderIncludes"]=t,this.viewletState["query.useExcludesAndIgnoreFiles"]=r,this.viewletState["query.preserveCase"]=i,this.viewletState["query.onlyOpenEditors"]=s;const a=this.searchAndReplaceWidget.isReplaceShown();this.viewletState["view.showReplace"]=a,this.viewletState["view.treeLayout"]=this.isTreeLayoutViewVisible,this.viewletState["query.replaceText"]=a&&this.searchWidget.getReplaceValue(),this._saveSearchHistoryService(),this.memento.saveMemento(),super.saveState()}_saveSearchHistoryService(){if(this.searchWidget===void 0)return;const e=Object.create(null),t=this.searchWidget.getSearchHistory();t&&t.length&&(e.search=t);const s=this.searchWidget.getReplaceHistory();s&&s.length&&(e.replace=s);const r=this.inputPatternExcludes.getHistory();r&&r.length&&(e.exclude=r);const i=this.inputPatternIncludes.getHistory();i&&i.length&&(e.include=i),this.searchHistoryService.save(e)}async retrieveFileStats(){const e=this.searchResult.matches().filter(t=>!t.fileStat).map(t=>t.resolveFileStat(this.fileService));await Promise.all(e)}async updateFileStats(e){const t=e.map(s=>s.resolveFileStat(this.fileService));await Promise.all(t)}removeFileStats(){for(const e of this.searchResult.matches())e.fileStat=void 0;for(const e of this.searchResult.matches(!0))e.fileStat=void 0}dispose(){this.isDisposed=!0,this.saveState(),super.dispose()}};A=q([d(1,Ve),d(2,Dt),d(3,Fe),d(4,Ge),d(5,qe),d(6,ke),d(7,He),d(8,Ke),d(9,Ne),d(10,ct),d(11,re),d(12,tt),d(13,Ft),d(14,ae),d(15,bt),d(16,Lt),d(17,Ot),d(18,Ze),d(19,Et),d(20,_e),d(21,Ae),d(22,Be),d(23,je),d(24,Ue),d(25,Xe),d(26,Qt),d(27,Vt),d(28,Nt),d(29,Bt)],A);class W extends Ce{element;constructor(c,e,t,s){super(),this.element=C("a.pointer",{tabindex:0},c),this._register(t.setupManagedHover(he("mouse"),this.element,s)),this.addEventHandlers(e)}addEventHandlers(c){const e=t=>{o.EventHelper.stop(t,!1),c(t)};this._register(o.addDisposableListener(this.element,o.EventType.CLICK,e)),this._register(o.addDisposableListener(this.element,o.EventType.KEY_DOWN,t=>{const s=new U(t);(s.equals(H.Space)||s.equals(H.Enter))&&(e(t),s.preventDefault(),s.stopPropagation())}))}}function Ut(b,c){let e=null;if(b instanceof S&&(e=b),b instanceof P&&b.count()>0&&(e=b.matches()[b.matches().length-1]),e){const t=e.range();if(c.isReplaceActive()&&c.replaceString){const s=e.replaceString;return{startLineNumber:t.startLineNumber,startColumn:t.startColumn,endLineNumber:t.startLineNumber,endColumn:t.startColumn+s.length}}return t}}function Yt(b,c){let e=c;if(Me(e)&&(e.getOriginalEditor().hasTextFocus()?e=e.getOriginalEditor():e=e.getModifiedEditor()),!j(e)||!e.hasModel())return null;const t=e.getSelection();if(!t)return null;if(t.isEmpty())return b?e.getModel().getWordAtPosition(t.getStartPosition())?.word??null:null;let s="";for(let r=t.startLineNumber;r<=t.endLineNumber;r++){let i=e.getModel().getLineContent(r);r===t.endLineNumber&&(i=i.substring(0,t.endColumn-1)),r===t.startLineNumber&&(i=i.substring(t.startColumn-1)),r!==t.startLineNumber&&(i=`
-`+i),s+=i}return s}let k=class{constructor(c,e){this.searchView=c;this.configurationService=e}get searchConfig(){return this.configurationService.getValue("search")}createSearchResultIterator(c){const e=[];if(!c.plainTextSearchResult.isEmpty()){if(!this.searchView.shouldShowAIResults())return this.createTextSearchResultIterator(c.plainTextSearchResult);e.push(c.plainTextSearchResult)}return this.searchView.shouldShowAIResults()&&c.searchModel.hasPlainResults&&!c.aiTextSearchResult.hidden&&e.push(c.aiTextSearchResult),e}createTextSearchResultIterator(c){const e=c.folderMatches().filter(t=>!t.isEmpty()).sort(J);return e.length===1?this.createFolderIterator(e[0]):e}createFolderIterator(c){return(this.searchView.isTreeLayoutViewVisible?c.matches():c.allDownstreamFileMatches()).sort((s,r)=>J(s,r,this.searchConfig.sortOrder))}createFileIterator(c){return c.matches().sort(J)}hasChildren(c){return c instanceof S?!1:c instanceof Z&&c.id()===Q?!0:c.hasChildren}getChildren(c){return c instanceof le?this.createSearchResultIterator(c):c instanceof Z?c.id()===Q&&!this.searchView.model.hasAIResults?this.searchView.addAIResults().then(()=>this.createTextSearchResultIterator(c)):this.createTextSearchResultIterator(c):c instanceof K?this.createFolderIterator(c):c instanceof P?this.createFileIterator(c):[]}getParent(c){const e=c.parent();if(e instanceof le)throw new Error("Invalid element passed to getParent");return e}};k=q([d(1,re)],k);export{A as SearchView,qt as SearchViewPosition,Ut as getEditorSelectionFromMatch,Yt as getSelectionTextFromEditor};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SearchView_1;
+import * as dom from '../../../../base/browser/dom.js';
+import { StandardKeyboardEvent } from '../../../../base/browser/keyboardEvent.js';
+import * as aria from '../../../../base/browser/ui/aria/aria.js';
+import { ObjectTreeElementCollapseState } from '../../../../base/browser/ui/tree/tree.js';
+import { Delayer, RunOnceScheduler } from '../../../../base/common/async.js';
+import * as errors from '../../../../base/common/errors.js';
+import { Event } from '../../../../base/common/event.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import * as env from '../../../../base/common/platform.js';
+import * as strings from '../../../../base/common/strings.js';
+import { URI } from '../../../../base/common/uri.js';
+import * as network from '../../../../base/common/network.js';
+import './media/searchview.css';
+import { getCodeEditor, isCodeEditor, isDiffEditor } from '../../../../editor/browser/editorBrowser.js';
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { EmbeddedCodeEditorWidget } from '../../../../editor/browser/widget/codeEditor/embeddedCodeEditorWidget.js';
+import { Selection } from '../../../../editor/common/core/selection.js';
+import { CommonFindController } from '../../../../editor/contrib/find/browser/findController.js';
+import { MultiCursorSelectionController } from '../../../../editor/contrib/multicursor/browser/multicursor.js';
+import * as nls from '../../../../nls.js';
+import { IAccessibilityService } from '../../../../platform/accessibility/common/accessibility.js';
+import { MenuId } from '../../../../platform/actions/common/actions.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService, IContextViewService } from '../../../../platform/contextview/browser/contextView.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { getSelectionKeyboardEvent, WorkbenchCompressibleAsyncDataTree } from '../../../../platform/list/browser/listService.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { IOpenerService, withSelection } from '../../../../platform/opener/common/opener.js';
+import { IProgressService } from '../../../../platform/progress/common/progress.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { defaultInputBoxStyles, defaultToggleStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { OpenFileFolderAction, OpenFolderAction } from '../../../browser/actions/workspaceActions.js';
+import { ResourceListDnDHandler } from '../../../browser/dnd.js';
+import { ResourceLabels } from '../../../browser/labels.js';
+import { ViewPane } from '../../../browser/parts/views/viewPane.js';
+import { Memento } from '../../../common/memento.js';
+import { IViewDescriptorService } from '../../../common/views.js';
+import { NotebookEditor } from '../../notebook/browser/notebookEditor.js';
+import { ExcludePatternInputWidget, IncludePatternInputWidget } from './patternInputWidget.js';
+import { appendKeyBindingLabel } from './searchActionsBase.js';
+import { searchDetailsIcon } from './searchIcons.js';
+import { renderSearchMessage } from './searchMessage.js';
+import { FileMatchRenderer, FolderMatchRenderer, MatchRenderer, SearchAccessibilityProvider, SearchDelegate, TextSearchResultRenderer } from './searchResultsView.js';
+import { SearchWidget } from './searchWidget.js';
+import * as Constants from '../common/constants.js';
+import { IReplaceService } from './replace.js';
+import { getOutOfWorkspaceEditorResources, SearchStateKey, SearchUIState } from '../common/search.js';
+import { ISearchHistoryService, SearchHistoryService } from '../common/searchHistoryService.js';
+import { AI_TEXT_SEARCH_RESULT_ID, FileMatch, FolderMatch, FolderMatchNoRoot, FolderMatchWithResource, FolderMatchWorkspaceRoot, ISearchViewModelWorkbenchService, Match, MatchInNotebook, searchMatchComparer, SearchModelLocation, SearchResult, TextSearchResult } from './searchModel.js';
+import { createEditorFromSearchResult } from '../../searchEditor/browser/searchEditorActions.js';
+import { ACTIVE_GROUP, IEditorService, SIDE_GROUP } from '../../../services/editor/common/editorService.js';
+import { IPreferencesService } from '../../../services/preferences/common/preferences.js';
+import { QueryBuilder } from '../../../services/search/common/queryBuilder.js';
+import { TextSearchCompleteMessageType } from '../../../services/search/common/search.js';
+import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
+import { INotebookService } from '../../notebook/common/notebookService.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { AccessibilitySignal, IAccessibilitySignalService } from '../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+import { getDefaultHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { IHoverService } from '../../../../platform/hover/browser/hover.js';
+const $ = dom.$;
+export var SearchViewPosition;
+(function (SearchViewPosition) {
+    SearchViewPosition[SearchViewPosition["SideBar"] = 0] = "SideBar";
+    SearchViewPosition[SearchViewPosition["Panel"] = 1] = "Panel";
+})(SearchViewPosition || (SearchViewPosition = {}));
+const SEARCH_CANCELLED_MESSAGE = nls.localize('searchCanceled', "Search was canceled before any results could be found - ");
+const DEBOUNCE_DELAY = 75;
+let SearchView = class SearchView extends ViewPane {
+    static { SearchView_1 = this; }
+    static { this.ACTIONS_RIGHT_CLASS_NAME = 'actions-right'; }
+    constructor(options, fileService, editorService, codeEditorService, progressService, notificationService, dialogService, commandService, contextViewService, instantiationService, viewDescriptorService, configurationService, contextService, searchViewModelWorkbenchService, contextKeyService, replaceService, textFileService, preferencesService, themeService, searchHistoryService, contextMenuService, accessibilityService, keybindingService, storageService, openerService, telemetryService, hoverService, notebookService, logService, accessibilitySignalService) {
+        super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService, hoverService);
+        this.fileService = fileService;
+        this.editorService = editorService;
+        this.codeEditorService = codeEditorService;
+        this.progressService = progressService;
+        this.notificationService = notificationService;
+        this.dialogService = dialogService;
+        this.commandService = commandService;
+        this.contextViewService = contextViewService;
+        this.contextService = contextService;
+        this.searchViewModelWorkbenchService = searchViewModelWorkbenchService;
+        this.replaceService = replaceService;
+        this.textFileService = textFileService;
+        this.preferencesService = preferencesService;
+        this.searchHistoryService = searchHistoryService;
+        this.accessibilityService = accessibilityService;
+        this.storageService = storageService;
+        this.notebookService = notebookService;
+        this.logService = logService;
+        this.accessibilitySignalService = accessibilitySignalService;
+        this.isDisposed = false;
+        this.lastFocusState = 'input';
+        this.messageDisposables = new DisposableStore();
+        this.currentSearchQ = Promise.resolve();
+        this.pauseSearching = false;
+        this._visibleMatches = 0;
+        this.refreshTreePromiseSerializer = Promise.resolve();
+        this.container = dom.$('.search-view');
+        this.viewletVisible = Constants.SearchContext.SearchViewVisibleKey.bindTo(this.contextKeyService);
+        this.firstMatchFocused = Constants.SearchContext.FirstMatchFocusKey.bindTo(this.contextKeyService);
+        this.fileMatchOrMatchFocused = Constants.SearchContext.FileMatchOrMatchFocusKey.bindTo(this.contextKeyService);
+        this.fileMatchOrFolderMatchFocus = Constants.SearchContext.FileMatchOrFolderMatchFocusKey.bindTo(this.contextKeyService);
+        this.fileMatchOrFolderMatchWithResourceFocus = Constants.SearchContext.FileMatchOrFolderMatchWithResourceFocusKey.bindTo(this.contextKeyService);
+        this.fileMatchFocused = Constants.SearchContext.FileFocusKey.bindTo(this.contextKeyService);
+        this.folderMatchFocused = Constants.SearchContext.FolderFocusKey.bindTo(this.contextKeyService);
+        this.folderMatchWithResourceFocused = Constants.SearchContext.ResourceFolderFocusKey.bindTo(this.contextKeyService);
+        this.hasSearchResultsKey = Constants.SearchContext.HasSearchResults.bindTo(this.contextKeyService);
+        this.matchFocused = Constants.SearchContext.MatchFocusKey.bindTo(this.contextKeyService);
+        this.searchStateKey = SearchStateKey.bindTo(this.contextKeyService);
+        this.hasSearchPatternKey = Constants.SearchContext.ViewHasSearchPatternKey.bindTo(this.contextKeyService);
+        this.hasReplacePatternKey = Constants.SearchContext.ViewHasReplacePatternKey.bindTo(this.contextKeyService);
+        this.hasFilePatternKey = Constants.SearchContext.ViewHasFilePatternKey.bindTo(this.contextKeyService);
+        this.hasSomeCollapsibleResultKey = Constants.SearchContext.ViewHasSomeCollapsibleKey.bindTo(this.contextKeyService);
+        this.treeViewKey = Constants.SearchContext.InTreeViewKey.bindTo(this.contextKeyService);
+        this._register(this.contextKeyService.onDidChangeContext(e => {
+            const keys = Constants.SearchContext.hasAIResultProvider.keys();
+            if (e.affectsSome(new Set(keys))) {
+                this.refreshHasAISetting();
+            }
+        }));
+        this.contextKeyService = this._register(this.contextKeyService.createScoped(this.container));
+        Constants.SearchContext.SearchViewFocusedKey.bindTo(this.contextKeyService).set(true);
+        this.inputBoxFocused = Constants.SearchContext.InputBoxFocusedKey.bindTo(this.contextKeyService);
+        this.inputPatternIncludesFocused = Constants.SearchContext.PatternIncludesFocusedKey.bindTo(this.contextKeyService);
+        this.inputPatternExclusionsFocused = Constants.SearchContext.PatternExcludesFocusedKey.bindTo(this.contextKeyService);
+        this.isEditableItem = Constants.SearchContext.IsEditableItemKey.bindTo(this.contextKeyService);
+        this.instantiationService = this._register(this.instantiationService.createChild(new ServiceCollection([IContextKeyService, this.contextKeyService])));
+        this._register(this.configurationService.onDidChangeConfiguration(async (e) => {
+            if (e.affectsConfiguration('search.sortOrder')) {
+                if (this.searchConfig.sortOrder === "modified") {
+                    this.removeFileStats();
+                }
+                await this.refreshTree();
+            }
+        }));
+        this.viewModel = this.searchViewModelWorkbenchService.searchModel;
+        this.queryBuilder = this.instantiationService.createInstance(QueryBuilder);
+        this.memento = new Memento(this.id, storageService);
+        this.viewletState = this.memento.getMemento(1, 1);
+        this._register(this.fileService.onDidFilesChange(e => this.onFilesChanged(e)));
+        this._register(this.textFileService.untitled.onWillDispose(model => this.onUntitledDidDispose(model.resource)));
+        this._register(this.contextService.onDidChangeWorkbenchState(() => this.onDidChangeWorkbenchState()));
+        this._register(this.searchHistoryService.onDidClearHistory(() => this.clearHistory()));
+        this._register(this.configurationService.onDidChangeConfiguration(e => this.onConfigurationUpdated(e)));
+        this.delayedRefresh = this._register(new Delayer(250));
+        this.addToSearchHistoryDelayer = this._register(new Delayer(2000));
+        this.toggleCollapseStateDelayer = this._register(new Delayer(100));
+        this.triggerQueryDelayer = this._register(new Delayer(0));
+        this.treeAccessibilityProvider = this.instantiationService.createInstance(SearchAccessibilityProvider, this);
+        this.isTreeLayoutViewVisible = this.viewletState['view.treeLayout'] ?? (this.searchConfig.defaultViewMode === "tree");
+        this._refreshResultsScheduler = this._register(new RunOnceScheduler(this._updateResults.bind(this), 80));
+        this._register(this.storageService.onWillSaveState(() => {
+            this._saveSearchHistoryService();
+        }));
+        this._register(this.storageService.onDidChangeValue(1, SearchHistoryService.SEARCH_HISTORY_KEY, this._register(new DisposableStore()))(() => {
+            const restoredHistory = this.searchHistoryService.load();
+            if (restoredHistory.include) {
+                this.inputPatternIncludes.prependHistory(restoredHistory.include);
+            }
+            if (restoredHistory.exclude) {
+                this.inputPatternExcludes.prependHistory(restoredHistory.exclude);
+            }
+            if (restoredHistory.search) {
+                this.searchWidget.prependSearchHistory(restoredHistory.search);
+            }
+            if (restoredHistory.replace) {
+                this.searchWidget.prependReplaceHistory(restoredHistory.replace);
+            }
+        }));
+        this.changedWhileHidden = this.hasSearchResults();
+    }
+    get isTreeLayoutViewVisible() {
+        return this.treeViewKey.get() ?? false;
+    }
+    set isTreeLayoutViewVisible(visible) {
+        this.treeViewKey.set(visible);
+    }
+    async setTreeView(visible) {
+        if (visible === this.isTreeLayoutViewVisible) {
+            return;
+        }
+        this.isTreeLayoutViewVisible = visible;
+        this.updateIndentStyles(this.themeService.getFileIconTheme());
+        return this.refreshTree();
+    }
+    get state() {
+        return this.searchStateKey.get() ?? SearchUIState.Idle;
+    }
+    set state(v) {
+        this.searchStateKey.set(v);
+    }
+    getContainer() {
+        return this.container;
+    }
+    get searchResult() {
+        return this.viewModel && this.viewModel.searchResult;
+    }
+    get model() {
+        return this.viewModel;
+    }
+    async refreshHasAISetting() {
+        const shouldShowAI = this.shouldShowAIResults();
+        if (!this.tree.hasNode(this.searchResult)) {
+            return;
+        }
+        if (shouldShowAI && !this.tree.hasNode(this.searchResult.aiTextSearchResult)) {
+            if (this.model.searchResult.getCachedSearchComplete(false)) {
+                return this.refreshAndUpdateCount();
+            }
+        }
+        else if (!shouldShowAI && this.tree.hasNode(this.searchResult.aiTextSearchResult)) {
+            return this.refreshAndUpdateCount();
+        }
+    }
+    onDidChangeWorkbenchState() {
+        if (this.contextService.getWorkbenchState() !== 1 && this.searchWithoutFolderMessageElement) {
+            dom.hide(this.searchWithoutFolderMessageElement);
+        }
+    }
+    refreshInputs() {
+        this.pauseSearching = true;
+        this.searchWidget.setValue(this.viewModel.searchResult.query?.contentPattern.pattern ?? '');
+        this.searchWidget.setReplaceAllActionState(false);
+        this.searchWidget.toggleReplace(true);
+        this.inputPatternIncludes.setOnlySearchInOpenEditors(this.viewModel.searchResult.query?.onlyOpenEditors || false);
+        this.inputPatternExcludes.setUseExcludesAndIgnoreFiles(!this.viewModel.searchResult.query?.userDisabledExcludesAndIgnoreFiles || true);
+        this.searchIncludePattern.setValue('');
+        this.searchExcludePattern.setValue('');
+        this.pauseSearching = false;
+    }
+    async replaceSearchModel(searchModel, asyncResults) {
+        let progressComplete;
+        this.progressService.withProgress({ location: this.getProgressLocation(), delay: 0 }, _progress => {
+            return new Promise(resolve => progressComplete = resolve);
+        });
+        const slowTimer = setTimeout(() => {
+            this.state = SearchUIState.SlowSearch;
+        }, 2000);
+        this._refreshResultsScheduler.schedule();
+        searchModel.location = SearchModelLocation.PANEL;
+        searchModel.replaceActive = this.viewModel.isReplaceActive();
+        searchModel.replaceString = this.searchWidget.getReplaceValue();
+        this._onSearchResultChangedDisposable?.dispose();
+        this._onSearchResultChangedDisposable = this._register(searchModel.onSearchResultChanged(async (event) => this.onSearchResultsChanged(event)));
+        this.searchViewModelWorkbenchService.searchModel = searchModel;
+        this.viewModel = searchModel;
+        this.tree.setInput(this.viewModel.searchResult);
+        await this.onSearchResultsChanged();
+        this.refreshInputs();
+        asyncResults.then((complete) => {
+            clearTimeout(slowTimer);
+            return this.onSearchComplete(progressComplete, undefined, undefined, complete);
+        }, (e) => {
+            clearTimeout(slowTimer);
+            return this.onSearchError(e, progressComplete, undefined, undefined);
+        });
+        const collapseResults = this.searchConfig.collapseResults;
+        if (collapseResults !== 'alwaysCollapse' && this.viewModel.searchResult.matches().length === 1) {
+            const onlyMatch = this.viewModel.searchResult.matches()[0];
+            if (onlyMatch.count() < 50) {
+                await this.tree.expand(onlyMatch);
+            }
+        }
+    }
+    renderBody(parent) {
+        super.renderBody(parent);
+        this.container = dom.append(parent, dom.$('.search-view'));
+        this.searchWidgetsContainerElement = dom.append(this.container, $('.search-widgets-container'));
+        this.createSearchWidget(this.searchWidgetsContainerElement);
+        const history = this.searchHistoryService.load();
+        const filePatterns = this.viewletState['query.filePatterns'] || '';
+        const patternExclusions = this.viewletState['query.folderExclusions'] || '';
+        const patternExclusionsHistory = history.exclude || [];
+        const patternIncludes = this.viewletState['query.folderIncludes'] || '';
+        const patternIncludesHistory = history.include || [];
+        const onlyOpenEditors = this.viewletState['query.onlyOpenEditors'] || false;
+        const queryDetailsExpanded = this.viewletState['query.queryDetailsExpanded'] || '';
+        const useExcludesAndIgnoreFiles = typeof this.viewletState['query.useExcludesAndIgnoreFiles'] === 'boolean' ?
+            this.viewletState['query.useExcludesAndIgnoreFiles'] : true;
+        this.queryDetails = dom.append(this.searchWidgetsContainerElement, $('.query-details'));
+        const toggleQueryDetailsLabel = nls.localize('moreSearch', "Toggle Search Details");
+        this.toggleQueryDetailsButton = dom.append(this.queryDetails, $('.more' + ThemeIcon.asCSSSelector(searchDetailsIcon), { tabindex: 0, role: 'button', 'aria-label': toggleQueryDetailsLabel }));
+        this._register(this.hoverService.setupManagedHover(getDefaultHoverDelegate('element'), this.toggleQueryDetailsButton, toggleQueryDetailsLabel));
+        this._register(dom.addDisposableListener(this.toggleQueryDetailsButton, dom.EventType.CLICK, e => {
+            dom.EventHelper.stop(e);
+            this.toggleQueryDetails(!this.accessibilityService.isScreenReaderOptimized());
+        }));
+        this._register(dom.addDisposableListener(this.toggleQueryDetailsButton, dom.EventType.KEY_UP, (e) => {
+            const event = new StandardKeyboardEvent(e);
+            if (event.equals(3) || event.equals(10)) {
+                dom.EventHelper.stop(e);
+                this.toggleQueryDetails(false);
+            }
+        }));
+        this._register(dom.addDisposableListener(this.toggleQueryDetailsButton, dom.EventType.KEY_DOWN, (e) => {
+            const event = new StandardKeyboardEvent(e);
+            if (event.equals(1024 | 2)) {
+                if (this.searchWidget.isReplaceActive()) {
+                    this.searchWidget.focusReplaceAllAction();
+                }
+                else {
+                    this.searchWidget.isReplaceShown() ? this.searchWidget.replaceInput?.focusOnPreserve() : this.searchWidget.focusRegexAction();
+                }
+                dom.EventHelper.stop(e);
+            }
+        }));
+        const folderIncludesList = dom.append(this.queryDetails, $('.file-types.includes'));
+        const filesToIncludeTitle = nls.localize('searchScope.includes', "files to include");
+        dom.append(folderIncludesList, $('h4', undefined, filesToIncludeTitle));
+        this.inputPatternIncludes = this._register(this.instantiationService.createInstance(IncludePatternInputWidget, folderIncludesList, this.contextViewService, {
+            ariaLabel: filesToIncludeTitle,
+            placeholder: nls.localize('placeholder.includes', "e.g. *.ts, src/**/include"),
+            showPlaceholderOnFocus: true,
+            history: patternIncludesHistory,
+            inputBoxStyles: defaultInputBoxStyles
+        }));
+        this.inputPatternIncludes.setValue(patternIncludes);
+        this.inputPatternIncludes.setOnlySearchInOpenEditors(onlyOpenEditors);
+        this._register(this.inputPatternIncludes.onCancel(() => this.cancelSearch(false)));
+        this._register(this.inputPatternIncludes.onChangeSearchInEditorsBox(() => this.triggerQueryChange()));
+        this.trackInputBox(this.inputPatternIncludes.inputFocusTracker, this.inputPatternIncludesFocused);
+        const excludesList = dom.append(this.queryDetails, $('.file-types.excludes'));
+        const excludesTitle = nls.localize('searchScope.excludes', "files to exclude");
+        dom.append(excludesList, $('h4', undefined, excludesTitle));
+        this.inputPatternExcludes = this._register(this.instantiationService.createInstance(ExcludePatternInputWidget, excludesList, this.contextViewService, {
+            ariaLabel: excludesTitle,
+            placeholder: nls.localize('placeholder.excludes', "e.g. *.ts, src/**/exclude"),
+            showPlaceholderOnFocus: true,
+            history: patternExclusionsHistory,
+            inputBoxStyles: defaultInputBoxStyles
+        }));
+        this.inputPatternExcludes.setValue(patternExclusions);
+        this.inputPatternExcludes.setUseExcludesAndIgnoreFiles(useExcludesAndIgnoreFiles);
+        this._register(this.inputPatternExcludes.onCancel(() => this.cancelSearch(false)));
+        this._register(this.inputPatternExcludes.onChangeIgnoreBox(() => this.triggerQueryChange()));
+        this.trackInputBox(this.inputPatternExcludes.inputFocusTracker, this.inputPatternExclusionsFocused);
+        const updateHasFilePatternKey = () => this.hasFilePatternKey.set(this.inputPatternIncludes.getValue().length > 0 || this.inputPatternExcludes.getValue().length > 0);
+        updateHasFilePatternKey();
+        const onFilePatternSubmit = (triggeredOnType) => {
+            this.triggerQueryChange({ triggeredOnType, delay: this.searchConfig.searchOnTypeDebouncePeriod });
+            if (triggeredOnType) {
+                updateHasFilePatternKey();
+            }
+        };
+        this._register(this.inputPatternIncludes.onSubmit(onFilePatternSubmit));
+        this._register(this.inputPatternExcludes.onSubmit(onFilePatternSubmit));
+        this.messagesElement = dom.append(this.container, $('.messages.text-search-provider-messages'));
+        if (this.contextService.getWorkbenchState() === 1) {
+            this.showSearchWithoutFolderMessage();
+        }
+        this.createSearchResultsView(this.container);
+        if (filePatterns !== '' || patternExclusions !== '' || patternIncludes !== '' || queryDetailsExpanded !== '' || !useExcludesAndIgnoreFiles) {
+            this.toggleQueryDetails(true, true, true);
+        }
+        this._onSearchResultChangedDisposable = this._register(this.viewModel.onSearchResultChanged(async (event) => await this.onSearchResultsChanged(event)));
+        this._register(this.onDidChangeBodyVisibility(visible => this.onVisibilityChanged(visible)));
+        this.updateIndentStyles(this.themeService.getFileIconTheme());
+        this._register(this.themeService.onDidFileIconThemeChange(this.updateIndentStyles, this));
+    }
+    updateIndentStyles(theme) {
+        this.resultsElement.classList.toggle('hide-arrows', this.isTreeLayoutViewVisible && theme.hidesExplorerArrows);
+    }
+    async onVisibilityChanged(visible) {
+        this.viewletVisible.set(visible);
+        if (visible) {
+            if (this.changedWhileHidden) {
+                await this.refreshAndUpdateCount();
+                this.changedWhileHidden = false;
+            }
+        }
+        else {
+            this.lastFocusState = 'input';
+        }
+        this.viewModel?.searchResult.toggleHighlights(visible);
+    }
+    get searchAndReplaceWidget() {
+        return this.searchWidget;
+    }
+    get searchIncludePattern() {
+        return this.inputPatternIncludes;
+    }
+    get searchExcludePattern() {
+        return this.inputPatternExcludes;
+    }
+    createSearchWidget(container) {
+        const contentPattern = this.viewletState['query.contentPattern'] || '';
+        const replaceText = this.viewletState['query.replaceText'] || '';
+        const isRegex = this.viewletState['query.regex'] === true;
+        const isWholeWords = this.viewletState['query.wholeWords'] === true;
+        const isCaseSensitive = this.viewletState['query.caseSensitive'] === true;
+        const history = this.searchHistoryService.load();
+        const searchHistory = history.search || this.viewletState['query.searchHistory'] || [];
+        const replaceHistory = history.replace || this.viewletState['query.replaceHistory'] || [];
+        const showReplace = typeof this.viewletState['view.showReplace'] === 'boolean' ? this.viewletState['view.showReplace'] : true;
+        const preserveCase = this.viewletState['query.preserveCase'] === true;
+        const isInNotebookMarkdownInput = this.viewletState['query.isInNotebookMarkdownInput'] ?? true;
+        const isInNotebookMarkdownPreview = this.viewletState['query.isInNotebookMarkdownPreview'] ?? true;
+        const isInNotebookCellInput = this.viewletState['query.isInNotebookCellInput'] ?? true;
+        const isInNotebookCellOutput = this.viewletState['query.isInNotebookCellOutput'] ?? true;
+        this.searchWidget = this._register(this.instantiationService.createInstance(SearchWidget, container, {
+            value: contentPattern,
+            replaceValue: replaceText,
+            isRegex: isRegex,
+            isCaseSensitive: isCaseSensitive,
+            isWholeWords: isWholeWords,
+            searchHistory: searchHistory,
+            replaceHistory: replaceHistory,
+            preserveCase: preserveCase,
+            inputBoxStyles: defaultInputBoxStyles,
+            toggleStyles: defaultToggleStyles,
+            notebookOptions: {
+                isInNotebookMarkdownInput,
+                isInNotebookMarkdownPreview,
+                isInNotebookCellInput,
+                isInNotebookCellOutput,
+            }
+        }));
+        if (!this.searchWidget.searchInput || !this.searchWidget.replaceInput) {
+            this.logService.warn(`Cannot fully create search widget. Search or replace input undefined. SearchInput: ${this.searchWidget.searchInput}, ReplaceInput: ${this.searchWidget.replaceInput}`);
+            return;
+        }
+        if (showReplace) {
+            this.searchWidget.toggleReplace(true);
+        }
+        this._register(this.searchWidget.onSearchSubmit(options => this.triggerQueryChange(options)));
+        this._register(this.searchWidget.onSearchCancel(({ focus }) => this.cancelSearch(focus)));
+        this._register(this.searchWidget.searchInput.onDidOptionChange(() => {
+            this.triggerQueryChange();
+        }));
+        this._register(this.searchWidget.getNotebookFilters().onDidChange(() => this.triggerQueryChange()));
+        const updateHasPatternKey = () => this.hasSearchPatternKey.set(this.searchWidget.searchInput ? (this.searchWidget.searchInput.getValue().length > 0) : false);
+        updateHasPatternKey();
+        this._register(this.searchWidget.searchInput.onDidChange(() => updateHasPatternKey()));
+        const updateHasReplacePatternKey = () => this.hasReplacePatternKey.set(this.searchWidget.getReplaceValue().length > 0);
+        updateHasReplacePatternKey();
+        this._register(this.searchWidget.replaceInput.inputBox.onDidChange(() => updateHasReplacePatternKey()));
+        this._register(this.searchWidget.onDidHeightChange(() => this.reLayout()));
+        this._register(this.searchWidget.onReplaceToggled(() => this.reLayout()));
+        this._register(this.searchWidget.onReplaceStateChange(async (state) => {
+            this.viewModel.replaceActive = state;
+            await this.refreshTree();
+        }));
+        this._register(this.searchWidget.onPreserveCaseChange(async (state) => {
+            this.viewModel.preserveCase = state;
+            await this.refreshTree();
+        }));
+        this._register(this.searchWidget.onReplaceValueChanged(() => {
+            this.viewModel.replaceString = this.searchWidget.getReplaceValue();
+            this.delayedRefresh.trigger(async () => this.refreshTree());
+        }));
+        this._register(this.searchWidget.onBlur(() => {
+            this.toggleQueryDetailsButton.focus();
+        }));
+        this._register(this.searchWidget.onReplaceAll(() => this.replaceAll()));
+        this.trackInputBox(this.searchWidget.searchInputFocusTracker);
+        this.trackInputBox(this.searchWidget.replaceInputFocusTracker);
+    }
+    shouldShowAIResults() {
+        const hasProvider = Constants.SearchContext.hasAIResultProvider.getValue(this.contextKeyService);
+        return !!hasProvider;
+    }
+    async onConfigurationUpdated(event) {
+        if (event && (event.affectsConfiguration('search.decorations.colors') || event.affectsConfiguration('search.decorations.badges'))) {
+            return this.refreshTree();
+        }
+    }
+    trackInputBox(inputFocusTracker, contextKey) {
+        if (!inputFocusTracker) {
+            return;
+        }
+        this._register(inputFocusTracker.onDidFocus(() => {
+            this.lastFocusState = 'input';
+            this.inputBoxFocused.set(true);
+            contextKey?.set(true);
+        }));
+        this._register(inputFocusTracker.onDidBlur(() => {
+            this.inputBoxFocused.set(this.searchWidget.searchInputHasFocus()
+                || this.searchWidget.replaceInputHasFocus()
+                || this.inputPatternIncludes.inputHasFocus()
+                || this.inputPatternExcludes.inputHasFocus());
+            contextKey?.set(false);
+        }));
+    }
+    async onSearchResultsChanged(event) {
+        if (this.isVisible()) {
+            return this.refreshAndUpdateCount(event);
+        }
+        else {
+            this.changedWhileHidden = true;
+        }
+    }
+    async refreshAndUpdateCount(event) {
+        this.searchWidget.setReplaceAllActionState(!this.viewModel.searchResult.isEmpty());
+        this.updateSearchResultCount(this.viewModel.searchResult.query.userDisabledExcludesAndIgnoreFiles, this.viewModel.searchResult.query?.onlyOpenEditors, event?.clearingAll);
+        return this.refreshTree(event);
+    }
+    async refreshTree(event) {
+        this.refreshTreePromiseSerializer = this.refreshTreePromiseSerializer.then(async () => {
+            if (!event || event.added || event.removed) {
+                if (this.searchConfig.sortOrder === "modified") {
+                    await this.retrieveFileStats()
+                        .then(() => this.tree.updateChildren(undefined));
+                }
+                else {
+                    await this.tree.updateChildren(undefined);
+                }
+            }
+            else {
+                if (this.searchConfig.sortOrder === "countAscending" ||
+                    this.searchConfig.sortOrder === "countDescending") {
+                    await this.tree.updateChildren(undefined);
+                }
+                else {
+                    await Promise.all(event.elements.map(async (element) => {
+                        await this.tree.updateChildren(element);
+                        this.tree.rerender(element);
+                    }));
+                }
+            }
+        });
+        return this.refreshTreePromiseSerializer;
+    }
+    originalShouldCollapse(match) {
+        const collapseResults = this.searchConfig.collapseResults;
+        return (collapseResults === 'alwaysCollapse' ||
+            (!(match instanceof Match) && match.count() > 10 && collapseResults !== 'alwaysExpand')) ?
+            ObjectTreeElementCollapseState.PreserveOrCollapsed : ObjectTreeElementCollapseState.PreserveOrExpanded;
+    }
+    shouldCollapse(match) {
+        const collapseResults = this.originalShouldCollapse(match);
+        if (collapseResults === ObjectTreeElementCollapseState.PreserveOrCollapsed) {
+            return true;
+        }
+        return false;
+    }
+    replaceAll() {
+        if (this.viewModel.searchResult.count() === 0) {
+            return;
+        }
+        const occurrences = this.viewModel.searchResult.count();
+        const fileCount = this.viewModel.searchResult.fileCount();
+        const replaceValue = this.searchWidget.getReplaceValue() || '';
+        const afterReplaceAllMessage = this.buildAfterReplaceAllMessage(occurrences, fileCount, replaceValue);
+        let progressComplete;
+        let progressReporter;
+        this.progressService.withProgress({ location: this.getProgressLocation(), delay: 100, total: occurrences }, p => {
+            progressReporter = p;
+            return new Promise(resolve => progressComplete = resolve);
+        });
+        const confirmation = {
+            title: nls.localize('replaceAll.confirmation.title', "Replace All"),
+            message: this.buildReplaceAllConfirmationMessage(occurrences, fileCount, replaceValue),
+            primaryButton: nls.localize({ key: 'replaceAll.confirm.button', comment: ['&& denotes a mnemonic'] }, "&&Replace")
+        };
+        this.dialogService.confirm(confirmation).then(res => {
+            if (res.confirmed) {
+                this.searchWidget.setReplaceAllActionState(false);
+                this.viewModel.searchResult.replaceAll(progressReporter).then(() => {
+                    progressComplete();
+                    const messageEl = this.clearMessage();
+                    dom.append(messageEl, afterReplaceAllMessage);
+                    this.reLayout();
+                }, (error) => {
+                    progressComplete();
+                    errors.isCancellationError(error);
+                    this.notificationService.error(error);
+                });
+            }
+            else {
+                progressComplete();
+            }
+        });
+    }
+    buildAfterReplaceAllMessage(occurrences, fileCount, replaceValue) {
+        if (occurrences === 1) {
+            if (fileCount === 1) {
+                if (replaceValue) {
+                    return nls.localize('replaceAll.occurrence.file.message', "Replaced {0} occurrence across {1} file with '{2}'.", occurrences, fileCount, replaceValue);
+                }
+                return nls.localize('removeAll.occurrence.file.message', "Replaced {0} occurrence across {1} file.", occurrences, fileCount);
+            }
+            if (replaceValue) {
+                return nls.localize('replaceAll.occurrence.files.message', "Replaced {0} occurrence across {1} files with '{2}'.", occurrences, fileCount, replaceValue);
+            }
+            return nls.localize('removeAll.occurrence.files.message', "Replaced {0} occurrence across {1} files.", occurrences, fileCount);
+        }
+        if (fileCount === 1) {
+            if (replaceValue) {
+                return nls.localize('replaceAll.occurrences.file.message', "Replaced {0} occurrences across {1} file with '{2}'.", occurrences, fileCount, replaceValue);
+            }
+            return nls.localize('removeAll.occurrences.file.message', "Replaced {0} occurrences across {1} file.", occurrences, fileCount);
+        }
+        if (replaceValue) {
+            return nls.localize('replaceAll.occurrences.files.message', "Replaced {0} occurrences across {1} files with '{2}'.", occurrences, fileCount, replaceValue);
+        }
+        return nls.localize('removeAll.occurrences.files.message', "Replaced {0} occurrences across {1} files.", occurrences, fileCount);
+    }
+    buildReplaceAllConfirmationMessage(occurrences, fileCount, replaceValue) {
+        if (occurrences === 1) {
+            if (fileCount === 1) {
+                if (replaceValue) {
+                    return nls.localize('removeAll.occurrence.file.confirmation.message', "Replace {0} occurrence across {1} file with '{2}'?", occurrences, fileCount, replaceValue);
+                }
+                return nls.localize('replaceAll.occurrence.file.confirmation.message', "Replace {0} occurrence across {1} file?", occurrences, fileCount);
+            }
+            if (replaceValue) {
+                return nls.localize('removeAll.occurrence.files.confirmation.message', "Replace {0} occurrence across {1} files with '{2}'?", occurrences, fileCount, replaceValue);
+            }
+            return nls.localize('replaceAll.occurrence.files.confirmation.message', "Replace {0} occurrence across {1} files?", occurrences, fileCount);
+        }
+        if (fileCount === 1) {
+            if (replaceValue) {
+                return nls.localize('removeAll.occurrences.file.confirmation.message', "Replace {0} occurrences across {1} file with '{2}'?", occurrences, fileCount, replaceValue);
+            }
+            return nls.localize('replaceAll.occurrences.file.confirmation.message', "Replace {0} occurrences across {1} file?", occurrences, fileCount);
+        }
+        if (replaceValue) {
+            return nls.localize('removeAll.occurrences.files.confirmation.message', "Replace {0} occurrences across {1} files with '{2}'?", occurrences, fileCount, replaceValue);
+        }
+        return nls.localize('replaceAll.occurrences.files.confirmation.message', "Replace {0} occurrences across {1} files?", occurrences, fileCount);
+    }
+    clearMessage() {
+        this.searchWithoutFolderMessageElement = undefined;
+        const wasHidden = this.messagesElement.style.display === 'none';
+        dom.clearNode(this.messagesElement);
+        dom.show(this.messagesElement);
+        this.messageDisposables.clear();
+        const newMessage = dom.append(this.messagesElement, $('.message'));
+        if (wasHidden) {
+            this.reLayout();
+        }
+        return newMessage;
+    }
+    createSearchResultsView(container) {
+        this.resultsElement = dom.append(container, $('.results.show-file-icons.file-icon-themable-tree'));
+        const delegate = this.instantiationService.createInstance(SearchDelegate);
+        const identityProvider = {
+            getId(element) {
+                return element.id();
+            }
+        };
+        this.searchDataSource = this.instantiationService.createInstance(SearchViewDataSource, this);
+        this.treeLabels = this._register(this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility }));
+        this.tree = this._register(this.instantiationService.createInstance((WorkbenchCompressibleAsyncDataTree), 'SearchView', this.resultsElement, delegate, {
+            isIncompressible: (element) => {
+                if (element instanceof FolderMatch && !(element.parent() instanceof TextSearchResult) && !(element.parent() instanceof FolderMatchWorkspaceRoot) && !(element.parent() instanceof FolderMatchNoRoot)) {
+                    return false;
+                }
+                return true;
+            }
+        }, [
+            this._register(this.instantiationService.createInstance(FolderMatchRenderer, this, this.treeLabels)),
+            this._register(this.instantiationService.createInstance(FileMatchRenderer, this, this.treeLabels)),
+            this._register(this.instantiationService.createInstance(TextSearchResultRenderer, this.treeLabels)),
+            this._register(this.instantiationService.createInstance(MatchRenderer, this)),
+        ], this.searchDataSource, {
+            identityProvider,
+            accessibilityProvider: this.treeAccessibilityProvider,
+            dnd: this.instantiationService.createInstance(ResourceListDnDHandler, element => {
+                if (element instanceof FileMatch) {
+                    return element.resource;
+                }
+                if (element instanceof Match) {
+                    return withSelection(element.parent().resource, element.range());
+                }
+                return null;
+            }),
+            multipleSelectionSupport: true,
+            selectionNavigation: true,
+            overrideStyles: this.getLocationBasedColors().listOverrideStyles,
+            paddingBottom: SearchDelegate.ITEM_HEIGHT,
+            collapseByDefault: (e) => {
+                if (e.id() === AI_TEXT_SEARCH_RESULT_ID) {
+                    return true;
+                }
+                return this.shouldCollapse(e);
+            }
+        }));
+        this.tree.setInput(this.viewModel.searchResult);
+        this._register(this.tree.onContextMenu(e => this.onContextMenu(e)));
+        const updateHasSomeCollapsible = () => this.toggleCollapseStateDelayer.trigger(() => this.hasSomeCollapsibleResultKey.set(this.hasSomeCollapsible()));
+        updateHasSomeCollapsible();
+        this._register(this.tree.onDidChangeCollapseState(() => updateHasSomeCollapsible()));
+        this._register(this.tree.onDidChangeModel(() => updateHasSomeCollapsible()));
+        this._register(Event.debounce(this.tree.onDidOpen, (last, event) => event, DEBOUNCE_DELAY, true)(options => {
+            if (options.element instanceof Match) {
+                const selectedMatch = options.element;
+                this.currentSelectedFileMatch?.setSelectedMatch(null);
+                this.currentSelectedFileMatch = selectedMatch.parent();
+                this.currentSelectedFileMatch.setSelectedMatch(selectedMatch);
+                this.onFocus(selectedMatch, options.editorOptions.preserveFocus, options.sideBySide, options.editorOptions.pinned);
+            }
+        }));
+        this._register(Event.debounce(this.tree.onDidChangeFocus, (last, event) => event, DEBOUNCE_DELAY, true)(() => {
+            const selection = this.tree.getSelection();
+            const focus = this.tree.getFocus()[0];
+            if (selection.length > 1 && focus instanceof Match) {
+                this.onFocus(focus, true);
+            }
+        }));
+        this._register(Event.any(this.tree.onDidFocus, this.tree.onDidChangeFocus)(() => {
+            const focus = this.tree.getFocus()[0];
+            if (this.tree.isDOMFocused()) {
+                const firstElem = this.tree.getFirstElementChild(this.tree.getInput());
+                this.firstMatchFocused.set(firstElem === focus);
+                this.fileMatchOrMatchFocused.set(!!focus);
+                this.fileMatchFocused.set(focus instanceof FileMatch);
+                this.folderMatchFocused.set(focus instanceof FolderMatch);
+                this.matchFocused.set(focus instanceof Match);
+                this.fileMatchOrFolderMatchFocus.set(focus instanceof FileMatch || focus instanceof FolderMatch);
+                this.fileMatchOrFolderMatchWithResourceFocus.set(focus instanceof FileMatch || focus instanceof FolderMatchWithResource);
+                this.folderMatchWithResourceFocused.set(focus instanceof FolderMatchWithResource);
+                this.lastFocusState = 'tree';
+            }
+            let editable = false;
+            if (focus instanceof Match) {
+                editable = !focus.isReadonly();
+            }
+            else if (focus instanceof FileMatch) {
+                editable = !focus.hasOnlyReadOnlyMatches();
+            }
+            else if (focus instanceof FolderMatch) {
+                editable = !focus.hasOnlyReadOnlyMatches();
+            }
+            this.isEditableItem.set(editable);
+        }));
+        this._register(this.tree.onDidBlur(() => {
+            this.firstMatchFocused.reset();
+            this.fileMatchOrMatchFocused.reset();
+            this.fileMatchFocused.reset();
+            this.folderMatchFocused.reset();
+            this.matchFocused.reset();
+            this.fileMatchOrFolderMatchFocus.reset();
+            this.fileMatchOrFolderMatchWithResourceFocus.reset();
+            this.folderMatchWithResourceFocused.reset();
+            this.isEditableItem.reset();
+        }));
+    }
+    onContextMenu(e) {
+        e.browserEvent.preventDefault();
+        e.browserEvent.stopPropagation();
+        this.contextMenuService.showContextMenu({
+            menuId: MenuId.SearchContext,
+            menuActionOptions: { shouldForwardArgs: true },
+            contextKeyService: this.contextKeyService,
+            getAnchor: () => e.anchor,
+            getActionsContext: () => e.element,
+        });
+    }
+    hasSomeCollapsible() {
+        const viewer = this.getControl();
+        const navigator = viewer.navigate();
+        let node = navigator.first();
+        do {
+            if (node && !viewer.isCollapsed(node) && (this.viewModel.hasAIResults || node.id() !== AI_TEXT_SEARCH_RESULT_ID)) {
+                return true;
+            }
+        } while (node = navigator.next());
+        return false;
+    }
+    async selectNextMatch() {
+        if (!this.hasSearchResults()) {
+            return;
+        }
+        const [selected] = this.tree.getSelection();
+        if (selected && !(selected instanceof Match)) {
+            if (this.tree.isCollapsed(selected)) {
+                await this.tree.expand(selected);
+            }
+        }
+        const navigator = this.tree.navigate(selected);
+        let next = navigator.next();
+        if (!next) {
+            next = navigator.first();
+        }
+        while (next && !(next instanceof Match)) {
+            if (this.tree.isCollapsed(next)) {
+                await this.tree.expand(next);
+            }
+            next = navigator.next();
+        }
+        if (next) {
+            if (next === selected) {
+                this.tree.setFocus([]);
+            }
+            const event = getSelectionKeyboardEvent(undefined, false, false);
+            this.tree.setFocus([next], event);
+            this.tree.setSelection([next], event);
+            this.tree.reveal(next);
+            const ariaLabel = this.treeAccessibilityProvider.getAriaLabel(next);
+            if (ariaLabel) {
+                aria.status(ariaLabel);
+            }
+        }
+    }
+    async selectPreviousMatch() {
+        if (!this.hasSearchResults()) {
+            return;
+        }
+        const [selected] = this.tree.getSelection();
+        let navigator = this.tree.navigate(selected);
+        let prev = navigator.previous();
+        while (!prev || (!(prev instanceof Match) && !this.tree.isCollapsed(prev))) {
+            const nextPrev = prev ? navigator.previous() : navigator.last();
+            if (!prev && !nextPrev) {
+                return;
+            }
+            prev = nextPrev;
+        }
+        while (prev && !(prev instanceof Match)) {
+            const nextItem = navigator.next();
+            if (!nextItem) {
+                break;
+            }
+            await this.tree.expand(prev);
+            navigator = this.tree.navigate(nextItem);
+            prev = nextItem ? navigator.previous() : navigator.last();
+        }
+        if (prev) {
+            if (prev === selected) {
+                this.tree.setFocus([]);
+            }
+            const event = getSelectionKeyboardEvent(undefined, false, false);
+            this.tree.setFocus([prev], event);
+            this.tree.setSelection([prev], event);
+            this.tree.reveal(prev);
+            const ariaLabel = this.treeAccessibilityProvider.getAriaLabel(prev);
+            if (ariaLabel) {
+                aria.status(ariaLabel);
+            }
+        }
+    }
+    moveFocusToResults() {
+        this.tree.domFocus();
+    }
+    focus() {
+        super.focus();
+        if (this.lastFocusState === 'input' || !this.hasSearchResults()) {
+            const updatedText = this.searchConfig.seedOnFocus ? this.updateTextFromSelection({ allowSearchOnType: false }) : false;
+            this.searchWidget.focus(undefined, undefined, updatedText);
+        }
+        else {
+            this.tree.domFocus();
+        }
+    }
+    updateTextFromFindWidgetOrSelection({ allowUnselectedWord = true, allowSearchOnType = true }) {
+        let activeEditor = this.editorService.activeTextEditorControl;
+        if (isCodeEditor(activeEditor) && !activeEditor?.hasTextFocus()) {
+            const controller = CommonFindController.get(activeEditor);
+            if (controller && controller.isFindInputFocused()) {
+                return this.updateTextFromFindWidget(controller, { allowSearchOnType });
+            }
+            const editors = this.codeEditorService.listCodeEditors();
+            activeEditor = editors.find(editor => editor instanceof EmbeddedCodeEditorWidget && editor.getParentEditor() === activeEditor && editor.hasTextFocus())
+                ?? activeEditor;
+        }
+        return this.updateTextFromSelection({ allowUnselectedWord, allowSearchOnType }, activeEditor);
+    }
+    updateTextFromFindWidget(controller, { allowSearchOnType = true }) {
+        if (!this.searchConfig.seedWithNearestWord && (dom.getActiveWindow().getSelection()?.toString() ?? '') === '') {
+            return false;
+        }
+        const searchString = controller.getState().searchString;
+        if (searchString === '') {
+            return false;
+        }
+        this.searchWidget.searchInput?.setCaseSensitive(controller.getState().matchCase);
+        this.searchWidget.searchInput?.setWholeWords(controller.getState().wholeWord);
+        this.searchWidget.searchInput?.setRegex(controller.getState().isRegex);
+        this.updateText(searchString, allowSearchOnType);
+        return true;
+    }
+    updateTextFromSelection({ allowUnselectedWord = true, allowSearchOnType = true }, editor) {
+        const seedSearchStringFromSelection = this.configurationService.getValue('editor').find.seedSearchStringFromSelection;
+        if (!seedSearchStringFromSelection || seedSearchStringFromSelection === 'never') {
+            return false;
+        }
+        let selectedText = this.getSearchTextFromEditor(allowUnselectedWord, editor);
+        if (selectedText === null) {
+            return false;
+        }
+        if (this.searchWidget.searchInput?.getRegex()) {
+            selectedText = strings.escapeRegExpCharacters(selectedText);
+        }
+        this.updateText(selectedText, allowSearchOnType);
+        return true;
+    }
+    updateText(text, allowSearchOnType = true) {
+        if (allowSearchOnType && !this.viewModel.searchResult.isDirty) {
+            this.searchWidget.setValue(text);
+        }
+        else {
+            this.pauseSearching = true;
+            this.searchWidget.setValue(text);
+            this.pauseSearching = false;
+        }
+    }
+    focusNextInputBox() {
+        if (this.searchWidget.searchInputHasFocus()) {
+            if (this.searchWidget.isReplaceShown()) {
+                this.searchWidget.focus(true, true);
+            }
+            else {
+                this.moveFocusFromSearchOrReplace();
+            }
+            return;
+        }
+        if (this.searchWidget.replaceInputHasFocus()) {
+            this.moveFocusFromSearchOrReplace();
+            return;
+        }
+        if (this.inputPatternIncludes.inputHasFocus()) {
+            this.inputPatternExcludes.focus();
+            this.inputPatternExcludes.select();
+            return;
+        }
+        if (this.inputPatternExcludes.inputHasFocus()) {
+            this.selectTreeIfNotSelected();
+            return;
+        }
+    }
+    moveFocusFromSearchOrReplace() {
+        if (this.showsFileTypes()) {
+            this.toggleQueryDetails(true, this.showsFileTypes());
+        }
+        else {
+            this.selectTreeIfNotSelected();
+        }
+    }
+    focusPreviousInputBox() {
+        if (this.searchWidget.searchInputHasFocus()) {
+            return;
+        }
+        if (this.searchWidget.replaceInputHasFocus()) {
+            this.searchWidget.focus(true);
+            return;
+        }
+        if (this.inputPatternIncludes.inputHasFocus()) {
+            this.searchWidget.focus(true, true);
+            return;
+        }
+        if (this.inputPatternExcludes.inputHasFocus()) {
+            this.inputPatternIncludes.focus();
+            this.inputPatternIncludes.select();
+            return;
+        }
+        if (this.tree.isDOMFocused()) {
+            this.moveFocusFromResults();
+            return;
+        }
+    }
+    moveFocusFromResults() {
+        if (this.showsFileTypes()) {
+            this.toggleQueryDetails(true, true, false, true);
+        }
+        else {
+            this.searchWidget.focus(true, true);
+        }
+    }
+    reLayout() {
+        if (this.isDisposed || !this.size) {
+            return;
+        }
+        const actionsPosition = this.searchConfig.actionsPosition;
+        this.getContainer().classList.toggle(SearchView_1.ACTIONS_RIGHT_CLASS_NAME, actionsPosition === 'right');
+        this.searchWidget.setWidth(this.size.width - 28);
+        this.inputPatternExcludes.setWidth(this.size.width - 28);
+        this.inputPatternIncludes.setWidth(this.size.width - 28);
+        const widgetHeight = dom.getTotalHeight(this.searchWidgetsContainerElement);
+        const messagesHeight = dom.getTotalHeight(this.messagesElement);
+        this.tree.layout(this.size.height - widgetHeight - messagesHeight, this.size.width - 28);
+    }
+    layoutBody(height, width) {
+        super.layoutBody(height, width);
+        this.size = new dom.Dimension(width, height);
+        this.reLayout();
+    }
+    getControl() {
+        return this.tree;
+    }
+    allSearchFieldsClear() {
+        return this.searchWidget.getReplaceValue() === '' &&
+            (!this.searchWidget.searchInput || this.searchWidget.searchInput.getValue() === '');
+    }
+    allFilePatternFieldsClear() {
+        return this.searchExcludePattern.getValue() === '' &&
+            this.searchIncludePattern.getValue() === '';
+    }
+    hasSearchResults() {
+        return !this.viewModel.searchResult.isEmpty();
+    }
+    clearSearchResults(clearInput = true) {
+        this.viewModel.searchResult.clear();
+        this.showEmptyStage(true);
+        if (this.contextService.getWorkbenchState() === 1) {
+            this.showSearchWithoutFolderMessage();
+        }
+        if (clearInput) {
+            if (this.allSearchFieldsClear()) {
+                this.clearFilePatternFields();
+            }
+            this.searchWidget.clear();
+        }
+        this.viewModel.cancelSearch();
+        this.tree.ariaLabel = nls.localize('emptySearch', "Empty Search");
+        this.accessibilitySignalService.playSignal(AccessibilitySignal.clear);
+        this.reLayout();
+    }
+    clearFilePatternFields() {
+        this.searchExcludePattern.clear();
+        this.searchIncludePattern.clear();
+    }
+    cancelSearch(focus = true) {
+        if (this.viewModel.cancelSearch()) {
+            if (focus) {
+                this.searchWidget.focus();
+            }
+            return true;
+        }
+        return false;
+    }
+    selectTreeIfNotSelected() {
+        if (this.tree.getNode(undefined)) {
+            this.tree.domFocus();
+            const selection = this.tree.getSelection();
+            if (selection.length === 0) {
+                const event = getSelectionKeyboardEvent();
+                this.tree.focusNext(undefined, undefined, event);
+                this.tree.setSelection(this.tree.getFocus(), event);
+            }
+        }
+    }
+    getSearchTextFromEditor(allowUnselectedWord, editor) {
+        if (dom.isAncestorOfActiveElement(this.getContainer())) {
+            return null;
+        }
+        editor = editor ?? this.editorService.activeTextEditorControl;
+        if (!editor) {
+            return null;
+        }
+        const allowUnselected = this.searchConfig.seedWithNearestWord && allowUnselectedWord;
+        return getSelectionTextFromEditor(allowUnselected, editor);
+    }
+    showsFileTypes() {
+        return this.queryDetails.classList.contains('more');
+    }
+    toggleCaseSensitive() {
+        this.searchWidget.searchInput?.setCaseSensitive(!this.searchWidget.searchInput.getCaseSensitive());
+        this.triggerQueryChange();
+    }
+    toggleWholeWords() {
+        this.searchWidget.searchInput?.setWholeWords(!this.searchWidget.searchInput.getWholeWords());
+        this.triggerQueryChange();
+    }
+    toggleRegex() {
+        this.searchWidget.searchInput?.setRegex(!this.searchWidget.searchInput.getRegex());
+        this.triggerQueryChange();
+    }
+    togglePreserveCase() {
+        this.searchWidget.replaceInput?.setPreserveCase(!this.searchWidget.replaceInput.getPreserveCase());
+        this.triggerQueryChange();
+    }
+    setSearchParameters(args = {}) {
+        if (typeof args.isCaseSensitive === 'boolean') {
+            this.searchWidget.searchInput?.setCaseSensitive(args.isCaseSensitive);
+        }
+        if (typeof args.matchWholeWord === 'boolean') {
+            this.searchWidget.searchInput?.setWholeWords(args.matchWholeWord);
+        }
+        if (typeof args.isRegex === 'boolean') {
+            this.searchWidget.searchInput?.setRegex(args.isRegex);
+        }
+        if (typeof args.filesToInclude === 'string') {
+            this.searchIncludePattern.setValue(String(args.filesToInclude));
+        }
+        if (typeof args.filesToExclude === 'string') {
+            this.searchExcludePattern.setValue(String(args.filesToExclude));
+        }
+        if (typeof args.query === 'string') {
+            this.searchWidget.searchInput?.setValue(args.query);
+        }
+        if (typeof args.replace === 'string') {
+            this.searchWidget.replaceInput?.setValue(args.replace);
+        }
+        else {
+            if (this.searchWidget.replaceInput && this.searchWidget.replaceInput.getValue() !== '') {
+                this.searchWidget.replaceInput.setValue('');
+            }
+        }
+        if (typeof args.triggerSearch === 'boolean' && args.triggerSearch) {
+            this.triggerQueryChange();
+        }
+        if (typeof args.preserveCase === 'boolean') {
+            this.searchWidget.replaceInput?.setPreserveCase(args.preserveCase);
+        }
+        if (typeof args.useExcludeSettingsAndIgnoreFiles === 'boolean') {
+            this.inputPatternExcludes.setUseExcludesAndIgnoreFiles(args.useExcludeSettingsAndIgnoreFiles);
+        }
+        if (typeof args.onlyOpenEditors === 'boolean') {
+            this.searchIncludePattern.setOnlySearchInOpenEditors(args.onlyOpenEditors);
+        }
+    }
+    toggleQueryDetails(moveFocus = true, show, skipLayout, reverse) {
+        const cls = 'more';
+        show = typeof show === 'undefined' ? !this.queryDetails.classList.contains(cls) : Boolean(show);
+        this.viewletState['query.queryDetailsExpanded'] = show;
+        skipLayout = Boolean(skipLayout);
+        if (show) {
+            this.toggleQueryDetailsButton.setAttribute('aria-expanded', 'true');
+            this.queryDetails.classList.add(cls);
+            if (moveFocus) {
+                if (reverse) {
+                    this.inputPatternExcludes.focus();
+                    this.inputPatternExcludes.select();
+                }
+                else {
+                    this.inputPatternIncludes.focus();
+                    this.inputPatternIncludes.select();
+                }
+            }
+        }
+        else {
+            this.toggleQueryDetailsButton.setAttribute('aria-expanded', 'false');
+            this.queryDetails.classList.remove(cls);
+            if (moveFocus) {
+                this.searchWidget.focus();
+            }
+        }
+        if (!skipLayout && this.size) {
+            this.reLayout();
+        }
+    }
+    searchInFolders(folderPaths = []) {
+        this._searchWithIncludeOrExclude(true, folderPaths);
+    }
+    searchOutsideOfFolders(folderPaths = []) {
+        this._searchWithIncludeOrExclude(false, folderPaths);
+    }
+    _searchWithIncludeOrExclude(include, folderPaths) {
+        if (!folderPaths.length || folderPaths.some(folderPath => folderPath === '.')) {
+            this.inputPatternIncludes.setValue('');
+            this.searchWidget.focus();
+            return;
+        }
+        if (!this.showsFileTypes()) {
+            this.toggleQueryDetails(true, true);
+        }
+        (include ? this.inputPatternIncludes : this.inputPatternExcludes).setValue(folderPaths.join(', '));
+        this.searchWidget.focus(false);
+    }
+    triggerQueryChange(_options) {
+        const options = { preserveFocus: true, triggeredOnType: false, delay: 0, ..._options };
+        if (options.triggeredOnType && !this.searchConfig.searchOnType) {
+            return;
+        }
+        if (!this.pauseSearching) {
+            const delay = options.triggeredOnType ? options.delay : 0;
+            this.triggerQueryDelayer.trigger(() => {
+                this._onQueryChanged(options.preserveFocus, options.triggeredOnType);
+            }, delay);
+        }
+    }
+    _getExcludePattern() {
+        return this.inputPatternExcludes.getValue().trim();
+    }
+    _getIncludePattern() {
+        return this.inputPatternIncludes.getValue().trim();
+    }
+    _onQueryChanged(preserveFocus, triggeredOnType = false) {
+        if (!(this.searchWidget.searchInput?.inputBox.isInputValid())) {
+            return;
+        }
+        if (this.tree.hasNode(this.searchResult.aiTextSearchResult)) {
+            this.tree.collapse(this.searchResult.aiTextSearchResult);
+        }
+        const isRegex = this.searchWidget.searchInput.getRegex();
+        const isInNotebookMarkdownInput = this.searchWidget.getNotebookFilters().markupInput;
+        const isInNotebookMarkdownPreview = this.searchWidget.getNotebookFilters().markupPreview;
+        const isInNotebookCellInput = this.searchWidget.getNotebookFilters().codeInput;
+        const isInNotebookCellOutput = this.searchWidget.getNotebookFilters().codeOutput;
+        const isWholeWords = this.searchWidget.searchInput.getWholeWords();
+        const isCaseSensitive = this.searchWidget.searchInput.getCaseSensitive();
+        const contentPattern = this.searchWidget.searchInput.getValue();
+        const excludePatternText = this._getExcludePattern();
+        const includePatternText = this._getIncludePattern();
+        const useExcludesAndIgnoreFiles = this.inputPatternExcludes.useExcludesAndIgnoreFiles();
+        const onlySearchInOpenEditors = this.inputPatternIncludes.onlySearchInOpenEditors();
+        if (contentPattern.length === 0) {
+            this.clearSearchResults(false);
+            this.clearMessage();
+            return;
+        }
+        const content = {
+            pattern: contentPattern,
+            isRegExp: isRegex,
+            isCaseSensitive: isCaseSensitive,
+            isWordMatch: isWholeWords,
+            notebookInfo: {
+                isInNotebookMarkdownInput,
+                isInNotebookMarkdownPreview,
+                isInNotebookCellInput,
+                isInNotebookCellOutput
+            }
+        };
+        const excludePattern = [{ pattern: this.inputPatternExcludes.getValue() }];
+        const includePattern = this.inputPatternIncludes.getValue();
+        const charsPerLine = content.isRegExp ? 10000 : 1000;
+        const options = {
+            _reason: 'searchView',
+            extraFileResources: this.instantiationService.invokeFunction(getOutOfWorkspaceEditorResources),
+            maxResults: this.searchConfig.maxResults ?? undefined,
+            disregardIgnoreFiles: !useExcludesAndIgnoreFiles || undefined,
+            disregardExcludeSettings: !useExcludesAndIgnoreFiles || undefined,
+            onlyOpenEditors: onlySearchInOpenEditors,
+            excludePattern,
+            includePattern,
+            previewOptions: {
+                matchLines: 1,
+                charsPerLine
+            },
+            isSmartCase: this.searchConfig.smartCase,
+            expandPatterns: true
+        };
+        const folderResources = this.contextService.getWorkspace().folders;
+        const onQueryValidationError = (err) => {
+            this.searchWidget.searchInput?.showMessage({ content: err.message, type: 3 });
+            this.viewModel.searchResult.clear();
+        };
+        let query;
+        try {
+            query = this.queryBuilder.text(content, folderResources.map(folder => folder.uri), options);
+        }
+        catch (err) {
+            onQueryValidationError(err);
+            return;
+        }
+        this.validateQuery(query).then(() => {
+            this.onQueryTriggered(query, options, excludePatternText, includePatternText, triggeredOnType);
+            if (!preserveFocus) {
+                this.searchWidget.focus(false, undefined, true);
+            }
+        }, onQueryValidationError);
+    }
+    validateQuery(query) {
+        const folderQueriesExistP = query.folderQueries.map(fq => {
+            return this.fileService.exists(fq.folder).catch(() => false);
+        });
+        return Promise.all(folderQueriesExistP).then(existResults => {
+            const existingFolderQueries = query.folderQueries.filter((folderQuery, i) => existResults[i]);
+            if (!query.folderQueries.length || existingFolderQueries.length) {
+                query.folderQueries = existingFolderQueries;
+            }
+            else {
+                const nonExistantPath = query.folderQueries[0].folder.fsPath;
+                const searchPathNotFoundError = nls.localize('searchPathNotFoundError', "Search path not found: {0}", nonExistantPath);
+                return Promise.reject(new Error(searchPathNotFoundError));
+            }
+            return undefined;
+        });
+    }
+    onQueryTriggered(query, options, excludePatternText, includePatternText, triggeredOnType) {
+        this.addToSearchHistoryDelayer.trigger(() => {
+            this.searchWidget.searchInput?.onSearchSubmit();
+            this.inputPatternExcludes.onSearchSubmit();
+            this.inputPatternIncludes.onSearchSubmit();
+        });
+        this.viewModel.cancelSearch(true);
+        this.viewModel.cancelAISearch(true);
+        this.currentSearchQ = this.currentSearchQ
+            .then(() => this.doSearch(query, excludePatternText, includePatternText, triggeredOnType))
+            .then(() => undefined, () => undefined);
+    }
+    async _updateResults() {
+        if (this.state === SearchUIState.Idle) {
+            return;
+        }
+        try {
+            const fileCount = this.viewModel.searchResult.fileCount();
+            if (this._visibleMatches !== fileCount) {
+                this._visibleMatches = fileCount;
+                await this.refreshAndUpdateCount();
+            }
+        }
+        finally {
+            this._refreshResultsScheduler.schedule();
+        }
+    }
+    async onSearchComplete(progressComplete, excludePatternText, includePatternText, completed) {
+        this.state = SearchUIState.Idle;
+        progressComplete();
+        this.onSearchResultsChanged();
+        const collapseResults = this.searchConfig.collapseResults;
+        if (collapseResults !== 'alwaysCollapse' && this.viewModel.searchResult.matches().length === 1) {
+            const onlyMatch = this.viewModel.searchResult.matches()[0];
+            if (onlyMatch.count() < 50) {
+                await this.tree.expand(onlyMatch);
+            }
+        }
+        const hasResults = !this.viewModel.searchResult.isEmpty();
+        if (completed?.exit === 1) {
+            return;
+        }
+        if (!hasResults) {
+            const hasExcludes = !!excludePatternText;
+            const hasIncludes = !!includePatternText;
+            let message;
+            if (!completed) {
+                message = SEARCH_CANCELLED_MESSAGE;
+            }
+            else if (this.inputPatternIncludes.onlySearchInOpenEditors()) {
+                if (hasIncludes && hasExcludes) {
+                    message = nls.localize('noOpenEditorResultsIncludesExcludes', "No results found in open editors matching '{0}' excluding '{1}' - ", includePatternText, excludePatternText);
+                }
+                else if (hasIncludes) {
+                    message = nls.localize('noOpenEditorResultsIncludes', "No results found in open editors matching '{0}' - ", includePatternText);
+                }
+                else if (hasExcludes) {
+                    message = nls.localize('noOpenEditorResultsExcludes', "No results found in open editors excluding '{0}' - ", excludePatternText);
+                }
+                else {
+                    message = nls.localize('noOpenEditorResultsFound', "No results found in open editors. Review your settings for configured exclusions and check your gitignore files - ");
+                }
+            }
+            else {
+                if (hasIncludes && hasExcludes) {
+                    message = nls.localize('noResultsIncludesExcludes', "No results found in '{0}' excluding '{1}' - ", includePatternText, excludePatternText);
+                }
+                else if (hasIncludes) {
+                    message = nls.localize('noResultsIncludes', "No results found in '{0}' - ", includePatternText);
+                }
+                else if (hasExcludes) {
+                    message = nls.localize('noResultsExcludes', "No results found excluding '{0}' - ", excludePatternText);
+                }
+                else {
+                    message = nls.localize('noResultsFound', "No results found. Review your settings for configured exclusions and check your gitignore files - ");
+                }
+            }
+            aria.status(message);
+            const messageEl = this.clearMessage();
+            dom.append(messageEl, message);
+            if (!completed) {
+                const searchAgainButton = this.messageDisposables.add(new SearchLinkButton(nls.localize('rerunSearch.message', "Search again"), () => this.triggerQueryChange({ preserveFocus: false }), this.hoverService));
+                dom.append(messageEl, searchAgainButton.element);
+            }
+            else if (hasIncludes || hasExcludes) {
+                const searchAgainButton = this.messageDisposables.add(new SearchLinkButton(nls.localize('rerunSearchInAll.message', "Search again in all files"), this.onSearchAgain.bind(this), this.hoverService));
+                dom.append(messageEl, searchAgainButton.element);
+            }
+            else {
+                const openSettingsButton = this.messageDisposables.add(new SearchLinkButton(nls.localize('openSettings.message', "Open Settings"), this.onOpenSettings.bind(this), this.hoverService));
+                dom.append(messageEl, openSettingsButton.element);
+            }
+            if (completed) {
+                dom.append(messageEl, $('span', undefined, ' - '));
+                const learnMoreButton = this.messageDisposables.add(new SearchLinkButton(nls.localize('openSettings.learnMore', "Learn More"), this.onLearnMore.bind(this), this.hoverService));
+                dom.append(messageEl, learnMoreButton.element);
+            }
+            if (this.contextService.getWorkbenchState() === 1) {
+                this.showSearchWithoutFolderMessage();
+            }
+            this.reLayout();
+        }
+        else {
+            this.viewModel.searchResult.toggleHighlights(this.isVisible());
+            aria.status(nls.localize('ariaSearchResultsStatus', "Search returned {0} results in {1} files", this.viewModel.searchResult.count(), this.viewModel.searchResult.fileCount()));
+        }
+        if (completed && completed.limitHit) {
+            completed.messages.push({ type: TextSearchCompleteMessageType.Warning, text: nls.localize('searchMaxResultsWarning', "The result set only contains a subset of all matches. Be more specific in your search to narrow down the results.") });
+        }
+        if (completed && completed.messages) {
+            for (const message of completed.messages) {
+                this.addMessage(message);
+            }
+        }
+        this.reLayout();
+    }
+    async onSearchError(e, progressComplete, excludePatternText, includePatternText, completed) {
+        this.state = SearchUIState.Idle;
+        if (errors.isCancellationError(e)) {
+            return this.onSearchComplete(progressComplete, excludePatternText, includePatternText, completed);
+        }
+        else {
+            progressComplete();
+            this.searchWidget.searchInput?.showMessage({ content: e.message, type: 3 });
+            this.viewModel.searchResult.clear();
+            return Promise.resolve();
+        }
+    }
+    async addAIResults() {
+        const excludePatternText = this._getExcludePattern();
+        const includePatternText = this._getIncludePattern();
+        let progressComplete;
+        this.progressService.withProgress({ location: this.getProgressLocation(), delay: 0 }, _progress => {
+            return new Promise(resolve => progressComplete = resolve);
+        });
+        this.searchWidget.searchInput?.clearMessage();
+        this.state = SearchUIState.Searching;
+        this.showEmptyStage();
+        const slowTimer = setTimeout(() => {
+            this.state = SearchUIState.SlowSearch;
+        }, 2000);
+        this._visibleMatches = 0;
+        this._refreshResultsScheduler.schedule();
+        this.searchWidget.setReplaceAllActionState(false);
+        this.tree.setSelection([]);
+        this.tree.setFocus([]);
+        this.viewModel.replaceString = this.searchWidget.getReplaceValue();
+        const result = this.viewModel.addAIResults();
+        return result.then((complete) => {
+            clearTimeout(slowTimer);
+            return this.onSearchComplete(progressComplete, excludePatternText, includePatternText, complete);
+        }, (e) => {
+            clearTimeout(slowTimer);
+            return this.onSearchError(e, progressComplete, excludePatternText, includePatternText);
+        });
+    }
+    doSearch(query, excludePatternText, includePatternText, triggeredOnType) {
+        let progressComplete;
+        this.progressService.withProgress({ location: this.getProgressLocation(), delay: triggeredOnType ? 300 : 0 }, _progress => {
+            return new Promise(resolve => progressComplete = resolve);
+        });
+        this.searchWidget.searchInput?.clearMessage();
+        this.state = SearchUIState.Searching;
+        this.showEmptyStage();
+        const slowTimer = setTimeout(() => {
+            this.state = SearchUIState.SlowSearch;
+        }, 2000);
+        this._visibleMatches = 0;
+        this._refreshResultsScheduler.schedule();
+        this.searchWidget.setReplaceAllActionState(false);
+        this.tree.setSelection([]);
+        this.tree.setFocus([]);
+        this.viewModel.replaceString = this.searchWidget.getReplaceValue();
+        const result = this.viewModel.search(query);
+        return result.asyncResults.then((complete) => {
+            clearTimeout(slowTimer);
+            return this.onSearchComplete(progressComplete, excludePatternText, includePatternText, complete);
+        }, (e) => {
+            clearTimeout(slowTimer);
+            return this.onSearchError(e, progressComplete, excludePatternText, includePatternText);
+        });
+    }
+    onOpenSettings(e) {
+        dom.EventHelper.stop(e, false);
+        this.openSettings('@id:files.exclude,search.exclude,search.useParentIgnoreFiles,search.useGlobalIgnoreFiles,search.useIgnoreFiles');
+    }
+    openSettings(query) {
+        const options = { query };
+        return this.contextService.getWorkbenchState() !== 1 ?
+            this.preferencesService.openWorkspaceSettings(options) :
+            this.preferencesService.openUserSettings(options);
+    }
+    onLearnMore() {
+        this.openerService.open(URI.parse('https://go.microsoft.com/fwlink/?linkid=853977'));
+    }
+    onSearchAgain() {
+        this.inputPatternExcludes.setValue('');
+        this.inputPatternIncludes.setValue('');
+        this.inputPatternIncludes.setOnlySearchInOpenEditors(false);
+        this.triggerQueryChange({ preserveFocus: false });
+    }
+    onEnableExcludes() {
+        this.toggleQueryDetails(false, true);
+        this.searchExcludePattern.setUseExcludesAndIgnoreFiles(true);
+    }
+    onDisableSearchInOpenEditors() {
+        this.toggleQueryDetails(false, true);
+        this.inputPatternIncludes.setOnlySearchInOpenEditors(false);
+    }
+    updateSearchResultCount(disregardExcludesAndIgnores, onlyOpenEditors, clear = false) {
+        const fileCount = this.viewModel.searchResult.fileCount();
+        const resultCount = this.viewModel.searchResult.count();
+        this.hasSearchResultsKey.set(fileCount > 0);
+        const msgWasHidden = this.messagesElement.style.display === 'none';
+        const messageEl = this.clearMessage();
+        const resultMsg = clear ? '' : this.buildResultCountMessage(resultCount, fileCount);
+        this.tree.ariaLabel = resultMsg + nls.localize('forTerm', " - Search: {0}", this.searchResult.query?.contentPattern.pattern ?? '');
+        dom.append(messageEl, resultMsg);
+        if (fileCount > 0) {
+            if (disregardExcludesAndIgnores) {
+                const excludesDisabledMessage = ' - ' + nls.localize('useIgnoresAndExcludesDisabled', "exclude settings and ignore files are disabled") + ' ';
+                const enableExcludesButton = this.messageDisposables.add(new SearchLinkButton(nls.localize('excludes.enable', "enable"), this.onEnableExcludes.bind(this), this.hoverService, nls.localize('useExcludesAndIgnoreFilesDescription', "Use Exclude Settings and Ignore Files")));
+                dom.append(messageEl, $('span', undefined, excludesDisabledMessage, '(', enableExcludesButton.element, ')'));
+            }
+            if (onlyOpenEditors) {
+                const searchingInOpenMessage = ' - ' + nls.localize('onlyOpenEditors', "searching only in open files") + ' ';
+                const disableOpenEditorsButton = this.messageDisposables.add(new SearchLinkButton(nls.localize('openEditors.disable', "disable"), this.onDisableSearchInOpenEditors.bind(this), this.hoverService, nls.localize('disableOpenEditors', "Search in entire workspace")));
+                dom.append(messageEl, $('span', undefined, searchingInOpenMessage, '(', disableOpenEditorsButton.element, ')'));
+            }
+            dom.append(messageEl, ' - ');
+            const openInEditorTooltip = appendKeyBindingLabel(nls.localize('openInEditor.tooltip', "Copy current search results to an editor"), this.keybindingService.lookupKeybinding("search.action.openInEditor"));
+            const openInEditorButton = this.messageDisposables.add(new SearchLinkButton(nls.localize('openInEditor.message', "Open in editor"), () => this.instantiationService.invokeFunction(createEditorFromSearchResult, this.searchResult, this.searchIncludePattern.getValue(), this.searchExcludePattern.getValue(), this.searchIncludePattern.onlySearchInOpenEditors()), this.hoverService, openInEditorTooltip));
+            dom.append(messageEl, openInEditorButton.element);
+            this.reLayout();
+        }
+        else if (!msgWasHidden) {
+            dom.hide(this.messagesElement);
+        }
+    }
+    addMessage(message) {
+        const messageBox = this.messagesElement.firstChild;
+        if (!messageBox) {
+            return;
+        }
+        dom.append(messageBox, renderSearchMessage(message, this.instantiationService, this.notificationService, this.openerService, this.commandService, this.messageDisposables, () => this.triggerQueryChange()));
+    }
+    buildResultCountMessage(resultCount, fileCount) {
+        if (resultCount === 1 && fileCount === 1) {
+            return nls.localize('search.file.result', "{0} result in {1} file", resultCount, fileCount);
+        }
+        else if (resultCount === 1) {
+            return nls.localize('search.files.result', "{0} result in {1} files", resultCount, fileCount);
+        }
+        else if (fileCount === 1) {
+            return nls.localize('search.file.results', "{0} results in {1} file", resultCount, fileCount);
+        }
+        else {
+            return nls.localize('search.files.results', "{0} results in {1} files", resultCount, fileCount);
+        }
+    }
+    showSearchWithoutFolderMessage() {
+        this.searchWithoutFolderMessageElement = this.clearMessage();
+        const textEl = dom.append(this.searchWithoutFolderMessageElement, $('p', undefined, nls.localize('searchWithoutFolder', "You have not opened or specified a folder. Only open files are currently searched - ")));
+        const openFolderButton = this.messageDisposables.add(new SearchLinkButton(nls.localize('openFolder', "Open Folder"), () => {
+            this.commandService.executeCommand(env.isMacintosh && env.isNative ? OpenFileFolderAction.ID : OpenFolderAction.ID).catch(err => errors.onUnexpectedError(err));
+        }, this.hoverService));
+        dom.append(textEl, openFolderButton.element);
+    }
+    showEmptyStage(forceHideMessages = false) {
+        const showingCancelled = (this.messagesElement.firstChild?.textContent?.indexOf(SEARCH_CANCELLED_MESSAGE) ?? -1) > -1;
+        if (showingCancelled || forceHideMessages || !this.configurationService.getValue().search.searchOnType) {
+            dom.hide(this.messagesElement);
+        }
+        dom.show(this.resultsElement);
+        this.currentSelectedFileMatch = undefined;
+    }
+    shouldOpenInNotebookEditor(match, uri) {
+        return match instanceof MatchInNotebook || (uri.scheme !== network.Schemas.untitled && this.notebookService.getContributedNotebookTypes(uri).length > 0);
+    }
+    onFocus(lineMatch, preserveFocus, sideBySide, pinned) {
+        const useReplacePreview = this.configurationService.getValue().search.useReplacePreview;
+        const resource = lineMatch instanceof Match ? lineMatch.parent().resource : lineMatch.resource;
+        return (useReplacePreview && this.viewModel.isReplaceActive() && !!this.viewModel.replaceString && !(this.shouldOpenInNotebookEditor(lineMatch, resource))) ?
+            this.replaceService.openReplacePreview(lineMatch, preserveFocus, sideBySide, pinned) :
+            this.open(lineMatch, preserveFocus, sideBySide, pinned, resource);
+    }
+    async open(element, preserveFocus, sideBySide, pinned, resourceInput) {
+        const selection = getEditorSelectionFromMatch(element, this.viewModel);
+        const oldParentMatches = element instanceof Match ? element.parent().matches() : [];
+        const resource = resourceInput ?? (element instanceof Match ? element.parent().resource : element.resource);
+        let editor;
+        const options = {
+            preserveFocus,
+            pinned,
+            selection,
+            revealIfVisible: true,
+        };
+        try {
+            editor = await this.editorService.openEditor({
+                resource: resource,
+                options,
+            }, sideBySide ? SIDE_GROUP : ACTIVE_GROUP);
+            const editorControl = editor?.getControl();
+            if (element instanceof Match && preserveFocus && isCodeEditor(editorControl)) {
+                this.viewModel.searchResult.getRangeHighlightDecorations().highlightRange(editorControl.getModel(), element.range());
+            }
+            else {
+                this.viewModel.searchResult.getRangeHighlightDecorations().removeHighlightRange();
+            }
+        }
+        catch (err) {
+            errors.onUnexpectedError(err);
+            return;
+        }
+        if (editor instanceof NotebookEditor) {
+            const elemParent = element.parent();
+            if (element instanceof Match) {
+                if (element instanceof MatchInNotebook) {
+                    element.parent().showMatch(element);
+                }
+                else {
+                    const editorWidget = editor.getControl();
+                    if (editorWidget) {
+                        elemParent.bindNotebookEditorWidget(editorWidget);
+                        await elemParent.updateMatchesForEditorWidget();
+                        const matchIndex = oldParentMatches.findIndex(e => e.id() === element.id());
+                        const matches = elemParent.matches();
+                        const match = matchIndex >= matches.length ? matches[matches.length - 1] : matches[matchIndex];
+                        if (match instanceof MatchInNotebook) {
+                            elemParent.showMatch(match);
+                            if (!this.tree.getFocus().includes(match) || !this.tree.getSelection().includes(match)) {
+                                this.tree.setSelection([match], getSelectionKeyboardEvent());
+                                this.tree.setFocus([match]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    openEditorWithMultiCursor(element) {
+        const resource = element instanceof Match ? element.parent().resource : element.resource;
+        return this.editorService.openEditor({
+            resource: resource,
+            options: {
+                preserveFocus: false,
+                pinned: true,
+                revealIfVisible: true
+            }
+        }).then(editor => {
+            if (editor) {
+                let fileMatch = null;
+                if (element instanceof FileMatch) {
+                    fileMatch = element;
+                }
+                else if (element instanceof Match) {
+                    fileMatch = element.parent();
+                }
+                if (fileMatch) {
+                    const selections = fileMatch.matches().map(m => new Selection(m.range().startLineNumber, m.range().startColumn, m.range().endLineNumber, m.range().endColumn));
+                    const codeEditor = getCodeEditor(editor.getControl());
+                    if (codeEditor) {
+                        const multiCursorController = MultiCursorSelectionController.get(codeEditor);
+                        multiCursorController?.selectAllUsingSelections(selections);
+                    }
+                }
+            }
+            this.viewModel.searchResult.getRangeHighlightDecorations().removeHighlightRange();
+        }, errors.onUnexpectedError);
+    }
+    onUntitledDidDispose(resource) {
+        if (!this.viewModel) {
+            return;
+        }
+        let matches = this.viewModel.searchResult.matches();
+        for (let i = 0, len = matches.length; i < len; i++) {
+            if (resource.toString() === matches[i].resource.toString()) {
+                this.viewModel.searchResult.remove(matches[i]);
+            }
+        }
+        matches = this.viewModel.searchResult.matches(true);
+        for (let i = 0, len = matches.length; i < len; i++) {
+            if (resource.toString() === matches[i].resource.toString()) {
+                this.viewModel.searchResult.remove(matches[i]);
+            }
+        }
+    }
+    onFilesChanged(e) {
+        if (!this.viewModel || (this.searchConfig.sortOrder !== "modified" && !e.gotDeleted())) {
+            return;
+        }
+        const matches = this.viewModel.searchResult.matches();
+        if (e.gotDeleted()) {
+            const deletedMatches = matches.filter(m => e.contains(m.resource, 2));
+            this.viewModel.searchResult.remove(deletedMatches);
+        }
+        else {
+            const changedMatches = matches.filter(m => e.contains(m.resource));
+            if (changedMatches.length && this.searchConfig.sortOrder === "modified") {
+                this.updateFileStats(changedMatches).then(async () => this.refreshTree());
+            }
+        }
+    }
+    get searchConfig() {
+        return this.configurationService.getValue('search');
+    }
+    clearHistory() {
+        this.searchWidget.clearHistory();
+        this.inputPatternExcludes.clearHistory();
+        this.inputPatternIncludes.clearHistory();
+    }
+    saveState() {
+        if (!this.searchWidget) {
+            return;
+        }
+        const patternExcludes = this.inputPatternExcludes?.getValue().trim() ?? '';
+        const patternIncludes = this.inputPatternIncludes?.getValue().trim() ?? '';
+        const onlyOpenEditors = this.inputPatternIncludes?.onlySearchInOpenEditors() ?? false;
+        const useExcludesAndIgnoreFiles = this.inputPatternExcludes?.useExcludesAndIgnoreFiles() ?? true;
+        const preserveCase = this.viewModel.preserveCase;
+        if (this.searchWidget.searchInput) {
+            const isRegex = this.searchWidget.searchInput.getRegex();
+            const isWholeWords = this.searchWidget.searchInput.getWholeWords();
+            const isCaseSensitive = this.searchWidget.searchInput.getCaseSensitive();
+            const contentPattern = this.searchWidget.searchInput.getValue();
+            const isInNotebookCellInput = this.searchWidget.getNotebookFilters().codeInput;
+            const isInNotebookCellOutput = this.searchWidget.getNotebookFilters().codeOutput;
+            const isInNotebookMarkdownInput = this.searchWidget.getNotebookFilters().markupInput;
+            const isInNotebookMarkdownPreview = this.searchWidget.getNotebookFilters().markupPreview;
+            this.viewletState['query.contentPattern'] = contentPattern;
+            this.viewletState['query.regex'] = isRegex;
+            this.viewletState['query.wholeWords'] = isWholeWords;
+            this.viewletState['query.caseSensitive'] = isCaseSensitive;
+            this.viewletState['query.isInNotebookMarkdownInput'] = isInNotebookMarkdownInput;
+            this.viewletState['query.isInNotebookMarkdownPreview'] = isInNotebookMarkdownPreview;
+            this.viewletState['query.isInNotebookCellInput'] = isInNotebookCellInput;
+            this.viewletState['query.isInNotebookCellOutput'] = isInNotebookCellOutput;
+        }
+        this.viewletState['query.folderExclusions'] = patternExcludes;
+        this.viewletState['query.folderIncludes'] = patternIncludes;
+        this.viewletState['query.useExcludesAndIgnoreFiles'] = useExcludesAndIgnoreFiles;
+        this.viewletState['query.preserveCase'] = preserveCase;
+        this.viewletState['query.onlyOpenEditors'] = onlyOpenEditors;
+        const isReplaceShown = this.searchAndReplaceWidget.isReplaceShown();
+        this.viewletState['view.showReplace'] = isReplaceShown;
+        this.viewletState['view.treeLayout'] = this.isTreeLayoutViewVisible;
+        this.viewletState['query.replaceText'] = isReplaceShown && this.searchWidget.getReplaceValue();
+        this._saveSearchHistoryService();
+        this.memento.saveMemento();
+        super.saveState();
+    }
+    _saveSearchHistoryService() {
+        if (this.searchWidget === undefined) {
+            return;
+        }
+        const history = Object.create(null);
+        const searchHistory = this.searchWidget.getSearchHistory();
+        if (searchHistory && searchHistory.length) {
+            history.search = searchHistory;
+        }
+        const replaceHistory = this.searchWidget.getReplaceHistory();
+        if (replaceHistory && replaceHistory.length) {
+            history.replace = replaceHistory;
+        }
+        const patternExcludesHistory = this.inputPatternExcludes.getHistory();
+        if (patternExcludesHistory && patternExcludesHistory.length) {
+            history.exclude = patternExcludesHistory;
+        }
+        const patternIncludesHistory = this.inputPatternIncludes.getHistory();
+        if (patternIncludesHistory && patternIncludesHistory.length) {
+            history.include = patternIncludesHistory;
+        }
+        this.searchHistoryService.save(history);
+    }
+    async retrieveFileStats() {
+        const files = this.searchResult.matches().filter(f => !f.fileStat).map(f => f.resolveFileStat(this.fileService));
+        await Promise.all(files);
+    }
+    async updateFileStats(elements) {
+        const files = elements.map(f => f.resolveFileStat(this.fileService));
+        await Promise.all(files);
+    }
+    removeFileStats() {
+        for (const fileMatch of this.searchResult.matches()) {
+            fileMatch.fileStat = undefined;
+        }
+        for (const fileMatch of this.searchResult.matches(true)) {
+            fileMatch.fileStat = undefined;
+        }
+    }
+    dispose() {
+        this.isDisposed = true;
+        this.saveState();
+        super.dispose();
+    }
+};
+SearchView = SearchView_1 = __decorate([
+    __param(1, IFileService),
+    __param(2, IEditorService),
+    __param(3, ICodeEditorService),
+    __param(4, IProgressService),
+    __param(5, INotificationService),
+    __param(6, IDialogService),
+    __param(7, ICommandService),
+    __param(8, IContextViewService),
+    __param(9, IInstantiationService),
+    __param(10, IViewDescriptorService),
+    __param(11, IConfigurationService),
+    __param(12, IWorkspaceContextService),
+    __param(13, ISearchViewModelWorkbenchService),
+    __param(14, IContextKeyService),
+    __param(15, IReplaceService),
+    __param(16, ITextFileService),
+    __param(17, IPreferencesService),
+    __param(18, IThemeService),
+    __param(19, ISearchHistoryService),
+    __param(20, IContextMenuService),
+    __param(21, IAccessibilityService),
+    __param(22, IKeybindingService),
+    __param(23, IStorageService),
+    __param(24, IOpenerService),
+    __param(25, ITelemetryService),
+    __param(26, IHoverService),
+    __param(27, INotebookService),
+    __param(28, ILogService),
+    __param(29, IAccessibilitySignalService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], SearchView);
+export { SearchView };
+class SearchLinkButton extends Disposable {
+    constructor(label, handler, hoverService, tooltip) {
+        super();
+        this.element = $('a.pointer', { tabindex: 0 }, label);
+        this._register(hoverService.setupManagedHover(getDefaultHoverDelegate('mouse'), this.element, tooltip));
+        this.addEventHandlers(handler);
+    }
+    addEventHandlers(handler) {
+        const wrappedHandler = (e) => {
+            dom.EventHelper.stop(e, false);
+            handler(e);
+        };
+        this._register(dom.addDisposableListener(this.element, dom.EventType.CLICK, wrappedHandler));
+        this._register(dom.addDisposableListener(this.element, dom.EventType.KEY_DOWN, e => {
+            const event = new StandardKeyboardEvent(e);
+            if (event.equals(10) || event.equals(3)) {
+                wrappedHandler(e);
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }));
+    }
+}
+export function getEditorSelectionFromMatch(element, viewModel) {
+    let match = null;
+    if (element instanceof Match) {
+        match = element;
+    }
+    if (element instanceof FileMatch && element.count() > 0) {
+        match = element.matches()[element.matches().length - 1];
+    }
+    if (match) {
+        const range = match.range();
+        if (viewModel.isReplaceActive() && !!viewModel.replaceString) {
+            const replaceString = match.replaceString;
+            return {
+                startLineNumber: range.startLineNumber,
+                startColumn: range.startColumn,
+                endLineNumber: range.startLineNumber,
+                endColumn: range.startColumn + replaceString.length
+            };
+        }
+        return range;
+    }
+    return undefined;
+}
+export function getSelectionTextFromEditor(allowUnselectedWord, activeEditor) {
+    let editor = activeEditor;
+    if (isDiffEditor(editor)) {
+        if (editor.getOriginalEditor().hasTextFocus()) {
+            editor = editor.getOriginalEditor();
+        }
+        else {
+            editor = editor.getModifiedEditor();
+        }
+    }
+    if (!isCodeEditor(editor) || !editor.hasModel()) {
+        return null;
+    }
+    const range = editor.getSelection();
+    if (!range) {
+        return null;
+    }
+    if (range.isEmpty()) {
+        if (allowUnselectedWord) {
+            const wordAtPosition = editor.getModel().getWordAtPosition(range.getStartPosition());
+            return wordAtPosition?.word ?? null;
+        }
+        else {
+            return null;
+        }
+    }
+    let searchText = '';
+    for (let i = range.startLineNumber; i <= range.endLineNumber; i++) {
+        let lineText = editor.getModel().getLineContent(i);
+        if (i === range.endLineNumber) {
+            lineText = lineText.substring(0, range.endColumn - 1);
+        }
+        if (i === range.startLineNumber) {
+            lineText = lineText.substring(range.startColumn - 1);
+        }
+        if (i !== range.startLineNumber) {
+            lineText = '\n' + lineText;
+        }
+        searchText += lineText;
+    }
+    return searchText;
+}
+let SearchViewDataSource = class SearchViewDataSource {
+    constructor(searchView, configurationService) {
+        this.searchView = searchView;
+        this.configurationService = configurationService;
+    }
+    get searchConfig() {
+        return this.configurationService.getValue('search');
+    }
+    createSearchResultIterator(searchResult) {
+        const ret = [];
+        if (!searchResult.plainTextSearchResult.isEmpty()) {
+            if (!this.searchView.shouldShowAIResults()) {
+                return this.createTextSearchResultIterator(searchResult.plainTextSearchResult);
+            }
+            ret.push(searchResult.plainTextSearchResult);
+        }
+        if (this.searchView.shouldShowAIResults() && searchResult.searchModel.hasPlainResults && !searchResult.aiTextSearchResult.hidden) {
+            ret.push(searchResult.aiTextSearchResult);
+        }
+        return ret;
+    }
+    createTextSearchResultIterator(textSearchResult) {
+        const folderMatches = textSearchResult.folderMatches()
+            .filter(fm => !fm.isEmpty())
+            .sort(searchMatchComparer);
+        if (folderMatches.length === 1) {
+            return this.createFolderIterator(folderMatches[0]);
+        }
+        return folderMatches;
+    }
+    createFolderIterator(folderMatch) {
+        const matchArray = this.searchView.isTreeLayoutViewVisible ? folderMatch.matches() : folderMatch.allDownstreamFileMatches();
+        const matches = matchArray.sort((a, b) => searchMatchComparer(a, b, this.searchConfig.sortOrder));
+        return matches;
+    }
+    createFileIterator(fileMatch) {
+        const matches = fileMatch.matches().sort(searchMatchComparer);
+        return matches;
+    }
+    hasChildren(element) {
+        if (element instanceof Match) {
+            return false;
+        }
+        if (element instanceof TextSearchResult && element.id() === AI_TEXT_SEARCH_RESULT_ID) {
+            return true;
+        }
+        const hasChildren = element.hasChildren;
+        return hasChildren;
+    }
+    getChildren(element) {
+        if (element instanceof SearchResult) {
+            return this.createSearchResultIterator(element);
+        }
+        else if (element instanceof TextSearchResult) {
+            if (element.id() === AI_TEXT_SEARCH_RESULT_ID && !this.searchView.model.hasAIResults) {
+                return this.searchView.addAIResults().then(() => this.createTextSearchResultIterator(element));
+            }
+            return this.createTextSearchResultIterator(element);
+        }
+        else if (element instanceof FolderMatch) {
+            return this.createFolderIterator(element);
+        }
+        else if (element instanceof FileMatch) {
+            return this.createFileIterator(element);
+        }
+        return [];
+    }
+    getParent(element) {
+        const parent = element.parent();
+        if (parent instanceof SearchResult) {
+            throw new Error('Invalid element passed to getParent');
+        }
+        return parent;
+    }
+};
+SearchViewDataSource = __decorate([
+    __param(1, IConfigurationService),
+    __metadata("design:paramtypes", [SearchView, Object])
+], SearchViewDataSource);

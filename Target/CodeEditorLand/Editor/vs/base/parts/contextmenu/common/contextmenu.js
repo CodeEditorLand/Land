@@ -1,1 +1,2 @@
-const e="vscode:contextmenu",t="vscode:onCloseContextMenu";export{e as CONTEXT_MENU_CHANNEL,t as CONTEXT_MENU_CLOSE_CHANNEL};
+export const CONTEXT_MENU_CHANNEL = 'vscode:contextmenu';
+export const CONTEXT_MENU_CLOSE_CHANNEL = 'vscode:onCloseContextMenu';

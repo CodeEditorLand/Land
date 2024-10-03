@@ -1,1 +1,58 @@
-var v=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var c=(s,r,t,e)=>{for(var i=e>1?void 0:e?u(r,t):r,o=s.length-1,a;o>=0;o--)(a=s[o])&&(i=(e?a(r,t,i):a(i))||i);return e&&i&&v(r,t,i),i},n=(s,r)=>(t,e)=>r(t,e,s);import{IDebugService as b}from"./debug.js";import{Disposable as p,MutableDisposable as g}from"../../../../base/common/lifecycle.js";import"../../../common/contributions.js";import{ILogService as m}from"../../../../platform/log/common/log.js";import{IAccessibilityService as h}from"../../../../platform/accessibility/common/accessibility.js";import{IConfigurationService as d}from"../../../../platform/configuration/common/configuration.js";import{Expression as f}from"./debugModel.js";let l=class extends p{constructor(t,e,i,o){super();this._debugService=t;this._logService=e;this._accessibilityService=i;this._configurationService=o;this._setListener(),this._register(o.onDidChangeConfiguration(a=>{a.affectsConfiguration("accessibility.debugWatchVariableAnnouncements")&&this._setListener()}))}static ID="workbench.contrib.debugWatchAccessibilityAnnouncer";_listener=this._register(new g);_setListener(){this._configurationService.getValue("accessibility.debugWatchVariableAnnouncements")&&!this._listener.value?this._listener.value=this._debugService.getModel().onDidChangeWatchExpressionValue(e=>{!e||e.value===f.DEFAULT_VALUE||(this._accessibilityService.alert(`${e.name} = ${e.value}`),this._logService.trace(`debugAccessibilityAnnouncerValueChanged ${e.name} ${e.value}`))}):this._listener.clear()}};l=c([n(0,b),n(1,m),n(2,h),n(3,d)],l);export{l as DebugWatchAccessibilityAnnouncer};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IDebugService } from './debug.js';
+import { Disposable, MutableDisposable } from '../../../../base/common/lifecycle.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IAccessibilityService } from '../../../../platform/accessibility/common/accessibility.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { Expression } from './debugModel.js';
+let DebugWatchAccessibilityAnnouncer = class DebugWatchAccessibilityAnnouncer extends Disposable {
+    static { this.ID = 'workbench.contrib.debugWatchAccessibilityAnnouncer'; }
+    constructor(_debugService, _logService, _accessibilityService, _configurationService) {
+        super();
+        this._debugService = _debugService;
+        this._logService = _logService;
+        this._accessibilityService = _accessibilityService;
+        this._configurationService = _configurationService;
+        this._listener = this._register(new MutableDisposable());
+        this._setListener();
+        this._register(_configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('accessibility.debugWatchVariableAnnouncements')) {
+                this._setListener();
+            }
+        }));
+    }
+    _setListener() {
+        const value = this._configurationService.getValue('accessibility.debugWatchVariableAnnouncements');
+        if (value && !this._listener.value) {
+            this._listener.value = this._debugService.getModel().onDidChangeWatchExpressionValue((e) => {
+                if (!e || e.value === Expression.DEFAULT_VALUE) {
+                    return;
+                }
+                this._accessibilityService.alert(`${e.name} = ${e.value}`);
+                this._logService.trace(`debugAccessibilityAnnouncerValueChanged ${e.name} ${e.value}`);
+            });
+        }
+        else {
+            this._listener.clear();
+        }
+    }
+};
+DebugWatchAccessibilityAnnouncer = __decorate([
+    __param(0, IDebugService),
+    __param(1, ILogService),
+    __param(2, IAccessibilityService),
+    __param(3, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], DebugWatchAccessibilityAnnouncer);
+export { DebugWatchAccessibilityAnnouncer };

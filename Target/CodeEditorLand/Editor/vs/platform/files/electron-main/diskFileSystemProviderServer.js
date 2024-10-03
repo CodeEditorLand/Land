@@ -1,1 +1,45 @@
-import{shell as I}from"electron";import{localize as s}from"../../../nls.js";import{isWindows as v}from"../../../base/common/platform.js";import"../../../base/common/event.js";import{URI as h}from"../../../base/common/uri.js";import{createFileSystemProviderError as m,FileSystemProviderErrorCode as a}from"../common/files.js";import"../node/diskFileSystemProvider.js";import{basename as c,normalize as d}from"../../../base/common/path.js";import"../../../base/common/lifecycle.js";import"../../log/common/log.js";import{AbstractDiskFileSystemProviderChannel as F,AbstractSessionFileWatcher as S}from"../node/diskFileSystemProviderServer.js";import{DefaultURITransformer as u}from"../../../base/common/uriIpc.js";import"../../environment/common/environment.js";import{toErrorMessage as l}from"../../../base/common/errorMessage.js";class N extends F{constructor(r,e,o){super(r,e);this.environmentService=o}getUriTransformer(r){return u}transformIncoming(r,e){return h.revive(e)}async delete(r,e,o){if(!o.useTrash)return super.delete(r,e,o);const f=this.transformIncoming(r,e),t=d(f.fsPath);try{await I.trashItem(t)}catch(n){throw m(v?s("binFailed","Failed to move '{0}' to the recycle bin ({1})",c(t),l(n)):s("trashFailed","Failed to move '{0}' to the trash ({1})",c(t),l(n)),a.Unknown)}}createSessionFileWatcher(r,e){return new U(r,e,this.logService,this.environmentService)}}class U extends S{watch(i,r,e){if(e.recursive)throw m("Recursive file watching is not supported from main process for performance reasons.",a.Unavailable);return super.watch(i,r,e)}}export{N as DiskFileSystemProviderChannel};
+import { shell } from 'electron';
+import { localize } from '../../../nls.js';
+import { isWindows } from '../../../base/common/platform.js';
+import { URI } from '../../../base/common/uri.js';
+import { createFileSystemProviderError, FileSystemProviderErrorCode } from '../common/files.js';
+import { basename, normalize } from '../../../base/common/path.js';
+import { AbstractDiskFileSystemProviderChannel, AbstractSessionFileWatcher } from '../node/diskFileSystemProviderServer.js';
+import { DefaultURITransformer } from '../../../base/common/uriIpc.js';
+import { toErrorMessage } from '../../../base/common/errorMessage.js';
+export class DiskFileSystemProviderChannel extends AbstractDiskFileSystemProviderChannel {
+    constructor(provider, logService, environmentService) {
+        super(provider, logService);
+        this.environmentService = environmentService;
+    }
+    getUriTransformer(ctx) {
+        return DefaultURITransformer;
+    }
+    transformIncoming(uriTransformer, _resource) {
+        return URI.revive(_resource);
+    }
+    async delete(uriTransformer, _resource, opts) {
+        if (!opts.useTrash) {
+            return super.delete(uriTransformer, _resource, opts);
+        }
+        const resource = this.transformIncoming(uriTransformer, _resource);
+        const filePath = normalize(resource.fsPath);
+        try {
+            await shell.trashItem(filePath);
+        }
+        catch (error) {
+            throw createFileSystemProviderError(isWindows ? localize('binFailed', "Failed to move '{0}' to the recycle bin ({1})", basename(filePath), toErrorMessage(error)) : localize('trashFailed', "Failed to move '{0}' to the trash ({1})", basename(filePath), toErrorMessage(error)), FileSystemProviderErrorCode.Unknown);
+        }
+    }
+    createSessionFileWatcher(uriTransformer, emitter) {
+        return new SessionFileWatcher(uriTransformer, emitter, this.logService, this.environmentService);
+    }
+}
+class SessionFileWatcher extends AbstractSessionFileWatcher {
+    watch(req, resource, opts) {
+        if (opts.recursive) {
+            throw createFileSystemProviderError('Recursive file watching is not supported from main process for performance reasons.', FileSystemProviderErrorCode.Unavailable);
+        }
+        return super.watch(req, resource, opts);
+    }
+}

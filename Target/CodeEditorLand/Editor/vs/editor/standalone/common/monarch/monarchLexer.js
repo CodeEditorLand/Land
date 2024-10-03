@@ -1,2 +1,714 @@
-var K=Object.defineProperty;var G=Object.getOwnPropertyDescriptor;var O=(x,e,t,n)=>{for(var a=n>1?void 0:n?G(e,t):e,r=x.length-1,u;r>=0;r--)(u=x[r])&&(a=(n?u(e,t,a):u(a))||a);return n&&a&&K(e,t,a),a},B=(x,e)=>(t,n)=>e(t,n,x);import{Disposable as H}from"../../../../base/common/lifecycle.js";import*as L from"../../../common/languages.js";import{NullState as q,nullTokenizeEncoded as V,nullTokenize as J}from"../../../common/languages/nullTokenize.js";import"../../../common/languages/supports/tokenization.js";import"../../../common/languages/language.js";import*as s from"./monarchCommon.js";import"../standaloneTheme.js";import{IConfigurationService as Q}from"../../../../platform/configuration/common/configuration.js";import{LanguageId as X,MetadataConsts as Y}from"../../../common/encodedTokenAttributes.js";const F=5;class C{static _INSTANCE=new C(F);static create(e,t){return this._INSTANCE.create(e,t)}_maxCacheDepth;_entries;constructor(e){this._maxCacheDepth=e,this._entries=Object.create(null)}create(e,t){if(e!==null&&e.depth>=this._maxCacheDepth)return new v(e,t);let n=v.getStackElementId(e);n.length>0&&(n+="|"),n+=t;let a=this._entries[n];return a||(a=new v(e,t),this._entries[n]=a,a)}}class v{parent;state;depth;constructor(e,t){this.parent=e,this.state=t,this.depth=(this.parent?this.parent.depth:0)+1}static getStackElementId(e){let t="";for(;e!==null;)t.length>0&&(t+="|"),t+=e.state,e=e.parent;return t}static _equals(e,t){for(;e!==null&&t!==null;){if(e===t)return!0;if(e.state!==t.state)return!1;e=e.parent,t=t.parent}return e===null&&t===null}equals(e){return v._equals(this,e)}push(e){return C.create(this,e)}pop(){return this.parent}popall(){let e=this;for(;e.parent;)e=e.parent;return e}switchTo(e){return C.create(this.parent,e)}}class y{languageId;state;constructor(e,t){this.languageId=e,this.state=t}equals(e){return this.languageId===e.languageId&&this.state.equals(e.state)}clone(){return this.state.clone()===this.state?this:new y(this.languageId,this.state)}}class E{static _INSTANCE=new E(F);static create(e,t){return this._INSTANCE.create(e,t)}_maxCacheDepth;_entries;constructor(e){this._maxCacheDepth=e,this._entries=Object.create(null)}create(e,t){if(t!==null)return new w(e,t);if(e!==null&&e.depth>=this._maxCacheDepth)return new w(e,t);const n=v.getStackElementId(e);let a=this._entries[n];return a||(a=new w(e,null),this._entries[n]=a,a)}}class w{stack;embeddedLanguageData;constructor(e,t){this.stack=e,this.embeddedLanguageData=t}clone(){return(this.embeddedLanguageData?this.embeddedLanguageData.clone():null)===this.embeddedLanguageData?this:E.create(this.stack,this.embeddedLanguageData)}equals(e){return!(e instanceof w)||!this.stack.equals(e.stack)?!1:this.embeddedLanguageData===null&&e.embeddedLanguageData===null?!0:this.embeddedLanguageData===null||e.embeddedLanguageData===null?!1:this.embeddedLanguageData.equals(e.embeddedLanguageData)}}class Z{_tokens;_languageId;_lastTokenType;_lastTokenLanguage;constructor(){this._tokens=[],this._languageId=null,this._lastTokenType=null,this._lastTokenLanguage=null}enterLanguage(e){this._languageId=e}emit(e,t){this._lastTokenType===t&&this._lastTokenLanguage===this._languageId||(this._lastTokenType=t,this._lastTokenLanguage=this._languageId,this._tokens.push(new L.Token(e,t,this._languageId)))}nestedLanguageTokenize(e,t,n,a){const r=n.languageId,u=n.state,g=L.TokenizationRegistry.get(r);if(!g)return this.enterLanguage(r),this.emit(a,""),u;const l=g.tokenize(e,t,u);if(a!==0)for(const c of l.tokens)this._tokens.push(new L.Token(c.offset+a,c.type,c.language));else this._tokens=this._tokens.concat(l.tokens);return this._lastTokenType=null,this._lastTokenLanguage=null,this._languageId=null,l.endState}finalize(e){return new L.TokenizationResult(this._tokens,e)}}class R{_languageService;_theme;_prependTokens;_tokens;_currentLanguageId;_lastTokenMetadata;constructor(e,t){this._languageService=e,this._theme=t,this._prependTokens=null,this._tokens=[],this._currentLanguageId=X.Null,this._lastTokenMetadata=0}enterLanguage(e){this._currentLanguageId=this._languageService.languageIdCodec.encodeLanguageId(e)}emit(e,t){const n=this._theme.match(this._currentLanguageId,t)|Y.BALANCED_BRACKETS_MASK;this._lastTokenMetadata!==n&&(this._lastTokenMetadata=n,this._tokens.push(e),this._tokens.push(n))}static _merge(e,t,n){const a=e!==null?e.length:0,r=t.length,u=n!==null?n.length:0;if(a===0&&r===0&&u===0)return new Uint32Array(0);if(a===0&&r===0)return n;if(r===0&&u===0)return e;const g=new Uint32Array(a+r+u);e!==null&&g.set(e);for(let l=0;l<r;l++)g[a+l]=t[l];return n!==null&&g.set(n,a+r),g}nestedLanguageTokenize(e,t,n,a){const r=n.languageId,u=n.state,g=L.TokenizationRegistry.get(r);if(!g)return this.enterLanguage(r),this.emit(a,""),u;const l=g.tokenizeEncoded(e,t,u);if(a!==0)for(let c=0,f=l.tokens.length;c<f;c+=2)l.tokens[c]+=a;return this._prependTokens=R._merge(this._prependTokens,this._tokens,l.tokens),this._tokens=[],this._currentLanguageId=0,this._lastTokenMetadata=0,l.endState}finalize(e){return new L.EncodedTokenizationResult(R._merge(this._prependTokens,this._tokens,null),e)}}let z=class extends H{constructor(t,n,a,r,u){super();this._configurationService=u;this._languageService=t,this._standaloneThemeService=n,this._languageId=a,this._lexer=r,this._embeddedLanguages=Object.create(null),this.embeddedLoaded=Promise.resolve(void 0);let g=!1;this._register(L.TokenizationRegistry.onDidChange(l=>{if(g)return;let c=!1;for(let f=0,d=l.changedLanguages.length;f<d;f++){const p=l.changedLanguages[f];if(this._embeddedLanguages[p]){c=!0;break}}c&&(g=!0,L.TokenizationRegistry.handleChange([this._languageId]),g=!1)})),this._maxTokenizationLineLength=this._configurationService.getValue("editor.maxTokenizationLineLength",{overrideIdentifier:this._languageId}),this._register(this._configurationService.onDidChangeConfiguration(l=>{l.affectsConfiguration("editor.maxTokenizationLineLength")&&(this._maxTokenizationLineLength=this._configurationService.getValue("editor.maxTokenizationLineLength",{overrideIdentifier:this._languageId}))}))}_languageService;_standaloneThemeService;_languageId;_lexer;_embeddedLanguages;embeddedLoaded;_maxTokenizationLineLength;getLoadStatus(){const t=[];for(const n in this._embeddedLanguages){const a=L.TokenizationRegistry.get(n);if(a){if(a instanceof z){const r=a.getLoadStatus();r.loaded===!1&&t.push(r.promise)}continue}L.TokenizationRegistry.isResolved(n)||t.push(L.TokenizationRegistry.getOrCreate(n))}return t.length===0?{loaded:!0}:{loaded:!1,promise:Promise.all(t).then(n=>{})}}getInitialState(){const t=C.create(null,this._lexer.start);return E.create(t,null)}tokenize(t,n,a){if(t.length>=this._maxTokenizationLineLength)return J(this._languageId,a);const r=new Z,u=this._tokenize(t,n,a,r);return r.finalize(u)}tokenizeEncoded(t,n,a){if(t.length>=this._maxTokenizationLineLength)return V(this._languageService.languageIdCodec.encodeLanguageId(this._languageId),a);const r=new R(this._languageService,this._standaloneThemeService.getColorTheme().tokenTheme),u=this._tokenize(t,n,a,r);return r.finalize(u)}_tokenize(t,n,a,r){return a.embeddedLanguageData?this._nestedTokenize(t,n,a,0,r):this._myTokenize(t,n,a,0,r)}_findLeavingNestedLanguageOffset(t,n){let a=this._lexer.tokenizer[n.stack.state];if(!a&&(a=s.findRules(this._lexer,n.stack.state),!a))throw s.createError(this._lexer,"tokenizer state is not defined: "+n.stack.state);let r=-1,u=!1;for(const g of a){if(!s.isIAction(g.action)||g.action.nextEmbedded!=="@pop")continue;u=!0;let l=g.resolveRegex(n.stack.state);const c=l.source;if(c.substr(0,4)==="^(?:"&&c.substr(c.length-1,1)===")"){const d=(l.ignoreCase?"i":"")+(l.unicode?"u":"");l=new RegExp(c.substr(4,c.length-5),d)}const f=t.search(l);f===-1||f!==0&&g.matchOnlyAtLineStart||(r===-1||f<r)&&(r=f)}if(!u)throw s.createError(this._lexer,'no rule containing nextEmbedded: "@pop" in tokenizer embedded state: '+n.stack.state);return r}_nestedTokenize(t,n,a,r,u){const g=this._findLeavingNestedLanguageOffset(t,a);if(g===-1){const f=u.nestedLanguageTokenize(t,n,a.embeddedLanguageData,r);return E.create(a.stack,new y(a.embeddedLanguageData.languageId,f))}const l=t.substring(0,g);l.length>0&&u.nestedLanguageTokenize(l,!1,a.embeddedLanguageData,r);const c=t.substring(g);return this._myTokenize(c,n,a,r+g,u)}_safeRuleName(t){return t?t.name:"(unknown)"}_myTokenize(t,n,a,r,u){u.enterLanguage(this._languageId);const g=t.length,l=n&&this._lexer.includeLF?t+`
-`:t,c=l.length;let f=a.embeddedLanguageData,d=a.stack,p=0,b=null,D=!0;for(;D||p<c;){const A=p,P=d.depth,U=b?b.groups.length:0,S=d.state;let h=null,m=null,i=null,T=null,M=null;if(b){h=b.matches;const o=b.groups.shift();m=o.matched,i=o.action,T=b.rule,b.groups.length===0&&(b=null)}else{if(!D&&p>=c)break;D=!1;let o=this._lexer.tokenizer[S];if(!o&&(o=s.findRules(this._lexer,S),!o))throw s.createError(this._lexer,"tokenizer state is not defined: "+S);const k=l.substr(p);for(const I of o)if((p===0||!I.matchOnlyAtLineStart)&&(h=k.match(I.resolveRegex(S)),h)){m=h[0],i=I.action;break}}if(h||(h=[""],m=""),i||(p<c&&(h=[l.charAt(p)],m=h[0]),i=this._lexer.defaultToken),m===null)break;for(p+=m.length;s.isFuzzyAction(i)&&s.isIAction(i)&&i.test;)i=i.test(m,h,S,p===c);let _=null;if(typeof i=="string"||Array.isArray(i))_=i;else if(i.group)_=i.group;else if(i.token!==null&&i.token!==void 0){if(i.tokenSubst?_=s.substituteMatches(this._lexer,i.token,m,h,S):_=i.token,i.nextEmbedded)if(i.nextEmbedded==="@pop"){if(!f)throw s.createError(this._lexer,"cannot pop embedded language if not inside one");f=null}else{if(f)throw s.createError(this._lexer,"cannot enter embedded language from within an embedded language");M=s.substituteMatches(this._lexer,i.nextEmbedded,m,h,S)}if(i.goBack&&(p=Math.max(0,p-i.goBack)),i.switchTo&&typeof i.switchTo=="string"){let o=s.substituteMatches(this._lexer,i.switchTo,m,h,S);if(o[0]==="@"&&(o=o.substr(1)),s.findRules(this._lexer,o))d=d.switchTo(o);else throw s.createError(this._lexer,"trying to switch to a state '"+o+"' that is undefined in rule: "+this._safeRuleName(T))}else{if(i.transform&&typeof i.transform=="function")throw s.createError(this._lexer,"action.transform not supported");if(i.next)if(i.next==="@push"){if(d.depth>=this._lexer.maxStack)throw s.createError(this._lexer,"maximum tokenizer stack size reached: ["+d.state+","+d.parent.state+",...]");d=d.push(S)}else if(i.next==="@pop"){if(d.depth<=1)throw s.createError(this._lexer,"trying to pop an empty stack in rule: "+this._safeRuleName(T));d=d.pop()}else if(i.next==="@popall")d=d.popall();else{let o=s.substituteMatches(this._lexer,i.next,m,h,S);if(o[0]==="@"&&(o=o.substr(1)),s.findRules(this._lexer,o))d=d.push(o);else throw s.createError(this._lexer,"trying to set a next state '"+o+"' that is undefined in rule: "+this._safeRuleName(T))}}i.log&&typeof i.log=="string"&&s.log(this._lexer,this._lexer.languageId+": "+s.substituteMatches(this._lexer,i.log,m,h,S))}if(_===null)throw s.createError(this._lexer,"lexer rule has no well-defined action in rule: "+this._safeRuleName(T));const N=o=>{const k=this._languageService.getLanguageIdByLanguageName(o)||this._languageService.getLanguageIdByMimeType(o)||o,I=this._getNestedEmbeddedLanguageData(k);if(p<c){const j=t.substr(p);return this._nestedTokenize(j,n,E.create(d,I),r+p,u)}else return E.create(d,I)};if(Array.isArray(_)){if(b&&b.groups.length>0)throw s.createError(this._lexer,"groups cannot be nested: "+this._safeRuleName(T));if(h.length!==_.length+1)throw s.createError(this._lexer,"matched number of groups does not match the number of actions in rule: "+this._safeRuleName(T));let o=0;for(let k=1;k<h.length;k++)o+=h[k].length;if(o!==m.length)throw s.createError(this._lexer,"with groups, all characters should be matched in consecutive groups in rule: "+this._safeRuleName(T));b={rule:T,matches:h,groups:[]};for(let k=0;k<_.length;k++)b.groups[k]={action:_[k],matched:h[k+1]};p-=m.length;continue}else{if(_==="@rematch"&&(p-=m.length,m="",h=null,_="",M!==null))return N(M);if(m.length===0){if(c===0||P!==d.depth||S!==d.state||(b?b.groups.length:0)!==U)continue;throw s.createError(this._lexer,"no progress in tokenizer in rule: "+this._safeRuleName(T))}let o=null;if(s.isString(_)&&_.indexOf("@brackets")===0){const k=_.substr(9),I=$(this._lexer,m);if(!I)throw s.createError(this._lexer,"@brackets token returned but no bracket defined as: "+m);o=s.sanitize(I.token+k)}else{const k=_===""?"":_+this._lexer.tokenPostfix;o=s.sanitize(k)}A<g&&u.emit(A+r,o)}if(M!==null)return N(M)}return E.create(d,f)}_getNestedEmbeddedLanguageData(t){if(!this._languageService.isRegisteredLanguageId(t))return new y(t,q);t!==this._languageId&&(this._languageService.requestBasicLanguageFeatures(t),L.TokenizationRegistry.getOrCreate(t),this._embeddedLanguages[t]=!0);const n=L.TokenizationRegistry.get(t);return n?new y(t,n.getInitialState()):new y(t,q)}};z=O([B(4,Q)],z);function $(x,e){if(!e)return null;e=s.fixCase(x,e);const t=x.brackets;for(const n of t){if(n.open===e)return{token:n.token,bracketType:s.MonarchBracket.Open};if(n.close===e)return{token:n.token,bracketType:s.MonarchBracket.Close}}return null}export{z as MonarchTokenizer};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var MonarchTokenizer_1;
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import * as languages from '../../../common/languages.js';
+import { NullState, nullTokenizeEncoded, nullTokenize } from '../../../common/languages/nullTokenize.js';
+import { ILanguageService } from '../../../common/languages/language.js';
+import * as monarchCommon from './monarchCommon.js';
+import { IStandaloneThemeService } from '../standaloneTheme.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+const CACHE_STACK_DEPTH = 5;
+class MonarchStackElementFactory {
+    static { this._INSTANCE = new MonarchStackElementFactory(CACHE_STACK_DEPTH); }
+    static create(parent, state) {
+        return this._INSTANCE.create(parent, state);
+    }
+    constructor(maxCacheDepth) {
+        this._maxCacheDepth = maxCacheDepth;
+        this._entries = Object.create(null);
+    }
+    create(parent, state) {
+        if (parent !== null && parent.depth >= this._maxCacheDepth) {
+            return new MonarchStackElement(parent, state);
+        }
+        let stackElementId = MonarchStackElement.getStackElementId(parent);
+        if (stackElementId.length > 0) {
+            stackElementId += '|';
+        }
+        stackElementId += state;
+        let result = this._entries[stackElementId];
+        if (result) {
+            return result;
+        }
+        result = new MonarchStackElement(parent, state);
+        this._entries[stackElementId] = result;
+        return result;
+    }
+}
+class MonarchStackElement {
+    constructor(parent, state) {
+        this.parent = parent;
+        this.state = state;
+        this.depth = (this.parent ? this.parent.depth : 0) + 1;
+    }
+    static getStackElementId(element) {
+        let result = '';
+        while (element !== null) {
+            if (result.length > 0) {
+                result += '|';
+            }
+            result += element.state;
+            element = element.parent;
+        }
+        return result;
+    }
+    static _equals(a, b) {
+        while (a !== null && b !== null) {
+            if (a === b) {
+                return true;
+            }
+            if (a.state !== b.state) {
+                return false;
+            }
+            a = a.parent;
+            b = b.parent;
+        }
+        if (a === null && b === null) {
+            return true;
+        }
+        return false;
+    }
+    equals(other) {
+        return MonarchStackElement._equals(this, other);
+    }
+    push(state) {
+        return MonarchStackElementFactory.create(this, state);
+    }
+    pop() {
+        return this.parent;
+    }
+    popall() {
+        let result = this;
+        while (result.parent) {
+            result = result.parent;
+        }
+        return result;
+    }
+    switchTo(state) {
+        return MonarchStackElementFactory.create(this.parent, state);
+    }
+}
+class EmbeddedLanguageData {
+    constructor(languageId, state) {
+        this.languageId = languageId;
+        this.state = state;
+    }
+    equals(other) {
+        return (this.languageId === other.languageId
+            && this.state.equals(other.state));
+    }
+    clone() {
+        const stateClone = this.state.clone();
+        if (stateClone === this.state) {
+            return this;
+        }
+        return new EmbeddedLanguageData(this.languageId, this.state);
+    }
+}
+class MonarchLineStateFactory {
+    static { this._INSTANCE = new MonarchLineStateFactory(CACHE_STACK_DEPTH); }
+    static create(stack, embeddedLanguageData) {
+        return this._INSTANCE.create(stack, embeddedLanguageData);
+    }
+    constructor(maxCacheDepth) {
+        this._maxCacheDepth = maxCacheDepth;
+        this._entries = Object.create(null);
+    }
+    create(stack, embeddedLanguageData) {
+        if (embeddedLanguageData !== null) {
+            return new MonarchLineState(stack, embeddedLanguageData);
+        }
+        if (stack !== null && stack.depth >= this._maxCacheDepth) {
+            return new MonarchLineState(stack, embeddedLanguageData);
+        }
+        const stackElementId = MonarchStackElement.getStackElementId(stack);
+        let result = this._entries[stackElementId];
+        if (result) {
+            return result;
+        }
+        result = new MonarchLineState(stack, null);
+        this._entries[stackElementId] = result;
+        return result;
+    }
+}
+class MonarchLineState {
+    constructor(stack, embeddedLanguageData) {
+        this.stack = stack;
+        this.embeddedLanguageData = embeddedLanguageData;
+    }
+    clone() {
+        const embeddedlanguageDataClone = this.embeddedLanguageData ? this.embeddedLanguageData.clone() : null;
+        if (embeddedlanguageDataClone === this.embeddedLanguageData) {
+            return this;
+        }
+        return MonarchLineStateFactory.create(this.stack, this.embeddedLanguageData);
+    }
+    equals(other) {
+        if (!(other instanceof MonarchLineState)) {
+            return false;
+        }
+        if (!this.stack.equals(other.stack)) {
+            return false;
+        }
+        if (this.embeddedLanguageData === null && other.embeddedLanguageData === null) {
+            return true;
+        }
+        if (this.embeddedLanguageData === null || other.embeddedLanguageData === null) {
+            return false;
+        }
+        return this.embeddedLanguageData.equals(other.embeddedLanguageData);
+    }
+}
+class MonarchClassicTokensCollector {
+    constructor() {
+        this._tokens = [];
+        this._languageId = null;
+        this._lastTokenType = null;
+        this._lastTokenLanguage = null;
+    }
+    enterLanguage(languageId) {
+        this._languageId = languageId;
+    }
+    emit(startOffset, type) {
+        if (this._lastTokenType === type && this._lastTokenLanguage === this._languageId) {
+            return;
+        }
+        this._lastTokenType = type;
+        this._lastTokenLanguage = this._languageId;
+        this._tokens.push(new languages.Token(startOffset, type, this._languageId));
+    }
+    nestedLanguageTokenize(embeddedLanguageLine, hasEOL, embeddedLanguageData, offsetDelta) {
+        const nestedLanguageId = embeddedLanguageData.languageId;
+        const embeddedModeState = embeddedLanguageData.state;
+        const nestedLanguageTokenizationSupport = languages.TokenizationRegistry.get(nestedLanguageId);
+        if (!nestedLanguageTokenizationSupport) {
+            this.enterLanguage(nestedLanguageId);
+            this.emit(offsetDelta, '');
+            return embeddedModeState;
+        }
+        const nestedResult = nestedLanguageTokenizationSupport.tokenize(embeddedLanguageLine, hasEOL, embeddedModeState);
+        if (offsetDelta !== 0) {
+            for (const token of nestedResult.tokens) {
+                this._tokens.push(new languages.Token(token.offset + offsetDelta, token.type, token.language));
+            }
+        }
+        else {
+            this._tokens = this._tokens.concat(nestedResult.tokens);
+        }
+        this._lastTokenType = null;
+        this._lastTokenLanguage = null;
+        this._languageId = null;
+        return nestedResult.endState;
+    }
+    finalize(endState) {
+        return new languages.TokenizationResult(this._tokens, endState);
+    }
+}
+class MonarchModernTokensCollector {
+    constructor(languageService, theme) {
+        this._languageService = languageService;
+        this._theme = theme;
+        this._prependTokens = null;
+        this._tokens = [];
+        this._currentLanguageId = 0;
+        this._lastTokenMetadata = 0;
+    }
+    enterLanguage(languageId) {
+        this._currentLanguageId = this._languageService.languageIdCodec.encodeLanguageId(languageId);
+    }
+    emit(startOffset, type) {
+        const metadata = this._theme.match(this._currentLanguageId, type) | 1024;
+        if (this._lastTokenMetadata === metadata) {
+            return;
+        }
+        this._lastTokenMetadata = metadata;
+        this._tokens.push(startOffset);
+        this._tokens.push(metadata);
+    }
+    static _merge(a, b, c) {
+        const aLen = (a !== null ? a.length : 0);
+        const bLen = b.length;
+        const cLen = (c !== null ? c.length : 0);
+        if (aLen === 0 && bLen === 0 && cLen === 0) {
+            return new Uint32Array(0);
+        }
+        if (aLen === 0 && bLen === 0) {
+            return c;
+        }
+        if (bLen === 0 && cLen === 0) {
+            return a;
+        }
+        const result = new Uint32Array(aLen + bLen + cLen);
+        if (a !== null) {
+            result.set(a);
+        }
+        for (let i = 0; i < bLen; i++) {
+            result[aLen + i] = b[i];
+        }
+        if (c !== null) {
+            result.set(c, aLen + bLen);
+        }
+        return result;
+    }
+    nestedLanguageTokenize(embeddedLanguageLine, hasEOL, embeddedLanguageData, offsetDelta) {
+        const nestedLanguageId = embeddedLanguageData.languageId;
+        const embeddedModeState = embeddedLanguageData.state;
+        const nestedLanguageTokenizationSupport = languages.TokenizationRegistry.get(nestedLanguageId);
+        if (!nestedLanguageTokenizationSupport) {
+            this.enterLanguage(nestedLanguageId);
+            this.emit(offsetDelta, '');
+            return embeddedModeState;
+        }
+        const nestedResult = nestedLanguageTokenizationSupport.tokenizeEncoded(embeddedLanguageLine, hasEOL, embeddedModeState);
+        if (offsetDelta !== 0) {
+            for (let i = 0, len = nestedResult.tokens.length; i < len; i += 2) {
+                nestedResult.tokens[i] += offsetDelta;
+            }
+        }
+        this._prependTokens = MonarchModernTokensCollector._merge(this._prependTokens, this._tokens, nestedResult.tokens);
+        this._tokens = [];
+        this._currentLanguageId = 0;
+        this._lastTokenMetadata = 0;
+        return nestedResult.endState;
+    }
+    finalize(endState) {
+        return new languages.EncodedTokenizationResult(MonarchModernTokensCollector._merge(this._prependTokens, this._tokens, null), endState);
+    }
+}
+let MonarchTokenizer = MonarchTokenizer_1 = class MonarchTokenizer extends Disposable {
+    constructor(languageService, standaloneThemeService, languageId, lexer, _configurationService) {
+        super();
+        this._configurationService = _configurationService;
+        this._languageService = languageService;
+        this._standaloneThemeService = standaloneThemeService;
+        this._languageId = languageId;
+        this._lexer = lexer;
+        this._embeddedLanguages = Object.create(null);
+        this.embeddedLoaded = Promise.resolve(undefined);
+        let emitting = false;
+        this._register(languages.TokenizationRegistry.onDidChange((e) => {
+            if (emitting) {
+                return;
+            }
+            let isOneOfMyEmbeddedModes = false;
+            for (let i = 0, len = e.changedLanguages.length; i < len; i++) {
+                const language = e.changedLanguages[i];
+                if (this._embeddedLanguages[language]) {
+                    isOneOfMyEmbeddedModes = true;
+                    break;
+                }
+            }
+            if (isOneOfMyEmbeddedModes) {
+                emitting = true;
+                languages.TokenizationRegistry.handleChange([this._languageId]);
+                emitting = false;
+            }
+        }));
+        this._maxTokenizationLineLength = this._configurationService.getValue('editor.maxTokenizationLineLength', {
+            overrideIdentifier: this._languageId
+        });
+        this._register(this._configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('editor.maxTokenizationLineLength')) {
+                this._maxTokenizationLineLength = this._configurationService.getValue('editor.maxTokenizationLineLength', {
+                    overrideIdentifier: this._languageId
+                });
+            }
+        }));
+    }
+    getLoadStatus() {
+        const promises = [];
+        for (const nestedLanguageId in this._embeddedLanguages) {
+            const tokenizationSupport = languages.TokenizationRegistry.get(nestedLanguageId);
+            if (tokenizationSupport) {
+                if (tokenizationSupport instanceof MonarchTokenizer_1) {
+                    const nestedModeStatus = tokenizationSupport.getLoadStatus();
+                    if (nestedModeStatus.loaded === false) {
+                        promises.push(nestedModeStatus.promise);
+                    }
+                }
+                continue;
+            }
+            if (!languages.TokenizationRegistry.isResolved(nestedLanguageId)) {
+                promises.push(languages.TokenizationRegistry.getOrCreate(nestedLanguageId));
+            }
+        }
+        if (promises.length === 0) {
+            return {
+                loaded: true
+            };
+        }
+        return {
+            loaded: false,
+            promise: Promise.all(promises).then(_ => undefined)
+        };
+    }
+    getInitialState() {
+        const rootState = MonarchStackElementFactory.create(null, this._lexer.start);
+        return MonarchLineStateFactory.create(rootState, null);
+    }
+    tokenize(line, hasEOL, lineState) {
+        if (line.length >= this._maxTokenizationLineLength) {
+            return nullTokenize(this._languageId, lineState);
+        }
+        const tokensCollector = new MonarchClassicTokensCollector();
+        const endLineState = this._tokenize(line, hasEOL, lineState, tokensCollector);
+        return tokensCollector.finalize(endLineState);
+    }
+    tokenizeEncoded(line, hasEOL, lineState) {
+        if (line.length >= this._maxTokenizationLineLength) {
+            return nullTokenizeEncoded(this._languageService.languageIdCodec.encodeLanguageId(this._languageId), lineState);
+        }
+        const tokensCollector = new MonarchModernTokensCollector(this._languageService, this._standaloneThemeService.getColorTheme().tokenTheme);
+        const endLineState = this._tokenize(line, hasEOL, lineState, tokensCollector);
+        return tokensCollector.finalize(endLineState);
+    }
+    _tokenize(line, hasEOL, lineState, collector) {
+        if (lineState.embeddedLanguageData) {
+            return this._nestedTokenize(line, hasEOL, lineState, 0, collector);
+        }
+        else {
+            return this._myTokenize(line, hasEOL, lineState, 0, collector);
+        }
+    }
+    _findLeavingNestedLanguageOffset(line, state) {
+        let rules = this._lexer.tokenizer[state.stack.state];
+        if (!rules) {
+            rules = monarchCommon.findRules(this._lexer, state.stack.state);
+            if (!rules) {
+                throw monarchCommon.createError(this._lexer, 'tokenizer state is not defined: ' + state.stack.state);
+            }
+        }
+        let popOffset = -1;
+        let hasEmbeddedPopRule = false;
+        for (const rule of rules) {
+            if (!monarchCommon.isIAction(rule.action) || rule.action.nextEmbedded !== '@pop') {
+                continue;
+            }
+            hasEmbeddedPopRule = true;
+            let regex = rule.resolveRegex(state.stack.state);
+            const regexSource = regex.source;
+            if (regexSource.substr(0, 4) === '^(?:' && regexSource.substr(regexSource.length - 1, 1) === ')') {
+                const flags = (regex.ignoreCase ? 'i' : '') + (regex.unicode ? 'u' : '');
+                regex = new RegExp(regexSource.substr(4, regexSource.length - 5), flags);
+            }
+            const result = line.search(regex);
+            if (result === -1 || (result !== 0 && rule.matchOnlyAtLineStart)) {
+                continue;
+            }
+            if (popOffset === -1 || result < popOffset) {
+                popOffset = result;
+            }
+        }
+        if (!hasEmbeddedPopRule) {
+            throw monarchCommon.createError(this._lexer, 'no rule containing nextEmbedded: "@pop" in tokenizer embedded state: ' + state.stack.state);
+        }
+        return popOffset;
+    }
+    _nestedTokenize(line, hasEOL, lineState, offsetDelta, tokensCollector) {
+        const popOffset = this._findLeavingNestedLanguageOffset(line, lineState);
+        if (popOffset === -1) {
+            const nestedEndState = tokensCollector.nestedLanguageTokenize(line, hasEOL, lineState.embeddedLanguageData, offsetDelta);
+            return MonarchLineStateFactory.create(lineState.stack, new EmbeddedLanguageData(lineState.embeddedLanguageData.languageId, nestedEndState));
+        }
+        const nestedLanguageLine = line.substring(0, popOffset);
+        if (nestedLanguageLine.length > 0) {
+            tokensCollector.nestedLanguageTokenize(nestedLanguageLine, false, lineState.embeddedLanguageData, offsetDelta);
+        }
+        const restOfTheLine = line.substring(popOffset);
+        return this._myTokenize(restOfTheLine, hasEOL, lineState, offsetDelta + popOffset, tokensCollector);
+    }
+    _safeRuleName(rule) {
+        if (rule) {
+            return rule.name;
+        }
+        return '(unknown)';
+    }
+    _myTokenize(lineWithoutLF, hasEOL, lineState, offsetDelta, tokensCollector) {
+        tokensCollector.enterLanguage(this._languageId);
+        const lineWithoutLFLength = lineWithoutLF.length;
+        const line = (hasEOL && this._lexer.includeLF ? lineWithoutLF + '\n' : lineWithoutLF);
+        const lineLength = line.length;
+        let embeddedLanguageData = lineState.embeddedLanguageData;
+        let stack = lineState.stack;
+        let pos = 0;
+        let groupMatching = null;
+        let forceEvaluation = true;
+        while (forceEvaluation || pos < lineLength) {
+            const pos0 = pos;
+            const stackLen0 = stack.depth;
+            const groupLen0 = groupMatching ? groupMatching.groups.length : 0;
+            const state = stack.state;
+            let matches = null;
+            let matched = null;
+            let action = null;
+            let rule = null;
+            let enteringEmbeddedLanguage = null;
+            if (groupMatching) {
+                matches = groupMatching.matches;
+                const groupEntry = groupMatching.groups.shift();
+                matched = groupEntry.matched;
+                action = groupEntry.action;
+                rule = groupMatching.rule;
+                if (groupMatching.groups.length === 0) {
+                    groupMatching = null;
+                }
+            }
+            else {
+                if (!forceEvaluation && pos >= lineLength) {
+                    break;
+                }
+                forceEvaluation = false;
+                let rules = this._lexer.tokenizer[state];
+                if (!rules) {
+                    rules = monarchCommon.findRules(this._lexer, state);
+                    if (!rules) {
+                        throw monarchCommon.createError(this._lexer, 'tokenizer state is not defined: ' + state);
+                    }
+                }
+                const restOfLine = line.substr(pos);
+                for (const rule of rules) {
+                    if (pos === 0 || !rule.matchOnlyAtLineStart) {
+                        matches = restOfLine.match(rule.resolveRegex(state));
+                        if (matches) {
+                            matched = matches[0];
+                            action = rule.action;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!matches) {
+                matches = [''];
+                matched = '';
+            }
+            if (!action) {
+                if (pos < lineLength) {
+                    matches = [line.charAt(pos)];
+                    matched = matches[0];
+                }
+                action = this._lexer.defaultToken;
+            }
+            if (matched === null) {
+                break;
+            }
+            pos += matched.length;
+            while (monarchCommon.isFuzzyAction(action) && monarchCommon.isIAction(action) && action.test) {
+                action = action.test(matched, matches, state, pos === lineLength);
+            }
+            let result = null;
+            if (typeof action === 'string' || Array.isArray(action)) {
+                result = action;
+            }
+            else if (action.group) {
+                result = action.group;
+            }
+            else if (action.token !== null && action.token !== undefined) {
+                if (action.tokenSubst) {
+                    result = monarchCommon.substituteMatches(this._lexer, action.token, matched, matches, state);
+                }
+                else {
+                    result = action.token;
+                }
+                if (action.nextEmbedded) {
+                    if (action.nextEmbedded === '@pop') {
+                        if (!embeddedLanguageData) {
+                            throw monarchCommon.createError(this._lexer, 'cannot pop embedded language if not inside one');
+                        }
+                        embeddedLanguageData = null;
+                    }
+                    else if (embeddedLanguageData) {
+                        throw monarchCommon.createError(this._lexer, 'cannot enter embedded language from within an embedded language');
+                    }
+                    else {
+                        enteringEmbeddedLanguage = monarchCommon.substituteMatches(this._lexer, action.nextEmbedded, matched, matches, state);
+                    }
+                }
+                if (action.goBack) {
+                    pos = Math.max(0, pos - action.goBack);
+                }
+                if (action.switchTo && typeof action.switchTo === 'string') {
+                    let nextState = monarchCommon.substituteMatches(this._lexer, action.switchTo, matched, matches, state);
+                    if (nextState[0] === '@') {
+                        nextState = nextState.substr(1);
+                    }
+                    if (!monarchCommon.findRules(this._lexer, nextState)) {
+                        throw monarchCommon.createError(this._lexer, 'trying to switch to a state \'' + nextState + '\' that is undefined in rule: ' + this._safeRuleName(rule));
+                    }
+                    else {
+                        stack = stack.switchTo(nextState);
+                    }
+                }
+                else if (action.transform && typeof action.transform === 'function') {
+                    throw monarchCommon.createError(this._lexer, 'action.transform not supported');
+                }
+                else if (action.next) {
+                    if (action.next === '@push') {
+                        if (stack.depth >= this._lexer.maxStack) {
+                            throw monarchCommon.createError(this._lexer, 'maximum tokenizer stack size reached: [' +
+                                stack.state + ',' + stack.parent.state + ',...]');
+                        }
+                        else {
+                            stack = stack.push(state);
+                        }
+                    }
+                    else if (action.next === '@pop') {
+                        if (stack.depth <= 1) {
+                            throw monarchCommon.createError(this._lexer, 'trying to pop an empty stack in rule: ' + this._safeRuleName(rule));
+                        }
+                        else {
+                            stack = stack.pop();
+                        }
+                    }
+                    else if (action.next === '@popall') {
+                        stack = stack.popall();
+                    }
+                    else {
+                        let nextState = monarchCommon.substituteMatches(this._lexer, action.next, matched, matches, state);
+                        if (nextState[0] === '@') {
+                            nextState = nextState.substr(1);
+                        }
+                        if (!monarchCommon.findRules(this._lexer, nextState)) {
+                            throw monarchCommon.createError(this._lexer, 'trying to set a next state \'' + nextState + '\' that is undefined in rule: ' + this._safeRuleName(rule));
+                        }
+                        else {
+                            stack = stack.push(nextState);
+                        }
+                    }
+                }
+                if (action.log && typeof (action.log) === 'string') {
+                    monarchCommon.log(this._lexer, this._lexer.languageId + ': ' + monarchCommon.substituteMatches(this._lexer, action.log, matched, matches, state));
+                }
+            }
+            if (result === null) {
+                throw monarchCommon.createError(this._lexer, 'lexer rule has no well-defined action in rule: ' + this._safeRuleName(rule));
+            }
+            const computeNewStateForEmbeddedLanguage = (enteringEmbeddedLanguage) => {
+                const languageId = (this._languageService.getLanguageIdByLanguageName(enteringEmbeddedLanguage)
+                    || this._languageService.getLanguageIdByMimeType(enteringEmbeddedLanguage)
+                    || enteringEmbeddedLanguage);
+                const embeddedLanguageData = this._getNestedEmbeddedLanguageData(languageId);
+                if (pos < lineLength) {
+                    const restOfLine = lineWithoutLF.substr(pos);
+                    return this._nestedTokenize(restOfLine, hasEOL, MonarchLineStateFactory.create(stack, embeddedLanguageData), offsetDelta + pos, tokensCollector);
+                }
+                else {
+                    return MonarchLineStateFactory.create(stack, embeddedLanguageData);
+                }
+            };
+            if (Array.isArray(result)) {
+                if (groupMatching && groupMatching.groups.length > 0) {
+                    throw monarchCommon.createError(this._lexer, 'groups cannot be nested: ' + this._safeRuleName(rule));
+                }
+                if (matches.length !== result.length + 1) {
+                    throw monarchCommon.createError(this._lexer, 'matched number of groups does not match the number of actions in rule: ' + this._safeRuleName(rule));
+                }
+                let totalLen = 0;
+                for (let i = 1; i < matches.length; i++) {
+                    totalLen += matches[i].length;
+                }
+                if (totalLen !== matched.length) {
+                    throw monarchCommon.createError(this._lexer, 'with groups, all characters should be matched in consecutive groups in rule: ' + this._safeRuleName(rule));
+                }
+                groupMatching = {
+                    rule: rule,
+                    matches: matches,
+                    groups: []
+                };
+                for (let i = 0; i < result.length; i++) {
+                    groupMatching.groups[i] = {
+                        action: result[i],
+                        matched: matches[i + 1]
+                    };
+                }
+                pos -= matched.length;
+                continue;
+            }
+            else {
+                if (result === '@rematch') {
+                    pos -= matched.length;
+                    matched = '';
+                    matches = null;
+                    result = '';
+                    if (enteringEmbeddedLanguage !== null) {
+                        return computeNewStateForEmbeddedLanguage(enteringEmbeddedLanguage);
+                    }
+                }
+                if (matched.length === 0) {
+                    if (lineLength === 0 || stackLen0 !== stack.depth || state !== stack.state || (!groupMatching ? 0 : groupMatching.groups.length) !== groupLen0) {
+                        continue;
+                    }
+                    else {
+                        throw monarchCommon.createError(this._lexer, 'no progress in tokenizer in rule: ' + this._safeRuleName(rule));
+                    }
+                }
+                let tokenType = null;
+                if (monarchCommon.isString(result) && result.indexOf('@brackets') === 0) {
+                    const rest = result.substr('@brackets'.length);
+                    const bracket = findBracket(this._lexer, matched);
+                    if (!bracket) {
+                        throw monarchCommon.createError(this._lexer, '@brackets token returned but no bracket defined as: ' + matched);
+                    }
+                    tokenType = monarchCommon.sanitize(bracket.token + rest);
+                }
+                else {
+                    const token = (result === '' ? '' : result + this._lexer.tokenPostfix);
+                    tokenType = monarchCommon.sanitize(token);
+                }
+                if (pos0 < lineWithoutLFLength) {
+                    tokensCollector.emit(pos0 + offsetDelta, tokenType);
+                }
+            }
+            if (enteringEmbeddedLanguage !== null) {
+                return computeNewStateForEmbeddedLanguage(enteringEmbeddedLanguage);
+            }
+        }
+        return MonarchLineStateFactory.create(stack, embeddedLanguageData);
+    }
+    _getNestedEmbeddedLanguageData(languageId) {
+        if (!this._languageService.isRegisteredLanguageId(languageId)) {
+            return new EmbeddedLanguageData(languageId, NullState);
+        }
+        if (languageId !== this._languageId) {
+            this._languageService.requestBasicLanguageFeatures(languageId);
+            languages.TokenizationRegistry.getOrCreate(languageId);
+            this._embeddedLanguages[languageId] = true;
+        }
+        const tokenizationSupport = languages.TokenizationRegistry.get(languageId);
+        if (tokenizationSupport) {
+            return new EmbeddedLanguageData(languageId, tokenizationSupport.getInitialState());
+        }
+        return new EmbeddedLanguageData(languageId, NullState);
+    }
+};
+MonarchTokenizer = MonarchTokenizer_1 = __decorate([
+    __param(4, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, String, Object, Object])
+], MonarchTokenizer);
+export { MonarchTokenizer };
+function findBracket(lexer, matched) {
+    if (!matched) {
+        return null;
+    }
+    matched = monarchCommon.fixCase(lexer, matched);
+    const brackets = lexer.brackets;
+    for (const bracket of brackets) {
+        if (bracket.open === matched) {
+            return { token: bracket.token, bracketType: 1 };
+        }
+        else if (bracket.close === matched) {
+            return { token: bracket.token, bracketType: -1 };
+        }
+    }
+    return null;
+}

@@ -1,1 +1,203 @@
-import{VSBuffer as v}from"../../../../base/common/buffer.js";import{Emitter as h,Event as I}from"../../../../base/common/event.js";import{Disposable as O,DisposableStore as M,toDisposable as R}from"../../../../base/common/lifecycle.js";import{clamp as u}from"../../../../base/common/numbers.js";import{assertNever as F}from"../../../../base/common/assert.js";import"../../../../base/common/uri.js";import{FileChangeType as y,FilePermission as E,FileSystemProviderCapabilities as b,FileSystemProviderErrorCode as s,FileType as U,createFileSystemProviderError as a}from"../../../../platform/files/common/files.js";import{DEBUG_MEMORY_SCHEME as S,MemoryRangeType as d,State as g}from"../common/debug.js";const P=/range=([0-9]+):([0-9]+)/;class K{constructor(t){this.debugService=t;t.onDidEndSession(({session:e})=>{for(const[r,i]of this.fdMemory)i.session===e&&this.close(r)})}memoryFdCounter=0;fdMemory=new Map;changeEmitter=new h;onDidChangeCapabilities=I.None;onDidChangeFile=this.changeEmitter.event;capabilities=0|b.PathCaseSensitive|b.FileOpenReadWriteClose;watch(t,e){if(e.recursive)return R(()=>{});const{session:r,memoryReference:i,offset:o}=this.parseUri(t),n=new M;return n.add(r.onDidChangeState(()=>{(r.state===g.Running||r.state===g.Inactive)&&this.changeEmitter.fire([{type:y.DELETED,resource:t}])})),n.add(r.onDidInvalidateMemory(m=>{m.body.memoryReference===i&&(o&&(m.body.offset>=o.toOffset||m.body.offset+m.body.count<o.fromOffset)||this.changeEmitter.fire([{resource:t,type:y.UPDATED}]))})),n}stat(t){const{readOnly:e}=this.parseUri(t);return Promise.resolve({type:U.File,mtime:0,ctime:0,size:0,permissions:e?E.Readonly:void 0})}mkdir(){throw a("Not allowed",s.NoPermissions)}readdir(){throw a("Not allowed",s.NoPermissions)}delete(){throw a("Not allowed",s.NoPermissions)}rename(){throw a("Not allowed",s.NoPermissions)}open(t,e){const{session:r,memoryReference:i,offset:o}=this.parseUri(t),n=this.memoryFdCounter++;let m=r.getMemory(i);return o&&(m=new D(m,o)),this.fdMemory.set(n,{session:r,region:m}),Promise.resolve(n)}close(t){return this.fdMemory.get(t)?.region.dispose(),this.fdMemory.delete(t),Promise.resolve()}async writeFile(t,e){const{offset:r}=this.parseUri(t);if(!r)throw a("Range must be present to read a file",s.FileNotFound);const i=await this.open(t,{create:!1});try{await this.write(i,r.fromOffset,e,0,e.length)}finally{this.close(i)}}async readFile(t){const{offset:e}=this.parseUri(t);if(!e)throw a("Range must be present to read a file",s.FileNotFound);const r=new Uint8Array(e.toOffset-e.fromOffset),i=await this.open(t,{create:!1});try{return await this.read(i,e.fromOffset,r,0,r.length),r}finally{this.close(i)}}async read(t,e,r,i,o){const n=this.fdMemory.get(t);if(!n)throw a("No file with that descriptor open",s.Unavailable);const m=await n.region.read(e,o);let f=0;for(const l of m)switch(l.type){case d.Unreadable:return f;case d.Error:if(f>0)return f;throw a(l.error,s.Unknown);case d.Valid:{const c=Math.max(0,e-l.offset),p=l.data.slice(c,Math.min(l.data.byteLength,c+(o-f)));r.set(p.buffer,i+f),f+=p.byteLength;break}default:F(l)}return f}write(t,e,r,i,o){const n=this.fdMemory.get(t);if(!n)throw a("No file with that descriptor open",s.Unavailable);return n.region.write(e,v.wrap(r).slice(i,i+o))}parseUri(t){if(t.scheme!==S)throw a(`Cannot open file with scheme ${t.scheme}`,s.FileNotFound);const e=this.debugService.getModel().getSession(t.authority);if(!e)throw a("Debug session not found",s.FileNotFound);let r;const i=P.exec(t.query);i&&(r={fromOffset:Number(i[1]),toOffset:Number(i[2])});const[,o]=t.path.split("/");return{session:e,offset:r,readOnly:!e.capabilities.supportsWriteMemoryRequest,sessionId:t.authority,memoryReference:decodeURIComponent(o)}}}class D extends O{constructor(e,r){super();this.parent=e;this.range=r;this.writable=e.writable,this._register(e),this._register(e.onDidInvalidate(i=>{const o=u(i.fromOffset-r.fromOffset,0,this.width),n=u(i.toOffset-r.fromOffset,0,this.width);n>o&&this.invalidateEmitter.fire({fromOffset:o,toOffset:n})}))}invalidateEmitter=new h;onDidInvalidate=this.invalidateEmitter.event;writable;width=this.range.toOffset-this.range.fromOffset;read(e,r){if(e<0)throw new RangeError(`Invalid fromOffset: ${e}`);return this.parent.read(this.range.fromOffset+e,this.range.fromOffset+Math.min(r,this.width))}write(e,r){return this.parent.write(this.range.fromOffset+e,r)}}export{K as DebugMemoryFileSystemProvider};
+import { VSBuffer } from '../../../../base/common/buffer.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { clamp } from '../../../../base/common/numbers.js';
+import { assertNever } from '../../../../base/common/assert.js';
+import { FilePermission, FileSystemProviderErrorCode, FileType, createFileSystemProviderError } from '../../../../platform/files/common/files.js';
+import { DEBUG_MEMORY_SCHEME } from '../common/debug.js';
+const rangeRe = /range=([0-9]+):([0-9]+)/;
+export class DebugMemoryFileSystemProvider {
+    constructor(debugService) {
+        this.debugService = debugService;
+        this.memoryFdCounter = 0;
+        this.fdMemory = new Map();
+        this.changeEmitter = new Emitter();
+        this.onDidChangeCapabilities = Event.None;
+        this.onDidChangeFile = this.changeEmitter.event;
+        this.capabilities = 0
+            | 1024
+            | 4;
+        debugService.onDidEndSession(({ session }) => {
+            for (const [fd, memory] of this.fdMemory) {
+                if (memory.session === session) {
+                    this.close(fd);
+                }
+            }
+        });
+    }
+    watch(resource, opts) {
+        if (opts.recursive) {
+            return toDisposable(() => { });
+        }
+        const { session, memoryReference, offset } = this.parseUri(resource);
+        const disposable = new DisposableStore();
+        disposable.add(session.onDidChangeState(() => {
+            if (session.state === 3 || session.state === 0) {
+                this.changeEmitter.fire([{ type: 2, resource }]);
+            }
+        }));
+        disposable.add(session.onDidInvalidateMemory(e => {
+            if (e.body.memoryReference !== memoryReference) {
+                return;
+            }
+            if (offset && (e.body.offset >= offset.toOffset || e.body.offset + e.body.count < offset.fromOffset)) {
+                return;
+            }
+            this.changeEmitter.fire([{ resource, type: 0 }]);
+        }));
+        return disposable;
+    }
+    stat(file) {
+        const { readOnly } = this.parseUri(file);
+        return Promise.resolve({
+            type: FileType.File,
+            mtime: 0,
+            ctime: 0,
+            size: 0,
+            permissions: readOnly ? FilePermission.Readonly : undefined,
+        });
+    }
+    mkdir() {
+        throw createFileSystemProviderError(`Not allowed`, FileSystemProviderErrorCode.NoPermissions);
+    }
+    readdir() {
+        throw createFileSystemProviderError(`Not allowed`, FileSystemProviderErrorCode.NoPermissions);
+    }
+    delete() {
+        throw createFileSystemProviderError(`Not allowed`, FileSystemProviderErrorCode.NoPermissions);
+    }
+    rename() {
+        throw createFileSystemProviderError(`Not allowed`, FileSystemProviderErrorCode.NoPermissions);
+    }
+    open(resource, _opts) {
+        const { session, memoryReference, offset } = this.parseUri(resource);
+        const fd = this.memoryFdCounter++;
+        let region = session.getMemory(memoryReference);
+        if (offset) {
+            region = new MemoryRegionView(region, offset);
+        }
+        this.fdMemory.set(fd, { session, region });
+        return Promise.resolve(fd);
+    }
+    close(fd) {
+        this.fdMemory.get(fd)?.region.dispose();
+        this.fdMemory.delete(fd);
+        return Promise.resolve();
+    }
+    async writeFile(resource, content) {
+        const { offset } = this.parseUri(resource);
+        if (!offset) {
+            throw createFileSystemProviderError(`Range must be present to read a file`, FileSystemProviderErrorCode.FileNotFound);
+        }
+        const fd = await this.open(resource, { create: false });
+        try {
+            await this.write(fd, offset.fromOffset, content, 0, content.length);
+        }
+        finally {
+            this.close(fd);
+        }
+    }
+    async readFile(resource) {
+        const { offset } = this.parseUri(resource);
+        if (!offset) {
+            throw createFileSystemProviderError(`Range must be present to read a file`, FileSystemProviderErrorCode.FileNotFound);
+        }
+        const data = new Uint8Array(offset.toOffset - offset.fromOffset);
+        const fd = await this.open(resource, { create: false });
+        try {
+            await this.read(fd, offset.fromOffset, data, 0, data.length);
+            return data;
+        }
+        finally {
+            this.close(fd);
+        }
+    }
+    async read(fd, pos, data, offset, length) {
+        const memory = this.fdMemory.get(fd);
+        if (!memory) {
+            throw createFileSystemProviderError(`No file with that descriptor open`, FileSystemProviderErrorCode.Unavailable);
+        }
+        const ranges = await memory.region.read(pos, length);
+        let readSoFar = 0;
+        for (const range of ranges) {
+            switch (range.type) {
+                case 1:
+                    return readSoFar;
+                case 2:
+                    if (readSoFar > 0) {
+                        return readSoFar;
+                    }
+                    else {
+                        throw createFileSystemProviderError(range.error, FileSystemProviderErrorCode.Unknown);
+                    }
+                case 0: {
+                    const start = Math.max(0, pos - range.offset);
+                    const toWrite = range.data.slice(start, Math.min(range.data.byteLength, start + (length - readSoFar)));
+                    data.set(toWrite.buffer, offset + readSoFar);
+                    readSoFar += toWrite.byteLength;
+                    break;
+                }
+                default:
+                    assertNever(range);
+            }
+        }
+        return readSoFar;
+    }
+    write(fd, pos, data, offset, length) {
+        const memory = this.fdMemory.get(fd);
+        if (!memory) {
+            throw createFileSystemProviderError(`No file with that descriptor open`, FileSystemProviderErrorCode.Unavailable);
+        }
+        return memory.region.write(pos, VSBuffer.wrap(data).slice(offset, offset + length));
+    }
+    parseUri(uri) {
+        if (uri.scheme !== DEBUG_MEMORY_SCHEME) {
+            throw createFileSystemProviderError(`Cannot open file with scheme ${uri.scheme}`, FileSystemProviderErrorCode.FileNotFound);
+        }
+        const session = this.debugService.getModel().getSession(uri.authority);
+        if (!session) {
+            throw createFileSystemProviderError(`Debug session not found`, FileSystemProviderErrorCode.FileNotFound);
+        }
+        let offset;
+        const rangeMatch = rangeRe.exec(uri.query);
+        if (rangeMatch) {
+            offset = { fromOffset: Number(rangeMatch[1]), toOffset: Number(rangeMatch[2]) };
+        }
+        const [, memoryReference] = uri.path.split('/');
+        return {
+            session,
+            offset,
+            readOnly: !session.capabilities.supportsWriteMemoryRequest,
+            sessionId: uri.authority,
+            memoryReference: decodeURIComponent(memoryReference),
+        };
+    }
+}
+class MemoryRegionView extends Disposable {
+    constructor(parent, range) {
+        super();
+        this.parent = parent;
+        this.range = range;
+        this.invalidateEmitter = new Emitter();
+        this.onDidInvalidate = this.invalidateEmitter.event;
+        this.width = this.range.toOffset - this.range.fromOffset;
+        this.writable = parent.writable;
+        this._register(parent);
+        this._register(parent.onDidInvalidate(e => {
+            const fromOffset = clamp(e.fromOffset - range.fromOffset, 0, this.width);
+            const toOffset = clamp(e.toOffset - range.fromOffset, 0, this.width);
+            if (toOffset > fromOffset) {
+                this.invalidateEmitter.fire({ fromOffset, toOffset });
+            }
+        }));
+    }
+    read(fromOffset, toOffset) {
+        if (fromOffset < 0) {
+            throw new RangeError(`Invalid fromOffset: ${fromOffset}`);
+        }
+        return this.parent.read(this.range.fromOffset + fromOffset, this.range.fromOffset + Math.min(toOffset, this.width));
+    }
+    write(offset, data) {
+        return this.parent.write(this.range.fromOffset + offset, data);
+    }
+}

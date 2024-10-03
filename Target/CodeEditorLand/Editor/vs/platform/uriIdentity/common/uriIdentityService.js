@@ -1,1 +1,95 @@
-var h=Object.defineProperty;var d=Object.getOwnPropertyDescriptor;var c=(n,e,r,t)=>{for(var i=t>1?void 0:t?d(e,r):e,s=n.length-1,l;s>=0;s--)(l=n[s])&&(i=(t?l(e,r,i):l(i))||i);return t&&i&&h(e,r,i),i},m=(n,e)=>(r,t)=>e(r,t,n);import{IUriIdentityService as p}from"./uriIdentity.js";import"../../../base/common/uri.js";import{InstantiationType as v,registerSingleton as U}from"../../instantiation/common/extensions.js";import{IFileService as _,FileSystemProviderCapabilities as g}from"../../files/common/files.js";import{ExtUri as f,normalizePath as y}from"../../../base/common/resources.js";import{SkipList as I}from"../../../base/common/skipList.js";import{Event as C}from"../../../base/common/event.js";import{DisposableStore as P}from"../../../base/common/lifecycle.js";class a{constructor(e){this.uri=e}static _clock=0;time=a._clock++;touch(){return this.time=a._clock++,this}}let o=class{constructor(e){this._fileService=e;const r=new Map,t=i=>{let s=r.get(i.scheme);return s===void 0&&(s=e.hasProvider(i)&&!this._fileService.hasCapability(i,g.PathCaseSensitive),r.set(i.scheme,s)),s};this._dispooables.add(C.any(e.onDidChangeFileSystemProviderRegistrations,e.onDidChangeFileSystemProviderCapabilities)(i=>{r.delete(i.scheme)})),this.extUri=new f(t),this._canonicalUris=new I((i,s)=>this.extUri.compare(i,s,!0),this._limit)}extUri;_dispooables=new P;_canonicalUris;_limit=2**16;dispose(){this._dispooables.dispose(),this._canonicalUris.clear()}asCanonicalUri(e){this._fileService.hasProvider(e)&&(e=y(e));const r=this._canonicalUris.get(e);return r?r.touch().uri.with({fragment:e.fragment}):(this._canonicalUris.set(e,new a(e)),this._checkTrim(),e)}_checkTrim(){if(this._canonicalUris.size<this._limit)return;const e=[...this._canonicalUris.entries()].sort((t,i)=>t[1].time<i[1].time?1:t[1].time>i[1].time?-1:0);a._clock=0,this._canonicalUris.clear();const r=this._limit*.5;for(let t=0;t<r;t++)this._canonicalUris.set(e[t][0],e[t][1].touch())}};o=c([m(0,_)],o),U(p,o,v.Delayed);export{o as UriIdentityService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IUriIdentityService } from './uriIdentity.js';
+import { registerSingleton } from '../../instantiation/common/extensions.js';
+import { IFileService } from '../../files/common/files.js';
+import { ExtUri, normalizePath } from '../../../base/common/resources.js';
+import { SkipList } from '../../../base/common/skipList.js';
+import { Event } from '../../../base/common/event.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+class Entry {
+    static { this._clock = 0; }
+    constructor(uri) {
+        this.uri = uri;
+        this.time = Entry._clock++;
+    }
+    touch() {
+        this.time = Entry._clock++;
+        return this;
+    }
+}
+let UriIdentityService = class UriIdentityService {
+    constructor(_fileService) {
+        this._fileService = _fileService;
+        this._dispooables = new DisposableStore();
+        this._limit = 2 ** 16;
+        const schemeIgnoresPathCasingCache = new Map();
+        const ignorePathCasing = (uri) => {
+            let ignorePathCasing = schemeIgnoresPathCasingCache.get(uri.scheme);
+            if (ignorePathCasing === undefined) {
+                ignorePathCasing = _fileService.hasProvider(uri) && !this._fileService.hasCapability(uri, 1024);
+                schemeIgnoresPathCasingCache.set(uri.scheme, ignorePathCasing);
+            }
+            return ignorePathCasing;
+        };
+        this._dispooables.add(Event.any(_fileService.onDidChangeFileSystemProviderRegistrations, _fileService.onDidChangeFileSystemProviderCapabilities)(e => {
+            schemeIgnoresPathCasingCache.delete(e.scheme);
+        }));
+        this.extUri = new ExtUri(ignorePathCasing);
+        this._canonicalUris = new SkipList((a, b) => this.extUri.compare(a, b, true), this._limit);
+    }
+    dispose() {
+        this._dispooables.dispose();
+        this._canonicalUris.clear();
+    }
+    asCanonicalUri(uri) {
+        if (this._fileService.hasProvider(uri)) {
+            uri = normalizePath(uri);
+        }
+        const item = this._canonicalUris.get(uri);
+        if (item) {
+            return item.touch().uri.with({ fragment: uri.fragment });
+        }
+        this._canonicalUris.set(uri, new Entry(uri));
+        this._checkTrim();
+        return uri;
+    }
+    _checkTrim() {
+        if (this._canonicalUris.size < this._limit) {
+            return;
+        }
+        const entries = [...this._canonicalUris.entries()].sort((a, b) => {
+            if (a[1].time < b[1].time) {
+                return 1;
+            }
+            else if (a[1].time > b[1].time) {
+                return -1;
+            }
+            else {
+                return 0;
+            }
+        });
+        Entry._clock = 0;
+        this._canonicalUris.clear();
+        const newSize = this._limit * 0.5;
+        for (let i = 0; i < newSize; i++) {
+            this._canonicalUris.set(entries[i][0], entries[i][1].touch());
+        }
+    }
+};
+UriIdentityService = __decorate([
+    __param(0, IFileService),
+    __metadata("design:paramtypes", [Object])
+], UriIdentityService);
+export { UriIdentityService };
+registerSingleton(IUriIdentityService, UriIdentityService, 1);

@@ -1,1 +1,97 @@
-import{CancellationToken as u}from"../../../../base/common/cancellation.js";import{illegalArgument as L,onUnexpectedExternalError as C}from"../../../../base/common/errors.js";import{DisposableStore as p}from"../../../../base/common/lifecycle.js";import{assertType as f}from"../../../../base/common/types.js";import{URI as c}from"../../../../base/common/uri.js";import"../../../common/model.js";import"../../../common/languages.js";import{IModelService as v}from"../../../common/services/model.js";import{CommandsRegistry as y}from"../../../../platform/commands/common/commands.js";import"../../../common/languageFeatureRegistry.js";import{ILanguageFeaturesService as b}from"../../../common/services/languageFeatures.js";class h{lenses=[];_disposables=new p;dispose(){this._disposables.dispose()}get isDisposed(){return this._disposables.isDisposed}add(n,l){this._disposables.add(n);for(const r of n.lenses)this.lenses.push({symbol:r,provider:l})}}async function P(m,n,l){const r=m.ordered(n),t=new Map,s=new h,a=r.map(async(e,o)=>{t.set(e,o);try{const i=await Promise.resolve(e.provideCodeLenses(n,l));i&&s.add(i,e)}catch(i){C(i)}});return await Promise.all(a),s.lenses=s.lenses.sort((e,o)=>e.symbol.range.startLineNumber<o.symbol.range.startLineNumber?-1:e.symbol.range.startLineNumber>o.symbol.range.startLineNumber?1:t.get(e.provider)<t.get(o.provider)?-1:t.get(e.provider)>t.get(o.provider)?1:e.symbol.range.startColumn<o.symbol.range.startColumn?-1:e.symbol.range.startColumn>o.symbol.range.startColumn?1:0),s}y.registerCommand("_executeCodeLensProvider",function(m,...n){let[l,r]=n;f(c.isUri(l)),f(typeof r=="number"||!r);const{codeLensProvider:t}=m.get(b),s=m.get(v).getModel(l);if(!s)throw L();const a=[],e=new p;return P(t,s,u.None).then(o=>{e.add(o);const i=[];for(const d of o.lenses)r==null||d.symbol.command?a.push(d.symbol):r-- >0&&d.provider.resolveCodeLens&&i.push(Promise.resolve(d.provider.resolveCodeLens(s,d.symbol,u.None)).then(g=>a.push(g||d.symbol)));return Promise.all(i)}).then(()=>a).finally(()=>{setTimeout(()=>e.dispose(),100)})});export{h as CodeLensModel,P as getCodeLensModel};
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { illegalArgument, onUnexpectedExternalError } from '../../../../base/common/errors.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { assertType } from '../../../../base/common/types.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IModelService } from '../../../common/services/model.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+export class CodeLensModel {
+    constructor() {
+        this.lenses = [];
+        this._disposables = new DisposableStore();
+    }
+    dispose() {
+        this._disposables.dispose();
+    }
+    get isDisposed() {
+        return this._disposables.isDisposed;
+    }
+    add(list, provider) {
+        this._disposables.add(list);
+        for (const symbol of list.lenses) {
+            this.lenses.push({ symbol, provider });
+        }
+    }
+}
+export async function getCodeLensModel(registry, model, token) {
+    const provider = registry.ordered(model);
+    const providerRanks = new Map();
+    const result = new CodeLensModel();
+    const promises = provider.map(async (provider, i) => {
+        providerRanks.set(provider, i);
+        try {
+            const list = await Promise.resolve(provider.provideCodeLenses(model, token));
+            if (list) {
+                result.add(list, provider);
+            }
+        }
+        catch (err) {
+            onUnexpectedExternalError(err);
+        }
+    });
+    await Promise.all(promises);
+    result.lenses = result.lenses.sort((a, b) => {
+        if (a.symbol.range.startLineNumber < b.symbol.range.startLineNumber) {
+            return -1;
+        }
+        else if (a.symbol.range.startLineNumber > b.symbol.range.startLineNumber) {
+            return 1;
+        }
+        else if ((providerRanks.get(a.provider)) < (providerRanks.get(b.provider))) {
+            return -1;
+        }
+        else if ((providerRanks.get(a.provider)) > (providerRanks.get(b.provider))) {
+            return 1;
+        }
+        else if (a.symbol.range.startColumn < b.symbol.range.startColumn) {
+            return -1;
+        }
+        else if (a.symbol.range.startColumn > b.symbol.range.startColumn) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    });
+    return result;
+}
+CommandsRegistry.registerCommand('_executeCodeLensProvider', function (accessor, ...args) {
+    let [uri, itemResolveCount] = args;
+    assertType(URI.isUri(uri));
+    assertType(typeof itemResolveCount === 'number' || !itemResolveCount);
+    const { codeLensProvider } = accessor.get(ILanguageFeaturesService);
+    const model = accessor.get(IModelService).getModel(uri);
+    if (!model) {
+        throw illegalArgument();
+    }
+    const result = [];
+    const disposables = new DisposableStore();
+    return getCodeLensModel(codeLensProvider, model, CancellationToken.None).then(value => {
+        disposables.add(value);
+        const resolve = [];
+        for (const item of value.lenses) {
+            if (itemResolveCount === undefined || itemResolveCount === null || Boolean(item.symbol.command)) {
+                result.push(item.symbol);
+            }
+            else if (itemResolveCount-- > 0 && item.provider.resolveCodeLens) {
+                resolve.push(Promise.resolve(item.provider.resolveCodeLens(model, item.symbol, CancellationToken.None)).then(symbol => result.push(symbol || item.symbol)));
+            }
+        }
+        return Promise.all(resolve);
+    }).then(() => {
+        return result;
+    }).finally(() => {
+        setTimeout(() => disposables.dispose(), 100);
+    });
+});

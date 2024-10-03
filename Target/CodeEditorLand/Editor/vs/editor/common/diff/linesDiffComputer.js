@@ -1,1 +1,16 @@
-import"./rangeMapping.js";class l{constructor(e,n,o){this.changes=e;this.moves=n;this.hitTimeout=o}}class i{lineRangeMapping;changes;constructor(e,n){this.lineRangeMapping=e,this.changes=n}flip(){return new i(this.lineRangeMapping.flip(),this.changes.map(e=>e.flip()))}}export{l as LinesDiff,i as MovedText};
+export class LinesDiff {
+    constructor(changes, moves, hitTimeout) {
+        this.changes = changes;
+        this.moves = moves;
+        this.hitTimeout = hitTimeout;
+    }
+}
+export class MovedText {
+    constructor(lineRangeMapping, changes) {
+        this.lineRangeMapping = lineRangeMapping;
+        this.changes = changes;
+    }
+    flip() {
+        return new MovedText(this.lineRangeMapping.flip(), this.changes.map(c => c.flip()));
+    }
+}

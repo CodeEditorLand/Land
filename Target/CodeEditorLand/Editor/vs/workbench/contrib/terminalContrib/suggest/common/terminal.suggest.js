@@ -1,1 +1,10 @@
-var t=(e=>(e.SelectPrevSuggestion="workbench.action.terminal.selectPrevSuggestion",e.SelectPrevPageSuggestion="workbench.action.terminal.selectPrevPageSuggestion",e.SelectNextSuggestion="workbench.action.terminal.selectNextSuggestion",e.SelectNextPageSuggestion="workbench.action.terminal.selectNextPageSuggestion",e.AcceptSelectedSuggestion="workbench.action.terminal.acceptSelectedSuggestion",e.AcceptSelectedSuggestionEnter="workbench.action.terminal.acceptSelectedSuggestionEnter",e.HideSuggestWidget="workbench.action.terminal.hideSuggestWidget",e.ClearSuggestCache="workbench.action.terminal.clearSuggestCache",e))(t||{});const g=["workbench.action.terminal.selectPrevSuggestion","workbench.action.terminal.selectPrevPageSuggestion","workbench.action.terminal.selectNextSuggestion","workbench.action.terminal.selectNextPageSuggestion","workbench.action.terminal.acceptSelectedSuggestion","workbench.action.terminal.acceptSelectedSuggestionEnter","workbench.action.terminal.hideSuggestWidget","workbench.action.terminal.clearSuggestCache"];export{t as TerminalSuggestCommandId,g as defaultTerminalSuggestCommandsToSkipShell};
+export const defaultTerminalSuggestCommandsToSkipShell = [
+    "workbench.action.terminal.selectPrevSuggestion",
+    "workbench.action.terminal.selectPrevPageSuggestion",
+    "workbench.action.terminal.selectNextSuggestion",
+    "workbench.action.terminal.selectNextPageSuggestion",
+    "workbench.action.terminal.acceptSelectedSuggestion",
+    "workbench.action.terminal.acceptSelectedSuggestionEnter",
+    "workbench.action.terminal.hideSuggestWidget",
+    "workbench.action.terminal.clearSuggestCache",
+];

@@ -1,1 +1,544 @@
-var te=Object.defineProperty;var ie=Object.getOwnPropertyDescriptor;var M=(g,e,t,i)=>{for(var s=i>1?void 0:i?ie(e,t):e,o=g.length-1,a;o>=0;o--)(a=g[o])&&(s=(i?a(e,t,s):a(s))||s);return i&&s&&te(e,t,s),s},n=(g,e)=>(t,i)=>e(t,i,g);import{$ as se,getActiveElement as ne,getTotalHeight as N,h,reset as E,trackFocus as oe}from"../../../../base/browser/dom.js";import"../../../../base/browser/ui/actionbar/actionViewItems.js";import{getDefaultHoverDelegate as re}from"../../../../base/browser/ui/hover/hoverDelegateFactory.js";import{renderLabelWithIcons as F}from"../../../../base/browser/ui/iconLabel/iconLabels.js";import"../../../../base/common/actions.js";import{isNonEmptyArray as ae,tail as de}from"../../../../base/common/arrays.js";import{Emitter as B,Event as le}from"../../../../base/common/event.js";import{MarkdownString as he}from"../../../../base/common/htmlContent.js";import{DisposableStore as K,MutableDisposable as ce,toDisposable as ue}from"../../../../base/common/lifecycle.js";import{constObservable as L,derived as ge,observableValue as P}from"../../../../base/common/observable.js";import"./media/inlineChat.css";import"../../../../editor/browser/editorBrowser.js";import{AccessibleDiffViewer as pe}from"../../../../editor/browser/widget/diffEditor/components/accessibleDiffViewer.js";import{EditorOption as me}from"../../../../editor/common/config/editorOptions.js";import{LineRange as q}from"../../../../editor/common/core/lineRange.js";import"../../../../editor/common/core/position.js";import"../../../../editor/common/core/range.js";import{Selection as _e}from"../../../../editor/common/core/selection.js";import{DetailedLineRangeMapping as fe,RangeMapping as Ie}from"../../../../editor/common/diff/rangeMapping.js";import{ScrollType as ve}from"../../../../editor/common/editorCommon.js";import"../../../../editor/common/model.js";import{ITextModelService as U}from"../../../../editor/common/services/resolverService.js";import{localize as x}from"../../../../nls.js";import{IAccessibleViewService as X}from"../../../../platform/accessibility/browser/accessibleView.js";import{IAccessibilityService as G}from"../../../../platform/accessibility/common/accessibility.js";import{MenuWorkbenchButtonBar as be}from"../../../../platform/actions/browser/buttonbar.js";import{createActionViewItem as Ce}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import{MenuWorkbenchToolBar as Se}from"../../../../platform/actions/browser/toolbar.js";import{MenuId as O,MenuItemAction as Me}from"../../../../platform/actions/common/actions.js";import{IConfigurationService as $}from"../../../../platform/configuration/common/configuration.js";import{IContextKeyService as R}from"../../../../platform/contextkey/common/contextkey.js";import{IHoverService as z}from"../../../../platform/hover/browser/hover.js";import{IInstantiationService as W}from"../../../../platform/instantiation/common/instantiation.js";import{ServiceCollection as ye}from"../../../../platform/instantiation/common/serviceCollection.js";import{IKeybindingService as j}from"../../../../platform/keybinding/common/keybinding.js";import{asCssVariable as we,asCssVariableName as Ee,editorBackground as Le,inputBackground as xe}from"../../../../platform/theme/common/colorRegistry.js";import{AccessibilityVerbositySettingId as H}from"../../accessibility/browser/accessibilityConfiguration.js";import{AccessibilityCommandId as Oe}from"../../accessibility/common/accessibilityCommands.js";import{MarkUnhelpfulActionId as Re}from"../../chat/browser/actions/chatTitleActions.js";import"../../chat/browser/chat.js";import{ChatVoteDownButton as We}from"../../chat/browser/chatListRenderer.js";import{ChatWidget as He}from"../../chat/browser/chatWidget.js";import{ChatAgentLocation as De}from"../../chat/common/chatAgents.js";import{chatRequestBackground as Ve}from"../../chat/common/chatColors.js";import{CONTEXT_CHAT_RESPONSE_SUPPORT_ISSUE_REPORTING as Ae,CONTEXT_RESPONSE as Te,CONTEXT_RESPONSE_ERROR as ke,CONTEXT_RESPONSE_FILTERED as Ne,CONTEXT_RESPONSE_VOTE as Fe}from"../../chat/common/chatContextKeys.js";import{ChatModel as Be}from"../../chat/common/chatModel.js";import{ChatAgentVoteDirection as J,IChatService as Q}from"../../chat/common/chatService.js";import{isResponseVM as c}from"../../chat/common/chatViewModel.js";import"./inlineChatSession.js";import{CTX_INLINE_CHAT_FOCUSED as Ke,CTX_INLINE_CHAT_RESPONSE_FOCUSED as Pe,inlineChatBackground as Y,inlineChatForeground as qe}from"../common/inlineChat.js";import{EDITOR_DRAG_AND_DROP_BACKGROUND as Ue}from"../../../common/theme.js";import{ILayoutService as Xe}from"../../../../platform/layout/browser/layoutService.js";let _=class{constructor(e,t,i,s,o,a,l,f,I,m,v){this._instantiationService=i;this._contextKeyService=s;this._keybindingService=o;this._accessibilityService=a;this._configurationService=l;this._accessibleViewService=f;this._textModelResolverService=I;this._chatService=m;this._hoverService=v;this.scopedContextKeyService=this._store.add(s.createScoped(this._elements.chatWidget));const p=i.createChild(new ye([R,this.scopedContextKeyService]),this._store);this._chatWidget=p.createInstance(He,e,void 0,{defaultElementHeight:32,renderStyle:"minimal",renderInputOnTop:!1,renderFollowups:!0,supportsFileReferences:l.getValue(`chat.experimental.variables.${e.location}`)===!0,filter:r=>c(r)&&r.isComplete&&!r.errorDetails?!(r.response.value.length>0&&r.response.value.every(d=>d.kind==="textEditGroup"&&t.chatWidgetViewOptions?.rendererOptions?.renderTextEditsAsSummary?.(d.uri))||r.response.value.length===0):!0,...t.chatWidgetViewOptions},{listForeground:qe,listBackground:Y,overlayBackground:Ue,inputEditorBackground:xe,resultEditorBackground:Le}),this._chatWidget.render(this._elements.chatWidget),this._elements.chatWidget.style.setProperty(Ee(Ve),we(Y)),this._chatWidget.setVisible(!0),this._store.add(this._chatWidget);const b=Te.bindTo(this.scopedContextKeyService),C=Fe.bindTo(this.scopedContextKeyService),D=Ae.bindTo(this.scopedContextKeyService),V=ke.bindTo(this.scopedContextKeyService),A=Ne.bindTo(this.scopedContextKeyService),w=this._store.add(new K);this._store.add(this._chatWidget.onDidChangeViewModel(()=>{w.clear();const r=this._chatWidget.viewModel;r&&(w.add(ue(()=>{S.context=void 0,b.reset(),C.reset(),V.reset(),A.reset(),D.reset()})),w.add(r.onDidChange(()=>{const d=r.getItems().at(-1);S.context=d,b.set(c(d)),C.set(c(d)?d.vote===J.Down?"down":d.vote===J.Up?"up":"":""),V.set(c(d)&&d.errorDetails!==void 0),A.set(!!(c(d)&&d.errorDetails?.responseIsFiltered)),D.set(c(d)&&(d.agent?.metadata.supportIssueReporting??!1)),this._onDidChangeHeight.fire()})),this._onDidChangeHeight.fire())})),this._store.add(this.chatWidget.onDidChangeContentHeight(()=>{this._onDidChangeHeight.fire()})),this._ctxResponseFocused=Pe.bindTo(this._contextKeyService);const T=this._store.add(oe(this.domNode));this._store.add(T.onDidBlur(()=>this._ctxResponseFocused.set(!1))),this._store.add(T.onDidFocus(()=>this._ctxResponseFocused.set(!0))),this._ctxInputEditorFocused=Ke.bindTo(s),this._store.add(this._chatWidget.inputEditor.onDidFocusEditorWidget(()=>this._ctxInputEditorFocused.set(!0))),this._store.add(this._chatWidget.inputEditor.onDidBlurEditorWidget(()=>this._ctxInputEditorFocused.set(!1)));const Z=t.statusMenuId instanceof O?t.statusMenuId:t.statusMenuId.menu,ee=t.statusMenuId instanceof O?void 0:t.statusMenuId.options,k=p.createInstance(be,this._elements.toolbar1,Z,{toolbarOptions:{primaryGroup:"0_main"},telemetrySource:t.chatWidgetViewOptions?.menus?.telemetrySource,menuOptions:{renderShortTitle:!0},...ee});this._store.add(k.onDidChange(()=>this._onDidChangeHeight.fire())),this._store.add(k);const S=p.createInstance(Se,this._elements.toolbar2,t.secondaryMenuId??O.for(""),{telemetrySource:t.chatWidgetViewOptions?.menus?.telemetrySource,menuOptions:{renderShortTitle:!0,shouldForwardArgs:!0},actionViewItemProvider:(r,d)=>r instanceof Me&&r.item.id===Re?p.createInstance(We,r,d):Ce(p,r,d)});this._store.add(S.onDidChangeMenuItems(()=>this._onDidChangeHeight.fire())),this._store.add(S),this._store.add(this._configurationService.onDidChangeConfiguration(r=>{r.affectsConfiguration(H.InlineChat)&&this._updateAriaLabel()})),this._elements.root.tabIndex=0,this._elements.statusLabel.tabIndex=0,this._updateAriaLabel(),this._store.add(this._hoverService.setupManagedHover(re("element"),this._elements.statusLabel,()=>this._elements.statusLabel.dataset.title)),this._store.add(this._chatService.onDidPerformUserAction(r=>{r.sessionId===this._chatWidget.viewModel?.model.sessionId&&r.action.kind==="vote"&&this.updateStatus("Thank you for your feedback!",{resetAfter:1250})})),this._defaultChatModel=this._store.add(this._instantiationService.createInstance(Be,void 0,De.Editor)),this._defaultChatModel.startInitialize(),this._defaultChatModel.initialize(void 0),this.setChatModel(this._defaultChatModel)}_elements=h("div.inline-chat@root",[h("div.chat-widget@chatWidget"),h("div.accessibleViewer@accessibleViewer"),h("div.status@status",[h("div.label.info.hidden@infoLabel"),h("div.actions.hidden@toolbar1"),h("div.label.status.hidden@statusLabel"),h("div.actions.secondary.hidden@toolbar2")])]);_store=new K;_defaultChatModel;_ctxInputEditorFocused;_ctxResponseFocused;_chatWidget;_onDidChangeHeight=this._store.add(new B);onDidChangeHeight=le.filter(this._onDidChangeHeight.event,e=>!this._isLayouting);_onDidChangeInput=this._store.add(new B);onDidChangeInput=this._onDidChangeInput.event;_isLayouting=!1;scopedContextKeyService;_updateAriaLabel(){if(this._elements.root.ariaLabel=this._accessibleViewService.getOpenAriaHint(H.InlineChat),this._accessibilityService.isScreenReaderOptimized()){let e=Ge;if(this._configurationService.getValue(H.InlineChat)){const t=this._keybindingService.lookupKeybinding(Oe.OpenAccessibilityHelp)?.getLabel();e=t?x("inlineChat.accessibilityHelp","Inline Chat Input, Use {0} for Inline Chat Accessibility Help.",t):x("inlineChat.accessibilityHelpNoKb","Inline Chat Input, Run the Inline Chat Accessibility Help command for more information.")}this._chatWidget.inputEditor.updateOptions({ariaLabel:e})}}dispose(){this._store.dispose()}get domNode(){return this._elements.root}get chatWidget(){return this._chatWidget}saveState(){this._chatWidget.saveState()}layout(e){this._isLayouting=!0;try{this._doLayout(e)}finally{this._isLayouting=!1}}_doLayout(e){const t=this._getExtraHeight(),i=N(this._elements.status);this._elements.root.style.height=`${e.height-t}px`,this._elements.root.style.width=`${e.width}px`,this._chatWidget.layout(e.height-i-t,e.width)}get contentHeight(){const e={chatWidgetContentHeight:this._chatWidget.contentHeight,statusHeight:N(this._elements.status),extraHeight:this._getExtraHeight()};return e.chatWidgetContentHeight+e.statusHeight+e.extraHeight}get minHeight(){let e=100;for(const i of this._chatWidget.viewModel?.getItems()??[])if(c(i)&&i.response.value.some(s=>s.kind==="textEditGroup"&&!s.state?.applied)){e=270;break}let t=this.contentHeight;return t-=this._chatWidget.contentHeight,t+=Math.min(this._chatWidget.input.contentHeight+e,this._chatWidget.contentHeight),t}_getExtraHeight(){return 6}get value(){return this._chatWidget.getInput()}set value(e){this._chatWidget.setInput(e)}selectAll(e=!0){let t=1;if(!e){const i=/^(\/\w+)\s*/.exec(this._chatWidget.inputEditor.getModel().getLineContent(1));i&&(t=i[1].length+1)}this._chatWidget.inputEditor.setSelection(new _e(1,t,Number.MAX_SAFE_INTEGER,1))}set placeholder(e){this._chatWidget.setInputPlaceholder(e)}toggleStatus(e){this._elements.toolbar1.classList.toggle("hidden",!e),this._elements.toolbar2.classList.toggle("hidden",!e),this._elements.status.classList.toggle("hidden",!e),this._elements.infoLabel.classList.toggle("hidden",!e),this._onDidChangeHeight.fire()}updateToolbar(e){this._elements.root.classList.toggle("toolbar",e),this._elements.toolbar1.classList.toggle("hidden",!e),this._elements.toolbar2.classList.toggle("hidden",!e),this._elements.status.classList.toggle("actions",e),this._elements.infoLabel.classList.toggle("hidden",e),this._onDidChangeHeight.fire()}async getCodeBlockInfo(e){const{viewModel:t}=this._chatWidget;if(!t)return;const i=t.getItems().filter(o=>c(o));if(!i.length)return;const s=i[i.length-1];return t.codeBlockModelCollection.get(t.sessionId,s,e)?.model}get responseContent(){const e=this._chatWidget.viewModel?.model.getRequests();if(ae(e))return de(e)?.response?.response.toString()}getChatModel(){return this._chatWidget.viewModel?.model??this._defaultChatModel}setChatModel(e){this._chatWidget.setModel(e,{inputValue:void 0})}updateChatMessage(e,t,i){if(!this._chatWidget.viewModel||this._chatWidget.viewModel.model!==this._defaultChatModel)return;const s=this._defaultChatModel;if(!e?.message.value){for(const a of s.getRequests())s.removeRequest(a.id);return}const o=s.addRequest({parts:[],text:""},{variables:[]},0);if(s.acceptResponseProgress(o,{kind:"markdownContent",content:e.message}),!t){s.completeResponse(o);return}return{cancel:()=>s.cancelRequest(o),complete:()=>s.completeResponse(o),appendContent:a=>{s.acceptResponseProgress(o,{kind:"markdownContent",content:new he(a)})}}}updateInfo(e){this._elements.infoLabel.classList.toggle("hidden",!e);const t=F(e);E(this._elements.infoLabel,...t),this._onDidChangeHeight.fire()}updateStatus(e,t={}){const i=typeof t.resetAfter=="number";if(i&&!this._elements.statusLabel.dataset.state){const o=this._elements.statusLabel.innerText,a=this._elements.statusLabel.dataset.title,l=Array.from(this._elements.statusLabel.classList.values());setTimeout(()=>{this.updateStatus(o,{classes:l,keepMessage:!0,title:a})},t.resetAfter)}const s=F(e);E(this._elements.statusLabel,...s),this._elements.statusLabel.className=`label status ${(t.classes??[]).join(" ")}`,this._elements.statusLabel.classList.toggle("hidden",!e),i?this._elements.statusLabel.dataset.state="temp":delete this._elements.statusLabel.dataset.state,t.title?this._elements.statusLabel.dataset.title=t.title:delete this._elements.statusLabel.dataset.title,this._onDidChangeHeight.fire()}reset(){this._chatWidget.setContext(!0),this._chatWidget.saveState(),this.updateChatMessage(void 0),E(this._elements.statusLabel),this._elements.statusLabel.classList.toggle("hidden",!0),this._elements.toolbar1.classList.add("hidden"),this._elements.toolbar2.classList.add("hidden"),this.updateInfo(""),this.chatWidget.setModel(this._defaultChatModel,{}),this._elements.accessibleViewer.classList.toggle("hidden",!0),this._onDidChangeHeight.fire()}focus(){this._chatWidget.focusInput()}hasFocus(){return this.domNode.contains(ne())}};_=M([n(2,W),n(3,R),n(4,j),n(5,G),n(6,$),n(7,X),n(8,U),n(9,Q),n(10,z)],_);const Ge=x("aria-label","Inline Chat Input");let y=class extends _{constructor(t,i,s,o,a,l,f,I,m,v,p,b,C){super(t,{...s,chatWidgetViewOptions:{...s.chatWidgetViewOptions,editorOverflowWidgetsDomNode:C.mainContainer.appendChild(se(".inline-chat-overflow.monaco-editor"))}},l,o,a,f,I,m,v,p,b);this._parentEditor=i}_accessibleViewer=this._store.add(new ce);get contentHeight(){let t=super.contentHeight;return this._accessibleViewer.value&&(t+=this._accessibleViewer.value.height+8),t}_doLayout(t){let i=t.height;this._accessibleViewer.value&&(this._accessibleViewer.value.width=t.width-12,i-=this._accessibleViewer.value.height+8),super._doLayout(t.with(void 0,i)),this._elements.root.style.height=`${t.height-this._getExtraHeight()}px`}reset(){this._accessibleViewer.clear(),super.reset()}showAccessibleHunk(t,i){this._elements.accessibleViewer.classList.remove("hidden"),this._accessibleViewer.clear(),this._accessibleViewer.value=this._instantiationService.createInstance(u,this._elements.accessibleViewer,t,i,new $e(this._parentEditor,t,i)),this._onDidChangeHeight.fire()}};y=M([n(3,R),n(4,j),n(5,W),n(6,G),n(7,$),n(8,X),n(9,U),n(10,Q),n(11,z),n(12,Xe)],y);let u=class extends pe{height;set width(e){this._width2.set(e,void 0)}_width2;constructor(e,t,i,s,o){const a=P("width",0),l=P("diff",u._asMapping(i)),f=ge(v=>[l.read(v)]),I=Math.min(10,8+l.get().changedLineCount),m=s.getModifiedOptions().get(me.lineHeight)*I;super(e,L(!0),()=>{},L(!1),a,L(m),f,s,o),this.height=m,this._width2=a,this._store.add(t.textModelN.onDidChangeContent(()=>{l.set(u._asMapping(i),void 0)}))}static _asMapping(e){const t=e.getRanges0(),i=e.getRangesN(),s=q.fromRangeInclusive(t[0]),o=q.fromRangeInclusive(i[0]),a=[];for(let l=1;l<t.length;l++)a.push(new Ie(t[l],i[l]));return new fe(s,o,a)}};u=M([n(4,W)],u);class $e{constructor(e,t,i){this._editor=e;this._session=t;this._hunk=i}getOriginalModel(){return this._session.textModel0}getModifiedModel(){return this._session.textModelN}getOriginalOptions(){return this._editor.getOptions()}getModifiedOptions(){return this._editor.getOptions()}originalReveal(e){}modifiedReveal(e){this._editor.revealRangeInCenterIfOutsideViewport(e||this._hunk.getRangesN()[0],ve.Smooth)}modifiedSetSelection(e){}modifiedFocus(){this._editor.focus()}getModifiedPosition(){return this._hunk.getRangesN()[0].getStartPosition()}}export{y as EditorBasedInlineChatWidget,_ as InlineChatWidget};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var HunkAccessibleDiffViewer_1;
+import { $, getActiveElement, getTotalHeight, h, reset, trackFocus } from '../../../../base/browser/dom.js';
+import { getDefaultHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { renderLabelWithIcons } from '../../../../base/browser/ui/iconLabel/iconLabels.js';
+import { isNonEmptyArray, tail } from '../../../../base/common/arrays.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
+import { DisposableStore, MutableDisposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { constObservable, derived, observableValue } from '../../../../base/common/observable.js';
+import './media/inlineChat.css';
+import { AccessibleDiffViewer } from '../../../../editor/browser/widget/diffEditor/components/accessibleDiffViewer.js';
+import { LineRange } from '../../../../editor/common/core/lineRange.js';
+import { Selection } from '../../../../editor/common/core/selection.js';
+import { DetailedLineRangeMapping, RangeMapping } from '../../../../editor/common/diff/rangeMapping.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { localize } from '../../../../nls.js';
+import { IAccessibleViewService } from '../../../../platform/accessibility/browser/accessibleView.js';
+import { IAccessibilityService } from '../../../../platform/accessibility/common/accessibility.js';
+import { MenuWorkbenchButtonBar } from '../../../../platform/actions/browser/buttonbar.js';
+import { createActionViewItem } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { MenuWorkbenchToolBar } from '../../../../platform/actions/browser/toolbar.js';
+import { MenuId, MenuItemAction } from '../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IHoverService } from '../../../../platform/hover/browser/hover.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { asCssVariable, asCssVariableName, editorBackground, inputBackground } from '../../../../platform/theme/common/colorRegistry.js';
+import { MarkUnhelpfulActionId } from '../../chat/browser/actions/chatTitleActions.js';
+import { ChatVoteDownButton } from '../../chat/browser/chatListRenderer.js';
+import { ChatWidget } from '../../chat/browser/chatWidget.js';
+import { ChatAgentLocation } from '../../chat/common/chatAgents.js';
+import { chatRequestBackground } from '../../chat/common/chatColors.js';
+import { CONTEXT_CHAT_RESPONSE_SUPPORT_ISSUE_REPORTING, CONTEXT_RESPONSE, CONTEXT_RESPONSE_ERROR, CONTEXT_RESPONSE_FILTERED, CONTEXT_RESPONSE_VOTE } from '../../chat/common/chatContextKeys.js';
+import { ChatModel } from '../../chat/common/chatModel.js';
+import { ChatAgentVoteDirection, IChatService } from '../../chat/common/chatService.js';
+import { isResponseVM } from '../../chat/common/chatViewModel.js';
+import { Session } from './inlineChatSession.js';
+import { CTX_INLINE_CHAT_FOCUSED, CTX_INLINE_CHAT_RESPONSE_FOCUSED, inlineChatBackground, inlineChatForeground } from '../common/inlineChat.js';
+import { EDITOR_DRAG_AND_DROP_BACKGROUND } from '../../../common/theme.js';
+import { ILayoutService } from '../../../../platform/layout/browser/layoutService.js';
+let InlineChatWidget = class InlineChatWidget {
+    constructor(location, options, _instantiationService, _contextKeyService, _keybindingService, _accessibilityService, _configurationService, _accessibleViewService, _textModelResolverService, _chatService, _hoverService) {
+        this._instantiationService = _instantiationService;
+        this._contextKeyService = _contextKeyService;
+        this._keybindingService = _keybindingService;
+        this._accessibilityService = _accessibilityService;
+        this._configurationService = _configurationService;
+        this._accessibleViewService = _accessibleViewService;
+        this._textModelResolverService = _textModelResolverService;
+        this._chatService = _chatService;
+        this._hoverService = _hoverService;
+        this._elements = h('div.inline-chat@root', [
+            h('div.chat-widget@chatWidget'),
+            h('div.accessibleViewer@accessibleViewer'),
+            h('div.status@status', [
+                h('div.label.info.hidden@infoLabel'),
+                h('div.actions.hidden@toolbar1'),
+                h('div.label.status.hidden@statusLabel'),
+                h('div.actions.secondary.hidden@toolbar2'),
+            ]),
+        ]);
+        this._store = new DisposableStore();
+        this._onDidChangeHeight = this._store.add(new Emitter());
+        this.onDidChangeHeight = Event.filter(this._onDidChangeHeight.event, _ => !this._isLayouting);
+        this._onDidChangeInput = this._store.add(new Emitter());
+        this.onDidChangeInput = this._onDidChangeInput.event;
+        this._isLayouting = false;
+        this.scopedContextKeyService = this._store.add(_contextKeyService.createScoped(this._elements.chatWidget));
+        const scopedInstaService = _instantiationService.createChild(new ServiceCollection([
+            IContextKeyService,
+            this.scopedContextKeyService
+        ]), this._store);
+        this._chatWidget = scopedInstaService.createInstance(ChatWidget, location, undefined, {
+            defaultElementHeight: 32,
+            renderStyle: 'minimal',
+            renderInputOnTop: false,
+            renderFollowups: true,
+            supportsFileReferences: _configurationService.getValue(`chat.experimental.variables.${location.location}`) === true,
+            filter: item => {
+                if (isResponseVM(item) && item.isComplete && !item.errorDetails) {
+                    if (item.response.value.length > 0 && item.response.value.every(item => item.kind === 'textEditGroup' && options.chatWidgetViewOptions?.rendererOptions?.renderTextEditsAsSummary?.(item.uri))) {
+                        return false;
+                    }
+                    if (item.response.value.length === 0) {
+                        return false;
+                    }
+                    return true;
+                }
+                return true;
+            },
+            ...options.chatWidgetViewOptions
+        }, {
+            listForeground: inlineChatForeground,
+            listBackground: inlineChatBackground,
+            overlayBackground: EDITOR_DRAG_AND_DROP_BACKGROUND,
+            inputEditorBackground: inputBackground,
+            resultEditorBackground: editorBackground
+        });
+        this._chatWidget.render(this._elements.chatWidget);
+        this._elements.chatWidget.style.setProperty(asCssVariableName(chatRequestBackground), asCssVariable(inlineChatBackground));
+        this._chatWidget.setVisible(true);
+        this._store.add(this._chatWidget);
+        const ctxResponse = CONTEXT_RESPONSE.bindTo(this.scopedContextKeyService);
+        const ctxResponseVote = CONTEXT_RESPONSE_VOTE.bindTo(this.scopedContextKeyService);
+        const ctxResponseSupportIssues = CONTEXT_CHAT_RESPONSE_SUPPORT_ISSUE_REPORTING.bindTo(this.scopedContextKeyService);
+        const ctxResponseError = CONTEXT_RESPONSE_ERROR.bindTo(this.scopedContextKeyService);
+        const ctxResponseErrorFiltered = CONTEXT_RESPONSE_FILTERED.bindTo(this.scopedContextKeyService);
+        const viewModelStore = this._store.add(new DisposableStore());
+        this._store.add(this._chatWidget.onDidChangeViewModel(() => {
+            viewModelStore.clear();
+            const viewModel = this._chatWidget.viewModel;
+            if (!viewModel) {
+                return;
+            }
+            viewModelStore.add(toDisposable(() => {
+                toolbar2.context = undefined;
+                ctxResponse.reset();
+                ctxResponseVote.reset();
+                ctxResponseError.reset();
+                ctxResponseErrorFiltered.reset();
+                ctxResponseSupportIssues.reset();
+            }));
+            viewModelStore.add(viewModel.onDidChange(() => {
+                const last = viewModel.getItems().at(-1);
+                toolbar2.context = last;
+                ctxResponse.set(isResponseVM(last));
+                ctxResponseVote.set(isResponseVM(last) ? last.vote === ChatAgentVoteDirection.Down ? 'down' : last.vote === ChatAgentVoteDirection.Up ? 'up' : '' : '');
+                ctxResponseError.set(isResponseVM(last) && last.errorDetails !== undefined);
+                ctxResponseErrorFiltered.set((!!(isResponseVM(last) && last.errorDetails?.responseIsFiltered)));
+                ctxResponseSupportIssues.set(isResponseVM(last) && (last.agent?.metadata.supportIssueReporting ?? false));
+                this._onDidChangeHeight.fire();
+            }));
+            this._onDidChangeHeight.fire();
+        }));
+        this._store.add(this.chatWidget.onDidChangeContentHeight(() => {
+            this._onDidChangeHeight.fire();
+        }));
+        this._ctxResponseFocused = CTX_INLINE_CHAT_RESPONSE_FOCUSED.bindTo(this._contextKeyService);
+        const tracker = this._store.add(trackFocus(this.domNode));
+        this._store.add(tracker.onDidBlur(() => this._ctxResponseFocused.set(false)));
+        this._store.add(tracker.onDidFocus(() => this._ctxResponseFocused.set(true)));
+        this._ctxInputEditorFocused = CTX_INLINE_CHAT_FOCUSED.bindTo(_contextKeyService);
+        this._store.add(this._chatWidget.inputEditor.onDidFocusEditorWidget(() => this._ctxInputEditorFocused.set(true)));
+        this._store.add(this._chatWidget.inputEditor.onDidBlurEditorWidget(() => this._ctxInputEditorFocused.set(false)));
+        const statusMenuId = options.statusMenuId instanceof MenuId ? options.statusMenuId : options.statusMenuId.menu;
+        const statusMenuOptions = options.statusMenuId instanceof MenuId ? undefined : options.statusMenuId.options;
+        const statusButtonBar = scopedInstaService.createInstance(MenuWorkbenchButtonBar, this._elements.toolbar1, statusMenuId, {
+            toolbarOptions: { primaryGroup: '0_main' },
+            telemetrySource: options.chatWidgetViewOptions?.menus?.telemetrySource,
+            menuOptions: { renderShortTitle: true },
+            ...statusMenuOptions,
+        });
+        this._store.add(statusButtonBar.onDidChange(() => this._onDidChangeHeight.fire()));
+        this._store.add(statusButtonBar);
+        const toolbar2 = scopedInstaService.createInstance(MenuWorkbenchToolBar, this._elements.toolbar2, options.secondaryMenuId ?? MenuId.for(''), {
+            telemetrySource: options.chatWidgetViewOptions?.menus?.telemetrySource,
+            menuOptions: { renderShortTitle: true, shouldForwardArgs: true },
+            actionViewItemProvider: (action, options) => {
+                if (action instanceof MenuItemAction && action.item.id === MarkUnhelpfulActionId) {
+                    return scopedInstaService.createInstance(ChatVoteDownButton, action, options);
+                }
+                return createActionViewItem(scopedInstaService, action, options);
+            }
+        });
+        this._store.add(toolbar2.onDidChangeMenuItems(() => this._onDidChangeHeight.fire()));
+        this._store.add(toolbar2);
+        this._store.add(this._configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration("accessibility.verbosity.inlineChat")) {
+                this._updateAriaLabel();
+            }
+        }));
+        this._elements.root.tabIndex = 0;
+        this._elements.statusLabel.tabIndex = 0;
+        this._updateAriaLabel();
+        this._store.add(this._hoverService.setupManagedHover(getDefaultHoverDelegate('element'), this._elements.statusLabel, () => {
+            return this._elements.statusLabel.dataset['title'];
+        }));
+        this._store.add(this._chatService.onDidPerformUserAction(e => {
+            if (e.sessionId === this._chatWidget.viewModel?.model.sessionId && e.action.kind === 'vote') {
+                this.updateStatus('Thank you for your feedback!', { resetAfter: 1250 });
+            }
+        }));
+        this._defaultChatModel = this._store.add(this._instantiationService.createInstance(ChatModel, undefined, ChatAgentLocation.Editor));
+        this._defaultChatModel.startInitialize();
+        this._defaultChatModel.initialize(undefined);
+        this.setChatModel(this._defaultChatModel);
+    }
+    _updateAriaLabel() {
+        this._elements.root.ariaLabel = this._accessibleViewService.getOpenAriaHint("accessibility.verbosity.inlineChat");
+        if (this._accessibilityService.isScreenReaderOptimized()) {
+            let label = defaultAriaLabel;
+            if (this._configurationService.getValue("accessibility.verbosity.inlineChat")) {
+                const kbLabel = this._keybindingService.lookupKeybinding("editor.action.accessibilityHelp")?.getLabel();
+                label = kbLabel
+                    ? localize('inlineChat.accessibilityHelp', "Inline Chat Input, Use {0} for Inline Chat Accessibility Help.", kbLabel)
+                    : localize('inlineChat.accessibilityHelpNoKb', "Inline Chat Input, Run the Inline Chat Accessibility Help command for more information.");
+            }
+            this._chatWidget.inputEditor.updateOptions({ ariaLabel: label });
+        }
+    }
+    dispose() {
+        this._store.dispose();
+    }
+    get domNode() {
+        return this._elements.root;
+    }
+    get chatWidget() {
+        return this._chatWidget;
+    }
+    saveState() {
+        this._chatWidget.saveState();
+    }
+    layout(widgetDim) {
+        this._isLayouting = true;
+        try {
+            this._doLayout(widgetDim);
+        }
+        finally {
+            this._isLayouting = false;
+        }
+    }
+    _doLayout(dimension) {
+        const extraHeight = this._getExtraHeight();
+        const statusHeight = getTotalHeight(this._elements.status);
+        this._elements.root.style.height = `${dimension.height - extraHeight}px`;
+        this._elements.root.style.width = `${dimension.width}px`;
+        this._chatWidget.layout(dimension.height - statusHeight - extraHeight, dimension.width);
+    }
+    get contentHeight() {
+        const data = {
+            chatWidgetContentHeight: this._chatWidget.contentHeight,
+            statusHeight: getTotalHeight(this._elements.status),
+            extraHeight: this._getExtraHeight()
+        };
+        const result = data.chatWidgetContentHeight + data.statusHeight + data.extraHeight;
+        return result;
+    }
+    get minHeight() {
+        let maxWidgetOutputHeight = 100;
+        for (const item of this._chatWidget.viewModel?.getItems() ?? []) {
+            if (isResponseVM(item) && item.response.value.some(r => r.kind === 'textEditGroup' && !r.state?.applied)) {
+                maxWidgetOutputHeight = 270;
+                break;
+            }
+        }
+        let value = this.contentHeight;
+        value -= this._chatWidget.contentHeight;
+        value += Math.min(this._chatWidget.input.contentHeight + maxWidgetOutputHeight, this._chatWidget.contentHeight);
+        return value;
+    }
+    _getExtraHeight() {
+        return 2 + 4;
+    }
+    get value() {
+        return this._chatWidget.getInput();
+    }
+    set value(value) {
+        this._chatWidget.setInput(value);
+    }
+    selectAll(includeSlashCommand = true) {
+        let startColumn = 1;
+        if (!includeSlashCommand) {
+            const match = /^(\/\w+)\s*/.exec(this._chatWidget.inputEditor.getModel().getLineContent(1));
+            if (match) {
+                startColumn = match[1].length + 1;
+            }
+        }
+        this._chatWidget.inputEditor.setSelection(new Selection(1, startColumn, Number.MAX_SAFE_INTEGER, 1));
+    }
+    set placeholder(value) {
+        this._chatWidget.setInputPlaceholder(value);
+    }
+    toggleStatus(show) {
+        this._elements.toolbar1.classList.toggle('hidden', !show);
+        this._elements.toolbar2.classList.toggle('hidden', !show);
+        this._elements.status.classList.toggle('hidden', !show);
+        this._elements.infoLabel.classList.toggle('hidden', !show);
+        this._onDidChangeHeight.fire();
+    }
+    updateToolbar(show) {
+        this._elements.root.classList.toggle('toolbar', show);
+        this._elements.toolbar1.classList.toggle('hidden', !show);
+        this._elements.toolbar2.classList.toggle('hidden', !show);
+        this._elements.status.classList.toggle('actions', show);
+        this._elements.infoLabel.classList.toggle('hidden', show);
+        this._onDidChangeHeight.fire();
+    }
+    async getCodeBlockInfo(codeBlockIndex) {
+        const { viewModel } = this._chatWidget;
+        if (!viewModel) {
+            return undefined;
+        }
+        const items = viewModel.getItems().filter(i => isResponseVM(i));
+        if (!items.length) {
+            return;
+        }
+        const item = items[items.length - 1];
+        return viewModel.codeBlockModelCollection.get(viewModel.sessionId, item, codeBlockIndex)?.model;
+    }
+    get responseContent() {
+        const requests = this._chatWidget.viewModel?.model.getRequests();
+        if (!isNonEmptyArray(requests)) {
+            return undefined;
+        }
+        return tail(requests)?.response?.response.toString();
+    }
+    getChatModel() {
+        return this._chatWidget.viewModel?.model ?? this._defaultChatModel;
+    }
+    setChatModel(chatModel) {
+        this._chatWidget.setModel(chatModel, { inputValue: undefined });
+    }
+    updateChatMessage(message, isIncomplete, isCodeBlockEditable) {
+        if (!this._chatWidget.viewModel || this._chatWidget.viewModel.model !== this._defaultChatModel) {
+            return;
+        }
+        const model = this._defaultChatModel;
+        if (!message?.message.value) {
+            for (const request of model.getRequests()) {
+                model.removeRequest(request.id);
+            }
+            return;
+        }
+        const chatRequest = model.addRequest({ parts: [], text: '' }, { variables: [] }, 0);
+        model.acceptResponseProgress(chatRequest, {
+            kind: 'markdownContent',
+            content: message.message
+        });
+        if (!isIncomplete) {
+            model.completeResponse(chatRequest);
+            return;
+        }
+        return {
+            cancel: () => model.cancelRequest(chatRequest),
+            complete: () => model.completeResponse(chatRequest),
+            appendContent: (fragment) => {
+                model.acceptResponseProgress(chatRequest, {
+                    kind: 'markdownContent',
+                    content: new MarkdownString(fragment)
+                });
+            }
+        };
+    }
+    updateInfo(message) {
+        this._elements.infoLabel.classList.toggle('hidden', !message);
+        const renderedMessage = renderLabelWithIcons(message);
+        reset(this._elements.infoLabel, ...renderedMessage);
+        this._onDidChangeHeight.fire();
+    }
+    updateStatus(message, ops = {}) {
+        const isTempMessage = typeof ops.resetAfter === 'number';
+        if (isTempMessage && !this._elements.statusLabel.dataset['state']) {
+            const statusLabel = this._elements.statusLabel.innerText;
+            const title = this._elements.statusLabel.dataset['title'];
+            const classes = Array.from(this._elements.statusLabel.classList.values());
+            setTimeout(() => {
+                this.updateStatus(statusLabel, { classes, keepMessage: true, title });
+            }, ops.resetAfter);
+        }
+        const renderedMessage = renderLabelWithIcons(message);
+        reset(this._elements.statusLabel, ...renderedMessage);
+        this._elements.statusLabel.className = `label status ${(ops.classes ?? []).join(' ')}`;
+        this._elements.statusLabel.classList.toggle('hidden', !message);
+        if (isTempMessage) {
+            this._elements.statusLabel.dataset['state'] = 'temp';
+        }
+        else {
+            delete this._elements.statusLabel.dataset['state'];
+        }
+        if (ops.title) {
+            this._elements.statusLabel.dataset['title'] = ops.title;
+        }
+        else {
+            delete this._elements.statusLabel.dataset['title'];
+        }
+        this._onDidChangeHeight.fire();
+    }
+    reset() {
+        this._chatWidget.setContext(true);
+        this._chatWidget.saveState();
+        this.updateChatMessage(undefined);
+        reset(this._elements.statusLabel);
+        this._elements.statusLabel.classList.toggle('hidden', true);
+        this._elements.toolbar1.classList.add('hidden');
+        this._elements.toolbar2.classList.add('hidden');
+        this.updateInfo('');
+        this.chatWidget.setModel(this._defaultChatModel, {});
+        this._elements.accessibleViewer.classList.toggle('hidden', true);
+        this._onDidChangeHeight.fire();
+    }
+    focus() {
+        this._chatWidget.focusInput();
+    }
+    hasFocus() {
+        return this.domNode.contains(getActiveElement());
+    }
+};
+InlineChatWidget = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, IContextKeyService),
+    __param(4, IKeybindingService),
+    __param(5, IAccessibilityService),
+    __param(6, IConfigurationService),
+    __param(7, IAccessibleViewService),
+    __param(8, ITextModelService),
+    __param(9, IChatService),
+    __param(10, IHoverService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], InlineChatWidget);
+export { InlineChatWidget };
+const defaultAriaLabel = localize('aria-label', "Inline Chat Input");
+let EditorBasedInlineChatWidget = class EditorBasedInlineChatWidget extends InlineChatWidget {
+    constructor(location, _parentEditor, options, contextKeyService, keybindingService, instantiationService, accessibilityService, configurationService, accessibleViewService, textModelResolverService, chatService, hoverService, layoutService) {
+        super(location, {
+            ...options,
+            chatWidgetViewOptions: {
+                ...options.chatWidgetViewOptions,
+                editorOverflowWidgetsDomNode: layoutService.mainContainer.appendChild($('.inline-chat-overflow.monaco-editor'))
+            }
+        }, instantiationService, contextKeyService, keybindingService, accessibilityService, configurationService, accessibleViewService, textModelResolverService, chatService, hoverService);
+        this._parentEditor = _parentEditor;
+        this._accessibleViewer = this._store.add(new MutableDisposable());
+    }
+    get contentHeight() {
+        let result = super.contentHeight;
+        if (this._accessibleViewer.value) {
+            result += this._accessibleViewer.value.height + 8;
+        }
+        return result;
+    }
+    _doLayout(dimension) {
+        let newHeight = dimension.height;
+        if (this._accessibleViewer.value) {
+            this._accessibleViewer.value.width = dimension.width - 12;
+            newHeight -= this._accessibleViewer.value.height + 8;
+        }
+        super._doLayout(dimension.with(undefined, newHeight));
+        this._elements.root.style.height = `${dimension.height - this._getExtraHeight()}px`;
+    }
+    reset() {
+        this._accessibleViewer.clear();
+        super.reset();
+    }
+    showAccessibleHunk(session, hunkData) {
+        this._elements.accessibleViewer.classList.remove('hidden');
+        this._accessibleViewer.clear();
+        this._accessibleViewer.value = this._instantiationService.createInstance(HunkAccessibleDiffViewer, this._elements.accessibleViewer, session, hunkData, new AccessibleHunk(this._parentEditor, session, hunkData));
+        this._onDidChangeHeight.fire();
+    }
+};
+EditorBasedInlineChatWidget = __decorate([
+    __param(3, IContextKeyService),
+    __param(4, IKeybindingService),
+    __param(5, IInstantiationService),
+    __param(6, IAccessibilityService),
+    __param(7, IConfigurationService),
+    __param(8, IAccessibleViewService),
+    __param(9, ITextModelService),
+    __param(10, IChatService),
+    __param(11, IHoverService),
+    __param(12, ILayoutService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], EditorBasedInlineChatWidget);
+export { EditorBasedInlineChatWidget };
+let HunkAccessibleDiffViewer = HunkAccessibleDiffViewer_1 = class HunkAccessibleDiffViewer extends AccessibleDiffViewer {
+    set width(value) {
+        this._width2.set(value, undefined);
+    }
+    constructor(parentNode, session, hunk, models, instantiationService) {
+        const width = observableValue('width', 0);
+        const diff = observableValue('diff', HunkAccessibleDiffViewer_1._asMapping(hunk));
+        const diffs = derived(r => [diff.read(r)]);
+        const lines = Math.min(10, 8 + diff.get().changedLineCount);
+        const height = models.getModifiedOptions().get(69) * lines;
+        super(parentNode, constObservable(true), () => { }, constObservable(false), width, constObservable(height), diffs, models, instantiationService);
+        this.height = height;
+        this._width2 = width;
+        this._store.add(session.textModelN.onDidChangeContent(() => {
+            diff.set(HunkAccessibleDiffViewer_1._asMapping(hunk), undefined);
+        }));
+    }
+    static _asMapping(hunk) {
+        const ranges0 = hunk.getRanges0();
+        const rangesN = hunk.getRangesN();
+        const originalLineRange = LineRange.fromRangeInclusive(ranges0[0]);
+        const modifiedLineRange = LineRange.fromRangeInclusive(rangesN[0]);
+        const innerChanges = [];
+        for (let i = 1; i < ranges0.length; i++) {
+            innerChanges.push(new RangeMapping(ranges0[i], rangesN[i]));
+        }
+        return new DetailedLineRangeMapping(originalLineRange, modifiedLineRange, innerChanges);
+    }
+};
+HunkAccessibleDiffViewer = HunkAccessibleDiffViewer_1 = __decorate([
+    __param(4, IInstantiationService),
+    __metadata("design:paramtypes", [HTMLElement,
+        Session, Object, Object, Object])
+], HunkAccessibleDiffViewer);
+class AccessibleHunk {
+    constructor(_editor, _session, _hunk) {
+        this._editor = _editor;
+        this._session = _session;
+        this._hunk = _hunk;
+    }
+    getOriginalModel() {
+        return this._session.textModel0;
+    }
+    getModifiedModel() {
+        return this._session.textModelN;
+    }
+    getOriginalOptions() {
+        return this._editor.getOptions();
+    }
+    getModifiedOptions() {
+        return this._editor.getOptions();
+    }
+    originalReveal(range) {
+    }
+    modifiedReveal(range) {
+        this._editor.revealRangeInCenterIfOutsideViewport(range || this._hunk.getRangesN()[0], 0);
+    }
+    modifiedSetSelection(range) {
+    }
+    modifiedFocus() {
+        this._editor.focus();
+    }
+    getModifiedPosition() {
+        return this._hunk.getRangesN()[0].getStartPosition();
+    }
+}

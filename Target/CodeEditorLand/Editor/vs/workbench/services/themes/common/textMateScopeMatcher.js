@@ -1,1 +1,120 @@
-function m(c,a,l){const n=p(c);let e=n.next();for(;e!==null;){let t=0;if(e.length===2&&e.charAt(1)===":"){switch(e.charAt(0)){case"R":t=1;break;case"L":t=-1;break;default:}e=n.next()}const r=h();if(r&&l.push({matcher:r,priority:t}),e!==",")break;e=n.next()}function u(){if(e==="-"){e=n.next();const t=u();return t?r=>t(r)<0?0:-1:null}if(e==="("){e=n.next();const t=x();return e===")"&&(e=n.next()),t}if(f(e)){const t=[];do t.push(e),e=n.next();while(f(e));return r=>a(t,r)}return null}function h(){let t=u();if(!t)return null;const r=[];for(;t;)r.push(t),t=u();return o=>{let i=r[0](o);for(let s=1;i>=0&&s<r.length;s++)i=Math.min(i,r[s](o));return i}}function x(){let t=h();if(!t)return null;const r=[];for(;t&&(r.push(t),e==="|"||e===",");){do e=n.next();while(e==="|"||e===",");t=h()}return o=>{let i=r[0](o);for(let s=1;s<r.length;s++)i=Math.max(i,r[s](o));return i}}}function f(c){return!!c&&!!c.match(/[\w\.:]+/)}function p(c){const a=/([LR]:|[\w\.:][\w\.:\-]*|[\,\|\-\(\)])/g;let l=a.exec(c);return{next:()=>{if(!l)return null;const n=l[0];return l=a.exec(c),n}}}export{m as createMatchers};
+'use strict';
+export function createMatchers(selector, matchesName, results) {
+    const tokenizer = newTokenizer(selector);
+    let token = tokenizer.next();
+    while (token !== null) {
+        let priority = 0;
+        if (token.length === 2 && token.charAt(1) === ':') {
+            switch (token.charAt(0)) {
+                case 'R':
+                    priority = 1;
+                    break;
+                case 'L':
+                    priority = -1;
+                    break;
+                default:
+                    console.log(`Unknown priority ${token} in scope selector`);
+            }
+            token = tokenizer.next();
+        }
+        const matcher = parseConjunction();
+        if (matcher) {
+            results.push({ matcher, priority });
+        }
+        if (token !== ',') {
+            break;
+        }
+        token = tokenizer.next();
+    }
+    function parseOperand() {
+        if (token === '-') {
+            token = tokenizer.next();
+            const expressionToNegate = parseOperand();
+            if (!expressionToNegate) {
+                return null;
+            }
+            return matcherInput => {
+                const score = expressionToNegate(matcherInput);
+                return score < 0 ? 0 : -1;
+            };
+        }
+        if (token === '(') {
+            token = tokenizer.next();
+            const expressionInParents = parseInnerExpression();
+            if (token === ')') {
+                token = tokenizer.next();
+            }
+            return expressionInParents;
+        }
+        if (isIdentifier(token)) {
+            const identifiers = [];
+            do {
+                identifiers.push(token);
+                token = tokenizer.next();
+            } while (isIdentifier(token));
+            return matcherInput => matchesName(identifiers, matcherInput);
+        }
+        return null;
+    }
+    function parseConjunction() {
+        let matcher = parseOperand();
+        if (!matcher) {
+            return null;
+        }
+        const matchers = [];
+        while (matcher) {
+            matchers.push(matcher);
+            matcher = parseOperand();
+        }
+        return matcherInput => {
+            let min = matchers[0](matcherInput);
+            for (let i = 1; min >= 0 && i < matchers.length; i++) {
+                min = Math.min(min, matchers[i](matcherInput));
+            }
+            return min;
+        };
+    }
+    function parseInnerExpression() {
+        let matcher = parseConjunction();
+        if (!matcher) {
+            return null;
+        }
+        const matchers = [];
+        while (matcher) {
+            matchers.push(matcher);
+            if (token === '|' || token === ',') {
+                do {
+                    token = tokenizer.next();
+                } while (token === '|' || token === ',');
+            }
+            else {
+                break;
+            }
+            matcher = parseConjunction();
+        }
+        return matcherInput => {
+            let max = matchers[0](matcherInput);
+            for (let i = 1; i < matchers.length; i++) {
+                max = Math.max(max, matchers[i](matcherInput));
+            }
+            return max;
+        };
+    }
+}
+function isIdentifier(token) {
+    return !!token && !!token.match(/[\w\.:]+/);
+}
+function newTokenizer(input) {
+    const regex = /([LR]:|[\w\.:][\w\.:\-]*|[\,\|\-\(\)])/g;
+    let match = regex.exec(input);
+    return {
+        next: () => {
+            if (!match) {
+                return null;
+            }
+            const res = match[0];
+            match = regex.exec(input);
+            return res;
+        }
+    };
+}

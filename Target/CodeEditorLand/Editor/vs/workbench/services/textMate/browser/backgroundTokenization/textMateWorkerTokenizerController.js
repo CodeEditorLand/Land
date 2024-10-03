@@ -1,1 +1,147 @@
-import{importAMDNodeModule as L}from"../../../../../amdX.js";import{Disposable as S}from"../../../../../base/common/lifecycle.js";import{autorun as I,keepObserved as C}from"../../../../../base/common/observable.js";import"../../../../../base/common/worker/simpleWorker.js";import{countEOL as b}from"../../../../../editor/common/core/eolCounter.js";import"../../../../../editor/common/core/lineRange.js";import{Range as T}from"../../../../../editor/common/core/range.js";import"../../../../../editor/common/languages.js";import"../../../../../editor/common/model.js";import{TokenizationStateStore as v}from"../../../../../editor/common/model/textModelTokens.js";import"../../../../../editor/common/textModelEvents.js";import{ContiguousMultilineTokensBuilder as m}from"../../../../../editor/common/tokens/contiguousMultilineTokensBuilder.js";import"../../../../../platform/configuration/common/configuration.js";import{observableConfigValue as y}from"../../../../../platform/observable/common/platformObservableUtils.js";import{ArrayEdit as x,MonotonousIndexTransformer as u,SingleArrayEdit as z}from"../arrayOperation.js";class k extends S{constructor(g,s,l,h,r,c){super();this._model=g;this._worker=s;this._languageIdCodec=l;this._backgroundTokenizationStore=h;this._configurationService=r;this._maxTokenizationLineLength=c;this._register(C(this._loggingEnabled)),this._register(this._model.onDidChangeContent(t=>{this._shouldLog,this._worker.$acceptModelChanged(this.controllerId,t),this._pendingChanges.push(t)})),this._register(this._model.onDidChangeLanguage(t=>{const n=this._model.getLanguageId(),i=this._languageIdCodec.encodeLanguageId(n);this._worker.$acceptModelLanguageChanged(this.controllerId,n,i)}));const e=this._model.getLanguageId(),o=this._languageIdCodec.encodeLanguageId(e);this._worker.$acceptNewModel({uri:this._model.uri,versionId:this._model.getVersionId(),lines:this._model.getLinesContent(),EOL:this._model.getEOL(),languageId:e,encodedLanguageId:o,maxTokenizationLineLength:this._maxTokenizationLineLength.get(),controllerId:this.controllerId}),this._register(I(t=>{const n=this._maxTokenizationLineLength.read(t);this._worker.$acceptMaxTokenizationLineLength(this.controllerId,n)}))}static _id=0;controllerId=k._id++;_pendingChanges=[];_states=new v;_loggingEnabled=y("editor.experimental.asyncTokenizationLogging",!1,this._configurationService);_applyStateStackDiffFn;_initialState;dispose(){super.dispose(),this._worker.$acceptRemovedModel(this.controllerId)}requestTokens(g,s){this._worker.$retokenize(this.controllerId,g,s)}async setTokensAndStates(g,s,l,h){if(this.controllerId!==g)return;let r=m.deserialize(new Uint8Array(l));if(this._shouldLog,this._shouldLog){const e=this._pendingChanges.filter(o=>o.versionId<=s).map(o=>o.changes).map(o=>_(o)).join(" then ")}for(;this._pendingChanges.length>0&&this._pendingChanges[0].versionId<=s;){const e=this._pendingChanges.shift();this._states.acceptChanges(e.changes)}if(this._pendingChanges.length>0){if(this._shouldLog){const t=this._pendingChanges.map(n=>n.changes).map(n=>_(n)).join(" then ")}const e=u.fromMany(this._pendingChanges.map(t=>f(t.changes))),o=new m;for(const t of r)for(let n=t.startLineNumber;n<=t.endLineNumber;n++)e.transform(n-1)!==void 0&&o.add(n,t.getLineTokens(n));r=o.finalize();for(const t of this._pendingChanges)for(const n of t.changes)for(let i=0;i<r.length;i++)r[i].applyEdit(n.range,n.text)}const c=u.fromMany(this._pendingChanges.map(e=>f(e.changes)));if(!this._applyStateStackDiffFn||!this._initialState){const{applyStateStackDiff:e,INITIAL:o}=await L("vscode-textmate","release/main.js");this._applyStateStackDiffFn=e,this._initialState=o}for(const e of h){let o=e.startLineNumber<=1?this._initialState:this._states.getEndState(e.startLineNumber-1);for(let t=0;t<e.stateDeltas.length;t++){const n=e.stateDeltas[t];let i;n?(i=this._applyStateStackDiffFn(o,n),this._states.setEndState(e.startLineNumber+t,i)):i=this._states.getEndState(e.startLineNumber+t);const p=c.transform(e.startLineNumber+t-1);p!==void 0&&this._backgroundTokenizationStore.setEndState(p+1,i),e.startLineNumber+t>=this._model.getLineCount()-1&&this._backgroundTokenizationStore.backgroundTokenizationFinished(),o=i}}this._backgroundTokenizationStore.setTokens(r)}get _shouldLog(){return this._loggingEnabled.get()}}function f(d){return new x(d.map(a=>new z(a.range.startLineNumber-1,a.range.endLineNumber-a.range.startLineNumber+1,b(a.text)[0]+1)))}function _(d){return d.map(a=>T.lift(a.range).toString()+" => "+a.text).join(" & ")}export{k as TextMateWorkerTokenizerController};
+import { importAMDNodeModule } from '../../../../../amdX.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { autorun, keepObserved } from '../../../../../base/common/observable.js';
+import { countEOL } from '../../../../../editor/common/core/eolCounter.js';
+import { LineRange } from '../../../../../editor/common/core/lineRange.js';
+import { Range } from '../../../../../editor/common/core/range.js';
+import { TokenizationStateStore } from '../../../../../editor/common/model/textModelTokens.js';
+import { ContiguousMultilineTokensBuilder } from '../../../../../editor/common/tokens/contiguousMultilineTokensBuilder.js';
+import { observableConfigValue } from '../../../../../platform/observable/common/platformObservableUtils.js';
+import { ArrayEdit, MonotonousIndexTransformer, SingleArrayEdit } from '../arrayOperation.js';
+export class TextMateWorkerTokenizerController extends Disposable {
+    static { this._id = 0; }
+    constructor(_model, _worker, _languageIdCodec, _backgroundTokenizationStore, _configurationService, _maxTokenizationLineLength) {
+        super();
+        this._model = _model;
+        this._worker = _worker;
+        this._languageIdCodec = _languageIdCodec;
+        this._backgroundTokenizationStore = _backgroundTokenizationStore;
+        this._configurationService = _configurationService;
+        this._maxTokenizationLineLength = _maxTokenizationLineLength;
+        this.controllerId = TextMateWorkerTokenizerController._id++;
+        this._pendingChanges = [];
+        this._states = new TokenizationStateStore();
+        this._loggingEnabled = observableConfigValue('editor.experimental.asyncTokenizationLogging', false, this._configurationService);
+        this._register(keepObserved(this._loggingEnabled));
+        this._register(this._model.onDidChangeContent((e) => {
+            if (this._shouldLog) {
+                console.log('model change', {
+                    fileName: this._model.uri.fsPath.split('\\').pop(),
+                    changes: changesToString(e.changes),
+                });
+            }
+            this._worker.$acceptModelChanged(this.controllerId, e);
+            this._pendingChanges.push(e);
+        }));
+        this._register(this._model.onDidChangeLanguage((e) => {
+            const languageId = this._model.getLanguageId();
+            const encodedLanguageId = this._languageIdCodec.encodeLanguageId(languageId);
+            this._worker.$acceptModelLanguageChanged(this.controllerId, languageId, encodedLanguageId);
+        }));
+        const languageId = this._model.getLanguageId();
+        const encodedLanguageId = this._languageIdCodec.encodeLanguageId(languageId);
+        this._worker.$acceptNewModel({
+            uri: this._model.uri,
+            versionId: this._model.getVersionId(),
+            lines: this._model.getLinesContent(),
+            EOL: this._model.getEOL(),
+            languageId,
+            encodedLanguageId,
+            maxTokenizationLineLength: this._maxTokenizationLineLength.get(),
+            controllerId: this.controllerId,
+        });
+        this._register(autorun(reader => {
+            const maxTokenizationLineLength = this._maxTokenizationLineLength.read(reader);
+            this._worker.$acceptMaxTokenizationLineLength(this.controllerId, maxTokenizationLineLength);
+        }));
+    }
+    dispose() {
+        super.dispose();
+        this._worker.$acceptRemovedModel(this.controllerId);
+    }
+    requestTokens(startLineNumber, endLineNumberExclusive) {
+        this._worker.$retokenize(this.controllerId, startLineNumber, endLineNumberExclusive);
+    }
+    async setTokensAndStates(controllerId, versionId, rawTokens, stateDeltas) {
+        if (this.controllerId !== controllerId) {
+            return;
+        }
+        let tokens = ContiguousMultilineTokensBuilder.deserialize(new Uint8Array(rawTokens));
+        if (this._shouldLog) {
+            console.log('received background tokenization result', {
+                fileName: this._model.uri.fsPath.split('\\').pop(),
+                updatedTokenLines: tokens.map((t) => t.getLineRange()).join(' & '),
+                updatedStateLines: stateDeltas.map((s) => new LineRange(s.startLineNumber, s.startLineNumber + s.stateDeltas.length).toString()).join(' & '),
+            });
+        }
+        if (this._shouldLog) {
+            const changes = this._pendingChanges.filter(c => c.versionId <= versionId).map(c => c.changes).map(c => changesToString(c)).join(' then ');
+            console.log('Applying changes to local states', changes);
+        }
+        while (this._pendingChanges.length > 0 &&
+            this._pendingChanges[0].versionId <= versionId) {
+            const change = this._pendingChanges.shift();
+            this._states.acceptChanges(change.changes);
+        }
+        if (this._pendingChanges.length > 0) {
+            if (this._shouldLog) {
+                const changes = this._pendingChanges.map(c => c.changes).map(c => changesToString(c)).join(' then ');
+                console.log('Considering non-processed changes', changes);
+            }
+            const curToFutureTransformerTokens = MonotonousIndexTransformer.fromMany(this._pendingChanges.map((c) => fullLineArrayEditFromModelContentChange(c.changes)));
+            const b = new ContiguousMultilineTokensBuilder();
+            for (const t of tokens) {
+                for (let i = t.startLineNumber; i <= t.endLineNumber; i++) {
+                    const result = curToFutureTransformerTokens.transform(i - 1);
+                    if (result !== undefined) {
+                        b.add(i, t.getLineTokens(i));
+                    }
+                }
+            }
+            tokens = b.finalize();
+            for (const change of this._pendingChanges) {
+                for (const innerChanges of change.changes) {
+                    for (let j = 0; j < tokens.length; j++) {
+                        tokens[j].applyEdit(innerChanges.range, innerChanges.text);
+                    }
+                }
+            }
+        }
+        const curToFutureTransformerStates = MonotonousIndexTransformer.fromMany(this._pendingChanges.map((c) => fullLineArrayEditFromModelContentChange(c.changes)));
+        if (!this._applyStateStackDiffFn || !this._initialState) {
+            const { applyStateStackDiff, INITIAL } = await importAMDNodeModule('vscode-textmate', 'release/main.js');
+            this._applyStateStackDiffFn = applyStateStackDiff;
+            this._initialState = INITIAL;
+        }
+        for (const d of stateDeltas) {
+            let prevState = d.startLineNumber <= 1 ? this._initialState : this._states.getEndState(d.startLineNumber - 1);
+            for (let i = 0; i < d.stateDeltas.length; i++) {
+                const delta = d.stateDeltas[i];
+                let state;
+                if (delta) {
+                    state = this._applyStateStackDiffFn(prevState, delta);
+                    this._states.setEndState(d.startLineNumber + i, state);
+                }
+                else {
+                    state = this._states.getEndState(d.startLineNumber + i);
+                }
+                const offset = curToFutureTransformerStates.transform(d.startLineNumber + i - 1);
+                if (offset !== undefined) {
+                    this._backgroundTokenizationStore.setEndState(offset + 1, state);
+                }
+                if (d.startLineNumber + i >= this._model.getLineCount() - 1) {
+                    this._backgroundTokenizationStore.backgroundTokenizationFinished();
+                }
+                prevState = state;
+            }
+        }
+        this._backgroundTokenizationStore.setTokens(tokens);
+    }
+    get _shouldLog() { return this._loggingEnabled.get(); }
+}
+function fullLineArrayEditFromModelContentChange(c) {
+    return new ArrayEdit(c.map((c) => new SingleArrayEdit(c.range.startLineNumber - 1, c.range.endLineNumber - c.range.startLineNumber + 1, countEOL(c.text)[0] + 1)));
+}
+function changesToString(changes) {
+    return changes.map(c => Range.lift(c.range).toString() + ' => ' + c.text).join(' & ');
+}

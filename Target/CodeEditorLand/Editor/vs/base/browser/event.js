@@ -1,1 +1,16 @@
-import"./touch.js";import{Emitter as s}from"../common/event.js";import"../common/lifecycle.js";class l{emitter;get event(){return this.emitter.event}constructor(e,t,n){const o=r=>this.emitter.fire(r);this.emitter=new s({onWillAddFirstListener:()=>e.addEventListener(t,o,n),onDidRemoveLastListener:()=>e.removeEventListener(t,o,n)})}dispose(){this.emitter.dispose()}}export{l as DomEmitter};
+import { Emitter } from '../common/event.js';
+export class DomEmitter {
+    get event() {
+        return this.emitter.event;
+    }
+    constructor(element, type, useCapture) {
+        const fn = (e) => this.emitter.fire(e);
+        this.emitter = new Emitter({
+            onWillAddFirstListener: () => element.addEventListener(type, fn, useCapture),
+            onDidRemoveLastListener: () => element.removeEventListener(type, fn, useCapture)
+        });
+    }
+    dispose() {
+        this.emitter.dispose();
+    }
+}

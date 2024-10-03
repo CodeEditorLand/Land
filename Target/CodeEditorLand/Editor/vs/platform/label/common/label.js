@@ -1,1 +1,2 @@
-import"../../../base/common/event.js";import"../../../base/common/lifecycle.js";import"../../../base/common/uri.js";import{createDecorator as r}from"../../instantiation/common/instantiation.js";import"../../workspace/common/workspace.js";const I=r("labelService");var t=(e=>(e[e.SHORT=0]="SHORT",e[e.MEDIUM=1]="MEDIUM",e[e.LONG=2]="LONG",e))(t||{});export{I as ILabelService,t as Verbosity};
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const ILabelService = createDecorator('labelService');

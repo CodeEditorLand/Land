@@ -1,1 +1,239 @@
-var C=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var S=(l,d,i,e)=>{for(var r=e>1?void 0:e?w(d,i):d,s=l.length-1,t;s>=0;s--)(t=l[s])&&(r=(e?t(d,i,r):t(r))||r);return e&&r&&C(d,i,r),r},c=(l,d)=>(i,e)=>d(i,e,l);import{app as P}from"electron";import{CancellationToken as E}from"../../../base/common/cancellation.js";import{Event as A}from"../../../base/common/event.js";import{hash as R}from"../../../base/common/hash.js";import{Disposable as I}from"../../../base/common/lifecycle.js";import{URI as L}from"../../../base/common/uri.js";import{generateUuid as M}from"../../../base/common/uuid.js";import{IConfigurationService as D}from"../../configuration/common/configuration.js";import{IEncryptionMainService as _}from"../../encryption/common/encryptionService.js";import{IEnvironmentMainService as b}from"../../environment/electron-main/environmentMainService.js";import{createDecorator as O}from"../../instantiation/common/instantiation.js";import{ILogService as T}from"../../log/common/log.js";import"../../request/common/request.js";import{StorageScope as x,StorageTarget as N}from"../../storage/common/storage.js";import{IApplicationStorageMainService as Y}from"../../storage/electron-main/storageMainService.js";import{IWindowsMainService as V}from"../../windows/electron-main/windows.js";const ae=O("proxyAuthService");let f=class extends I{constructor(i,e,r,s,t,o){super();this.logService=i;this.windowsMainService=e;this.encryptionMainService=r;this.applicationStorageMainService=s;this.configurationService=t;this.environmentMainService=o;this.registerListeners()}PROXY_CREDENTIALS_SERVICE_KEY="proxy-credentials://";pendingProxyResolves=new Map;currentDialog=void 0;cancelledAuthInfoHashes=new Set;sessionCredentials=new Map;registerListeners(){const i=A.fromNodeEventEmitter(P,"login",(e,r,s,t,o)=>({event:e,authInfo:{...t,attempt:s.firstAuthAttempt?1:2},callback:o}));this._register(i(this.onLogin,this))}async lookupAuthorization(i){return this.onLogin({authInfo:i})}async onLogin({event:i,authInfo:e,callback:r}){if(!e.isProxy)return;i?.preventDefault();const s=String(R({scheme:e.scheme,host:e.host,port:e.port}));let t,o=this.pendingProxyResolves.get(s);if(o)this.logService.trace("auth#onLogin (proxy) - pending proxy handling found"),t=await o;else{this.logService.trace("auth#onLogin (proxy) - no pending proxy handling found, starting new"),o=this.resolveProxyCredentials(e,s),this.pendingProxyResolves.set(s,o);try{t=await o}finally{this.pendingProxyResolves.delete(s)}}return r?.(t?.username,t?.password),t}async resolveProxyCredentials(i,e){this.logService.trace("auth#resolveProxyCredentials (proxy) - enter");try{const r=await this.doResolveProxyCredentials(i,e);if(r)return this.logService.trace("auth#resolveProxyCredentials (proxy) - got credentials"),r;this.logService.trace("auth#resolveProxyCredentials (proxy) - did not get credentials")}finally{this.logService.trace("auth#resolveProxyCredentials (proxy) - exit")}}async doResolveProxyCredentials(i,e){if(this.logService.trace("auth#doResolveProxyCredentials - enter",i),this.environmentMainService.extensionTestsLocationURI){const n=this.configurationService.getValue("integration-test.http.proxyAuth");if(n){const a=n.indexOf(":");return a!==-1?{username:n.substring(0,a),password:n.substring(a+1)}:{username:n,password:""}}return}const r=(this.configurationService.getValue("http.proxy")||"").trim()||(process.env.https_proxy||process.env.HTTPS_PROXY||process.env.http_proxy||process.env.HTTP_PROXY||"").trim()||void 0;if(r?.indexOf("@")!==-1){const n=L.parse(r),a=n.authority.indexOf("@");if(a!==-1){if(i.attempt>1){this.logService.trace("auth#doResolveProxyCredentials (proxy) - exit - ignoring previously used config/envvar credentials");return}this.logService.trace("auth#doResolveProxyCredentials (proxy) - exit - found config/envvar credentials to use");const u=n.authority.substring(0,a),v=u.indexOf(":");return v!==-1?{username:u.substring(0,v),password:u.substring(v+1)}:{username:u,password:""}}}const s=i.attempt===1&&this.sessionCredentials.get(e);if(s){this.logService.trace("auth#doResolveProxyCredentials (proxy) - exit - found session credentials to use");const{username:n,password:a}=s;return{username:n,password:a}}let t,o;try{const n=this.applicationStorageMainService.get(this.PROXY_CREDENTIALS_SERVICE_KEY+e,x.APPLICATION);if(n){const a=JSON.parse(await this.encryptionMainService.decrypt(n));t=a.username,o=a.password}}catch(n){this.logService.error(n)}if(i.attempt===1&&typeof t=="string"&&typeof o=="string")return this.logService.trace("auth#doResolveProxyCredentials (proxy) - exit - found stored credentials to use"),this.sessionCredentials.set(e,{username:t,password:o}),{username:t,password:o};const g=this.currentDialog,p=this.currentDialog=(async()=>{await g;const n=await this.showProxyCredentialsDialog(i,e,t,o);return this.currentDialog===p&&(this.currentDialog=void 0),n})();return p}async showProxyCredentialsDialog(i,e,r,s){if(this.cancelledAuthInfoHashes.has(e)){this.logService.trace("auth#doResolveProxyCredentials (proxy) - exit - login dialog was cancelled before, not showing again");return}const t=this.windowsMainService.getFocusedWindow()||this.windowsMainService.getLastActiveWindow();if(!t){this.logService.trace("auth#doResolveProxyCredentials (proxy) - exit - no opened window found to show dialog in");return}this.logService.trace(`auth#doResolveProxyCredentials (proxy) - asking window ${t.id} to handle proxy login`);const o=this.sessionCredentials.get(e),g={authInfo:i,username:o?.username??r,password:o?.password??s,replyChannel:`vscode:proxyAuthResponse:${M()}`};t.sendWhenReady("vscode:openProxyAuthenticationDialog",E.None,g);const p=await new Promise(n=>{const a=async(u,v,h)=>{if(v===g.replyChannel)if(this.logService.trace(`auth#doResolveProxyCredentials - exit - received credentials from window ${t.id}`),t.win?.webContents.off("ipc-message",a),h){const y={username:h.username,password:h.password};try{if(h.remember){const m=await this.encryptionMainService.encrypt(JSON.stringify(y));this.applicationStorageMainService.store(this.PROXY_CREDENTIALS_SERVICE_KEY+e,m,x.APPLICATION,N.MACHINE)}else this.applicationStorageMainService.remove(this.PROXY_CREDENTIALS_SERVICE_KEY+e,x.APPLICATION)}catch(m){this.logService.error(m)}n({username:y.username,password:y.password})}else this.cancelledAuthInfoHashes.add(e),n(void 0)};t.win?.webContents.on("ipc-message",a)});return this.sessionCredentials.set(e,p),p}};f=S([c(0,T),c(1,V),c(2,_),c(3,Y),c(4,D),c(5,b)],f);export{ae as IProxyAuthService,f as ProxyAuthService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { app } from 'electron';
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { Event } from '../../../base/common/event.js';
+import { hash } from '../../../base/common/hash.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { URI } from '../../../base/common/uri.js';
+import { generateUuid } from '../../../base/common/uuid.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { IEncryptionMainService } from '../../encryption/common/encryptionService.js';
+import { IEnvironmentMainService } from '../../environment/electron-main/environmentMainService.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { ILogService } from '../../log/common/log.js';
+import { IApplicationStorageMainService } from '../../storage/electron-main/storageMainService.js';
+import { IWindowsMainService } from '../../windows/electron-main/windows.js';
+export const IProxyAuthService = createDecorator('proxyAuthService');
+let ProxyAuthService = class ProxyAuthService extends Disposable {
+    constructor(logService, windowsMainService, encryptionMainService, applicationStorageMainService, configurationService, environmentMainService) {
+        super();
+        this.logService = logService;
+        this.windowsMainService = windowsMainService;
+        this.encryptionMainService = encryptionMainService;
+        this.applicationStorageMainService = applicationStorageMainService;
+        this.configurationService = configurationService;
+        this.environmentMainService = environmentMainService;
+        this.PROXY_CREDENTIALS_SERVICE_KEY = 'proxy-credentials://';
+        this.pendingProxyResolves = new Map();
+        this.currentDialog = undefined;
+        this.cancelledAuthInfoHashes = new Set();
+        this.sessionCredentials = new Map();
+        this.registerListeners();
+    }
+    registerListeners() {
+        const onLogin = Event.fromNodeEventEmitter(app, 'login', (event, _webContents, req, authInfo, callback) => ({ event, authInfo: { ...authInfo, attempt: req.firstAuthAttempt ? 1 : 2 }, callback }));
+        this._register(onLogin(this.onLogin, this));
+    }
+    async lookupAuthorization(authInfo) {
+        return this.onLogin({ authInfo });
+    }
+    async onLogin({ event, authInfo, callback }) {
+        if (!authInfo.isProxy) {
+            return;
+        }
+        event?.preventDefault();
+        const authInfoHash = String(hash({ scheme: authInfo.scheme, host: authInfo.host, port: authInfo.port }));
+        let credentials = undefined;
+        let pendingProxyResolve = this.pendingProxyResolves.get(authInfoHash);
+        if (!pendingProxyResolve) {
+            this.logService.trace('auth#onLogin (proxy) - no pending proxy handling found, starting new');
+            pendingProxyResolve = this.resolveProxyCredentials(authInfo, authInfoHash);
+            this.pendingProxyResolves.set(authInfoHash, pendingProxyResolve);
+            try {
+                credentials = await pendingProxyResolve;
+            }
+            finally {
+                this.pendingProxyResolves.delete(authInfoHash);
+            }
+        }
+        else {
+            this.logService.trace('auth#onLogin (proxy) - pending proxy handling found');
+            credentials = await pendingProxyResolve;
+        }
+        callback?.(credentials?.username, credentials?.password);
+        return credentials;
+    }
+    async resolveProxyCredentials(authInfo, authInfoHash) {
+        this.logService.trace('auth#resolveProxyCredentials (proxy) - enter');
+        try {
+            const credentials = await this.doResolveProxyCredentials(authInfo, authInfoHash);
+            if (credentials) {
+                this.logService.trace('auth#resolveProxyCredentials (proxy) - got credentials');
+                return credentials;
+            }
+            else {
+                this.logService.trace('auth#resolveProxyCredentials (proxy) - did not get credentials');
+            }
+        }
+        finally {
+            this.logService.trace('auth#resolveProxyCredentials (proxy) - exit');
+        }
+        return undefined;
+    }
+    async doResolveProxyCredentials(authInfo, authInfoHash) {
+        this.logService.trace('auth#doResolveProxyCredentials - enter', authInfo);
+        if (this.environmentMainService.extensionTestsLocationURI) {
+            const credentials = this.configurationService.getValue('integration-test.http.proxyAuth');
+            if (credentials) {
+                const j = credentials.indexOf(':');
+                if (j !== -1) {
+                    return {
+                        username: credentials.substring(0, j),
+                        password: credentials.substring(j + 1)
+                    };
+                }
+                else {
+                    return {
+                        username: credentials,
+                        password: ''
+                    };
+                }
+            }
+            return undefined;
+        }
+        const newHttpProxy = (this.configurationService.getValue('http.proxy') || '').trim()
+            || (process.env['https_proxy'] || process.env['HTTPS_PROXY'] || process.env['http_proxy'] || process.env['HTTP_PROXY'] || '').trim()
+            || undefined;
+        if (newHttpProxy?.indexOf('@') !== -1) {
+            const uri = URI.parse(newHttpProxy);
+            const i = uri.authority.indexOf('@');
+            if (i !== -1) {
+                if (authInfo.attempt > 1) {
+                    this.logService.trace('auth#doResolveProxyCredentials (proxy) - exit - ignoring previously used config/envvar credentials');
+                    return undefined;
+                }
+                this.logService.trace('auth#doResolveProxyCredentials (proxy) - exit - found config/envvar credentials to use');
+                const credentials = uri.authority.substring(0, i);
+                const j = credentials.indexOf(':');
+                if (j !== -1) {
+                    return {
+                        username: credentials.substring(0, j),
+                        password: credentials.substring(j + 1)
+                    };
+                }
+                else {
+                    return {
+                        username: credentials,
+                        password: ''
+                    };
+                }
+            }
+        }
+        const sessionCredentials = authInfo.attempt === 1 && this.sessionCredentials.get(authInfoHash);
+        if (sessionCredentials) {
+            this.logService.trace('auth#doResolveProxyCredentials (proxy) - exit - found session credentials to use');
+            const { username, password } = sessionCredentials;
+            return { username, password };
+        }
+        let storedUsername;
+        let storedPassword;
+        try {
+            const encryptedValue = this.applicationStorageMainService.get(this.PROXY_CREDENTIALS_SERVICE_KEY + authInfoHash, -1);
+            if (encryptedValue) {
+                const credentials = JSON.parse(await this.encryptionMainService.decrypt(encryptedValue));
+                storedUsername = credentials.username;
+                storedPassword = credentials.password;
+            }
+        }
+        catch (error) {
+            this.logService.error(error);
+        }
+        if (authInfo.attempt === 1 && typeof storedUsername === 'string' && typeof storedPassword === 'string') {
+            this.logService.trace('auth#doResolveProxyCredentials (proxy) - exit - found stored credentials to use');
+            this.sessionCredentials.set(authInfoHash, { username: storedUsername, password: storedPassword });
+            return { username: storedUsername, password: storedPassword };
+        }
+        const previousDialog = this.currentDialog;
+        const currentDialog = this.currentDialog = (async () => {
+            await previousDialog;
+            const credentials = await this.showProxyCredentialsDialog(authInfo, authInfoHash, storedUsername, storedPassword);
+            if (this.currentDialog === currentDialog) {
+                this.currentDialog = undefined;
+            }
+            return credentials;
+        })();
+        return currentDialog;
+    }
+    async showProxyCredentialsDialog(authInfo, authInfoHash, storedUsername, storedPassword) {
+        if (this.cancelledAuthInfoHashes.has(authInfoHash)) {
+            this.logService.trace('auth#doResolveProxyCredentials (proxy) - exit - login dialog was cancelled before, not showing again');
+            return undefined;
+        }
+        const window = this.windowsMainService.getFocusedWindow() || this.windowsMainService.getLastActiveWindow();
+        if (!window) {
+            this.logService.trace('auth#doResolveProxyCredentials (proxy) - exit - no opened window found to show dialog in');
+            return undefined;
+        }
+        this.logService.trace(`auth#doResolveProxyCredentials (proxy) - asking window ${window.id} to handle proxy login`);
+        const sessionCredentials = this.sessionCredentials.get(authInfoHash);
+        const payload = {
+            authInfo,
+            username: sessionCredentials?.username ?? storedUsername,
+            password: sessionCredentials?.password ?? storedPassword,
+            replyChannel: `vscode:proxyAuthResponse:${generateUuid()}`
+        };
+        window.sendWhenReady('vscode:openProxyAuthenticationDialog', CancellationToken.None, payload);
+        const loginDialogCredentials = await new Promise(resolve => {
+            const proxyAuthResponseHandler = async (event, channel, reply) => {
+                if (channel === payload.replyChannel) {
+                    this.logService.trace(`auth#doResolveProxyCredentials - exit - received credentials from window ${window.id}`);
+                    window.win?.webContents.off('ipc-message', proxyAuthResponseHandler);
+                    if (reply) {
+                        const credentials = { username: reply.username, password: reply.password };
+                        try {
+                            if (reply.remember) {
+                                const encryptedSerializedCredentials = await this.encryptionMainService.encrypt(JSON.stringify(credentials));
+                                this.applicationStorageMainService.store(this.PROXY_CREDENTIALS_SERVICE_KEY + authInfoHash, encryptedSerializedCredentials, -1, 1);
+                            }
+                            else {
+                                this.applicationStorageMainService.remove(this.PROXY_CREDENTIALS_SERVICE_KEY + authInfoHash, -1);
+                            }
+                        }
+                        catch (error) {
+                            this.logService.error(error);
+                        }
+                        resolve({ username: credentials.username, password: credentials.password });
+                    }
+                    else {
+                        this.cancelledAuthInfoHashes.add(authInfoHash);
+                        resolve(undefined);
+                    }
+                }
+            };
+            window.win?.webContents.on('ipc-message', proxyAuthResponseHandler);
+        });
+        this.sessionCredentials.set(authInfoHash, loginDialogCredentials);
+        return loginDialogCredentials;
+    }
+};
+ProxyAuthService = __decorate([
+    __param(0, ILogService),
+    __param(1, IWindowsMainService),
+    __param(2, IEncryptionMainService),
+    __param(3, IApplicationStorageMainService),
+    __param(4, IConfigurationService),
+    __param(5, IEnvironmentMainService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], ProxyAuthService);
+export { ProxyAuthService };

@@ -1,1 +1,592 @@
-var ne=Object.defineProperty;var se=Object.getOwnPropertyDescriptor;var C=(u,d,i,e)=>{for(var t=e>1?void 0:e?se(d,i):d,o=u.length-1,r;o>=0;o--)(r=u[o])&&(t=(e?r(d,i,t):r(t))||t);return e&&t&&ne(d,i,t),t},h=(u,d)=>(i,e)=>d(i,e,u);import{getTotalWidth as re,WindowIntervalTimer as ae}from"../../../../base/browser/dom.js";import{coalesceInPlace as de}from"../../../../base/common/arrays.js";import"../../../../base/common/cancellation.js";import{Emitter as B,Event as U}from"../../../../base/common/event.js";import{DisposableStore as P}from"../../../../base/common/lifecycle.js";import{themeColorFromId as G,ThemeIcon as ce}from"../../../../base/common/themables.js";import"../../../../editor/browser/editorBrowser.js";import{StableEditorScrollState as le}from"../../../../editor/browser/stableEditorScroll.js";import{LineSource as he,RenderOptions as fe,renderLines as pe}from"../../../../editor/browser/widget/diffEditor/components/diffEditorViewZones/renderLines.js";import"../../../../editor/common/core/editOperation.js";import{LineRange as M}from"../../../../editor/common/core/lineRange.js";import"../../../../editor/common/core/position.js";import{Range as K}from"../../../../editor/common/core/range.js";import"../../../../editor/common/editorCommon.js";import{MinimapPosition as ue,OverviewRulerLane as me,TrackedRangeStickiness as ge}from"../../../../editor/common/model.js";import{ModelDecorationOptions as R}from"../../../../editor/common/model/textModel.js";import{IEditorWorkerService as _e}from"../../../../editor/common/services/editorWorker.js";import{InlineDecoration as ve,InlineDecorationType as Ie}from"../../../../editor/common/viewModel.js";import{IContextKeyService as Z}from"../../../../platform/contextkey/common/contextkey.js";import{Progress as De}from"../../../../platform/progress/common/progress.js";import{SaveReason as ye}from"../../../common/editor.js";import{countWords as Ce}from"../../chat/common/chatWordCounter.js";import{HunkState as D}from"./inlineChatSession.js";import"./inlineChatZoneWidget.js";import{ACTION_TOGGLE_DIFF as be,CTX_INLINE_CHAT_CHANGE_HAS_DIFF as ke,CTX_INLINE_CHAT_CHANGE_SHOWS_DIFF as Se,CTX_INLINE_CHAT_DOCUMENT_CHANGED as Ee,InlineChatConfigKeys as we,MENU_INLINE_CHAT_ZONE as X,minimapInlineChatDiffInserted as xe,overviewRulerInlineChatDiffInserted as Ne}from"../common/inlineChat.js";import{assertType as q}from"../../../../base/common/types.js";import{IModelService as Ae}from"../../../../editor/common/services/model.js";import{performAsyncTextEdit as Te,asProgressiveEdit as Le}from"./utils.js";import{IAccessibilityService as Oe}from"../../../../platform/accessibility/common/accessibility.js";import{IConfigurationService as He}from"../../../../platform/configuration/common/configuration.js";import{ITextFileService as W}from"../../../services/textfile/common/textfiles.js";import"../../../services/untitled/common/untitledTextEditorModel.js";import{Schemas as Pe}from"../../../../base/common/network.js";import{IInstantiationService as k}from"../../../../platform/instantiation/common/instantiation.js";import{DefaultChatTextEditor as Me}from"../../chat/browser/codeBlockPart.js";import{isEqual as Re}from"../../../../base/common/resources.js";import{generateUuid as Ze}from"../../../../base/common/uuid.js";import{MenuWorkbenchButtonBar as We}from"../../../../platform/actions/browser/buttonbar.js";import{EditorOption as Ve}from"../../../../editor/common/config/editorOptions.js";import{Iterable as $}from"../../../../base/common/iterator.js";import{ConflictActionsFactory as Fe}from"../../mergeEditor/browser/view/conflictActions.js";import{observableValue as ze}from"../../../../base/common/observable.js";import{IMenuService as Be,MenuItemAction as Ue}from"../../../../platform/actions/common/actions.js";var Ge=(o=>(o[o.Accept=0]="Accept",o[o.Discard=1]="Discard",o[o.MoveNext=2]="MoveNext",o[o.MovePrev=3]="MovePrev",o[o.ToggleDiff=4]="ToggleDiff",o))(Ge||{});let _=class{constructor(d,i,e,t,o){this._session=d;this._editor=i;this._zone=e;this._textFileService=t;this._instaService=o}static _decoBlock=R.register({description:"inline-chat",showIfCollapsed:!1,isWholeLine:!0});_store=new P;_onDidAccept=this._store.add(new B);_onDidDiscard=this._store.add(new B);onDidAccept=this._onDidAccept.event;onDidDiscard=this._onDidDiscard.event;dispose(){this._store.dispose()}performHunkAction(d,i){i===0?this._onDidAccept.fire():i===1&&this._onDidDiscard.fire()}async _doApplyChanges(d){const i=[],e=this._instaService.createInstance(Me);for(const t of this._session.chatModel.getRequests())if(t.response?.response){for(const o of t.response.response.value)if(o.kind==="textEditGroup"&&!(d&&Re(o.uri,this._session.textModelN.uri))&&(await e.apply(t.response,o,void 0),o.uri.scheme===Pe.untitled)){const r=this._textFileService.untitled.get(o.uri);r&&i.push(r)}}for(const t of i)t.isDisposed()||(await t.resolve(),await t.save({reason:ye.EXPLICIT}))}cancel(){return this._session.hunkData.discardAll()}getWholeRangeDecoration(){const i=[this._session.wholeRange.value].map(e=>e.isEmpty()?void 0:{range:e,options:_._decoBlock});return de(i),i}};_=C([h(3,W),h(4,k)],_);let S=class extends _{_ctxDocumentChanged;constructor(d,i,e,t,o,r,n){super(d,i,e,r,n),this._ctxDocumentChanged=Ee.bindTo(o);const a=t.getModel(d.targetUri);U.debounce(a.onDidChangeContent.bind(a),()=>{},350)(s=>{!a.isDisposed()&&!d.textModel0.isDisposed()&&this._ctxDocumentChanged.set(d.hasChangedText)},void 0,this._store)}dispose(){this._ctxDocumentChanged.reset(),super.dispose()}async apply(){await super._doApplyChanges(!1)}async makeChanges(){}async makeProgressiveChanges(){}async renderChanges(){}hasFocus(){return this._zone.widget.hasFocus()}};S=C([h(3,Ae),h(4,Z),h(5,W),h(6,k)],S);let E=class extends _{constructor(i,e,t,o,r,n,a,s,f,c,v,x){super(i,e,t,v,x);this._showOverlayToolbar=o;this._editorWorkerService=n;this._accessibilityService=a;this._configService=s;this._menuService=f;this._contextService=c;this._ctxCurrentChangeHasDiff=ke.bindTo(r),this._ctxCurrentChangeShowsDiff=Se.bindTo(r),this._progressiveEditingDecorations=this._editor.createDecorationsCollection(),this._lensActionsFactory=this._store.add(new Fe(this._editor))}_decoInsertedText=R.register({description:"inline-modified-line",className:"inline-chat-inserted-range-linehighlight",isWholeLine:!0,overviewRuler:{position:me.Full,color:G(Ne)},minimap:{position:ue.Inline,color:G(xe)}});_decoInsertedTextRange=R.register({description:"inline-chat-inserted-range-linehighlight",className:"inline-chat-inserted-range",stickiness:ge.NeverGrowsWhenTypingAtEdges});_ctxCurrentChangeHasDiff;_ctxCurrentChangeShowsDiff;_progressiveEditingDecorations;_lensActionsFactory;_editCount=0;dispose(){this._resetDiff(),super.dispose()}_resetDiff(){this._ctxCurrentChangeHasDiff.reset(),this._ctxCurrentChangeShowsDiff.reset(),this._zone.widget.updateStatus(""),this._progressiveEditingDecorations.clear();for(const i of this._hunkDisplayData.values())i.remove()}async apply(){this._resetDiff(),this._editCount>0&&this._editor.pushUndoStop(),await super._doApplyChanges(!0)}cancel(){return this._resetDiff(),super.cancel()}async makeChanges(i,e,t){return this._makeChanges(i,e,void 0,void 0,t)}async makeProgressiveChanges(i,e,t,o){const r=new De(n=>{const a=new Set;for(const c of n)M.fromRange(c.range).forEach(v=>a.add(v));const s=this._progressiveEditingDecorations.getRanges().map(M.fromRange);for(const c of s)c.forEach(v=>a.delete(v));const f=[];for(const c of a)f.push({range:new K(c,1,c,Number.MAX_VALUE),options:this._decoInsertedText});this._progressiveEditingDecorations.append(f)});return this._makeChanges(i,e,t,r,o)}async _makeChanges(i,e,t,o,r){if(r&&this._editor.pushUndoStop(),this._editCount++,t){const n=t.duration/1e3;for(const a of i){const f=Ce(a.text??"")/n,c=Le(new ae(this._zone.domNode),a,f,t.token);await Te(this._session.textModelN,c,o,e)}}else e.start(),this._session.textModelN.pushEditOperations(null,i,n=>(o?.report(n),null)),e.stop()}performHunkAction(i,e){const t=this._findDisplayData(i);if(!t){e===0?this._onDidAccept.fire():e===1&&this._onDidDiscard.fire();return}e===0?t.acceptHunk():e===1?t.discardHunk():e===2?t.move(!0):e===3?t.move(!1):e===4&&t.toggleDiff?.()}_findDisplayData(i){let e;if(i&&(e=this._hunkDisplayData.get(i)),!e&&this._zone.position){const t=this._zone.position.lineNumber;let o=Number.MAX_SAFE_INTEGER;for(const r of this._hunkDisplayData.values()){if(r.hunk.getState()!==D.Pending)continue;const n=r.hunk.getRangesN(),a=t<=n[0].startLineNumber?n[0].startLineNumber-t:t-n[0].endLineNumber;a<o&&(o=a,e=r)}}return e||(e=$.first($.filter(this._hunkDisplayData.values(),t=>t.hunk.getState()===D.Pending))),e}_hunkDisplayData=new Map;async renderChanges(){this._progressiveEditingDecorations.clear();const i=()=>{let e;if(V(this._editor,(t,o)=>{const r=new Set(this._hunkDisplayData.keys());e=void 0;for(const n of this._session.hunkData.getInfo()){r.delete(n);const a=n.getRangesN();let s=this._hunkDisplayData.get(n);if(s)if(n.getState()!==D.Pending)s.remove();else{const f=this._zone.position?.lineNumber??this._editor.getPosition().lineNumber,c=a[0];s.position=c.getStartPosition().delta(-1),s.distance=f<=c.startLineNumber?c.startLineNumber-f:f-c.endLineNumber}else{const f=[];for(let l=0;l<a.length;l++)f.push(t.addDecoration(a[l],l===0?this._decoInsertedText:this._decoInsertedTextRange));const c=()=>{n.acceptChanges(),i()},v=()=>{n.discardChanges(),i()},x=this._session.textModel0.mightContainNonBasicASCII(),j=this._session.textModel0.mightContainRTL(),J=fe.fromEditor(this._editor),N=n.getRanges0()[0],Q=new he(M.fromRangeInclusive(N).mapToLineArray(l=>this._session.textModel0.tokenization.getLineTokens(l)),[],x,j),A=document.createElement("div");A.className="inline-chat-original-zone2";const F=pe(Q,J,[new ve(new K(N.startLineNumber,1,N.startLineNumber,1),"",Ie.Regular)],A),T={afterLineNumber:-1,heightInLines:F.heightInLines,domNode:A,ordinal:50002},Y=()=>{const l=le.capture(this._editor);V(this._editor,(p,m)=>{if(q(s),s.diffViewZoneId)m.removeZone(s.diffViewZoneId),L?.updateExtraTop(0),s.diffViewZoneId=void 0;else{const[I]=n.getRangesN();T.afterLineNumber=I.startLineNumber-1,s.diffViewZoneId=m.addZone(T),L?.updateExtraTop(F.heightInLines)}}),this._ctxCurrentChangeShowsDiff.set(typeof s?.diffViewZoneId=="string"),l.restore(this._editor)},L=(this._showOverlayToolbar,void 0);let y;const z=[];if(this._showOverlayToolbar&&n.getState()===D.Pending){y=new P;const l=this._menuService.createMenu(X,this._contextService),p=()=>{const I=[],H=l.getActions({arg:n});for(const[,oe]of H)for(const g of oe)if(g instanceof Ue){let b=g.label;g.id===be?b=g.checked?"Hide Changes":"Show Changes":ce.isThemeIcon(g.item.icon)&&(b=`$(${g.item.icon.id}) ${b}`),I.push({text:b,tooltip:g.tooltip,action:async()=>g.run()})}return I},m=ze(this,p());y.add(l.onDidChange(()=>m.set(p(),void 0))),y.add(l),y.add(this._lensActionsFactory.createWidget(o,a[0].startLineNumber-1,m,z))}const ee=()=>{V(this._editor,(l,p)=>{q(s);for(const m of s.decorationIds)l.removeDecoration(m);s.diffViewZoneId&&p.removeZone(s.diffViewZoneId),s.decorationIds=[],s.diffViewZoneId=void 0,s.lensActionsViewZoneIds?.forEach(p.removeZone),s.lensActionsViewZoneIds=void 0}),y?.dispose(),L?.dispose()},te=l=>{const p=Array.from(this._hunkDisplayData.keys()),m=p.indexOf(n),I=(m+(l?1:-1)+p.length)%p.length;if(I!==m){const H=this._hunkDisplayData.get(p[I]);this._zone.updatePositionAndHeight(H?.position),i()}},O=this._zone.position?.lineNumber??this._editor.getPosition().lineNumber,ie=O<=a[0].startLineNumber?a[0].startLineNumber-O:O-a[0].endLineNumber;s={hunk:n,decorationIds:f,diffViewZoneId:"",diffViewZone:T,lensActionsViewZoneIds:z,distance:ie,position:a[0].getStartPosition().delta(-1),acceptHunk:c,discardHunk:v,toggleDiff:n.isInsertion()?void 0:Y,remove:ee,move:te},this._hunkDisplayData.set(n,s)}n.getState()===D.Pending&&(!e||s.distance<e.distance)&&(e=s)}for(const n of r){const a=this._hunkDisplayData.get(n);a&&(this._hunkDisplayData.delete(n),a.remove())}}),e){this._zone.reveal(e.position);const t=this._configService.getValue(we.AccessibleDiffView);(t==="on"||t==="auto"&&this._accessibilityService.isScreenReaderOptimized())&&this._zone.widget.showAccessibleHunk(this._session,e.hunk),this._ctxCurrentChangeHasDiff.set(!!e.toggleDiff)}else if(this._hunkDisplayData.size>0){let t=!1;for(const o of this._session.hunkData.getInfo())if(o.getState()===D.Accepted){t=!0;break}t?this._onDidAccept.fire():this._onDidDiscard.fire()}return e};return i()?.position}hasFocus(){return this._zone.widget.hasFocus()}getWholeRangeDecoration(){return[]}};E=C([h(4,Z),h(5,_e),h(6,Oe),h(7,He),h(8,Be),h(9,Z),h(10,W),h(11,k)],E);function V(u,d){u.changeDecorations(i=>{u.changeViewZones(e=>{d(i,e)})})}let w=class{constructor(d,i,e){this._editor=d;this._hunkInfo=i;this._instaService=e;if(this._domNode.classList.add("inline-chat-diff-overlay"),i.getState()===D.Pending){const t=this._store.add(this._instaService.createInstance(We,this._domNode,X,{menuOptions:{arg:i},telemetrySource:"inlineChat-changesZone",buttonConfigProvider:(o,r)=>({isSecondary:r>0,showIcon:!0,showLabel:!1})}));this._store.add(t.onDidChange(()=>this._editor.layoutOverlayWidget(this)))}this._editor.addOverlayWidget(this),this._store.add(U.any(this._editor.onDidLayoutChange,this._editor.onDidScrollChange)(()=>this._editor.layoutOverlayWidget(this))),queueMicrotask(()=>this._editor.layoutOverlayWidget(this))}allowEditorOverflow=!1;_id="inline-chat-diff-overlay-"+Ze();_domNode=document.createElement("div");_store=new P;_extraTopLines=0;dispose(){this._editor.removeOverlayWidget(this),this._store.dispose()}getId(){return this._id}getDomNode(){return this._domNode}getPosition(){const d=this._hunkInfo.getRangesN()[0].startLineNumber,i=this._editor.getLayoutInfo(),e=this._editor.getTopForLineNumber(d)-this._editor.getScrollTop(),t=i.contentLeft+i.contentWidth-i.verticalScrollbarWidth,o=this._editor.getOption(Ve.lineHeight)*this._extraTopLines,r=re(this._domNode);return{preference:{top:e-o,left:t-r}}}updateExtraTop(d){this._extraTopLines!==d&&(this._extraTopLines=d,this._editor.layoutOverlayWidget(this))}};w=C([h(2,k)],w);export{_ as EditModeStrategy,Ge as HunkAction,E as LiveStrategy,S as PreviewStrategy};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var EditModeStrategy_1;
+import { getTotalWidth, WindowIntervalTimer } from '../../../../base/browser/dom.js';
+import { coalesceInPlace } from '../../../../base/common/arrays.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { themeColorFromId, ThemeIcon } from '../../../../base/common/themables.js';
+import { StableEditorScrollState } from '../../../../editor/browser/stableEditorScroll.js';
+import { LineSource, RenderOptions, renderLines } from '../../../../editor/browser/widget/diffEditor/components/diffEditorViewZones/renderLines.js';
+import { LineRange } from '../../../../editor/common/core/lineRange.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { OverviewRulerLane } from '../../../../editor/common/model.js';
+import { ModelDecorationOptions } from '../../../../editor/common/model/textModel.js';
+import { IEditorWorkerService } from '../../../../editor/common/services/editorWorker.js';
+import { InlineDecoration } from '../../../../editor/common/viewModel.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { Progress } from '../../../../platform/progress/common/progress.js';
+import { countWords } from '../../chat/common/chatWordCounter.js';
+import { Session } from './inlineChatSession.js';
+import { InlineChatZoneWidget } from './inlineChatZoneWidget.js';
+import { ACTION_TOGGLE_DIFF, CTX_INLINE_CHAT_CHANGE_HAS_DIFF, CTX_INLINE_CHAT_CHANGE_SHOWS_DIFF, CTX_INLINE_CHAT_DOCUMENT_CHANGED, MENU_INLINE_CHAT_ZONE, minimapInlineChatDiffInserted, overviewRulerInlineChatDiffInserted } from '../common/inlineChat.js';
+import { assertType } from '../../../../base/common/types.js';
+import { IModelService } from '../../../../editor/common/services/model.js';
+import { performAsyncTextEdit, asProgressiveEdit } from './utils.js';
+import { IAccessibilityService } from '../../../../platform/accessibility/common/accessibility.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { DefaultChatTextEditor } from '../../chat/browser/codeBlockPart.js';
+import { isEqual } from '../../../../base/common/resources.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
+import { MenuWorkbenchButtonBar } from '../../../../platform/actions/browser/buttonbar.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { ConflictActionsFactory } from '../../mergeEditor/browser/view/conflictActions.js';
+import { observableValue } from '../../../../base/common/observable.js';
+import { IMenuService, MenuItemAction } from '../../../../platform/actions/common/actions.js';
+let EditModeStrategy = class EditModeStrategy {
+    static { EditModeStrategy_1 = this; }
+    static { this._decoBlock = ModelDecorationOptions.register({
+        description: 'inline-chat',
+        showIfCollapsed: false,
+        isWholeLine: true,
+    }); }
+    constructor(_session, _editor, _zone, _textFileService, _instaService) {
+        this._session = _session;
+        this._editor = _editor;
+        this._zone = _zone;
+        this._textFileService = _textFileService;
+        this._instaService = _instaService;
+        this._store = new DisposableStore();
+        this._onDidAccept = this._store.add(new Emitter());
+        this._onDidDiscard = this._store.add(new Emitter());
+        this.onDidAccept = this._onDidAccept.event;
+        this.onDidDiscard = this._onDidDiscard.event;
+    }
+    dispose() {
+        this._store.dispose();
+    }
+    performHunkAction(_hunk, action) {
+        if (action === 0) {
+            this._onDidAccept.fire();
+        }
+        else if (action === 1) {
+            this._onDidDiscard.fire();
+        }
+    }
+    async _doApplyChanges(ignoreLocal) {
+        const untitledModels = [];
+        const editor = this._instaService.createInstance(DefaultChatTextEditor);
+        for (const request of this._session.chatModel.getRequests()) {
+            if (!request.response?.response) {
+                continue;
+            }
+            for (const item of request.response.response.value) {
+                if (item.kind !== 'textEditGroup') {
+                    continue;
+                }
+                if (ignoreLocal && isEqual(item.uri, this._session.textModelN.uri)) {
+                    continue;
+                }
+                await editor.apply(request.response, item, undefined);
+                if (item.uri.scheme === Schemas.untitled) {
+                    const untitled = this._textFileService.untitled.get(item.uri);
+                    if (untitled) {
+                        untitledModels.push(untitled);
+                    }
+                }
+            }
+        }
+        for (const untitledModel of untitledModels) {
+            if (!untitledModel.isDisposed()) {
+                await untitledModel.resolve();
+                await untitledModel.save({ reason: 1 });
+            }
+        }
+    }
+    cancel() {
+        return this._session.hunkData.discardAll();
+    }
+    getWholeRangeDecoration() {
+        const ranges = [this._session.wholeRange.value];
+        const newDecorations = ranges.map(range => range.isEmpty() ? undefined : ({ range, options: EditModeStrategy_1._decoBlock }));
+        coalesceInPlace(newDecorations);
+        return newDecorations;
+    }
+};
+EditModeStrategy = EditModeStrategy_1 = __decorate([
+    __param(3, ITextFileService),
+    __param(4, IInstantiationService),
+    __metadata("design:paramtypes", [Session, Object, InlineChatZoneWidget, Object, Object])
+], EditModeStrategy);
+export { EditModeStrategy };
+let PreviewStrategy = class PreviewStrategy extends EditModeStrategy {
+    constructor(session, editor, zone, modelService, contextKeyService, textFileService, instaService) {
+        super(session, editor, zone, textFileService, instaService);
+        this._ctxDocumentChanged = CTX_INLINE_CHAT_DOCUMENT_CHANGED.bindTo(contextKeyService);
+        const baseModel = modelService.getModel(session.targetUri);
+        Event.debounce(baseModel.onDidChangeContent.bind(baseModel), () => { }, 350)(_ => {
+            if (!baseModel.isDisposed() && !session.textModel0.isDisposed()) {
+                this._ctxDocumentChanged.set(session.hasChangedText);
+            }
+        }, undefined, this._store);
+    }
+    dispose() {
+        this._ctxDocumentChanged.reset();
+        super.dispose();
+    }
+    async apply() {
+        await super._doApplyChanges(false);
+    }
+    async makeChanges() {
+    }
+    async makeProgressiveChanges() {
+    }
+    async renderChanges() { }
+    hasFocus() {
+        return this._zone.widget.hasFocus();
+    }
+};
+PreviewStrategy = __decorate([
+    __param(3, IModelService),
+    __param(4, IContextKeyService),
+    __param(5, ITextFileService),
+    __param(6, IInstantiationService),
+    __metadata("design:paramtypes", [Session, Object, InlineChatZoneWidget, Object, Object, Object, Object])
+], PreviewStrategy);
+export { PreviewStrategy };
+let LiveStrategy = class LiveStrategy extends EditModeStrategy {
+    constructor(session, editor, zone, _showOverlayToolbar, contextKeyService, _editorWorkerService, _accessibilityService, _configService, _menuService, _contextService, textFileService, instaService) {
+        super(session, editor, zone, textFileService, instaService);
+        this._showOverlayToolbar = _showOverlayToolbar;
+        this._editorWorkerService = _editorWorkerService;
+        this._accessibilityService = _accessibilityService;
+        this._configService = _configService;
+        this._menuService = _menuService;
+        this._contextService = _contextService;
+        this._decoInsertedText = ModelDecorationOptions.register({
+            description: 'inline-modified-line',
+            className: 'inline-chat-inserted-range-linehighlight',
+            isWholeLine: true,
+            overviewRuler: {
+                position: OverviewRulerLane.Full,
+                color: themeColorFromId(overviewRulerInlineChatDiffInserted),
+            },
+            minimap: {
+                position: 1,
+                color: themeColorFromId(minimapInlineChatDiffInserted),
+            }
+        });
+        this._decoInsertedTextRange = ModelDecorationOptions.register({
+            description: 'inline-chat-inserted-range-linehighlight',
+            className: 'inline-chat-inserted-range',
+            stickiness: 1,
+        });
+        this._editCount = 0;
+        this._hunkDisplayData = new Map();
+        this._ctxCurrentChangeHasDiff = CTX_INLINE_CHAT_CHANGE_HAS_DIFF.bindTo(contextKeyService);
+        this._ctxCurrentChangeShowsDiff = CTX_INLINE_CHAT_CHANGE_SHOWS_DIFF.bindTo(contextKeyService);
+        this._progressiveEditingDecorations = this._editor.createDecorationsCollection();
+        this._lensActionsFactory = this._store.add(new ConflictActionsFactory(this._editor));
+    }
+    dispose() {
+        this._resetDiff();
+        super.dispose();
+    }
+    _resetDiff() {
+        this._ctxCurrentChangeHasDiff.reset();
+        this._ctxCurrentChangeShowsDiff.reset();
+        this._zone.widget.updateStatus('');
+        this._progressiveEditingDecorations.clear();
+        for (const data of this._hunkDisplayData.values()) {
+            data.remove();
+        }
+    }
+    async apply() {
+        this._resetDiff();
+        if (this._editCount > 0) {
+            this._editor.pushUndoStop();
+        }
+        await super._doApplyChanges(true);
+    }
+    cancel() {
+        this._resetDiff();
+        return super.cancel();
+    }
+    async makeChanges(edits, obs, undoStopBefore) {
+        return this._makeChanges(edits, obs, undefined, undefined, undoStopBefore);
+    }
+    async makeProgressiveChanges(edits, obs, opts, undoStopBefore) {
+        const progress = new Progress(edits => {
+            const newLines = new Set();
+            for (const edit of edits) {
+                LineRange.fromRange(edit.range).forEach(line => newLines.add(line));
+            }
+            const existingRanges = this._progressiveEditingDecorations.getRanges().map(LineRange.fromRange);
+            for (const existingRange of existingRanges) {
+                existingRange.forEach(line => newLines.delete(line));
+            }
+            const newDecorations = [];
+            for (const line of newLines) {
+                newDecorations.push({ range: new Range(line, 1, line, Number.MAX_VALUE), options: this._decoInsertedText });
+            }
+            this._progressiveEditingDecorations.append(newDecorations);
+        });
+        return this._makeChanges(edits, obs, opts, progress, undoStopBefore);
+    }
+    async _makeChanges(edits, obs, opts, progress, undoStopBefore) {
+        if (undoStopBefore) {
+            this._editor.pushUndoStop();
+        }
+        this._editCount++;
+        if (opts) {
+            const durationInSec = opts.duration / 1000;
+            for (const edit of edits) {
+                const wordCount = countWords(edit.text ?? '');
+                const speed = wordCount / durationInSec;
+                const asyncEdit = asProgressiveEdit(new WindowIntervalTimer(this._zone.domNode), edit, speed, opts.token);
+                await performAsyncTextEdit(this._session.textModelN, asyncEdit, progress, obs);
+            }
+        }
+        else {
+            obs.start();
+            this._session.textModelN.pushEditOperations(null, edits, (undoEdits) => {
+                progress?.report(undoEdits);
+                return null;
+            });
+            obs.stop();
+        }
+    }
+    performHunkAction(hunk, action) {
+        const displayData = this._findDisplayData(hunk);
+        if (!displayData) {
+            if (action === 0) {
+                this._onDidAccept.fire();
+            }
+            else if (action === 1) {
+                this._onDidDiscard.fire();
+            }
+            return;
+        }
+        if (action === 0) {
+            displayData.acceptHunk();
+        }
+        else if (action === 1) {
+            displayData.discardHunk();
+        }
+        else if (action === 2) {
+            displayData.move(true);
+        }
+        else if (action === 3) {
+            displayData.move(false);
+        }
+        else if (action === 4) {
+            displayData.toggleDiff?.();
+        }
+    }
+    _findDisplayData(hunkInfo) {
+        let result;
+        if (hunkInfo) {
+            result = this._hunkDisplayData.get(hunkInfo);
+        }
+        if (!result && this._zone.position) {
+            const zoneLine = this._zone.position.lineNumber;
+            let distance = Number.MAX_SAFE_INTEGER;
+            for (const candidate of this._hunkDisplayData.values()) {
+                if (candidate.hunk.getState() !== 0) {
+                    continue;
+                }
+                const hunkRanges = candidate.hunk.getRangesN();
+                const myDistance = zoneLine <= hunkRanges[0].startLineNumber
+                    ? hunkRanges[0].startLineNumber - zoneLine
+                    : zoneLine - hunkRanges[0].endLineNumber;
+                if (myDistance < distance) {
+                    distance = myDistance;
+                    result = candidate;
+                }
+            }
+        }
+        if (!result) {
+            result = Iterable.first(Iterable.filter(this._hunkDisplayData.values(), candidate => candidate.hunk.getState() === 0));
+        }
+        return result;
+    }
+    async renderChanges() {
+        this._progressiveEditingDecorations.clear();
+        const renderHunks = () => {
+            let widgetData;
+            changeDecorationsAndViewZones(this._editor, (decorationsAccessor, viewZoneAccessor) => {
+                const keysNow = new Set(this._hunkDisplayData.keys());
+                widgetData = undefined;
+                for (const hunkData of this._session.hunkData.getInfo()) {
+                    keysNow.delete(hunkData);
+                    const hunkRanges = hunkData.getRangesN();
+                    let data = this._hunkDisplayData.get(hunkData);
+                    if (!data) {
+                        const decorationIds = [];
+                        for (let i = 0; i < hunkRanges.length; i++) {
+                            decorationIds.push(decorationsAccessor.addDecoration(hunkRanges[i], i === 0
+                                ? this._decoInsertedText
+                                : this._decoInsertedTextRange));
+                        }
+                        const acceptHunk = () => {
+                            hunkData.acceptChanges();
+                            renderHunks();
+                        };
+                        const discardHunk = () => {
+                            hunkData.discardChanges();
+                            renderHunks();
+                        };
+                        const mightContainNonBasicASCII = this._session.textModel0.mightContainNonBasicASCII();
+                        const mightContainRTL = this._session.textModel0.mightContainRTL();
+                        const renderOptions = RenderOptions.fromEditor(this._editor);
+                        const originalRange = hunkData.getRanges0()[0];
+                        const source = new LineSource(LineRange.fromRangeInclusive(originalRange).mapToLineArray(l => this._session.textModel0.tokenization.getLineTokens(l)), [], mightContainNonBasicASCII, mightContainRTL);
+                        const domNode = document.createElement('div');
+                        domNode.className = 'inline-chat-original-zone2';
+                        const result = renderLines(source, renderOptions, [new InlineDecoration(new Range(originalRange.startLineNumber, 1, originalRange.startLineNumber, 1), '', 0)], domNode);
+                        const viewZoneData = {
+                            afterLineNumber: -1,
+                            heightInLines: result.heightInLines,
+                            domNode,
+                            ordinal: 50000 + 2
+                        };
+                        const toggleDiff = () => {
+                            const scrollState = StableEditorScrollState.capture(this._editor);
+                            changeDecorationsAndViewZones(this._editor, (_decorationsAccessor, viewZoneAccessor) => {
+                                assertType(data);
+                                if (!data.diffViewZoneId) {
+                                    const [hunkRange] = hunkData.getRangesN();
+                                    viewZoneData.afterLineNumber = hunkRange.startLineNumber - 1;
+                                    data.diffViewZoneId = viewZoneAccessor.addZone(viewZoneData);
+                                    overlay?.updateExtraTop(result.heightInLines);
+                                }
+                                else {
+                                    viewZoneAccessor.removeZone(data.diffViewZoneId);
+                                    overlay?.updateExtraTop(0);
+                                    data.diffViewZoneId = undefined;
+                                }
+                            });
+                            this._ctxCurrentChangeShowsDiff.set(typeof data?.diffViewZoneId === 'string');
+                            scrollState.restore(this._editor);
+                        };
+                        const overlay = this._showOverlayToolbar && false
+                            ? this._instaService.createInstance(InlineChangeOverlay, this._editor, hunkData)
+                            : undefined;
+                        let lensActions;
+                        const lensActionsViewZoneIds = [];
+                        if (this._showOverlayToolbar && hunkData.getState() === 0) {
+                            lensActions = new DisposableStore();
+                            const menu = this._menuService.createMenu(MENU_INLINE_CHAT_ZONE, this._contextService);
+                            const makeActions = () => {
+                                const actions = [];
+                                const tuples = menu.getActions({ arg: hunkData });
+                                for (const [, group] of tuples) {
+                                    for (const item of group) {
+                                        if (item instanceof MenuItemAction) {
+                                            let text = item.label;
+                                            if (item.id === ACTION_TOGGLE_DIFF) {
+                                                text = item.checked ? 'Hide Changes' : 'Show Changes';
+                                            }
+                                            else if (ThemeIcon.isThemeIcon(item.item.icon)) {
+                                                text = `$(${item.item.icon.id}) ${text}`;
+                                            }
+                                            actions.push({
+                                                text,
+                                                tooltip: item.tooltip,
+                                                action: async () => item.run(),
+                                            });
+                                        }
+                                    }
+                                }
+                                return actions;
+                            };
+                            const obs = observableValue(this, makeActions());
+                            lensActions.add(menu.onDidChange(() => obs.set(makeActions(), undefined)));
+                            lensActions.add(menu);
+                            lensActions.add(this._lensActionsFactory.createWidget(viewZoneAccessor, hunkRanges[0].startLineNumber - 1, obs, lensActionsViewZoneIds));
+                        }
+                        const remove = () => {
+                            changeDecorationsAndViewZones(this._editor, (decorationsAccessor, viewZoneAccessor) => {
+                                assertType(data);
+                                for (const decorationId of data.decorationIds) {
+                                    decorationsAccessor.removeDecoration(decorationId);
+                                }
+                                if (data.diffViewZoneId) {
+                                    viewZoneAccessor.removeZone(data.diffViewZoneId);
+                                }
+                                data.decorationIds = [];
+                                data.diffViewZoneId = undefined;
+                                data.lensActionsViewZoneIds?.forEach(viewZoneAccessor.removeZone);
+                                data.lensActionsViewZoneIds = undefined;
+                            });
+                            lensActions?.dispose();
+                            overlay?.dispose();
+                        };
+                        const move = (next) => {
+                            const keys = Array.from(this._hunkDisplayData.keys());
+                            const idx = keys.indexOf(hunkData);
+                            const nextIdx = (idx + (next ? 1 : -1) + keys.length) % keys.length;
+                            if (nextIdx !== idx) {
+                                const nextData = this._hunkDisplayData.get(keys[nextIdx]);
+                                this._zone.updatePositionAndHeight(nextData?.position);
+                                renderHunks();
+                            }
+                        };
+                        const zoneLineNumber = this._zone.position?.lineNumber ?? this._editor.getPosition().lineNumber;
+                        const myDistance = zoneLineNumber <= hunkRanges[0].startLineNumber
+                            ? hunkRanges[0].startLineNumber - zoneLineNumber
+                            : zoneLineNumber - hunkRanges[0].endLineNumber;
+                        data = {
+                            hunk: hunkData,
+                            decorationIds,
+                            diffViewZoneId: '',
+                            diffViewZone: viewZoneData,
+                            lensActionsViewZoneIds,
+                            distance: myDistance,
+                            position: hunkRanges[0].getStartPosition().delta(-1),
+                            acceptHunk,
+                            discardHunk,
+                            toggleDiff: !hunkData.isInsertion() ? toggleDiff : undefined,
+                            remove,
+                            move,
+                        };
+                        this._hunkDisplayData.set(hunkData, data);
+                    }
+                    else if (hunkData.getState() !== 0) {
+                        data.remove();
+                    }
+                    else {
+                        const zoneLineNumber = this._zone.position?.lineNumber ?? this._editor.getPosition().lineNumber;
+                        const modifiedRangeNow = hunkRanges[0];
+                        data.position = modifiedRangeNow.getStartPosition().delta(-1);
+                        data.distance = zoneLineNumber <= modifiedRangeNow.startLineNumber
+                            ? modifiedRangeNow.startLineNumber - zoneLineNumber
+                            : zoneLineNumber - modifiedRangeNow.endLineNumber;
+                    }
+                    if (hunkData.getState() === 0 && (!widgetData || data.distance < widgetData.distance)) {
+                        widgetData = data;
+                    }
+                }
+                for (const key of keysNow) {
+                    const data = this._hunkDisplayData.get(key);
+                    if (data) {
+                        this._hunkDisplayData.delete(key);
+                        data.remove();
+                    }
+                }
+            });
+            if (widgetData) {
+                this._zone.reveal(widgetData.position);
+                const mode = this._configService.getValue("inlineChat.accessibleDiffView");
+                if (mode === 'on' || mode === 'auto' && this._accessibilityService.isScreenReaderOptimized()) {
+                    this._zone.widget.showAccessibleHunk(this._session, widgetData.hunk);
+                }
+                this._ctxCurrentChangeHasDiff.set(Boolean(widgetData.toggleDiff));
+            }
+            else if (this._hunkDisplayData.size > 0) {
+                let oneAccepted = false;
+                for (const hunkData of this._session.hunkData.getInfo()) {
+                    if (hunkData.getState() === 1) {
+                        oneAccepted = true;
+                        break;
+                    }
+                }
+                if (oneAccepted) {
+                    this._onDidAccept.fire();
+                }
+                else {
+                    this._onDidDiscard.fire();
+                }
+            }
+            return widgetData;
+        };
+        return renderHunks()?.position;
+    }
+    hasFocus() {
+        return this._zone.widget.hasFocus();
+    }
+    getWholeRangeDecoration() {
+        return [];
+    }
+};
+LiveStrategy = __decorate([
+    __param(4, IContextKeyService),
+    __param(5, IEditorWorkerService),
+    __param(6, IAccessibilityService),
+    __param(7, IConfigurationService),
+    __param(8, IMenuService),
+    __param(9, IContextKeyService),
+    __param(10, ITextFileService),
+    __param(11, IInstantiationService),
+    __metadata("design:paramtypes", [Session, Object, InlineChatZoneWidget, Boolean, Object, Object, Object, Object, Object, Object, Object, Object])
+], LiveStrategy);
+export { LiveStrategy };
+function changeDecorationsAndViewZones(editor, callback) {
+    editor.changeDecorations(decorationsAccessor => {
+        editor.changeViewZones(viewZoneAccessor => {
+            callback(decorationsAccessor, viewZoneAccessor);
+        });
+    });
+}
+let InlineChangeOverlay = class InlineChangeOverlay {
+    constructor(_editor, _hunkInfo, _instaService) {
+        this._editor = _editor;
+        this._hunkInfo = _hunkInfo;
+        this._instaService = _instaService;
+        this.allowEditorOverflow = false;
+        this._id = `inline-chat-diff-overlay-` + generateUuid();
+        this._domNode = document.createElement('div');
+        this._store = new DisposableStore();
+        this._extraTopLines = 0;
+        this._domNode.classList.add('inline-chat-diff-overlay');
+        if (_hunkInfo.getState() === 0) {
+            const menuBar = this._store.add(this._instaService.createInstance(MenuWorkbenchButtonBar, this._domNode, MENU_INLINE_CHAT_ZONE, {
+                menuOptions: { arg: _hunkInfo },
+                telemetrySource: 'inlineChat-changesZone',
+                buttonConfigProvider: (_action, idx) => {
+                    return {
+                        isSecondary: idx > 0,
+                        showIcon: true,
+                        showLabel: false
+                    };
+                },
+            }));
+            this._store.add(menuBar.onDidChange(() => this._editor.layoutOverlayWidget(this)));
+        }
+        this._editor.addOverlayWidget(this);
+        this._store.add(Event.any(this._editor.onDidLayoutChange, this._editor.onDidScrollChange)(() => this._editor.layoutOverlayWidget(this)));
+        queueMicrotask(() => this._editor.layoutOverlayWidget(this));
+    }
+    dispose() {
+        this._editor.removeOverlayWidget(this);
+        this._store.dispose();
+    }
+    getId() {
+        return this._id;
+    }
+    getDomNode() {
+        return this._domNode;
+    }
+    getPosition() {
+        const line = this._hunkInfo.getRangesN()[0].startLineNumber;
+        const info = this._editor.getLayoutInfo();
+        const top = this._editor.getTopForLineNumber(line) - this._editor.getScrollTop();
+        const left = info.contentLeft + info.contentWidth - info.verticalScrollbarWidth;
+        const extraTop = this._editor.getOption(69) * this._extraTopLines;
+        const width = getTotalWidth(this._domNode);
+        return { preference: { top: top - extraTop, left: left - width } };
+    }
+    updateExtraTop(value) {
+        if (this._extraTopLines !== value) {
+            this._extraTopLines = value;
+            this._editor.layoutOverlayWidget(this);
+        }
+    }
+};
+InlineChangeOverlay = __decorate([
+    __param(2, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], InlineChangeOverlay);

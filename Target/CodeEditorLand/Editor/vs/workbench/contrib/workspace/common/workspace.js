@@ -1,1 +1,7 @@
-import{localize as e}from"../../../../nls.js";import{RawContextKey as t}from"../../../../platform/contextkey/common/contextkey.js";const o={IsEnabled:new t("isWorkspaceTrustEnabled",!1,e("workspaceTrustEnabledCtx","Whether the workspace trust feature is enabled.")),IsTrusted:new t("isWorkspaceTrusted",!1,e("workspaceTrustedCtx","Whether the current workspace has been trusted by the user."))},a="workbench.trust.manage";export{a as MANAGE_TRUST_COMMAND_ID,o as WorkspaceTrustContext};
+import { localize } from '../../../../nls.js';
+import { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+export const WorkspaceTrustContext = {
+    IsEnabled: new RawContextKey('isWorkspaceTrustEnabled', false, localize('workspaceTrustEnabledCtx', "Whether the workspace trust feature is enabled.")),
+    IsTrusted: new RawContextKey('isWorkspaceTrusted', false, localize('workspaceTrustedCtx', "Whether the current workspace has been trusted by the user."))
+};
+export const MANAGE_TRUST_COMMAND_ID = 'workbench.trust.manage';

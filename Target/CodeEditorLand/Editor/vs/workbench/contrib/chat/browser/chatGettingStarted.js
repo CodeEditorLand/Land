@@ -1,1 +1,136 @@
-var u=Object.defineProperty;var I=Object.getOwnPropertyDescriptor;var l=(a,o,e,t)=>{for(var i=t>1?void 0:t?I(o,e):o,c=a.length-1,v;c>=0;c--)(v=a[c])&&(i=(t?v(o,e,i):v(i))||i);return t&&i&&u(o,e,i),i},r=(a,o)=>(e,t)=>o(e,t,a);import{Registry as x}from"../../../../platform/registry/common/platform.js";import"../../../common/contributions.js";import{Disposable as C,MutableDisposable as y}from"../../../../base/common/lifecycle.js";import{ContextKeyExpr as w,IContextKeyService as A}from"../../../../platform/contextkey/common/contextkey.js";import{IActivityService as E,NumberBadge as b}from"../../../services/activity/common/activity.js";import{IProductService as P}from"../../../../platform/product/common/productService.js";import{ExtensionIdentifier as p}from"../../../../platform/extensions/common/extensions.js";import{IStorageService as N,StorageScope as s,StorageTarget as h}from"../../../../platform/storage/common/storage.js";import{IExtensionService as D}from"../../../services/extensions/common/extensions.js";import{Extensions as M,ConfigurationScope as T}from"../../../../platform/configuration/common/configurationRegistry.js";import{applicationConfigurationNodeBase as H}from"../../../common/configuration.js";import{localize as S}from"../../../../nls.js";import{IConfigurationService as L}from"../../../../platform/configuration/common/configuration.js";import{CHAT_VIEW_ID as g}from"./chat.js";import{ICommandService as O}from"../../../../platform/commands/common/commands.js";import{IExtensionManagementService as G}from"../../../../platform/extensionManagement/common/extensionManagement.js";const n="workbench.panel.chat.view.experimental.showGettingStarted";let d=class extends C{constructor(e,t,i,c,v,B,R,_){super();this.contextService=e;this.productService=t;this.storageService=i;this.activityService=c;this.extensionService=v;this.commandService=B;this.configurationService=R;this.extensionManagementService=_;this.productService.gitHubEntitlement&&this.storageService.get(n,s.APPLICATION)===void 0&&this.extensionManagementService.getInstalled().then(async f=>{if(!f.find(m=>p.equals(m.identifier.id,this.productService.gitHubEntitlement.extensionId))){this.registerListeners();return}this.storageService.store(n,"installed",s.APPLICATION,h.MACHINE)})}static ID="workbench.contrib.chatGettingStarted";showChatGettingStartedDisposable=this._register(new y);registerListeners(){this._register(this.extensionService.onDidChangeExtensions(async e=>{if(this.storageService.get(n,s.APPLICATION)===void 0){for(const t of e.added)if(p.equals(this.productService.gitHubEntitlement.extensionId,t.identifier)){this.displayBadge();return}}})),this.extensionService.onDidChangeExtensionsStatus(async e=>{if(this.storageService.get(n,s.APPLICATION)===void 0){for(const t of e)if(p.equals(this.productService.gitHubEntitlement.extensionId,t.value)&&this.extensionService.getExtensionsStatus()[t.value].activationTimes){this.displayChatPanel();return}}}),this._register(this.contextService.onDidChangeContext(e=>{this.storageService.get(n,s.APPLICATION)!==void 0&&e.affectsSome(new Set([`view.${g}.visible`]))&&this.contextService.contextMatchesRules(w.deserialize(`${g}.visible`))&&this.showChatGettingStartedDisposable.clear()}))}async displayBadge(){const e=this.configurationService.inspect(n).value??"";if(!e||e!=="showBadge")return;const t=new b(1,()=>S("chat.openPanel","Open Chat Panel"));this.showChatGettingStartedDisposable.value=this.activityService.showViewActivity(g,{badge:t}),this.storageService.store(n,e,s.APPLICATION,h.MACHINE)}async displayChatPanel(){const e=this.configurationService.inspect(n).value??"";!e||e!=="showChatPanel"||(this.commandService.executeCommand(`${g}.focus`),this.storageService.store(n,e,s.APPLICATION,h.MACHINE))}};d=l([r(0,A),r(1,P),r(2,N),r(3,E),r(4,D),r(5,O),r(6,L),r(7,G)],d);const k=x.as(M.Configuration);k.registerConfiguration({...H,properties:{"workbench.panel.chat.view.experimental.showGettingStarted":{scope:T.MACHINE,type:"string",default:"",tags:["experimental"],description:S("workbench.panel.chat.view.showGettingStarted","When enabled, shows a getting started experiments in the chat panel.")}}});export{d as ChatGettingStartedContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Disposable, MutableDisposable } from '../../../../base/common/lifecycle.js';
+import { ContextKeyExpr, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IActivityService, NumberBadge } from '../../../services/activity/common/activity.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { ExtensionIdentifier } from '../../../../platform/extensions/common/extensions.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { Extensions as ConfigurationExtensions, } from '../../../../platform/configuration/common/configurationRegistry.js';
+import { applicationConfigurationNodeBase } from '../../../common/configuration.js';
+import { localize } from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { CHAT_VIEW_ID } from './chat.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IExtensionManagementService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+const showChatGettingStartedConfigKey = 'workbench.panel.chat.view.experimental.showGettingStarted';
+let ChatGettingStartedContribution = class ChatGettingStartedContribution extends Disposable {
+    static { this.ID = 'workbench.contrib.chatGettingStarted'; }
+    constructor(contextService, productService, storageService, activityService, extensionService, commandService, configurationService, extensionManagementService) {
+        super();
+        this.contextService = contextService;
+        this.productService = productService;
+        this.storageService = storageService;
+        this.activityService = activityService;
+        this.extensionService = extensionService;
+        this.commandService = commandService;
+        this.configurationService = configurationService;
+        this.extensionManagementService = extensionManagementService;
+        this.showChatGettingStartedDisposable = this._register(new MutableDisposable());
+        if (!this.productService.gitHubEntitlement) {
+            return;
+        }
+        if (this.storageService.get(showChatGettingStartedConfigKey, -1) !== undefined) {
+            return;
+        }
+        this.extensionManagementService.getInstalled().then(async (exts) => {
+            const installed = exts.find(value => ExtensionIdentifier.equals(value.identifier.id, this.productService.gitHubEntitlement.extensionId));
+            if (!installed) {
+                this.registerListeners();
+                return;
+            }
+            this.storageService.store(showChatGettingStartedConfigKey, 'installed', -1, 1);
+        });
+    }
+    registerListeners() {
+        this._register(this.extensionService.onDidChangeExtensions(async (result) => {
+            if (this.storageService.get(showChatGettingStartedConfigKey, -1) !== undefined) {
+                return;
+            }
+            for (const ext of result.added) {
+                if (ExtensionIdentifier.equals(this.productService.gitHubEntitlement.extensionId, ext.identifier)) {
+                    this.displayBadge();
+                    return;
+                }
+            }
+        }));
+        this.extensionService.onDidChangeExtensionsStatus(async (event) => {
+            if (this.storageService.get(showChatGettingStartedConfigKey, -1) !== undefined) {
+                return;
+            }
+            for (const ext of event) {
+                if (ExtensionIdentifier.equals(this.productService.gitHubEntitlement.extensionId, ext.value)) {
+                    const extensionStatus = this.extensionService.getExtensionsStatus();
+                    if (extensionStatus[ext.value].activationTimes) {
+                        this.displayChatPanel();
+                        return;
+                    }
+                }
+            }
+        });
+        this._register(this.contextService.onDidChangeContext(event => {
+            if (this.storageService.get(showChatGettingStartedConfigKey, -1) === undefined) {
+                return;
+            }
+            if (event.affectsSome(new Set([`view.${CHAT_VIEW_ID}.visible`]))) {
+                if (this.contextService.contextMatchesRules(ContextKeyExpr.deserialize(`${CHAT_VIEW_ID}.visible`))) {
+                    this.showChatGettingStartedDisposable.clear();
+                }
+            }
+        }));
+    }
+    async displayBadge() {
+        const showGettingStartedExp = this.configurationService.inspect(showChatGettingStartedConfigKey).value ?? '';
+        if (!showGettingStartedExp || showGettingStartedExp !== 'showBadge') {
+            return;
+        }
+        const badge = new NumberBadge(1, () => localize('chat.openPanel', 'Open Chat Panel'));
+        this.showChatGettingStartedDisposable.value = this.activityService.showViewActivity(CHAT_VIEW_ID, { badge });
+        this.storageService.store(showChatGettingStartedConfigKey, showGettingStartedExp, -1, 1);
+    }
+    async displayChatPanel() {
+        const showGettingStartedExp = this.configurationService.inspect(showChatGettingStartedConfigKey).value ?? '';
+        if (!showGettingStartedExp || showGettingStartedExp !== 'showChatPanel') {
+            return;
+        }
+        this.commandService.executeCommand(`${CHAT_VIEW_ID}.focus`);
+        this.storageService.store(showChatGettingStartedConfigKey, showGettingStartedExp, -1, 1);
+    }
+};
+ChatGettingStartedContribution = __decorate([
+    __param(0, IContextKeyService),
+    __param(1, IProductService),
+    __param(2, IStorageService),
+    __param(3, IActivityService),
+    __param(4, IExtensionService),
+    __param(5, ICommandService),
+    __param(6, IConfigurationService),
+    __param(7, IExtensionManagementService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], ChatGettingStartedContribution);
+export { ChatGettingStartedContribution };
+const configurationRegistry = Registry.as(ConfigurationExtensions.Configuration);
+configurationRegistry.registerConfiguration({
+    ...applicationConfigurationNodeBase,
+    properties: {
+        'workbench.panel.chat.view.experimental.showGettingStarted': {
+            scope: 2,
+            type: 'string',
+            default: '',
+            tags: ['experimental'],
+            description: localize('workbench.panel.chat.view.showGettingStarted', "When enabled, shows a getting started experiments in the chat panel.")
+        }
+    }
+});

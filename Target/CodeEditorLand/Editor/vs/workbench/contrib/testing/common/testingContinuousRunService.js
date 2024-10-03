@@ -1,1 +1,140 @@
-var c=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var g=(a,o,e,i)=>{for(var t=i>1?void 0:i?h(o,e):o,s=a.length-1,n;s>=0;s--)(n=a[s])&&(t=(i?n(o,e,t):n(t))||t);return i&&t&&c(o,e,t),t},u=(a,o)=>(e,i)=>o(e,i,a);import{CancellationTokenSource as m}from"../../../../base/common/cancellation.js";import{Disposable as b,DisposableStore as S,toDisposable as p}from"../../../../base/common/lifecycle.js";import{IContextKeyService as y}from"../../../../platform/contextkey/common/contextkey.js";import{createDecorator as v}from"../../../../platform/instantiation/common/instantiation.js";import{IStorageService as R,StorageScope as I,StorageTarget as P}from"../../../../platform/storage/common/storage.js";import{StoredValue as C}from"./storedValue.js";import{TestingContextKeys as T}from"./testingContextKeys.js";import{ITestService as E}from"./testService.js";import"./testServiceImpl.js";import"./testTypes.js";import{Emitter as O}from"../../../../base/common/event.js";import{TestId as l}from"./testId.js";import{WellDefinedPrefixTree as D}from"../../../../base/common/prefixTree.js";import{ITestProfileService as x}from"./testProfileService.js";import*as K from"../../../../base/common/arrays.js";const Z=v("testingContinuousRunService");let d=class extends b{constructor(e,i,t,s){super();this.testService=e;this.testProfileService=s;this.isGloballyOn=T.isContinuousModeOn.bindTo(t),this.lastRun=this._register(new C({key:"lastContinuousRunProfileIds",scope:I.WORKSPACE,target:P.MACHINE,serialization:{deserialize:n=>new Set(JSON.parse(n)),serialize:n=>JSON.stringify([...n])}},i)),this._register(p(()=>{this.globallyRunning?.dispose();for(const n of this.running.values())n.dispose()}))}changeEmitter=new O;globallyRunning;running=new D;lastRun;isGloballyOn;onDidChange=this.changeEmitter.event;get lastRunProfileIds(){return this.lastRun.get(new Set)}isSpecificallyEnabledFor(e){return this.running.size>0&&this.running.hasKey(l.fromString(e).path)}isEnabledForAParentOf(e){return this.globallyRunning?!0:this.running.size>0&&this.running.hasKeyOrParent(l.fromString(e).path)}isEnabledForAChildOf(e){return this.running.size>0&&this.running.hasKeyOrChildren(l.fromString(e).path)}isEnabled(){return!!this.globallyRunning||this.running.size>0}start(e,i){const t=new S,s=new m;t.add(p(()=>s.dispose(!0))),i===void 0&&this.isGloballyOn.set(!0),i?this.running.mutate(l.fromString(i).path,r=>(r?.dispose(),t)):(this.globallyRunning?.dispose(),this.globallyRunning=t);let n;if(e instanceof Array)n=e;else{const r=()=>this.testProfileService.getGroupDefaultProfiles(e).filter(f=>f.supportsContinuousRun&&(!i||l.root(i)===f.controllerId));n=r(),t.add(this.testProfileService.onDidChange(()=>{K.equals(r(),n)||this.start(e,i)}))}this.lastRun.store(new Set(n.map(r=>r.profileId))),n.length&&this.testService.startContinuousRun({continuous:!0,group:n[0].group,targets:n.map(r=>({testIds:[i??r.controllerId],controllerId:r.controllerId,profileId:r.profileId}))},s.token),this.changeEmitter.fire(i)}stop(e){if(!e)this.globallyRunning?.dispose(),this.globallyRunning=void 0;else{const i=[...this.running.deleteRecursive(l.fromString(e).path)];for(let t=i.length-1;t>=0;t--)i[t].dispose()}e===void 0&&this.isGloballyOn.set(!1),this.changeEmitter.fire(e)}};d=g([u(0,E),u(1,R),u(2,y),u(3,x)],d);export{Z as ITestingContinuousRunService,d as TestingContinuousRunService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { StoredValue } from './storedValue.js';
+import { TestingContextKeys } from './testingContextKeys.js';
+import { ITestService } from './testService.js';
+import { TestService } from './testServiceImpl.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { TestId } from './testId.js';
+import { WellDefinedPrefixTree } from '../../../../base/common/prefixTree.js';
+import { ITestProfileService } from './testProfileService.js';
+import * as arrays from '../../../../base/common/arrays.js';
+export const ITestingContinuousRunService = createDecorator('testingContinuousRunService');
+let TestingContinuousRunService = class TestingContinuousRunService extends Disposable {
+    get lastRunProfileIds() {
+        return this.lastRun.get(new Set());
+    }
+    constructor(testService, storageService, contextKeyService, testProfileService) {
+        super();
+        this.testService = testService;
+        this.testProfileService = testProfileService;
+        this.changeEmitter = new Emitter();
+        this.running = new WellDefinedPrefixTree();
+        this.onDidChange = this.changeEmitter.event;
+        this.isGloballyOn = TestingContextKeys.isContinuousModeOn.bindTo(contextKeyService);
+        this.lastRun = this._register(new StoredValue({
+            key: 'lastContinuousRunProfileIds',
+            scope: 1,
+            target: 1,
+            serialization: {
+                deserialize: v => new Set(JSON.parse(v)),
+                serialize: v => JSON.stringify([...v])
+            },
+        }, storageService));
+        this._register(toDisposable(() => {
+            this.globallyRunning?.dispose();
+            for (const cts of this.running.values()) {
+                cts.dispose();
+            }
+        }));
+    }
+    isSpecificallyEnabledFor(testId) {
+        return this.running.size > 0 && this.running.hasKey(TestId.fromString(testId).path);
+    }
+    isEnabledForAParentOf(testId) {
+        if (this.globallyRunning) {
+            return true;
+        }
+        return this.running.size > 0 && this.running.hasKeyOrParent(TestId.fromString(testId).path);
+    }
+    isEnabledForAChildOf(testId) {
+        return this.running.size > 0 && this.running.hasKeyOrChildren(TestId.fromString(testId).path);
+    }
+    isEnabled() {
+        return !!this.globallyRunning || this.running.size > 0;
+    }
+    start(profiles, testId) {
+        const store = new DisposableStore();
+        const cts = new CancellationTokenSource();
+        store.add(toDisposable(() => cts.dispose(true)));
+        if (testId === undefined) {
+            this.isGloballyOn.set(true);
+        }
+        if (!testId) {
+            this.globallyRunning?.dispose();
+            this.globallyRunning = store;
+        }
+        else {
+            this.running.mutate(TestId.fromString(testId).path, c => {
+                c?.dispose();
+                return store;
+            });
+        }
+        let actualProfiles;
+        if (profiles instanceof Array) {
+            actualProfiles = profiles;
+        }
+        else {
+            const getRelevant = () => this.testProfileService.getGroupDefaultProfiles(profiles)
+                .filter(p => p.supportsContinuousRun && (!testId || TestId.root(testId) === p.controllerId));
+            actualProfiles = getRelevant();
+            store.add(this.testProfileService.onDidChange(() => {
+                if (!arrays.equals(getRelevant(), actualProfiles)) {
+                    this.start(profiles, testId);
+                }
+            }));
+        }
+        this.lastRun.store(new Set(actualProfiles.map(p => p.profileId)));
+        if (actualProfiles.length) {
+            this.testService.startContinuousRun({
+                continuous: true,
+                group: actualProfiles[0].group,
+                targets: actualProfiles.map(p => ({
+                    testIds: [testId ?? p.controllerId],
+                    controllerId: p.controllerId,
+                    profileId: p.profileId
+                })),
+            }, cts.token);
+        }
+        this.changeEmitter.fire(testId);
+    }
+    stop(testId) {
+        if (!testId) {
+            this.globallyRunning?.dispose();
+            this.globallyRunning = undefined;
+        }
+        else {
+            const cancellations = [...this.running.deleteRecursive(TestId.fromString(testId).path)];
+            for (let i = cancellations.length - 1; i >= 0; i--) {
+                cancellations[i].dispose();
+            }
+        }
+        if (testId === undefined) {
+            this.isGloballyOn.set(false);
+        }
+        this.changeEmitter.fire(testId);
+    }
+};
+TestingContinuousRunService = __decorate([
+    __param(0, ITestService),
+    __param(1, IStorageService),
+    __param(2, IContextKeyService),
+    __param(3, ITestProfileService),
+    __metadata("design:paramtypes", [TestService, Object, Object, Object])
+], TestingContinuousRunService);
+export { TestingContinuousRunService };

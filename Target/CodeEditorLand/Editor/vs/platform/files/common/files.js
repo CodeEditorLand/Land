@@ -1,1 +1,376 @@
-import"../../../base/common/buffer.js";import"../../../base/common/cancellation.js";import"../../../base/common/event.js";import"../../../base/common/glob.js";import"../../../base/common/lifecycle.js";import{TernarySearchTree as m}from"../../../base/common/ternarySearchTree.js";import{sep as y}from"../../../base/common/path.js";import"../../../base/common/stream.js";import{startsWithIgnoreCase as v}from"../../../base/common/strings.js";import{isNumber as R}from"../../../base/common/types.js";import{URI as O}from"../../../base/common/uri.js";import{localize as c}from"../../../nls.js";import{createDecorator as S}from"../../instantiation/common/instantiation.js";import{isWeb as b}from"../../../base/common/platform.js";import{Schemas as f}from"../../../base/common/network.js";import"../../../base/common/htmlContent.js";import{Lazy as u}from"../../../base/common/lazy.js";const de=S("fileService");function ce(r){return r.create===!0}var h=(n=>(n[n.Unknown=0]="Unknown",n[n.File=1]="File",n[n.Directory=2]="Directory",n[n.SymbolicLink=64]="SymbolicLink",n))(h||{}),x=(i=>(i[i.Readonly=1]="Readonly",i[i.Locked=2]="Locked",i))(x||{}),C=(t=>(t[t.UPDATED=2]="UPDATED",t[t.ADDED=4]="ADDED",t[t.DELETED=8]="DELETED",t))(C||{});function Ie(r){const e=r;return!!e&&typeof e.onDidChange=="function"}var P=(o=>(o[o.None=0]="None",o[o.FileReadWrite=2]="FileReadWrite",o[o.FileOpenReadWriteClose=4]="FileOpenReadWriteClose",o[o.FileReadStream=16]="FileReadStream",o[o.FileFolderCopy=8]="FileFolderCopy",o[o.PathCaseSensitive=1024]="PathCaseSensitive",o[o.Readonly=2048]="Readonly",o[o.Trash=4096]="Trash",o[o.FileWriteUnlock=8192]="FileWriteUnlock",o[o.FileAtomicRead=16384]="FileAtomicRead",o[o.FileAtomicWrite=32768]="FileAtomicWrite",o[o.FileAtomicDelete=65536]="FileAtomicDelete",o[o.FileClone=131072]="FileClone",o))(P||{});function E(r){return!!(r.capabilities&2)}function pe(r){return!!(r.capabilities&8)}function me(r){return!!(r.capabilities&131072)}function ue(r){return!!(r.capabilities&4)}function Fe(r){return!!(r.capabilities&16)}function ye(r){return E(r)?!!(r.capabilities&16384):!1}function fe(r){return E(r)?!!(r.capabilities&32768):!1}function Ee(r){return!!(r.capabilities&65536)}function ve(r){return!!(r.capabilities&2048)}var g=(d=>(d.FileExists="EntryExists",d.FileNotFound="EntryNotFound",d.FileNotADirectory="EntryNotADirectory",d.FileIsADirectory="EntryIsADirectory",d.FileExceedsStorageQuota="EntryExceedsStorageQuota",d.FileTooLarge="EntryTooLarge",d.FileWriteLocked="EntryWriteLocked",d.NoPermissions="NoPermissions",d.Unavailable="Unavailable",d.Unknown="Unknown",d))(g||{});class p extends Error{constructor(i,t){super(i);this.code=t}static create(i,t){const n=new p(i.toString(),t);return D(n,t),n}}function U(r,e){return p.create(r,e)}function Re(r){return r||U(c("unknownError","Unknown Error"),"Unknown")}function D(r,e){return r.name=e?`${e} (FileSystemError)`:"FileSystemError",r}function W(r){if(!r)return"Unknown";if(r instanceof p)return r.code;const e=/^(.+) \(FileSystemError\)$/.exec(r.name);if(!e)return"Unknown";switch(e[1]){case"EntryExists":return"EntryExists";case"EntryIsADirectory":return"EntryIsADirectory";case"EntryNotADirectory":return"EntryNotADirectory";case"EntryNotFound":return"EntryNotFound";case"EntryTooLarge":return"EntryTooLarge";case"EntryWriteLocked":return"EntryWriteLocked";case"NoPermissions":return"NoPermissions";case"Unavailable":return"Unavailable"}return"Unknown"}function Oe(r){if(r instanceof F)return r.fileOperationResult;switch(W(r)){case"EntryNotFound":return 1;case"EntryIsADirectory":return 0;case"EntryNotADirectory":return 9;case"EntryWriteLocked":return 5;case"NoPermissions":return 6;case"EntryExists":return 4;case"EntryTooLarge":return 7;default:return 10}}var A=(l=>(l[l.CREATE=0]="CREATE",l[l.DELETE=1]="DELETE",l[l.MOVE=2]="MOVE",l[l.COPY=3]="COPY",l[l.WRITE=4]="WRITE",l))(A||{});class Se{constructor(e,i,t){this.resource=e;this.operation=i;this.target=t}isOperation(e){return this.operation===e}}var L=(t=>(t[t.UPDATED=0]="UPDATED",t[t.ADDED=1]="ADDED",t[t.DELETED=2]="DELETED",t))(L||{});class I{constructor(e,i){this.ignorePathCasing=i;for(const t of e){switch(t.type){case 1:this.rawAdded.push(t.resource);break;case 0:this.rawUpdated.push(t.resource);break;case 2:this.rawDeleted.push(t.resource);break}this.correlationId!==I.MIXED_CORRELATION&&(typeof t.cId=="number"?this.correlationId===void 0?this.correlationId=t.cId:this.correlationId!==t.cId&&(this.correlationId=I.MIXED_CORRELATION):this.correlationId!==void 0&&(this.correlationId=I.MIXED_CORRELATION))}}static MIXED_CORRELATION=null;correlationId=void 0;added=new u(()=>{const e=m.forUris(()=>this.ignorePathCasing);return e.fill(this.rawAdded.map(i=>[i,!0])),e});updated=new u(()=>{const e=m.forUris(()=>this.ignorePathCasing);return e.fill(this.rawUpdated.map(i=>[i,!0])),e});deleted=new u(()=>{const e=m.forUris(()=>this.ignorePathCasing);return e.fill(this.rawDeleted.map(i=>[i,!0])),e});contains(e,...i){return this.doContains(e,{includeChildren:!1},...i)}affects(e,...i){return this.doContains(e,{includeChildren:!0},...i)}doContains(e,i,...t){if(!e)return!1;const n=t.length>0;return!!((!n||t.includes(1))&&(this.added.value.get(e)||i.includeChildren&&this.added.value.findSuperstr(e))||(!n||t.includes(0))&&(this.updated.value.get(e)||i.includeChildren&&this.updated.value.findSuperstr(e))||(!n||t.includes(2))&&(this.deleted.value.findSubstr(e)||i.includeChildren&&this.deleted.value.findSuperstr(e)))}gotAdded(){return this.rawAdded.length>0}gotDeleted(){return this.rawDeleted.length>0}gotUpdated(){return this.rawUpdated.length>0}correlates(e){return this.correlationId===e}hasCorrelation(){return typeof this.correlationId=="number"}rawAdded=[];rawUpdated=[];rawDeleted=[]}function be(r,e,i){return!r||!e||r===e||e.length>r.length?!1:(e.charAt(e.length-1)!==y&&(e+=y),i?v(r,e):r.indexOf(e)===0)}class F extends Error{constructor(i,t,n){super(i);this.fileOperationResult=t;this.options=n}}class he extends F{constructor(i,t,n,l){super(i,t,l);this.fileOperationResult=t;this.size=n}}class xe extends F{constructor(i,t,n){super(i,2,n);this.stat=t}}var T=(a=>(a[a.FILE_IS_DIRECTORY=0]="FILE_IS_DIRECTORY",a[a.FILE_NOT_FOUND=1]="FILE_NOT_FOUND",a[a.FILE_NOT_MODIFIED_SINCE=2]="FILE_NOT_MODIFIED_SINCE",a[a.FILE_MODIFIED_SINCE=3]="FILE_MODIFIED_SINCE",a[a.FILE_MOVE_CONFLICT=4]="FILE_MOVE_CONFLICT",a[a.FILE_WRITE_LOCKED=5]="FILE_WRITE_LOCKED",a[a.FILE_PERMISSION_DENIED=6]="FILE_PERMISSION_DENIED",a[a.FILE_TOO_LARGE=7]="FILE_TOO_LARGE",a[a.FILE_INVALID_PATH=8]="FILE_INVALID_PATH",a[a.FILE_NOT_DIRECTORY=9]="FILE_NOT_DIRECTORY",a[a.FILE_OTHER_ERROR=10]="FILE_OTHER_ERROR",a))(T||{});const Ce={OFF:"off",AFTER_DELAY:"afterDelay",ON_FOCUS_CHANGE:"onFocusChange",ON_WINDOW_CHANGE:"onWindowChange"},Pe={OFF:"off",ON_EXIT:"onExit",ON_EXIT_AND_WINDOW_CLOSE:"onExitAndWindowClose"},ge="files.associations",Ue="files.exclude",De="files.readonlyInclude",We="files.readonlyExclude",Ae="files.readonlyFromPermissions";var N=(t=>(t[t.FILE=0]="FILE",t[t.FOLDER=1]="FOLDER",t[t.ROOT_FOLDER=2]="ROOT_FOLDER",t))(N||{});const Le="";function Te(r){if(!(typeof r.size!="number"||typeof r.mtime!="number"))return r.mtime.toString(29)+r.size.toString(31)}async function Ne(r,e){if(!e.hasProvider(O.from({scheme:r.scheme})))return new Promise(i=>{const t=e.onDidChangeFileSystemProviderRegistrations(n=>{n.scheme===r.scheme&&n.added&&(t.dispose(),i())})})}class s{static KB=1024;static MB=s.KB*s.KB;static GB=s.MB*s.KB;static TB=s.GB*s.KB;static formatSize(e){return R(e)||(e=0),e<s.KB?c("sizeB","{0}B",e.toFixed(0)):e<s.MB?c("sizeKB","{0}KB",(e/s.KB).toFixed(2)):e<s.GB?c("sizeMB","{0}MB",(e/s.MB).toFixed(2)):e<s.TB?c("sizeGB","{0}GB",(e/s.GB).toFixed(2)):c("sizeTB","{0}TB",(e/s.TB).toFixed(2))}}function Me(r){const e=typeof r=="string"||r?.scheme===f.vscodeRemote;return typeof r!="string"&&r?.scheme===f.file?1024*s.MB:e?10*s.MB:b?50*s.MB:1024*s.MB}export{Ce as AutoSaveConfiguration,s as ByteSize,Le as ETAG_DISABLED,ge as FILES_ASSOCIATIONS_CONFIG,Ue as FILES_EXCLUDE_CONFIG,We as FILES_READONLY_EXCLUDE_CONFIG,Ae as FILES_READONLY_FROM_PERMISSIONS_CONFIG,De as FILES_READONLY_INCLUDE_CONFIG,C as FileChangeFilter,L as FileChangeType,I as FileChangesEvent,N as FileKind,A as FileOperation,F as FileOperationError,Se as FileOperationEvent,T as FileOperationResult,x as FilePermission,P as FileSystemProviderCapabilities,p as FileSystemProviderError,g as FileSystemProviderErrorCode,h as FileType,Pe as HotExitConfiguration,de as IFileService,xe as NotModifiedSinceFileOperationError,he as TooLargeFileOperationError,U as createFileSystemProviderError,Re as ensureFileSystemProviderError,Te as etag,Me as getLargeFileConfirmationLimit,Ee as hasFileAtomicDeleteCapability,ye as hasFileAtomicReadCapability,fe as hasFileAtomicWriteCapability,me as hasFileCloneCapability,pe as hasFileFolderCopyCapability,Fe as hasFileReadStreamCapability,ue as hasOpenReadWriteCloseCapability,E as hasReadWriteCapability,ve as hasReadonlyCapability,ce as isFileOpenForWriteOptions,Ie as isFileSystemWatcher,be as isParent,D as markAsFileSystemProviderError,Oe as toFileOperationResult,W as toFileSystemProviderErrorCode,Ne as whenProviderRegistered};
+import { TernarySearchTree } from '../../../base/common/ternarySearchTree.js';
+import { sep } from '../../../base/common/path.js';
+import { startsWithIgnoreCase } from '../../../base/common/strings.js';
+import { isNumber } from '../../../base/common/types.js';
+import { URI } from '../../../base/common/uri.js';
+import { localize } from '../../../nls.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { isWeb } from '../../../base/common/platform.js';
+import { Schemas } from '../../../base/common/network.js';
+import { Lazy } from '../../../base/common/lazy.js';
+export const IFileService = createDecorator('fileService');
+export function isFileOpenForWriteOptions(options) {
+    return options.create === true;
+}
+export var FileType;
+(function (FileType) {
+    FileType[FileType["Unknown"] = 0] = "Unknown";
+    FileType[FileType["File"] = 1] = "File";
+    FileType[FileType["Directory"] = 2] = "Directory";
+    FileType[FileType["SymbolicLink"] = 64] = "SymbolicLink";
+})(FileType || (FileType = {}));
+export var FilePermission;
+(function (FilePermission) {
+    FilePermission[FilePermission["Readonly"] = 1] = "Readonly";
+    FilePermission[FilePermission["Locked"] = 2] = "Locked";
+})(FilePermission || (FilePermission = {}));
+export function isFileSystemWatcher(thing) {
+    const candidate = thing;
+    return !!candidate && typeof candidate.onDidChange === 'function';
+}
+export function hasReadWriteCapability(provider) {
+    return !!(provider.capabilities & 2);
+}
+export function hasFileFolderCopyCapability(provider) {
+    return !!(provider.capabilities & 8);
+}
+export function hasFileCloneCapability(provider) {
+    return !!(provider.capabilities & 131072);
+}
+export function hasOpenReadWriteCloseCapability(provider) {
+    return !!(provider.capabilities & 4);
+}
+export function hasFileReadStreamCapability(provider) {
+    return !!(provider.capabilities & 16);
+}
+export function hasFileAtomicReadCapability(provider) {
+    if (!hasReadWriteCapability(provider)) {
+        return false;
+    }
+    return !!(provider.capabilities & 16384);
+}
+export function hasFileAtomicWriteCapability(provider) {
+    if (!hasReadWriteCapability(provider)) {
+        return false;
+    }
+    return !!(provider.capabilities & 32768);
+}
+export function hasFileAtomicDeleteCapability(provider) {
+    return !!(provider.capabilities & 65536);
+}
+export function hasReadonlyCapability(provider) {
+    return !!(provider.capabilities & 2048);
+}
+export var FileSystemProviderErrorCode;
+(function (FileSystemProviderErrorCode) {
+    FileSystemProviderErrorCode["FileExists"] = "EntryExists";
+    FileSystemProviderErrorCode["FileNotFound"] = "EntryNotFound";
+    FileSystemProviderErrorCode["FileNotADirectory"] = "EntryNotADirectory";
+    FileSystemProviderErrorCode["FileIsADirectory"] = "EntryIsADirectory";
+    FileSystemProviderErrorCode["FileExceedsStorageQuota"] = "EntryExceedsStorageQuota";
+    FileSystemProviderErrorCode["FileTooLarge"] = "EntryTooLarge";
+    FileSystemProviderErrorCode["FileWriteLocked"] = "EntryWriteLocked";
+    FileSystemProviderErrorCode["NoPermissions"] = "NoPermissions";
+    FileSystemProviderErrorCode["Unavailable"] = "Unavailable";
+    FileSystemProviderErrorCode["Unknown"] = "Unknown";
+})(FileSystemProviderErrorCode || (FileSystemProviderErrorCode = {}));
+export class FileSystemProviderError extends Error {
+    static create(error, code) {
+        const providerError = new FileSystemProviderError(error.toString(), code);
+        markAsFileSystemProviderError(providerError, code);
+        return providerError;
+    }
+    constructor(message, code) {
+        super(message);
+        this.code = code;
+    }
+}
+export function createFileSystemProviderError(error, code) {
+    return FileSystemProviderError.create(error, code);
+}
+export function ensureFileSystemProviderError(error) {
+    if (!error) {
+        return createFileSystemProviderError(localize('unknownError', "Unknown Error"), FileSystemProviderErrorCode.Unknown);
+    }
+    return error;
+}
+export function markAsFileSystemProviderError(error, code) {
+    error.name = code ? `${code} (FileSystemError)` : `FileSystemError`;
+    return error;
+}
+export function toFileSystemProviderErrorCode(error) {
+    if (!error) {
+        return FileSystemProviderErrorCode.Unknown;
+    }
+    if (error instanceof FileSystemProviderError) {
+        return error.code;
+    }
+    const match = /^(.+) \(FileSystemError\)$/.exec(error.name);
+    if (!match) {
+        return FileSystemProviderErrorCode.Unknown;
+    }
+    switch (match[1]) {
+        case FileSystemProviderErrorCode.FileExists: return FileSystemProviderErrorCode.FileExists;
+        case FileSystemProviderErrorCode.FileIsADirectory: return FileSystemProviderErrorCode.FileIsADirectory;
+        case FileSystemProviderErrorCode.FileNotADirectory: return FileSystemProviderErrorCode.FileNotADirectory;
+        case FileSystemProviderErrorCode.FileNotFound: return FileSystemProviderErrorCode.FileNotFound;
+        case FileSystemProviderErrorCode.FileTooLarge: return FileSystemProviderErrorCode.FileTooLarge;
+        case FileSystemProviderErrorCode.FileWriteLocked: return FileSystemProviderErrorCode.FileWriteLocked;
+        case FileSystemProviderErrorCode.NoPermissions: return FileSystemProviderErrorCode.NoPermissions;
+        case FileSystemProviderErrorCode.Unavailable: return FileSystemProviderErrorCode.Unavailable;
+    }
+    return FileSystemProviderErrorCode.Unknown;
+}
+export function toFileOperationResult(error) {
+    if (error instanceof FileOperationError) {
+        return error.fileOperationResult;
+    }
+    switch (toFileSystemProviderErrorCode(error)) {
+        case FileSystemProviderErrorCode.FileNotFound:
+            return 1;
+        case FileSystemProviderErrorCode.FileIsADirectory:
+            return 0;
+        case FileSystemProviderErrorCode.FileNotADirectory:
+            return 9;
+        case FileSystemProviderErrorCode.FileWriteLocked:
+            return 5;
+        case FileSystemProviderErrorCode.NoPermissions:
+            return 6;
+        case FileSystemProviderErrorCode.FileExists:
+            return 4;
+        case FileSystemProviderErrorCode.FileTooLarge:
+            return 7;
+        default:
+            return 10;
+    }
+}
+export class FileOperationEvent {
+    constructor(resource, operation, target) {
+        this.resource = resource;
+        this.operation = operation;
+        this.target = target;
+    }
+    isOperation(operation) {
+        return this.operation === operation;
+    }
+}
+export class FileChangesEvent {
+    static { this.MIXED_CORRELATION = null; }
+    constructor(changes, ignorePathCasing) {
+        this.ignorePathCasing = ignorePathCasing;
+        this.correlationId = undefined;
+        this.added = new Lazy(() => {
+            const added = TernarySearchTree.forUris(() => this.ignorePathCasing);
+            added.fill(this.rawAdded.map(resource => [resource, true]));
+            return added;
+        });
+        this.updated = new Lazy(() => {
+            const updated = TernarySearchTree.forUris(() => this.ignorePathCasing);
+            updated.fill(this.rawUpdated.map(resource => [resource, true]));
+            return updated;
+        });
+        this.deleted = new Lazy(() => {
+            const deleted = TernarySearchTree.forUris(() => this.ignorePathCasing);
+            deleted.fill(this.rawDeleted.map(resource => [resource, true]));
+            return deleted;
+        });
+        this.rawAdded = [];
+        this.rawUpdated = [];
+        this.rawDeleted = [];
+        for (const change of changes) {
+            switch (change.type) {
+                case 1:
+                    this.rawAdded.push(change.resource);
+                    break;
+                case 0:
+                    this.rawUpdated.push(change.resource);
+                    break;
+                case 2:
+                    this.rawDeleted.push(change.resource);
+                    break;
+            }
+            if (this.correlationId !== FileChangesEvent.MIXED_CORRELATION) {
+                if (typeof change.cId === 'number') {
+                    if (this.correlationId === undefined) {
+                        this.correlationId = change.cId;
+                    }
+                    else if (this.correlationId !== change.cId) {
+                        this.correlationId = FileChangesEvent.MIXED_CORRELATION;
+                    }
+                }
+                else {
+                    if (this.correlationId !== undefined) {
+                        this.correlationId = FileChangesEvent.MIXED_CORRELATION;
+                    }
+                }
+            }
+        }
+    }
+    contains(resource, ...types) {
+        return this.doContains(resource, { includeChildren: false }, ...types);
+    }
+    affects(resource, ...types) {
+        return this.doContains(resource, { includeChildren: true }, ...types);
+    }
+    doContains(resource, options, ...types) {
+        if (!resource) {
+            return false;
+        }
+        const hasTypesFilter = types.length > 0;
+        if (!hasTypesFilter || types.includes(1)) {
+            if (this.added.value.get(resource)) {
+                return true;
+            }
+            if (options.includeChildren && this.added.value.findSuperstr(resource)) {
+                return true;
+            }
+        }
+        if (!hasTypesFilter || types.includes(0)) {
+            if (this.updated.value.get(resource)) {
+                return true;
+            }
+            if (options.includeChildren && this.updated.value.findSuperstr(resource)) {
+                return true;
+            }
+        }
+        if (!hasTypesFilter || types.includes(2)) {
+            if (this.deleted.value.findSubstr(resource)) {
+                return true;
+            }
+            if (options.includeChildren && this.deleted.value.findSuperstr(resource)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    gotAdded() {
+        return this.rawAdded.length > 0;
+    }
+    gotDeleted() {
+        return this.rawDeleted.length > 0;
+    }
+    gotUpdated() {
+        return this.rawUpdated.length > 0;
+    }
+    correlates(correlationId) {
+        return this.correlationId === correlationId;
+    }
+    hasCorrelation() {
+        return typeof this.correlationId === 'number';
+    }
+}
+export function isParent(path, candidate, ignoreCase) {
+    if (!path || !candidate || path === candidate) {
+        return false;
+    }
+    if (candidate.length > path.length) {
+        return false;
+    }
+    if (candidate.charAt(candidate.length - 1) !== sep) {
+        candidate += sep;
+    }
+    if (ignoreCase) {
+        return startsWithIgnoreCase(path, candidate);
+    }
+    return path.indexOf(candidate) === 0;
+}
+export class FileOperationError extends Error {
+    constructor(message, fileOperationResult, options) {
+        super(message);
+        this.fileOperationResult = fileOperationResult;
+        this.options = options;
+    }
+}
+export class TooLargeFileOperationError extends FileOperationError {
+    constructor(message, fileOperationResult, size, options) {
+        super(message, fileOperationResult, options);
+        this.fileOperationResult = fileOperationResult;
+        this.size = size;
+    }
+}
+export class NotModifiedSinceFileOperationError extends FileOperationError {
+    constructor(message, stat, options) {
+        super(message, 2, options);
+        this.stat = stat;
+    }
+}
+export const AutoSaveConfiguration = {
+    OFF: 'off',
+    AFTER_DELAY: 'afterDelay',
+    ON_FOCUS_CHANGE: 'onFocusChange',
+    ON_WINDOW_CHANGE: 'onWindowChange'
+};
+export const HotExitConfiguration = {
+    OFF: 'off',
+    ON_EXIT: 'onExit',
+    ON_EXIT_AND_WINDOW_CLOSE: 'onExitAndWindowClose'
+};
+export const FILES_ASSOCIATIONS_CONFIG = 'files.associations';
+export const FILES_EXCLUDE_CONFIG = 'files.exclude';
+export const FILES_READONLY_INCLUDE_CONFIG = 'files.readonlyInclude';
+export const FILES_READONLY_EXCLUDE_CONFIG = 'files.readonlyExclude';
+export const FILES_READONLY_FROM_PERMISSIONS_CONFIG = 'files.readonlyFromPermissions';
+export var FileKind;
+(function (FileKind) {
+    FileKind[FileKind["FILE"] = 0] = "FILE";
+    FileKind[FileKind["FOLDER"] = 1] = "FOLDER";
+    FileKind[FileKind["ROOT_FOLDER"] = 2] = "ROOT_FOLDER";
+})(FileKind || (FileKind = {}));
+export const ETAG_DISABLED = '';
+export function etag(stat) {
+    if (typeof stat.size !== 'number' || typeof stat.mtime !== 'number') {
+        return undefined;
+    }
+    return stat.mtime.toString(29) + stat.size.toString(31);
+}
+export async function whenProviderRegistered(file, fileService) {
+    if (fileService.hasProvider(URI.from({ scheme: file.scheme }))) {
+        return;
+    }
+    return new Promise(resolve => {
+        const disposable = fileService.onDidChangeFileSystemProviderRegistrations(e => {
+            if (e.scheme === file.scheme && e.added) {
+                disposable.dispose();
+                resolve();
+            }
+        });
+    });
+}
+export class ByteSize {
+    static { this.KB = 1024; }
+    static { this.MB = ByteSize.KB * ByteSize.KB; }
+    static { this.GB = ByteSize.MB * ByteSize.KB; }
+    static { this.TB = ByteSize.GB * ByteSize.KB; }
+    static formatSize(size) {
+        if (!isNumber(size)) {
+            size = 0;
+        }
+        if (size < ByteSize.KB) {
+            return localize('sizeB', "{0}B", size.toFixed(0));
+        }
+        if (size < ByteSize.MB) {
+            return localize('sizeKB', "{0}KB", (size / ByteSize.KB).toFixed(2));
+        }
+        if (size < ByteSize.GB) {
+            return localize('sizeMB', "{0}MB", (size / ByteSize.MB).toFixed(2));
+        }
+        if (size < ByteSize.TB) {
+            return localize('sizeGB', "{0}GB", (size / ByteSize.GB).toFixed(2));
+        }
+        return localize('sizeTB', "{0}TB", (size / ByteSize.TB).toFixed(2));
+    }
+}
+export function getLargeFileConfirmationLimit(arg) {
+    const isRemote = typeof arg === 'string' || arg?.scheme === Schemas.vscodeRemote;
+    const isLocal = typeof arg !== 'string' && arg?.scheme === Schemas.file;
+    if (isLocal) {
+        return 1024 * ByteSize.MB;
+    }
+    if (isRemote) {
+        return 10 * ByteSize.MB;
+    }
+    if (isWeb) {
+        return 50 * ByteSize.MB;
+    }
+    return 1024 * ByteSize.MB;
+}

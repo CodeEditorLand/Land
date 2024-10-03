@@ -1,1 +1,2 @@
-import{createDecorator as e}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../base/common/uri.js";import"./notebookCommon.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/event.js";import"./model/notebookTextModel.js";const R=e("INotebookModelResolverService");export{R as INotebookEditorModelResolverService};
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export const INotebookEditorModelResolverService = createDecorator('INotebookModelResolverService');

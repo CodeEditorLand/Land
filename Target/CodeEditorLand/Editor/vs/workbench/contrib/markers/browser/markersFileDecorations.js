@@ -1,1 +1,112 @@
-var f=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var c=(t,r,i,e)=>{for(var o=e>1?void 0:e?m(r,i):r,l=t.length-1,d;l>=0;l--)(d=t[l])&&(o=(e?d(r,i,o):d(o))||o);return e&&o&&f(r,i,o),o},s=(t,r)=>(i,e)=>r(i,e,t);import{Extensions as h}from"../../../common/contributions.js";import{IMarkerService as u,MarkerSeverity as p}from"../../../../platform/markers/common/markers.js";import{IDecorationsService as g}from"../../../services/decorations/common/decorations.js";import{dispose as b}from"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import"../../../../base/common/event.js";import{localize as a}from"../../../../nls.js";import{Registry as v}from"../../../../platform/registry/common/platform.js";import{listErrorForeground as _,listWarningForeground as y}from"../../../../platform/theme/common/colorRegistry.js";import{IConfigurationService as I}from"../../../../platform/configuration/common/configuration.js";import{Extensions as k}from"../../../../platform/configuration/common/configurationRegistry.js";import{LifecyclePhase as S}from"../../../services/lifecycle/common/lifecycle.js";class C{constructor(r){this._markerService=r;this.onDidChange=r.onMarkerChanged}label=a("label","Problems");onDidChange;provideDecorations(r){const i=this._markerService.read({resource:r,severities:p.Error|p.Warning});let e;for(const o of i)(!e||o.severity>e.severity)&&(e=o);if(e)return{weight:100*e.severity,bubble:!0,tooltip:i.length===1?a("tooltip.1","1 problem in this file"):a("tooltip.N","{0} problems in this file",i.length),letter:i.length<10?i.length.toString():"9+",color:e.severity===p.Error?_:y}}}let n=class{constructor(r,i,e){this._markerService=r;this._decorationsService=i;this._configurationService=e;this._disposables=[this._configurationService.onDidChangeConfiguration(o=>{o.affectsConfiguration("problems.visibility")&&this._updateEnablement()})],this._updateEnablement()}_disposables;_provider;_enabled;dispose(){b(this._provider),b(this._disposables)}_updateEnablement(){const r=this._configurationService.getValue("problems.visibility");if(r===void 0)return;const i=this._configurationService.getValue("problems"),e=r&&i.decorations.enabled;if(e===this._enabled){(!r||!i.decorations.enabled)&&(this._provider?.dispose(),this._provider=void 0);return}if(this._enabled=e,this._enabled){const o=new C(this._markerService);this._provider=this._decorationsService.registerDecorationsProvider(o)}else this._provider&&this._provider.dispose()}};n=c([s(0,u),s(1,g),s(2,I)],n),v.as(k.Configuration).registerConfiguration({id:"problems",order:101,type:"object",properties:{"problems.decorations.enabled":{markdownDescription:a("markers.showOnFile","Show Errors & Warnings on files and folder. Overwritten by {0} when it is off.","`#problems.visibility#`"),type:"boolean",default:!0}}}),v.as(h.Workbench).registerWorkbenchContribution(n,S.Restored);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+import { IMarkerService, MarkerSeverity } from '../../../../platform/markers/common/markers.js';
+import { IDecorationsService } from '../../../services/decorations/common/decorations.js';
+import { dispose } from '../../../../base/common/lifecycle.js';
+import { localize } from '../../../../nls.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { listErrorForeground, listWarningForeground } from '../../../../platform/theme/common/colorRegistry.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { Extensions as ConfigurationExtensions } from '../../../../platform/configuration/common/configurationRegistry.js';
+class MarkersDecorationsProvider {
+    constructor(_markerService) {
+        this._markerService = _markerService;
+        this.label = localize('label', "Problems");
+        this.onDidChange = _markerService.onMarkerChanged;
+    }
+    provideDecorations(resource) {
+        const markers = this._markerService.read({
+            resource,
+            severities: MarkerSeverity.Error | MarkerSeverity.Warning
+        });
+        let first;
+        for (const marker of markers) {
+            if (!first || marker.severity > first.severity) {
+                first = marker;
+            }
+        }
+        if (!first) {
+            return undefined;
+        }
+        return {
+            weight: 100 * first.severity,
+            bubble: true,
+            tooltip: markers.length === 1 ? localize('tooltip.1', "1 problem in this file") : localize('tooltip.N', "{0} problems in this file", markers.length),
+            letter: markers.length < 10 ? markers.length.toString() : '9+',
+            color: first.severity === MarkerSeverity.Error ? listErrorForeground : listWarningForeground,
+        };
+    }
+}
+let MarkersFileDecorations = class MarkersFileDecorations {
+    constructor(_markerService, _decorationsService, _configurationService) {
+        this._markerService = _markerService;
+        this._decorationsService = _decorationsService;
+        this._configurationService = _configurationService;
+        this._disposables = [
+            this._configurationService.onDidChangeConfiguration(e => {
+                if (e.affectsConfiguration('problems.visibility')) {
+                    this._updateEnablement();
+                }
+            }),
+        ];
+        this._updateEnablement();
+    }
+    dispose() {
+        dispose(this._provider);
+        dispose(this._disposables);
+    }
+    _updateEnablement() {
+        const problem = this._configurationService.getValue('problems.visibility');
+        if (problem === undefined) {
+            return;
+        }
+        const value = this._configurationService.getValue('problems');
+        const shouldEnable = (problem && value.decorations.enabled);
+        if (shouldEnable === this._enabled) {
+            if (!problem || !value.decorations.enabled) {
+                this._provider?.dispose();
+                this._provider = undefined;
+            }
+            return;
+        }
+        this._enabled = shouldEnable;
+        if (this._enabled) {
+            const provider = new MarkersDecorationsProvider(this._markerService);
+            this._provider = this._decorationsService.registerDecorationsProvider(provider);
+        }
+        else if (this._provider) {
+            this._provider.dispose();
+        }
+    }
+};
+MarkersFileDecorations = __decorate([
+    __param(0, IMarkerService),
+    __param(1, IDecorationsService),
+    __param(2, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], MarkersFileDecorations);
+Registry.as(ConfigurationExtensions.Configuration).registerConfiguration({
+    'id': 'problems',
+    'order': 101,
+    'type': 'object',
+    'properties': {
+        'problems.decorations.enabled': {
+            'markdownDescription': localize('markers.showOnFile', "Show Errors & Warnings on files and folder. Overwritten by {0} when it is off.", '`#problems.visibility#`'),
+            'type': 'boolean',
+            'default': true
+        }
+    }
+});
+Registry.as(WorkbenchExtensions.Workbench)
+    .registerWorkbenchContribution(MarkersFileDecorations, 3);

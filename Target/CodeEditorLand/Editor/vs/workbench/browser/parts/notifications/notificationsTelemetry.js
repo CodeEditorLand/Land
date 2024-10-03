@@ -1,1 +1,47 @@
-var m=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var f=(o,t,e,i)=>{for(var r=i>1?void 0:i?h(t,e):t,n=o.length-1,c;n>=0;n--)(c=o[n])&&(r=(i?c(t,e,r):c(r))||r);return i&&r&&m(t,e,r),r},a=(o,t)=>(e,i)=>t(e,i,o);import{Disposable as l}from"../../../../base/common/lifecycle.js";import{INotificationService as g,NotificationPriority as u}from"../../../../platform/notification/common/notification.js";import{ITelemetryService as d}from"../../../../platform/telemetry/common/telemetry.js";import"../../../common/contributions.js";import{hash as y}from"../../../../base/common/hash.js";function p(o,t,e){return{id:y(o.toString()).toString(),silent:e,source:t||"core"}}let s=class extends l{constructor(e,i){super();this.telemetryService=e;this.notificationService=i;this.registerListeners()}registerListeners(){this._register(this.notificationService.onDidAddNotification(e=>{const i=e.source&&typeof e.source!="string"?e.source.id:e.source;this.telemetryService.publicLog2("notification:show",p(e.message,i,e.priority===u.SILENT))})),this._register(this.notificationService.onDidRemoveNotification(e=>{const i=e.source&&typeof e.source!="string"?e.source.id:e.source;this.telemetryService.publicLog2("notification:close",p(e.message,i,e.priority===u.SILENT))}))}};s=f([a(0,d),a(1,g)],s);export{s as NotificationsTelemetry,p as notificationToMetrics};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { INotificationService, NotificationPriority } from '../../../../platform/notification/common/notification.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { hash } from '../../../../base/common/hash.js';
+export function notificationToMetrics(message, source, silent) {
+    return {
+        id: hash(message.toString()).toString(),
+        silent,
+        source: source || 'core'
+    };
+}
+let NotificationsTelemetry = class NotificationsTelemetry extends Disposable {
+    constructor(telemetryService, notificationService) {
+        super();
+        this.telemetryService = telemetryService;
+        this.notificationService = notificationService;
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.notificationService.onDidAddNotification(notification => {
+            const source = notification.source && typeof notification.source !== 'string' ? notification.source.id : notification.source;
+            this.telemetryService.publicLog2('notification:show', notificationToMetrics(notification.message, source, notification.priority === NotificationPriority.SILENT));
+        }));
+        this._register(this.notificationService.onDidRemoveNotification(notification => {
+            const source = notification.source && typeof notification.source !== 'string' ? notification.source.id : notification.source;
+            this.telemetryService.publicLog2('notification:close', notificationToMetrics(notification.message, source, notification.priority === NotificationPriority.SILENT));
+        }));
+    }
+};
+NotificationsTelemetry = __decorate([
+    __param(0, ITelemetryService),
+    __param(1, INotificationService),
+    __metadata("design:paramtypes", [Object, Object])
+], NotificationsTelemetry);
+export { NotificationsTelemetry };

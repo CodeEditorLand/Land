@@ -1,1 +1,461 @@
-var y=Object.defineProperty;var N=Object.getOwnPropertyDescriptor;var f=(d,e,i,t)=>{for(var o=t>1?void 0:t?N(e,i):e,n=d.length-1,s;n>=0;n--)(s=d[n])&&(o=(t?s(e,i,o):s(o))||o);return t&&o&&y(e,i,o),o},p=(d,e)=>(i,t)=>e(i,t,d);import"../../../../base/common/uri.js";import{Emitter as v,Event as x}from"../../../../base/common/event.js";import{TrackedRangeStickiness as C}from"../../../../editor/common/model.js";import{CTX_INLINE_CHAT_HAS_STASHED_SESSION as T}from"../common/inlineChat.js";import{Range as l}from"../../../../editor/common/core/range.js";import{ModelDecorationOptions as I}from"../../../../editor/common/model/textModel.js";import{EditOperation as _}from"../../../../editor/common/core/editOperation.js";import{DetailedLineRangeMapping as b}from"../../../../editor/common/diff/rangeMapping.js";import{IInlineChatSessionService as k}from"./inlineChatSessionService.js";import"../../../../editor/common/core/lineRange.js";import{IEditorWorkerService as A}from"../../../../editor/common/services/editorWorker.js";import{coalesceInPlace as D}from"../../../../base/common/arrays.js";import{Iterable as L}from"../../../../base/common/iterator.js";import"../../../../editor/common/textModelEvents.js";import{DisposableStore as H}from"../../../../base/common/lifecycle.js";import"../../../../editor/browser/editorBrowser.js";import{IContextKeyService as w}from"../../../../platform/contextkey/common/contextkey.js";import{ILogService as O}from"../../../../platform/log/common/log.js";import"../../chat/common/chatModel.js";import{ExtensionIdentifier as U}from"../../../../platform/extensions/common/extensions.js";import"../../chat/common/chatAgents.js";import"../../../../editor/common/diff/documentDiffProvider.js";class M{constructor(e,i){this._textModel=e;this._decorationIds=e.deltaDecorations([],[{range:i,options:M._options}])}static _options=I.register({description:"inlineChat/session/wholeRange"});_onDidChange=new v;onDidChange=this._onDidChange.event;_decorationIds=[];dispose(){this._onDidChange.dispose(),this._textModel.isDisposed()||this._textModel.deltaDecorations(this._decorationIds,[])}fixup(e){const i=[];for(const{modified:s}of e){const a=s.isEmpty?new l(s.startLineNumber,1,s.startLineNumber,this._textModel.getLineLength(s.startLineNumber)):new l(s.startLineNumber,1,s.endLineNumberExclusive-1,this._textModel.getLineLength(s.endLineNumberExclusive-1));i.push({range:a,options:M._options})}const[t,...o]=this._decorationIds,n=this._textModel.deltaDecorations(o,i);this._decorationIds=[t].concat(n),this._onDidChange.fire(this)}get trackedInitialRange(){const[e]=this._decorationIds;return this._textModel.getDecorationRange(e)??new l(1,1,1,1)}get value(){let e;for(const i of this._decorationIds){const t=this._textModel.getDecorationRange(i);t&&(e?e=l.plusRange(e,t):e=t)}return e}}class be{constructor(e,i,t,o,n,s,a,r,h,g){this.editMode=e;this.headless=i;this.targetUri=t;this.textModel0=o;this.textModelN=n;this.agent=s;this.wholeRange=a;this.hunkData=r;this.chatModel=h;this._teldata={extension:U.toKey(s.extensionId),startTime:this._startTime.toISOString(),endTime:this._startTime.toISOString(),edits:0,finishedByEdit:!1,rounds:"",undos:"",editMode:e,unstashed:0,acceptedHunks:0,discardedHunks:0,responseTypes:""},g&&(this._versionByRequest=new Map(g))}_isUnstashed=!1;_startTime=new Date;_teldata;_versionByRequest=new Map;get isUnstashed(){return this._isUnstashed}markUnstashed(){this._teldata.unstashed+=1,this._isUnstashed=!0}markModelVersion(e){this._versionByRequest.set(e.id,this.textModelN.getAlternativeVersionId())}get versionsByRequest(){return Array.from(this._versionByRequest)}async undoChangesUntil(e){const i=this._versionByRequest.get(e);if(i===void 0)return!1;this.hunkData.ignoreTextModelNChanges=!0;try{for(;i<this.textModelN.getAlternativeVersionId()&&this.textModelN.canUndo();)await this.textModelN.undo()}finally{this.hunkData.ignoreTextModelNChanges=!1}return!0}get hasChangedText(){return!this.textModel0.equalsTextBuffer(this.textModelN.getTextBuffer())}asChangedText(e){if(e.length===0)return;let i=Number.MAX_VALUE,t=Number.MIN_VALUE;for(const o of e)i=Math.min(i,o.modified.startLineNumber),t=Math.max(t,o.modified.endLineNumberExclusive);return this.textModelN.getValueInRange(new l(i,1,t,Number.MAX_VALUE))}recordExternalEditOccurred(e){this._teldata.edits+=1,this._teldata.finishedByEdit=e}asTelemetryData(){for(const e of this.hunkData.getInfo())switch(e.getState()){case 1:this._teldata.acceptedHunks+=1;break;case 2:this._teldata.discardedHunks+=1;break}return this._teldata.endTime=new Date().toISOString(),this._teldata}}let m=class{constructor(e,i,t,o,n,s){this._undoCancelEdits=t;this._sessionService=n;this._logService=s;this._ctxHasStashedSession=T.bindTo(o),this._session=i,this._ctxHasStashedSession.set(!0),this._listener=x.once(x.any(e.onDidChangeCursorSelection,e.onDidChangeModelContent,e.onDidChangeModel,e.onDidBlurEditorWidget))(()=>{this._session=void 0,this._sessionService.releaseSession(i),this._ctxHasStashedSession.reset()})}_listener;_ctxHasStashedSession;_session;dispose(){this._listener.dispose(),this._ctxHasStashedSession.reset(),this._session&&this._sessionService.releaseSession(this._session)}unstash(){if(!this._session)return;this._listener.dispose();const e=this._session;return e.markUnstashed(),e.hunkData.ignoreTextModelNChanges=!0,e.textModelN.pushEditOperations(null,this._undoCancelEdits,()=>null),e.hunkData.ignoreTextModelNChanges=!1,this._session=void 0,this._logService.debug("[IE] Unstashed session"),e}};m=f([p(3,w),p(4,k),p(5,O)],m);function R(d,e){return d.isEmpty?new l(d.startLineNumber,1,d.startLineNumber,Number.MAX_SAFE_INTEGER):new l(d.startLineNumber,1,d.endLineNumberExclusive-1,Number.MAX_SAFE_INTEGER)}let c=class{constructor(e,i,t){this._editorWorkerService=e;this._textModel0=i;this._textModelN=t;this._store.add(t.onDidChangeContent(o=>{this._ignoreChanges||this._mirrorChanges(o)}))}static _HUNK_TRACKED_RANGE=I.register({description:"inline-chat-hunk-tracked-range",stickiness:C.AlwaysGrowsWhenTypingAtEdges});static _HUNK_THRESHOLD=8;_store=new H;_data=new Map;_ignoreChanges=!1;dispose(){this._textModelN.isDisposed()||this._textModelN.changeDecorations(e=>{for(const{textModelNDecorations:i}of this._data.values())i.forEach(e.removeDecoration,e)}),this._textModel0.isDisposed()||this._textModel0.changeDecorations(e=>{for(const{textModel0Decorations:i}of this._data.values())i.forEach(e.removeDecoration,e)}),this._data.clear(),this._store.dispose()}set ignoreTextModelNChanges(e){this._ignoreChanges=e}get ignoreTextModelNChanges(){return this._ignoreChanges}_mirrorChanges(e){const i=[],t=[];for(const n of this._data.values())if(n.state===0)for(let s=1;s<n.textModelNDecorations.length;s++){const a=this._textModelN.getDecorationRange(n.textModelNDecorations[s]),r=this._textModel0.getDecorationRange(n.textModel0Decorations[s]);a&&r&&i.push({rangeN:a,range0:r,markAccepted:()=>n.state=1})}else if(n.state===1)for(let s=1;s<n.textModel0Decorations.length;s++){const a=this._textModel0.getDecorationRange(n.textModel0Decorations[s]);a&&t.push(a)}i.sort((n,s)=>l.compareRangesUsingStarts(n.rangeN,s.rangeN)),t.sort(l.compareRangesUsingStarts);const o=[];for(const n of e.changes){let s=!1,a=0;for(const u of i)if(u.rangeN.getEndPosition().isBefore(l.getStartPosition(n.range)))a+=this._textModelN.getValueLengthInRange(u.rangeN),a-=this._textModel0.getValueLengthInRange(u.range0);else if(l.areIntersectingOrTouching(u.rangeN,n.range)){u.markAccepted(),s=!0;break}else break;if(s)continue;const r=n.rangeOffset-a,h=this._textModel0.getPositionAt(r);let g=0;for(const u of t)u.getEndPosition().isBefore(h)&&(g+=this._textModel0.getValueLengthInRange(u));const E=this._textModel0.getPositionAt(r+g),S=this._textModel0.getPositionAt(r+g+n.rangeLength);o.push(_.replace(l.fromPositions(E,S),n.text))}this._textModel0.pushEditOperations(null,o,()=>null)}async recompute(e,i){i??=await this._editorWorkerService.computeDiff(this._textModel0.uri,this._textModelN.uri,{ignoreTrimWhitespace:!1,maxComputationTimeMs:Number.MAX_SAFE_INTEGER,computeMoves:!1},"advanced");let t=[];if(i&&i.changes.length>0){t=[i.changes[0]];for(let n=1;n<i.changes.length;n++){const s=t[t.length-1],a=i.changes[n];a.modified.startLineNumber-s.modified.endLineNumberExclusive<=c._HUNK_THRESHOLD?t[t.length-1]=new b(s.original.join(a.original),s.modified.join(a.modified),(s.innerChanges??[]).concat(a.innerChanges??[])):t.push(a)}}const o=t.map(n=>new P(n.original,n.modified,n.innerChanges??[]));e.applied=o.length,this._textModelN.changeDecorations(n=>{this._textModel0.changeDecorations(s=>{for(const{textModelNDecorations:a,textModel0Decorations:r}of this._data.values())a.forEach(n.removeDecoration,n),r.forEach(s.removeDecoration,s);this._data.clear();for(const a of o){const r=[],h=[];r.push(n.addDecoration(R(a.modified,this._textModelN),c._HUNK_TRACKED_RANGE)),h.push(s.addDecoration(R(a.original,this._textModel0),c._HUNK_TRACKED_RANGE));for(const g of a.changes)r.push(n.addDecoration(g.modifiedRange,c._HUNK_TRACKED_RANGE)),h.push(s.addDecoration(g.originalRange,c._HUNK_TRACKED_RANGE));this._data.set(a,{editState:e,textModelNDecorations:r,textModel0Decorations:h,state:0})}})})}get size(){return this._data.size}get pending(){return L.reduce(this._data.values(),(e,{state:i})=>e+(i===0?1:0),0)}_discardEdits(e){const i=[],t=e.getRangesN(),o=e.getRanges0();for(let n=1;n<t.length;n++){const s=t[n],a=this._textModel0.getValueInRange(o[n]);i.push(_.replace(s,a))}return i}discardAll(){const e=[];for(const t of this.getInfo())t.getState()===0&&e.push(this._discardEdits(t));const i=[];return this._textModelN.pushEditOperations(null,e.flat(),t=>(i.push(t),null)),i.flat()}getInfo(){const e=[];for(const[i,t]of this._data.entries()){const o={getState:()=>t.state,isInsertion:()=>i.original.isEmpty,getRangesN:()=>{const n=t.textModelNDecorations.map(s=>this._textModelN.getDecorationRange(s));return D(n),n},getRanges0:()=>{const n=t.textModel0Decorations.map(s=>this._textModel0.getDecorationRange(s));return D(n),n},discardChanges:()=>{if(t.state===0){const n=this._discardEdits(o);this._textModelN.pushEditOperations(null,n,()=>null),t.state=2,t.editState.applied>0&&(t.editState.applied-=1)}},acceptChanges:()=>{if(t.state===0){const n=[],s=o.getRangesN(),a=o.getRanges0();for(let r=1;r<a.length;r++){const h=a[r],g=this._textModelN.getValueInRange(s[r]);n.push(_.replace(h,g))}this._textModel0.pushEditOperations(null,n,()=>null),t.state=1}}};e.push(o)}return e}};c=f([p(0,A)],c);class P{constructor(e,i,t){this.original=e;this.modified=i;this.changes=t}}var V=(t=>(t[t.Pending=0]="Pending",t[t.Accepted=1]="Accepted",t[t.Rejected=2]="Rejected",t))(V||{});export{c as HunkData,V as HunkState,be as Session,M as SessionWholeRange,m as StashedSession};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var HunkData_1;
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { CTX_INLINE_CHAT_HAS_STASHED_SESSION } from '../common/inlineChat.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { ModelDecorationOptions } from '../../../../editor/common/model/textModel.js';
+import { EditOperation } from '../../../../editor/common/core/editOperation.js';
+import { DetailedLineRangeMapping } from '../../../../editor/common/diff/rangeMapping.js';
+import { IInlineChatSessionService } from './inlineChatSessionService.js';
+import { IEditorWorkerService } from '../../../../editor/common/services/editorWorker.js';
+import { coalesceInPlace } from '../../../../base/common/arrays.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { ExtensionIdentifier } from '../../../../platform/extensions/common/extensions.js';
+export class SessionWholeRange {
+    static { this._options = ModelDecorationOptions.register({ description: 'inlineChat/session/wholeRange' }); }
+    constructor(_textModel, wholeRange) {
+        this._textModel = _textModel;
+        this._onDidChange = new Emitter();
+        this.onDidChange = this._onDidChange.event;
+        this._decorationIds = [];
+        this._decorationIds = _textModel.deltaDecorations([], [{ range: wholeRange, options: SessionWholeRange._options }]);
+    }
+    dispose() {
+        this._onDidChange.dispose();
+        if (!this._textModel.isDisposed()) {
+            this._textModel.deltaDecorations(this._decorationIds, []);
+        }
+    }
+    fixup(changes) {
+        const newDeco = [];
+        for (const { modified } of changes) {
+            const modifiedRange = modified.isEmpty
+                ? new Range(modified.startLineNumber, 1, modified.startLineNumber, this._textModel.getLineLength(modified.startLineNumber))
+                : new Range(modified.startLineNumber, 1, modified.endLineNumberExclusive - 1, this._textModel.getLineLength(modified.endLineNumberExclusive - 1));
+            newDeco.push({ range: modifiedRange, options: SessionWholeRange._options });
+        }
+        const [first, ...rest] = this._decorationIds;
+        const newIds = this._textModel.deltaDecorations(rest, newDeco);
+        this._decorationIds = [first].concat(newIds);
+        this._onDidChange.fire(this);
+    }
+    get trackedInitialRange() {
+        const [first] = this._decorationIds;
+        return this._textModel.getDecorationRange(first) ?? new Range(1, 1, 1, 1);
+    }
+    get value() {
+        let result;
+        for (const id of this._decorationIds) {
+            const range = this._textModel.getDecorationRange(id);
+            if (range) {
+                if (!result) {
+                    result = range;
+                }
+                else {
+                    result = Range.plusRange(result, range);
+                }
+            }
+        }
+        return result;
+    }
+}
+export class Session {
+    constructor(editMode, headless, targetUri, textModel0, textModelN, agent, wholeRange, hunkData, chatModel, versionsByRequest) {
+        this.editMode = editMode;
+        this.headless = headless;
+        this.targetUri = targetUri;
+        this.textModel0 = textModel0;
+        this.textModelN = textModelN;
+        this.agent = agent;
+        this.wholeRange = wholeRange;
+        this.hunkData = hunkData;
+        this.chatModel = chatModel;
+        this._isUnstashed = false;
+        this._startTime = new Date();
+        this._versionByRequest = new Map();
+        this._teldata = {
+            extension: ExtensionIdentifier.toKey(agent.extensionId),
+            startTime: this._startTime.toISOString(),
+            endTime: this._startTime.toISOString(),
+            edits: 0,
+            finishedByEdit: false,
+            rounds: '',
+            undos: '',
+            editMode,
+            unstashed: 0,
+            acceptedHunks: 0,
+            discardedHunks: 0,
+            responseTypes: ''
+        };
+        if (versionsByRequest) {
+            this._versionByRequest = new Map(versionsByRequest);
+        }
+    }
+    get isUnstashed() {
+        return this._isUnstashed;
+    }
+    markUnstashed() {
+        this._teldata.unstashed += 1;
+        this._isUnstashed = true;
+    }
+    markModelVersion(request) {
+        this._versionByRequest.set(request.id, this.textModelN.getAlternativeVersionId());
+    }
+    get versionsByRequest() {
+        return Array.from(this._versionByRequest);
+    }
+    async undoChangesUntil(requestId) {
+        const targetAltVersion = this._versionByRequest.get(requestId);
+        if (targetAltVersion === undefined) {
+            return false;
+        }
+        this.hunkData.ignoreTextModelNChanges = true;
+        try {
+            while (targetAltVersion < this.textModelN.getAlternativeVersionId() && this.textModelN.canUndo()) {
+                await this.textModelN.undo();
+            }
+        }
+        finally {
+            this.hunkData.ignoreTextModelNChanges = false;
+        }
+        return true;
+    }
+    get hasChangedText() {
+        return !this.textModel0.equalsTextBuffer(this.textModelN.getTextBuffer());
+    }
+    asChangedText(changes) {
+        if (changes.length === 0) {
+            return undefined;
+        }
+        let startLine = Number.MAX_VALUE;
+        let endLine = Number.MIN_VALUE;
+        for (const change of changes) {
+            startLine = Math.min(startLine, change.modified.startLineNumber);
+            endLine = Math.max(endLine, change.modified.endLineNumberExclusive);
+        }
+        return this.textModelN.getValueInRange(new Range(startLine, 1, endLine, Number.MAX_VALUE));
+    }
+    recordExternalEditOccurred(didFinish) {
+        this._teldata.edits += 1;
+        this._teldata.finishedByEdit = didFinish;
+    }
+    asTelemetryData() {
+        for (const item of this.hunkData.getInfo()) {
+            switch (item.getState()) {
+                case 1:
+                    this._teldata.acceptedHunks += 1;
+                    break;
+                case 2:
+                    this._teldata.discardedHunks += 1;
+                    break;
+            }
+        }
+        this._teldata.endTime = new Date().toISOString();
+        return this._teldata;
+    }
+}
+let StashedSession = class StashedSession {
+    constructor(editor, session, _undoCancelEdits, contextKeyService, _sessionService, _logService) {
+        this._undoCancelEdits = _undoCancelEdits;
+        this._sessionService = _sessionService;
+        this._logService = _logService;
+        this._ctxHasStashedSession = CTX_INLINE_CHAT_HAS_STASHED_SESSION.bindTo(contextKeyService);
+        this._session = session;
+        this._ctxHasStashedSession.set(true);
+        this._listener = Event.once(Event.any(editor.onDidChangeCursorSelection, editor.onDidChangeModelContent, editor.onDidChangeModel, editor.onDidBlurEditorWidget))(() => {
+            this._session = undefined;
+            this._sessionService.releaseSession(session);
+            this._ctxHasStashedSession.reset();
+        });
+    }
+    dispose() {
+        this._listener.dispose();
+        this._ctxHasStashedSession.reset();
+        if (this._session) {
+            this._sessionService.releaseSession(this._session);
+        }
+    }
+    unstash() {
+        if (!this._session) {
+            return undefined;
+        }
+        this._listener.dispose();
+        const result = this._session;
+        result.markUnstashed();
+        result.hunkData.ignoreTextModelNChanges = true;
+        result.textModelN.pushEditOperations(null, this._undoCancelEdits, () => null);
+        result.hunkData.ignoreTextModelNChanges = false;
+        this._session = undefined;
+        this._logService.debug('[IE] Unstashed session');
+        return result;
+    }
+};
+StashedSession = __decorate([
+    __param(3, IContextKeyService),
+    __param(4, IInlineChatSessionService),
+    __param(5, ILogService),
+    __metadata("design:paramtypes", [Object, Session, Array, Object, Object, Object])
+], StashedSession);
+export { StashedSession };
+function lineRangeAsRange(lineRange, model) {
+    return lineRange.isEmpty
+        ? new Range(lineRange.startLineNumber, 1, lineRange.startLineNumber, Number.MAX_SAFE_INTEGER)
+        : new Range(lineRange.startLineNumber, 1, lineRange.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER);
+}
+let HunkData = class HunkData {
+    static { HunkData_1 = this; }
+    static { this._HUNK_TRACKED_RANGE = ModelDecorationOptions.register({
+        description: 'inline-chat-hunk-tracked-range',
+        stickiness: 0
+    }); }
+    static { this._HUNK_THRESHOLD = 8; }
+    constructor(_editorWorkerService, _textModel0, _textModelN) {
+        this._editorWorkerService = _editorWorkerService;
+        this._textModel0 = _textModel0;
+        this._textModelN = _textModelN;
+        this._store = new DisposableStore();
+        this._data = new Map();
+        this._ignoreChanges = false;
+        this._store.add(_textModelN.onDidChangeContent(e => {
+            if (!this._ignoreChanges) {
+                this._mirrorChanges(e);
+            }
+        }));
+    }
+    dispose() {
+        if (!this._textModelN.isDisposed()) {
+            this._textModelN.changeDecorations(accessor => {
+                for (const { textModelNDecorations } of this._data.values()) {
+                    textModelNDecorations.forEach(accessor.removeDecoration, accessor);
+                }
+            });
+        }
+        if (!this._textModel0.isDisposed()) {
+            this._textModel0.changeDecorations(accessor => {
+                for (const { textModel0Decorations } of this._data.values()) {
+                    textModel0Decorations.forEach(accessor.removeDecoration, accessor);
+                }
+            });
+        }
+        this._data.clear();
+        this._store.dispose();
+    }
+    set ignoreTextModelNChanges(value) {
+        this._ignoreChanges = value;
+    }
+    get ignoreTextModelNChanges() {
+        return this._ignoreChanges;
+    }
+    _mirrorChanges(event) {
+        const hunkRanges = [];
+        const ranges0 = [];
+        for (const entry of this._data.values()) {
+            if (entry.state === 0) {
+                for (let i = 1; i < entry.textModelNDecorations.length; i++) {
+                    const rangeN = this._textModelN.getDecorationRange(entry.textModelNDecorations[i]);
+                    const range0 = this._textModel0.getDecorationRange(entry.textModel0Decorations[i]);
+                    if (rangeN && range0) {
+                        hunkRanges.push({
+                            rangeN, range0,
+                            markAccepted: () => entry.state = 1
+                        });
+                    }
+                }
+            }
+            else if (entry.state === 1) {
+                for (let i = 1; i < entry.textModel0Decorations.length; i++) {
+                    const range = this._textModel0.getDecorationRange(entry.textModel0Decorations[i]);
+                    if (range) {
+                        ranges0.push(range);
+                    }
+                }
+            }
+        }
+        hunkRanges.sort((a, b) => Range.compareRangesUsingStarts(a.rangeN, b.rangeN));
+        ranges0.sort(Range.compareRangesUsingStarts);
+        const edits = [];
+        for (const change of event.changes) {
+            let isOverlapping = false;
+            let pendingChangesLen = 0;
+            for (const entry of hunkRanges) {
+                if (entry.rangeN.getEndPosition().isBefore(Range.getStartPosition(change.range))) {
+                    pendingChangesLen += this._textModelN.getValueLengthInRange(entry.rangeN);
+                    pendingChangesLen -= this._textModel0.getValueLengthInRange(entry.range0);
+                }
+                else if (Range.areIntersectingOrTouching(entry.rangeN, change.range)) {
+                    entry.markAccepted();
+                    isOverlapping = true;
+                    break;
+                }
+                else {
+                    break;
+                }
+            }
+            if (isOverlapping) {
+                continue;
+            }
+            const offset0 = change.rangeOffset - pendingChangesLen;
+            const start0 = this._textModel0.getPositionAt(offset0);
+            let acceptedChangesLen = 0;
+            for (const range of ranges0) {
+                if (range.getEndPosition().isBefore(start0)) {
+                    acceptedChangesLen += this._textModel0.getValueLengthInRange(range);
+                }
+            }
+            const start = this._textModel0.getPositionAt(offset0 + acceptedChangesLen);
+            const end = this._textModel0.getPositionAt(offset0 + acceptedChangesLen + change.rangeLength);
+            edits.push(EditOperation.replace(Range.fromPositions(start, end), change.text));
+        }
+        this._textModel0.pushEditOperations(null, edits, () => null);
+    }
+    async recompute(editState, diff) {
+        diff ??= await this._editorWorkerService.computeDiff(this._textModel0.uri, this._textModelN.uri, { ignoreTrimWhitespace: false, maxComputationTimeMs: Number.MAX_SAFE_INTEGER, computeMoves: false }, 'advanced');
+        let mergedChanges = [];
+        if (diff && diff.changes.length > 0) {
+            mergedChanges = [diff.changes[0]];
+            for (let i = 1; i < diff.changes.length; i++) {
+                const lastChange = mergedChanges[mergedChanges.length - 1];
+                const thisChange = diff.changes[i];
+                if (thisChange.modified.startLineNumber - lastChange.modified.endLineNumberExclusive <= HunkData_1._HUNK_THRESHOLD) {
+                    mergedChanges[mergedChanges.length - 1] = new DetailedLineRangeMapping(lastChange.original.join(thisChange.original), lastChange.modified.join(thisChange.modified), (lastChange.innerChanges ?? []).concat(thisChange.innerChanges ?? []));
+                }
+                else {
+                    mergedChanges.push(thisChange);
+                }
+            }
+        }
+        const hunks = mergedChanges.map(change => new RawHunk(change.original, change.modified, change.innerChanges ?? []));
+        editState.applied = hunks.length;
+        this._textModelN.changeDecorations(accessorN => {
+            this._textModel0.changeDecorations(accessor0 => {
+                for (const { textModelNDecorations, textModel0Decorations } of this._data.values()) {
+                    textModelNDecorations.forEach(accessorN.removeDecoration, accessorN);
+                    textModel0Decorations.forEach(accessor0.removeDecoration, accessor0);
+                }
+                this._data.clear();
+                for (const hunk of hunks) {
+                    const textModelNDecorations = [];
+                    const textModel0Decorations = [];
+                    textModelNDecorations.push(accessorN.addDecoration(lineRangeAsRange(hunk.modified, this._textModelN), HunkData_1._HUNK_TRACKED_RANGE));
+                    textModel0Decorations.push(accessor0.addDecoration(lineRangeAsRange(hunk.original, this._textModel0), HunkData_1._HUNK_TRACKED_RANGE));
+                    for (const change of hunk.changes) {
+                        textModelNDecorations.push(accessorN.addDecoration(change.modifiedRange, HunkData_1._HUNK_TRACKED_RANGE));
+                        textModel0Decorations.push(accessor0.addDecoration(change.originalRange, HunkData_1._HUNK_TRACKED_RANGE));
+                    }
+                    this._data.set(hunk, {
+                        editState,
+                        textModelNDecorations,
+                        textModel0Decorations,
+                        state: 0
+                    });
+                }
+            });
+        });
+    }
+    get size() {
+        return this._data.size;
+    }
+    get pending() {
+        return Iterable.reduce(this._data.values(), (r, { state }) => r + (state === 0 ? 1 : 0), 0);
+    }
+    _discardEdits(item) {
+        const edits = [];
+        const rangesN = item.getRangesN();
+        const ranges0 = item.getRanges0();
+        for (let i = 1; i < rangesN.length; i++) {
+            const modifiedRange = rangesN[i];
+            const originalValue = this._textModel0.getValueInRange(ranges0[i]);
+            edits.push(EditOperation.replace(modifiedRange, originalValue));
+        }
+        return edits;
+    }
+    discardAll() {
+        const edits = [];
+        for (const item of this.getInfo()) {
+            if (item.getState() === 0) {
+                edits.push(this._discardEdits(item));
+            }
+        }
+        const undoEdits = [];
+        this._textModelN.pushEditOperations(null, edits.flat(), (_undoEdits) => {
+            undoEdits.push(_undoEdits);
+            return null;
+        });
+        return undoEdits.flat();
+    }
+    getInfo() {
+        const result = [];
+        for (const [hunk, data] of this._data.entries()) {
+            const item = {
+                getState: () => {
+                    return data.state;
+                },
+                isInsertion: () => {
+                    return hunk.original.isEmpty;
+                },
+                getRangesN: () => {
+                    const ranges = data.textModelNDecorations.map(id => this._textModelN.getDecorationRange(id));
+                    coalesceInPlace(ranges);
+                    return ranges;
+                },
+                getRanges0: () => {
+                    const ranges = data.textModel0Decorations.map(id => this._textModel0.getDecorationRange(id));
+                    coalesceInPlace(ranges);
+                    return ranges;
+                },
+                discardChanges: () => {
+                    if (data.state === 0) {
+                        const edits = this._discardEdits(item);
+                        this._textModelN.pushEditOperations(null, edits, () => null);
+                        data.state = 2;
+                        if (data.editState.applied > 0) {
+                            data.editState.applied -= 1;
+                        }
+                    }
+                },
+                acceptChanges: () => {
+                    if (data.state === 0) {
+                        const edits = [];
+                        const rangesN = item.getRangesN();
+                        const ranges0 = item.getRanges0();
+                        for (let i = 1; i < ranges0.length; i++) {
+                            const originalRange = ranges0[i];
+                            const modifiedValue = this._textModelN.getValueInRange(rangesN[i]);
+                            edits.push(EditOperation.replace(originalRange, modifiedValue));
+                        }
+                        this._textModel0.pushEditOperations(null, edits, () => null);
+                        data.state = 1;
+                    }
+                }
+            };
+            result.push(item);
+        }
+        return result;
+    }
+};
+HunkData = HunkData_1 = __decorate([
+    __param(0, IEditorWorkerService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], HunkData);
+export { HunkData };
+class RawHunk {
+    constructor(original, modified, changes) {
+        this.original = original;
+        this.modified = modified;
+        this.changes = changes;
+    }
+}

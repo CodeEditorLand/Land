@@ -1,1 +1,67 @@
-var S=Object.defineProperty;var l=Object.getOwnPropertyDescriptor;var c=(s,i,t,e)=>{for(var r=e>1?void 0:e?l(i,t):i,a=s.length-1,n;a>=0;a--)(n=s[a])&&(r=(e?n(i,t,r):n(r))||r);return e&&r&&S(i,t,r),r},h=(s,i)=>(t,e)=>i(t,e,s);import{Emitter as g}from"../../../../base/common/event.js";import{INativeHostService as p}from"../../../../platform/native/common/native.js";import{InstantiationType as v,registerSingleton as C}from"../../../../platform/instantiation/common/extensions.js";import{Disposable as I}from"../../../../base/common/lifecycle.js";import{IHostColorSchemeService as f}from"../common/hostColorSchemeService.js";import{INativeWorkbenchEnvironmentService as u}from"../../environment/electron-sandbox/environmentService.js";import{IStorageService as E,StorageScope as m,StorageTarget as y}from"../../../../platform/storage/common/storage.js";import{isBoolean as d,isObject as O}from"../../../../base/common/types.js";import"../../../../platform/window/common/window.js";let o=class extends I{constructor(t,e,r){super();this.nativeHostService=t;this.storageService=r;this._register(this.nativeHostService.onDidChangeColorScheme(n=>this.update(n)));const a=this.getStoredValue()??e.window.colorScheme;this.dark=a.dark,this.highContrast=a.highContrast,this.nativeHostService.getOSColorScheme().then(n=>this.update(n))}static STORAGE_KEY="HostColorSchemeData";_onDidChangeColorScheme=this._register(new g);onDidChangeColorScheme=this._onDidChangeColorScheme.event;dark;highContrast;getStoredValue(){const t=this.storageService.get(o.STORAGE_KEY,m.APPLICATION);if(t)try{const e=JSON.parse(t);if(O(e)&&d(e.highContrast)&&d(e.dark))return e}catch{}}update({highContrast:t,dark:e}){(e!==this.dark||t!==this.highContrast)&&(this.dark=e,this.highContrast=t,this.storageService.store(o.STORAGE_KEY,JSON.stringify({highContrast:t,dark:e}),m.APPLICATION,y.MACHINE),this._onDidChangeColorScheme.fire())}};o=c([h(0,p),h(1,u),h(2,E)],o),C(f,o,v.Delayed);export{o as NativeHostColorSchemeService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var NativeHostColorSchemeService_1;
+import { Emitter } from '../../../../base/common/event.js';
+import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IHostColorSchemeService } from '../common/hostColorSchemeService.js';
+import { INativeWorkbenchEnvironmentService } from '../../environment/electron-sandbox/environmentService.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { isBoolean, isObject } from '../../../../base/common/types.js';
+let NativeHostColorSchemeService = class NativeHostColorSchemeService extends Disposable {
+    static { NativeHostColorSchemeService_1 = this; }
+    static { this.STORAGE_KEY = 'HostColorSchemeData'; }
+    constructor(nativeHostService, environmentService, storageService) {
+        super();
+        this.nativeHostService = nativeHostService;
+        this.storageService = storageService;
+        this._onDidChangeColorScheme = this._register(new Emitter());
+        this.onDidChangeColorScheme = this._onDidChangeColorScheme.event;
+        this._register(this.nativeHostService.onDidChangeColorScheme(scheme => this.update(scheme)));
+        const initial = this.getStoredValue() ?? environmentService.window.colorScheme;
+        this.dark = initial.dark;
+        this.highContrast = initial.highContrast;
+        this.nativeHostService.getOSColorScheme().then(scheme => this.update(scheme));
+    }
+    getStoredValue() {
+        const stored = this.storageService.get(NativeHostColorSchemeService_1.STORAGE_KEY, -1);
+        if (stored) {
+            try {
+                const scheme = JSON.parse(stored);
+                if (isObject(scheme) && isBoolean(scheme.highContrast) && isBoolean(scheme.dark)) {
+                    return scheme;
+                }
+            }
+            catch (e) {
+            }
+        }
+        return undefined;
+    }
+    update({ highContrast, dark }) {
+        if (dark !== this.dark || highContrast !== this.highContrast) {
+            this.dark = dark;
+            this.highContrast = highContrast;
+            this.storageService.store(NativeHostColorSchemeService_1.STORAGE_KEY, JSON.stringify({ highContrast, dark }), -1, 1);
+            this._onDidChangeColorScheme.fire();
+        }
+    }
+};
+NativeHostColorSchemeService = NativeHostColorSchemeService_1 = __decorate([
+    __param(0, INativeHostService),
+    __param(1, INativeWorkbenchEnvironmentService),
+    __param(2, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], NativeHostColorSchemeService);
+export { NativeHostColorSchemeService };
+registerSingleton(IHostColorSchemeService, NativeHostColorSchemeService, 1);

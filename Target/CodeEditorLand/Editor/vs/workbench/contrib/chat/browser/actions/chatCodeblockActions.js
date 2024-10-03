@@ -1,1 +1,488 @@
-import{Codicon as f}from"../../../../../base/common/codicons.js";import{KeyCode as p,KeyMod as d}from"../../../../../base/common/keyCodes.js";import"../../../../../editor/browser/editorBrowser.js";import"../../../../../editor/browser/editorExtensions.js";import{ICodeEditorService as W}from"../../../../../editor/browser/services/codeEditorService.js";import{EditorContextKeys as E}from"../../../../../editor/common/editorContextKeys.js";import{CopyAction as G}from"../../../../../editor/contrib/clipboard/browser/clipboard.js";import{localize2 as m}from"../../../../../nls.js";import{Action2 as B,MenuId as k,registerAction2 as C}from"../../../../../platform/actions/common/actions.js";import{IClipboardService as D}from"../../../../../platform/clipboard/common/clipboardService.js";import{ContextKeyExpr as a}from"../../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as w}from"../../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as x}from"../../../../../platform/keybinding/common/keybindingsRegistry.js";import{TerminalLocation as X}from"../../../../../platform/terminal/common/terminal.js";import"../../../../common/editor.js";import{IEditorService as F}from"../../../../services/editor/common/editorService.js";import{accessibleViewInCodeBlock as M}from"../../../accessibility/browser/accessibilityConfiguration.js";import{ITerminalEditorService as j,ITerminalGroupService as z,ITerminalService as Y}from"../../../terminal/browser/terminal.js";import{CONTEXT_CHAT_EDIT_APPLIED as U,CONTEXT_CHAT_ENABLED as v,CONTEXT_IN_CHAT_INPUT as _,CONTEXT_IN_CHAT_SESSION as h}from"../../common/chatContextKeys.js";import{IChatEditingService as J}from"../../common/chatEditingService.js";import{ChatCopyKind as O,IChatService as b}from"../../common/chatService.js";import{isResponseVM as A}from"../../common/chatViewModel.js";import{IChatCodeBlockContextProviderService as Q,IChatWidgetService as R}from"../chat.js";import{DefaultChatTextEditor as V}from"../codeBlockPart.js";import{CHAT_CATEGORY as g}from"./chatActions.js";import{ApplyCodeBlockOperation as Z,InsertCodeBlockOperation as $}from"./codeBlockOperations.js";const N=["fish","ps1","pwsh","powershell","sh","shellscript","zsh"];function P(c){return typeof c=="object"&&c!==null&&"code"in c&&"element"in c}function ee(c){return typeof c=="object"&&c!==null&&"element"in c}function q(c){return A(c.element)&&c.element.errorDetails?.responseIsFiltered}class T extends B{run(r,...t){let e=t[0];if(!P(e)){const o=r.get(W),n=o.getFocusedCodeEditor()||o.getActiveCodeEditor();if(!n||(e=K(n,r),!P(e)))return}return this.runWithContext(r,e)}}function Ve(){C(class extends B{constructor(){super({id:"workbench.action.chat.copyCodeBlock",title:m("interactive.copyCodeBlock.label","Copy"),f1:!1,category:g,icon:f.copy,menu:{id:k.ChatCodeBlock,group:"navigation",order:30}})}run(t,...e){const o=e[0];if(!P(o)||q(o))return;t.get(D).writeText(o.code),A(o.element)&&t.get(b).notifyUserAction({agentId:o.element.agent?.id,command:o.element.slashCommand?.name,sessionId:o.element.sessionId,requestId:o.element.requestId,result:o.element.result,action:{kind:"copy",codeBlockIndex:o.codeBlockIndex,copyKind:O.Toolbar,copiedCharacters:o.code.length,totalCharacters:o.code.length,copiedText:o.code}})}}),G?.addImplementation(5e4,"chat-codeblock",r=>{const t=r.get(W).getFocusedCodeEditor();if(!t)return!1;const e=t.getModel();if(!e)return!1;const o=K(t,r);if(!o)return!1;const n=t.getSelections()?.length===1&&t.getSelection()?.isEmpty(),s=n?e.getValue():t.getSelections()?.reduce((y,I)=>y+e.getValueInRange(I),"")??"",u=e.getValueLength(),l=r.get(b),i=o.element;return i&&l.notifyUserAction({agentId:i.agent?.id,command:i.slashCommand?.name,sessionId:i.sessionId,requestId:i.requestId,result:i.result,action:{kind:"copy",codeBlockIndex:o.codeBlockIndex,copyKind:O.Action,copiedText:s,copiedCharacters:s.length,totalCharacters:u}}),n?(r.get(D).writeText(o.code),!0):!1}),C(class extends T{operation;constructor(){super({id:"workbench.action.chat.applyInEditor",title:m("interactive.applyInEditor.label","Apply in Editor"),precondition:v,f1:!0,category:g,icon:f.gitPullRequestGoToChanges,menu:{id:k.ChatCodeBlock,group:"navigation",when:a.and(h,...N.map(t=>a.notEquals(E.languageId.key,t))),order:10},keybinding:{when:a.or(a.and(h,_.negate()),M),primary:d.CtrlCmd|p.Enter,mac:{primary:d.WinCtrl|p.Enter},weight:x.ExternalExtension+1}})}runWithContext(t,e){return this.operation||(this.operation=t.get(w).createInstance(Z)),this.operation.run(e)}}),C(class extends B{constructor(){super({id:"workbench.action.chat.applyAll",title:m("chat.applyAll.label","Apply All Edits"),precondition:v,f1:!0,category:g,icon:f.edit})}async run(t,...e){const o=t.get(R),n=t.get(J),s=o.lastFocusedWidget;if(!s||!s.viewModel)return;const u=e[0],i=s.viewModel.model.getRequests().find(y=>y.response?.result?.metadata?.applyEditsId===u);i&&i.response&&(await n.startOrContinueEditingSession(s.viewModel.sessionId,{silent:!0}),await n.triggerEditComputation(i.response))}}),C(class extends T{constructor(){super({id:"workbench.action.chat.insertCodeBlock",title:m("interactive.insertCodeBlock.label","Insert At Cursor"),precondition:v,f1:!0,category:g,icon:f.insert,menu:{id:k.ChatCodeBlock,group:"navigation",when:h,order:20},keybinding:{when:a.or(a.and(h,_.negate()),M),primary:d.CtrlCmd|p.Enter,mac:{primary:d.WinCtrl|p.Enter},weight:x.ExternalExtension+1}})}runWithContext(t,e){return t.get(w).createInstance($).run(e)}}),C(class extends T{constructor(){super({id:"workbench.action.chat.insertIntoNewFile",title:m("interactive.insertIntoNewFile.label","Insert into New File"),precondition:v,f1:!0,category:g,icon:f.newFile,menu:{id:k.ChatCodeBlock,group:"navigation",isHiddenByDefault:!0,order:40}})}async runWithContext(t,e){if(q(e))return;const o=t.get(F),n=t.get(b);o.openEditor({contents:e.code,languageId:e.languageId,resource:void 0}),A(e.element)&&n.notifyUserAction({agentId:e.element.agent?.id,command:e.element.slashCommand?.name,sessionId:e.element.sessionId,requestId:e.element.requestId,result:e.element.result,action:{kind:"insert",codeBlockIndex:e.codeBlockIndex,totalCharacters:e.code.length,newFile:!0}})}}),C(class extends T{constructor(){super({id:"workbench.action.chat.runInTerminal",title:m("interactive.runInTerminal.label","Insert into Terminal"),precondition:v,f1:!0,category:g,icon:f.terminal,menu:[{id:k.ChatCodeBlock,group:"navigation",when:a.and(h,a.or(...N.map(t=>a.equals(E.languageId.key,t))))},{id:k.ChatCodeBlock,group:"navigation",isHiddenByDefault:!0,when:a.and(h,...N.map(t=>a.notEquals(E.languageId.key,t)))}],keybinding:[{primary:d.CtrlCmd|d.Alt|p.Enter,mac:{primary:d.WinCtrl|d.Alt|p.Enter},weight:x.EditorContrib,when:a.or(h,M)}]})}async runWithContext(t,e){if(q(e))return;const o=t.get(b),n=t.get(Y),s=t.get(F),u=t.get(j),l=t.get(z);let i=await n.getActiveOrCreateInstance();if(i=i.xterm?.isStdinDisabled||i.shellLaunchConfig.isFeatureTerminal?await n.createTerminal():i,n.setActiveInstance(i),await i.focusWhenReady(!0),i.target===X.Editor){const I=s.findEditors(i.resource);u.openEditor(i,{viewColumn:I?.[0].groupId})}else l.showPanel(!0);i.runCommand(e.code,!1),A(e.element)&&o.notifyUserAction({agentId:e.element.agent?.id,command:e.element.slashCommand?.name,sessionId:e.element.sessionId,requestId:e.element.requestId,result:e.element.result,action:{kind:"runInTerminal",codeBlockIndex:e.codeBlockIndex,languageId:e.languageId}})}});function c(r,t){const e=r.get(W),n=r.get(R).lastFocusedWidget;if(!n)return;const u=e.getFocusedCodeEditor()?.getModel()?.uri,l=u?n.getCodeBlockInfoForEditor(u):void 0,i=!n.inputEditor.hasWidgetFocus()&&n.getFocus(),y=A(i)?i:void 0,I=l?l.element:y??n.viewModel?.getItems().reverse().find(L=>A(L));if(!I||!A(I))return;n.reveal(I);const S=n.getCodeBlockInfosForResponse(I),H=l?(l.codeBlockIndex+(t?-1:1)+S.length)%S.length:t?S.length-1:0;S[H]?.focus()}C(class extends B{constructor(){super({id:"workbench.action.chat.nextCodeBlock",title:m("interactive.nextCodeBlock.label","Next Code Block"),keybinding:{primary:d.CtrlCmd|d.Alt|p.PageDown,mac:{primary:d.CtrlCmd|d.Alt|p.PageDown},weight:x.WorkbenchContrib,when:h},precondition:v,f1:!0,category:g})}run(t,...e){c(t)}}),C(class extends B{constructor(){super({id:"workbench.action.chat.previousCodeBlock",title:m("interactive.previousCodeBlock.label","Previous Code Block"),keybinding:{primary:d.CtrlCmd|d.Alt|p.PageUp,mac:{primary:d.CtrlCmd|d.Alt|p.PageUp},weight:x.WorkbenchContrib,when:h},precondition:v,f1:!0,category:g})}run(t,...e){c(t,!0)}})}function K(c,r){const t=r.get(R),e=r.get(Q),o=c.getModel();if(!o)return;const s=t.lastFocusedWidget?.getCodeBlockInfoForEditor(o.uri);if(!s){for(const u of e.providers){const l=u.getCodeBlockContext(c);if(l)return l}return}return{element:s.element,codeBlockIndex:s.codeBlockIndex,code:c.getValue(),languageId:c.getModel().getLanguageId(),codemapperUri:s.codemapperUri}}function Le(){class c extends B{run(t,...e){const o=e[0];if(ee(o))return this.runWithContext(t,o)}}C(class extends c{constructor(){super({id:"workbench.action.chat.applyCompareEdits",title:m("interactive.compare.apply","Apply Edits"),f1:!1,category:g,icon:f.check,precondition:a.and(E.hasChanges,U.negate()),menu:{id:k.ChatCompareBlock,group:"navigation",order:1}})}async runWithContext(t,e){const o=t.get(F);await t.get(w).createInstance(V).apply(e.element,e.edit,e.diffEditor),await o.openEditor({resource:e.edit.uri,options:{revealIfVisible:!0}})}}),C(class extends c{constructor(){super({id:"workbench.action.chat.discardCompareEdits",title:m("interactive.compare.discard","Discard Edits"),f1:!1,category:g,icon:f.trash,precondition:a.and(E.hasChanges,U.negate()),menu:{id:k.ChatCompareBlock,group:"navigation",order:2}})}async runWithContext(t,e){t.get(w).createInstance(V).discard(e.element,e.edit)}})}export{P as isCodeBlockActionContext,ee as isCodeCompareBlockActionContext,Ve as registerChatCodeBlockActions,Le as registerChatCodeCompareBlockActions};
+import { Codicon } from '../../../../../base/common/codicons.js';
+import { ICodeEditorService } from '../../../../../editor/browser/services/codeEditorService.js';
+import { EditorContextKeys } from '../../../../../editor/common/editorContextKeys.js';
+import { CopyAction } from '../../../../../editor/contrib/clipboard/browser/clipboard.js';
+import { localize2 } from '../../../../../nls.js';
+import { Action2, MenuId, registerAction2 } from '../../../../../platform/actions/common/actions.js';
+import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
+import { ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { TerminalLocation } from '../../../../../platform/terminal/common/terminal.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+import { accessibleViewInCodeBlock } from '../../../accessibility/browser/accessibilityConfiguration.js';
+import { ITerminalEditorService, ITerminalGroupService, ITerminalService } from '../../../terminal/browser/terminal.js';
+import { CONTEXT_CHAT_EDIT_APPLIED, CONTEXT_CHAT_ENABLED, CONTEXT_IN_CHAT_INPUT, CONTEXT_IN_CHAT_SESSION } from '../../common/chatContextKeys.js';
+import { IChatEditingService } from '../../common/chatEditingService.js';
+import { ChatCopyKind, IChatService } from '../../common/chatService.js';
+import { isResponseVM } from '../../common/chatViewModel.js';
+import { IChatCodeBlockContextProviderService, IChatWidgetService } from '../chat.js';
+import { DefaultChatTextEditor } from '../codeBlockPart.js';
+import { CHAT_CATEGORY } from './chatActions.js';
+import { ApplyCodeBlockOperation, InsertCodeBlockOperation } from './codeBlockOperations.js';
+const shellLangIds = [
+    'fish',
+    'ps1',
+    'pwsh',
+    'powershell',
+    'sh',
+    'shellscript',
+    'zsh'
+];
+export function isCodeBlockActionContext(thing) {
+    return typeof thing === 'object' && thing !== null && 'code' in thing && 'element' in thing;
+}
+export function isCodeCompareBlockActionContext(thing) {
+    return typeof thing === 'object' && thing !== null && 'element' in thing;
+}
+function isResponseFiltered(context) {
+    return isResponseVM(context.element) && context.element.errorDetails?.responseIsFiltered;
+}
+class ChatCodeBlockAction extends Action2 {
+    run(accessor, ...args) {
+        let context = args[0];
+        if (!isCodeBlockActionContext(context)) {
+            const codeEditorService = accessor.get(ICodeEditorService);
+            const editor = codeEditorService.getFocusedCodeEditor() || codeEditorService.getActiveCodeEditor();
+            if (!editor) {
+                return;
+            }
+            context = getContextFromEditor(editor, accessor);
+            if (!isCodeBlockActionContext(context)) {
+                return;
+            }
+        }
+        return this.runWithContext(accessor, context);
+    }
+}
+export function registerChatCodeBlockActions() {
+    registerAction2(class CopyCodeBlockAction extends Action2 {
+        constructor() {
+            super({
+                id: 'workbench.action.chat.copyCodeBlock',
+                title: localize2('interactive.copyCodeBlock.label', "Copy"),
+                f1: false,
+                category: CHAT_CATEGORY,
+                icon: Codicon.copy,
+                menu: {
+                    id: MenuId.ChatCodeBlock,
+                    group: 'navigation',
+                    order: 30
+                }
+            });
+        }
+        run(accessor, ...args) {
+            const context = args[0];
+            if (!isCodeBlockActionContext(context) || isResponseFiltered(context)) {
+                return;
+            }
+            const clipboardService = accessor.get(IClipboardService);
+            clipboardService.writeText(context.code);
+            if (isResponseVM(context.element)) {
+                const chatService = accessor.get(IChatService);
+                chatService.notifyUserAction({
+                    agentId: context.element.agent?.id,
+                    command: context.element.slashCommand?.name,
+                    sessionId: context.element.sessionId,
+                    requestId: context.element.requestId,
+                    result: context.element.result,
+                    action: {
+                        kind: 'copy',
+                        codeBlockIndex: context.codeBlockIndex,
+                        copyKind: ChatCopyKind.Toolbar,
+                        copiedCharacters: context.code.length,
+                        totalCharacters: context.code.length,
+                        copiedText: context.code,
+                    }
+                });
+            }
+        }
+    });
+    CopyAction?.addImplementation(50000, 'chat-codeblock', (accessor) => {
+        const editor = accessor.get(ICodeEditorService).getFocusedCodeEditor();
+        if (!editor) {
+            return false;
+        }
+        const editorModel = editor.getModel();
+        if (!editorModel) {
+            return false;
+        }
+        const context = getContextFromEditor(editor, accessor);
+        if (!context) {
+            return false;
+        }
+        const noSelection = editor.getSelections()?.length === 1 && editor.getSelection()?.isEmpty();
+        const copiedText = noSelection ?
+            editorModel.getValue() :
+            editor.getSelections()?.reduce((acc, selection) => acc + editorModel.getValueInRange(selection), '') ?? '';
+        const totalCharacters = editorModel.getValueLength();
+        const chatService = accessor.get(IChatService);
+        const element = context.element;
+        if (element) {
+            chatService.notifyUserAction({
+                agentId: element.agent?.id,
+                command: element.slashCommand?.name,
+                sessionId: element.sessionId,
+                requestId: element.requestId,
+                result: element.result,
+                action: {
+                    kind: 'copy',
+                    codeBlockIndex: context.codeBlockIndex,
+                    copyKind: ChatCopyKind.Action,
+                    copiedText,
+                    copiedCharacters: copiedText.length,
+                    totalCharacters,
+                }
+            });
+        }
+        if (noSelection) {
+            accessor.get(IClipboardService).writeText(context.code);
+            return true;
+        }
+        return false;
+    });
+    registerAction2(class SmartApplyInEditorAction extends ChatCodeBlockAction {
+        constructor() {
+            super({
+                id: 'workbench.action.chat.applyInEditor',
+                title: localize2('interactive.applyInEditor.label', "Apply in Editor"),
+                precondition: CONTEXT_CHAT_ENABLED,
+                f1: true,
+                category: CHAT_CATEGORY,
+                icon: Codicon.gitPullRequestGoToChanges,
+                menu: {
+                    id: MenuId.ChatCodeBlock,
+                    group: 'navigation',
+                    when: ContextKeyExpr.and(CONTEXT_IN_CHAT_SESSION, ...shellLangIds.map(e => ContextKeyExpr.notEquals(EditorContextKeys.languageId.key, e))),
+                    order: 10
+                },
+                keybinding: {
+                    when: ContextKeyExpr.or(ContextKeyExpr.and(CONTEXT_IN_CHAT_SESSION, CONTEXT_IN_CHAT_INPUT.negate()), accessibleViewInCodeBlock),
+                    primary: 2048 | 3,
+                    mac: { primary: 256 | 3 },
+                    weight: 400 + 1
+                },
+            });
+        }
+        runWithContext(accessor, context) {
+            if (!this.operation) {
+                this.operation = accessor.get(IInstantiationService).createInstance(ApplyCodeBlockOperation);
+            }
+            return this.operation.run(context);
+        }
+    });
+    registerAction2(class ApplyAllAction extends Action2 {
+        constructor() {
+            super({
+                id: 'workbench.action.chat.applyAll',
+                title: localize2('chat.applyAll.label', "Apply All Edits"),
+                precondition: CONTEXT_CHAT_ENABLED,
+                f1: true,
+                category: CHAT_CATEGORY,
+                icon: Codicon.edit
+            });
+        }
+        async run(accessor, ...args) {
+            const chatWidgetService = accessor.get(IChatWidgetService);
+            const chatEditingService = accessor.get(IChatEditingService);
+            const widget = chatWidgetService.lastFocusedWidget;
+            if (!widget || !widget.viewModel) {
+                return;
+            }
+            const applyEditsId = args[0];
+            const chatModel = widget.viewModel.model;
+            const request = chatModel.getRequests().find(request => request.response?.result?.metadata?.applyEditsId === applyEditsId);
+            if (request && request.response) {
+                await chatEditingService.startOrContinueEditingSession(widget.viewModel.sessionId, { silent: true });
+                await chatEditingService.triggerEditComputation(request.response);
+            }
+        }
+    });
+    registerAction2(class SmartApplyInEditorAction extends ChatCodeBlockAction {
+        constructor() {
+            super({
+                id: 'workbench.action.chat.insertCodeBlock',
+                title: localize2('interactive.insertCodeBlock.label', "Insert At Cursor"),
+                precondition: CONTEXT_CHAT_ENABLED,
+                f1: true,
+                category: CHAT_CATEGORY,
+                icon: Codicon.insert,
+                menu: {
+                    id: MenuId.ChatCodeBlock,
+                    group: 'navigation',
+                    when: CONTEXT_IN_CHAT_SESSION,
+                    order: 20
+                },
+                keybinding: {
+                    when: ContextKeyExpr.or(ContextKeyExpr.and(CONTEXT_IN_CHAT_SESSION, CONTEXT_IN_CHAT_INPUT.negate()), accessibleViewInCodeBlock),
+                    primary: 2048 | 3,
+                    mac: { primary: 256 | 3 },
+                    weight: 400 + 1
+                },
+            });
+        }
+        runWithContext(accessor, context) {
+            const operation = accessor.get(IInstantiationService).createInstance(InsertCodeBlockOperation);
+            return operation.run(context);
+        }
+    });
+    registerAction2(class InsertIntoNewFileAction extends ChatCodeBlockAction {
+        constructor() {
+            super({
+                id: 'workbench.action.chat.insertIntoNewFile',
+                title: localize2('interactive.insertIntoNewFile.label', "Insert into New File"),
+                precondition: CONTEXT_CHAT_ENABLED,
+                f1: true,
+                category: CHAT_CATEGORY,
+                icon: Codicon.newFile,
+                menu: {
+                    id: MenuId.ChatCodeBlock,
+                    group: 'navigation',
+                    isHiddenByDefault: true,
+                    order: 40,
+                }
+            });
+        }
+        async runWithContext(accessor, context) {
+            if (isResponseFiltered(context)) {
+                return;
+            }
+            const editorService = accessor.get(IEditorService);
+            const chatService = accessor.get(IChatService);
+            editorService.openEditor({ contents: context.code, languageId: context.languageId, resource: undefined });
+            if (isResponseVM(context.element)) {
+                chatService.notifyUserAction({
+                    agentId: context.element.agent?.id,
+                    command: context.element.slashCommand?.name,
+                    sessionId: context.element.sessionId,
+                    requestId: context.element.requestId,
+                    result: context.element.result,
+                    action: {
+                        kind: 'insert',
+                        codeBlockIndex: context.codeBlockIndex,
+                        totalCharacters: context.code.length,
+                        newFile: true
+                    }
+                });
+            }
+        }
+    });
+    registerAction2(class RunInTerminalAction extends ChatCodeBlockAction {
+        constructor() {
+            super({
+                id: 'workbench.action.chat.runInTerminal',
+                title: localize2('interactive.runInTerminal.label', "Insert into Terminal"),
+                precondition: CONTEXT_CHAT_ENABLED,
+                f1: true,
+                category: CHAT_CATEGORY,
+                icon: Codicon.terminal,
+                menu: [{
+                        id: MenuId.ChatCodeBlock,
+                        group: 'navigation',
+                        when: ContextKeyExpr.and(CONTEXT_IN_CHAT_SESSION, ContextKeyExpr.or(...shellLangIds.map(e => ContextKeyExpr.equals(EditorContextKeys.languageId.key, e)))),
+                    },
+                    {
+                        id: MenuId.ChatCodeBlock,
+                        group: 'navigation',
+                        isHiddenByDefault: true,
+                        when: ContextKeyExpr.and(CONTEXT_IN_CHAT_SESSION, ...shellLangIds.map(e => ContextKeyExpr.notEquals(EditorContextKeys.languageId.key, e)))
+                    }],
+                keybinding: [{
+                        primary: 2048 | 512 | 3,
+                        mac: {
+                            primary: 256 | 512 | 3
+                        },
+                        weight: 100,
+                        when: ContextKeyExpr.or(CONTEXT_IN_CHAT_SESSION, accessibleViewInCodeBlock),
+                    }]
+            });
+        }
+        async runWithContext(accessor, context) {
+            if (isResponseFiltered(context)) {
+                return;
+            }
+            const chatService = accessor.get(IChatService);
+            const terminalService = accessor.get(ITerminalService);
+            const editorService = accessor.get(IEditorService);
+            const terminalEditorService = accessor.get(ITerminalEditorService);
+            const terminalGroupService = accessor.get(ITerminalGroupService);
+            let terminal = await terminalService.getActiveOrCreateInstance();
+            const unusableTerminal = terminal.xterm?.isStdinDisabled || terminal.shellLaunchConfig.isFeatureTerminal;
+            terminal = unusableTerminal ? await terminalService.createTerminal() : terminal;
+            terminalService.setActiveInstance(terminal);
+            await terminal.focusWhenReady(true);
+            if (terminal.target === TerminalLocation.Editor) {
+                const existingEditors = editorService.findEditors(terminal.resource);
+                terminalEditorService.openEditor(terminal, { viewColumn: existingEditors?.[0].groupId });
+            }
+            else {
+                terminalGroupService.showPanel(true);
+            }
+            terminal.runCommand(context.code, false);
+            if (isResponseVM(context.element)) {
+                chatService.notifyUserAction({
+                    agentId: context.element.agent?.id,
+                    command: context.element.slashCommand?.name,
+                    sessionId: context.element.sessionId,
+                    requestId: context.element.requestId,
+                    result: context.element.result,
+                    action: {
+                        kind: 'runInTerminal',
+                        codeBlockIndex: context.codeBlockIndex,
+                        languageId: context.languageId,
+                    }
+                });
+            }
+        }
+    });
+    function navigateCodeBlocks(accessor, reverse) {
+        const codeEditorService = accessor.get(ICodeEditorService);
+        const chatWidgetService = accessor.get(IChatWidgetService);
+        const widget = chatWidgetService.lastFocusedWidget;
+        if (!widget) {
+            return;
+        }
+        const editor = codeEditorService.getFocusedCodeEditor();
+        const editorUri = editor?.getModel()?.uri;
+        const curCodeBlockInfo = editorUri ? widget.getCodeBlockInfoForEditor(editorUri) : undefined;
+        const focused = !widget.inputEditor.hasWidgetFocus() && widget.getFocus();
+        const focusedResponse = isResponseVM(focused) ? focused : undefined;
+        const currentResponse = curCodeBlockInfo ?
+            curCodeBlockInfo.element :
+            (focusedResponse ?? widget.viewModel?.getItems().reverse().find((item) => isResponseVM(item)));
+        if (!currentResponse || !isResponseVM(currentResponse)) {
+            return;
+        }
+        widget.reveal(currentResponse);
+        const responseCodeblocks = widget.getCodeBlockInfosForResponse(currentResponse);
+        const focusIdx = curCodeBlockInfo ?
+            (curCodeBlockInfo.codeBlockIndex + (reverse ? -1 : 1) + responseCodeblocks.length) % responseCodeblocks.length :
+            reverse ? responseCodeblocks.length - 1 : 0;
+        responseCodeblocks[focusIdx]?.focus();
+    }
+    registerAction2(class NextCodeBlockAction extends Action2 {
+        constructor() {
+            super({
+                id: 'workbench.action.chat.nextCodeBlock',
+                title: localize2('interactive.nextCodeBlock.label', "Next Code Block"),
+                keybinding: {
+                    primary: 2048 | 512 | 12,
+                    mac: { primary: 2048 | 512 | 12, },
+                    weight: 200,
+                    when: CONTEXT_IN_CHAT_SESSION,
+                },
+                precondition: CONTEXT_CHAT_ENABLED,
+                f1: true,
+                category: CHAT_CATEGORY,
+            });
+        }
+        run(accessor, ...args) {
+            navigateCodeBlocks(accessor);
+        }
+    });
+    registerAction2(class PreviousCodeBlockAction extends Action2 {
+        constructor() {
+            super({
+                id: 'workbench.action.chat.previousCodeBlock',
+                title: localize2('interactive.previousCodeBlock.label', "Previous Code Block"),
+                keybinding: {
+                    primary: 2048 | 512 | 11,
+                    mac: { primary: 2048 | 512 | 11, },
+                    weight: 200,
+                    when: CONTEXT_IN_CHAT_SESSION,
+                },
+                precondition: CONTEXT_CHAT_ENABLED,
+                f1: true,
+                category: CHAT_CATEGORY,
+            });
+        }
+        run(accessor, ...args) {
+            navigateCodeBlocks(accessor, true);
+        }
+    });
+}
+function getContextFromEditor(editor, accessor) {
+    const chatWidgetService = accessor.get(IChatWidgetService);
+    const chatCodeBlockContextProviderService = accessor.get(IChatCodeBlockContextProviderService);
+    const model = editor.getModel();
+    if (!model) {
+        return;
+    }
+    const widget = chatWidgetService.lastFocusedWidget;
+    const codeBlockInfo = widget?.getCodeBlockInfoForEditor(model.uri);
+    if (!codeBlockInfo) {
+        for (const provider of chatCodeBlockContextProviderService.providers) {
+            const context = provider.getCodeBlockContext(editor);
+            if (context) {
+                return context;
+            }
+        }
+        return;
+    }
+    return {
+        element: codeBlockInfo.element,
+        codeBlockIndex: codeBlockInfo.codeBlockIndex,
+        code: editor.getValue(),
+        languageId: editor.getModel().getLanguageId(),
+        codemapperUri: codeBlockInfo.codemapperUri
+    };
+}
+export function registerChatCodeCompareBlockActions() {
+    class ChatCompareCodeBlockAction extends Action2 {
+        run(accessor, ...args) {
+            const context = args[0];
+            if (!isCodeCompareBlockActionContext(context)) {
+                return;
+            }
+            return this.runWithContext(accessor, context);
+        }
+    }
+    registerAction2(class ApplyEditsCompareBlockAction extends ChatCompareCodeBlockAction {
+        constructor() {
+            super({
+                id: 'workbench.action.chat.applyCompareEdits',
+                title: localize2('interactive.compare.apply', "Apply Edits"),
+                f1: false,
+                category: CHAT_CATEGORY,
+                icon: Codicon.check,
+                precondition: ContextKeyExpr.and(EditorContextKeys.hasChanges, CONTEXT_CHAT_EDIT_APPLIED.negate()),
+                menu: {
+                    id: MenuId.ChatCompareBlock,
+                    group: 'navigation',
+                    order: 1,
+                }
+            });
+        }
+        async runWithContext(accessor, context) {
+            const editorService = accessor.get(IEditorService);
+            const instaService = accessor.get(IInstantiationService);
+            const editor = instaService.createInstance(DefaultChatTextEditor);
+            await editor.apply(context.element, context.edit, context.diffEditor);
+            await editorService.openEditor({
+                resource: context.edit.uri,
+                options: { revealIfVisible: true },
+            });
+        }
+    });
+    registerAction2(class DiscardEditsCompareBlockAction extends ChatCompareCodeBlockAction {
+        constructor() {
+            super({
+                id: 'workbench.action.chat.discardCompareEdits',
+                title: localize2('interactive.compare.discard', "Discard Edits"),
+                f1: false,
+                category: CHAT_CATEGORY,
+                icon: Codicon.trash,
+                precondition: ContextKeyExpr.and(EditorContextKeys.hasChanges, CONTEXT_CHAT_EDIT_APPLIED.negate()),
+                menu: {
+                    id: MenuId.ChatCompareBlock,
+                    group: 'navigation',
+                    order: 2,
+                }
+            });
+        }
+        async runWithContext(accessor, context) {
+            const instaService = accessor.get(IInstantiationService);
+            const editor = instaService.createInstance(DefaultChatTextEditor);
+            editor.discard(context.element, context.edit);
+        }
+    });
+}

@@ -1,1 +1,240 @@
-var x=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var h=(p,c,e,i)=>{for(var o=i>1?void 0:i?w(c,e):c,r=p.length-1,t;r>=0;r--)(t=p[r])&&(o=(i?t(c,e,o):t(o))||o);return i&&o&&x(c,e,o),o},d=(p,c)=>(e,i)=>c(e,i,p);import{localize as m,localize2 as D}from"../../../../../nls.js";import{IQuickInputService as O,ItemActivation as Q}from"../../../../../platform/quickinput/common/quickInput.js";import{IEditorService as T}from"../../../../services/editor/common/editorService.js";import"../../../../../editor/common/core/range.js";import{Registry as M}from"../../../../../platform/registry/common/platform.js";import{Extensions as A}from"../../../../../platform/quickinput/common/quickAccess.js";import{AbstractGotoSymbolQuickAccessProvider as u}from"../../../../../editor/contrib/quickAccess/browser/gotoSymbolQuickAccess.js";import{IConfigurationService as G}from"../../../../../platform/configuration/common/configuration.js";import"../../../../common/editor.js";import"../../../../../editor/common/model.js";import{DisposableStore as F,toDisposable as E,Disposable as L,MutableDisposable as R}from"../../../../../base/common/lifecycle.js";import{timeout as B}from"../../../../../base/common/async.js";import{CancellationTokenSource as K}from"../../../../../base/common/cancellation.js";import{registerAction2 as W,Action2 as z,MenuId as _}from"../../../../../platform/actions/common/actions.js";import{KeyMod as k,KeyCode as V}from"../../../../../base/common/keyCodes.js";import{prepareQuery as X}from"../../../../../base/common/fuzzyScorer.js";import{SymbolKind as C}from"../../../../../editor/common/languages.js";import{fuzzyScore as q}from"../../../../../base/common/filters.js";import{onUnexpectedError as N}from"../../../../../base/common/errors.js";import"../../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as Y}from"../../../../../platform/keybinding/common/keybindingsRegistry.js";import"../../../../../editor/contrib/quickAccess/browser/editorNavigationQuickAccess.js";import{IOutlineService as U,OutlineTarget as H}from"../../../../services/outline/browser/outline.js";import{isCompositeEditor as j}from"../../../../../editor/browser/editorBrowser.js";import"../../../../../platform/editor/common/editor.js";import{IEditorGroupsService as J}from"../../../../services/editor/common/editorGroupsService.js";import{IOutlineModelService as Z}from"../../../../../editor/contrib/documentSymbols/browser/outlineModel.js";import{ILanguageFeaturesService as $}from"../../../../../editor/common/services/languageFeatures.js";import{ContextKeyExpr as ee}from"../../../../../platform/contextkey/common/contextkey.js";import{accessibilityHelpIsShown as ie,accessibleViewIsShown as te}from"../../../accessibility/browser/accessibilityConfiguration.js";import{matchesFuzzyIconAware as oe,parseLabelWithIcons as re}from"../../../../../base/common/iconLabels.js";let a=class extends u{constructor(e,i,o,r,t,S){super(r,S,{openSideBySideDirection:()=>this.configuration.openSideBySideDirection});this.editorService=e;this.editorGroupService=i;this.configurationService=o;this.outlineService=t}onDidActiveTextEditorControlChange=this.editorService.onDidActiveEditorChange;get configuration(){const e=this.configurationService.getValue().workbench?.editor;return{openEditorPinned:!e?.enablePreviewFromQuickOpen||!e?.enablePreview,openSideBySideDirection:e?.openSideBySideDirection}}get activeTextEditorControl(){if(!j(this.editorService.activeEditorPane?.getControl()))return this.editorService.activeTextEditorControl}gotoLocation(e,i){if((i.keyMods.alt||this.configuration.openEditorPinned&&i.keyMods.ctrlCmd||i.forceSideBySide)&&this.editorService.activeEditor){e.restoreViewState?.();const o={selection:i.range,pinned:i.keyMods.ctrlCmd||this.configuration.openEditorPinned,preserveFocus:i.preserveFocus};this.editorGroupService.sideGroup.openEditor(this.editorService.activeEditor,o)}else super.gotoLocation(e,i)}static SYMBOL_PICKS_TIMEOUT=8e3;async getSymbolPicks(e,i,o,r,t){return!await Promise.race([this.waitForLanguageSymbolRegistry(e,r),B(a.SYMBOL_PICKS_TIMEOUT)])||t.isCancellationRequested?[]:this.doGetSymbolPicks(this.getDocumentSymbols(e,t),X(i),o,t,e)}provideWithoutTextEditor(e){return this.canPickWithOutlineService()?this.doGetOutlinePicks(e):super.provideWithoutTextEditor(e)}canPickWithOutlineService(){return this.editorService.activeEditorPane?this.outlineService.canCreateOutline(this.editorService.activeEditorPane):!1}doGetOutlinePicks(e){const i=this.editorService.activeEditorPane;if(!i)return L.None;const o=new K,r=new F;return r.add(E(()=>o.dispose(!0))),e.busy=!0,this.outlineService.createOutline(i,H.QuickPick,o.token).then(t=>{if(!t)return;if(o.token.isCancellationRequested){t.dispose();return}r.add(t);const S=t.captureViewState();r.add(E(()=>{e.selectedItems.length===0&&S.dispose()}));const l=t.config.quickPickDataSource.getQuickPickElements(),P=l.map((n,s)=>({kind:C.File,index:s,score:0,label:n.label,description:n.description,ariaLabel:n.ariaLabel,iconClasses:n.iconClasses}));r.add(e.onDidAccept(()=>{e.hide();const[n]=e.selectedItems;n&&l[n.index]&&t.reveal(l[n.index].element,{},!1,!1)}));const y=()=>{const n=P.filter(s=>{if(e.value==="@")return s.score=0,s.highlights=void 0,!0;const I=e.value.substring(u.PREFIX.length).trim(),g=re(s.label),b=q(I,I.toLowerCase(),0,g.text,g.text.toLowerCase(),0,{firstMatchCanBeWeak:!0,boostFullMatch:!0});return b?(s.score=b[1],s.highlights={label:oe(I,g)??void 0},!0):!1});if(n.length===0){const s=m("empty","No matching entries");e.items=[{label:s,index:-1,kind:C.String}],e.ariaLabel=s}else e.items=n};y(),r.add(e.onDidChangeValue(y));const v=new R;r.add(v),r.add(e.onDidChangeActive(()=>{const[n]=e.activeItems;n&&l[n.index]?v.value=t.preview(l[n.index].element):v.clear()}))}).catch(t=>{N(t),e.hide()}).finally(()=>{e.busy=!1}),r}};a=h([d(0,T),d(1,J),d(2,G),d(3,$),d(4,U),d(5,Z)],a);class f extends z{static ID="workbench.action.gotoSymbol";constructor(){super({id:f.ID,title:{...D("gotoSymbol","Go to Symbol in Editor..."),mnemonicTitle:m({key:"miGotoSymbolInEditor",comment:["&& denotes a mnemonic"]},"Go to &&Symbol in Editor...")},f1:!0,keybinding:{when:ee.and(te.negate(),ie.negate()),weight:Y.WorkbenchContrib,primary:k.CtrlCmd|k.Shift|V.KeyO},menu:[{id:_.MenubarGoMenu,group:"4_symbol_nav",order:1}]})}run(c){c.get(O).quickAccess.show(a.PREFIX,{itemActivation:Q.NONE})}}W(f),M.as(A.Quickaccess).registerQuickAccessProvider({ctor:a,prefix:u.PREFIX,contextKey:"inFileSymbolsPicker",placeholder:m("gotoSymbolQuickAccessPlaceholder","Type the name of a symbol to go to."),helpEntries:[{description:m("gotoSymbolQuickAccess","Go to Symbol in Editor"),prefix:u.PREFIX,commandId:f.ID,commandCenterOrder:40},{description:m("gotoSymbolByCategoryQuickAccess","Go to Symbol in Editor by Category"),prefix:u.PREFIX_BY_CATEGORY}]});export{a as GotoSymbolQuickAccessProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var GotoSymbolQuickAccessProvider_1;
+import { localize, localize2 } from '../../../../../nls.js';
+import { IQuickInputService, ItemActivation } from '../../../../../platform/quickinput/common/quickInput.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+import { Registry } from '../../../../../platform/registry/common/platform.js';
+import { Extensions as QuickaccessExtensions } from '../../../../../platform/quickinput/common/quickAccess.js';
+import { AbstractGotoSymbolQuickAccessProvider } from '../../../../../editor/contrib/quickAccess/browser/gotoSymbolQuickAccess.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { DisposableStore, toDisposable, Disposable, MutableDisposable } from '../../../../../base/common/lifecycle.js';
+import { timeout } from '../../../../../base/common/async.js';
+import { CancellationTokenSource } from '../../../../../base/common/cancellation.js';
+import { registerAction2, Action2, MenuId } from '../../../../../platform/actions/common/actions.js';
+import { prepareQuery } from '../../../../../base/common/fuzzyScorer.js';
+import { fuzzyScore } from '../../../../../base/common/filters.js';
+import { onUnexpectedError } from '../../../../../base/common/errors.js';
+import { IOutlineService } from '../../../../services/outline/browser/outline.js';
+import { isCompositeEditor } from '../../../../../editor/browser/editorBrowser.js';
+import { IEditorGroupsService } from '../../../../services/editor/common/editorGroupsService.js';
+import { IOutlineModelService } from '../../../../../editor/contrib/documentSymbols/browser/outlineModel.js';
+import { ILanguageFeaturesService } from '../../../../../editor/common/services/languageFeatures.js';
+import { ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
+import { accessibilityHelpIsShown, accessibleViewIsShown } from '../../../accessibility/browser/accessibilityConfiguration.js';
+import { matchesFuzzyIconAware, parseLabelWithIcons } from '../../../../../base/common/iconLabels.js';
+let GotoSymbolQuickAccessProvider = class GotoSymbolQuickAccessProvider extends AbstractGotoSymbolQuickAccessProvider {
+    static { GotoSymbolQuickAccessProvider_1 = this; }
+    constructor(editorService, editorGroupService, configurationService, languageFeaturesService, outlineService, outlineModelService) {
+        super(languageFeaturesService, outlineModelService, {
+            openSideBySideDirection: () => this.configuration.openSideBySideDirection
+        });
+        this.editorService = editorService;
+        this.editorGroupService = editorGroupService;
+        this.configurationService = configurationService;
+        this.outlineService = outlineService;
+        this.onDidActiveTextEditorControlChange = this.editorService.onDidActiveEditorChange;
+    }
+    get configuration() {
+        const editorConfig = this.configurationService.getValue().workbench?.editor;
+        return {
+            openEditorPinned: !editorConfig?.enablePreviewFromQuickOpen || !editorConfig?.enablePreview,
+            openSideBySideDirection: editorConfig?.openSideBySideDirection
+        };
+    }
+    get activeTextEditorControl() {
+        if (isCompositeEditor(this.editorService.activeEditorPane?.getControl())) {
+            return undefined;
+        }
+        return this.editorService.activeTextEditorControl;
+    }
+    gotoLocation(context, options) {
+        if ((options.keyMods.alt || (this.configuration.openEditorPinned && options.keyMods.ctrlCmd) || options.forceSideBySide) && this.editorService.activeEditor) {
+            context.restoreViewState?.();
+            const editorOptions = {
+                selection: options.range,
+                pinned: options.keyMods.ctrlCmd || this.configuration.openEditorPinned,
+                preserveFocus: options.preserveFocus
+            };
+            this.editorGroupService.sideGroup.openEditor(this.editorService.activeEditor, editorOptions);
+        }
+        else {
+            super.gotoLocation(context, options);
+        }
+    }
+    static { this.SYMBOL_PICKS_TIMEOUT = 8000; }
+    async getSymbolPicks(model, filter, options, disposables, token) {
+        const result = await Promise.race([
+            this.waitForLanguageSymbolRegistry(model, disposables),
+            timeout(GotoSymbolQuickAccessProvider_1.SYMBOL_PICKS_TIMEOUT)
+        ]);
+        if (!result || token.isCancellationRequested) {
+            return [];
+        }
+        return this.doGetSymbolPicks(this.getDocumentSymbols(model, token), prepareQuery(filter), options, token, model);
+    }
+    provideWithoutTextEditor(picker) {
+        if (this.canPickWithOutlineService()) {
+            return this.doGetOutlinePicks(picker);
+        }
+        return super.provideWithoutTextEditor(picker);
+    }
+    canPickWithOutlineService() {
+        return this.editorService.activeEditorPane ? this.outlineService.canCreateOutline(this.editorService.activeEditorPane) : false;
+    }
+    doGetOutlinePicks(picker) {
+        const pane = this.editorService.activeEditorPane;
+        if (!pane) {
+            return Disposable.None;
+        }
+        const cts = new CancellationTokenSource();
+        const disposables = new DisposableStore();
+        disposables.add(toDisposable(() => cts.dispose(true)));
+        picker.busy = true;
+        this.outlineService.createOutline(pane, 4, cts.token).then(outline => {
+            if (!outline) {
+                return;
+            }
+            if (cts.token.isCancellationRequested) {
+                outline.dispose();
+                return;
+            }
+            disposables.add(outline);
+            const viewState = outline.captureViewState();
+            disposables.add(toDisposable(() => {
+                if (picker.selectedItems.length === 0) {
+                    viewState.dispose();
+                }
+            }));
+            const entries = outline.config.quickPickDataSource.getQuickPickElements();
+            const items = entries.map((entry, idx) => {
+                return {
+                    kind: 0,
+                    index: idx,
+                    score: 0,
+                    label: entry.label,
+                    description: entry.description,
+                    ariaLabel: entry.ariaLabel,
+                    iconClasses: entry.iconClasses
+                };
+            });
+            disposables.add(picker.onDidAccept(() => {
+                picker.hide();
+                const [entry] = picker.selectedItems;
+                if (entry && entries[entry.index]) {
+                    outline.reveal(entries[entry.index].element, {}, false, false);
+                }
+            }));
+            const updatePickerItems = () => {
+                const filteredItems = items.filter(item => {
+                    if (picker.value === '@') {
+                        item.score = 0;
+                        item.highlights = undefined;
+                        return true;
+                    }
+                    const trimmedQuery = picker.value.substring(AbstractGotoSymbolQuickAccessProvider.PREFIX.length).trim();
+                    const parsedLabel = parseLabelWithIcons(item.label);
+                    const score = fuzzyScore(trimmedQuery, trimmedQuery.toLowerCase(), 0, parsedLabel.text, parsedLabel.text.toLowerCase(), 0, { firstMatchCanBeWeak: true, boostFullMatch: true });
+                    if (!score) {
+                        return false;
+                    }
+                    item.score = score[1];
+                    item.highlights = { label: matchesFuzzyIconAware(trimmedQuery, parsedLabel) ?? undefined };
+                    return true;
+                });
+                if (filteredItems.length === 0) {
+                    const label = localize('empty', 'No matching entries');
+                    picker.items = [{ label, index: -1, kind: 14 }];
+                    picker.ariaLabel = label;
+                }
+                else {
+                    picker.items = filteredItems;
+                }
+            };
+            updatePickerItems();
+            disposables.add(picker.onDidChangeValue(updatePickerItems));
+            const previewDisposable = new MutableDisposable();
+            disposables.add(previewDisposable);
+            disposables.add(picker.onDidChangeActive(() => {
+                const [entry] = picker.activeItems;
+                if (entry && entries[entry.index]) {
+                    previewDisposable.value = outline.preview(entries[entry.index].element);
+                }
+                else {
+                    previewDisposable.clear();
+                }
+            }));
+        }).catch(err => {
+            onUnexpectedError(err);
+            picker.hide();
+        }).finally(() => {
+            picker.busy = false;
+        });
+        return disposables;
+    }
+};
+GotoSymbolQuickAccessProvider = GotoSymbolQuickAccessProvider_1 = __decorate([
+    __param(0, IEditorService),
+    __param(1, IEditorGroupsService),
+    __param(2, IConfigurationService),
+    __param(3, ILanguageFeaturesService),
+    __param(4, IOutlineService),
+    __param(5, IOutlineModelService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], GotoSymbolQuickAccessProvider);
+export { GotoSymbolQuickAccessProvider };
+class GotoSymbolAction extends Action2 {
+    static { this.ID = 'workbench.action.gotoSymbol'; }
+    constructor() {
+        super({
+            id: GotoSymbolAction.ID,
+            title: {
+                ...localize2('gotoSymbol', "Go to Symbol in Editor..."),
+                mnemonicTitle: localize({ key: 'miGotoSymbolInEditor', comment: ['&& denotes a mnemonic'] }, "Go to &&Symbol in Editor..."),
+            },
+            f1: true,
+            keybinding: {
+                when: ContextKeyExpr.and(accessibleViewIsShown.negate(), accessibilityHelpIsShown.negate()),
+                weight: 200,
+                primary: 2048 | 1024 | 45
+            },
+            menu: [{
+                    id: MenuId.MenubarGoMenu,
+                    group: '4_symbol_nav',
+                    order: 1
+                }]
+        });
+    }
+    run(accessor) {
+        accessor.get(IQuickInputService).quickAccess.show(GotoSymbolQuickAccessProvider.PREFIX, { itemActivation: ItemActivation.NONE });
+    }
+}
+registerAction2(GotoSymbolAction);
+Registry.as(QuickaccessExtensions.Quickaccess).registerQuickAccessProvider({
+    ctor: GotoSymbolQuickAccessProvider,
+    prefix: AbstractGotoSymbolQuickAccessProvider.PREFIX,
+    contextKey: 'inFileSymbolsPicker',
+    placeholder: localize('gotoSymbolQuickAccessPlaceholder', "Type the name of a symbol to go to."),
+    helpEntries: [
+        {
+            description: localize('gotoSymbolQuickAccess', "Go to Symbol in Editor"),
+            prefix: AbstractGotoSymbolQuickAccessProvider.PREFIX,
+            commandId: GotoSymbolAction.ID,
+            commandCenterOrder: 40
+        },
+        {
+            description: localize('gotoSymbolByCategoryQuickAccess', "Go to Symbol in Editor by Category"),
+            prefix: AbstractGotoSymbolQuickAccessProvider.PREFIX_BY_CATEGORY
+        }
+    ]
+});

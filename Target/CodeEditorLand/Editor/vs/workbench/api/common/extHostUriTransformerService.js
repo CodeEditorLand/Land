@@ -1,1 +1,18 @@
-import"../../../base/common/uriIpc.js";import{createDecorator as o}from"../../../platform/instantiation/common/instantiation.js";import"../../../base/common/uri.js";const a=o("IURITransformerService");class c{transformIncoming;transformOutgoing;transformOutgoingURI;transformOutgoingScheme;constructor(r){r?(this.transformIncoming=r.transformIncoming.bind(r),this.transformOutgoing=r.transformOutgoing.bind(r),this.transformOutgoingURI=r.transformOutgoingURI.bind(r),this.transformOutgoingScheme=r.transformOutgoingScheme.bind(r)):(this.transformIncoming=n=>n,this.transformOutgoing=n=>n,this.transformOutgoingURI=n=>n,this.transformOutgoingScheme=n=>n)}}export{a as IURITransformerService,c as URITransformerService};
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+export const IURITransformerService = createDecorator('IURITransformerService');
+export class URITransformerService {
+    constructor(delegate) {
+        if (!delegate) {
+            this.transformIncoming = arg => arg;
+            this.transformOutgoing = arg => arg;
+            this.transformOutgoingURI = arg => arg;
+            this.transformOutgoingScheme = arg => arg;
+        }
+        else {
+            this.transformIncoming = delegate.transformIncoming.bind(delegate);
+            this.transformOutgoing = delegate.transformOutgoing.bind(delegate);
+            this.transformOutgoingURI = delegate.transformOutgoingURI.bind(delegate);
+            this.transformOutgoingScheme = delegate.transformOutgoingScheme.bind(delegate);
+        }
+    }
+}

@@ -1,1 +1,123 @@
-var f=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var h=(s,a,e,o)=>{for(var t=o>1?void 0:o?m(a,e):a,n=s.length-1,r;n>=0;n--)(r=s[n])&&(t=(o?r(a,e,t):r(t))||t);return o&&t&&f(a,e,t),t},u=(s,a)=>(e,o)=>a(e,o,s);import{Disposable as _,DisposableStore as g,MutableDisposable as v}from"../../../../../base/common/lifecycle.js";import*as l from"../../../../../base/browser/dom.js";import{RunOnceScheduler as y}from"../../../../../base/common/async.js";import{convertBufferRangeToViewport as b}from"./terminalLinkHelpers.js";import{isMacintosh as k}from"../../../../../base/common/platform.js";import{Emitter as C}from"../../../../../base/common/event.js";import{IConfigurationService as w}from"../../../../../platform/configuration/common/configuration.js";import"./links.js";let c=class extends _{constructor(e,o,t,n,r,d,i,p,L,D,I,M,S){super();this._xterm=e;this.range=o;this.text=t;this.uri=n;this.parsedLink=r;this.actions=d;this._viewportY=i;this._activateCallback=p;this._tooltipCallback=L;this._isHighConfidenceLink=D;this.label=I;this._type=M;this._configurationService=S;this.decorations={pointerCursor:!1,underline:this._isHighConfidenceLink}}decorations;_tooltipScheduler=this._register(new v);_hoverListeners=this._register(new v);_onInvalidated=new C;get onInvalidated(){return this._onInvalidated.event}get type(){return this._type}activate(e,o){this._activateCallback(e,o)}hover(e,o){const t=l.getWindow(e),n=t.document,r=this._hoverListeners.value=new g;r.add(l.addDisposableListener(n,"keydown",i=>{!i.repeat&&this._isModifierDown(i)&&this._enableDecorations()})),r.add(l.addDisposableListener(n,"keyup",i=>{!i.repeat&&!this._isModifierDown(i)&&this._disableDecorations()})),r.add(this._xterm.onRender(i=>{const p=this.range.start.y-this._viewportY;p>=i.start&&p<=i.end&&this._onInvalidated.fire()})),this._isHighConfidenceLink&&(this._tooltipScheduler.value=new y(()=>{this._tooltipCallback(this,b(this.range,this._viewportY),this._isHighConfidenceLink?()=>this._enableDecorations():void 0,this._isHighConfidenceLink?()=>this._disableDecorations():void 0),this._tooltipScheduler.clear()},this._configurationService.getValue("workbench.hover.delay")),this._tooltipScheduler.value.schedule());const d={x:e.pageX,y:e.pageY};r.add(l.addDisposableListener(n,l.EventType.MOUSE_MOVE,i=>{this._isModifierDown(i)?this._enableDecorations():this._disableDecorations(),(Math.abs(i.pageX-d.x)>t.devicePixelRatio*2||Math.abs(i.pageY-d.y)>t.devicePixelRatio*2)&&(d.x=i.pageX,d.y=i.pageY,this._tooltipScheduler.value?.schedule())}))}leave(){this._hoverListeners.clear(),this._tooltipScheduler.clear()}_enableDecorations(){this.decorations.pointerCursor||(this.decorations.pointerCursor=!0),this.decorations.underline||(this.decorations.underline=!0)}_disableDecorations(){this.decorations.pointerCursor&&(this.decorations.pointerCursor=!1),this.decorations.underline!==this._isHighConfidenceLink&&(this.decorations.underline=this._isHighConfidenceLink)}_isModifierDown(e){return this._configurationService.getValue("editor.multiCursorModifier")==="ctrlCmd"?!!e.altKey:k?e.metaKey:e.ctrlKey}};c=h([u(12,w)],c);export{c as TerminalLink};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable, DisposableStore, MutableDisposable } from '../../../../../base/common/lifecycle.js';
+import * as dom from '../../../../../base/browser/dom.js';
+import { RunOnceScheduler } from '../../../../../base/common/async.js';
+import { convertBufferRangeToViewport } from './terminalLinkHelpers.js';
+import { isMacintosh } from '../../../../../base/common/platform.js';
+import { Emitter } from '../../../../../base/common/event.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+let TerminalLink = class TerminalLink extends Disposable {
+    get onInvalidated() { return this._onInvalidated.event; }
+    get type() { return this._type; }
+    constructor(_xterm, range, text, uri, parsedLink, actions, _viewportY, _activateCallback, _tooltipCallback, _isHighConfidenceLink, label, _type, _configurationService) {
+        super();
+        this._xterm = _xterm;
+        this.range = range;
+        this.text = text;
+        this.uri = uri;
+        this.parsedLink = parsedLink;
+        this.actions = actions;
+        this._viewportY = _viewportY;
+        this._activateCallback = _activateCallback;
+        this._tooltipCallback = _tooltipCallback;
+        this._isHighConfidenceLink = _isHighConfidenceLink;
+        this.label = label;
+        this._type = _type;
+        this._configurationService = _configurationService;
+        this._tooltipScheduler = this._register(new MutableDisposable());
+        this._hoverListeners = this._register(new MutableDisposable());
+        this._onInvalidated = new Emitter();
+        this.decorations = {
+            pointerCursor: false,
+            underline: this._isHighConfidenceLink
+        };
+    }
+    activate(event, text) {
+        this._activateCallback(event, text);
+    }
+    hover(event, text) {
+        const w = dom.getWindow(event);
+        const d = w.document;
+        const hoverListeners = this._hoverListeners.value = new DisposableStore();
+        hoverListeners.add(dom.addDisposableListener(d, 'keydown', e => {
+            if (!e.repeat && this._isModifierDown(e)) {
+                this._enableDecorations();
+            }
+        }));
+        hoverListeners.add(dom.addDisposableListener(d, 'keyup', e => {
+            if (!e.repeat && !this._isModifierDown(e)) {
+                this._disableDecorations();
+            }
+        }));
+        hoverListeners.add(this._xterm.onRender(e => {
+            const viewportRangeY = this.range.start.y - this._viewportY;
+            if (viewportRangeY >= e.start && viewportRangeY <= e.end) {
+                this._onInvalidated.fire();
+            }
+        }));
+        if (this._isHighConfidenceLink) {
+            this._tooltipScheduler.value = new RunOnceScheduler(() => {
+                this._tooltipCallback(this, convertBufferRangeToViewport(this.range, this._viewportY), this._isHighConfidenceLink ? () => this._enableDecorations() : undefined, this._isHighConfidenceLink ? () => this._disableDecorations() : undefined);
+                this._tooltipScheduler.clear();
+            }, this._configurationService.getValue('workbench.hover.delay'));
+            this._tooltipScheduler.value.schedule();
+        }
+        const origin = { x: event.pageX, y: event.pageY };
+        hoverListeners.add(dom.addDisposableListener(d, dom.EventType.MOUSE_MOVE, e => {
+            if (this._isModifierDown(e)) {
+                this._enableDecorations();
+            }
+            else {
+                this._disableDecorations();
+            }
+            if (Math.abs(e.pageX - origin.x) > w.devicePixelRatio * 2 || Math.abs(e.pageY - origin.y) > w.devicePixelRatio * 2) {
+                origin.x = e.pageX;
+                origin.y = e.pageY;
+                this._tooltipScheduler.value?.schedule();
+            }
+        }));
+    }
+    leave() {
+        this._hoverListeners.clear();
+        this._tooltipScheduler.clear();
+    }
+    _enableDecorations() {
+        if (!this.decorations.pointerCursor) {
+            this.decorations.pointerCursor = true;
+        }
+        if (!this.decorations.underline) {
+            this.decorations.underline = true;
+        }
+    }
+    _disableDecorations() {
+        if (this.decorations.pointerCursor) {
+            this.decorations.pointerCursor = false;
+        }
+        if (this.decorations.underline !== this._isHighConfidenceLink) {
+            this.decorations.underline = this._isHighConfidenceLink;
+        }
+    }
+    _isModifierDown(event) {
+        const multiCursorModifier = this._configurationService.getValue('editor.multiCursorModifier');
+        if (multiCursorModifier === 'ctrlCmd') {
+            return !!event.altKey;
+        }
+        return isMacintosh ? event.metaKey : event.ctrlKey;
+    }
+};
+TerminalLink = __decorate([
+    __param(12, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, String, Object, Object, Object, Number, Function, Function, Boolean, Object, Object, Object])
+], TerminalLink);
+export { TerminalLink };

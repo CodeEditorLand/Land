@@ -1,1 +1,69 @@
-var g=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var p=(n,i,e,t)=>{for(var a=t>1?void 0:t?b(i,e):i,r=n.length-1,s;r>=0;r--)(s=n[r])&&(a=(t?s(i,e,a):s(a))||a);return t&&a&&g(i,e,a),a},m=(n,i)=>(e,t)=>i(e,t,n);import{Emitter as u}from"../../../../../base/common/event.js";import{Disposable as S}from"../../../../../base/common/lifecycle.js";import{localize as c}from"../../../../../nls.js";import{IInstantiationService as v}from"../../../../../platform/instantiation/common/instantiation.js";import{ChatConfirmationWidget as D}from"./chatConfirmationWidget.js";import"./chatContentParts.js";import"../../common/chatModel.js";import{IChatService as R}from"../../common/chatService.js";import{isResponseVM as f}from"../../common/chatViewModel.js";let h=class extends S{constructor(e,t,a,r){super();this.instantiationService=a;this.chatService=r;const s=t.element,C=e.buttons?e.buttons.map(o=>({label:o,data:e.data})):[{label:c("accept","Accept"),data:e.data},{label:c("dismiss","Dismiss"),data:e.data,isSecondary:!0}],d=this._register(this.instantiationService.createInstance(D,e.title,e.message,C));d.setShowButtons(!e.isUsed),this._register(d.onDidClick(async o=>{if(f(s)){const I=`${o.label}: "${e.title}"`,l=o.isSecondary?{rejectedConfirmationData:[o.data]}:{acceptedConfirmationData:[o.data]};l.agentId=s.agent?.id,l.slashCommand=s.slashCommand?.name,l.confirmation=o.label,await this.chatService.sendRequest(s.sessionId,I,l)&&(e.isUsed=!0,d.setShowButtons(!1),this._onDidChangeHeight.fire())}})),this.domNode=d.domNode}domNode;_onDidChangeHeight=this._register(new u);onDidChangeHeight=this._onDidChangeHeight.event;hasSameContent(e){return e.kind==="confirmation"}addDisposable(e){this._register(e)}};h=p([m(2,v),m(3,R)],h);export{h as ChatConfirmationContentPart};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter } from '../../../../../base/common/event.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { localize } from '../../../../../nls.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { ChatConfirmationWidget } from './chatConfirmationWidget.js';
+import { IChatService } from '../../common/chatService.js';
+import { isResponseVM } from '../../common/chatViewModel.js';
+let ChatConfirmationContentPart = class ChatConfirmationContentPart extends Disposable {
+    constructor(confirmation, context, instantiationService, chatService) {
+        super();
+        this.instantiationService = instantiationService;
+        this.chatService = chatService;
+        this._onDidChangeHeight = this._register(new Emitter());
+        this.onDidChangeHeight = this._onDidChangeHeight.event;
+        const element = context.element;
+        const buttons = confirmation.buttons
+            ? confirmation.buttons.map(button => ({
+                label: button,
+                data: confirmation.data
+            }))
+            : [
+                { label: localize('accept', "Accept"), data: confirmation.data },
+                { label: localize('dismiss', "Dismiss"), data: confirmation.data, isSecondary: true },
+            ];
+        const confirmationWidget = this._register(this.instantiationService.createInstance(ChatConfirmationWidget, confirmation.title, confirmation.message, buttons));
+        confirmationWidget.setShowButtons(!confirmation.isUsed);
+        this._register(confirmationWidget.onDidClick(async (e) => {
+            if (isResponseVM(element)) {
+                const prompt = `${e.label}: "${confirmation.title}"`;
+                const data = e.isSecondary ?
+                    { rejectedConfirmationData: [e.data] } :
+                    { acceptedConfirmationData: [e.data] };
+                data.agentId = element.agent?.id;
+                data.slashCommand = element.slashCommand?.name;
+                data.confirmation = e.label;
+                if (await this.chatService.sendRequest(element.sessionId, prompt, data)) {
+                    confirmation.isUsed = true;
+                    confirmationWidget.setShowButtons(false);
+                    this._onDidChangeHeight.fire();
+                }
+            }
+        }));
+        this.domNode = confirmationWidget.domNode;
+    }
+    hasSameContent(other) {
+        return other.kind === 'confirmation';
+    }
+    addDisposable(disposable) {
+        this._register(disposable);
+    }
+};
+ChatConfirmationContentPart = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, IChatService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], ChatConfirmationContentPart);
+export { ChatConfirmationContentPart };

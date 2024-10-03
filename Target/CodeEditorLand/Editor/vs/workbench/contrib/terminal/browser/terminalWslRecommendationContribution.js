@@ -1,1 +1,71 @@
-var S=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var I=(s,i,o,t)=>{for(var e=t>1?void 0:t?v(i,o):i,a=s.length-1,n;a>=0;a--)(n=s[a])&&(e=(t?n(i,o,e):n(e))||e);return t&&e&&S(i,o,e),e},r=(s,i)=>(o,t)=>i(o,t,s);import{Disposable as b}from"../../../../base/common/lifecycle.js";import{basename as g}from"../../../../base/common/path.js";import{isWindows as w}from"../../../../base/common/platform.js";import{localize as d}from"../../../../nls.js";import{IExtensionManagementService as h}from"../../../../platform/extensionManagement/common/extensionManagement.js";import{IInstantiationService as y}from"../../../../platform/instantiation/common/instantiation.js";import{INotificationService as E,NeverShowAgainScope as C,Severity as A}from"../../../../platform/notification/common/notification.js";import{IProductService as D}from"../../../../platform/product/common/productService.js";import{InstallRecommendedExtensionAction as L}from"../../extensions/browser/extensionsActions.js";import{ITerminalService as N}from"./terminal.js";let c=class extends b{static ID="terminalWslRecommendation";constructor(i,o,t,e,a){if(super(),!w)return;const n=o.exeBasedExtensionTips;if(!n||!n.wsl)return;let p=a.onDidCreateInstance(async f=>{async function u(l){return(await e.getInstalled()).some(x=>x.identifier.id===l)}if(!f.shellLaunchConfig.executable||g(f.shellLaunchConfig.executable).toLowerCase()!=="wsl.exe")return;p?.dispose(),p=void 0;const m=Object.keys(n.wsl.recommendations).find(l=>n.wsl.recommendations[l].important);!m||await u(m)||t.prompt(A.Info,d("useWslExtension.title","The '{0}' extension is recommended for opening a terminal in WSL.",n.wsl.friendlyName),[{label:d("install","Install"),run:()=>{i.createInstance(L,m).run()}}],{sticky:!0,neverShowAgain:{id:"terminalConfigHelper/launchRecommendationsIgnore",scope:C.APPLICATION},onCancel:()=>{}})})}};c=I([r(0,y),r(1,D),r(2,E),r(3,h),r(4,N)],c);export{c as TerminalWslRecommendationContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { basename } from '../../../../base/common/path.js';
+import { isWindows } from '../../../../base/common/platform.js';
+import { localize } from '../../../../nls.js';
+import { IExtensionManagementService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { INotificationService, NeverShowAgainScope, Severity } from '../../../../platform/notification/common/notification.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { InstallRecommendedExtensionAction } from '../../extensions/browser/extensionsActions.js';
+import { ITerminalService } from './terminal.js';
+let TerminalWslRecommendationContribution = class TerminalWslRecommendationContribution extends Disposable {
+    static { this.ID = 'terminalWslRecommendation'; }
+    constructor(instantiationService, productService, notificationService, extensionManagementService, terminalService) {
+        super();
+        if (!isWindows) {
+            return;
+        }
+        const exeBasedExtensionTips = productService.exeBasedExtensionTips;
+        if (!exeBasedExtensionTips || !exeBasedExtensionTips.wsl) {
+            return;
+        }
+        let listener = terminalService.onDidCreateInstance(async (instance) => {
+            async function isExtensionInstalled(id) {
+                const extensions = await extensionManagementService.getInstalled();
+                return extensions.some(e => e.identifier.id === id);
+            }
+            if (!instance.shellLaunchConfig.executable || basename(instance.shellLaunchConfig.executable).toLowerCase() !== 'wsl.exe') {
+                return;
+            }
+            listener?.dispose();
+            listener = undefined;
+            const extId = Object.keys(exeBasedExtensionTips.wsl.recommendations).find(extId => exeBasedExtensionTips.wsl.recommendations[extId].important);
+            if (!extId || await isExtensionInstalled(extId)) {
+                return;
+            }
+            notificationService.prompt(Severity.Info, localize('useWslExtension.title', "The '{0}' extension is recommended for opening a terminal in WSL.", exeBasedExtensionTips.wsl.friendlyName), [
+                {
+                    label: localize('install', 'Install'),
+                    run: () => {
+                        instantiationService.createInstance(InstallRecommendedExtensionAction, extId).run();
+                    }
+                }
+            ], {
+                sticky: true,
+                neverShowAgain: { id: 'terminalConfigHelper/launchRecommendationsIgnore', scope: NeverShowAgainScope.APPLICATION },
+                onCancel: () => { }
+            });
+        });
+    }
+};
+TerminalWslRecommendationContribution = __decorate([
+    __param(0, IInstantiationService),
+    __param(1, IProductService),
+    __param(2, INotificationService),
+    __param(3, IExtensionManagementService),
+    __param(4, ITerminalService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], TerminalWslRecommendationContribution);
+export { TerminalWslRecommendationContribution };

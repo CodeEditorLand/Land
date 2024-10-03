@@ -1,1 +1,21 @@
-class i{_serviceBrand;_dragOperations=new Map;removeDragOperationTransfer(e){if(e&&this._dragOperations.has(e)){const r=this._dragOperations.get(e);return this._dragOperations.delete(e),r}}addDragOperationTransfer(e,r){this._dragOperations.set(e,r)}}class d{constructor(e){this.identifier=e}}export{d as DraggedTreeItemsIdentifier,i as TreeViewsDnDService};
+export class TreeViewsDnDService {
+    constructor() {
+        this._dragOperations = new Map();
+    }
+    removeDragOperationTransfer(uuid) {
+        if ((uuid && this._dragOperations.has(uuid))) {
+            const operation = this._dragOperations.get(uuid);
+            this._dragOperations.delete(uuid);
+            return operation;
+        }
+        return undefined;
+    }
+    addDragOperationTransfer(uuid, transferPromise) {
+        this._dragOperations.set(uuid, transferPromise);
+    }
+}
+export class DraggedTreeItemsIdentifier {
+    constructor(identifier) {
+        this.identifier = identifier;
+    }
+}

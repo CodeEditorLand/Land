@@ -1,1 +1,153 @@
-import{onUnexpectedExternalError as u}from"../../../../base/common/errors.js";import"../../../../base/common/lifecycle.js";import"../../../services/search/common/search.js";import"../../../../editor/common/languages.js";import{IWorkspaceContextService as f}from"../../../../platform/workspace/common/workspace.js";import"../../../../base/common/uri.js";import{EditorResourceAccessor as b,SideBySideEditor as y}from"../../../common/editor.js";import{IEditorService as S}from"../../../services/editor/common/editorService.js";import{CancellationToken as g}from"../../../../base/common/cancellation.js";import"../../../../platform/instantiation/common/instantiation.js";import{IFileService as I}from"../../../../platform/files/common/files.js";import{Range as c}from"../../../../editor/common/core/range.js";import{isNumber as l}from"../../../../base/common/types.js";import{RawContextKey as k}from"../../../../platform/contextkey/common/contextkey.js";import{compare as m}from"../../../../base/common/strings.js";import{groupBy as v}from"../../../../base/common/arrays.js";var p;(o=>{const r=[];function a(s){let e=s;return e&&r.push(e),{dispose(){if(e){const n=r.indexOf(e);n>=0&&(r.splice(n,1),e=void 0)}}}}o.register=a;function t(){return r.slice(0)}o.all=t})(p||={});class W{constructor(a,t){this.symbol=a;this.provider=t}}async function Q(r,a=g.None){const t=[],o=p.all().map(async e=>{try{const n=await e.provideWorkspaceSymbols(r,a);if(!n)return;for(const i of n)t.push(new W(i,e))}catch(n){u(n)}});if(await Promise.all(o),a.isCancellationRequested)return[];function s(e,n){let i=m(e.symbol.name,n.symbol.name);return i===0&&(i=e.symbol.kind-n.symbol.kind),i===0&&(i=m(e.symbol.location.uri.toString(),n.symbol.location.uri.toString())),i===0&&(e.symbol.location.range&&n.symbol.location.range?c.areIntersecting(e.symbol.location.range,n.symbol.location.range)||(i=c.compareRangesUsingStarts(e.symbol.location.range,n.symbol.location.range)):e.provider.resolveWorkspaceSymbol&&!n.provider.resolveWorkspaceSymbol?i=-1:!e.provider.resolveWorkspaceSymbol&&n.provider.resolveWorkspaceSymbol&&(i=1)),i===0&&(i=m(e.symbol.containerName??"",n.symbol.containerName??"")),i}return v(t,s).map(e=>e[0]).flat()}function V(r){const a=r.get(S),t=r.get(f),o=r.get(I);return a.editors.map(e=>b.getOriginalUri(e,{supportSideBySide:y.PRIMARY})).filter(e=>!!e&&!t.isInsideWorkspace(e)&&o.hasProvider(e))}const d=/\s?[#:\(](?:line )?(\d*)(?:[#:,](\d*))?\)?:?\s*$/;function X(r,a){if(!r||a?.some(s=>{const e=r.indexOf(s);return e===0||e>0&&!d.test(r.substring(e+1))}))return;let t;const o=d.exec(r);if(o){const s=parseInt(o[1]??"",10);if(l(s)){t={startLineNumber:s,startColumn:1,endLineNumber:s,endColumn:1};const e=parseInt(o[2]??"",10);l(e)&&(t={startLineNumber:t.startLineNumber,startColumn:e,endLineNumber:t.endLineNumber,endColumn:e})}else o[1]===""&&(t={startLineNumber:1,startColumn:1,endLineNumber:1,endColumn:1})}if(o&&t)return{filter:r.substr(0,o.index),range:t}}var x=(o=>(o[o.Idle=0]="Idle",o[o.Searching=1]="Searching",o[o.SlowSearch=2]="SlowSearch",o))(x||{});const Z=new k("searchState",0);export{Z as SearchStateKey,x as SearchUIState,W as WorkspaceSymbolItem,p as WorkspaceSymbolProviderRegistry,X as extractRangeFromFilter,V as getOutOfWorkspaceEditorResources,Q as getWorkspaceSymbols};
+import { onUnexpectedExternalError } from '../../../../base/common/errors.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { EditorResourceAccessor, SideBySideEditor } from '../../../common/editor.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { isNumber } from '../../../../base/common/types.js';
+import { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { compare } from '../../../../base/common/strings.js';
+import { groupBy } from '../../../../base/common/arrays.js';
+export var WorkspaceSymbolProviderRegistry;
+(function (WorkspaceSymbolProviderRegistry) {
+    const _supports = [];
+    function register(provider) {
+        let support = provider;
+        if (support) {
+            _supports.push(support);
+        }
+        return {
+            dispose() {
+                if (support) {
+                    const idx = _supports.indexOf(support);
+                    if (idx >= 0) {
+                        _supports.splice(idx, 1);
+                        support = undefined;
+                    }
+                }
+            }
+        };
+    }
+    WorkspaceSymbolProviderRegistry.register = register;
+    function all() {
+        return _supports.slice(0);
+    }
+    WorkspaceSymbolProviderRegistry.all = all;
+})(WorkspaceSymbolProviderRegistry || (WorkspaceSymbolProviderRegistry = {}));
+export class WorkspaceSymbolItem {
+    constructor(symbol, provider) {
+        this.symbol = symbol;
+        this.provider = provider;
+    }
+}
+export async function getWorkspaceSymbols(query, token = CancellationToken.None) {
+    const all = [];
+    const promises = WorkspaceSymbolProviderRegistry.all().map(async (provider) => {
+        try {
+            const value = await provider.provideWorkspaceSymbols(query, token);
+            if (!value) {
+                return;
+            }
+            for (const symbol of value) {
+                all.push(new WorkspaceSymbolItem(symbol, provider));
+            }
+        }
+        catch (err) {
+            onUnexpectedExternalError(err);
+        }
+    });
+    await Promise.all(promises);
+    if (token.isCancellationRequested) {
+        return [];
+    }
+    function compareItems(a, b) {
+        let res = compare(a.symbol.name, b.symbol.name);
+        if (res === 0) {
+            res = a.symbol.kind - b.symbol.kind;
+        }
+        if (res === 0) {
+            res = compare(a.symbol.location.uri.toString(), b.symbol.location.uri.toString());
+        }
+        if (res === 0) {
+            if (a.symbol.location.range && b.symbol.location.range) {
+                if (!Range.areIntersecting(a.symbol.location.range, b.symbol.location.range)) {
+                    res = Range.compareRangesUsingStarts(a.symbol.location.range, b.symbol.location.range);
+                }
+            }
+            else if (a.provider.resolveWorkspaceSymbol && !b.provider.resolveWorkspaceSymbol) {
+                res = -1;
+            }
+            else if (!a.provider.resolveWorkspaceSymbol && b.provider.resolveWorkspaceSymbol) {
+                res = 1;
+            }
+        }
+        if (res === 0) {
+            res = compare(a.symbol.containerName ?? '', b.symbol.containerName ?? '');
+        }
+        return res;
+    }
+    return groupBy(all, compareItems).map(group => group[0]).flat();
+}
+export function getOutOfWorkspaceEditorResources(accessor) {
+    const editorService = accessor.get(IEditorService);
+    const contextService = accessor.get(IWorkspaceContextService);
+    const fileService = accessor.get(IFileService);
+    const resources = editorService.editors
+        .map(editor => EditorResourceAccessor.getOriginalUri(editor, { supportSideBySide: SideBySideEditor.PRIMARY }))
+        .filter(resource => !!resource && !contextService.isInsideWorkspace(resource) && fileService.hasProvider(resource));
+    return resources;
+}
+const LINE_COLON_PATTERN = /\s?[#:\(](?:line )?(\d*)(?:[#:,](\d*))?\)?:?\s*$/;
+export function extractRangeFromFilter(filter, unless) {
+    if (!filter || unless?.some(value => {
+        const unlessCharPos = filter.indexOf(value);
+        return unlessCharPos === 0 || unlessCharPos > 0 && !LINE_COLON_PATTERN.test(filter.substring(unlessCharPos + 1));
+    })) {
+        return undefined;
+    }
+    let range = undefined;
+    const patternMatch = LINE_COLON_PATTERN.exec(filter);
+    if (patternMatch) {
+        const startLineNumber = parseInt(patternMatch[1] ?? '', 10);
+        if (isNumber(startLineNumber)) {
+            range = {
+                startLineNumber: startLineNumber,
+                startColumn: 1,
+                endLineNumber: startLineNumber,
+                endColumn: 1
+            };
+            const startColumn = parseInt(patternMatch[2] ?? '', 10);
+            if (isNumber(startColumn)) {
+                range = {
+                    startLineNumber: range.startLineNumber,
+                    startColumn: startColumn,
+                    endLineNumber: range.endLineNumber,
+                    endColumn: startColumn
+                };
+            }
+        }
+        else if (patternMatch[1] === '') {
+            range = {
+                startLineNumber: 1,
+                startColumn: 1,
+                endLineNumber: 1,
+                endColumn: 1
+            };
+        }
+    }
+    if (patternMatch && range) {
+        return {
+            filter: filter.substr(0, patternMatch.index),
+            range
+        };
+    }
+    return undefined;
+}
+export var SearchUIState;
+(function (SearchUIState) {
+    SearchUIState[SearchUIState["Idle"] = 0] = "Idle";
+    SearchUIState[SearchUIState["Searching"] = 1] = "Searching";
+    SearchUIState[SearchUIState["SlowSearch"] = 2] = "SlowSearch";
+})(SearchUIState || (SearchUIState = {}));
+export const SearchStateKey = new RawContextKey('searchState', SearchUIState.Idle);

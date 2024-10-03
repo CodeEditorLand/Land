@@ -1,1 +1,234 @@
-var L=Object.defineProperty;var K=Object.getOwnPropertyDescriptor;var g=(w,s,i,r)=>{for(var t=r>1?void 0:r?K(s,i):s,c=w.length-1,n;c>=0;c--)(n=w[c])&&(t=(r?n(s,i,t):n(t))||t);return r&&t&&L(s,i,t),t},m=(w,s)=>(i,r)=>s(i,r,w);import{localize as u,localize2 as y}from"../../../../nls.js";import{IQuickInputService as b,ItemActivation as Q}from"../../../../platform/quickinput/common/quickInput.js";import{PickerQuickAccessProvider as A}from"../../../../platform/quickinput/browser/pickerQuickAccess.js";import{IViewDescriptorService as R,ViewContainerLocation as d}from"../../../common/views.js";import{IViewsService as B}from"../../../services/views/common/viewsService.js";import{IOutputService as G}from"../../../services/output/common/output.js";import{ITerminalGroupService as O,ITerminalService as F}from"../../terminal/browser/terminal.js";import{IContextKeyService as M}from"../../../../platform/contextkey/common/contextkey.js";import"../../../browser/panecomposite.js";import{matchesFuzzy as T}from"../../../../base/common/filters.js";import{fuzzyContains as q}from"../../../../base/common/strings.js";import{IKeybindingService as z}from"../../../../platform/keybinding/common/keybinding.js";import{Action2 as V}from"../../../../platform/actions/common/actions.js";import"../../../../platform/instantiation/common/instantiation.js";import{KeyMod as k,KeyCode as P}from"../../../../base/common/keyCodes.js";import{KeybindingWeight as N}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{Categories as D}from"../../../../platform/action/common/actionCommonCategories.js";import{IPaneCompositePartService as W}from"../../../services/panecomposite/browser/panecomposite.js";import{IDebugService as X,REPL_VIEW_ID as x}from"../../debug/common/debug.js";let v=class extends A{constructor(i,r,t,c,n,e,a,o){super(v.PREFIX,{noResultsPick:{label:u("noViewResults","No matching views"),containerLabel:""}});this.viewDescriptorService=i;this.viewsService=r;this.outputService=t;this.terminalService=c;this.terminalGroupService=n;this.debugService=e;this.paneCompositeService=a;this.contextKeyService=o}static PREFIX="view ";_getPicks(i){const r=this.doGetViewPickItems().filter(e=>i?(e.highlights={label:T(i,e.label,!0)??void 0},e.highlights.label||q(e.containerLabel,i)):!0),t=new Map;for(const e of r)t.has(e.label)||t.set(e.label,e.containerLabel);const c=[];let n;for(const e of r){if(n!==e.containerLabel){n=e.containerLabel;let a;t.has(n)?a=`${t.get(n)} / ${n}`:a=n,c.push({type:"separator",label:a})}c.push(e)}return c}doGetViewPickItems(){const i=[],r=(e,a)=>{const o=this.viewDescriptorService.getViewContainerModel(a),p=[];for(const l of o.allViewDescriptors)this.contextKeyService.contextMatchesRules(l.when)&&p.push({label:l.name.value,containerLabel:o.title,accept:()=>this.viewsService.openView(l.id,!0)});return p},t=(e,a)=>{const o=this.paneCompositeService.getPaneComposites(e),p=this.paneCompositeService.getVisiblePaneCompositeIds(e);o.sort((l,I)=>{let f=p.findIndex(C=>l.id===C),S=p.findIndex(C=>I.id===C);return f<0&&(f=o.indexOf(l)+p.length),S<0&&(S=o.indexOf(I)+p.length),f-S});for(const l of o)if(this.includeViewContainer(l)){const I=this.viewDescriptorService.getViewContainerById(l.id);I&&i.push({label:this.viewDescriptorService.getViewContainerModel(I).title,containerLabel:a,accept:()=>this.paneCompositeService.openPaneComposite(l.id,e,!0)})}};t(d.Sidebar,u("views","Side Bar")),t(d.Panel,u("panels","Panel")),t(d.AuxiliaryBar,u("secondary side bar","Secondary Side Bar"));const c=e=>{const a=this.paneCompositeService.getPaneComposites(e);for(const o of a){const p=this.viewDescriptorService.getViewContainerById(o.id);p&&i.push(...r(o,p))}};c(d.Sidebar),c(d.Panel),c(d.AuxiliaryBar),this.terminalGroupService.groups.forEach((e,a)=>{e.terminalInstances.forEach((o,p)=>{const l=u("terminalTitle","{0}: {1}",`${a+1}.${p+1}`,o.title);i.push({label:l,containerLabel:u("terminals","Terminal"),accept:async()=>{await this.terminalGroupService.showPanel(!0),this.terminalService.setActiveInstance(o)}})})}),this.debugService.getModel().getSessions(!0).filter(e=>e.hasSeparateRepl()).forEach((e,a)=>{const o=e.name;i.push({label:o,containerLabel:u("debugConsoles","Debug Console"),accept:async()=>{await this.debugService.focusStackFrame(void 0,void 0,e,{explicit:!0}),this.viewsService.isViewVisible(x)||await this.viewsService.openView(x,!0)}})});const n=this.outputService.getChannelDescriptors();for(const e of n)i.push({label:e.label,containerLabel:u("channels","Output"),accept:()=>this.outputService.showChannel(e.id)});return i}includeViewContainer(i){const r=this.viewDescriptorService.getViewContainerById(i.id);return r?.hideIfEmpty?this.viewDescriptorService.getViewContainerModel(r).activeViewDescriptors.length>0:!0}};v=g([m(0,R),m(1,B),m(2,G),m(3,F),m(4,O),m(5,X),m(6,W),m(7,M)],v);class E extends V{static ID="workbench.action.openView";constructor(){super({id:E.ID,title:y("openView","Open View"),category:D.View,f1:!0})}async run(s){s.get(b).quickAccess.show(v.PREFIX)}}class h extends V{static ID="workbench.action.quickOpenView";static KEYBINDING={primary:k.CtrlCmd|P.KeyQ,mac:{primary:k.WinCtrl|P.KeyQ},linux:{primary:0}};constructor(){super({id:h.ID,title:y("quickOpenView","Quick Open View"),category:D.View,f1:!1,keybinding:{weight:N.WorkbenchContrib,when:void 0,...h.KEYBINDING}})}async run(s){const i=s.get(z),r=s.get(b),t=i.lookupKeybindings(h.ID);r.quickAccess.show(v.PREFIX,{quickNavigateConfiguration:{keybindings:t},itemActivation:Q.FIRST})}}export{E as OpenViewPickerAction,h as QuickAccessViewPickerAction,v as ViewQuickAccessProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ViewQuickAccessProvider_1;
+import { localize, localize2 } from '../../../../nls.js';
+import { IQuickInputService, ItemActivation } from '../../../../platform/quickinput/common/quickInput.js';
+import { PickerQuickAccessProvider } from '../../../../platform/quickinput/browser/pickerQuickAccess.js';
+import { IViewDescriptorService } from '../../../common/views.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+import { IOutputService } from '../../../services/output/common/output.js';
+import { ITerminalGroupService, ITerminalService } from '../../terminal/browser/terminal.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { matchesFuzzy } from '../../../../base/common/filters.js';
+import { fuzzyContains } from '../../../../base/common/strings.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { Action2 } from '../../../../platform/actions/common/actions.js';
+import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
+import { IPaneCompositePartService } from '../../../services/panecomposite/browser/panecomposite.js';
+import { IDebugService, REPL_VIEW_ID } from '../../debug/common/debug.js';
+let ViewQuickAccessProvider = class ViewQuickAccessProvider extends PickerQuickAccessProvider {
+    static { ViewQuickAccessProvider_1 = this; }
+    static { this.PREFIX = 'view '; }
+    constructor(viewDescriptorService, viewsService, outputService, terminalService, terminalGroupService, debugService, paneCompositeService, contextKeyService) {
+        super(ViewQuickAccessProvider_1.PREFIX, {
+            noResultsPick: {
+                label: localize('noViewResults', "No matching views"),
+                containerLabel: ''
+            }
+        });
+        this.viewDescriptorService = viewDescriptorService;
+        this.viewsService = viewsService;
+        this.outputService = outputService;
+        this.terminalService = terminalService;
+        this.terminalGroupService = terminalGroupService;
+        this.debugService = debugService;
+        this.paneCompositeService = paneCompositeService;
+        this.contextKeyService = contextKeyService;
+    }
+    _getPicks(filter) {
+        const filteredViewEntries = this.doGetViewPickItems().filter(entry => {
+            if (!filter) {
+                return true;
+            }
+            entry.highlights = { label: matchesFuzzy(filter, entry.label, true) ?? undefined };
+            return entry.highlights.label || fuzzyContains(entry.containerLabel, filter);
+        });
+        const mapEntryToContainer = new Map();
+        for (const entry of filteredViewEntries) {
+            if (!mapEntryToContainer.has(entry.label)) {
+                mapEntryToContainer.set(entry.label, entry.containerLabel);
+            }
+        }
+        const filteredViewEntriesWithSeparators = [];
+        let lastContainer = undefined;
+        for (const entry of filteredViewEntries) {
+            if (lastContainer !== entry.containerLabel) {
+                lastContainer = entry.containerLabel;
+                let separatorLabel;
+                if (mapEntryToContainer.has(lastContainer)) {
+                    separatorLabel = `${mapEntryToContainer.get(lastContainer)} / ${lastContainer}`;
+                }
+                else {
+                    separatorLabel = lastContainer;
+                }
+                filteredViewEntriesWithSeparators.push({ type: 'separator', label: separatorLabel });
+            }
+            filteredViewEntriesWithSeparators.push(entry);
+        }
+        return filteredViewEntriesWithSeparators;
+    }
+    doGetViewPickItems() {
+        const viewEntries = [];
+        const getViewEntriesForPaneComposite = (paneComposite, viewContainer) => {
+            const viewContainerModel = this.viewDescriptorService.getViewContainerModel(viewContainer);
+            const result = [];
+            for (const view of viewContainerModel.allViewDescriptors) {
+                if (this.contextKeyService.contextMatchesRules(view.when)) {
+                    result.push({
+                        label: view.name.value,
+                        containerLabel: viewContainerModel.title,
+                        accept: () => this.viewsService.openView(view.id, true)
+                    });
+                }
+            }
+            return result;
+        };
+        const addPaneComposites = (location, containerLabel) => {
+            const paneComposites = this.paneCompositeService.getPaneComposites(location);
+            const visiblePaneCompositeIds = this.paneCompositeService.getVisiblePaneCompositeIds(location);
+            paneComposites.sort((a, b) => {
+                let aIndex = visiblePaneCompositeIds.findIndex(id => a.id === id);
+                let bIndex = visiblePaneCompositeIds.findIndex(id => b.id === id);
+                if (aIndex < 0) {
+                    aIndex = paneComposites.indexOf(a) + visiblePaneCompositeIds.length;
+                }
+                if (bIndex < 0) {
+                    bIndex = paneComposites.indexOf(b) + visiblePaneCompositeIds.length;
+                }
+                return aIndex - bIndex;
+            });
+            for (const paneComposite of paneComposites) {
+                if (this.includeViewContainer(paneComposite)) {
+                    const viewContainer = this.viewDescriptorService.getViewContainerById(paneComposite.id);
+                    if (viewContainer) {
+                        viewEntries.push({
+                            label: this.viewDescriptorService.getViewContainerModel(viewContainer).title,
+                            containerLabel,
+                            accept: () => this.paneCompositeService.openPaneComposite(paneComposite.id, location, true)
+                        });
+                    }
+                }
+            }
+        };
+        addPaneComposites(0, localize('views', "Side Bar"));
+        addPaneComposites(1, localize('panels', "Panel"));
+        addPaneComposites(2, localize('secondary side bar', "Secondary Side Bar"));
+        const addPaneCompositeViews = (location) => {
+            const paneComposites = this.paneCompositeService.getPaneComposites(location);
+            for (const paneComposite of paneComposites) {
+                const viewContainer = this.viewDescriptorService.getViewContainerById(paneComposite.id);
+                if (viewContainer) {
+                    viewEntries.push(...getViewEntriesForPaneComposite(paneComposite, viewContainer));
+                }
+            }
+        };
+        addPaneCompositeViews(0);
+        addPaneCompositeViews(1);
+        addPaneCompositeViews(2);
+        this.terminalGroupService.groups.forEach((group, groupIndex) => {
+            group.terminalInstances.forEach((terminal, terminalIndex) => {
+                const label = localize('terminalTitle', "{0}: {1}", `${groupIndex + 1}.${terminalIndex + 1}`, terminal.title);
+                viewEntries.push({
+                    label,
+                    containerLabel: localize('terminals', "Terminal"),
+                    accept: async () => {
+                        await this.terminalGroupService.showPanel(true);
+                        this.terminalService.setActiveInstance(terminal);
+                    }
+                });
+            });
+        });
+        this.debugService.getModel().getSessions(true).filter(s => s.hasSeparateRepl()).forEach((session, _) => {
+            const label = session.name;
+            viewEntries.push({
+                label,
+                containerLabel: localize('debugConsoles', "Debug Console"),
+                accept: async () => {
+                    await this.debugService.focusStackFrame(undefined, undefined, session, { explicit: true });
+                    if (!this.viewsService.isViewVisible(REPL_VIEW_ID)) {
+                        await this.viewsService.openView(REPL_VIEW_ID, true);
+                    }
+                }
+            });
+        });
+        const channels = this.outputService.getChannelDescriptors();
+        for (const channel of channels) {
+            viewEntries.push({
+                label: channel.label,
+                containerLabel: localize('channels', "Output"),
+                accept: () => this.outputService.showChannel(channel.id)
+            });
+        }
+        return viewEntries;
+    }
+    includeViewContainer(container) {
+        const viewContainer = this.viewDescriptorService.getViewContainerById(container.id);
+        if (viewContainer?.hideIfEmpty) {
+            return this.viewDescriptorService.getViewContainerModel(viewContainer).activeViewDescriptors.length > 0;
+        }
+        return true;
+    }
+};
+ViewQuickAccessProvider = ViewQuickAccessProvider_1 = __decorate([
+    __param(0, IViewDescriptorService),
+    __param(1, IViewsService),
+    __param(2, IOutputService),
+    __param(3, ITerminalService),
+    __param(4, ITerminalGroupService),
+    __param(5, IDebugService),
+    __param(6, IPaneCompositePartService),
+    __param(7, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], ViewQuickAccessProvider);
+export { ViewQuickAccessProvider };
+export class OpenViewPickerAction extends Action2 {
+    static { this.ID = 'workbench.action.openView'; }
+    constructor() {
+        super({
+            id: OpenViewPickerAction.ID,
+            title: localize2('openView', 'Open View'),
+            category: Categories.View,
+            f1: true
+        });
+    }
+    async run(accessor) {
+        accessor.get(IQuickInputService).quickAccess.show(ViewQuickAccessProvider.PREFIX);
+    }
+}
+export class QuickAccessViewPickerAction extends Action2 {
+    static { this.ID = 'workbench.action.quickOpenView'; }
+    static { this.KEYBINDING = {
+        primary: 2048 | 47,
+        mac: { primary: 256 | 47 },
+        linux: { primary: 0 }
+    }; }
+    constructor() {
+        super({
+            id: QuickAccessViewPickerAction.ID,
+            title: localize2('quickOpenView', 'Quick Open View'),
+            category: Categories.View,
+            f1: false,
+            keybinding: {
+                weight: 200,
+                when: undefined,
+                ...QuickAccessViewPickerAction.KEYBINDING
+            }
+        });
+    }
+    async run(accessor) {
+        const keybindingService = accessor.get(IKeybindingService);
+        const quickInputService = accessor.get(IQuickInputService);
+        const keys = keybindingService.lookupKeybindings(QuickAccessViewPickerAction.ID);
+        quickInputService.quickAccess.show(ViewQuickAccessProvider.PREFIX, { quickNavigateConfiguration: { keybindings: keys }, itemActivation: ItemActivation.FIRST });
+    }
+}

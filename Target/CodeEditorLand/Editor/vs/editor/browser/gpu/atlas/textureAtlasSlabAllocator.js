@@ -1,2 +1,274 @@
-import{getActiveWindow as w}from"../../../../base/browser/dom.js";import{BugIndicatingError as P}from"../../../../base/common/errors.js";import{TwoKeyMap as H}from"../../../../base/common/map.js";import{ensureNonNullable as v}from"../gpuUtils.js";import{UsagePreviewColors as x}from"./atlas.js";class T{constructor(r,l,s){this._canvas=r;this._textureIndex=l;this._ctx=v(this._canvas.getContext("2d",{willReadFrequently:!0})),this._slabW=Math.min(s?.slabW??64<<Math.floor(w().devicePixelRatio)-1,this._canvas.width),this._slabH=Math.min(s?.slabH??this._slabW,this._canvas.height),this._slabsPerRow=Math.floor(this._canvas.width/this._slabW),this._slabsPerColumn=Math.floor(this._canvas.height/this._slabH)}_ctx;_slabs=[];_activeSlabsByDims=new H;_unusedRects=[];_openRegionsByHeight=new Map;_openRegionsByWidth=new Map;_allocatedGlyphs=new Set;_slabW;_slabH;_slabsPerRow;_slabsPerColumn;_nextIndex=0;allocate(r){const l=r.boundingBox.right-r.boundingBox.left+1,s=r.boundingBox.bottom-r.boundingBox.top+1;if(l>this._canvas.width||s>this._canvas.height)throw new P("Glyph is too large for the atlas page");if(l>this._slabW||s>this._slabH){if(this._allocatedGlyphs.size>0)return;let t=this._canvas.width;for(;l<t/2&&s<t/2;)t/=2;this._slabW=t,this._slabH=t,this._slabsPerRow=Math.floor(this._canvas.width/this._slabW),this._slabsPerColumn=Math.floor(this._canvas.height/this._slabH)}const a={w:l,h:s};let i=this._activeSlabsByDims.get(a.w,a.h);if(i){const t=Math.floor(this._slabW/i.entryW)*Math.floor(this._slabH/i.entryH);i.count>=t&&(i=void 0)}let f,c;if(!i)if(l<s){const t=this._openRegionsByWidth.get(l);if(t?.length)for(let o=t.length-1;o>=0;o--){const e=t[o];if(e.w>=l&&e.h>=s){f=e.x,c=e.y,l<e.w&&this._unusedRects.push({x:e.x+l,y:e.y,w:e.w-l,h:s}),e.y+=s,e.h-=s,e.h===0&&(o===t.length-1?t.pop():this._unusedRects.splice(o,1));break}}}else{const t=this._openRegionsByHeight.get(s);if(t?.length)for(let o=t.length-1;o>=0;o--){const e=t[o];if(e.w>=l&&e.h>=s){f=e.x,c=e.y,s<e.h&&this._unusedRects.push({x:e.x,y:e.y+s,w:l,h:e.h-s}),e.x+=l,e.w-=l,e.h===0&&(o===t.length-1?t.pop():this._unusedRects.splice(o,1));break}}}if(f===void 0||c===void 0){if(!i){if(this._slabs.length>=this._slabsPerRow*this._slabsPerColumn)return;i={x:Math.floor(this._slabs.length%this._slabsPerRow)*this._slabW,y:Math.floor(this._slabs.length/this._slabsPerRow)*this._slabH,entryW:a.w,entryH:a.h,count:0};const o=this._slabW%i.entryW,e=this._slabH%i.entryH;o&&R(this._openRegionsByWidth,o,{x:i.x+this._slabW-o,w:o,y:i.y,h:this._slabH-(e??0)}),e&&R(this._openRegionsByHeight,e,{x:i.x,w:this._slabW,y:i.y+this._slabH-e,h:e}),this._slabs.push(i),this._activeSlabsByDims.set(a.w,a.h,i)}const t=Math.floor(this._slabW/i.entryW);f=i.x+Math.floor(i.count%t)*i.entryW,c=i.y+Math.floor(i.count/t)*i.entryH,i.count++}this._ctx.drawImage(r.source,r.boundingBox.left,r.boundingBox.top,l,s,f,c,l,s);const u={pageIndex:this._textureIndex,glyphIndex:this._nextIndex++,x:f,y:c,w:l,h:s,originOffsetX:r.originOffset.x,originOffsetY:r.originOffset.y};return this._allocatedGlyphs.add(u),u}getUsagePreview(){const r=this._canvas.width,l=this._canvas.height,s=new OffscreenCanvas(r,l),a=v(s.getContext("2d"));a.fillStyle=x.Unused,a.fillRect(0,0,r,l);let i=0,f=0,c=0,u=0;const t=64<<Math.floor(w().devicePixelRatio)-1,o=t;for(const n of this._slabs){let b=0,h=0;for(let y=0;y<n.count;y++)b+n.entryW>t&&(b=0,h+=n.entryH),a.fillStyle=x.Wasted,a.fillRect(n.x+b,n.y+h,n.entryW,n.entryH),i+=n.entryW*n.entryH,b+=n.entryW;const d=Math.floor(t/n.entryW),g=Math.floor(o/n.entryH),p=n.entryW*d*n.entryH*g;c+=t*o-p}for(const n of this._allocatedGlyphs)f+=n.w*n.h,a.fillStyle=x.Used,a.fillRect(n.x,n.y,n.w,n.h);const e=Array.from(this._openRegionsByWidth.values()).flat().concat(Array.from(this._openRegionsByHeight.values()).flat());for(const n of e)a.fillStyle=x.Restricted,a.fillRect(n.x,n.y,n.w,n.h),u+=n.w*n.h;return a.globalAlpha=.5,a.drawImage(this._canvas,0,0),a.globalAlpha=1,s.convertToBlob()}getStats(){const r=this._canvas.width,l=this._canvas.height;let s=0,a=0,i=0,f=0,c=0;const u=r*l,t=64<<Math.floor(w().devicePixelRatio)-1,o=t;for(const h of this._slabs){let d=0,g=0;for(let m=0;m<h.count;m++)d+h.entryW>t&&(d=0,g+=h.entryH),s+=h.entryW*h.entryH,d+=h.entryW;const p=Math.floor(t/h.entryW),y=Math.floor(o/h.entryH),W=h.entryW*p*h.entryH*y;i+=t*o-W}for(const h of this._allocatedGlyphs)a+=h.w*h.h;const e=Array.from(this._openRegionsByWidth.values()).flat().concat(Array.from(this._openRegionsByHeight.values()).flat());for(const h of e)c+=h.w*h.h;const n=i-c;f=s-(a-n);const b=a/(a+f+c);return[`page[${this._textureIndex}]:`,`     Total: ${u}px (${r}x${l})`,`      Used: ${a}px (${(a/u*100).toFixed(2)}%)`,`    Wasted: ${f}px (${(f/u*100).toFixed(2)}%)`,`Restricted: ${c}px (${(c/u*100).toFixed(2)}%) (hard to allocate)`,`Efficiency: ${b===1?"100":(b*100).toFixed(2)}%`,`     Slabs: ${this._slabs.length} of ${Math.floor(this._canvas.width/t)*Math.floor(this._canvas.height/o)}`].join(`
-`)}}function R(_,r,l){let s=_.get(r);s||(s=[],_.set(r,s)),s.push(l)}export{T as TextureAtlasSlabAllocator};
+import { getActiveWindow } from '../../../../base/browser/dom.js';
+import { BugIndicatingError } from '../../../../base/common/errors.js';
+import { TwoKeyMap } from '../../../../base/common/map.js';
+import { ensureNonNullable } from '../gpuUtils.js';
+export class TextureAtlasSlabAllocator {
+    constructor(_canvas, _textureIndex, options) {
+        this._canvas = _canvas;
+        this._textureIndex = _textureIndex;
+        this._slabs = [];
+        this._activeSlabsByDims = new TwoKeyMap();
+        this._unusedRects = [];
+        this._openRegionsByHeight = new Map();
+        this._openRegionsByWidth = new Map();
+        this._allocatedGlyphs = new Set();
+        this._nextIndex = 0;
+        this._ctx = ensureNonNullable(this._canvas.getContext('2d', {
+            willReadFrequently: true
+        }));
+        this._slabW = Math.min(options?.slabW ?? (64 << (Math.floor(getActiveWindow().devicePixelRatio) - 1)), this._canvas.width);
+        this._slabH = Math.min(options?.slabH ?? this._slabW, this._canvas.height);
+        this._slabsPerRow = Math.floor(this._canvas.width / this._slabW);
+        this._slabsPerColumn = Math.floor(this._canvas.height / this._slabH);
+    }
+    allocate(rasterizedGlyph) {
+        const glyphWidth = rasterizedGlyph.boundingBox.right - rasterizedGlyph.boundingBox.left + 1;
+        const glyphHeight = rasterizedGlyph.boundingBox.bottom - rasterizedGlyph.boundingBox.top + 1;
+        if (glyphWidth > this._canvas.width || glyphHeight > this._canvas.height) {
+            throw new BugIndicatingError('Glyph is too large for the atlas page');
+        }
+        if (glyphWidth > this._slabW || glyphHeight > this._slabH) {
+            if (this._allocatedGlyphs.size > 0) {
+                return undefined;
+            }
+            let sizeCandidate = this._canvas.width;
+            while (glyphWidth < sizeCandidate / 2 && glyphHeight < sizeCandidate / 2) {
+                sizeCandidate /= 2;
+            }
+            this._slabW = sizeCandidate;
+            this._slabH = sizeCandidate;
+            this._slabsPerRow = Math.floor(this._canvas.width / this._slabW);
+            this._slabsPerColumn = Math.floor(this._canvas.height / this._slabH);
+        }
+        const desiredSlabSize = {
+            w: glyphWidth,
+            h: glyphHeight,
+        };
+        let slab = this._activeSlabsByDims.get(desiredSlabSize.w, desiredSlabSize.h);
+        if (slab) {
+            const glyphsPerSlab = Math.floor(this._slabW / slab.entryW) * Math.floor(this._slabH / slab.entryH);
+            if (slab.count >= glyphsPerSlab) {
+                slab = undefined;
+            }
+        }
+        let dx;
+        let dy;
+        if (!slab) {
+            if (glyphWidth < glyphHeight) {
+                const openRegions = this._openRegionsByWidth.get(glyphWidth);
+                if (openRegions?.length) {
+                    for (let i = openRegions.length - 1; i >= 0; i--) {
+                        const r = openRegions[i];
+                        if (r.w >= glyphWidth && r.h >= glyphHeight) {
+                            dx = r.x;
+                            dy = r.y;
+                            if (glyphWidth < r.w) {
+                                this._unusedRects.push({
+                                    x: r.x + glyphWidth,
+                                    y: r.y,
+                                    w: r.w - glyphWidth,
+                                    h: glyphHeight
+                                });
+                            }
+                            r.y += glyphHeight;
+                            r.h -= glyphHeight;
+                            if (r.h === 0) {
+                                if (i === openRegions.length - 1) {
+                                    openRegions.pop();
+                                }
+                                else {
+                                    this._unusedRects.splice(i, 1);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            else {
+                const openRegions = this._openRegionsByHeight.get(glyphHeight);
+                if (openRegions?.length) {
+                    for (let i = openRegions.length - 1; i >= 0; i--) {
+                        const r = openRegions[i];
+                        if (r.w >= glyphWidth && r.h >= glyphHeight) {
+                            dx = r.x;
+                            dy = r.y;
+                            if (glyphHeight < r.h) {
+                                this._unusedRects.push({
+                                    x: r.x,
+                                    y: r.y + glyphHeight,
+                                    w: glyphWidth,
+                                    h: r.h - glyphHeight
+                                });
+                            }
+                            r.x += glyphWidth;
+                            r.w -= glyphWidth;
+                            if (r.h === 0) {
+                                if (i === openRegions.length - 1) {
+                                    openRegions.pop();
+                                }
+                                else {
+                                    this._unusedRects.splice(i, 1);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (dx === undefined || dy === undefined) {
+            if (!slab) {
+                if (this._slabs.length >= this._slabsPerRow * this._slabsPerColumn) {
+                    return undefined;
+                }
+                slab = {
+                    x: Math.floor(this._slabs.length % this._slabsPerRow) * this._slabW,
+                    y: Math.floor(this._slabs.length / this._slabsPerRow) * this._slabH,
+                    entryW: desiredSlabSize.w,
+                    entryH: desiredSlabSize.h,
+                    count: 0
+                };
+                const unusedW = this._slabW % slab.entryW;
+                const unusedH = this._slabH % slab.entryH;
+                if (unusedW) {
+                    addEntryToMapArray(this._openRegionsByWidth, unusedW, {
+                        x: slab.x + this._slabW - unusedW,
+                        w: unusedW,
+                        y: slab.y,
+                        h: this._slabH - (unusedH ?? 0)
+                    });
+                }
+                if (unusedH) {
+                    addEntryToMapArray(this._openRegionsByHeight, unusedH, {
+                        x: slab.x,
+                        w: this._slabW,
+                        y: slab.y + this._slabH - unusedH,
+                        h: unusedH
+                    });
+                }
+                this._slabs.push(slab);
+                this._activeSlabsByDims.set(desiredSlabSize.w, desiredSlabSize.h, slab);
+            }
+            const glyphsPerRow = Math.floor(this._slabW / slab.entryW);
+            dx = slab.x + Math.floor(slab.count % glyphsPerRow) * slab.entryW;
+            dy = slab.y + Math.floor(slab.count / glyphsPerRow) * slab.entryH;
+            slab.count++;
+        }
+        this._ctx.drawImage(rasterizedGlyph.source, rasterizedGlyph.boundingBox.left, rasterizedGlyph.boundingBox.top, glyphWidth, glyphHeight, dx, dy, glyphWidth, glyphHeight);
+        const glyph = {
+            pageIndex: this._textureIndex,
+            glyphIndex: this._nextIndex++,
+            x: dx,
+            y: dy,
+            w: glyphWidth,
+            h: glyphHeight,
+            originOffsetX: rasterizedGlyph.originOffset.x,
+            originOffsetY: rasterizedGlyph.originOffset.y
+        };
+        this._allocatedGlyphs.add(glyph);
+        return glyph;
+    }
+    getUsagePreview() {
+        const w = this._canvas.width;
+        const h = this._canvas.height;
+        const canvas = new OffscreenCanvas(w, h);
+        const ctx = ensureNonNullable(canvas.getContext('2d'));
+        ctx.fillStyle = "#808080";
+        ctx.fillRect(0, 0, w, h);
+        let slabEntryPixels = 0;
+        let usedPixels = 0;
+        let slabEdgePixels = 0;
+        let restrictedPixels = 0;
+        const slabW = 64 << (Math.floor(getActiveWindow().devicePixelRatio) - 1);
+        const slabH = slabW;
+        for (const slab of this._slabs) {
+            let x = 0;
+            let y = 0;
+            for (let i = 0; i < slab.count; i++) {
+                if (x + slab.entryW > slabW) {
+                    x = 0;
+                    y += slab.entryH;
+                }
+                ctx.fillStyle = "#FF0000";
+                ctx.fillRect(slab.x + x, slab.y + y, slab.entryW, slab.entryH);
+                slabEntryPixels += slab.entryW * slab.entryH;
+                x += slab.entryW;
+            }
+            const entriesPerRow = Math.floor(slabW / slab.entryW);
+            const entriesPerCol = Math.floor(slabH / slab.entryH);
+            const thisSlabPixels = slab.entryW * entriesPerRow * slab.entryH * entriesPerCol;
+            slabEdgePixels += (slabW * slabH) - thisSlabPixels;
+        }
+        for (const g of this._allocatedGlyphs) {
+            usedPixels += g.w * g.h;
+            ctx.fillStyle = "#4040FF";
+            ctx.fillRect(g.x, g.y, g.w, g.h);
+        }
+        const unusedRegions = Array.from(this._openRegionsByWidth.values()).flat().concat(Array.from(this._openRegionsByHeight.values()).flat());
+        for (const r of unusedRegions) {
+            ctx.fillStyle = "#FF000088";
+            ctx.fillRect(r.x, r.y, r.w, r.h);
+            restrictedPixels += r.w * r.h;
+        }
+        ctx.globalAlpha = 0.5;
+        ctx.drawImage(this._canvas, 0, 0);
+        ctx.globalAlpha = 1;
+        return canvas.convertToBlob();
+    }
+    getStats() {
+        const w = this._canvas.width;
+        const h = this._canvas.height;
+        let slabEntryPixels = 0;
+        let usedPixels = 0;
+        let slabEdgePixels = 0;
+        let wastedPixels = 0;
+        let restrictedPixels = 0;
+        const totalPixels = w * h;
+        const slabW = 64 << (Math.floor(getActiveWindow().devicePixelRatio) - 1);
+        const slabH = slabW;
+        for (const slab of this._slabs) {
+            let x = 0;
+            let y = 0;
+            for (let i = 0; i < slab.count; i++) {
+                if (x + slab.entryW > slabW) {
+                    x = 0;
+                    y += slab.entryH;
+                }
+                slabEntryPixels += slab.entryW * slab.entryH;
+                x += slab.entryW;
+            }
+            const entriesPerRow = Math.floor(slabW / slab.entryW);
+            const entriesPerCol = Math.floor(slabH / slab.entryH);
+            const thisSlabPixels = slab.entryW * entriesPerRow * slab.entryH * entriesPerCol;
+            slabEdgePixels += (slabW * slabH) - thisSlabPixels;
+        }
+        for (const g of this._allocatedGlyphs) {
+            usedPixels += g.w * g.h;
+        }
+        const unusedRegions = Array.from(this._openRegionsByWidth.values()).flat().concat(Array.from(this._openRegionsByHeight.values()).flat());
+        for (const r of unusedRegions) {
+            restrictedPixels += r.w * r.h;
+        }
+        const edgeUsedPixels = slabEdgePixels - restrictedPixels;
+        wastedPixels = slabEntryPixels - (usedPixels - edgeUsedPixels);
+        const efficiency = usedPixels / (usedPixels + wastedPixels + restrictedPixels);
+        return [
+            `page[${this._textureIndex}]:`,
+            `     Total: ${totalPixels}px (${w}x${h})`,
+            `      Used: ${usedPixels}px (${((usedPixels / totalPixels) * 100).toFixed(2)}%)`,
+            `    Wasted: ${wastedPixels}px (${((wastedPixels / totalPixels) * 100).toFixed(2)}%)`,
+            `Restricted: ${restrictedPixels}px (${((restrictedPixels / totalPixels) * 100).toFixed(2)}%) (hard to allocate)`,
+            `Efficiency: ${efficiency === 1 ? '100' : (efficiency * 100).toFixed(2)}%`,
+            `     Slabs: ${this._slabs.length} of ${Math.floor(this._canvas.width / slabW) * Math.floor(this._canvas.height / slabH)}`
+        ].join('\n');
+    }
+}
+function addEntryToMapArray(map, key, entry) {
+    let list = map.get(key);
+    if (!list) {
+        list = [];
+        map.set(key, list);
+    }
+    list.push(entry);
+}

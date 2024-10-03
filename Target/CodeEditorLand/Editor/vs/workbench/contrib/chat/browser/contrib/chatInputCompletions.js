@@ -1,1 +1,520 @@
-var J=Object.defineProperty;var X=Object.getOwnPropertyDescriptor;var D=(I,i,c,a)=>{for(var e=a>1?void 0:a?X(i,c):i,m=I.length-1,h;m>=0;m--)(h=I[m])&&(e=(a?h(i,c,e):h(e))||e);return a&&e&&J(i,c,e),e},g=(I,i)=>(c,a)=>i(c,a,I);import"../../../../../base/common/cancellation.js";import{isPatternInWord as Y}from"../../../../../base/common/filters.js";import{Disposable as _}from"../../../../../base/common/lifecycle.js";import{ResourceSet as Z}from"../../../../../base/common/map.js";import"../../../../../base/common/uri.js";import{generateUuid as ee}from"../../../../../base/common/uuid.js";import"../../../../../editor/common/core/position.js";import{Range as x}from"../../../../../editor/common/core/range.js";import{getWordAtText as te}from"../../../../../editor/common/core/wordHelper.js";import{CompletionItemKind as T}from"../../../../../editor/common/languages.js";import"../../../../../editor/common/model.js";import{ILanguageFeaturesService as E}from"../../../../../editor/common/services/languageFeatures.js";import{localize as re}from"../../../../../nls.js";import{Action2 as ie,registerAction2 as ne}from"../../../../../platform/actions/common/actions.js";import{CommandsRegistry as ae}from"../../../../../platform/commands/common/commands.js";import{IConfigurationService as oe}from"../../../../../platform/configuration/common/configuration.js";import{IInstantiationService as se}from"../../../../../platform/instantiation/common/instantiation.js";import{ILabelService as ce}from"../../../../../platform/label/common/label.js";import{Registry as V}from"../../../../../platform/registry/common/platform.js";import{IWorkspaceContextService as le}from"../../../../../platform/workspace/common/workspace.js";import{Extensions as U}from"../../../../common/contributions.js";import{IHistoryService as me}from"../../../../services/history/common/history.js";import{LifecyclePhase as q}from"../../../../services/lifecycle/common/lifecycle.js";import{QueryBuilder as de}from"../../../../services/search/common/queryBuilder.js";import{ISearchService as ue}from"../../../../services/search/common/search.js";import{ChatAgentLocation as Q,IChatAgentNameService as ge,IChatAgentService as he,getFullyQualifiedId as pe}from"../../common/chatAgents.js";import{ChatRequestAgentPart as H,ChatRequestAgentSubcommandPart as fe,ChatRequestTextPart as ve,ChatRequestToolPart as Ce,ChatRequestVariablePart as Ie,chatAgentLeader as B,chatSubcommandLeader as z,chatVariableLeader as y}from"../../common/chatParserTypes.js";import{IChatSlashCommandService as be}from"../../common/chatSlashCommands.js";import{IChatVariablesService as Se}from"../../common/chatVariables.js";import{ILanguageModelToolsService as ye}from"../../common/languageModelToolsService.js";import{SubmitAction as O}from"../actions/chatExecuteActions.js";import{IChatWidgetService as K}from"../chat.js";import{ChatInputPart as N}from"../chatInputPart.js";import{ChatDynamicVariableModel as xe,SelectAndInsertFileAction as G}from"./chatDynamicVariables.js";let L=class extends _{constructor(c,a,e){super();this.languageFeaturesService=c;this.chatWidgetService=a;this.chatSlashCommandService=e;this._register(this.languageFeaturesService.completionProvider.register({scheme:N.INPUT_SCHEME,hasAccessToAllModels:!0},{_debugDisplayName:"globalSlashCommands",triggerCharacters:["/"],provideCompletionItems:async(m,h,d,v)=>{const u=this.chatWidgetService.getWidgetByInputUri(m.uri);if(!u||!u.viewModel||!W(m,h,/\/\w*/g))return null;if(u.parsedInput.parts.find(n=>n instanceof H))return;const p=this.chatSlashCommandService.getCommands(u.location);return p?{suggestions:p.map((n,b)=>{const S=`/${n.command}`;return{label:S,insertText:n.executeImmediately?"":`${S} `,detail:n.detail,range:new x(1,1,1,1),sortText:n.sortText??"a".repeat(b+1),kind:T.Text,command:n.executeImmediately?{id:O.ID,title:S,arguments:[{widget:u,inputValue:`${S} `}]}:void 0}})}:null}})),this._register(this.languageFeaturesService.completionProvider.register({scheme:N.INPUT_SCHEME,hasAccessToAllModels:!0},{_debugDisplayName:"globalSlashCommandsAt",triggerCharacters:["@"],provideCompletionItems:async(m,h,d,v)=>{const u=this.chatWidgetService.getWidgetByInputUri(m.uri);if(!u||!u.viewModel||!W(m,h,/@\w*/g))return null;const o=this.chatSlashCommandService.getCommands(u.location);return o?{suggestions:o.map((t,p)=>{const n=`${z}${t.command}`;return{label:n,insertText:t.executeImmediately?"":`${n} `,detail:t.detail,range:new x(1,1,1,1),filterText:`${B}${t.command}`,sortText:t.sortText??"z".repeat(p+1),kind:T.Text,command:t.executeImmediately?{id:O.ID,title:n,arguments:[{widget:u,inputValue:`${n} `}]}:void 0}})}:null}}))}};L=D([g(0,E),g(1,K),g(2,be)],L),V.as(U.Workbench).registerWorkbenchContribution(L,q.Eventually);let M=class extends _{constructor(c,a,e,m){super();this.languageFeaturesService=c;this.chatWidgetService=a;this.chatAgentService=e;this.chatAgentNameService=m;const h={_debugDisplayName:"chatAgentSubcommand",triggerCharacters:["/"],provideCompletionItems:async(d,v,u,l)=>{const o=this.chatWidgetService.getWidgetByInputUri(d.uri);if(!o||!o.viewModel)return;const t=W(d,v,/\/\w*/g);if(!t)return null;const p=o.parsedInput.parts,n=p.findIndex(C=>C instanceof H);if(n<0||p.find(C=>C instanceof fe))return;for(const C of p.slice(n+1))if(!(C instanceof ve)||!C.text.trim().match(/^(\/\w*)?$/))return;return{suggestions:p[n].agent.slashCommands.map((C,s)=>{const f=`/${C.name}`;return{label:f,insertText:`${f} `,detail:C.description,range:t,kind:T.Text}})}}};this._register(this.languageFeaturesService.completionProvider.register({scheme:N.INPUT_SCHEME,hasAccessToAllModels:!0},h)),this._register(this.languageFeaturesService.completionProvider.register({scheme:N.INPUT_SCHEME,hasAccessToAllModels:!0},{_debugDisplayName:"chatAgentAndSubcommand",triggerCharacters:["@","/"],provideCompletionItems:async(d,v,u,l)=>{const o=this.chatWidgetService.getWidgetByInputUri(d.uri),t=o?.viewModel;if(!o||!t)return;if(!W(d,v,/(@|\/)\w*/g))return null;const n=v.column>1?d.getValueInRange(new x(v.lineNumber,v.column-1,v.lineNumber,v.column)):"@",b=this.chatAgentService.getAgents().filter(s=>s.locations.includes(o.location)),S=(s,f)=>{const $=s.id==="github.copilot.terminalPanel"?"0000":"";return`${n}${$}${s.name}.${f}`};return{suggestions:b.filter(s=>!s.isDefault).map(s=>{const{label:f,isDupe:$}=this.getAgentCompletionDetails(s),P=s.description;return{label:$?{label:f,description:s.description,detail:` (${s.publisherDisplayName})`}:f,detail:P,filterText:`${n}${s.name}`,insertText:`${f} `,range:new x(1,1,1,1),kind:T.Text,sortText:`${B}${s.name}`,command:{id:k.ID,title:k.ID,arguments:[{agent:s,widget:o}]}}}).concat(b.flatMap(s=>s.slashCommands.map((f,$)=>{const{label:P,isDupe:r}=this.getAgentCompletionDetails(s),A=`${P} ${z}${f.name}`,F={label:r?{label:A,description:f.description,detail:r?` (${s.publisherDisplayName})`:void 0}:A,detail:f.description,filterText:S(s,f.name),commitCharacters:[" "],insertText:A+" ",range:new x(1,1,1,1),kind:T.Text,sortText:`x${B}${s.name}${f.name}`,command:{id:k.ID,title:k.ID,arguments:[{agent:s,widget:o}]}};if(s.isDefault){const j=`${z}${f.name}`;F.label=j,F.insertText=`${j} `,F.detail=f.description}return F})))}}}))}getAgentCompletionDetails(c){const a=this.chatAgentNameService.getAgentNameRestriction(c),e=`${B}${a?c.name:pe(c)}`,m=a&&this.chatAgentService.agentHasDupeName(c.id);return{label:e,isDupe:m}}};M=D([g(0,E),g(1,K),g(2,he),g(3,ge)],M),V.as(U.Workbench).registerWorkbenchContribution(M,q.Eventually);class k extends ie{static ID="workbench.action.chat.assignSelectedAgent";constructor(){super({id:k.ID,title:""})}async run(i,...c){const a=c[0];!a||!a.widget||!a.agent||(a.widget.lastSelectedAgent=a.agent)}}ne(k);class Ae{constructor(i,c){this.widget=i;this.variable=c}}let w=class extends _{constructor(c,a,e,m,h,d,v){super();this.historyService=c;this.workspaceContextService=a;this.searchService=e;this.labelService=m;this.languageFeaturesService=h;this.chatWidgetService=d;this.instantiationService=v;this._register(this.languageFeaturesService.completionProvider.register({scheme:N.INPUT_SCHEME,hasAccessToAllModels:!0},{_debugDisplayName:"chatDynamicCompletions",triggerCharacters:[y],provideCompletionItems:async(u,l,o,t)=>{const p=this.chatWidgetService.getWidgetByInputUri(u.uri);if(!p||!p.supportsFileReferences)return null;const n={suggestions:[]},b=W(u,l,w.VariableNameDef,!0);if(b){const C=new x(l.lineNumber,b.replace.startColumn,l.lineNumber,b.replace.startColumn+6);n.suggestions.push({label:`${y}file`,insertText:`${y}file:`,detail:re("pickFileLabel","Pick a file"),range:b,kind:T.Text,command:{id:G.ID,title:G.ID,arguments:[{widget:p,range:C}]},sortText:"z"})}const S=W(u,l,new RegExp(`${y}[^\\s]*`,"g"),!0);return S&&await this.addFileEntries(p,n,S,t),n}})),this._register(ae.registerCommand(w.addReferenceCommand,(u,l)=>this.cmdAddReference(l))),this.queryBuilder=this.instantiationService.createInstance(de)}static addReferenceCommand="_addReferenceCmd";static VariableNameDef=new RegExp(`${y}\\w*`,"g");queryBuilder;cacheKey;async addFileEntries(c,a,e,m){const h=l=>{const o=this.labelService.getUriBasenameLabel(l),t=`${y}file:${o}`;return{label:{label:o,description:this.labelService.getUriLabel(l,{relative:!0})},filterText:`${y}${o}`,insertText:e.varWord?.endColumn===e.replace.endColumn?`${t} `:t,range:e,kind:T.File,sortText:"{",command:{id:w.addReferenceCommand,title:"",arguments:[new Ae(c,{id:"vscode.file",range:{startLineNumber:e.replace.startLineNumber,startColumn:e.replace.startColumn,endLineNumber:e.replace.endLineNumber,endColumn:e.replace.startColumn+t.length},data:l})]}}};let d;e.varWord?.word&&e.varWord.word.startsWith(y)&&(d=e.varWord.word.toLowerCase().slice(1));const v=new Z,u=a.suggestions.length;for(const l of this.historyService.getHistory()){if(!l.resource||!this.workspaceContextService.getWorkspaceFolder(l.resource))continue;if(d){const t=this.labelService.getUriBasenameLabel(l.resource).toLowerCase();if(!Y(d,0,d.length,t,0,t.length))continue}if(v.add(l.resource),a.suggestions.push(h(l.resource))-u>=5)break}if(d){this.cacheKey&&Date.now()-this.cacheKey.time>6e4&&(this.searchService.clearCache(this.cacheKey.key),this.cacheKey=void 0),this.cacheKey||(this.cacheKey={key:ee(),time:Date.now()}),this.cacheKey.time=Date.now();const l=this.queryBuilder.file(this.workspaceContextService.getWorkspace().folders,{filePattern:d,sortByScore:!0,maxResults:250,cacheKey:this.cacheKey.key}),o=await this.searchService.fileSearch(l,m);for(const t of o.results)v.has(t.resource)||a.suggestions.push(h(t.resource))}a.incomplete=!0}cmdAddReference(c){c.widget.getContrib(xe.ID)?.addReference(c.variable)}};w=D([g(0,me),g(1,le),g(2,ue),g(3,ce),g(4,E),g(5,K),g(6,se)],w),V.as(U.Workbench).registerWorkbenchContribution(w,q.Eventually);function W(I,i,c,a=!1){const e=te(i.column,c,I.getLineContent(i.lineNumber),0);if(!e&&I.getWordUntilPosition(i).word||!e&&i.column>1&&I.getValueInRange(new x(i.lineNumber,i.column-1,i.lineNumber,i.column))!==" "||e&&a&&I.getWordUntilPosition({lineNumber:i.lineNumber,column:e.startColumn}).word)return;let m,h;return e?(m=new x(i.lineNumber,e.startColumn,i.lineNumber,i.column),h=new x(i.lineNumber,e.startColumn,i.lineNumber,e.endColumn)):m=h=x.fromPositions(i),{insert:m,replace:h,varWord:e}}let R=class extends _{constructor(c,a,e,m,h){super();this.languageFeaturesService=c;this.chatWidgetService=a;this.chatVariablesService=e;this._register(this.languageFeaturesService.completionProvider.register({scheme:N.INPUT_SCHEME,hasAccessToAllModels:!0},{_debugDisplayName:"chatVariables",triggerCharacters:[y],provideCompletionItems:async(d,v,u,l)=>{const o=new Set;o.add(Q.Panel);for(const r of Object.values(Q))typeof r=="string"&&m.getValue(`chat.experimental.variables.${r}`)&&o.add(r);const t=this.chatWidgetService.getWidgetByInputUri(d.uri);if(!t||!o.has(t.location))return null;const p=W(d,v,R.VariableNameDef,!0);if(!p)return null;const n=t.parsedInput.parts.find(r=>r instanceof H),b=n?n.agent.metadata.supportsSlowVariables:!0,S=t.parsedInput.parts.filter(r=>r instanceof Ie),C=new Set(S.map(r=>r.variableName)),s=Array.from(this.chatVariablesService.getVariables(t.location)).filter(r=>!C.has(r.name)).filter(r=>!r.isSlow||b).map(r=>{const A=`${y}${r.name}`;return{label:A,range:p,insertText:A+" ",detail:r.description,kind:T.Text,sortText:"z"}}),f=t.parsedInput.parts.filter(r=>r instanceof Ce),$=new Set(f.map(r=>r.toolName)),P=[];return(!n||n.agent.supportsToolReferences)&&P.push(...Array.from(h.getTools()).filter(r=>r.canBeInvokedManually).filter(r=>!$.has(r.name??"")).map(r=>{const A=`${y}${r.name}`;return{label:A,range:p,insertText:A+" ",detail:r.userDescription,kind:T.Text,sortText:"z"}})),{suggestions:[...s,...P]}}}))}static VariableNameDef=new RegExp(`(?<=^|\\s)${y}\\w*`,"g")};R=D([g(0,E),g(1,K),g(2,Se),g(3,oe),g(4,ye)],R),V.as(U.Workbench).registerWorkbenchContribution(R,q.Eventually);export{W as computeCompletionRanges};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var BuiltinDynamicCompletions_1, VariableCompletions_1;
+import { isPatternInWord } from '../../../../../base/common/filters.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { ResourceSet } from '../../../../../base/common/map.js';
+import { generateUuid } from '../../../../../base/common/uuid.js';
+import { Range } from '../../../../../editor/common/core/range.js';
+import { getWordAtText } from '../../../../../editor/common/core/wordHelper.js';
+import { ILanguageFeaturesService } from '../../../../../editor/common/services/languageFeatures.js';
+import { localize } from '../../../../../nls.js';
+import { Action2, registerAction2 } from '../../../../../platform/actions/common/actions.js';
+import { CommandsRegistry } from '../../../../../platform/commands/common/commands.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { ILabelService } from '../../../../../platform/label/common/label.js';
+import { Registry } from '../../../../../platform/registry/common/platform.js';
+import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
+import { Extensions as WorkbenchExtensions } from '../../../../common/contributions.js';
+import { IHistoryService } from '../../../../services/history/common/history.js';
+import { QueryBuilder } from '../../../../services/search/common/queryBuilder.js';
+import { ISearchService } from '../../../../services/search/common/search.js';
+import { ChatAgentLocation, IChatAgentNameService, IChatAgentService, getFullyQualifiedId } from '../../common/chatAgents.js';
+import { ChatRequestAgentPart, ChatRequestAgentSubcommandPart, ChatRequestTextPart, ChatRequestToolPart, ChatRequestVariablePart, chatAgentLeader, chatSubcommandLeader, chatVariableLeader } from '../../common/chatParserTypes.js';
+import { IChatSlashCommandService } from '../../common/chatSlashCommands.js';
+import { IChatVariablesService } from '../../common/chatVariables.js';
+import { ILanguageModelToolsService } from '../../common/languageModelToolsService.js';
+import { SubmitAction } from '../actions/chatExecuteActions.js';
+import { IChatWidgetService } from '../chat.js';
+import { ChatInputPart } from '../chatInputPart.js';
+import { ChatDynamicVariableModel, SelectAndInsertFileAction } from './chatDynamicVariables.js';
+let SlashCommandCompletions = class SlashCommandCompletions extends Disposable {
+    constructor(languageFeaturesService, chatWidgetService, chatSlashCommandService) {
+        super();
+        this.languageFeaturesService = languageFeaturesService;
+        this.chatWidgetService = chatWidgetService;
+        this.chatSlashCommandService = chatSlashCommandService;
+        this._register(this.languageFeaturesService.completionProvider.register({ scheme: ChatInputPart.INPUT_SCHEME, hasAccessToAllModels: true }, {
+            _debugDisplayName: 'globalSlashCommands',
+            triggerCharacters: ['/'],
+            provideCompletionItems: async (model, position, _context, _token) => {
+                const widget = this.chatWidgetService.getWidgetByInputUri(model.uri);
+                if (!widget || !widget.viewModel) {
+                    return null;
+                }
+                const range = computeCompletionRanges(model, position, /\/\w*/g);
+                if (!range) {
+                    return null;
+                }
+                const parsedRequest = widget.parsedInput.parts;
+                const usedAgent = parsedRequest.find(p => p instanceof ChatRequestAgentPart);
+                if (usedAgent) {
+                    return;
+                }
+                const slashCommands = this.chatSlashCommandService.getCommands(widget.location);
+                if (!slashCommands) {
+                    return null;
+                }
+                return {
+                    suggestions: slashCommands.map((c, i) => {
+                        const withSlash = `/${c.command}`;
+                        return {
+                            label: withSlash,
+                            insertText: c.executeImmediately ? '' : `${withSlash} `,
+                            detail: c.detail,
+                            range: new Range(1, 1, 1, 1),
+                            sortText: c.sortText ?? 'a'.repeat(i + 1),
+                            kind: 18,
+                            command: c.executeImmediately ? { id: SubmitAction.ID, title: withSlash, arguments: [{ widget, inputValue: `${withSlash} ` }] } : undefined,
+                        };
+                    })
+                };
+            }
+        }));
+        this._register(this.languageFeaturesService.completionProvider.register({ scheme: ChatInputPart.INPUT_SCHEME, hasAccessToAllModels: true }, {
+            _debugDisplayName: 'globalSlashCommandsAt',
+            triggerCharacters: ['@'],
+            provideCompletionItems: async (model, position, _context, _token) => {
+                const widget = this.chatWidgetService.getWidgetByInputUri(model.uri);
+                if (!widget || !widget.viewModel) {
+                    return null;
+                }
+                const range = computeCompletionRanges(model, position, /@\w*/g);
+                if (!range) {
+                    return null;
+                }
+                const slashCommands = this.chatSlashCommandService.getCommands(widget.location);
+                if (!slashCommands) {
+                    return null;
+                }
+                return {
+                    suggestions: slashCommands.map((c, i) => {
+                        const withSlash = `${chatSubcommandLeader}${c.command}`;
+                        return {
+                            label: withSlash,
+                            insertText: c.executeImmediately ? '' : `${withSlash} `,
+                            detail: c.detail,
+                            range: new Range(1, 1, 1, 1),
+                            filterText: `${chatAgentLeader}${c.command}`,
+                            sortText: c.sortText ?? 'z'.repeat(i + 1),
+                            kind: 18,
+                            command: c.executeImmediately ? { id: SubmitAction.ID, title: withSlash, arguments: [{ widget, inputValue: `${withSlash} ` }] } : undefined,
+                        };
+                    })
+                };
+            }
+        }));
+    }
+};
+SlashCommandCompletions = __decorate([
+    __param(0, ILanguageFeaturesService),
+    __param(1, IChatWidgetService),
+    __param(2, IChatSlashCommandService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], SlashCommandCompletions);
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(SlashCommandCompletions, 4);
+let AgentCompletions = class AgentCompletions extends Disposable {
+    constructor(languageFeaturesService, chatWidgetService, chatAgentService, chatAgentNameService) {
+        super();
+        this.languageFeaturesService = languageFeaturesService;
+        this.chatWidgetService = chatWidgetService;
+        this.chatAgentService = chatAgentService;
+        this.chatAgentNameService = chatAgentNameService;
+        const subCommandProvider = {
+            _debugDisplayName: 'chatAgentSubcommand',
+            triggerCharacters: ['/'],
+            provideCompletionItems: async (model, position, _context, token) => {
+                const widget = this.chatWidgetService.getWidgetByInputUri(model.uri);
+                if (!widget || !widget.viewModel) {
+                    return;
+                }
+                const range = computeCompletionRanges(model, position, /\/\w*/g);
+                if (!range) {
+                    return null;
+                }
+                const parsedRequest = widget.parsedInput.parts;
+                const usedAgentIdx = parsedRequest.findIndex((p) => p instanceof ChatRequestAgentPart);
+                if (usedAgentIdx < 0) {
+                    return;
+                }
+                const usedSubcommand = parsedRequest.find(p => p instanceof ChatRequestAgentSubcommandPart);
+                if (usedSubcommand) {
+                    return;
+                }
+                for (const partAfterAgent of parsedRequest.slice(usedAgentIdx + 1)) {
+                    if (!(partAfterAgent instanceof ChatRequestTextPart) || !partAfterAgent.text.trim().match(/^(\/\w*)?$/)) {
+                        return;
+                    }
+                }
+                const usedAgent = parsedRequest[usedAgentIdx];
+                return {
+                    suggestions: usedAgent.agent.slashCommands.map((c, i) => {
+                        const withSlash = `/${c.name}`;
+                        return {
+                            label: withSlash,
+                            insertText: `${withSlash} `,
+                            detail: c.description,
+                            range,
+                            kind: 18,
+                        };
+                    })
+                };
+            }
+        };
+        this._register(this.languageFeaturesService.completionProvider.register({ scheme: ChatInputPart.INPUT_SCHEME, hasAccessToAllModels: true }, subCommandProvider));
+        this._register(this.languageFeaturesService.completionProvider.register({ scheme: ChatInputPart.INPUT_SCHEME, hasAccessToAllModels: true }, {
+            _debugDisplayName: 'chatAgentAndSubcommand',
+            triggerCharacters: ['@', '/'],
+            provideCompletionItems: async (model, position, _context, token) => {
+                const widget = this.chatWidgetService.getWidgetByInputUri(model.uri);
+                const viewModel = widget?.viewModel;
+                if (!widget || !viewModel) {
+                    return;
+                }
+                const range = computeCompletionRanges(model, position, /(@|\/)\w*/g);
+                if (!range) {
+                    return null;
+                }
+                const preceedingChar = position.column > 1 ?
+                    model.getValueInRange(new Range(position.lineNumber, position.column - 1, position.lineNumber, position.column)) :
+                    '@';
+                const agents = this.chatAgentService.getAgents()
+                    .filter(a => a.locations.includes(widget.location));
+                const getFilterText = (agent, command) => {
+                    const dummyPrefix = agent.id === 'github.copilot.terminalPanel' ? `0000` : ``;
+                    return `${preceedingChar}${dummyPrefix}${agent.name}.${command}`;
+                };
+                const justAgents = agents
+                    .filter(a => !a.isDefault)
+                    .map(agent => {
+                    const { label: agentLabel, isDupe } = this.getAgentCompletionDetails(agent);
+                    const detail = agent.description;
+                    return {
+                        label: isDupe ?
+                            { label: agentLabel, description: agent.description, detail: ` (${agent.publisherDisplayName})` } :
+                            agentLabel,
+                        detail,
+                        filterText: `${preceedingChar}${agent.name}`,
+                        insertText: `${agentLabel} `,
+                        range: new Range(1, 1, 1, 1),
+                        kind: 18,
+                        sortText: `${chatAgentLeader}${agent.name}`,
+                        command: { id: AssignSelectedAgentAction.ID, title: AssignSelectedAgentAction.ID, arguments: [{ agent, widget }] },
+                    };
+                });
+                return {
+                    suggestions: justAgents.concat(agents.flatMap(agent => agent.slashCommands.map((c, i) => {
+                        const { label: agentLabel, isDupe } = this.getAgentCompletionDetails(agent);
+                        const label = `${agentLabel} ${chatSubcommandLeader}${c.name}`;
+                        const item = {
+                            label: isDupe ?
+                                { label, description: c.description, detail: isDupe ? ` (${agent.publisherDisplayName})` : undefined } :
+                                label,
+                            detail: c.description,
+                            filterText: getFilterText(agent, c.name),
+                            commitCharacters: [' '],
+                            insertText: label + ' ',
+                            range: new Range(1, 1, 1, 1),
+                            kind: 18,
+                            sortText: `x${chatAgentLeader}${agent.name}${c.name}`,
+                            command: { id: AssignSelectedAgentAction.ID, title: AssignSelectedAgentAction.ID, arguments: [{ agent, widget }] },
+                        };
+                        if (agent.isDefault) {
+                            const label = `${chatSubcommandLeader}${c.name}`;
+                            item.label = label;
+                            item.insertText = `${label} `;
+                            item.detail = c.description;
+                        }
+                        return item;
+                    })))
+                };
+            }
+        }));
+    }
+    getAgentCompletionDetails(agent) {
+        const isAllowed = this.chatAgentNameService.getAgentNameRestriction(agent);
+        const agentLabel = `${chatAgentLeader}${isAllowed ? agent.name : getFullyQualifiedId(agent)}`;
+        const isDupe = isAllowed && this.chatAgentService.agentHasDupeName(agent.id);
+        return { label: agentLabel, isDupe };
+    }
+};
+AgentCompletions = __decorate([
+    __param(0, ILanguageFeaturesService),
+    __param(1, IChatWidgetService),
+    __param(2, IChatAgentService),
+    __param(3, IChatAgentNameService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], AgentCompletions);
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(AgentCompletions, 4);
+class AssignSelectedAgentAction extends Action2 {
+    static { this.ID = 'workbench.action.chat.assignSelectedAgent'; }
+    constructor() {
+        super({
+            id: AssignSelectedAgentAction.ID,
+            title: ''
+        });
+    }
+    async run(accessor, ...args) {
+        const arg = args[0];
+        if (!arg || !arg.widget || !arg.agent) {
+            return;
+        }
+        arg.widget.lastSelectedAgent = arg.agent;
+    }
+}
+registerAction2(AssignSelectedAgentAction);
+class ReferenceArgument {
+    constructor(widget, variable) {
+        this.widget = widget;
+        this.variable = variable;
+    }
+}
+let BuiltinDynamicCompletions = class BuiltinDynamicCompletions extends Disposable {
+    static { BuiltinDynamicCompletions_1 = this; }
+    static { this.addReferenceCommand = '_addReferenceCmd'; }
+    static { this.VariableNameDef = new RegExp(`${chatVariableLeader}\\w*`, 'g'); }
+    constructor(historyService, workspaceContextService, searchService, labelService, languageFeaturesService, chatWidgetService, instantiationService) {
+        super();
+        this.historyService = historyService;
+        this.workspaceContextService = workspaceContextService;
+        this.searchService = searchService;
+        this.labelService = labelService;
+        this.languageFeaturesService = languageFeaturesService;
+        this.chatWidgetService = chatWidgetService;
+        this.instantiationService = instantiationService;
+        this._register(this.languageFeaturesService.completionProvider.register({ scheme: ChatInputPart.INPUT_SCHEME, hasAccessToAllModels: true }, {
+            _debugDisplayName: 'chatDynamicCompletions',
+            triggerCharacters: [chatVariableLeader],
+            provideCompletionItems: async (model, position, _context, token) => {
+                const widget = this.chatWidgetService.getWidgetByInputUri(model.uri);
+                if (!widget || !widget.supportsFileReferences) {
+                    return null;
+                }
+                const result = { suggestions: [] };
+                const range = computeCompletionRanges(model, position, BuiltinDynamicCompletions_1.VariableNameDef, true);
+                if (range) {
+                    const afterRange = new Range(position.lineNumber, range.replace.startColumn, position.lineNumber, range.replace.startColumn + '#file:'.length);
+                    result.suggestions.push({
+                        label: `${chatVariableLeader}file`,
+                        insertText: `${chatVariableLeader}file:`,
+                        detail: localize('pickFileLabel', "Pick a file"),
+                        range,
+                        kind: 18,
+                        command: { id: SelectAndInsertFileAction.ID, title: SelectAndInsertFileAction.ID, arguments: [{ widget, range: afterRange }] },
+                        sortText: 'z'
+                    });
+                }
+                const range2 = computeCompletionRanges(model, position, new RegExp(`${chatVariableLeader}[^\\s]*`, 'g'), true);
+                if (range2) {
+                    await this.addFileEntries(widget, result, range2, token);
+                }
+                return result;
+            }
+        }));
+        this._register(CommandsRegistry.registerCommand(BuiltinDynamicCompletions_1.addReferenceCommand, (_services, arg) => this.cmdAddReference(arg)));
+        this.queryBuilder = this.instantiationService.createInstance(QueryBuilder);
+    }
+    async addFileEntries(widget, result, info, token) {
+        const makeFileCompletionItem = (resource) => {
+            const basename = this.labelService.getUriBasenameLabel(resource);
+            const text = `${chatVariableLeader}file:${basename}`;
+            return {
+                label: { label: basename, description: this.labelService.getUriLabel(resource, { relative: true }) },
+                filterText: `${chatVariableLeader}${basename}`,
+                insertText: info.varWord?.endColumn === info.replace.endColumn ? `${text} ` : text,
+                range: info,
+                kind: 20,
+                sortText: '{',
+                command: {
+                    id: BuiltinDynamicCompletions_1.addReferenceCommand, title: '', arguments: [new ReferenceArgument(widget, {
+                            id: 'vscode.file',
+                            range: { startLineNumber: info.replace.startLineNumber, startColumn: info.replace.startColumn, endLineNumber: info.replace.endLineNumber, endColumn: info.replace.startColumn + text.length },
+                            data: resource
+                        })]
+                }
+            };
+        };
+        let pattern;
+        if (info.varWord?.word && info.varWord.word.startsWith(chatVariableLeader)) {
+            pattern = info.varWord.word.toLowerCase().slice(1);
+        }
+        const seen = new ResourceSet();
+        const len = result.suggestions.length;
+        for (const item of this.historyService.getHistory()) {
+            if (!item.resource || !this.workspaceContextService.getWorkspaceFolder(item.resource)) {
+                continue;
+            }
+            if (pattern) {
+                const basename = this.labelService.getUriBasenameLabel(item.resource).toLowerCase();
+                if (!isPatternInWord(pattern, 0, pattern.length, basename, 0, basename.length)) {
+                    continue;
+                }
+            }
+            seen.add(item.resource);
+            const newLen = result.suggestions.push(makeFileCompletionItem(item.resource));
+            if (newLen - len >= 5) {
+                break;
+            }
+        }
+        if (pattern) {
+            if (this.cacheKey && Date.now() - this.cacheKey.time > 60000) {
+                this.searchService.clearCache(this.cacheKey.key);
+                this.cacheKey = undefined;
+            }
+            if (!this.cacheKey) {
+                this.cacheKey = {
+                    key: generateUuid(),
+                    time: Date.now()
+                };
+            }
+            this.cacheKey.time = Date.now();
+            const query = this.queryBuilder.file(this.workspaceContextService.getWorkspace().folders, {
+                filePattern: pattern,
+                sortByScore: true,
+                maxResults: 250,
+                cacheKey: this.cacheKey.key
+            });
+            const data = await this.searchService.fileSearch(query, token);
+            for (const match of data.results) {
+                if (seen.has(match.resource)) {
+                    continue;
+                }
+                result.suggestions.push(makeFileCompletionItem(match.resource));
+            }
+        }
+        result.incomplete = true;
+    }
+    cmdAddReference(arg) {
+        arg.widget.getContrib(ChatDynamicVariableModel.ID)?.addReference(arg.variable);
+    }
+};
+BuiltinDynamicCompletions = BuiltinDynamicCompletions_1 = __decorate([
+    __param(0, IHistoryService),
+    __param(1, IWorkspaceContextService),
+    __param(2, ISearchService),
+    __param(3, ILabelService),
+    __param(4, ILanguageFeaturesService),
+    __param(5, IChatWidgetService),
+    __param(6, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], BuiltinDynamicCompletions);
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(BuiltinDynamicCompletions, 4);
+export function computeCompletionRanges(model, position, reg, onlyOnWordStart = false) {
+    const varWord = getWordAtText(position.column, reg, model.getLineContent(position.lineNumber), 0);
+    if (!varWord && model.getWordUntilPosition(position).word) {
+        return;
+    }
+    if (!varWord && position.column > 1) {
+        const textBefore = model.getValueInRange(new Range(position.lineNumber, position.column - 1, position.lineNumber, position.column));
+        if (textBefore !== ' ') {
+            return;
+        }
+    }
+    if (varWord && onlyOnWordStart) {
+        const wordBefore = model.getWordUntilPosition({ lineNumber: position.lineNumber, column: varWord.startColumn });
+        if (wordBefore.word) {
+            return;
+        }
+    }
+    let insert;
+    let replace;
+    if (!varWord) {
+        insert = replace = Range.fromPositions(position);
+    }
+    else {
+        insert = new Range(position.lineNumber, varWord.startColumn, position.lineNumber, position.column);
+        replace = new Range(position.lineNumber, varWord.startColumn, position.lineNumber, varWord.endColumn);
+    }
+    return { insert, replace, varWord };
+}
+let VariableCompletions = class VariableCompletions extends Disposable {
+    static { VariableCompletions_1 = this; }
+    static { this.VariableNameDef = new RegExp(`(?<=^|\\s)${chatVariableLeader}\\w*`, 'g'); }
+    constructor(languageFeaturesService, chatWidgetService, chatVariablesService, configService, toolsService) {
+        super();
+        this.languageFeaturesService = languageFeaturesService;
+        this.chatWidgetService = chatWidgetService;
+        this.chatVariablesService = chatVariablesService;
+        this._register(this.languageFeaturesService.completionProvider.register({ scheme: ChatInputPart.INPUT_SCHEME, hasAccessToAllModels: true }, {
+            _debugDisplayName: 'chatVariables',
+            triggerCharacters: [chatVariableLeader],
+            provideCompletionItems: async (model, position, _context, _token) => {
+                const locations = new Set();
+                locations.add(ChatAgentLocation.Panel);
+                for (const value of Object.values(ChatAgentLocation)) {
+                    if (typeof value === 'string' && configService.getValue(`chat.experimental.variables.${value}`)) {
+                        locations.add(value);
+                    }
+                }
+                const widget = this.chatWidgetService.getWidgetByInputUri(model.uri);
+                if (!widget || !locations.has(widget.location)) {
+                    return null;
+                }
+                const range = computeCompletionRanges(model, position, VariableCompletions_1.VariableNameDef, true);
+                if (!range) {
+                    return null;
+                }
+                const usedAgent = widget.parsedInput.parts.find(p => p instanceof ChatRequestAgentPart);
+                const slowSupported = usedAgent ? usedAgent.agent.metadata.supportsSlowVariables : true;
+                const usedVariables = widget.parsedInput.parts.filter((p) => p instanceof ChatRequestVariablePart);
+                const usedVariableNames = new Set(usedVariables.map(v => v.variableName));
+                const variableItems = Array.from(this.chatVariablesService.getVariables(widget.location))
+                    .filter(v => !usedVariableNames.has(v.name))
+                    .filter(v => !v.isSlow || slowSupported)
+                    .map((v) => {
+                    const withLeader = `${chatVariableLeader}${v.name}`;
+                    return {
+                        label: withLeader,
+                        range,
+                        insertText: withLeader + ' ',
+                        detail: v.description,
+                        kind: 18,
+                        sortText: 'z'
+                    };
+                });
+                const usedTools = widget.parsedInput.parts.filter((p) => p instanceof ChatRequestToolPart);
+                const usedToolNames = new Set(usedTools.map(v => v.toolName));
+                const toolItems = [];
+                if (!usedAgent || usedAgent.agent.supportsToolReferences) {
+                    toolItems.push(...Array.from(toolsService.getTools())
+                        .filter(t => t.canBeInvokedManually)
+                        .filter(t => !usedToolNames.has(t.name ?? ''))
+                        .map((t) => {
+                        const withLeader = `${chatVariableLeader}${t.name}`;
+                        return {
+                            label: withLeader,
+                            range,
+                            insertText: withLeader + ' ',
+                            detail: t.userDescription,
+                            kind: 18,
+                            sortText: 'z'
+                        };
+                    }));
+                }
+                return {
+                    suggestions: [...variableItems, ...toolItems]
+                };
+            }
+        }));
+    }
+};
+VariableCompletions = VariableCompletions_1 = __decorate([
+    __param(0, ILanguageFeaturesService),
+    __param(1, IChatWidgetService),
+    __param(2, IChatVariablesService),
+    __param(3, IConfigurationService),
+    __param(4, ILanguageModelToolsService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], VariableCompletions);
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(VariableCompletions, 4);

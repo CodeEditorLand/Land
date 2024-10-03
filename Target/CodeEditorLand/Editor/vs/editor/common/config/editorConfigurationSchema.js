@@ -1,1 +1,303 @@
-import{diffEditorDefaultOptions as i}from"./diffEditor.js";import{editorOptionsRegistry as l}from"./editorOptions.js";import{EDITOR_MODEL_DEFAULTS as o}from"../core/textModelDefaults.js";import*as e from"../../../nls.js";import{ConfigurationScope as c,Extensions as f}from"../../../platform/configuration/common/configurationRegistry.js";import{Registry as h}from"../../../platform/registry/common/platform.js";const g=Object.freeze({id:"editor",order:5,type:"object",title:e.localize("editorConfigurationTitle","Editor"),scope:c.LANGUAGE_OVERRIDABLE}),r={...g,properties:{"editor.tabSize":{type:"number",default:o.tabSize,minimum:1,markdownDescription:e.localize("tabSize","The number of spaces a tab is equal to. This setting is overridden based on the file contents when {0} is on.","`#editor.detectIndentation#`")},"editor.indentSize":{anyOf:[{type:"string",enum:["tabSize"]},{type:"number",minimum:1}],default:"tabSize",markdownDescription:e.localize("indentSize",'The number of spaces used for indentation or `"tabSize"` to use the value from `#editor.tabSize#`. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on.')},"editor.insertSpaces":{type:"boolean",default:o.insertSpaces,markdownDescription:e.localize("insertSpaces","Insert spaces when pressing `Tab`. This setting is overridden based on the file contents when {0} is on.","`#editor.detectIndentation#`")},"editor.detectIndentation":{type:"boolean",default:o.detectIndentation,markdownDescription:e.localize("detectIndentation","Controls whether {0} and {1} will be automatically detected when a file is opened based on the file contents.","`#editor.tabSize#`","`#editor.insertSpaces#`")},"editor.trimAutoWhitespace":{type:"boolean",default:o.trimAutoWhitespace,description:e.localize("trimAutoWhitespace","Remove trailing auto inserted whitespace.")},"editor.largeFileOptimizations":{type:"boolean",default:o.largeFileOptimizations,description:e.localize("largeFileOptimizations","Special handling for large files to disable certain memory intensive features.")},"editor.wordBasedSuggestions":{enum:["off","currentDocument","matchingDocuments","allDocuments"],default:"matchingDocuments",enumDescriptions:[e.localize("wordBasedSuggestions.off","Turn off Word Based Suggestions."),e.localize("wordBasedSuggestions.currentDocument","Only suggest words from the active document."),e.localize("wordBasedSuggestions.matchingDocuments","Suggest words from all open documents of the same language."),e.localize("wordBasedSuggestions.allDocuments","Suggest words from all open documents.")],description:e.localize("wordBasedSuggestions","Controls whether completions should be computed based on words in the document and from which documents they are computed.")},"editor.semanticHighlighting.enabled":{enum:[!0,!1,"configuredByTheme"],enumDescriptions:[e.localize("semanticHighlighting.true","Semantic highlighting enabled for all color themes."),e.localize("semanticHighlighting.false","Semantic highlighting disabled for all color themes."),e.localize("semanticHighlighting.configuredByTheme","Semantic highlighting is configured by the current color theme's `semanticHighlighting` setting.")],default:"configuredByTheme",description:e.localize("semanticHighlighting.enabled","Controls whether the semanticHighlighting is shown for the languages that support it.")},"editor.stablePeek":{type:"boolean",default:!1,markdownDescription:e.localize("stablePeek","Keep peek editors open even when double-clicking their content or when hitting `Escape`.")},"editor.maxTokenizationLineLength":{type:"integer",default:2e4,description:e.localize("maxTokenizationLineLength","Lines above this length will not be tokenized for performance reasons")},"editor.experimental.asyncTokenization":{type:"boolean",default:!0,description:e.localize("editor.experimental.asyncTokenization","Controls whether the tokenization should happen asynchronously on a web worker."),tags:["experimental"]},"editor.experimental.asyncTokenizationLogging":{type:"boolean",default:!1,description:e.localize("editor.experimental.asyncTokenizationLogging","Controls whether async tokenization should be logged. For debugging only.")},"editor.experimental.asyncTokenizationVerification":{type:"boolean",default:!1,description:e.localize("editor.experimental.asyncTokenizationVerification","Controls whether async tokenization should be verified against legacy background tokenization. Might slow down tokenization. For debugging only."),tags:["experimental"]},"editor.experimental.treeSitterTelemetry":{type:"boolean",default:!1,markdownDescription:e.localize("editor.experimental.treeSitterTelemetry","Controls whether tree sitter parsing should be turned on and telemetry collected. Setting `editor.experimental.preferTreeSitter` for specific languages will take precedence."),tags:["experimental"]},"editor.experimental.preferTreeSitter":{type:"array",items:{type:"string",enum:["typescript"]},default:[],markdownDescription:e.localize("editor.experimental.preferTreeSitter","Controls whether tree sitter parsing should be turned on for specific languages. This will take precedence over `editor.experimental.treeSitterTelemetry` for the specified languages.")},"editor.language.brackets":{type:["array","null"],default:null,description:e.localize("schema.brackets","Defines the bracket symbols that increase or decrease the indentation."),items:{type:"array",items:[{type:"string",description:e.localize("schema.openBracket","The opening bracket character or string sequence.")},{type:"string",description:e.localize("schema.closeBracket","The closing bracket character or string sequence.")}]}},"editor.language.colorizedBracketPairs":{type:["array","null"],default:null,description:e.localize("schema.colorizedBracketPairs","Defines the bracket pairs that are colorized by their nesting level if bracket pair colorization is enabled."),items:{type:"array",items:[{type:"string",description:e.localize("schema.openBracket","The opening bracket character or string sequence.")},{type:"string",description:e.localize("schema.closeBracket","The closing bracket character or string sequence.")}]}},"diffEditor.maxComputationTime":{type:"number",default:i.maxComputationTime,description:e.localize("maxComputationTime","Timeout in milliseconds after which diff computation is cancelled. Use 0 for no timeout.")},"diffEditor.maxFileSize":{type:"number",default:i.maxFileSize,description:e.localize("maxFileSize","Maximum file size in MB for which to compute diffs. Use 0 for no limit.")},"diffEditor.renderSideBySide":{type:"boolean",default:i.renderSideBySide,description:e.localize("sideBySide","Controls whether the diff editor shows the diff side by side or inline.")},"diffEditor.renderSideBySideInlineBreakpoint":{type:"number",default:i.renderSideBySideInlineBreakpoint,description:e.localize("renderSideBySideInlineBreakpoint","If the diff editor width is smaller than this value, the inline view is used.")},"diffEditor.useInlineViewWhenSpaceIsLimited":{type:"boolean",default:i.useInlineViewWhenSpaceIsLimited,description:e.localize("useInlineViewWhenSpaceIsLimited","If enabled and the editor width is too small, the inline view is used.")},"diffEditor.renderMarginRevertIcon":{type:"boolean",default:i.renderMarginRevertIcon,description:e.localize("renderMarginRevertIcon","When enabled, the diff editor shows arrows in its glyph margin to revert changes.")},"diffEditor.renderGutterMenu":{type:"boolean",default:i.renderGutterMenu,description:e.localize("renderGutterMenu","When enabled, the diff editor shows a special gutter for revert and stage actions.")},"diffEditor.ignoreTrimWhitespace":{type:"boolean",default:i.ignoreTrimWhitespace,description:e.localize("ignoreTrimWhitespace","When enabled, the diff editor ignores changes in leading or trailing whitespace.")},"diffEditor.renderIndicators":{type:"boolean",default:i.renderIndicators,description:e.localize("renderIndicators","Controls whether the diff editor shows +/- indicators for added/removed changes.")},"diffEditor.codeLens":{type:"boolean",default:i.diffCodeLens,description:e.localize("codeLens","Controls whether the editor shows CodeLens.")},"diffEditor.wordWrap":{type:"string",enum:["off","on","inherit"],default:i.diffWordWrap,markdownEnumDescriptions:[e.localize("wordWrap.off","Lines will never wrap."),e.localize("wordWrap.on","Lines will wrap at the viewport width."),e.localize("wordWrap.inherit","Lines will wrap according to the {0} setting.","`#editor.wordWrap#`")]},"diffEditor.diffAlgorithm":{type:"string",enum:["legacy","advanced"],default:i.diffAlgorithm,markdownEnumDescriptions:[e.localize("diffAlgorithm.legacy","Uses the legacy diffing algorithm."),e.localize("diffAlgorithm.advanced","Uses the advanced diffing algorithm.")],tags:["experimental"]},"diffEditor.hideUnchangedRegions.enabled":{type:"boolean",default:i.hideUnchangedRegions.enabled,markdownDescription:e.localize("hideUnchangedRegions.enabled","Controls whether the diff editor shows unchanged regions.")},"diffEditor.hideUnchangedRegions.revealLineCount":{type:"integer",default:i.hideUnchangedRegions.revealLineCount,markdownDescription:e.localize("hideUnchangedRegions.revealLineCount","Controls how many lines are used for unchanged regions."),minimum:1},"diffEditor.hideUnchangedRegions.minimumLineCount":{type:"integer",default:i.hideUnchangedRegions.minimumLineCount,markdownDescription:e.localize("hideUnchangedRegions.minimumLineCount","Controls how many lines are used as a minimum for unchanged regions."),minimum:1},"diffEditor.hideUnchangedRegions.contextLineCount":{type:"integer",default:i.hideUnchangedRegions.contextLineCount,markdownDescription:e.localize("hideUnchangedRegions.contextLineCount","Controls how many lines are used as context when comparing unchanged regions."),minimum:1},"diffEditor.experimental.showMoves":{type:"boolean",default:i.experimental.showMoves,markdownDescription:e.localize("showMoves","Controls whether the diff editor should show detected code moves.")},"diffEditor.experimental.showEmptyDecorations":{type:"boolean",default:i.experimental.showEmptyDecorations,description:e.localize("showEmptyDecorations","Controls whether the diff editor shows empty decorations to see where characters got inserted or deleted.")},"diffEditor.experimental.useTrueInlineView":{type:"boolean",default:i.experimental.useTrueInlineView,description:e.localize("useTrueInlineView","If enabled and the editor uses the inline view, word changes are rendered inline.")}}};function u(t){return typeof t.type<"u"||typeof t.anyOf<"u"}for(const t of l){const n=t.schema;if(typeof n<"u")if(u(n))r.properties[`editor.${t.name}`]=n;else for(const s in n)Object.hasOwnProperty.call(n,s)&&(r.properties[s]=n[s])}let a=null;function d(){return a===null&&(a=Object.create(null),Object.keys(r.properties).forEach(t=>{a[t]=!0})),a}function T(t){return d()[`editor.${t}`]||!1}function E(t){return d()[`diffEditor.${t}`]||!1}const p=h.as(f.Configuration);p.registerConfiguration(r);export{g as editorConfigurationBaseNode,E as isDiffEditorConfigurationKey,T as isEditorConfigurationKey};
+import { diffEditorDefaultOptions } from './diffEditor.js';
+import { editorOptionsRegistry } from './editorOptions.js';
+import { EDITOR_MODEL_DEFAULTS } from '../core/textModelDefaults.js';
+import * as nls from '../../../nls.js';
+import { Extensions } from '../../../platform/configuration/common/configurationRegistry.js';
+import { Registry } from '../../../platform/registry/common/platform.js';
+export const editorConfigurationBaseNode = Object.freeze({
+    id: 'editor',
+    order: 5,
+    type: 'object',
+    title: nls.localize('editorConfigurationTitle', "Editor"),
+    scope: 5,
+});
+const editorConfiguration = {
+    ...editorConfigurationBaseNode,
+    properties: {
+        'editor.tabSize': {
+            type: 'number',
+            default: EDITOR_MODEL_DEFAULTS.tabSize,
+            minimum: 1,
+            markdownDescription: nls.localize('tabSize', "The number of spaces a tab is equal to. This setting is overridden based on the file contents when {0} is on.", '`#editor.detectIndentation#`')
+        },
+        'editor.indentSize': {
+            'anyOf': [
+                {
+                    type: 'string',
+                    enum: ['tabSize']
+                },
+                {
+                    type: 'number',
+                    minimum: 1
+                }
+            ],
+            default: 'tabSize',
+            markdownDescription: nls.localize('indentSize', "The number of spaces used for indentation or `\"tabSize\"` to use the value from `#editor.tabSize#`. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on.")
+        },
+        'editor.insertSpaces': {
+            type: 'boolean',
+            default: EDITOR_MODEL_DEFAULTS.insertSpaces,
+            markdownDescription: nls.localize('insertSpaces', "Insert spaces when pressing `Tab`. This setting is overridden based on the file contents when {0} is on.", '`#editor.detectIndentation#`')
+        },
+        'editor.detectIndentation': {
+            type: 'boolean',
+            default: EDITOR_MODEL_DEFAULTS.detectIndentation,
+            markdownDescription: nls.localize('detectIndentation', "Controls whether {0} and {1} will be automatically detected when a file is opened based on the file contents.", '`#editor.tabSize#`', '`#editor.insertSpaces#`')
+        },
+        'editor.trimAutoWhitespace': {
+            type: 'boolean',
+            default: EDITOR_MODEL_DEFAULTS.trimAutoWhitespace,
+            description: nls.localize('trimAutoWhitespace', "Remove trailing auto inserted whitespace.")
+        },
+        'editor.largeFileOptimizations': {
+            type: 'boolean',
+            default: EDITOR_MODEL_DEFAULTS.largeFileOptimizations,
+            description: nls.localize('largeFileOptimizations', "Special handling for large files to disable certain memory intensive features.")
+        },
+        'editor.wordBasedSuggestions': {
+            enum: ['off', 'currentDocument', 'matchingDocuments', 'allDocuments'],
+            default: 'matchingDocuments',
+            enumDescriptions: [
+                nls.localize('wordBasedSuggestions.off', 'Turn off Word Based Suggestions.'),
+                nls.localize('wordBasedSuggestions.currentDocument', 'Only suggest words from the active document.'),
+                nls.localize('wordBasedSuggestions.matchingDocuments', 'Suggest words from all open documents of the same language.'),
+                nls.localize('wordBasedSuggestions.allDocuments', 'Suggest words from all open documents.')
+            ],
+            description: nls.localize('wordBasedSuggestions', "Controls whether completions should be computed based on words in the document and from which documents they are computed.")
+        },
+        'editor.semanticHighlighting.enabled': {
+            enum: [true, false, 'configuredByTheme'],
+            enumDescriptions: [
+                nls.localize('semanticHighlighting.true', 'Semantic highlighting enabled for all color themes.'),
+                nls.localize('semanticHighlighting.false', 'Semantic highlighting disabled for all color themes.'),
+                nls.localize('semanticHighlighting.configuredByTheme', 'Semantic highlighting is configured by the current color theme\'s `semanticHighlighting` setting.')
+            ],
+            default: 'configuredByTheme',
+            description: nls.localize('semanticHighlighting.enabled', "Controls whether the semanticHighlighting is shown for the languages that support it.")
+        },
+        'editor.stablePeek': {
+            type: 'boolean',
+            default: false,
+            markdownDescription: nls.localize('stablePeek', "Keep peek editors open even when double-clicking their content or when hitting `Escape`.")
+        },
+        'editor.maxTokenizationLineLength': {
+            type: 'integer',
+            default: 20_000,
+            description: nls.localize('maxTokenizationLineLength', "Lines above this length will not be tokenized for performance reasons")
+        },
+        'editor.experimental.asyncTokenization': {
+            type: 'boolean',
+            default: true,
+            description: nls.localize('editor.experimental.asyncTokenization', "Controls whether the tokenization should happen asynchronously on a web worker."),
+            tags: ['experimental'],
+        },
+        'editor.experimental.asyncTokenizationLogging': {
+            type: 'boolean',
+            default: false,
+            description: nls.localize('editor.experimental.asyncTokenizationLogging', "Controls whether async tokenization should be logged. For debugging only."),
+        },
+        'editor.experimental.asyncTokenizationVerification': {
+            type: 'boolean',
+            default: false,
+            description: nls.localize('editor.experimental.asyncTokenizationVerification', "Controls whether async tokenization should be verified against legacy background tokenization. Might slow down tokenization. For debugging only."),
+            tags: ['experimental'],
+        },
+        'editor.experimental.treeSitterTelemetry': {
+            type: 'boolean',
+            default: false,
+            markdownDescription: nls.localize('editor.experimental.treeSitterTelemetry', "Controls whether tree sitter parsing should be turned on and telemetry collected. Setting `editor.experimental.preferTreeSitter` for specific languages will take precedence."),
+            tags: ['experimental']
+        },
+        'editor.experimental.preferTreeSitter': {
+            type: 'array',
+            items: {
+                type: 'string',
+                enum: ['typescript']
+            },
+            default: [],
+            markdownDescription: nls.localize('editor.experimental.preferTreeSitter', "Controls whether tree sitter parsing should be turned on for specific languages. This will take precedence over `editor.experimental.treeSitterTelemetry` for the specified languages."),
+        },
+        'editor.language.brackets': {
+            type: ['array', 'null'],
+            default: null,
+            description: nls.localize('schema.brackets', 'Defines the bracket symbols that increase or decrease the indentation.'),
+            items: {
+                type: 'array',
+                items: [
+                    {
+                        type: 'string',
+                        description: nls.localize('schema.openBracket', 'The opening bracket character or string sequence.')
+                    },
+                    {
+                        type: 'string',
+                        description: nls.localize('schema.closeBracket', 'The closing bracket character or string sequence.')
+                    }
+                ]
+            }
+        },
+        'editor.language.colorizedBracketPairs': {
+            type: ['array', 'null'],
+            default: null,
+            description: nls.localize('schema.colorizedBracketPairs', 'Defines the bracket pairs that are colorized by their nesting level if bracket pair colorization is enabled.'),
+            items: {
+                type: 'array',
+                items: [
+                    {
+                        type: 'string',
+                        description: nls.localize('schema.openBracket', 'The opening bracket character or string sequence.')
+                    },
+                    {
+                        type: 'string',
+                        description: nls.localize('schema.closeBracket', 'The closing bracket character or string sequence.')
+                    }
+                ]
+            }
+        },
+        'diffEditor.maxComputationTime': {
+            type: 'number',
+            default: diffEditorDefaultOptions.maxComputationTime,
+            description: nls.localize('maxComputationTime', "Timeout in milliseconds after which diff computation is cancelled. Use 0 for no timeout.")
+        },
+        'diffEditor.maxFileSize': {
+            type: 'number',
+            default: diffEditorDefaultOptions.maxFileSize,
+            description: nls.localize('maxFileSize', "Maximum file size in MB for which to compute diffs. Use 0 for no limit.")
+        },
+        'diffEditor.renderSideBySide': {
+            type: 'boolean',
+            default: diffEditorDefaultOptions.renderSideBySide,
+            description: nls.localize('sideBySide', "Controls whether the diff editor shows the diff side by side or inline.")
+        },
+        'diffEditor.renderSideBySideInlineBreakpoint': {
+            type: 'number',
+            default: diffEditorDefaultOptions.renderSideBySideInlineBreakpoint,
+            description: nls.localize('renderSideBySideInlineBreakpoint', "If the diff editor width is smaller than this value, the inline view is used.")
+        },
+        'diffEditor.useInlineViewWhenSpaceIsLimited': {
+            type: 'boolean',
+            default: diffEditorDefaultOptions.useInlineViewWhenSpaceIsLimited,
+            description: nls.localize('useInlineViewWhenSpaceIsLimited', "If enabled and the editor width is too small, the inline view is used.")
+        },
+        'diffEditor.renderMarginRevertIcon': {
+            type: 'boolean',
+            default: diffEditorDefaultOptions.renderMarginRevertIcon,
+            description: nls.localize('renderMarginRevertIcon', "When enabled, the diff editor shows arrows in its glyph margin to revert changes.")
+        },
+        'diffEditor.renderGutterMenu': {
+            type: 'boolean',
+            default: diffEditorDefaultOptions.renderGutterMenu,
+            description: nls.localize('renderGutterMenu', "When enabled, the diff editor shows a special gutter for revert and stage actions.")
+        },
+        'diffEditor.ignoreTrimWhitespace': {
+            type: 'boolean',
+            default: diffEditorDefaultOptions.ignoreTrimWhitespace,
+            description: nls.localize('ignoreTrimWhitespace', "When enabled, the diff editor ignores changes in leading or trailing whitespace.")
+        },
+        'diffEditor.renderIndicators': {
+            type: 'boolean',
+            default: diffEditorDefaultOptions.renderIndicators,
+            description: nls.localize('renderIndicators', "Controls whether the diff editor shows +/- indicators for added/removed changes.")
+        },
+        'diffEditor.codeLens': {
+            type: 'boolean',
+            default: diffEditorDefaultOptions.diffCodeLens,
+            description: nls.localize('codeLens', "Controls whether the editor shows CodeLens.")
+        },
+        'diffEditor.wordWrap': {
+            type: 'string',
+            enum: ['off', 'on', 'inherit'],
+            default: diffEditorDefaultOptions.diffWordWrap,
+            markdownEnumDescriptions: [
+                nls.localize('wordWrap.off', "Lines will never wrap."),
+                nls.localize('wordWrap.on', "Lines will wrap at the viewport width."),
+                nls.localize('wordWrap.inherit', "Lines will wrap according to the {0} setting.", '`#editor.wordWrap#`'),
+            ]
+        },
+        'diffEditor.diffAlgorithm': {
+            type: 'string',
+            enum: ['legacy', 'advanced'],
+            default: diffEditorDefaultOptions.diffAlgorithm,
+            markdownEnumDescriptions: [
+                nls.localize('diffAlgorithm.legacy', "Uses the legacy diffing algorithm."),
+                nls.localize('diffAlgorithm.advanced', "Uses the advanced diffing algorithm."),
+            ],
+            tags: ['experimental'],
+        },
+        'diffEditor.hideUnchangedRegions.enabled': {
+            type: 'boolean',
+            default: diffEditorDefaultOptions.hideUnchangedRegions.enabled,
+            markdownDescription: nls.localize('hideUnchangedRegions.enabled', "Controls whether the diff editor shows unchanged regions."),
+        },
+        'diffEditor.hideUnchangedRegions.revealLineCount': {
+            type: 'integer',
+            default: diffEditorDefaultOptions.hideUnchangedRegions.revealLineCount,
+            markdownDescription: nls.localize('hideUnchangedRegions.revealLineCount', "Controls how many lines are used for unchanged regions."),
+            minimum: 1,
+        },
+        'diffEditor.hideUnchangedRegions.minimumLineCount': {
+            type: 'integer',
+            default: diffEditorDefaultOptions.hideUnchangedRegions.minimumLineCount,
+            markdownDescription: nls.localize('hideUnchangedRegions.minimumLineCount', "Controls how many lines are used as a minimum for unchanged regions."),
+            minimum: 1,
+        },
+        'diffEditor.hideUnchangedRegions.contextLineCount': {
+            type: 'integer',
+            default: diffEditorDefaultOptions.hideUnchangedRegions.contextLineCount,
+            markdownDescription: nls.localize('hideUnchangedRegions.contextLineCount', "Controls how many lines are used as context when comparing unchanged regions."),
+            minimum: 1,
+        },
+        'diffEditor.experimental.showMoves': {
+            type: 'boolean',
+            default: diffEditorDefaultOptions.experimental.showMoves,
+            markdownDescription: nls.localize('showMoves', "Controls whether the diff editor should show detected code moves.")
+        },
+        'diffEditor.experimental.showEmptyDecorations': {
+            type: 'boolean',
+            default: diffEditorDefaultOptions.experimental.showEmptyDecorations,
+            description: nls.localize('showEmptyDecorations', "Controls whether the diff editor shows empty decorations to see where characters got inserted or deleted."),
+        },
+        'diffEditor.experimental.useTrueInlineView': {
+            type: 'boolean',
+            default: diffEditorDefaultOptions.experimental.useTrueInlineView,
+            description: nls.localize('useTrueInlineView', "If enabled and the editor uses the inline view, word changes are rendered inline."),
+        },
+    }
+};
+function isConfigurationPropertySchema(x) {
+    return (typeof x.type !== 'undefined' || typeof x.anyOf !== 'undefined');
+}
+for (const editorOption of editorOptionsRegistry) {
+    const schema = editorOption.schema;
+    if (typeof schema !== 'undefined') {
+        if (isConfigurationPropertySchema(schema)) {
+            editorConfiguration.properties[`editor.${editorOption.name}`] = schema;
+        }
+        else {
+            for (const key in schema) {
+                if (Object.hasOwnProperty.call(schema, key)) {
+                    editorConfiguration.properties[key] = schema[key];
+                }
+            }
+        }
+    }
+}
+let cachedEditorConfigurationKeys = null;
+function getEditorConfigurationKeys() {
+    if (cachedEditorConfigurationKeys === null) {
+        cachedEditorConfigurationKeys = Object.create(null);
+        Object.keys(editorConfiguration.properties).forEach((prop) => {
+            cachedEditorConfigurationKeys[prop] = true;
+        });
+    }
+    return cachedEditorConfigurationKeys;
+}
+export function isEditorConfigurationKey(key) {
+    const editorConfigurationKeys = getEditorConfigurationKeys();
+    return (editorConfigurationKeys[`editor.${key}`] || false);
+}
+export function isDiffEditorConfigurationKey(key) {
+    const editorConfigurationKeys = getEditorConfigurationKeys();
+    return (editorConfigurationKeys[`diffEditor.${key}`] || false);
+}
+const configurationRegistry = Registry.as(Extensions.Configuration);
+configurationRegistry.registerConfiguration(editorConfiguration);

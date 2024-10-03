@@ -1,1 +1,569 @@
-var Y=Object.defineProperty;var Z=Object.getOwnPropertyDescriptor;var H=(u,s,e,t)=>{for(var i=t>1?void 0:t?Z(s,e):s,r=u.length-1,d;r>=0;r--)(d=u[r])&&(i=(t?d(s,e,i):d(i))||i);return t&&i&&Y(s,e,i),i},P=(u,s)=>(e,t)=>s(e,t,u);import{addDisposableListener as ee,addStandardDisposableListener as ie,reset as W}from"../../../../../base/browser/dom.js";import{createTrustedTypesPolicy as te}from"../../../../../base/browser/trustedTypes.js";import{ActionBar as ne}from"../../../../../base/browser/ui/actionbar/actionbar.js";import{DomScrollableElement as re}from"../../../../../base/browser/ui/scrollbar/scrollableElement.js";import{Action as oe}from"../../../../../base/common/actions.js";import{forEachAdjacent as se,groupAdjacentBy as de}from"../../../../../base/common/arrays.js";import{Codicon as q}from"../../../../../base/common/codicons.js";import{KeyCode as b,KeyMod as x}from"../../../../../base/common/keyCodes.js";import{Disposable as B,toDisposable as ae}from"../../../../../base/common/lifecycle.js";import{autorun as D,autorunWithStore as le,derived as ce,derivedWithStore as me,observableValue as U,subtransaction as ue,transaction as O}from"../../../../../base/common/observable.js";import{ThemeIcon as z}from"../../../../../base/common/themables.js";import{applyFontInfo as fe}from"../../../config/domFontInfo.js";import{applyStyle as K}from"../utils.js";import{EditorFontLigatures as ge,EditorOption as I}from"../../../../common/config/editorOptions.js";import{LineRange as k}from"../../../../common/core/lineRange.js";import{OffsetRange as X}from"../../../../common/core/offsetRange.js";import{Position as F}from"../../../../common/core/position.js";import{Range as $}from"../../../../common/core/range.js";import{LineRangeMapping as pe}from"../../../../common/diff/rangeMapping.js";import"../../../../common/languages.js";import{ILanguageService as he}from"../../../../common/languages/language.js";import"../../../../common/model.js";import{LineTokens as be}from"../../../../common/tokens/lineTokens.js";import{RenderLineInput as ve,renderViewLine2 as _e}from"../../../../common/viewLayout/viewLineRenderer.js";import{ViewLineRenderingData as J}from"../../../../common/viewModel.js";import{localize as g}from"../../../../../nls.js";import{AccessibilitySignal as Q,IAccessibilitySignalService as Le}from"../../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";import{IInstantiationService as we}from"../../../../../platform/instantiation/common/instantiation.js";import{registerIcon as j}from"../../../../../platform/theme/common/iconRegistry.js";import"./accessibleDiffViewer.css";import"./diffEditorEditors.js";const ye=j("diff-review-insert",q.add,g("accessibleDiffViewerInsertIcon","Icon for 'Insert' in accessible diff viewer.")),Ie=j("diff-review-remove",q.remove,g("accessibleDiffViewerRemoveIcon","Icon for 'Remove' in accessible diff viewer.")),Ee=j("diff-review-close",q.close,g("accessibleDiffViewerCloseIcon","Icon for 'Close' in accessible diff viewer."));let T=class extends B{constructor(e,t,i,r,d,a,o,n,c){super();this._parentNode=e;this._visible=t;this._setVisible=i;this._canClose=r;this._width=d;this._height=a;this._diffs=o;this._models=n;this._instantiationService=c}static _ttPolicy=te("diffReview",{createHTML:e=>e});_state=me(this,(e,t)=>{const i=this._visible.read(e);if(this._parentNode.style.visibility=i?"visible":"hidden",!i)return null;const r=t.add(this._instantiationService.createInstance(A,this._diffs,this._models,this._setVisible,this._canClose)),d=t.add(this._instantiationService.createInstance(V,this._parentNode,r,this._width,this._height,this._models));return{model:r,view:d}}).recomputeInitiallyAndOnChange(this._store);next(){O(e=>{const t=this._visible.get();this._setVisible(!0,e),t&&this._state.get().model.nextGroup(e)})}prev(){O(e=>{this._setVisible(!0,e),this._state.get().model.previousGroup(e)})}close(){O(e=>{this._setVisible(!1,e)})}};T=H([P(8,we)],T);let A=class extends B{constructor(e,t,i,r,d){super();this._diffs=e;this._models=t;this._setVisible=i;this.canClose=r;this._accessibilitySignalService=d;this._register(D(a=>{const o=this._diffs.read(a);if(!o){this._groups.set([],void 0);return}const n=Ne(o,this._models.getOriginalModel().getLineCount(),this._models.getModifiedModel().getLineCount());O(c=>{const l=this._models.getModifiedPosition();if(l){const f=n.findIndex(p=>l?.lineNumber<p.range.modified.endLineNumberExclusive);f!==-1&&this._currentGroupIdx.set(f,c)}this._groups.set(n,c)})})),this._register(D(a=>{const o=this.currentElement.read(a);o?.type===2?this._accessibilitySignalService.playSignal(Q.diffLineDeleted,{source:"accessibleDiffViewer.currentElementChanged"}):o?.type===3&&this._accessibilitySignalService.playSignal(Q.diffLineInserted,{source:"accessibleDiffViewer.currentElementChanged"})})),this._register(D(a=>{const o=this.currentElement.read(a);if(o&&o.type!==0){const n=o.modifiedLineNumber??o.diff.modified.startLineNumber;this._models.modifiedSetSelection($.fromPositions(new F(n,1)))}}))}_groups=U(this,[]);_currentGroupIdx=U(this,0);_currentElementIdx=U(this,0);groups=this._groups;currentGroup=this._currentGroupIdx.map((e,t)=>this._groups.read(t)[e]);currentGroupIndex=this._currentGroupIdx;currentElement=this._currentElementIdx.map((e,t)=>this.currentGroup.read(t)?.lines[e]);_goToGroupDelta(e,t){const i=this.groups.get();!i||i.length<=1||ue(t,r=>{this._currentGroupIdx.set(X.ofLength(i.length).clipCyclic(this._currentGroupIdx.get()+e),r),this._currentElementIdx.set(0,r)})}nextGroup(e){this._goToGroupDelta(1,e)}previousGroup(e){this._goToGroupDelta(-1,e)}_goToLineDelta(e){const t=this.currentGroup.get();!t||t.lines.length<=1||O(i=>{this._currentElementIdx.set(X.ofLength(t.lines.length).clip(this._currentElementIdx.get()+e),i)})}goToNextLine(){this._goToLineDelta(1)}goToPreviousLine(){this._goToLineDelta(-1)}goToLine(e){const t=this.currentGroup.get();if(!t)return;const i=t.lines.indexOf(e);i!==-1&&O(r=>{this._currentElementIdx.set(i,r)})}revealCurrentElementInEditor(){if(!this.canClose.get())return;this._setVisible(!1,void 0);const e=this.currentElement.get();e&&(e.type===2?this._models.originalReveal($.fromPositions(new F(e.originalLineNumber,1))):this._models.modifiedReveal(e.type!==0?$.fromPositions(new F(e.modifiedLineNumber,1)):void 0))}close(){this.canClose.get()&&(this._setVisible(!1,void 0),this._models.modifiedFocus())}};A=H([P(4,Le)],A);const R=3;function Ne(u,s,e){const t=[];for(const i of de(u,(r,d)=>d.modified.startLineNumber-r.modified.endLineNumberExclusive<2*R)){const r=[];r.push(new Me);const d=new k(Math.max(1,i[0].original.startLineNumber-R),Math.min(i[i.length-1].original.endLineNumberExclusive+R,s+1)),a=new k(Math.max(1,i[0].modified.startLineNumber-R),Math.min(i[i.length-1].modified.endLineNumberExclusive+R,e+1));se(i,(c,l)=>{const f=new k(c?c.original.endLineNumberExclusive:d.startLineNumber,l?l.original.startLineNumber:d.endLineNumberExclusive),p=new k(c?c.modified.endLineNumberExclusive:a.startLineNumber,l?l.modified.startLineNumber:a.endLineNumberExclusive);f.forEach(v=>{r.push(new Oe(v,p.startLineNumber+(v-f.startLineNumber)))}),l&&(l.original.forEach(v=>{r.push(new xe(l,v))}),l.modified.forEach(v=>{r.push(new De(l,v))}))});const o=i[0].modified.join(i[i.length-1].modified),n=i[0].original.join(i[i.length-1].original);t.push(new Te(new pe(o,n),r))}return t}var Ce=(i=>(i[i.Header=0]="Header",i[i.Unchanged=1]="Unchanged",i[i.Deleted=2]="Deleted",i[i.Added=3]="Added",i))(Ce||{});class Te{constructor(s,e){this.range=s;this.lines=e}}class Me{type=0}class xe{constructor(s,e){this.diff=s;this.originalLineNumber=e}type=2;modifiedLineNumber=void 0}class De{constructor(s,e){this.diff=s;this.modifiedLineNumber=e}type=3;originalLineNumber=void 0}class Oe{constructor(s,e){this.originalLineNumber=s;this.modifiedLineNumber=e}type=1}let V=class extends B{constructor(e,t,i,r,d,a){super();this._element=e;this._model=t;this._width=i;this._height=r;this._models=d;this._languageService=a;this.domNode=this._element,this.domNode.className="monaco-component diff-review monaco-editor-background";const o=document.createElement("div");o.className="diff-review-actions",this._actionBar=this._register(new ne(o)),this._register(D(n=>{this._actionBar.clear(),this._model.canClose.read(n)&&this._actionBar.push(new oe("diffreview.close",g("label.close","Close"),"close-diff-review "+z.asClassName(Ee),!0,async()=>t.close()),{label:!1,icon:!0})})),this._content=document.createElement("div"),this._content.className="diff-review-content",this._content.setAttribute("role","code"),this._scrollbar=this._register(new re(this._content,{})),W(this.domNode,this._scrollbar.getDomNode(),o),this._register(D(n=>{this._height.read(n),this._width.read(n),this._scrollbar.scanDomNode()})),this._register(ae(()=>{W(this.domNode)})),this._register(K(this.domNode,{width:this._width,height:this._height})),this._register(K(this._content,{width:this._width,height:this._height})),this._register(le((n,c)=>{this._model.currentGroup.read(n),this._render(c)})),this._register(ie(this.domNode,"keydown",n=>{(n.equals(b.DownArrow)||n.equals(x.CtrlCmd|b.DownArrow)||n.equals(x.Alt|b.DownArrow))&&(n.preventDefault(),this._model.goToNextLine()),(n.equals(b.UpArrow)||n.equals(x.CtrlCmd|b.UpArrow)||n.equals(x.Alt|b.UpArrow))&&(n.preventDefault(),this._model.goToPreviousLine()),(n.equals(b.Escape)||n.equals(x.CtrlCmd|b.Escape)||n.equals(x.Alt|b.Escape)||n.equals(x.Shift|b.Escape))&&(n.preventDefault(),this._model.close()),(n.equals(b.Space)||n.equals(b.Enter))&&(n.preventDefault(),this._model.revealCurrentElementInEditor())}))}domNode;_content;_scrollbar;_actionBar;_render(e){const t=this._models.getOriginalOptions(),i=this._models.getModifiedOptions(),r=document.createElement("div");r.className="diff-review-table",r.setAttribute("role","list"),r.setAttribute("aria-label",g("ariaLabel","Accessible Diff Viewer. Use arrow up and down to navigate.")),fe(r,i.get(I.fontInfo)),W(this._content,r);const d=this._models.getOriginalModel(),a=this._models.getModifiedModel();if(!d||!a)return;const o=d.getOptions(),n=a.getOptions(),c=i.get(I.lineHeight),l=this._model.currentGroup.get();for(const f of l?.lines||[]){if(!l)break;let p;if(f.type===0){const h=document.createElement("div");h.className="diff-review-row",h.setAttribute("role","listitem");const m=l.range,G=this._model.currentGroupIndex.get(),M=this._model.groups.get().length,w=N=>N===0?g("no_lines_changed","no lines changed"):N===1?g("one_line_changed","1 line changed"):g("more_lines_changed","{0} lines changed",N),y=w(m.original.length),E=w(m.modified.length);h.setAttribute("aria-label",g({key:"header",comment:["This is the ARIA label for a git diff header.","A git diff header looks like this: @@ -154,12 +159,39 @@.","That encodes that at original line 154 (which is now line 159), 12 lines were removed/changed with 39 lines.","Variables 0 and 1 refer to the diff index out of total number of diffs.","Variables 2 and 4 will be numbers (a line number).",'Variables 3 and 5 will be "no lines changed", "1 line changed" or "X lines changed", localized separately.']},"Difference {0} of {1}: original line {2}, {3}, modified line {4}, {5}",G+1,M,m.original.startLineNumber,y,m.modified.startLineNumber,E));const _=document.createElement("div");_.className="diff-review-cell diff-review-summary",_.appendChild(document.createTextNode(`${G+1}/${M}: @@ -${m.original.startLineNumber},${m.original.length} +${m.modified.startLineNumber},${m.modified.length} @@`)),h.appendChild(_),p=h}else p=this._createRow(f,c,this._width.get(),t,d,o,i,a,n);r.appendChild(p);const v=ce(h=>this._model.currentElement.read(h)===f);e.add(D(h=>{const m=v.read(h);p.tabIndex=m?0:-1,m&&p.focus()})),e.add(ee(p,"focus",()=>{this._model.goToLine(f)}))}this._scrollbar.scanDomNode()}_createRow(e,t,i,r,d,a,o,n,c){const l=r.get(I.layoutInfo),f=l.glyphMarginWidth+l.lineNumbersWidth,p=o.get(I.layoutInfo),v=10+p.glyphMarginWidth+p.lineNumbersWidth;let h="diff-review-row",m="";const G="diff-review-spacer";let M=null;switch(e.type){case 3:h="diff-review-row line-insert",m=" char-insert",M=ye;break;case 2:h="diff-review-row line-delete",m=" char-delete",M=Ie;break}const w=document.createElement("div");w.style.minWidth=i+"px",w.className=h,w.setAttribute("role","listitem"),w.ariaLevel="";const y=document.createElement("div");y.className="diff-review-cell",y.style.height=`${t}px`,w.appendChild(y);const E=document.createElement("span");E.style.width=f+"px",E.style.minWidth=f+"px",E.className="diff-review-line-number"+m,e.originalLineNumber!==void 0?E.appendChild(document.createTextNode(String(e.originalLineNumber))):E.innerText="\xA0",y.appendChild(E);const _=document.createElement("span");_.style.width=v+"px",_.style.minWidth=v+"px",_.style.paddingRight="10px",_.className="diff-review-line-number"+m,e.modifiedLineNumber!==void 0?_.appendChild(document.createTextNode(String(e.modifiedLineNumber))):_.innerText="\xA0",y.appendChild(_);const N=document.createElement("span");if(N.className=G,M){const L=document.createElement("span");L.className=z.asClassName(M),L.innerText="\xA0\xA0",N.appendChild(L)}else N.innerText="\xA0\xA0";y.appendChild(N);let C;if(e.modifiedLineNumber!==void 0){let L=this._getLineHtml(n,o,c.tabSize,e.modifiedLineNumber,this._languageService.languageIdCodec);T._ttPolicy&&(L=T._ttPolicy.createHTML(L)),y.insertAdjacentHTML("beforeend",L),C=n.getLineContent(e.modifiedLineNumber)}else{let L=this._getLineHtml(d,r,a.tabSize,e.originalLineNumber,this._languageService.languageIdCodec);T._ttPolicy&&(L=T._ttPolicy.createHTML(L)),y.insertAdjacentHTML("beforeend",L),C=d.getLineContent(e.originalLineNumber)}C.length===0&&(C=g("blankLine","blank"));let S="";switch(e.type){case 1:e.originalLineNumber===e.modifiedLineNumber?S=g({key:"unchangedLine",comment:["The placeholders are contents of the line and should not be translated."]},"{0} unchanged line {1}",C,e.originalLineNumber):S=g("equalLine","{0} original line {1} modified line {2}",C,e.originalLineNumber,e.modifiedLineNumber);break;case 3:S=g("insertLine","+ {0} modified line {1}",C,e.modifiedLineNumber);break;case 2:S=g("deleteLine","- {0} original line {1}",C,e.originalLineNumber);break}return w.setAttribute("aria-label",S),w}_getLineHtml(e,t,i,r,d){const a=e.getLineContent(r),o=t.get(I.fontInfo),n=be.createEmpty(a,d),c=J.isBasicASCII(a,e.mightContainNonBasicASCII()),l=J.containsRTL(a,c,e.mightContainRTL());return _e(new ve(o.isMonospace&&!t.get(I.disableMonospaceOptimizations),o.canUseHalfwidthRightwardsArrow,a,!1,c,l,0,n,[],i,0,o.spaceWidth,o.middotWidth,o.wsmiddotWidth,t.get(I.stopRenderingLineAfter),t.get(I.renderWhitespace),t.get(I.renderControlCharacters),t.get(I.fontLigatures)!==ge.OFF,null)).html}};V=H([P(5,he)],V);class _i{constructor(s){this.editors=s}getOriginalModel(){return this.editors.original.getModel()}getOriginalOptions(){return this.editors.original.getOptions()}originalReveal(s){this.editors.original.revealRange(s),this.editors.original.setSelection(s),this.editors.original.focus()}getModifiedModel(){return this.editors.modified.getModel()}getModifiedOptions(){return this.editors.modified.getOptions()}modifiedReveal(s){s&&(this.editors.modified.revealRange(s),this.editors.modified.setSelection(s)),this.editors.modified.focus()}modifiedSetSelection(s){this.editors.modified.setSelection(s)}modifiedFocus(){this.editors.modified.focus()}getModifiedPosition(){return this.editors.modified.getPosition()??void 0}}export{T as AccessibleDiffViewer,_i as AccessibleDiffViewerModelFromEditors};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { addDisposableListener, addStandardDisposableListener, reset } from '../../../../../base/browser/dom.js';
+import { createTrustedTypesPolicy } from '../../../../../base/browser/trustedTypes.js';
+import { ActionBar } from '../../../../../base/browser/ui/actionbar/actionbar.js';
+import { DomScrollableElement } from '../../../../../base/browser/ui/scrollbar/scrollableElement.js';
+import { Action } from '../../../../../base/common/actions.js';
+import { forEachAdjacent, groupAdjacentBy } from '../../../../../base/common/arrays.js';
+import { Codicon } from '../../../../../base/common/codicons.js';
+import { Disposable, toDisposable } from '../../../../../base/common/lifecycle.js';
+import { autorun, autorunWithStore, derived, derivedWithStore, observableValue, subtransaction, transaction } from '../../../../../base/common/observable.js';
+import { ThemeIcon } from '../../../../../base/common/themables.js';
+import { applyFontInfo } from '../../../config/domFontInfo.js';
+import { applyStyle } from '../utils.js';
+import { EditorFontLigatures } from '../../../../common/config/editorOptions.js';
+import { LineRange } from '../../../../common/core/lineRange.js';
+import { OffsetRange } from '../../../../common/core/offsetRange.js';
+import { Position } from '../../../../common/core/position.js';
+import { Range } from '../../../../common/core/range.js';
+import { LineRangeMapping } from '../../../../common/diff/rangeMapping.js';
+import { ILanguageService } from '../../../../common/languages/language.js';
+import { LineTokens } from '../../../../common/tokens/lineTokens.js';
+import { RenderLineInput, renderViewLine2 } from '../../../../common/viewLayout/viewLineRenderer.js';
+import { ViewLineRenderingData } from '../../../../common/viewModel.js';
+import { localize } from '../../../../../nls.js';
+import { AccessibilitySignal, IAccessibilitySignalService } from '../../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { registerIcon } from '../../../../../platform/theme/common/iconRegistry.js';
+import './accessibleDiffViewer.css';
+const accessibleDiffViewerInsertIcon = registerIcon('diff-review-insert', Codicon.add, localize('accessibleDiffViewerInsertIcon', 'Icon for \'Insert\' in accessible diff viewer.'));
+const accessibleDiffViewerRemoveIcon = registerIcon('diff-review-remove', Codicon.remove, localize('accessibleDiffViewerRemoveIcon', 'Icon for \'Remove\' in accessible diff viewer.'));
+const accessibleDiffViewerCloseIcon = registerIcon('diff-review-close', Codicon.close, localize('accessibleDiffViewerCloseIcon', 'Icon for \'Close\' in accessible diff viewer.'));
+let AccessibleDiffViewer = class AccessibleDiffViewer extends Disposable {
+    static { this._ttPolicy = createTrustedTypesPolicy('diffReview', { createHTML: value => value }); }
+    constructor(_parentNode, _visible, _setVisible, _canClose, _width, _height, _diffs, _models, _instantiationService) {
+        super();
+        this._parentNode = _parentNode;
+        this._visible = _visible;
+        this._setVisible = _setVisible;
+        this._canClose = _canClose;
+        this._width = _width;
+        this._height = _height;
+        this._diffs = _diffs;
+        this._models = _models;
+        this._instantiationService = _instantiationService;
+        this._state = derivedWithStore(this, (reader, store) => {
+            const visible = this._visible.read(reader);
+            this._parentNode.style.visibility = visible ? 'visible' : 'hidden';
+            if (!visible) {
+                return null;
+            }
+            const model = store.add(this._instantiationService.createInstance(ViewModel, this._diffs, this._models, this._setVisible, this._canClose));
+            const view = store.add(this._instantiationService.createInstance(View, this._parentNode, model, this._width, this._height, this._models));
+            return { model, view, };
+        }).recomputeInitiallyAndOnChange(this._store);
+    }
+    next() {
+        transaction(tx => {
+            const isVisible = this._visible.get();
+            this._setVisible(true, tx);
+            if (isVisible) {
+                this._state.get().model.nextGroup(tx);
+            }
+        });
+    }
+    prev() {
+        transaction(tx => {
+            this._setVisible(true, tx);
+            this._state.get().model.previousGroup(tx);
+        });
+    }
+    close() {
+        transaction(tx => {
+            this._setVisible(false, tx);
+        });
+    }
+};
+AccessibleDiffViewer = __decorate([
+    __param(8, IInstantiationService),
+    __metadata("design:paramtypes", [HTMLElement, Object, Function, Object, Object, Object, Object, Object, Object])
+], AccessibleDiffViewer);
+export { AccessibleDiffViewer };
+let ViewModel = class ViewModel extends Disposable {
+    constructor(_diffs, _models, _setVisible, canClose, _accessibilitySignalService) {
+        super();
+        this._diffs = _diffs;
+        this._models = _models;
+        this._setVisible = _setVisible;
+        this.canClose = canClose;
+        this._accessibilitySignalService = _accessibilitySignalService;
+        this._groups = observableValue(this, []);
+        this._currentGroupIdx = observableValue(this, 0);
+        this._currentElementIdx = observableValue(this, 0);
+        this.groups = this._groups;
+        this.currentGroup = this._currentGroupIdx.map((idx, r) => this._groups.read(r)[idx]);
+        this.currentGroupIndex = this._currentGroupIdx;
+        this.currentElement = this._currentElementIdx.map((idx, r) => this.currentGroup.read(r)?.lines[idx]);
+        this._register(autorun(reader => {
+            const diffs = this._diffs.read(reader);
+            if (!diffs) {
+                this._groups.set([], undefined);
+                return;
+            }
+            const groups = computeViewElementGroups(diffs, this._models.getOriginalModel().getLineCount(), this._models.getModifiedModel().getLineCount());
+            transaction(tx => {
+                const p = this._models.getModifiedPosition();
+                if (p) {
+                    const nextGroup = groups.findIndex(g => p?.lineNumber < g.range.modified.endLineNumberExclusive);
+                    if (nextGroup !== -1) {
+                        this._currentGroupIdx.set(nextGroup, tx);
+                    }
+                }
+                this._groups.set(groups, tx);
+            });
+        }));
+        this._register(autorun(reader => {
+            const currentViewItem = this.currentElement.read(reader);
+            if (currentViewItem?.type === LineType.Deleted) {
+                this._accessibilitySignalService.playSignal(AccessibilitySignal.diffLineDeleted, { source: 'accessibleDiffViewer.currentElementChanged' });
+            }
+            else if (currentViewItem?.type === LineType.Added) {
+                this._accessibilitySignalService.playSignal(AccessibilitySignal.diffLineInserted, { source: 'accessibleDiffViewer.currentElementChanged' });
+            }
+        }));
+        this._register(autorun(reader => {
+            const currentViewItem = this.currentElement.read(reader);
+            if (currentViewItem && currentViewItem.type !== LineType.Header) {
+                const lineNumber = currentViewItem.modifiedLineNumber ?? currentViewItem.diff.modified.startLineNumber;
+                this._models.modifiedSetSelection(Range.fromPositions(new Position(lineNumber, 1)));
+            }
+        }));
+    }
+    _goToGroupDelta(delta, tx) {
+        const groups = this.groups.get();
+        if (!groups || groups.length <= 1) {
+            return;
+        }
+        subtransaction(tx, tx => {
+            this._currentGroupIdx.set(OffsetRange.ofLength(groups.length).clipCyclic(this._currentGroupIdx.get() + delta), tx);
+            this._currentElementIdx.set(0, tx);
+        });
+    }
+    nextGroup(tx) { this._goToGroupDelta(1, tx); }
+    previousGroup(tx) { this._goToGroupDelta(-1, tx); }
+    _goToLineDelta(delta) {
+        const group = this.currentGroup.get();
+        if (!group || group.lines.length <= 1) {
+            return;
+        }
+        transaction(tx => {
+            this._currentElementIdx.set(OffsetRange.ofLength(group.lines.length).clip(this._currentElementIdx.get() + delta), tx);
+        });
+    }
+    goToNextLine() { this._goToLineDelta(1); }
+    goToPreviousLine() { this._goToLineDelta(-1); }
+    goToLine(line) {
+        const group = this.currentGroup.get();
+        if (!group) {
+            return;
+        }
+        const idx = group.lines.indexOf(line);
+        if (idx === -1) {
+            return;
+        }
+        transaction(tx => {
+            this._currentElementIdx.set(idx, tx);
+        });
+    }
+    revealCurrentElementInEditor() {
+        if (!this.canClose.get()) {
+            return;
+        }
+        this._setVisible(false, undefined);
+        const curElem = this.currentElement.get();
+        if (curElem) {
+            if (curElem.type === LineType.Deleted) {
+                this._models.originalReveal(Range.fromPositions(new Position(curElem.originalLineNumber, 1)));
+            }
+            else {
+                this._models.modifiedReveal(curElem.type !== LineType.Header
+                    ? Range.fromPositions(new Position(curElem.modifiedLineNumber, 1))
+                    : undefined);
+            }
+        }
+    }
+    close() {
+        if (!this.canClose.get()) {
+            return;
+        }
+        this._setVisible(false, undefined);
+        this._models.modifiedFocus();
+    }
+};
+ViewModel = __decorate([
+    __param(4, IAccessibilitySignalService),
+    __metadata("design:paramtypes", [Object, Object, Function, Object, Object])
+], ViewModel);
+const viewElementGroupLineMargin = 3;
+function computeViewElementGroups(diffs, originalLineCount, modifiedLineCount) {
+    const result = [];
+    for (const g of groupAdjacentBy(diffs, (a, b) => (b.modified.startLineNumber - a.modified.endLineNumberExclusive < 2 * viewElementGroupLineMargin))) {
+        const viewElements = [];
+        viewElements.push(new HeaderViewElement());
+        const origFullRange = new LineRange(Math.max(1, g[0].original.startLineNumber - viewElementGroupLineMargin), Math.min(g[g.length - 1].original.endLineNumberExclusive + viewElementGroupLineMargin, originalLineCount + 1));
+        const modifiedFullRange = new LineRange(Math.max(1, g[0].modified.startLineNumber - viewElementGroupLineMargin), Math.min(g[g.length - 1].modified.endLineNumberExclusive + viewElementGroupLineMargin, modifiedLineCount + 1));
+        forEachAdjacent(g, (a, b) => {
+            const origRange = new LineRange(a ? a.original.endLineNumberExclusive : origFullRange.startLineNumber, b ? b.original.startLineNumber : origFullRange.endLineNumberExclusive);
+            const modifiedRange = new LineRange(a ? a.modified.endLineNumberExclusive : modifiedFullRange.startLineNumber, b ? b.modified.startLineNumber : modifiedFullRange.endLineNumberExclusive);
+            origRange.forEach(origLineNumber => {
+                viewElements.push(new UnchangedLineViewElement(origLineNumber, modifiedRange.startLineNumber + (origLineNumber - origRange.startLineNumber)));
+            });
+            if (b) {
+                b.original.forEach(origLineNumber => {
+                    viewElements.push(new DeletedLineViewElement(b, origLineNumber));
+                });
+                b.modified.forEach(modifiedLineNumber => {
+                    viewElements.push(new AddedLineViewElement(b, modifiedLineNumber));
+                });
+            }
+        });
+        const modifiedRange = g[0].modified.join(g[g.length - 1].modified);
+        const originalRange = g[0].original.join(g[g.length - 1].original);
+        result.push(new ViewElementGroup(new LineRangeMapping(modifiedRange, originalRange), viewElements));
+    }
+    return result;
+}
+var LineType;
+(function (LineType) {
+    LineType[LineType["Header"] = 0] = "Header";
+    LineType[LineType["Unchanged"] = 1] = "Unchanged";
+    LineType[LineType["Deleted"] = 2] = "Deleted";
+    LineType[LineType["Added"] = 3] = "Added";
+})(LineType || (LineType = {}));
+class ViewElementGroup {
+    constructor(range, lines) {
+        this.range = range;
+        this.lines = lines;
+    }
+}
+class HeaderViewElement {
+    constructor() {
+        this.type = LineType.Header;
+    }
+}
+class DeletedLineViewElement {
+    constructor(diff, originalLineNumber) {
+        this.diff = diff;
+        this.originalLineNumber = originalLineNumber;
+        this.type = LineType.Deleted;
+        this.modifiedLineNumber = undefined;
+    }
+}
+class AddedLineViewElement {
+    constructor(diff, modifiedLineNumber) {
+        this.diff = diff;
+        this.modifiedLineNumber = modifiedLineNumber;
+        this.type = LineType.Added;
+        this.originalLineNumber = undefined;
+    }
+}
+class UnchangedLineViewElement {
+    constructor(originalLineNumber, modifiedLineNumber) {
+        this.originalLineNumber = originalLineNumber;
+        this.modifiedLineNumber = modifiedLineNumber;
+        this.type = LineType.Unchanged;
+    }
+}
+let View = class View extends Disposable {
+    constructor(_element, _model, _width, _height, _models, _languageService) {
+        super();
+        this._element = _element;
+        this._model = _model;
+        this._width = _width;
+        this._height = _height;
+        this._models = _models;
+        this._languageService = _languageService;
+        this.domNode = this._element;
+        this.domNode.className = 'monaco-component diff-review monaco-editor-background';
+        const actionBarContainer = document.createElement('div');
+        actionBarContainer.className = 'diff-review-actions';
+        this._actionBar = this._register(new ActionBar(actionBarContainer));
+        this._register(autorun(reader => {
+            this._actionBar.clear();
+            if (this._model.canClose.read(reader)) {
+                this._actionBar.push(new Action('diffreview.close', localize('label.close', "Close"), 'close-diff-review ' + ThemeIcon.asClassName(accessibleDiffViewerCloseIcon), true, async () => _model.close()), { label: false, icon: true });
+            }
+        }));
+        this._content = document.createElement('div');
+        this._content.className = 'diff-review-content';
+        this._content.setAttribute('role', 'code');
+        this._scrollbar = this._register(new DomScrollableElement(this._content, {}));
+        reset(this.domNode, this._scrollbar.getDomNode(), actionBarContainer);
+        this._register(autorun(r => {
+            this._height.read(r);
+            this._width.read(r);
+            this._scrollbar.scanDomNode();
+        }));
+        this._register(toDisposable(() => { reset(this.domNode); }));
+        this._register(applyStyle(this.domNode, { width: this._width, height: this._height }));
+        this._register(applyStyle(this._content, { width: this._width, height: this._height }));
+        this._register(autorunWithStore((reader, store) => {
+            this._model.currentGroup.read(reader);
+            this._render(store);
+        }));
+        this._register(addStandardDisposableListener(this.domNode, 'keydown', (e) => {
+            if (e.equals(18)
+                || e.equals(2048 | 18)
+                || e.equals(512 | 18)) {
+                e.preventDefault();
+                this._model.goToNextLine();
+            }
+            if (e.equals(16)
+                || e.equals(2048 | 16)
+                || e.equals(512 | 16)) {
+                e.preventDefault();
+                this._model.goToPreviousLine();
+            }
+            if (e.equals(9)
+                || e.equals(2048 | 9)
+                || e.equals(512 | 9)
+                || e.equals(1024 | 9)) {
+                e.preventDefault();
+                this._model.close();
+            }
+            if (e.equals(10)
+                || e.equals(3)) {
+                e.preventDefault();
+                this._model.revealCurrentElementInEditor();
+            }
+        }));
+    }
+    _render(store) {
+        const originalOptions = this._models.getOriginalOptions();
+        const modifiedOptions = this._models.getModifiedOptions();
+        const container = document.createElement('div');
+        container.className = 'diff-review-table';
+        container.setAttribute('role', 'list');
+        container.setAttribute('aria-label', localize('ariaLabel', 'Accessible Diff Viewer. Use arrow up and down to navigate.'));
+        applyFontInfo(container, modifiedOptions.get(52));
+        reset(this._content, container);
+        const originalModel = this._models.getOriginalModel();
+        const modifiedModel = this._models.getModifiedModel();
+        if (!originalModel || !modifiedModel) {
+            return;
+        }
+        const originalModelOpts = originalModel.getOptions();
+        const modifiedModelOpts = modifiedModel.getOptions();
+        const lineHeight = modifiedOptions.get(69);
+        const group = this._model.currentGroup.get();
+        for (const viewItem of group?.lines || []) {
+            if (!group) {
+                break;
+            }
+            let row;
+            if (viewItem.type === LineType.Header) {
+                const header = document.createElement('div');
+                header.className = 'diff-review-row';
+                header.setAttribute('role', 'listitem');
+                const r = group.range;
+                const diffIndex = this._model.currentGroupIndex.get();
+                const diffsLength = this._model.groups.get().length;
+                const getAriaLines = (lines) => lines === 0 ? localize('no_lines_changed', "no lines changed")
+                    : lines === 1 ? localize('one_line_changed', "1 line changed")
+                        : localize('more_lines_changed', "{0} lines changed", lines);
+                const originalChangedLinesCntAria = getAriaLines(r.original.length);
+                const modifiedChangedLinesCntAria = getAriaLines(r.modified.length);
+                header.setAttribute('aria-label', localize({
+                    key: 'header',
+                    comment: [
+                        'This is the ARIA label for a git diff header.',
+                        'A git diff header looks like this: @@ -154,12 +159,39 @@.',
+                        'That encodes that at original line 154 (which is now line 159), 12 lines were removed/changed with 39 lines.',
+                        'Variables 0 and 1 refer to the diff index out of total number of diffs.',
+                        'Variables 2 and 4 will be numbers (a line number).',
+                        'Variables 3 and 5 will be "no lines changed", "1 line changed" or "X lines changed", localized separately.'
+                    ]
+                }, "Difference {0} of {1}: original line {2}, {3}, modified line {4}, {5}", (diffIndex + 1), diffsLength, r.original.startLineNumber, originalChangedLinesCntAria, r.modified.startLineNumber, modifiedChangedLinesCntAria));
+                const cell = document.createElement('div');
+                cell.className = 'diff-review-cell diff-review-summary';
+                cell.appendChild(document.createTextNode(`${diffIndex + 1}/${diffsLength}: @@ -${r.original.startLineNumber},${r.original.length} +${r.modified.startLineNumber},${r.modified.length} @@`));
+                header.appendChild(cell);
+                row = header;
+            }
+            else {
+                row = this._createRow(viewItem, lineHeight, this._width.get(), originalOptions, originalModel, originalModelOpts, modifiedOptions, modifiedModel, modifiedModelOpts);
+            }
+            container.appendChild(row);
+            const isSelectedObs = derived(reader => this._model.currentElement.read(reader) === viewItem);
+            store.add(autorun(reader => {
+                const isSelected = isSelectedObs.read(reader);
+                row.tabIndex = isSelected ? 0 : -1;
+                if (isSelected) {
+                    row.focus();
+                }
+            }));
+            store.add(addDisposableListener(row, 'focus', () => {
+                this._model.goToLine(viewItem);
+            }));
+        }
+        this._scrollbar.scanDomNode();
+    }
+    _createRow(item, lineHeight, width, originalOptions, originalModel, originalModelOpts, modifiedOptions, modifiedModel, modifiedModelOpts) {
+        const originalLayoutInfo = originalOptions.get(148);
+        const originalLineNumbersWidth = originalLayoutInfo.glyphMarginWidth + originalLayoutInfo.lineNumbersWidth;
+        const modifiedLayoutInfo = modifiedOptions.get(148);
+        const modifiedLineNumbersWidth = 10 + modifiedLayoutInfo.glyphMarginWidth + modifiedLayoutInfo.lineNumbersWidth;
+        let rowClassName = 'diff-review-row';
+        let lineNumbersExtraClassName = '';
+        const spacerClassName = 'diff-review-spacer';
+        let spacerIcon = null;
+        switch (item.type) {
+            case LineType.Added:
+                rowClassName = 'diff-review-row line-insert';
+                lineNumbersExtraClassName = ' char-insert';
+                spacerIcon = accessibleDiffViewerInsertIcon;
+                break;
+            case LineType.Deleted:
+                rowClassName = 'diff-review-row line-delete';
+                lineNumbersExtraClassName = ' char-delete';
+                spacerIcon = accessibleDiffViewerRemoveIcon;
+                break;
+        }
+        const row = document.createElement('div');
+        row.style.minWidth = width + 'px';
+        row.className = rowClassName;
+        row.setAttribute('role', 'listitem');
+        row.ariaLevel = '';
+        const cell = document.createElement('div');
+        cell.className = 'diff-review-cell';
+        cell.style.height = `${lineHeight}px`;
+        row.appendChild(cell);
+        const originalLineNumber = document.createElement('span');
+        originalLineNumber.style.width = (originalLineNumbersWidth + 'px');
+        originalLineNumber.style.minWidth = (originalLineNumbersWidth + 'px');
+        originalLineNumber.className = 'diff-review-line-number' + lineNumbersExtraClassName;
+        if (item.originalLineNumber !== undefined) {
+            originalLineNumber.appendChild(document.createTextNode(String(item.originalLineNumber)));
+        }
+        else {
+            originalLineNumber.innerText = '\u00a0';
+        }
+        cell.appendChild(originalLineNumber);
+        const modifiedLineNumber = document.createElement('span');
+        modifiedLineNumber.style.width = (modifiedLineNumbersWidth + 'px');
+        modifiedLineNumber.style.minWidth = (modifiedLineNumbersWidth + 'px');
+        modifiedLineNumber.style.paddingRight = '10px';
+        modifiedLineNumber.className = 'diff-review-line-number' + lineNumbersExtraClassName;
+        if (item.modifiedLineNumber !== undefined) {
+            modifiedLineNumber.appendChild(document.createTextNode(String(item.modifiedLineNumber)));
+        }
+        else {
+            modifiedLineNumber.innerText = '\u00a0';
+        }
+        cell.appendChild(modifiedLineNumber);
+        const spacer = document.createElement('span');
+        spacer.className = spacerClassName;
+        if (spacerIcon) {
+            const spacerCodicon = document.createElement('span');
+            spacerCodicon.className = ThemeIcon.asClassName(spacerIcon);
+            spacerCodicon.innerText = '\u00a0\u00a0';
+            spacer.appendChild(spacerCodicon);
+        }
+        else {
+            spacer.innerText = '\u00a0\u00a0';
+        }
+        cell.appendChild(spacer);
+        let lineContent;
+        if (item.modifiedLineNumber !== undefined) {
+            let html = this._getLineHtml(modifiedModel, modifiedOptions, modifiedModelOpts.tabSize, item.modifiedLineNumber, this._languageService.languageIdCodec);
+            if (AccessibleDiffViewer._ttPolicy) {
+                html = AccessibleDiffViewer._ttPolicy.createHTML(html);
+            }
+            cell.insertAdjacentHTML('beforeend', html);
+            lineContent = modifiedModel.getLineContent(item.modifiedLineNumber);
+        }
+        else {
+            let html = this._getLineHtml(originalModel, originalOptions, originalModelOpts.tabSize, item.originalLineNumber, this._languageService.languageIdCodec);
+            if (AccessibleDiffViewer._ttPolicy) {
+                html = AccessibleDiffViewer._ttPolicy.createHTML(html);
+            }
+            cell.insertAdjacentHTML('beforeend', html);
+            lineContent = originalModel.getLineContent(item.originalLineNumber);
+        }
+        if (lineContent.length === 0) {
+            lineContent = localize('blankLine', "blank");
+        }
+        let ariaLabel = '';
+        switch (item.type) {
+            case LineType.Unchanged:
+                if (item.originalLineNumber === item.modifiedLineNumber) {
+                    ariaLabel = localize({ key: 'unchangedLine', comment: ['The placeholders are contents of the line and should not be translated.'] }, "{0} unchanged line {1}", lineContent, item.originalLineNumber);
+                }
+                else {
+                    ariaLabel = localize('equalLine', "{0} original line {1} modified line {2}", lineContent, item.originalLineNumber, item.modifiedLineNumber);
+                }
+                break;
+            case LineType.Added:
+                ariaLabel = localize('insertLine', "+ {0} modified line {1}", lineContent, item.modifiedLineNumber);
+                break;
+            case LineType.Deleted:
+                ariaLabel = localize('deleteLine', "- {0} original line {1}", lineContent, item.originalLineNumber);
+                break;
+        }
+        row.setAttribute('aria-label', ariaLabel);
+        return row;
+    }
+    _getLineHtml(model, options, tabSize, lineNumber, languageIdCodec) {
+        const lineContent = model.getLineContent(lineNumber);
+        const fontInfo = options.get(52);
+        const lineTokens = LineTokens.createEmpty(lineContent, languageIdCodec);
+        const isBasicASCII = ViewLineRenderingData.isBasicASCII(lineContent, model.mightContainNonBasicASCII());
+        const containsRTL = ViewLineRenderingData.containsRTL(lineContent, isBasicASCII, model.mightContainRTL());
+        const r = renderViewLine2(new RenderLineInput((fontInfo.isMonospace && !options.get(33)), fontInfo.canUseHalfwidthRightwardsArrow, lineContent, false, isBasicASCII, containsRTL, 0, lineTokens, [], tabSize, 0, fontInfo.spaceWidth, fontInfo.middotWidth, fontInfo.wsmiddotWidth, options.get(120), options.get(102), options.get(97), options.get(53) !== EditorFontLigatures.OFF, null));
+        return r.html;
+    }
+};
+View = __decorate([
+    __param(5, ILanguageService),
+    __metadata("design:paramtypes", [HTMLElement,
+        ViewModel, Object, Object, Object, Object])
+], View);
+export class AccessibleDiffViewerModelFromEditors {
+    constructor(editors) {
+        this.editors = editors;
+    }
+    getOriginalModel() {
+        return this.editors.original.getModel();
+    }
+    getOriginalOptions() {
+        return this.editors.original.getOptions();
+    }
+    originalReveal(range) {
+        this.editors.original.revealRange(range);
+        this.editors.original.setSelection(range);
+        this.editors.original.focus();
+    }
+    getModifiedModel() {
+        return this.editors.modified.getModel();
+    }
+    getModifiedOptions() {
+        return this.editors.modified.getOptions();
+    }
+    modifiedReveal(range) {
+        if (range) {
+            this.editors.modified.revealRange(range);
+            this.editors.modified.setSelection(range);
+        }
+        this.editors.modified.focus();
+    }
+    modifiedSetSelection(range) {
+        this.editors.modified.setSelection(range);
+    }
+    modifiedFocus() {
+        this.editors.modified.focus();
+    }
+    getModifiedPosition() {
+        return this.editors.modified.getPosition() ?? undefined;
+    }
+}

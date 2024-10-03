@@ -1,1 +1,233 @@
-var A=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var C=(s,r,n,t)=>{for(var e=t>1?void 0:t?w(r,n):r,a=s.length-1,i;a>=0;a--)(i=s[a])&&(e=(t?i(r,n,e):i(e))||e);return t&&e&&A(r,n,e),e},y=(s,r)=>(n,t)=>r(n,t,s);import{coalesce as R}from"../../../../../base/common/arrays.js";import{MarkdownString as N}from"../../../../../base/common/htmlContent.js";import{Disposable as L}from"../../../../../base/common/lifecycle.js";import{basename as k}from"../../../../../base/common/resources.js";import{URI as V}from"../../../../../base/common/uri.js";import{Range as g}from"../../../../../editor/common/core/range.js";import"../../../../../editor/common/editorCommon.js";import"../../../../../editor/common/languages.js";import{ITextModelService as E}from"../../../../../editor/common/services/resolverService.js";import{localize as x}from"../../../../../nls.js";import{Action2 as D,registerAction2 as S}from"../../../../../platform/actions/common/actions.js";import{ICommandService as F}from"../../../../../platform/commands/common/commands.js";import"../../../../../platform/instantiation/common/instantiation.js";import{ILabelService as O}from"../../../../../platform/label/common/label.js";import{ILogService as W}from"../../../../../platform/log/common/log.js";import"../../../../../platform/quickinput/common/quickAccess.js";import{IQuickInputService as M}from"../../../../../platform/quickinput/common/quickInput.js";import"../chat.js";import{ChatWidget as T}from"../chatWidget.js";import{IChatVariablesService as Q}from"../../common/chatVariables.js";const U="chat-dynamic-variable";let d=class extends L{constructor(n,t){super();this.widget=n;this.labelService=t;this._register(n.inputEditor.onDidChangeModelContent(e=>{e.changes.forEach(a=>{this._variables=R(this._variables.map(i=>{const c=g.intersectRanges(i.range,a.range);if(c&&!c.isEmpty()){if(!g.containsRange(a.range,i.range)){const o=new g(i.range.startLineNumber,i.range.startColumn,i.range.endLineNumber,i.range.endColumn-1);this.widget.inputEditor.executeEdits(this.id,[{range:o,text:""}])}return null}else if(g.compareRangesUsingStarts(i.range,a.range)>0){const o=a.text.length-a.rangeLength;return{...i,range:{startLineNumber:i.range.startLineNumber,startColumn:i.range.startColumn+o,endLineNumber:i.range.endLineNumber,endColumn:i.range.endColumn+o}}}return i}))}),this.updateDecorations()}))}static ID="chatDynamicVariableModel";_variables=[];get variables(){return[...this._variables]}get id(){return d.ID}getInputState(){return this.variables}setInputState(n){Array.isArray(n)||(n=[]),this._variables=n,this.updateDecorations()}addReference(n){this._variables.push(n),this.updateDecorations()}updateDecorations(){this.widget.inputEditor.setDecorationsByType("chat",U,this._variables.map(n=>({range:n.range,hoverMessage:this.getHoverForReference(n)})))}getHoverForReference(n){const t=n.data;if(V.isUri(t))return new N(this.labelService.getUriLabel(t,{relative:!0}))}};d=C([y(1,O)],d),T.CONTRIBS.push(d);function q(s){return"widget"in s&&"range"in s}class m extends D{static Name="files";static Item={label:x("allFiles","All Files"),description:x("allFilesDescription","Search for relevant files in the workspace and provide context from them")};static ID="workbench.action.chat.selectAndInsertFile";constructor(){super({id:m.ID,title:""})}async run(r,...n){const t=r.get(E),e=r.get(W),a=r.get(M),i=r.get(Q),c=n[0];if(!q(c))return;const o=()=>{c.widget.inputEditor.executeEdits("chatInsertFile",[{range:c.range,text:""}])};let u;i.hasVariable(m.Name)&&(u={providerOptions:{additionPicks:[m.Item,{type:"separator"}]}});const p=await a.quickAccess.pick("",u);if(!p?.length){e.trace("SelectAndInsertFileAction: no file selected"),o();return}const b=c.widget.inputEditor,l=c.range;if(p[0]===m.Item){const v=`#${m.Name}`;b.executeEdits("chatInsertFile",[{range:l,text:v+" "}])||(e.trace(`SelectAndInsertFileAction: failed to insert "${v}"`),o());return}const I=p[0].resource;if(!t.canHandleResource(I)){e.trace("SelectAndInsertFileAction: non-text resource selected"),o();return}const h=`#file:${k(I)}`;if(!b.executeEdits("chatInsertFile",[{range:l,text:h+" "}])){e.trace(`SelectAndInsertFileAction: failed to insert "${h}"`),o();return}c.widget.getContrib(d.ID)?.addReference({id:"vscode.file",range:{startLineNumber:l.startLineNumber,startColumn:l.startColumn,endLineNumber:l.endLineNumber,endColumn:l.startColumn+h.length},data:I})}}S(m);function $(s){return"widget"in s&&"range"in s&&"variableData"in s}class f extends D{static ID="workbench.action.chat.addDynamicVariable";constructor(){super({id:f.ID,title:""})}async run(r,...n){const t=n[0];if(!$(t))return;let e=t.range;const a=t.variableData,i=()=>{t.widget.inputEditor.executeEdits("chatInsertDynamicVariableWithArguments",[{range:t.range,text:""}])};if(t.command){const o=await r.get(F).executeCommand(t.command.id,...t.command.arguments??[]);if(!o){i();return}const u=":"+o,p=new g(e.startLineNumber,e.endColumn,e.endLineNumber,e.endColumn+u.length);if(e=new g(e.startLineNumber,e.startColumn,e.endLineNumber,e.endColumn+u.length),!t.widget.inputEditor.executeEdits("chatInsertDynamicVariableWithArguments",[{range:p,text:u+" "}])){i();return}}t.widget.getContrib(d.ID)?.addReference({id:t.id,range:e,data:a})}}S(f);export{f as AddDynamicVariableAction,d as ChatDynamicVariableModel,m as SelectAndInsertFileAction,U as dynamicVariableDecorationType};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ChatDynamicVariableModel_1;
+import { coalesce } from '../../../../../base/common/arrays.js';
+import { MarkdownString } from '../../../../../base/common/htmlContent.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { basename } from '../../../../../base/common/resources.js';
+import { URI } from '../../../../../base/common/uri.js';
+import { Range } from '../../../../../editor/common/core/range.js';
+import { ITextModelService } from '../../../../../editor/common/services/resolverService.js';
+import { localize } from '../../../../../nls.js';
+import { Action2, registerAction2 } from '../../../../../platform/actions/common/actions.js';
+import { ICommandService } from '../../../../../platform/commands/common/commands.js';
+import { ILabelService } from '../../../../../platform/label/common/label.js';
+import { ILogService } from '../../../../../platform/log/common/log.js';
+import { IQuickInputService } from '../../../../../platform/quickinput/common/quickInput.js';
+import { ChatWidget } from '../chatWidget.js';
+import { IChatVariablesService } from '../../common/chatVariables.js';
+export const dynamicVariableDecorationType = 'chat-dynamic-variable';
+let ChatDynamicVariableModel = class ChatDynamicVariableModel extends Disposable {
+    static { ChatDynamicVariableModel_1 = this; }
+    static { this.ID = 'chatDynamicVariableModel'; }
+    get variables() {
+        return [...this._variables];
+    }
+    get id() {
+        return ChatDynamicVariableModel_1.ID;
+    }
+    constructor(widget, labelService) {
+        super();
+        this.widget = widget;
+        this.labelService = labelService;
+        this._variables = [];
+        this._register(widget.inputEditor.onDidChangeModelContent(e => {
+            e.changes.forEach(c => {
+                this._variables = coalesce(this._variables.map(ref => {
+                    const intersection = Range.intersectRanges(ref.range, c.range);
+                    if (intersection && !intersection.isEmpty()) {
+                        if (!Range.containsRange(c.range, ref.range)) {
+                            const rangeToDelete = new Range(ref.range.startLineNumber, ref.range.startColumn, ref.range.endLineNumber, ref.range.endColumn - 1);
+                            this.widget.inputEditor.executeEdits(this.id, [{
+                                    range: rangeToDelete,
+                                    text: '',
+                                }]);
+                        }
+                        return null;
+                    }
+                    else if (Range.compareRangesUsingStarts(ref.range, c.range) > 0) {
+                        const delta = c.text.length - c.rangeLength;
+                        return {
+                            ...ref,
+                            range: {
+                                startLineNumber: ref.range.startLineNumber,
+                                startColumn: ref.range.startColumn + delta,
+                                endLineNumber: ref.range.endLineNumber,
+                                endColumn: ref.range.endColumn + delta
+                            }
+                        };
+                    }
+                    return ref;
+                }));
+            });
+            this.updateDecorations();
+        }));
+    }
+    getInputState() {
+        return this.variables;
+    }
+    setInputState(s) {
+        if (!Array.isArray(s)) {
+            s = [];
+        }
+        this._variables = s;
+        this.updateDecorations();
+    }
+    addReference(ref) {
+        this._variables.push(ref);
+        this.updateDecorations();
+    }
+    updateDecorations() {
+        this.widget.inputEditor.setDecorationsByType('chat', dynamicVariableDecorationType, this._variables.map((r) => ({
+            range: r.range,
+            hoverMessage: this.getHoverForReference(r)
+        })));
+    }
+    getHoverForReference(ref) {
+        const value = ref.data;
+        if (URI.isUri(value)) {
+            return new MarkdownString(this.labelService.getUriLabel(value, { relative: true }));
+        }
+        else {
+            return undefined;
+        }
+    }
+};
+ChatDynamicVariableModel = ChatDynamicVariableModel_1 = __decorate([
+    __param(1, ILabelService),
+    __metadata("design:paramtypes", [Object, Object])
+], ChatDynamicVariableModel);
+export { ChatDynamicVariableModel };
+ChatWidget.CONTRIBS.push(ChatDynamicVariableModel);
+function isSelectAndInsertFileActionContext(context) {
+    return 'widget' in context && 'range' in context;
+}
+export class SelectAndInsertFileAction extends Action2 {
+    static { this.Name = 'files'; }
+    static { this.Item = {
+        label: localize('allFiles', 'All Files'),
+        description: localize('allFilesDescription', 'Search for relevant files in the workspace and provide context from them'),
+    }; }
+    static { this.ID = 'workbench.action.chat.selectAndInsertFile'; }
+    constructor() {
+        super({
+            id: SelectAndInsertFileAction.ID,
+            title: ''
+        });
+    }
+    async run(accessor, ...args) {
+        const textModelService = accessor.get(ITextModelService);
+        const logService = accessor.get(ILogService);
+        const quickInputService = accessor.get(IQuickInputService);
+        const chatVariablesService = accessor.get(IChatVariablesService);
+        const context = args[0];
+        if (!isSelectAndInsertFileActionContext(context)) {
+            return;
+        }
+        const doCleanup = () => {
+            context.widget.inputEditor.executeEdits('chatInsertFile', [{ range: context.range, text: `` }]);
+        };
+        let options;
+        if (chatVariablesService.hasVariable(SelectAndInsertFileAction.Name)) {
+            const providerOptions = {
+                additionPicks: [SelectAndInsertFileAction.Item, { type: 'separator' }]
+            };
+            options = { providerOptions };
+        }
+        const picks = await quickInputService.quickAccess.pick('', options);
+        if (!picks?.length) {
+            logService.trace('SelectAndInsertFileAction: no file selected');
+            doCleanup();
+            return;
+        }
+        const editor = context.widget.inputEditor;
+        const range = context.range;
+        if (picks[0] === SelectAndInsertFileAction.Item) {
+            const text = `#${SelectAndInsertFileAction.Name}`;
+            const success = editor.executeEdits('chatInsertFile', [{ range, text: text + ' ' }]);
+            if (!success) {
+                logService.trace(`SelectAndInsertFileAction: failed to insert "${text}"`);
+                doCleanup();
+            }
+            return;
+        }
+        const resource = picks[0].resource;
+        if (!textModelService.canHandleResource(resource)) {
+            logService.trace('SelectAndInsertFileAction: non-text resource selected');
+            doCleanup();
+            return;
+        }
+        const fileName = basename(resource);
+        const text = `#file:${fileName}`;
+        const success = editor.executeEdits('chatInsertFile', [{ range, text: text + ' ' }]);
+        if (!success) {
+            logService.trace(`SelectAndInsertFileAction: failed to insert "${text}"`);
+            doCleanup();
+            return;
+        }
+        context.widget.getContrib(ChatDynamicVariableModel.ID)?.addReference({
+            id: 'vscode.file',
+            range: { startLineNumber: range.startLineNumber, startColumn: range.startColumn, endLineNumber: range.endLineNumber, endColumn: range.startColumn + text.length },
+            data: resource
+        });
+    }
+}
+registerAction2(SelectAndInsertFileAction);
+function isAddDynamicVariableContext(context) {
+    return 'widget' in context &&
+        'range' in context &&
+        'variableData' in context;
+}
+export class AddDynamicVariableAction extends Action2 {
+    static { this.ID = 'workbench.action.chat.addDynamicVariable'; }
+    constructor() {
+        super({
+            id: AddDynamicVariableAction.ID,
+            title: ''
+        });
+    }
+    async run(accessor, ...args) {
+        const context = args[0];
+        if (!isAddDynamicVariableContext(context)) {
+            return;
+        }
+        let range = context.range;
+        const variableData = context.variableData;
+        const doCleanup = () => {
+            context.widget.inputEditor.executeEdits('chatInsertDynamicVariableWithArguments', [{ range: context.range, text: `` }]);
+        };
+        if (context.command) {
+            const commandService = accessor.get(ICommandService);
+            const selection = await commandService.executeCommand(context.command.id, ...(context.command.arguments ?? []));
+            if (!selection) {
+                doCleanup();
+                return;
+            }
+            const insertText = ':' + selection;
+            const insertRange = new Range(range.startLineNumber, range.endColumn, range.endLineNumber, range.endColumn + insertText.length);
+            range = new Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn + insertText.length);
+            const editor = context.widget.inputEditor;
+            const success = editor.executeEdits('chatInsertDynamicVariableWithArguments', [{ range: insertRange, text: insertText + ' ' }]);
+            if (!success) {
+                doCleanup();
+                return;
+            }
+        }
+        context.widget.getContrib(ChatDynamicVariableModel.ID)?.addReference({
+            id: context.id,
+            range: range,
+            data: variableData
+        });
+    }
+}
+registerAction2(AddDynamicVariableAction);

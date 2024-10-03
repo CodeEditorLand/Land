@@ -1,1 +1,575 @@
-import*as d from"../../../base/browser/dom.js";import{StandardWheelEvent as N}from"../../../base/browser/mouseEvent.js";import{Disposable as w}from"../../../base/common/lifecycle.js";import*as T from"../../../base/common/platform.js";import{HitTestContext as D,MouseTarget as m,MouseTargetFactory as S}from"./mouseTarget.js";import{MouseTargetType as h}from"../editorBrowser.js";import{ClientCoordinates as L,EditorMouseEvent as P,EditorMouseEventFactory as O,GlobalEditorPointerMoveMonitor as x,createEditorPagePosition as y,createCoordinatesRelativeToEditor as b,PageCoordinates as H}from"../editorDom.js";import"../view/viewController.js";import{EditorZoom as g}from"../../common/config/editorZoom.js";import{Position as _}from"../../common/core/position.js";import{Selection as I}from"../../common/core/selection.js";import"../view/renderingContext.js";import"../../common/viewModel/viewContext.js";import"../../common/viewEvents.js";import{ViewEventHandler as K}from"../../common/viewEventHandler.js";import{EditorOption as v}from"../../common/config/editorOptions.js";import{NavigationCommandRevealType as f}from"../coreCommands.js";import{MouseWheelClassifier as A}from"../../../base/browser/ui/scrollbar/scrollableElement.js";class pe extends K{_context;viewController;viewHelper;mouseTargetFactory;_mouseDownOperation;lastMouseLeaveTime;_height;_mouseLeaveMonitor=null;constructor(o,t,e){super(),this._context=o,this.viewController=t,this.viewHelper=e,this.mouseTargetFactory=new S(this._context,e),this._mouseDownOperation=this._register(new B(this._context,this.viewController,this.viewHelper,this.mouseTargetFactory,(n,a)=>this._createMouseTarget(n,a),n=>this._getMouseColumn(n))),this.lastMouseLeaveTime=-1,this._height=this._context.configuration.options.get(v.layoutInfo).height;const s=new O(this.viewHelper.viewDomNode);this._register(s.onContextMenu(this.viewHelper.viewDomNode,n=>this._onContextMenu(n,!0))),this._register(s.onMouseMove(this.viewHelper.viewDomNode,n=>{this._onMouseMove(n),this._mouseLeaveMonitor||(this._mouseLeaveMonitor=d.addDisposableListener(this.viewHelper.viewDomNode.ownerDocument,"mousemove",a=>{this.viewHelper.viewDomNode.contains(a.target)||this._onMouseLeave(new P(a,!1,this.viewHelper.viewDomNode))}))})),this._register(s.onMouseUp(this.viewHelper.viewDomNode,n=>this._onMouseUp(n))),this._register(s.onMouseLeave(this.viewHelper.viewDomNode,n=>this._onMouseLeave(n)));let i=0;this._register(s.onPointerDown(this.viewHelper.viewDomNode,(n,a)=>{i=a})),this._register(d.addDisposableListener(this.viewHelper.viewDomNode,d.EventType.POINTER_UP,n=>{this._mouseDownOperation.onPointerUp()})),this._register(s.onMouseDown(this.viewHelper.viewDomNode,n=>this._onMouseDown(n,i))),this._setupMouseWheelZoomListener(),this._context.addEventHandler(this)}_setupMouseWheelZoomListener(){const o=A.INSTANCE;let t=0,e=g.getZoomLevel(),s=!1,i=0;const n=r=>{if(this.viewController.emitMouseWheel(r),!this._context.configuration.options.get(v.mouseWheelZoom))return;const l=new N(r);if(o.acceptStandardWheelEvent(l),o.isPhysicalMouseWheel()){if(a(r)){const u=g.getZoomLevel(),p=l.deltaY>0?1:-1;g.setZoomLevel(u+p),l.preventDefault(),l.stopPropagation()}}else Date.now()-t>50&&(e=g.getZoomLevel(),s=a(r),i=0),t=Date.now(),i+=l.deltaY,s&&(g.setZoomLevel(e+i/5),l.preventDefault(),l.stopPropagation())};this._register(d.addDisposableListener(this.viewHelper.viewDomNode,d.EventType.MOUSE_WHEEL,n,{capture:!0,passive:!1}));function a(r){return T.isMacintosh?(r.metaKey||r.ctrlKey)&&!r.shiftKey&&!r.altKey:r.ctrlKey&&!r.metaKey&&!r.shiftKey&&!r.altKey}}dispose(){this._context.removeEventHandler(this),this._mouseLeaveMonitor&&(this._mouseLeaveMonitor.dispose(),this._mouseLeaveMonitor=null),super.dispose()}onConfigurationChanged(o){if(o.hasChanged(v.layoutInfo)){const t=this._context.configuration.options.get(v.layoutInfo).height;this._height!==t&&(this._height=t,this._mouseDownOperation.onHeightChanged())}return!1}onCursorStateChanged(o){return this._mouseDownOperation.onCursorStateChanged(o),!1}onFocusChanged(o){return!1}getTargetAtClientPoint(o,t){const s=new L(o,t).toPageCoordinates(d.getWindow(this.viewHelper.viewDomNode)),i=y(this.viewHelper.viewDomNode);if(s.y<i.y||s.y>i.y+i.height||s.x<i.x||s.x>i.x+i.width)return null;const n=b(this.viewHelper.viewDomNode,i,s);return this.mouseTargetFactory.createMouseTarget(this.viewHelper.getLastRenderData(),i,s,n,null)}_createMouseTarget(o,t){let e=o.target;if(!this.viewHelper.viewDomNode.contains(e)){const s=d.getShadowRoot(this.viewHelper.viewDomNode);s&&(e=s.elementsFromPoint(o.posx,o.posy).find(i=>this.viewHelper.viewDomNode.contains(i)))}return this.mouseTargetFactory.createMouseTarget(this.viewHelper.getLastRenderData(),o.editorPos,o.pos,o.relativePos,t?e:null)}_getMouseColumn(o){return this.mouseTargetFactory.getMouseColumn(o.relativePos)}_onContextMenu(o,t){this.viewController.emitContextMenu({event:o,target:this._createMouseTarget(o,t)})}_onMouseMove(o){this.mouseTargetFactory.mouseTargetIsWidget(o)||o.preventDefault(),!(this._mouseDownOperation.isActive()||o.timestamp<this.lastMouseLeaveTime)&&this.viewController.emitMouseMove({event:o,target:this._createMouseTarget(o,!0)})}_onMouseLeave(o){this._mouseLeaveMonitor&&(this._mouseLeaveMonitor.dispose(),this._mouseLeaveMonitor=null),this.lastMouseLeaveTime=new Date().getTime(),this.viewController.emitMouseLeave({event:o,target:null})}_onMouseUp(o){this.viewController.emitMouseUp({event:o,target:this._createMouseTarget(o,!0)})}_onMouseDown(o,t){const e=this._createMouseTarget(o,!0),s=e.type===h.CONTENT_TEXT||e.type===h.CONTENT_EMPTY,i=e.type===h.GUTTER_GLYPH_MARGIN||e.type===h.GUTTER_LINE_NUMBERS||e.type===h.GUTTER_LINE_DECORATIONS,n=e.type===h.GUTTER_LINE_NUMBERS,a=this._context.configuration.options.get(v.selectOnLineNumbers),r=e.type===h.CONTENT_VIEW_ZONE||e.type===h.GUTTER_VIEW_ZONE,l=e.type===h.CONTENT_WIDGET;let u=o.leftButton||o.middleButton;T.isMacintosh&&o.leftButton&&o.ctrlKey&&(u=!1);const p=()=>{o.preventDefault(),this.viewHelper.focusTextArea()};if(u&&(s||n&&a))p(),this._mouseDownOperation.start(e.type,o,t);else if(i)o.preventDefault();else if(r){const c=e.detail;u&&this.viewHelper.shouldSuppressMouseDownOnViewZone(c.viewZoneId)&&(p(),this._mouseDownOperation.start(e.type,o,t),o.preventDefault())}else l&&this.viewHelper.shouldSuppressMouseDownOnWidget(e.detail)&&(p(),o.preventDefault());this.viewController.emitMouseDown({event:o,target:e})}_onMouseWheel(o){this.viewController.emitMouseWheel(o)}}class B extends w{constructor(t,e,s,i,n,a){super();this._context=t;this._viewController=e;this._viewHelper=s;this._mouseTargetFactory=i;this._createMouseTarget=n,this._getMouseColumn=a,this._mouseMoveMonitor=this._register(new x(this._viewHelper.viewDomNode)),this._topBottomDragScrolling=this._register(new W(this._context,this._viewHelper,this._mouseTargetFactory,(r,l,u)=>this._dispatchMouse(r,l,u))),this._mouseState=new E,this._currentSelection=new I(1,1,1,1),this._isActive=!1,this._lastMouseEvent=null}_createMouseTarget;_getMouseColumn;_mouseMoveMonitor;_topBottomDragScrolling;_mouseState;_currentSelection;_isActive;_lastMouseEvent;dispose(){super.dispose()}isActive(){return this._isActive}_onMouseDownThenMove(t){this._lastMouseEvent=t,this._mouseState.setModifiers(t);const e=this._findMousePosition(t,!1);e&&(this._mouseState.isDragAndDrop?this._viewController.emitMouseDrag({event:t,target:e}):e.type===h.OUTSIDE_EDITOR&&(e.outsidePosition==="above"||e.outsidePosition==="below")?this._topBottomDragScrolling.start(e,t):(this._topBottomDragScrolling.stop(),this._dispatchMouse(e,!0,f.Minimal)))}start(t,e,s){this._lastMouseEvent=e,this._mouseState.setStartedOnLineNumbers(t===h.GUTTER_LINE_NUMBERS),this._mouseState.setStartButtons(e),this._mouseState.setModifiers(e);const i=this._findMousePosition(e,!0);if(!i||!i.position)return;this._mouseState.trySetCount(e.detail,i.position),e.detail=this._mouseState.count;const n=this._context.configuration.options;if(!n.get(v.readOnly)&&n.get(v.dragAndDrop)&&!n.get(v.columnSelection)&&!this._mouseState.altKey&&e.detail<2&&!this._isActive&&!this._currentSelection.isEmpty()&&i.type===h.CONTENT_TEXT&&i.position&&this._currentSelection.containsPosition(i.position)){this._mouseState.isDragAndDrop=!0,this._isActive=!0,this._mouseMoveMonitor.startMonitoring(this._viewHelper.viewLinesDomNode,s,e.buttons,a=>this._onMouseDownThenMove(a),a=>{const r=this._findMousePosition(this._lastMouseEvent,!1);d.isKeyboardEvent(a)?this._viewController.emitMouseDropCanceled():this._viewController.emitMouseDrop({event:this._lastMouseEvent,target:r?this._createMouseTarget(this._lastMouseEvent,!0):null}),this._stop()});return}this._mouseState.isDragAndDrop=!1,this._dispatchMouse(i,e.shiftKey,f.Minimal),this._isActive||(this._isActive=!0,this._mouseMoveMonitor.startMonitoring(this._viewHelper.viewLinesDomNode,s,e.buttons,a=>this._onMouseDownThenMove(a),()=>this._stop()))}_stop(){this._isActive=!1,this._topBottomDragScrolling.stop()}onHeightChanged(){this._mouseMoveMonitor.stopMonitoring()}onPointerUp(){this._mouseMoveMonitor.stopMonitoring()}onCursorStateChanged(t){this._currentSelection=t.selections[0]}_getPositionOutsideEditor(t){const e=t.editorPos,s=this._context.viewModel,i=this._context.viewLayout,n=this._getMouseColumn(t);if(t.posy<e.y){const r=e.y-t.posy,l=Math.max(i.getCurrentScrollTop()-r,0),u=D.getZoneAtCoord(this._context,l);if(u){const c=this._helpPositionJumpOverViewZone(u);if(c)return m.createOutsideEditor(n,c,"above",r)}const p=i.getLineNumberAtVerticalOffset(l);return m.createOutsideEditor(n,new _(p,1),"above",r)}if(t.posy>e.y+e.height){const r=t.posy-e.y-e.height,l=i.getCurrentScrollTop()+t.relativePos.y,u=D.getZoneAtCoord(this._context,l);if(u){const c=this._helpPositionJumpOverViewZone(u);if(c)return m.createOutsideEditor(n,c,"below",r)}const p=i.getLineNumberAtVerticalOffset(l);return m.createOutsideEditor(n,new _(p,s.getLineMaxColumn(p)),"below",r)}const a=i.getLineNumberAtVerticalOffset(i.getCurrentScrollTop()+t.relativePos.y);if(t.posx<e.x){const r=e.x-t.posx;return m.createOutsideEditor(n,new _(a,1),"left",r)}if(t.posx>e.x+e.width){const r=t.posx-e.x-e.width;return m.createOutsideEditor(n,new _(a,s.getLineMaxColumn(a)),"right",r)}return null}_findMousePosition(t,e){const s=this._getPositionOutsideEditor(t);if(s)return s;const i=this._createMouseTarget(t,e);if(!i.position)return null;if(i.type===h.CONTENT_VIEW_ZONE||i.type===h.GUTTER_VIEW_ZONE){const a=this._helpPositionJumpOverViewZone(i.detail);if(a)return m.createViewZone(i.type,i.element,i.mouseColumn,a,i.detail)}return i}_helpPositionJumpOverViewZone(t){const e=new _(this._currentSelection.selectionStartLineNumber,this._currentSelection.selectionStartColumn),s=t.positionBefore,i=t.positionAfter;return s&&i?s.isBefore(e)?s:i:null}_dispatchMouse(t,e,s){t.position&&this._viewController.dispatchMouse({position:t.position,mouseColumn:t.mouseColumn,startedOnLineNumbers:this._mouseState.startedOnLineNumbers,revealType:s,inSelectionMode:e,mouseDownCount:this._mouseState.count,altKey:this._mouseState.altKey,ctrlKey:this._mouseState.ctrlKey,metaKey:this._mouseState.metaKey,shiftKey:this._mouseState.shiftKey,leftButton:this._mouseState.leftButton,middleButton:this._mouseState.middleButton,onInjectedText:t.type===h.CONTENT_TEXT&&t.detail.injectedText!==null})}}class W extends w{constructor(t,e,s,i){super();this._context=t;this._viewHelper=e;this._mouseTargetFactory=s;this._dispatchMouse=i;this._operation=null}_operation;dispose(){super.dispose(),this.stop()}start(t,e){this._operation?this._operation.setPosition(t,e):this._operation=new V(this._context,this._viewHelper,this._mouseTargetFactory,this._dispatchMouse,t,e)}stop(){this._operation&&(this._operation.dispose(),this._operation=null)}}class V extends w{constructor(t,e,s,i,n,a){super();this._context=t;this._viewHelper=e;this._mouseTargetFactory=s;this._dispatchMouse=i;this._position=n,this._mouseEvent=a,this._lastTime=Date.now(),this._animationFrameDisposable=d.scheduleAtNextAnimationFrame(d.getWindow(a.browserEvent),()=>this._execute())}_position;_mouseEvent;_lastTime;_animationFrameDisposable;dispose(){this._animationFrameDisposable.dispose(),super.dispose()}setPosition(t,e){this._position=t,this._mouseEvent=e}_tick(){const t=Date.now(),e=t-this._lastTime;return this._lastTime=t,e}_getScrollSpeed(){const t=this._context.configuration.options.get(v.lineHeight),e=this._context.configuration.options.get(v.layoutInfo).height/t,s=this._position.outsideDistance/t;return s<=1.5?Math.max(30,e*(1+s)):s<=3?Math.max(60,e*(2+s)):Math.max(200,e*(7+s))}_execute(){const t=this._context.configuration.options.get(v.lineHeight),e=this._getScrollSpeed(),s=this._tick(),i=e*(s/1e3)*t,n=this._position.outsidePosition==="above"?-i:i;this._context.viewModel.viewLayout.deltaScrollNow(0,n),this._viewHelper.renderNow();const a=this._context.viewLayout.getLinesViewportData(),r=this._position.outsidePosition==="above"?a.startLineNumber:a.endLineNumber;let l;{const u=y(this._viewHelper.viewDomNode),p=this._context.configuration.options.get(v.layoutInfo).horizontalScrollbarHeight,c=new H(this._mouseEvent.pos.x,u.y+u.height-p-.1),C=b(this._viewHelper.viewDomNode,u,c);l=this._mouseTargetFactory.createMouseTarget(this._viewHelper.getLastRenderData(),u,c,C,null)}(!l.position||l.position.lineNumber!==r)&&(this._position.outsidePosition==="above"?l=m.createOutsideEditor(this._position.mouseColumn,new _(r,1),"above",this._position.outsideDistance):l=m.createOutsideEditor(this._position.mouseColumn,new _(r,this._context.viewModel.getLineMaxColumn(r)),"below",this._position.outsideDistance)),this._dispatchMouse(l,!0,f.None),this._animationFrameDisposable=d.scheduleAtNextAnimationFrame(d.getWindow(l.element),()=>this._execute())}}class E{static CLEAR_MOUSE_DOWN_COUNT_TIME=400;_altKey;get altKey(){return this._altKey}_ctrlKey;get ctrlKey(){return this._ctrlKey}_metaKey;get metaKey(){return this._metaKey}_shiftKey;get shiftKey(){return this._shiftKey}_leftButton;get leftButton(){return this._leftButton}_middleButton;get middleButton(){return this._middleButton}_startedOnLineNumbers;get startedOnLineNumbers(){return this._startedOnLineNumbers}_lastMouseDownPosition;_lastMouseDownPositionEqualCount;_lastMouseDownCount;_lastSetMouseDownCountTime;isDragAndDrop;constructor(){this._altKey=!1,this._ctrlKey=!1,this._metaKey=!1,this._shiftKey=!1,this._leftButton=!1,this._middleButton=!1,this._startedOnLineNumbers=!1,this._lastMouseDownPosition=null,this._lastMouseDownPositionEqualCount=0,this._lastMouseDownCount=0,this._lastSetMouseDownCountTime=0,this.isDragAndDrop=!1}get count(){return this._lastMouseDownCount}setModifiers(o){this._altKey=o.altKey,this._ctrlKey=o.ctrlKey,this._metaKey=o.metaKey,this._shiftKey=o.shiftKey}setStartButtons(o){this._leftButton=o.leftButton,this._middleButton=o.middleButton}setStartedOnLineNumbers(o){this._startedOnLineNumbers=o}trySetCount(o,t){const e=new Date().getTime();e-this._lastSetMouseDownCountTime>E.CLEAR_MOUSE_DOWN_COUNT_TIME&&(o=1),this._lastSetMouseDownCountTime=e,o>this._lastMouseDownCount+1&&(o=this._lastMouseDownCount+1),this._lastMouseDownPosition&&this._lastMouseDownPosition.equals(t)?this._lastMouseDownPositionEqualCount++:this._lastMouseDownPositionEqualCount=1,this._lastMouseDownPosition=t,this._lastMouseDownCount=Math.min(o,this._lastMouseDownPositionEqualCount)}}export{pe as MouseHandler};
+import * as dom from '../../../base/browser/dom.js';
+import { StandardWheelEvent } from '../../../base/browser/mouseEvent.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import * as platform from '../../../base/common/platform.js';
+import { HitTestContext, MouseTarget, MouseTargetFactory } from './mouseTarget.js';
+import { ClientCoordinates, EditorMouseEvent, EditorMouseEventFactory, GlobalEditorPointerMoveMonitor, createEditorPagePosition, createCoordinatesRelativeToEditor, PageCoordinates } from '../editorDom.js';
+import { EditorZoom } from '../../common/config/editorZoom.js';
+import { Position } from '../../common/core/position.js';
+import { Selection } from '../../common/core/selection.js';
+import { ViewEventHandler } from '../../common/viewEventHandler.js';
+import { MouseWheelClassifier } from '../../../base/browser/ui/scrollbar/scrollableElement.js';
+export class MouseHandler extends ViewEventHandler {
+    constructor(context, viewController, viewHelper) {
+        super();
+        this._mouseLeaveMonitor = null;
+        this._context = context;
+        this.viewController = viewController;
+        this.viewHelper = viewHelper;
+        this.mouseTargetFactory = new MouseTargetFactory(this._context, viewHelper);
+        this._mouseDownOperation = this._register(new MouseDownOperation(this._context, this.viewController, this.viewHelper, this.mouseTargetFactory, (e, testEventTarget) => this._createMouseTarget(e, testEventTarget), (e) => this._getMouseColumn(e)));
+        this.lastMouseLeaveTime = -1;
+        this._height = this._context.configuration.options.get(148).height;
+        const mouseEvents = new EditorMouseEventFactory(this.viewHelper.viewDomNode);
+        this._register(mouseEvents.onContextMenu(this.viewHelper.viewDomNode, (e) => this._onContextMenu(e, true)));
+        this._register(mouseEvents.onMouseMove(this.viewHelper.viewDomNode, (e) => {
+            this._onMouseMove(e);
+            if (!this._mouseLeaveMonitor) {
+                this._mouseLeaveMonitor = dom.addDisposableListener(this.viewHelper.viewDomNode.ownerDocument, 'mousemove', (e) => {
+                    if (!this.viewHelper.viewDomNode.contains(e.target)) {
+                        this._onMouseLeave(new EditorMouseEvent(e, false, this.viewHelper.viewDomNode));
+                    }
+                });
+            }
+        }));
+        this._register(mouseEvents.onMouseUp(this.viewHelper.viewDomNode, (e) => this._onMouseUp(e)));
+        this._register(mouseEvents.onMouseLeave(this.viewHelper.viewDomNode, (e) => this._onMouseLeave(e)));
+        let capturePointerId = 0;
+        this._register(mouseEvents.onPointerDown(this.viewHelper.viewDomNode, (e, pointerId) => {
+            capturePointerId = pointerId;
+        }));
+        this._register(dom.addDisposableListener(this.viewHelper.viewDomNode, dom.EventType.POINTER_UP, (e) => {
+            this._mouseDownOperation.onPointerUp();
+        }));
+        this._register(mouseEvents.onMouseDown(this.viewHelper.viewDomNode, (e) => this._onMouseDown(e, capturePointerId)));
+        this._setupMouseWheelZoomListener();
+        this._context.addEventHandler(this);
+    }
+    _setupMouseWheelZoomListener() {
+        const classifier = MouseWheelClassifier.INSTANCE;
+        let prevMouseWheelTime = 0;
+        let gestureStartZoomLevel = EditorZoom.getZoomLevel();
+        let gestureHasZoomModifiers = false;
+        let gestureAccumulatedDelta = 0;
+        const onMouseWheel = (browserEvent) => {
+            this.viewController.emitMouseWheel(browserEvent);
+            if (!this._context.configuration.options.get(78)) {
+                return;
+            }
+            const e = new StandardWheelEvent(browserEvent);
+            classifier.acceptStandardWheelEvent(e);
+            if (classifier.isPhysicalMouseWheel()) {
+                if (hasMouseWheelZoomModifiers(browserEvent)) {
+                    const zoomLevel = EditorZoom.getZoomLevel();
+                    const delta = e.deltaY > 0 ? 1 : -1;
+                    EditorZoom.setZoomLevel(zoomLevel + delta);
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+            else {
+                if (Date.now() - prevMouseWheelTime > 50) {
+                    gestureStartZoomLevel = EditorZoom.getZoomLevel();
+                    gestureHasZoomModifiers = hasMouseWheelZoomModifiers(browserEvent);
+                    gestureAccumulatedDelta = 0;
+                }
+                prevMouseWheelTime = Date.now();
+                gestureAccumulatedDelta += e.deltaY;
+                if (gestureHasZoomModifiers) {
+                    EditorZoom.setZoomLevel(gestureStartZoomLevel + gestureAccumulatedDelta / 5);
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+        };
+        this._register(dom.addDisposableListener(this.viewHelper.viewDomNode, dom.EventType.MOUSE_WHEEL, onMouseWheel, { capture: true, passive: false }));
+        function hasMouseWheelZoomModifiers(browserEvent) {
+            return (platform.isMacintosh
+                ? ((browserEvent.metaKey || browserEvent.ctrlKey) && !browserEvent.shiftKey && !browserEvent.altKey)
+                : (browserEvent.ctrlKey && !browserEvent.metaKey && !browserEvent.shiftKey && !browserEvent.altKey));
+        }
+    }
+    dispose() {
+        this._context.removeEventHandler(this);
+        if (this._mouseLeaveMonitor) {
+            this._mouseLeaveMonitor.dispose();
+            this._mouseLeaveMonitor = null;
+        }
+        super.dispose();
+    }
+    onConfigurationChanged(e) {
+        if (e.hasChanged(148)) {
+            const height = this._context.configuration.options.get(148).height;
+            if (this._height !== height) {
+                this._height = height;
+                this._mouseDownOperation.onHeightChanged();
+            }
+        }
+        return false;
+    }
+    onCursorStateChanged(e) {
+        this._mouseDownOperation.onCursorStateChanged(e);
+        return false;
+    }
+    onFocusChanged(e) {
+        return false;
+    }
+    getTargetAtClientPoint(clientX, clientY) {
+        const clientPos = new ClientCoordinates(clientX, clientY);
+        const pos = clientPos.toPageCoordinates(dom.getWindow(this.viewHelper.viewDomNode));
+        const editorPos = createEditorPagePosition(this.viewHelper.viewDomNode);
+        if (pos.y < editorPos.y || pos.y > editorPos.y + editorPos.height || pos.x < editorPos.x || pos.x > editorPos.x + editorPos.width) {
+            return null;
+        }
+        const relativePos = createCoordinatesRelativeToEditor(this.viewHelper.viewDomNode, editorPos, pos);
+        return this.mouseTargetFactory.createMouseTarget(this.viewHelper.getLastRenderData(), editorPos, pos, relativePos, null);
+    }
+    _createMouseTarget(e, testEventTarget) {
+        let target = e.target;
+        if (!this.viewHelper.viewDomNode.contains(target)) {
+            const shadowRoot = dom.getShadowRoot(this.viewHelper.viewDomNode);
+            if (shadowRoot) {
+                target = shadowRoot.elementsFromPoint(e.posx, e.posy).find((el) => this.viewHelper.viewDomNode.contains(el));
+            }
+        }
+        return this.mouseTargetFactory.createMouseTarget(this.viewHelper.getLastRenderData(), e.editorPos, e.pos, e.relativePos, testEventTarget ? target : null);
+    }
+    _getMouseColumn(e) {
+        return this.mouseTargetFactory.getMouseColumn(e.relativePos);
+    }
+    _onContextMenu(e, testEventTarget) {
+        this.viewController.emitContextMenu({
+            event: e,
+            target: this._createMouseTarget(e, testEventTarget)
+        });
+    }
+    _onMouseMove(e) {
+        const targetIsWidget = this.mouseTargetFactory.mouseTargetIsWidget(e);
+        if (!targetIsWidget) {
+            e.preventDefault();
+        }
+        if (this._mouseDownOperation.isActive()) {
+            return;
+        }
+        const actualMouseMoveTime = e.timestamp;
+        if (actualMouseMoveTime < this.lastMouseLeaveTime) {
+            return;
+        }
+        this.viewController.emitMouseMove({
+            event: e,
+            target: this._createMouseTarget(e, true)
+        });
+    }
+    _onMouseLeave(e) {
+        if (this._mouseLeaveMonitor) {
+            this._mouseLeaveMonitor.dispose();
+            this._mouseLeaveMonitor = null;
+        }
+        this.lastMouseLeaveTime = (new Date()).getTime();
+        this.viewController.emitMouseLeave({
+            event: e,
+            target: null
+        });
+    }
+    _onMouseUp(e) {
+        this.viewController.emitMouseUp({
+            event: e,
+            target: this._createMouseTarget(e, true)
+        });
+    }
+    _onMouseDown(e, pointerId) {
+        const t = this._createMouseTarget(e, true);
+        const targetIsContent = (t.type === 6 || t.type === 7);
+        const targetIsGutter = (t.type === 2 || t.type === 3 || t.type === 4);
+        const targetIsLineNumbers = (t.type === 3);
+        const selectOnLineNumbers = this._context.configuration.options.get(112);
+        const targetIsViewZone = (t.type === 8 || t.type === 5);
+        const targetIsWidget = (t.type === 9);
+        let shouldHandle = e.leftButton || e.middleButton;
+        if (platform.isMacintosh && e.leftButton && e.ctrlKey) {
+            shouldHandle = false;
+        }
+        const focus = () => {
+            e.preventDefault();
+            this.viewHelper.focusTextArea();
+        };
+        if (shouldHandle && (targetIsContent || (targetIsLineNumbers && selectOnLineNumbers))) {
+            focus();
+            this._mouseDownOperation.start(t.type, e, pointerId);
+        }
+        else if (targetIsGutter) {
+            e.preventDefault();
+        }
+        else if (targetIsViewZone) {
+            const viewZoneData = t.detail;
+            if (shouldHandle && this.viewHelper.shouldSuppressMouseDownOnViewZone(viewZoneData.viewZoneId)) {
+                focus();
+                this._mouseDownOperation.start(t.type, e, pointerId);
+                e.preventDefault();
+            }
+        }
+        else if (targetIsWidget && this.viewHelper.shouldSuppressMouseDownOnWidget(t.detail)) {
+            focus();
+            e.preventDefault();
+        }
+        this.viewController.emitMouseDown({
+            event: e,
+            target: t
+        });
+    }
+    _onMouseWheel(e) {
+        this.viewController.emitMouseWheel(e);
+    }
+}
+class MouseDownOperation extends Disposable {
+    constructor(_context, _viewController, _viewHelper, _mouseTargetFactory, createMouseTarget, getMouseColumn) {
+        super();
+        this._context = _context;
+        this._viewController = _viewController;
+        this._viewHelper = _viewHelper;
+        this._mouseTargetFactory = _mouseTargetFactory;
+        this._createMouseTarget = createMouseTarget;
+        this._getMouseColumn = getMouseColumn;
+        this._mouseMoveMonitor = this._register(new GlobalEditorPointerMoveMonitor(this._viewHelper.viewDomNode));
+        this._topBottomDragScrolling = this._register(new TopBottomDragScrolling(this._context, this._viewHelper, this._mouseTargetFactory, (position, inSelectionMode, revealType) => this._dispatchMouse(position, inSelectionMode, revealType)));
+        this._mouseState = new MouseDownState();
+        this._currentSelection = new Selection(1, 1, 1, 1);
+        this._isActive = false;
+        this._lastMouseEvent = null;
+    }
+    dispose() {
+        super.dispose();
+    }
+    isActive() {
+        return this._isActive;
+    }
+    _onMouseDownThenMove(e) {
+        this._lastMouseEvent = e;
+        this._mouseState.setModifiers(e);
+        const position = this._findMousePosition(e, false);
+        if (!position) {
+            return;
+        }
+        if (this._mouseState.isDragAndDrop) {
+            this._viewController.emitMouseDrag({
+                event: e,
+                target: position
+            });
+        }
+        else {
+            if (position.type === 13 && (position.outsidePosition === 'above' || position.outsidePosition === 'below')) {
+                this._topBottomDragScrolling.start(position, e);
+            }
+            else {
+                this._topBottomDragScrolling.stop();
+                this._dispatchMouse(position, true, 1);
+            }
+        }
+    }
+    start(targetType, e, pointerId) {
+        this._lastMouseEvent = e;
+        this._mouseState.setStartedOnLineNumbers(targetType === 3);
+        this._mouseState.setStartButtons(e);
+        this._mouseState.setModifiers(e);
+        const position = this._findMousePosition(e, true);
+        if (!position || !position.position) {
+            return;
+        }
+        this._mouseState.trySetCount(e.detail, position.position);
+        e.detail = this._mouseState.count;
+        const options = this._context.configuration.options;
+        if (!options.get(94)
+            && options.get(35)
+            && !options.get(22)
+            && !this._mouseState.altKey
+            && e.detail < 2
+            && !this._isActive
+            && !this._currentSelection.isEmpty()
+            && (position.type === 6)
+            && position.position && this._currentSelection.containsPosition(position.position)) {
+            this._mouseState.isDragAndDrop = true;
+            this._isActive = true;
+            this._mouseMoveMonitor.startMonitoring(this._viewHelper.viewLinesDomNode, pointerId, e.buttons, (e) => this._onMouseDownThenMove(e), (browserEvent) => {
+                const position = this._findMousePosition(this._lastMouseEvent, false);
+                if (dom.isKeyboardEvent(browserEvent)) {
+                    this._viewController.emitMouseDropCanceled();
+                }
+                else {
+                    this._viewController.emitMouseDrop({
+                        event: this._lastMouseEvent,
+                        target: (position ? this._createMouseTarget(this._lastMouseEvent, true) : null)
+                    });
+                }
+                this._stop();
+            });
+            return;
+        }
+        this._mouseState.isDragAndDrop = false;
+        this._dispatchMouse(position, e.shiftKey, 1);
+        if (!this._isActive) {
+            this._isActive = true;
+            this._mouseMoveMonitor.startMonitoring(this._viewHelper.viewLinesDomNode, pointerId, e.buttons, (e) => this._onMouseDownThenMove(e), () => this._stop());
+        }
+    }
+    _stop() {
+        this._isActive = false;
+        this._topBottomDragScrolling.stop();
+    }
+    onHeightChanged() {
+        this._mouseMoveMonitor.stopMonitoring();
+    }
+    onPointerUp() {
+        this._mouseMoveMonitor.stopMonitoring();
+    }
+    onCursorStateChanged(e) {
+        this._currentSelection = e.selections[0];
+    }
+    _getPositionOutsideEditor(e) {
+        const editorContent = e.editorPos;
+        const model = this._context.viewModel;
+        const viewLayout = this._context.viewLayout;
+        const mouseColumn = this._getMouseColumn(e);
+        if (e.posy < editorContent.y) {
+            const outsideDistance = editorContent.y - e.posy;
+            const verticalOffset = Math.max(viewLayout.getCurrentScrollTop() - outsideDistance, 0);
+            const viewZoneData = HitTestContext.getZoneAtCoord(this._context, verticalOffset);
+            if (viewZoneData) {
+                const newPosition = this._helpPositionJumpOverViewZone(viewZoneData);
+                if (newPosition) {
+                    return MouseTarget.createOutsideEditor(mouseColumn, newPosition, 'above', outsideDistance);
+                }
+            }
+            const aboveLineNumber = viewLayout.getLineNumberAtVerticalOffset(verticalOffset);
+            return MouseTarget.createOutsideEditor(mouseColumn, new Position(aboveLineNumber, 1), 'above', outsideDistance);
+        }
+        if (e.posy > editorContent.y + editorContent.height) {
+            const outsideDistance = e.posy - editorContent.y - editorContent.height;
+            const verticalOffset = viewLayout.getCurrentScrollTop() + e.relativePos.y;
+            const viewZoneData = HitTestContext.getZoneAtCoord(this._context, verticalOffset);
+            if (viewZoneData) {
+                const newPosition = this._helpPositionJumpOverViewZone(viewZoneData);
+                if (newPosition) {
+                    return MouseTarget.createOutsideEditor(mouseColumn, newPosition, 'below', outsideDistance);
+                }
+            }
+            const belowLineNumber = viewLayout.getLineNumberAtVerticalOffset(verticalOffset);
+            return MouseTarget.createOutsideEditor(mouseColumn, new Position(belowLineNumber, model.getLineMaxColumn(belowLineNumber)), 'below', outsideDistance);
+        }
+        const possibleLineNumber = viewLayout.getLineNumberAtVerticalOffset(viewLayout.getCurrentScrollTop() + e.relativePos.y);
+        if (e.posx < editorContent.x) {
+            const outsideDistance = editorContent.x - e.posx;
+            return MouseTarget.createOutsideEditor(mouseColumn, new Position(possibleLineNumber, 1), 'left', outsideDistance);
+        }
+        if (e.posx > editorContent.x + editorContent.width) {
+            const outsideDistance = e.posx - editorContent.x - editorContent.width;
+            return MouseTarget.createOutsideEditor(mouseColumn, new Position(possibleLineNumber, model.getLineMaxColumn(possibleLineNumber)), 'right', outsideDistance);
+        }
+        return null;
+    }
+    _findMousePosition(e, testEventTarget) {
+        const positionOutsideEditor = this._getPositionOutsideEditor(e);
+        if (positionOutsideEditor) {
+            return positionOutsideEditor;
+        }
+        const t = this._createMouseTarget(e, testEventTarget);
+        const hintedPosition = t.position;
+        if (!hintedPosition) {
+            return null;
+        }
+        if (t.type === 8 || t.type === 5) {
+            const newPosition = this._helpPositionJumpOverViewZone(t.detail);
+            if (newPosition) {
+                return MouseTarget.createViewZone(t.type, t.element, t.mouseColumn, newPosition, t.detail);
+            }
+        }
+        return t;
+    }
+    _helpPositionJumpOverViewZone(viewZoneData) {
+        const selectionStart = new Position(this._currentSelection.selectionStartLineNumber, this._currentSelection.selectionStartColumn);
+        const positionBefore = viewZoneData.positionBefore;
+        const positionAfter = viewZoneData.positionAfter;
+        if (positionBefore && positionAfter) {
+            if (positionBefore.isBefore(selectionStart)) {
+                return positionBefore;
+            }
+            else {
+                return positionAfter;
+            }
+        }
+        return null;
+    }
+    _dispatchMouse(position, inSelectionMode, revealType) {
+        if (!position.position) {
+            return;
+        }
+        this._viewController.dispatchMouse({
+            position: position.position,
+            mouseColumn: position.mouseColumn,
+            startedOnLineNumbers: this._mouseState.startedOnLineNumbers,
+            revealType,
+            inSelectionMode: inSelectionMode,
+            mouseDownCount: this._mouseState.count,
+            altKey: this._mouseState.altKey,
+            ctrlKey: this._mouseState.ctrlKey,
+            metaKey: this._mouseState.metaKey,
+            shiftKey: this._mouseState.shiftKey,
+            leftButton: this._mouseState.leftButton,
+            middleButton: this._mouseState.middleButton,
+            onInjectedText: position.type === 6 && position.detail.injectedText !== null
+        });
+    }
+}
+class TopBottomDragScrolling extends Disposable {
+    constructor(_context, _viewHelper, _mouseTargetFactory, _dispatchMouse) {
+        super();
+        this._context = _context;
+        this._viewHelper = _viewHelper;
+        this._mouseTargetFactory = _mouseTargetFactory;
+        this._dispatchMouse = _dispatchMouse;
+        this._operation = null;
+    }
+    dispose() {
+        super.dispose();
+        this.stop();
+    }
+    start(position, mouseEvent) {
+        if (this._operation) {
+            this._operation.setPosition(position, mouseEvent);
+        }
+        else {
+            this._operation = new TopBottomDragScrollingOperation(this._context, this._viewHelper, this._mouseTargetFactory, this._dispatchMouse, position, mouseEvent);
+        }
+    }
+    stop() {
+        if (this._operation) {
+            this._operation.dispose();
+            this._operation = null;
+        }
+    }
+}
+class TopBottomDragScrollingOperation extends Disposable {
+    constructor(_context, _viewHelper, _mouseTargetFactory, _dispatchMouse, position, mouseEvent) {
+        super();
+        this._context = _context;
+        this._viewHelper = _viewHelper;
+        this._mouseTargetFactory = _mouseTargetFactory;
+        this._dispatchMouse = _dispatchMouse;
+        this._position = position;
+        this._mouseEvent = mouseEvent;
+        this._lastTime = Date.now();
+        this._animationFrameDisposable = dom.scheduleAtNextAnimationFrame(dom.getWindow(mouseEvent.browserEvent), () => this._execute());
+    }
+    dispose() {
+        this._animationFrameDisposable.dispose();
+        super.dispose();
+    }
+    setPosition(position, mouseEvent) {
+        this._position = position;
+        this._mouseEvent = mouseEvent;
+    }
+    _tick() {
+        const now = Date.now();
+        const elapsed = now - this._lastTime;
+        this._lastTime = now;
+        return elapsed;
+    }
+    _getScrollSpeed() {
+        const lineHeight = this._context.configuration.options.get(69);
+        const viewportInLines = this._context.configuration.options.get(148).height / lineHeight;
+        const outsideDistanceInLines = this._position.outsideDistance / lineHeight;
+        if (outsideDistanceInLines <= 1.5) {
+            return Math.max(30, viewportInLines * (1 + outsideDistanceInLines));
+        }
+        if (outsideDistanceInLines <= 3) {
+            return Math.max(60, viewportInLines * (2 + outsideDistanceInLines));
+        }
+        return Math.max(200, viewportInLines * (7 + outsideDistanceInLines));
+    }
+    _execute() {
+        const lineHeight = this._context.configuration.options.get(69);
+        const scrollSpeedInLines = this._getScrollSpeed();
+        const elapsed = this._tick();
+        const scrollInPixels = scrollSpeedInLines * (elapsed / 1000) * lineHeight;
+        const scrollValue = (this._position.outsidePosition === 'above' ? -scrollInPixels : scrollInPixels);
+        this._context.viewModel.viewLayout.deltaScrollNow(0, scrollValue);
+        this._viewHelper.renderNow();
+        const viewportData = this._context.viewLayout.getLinesViewportData();
+        const edgeLineNumber = (this._position.outsidePosition === 'above' ? viewportData.startLineNumber : viewportData.endLineNumber);
+        let mouseTarget;
+        {
+            const editorPos = createEditorPagePosition(this._viewHelper.viewDomNode);
+            const horizontalScrollbarHeight = this._context.configuration.options.get(148).horizontalScrollbarHeight;
+            const pos = new PageCoordinates(this._mouseEvent.pos.x, editorPos.y + editorPos.height - horizontalScrollbarHeight - 0.1);
+            const relativePos = createCoordinatesRelativeToEditor(this._viewHelper.viewDomNode, editorPos, pos);
+            mouseTarget = this._mouseTargetFactory.createMouseTarget(this._viewHelper.getLastRenderData(), editorPos, pos, relativePos, null);
+        }
+        if (!mouseTarget.position || mouseTarget.position.lineNumber !== edgeLineNumber) {
+            if (this._position.outsidePosition === 'above') {
+                mouseTarget = MouseTarget.createOutsideEditor(this._position.mouseColumn, new Position(edgeLineNumber, 1), 'above', this._position.outsideDistance);
+            }
+            else {
+                mouseTarget = MouseTarget.createOutsideEditor(this._position.mouseColumn, new Position(edgeLineNumber, this._context.viewModel.getLineMaxColumn(edgeLineNumber)), 'below', this._position.outsideDistance);
+            }
+        }
+        this._dispatchMouse(mouseTarget, true, 2);
+        this._animationFrameDisposable = dom.scheduleAtNextAnimationFrame(dom.getWindow(mouseTarget.element), () => this._execute());
+    }
+}
+class MouseDownState {
+    static { this.CLEAR_MOUSE_DOWN_COUNT_TIME = 400; }
+    get altKey() { return this._altKey; }
+    get ctrlKey() { return this._ctrlKey; }
+    get metaKey() { return this._metaKey; }
+    get shiftKey() { return this._shiftKey; }
+    get leftButton() { return this._leftButton; }
+    get middleButton() { return this._middleButton; }
+    get startedOnLineNumbers() { return this._startedOnLineNumbers; }
+    constructor() {
+        this._altKey = false;
+        this._ctrlKey = false;
+        this._metaKey = false;
+        this._shiftKey = false;
+        this._leftButton = false;
+        this._middleButton = false;
+        this._startedOnLineNumbers = false;
+        this._lastMouseDownPosition = null;
+        this._lastMouseDownPositionEqualCount = 0;
+        this._lastMouseDownCount = 0;
+        this._lastSetMouseDownCountTime = 0;
+        this.isDragAndDrop = false;
+    }
+    get count() {
+        return this._lastMouseDownCount;
+    }
+    setModifiers(source) {
+        this._altKey = source.altKey;
+        this._ctrlKey = source.ctrlKey;
+        this._metaKey = source.metaKey;
+        this._shiftKey = source.shiftKey;
+    }
+    setStartButtons(source) {
+        this._leftButton = source.leftButton;
+        this._middleButton = source.middleButton;
+    }
+    setStartedOnLineNumbers(startedOnLineNumbers) {
+        this._startedOnLineNumbers = startedOnLineNumbers;
+    }
+    trySetCount(setMouseDownCount, newMouseDownPosition) {
+        const currentTime = (new Date()).getTime();
+        if (currentTime - this._lastSetMouseDownCountTime > MouseDownState.CLEAR_MOUSE_DOWN_COUNT_TIME) {
+            setMouseDownCount = 1;
+        }
+        this._lastSetMouseDownCountTime = currentTime;
+        if (setMouseDownCount > this._lastMouseDownCount + 1) {
+            setMouseDownCount = this._lastMouseDownCount + 1;
+        }
+        if (this._lastMouseDownPosition && this._lastMouseDownPosition.equals(newMouseDownPosition)) {
+            this._lastMouseDownPositionEqualCount++;
+        }
+        else {
+            this._lastMouseDownPositionEqualCount = 1;
+        }
+        this._lastMouseDownPosition = newMouseDownPosition;
+        this._lastMouseDownCount = Math.min(setMouseDownCount, this._lastMouseDownPositionEqualCount);
+    }
+}

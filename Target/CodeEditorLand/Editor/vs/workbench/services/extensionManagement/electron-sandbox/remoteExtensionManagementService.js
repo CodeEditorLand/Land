@@ -1,1 +1,217 @@
-var w=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var h=(f,d,e,n)=>{for(var i=n>1?void 0:n?u(d,e):d,t=f.length-1,r;t>=0;t--)(r=f[t])&&(i=(n?r(d,e,i):r(i))||i);return n&&i&&w(d,e,i),i},s=(f,d)=>(e,n)=>d(e,n,f);import"../../../../base/parts/ipc/common/ipc.js";import{IExtensionGalleryService as P,InstallOperation as y,ExtensionManagementError as g,ExtensionManagementErrorCode as c,EXTENSION_INSTALL_CLIENT_TARGET_PLATFORM_CONTEXT as A}from"../../../../platform/extensionManagement/common/extensionManagement.js";import"../../../../base/common/uri.js";import{ExtensionType as k}from"../../../../platform/extensions/common/extensions.js";import{areSameExtensions as E}from"../../../../platform/extensionManagement/common/extensionManagementUtil.js";import{ILogService as D}from"../../../../platform/log/common/log.js";import{toErrorMessage as C}from"../../../../base/common/errorMessage.js";import{isNonEmptyArray as S}from"../../../../base/common/arrays.js";import{CancellationToken as m}from"../../../../base/common/cancellation.js";import{localize as x}from"../../../../nls.js";import{IProductService as M}from"../../../../platform/product/common/productService.js";import{IConfigurationService as b}from"../../../../platform/configuration/common/configuration.js";import"../common/extensionManagement.js";import{Promises as G}from"../../../../base/common/async.js";import{IExtensionManifestPropertiesService as U}from"../../extensions/common/extensionManifestPropertiesService.js";import{IFileService as L}from"../../../../platform/files/common/files.js";import{RemoteExtensionManagementService as T}from"../common/remoteExtensionManagementService.js";import{IUserDataProfilesService as R}from"../../../../platform/userDataProfile/common/userDataProfile.js";import{IUserDataProfileService as V}from"../../userDataProfile/common/userDataProfile.js";import{IRemoteUserDataProfilesService as F}from"../../userDataProfile/common/remoteUserDataProfiles.js";import{IUriIdentityService as N}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{areApiProposalsCompatible as _}from"../../../../platform/extensions/common/extensionValidator.js";import{isBoolean as $,isUndefined as W}from"../../../../base/common/types.js";let v=class extends T{constructor(e,n,i,t,r,a,I,o,l,p,X,z){super(e,i,t,r,a);this.localExtensionManagementServer=n;this.logService=I;this.galleryService=o;this.configurationService=l;this.productService=p;this.fileService=X;this.extensionManifestPropertiesService=z}async install(e,n){const i=await super.install(e,n);return await this.installUIDependenciesAndPackedExtensions(i),i}async installFromGallery(e,n={}){if(W(n.donotVerifySignature)){const t=this.configurationService.getValue("extensions.verifySignature");n.donotVerifySignature=$(t)?!t:void 0}const i=await this.doInstallFromGallery(e,n);return await this.installUIDependenciesAndPackedExtensions(i),i}async doInstallFromGallery(e,n){if(this.configurationService.getValue("remote.downloadExtensionsLocally"))return this.downloadAndInstall(e,n);try{const i=await this.localExtensionManagementServer.extensionManagementService.getTargetPlatform();return await super.installFromGallery(e,{...n,context:{...n?.context,[A]:i}})}catch(i){switch(i.name){case c.Download:case c.DownloadSignature:case c.Gallery:case c.Internal:case c.Unknown:try{return this.logService.error(`Error while installing '${e.identifier.id}' extension in the remote server.`,C(i)),await this.downloadAndInstall(e,n)}catch(t){throw this.logService.error(t),t}default:throw this.logService.debug("Remote Install Error Name",i.name),i}}}async downloadAndInstall(e,n){this.logService.info(`Downloading the '${e.identifier.id}' extension locally and install`);const i=await this.checkAndGetCompatible(e,!!n.installPreReleaseVersion);n={...n,donotIncludePackAndDependencies:!0};const t=await this.getInstalled(k.User,void 0,n.productVersion),r=await this.getAllWorkspaceDependenciesAndPackedExtensions(i,m.None);if(r.length){this.logService.info(`Downloading the workspace dependencies and packed extensions of '${i.identifier.id}' locally and install`);for(const a of r)await this.downloadCompatibleAndInstall(a,t,n)}return await this.downloadCompatibleAndInstall(i,t,n)}async downloadCompatibleAndInstall(e,n,i){const t=await this.checkAndGetCompatible(e,!!i.installPreReleaseVersion);this.logService.trace("Downloading extension:",t.identifier.id);const r=await this.localExtensionManagementServer.extensionManagementService.download(t,n.filter(a=>E(a.identifier,t.identifier))[0]?y.Update:y.Install,!!i.donotVerifySignature);this.logService.info("Downloaded extension:",t.identifier.id,r.path);try{const a=await super.install(r,{...i,keepExisting:!0});return this.logService.info(`Successfully installed '${t.identifier.id}' extension`),a}finally{try{await this.fileService.del(r)}catch(a){this.logService.error(a)}}}async checkAndGetCompatible(e,n){const i=await this.getTargetPlatform();let t=null;if(e.hasPreReleaseVersion&&e.properties.isPreReleaseVersion!==n&&(t=(await this.galleryService.getExtensions([{...e.identifier,preRelease:n}],{targetPlatform:i,compatible:!0},m.None))[0]||null),!t&&await this.galleryService.isExtensionCompatible(e,n,i)&&(t=e),t||(t=await this.galleryService.getCompatibleExtension(e,n,i)),!t){const r=[];throw _(e.properties.enabledApiProposals??[],r)?!n&&e.properties.isPreReleaseVersion&&(await this.galleryService.getExtensions([e.identifier],m.None))[0]?new g(x("notFoundReleaseExtension","Can't install release version of '{0}' extension because it has no release version.",e.identifier.id),c.ReleaseVersionNotFound):new g(x("notFoundCompatibleDependency","Can't install '{0}' extension because it is not compatible with the current version of {1} (version {2}).",e.identifier.id,this.productService.nameLong,this.productService.version),c.Incompatible):new g(x("incompatibleAPI","Can't install '{0}' extension. {1}",e.displayName??e.identifier.id,r[0]),c.IncompatibleApi)}return t}async installUIDependenciesAndPackedExtensions(e){const n=await this.getAllUIDependenciesAndPackedExtensions(e.manifest,m.None),i=await this.localExtensionManagementServer.extensionManagementService.getInstalled(),t=n.filter(r=>i.every(a=>!E(a.identifier,r.identifier)));t.length&&(this.logService.info(`Installing UI dependencies and packed extensions of '${e.identifier.id}' locally`),await G.settled(t.map(r=>this.localExtensionManagementServer.extensionManagementService.installFromGallery(r))))}async getAllUIDependenciesAndPackedExtensions(e,n){const i=new Map,t=[...e.extensionPack||[],...e.extensionDependencies||[]];return await this.getDependenciesAndPackedExtensionsRecursively(t,i,!0,n),[...i.values()]}async getAllWorkspaceDependenciesAndPackedExtensions(e,n){const i=new Map;i.set(e.identifier.id.toLowerCase(),e);const t=await this.galleryService.getManifest(e,n);if(t){const r=[...t.extensionPack||[],...t.extensionDependencies||[]];await this.getDependenciesAndPackedExtensionsRecursively(r,i,!1,n)}return i.delete(e.identifier.id),[...i.values()]}async getDependenciesAndPackedExtensionsRecursively(e,n,i,t){if(e.length===0)return Promise.resolve();const r=await this.galleryService.getExtensions(e.map(o=>({id:o})),t),a=await Promise.all(r.map(o=>this.galleryService.getManifest(o,t))),I=[];for(let o=0;o<r.length;o++){const l=r[o],p=a[o];p&&this.extensionManifestPropertiesService.prefersExecuteOnUI(p)===i&&(n.set(l.identifier.id.toLowerCase(),l),I.push(p))}e=[];for(const o of I){if(S(o.extensionDependencies))for(const l of o.extensionDependencies)n.has(l.toLowerCase())||e.push(l);if(S(o.extensionPack))for(const l of o.extensionPack)n.has(l.toLowerCase())||e.push(l)}return this.getDependenciesAndPackedExtensionsRecursively(e,n,i,t)}};v=h([s(2,V),s(3,R),s(4,F),s(5,N),s(6,D),s(7,P),s(8,b),s(9,M),s(10,L),s(11,U)],v);export{v as NativeRemoteExtensionManagementService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IExtensionGalleryService, ExtensionManagementError, EXTENSION_INSTALL_CLIENT_TARGET_PLATFORM_CONTEXT } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { areSameExtensions } from '../../../../platform/extensionManagement/common/extensionManagementUtil.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { toErrorMessage } from '../../../../base/common/errorMessage.js';
+import { isNonEmptyArray } from '../../../../base/common/arrays.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { localize } from '../../../../nls.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { Promises } from '../../../../base/common/async.js';
+import { IExtensionManifestPropertiesService } from '../../extensions/common/extensionManifestPropertiesService.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { RemoteExtensionManagementService } from '../common/remoteExtensionManagementService.js';
+import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
+import { IUserDataProfileService } from '../../userDataProfile/common/userDataProfile.js';
+import { IRemoteUserDataProfilesService } from '../../userDataProfile/common/remoteUserDataProfiles.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { areApiProposalsCompatible } from '../../../../platform/extensions/common/extensionValidator.js';
+import { isBoolean, isUndefined } from '../../../../base/common/types.js';
+let NativeRemoteExtensionManagementService = class NativeRemoteExtensionManagementService extends RemoteExtensionManagementService {
+    constructor(channel, localExtensionManagementServer, userDataProfileService, userDataProfilesService, remoteUserDataProfilesService, uriIdentityService, logService, galleryService, configurationService, productService, fileService, extensionManifestPropertiesService) {
+        super(channel, userDataProfileService, userDataProfilesService, remoteUserDataProfilesService, uriIdentityService);
+        this.localExtensionManagementServer = localExtensionManagementServer;
+        this.logService = logService;
+        this.galleryService = galleryService;
+        this.configurationService = configurationService;
+        this.productService = productService;
+        this.fileService = fileService;
+        this.extensionManifestPropertiesService = extensionManifestPropertiesService;
+    }
+    async install(vsix, options) {
+        const local = await super.install(vsix, options);
+        await this.installUIDependenciesAndPackedExtensions(local);
+        return local;
+    }
+    async installFromGallery(extension, installOptions = {}) {
+        if (isUndefined(installOptions.donotVerifySignature)) {
+            const value = this.configurationService.getValue('extensions.verifySignature');
+            installOptions.donotVerifySignature = isBoolean(value) ? !value : undefined;
+        }
+        const local = await this.doInstallFromGallery(extension, installOptions);
+        await this.installUIDependenciesAndPackedExtensions(local);
+        return local;
+    }
+    async doInstallFromGallery(extension, installOptions) {
+        if (this.configurationService.getValue('remote.downloadExtensionsLocally')) {
+            return this.downloadAndInstall(extension, installOptions);
+        }
+        try {
+            const clientTargetPlatform = await this.localExtensionManagementServer.extensionManagementService.getTargetPlatform();
+            return await super.installFromGallery(extension, { ...installOptions, context: { ...installOptions?.context, [EXTENSION_INSTALL_CLIENT_TARGET_PLATFORM_CONTEXT]: clientTargetPlatform } });
+        }
+        catch (error) {
+            switch (error.name) {
+                case "Download":
+                case "DownloadSignature":
+                case "Gallery":
+                case "Internal":
+                case "Unknown":
+                    try {
+                        this.logService.error(`Error while installing '${extension.identifier.id}' extension in the remote server.`, toErrorMessage(error));
+                        return await this.downloadAndInstall(extension, installOptions);
+                    }
+                    catch (e) {
+                        this.logService.error(e);
+                        throw e;
+                    }
+                default:
+                    this.logService.debug('Remote Install Error Name', error.name);
+                    throw error;
+            }
+        }
+    }
+    async downloadAndInstall(extension, installOptions) {
+        this.logService.info(`Downloading the '${extension.identifier.id}' extension locally and install`);
+        const compatible = await this.checkAndGetCompatible(extension, !!installOptions.installPreReleaseVersion);
+        installOptions = { ...installOptions, donotIncludePackAndDependencies: true };
+        const installed = await this.getInstalled(1, undefined, installOptions.productVersion);
+        const workspaceExtensions = await this.getAllWorkspaceDependenciesAndPackedExtensions(compatible, CancellationToken.None);
+        if (workspaceExtensions.length) {
+            this.logService.info(`Downloading the workspace dependencies and packed extensions of '${compatible.identifier.id}' locally and install`);
+            for (const workspaceExtension of workspaceExtensions) {
+                await this.downloadCompatibleAndInstall(workspaceExtension, installed, installOptions);
+            }
+        }
+        return await this.downloadCompatibleAndInstall(compatible, installed, installOptions);
+    }
+    async downloadCompatibleAndInstall(extension, installed, installOptions) {
+        const compatible = await this.checkAndGetCompatible(extension, !!installOptions.installPreReleaseVersion);
+        this.logService.trace('Downloading extension:', compatible.identifier.id);
+        const location = await this.localExtensionManagementServer.extensionManagementService.download(compatible, installed.filter(i => areSameExtensions(i.identifier, compatible.identifier))[0] ? 3 : 2, !!installOptions.donotVerifySignature);
+        this.logService.info('Downloaded extension:', compatible.identifier.id, location.path);
+        try {
+            const local = await super.install(location, { ...installOptions, keepExisting: true });
+            this.logService.info(`Successfully installed '${compatible.identifier.id}' extension`);
+            return local;
+        }
+        finally {
+            try {
+                await this.fileService.del(location);
+            }
+            catch (error) {
+                this.logService.error(error);
+            }
+        }
+    }
+    async checkAndGetCompatible(extension, includePreRelease) {
+        const targetPlatform = await this.getTargetPlatform();
+        let compatibleExtension = null;
+        if (extension.hasPreReleaseVersion && extension.properties.isPreReleaseVersion !== includePreRelease) {
+            compatibleExtension = (await this.galleryService.getExtensions([{ ...extension.identifier, preRelease: includePreRelease }], { targetPlatform, compatible: true }, CancellationToken.None))[0] || null;
+        }
+        if (!compatibleExtension && await this.galleryService.isExtensionCompatible(extension, includePreRelease, targetPlatform)) {
+            compatibleExtension = extension;
+        }
+        if (!compatibleExtension) {
+            compatibleExtension = await this.galleryService.getCompatibleExtension(extension, includePreRelease, targetPlatform);
+        }
+        if (!compatibleExtension) {
+            const incompatibleApiProposalsMessages = [];
+            if (!areApiProposalsCompatible(extension.properties.enabledApiProposals ?? [], incompatibleApiProposalsMessages)) {
+                throw new ExtensionManagementError(localize('incompatibleAPI', "Can't install '{0}' extension. {1}", extension.displayName ?? extension.identifier.id, incompatibleApiProposalsMessages[0]), "IncompatibleApi");
+            }
+            if (!includePreRelease && extension.properties.isPreReleaseVersion && (await this.galleryService.getExtensions([extension.identifier], CancellationToken.None))[0]) {
+                throw new ExtensionManagementError(localize('notFoundReleaseExtension', "Can't install release version of '{0}' extension because it has no release version.", extension.identifier.id), "ReleaseVersionNotFound");
+            }
+            throw new ExtensionManagementError(localize('notFoundCompatibleDependency', "Can't install '{0}' extension because it is not compatible with the current version of {1} (version {2}).", extension.identifier.id, this.productService.nameLong, this.productService.version), "Incompatible");
+        }
+        return compatibleExtension;
+    }
+    async installUIDependenciesAndPackedExtensions(local) {
+        const uiExtensions = await this.getAllUIDependenciesAndPackedExtensions(local.manifest, CancellationToken.None);
+        const installed = await this.localExtensionManagementServer.extensionManagementService.getInstalled();
+        const toInstall = uiExtensions.filter(e => installed.every(i => !areSameExtensions(i.identifier, e.identifier)));
+        if (toInstall.length) {
+            this.logService.info(`Installing UI dependencies and packed extensions of '${local.identifier.id}' locally`);
+            await Promises.settled(toInstall.map(d => this.localExtensionManagementServer.extensionManagementService.installFromGallery(d)));
+        }
+    }
+    async getAllUIDependenciesAndPackedExtensions(manifest, token) {
+        const result = new Map();
+        const extensions = [...(manifest.extensionPack || []), ...(manifest.extensionDependencies || [])];
+        await this.getDependenciesAndPackedExtensionsRecursively(extensions, result, true, token);
+        return [...result.values()];
+    }
+    async getAllWorkspaceDependenciesAndPackedExtensions(extension, token) {
+        const result = new Map();
+        result.set(extension.identifier.id.toLowerCase(), extension);
+        const manifest = await this.galleryService.getManifest(extension, token);
+        if (manifest) {
+            const extensions = [...(manifest.extensionPack || []), ...(manifest.extensionDependencies || [])];
+            await this.getDependenciesAndPackedExtensionsRecursively(extensions, result, false, token);
+        }
+        result.delete(extension.identifier.id);
+        return [...result.values()];
+    }
+    async getDependenciesAndPackedExtensionsRecursively(toGet, result, uiExtension, token) {
+        if (toGet.length === 0) {
+            return Promise.resolve();
+        }
+        const extensions = await this.galleryService.getExtensions(toGet.map(id => ({ id })), token);
+        const manifests = await Promise.all(extensions.map(e => this.galleryService.getManifest(e, token)));
+        const extensionsManifests = [];
+        for (let idx = 0; idx < extensions.length; idx++) {
+            const extension = extensions[idx];
+            const manifest = manifests[idx];
+            if (manifest && this.extensionManifestPropertiesService.prefersExecuteOnUI(manifest) === uiExtension) {
+                result.set(extension.identifier.id.toLowerCase(), extension);
+                extensionsManifests.push(manifest);
+            }
+        }
+        toGet = [];
+        for (const extensionManifest of extensionsManifests) {
+            if (isNonEmptyArray(extensionManifest.extensionDependencies)) {
+                for (const id of extensionManifest.extensionDependencies) {
+                    if (!result.has(id.toLowerCase())) {
+                        toGet.push(id);
+                    }
+                }
+            }
+            if (isNonEmptyArray(extensionManifest.extensionPack)) {
+                for (const id of extensionManifest.extensionPack) {
+                    if (!result.has(id.toLowerCase())) {
+                        toGet.push(id);
+                    }
+                }
+            }
+        }
+        return this.getDependenciesAndPackedExtensionsRecursively(toGet, result, uiExtension, token);
+    }
+};
+NativeRemoteExtensionManagementService = __decorate([
+    __param(2, IUserDataProfileService),
+    __param(3, IUserDataProfilesService),
+    __param(4, IRemoteUserDataProfilesService),
+    __param(5, IUriIdentityService),
+    __param(6, ILogService),
+    __param(7, IExtensionGalleryService),
+    __param(8, IConfigurationService),
+    __param(9, IProductService),
+    __param(10, IFileService),
+    __param(11, IExtensionManifestPropertiesService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], NativeRemoteExtensionManagementService);
+export { NativeRemoteExtensionManagementService };

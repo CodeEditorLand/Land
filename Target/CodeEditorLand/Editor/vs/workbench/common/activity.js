@@ -1,1 +1,2 @@
-const o="workbench.actions.manage",c="workbench.actions.accounts";export{c as ACCOUNTS_ACTIVITY_ID,o as GLOBAL_ACTIVITY_ID};
+export const GLOBAL_ACTIVITY_ID = 'workbench.actions.manage';
+export const ACCOUNTS_ACTIVITY_ID = 'workbench.actions.accounts';

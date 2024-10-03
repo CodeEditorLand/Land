@@ -1,1 +1,92 @@
-import"child_process";import{promises as p}from"fs";import*as s from"../common/path.js";import*as m from"../common/platform.js";import*as l from"../common/process.js";import{Source as d,TerminateResponseCode as g}from"../common/processes.js";import*as y from"../common/types.js";import*as x from"./pfs.js";function j(f=l.env){return f.comspec||"cmd.exe"}function k(f){let a=[],r=!1;const t=function(n){if(r){a.push(n);return}(!f.send(n,u=>{if(r=!1,a.length>0){const i=a.slice(0);a=[],i.forEach(e=>t(e))}})||m.isWindows)&&(r=!0)};return{send:t}}var P;(a=>{async function f(r,t,n){if(s.isAbsolute(r))return r;if(t===void 0&&(t=l.cwd()),s.dirname(r)!=="."||(n===void 0&&y.isString(l.env.PATH)&&(n=l.env.PATH.split(s.delimiter)),n===void 0||n.length===0))return s.join(t,r);async function u(i){if(await x.Promises.exists(i)){let e;try{e=await p.stat(i)}catch(o){o.message.startsWith("EACCES")&&(e=await p.lstat(i))}return e?!e.isDirectory():!1}return!1}for(const i of n){let e;if(s.isAbsolute(i)?e=s.join(i,r):e=s.join(t,i,r),await u(e))return e;let o=e+".com";if(await u(o)||(o=e+".exe",await u(o)))return o}return s.join(t,r)}a.findExecutable=f})(P||={});export{d as Source,g as TerminateResponseCode,k as createQueuedSender,j as getWindowsShell,P as win32};
+import { promises } from 'fs';
+import * as path from '../common/path.js';
+import * as Platform from '../common/platform.js';
+import * as process from '../common/process.js';
+import * as Types from '../common/types.js';
+import * as pfs from './pfs.js';
+export function getWindowsShell(env = process.env) {
+    return env['comspec'] || 'cmd.exe';
+}
+export function createQueuedSender(childProcess) {
+    let msgQueue = [];
+    let useQueue = false;
+    const send = function (msg) {
+        if (useQueue) {
+            msgQueue.push(msg);
+            return;
+        }
+        const result = childProcess.send(msg, (error) => {
+            if (error) {
+                console.error(error);
+            }
+            useQueue = false;
+            if (msgQueue.length > 0) {
+                const msgQueueCopy = msgQueue.slice(0);
+                msgQueue = [];
+                msgQueueCopy.forEach(entry => send(entry));
+            }
+        });
+        if (!result || Platform.isWindows) {
+            useQueue = true;
+        }
+    };
+    return { send };
+}
+export var win32;
+(function (win32) {
+    async function findExecutable(command, cwd, paths) {
+        if (path.isAbsolute(command)) {
+            return command;
+        }
+        if (cwd === undefined) {
+            cwd = process.cwd();
+        }
+        const dir = path.dirname(command);
+        if (dir !== '.') {
+            return path.join(cwd, command);
+        }
+        if (paths === undefined && Types.isString(process.env['PATH'])) {
+            paths = process.env['PATH'].split(path.delimiter);
+        }
+        if (paths === undefined || paths.length === 0) {
+            return path.join(cwd, command);
+        }
+        async function fileExists(path) {
+            if (await pfs.Promises.exists(path)) {
+                let statValue;
+                try {
+                    statValue = await promises.stat(path);
+                }
+                catch (e) {
+                    if (e.message.startsWith('EACCES')) {
+                        statValue = await promises.lstat(path);
+                    }
+                }
+                return statValue ? !statValue.isDirectory() : false;
+            }
+            return false;
+        }
+        for (const pathEntry of paths) {
+            let fullPath;
+            if (path.isAbsolute(pathEntry)) {
+                fullPath = path.join(pathEntry, command);
+            }
+            else {
+                fullPath = path.join(cwd, pathEntry, command);
+            }
+            if (await fileExists(fullPath)) {
+                return fullPath;
+            }
+            let withExtension = fullPath + '.com';
+            if (await fileExists(withExtension)) {
+                return withExtension;
+            }
+            withExtension = fullPath + '.exe';
+            if (await fileExists(withExtension)) {
+                return withExtension;
+            }
+        }
+        return path.join(cwd, command);
+    }
+    win32.findExecutable = findExecutable;
+})(win32 || (win32 = {}));

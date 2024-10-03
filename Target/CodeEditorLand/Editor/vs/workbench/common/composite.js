@@ -1,1 +1,1 @@
-import"../../base/common/event.js";
+export {};

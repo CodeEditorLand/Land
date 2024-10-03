@@ -1,1 +1,142 @@
-var g=Object.defineProperty;var I=Object.getOwnPropertyDescriptor;var c=(n,e,t,o)=>{for(var s=o>1?void 0:o?I(e,t):e,p=n.length-1,r;p>=0;p--)(r=n[p])&&(s=(o?r(e,t,s):r(s))||s);return o&&s&&g(e,t,s),s},d=(n,e)=>(t,o)=>e(t,o,n);import"../../../base/common/actions.js";import{DeferredPromise as h}from"../../../base/common/async.js";import{CancellationTokenSource as y}from"../../../base/common/cancellation.js";import{Disposable as u,DisposableStore as P,toDisposable as i}from"../../../base/common/lifecycle.js";import{createDecorator as l}from"../../instantiation/common/instantiation.js";import"../../notification/common/notification.js";const m=l("progressService");var v=(r=>(r[r.Explorer=1]="Explorer",r[r.Scm=3]="Scm",r[r.Extensions=5]="Extensions",r[r.Window=10]="Window",r[r.Notification=15]="Notification",r[r.Dialog=20]="Dialog",r))(v||{});const R=Object.freeze({total(){},worked(){},done(){}});class A{constructor(e){this.callback=e}static None=Object.freeze({report(){}});_value;get value(){return this._value}report(e){this._value=e,this.callback(this._value)}}class N{constructor(e){this.callback=e}_value;get value(){return this._value}_asyncQueue;_processingAsyncQueue;_drainListener;report(e){this._asyncQueue?this._asyncQueue.push(e):this._asyncQueue=[e],this._processAsyncQueue()}async _processAsyncQueue(){if(!this._processingAsyncQueue)try{for(this._processingAsyncQueue=!0;this._asyncQueue&&this._asyncQueue.length;){const e=this._asyncQueue.shift();this._value=e,await this.callback(this._value)}}finally{this._processingAsyncQueue=!1;const e=this._drainListener;this._drainListener=void 0,e?.()}}drain(){return this._processingAsyncQueue?new Promise(e=>{const t=this._drainListener;this._drainListener=()=>{t?.(),e()}}):Promise.resolve()}}let a=class extends u{deferred=new h;reporter;lastStep;constructor(e,t){super(),t.withProgress(e,o=>(this.reporter=o,this.lastStep&&o.report(this.lastStep),this.deferred.p)),this._register(i(()=>this.deferred.complete()))}report(e){this.reporter?this.reporter.report(e):this.lastStep=e}};a=c([d(1,m)],a);class C extends u{constructor(t){super();this.progressIndicator=t}currentOperationId=0;currentOperationDisposables=this._register(new P);currentProgressRunner;currentProgressTimeout;start(t){this.stop();const o=++this.currentOperationId,s=new y;return this.currentProgressTimeout=setTimeout(()=>{o===this.currentOperationId&&(this.currentProgressRunner=this.progressIndicator.show(!0))},t),this.currentOperationDisposables.add(i(()=>clearTimeout(this.currentProgressTimeout))),this.currentOperationDisposables.add(i(()=>s.cancel())),this.currentOperationDisposables.add(i(()=>this.currentProgressRunner?this.currentProgressRunner.done():void 0)),{id:o,token:s.token,stop:()=>this.doStop(o),isCurrent:()=>this.currentOperationId===o}}stop(){this.doStop(this.currentOperationId)}doStop(t){this.currentOperationId===t&&this.currentOperationDisposables.clear()}}const E=l("editorProgressService");export{N as AsyncProgress,E as IEditorProgressService,m as IProgressService,C as LongRunningOperation,A as Progress,v as ProgressLocation,a as UnmanagedProgress,R as emptyProgressRunner};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { DeferredPromise } from '../../../base/common/async.js';
+import { CancellationTokenSource } from '../../../base/common/cancellation.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../base/common/lifecycle.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const IProgressService = createDecorator('progressService');
+export const emptyProgressRunner = Object.freeze({
+    total() { },
+    worked() { },
+    done() { }
+});
+export class Progress {
+    static { this.None = Object.freeze({ report() { } }); }
+    get value() { return this._value; }
+    constructor(callback) {
+        this.callback = callback;
+    }
+    report(item) {
+        this._value = item;
+        this.callback(this._value);
+    }
+}
+export class AsyncProgress {
+    get value() { return this._value; }
+    constructor(callback) {
+        this.callback = callback;
+    }
+    report(item) {
+        if (!this._asyncQueue) {
+            this._asyncQueue = [item];
+        }
+        else {
+            this._asyncQueue.push(item);
+        }
+        this._processAsyncQueue();
+    }
+    async _processAsyncQueue() {
+        if (this._processingAsyncQueue) {
+            return;
+        }
+        try {
+            this._processingAsyncQueue = true;
+            while (this._asyncQueue && this._asyncQueue.length) {
+                const item = this._asyncQueue.shift();
+                this._value = item;
+                await this.callback(this._value);
+            }
+        }
+        finally {
+            this._processingAsyncQueue = false;
+            const drainListener = this._drainListener;
+            this._drainListener = undefined;
+            drainListener?.();
+        }
+    }
+    drain() {
+        if (this._processingAsyncQueue) {
+            return new Promise(resolve => {
+                const prevListener = this._drainListener;
+                this._drainListener = () => {
+                    prevListener?.();
+                    resolve();
+                };
+            });
+        }
+        return Promise.resolve();
+    }
+}
+let UnmanagedProgress = class UnmanagedProgress extends Disposable {
+    constructor(options, progressService) {
+        super();
+        this.deferred = new DeferredPromise();
+        progressService.withProgress(options, reporter => {
+            this.reporter = reporter;
+            if (this.lastStep) {
+                reporter.report(this.lastStep);
+            }
+            return this.deferred.p;
+        });
+        this._register(toDisposable(() => this.deferred.complete()));
+    }
+    report(step) {
+        if (this.reporter) {
+            this.reporter.report(step);
+        }
+        else {
+            this.lastStep = step;
+        }
+    }
+};
+UnmanagedProgress = __decorate([
+    __param(1, IProgressService),
+    __metadata("design:paramtypes", [Object, Object])
+], UnmanagedProgress);
+export { UnmanagedProgress };
+export class LongRunningOperation extends Disposable {
+    constructor(progressIndicator) {
+        super();
+        this.progressIndicator = progressIndicator;
+        this.currentOperationId = 0;
+        this.currentOperationDisposables = this._register(new DisposableStore());
+    }
+    start(progressDelay) {
+        this.stop();
+        const newOperationId = ++this.currentOperationId;
+        const newOperationToken = new CancellationTokenSource();
+        this.currentProgressTimeout = setTimeout(() => {
+            if (newOperationId === this.currentOperationId) {
+                this.currentProgressRunner = this.progressIndicator.show(true);
+            }
+        }, progressDelay);
+        this.currentOperationDisposables.add(toDisposable(() => clearTimeout(this.currentProgressTimeout)));
+        this.currentOperationDisposables.add(toDisposable(() => newOperationToken.cancel()));
+        this.currentOperationDisposables.add(toDisposable(() => this.currentProgressRunner ? this.currentProgressRunner.done() : undefined));
+        return {
+            id: newOperationId,
+            token: newOperationToken.token,
+            stop: () => this.doStop(newOperationId),
+            isCurrent: () => this.currentOperationId === newOperationId
+        };
+    }
+    stop() {
+        this.doStop(this.currentOperationId);
+    }
+    doStop(operationId) {
+        if (this.currentOperationId === operationId) {
+            this.currentOperationDisposables.clear();
+        }
+    }
+}
+export const IEditorProgressService = createDecorator('editorProgressService');

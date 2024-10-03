@@ -1,1 +1,22 @@
-import{Token as l,TokenizationResult as r,EncodedTokenizationResult as u}from"../languages.js";import{FontStyle as i,ColorId as a,StandardTokenType as T,MetadataConsts as t}from"../encodedTokenAttributes.js";const S=new class{clone(){return this}equals(e){return this===e}};function c(e,n){return new r([new l(0,"",e)],n)}function I(e,n){const o=new Uint32Array(2);return o[0]=0,o[1]=(e<<t.LANGUAGEID_OFFSET|T.Other<<t.TOKEN_TYPE_OFFSET|i.None<<t.FONT_STYLE_OFFSET|a.DefaultForeground<<t.FOREGROUND_OFFSET|a.DefaultBackground<<t.BACKGROUND_OFFSET)>>>0,new u(o,n===null?S:n)}export{S as NullState,c as nullTokenize,I as nullTokenizeEncoded};
+import { Token, TokenizationResult, EncodedTokenizationResult } from '../languages.js';
+export const NullState = new class {
+    clone() {
+        return this;
+    }
+    equals(other) {
+        return (this === other);
+    }
+};
+export function nullTokenize(languageId, state) {
+    return new TokenizationResult([new Token(0, '', languageId)], state);
+}
+export function nullTokenizeEncoded(languageId, state) {
+    const tokens = new Uint32Array(2);
+    tokens[0] = 0;
+    tokens[1] = ((languageId << 0)
+        | (0 << 8)
+        | (0 << 11)
+        | (1 << 15)
+        | (2 << 24)) >>> 0;
+    return new EncodedTokenizationResult(tokens, state === null ? NullState : state);
+}

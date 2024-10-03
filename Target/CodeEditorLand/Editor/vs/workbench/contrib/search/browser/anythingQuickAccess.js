@@ -1,1 +1,776 @@
-var U=Object.defineProperty;var H=Object.getOwnPropertyDescriptor;var O=(k,f,e,i)=>{for(var o=i>1?void 0:i?H(f,e):f,t=k.length-1,r;t>=0;t--)(r=k[t])&&(o=(i?r(f,e,o):r(o))||o);return i&&o&&U(f,e,o),o},u=(k,f)=>(e,i)=>f(e,i,k);import"./media/anythingQuickAccess.css";import{quickPickItemScorerAccessor as y,QuickPickItemScorerAccessor as B,QuickInputHideReason as _,IQuickInputService as N}from"../../../../platform/quickinput/common/quickInput.js";import{PickerQuickAccessProvider as W,TriggerAction as v}from"../../../../platform/quickinput/browser/pickerQuickAccess.js";import{prepareQuery as G,compareItemsByFuzzyScore as D,scoreItemFuzzy as A}from"../../../../base/common/fuzzyScorer.js";import{QueryBuilder as K}from"../../../services/search/common/queryBuilder.js";import{IInstantiationService as V}from"../../../../platform/instantiation/common/instantiation.js";import{getOutOfWorkspaceEditorResources as z,extractRangeFromFilter as X}from"../common/search.js";import{ISearchService as q}from"../../../services/search/common/search.js";import{IWorkspaceContextService as Y}from"../../../../platform/workspace/common/workspace.js";import{untildify as j}from"../../../../base/common/labels.js";import{IPathService as $}from"../../../services/path/common/pathService.js";import{URI as P}from"../../../../base/common/uri.js";import{toLocalResource as T,dirname as J,basenameOrAuthority as Z}from"../../../../base/common/resources.js";import{IWorkbenchEnvironmentService as ee}from"../../../services/environment/common/environmentService.js";import{IFileService as ie}from"../../../../platform/files/common/files.js";import"../../../../base/common/cancellation.js";import{DisposableStore as te,toDisposable as re,MutableDisposable as ne,Disposable as Q}from"../../../../base/common/lifecycle.js";import{ILabelService as oe}from"../../../../platform/label/common/label.js";import{getIconClasses as se}from"../../../../editor/common/services/getIconClasses.js";import{IModelService as ae}from"../../../../editor/common/services/model.js";import{ILanguageService as ce}from"../../../../editor/common/languages/language.js";import{localize as p}from"../../../../nls.js";import{IWorkingCopyService as le}from"../../../services/workingCopy/common/workingCopyService.js";import{IConfigurationService as ue}from"../../../../platform/configuration/common/configuration.js";import{EditorResourceAccessor as de,isEditorInput as L}from"../../../common/editor.js";import"../../../common/editor/editorInput.js";import{IEditorService as he,SIDE_GROUP as M,ACTIVE_GROUP as pe}from"../../../services/editor/common/editorService.js";import{Range as fe}from"../../../../editor/common/core/range.js";import{ThrottledDelayer as me}from"../../../../base/common/async.js";import{top as Se}from"../../../../base/common/arrays.js";import{FileQueryCacheState as ke}from"../common/cacheState.js";import{IHistoryService as ge}from"../../../services/history/common/history.js";import"../../../../platform/editor/common/editor.js";import{Schemas as b}from"../../../../base/common/network.js";import{IFilesConfigurationService as Ie}from"../../../services/filesConfiguration/common/filesConfigurationService.js";import{ResourceMap as E}from"../../../../base/common/map.js";import{SymbolsQuickAccessProvider as ye}from"./symbolsQuickAccess.js";import{DefaultQuickAccessFilterValue as ve,Extensions as Pe}from"../../../../platform/quickinput/common/quickAccess.js";import{PickerEditorState as be}from"../../../browser/quickaccess.js";import{GotoSymbolQuickAccessProvider as I}from"../../codeEditor/browser/quickaccess/gotoSymbolQuickAccess.js";import{ITextModelService as Re}from"../../../../editor/common/services/resolverService.js";import{ScrollType as Ce}from"../../../../editor/common/editorCommon.js";import{Event as x}from"../../../../base/common/event.js";import{Codicon as R}from"../../../../base/common/codicons.js";import{ThemeIcon as C}from"../../../../base/common/themables.js";import{IUriIdentityService as Ae}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{stripIcons as Qe}from"../../../../base/common/iconLabels.js";import{Lazy as F}from"../../../../base/common/lazy.js";import{IKeybindingService as Ee}from"../../../../platform/keybinding/common/keybinding.js";import{Registry as Fe}from"../../../../platform/registry/common/platform.js";import{ASK_QUICK_QUESTION_ACTION_ID as we}from"../../chat/browser/actions/chatQuickInputActions.js";import{IQuickChatService as Oe}from"../../chat/browser/chat.js";import{ILogService as De}from"../../../../platform/log/common/log.js";import{ICustomEditorLabelService as Te}from"../../../services/editor/common/customEditorLabelService.js";function w(k){const f=k;return!!f?.range&&!!f.resource}let d=class extends W{constructor(e,i,o,t,r,n,s,a,c,l,h,g,m,S,Le,Me,xe,Ue,He,Be,_e){super(d.PREFIX,{canAcceptInBackground:!0,noResultsPick:d.NO_RESULTS_PICK});this.instantiationService=e;this.searchService=i;this.contextService=o;this.pathService=t;this.environmentService=r;this.fileService=n;this.labelService=s;this.modelService=a;this.languageService=c;this.workingCopyService=l;this.configurationService=h;this.editorService=g;this.historyService=m;this.filesConfigurationService=S;this.textModelService=Le;this.uriIdentityService=Me;this.quickInputService=xe;this.keybindingService=Ue;this.quickChatService=He;this.logService=Be;this.customEditorLabelService=_e}static PREFIX="";static NO_RESULTS_PICK={label:p("noAnythingResults","No matching results")};static MAX_RESULTS=512;static TYPING_SEARCH_DELAY=200;static SYMBOL_PICKS_MERGE_DELAY=200;pickState=this._register(new class extends Q{constructor(i,o){super();this.provider=i;this.instantiationService=o}picker=void 0;editorViewState=this._register(this.instantiationService.createInstance(be));scorerCache=Object.create(null);fileQueryCache=void 0;lastOriginalFilter=void 0;lastFilter=void 0;lastRange=void 0;lastGlobalPicks=void 0;isQuickNavigating=void 0;set(i){this.picker=i,x.once(i.onDispose)(()=>{i===this.picker&&(this.picker=void 0)});const o=!!i.quickNavigate;o||(this.fileQueryCache=this.provider.createFileQueryCache(),this.scorerCache=Object.create(null)),this.isQuickNavigating=o,this.lastOriginalFilter=void 0,this.lastFilter=void 0,this.lastRange=void 0,this.lastGlobalPicks=void 0,this.editorViewState.reset()}}(this,this.instantiationService));get defaultFilterValue(){if(this.configuration.preserveInput)return ve.LAST}get configuration(){const e=this.configurationService.getValue().workbench?.editor,i=this.configurationService.getValue().search,o=this.configurationService.getValue().workbench.quickOpen;return{openEditorPinned:!e?.enablePreviewFromQuickOpen||!e?.enablePreview,openSideBySideDirection:e?.openSideBySideDirection,includeSymbols:i?.quickOpen.includeSymbols,includeHistory:i?.quickOpen.includeHistory,historyFilterSortOrder:i?.quickOpen.history.filterSortOrder,preserveInput:o.preserveInput}}provide(e,i,o){const t=new te;this.pickState.set(e);const r=t.add(new ne);return t.add(e.onDidChangeActive(()=>{r.value=void 0;const[n]=e.activeItems;w(n)&&(r.value=this.decorateAndRevealSymbolRange(n))})),t.add(x.once(e.onDidHide)(({reason:n})=>{n===_.Gesture&&this.pickState.editorViewState.restore()})),t.add(super.provide(e,i,o)),t}decorateAndRevealSymbolRange(e){const i=this.editorService.activeEditor;if(!this.uriIdentityService.extUri.isEqual(e.resource,i?.resource))return Q.None;const o=this.editorService.activeTextEditorControl;return o?(this.pickState.editorViewState.set(),o.revealRangeInCenter(e.range.selection,Ce.Smooth),this.addDecorations(o,e.range.decoration),re(()=>this.clearDecorations(o))):Q.None}_getPicks(e,i,o,t){const r=X(e,[I.PREFIX]);let n;if(r?n=r.filter:n=e,this.pickState.lastRange=r?.range,e!==this.pickState.lastOriginalFilter&&n===this.pickState.lastFilter)return null;const s=!!this.pickState.lastOriginalFilter;this.pickState.lastOriginalFilter=e,this.pickState.lastFilter=n;const a=this.pickState.picker?.items,c=this.pickState.picker?.activeItems[0];if(a&&c){const l=w(c),h=c===d.NO_RESULTS_PICK&&n.indexOf(I.PREFIX)>=0;!l&&!h&&(this.pickState.lastGlobalPicks={items:a,active:c})}return this.doGetPicks(n,{...t,enableEditorSymbolSearch:s},i,o)}doGetPicks(e,i,o,t){const r=G(e);if(i.enableEditorSymbolSearch){const c=this.getEditorSymbolPicks(r,o,t);if(c)return c}const n=this.pickState.picker?.activeItems[0];if(w(n)&&this.pickState.lastGlobalPicks)return this.pickState.lastGlobalPicks;const s=this.getEditorHistoryPicks(r);let a=new Array;if(i.additionPicks)for(const c of i.additionPicks){if(c.type==="separator"){a.push(c);continue}if(!r.original){c.highlights=void 0,a.push(c);continue}const{score:l,labelMatch:h,descriptionMatch:g}=A(c,r,!0,y,this.pickState.scorerCache);l&&(c.highlights={label:h,description:g},a.push(c))}return this.pickState.isQuickNavigating?(a.length>0&&a.push({type:"separator",label:p("recentlyOpenedSeparator","recently opened")}),a=s):(i.includeHelp&&a.push(...this.getHelpPicks(r,t,i)),s.length!==0&&(a.push({type:"separator",label:p("recentlyOpenedSeparator","recently opened")}),a.push(...s))),{picks:i.filter?a.filter(c=>i.filter?.(c)):a,additionalPicks:(async()=>{const c=new E;for(const h of s)h.resource&&c.set(h.resource,!0);let l=await this.getAdditionalPicks(r,c,this.configuration.includeSymbols,t);return i.filter&&(l=l.filter(h=>i.filter?.(h))),t.isCancellationRequested?[]:l.length>0?[{type:"separator",label:this.configuration.includeSymbols?p("fileAndSymbolResultsSeparator","file and symbol results"):p("fileResultsSeparator","file results")},...l]:[]})(),mergeDelay:d.SYMBOL_PICKS_MERGE_DELAY}}async getAdditionalPicks(e,i,o,t){const[r,n]=await Promise.all([this.getFilePicks(e,i,t),this.getWorkspaceSymbolPicks(e,o,t)]);if(t.isCancellationRequested)return[];const s=Se([...r,...n],(c,l)=>D(c,l,e,!0,y,this.pickState.scorerCache),d.MAX_RESULTS),a=[];for(const c of s)if(c.highlights)a.push(c);else{const{score:l,labelMatch:h,descriptionMatch:g}=A(c,e,!0,y,this.pickState.scorerCache);if(!l)continue;c.highlights={label:h,description:g},a.push(c)}return a}labelOnlyEditorHistoryPickAccessor=new B({skipDescription:!0});getEditorHistoryPicks(e){const i=this.configuration;if(!e.normalized)return this.historyService.getHistory().map(r=>this.createAnythingPick(r,i));if(!this.configuration.includeHistory)return[];const o=e.containsPathSeparator?y:this.labelOnlyEditorHistoryPickAccessor,t=[];for(const r of this.historyService.getHistory()){const n=r.resource;if(!n||!this.fileService.hasProvider(n)&&n.scheme!==b.untitled&&n.scheme!==b.vscodeTerminal)continue;const s=this.createAnythingPick(r,i),{score:a,labelMatch:c,descriptionMatch:l}=A(s,e,!1,o,this.pickState.scorerCache);a&&(s.highlights={label:c,description:l},t.push(s))}return this.configuration.historyFilterSortOrder==="recency"?t:t.sort((r,n)=>D(r,n,e,!1,o,this.pickState.scorerCache))}fileQueryDelayer=this._register(new me(d.TYPING_SEARCH_DELAY));fileQueryBuilder=this.instantiationService.createInstance(K);createFileQueryCache(){return new ke(e=>this.fileQueryBuilder.file(this.contextService.getWorkspace().folders,this.getFileQueryOptions({cacheKey:e})),e=>this.searchService.fileSearch(e),e=>this.searchService.clearCache(e),this.pickState.fileQueryCache).load()}async getFilePicks(e,i,o){if(!e.normalized)return[];const t=await this.getAbsolutePathFileResult(e,o);if(o.isCancellationRequested)return[];let r;if(t){if(i.has(t))return[];const s=this.createAnythingPick(t,this.configuration);return s.highlights={label:[{start:0,end:s.label.length}],description:s.description?[{start:0,end:s.description.length}]:void 0},[s]}if(this.pickState.fileQueryCache?.isLoaded?r=await this.doFileSearch(e,o):r=await this.fileQueryDelayer.trigger(async()=>o.isCancellationRequested?[]:this.doFileSearch(e,o)),o.isCancellationRequested)return[];const n=this.configuration;return r.filter(s=>!i.has(s)).map(s=>this.createAnythingPick(s,n))}async doFileSearch(e,i){const[o,t]=await Promise.all([this.getFileSearchResults(e,i),this.getRelativePathFileResults(e,i)]);if(i.isCancellationRequested)return[];if(!t)return o;const r=new E;for(const n of t)r.set(n,!0);return[...o.filter(n=>!r.has(n)),...t]}async getFileSearchResults(e,i){let o="";e.values&&e.values.length>1?o=e.values[0].original:o=e.original;const t=await this.doGetFileSearchResults(o,i);if(i.isCancellationRequested)return[];if(t.limitHit&&e.values&&e.values.length>1){const r=await this.doGetFileSearchResults(e.original,i);if(i.isCancellationRequested)return[];const n=new E;for(const s of t.results)n.set(s.resource,!0);for(const s of r.results)n.has(s.resource)||t.results.push(s)}return t.results.map(r=>r.resource)}doGetFileSearchResults(e,i){const o=Date.now();return this.searchService.fileSearch(this.fileQueryBuilder.file(this.contextService.getWorkspace().folders,this.getFileQueryOptions({filePattern:e,cacheKey:this.pickState.fileQueryCache?.cacheKey,maxResults:d.MAX_RESULTS})),i).finally(()=>{this.logService.trace(`QuickAccess fileSearch ${Date.now()-o}ms`)})}getFileQueryOptions(e){return{_reason:"openFileHandler",extraFileResources:this.instantiationService.invokeFunction(z),filePattern:e.filePattern||"",cacheKey:e.cacheKey,maxResults:e.maxResults||0,sortByScore:!0}}async getAbsolutePathFileResult(e,i){if(!e.containsPathSeparator)return;const o=await this.pathService.userHome(),t=j(e.original,o.scheme===b.file?o.fsPath:o.path);if(i.isCancellationRequested)return;const r=(await this.pathService.path).isAbsolute(t);if(!i.isCancellationRequested&&r){const n=T(await this.pathService.fileURI(t),this.environmentService.remoteAuthority,this.pathService.defaultUriScheme);if(i.isCancellationRequested)return;try{if((await this.fileService.stat(n)).isFile)return n}catch{}}}async getRelativePathFileResults(e,i){if(!e.containsPathSeparator)return;if(!(await this.pathService.path).isAbsolute(e.original)){const t=[];for(const r of this.contextService.getWorkspace().folders){if(i.isCancellationRequested)break;const n=T(r.toResource(e.original),this.environmentService.remoteAuthority,this.pathService.defaultUriScheme);try{(await this.fileService.stat(n)).isFile&&t.push(n)}catch{}}return t}}lazyRegistry=new F(()=>Fe.as(Pe.Quickaccess));getHelpPicks(e,i,o){if(e.normalized)return[];const t=this.lazyRegistry.value.getQuickAccessProviders().filter(r=>r.helpEntries.some(n=>n.commandCenterOrder!==void 0)).flatMap(r=>r.helpEntries.filter(n=>n.commandCenterOrder!==void 0).map(n=>{const s={...o,includeHelp:r.prefix===d.PREFIX?!1:o?.includeHelp},a=n.commandCenterLabel??n.description;return{label:a,description:n.prefix??r.prefix,commandCenterOrder:n.commandCenterOrder,keybinding:n.commandId?this.keybindingService.lookupKeybinding(n.commandId):void 0,ariaLabel:p("helpPickAriaLabel","{0}, {1}",a,n.description),accept:()=>{this.quickInputService.quickAccess.show(r.prefix,{preserveValue:!0,providerOptions:s})}}}));return this.quickChatService.enabled&&t.push({label:p("chat","Open Quick Chat"),commandCenterOrder:30,keybinding:this.keybindingService.lookupKeybinding(we),accept:()=>this.quickChatService.toggle()}),t.sort((r,n)=>r.commandCenterOrder-n.commandCenterOrder)}workspaceSymbolsQuickAccess=this._register(this.instantiationService.createInstance(ye));async getWorkspaceSymbolPicks(e,i,o){return!e.normalized||!i||this.pickState.lastRange?[]:this.workspaceSymbolsQuickAccess.getSymbolPicks(e.original,{skipLocal:!0,skipSorting:!0,delay:d.TYPING_SEARCH_DELAY},o)}editorSymbolsQuickAccess=this.instantiationService.createInstance(I);getEditorSymbolPicks(e,i,o){const t=e.original.split(I.PREFIX),r=t.length>1?t[t.length-1].trim():void 0;if(typeof r!="string")return null;const n=this.pickState.lastGlobalPicks?.active;if(!n)return null;const s=n.resource;return!s||!this.fileService.hasProvider(s)&&s.scheme!==b.untitled||(n.label.includes(I.PREFIX)||n.description?.includes(I.PREFIX))&&t.length<3?null:this.doGetEditorSymbolPicks(n,s,r,i,o)}async doGetEditorSymbolPicks(e,i,o,t,r){try{this.pickState.editorViewState.set(),await this.pickState.editorViewState.openTransientEditor({resource:i,options:{preserveFocus:!0,revealIfOpened:!0,ignoreError:!0}})}catch{return[]}if(r.isCancellationRequested)return[];let n=this.modelService.getModel(i);if(!n)try{const a=t.add(await this.textModelService.createModelReference(i));if(r.isCancellationRequested)return[];n=a.object.textEditorModel}catch{return[]}const s=await this.editorSymbolsQuickAccess.getSymbolPicks(n,o,{extraContainerLabel:Qe(e.label)},t,r);return r.isCancellationRequested?[]:s.map(a=>a.type==="separator"?a:{...a,resource:i,description:a.description,trigger:(c,l)=>(this.openAnything(i,{keyMods:l,range:a.range?.selection,forceOpenSideBySide:!0}),v.CLOSE_PICKER),accept:(c,l)=>this.openAnything(i,{keyMods:c,range:a.range?.selection,preserveFocus:l.inBackground,forcePinned:l.inBackground})})}addDecorations(e,i){this.editorSymbolsQuickAccess.addDecorations(e,i)}clearDecorations(e){this.editorSymbolsQuickAccess.clearDecorations(e)}createAnythingPick(e,i){const o=!P.isUri(e);let t,r,n,s,a,c;if(L(e))t=de.getOriginalUri(e),r=e.getName(),n=e.getDescription(),s=e.isDirty()&&!e.isSaving(),a=e.getLabelExtraClasses(),c=e.getIcon();else{t=P.isUri(e)?e:e.resource;const m=this.customEditorLabelService.getName(t);r=m||Z(t),n=this.labelService.getUriLabel(m?t:J(t),{relative:!0}),s=this.workingCopyService.isDirty(t)&&!this.filesConfigurationService.hasShortAutoSaveDelay(t),a=[]}const l=n?`${r} ${n}`:r,h=new F(()=>se(this.modelService,this.languageService,t,void 0,c).concat(a)),g=new F(()=>{const m=i.openSideBySideDirection,S=[];return S.push({iconClass:m==="right"?C.asClassName(R.splitHorizontal):C.asClassName(R.splitVertical),tooltip:m==="right"?p({key:"openToSide",comment:["Open this file in a split editor on the left/right side"]},"Open to the Side"):p({key:"openToBottom",comment:["Open this file in a split editor on the bottom"]},"Open to the Bottom")}),o&&S.push({iconClass:s?"dirty-anything "+C.asClassName(R.circleFilled):C.asClassName(R.close),tooltip:p("closeEditor","Remove from Recently Opened"),alwaysVisible:s}),S});return{resource:t,label:r,ariaLabel:s?p("filePickAriaLabelDirty","{0} unsaved changes",l):l,description:n,get iconClasses(){return h.value},get buttons(){return g.value},trigger:(m,S)=>{switch(m){case 0:return this.openAnything(e,{keyMods:S,range:this.pickState.lastRange,forceOpenSideBySide:!0}),v.CLOSE_PICKER;case 1:if(!P.isUri(e))return this.historyService.removeFromHistory(e),v.REMOVE_ITEM}return v.NO_ACTION},accept:(m,S)=>this.openAnything(e,{keyMods:m,range:this.pickState.lastRange,preserveFocus:S.inBackground,forcePinned:S.inBackground})}}async openAnything(e,i){const o={preserveFocus:i.preserveFocus,pinned:i.keyMods?.ctrlCmd||i.forcePinned||this.configuration.openEditorPinned,selection:i.range?fe.collapseToStart(i.range):void 0},t=i.keyMods?.alt||this.configuration.openEditorPinned&&i.keyMods?.ctrlCmd||i.forceOpenSideBySide?M:pe;if(t===M&&await this.pickState.editorViewState.restore(),L(e))await this.editorService.openEditor(e,o,t);else{let r;P.isUri(e)?r={resource:e,options:o}:r={...e,options:{...e.options,...o}},await this.editorService.openEditor(r,t)}}};d=O([u(0,V),u(1,q),u(2,Y),u(3,$),u(4,ee),u(5,ie),u(6,oe),u(7,ae),u(8,ce),u(9,le),u(10,ue),u(11,he),u(12,ge),u(13,Ie),u(14,Re),u(15,Ae),u(16,N),u(17,Ee),u(18,Oe),u(19,De),u(20,Te)],d);export{d as AnythingQuickAccessProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var AnythingQuickAccessProvider_1;
+import './media/anythingQuickAccess.css';
+import { quickPickItemScorerAccessor, QuickPickItemScorerAccessor, QuickInputHideReason, IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { PickerQuickAccessProvider, TriggerAction } from '../../../../platform/quickinput/browser/pickerQuickAccess.js';
+import { prepareQuery, compareItemsByFuzzyScore, scoreItemFuzzy } from '../../../../base/common/fuzzyScorer.js';
+import { QueryBuilder } from '../../../services/search/common/queryBuilder.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { getOutOfWorkspaceEditorResources, extractRangeFromFilter } from '../common/search.js';
+import { ISearchService } from '../../../services/search/common/search.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { untildify } from '../../../../base/common/labels.js';
+import { IPathService } from '../../../services/path/common/pathService.js';
+import { URI } from '../../../../base/common/uri.js';
+import { toLocalResource, dirname, basenameOrAuthority } from '../../../../base/common/resources.js';
+import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { DisposableStore, toDisposable, MutableDisposable, Disposable } from '../../../../base/common/lifecycle.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { getIconClasses } from '../../../../editor/common/services/getIconClasses.js';
+import { IModelService } from '../../../../editor/common/services/model.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+import { localize } from '../../../../nls.js';
+import { IWorkingCopyService } from '../../../services/workingCopy/common/workingCopyService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { EditorResourceAccessor, isEditorInput } from '../../../common/editor.js';
+import { IEditorService, SIDE_GROUP, ACTIVE_GROUP } from '../../../services/editor/common/editorService.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { ThrottledDelayer } from '../../../../base/common/async.js';
+import { top } from '../../../../base/common/arrays.js';
+import { FileQueryCacheState } from '../common/cacheState.js';
+import { IHistoryService } from '../../../services/history/common/history.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { IFilesConfigurationService } from '../../../services/filesConfiguration/common/filesConfigurationService.js';
+import { ResourceMap } from '../../../../base/common/map.js';
+import { SymbolsQuickAccessProvider } from './symbolsQuickAccess.js';
+import { DefaultQuickAccessFilterValue, Extensions } from '../../../../platform/quickinput/common/quickAccess.js';
+import { PickerEditorState } from '../../../browser/quickaccess.js';
+import { GotoSymbolQuickAccessProvider } from '../../codeEditor/browser/quickaccess/gotoSymbolQuickAccess.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { Event } from '../../../../base/common/event.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { stripIcons } from '../../../../base/common/iconLabels.js';
+import { Lazy } from '../../../../base/common/lazy.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { ASK_QUICK_QUESTION_ACTION_ID } from '../../chat/browser/actions/chatQuickInputActions.js';
+import { IQuickChatService } from '../../chat/browser/chat.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { ICustomEditorLabelService } from '../../../services/editor/common/customEditorLabelService.js';
+function isEditorSymbolQuickPickItem(pick) {
+    const candidate = pick;
+    return !!candidate?.range && !!candidate.resource;
+}
+let AnythingQuickAccessProvider = class AnythingQuickAccessProvider extends PickerQuickAccessProvider {
+    static { AnythingQuickAccessProvider_1 = this; }
+    static { this.PREFIX = ''; }
+    static { this.NO_RESULTS_PICK = {
+        label: localize('noAnythingResults', "No matching results")
+    }; }
+    static { this.MAX_RESULTS = 512; }
+    static { this.TYPING_SEARCH_DELAY = 200; }
+    static { this.SYMBOL_PICKS_MERGE_DELAY = 200; }
+    get defaultFilterValue() {
+        if (this.configuration.preserveInput) {
+            return DefaultQuickAccessFilterValue.LAST;
+        }
+        return undefined;
+    }
+    constructor(instantiationService, searchService, contextService, pathService, environmentService, fileService, labelService, modelService, languageService, workingCopyService, configurationService, editorService, historyService, filesConfigurationService, textModelService, uriIdentityService, quickInputService, keybindingService, quickChatService, logService, customEditorLabelService) {
+        super(AnythingQuickAccessProvider_1.PREFIX, {
+            canAcceptInBackground: true,
+            noResultsPick: AnythingQuickAccessProvider_1.NO_RESULTS_PICK
+        });
+        this.instantiationService = instantiationService;
+        this.searchService = searchService;
+        this.contextService = contextService;
+        this.pathService = pathService;
+        this.environmentService = environmentService;
+        this.fileService = fileService;
+        this.labelService = labelService;
+        this.modelService = modelService;
+        this.languageService = languageService;
+        this.workingCopyService = workingCopyService;
+        this.configurationService = configurationService;
+        this.editorService = editorService;
+        this.historyService = historyService;
+        this.filesConfigurationService = filesConfigurationService;
+        this.textModelService = textModelService;
+        this.uriIdentityService = uriIdentityService;
+        this.quickInputService = quickInputService;
+        this.keybindingService = keybindingService;
+        this.quickChatService = quickChatService;
+        this.logService = logService;
+        this.customEditorLabelService = customEditorLabelService;
+        this.pickState = this._register(new class extends Disposable {
+            constructor(provider, instantiationService) {
+                super();
+                this.provider = provider;
+                this.instantiationService = instantiationService;
+                this.picker = undefined;
+                this.editorViewState = this._register(this.instantiationService.createInstance(PickerEditorState));
+                this.scorerCache = Object.create(null);
+                this.fileQueryCache = undefined;
+                this.lastOriginalFilter = undefined;
+                this.lastFilter = undefined;
+                this.lastRange = undefined;
+                this.lastGlobalPicks = undefined;
+                this.isQuickNavigating = undefined;
+            }
+            set(picker) {
+                this.picker = picker;
+                Event.once(picker.onDispose)(() => {
+                    if (picker === this.picker) {
+                        this.picker = undefined;
+                    }
+                });
+                const isQuickNavigating = !!picker.quickNavigate;
+                if (!isQuickNavigating) {
+                    this.fileQueryCache = this.provider.createFileQueryCache();
+                    this.scorerCache = Object.create(null);
+                }
+                this.isQuickNavigating = isQuickNavigating;
+                this.lastOriginalFilter = undefined;
+                this.lastFilter = undefined;
+                this.lastRange = undefined;
+                this.lastGlobalPicks = undefined;
+                this.editorViewState.reset();
+            }
+        }(this, this.instantiationService));
+        this.labelOnlyEditorHistoryPickAccessor = new QuickPickItemScorerAccessor({ skipDescription: true });
+        this.fileQueryDelayer = this._register(new ThrottledDelayer(AnythingQuickAccessProvider_1.TYPING_SEARCH_DELAY));
+        this.fileQueryBuilder = this.instantiationService.createInstance(QueryBuilder);
+        this.lazyRegistry = new Lazy(() => Registry.as(Extensions.Quickaccess));
+        this.workspaceSymbolsQuickAccess = this._register(this.instantiationService.createInstance(SymbolsQuickAccessProvider));
+        this.editorSymbolsQuickAccess = this.instantiationService.createInstance(GotoSymbolQuickAccessProvider);
+    }
+    get configuration() {
+        const editorConfig = this.configurationService.getValue().workbench?.editor;
+        const searchConfig = this.configurationService.getValue().search;
+        const quickAccessConfig = this.configurationService.getValue().workbench.quickOpen;
+        return {
+            openEditorPinned: !editorConfig?.enablePreviewFromQuickOpen || !editorConfig?.enablePreview,
+            openSideBySideDirection: editorConfig?.openSideBySideDirection,
+            includeSymbols: searchConfig?.quickOpen.includeSymbols,
+            includeHistory: searchConfig?.quickOpen.includeHistory,
+            historyFilterSortOrder: searchConfig?.quickOpen.history.filterSortOrder,
+            preserveInput: quickAccessConfig.preserveInput
+        };
+    }
+    provide(picker, token, runOptions) {
+        const disposables = new DisposableStore();
+        this.pickState.set(picker);
+        const editorDecorationsDisposable = disposables.add(new MutableDisposable());
+        disposables.add(picker.onDidChangeActive(() => {
+            editorDecorationsDisposable.value = undefined;
+            const [item] = picker.activeItems;
+            if (isEditorSymbolQuickPickItem(item)) {
+                editorDecorationsDisposable.value = this.decorateAndRevealSymbolRange(item);
+            }
+        }));
+        disposables.add(Event.once(picker.onDidHide)(({ reason }) => {
+            if (reason === QuickInputHideReason.Gesture) {
+                this.pickState.editorViewState.restore();
+            }
+        }));
+        disposables.add(super.provide(picker, token, runOptions));
+        return disposables;
+    }
+    decorateAndRevealSymbolRange(pick) {
+        const activeEditor = this.editorService.activeEditor;
+        if (!this.uriIdentityService.extUri.isEqual(pick.resource, activeEditor?.resource)) {
+            return Disposable.None;
+        }
+        const activeEditorControl = this.editorService.activeTextEditorControl;
+        if (!activeEditorControl) {
+            return Disposable.None;
+        }
+        this.pickState.editorViewState.set();
+        activeEditorControl.revealRangeInCenter(pick.range.selection, 0);
+        this.addDecorations(activeEditorControl, pick.range.decoration);
+        return toDisposable(() => this.clearDecorations(activeEditorControl));
+    }
+    _getPicks(originalFilter, disposables, token, runOptions) {
+        const filterWithRange = extractRangeFromFilter(originalFilter, [GotoSymbolQuickAccessProvider.PREFIX]);
+        let filter;
+        if (filterWithRange) {
+            filter = filterWithRange.filter;
+        }
+        else {
+            filter = originalFilter;
+        }
+        this.pickState.lastRange = filterWithRange?.range;
+        if (originalFilter !== this.pickState.lastOriginalFilter && filter === this.pickState.lastFilter) {
+            return null;
+        }
+        const lastWasFiltering = !!this.pickState.lastOriginalFilter;
+        this.pickState.lastOriginalFilter = originalFilter;
+        this.pickState.lastFilter = filter;
+        const picks = this.pickState.picker?.items;
+        const activePick = this.pickState.picker?.activeItems[0];
+        if (picks && activePick) {
+            const activePickIsEditorSymbol = isEditorSymbolQuickPickItem(activePick);
+            const activePickIsNoResultsInEditorSymbols = activePick === AnythingQuickAccessProvider_1.NO_RESULTS_PICK && filter.indexOf(GotoSymbolQuickAccessProvider.PREFIX) >= 0;
+            if (!activePickIsEditorSymbol && !activePickIsNoResultsInEditorSymbols) {
+                this.pickState.lastGlobalPicks = {
+                    items: picks,
+                    active: activePick
+                };
+            }
+        }
+        return this.doGetPicks(filter, {
+            ...runOptions,
+            enableEditorSymbolSearch: lastWasFiltering
+        }, disposables, token);
+    }
+    doGetPicks(filter, options, disposables, token) {
+        const query = prepareQuery(filter);
+        if (options.enableEditorSymbolSearch) {
+            const editorSymbolPicks = this.getEditorSymbolPicks(query, disposables, token);
+            if (editorSymbolPicks) {
+                return editorSymbolPicks;
+            }
+        }
+        const activePick = this.pickState.picker?.activeItems[0];
+        if (isEditorSymbolQuickPickItem(activePick) && this.pickState.lastGlobalPicks) {
+            return this.pickState.lastGlobalPicks;
+        }
+        const historyEditorPicks = this.getEditorHistoryPicks(query);
+        let picks = new Array();
+        if (options.additionPicks) {
+            for (const pick of options.additionPicks) {
+                if (pick.type === 'separator') {
+                    picks.push(pick);
+                    continue;
+                }
+                if (!query.original) {
+                    pick.highlights = undefined;
+                    picks.push(pick);
+                    continue;
+                }
+                const { score, labelMatch, descriptionMatch } = scoreItemFuzzy(pick, query, true, quickPickItemScorerAccessor, this.pickState.scorerCache);
+                if (!score) {
+                    continue;
+                }
+                pick.highlights = {
+                    label: labelMatch,
+                    description: descriptionMatch
+                };
+                picks.push(pick);
+            }
+        }
+        if (this.pickState.isQuickNavigating) {
+            if (picks.length > 0) {
+                picks.push({ type: 'separator', label: localize('recentlyOpenedSeparator', "recently opened") });
+            }
+            picks = historyEditorPicks;
+        }
+        else {
+            if (options.includeHelp) {
+                picks.push(...this.getHelpPicks(query, token, options));
+            }
+            if (historyEditorPicks.length !== 0) {
+                picks.push({ type: 'separator', label: localize('recentlyOpenedSeparator', "recently opened") });
+                picks.push(...historyEditorPicks);
+            }
+        }
+        return {
+            picks: options.filter ? picks.filter((p) => options.filter?.(p)) : picks,
+            additionalPicks: (async () => {
+                const additionalPicksExcludes = new ResourceMap();
+                for (const historyEditorPick of historyEditorPicks) {
+                    if (historyEditorPick.resource) {
+                        additionalPicksExcludes.set(historyEditorPick.resource, true);
+                    }
+                }
+                let additionalPicks = await this.getAdditionalPicks(query, additionalPicksExcludes, this.configuration.includeSymbols, token);
+                if (options.filter) {
+                    additionalPicks = additionalPicks.filter((p) => options.filter?.(p));
+                }
+                if (token.isCancellationRequested) {
+                    return [];
+                }
+                return additionalPicks.length > 0 ? [
+                    { type: 'separator', label: this.configuration.includeSymbols ? localize('fileAndSymbolResultsSeparator', "file and symbol results") : localize('fileResultsSeparator', "file results") },
+                    ...additionalPicks
+                ] : [];
+            })(),
+            mergeDelay: AnythingQuickAccessProvider_1.SYMBOL_PICKS_MERGE_DELAY
+        };
+    }
+    async getAdditionalPicks(query, excludes, includeSymbols, token) {
+        const [filePicks, symbolPicks] = await Promise.all([
+            this.getFilePicks(query, excludes, token),
+            this.getWorkspaceSymbolPicks(query, includeSymbols, token)
+        ]);
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        const sortedAnythingPicks = top([...filePicks, ...symbolPicks], (anyPickA, anyPickB) => compareItemsByFuzzyScore(anyPickA, anyPickB, query, true, quickPickItemScorerAccessor, this.pickState.scorerCache), AnythingQuickAccessProvider_1.MAX_RESULTS);
+        const filteredAnythingPicks = [];
+        for (const anythingPick of sortedAnythingPicks) {
+            if (anythingPick.highlights) {
+                filteredAnythingPicks.push(anythingPick);
+            }
+            else {
+                const { score, labelMatch, descriptionMatch } = scoreItemFuzzy(anythingPick, query, true, quickPickItemScorerAccessor, this.pickState.scorerCache);
+                if (!score) {
+                    continue;
+                }
+                anythingPick.highlights = {
+                    label: labelMatch,
+                    description: descriptionMatch
+                };
+                filteredAnythingPicks.push(anythingPick);
+            }
+        }
+        return filteredAnythingPicks;
+    }
+    getEditorHistoryPicks(query) {
+        const configuration = this.configuration;
+        if (!query.normalized) {
+            return this.historyService.getHistory().map(editor => this.createAnythingPick(editor, configuration));
+        }
+        if (!this.configuration.includeHistory) {
+            return [];
+        }
+        const editorHistoryScorerAccessor = query.containsPathSeparator ? quickPickItemScorerAccessor : this.labelOnlyEditorHistoryPickAccessor;
+        const editorHistoryPicks = [];
+        for (const editor of this.historyService.getHistory()) {
+            const resource = editor.resource;
+            if (!resource || (!this.fileService.hasProvider(resource) && resource.scheme !== Schemas.untitled && resource.scheme !== Schemas.vscodeTerminal)) {
+                continue;
+            }
+            const editorHistoryPick = this.createAnythingPick(editor, configuration);
+            const { score, labelMatch, descriptionMatch } = scoreItemFuzzy(editorHistoryPick, query, false, editorHistoryScorerAccessor, this.pickState.scorerCache);
+            if (!score) {
+                continue;
+            }
+            editorHistoryPick.highlights = {
+                label: labelMatch,
+                description: descriptionMatch
+            };
+            editorHistoryPicks.push(editorHistoryPick);
+        }
+        if (this.configuration.historyFilterSortOrder === 'recency') {
+            return editorHistoryPicks;
+        }
+        return editorHistoryPicks.sort((editorA, editorB) => compareItemsByFuzzyScore(editorA, editorB, query, false, editorHistoryScorerAccessor, this.pickState.scorerCache));
+    }
+    createFileQueryCache() {
+        return new FileQueryCacheState(cacheKey => this.fileQueryBuilder.file(this.contextService.getWorkspace().folders, this.getFileQueryOptions({ cacheKey })), query => this.searchService.fileSearch(query), cacheKey => this.searchService.clearCache(cacheKey), this.pickState.fileQueryCache).load();
+    }
+    async getFilePicks(query, excludes, token) {
+        if (!query.normalized) {
+            return [];
+        }
+        const absolutePathResult = await this.getAbsolutePathFileResult(query, token);
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        let fileMatches;
+        if (absolutePathResult) {
+            if (excludes.has(absolutePathResult)) {
+                return [];
+            }
+            const absolutePathPick = this.createAnythingPick(absolutePathResult, this.configuration);
+            absolutePathPick.highlights = {
+                label: [{ start: 0, end: absolutePathPick.label.length }],
+                description: absolutePathPick.description ? [{ start: 0, end: absolutePathPick.description.length }] : undefined
+            };
+            return [absolutePathPick];
+        }
+        if (this.pickState.fileQueryCache?.isLoaded) {
+            fileMatches = await this.doFileSearch(query, token);
+        }
+        else {
+            fileMatches = await this.fileQueryDelayer.trigger(async () => {
+                if (token.isCancellationRequested) {
+                    return [];
+                }
+                return this.doFileSearch(query, token);
+            });
+        }
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        const configuration = this.configuration;
+        return fileMatches
+            .filter(resource => !excludes.has(resource))
+            .map(resource => this.createAnythingPick(resource, configuration));
+    }
+    async doFileSearch(query, token) {
+        const [fileSearchResults, relativePathFileResults] = await Promise.all([
+            this.getFileSearchResults(query, token),
+            this.getRelativePathFileResults(query, token)
+        ]);
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        if (!relativePathFileResults) {
+            return fileSearchResults;
+        }
+        const relativePathFileResultsMap = new ResourceMap();
+        for (const relativePathFileResult of relativePathFileResults) {
+            relativePathFileResultsMap.set(relativePathFileResult, true);
+        }
+        return [
+            ...fileSearchResults.filter(result => !relativePathFileResultsMap.has(result)),
+            ...relativePathFileResults
+        ];
+    }
+    async getFileSearchResults(query, token) {
+        let filePattern = '';
+        if (query.values && query.values.length > 1) {
+            filePattern = query.values[0].original;
+        }
+        else {
+            filePattern = query.original;
+        }
+        const fileSearchResults = await this.doGetFileSearchResults(filePattern, token);
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        if (fileSearchResults.limitHit && query.values && query.values.length > 1) {
+            const additionalFileSearchResults = await this.doGetFileSearchResults(query.original, token);
+            if (token.isCancellationRequested) {
+                return [];
+            }
+            const existingFileSearchResultsMap = new ResourceMap();
+            for (const fileSearchResult of fileSearchResults.results) {
+                existingFileSearchResultsMap.set(fileSearchResult.resource, true);
+            }
+            for (const additionalFileSearchResult of additionalFileSearchResults.results) {
+                if (!existingFileSearchResultsMap.has(additionalFileSearchResult.resource)) {
+                    fileSearchResults.results.push(additionalFileSearchResult);
+                }
+            }
+        }
+        return fileSearchResults.results.map(result => result.resource);
+    }
+    doGetFileSearchResults(filePattern, token) {
+        const start = Date.now();
+        return this.searchService.fileSearch(this.fileQueryBuilder.file(this.contextService.getWorkspace().folders, this.getFileQueryOptions({
+            filePattern,
+            cacheKey: this.pickState.fileQueryCache?.cacheKey,
+            maxResults: AnythingQuickAccessProvider_1.MAX_RESULTS
+        })), token).finally(() => {
+            this.logService.trace(`QuickAccess fileSearch ${Date.now() - start}ms`);
+        });
+    }
+    getFileQueryOptions(input) {
+        return {
+            _reason: 'openFileHandler',
+            extraFileResources: this.instantiationService.invokeFunction(getOutOfWorkspaceEditorResources),
+            filePattern: input.filePattern || '',
+            cacheKey: input.cacheKey,
+            maxResults: input.maxResults || 0,
+            sortByScore: true
+        };
+    }
+    async getAbsolutePathFileResult(query, token) {
+        if (!query.containsPathSeparator) {
+            return;
+        }
+        const userHome = await this.pathService.userHome();
+        const detildifiedQuery = untildify(query.original, userHome.scheme === Schemas.file ? userHome.fsPath : userHome.path);
+        if (token.isCancellationRequested) {
+            return;
+        }
+        const isAbsolutePathQuery = (await this.pathService.path).isAbsolute(detildifiedQuery);
+        if (token.isCancellationRequested) {
+            return;
+        }
+        if (isAbsolutePathQuery) {
+            const resource = toLocalResource(await this.pathService.fileURI(detildifiedQuery), this.environmentService.remoteAuthority, this.pathService.defaultUriScheme);
+            if (token.isCancellationRequested) {
+                return;
+            }
+            try {
+                if ((await this.fileService.stat(resource)).isFile) {
+                    return resource;
+                }
+            }
+            catch (error) {
+            }
+        }
+        return;
+    }
+    async getRelativePathFileResults(query, token) {
+        if (!query.containsPathSeparator) {
+            return;
+        }
+        const isAbsolutePathQuery = (await this.pathService.path).isAbsolute(query.original);
+        if (!isAbsolutePathQuery) {
+            const resources = [];
+            for (const folder of this.contextService.getWorkspace().folders) {
+                if (token.isCancellationRequested) {
+                    break;
+                }
+                const resource = toLocalResource(folder.toResource(query.original), this.environmentService.remoteAuthority, this.pathService.defaultUriScheme);
+                try {
+                    if ((await this.fileService.stat(resource)).isFile) {
+                        resources.push(resource);
+                    }
+                }
+                catch (error) {
+                }
+            }
+            return resources;
+        }
+        return;
+    }
+    getHelpPicks(query, token, runOptions) {
+        if (query.normalized) {
+            return [];
+        }
+        const providers = this.lazyRegistry.value.getQuickAccessProviders()
+            .filter(p => p.helpEntries.some(h => h.commandCenterOrder !== undefined))
+            .flatMap(provider => provider.helpEntries
+            .filter(h => h.commandCenterOrder !== undefined)
+            .map(helpEntry => {
+            const providerSpecificOptions = {
+                ...runOptions,
+                includeHelp: provider.prefix === AnythingQuickAccessProvider_1.PREFIX ? false : runOptions?.includeHelp
+            };
+            const label = helpEntry.commandCenterLabel ?? helpEntry.description;
+            return {
+                label,
+                description: helpEntry.prefix ?? provider.prefix,
+                commandCenterOrder: helpEntry.commandCenterOrder,
+                keybinding: helpEntry.commandId ? this.keybindingService.lookupKeybinding(helpEntry.commandId) : undefined,
+                ariaLabel: localize('helpPickAriaLabel', "{0}, {1}", label, helpEntry.description),
+                accept: () => {
+                    this.quickInputService.quickAccess.show(provider.prefix, {
+                        preserveValue: true,
+                        providerOptions: providerSpecificOptions
+                    });
+                }
+            };
+        }));
+        if (this.quickChatService.enabled) {
+            providers.push({
+                label: localize('chat', "Open Quick Chat"),
+                commandCenterOrder: 30,
+                keybinding: this.keybindingService.lookupKeybinding(ASK_QUICK_QUESTION_ACTION_ID),
+                accept: () => this.quickChatService.toggle()
+            });
+        }
+        return providers.sort((a, b) => a.commandCenterOrder - b.commandCenterOrder);
+    }
+    async getWorkspaceSymbolPicks(query, includeSymbols, token) {
+        if (!query.normalized ||
+            !includeSymbols ||
+            this.pickState.lastRange) {
+            return [];
+        }
+        return this.workspaceSymbolsQuickAccess.getSymbolPicks(query.original, {
+            skipLocal: true,
+            skipSorting: true,
+            delay: AnythingQuickAccessProvider_1.TYPING_SEARCH_DELAY
+        }, token);
+    }
+    getEditorSymbolPicks(query, disposables, token) {
+        const filterSegments = query.original.split(GotoSymbolQuickAccessProvider.PREFIX);
+        const filter = filterSegments.length > 1 ? filterSegments[filterSegments.length - 1].trim() : undefined;
+        if (typeof filter !== 'string') {
+            return null;
+        }
+        const activeGlobalPick = this.pickState.lastGlobalPicks?.active;
+        if (!activeGlobalPick) {
+            return null;
+        }
+        const activeGlobalResource = activeGlobalPick.resource;
+        if (!activeGlobalResource || (!this.fileService.hasProvider(activeGlobalResource) && activeGlobalResource.scheme !== Schemas.untitled)) {
+            return null;
+        }
+        if (activeGlobalPick.label.includes(GotoSymbolQuickAccessProvider.PREFIX) || activeGlobalPick.description?.includes(GotoSymbolQuickAccessProvider.PREFIX)) {
+            if (filterSegments.length < 3) {
+                return null;
+            }
+        }
+        return this.doGetEditorSymbolPicks(activeGlobalPick, activeGlobalResource, filter, disposables, token);
+    }
+    async doGetEditorSymbolPicks(activeGlobalPick, activeGlobalResource, filter, disposables, token) {
+        try {
+            this.pickState.editorViewState.set();
+            await this.pickState.editorViewState.openTransientEditor({
+                resource: activeGlobalResource,
+                options: { preserveFocus: true, revealIfOpened: true, ignoreError: true }
+            });
+        }
+        catch (error) {
+            return [];
+        }
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        let model = this.modelService.getModel(activeGlobalResource);
+        if (!model) {
+            try {
+                const modelReference = disposables.add(await this.textModelService.createModelReference(activeGlobalResource));
+                if (token.isCancellationRequested) {
+                    return [];
+                }
+                model = modelReference.object.textEditorModel;
+            }
+            catch (error) {
+                return [];
+            }
+        }
+        const editorSymbolPicks = (await this.editorSymbolsQuickAccess.getSymbolPicks(model, filter, { extraContainerLabel: stripIcons(activeGlobalPick.label) }, disposables, token));
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        return editorSymbolPicks.map(editorSymbolPick => {
+            if (editorSymbolPick.type === 'separator') {
+                return editorSymbolPick;
+            }
+            return {
+                ...editorSymbolPick,
+                resource: activeGlobalResource,
+                description: editorSymbolPick.description,
+                trigger: (buttonIndex, keyMods) => {
+                    this.openAnything(activeGlobalResource, { keyMods, range: editorSymbolPick.range?.selection, forceOpenSideBySide: true });
+                    return TriggerAction.CLOSE_PICKER;
+                },
+                accept: (keyMods, event) => this.openAnything(activeGlobalResource, { keyMods, range: editorSymbolPick.range?.selection, preserveFocus: event.inBackground, forcePinned: event.inBackground })
+            };
+        });
+    }
+    addDecorations(editor, range) {
+        this.editorSymbolsQuickAccess.addDecorations(editor, range);
+    }
+    clearDecorations(editor) {
+        this.editorSymbolsQuickAccess.clearDecorations(editor);
+    }
+    createAnythingPick(resourceOrEditor, configuration) {
+        const isEditorHistoryEntry = !URI.isUri(resourceOrEditor);
+        let resource;
+        let label;
+        let description = undefined;
+        let isDirty = undefined;
+        let extraClasses;
+        let icon = undefined;
+        if (isEditorInput(resourceOrEditor)) {
+            resource = EditorResourceAccessor.getOriginalUri(resourceOrEditor);
+            label = resourceOrEditor.getName();
+            description = resourceOrEditor.getDescription();
+            isDirty = resourceOrEditor.isDirty() && !resourceOrEditor.isSaving();
+            extraClasses = resourceOrEditor.getLabelExtraClasses();
+            icon = resourceOrEditor.getIcon();
+        }
+        else {
+            resource = URI.isUri(resourceOrEditor) ? resourceOrEditor : resourceOrEditor.resource;
+            const customLabel = this.customEditorLabelService.getName(resource);
+            label = customLabel || basenameOrAuthority(resource);
+            description = this.labelService.getUriLabel(!!customLabel ? resource : dirname(resource), { relative: true });
+            isDirty = this.workingCopyService.isDirty(resource) && !this.filesConfigurationService.hasShortAutoSaveDelay(resource);
+            extraClasses = [];
+        }
+        const labelAndDescription = description ? `${label} ${description}` : label;
+        const iconClassesValue = new Lazy(() => getIconClasses(this.modelService, this.languageService, resource, undefined, icon).concat(extraClasses));
+        const buttonsValue = new Lazy(() => {
+            const openSideBySideDirection = configuration.openSideBySideDirection;
+            const buttons = [];
+            buttons.push({
+                iconClass: openSideBySideDirection === 'right' ? ThemeIcon.asClassName(Codicon.splitHorizontal) : ThemeIcon.asClassName(Codicon.splitVertical),
+                tooltip: openSideBySideDirection === 'right' ?
+                    localize({ key: 'openToSide', comment: ['Open this file in a split editor on the left/right side'] }, "Open to the Side") :
+                    localize({ key: 'openToBottom', comment: ['Open this file in a split editor on the bottom'] }, "Open to the Bottom")
+            });
+            if (isEditorHistoryEntry) {
+                buttons.push({
+                    iconClass: isDirty ? ('dirty-anything ' + ThemeIcon.asClassName(Codicon.circleFilled)) : ThemeIcon.asClassName(Codicon.close),
+                    tooltip: localize('closeEditor', "Remove from Recently Opened"),
+                    alwaysVisible: isDirty
+                });
+            }
+            return buttons;
+        });
+        return {
+            resource,
+            label,
+            ariaLabel: isDirty ? localize('filePickAriaLabelDirty', "{0} unsaved changes", labelAndDescription) : labelAndDescription,
+            description,
+            get iconClasses() { return iconClassesValue.value; },
+            get buttons() { return buttonsValue.value; },
+            trigger: (buttonIndex, keyMods) => {
+                switch (buttonIndex) {
+                    case 0:
+                        this.openAnything(resourceOrEditor, { keyMods, range: this.pickState.lastRange, forceOpenSideBySide: true });
+                        return TriggerAction.CLOSE_PICKER;
+                    case 1:
+                        if (!URI.isUri(resourceOrEditor)) {
+                            this.historyService.removeFromHistory(resourceOrEditor);
+                            return TriggerAction.REMOVE_ITEM;
+                        }
+                }
+                return TriggerAction.NO_ACTION;
+            },
+            accept: (keyMods, event) => this.openAnything(resourceOrEditor, { keyMods, range: this.pickState.lastRange, preserveFocus: event.inBackground, forcePinned: event.inBackground })
+        };
+    }
+    async openAnything(resourceOrEditor, options) {
+        const editorOptions = {
+            preserveFocus: options.preserveFocus,
+            pinned: options.keyMods?.ctrlCmd || options.forcePinned || this.configuration.openEditorPinned,
+            selection: options.range ? Range.collapseToStart(options.range) : undefined
+        };
+        const targetGroup = options.keyMods?.alt || (this.configuration.openEditorPinned && options.keyMods?.ctrlCmd) || options.forceOpenSideBySide ? SIDE_GROUP : ACTIVE_GROUP;
+        if (targetGroup === SIDE_GROUP) {
+            await this.pickState.editorViewState.restore();
+        }
+        if (isEditorInput(resourceOrEditor)) {
+            await this.editorService.openEditor(resourceOrEditor, editorOptions, targetGroup);
+        }
+        else {
+            let resourceEditorInput;
+            if (URI.isUri(resourceOrEditor)) {
+                resourceEditorInput = {
+                    resource: resourceOrEditor,
+                    options: editorOptions
+                };
+            }
+            else {
+                resourceEditorInput = {
+                    ...resourceOrEditor,
+                    options: {
+                        ...resourceOrEditor.options,
+                        ...editorOptions
+                    }
+                };
+            }
+            await this.editorService.openEditor(resourceEditorInput, targetGroup);
+        }
+    }
+};
+AnythingQuickAccessProvider = AnythingQuickAccessProvider_1 = __decorate([
+    __param(0, IInstantiationService),
+    __param(1, ISearchService),
+    __param(2, IWorkspaceContextService),
+    __param(3, IPathService),
+    __param(4, IWorkbenchEnvironmentService),
+    __param(5, IFileService),
+    __param(6, ILabelService),
+    __param(7, IModelService),
+    __param(8, ILanguageService),
+    __param(9, IWorkingCopyService),
+    __param(10, IConfigurationService),
+    __param(11, IEditorService),
+    __param(12, IHistoryService),
+    __param(13, IFilesConfigurationService),
+    __param(14, ITextModelService),
+    __param(15, IUriIdentityService),
+    __param(16, IQuickInputService),
+    __param(17, IKeybindingService),
+    __param(18, IQuickChatService),
+    __param(19, ILogService),
+    __param(20, ICustomEditorLabelService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], AnythingQuickAccessProvider);
+export { AnythingQuickAccessProvider };

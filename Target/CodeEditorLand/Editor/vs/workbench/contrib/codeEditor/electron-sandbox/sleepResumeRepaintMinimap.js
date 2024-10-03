@@ -1,1 +1,31 @@
-var d=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var h=(i,r,t,o)=>{for(var e=o>1?void 0:o?m(r,t):r,n=i.length-1,c;n>=0;n--)(c=i[n])&&(e=(o?c(r,t,e):c(e))||e);return o&&e&&d(r,t,e),e},b=(i,r)=>(t,o)=>r(t,o,i);import{LifecyclePhase as f}from"../../../services/lifecycle/common/lifecycle.js";import{Registry as C}from"../../../../platform/registry/common/platform.js";import{Extensions as I}from"../../../common/contributions.js";import{ICodeEditorService as k}from"../../../../editor/browser/services/codeEditorService.js";import{INativeHostService as u}from"../../../../platform/native/common/native.js";import{Disposable as v}from"../../../../base/common/lifecycle.js";let s=class extends v{constructor(r,t){super(),this._register(t.onDidResumeOS(()=>{r.listCodeEditors().forEach(o=>o.render(!0))}))}};s=h([b(0,k),b(1,u)],s),C.as(I.Workbench).registerWorkbenchContribution(s,f.Eventually);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+let SleepResumeRepaintMinimap = class SleepResumeRepaintMinimap extends Disposable {
+    constructor(codeEditorService, nativeHostService) {
+        super();
+        this._register(nativeHostService.onDidResumeOS(() => {
+            codeEditorService.listCodeEditors().forEach(editor => editor.render(true));
+        }));
+    }
+};
+SleepResumeRepaintMinimap = __decorate([
+    __param(0, ICodeEditorService),
+    __param(1, INativeHostService),
+    __metadata("design:paramtypes", [Object, Object])
+], SleepResumeRepaintMinimap);
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(SleepResumeRepaintMinimap, 4);

@@ -1,1 +1,3 @@
-import{create as e}from"./extensionHostWorker.js";const s=e();self.onmessage=a=>s.onmessage(a.data);
+import { create } from './extensionHostWorker.js';
+const data = create();
+self.onmessage = (e) => data.onmessage(e.data);

@@ -1,7 +1,128 @@
-import{CharCode as u}from"../../../../base/common/charCode.js";import"../../../../base/common/lifecycle.js";import*as s from"../../../../base/common/strings.js";import{DefaultEndOfLine as p}from"../../model.js";import{StringBuffer as f,createLineStarts as _,createLineStartsFast as l}from"./pieceTreeBase.js";import{PieceTreeTextBuffer as C}from"./pieceTreeTextBuffer.js";class m{constructor(t,i,e,n,r,o,a,h,v){this._chunks=t;this._bom=i;this._cr=e;this._lf=n;this._crlf=r;this._containsRTL=o;this._containsUnusualLineTerminators=a;this._isBasicASCII=h;this._normalizeEOL=v}_getEOL(t){const i=this._cr+this._lf+this._crlf,e=this._cr+this._crlf;return i===0?t===p.LF?`
-`:`\r
-`:e>i/2?`\r
-`:`
-`}create(t){const i=this._getEOL(t),e=this._chunks;if(this._normalizeEOL&&(i===`\r
-`&&(this._cr>0||this._lf>0)||i===`
-`&&(this._cr>0||this._crlf>0)))for(let r=0,o=e.length;r<o;r++){const a=e[r].buffer.replace(/\r\n|\r|\n/g,i),h=l(a);e[r]=new f(a,h)}const n=new C(e,this._bom,i,this._containsRTL,this._containsUnusualLineTerminators,this._isBasicASCII,this._normalizeEOL);return{textBuffer:n,disposable:n}}getFirstLineText(t){return this._chunks[0].buffer.substr(0,t).split(/\r\n|\r|\n/)[0]}}class y{chunks;BOM;_hasPreviousChar;_previousChar;_tmpLineStarts;cr;lf;crlf;containsRTL;containsUnusualLineTerminators;isBasicASCII;constructor(){this.chunks=[],this.BOM="",this._hasPreviousChar=!1,this._previousChar=0,this._tmpLineStarts=[],this.cr=0,this.lf=0,this.crlf=0,this.containsRTL=!1,this.containsUnusualLineTerminators=!1,this.isBasicASCII=!0}acceptChunk(t){if(t.length===0)return;this.chunks.length===0&&s.startsWithUTF8BOM(t)&&(this.BOM=s.UTF8_BOM_CHARACTER,t=t.substr(1));const i=t.charCodeAt(t.length-1);i===u.CarriageReturn||i>=55296&&i<=56319?(this._acceptChunk1(t.substr(0,t.length-1),!1),this._hasPreviousChar=!0,this._previousChar=i):(this._acceptChunk1(t,!1),this._hasPreviousChar=!1,this._previousChar=i)}_acceptChunk1(t,i){!i&&t.length===0||(this._hasPreviousChar?this._acceptChunk2(String.fromCharCode(this._previousChar)+t):this._acceptChunk2(t))}_acceptChunk2(t){const i=_(this._tmpLineStarts,t);this.chunks.push(new f(t,i.lineStarts)),this.cr+=i.cr,this.lf+=i.lf,this.crlf+=i.crlf,i.isBasicASCII||(this.isBasicASCII=!1,this.containsRTL||(this.containsRTL=s.containsRTL(t)),this.containsUnusualLineTerminators||(this.containsUnusualLineTerminators=s.containsUnusualLineTerminators(t)))}finish(t=!0){return this._finish(),new m(this.chunks,this.BOM,this.cr,this.lf,this.crlf,this.containsRTL,this.containsUnusualLineTerminators,this.isBasicASCII,t)}_finish(){if(this.chunks.length===0&&this._acceptChunk1("",!0),this._hasPreviousChar){this._hasPreviousChar=!1;const t=this.chunks[this.chunks.length-1];t.buffer+=String.fromCharCode(this._previousChar);const i=l(t.buffer);t.lineStarts=i,this._previousChar===u.CarriageReturn&&this.cr++}}}export{y as PieceTreeTextBufferBuilder};
+import * as strings from '../../../../base/common/strings.js';
+import { StringBuffer, createLineStarts, createLineStartsFast } from './pieceTreeBase.js';
+import { PieceTreeTextBuffer } from './pieceTreeTextBuffer.js';
+class PieceTreeTextBufferFactory {
+    constructor(_chunks, _bom, _cr, _lf, _crlf, _containsRTL, _containsUnusualLineTerminators, _isBasicASCII, _normalizeEOL) {
+        this._chunks = _chunks;
+        this._bom = _bom;
+        this._cr = _cr;
+        this._lf = _lf;
+        this._crlf = _crlf;
+        this._containsRTL = _containsRTL;
+        this._containsUnusualLineTerminators = _containsUnusualLineTerminators;
+        this._isBasicASCII = _isBasicASCII;
+        this._normalizeEOL = _normalizeEOL;
+    }
+    _getEOL(defaultEOL) {
+        const totalEOLCount = this._cr + this._lf + this._crlf;
+        const totalCRCount = this._cr + this._crlf;
+        if (totalEOLCount === 0) {
+            return (defaultEOL === 1 ? '\n' : '\r\n');
+        }
+        if (totalCRCount > totalEOLCount / 2) {
+            return '\r\n';
+        }
+        return '\n';
+    }
+    create(defaultEOL) {
+        const eol = this._getEOL(defaultEOL);
+        const chunks = this._chunks;
+        if (this._normalizeEOL &&
+            ((eol === '\r\n' && (this._cr > 0 || this._lf > 0))
+                || (eol === '\n' && (this._cr > 0 || this._crlf > 0)))) {
+            for (let i = 0, len = chunks.length; i < len; i++) {
+                const str = chunks[i].buffer.replace(/\r\n|\r|\n/g, eol);
+                const newLineStart = createLineStartsFast(str);
+                chunks[i] = new StringBuffer(str, newLineStart);
+            }
+        }
+        const textBuffer = new PieceTreeTextBuffer(chunks, this._bom, eol, this._containsRTL, this._containsUnusualLineTerminators, this._isBasicASCII, this._normalizeEOL);
+        return { textBuffer: textBuffer, disposable: textBuffer };
+    }
+    getFirstLineText(lengthLimit) {
+        return this._chunks[0].buffer.substr(0, lengthLimit).split(/\r\n|\r|\n/)[0];
+    }
+}
+export class PieceTreeTextBufferBuilder {
+    constructor() {
+        this.chunks = [];
+        this.BOM = '';
+        this._hasPreviousChar = false;
+        this._previousChar = 0;
+        this._tmpLineStarts = [];
+        this.cr = 0;
+        this.lf = 0;
+        this.crlf = 0;
+        this.containsRTL = false;
+        this.containsUnusualLineTerminators = false;
+        this.isBasicASCII = true;
+    }
+    acceptChunk(chunk) {
+        if (chunk.length === 0) {
+            return;
+        }
+        if (this.chunks.length === 0) {
+            if (strings.startsWithUTF8BOM(chunk)) {
+                this.BOM = strings.UTF8_BOM_CHARACTER;
+                chunk = chunk.substr(1);
+            }
+        }
+        const lastChar = chunk.charCodeAt(chunk.length - 1);
+        if (lastChar === 13 || (lastChar >= 0xD800 && lastChar <= 0xDBFF)) {
+            this._acceptChunk1(chunk.substr(0, chunk.length - 1), false);
+            this._hasPreviousChar = true;
+            this._previousChar = lastChar;
+        }
+        else {
+            this._acceptChunk1(chunk, false);
+            this._hasPreviousChar = false;
+            this._previousChar = lastChar;
+        }
+    }
+    _acceptChunk1(chunk, allowEmptyStrings) {
+        if (!allowEmptyStrings && chunk.length === 0) {
+            return;
+        }
+        if (this._hasPreviousChar) {
+            this._acceptChunk2(String.fromCharCode(this._previousChar) + chunk);
+        }
+        else {
+            this._acceptChunk2(chunk);
+        }
+    }
+    _acceptChunk2(chunk) {
+        const lineStarts = createLineStarts(this._tmpLineStarts, chunk);
+        this.chunks.push(new StringBuffer(chunk, lineStarts.lineStarts));
+        this.cr += lineStarts.cr;
+        this.lf += lineStarts.lf;
+        this.crlf += lineStarts.crlf;
+        if (!lineStarts.isBasicASCII) {
+            this.isBasicASCII = false;
+            if (!this.containsRTL) {
+                this.containsRTL = strings.containsRTL(chunk);
+            }
+            if (!this.containsUnusualLineTerminators) {
+                this.containsUnusualLineTerminators = strings.containsUnusualLineTerminators(chunk);
+            }
+        }
+    }
+    finish(normalizeEOL = true) {
+        this._finish();
+        return new PieceTreeTextBufferFactory(this.chunks, this.BOM, this.cr, this.lf, this.crlf, this.containsRTL, this.containsUnusualLineTerminators, this.isBasicASCII, normalizeEOL);
+    }
+    _finish() {
+        if (this.chunks.length === 0) {
+            this._acceptChunk1('', true);
+        }
+        if (this._hasPreviousChar) {
+            this._hasPreviousChar = false;
+            const lastChunk = this.chunks[this.chunks.length - 1];
+            lastChunk.buffer += String.fromCharCode(this._previousChar);
+            const newLineStarts = createLineStartsFast(lastChunk.buffer);
+            lastChunk.lineStarts = newLineStarts;
+            if (this._previousChar === 13) {
+                this.cr++;
+            }
+        }
+    }
+}

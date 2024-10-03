@@ -1,1 +1,196 @@
-import*as c from"../../../../base/browser/dom.js";import{createFastDomNode as v}from"../../../../base/browser/fastDomNode.js";import*as S from"../../../../base/common/strings.js";import{applyFontInfo as C}from"../../config/domFontInfo.js";import{TextEditorCursorStyle as s,EditorOption as o}from"../../../common/config/editorOptions.js";import{Position as b}from"../../../common/core/position.js";import{Range as x}from"../../../common/core/range.js";import"../../view/renderingContext.js";import"../../../common/viewModel/viewContext.js";import"../../../common/viewEvents.js";import{MOUSE_CURSOR_TEXT_CSS_CLASS_NAME as N}from"../../../../base/browser/ui/mouseCursor/mouseCursor.js";class y{constructor(e,i,t,n,r,l,d){this.top=e;this.left=i;this.paddingLeft=t;this.width=n;this.height=r;this.textContent=l;this.textContentClassName=d}}var H=(t=>(t[t.Single=0]="Single",t[t.MultiPrimary=1]="MultiPrimary",t[t.MultiSecondary=2]="MultiSecondary",t))(H||{});class ${_context;_domNode;_cursorStyle;_lineCursorWidth;_lineHeight;_typicalHalfwidthCharacterWidth;_isVisible;_position;_pluralityClass;_lastRenderedContent;_renderData;constructor(e,i){this._context=e;const t=this._context.configuration.options,n=t.get(o.fontInfo);this._cursorStyle=t.get(o.cursorStyle),this._lineHeight=t.get(o.lineHeight),this._typicalHalfwidthCharacterWidth=n.typicalHalfwidthCharacterWidth,this._lineCursorWidth=Math.min(t.get(o.cursorWidth),this._typicalHalfwidthCharacterWidth),this._isVisible=!0,this._domNode=v(document.createElement("div")),this._domNode.setClassName(`cursor ${N}`),this._domNode.setHeight(this._lineHeight),this._domNode.setTop(0),this._domNode.setLeft(0),C(this._domNode,n),this._domNode.setDisplay("none"),this._position=new b(1,1),this._pluralityClass="",this.setPlurality(i),this._lastRenderedContent="",this._renderData=null}getDomNode(){return this._domNode}getPosition(){return this._position}setPlurality(e){switch(e){default:case 0:this._pluralityClass="";break;case 1:this._pluralityClass="cursor-primary";break;case 2:this._pluralityClass="cursor-secondary";break}}show(){this._isVisible||(this._domNode.setVisibility("inherit"),this._isVisible=!0)}hide(){this._isVisible&&(this._domNode.setVisibility("hidden"),this._isVisible=!1)}onConfigurationChanged(e){const i=this._context.configuration.options,t=i.get(o.fontInfo);return this._cursorStyle=i.get(o.cursorStyle),this._lineHeight=i.get(o.lineHeight),this._typicalHalfwidthCharacterWidth=t.typicalHalfwidthCharacterWidth,this._lineCursorWidth=Math.min(i.get(o.cursorWidth),this._typicalHalfwidthCharacterWidth),C(this._domNode,t),!0}onCursorPositionChanged(e,i){return i?this._domNode.domNode.style.transitionProperty="none":this._domNode.domNode.style.transitionProperty="",this._position=e,!0}_getGraphemeAwarePosition(){const{lineNumber:e,column:i}=this._position,t=this._context.viewModel.getLineContent(e),[n,r]=S.getCharContainingOffset(t,i-1);return[new b(e,n+1),t.substring(n,r)]}_prepareRender(e){let i="",t="";const[n,r]=this._getGraphemeAwarePosition();if(this._cursorStyle===s.Line||this._cursorStyle===s.LineThin){const u=e.visibleRangeForPosition(n);if(!u||u.outsideRenderedLine)return null;const f=c.getWindow(this._domNode.domNode);let a;this._cursorStyle===s.Line?(a=c.computeScreenAwareSize(f,this._lineCursorWidth>0?this._lineCursorWidth:2),a>2&&(i=r,t=this._getTokenClassName(n))):a=c.computeScreenAwareSize(f,1);let m=u.left,_=0;a>=2&&m>=1&&(_=1,m-=_);const R=e.getVerticalOffsetForLineNumber(n.lineNumber)-e.bigNumbersDelta;return new y(R,m,_,a,this._lineHeight,i,t)}const l=e.linesVisibleRangesForRange(new x(n.lineNumber,n.column,n.lineNumber,n.column+r.length),!1);if(!l||l.length===0)return null;const d=l[0];if(d.outsideRenderedLine||d.ranges.length===0)return null;const h=d.ranges[0],D=r==="	"?this._typicalHalfwidthCharacterWidth:h.width<1?this._typicalHalfwidthCharacterWidth:h.width;this._cursorStyle===s.Block&&(i=r,t=this._getTokenClassName(n));let p=e.getVerticalOffsetForLineNumber(n.lineNumber)-e.bigNumbersDelta,g=this._lineHeight;return(this._cursorStyle===s.Underline||this._cursorStyle===s.UnderlineThin)&&(p+=this._lineHeight-2,g=2),new y(p,h.left,0,D,g,i,t)}_getTokenClassName(e){const i=this._context.viewModel.getViewLineData(e.lineNumber),t=i.tokens.findTokenIndexAtOffset(e.column-1);return i.tokens.getClassName(t)}prepareRender(e){this._renderData=this._prepareRender(e)}render(e){return this._renderData?(this._lastRenderedContent!==this._renderData.textContent&&(this._lastRenderedContent=this._renderData.textContent,this._domNode.domNode.textContent=this._lastRenderedContent),this._domNode.setClassName(`cursor ${this._pluralityClass} ${N} ${this._renderData.textContentClassName}`),this._domNode.setDisplay("block"),this._domNode.setTop(this._renderData.top),this._domNode.setLeft(this._renderData.left),this._domNode.setPaddingLeft(this._renderData.paddingLeft),this._domNode.setWidth(this._renderData.width),this._domNode.setLineHeight(this._renderData.height),this._domNode.setHeight(this._renderData.height),{domNode:this._domNode.domNode,position:this._position,contentLeft:this._renderData.left,height:this._renderData.height,width:2}):(this._domNode.setDisplay("none"),null)}}export{H as CursorPlurality,$ as ViewCursor};
+import * as dom from '../../../../base/browser/dom.js';
+import { createFastDomNode } from '../../../../base/browser/fastDomNode.js';
+import * as strings from '../../../../base/common/strings.js';
+import { applyFontInfo } from '../../config/domFontInfo.js';
+import { TextEditorCursorStyle } from '../../../common/config/editorOptions.js';
+import { Position } from '../../../common/core/position.js';
+import { Range } from '../../../common/core/range.js';
+import { MOUSE_CURSOR_TEXT_CSS_CLASS_NAME } from '../../../../base/browser/ui/mouseCursor/mouseCursor.js';
+class ViewCursorRenderData {
+    constructor(top, left, paddingLeft, width, height, textContent, textContentClassName) {
+        this.top = top;
+        this.left = left;
+        this.paddingLeft = paddingLeft;
+        this.width = width;
+        this.height = height;
+        this.textContent = textContent;
+        this.textContentClassName = textContentClassName;
+    }
+}
+export var CursorPlurality;
+(function (CursorPlurality) {
+    CursorPlurality[CursorPlurality["Single"] = 0] = "Single";
+    CursorPlurality[CursorPlurality["MultiPrimary"] = 1] = "MultiPrimary";
+    CursorPlurality[CursorPlurality["MultiSecondary"] = 2] = "MultiSecondary";
+})(CursorPlurality || (CursorPlurality = {}));
+export class ViewCursor {
+    constructor(context, plurality) {
+        this._context = context;
+        const options = this._context.configuration.options;
+        const fontInfo = options.get(52);
+        this._cursorStyle = options.get(28);
+        this._lineHeight = options.get(69);
+        this._typicalHalfwidthCharacterWidth = fontInfo.typicalHalfwidthCharacterWidth;
+        this._lineCursorWidth = Math.min(options.get(31), this._typicalHalfwidthCharacterWidth);
+        this._isVisible = true;
+        this._domNode = createFastDomNode(document.createElement('div'));
+        this._domNode.setClassName(`cursor ${MOUSE_CURSOR_TEXT_CSS_CLASS_NAME}`);
+        this._domNode.setHeight(this._lineHeight);
+        this._domNode.setTop(0);
+        this._domNode.setLeft(0);
+        applyFontInfo(this._domNode, fontInfo);
+        this._domNode.setDisplay('none');
+        this._position = new Position(1, 1);
+        this._pluralityClass = '';
+        this.setPlurality(plurality);
+        this._lastRenderedContent = '';
+        this._renderData = null;
+    }
+    getDomNode() {
+        return this._domNode;
+    }
+    getPosition() {
+        return this._position;
+    }
+    setPlurality(plurality) {
+        switch (plurality) {
+            default:
+            case CursorPlurality.Single:
+                this._pluralityClass = '';
+                break;
+            case CursorPlurality.MultiPrimary:
+                this._pluralityClass = 'cursor-primary';
+                break;
+            case CursorPlurality.MultiSecondary:
+                this._pluralityClass = 'cursor-secondary';
+                break;
+        }
+    }
+    show() {
+        if (!this._isVisible) {
+            this._domNode.setVisibility('inherit');
+            this._isVisible = true;
+        }
+    }
+    hide() {
+        if (this._isVisible) {
+            this._domNode.setVisibility('hidden');
+            this._isVisible = false;
+        }
+    }
+    onConfigurationChanged(e) {
+        const options = this._context.configuration.options;
+        const fontInfo = options.get(52);
+        this._cursorStyle = options.get(28);
+        this._lineHeight = options.get(69);
+        this._typicalHalfwidthCharacterWidth = fontInfo.typicalHalfwidthCharacterWidth;
+        this._lineCursorWidth = Math.min(options.get(31), this._typicalHalfwidthCharacterWidth);
+        applyFontInfo(this._domNode, fontInfo);
+        return true;
+    }
+    onCursorPositionChanged(position, pauseAnimation) {
+        if (pauseAnimation) {
+            this._domNode.domNode.style.transitionProperty = 'none';
+        }
+        else {
+            this._domNode.domNode.style.transitionProperty = '';
+        }
+        this._position = position;
+        return true;
+    }
+    _getGraphemeAwarePosition() {
+        const { lineNumber, column } = this._position;
+        const lineContent = this._context.viewModel.getLineContent(lineNumber);
+        const [startOffset, endOffset] = strings.getCharContainingOffset(lineContent, column - 1);
+        return [new Position(lineNumber, startOffset + 1), lineContent.substring(startOffset, endOffset)];
+    }
+    _prepareRender(ctx) {
+        let textContent = '';
+        let textContentClassName = '';
+        const [position, nextGrapheme] = this._getGraphemeAwarePosition();
+        if (this._cursorStyle === TextEditorCursorStyle.Line || this._cursorStyle === TextEditorCursorStyle.LineThin) {
+            const visibleRange = ctx.visibleRangeForPosition(position);
+            if (!visibleRange || visibleRange.outsideRenderedLine) {
+                return null;
+            }
+            const window = dom.getWindow(this._domNode.domNode);
+            let width;
+            if (this._cursorStyle === TextEditorCursorStyle.Line) {
+                width = dom.computeScreenAwareSize(window, this._lineCursorWidth > 0 ? this._lineCursorWidth : 2);
+                if (width > 2) {
+                    textContent = nextGrapheme;
+                    textContentClassName = this._getTokenClassName(position);
+                }
+            }
+            else {
+                width = dom.computeScreenAwareSize(window, 1);
+            }
+            let left = visibleRange.left;
+            let paddingLeft = 0;
+            if (width >= 2 && left >= 1) {
+                paddingLeft = 1;
+                left -= paddingLeft;
+            }
+            const top = ctx.getVerticalOffsetForLineNumber(position.lineNumber) - ctx.bigNumbersDelta;
+            return new ViewCursorRenderData(top, left, paddingLeft, width, this._lineHeight, textContent, textContentClassName);
+        }
+        const visibleRangeForCharacter = ctx.linesVisibleRangesForRange(new Range(position.lineNumber, position.column, position.lineNumber, position.column + nextGrapheme.length), false);
+        if (!visibleRangeForCharacter || visibleRangeForCharacter.length === 0) {
+            return null;
+        }
+        const firstVisibleRangeForCharacter = visibleRangeForCharacter[0];
+        if (firstVisibleRangeForCharacter.outsideRenderedLine || firstVisibleRangeForCharacter.ranges.length === 0) {
+            return null;
+        }
+        const range = firstVisibleRangeForCharacter.ranges[0];
+        const width = (nextGrapheme === '\t'
+            ? this._typicalHalfwidthCharacterWidth
+            : (range.width < 1
+                ? this._typicalHalfwidthCharacterWidth
+                : range.width));
+        if (this._cursorStyle === TextEditorCursorStyle.Block) {
+            textContent = nextGrapheme;
+            textContentClassName = this._getTokenClassName(position);
+        }
+        let top = ctx.getVerticalOffsetForLineNumber(position.lineNumber) - ctx.bigNumbersDelta;
+        let height = this._lineHeight;
+        if (this._cursorStyle === TextEditorCursorStyle.Underline || this._cursorStyle === TextEditorCursorStyle.UnderlineThin) {
+            top += this._lineHeight - 2;
+            height = 2;
+        }
+        return new ViewCursorRenderData(top, range.left, 0, width, height, textContent, textContentClassName);
+    }
+    _getTokenClassName(position) {
+        const lineData = this._context.viewModel.getViewLineData(position.lineNumber);
+        const tokenIndex = lineData.tokens.findTokenIndexAtOffset(position.column - 1);
+        return lineData.tokens.getClassName(tokenIndex);
+    }
+    prepareRender(ctx) {
+        this._renderData = this._prepareRender(ctx);
+    }
+    render(ctx) {
+        if (!this._renderData) {
+            this._domNode.setDisplay('none');
+            return null;
+        }
+        if (this._lastRenderedContent !== this._renderData.textContent) {
+            this._lastRenderedContent = this._renderData.textContent;
+            this._domNode.domNode.textContent = this._lastRenderedContent;
+        }
+        this._domNode.setClassName(`cursor ${this._pluralityClass} ${MOUSE_CURSOR_TEXT_CSS_CLASS_NAME} ${this._renderData.textContentClassName}`);
+        this._domNode.setDisplay('block');
+        this._domNode.setTop(this._renderData.top);
+        this._domNode.setLeft(this._renderData.left);
+        this._domNode.setPaddingLeft(this._renderData.paddingLeft);
+        this._domNode.setWidth(this._renderData.width);
+        this._domNode.setLineHeight(this._renderData.height);
+        this._domNode.setHeight(this._renderData.height);
+        return {
+            domNode: this._domNode.domNode,
+            position: this._position,
+            contentLeft: this._renderData.left,
+            height: this._renderData.height,
+            width: 2
+        };
+    }
+}

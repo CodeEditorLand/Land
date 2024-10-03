@@ -1,1 +1,58 @@
-var f=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var a=(o,r,t,i)=>{for(var e=i>1?void 0:i?v(r,t):r,n=o.length-1,d;n>=0;n--)(d=o[n])&&(e=(i?d(r,t,e):d(e))||e);return i&&e&&f(r,t,e),e},s=(o,r)=>(t,i)=>r(t,i,o);import{Disposable as h}from"../../../../base/common/lifecycle.js";import{isDiffEditor as m}from"../../../../editor/browser/editorBrowser.js";import{localize as l}from"../../../../nls.js";import{IAccessibilityService as g}from"../../../../platform/accessibility/common/accessibility.js";import{IConfigurationService as _}from"../../../../platform/configuration/common/configuration.js";import"../../../common/contributions.js";import{IEditorService as S}from"../../../services/editor/common/editorService.js";import{Event as b}from"../../../../base/common/event.js";import{AccessibilityVerbositySettingId as p}from"../../accessibility/browser/accessibilityConfiguration.js";let c=class extends h{constructor(t,i,e){super();this._editorService=t;this._accessibilityService=i;this._configurationService=e;this._register(b.runAndSubscribe(i.onDidChangeScreenReaderOptimized,()=>this._updateListener())),this._register(e.onDidChangeConfiguration(n=>{n.affectsConfiguration(p.DiffEditorActive)&&this._updateListener()}))}static ID="workbench.contrib.diffEditorActiveAnnouncement";_onDidActiveEditorChangeListener;_updateListener(){const t=this._configurationService.getValue(p.DiffEditorActive),i=this._accessibilityService.isScreenReaderOptimized();if(!t||!i){this._onDidActiveEditorChangeListener?.dispose(),this._onDidActiveEditorChangeListener=void 0;return}this._onDidActiveEditorChangeListener||(this._onDidActiveEditorChangeListener=this._register(this._editorService.onDidActiveEditorChange(()=>{m(this._editorService.activeTextEditorControl)&&this._accessibilityService.alert(l("openDiffEditorAnnouncement","Diff editor"))})))}};c=a([s(0,S),s(1,g),s(2,_)],c);export{c as DiffEditorActiveAnnouncementContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { isDiffEditor } from '../../../../editor/browser/editorBrowser.js';
+import { localize } from '../../../../nls.js';
+import { IAccessibilityService } from '../../../../platform/accessibility/common/accessibility.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { Event } from '../../../../base/common/event.js';
+let DiffEditorActiveAnnouncementContribution = class DiffEditorActiveAnnouncementContribution extends Disposable {
+    static { this.ID = 'workbench.contrib.diffEditorActiveAnnouncement'; }
+    constructor(_editorService, _accessibilityService, _configurationService) {
+        super();
+        this._editorService = _editorService;
+        this._accessibilityService = _accessibilityService;
+        this._configurationService = _configurationService;
+        this._register(Event.runAndSubscribe(_accessibilityService.onDidChangeScreenReaderOptimized, () => this._updateListener()));
+        this._register(_configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration("accessibility.verbosity.diffEditorActive")) {
+                this._updateListener();
+            }
+        }));
+    }
+    _updateListener() {
+        const announcementEnabled = this._configurationService.getValue("accessibility.verbosity.diffEditorActive");
+        const screenReaderOptimized = this._accessibilityService.isScreenReaderOptimized();
+        if (!announcementEnabled || !screenReaderOptimized) {
+            this._onDidActiveEditorChangeListener?.dispose();
+            this._onDidActiveEditorChangeListener = undefined;
+            return;
+        }
+        if (this._onDidActiveEditorChangeListener) {
+            return;
+        }
+        this._onDidActiveEditorChangeListener = this._register(this._editorService.onDidActiveEditorChange(() => {
+            if (isDiffEditor(this._editorService.activeTextEditorControl)) {
+                this._accessibilityService.alert(localize('openDiffEditorAnnouncement', "Diff editor"));
+            }
+        }));
+    }
+};
+DiffEditorActiveAnnouncementContribution = __decorate([
+    __param(0, IEditorService),
+    __param(1, IAccessibilityService),
+    __param(2, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], DiffEditorActiveAnnouncementContribution);
+export { DiffEditorActiveAnnouncementContribution };

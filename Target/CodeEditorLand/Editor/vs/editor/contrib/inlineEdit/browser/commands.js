@@ -1,1 +1,133 @@
-import{KeyCode as c,KeyMod as n}from"../../../../base/common/keyCodes.js";import"../../../browser/editorBrowser.js";import{EditorAction as d}from"../../../browser/editorExtensions.js";import{EditorContextKeys as o}from"../../../common/editorContextKeys.js";import{inlineEditAcceptId as E,inlineEditJumpBackId as u,inlineEditJumpToId as m,inlineEditRejectId as b}from"./commandIds.js";import{InlineEditController as i}from"./inlineEditController.js";import{MenuId as a}from"../../../../platform/actions/common/actions.js";import{ContextKeyExpr as r}from"../../../../platform/contextkey/common/contextkey.js";import{KeybindingWeight as l}from"../../../../platform/keybinding/common/keybindingsRegistry.js";class J extends d{constructor(){super({id:E,label:"Accept Inline Edit",alias:"Accept Inline Edit",precondition:r.and(o.writable,i.inlineEditVisibleContext),kbOpts:[{weight:l.EditorContrib+1,primary:c.Tab,kbExpr:r.and(o.writable,i.inlineEditVisibleContext,i.cursorAtInlineEditContext)}],menuOpts:[{menuId:a.InlineEditToolbar,title:"Accept",group:"primary",order:1}]})}async run(e,t){await i.get(t)?.accept()}}class O extends d{constructor(){const e=r.and(o.writable,r.not(i.inlineEditVisibleKey));super({id:"editor.action.inlineEdit.trigger",label:"Trigger Inline Edit",alias:"Trigger Inline Edit",precondition:e,kbOpts:{weight:l.EditorContrib+1,primary:n.CtrlCmd|n.Alt|c.Equal,kbExpr:e}})}async run(e,t){i.get(t)?.trigger()}}class h extends d{constructor(){const e=r.and(o.writable,i.inlineEditVisibleContext,r.not(i.cursorAtInlineEditKey));super({id:m,label:"Jump to Inline Edit",alias:"Jump to Inline Edit",precondition:e,kbOpts:{weight:l.EditorContrib+1,primary:n.CtrlCmd|n.Alt|c.Equal,kbExpr:e},menuOpts:[{menuId:a.InlineEditToolbar,title:"Jump To Edit",group:"primary",order:3,when:e}]})}async run(e,t){i.get(t)?.jumpToCurrent()}}class j extends d{constructor(){const e=r.and(o.writable,i.cursorAtInlineEditContext);super({id:u,label:"Jump Back from Inline Edit",alias:"Jump Back from Inline Edit",precondition:e,kbOpts:{weight:l.EditorContrib+10,primary:n.CtrlCmd|n.Alt|c.Equal,kbExpr:e},menuOpts:[{menuId:a.InlineEditToolbar,title:"Jump Back",group:"primary",order:3,when:e}]})}async run(e,t){i.get(t)?.jumpBack()}}class K extends d{constructor(){const e=r.and(o.writable,i.inlineEditVisibleContext);super({id:b,label:"Reject Inline Edit",alias:"Reject Inline Edit",precondition:e,kbOpts:{weight:l.EditorContrib,primary:c.Escape,kbExpr:e},menuOpts:[{menuId:a.InlineEditToolbar,title:"Reject",group:"secondary",order:2}]})}async run(e,t){await i.get(t)?.clear()}}export{J as AcceptInlineEdit,j as JumpBackInlineEdit,h as JumpToInlineEdit,K as RejectInlineEdit,O as TriggerInlineEdit};
+import { EditorAction } from '../../../browser/editorExtensions.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import { inlineEditAcceptId, inlineEditJumpBackId, inlineEditJumpToId, inlineEditRejectId } from './commandIds.js';
+import { InlineEditController } from './inlineEditController.js';
+import { MenuId } from '../../../../platform/actions/common/actions.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+export class AcceptInlineEdit extends EditorAction {
+    constructor() {
+        super({
+            id: inlineEditAcceptId,
+            label: 'Accept Inline Edit',
+            alias: 'Accept Inline Edit',
+            precondition: ContextKeyExpr.and(EditorContextKeys.writable, InlineEditController.inlineEditVisibleContext),
+            kbOpts: [
+                {
+                    weight: 100 + 1,
+                    primary: 2,
+                    kbExpr: ContextKeyExpr.and(EditorContextKeys.writable, InlineEditController.inlineEditVisibleContext, InlineEditController.cursorAtInlineEditContext)
+                }
+            ],
+            menuOpts: [{
+                    menuId: MenuId.InlineEditToolbar,
+                    title: 'Accept',
+                    group: 'primary',
+                    order: 1,
+                }],
+        });
+    }
+    async run(accessor, editor) {
+        const controller = InlineEditController.get(editor);
+        await controller?.accept();
+    }
+}
+export class TriggerInlineEdit extends EditorAction {
+    constructor() {
+        const activeExpr = ContextKeyExpr.and(EditorContextKeys.writable, ContextKeyExpr.not(InlineEditController.inlineEditVisibleKey));
+        super({
+            id: 'editor.action.inlineEdit.trigger',
+            label: 'Trigger Inline Edit',
+            alias: 'Trigger Inline Edit',
+            precondition: activeExpr,
+            kbOpts: {
+                weight: 100 + 1,
+                primary: 2048 | 512 | 86,
+                kbExpr: activeExpr
+            },
+        });
+    }
+    async run(accessor, editor) {
+        const controller = InlineEditController.get(editor);
+        controller?.trigger();
+    }
+}
+export class JumpToInlineEdit extends EditorAction {
+    constructor() {
+        const activeExpr = ContextKeyExpr.and(EditorContextKeys.writable, InlineEditController.inlineEditVisibleContext, ContextKeyExpr.not(InlineEditController.cursorAtInlineEditKey));
+        super({
+            id: inlineEditJumpToId,
+            label: 'Jump to Inline Edit',
+            alias: 'Jump to Inline Edit',
+            precondition: activeExpr,
+            kbOpts: {
+                weight: 100 + 1,
+                primary: 2048 | 512 | 86,
+                kbExpr: activeExpr
+            },
+            menuOpts: [{
+                    menuId: MenuId.InlineEditToolbar,
+                    title: 'Jump To Edit',
+                    group: 'primary',
+                    order: 3,
+                    when: activeExpr
+                }],
+        });
+    }
+    async run(accessor, editor) {
+        const controller = InlineEditController.get(editor);
+        controller?.jumpToCurrent();
+    }
+}
+export class JumpBackInlineEdit extends EditorAction {
+    constructor() {
+        const activeExpr = ContextKeyExpr.and(EditorContextKeys.writable, InlineEditController.cursorAtInlineEditContext);
+        super({
+            id: inlineEditJumpBackId,
+            label: 'Jump Back from Inline Edit',
+            alias: 'Jump Back from Inline Edit',
+            precondition: activeExpr,
+            kbOpts: {
+                weight: 100 + 10,
+                primary: 2048 | 512 | 86,
+                kbExpr: activeExpr
+            },
+            menuOpts: [{
+                    menuId: MenuId.InlineEditToolbar,
+                    title: 'Jump Back',
+                    group: 'primary',
+                    order: 3,
+                    when: activeExpr
+                }],
+        });
+    }
+    async run(accessor, editor) {
+        const controller = InlineEditController.get(editor);
+        controller?.jumpBack();
+    }
+}
+export class RejectInlineEdit extends EditorAction {
+    constructor() {
+        const activeExpr = ContextKeyExpr.and(EditorContextKeys.writable, InlineEditController.inlineEditVisibleContext);
+        super({
+            id: inlineEditRejectId,
+            label: 'Reject Inline Edit',
+            alias: 'Reject Inline Edit',
+            precondition: activeExpr,
+            kbOpts: {
+                weight: 100,
+                primary: 9,
+                kbExpr: activeExpr
+            },
+            menuOpts: [{
+                    menuId: MenuId.InlineEditToolbar,
+                    title: 'Reject',
+                    group: 'secondary',
+                    order: 2,
+                }],
+        });
+    }
+    async run(accessor, editor) {
+        const controller = InlineEditController.get(editor);
+        await controller?.clear();
+    }
+}

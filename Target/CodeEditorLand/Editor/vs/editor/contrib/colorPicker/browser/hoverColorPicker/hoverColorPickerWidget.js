@@ -1,1 +1,29 @@
-import"../colorPicker.css";import{PixelRatio as d}from"../../../../../base/browser/pixelRatio.js";import*as r from"../../../../../base/browser/dom.js";import{Widget as m}from"../../../../../base/browser/ui/widget.js";import"../colorPickerModel.js";import"../../../hover/browser/hoverTypes.js";import"../../../../../platform/theme/common/themeService.js";import{ColorPickerBody as l}from"../colorPickerParts/colorPickerBody.js";import{ColorPickerHeader as s}from"../colorPickerParts/colorPickerHeader.js";const a=r.$;class i extends m{constructor(e,p,c,t,o=!1){super();this.model=p;this.pixelRatio=c;this._register(d.getInstance(r.getWindow(e)).onDidChange(()=>this.layout())),this._domNode=a(".colorpicker-widget"),e.appendChild(this._domNode),this.header=this._register(new s(this._domNode,this.model,t,o)),this.body=this._register(new l(this._domNode,this.model,this.pixelRatio,o))}static ID="editor.contrib.colorPickerWidget";_domNode;body;header;getId(){return i.ID}layout(){this.body.layout()}get domNode(){return this._domNode}}export{i as ColorPickerWidget};
+import '../colorPicker.css';
+import { PixelRatio } from '../../../../../base/browser/pixelRatio.js';
+import * as dom from '../../../../../base/browser/dom.js';
+import { Widget } from '../../../../../base/browser/ui/widget.js';
+import { ColorPickerBody } from '../colorPickerParts/colorPickerBody.js';
+import { ColorPickerHeader } from '../colorPickerParts/colorPickerHeader.js';
+const $ = dom.$;
+export class ColorPickerWidget extends Widget {
+    static { this.ID = 'editor.contrib.colorPickerWidget'; }
+    constructor(container, model, pixelRatio, themeService, standaloneColorPicker = false) {
+        super();
+        this.model = model;
+        this.pixelRatio = pixelRatio;
+        this._register(PixelRatio.getInstance(dom.getWindow(container)).onDidChange(() => this.layout()));
+        this._domNode = $('.colorpicker-widget');
+        container.appendChild(this._domNode);
+        this.header = this._register(new ColorPickerHeader(this._domNode, this.model, themeService, standaloneColorPicker));
+        this.body = this._register(new ColorPickerBody(this._domNode, this.model, this.pixelRatio, standaloneColorPicker));
+    }
+    getId() {
+        return ColorPickerWidget.ID;
+    }
+    layout() {
+        this.body.layout();
+    }
+    get domNode() {
+        return this._domNode;
+    }
+}

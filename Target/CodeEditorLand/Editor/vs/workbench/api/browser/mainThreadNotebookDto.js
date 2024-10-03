@@ -1,1 +1,126 @@
-import"../common/extHost.protocol.js";import*as p from"../../contrib/notebook/common/notebookCommon.js";import{CellExecutionUpdateType as u}from"../../contrib/notebook/common/notebookExecutionService.js";import"../../contrib/notebook/common/notebookExecutionStateService.js";var l;(c=>{function m(t){return{mime:t.mime,valueBytes:t.data}}c.toNotebookOutputItemDto=m;function o(t){return{outputId:t.outputId,metadata:t.metadata,items:t.outputs.map(m)}}c.toNotebookOutputDto=o;function r(t){return{cellKind:t.cellKind,language:t.language,mime:t.mime,source:t.source,internalMetadata:t.internalMetadata,metadata:t.metadata,outputs:t.outputs.map(o)}}c.toNotebookCellDataDto=r;function i(t){return{metadata:t.metadata,cells:t.cells.map(r)}}c.toNotebookDataDto=i;function e(t){return{mime:t.mime,data:t.valueBytes}}c.fromNotebookOutputItemDto=e;function a(t){return{outputId:t.outputId,metadata:t.metadata,outputs:t.items.map(e)}}c.fromNotebookOutputDto=a;function n(t){return{cellKind:t.cellKind,language:t.language,mime:t.mime,source:t.source,outputs:t.outputs.map(a),metadata:t.metadata,internalMetadata:t.internalMetadata}}c.fromNotebookCellDataDto=n;function s(t){return{metadata:t.metadata,cells:t.cells.map(n)}}c.fromNotebookDataDto=s;function d(t){return{handle:t.handle,uri:t.uri,source:t.textBuffer.getLinesContent(),eol:t.textBuffer.getEOL(),language:t.language,cellKind:t.cellKind,outputs:t.outputs.map(o),metadata:t.metadata,internalMetadata:t.internalMetadata}}c.toNotebookCellDto=d;function D(t){return t.editType===u.Output?{editType:t.editType,cellHandle:t.cellHandle,append:t.append,outputs:t.outputs.map(a)}:t.editType===u.OutputItems?{editType:t.editType,append:t.append,outputId:t.outputId,items:t.items.map(e)}:t}c.fromCellExecuteUpdateDto=D;function x(t){return t}c.fromCellExecuteCompleteDto=x;function C(t){return t.editType===p.CellEditType.Replace?{editType:t.editType,index:t.index,count:t.count,cells:t.cells.map(n)}:t}c.fromCellEditOperationDto=C})(l||={});export{l as NotebookDto};
+import { CellExecutionUpdateType } from '../../contrib/notebook/common/notebookExecutionService.js';
+export var NotebookDto;
+(function (NotebookDto) {
+    function toNotebookOutputItemDto(item) {
+        return {
+            mime: item.mime,
+            valueBytes: item.data
+        };
+    }
+    NotebookDto.toNotebookOutputItemDto = toNotebookOutputItemDto;
+    function toNotebookOutputDto(output) {
+        return {
+            outputId: output.outputId,
+            metadata: output.metadata,
+            items: output.outputs.map(toNotebookOutputItemDto)
+        };
+    }
+    NotebookDto.toNotebookOutputDto = toNotebookOutputDto;
+    function toNotebookCellDataDto(cell) {
+        return {
+            cellKind: cell.cellKind,
+            language: cell.language,
+            mime: cell.mime,
+            source: cell.source,
+            internalMetadata: cell.internalMetadata,
+            metadata: cell.metadata,
+            outputs: cell.outputs.map(toNotebookOutputDto)
+        };
+    }
+    NotebookDto.toNotebookCellDataDto = toNotebookCellDataDto;
+    function toNotebookDataDto(data) {
+        return {
+            metadata: data.metadata,
+            cells: data.cells.map(toNotebookCellDataDto)
+        };
+    }
+    NotebookDto.toNotebookDataDto = toNotebookDataDto;
+    function fromNotebookOutputItemDto(item) {
+        return {
+            mime: item.mime,
+            data: item.valueBytes
+        };
+    }
+    NotebookDto.fromNotebookOutputItemDto = fromNotebookOutputItemDto;
+    function fromNotebookOutputDto(output) {
+        return {
+            outputId: output.outputId,
+            metadata: output.metadata,
+            outputs: output.items.map(fromNotebookOutputItemDto)
+        };
+    }
+    NotebookDto.fromNotebookOutputDto = fromNotebookOutputDto;
+    function fromNotebookCellDataDto(cell) {
+        return {
+            cellKind: cell.cellKind,
+            language: cell.language,
+            mime: cell.mime,
+            source: cell.source,
+            outputs: cell.outputs.map(fromNotebookOutputDto),
+            metadata: cell.metadata,
+            internalMetadata: cell.internalMetadata
+        };
+    }
+    NotebookDto.fromNotebookCellDataDto = fromNotebookCellDataDto;
+    function fromNotebookDataDto(data) {
+        return {
+            metadata: data.metadata,
+            cells: data.cells.map(fromNotebookCellDataDto)
+        };
+    }
+    NotebookDto.fromNotebookDataDto = fromNotebookDataDto;
+    function toNotebookCellDto(cell) {
+        return {
+            handle: cell.handle,
+            uri: cell.uri,
+            source: cell.textBuffer.getLinesContent(),
+            eol: cell.textBuffer.getEOL(),
+            language: cell.language,
+            cellKind: cell.cellKind,
+            outputs: cell.outputs.map(toNotebookOutputDto),
+            metadata: cell.metadata,
+            internalMetadata: cell.internalMetadata,
+        };
+    }
+    NotebookDto.toNotebookCellDto = toNotebookCellDto;
+    function fromCellExecuteUpdateDto(data) {
+        if (data.editType === CellExecutionUpdateType.Output) {
+            return {
+                editType: data.editType,
+                cellHandle: data.cellHandle,
+                append: data.append,
+                outputs: data.outputs.map(fromNotebookOutputDto)
+            };
+        }
+        else if (data.editType === CellExecutionUpdateType.OutputItems) {
+            return {
+                editType: data.editType,
+                append: data.append,
+                outputId: data.outputId,
+                items: data.items.map(fromNotebookOutputItemDto)
+            };
+        }
+        else {
+            return data;
+        }
+    }
+    NotebookDto.fromCellExecuteUpdateDto = fromCellExecuteUpdateDto;
+    function fromCellExecuteCompleteDto(data) {
+        return data;
+    }
+    NotebookDto.fromCellExecuteCompleteDto = fromCellExecuteCompleteDto;
+    function fromCellEditOperationDto(edit) {
+        if (edit.editType === 1) {
+            return {
+                editType: edit.editType,
+                index: edit.index,
+                count: edit.count,
+                cells: edit.cells.map(fromNotebookCellDataDto)
+            };
+        }
+        else {
+            return edit;
+        }
+    }
+    NotebookDto.fromCellEditOperationDto = fromCellEditOperationDto;
+})(NotebookDto || (NotebookDto = {}));

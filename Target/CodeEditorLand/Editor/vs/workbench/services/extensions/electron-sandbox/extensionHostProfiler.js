@@ -1,1 +1,133 @@
-var T=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var v=(f,i,s,r)=>{for(var n=r>1?void 0:r?b(i,s):i,l=f.length-1,c;l>=0;l--)(c=f[l])&&(n=(r?c(i,s,n):c(n))||n);return r&&n&&T(i,s,n),n},g=(f,i)=>(s,r)=>i(s,r,f);import{TernarySearchTree as _}from"../../../../base/common/ternarySearchTree.js";import{IExtensionService as y}from"../common/extensions.js";import"../../../../platform/extensions/common/extensions.js";import{Schemas as w}from"../../../../base/common/network.js";import{URI as P}from"../../../../base/common/uri.js";import{IV8InspectProfilingService as D}from"../../../../platform/profiling/common/profiling.js";import{createSingleCallFunction as V}from"../../../../base/common/functional.js";let u=class{constructor(i,s,r,n){this._host=i;this._port=s;this._extensionService=r;this._profilingService=n}async start(){const i=await this._profilingService.startProfiling({host:this._host,port:this._port});return{stop:V(async()=>{const s=await this._profilingService.stopProfiling(i);await this._extensionService.whenInstalledExtensionsRegistered();const r=this._extensionService.extensions;return this._distill(s,r)})}}_distill(i,s){const r=_.forUris();for(const e of s)e.extensionLocation.scheme===w.file&&r.set(P.file(e.extensionLocation.fsPath),e);const n=i.nodes,l=new Map,c=new Map;for(const e of n)l.set(e.id,e);function h(e,t){if(t){if(t==="self"&&e.callFrame.url){let o;try{o=r.findSubstr(P.parse(e.callFrame.url))}catch{}o&&(t=o.identifier.value)}}else switch(e.callFrame.functionName){case"(root)":break;case"(program)":t="program";break;case"(garbage collector)":t="gc";break;default:t="self";break}if(c.set(e.id,t),e.children)for(const o of e.children){const I=l.get(o);I&&h(I,t)}}h(n[0],null);const S=i.samples||[],x=i.timeDeltas||[],m=[],d=[];let p=0,a;for(let e=0;e<S.length;e++){const t=S[e],o=c.get(t);o!==a&&(a&&(d.push(a),m.push(p)),a=o??void 0,p=0),p+=x[e]}return a&&(d.push(a),m.push(p)),{startTime:i.startTime,endTime:i.endTime,deltas:m,ids:d,data:i,getAggregatedTimes:()=>{const e=new Map;for(let t=0;t<d.length;t++){const o=d[t];e.set(o,(e.get(o)||0)+m[t])}return e}}}};u=v([g(2,y),g(3,D)],u);export{u as ExtensionHostProfiler};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { TernarySearchTree } from '../../../../base/common/ternarySearchTree.js';
+import { IExtensionService } from '../common/extensions.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IV8InspectProfilingService } from '../../../../platform/profiling/common/profiling.js';
+import { createSingleCallFunction } from '../../../../base/common/functional.js';
+let ExtensionHostProfiler = class ExtensionHostProfiler {
+    constructor(_host, _port, _extensionService, _profilingService) {
+        this._host = _host;
+        this._port = _port;
+        this._extensionService = _extensionService;
+        this._profilingService = _profilingService;
+    }
+    async start() {
+        const id = await this._profilingService.startProfiling({ host: this._host, port: this._port });
+        return {
+            stop: createSingleCallFunction(async () => {
+                const profile = await this._profilingService.stopProfiling(id);
+                await this._extensionService.whenInstalledExtensionsRegistered();
+                const extensions = this._extensionService.extensions;
+                return this._distill(profile, extensions);
+            })
+        };
+    }
+    _distill(profile, extensions) {
+        const searchTree = TernarySearchTree.forUris();
+        for (const extension of extensions) {
+            if (extension.extensionLocation.scheme === Schemas.file) {
+                searchTree.set(URI.file(extension.extensionLocation.fsPath), extension);
+            }
+        }
+        const nodes = profile.nodes;
+        const idsToNodes = new Map();
+        const idsToSegmentId = new Map();
+        for (const node of nodes) {
+            idsToNodes.set(node.id, node);
+        }
+        function visit(node, segmentId) {
+            if (!segmentId) {
+                switch (node.callFrame.functionName) {
+                    case '(root)':
+                        break;
+                    case '(program)':
+                        segmentId = 'program';
+                        break;
+                    case '(garbage collector)':
+                        segmentId = 'gc';
+                        break;
+                    default:
+                        segmentId = 'self';
+                        break;
+                }
+            }
+            else if (segmentId === 'self' && node.callFrame.url) {
+                let extension;
+                try {
+                    extension = searchTree.findSubstr(URI.parse(node.callFrame.url));
+                }
+                catch {
+                }
+                if (extension) {
+                    segmentId = extension.identifier.value;
+                }
+            }
+            idsToSegmentId.set(node.id, segmentId);
+            if (node.children) {
+                for (const child of node.children) {
+                    const childNode = idsToNodes.get(child);
+                    if (childNode) {
+                        visit(childNode, segmentId);
+                    }
+                }
+            }
+        }
+        visit(nodes[0], null);
+        const samples = profile.samples || [];
+        const timeDeltas = profile.timeDeltas || [];
+        const distilledDeltas = [];
+        const distilledIds = [];
+        let currSegmentTime = 0;
+        let currSegmentId;
+        for (let i = 0; i < samples.length; i++) {
+            const id = samples[i];
+            const segmentId = idsToSegmentId.get(id);
+            if (segmentId !== currSegmentId) {
+                if (currSegmentId) {
+                    distilledIds.push(currSegmentId);
+                    distilledDeltas.push(currSegmentTime);
+                }
+                currSegmentId = segmentId ?? undefined;
+                currSegmentTime = 0;
+            }
+            currSegmentTime += timeDeltas[i];
+        }
+        if (currSegmentId) {
+            distilledIds.push(currSegmentId);
+            distilledDeltas.push(currSegmentTime);
+        }
+        return {
+            startTime: profile.startTime,
+            endTime: profile.endTime,
+            deltas: distilledDeltas,
+            ids: distilledIds,
+            data: profile,
+            getAggregatedTimes: () => {
+                const segmentsToTime = new Map();
+                for (let i = 0; i < distilledIds.length; i++) {
+                    const id = distilledIds[i];
+                    segmentsToTime.set(id, (segmentsToTime.get(id) || 0) + distilledDeltas[i]);
+                }
+                return segmentsToTime;
+            }
+        };
+    }
+};
+ExtensionHostProfiler = __decorate([
+    __param(2, IExtensionService),
+    __param(3, IV8InspectProfilingService),
+    __metadata("design:paramtypes", [String, Number, Object, Object])
+], ExtensionHostProfiler);
+export { ExtensionHostProfiler };

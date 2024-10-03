@@ -1,1 +1,1 @@
-import"../../model/mirrorTextModel.js";
+export {};

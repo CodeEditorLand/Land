@@ -1,1 +1,902 @@
-import{CharCode as a}from"../../../../base/common/charCode.js";var M=(i=>(i[i.Dollar=0]="Dollar",i[i.Colon=1]="Colon",i[i.Comma=2]="Comma",i[i.CurlyOpen=3]="CurlyOpen",i[i.CurlyClose=4]="CurlyClose",i[i.Backslash=5]="Backslash",i[i.Forwardslash=6]="Forwardslash",i[i.Pipe=7]="Pipe",i[i.Int=8]="Int",i[i.VariableName=9]="VariableName",i[i.Format=10]="Format",i[i.Plus=11]="Plus",i[i.Dash=12]="Dash",i[i.QuestionMark=13]="QuestionMark",i[i.EOF=14]="EOF",i))(M||{});class h{static _table={[a.DollarSign]:0,[a.Colon]:1,[a.Comma]:2,[a.OpenCurlyBrace]:3,[a.CloseCurlyBrace]:4,[a.Backslash]:5,[a.Slash]:6,[a.Pipe]:7,[a.Plus]:11,[a.Dash]:12,[a.QuestionMark]:13};static isDigitCharacter(t){return t>=a.Digit0&&t<=a.Digit9}static isVariableCharacter(t){return t===a.Underline||t>=a.a&&t<=a.z||t>=a.A&&t<=a.Z}value="";pos=0;text(t){this.value=t,this.pos=0}tokenText(t){return this.value.substr(t.pos,t.len)}next(){if(this.pos>=this.value.length)return{type:14,pos:this.pos,len:0};const t=this.pos;let e=0,r=this.value.charCodeAt(t),n;if(n=h._table[r],typeof n=="number")return this.pos+=1,{type:n,pos:t,len:1};if(h.isDigitCharacter(r)){n=8;do e+=1,r=this.value.charCodeAt(t+e);while(h.isDigitCharacter(r));return this.pos+=e,{type:n,pos:t,len:e}}if(h.isVariableCharacter(r)){n=9;do r=this.value.charCodeAt(t+ ++e);while(h.isVariableCharacter(r)||h.isDigitCharacter(r));return this.pos+=e,{type:n,pos:t,len:e}}n=10;do e+=1,r=this.value.charCodeAt(t+e);while(!isNaN(r)&&typeof h._table[r]>"u"&&!h.isDigitCharacter(r)&&!h.isVariableCharacter(r));return this.pos+=e,{type:n,pos:t,len:e}}}class T{_markerBrand;parent;_children=[];appendChild(t){return t instanceof o&&this._children[this._children.length-1]instanceof o?this._children[this._children.length-1].value+=t.value:(t.parent=this,this._children.push(t)),this}replace(t,e){const{parent:r}=t,n=r.children.indexOf(t),s=r.children.slice(0);s.splice(n,1,...e),r._children=s,function p(C,l){for(const d of C)d.parent=l,p(d.children,d)}(e,r)}get children(){return this._children}get rightMostDescendant(){return this._children.length>0?this._children[this._children.length-1].rightMostDescendant:this}get snippet(){let t=this;for(;;){if(!t)return;if(t instanceof g)return t;t=t.parent}}toString(){return this.children.reduce((t,e)=>t+e.toString(),"")}len(){return 0}}class o extends T{constructor(e){super();this.value=e}static escape(e){return e.replace(/\$|}|\\/g,"\\$&")}toString(){return this.value}toTextmateString(){return o.escape(this.value)}len(){return this.value.length}clone(){return new o(this.value)}}class w extends T{transform}class u extends w{constructor(e){super();this.index=e}static compareByIndex(e,r){return e.index===r.index?0:e.isFinalTabstop?1:r.isFinalTabstop||e.index<r.index?-1:e.index>r.index?1:0}get isFinalTabstop(){return this.index===0}get choice(){return this._children.length===1&&this._children[0]instanceof _?this._children[0]:void 0}toTextmateString(){let e="";return this.transform&&(e=this.transform.toTextmateString()),this.children.length===0&&!this.transform?`$${this.index}`:this.children.length===0?`\${${this.index}${e}}`:this.choice?`\${${this.index}|${this.choice.toTextmateString()}|${e}}`:`\${${this.index}:${this.children.map(r=>r.toTextmateString()).join("")}${e}}`}clone(){const e=new u(this.index);return this.transform&&(e.transform=this.transform.clone()),e._children=this.children.map(r=>r.clone()),e}}class _ extends T{options=[];appendChild(t){return t instanceof o&&(t.parent=this,this.options.push(t)),this}toString(){return this.options[0].value}toTextmateString(){return this.options.map(t=>t.value.replace(/\||,|\\/g,"\\$&")).join(",")}len(){return this.options[0].len()}clone(){const t=new _;return this.options.forEach(t.appendChild,t),t}}class y extends T{regexp=new RegExp("");resolve(t){const e=this;let r=!1,n=t.replace(this.regexp,function(){return r=!0,e._replace(Array.prototype.slice.call(arguments,0,-2))});return!r&&this._children.some(s=>s instanceof c&&!!s.elseValue)&&(n=this._replace([])),n}_replace(t){let e="";for(const r of this._children)if(r instanceof c){let n=t[r.index]||"";n=r.resolve(n),e+=n}else e+=r.toString();return e}toString(){return""}toTextmateString(){return`/${this.regexp.source}/${this.children.map(t=>t.toTextmateString())}/${(this.regexp.ignoreCase?"i":"")+(this.regexp.global?"g":"")}`}clone(){const t=new y;return t.regexp=new RegExp(this.regexp.source,(this.regexp.ignoreCase?"i":"")+(this.regexp.global?"g":"")),t._children=this.children.map(e=>e.clone()),t}}class c extends T{constructor(e,r,n,s){super();this.index=e;this.shorthandName=r;this.ifValue=n;this.elseValue=s}resolve(e){return this.shorthandName==="upcase"?e?e.toLocaleUpperCase():"":this.shorthandName==="downcase"?e?e.toLocaleLowerCase():"":this.shorthandName==="capitalize"?e?e[0].toLocaleUpperCase()+e.substr(1):"":this.shorthandName==="pascalcase"?e?this._toPascalCase(e):"":this.shorthandName==="camelcase"?e?this._toCamelCase(e):"":e&&typeof this.ifValue=="string"?this.ifValue:!e&&typeof this.elseValue=="string"?this.elseValue:e||""}_toPascalCase(e){const r=e.match(/[a-z0-9]+/gi);return r?r.map(n=>n.charAt(0).toUpperCase()+n.substr(1)).join(""):e}_toCamelCase(e){const r=e.match(/[a-z0-9]+/gi);return r?r.map((n,s)=>s===0?n.charAt(0).toLowerCase()+n.substr(1):n.charAt(0).toUpperCase()+n.substr(1)).join(""):e}toTextmateString(){let e="${";return e+=this.index,this.shorthandName?e+=`:/${this.shorthandName}`:this.ifValue&&this.elseValue?e+=`:?${this.ifValue}:${this.elseValue}`:this.ifValue?e+=`:+${this.ifValue}`:this.elseValue&&(e+=`:-${this.elseValue}`),e+="}",e}clone(){return new c(this.index,this.shorthandName,this.ifValue,this.elseValue)}}class k extends w{constructor(e){super();this.name=e}resolve(e){let r=e.resolve(this);return this.transform&&(r=this.transform.resolve(r||"")),r!==void 0?(this._children=[new o(r)],!0):!1}toTextmateString(){let e="";return this.transform&&(e=this.transform.toTextmateString()),this.children.length===0?`\${${this.name}${e}}`:`\${${this.name}:${this.children.map(r=>r.toTextmateString()).join("")}${e}}`}clone(){const e=new k(this.name);return this.transform&&(e.transform=this.transform.clone()),e._children=this.children.map(r=>r.clone()),e}}function v(m,t){const e=[...m];for(;e.length>0;){const r=e.shift();if(!t(r))break;e.unshift(...r.children)}}class g extends T{_placeholders;get placeholderInfo(){if(!this._placeholders){const t=[];let e;this.walk(function(r){return r instanceof u&&(t.push(r),e=!e||e.index<r.index?r:e),!0}),this._placeholders={all:t,last:e}}return this._placeholders}get placeholders(){const{all:t}=this.placeholderInfo;return t}offset(t){let e=0,r=!1;return this.walk(n=>n===t?(r=!0,!1):(e+=n.len(),!0)),r?e:-1}fullLen(t){let e=0;return v([t],r=>(e+=r.len(),!0)),e}enclosingPlaceholders(t){const e=[];let{parent:r}=t;for(;r;)r instanceof u&&e.push(r),r=r.parent;return e}resolveVariables(t){return this.walk(e=>(e instanceof k&&e.resolve(t)&&(this._placeholders=void 0),!0)),this}appendChild(t){return this._placeholders=void 0,super.appendChild(t)}replace(t,e){return this._placeholders=void 0,super.replace(t,e)}toTextmateString(){return this.children.reduce((t,e)=>t+e.toTextmateString(),"")}clone(){const t=new g;return this._children=this.children.map(e=>e.clone()),t}walk(t){v(this.children,t)}}class V{static escape(t){return t.replace(/\$|}|\\/g,"\\$&")}static asInsertText(t){return new V().parse(t).toString()}static guessNeedsClipboard(t){return/\${?CLIPBOARD/.test(t)}_scanner=new h;_token={type:14,pos:0,len:0};parse(t,e,r){const n=new g;return this.parseFragment(t,n),this.ensureFinalTabstop(n,r??!1,e??!1),n}parseFragment(t,e){const r=e.children.length;for(this._scanner.text(t),this._token=this._scanner.next();this._parse(e););const n=new Map,s=[];e.walk(l=>(l instanceof u&&(l.isFinalTabstop?n.set(0,void 0):!n.has(l.index)&&l.children.length>0?n.set(l.index,l.children):s.push(l)),!0));const p=(l,d)=>{const x=n.get(l.index);if(!x)return;const b=new u(l.index);b.transform=l.transform;for(const $ of x){const f=$.clone();b.appendChild(f),f instanceof u&&n.has(f.index)&&!d.has(f.index)&&(d.add(f.index),p(f,d),d.delete(f.index))}e.replace(l,[b])},C=new Set;for(const l of s)p(l,C);return e.children.slice(r)}ensureFinalTabstop(t,e,r){(e||r&&t.placeholders.length>0)&&(t.placeholders.find(s=>s.index===0)||t.appendChild(new u(0)))}_accept(t,e){if(t===void 0||this._token.type===t){const r=e?this._scanner.tokenText(this._token):!0;return this._token=this._scanner.next(),r}return!1}_backTo(t){return this._scanner.pos=t.pos+t.len,this._token=t,!1}_until(t){const e=this._token;for(;this._token.type!==t;){if(this._token.type===14)return!1;if(this._token.type===5){const n=this._scanner.next();if(n.type!==0&&n.type!==4&&n.type!==5)return!1}this._token=this._scanner.next()}const r=this._scanner.value.substring(e.pos,this._token.pos).replace(/\\(\$|}|\\)/g,"$1");return this._token=this._scanner.next(),r}_parse(t){return this._parseEscaped(t)||this._parseTabstopOrVariableName(t)||this._parseComplexPlaceholder(t)||this._parseComplexVariable(t)||this._parseAnything(t)}_parseEscaped(t){let e;return(e=this._accept(5,!0))?(e=this._accept(0,!0)||this._accept(4,!0)||this._accept(5,!0)||e,t.appendChild(new o(e)),!0):!1}_parseTabstopOrVariableName(t){let e;const r=this._token;return this._accept(0)&&(e=this._accept(9,!0)||this._accept(8,!0))?(t.appendChild(/^\d+$/.test(e)?new u(Number(e)):new k(e)),!0):this._backTo(r)}_parseComplexPlaceholder(t){let e;const r=this._token;if(!(this._accept(0)&&this._accept(3)&&(e=this._accept(8,!0))))return this._backTo(r);const s=new u(Number(e));if(this._accept(1))for(;;){if(this._accept(4))return t.appendChild(s),!0;if(!this._parse(s))return t.appendChild(new o("${"+e+":")),s.children.forEach(t.appendChild,t),!0}else if(s.index>0&&this._accept(7)){const p=new _;for(;;){if(this._parseChoiceElement(p)){if(this._accept(2))continue;if(this._accept(7)&&(s.appendChild(p),this._accept(4)))return t.appendChild(s),!0}return this._backTo(r),!1}}else return this._accept(6)?this._parseTransform(s)?(t.appendChild(s),!0):(this._backTo(r),!1):this._accept(4)?(t.appendChild(s),!0):this._backTo(r)}_parseChoiceElement(t){const e=this._token,r=[];for(;!(this._token.type===2||this._token.type===7);){let n;if((n=this._accept(5,!0))?n=this._accept(2,!0)||this._accept(7,!0)||this._accept(5,!0)||n:n=this._accept(void 0,!0),!n)return this._backTo(e),!1;r.push(n)}return r.length===0?(this._backTo(e),!1):(t.appendChild(new o(r.join(""))),!0)}_parseComplexVariable(t){let e;const r=this._token;if(!(this._accept(0)&&this._accept(3)&&(e=this._accept(9,!0))))return this._backTo(r);const s=new k(e);if(this._accept(1))for(;;){if(this._accept(4))return t.appendChild(s),!0;if(!this._parse(s))return t.appendChild(new o("${"+e+":")),s.children.forEach(t.appendChild,t),!0}else return this._accept(6)?this._parseTransform(s)?(t.appendChild(s),!0):(this._backTo(r),!1):this._accept(4)?(t.appendChild(s),!0):this._backTo(r)}_parseTransform(t){const e=new y;let r="",n="";for(;!this._accept(6);){let s;if(s=this._accept(5,!0)){s=this._accept(6,!0)||s,r+=s;continue}if(this._token.type!==14){r+=this._accept(void 0,!0);continue}return!1}for(;!this._accept(6);){let s;if(s=this._accept(5,!0)){s=this._accept(5,!0)||this._accept(6,!0)||s,e.appendChild(new o(s));continue}if(!(this._parseFormatString(e)||this._parseAnything(e)))return!1}for(;!this._accept(4);){if(this._token.type!==14){n+=this._accept(void 0,!0);continue}return!1}try{e.regexp=new RegExp(r,n)}catch{return!1}return t.transform=e,!0}_parseFormatString(t){const e=this._token;if(!this._accept(0))return!1;let r=!1;this._accept(3)&&(r=!0);const n=this._accept(8,!0);if(n)if(r){if(this._accept(4))return t.appendChild(new c(Number(n))),!0;if(!this._accept(1))return this._backTo(e),!1}else return t.appendChild(new c(Number(n))),!0;else return this._backTo(e),!1;if(this._accept(6)){const s=this._accept(9,!0);return!s||!this._accept(4)?(this._backTo(e),!1):(t.appendChild(new c(Number(n),s)),!0)}else if(this._accept(11)){const s=this._until(4);if(s)return t.appendChild(new c(Number(n),void 0,s,void 0)),!0}else if(this._accept(12)){const s=this._until(4);if(s)return t.appendChild(new c(Number(n),void 0,void 0,s)),!0}else if(this._accept(13)){const s=this._until(1);if(s){const p=this._until(4);if(p)return t.appendChild(new c(Number(n),void 0,s,p)),!0}}else{const s=this._until(4);if(s)return t.appendChild(new c(Number(n),void 0,void 0,s)),!0}return this._backTo(e),!1}_parseAnything(t){return this._token.type!==14?(t.appendChild(new o(this._scanner.tokenText(this._token))),this._accept(void 0),!0):!1}}export{_ as Choice,c as FormatString,T as Marker,u as Placeholder,h as Scanner,V as SnippetParser,o as Text,g as TextmateSnippet,M as TokenType,y as Transform,w as TransformableMarker,k as Variable};
+export class Scanner {
+    constructor() {
+        this.value = '';
+        this.pos = 0;
+    }
+    static { this._table = {
+        [36]: 0,
+        [58]: 1,
+        [44]: 2,
+        [123]: 3,
+        [125]: 4,
+        [92]: 5,
+        [47]: 6,
+        [124]: 7,
+        [43]: 11,
+        [45]: 12,
+        [63]: 13,
+    }; }
+    static isDigitCharacter(ch) {
+        return ch >= 48 && ch <= 57;
+    }
+    static isVariableCharacter(ch) {
+        return ch === 95
+            || (ch >= 97 && ch <= 122)
+            || (ch >= 65 && ch <= 90);
+    }
+    text(value) {
+        this.value = value;
+        this.pos = 0;
+    }
+    tokenText(token) {
+        return this.value.substr(token.pos, token.len);
+    }
+    next() {
+        if (this.pos >= this.value.length) {
+            return { type: 14, pos: this.pos, len: 0 };
+        }
+        const pos = this.pos;
+        let len = 0;
+        let ch = this.value.charCodeAt(pos);
+        let type;
+        type = Scanner._table[ch];
+        if (typeof type === 'number') {
+            this.pos += 1;
+            return { type, pos, len: 1 };
+        }
+        if (Scanner.isDigitCharacter(ch)) {
+            type = 8;
+            do {
+                len += 1;
+                ch = this.value.charCodeAt(pos + len);
+            } while (Scanner.isDigitCharacter(ch));
+            this.pos += len;
+            return { type, pos, len };
+        }
+        if (Scanner.isVariableCharacter(ch)) {
+            type = 9;
+            do {
+                ch = this.value.charCodeAt(pos + (++len));
+            } while (Scanner.isVariableCharacter(ch) || Scanner.isDigitCharacter(ch));
+            this.pos += len;
+            return { type, pos, len };
+        }
+        type = 10;
+        do {
+            len += 1;
+            ch = this.value.charCodeAt(pos + len);
+        } while (!isNaN(ch)
+            && typeof Scanner._table[ch] === 'undefined'
+            && !Scanner.isDigitCharacter(ch)
+            && !Scanner.isVariableCharacter(ch));
+        this.pos += len;
+        return { type, pos, len };
+    }
+}
+export class Marker {
+    constructor() {
+        this._children = [];
+    }
+    appendChild(child) {
+        if (child instanceof Text && this._children[this._children.length - 1] instanceof Text) {
+            this._children[this._children.length - 1].value += child.value;
+        }
+        else {
+            child.parent = this;
+            this._children.push(child);
+        }
+        return this;
+    }
+    replace(child, others) {
+        const { parent } = child;
+        const idx = parent.children.indexOf(child);
+        const newChildren = parent.children.slice(0);
+        newChildren.splice(idx, 1, ...others);
+        parent._children = newChildren;
+        (function _fixParent(children, parent) {
+            for (const child of children) {
+                child.parent = parent;
+                _fixParent(child.children, child);
+            }
+        })(others, parent);
+    }
+    get children() {
+        return this._children;
+    }
+    get rightMostDescendant() {
+        if (this._children.length > 0) {
+            return this._children[this._children.length - 1].rightMostDescendant;
+        }
+        return this;
+    }
+    get snippet() {
+        let candidate = this;
+        while (true) {
+            if (!candidate) {
+                return undefined;
+            }
+            if (candidate instanceof TextmateSnippet) {
+                return candidate;
+            }
+            candidate = candidate.parent;
+        }
+    }
+    toString() {
+        return this.children.reduce((prev, cur) => prev + cur.toString(), '');
+    }
+    len() {
+        return 0;
+    }
+}
+export class Text extends Marker {
+    static escape(value) {
+        return value.replace(/\$|}|\\/g, '\\$&');
+    }
+    constructor(value) {
+        super();
+        this.value = value;
+    }
+    toString() {
+        return this.value;
+    }
+    toTextmateString() {
+        return Text.escape(this.value);
+    }
+    len() {
+        return this.value.length;
+    }
+    clone() {
+        return new Text(this.value);
+    }
+}
+export class TransformableMarker extends Marker {
+}
+export class Placeholder extends TransformableMarker {
+    static compareByIndex(a, b) {
+        if (a.index === b.index) {
+            return 0;
+        }
+        else if (a.isFinalTabstop) {
+            return 1;
+        }
+        else if (b.isFinalTabstop) {
+            return -1;
+        }
+        else if (a.index < b.index) {
+            return -1;
+        }
+        else if (a.index > b.index) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+    constructor(index) {
+        super();
+        this.index = index;
+    }
+    get isFinalTabstop() {
+        return this.index === 0;
+    }
+    get choice() {
+        return this._children.length === 1 && this._children[0] instanceof Choice
+            ? this._children[0]
+            : undefined;
+    }
+    toTextmateString() {
+        let transformString = '';
+        if (this.transform) {
+            transformString = this.transform.toTextmateString();
+        }
+        if (this.children.length === 0 && !this.transform) {
+            return `\$${this.index}`;
+        }
+        else if (this.children.length === 0) {
+            return `\${${this.index}${transformString}}`;
+        }
+        else if (this.choice) {
+            return `\${${this.index}|${this.choice.toTextmateString()}|${transformString}}`;
+        }
+        else {
+            return `\${${this.index}:${this.children.map(child => child.toTextmateString()).join('')}${transformString}}`;
+        }
+    }
+    clone() {
+        const ret = new Placeholder(this.index);
+        if (this.transform) {
+            ret.transform = this.transform.clone();
+        }
+        ret._children = this.children.map(child => child.clone());
+        return ret;
+    }
+}
+export class Choice extends Marker {
+    constructor() {
+        super(...arguments);
+        this.options = [];
+    }
+    appendChild(marker) {
+        if (marker instanceof Text) {
+            marker.parent = this;
+            this.options.push(marker);
+        }
+        return this;
+    }
+    toString() {
+        return this.options[0].value;
+    }
+    toTextmateString() {
+        return this.options
+            .map(option => option.value.replace(/\||,|\\/g, '\\$&'))
+            .join(',');
+    }
+    len() {
+        return this.options[0].len();
+    }
+    clone() {
+        const ret = new Choice();
+        this.options.forEach(ret.appendChild, ret);
+        return ret;
+    }
+}
+export class Transform extends Marker {
+    constructor() {
+        super(...arguments);
+        this.regexp = new RegExp('');
+    }
+    resolve(value) {
+        const _this = this;
+        let didMatch = false;
+        let ret = value.replace(this.regexp, function () {
+            didMatch = true;
+            return _this._replace(Array.prototype.slice.call(arguments, 0, -2));
+        });
+        if (!didMatch && this._children.some(child => child instanceof FormatString && Boolean(child.elseValue))) {
+            ret = this._replace([]);
+        }
+        return ret;
+    }
+    _replace(groups) {
+        let ret = '';
+        for (const marker of this._children) {
+            if (marker instanceof FormatString) {
+                let value = groups[marker.index] || '';
+                value = marker.resolve(value);
+                ret += value;
+            }
+            else {
+                ret += marker.toString();
+            }
+        }
+        return ret;
+    }
+    toString() {
+        return '';
+    }
+    toTextmateString() {
+        return `/${this.regexp.source}/${this.children.map(c => c.toTextmateString())}/${(this.regexp.ignoreCase ? 'i' : '') + (this.regexp.global ? 'g' : '')}`;
+    }
+    clone() {
+        const ret = new Transform();
+        ret.regexp = new RegExp(this.regexp.source, '' + (this.regexp.ignoreCase ? 'i' : '') + (this.regexp.global ? 'g' : ''));
+        ret._children = this.children.map(child => child.clone());
+        return ret;
+    }
+}
+export class FormatString extends Marker {
+    constructor(index, shorthandName, ifValue, elseValue) {
+        super();
+        this.index = index;
+        this.shorthandName = shorthandName;
+        this.ifValue = ifValue;
+        this.elseValue = elseValue;
+    }
+    resolve(value) {
+        if (this.shorthandName === 'upcase') {
+            return !value ? '' : value.toLocaleUpperCase();
+        }
+        else if (this.shorthandName === 'downcase') {
+            return !value ? '' : value.toLocaleLowerCase();
+        }
+        else if (this.shorthandName === 'capitalize') {
+            return !value ? '' : (value[0].toLocaleUpperCase() + value.substr(1));
+        }
+        else if (this.shorthandName === 'pascalcase') {
+            return !value ? '' : this._toPascalCase(value);
+        }
+        else if (this.shorthandName === 'camelcase') {
+            return !value ? '' : this._toCamelCase(value);
+        }
+        else if (Boolean(value) && typeof this.ifValue === 'string') {
+            return this.ifValue;
+        }
+        else if (!Boolean(value) && typeof this.elseValue === 'string') {
+            return this.elseValue;
+        }
+        else {
+            return value || '';
+        }
+    }
+    _toPascalCase(value) {
+        const match = value.match(/[a-z0-9]+/gi);
+        if (!match) {
+            return value;
+        }
+        return match.map(word => {
+            return word.charAt(0).toUpperCase() + word.substr(1);
+        })
+            .join('');
+    }
+    _toCamelCase(value) {
+        const match = value.match(/[a-z0-9]+/gi);
+        if (!match) {
+            return value;
+        }
+        return match.map((word, index) => {
+            if (index === 0) {
+                return word.charAt(0).toLowerCase() + word.substr(1);
+            }
+            return word.charAt(0).toUpperCase() + word.substr(1);
+        })
+            .join('');
+    }
+    toTextmateString() {
+        let value = '${';
+        value += this.index;
+        if (this.shorthandName) {
+            value += `:/${this.shorthandName}`;
+        }
+        else if (this.ifValue && this.elseValue) {
+            value += `:?${this.ifValue}:${this.elseValue}`;
+        }
+        else if (this.ifValue) {
+            value += `:+${this.ifValue}`;
+        }
+        else if (this.elseValue) {
+            value += `:-${this.elseValue}`;
+        }
+        value += '}';
+        return value;
+    }
+    clone() {
+        const ret = new FormatString(this.index, this.shorthandName, this.ifValue, this.elseValue);
+        return ret;
+    }
+}
+export class Variable extends TransformableMarker {
+    constructor(name) {
+        super();
+        this.name = name;
+    }
+    resolve(resolver) {
+        let value = resolver.resolve(this);
+        if (this.transform) {
+            value = this.transform.resolve(value || '');
+        }
+        if (value !== undefined) {
+            this._children = [new Text(value)];
+            return true;
+        }
+        return false;
+    }
+    toTextmateString() {
+        let transformString = '';
+        if (this.transform) {
+            transformString = this.transform.toTextmateString();
+        }
+        if (this.children.length === 0) {
+            return `\${${this.name}${transformString}}`;
+        }
+        else {
+            return `\${${this.name}:${this.children.map(child => child.toTextmateString()).join('')}${transformString}}`;
+        }
+    }
+    clone() {
+        const ret = new Variable(this.name);
+        if (this.transform) {
+            ret.transform = this.transform.clone();
+        }
+        ret._children = this.children.map(child => child.clone());
+        return ret;
+    }
+}
+function walk(marker, visitor) {
+    const stack = [...marker];
+    while (stack.length > 0) {
+        const marker = stack.shift();
+        const recurse = visitor(marker);
+        if (!recurse) {
+            break;
+        }
+        stack.unshift(...marker.children);
+    }
+}
+export class TextmateSnippet extends Marker {
+    get placeholderInfo() {
+        if (!this._placeholders) {
+            const all = [];
+            let last;
+            this.walk(function (candidate) {
+                if (candidate instanceof Placeholder) {
+                    all.push(candidate);
+                    last = !last || last.index < candidate.index ? candidate : last;
+                }
+                return true;
+            });
+            this._placeholders = { all, last };
+        }
+        return this._placeholders;
+    }
+    get placeholders() {
+        const { all } = this.placeholderInfo;
+        return all;
+    }
+    offset(marker) {
+        let pos = 0;
+        let found = false;
+        this.walk(candidate => {
+            if (candidate === marker) {
+                found = true;
+                return false;
+            }
+            pos += candidate.len();
+            return true;
+        });
+        if (!found) {
+            return -1;
+        }
+        return pos;
+    }
+    fullLen(marker) {
+        let ret = 0;
+        walk([marker], marker => {
+            ret += marker.len();
+            return true;
+        });
+        return ret;
+    }
+    enclosingPlaceholders(placeholder) {
+        const ret = [];
+        let { parent } = placeholder;
+        while (parent) {
+            if (parent instanceof Placeholder) {
+                ret.push(parent);
+            }
+            parent = parent.parent;
+        }
+        return ret;
+    }
+    resolveVariables(resolver) {
+        this.walk(candidate => {
+            if (candidate instanceof Variable) {
+                if (candidate.resolve(resolver)) {
+                    this._placeholders = undefined;
+                }
+            }
+            return true;
+        });
+        return this;
+    }
+    appendChild(child) {
+        this._placeholders = undefined;
+        return super.appendChild(child);
+    }
+    replace(child, others) {
+        this._placeholders = undefined;
+        return super.replace(child, others);
+    }
+    toTextmateString() {
+        return this.children.reduce((prev, cur) => prev + cur.toTextmateString(), '');
+    }
+    clone() {
+        const ret = new TextmateSnippet();
+        this._children = this.children.map(child => child.clone());
+        return ret;
+    }
+    walk(visitor) {
+        walk(this.children, visitor);
+    }
+}
+export class SnippetParser {
+    constructor() {
+        this._scanner = new Scanner();
+        this._token = { type: 14, pos: 0, len: 0 };
+    }
+    static escape(value) {
+        return value.replace(/\$|}|\\/g, '\\$&');
+    }
+    static asInsertText(value) {
+        return new SnippetParser().parse(value).toString();
+    }
+    static guessNeedsClipboard(template) {
+        return /\${?CLIPBOARD/.test(template);
+    }
+    parse(value, insertFinalTabstop, enforceFinalTabstop) {
+        const snippet = new TextmateSnippet();
+        this.parseFragment(value, snippet);
+        this.ensureFinalTabstop(snippet, enforceFinalTabstop ?? false, insertFinalTabstop ?? false);
+        return snippet;
+    }
+    parseFragment(value, snippet) {
+        const offset = snippet.children.length;
+        this._scanner.text(value);
+        this._token = this._scanner.next();
+        while (this._parse(snippet)) {
+        }
+        const placeholderDefaultValues = new Map();
+        const incompletePlaceholders = [];
+        snippet.walk(marker => {
+            if (marker instanceof Placeholder) {
+                if (marker.isFinalTabstop) {
+                    placeholderDefaultValues.set(0, undefined);
+                }
+                else if (!placeholderDefaultValues.has(marker.index) && marker.children.length > 0) {
+                    placeholderDefaultValues.set(marker.index, marker.children);
+                }
+                else {
+                    incompletePlaceholders.push(marker);
+                }
+            }
+            return true;
+        });
+        const fillInIncompletePlaceholder = (placeholder, stack) => {
+            const defaultValues = placeholderDefaultValues.get(placeholder.index);
+            if (!defaultValues) {
+                return;
+            }
+            const clone = new Placeholder(placeholder.index);
+            clone.transform = placeholder.transform;
+            for (const child of defaultValues) {
+                const newChild = child.clone();
+                clone.appendChild(newChild);
+                if (newChild instanceof Placeholder && placeholderDefaultValues.has(newChild.index) && !stack.has(newChild.index)) {
+                    stack.add(newChild.index);
+                    fillInIncompletePlaceholder(newChild, stack);
+                    stack.delete(newChild.index);
+                }
+            }
+            snippet.replace(placeholder, [clone]);
+        };
+        const stack = new Set();
+        for (const placeholder of incompletePlaceholders) {
+            fillInIncompletePlaceholder(placeholder, stack);
+        }
+        return snippet.children.slice(offset);
+    }
+    ensureFinalTabstop(snippet, enforceFinalTabstop, insertFinalTabstop) {
+        if (enforceFinalTabstop || insertFinalTabstop && snippet.placeholders.length > 0) {
+            const finalTabstop = snippet.placeholders.find(p => p.index === 0);
+            if (!finalTabstop) {
+                snippet.appendChild(new Placeholder(0));
+            }
+        }
+    }
+    _accept(type, value) {
+        if (type === undefined || this._token.type === type) {
+            const ret = !value ? true : this._scanner.tokenText(this._token);
+            this._token = this._scanner.next();
+            return ret;
+        }
+        return false;
+    }
+    _backTo(token) {
+        this._scanner.pos = token.pos + token.len;
+        this._token = token;
+        return false;
+    }
+    _until(type) {
+        const start = this._token;
+        while (this._token.type !== type) {
+            if (this._token.type === 14) {
+                return false;
+            }
+            else if (this._token.type === 5) {
+                const nextToken = this._scanner.next();
+                if (nextToken.type !== 0
+                    && nextToken.type !== 4
+                    && nextToken.type !== 5) {
+                    return false;
+                }
+            }
+            this._token = this._scanner.next();
+        }
+        const value = this._scanner.value.substring(start.pos, this._token.pos).replace(/\\(\$|}|\\)/g, '$1');
+        this._token = this._scanner.next();
+        return value;
+    }
+    _parse(marker) {
+        return this._parseEscaped(marker)
+            || this._parseTabstopOrVariableName(marker)
+            || this._parseComplexPlaceholder(marker)
+            || this._parseComplexVariable(marker)
+            || this._parseAnything(marker);
+    }
+    _parseEscaped(marker) {
+        let value;
+        if (value = this._accept(5, true)) {
+            value = this._accept(0, true)
+                || this._accept(4, true)
+                || this._accept(5, true)
+                || value;
+            marker.appendChild(new Text(value));
+            return true;
+        }
+        return false;
+    }
+    _parseTabstopOrVariableName(parent) {
+        let value;
+        const token = this._token;
+        const match = this._accept(0)
+            && (value = this._accept(9, true) || this._accept(8, true));
+        if (!match) {
+            return this._backTo(token);
+        }
+        parent.appendChild(/^\d+$/.test(value)
+            ? new Placeholder(Number(value))
+            : new Variable(value));
+        return true;
+    }
+    _parseComplexPlaceholder(parent) {
+        let index;
+        const token = this._token;
+        const match = this._accept(0)
+            && this._accept(3)
+            && (index = this._accept(8, true));
+        if (!match) {
+            return this._backTo(token);
+        }
+        const placeholder = new Placeholder(Number(index));
+        if (this._accept(1)) {
+            while (true) {
+                if (this._accept(4)) {
+                    parent.appendChild(placeholder);
+                    return true;
+                }
+                if (this._parse(placeholder)) {
+                    continue;
+                }
+                parent.appendChild(new Text('${' + index + ':'));
+                placeholder.children.forEach(parent.appendChild, parent);
+                return true;
+            }
+        }
+        else if (placeholder.index > 0 && this._accept(7)) {
+            const choice = new Choice();
+            while (true) {
+                if (this._parseChoiceElement(choice)) {
+                    if (this._accept(2)) {
+                        continue;
+                    }
+                    if (this._accept(7)) {
+                        placeholder.appendChild(choice);
+                        if (this._accept(4)) {
+                            parent.appendChild(placeholder);
+                            return true;
+                        }
+                    }
+                }
+                this._backTo(token);
+                return false;
+            }
+        }
+        else if (this._accept(6)) {
+            if (this._parseTransform(placeholder)) {
+                parent.appendChild(placeholder);
+                return true;
+            }
+            this._backTo(token);
+            return false;
+        }
+        else if (this._accept(4)) {
+            parent.appendChild(placeholder);
+            return true;
+        }
+        else {
+            return this._backTo(token);
+        }
+    }
+    _parseChoiceElement(parent) {
+        const token = this._token;
+        const values = [];
+        while (true) {
+            if (this._token.type === 2 || this._token.type === 7) {
+                break;
+            }
+            let value;
+            if (value = this._accept(5, true)) {
+                value = this._accept(2, true)
+                    || this._accept(7, true)
+                    || this._accept(5, true)
+                    || value;
+            }
+            else {
+                value = this._accept(undefined, true);
+            }
+            if (!value) {
+                this._backTo(token);
+                return false;
+            }
+            values.push(value);
+        }
+        if (values.length === 0) {
+            this._backTo(token);
+            return false;
+        }
+        parent.appendChild(new Text(values.join('')));
+        return true;
+    }
+    _parseComplexVariable(parent) {
+        let name;
+        const token = this._token;
+        const match = this._accept(0)
+            && this._accept(3)
+            && (name = this._accept(9, true));
+        if (!match) {
+            return this._backTo(token);
+        }
+        const variable = new Variable(name);
+        if (this._accept(1)) {
+            while (true) {
+                if (this._accept(4)) {
+                    parent.appendChild(variable);
+                    return true;
+                }
+                if (this._parse(variable)) {
+                    continue;
+                }
+                parent.appendChild(new Text('${' + name + ':'));
+                variable.children.forEach(parent.appendChild, parent);
+                return true;
+            }
+        }
+        else if (this._accept(6)) {
+            if (this._parseTransform(variable)) {
+                parent.appendChild(variable);
+                return true;
+            }
+            this._backTo(token);
+            return false;
+        }
+        else if (this._accept(4)) {
+            parent.appendChild(variable);
+            return true;
+        }
+        else {
+            return this._backTo(token);
+        }
+    }
+    _parseTransform(parent) {
+        const transform = new Transform();
+        let regexValue = '';
+        let regexOptions = '';
+        while (true) {
+            if (this._accept(6)) {
+                break;
+            }
+            let escaped;
+            if (escaped = this._accept(5, true)) {
+                escaped = this._accept(6, true) || escaped;
+                regexValue += escaped;
+                continue;
+            }
+            if (this._token.type !== 14) {
+                regexValue += this._accept(undefined, true);
+                continue;
+            }
+            return false;
+        }
+        while (true) {
+            if (this._accept(6)) {
+                break;
+            }
+            let escaped;
+            if (escaped = this._accept(5, true)) {
+                escaped = this._accept(5, true) || this._accept(6, true) || escaped;
+                transform.appendChild(new Text(escaped));
+                continue;
+            }
+            if (this._parseFormatString(transform) || this._parseAnything(transform)) {
+                continue;
+            }
+            return false;
+        }
+        while (true) {
+            if (this._accept(4)) {
+                break;
+            }
+            if (this._token.type !== 14) {
+                regexOptions += this._accept(undefined, true);
+                continue;
+            }
+            return false;
+        }
+        try {
+            transform.regexp = new RegExp(regexValue, regexOptions);
+        }
+        catch (e) {
+            return false;
+        }
+        parent.transform = transform;
+        return true;
+    }
+    _parseFormatString(parent) {
+        const token = this._token;
+        if (!this._accept(0)) {
+            return false;
+        }
+        let complex = false;
+        if (this._accept(3)) {
+            complex = true;
+        }
+        const index = this._accept(8, true);
+        if (!index) {
+            this._backTo(token);
+            return false;
+        }
+        else if (!complex) {
+            parent.appendChild(new FormatString(Number(index)));
+            return true;
+        }
+        else if (this._accept(4)) {
+            parent.appendChild(new FormatString(Number(index)));
+            return true;
+        }
+        else if (!this._accept(1)) {
+            this._backTo(token);
+            return false;
+        }
+        if (this._accept(6)) {
+            const shorthand = this._accept(9, true);
+            if (!shorthand || !this._accept(4)) {
+                this._backTo(token);
+                return false;
+            }
+            else {
+                parent.appendChild(new FormatString(Number(index), shorthand));
+                return true;
+            }
+        }
+        else if (this._accept(11)) {
+            const ifValue = this._until(4);
+            if (ifValue) {
+                parent.appendChild(new FormatString(Number(index), undefined, ifValue, undefined));
+                return true;
+            }
+        }
+        else if (this._accept(12)) {
+            const elseValue = this._until(4);
+            if (elseValue) {
+                parent.appendChild(new FormatString(Number(index), undefined, undefined, elseValue));
+                return true;
+            }
+        }
+        else if (this._accept(13)) {
+            const ifValue = this._until(1);
+            if (ifValue) {
+                const elseValue = this._until(4);
+                if (elseValue) {
+                    parent.appendChild(new FormatString(Number(index), undefined, ifValue, elseValue));
+                    return true;
+                }
+            }
+        }
+        else {
+            const elseValue = this._until(4);
+            if (elseValue) {
+                parent.appendChild(new FormatString(Number(index), undefined, undefined, elseValue));
+                return true;
+            }
+        }
+        this._backTo(token);
+        return false;
+    }
+    _parseAnything(marker) {
+        if (this._token.type !== 14) {
+            marker.appendChild(new Text(this._scanner.tokenText(this._token)));
+            this._accept(undefined);
+            return true;
+        }
+        return false;
+    }
+}

@@ -1,3 +1,246 @@
-import{Event as l}from"../../../../base/common/event.js";import"../../../../base/common/severity.js";import{URI as P}from"../../../../base/common/uri.js";import"../../../../base/parts/ipc/common/ipc.js";import{getExtensionId as D,getGalleryExtensionId as _}from"../../../../platform/extensionManagement/common/extensionManagementUtil.js";import{ImplicitActivationEvents as p}from"../../../../platform/extensionManagement/common/implicitActivationEvents.js";import{ExtensionIdentifier as u,ExtensionIdentifierMap as A,ExtensionIdentifierSet as x,ExtensionType as v,TargetPlatform as S}from"../../../../platform/extensions/common/extensions.js";import"../../../../platform/extensions/common/extensionsApiProposals.js";import{createDecorator as R}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/profiling/common/profiling.js";import"./extensionHostKind.js";import"./extensionHostProtocol.js";import"./extensionRunningLocation.js";import"./extensionsRegistry.js";const oe=Object.freeze({identifier:new u("nullExtensionDescription"),name:"Null Extension Description",version:"0.0.0",publisher:"vscode",engines:{vscode:""},extensionLocation:P.parse("void:location"),isBuiltin:!1,targetPlatform:S.UNDEFINED,isUserBuiltin:!1,isUnderDevelopment:!1}),se="extensions.webWorker",re=R("extensionService");class ae{constructor(e){this.dependency=e}}var T=(s=>(s[s.EagerAutoStart=1]="EagerAutoStart",s[s.EagerManualStart=2]="EagerManualStart",s[s.Lazy=3]="Lazy",s))(T||{});class le{_versionId;_allExtensions;_myExtensions;_myActivationEvents;get versionId(){return this._versionId}get allExtensions(){return this._allExtensions}get myExtensions(){return this._myExtensions}constructor(e,t,s){this._versionId=e,this._allExtensions=t.slice(0),this._myExtensions=s.slice(0),this._myActivationEvents=null}toSnapshot(){return{versionId:this._versionId,allExtensions:this._allExtensions,myExtensions:this._myExtensions,activationEvents:p.createActivationEventsMap(this._allExtensions)}}set(e,t,s){if(this._versionId>e)throw new Error(`ExtensionHostExtensions: invalid versionId ${e} (current: ${this._versionId})`);const a=[],d=[],E=[],c=[],o=I(this._allExtensions),g=I(t),m=(i,r)=>i.extensionLocation.toString()===r.extensionLocation.toString()||i.isBuiltin===r.isBuiltin||i.isUserBuiltin===r.isUserBuiltin||i.isUnderDevelopment===r.isUnderDevelopment;for(const i of this._allExtensions){const r=g.get(i.identifier);if(!r){a.push(i.identifier),o.delete(i.identifier);continue}if(!m(i,r)){a.push(i.identifier),o.delete(i.identifier);continue}}for(const i of t){const r=o.get(i.identifier);if(!r){d.push(i);continue}if(!m(r,i)){a.push(r.identifier),o.delete(r.identifier);continue}}const y=new x(this._myExtensions),b=new x(s);for(const i of this._myExtensions)b.has(i)||E.push(i);for(const i of s)y.has(i)||c.push(i);const h=p.createActivationEventsMap(d),f={versionId:e,toRemove:a,toAdd:d,addActivationEvents:h,myToRemove:E,myToAdd:c};return this.delta(f),f}delta(e){if(this._versionId>=e.versionId)return null;const{toRemove:t,toAdd:s,myToRemove:a,myToAdd:d}=e,E=new x(t),c=new x(a);for(let o=0;o<this._allExtensions.length;o++)E.has(this._allExtensions[o].identifier)&&(this._allExtensions.splice(o,1),o--);for(let o=0;o<this._myExtensions.length;o++)c.has(this._myExtensions[o])&&(this._myExtensions.splice(o,1),o--);for(const o of s)this._allExtensions.push(o);for(const o of d)this._myExtensions.push(o);return this._myActivationEvents=null,e}containsExtension(e){for(const t of this._myExtensions)if(u.equals(t,e))return!0;return!1}containsActivationEvent(e){return this._myActivationEvents||(this._myActivationEvents=this._readMyActivationEvents()),this._myActivationEvents.has(e)}_readMyActivationEvents(){const e=new Set;for(const t of this._allExtensions){if(!this.containsExtension(t.identifier))continue;const s=p.readActivationEvents(t);for(const a of s)e.add(a)}return e}}function I(n){const e=new A;for(const t of n)e.set(t.identifier,t);return e}function C(n,e){return n.enabledApiProposals?n.enabledApiProposals.includes(e):!1}function de(n,e){if(!C(n,e))throw new Error(`Extension '${n.identifier.value}' CANNOT use API proposal: ${e}.
-Its package.json#enabledApiProposals-property declares: ${n.enabledApiProposals?.join(", ")??"[]"} but NOT ${e}.
- The missing proposal MUST be added and you must start in extension development mode or use the following command line switch: --enable-proposed-api ${n.identifier.value}`)}class Ee{constructor(e,t,s,a){this.codeLoadingTime=e;this.activateCallTime=t;this.activateResolvedTime=s;this.activationReason=a}}class ce{description;value;constructor(e,t){this.description=e,this.value=t}}var w=(t=>(t[t.Normal=0]="Normal",t[t.Immediate=1]="Immediate",t))(w||{});function xe(n){return{type:n.isBuiltin?v.System:v.User,isBuiltin:n.isBuiltin||n.isUserBuiltin,identifier:{id:_(n.publisher,n.name),uuid:n.uuid},manifest:n,location:n.extensionLocation,targetPlatform:n.targetPlatform,validations:[],isValid:!0}}function ve(n,e){const t=D(n.manifest.publisher,n.manifest.name);return{id:t,identifier:new u(t),isBuiltin:n.type===v.System,isUserBuiltin:n.type===v.User&&n.isBuiltin,isUnderDevelopment:!!e,extensionLocation:n.location,uuid:n.identifier.uuid,targetPlatform:n.targetPlatform,publisherDisplayName:n.publisherDisplayName,...n.manifest}}class pe{onDidRegisterExtensions=l.None;onDidChangeExtensionsStatus=l.None;onDidChangeExtensions=l.None;onWillActivateByEvent=l.None;onDidChangeResponsiveChange=l.None;onWillStop=l.None;extensions=[];activateByEvent(e){return Promise.resolve(void 0)}activateById(e,t){return Promise.resolve(void 0)}activationEventIsDone(e){return!1}whenInstalledExtensionsRegistered(){return Promise.resolve(!0)}getExtension(){return Promise.resolve(void 0)}readExtensionPointContributions(e){return Promise.resolve(Object.create(null))}getExtensionsStatus(){return Object.create(null)}getInspectPorts(e,t){return Promise.resolve([])}async stopExtensionHosts(){return!0}async startExtensionHosts(){}async setRemoteEnvironment(e){}canAddExtension(){return!1}canRemoveExtension(){return!1}}export{w as ActivationKind,Ee as ActivationTimes,le as ExtensionHostExtensions,T as ExtensionHostStartup,ce as ExtensionPointContribution,re as IExtensionService,ae as MissingExtensionDependency,pe as NullExtensionService,de as checkProposedApiEnabled,C as isProposedApiEnabled,oe as nullExtensionDescription,xe as toExtension,ve as toExtensionDescription,se as webWorkerExtHostConfig};
+import { Event } from '../../../../base/common/event.js';
+import { URI } from '../../../../base/common/uri.js';
+import { getExtensionId, getGalleryExtensionId } from '../../../../platform/extensionManagement/common/extensionManagementUtil.js';
+import { ImplicitActivationEvents } from '../../../../platform/extensionManagement/common/implicitActivationEvents.js';
+import { ExtensionIdentifier, ExtensionIdentifierMap, ExtensionIdentifierSet } from '../../../../platform/extensions/common/extensions.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export const nullExtensionDescription = Object.freeze({
+    identifier: new ExtensionIdentifier('nullExtensionDescription'),
+    name: 'Null Extension Description',
+    version: '0.0.0',
+    publisher: 'vscode',
+    engines: { vscode: '' },
+    extensionLocation: URI.parse('void:location'),
+    isBuiltin: false,
+    targetPlatform: "undefined",
+    isUserBuiltin: false,
+    isUnderDevelopment: false
+});
+export const webWorkerExtHostConfig = 'extensions.webWorker';
+export const IExtensionService = createDecorator('extensionService');
+export class MissingExtensionDependency {
+    constructor(dependency) {
+        this.dependency = dependency;
+    }
+}
+export class ExtensionHostExtensions {
+    get versionId() {
+        return this._versionId;
+    }
+    get allExtensions() {
+        return this._allExtensions;
+    }
+    get myExtensions() {
+        return this._myExtensions;
+    }
+    constructor(versionId, allExtensions, myExtensions) {
+        this._versionId = versionId;
+        this._allExtensions = allExtensions.slice(0);
+        this._myExtensions = myExtensions.slice(0);
+        this._myActivationEvents = null;
+    }
+    toSnapshot() {
+        return {
+            versionId: this._versionId,
+            allExtensions: this._allExtensions,
+            myExtensions: this._myExtensions,
+            activationEvents: ImplicitActivationEvents.createActivationEventsMap(this._allExtensions)
+        };
+    }
+    set(versionId, allExtensions, myExtensions) {
+        if (this._versionId > versionId) {
+            throw new Error(`ExtensionHostExtensions: invalid versionId ${versionId} (current: ${this._versionId})`);
+        }
+        const toRemove = [];
+        const toAdd = [];
+        const myToRemove = [];
+        const myToAdd = [];
+        const oldExtensionsMap = extensionDescriptionArrayToMap(this._allExtensions);
+        const newExtensionsMap = extensionDescriptionArrayToMap(allExtensions);
+        const extensionsAreTheSame = (a, b) => {
+            return ((a.extensionLocation.toString() === b.extensionLocation.toString())
+                || (a.isBuiltin === b.isBuiltin)
+                || (a.isUserBuiltin === b.isUserBuiltin)
+                || (a.isUnderDevelopment === b.isUnderDevelopment));
+        };
+        for (const oldExtension of this._allExtensions) {
+            const newExtension = newExtensionsMap.get(oldExtension.identifier);
+            if (!newExtension) {
+                toRemove.push(oldExtension.identifier);
+                oldExtensionsMap.delete(oldExtension.identifier);
+                continue;
+            }
+            if (!extensionsAreTheSame(oldExtension, newExtension)) {
+                toRemove.push(oldExtension.identifier);
+                oldExtensionsMap.delete(oldExtension.identifier);
+                continue;
+            }
+        }
+        for (const newExtension of allExtensions) {
+            const oldExtension = oldExtensionsMap.get(newExtension.identifier);
+            if (!oldExtension) {
+                toAdd.push(newExtension);
+                continue;
+            }
+            if (!extensionsAreTheSame(oldExtension, newExtension)) {
+                toRemove.push(oldExtension.identifier);
+                oldExtensionsMap.delete(oldExtension.identifier);
+                continue;
+            }
+        }
+        const myOldExtensionsSet = new ExtensionIdentifierSet(this._myExtensions);
+        const myNewExtensionsSet = new ExtensionIdentifierSet(myExtensions);
+        for (const oldExtensionId of this._myExtensions) {
+            if (!myNewExtensionsSet.has(oldExtensionId)) {
+                myToRemove.push(oldExtensionId);
+            }
+        }
+        for (const newExtensionId of myExtensions) {
+            if (!myOldExtensionsSet.has(newExtensionId)) {
+                myToAdd.push(newExtensionId);
+            }
+        }
+        const addActivationEvents = ImplicitActivationEvents.createActivationEventsMap(toAdd);
+        const delta = { versionId, toRemove, toAdd, addActivationEvents, myToRemove, myToAdd };
+        this.delta(delta);
+        return delta;
+    }
+    delta(extensionsDelta) {
+        if (this._versionId >= extensionsDelta.versionId) {
+            return null;
+        }
+        const { toRemove, toAdd, myToRemove, myToAdd } = extensionsDelta;
+        const toRemoveSet = new ExtensionIdentifierSet(toRemove);
+        const myToRemoveSet = new ExtensionIdentifierSet(myToRemove);
+        for (let i = 0; i < this._allExtensions.length; i++) {
+            if (toRemoveSet.has(this._allExtensions[i].identifier)) {
+                this._allExtensions.splice(i, 1);
+                i--;
+            }
+        }
+        for (let i = 0; i < this._myExtensions.length; i++) {
+            if (myToRemoveSet.has(this._myExtensions[i])) {
+                this._myExtensions.splice(i, 1);
+                i--;
+            }
+        }
+        for (const extension of toAdd) {
+            this._allExtensions.push(extension);
+        }
+        for (const extensionId of myToAdd) {
+            this._myExtensions.push(extensionId);
+        }
+        this._myActivationEvents = null;
+        return extensionsDelta;
+    }
+    containsExtension(extensionId) {
+        for (const myExtensionId of this._myExtensions) {
+            if (ExtensionIdentifier.equals(myExtensionId, extensionId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    containsActivationEvent(activationEvent) {
+        if (!this._myActivationEvents) {
+            this._myActivationEvents = this._readMyActivationEvents();
+        }
+        return this._myActivationEvents.has(activationEvent);
+    }
+    _readMyActivationEvents() {
+        const result = new Set();
+        for (const extensionDescription of this._allExtensions) {
+            if (!this.containsExtension(extensionDescription.identifier)) {
+                continue;
+            }
+            const activationEvents = ImplicitActivationEvents.readActivationEvents(extensionDescription);
+            for (const activationEvent of activationEvents) {
+                result.add(activationEvent);
+            }
+        }
+        return result;
+    }
+}
+function extensionDescriptionArrayToMap(extensions) {
+    const result = new ExtensionIdentifierMap();
+    for (const extension of extensions) {
+        result.set(extension.identifier, extension);
+    }
+    return result;
+}
+export function isProposedApiEnabled(extension, proposal) {
+    if (!extension.enabledApiProposals) {
+        return false;
+    }
+    return extension.enabledApiProposals.includes(proposal);
+}
+export function checkProposedApiEnabled(extension, proposal) {
+    if (!isProposedApiEnabled(extension, proposal)) {
+        throw new Error(`Extension '${extension.identifier.value}' CANNOT use API proposal: ${proposal}.\nIts package.json#enabledApiProposals-property declares: ${extension.enabledApiProposals?.join(', ') ?? '[]'} but NOT ${proposal}.\n The missing proposal MUST be added and you must start in extension development mode or use the following command line switch: --enable-proposed-api ${extension.identifier.value}`);
+    }
+}
+export class ActivationTimes {
+    constructor(codeLoadingTime, activateCallTime, activateResolvedTime, activationReason) {
+        this.codeLoadingTime = codeLoadingTime;
+        this.activateCallTime = activateCallTime;
+        this.activateResolvedTime = activateResolvedTime;
+        this.activationReason = activationReason;
+    }
+}
+export class ExtensionPointContribution {
+    constructor(description, value) {
+        this.description = description;
+        this.value = value;
+    }
+}
+export function toExtension(extensionDescription) {
+    return {
+        type: extensionDescription.isBuiltin ? 0 : 1,
+        isBuiltin: extensionDescription.isBuiltin || extensionDescription.isUserBuiltin,
+        identifier: { id: getGalleryExtensionId(extensionDescription.publisher, extensionDescription.name), uuid: extensionDescription.uuid },
+        manifest: extensionDescription,
+        location: extensionDescription.extensionLocation,
+        targetPlatform: extensionDescription.targetPlatform,
+        validations: [],
+        isValid: true
+    };
+}
+export function toExtensionDescription(extension, isUnderDevelopment) {
+    const id = getExtensionId(extension.manifest.publisher, extension.manifest.name);
+    return {
+        id,
+        identifier: new ExtensionIdentifier(id),
+        isBuiltin: extension.type === 0,
+        isUserBuiltin: extension.type === 1 && extension.isBuiltin,
+        isUnderDevelopment: !!isUnderDevelopment,
+        extensionLocation: extension.location,
+        uuid: extension.identifier.uuid,
+        targetPlatform: extension.targetPlatform,
+        publisherDisplayName: extension.publisherDisplayName,
+        ...extension.manifest
+    };
+}
+export class NullExtensionService {
+    constructor() {
+        this.onDidRegisterExtensions = Event.None;
+        this.onDidChangeExtensionsStatus = Event.None;
+        this.onDidChangeExtensions = Event.None;
+        this.onWillActivateByEvent = Event.None;
+        this.onDidChangeResponsiveChange = Event.None;
+        this.onWillStop = Event.None;
+        this.extensions = [];
+    }
+    activateByEvent(_activationEvent) { return Promise.resolve(undefined); }
+    activateById(extensionId, reason) { return Promise.resolve(undefined); }
+    activationEventIsDone(_activationEvent) { return false; }
+    whenInstalledExtensionsRegistered() { return Promise.resolve(true); }
+    getExtension() { return Promise.resolve(undefined); }
+    readExtensionPointContributions(_extPoint) { return Promise.resolve(Object.create(null)); }
+    getExtensionsStatus() { return Object.create(null); }
+    getInspectPorts(_extensionHostKind, _tryEnableInspector) { return Promise.resolve([]); }
+    async stopExtensionHosts() { return true; }
+    async startExtensionHosts() { }
+    async setRemoteEnvironment(_env) { }
+    canAddExtension() { return false; }
+    canRemoveExtension() { return false; }
+}

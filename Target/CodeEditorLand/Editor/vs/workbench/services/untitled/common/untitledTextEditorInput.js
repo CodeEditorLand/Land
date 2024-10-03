@@ -1,1 +1,168 @@
-var g=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var c=(a,o,e,t)=>{for(var i=t>1?void 0:t?f(o,e):o,d=a.length-1,n;d>=0;d--)(n=a[d])&&(i=(t?n(o,e,i):n(i))||i);return t&&i&&g(o,e,i),i},r=(a,o)=>(e,t)=>o(e,t,a);import"../../../../base/common/uri.js";import{DEFAULT_EDITOR_ASSOCIATION as v,findViewStateForEditor as I,isUntitledResourceEditorInput as E,Verbosity as S}from"../../../common/editor.js";import"../../../common/editor/editorInput.js";import{AbstractTextResourceEditorInput as M}from"../../../common/editor/textResourceEditorInput.js";import"./untitledTextEditorModel.js";import{ITextFileService as R}from"../../textfile/common/textfiles.js";import{ILabelService as D}from"../../../../platform/label/common/label.js";import{IEditorService as x}from"../../editor/common/editorService.js";import{IFileService as y}from"../../../../platform/files/common/files.js";import{isEqual as l,toLocalResource as T}from"../../../../base/common/resources.js";import{IWorkbenchEnvironmentService as U}from"../../environment/common/environmentService.js";import{IPathService as b}from"../../path/common/pathService.js";import"../../../../platform/editor/common/editor.js";import{IFilesConfigurationService as L}from"../../filesConfiguration/common/filesConfigurationService.js";import{ITextModelService as C}from"../../../../editor/common/services/resolverService.js";import{DisposableStore as F,dispose as A}from"../../../../base/common/lifecycle.js";import{ITextResourceConfigurationService as P}from"../../../../editor/common/services/textResourceConfiguration.js";import{ICustomEditorLabelService as w}from"../../editor/common/customEditorLabelService.js";let s=class extends M{constructor(e,t,i,d,n,O,V,u,N,h,p){super(e.resource,void 0,d,t,i,n,u,h,p);this.model=e;this.environmentService=O;this.pathService=V;this.textModelService=N;this.registerModelListeners(e),this._register(this.textFileService.untitled.onDidCreate(m=>this.onDidCreateUntitledModel(m)))}static ID="workbench.editors.untitledEditorInput";get typeId(){return s.ID}get editorId(){return v.id}modelResolve=void 0;modelDisposables=this._register(new F);cachedUntitledTextEditorModelReference=void 0;registerModelListeners(e){this.modelDisposables.clear(),this.modelDisposables.add(e.onDidChangeDirty(()=>this._onDidChangeDirty.fire())),this.modelDisposables.add(e.onDidChangeName(()=>this._onDidChangeLabel.fire())),this.modelDisposables.add(e.onDidRevert(()=>this.dispose()))}onDidCreateUntitledModel(e){l(e.resource,this.model.resource)&&e!==this.model&&(this.model=e,this.registerModelListeners(e))}getName(){return this.model.name}getDescription(e=S.MEDIUM){if(!this.model.hasAssociatedFilePath){const t=this.resource.path;return t!==this.getName()?t:void 0}return super.getDescription(e)}getTitle(e){if(!this.model.hasAssociatedFilePath){const t=this.getName(),i=this.getDescription();return i&&i!==t?`${t} \u2022 ${i}`:t}return super.getTitle(e)}isDirty(){return this.model.isDirty()}getEncoding(){return this.model.getEncoding()}setEncoding(e,t){return this.model.setEncoding(e)}get hasLanguageSetExplicitly(){return this.model.hasLanguageSetExplicitly}get hasAssociatedFilePath(){return this.model.hasAssociatedFilePath}setLanguageId(e,t){this.model.setLanguageId(e,t)}getLanguageId(){return this.model.getLanguageId()}async resolve(){return this.modelResolve||(this.modelResolve=(async()=>{this.cachedUntitledTextEditorModelReference=await this.textModelService.createModelReference(this.resource)})()),await this.modelResolve,this.isDisposed()&&this.disposeModelReference(),this.model}toUntyped(e){const t={resource:this.model.hasAssociatedFilePath?T(this.model.resource,this.environmentService.remoteAuthority,this.pathService.defaultUriScheme):this.resource,forceUntitled:!0,options:{override:this.editorId}};return typeof e?.preserveViewState=="number"&&(t.encoding=this.getEncoding(),t.languageId=this.getLanguageId(),t.contents=this.model.isModified()?this.model.textEditorModel?.getValue():void 0,t.options.viewState=I(this,e.preserveViewState,this.editorService),typeof t.contents=="string"&&!this.model.hasAssociatedFilePath&&!e.preserveResource&&(t.resource=void 0)),t}matches(e){return this===e?!0:e instanceof s?l(e.resource,this.resource):E(e)?super.matches(e):!1}dispose(){this.modelResolve=void 0,this.disposeModelReference(),super.dispose()}disposeModelReference(){A(this.cachedUntitledTextEditorModelReference),this.cachedUntitledTextEditorModelReference=void 0}};s=c([r(1,R),r(2,D),r(3,x),r(4,y),r(5,U),r(6,b),r(7,L),r(8,C),r(9,P),r(10,w)],s);export{s as UntitledTextEditorInput};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var UntitledTextEditorInput_1;
+import { DEFAULT_EDITOR_ASSOCIATION, findViewStateForEditor, isUntitledResourceEditorInput } from '../../../common/editor.js';
+import { AbstractTextResourceEditorInput } from '../../../common/editor/textResourceEditorInput.js';
+import { ITextFileService } from '../../textfile/common/textfiles.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { IEditorService } from '../../editor/common/editorService.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { isEqual, toLocalResource } from '../../../../base/common/resources.js';
+import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
+import { IPathService } from '../../path/common/pathService.js';
+import { IFilesConfigurationService } from '../../filesConfiguration/common/filesConfigurationService.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { DisposableStore, dispose } from '../../../../base/common/lifecycle.js';
+import { ITextResourceConfigurationService } from '../../../../editor/common/services/textResourceConfiguration.js';
+import { ICustomEditorLabelService } from '../../editor/common/customEditorLabelService.js';
+let UntitledTextEditorInput = class UntitledTextEditorInput extends AbstractTextResourceEditorInput {
+    static { UntitledTextEditorInput_1 = this; }
+    static { this.ID = 'workbench.editors.untitledEditorInput'; }
+    get typeId() {
+        return UntitledTextEditorInput_1.ID;
+    }
+    get editorId() {
+        return DEFAULT_EDITOR_ASSOCIATION.id;
+    }
+    constructor(model, textFileService, labelService, editorService, fileService, environmentService, pathService, filesConfigurationService, textModelService, textResourceConfigurationService, customEditorLabelService) {
+        super(model.resource, undefined, editorService, textFileService, labelService, fileService, filesConfigurationService, textResourceConfigurationService, customEditorLabelService);
+        this.model = model;
+        this.environmentService = environmentService;
+        this.pathService = pathService;
+        this.textModelService = textModelService;
+        this.modelResolve = undefined;
+        this.modelDisposables = this._register(new DisposableStore());
+        this.cachedUntitledTextEditorModelReference = undefined;
+        this.registerModelListeners(model);
+        this._register(this.textFileService.untitled.onDidCreate(model => this.onDidCreateUntitledModel(model)));
+    }
+    registerModelListeners(model) {
+        this.modelDisposables.clear();
+        this.modelDisposables.add(model.onDidChangeDirty(() => this._onDidChangeDirty.fire()));
+        this.modelDisposables.add(model.onDidChangeName(() => this._onDidChangeLabel.fire()));
+        this.modelDisposables.add(model.onDidRevert(() => this.dispose()));
+    }
+    onDidCreateUntitledModel(model) {
+        if (isEqual(model.resource, this.model.resource) && model !== this.model) {
+            this.model = model;
+            this.registerModelListeners(model);
+        }
+    }
+    getName() {
+        return this.model.name;
+    }
+    getDescription(verbosity = 1) {
+        if (!this.model.hasAssociatedFilePath) {
+            const descriptionCandidate = this.resource.path;
+            if (descriptionCandidate !== this.getName()) {
+                return descriptionCandidate;
+            }
+            return undefined;
+        }
+        return super.getDescription(verbosity);
+    }
+    getTitle(verbosity) {
+        if (!this.model.hasAssociatedFilePath) {
+            const name = this.getName();
+            const description = this.getDescription();
+            if (description && description !== name) {
+                return `${name} • ${description}`;
+            }
+            return name;
+        }
+        return super.getTitle(verbosity);
+    }
+    isDirty() {
+        return this.model.isDirty();
+    }
+    getEncoding() {
+        return this.model.getEncoding();
+    }
+    setEncoding(encoding, mode) {
+        return this.model.setEncoding(encoding);
+    }
+    get hasLanguageSetExplicitly() { return this.model.hasLanguageSetExplicitly; }
+    get hasAssociatedFilePath() { return this.model.hasAssociatedFilePath; }
+    setLanguageId(languageId, source) {
+        this.model.setLanguageId(languageId, source);
+    }
+    getLanguageId() {
+        return this.model.getLanguageId();
+    }
+    async resolve() {
+        if (!this.modelResolve) {
+            this.modelResolve = (async () => {
+                this.cachedUntitledTextEditorModelReference = await this.textModelService.createModelReference(this.resource);
+            })();
+        }
+        await this.modelResolve;
+        if (this.isDisposed()) {
+            this.disposeModelReference();
+        }
+        return this.model;
+    }
+    toUntyped(options) {
+        const untypedInput = {
+            resource: this.model.hasAssociatedFilePath ? toLocalResource(this.model.resource, this.environmentService.remoteAuthority, this.pathService.defaultUriScheme) : this.resource,
+            forceUntitled: true,
+            options: {
+                override: this.editorId
+            }
+        };
+        if (typeof options?.preserveViewState === 'number') {
+            untypedInput.encoding = this.getEncoding();
+            untypedInput.languageId = this.getLanguageId();
+            untypedInput.contents = this.model.isModified() ? this.model.textEditorModel?.getValue() : undefined;
+            untypedInput.options.viewState = findViewStateForEditor(this, options.preserveViewState, this.editorService);
+            if (typeof untypedInput.contents === 'string' && !this.model.hasAssociatedFilePath && !options.preserveResource) {
+                untypedInput.resource = undefined;
+            }
+        }
+        return untypedInput;
+    }
+    matches(otherInput) {
+        if (this === otherInput) {
+            return true;
+        }
+        if (otherInput instanceof UntitledTextEditorInput_1) {
+            return isEqual(otherInput.resource, this.resource);
+        }
+        if (isUntitledResourceEditorInput(otherInput)) {
+            return super.matches(otherInput);
+        }
+        return false;
+    }
+    dispose() {
+        this.modelResolve = undefined;
+        this.disposeModelReference();
+        super.dispose();
+    }
+    disposeModelReference() {
+        dispose(this.cachedUntitledTextEditorModelReference);
+        this.cachedUntitledTextEditorModelReference = undefined;
+    }
+};
+UntitledTextEditorInput = UntitledTextEditorInput_1 = __decorate([
+    __param(1, ITextFileService),
+    __param(2, ILabelService),
+    __param(3, IEditorService),
+    __param(4, IFileService),
+    __param(5, IWorkbenchEnvironmentService),
+    __param(6, IPathService),
+    __param(7, IFilesConfigurationService),
+    __param(8, ITextModelService),
+    __param(9, ITextResourceConfigurationService),
+    __param(10, ICustomEditorLabelService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], UntitledTextEditorInput);
+export { UntitledTextEditorInput };

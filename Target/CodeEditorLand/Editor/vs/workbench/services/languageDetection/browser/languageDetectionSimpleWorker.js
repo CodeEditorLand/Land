@@ -1,1 +1,232 @@
-import{importAMDNodeModule as f}from"../../../../amdX.js";import{StopWatch as h}from"../../../../base/common/stopwatch.js";import"../../../../base/common/worker/simpleWorker.js";import{LanguageDetectionWorkerHost as v}from"./languageDetectionWorker.protocol.js";import{WorkerTextModelSyncServer as m}from"../../../../editor/common/services/textModelSync/textModelSync.impl.js";function _(p){return new a(p)}class a{_requestHandlerBrand;static expectedRelativeConfidence=.2;static positiveConfidenceCorrectionBucket1=.05;static positiveConfidenceCorrectionBucket2=.025;static negativeConfidenceCorrection=.5;_workerTextModelSyncServer=new m;_host;_regexpModel;_regexpLoadFailed=!1;_modelOperations;_loadFailed=!1;modelIdToCoreId=new Map;constructor(e){this._host=v.getChannel(e),this._workerTextModelSyncServer.bindToServer(e)}async $detectLanguage(e,o,t,r){const i=[],n=[],c=new h,l=this.getTextForDetection(e);if(!l)return;const u=async()=>{for await(const s of this.detectLanguagesImpl(l)){this.modelIdToCoreId.has(s.languageId)||this.modelIdToCoreId.set(s.languageId,await this._host.$getLanguageId(s.languageId));const d=this.modelIdToCoreId.get(s.languageId);d&&(!r?.length||r.includes(d))&&(i.push(d),n.push(s.confidence))}if(c.stop(),i.length)return this._host.$sendTelemetryEvent(i,n,c.elapsed()),i[0]},g=async()=>this.runRegexpModel(l,o??{},r);if(t){const s=await g();if(s)return s;const d=await u();if(d)return d}else{const s=await u();if(s)return s;const d=await g();if(d)return d}}getTextForDetection(e){const o=this._workerTextModelSyncServer.getModel(e);if(!o)return;const t=o.positionAt(1e4);return o.getValueInRange({startColumn:1,startLineNumber:1,endColumn:t.column,endLineNumber:t.lineNumber})}async getRegexpModel(){if(this._regexpLoadFailed)return;if(this._regexpModel)return this._regexpModel;const e=await this._host.$getRegexpModelUri();try{return this._regexpModel=await f(e,""),this._regexpModel}catch{this._regexpLoadFailed=!0;return}}async runRegexpModel(e,o,t){const r=await this.getRegexpModel();if(!r)return;if(t?.length)for(const n of Object.keys(o))t.includes(n)?o[n]=1:o[n]=0;return r.detect(e,o,t)}async getModelOperations(){if(this._modelOperations)return this._modelOperations;const e=await this._host.$getIndexJsUri(),{ModelOperations:o}=await f(e,"");return this._modelOperations=new o({modelJsonLoaderFunc:async()=>{const t=await fetch(await this._host.$getModelJsonUri());try{return await t.json()}catch{const i="Failed to parse model JSON.";throw new Error(i)}},weightsLoaderFunc:async()=>await(await fetch(await this._host.$getWeightsUri())).arrayBuffer()}),this._modelOperations}adjustLanguageConfidence(e){switch(e.languageId){case"js":case"html":case"json":case"ts":case"css":case"py":case"xml":case"php":e.confidence+=a.positiveConfidenceCorrectionBucket1;break;case"cpp":case"sh":case"java":case"cs":case"c":e.confidence+=a.positiveConfidenceCorrectionBucket2;break;case"bat":case"ini":case"makefile":case"sql":case"csv":case"toml":e.confidence-=a.negativeConfidenceCorrection;break;default:break}return e}async*detectLanguagesImpl(e){if(this._loadFailed)return;let o;try{o=await this.getModelOperations()}catch{this._loadFailed=!0;return}let t;try{t=await o.runModel(e)}catch{}if(!t||t.length===0||t[0].confidence<a.expectedRelativeConfidence)return;const r=this.adjustLanguageConfidence(t[0]);if(r.confidence<a.expectedRelativeConfidence)return;const i=[r];for(let n of t){if(n===r)continue;if(n=this.adjustLanguageConfidence(n),i[i.length-1].confidence-n.confidence>=a.expectedRelativeConfidence){for(;i.length;)yield i.shift();if(n.confidence>a.expectedRelativeConfidence){i.push(n);continue}return}else{if(n.confidence>a.expectedRelativeConfidence){i.push(n);continue}return}}}}export{a as LanguageDetectionSimpleWorker,_ as create};
+import { importAMDNodeModule } from '../../../../amdX.js';
+import { StopWatch } from '../../../../base/common/stopwatch.js';
+import { LanguageDetectionWorkerHost } from './languageDetectionWorker.protocol.js';
+import { WorkerTextModelSyncServer } from '../../../../editor/common/services/textModelSync/textModelSync.impl.js';
+export function create(workerServer) {
+    return new LanguageDetectionSimpleWorker(workerServer);
+}
+export class LanguageDetectionSimpleWorker {
+    static { this.expectedRelativeConfidence = 0.2; }
+    static { this.positiveConfidenceCorrectionBucket1 = 0.05; }
+    static { this.positiveConfidenceCorrectionBucket2 = 0.025; }
+    static { this.negativeConfidenceCorrection = 0.5; }
+    constructor(workerServer) {
+        this._workerTextModelSyncServer = new WorkerTextModelSyncServer();
+        this._regexpLoadFailed = false;
+        this._loadFailed = false;
+        this.modelIdToCoreId = new Map();
+        this._host = LanguageDetectionWorkerHost.getChannel(workerServer);
+        this._workerTextModelSyncServer.bindToServer(workerServer);
+    }
+    async $detectLanguage(uri, langBiases, preferHistory, supportedLangs) {
+        const languages = [];
+        const confidences = [];
+        const stopWatch = new StopWatch();
+        const documentTextSample = this.getTextForDetection(uri);
+        if (!documentTextSample) {
+            return;
+        }
+        const neuralResolver = async () => {
+            for await (const language of this.detectLanguagesImpl(documentTextSample)) {
+                if (!this.modelIdToCoreId.has(language.languageId)) {
+                    this.modelIdToCoreId.set(language.languageId, await this._host.$getLanguageId(language.languageId));
+                }
+                const coreId = this.modelIdToCoreId.get(language.languageId);
+                if (coreId && (!supportedLangs?.length || supportedLangs.includes(coreId))) {
+                    languages.push(coreId);
+                    confidences.push(language.confidence);
+                }
+            }
+            stopWatch.stop();
+            if (languages.length) {
+                this._host.$sendTelemetryEvent(languages, confidences, stopWatch.elapsed());
+                return languages[0];
+            }
+            return undefined;
+        };
+        const historicalResolver = async () => this.runRegexpModel(documentTextSample, langBiases ?? {}, supportedLangs);
+        if (preferHistory) {
+            const history = await historicalResolver();
+            if (history) {
+                return history;
+            }
+            const neural = await neuralResolver();
+            if (neural) {
+                return neural;
+            }
+        }
+        else {
+            const neural = await neuralResolver();
+            if (neural) {
+                return neural;
+            }
+            const history = await historicalResolver();
+            if (history) {
+                return history;
+            }
+        }
+        return undefined;
+    }
+    getTextForDetection(uri) {
+        const editorModel = this._workerTextModelSyncServer.getModel(uri);
+        if (!editorModel) {
+            return;
+        }
+        const end = editorModel.positionAt(10000);
+        const content = editorModel.getValueInRange({
+            startColumn: 1,
+            startLineNumber: 1,
+            endColumn: end.column,
+            endLineNumber: end.lineNumber
+        });
+        return content;
+    }
+    async getRegexpModel() {
+        if (this._regexpLoadFailed) {
+            return;
+        }
+        if (this._regexpModel) {
+            return this._regexpModel;
+        }
+        const uri = await this._host.$getRegexpModelUri();
+        try {
+            this._regexpModel = await importAMDNodeModule(uri, '');
+            return this._regexpModel;
+        }
+        catch (e) {
+            this._regexpLoadFailed = true;
+            return;
+        }
+    }
+    async runRegexpModel(content, langBiases, supportedLangs) {
+        const regexpModel = await this.getRegexpModel();
+        if (!regexpModel) {
+            return;
+        }
+        if (supportedLangs?.length) {
+            for (const lang of Object.keys(langBiases)) {
+                if (supportedLangs.includes(lang)) {
+                    langBiases[lang] = 1;
+                }
+                else {
+                    langBiases[lang] = 0;
+                }
+            }
+        }
+        const detected = regexpModel.detect(content, langBiases, supportedLangs);
+        return detected;
+    }
+    async getModelOperations() {
+        if (this._modelOperations) {
+            return this._modelOperations;
+        }
+        const uri = await this._host.$getIndexJsUri();
+        const { ModelOperations } = await importAMDNodeModule(uri, '');
+        this._modelOperations = new ModelOperations({
+            modelJsonLoaderFunc: async () => {
+                const response = await fetch(await this._host.$getModelJsonUri());
+                try {
+                    const modelJSON = await response.json();
+                    return modelJSON;
+                }
+                catch (e) {
+                    const message = `Failed to parse model JSON.`;
+                    throw new Error(message);
+                }
+            },
+            weightsLoaderFunc: async () => {
+                const response = await fetch(await this._host.$getWeightsUri());
+                const buffer = await response.arrayBuffer();
+                return buffer;
+            }
+        });
+        return this._modelOperations;
+    }
+    adjustLanguageConfidence(modelResult) {
+        switch (modelResult.languageId) {
+            case 'js':
+            case 'html':
+            case 'json':
+            case 'ts':
+            case 'css':
+            case 'py':
+            case 'xml':
+            case 'php':
+                modelResult.confidence += LanguageDetectionSimpleWorker.positiveConfidenceCorrectionBucket1;
+                break;
+            case 'cpp':
+            case 'sh':
+            case 'java':
+            case 'cs':
+            case 'c':
+                modelResult.confidence += LanguageDetectionSimpleWorker.positiveConfidenceCorrectionBucket2;
+                break;
+            case 'bat':
+            case 'ini':
+            case 'makefile':
+            case 'sql':
+            case 'csv':
+            case 'toml':
+                modelResult.confidence -= LanguageDetectionSimpleWorker.negativeConfidenceCorrection;
+                break;
+            default:
+                break;
+        }
+        return modelResult;
+    }
+    async *detectLanguagesImpl(content) {
+        if (this._loadFailed) {
+            return;
+        }
+        let modelOperations;
+        try {
+            modelOperations = await this.getModelOperations();
+        }
+        catch (e) {
+            console.log(e);
+            this._loadFailed = true;
+            return;
+        }
+        let modelResults;
+        try {
+            modelResults = await modelOperations.runModel(content);
+        }
+        catch (e) {
+            console.warn(e);
+        }
+        if (!modelResults
+            || modelResults.length === 0
+            || modelResults[0].confidence < LanguageDetectionSimpleWorker.expectedRelativeConfidence) {
+            return;
+        }
+        const firstModelResult = this.adjustLanguageConfidence(modelResults[0]);
+        if (firstModelResult.confidence < LanguageDetectionSimpleWorker.expectedRelativeConfidence) {
+            return;
+        }
+        const possibleLanguages = [firstModelResult];
+        for (let current of modelResults) {
+            if (current === firstModelResult) {
+                continue;
+            }
+            current = this.adjustLanguageConfidence(current);
+            const currentHighest = possibleLanguages[possibleLanguages.length - 1];
+            if (currentHighest.confidence - current.confidence >= LanguageDetectionSimpleWorker.expectedRelativeConfidence) {
+                while (possibleLanguages.length) {
+                    yield possibleLanguages.shift();
+                }
+                if (current.confidence > LanguageDetectionSimpleWorker.expectedRelativeConfidence) {
+                    possibleLanguages.push(current);
+                    continue;
+                }
+                return;
+            }
+            else {
+                if (current.confidence > LanguageDetectionSimpleWorker.expectedRelativeConfidence) {
+                    possibleLanguages.push(current);
+                    continue;
+                }
+                return;
+            }
+        }
+    }
+}

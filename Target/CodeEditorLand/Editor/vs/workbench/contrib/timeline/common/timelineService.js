@@ -1,1 +1,118 @@
-var c=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var h=(s,e,i,r)=>{for(var n=r>1?void 0:r?p(e,i):e,t=s.length-1,o;t>=0;t--)(o=s[t])&&(n=(r?o(e,i,n):o(n))||n);return r&&n&&c(e,i,n),n},d=(s,e)=>(i,r)=>e(i,r,s);import"../../../../base/common/cancellation.js";import{Emitter as m}from"../../../../base/common/event.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import{ILogService as g}from"../../../../platform/log/common/log.js";import{TimelinePaneId as C}from"./timeline.js";import{IViewsService as u}from"../../../services/views/common/viewsService.js";import{IConfigurationService as f}from"../../../../platform/configuration/common/configuration.js";import{IContextKeyService as T,RawContextKey as P}from"../../../../platform/contextkey/common/contextkey.js";const S=new P("timelineHasProvider",!1);let v=class{constructor(e,i,r,n){this.logService=e;this.viewsService=i;this.configurationService=r;this.contextKeyService=n;this.hasProviderContext=S.bindTo(this.contextKeyService),this.updateHasProviderContext()}_onDidChangeProviders=new m;onDidChangeProviders=this._onDidChangeProviders.event;_onDidChangeTimeline=new m;onDidChangeTimeline=this._onDidChangeTimeline.event;_onDidChangeUri=new m;onDidChangeUri=this._onDidChangeUri.event;hasProviderContext;providers=new Map;providerSubscriptions=new Map;getSources(){return[...this.providers.values()].map(e=>({id:e.id,label:e.label}))}getTimeline(e,i,r,n){this.logService.trace(`TimelineService#getTimeline(${e}): uri=${i.toString()}`);const t=this.providers.get(e);if(t!==void 0){if(typeof t.scheme=="string"){if(t.scheme!=="*"&&t.scheme!==i.scheme)return}else if(!t.scheme.includes(i.scheme))return;return{result:t.provideTimeline(i,r,n.token).then(o=>{if(o!==void 0)return o.items=o.items.map(a=>({...a,source:t.id})),o.items.sort((a,l)=>l.timestamp-a.timestamp||l.source.localeCompare(a.source,void 0,{numeric:!0,sensitivity:"base"})),o}),options:r,source:t.id,tokenSource:n,uri:i}}}registerTimelineProvider(e){this.logService.trace(`TimelineService#registerTimelineProvider: id=${e.id}`);const i=e.id,r=this.providers.get(i);if(r)try{r?.dispose()}catch{}return this.providers.set(i,e),this.updateHasProviderContext(),e.onDidChange&&this.providerSubscriptions.set(i,e.onDidChange(n=>this._onDidChangeTimeline.fire(n))),this._onDidChangeProviders.fire({added:[i]}),{dispose:()=>{this.providers.delete(i),this._onDidChangeProviders.fire({removed:[i]})}}}unregisterTimelineProvider(e){this.logService.trace(`TimelineService#unregisterTimelineProvider: id=${e}`),this.providers.has(e)&&(this.providers.delete(e),this.providerSubscriptions.delete(e),this.updateHasProviderContext(),this._onDidChangeProviders.fire({removed:[e]}))}setUri(e){this.viewsService.openView(C,!0),this._onDidChangeUri.fire(e)}updateHasProviderContext(){this.hasProviderContext.set(this.providers.size!==0)}};v=h([d(0,g),d(1,u),d(2,f),d(3,T)],v);export{S as TimelineHasProviderContext,v as TimelineService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter } from '../../../../base/common/event.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { TimelinePaneId } from './timeline.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+export const TimelineHasProviderContext = new RawContextKey('timelineHasProvider', false);
+let TimelineService = class TimelineService {
+    constructor(logService, viewsService, configurationService, contextKeyService) {
+        this.logService = logService;
+        this.viewsService = viewsService;
+        this.configurationService = configurationService;
+        this.contextKeyService = contextKeyService;
+        this._onDidChangeProviders = new Emitter();
+        this.onDidChangeProviders = this._onDidChangeProviders.event;
+        this._onDidChangeTimeline = new Emitter();
+        this.onDidChangeTimeline = this._onDidChangeTimeline.event;
+        this._onDidChangeUri = new Emitter();
+        this.onDidChangeUri = this._onDidChangeUri.event;
+        this.providers = new Map();
+        this.providerSubscriptions = new Map();
+        this.hasProviderContext = TimelineHasProviderContext.bindTo(this.contextKeyService);
+        this.updateHasProviderContext();
+    }
+    getSources() {
+        return [...this.providers.values()].map(p => ({ id: p.id, label: p.label }));
+    }
+    getTimeline(id, uri, options, tokenSource) {
+        this.logService.trace(`TimelineService#getTimeline(${id}): uri=${uri.toString()}`);
+        const provider = this.providers.get(id);
+        if (provider === undefined) {
+            return undefined;
+        }
+        if (typeof provider.scheme === 'string') {
+            if (provider.scheme !== '*' && provider.scheme !== uri.scheme) {
+                return undefined;
+            }
+        }
+        else if (!provider.scheme.includes(uri.scheme)) {
+            return undefined;
+        }
+        return {
+            result: provider.provideTimeline(uri, options, tokenSource.token)
+                .then(result => {
+                if (result === undefined) {
+                    return undefined;
+                }
+                result.items = result.items.map(item => ({ ...item, source: provider.id }));
+                result.items.sort((a, b) => (b.timestamp - a.timestamp) || b.source.localeCompare(a.source, undefined, { numeric: true, sensitivity: 'base' }));
+                return result;
+            }),
+            options: options,
+            source: provider.id,
+            tokenSource: tokenSource,
+            uri: uri
+        };
+    }
+    registerTimelineProvider(provider) {
+        this.logService.trace(`TimelineService#registerTimelineProvider: id=${provider.id}`);
+        const id = provider.id;
+        const existing = this.providers.get(id);
+        if (existing) {
+            try {
+                existing?.dispose();
+            }
+            catch { }
+        }
+        this.providers.set(id, provider);
+        this.updateHasProviderContext();
+        if (provider.onDidChange) {
+            this.providerSubscriptions.set(id, provider.onDidChange(e => this._onDidChangeTimeline.fire(e)));
+        }
+        this._onDidChangeProviders.fire({ added: [id] });
+        return {
+            dispose: () => {
+                this.providers.delete(id);
+                this._onDidChangeProviders.fire({ removed: [id] });
+            }
+        };
+    }
+    unregisterTimelineProvider(id) {
+        this.logService.trace(`TimelineService#unregisterTimelineProvider: id=${id}`);
+        if (!this.providers.has(id)) {
+            return;
+        }
+        this.providers.delete(id);
+        this.providerSubscriptions.delete(id);
+        this.updateHasProviderContext();
+        this._onDidChangeProviders.fire({ removed: [id] });
+    }
+    setUri(uri) {
+        this.viewsService.openView(TimelinePaneId, true);
+        this._onDidChangeUri.fire(uri);
+    }
+    updateHasProviderContext() {
+        this.hasProviderContext.set(this.providers.size !== 0);
+    }
+};
+TimelineService = __decorate([
+    __param(0, ILogService),
+    __param(1, IViewsService),
+    __param(2, IConfigurationService),
+    __param(3, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], TimelineService);
+export { TimelineService };

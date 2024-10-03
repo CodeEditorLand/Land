@@ -1,1 +1,72 @@
-import{streamToBuffer as u}from"../../../base/common/buffer.js";import{CancellationToken as p}from"../../../base/common/cancellation.js";import"../../../base/parts/request/common/request.js";import"../../request/common/request.js";import*as c from"https";import{AbstractOneDataSystemAppender as m}from"../common/1dsAppender.js";async function f(t,e){const s=await e.request(t,p.None),o=(await u(s.stream)).toString(),n=s.res.statusCode??200;return{headers:s.res.headers,statusCode:n,responseData:o}}async function h(t){const e={method:t.type,headers:t.headers};return new Promise((o,n)=>{const r=c.request(t.url??"",e,a=>{a.on("data",function(i){o({headers:a.headers,statusCode:a.statusCode??200,responseData:i.toString()})}),a.on("error",function(i){n(i)})});r.write(t.data,a=>{a&&n(a)}),r.end()})}async function g(t,e,s){const o=typeof e.data=="string"?e.data:new TextDecoder().decode(e.data),n={type:"POST",headers:{...e.headers,"Content-Type":"application/json","Content-Length":Buffer.byteLength(e.data).toString()},url:e.urlString,data:o};try{const r=t?await f(n,t):await h(n);s(r.statusCode,r.headers,r.responseData)}catch{s(0,{})}}class P extends m{constructor(e,s,o,n,r){const a={sendPOST:(i,d)=>{g(e,i,d)}};super(s,o,n,r,a)}}export{P as OneDataSystemAppender};
+import { streamToBuffer } from '../../../base/common/buffer.js';
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import * as https from 'https';
+import { AbstractOneDataSystemAppender } from '../common/1dsAppender.js';
+async function makeTelemetryRequest(options, requestService) {
+    const response = await requestService.request(options, CancellationToken.None);
+    const responseData = (await streamToBuffer(response.stream)).toString();
+    const statusCode = response.res.statusCode ?? 200;
+    const headers = response.res.headers;
+    return {
+        headers,
+        statusCode,
+        responseData
+    };
+}
+async function makeLegacyTelemetryRequest(options) {
+    const httpsOptions = {
+        method: options.type,
+        headers: options.headers
+    };
+    const responsePromise = new Promise((resolve, reject) => {
+        const req = https.request(options.url ?? '', httpsOptions, res => {
+            res.on('data', function (responseData) {
+                resolve({
+                    headers: res.headers,
+                    statusCode: res.statusCode ?? 200,
+                    responseData: responseData.toString()
+                });
+            });
+            res.on('error', function (err) {
+                reject(err);
+            });
+        });
+        req.write(options.data, (err) => {
+            if (err) {
+                reject(err);
+            }
+        });
+        req.end();
+    });
+    return responsePromise;
+}
+async function sendPostAsync(requestService, payload, oncomplete) {
+    const telemetryRequestData = typeof payload.data === 'string' ? payload.data : new TextDecoder().decode(payload.data);
+    const requestOptions = {
+        type: 'POST',
+        headers: {
+            ...payload.headers,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(payload.data).toString()
+        },
+        url: payload.urlString,
+        data: telemetryRequestData
+    };
+    try {
+        const responseData = requestService ? await makeTelemetryRequest(requestOptions, requestService) : await makeLegacyTelemetryRequest(requestOptions);
+        oncomplete(responseData.statusCode, responseData.headers, responseData.responseData);
+    }
+    catch {
+        oncomplete(0, {});
+    }
+}
+export class OneDataSystemAppender extends AbstractOneDataSystemAppender {
+    constructor(requestService, isInternalTelemetry, eventPrefix, defaultData, iKeyOrClientFactory) {
+        const customHttpXHROverride = {
+            sendPOST: (payload, oncomplete) => {
+                sendPostAsync(requestService, payload, oncomplete);
+            }
+        };
+        super(isInternalTelemetry, eventPrefix, defaultData, iKeyOrClientFactory, customHttpXHROverride);
+    }
+}

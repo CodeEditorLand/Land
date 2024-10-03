@@ -1,1 +1,55 @@
-var S=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var l=(n,i,e,r)=>{for(var t=r>1?void 0:r?f(i,e):i,s=n.length-1,c;s>=0;s--)(c=n[s])&&(t=(r?c(i,e,t):c(t))||t);return r&&t&&S(i,e,t),t},o=(n,i)=>(e,r)=>i(e,r,n);import"../../../base/common/uri.js";import{InstantiationType as v,registerSingleton as I}from"../../instantiation/common/extensions.js";import{IFileService as d}from"../../files/common/files.js";import{FileAccess as p,Schemas as m}from"../../../base/common/network.js";import{IProductService as u}from"../../product/common/productService.js";import{IStorageService as g}from"../../storage/common/storage.js";import{IEnvironmentService as h}from"../../environment/common/environment.js";import{ILogService as w}from"../../log/common/log.js";import{IConfigurationService as y}from"../../configuration/common/configuration.js";import{AbstractExtensionResourceLoaderService as R,IExtensionResourceLoaderService as x}from"../common/extensionResourceLoader.js";let a=class extends R{constructor(e,r,t,s,c,E){super(e,r,t,s,c);this._logService=E}async readExtensionResource(e){if(e=p.uriToBrowserUri(e),e.scheme!==m.http&&e.scheme!==m.https&&e.scheme!==m.data)return(await this._fileService.readFile(e)).value.toString();const r={};this.isExtensionGalleryResource(e)&&(r.headers=await this.getExtensionGalleryRequestHeaders(),r.mode="cors");const t=await fetch(e.toString(!0),r);if(t.status!==200)throw this._logService.info(`Request to '${e.toString(!0)}' failed with status code ${t.status}`),new Error(t.statusText);return t.text()}};a=l([o(0,d),o(1,g),o(2,u),o(3,h),o(4,y),o(5,w)],a),I(x,a,v.Delayed);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { registerSingleton } from '../../instantiation/common/extensions.js';
+import { IFileService } from '../../files/common/files.js';
+import { FileAccess, Schemas } from '../../../base/common/network.js';
+import { IProductService } from '../../product/common/productService.js';
+import { IStorageService } from '../../storage/common/storage.js';
+import { IEnvironmentService } from '../../environment/common/environment.js';
+import { ILogService } from '../../log/common/log.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { AbstractExtensionResourceLoaderService, IExtensionResourceLoaderService } from '../common/extensionResourceLoader.js';
+let ExtensionResourceLoaderService = class ExtensionResourceLoaderService extends AbstractExtensionResourceLoaderService {
+    constructor(fileService, storageService, productService, environmentService, configurationService, _logService) {
+        super(fileService, storageService, productService, environmentService, configurationService);
+        this._logService = _logService;
+    }
+    async readExtensionResource(uri) {
+        uri = FileAccess.uriToBrowserUri(uri);
+        if (uri.scheme !== Schemas.http && uri.scheme !== Schemas.https && uri.scheme !== Schemas.data) {
+            const result = await this._fileService.readFile(uri);
+            return result.value.toString();
+        }
+        const requestInit = {};
+        if (this.isExtensionGalleryResource(uri)) {
+            requestInit.headers = await this.getExtensionGalleryRequestHeaders();
+            requestInit.mode = 'cors';
+        }
+        const response = await fetch(uri.toString(true), requestInit);
+        if (response.status !== 200) {
+            this._logService.info(`Request to '${uri.toString(true)}' failed with status code ${response.status}`);
+            throw new Error(response.statusText);
+        }
+        return response.text();
+    }
+};
+ExtensionResourceLoaderService = __decorate([
+    __param(0, IFileService),
+    __param(1, IStorageService),
+    __param(2, IProductService),
+    __param(3, IEnvironmentService),
+    __param(4, IConfigurationService),
+    __param(5, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], ExtensionResourceLoaderService);
+registerSingleton(IExtensionResourceLoaderService, ExtensionResourceLoaderService, 1);

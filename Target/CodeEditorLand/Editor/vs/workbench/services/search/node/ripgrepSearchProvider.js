@@ -1,1 +1,54 @@
-import{CancellationTokenSource as u}from"../../../../base/common/cancellation.js";import"./ripgrepSearchUtils.js";import{RipgrepTextSearchEngine as T}from"./ripgrepTextSearchEngine.js";import"../common/searchExtTypes.js";import{Progress as d}from"../../../../platform/progress/common/progress.js";import{Schemas as p}from"../../../../base/common/network.js";class z{constructor(e,t){this.outputChannel=e;this.getNumThreads=t;process.once("exit",()=>this.dispose())}inProgress=new Set;async provideTextSearchResults(e,t,r,i){const l=await this.getNumThreads(),h=new T(this.outputChannel,l);return Promise.all(t.folderOptions.map(o=>{const a={folderOptions:o,numThreads:l,maxResults:t.maxResults,previewOptions:t.previewOptions,maxFileSize:t.maxFileSize,surroundingContext:t.surroundingContext};if(o.folder.scheme===p.vscodeUserData){const n={...a,folder:o.folder.with({scheme:p.file})},m=new d(s=>r.report({...s,uri:s.uri.with({scheme:o.folder.scheme})}));return this.withToken(i,s=>h.provideTextSearchResultsWithRgOptions(e,n,m,s))}else return this.withToken(i,n=>h.provideTextSearchResultsWithRgOptions(e,a,r,n))})).then(o=>({limitHit:o.some(n=>!!n&&n.limitHit)}))}async withToken(e,t){const r=S(e);this.inProgress.add(r);const i=await t(r.token);return this.inProgress.delete(r),i}dispose(){this.inProgress.forEach(e=>e.cancel())}}function S(c){const e=new u;return c.onCancellationRequested(()=>e.cancel()),e}export{z as RipgrepSearchProvider};
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { RipgrepTextSearchEngine } from './ripgrepTextSearchEngine.js';
+import { Progress } from '../../../../platform/progress/common/progress.js';
+import { Schemas } from '../../../../base/common/network.js';
+export class RipgrepSearchProvider {
+    constructor(outputChannel, getNumThreads) {
+        this.outputChannel = outputChannel;
+        this.getNumThreads = getNumThreads;
+        this.inProgress = new Set();
+        process.once('exit', () => this.dispose());
+    }
+    async provideTextSearchResults(query, options, progress, token) {
+        const numThreads = await this.getNumThreads();
+        const engine = new RipgrepTextSearchEngine(this.outputChannel, numThreads);
+        return Promise.all(options.folderOptions.map(folderOption => {
+            const extendedOptions = {
+                folderOptions: folderOption,
+                numThreads,
+                maxResults: options.maxResults,
+                previewOptions: options.previewOptions,
+                maxFileSize: options.maxFileSize,
+                surroundingContext: options.surroundingContext
+            };
+            if (folderOption.folder.scheme === Schemas.vscodeUserData) {
+                const translatedOptions = { ...extendedOptions, folder: folderOption.folder.with({ scheme: Schemas.file }) };
+                const progressTranslator = new Progress(data => progress.report({ ...data, uri: data.uri.with({ scheme: folderOption.folder.scheme }) }));
+                return this.withToken(token, token => engine.provideTextSearchResultsWithRgOptions(query, translatedOptions, progressTranslator, token));
+            }
+            else {
+                return this.withToken(token, token => engine.provideTextSearchResultsWithRgOptions(query, extendedOptions, progress, token));
+            }
+        })).then((e => {
+            const complete = {
+                limitHit: e.some(complete => !!complete && complete.limitHit)
+            };
+            return complete;
+        }));
+    }
+    async withToken(token, fn) {
+        const merged = mergedTokenSource(token);
+        this.inProgress.add(merged);
+        const result = await fn(merged.token);
+        this.inProgress.delete(merged);
+        return result;
+    }
+    dispose() {
+        this.inProgress.forEach(engine => engine.cancel());
+    }
+}
+function mergedTokenSource(token) {
+    const tokenSource = new CancellationTokenSource();
+    token.onCancellationRequested(() => tokenSource.cancel());
+    return tokenSource;
+}

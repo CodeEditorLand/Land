@@ -1,1 +1,38 @@
-var a=Object.defineProperty;var l=Object.getOwnPropertyDescriptor;var m=(i,e,r,o)=>{for(var s=o>1?void 0:o?l(e,r):e,n=i.length-1,c;n>=0;n--)(c=i[n])&&(s=(o?c(e,r,s):c(s))||s);return o&&s&&a(e,r,s),s},p=(i,e)=>(r,o)=>e(r,o,i);import{Disposable as v}from"../../../../base/common/lifecycle.js";import{IOpenerService as I}from"../../../../platform/opener/common/opener.js";import"../../../common/contributions.js";import{IBrowserWorkbenchEnvironmentService as b}from"../../../services/environment/browser/environmentService.js";let t=class extends v{static ID="workbench.contrib.externalUriResolver";constructor(e,r){super(),r.options?.resolveExternalUri&&this._register(e.registerExternalUriResolver({resolveExternalUri:async o=>({resolved:await r.options.resolveExternalUri(o),dispose:()=>{}})}))}};t=m([p(0,I),p(1,b)],t);export{t as ExternalUriResolverContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { IBrowserWorkbenchEnvironmentService } from '../../../services/environment/browser/environmentService.js';
+let ExternalUriResolverContribution = class ExternalUriResolverContribution extends Disposable {
+    static { this.ID = 'workbench.contrib.externalUriResolver'; }
+    constructor(_openerService, _workbenchEnvironmentService) {
+        super();
+        if (_workbenchEnvironmentService.options?.resolveExternalUri) {
+            this._register(_openerService.registerExternalUriResolver({
+                resolveExternalUri: async (resource) => {
+                    return {
+                        resolved: await _workbenchEnvironmentService.options.resolveExternalUri(resource),
+                        dispose: () => {
+                        }
+                    };
+                }
+            }));
+        }
+    }
+};
+ExternalUriResolverContribution = __decorate([
+    __param(0, IOpenerService),
+    __param(1, IBrowserWorkbenchEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object])
+], ExternalUriResolverContribution);
+export { ExternalUriResolverContribution };

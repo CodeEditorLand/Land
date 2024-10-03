@@ -1,1 +1,163 @@
-var v=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=(a,e,o,n)=>{for(var i=n>1?void 0:n?h(e,o):e,r=a.length-1,t;r>=0;r--)(t=a[r])&&(i=(n?t(e,o,i):t(i))||i);return n&&i&&v(e,o,i),i},c=(a,e)=>(o,n)=>e(o,n,a);import{app as I}from"electron";import{coalesce as P}from"../../../base/common/arrays.js";import{isMacintosh as m}from"../../../base/common/platform.js";import{URI as u}from"../../../base/common/uri.js";import{whenDeleted as S}from"../../../base/node/pfs.js";import{IConfigurationService as W}from"../../configuration/common/configuration.js";import"../../environment/common/argv.js";import{isLaunchedFromCli as M}from"../../environment/node/argvHelper.js";import{createDecorator as y}from"../../instantiation/common/instantiation.js";import{ILogService as g}from"../../log/common/log.js";import{IURLService as C}from"../../url/common/url.js";import"../../window/electron-main/window.js";import"../../window/common/window.js";import{IWindowsMainService as E,OpenContext as w}from"../../windows/electron-main/windows.js";import"../../url/electron-main/url.js";const A="launchMainService",Y=y(A);let l=class{constructor(e,o,n,i){this.logService=e;this.windowsMainService=o;this.urlService=n;this.configurationService=i}async start(e,o){this.logService.trace("Received data from other instance: ",e,o),m&&I.focus({steal:!0});const n=this.parseOpenUrl(e);if(n.length){let i=Promise.resolve();if(this.windowsMainService.getWindowCount()===0){const r=(await this.windowsMainService.openEmptyWindow({context:w.DESKTOP})).at(0);r&&(i=r.ready())}i.then(()=>{for(const{uri:r,originalUrl:t}of n)this.urlService.open(r,{originalUrl:t})})}else return this.startOpenWindow(e,o)}parseOpenUrl(e){return e["open-url"]&&e._urls&&e._urls.length>0?P(e._urls.map(o=>{try{return{uri:u.parse(o),originalUrl:o}}catch{return null}})):[]}async startOpenWindow(e,o){const n=M(o)?w.CLI:w.DESKTOP;let i=[];const r=e.wait&&e.waitMarkerFilePath?u.file(e.waitMarkerFilePath):void 0,t=e.remote||void 0,s={context:n,cli:e,userEnv:e["preserve-env"]||n===w.CLI?o:void 0,waitMarkerFileURI:r,remoteAuthority:t,forceProfile:e.profile,forceTempProfile:e["profile-temp"]};if(e.extensionDevelopmentPath)await this.windowsMainService.openExtensionDevelopmentHostWindow(e.extensionDevelopmentPath,s);else if(!e._.length&&!e["folder-uri"]&&!e["file-uri"]){let d=!1;if(e["new-window"]||s.forceProfile||s.forceTempProfile)d=!0;else if(e["reuse-window"])d=!1;else switch(this.configurationService.getValue("window")?.openWithoutArgumentsInNewWindow||"default"){case"on":d=!0;break;case"off":d=!1;break;default:d=!m}if(d)i=await this.windowsMainService.open({...s,forceNewWindow:!0,forceEmpty:!0});else{const f=this.windowsMainService.getLastActiveWindow();f?(this.windowsMainService.openExistingWindow(f,s),i=[f]):i=await this.windowsMainService.open({...s,forceEmpty:!0})}}else i=await this.windowsMainService.open({...s,forceNewWindow:e["new-window"],preferNewWindow:!e["reuse-window"]&&!e.wait,forceReuseWindow:e["reuse-window"],diffMode:e.diff,mergeMode:e.merge,addMode:e.add,noRecentEntry:!!e["skip-add-to-recently-opened"],gotoLineMode:e.goto});if(r&&i.length===1&&i[0])return Promise.race([i[0].whenClosedOrLoaded,S(r.fsPath)]).then(()=>{},()=>{})}async getMainProcessId(){return this.logService.trace("Received request for process ID from other instance."),process.pid}};l=p([c(0,g),c(1,E),c(2,C),c(3,W)],l);export{A as ID,Y as ILaunchMainService,l as LaunchMainService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { app } from 'electron';
+import { coalesce } from '../../../base/common/arrays.js';
+import { isMacintosh } from '../../../base/common/platform.js';
+import { URI } from '../../../base/common/uri.js';
+import { whenDeleted } from '../../../base/node/pfs.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { isLaunchedFromCli } from '../../environment/node/argvHelper.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { ILogService } from '../../log/common/log.js';
+import { IURLService } from '../../url/common/url.js';
+import { IWindowsMainService } from '../../windows/electron-main/windows.js';
+export const ID = 'launchMainService';
+export const ILaunchMainService = createDecorator(ID);
+let LaunchMainService = class LaunchMainService {
+    constructor(logService, windowsMainService, urlService, configurationService) {
+        this.logService = logService;
+        this.windowsMainService = windowsMainService;
+        this.urlService = urlService;
+        this.configurationService = configurationService;
+    }
+    async start(args, userEnv) {
+        this.logService.trace('Received data from other instance: ', args, userEnv);
+        if (isMacintosh) {
+            app.focus({ steal: true });
+        }
+        const urlsToOpen = this.parseOpenUrl(args);
+        if (urlsToOpen.length) {
+            let whenWindowReady = Promise.resolve();
+            if (this.windowsMainService.getWindowCount() === 0) {
+                const window = (await this.windowsMainService.openEmptyWindow({ context: 4 })).at(0);
+                if (window) {
+                    whenWindowReady = window.ready();
+                }
+            }
+            whenWindowReady.then(() => {
+                for (const { uri, originalUrl } of urlsToOpen) {
+                    this.urlService.open(uri, { originalUrl });
+                }
+            });
+        }
+        else {
+            return this.startOpenWindow(args, userEnv);
+        }
+    }
+    parseOpenUrl(args) {
+        if (args['open-url'] && args._urls && args._urls.length > 0) {
+            return coalesce(args._urls
+                .map(url => {
+                try {
+                    return { uri: URI.parse(url), originalUrl: url };
+                }
+                catch (err) {
+                    return null;
+                }
+            }));
+        }
+        return [];
+    }
+    async startOpenWindow(args, userEnv) {
+        const context = isLaunchedFromCli(userEnv) ? 0 : 4;
+        let usedWindows = [];
+        const waitMarkerFileURI = args.wait && args.waitMarkerFilePath ? URI.file(args.waitMarkerFilePath) : undefined;
+        const remoteAuthority = args.remote || undefined;
+        const baseConfig = {
+            context,
+            cli: args,
+            userEnv: (args['preserve-env'] || context === 0) ? userEnv : undefined,
+            waitMarkerFileURI,
+            remoteAuthority,
+            forceProfile: args.profile,
+            forceTempProfile: args['profile-temp']
+        };
+        if (!!args.extensionDevelopmentPath) {
+            await this.windowsMainService.openExtensionDevelopmentHostWindow(args.extensionDevelopmentPath, baseConfig);
+        }
+        else if (!args._.length && !args['folder-uri'] && !args['file-uri']) {
+            let openNewWindow = false;
+            if (args['new-window'] || baseConfig.forceProfile || baseConfig.forceTempProfile) {
+                openNewWindow = true;
+            }
+            else if (args['reuse-window']) {
+                openNewWindow = false;
+            }
+            else {
+                const windowConfig = this.configurationService.getValue('window');
+                const openWithoutArgumentsInNewWindowConfig = windowConfig?.openWithoutArgumentsInNewWindow || 'default';
+                switch (openWithoutArgumentsInNewWindowConfig) {
+                    case 'on':
+                        openNewWindow = true;
+                        break;
+                    case 'off':
+                        openNewWindow = false;
+                        break;
+                    default:
+                        openNewWindow = !isMacintosh;
+                }
+            }
+            if (openNewWindow) {
+                usedWindows = await this.windowsMainService.open({
+                    ...baseConfig,
+                    forceNewWindow: true,
+                    forceEmpty: true
+                });
+            }
+            else {
+                const lastActive = this.windowsMainService.getLastActiveWindow();
+                if (lastActive) {
+                    this.windowsMainService.openExistingWindow(lastActive, baseConfig);
+                    usedWindows = [lastActive];
+                }
+                else {
+                    usedWindows = await this.windowsMainService.open({
+                        ...baseConfig,
+                        forceEmpty: true
+                    });
+                }
+            }
+        }
+        else {
+            usedWindows = await this.windowsMainService.open({
+                ...baseConfig,
+                forceNewWindow: args['new-window'],
+                preferNewWindow: !args['reuse-window'] && !args.wait,
+                forceReuseWindow: args['reuse-window'],
+                diffMode: args.diff,
+                mergeMode: args.merge,
+                addMode: args.add,
+                noRecentEntry: !!args['skip-add-to-recently-opened'],
+                gotoLineMode: args.goto
+            });
+        }
+        if (waitMarkerFileURI && usedWindows.length === 1 && usedWindows[0]) {
+            return Promise.race([
+                usedWindows[0].whenClosedOrLoaded,
+                whenDeleted(waitMarkerFileURI.fsPath)
+            ]).then(() => undefined, () => undefined);
+        }
+    }
+    async getMainProcessId() {
+        this.logService.trace('Received request for process ID from other instance.');
+        return process.pid;
+    }
+};
+LaunchMainService = __decorate([
+    __param(0, ILogService),
+    __param(1, IWindowsMainService),
+    __param(2, IURLService),
+    __param(3, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], LaunchMainService);
+export { LaunchMainService };

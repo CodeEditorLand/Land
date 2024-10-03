@@ -1,1 +1,50 @@
-import"../../../../base/common/cancellation.js";import*as l from"../../../../base/node/pfs.js";import{resultIsMatch as u}from"../common/search.js";import{RipgrepTextSearchEngine as h}from"./ripgrepTextSearchEngine.js";import{NativeTextSearchManager as m}from"./textSearchManager.js";class q{constructor(r,s){this.query=r;this.numThreads=s}search(r,s,i){if((!this.query.folderQueries||!this.query.folderQueries.length)&&(!this.query.extraFileResources||!this.query.extraFileResources.length))return Promise.resolve({type:"success",limitHit:!1,stats:{type:"searchProcess"},messages:[]});const n={appendLine(a){i({message:a})}},c=new m(this.query,new h(n,this.numThreads),l);return new Promise((a,o)=>c.search(t=>{s(t.map(p))},r).then(t=>a({limitHit:t.limitHit??!1,type:"success",stats:t.stats,messages:[]}),o))}}function p(e){return{path:e.resource&&e.resource.fsPath,results:e.results,numMatches:(e.results||[]).reduce((r,s)=>u(s)?r+s.rangeLocations.length:r+1,0)}}export{q as TextSearchEngineAdapter};
+import * as pfs from '../../../../base/node/pfs.js';
+import { resultIsMatch } from '../common/search.js';
+import { RipgrepTextSearchEngine } from './ripgrepTextSearchEngine.js';
+import { NativeTextSearchManager } from './textSearchManager.js';
+export class TextSearchEngineAdapter {
+    constructor(query, numThreads) {
+        this.query = query;
+        this.numThreads = numThreads;
+    }
+    search(token, onResult, onMessage) {
+        if ((!this.query.folderQueries || !this.query.folderQueries.length) && (!this.query.extraFileResources || !this.query.extraFileResources.length)) {
+            return Promise.resolve({
+                type: 'success',
+                limitHit: false,
+                stats: {
+                    type: 'searchProcess'
+                },
+                messages: []
+            });
+        }
+        const pretendOutputChannel = {
+            appendLine(msg) {
+                onMessage({ message: msg });
+            }
+        };
+        const textSearchManager = new NativeTextSearchManager(this.query, new RipgrepTextSearchEngine(pretendOutputChannel, this.numThreads), pfs);
+        return new Promise((resolve, reject) => {
+            return textSearchManager
+                .search(matches => {
+                onResult(matches.map(fileMatchToSerialized));
+            }, token)
+                .then(c => resolve({ limitHit: c.limitHit ?? false, type: 'success', stats: c.stats, messages: [] }), reject);
+        });
+    }
+}
+function fileMatchToSerialized(match) {
+    return {
+        path: match.resource && match.resource.fsPath,
+        results: match.results,
+        numMatches: (match.results || []).reduce((sum, r) => {
+            if (resultIsMatch(r)) {
+                const m = r;
+                return sum + m.rangeLocations.length;
+            }
+            else {
+                return sum + 1;
+            }
+        }, 0)
+    };
+}

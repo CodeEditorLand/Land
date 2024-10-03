@@ -1,1 +1,62 @@
-import{ErrorNoTelemetry as a}from"../../../base/common/errors.js";import"../../../base/common/event.js";import"../../../base/common/uri.js";import{createDecorator as s}from"../../instantiation/common/instantiation.js";const g=s("remoteAuthorityResolverService");var l=(o=>(o[o.WebSocket=0]="WebSocket",o[o.Managed=1]="Managed",o))(l||{});class m{constructor(e){this.id=e}type=1;toString(){return`Managed(${this.id})`}}class R{constructor(e,o){this.host=e;this.port=o}type=0;toString(){return`WebSocket(${this.host}:${this.port})`}}var c=(i=>(i.Unknown="Unknown",i.NotAvailable="NotAvailable",i.TemporarilyNotAvailable="TemporarilyNotAvailable",i.NoResolverFound="NoResolverFound",i.InvalidAuthority="InvalidAuthority",i))(c||{});class t extends a{static isNotAvailable(e){return e instanceof t&&e._code==="NotAvailable"}static isTemporarilyNotAvailable(e){return e instanceof t&&e._code==="TemporarilyNotAvailable"}static isNoResolverFound(e){return e instanceof t&&e._code==="NoResolverFound"}static isInvalidAuthority(e){return e instanceof t&&e._code==="InvalidAuthority"}static isHandled(e){return e instanceof t&&e.isHandled}_message;_code;_detail;isHandled;constructor(e,o="Unknown",r){super(e),this._message=e,this._code=o,this._detail=r,this.isHandled=o==="NotAvailable"&&r===!0,Object.setPrototypeOf(this,t.prototype)}}function h(n){const e=n.indexOf("+");return e===-1?n:n.substring(0,e)}export{g as IRemoteAuthorityResolverService,m as ManagedRemoteConnection,t as RemoteAuthorityResolverError,c as RemoteAuthorityResolverErrorCode,l as RemoteConnectionType,R as WebSocketRemoteConnection,h as getRemoteAuthorityPrefix};
+import { ErrorNoTelemetry } from '../../../base/common/errors.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const IRemoteAuthorityResolverService = createDecorator('remoteAuthorityResolverService');
+export class ManagedRemoteConnection {
+    constructor(id) {
+        this.id = id;
+        this.type = 1;
+    }
+    toString() {
+        return `Managed(${this.id})`;
+    }
+}
+export class WebSocketRemoteConnection {
+    constructor(host, port) {
+        this.host = host;
+        this.port = port;
+        this.type = 0;
+    }
+    toString() {
+        return `WebSocket(${this.host}:${this.port})`;
+    }
+}
+export var RemoteAuthorityResolverErrorCode;
+(function (RemoteAuthorityResolverErrorCode) {
+    RemoteAuthorityResolverErrorCode["Unknown"] = "Unknown";
+    RemoteAuthorityResolverErrorCode["NotAvailable"] = "NotAvailable";
+    RemoteAuthorityResolverErrorCode["TemporarilyNotAvailable"] = "TemporarilyNotAvailable";
+    RemoteAuthorityResolverErrorCode["NoResolverFound"] = "NoResolverFound";
+    RemoteAuthorityResolverErrorCode["InvalidAuthority"] = "InvalidAuthority";
+})(RemoteAuthorityResolverErrorCode || (RemoteAuthorityResolverErrorCode = {}));
+export class RemoteAuthorityResolverError extends ErrorNoTelemetry {
+    static isNotAvailable(err) {
+        return (err instanceof RemoteAuthorityResolverError) && err._code === RemoteAuthorityResolverErrorCode.NotAvailable;
+    }
+    static isTemporarilyNotAvailable(err) {
+        return (err instanceof RemoteAuthorityResolverError) && err._code === RemoteAuthorityResolverErrorCode.TemporarilyNotAvailable;
+    }
+    static isNoResolverFound(err) {
+        return (err instanceof RemoteAuthorityResolverError) && err._code === RemoteAuthorityResolverErrorCode.NoResolverFound;
+    }
+    static isInvalidAuthority(err) {
+        return (err instanceof RemoteAuthorityResolverError) && err._code === RemoteAuthorityResolverErrorCode.InvalidAuthority;
+    }
+    static isHandled(err) {
+        return (err instanceof RemoteAuthorityResolverError) && err.isHandled;
+    }
+    constructor(message, code = RemoteAuthorityResolverErrorCode.Unknown, detail) {
+        super(message);
+        this._message = message;
+        this._code = code;
+        this._detail = detail;
+        this.isHandled = (code === RemoteAuthorityResolverErrorCode.NotAvailable) && detail === true;
+        Object.setPrototypeOf(this, RemoteAuthorityResolverError.prototype);
+    }
+}
+export function getRemoteAuthorityPrefix(remoteAuthority) {
+    const plusIndex = remoteAuthority.indexOf('+');
+    if (plusIndex === -1) {
+        return remoteAuthority;
+    }
+    return remoteAuthority.substring(0, plusIndex);
+}

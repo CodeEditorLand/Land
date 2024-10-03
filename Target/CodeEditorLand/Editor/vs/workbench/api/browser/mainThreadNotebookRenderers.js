@@ -1,1 +1,35 @@
-var x=Object.defineProperty;var g=Object.getOwnPropertyDescriptor;var p=(s,r,t,o)=>{for(var e=o>1?void 0:o?g(r,t):r,i=s.length-1,a;i>=0;i--)(a=s[i])&&(e=(o?a(r,t,e):a(e))||e);return o&&e&&x(r,t,e),e},d=(s,r)=>(t,o)=>r(t,o,s);import{Disposable as m}from"../../../base/common/lifecycle.js";import{ExtHostContext as h,MainContext as b}from"../common/extHost.protocol.js";import{extHostNamedCustomer as l}from"../../services/extensions/common/extHostCustomers.js";import{INotebookRendererMessagingService as u}from"../../contrib/notebook/common/notebookRendererMessagingService.js";let n=class extends m{constructor(t,o){super();this.messaging=o;this.proxy=t.getProxy(h.ExtHostNotebookRenderers),this._register(o.onShouldPostMessage(e=>{this.proxy.$postRendererMessage(e.editorId,e.rendererId,e.message)}))}proxy;$postMessage(t,o,e){return this.messaging.receiveMessage(t,o,e)}};n=p([l(b.MainThreadNotebookRenderers),d(1,u)],n);export{n as MainThreadNotebookRenderers};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { ExtHostContext, MainContext } from '../common/extHost.protocol.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+import { INotebookRendererMessagingService } from '../../contrib/notebook/common/notebookRendererMessagingService.js';
+let MainThreadNotebookRenderers = class MainThreadNotebookRenderers extends Disposable {
+    constructor(extHostContext, messaging) {
+        super();
+        this.messaging = messaging;
+        this.proxy = extHostContext.getProxy(ExtHostContext.ExtHostNotebookRenderers);
+        this._register(messaging.onShouldPostMessage(e => {
+            this.proxy.$postRendererMessage(e.editorId, e.rendererId, e.message);
+        }));
+    }
+    $postMessage(editorId, rendererId, message) {
+        return this.messaging.receiveMessage(editorId, rendererId, message);
+    }
+};
+MainThreadNotebookRenderers = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadNotebookRenderers),
+    __param(1, INotebookRendererMessagingService),
+    __metadata("design:paramtypes", [Object, Object])
+], MainThreadNotebookRenderers);
+export { MainThreadNotebookRenderers };

@@ -1,3 +1,810 @@
-var G=Object.defineProperty;var M=Object.getOwnPropertyDescriptor;var I=(s,i,e,t)=>{for(var n=t>1?void 0:t?M(i,e):i,r=s.length-1,a;r>=0;r--)(a=s[r])&&(n=(t?a(i,e,n):a(n))||n);return t&&n&&G(i,e,n),n},d=(s,i)=>(e,t)=>i(e,t,s);import*as x from"../../../../base/common/arrays.js";import{escapeRegExpCharacters as U,isFalsyOrWhitespace as F}from"../../../../base/common/strings.js";import{isUndefinedOrNull as b}from"../../../../base/common/types.js";import{URI as L}from"../../../../base/common/uri.js";import{ConfigurationTarget as c}from"../../../../platform/configuration/common/configuration.js";import"./preferencesWidgets.js";import{knownAcronyms as W,knownTermMappings as B,tocData as $}from"./settingsLayout.js";import{ENABLE_EXTENSION_TOGGLE_SETTINGS as K,ENABLE_LANGUAGE_FILTER as z,MODIFIED_SETTING_TAG as R,POLICY_SETTING_TAG as _,REQUIRE_TRUSTED_WORKSPACE_SETTING_TAG as j,compareTwoNullableNumbers as O}from"../common/preferences.js";import{SettingMatchType as Q,SettingValueType as g}from"../../../services/preferences/common/preferences.js";import{IWorkbenchEnvironmentService as X}from"../../../services/environment/common/environmentService.js";import{FOLDER_SCOPES as H,WORKSPACE_SCOPES as J,REMOTE_MACHINE_SCOPES as Y,LOCAL_MACHINE_SCOPES as Z,IWorkbenchConfigurationService as V,APPLICATION_SCOPES as q}from"../../../services/configuration/common/configuration.js";import"../../../../base/common/jsonSchema.js";import{Disposable as ee}from"../../../../base/common/lifecycle.js";import{Emitter as te}from"../../../../base/common/event.js";import{ConfigurationScope as A,EditPresentationTypes as ie,Extensions as se}from"../../../../platform/configuration/common/configurationRegistry.js";import{ILanguageService as N}from"../../../../editor/common/languages/language.js";import{Registry as ne}from"../../../../platform/registry/common/platform.js";import{IUserDataProfileService as k}from"../../../services/userDataProfile/common/userDataProfile.js";import{IProductService as D}from"../../../../platform/product/common/productService.js";const qe="usesOnlineServices";class C extends ee{id;parent;_tabbable=!1;_onDidChangeTabbable=new te;onDidChangeTabbable=this._onDidChangeTabbable.event;constructor(i){super(),this.id=i}get tabbable(){return this._tabbable}set tabbable(i){this._tabbable=i,this._onDidChangeTabbable.fire()}}class w extends C{count;label;level;isFirstGroup;_childSettingKeys=new Set;_children=[];get children(){return this._children}set children(i){this._children=i,this._childSettingKeys=new Set,this._children.forEach(e=>{e instanceof v&&this._childSettingKeys.add(e.setting.key)})}constructor(i,e,t,n,r){super(i),this.count=e,this.label=t,this.level=n,this.isFirstGroup=r}containsSetting(i){return this._childSettingKeys.has(i)}}class re extends C{constructor(e,t){super(e);this.extensionIds=t}}class v extends C{constructor(e,t,n,r,a,l,o,p,h){super(oe(t.id+"_"+e.key));this.settingsTarget=n;this.isWorkspaceTrusted=r;this.languageFilter=a;this.languageService=l;this.productService=o;this.userDataProfileService=p;this.configurationService=h;this.setting=e,this.parent=t,this.initSettingDescription(),this.initSettingValueType()}static MAX_DESC_LINES=20;setting;_displayCategory=null;_displayLabel=null;value;scopeValue;defaultValue;defaultValueSource;isConfigured=!1;isUntrusted=!1;hasPolicyValue=!1;tags;overriddenScopeList=[];overriddenDefaultsLanguageList=[];languageOverrideValues=new Map;description;valueType;get displayCategory(){return this._displayCategory||this.initLabels(),this._displayCategory}get displayLabel(){return this._displayLabel||this.initLabels(),this._displayLabel}initLabels(){if(this.setting.title){this._displayLabel=this.setting.title,this._displayCategory=this.setting.categoryLabel??null;return}const e=ue(this.setting.key,this.parent.id,this.setting.isLanguageTagSetting);this._displayLabel=e.label,this._displayCategory=e.category}initSettingDescription(){if(this.setting.description.length>v.MAX_DESC_LINES){const e=this.setting.description.slice(0,v.MAX_DESC_LINES);e.push("[...]"),this.description=e.join(`
-`)}else this.description=this.setting.description.join(`
-`)}initSettingValueType(){ce(this.setting,this.productService)?this.valueType=g.ExtensionToggle:this.setting.enum&&(!this.setting.type||me(this.setting.type))?this.valueType=g.Enum:this.setting.type==="string"?this.setting.editPresentation===ie.Multiline?this.valueType=g.MultilineString:this.valueType=g.String:he(this.setting)?this.valueType=g.Exclude:pe(this.setting)?this.valueType=g.Include:this.setting.type==="integer"?this.valueType=g.Integer:this.setting.type==="number"?this.valueType=g.Number:this.setting.type==="boolean"?this.valueType=g.Boolean:this.setting.type==="array"&&this.setting.arrayItemType&&["string","enum","number","integer"].includes(this.setting.arrayItemType)?this.valueType=g.Array:Array.isArray(this.setting.type)&&this.setting.type.includes(g.Null)&&this.setting.type.length===2?this.setting.type.includes(g.Integer)?this.valueType=g.NullableInteger:this.setting.type.includes(g.Number)?this.valueType=g.NullableNumber:this.valueType=g.Complex:Se(this.setting)?this.setting.allKeysAreBoolean?this.valueType=g.BooleanObject:this.valueType=g.Object:this.setting.isLanguageTagSetting?this.valueType=g.LanguageTag:this.valueType=g.Complex}inspectSelf(){const e=this.getTargetToInspect(this.setting),t=le(this.setting.key,e,this.languageFilter,this.configurationService);this.update(t,this.isWorkspaceTrusted)}getTargetToInspect(e){if(!this.userDataProfileService.currentProfile.isDefault&&!this.userDataProfileService.currentProfile.useDefaultFlags?.settings){if(e.scope===A.APPLICATION)return c.APPLICATION;if(this.configurationService.isSettingAppliedForAllProfiles(e.key)&&this.settingsTarget===c.USER_LOCAL)return c.APPLICATION}return this.settingsTarget}update(e,t){let{isConfigured:n,inspected:r,targetSelector:a,inspectedLanguageOverrides:l,languageSelector:o}=e;switch(a){case"workspaceFolderValue":case"workspaceValue":this.isUntrusted=!!this.setting.restricted&&!t;break}let p=n?r[a]:r.defaultValue;const h=[],S=[];if((o||a!=="workspaceValue")&&typeof r.workspaceValue<"u"&&h.push("workspace:"),(o||a!=="userRemoteValue")&&typeof r.userRemoteValue<"u"&&h.push("remote:"),(o||a!=="userLocalValue")&&typeof r.userLocalValue<"u"&&h.push("user:"),r.overrideIdentifiers)for(const u of r.overrideIdentifiers){const f=l.get(u);f&&(this.languageService.isRegisteredLanguageId(u)&&(o!==u&&typeof f.default?.override<"u"&&S.push(u),(o!==u||a!=="workspaceValue")&&typeof f.workspace?.override<"u"&&h.push(`workspace:${u}`),(o!==u||a!=="userRemoteValue")&&typeof f.userRemote?.override<"u"&&h.push(`remote:${u}`),(o!==u||a!=="userLocalValue")&&typeof f.userLocal?.override<"u"&&h.push(`user:${u}`)),this.languageOverrideValues.set(u,f))}if(this.overriddenScopeList=h,this.overriddenDefaultsLanguageList=S,this.defaultValueSource=this.setting.nonLanguageSpecificDefaultValueSource,r.policyValue)this.hasPolicyValue=!0,n=!1,p=r.policyValue,this.scopeValue=r.policyValue,this.defaultValue=r.defaultValue;else if(o&&this.languageOverrideValues.has(o)){const u=this.languageOverrideValues.get(o);p=(n?u[a]:u.defaultValue)??p,this.scopeValue=n&&u[a],this.defaultValue=u.defaultValue??r.defaultValue;const y=ne.as(se.Configuration).getConfigurationDefaultsOverrides().get(`[${o}]`)?.source,m=y instanceof Map?y.get(this.setting.key):void 0;m&&(this.defaultValueSource=m)}else this.scopeValue=n&&r[a],this.defaultValue=r.defaultValue;this.value=p,this.isConfigured=n,(n||this.setting.tags||this.tags||this.setting.restricted||this.hasPolicyValue)&&(this.tags=new Set,n&&this.tags.add(R),this.setting.tags?.forEach(u=>this.tags.add(u)),this.setting.restricted&&this.tags.add(j),this.hasPolicyValue&&this.tags.add(_))}matchesAllTags(e){return e?.size?(this.tags||this.inspectSelf(),!!this.tags?.size&&Array.from(e).every(t=>this.tags.has(t))):!0}matchesScope(e,t){const n=L.isUri(e)?c.WORKSPACE_FOLDER:e;return this.setting.scope?n===c.APPLICATION?q.includes(this.setting.scope):n===c.WORKSPACE_FOLDER?H.includes(this.setting.scope):n===c.WORKSPACE?J.includes(this.setting.scope):n===c.USER_REMOTE?Y.includes(this.setting.scope):n===c.USER_LOCAL&&t?Z.includes(this.setting.scope):!0:!0}matchesAnyExtension(e){return!e||!e.size?!0:this.setting.extensionInfo?Array.from(e).some(t=>t.toLowerCase()===this.setting.extensionInfo.id.toLowerCase()):!1}matchesAnyFeature(e){if(!e||!e.size)return!0;const t=$.children.find(n=>n.id==="features");return Array.from(e).some(n=>{if(t&&t.children){const r=t.children.find(a=>"features/"+n===a.id);if(r){const a=r.settings?.map(l=>ae(l));return a&&!this.setting.extensionInfo&&a.some(l=>l.test(this.setting.key.toLowerCase()))}else return!1}else return!1})}matchesAnyId(e){return!e||!e.size?!0:e.has(this.setting.key)}matchesAllLanguages(e){return e?this.languageService.isRegisteredLanguageId(e)?this.setting.scope===A.LANGUAGE_OVERRIDABLE:!1:!0}}function ae(s){return s=U(s).replace(/\\\*/g,".*"),new RegExp(`^${s}$`,"i")}let T=class{constructor(i,e,t,n,r,a){this._viewState=i;this._isWorkspaceTrusted=e;this._configurationService=t;this._languageService=n;this._userDataProfileService=r;this._productService=a}_root;_tocRoot;_treeElementsBySettingName=new Map;get root(){return this._root}update(i=this._tocRoot){this._treeElementsBySettingName.clear();const e=this.createSettingsTreeGroupElement(i);e.children[0]instanceof w&&(e.children[0].isFirstGroup=!0),this._root?(this.disposeChildren(this._root.children),this._root.children=e.children):this._root=e}updateWorkspaceTrust(i){this._isWorkspaceTrusted=i,this.updateRequireTrustedTargetElements()}disposeChildren(i){for(const e of i)this.recursiveDispose(e)}recursiveDispose(i){i instanceof w&&this.disposeChildren(i.children),i.dispose()}getElementsByName(i){return this._treeElementsBySettingName.get(i)??null}updateElementsByName(i){this._treeElementsBySettingName.has(i)&&this.reinspectSettings(this._treeElementsBySettingName.get(i))}updateRequireTrustedTargetElements(){this.reinspectSettings([...this._treeElementsBySettingName.values()].flat().filter(i=>i.isUntrusted))}reinspectSettings(i){for(const e of i)e.inspectSelf()}createSettingsTreeGroupElement(i,e){const t=e?this.getDepth(e)+1:0,n=new w(i.id,void 0,i.label,t,!1);n.parent=e;const r=[];if(i.settings){const a=i.settings.map(l=>this.createSettingsTreeSettingElement(l,n)).filter(l=>l.setting.deprecationMessage?l.isConfigured:!0);r.push(...a)}if(i.children){const a=i.children.map(l=>this.createSettingsTreeGroupElement(l,n));r.push(...a)}return n.children=r,n}getDepth(i){return i.parent?1+this.getDepth(i.parent):0}createSettingsTreeSettingElement(i,e){const t=new v(i,e,this._viewState.settingsTarget,this._isWorkspaceTrusted,this._viewState.languageFilter,this._languageService,this._productService,this._userDataProfileService,this._configurationService),n=this._treeElementsBySettingName.get(i.key)||[];return n.push(t),this._treeElementsBySettingName.set(i.key,n),t}};T=I([d(2,V),d(3,N),d(4,k),d(5,D)],T);function le(s,i,e,t){const n=L.isUri(i)?{resource:i}:void 0,r=t.inspect(s,n),a=i===c.APPLICATION?"applicationValue":i===c.USER_LOCAL?"userLocalValue":i===c.USER_REMOTE?"userRemoteValue":i===c.WORKSPACE?"workspaceValue":"workspaceFolderValue",l=i===c.APPLICATION?"application":i===c.USER_LOCAL?"userLocal":i===c.USER_REMOTE?"userRemote":i===c.WORKSPACE?"workspace":"workspaceFolder";let o=typeof r[a]<"u";const p=r.overrideIdentifiers,h=new Map;if(e&&(o=!1),p){for(const S of p)h.set(S,t.inspect(s,{overrideIdentifier:S}));e&&h.has(e)&&typeof h.get(e)[l]?.override<"u"&&(o=!0)}return{isConfigured:o,inspected:r,targetSelector:a,inspectedLanguageOverrides:h,languageSelector:e}}function oe(s){return s.replace(/[\.\/]/,"_")}function ue(s,i="",e=!1){const t=s.lastIndexOf(".");let n="";t>=0&&(n=s.substring(0,t),s=s.substring(t+1)),i=i.replace(/\//g,"."),n=ge(n,i),n=P(n),e&&(s=s.replace(/[\[\]]/g,""),s="$(bracket) "+s);const r=P(s);return{category:n,label:r}}function P(s){s=s.replace(/\.([a-z0-9])/g,(i,e)=>` \u203A ${e.toUpperCase()}`).replace(/([a-z0-9])([A-Z])/g,"$1 $2").replace(/^[a-z]/g,i=>i.toUpperCase()).replace(/\b\w+\b/g,i=>W.has(i.toLowerCase())?i.toUpperCase():i);for(const[i,e]of B)s=s.replace(new RegExp(`\\b${i}\\b`,"gi"),e);return s}function ge(s,i){const e=n=>{/insiders$/i.test(s)||(i=i.replace(/-?insiders$/i,""));const r=i.split(".").map(a=>a.replace(/-/g,"").toLowerCase()===s.toLowerCase()?a.replace(/-/g,""):a);for(;r.length;){const a=new RegExp(`^${r.join("\\.")}(\\.|$)`,"i");if(a.test(s))return s.replace(a,"");n?r.pop():r.shift()}return null};let t=e(!0);return t===null&&(t=e(!1)),t===null&&(t=s),t}function ce(s,i){return K&&!!i.extensionRecommendations&&!!s.displayExtensionId}function he(s){return s.key==="files.exclude"||s.key==="search.exclude"||s.key==="workbench.localHistory.exclude"||s.key==="explorer.autoRevealExclude"||s.key==="files.readonlyExclude"||s.key==="files.watcherExclude"}function pe(s){return s.key==="files.readonlyInclude"}function de(s){return s==="workbench.editor.customLabels.patterns"}function fe({type:s},i){return s==="string"||s==="boolean"||s==="integer"||s==="number"?!0:de(i)&&Array.isArray(s)&&s.length===2?s.includes("null")&&(s.includes("string")||s.includes("boolean")||s.includes("integer")||s.includes("number")):!1}function Se({key:s,type:i,objectProperties:e,objectPatternProperties:t,objectAdditionalProperties:n}){if(i!=="object"||b(e)&&b(t)&&b(n)||(n===!0||n===void 0)&&!Object.keys(t??{}).includes(".*"))return!1;const r=[...Object.values(e??{}),...Object.values(t??{})];return n&&typeof n=="object"&&r.push(n),r.map(l=>Array.isArray(l.anyOf)?l.anyOf:[l]).flat().every(l=>fe(l,s))}function me(s){const i=["string","boolean","null","integer","number"];return(Array.isArray(s)?s:[s]).every(t=>i.includes(t))}var ve=(t=>(t[t.Local=0]="Local",t[t.Remote=1]="Remote",t[t.NewExtensions=2]="NewExtensions",t))(ve||{});let E=class extends T{constructor(e,t,n,r,a,l,o,p){super(e,n,r,l,o,p);this.environmentService=a;this.settingsOrderByTocIndex=t,this.update({id:"searchResultModel",label:""})}rawSearchResults=null;cachedUniqueSearchResults=null;newExtensionSearchResults=null;searchResultCount=null;settingsOrderByTocIndex;id="searchResultModel";sortResults(e){if(this.settingsOrderByTocIndex)for(const t of e)t.setting.internalOrder=this.settingsOrderByTocIndex.get(t.setting.key);return this._viewState.query?(e.sort((t,n)=>t.matchType!==n.matchType?n.matchType-t.matchType:t.matchType===Q.RemoteMatch?n.score-t.score:O(t.setting.internalOrder,n.setting.internalOrder)),x.distinct(e,t=>t.setting.key)):e.sort((t,n)=>O(t.setting.internalOrder,n.setting.internalOrder))}getUniqueResults(){if(this.cachedUniqueSearchResults)return this.cachedUniqueSearchResults;if(!this.rawSearchResults)return null;let e=[];const t=new Set,n=this.rawSearchResults[0];n&&(n.filterMatches.forEach(a=>t.add(a.setting.key)),e=n.filterMatches);const r=this.rawSearchResults[1];return r&&(r.filterMatches=r.filterMatches.filter(a=>!t.has(a.setting.key)),e=e.concat(r.filterMatches),this.newExtensionSearchResults=this.rawSearchResults[2]),e=this.sortResults(e),this.cachedUniqueSearchResults={filterMatches:e,exactMatch:n?.exactMatch||r?.exactMatch},this.cachedUniqueSearchResults}getRawResults(){return this.rawSearchResults||[]}setResult(e,t){if(this.cachedUniqueSearchResults=null,this.newExtensionSearchResults=null,this.rawSearchResults=this.rawSearchResults||[],!t){delete this.rawSearchResults[e];return}t.exactMatch&&(this.rawSearchResults=[]),this.rawSearchResults[e]=t,this.updateChildren()}updateChildren(){this.update({id:"searchResultModel",label:"searchResultModel",settings:this.getFlatSettings()});const e=!!this.environmentService.remoteAuthority;if(this.root.children=this.root.children.filter(t=>t instanceof v&&t.matchesAllTags(this._viewState.tagFilters)&&t.matchesScope(this._viewState.settingsTarget,e)&&t.matchesAnyExtension(this._viewState.extensionFilters)&&t.matchesAnyId(this._viewState.idFilters)&&t.matchesAnyFeature(this._viewState.featureFilters)&&t.matchesAllLanguages(this._viewState.languageFilter)),this.searchResultCount=this.root.children.length,this.newExtensionSearchResults?.filterMatches.length){let t=this.newExtensionSearchResults.filterMatches.map(n=>n.setting).filter(n=>n.extensionName&&n.extensionPublisher).map(n=>`${n.extensionPublisher}.${n.extensionName}`);if(t=x.distinct(t),t.length){const n=new re("newExtensions",t);n.parent=this._root,this._root.children.push(n)}}}getUniqueResultsCount(){return this.searchResultCount??0}getFlatSettings(){return this.getUniqueResults()?.filterMatches.map(e=>e.setting)??[]}};E=I([d(3,V),d(4,X),d(5,N),d(6,k),d(7,D)],E);const ye=/(^|\s)@tag:("([^"]*)"|[^"]\S*)/g,Te=/(^|\s)@ext:("([^"]*)"|[^"]\S*)?/g,Ee=/(^|\s)@feature:("([^"]*)"|[^"]\S*)?/g,Ie=/(^|\s)@id:("([^"]*)"|[^"]\S*)?/g,be=/(^|\s)@lang:("([^"]*)"|[^"]\S*)?/g;function et(s){function i(l,o,p){return l.replace(o,(h,S,u,f)=>{const y=f||u;return y&&p.push(...y.split(",").map(m=>m.trim()).filter(m=>!F(m))),""})}const e=[];s=s.replace(ye,(l,o,p,h)=>(e.push(h||p),"")),s=s.replace(`@${R}`,()=>(e.push(R),"")),s=s.replace(`@${_}`,()=>(e.push(_),""));const t=[],n=[],r=[],a=[];return s=i(s,Te,t),s=i(s,Ee,n),s=i(s,Ie,r),z&&(s=i(s,be,a)),s=s.trim(),{tags:e,extensionFilters:t,featureFilters:n,idFilters:r,languageFilter:a.length?a[0]:void 0,query:s}}export{qe as ONLINE_SERVICES_SETTING_TAG,ve as SearchResultIdx,E as SearchResultModel,C as SettingsTreeElement,w as SettingsTreeGroupElement,T as SettingsTreeModel,re as SettingsTreeNewExtensionsElement,v as SettingsTreeSettingElement,le as inspectSetting,de as objectSettingSupportsRemoveDefaultValue,et as parseQuery,ue as settingKeyToDisplayFormat};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as arrays from '../../../../base/common/arrays.js';
+import { escapeRegExpCharacters, isFalsyOrWhitespace } from '../../../../base/common/strings.js';
+import { isUndefinedOrNull } from '../../../../base/common/types.js';
+import { URI } from '../../../../base/common/uri.js';
+import { knownAcronyms, knownTermMappings, tocData } from './settingsLayout.js';
+import { ENABLE_EXTENSION_TOGGLE_SETTINGS, ENABLE_LANGUAGE_FILTER, MODIFIED_SETTING_TAG, POLICY_SETTING_TAG, REQUIRE_TRUSTED_WORKSPACE_SETTING_TAG, compareTwoNullableNumbers } from '../common/preferences.js';
+import { SettingMatchType, SettingValueType } from '../../../services/preferences/common/preferences.js';
+import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
+import { FOLDER_SCOPES, WORKSPACE_SCOPES, REMOTE_MACHINE_SCOPES, LOCAL_MACHINE_SCOPES, IWorkbenchConfigurationService, APPLICATION_SCOPES } from '../../../services/configuration/common/configuration.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { EditPresentationTypes, Extensions } from '../../../../platform/configuration/common/configurationRegistry.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { IUserDataProfileService } from '../../../services/userDataProfile/common/userDataProfile.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+export const ONLINE_SERVICES_SETTING_TAG = 'usesOnlineServices';
+export class SettingsTreeElement extends Disposable {
+    constructor(_id) {
+        super();
+        this._tabbable = false;
+        this._onDidChangeTabbable = new Emitter();
+        this.onDidChangeTabbable = this._onDidChangeTabbable.event;
+        this.id = _id;
+    }
+    get tabbable() {
+        return this._tabbable;
+    }
+    set tabbable(value) {
+        this._tabbable = value;
+        this._onDidChangeTabbable.fire();
+    }
+}
+export class SettingsTreeGroupElement extends SettingsTreeElement {
+    get children() {
+        return this._children;
+    }
+    set children(newChildren) {
+        this._children = newChildren;
+        this._childSettingKeys = new Set();
+        this._children.forEach(child => {
+            if (child instanceof SettingsTreeSettingElement) {
+                this._childSettingKeys.add(child.setting.key);
+            }
+        });
+    }
+    constructor(_id, count, label, level, isFirstGroup) {
+        super(_id);
+        this._childSettingKeys = new Set();
+        this._children = [];
+        this.count = count;
+        this.label = label;
+        this.level = level;
+        this.isFirstGroup = isFirstGroup;
+    }
+    containsSetting(key) {
+        return this._childSettingKeys.has(key);
+    }
+}
+export class SettingsTreeNewExtensionsElement extends SettingsTreeElement {
+    constructor(_id, extensionIds) {
+        super(_id);
+        this.extensionIds = extensionIds;
+    }
+}
+export class SettingsTreeSettingElement extends SettingsTreeElement {
+    static { this.MAX_DESC_LINES = 20; }
+    constructor(setting, parent, settingsTarget, isWorkspaceTrusted, languageFilter, languageService, productService, userDataProfileService, configurationService) {
+        super(sanitizeId(parent.id + '_' + setting.key));
+        this.settingsTarget = settingsTarget;
+        this.isWorkspaceTrusted = isWorkspaceTrusted;
+        this.languageFilter = languageFilter;
+        this.languageService = languageService;
+        this.productService = productService;
+        this.userDataProfileService = userDataProfileService;
+        this.configurationService = configurationService;
+        this._displayCategory = null;
+        this._displayLabel = null;
+        this.isConfigured = false;
+        this.isUntrusted = false;
+        this.hasPolicyValue = false;
+        this.overriddenScopeList = [];
+        this.overriddenDefaultsLanguageList = [];
+        this.languageOverrideValues = new Map();
+        this.setting = setting;
+        this.parent = parent;
+        this.initSettingDescription();
+        this.initSettingValueType();
+    }
+    get displayCategory() {
+        if (!this._displayCategory) {
+            this.initLabels();
+        }
+        return this._displayCategory;
+    }
+    get displayLabel() {
+        if (!this._displayLabel) {
+            this.initLabels();
+        }
+        return this._displayLabel;
+    }
+    initLabels() {
+        if (this.setting.title) {
+            this._displayLabel = this.setting.title;
+            this._displayCategory = this.setting.categoryLabel ?? null;
+            return;
+        }
+        const displayKeyFormat = settingKeyToDisplayFormat(this.setting.key, this.parent.id, this.setting.isLanguageTagSetting);
+        this._displayLabel = displayKeyFormat.label;
+        this._displayCategory = displayKeyFormat.category;
+    }
+    initSettingDescription() {
+        if (this.setting.description.length > SettingsTreeSettingElement.MAX_DESC_LINES) {
+            const truncatedDescLines = this.setting.description.slice(0, SettingsTreeSettingElement.MAX_DESC_LINES);
+            truncatedDescLines.push('[...]');
+            this.description = truncatedDescLines.join('\n');
+        }
+        else {
+            this.description = this.setting.description.join('\n');
+        }
+    }
+    initSettingValueType() {
+        if (isExtensionToggleSetting(this.setting, this.productService)) {
+            this.valueType = SettingValueType.ExtensionToggle;
+        }
+        else if (this.setting.enum && (!this.setting.type || settingTypeEnumRenderable(this.setting.type))) {
+            this.valueType = SettingValueType.Enum;
+        }
+        else if (this.setting.type === 'string') {
+            if (this.setting.editPresentation === EditPresentationTypes.Multiline) {
+                this.valueType = SettingValueType.MultilineString;
+            }
+            else {
+                this.valueType = SettingValueType.String;
+            }
+        }
+        else if (isExcludeSetting(this.setting)) {
+            this.valueType = SettingValueType.Exclude;
+        }
+        else if (isIncludeSetting(this.setting)) {
+            this.valueType = SettingValueType.Include;
+        }
+        else if (this.setting.type === 'integer') {
+            this.valueType = SettingValueType.Integer;
+        }
+        else if (this.setting.type === 'number') {
+            this.valueType = SettingValueType.Number;
+        }
+        else if (this.setting.type === 'boolean') {
+            this.valueType = SettingValueType.Boolean;
+        }
+        else if (this.setting.type === 'array' && this.setting.arrayItemType &&
+            ['string', 'enum', 'number', 'integer'].includes(this.setting.arrayItemType)) {
+            this.valueType = SettingValueType.Array;
+        }
+        else if (Array.isArray(this.setting.type) && this.setting.type.includes(SettingValueType.Null) && this.setting.type.length === 2) {
+            if (this.setting.type.includes(SettingValueType.Integer)) {
+                this.valueType = SettingValueType.NullableInteger;
+            }
+            else if (this.setting.type.includes(SettingValueType.Number)) {
+                this.valueType = SettingValueType.NullableNumber;
+            }
+            else {
+                this.valueType = SettingValueType.Complex;
+            }
+        }
+        else if (isObjectSetting(this.setting)) {
+            if (this.setting.allKeysAreBoolean) {
+                this.valueType = SettingValueType.BooleanObject;
+            }
+            else {
+                this.valueType = SettingValueType.Object;
+            }
+        }
+        else if (this.setting.isLanguageTagSetting) {
+            this.valueType = SettingValueType.LanguageTag;
+        }
+        else {
+            this.valueType = SettingValueType.Complex;
+        }
+    }
+    inspectSelf() {
+        const targetToInspect = this.getTargetToInspect(this.setting);
+        const inspectResult = inspectSetting(this.setting.key, targetToInspect, this.languageFilter, this.configurationService);
+        this.update(inspectResult, this.isWorkspaceTrusted);
+    }
+    getTargetToInspect(setting) {
+        if (!this.userDataProfileService.currentProfile.isDefault && !this.userDataProfileService.currentProfile.useDefaultFlags?.settings) {
+            if (setting.scope === 1) {
+                return 1;
+            }
+            if (this.configurationService.isSettingAppliedForAllProfiles(setting.key) && this.settingsTarget === 3) {
+                return 1;
+            }
+        }
+        return this.settingsTarget;
+    }
+    update(inspectResult, isWorkspaceTrusted) {
+        let { isConfigured, inspected, targetSelector, inspectedLanguageOverrides, languageSelector } = inspectResult;
+        switch (targetSelector) {
+            case 'workspaceFolderValue':
+            case 'workspaceValue':
+                this.isUntrusted = !!this.setting.restricted && !isWorkspaceTrusted;
+                break;
+        }
+        let displayValue = isConfigured ? inspected[targetSelector] : inspected.defaultValue;
+        const overriddenScopeList = [];
+        const overriddenDefaultsLanguageList = [];
+        if ((languageSelector || targetSelector !== 'workspaceValue') && typeof inspected.workspaceValue !== 'undefined') {
+            overriddenScopeList.push('workspace:');
+        }
+        if ((languageSelector || targetSelector !== 'userRemoteValue') && typeof inspected.userRemoteValue !== 'undefined') {
+            overriddenScopeList.push('remote:');
+        }
+        if ((languageSelector || targetSelector !== 'userLocalValue') && typeof inspected.userLocalValue !== 'undefined') {
+            overriddenScopeList.push('user:');
+        }
+        if (inspected.overrideIdentifiers) {
+            for (const overrideIdentifier of inspected.overrideIdentifiers) {
+                const inspectedOverride = inspectedLanguageOverrides.get(overrideIdentifier);
+                if (inspectedOverride) {
+                    if (this.languageService.isRegisteredLanguageId(overrideIdentifier)) {
+                        if (languageSelector !== overrideIdentifier && typeof inspectedOverride.default?.override !== 'undefined') {
+                            overriddenDefaultsLanguageList.push(overrideIdentifier);
+                        }
+                        if ((languageSelector !== overrideIdentifier || targetSelector !== 'workspaceValue') && typeof inspectedOverride.workspace?.override !== 'undefined') {
+                            overriddenScopeList.push(`workspace:${overrideIdentifier}`);
+                        }
+                        if ((languageSelector !== overrideIdentifier || targetSelector !== 'userRemoteValue') && typeof inspectedOverride.userRemote?.override !== 'undefined') {
+                            overriddenScopeList.push(`remote:${overrideIdentifier}`);
+                        }
+                        if ((languageSelector !== overrideIdentifier || targetSelector !== 'userLocalValue') && typeof inspectedOverride.userLocal?.override !== 'undefined') {
+                            overriddenScopeList.push(`user:${overrideIdentifier}`);
+                        }
+                    }
+                    this.languageOverrideValues.set(overrideIdentifier, inspectedOverride);
+                }
+            }
+        }
+        this.overriddenScopeList = overriddenScopeList;
+        this.overriddenDefaultsLanguageList = overriddenDefaultsLanguageList;
+        this.defaultValueSource = this.setting.nonLanguageSpecificDefaultValueSource;
+        if (inspected.policyValue) {
+            this.hasPolicyValue = true;
+            isConfigured = false;
+            displayValue = inspected.policyValue;
+            this.scopeValue = inspected.policyValue;
+            this.defaultValue = inspected.defaultValue;
+        }
+        else if (languageSelector && this.languageOverrideValues.has(languageSelector)) {
+            const overrideValues = this.languageOverrideValues.get(languageSelector);
+            displayValue = (isConfigured ? overrideValues[targetSelector] : overrideValues.defaultValue) ?? displayValue;
+            this.scopeValue = isConfigured && overrideValues[targetSelector];
+            this.defaultValue = overrideValues.defaultValue ?? inspected.defaultValue;
+            const registryValues = Registry.as(Extensions.Configuration).getConfigurationDefaultsOverrides();
+            const source = registryValues.get(`[${languageSelector}]`)?.source;
+            const overrideValueSource = source instanceof Map ? source.get(this.setting.key) : undefined;
+            if (overrideValueSource) {
+                this.defaultValueSource = overrideValueSource;
+            }
+        }
+        else {
+            this.scopeValue = isConfigured && inspected[targetSelector];
+            this.defaultValue = inspected.defaultValue;
+        }
+        this.value = displayValue;
+        this.isConfigured = isConfigured;
+        if (isConfigured || this.setting.tags || this.tags || this.setting.restricted || this.hasPolicyValue) {
+            this.tags = new Set();
+            if (isConfigured) {
+                this.tags.add(MODIFIED_SETTING_TAG);
+            }
+            this.setting.tags?.forEach(tag => this.tags.add(tag));
+            if (this.setting.restricted) {
+                this.tags.add(REQUIRE_TRUSTED_WORKSPACE_SETTING_TAG);
+            }
+            if (this.hasPolicyValue) {
+                this.tags.add(POLICY_SETTING_TAG);
+            }
+        }
+    }
+    matchesAllTags(tagFilters) {
+        if (!tagFilters?.size) {
+            return true;
+        }
+        if (!this.tags) {
+            this.inspectSelf();
+        }
+        return !!this.tags?.size &&
+            Array.from(tagFilters).every(tag => this.tags.has(tag));
+    }
+    matchesScope(scope, isRemote) {
+        const configTarget = URI.isUri(scope) ? 6 : scope;
+        if (!this.setting.scope) {
+            return true;
+        }
+        if (configTarget === 1) {
+            return APPLICATION_SCOPES.includes(this.setting.scope);
+        }
+        if (configTarget === 6) {
+            return FOLDER_SCOPES.includes(this.setting.scope);
+        }
+        if (configTarget === 5) {
+            return WORKSPACE_SCOPES.includes(this.setting.scope);
+        }
+        if (configTarget === 4) {
+            return REMOTE_MACHINE_SCOPES.includes(this.setting.scope);
+        }
+        if (configTarget === 3) {
+            if (isRemote) {
+                return LOCAL_MACHINE_SCOPES.includes(this.setting.scope);
+            }
+        }
+        return true;
+    }
+    matchesAnyExtension(extensionFilters) {
+        if (!extensionFilters || !extensionFilters.size) {
+            return true;
+        }
+        if (!this.setting.extensionInfo) {
+            return false;
+        }
+        return Array.from(extensionFilters).some(extensionId => extensionId.toLowerCase() === this.setting.extensionInfo.id.toLowerCase());
+    }
+    matchesAnyFeature(featureFilters) {
+        if (!featureFilters || !featureFilters.size) {
+            return true;
+        }
+        const features = tocData.children.find(child => child.id === 'features');
+        return Array.from(featureFilters).some(filter => {
+            if (features && features.children) {
+                const feature = features.children.find(feature => 'features/' + filter === feature.id);
+                if (feature) {
+                    const patterns = feature.settings?.map(setting => createSettingMatchRegExp(setting));
+                    return patterns && !this.setting.extensionInfo && patterns.some(pattern => pattern.test(this.setting.key.toLowerCase()));
+                }
+                else {
+                    return false;
+                }
+            }
+            else {
+                return false;
+            }
+        });
+    }
+    matchesAnyId(idFilters) {
+        if (!idFilters || !idFilters.size) {
+            return true;
+        }
+        return idFilters.has(this.setting.key);
+    }
+    matchesAllLanguages(languageFilter) {
+        if (!languageFilter) {
+            return true;
+        }
+        if (!this.languageService.isRegisteredLanguageId(languageFilter)) {
+            return false;
+        }
+        if (this.setting.scope === 5) {
+            return true;
+        }
+        return false;
+    }
+}
+function createSettingMatchRegExp(pattern) {
+    pattern = escapeRegExpCharacters(pattern)
+        .replace(/\\\*/g, '.*');
+    return new RegExp(`^${pattern}$`, 'i');
+}
+let SettingsTreeModel = class SettingsTreeModel {
+    constructor(_viewState, _isWorkspaceTrusted, _configurationService, _languageService, _userDataProfileService, _productService) {
+        this._viewState = _viewState;
+        this._isWorkspaceTrusted = _isWorkspaceTrusted;
+        this._configurationService = _configurationService;
+        this._languageService = _languageService;
+        this._userDataProfileService = _userDataProfileService;
+        this._productService = _productService;
+        this._treeElementsBySettingName = new Map();
+    }
+    get root() {
+        return this._root;
+    }
+    update(newTocRoot = this._tocRoot) {
+        this._treeElementsBySettingName.clear();
+        const newRoot = this.createSettingsTreeGroupElement(newTocRoot);
+        if (newRoot.children[0] instanceof SettingsTreeGroupElement) {
+            newRoot.children[0].isFirstGroup = true;
+        }
+        if (this._root) {
+            this.disposeChildren(this._root.children);
+            this._root.children = newRoot.children;
+        }
+        else {
+            this._root = newRoot;
+        }
+    }
+    updateWorkspaceTrust(workspaceTrusted) {
+        this._isWorkspaceTrusted = workspaceTrusted;
+        this.updateRequireTrustedTargetElements();
+    }
+    disposeChildren(children) {
+        for (const child of children) {
+            this.recursiveDispose(child);
+        }
+    }
+    recursiveDispose(element) {
+        if (element instanceof SettingsTreeGroupElement) {
+            this.disposeChildren(element.children);
+        }
+        element.dispose();
+    }
+    getElementsByName(name) {
+        return this._treeElementsBySettingName.get(name) ?? null;
+    }
+    updateElementsByName(name) {
+        if (!this._treeElementsBySettingName.has(name)) {
+            return;
+        }
+        this.reinspectSettings(this._treeElementsBySettingName.get(name));
+    }
+    updateRequireTrustedTargetElements() {
+        this.reinspectSettings([...this._treeElementsBySettingName.values()].flat().filter(s => s.isUntrusted));
+    }
+    reinspectSettings(settings) {
+        for (const element of settings) {
+            element.inspectSelf();
+        }
+    }
+    createSettingsTreeGroupElement(tocEntry, parent) {
+        const depth = parent ? this.getDepth(parent) + 1 : 0;
+        const element = new SettingsTreeGroupElement(tocEntry.id, undefined, tocEntry.label, depth, false);
+        element.parent = parent;
+        const children = [];
+        if (tocEntry.settings) {
+            const settingChildren = tocEntry.settings.map(s => this.createSettingsTreeSettingElement(s, element))
+                .filter(el => el.setting.deprecationMessage ? el.isConfigured : true);
+            children.push(...settingChildren);
+        }
+        if (tocEntry.children) {
+            const groupChildren = tocEntry.children.map(child => this.createSettingsTreeGroupElement(child, element));
+            children.push(...groupChildren);
+        }
+        element.children = children;
+        return element;
+    }
+    getDepth(element) {
+        if (element.parent) {
+            return 1 + this.getDepth(element.parent);
+        }
+        else {
+            return 0;
+        }
+    }
+    createSettingsTreeSettingElement(setting, parent) {
+        const element = new SettingsTreeSettingElement(setting, parent, this._viewState.settingsTarget, this._isWorkspaceTrusted, this._viewState.languageFilter, this._languageService, this._productService, this._userDataProfileService, this._configurationService);
+        const nameElements = this._treeElementsBySettingName.get(setting.key) || [];
+        nameElements.push(element);
+        this._treeElementsBySettingName.set(setting.key, nameElements);
+        return element;
+    }
+};
+SettingsTreeModel = __decorate([
+    __param(2, IWorkbenchConfigurationService),
+    __param(3, ILanguageService),
+    __param(4, IUserDataProfileService),
+    __param(5, IProductService),
+    __metadata("design:paramtypes", [Object, Boolean, Object, Object, Object, Object])
+], SettingsTreeModel);
+export { SettingsTreeModel };
+export function inspectSetting(key, target, languageFilter, configurationService) {
+    const inspectOverrides = URI.isUri(target) ? { resource: target } : undefined;
+    const inspected = configurationService.inspect(key, inspectOverrides);
+    const targetSelector = target === 1 ? 'applicationValue' :
+        target === 3 ? 'userLocalValue' :
+            target === 4 ? 'userRemoteValue' :
+                target === 5 ? 'workspaceValue' :
+                    'workspaceFolderValue';
+    const targetOverrideSelector = target === 1 ? 'application' :
+        target === 3 ? 'userLocal' :
+            target === 4 ? 'userRemote' :
+                target === 5 ? 'workspace' :
+                    'workspaceFolder';
+    let isConfigured = typeof inspected[targetSelector] !== 'undefined';
+    const overrideIdentifiers = inspected.overrideIdentifiers;
+    const inspectedLanguageOverrides = new Map();
+    if (languageFilter) {
+        isConfigured = false;
+    }
+    if (overrideIdentifiers) {
+        for (const overrideIdentifier of overrideIdentifiers) {
+            inspectedLanguageOverrides.set(overrideIdentifier, configurationService.inspect(key, { overrideIdentifier }));
+        }
+        if (languageFilter) {
+            if (inspectedLanguageOverrides.has(languageFilter)) {
+                const overrideValue = inspectedLanguageOverrides.get(languageFilter)[targetOverrideSelector]?.override;
+                if (typeof overrideValue !== 'undefined') {
+                    isConfigured = true;
+                }
+            }
+        }
+    }
+    return { isConfigured, inspected, targetSelector, inspectedLanguageOverrides, languageSelector: languageFilter };
+}
+function sanitizeId(id) {
+    return id.replace(/[\.\/]/, '_');
+}
+export function settingKeyToDisplayFormat(key, groupId = '', isLanguageTagSetting = false) {
+    const lastDotIdx = key.lastIndexOf('.');
+    let category = '';
+    if (lastDotIdx >= 0) {
+        category = key.substring(0, lastDotIdx);
+        key = key.substring(lastDotIdx + 1);
+    }
+    groupId = groupId.replace(/\//g, '.');
+    category = trimCategoryForGroup(category, groupId);
+    category = wordifyKey(category);
+    if (isLanguageTagSetting) {
+        key = key.replace(/[\[\]]/g, '');
+        key = '$(bracket) ' + key;
+    }
+    const label = wordifyKey(key);
+    return { category, label };
+}
+function wordifyKey(key) {
+    key = key
+        .replace(/\.([a-z0-9])/g, (_, p1) => ` \u203A ${p1.toUpperCase()}`)
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/^[a-z]/g, match => match.toUpperCase())
+        .replace(/\b\w+\b/g, match => {
+        return knownAcronyms.has(match.toLowerCase()) ?
+            match.toUpperCase() :
+            match;
+    });
+    for (const [k, v] of knownTermMappings) {
+        key = key.replace(new RegExp(`\\b${k}\\b`, 'gi'), v);
+    }
+    return key;
+}
+function trimCategoryForGroup(category, groupId) {
+    const doTrim = (forward) => {
+        if (!/insiders$/i.test(category)) {
+            groupId = groupId.replace(/-?insiders$/i, '');
+        }
+        const parts = groupId.split('.')
+            .map(part => {
+            if (part.replace(/-/g, '').toLowerCase() === category.toLowerCase()) {
+                return part.replace(/-/g, '');
+            }
+            else {
+                return part;
+            }
+        });
+        while (parts.length) {
+            const reg = new RegExp(`^${parts.join('\\.')}(\\.|$)`, 'i');
+            if (reg.test(category)) {
+                return category.replace(reg, '');
+            }
+            if (forward) {
+                parts.pop();
+            }
+            else {
+                parts.shift();
+            }
+        }
+        return null;
+    };
+    let trimmed = doTrim(true);
+    if (trimmed === null) {
+        trimmed = doTrim(false);
+    }
+    if (trimmed === null) {
+        trimmed = category;
+    }
+    return trimmed;
+}
+function isExtensionToggleSetting(setting, productService) {
+    return ENABLE_EXTENSION_TOGGLE_SETTINGS &&
+        !!productService.extensionRecommendations &&
+        !!setting.displayExtensionId;
+}
+function isExcludeSetting(setting) {
+    return setting.key === 'files.exclude' ||
+        setting.key === 'search.exclude' ||
+        setting.key === 'workbench.localHistory.exclude' ||
+        setting.key === 'explorer.autoRevealExclude' ||
+        setting.key === 'files.readonlyExclude' ||
+        setting.key === 'files.watcherExclude';
+}
+function isIncludeSetting(setting) {
+    return setting.key === 'files.readonlyInclude';
+}
+export function objectSettingSupportsRemoveDefaultValue(key) {
+    return key === 'workbench.editor.customLabels.patterns';
+}
+function isObjectRenderableSchema({ type }, key) {
+    if (type === 'string' || type === 'boolean' || type === 'integer' || type === 'number') {
+        return true;
+    }
+    if (objectSettingSupportsRemoveDefaultValue(key) && Array.isArray(type) && type.length === 2) {
+        return type.includes('null') && (type.includes('string') || type.includes('boolean') || type.includes('integer') || type.includes('number'));
+    }
+    return false;
+}
+function isObjectSetting({ key, type, objectProperties, objectPatternProperties, objectAdditionalProperties }) {
+    if (type !== 'object') {
+        return false;
+    }
+    if (isUndefinedOrNull(objectProperties) &&
+        isUndefinedOrNull(objectPatternProperties) &&
+        isUndefinedOrNull(objectAdditionalProperties)) {
+        return false;
+    }
+    if ((objectAdditionalProperties === true || objectAdditionalProperties === undefined)
+        && !Object.keys(objectPatternProperties ?? {}).includes('.*')) {
+        return false;
+    }
+    const schemas = [...Object.values(objectProperties ?? {}), ...Object.values(objectPatternProperties ?? {})];
+    if (objectAdditionalProperties && typeof objectAdditionalProperties === 'object') {
+        schemas.push(objectAdditionalProperties);
+    }
+    const flatSchemas = schemas.map((schema) => {
+        if (Array.isArray(schema.anyOf)) {
+            return schema.anyOf;
+        }
+        return [schema];
+    }).flat();
+    return flatSchemas.every((schema) => isObjectRenderableSchema(schema, key));
+}
+function settingTypeEnumRenderable(_type) {
+    const enumRenderableSettingTypes = ['string', 'boolean', 'null', 'integer', 'number'];
+    const type = Array.isArray(_type) ? _type : [_type];
+    return type.every(type => enumRenderableSettingTypes.includes(type));
+}
+let SearchResultModel = class SearchResultModel extends SettingsTreeModel {
+    constructor(viewState, settingsOrderByTocIndex, isWorkspaceTrusted, configurationService, environmentService, languageService, userDataProfileService, productService) {
+        super(viewState, isWorkspaceTrusted, configurationService, languageService, userDataProfileService, productService);
+        this.environmentService = environmentService;
+        this.rawSearchResults = null;
+        this.cachedUniqueSearchResults = null;
+        this.newExtensionSearchResults = null;
+        this.searchResultCount = null;
+        this.id = 'searchResultModel';
+        this.settingsOrderByTocIndex = settingsOrderByTocIndex;
+        this.update({ id: 'searchResultModel', label: '' });
+    }
+    sortResults(filterMatches) {
+        if (this.settingsOrderByTocIndex) {
+            for (const match of filterMatches) {
+                match.setting.internalOrder = this.settingsOrderByTocIndex.get(match.setting.key);
+            }
+        }
+        if (!this._viewState.query) {
+            return filterMatches.sort((a, b) => compareTwoNullableNumbers(a.setting.internalOrder, b.setting.internalOrder));
+        }
+        filterMatches.sort((a, b) => {
+            if (a.matchType !== b.matchType) {
+                return b.matchType - a.matchType;
+            }
+            else if (a.matchType === SettingMatchType.RemoteMatch) {
+                return b.score - a.score;
+            }
+            else {
+                return compareTwoNullableNumbers(a.setting.internalOrder, b.setting.internalOrder);
+            }
+        });
+        return arrays.distinct(filterMatches, (match) => match.setting.key);
+    }
+    getUniqueResults() {
+        if (this.cachedUniqueSearchResults) {
+            return this.cachedUniqueSearchResults;
+        }
+        if (!this.rawSearchResults) {
+            return null;
+        }
+        let combinedFilterMatches = [];
+        const localMatchKeys = new Set();
+        const localResult = this.rawSearchResults[0];
+        if (localResult) {
+            localResult.filterMatches.forEach(m => localMatchKeys.add(m.setting.key));
+            combinedFilterMatches = localResult.filterMatches;
+        }
+        const remoteResult = this.rawSearchResults[1];
+        if (remoteResult) {
+            remoteResult.filterMatches = remoteResult.filterMatches.filter(m => !localMatchKeys.has(m.setting.key));
+            combinedFilterMatches = combinedFilterMatches.concat(remoteResult.filterMatches);
+            this.newExtensionSearchResults = this.rawSearchResults[2];
+        }
+        combinedFilterMatches = this.sortResults(combinedFilterMatches);
+        this.cachedUniqueSearchResults = {
+            filterMatches: combinedFilterMatches,
+            exactMatch: localResult?.exactMatch || remoteResult?.exactMatch
+        };
+        return this.cachedUniqueSearchResults;
+    }
+    getRawResults() {
+        return this.rawSearchResults || [];
+    }
+    setResult(order, result) {
+        this.cachedUniqueSearchResults = null;
+        this.newExtensionSearchResults = null;
+        this.rawSearchResults = this.rawSearchResults || [];
+        if (!result) {
+            delete this.rawSearchResults[order];
+            return;
+        }
+        if (result.exactMatch) {
+            this.rawSearchResults = [];
+        }
+        this.rawSearchResults[order] = result;
+        this.updateChildren();
+    }
+    updateChildren() {
+        this.update({
+            id: 'searchResultModel',
+            label: 'searchResultModel',
+            settings: this.getFlatSettings()
+        });
+        const isRemote = !!this.environmentService.remoteAuthority;
+        this.root.children = this.root.children
+            .filter(child => child instanceof SettingsTreeSettingElement && child.matchesAllTags(this._viewState.tagFilters) && child.matchesScope(this._viewState.settingsTarget, isRemote) && child.matchesAnyExtension(this._viewState.extensionFilters) && child.matchesAnyId(this._viewState.idFilters) && child.matchesAnyFeature(this._viewState.featureFilters) && child.matchesAllLanguages(this._viewState.languageFilter));
+        this.searchResultCount = this.root.children.length;
+        if (this.newExtensionSearchResults?.filterMatches.length) {
+            let resultExtensionIds = this.newExtensionSearchResults.filterMatches
+                .map(result => result.setting)
+                .filter(setting => setting.extensionName && setting.extensionPublisher)
+                .map(setting => `${setting.extensionPublisher}.${setting.extensionName}`);
+            resultExtensionIds = arrays.distinct(resultExtensionIds);
+            if (resultExtensionIds.length) {
+                const newExtElement = new SettingsTreeNewExtensionsElement('newExtensions', resultExtensionIds);
+                newExtElement.parent = this._root;
+                this._root.children.push(newExtElement);
+            }
+        }
+    }
+    getUniqueResultsCount() {
+        return this.searchResultCount ?? 0;
+    }
+    getFlatSettings() {
+        return this.getUniqueResults()?.filterMatches.map(m => m.setting) ?? [];
+    }
+};
+SearchResultModel = __decorate([
+    __param(3, IWorkbenchConfigurationService),
+    __param(4, IWorkbenchEnvironmentService),
+    __param(5, ILanguageService),
+    __param(6, IUserDataProfileService),
+    __param(7, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Boolean, Object, Object, Object, Object, Object])
+], SearchResultModel);
+export { SearchResultModel };
+const tagRegex = /(^|\s)@tag:("([^"]*)"|[^"]\S*)/g;
+const extensionRegex = /(^|\s)@ext:("([^"]*)"|[^"]\S*)?/g;
+const featureRegex = /(^|\s)@feature:("([^"]*)"|[^"]\S*)?/g;
+const idRegex = /(^|\s)@id:("([^"]*)"|[^"]\S*)?/g;
+const languageRegex = /(^|\s)@lang:("([^"]*)"|[^"]\S*)?/g;
+export function parseQuery(query) {
+    function getTagsForType(query, filterRegex, parsedParts) {
+        return query.replace(filterRegex, (_, __, quotedParsedElement, unquotedParsedElement) => {
+            const parsedElement = unquotedParsedElement || quotedParsedElement;
+            if (parsedElement) {
+                parsedParts.push(...parsedElement.split(',').map(s => s.trim()).filter(s => !isFalsyOrWhitespace(s)));
+            }
+            return '';
+        });
+    }
+    const tags = [];
+    query = query.replace(tagRegex, (_, __, quotedTag, tag) => {
+        tags.push(tag || quotedTag);
+        return '';
+    });
+    query = query.replace(`@${MODIFIED_SETTING_TAG}`, () => {
+        tags.push(MODIFIED_SETTING_TAG);
+        return '';
+    });
+    query = query.replace(`@${POLICY_SETTING_TAG}`, () => {
+        tags.push(POLICY_SETTING_TAG);
+        return '';
+    });
+    const extensions = [];
+    const features = [];
+    const ids = [];
+    const langs = [];
+    query = getTagsForType(query, extensionRegex, extensions);
+    query = getTagsForType(query, featureRegex, features);
+    query = getTagsForType(query, idRegex, ids);
+    if (ENABLE_LANGUAGE_FILTER) {
+        query = getTagsForType(query, languageRegex, langs);
+    }
+    query = query.trim();
+    return {
+        tags,
+        extensionFilters: extensions,
+        featureFilters: features,
+        idFilters: ids,
+        languageFilter: langs.length ? langs[0] : undefined,
+        query,
+    };
+}

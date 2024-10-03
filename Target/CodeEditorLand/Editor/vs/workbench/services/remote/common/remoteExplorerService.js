@@ -1,1 +1,196 @@
-var g=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=(i,e,r,n)=>{for(var t=n>1?void 0:n?h(e,r):e,l=i.length-1,u;l>=0;l--)(u=i[l])&&(t=(n?u(e,r,t):u(t))||t);return n&&t&&g(e,r,t),t},s=(i,e)=>(r,n)=>e(r,n,i);import*as o from"../../../../nls.js";import{Emitter as d}from"../../../../base/common/event.js";import{IInstantiationService as T,createDecorator as f}from"../../../../platform/instantiation/common/instantiation.js";import{InstantiationType as E,registerSingleton as b}from"../../../../platform/instantiation/common/extensions.js";import{IStorageService as P,StorageScope as m,StorageTarget as c}from"../../../../platform/storage/common/storage.js";import{ITunnelService as _}from"../../../../platform/tunnel/common/tunnel.js";import"../../../../base/common/lifecycle.js";import"../../../common/views.js";import"../../../../platform/remote/common/remoteAuthorityResolver.js";import"../../../../base/common/uri.js";import{TunnelModel as v}from"./tunnelModel.js";import{ExtensionsRegistry as y}from"../../extensions/common/extensionsRegistry.js";import"../../../../platform/extensions/common/extensions.js";import"../../../../base/common/jsonSchema.js";const S=f("remoteExplorerService"),I="remote.explorerType",se="~remote.forwardedPorts",de="~remote.forwardedPortsContainer",le="remote.autoForwardPorts",ue="remote.autoForwardPortsSource",pe="remote.autoForwardPortsFallback",me="process",ce="output",Ie="hybrid";var C=(t=>(t.Candidate="Candidate",t.Detected="Detected",t.Forwarded="Forwarded",t.Add="Add",t))(C||{}),D=(t=>(t[t.None=0]="None",t[t.New=1]="New",t[t.Label=2]="Label",t[t.LocalPort=3]="LocalPort",t))(D||{});const x={type:"object",required:["id"],properties:{id:{description:o.localize("getStartedWalkthrough.id","The ID of a Get Started walkthrough to open."),type:"string"}}},R=y.registerExtensionPoint({extensionPoint:"remoteHelp",jsonSchema:{description:o.localize("RemoteHelpInformationExtPoint","Contributes help information for Remote"),type:"object",properties:{getStarted:{description:o.localize("RemoteHelpInformationExtPoint.getStarted","The url, or a command that returns the url, to your project's Getting Started page, or a walkthrough ID contributed by your project's extension"),oneOf:[{type:"string"},x]},documentation:{description:o.localize("RemoteHelpInformationExtPoint.documentation","The url, or a command that returns the url, to your project's documentation page"),type:"string"},feedback:{description:o.localize("RemoteHelpInformationExtPoint.feedback","The url, or a command that returns the url, to your project's feedback reporter"),type:"string",markdownDeprecationMessage:o.localize("RemoteHelpInformationExtPoint.feedback.deprecated","Use {0} instead","`reportIssue`")},reportIssue:{description:o.localize("RemoteHelpInformationExtPoint.reportIssue","The url, or a command that returns the url, to your project's issue reporter"),type:"string"},issues:{description:o.localize("RemoteHelpInformationExtPoint.issues","The url, or a command that returns the url, to your project's issues list"),type:"string"}}}});var F=(n=>(n[n.Disabled=0]="Disabled",n[n.ViewOnly=1]="ViewOnly",n[n.AdditionalFeatures=2]="AdditionalFeatures",n))(F||{});let a=class{constructor(e,r,n){this.storageService=e;this.tunnelService=r;this._tunnelModel=n.createInstance(v),R.setHandler(t=>{this._helpInformation.push(...t),this._onDidChangeHelpInformation.fire(t)})}_serviceBrand;_targetType=[];_onDidChangeTargetType=new d;onDidChangeTargetType=this._onDidChangeTargetType.event;_onDidChangeHelpInformation=new d;onDidChangeHelpInformation=this._onDidChangeHelpInformation.event;_helpInformation=[];_tunnelModel;_editable;_onDidChangeEditable=new d;onDidChangeEditable=this._onDidChangeEditable.event;_onEnabledPortsFeatures=new d;onEnabledPortsFeatures=this._onEnabledPortsFeatures.event;_portsFeaturesEnabled=0;namedProcesses=new Map;get helpInformation(){return this._helpInformation}set targetType(e){const r=this._targetType.length>0?this._targetType[0]:"",n=e.length>0?e[0]:"";r!==n&&(this._targetType=e,this.storageService.store(I,this._targetType.toString(),m.WORKSPACE,c.MACHINE),this.storageService.store(I,this._targetType.toString(),m.PROFILE,c.USER),this._onDidChangeTargetType.fire(this._targetType))}get targetType(){return this._targetType}get tunnelModel(){return this._tunnelModel}forward(e,r){return this.tunnelModel.forward(e,r)}close(e,r){return this.tunnelModel.close(e.host,e.port,r)}setTunnelInformation(e){e?.features&&this.tunnelService.setTunnelFeatures(e.features),this.tunnelModel.addEnvironmentTunnels(e?.environmentTunnels)}setEditable(e,r,n){n?this._editable={tunnelItem:e,data:n,editId:r}:this._editable=void 0,this._onDidChangeEditable.fire(e?{tunnel:e,editId:r}:void 0)}getEditableData(e,r){return this._editable&&(!e&&e===this._editable.tunnelItem||e&&this._editable.tunnelItem?.remotePort===e.remotePort&&this._editable.tunnelItem.remoteHost===e.remoteHost&&this._editable.editId===r)?this._editable.data:void 0}setCandidateFilter(e){return e?(this.tunnelModel.setCandidateFilter(e),{dispose:()=>{this.tunnelModel.setCandidateFilter(void 0)}}):{dispose:()=>{}}}onFoundNewCandidates(e){this.tunnelModel.setCandidates(e)}restore(){return this.tunnelModel.restoreForwarded()}enablePortsFeatures(e){this._portsFeaturesEnabled=e?1:2,this._onEnabledPortsFeatures.fire()}get portsFeaturesEnabled(){return this._portsFeaturesEnabled}};a=p([s(0,P),s(1,_),s(2,T)],a),b(S,a,E.Delayed);export{S as IRemoteExplorerService,pe as PORT_AUTO_FALLBACK_SETTING,le as PORT_AUTO_FORWARD_SETTING,ue as PORT_AUTO_SOURCE_SETTING,Ie as PORT_AUTO_SOURCE_SETTING_HYBRID,ce as PORT_AUTO_SOURCE_SETTING_OUTPUT,me as PORT_AUTO_SOURCE_SETTING_PROCESS,F as PortsEnablement,I as REMOTE_EXPLORER_TYPE_KEY,de as TUNNEL_VIEW_CONTAINER_ID,se as TUNNEL_VIEW_ID,D as TunnelEditId,C as TunnelType};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as nls from '../../../../nls.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { IInstantiationService, createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { ITunnelService } from '../../../../platform/tunnel/common/tunnel.js';
+import { TunnelModel } from './tunnelModel.js';
+import { ExtensionsRegistry } from '../../extensions/common/extensionsRegistry.js';
+export const IRemoteExplorerService = createDecorator('remoteExplorerService');
+export const REMOTE_EXPLORER_TYPE_KEY = 'remote.explorerType';
+export const TUNNEL_VIEW_ID = '~remote.forwardedPorts';
+export const TUNNEL_VIEW_CONTAINER_ID = '~remote.forwardedPortsContainer';
+export const PORT_AUTO_FORWARD_SETTING = 'remote.autoForwardPorts';
+export const PORT_AUTO_SOURCE_SETTING = 'remote.autoForwardPortsSource';
+export const PORT_AUTO_FALLBACK_SETTING = 'remote.autoForwardPortsFallback';
+export const PORT_AUTO_SOURCE_SETTING_PROCESS = 'process';
+export const PORT_AUTO_SOURCE_SETTING_OUTPUT = 'output';
+export const PORT_AUTO_SOURCE_SETTING_HYBRID = 'hybrid';
+export var TunnelType;
+(function (TunnelType) {
+    TunnelType["Candidate"] = "Candidate";
+    TunnelType["Detected"] = "Detected";
+    TunnelType["Forwarded"] = "Forwarded";
+    TunnelType["Add"] = "Add";
+})(TunnelType || (TunnelType = {}));
+export var TunnelEditId;
+(function (TunnelEditId) {
+    TunnelEditId[TunnelEditId["None"] = 0] = "None";
+    TunnelEditId[TunnelEditId["New"] = 1] = "New";
+    TunnelEditId[TunnelEditId["Label"] = 2] = "Label";
+    TunnelEditId[TunnelEditId["LocalPort"] = 3] = "LocalPort";
+})(TunnelEditId || (TunnelEditId = {}));
+const getStartedWalkthrough = {
+    type: 'object',
+    required: ['id'],
+    properties: {
+        id: {
+            description: nls.localize('getStartedWalkthrough.id', 'The ID of a Get Started walkthrough to open.'),
+            type: 'string'
+        },
+    }
+};
+const remoteHelpExtPoint = ExtensionsRegistry.registerExtensionPoint({
+    extensionPoint: 'remoteHelp',
+    jsonSchema: {
+        description: nls.localize('RemoteHelpInformationExtPoint', 'Contributes help information for Remote'),
+        type: 'object',
+        properties: {
+            'getStarted': {
+                description: nls.localize('RemoteHelpInformationExtPoint.getStarted', "The url, or a command that returns the url, to your project's Getting Started page, or a walkthrough ID contributed by your project's extension"),
+                oneOf: [
+                    { type: 'string' },
+                    getStartedWalkthrough
+                ]
+            },
+            'documentation': {
+                description: nls.localize('RemoteHelpInformationExtPoint.documentation', "The url, or a command that returns the url, to your project's documentation page"),
+                type: 'string'
+            },
+            'feedback': {
+                description: nls.localize('RemoteHelpInformationExtPoint.feedback', "The url, or a command that returns the url, to your project's feedback reporter"),
+                type: 'string',
+                markdownDeprecationMessage: nls.localize('RemoteHelpInformationExtPoint.feedback.deprecated', "Use {0} instead", '`reportIssue`')
+            },
+            'reportIssue': {
+                description: nls.localize('RemoteHelpInformationExtPoint.reportIssue', "The url, or a command that returns the url, to your project's issue reporter"),
+                type: 'string'
+            },
+            'issues': {
+                description: nls.localize('RemoteHelpInformationExtPoint.issues', "The url, or a command that returns the url, to your project's issues list"),
+                type: 'string'
+            }
+        }
+    }
+});
+export var PortsEnablement;
+(function (PortsEnablement) {
+    PortsEnablement[PortsEnablement["Disabled"] = 0] = "Disabled";
+    PortsEnablement[PortsEnablement["ViewOnly"] = 1] = "ViewOnly";
+    PortsEnablement[PortsEnablement["AdditionalFeatures"] = 2] = "AdditionalFeatures";
+})(PortsEnablement || (PortsEnablement = {}));
+let RemoteExplorerService = class RemoteExplorerService {
+    constructor(storageService, tunnelService, instantiationService) {
+        this.storageService = storageService;
+        this.tunnelService = tunnelService;
+        this._targetType = [];
+        this._onDidChangeTargetType = new Emitter();
+        this.onDidChangeTargetType = this._onDidChangeTargetType.event;
+        this._onDidChangeHelpInformation = new Emitter();
+        this.onDidChangeHelpInformation = this._onDidChangeHelpInformation.event;
+        this._helpInformation = [];
+        this._onDidChangeEditable = new Emitter();
+        this.onDidChangeEditable = this._onDidChangeEditable.event;
+        this._onEnabledPortsFeatures = new Emitter();
+        this.onEnabledPortsFeatures = this._onEnabledPortsFeatures.event;
+        this._portsFeaturesEnabled = PortsEnablement.Disabled;
+        this.namedProcesses = new Map();
+        this._tunnelModel = instantiationService.createInstance(TunnelModel);
+        remoteHelpExtPoint.setHandler((extensions) => {
+            this._helpInformation.push(...extensions);
+            this._onDidChangeHelpInformation.fire(extensions);
+        });
+    }
+    get helpInformation() {
+        return this._helpInformation;
+    }
+    set targetType(name) {
+        const current = this._targetType.length > 0 ? this._targetType[0] : '';
+        const newName = name.length > 0 ? name[0] : '';
+        if (current !== newName) {
+            this._targetType = name;
+            this.storageService.store(REMOTE_EXPLORER_TYPE_KEY, this._targetType.toString(), 1, 1);
+            this.storageService.store(REMOTE_EXPLORER_TYPE_KEY, this._targetType.toString(), 0, 0);
+            this._onDidChangeTargetType.fire(this._targetType);
+        }
+    }
+    get targetType() {
+        return this._targetType;
+    }
+    get tunnelModel() {
+        return this._tunnelModel;
+    }
+    forward(tunnelProperties, attributes) {
+        return this.tunnelModel.forward(tunnelProperties, attributes);
+    }
+    close(remote, reason) {
+        return this.tunnelModel.close(remote.host, remote.port, reason);
+    }
+    setTunnelInformation(tunnelInformation) {
+        if (tunnelInformation?.features) {
+            this.tunnelService.setTunnelFeatures(tunnelInformation.features);
+        }
+        this.tunnelModel.addEnvironmentTunnels(tunnelInformation?.environmentTunnels);
+    }
+    setEditable(tunnelItem, editId, data) {
+        if (!data) {
+            this._editable = undefined;
+        }
+        else {
+            this._editable = { tunnelItem, data, editId };
+        }
+        this._onDidChangeEditable.fire(tunnelItem ? { tunnel: tunnelItem, editId } : undefined);
+    }
+    getEditableData(tunnelItem, editId) {
+        return (this._editable &&
+            ((!tunnelItem && (tunnelItem === this._editable.tunnelItem)) ||
+                (tunnelItem && (this._editable.tunnelItem?.remotePort === tunnelItem.remotePort) && (this._editable.tunnelItem.remoteHost === tunnelItem.remoteHost)
+                    && (this._editable.editId === editId)))) ?
+            this._editable.data : undefined;
+    }
+    setCandidateFilter(filter) {
+        if (!filter) {
+            return {
+                dispose: () => { }
+            };
+        }
+        this.tunnelModel.setCandidateFilter(filter);
+        return {
+            dispose: () => {
+                this.tunnelModel.setCandidateFilter(undefined);
+            }
+        };
+    }
+    onFoundNewCandidates(candidates) {
+        this.tunnelModel.setCandidates(candidates);
+    }
+    restore() {
+        return this.tunnelModel.restoreForwarded();
+    }
+    enablePortsFeatures(viewOnly) {
+        this._portsFeaturesEnabled = viewOnly ? PortsEnablement.ViewOnly : PortsEnablement.AdditionalFeatures;
+        this._onEnabledPortsFeatures.fire();
+    }
+    get portsFeaturesEnabled() {
+        return this._portsFeaturesEnabled;
+    }
+};
+RemoteExplorerService = __decorate([
+    __param(0, IStorageService),
+    __param(1, ITunnelService),
+    __param(2, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], RemoteExplorerService);
+registerSingleton(IRemoteExplorerService, RemoteExplorerService, 1);

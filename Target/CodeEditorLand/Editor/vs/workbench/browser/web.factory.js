@@ -1,1 +1,114 @@
-import{Menu as a}from"./web.api.js";import{BrowserMain as d}from"./web.main.js";import"../../base/common/uri.js";import{toDisposable as u}from"../../base/common/lifecycle.js";import{CommandsRegistry as w}from"../../platform/commands/common/commands.js";import{mark as f}from"../../base/common/performance.js";import{MenuId as c,MenuRegistry as h}from"../../platform/actions/common/actions.js";import{DeferredPromise as l}from"../../base/common/async.js";import{asArray as g}from"../../base/common/arrays.js";import"../../platform/progress/common/progress.js";import"../../platform/log/common/log.js";import"../services/terminal/common/embedderTerminalService.js";let m=!1;const r=new l;function _(t,s){if(f("code/didLoadWorkbenchMain"),m)throw new Error("Unable to create the VSCode workbench more than once.");if(m=!0,Array.isArray(s.commands)){for(const e of s.commands)if(w.registerCommand(e.id,(o,...i)=>e.handler(...i)),e.label)for(const o of g(e.menu??a.CommandPalette))h.appendMenuItem(I(o),{command:{id:e.id,title:e.label}})}let n;return new d(t,s).open().then(e=>{n=e,r.complete(e)}),u(()=>{n?n.shutdown():r.p.then(e=>e.shutdown())})}function I(t){switch(t){case a.CommandPalette:return c.CommandPalette;case a.StatusBarWindowIndicatorMenu:return c.StatusBarWindowIndicatorMenu}}var b;(s=>{async function t(n,...e){return(await r.p).commands.executeCommand(n,...e)}s.executeCommand=t})(b||={});var k;(s=>{function t(n,e){r.p.then(o=>o.logger.log(n,e))}s.log=t})(k||={});var P;(e=>{async function t(){return(await r.p).env.retrievePerformanceMarks()}e.retrievePerformanceMarks=t;async function s(){return(await r.p).env.getUriScheme()}e.getUriScheme=s;async function n(o){return(await r.p).env.openUri(o)}e.openUri=n})(P||={});var x;(e=>{async function t(o,i){return(await r.p).window.withProgress(o,i)}e.withProgress=t;async function s(o){(await r.p).window.createTerminal(o)}e.createTerminal=s;async function n(o,...i){return await(await r.p).window.showInformationMessage(o,...i)}e.showInformationMessage=n})(x||={});var y;(n=>{async function t(){await(await r.p).workspace.didResolveRemoteAuthority()}n.didResolveRemoteAuthority=t;async function s(e){return(await r.p).workspace.openTunnel(e)}n.openTunnel=s})(y||={});export{b as commands,_ as create,P as env,k as logger,x as window,y as workspace};
+import { Menu } from './web.api.js';
+import { BrowserMain } from './web.main.js';
+import { toDisposable } from '../../base/common/lifecycle.js';
+import { CommandsRegistry } from '../../platform/commands/common/commands.js';
+import { mark } from '../../base/common/performance.js';
+import { MenuId, MenuRegistry } from '../../platform/actions/common/actions.js';
+import { DeferredPromise } from '../../base/common/async.js';
+import { asArray } from '../../base/common/arrays.js';
+let created = false;
+const workbenchPromise = new DeferredPromise();
+export function create(domElement, options) {
+    mark('code/didLoadWorkbenchMain');
+    if (created) {
+        throw new Error('Unable to create the VSCode workbench more than once.');
+    }
+    else {
+        created = true;
+    }
+    if (Array.isArray(options.commands)) {
+        for (const command of options.commands) {
+            CommandsRegistry.registerCommand(command.id, (accessor, ...args) => {
+                return command.handler(...args);
+            });
+            if (command.label) {
+                for (const menu of asArray(command.menu ?? Menu.CommandPalette)) {
+                    MenuRegistry.appendMenuItem(asMenuId(menu), { command: { id: command.id, title: command.label } });
+                }
+            }
+        }
+    }
+    let instantiatedWorkbench = undefined;
+    new BrowserMain(domElement, options).open().then(workbench => {
+        instantiatedWorkbench = workbench;
+        workbenchPromise.complete(workbench);
+    });
+    return toDisposable(() => {
+        if (instantiatedWorkbench) {
+            instantiatedWorkbench.shutdown();
+        }
+        else {
+            workbenchPromise.p.then(instantiatedWorkbench => instantiatedWorkbench.shutdown());
+        }
+    });
+}
+function asMenuId(menu) {
+    switch (menu) {
+        case Menu.CommandPalette: return MenuId.CommandPalette;
+        case Menu.StatusBarWindowIndicatorMenu: return MenuId.StatusBarWindowIndicatorMenu;
+    }
+}
+export var commands;
+(function (commands) {
+    async function executeCommand(command, ...args) {
+        const workbench = await workbenchPromise.p;
+        return workbench.commands.executeCommand(command, ...args);
+    }
+    commands.executeCommand = executeCommand;
+})(commands || (commands = {}));
+export var logger;
+(function (logger) {
+    function log(level, message) {
+        workbenchPromise.p.then(workbench => workbench.logger.log(level, message));
+    }
+    logger.log = log;
+})(logger || (logger = {}));
+export var env;
+(function (env) {
+    async function retrievePerformanceMarks() {
+        const workbench = await workbenchPromise.p;
+        return workbench.env.retrievePerformanceMarks();
+    }
+    env.retrievePerformanceMarks = retrievePerformanceMarks;
+    async function getUriScheme() {
+        const workbench = await workbenchPromise.p;
+        return workbench.env.getUriScheme();
+    }
+    env.getUriScheme = getUriScheme;
+    async function openUri(target) {
+        const workbench = await workbenchPromise.p;
+        return workbench.env.openUri(target);
+    }
+    env.openUri = openUri;
+})(env || (env = {}));
+export var window;
+(function (window) {
+    async function withProgress(options, task) {
+        const workbench = await workbenchPromise.p;
+        return workbench.window.withProgress(options, task);
+    }
+    window.withProgress = withProgress;
+    async function createTerminal(options) {
+        const workbench = await workbenchPromise.p;
+        workbench.window.createTerminal(options);
+    }
+    window.createTerminal = createTerminal;
+    async function showInformationMessage(message, ...items) {
+        const workbench = await workbenchPromise.p;
+        return await workbench.window.showInformationMessage(message, ...items);
+    }
+    window.showInformationMessage = showInformationMessage;
+})(window || (window = {}));
+export var workspace;
+(function (workspace) {
+    async function didResolveRemoteAuthority() {
+        const workbench = await workbenchPromise.p;
+        await workbench.workspace.didResolveRemoteAuthority();
+    }
+    workspace.didResolveRemoteAuthority = didResolveRemoteAuthority;
+    async function openTunnel(tunnelOptions) {
+        const workbench = await workbenchPromise.p;
+        return workbench.workspace.openTunnel(tunnelOptions);
+    }
+    workspace.openTunnel = openTunnel;
+})(workspace || (workspace = {}));

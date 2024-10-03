@@ -1,2 +1,310 @@
-var P=Object.defineProperty;var U=Object.getOwnPropertyDescriptor;var h=(s,e,t,o)=>{for(var n=o>1?void 0:o?U(e,t):e,r=s.length-1,a;r>=0;r--)(a=s[r])&&(n=(o?a(e,t,n):a(n))||n);return o&&n&&P(e,t,n),n},i=(s,e)=>(t,o)=>e(t,o,s);import*as W from"../../../base/browser/ui/aria/aria.js";import{Disposable as q,toDisposable as X,DisposableStore as Y}from"../../../base/common/lifecycle.js";import"../../browser/editorBrowser.js";import{ICodeEditorService as T}from"../../browser/services/codeEditorService.js";import{CodeEditorWidget as j}from"../../browser/widget/codeEditor/codeEditorWidget.js";import"../../common/config/editorOptions.js";import{InternalEditorAction as J}from"../../common/editorAction.js";import"../../common/editorCommon.js";import"../../common/model.js";import{StandaloneKeybindingService as Q,updateConfigurationService as y}from"./standaloneServices.js";import{IStandaloneThemeService as L}from"../common/standaloneTheme.js";import{MenuId as Z,MenuRegistry as $}from"../../../platform/actions/common/actions.js";import{CommandsRegistry as ee,ICommandService as O}from"../../../platform/commands/common/commands.js";import{IConfigurationService as k}from"../../../platform/configuration/common/configuration.js";import{ContextKeyExpr as v,IContextKeyService as K}from"../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as te}from"../../../platform/contextview/browser/contextView.js";import{IInstantiationService as _}from"../../../platform/instantiation/common/instantiation.js";import{IKeybindingService as R}from"../../../platform/keybinding/common/keybinding.js";import{INotificationService as A}from"../../../platform/notification/common/notification.js";import{IThemeService as ie}from"../../../platform/theme/common/themeService.js";import{IAccessibilityService as N}from"../../../platform/accessibility/common/accessibility.js";import{StandaloneCodeEditorNLS as oe}from"../../common/standaloneStrings.js";import{IClipboardService as ne}from"../../../platform/clipboard/common/clipboardService.js";import{IEditorProgressService as re}from"../../../platform/progress/common/progress.js";import"./standaloneThemeService.js";import{IModelService as ae}from"../../common/services/model.js";import{ILanguageService as de}from"../../common/languages/language.js";import"../../../base/common/uri.js";import{StandaloneCodeEditorService as se}from"./standaloneCodeEditorService.js";import{PLAINTEXT_LANGUAGE_ID as ce}from"../../common/languages/modesRegistry.js";import{ILanguageConfigurationService as w}from"../../common/languages/languageConfigurationRegistry.js";import"../../browser/config/editorConfiguration.js";import{ILanguageFeaturesService as V}from"../../common/services/languageFeatures.js";import{DiffEditorWidget as le}from"../../browser/widget/diffEditor/diffEditorWidget.js";import{IAccessibilitySignalService as ue}from"../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";import{mainWindow as me}from"../../../base/browser/window.js";import{setHoverDelegateFactory as ge}from"../../../base/browser/ui/hover/hoverDelegateFactory.js";import{IHoverService as B,WorkbenchHoverDelegate as Ie}from"../../../platform/hover/browser/hover.js";import{setBaseLayerHoverDelegate as fe}from"../../../base/browser/ui/hover/hoverDelegate2.js";let pe=0,G=!1;function ve(s){if(!s){if(G)return;G=!0}W.setARIAContainer(s||me.document.body)}let S=class extends j{_standaloneKeybindingService;constructor(e,t,o,n,r,a,f,I,c,l,g,p,d){const u={...t};u.ariaLabel=u.ariaLabel||oe.editorViewAccessibleLabel,super(e,u,{},o,n,r,a,c,l,g,p,d),I instanceof Q?this._standaloneKeybindingService=I:this._standaloneKeybindingService=null,ve(u.ariaContainerElement),ge((E,D)=>o.createInstance(Ie,E,D,{})),fe(f)}addCommand(e,t,o){if(!this._standaloneKeybindingService)return null;const n="DYNAMIC_"+ ++pe,r=v.deserialize(o);return this._standaloneKeybindingService.addDynamicKeybinding(n,e,t,r),n}createContextKey(e,t){return this._contextKeyService.createKey(e,t)}addAction(e){if(typeof e.id!="string"||typeof e.label!="string"||typeof e.run!="function")throw new Error("Invalid action descriptor, `id`, `label` and `run` are required properties!");if(!this._standaloneKeybindingService)return q.None;const t=e.id,o=e.label,n=v.and(v.equals("editorId",this.getId()),v.deserialize(e.precondition)),r=e.keybindings,a=v.and(n,v.deserialize(e.keybindingContext)),f=e.contextMenuGroupId||null,I=e.contextMenuOrder||0,c=(d,...u)=>Promise.resolve(e.run(this,...u)),l=new Y,g=this.getId()+":"+t;if(l.add(ee.registerCommand(g,c)),f){const d={command:{id:g,title:o},when:n,group:f,order:I};l.add($.appendMenuItem(Z.EditorContext,d))}if(Array.isArray(r))for(const d of r)l.add(this._standaloneKeybindingService.addDynamicKeybinding(g,d,c,a));const p=new J(g,o,o,void 0,n,(...d)=>Promise.resolve(e.run(this,...d)),this._contextKeyService);return this._actions.set(t,p),l.add(X(()=>{this._actions.delete(t)})),l}_triggerCommand(e,t){if(this._codeEditorService instanceof se)try{this._codeEditorService.setActiveCodeEditor(this),super._triggerCommand(e,t)}finally{this._codeEditorService.setActiveCodeEditor(null)}else super._triggerCommand(e,t)}};S=h([i(2,_),i(3,T),i(4,O),i(5,K),i(6,B),i(7,R),i(8,ie),i(9,A),i(10,N),i(11,w),i(12,V)],S);let b=class extends S{_configurationService;_standaloneThemeService;_ownsModel;constructor(e,t,o,n,r,a,f,I,c,l,g,p,d,u,E,D){const m={...t};y(g,m,!1);const F=c.registerEditorContainer(e);typeof m.theme=="string"&&c.setTheme(m.theme),typeof m.autoDetectHighContrast<"u"&&c.setAutoDetectHighContrast(!!m.autoDetectHighContrast);const H=m.model;delete m.model,super(e,m,o,n,r,a,f,I,c,l,p,E,D),this._configurationService=g,this._standaloneThemeService=c,this._register(F);let C;if(typeof H>"u"){const M=u.getLanguageIdByMimeType(m.language)||m.language||ce;C=Se(d,u,m.value||"",M,void 0),this._ownsModel=!0}else C=H,this._ownsModel=!1;if(this._attachModel(C),C){const M={oldModelUrl:null,newModelUrl:C.uri};this._onDidChangeModel.fire(M)}}dispose(){super.dispose()}updateOptions(e){y(this._configurationService,e,!1),typeof e.theme=="string"&&this._standaloneThemeService.setTheme(e.theme),typeof e.autoDetectHighContrast<"u"&&this._standaloneThemeService.setAutoDetectHighContrast(!!e.autoDetectHighContrast),super.updateOptions(e)}_postDetachModelCleanup(e){super._postDetachModelCleanup(e),e&&this._ownsModel&&(e.dispose(),this._ownsModel=!1)}};b=h([i(2,_),i(3,T),i(4,O),i(5,K),i(6,B),i(7,R),i(8,L),i(9,A),i(10,k),i(11,N),i(12,ae),i(13,de),i(14,w),i(15,V)],b);let x=class extends le{_configurationService;_standaloneThemeService;constructor(e,t,o,n,r,a,f,I,c,l,g,p){const d={...t};y(I,d,!0);const u=a.registerEditorContainer(e);typeof d.theme=="string"&&a.setTheme(d.theme),typeof d.autoDetectHighContrast<"u"&&a.setAutoDetectHighContrast(!!d.autoDetectHighContrast),super(e,d,{},n,o,r,p,l),this._configurationService=I,this._standaloneThemeService=a,this._register(u)}dispose(){super.dispose()}updateOptions(e){y(this._configurationService,e,!0),typeof e.theme=="string"&&this._standaloneThemeService.setTheme(e.theme),typeof e.autoDetectHighContrast<"u"&&this._standaloneThemeService.setAutoDetectHighContrast(!!e.autoDetectHighContrast),super.updateOptions(e)}_createInnerEditor(e,t,o){return e.createInstance(S,t,o)}getOriginalEditor(){return super.getOriginalEditor()}getModifiedEditor(){return super.getModifiedEditor()}addCommand(e,t,o){return this.getModifiedEditor().addCommand(e,t,o)}createContextKey(e,t){return this.getModifiedEditor().createContextKey(e,t)}addAction(e){return this.getModifiedEditor().addAction(e)}};x=h([i(2,_),i(3,K),i(4,T),i(5,L),i(6,A),i(7,k),i(8,te),i(9,re),i(10,ne),i(11,ue)],x);function Se(s,e,t,o,n){if(t=t||"",!o){const r=t.indexOf(`
-`);let a=t;return r!==-1&&(a=t.substring(0,r)),z(s,t,e.createByFilepathOrFirstLine(n||null,a),n)}return z(s,t,e.createById(o),n)}function z(s,e,t,o){return s.createModel(e,t,o)}export{S as StandaloneCodeEditor,x as StandaloneDiffEditor2,b as StandaloneEditor,Se as createTextModel};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as aria from '../../../base/browser/ui/aria/aria.js';
+import { Disposable, toDisposable, DisposableStore } from '../../../base/common/lifecycle.js';
+import { ICodeEditorService } from '../../browser/services/codeEditorService.js';
+import { CodeEditorWidget } from '../../browser/widget/codeEditor/codeEditorWidget.js';
+import { InternalEditorAction } from '../../common/editorAction.js';
+import { StandaloneKeybindingService, updateConfigurationService } from './standaloneServices.js';
+import { IStandaloneThemeService } from '../common/standaloneTheme.js';
+import { MenuId, MenuRegistry } from '../../../platform/actions/common/actions.js';
+import { CommandsRegistry, ICommandService } from '../../../platform/commands/common/commands.js';
+import { IConfigurationService } from '../../../platform/configuration/common/configuration.js';
+import { ContextKeyExpr, IContextKeyService } from '../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService } from '../../../platform/contextview/browser/contextView.js';
+import { IInstantiationService } from '../../../platform/instantiation/common/instantiation.js';
+import { IKeybindingService } from '../../../platform/keybinding/common/keybinding.js';
+import { INotificationService } from '../../../platform/notification/common/notification.js';
+import { IThemeService } from '../../../platform/theme/common/themeService.js';
+import { IAccessibilityService } from '../../../platform/accessibility/common/accessibility.js';
+import { StandaloneCodeEditorNLS } from '../../common/standaloneStrings.js';
+import { IClipboardService } from '../../../platform/clipboard/common/clipboardService.js';
+import { IEditorProgressService } from '../../../platform/progress/common/progress.js';
+import { IModelService } from '../../common/services/model.js';
+import { ILanguageService } from '../../common/languages/language.js';
+import { StandaloneCodeEditorService } from './standaloneCodeEditorService.js';
+import { PLAINTEXT_LANGUAGE_ID } from '../../common/languages/modesRegistry.js';
+import { ILanguageConfigurationService } from '../../common/languages/languageConfigurationRegistry.js';
+import { ILanguageFeaturesService } from '../../common/services/languageFeatures.js';
+import { DiffEditorWidget } from '../../browser/widget/diffEditor/diffEditorWidget.js';
+import { IAccessibilitySignalService } from '../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+import { mainWindow } from '../../../base/browser/window.js';
+import { setHoverDelegateFactory } from '../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { IHoverService, WorkbenchHoverDelegate } from '../../../platform/hover/browser/hover.js';
+import { setBaseLayerHoverDelegate } from '../../../base/browser/ui/hover/hoverDelegate2.js';
+let LAST_GENERATED_COMMAND_ID = 0;
+let ariaDomNodeCreated = false;
+function createAriaDomNode(parent) {
+    if (!parent) {
+        if (ariaDomNodeCreated) {
+            return;
+        }
+        ariaDomNodeCreated = true;
+    }
+    aria.setARIAContainer(parent || mainWindow.document.body);
+}
+let StandaloneCodeEditor = class StandaloneCodeEditor extends CodeEditorWidget {
+    constructor(domElement, _options, instantiationService, codeEditorService, commandService, contextKeyService, hoverService, keybindingService, themeService, notificationService, accessibilityService, languageConfigurationService, languageFeaturesService) {
+        const options = { ..._options };
+        options.ariaLabel = options.ariaLabel || StandaloneCodeEditorNLS.editorViewAccessibleLabel;
+        super(domElement, options, {}, instantiationService, codeEditorService, commandService, contextKeyService, themeService, notificationService, accessibilityService, languageConfigurationService, languageFeaturesService);
+        if (keybindingService instanceof StandaloneKeybindingService) {
+            this._standaloneKeybindingService = keybindingService;
+        }
+        else {
+            this._standaloneKeybindingService = null;
+        }
+        createAriaDomNode(options.ariaContainerElement);
+        setHoverDelegateFactory((placement, enableInstantHover) => instantiationService.createInstance(WorkbenchHoverDelegate, placement, enableInstantHover, {}));
+        setBaseLayerHoverDelegate(hoverService);
+    }
+    addCommand(keybinding, handler, context) {
+        if (!this._standaloneKeybindingService) {
+            console.warn('Cannot add command because the editor is configured with an unrecognized KeybindingService');
+            return null;
+        }
+        const commandId = 'DYNAMIC_' + (++LAST_GENERATED_COMMAND_ID);
+        const whenExpression = ContextKeyExpr.deserialize(context);
+        this._standaloneKeybindingService.addDynamicKeybinding(commandId, keybinding, handler, whenExpression);
+        return commandId;
+    }
+    createContextKey(key, defaultValue) {
+        return this._contextKeyService.createKey(key, defaultValue);
+    }
+    addAction(_descriptor) {
+        if ((typeof _descriptor.id !== 'string') || (typeof _descriptor.label !== 'string') || (typeof _descriptor.run !== 'function')) {
+            throw new Error('Invalid action descriptor, `id`, `label` and `run` are required properties!');
+        }
+        if (!this._standaloneKeybindingService) {
+            console.warn('Cannot add keybinding because the editor is configured with an unrecognized KeybindingService');
+            return Disposable.None;
+        }
+        const id = _descriptor.id;
+        const label = _descriptor.label;
+        const precondition = ContextKeyExpr.and(ContextKeyExpr.equals('editorId', this.getId()), ContextKeyExpr.deserialize(_descriptor.precondition));
+        const keybindings = _descriptor.keybindings;
+        const keybindingsWhen = ContextKeyExpr.and(precondition, ContextKeyExpr.deserialize(_descriptor.keybindingContext));
+        const contextMenuGroupId = _descriptor.contextMenuGroupId || null;
+        const contextMenuOrder = _descriptor.contextMenuOrder || 0;
+        const run = (_accessor, ...args) => {
+            return Promise.resolve(_descriptor.run(this, ...args));
+        };
+        const toDispose = new DisposableStore();
+        const uniqueId = this.getId() + ':' + id;
+        toDispose.add(CommandsRegistry.registerCommand(uniqueId, run));
+        if (contextMenuGroupId) {
+            const menuItem = {
+                command: {
+                    id: uniqueId,
+                    title: label
+                },
+                when: precondition,
+                group: contextMenuGroupId,
+                order: contextMenuOrder
+            };
+            toDispose.add(MenuRegistry.appendMenuItem(MenuId.EditorContext, menuItem));
+        }
+        if (Array.isArray(keybindings)) {
+            for (const kb of keybindings) {
+                toDispose.add(this._standaloneKeybindingService.addDynamicKeybinding(uniqueId, kb, run, keybindingsWhen));
+            }
+        }
+        const internalAction = new InternalEditorAction(uniqueId, label, label, undefined, precondition, (...args) => Promise.resolve(_descriptor.run(this, ...args)), this._contextKeyService);
+        this._actions.set(id, internalAction);
+        toDispose.add(toDisposable(() => {
+            this._actions.delete(id);
+        }));
+        return toDispose;
+    }
+    _triggerCommand(handlerId, payload) {
+        if (this._codeEditorService instanceof StandaloneCodeEditorService) {
+            try {
+                this._codeEditorService.setActiveCodeEditor(this);
+                super._triggerCommand(handlerId, payload);
+            }
+            finally {
+                this._codeEditorService.setActiveCodeEditor(null);
+            }
+        }
+        else {
+            super._triggerCommand(handlerId, payload);
+        }
+    }
+};
+StandaloneCodeEditor = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, ICodeEditorService),
+    __param(4, ICommandService),
+    __param(5, IContextKeyService),
+    __param(6, IHoverService),
+    __param(7, IKeybindingService),
+    __param(8, IThemeService),
+    __param(9, INotificationService),
+    __param(10, IAccessibilityService),
+    __param(11, ILanguageConfigurationService),
+    __param(12, ILanguageFeaturesService),
+    __metadata("design:paramtypes", [HTMLElement, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], StandaloneCodeEditor);
+export { StandaloneCodeEditor };
+let StandaloneEditor = class StandaloneEditor extends StandaloneCodeEditor {
+    constructor(domElement, _options, instantiationService, codeEditorService, commandService, contextKeyService, hoverService, keybindingService, themeService, notificationService, configurationService, accessibilityService, modelService, languageService, languageConfigurationService, languageFeaturesService) {
+        const options = { ..._options };
+        updateConfigurationService(configurationService, options, false);
+        const themeDomRegistration = themeService.registerEditorContainer(domElement);
+        if (typeof options.theme === 'string') {
+            themeService.setTheme(options.theme);
+        }
+        if (typeof options.autoDetectHighContrast !== 'undefined') {
+            themeService.setAutoDetectHighContrast(Boolean(options.autoDetectHighContrast));
+        }
+        const _model = options.model;
+        delete options.model;
+        super(domElement, options, instantiationService, codeEditorService, commandService, contextKeyService, hoverService, keybindingService, themeService, notificationService, accessibilityService, languageConfigurationService, languageFeaturesService);
+        this._configurationService = configurationService;
+        this._standaloneThemeService = themeService;
+        this._register(themeDomRegistration);
+        let model;
+        if (typeof _model === 'undefined') {
+            const languageId = languageService.getLanguageIdByMimeType(options.language) || options.language || PLAINTEXT_LANGUAGE_ID;
+            model = createTextModel(modelService, languageService, options.value || '', languageId, undefined);
+            this._ownsModel = true;
+        }
+        else {
+            model = _model;
+            this._ownsModel = false;
+        }
+        this._attachModel(model);
+        if (model) {
+            const e = {
+                oldModelUrl: null,
+                newModelUrl: model.uri
+            };
+            this._onDidChangeModel.fire(e);
+        }
+    }
+    dispose() {
+        super.dispose();
+    }
+    updateOptions(newOptions) {
+        updateConfigurationService(this._configurationService, newOptions, false);
+        if (typeof newOptions.theme === 'string') {
+            this._standaloneThemeService.setTheme(newOptions.theme);
+        }
+        if (typeof newOptions.autoDetectHighContrast !== 'undefined') {
+            this._standaloneThemeService.setAutoDetectHighContrast(Boolean(newOptions.autoDetectHighContrast));
+        }
+        super.updateOptions(newOptions);
+    }
+    _postDetachModelCleanup(detachedModel) {
+        super._postDetachModelCleanup(detachedModel);
+        if (detachedModel && this._ownsModel) {
+            detachedModel.dispose();
+            this._ownsModel = false;
+        }
+    }
+};
+StandaloneEditor = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, ICodeEditorService),
+    __param(4, ICommandService),
+    __param(5, IContextKeyService),
+    __param(6, IHoverService),
+    __param(7, IKeybindingService),
+    __param(8, IStandaloneThemeService),
+    __param(9, INotificationService),
+    __param(10, IConfigurationService),
+    __param(11, IAccessibilityService),
+    __param(12, IModelService),
+    __param(13, ILanguageService),
+    __param(14, ILanguageConfigurationService),
+    __param(15, ILanguageFeaturesService),
+    __metadata("design:paramtypes", [HTMLElement, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], StandaloneEditor);
+export { StandaloneEditor };
+let StandaloneDiffEditor2 = class StandaloneDiffEditor2 extends DiffEditorWidget {
+    constructor(domElement, _options, instantiationService, contextKeyService, codeEditorService, themeService, notificationService, configurationService, contextMenuService, editorProgressService, clipboardService, accessibilitySignalService) {
+        const options = { ..._options };
+        updateConfigurationService(configurationService, options, true);
+        const themeDomRegistration = themeService.registerEditorContainer(domElement);
+        if (typeof options.theme === 'string') {
+            themeService.setTheme(options.theme);
+        }
+        if (typeof options.autoDetectHighContrast !== 'undefined') {
+            themeService.setAutoDetectHighContrast(Boolean(options.autoDetectHighContrast));
+        }
+        super(domElement, options, {}, contextKeyService, instantiationService, codeEditorService, accessibilitySignalService, editorProgressService);
+        this._configurationService = configurationService;
+        this._standaloneThemeService = themeService;
+        this._register(themeDomRegistration);
+    }
+    dispose() {
+        super.dispose();
+    }
+    updateOptions(newOptions) {
+        updateConfigurationService(this._configurationService, newOptions, true);
+        if (typeof newOptions.theme === 'string') {
+            this._standaloneThemeService.setTheme(newOptions.theme);
+        }
+        if (typeof newOptions.autoDetectHighContrast !== 'undefined') {
+            this._standaloneThemeService.setAutoDetectHighContrast(Boolean(newOptions.autoDetectHighContrast));
+        }
+        super.updateOptions(newOptions);
+    }
+    _createInnerEditor(instantiationService, container, options) {
+        return instantiationService.createInstance(StandaloneCodeEditor, container, options);
+    }
+    getOriginalEditor() {
+        return super.getOriginalEditor();
+    }
+    getModifiedEditor() {
+        return super.getModifiedEditor();
+    }
+    addCommand(keybinding, handler, context) {
+        return this.getModifiedEditor().addCommand(keybinding, handler, context);
+    }
+    createContextKey(key, defaultValue) {
+        return this.getModifiedEditor().createContextKey(key, defaultValue);
+    }
+    addAction(descriptor) {
+        return this.getModifiedEditor().addAction(descriptor);
+    }
+};
+StandaloneDiffEditor2 = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, IContextKeyService),
+    __param(4, ICodeEditorService),
+    __param(5, IStandaloneThemeService),
+    __param(6, INotificationService),
+    __param(7, IConfigurationService),
+    __param(8, IContextMenuService),
+    __param(9, IEditorProgressService),
+    __param(10, IClipboardService),
+    __param(11, IAccessibilitySignalService),
+    __metadata("design:paramtypes", [HTMLElement, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], StandaloneDiffEditor2);
+export { StandaloneDiffEditor2 };
+export function createTextModel(modelService, languageService, value, languageId, uri) {
+    value = value || '';
+    if (!languageId) {
+        const firstLF = value.indexOf('\n');
+        let firstLine = value;
+        if (firstLF !== -1) {
+            firstLine = value.substring(0, firstLF);
+        }
+        return doCreateModel(modelService, value, languageService.createByFilepathOrFirstLine(uri || null, firstLine), uri);
+    }
+    return doCreateModel(modelService, value, languageService.createById(languageId), uri);
+}
+function doCreateModel(modelService, value, languageSelection, uri) {
+    return modelService.createModel(value, languageSelection, uri);
+}

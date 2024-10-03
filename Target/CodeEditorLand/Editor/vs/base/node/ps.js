@@ -1,3 +1,228 @@
-import{exec as h}from"child_process";import{FileAccess as x}from"../common/network.js";import"../common/processes.js";function P(l){return new Promise((m,u)=>{let f;const g=new Map;function a(i,t,r,p,s){const n=g.get(t);if(i===l||n){const e={name:d(r),cmd:r,pid:i,ppid:t,load:p,mem:s};g.set(i,e),i===l&&(f=e),n&&(n.children||(n.children=[]),n.children.push(e),n.children.length>1&&(n.children=n.children.sort((c,o)=>c.pid-o.pid)))}}function d(i){const t=/--utility-sub-type=network/i,r=/--crashes-directory/i,p=/\\pipe\\winpty-control/i,s=/conhost\.exe.+--headless/i,n=/--type=([a-zA-Z-]+)/;if(r.exec(i))return"electron-crash-reporter";if(p.exec(i))return"winpty-agent";if(s.exec(i))return"conpty-agent";let e=n.exec(i);if(e&&e.length===2)return e[1]==="renderer"?"window":e[1]==="utility"?t.exec(i)?"utility-network-service":"utility-process":e[1]==="extensionHost"?"extension-host":e[1];const c=/[a-zA-Z-]+\.js/g;let o="";do e=c.exec(i),e&&(o+=e+" ");while(e);return o&&i.indexOf("node ")<0&&i.indexOf("node.exe")<0?`electron-nodejs (${o})`:i}if(process.platform==="win32"){const i=t=>t.indexOf("\\\\?\\")===0||t.indexOf("\\??\\")===0?t.substring(4):t.indexOf('"\\\\?\\')===0||t.indexOf('"\\??\\')===0?'"'+t.substring(5):t;import("@vscode/windows-process-tree").then(t=>{t.getProcessList(l,r=>{if(!r){u(new Error(`Root process ${l} not found`));return}t.getProcessCpuUsage(r,p=>{const s=new Map;p.forEach(n=>{const e=i(n.commandLine||"");s.set(n.pid,{name:d(e),cmd:e,pid:n.pid,ppid:n.ppid,load:n.cpu||0,mem:n.memory||0})}),f=s.get(l),f?(s.forEach(n=>{const e=s.get(n.ppid);e&&(e.children||(e.children=[]),e.children.push(n))}),s.forEach(n=>{n.children&&(n.children=n.children.sort((e,c)=>e.pid-c.pid))}),m(f)):u(new Error(`Root process ${l} not found`))})},t.ProcessDataFlag.CommandLine|t.ProcessDataFlag.Memory)})}else{let i=function(){let t=[f];const r=[];for(;t.length;){const s=t.shift();s&&(r.push(s.pid),s.children&&(t=t.concat(s.children)))}let p=JSON.stringify(x.asFileUri("vs/base/node/cpuUsage.sh").fsPath);p+=" "+r.join(" "),h(p,{},(s,n,e)=>{if(s||e)u(s||new Error(e.toString()));else{const c=n.toString().split(`
-`);for(let o=0;o<r.length;o++){const I=g.get(r[o]);I.load=parseFloat(c[o])}if(!f){u(new Error(`Root process ${l} not found`));return}m(f)}})};var E=i;h("which ps",{},(t,r,p)=>{if(t||p)if(process.platform!=="linux")u(t||new Error(p.toString()));else{const s=JSON.stringify(x.asFileUri("vs/base/node/ps.sh").fsPath);h(s,{},(n,e,c)=>{n||c?u(n||new Error(c.toString())):(b(e,a),i())})}else{const s=r.toString().trim();h(`${s} -ax -o pid=,ppid=,pcpu=,pmem=,command=`,{maxBuffer:1e3*1024,env:{LC_NUMERIC:"en_US.UTF-8"}},(e,c,o)=>{e||o&&!o.includes("screen size is bogus")?u(e||new Error(o.toString())):(b(c,a),process.platform==="linux"?i():f?m(f):u(new Error(`Root process ${l} not found`)))})}})}})}function b(l,m){const u=/^\s*([0-9]+)\s+([0-9]+)\s+([0-9]+\.[0-9]+)\s+([0-9]+\.[0-9]+)\s+(.+)$/,f=l.toString().split(`
-`);for(const g of f){const a=u.exec(g.trim());a&&a.length===6&&m(parseInt(a[1]),parseInt(a[2]),a[5],parseFloat(a[3]),parseFloat(a[4]))}}export{P as listProcesses};
+import { exec } from 'child_process';
+import { FileAccess } from '../common/network.js';
+export function listProcesses(rootPid) {
+    return new Promise((resolve, reject) => {
+        let rootItem;
+        const map = new Map();
+        function addToTree(pid, ppid, cmd, load, mem) {
+            const parent = map.get(ppid);
+            if (pid === rootPid || parent) {
+                const item = {
+                    name: findName(cmd),
+                    cmd,
+                    pid,
+                    ppid,
+                    load,
+                    mem
+                };
+                map.set(pid, item);
+                if (pid === rootPid) {
+                    rootItem = item;
+                }
+                if (parent) {
+                    if (!parent.children) {
+                        parent.children = [];
+                    }
+                    parent.children.push(item);
+                    if (parent.children.length > 1) {
+                        parent.children = parent.children.sort((a, b) => a.pid - b.pid);
+                    }
+                }
+            }
+        }
+        function findName(cmd) {
+            const UTILITY_NETWORK_HINT = /--utility-sub-type=network/i;
+            const WINDOWS_CRASH_REPORTER = /--crashes-directory/i;
+            const WINPTY = /\\pipe\\winpty-control/i;
+            const CONPTY = /conhost\.exe.+--headless/i;
+            const TYPE = /--type=([a-zA-Z-]+)/;
+            if (WINDOWS_CRASH_REPORTER.exec(cmd)) {
+                return 'electron-crash-reporter';
+            }
+            if (WINPTY.exec(cmd)) {
+                return 'winpty-agent';
+            }
+            if (CONPTY.exec(cmd)) {
+                return 'conpty-agent';
+            }
+            let matches = TYPE.exec(cmd);
+            if (matches && matches.length === 2) {
+                if (matches[1] === 'renderer') {
+                    return `window`;
+                }
+                else if (matches[1] === 'utility') {
+                    if (UTILITY_NETWORK_HINT.exec(cmd)) {
+                        return 'utility-network-service';
+                    }
+                    return 'utility-process';
+                }
+                else if (matches[1] === 'extensionHost') {
+                    return 'extension-host';
+                }
+                return matches[1];
+            }
+            const JS = /[a-zA-Z-]+\.js/g;
+            let result = '';
+            do {
+                matches = JS.exec(cmd);
+                if (matches) {
+                    result += matches + ' ';
+                }
+            } while (matches);
+            if (result) {
+                if (cmd.indexOf('node ') < 0 && cmd.indexOf('node.exe') < 0) {
+                    return `electron-nodejs (${result})`;
+                }
+            }
+            return cmd;
+        }
+        if (process.platform === 'win32') {
+            const cleanUNCPrefix = (value) => {
+                if (value.indexOf('\\\\?\\') === 0) {
+                    return value.substring(4);
+                }
+                else if (value.indexOf('\\??\\') === 0) {
+                    return value.substring(4);
+                }
+                else if (value.indexOf('"\\\\?\\') === 0) {
+                    return '"' + value.substring(5);
+                }
+                else if (value.indexOf('"\\??\\') === 0) {
+                    return '"' + value.substring(5);
+                }
+                else {
+                    return value;
+                }
+            };
+            (import('@vscode/windows-process-tree')).then(windowsProcessTree => {
+                windowsProcessTree.getProcessList(rootPid, (processList) => {
+                    if (!processList) {
+                        reject(new Error(`Root process ${rootPid} not found`));
+                        return;
+                    }
+                    windowsProcessTree.getProcessCpuUsage(processList, (completeProcessList) => {
+                        const processItems = new Map();
+                        completeProcessList.forEach(process => {
+                            const commandLine = cleanUNCPrefix(process.commandLine || '');
+                            processItems.set(process.pid, {
+                                name: findName(commandLine),
+                                cmd: commandLine,
+                                pid: process.pid,
+                                ppid: process.ppid,
+                                load: process.cpu || 0,
+                                mem: process.memory || 0
+                            });
+                        });
+                        rootItem = processItems.get(rootPid);
+                        if (rootItem) {
+                            processItems.forEach(item => {
+                                const parent = processItems.get(item.ppid);
+                                if (parent) {
+                                    if (!parent.children) {
+                                        parent.children = [];
+                                    }
+                                    parent.children.push(item);
+                                }
+                            });
+                            processItems.forEach(item => {
+                                if (item.children) {
+                                    item.children = item.children.sort((a, b) => a.pid - b.pid);
+                                }
+                            });
+                            resolve(rootItem);
+                        }
+                        else {
+                            reject(new Error(`Root process ${rootPid} not found`));
+                        }
+                    });
+                }, windowsProcessTree.ProcessDataFlag.CommandLine | windowsProcessTree.ProcessDataFlag.Memory);
+            });
+        }
+        else {
+            function calculateLinuxCpuUsage() {
+                let processes = [rootItem];
+                const pids = [];
+                while (processes.length) {
+                    const process = processes.shift();
+                    if (process) {
+                        pids.push(process.pid);
+                        if (process.children) {
+                            processes = processes.concat(process.children);
+                        }
+                    }
+                }
+                let cmd = JSON.stringify(FileAccess.asFileUri('vs/base/node/cpuUsage.sh').fsPath);
+                cmd += ' ' + pids.join(' ');
+                exec(cmd, {}, (err, stdout, stderr) => {
+                    if (err || stderr) {
+                        reject(err || new Error(stderr.toString()));
+                    }
+                    else {
+                        const cpuUsage = stdout.toString().split('\n');
+                        for (let i = 0; i < pids.length; i++) {
+                            const processInfo = map.get(pids[i]);
+                            processInfo.load = parseFloat(cpuUsage[i]);
+                        }
+                        if (!rootItem) {
+                            reject(new Error(`Root process ${rootPid} not found`));
+                            return;
+                        }
+                        resolve(rootItem);
+                    }
+                });
+            }
+            exec('which ps', {}, (err, stdout, stderr) => {
+                if (err || stderr) {
+                    if (process.platform !== 'linux') {
+                        reject(err || new Error(stderr.toString()));
+                    }
+                    else {
+                        const cmd = JSON.stringify(FileAccess.asFileUri('vs/base/node/ps.sh').fsPath);
+                        exec(cmd, {}, (err, stdout, stderr) => {
+                            if (err || stderr) {
+                                reject(err || new Error(stderr.toString()));
+                            }
+                            else {
+                                parsePsOutput(stdout, addToTree);
+                                calculateLinuxCpuUsage();
+                            }
+                        });
+                    }
+                }
+                else {
+                    const ps = stdout.toString().trim();
+                    const args = '-ax -o pid=,ppid=,pcpu=,pmem=,command=';
+                    exec(`${ps} ${args}`, { maxBuffer: 1000 * 1024, env: { LC_NUMERIC: 'en_US.UTF-8' } }, (err, stdout, stderr) => {
+                        if (err || (stderr && !stderr.includes('screen size is bogus'))) {
+                            reject(err || new Error(stderr.toString()));
+                        }
+                        else {
+                            parsePsOutput(stdout, addToTree);
+                            if (process.platform === 'linux') {
+                                calculateLinuxCpuUsage();
+                            }
+                            else {
+                                if (!rootItem) {
+                                    reject(new Error(`Root process ${rootPid} not found`));
+                                }
+                                else {
+                                    resolve(rootItem);
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    });
+}
+function parsePsOutput(stdout, addToTree) {
+    const PID_CMD = /^\s*([0-9]+)\s+([0-9]+)\s+([0-9]+\.[0-9]+)\s+([0-9]+\.[0-9]+)\s+(.+)$/;
+    const lines = stdout.toString().split('\n');
+    for (const line of lines) {
+        const matches = PID_CMD.exec(line.trim());
+        if (matches && matches.length === 6) {
+            addToTree(parseInt(matches[1]), parseInt(matches[2]), matches[5], parseFloat(matches[3]), parseFloat(matches[4]));
+        }
+    }
+}

@@ -1,1 +1,31 @@
-import{KeybindingsRegistry as i}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import*as t from"../../../../base/common/platform.js";import{KeyCode as n,KeyMod as d}from"../../../../base/common/keyCodes.js";import{getActiveWindow as m}from"../../../../base/browser/dom.js";if(t.isMacintosh){let e=function(r){return()=>{m().document.execCommand(r)}};var C=e;i.registerCommandAndKeybindingRule({id:"execCut",primary:d.CtrlCmd|n.KeyX,handler:e("cut"),weight:0,when:void 0}),i.registerCommandAndKeybindingRule({id:"execCopy",primary:d.CtrlCmd|n.KeyC,handler:e("copy"),weight:0,when:void 0}),i.registerCommandAndKeybindingRule({id:"execPaste",primary:d.CtrlCmd|n.KeyV,handler:e("paste"),weight:0,when:void 0})}
+import { KeybindingsRegistry } from '../../../../platform/keybinding/common/keybindingsRegistry.js';
+import * as platform from '../../../../base/common/platform.js';
+import { getActiveWindow } from '../../../../base/browser/dom.js';
+if (platform.isMacintosh) {
+    KeybindingsRegistry.registerCommandAndKeybindingRule({
+        id: 'execCut',
+        primary: 2048 | 54,
+        handler: bindExecuteCommand('cut'),
+        weight: 0,
+        when: undefined,
+    });
+    KeybindingsRegistry.registerCommandAndKeybindingRule({
+        id: 'execCopy',
+        primary: 2048 | 33,
+        handler: bindExecuteCommand('copy'),
+        weight: 0,
+        when: undefined,
+    });
+    KeybindingsRegistry.registerCommandAndKeybindingRule({
+        id: 'execPaste',
+        primary: 2048 | 52,
+        handler: bindExecuteCommand('paste'),
+        weight: 0,
+        when: undefined,
+    });
+    function bindExecuteCommand(command) {
+        return () => {
+            getActiveWindow().document.execCommand(command);
+        };
+    }
+}

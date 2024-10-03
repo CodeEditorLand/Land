@@ -1,1 +1,43 @@
-import"../../../../../base/browser/ui/tree/tree.js";import{WorkbenchObjectTree as a}from"../../../../../platform/list/browser/listService.js";import{TestItemTreeElement as s}from"./index.js";import"./testingViewState.js";import{TestId as T}from"../../common/testId.js";class b extends a{getOptimizedViewState(d){const l=d||{},n=(e,t)=>{if(!(e.element instanceof s))return!1;const r=T.localId(e.element.test.item.extId),i=t.children?.[r]||{};i.collapsed=e.depth===0||!e.collapsed?e.collapsed:void 0;let o=i.collapsed!==void 0;if(e.children.length)for(const c of e.children)o=n(c,i)||o;return o?(t.children??={},t.children[r]=i):t.children?.hasOwnProperty(r)&&delete t.children[r],o};l.children??={};for(const e of this.getNode().children)if(e.element instanceof s)if(e.element.test.controllerId===e.element.test.item.extId)n(e,l);else{const t=l.children[e.element.test.controllerId]??={children:{}};n(e,t)}return l}}export{b as TestingObjectTree};
+import { WorkbenchObjectTree } from '../../../../../platform/list/browser/listService.js';
+import { TestItemTreeElement } from './index.js';
+import { TestId } from '../../common/testId.js';
+export class TestingObjectTree extends WorkbenchObjectTree {
+    getOptimizedViewState(updatePreviousState) {
+        const root = updatePreviousState || {};
+        const build = (node, parent) => {
+            if (!(node.element instanceof TestItemTreeElement)) {
+                return false;
+            }
+            const localId = TestId.localId(node.element.test.item.extId);
+            const inTree = parent.children?.[localId] || {};
+            inTree.collapsed = node.depth === 0 || !node.collapsed ? node.collapsed : undefined;
+            let hasAnyNonDefaultValue = inTree.collapsed !== undefined;
+            if (node.children.length) {
+                for (const child of node.children) {
+                    hasAnyNonDefaultValue = build(child, inTree) || hasAnyNonDefaultValue;
+                }
+            }
+            if (hasAnyNonDefaultValue) {
+                parent.children ??= {};
+                parent.children[localId] = inTree;
+            }
+            else if (parent.children?.hasOwnProperty(localId)) {
+                delete parent.children[localId];
+            }
+            return hasAnyNonDefaultValue;
+        };
+        root.children ??= {};
+        for (const node of this.getNode().children) {
+            if (node.element instanceof TestItemTreeElement) {
+                if (node.element.test.controllerId === node.element.test.item.extId) {
+                    build(node, root);
+                }
+                else {
+                    const ctrlNode = root.children[node.element.test.controllerId] ??= { children: {} };
+                    build(node, ctrlNode);
+                }
+            }
+        }
+        return root;
+    }
+}

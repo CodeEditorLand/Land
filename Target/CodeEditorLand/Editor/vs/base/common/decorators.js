@@ -1,1 +1,105 @@
-function r(f){return(o,t,u)=>{let e=null,s=null;if(typeof u.value=="function"?(e="value",s=u.value):typeof u.get=="function"&&(e="get",s=u.get),!s)throw new Error("not supported");u[e]=f(s,t)}}function a(f,o,t){let u=null,e=null;if(typeof t.value=="function"?(u="value",e=t.value,e.length):typeof t.get=="function"&&(u="get",e=t.get),!e)throw new Error("not supported");const s=`$memoize$${o}`;t[u]=function(...n){return this.hasOwnProperty(s)||Object.defineProperty(this,s,{configurable:!1,enumerable:!1,writable:!1,value:e.apply(this,n)}),this[s]}}function y(f,o,t){return r((u,e)=>{const s=`$debounce$${e}`,n=`$debounce$result$${e}`;return function(...i){this[n]||(this[n]=t?t():void 0),clearTimeout(this[s]),o&&(this[n]=o(this[n],...i),i=[this[n]]),this[s]=setTimeout(()=>{u.apply(this,i),this[n]=t?t():void 0},f)}})}function $(f,o,t){return r((u,e)=>{const s=`$throttle$timer$${e}`,n=`$throttle$result$${e}`,i=`$throttle$lastRun$${e}`,h=`$throttle$pending$${e}`;return function(...c){if(this[n]||(this[n]=t?t():void 0),(this[i]===null||this[i]===void 0)&&(this[i]=-Number.MAX_VALUE),o&&(this[n]=o(this[n],...c)),this[h])return;const l=this[i]+f;l<=Date.now()?(this[i]=Date.now(),u.apply(this,[this[n]]),this[n]=t?t():void 0):(this[h]=!0,this[s]=setTimeout(()=>{this[h]=!1,this[i]=Date.now(),u.apply(this,[this[n]]),this[n]=t?t():void 0},l-Date.now()))}})}export{y as debounce,a as memoize,$ as throttle};
+function createDecorator(mapFn) {
+    return (target, key, descriptor) => {
+        let fnKey = null;
+        let fn = null;
+        if (typeof descriptor.value === 'function') {
+            fnKey = 'value';
+            fn = descriptor.value;
+        }
+        else if (typeof descriptor.get === 'function') {
+            fnKey = 'get';
+            fn = descriptor.get;
+        }
+        if (!fn) {
+            throw new Error('not supported');
+        }
+        descriptor[fnKey] = mapFn(fn, key);
+    };
+}
+export function memoize(_target, key, descriptor) {
+    let fnKey = null;
+    let fn = null;
+    if (typeof descriptor.value === 'function') {
+        fnKey = 'value';
+        fn = descriptor.value;
+        if (fn.length !== 0) {
+            console.warn('Memoize should only be used in functions with zero parameters');
+        }
+    }
+    else if (typeof descriptor.get === 'function') {
+        fnKey = 'get';
+        fn = descriptor.get;
+    }
+    if (!fn) {
+        throw new Error('not supported');
+    }
+    const memoizeKey = `$memoize$${key}`;
+    descriptor[fnKey] = function (...args) {
+        if (!this.hasOwnProperty(memoizeKey)) {
+            Object.defineProperty(this, memoizeKey, {
+                configurable: false,
+                enumerable: false,
+                writable: false,
+                value: fn.apply(this, args)
+            });
+        }
+        return this[memoizeKey];
+    };
+}
+export function debounce(delay, reducer, initialValueProvider) {
+    return createDecorator((fn, key) => {
+        const timerKey = `$debounce$${key}`;
+        const resultKey = `$debounce$result$${key}`;
+        return function (...args) {
+            if (!this[resultKey]) {
+                this[resultKey] = initialValueProvider ? initialValueProvider() : undefined;
+            }
+            clearTimeout(this[timerKey]);
+            if (reducer) {
+                this[resultKey] = reducer(this[resultKey], ...args);
+                args = [this[resultKey]];
+            }
+            this[timerKey] = setTimeout(() => {
+                fn.apply(this, args);
+                this[resultKey] = initialValueProvider ? initialValueProvider() : undefined;
+            }, delay);
+        };
+    });
+}
+export function throttle(delay, reducer, initialValueProvider) {
+    return createDecorator((fn, key) => {
+        const timerKey = `$throttle$timer$${key}`;
+        const resultKey = `$throttle$result$${key}`;
+        const lastRunKey = `$throttle$lastRun$${key}`;
+        const pendingKey = `$throttle$pending$${key}`;
+        return function (...args) {
+            if (!this[resultKey]) {
+                this[resultKey] = initialValueProvider ? initialValueProvider() : undefined;
+            }
+            if (this[lastRunKey] === null || this[lastRunKey] === undefined) {
+                this[lastRunKey] = -Number.MAX_VALUE;
+            }
+            if (reducer) {
+                this[resultKey] = reducer(this[resultKey], ...args);
+            }
+            if (this[pendingKey]) {
+                return;
+            }
+            const nextTime = this[lastRunKey] + delay;
+            if (nextTime <= Date.now()) {
+                this[lastRunKey] = Date.now();
+                fn.apply(this, [this[resultKey]]);
+                this[resultKey] = initialValueProvider ? initialValueProvider() : undefined;
+            }
+            else {
+                this[pendingKey] = true;
+                this[timerKey] = setTimeout(() => {
+                    this[pendingKey] = false;
+                    this[lastRunKey] = Date.now();
+                    fn.apply(this, [this[resultKey]]);
+                    this[resultKey] = initialValueProvider ? initialValueProvider() : undefined;
+                }, nextTime - Date.now());
+            }
+        };
+    });
+}

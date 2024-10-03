@@ -1,1 +1,143 @@
-var U=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var d=(p,s,e,t)=>{for(var i=t>1?void 0:t?S(s,e):s,a=p.length-1,c;a>=0;a--)(c=p[a])&&(i=(t?c(s,e,i):c(i))||i);return t&&i&&U(s,e,i),i},r=(p,s)=>(e,t)=>s(e,t,p);import*as n from"electron";import{memoize as h}from"../../../base/common/decorators.js";import{Event as u}from"../../../base/common/event.js";import{hash as I}from"../../../base/common/hash.js";import{DisposableStore as b}from"../../../base/common/lifecycle.js";import{IConfigurationService as w}from"../../configuration/common/configuration.js";import{IEnvironmentMainService as y}from"../../environment/electron-main/environmentMainService.js";import{ILifecycleMainService as A}from"../../lifecycle/electron-main/lifecycleMainService.js";import{ILogService as R}from"../../log/common/log.js";import{IProductService as E}from"../../product/common/productService.js";import{IRequestService as C}from"../../request/common/request.js";import{ITelemetryService as N}from"../../telemetry/common/telemetry.js";import{State as l,StateType as v,UpdateType as m}from"../common/update.js";import{AbstractUpdateService as F,createUpdateURL as L}from"./abstractUpdateService.js";let o=class extends F{constructor(e,t,i,a,c,f,g){super(e,t,a,c,f,g);this.telemetryService=i;e.setRelaunchHandler(this)}disposables=new b;get onRawError(){return u.fromNodeEventEmitter(n.autoUpdater,"error",(e,t)=>t)}get onRawUpdateNotAvailable(){return u.fromNodeEventEmitter(n.autoUpdater,"update-not-available")}get onRawUpdateAvailable(){return u.fromNodeEventEmitter(n.autoUpdater,"update-available")}get onRawUpdateDownloaded(){return u.fromNodeEventEmitter(n.autoUpdater,"update-downloaded",(e,t,i,a)=>({version:i,productVersion:i,timestamp:a}))}handleRelaunch(e){return e?.addArgs||e?.removeArgs||this.state.type!==v.Ready?!1:(this.logService.trace("update#handleRelaunch(): running raw#quitAndInstall()"),this.doQuitAndInstall(),!0)}async initialize(){await super.initialize(),this.onRawError(this.onError,this,this.disposables),this.onRawUpdateAvailable(this.onUpdateAvailable,this,this.disposables),this.onRawUpdateDownloaded(this.onUpdateDownloaded,this,this.disposables),this.onRawUpdateNotAvailable(this.onUpdateNotAvailable,this,this.disposables)}onError(e){this.telemetryService.publicLog2("update:error",{messageHash:String(I(String(e)))}),this.logService.error("UpdateService error:",e);const t=this.state.type===v.CheckingForUpdates&&this.state.explicit?e:void 0;this.setState(l.Idle(m.Archive,t))}buildUpdateFeedUrl(e){let t;this.productService.darwinUniversalAssetId?t=this.productService.darwinUniversalAssetId:t=process.arch==="x64"?"darwin":"darwin-arm64";const i=L(t,e,this.productService);try{n.autoUpdater.setFeedURL({url:i})}catch(a){this.logService.error("Failed to set update feed URL",a);return}return i}doCheckForUpdates(e){this.setState(l.CheckingForUpdates(e)),n.autoUpdater.checkForUpdates()}onUpdateAvailable(){this.state.type===v.CheckingForUpdates&&this.setState(l.Downloading)}onUpdateDownloaded(e){this.state.type===v.Downloading&&(this.setState(l.Downloaded(e)),this.telemetryService.publicLog2("update:downloaded",{version:e.version}),this.setState(l.Ready(e)))}onUpdateNotAvailable(){this.state.type===v.CheckingForUpdates&&(this.telemetryService.publicLog2("update:notAvailable",{explicit:this.state.explicit}),this.setState(l.Idle(m.Archive)))}doQuitAndInstall(){this.logService.trace("update#quitAndInstall(): running raw#quitAndInstall()"),n.autoUpdater.quitAndInstall()}dispose(){this.disposables.dispose()}};d([h],o.prototype,"onRawError",1),d([h],o.prototype,"onRawUpdateNotAvailable",1),d([h],o.prototype,"onRawUpdateAvailable",1),d([h],o.prototype,"onRawUpdateDownloaded",1),o=d([r(0,A),r(1,w),r(2,N),r(3,y),r(4,C),r(5,R),r(6,E)],o);export{o as DarwinUpdateService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as electron from 'electron';
+import { memoize } from '../../../base/common/decorators.js';
+import { Event } from '../../../base/common/event.js';
+import { hash } from '../../../base/common/hash.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { IEnvironmentMainService } from '../../environment/electron-main/environmentMainService.js';
+import { ILifecycleMainService } from '../../lifecycle/electron-main/lifecycleMainService.js';
+import { ILogService } from '../../log/common/log.js';
+import { IProductService } from '../../product/common/productService.js';
+import { IRequestService } from '../../request/common/request.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+import { State } from '../common/update.js';
+import { AbstractUpdateService, createUpdateURL } from './abstractUpdateService.js';
+let DarwinUpdateService = class DarwinUpdateService extends AbstractUpdateService {
+    get onRawError() { return Event.fromNodeEventEmitter(electron.autoUpdater, 'error', (_, message) => message); }
+    get onRawUpdateNotAvailable() { return Event.fromNodeEventEmitter(electron.autoUpdater, 'update-not-available'); }
+    get onRawUpdateAvailable() { return Event.fromNodeEventEmitter(electron.autoUpdater, 'update-available'); }
+    get onRawUpdateDownloaded() { return Event.fromNodeEventEmitter(electron.autoUpdater, 'update-downloaded', (_, releaseNotes, version, timestamp) => ({ version, productVersion: version, timestamp })); }
+    constructor(lifecycleMainService, configurationService, telemetryService, environmentMainService, requestService, logService, productService) {
+        super(lifecycleMainService, configurationService, environmentMainService, requestService, logService, productService);
+        this.telemetryService = telemetryService;
+        this.disposables = new DisposableStore();
+        lifecycleMainService.setRelaunchHandler(this);
+    }
+    handleRelaunch(options) {
+        if (options?.addArgs || options?.removeArgs) {
+            return false;
+        }
+        if (this.state.type !== "ready") {
+            return false;
+        }
+        this.logService.trace('update#handleRelaunch(): running raw#quitAndInstall()');
+        this.doQuitAndInstall();
+        return true;
+    }
+    async initialize() {
+        await super.initialize();
+        this.onRawError(this.onError, this, this.disposables);
+        this.onRawUpdateAvailable(this.onUpdateAvailable, this, this.disposables);
+        this.onRawUpdateDownloaded(this.onUpdateDownloaded, this, this.disposables);
+        this.onRawUpdateNotAvailable(this.onUpdateNotAvailable, this, this.disposables);
+    }
+    onError(err) {
+        this.telemetryService.publicLog2('update:error', { messageHash: String(hash(String(err))) });
+        this.logService.error('UpdateService error:', err);
+        const message = (this.state.type === "checking for updates" && this.state.explicit) ? err : undefined;
+        this.setState(State.Idle(1, message));
+    }
+    buildUpdateFeedUrl(quality) {
+        let assetID;
+        if (!this.productService.darwinUniversalAssetId) {
+            assetID = process.arch === 'x64' ? 'darwin' : 'darwin-arm64';
+        }
+        else {
+            assetID = this.productService.darwinUniversalAssetId;
+        }
+        const url = createUpdateURL(assetID, quality, this.productService);
+        try {
+            electron.autoUpdater.setFeedURL({ url });
+        }
+        catch (e) {
+            this.logService.error('Failed to set update feed URL', e);
+            return undefined;
+        }
+        return url;
+    }
+    doCheckForUpdates(context) {
+        this.setState(State.CheckingForUpdates(context));
+        electron.autoUpdater.checkForUpdates();
+    }
+    onUpdateAvailable() {
+        if (this.state.type !== "checking for updates") {
+            return;
+        }
+        this.setState(State.Downloading);
+    }
+    onUpdateDownloaded(update) {
+        if (this.state.type !== "downloading") {
+            return;
+        }
+        this.setState(State.Downloaded(update));
+        this.telemetryService.publicLog2('update:downloaded', { version: update.version });
+        this.setState(State.Ready(update));
+    }
+    onUpdateNotAvailable() {
+        if (this.state.type !== "checking for updates") {
+            return;
+        }
+        this.telemetryService.publicLog2('update:notAvailable', { explicit: this.state.explicit });
+        this.setState(State.Idle(1));
+    }
+    doQuitAndInstall() {
+        this.logService.trace('update#quitAndInstall(): running raw#quitAndInstall()');
+        electron.autoUpdater.quitAndInstall();
+    }
+    dispose() {
+        this.disposables.dispose();
+    }
+};
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], DarwinUpdateService.prototype, "onRawError", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], DarwinUpdateService.prototype, "onRawUpdateNotAvailable", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], DarwinUpdateService.prototype, "onRawUpdateAvailable", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], DarwinUpdateService.prototype, "onRawUpdateDownloaded", null);
+DarwinUpdateService = __decorate([
+    __param(0, ILifecycleMainService),
+    __param(1, IConfigurationService),
+    __param(2, ITelemetryService),
+    __param(3, IEnvironmentMainService),
+    __param(4, IRequestService),
+    __param(5, ILogService),
+    __param(6, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], DarwinUpdateService);
+export { DarwinUpdateService };

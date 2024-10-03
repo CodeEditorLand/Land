@@ -1,1 +1,22 @@
-import{generateUuid as t}from"../../../base/common/uuid.js";import"../common/profiling.js";class a{_serviceBrand;_sessions=new Map;async startProfiling(s){const i=await(await import("v8-inspect-profiler")).startProfiling({host:s.host,port:s.port,checkForPaused:!0}),e=t();return this._sessions.set(e,i),e}async stopProfiling(s){const r=this._sessions.get(s);if(!r)throw new Error(`UNKNOWN session '${s}'`);const i=await r.stop();return this._sessions.delete(s),i.profile}}export{a as InspectProfilingService};
+import { generateUuid } from '../../../base/common/uuid.js';
+export class InspectProfilingService {
+    constructor() {
+        this._sessions = new Map();
+    }
+    async startProfiling(options) {
+        const prof = await import('v8-inspect-profiler');
+        const session = await prof.startProfiling({ host: options.host, port: options.port, checkForPaused: true });
+        const id = generateUuid();
+        this._sessions.set(id, session);
+        return id;
+    }
+    async stopProfiling(sessionId) {
+        const session = this._sessions.get(sessionId);
+        if (!session) {
+            throw new Error(`UNKNOWN session '${sessionId}'`);
+        }
+        const result = await session.stop();
+        this._sessions.delete(sessionId);
+        return result.profile;
+    }
+}

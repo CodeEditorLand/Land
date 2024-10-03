@@ -1,1 +1,65 @@
-var f=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var l=(i,o,e,r)=>{for(var t=r>1?void 0:r?h(o,e):o,c=i.length-1,a;c>=0;c--)(a=i[c])&&(t=(r?a(o,e,t):a(t))||t);return r&&t&&f(o,e,t),t},m=(i,o)=>(e,r)=>o(e,r,i);import*as v from"fs";import{RunOnceScheduler as g}from"../../../../base/common/async.js";import{onUnexpectedError as S}from"../../../../base/common/errors.js";import{Disposable as y}from"../../../../base/common/lifecycle.js";import{basename as w,dirname as x,join as D}from"../../../../base/common/path.js";import{Promises as u}from"../../../../base/node/pfs.js";import{ILogService as P}from"../../../../platform/log/common/log.js";import{IProductService as I}from"../../../../platform/product/common/productService.js";let s=class extends y{constructor(e,r,t){super();this.productService=r;this.logService=t;e&&this._register(new g(()=>{this.cleanUpCodeCaches(e)},3e4)).schedule()}_DataMaxAge=this.productService.quality!=="stable"?1e3*60*60*24*7:1e3*60*60*24*30*3;async cleanUpCodeCaches(e){this.logService.trace("[code cache cleanup]: Starting to clean up old code cache folders.");try{const r=Date.now(),t=x(e),c=w(e),a=await u.readdir(t);await Promise.all(a.map(async n=>{if(n===c)return;const d=D(t,n),p=await v.promises.stat(d);if(p.isDirectory()&&r-p.mtime.getTime()>this._DataMaxAge)return this.logService.trace(`[code cache cleanup]: Removing code cache folder ${n}.`),u.rm(d)}))}catch(r){S(r)}}};s=l([m(1,I),m(2,P)],s);export{s as CodeCacheCleaner};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as fs from 'fs';
+import { RunOnceScheduler } from '../../../../base/common/async.js';
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { basename, dirname, join } from '../../../../base/common/path.js';
+import { Promises } from '../../../../base/node/pfs.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+let CodeCacheCleaner = class CodeCacheCleaner extends Disposable {
+    constructor(currentCodeCachePath, productService, logService) {
+        super();
+        this.productService = productService;
+        this.logService = logService;
+        this._DataMaxAge = this.productService.quality !== 'stable'
+            ? 1000 * 60 * 60 * 24 * 7
+            : 1000 * 60 * 60 * 24 * 30 * 3;
+        if (currentCodeCachePath) {
+            const scheduler = this._register(new RunOnceScheduler(() => {
+                this.cleanUpCodeCaches(currentCodeCachePath);
+            }, 30 * 1000));
+            scheduler.schedule();
+        }
+    }
+    async cleanUpCodeCaches(currentCodeCachePath) {
+        this.logService.trace('[code cache cleanup]: Starting to clean up old code cache folders.');
+        try {
+            const now = Date.now();
+            const codeCacheRootPath = dirname(currentCodeCachePath);
+            const currentCodeCache = basename(currentCodeCachePath);
+            const codeCaches = await Promises.readdir(codeCacheRootPath);
+            await Promise.all(codeCaches.map(async (codeCache) => {
+                if (codeCache === currentCodeCache) {
+                    return;
+                }
+                const codeCacheEntryPath = join(codeCacheRootPath, codeCache);
+                const codeCacheEntryStat = await fs.promises.stat(codeCacheEntryPath);
+                if (codeCacheEntryStat.isDirectory() && (now - codeCacheEntryStat.mtime.getTime()) > this._DataMaxAge) {
+                    this.logService.trace(`[code cache cleanup]: Removing code cache folder ${codeCache}.`);
+                    return Promises.rm(codeCacheEntryPath);
+                }
+            }));
+        }
+        catch (error) {
+            onUnexpectedError(error);
+        }
+    }
+};
+CodeCacheCleaner = __decorate([
+    __param(1, IProductService),
+    __param(2, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], CodeCacheCleaner);
+export { CodeCacheCleaner };

@@ -1,1 +1,179 @@
-import"./base.js";import{DebugNameData as i}from"./debugName.js";import{assertFn as p,DisposableStore as o,markAsDisposed as l,onBugIndicatingError as h,toDisposable as m,trackDisposable as b}from"./commonFacade/deps.js";import{getLogger as u}from"./logging.js";function c(a){return new s(new i(void 0,void 0,a),a,void 0,void 0)}function g(a,e){return new s(new i(a.owner,a.debugName,a.debugReferenceFn??e),e,void 0,void 0)}function y(a,e){return new s(new i(a.owner,a.debugName,a.debugReferenceFn??e),e,a.createEmptyChangeSummary,a.handleChange)}function x(a,e){const n=new o,t=y({owner:a.owner,debugName:a.debugName,debugReferenceFn:a.debugReferenceFn??e,createEmptyChangeSummary:a.createEmptyChangeSummary,handleChange:a.handleChange},(r,d)=>{n.clear(),e(r,d,n)});return m(()=>{t.dispose(),n.dispose()})}function A(a){const e=new o,n=g({owner:void 0,debugName:void 0,debugReferenceFn:a},t=>{e.clear(),a(t,e)});return m(()=>{n.dispose(),e.dispose()})}function _(a,e){let n;return g({debugReferenceFn:e},t=>{const r=a.read(t),d=n;n=r,e({lastValue:d,newValue:r})})}var C=(t=>(t[t.dependenciesMightHaveChanged=1]="dependenciesMightHaveChanged",t[t.stale=2]="stale",t[t.upToDate=3]="upToDate",t))(C||{});class s{constructor(e,n,t,r){this._debugNameData=e;this._runFn=n;this.createChangeSummary=t;this._handleChange=r;this.changeSummary=this.createChangeSummary?.(),u()?.handleAutorunCreated(this),this._runIfNeeded(),b(this)}state=2;updateCount=0;disposed=!1;dependencies=new Set;dependenciesToBeRemoved=new Set;changeSummary;get debugName(){return this._debugNameData.getDebugName(this)??"(anonymous)"}dispose(){this.disposed=!0;for(const e of this.dependencies)e.removeObserver(this);this.dependencies.clear(),l(this)}_runIfNeeded(){if(this.state===3)return;const e=this.dependenciesToBeRemoved;this.dependenciesToBeRemoved=this.dependencies,this.dependencies=e,this.state=3;const n=this.disposed;try{if(!n){u()?.handleAutorunTriggered(this);const t=this.changeSummary;try{this.changeSummary=this.createChangeSummary?.(),this._runFn(this,t)}catch(r){h(r)}}}finally{n||u()?.handleAutorunFinished(this);for(const t of this.dependenciesToBeRemoved)t.removeObserver(this);this.dependenciesToBeRemoved.clear()}}toString(){return`Autorun<${this.debugName}>`}beginUpdate(){this.state===3&&(this.state=1),this.updateCount++}endUpdate(){try{if(this.updateCount===1)do{if(this.state===1){this.state=3;for(const e of this.dependencies)if(e.reportChanges(),this.state===2)break}this._runIfNeeded()}while(this.state!==3)}finally{this.updateCount--}p(()=>this.updateCount>=0)}handlePossibleChange(e){this.state===3&&this.dependencies.has(e)&&!this.dependenciesToBeRemoved.has(e)&&(this.state=1)}handleChange(e,n){if(this.dependencies.has(e)&&!this.dependenciesToBeRemoved.has(e))try{(this._handleChange?this._handleChange({changedObservable:e,change:n,didChange:r=>r===e},this.changeSummary):!0)&&(this.state=2)}catch(t){h(t)}}readObservable(e){if(this.disposed)return e.get();e.addObserver(this);const n=e.get();return this.dependencies.add(e),this.dependenciesToBeRemoved.delete(e),n}}(e=>e.Observer=s)(c||={});export{s as AutorunObserver,c as autorun,_ as autorunDelta,y as autorunHandleChanges,g as autorunOpts,A as autorunWithStore,x as autorunWithStoreHandleChanges};
+import { DebugNameData } from './debugName.js';
+import { assertFn, DisposableStore, markAsDisposed, onBugIndicatingError, toDisposable, trackDisposable } from './commonFacade/deps.js';
+import { getLogger } from './logging.js';
+export function autorun(fn) {
+    return new AutorunObserver(new DebugNameData(undefined, undefined, fn), fn, undefined, undefined);
+}
+export function autorunOpts(options, fn) {
+    return new AutorunObserver(new DebugNameData(options.owner, options.debugName, options.debugReferenceFn ?? fn), fn, undefined, undefined);
+}
+export function autorunHandleChanges(options, fn) {
+    return new AutorunObserver(new DebugNameData(options.owner, options.debugName, options.debugReferenceFn ?? fn), fn, options.createEmptyChangeSummary, options.handleChange);
+}
+export function autorunWithStoreHandleChanges(options, fn) {
+    const store = new DisposableStore();
+    const disposable = autorunHandleChanges({
+        owner: options.owner,
+        debugName: options.debugName,
+        debugReferenceFn: options.debugReferenceFn ?? fn,
+        createEmptyChangeSummary: options.createEmptyChangeSummary,
+        handleChange: options.handleChange,
+    }, (reader, changeSummary) => {
+        store.clear();
+        fn(reader, changeSummary, store);
+    });
+    return toDisposable(() => {
+        disposable.dispose();
+        store.dispose();
+    });
+}
+export function autorunWithStore(fn) {
+    const store = new DisposableStore();
+    const disposable = autorunOpts({
+        owner: undefined,
+        debugName: undefined,
+        debugReferenceFn: fn,
+    }, reader => {
+        store.clear();
+        fn(reader, store);
+    });
+    return toDisposable(() => {
+        disposable.dispose();
+        store.dispose();
+    });
+}
+export function autorunDelta(observable, handler) {
+    let _lastValue;
+    return autorunOpts({ debugReferenceFn: handler }, (reader) => {
+        const newValue = observable.read(reader);
+        const lastValue = _lastValue;
+        _lastValue = newValue;
+        handler({ lastValue, newValue });
+    });
+}
+export class AutorunObserver {
+    get debugName() {
+        return this._debugNameData.getDebugName(this) ?? '(anonymous)';
+    }
+    constructor(_debugNameData, _runFn, createChangeSummary, _handleChange) {
+        this._debugNameData = _debugNameData;
+        this._runFn = _runFn;
+        this.createChangeSummary = createChangeSummary;
+        this._handleChange = _handleChange;
+        this.state = 2;
+        this.updateCount = 0;
+        this.disposed = false;
+        this.dependencies = new Set();
+        this.dependenciesToBeRemoved = new Set();
+        this.changeSummary = this.createChangeSummary?.();
+        getLogger()?.handleAutorunCreated(this);
+        this._runIfNeeded();
+        trackDisposable(this);
+    }
+    dispose() {
+        this.disposed = true;
+        for (const o of this.dependencies) {
+            o.removeObserver(this);
+        }
+        this.dependencies.clear();
+        markAsDisposed(this);
+    }
+    _runIfNeeded() {
+        if (this.state === 3) {
+            return;
+        }
+        const emptySet = this.dependenciesToBeRemoved;
+        this.dependenciesToBeRemoved = this.dependencies;
+        this.dependencies = emptySet;
+        this.state = 3;
+        const isDisposed = this.disposed;
+        try {
+            if (!isDisposed) {
+                getLogger()?.handleAutorunTriggered(this);
+                const changeSummary = this.changeSummary;
+                try {
+                    this.changeSummary = this.createChangeSummary?.();
+                    this._runFn(this, changeSummary);
+                }
+                catch (e) {
+                    onBugIndicatingError(e);
+                }
+            }
+        }
+        finally {
+            if (!isDisposed) {
+                getLogger()?.handleAutorunFinished(this);
+            }
+            for (const o of this.dependenciesToBeRemoved) {
+                o.removeObserver(this);
+            }
+            this.dependenciesToBeRemoved.clear();
+        }
+    }
+    toString() {
+        return `Autorun<${this.debugName}>`;
+    }
+    beginUpdate() {
+        if (this.state === 3) {
+            this.state = 1;
+        }
+        this.updateCount++;
+    }
+    endUpdate() {
+        try {
+            if (this.updateCount === 1) {
+                do {
+                    if (this.state === 1) {
+                        this.state = 3;
+                        for (const d of this.dependencies) {
+                            d.reportChanges();
+                            if (this.state === 2) {
+                                break;
+                            }
+                        }
+                    }
+                    this._runIfNeeded();
+                } while (this.state !== 3);
+            }
+        }
+        finally {
+            this.updateCount--;
+        }
+        assertFn(() => this.updateCount >= 0);
+    }
+    handlePossibleChange(observable) {
+        if (this.state === 3 && this.dependencies.has(observable) && !this.dependenciesToBeRemoved.has(observable)) {
+            this.state = 1;
+        }
+    }
+    handleChange(observable, change) {
+        if (this.dependencies.has(observable) && !this.dependenciesToBeRemoved.has(observable)) {
+            try {
+                const shouldReact = this._handleChange ? this._handleChange({
+                    changedObservable: observable,
+                    change,
+                    didChange: (o) => o === observable,
+                }, this.changeSummary) : true;
+                if (shouldReact) {
+                    this.state = 2;
+                }
+            }
+            catch (e) {
+                onBugIndicatingError(e);
+            }
+        }
+    }
+    readObservable(observable) {
+        if (this.disposed) {
+            return observable.get();
+        }
+        observable.addObserver(this);
+        const value = observable.get();
+        this.dependencies.add(observable);
+        this.dependenciesToBeRemoved.delete(observable);
+        return value;
+    }
+}
+(function (autorun) {
+    autorun.Observer = AutorunObserver;
+})(autorun || (autorun = {}));

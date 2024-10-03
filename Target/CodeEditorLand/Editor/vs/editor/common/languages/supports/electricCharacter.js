@@ -1,1 +1,47 @@
-import{distinct as l}from"../../../../base/common/arrays.js";import{ignoreBracketsInToken as k}from"../supports.js";import{BracketsUtils as h}from"./richEditBrackets.js";class m{_richEditBrackets;constructor(t){this._richEditBrackets=t}getElectricCharacters(){const t=[];if(this._richEditBrackets)for(const e of this._richEditBrackets.brackets)for(const r of e.close){const n=r.charAt(r.length-1);t.push(n)}return l(t)}onElectricCharacter(t,e,r){if(!this._richEditBrackets||this._richEditBrackets.brackets.length===0)return null;const n=e.findTokenIndexAtOffset(r-1);if(k(e.getStandardTokenType(n)))return null;const a=this._richEditBrackets.reversedRegex,i=e.getLineContent().substring(0,r-1)+t,c=h.findPrevBracketInRange(a,1,i,0,i.length);if(!c)return null;const s=i.substring(c.startColumn-1,c.endColumn-1).toLowerCase();if(this._richEditBrackets.textIsOpenBracket[s])return null;const o=e.getActualLineContentBefore(c.startColumn-1);return/^\s*$/.test(o)?{matchOpenBracket:s}:null}}export{m as BracketElectricCharacterSupport};
+import { distinct } from '../../../../base/common/arrays.js';
+import { ignoreBracketsInToken } from '../supports.js';
+import { BracketsUtils } from './richEditBrackets.js';
+export class BracketElectricCharacterSupport {
+    constructor(richEditBrackets) {
+        this._richEditBrackets = richEditBrackets;
+    }
+    getElectricCharacters() {
+        const result = [];
+        if (this._richEditBrackets) {
+            for (const bracket of this._richEditBrackets.brackets) {
+                for (const close of bracket.close) {
+                    const lastChar = close.charAt(close.length - 1);
+                    result.push(lastChar);
+                }
+            }
+        }
+        return distinct(result);
+    }
+    onElectricCharacter(character, context, column) {
+        if (!this._richEditBrackets || this._richEditBrackets.brackets.length === 0) {
+            return null;
+        }
+        const tokenIndex = context.findTokenIndexAtOffset(column - 1);
+        if (ignoreBracketsInToken(context.getStandardTokenType(tokenIndex))) {
+            return null;
+        }
+        const reversedBracketRegex = this._richEditBrackets.reversedRegex;
+        const text = context.getLineContent().substring(0, column - 1) + character;
+        const r = BracketsUtils.findPrevBracketInRange(reversedBracketRegex, 1, text, 0, text.length);
+        if (!r) {
+            return null;
+        }
+        const bracketText = text.substring(r.startColumn - 1, r.endColumn - 1).toLowerCase();
+        const isOpen = this._richEditBrackets.textIsOpenBracket[bracketText];
+        if (isOpen) {
+            return null;
+        }
+        const textBeforeBracket = context.getActualLineContentBefore(r.startColumn - 1);
+        if (!/^\s*$/.test(textBeforeBracket)) {
+            return null;
+        }
+        return {
+            matchOpenBracket: bracketText
+        };
+    }
+}

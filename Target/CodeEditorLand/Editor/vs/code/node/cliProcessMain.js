@@ -1,1 +1,230 @@
-import*as k from"fs";import{hostname as _,release as b}from"os";import{raceTimeout as H}from"../../base/common/async.js";import{toErrorMessage as q}from"../../base/common/errorMessage.js";import{isSigPipeError as W,onUnexpectedError as N,setUnexpectedErrorHandler as X}from"../../base/common/errors.js";import{Disposable as $}from"../../base/common/lifecycle.js";import{Schemas as p}from"../../base/common/network.js";import{isAbsolute as j,join as z}from"../../base/common/path.js";import{isWindows as C}from"../../base/common/platform.js";import{cwd as G}from"../../base/common/process.js";import{URI as K}from"../../base/common/uri.js";import{IConfigurationService as B}from"../../platform/configuration/common/configuration.js";import{ConfigurationService as Y}from"../../platform/configuration/common/configurationService.js";import{IDownloadService as J}from"../../platform/download/common/download.js";import{DownloadService as Q}from"../../platform/download/common/downloadService.js";import"../../platform/environment/common/argv.js";import{INativeEnvironmentService as D}from"../../platform/environment/common/environment.js";import{NativeEnvironmentService as Z}from"../../platform/environment/node/environmentService.js";import{ExtensionGalleryServiceWithNoStorageService as ee}from"../../platform/extensionManagement/common/extensionGalleryService.js";import{IExtensionGalleryService as re}from"../../platform/extensionManagement/common/extensionManagement.js";import{ExtensionSignatureVerificationService as ie,IExtensionSignatureVerificationService as te}from"../../platform/extensionManagement/node/extensionSignatureVerificationService.js";import{ExtensionManagementCLI as g}from"../../platform/extensionManagement/common/extensionManagementCLI.js";import{IExtensionsProfileScannerService as oe}from"../../platform/extensionManagement/common/extensionsProfileScannerService.js";import{IExtensionsScannerService as ne}from"../../platform/extensionManagement/common/extensionsScannerService.js";import{ExtensionManagementService as se,INativeServerExtensionManagementService as ae}from"../../platform/extensionManagement/node/extensionManagementService.js";import{ExtensionsScannerService as ce}from"../../platform/extensionManagement/node/extensionsScannerService.js";import{IFileService as U}from"../../platform/files/common/files.js";import{FileService as me}from"../../platform/files/common/fileService.js";import{DiskFileSystemProvider as le}from"../../platform/files/node/diskFileSystemProvider.js";import{SyncDescriptor as a}from"../../platform/instantiation/common/descriptors.js";import"../../platform/instantiation/common/instantiation.js";import{InstantiationService as fe}from"../../platform/instantiation/common/instantiationService.js";import{ServiceCollection as ve}from"../../platform/instantiation/common/serviceCollection.js";import{ILanguagePackService as pe}from"../../platform/languagePacks/common/languagePacks.js";import{NativeLanguagePackService as ge}from"../../platform/languagePacks/node/languagePacks.js";import{ConsoleLogger as l,getLogLevel as de,ILoggerService as Se,ILogService as T,LogLevel as f}from"../../platform/log/common/log.js";import{FilePolicyService as ue}from"../../platform/policy/common/filePolicyService.js";import{IPolicyService as Ie,NullPolicyService as he}from"../../platform/policy/common/policy.js";import{NativePolicyService as we}from"../../platform/policy/node/nativePolicyService.js";import Pe from"../../platform/product/common/product.js";import{IProductService as ye}from"../../platform/product/common/productService.js";import{IRequestService as xe}from"../../platform/request/common/request.js";import{RequestService as Ee}from"../../platform/request/node/requestService.js";import{SaveStrategy as Le,StateReadonlyService as Ne}from"../../platform/state/node/stateService.js";import{resolveCommonProperties as Ce}from"../../platform/telemetry/common/commonProperties.js";import{ITelemetryService as R}from"../../platform/telemetry/common/telemetry.js";import{TelemetryService as De}from"../../platform/telemetry/common/telemetryService.js";import{supportsTelemetry as Ue,NullTelemetryService as Te,getPiiPathsFromEnvironment as Re,isInternalTelemetry as Fe}from"../../platform/telemetry/common/telemetryUtils.js";import{OneDataSystemAppender as Ae}from"../../platform/telemetry/node/1dsAppender.js";import"../../platform/telemetry/node/telemetry.js";import{IUriIdentityService as F}from"../../platform/uriIdentity/common/uriIdentity.js";import{UriIdentityService as A}from"../../platform/uriIdentity/common/uriIdentityService.js";import{IUserDataProfilesService as M}from"../../platform/userDataProfile/common/userDataProfile.js";import{UserDataProfilesReadonlyService as Me}from"../../platform/userDataProfile/node/userDataProfile.js";import{resolveMachineId as Oe,resolveSqmId as Ve,resolvedevDeviceId as ke}from"../../platform/telemetry/node/telemetryUtils.js";import{ExtensionsProfileScannerService as _e}from"../../platform/extensionManagement/node/extensionsProfileScannerService.js";import{LogService as be}from"../../platform/log/common/logService.js";import{LoggerService as He}from"../../platform/log/node/loggerService.js";import{localize as qe}from"../../nls.js";import{FileUserDataProvider as We}from"../../platform/userData/common/fileUserDataProvider.js";import{addUNCHostToAllowlist as Xe,getUNCHost as $e}from"../../base/node/unc.js";class je extends ${constructor(e){super();this.argv=e;this.registerListeners()}registerListeners(){process.once("exit",()=>this.dispose())}async run(){const[e,r]=await this.initServices();return e.invokeFunction(async i=>{const o=i.get(T),c=i.get(U),s=i.get(D),t=i.get(M);o.info("CLI main",this.argv),this.registerErrorHandler(o),await this.doRun(s,c,t,e),await Promise.all(r.map(n=>{H(n.flush(),1e3)}))})}async initServices(){const e=new ve,r={_serviceBrand:void 0,...Pe};e.set(ye,r);const i=new Z(this.argv,r);e.set(D,i),await Promise.all([this.allowWindowsUNCPath(i.appSettingsHome.with({scheme:p.file}).fsPath),this.allowWindowsUNCPath(i.extensionsPath)].map(m=>m?k.promises.mkdir(m,{recursive:!0}):void 0));const o=new He(de(i),i.logsHome);e.set(Se,o);const c=this._register(o.createLogger("cli",{name:qe("cli","CLI")})),s=[];o.getLogLevel()===f.Trace&&s.push(new l(o.getLogLevel()));const t=this._register(new be(c,s));e.set(T,t);const n=this._register(new me(t));e.set(U,n);const P=this._register(new le(t));n.registerProvider(p.file,P);const I=new A(n);e.set(F,I);const v=new Ne(Le.DELAYED,i,t,n),d=new Me(v,I,i,n,t);e.set(M,d),n.registerProvider(p.vscodeUserData,new We(p.file,P,p.vscodeUserData,d,I,t));const y=C&&r.win32RegValueName?this._register(new we(t,r.win32RegValueName)):i.policyFile?this._register(new ue(i.policyFile,n,t)):new he;e.set(Ie,y);const S=this._register(new Y(d.defaultProfile.settingsResource,n,y,t));e.set(B,S),await Promise.all([v.init(),S.initialize()]);let x;try{x=await Oe(v,t)}catch(m){m.code!=="ENOENT"&&t.error(m)}const O=await Ve(v,t),V=await ke(v,t);d.init(),e.set(F,new A(n));const E=new Ee(S,i,t);e.set(xe,E),e.set(J,new a(Q,void 0,!0)),e.set(oe,new a(_e,void 0,!0)),e.set(ne,new a(ce,void 0,!0)),e.set(te,new a(ie,void 0,!0)),e.set(ae,new a(se,void 0,!0)),e.set(re,new a(ee,void 0,!0)),e.set(pe,new a(ge,void 0,!1));const h=[],L=Fe(r,S);if(Ue(r,i)){r.aiConfig&&r.aiConfig.ariaKey&&h.push(new Ae(E,L,"monacoworkbench",null,r.aiConfig.ariaKey));const m={appenders:h,sendErrorTelemetry:!1,commonProperties:Ce(b(),_(),process.arch,r.commit,r.version,x,O,V,L),piiPaths:Re(i)};e.set(R,new a(De,[m],!1))}else e.set(R,Te);return[new fe(e),h]}allowWindowsUNCPath(e){if(C){const r=$e(e);r&&Xe(r)}return e}registerErrorHandler(e){X(r=>{const i=q(r,!0);i&&e.error(`[uncaught exception in CLI]: ${i}`)}),process.on("uncaughtException",r=>{W(r)||N(r)}),process.on("unhandledRejection",r=>N(r))}async doRun(e,r,i,o){let c;if(e.args.profile&&(c=i.profiles.find(t=>t.name===e.args.profile),!c))throw new Error(`Profile '${e.args.profile}' not found.`);const s=(c??i.defaultProfile).extensionsResource;if(this.argv["list-extensions"])return o.createInstance(g,new l(f.Info,!1)).listExtensions(!!this.argv["show-versions"],this.argv.category,s);if(this.argv["install-extension"]||this.argv["install-builtin-extension"]){const t={isMachineScoped:!!this.argv["do-not-sync"],installPreReleaseVersion:!!this.argv["pre-release"],profileLocation:s};return o.createInstance(g,new l(f.Info,!1)).installExtensions(this.asExtensionIdOrVSIX(this.argv["install-extension"]||[]),this.asExtensionIdOrVSIX(this.argv["install-builtin-extension"]||[]),t,!!this.argv.force)}else{if(this.argv["uninstall-extension"])return o.createInstance(g,new l(f.Info,!1)).uninstallExtensions(this.asExtensionIdOrVSIX(this.argv["uninstall-extension"]),!!this.argv.force,s);if(this.argv["update-extensions"])return o.createInstance(g,new l(f.Info,!1)).updateExtensions(s);if(this.argv["locate-extension"])return o.createInstance(g,new l(f.Info,!1)).locateExtension(this.argv["locate-extension"]);this.argv.telemetry}}asExtensionIdOrVSIX(e){return e.map(r=>/\.vsix$/i.test(r)?K.file(j(r)?r:z(G(),r)):r)}}async function si(w){const u=new je(w);try{await u.run()}finally{u.dispose()}}export{si as main};
+import * as fs from 'fs';
+import { hostname, release } from 'os';
+import { raceTimeout } from '../../base/common/async.js';
+import { toErrorMessage } from '../../base/common/errorMessage.js';
+import { isSigPipeError, onUnexpectedError, setUnexpectedErrorHandler } from '../../base/common/errors.js';
+import { Disposable } from '../../base/common/lifecycle.js';
+import { Schemas } from '../../base/common/network.js';
+import { isAbsolute, join } from '../../base/common/path.js';
+import { isWindows } from '../../base/common/platform.js';
+import { cwd } from '../../base/common/process.js';
+import { URI } from '../../base/common/uri.js';
+import { IConfigurationService } from '../../platform/configuration/common/configuration.js';
+import { ConfigurationService } from '../../platform/configuration/common/configurationService.js';
+import { IDownloadService } from '../../platform/download/common/download.js';
+import { DownloadService } from '../../platform/download/common/downloadService.js';
+import { INativeEnvironmentService } from '../../platform/environment/common/environment.js';
+import { NativeEnvironmentService } from '../../platform/environment/node/environmentService.js';
+import { ExtensionGalleryServiceWithNoStorageService } from '../../platform/extensionManagement/common/extensionGalleryService.js';
+import { IExtensionGalleryService } from '../../platform/extensionManagement/common/extensionManagement.js';
+import { ExtensionSignatureVerificationService, IExtensionSignatureVerificationService } from '../../platform/extensionManagement/node/extensionSignatureVerificationService.js';
+import { ExtensionManagementCLI } from '../../platform/extensionManagement/common/extensionManagementCLI.js';
+import { IExtensionsProfileScannerService } from '../../platform/extensionManagement/common/extensionsProfileScannerService.js';
+import { IExtensionsScannerService } from '../../platform/extensionManagement/common/extensionsScannerService.js';
+import { ExtensionManagementService, INativeServerExtensionManagementService } from '../../platform/extensionManagement/node/extensionManagementService.js';
+import { ExtensionsScannerService } from '../../platform/extensionManagement/node/extensionsScannerService.js';
+import { IFileService } from '../../platform/files/common/files.js';
+import { FileService } from '../../platform/files/common/fileService.js';
+import { DiskFileSystemProvider } from '../../platform/files/node/diskFileSystemProvider.js';
+import { SyncDescriptor } from '../../platform/instantiation/common/descriptors.js';
+import { InstantiationService } from '../../platform/instantiation/common/instantiationService.js';
+import { ServiceCollection } from '../../platform/instantiation/common/serviceCollection.js';
+import { ILanguagePackService } from '../../platform/languagePacks/common/languagePacks.js';
+import { NativeLanguagePackService } from '../../platform/languagePacks/node/languagePacks.js';
+import { ConsoleLogger, getLogLevel, ILoggerService, ILogService, LogLevel } from '../../platform/log/common/log.js';
+import { FilePolicyService } from '../../platform/policy/common/filePolicyService.js';
+import { IPolicyService, NullPolicyService } from '../../platform/policy/common/policy.js';
+import { NativePolicyService } from '../../platform/policy/node/nativePolicyService.js';
+import product from '../../platform/product/common/product.js';
+import { IProductService } from '../../platform/product/common/productService.js';
+import { IRequestService } from '../../platform/request/common/request.js';
+import { RequestService } from '../../platform/request/node/requestService.js';
+import { StateReadonlyService } from '../../platform/state/node/stateService.js';
+import { resolveCommonProperties } from '../../platform/telemetry/common/commonProperties.js';
+import { ITelemetryService } from '../../platform/telemetry/common/telemetry.js';
+import { TelemetryService } from '../../platform/telemetry/common/telemetryService.js';
+import { supportsTelemetry, NullTelemetryService, getPiiPathsFromEnvironment, isInternalTelemetry } from '../../platform/telemetry/common/telemetryUtils.js';
+import { OneDataSystemAppender } from '../../platform/telemetry/node/1dsAppender.js';
+import { buildTelemetryMessage } from '../../platform/telemetry/node/telemetry.js';
+import { IUriIdentityService } from '../../platform/uriIdentity/common/uriIdentity.js';
+import { UriIdentityService } from '../../platform/uriIdentity/common/uriIdentityService.js';
+import { IUserDataProfilesService } from '../../platform/userDataProfile/common/userDataProfile.js';
+import { UserDataProfilesReadonlyService } from '../../platform/userDataProfile/node/userDataProfile.js';
+import { resolveMachineId, resolveSqmId, resolvedevDeviceId } from '../../platform/telemetry/node/telemetryUtils.js';
+import { ExtensionsProfileScannerService } from '../../platform/extensionManagement/node/extensionsProfileScannerService.js';
+import { LogService } from '../../platform/log/common/logService.js';
+import { LoggerService } from '../../platform/log/node/loggerService.js';
+import { localize } from '../../nls.js';
+import { FileUserDataProvider } from '../../platform/userData/common/fileUserDataProvider.js';
+import { addUNCHostToAllowlist, getUNCHost } from '../../base/node/unc.js';
+class CliMain extends Disposable {
+    constructor(argv) {
+        super();
+        this.argv = argv;
+        this.registerListeners();
+    }
+    registerListeners() {
+        process.once('exit', () => this.dispose());
+    }
+    async run() {
+        const [instantiationService, appenders] = await this.initServices();
+        return instantiationService.invokeFunction(async (accessor) => {
+            const logService = accessor.get(ILogService);
+            const fileService = accessor.get(IFileService);
+            const environmentService = accessor.get(INativeEnvironmentService);
+            const userDataProfilesService = accessor.get(IUserDataProfilesService);
+            logService.info('CLI main', this.argv);
+            this.registerErrorHandler(logService);
+            await this.doRun(environmentService, fileService, userDataProfilesService, instantiationService);
+            await Promise.all(appenders.map(a => {
+                raceTimeout(a.flush(), 1000);
+            }));
+            return;
+        });
+    }
+    async initServices() {
+        const services = new ServiceCollection();
+        const productService = { _serviceBrand: undefined, ...product };
+        services.set(IProductService, productService);
+        const environmentService = new NativeEnvironmentService(this.argv, productService);
+        services.set(INativeEnvironmentService, environmentService);
+        await Promise.all([
+            this.allowWindowsUNCPath(environmentService.appSettingsHome.with({ scheme: Schemas.file }).fsPath),
+            this.allowWindowsUNCPath(environmentService.extensionsPath)
+        ].map(path => path ? fs.promises.mkdir(path, { recursive: true }) : undefined));
+        const loggerService = new LoggerService(getLogLevel(environmentService), environmentService.logsHome);
+        services.set(ILoggerService, loggerService);
+        const logger = this._register(loggerService.createLogger('cli', { name: localize('cli', "CLI") }));
+        const otherLoggers = [];
+        if (loggerService.getLogLevel() === LogLevel.Trace) {
+            otherLoggers.push(new ConsoleLogger(loggerService.getLogLevel()));
+        }
+        const logService = this._register(new LogService(logger, otherLoggers));
+        services.set(ILogService, logService);
+        const fileService = this._register(new FileService(logService));
+        services.set(IFileService, fileService);
+        const diskFileSystemProvider = this._register(new DiskFileSystemProvider(logService));
+        fileService.registerProvider(Schemas.file, diskFileSystemProvider);
+        const uriIdentityService = new UriIdentityService(fileService);
+        services.set(IUriIdentityService, uriIdentityService);
+        const stateService = new StateReadonlyService(1, environmentService, logService, fileService);
+        const userDataProfilesService = new UserDataProfilesReadonlyService(stateService, uriIdentityService, environmentService, fileService, logService);
+        services.set(IUserDataProfilesService, userDataProfilesService);
+        fileService.registerProvider(Schemas.vscodeUserData, new FileUserDataProvider(Schemas.file, diskFileSystemProvider, Schemas.vscodeUserData, userDataProfilesService, uriIdentityService, logService));
+        const policyService = isWindows && productService.win32RegValueName ? this._register(new NativePolicyService(logService, productService.win32RegValueName))
+            : environmentService.policyFile ? this._register(new FilePolicyService(environmentService.policyFile, fileService, logService))
+                : new NullPolicyService();
+        services.set(IPolicyService, policyService);
+        const configurationService = this._register(new ConfigurationService(userDataProfilesService.defaultProfile.settingsResource, fileService, policyService, logService));
+        services.set(IConfigurationService, configurationService);
+        await Promise.all([
+            stateService.init(),
+            configurationService.initialize()
+        ]);
+        let machineId = undefined;
+        try {
+            machineId = await resolveMachineId(stateService, logService);
+        }
+        catch (error) {
+            if (error.code !== 'ENOENT') {
+                logService.error(error);
+            }
+        }
+        const sqmId = await resolveSqmId(stateService, logService);
+        const devDeviceId = await resolvedevDeviceId(stateService, logService);
+        userDataProfilesService.init();
+        services.set(IUriIdentityService, new UriIdentityService(fileService));
+        const requestService = new RequestService(configurationService, environmentService, logService);
+        services.set(IRequestService, requestService);
+        services.set(IDownloadService, new SyncDescriptor(DownloadService, undefined, true));
+        services.set(IExtensionsProfileScannerService, new SyncDescriptor(ExtensionsProfileScannerService, undefined, true));
+        services.set(IExtensionsScannerService, new SyncDescriptor(ExtensionsScannerService, undefined, true));
+        services.set(IExtensionSignatureVerificationService, new SyncDescriptor(ExtensionSignatureVerificationService, undefined, true));
+        services.set(INativeServerExtensionManagementService, new SyncDescriptor(ExtensionManagementService, undefined, true));
+        services.set(IExtensionGalleryService, new SyncDescriptor(ExtensionGalleryServiceWithNoStorageService, undefined, true));
+        services.set(ILanguagePackService, new SyncDescriptor(NativeLanguagePackService, undefined, false));
+        const appenders = [];
+        const isInternal = isInternalTelemetry(productService, configurationService);
+        if (supportsTelemetry(productService, environmentService)) {
+            if (productService.aiConfig && productService.aiConfig.ariaKey) {
+                appenders.push(new OneDataSystemAppender(requestService, isInternal, 'monacoworkbench', null, productService.aiConfig.ariaKey));
+            }
+            const config = {
+                appenders,
+                sendErrorTelemetry: false,
+                commonProperties: resolveCommonProperties(release(), hostname(), process.arch, productService.commit, productService.version, machineId, sqmId, devDeviceId, isInternal),
+                piiPaths: getPiiPathsFromEnvironment(environmentService)
+            };
+            services.set(ITelemetryService, new SyncDescriptor(TelemetryService, [config], false));
+        }
+        else {
+            services.set(ITelemetryService, NullTelemetryService);
+        }
+        return [new InstantiationService(services), appenders];
+    }
+    allowWindowsUNCPath(path) {
+        if (isWindows) {
+            const host = getUNCHost(path);
+            if (host) {
+                addUNCHostToAllowlist(host);
+            }
+        }
+        return path;
+    }
+    registerErrorHandler(logService) {
+        setUnexpectedErrorHandler(error => {
+            const message = toErrorMessage(error, true);
+            if (!message) {
+                return;
+            }
+            logService.error(`[uncaught exception in CLI]: ${message}`);
+        });
+        process.on('uncaughtException', err => {
+            if (!isSigPipeError(err)) {
+                onUnexpectedError(err);
+            }
+        });
+        process.on('unhandledRejection', (reason) => onUnexpectedError(reason));
+    }
+    async doRun(environmentService, fileService, userDataProfilesService, instantiationService) {
+        let profile = undefined;
+        if (environmentService.args.profile) {
+            profile = userDataProfilesService.profiles.find(p => p.name === environmentService.args.profile);
+            if (!profile) {
+                throw new Error(`Profile '${environmentService.args.profile}' not found.`);
+            }
+        }
+        const profileLocation = (profile ?? userDataProfilesService.defaultProfile).extensionsResource;
+        if (this.argv['list-extensions']) {
+            return instantiationService.createInstance(ExtensionManagementCLI, new ConsoleLogger(LogLevel.Info, false)).listExtensions(!!this.argv['show-versions'], this.argv['category'], profileLocation);
+        }
+        else if (this.argv['install-extension'] || this.argv['install-builtin-extension']) {
+            const installOptions = { isMachineScoped: !!this.argv['do-not-sync'], installPreReleaseVersion: !!this.argv['pre-release'], profileLocation };
+            return instantiationService.createInstance(ExtensionManagementCLI, new ConsoleLogger(LogLevel.Info, false)).installExtensions(this.asExtensionIdOrVSIX(this.argv['install-extension'] || []), this.asExtensionIdOrVSIX(this.argv['install-builtin-extension'] || []), installOptions, !!this.argv['force']);
+        }
+        else if (this.argv['uninstall-extension']) {
+            return instantiationService.createInstance(ExtensionManagementCLI, new ConsoleLogger(LogLevel.Info, false)).uninstallExtensions(this.asExtensionIdOrVSIX(this.argv['uninstall-extension']), !!this.argv['force'], profileLocation);
+        }
+        else if (this.argv['update-extensions']) {
+            return instantiationService.createInstance(ExtensionManagementCLI, new ConsoleLogger(LogLevel.Info, false)).updateExtensions(profileLocation);
+        }
+        else if (this.argv['locate-extension']) {
+            return instantiationService.createInstance(ExtensionManagementCLI, new ConsoleLogger(LogLevel.Info, false)).locateExtension(this.argv['locate-extension']);
+        }
+        else if (this.argv['telemetry']) {
+            console.log(await buildTelemetryMessage(environmentService.appRoot, environmentService.extensionsPath));
+        }
+    }
+    asExtensionIdOrVSIX(inputs) {
+        return inputs.map(input => /\.vsix$/i.test(input) ? URI.file(isAbsolute(input) ? input : join(cwd(), input)) : input);
+    }
+}
+export async function main(argv) {
+    const cliMain = new CliMain(argv);
+    try {
+        await cliMain.run();
+    }
+    finally {
+        cliMain.dispose();
+    }
+}

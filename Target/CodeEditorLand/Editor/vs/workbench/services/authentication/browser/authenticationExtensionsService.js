@@ -1,1 +1,389 @@
-var k=Object.defineProperty;var O=Object.getOwnPropertyDescriptor;var y=(p,S,e,s)=>{for(var t=s>1?void 0:s?O(S,e):S,i=p.length-1,o;i>=0;i--)(o=p[i])&&(t=(s?o(S,e,t):o(t))||t);return s&&t&&k(S,e,t),t},A=(p,S)=>(e,s)=>S(e,s,p);import{Disposable as D,DisposableStore as T,dispose as $,MutableDisposable as M}from"../../../../base/common/lifecycle.js";import*as m from"../../../../nls.js";import{MenuId as R,MenuRegistry as q}from"../../../../platform/actions/common/actions.js";import{CommandsRegistry as I}from"../../../../platform/commands/common/commands.js";import{IDialogService as j}from"../../../../platform/dialogs/common/dialogs.js";import{InstantiationType as B,registerSingleton as L}from"../../../../platform/instantiation/common/extensions.js";import{Severity as K}from"../../../../platform/notification/common/notification.js";import{IQuickInputService as z}from"../../../../platform/quickinput/common/quickInput.js";import{IStorageService as H,StorageScope as l,StorageTarget as P}from"../../../../platform/storage/common/storage.js";import{IActivityService as N,NumberBadge as U}from"../../activity/common/activity.js";import{IAuthenticationAccessService as W}from"./authenticationAccessService.js";import{IAuthenticationUsageService as x}from"./authenticationUsageService.js";import{IAuthenticationService as w,IAuthenticationExtensionsService as G}from"../common/authentication.js";import{Emitter as Q}from"../../../../base/common/event.js";import{IProductService as F}from"../../../../platform/product/common/productService.js";const v=" ";let f=class extends D{constructor(e,s,t,i,o,n,r,c){super();this.activityService=e;this.storageService=s;this.dialogService=t;this.quickInputService=i;this._productService=o;this._authenticationService=n;this._authenticationUsageService=r;this._authenticationAccessService=c;this.registerListeners()}_signInRequestItems=new Map;_sessionAccessRequestItems=new Map;_accountBadgeDisposable=this._register(new M);_onDidAccountPreferenceChange=this._register(new Q);onDidChangeAccountPreference=this._onDidAccountPreferenceChange.event;_inheritAuthAccountPreferenceParentToChildren=this._productService.inheritAuthAccountPreference||{};_inheritAuthAccountPreferenceChildToParent=Object.entries(this._inheritAuthAccountPreferenceParentToChildren).reduce((e,[s,t])=>(t.forEach(i=>{e[i]=s}),e),{});registerListeners(){this._register(this._authenticationService.onDidChangeSessions(async e=>{e.event.added?.length&&await this.updateNewSessionRequests(e.providerId,e.event.added),e.event.removed?.length&&await this.updateAccessRequests(e.providerId,e.event.removed),this.updateBadgeCount()})),this._register(this._authenticationService.onDidUnregisterAuthenticationProvider(e=>{const s=this._sessionAccessRequestItems.get(e.id)||{};Object.keys(s).forEach(t=>{this.removeAccessRequest(e.id,t)})}))}async updateNewSessionRequests(e,s){const t=this._signInRequestItems.get(e);t&&Object.keys(t).forEach(i=>{s.some(o=>o.scopes.slice().join(v)===i)&&(t[i]?.disposables.forEach(n=>n.dispose()),delete t[i],Object.keys(t).length===0?this._signInRequestItems.delete(e):this._signInRequestItems.set(e,t))})}async updateAccessRequests(e,s){const t=this._sessionAccessRequestItems.get(e);t&&Object.keys(t).forEach(i=>{s.forEach(o=>{const n=t[i].possibleSessions.findIndex(r=>r.id===o.id);n&&t[i].possibleSessions.splice(n,1)}),t[i].possibleSessions.length||this.removeAccessRequest(e,i)})}updateBadgeCount(){this._accountBadgeDisposable.clear();let e=0;if(this._signInRequestItems.forEach(s=>{Object.keys(s).forEach(t=>{e+=s[t].requestingExtensionIds.length})}),this._sessionAccessRequestItems.forEach(s=>{e+=Object.keys(s).length}),e>0){const s=new U(e,()=>m.localize("sign in","Sign in requested"));this._accountBadgeDisposable.value=this.activityService.showAccountsActivity({badge:s})}}removeAccessRequest(e,s){const t=this._sessionAccessRequestItems.get(e)||{};t[s]&&($(t[s].disposables),delete t[s],this.updateBadgeCount())}updateAccountPreference(e,s,t){const i=this._inheritAuthAccountPreferenceChildToParent[e]??e,o=this._getKey(i,s);this.storageService.store(o,t.label,l.WORKSPACE,P.MACHINE),this.storageService.store(o,t.label,l.APPLICATION,P.MACHINE);const n=this._inheritAuthAccountPreferenceParentToChildren[i],r=n?[i,...n]:[i];this._onDidAccountPreferenceChange.fire({extensionIds:r,providerId:s})}getAccountPreference(e,s){const t=this._getKey(this._inheritAuthAccountPreferenceChildToParent[e]??e,s);return this.storageService.get(t,l.WORKSPACE)??this.storageService.get(t,l.APPLICATION)}removeAccountPreference(e,s){const t=this._getKey(this._inheritAuthAccountPreferenceChildToParent[e]??e,s);this.storageService.remove(t,l.WORKSPACE),this.storageService.remove(t,l.APPLICATION)}_getKey(e,s){return`${e}-${s}`}updateSessionPreference(e,s,t){const i=`${s}-${e}-${t.scopes.join(v)}`;this.storageService.store(i,t.id,l.WORKSPACE,P.MACHINE),this.storageService.store(i,t.id,l.APPLICATION,P.MACHINE)}getSessionPreference(e,s,t){const i=`${s}-${e}-${t.join(v)}`;return this.storageService.get(i,l.WORKSPACE)??this.storageService.get(i,l.APPLICATION)}removeSessionPreference(e,s,t){const i=`${s}-${e}-${t.join(v)}`;this.storageService.remove(i,l.WORKSPACE),this.storageService.remove(i,l.APPLICATION)}_updateAccountAndSessionPreferences(e,s,t){this.updateAccountPreference(s,e,t.account),this.updateSessionPreference(e,s,t)}async showGetSessionPrompt(e,s,t,i){let o;(a=>(a[a.Allow=0]="Allow",a[a.Deny=1]="Deny",a[a.Cancel=2]="Cancel"))(o||={});const{result:n}=await this.dialogService.prompt({type:K.Info,message:m.localize("confirmAuthenticationAccess","The extension '{0}' wants to access the {1} account '{2}'.",i,e.label,s),buttons:[{label:m.localize({key:"allow",comment:["&& denotes a mnemonic"]},"&&Allow"),run:()=>0},{label:m.localize({key:"deny",comment:["&& denotes a mnemonic"]},"&&Deny"),run:()=>1}],cancelButton:{run:()=>2}});return n!==2&&(this._authenticationAccessService.updateAllowedExtensions(e.id,s,[{id:t,name:i,allowed:n===0}]),this.removeAccessRequest(e.id,t)),n===0}async selectSession(e,s,t,i,o){const n=await this._authenticationService.getAccounts(e);if(!n.length)throw new Error("No accounts available");const r=new T,c=r.add(this.quickInputService.createQuickPick());c.ignoreFocusOut=!0;const h=new Set,a=o.filter(u=>!h.has(u.account.label)&&h.add(u.account.label)).map(u=>({label:u.account.label,session:u}));return n.forEach(u=>{h.has(u.label)||a.push({label:u.label,account:u})}),a.push({label:m.localize("useOtherAccount","Sign in to another account")}),c.items=a,c.title=m.localize({key:"selectAccount",comment:["The placeholder {0} is the name of an extension. {1} is the name of the type of account, such as Microsoft or GitHub."]},"The extension '{0}' wants to access a {1} account",t,this._authenticationService.getProvider(e).label),c.placeholder=m.localize("getSessionPlateholder","Select an account for '{0}' to use or Esc to cancel",t),await new Promise((u,g)=>{r.add(c.onDidAccept(async b=>{c.dispose();let d=c.selectedItems[0].session;if(!d){const C=c.selectedItems[0].account;try{d=await this._authenticationService.createSession(e,i,{account:C})}catch(E){g(E);return}}const _=d.account.label;this._authenticationAccessService.updateAllowedExtensions(e,_,[{id:s,name:t,allowed:!0}]),this._updateAccountAndSessionPreferences(e,s,d),this.removeAccessRequest(e,s),u(d)})),r.add(c.onDidHide(b=>{c.selectedItems[0]||g("User did not consent to account access"),r.dispose()})),c.show()})}async completeSessionAccessRequest(e,s,t,i){const n=(this._sessionAccessRequestItems.get(e.id)||{})[s];if(!n||!e)return;const r=n.possibleSessions;let c;if(e.supportsMultipleAccounts)try{c=await this.selectSession(e.id,s,t,i,r)}catch{}else await this.showGetSessionPrompt(e,r[0].account.label,s,t)&&(c=r[0]);c&&this._authenticationUsageService.addAccountUsage(e.id,c.account.label,s,t)}requestSessionAccess(e,s,t,i,o){const n=this._sessionAccessRequestItems.get(e)||{};if(n[s])return;const c=this._authenticationService.getProvider(e),h=q.appendMenuItem(R.AccountsContext,{group:"3_accessRequests",command:{id:`${e}${s}Access`,title:m.localize({key:"accessRequest",comment:["The placeholder {0} will be replaced with an authentication provider''s label. {1} will be replaced with an extension name. (1) is to indicate that this menu item contributes to a badge count"]},"Grant access to {0} for {1}... (1)",c.label,t)}}),a=I.registerCommand({id:`${e}${s}Access`,handler:async u=>{this.completeSessionAccessRequest(c,s,t,i)}});n[s]={possibleSessions:o,disposables:[h,a]},this._sessionAccessRequestItems.set(e,n),this.updateBadgeCount()}async requestNewSession(e,s,t,i){this._authenticationService.isAuthenticationProviderRegistered(e)||await new Promise((g,b)=>{const d=this._authenticationService.onDidRegisterAuthenticationProvider(_=>{_.id===e&&(d.dispose(),g())})});let o;try{o=this._authenticationService.getProvider(e)}catch{return}const n=this._signInRequestItems.get(e),r=s.join(v);if(n&&n[r]&&n[r].requestingExtensionIds.includes(t))return;const h=`${e}:${t}:signIn${Object.keys(n||[]).length}`,a=q.appendMenuItem(R.AccountsContext,{group:"2_signInRequests",command:{id:h,title:m.localize({key:"signInRequest",comment:["The placeholder {0} will be replaced with an authentication provider's label. {1} will be replaced with an extension name. (1) is to indicate that this menu item contributes to a badge count."]},"Sign in with {0} to use {1} (1)",o.label,i)}}),u=I.registerCommand({id:h,handler:async g=>{const d=await g.get(w).createSession(e,s);this._authenticationAccessService.updateAllowedExtensions(e,d.account.label,[{id:t,name:i,allowed:!0}]),this._updateAccountAndSessionPreferences(e,t,d)}});if(n){const g=n[r]||{disposables:[],requestingExtensionIds:[]};n[r]={disposables:[...g.disposables,a,u],requestingExtensionIds:[...g.requestingExtensionIds,t]},this._signInRequestItems.set(e,n)}else this._signInRequestItems.set(e,{[r]:{disposables:[a,u],requestingExtensionIds:[t]}});this.updateBadgeCount()}};f=y([A(0,N),A(1,H),A(2,j),A(3,z),A(4,F),A(5,w),A(6,x),A(7,W)],f),L(G,f,B.Delayed);export{f as AuthenticationExtensionsService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable, DisposableStore, dispose, MutableDisposable } from '../../../../base/common/lifecycle.js';
+import * as nls from '../../../../nls.js';
+import { MenuId, MenuRegistry } from '../../../../platform/actions/common/actions.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { Severity } from '../../../../platform/notification/common/notification.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IActivityService, NumberBadge } from '../../activity/common/activity.js';
+import { IAuthenticationAccessService } from './authenticationAccessService.js';
+import { IAuthenticationUsageService } from './authenticationUsageService.js';
+import { IAuthenticationService, IAuthenticationExtensionsService } from '../common/authentication.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+const SCOPESLIST_SEPARATOR = ' ';
+let AuthenticationExtensionsService = class AuthenticationExtensionsService extends Disposable {
+    constructor(activityService, storageService, dialogService, quickInputService, _productService, _authenticationService, _authenticationUsageService, _authenticationAccessService) {
+        super();
+        this.activityService = activityService;
+        this.storageService = storageService;
+        this.dialogService = dialogService;
+        this.quickInputService = quickInputService;
+        this._productService = _productService;
+        this._authenticationService = _authenticationService;
+        this._authenticationUsageService = _authenticationUsageService;
+        this._authenticationAccessService = _authenticationAccessService;
+        this._signInRequestItems = new Map();
+        this._sessionAccessRequestItems = new Map();
+        this._accountBadgeDisposable = this._register(new MutableDisposable());
+        this._onDidAccountPreferenceChange = this._register(new Emitter());
+        this.onDidChangeAccountPreference = this._onDidAccountPreferenceChange.event;
+        this._inheritAuthAccountPreferenceParentToChildren = this._productService.inheritAuthAccountPreference || {};
+        this._inheritAuthAccountPreferenceChildToParent = Object.entries(this._inheritAuthAccountPreferenceParentToChildren).reduce((acc, [parent, children]) => {
+            children.forEach((child) => {
+                acc[child] = parent;
+            });
+            return acc;
+        }, {});
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this._authenticationService.onDidChangeSessions(async (e) => {
+            if (e.event.added?.length) {
+                await this.updateNewSessionRequests(e.providerId, e.event.added);
+            }
+            if (e.event.removed?.length) {
+                await this.updateAccessRequests(e.providerId, e.event.removed);
+            }
+            this.updateBadgeCount();
+        }));
+        this._register(this._authenticationService.onDidUnregisterAuthenticationProvider(e => {
+            const accessRequests = this._sessionAccessRequestItems.get(e.id) || {};
+            Object.keys(accessRequests).forEach(extensionId => {
+                this.removeAccessRequest(e.id, extensionId);
+            });
+        }));
+    }
+    async updateNewSessionRequests(providerId, addedSessions) {
+        const existingRequestsForProvider = this._signInRequestItems.get(providerId);
+        if (!existingRequestsForProvider) {
+            return;
+        }
+        Object.keys(existingRequestsForProvider).forEach(requestedScopes => {
+            if (addedSessions.some(session => session.scopes.slice().join(SCOPESLIST_SEPARATOR) === requestedScopes)) {
+                const sessionRequest = existingRequestsForProvider[requestedScopes];
+                sessionRequest?.disposables.forEach(item => item.dispose());
+                delete existingRequestsForProvider[requestedScopes];
+                if (Object.keys(existingRequestsForProvider).length === 0) {
+                    this._signInRequestItems.delete(providerId);
+                }
+                else {
+                    this._signInRequestItems.set(providerId, existingRequestsForProvider);
+                }
+            }
+        });
+    }
+    async updateAccessRequests(providerId, removedSessions) {
+        const providerRequests = this._sessionAccessRequestItems.get(providerId);
+        if (providerRequests) {
+            Object.keys(providerRequests).forEach(extensionId => {
+                removedSessions.forEach(removed => {
+                    const indexOfSession = providerRequests[extensionId].possibleSessions.findIndex(session => session.id === removed.id);
+                    if (indexOfSession) {
+                        providerRequests[extensionId].possibleSessions.splice(indexOfSession, 1);
+                    }
+                });
+                if (!providerRequests[extensionId].possibleSessions.length) {
+                    this.removeAccessRequest(providerId, extensionId);
+                }
+            });
+        }
+    }
+    updateBadgeCount() {
+        this._accountBadgeDisposable.clear();
+        let numberOfRequests = 0;
+        this._signInRequestItems.forEach(providerRequests => {
+            Object.keys(providerRequests).forEach(request => {
+                numberOfRequests += providerRequests[request].requestingExtensionIds.length;
+            });
+        });
+        this._sessionAccessRequestItems.forEach(accessRequest => {
+            numberOfRequests += Object.keys(accessRequest).length;
+        });
+        if (numberOfRequests > 0) {
+            const badge = new NumberBadge(numberOfRequests, () => nls.localize('sign in', "Sign in requested"));
+            this._accountBadgeDisposable.value = this.activityService.showAccountsActivity({ badge });
+        }
+    }
+    removeAccessRequest(providerId, extensionId) {
+        const providerRequests = this._sessionAccessRequestItems.get(providerId) || {};
+        if (providerRequests[extensionId]) {
+            dispose(providerRequests[extensionId].disposables);
+            delete providerRequests[extensionId];
+            this.updateBadgeCount();
+        }
+    }
+    updateAccountPreference(extensionId, providerId, account) {
+        const parentExtensionId = this._inheritAuthAccountPreferenceChildToParent[extensionId] ?? extensionId;
+        const key = this._getKey(parentExtensionId, providerId);
+        this.storageService.store(key, account.label, 1, 1);
+        this.storageService.store(key, account.label, -1, 1);
+        const childrenExtensions = this._inheritAuthAccountPreferenceParentToChildren[parentExtensionId];
+        const extensionIds = childrenExtensions ? [parentExtensionId, ...childrenExtensions] : [parentExtensionId];
+        this._onDidAccountPreferenceChange.fire({ extensionIds, providerId });
+    }
+    getAccountPreference(extensionId, providerId) {
+        const key = this._getKey(this._inheritAuthAccountPreferenceChildToParent[extensionId] ?? extensionId, providerId);
+        return this.storageService.get(key, 1) ?? this.storageService.get(key, -1);
+    }
+    removeAccountPreference(extensionId, providerId) {
+        const key = this._getKey(this._inheritAuthAccountPreferenceChildToParent[extensionId] ?? extensionId, providerId);
+        this.storageService.remove(key, 1);
+        this.storageService.remove(key, -1);
+    }
+    _getKey(extensionId, providerId) {
+        return `${extensionId}-${providerId}`;
+    }
+    updateSessionPreference(providerId, extensionId, session) {
+        const key = `${extensionId}-${providerId}-${session.scopes.join(SCOPESLIST_SEPARATOR)}`;
+        this.storageService.store(key, session.id, 1, 1);
+        this.storageService.store(key, session.id, -1, 1);
+    }
+    getSessionPreference(providerId, extensionId, scopes) {
+        const key = `${extensionId}-${providerId}-${scopes.join(SCOPESLIST_SEPARATOR)}`;
+        return this.storageService.get(key, 1) ?? this.storageService.get(key, -1);
+    }
+    removeSessionPreference(providerId, extensionId, scopes) {
+        const key = `${extensionId}-${providerId}-${scopes.join(SCOPESLIST_SEPARATOR)}`;
+        this.storageService.remove(key, 1);
+        this.storageService.remove(key, -1);
+    }
+    _updateAccountAndSessionPreferences(providerId, extensionId, session) {
+        this.updateAccountPreference(extensionId, providerId, session.account);
+        this.updateSessionPreference(providerId, extensionId, session);
+    }
+    async showGetSessionPrompt(provider, accountName, extensionId, extensionName) {
+        let SessionPromptChoice;
+        (function (SessionPromptChoice) {
+            SessionPromptChoice[SessionPromptChoice["Allow"] = 0] = "Allow";
+            SessionPromptChoice[SessionPromptChoice["Deny"] = 1] = "Deny";
+            SessionPromptChoice[SessionPromptChoice["Cancel"] = 2] = "Cancel";
+        })(SessionPromptChoice || (SessionPromptChoice = {}));
+        const { result } = await this.dialogService.prompt({
+            type: Severity.Info,
+            message: nls.localize('confirmAuthenticationAccess', "The extension '{0}' wants to access the {1} account '{2}'.", extensionName, provider.label, accountName),
+            buttons: [
+                {
+                    label: nls.localize({ key: 'allow', comment: ['&& denotes a mnemonic'] }, "&&Allow"),
+                    run: () => SessionPromptChoice.Allow
+                },
+                {
+                    label: nls.localize({ key: 'deny', comment: ['&& denotes a mnemonic'] }, "&&Deny"),
+                    run: () => SessionPromptChoice.Deny
+                }
+            ],
+            cancelButton: {
+                run: () => SessionPromptChoice.Cancel
+            }
+        });
+        if (result !== SessionPromptChoice.Cancel) {
+            this._authenticationAccessService.updateAllowedExtensions(provider.id, accountName, [{ id: extensionId, name: extensionName, allowed: result === SessionPromptChoice.Allow }]);
+            this.removeAccessRequest(provider.id, extensionId);
+        }
+        return result === SessionPromptChoice.Allow;
+    }
+    async selectSession(providerId, extensionId, extensionName, scopes, availableSessions) {
+        const allAccounts = await this._authenticationService.getAccounts(providerId);
+        if (!allAccounts.length) {
+            throw new Error('No accounts available');
+        }
+        const disposables = new DisposableStore();
+        const quickPick = disposables.add(this.quickInputService.createQuickPick());
+        quickPick.ignoreFocusOut = true;
+        const accountsWithSessions = new Set();
+        const items = availableSessions
+            .filter(session => !accountsWithSessions.has(session.account.label) && accountsWithSessions.add(session.account.label))
+            .map(session => {
+            return {
+                label: session.account.label,
+                session: session
+            };
+        });
+        allAccounts.forEach(account => {
+            if (!accountsWithSessions.has(account.label)) {
+                items.push({ label: account.label, account });
+            }
+        });
+        items.push({ label: nls.localize('useOtherAccount', "Sign in to another account") });
+        quickPick.items = items;
+        quickPick.title = nls.localize({
+            key: 'selectAccount',
+            comment: ['The placeholder {0} is the name of an extension. {1} is the name of the type of account, such as Microsoft or GitHub.']
+        }, "The extension '{0}' wants to access a {1} account", extensionName, this._authenticationService.getProvider(providerId).label);
+        quickPick.placeholder = nls.localize('getSessionPlateholder', "Select an account for '{0}' to use or Esc to cancel", extensionName);
+        return await new Promise((resolve, reject) => {
+            disposables.add(quickPick.onDidAccept(async (_) => {
+                quickPick.dispose();
+                let session = quickPick.selectedItems[0].session;
+                if (!session) {
+                    const account = quickPick.selectedItems[0].account;
+                    try {
+                        session = await this._authenticationService.createSession(providerId, scopes, { account });
+                    }
+                    catch (e) {
+                        reject(e);
+                        return;
+                    }
+                }
+                const accountName = session.account.label;
+                this._authenticationAccessService.updateAllowedExtensions(providerId, accountName, [{ id: extensionId, name: extensionName, allowed: true }]);
+                this._updateAccountAndSessionPreferences(providerId, extensionId, session);
+                this.removeAccessRequest(providerId, extensionId);
+                resolve(session);
+            }));
+            disposables.add(quickPick.onDidHide(_ => {
+                if (!quickPick.selectedItems[0]) {
+                    reject('User did not consent to account access');
+                }
+                disposables.dispose();
+            }));
+            quickPick.show();
+        });
+    }
+    async completeSessionAccessRequest(provider, extensionId, extensionName, scopes) {
+        const providerRequests = this._sessionAccessRequestItems.get(provider.id) || {};
+        const existingRequest = providerRequests[extensionId];
+        if (!existingRequest) {
+            return;
+        }
+        if (!provider) {
+            return;
+        }
+        const possibleSessions = existingRequest.possibleSessions;
+        let session;
+        if (provider.supportsMultipleAccounts) {
+            try {
+                session = await this.selectSession(provider.id, extensionId, extensionName, scopes, possibleSessions);
+            }
+            catch (_) {
+            }
+        }
+        else {
+            const approved = await this.showGetSessionPrompt(provider, possibleSessions[0].account.label, extensionId, extensionName);
+            if (approved) {
+                session = possibleSessions[0];
+            }
+        }
+        if (session) {
+            this._authenticationUsageService.addAccountUsage(provider.id, session.account.label, extensionId, extensionName);
+        }
+    }
+    requestSessionAccess(providerId, extensionId, extensionName, scopes, possibleSessions) {
+        const providerRequests = this._sessionAccessRequestItems.get(providerId) || {};
+        const hasExistingRequest = providerRequests[extensionId];
+        if (hasExistingRequest) {
+            return;
+        }
+        const provider = this._authenticationService.getProvider(providerId);
+        const menuItem = MenuRegistry.appendMenuItem(MenuId.AccountsContext, {
+            group: '3_accessRequests',
+            command: {
+                id: `${providerId}${extensionId}Access`,
+                title: nls.localize({
+                    key: 'accessRequest',
+                    comment: [`The placeholder {0} will be replaced with an authentication provider''s label. {1} will be replaced with an extension name. (1) is to indicate that this menu item contributes to a badge count`]
+                }, "Grant access to {0} for {1}... (1)", provider.label, extensionName)
+            }
+        });
+        const accessCommand = CommandsRegistry.registerCommand({
+            id: `${providerId}${extensionId}Access`,
+            handler: async (accessor) => {
+                this.completeSessionAccessRequest(provider, extensionId, extensionName, scopes);
+            }
+        });
+        providerRequests[extensionId] = { possibleSessions, disposables: [menuItem, accessCommand] };
+        this._sessionAccessRequestItems.set(providerId, providerRequests);
+        this.updateBadgeCount();
+    }
+    async requestNewSession(providerId, scopes, extensionId, extensionName) {
+        if (!this._authenticationService.isAuthenticationProviderRegistered(providerId)) {
+            await new Promise((resolve, _) => {
+                const dispose = this._authenticationService.onDidRegisterAuthenticationProvider(e => {
+                    if (e.id === providerId) {
+                        dispose.dispose();
+                        resolve();
+                    }
+                });
+            });
+        }
+        let provider;
+        try {
+            provider = this._authenticationService.getProvider(providerId);
+        }
+        catch (_e) {
+            return;
+        }
+        const providerRequests = this._signInRequestItems.get(providerId);
+        const scopesList = scopes.join(SCOPESLIST_SEPARATOR);
+        const extensionHasExistingRequest = providerRequests
+            && providerRequests[scopesList]
+            && providerRequests[scopesList].requestingExtensionIds.includes(extensionId);
+        if (extensionHasExistingRequest) {
+            return;
+        }
+        const commandId = `${providerId}:${extensionId}:signIn${Object.keys(providerRequests || []).length}`;
+        const menuItem = MenuRegistry.appendMenuItem(MenuId.AccountsContext, {
+            group: '2_signInRequests',
+            command: {
+                id: commandId,
+                title: nls.localize({
+                    key: 'signInRequest',
+                    comment: [`The placeholder {0} will be replaced with an authentication provider's label. {1} will be replaced with an extension name. (1) is to indicate that this menu item contributes to a badge count.`]
+                }, "Sign in with {0} to use {1} (1)", provider.label, extensionName)
+            }
+        });
+        const signInCommand = CommandsRegistry.registerCommand({
+            id: commandId,
+            handler: async (accessor) => {
+                const authenticationService = accessor.get(IAuthenticationService);
+                const session = await authenticationService.createSession(providerId, scopes);
+                this._authenticationAccessService.updateAllowedExtensions(providerId, session.account.label, [{ id: extensionId, name: extensionName, allowed: true }]);
+                this._updateAccountAndSessionPreferences(providerId, extensionId, session);
+            }
+        });
+        if (providerRequests) {
+            const existingRequest = providerRequests[scopesList] || { disposables: [], requestingExtensionIds: [] };
+            providerRequests[scopesList] = {
+                disposables: [...existingRequest.disposables, menuItem, signInCommand],
+                requestingExtensionIds: [...existingRequest.requestingExtensionIds, extensionId]
+            };
+            this._signInRequestItems.set(providerId, providerRequests);
+        }
+        else {
+            this._signInRequestItems.set(providerId, {
+                [scopesList]: {
+                    disposables: [menuItem, signInCommand],
+                    requestingExtensionIds: [extensionId]
+                }
+            });
+        }
+        this.updateBadgeCount();
+    }
+};
+AuthenticationExtensionsService = __decorate([
+    __param(0, IActivityService),
+    __param(1, IStorageService),
+    __param(2, IDialogService),
+    __param(3, IQuickInputService),
+    __param(4, IProductService),
+    __param(5, IAuthenticationService),
+    __param(6, IAuthenticationUsageService),
+    __param(7, IAuthenticationAccessService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], AuthenticationExtensionsService);
+export { AuthenticationExtensionsService };
+registerSingleton(IAuthenticationExtensionsService, AuthenticationExtensionsService, 1);

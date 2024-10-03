@@ -1,1 +1,281 @@
-import"../../../base/common/buffer.js";import{CancellationToken as g}from"../../../base/common/cancellation.js";import{hash as f}from"../../../base/common/hash.js";import{DisposableStore as y}from"../../../base/common/lifecycle.js";import{Schemas as l}from"../../../base/common/network.js";import{joinPath as x}from"../../../base/common/resources.js";import{URI as u}from"../../../base/common/uri.js";import"../../../platform/extensions/common/extensions.js";import"./extHostDocuments.js";import"./extHostStoragePaths.js";import*as b from"./extHostTypeConverters.js";import{shouldSerializeBuffersForPostMessage as h,toExtensionData as P}from"./extHostWebview.js";import"./extHostWebviewPanels.js";import"../../services/editor/common/editorGroupColumn.js";import{Cache as D}from"./cache.js";import*as w from"./extHost.protocol.js";import*as p from"./extHostTypes.js";class _{constructor(o,t){this.document=o;this._storagePath=t}_backupCounter=1;_edits=new D("custom documents");_backup;addEdit(o){return this._edits.add([o])}async undo(o,t){await this.getEdit(o).undo(),t||this.disposeBackup()}async redo(o,t){await this.getEdit(o).redo(),t||this.disposeBackup()}disposeEdits(o){for(const t of o)this._edits.delete(t)}getNewBackupUri(){if(!this._storagePath)throw new Error("Backup requires a valid storage path");const o=I(this.document.uri)+this._backupCounter++;return x(this._storagePath,o)}updateBackup(o){this._backup?.delete(),this._backup=o}disposeBackup(){this._backup?.delete(),this._backup=void 0}getEdit(o){const t=this._edits.get(o,0);if(!t)throw new Error("No edit found");return t}}class k{_documents=new Map;get(o,t){return this._documents.get(this.key(o,t))}add(o,t,e){const r=this.key(o,t.uri);if(this._documents.has(r))throw new Error(`Document already exists for viewType:${o} resource:${t.uri}`);const s=new _(t,e);return this._documents.set(r,s),s}delete(o,t){const e=this.key(o,t.uri);this._documents.delete(e)}key(o,t){return`${o}@@@${t}`}}var $=(t=>(t[t.Text=0]="Text",t[t.Custom=1]="Custom",t))($||{});class H{_providers=new Map;addTextProvider(o,t,e){return this.add(o,{type:0,extension:t,provider:e})}addCustomProvider(o,t,e){return this.add(o,{type:1,extension:t,provider:e})}get(o){return this._providers.get(o)}add(o,t){if(this._providers.has(o))throw new Error(`Provider for viewType:${o} already registered`);return this._providers.set(o,t),new p.Disposable(()=>this._providers.delete(o))}}class ot{constructor(o,t,e,r,s){this._extHostDocuments=t;this._extensionStoragePaths=e;this._extHostWebview=r;this._extHostWebviewPanels=s;this._proxy=o.getProxy(w.MainContext.MainThreadCustomEditors)}_proxy;_editorProviders=new H;_documents=new k;registerCustomEditorProvider(o,t,e,r){const s=new y;return U(e)?(s.add(this._editorProviders.addTextProvider(t,o,e)),this._proxy.$registerTextEditorProvider(P(o),t,r.webviewOptions||{},{supportsMove:!!e.moveCustomTextEditor},h(o))):(s.add(this._editorProviders.addCustomProvider(t,o,e)),a(e)&&s.add(e.onDidChangeCustomDocument(i=>{const d=this.getCustomDocumentEntry(t,i.document.uri);if(S(i)){const m=d.addEdit(i);this._proxy.$onDidEdit(i.document.uri,t,m,i.label)}else this._proxy.$onContentChange(i.document.uri,t)})),this._proxy.$registerCustomEditorProvider(P(o),t,r.webviewOptions||{},!!r.supportsMultipleEditorsPerDocument,h(o))),p.Disposable.from(s,new p.Disposable(()=>{this._proxy.$unregisterEditorProvider(t)}))}async $createCustomDocument(o,t,e,r,s){const i=this._editorProviders.get(t);if(!i)throw new Error(`No provider found for '${t}'`);if(i.type!==1)throw new Error(`Invalid provide type for '${t}'`);const d=u.revive(o),m=await i.provider.openCustomDocument(d,{backupId:e,untitledDocumentData:r?.buffer},s);let c;return a(i.provider)&&this._extensionStoragePaths&&(c=this._extensionStoragePaths.workspaceValue(i.extension)??this._extensionStoragePaths.globalValue(i.extension)),this._documents.add(t,m,c),{editable:a(i.provider)}}async $disposeCustomDocument(o,t){const e=this._editorProviders.get(t);if(!e)throw new Error(`No provider found for '${t}'`);if(e.type!==1)throw new Error(`Invalid provider type for '${t}'`);const r=u.revive(o),{document:s}=this.getCustomDocumentEntry(t,r);this._documents.delete(t,s),s.dispose()}async $resolveCustomEditor(o,t,e,r,s,i){const d=this._editorProviders.get(e);if(!d)throw new Error(`No provider found for '${e}'`);const m=b.ViewColumn.to(s),c=this._extHostWebview.createNewWebview(t,r.contentOptions,d.extension),C=this._extHostWebviewPanels.createNewWebviewPanel(t,e,r.title,m,r.options,c,r.active),E=u.revive(o);switch(d.type){case 1:{const{document:v}=this.getCustomDocumentEntry(e,E);return d.provider.resolveCustomEditor(v,C,i)}case 0:{const v=this._extHostDocuments.getDocument(E);return d.provider.resolveCustomTextEditor(v,C,i)}default:throw new Error("Unknown webview provider type")}}$disposeEdits(o,t,e){this.getCustomDocumentEntry(t,o).disposeEdits(e)}async $onMoveCustomEditor(o,t,e){const r=this._editorProviders.get(e);if(!r)throw new Error(`No provider found for '${e}'`);if(!r.provider.moveCustomTextEditor)throw new Error(`Provider does not implement move '${e}'`);const s=this._extHostWebviewPanels.getWebviewPanel(o);if(!s)throw new Error("No webview found");const i=u.revive(t),d=this._extHostDocuments.getDocument(i);await r.provider.moveCustomTextEditor(d,s,g.None)}async $undo(o,t,e,r){return this.getCustomDocumentEntry(t,o).undo(e,r)}async $redo(o,t,e,r){return this.getCustomDocumentEntry(t,o).redo(e,r)}async $revert(o,t,e){const r=this.getCustomDocumentEntry(t,o);await this.getCustomEditorProvider(t).revertCustomDocument(r.document,e),r.disposeBackup()}async $onSave(o,t,e){const r=this.getCustomDocumentEntry(t,o);await this.getCustomEditorProvider(t).saveCustomDocument(r.document,e),r.disposeBackup()}async $onSaveAs(o,t,e,r){const s=this.getCustomDocumentEntry(t,o);return this.getCustomEditorProvider(t).saveCustomDocumentAs(s.document,u.revive(e),r)}async $backup(o,t,e){const r=this.getCustomDocumentEntry(t,o),i=await this.getCustomEditorProvider(t).backupCustomDocument(r.document,{destination:r.getNewBackupUri()},e);return r.updateBackup(i),i.id}getCustomDocumentEntry(o,t){const e=this._documents.get(o,u.revive(t));if(!e)throw new Error("No custom document found");return e}getCustomEditorProvider(o){const e=this._editorProviders.get(o)?.provider;if(!e||!a(e))throw new Error("Custom document is not editable");return e}}function a(n){return!!n.onDidChangeCustomDocument}function U(n){return typeof n.resolveCustomTextEditor=="function"}function S(n){return typeof n.undo=="function"&&typeof n.redo=="function"}function I(n){const o=n.scheme===l.file||n.scheme===l.untitled?n.fsPath:n.toString();return f(o)+""}export{ot as ExtHostCustomEditors};
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { hash } from '../../../base/common/hash.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { Schemas } from '../../../base/common/network.js';
+import { joinPath } from '../../../base/common/resources.js';
+import { URI } from '../../../base/common/uri.js';
+import * as typeConverters from './extHostTypeConverters.js';
+import { shouldSerializeBuffersForPostMessage, toExtensionData } from './extHostWebview.js';
+import { Cache } from './cache.js';
+import * as extHostProtocol from './extHost.protocol.js';
+import * as extHostTypes from './extHostTypes.js';
+class CustomDocumentStoreEntry {
+    constructor(document, _storagePath) {
+        this.document = document;
+        this._storagePath = _storagePath;
+        this._backupCounter = 1;
+        this._edits = new Cache('custom documents');
+    }
+    addEdit(item) {
+        return this._edits.add([item]);
+    }
+    async undo(editId, isDirty) {
+        await this.getEdit(editId).undo();
+        if (!isDirty) {
+            this.disposeBackup();
+        }
+    }
+    async redo(editId, isDirty) {
+        await this.getEdit(editId).redo();
+        if (!isDirty) {
+            this.disposeBackup();
+        }
+    }
+    disposeEdits(editIds) {
+        for (const id of editIds) {
+            this._edits.delete(id);
+        }
+    }
+    getNewBackupUri() {
+        if (!this._storagePath) {
+            throw new Error('Backup requires a valid storage path');
+        }
+        const fileName = hashPath(this.document.uri) + (this._backupCounter++);
+        return joinPath(this._storagePath, fileName);
+    }
+    updateBackup(backup) {
+        this._backup?.delete();
+        this._backup = backup;
+    }
+    disposeBackup() {
+        this._backup?.delete();
+        this._backup = undefined;
+    }
+    getEdit(editId) {
+        const edit = this._edits.get(editId, 0);
+        if (!edit) {
+            throw new Error('No edit found');
+        }
+        return edit;
+    }
+}
+class CustomDocumentStore {
+    constructor() {
+        this._documents = new Map();
+    }
+    get(viewType, resource) {
+        return this._documents.get(this.key(viewType, resource));
+    }
+    add(viewType, document, storagePath) {
+        const key = this.key(viewType, document.uri);
+        if (this._documents.has(key)) {
+            throw new Error(`Document already exists for viewType:${viewType} resource:${document.uri}`);
+        }
+        const entry = new CustomDocumentStoreEntry(document, storagePath);
+        this._documents.set(key, entry);
+        return entry;
+    }
+    delete(viewType, document) {
+        const key = this.key(viewType, document.uri);
+        this._documents.delete(key);
+    }
+    key(viewType, resource) {
+        return `${viewType}@@@${resource}`;
+    }
+}
+class EditorProviderStore {
+    constructor() {
+        this._providers = new Map();
+    }
+    addTextProvider(viewType, extension, provider) {
+        return this.add(viewType, { type: 0, extension, provider });
+    }
+    addCustomProvider(viewType, extension, provider) {
+        return this.add(viewType, { type: 1, extension, provider });
+    }
+    get(viewType) {
+        return this._providers.get(viewType);
+    }
+    add(viewType, entry) {
+        if (this._providers.has(viewType)) {
+            throw new Error(`Provider for viewType:${viewType} already registered`);
+        }
+        this._providers.set(viewType, entry);
+        return new extHostTypes.Disposable(() => this._providers.delete(viewType));
+    }
+}
+export class ExtHostCustomEditors {
+    constructor(mainContext, _extHostDocuments, _extensionStoragePaths, _extHostWebview, _extHostWebviewPanels) {
+        this._extHostDocuments = _extHostDocuments;
+        this._extensionStoragePaths = _extensionStoragePaths;
+        this._extHostWebview = _extHostWebview;
+        this._extHostWebviewPanels = _extHostWebviewPanels;
+        this._editorProviders = new EditorProviderStore();
+        this._documents = new CustomDocumentStore();
+        this._proxy = mainContext.getProxy(extHostProtocol.MainContext.MainThreadCustomEditors);
+    }
+    registerCustomEditorProvider(extension, viewType, provider, options) {
+        const disposables = new DisposableStore();
+        if (isCustomTextEditorProvider(provider)) {
+            disposables.add(this._editorProviders.addTextProvider(viewType, extension, provider));
+            this._proxy.$registerTextEditorProvider(toExtensionData(extension), viewType, options.webviewOptions || {}, {
+                supportsMove: !!provider.moveCustomTextEditor,
+            }, shouldSerializeBuffersForPostMessage(extension));
+        }
+        else {
+            disposables.add(this._editorProviders.addCustomProvider(viewType, extension, provider));
+            if (isCustomEditorProviderWithEditingCapability(provider)) {
+                disposables.add(provider.onDidChangeCustomDocument(e => {
+                    const entry = this.getCustomDocumentEntry(viewType, e.document.uri);
+                    if (isEditEvent(e)) {
+                        const editId = entry.addEdit(e);
+                        this._proxy.$onDidEdit(e.document.uri, viewType, editId, e.label);
+                    }
+                    else {
+                        this._proxy.$onContentChange(e.document.uri, viewType);
+                    }
+                }));
+            }
+            this._proxy.$registerCustomEditorProvider(toExtensionData(extension), viewType, options.webviewOptions || {}, !!options.supportsMultipleEditorsPerDocument, shouldSerializeBuffersForPostMessage(extension));
+        }
+        return extHostTypes.Disposable.from(disposables, new extHostTypes.Disposable(() => {
+            this._proxy.$unregisterEditorProvider(viewType);
+        }));
+    }
+    async $createCustomDocument(resource, viewType, backupId, untitledDocumentData, cancellation) {
+        const entry = this._editorProviders.get(viewType);
+        if (!entry) {
+            throw new Error(`No provider found for '${viewType}'`);
+        }
+        if (entry.type !== 1) {
+            throw new Error(`Invalid provide type for '${viewType}'`);
+        }
+        const revivedResource = URI.revive(resource);
+        const document = await entry.provider.openCustomDocument(revivedResource, { backupId, untitledDocumentData: untitledDocumentData?.buffer }, cancellation);
+        let storageRoot;
+        if (isCustomEditorProviderWithEditingCapability(entry.provider) && this._extensionStoragePaths) {
+            storageRoot = this._extensionStoragePaths.workspaceValue(entry.extension) ?? this._extensionStoragePaths.globalValue(entry.extension);
+        }
+        this._documents.add(viewType, document, storageRoot);
+        return { editable: isCustomEditorProviderWithEditingCapability(entry.provider) };
+    }
+    async $disposeCustomDocument(resource, viewType) {
+        const entry = this._editorProviders.get(viewType);
+        if (!entry) {
+            throw new Error(`No provider found for '${viewType}'`);
+        }
+        if (entry.type !== 1) {
+            throw new Error(`Invalid provider type for '${viewType}'`);
+        }
+        const revivedResource = URI.revive(resource);
+        const { document } = this.getCustomDocumentEntry(viewType, revivedResource);
+        this._documents.delete(viewType, document);
+        document.dispose();
+    }
+    async $resolveCustomEditor(resource, handle, viewType, initData, position, cancellation) {
+        const entry = this._editorProviders.get(viewType);
+        if (!entry) {
+            throw new Error(`No provider found for '${viewType}'`);
+        }
+        const viewColumn = typeConverters.ViewColumn.to(position);
+        const webview = this._extHostWebview.createNewWebview(handle, initData.contentOptions, entry.extension);
+        const panel = this._extHostWebviewPanels.createNewWebviewPanel(handle, viewType, initData.title, viewColumn, initData.options, webview, initData.active);
+        const revivedResource = URI.revive(resource);
+        switch (entry.type) {
+            case 1: {
+                const { document } = this.getCustomDocumentEntry(viewType, revivedResource);
+                return entry.provider.resolveCustomEditor(document, panel, cancellation);
+            }
+            case 0: {
+                const document = this._extHostDocuments.getDocument(revivedResource);
+                return entry.provider.resolveCustomTextEditor(document, panel, cancellation);
+            }
+            default: {
+                throw new Error('Unknown webview provider type');
+            }
+        }
+    }
+    $disposeEdits(resourceComponents, viewType, editIds) {
+        const document = this.getCustomDocumentEntry(viewType, resourceComponents);
+        document.disposeEdits(editIds);
+    }
+    async $onMoveCustomEditor(handle, newResourceComponents, viewType) {
+        const entry = this._editorProviders.get(viewType);
+        if (!entry) {
+            throw new Error(`No provider found for '${viewType}'`);
+        }
+        if (!entry.provider.moveCustomTextEditor) {
+            throw new Error(`Provider does not implement move '${viewType}'`);
+        }
+        const webview = this._extHostWebviewPanels.getWebviewPanel(handle);
+        if (!webview) {
+            throw new Error(`No webview found`);
+        }
+        const resource = URI.revive(newResourceComponents);
+        const document = this._extHostDocuments.getDocument(resource);
+        await entry.provider.moveCustomTextEditor(document, webview, CancellationToken.None);
+    }
+    async $undo(resourceComponents, viewType, editId, isDirty) {
+        const entry = this.getCustomDocumentEntry(viewType, resourceComponents);
+        return entry.undo(editId, isDirty);
+    }
+    async $redo(resourceComponents, viewType, editId, isDirty) {
+        const entry = this.getCustomDocumentEntry(viewType, resourceComponents);
+        return entry.redo(editId, isDirty);
+    }
+    async $revert(resourceComponents, viewType, cancellation) {
+        const entry = this.getCustomDocumentEntry(viewType, resourceComponents);
+        const provider = this.getCustomEditorProvider(viewType);
+        await provider.revertCustomDocument(entry.document, cancellation);
+        entry.disposeBackup();
+    }
+    async $onSave(resourceComponents, viewType, cancellation) {
+        const entry = this.getCustomDocumentEntry(viewType, resourceComponents);
+        const provider = this.getCustomEditorProvider(viewType);
+        await provider.saveCustomDocument(entry.document, cancellation);
+        entry.disposeBackup();
+    }
+    async $onSaveAs(resourceComponents, viewType, targetResource, cancellation) {
+        const entry = this.getCustomDocumentEntry(viewType, resourceComponents);
+        const provider = this.getCustomEditorProvider(viewType);
+        return provider.saveCustomDocumentAs(entry.document, URI.revive(targetResource), cancellation);
+    }
+    async $backup(resourceComponents, viewType, cancellation) {
+        const entry = this.getCustomDocumentEntry(viewType, resourceComponents);
+        const provider = this.getCustomEditorProvider(viewType);
+        const backup = await provider.backupCustomDocument(entry.document, {
+            destination: entry.getNewBackupUri(),
+        }, cancellation);
+        entry.updateBackup(backup);
+        return backup.id;
+    }
+    getCustomDocumentEntry(viewType, resource) {
+        const entry = this._documents.get(viewType, URI.revive(resource));
+        if (!entry) {
+            throw new Error('No custom document found');
+        }
+        return entry;
+    }
+    getCustomEditorProvider(viewType) {
+        const entry = this._editorProviders.get(viewType);
+        const provider = entry?.provider;
+        if (!provider || !isCustomEditorProviderWithEditingCapability(provider)) {
+            throw new Error('Custom document is not editable');
+        }
+        return provider;
+    }
+}
+function isCustomEditorProviderWithEditingCapability(provider) {
+    return !!provider.onDidChangeCustomDocument;
+}
+function isCustomTextEditorProvider(provider) {
+    return typeof provider.resolveCustomTextEditor === 'function';
+}
+function isEditEvent(e) {
+    return typeof e.undo === 'function'
+        && typeof e.redo === 'function';
+}
+function hashPath(resource) {
+    const str = resource.scheme === Schemas.file || resource.scheme === Schemas.untitled ? resource.fsPath : resource.toString();
+    return hash(str) + '';
+}

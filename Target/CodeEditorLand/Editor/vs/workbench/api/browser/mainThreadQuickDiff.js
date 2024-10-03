@@ -1,1 +1,52 @@
-var d=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var f=(s,i,o,r)=>{for(var e=r>1?void 0:r?m(i,o):i,t=s.length-1,p;t>=0;t--)(p=s[t])&&(e=(r?p(i,o,e):p(e))||e);return r&&e&&d(i,o,e),e},a=(s,i)=>(o,r)=>i(o,r,s);import{CancellationToken as D}from"../../../base/common/cancellation.js";import{DisposableMap as u}from"../../../base/common/lifecycle.js";import{URI as c}from"../../../base/common/uri.js";import{ExtHostContext as l,MainContext as x}from"../common/extHost.protocol.js";import{IQuickDiffService as k}from"../../contrib/scm/common/quickDiff.js";import{extHostNamedCustomer as b}from"../../services/extensions/common/extHostCustomers.js";let n=class{constructor(i,o){this.quickDiffService=o;this.proxy=i.getProxy(l.ExtHostQuickDiff)}proxy;providerDisposables=new u;async $registerQuickDiffProvider(i,o,r,e){const t={label:r,rootUri:c.revive(e),selector:o,isSCM:!1,getOriginalResource:async v=>c.revive(await this.proxy.$provideOriginalResource(i,v,D.None))},p=this.quickDiffService.addQuickDiffProvider(t);this.providerDisposables.set(i,p)}async $unregisterQuickDiffProvider(i){this.providerDisposables.has(i)&&this.providerDisposables.deleteAndDispose(i)}dispose(){this.providerDisposables.dispose()}};n=f([b(x.MainThreadQuickDiff),a(1,k)],n);export{n as MainThreadQuickDiff};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { DisposableMap } from '../../../base/common/lifecycle.js';
+import { URI } from '../../../base/common/uri.js';
+import { ExtHostContext, MainContext } from '../common/extHost.protocol.js';
+import { IQuickDiffService } from '../../contrib/scm/common/quickDiff.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+let MainThreadQuickDiff = class MainThreadQuickDiff {
+    constructor(extHostContext, quickDiffService) {
+        this.quickDiffService = quickDiffService;
+        this.providerDisposables = new DisposableMap();
+        this.proxy = extHostContext.getProxy(ExtHostContext.ExtHostQuickDiff);
+    }
+    async $registerQuickDiffProvider(handle, selector, label, rootUri) {
+        const provider = {
+            label,
+            rootUri: URI.revive(rootUri),
+            selector,
+            isSCM: false,
+            getOriginalResource: async (uri) => {
+                return URI.revive(await this.proxy.$provideOriginalResource(handle, uri, CancellationToken.None));
+            }
+        };
+        const disposable = this.quickDiffService.addQuickDiffProvider(provider);
+        this.providerDisposables.set(handle, disposable);
+    }
+    async $unregisterQuickDiffProvider(handle) {
+        if (this.providerDisposables.has(handle)) {
+            this.providerDisposables.deleteAndDispose(handle);
+        }
+    }
+    dispose() {
+        this.providerDisposables.dispose();
+    }
+};
+MainThreadQuickDiff = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadQuickDiff),
+    __param(1, IQuickDiffService),
+    __metadata("design:paramtypes", [Object, Object])
+], MainThreadQuickDiff);
+export { MainThreadQuickDiff };

@@ -1,1 +1,398 @@
-var E=Object.defineProperty;var V=Object.getOwnPropertyDescriptor;var F=(u,m,e,i)=>{for(var n=i>1?void 0:i?V(m,e):m,r=u.length-1,t;r>=0;r--)(t=u[r])&&(n=(i?t(m,e,n):t(n))||n);return i&&n&&E(m,e,n),n},L=(u,m)=>(e,i)=>m(e,i,u);import{EventType as z}from"../../../../../base/browser/dom.js";import{MarkdownString as N}from"../../../../../base/common/htmlContent.js";import{DisposableStore as U,dispose as M,toDisposable as Y}from"../../../../../base/common/lifecycle.js";import{isMacintosh as y,OS as B}from"../../../../../base/common/platform.js";import{URI as O}from"../../../../../base/common/uri.js";import*as d from"../../../../../nls.js";import{IConfigurationService as K}from"../../../../../platform/configuration/common/configuration.js";import{IInstantiationService as X}from"../../../../../platform/instantiation/common/instantiation.js";import{ITunnelService as $}from"../../../../../platform/tunnel/common/tunnel.js";import{TerminalBuiltinLinkType as k}from"./links.js";import{TerminalExternalLinkDetector as q}from"./terminalExternalLinkDetector.js";import"./terminalLink.js";import{TerminalLinkDetectorAdapter as j}from"./terminalLinkDetectorAdapter.js";import{TerminalLocalFileLinkOpener as G,TerminalLocalFolderInWorkspaceLinkOpener as Q,TerminalLocalFolderOutsideWorkspaceLinkOpener as J,TerminalSearchLinkOpener as Z,TerminalUrlLinkOpener as ee}from"./terminalLinkOpeners.js";import{TerminalLocalLinkDetector as S}from"./terminalLocalLinkDetector.js";import{TerminalUriLinkDetector as D}from"./terminalUriLinkDetector.js";import{TerminalWordLinkDetector as C}from"./terminalWordLinkDetector.js";import{ITerminalConfigurationService as ie,TerminalLinkQuickPickEvent as R}from"../../../terminal/browser/terminal.js";import{TerminalHover as ne}from"../../../terminal/browser/widgets/terminalHoverWidget.js";import"../../../terminal/browser/widgets/widgetManager.js";import"../../../terminal/browser/xterm-private.js";import"../../../../../platform/terminal/common/capabilities/capabilities.js";import{TERMINAL_CONFIG_SECTION as re}from"../../../terminal/common/terminal.js";import{convertBufferRangeToViewport as te}from"./terminalLinkHelpers.js";import{RunOnceScheduler as oe}from"../../../../../base/common/async.js";import{ITerminalLogService as se}from"../../../../../platform/terminal/common/terminal.js";import{TerminalMultiLineLinkDetector as H}from"./terminalMultiLineLinkDetector.js";import{INotificationService as ae,Severity as le}from"../../../../../platform/notification/common/notification.js";let b=class extends U{constructor(e,i,n,r,t,s,o,a,l,h){super();this._xterm=e;this._processInfo=i;this._linkResolver=r;this._configurationService=t;this._terminalConfigurationService=s;this._instantiationService=o;this._notificationService=a;this._logService=l;this._tunnelService=h;let c=!0;switch(this._configurationService.getValue(re).enableFileLinks){case"off":case!1:c=!1;break;case"notRemote":c=!this._processInfo.remoteAuthority;break}c&&(this._setupLinkDetector(H.id,this._instantiationService.createInstance(H,this._xterm,this._processInfo,this._linkResolver)),this._setupLinkDetector(S.id,this._instantiationService.createInstance(S,this._xterm,n,this._processInfo,this._linkResolver))),this._setupLinkDetector(D.id,this._instantiationService.createInstance(D,this._xterm,this._processInfo,this._linkResolver)),this._setupLinkDetector(C.id,this.add(this._instantiationService.createInstance(C,this._xterm)));const w=this._instantiationService.createInstance(G),_=this._instantiationService.createInstance(Q);this._openers.set(k.LocalFile,w),this._openers.set(k.LocalFolderInWorkspace,_),this._openers.set(k.LocalFolderOutsideWorkspace,this._instantiationService.createInstance(J)),this._openers.set(k.Search,this._instantiationService.createInstance(Z,n,this._processInfo.initialCwd,w,_,()=>this._processInfo.os||B)),this._openers.set(k.Url,this._instantiationService.createInstance(ee,!!this._processInfo.remoteAuthority)),this._registerStandardLinkProviders();let I,v;this.add(Y(()=>{this._clearLinkProviders(),M(this._externalLinkProviders),I?.dispose(),v?.dispose()})),this._xterm.options.linkHandler={allowNonHttpProtocols:!0,activate:(P,p)=>{if(!this._isLinkActivationModifierDown(P))return;const g=p.indexOf(":");if(g===-1)throw new Error(`Could not find scheme in link "${p}"`);const f=p.substring(0,g);this._terminalConfigurationService.config.allowedLinkSchemes.indexOf(f)===-1&&this._notificationService.prompt(le.Warning,d.localize("scheme","Opening URIs can be insecure, do you want to allow opening links with the scheme {0}?",f),[{label:d.localize("allow","Allow {0}",f),run:()=>{const x=[...this._terminalConfigurationService.config.allowedLinkSchemes,f];this._configurationService.updateValue("terminal.integrated.allowedLinkSchemes",x)}}]),this._openers.get(k.Url)?.open({type:k.Url,text:p,bufferRange:null,uri:O.parse(p)})},hover:(P,p,g)=>{I?.dispose(),I=void 0,v?.dispose(),v=new oe(()=>{const f=this._xterm._core,x={width:f._renderService.dimensions.css.cell.width,height:f._renderService.dimensions.css.cell.height},A={width:this._xterm.cols,height:this._xterm.rows};I=this._showHover({viewportRange:te(g,this._xterm.buffer.active.viewportY),cellDimensions:x,terminalDimensions:A},this._getLinkHoverString(p,p),void 0,W=>this._xterm.options.linkHandler?.activate(P,W,g)),v?.dispose(),v=void 0},this._configurationService.getValue("workbench.hover.delay")),v.schedule()}}}_widgetManager;_standardLinkProviders=new Map;_linkProvidersDisposables=[];_externalLinkProviders=[];_openers=new Map;externalProvideLinksCb;_setupLinkDetector(e,i,n=!1){const r=this.add(this._instantiationService.createInstance(j,i));return this.add(r.onDidActivateLink(t=>{t.event?.preventDefault(),!(t.event&&!(t.event instanceof R)&&!this._isLinkActivationModifierDown(t.event))&&(t.link.activate?t.link.activate(t.link.text):this._openLink(t.link))})),this.add(r.onDidShowHover(t=>this._tooltipCallback(t.link,t.viewportRange,t.modifierDownCallback,t.modifierUpCallback))),n||this._standardLinkProviders.set(e,r),r}async _openLink(e){this._logService.debug("Opening link",e);const i=this._openers.get(e.type);if(!i)throw new Error(`No matching opener for link type "${e.type}"`);await i.open(e)}async openRecentLink(e){let i,n=this._xterm.buffer.active.length;for(;(!i||i.length===0)&&n>=this._xterm.buffer.active.viewportY;)i=await this._getLinksForType(n,e),n--;if(!i||i.length<1)return;const r=new R(z.CLICK);return i[0].activate(r,i[0].text),i[0]}async getLinks(){const e=[];for(let o=this._xterm.buffer.active.viewportY+this._xterm.rows-1;o>=this._xterm.buffer.active.viewportY;o--)e.push(this._getLinksForLine(o));const i=await Promise.all(e),n={wordLinks:[],webLinks:[],fileLinks:[],folderLinks:[]};for(const o of i)if(o){const{wordLinks:a,webLinks:l,fileLinks:h,folderLinks:c}=o;a?.length&&n.wordLinks.push(...a.reverse()),l?.length&&n.webLinks.push(...l.reverse()),h?.length&&n.fileLinks.push(...h.reverse()),c?.length&&n.folderLinks.push(...c.reverse())}const r=[];for(let o=this._xterm.buffer.active.viewportY-1;o>=0;o--)r.push(this._getLinksForLine(o));const t=[];for(let o=this._xterm.buffer.active.length-1;o>=this._xterm.buffer.active.viewportY+this._xterm.rows;o--)t.push(this._getLinksForLine(o));const s=Promise.all(r).then(async o=>{const a=await Promise.all(t),l={wordLinks:[...n.wordLinks],webLinks:[...n.webLinks],fileLinks:[...n.fileLinks],folderLinks:[...n.folderLinks]};for(const h of[...a,...o])if(h){const{wordLinks:c,webLinks:T,fileLinks:w,folderLinks:_}=h;c?.length&&l.wordLinks.push(...c.reverse()),T?.length&&l.webLinks.push(...T.reverse()),w?.length&&l.fileLinks.push(...w.reverse()),_?.length&&l.folderLinks.push(..._.reverse())}return l});return{viewport:n,all:s}}async _getLinksForLine(e){const i=await this._getLinksForType(e,"word"),n=await this._getLinksForType(e,"url"),r=await this._getLinksForType(e,"localFile"),t=await this._getLinksForType(e,"localFolder"),s=new Set;let o;if(i){o=[];for(const a of i)!s.has(a.text)&&a.text.length>1&&(o.push(a),s.add(a.text))}return{wordLinks:o,webLinks:n,fileLinks:r,folderLinks:t}}async _getLinksForType(e,i){switch(i){case"word":return await new Promise(n=>this._standardLinkProviders.get(C.id)?.provideLinks(e,n));case"url":return await new Promise(n=>this._standardLinkProviders.get(D.id)?.provideLinks(e,n));case"localFile":return(await new Promise(r=>this._standardLinkProviders.get(S.id)?.provideLinks(e,r)))?.filter(r=>r.type===k.LocalFile);case"localFolder":return(await new Promise(r=>this._standardLinkProviders.get(S.id)?.provideLinks(e,r)))?.filter(r=>r.type===k.LocalFolderInWorkspace)}}_tooltipCallback(e,i,n,r){if(!this._widgetManager)return;const t=this._xterm._core,s={width:t._renderService.dimensions.css.cell.width,height:t._renderService.dimensions.css.cell.height},o={width:this._xterm.cols,height:this._xterm.rows};this._showHover({viewportRange:i,cellDimensions:s,terminalDimensions:o,modifierDownCallback:n,modifierUpCallback:r},this._getLinkHoverString(e.text,e.label),e.actions,a=>e.activate(void 0,a),e)}_showHover(e,i,n,r,t){if(this._widgetManager){const s=this._instantiationService.createInstance(ne,e,i,n,r),o=this._widgetManager.attachWidget(s);return o&&t?.onInvalidated(()=>o.dispose()),o}}setWidgetManager(e){this._widgetManager=e}_clearLinkProviders(){M(this._linkProvidersDisposables),this._linkProvidersDisposables.length=0}_registerStandardLinkProviders(){const e=async r=>this.externalProvideLinksCb?.(r),i=`extension-${this._externalLinkProviders.length}`,n=this._setupLinkDetector(i,new q(i,this._xterm,e),!0);this._linkProvidersDisposables.push(this._xterm.registerLinkProvider(n));for(const r of this._standardLinkProviders.values())this._linkProvidersDisposables.push(this._xterm.registerLinkProvider(r))}_isLinkActivationModifierDown(e){return this._configurationService.getValue("editor").multiCursorModifier==="ctrlCmd"?!!e.altKey:y?e.metaKey:e.ctrlKey}_getLinkHoverString(e,i){const n=this._configurationService.getValue("editor");let r="";n.multiCursorModifier==="ctrlCmd"?y?r=d.localize("terminalLinkHandler.followLinkAlt.mac","option + click"):r=d.localize("terminalLinkHandler.followLinkAlt","alt + click"):y?r=d.localize("terminalLinkHandler.followLinkCmd","cmd + click"):r=d.localize("terminalLinkHandler.followLinkCtrl","ctrl + click");let t=d.localize("followLink","Follow link");try{this._tunnelService.canTunnel(O.parse(e))&&(t=d.localize("followForwardedLink","Follow link using forwarded port"))}catch{}const s=new N("",!0);return i&&(i=s.appendText(i).value,s.value=""),e&&(e=s.appendText(e).value,s.value=""),i=i||t,e=e||i,/(\s|&nbsp;)/.test(e)&&(e=d.localize("followLinkUrl","Link")),s.appendLink(e,i).appendMarkdown(` (${r})`)}};b=F([L(4,K),L(5,ie),L(6,X),L(7,ae),L(8,se),L(9,$)],b);export{b as TerminalLinkManager};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { EventType } from '../../../../../base/browser/dom.js';
+import { MarkdownString } from '../../../../../base/common/htmlContent.js';
+import { DisposableStore, dispose, toDisposable } from '../../../../../base/common/lifecycle.js';
+import { isMacintosh, OS } from '../../../../../base/common/platform.js';
+import { URI } from '../../../../../base/common/uri.js';
+import * as nls from '../../../../../nls.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { ITunnelService } from '../../../../../platform/tunnel/common/tunnel.js';
+import { TerminalExternalLinkDetector } from './terminalExternalLinkDetector.js';
+import { TerminalLinkDetectorAdapter } from './terminalLinkDetectorAdapter.js';
+import { TerminalLocalFileLinkOpener, TerminalLocalFolderInWorkspaceLinkOpener, TerminalLocalFolderOutsideWorkspaceLinkOpener, TerminalSearchLinkOpener, TerminalUrlLinkOpener } from './terminalLinkOpeners.js';
+import { TerminalLocalLinkDetector } from './terminalLocalLinkDetector.js';
+import { TerminalUriLinkDetector } from './terminalUriLinkDetector.js';
+import { TerminalWordLinkDetector } from './terminalWordLinkDetector.js';
+import { ITerminalConfigurationService, TerminalLinkQuickPickEvent } from '../../../terminal/browser/terminal.js';
+import { TerminalHover } from '../../../terminal/browser/widgets/terminalHoverWidget.js';
+import { TERMINAL_CONFIG_SECTION } from '../../../terminal/common/terminal.js';
+import { convertBufferRangeToViewport } from './terminalLinkHelpers.js';
+import { RunOnceScheduler } from '../../../../../base/common/async.js';
+import { ITerminalLogService } from '../../../../../platform/terminal/common/terminal.js';
+import { TerminalMultiLineLinkDetector } from './terminalMultiLineLinkDetector.js';
+import { INotificationService, Severity } from '../../../../../platform/notification/common/notification.js';
+let TerminalLinkManager = class TerminalLinkManager extends DisposableStore {
+    constructor(_xterm, _processInfo, capabilities, _linkResolver, _configurationService, _terminalConfigurationService, _instantiationService, _notificationService, _logService, _tunnelService) {
+        super();
+        this._xterm = _xterm;
+        this._processInfo = _processInfo;
+        this._linkResolver = _linkResolver;
+        this._configurationService = _configurationService;
+        this._terminalConfigurationService = _terminalConfigurationService;
+        this._instantiationService = _instantiationService;
+        this._notificationService = _notificationService;
+        this._logService = _logService;
+        this._tunnelService = _tunnelService;
+        this._standardLinkProviders = new Map();
+        this._linkProvidersDisposables = [];
+        this._externalLinkProviders = [];
+        this._openers = new Map();
+        let enableFileLinks = true;
+        const enableFileLinksConfig = this._configurationService.getValue(TERMINAL_CONFIG_SECTION).enableFileLinks;
+        switch (enableFileLinksConfig) {
+            case 'off':
+            case false:
+                enableFileLinks = false;
+                break;
+            case 'notRemote':
+                enableFileLinks = !this._processInfo.remoteAuthority;
+                break;
+        }
+        if (enableFileLinks) {
+            this._setupLinkDetector(TerminalMultiLineLinkDetector.id, this._instantiationService.createInstance(TerminalMultiLineLinkDetector, this._xterm, this._processInfo, this._linkResolver));
+            this._setupLinkDetector(TerminalLocalLinkDetector.id, this._instantiationService.createInstance(TerminalLocalLinkDetector, this._xterm, capabilities, this._processInfo, this._linkResolver));
+        }
+        this._setupLinkDetector(TerminalUriLinkDetector.id, this._instantiationService.createInstance(TerminalUriLinkDetector, this._xterm, this._processInfo, this._linkResolver));
+        this._setupLinkDetector(TerminalWordLinkDetector.id, this.add(this._instantiationService.createInstance(TerminalWordLinkDetector, this._xterm)));
+        const localFileOpener = this._instantiationService.createInstance(TerminalLocalFileLinkOpener);
+        const localFolderInWorkspaceOpener = this._instantiationService.createInstance(TerminalLocalFolderInWorkspaceLinkOpener);
+        this._openers.set("LocalFile", localFileOpener);
+        this._openers.set("LocalFolderInWorkspace", localFolderInWorkspaceOpener);
+        this._openers.set("LocalFolderOutsideWorkspace", this._instantiationService.createInstance(TerminalLocalFolderOutsideWorkspaceLinkOpener));
+        this._openers.set("Search", this._instantiationService.createInstance(TerminalSearchLinkOpener, capabilities, this._processInfo.initialCwd, localFileOpener, localFolderInWorkspaceOpener, () => this._processInfo.os || OS));
+        this._openers.set("Url", this._instantiationService.createInstance(TerminalUrlLinkOpener, !!this._processInfo.remoteAuthority));
+        this._registerStandardLinkProviders();
+        let activeHoverDisposable;
+        let activeTooltipScheduler;
+        this.add(toDisposable(() => {
+            this._clearLinkProviders();
+            dispose(this._externalLinkProviders);
+            activeHoverDisposable?.dispose();
+            activeTooltipScheduler?.dispose();
+        }));
+        this._xterm.options.linkHandler = {
+            allowNonHttpProtocols: true,
+            activate: (event, text) => {
+                if (!this._isLinkActivationModifierDown(event)) {
+                    return;
+                }
+                const colonIndex = text.indexOf(':');
+                if (colonIndex === -1) {
+                    throw new Error(`Could not find scheme in link "${text}"`);
+                }
+                const scheme = text.substring(0, colonIndex);
+                if (this._terminalConfigurationService.config.allowedLinkSchemes.indexOf(scheme) === -1) {
+                    this._notificationService.prompt(Severity.Warning, nls.localize('scheme', 'Opening URIs can be insecure, do you want to allow opening links with the scheme {0}?', scheme), [
+                        {
+                            label: nls.localize('allow', 'Allow {0}', scheme),
+                            run: () => {
+                                const allowedLinkSchemes = [
+                                    ...this._terminalConfigurationService.config.allowedLinkSchemes,
+                                    scheme
+                                ];
+                                this._configurationService.updateValue(`terminal.integrated.allowedLinkSchemes`, allowedLinkSchemes);
+                            }
+                        }
+                    ]);
+                }
+                this._openers.get("Url")?.open({
+                    type: "Url",
+                    text,
+                    bufferRange: null,
+                    uri: URI.parse(text)
+                });
+            },
+            hover: (e, text, range) => {
+                activeHoverDisposable?.dispose();
+                activeHoverDisposable = undefined;
+                activeTooltipScheduler?.dispose();
+                activeTooltipScheduler = new RunOnceScheduler(() => {
+                    const core = this._xterm._core;
+                    const cellDimensions = {
+                        width: core._renderService.dimensions.css.cell.width,
+                        height: core._renderService.dimensions.css.cell.height
+                    };
+                    const terminalDimensions = {
+                        width: this._xterm.cols,
+                        height: this._xterm.rows
+                    };
+                    activeHoverDisposable = this._showHover({
+                        viewportRange: convertBufferRangeToViewport(range, this._xterm.buffer.active.viewportY),
+                        cellDimensions,
+                        terminalDimensions
+                    }, this._getLinkHoverString(text, text), undefined, (text) => this._xterm.options.linkHandler?.activate(e, text, range));
+                    activeTooltipScheduler?.dispose();
+                    activeTooltipScheduler = undefined;
+                }, this._configurationService.getValue('workbench.hover.delay'));
+                activeTooltipScheduler.schedule();
+            }
+        };
+    }
+    _setupLinkDetector(id, detector, isExternal = false) {
+        const detectorAdapter = this.add(this._instantiationService.createInstance(TerminalLinkDetectorAdapter, detector));
+        this.add(detectorAdapter.onDidActivateLink(e => {
+            e.event?.preventDefault();
+            if (e.event && !(e.event instanceof TerminalLinkQuickPickEvent) && !this._isLinkActivationModifierDown(e.event)) {
+                return;
+            }
+            if (e.link.activate) {
+                e.link.activate(e.link.text);
+            }
+            else {
+                this._openLink(e.link);
+            }
+        }));
+        this.add(detectorAdapter.onDidShowHover(e => this._tooltipCallback(e.link, e.viewportRange, e.modifierDownCallback, e.modifierUpCallback)));
+        if (!isExternal) {
+            this._standardLinkProviders.set(id, detectorAdapter);
+        }
+        return detectorAdapter;
+    }
+    async _openLink(link) {
+        this._logService.debug('Opening link', link);
+        const opener = this._openers.get(link.type);
+        if (!opener) {
+            throw new Error(`No matching opener for link type "${link.type}"`);
+        }
+        await opener.open(link);
+    }
+    async openRecentLink(type) {
+        let links;
+        let i = this._xterm.buffer.active.length;
+        while ((!links || links.length === 0) && i >= this._xterm.buffer.active.viewportY) {
+            links = await this._getLinksForType(i, type);
+            i--;
+        }
+        if (!links || links.length < 1) {
+            return undefined;
+        }
+        const event = new TerminalLinkQuickPickEvent(EventType.CLICK);
+        links[0].activate(event, links[0].text);
+        return links[0];
+    }
+    async getLinks() {
+        const viewportLinksByLinePromises = [];
+        for (let i = this._xterm.buffer.active.viewportY + this._xterm.rows - 1; i >= this._xterm.buffer.active.viewportY; i--) {
+            viewportLinksByLinePromises.push(this._getLinksForLine(i));
+        }
+        const viewportLinksByLine = await Promise.all(viewportLinksByLinePromises);
+        const viewportLinks = {
+            wordLinks: [],
+            webLinks: [],
+            fileLinks: [],
+            folderLinks: [],
+        };
+        for (const links of viewportLinksByLine) {
+            if (links) {
+                const { wordLinks, webLinks, fileLinks, folderLinks } = links;
+                if (wordLinks?.length) {
+                    viewportLinks.wordLinks.push(...wordLinks.reverse());
+                }
+                if (webLinks?.length) {
+                    viewportLinks.webLinks.push(...webLinks.reverse());
+                }
+                if (fileLinks?.length) {
+                    viewportLinks.fileLinks.push(...fileLinks.reverse());
+                }
+                if (folderLinks?.length) {
+                    viewportLinks.folderLinks.push(...folderLinks.reverse());
+                }
+            }
+        }
+        const aboveViewportLinksPromises = [];
+        for (let i = this._xterm.buffer.active.viewportY - 1; i >= 0; i--) {
+            aboveViewportLinksPromises.push(this._getLinksForLine(i));
+        }
+        const belowViewportLinksPromises = [];
+        for (let i = this._xterm.buffer.active.length - 1; i >= this._xterm.buffer.active.viewportY + this._xterm.rows; i--) {
+            belowViewportLinksPromises.push(this._getLinksForLine(i));
+        }
+        const allLinks = Promise.all(aboveViewportLinksPromises).then(async (aboveViewportLinks) => {
+            const belowViewportLinks = await Promise.all(belowViewportLinksPromises);
+            const allResults = {
+                wordLinks: [...viewportLinks.wordLinks],
+                webLinks: [...viewportLinks.webLinks],
+                fileLinks: [...viewportLinks.fileLinks],
+                folderLinks: [...viewportLinks.folderLinks]
+            };
+            for (const links of [...belowViewportLinks, ...aboveViewportLinks]) {
+                if (links) {
+                    const { wordLinks, webLinks, fileLinks, folderLinks } = links;
+                    if (wordLinks?.length) {
+                        allResults.wordLinks.push(...wordLinks.reverse());
+                    }
+                    if (webLinks?.length) {
+                        allResults.webLinks.push(...webLinks.reverse());
+                    }
+                    if (fileLinks?.length) {
+                        allResults.fileLinks.push(...fileLinks.reverse());
+                    }
+                    if (folderLinks?.length) {
+                        allResults.folderLinks.push(...folderLinks.reverse());
+                    }
+                }
+            }
+            return allResults;
+        });
+        return {
+            viewport: viewportLinks,
+            all: allLinks
+        };
+    }
+    async _getLinksForLine(y) {
+        const unfilteredWordLinks = await this._getLinksForType(y, 'word');
+        const webLinks = await this._getLinksForType(y, 'url');
+        const fileLinks = await this._getLinksForType(y, 'localFile');
+        const folderLinks = await this._getLinksForType(y, 'localFolder');
+        const words = new Set();
+        let wordLinks;
+        if (unfilteredWordLinks) {
+            wordLinks = [];
+            for (const link of unfilteredWordLinks) {
+                if (!words.has(link.text) && link.text.length > 1) {
+                    wordLinks.push(link);
+                    words.add(link.text);
+                }
+            }
+        }
+        return { wordLinks, webLinks, fileLinks, folderLinks };
+    }
+    async _getLinksForType(y, type) {
+        switch (type) {
+            case 'word':
+                return (await new Promise(r => this._standardLinkProviders.get(TerminalWordLinkDetector.id)?.provideLinks(y, r)));
+            case 'url':
+                return (await new Promise(r => this._standardLinkProviders.get(TerminalUriLinkDetector.id)?.provideLinks(y, r)));
+            case 'localFile': {
+                const links = (await new Promise(r => this._standardLinkProviders.get(TerminalLocalLinkDetector.id)?.provideLinks(y, r)));
+                return links?.filter(link => link.type === "LocalFile");
+            }
+            case 'localFolder': {
+                const links = (await new Promise(r => this._standardLinkProviders.get(TerminalLocalLinkDetector.id)?.provideLinks(y, r)));
+                return links?.filter(link => link.type === "LocalFolderInWorkspace");
+            }
+        }
+    }
+    _tooltipCallback(link, viewportRange, modifierDownCallback, modifierUpCallback) {
+        if (!this._widgetManager) {
+            return;
+        }
+        const core = this._xterm._core;
+        const cellDimensions = {
+            width: core._renderService.dimensions.css.cell.width,
+            height: core._renderService.dimensions.css.cell.height
+        };
+        const terminalDimensions = {
+            width: this._xterm.cols,
+            height: this._xterm.rows
+        };
+        this._showHover({
+            viewportRange,
+            cellDimensions,
+            terminalDimensions,
+            modifierDownCallback,
+            modifierUpCallback
+        }, this._getLinkHoverString(link.text, link.label), link.actions, (text) => link.activate(undefined, text), link);
+    }
+    _showHover(targetOptions, text, actions, linkHandler, link) {
+        if (this._widgetManager) {
+            const widget = this._instantiationService.createInstance(TerminalHover, targetOptions, text, actions, linkHandler);
+            const attached = this._widgetManager.attachWidget(widget);
+            if (attached) {
+                link?.onInvalidated(() => attached.dispose());
+            }
+            return attached;
+        }
+        return undefined;
+    }
+    setWidgetManager(widgetManager) {
+        this._widgetManager = widgetManager;
+    }
+    _clearLinkProviders() {
+        dispose(this._linkProvidersDisposables);
+        this._linkProvidersDisposables.length = 0;
+    }
+    _registerStandardLinkProviders() {
+        const proxyLinkProvider = async (bufferLineNumber) => {
+            return this.externalProvideLinksCb?.(bufferLineNumber);
+        };
+        const detectorId = `extension-${this._externalLinkProviders.length}`;
+        const wrappedLinkProvider = this._setupLinkDetector(detectorId, new TerminalExternalLinkDetector(detectorId, this._xterm, proxyLinkProvider), true);
+        this._linkProvidersDisposables.push(this._xterm.registerLinkProvider(wrappedLinkProvider));
+        for (const p of this._standardLinkProviders.values()) {
+            this._linkProvidersDisposables.push(this._xterm.registerLinkProvider(p));
+        }
+    }
+    _isLinkActivationModifierDown(event) {
+        const editorConf = this._configurationService.getValue('editor');
+        if (editorConf.multiCursorModifier === 'ctrlCmd') {
+            return !!event.altKey;
+        }
+        return isMacintosh ? event.metaKey : event.ctrlKey;
+    }
+    _getLinkHoverString(uri, label) {
+        const editorConf = this._configurationService.getValue('editor');
+        let clickLabel = '';
+        if (editorConf.multiCursorModifier === 'ctrlCmd') {
+            if (isMacintosh) {
+                clickLabel = nls.localize('terminalLinkHandler.followLinkAlt.mac', "option + click");
+            }
+            else {
+                clickLabel = nls.localize('terminalLinkHandler.followLinkAlt', "alt + click");
+            }
+        }
+        else {
+            if (isMacintosh) {
+                clickLabel = nls.localize('terminalLinkHandler.followLinkCmd', "cmd + click");
+            }
+            else {
+                clickLabel = nls.localize('terminalLinkHandler.followLinkCtrl', "ctrl + click");
+            }
+        }
+        let fallbackLabel = nls.localize('followLink', "Follow link");
+        try {
+            if (this._tunnelService.canTunnel(URI.parse(uri))) {
+                fallbackLabel = nls.localize('followForwardedLink', "Follow link using forwarded port");
+            }
+        }
+        catch {
+        }
+        const markdown = new MarkdownString('', true);
+        if (label) {
+            label = markdown.appendText(label).value;
+            markdown.value = '';
+        }
+        if (uri) {
+            uri = markdown.appendText(uri).value;
+            markdown.value = '';
+        }
+        label = label || fallbackLabel;
+        uri = uri || label;
+        if (/(\s|&nbsp;)/.test(uri)) {
+            uri = nls.localize('followLinkUrl', 'Link');
+        }
+        return markdown.appendLink(uri, label).appendMarkdown(` (${clickLabel})`);
+    }
+};
+TerminalLinkManager = __decorate([
+    __param(4, IConfigurationService),
+    __param(5, ITerminalConfigurationService),
+    __param(6, IInstantiationService),
+    __param(7, INotificationService),
+    __param(8, ITerminalLogService),
+    __param(9, ITunnelService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], TerminalLinkManager);
+export { TerminalLinkManager };

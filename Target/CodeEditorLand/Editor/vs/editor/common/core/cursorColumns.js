@@ -1,1 +1,79 @@
-import{CharCode as l}from"../../../base/common/charCode.js";import*as b from"../../../base/common/strings.js";class a{static _nextVisibleColumn(e,t,o){return e===l.Tab?a.nextRenderTabStop(t,o):b.isFullWidthCharacter(e)||b.isEmojiImprecise(e)?t+2:t+1}static visibleColumnFromColumn(e,t,o){const u=Math.min(t-1,e.length),n=e.substring(0,u),r=new b.GraphemeIterator(n);let i=0;for(;!r.eol();){const m=b.getNextCodePoint(n,u,r.offset);r.nextGraphemeLength(),i=this._nextVisibleColumn(m,i,o)}return i}static toStatusbarColumn(e,t,o){const u=e.substring(0,Math.min(t-1,e.length)),n=new b.CodePointIterator(u);let r=0;for(;!n.eol();)n.nextCodePoint()===l.Tab?r=a.nextRenderTabStop(r,o):r=r+1;return r+1}static columnFromVisibleColumn(e,t,o){if(t<=0)return 1;const u=e.length,n=new b.GraphemeIterator(e);let r=0,i=1;for(;!n.eol();){const m=b.getNextCodePoint(e,u,n.offset);n.nextGraphemeLength();const s=this._nextVisibleColumn(m,r,o),c=n.offset+1;if(s>=t){const p=t-r;return s-t<p?c:i}r=s,i=c}return u+1}static nextRenderTabStop(e,t){return e+t-e%t}static nextIndentTabStop(e,t){return a.nextRenderTabStop(e,t)}static prevRenderTabStop(e,t){return Math.max(0,e-1-(e-1)%t)}static prevIndentTabStop(e,t){return a.prevRenderTabStop(e,t)}}export{a as CursorColumns};
+import * as strings from '../../../base/common/strings.js';
+export class CursorColumns {
+    static _nextVisibleColumn(codePoint, visibleColumn, tabSize) {
+        if (codePoint === 9) {
+            return CursorColumns.nextRenderTabStop(visibleColumn, tabSize);
+        }
+        if (strings.isFullWidthCharacter(codePoint) || strings.isEmojiImprecise(codePoint)) {
+            return visibleColumn + 2;
+        }
+        return visibleColumn + 1;
+    }
+    static visibleColumnFromColumn(lineContent, column, tabSize) {
+        const textLen = Math.min(column - 1, lineContent.length);
+        const text = lineContent.substring(0, textLen);
+        const iterator = new strings.GraphemeIterator(text);
+        let result = 0;
+        while (!iterator.eol()) {
+            const codePoint = strings.getNextCodePoint(text, textLen, iterator.offset);
+            iterator.nextGraphemeLength();
+            result = this._nextVisibleColumn(codePoint, result, tabSize);
+        }
+        return result;
+    }
+    static toStatusbarColumn(lineContent, column, tabSize) {
+        const text = lineContent.substring(0, Math.min(column - 1, lineContent.length));
+        const iterator = new strings.CodePointIterator(text);
+        let result = 0;
+        while (!iterator.eol()) {
+            const codePoint = iterator.nextCodePoint();
+            if (codePoint === 9) {
+                result = CursorColumns.nextRenderTabStop(result, tabSize);
+            }
+            else {
+                result = result + 1;
+            }
+        }
+        return result + 1;
+    }
+    static columnFromVisibleColumn(lineContent, visibleColumn, tabSize) {
+        if (visibleColumn <= 0) {
+            return 1;
+        }
+        const lineContentLength = lineContent.length;
+        const iterator = new strings.GraphemeIterator(lineContent);
+        let beforeVisibleColumn = 0;
+        let beforeColumn = 1;
+        while (!iterator.eol()) {
+            const codePoint = strings.getNextCodePoint(lineContent, lineContentLength, iterator.offset);
+            iterator.nextGraphemeLength();
+            const afterVisibleColumn = this._nextVisibleColumn(codePoint, beforeVisibleColumn, tabSize);
+            const afterColumn = iterator.offset + 1;
+            if (afterVisibleColumn >= visibleColumn) {
+                const beforeDelta = visibleColumn - beforeVisibleColumn;
+                const afterDelta = afterVisibleColumn - visibleColumn;
+                if (afterDelta < beforeDelta) {
+                    return afterColumn;
+                }
+                else {
+                    return beforeColumn;
+                }
+            }
+            beforeVisibleColumn = afterVisibleColumn;
+            beforeColumn = afterColumn;
+        }
+        return lineContentLength + 1;
+    }
+    static nextRenderTabStop(visibleColumn, tabSize) {
+        return visibleColumn + tabSize - visibleColumn % tabSize;
+    }
+    static nextIndentTabStop(visibleColumn, indentSize) {
+        return CursorColumns.nextRenderTabStop(visibleColumn, indentSize);
+    }
+    static prevRenderTabStop(column, tabSize) {
+        return Math.max(0, column - 1 - (column - 1) % tabSize);
+    }
+    static prevIndentTabStop(column, indentSize) {
+        return CursorColumns.prevRenderTabStop(column, indentSize);
+    }
+}

@@ -1,1 +1,34 @@
-const t=String.raw,u=t`(?<!\\)`+t`(!?\[`+t`(?:`+t`[^\[\]\\]|`+t`\\.|`+t`\[[^\[\]]*\]`+t`)*`+t`\])`+t`(\(\s*)`+t`(`+t`[^\s\(\)<](?:[^\s\(\)]|\([^\s\(\)]*?\))*|`+t`<(?:\\[<>]|[^<>])+>`+t`)`+t`\s*(?:"[^"]*"|'[^']*'|\([^\(\)]*\))?\s*`+t`\)`;function g(n,r){const o=Array.from(n.matchAll(new RegExp(u+t`|\p{sc=Han}|=+|\++|-+|[^\s\|\p{sc=Han}|=|\+|\-]+`,"gu"))),e=o.slice(0,r),l=r>o.length?n.length:e.length?e.at(-1).index+e.at(-1)[0].length:0,s=n.substring(0,l);return{value:s,returnedWordCount:e.length===0?s.length?1:0:e.length,isFullString:l>=n.length,totalWordCount:o.length}}function a(n){return g(n,Number.MAX_SAFE_INTEGER).returnedWordCount}export{a as countWords,g as getNWords};
+const r = String.raw;
+const linkPattern = r `(?<!\\)` +
+    r `(!?\[` +
+    r `(?:` +
+    r `[^\[\]\\]|` +
+    r `\\.|` +
+    r `\[[^\[\]]*\]` +
+    r `)*` +
+    r `\])` +
+    r `(\(\s*)` +
+    r `(` +
+    r `[^\s\(\)<](?:[^\s\(\)]|\([^\s\(\)]*?\))*|` +
+    r `<(?:\\[<>]|[^<>])+>` +
+    r `)` +
+    r `\s*(?:"[^"]*"|'[^']*'|\([^\(\)]*\))?\s*` +
+    r `\)`;
+export function getNWords(str, numWordsToCount) {
+    const allWordMatches = Array.from(str.matchAll(new RegExp(linkPattern + r `|\p{sc=Han}|=+|\++|-+|[^\s\|\p{sc=Han}|=|\+|\-]+`, 'gu')));
+    const targetWords = allWordMatches.slice(0, numWordsToCount);
+    const endIndex = numWordsToCount > allWordMatches.length
+        ? str.length
+        : targetWords.length ? targetWords.at(-1).index + targetWords.at(-1)[0].length : 0;
+    const value = str.substring(0, endIndex);
+    return {
+        value,
+        returnedWordCount: targetWords.length === 0 ? (value.length ? 1 : 0) : targetWords.length,
+        isFullString: endIndex >= str.length,
+        totalWordCount: allWordMatches.length
+    };
+}
+export function countWords(str) {
+    const result = getNWords(str, Number.MAX_SAFE_INTEGER);
+    return result.returnedWordCount;
+}

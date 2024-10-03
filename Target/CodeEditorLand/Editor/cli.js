@@ -1,1 +1,14 @@
-import"./bootstrap-cli.js";import{dirname as r}from"path";import{fileURLToPath as t}from"url";import{configurePortable as i}from"./bootstrap-node.js";import{bootstrapESM as a}from"./bootstrap-esm.js";import{resolveNLSConfiguration as m}from"./vs/base/node/nls.js";import{product as o}from"./bootstrap-meta.js";const e=r(t(import.meta.url)),n=await m({userLocale:"en",osLocale:"en",commit:o.commit,userDataPath:"",nlsMetadataPath:e});process.env.VSCODE_NLS_CONFIG=JSON.stringify(n),i(o),process.env.VSCODE_CLI="1",await a(),await import("./vs/code/node/cli.js");
+import './bootstrap-cli.js';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { configurePortable } from './bootstrap-node.js';
+import { bootstrapESM } from './bootstrap-esm.js';
+import { resolveNLSConfiguration } from './vs/base/node/nls.js';
+import { product } from './bootstrap-meta.js';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const nlsConfiguration = await resolveNLSConfiguration({ userLocale: 'en', osLocale: 'en', commit: product.commit, userDataPath: '', nlsMetadataPath: __dirname });
+process.env['VSCODE_NLS_CONFIG'] = JSON.stringify(nlsConfiguration);
+configurePortable(product);
+process.env['VSCODE_CLI'] = '1';
+await bootstrapESM();
+await import('./vs/code/node/cli.js');

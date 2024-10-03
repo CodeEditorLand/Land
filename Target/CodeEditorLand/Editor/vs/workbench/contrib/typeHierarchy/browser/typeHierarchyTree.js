@@ -1,1 +1,116 @@
-import"../../../../base/browser/ui/tree/tree.js";import{TypeHierarchyDirection as s,TypeHierarchyModel as y}from"../common/typeHierarchy.js";import{CancellationToken as c}from"../../../../base/common/cancellation.js";import"../../../../base/browser/ui/list/list.js";import{createMatches as d}from"../../../../base/common/filters.js";import{IconLabel as u}from"../../../../base/browser/ui/iconLabel/iconLabel.js";import{SymbolKinds as T,SymbolTag as g}from"../../../../editor/common/languages.js";import{compare as h}from"../../../../base/common/strings.js";import{Range as I}from"../../../../editor/common/core/range.js";import"../../../../base/browser/ui/list/listWidget.js";import{localize as a}from"../../../../nls.js";import{ThemeIcon as b}from"../../../../base/common/themables.js";class o{constructor(e,r,t){this.item=e;this.model=r;this.parent=t}static compare(e,r){let t=h(e.item.uri.toString(),r.item.uri.toString());return t===0&&(t=I.compareRangesUsingStarts(e.item.range,r.item.range)),t}}class K{constructor(e){this.getDirection=e}hasChildren(){return!0}async getChildren(e){if(e instanceof y)return e.roots.map(i=>new o(i,e,void 0));const{model:r,item:t}=e;return this.getDirection()===s.Supertypes?(await r.provideSupertypes(t,c.None)).map(i=>new o(i,r,e)):(await r.provideSubtypes(t,c.None)).map(i=>new o(i,r,e))}}class U{compare(e,r){return o.compare(e,r)}}class W{constructor(e){this.getDirection=e}getId(e){let r=this.getDirection()+JSON.stringify(e.item.uri)+JSON.stringify(e.item.range);return e.parent&&(r+=this.getId(e.parent)),r}}class f{constructor(e,r){this.icon=e;this.label=r}}class p{static id="TypeRenderer";templateId=p.id;renderTemplate(e){e.classList.add("typehierarchy-element");const r=document.createElement("div");e.appendChild(r);const t=new u(e,{supportHighlights:!0});return new f(r,t)}renderElement(e,r,t){const{element:i,filterData:l}=e,m=i.item.tags?.includes(g.Deprecated);t.icon.classList.add("inline",...b.asClassNameArray(T.toIcon(i.item.kind))),t.label.setLabel(i.item.name,i.item.detail,{labelEscapeNewLines:!0,matches:d(l),strikethrough:m})}disposeTemplate(e){e.label.dispose()}}class j{getHeight(e){return 22}getTemplateId(e){return p.id}}class q{constructor(e){this.getDirection=e}getWidgetAriaLabel(){return a("tree.aria","Type Hierarchy")}getAriaLabel(e){return this.getDirection()===s.Supertypes?a("supertypes","supertypes of {0}",e.item.name):a("subtypes","subtypes of {0}",e.item.name)}}export{q as AccessibilityProvider,K as DataSource,W as IdentityProvider,U as Sorter,o as Type,p as TypeRenderer,j as VirtualDelegate};
+import { TypeHierarchyModel } from '../common/typeHierarchy.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { createMatches } from '../../../../base/common/filters.js';
+import { IconLabel } from '../../../../base/browser/ui/iconLabel/iconLabel.js';
+import { SymbolKinds } from '../../../../editor/common/languages.js';
+import { compare } from '../../../../base/common/strings.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { localize } from '../../../../nls.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+export class Type {
+    constructor(item, model, parent) {
+        this.item = item;
+        this.model = model;
+        this.parent = parent;
+    }
+    static compare(a, b) {
+        let res = compare(a.item.uri.toString(), b.item.uri.toString());
+        if (res === 0) {
+            res = Range.compareRangesUsingStarts(a.item.range, b.item.range);
+        }
+        return res;
+    }
+}
+export class DataSource {
+    constructor(getDirection) {
+        this.getDirection = getDirection;
+    }
+    hasChildren() {
+        return true;
+    }
+    async getChildren(element) {
+        if (element instanceof TypeHierarchyModel) {
+            return element.roots.map(root => new Type(root, element, undefined));
+        }
+        const { model, item } = element;
+        if (this.getDirection() === "supertypes") {
+            return (await model.provideSupertypes(item, CancellationToken.None)).map(item => {
+                return new Type(item, model, element);
+            });
+        }
+        else {
+            return (await model.provideSubtypes(item, CancellationToken.None)).map(item => {
+                return new Type(item, model, element);
+            });
+        }
+    }
+}
+export class Sorter {
+    compare(element, otherElement) {
+        return Type.compare(element, otherElement);
+    }
+}
+export class IdentityProvider {
+    constructor(getDirection) {
+        this.getDirection = getDirection;
+    }
+    getId(element) {
+        let res = this.getDirection() + JSON.stringify(element.item.uri) + JSON.stringify(element.item.range);
+        if (element.parent) {
+            res += this.getId(element.parent);
+        }
+        return res;
+    }
+}
+class TypeRenderingTemplate {
+    constructor(icon, label) {
+        this.icon = icon;
+        this.label = label;
+    }
+}
+export class TypeRenderer {
+    constructor() {
+        this.templateId = TypeRenderer.id;
+    }
+    static { this.id = 'TypeRenderer'; }
+    renderTemplate(container) {
+        container.classList.add('typehierarchy-element');
+        const icon = document.createElement('div');
+        container.appendChild(icon);
+        const label = new IconLabel(container, { supportHighlights: true });
+        return new TypeRenderingTemplate(icon, label);
+    }
+    renderElement(node, _index, template) {
+        const { element, filterData } = node;
+        const deprecated = element.item.tags?.includes(1);
+        template.icon.classList.add('inline', ...ThemeIcon.asClassNameArray(SymbolKinds.toIcon(element.item.kind)));
+        template.label.setLabel(element.item.name, element.item.detail, { labelEscapeNewLines: true, matches: createMatches(filterData), strikethrough: deprecated });
+    }
+    disposeTemplate(template) {
+        template.label.dispose();
+    }
+}
+export class VirtualDelegate {
+    getHeight(_element) {
+        return 22;
+    }
+    getTemplateId(_element) {
+        return TypeRenderer.id;
+    }
+}
+export class AccessibilityProvider {
+    constructor(getDirection) {
+        this.getDirection = getDirection;
+    }
+    getWidgetAriaLabel() {
+        return localize('tree.aria', "Type Hierarchy");
+    }
+    getAriaLabel(element) {
+        if (this.getDirection() === "supertypes") {
+            return localize('supertypes', "supertypes of {0}", element.item.name);
+        }
+        else {
+            return localize('subtypes', "subtypes of {0}", element.item.name);
+        }
+    }
+}

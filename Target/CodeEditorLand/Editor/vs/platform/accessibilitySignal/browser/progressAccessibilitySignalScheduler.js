@@ -1,1 +1,36 @@
-var a=Object.defineProperty;var d=Object.getOwnPropertyDescriptor;var c=(p,s,o,e)=>{for(var i=e>1?void 0:e?d(s,o):s,n=p.length-1,t;n>=0;n--)(t=p[n])&&(i=(e?t(s,o,i):t(i))||i);return e&&i&&a(s,o,i),i},l=(p,s)=>(o,e)=>s(o,e,p);import{RunOnceScheduler as u}from"../../../base/common/async.js";import{Disposable as _}from"../../../base/common/lifecycle.js";import{AccessibilitySignal as h,IAccessibilitySignalService as v}from"./accessibilitySignalService.js";const S=5e3;let r=class extends _{constructor(o,e,i){super();this._accessibilitySignalService=i;this._scheduler=new u(()=>{this._signalLoop=this._accessibilitySignalService.playSignalLoop(h.progress,e??S)},o),this._scheduler.schedule()}_scheduler;_signalLoop;dispose(){super.dispose(),this._signalLoop?.dispose(),this._scheduler.dispose()}};r=c([l(2,v)],r);export{r as AccessibilityProgressSignalScheduler};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { RunOnceScheduler } from '../../../base/common/async.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { AccessibilitySignal, IAccessibilitySignalService } from './accessibilitySignalService.js';
+const PROGRESS_SIGNAL_LOOP_DELAY = 5000;
+let AccessibilityProgressSignalScheduler = class AccessibilityProgressSignalScheduler extends Disposable {
+    constructor(msDelayTime, msLoopTime, _accessibilitySignalService) {
+        super();
+        this._accessibilitySignalService = _accessibilitySignalService;
+        this._scheduler = new RunOnceScheduler(() => {
+            this._signalLoop = this._accessibilitySignalService.playSignalLoop(AccessibilitySignal.progress, msLoopTime ?? PROGRESS_SIGNAL_LOOP_DELAY);
+        }, msDelayTime);
+        this._scheduler.schedule();
+    }
+    dispose() {
+        super.dispose();
+        this._signalLoop?.dispose();
+        this._scheduler.dispose();
+    }
+};
+AccessibilityProgressSignalScheduler = __decorate([
+    __param(2, IAccessibilitySignalService),
+    __metadata("design:paramtypes", [Number, Object, Object])
+], AccessibilityProgressSignalScheduler);
+export { AccessibilityProgressSignalScheduler };

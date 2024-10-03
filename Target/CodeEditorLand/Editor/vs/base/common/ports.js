@@ -1,1 +1,5 @@
-function m(){return 1025+Math.floor(64510*Math.random())}export{m as randomPort};
+export function randomPort() {
+    const min = 1025;
+    const max = 65535;
+    return min + Math.floor((max - min) * Math.random());
+}

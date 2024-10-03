@@ -1,1 +1,872 @@
-import{basename as $}from"../../../../base/common/path.js";import*as _ from"../../../../base/common/json.js";import{Color as k}from"../../../../base/common/color.js";import{ExtensionData as H,VS_LIGHT_THEME as Y,VS_HC_THEME as q,THEME_SCOPE_CLOSE_PAREN as X,THEME_SCOPE_OPEN_PAREN as Z,themeScopeRegex as Q,THEME_SCOPE_WILDCARD as x,VS_HC_LIGHT_THEME as ee}from"./workbenchThemeService.js";import{convertSettings as O}from"./themeCompatibility.js";import*as S from"../../../../nls.js";import*as T from"../../../../base/common/types.js";import*as R from"../../../../base/common/resources.js";import{Extensions as te,editorBackground as w,editorForeground as z,DEFAULT_COLOR_CONFIG_VALUE as A}from"../../../../platform/theme/common/colorRegistry.js";import{getThemeTypeSelector as oe}from"../../../../platform/theme/common/themeService.js";import{Registry as ne}from"../../../../platform/registry/common/platform.js";import{getParseErrorMessage as ie}from"../../../../base/common/jsonErrorMessages.js";import"../../../../base/common/uri.js";import{parse as re}from"./plistParser.js";import{TokenStyle as E,SemanticTokenRule as j,getTokenClassificationRegistry as se,parseClassifierString as L}from"../../../../platform/theme/common/tokenClassificationRegistry.js";import{createMatchers as F}from"./textMateScopeMatcher.js";import"../../../../platform/extensionResourceLoader/common/extensionResourceLoader.js";import{CharCode as g}from"../../../../base/common/charCode.js";import{StorageScope as U,StorageTarget as ae}from"../../../../platform/storage/common/storage.js";import"./themeConfiguration.js";import{ColorScheme as P}from"../../../../platform/theme/common/theme.js";import{ColorId as le,FontStyle as v,MetadataConsts as b}from"../../../../editor/common/encodedTokenAttributes.js";import{toStandardTokenType as ce}from"../../../../editor/common/languages/supports/tokenization.js";const ue=ne.as(te.ColorContribution),D=se(),G={comments:["comment","punctuation.definition.comment"],strings:["string","meta.embedded.assembly"],keywords:["keyword - keyword.operator","keyword.control","storage","storage.type"],numbers:["constant.numeric"],types:["entity.name.type","entity.name.class","support.type","support.class"],functions:["entity.name.function","support.function"],variables:["variable","entity.name.variable"]};class C{static STORAGE_KEY="colorThemeData";id;label;settingsId;description;isLoaded;location;watch;extensionData;themeSemanticHighlighting;customSemanticHighlighting;customSemanticHighlightingDeprecated;themeTokenColors=[];customTokenColors=[];colorMap={};customColorMap={};semanticTokenRules=[];customSemanticTokenRules=[];themeTokenScopeMatchers;customTokenScopeMatchers;textMateThemingRules=void 0;tokenColorIndex=void 0;constructor(e,t,o){this.id=e,this.label=t,this.settingsId=o,this.isLoaded=!1}get semanticHighlighting(){return this.customSemanticHighlighting!==void 0?this.customSemanticHighlighting:this.customSemanticHighlightingDeprecated!==void 0?this.customSemanticHighlightingDeprecated:!!this.themeSemanticHighlighting}get tokenColors(){if(!this.textMateThemingRules){let a=function(s){s.scope&&s.settings&&(s.scope==="token.info-token"&&(r=!0),t.push({scope:s.scope,settings:{foreground:y(s.settings.foreground),background:y(s.settings.background),fontStyle:s.settings.fontStyle}}))};var e=a;const t=[],o=this.getColor(z)||this.getDefault(z),n=this.getColor(w)||this.getDefault(w);t.push({settings:{foreground:y(o),background:y(n)}});let r=!1;this.themeTokenColors.forEach(a),this.customTokenColors.forEach(a),r||fe[this.type].forEach(a),this.textMateThemingRules=t}return this.textMateThemingRules}getColor(e,t){const o=this.customColorMap[e];if(o instanceof k)return o;if(o===void 0){const n=this.colorMap[e];if(n!==void 0)return n}if(t!==!1)return this.getDefault(e)}getTokenStyle(e,t,o,n=!0,r={}){const a={foreground:void 0,bold:void 0,underline:void 0,strikethrough:void 0,italic:void 0},s={foreground:-1,bold:-1,underline:-1,strikethrough:-1,italic:-1};function l(u,d,h){d.foreground&&s.foreground<=u&&(s.foreground=u,a.foreground=d.foreground,r.foreground=h);for(const p of["bold","underline","strikethrough","italic"]){const m=p,I=d[m];I!==void 0&&s[m]<=u&&(s[m]=u,a[m]=I,r[m]=h)}}function c(u){const d=u.selector.match(e,t,o);d>=0&&l(d,u.style,u)}this.semanticTokenRules.forEach(c),this.customSemanticTokenRules.forEach(c);let f=!1;for(const u in s){const d=u;s[d]===-1?f=!0:s[d]=Number.MAX_VALUE}if(f)for(const u of D.getTokenStylingDefaultRules()){const d=u.selector.match(e,t,o);if(d>=0){let h;if(u.defaults.scopesToProbe&&(h=this.resolveScopes(u.defaults.scopesToProbe),h&&l(d,h,u.defaults.scopesToProbe)),!h&&n!==!1){const p=u.defaults[this.type];h=this.resolveTokenStyleValue(p),h&&l(d,h,p)}}}return E.fromData(a)}resolveTokenStyleValue(e){if(e!==void 0){if(typeof e=="string"){const{type:t,modifiers:o,language:n}=L(e,"");return this.getTokenStyle(t,o,n)}else if(typeof e=="object")return e}}getTokenColorIndex(){if(!this.tokenColorIndex){const e=new me;this.tokenColors.forEach(t=>{e.add(t.settings.foreground),e.add(t.settings.background)}),this.semanticTokenRules.forEach(t=>e.add(t.style.foreground)),D.getTokenStylingDefaultRules().forEach(t=>{const o=t.defaults[this.type];o&&typeof o=="object"&&e.add(o.foreground)}),this.customSemanticTokenRules.forEach(t=>e.add(t.style.foreground)),this.tokenColorIndex=e}return this.tokenColorIndex}get tokenColorMap(){return this.getTokenColorIndex().asArray()}getTokenStyleMetadata(e,t,o,n=!0,r={}){const{type:a,language:s}=L(e,o),l=this.getTokenStyle(a,t,s,n,r);if(l)return{foreground:this.getTokenColorIndex().get(l.foreground),bold:l.bold,underline:l.underline,strikethrough:l.strikethrough,italic:l.italic}}getTokenStylingRuleScope(e){if(this.customSemanticTokenRules.indexOf(e)!==-1)return"setting";if(this.semanticTokenRules.indexOf(e)!==-1)return"theme"}getDefault(e){return ue.resolveDefaultColor(e,this)}resolveScopes(e,t){this.themeTokenScopeMatchers||(this.themeTokenScopeMatchers=this.themeTokenColors.map(W)),this.customTokenScopeMatchers||(this.customTokenScopeMatchers=this.customTokenColors.map(W));for(const n of e){let u=function(d,h){for(let p=0;p<d.length;p++){const m=d[p](n);if(m>=0){const I=h[p],M=h[p].settings;m>=s&&M.foreground&&(r=M.foreground,s=m,f=I),m>=l&&T.isString(M.fontStyle)&&(a=M.fontStyle,l=m,c=I)}}};var o=u;let r,a,s=-1,l=-1,c,f;if(u(this.themeTokenScopeMatchers,this.themeTokenColors),u(this.customTokenScopeMatchers,this.customTokenColors),r!==void 0||a!==void 0)return t&&(t.foreground=f,t.bold=t.italic=t.underline=t.strikethrough=c,t.scope=n),E.fromSettings(r,a)}}defines(e){const t=this.customColorMap[e];return t instanceof k?!0:t===void 0&&this.colorMap.hasOwnProperty(e)}setCustomizations(e){this.setCustomColors(e.colorCustomizations),this.setCustomTokenColors(e.tokenColorCustomizations),this.setCustomSemanticTokenColors(e.semanticTokenColorCustomizations)}setCustomColors(e){this.customColorMap={},this.overwriteCustomColors(e);const t=this.getThemeSpecificColors(e);T.isObject(t)&&this.overwriteCustomColors(t),this.tokenColorIndex=void 0,this.textMateThemingRules=void 0,this.customTokenScopeMatchers=void 0}overwriteCustomColors(e){for(const t in e){const o=e[t];o===A?this.customColorMap[t]=A:typeof o=="string"&&(this.customColorMap[t]=k.fromHex(o))}}setCustomTokenColors(e){this.customTokenColors=[],this.customSemanticHighlightingDeprecated=void 0,this.addCustomTokenColors(e);const t=this.getThemeSpecificColors(e);T.isObject(t)&&this.addCustomTokenColors(t),this.tokenColorIndex=void 0,this.textMateThemingRules=void 0,this.customTokenScopeMatchers=void 0}setCustomSemanticTokenColors(e){if(this.customSemanticTokenRules=[],this.customSemanticHighlighting=void 0,e){this.customSemanticHighlighting=e.enabled,e.rules&&this.readSemanticTokenRules(e.rules);const t=this.getThemeSpecificColors(e);T.isObject(t)&&(t.enabled!==void 0&&(this.customSemanticHighlighting=t.enabled),t.rules&&this.readSemanticTokenRules(t.rules))}this.tokenColorIndex=void 0,this.textMateThemingRules=void 0}isThemeScope(e){return e.charAt(0)===Z&&e.charAt(e.length-1)===X}isThemeScopeMatch(e){const t=e.charAt(0),o=e.charAt(e.length-1),n=e.slice(0,-1),r=e.slice(1,-1),a=e.slice(1);return e===this.settingsId||this.settingsId.includes(r)&&t===x&&o===x||this.settingsId.startsWith(n)&&o===x||this.settingsId.endsWith(a)&&t===x}getThemeSpecificColors(e){let t;for(const o in e){const n=e[o];if(this.isThemeScope(o)&&n instanceof Object&&!Array.isArray(n)){const r=o.match(Q)||[];for(const a of r){const s=a.substring(1,a.length-1);if(this.isThemeScopeMatch(s)){t||(t={});const l=n;for(const c in l){const f=t[c],u=l[c];Array.isArray(f)&&Array.isArray(u)?t[c]=f.concat(u):u&&(t[c]=u)}}}}}return t}readSemanticTokenRules(e){for(const t in e)if(!this.isThemeScope(t))try{const o=B(t,e[t]);o&&this.customSemanticTokenRules.push(o)}catch{}}addCustomTokenColors(e){for(const t in G){const o=t,n=e[o];if(n){const r=typeof n=="string"?{foreground:n}:n,a=G[o];for(const s of a)this.customTokenColors.push({scope:s,settings:r})}}if(Array.isArray(e.textMateRules))for(const t of e.textMateRules)t.scope&&t.settings&&this.customTokenColors.push(t);e.semanticHighlighting!==void 0&&(this.customSemanticHighlightingDeprecated=e.semanticHighlighting)}ensureLoaded(e){return this.isLoaded?Promise.resolve(void 0):this.load(e)}reload(e){return this.load(e)}load(e){if(!this.location)return Promise.resolve(void 0);this.themeTokenColors=[],this.clearCaches();const t={colors:{},textMateRules:[],semanticTokenRules:[],semanticHighlighting:!1};return V(e,this.location,t).then(o=>{this.isLoaded=!0,this.semanticTokenRules=t.semanticTokenRules,this.colorMap=t.colors,this.themeTokenColors=t.textMateRules,this.themeSemanticHighlighting=t.semanticHighlighting})}clearCaches(){this.tokenColorIndex=void 0,this.textMateThemingRules=void 0,this.themeTokenScopeMatchers=void 0,this.customTokenScopeMatchers=void 0}toStorage(e){const t={};for(const n in this.colorMap)t[n]=k.Format.CSS.formatHexA(this.colorMap[n],!0);const o=JSON.stringify({id:this.id,label:this.label,settingsId:this.settingsId,themeTokenColors:this.themeTokenColors.map(n=>({settings:n.settings,scope:n.scope})),semanticTokenRules:this.semanticTokenRules.map(j.toJSONObject),extensionData:H.toJSONObject(this.extensionData),themeSemanticHighlighting:this.themeSemanticHighlighting,colorMap:t,watch:this.watch});e.store(C.STORAGE_KEY,o,U.PROFILE,ae.USER)}get baseTheme(){return this.classNames[0]}get classNames(){return this.id.split(" ")}get type(){switch(this.baseTheme){case Y:return P.LIGHT;case q:return P.HIGH_CONTRAST_DARK;case ee:return P.HIGH_CONTRAST_LIGHT;default:return P.DARK}}static createUnloadedThemeForThemeType(e,t){return C.createUnloadedTheme(oe(e),t)}static createUnloadedTheme(e,t){const o=new C(e,"","__"+e);if(o.isLoaded=!1,o.themeTokenColors=[],o.watch=!1,t)for(const n in t)o.colorMap[n]=k.fromHex(t[n]);return o}static createLoadedEmptyTheme(e,t){const o=new C(e,"",t);return o.isLoaded=!0,o.themeTokenColors=[],o.watch=!1,o}static fromStorageData(e){const t=e.get(C.STORAGE_KEY,U.PROFILE);if(t)try{const o=JSON.parse(t),n=new C("","","");for(const r in o)switch(r){case"colorMap":{const a=o[r];for(const s in a)n.colorMap[s]=k.fromHex(a[s]);break}case"themeTokenColors":case"id":case"label":case"settingsId":case"watch":case"themeSemanticHighlighting":n[r]=o[r];break;case"semanticTokenRules":{const a=o[r];if(Array.isArray(a))for(const s of a){const l=j.fromJSONObject(D,s);l&&n.semanticTokenRules.push(l)}break}case"location":break;case"extensionData":n.extensionData=H.fromJSONObject(o.extensionData);break}return!n.id||!n.settingsId?void 0:n}catch{return}}static fromExtensionTheme(e,t,o){const n=e.uiTheme||"vs-dark",r=de(o.extensionId,e.path),a=`${n} ${r}`,s=e.label||$(e.path),l=e.id||s,c=new C(a,s,l);return c.description=e.description,c.watch=e._watch===!0,c.location=t,c.extensionData=o,c.isLoaded=!1,c}}function de(i,e){e.startsWith("./")&&(e=e.substr(2));let t=`${i}-${e}`;return t=t.replace(/[^_a-zA-Z0-9-]/g,"-"),t.charAt(0).match(/[0-9-]/)&&(t="_"+t),t}async function V(i,e,t){if(R.extname(e)===".json"){const o=await i.readExtensionResource(e),n=[],r=_.parse(o,n);if(n.length>0)return Promise.reject(new Error(S.localize("error.cannotparsejson","Problems parsing JSON theme file: {0}",n.map(c=>ie(c.error)).join(", "))));if(_.getNodeType(r)!=="object")return Promise.reject(new Error(S.localize("error.invalidformat","Invalid format for JSON theme file: Object expected.")));if(r.include&&await V(i,R.joinPath(R.dirname(e),r.include),t),Array.isArray(r.settings))return O(r.settings,t),null;t.semanticHighlighting=t.semanticHighlighting||r.semanticHighlighting;const a=r.colors;if(a){if(typeof a!="object")return Promise.reject(new Error(S.localize({key:"error.invalidformat.colors",comment:["{0} will be replaced by a path. Values in quotes should not be translated."]},"Problem parsing color theme file: {0}. Property 'colors' is not of type 'object'.",e.toString())));for(const c in a){const f=a[c];f===A?delete t.colors[c]:typeof f=="string"&&(t.colors[c]=k.fromHex(a[c]))}}const s=r.tokenColors;if(s)if(Array.isArray(s))t.textMateRules.push(...s);else if(typeof s=="string")await N(i,R.joinPath(R.dirname(e),s),t);else return Promise.reject(new Error(S.localize({key:"error.invalidformat.tokenColors",comment:["{0} will be replaced by a path. Values in quotes should not be translated."]},"Problem parsing color theme file: {0}. Property 'tokenColors' should be either an array specifying colors or a path to a TextMate theme file",e.toString())));const l=r.semanticTokenColors;if(l&&typeof l=="object")for(const c in l)try{const f=B(c,l[c]);f&&t.semanticTokenRules.push(f)}catch{return Promise.reject(new Error(S.localize({key:"error.invalidformat.semanticTokenColors",comment:["{0} will be replaced by a path. Values in quotes should not be translated."]},"Problem parsing color theme file: {0}. Property 'semanticTokenColors' contains a invalid selector",e.toString())))}}else return N(i,e,t)}function N(i,e,t){return i.readExtensionResource(e).then(o=>{try{const r=re(o).settings;return Array.isArray(r)?(O(r,t),Promise.resolve(null)):Promise.reject(new Error(S.localize("error.plist.invalidformat","Problem parsing tmTheme file: {0}. 'settings' is not array.")))}catch(n){return Promise.reject(new Error(S.localize("error.cannotparse","Problems parsing tmTheme file: {0}",n.message)))}},o=>Promise.reject(new Error(S.localize("error.cannotload","Problems loading tmTheme file {0}: {1}",e.toString(),o.message))))}const fe={light:[{scope:"token.info-token",settings:{foreground:"#316bcd"}},{scope:"token.warn-token",settings:{foreground:"#cd9731"}},{scope:"token.error-token",settings:{foreground:"#cd3131"}},{scope:"token.debug-token",settings:{foreground:"#800080"}}],dark:[{scope:"token.info-token",settings:{foreground:"#6796e6"}},{scope:"token.warn-token",settings:{foreground:"#cd9731"}},{scope:"token.error-token",settings:{foreground:"#f44747"}},{scope:"token.debug-token",settings:{foreground:"#b267e6"}}],hcLight:[{scope:"token.info-token",settings:{foreground:"#316bcd"}},{scope:"token.warn-token",settings:{foreground:"#cd9731"}},{scope:"token.error-token",settings:{foreground:"#cd3131"}},{scope:"token.debug-token",settings:{foreground:"#800080"}}],hcDark:[{scope:"token.info-token",settings:{foreground:"#6796e6"}},{scope:"token.warn-token",settings:{foreground:"#008000"}},{scope:"token.error-token",settings:{foreground:"#FF0000"}},{scope:"token.debug-token",settings:{foreground:"#b267e6"}}]},K=i=>-1;function J(i,e){if(e.length<i.length)return-1;let t=0,o;return i.every((r,a)=>{for(let s=t;s<e.length;s++)if(he(e[s],r))return o=(a+1)*65536+r.length,t=s+1,!0;return!1})&&o!==void 0?o:-1}function he(i,e){if(!i)return!1;if(i===e)return!0;const t=e.length;return i.length>t&&i.substr(0,t)===e&&i[t]==="."}function W(i){const e=i.scope;if(!e||!i.settings)return K;const t=[];if(Array.isArray(e))for(const o of e)F(o,J,t);else F(e,J,t);return t.length===0?K:o=>{let n=t[0].matcher(o);for(let r=1;r<t.length;r++)n=Math.max(n,t[r].matcher(o));return n}}function B(i,e){const t=D.parseTokenSelector(i);let o;if(typeof e=="string"?o=E.fromSettings(e,void 0):ge(e)&&(o=E.fromSettings(e.foreground,e.fontStyle,e.bold,e.underline,e.strikethrough,e.italic)),o)return{selector:t,style:o}}function ge(i){return i&&(T.isString(i.foreground)||T.isString(i.fontStyle)||T.isBoolean(i.italic)||T.isBoolean(i.underline)||T.isBoolean(i.strikethrough)||T.isBoolean(i.bold))}function rt(i,e,t){let o=0;o|=t<<b.LANGUAGEID_OFFSET;const n={},r=i.resolveScopes([e],n);if(e.length>0){const l=ce(e[e.length-1]);o|=l<<b.TOKEN_TYPE_OFFSET}switch(n.foreground?.settings.fontStyle){case"italic":o|=v.Italic|b.ITALIC_MASK;break;case"bold":o|=v.Bold|b.BOLD_MASK;break;case"underline":o|=v.Underline|b.UNDERLINE_MASK;break;case"strikethrough":o|=v.Strikethrough|b.STRIKETHROUGH_MASK;break}const a=r?.foreground,s=a!==void 0?i.getTokenColorIndex().get(a):le.DefaultForeground;return o|=s<<b.FOREGROUND_OFFSET,o}class me{_lastColorId;_id2color;_color2id;constructor(){this._lastColorId=0,this._id2color=[],this._color2id=Object.create(null)}add(e){if(e=y(e),e===void 0)return 0;let t=this._color2id[e];return t||(t=++this._lastColorId,this._color2id[e]=t,this._id2color[t]=e,t)}get(e){if(e=y(e),e===void 0)return 0;const t=this._color2id[e];return t||0}asArray(){return this._id2color.slice(0)}}function y(i){if(!i)return;typeof i!="string"&&(i=k.Format.CSS.formatHexA(i,!0));const e=i.length;if(i.charCodeAt(0)!==g.Hash||e!==4&&e!==5&&e!==7&&e!==9)return;const t=[g.Hash];for(let o=1;o<e;o++){const n=pe(i.charCodeAt(o));if(!n)return;t.push(n),(e===4||e===5)&&t.push(n)}return t.length===9&&t[7]===g.F&&t[8]===g.F&&(t.length=7),String.fromCharCode(...t)}function pe(i){return i>=g.Digit0&&i<=g.Digit9||i>=g.A&&i<=g.F?i:i>=g.a&&i<=g.f?i-g.a+g.A:0}export{C as ColorThemeData,rt as findMetadata};
+import { basename } from '../../../../base/common/path.js';
+import * as Json from '../../../../base/common/json.js';
+import { Color } from '../../../../base/common/color.js';
+import { ExtensionData, VS_LIGHT_THEME, VS_HC_THEME, THEME_SCOPE_CLOSE_PAREN, THEME_SCOPE_OPEN_PAREN, themeScopeRegex, THEME_SCOPE_WILDCARD, VS_HC_LIGHT_THEME } from './workbenchThemeService.js';
+import { convertSettings } from './themeCompatibility.js';
+import * as nls from '../../../../nls.js';
+import * as types from '../../../../base/common/types.js';
+import * as resources from '../../../../base/common/resources.js';
+import { Extensions as ColorRegistryExtensions, editorBackground, editorForeground, DEFAULT_COLOR_CONFIG_VALUE } from '../../../../platform/theme/common/colorRegistry.js';
+import { getThemeTypeSelector } from '../../../../platform/theme/common/themeService.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { getParseErrorMessage } from '../../../../base/common/jsonErrorMessages.js';
+import { parse as parsePList } from './plistParser.js';
+import { TokenStyle, SemanticTokenRule, getTokenClassificationRegistry, parseClassifierString } from '../../../../platform/theme/common/tokenClassificationRegistry.js';
+import { createMatchers } from './textMateScopeMatcher.js';
+import { ColorScheme } from '../../../../platform/theme/common/theme.js';
+import { toStandardTokenType } from '../../../../editor/common/languages/supports/tokenization.js';
+const colorRegistry = Registry.as(ColorRegistryExtensions.ColorContribution);
+const tokenClassificationRegistry = getTokenClassificationRegistry();
+const tokenGroupToScopesMap = {
+    comments: ['comment', 'punctuation.definition.comment'],
+    strings: ['string', 'meta.embedded.assembly'],
+    keywords: ['keyword - keyword.operator', 'keyword.control', 'storage', 'storage.type'],
+    numbers: ['constant.numeric'],
+    types: ['entity.name.type', 'entity.name.class', 'support.type', 'support.class'],
+    functions: ['entity.name.function', 'support.function'],
+    variables: ['variable', 'entity.name.variable']
+};
+export class ColorThemeData {
+    static { this.STORAGE_KEY = 'colorThemeData'; }
+    constructor(id, label, settingsId) {
+        this.themeTokenColors = [];
+        this.customTokenColors = [];
+        this.colorMap = {};
+        this.customColorMap = {};
+        this.semanticTokenRules = [];
+        this.customSemanticTokenRules = [];
+        this.textMateThemingRules = undefined;
+        this.tokenColorIndex = undefined;
+        this.id = id;
+        this.label = label;
+        this.settingsId = settingsId;
+        this.isLoaded = false;
+    }
+    get semanticHighlighting() {
+        if (this.customSemanticHighlighting !== undefined) {
+            return this.customSemanticHighlighting;
+        }
+        if (this.customSemanticHighlightingDeprecated !== undefined) {
+            return this.customSemanticHighlightingDeprecated;
+        }
+        return !!this.themeSemanticHighlighting;
+    }
+    get tokenColors() {
+        if (!this.textMateThemingRules) {
+            const result = [];
+            const foreground = this.getColor(editorForeground) || this.getDefault(editorForeground);
+            const background = this.getColor(editorBackground) || this.getDefault(editorBackground);
+            result.push({
+                settings: {
+                    foreground: normalizeColor(foreground),
+                    background: normalizeColor(background)
+                }
+            });
+            let hasDefaultTokens = false;
+            function addRule(rule) {
+                if (rule.scope && rule.settings) {
+                    if (rule.scope === 'token.info-token') {
+                        hasDefaultTokens = true;
+                    }
+                    result.push({ scope: rule.scope, settings: { foreground: normalizeColor(rule.settings.foreground), background: normalizeColor(rule.settings.background), fontStyle: rule.settings.fontStyle } });
+                }
+            }
+            this.themeTokenColors.forEach(addRule);
+            this.customTokenColors.forEach(addRule);
+            if (!hasDefaultTokens) {
+                defaultThemeColors[this.type].forEach(addRule);
+            }
+            this.textMateThemingRules = result;
+        }
+        return this.textMateThemingRules;
+    }
+    getColor(colorId, useDefault) {
+        const customColor = this.customColorMap[colorId];
+        if (customColor instanceof Color) {
+            return customColor;
+        }
+        if (customColor === undefined) {
+            const color = this.colorMap[colorId];
+            if (color !== undefined) {
+                return color;
+            }
+        }
+        if (useDefault !== false) {
+            return this.getDefault(colorId);
+        }
+        return undefined;
+    }
+    getTokenStyle(type, modifiers, language, useDefault = true, definitions = {}) {
+        const result = {
+            foreground: undefined,
+            bold: undefined,
+            underline: undefined,
+            strikethrough: undefined,
+            italic: undefined
+        };
+        const score = {
+            foreground: -1,
+            bold: -1,
+            underline: -1,
+            strikethrough: -1,
+            italic: -1
+        };
+        function _processStyle(matchScore, style, definition) {
+            if (style.foreground && score.foreground <= matchScore) {
+                score.foreground = matchScore;
+                result.foreground = style.foreground;
+                definitions.foreground = definition;
+            }
+            for (const p of ['bold', 'underline', 'strikethrough', 'italic']) {
+                const property = p;
+                const info = style[property];
+                if (info !== undefined) {
+                    if (score[property] <= matchScore) {
+                        score[property] = matchScore;
+                        result[property] = info;
+                        definitions[property] = definition;
+                    }
+                }
+            }
+        }
+        function _processSemanticTokenRule(rule) {
+            const matchScore = rule.selector.match(type, modifiers, language);
+            if (matchScore >= 0) {
+                _processStyle(matchScore, rule.style, rule);
+            }
+        }
+        this.semanticTokenRules.forEach(_processSemanticTokenRule);
+        this.customSemanticTokenRules.forEach(_processSemanticTokenRule);
+        let hasUndefinedStyleProperty = false;
+        for (const k in score) {
+            const key = k;
+            if (score[key] === -1) {
+                hasUndefinedStyleProperty = true;
+            }
+            else {
+                score[key] = Number.MAX_VALUE;
+            }
+        }
+        if (hasUndefinedStyleProperty) {
+            for (const rule of tokenClassificationRegistry.getTokenStylingDefaultRules()) {
+                const matchScore = rule.selector.match(type, modifiers, language);
+                if (matchScore >= 0) {
+                    let style;
+                    if (rule.defaults.scopesToProbe) {
+                        style = this.resolveScopes(rule.defaults.scopesToProbe);
+                        if (style) {
+                            _processStyle(matchScore, style, rule.defaults.scopesToProbe);
+                        }
+                    }
+                    if (!style && useDefault !== false) {
+                        const tokenStyleValue = rule.defaults[this.type];
+                        style = this.resolveTokenStyleValue(tokenStyleValue);
+                        if (style) {
+                            _processStyle(matchScore, style, tokenStyleValue);
+                        }
+                    }
+                }
+            }
+        }
+        return TokenStyle.fromData(result);
+    }
+    resolveTokenStyleValue(tokenStyleValue) {
+        if (tokenStyleValue === undefined) {
+            return undefined;
+        }
+        else if (typeof tokenStyleValue === 'string') {
+            const { type, modifiers, language } = parseClassifierString(tokenStyleValue, '');
+            return this.getTokenStyle(type, modifiers, language);
+        }
+        else if (typeof tokenStyleValue === 'object') {
+            return tokenStyleValue;
+        }
+        return undefined;
+    }
+    getTokenColorIndex() {
+        if (!this.tokenColorIndex) {
+            const index = new TokenColorIndex();
+            this.tokenColors.forEach(rule => {
+                index.add(rule.settings.foreground);
+                index.add(rule.settings.background);
+            });
+            this.semanticTokenRules.forEach(r => index.add(r.style.foreground));
+            tokenClassificationRegistry.getTokenStylingDefaultRules().forEach(r => {
+                const defaultColor = r.defaults[this.type];
+                if (defaultColor && typeof defaultColor === 'object') {
+                    index.add(defaultColor.foreground);
+                }
+            });
+            this.customSemanticTokenRules.forEach(r => index.add(r.style.foreground));
+            this.tokenColorIndex = index;
+        }
+        return this.tokenColorIndex;
+    }
+    get tokenColorMap() {
+        return this.getTokenColorIndex().asArray();
+    }
+    getTokenStyleMetadata(typeWithLanguage, modifiers, defaultLanguage, useDefault = true, definitions = {}) {
+        const { type, language } = parseClassifierString(typeWithLanguage, defaultLanguage);
+        const style = this.getTokenStyle(type, modifiers, language, useDefault, definitions);
+        if (!style) {
+            return undefined;
+        }
+        return {
+            foreground: this.getTokenColorIndex().get(style.foreground),
+            bold: style.bold,
+            underline: style.underline,
+            strikethrough: style.strikethrough,
+            italic: style.italic,
+        };
+    }
+    getTokenStylingRuleScope(rule) {
+        if (this.customSemanticTokenRules.indexOf(rule) !== -1) {
+            return 'setting';
+        }
+        if (this.semanticTokenRules.indexOf(rule) !== -1) {
+            return 'theme';
+        }
+        return undefined;
+    }
+    getDefault(colorId) {
+        return colorRegistry.resolveDefaultColor(colorId, this);
+    }
+    resolveScopes(scopes, definitions) {
+        if (!this.themeTokenScopeMatchers) {
+            this.themeTokenScopeMatchers = this.themeTokenColors.map(getScopeMatcher);
+        }
+        if (!this.customTokenScopeMatchers) {
+            this.customTokenScopeMatchers = this.customTokenColors.map(getScopeMatcher);
+        }
+        for (const scope of scopes) {
+            let foreground = undefined;
+            let fontStyle = undefined;
+            let foregroundScore = -1;
+            let fontStyleScore = -1;
+            let fontStyleThemingRule = undefined;
+            let foregroundThemingRule = undefined;
+            function findTokenStyleForScopeInScopes(scopeMatchers, themingRules) {
+                for (let i = 0; i < scopeMatchers.length; i++) {
+                    const score = scopeMatchers[i](scope);
+                    if (score >= 0) {
+                        const themingRule = themingRules[i];
+                        const settings = themingRules[i].settings;
+                        if (score >= foregroundScore && settings.foreground) {
+                            foreground = settings.foreground;
+                            foregroundScore = score;
+                            foregroundThemingRule = themingRule;
+                        }
+                        if (score >= fontStyleScore && types.isString(settings.fontStyle)) {
+                            fontStyle = settings.fontStyle;
+                            fontStyleScore = score;
+                            fontStyleThemingRule = themingRule;
+                        }
+                    }
+                }
+            }
+            findTokenStyleForScopeInScopes(this.themeTokenScopeMatchers, this.themeTokenColors);
+            findTokenStyleForScopeInScopes(this.customTokenScopeMatchers, this.customTokenColors);
+            if (foreground !== undefined || fontStyle !== undefined) {
+                if (definitions) {
+                    definitions.foreground = foregroundThemingRule;
+                    definitions.bold = definitions.italic = definitions.underline = definitions.strikethrough = fontStyleThemingRule;
+                    definitions.scope = scope;
+                }
+                return TokenStyle.fromSettings(foreground, fontStyle);
+            }
+        }
+        return undefined;
+    }
+    defines(colorId) {
+        const customColor = this.customColorMap[colorId];
+        if (customColor instanceof Color) {
+            return true;
+        }
+        return customColor === undefined && this.colorMap.hasOwnProperty(colorId);
+    }
+    setCustomizations(settings) {
+        this.setCustomColors(settings.colorCustomizations);
+        this.setCustomTokenColors(settings.tokenColorCustomizations);
+        this.setCustomSemanticTokenColors(settings.semanticTokenColorCustomizations);
+    }
+    setCustomColors(colors) {
+        this.customColorMap = {};
+        this.overwriteCustomColors(colors);
+        const themeSpecificColors = this.getThemeSpecificColors(colors);
+        if (types.isObject(themeSpecificColors)) {
+            this.overwriteCustomColors(themeSpecificColors);
+        }
+        this.tokenColorIndex = undefined;
+        this.textMateThemingRules = undefined;
+        this.customTokenScopeMatchers = undefined;
+    }
+    overwriteCustomColors(colors) {
+        for (const id in colors) {
+            const colorVal = colors[id];
+            if (colorVal === DEFAULT_COLOR_CONFIG_VALUE) {
+                this.customColorMap[id] = DEFAULT_COLOR_CONFIG_VALUE;
+            }
+            else if (typeof colorVal === 'string') {
+                this.customColorMap[id] = Color.fromHex(colorVal);
+            }
+        }
+    }
+    setCustomTokenColors(customTokenColors) {
+        this.customTokenColors = [];
+        this.customSemanticHighlightingDeprecated = undefined;
+        this.addCustomTokenColors(customTokenColors);
+        const themeSpecificTokenColors = this.getThemeSpecificColors(customTokenColors);
+        if (types.isObject(themeSpecificTokenColors)) {
+            this.addCustomTokenColors(themeSpecificTokenColors);
+        }
+        this.tokenColorIndex = undefined;
+        this.textMateThemingRules = undefined;
+        this.customTokenScopeMatchers = undefined;
+    }
+    setCustomSemanticTokenColors(semanticTokenColors) {
+        this.customSemanticTokenRules = [];
+        this.customSemanticHighlighting = undefined;
+        if (semanticTokenColors) {
+            this.customSemanticHighlighting = semanticTokenColors.enabled;
+            if (semanticTokenColors.rules) {
+                this.readSemanticTokenRules(semanticTokenColors.rules);
+            }
+            const themeSpecificColors = this.getThemeSpecificColors(semanticTokenColors);
+            if (types.isObject(themeSpecificColors)) {
+                if (themeSpecificColors.enabled !== undefined) {
+                    this.customSemanticHighlighting = themeSpecificColors.enabled;
+                }
+                if (themeSpecificColors.rules) {
+                    this.readSemanticTokenRules(themeSpecificColors.rules);
+                }
+            }
+        }
+        this.tokenColorIndex = undefined;
+        this.textMateThemingRules = undefined;
+    }
+    isThemeScope(key) {
+        return key.charAt(0) === THEME_SCOPE_OPEN_PAREN && key.charAt(key.length - 1) === THEME_SCOPE_CLOSE_PAREN;
+    }
+    isThemeScopeMatch(themeId) {
+        const themeIdFirstChar = themeId.charAt(0);
+        const themeIdLastChar = themeId.charAt(themeId.length - 1);
+        const themeIdPrefix = themeId.slice(0, -1);
+        const themeIdInfix = themeId.slice(1, -1);
+        const themeIdSuffix = themeId.slice(1);
+        return themeId === this.settingsId
+            || (this.settingsId.includes(themeIdInfix) && themeIdFirstChar === THEME_SCOPE_WILDCARD && themeIdLastChar === THEME_SCOPE_WILDCARD)
+            || (this.settingsId.startsWith(themeIdPrefix) && themeIdLastChar === THEME_SCOPE_WILDCARD)
+            || (this.settingsId.endsWith(themeIdSuffix) && themeIdFirstChar === THEME_SCOPE_WILDCARD);
+    }
+    getThemeSpecificColors(colors) {
+        let themeSpecificColors;
+        for (const key in colors) {
+            const scopedColors = colors[key];
+            if (this.isThemeScope(key) && scopedColors instanceof Object && !Array.isArray(scopedColors)) {
+                const themeScopeList = key.match(themeScopeRegex) || [];
+                for (const themeScope of themeScopeList) {
+                    const themeId = themeScope.substring(1, themeScope.length - 1);
+                    if (this.isThemeScopeMatch(themeId)) {
+                        if (!themeSpecificColors) {
+                            themeSpecificColors = {};
+                        }
+                        const scopedThemeSpecificColors = scopedColors;
+                        for (const subkey in scopedThemeSpecificColors) {
+                            const originalColors = themeSpecificColors[subkey];
+                            const overrideColors = scopedThemeSpecificColors[subkey];
+                            if (Array.isArray(originalColors) && Array.isArray(overrideColors)) {
+                                themeSpecificColors[subkey] = originalColors.concat(overrideColors);
+                            }
+                            else if (overrideColors) {
+                                themeSpecificColors[subkey] = overrideColors;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return themeSpecificColors;
+    }
+    readSemanticTokenRules(tokenStylingRuleSection) {
+        for (const key in tokenStylingRuleSection) {
+            if (!this.isThemeScope(key)) {
+                try {
+                    const rule = readSemanticTokenRule(key, tokenStylingRuleSection[key]);
+                    if (rule) {
+                        this.customSemanticTokenRules.push(rule);
+                    }
+                }
+                catch (e) {
+                }
+            }
+        }
+    }
+    addCustomTokenColors(customTokenColors) {
+        for (const tokenGroup in tokenGroupToScopesMap) {
+            const group = tokenGroup;
+            const value = customTokenColors[group];
+            if (value) {
+                const settings = typeof value === 'string' ? { foreground: value } : value;
+                const scopes = tokenGroupToScopesMap[group];
+                for (const scope of scopes) {
+                    this.customTokenColors.push({ scope, settings });
+                }
+            }
+        }
+        if (Array.isArray(customTokenColors.textMateRules)) {
+            for (const rule of customTokenColors.textMateRules) {
+                if (rule.scope && rule.settings) {
+                    this.customTokenColors.push(rule);
+                }
+            }
+        }
+        if (customTokenColors.semanticHighlighting !== undefined) {
+            this.customSemanticHighlightingDeprecated = customTokenColors.semanticHighlighting;
+        }
+    }
+    ensureLoaded(extensionResourceLoaderService) {
+        return !this.isLoaded ? this.load(extensionResourceLoaderService) : Promise.resolve(undefined);
+    }
+    reload(extensionResourceLoaderService) {
+        return this.load(extensionResourceLoaderService);
+    }
+    load(extensionResourceLoaderService) {
+        if (!this.location) {
+            return Promise.resolve(undefined);
+        }
+        this.themeTokenColors = [];
+        this.clearCaches();
+        const result = {
+            colors: {},
+            textMateRules: [],
+            semanticTokenRules: [],
+            semanticHighlighting: false
+        };
+        return _loadColorTheme(extensionResourceLoaderService, this.location, result).then(_ => {
+            this.isLoaded = true;
+            this.semanticTokenRules = result.semanticTokenRules;
+            this.colorMap = result.colors;
+            this.themeTokenColors = result.textMateRules;
+            this.themeSemanticHighlighting = result.semanticHighlighting;
+        });
+    }
+    clearCaches() {
+        this.tokenColorIndex = undefined;
+        this.textMateThemingRules = undefined;
+        this.themeTokenScopeMatchers = undefined;
+        this.customTokenScopeMatchers = undefined;
+    }
+    toStorage(storageService) {
+        const colorMapData = {};
+        for (const key in this.colorMap) {
+            colorMapData[key] = Color.Format.CSS.formatHexA(this.colorMap[key], true);
+        }
+        const value = JSON.stringify({
+            id: this.id,
+            label: this.label,
+            settingsId: this.settingsId,
+            themeTokenColors: this.themeTokenColors.map(tc => ({ settings: tc.settings, scope: tc.scope })),
+            semanticTokenRules: this.semanticTokenRules.map(SemanticTokenRule.toJSONObject),
+            extensionData: ExtensionData.toJSONObject(this.extensionData),
+            themeSemanticHighlighting: this.themeSemanticHighlighting,
+            colorMap: colorMapData,
+            watch: this.watch
+        });
+        storageService.store(ColorThemeData.STORAGE_KEY, value, 0, 0);
+    }
+    get baseTheme() {
+        return this.classNames[0];
+    }
+    get classNames() {
+        return this.id.split(' ');
+    }
+    get type() {
+        switch (this.baseTheme) {
+            case VS_LIGHT_THEME: return ColorScheme.LIGHT;
+            case VS_HC_THEME: return ColorScheme.HIGH_CONTRAST_DARK;
+            case VS_HC_LIGHT_THEME: return ColorScheme.HIGH_CONTRAST_LIGHT;
+            default: return ColorScheme.DARK;
+        }
+    }
+    static createUnloadedThemeForThemeType(themeType, colorMap) {
+        return ColorThemeData.createUnloadedTheme(getThemeTypeSelector(themeType), colorMap);
+    }
+    static createUnloadedTheme(id, colorMap) {
+        const themeData = new ColorThemeData(id, '', '__' + id);
+        themeData.isLoaded = false;
+        themeData.themeTokenColors = [];
+        themeData.watch = false;
+        if (colorMap) {
+            for (const id in colorMap) {
+                themeData.colorMap[id] = Color.fromHex(colorMap[id]);
+            }
+        }
+        return themeData;
+    }
+    static createLoadedEmptyTheme(id, settingsId) {
+        const themeData = new ColorThemeData(id, '', settingsId);
+        themeData.isLoaded = true;
+        themeData.themeTokenColors = [];
+        themeData.watch = false;
+        return themeData;
+    }
+    static fromStorageData(storageService) {
+        const input = storageService.get(ColorThemeData.STORAGE_KEY, 0);
+        if (!input) {
+            return undefined;
+        }
+        try {
+            const data = JSON.parse(input);
+            const theme = new ColorThemeData('', '', '');
+            for (const key in data) {
+                switch (key) {
+                    case 'colorMap': {
+                        const colorMapData = data[key];
+                        for (const id in colorMapData) {
+                            theme.colorMap[id] = Color.fromHex(colorMapData[id]);
+                        }
+                        break;
+                    }
+                    case 'themeTokenColors':
+                    case 'id':
+                    case 'label':
+                    case 'settingsId':
+                    case 'watch':
+                    case 'themeSemanticHighlighting':
+                        theme[key] = data[key];
+                        break;
+                    case 'semanticTokenRules': {
+                        const rulesData = data[key];
+                        if (Array.isArray(rulesData)) {
+                            for (const d of rulesData) {
+                                const rule = SemanticTokenRule.fromJSONObject(tokenClassificationRegistry, d);
+                                if (rule) {
+                                    theme.semanticTokenRules.push(rule);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    case 'location':
+                        break;
+                    case 'extensionData':
+                        theme.extensionData = ExtensionData.fromJSONObject(data.extensionData);
+                        break;
+                }
+            }
+            if (!theme.id || !theme.settingsId) {
+                return undefined;
+            }
+            return theme;
+        }
+        catch (e) {
+            return undefined;
+        }
+    }
+    static fromExtensionTheme(theme, colorThemeLocation, extensionData) {
+        const baseTheme = theme['uiTheme'] || 'vs-dark';
+        const themeSelector = toCSSSelector(extensionData.extensionId, theme.path);
+        const id = `${baseTheme} ${themeSelector}`;
+        const label = theme.label || basename(theme.path);
+        const settingsId = theme.id || label;
+        const themeData = new ColorThemeData(id, label, settingsId);
+        themeData.description = theme.description;
+        themeData.watch = theme._watch === true;
+        themeData.location = colorThemeLocation;
+        themeData.extensionData = extensionData;
+        themeData.isLoaded = false;
+        return themeData;
+    }
+}
+function toCSSSelector(extensionId, path) {
+    if (path.startsWith('./')) {
+        path = path.substr(2);
+    }
+    let str = `${extensionId}-${path}`;
+    str = str.replace(/[^_a-zA-Z0-9-]/g, '-');
+    if (str.charAt(0).match(/[0-9-]/)) {
+        str = '_' + str;
+    }
+    return str;
+}
+async function _loadColorTheme(extensionResourceLoaderService, themeLocation, result) {
+    if (resources.extname(themeLocation) === '.json') {
+        const content = await extensionResourceLoaderService.readExtensionResource(themeLocation);
+        const errors = [];
+        const contentValue = Json.parse(content, errors);
+        if (errors.length > 0) {
+            return Promise.reject(new Error(nls.localize('error.cannotparsejson', "Problems parsing JSON theme file: {0}", errors.map(e => getParseErrorMessage(e.error)).join(', '))));
+        }
+        else if (Json.getNodeType(contentValue) !== 'object') {
+            return Promise.reject(new Error(nls.localize('error.invalidformat', "Invalid format for JSON theme file: Object expected.")));
+        }
+        if (contentValue.include) {
+            await _loadColorTheme(extensionResourceLoaderService, resources.joinPath(resources.dirname(themeLocation), contentValue.include), result);
+        }
+        if (Array.isArray(contentValue.settings)) {
+            convertSettings(contentValue.settings, result);
+            return null;
+        }
+        result.semanticHighlighting = result.semanticHighlighting || contentValue.semanticHighlighting;
+        const colors = contentValue.colors;
+        if (colors) {
+            if (typeof colors !== 'object') {
+                return Promise.reject(new Error(nls.localize({ key: 'error.invalidformat.colors', comment: ['{0} will be replaced by a path. Values in quotes should not be translated.'] }, "Problem parsing color theme file: {0}. Property 'colors' is not of type 'object'.", themeLocation.toString())));
+            }
+            for (const colorId in colors) {
+                const colorVal = colors[colorId];
+                if (colorVal === DEFAULT_COLOR_CONFIG_VALUE) {
+                    delete result.colors[colorId];
+                }
+                else if (typeof colorVal === 'string') {
+                    result.colors[colorId] = Color.fromHex(colors[colorId]);
+                }
+            }
+        }
+        const tokenColors = contentValue.tokenColors;
+        if (tokenColors) {
+            if (Array.isArray(tokenColors)) {
+                result.textMateRules.push(...tokenColors);
+            }
+            else if (typeof tokenColors === 'string') {
+                await _loadSyntaxTokens(extensionResourceLoaderService, resources.joinPath(resources.dirname(themeLocation), tokenColors), result);
+            }
+            else {
+                return Promise.reject(new Error(nls.localize({ key: 'error.invalidformat.tokenColors', comment: ['{0} will be replaced by a path. Values in quotes should not be translated.'] }, "Problem parsing color theme file: {0}. Property 'tokenColors' should be either an array specifying colors or a path to a TextMate theme file", themeLocation.toString())));
+            }
+        }
+        const semanticTokenColors = contentValue.semanticTokenColors;
+        if (semanticTokenColors && typeof semanticTokenColors === 'object') {
+            for (const key in semanticTokenColors) {
+                try {
+                    const rule = readSemanticTokenRule(key, semanticTokenColors[key]);
+                    if (rule) {
+                        result.semanticTokenRules.push(rule);
+                    }
+                }
+                catch (e) {
+                    return Promise.reject(new Error(nls.localize({ key: 'error.invalidformat.semanticTokenColors', comment: ['{0} will be replaced by a path. Values in quotes should not be translated.'] }, "Problem parsing color theme file: {0}. Property 'semanticTokenColors' contains a invalid selector", themeLocation.toString())));
+                }
+            }
+        }
+    }
+    else {
+        return _loadSyntaxTokens(extensionResourceLoaderService, themeLocation, result);
+    }
+}
+function _loadSyntaxTokens(extensionResourceLoaderService, themeLocation, result) {
+    return extensionResourceLoaderService.readExtensionResource(themeLocation).then(content => {
+        try {
+            const contentValue = parsePList(content);
+            const settings = contentValue.settings;
+            if (!Array.isArray(settings)) {
+                return Promise.reject(new Error(nls.localize('error.plist.invalidformat', "Problem parsing tmTheme file: {0}. 'settings' is not array.")));
+            }
+            convertSettings(settings, result);
+            return Promise.resolve(null);
+        }
+        catch (e) {
+            return Promise.reject(new Error(nls.localize('error.cannotparse', "Problems parsing tmTheme file: {0}", e.message)));
+        }
+    }, error => {
+        return Promise.reject(new Error(nls.localize('error.cannotload', "Problems loading tmTheme file {0}: {1}", themeLocation.toString(), error.message)));
+    });
+}
+const defaultThemeColors = {
+    'light': [
+        { scope: 'token.info-token', settings: { foreground: '#316bcd' } },
+        { scope: 'token.warn-token', settings: { foreground: '#cd9731' } },
+        { scope: 'token.error-token', settings: { foreground: '#cd3131' } },
+        { scope: 'token.debug-token', settings: { foreground: '#800080' } }
+    ],
+    'dark': [
+        { scope: 'token.info-token', settings: { foreground: '#6796e6' } },
+        { scope: 'token.warn-token', settings: { foreground: '#cd9731' } },
+        { scope: 'token.error-token', settings: { foreground: '#f44747' } },
+        { scope: 'token.debug-token', settings: { foreground: '#b267e6' } }
+    ],
+    'hcLight': [
+        { scope: 'token.info-token', settings: { foreground: '#316bcd' } },
+        { scope: 'token.warn-token', settings: { foreground: '#cd9731' } },
+        { scope: 'token.error-token', settings: { foreground: '#cd3131' } },
+        { scope: 'token.debug-token', settings: { foreground: '#800080' } }
+    ],
+    'hcDark': [
+        { scope: 'token.info-token', settings: { foreground: '#6796e6' } },
+        { scope: 'token.warn-token', settings: { foreground: '#008000' } },
+        { scope: 'token.error-token', settings: { foreground: '#FF0000' } },
+        { scope: 'token.debug-token', settings: { foreground: '#b267e6' } }
+    ]
+};
+const noMatch = (_scope) => -1;
+function nameMatcher(identifiers, scopes) {
+    if (scopes.length < identifiers.length) {
+        return -1;
+    }
+    let lastIndex = 0;
+    let score = undefined;
+    const every = identifiers.every((identifier, identifierIndex) => {
+        for (let i = lastIndex; i < scopes.length; i++) {
+            if (scopesAreMatching(scopes[i], identifier)) {
+                score = (identifierIndex + 1) * 0x10000 + identifier.length;
+                lastIndex = i + 1;
+                return true;
+            }
+        }
+        return false;
+    });
+    return every && score !== undefined ? score : -1;
+}
+function scopesAreMatching(thisScopeName, scopeName) {
+    if (!thisScopeName) {
+        return false;
+    }
+    if (thisScopeName === scopeName) {
+        return true;
+    }
+    const len = scopeName.length;
+    return thisScopeName.length > len && thisScopeName.substr(0, len) === scopeName && thisScopeName[len] === '.';
+}
+function getScopeMatcher(rule) {
+    const ruleScope = rule.scope;
+    if (!ruleScope || !rule.settings) {
+        return noMatch;
+    }
+    const matchers = [];
+    if (Array.isArray(ruleScope)) {
+        for (const rs of ruleScope) {
+            createMatchers(rs, nameMatcher, matchers);
+        }
+    }
+    else {
+        createMatchers(ruleScope, nameMatcher, matchers);
+    }
+    if (matchers.length === 0) {
+        return noMatch;
+    }
+    return (scope) => {
+        let max = matchers[0].matcher(scope);
+        for (let i = 1; i < matchers.length; i++) {
+            max = Math.max(max, matchers[i].matcher(scope));
+        }
+        return max;
+    };
+}
+function readSemanticTokenRule(selectorString, settings) {
+    const selector = tokenClassificationRegistry.parseTokenSelector(selectorString);
+    let style;
+    if (typeof settings === 'string') {
+        style = TokenStyle.fromSettings(settings, undefined);
+    }
+    else if (isSemanticTokenColorizationSetting(settings)) {
+        style = TokenStyle.fromSettings(settings.foreground, settings.fontStyle, settings.bold, settings.underline, settings.strikethrough, settings.italic);
+    }
+    if (style) {
+        return { selector, style };
+    }
+    return undefined;
+}
+function isSemanticTokenColorizationSetting(style) {
+    return style && (types.isString(style.foreground) || types.isString(style.fontStyle) || types.isBoolean(style.italic)
+        || types.isBoolean(style.underline) || types.isBoolean(style.strikethrough) || types.isBoolean(style.bold));
+}
+export function findMetadata(colorThemeData, captureNames, languageId) {
+    let metadata = 0;
+    metadata |= (languageId << 0);
+    const definitions = {};
+    const tokenStyle = colorThemeData.resolveScopes([captureNames], definitions);
+    if (captureNames.length > 0) {
+        const standardToken = toStandardTokenType(captureNames[captureNames.length - 1]);
+        metadata |= (standardToken << 8);
+    }
+    switch (definitions.foreground?.settings.fontStyle) {
+        case 'italic':
+            metadata |= 1 | 2048;
+            break;
+        case 'bold':
+            metadata |= 2 | 4096;
+            break;
+        case 'underline':
+            metadata |= 4 | 8192;
+            break;
+        case 'strikethrough':
+            metadata |= 8 | 16384;
+            break;
+    }
+    const foreground = tokenStyle?.foreground;
+    const tokenStyleForeground = (foreground !== undefined) ? colorThemeData.getTokenColorIndex().get(foreground) : 1;
+    metadata |= tokenStyleForeground << 15;
+    return metadata;
+}
+class TokenColorIndex {
+    constructor() {
+        this._lastColorId = 0;
+        this._id2color = [];
+        this._color2id = Object.create(null);
+    }
+    add(color) {
+        color = normalizeColor(color);
+        if (color === undefined) {
+            return 0;
+        }
+        let value = this._color2id[color];
+        if (value) {
+            return value;
+        }
+        value = ++this._lastColorId;
+        this._color2id[color] = value;
+        this._id2color[value] = color;
+        return value;
+    }
+    get(color) {
+        color = normalizeColor(color);
+        if (color === undefined) {
+            return 0;
+        }
+        const value = this._color2id[color];
+        if (value) {
+            return value;
+        }
+        console.log(`Color ${color} not in index.`);
+        return 0;
+    }
+    asArray() {
+        return this._id2color.slice(0);
+    }
+}
+function normalizeColor(color) {
+    if (!color) {
+        return undefined;
+    }
+    if (typeof color !== 'string') {
+        color = Color.Format.CSS.formatHexA(color, true);
+    }
+    const len = color.length;
+    if (color.charCodeAt(0) !== 35 || (len !== 4 && len !== 5 && len !== 7 && len !== 9)) {
+        return undefined;
+    }
+    const result = [35];
+    for (let i = 1; i < len; i++) {
+        const upper = hexUpper(color.charCodeAt(i));
+        if (!upper) {
+            return undefined;
+        }
+        result.push(upper);
+        if (len === 4 || len === 5) {
+            result.push(upper);
+        }
+    }
+    if (result.length === 9 && result[7] === 70 && result[8] === 70) {
+        result.length = 7;
+    }
+    return String.fromCharCode(...result);
+}
+function hexUpper(charCode) {
+    if (charCode >= 48 && charCode <= 57 || charCode >= 65 && charCode <= 70) {
+        return charCode;
+    }
+    else if (charCode >= 97 && charCode <= 102) {
+        return charCode - 97 + 65;
+    }
+    return 0;
+}

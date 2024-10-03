@@ -1,1 +1,53 @@
-var g=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var m=(t,e,r,o)=>{for(var i=o>1?void 0:o?S(e,r):e,a=t.length-1,c;a>=0;a--)(c=t[a])&&(i=(o?c(e,r,i):c(i))||i);return o&&i&&g(e,r,i),i},n=(t,e)=>(r,o)=>e(r,o,t);import{isLinux as p}from"../../../../base/common/platform.js";import{parse as l}from"../../../../base/common/jsonc.js";import{IEnvironmentService as h}from"../../../../platform/environment/common/environment.js";import{IFileService as d}from"../../../../platform/files/common/files.js";import{Registry as I}from"../../../../platform/registry/common/platform.js";import{IStorageService as f,StorageScope as v,StorageTarget as b}from"../../../../platform/storage/common/storage.js";import{Extensions as u}from"../../../common/contributions.js";import{IJSONEditingService as y}from"../../../services/configuration/common/jsonEditing.js";import{LifecyclePhase as k}from"../../../services/lifecycle/common/lifecycle.js";let s=class{constructor(e,r,o,i){this.jsonEditingService=e;this.environmentService=r;this.fileService=o;this.storageService=i;this.migrateToGnomeLibsecret()}async migrateToGnomeLibsecret(){if(!(!p||this.storageService.getBoolean("encryption.migratedToGnomeLibsecret",v.APPLICATION,!1)))try{const e=await this.fileService.readFile(this.environmentService.argvResource),r=l(e.value.toString());(r["password-store"]==="gnome"||r["password-store"]==="gnome-keyring")&&this.jsonEditingService.write(this.environmentService.argvResource,[{path:["password-store"],value:"gnome-libsecret"}],!0),this.storageService.store("encryption.migratedToGnomeLibsecret",!0,v.APPLICATION,b.USER)}catch{}}};s=m([n(0,y),n(1,h),n(2,d),n(3,f)],s),I.as(u.Workbench).registerWorkbenchContribution(s,k.Eventually);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { isLinux } from '../../../../base/common/platform.js';
+import { parse } from '../../../../base/common/jsonc.js';
+import { IEnvironmentService } from '../../../../platform/environment/common/environment.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+import { IJSONEditingService } from '../../../services/configuration/common/jsonEditing.js';
+let EncryptionContribution = class EncryptionContribution {
+    constructor(jsonEditingService, environmentService, fileService, storageService) {
+        this.jsonEditingService = jsonEditingService;
+        this.environmentService = environmentService;
+        this.fileService = fileService;
+        this.storageService = storageService;
+        this.migrateToGnomeLibsecret();
+    }
+    async migrateToGnomeLibsecret() {
+        if (!isLinux || this.storageService.getBoolean('encryption.migratedToGnomeLibsecret', -1, false)) {
+            return;
+        }
+        try {
+            const content = await this.fileService.readFile(this.environmentService.argvResource);
+            const argv = parse(content.value.toString());
+            if (argv['password-store'] === 'gnome' || argv['password-store'] === 'gnome-keyring') {
+                this.jsonEditingService.write(this.environmentService.argvResource, [{ path: ['password-store'], value: 'gnome-libsecret' }], true);
+            }
+            this.storageService.store('encryption.migratedToGnomeLibsecret', true, -1, 0);
+        }
+        catch (error) {
+            console.error(error);
+        }
+    }
+};
+EncryptionContribution = __decorate([
+    __param(0, IJSONEditingService),
+    __param(1, IEnvironmentService),
+    __param(2, IFileService),
+    __param(3, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], EncryptionContribution);
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(EncryptionContribution, 4);

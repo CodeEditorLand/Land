@@ -1,3 +1,267 @@
-var m=Object.defineProperty;var K=Object.getOwnPropertyDescriptor;var b=(u,a,i,e)=>{for(var t=e>1?void 0:e?K(a,i):a,n=u.length-1,r;n>=0;n--)(r=u[n])&&(t=(e?r(a,i,t):r(t))||t);return e&&t&&m(a,i,t),t},f=(u,a)=>(i,e)=>a(i,e,u);import{localize as v}from"../../../../nls.js";import{Queue as E}from"../../../../base/common/async.js";import*as c from"../../../../base/common/json.js";import*as I from"../../../../base/common/objects.js";import{setProperty as l}from"../../../../base/common/jsonEdit.js";import"../../../../base/common/jsonFormatter.js";import{Disposable as x}from"../../../../base/common/lifecycle.js";import{EditOperation as h}from"../../../../editor/common/core/editOperation.js";import{Range as R}from"../../../../editor/common/core/range.js";import{Selection as w}from"../../../../editor/common/core/selection.js";import"../../../../editor/common/model.js";import{ITextModelService as P}from"../../../../editor/common/services/resolverService.js";import{ContextKeyExpr as p}from"../../../../platform/contextkey/common/contextkey.js";import{IFileService as S}from"../../../../platform/files/common/files.js";import{createDecorator as T}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/keybinding/common/keybinding.js";import"../../../../platform/keybinding/common/resolvedKeybindingItem.js";import{ITextFileService as U}from"../../textfile/common/textfiles.js";import{InstantiationType as D,registerSingleton as M}from"../../../../platform/instantiation/common/extensions.js";import{IUserDataProfileService as F}from"../../userDataProfile/common/userDataProfile.js";const V=T("keybindingEditingService");let g=class extends x{constructor(i,e,t,n){super();this.textModelResolverService=i;this.textFileService=e;this.fileService=t;this.userDataProfileService=n;this.queue=new E}_serviceBrand;queue;addKeybinding(i,e,t){return this.queue.queue(()=>this.doEditKeybinding(i,e,t,!0))}editKeybinding(i,e,t){return this.queue.queue(()=>this.doEditKeybinding(i,e,t,!1))}resetKeybinding(i){return this.queue.queue(()=>this.doResetKeybinding(i))}removeKeybinding(i){return this.queue.queue(()=>this.doRemoveKeybinding(i))}async doEditKeybinding(i,e,t,n){const r=await this.resolveAndValidate(),s=r.object.textEditorModel;if(n)this.updateKeybinding(i,e,t,s,-1);else{const o=c.parse(s.getValue()),d=this.findUserKeybindingEntryIndex(i,o);this.updateKeybinding(i,e,t,s,d),i.isDefault&&i.resolvedKeybinding&&this.removeDefaultKeybinding(i,s)}try{await this.save()}finally{r.dispose()}}async doRemoveKeybinding(i){const e=await this.resolveAndValidate(),t=e.object.textEditorModel;i.isDefault?this.removeDefaultKeybinding(i,t):this.removeUserKeybinding(i,t);try{return await this.save()}finally{e.dispose()}}async doResetKeybinding(i){const e=await this.resolveAndValidate(),t=e.object.textEditorModel;i.isDefault||(this.removeUserKeybinding(i,t),this.removeUnassignedDefaultKeybinding(i,t));try{return await this.save()}finally{e.dispose()}}save(){return this.textFileService.save(this.userDataProfileService.currentProfile.keybindingsResource)}updateKeybinding(i,e,t,n,r){const{tabSize:s,insertSpaces:o}=n.getOptions(),d=n.getEOL();if(r!==-1){this.applyEditsToBuffer(l(n.getValue(),[r,"key"],e,{tabSize:s,insertSpaces:o,eol:d})[0],n);const y=l(n.getValue(),[r,"when"],t,{tabSize:s,insertSpaces:o,eol:d});y.length>0&&this.applyEditsToBuffer(y[0],n)}else this.applyEditsToBuffer(l(n.getValue(),[-1],this.asObject(e,i.command,t,!1),{tabSize:s,insertSpaces:o,eol:d})[0],n)}removeUserKeybinding(i,e){const{tabSize:t,insertSpaces:n}=e.getOptions(),r=e.getEOL(),s=c.parse(e.getValue()),o=this.findUserKeybindingEntryIndex(i,s);o!==-1&&this.applyEditsToBuffer(l(e.getValue(),[o],void 0,{tabSize:t,insertSpaces:n,eol:r})[0],e)}removeDefaultKeybinding(i,e){const{tabSize:t,insertSpaces:n}=e.getOptions(),r=e.getEOL(),s=i.resolvedKeybinding?i.resolvedKeybinding.getUserSettingsLabel():null;if(s){const o=this.asObject(s,i.command,i.when?i.when.serialize():void 0,!0);c.parse(e.getValue()).every(y=>!this.areSame(y,o))&&this.applyEditsToBuffer(l(e.getValue(),[-1],o,{tabSize:t,insertSpaces:n,eol:r})[0],e)}}removeUnassignedDefaultKeybinding(i,e){const{tabSize:t,insertSpaces:n}=e.getOptions(),r=e.getEOL(),s=c.parse(e.getValue()),o=this.findUnassignedDefaultKeybindingEntryIndex(i,s).reverse();for(const d of o)this.applyEditsToBuffer(l(e.getValue(),[d],void 0,{tabSize:t,insertSpaces:n,eol:r})[0],e)}findUserKeybindingEntryIndex(i,e){for(let t=0;t<e.length;t++){const n=e[t];if(n.command===i.command){if(!n.when&&!i.when)return t;if(n.when&&i.when){const r=p.deserialize(n.when);if(r&&r.serialize()===i.when.serialize())return t}}}return-1}findUnassignedDefaultKeybindingEntryIndex(i,e){const t=[];for(let n=0;n<e.length;n++)e[n].command===`-${i.command}`&&t.push(n);return t}asObject(i,e,t,n){const r={key:i};return e&&(r.command=n?`-${e}`:e),t&&(r.when=t),r}areSame(i,e){if(i.command!==e.command||i.key!==e.key)return!1;const t=p.deserialize(i.when),n=p.deserialize(e.when);return!(t&&!n||!t&&n||t&&n&&!t.equals(n)||!I.equals(i.args,e.args))}applyEditsToBuffer(i,e){const t=e.getPositionAt(i.offset),n=e.getPositionAt(i.offset+i.length),r=new R(t.lineNumber,t.column,n.lineNumber,n.column),o=e.getValueInRange(r)?h.replace(r,i.content):h.insert(t,i.content);e.pushEditOperations([new w(t.lineNumber,t.column,t.lineNumber,t.column)],[o],()=>[])}async resolveModelReference(){return await this.fileService.exists(this.userDataProfileService.currentProfile.keybindingsResource)||await this.textFileService.write(this.userDataProfileService.currentProfile.keybindingsResource,this.getEmptyContent(),{encoding:"utf8"}),this.textModelResolverService.createModelReference(this.userDataProfileService.currentProfile.keybindingsResource)}async resolveAndValidate(){if(this.textFileService.isDirty(this.userDataProfileService.currentProfile.keybindingsResource))throw new Error(v("errorKeybindingsFileDirty","Unable to write because the keybindings configuration file has unsaved changes. Please save it first and then try again."));const i=await this.resolveModelReference(),e=i.object.textEditorModel,t=e.getEOL();if(e.getValue()){const n=this.parse(e);if(n.parseErrors.length)throw i.dispose(),new Error(v("parseErrors","Unable to write to the keybindings configuration file. Please open it to correct errors/warnings in the file and try again."));if(n.result){if(!Array.isArray(n.result))throw i.dispose(),new Error(v("errorInvalidConfiguration","Unable to write to the keybindings configuration file. It has an object which is not of type Array. Please open the file to clean up and try again."))}else{const r=t+"[]";this.applyEditsToBuffer({content:r,length:r.length,offset:e.getValue().length},e)}}else{const n=this.getEmptyContent();this.applyEditsToBuffer({content:n,length:n.length,offset:0},e)}return i}parse(i){const e=[];return{result:c.parse(i.getValue(),e,{allowTrailingComma:!0,allowEmptyContent:!0}),parseErrors:e}}getEmptyContent(){return"// "+v("emptyKeybindingsHeader","Place your key bindings in this file to override the defaults")+`
-[
-]`}};g=b([f(0,P),f(1,U),f(2,S),f(3,F)],g),M(V,g,D.Delayed);export{V as IKeybindingEditingService,g as KeybindingsEditingService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { localize } from '../../../../nls.js';
+import { Queue } from '../../../../base/common/async.js';
+import * as json from '../../../../base/common/json.js';
+import * as objects from '../../../../base/common/objects.js';
+import { setProperty } from '../../../../base/common/jsonEdit.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { EditOperation } from '../../../../editor/common/core/editOperation.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { Selection } from '../../../../editor/common/core/selection.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { ITextFileService } from '../../textfile/common/textfiles.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IUserDataProfileService } from '../../userDataProfile/common/userDataProfile.js';
+export const IKeybindingEditingService = createDecorator('keybindingEditingService');
+let KeybindingsEditingService = class KeybindingsEditingService extends Disposable {
+    constructor(textModelResolverService, textFileService, fileService, userDataProfileService) {
+        super();
+        this.textModelResolverService = textModelResolverService;
+        this.textFileService = textFileService;
+        this.fileService = fileService;
+        this.userDataProfileService = userDataProfileService;
+        this.queue = new Queue();
+    }
+    addKeybinding(keybindingItem, key, when) {
+        return this.queue.queue(() => this.doEditKeybinding(keybindingItem, key, when, true));
+    }
+    editKeybinding(keybindingItem, key, when) {
+        return this.queue.queue(() => this.doEditKeybinding(keybindingItem, key, when, false));
+    }
+    resetKeybinding(keybindingItem) {
+        return this.queue.queue(() => this.doResetKeybinding(keybindingItem));
+    }
+    removeKeybinding(keybindingItem) {
+        return this.queue.queue(() => this.doRemoveKeybinding(keybindingItem));
+    }
+    async doEditKeybinding(keybindingItem, key, when, add) {
+        const reference = await this.resolveAndValidate();
+        const model = reference.object.textEditorModel;
+        if (add) {
+            this.updateKeybinding(keybindingItem, key, when, model, -1);
+        }
+        else {
+            const userKeybindingEntries = json.parse(model.getValue());
+            const userKeybindingEntryIndex = this.findUserKeybindingEntryIndex(keybindingItem, userKeybindingEntries);
+            this.updateKeybinding(keybindingItem, key, when, model, userKeybindingEntryIndex);
+            if (keybindingItem.isDefault && keybindingItem.resolvedKeybinding) {
+                this.removeDefaultKeybinding(keybindingItem, model);
+            }
+        }
+        try {
+            await this.save();
+        }
+        finally {
+            reference.dispose();
+        }
+    }
+    async doRemoveKeybinding(keybindingItem) {
+        const reference = await this.resolveAndValidate();
+        const model = reference.object.textEditorModel;
+        if (keybindingItem.isDefault) {
+            this.removeDefaultKeybinding(keybindingItem, model);
+        }
+        else {
+            this.removeUserKeybinding(keybindingItem, model);
+        }
+        try {
+            return await this.save();
+        }
+        finally {
+            reference.dispose();
+        }
+    }
+    async doResetKeybinding(keybindingItem) {
+        const reference = await this.resolveAndValidate();
+        const model = reference.object.textEditorModel;
+        if (!keybindingItem.isDefault) {
+            this.removeUserKeybinding(keybindingItem, model);
+            this.removeUnassignedDefaultKeybinding(keybindingItem, model);
+        }
+        try {
+            return await this.save();
+        }
+        finally {
+            reference.dispose();
+        }
+    }
+    save() {
+        return this.textFileService.save(this.userDataProfileService.currentProfile.keybindingsResource);
+    }
+    updateKeybinding(keybindingItem, newKey, when, model, userKeybindingEntryIndex) {
+        const { tabSize, insertSpaces } = model.getOptions();
+        const eol = model.getEOL();
+        if (userKeybindingEntryIndex !== -1) {
+            this.applyEditsToBuffer(setProperty(model.getValue(), [userKeybindingEntryIndex, 'key'], newKey, { tabSize, insertSpaces, eol })[0], model);
+            const edits = setProperty(model.getValue(), [userKeybindingEntryIndex, 'when'], when, { tabSize, insertSpaces, eol });
+            if (edits.length > 0) {
+                this.applyEditsToBuffer(edits[0], model);
+            }
+        }
+        else {
+            this.applyEditsToBuffer(setProperty(model.getValue(), [-1], this.asObject(newKey, keybindingItem.command, when, false), { tabSize, insertSpaces, eol })[0], model);
+        }
+    }
+    removeUserKeybinding(keybindingItem, model) {
+        const { tabSize, insertSpaces } = model.getOptions();
+        const eol = model.getEOL();
+        const userKeybindingEntries = json.parse(model.getValue());
+        const userKeybindingEntryIndex = this.findUserKeybindingEntryIndex(keybindingItem, userKeybindingEntries);
+        if (userKeybindingEntryIndex !== -1) {
+            this.applyEditsToBuffer(setProperty(model.getValue(), [userKeybindingEntryIndex], undefined, { tabSize, insertSpaces, eol })[0], model);
+        }
+    }
+    removeDefaultKeybinding(keybindingItem, model) {
+        const { tabSize, insertSpaces } = model.getOptions();
+        const eol = model.getEOL();
+        const key = keybindingItem.resolvedKeybinding ? keybindingItem.resolvedKeybinding.getUserSettingsLabel() : null;
+        if (key) {
+            const entry = this.asObject(key, keybindingItem.command, keybindingItem.when ? keybindingItem.when.serialize() : undefined, true);
+            const userKeybindingEntries = json.parse(model.getValue());
+            if (userKeybindingEntries.every(e => !this.areSame(e, entry))) {
+                this.applyEditsToBuffer(setProperty(model.getValue(), [-1], entry, { tabSize, insertSpaces, eol })[0], model);
+            }
+        }
+    }
+    removeUnassignedDefaultKeybinding(keybindingItem, model) {
+        const { tabSize, insertSpaces } = model.getOptions();
+        const eol = model.getEOL();
+        const userKeybindingEntries = json.parse(model.getValue());
+        const indices = this.findUnassignedDefaultKeybindingEntryIndex(keybindingItem, userKeybindingEntries).reverse();
+        for (const index of indices) {
+            this.applyEditsToBuffer(setProperty(model.getValue(), [index], undefined, { tabSize, insertSpaces, eol })[0], model);
+        }
+    }
+    findUserKeybindingEntryIndex(keybindingItem, userKeybindingEntries) {
+        for (let index = 0; index < userKeybindingEntries.length; index++) {
+            const keybinding = userKeybindingEntries[index];
+            if (keybinding.command === keybindingItem.command) {
+                if (!keybinding.when && !keybindingItem.when) {
+                    return index;
+                }
+                if (keybinding.when && keybindingItem.when) {
+                    const contextKeyExpr = ContextKeyExpr.deserialize(keybinding.when);
+                    if (contextKeyExpr && contextKeyExpr.serialize() === keybindingItem.when.serialize()) {
+                        return index;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+    findUnassignedDefaultKeybindingEntryIndex(keybindingItem, userKeybindingEntries) {
+        const indices = [];
+        for (let index = 0; index < userKeybindingEntries.length; index++) {
+            if (userKeybindingEntries[index].command === `-${keybindingItem.command}`) {
+                indices.push(index);
+            }
+        }
+        return indices;
+    }
+    asObject(key, command, when, negate) {
+        const object = { key };
+        if (command) {
+            object['command'] = negate ? `-${command}` : command;
+        }
+        if (when) {
+            object['when'] = when;
+        }
+        return object;
+    }
+    areSame(a, b) {
+        if (a.command !== b.command) {
+            return false;
+        }
+        if (a.key !== b.key) {
+            return false;
+        }
+        const whenA = ContextKeyExpr.deserialize(a.when);
+        const whenB = ContextKeyExpr.deserialize(b.when);
+        if ((whenA && !whenB) || (!whenA && whenB)) {
+            return false;
+        }
+        if (whenA && whenB && !whenA.equals(whenB)) {
+            return false;
+        }
+        if (!objects.equals(a.args, b.args)) {
+            return false;
+        }
+        return true;
+    }
+    applyEditsToBuffer(edit, model) {
+        const startPosition = model.getPositionAt(edit.offset);
+        const endPosition = model.getPositionAt(edit.offset + edit.length);
+        const range = new Range(startPosition.lineNumber, startPosition.column, endPosition.lineNumber, endPosition.column);
+        const currentText = model.getValueInRange(range);
+        const editOperation = currentText ? EditOperation.replace(range, edit.content) : EditOperation.insert(startPosition, edit.content);
+        model.pushEditOperations([new Selection(startPosition.lineNumber, startPosition.column, startPosition.lineNumber, startPosition.column)], [editOperation], () => []);
+    }
+    async resolveModelReference() {
+        const exists = await this.fileService.exists(this.userDataProfileService.currentProfile.keybindingsResource);
+        if (!exists) {
+            await this.textFileService.write(this.userDataProfileService.currentProfile.keybindingsResource, this.getEmptyContent(), { encoding: 'utf8' });
+        }
+        return this.textModelResolverService.createModelReference(this.userDataProfileService.currentProfile.keybindingsResource);
+    }
+    async resolveAndValidate() {
+        if (this.textFileService.isDirty(this.userDataProfileService.currentProfile.keybindingsResource)) {
+            throw new Error(localize('errorKeybindingsFileDirty', "Unable to write because the keybindings configuration file has unsaved changes. Please save it first and then try again."));
+        }
+        const reference = await this.resolveModelReference();
+        const model = reference.object.textEditorModel;
+        const EOL = model.getEOL();
+        if (model.getValue()) {
+            const parsed = this.parse(model);
+            if (parsed.parseErrors.length) {
+                reference.dispose();
+                throw new Error(localize('parseErrors', "Unable to write to the keybindings configuration file. Please open it to correct errors/warnings in the file and try again."));
+            }
+            if (parsed.result) {
+                if (!Array.isArray(parsed.result)) {
+                    reference.dispose();
+                    throw new Error(localize('errorInvalidConfiguration', "Unable to write to the keybindings configuration file. It has an object which is not of type Array. Please open the file to clean up and try again."));
+                }
+            }
+            else {
+                const content = EOL + '[]';
+                this.applyEditsToBuffer({ content, length: content.length, offset: model.getValue().length }, model);
+            }
+        }
+        else {
+            const content = this.getEmptyContent();
+            this.applyEditsToBuffer({ content, length: content.length, offset: 0 }, model);
+        }
+        return reference;
+    }
+    parse(model) {
+        const parseErrors = [];
+        const result = json.parse(model.getValue(), parseErrors, { allowTrailingComma: true, allowEmptyContent: true });
+        return { result, parseErrors };
+    }
+    getEmptyContent() {
+        return '// ' + localize('emptyKeybindingsHeader', "Place your key bindings in this file to override the defaults") + '\n[\n]';
+    }
+};
+KeybindingsEditingService = __decorate([
+    __param(0, ITextModelService),
+    __param(1, ITextFileService),
+    __param(2, IFileService),
+    __param(3, IUserDataProfileService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], KeybindingsEditingService);
+export { KeybindingsEditingService };
+registerSingleton(IKeybindingEditingService, KeybindingsEditingService, 1);

@@ -1,1 +1,39 @@
-var S=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var s=(m,e,I,t)=>{for(var i=t>1?void 0:t?p(e,I):e,o=m.length-1,n;o>=0;o--)(n=m[o])&&(i=(t?n(e,I,i):n(i))||i);return t&&i&&S(e,I,i),i},r=(m,e)=>(I,t)=>e(I,t,m);import{URI as f}from"../../../base/common/uri.js";import{INativeEnvironmentService as l}from"../../environment/common/environment.js";import{IExtensionsProfileScannerService as P}from"../common/extensionsProfileScannerService.js";import{NativeExtensionsScannerService as d}from"../common/extensionsScannerService.js";import{IFileService as u}from"../../files/common/files.js";import{IInstantiationService as x}from"../../instantiation/common/instantiation.js";import{ILogService as E}from"../../log/common/log.js";import{IProductService as U}from"../../product/common/productService.js";import{IUriIdentityService as N}from"../../uriIdentity/common/uriIdentity.js";import{IUserDataProfilesService as g}from"../../userDataProfile/common/userDataProfile.js";let c=class extends d{constructor(e,I,t,i,o,n,a,v){super(f.file(o.builtinExtensionsPath),f.file(o.extensionsPath),o.userHome,e.defaultProfile,e,I,t,i,o,n,a,v)}};c=s([r(0,g),r(1,P),r(2,u),r(3,E),r(4,l),r(5,U),r(6,N),r(7,x)],c);export{c as ExtensionsScannerService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { URI } from '../../../base/common/uri.js';
+import { INativeEnvironmentService } from '../../environment/common/environment.js';
+import { IExtensionsProfileScannerService } from '../common/extensionsProfileScannerService.js';
+import { NativeExtensionsScannerService, } from '../common/extensionsScannerService.js';
+import { IFileService } from '../../files/common/files.js';
+import { IInstantiationService } from '../../instantiation/common/instantiation.js';
+import { ILogService } from '../../log/common/log.js';
+import { IProductService } from '../../product/common/productService.js';
+import { IUriIdentityService } from '../../uriIdentity/common/uriIdentity.js';
+import { IUserDataProfilesService } from '../../userDataProfile/common/userDataProfile.js';
+let ExtensionsScannerService = class ExtensionsScannerService extends NativeExtensionsScannerService {
+    constructor(userDataProfilesService, extensionsProfileScannerService, fileService, logService, environmentService, productService, uriIdentityService, instantiationService) {
+        super(URI.file(environmentService.builtinExtensionsPath), URI.file(environmentService.extensionsPath), environmentService.userHome, userDataProfilesService.defaultProfile, userDataProfilesService, extensionsProfileScannerService, fileService, logService, environmentService, productService, uriIdentityService, instantiationService);
+    }
+};
+ExtensionsScannerService = __decorate([
+    __param(0, IUserDataProfilesService),
+    __param(1, IExtensionsProfileScannerService),
+    __param(2, IFileService),
+    __param(3, ILogService),
+    __param(4, INativeEnvironmentService),
+    __param(5, IProductService),
+    __param(6, IUriIdentityService),
+    __param(7, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], ExtensionsScannerService);
+export { ExtensionsScannerService };

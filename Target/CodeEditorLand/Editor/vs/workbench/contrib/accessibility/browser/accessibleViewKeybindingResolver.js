@@ -1,1 +1,34 @@
-import{MarkdownString as m}from"../../../../base/common/htmlContent.js";import"../../../../platform/keybinding/common/keybinding.js";import"../../../../platform/quickinput/browser/pickerQuickAccess.js";function y(s,n){if(!n)return;const i=[],c=[],g=n.matchAll(/(\<keybinding:(?<commandId>[^\<]*)\>)/gm);for(const t of[...g]){const e=t?.groups?.commandId;let d;if(t?.length&&e){const o=s.lookupKeybinding(e)?.getAriaLabel();o?(d=" ("+o+")",c.push({label:e,id:e})):(d=" (unassigned keybinding)",i.push({label:e,id:e})),n=n.replace(t[0],d)}}const r=new m(n);return r.isTrusted=!0,{content:r,configureKeybindingItems:i.length?i:void 0,configuredKeybindingItems:c.length?c:void 0}}export{y as resolveContentAndKeybindingItems};
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
+export function resolveContentAndKeybindingItems(keybindingService, value) {
+    if (!value) {
+        return;
+    }
+    const configureKeybindingItems = [];
+    const configuredKeybindingItems = [];
+    const matches = value.matchAll(/(\<keybinding:(?<commandId>[^\<]*)\>)/gm);
+    for (const match of [...matches]) {
+        const commandId = match?.groups?.commandId;
+        let kbLabel;
+        if (match?.length && commandId) {
+            const keybinding = keybindingService.lookupKeybinding(commandId)?.getAriaLabel();
+            if (!keybinding) {
+                kbLabel = ` (unassigned keybinding)`;
+                configureKeybindingItems.push({
+                    label: commandId,
+                    id: commandId
+                });
+            }
+            else {
+                kbLabel = ' (' + keybinding + ')';
+                configuredKeybindingItems.push({
+                    label: commandId,
+                    id: commandId
+                });
+            }
+            value = value.replace(match[0], kbLabel);
+        }
+    }
+    const content = new MarkdownString(value);
+    content.isTrusted = true;
+    return { content, configureKeybindingItems: configureKeybindingItems.length ? configureKeybindingItems : undefined, configuredKeybindingItems: configuredKeybindingItems.length ? configuredKeybindingItems : undefined };
+}

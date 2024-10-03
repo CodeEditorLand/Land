@@ -1,1 +1,247 @@
-var A=Object.defineProperty;var N=Object.getOwnPropertyDescriptor;var u=(n,e,t,o)=>{for(var i=o>1?void 0:o?N(e,t):e,r=n.length-1,s;r>=0;r--)(s=n[r])&&(i=(o?s(e,t,i):s(i))||i);return o&&i&&A(e,t,i),i},c=(n,e)=>(t,o)=>e(t,o,n);import{isNonEmptyArray as P}from"../../../../base/common/arrays.js";import{CancellationToken as f,CancellationTokenSource as K}from"../../../../base/common/cancellation.js";import{onUnexpectedError as L}from"../../../../base/common/errors.js";import{KeyChord as T,KeyCode as g,KeyMod as l}from"../../../../base/common/keyCodes.js";import{DisposableStore as h}from"../../../../base/common/lifecycle.js";import"../../../browser/editorBrowser.js";import{EditorAction as y,EditorContributionInstantiation as b,registerEditorAction as E,registerEditorContribution as D}from"../../../browser/editorExtensions.js";import{ICodeEditorService as R}from"../../../browser/services/codeEditorService.js";import{EditorOption as v}from"../../../common/config/editorOptions.js";import{CharacterSet as W}from"../../../common/core/characterClassifier.js";import{Range as z}from"../../../common/core/range.js";import"../../../common/editorCommon.js";import{EditorContextKeys as d}from"../../../common/editorContextKeys.js";import{IEditorWorkerService as B}from"../../../common/services/editorWorker.js";import{ILanguageFeaturesService as I}from"../../../common/services/languageFeatures.js";import{formatDocumentRangesWithSelectedProvider as F,formatDocumentWithSelectedProvider as q,FormattingMode as S,getOnTypeFormattingEdits as G}from"./format.js";import{FormattingEdit as U}from"./formattingEdit.js";import*as M from"../../../../nls.js";import{AccessibilitySignal as j,IAccessibilitySignalService as H}from"../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";import{CommandsRegistry as J,ICommandService as Q}from"../../../../platform/commands/common/commands.js";import{ContextKeyExpr as w}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as C}from"../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as x}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{IEditorProgressService as O,Progress as _}from"../../../../platform/progress/common/progress.js";let m=class{constructor(e,t,o,i){this._editor=e;this._languageFeaturesService=t;this._workerService=o;this._accessibilitySignalService=i;this._disposables.add(t.onTypeFormattingEditProvider.onDidChange(this._update,this)),this._disposables.add(e.onDidChangeModel(()=>this._update())),this._disposables.add(e.onDidChangeModelLanguage(()=>this._update())),this._disposables.add(e.onDidChangeConfiguration(r=>{r.hasChanged(v.formatOnType)&&this._update()})),this._update()}static ID="editor.contrib.autoFormat";_disposables=new h;_sessionDisposables=new h;dispose(){this._disposables.dispose(),this._sessionDisposables.dispose()}_update(){if(this._sessionDisposables.clear(),!this._editor.getOption(v.formatOnType)||!this._editor.hasModel())return;const e=this._editor.getModel(),[t]=this._languageFeaturesService.onTypeFormattingEditProvider.ordered(e);if(!t||!t.autoFormatTriggerCharacters)return;const o=new W;for(const i of t.autoFormatTriggerCharacters)o.add(i.charCodeAt(0));this._sessionDisposables.add(this._editor.onDidType(i=>{const r=i.charCodeAt(i.length-1);o.has(r)&&this._trigger(String.fromCharCode(r))}))}_trigger(e){if(!this._editor.hasModel()||this._editor.getSelections().length>1||!this._editor.getSelection().isEmpty())return;const t=this._editor.getModel(),o=this._editor.getPosition(),i=new K,r=this._editor.onDidChangeModelContent(s=>{if(s.isFlush){i.cancel(),r.dispose();return}for(let a=0,k=s.changes.length;a<k;a++)if(s.changes[a].range.endLineNumber<=o.lineNumber){i.cancel(),r.dispose();return}});G(this._workerService,this._languageFeaturesService,t,o,e,t.getFormattingOptions(),i.token).then(s=>{i.token.isCancellationRequested||P(s)&&(this._accessibilitySignalService.playSignal(j.format,{userGesture:!1}),U.execute(this._editor,s,!0))}).finally(()=>{r.dispose()})}};m=u([c(1,I),c(2,B),c(3,H)],m);let p=class{constructor(e,t,o){this.editor=e;this._languageFeaturesService=t;this._instantiationService=o;this._callOnDispose.add(e.onDidChangeConfiguration(()=>this._update())),this._callOnDispose.add(e.onDidChangeModel(()=>this._update())),this._callOnDispose.add(e.onDidChangeModelLanguage(()=>this._update())),this._callOnDispose.add(t.documentRangeFormattingEditProvider.onDidChange(this._update,this))}static ID="editor.contrib.formatOnPaste";_callOnDispose=new h;_callOnModel=new h;dispose(){this._callOnDispose.dispose(),this._callOnModel.dispose()}_update(){this._callOnModel.clear(),this.editor.getOption(v.formatOnPaste)&&this.editor.hasModel()&&this._languageFeaturesService.documentRangeFormattingEditProvider.has(this.editor.getModel())&&this._callOnModel.add(this.editor.onDidPaste(({range:e})=>this._trigger(e)))}_trigger(e){this.editor.hasModel()&&(this.editor.getSelections().length>1||this._instantiationService.invokeFunction(F,this.editor,e,S.Silent,_.None,f.None,!1).catch(L))}};p=u([c(1,I),c(2,C)],p);class V extends y{constructor(){super({id:"editor.action.formatDocument",label:M.localize("formatDocument.label","Format Document"),alias:"Format Document",precondition:w.and(d.notInCompositeEditor,d.writable,d.hasDocumentFormattingProvider),kbOpts:{kbExpr:d.editorTextFocus,primary:l.Shift|l.Alt|g.KeyF,linux:{primary:l.CtrlCmd|l.Shift|g.KeyI},weight:x.EditorContrib},contextMenuOpts:{group:"1_modification",order:1.3}})}async run(e,t){if(t.hasModel()){const o=e.get(C);await e.get(O).showWhile(o.invokeFunction(q,t,S.Explicit,_.None,f.None,!0),250)}}}class X extends y{constructor(){super({id:"editor.action.formatSelection",label:M.localize("formatSelection.label","Format Selection"),alias:"Format Selection",precondition:w.and(d.writable,d.hasDocumentSelectionFormattingProvider),kbOpts:{kbExpr:d.editorTextFocus,primary:T(l.CtrlCmd|g.KeyK,l.CtrlCmd|g.KeyF),weight:x.EditorContrib},contextMenuOpts:{when:d.hasNonEmptySelection,group:"1_modification",order:1.31}})}async run(e,t){if(!t.hasModel())return;const o=e.get(C),i=t.getModel(),r=t.getSelections().map(a=>a.isEmpty()?new z(a.startLineNumber,1,a.startLineNumber,i.getLineMaxColumn(a.startLineNumber)):a);await e.get(O).showWhile(o.invokeFunction(F,t,r,S.Explicit,_.None,f.None,!0),250)}}D(m.ID,m,b.BeforeFirstInteraction),D(p.ID,p,b.BeforeFirstInteraction),E(V),E(X),J.registerCommand("editor.action.format",async n=>{const e=n.get(R).getFocusedCodeEditor();if(!e||!e.hasModel())return;const t=n.get(Q);e.getSelection().isEmpty()?await t.executeCommand("editor.action.formatDocument"):await t.executeCommand("editor.action.formatSelection")});export{m as FormatOnType};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { isNonEmptyArray } from '../../../../base/common/arrays.js';
+import { CancellationToken, CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+import { KeyChord } from '../../../../base/common/keyCodes.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { EditorAction, registerEditorAction, registerEditorContribution } from '../../../browser/editorExtensions.js';
+import { ICodeEditorService } from '../../../browser/services/codeEditorService.js';
+import { CharacterSet } from '../../../common/core/characterClassifier.js';
+import { Range } from '../../../common/core/range.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import { IEditorWorkerService } from '../../../common/services/editorWorker.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { formatDocumentRangesWithSelectedProvider, formatDocumentWithSelectedProvider, getOnTypeFormattingEdits } from './format.js';
+import { FormattingEdit } from './formattingEdit.js';
+import * as nls from '../../../../nls.js';
+import { AccessibilitySignal, IAccessibilitySignalService } from '../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+import { CommandsRegistry, ICommandService } from '../../../../platform/commands/common/commands.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IEditorProgressService, Progress } from '../../../../platform/progress/common/progress.js';
+let FormatOnType = class FormatOnType {
+    static { this.ID = 'editor.contrib.autoFormat'; }
+    constructor(_editor, _languageFeaturesService, _workerService, _accessibilitySignalService) {
+        this._editor = _editor;
+        this._languageFeaturesService = _languageFeaturesService;
+        this._workerService = _workerService;
+        this._accessibilitySignalService = _accessibilitySignalService;
+        this._disposables = new DisposableStore();
+        this._sessionDisposables = new DisposableStore();
+        this._disposables.add(_languageFeaturesService.onTypeFormattingEditProvider.onDidChange(this._update, this));
+        this._disposables.add(_editor.onDidChangeModel(() => this._update()));
+        this._disposables.add(_editor.onDidChangeModelLanguage(() => this._update()));
+        this._disposables.add(_editor.onDidChangeConfiguration(e => {
+            if (e.hasChanged(58)) {
+                this._update();
+            }
+        }));
+        this._update();
+    }
+    dispose() {
+        this._disposables.dispose();
+        this._sessionDisposables.dispose();
+    }
+    _update() {
+        this._sessionDisposables.clear();
+        if (!this._editor.getOption(58)) {
+            return;
+        }
+        if (!this._editor.hasModel()) {
+            return;
+        }
+        const model = this._editor.getModel();
+        const [support] = this._languageFeaturesService.onTypeFormattingEditProvider.ordered(model);
+        if (!support || !support.autoFormatTriggerCharacters) {
+            return;
+        }
+        const triggerChars = new CharacterSet();
+        for (const ch of support.autoFormatTriggerCharacters) {
+            triggerChars.add(ch.charCodeAt(0));
+        }
+        this._sessionDisposables.add(this._editor.onDidType((text) => {
+            const lastCharCode = text.charCodeAt(text.length - 1);
+            if (triggerChars.has(lastCharCode)) {
+                this._trigger(String.fromCharCode(lastCharCode));
+            }
+        }));
+    }
+    _trigger(ch) {
+        if (!this._editor.hasModel()) {
+            return;
+        }
+        if (this._editor.getSelections().length > 1 || !this._editor.getSelection().isEmpty()) {
+            return;
+        }
+        const model = this._editor.getModel();
+        const position = this._editor.getPosition();
+        const cts = new CancellationTokenSource();
+        const unbind = this._editor.onDidChangeModelContent((e) => {
+            if (e.isFlush) {
+                cts.cancel();
+                unbind.dispose();
+                return;
+            }
+            for (let i = 0, len = e.changes.length; i < len; i++) {
+                const change = e.changes[i];
+                if (change.range.endLineNumber <= position.lineNumber) {
+                    cts.cancel();
+                    unbind.dispose();
+                    return;
+                }
+            }
+        });
+        getOnTypeFormattingEdits(this._workerService, this._languageFeaturesService, model, position, ch, model.getFormattingOptions(), cts.token).then(edits => {
+            if (cts.token.isCancellationRequested) {
+                return;
+            }
+            if (isNonEmptyArray(edits)) {
+                this._accessibilitySignalService.playSignal(AccessibilitySignal.format, { userGesture: false });
+                FormattingEdit.execute(this._editor, edits, true);
+            }
+        }).finally(() => {
+            unbind.dispose();
+        });
+    }
+};
+FormatOnType = __decorate([
+    __param(1, ILanguageFeaturesService),
+    __param(2, IEditorWorkerService),
+    __param(3, IAccessibilitySignalService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], FormatOnType);
+export { FormatOnType };
+let FormatOnPaste = class FormatOnPaste {
+    static { this.ID = 'editor.contrib.formatOnPaste'; }
+    constructor(editor, _languageFeaturesService, _instantiationService) {
+        this.editor = editor;
+        this._languageFeaturesService = _languageFeaturesService;
+        this._instantiationService = _instantiationService;
+        this._callOnDispose = new DisposableStore();
+        this._callOnModel = new DisposableStore();
+        this._callOnDispose.add(editor.onDidChangeConfiguration(() => this._update()));
+        this._callOnDispose.add(editor.onDidChangeModel(() => this._update()));
+        this._callOnDispose.add(editor.onDidChangeModelLanguage(() => this._update()));
+        this._callOnDispose.add(_languageFeaturesService.documentRangeFormattingEditProvider.onDidChange(this._update, this));
+    }
+    dispose() {
+        this._callOnDispose.dispose();
+        this._callOnModel.dispose();
+    }
+    _update() {
+        this._callOnModel.clear();
+        if (!this.editor.getOption(57)) {
+            return;
+        }
+        if (!this.editor.hasModel()) {
+            return;
+        }
+        if (!this._languageFeaturesService.documentRangeFormattingEditProvider.has(this.editor.getModel())) {
+            return;
+        }
+        this._callOnModel.add(this.editor.onDidPaste(({ range }) => this._trigger(range)));
+    }
+    _trigger(range) {
+        if (!this.editor.hasModel()) {
+            return;
+        }
+        if (this.editor.getSelections().length > 1) {
+            return;
+        }
+        this._instantiationService.invokeFunction(formatDocumentRangesWithSelectedProvider, this.editor, range, 2, Progress.None, CancellationToken.None, false).catch(onUnexpectedError);
+    }
+};
+FormatOnPaste = __decorate([
+    __param(1, ILanguageFeaturesService),
+    __param(2, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], FormatOnPaste);
+class FormatDocumentAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.formatDocument',
+            label: nls.localize('formatDocument.label', "Format Document"),
+            alias: 'Format Document',
+            precondition: ContextKeyExpr.and(EditorContextKeys.notInCompositeEditor, EditorContextKeys.writable, EditorContextKeys.hasDocumentFormattingProvider),
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 1024 | 512 | 36,
+                linux: { primary: 2048 | 1024 | 39 },
+                weight: 100
+            },
+            contextMenuOpts: {
+                group: '1_modification',
+                order: 1.3
+            }
+        });
+    }
+    async run(accessor, editor) {
+        if (editor.hasModel()) {
+            const instaService = accessor.get(IInstantiationService);
+            const progressService = accessor.get(IEditorProgressService);
+            await progressService.showWhile(instaService.invokeFunction(formatDocumentWithSelectedProvider, editor, 1, Progress.None, CancellationToken.None, true), 250);
+        }
+    }
+}
+class FormatSelectionAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.formatSelection',
+            label: nls.localize('formatSelection.label', "Format Selection"),
+            alias: 'Format Selection',
+            precondition: ContextKeyExpr.and(EditorContextKeys.writable, EditorContextKeys.hasDocumentSelectionFormattingProvider),
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: KeyChord(2048 | 41, 2048 | 36),
+                weight: 100
+            },
+            contextMenuOpts: {
+                when: EditorContextKeys.hasNonEmptySelection,
+                group: '1_modification',
+                order: 1.31
+            }
+        });
+    }
+    async run(accessor, editor) {
+        if (!editor.hasModel()) {
+            return;
+        }
+        const instaService = accessor.get(IInstantiationService);
+        const model = editor.getModel();
+        const ranges = editor.getSelections().map(range => {
+            return range.isEmpty()
+                ? new Range(range.startLineNumber, 1, range.startLineNumber, model.getLineMaxColumn(range.startLineNumber))
+                : range;
+        });
+        const progressService = accessor.get(IEditorProgressService);
+        await progressService.showWhile(instaService.invokeFunction(formatDocumentRangesWithSelectedProvider, editor, ranges, 1, Progress.None, CancellationToken.None, true), 250);
+    }
+}
+registerEditorContribution(FormatOnType.ID, FormatOnType, 2);
+registerEditorContribution(FormatOnPaste.ID, FormatOnPaste, 2);
+registerEditorAction(FormatDocumentAction);
+registerEditorAction(FormatSelectionAction);
+CommandsRegistry.registerCommand('editor.action.format', async (accessor) => {
+    const editor = accessor.get(ICodeEditorService).getFocusedCodeEditor();
+    if (!editor || !editor.hasModel()) {
+        return;
+    }
+    const commandService = accessor.get(ICommandService);
+    if (editor.getSelection().isEmpty()) {
+        await commandService.executeCommand('editor.action.formatDocument');
+    }
+    else {
+        await commandService.executeCommand('editor.action.formatSelection');
+    }
+});

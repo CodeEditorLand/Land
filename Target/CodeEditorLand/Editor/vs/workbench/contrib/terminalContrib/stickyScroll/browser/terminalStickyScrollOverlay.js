@@ -1,3 +1,394 @@
-var W=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var u=(l,o,e,t)=>{for(var i=t>1?void 0:t?D(o,e):o,n=l.length-1,a;n>=0;n--)(a=l[n])&&(i=(t?a(o,e,i):a(i))||i);return t&&i&&W(o,e,i),i},d=(l,o)=>(e,t)=>o(e,t,l);import{importAMDNodeModule as w}from"../../../../../amdX.js";import{$ as x,addDisposableListener as k,addStandardDisposableListener as g,getWindow as P}from"../../../../../base/browser/dom.js";import{memoize as I,throttle as T}from"../../../../../base/common/decorators.js";import{Event as C}from"../../../../../base/common/event.js";import{Disposable as R,MutableDisposable as B,combinedDisposable as E,toDisposable as V}from"../../../../../base/common/lifecycle.js";import{removeAnsiEscapeCodes as X}from"../../../../../base/common/strings.js";import"./media/stickyScroll.css";import{localize as b}from"../../../../../nls.js";import{IMenuService as N,MenuId as H}from"../../../../../platform/actions/common/actions.js";import{IConfigurationService as K}from"../../../../../platform/configuration/common/configuration.js";import{IContextKeyService as Y}from"../../../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as G}from"../../../../../platform/contextview/browser/contextView.js";import{IKeybindingService as F}from"../../../../../platform/keybinding/common/keybinding.js";import"../../../../../platform/terminal/common/capabilities/capabilities.js";import"../../../../../platform/terminal/common/capabilities/commandDetection/terminalCommand.js";import{IThemeService as Q}from"../../../../../platform/theme/common/themeService.js";import{ITerminalConfigurationService as $}from"../../../terminal/browser/terminal.js";import{openContextMenu as j}from"../../../terminal/browser/terminalContextMenu.js";import"../../../terminal/browser/xterm-private.js";import{TERMINAL_CONFIG_SECTION as q,TerminalCommandId as M}from"../../../terminal/common/terminal.js";import{terminalStrings as A}from"../../../terminal/common/terminalStrings.js";import{TerminalStickyScrollSettingId as O}from"../common/terminalStickyScrollConfiguration.js";import{terminalStickyScrollBackground as J,terminalStickyScrollHoverBackground as U}from"./terminalStickyScrollColorRegistry.js";var Z=(e=>(e[e.Off=0]="Off",e[e.On=1]="On",e))(Z||{}),ee=(o=>(o.Visible="visible",o))(ee||{}),te=(o=>(o[o.StickyScrollPercentageCap=.4]="StickyScrollPercentageCap",o))(te||{});let c=class extends R{constructor(e,t,i,n,a,m,r,p,v,y,_,f){super();this._instance=e;this._xterm=t;this._xtermColorProvider=i;this._commandDetection=n;this._contextMenuService=p;this._keybindingService=v;this._terminalConfigurationService=_;this._themeService=f;this._contextMenu=this._register(y.createMenu(H.TerminalStickyScrollContext,r)),this._register(C.runAndSubscribe(this._xterm.raw.buffer.onBufferChange,s=>{this._setState((s??this._xterm.raw.buffer.active).type==="normal"?1:0)})),this._register(C.runAndSubscribe(m.onDidChangeConfiguration,s=>{(!s||s.affectsConfiguration(O.MaxLineCount))&&(this._rawMaxLineCount=m.getValue(O.MaxLineCount))})),this._register(this._instance.onDidChangeTarget(()=>this._syncOptions())),a.then(s=>{this._store.isDisposed||(this._stickyScrollOverlay=this._register(new s({rows:1,cols:this._xterm.raw.cols,allowProposedApi:!0,...this._getOptions()})),this._refreshGpuAcceleration(),this._register(m.onDidChangeConfiguration(h=>{h.affectsConfiguration(q)&&this._syncOptions()})),this._register(this._themeService.onDidColorThemeChange(()=>{this._syncOptions()})),this._register(this._xterm.raw.onResize(()=>{this._syncOptions(),this._refresh()})),this._register(this._instance.onDidChangeVisibility(h=>{h&&this._refresh()})),this._getSerializeAddonConstructor().then(h=>{this._store.isDisposed||(this._serializeAddon=this._register(new h),this._xterm.raw.loadAddon(this._serializeAddon),this._refresh())}))})}_stickyScrollOverlay;_serializeAddon;_webglAddon;_element;_currentStickyCommand;_currentContent;_contextMenu;_refreshListeners=this._register(new B);_state=0;_isRefreshQueued=!1;_rawMaxLineCount=5;lockHide(){this._element?.classList.add("lock-hide")}unlockHide(){this._element?.classList.remove("lock-hide")}_setState(e){if(this._state!==e)switch(e){case 0:{this._setVisible(!1),this._uninstallRefreshListeners();break}case 1:{this._refresh(),this._installRefreshListeners();break}}}_installRefreshListeners(){this._refreshListeners.value||(this._refreshListeners.value=E(C.any(this._xterm.raw.onScroll,this._xterm.raw.onLineFeed,this._xterm.raw.onCursorMove)(()=>this._refresh()),g(this._xterm.raw.element.querySelector(".xterm-viewport"),"scroll",()=>this._refresh())))}_uninstallRefreshListeners(){this._refreshListeners.clear()}_setVisible(e){e&&this._ensureElement(),this._element?.classList.toggle("visible",e)}_refresh(){this._isRefreshQueued||(this._isRefreshQueued=!0,queueMicrotask(()=>{this._refreshNow(),this._isRefreshQueued=!1}))}_refreshNow(){const e=this._commandDetection.getCommandForLine(this._xterm.raw.buffer.active.viewportY);if(this._currentStickyCommand=void 0,!e){this._setVisible(!1);return}if(!("marker"in e)){const i=this._commandDetection.currentCommand;if(i?.commandStartMarker&&i.commandExecutedMarker){this._updateContent(i,i.commandStartMarker);return}this._setVisible(!1);return}const t=e.marker;if(!t||t.line===-1){this._setVisible(!1);return}this._updateContent(e,t)}_updateContent(e,t){const i=this._xterm.raw;if(!i.element?.parentElement||!this._stickyScrollOverlay||!this._serializeAddon)return;if(e.promptStartMarker?.line===-1){this._setVisible(!1);return}const n=i.buffer.active,a=e.getPromptRowCount(),m=e.getCommandRowCount(),r=t.line-(a-1),p=!("getOutput"in e),v=!p&&e.endMarker?Math.max(n.viewportY-e.endMarker.line+1,0):0,y=Math.min(this._rawMaxLineCount,Math.floor(i.rows*.4)),_=Math.min(a+m-1,y)-v;if(n.viewportY<=r){this._setVisible(!1);return}if(p&&n.viewportY===n.baseY&&n.cursorY===i.rows-1){const s=n.getLine(n.baseY+i.rows-1);if(n.cursorX===1&&L(s,":")||n.cursorX===5&&L(s,"(END)")){this._setVisible(!1);return}}const f=this._serializeAddon.serialize({range:{start:r+v,end:r+v+Math.max(_-1,0)}});if(p&&X(f).length===0){this._setVisible(!1);return}if((f&&this._currentContent!==f||this._stickyScrollOverlay.cols!==i.cols||this._stickyScrollOverlay.rows!==_)&&(this._stickyScrollOverlay.resize(this._stickyScrollOverlay.cols,_),this._stickyScrollOverlay.write("\x1B[0m\x1B[H\x1B[2J"),this._stickyScrollOverlay.write(f),this._currentContent=f),f){if(this._currentStickyCommand=e,this._setVisible(!0),this._element){const s=i.element.getBoundingClientRect();if(s.height>0){const h=s.height/i.rows,z=_*h;let S=0;!p&&e.endMarker&&e.endMarker.line!==-1&&n.viewportY+_>e.endMarker.line&&(S=(n.viewportY+_-e.endMarker.line)*h),this._element.style.bottom=`${s.height-z+1+S}px`}}}else this._setVisible(!1)}_ensureElement(){if(this._element||!this._stickyScrollOverlay||!this._xterm?.raw.element?.parentElement)return;const e=this._stickyScrollOverlay,t=x(".hover-overlay");this._element=x(".terminal-sticky-scroll",void 0,t),this._xterm.raw.element.parentElement.append(this._element),this._register(V(()=>this._element?.remove()));let i=b("stickyScrollHoverTitle","Navigate to Command");const n=this._keybindingService.lookupKeybinding(M.ScrollToPreviousCommand);if(n){const r=n.getLabel();r&&(i+=`
-`+b("labelWithKeybinding","{0} ({1})",A.scrollToPreviousCommand.value,r))}const a=this._keybindingService.lookupKeybinding(M.ScrollToNextCommand);if(a){const r=a.getLabel();r&&(i+=`
-`+b("labelWithKeybinding","{0} ({1})",A.scrollToNextCommand.value,r))}t.title=i;const m=this._xterm.raw._core.viewport?.scrollBarWidth;m!==void 0&&(this._element.style.right=`${m}px`),this._stickyScrollOverlay.open(this._element),this._register(g(t,"click",()=>{this._xterm&&this._currentStickyCommand&&(this._xterm.markTracker.revealCommand(this._currentStickyCommand),this._instance.focus())})),this._register(g(t,"wheel",r=>this._xterm?.raw.element?.dispatchEvent(new WheelEvent(r.type,r)))),this._register(k(t,"mousedown",r=>{r.stopImmediatePropagation(),r.preventDefault()})),this._register(k(t,"contextmenu",r=>{r.stopImmediatePropagation(),r.preventDefault(),j(P(t),r,this._instance,this._contextMenu,this._contextMenuService)})),this._register(g(t,"mouseover",()=>e.options.theme=this._getTheme(!0))),this._register(g(t,"mouseleave",()=>e.options.theme=this._getTheme(!1)))}_syncOptions(){this._stickyScrollOverlay&&(this._stickyScrollOverlay.resize(this._xterm.raw.cols,this._stickyScrollOverlay.rows),this._stickyScrollOverlay.options=this._getOptions(),this._refreshGpuAcceleration())}_getOptions(){const e=this._xterm.raw.options;return{cursorInactiveStyle:"none",scrollback:0,logLevel:"off",theme:this._getTheme(!1),documentOverride:e.documentOverride,fontFamily:e.fontFamily,fontWeight:e.fontWeight,fontWeightBold:e.fontWeightBold,fontSize:e.fontSize,letterSpacing:e.letterSpacing,lineHeight:e.lineHeight,drawBoldTextInBrightColors:e.drawBoldTextInBrightColors,minimumContrastRatio:e.minimumContrastRatio,tabStopWidth:e.tabStopWidth,customGlyphs:e.customGlyphs}}async _refreshGpuAcceleration(){if(this._shouldLoadWebgl()&&!this._webglAddon){const e=await this._getWebglAddonConstructor();if(this._store.isDisposed)return;this._webglAddon=this._register(new e),this._stickyScrollOverlay?.loadAddon(this._webglAddon)}else!this._shouldLoadWebgl()&&this._webglAddon&&(this._webglAddon.dispose(),this._webglAddon=void 0)}_shouldLoadWebgl(){return this._terminalConfigurationService.config.gpuAcceleration==="auto"||this._terminalConfigurationService.config.gpuAcceleration==="on"}_getTheme(e){const t=this._themeService.getColorTheme();return{...this._xterm.getXtermTheme(),background:e?t.getColor(U)?.toString()??this._xtermColorProvider.getBackgroundColor(t)?.toString():t.getColor(J)?.toString()??this._xtermColorProvider.getBackgroundColor(t)?.toString(),selectionBackground:void 0,selectionInactiveBackground:void 0}}async _getSerializeAddonConstructor(){return(await w("@xterm/addon-serialize","lib/addon-serialize.js")).SerializeAddon}async _getWebglAddonConstructor(){return(await w("@xterm/addon-webgl","lib/addon-webgl.js")).WebglAddon}};u([T(0)],c.prototype,"_syncOptions",1),u([T(0)],c.prototype,"_refreshGpuAcceleration",1),u([I],c.prototype,"_getSerializeAddonConstructor",1),u([I],c.prototype,"_getWebglAddonConstructor",1),c=u([d(5,K),d(6,Y),d(7,G),d(8,F),d(9,N),d(10,$),d(11,Q)],c);function L(l,o){if(!l)return!1;for(let e=0;e<o.length;e++)if(l.getCell(e)?.getChars()!==o[e])return!1;return!0}export{c as TerminalStickyScrollOverlay};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { importAMDNodeModule } from '../../../../../amdX.js';
+import { $, addDisposableListener, addStandardDisposableListener, getWindow } from '../../../../../base/browser/dom.js';
+import { memoize, throttle } from '../../../../../base/common/decorators.js';
+import { Event } from '../../../../../base/common/event.js';
+import { Disposable, MutableDisposable, combinedDisposable, toDisposable } from '../../../../../base/common/lifecycle.js';
+import { removeAnsiEscapeCodes } from '../../../../../base/common/strings.js';
+import './media/stickyScroll.css';
+import { localize } from '../../../../../nls.js';
+import { IMenuService, MenuId } from '../../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService } from '../../../../../platform/contextview/browser/contextView.js';
+import { IKeybindingService } from '../../../../../platform/keybinding/common/keybinding.js';
+import { IThemeService } from '../../../../../platform/theme/common/themeService.js';
+import { ITerminalConfigurationService } from '../../../terminal/browser/terminal.js';
+import { openContextMenu } from '../../../terminal/browser/terminalContextMenu.js';
+import { TERMINAL_CONFIG_SECTION } from '../../../terminal/common/terminal.js';
+import { terminalStrings } from '../../../terminal/common/terminalStrings.js';
+import { terminalStickyScrollBackground, terminalStickyScrollHoverBackground } from './terminalStickyScrollColorRegistry.js';
+let TerminalStickyScrollOverlay = class TerminalStickyScrollOverlay extends Disposable {
+    constructor(_instance, _xterm, _xtermColorProvider, _commandDetection, xtermCtor, configurationService, contextKeyService, _contextMenuService, _keybindingService, menuService, _terminalConfigurationService, _themeService) {
+        super();
+        this._instance = _instance;
+        this._xterm = _xterm;
+        this._xtermColorProvider = _xtermColorProvider;
+        this._commandDetection = _commandDetection;
+        this._contextMenuService = _contextMenuService;
+        this._keybindingService = _keybindingService;
+        this._terminalConfigurationService = _terminalConfigurationService;
+        this._themeService = _themeService;
+        this._refreshListeners = this._register(new MutableDisposable());
+        this._state = 0;
+        this._isRefreshQueued = false;
+        this._rawMaxLineCount = 5;
+        this._contextMenu = this._register(menuService.createMenu(MenuId.TerminalStickyScrollContext, contextKeyService));
+        this._register(Event.runAndSubscribe(this._xterm.raw.buffer.onBufferChange, buffer => {
+            this._setState((buffer ?? this._xterm.raw.buffer.active).type === 'normal' ? 1 : 0);
+        }));
+        this._register(Event.runAndSubscribe(configurationService.onDidChangeConfiguration, e => {
+            if (!e || e.affectsConfiguration("terminal.integrated.stickyScroll.maxLineCount")) {
+                this._rawMaxLineCount = configurationService.getValue("terminal.integrated.stickyScroll.maxLineCount");
+            }
+        }));
+        this._register(this._instance.onDidChangeTarget(() => this._syncOptions()));
+        xtermCtor.then(ctor => {
+            if (this._store.isDisposed) {
+                return;
+            }
+            this._stickyScrollOverlay = this._register(new ctor({
+                rows: 1,
+                cols: this._xterm.raw.cols,
+                allowProposedApi: true,
+                ...this._getOptions()
+            }));
+            this._refreshGpuAcceleration();
+            this._register(configurationService.onDidChangeConfiguration(e => {
+                if (e.affectsConfiguration(TERMINAL_CONFIG_SECTION)) {
+                    this._syncOptions();
+                }
+            }));
+            this._register(this._themeService.onDidColorThemeChange(() => {
+                this._syncOptions();
+            }));
+            this._register(this._xterm.raw.onResize(() => {
+                this._syncOptions();
+                this._refresh();
+            }));
+            this._register(this._instance.onDidChangeVisibility(isVisible => {
+                if (isVisible) {
+                    this._refresh();
+                }
+            }));
+            this._getSerializeAddonConstructor().then(SerializeAddon => {
+                if (this._store.isDisposed) {
+                    return;
+                }
+                this._serializeAddon = this._register(new SerializeAddon());
+                this._xterm.raw.loadAddon(this._serializeAddon);
+                this._refresh();
+            });
+        });
+    }
+    lockHide() {
+        this._element?.classList.add('lock-hide');
+    }
+    unlockHide() {
+        this._element?.classList.remove('lock-hide');
+    }
+    _setState(state) {
+        if (this._state === state) {
+            return;
+        }
+        switch (state) {
+            case 0: {
+                this._setVisible(false);
+                this._uninstallRefreshListeners();
+                break;
+            }
+            case 1: {
+                this._refresh();
+                this._installRefreshListeners();
+                break;
+            }
+        }
+    }
+    _installRefreshListeners() {
+        if (!this._refreshListeners.value) {
+            this._refreshListeners.value = combinedDisposable(Event.any(this._xterm.raw.onScroll, this._xterm.raw.onLineFeed, this._xterm.raw.onCursorMove)(() => this._refresh()), addStandardDisposableListener(this._xterm.raw.element.querySelector('.xterm-viewport'), 'scroll', () => this._refresh()));
+        }
+    }
+    _uninstallRefreshListeners() {
+        this._refreshListeners.clear();
+    }
+    _setVisible(isVisible) {
+        if (isVisible) {
+            this._ensureElement();
+        }
+        this._element?.classList.toggle("visible", isVisible);
+    }
+    _refresh() {
+        if (this._isRefreshQueued) {
+            return;
+        }
+        this._isRefreshQueued = true;
+        queueMicrotask(() => {
+            this._refreshNow();
+            this._isRefreshQueued = false;
+        });
+    }
+    _refreshNow() {
+        const command = this._commandDetection.getCommandForLine(this._xterm.raw.buffer.active.viewportY);
+        this._currentStickyCommand = undefined;
+        if (!command) {
+            this._setVisible(false);
+            return;
+        }
+        if (!('marker' in command)) {
+            const partialCommand = this._commandDetection.currentCommand;
+            if (partialCommand?.commandStartMarker && partialCommand.commandExecutedMarker) {
+                this._updateContent(partialCommand, partialCommand.commandStartMarker);
+                return;
+            }
+            this._setVisible(false);
+            return;
+        }
+        const marker = command.marker;
+        if (!marker || marker.line === -1) {
+            this._setVisible(false);
+            return;
+        }
+        this._updateContent(command, marker);
+    }
+    _updateContent(command, startMarker) {
+        const xterm = this._xterm.raw;
+        if (!xterm.element?.parentElement || !this._stickyScrollOverlay || !this._serializeAddon) {
+            return;
+        }
+        if (command.promptStartMarker?.line === -1) {
+            this._setVisible(false);
+            return;
+        }
+        const buffer = xterm.buffer.active;
+        const promptRowCount = command.getPromptRowCount();
+        const commandRowCount = command.getCommandRowCount();
+        const stickyScrollLineStart = startMarker.line - (promptRowCount - 1);
+        const isPartialCommand = !('getOutput' in command);
+        const rowOffset = !isPartialCommand && command.endMarker ? Math.max(buffer.viewportY - command.endMarker.line + 1, 0) : 0;
+        const maxLineCount = Math.min(this._rawMaxLineCount, Math.floor(xterm.rows * 0.4));
+        const stickyScrollLineCount = Math.min(promptRowCount + commandRowCount - 1, maxLineCount) - rowOffset;
+        if (buffer.viewportY <= stickyScrollLineStart) {
+            this._setVisible(false);
+            return;
+        }
+        if (isPartialCommand && buffer.viewportY === buffer.baseY && buffer.cursorY === xterm.rows - 1) {
+            const line = buffer.getLine(buffer.baseY + xterm.rows - 1);
+            if ((buffer.cursorX === 1 && lineStartsWith(line, ':')) ||
+                (buffer.cursorX === 5 && lineStartsWith(line, '(END)'))) {
+                this._setVisible(false);
+                return;
+            }
+        }
+        const content = this._serializeAddon.serialize({
+            range: {
+                start: stickyScrollLineStart + rowOffset,
+                end: stickyScrollLineStart + rowOffset + Math.max(stickyScrollLineCount - 1, 0)
+            }
+        });
+        if (isPartialCommand && removeAnsiEscapeCodes(content).length === 0) {
+            this._setVisible(false);
+            return;
+        }
+        if (content && this._currentContent !== content ||
+            this._stickyScrollOverlay.cols !== xterm.cols ||
+            this._stickyScrollOverlay.rows !== stickyScrollLineCount) {
+            this._stickyScrollOverlay.resize(this._stickyScrollOverlay.cols, stickyScrollLineCount);
+            this._stickyScrollOverlay.write('\x1b[0m\x1b[H\x1b[2J');
+            this._stickyScrollOverlay.write(content);
+            this._currentContent = content;
+        }
+        if (content) {
+            this._currentStickyCommand = command;
+            this._setVisible(true);
+            if (this._element) {
+                const termBox = xterm.element.getBoundingClientRect();
+                if (termBox.height > 0) {
+                    const rowHeight = termBox.height / xterm.rows;
+                    const overlayHeight = stickyScrollLineCount * rowHeight;
+                    let endMarkerOffset = 0;
+                    if (!isPartialCommand && command.endMarker && command.endMarker.line !== -1) {
+                        if (buffer.viewportY + stickyScrollLineCount > command.endMarker.line) {
+                            const diff = buffer.viewportY + stickyScrollLineCount - command.endMarker.line;
+                            endMarkerOffset = diff * rowHeight;
+                        }
+                    }
+                    this._element.style.bottom = `${termBox.height - overlayHeight + 1 + endMarkerOffset}px`;
+                }
+            }
+        }
+        else {
+            this._setVisible(false);
+        }
+    }
+    _ensureElement() {
+        if (this._element ||
+            !this._stickyScrollOverlay ||
+            !this._xterm?.raw.element?.parentElement) {
+            return;
+        }
+        const overlay = this._stickyScrollOverlay;
+        const hoverOverlay = $('.hover-overlay');
+        this._element = $('.terminal-sticky-scroll', undefined, hoverOverlay);
+        this._xterm.raw.element.parentElement.append(this._element);
+        this._register(toDisposable(() => this._element?.remove()));
+        let hoverTitle = localize('stickyScrollHoverTitle', 'Navigate to Command');
+        const scrollToPreviousCommandKeybinding = this._keybindingService.lookupKeybinding("workbench.action.terminal.scrollToPreviousCommand");
+        if (scrollToPreviousCommandKeybinding) {
+            const label = scrollToPreviousCommandKeybinding.getLabel();
+            if (label) {
+                hoverTitle += '\n' + localize('labelWithKeybinding', "{0} ({1})", terminalStrings.scrollToPreviousCommand.value, label);
+            }
+        }
+        const scrollToNextCommandKeybinding = this._keybindingService.lookupKeybinding("workbench.action.terminal.scrollToNextCommand");
+        if (scrollToNextCommandKeybinding) {
+            const label = scrollToNextCommandKeybinding.getLabel();
+            if (label) {
+                hoverTitle += '\n' + localize('labelWithKeybinding', "{0} ({1})", terminalStrings.scrollToNextCommand.value, label);
+            }
+        }
+        hoverOverlay.title = hoverTitle;
+        const scrollBarWidth = this._xterm.raw._core.viewport?.scrollBarWidth;
+        if (scrollBarWidth !== undefined) {
+            this._element.style.right = `${scrollBarWidth}px`;
+        }
+        this._stickyScrollOverlay.open(this._element);
+        this._register(addStandardDisposableListener(hoverOverlay, 'click', () => {
+            if (this._xterm && this._currentStickyCommand) {
+                this._xterm.markTracker.revealCommand(this._currentStickyCommand);
+                this._instance.focus();
+            }
+        }));
+        this._register(addStandardDisposableListener(hoverOverlay, 'wheel', e => this._xterm?.raw.element?.dispatchEvent(new WheelEvent(e.type, e))));
+        this._register(addDisposableListener(hoverOverlay, 'mousedown', e => {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+        }));
+        this._register(addDisposableListener(hoverOverlay, 'contextmenu', e => {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            openContextMenu(getWindow(hoverOverlay), e, this._instance, this._contextMenu, this._contextMenuService);
+        }));
+        this._register(addStandardDisposableListener(hoverOverlay, 'mouseover', () => overlay.options.theme = this._getTheme(true)));
+        this._register(addStandardDisposableListener(hoverOverlay, 'mouseleave', () => overlay.options.theme = this._getTheme(false)));
+    }
+    _syncOptions() {
+        if (!this._stickyScrollOverlay) {
+            return;
+        }
+        this._stickyScrollOverlay.resize(this._xterm.raw.cols, this._stickyScrollOverlay.rows);
+        this._stickyScrollOverlay.options = this._getOptions();
+        this._refreshGpuAcceleration();
+    }
+    _getOptions() {
+        const o = this._xterm.raw.options;
+        return {
+            cursorInactiveStyle: 'none',
+            scrollback: 0,
+            logLevel: 'off',
+            theme: this._getTheme(false),
+            documentOverride: o.documentOverride,
+            fontFamily: o.fontFamily,
+            fontWeight: o.fontWeight,
+            fontWeightBold: o.fontWeightBold,
+            fontSize: o.fontSize,
+            letterSpacing: o.letterSpacing,
+            lineHeight: o.lineHeight,
+            drawBoldTextInBrightColors: o.drawBoldTextInBrightColors,
+            minimumContrastRatio: o.minimumContrastRatio,
+            tabStopWidth: o.tabStopWidth,
+            customGlyphs: o.customGlyphs,
+        };
+    }
+    async _refreshGpuAcceleration() {
+        if (this._shouldLoadWebgl() && !this._webglAddon) {
+            const WebglAddon = await this._getWebglAddonConstructor();
+            if (this._store.isDisposed) {
+                return;
+            }
+            this._webglAddon = this._register(new WebglAddon());
+            this._stickyScrollOverlay?.loadAddon(this._webglAddon);
+        }
+        else if (!this._shouldLoadWebgl() && this._webglAddon) {
+            this._webglAddon.dispose();
+            this._webglAddon = undefined;
+        }
+    }
+    _shouldLoadWebgl() {
+        return this._terminalConfigurationService.config.gpuAcceleration === 'auto' || this._terminalConfigurationService.config.gpuAcceleration === 'on';
+    }
+    _getTheme(isHovering) {
+        const theme = this._themeService.getColorTheme();
+        return {
+            ...this._xterm.getXtermTheme(),
+            background: isHovering
+                ? theme.getColor(terminalStickyScrollHoverBackground)?.toString() ?? this._xtermColorProvider.getBackgroundColor(theme)?.toString()
+                : theme.getColor(terminalStickyScrollBackground)?.toString() ?? this._xtermColorProvider.getBackgroundColor(theme)?.toString(),
+            selectionBackground: undefined,
+            selectionInactiveBackground: undefined
+        };
+    }
+    async _getSerializeAddonConstructor() {
+        return (await importAMDNodeModule('@xterm/addon-serialize', 'lib/addon-serialize.js')).SerializeAddon;
+    }
+    async _getWebglAddonConstructor() {
+        return (await importAMDNodeModule('@xterm/addon-webgl', 'lib/addon-webgl.js')).WebglAddon;
+    }
+};
+__decorate([
+    throttle(0),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], TerminalStickyScrollOverlay.prototype, "_syncOptions", null);
+__decorate([
+    throttle(0),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], TerminalStickyScrollOverlay.prototype, "_refreshGpuAcceleration", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], TerminalStickyScrollOverlay.prototype, "_getSerializeAddonConstructor", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], TerminalStickyScrollOverlay.prototype, "_getWebglAddonConstructor", null);
+TerminalStickyScrollOverlay = __decorate([
+    __param(5, IConfigurationService),
+    __param(6, IContextKeyService),
+    __param(7, IContextMenuService),
+    __param(8, IKeybindingService),
+    __param(9, IMenuService),
+    __param(10, ITerminalConfigurationService),
+    __param(11, IThemeService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Promise, Object, Object, Object, Object, Object, Object, Object])
+], TerminalStickyScrollOverlay);
+export { TerminalStickyScrollOverlay };
+function lineStartsWith(line, text) {
+    if (!line) {
+        return false;
+    }
+    for (let i = 0; i < text.length; i++) {
+        if (line.getCell(i)?.getChars() !== text[i]) {
+            return false;
+        }
+    }
+    return true;
+}

@@ -1,1 +1,74 @@
-import{Button as h,ButtonWithDropdown as v}from"../../../../base/browser/ui/button/button.js";import{ActionRunner as f}from"../../../../base/common/actions.js";import{DisposableStore as y}from"../../../../base/common/lifecycle.js";import{SubmenuItemAction as g}from"../../../../platform/actions/common/actions.js";import"../../../../platform/contextkey/common/contextkey.js";import"../../../../platform/contextview/browser/contextView.js";import"../../../../platform/keybinding/common/keybinding.js";import{defaultButtonStyles as p}from"../../../../platform/theme/browser/defaultStyles.js";import{CommentCommandId as A}from"../common/commentCommandIds.js";class R{constructor(t,l,d,n,i,c,r){this.keybindingService=t;this.contextKeyService=l;this.contextMenuService=d;this.container=n;this.actionHandler=i;this.maxActions=c;this.supportDropdowns=r}_buttonElements=[];_toDispose=new y;_actions=[];setActions(t,l=!1){this._toDispose.clear(),this._buttonElements.forEach(i=>i.remove()),this._buttonElements=[];const d=t.getActions({shouldForwardArgs:!0});let n=!l;for(const i of d){const[,c]=i;this._actions=c;for(const r of c){const s=this.supportDropdowns&&r instanceof g?r.actions:[],e=s.length?s[0]:r;let a=this.keybindingService.lookupKeybinding(e.id,this.contextKeyService)?.getLabel();!a&&n&&(a=this.keybindingService.lookupKeybinding(A.Submit,this.contextKeyService)?.getLabel());const m=a?`${e.label} (${a})`:e.label,u=this.actionHandler,o=s.length?new v(this.container,{contextMenuProvider:this.contextMenuService,actions:s,actionRunner:new class extends f{async runAction(b,x){return u(b)}},secondary:!n,title:m,addPrimaryActionToDropdown:!1,...p}):new h(this.container,{secondary:!n,title:m,...p});if(n=!1,this._buttonElements.push(o.element),this._toDispose.add(o),this._toDispose.add(o.onDidClick(()=>this.actionHandler(e))),o.enabled=e.enabled,o.label=e.label,this.maxActions!==void 0&&this._buttonElements.length>=this.maxActions)return}}}triggerDefaultAction(){if(this._actions.length){const t=this._actions[0];if(t.enabled)return this.actionHandler(t)}}dispose(){this._toDispose.dispose()}}export{R as CommentFormActions};
+import { Button, ButtonWithDropdown } from '../../../../base/browser/ui/button/button.js';
+import { ActionRunner } from '../../../../base/common/actions.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { SubmenuItemAction } from '../../../../platform/actions/common/actions.js';
+import { defaultButtonStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+export class CommentFormActions {
+    constructor(keybindingService, contextKeyService, contextMenuService, container, actionHandler, maxActions, supportDropdowns) {
+        this.keybindingService = keybindingService;
+        this.contextKeyService = contextKeyService;
+        this.contextMenuService = contextMenuService;
+        this.container = container;
+        this.actionHandler = actionHandler;
+        this.maxActions = maxActions;
+        this.supportDropdowns = supportDropdowns;
+        this._buttonElements = [];
+        this._toDispose = new DisposableStore();
+        this._actions = [];
+    }
+    setActions(menu, hasOnlySecondaryActions = false) {
+        this._toDispose.clear();
+        this._buttonElements.forEach(b => b.remove());
+        this._buttonElements = [];
+        const groups = menu.getActions({ shouldForwardArgs: true });
+        let isPrimary = !hasOnlySecondaryActions;
+        for (const group of groups) {
+            const [, actions] = group;
+            this._actions = actions;
+            for (const current of actions) {
+                const dropDownActions = this.supportDropdowns && current instanceof SubmenuItemAction ? current.actions : [];
+                const action = dropDownActions.length ? dropDownActions[0] : current;
+                let keybinding = this.keybindingService.lookupKeybinding(action.id, this.contextKeyService)?.getLabel();
+                if (!keybinding && isPrimary) {
+                    keybinding = this.keybindingService.lookupKeybinding("editor.action.submitComment", this.contextKeyService)?.getLabel();
+                }
+                const title = keybinding ? `${action.label} (${keybinding})` : action.label;
+                const actionHandler = this.actionHandler;
+                const button = dropDownActions.length ? new ButtonWithDropdown(this.container, {
+                    contextMenuProvider: this.contextMenuService,
+                    actions: dropDownActions,
+                    actionRunner: new class extends ActionRunner {
+                        async runAction(action, context) {
+                            return actionHandler(action);
+                        }
+                    },
+                    secondary: !isPrimary,
+                    title,
+                    addPrimaryActionToDropdown: false,
+                    ...defaultButtonStyles
+                }) : new Button(this.container, { secondary: !isPrimary, title, ...defaultButtonStyles });
+                isPrimary = false;
+                this._buttonElements.push(button.element);
+                this._toDispose.add(button);
+                this._toDispose.add(button.onDidClick(() => this.actionHandler(action)));
+                button.enabled = action.enabled;
+                button.label = action.label;
+                if ((this.maxActions !== undefined) && (this._buttonElements.length >= this.maxActions)) {
+                    console.warn(`An extension has contributed more than the allowable number of actions to a comments menu.`);
+                    return;
+                }
+            }
+        }
+    }
+    triggerDefaultAction() {
+        if (this._actions.length) {
+            const lastAction = this._actions[0];
+            if (lastAction.enabled) {
+                return this.actionHandler(lastAction);
+            }
+        }
+    }
+    dispose() {
+        this._toDispose.dispose();
+    }
+}

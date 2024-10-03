@@ -1,1 +1,332 @@
-var M=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var x=(u,d,t,i)=>{for(var e=i>1?void 0:i?T(d,t):d,r=u.length-1,n;r>=0;r--)(n=u[r])&&(e=(i?n(d,t,e):n(e))||e);return i&&e&&M(d,t,e),e},c=(u,d)=>(t,i)=>d(t,i,u);import*as a from"../../../../../../base/browser/dom.js";import{StandardKeyboardEvent as L}from"../../../../../../base/browser/keyboardEvent.js";import{SimpleIconLabel as A}from"../../../../../../base/browser/ui/iconLabel/simpleIconLabel.js";import"../../../../../../base/common/actions.js";import{toErrorMessage as B}from"../../../../../../base/common/errorMessage.js";import{Emitter as N}from"../../../../../../base/common/event.js";import{stripIcons as W}from"../../../../../../base/common/iconLabels.js";import{KeyCode as E}from"../../../../../../base/common/keyCodes.js";import{Disposable as O,DisposableStore as D,dispose as k}from"../../../../../../base/common/lifecycle.js";import{MarshalledId as F}from"../../../../../../base/common/marshallingIds.js";import"../../../../../../editor/browser/editorBrowser.js";import{isThemeColor as P}from"../../../../../../editor/common/editorCommon.js";import{ICommandService as R}from"../../../../../../platform/commands/common/commands.js";import{IInstantiationService as V}from"../../../../../../platform/instantiation/common/instantiation.js";import{INotificationService as K}from"../../../../../../platform/notification/common/notification.js";import{ITelemetryService as $}from"../../../../../../platform/telemetry/common/telemetry.js";import{IThemeService as S}from"../../../../../../platform/theme/common/themeService.js";import"../../../../../../base/common/themables.js";import"../../controller/coreActions.js";import{CellFocusMode as C}from"../../notebookBrowser.js";import{CellContentPart as q}from"../cellPart.js";import{ClickTargetType as I}from"./cellWidgets.js";import{CodeCellViewModel as Y}from"../../viewModel/codeCellViewModel.js";import{CellStatusbarAlignment as w}from"../../../common/notebookCommon.js";import"../../../../../../base/browser/ui/hover/hoverDelegate.js";import{IHoverService as H}from"../../../../../../platform/hover/browser/hover.js";import{IConfigurationService as j}from"../../../../../../platform/configuration/common/configuration.js";import{HoverPosition as X}from"../../../../../../base/browser/ui/hover/hoverWidget.js";const v=a.$;let g=class extends q{constructor(t,i,e,r,n,o,l,b){super();this._notebookEditor=t;this._cellContainer=i;this._editor=r;this._instantiationService=n;this._themeService=b;this.statusBarContainer=a.append(e,v(".cell-statusbar-container")),this.statusBarContainer.tabIndex=-1;const h=a.append(this.statusBarContainer,v(".cell-status-left")),m=a.append(this.statusBarContainer,v(".cell-status-right"));this.leftItemsContainer=a.append(h,v(".cell-contributed-items.cell-contributed-items-left")),this.rightItemsContainer=a.append(m,v(".cell-contributed-items.cell-contributed-items-right")),this.itemsDisposable=this._register(new D),this.hoverDelegate=new class{_lastHoverHideTime=0;showHover=s=>(s.position=s.position??{},s.position.hoverPosition=X.ABOVE,o.showHover(s));placement="element";get delay(){return Date.now()-this._lastHoverHideTime<200?0:l.getValue("workbench.hover.delay")}onDidHideHover(){this._lastHoverHideTime=Date.now()}},this._register(this._themeService.onDidColorThemeChange(()=>this.currentContext&&this.updateContext(this.currentContext))),this._register(a.addDisposableListener(this.statusBarContainer,a.EventType.CLICK,s=>{if(s.target===h||s.target===m||s.target===this.statusBarContainer)this._onDidClick.fire({type:I.Container,event:s});else{const p=s.target;let y=!1;if(p&&a.isHTMLElement(p)){const _=p;(_.classList.contains("cell-status-item-has-command")||_.parentElement&&_.parentElement.classList.contains("cell-status-item-has-command"))&&(y=!0)}y?this._onDidClick.fire({type:I.ContributedCommandItem,event:s}):this._onDidClick.fire({type:I.ContributedTextItem,event:s})}}))}statusBarContainer;leftItemsContainer;rightItemsContainer;itemsDisposable;leftItems=[];rightItems=[];width=0;currentContext;_onDidClick=this._register(new N);onDidClick=this._onDidClick.event;hoverDelegate;didRenderCell(t){if(this._notebookEditor.hasModel()){const i={ui:!0,cell:t,notebookEditor:this._notebookEditor,$mid:F.NotebookCellActionContext};this.updateContext(i)}if(this._editor){const i=()=>{if(this._editor&&(this._editor.hasWidgetFocus()||this.statusBarContainer.ownerDocument.activeElement&&this.statusBarContainer.contains(this.statusBarContainer.ownerDocument.activeElement)))t.focusMode=C.Editor;else{const e=t.focusMode;e===C.ChatInput?t.focusMode=C.ChatInput:e===C.Output&&this._notebookEditor.hasWebviewFocus()?t.focusMode=C.Output:t.focusMode=C.Container}};this.cellDisposables.add(this._editor.onDidFocusEditorWidget(()=>{i()})),this.cellDisposables.add(this._editor.onDidBlurEditorWidget(()=>{this._notebookEditor.hasEditorFocus()&&!(this.statusBarContainer.ownerDocument.activeElement&&this.statusBarContainer.contains(this.statusBarContainer.ownerDocument.activeElement))&&i()})),this.cellDisposables.add(this.onDidClick(e=>{if(this.currentCell instanceof Y&&e.type!==I.ContributedCommandItem&&this._editor){const r=this._editor.getTargetAtClientPoint(e.event.clientX,e.event.clientY-this._notebookEditor.notebookOptions.computeEditorStatusbarHeight(this.currentCell.internalMetadata,this.currentCell.uri));r?.position&&(this._editor.setPosition(r.position),this._editor.focus())}}))}}updateInternalLayoutNow(t){this._cellContainer.classList.toggle("cell-statusbar-hidden",this._notebookEditor.notebookOptions.computeEditorStatusbarHeight(t.internalMetadata,t.uri)===0);const e=t.layoutInfo.editorWidth;if(!e)return;this.width=e,this.statusBarContainer.style.width=`${e}px`;const r=this.getMaxItemWidth();this.leftItems.forEach(n=>n.maxWidth=r),this.rightItems.forEach(n=>n.maxWidth=r)}getMaxItemWidth(){return this.width/2}updateContext(t){this.currentContext=t,this.itemsDisposable.clear(),this.currentContext&&(this.itemsDisposable.add(this.currentContext.cell.onDidChangeLayout(()=>{this.currentContext&&this.updateInternalLayoutNow(this.currentContext.cell)})),this.itemsDisposable.add(this.currentContext.cell.onDidChangeCellStatusBarItems(()=>this.updateRenderedItems())),this.itemsDisposable.add(this.currentContext.notebookEditor.onDidChangeActiveCell(()=>this.updateActiveCell())),this.updateInternalLayoutNow(this.currentContext.cell),this.updateActiveCell(),this.updateRenderedItems())}updateActiveCell(){const t=this.currentContext.notebookEditor.getActiveCell()===this.currentContext?.cell;this.statusBarContainer.classList.toggle("is-active-cell",t)}updateRenderedItems(){const t=this.currentContext.cell.getCellStatusBarItems();t.sort((o,l)=>(l.priority??0)-(o.priority??0));const i=this.getMaxItemWidth(),e=t.filter(o=>o.alignment===w.Left),r=t.filter(o=>o.alignment===w.Right).reverse(),n=(o,l,b)=>{if(o.length>l.length){const h=o.splice(l.length,o.length-l.length);for(const m of h)m.container.remove(),m.dispose()}l.forEach((h,m)=>{const s=o[m];if(s)s.updateItem(h,i);else{const p=this._instantiationService.createInstance(f,this.currentContext,this.hoverDelegate,this._editor,h,i);o.push(p),b.appendChild(p.container)}})};n(this.leftItems,e,this.leftItemsContainer),n(this.rightItems,r,this.rightItemsContainer)}dispose(){super.dispose(),k(this.leftItems),k(this.rightItems)}};g=x([c(4,V),c(5,H),c(6,j),c(7,S)],g);let f=class extends O{constructor(t,i,e,r,n,o,l,b,h,m){super();this._context=t;this._hoverDelegate=i;this._editor=e;this._telemetryService=o;this._commandService=l;this._notificationService=b;this._themeService=h;this._hoverService=m;this.updateItem(r,n)}container=v(".cell-status-item");set maxWidth(t){this.container.style.maxWidth=t+"px"}_currentItem;_itemDisposables=this._register(new D);updateItem(t,i){this._itemDisposables.clear(),(!this._currentItem||this._currentItem.text!==t.text)&&(this._itemDisposables.add(new A(this.container)).text=t.text.replace(/\n/g," "));const e=o=>P(o)?this._themeService.getColorTheme().getColor(o.id)?.toString()||"":o;this.container.style.color=t.color?e(t.color):"",this.container.style.backgroundColor=t.backgroundColor?e(t.backgroundColor):"",this.container.style.opacity=t.opacity?t.opacity:"",this.container.classList.toggle("cell-status-item-show-when-active",!!t.onlyShowWhenActive),typeof i=="number"&&(this.maxWidth=i);let r,n;if(t.accessibilityInformation?(r=t.accessibilityInformation.label,n=t.accessibilityInformation.role):r=t.text?W(t.text).trim():"",this.container.setAttribute("aria-label",r),this.container.setAttribute("role",n||""),t.tooltip){const o=typeof t.tooltip=="string"?t.tooltip:{markdown:t.tooltip,markdownNotSupportedFallback:void 0};this._itemDisposables.add(this._hoverService.setupManagedHover(this._hoverDelegate,this.container,o))}this.container.classList.toggle("cell-status-item-has-command",!!t.command),t.command?(this.container.tabIndex=0,this._itemDisposables.add(a.addDisposableListener(this.container,a.EventType.CLICK,o=>{this.executeCommand()})),this._itemDisposables.add(a.addDisposableListener(this.container,a.EventType.KEY_DOWN,o=>{const l=new L(o);(l.equals(E.Space)||l.equals(E.Enter))&&this.executeCommand()}))):this.container.removeAttribute("tabIndex"),this._currentItem=t}async executeCommand(){const t=this._currentItem.command;if(!t)return;const i=typeof t=="string"?t:t.id,e=typeof t=="string"?[]:t.arguments??[];(typeof t=="string"||!t.arguments||!Array.isArray(t.arguments)||t.arguments.length===0)&&e.unshift(this._context),this._telemetryService.publicLog2("workbenchActionExecuted",{id:i,from:"cell status bar"});try{this._editor?.focus(),await this._commandService.executeCommand(i,...e)}catch(r){this._notificationService.error(B(r))}}};f=x([c(5,$),c(6,R),c(7,K),c(8,S),c(9,H)],f);export{g as CellEditorStatusBar};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as DOM from '../../../../../../base/browser/dom.js';
+import { StandardKeyboardEvent } from '../../../../../../base/browser/keyboardEvent.js';
+import { SimpleIconLabel } from '../../../../../../base/browser/ui/iconLabel/simpleIconLabel.js';
+import { toErrorMessage } from '../../../../../../base/common/errorMessage.js';
+import { Emitter } from '../../../../../../base/common/event.js';
+import { stripIcons } from '../../../../../../base/common/iconLabels.js';
+import { Disposable, DisposableStore, dispose } from '../../../../../../base/common/lifecycle.js';
+import { isThemeColor } from '../../../../../../editor/common/editorCommon.js';
+import { ICommandService } from '../../../../../../platform/commands/common/commands.js';
+import { IInstantiationService } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { INotificationService } from '../../../../../../platform/notification/common/notification.js';
+import { ITelemetryService } from '../../../../../../platform/telemetry/common/telemetry.js';
+import { IThemeService } from '../../../../../../platform/theme/common/themeService.js';
+import { CellFocusMode } from '../../notebookBrowser.js';
+import { CellContentPart } from '../cellPart.js';
+import { CodeCellViewModel } from '../../viewModel/codeCellViewModel.js';
+import { IHoverService } from '../../../../../../platform/hover/browser/hover.js';
+import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
+const $ = DOM.$;
+let CellEditorStatusBar = class CellEditorStatusBar extends CellContentPart {
+    constructor(_notebookEditor, _cellContainer, editorPart, _editor, _instantiationService, hoverService, configurationService, _themeService) {
+        super();
+        this._notebookEditor = _notebookEditor;
+        this._cellContainer = _cellContainer;
+        this._editor = _editor;
+        this._instantiationService = _instantiationService;
+        this._themeService = _themeService;
+        this.leftItems = [];
+        this.rightItems = [];
+        this.width = 0;
+        this._onDidClick = this._register(new Emitter());
+        this.onDidClick = this._onDidClick.event;
+        this.statusBarContainer = DOM.append(editorPart, $('.cell-statusbar-container'));
+        this.statusBarContainer.tabIndex = -1;
+        const leftItemsContainer = DOM.append(this.statusBarContainer, $('.cell-status-left'));
+        const rightItemsContainer = DOM.append(this.statusBarContainer, $('.cell-status-right'));
+        this.leftItemsContainer = DOM.append(leftItemsContainer, $('.cell-contributed-items.cell-contributed-items-left'));
+        this.rightItemsContainer = DOM.append(rightItemsContainer, $('.cell-contributed-items.cell-contributed-items-right'));
+        this.itemsDisposable = this._register(new DisposableStore());
+        this.hoverDelegate = new class {
+            constructor() {
+                this._lastHoverHideTime = 0;
+                this.showHover = (options) => {
+                    options.position = options.position ?? {};
+                    options.position.hoverPosition = 3;
+                    return hoverService.showHover(options);
+                };
+                this.placement = 'element';
+            }
+            get delay() {
+                return Date.now() - this._lastHoverHideTime < 200
+                    ? 0
+                    : configurationService.getValue('workbench.hover.delay');
+            }
+            onDidHideHover() {
+                this._lastHoverHideTime = Date.now();
+            }
+        };
+        this._register(this._themeService.onDidColorThemeChange(() => this.currentContext && this.updateContext(this.currentContext)));
+        this._register(DOM.addDisposableListener(this.statusBarContainer, DOM.EventType.CLICK, e => {
+            if (e.target === leftItemsContainer || e.target === rightItemsContainer || e.target === this.statusBarContainer) {
+                this._onDidClick.fire({
+                    type: 0,
+                    event: e
+                });
+            }
+            else {
+                const target = e.target;
+                let itemHasCommand = false;
+                if (target && DOM.isHTMLElement(target)) {
+                    const targetElement = target;
+                    if (targetElement.classList.contains('cell-status-item-has-command')) {
+                        itemHasCommand = true;
+                    }
+                    else if (targetElement.parentElement && targetElement.parentElement.classList.contains('cell-status-item-has-command')) {
+                        itemHasCommand = true;
+                    }
+                }
+                if (itemHasCommand) {
+                    this._onDidClick.fire({
+                        type: 2,
+                        event: e
+                    });
+                }
+                else {
+                    this._onDidClick.fire({
+                        type: 1,
+                        event: e
+                    });
+                }
+            }
+        }));
+    }
+    didRenderCell(element) {
+        if (this._notebookEditor.hasModel()) {
+            const context = {
+                ui: true,
+                cell: element,
+                notebookEditor: this._notebookEditor,
+                $mid: 13
+            };
+            this.updateContext(context);
+        }
+        if (this._editor) {
+            const updateFocusModeForEditorEvent = () => {
+                if (this._editor && (this._editor.hasWidgetFocus() || (this.statusBarContainer.ownerDocument.activeElement && this.statusBarContainer.contains(this.statusBarContainer.ownerDocument.activeElement)))) {
+                    element.focusMode = CellFocusMode.Editor;
+                }
+                else {
+                    const currentMode = element.focusMode;
+                    if (currentMode === CellFocusMode.ChatInput) {
+                        element.focusMode = CellFocusMode.ChatInput;
+                    }
+                    else if (currentMode === CellFocusMode.Output && this._notebookEditor.hasWebviewFocus()) {
+                        element.focusMode = CellFocusMode.Output;
+                    }
+                    else {
+                        element.focusMode = CellFocusMode.Container;
+                    }
+                }
+            };
+            this.cellDisposables.add(this._editor.onDidFocusEditorWidget(() => {
+                updateFocusModeForEditorEvent();
+            }));
+            this.cellDisposables.add(this._editor.onDidBlurEditorWidget(() => {
+                if (this._notebookEditor.hasEditorFocus() &&
+                    !(this.statusBarContainer.ownerDocument.activeElement && this.statusBarContainer.contains(this.statusBarContainer.ownerDocument.activeElement))) {
+                    updateFocusModeForEditorEvent();
+                }
+            }));
+            this.cellDisposables.add(this.onDidClick(e => {
+                if (this.currentCell instanceof CodeCellViewModel && e.type !== 2 && this._editor) {
+                    const target = this._editor.getTargetAtClientPoint(e.event.clientX, e.event.clientY - this._notebookEditor.notebookOptions.computeEditorStatusbarHeight(this.currentCell.internalMetadata, this.currentCell.uri));
+                    if (target?.position) {
+                        this._editor.setPosition(target.position);
+                        this._editor.focus();
+                    }
+                }
+            }));
+        }
+    }
+    updateInternalLayoutNow(element) {
+        this._cellContainer.classList.toggle('cell-statusbar-hidden', this._notebookEditor.notebookOptions.computeEditorStatusbarHeight(element.internalMetadata, element.uri) === 0);
+        const layoutInfo = element.layoutInfo;
+        const width = layoutInfo.editorWidth;
+        if (!width) {
+            return;
+        }
+        this.width = width;
+        this.statusBarContainer.style.width = `${width}px`;
+        const maxItemWidth = this.getMaxItemWidth();
+        this.leftItems.forEach(item => item.maxWidth = maxItemWidth);
+        this.rightItems.forEach(item => item.maxWidth = maxItemWidth);
+    }
+    getMaxItemWidth() {
+        return this.width / 2;
+    }
+    updateContext(context) {
+        this.currentContext = context;
+        this.itemsDisposable.clear();
+        if (!this.currentContext) {
+            return;
+        }
+        this.itemsDisposable.add(this.currentContext.cell.onDidChangeLayout(() => {
+            if (this.currentContext) {
+                this.updateInternalLayoutNow(this.currentContext.cell);
+            }
+        }));
+        this.itemsDisposable.add(this.currentContext.cell.onDidChangeCellStatusBarItems(() => this.updateRenderedItems()));
+        this.itemsDisposable.add(this.currentContext.notebookEditor.onDidChangeActiveCell(() => this.updateActiveCell()));
+        this.updateInternalLayoutNow(this.currentContext.cell);
+        this.updateActiveCell();
+        this.updateRenderedItems();
+    }
+    updateActiveCell() {
+        const isActiveCell = this.currentContext.notebookEditor.getActiveCell() === this.currentContext?.cell;
+        this.statusBarContainer.classList.toggle('is-active-cell', isActiveCell);
+    }
+    updateRenderedItems() {
+        const items = this.currentContext.cell.getCellStatusBarItems();
+        items.sort((itemA, itemB) => {
+            return (itemB.priority ?? 0) - (itemA.priority ?? 0);
+        });
+        const maxItemWidth = this.getMaxItemWidth();
+        const newLeftItems = items.filter(item => item.alignment === 1);
+        const newRightItems = items.filter(item => item.alignment === 2).reverse();
+        const updateItems = (renderedItems, newItems, container) => {
+            if (renderedItems.length > newItems.length) {
+                const deleted = renderedItems.splice(newItems.length, renderedItems.length - newItems.length);
+                for (const deletedItem of deleted) {
+                    deletedItem.container.remove();
+                    deletedItem.dispose();
+                }
+            }
+            newItems.forEach((newLeftItem, i) => {
+                const existingItem = renderedItems[i];
+                if (existingItem) {
+                    existingItem.updateItem(newLeftItem, maxItemWidth);
+                }
+                else {
+                    const item = this._instantiationService.createInstance(CellStatusBarItem, this.currentContext, this.hoverDelegate, this._editor, newLeftItem, maxItemWidth);
+                    renderedItems.push(item);
+                    container.appendChild(item.container);
+                }
+            });
+        };
+        updateItems(this.leftItems, newLeftItems, this.leftItemsContainer);
+        updateItems(this.rightItems, newRightItems, this.rightItemsContainer);
+    }
+    dispose() {
+        super.dispose();
+        dispose(this.leftItems);
+        dispose(this.rightItems);
+    }
+};
+CellEditorStatusBar = __decorate([
+    __param(4, IInstantiationService),
+    __param(5, IHoverService),
+    __param(6, IConfigurationService),
+    __param(7, IThemeService),
+    __metadata("design:paramtypes", [Object, HTMLElement,
+        HTMLElement, Object, Object, Object, Object, Object])
+], CellEditorStatusBar);
+export { CellEditorStatusBar };
+let CellStatusBarItem = class CellStatusBarItem extends Disposable {
+    set maxWidth(v) {
+        this.container.style.maxWidth = v + 'px';
+    }
+    constructor(_context, _hoverDelegate, _editor, itemModel, maxWidth, _telemetryService, _commandService, _notificationService, _themeService, _hoverService) {
+        super();
+        this._context = _context;
+        this._hoverDelegate = _hoverDelegate;
+        this._editor = _editor;
+        this._telemetryService = _telemetryService;
+        this._commandService = _commandService;
+        this._notificationService = _notificationService;
+        this._themeService = _themeService;
+        this._hoverService = _hoverService;
+        this.container = $('.cell-status-item');
+        this._itemDisposables = this._register(new DisposableStore());
+        this.updateItem(itemModel, maxWidth);
+    }
+    updateItem(item, maxWidth) {
+        this._itemDisposables.clear();
+        if (!this._currentItem || this._currentItem.text !== item.text) {
+            this._itemDisposables.add(new SimpleIconLabel(this.container)).text = item.text.replace(/\n/g, ' ');
+        }
+        const resolveColor = (color) => {
+            return isThemeColor(color) ?
+                (this._themeService.getColorTheme().getColor(color.id)?.toString() || '') :
+                color;
+        };
+        this.container.style.color = item.color ? resolveColor(item.color) : '';
+        this.container.style.backgroundColor = item.backgroundColor ? resolveColor(item.backgroundColor) : '';
+        this.container.style.opacity = item.opacity ? item.opacity : '';
+        this.container.classList.toggle('cell-status-item-show-when-active', !!item.onlyShowWhenActive);
+        if (typeof maxWidth === 'number') {
+            this.maxWidth = maxWidth;
+        }
+        let ariaLabel;
+        let role;
+        if (item.accessibilityInformation) {
+            ariaLabel = item.accessibilityInformation.label;
+            role = item.accessibilityInformation.role;
+        }
+        else {
+            ariaLabel = item.text ? stripIcons(item.text).trim() : '';
+        }
+        this.container.setAttribute('aria-label', ariaLabel);
+        this.container.setAttribute('role', role || '');
+        if (item.tooltip) {
+            const hoverContent = typeof item.tooltip === 'string' ? item.tooltip : { markdown: item.tooltip, markdownNotSupportedFallback: undefined };
+            this._itemDisposables.add(this._hoverService.setupManagedHover(this._hoverDelegate, this.container, hoverContent));
+        }
+        this.container.classList.toggle('cell-status-item-has-command', !!item.command);
+        if (item.command) {
+            this.container.tabIndex = 0;
+            this._itemDisposables.add(DOM.addDisposableListener(this.container, DOM.EventType.CLICK, _e => {
+                this.executeCommand();
+            }));
+            this._itemDisposables.add(DOM.addDisposableListener(this.container, DOM.EventType.KEY_DOWN, e => {
+                const event = new StandardKeyboardEvent(e);
+                if (event.equals(10) || event.equals(3)) {
+                    this.executeCommand();
+                }
+            }));
+        }
+        else {
+            this.container.removeAttribute('tabIndex');
+        }
+        this._currentItem = item;
+    }
+    async executeCommand() {
+        const command = this._currentItem.command;
+        if (!command) {
+            return;
+        }
+        const id = typeof command === 'string' ? command : command.id;
+        const args = typeof command === 'string' ? [] : command.arguments ?? [];
+        if (typeof command === 'string' || !command.arguments || !Array.isArray(command.arguments) || command.arguments.length === 0) {
+            args.unshift(this._context);
+        }
+        this._telemetryService.publicLog2('workbenchActionExecuted', { id, from: 'cell status bar' });
+        try {
+            this._editor?.focus();
+            await this._commandService.executeCommand(id, ...args);
+        }
+        catch (error) {
+            this._notificationService.error(toErrorMessage(error));
+        }
+    }
+};
+CellStatusBarItem = __decorate([
+    __param(5, ITelemetryService),
+    __param(6, ICommandService),
+    __param(7, INotificationService),
+    __param(8, IThemeService),
+    __param(9, IHoverService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], CellStatusBarItem);

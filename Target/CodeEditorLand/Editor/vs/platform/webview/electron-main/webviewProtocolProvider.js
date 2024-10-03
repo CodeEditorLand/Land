@@ -1,1 +1,39 @@
-import{protocol as c}from"electron";import{Disposable as a}from"../../../base/common/lifecycle.js";import{COI as l,FileAccess as p,Schemas as h}from"../../../base/common/network.js";import{URI as v}from"../../../base/common/uri.js";class o extends a{static validWebviewFilePaths=new Map([["/index.html","index.html"],["/fake.html","fake.html"],["/service-worker.js","service-worker.js"]]);constructor(){super();const e=this.handleWebviewRequest.bind(this);c.registerFileProtocol(h.vscodeWebview,e)}handleWebviewRequest(e,r){try{const s=v.parse(e.url),t=o.validWebviewFilePaths.get(s.path);if(typeof t=="string"){const i=`vs/workbench/contrib/webview/browser/pre/${t}`,n=p.asFileUri(i);return r({path:n.fsPath,headers:{...l.getHeadersFromQuery(e.url),"Cross-Origin-Resource-Policy":"cross-origin"}})}else return r({error:-10})}catch{}return r({error:-2})}}export{o as WebviewProtocolProvider};
+import { protocol } from 'electron';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { COI, FileAccess, Schemas } from '../../../base/common/network.js';
+import { URI } from '../../../base/common/uri.js';
+export class WebviewProtocolProvider extends Disposable {
+    static { this.validWebviewFilePaths = new Map([
+        ['/index.html', 'index.html'],
+        ['/fake.html', 'fake.html'],
+        ['/service-worker.js', 'service-worker.js'],
+    ]); }
+    constructor() {
+        super();
+        const webviewHandler = this.handleWebviewRequest.bind(this);
+        protocol.registerFileProtocol(Schemas.vscodeWebview, webviewHandler);
+    }
+    handleWebviewRequest(request, callback) {
+        try {
+            const uri = URI.parse(request.url);
+            const entry = WebviewProtocolProvider.validWebviewFilePaths.get(uri.path);
+            if (typeof entry === 'string') {
+                const relativeResourcePath = `vs/workbench/contrib/webview/browser/pre/${entry}`;
+                const url = FileAccess.asFileUri(relativeResourcePath);
+                return callback({
+                    path: url.fsPath,
+                    headers: {
+                        ...COI.getHeadersFromQuery(request.url),
+                        'Cross-Origin-Resource-Policy': 'cross-origin'
+                    }
+                });
+            }
+            else {
+                return callback({ error: -10 });
+            }
+        }
+        catch {
+        }
+        return callback({ error: -2 });
+    }
+}

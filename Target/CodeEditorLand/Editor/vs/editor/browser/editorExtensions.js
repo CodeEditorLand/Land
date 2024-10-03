@@ -1,1 +1,432 @@
-import*as p from"../../nls.js";import{URI as D}from"../../base/common/uri.js";import"./editorBrowser.js";import{ICodeEditorService as x}from"./services/codeEditorService.js";import{Position as b}from"../common/core/position.js";import"../common/editorCommon.js";import"../common/model.js";import{IModelService as _}from"../common/services/model.js";import{ITextModelService as K}from"../common/services/resolverService.js";import{MenuId as m,MenuRegistry as N,Action2 as P}from"../../platform/actions/common/actions.js";import{CommandsRegistry as A}from"../../platform/commands/common/commands.js";import{ContextKeyExpr as S,IContextKeyService as g}from"../../platform/contextkey/common/contextkey.js";import{IInstantiationService as R}from"../../platform/instantiation/common/instantiation.js";import{KeybindingsRegistry as F,KeybindingWeight as I}from"../../platform/keybinding/common/keybindingsRegistry.js";import{Registry as z}from"../../platform/registry/common/platform.js";import{ITelemetryService as B}from"../../platform/telemetry/common/telemetry.js";import{assertType as O}from"../../base/common/types.js";import"../../base/common/themables.js";import"../../base/common/lifecycle.js";import{KeyMod as u,KeyCode as l}from"../../base/common/keyCodes.js";import{ILogService as M}from"../../platform/log/common/log.js";import{getActiveElement as U}from"../../base/browser/dom.js";var $=(o=>(o[o.Eager=0]="Eager",o[o.AfterFirstRender=1]="AfterFirstRender",o[o.BeforeFirstInteraction=2]="BeforeFirstInteraction",o[o.Eventually=3]="Eventually",o[o.Lazy=4]="Lazy",o))($||{});class h{id;precondition;_kbOpts;_menuOpts;metadata;constructor(t){this.id=t.id,this.precondition=t.precondition,this._kbOpts=t.kbOpts,this._menuOpts=t.menuOpts,this.metadata=t.metadata}register(){if(Array.isArray(this._menuOpts)?this._menuOpts.forEach(this._registerMenuItem,this):this._menuOpts&&this._registerMenuItem(this._menuOpts),this._kbOpts){const t=Array.isArray(this._kbOpts)?this._kbOpts:[this._kbOpts];for(const e of t){let i=e.kbExpr;this.precondition&&(i?i=S.and(i,this.precondition):i=this.precondition);const n={id:this.id,weight:e.weight,args:e.args,when:i,primary:e.primary,secondary:e.secondary,win:e.win,linux:e.linux,mac:e.mac};F.registerKeybindingRule(n)}}A.registerCommand({id:this.id,handler:(t,e)=>this.runCommand(t,e),metadata:this.metadata})}_registerMenuItem(t){N.appendMenuItem(t.menuId,{group:t.group,command:{id:this.id,title:t.title,icon:t.icon,precondition:this.precondition},when:t.when,order:t.order})}}class v extends h{_implementations=[];addImplementation(t,e,i,n){return this._implementations.push({priority:t,name:e,implementation:i,when:n}),this._implementations.sort((o,s)=>s.priority-o.priority),{dispose:()=>{for(let o=0;o<this._implementations.length;o++)if(this._implementations[o].implementation===i){this._implementations.splice(o,1);return}}}}runCommand(t,e){const i=t.get(M),n=t.get(g);i.trace(`Executing Command '${this.id}' which has ${this._implementations.length} bound.`);for(const o of this._implementations){if(o.when){const a=n.getContext(U());if(!o.when.evaluate(a))continue}const s=o.implementation(t,e);if(s)return i.trace(`Command '${this.id}' was handled by '${o.name}'.`),typeof s=="boolean"?void 0:s}i.trace(`The Command '${this.id}' was not handled by any implementation.`)}}class T extends h{constructor(e,i){super(i);this.command=e}runCommand(e,i){return this.command.runCommand(e,i)}}class f extends h{static bindToContribution(t){return class extends f{_callback;constructor(i){super(i),this._callback=i.handler}runEditorCommand(i,n,o){const s=t(n);s&&this._callback(s,o)}}}static runEditorCommand(t,e,i,n){const o=t.get(x),s=o.getFocusedCodeEditor()||o.getActiveCodeEditor();if(s)return s.invokeWithinContext(a=>{if(a.get(g).contextMatchesRules(i??void 0))return n(a,s,e)})}runCommand(t,e){return f.runEditorCommand(t,e,this.precondition,(i,n,o)=>this.runEditorCommand(i,n,o))}}class y extends f{static convertOptions(t){let e;Array.isArray(t.menuOpts)?e=t.menuOpts:t.menuOpts?e=[t.menuOpts]:e=[];function i(n){return n.menuId||(n.menuId=m.EditorContext),n.title||(n.title=t.label),n.when=S.and(t.precondition,n.when),n}return Array.isArray(t.contextMenuOpts)?e.push(...t.contextMenuOpts.map(i)):t.contextMenuOpts&&e.push(i(t.contextMenuOpts)),t.menuOpts=e,t}label;alias;constructor(t){super(y.convertOptions(t)),this.label=t.label,this.alias=t.alias}runEditorCommand(t,e,i){return this.reportTelemetry(t,e),this.run(t,e,i||{})}reportTelemetry(t,e){t.get(B).publicLog2("editorActionInvoked",{name:this.label,id:this.id})}}class Mt extends y{_implementations=[];addImplementation(t,e){return this._implementations.push([t,e]),this._implementations.sort((i,n)=>n[0]-i[0]),{dispose:()=>{for(let i=0;i<this._implementations.length;i++)if(this._implementations[i][1]===e){this._implementations.splice(i,1);return}}}}run(t,e,i){for(const n of this._implementations){const o=n[1](t,e,i);if(o)return typeof o=="boolean"?void 0:o}}}class Tt extends P{run(t,...e){const i=t.get(x),n=i.getFocusedCodeEditor()||i.getActiveCodeEditor();if(n)return n.invokeWithinContext(o=>{const s=o.get(g),a=o.get(M);if(!s.contextMatchesRules(this.desc.precondition??void 0)){a.debug("[EditorAction2] NOT running command because its precondition is FALSE",this.desc.id,this.desc.precondition?.serialize());return}return this.runEditorCommand(o,n,...e)})}}function wt(r,t){A.registerCommand(r,function(e,...i){const n=e.get(R),[o,s]=i;O(D.isUri(o)),O(b.isIPosition(s));const a=e.get(_).getModel(o);if(a){const c=b.lift(s);return n.invokeFunction(t,a,c,...i.slice(2))}return e.get(K).createModelReference(o).then(c=>new Promise((w,k)=>{try{const E=n.invokeFunction(t,c.object.textEditorModel,b.lift(s),i.slice(2));w(E)}catch(E){k(E)}}).finally(()=>{c.dispose()}))})}function kt(r){return d.INSTANCE.registerEditorCommand(r),r}function Dt(r){const t=new r;return d.INSTANCE.registerEditorAction(t),t}function _t(r){return d.INSTANCE.registerEditorAction(r),r}function Kt(r){d.INSTANCE.registerEditorAction(r)}function Nt(r,t,e){d.INSTANCE.registerEditorContribution(r,t,e)}function Pt(r,t){d.INSTANCE.registerDiffEditorContribution(r,t)}var L;(o=>{function r(s){return d.INSTANCE.getEditorCommand(s)}o.getEditorCommand=r;function t(){return d.INSTANCE.getEditorActions()}o.getEditorActions=t;function e(){return d.INSTANCE.getEditorContributions()}o.getEditorContributions=e;function i(s){return d.INSTANCE.getEditorContributions().filter(a=>s.indexOf(a.id)>=0)}o.getSomeEditorContributions=i;function n(){return d.INSTANCE.getDiffEditorContributions()}o.getDiffEditorContributions=n})(L||={});const W={EditorCommonContributions:"editor.contributions"};class d{static INSTANCE=new d;editorContributions=[];diffEditorContributions=[];editorActions=[];editorCommands=Object.create(null);constructor(){}registerEditorContribution(t,e,i){this.editorContributions.push({id:t,ctor:e,instantiation:i})}getEditorContributions(){return this.editorContributions.slice(0)}registerDiffEditorContribution(t,e){this.diffEditorContributions.push({id:t,ctor:e})}getDiffEditorContributions(){return this.diffEditorContributions.slice(0)}registerEditorAction(t){t.register(),this.editorActions.push(t)}getEditorActions(){return this.editorActions}registerEditorCommand(t){t.register(),this.editorCommands[t.id]=t}getEditorCommand(t){return this.editorCommands[t]||null}}z.add(W.EditorCommonContributions,d.INSTANCE);function C(r){return r.register(),r}const Z=C(new v({id:"undo",precondition:void 0,kbOpts:{weight:I.EditorCore,primary:u.CtrlCmd|l.KeyZ},menuOpts:[{menuId:m.MenubarEditMenu,group:"1_do",title:p.localize({key:"miUndo",comment:["&& denotes a mnemonic"]},"&&Undo"),order:1},{menuId:m.CommandPalette,group:"",title:p.localize("undo","Undo"),order:1}]}));C(new T(Z,{id:"default:undo",precondition:void 0}));const j=C(new v({id:"redo",precondition:void 0,kbOpts:{weight:I.EditorCore,primary:u.CtrlCmd|l.KeyY,secondary:[u.CtrlCmd|u.Shift|l.KeyZ],mac:{primary:u.CtrlCmd|u.Shift|l.KeyZ}},menuOpts:[{menuId:m.MenubarEditMenu,group:"1_do",title:p.localize({key:"miRedo",comment:["&& denotes a mnemonic"]},"&&Redo"),order:2},{menuId:m.CommandPalette,group:"",title:p.localize("redo","Redo"),order:1}]}));C(new T(j,{id:"default:redo",precondition:void 0}));const Rt=C(new v({id:"editor.action.selectAll",precondition:void 0,kbOpts:{weight:I.EditorCore,kbExpr:null,primary:u.CtrlCmd|l.KeyA},menuOpts:[{menuId:m.MenubarSelectionMenu,group:"1_basic",title:p.localize({key:"miSelectAll",comment:["&& denotes a mnemonic"]},"&&Select All"),order:1},{menuId:m.CommandPalette,group:"",title:p.localize("selectAll","Select All"),order:1}]}));export{h as Command,y as EditorAction,Tt as EditorAction2,f as EditorCommand,$ as EditorContributionInstantiation,L as EditorExtensionsRegistry,v as MultiCommand,Mt as MultiEditorAction,T as ProxyCommand,j as RedoCommand,Rt as SelectAllCommand,Z as UndoCommand,Pt as registerDiffEditorContribution,Dt as registerEditorAction,kt as registerEditorCommand,Nt as registerEditorContribution,Kt as registerInstantiatedEditorAction,wt as registerModelAndPositionCommand,_t as registerMultiEditorAction};
+import * as nls from '../../nls.js';
+import { URI } from '../../base/common/uri.js';
+import { ICodeEditorService } from './services/codeEditorService.js';
+import { Position } from '../common/core/position.js';
+import { IModelService } from '../common/services/model.js';
+import { ITextModelService } from '../common/services/resolverService.js';
+import { MenuId, MenuRegistry, Action2 } from '../../platform/actions/common/actions.js';
+import { CommandsRegistry } from '../../platform/commands/common/commands.js';
+import { ContextKeyExpr, IContextKeyService } from '../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../platform/instantiation/common/instantiation.js';
+import { KeybindingsRegistry } from '../../platform/keybinding/common/keybindingsRegistry.js';
+import { Registry } from '../../platform/registry/common/platform.js';
+import { ITelemetryService } from '../../platform/telemetry/common/telemetry.js';
+import { assertType } from '../../base/common/types.js';
+import { ILogService } from '../../platform/log/common/log.js';
+import { getActiveElement } from '../../base/browser/dom.js';
+export class Command {
+    constructor(opts) {
+        this.id = opts.id;
+        this.precondition = opts.precondition;
+        this._kbOpts = opts.kbOpts;
+        this._menuOpts = opts.menuOpts;
+        this.metadata = opts.metadata;
+    }
+    register() {
+        if (Array.isArray(this._menuOpts)) {
+            this._menuOpts.forEach(this._registerMenuItem, this);
+        }
+        else if (this._menuOpts) {
+            this._registerMenuItem(this._menuOpts);
+        }
+        if (this._kbOpts) {
+            const kbOptsArr = Array.isArray(this._kbOpts) ? this._kbOpts : [this._kbOpts];
+            for (const kbOpts of kbOptsArr) {
+                let kbWhen = kbOpts.kbExpr;
+                if (this.precondition) {
+                    if (kbWhen) {
+                        kbWhen = ContextKeyExpr.and(kbWhen, this.precondition);
+                    }
+                    else {
+                        kbWhen = this.precondition;
+                    }
+                }
+                const desc = {
+                    id: this.id,
+                    weight: kbOpts.weight,
+                    args: kbOpts.args,
+                    when: kbWhen,
+                    primary: kbOpts.primary,
+                    secondary: kbOpts.secondary,
+                    win: kbOpts.win,
+                    linux: kbOpts.linux,
+                    mac: kbOpts.mac,
+                };
+                KeybindingsRegistry.registerKeybindingRule(desc);
+            }
+        }
+        CommandsRegistry.registerCommand({
+            id: this.id,
+            handler: (accessor, args) => this.runCommand(accessor, args),
+            metadata: this.metadata
+        });
+    }
+    _registerMenuItem(item) {
+        MenuRegistry.appendMenuItem(item.menuId, {
+            group: item.group,
+            command: {
+                id: this.id,
+                title: item.title,
+                icon: item.icon,
+                precondition: this.precondition
+            },
+            when: item.when,
+            order: item.order
+        });
+    }
+}
+export class MultiCommand extends Command {
+    constructor() {
+        super(...arguments);
+        this._implementations = [];
+    }
+    addImplementation(priority, name, implementation, when) {
+        this._implementations.push({ priority, name, implementation, when });
+        this._implementations.sort((a, b) => b.priority - a.priority);
+        return {
+            dispose: () => {
+                for (let i = 0; i < this._implementations.length; i++) {
+                    if (this._implementations[i].implementation === implementation) {
+                        this._implementations.splice(i, 1);
+                        return;
+                    }
+                }
+            }
+        };
+    }
+    runCommand(accessor, args) {
+        const logService = accessor.get(ILogService);
+        const contextKeyService = accessor.get(IContextKeyService);
+        logService.trace(`Executing Command '${this.id}' which has ${this._implementations.length} bound.`);
+        for (const impl of this._implementations) {
+            if (impl.when) {
+                const context = contextKeyService.getContext(getActiveElement());
+                const value = impl.when.evaluate(context);
+                if (!value) {
+                    continue;
+                }
+            }
+            const result = impl.implementation(accessor, args);
+            if (result) {
+                logService.trace(`Command '${this.id}' was handled by '${impl.name}'.`);
+                if (typeof result === 'boolean') {
+                    return;
+                }
+                return result;
+            }
+        }
+        logService.trace(`The Command '${this.id}' was not handled by any implementation.`);
+    }
+}
+export class ProxyCommand extends Command {
+    constructor(command, opts) {
+        super(opts);
+        this.command = command;
+    }
+    runCommand(accessor, args) {
+        return this.command.runCommand(accessor, args);
+    }
+}
+export class EditorCommand extends Command {
+    static bindToContribution(controllerGetter) {
+        return class EditorControllerCommandImpl extends EditorCommand {
+            constructor(opts) {
+                super(opts);
+                this._callback = opts.handler;
+            }
+            runEditorCommand(accessor, editor, args) {
+                const controller = controllerGetter(editor);
+                if (controller) {
+                    this._callback(controller, args);
+                }
+            }
+        };
+    }
+    static runEditorCommand(accessor, args, precondition, runner) {
+        const codeEditorService = accessor.get(ICodeEditorService);
+        const editor = codeEditorService.getFocusedCodeEditor() || codeEditorService.getActiveCodeEditor();
+        if (!editor) {
+            return;
+        }
+        return editor.invokeWithinContext((editorAccessor) => {
+            const kbService = editorAccessor.get(IContextKeyService);
+            if (!kbService.contextMatchesRules(precondition ?? undefined)) {
+                return;
+            }
+            return runner(editorAccessor, editor, args);
+        });
+    }
+    runCommand(accessor, args) {
+        return EditorCommand.runEditorCommand(accessor, args, this.precondition, (accessor, editor, args) => this.runEditorCommand(accessor, editor, args));
+    }
+}
+export class EditorAction extends EditorCommand {
+    static convertOptions(opts) {
+        let menuOpts;
+        if (Array.isArray(opts.menuOpts)) {
+            menuOpts = opts.menuOpts;
+        }
+        else if (opts.menuOpts) {
+            menuOpts = [opts.menuOpts];
+        }
+        else {
+            menuOpts = [];
+        }
+        function withDefaults(item) {
+            if (!item.menuId) {
+                item.menuId = MenuId.EditorContext;
+            }
+            if (!item.title) {
+                item.title = opts.label;
+            }
+            item.when = ContextKeyExpr.and(opts.precondition, item.when);
+            return item;
+        }
+        if (Array.isArray(opts.contextMenuOpts)) {
+            menuOpts.push(...opts.contextMenuOpts.map(withDefaults));
+        }
+        else if (opts.contextMenuOpts) {
+            menuOpts.push(withDefaults(opts.contextMenuOpts));
+        }
+        opts.menuOpts = menuOpts;
+        return opts;
+    }
+    constructor(opts) {
+        super(EditorAction.convertOptions(opts));
+        this.label = opts.label;
+        this.alias = opts.alias;
+    }
+    runEditorCommand(accessor, editor, args) {
+        this.reportTelemetry(accessor, editor);
+        return this.run(accessor, editor, args || {});
+    }
+    reportTelemetry(accessor, editor) {
+        accessor.get(ITelemetryService).publicLog2('editorActionInvoked', { name: this.label, id: this.id });
+    }
+}
+export class MultiEditorAction extends EditorAction {
+    constructor() {
+        super(...arguments);
+        this._implementations = [];
+    }
+    addImplementation(priority, implementation) {
+        this._implementations.push([priority, implementation]);
+        this._implementations.sort((a, b) => b[0] - a[0]);
+        return {
+            dispose: () => {
+                for (let i = 0; i < this._implementations.length; i++) {
+                    if (this._implementations[i][1] === implementation) {
+                        this._implementations.splice(i, 1);
+                        return;
+                    }
+                }
+            }
+        };
+    }
+    run(accessor, editor, args) {
+        for (const impl of this._implementations) {
+            const result = impl[1](accessor, editor, args);
+            if (result) {
+                if (typeof result === 'boolean') {
+                    return;
+                }
+                return result;
+            }
+        }
+    }
+}
+export class EditorAction2 extends Action2 {
+    run(accessor, ...args) {
+        const codeEditorService = accessor.get(ICodeEditorService);
+        const editor = codeEditorService.getFocusedCodeEditor() || codeEditorService.getActiveCodeEditor();
+        if (!editor) {
+            return;
+        }
+        return editor.invokeWithinContext((editorAccessor) => {
+            const kbService = editorAccessor.get(IContextKeyService);
+            const logService = editorAccessor.get(ILogService);
+            const enabled = kbService.contextMatchesRules(this.desc.precondition ?? undefined);
+            if (!enabled) {
+                logService.debug(`[EditorAction2] NOT running command because its precondition is FALSE`, this.desc.id, this.desc.precondition?.serialize());
+                return;
+            }
+            return this.runEditorCommand(editorAccessor, editor, ...args);
+        });
+    }
+}
+export function registerModelAndPositionCommand(id, handler) {
+    CommandsRegistry.registerCommand(id, function (accessor, ...args) {
+        const instaService = accessor.get(IInstantiationService);
+        const [resource, position] = args;
+        assertType(URI.isUri(resource));
+        assertType(Position.isIPosition(position));
+        const model = accessor.get(IModelService).getModel(resource);
+        if (model) {
+            const editorPosition = Position.lift(position);
+            return instaService.invokeFunction(handler, model, editorPosition, ...args.slice(2));
+        }
+        return accessor.get(ITextModelService).createModelReference(resource).then(reference => {
+            return new Promise((resolve, reject) => {
+                try {
+                    const result = instaService.invokeFunction(handler, reference.object.textEditorModel, Position.lift(position), args.slice(2));
+                    resolve(result);
+                }
+                catch (err) {
+                    reject(err);
+                }
+            }).finally(() => {
+                reference.dispose();
+            });
+        });
+    });
+}
+export function registerEditorCommand(editorCommand) {
+    EditorContributionRegistry.INSTANCE.registerEditorCommand(editorCommand);
+    return editorCommand;
+}
+export function registerEditorAction(ctor) {
+    const action = new ctor();
+    EditorContributionRegistry.INSTANCE.registerEditorAction(action);
+    return action;
+}
+export function registerMultiEditorAction(action) {
+    EditorContributionRegistry.INSTANCE.registerEditorAction(action);
+    return action;
+}
+export function registerInstantiatedEditorAction(editorAction) {
+    EditorContributionRegistry.INSTANCE.registerEditorAction(editorAction);
+}
+export function registerEditorContribution(id, ctor, instantiation) {
+    EditorContributionRegistry.INSTANCE.registerEditorContribution(id, ctor, instantiation);
+}
+export function registerDiffEditorContribution(id, ctor) {
+    EditorContributionRegistry.INSTANCE.registerDiffEditorContribution(id, ctor);
+}
+export var EditorExtensionsRegistry;
+(function (EditorExtensionsRegistry) {
+    function getEditorCommand(commandId) {
+        return EditorContributionRegistry.INSTANCE.getEditorCommand(commandId);
+    }
+    EditorExtensionsRegistry.getEditorCommand = getEditorCommand;
+    function getEditorActions() {
+        return EditorContributionRegistry.INSTANCE.getEditorActions();
+    }
+    EditorExtensionsRegistry.getEditorActions = getEditorActions;
+    function getEditorContributions() {
+        return EditorContributionRegistry.INSTANCE.getEditorContributions();
+    }
+    EditorExtensionsRegistry.getEditorContributions = getEditorContributions;
+    function getSomeEditorContributions(ids) {
+        return EditorContributionRegistry.INSTANCE.getEditorContributions().filter(c => ids.indexOf(c.id) >= 0);
+    }
+    EditorExtensionsRegistry.getSomeEditorContributions = getSomeEditorContributions;
+    function getDiffEditorContributions() {
+        return EditorContributionRegistry.INSTANCE.getDiffEditorContributions();
+    }
+    EditorExtensionsRegistry.getDiffEditorContributions = getDiffEditorContributions;
+})(EditorExtensionsRegistry || (EditorExtensionsRegistry = {}));
+const Extensions = {
+    EditorCommonContributions: 'editor.contributions'
+};
+class EditorContributionRegistry {
+    static { this.INSTANCE = new EditorContributionRegistry(); }
+    constructor() {
+        this.editorContributions = [];
+        this.diffEditorContributions = [];
+        this.editorActions = [];
+        this.editorCommands = Object.create(null);
+    }
+    registerEditorContribution(id, ctor, instantiation) {
+        this.editorContributions.push({ id, ctor: ctor, instantiation });
+    }
+    getEditorContributions() {
+        return this.editorContributions.slice(0);
+    }
+    registerDiffEditorContribution(id, ctor) {
+        this.diffEditorContributions.push({ id, ctor: ctor });
+    }
+    getDiffEditorContributions() {
+        return this.diffEditorContributions.slice(0);
+    }
+    registerEditorAction(action) {
+        action.register();
+        this.editorActions.push(action);
+    }
+    getEditorActions() {
+        return this.editorActions;
+    }
+    registerEditorCommand(editorCommand) {
+        editorCommand.register();
+        this.editorCommands[editorCommand.id] = editorCommand;
+    }
+    getEditorCommand(commandId) {
+        return (this.editorCommands[commandId] || null);
+    }
+}
+Registry.add(Extensions.EditorCommonContributions, EditorContributionRegistry.INSTANCE);
+function registerCommand(command) {
+    command.register();
+    return command;
+}
+export const UndoCommand = registerCommand(new MultiCommand({
+    id: 'undo',
+    precondition: undefined,
+    kbOpts: {
+        weight: 0,
+        primary: 2048 | 56
+    },
+    menuOpts: [{
+            menuId: MenuId.MenubarEditMenu,
+            group: '1_do',
+            title: nls.localize({ key: 'miUndo', comment: ['&& denotes a mnemonic'] }, "&&Undo"),
+            order: 1
+        }, {
+            menuId: MenuId.CommandPalette,
+            group: '',
+            title: nls.localize('undo', "Undo"),
+            order: 1
+        }]
+}));
+registerCommand(new ProxyCommand(UndoCommand, { id: 'default:undo', precondition: undefined }));
+export const RedoCommand = registerCommand(new MultiCommand({
+    id: 'redo',
+    precondition: undefined,
+    kbOpts: {
+        weight: 0,
+        primary: 2048 | 55,
+        secondary: [2048 | 1024 | 56],
+        mac: { primary: 2048 | 1024 | 56 }
+    },
+    menuOpts: [{
+            menuId: MenuId.MenubarEditMenu,
+            group: '1_do',
+            title: nls.localize({ key: 'miRedo', comment: ['&& denotes a mnemonic'] }, "&&Redo"),
+            order: 2
+        }, {
+            menuId: MenuId.CommandPalette,
+            group: '',
+            title: nls.localize('redo', "Redo"),
+            order: 1
+        }]
+}));
+registerCommand(new ProxyCommand(RedoCommand, { id: 'default:redo', precondition: undefined }));
+export const SelectAllCommand = registerCommand(new MultiCommand({
+    id: 'editor.action.selectAll',
+    precondition: undefined,
+    kbOpts: {
+        weight: 0,
+        kbExpr: null,
+        primary: 2048 | 31
+    },
+    menuOpts: [{
+            menuId: MenuId.MenubarSelectionMenu,
+            group: '1_basic',
+            title: nls.localize({ key: 'miSelectAll', comment: ['&& denotes a mnemonic'] }, "&&Select All"),
+            order: 1
+        }, {
+            menuId: MenuId.CommandPalette,
+            group: '',
+            title: nls.localize('selectAll', "Select All"),
+            order: 1
+        }]
+}));

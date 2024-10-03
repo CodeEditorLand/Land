@@ -1,1 +1,131 @@
-var a=(t=>(t.Delimiter="\0",t))(a||{}),c=(e=>(e[e.IsSame=0]="IsSame",e[e.Disconnected=1]="Disconnected",e[e.IsChild=2]="IsChild",e[e.IsParent=3]="IsParent",e))(c||{});class r{constructor(t,i=t.length){this.path=t;this.viewEnd=i;if(t.length===0||i<1)throw new Error("cannot create test with empty path")}stringifed;static fromExtHostTestItem(t,i,n=t.parent){if(t._isRoot)return new r([i]);const e=[t.id];for(let s=n;s&&s.id!==i;s=s.parent)e.push(s.id);return e.push(i),new r(e.reverse())}static isRoot(t){return!t.includes("\0")}static root(t){const i=t.indexOf("\0");return i===-1?t:t.slice(0,i)}static fromString(t){return new r(t.split("\0"))}static join(t,i){return new r([...t.path,i])}static joinToString(t,i){return t.toString()+"\0"+i}static parentId(t){const i=t.lastIndexOf("\0");return i===-1?void 0:t.slice(0,i)}static localId(t){const i=t.lastIndexOf("\0");return i===-1?t:t.slice(i+1)}static isChild(t,i){return i[t.length]==="\0"&&i.startsWith(t)}static compare(t,i){return t===i?0:r.isChild(t,i)?2:r.isChild(i,t)?3:1}static getLengthOfCommonPrefix(t,i){if(t===0)return 0;let n=0;for(;n<t-1;){for(let e=1;e<t;e++){const s=i(e-1),l=i(e);if(s.path[n]!==l.path[n])return n}n++}return n}get rootId(){return new r(this.path,1)}get parentId(){return this.viewEnd>1?new r(this.path,this.viewEnd-1):void 0}get localId(){return this.path[this.viewEnd-1]}get controllerId(){return this.path[0]}get isRoot(){return this.viewEnd===1}*idsFromRoot(){for(let t=1;t<=this.viewEnd;t++)yield new r(this.path,t)}*idsToRoot(){for(let t=this.viewEnd;t>0;t--)yield new r(this.path,t)}compare(t){if(typeof t=="string")return r.compare(this.toString(),t);for(let i=0;i<t.viewEnd&&i<this.viewEnd;i++)if(t.path[i]!==this.path[i])return 1;return t.viewEnd>this.viewEnd?2:t.viewEnd<this.viewEnd?3:0}toJSON(){return this.toString()}toString(){if(!this.stringifed){this.stringifed=this.path[0];for(let t=1;t<this.viewEnd;t++)this.stringifed+="\0",this.stringifed+=this.path[t]}return this.stringifed}}export{r as TestId,a as TestIdPathParts,c as TestPosition};
+export class TestId {
+    static fromExtHostTestItem(item, rootId, parent = item.parent) {
+        if (item._isRoot) {
+            return new TestId([rootId]);
+        }
+        const path = [item.id];
+        for (let i = parent; i && i.id !== rootId; i = i.parent) {
+            path.push(i.id);
+        }
+        path.push(rootId);
+        return new TestId(path.reverse());
+    }
+    static isRoot(idString) {
+        return !idString.includes("\0");
+    }
+    static root(idString) {
+        const idx = idString.indexOf("\0");
+        return idx === -1 ? idString : idString.slice(0, idx);
+    }
+    static fromString(idString) {
+        return new TestId(idString.split("\0"));
+    }
+    static join(base, b) {
+        return new TestId([...base.path, b]);
+    }
+    static joinToString(base, b) {
+        return base.toString() + "\0" + b;
+    }
+    static parentId(idString) {
+        const idx = idString.lastIndexOf("\0");
+        return idx === -1 ? undefined : idString.slice(0, idx);
+    }
+    static localId(idString) {
+        const idx = idString.lastIndexOf("\0");
+        return idx === -1 ? idString : idString.slice(idx + "\0".length);
+    }
+    static isChild(maybeParent, maybeChild) {
+        return maybeChild[maybeParent.length] === "\0" && maybeChild.startsWith(maybeParent);
+    }
+    static compare(a, b) {
+        if (a === b) {
+            return 0;
+        }
+        if (TestId.isChild(a, b)) {
+            return 2;
+        }
+        if (TestId.isChild(b, a)) {
+            return 3;
+        }
+        return 1;
+    }
+    static getLengthOfCommonPrefix(length, getId) {
+        if (length === 0) {
+            return 0;
+        }
+        let commonPrefix = 0;
+        while (commonPrefix < length - 1) {
+            for (let i = 1; i < length; i++) {
+                const a = getId(i - 1);
+                const b = getId(i);
+                if (a.path[commonPrefix] !== b.path[commonPrefix]) {
+                    return commonPrefix;
+                }
+            }
+            commonPrefix++;
+        }
+        return commonPrefix;
+    }
+    constructor(path, viewEnd = path.length) {
+        this.path = path;
+        this.viewEnd = viewEnd;
+        if (path.length === 0 || viewEnd < 1) {
+            throw new Error('cannot create test with empty path');
+        }
+    }
+    get rootId() {
+        return new TestId(this.path, 1);
+    }
+    get parentId() {
+        return this.viewEnd > 1 ? new TestId(this.path, this.viewEnd - 1) : undefined;
+    }
+    get localId() {
+        return this.path[this.viewEnd - 1];
+    }
+    get controllerId() {
+        return this.path[0];
+    }
+    get isRoot() {
+        return this.viewEnd === 1;
+    }
+    *idsFromRoot() {
+        for (let i = 1; i <= this.viewEnd; i++) {
+            yield new TestId(this.path, i);
+        }
+    }
+    *idsToRoot() {
+        for (let i = this.viewEnd; i > 0; i--) {
+            yield new TestId(this.path, i);
+        }
+    }
+    compare(other) {
+        if (typeof other === 'string') {
+            return TestId.compare(this.toString(), other);
+        }
+        for (let i = 0; i < other.viewEnd && i < this.viewEnd; i++) {
+            if (other.path[i] !== this.path[i]) {
+                return 1;
+            }
+        }
+        if (other.viewEnd > this.viewEnd) {
+            return 2;
+        }
+        if (other.viewEnd < this.viewEnd) {
+            return 3;
+        }
+        return 0;
+    }
+    toJSON() {
+        return this.toString();
+    }
+    toString() {
+        if (!this.stringifed) {
+            this.stringifed = this.path[0];
+            for (let i = 1; i < this.viewEnd; i++) {
+                this.stringifed += "\0";
+                this.stringifed += this.path[i];
+            }
+        }
+        return this.stringifed;
+    }
+}

@@ -1,1 +1,444 @@
-import"../../../../../base/common/cancellation.js";import"../../../../../base/common/diff/diff.js";import{Emitter as D}from"../../../../../base/common/event.js";import{Disposable as S,DisposableStore as x,dispose as M}from"../../../../../base/common/lifecycle.js";import{Schemas as p}from"../../../../../base/common/network.js";import"../../../../../editor/common/config/fontInfo.js";import"../../../../../platform/configuration/common/configuration.js";import{MultiDiffEditorItem as _}from"../../../multiDiffEditor/browser/multiDiffSourceResolverService.js";import{DiffElementPlaceholderViewModel as N,NotebookDocumentMetadataViewModel as O,SideBySideDiffElementViewModel as w,SingleSideDiffElementViewModel as E}from"./diffElementViewModel.js";import"./eventDispatcher.js";import{NOTEBOOK_DIFF_ITEM_DIFF_STATE as b,NOTEBOOK_DIFF_ITEM_KIND as k}from"./notebookDiffEditorBrowser.js";import"../../common/model/notebookTextModel.js";import{CellUri as g}from"../../common/notebookCommon.js";import"../../common/notebookService.js";import"../../common/services/notebookWorkerService.js";import"./editorHeightCalculator.js";import{raceCancellation as v}from"../../../../../base/common/async.js";class me extends S{constructor(t,o,e,i,n,l,r,a){super();this.model=t;this.notebookEditorWorkerService=o;this.configurationService=e;this.eventDispatcher=i;this.notebookService=n;this.diffEditorHeightCalculator=l;this.fontInfo=r;this.excludeUnchangedPlaceholder=a;this.hideOutput=this.model.modified.notebook.transientOptions.transientOutputs||this.configurationService.getValue("notebook.diff.ignoreOutputs"),this.ignoreMetadata=this.configurationService.getValue("notebook.diff.ignoreMetadata"),this._register(this.configurationService.onDidChangeConfiguration(h=>{let u=!1,f=!1;if(h.affectsConfiguration("notebook.diff.ignoreMetadata")){const c=this.configurationService.getValue("notebook.diff.ignoreMetadata");c!==void 0&&this.ignoreMetadata!==c&&(this.ignoreMetadata=c,u=!0,f=!0)}if(h.affectsConfiguration("notebook.diff.ignoreOutputs")){const c=this.configurationService.getValue("notebook.diff.ignoreOutputs");c!==void 0&&this.hideOutput!==(c||this.model.modified.notebook.transientOptions.transientOutputs)&&(this.hideOutput=c||!!this.model.modified.notebook.transientOptions.transientOutputs,u=!0)}f&&this.toggleNotebookMetadata(),u&&this._onDidChange.fire()}))}placeholderAndRelatedCells=new Map;_items=[];get items(){return this._items}_onDidChangeItems=this._register(new D);onDidChangeItems=this._onDidChangeItems.event;disposables=this._register(new x);_onDidChange=this._register(new D);diffEditorItems=[];onDidChange=this._onDidChange.event;notebookMetadataViewModel;get value(){return this.diffEditorItems.filter(t=>t.type!=="placeholder").filter(t=>this._includeUnchanged?!0:t instanceof I||t instanceof m||t instanceof C?!(t.type==="unchanged"&&t.containerType==="unchanged"):!0).filter(t=>t instanceof C?!this.hideOutput:!0).filter(t=>t instanceof m?!this.ignoreMetadata:!0)}_hasUnchangedCells;get hasUnchangedCells(){return this._hasUnchangedCells===!0}_includeUnchanged;get includeUnchanged(){return this._includeUnchanged===!0}set includeUnchanged(t){this._includeUnchanged=t,this._onDidChange.fire()}hideOutput;ignoreMetadata;originalCellViewModels=[];dispose(){this.clear(),super.dispose()}clear(){this.disposables.clear(),M(Array.from(this.placeholderAndRelatedCells.keys())),this.placeholderAndRelatedCells.clear(),M(this.originalCellViewModels),this.originalCellViewModels=[],M(this._items),this._items.splice(0,this._items.length)}async computeDiff(t){const o=await v(this.notebookEditorWorkerService.computeDiff(this.model.original.resource,this.model.modified.resource),t);if(!o||t.isCancellationRequested)return;U(this.model,o.cellsDiff);const{cellDiffInfo:e,firstChangeIndex:i}=R(this.model,o);if(!H(e,this.originalCellViewModels,this.model)){if(await v(this.updateViewModels(e,o.metadataChanged,i),t),t.isCancellationRequested)return;this.updateDiffEditorItems()}}toggleNotebookMetadata(){this.notebookMetadataViewModel&&(this.ignoreMetadata?this._items.length&&this._items[0]===this.notebookMetadataViewModel&&(this._items.splice(0,1),this._onDidChangeItems.fire({start:0,deleteCount:1,elements:[]})):(!this._items.length||this._items[0]!==this.notebookMetadataViewModel)&&(this._items.splice(0,0,this.notebookMetadataViewModel),this._onDidChangeItems.fire({start:0,deleteCount:0,elements:[this.notebookMetadataViewModel]})))}updateDiffEditorItems(){this.diffEditorItems=[];const t=this.model.original.resource,o=this.model.modified.resource;this._hasUnchangedCells=!1,this.items.forEach(e=>{switch(e.type){case"delete":{this.diffEditorItems.push(new I(e.original.uri,void 0,e.type,e.type));const i=g.generateCellPropertyUri(t,e.original.handle,p.vscodeNotebookCellMetadata);this.diffEditorItems.push(new m(i,void 0,e.type,e.type));const n=g.generateCellPropertyUri(t,e.original.handle,p.vscodeNotebookCellOutput);this.diffEditorItems.push(new C(n,void 0,e.type,e.type));break}case"insert":{this.diffEditorItems.push(new I(void 0,e.modified.uri,e.type,e.type));const i=g.generateCellPropertyUri(o,e.modified.handle,p.vscodeNotebookCellMetadata);this.diffEditorItems.push(new m(void 0,i,e.type,e.type));const n=g.generateCellPropertyUri(o,e.modified.handle,p.vscodeNotebookCellOutput);this.diffEditorItems.push(new C(void 0,n,e.type,e.type));break}case"modified":{const i=e.checkIfInputModified()?e.type:"unchanged",n=e.checkIfInputModified()||e.checkMetadataIfModified()||e.checkIfOutputsModified()?e.type:"unchanged";this.diffEditorItems.push(new I(e.original.uri,e.modified.uri,i,n));const l=g.generateCellPropertyUri(t,e.original.handle,p.vscodeNotebookCellMetadata),r=g.generateCellPropertyUri(o,e.modified.handle,p.vscodeNotebookCellMetadata);this.diffEditorItems.push(new m(l,r,e.checkMetadataIfModified()?e.type:"unchanged",n));const a=g.generateCellPropertyUri(t,e.original.handle,p.vscodeNotebookCellOutput),h=g.generateCellPropertyUri(o,e.modified.handle,p.vscodeNotebookCellOutput);this.diffEditorItems.push(new C(a,h,e.checkIfOutputsModified()?e.type:"unchanged",n));break}case"unchanged":{this._hasUnchangedCells=!0,this.diffEditorItems.push(new I(e.original.uri,e.modified.uri,e.type,e.type));const i=g.generateCellPropertyUri(t,e.original.handle,p.vscodeNotebookCellMetadata),n=g.generateCellPropertyUri(o,e.modified.handle,p.vscodeNotebookCellMetadata);this.diffEditorItems.push(new m(i,n,e.type,e.type));const l=g.generateCellPropertyUri(t,e.original.handle,p.vscodeNotebookCellOutput),r=g.generateCellPropertyUri(o,e.modified.handle,p.vscodeNotebookCellOutput);this.diffEditorItems.push(new C(l,r,e.type,e.type));break}}}),this._onDidChange.fire()}async updateViewModels(t,o,e){const i=await this.createDiffViewModels(t,o),n=this._items.length;this.clear(),this._items.splice(0,n);let l;this.originalCellViewModels=i,i.forEach((r,a)=>{if(r.type==="unchanged"&&!this.excludeUnchangedPlaceholder){if(!l){r.displayIconToHideUnmodifiedCells=!0,l=new N(r.mainDocumentTextModel,r.editorEventDispatcher,r.initData),this._items.push(l);const u=l;this.disposables.add(u.onUnfoldHiddenCells(()=>{const f=this.placeholderAndRelatedCells.get(u);if(!Array.isArray(f))return;const c=this._items.indexOf(u);this._items.splice(c,1,...f),this._onDidChangeItems.fire({start:c,deleteCount:1,elements:f})})),this.disposables.add(r.onHideUnchangedCells(()=>{const f=this.placeholderAndRelatedCells.get(u);if(!Array.isArray(f))return;const c=this._items.indexOf(r);this._items.splice(c,f.length,u),this._onDidChangeItems.fire({start:c,deleteCount:f.length,elements:[u]})}))}const h=this.placeholderAndRelatedCells.get(l)||[];h.push(r),this.placeholderAndRelatedCells.set(l,h),l.hiddenCells.push(r)}else l=void 0,this._items.push(r)}),this._onDidChangeItems.fire({start:0,deleteCount:n,elements:this._items,firstChangeIndex:e})}async createDiffViewModels(t,o){const e=this.model.original.notebook,i=this.model.modified.notebook,n={metadataStatusHeight:this.configurationService.getValue("notebook.diff.ignoreMetadata")?0:25,outputStatusHeight:this.configurationService.getValue("notebook.diff.ignoreOutputs")||i.transientOptions.transientOutputs?0:25,fontInfo:this.fontInfo},l=[];return this.notebookMetadataViewModel=this._register(new O(this.model.original.notebook,this.model.modified.notebook,o?"modifiedMetadata":"unchangedMetadata",this.eventDispatcher,n,this.notebookService,this.diffEditorHeightCalculator)),this.ignoreMetadata||(o&&await this.notebookMetadataViewModel.computeHeights(),l.push(this.notebookMetadataViewModel)),(await Promise.all(t.map(async a=>{switch(a.type){case"delete":return new E(e,i,e.cells[a.originalCellIndex],void 0,"delete",this.eventDispatcher,n,this.notebookService,this.configurationService,this.diffEditorHeightCalculator,a.originalCellIndex);case"insert":return new E(i,e,void 0,i.cells[a.modifiedCellIndex],"insert",this.eventDispatcher,n,this.notebookService,this.configurationService,this.diffEditorHeightCalculator,a.modifiedCellIndex);case"modified":{const h=new w(this.model.modified.notebook,this.model.original.notebook,e.cells[a.originalCellIndex],i.cells[a.modifiedCellIndex],"modified",this.eventDispatcher,n,this.notebookService,this.configurationService,a.originalCellIndex,this.diffEditorHeightCalculator);return await h.computeEditorHeights(),h}case"unchanged":return new w(this.model.modified.notebook,this.model.original.notebook,e.cells[a.originalCellIndex],i.cells[a.modifiedCellIndex],"unchanged",this.eventDispatcher,n,this.notebookService,this.configurationService,a.originalCellIndex,this.diffEditorHeightCalculator)}}))).forEach(a=>l.push(a)),l}}function U(d,s){const t=s.changes;for(let o=0;o<s.changes.length-1;o++){const e=t[o],i=t[o+1],n=e.originalStart,l=e.modifiedStart;e.originalLength===1&&e.modifiedLength===0&&i.originalStart===n+2&&i.originalLength===0&&i.modifiedStart===l+1&&i.modifiedLength===1&&d.original.notebook.cells[n].getHashValue()===d.modified.notebook.cells[l+1].getHashValue()&&d.original.notebook.cells[n+1].getHashValue()===d.modified.notebook.cells[l].getHashValue()&&(e.originalStart=n,e.originalLength=0,e.modifiedStart=l,e.modifiedLength=1,i.originalStart=n+1,i.originalLength=1,i.modifiedStart=l+2,i.modifiedLength=0,o++)}}function R(d,s){const t=s.cellsDiff.changes,o=[],e=d.original.notebook,i=d.modified.notebook;let n=0,l=0,r=-1;for(let a=0;a<t.length;a++){const h=t[a];for(let f=0;f<h.originalStart-n;f++){const c=e.cells[n+f],V=i.cells[l+f];c.getHashValue()===V.getHashValue()?o.push({originalCellIndex:n+f,modifiedCellIndex:l+f,type:"unchanged"}):(r===-1&&(r=o.length),o.push({originalCellIndex:n+f,modifiedCellIndex:l+f,type:"modified"}))}const u=B(h,e,i);u.length&&r===-1&&(r=o.length),o.push(...u),n=h.originalStart+h.originalLength,l=h.modifiedStart+h.modifiedLength}for(let a=n;a<e.cells.length;a++)o.push({originalCellIndex:a,modifiedCellIndex:a-n+l,type:"unchanged"});return{cellDiffInfo:o,firstChangeIndex:r}}function H(d,s,t){if(d.length!==s.length)return!1;const o=t.original.notebook,e=t.modified.notebook;for(let i=0;i<s.length;i++){const n=d[i],l=s[i];if(n.type!==l.type)return!1;switch(n.type){case"delete":{if(o.cells[n.originalCellIndex].handle!==l.original?.handle)return!1;continue}case"insert":{if(e.cells[n.modifiedCellIndex].handle!==l.modified?.handle)return!1;continue}default:{if(o.cells[n.originalCellIndex].handle!==l.original?.handle||e.cells[n.modifiedCellIndex].handle!==l.modified?.handle)return!1;continue}}}return!0}function B(d,s,t){const o=[],e=Math.min(d.originalLength,d.modifiedLength);for(let i=0;i<e;i++){const n=s.cells[d.originalStart+i].equal(t.cells[d.modifiedStart+i]);o.push({originalCellIndex:d.originalStart+i,modifiedCellIndex:d.modifiedStart+i,type:n?"unchanged":"modified"})}for(let i=e;i<d.originalLength;i++)o.push({originalCellIndex:d.originalStart+i,type:"delete"});for(let i=e;i<d.modifiedLength;i++)o.push({modifiedCellIndex:d.modifiedStart+i,type:"insert"});return o}class y extends _{constructor(t,o,e,i,n,l,r){super(t,o,e,r);this.type=i;this.containerType=n;this.kind=l}}class I extends y{constructor(s,t,o,e){super(s,t,t||s,o,e,"Cell",{[k.key]:"Cell",[b.key]:o})}}class m extends y{constructor(s,t,o,e){super(s,t,t||s,o,e,"Metadata",{[k.key]:"Metadata",[b.key]:o})}}class C extends y{constructor(s,t,o,e){super(s,t,t||s,o,e,"Output",{[k.key]:"Output",[b.key]:o})}}export{me as NotebookDiffViewModel,y as NotebookMultiDiffEditorItem,U as prettyChanges};
+import { Emitter } from '../../../../../base/common/event.js';
+import { Disposable, DisposableStore, dispose } from '../../../../../base/common/lifecycle.js';
+import { Schemas } from '../../../../../base/common/network.js';
+import { MultiDiffEditorItem } from '../../../multiDiffEditor/browser/multiDiffSourceResolverService.js';
+import { DiffElementPlaceholderViewModel, NotebookDocumentMetadataViewModel, SideBySideDiffElementViewModel, SingleSideDiffElementViewModel } from './diffElementViewModel.js';
+import { NOTEBOOK_DIFF_ITEM_DIFF_STATE, NOTEBOOK_DIFF_ITEM_KIND } from './notebookDiffEditorBrowser.js';
+import { CellUri } from '../../common/notebookCommon.js';
+import { raceCancellation } from '../../../../../base/common/async.js';
+export class NotebookDiffViewModel extends Disposable {
+    get items() {
+        return this._items;
+    }
+    get value() {
+        return this.diffEditorItems
+            .filter(item => item.type !== 'placeholder')
+            .filter(item => {
+            if (this._includeUnchanged) {
+                return true;
+            }
+            if (item instanceof NotebookMultiDiffEditorCellItem) {
+                return item.type === 'unchanged' && item.containerType === 'unchanged' ? false : true;
+            }
+            if (item instanceof NotebookMultiDiffEditorMetadataItem) {
+                return item.type === 'unchanged' && item.containerType === 'unchanged' ? false : true;
+            }
+            if (item instanceof NotebookMultiDiffEditorOutputItem) {
+                return item.type === 'unchanged' && item.containerType === 'unchanged' ? false : true;
+            }
+            return true;
+        })
+            .filter(item => item instanceof NotebookMultiDiffEditorOutputItem ? !this.hideOutput : true)
+            .filter(item => item instanceof NotebookMultiDiffEditorMetadataItem ? !this.ignoreMetadata : true);
+    }
+    get hasUnchangedCells() {
+        return this._hasUnchangedCells === true;
+    }
+    get includeUnchanged() {
+        return this._includeUnchanged === true;
+    }
+    set includeUnchanged(value) {
+        this._includeUnchanged = value;
+        this._onDidChange.fire();
+    }
+    constructor(model, notebookEditorWorkerService, configurationService, eventDispatcher, notebookService, diffEditorHeightCalculator, fontInfo, excludeUnchangedPlaceholder) {
+        super();
+        this.model = model;
+        this.notebookEditorWorkerService = notebookEditorWorkerService;
+        this.configurationService = configurationService;
+        this.eventDispatcher = eventDispatcher;
+        this.notebookService = notebookService;
+        this.diffEditorHeightCalculator = diffEditorHeightCalculator;
+        this.fontInfo = fontInfo;
+        this.excludeUnchangedPlaceholder = excludeUnchangedPlaceholder;
+        this.placeholderAndRelatedCells = new Map();
+        this._items = [];
+        this._onDidChangeItems = this._register(new Emitter());
+        this.onDidChangeItems = this._onDidChangeItems.event;
+        this.disposables = this._register(new DisposableStore());
+        this._onDidChange = this._register(new Emitter());
+        this.diffEditorItems = [];
+        this.onDidChange = this._onDidChange.event;
+        this.originalCellViewModels = [];
+        this.hideOutput = this.model.modified.notebook.transientOptions.transientOutputs || this.configurationService.getValue('notebook.diff.ignoreOutputs');
+        this.ignoreMetadata = this.configurationService.getValue('notebook.diff.ignoreMetadata');
+        this._register(this.configurationService.onDidChangeConfiguration(e => {
+            let triggerChange = false;
+            let metadataChanged = false;
+            if (e.affectsConfiguration('notebook.diff.ignoreMetadata')) {
+                const newValue = this.configurationService.getValue('notebook.diff.ignoreMetadata');
+                if (newValue !== undefined && this.ignoreMetadata !== newValue) {
+                    this.ignoreMetadata = newValue;
+                    triggerChange = true;
+                    metadataChanged = true;
+                }
+            }
+            if (e.affectsConfiguration('notebook.diff.ignoreOutputs')) {
+                const newValue = this.configurationService.getValue('notebook.diff.ignoreOutputs');
+                if (newValue !== undefined && this.hideOutput !== (newValue || this.model.modified.notebook.transientOptions.transientOutputs)) {
+                    this.hideOutput = newValue || !!(this.model.modified.notebook.transientOptions.transientOutputs);
+                    triggerChange = true;
+                }
+            }
+            if (metadataChanged) {
+                this.toggleNotebookMetadata();
+            }
+            if (triggerChange) {
+                this._onDidChange.fire();
+            }
+        }));
+    }
+    dispose() {
+        this.clear();
+        super.dispose();
+    }
+    clear() {
+        this.disposables.clear();
+        dispose(Array.from(this.placeholderAndRelatedCells.keys()));
+        this.placeholderAndRelatedCells.clear();
+        dispose(this.originalCellViewModels);
+        this.originalCellViewModels = [];
+        dispose(this._items);
+        this._items.splice(0, this._items.length);
+    }
+    async computeDiff(token) {
+        const diffResult = await raceCancellation(this.notebookEditorWorkerService.computeDiff(this.model.original.resource, this.model.modified.resource), token);
+        if (!diffResult || token.isCancellationRequested) {
+            return;
+        }
+        prettyChanges(this.model, diffResult.cellsDiff);
+        const { cellDiffInfo, firstChangeIndex } = computeDiff(this.model, diffResult);
+        if (isEqual(cellDiffInfo, this.originalCellViewModels, this.model)) {
+            return;
+        }
+        else {
+            await raceCancellation(this.updateViewModels(cellDiffInfo, diffResult.metadataChanged, firstChangeIndex), token);
+            if (token.isCancellationRequested) {
+                return;
+            }
+            this.updateDiffEditorItems();
+        }
+    }
+    toggleNotebookMetadata() {
+        if (!this.notebookMetadataViewModel) {
+            return;
+        }
+        if (this.ignoreMetadata) {
+            if (this._items.length && this._items[0] === this.notebookMetadataViewModel) {
+                this._items.splice(0, 1);
+                this._onDidChangeItems.fire({ start: 0, deleteCount: 1, elements: [] });
+            }
+        }
+        else {
+            if (!this._items.length || this._items[0] !== this.notebookMetadataViewModel) {
+                this._items.splice(0, 0, this.notebookMetadataViewModel);
+                this._onDidChangeItems.fire({ start: 0, deleteCount: 0, elements: [this.notebookMetadataViewModel] });
+            }
+        }
+    }
+    updateDiffEditorItems() {
+        this.diffEditorItems = [];
+        const originalSourceUri = this.model.original.resource;
+        const modifiedSourceUri = this.model.modified.resource;
+        this._hasUnchangedCells = false;
+        this.items.forEach(item => {
+            switch (item.type) {
+                case 'delete': {
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorCellItem(item.original.uri, undefined, item.type, item.type));
+                    const originalMetadata = CellUri.generateCellPropertyUri(originalSourceUri, item.original.handle, Schemas.vscodeNotebookCellMetadata);
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorMetadataItem(originalMetadata, undefined, item.type, item.type));
+                    const originalOutput = CellUri.generateCellPropertyUri(originalSourceUri, item.original.handle, Schemas.vscodeNotebookCellOutput);
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorOutputItem(originalOutput, undefined, item.type, item.type));
+                    break;
+                }
+                case 'insert': {
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorCellItem(undefined, item.modified.uri, item.type, item.type));
+                    const modifiedMetadata = CellUri.generateCellPropertyUri(modifiedSourceUri, item.modified.handle, Schemas.vscodeNotebookCellMetadata);
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorMetadataItem(undefined, modifiedMetadata, item.type, item.type));
+                    const modifiedOutput = CellUri.generateCellPropertyUri(modifiedSourceUri, item.modified.handle, Schemas.vscodeNotebookCellOutput);
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorOutputItem(undefined, modifiedOutput, item.type, item.type));
+                    break;
+                }
+                case 'modified': {
+                    const cellType = item.checkIfInputModified() ? item.type : 'unchanged';
+                    const containerChanged = (item.checkIfInputModified() || item.checkMetadataIfModified() || item.checkIfOutputsModified()) ? item.type : 'unchanged';
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorCellItem(item.original.uri, item.modified.uri, cellType, containerChanged));
+                    const originalMetadata = CellUri.generateCellPropertyUri(originalSourceUri, item.original.handle, Schemas.vscodeNotebookCellMetadata);
+                    const modifiedMetadata = CellUri.generateCellPropertyUri(modifiedSourceUri, item.modified.handle, Schemas.vscodeNotebookCellMetadata);
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorMetadataItem(originalMetadata, modifiedMetadata, item.checkMetadataIfModified() ? item.type : 'unchanged', containerChanged));
+                    const originalOutput = CellUri.generateCellPropertyUri(originalSourceUri, item.original.handle, Schemas.vscodeNotebookCellOutput);
+                    const modifiedOutput = CellUri.generateCellPropertyUri(modifiedSourceUri, item.modified.handle, Schemas.vscodeNotebookCellOutput);
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorOutputItem(originalOutput, modifiedOutput, item.checkIfOutputsModified() ? item.type : 'unchanged', containerChanged));
+                    break;
+                }
+                case 'unchanged': {
+                    this._hasUnchangedCells = true;
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorCellItem(item.original.uri, item.modified.uri, item.type, item.type));
+                    const originalMetadata = CellUri.generateCellPropertyUri(originalSourceUri, item.original.handle, Schemas.vscodeNotebookCellMetadata);
+                    const modifiedMetadata = CellUri.generateCellPropertyUri(modifiedSourceUri, item.modified.handle, Schemas.vscodeNotebookCellMetadata);
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorMetadataItem(originalMetadata, modifiedMetadata, item.type, item.type));
+                    const originalOutput = CellUri.generateCellPropertyUri(originalSourceUri, item.original.handle, Schemas.vscodeNotebookCellOutput);
+                    const modifiedOutput = CellUri.generateCellPropertyUri(modifiedSourceUri, item.modified.handle, Schemas.vscodeNotebookCellOutput);
+                    this.diffEditorItems.push(new NotebookMultiDiffEditorOutputItem(originalOutput, modifiedOutput, item.type, item.type));
+                    break;
+                }
+            }
+        });
+        this._onDidChange.fire();
+    }
+    async updateViewModels(cellDiffInfo, metadataChanged, firstChangeIndex) {
+        const cellViewModels = await this.createDiffViewModels(cellDiffInfo, metadataChanged);
+        const oldLength = this._items.length;
+        this.clear();
+        this._items.splice(0, oldLength);
+        let placeholder = undefined;
+        this.originalCellViewModels = cellViewModels;
+        cellViewModels.forEach((vm, index) => {
+            if (vm.type === 'unchanged' && !this.excludeUnchangedPlaceholder) {
+                if (!placeholder) {
+                    vm.displayIconToHideUnmodifiedCells = true;
+                    placeholder = new DiffElementPlaceholderViewModel(vm.mainDocumentTextModel, vm.editorEventDispatcher, vm.initData);
+                    this._items.push(placeholder);
+                    const placeholderItem = placeholder;
+                    this.disposables.add(placeholderItem.onUnfoldHiddenCells(() => {
+                        const hiddenCellViewModels = this.placeholderAndRelatedCells.get(placeholderItem);
+                        if (!Array.isArray(hiddenCellViewModels)) {
+                            return;
+                        }
+                        const start = this._items.indexOf(placeholderItem);
+                        this._items.splice(start, 1, ...hiddenCellViewModels);
+                        this._onDidChangeItems.fire({ start, deleteCount: 1, elements: hiddenCellViewModels });
+                    }));
+                    this.disposables.add(vm.onHideUnchangedCells(() => {
+                        const hiddenCellViewModels = this.placeholderAndRelatedCells.get(placeholderItem);
+                        if (!Array.isArray(hiddenCellViewModels)) {
+                            return;
+                        }
+                        const start = this._items.indexOf(vm);
+                        this._items.splice(start, hiddenCellViewModels.length, placeholderItem);
+                        this._onDidChangeItems.fire({ start, deleteCount: hiddenCellViewModels.length, elements: [placeholderItem] });
+                    }));
+                }
+                const hiddenCellViewModels = this.placeholderAndRelatedCells.get(placeholder) || [];
+                hiddenCellViewModels.push(vm);
+                this.placeholderAndRelatedCells.set(placeholder, hiddenCellViewModels);
+                placeholder.hiddenCells.push(vm);
+            }
+            else {
+                placeholder = undefined;
+                this._items.push(vm);
+            }
+        });
+        this._onDidChangeItems.fire({ start: 0, deleteCount: oldLength, elements: this._items, firstChangeIndex });
+    }
+    async createDiffViewModels(computedCellDiffs, metadataChanged) {
+        const originalModel = this.model.original.notebook;
+        const modifiedModel = this.model.modified.notebook;
+        const initData = {
+            metadataStatusHeight: this.configurationService.getValue('notebook.diff.ignoreMetadata') ? 0 : 25,
+            outputStatusHeight: this.configurationService.getValue('notebook.diff.ignoreOutputs') || !!(modifiedModel.transientOptions.transientOutputs) ? 0 : 25,
+            fontInfo: this.fontInfo
+        };
+        const viewModels = [];
+        this.notebookMetadataViewModel = this._register(new NotebookDocumentMetadataViewModel(this.model.original.notebook, this.model.modified.notebook, metadataChanged ? 'modifiedMetadata' : 'unchangedMetadata', this.eventDispatcher, initData, this.notebookService, this.diffEditorHeightCalculator));
+        if (!this.ignoreMetadata) {
+            if (metadataChanged) {
+                await this.notebookMetadataViewModel.computeHeights();
+            }
+            viewModels.push(this.notebookMetadataViewModel);
+        }
+        const cellViewModels = await Promise.all(computedCellDiffs.map(async (diff) => {
+            switch (diff.type) {
+                case 'delete': {
+                    return new SingleSideDiffElementViewModel(originalModel, modifiedModel, originalModel.cells[diff.originalCellIndex], undefined, 'delete', this.eventDispatcher, initData, this.notebookService, this.configurationService, this.diffEditorHeightCalculator, diff.originalCellIndex);
+                }
+                case 'insert': {
+                    return new SingleSideDiffElementViewModel(modifiedModel, originalModel, undefined, modifiedModel.cells[diff.modifiedCellIndex], 'insert', this.eventDispatcher, initData, this.notebookService, this.configurationService, this.diffEditorHeightCalculator, diff.modifiedCellIndex);
+                }
+                case 'modified': {
+                    const viewModel = new SideBySideDiffElementViewModel(this.model.modified.notebook, this.model.original.notebook, originalModel.cells[diff.originalCellIndex], modifiedModel.cells[diff.modifiedCellIndex], 'modified', this.eventDispatcher, initData, this.notebookService, this.configurationService, diff.originalCellIndex, this.diffEditorHeightCalculator);
+                    await viewModel.computeEditorHeights();
+                    return viewModel;
+                }
+                case 'unchanged': {
+                    return new SideBySideDiffElementViewModel(this.model.modified.notebook, this.model.original.notebook, originalModel.cells[diff.originalCellIndex], modifiedModel.cells[diff.modifiedCellIndex], 'unchanged', this.eventDispatcher, initData, this.notebookService, this.configurationService, diff.originalCellIndex, this.diffEditorHeightCalculator);
+                }
+            }
+        }));
+        cellViewModels.forEach(vm => viewModels.push(vm));
+        return viewModels;
+    }
+}
+export function prettyChanges(model, diffResult) {
+    const changes = diffResult.changes;
+    for (let i = 0; i < diffResult.changes.length - 1; i++) {
+        const curr = changes[i];
+        const next = changes[i + 1];
+        const x = curr.originalStart;
+        const y = curr.modifiedStart;
+        if (curr.originalLength === 1
+            && curr.modifiedLength === 0
+            && next.originalStart === x + 2
+            && next.originalLength === 0
+            && next.modifiedStart === y + 1
+            && next.modifiedLength === 1
+            && model.original.notebook.cells[x].getHashValue() === model.modified.notebook.cells[y + 1].getHashValue()
+            && model.original.notebook.cells[x + 1].getHashValue() === model.modified.notebook.cells[y].getHashValue()) {
+            curr.originalStart = x;
+            curr.originalLength = 0;
+            curr.modifiedStart = y;
+            curr.modifiedLength = 1;
+            next.originalStart = x + 1;
+            next.originalLength = 1;
+            next.modifiedStart = y + 2;
+            next.modifiedLength = 0;
+            i++;
+        }
+    }
+}
+function computeDiff(model, diffResult) {
+    const cellChanges = diffResult.cellsDiff.changes;
+    const cellDiffInfo = [];
+    const originalModel = model.original.notebook;
+    const modifiedModel = model.modified.notebook;
+    let originalCellIndex = 0;
+    let modifiedCellIndex = 0;
+    let firstChangeIndex = -1;
+    for (let i = 0; i < cellChanges.length; i++) {
+        const change = cellChanges[i];
+        for (let j = 0; j < change.originalStart - originalCellIndex; j++) {
+            const originalCell = originalModel.cells[originalCellIndex + j];
+            const modifiedCell = modifiedModel.cells[modifiedCellIndex + j];
+            if (originalCell.getHashValue() === modifiedCell.getHashValue()) {
+                cellDiffInfo.push({
+                    originalCellIndex: originalCellIndex + j,
+                    modifiedCellIndex: modifiedCellIndex + j,
+                    type: 'unchanged'
+                });
+            }
+            else {
+                if (firstChangeIndex === -1) {
+                    firstChangeIndex = cellDiffInfo.length;
+                }
+                cellDiffInfo.push({
+                    originalCellIndex: originalCellIndex + j,
+                    modifiedCellIndex: modifiedCellIndex + j,
+                    type: 'modified'
+                });
+            }
+        }
+        const modifiedLCS = computeModifiedLCS(change, originalModel, modifiedModel);
+        if (modifiedLCS.length && firstChangeIndex === -1) {
+            firstChangeIndex = cellDiffInfo.length;
+        }
+        cellDiffInfo.push(...modifiedLCS);
+        originalCellIndex = change.originalStart + change.originalLength;
+        modifiedCellIndex = change.modifiedStart + change.modifiedLength;
+    }
+    for (let i = originalCellIndex; i < originalModel.cells.length; i++) {
+        cellDiffInfo.push({
+            originalCellIndex: i,
+            modifiedCellIndex: i - originalCellIndex + modifiedCellIndex,
+            type: 'unchanged'
+        });
+    }
+    return {
+        cellDiffInfo,
+        firstChangeIndex
+    };
+}
+function isEqual(cellDiffInfo, viewModels, model) {
+    if (cellDiffInfo.length !== viewModels.length) {
+        return false;
+    }
+    const originalModel = model.original.notebook;
+    const modifiedModel = model.modified.notebook;
+    for (let i = 0; i < viewModels.length; i++) {
+        const a = cellDiffInfo[i];
+        const b = viewModels[i];
+        if (a.type !== b.type) {
+            return false;
+        }
+        switch (a.type) {
+            case 'delete': {
+                if (originalModel.cells[a.originalCellIndex].handle !== b.original?.handle) {
+                    return false;
+                }
+                continue;
+            }
+            case 'insert': {
+                if (modifiedModel.cells[a.modifiedCellIndex].handle !== b.modified?.handle) {
+                    return false;
+                }
+                continue;
+            }
+            default: {
+                if (originalModel.cells[a.originalCellIndex].handle !== b.original?.handle) {
+                    return false;
+                }
+                if (modifiedModel.cells[a.modifiedCellIndex].handle !== b.modified?.handle) {
+                    return false;
+                }
+                continue;
+            }
+        }
+    }
+    return true;
+}
+function computeModifiedLCS(change, originalModel, modifiedModel) {
+    const result = [];
+    const modifiedLen = Math.min(change.originalLength, change.modifiedLength);
+    for (let j = 0; j < modifiedLen; j++) {
+        const isTheSame = originalModel.cells[change.originalStart + j].equal(modifiedModel.cells[change.modifiedStart + j]);
+        result.push({
+            originalCellIndex: change.originalStart + j,
+            modifiedCellIndex: change.modifiedStart + j,
+            type: isTheSame ? 'unchanged' : 'modified'
+        });
+    }
+    for (let j = modifiedLen; j < change.originalLength; j++) {
+        result.push({
+            originalCellIndex: change.originalStart + j,
+            type: 'delete'
+        });
+    }
+    for (let j = modifiedLen; j < change.modifiedLength; j++) {
+        result.push({
+            modifiedCellIndex: change.modifiedStart + j,
+            type: 'insert'
+        });
+    }
+    return result;
+}
+export class NotebookMultiDiffEditorItem extends MultiDiffEditorItem {
+    constructor(originalUri, modifiedUri, goToFileUri, type, containerType, kind, contextKeys) {
+        super(originalUri, modifiedUri, goToFileUri, contextKeys);
+        this.type = type;
+        this.containerType = containerType;
+        this.kind = kind;
+    }
+}
+class NotebookMultiDiffEditorCellItem extends NotebookMultiDiffEditorItem {
+    constructor(originalUri, modifiedUri, type, containerType) {
+        super(originalUri, modifiedUri, modifiedUri || originalUri, type, containerType, 'Cell', {
+            [NOTEBOOK_DIFF_ITEM_KIND.key]: 'Cell',
+            [NOTEBOOK_DIFF_ITEM_DIFF_STATE.key]: type
+        });
+    }
+}
+class NotebookMultiDiffEditorMetadataItem extends NotebookMultiDiffEditorItem {
+    constructor(originalUri, modifiedUri, type, containerType) {
+        super(originalUri, modifiedUri, modifiedUri || originalUri, type, containerType, 'Metadata', {
+            [NOTEBOOK_DIFF_ITEM_KIND.key]: 'Metadata',
+            [NOTEBOOK_DIFF_ITEM_DIFF_STATE.key]: type
+        });
+    }
+}
+class NotebookMultiDiffEditorOutputItem extends NotebookMultiDiffEditorItem {
+    constructor(originalUri, modifiedUri, type, containerType) {
+        super(originalUri, modifiedUri, modifiedUri || originalUri, type, containerType, 'Output', {
+            [NOTEBOOK_DIFF_ITEM_KIND.key]: 'Output',
+            [NOTEBOOK_DIFF_ITEM_DIFF_STATE.key]: type
+        });
+    }
+}

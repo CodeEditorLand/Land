@@ -1,1 +1,255 @@
-var g=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var u=(p,e,t,r)=>{for(var o=r>1?void 0:r?f(e,t):e,n=p.length-1,i;n>=0;n--)(i=p[n])&&(o=(r?i(e,t,o):i(o))||o);return r&&o&&g(e,t,o),o},a=(p,e)=>(t,r)=>e(t,r,p);import{BrowserWindow as h,screen as c}from"electron";import{arch as W,release as y,type as R}from"os";import{raceTimeout as S}from"../../../base/common/async.js";import{CancellationTokenSource as b}from"../../../base/common/cancellation.js";import{DisposableStore as I}from"../../../base/common/lifecycle.js";import{FileAccess as m}from"../../../base/common/network.js";import{isMacintosh as C}from"../../../base/common/platform.js";import{validatedIpcMain as M}from"../../../base/parts/ipc/electron-main/ipcMain.js";import{getNLSLanguage as P,getNLSMessages as D,localize as d}from"../../../nls.js";import{IDialogMainService as O}from"../../dialogs/electron-main/dialogMainService.js";import{IEnvironmentMainService as x}from"../../environment/electron-main/environmentMainService.js";import"../common/issue.js";import{ILogService as B}from"../../log/common/log.js";import{INativeHostMainService as k}from"../../native/electron-main/nativeHostMainService.js";import E from"../../product/common/product.js";import{IProtocolMainService as L}from"../../protocol/electron-main/protocol.js";import{zoomLevelToZoomFactor as T}from"../../window/common/window.js";import"../../window/electron-main/window.js";import{IWindowsMainService as U}from"../../windows/electron-main/windows.js";import{ICSSDevelopmentService as z}from"../../cssDev/node/cssDevService.js";let l=class{constructor(e,t,r,o,n,i,s,w){this.userEnv=e;this.environmentMainService=t;this.logService=r;this.dialogMainService=o;this.nativeHostMainService=n;this.protocolMainService=i;this.windowsMainService=s;this.cssDevelopmentService=w}static DEFAULT_BACKGROUND_COLOR="#1E1E1E";issueReporterWindow=null;issueReporterParentWindow=null;async openReporter(e){if(this.issueReporterWindow)this.issueReporterWindow&&this.focusWindow(this.issueReporterWindow);else if(this.issueReporterParentWindow=h.getFocusedWindow(),this.issueReporterParentWindow){const t=new I,r=t.add(this.protocolMainService.createIPCObjectUrl()),o=this.getWindowPosition(this.issueReporterParentWindow,700,800);this.issueReporterWindow=this.createBrowserWindow(o,r,{backgroundColor:e.styles.backgroundColor,title:d("issueReporter","Issue Reporter"),zoomLevel:e.zoomLevel,alwaysOnTop:!1},"issue-reporter"),r.update({appRoot:this.environmentMainService.appRoot,windowId:this.issueReporterWindow.id,userEnv:this.userEnv,data:e,disableExtensions:!!this.environmentMainService.disableExtensions,os:{type:R(),arch:W(),release:y()},product:E,nls:{messages:D(),language:P()},cssModules:this.cssDevelopmentService.isEnabled?await this.cssDevelopmentService.getCssModules():void 0}),this.issueReporterWindow.loadURL(m.asBrowserUri(`vs/workbench/contrib/issue/electron-sandbox/issueReporter${this.environmentMainService.isBuilt?"":"-dev"}.html`).toString(!0)),this.issueReporterWindow.on("close",()=>{this.issueReporterWindow=null,t.dispose()}),this.issueReporterParentWindow.on("closed",()=>{this.issueReporterWindow&&(this.issueReporterWindow.close(),this.issueReporterWindow=null,t.dispose())})}}async $reloadWithExtensionsDisabled(){if(this.issueReporterParentWindow)try{await this.nativeHostMainService.reload(this.issueReporterParentWindow.id,{disableExtensions:!0})}catch(e){this.logService.error(e)}}async $showConfirmCloseDialog(){if(this.issueReporterWindow){const{response:e}=await this.dialogMainService.showMessageBox({type:"warning",message:d("confirmCloseIssueReporter","Your input will not be saved. Are you sure you want to close this window?"),buttons:[d({key:"yes",comment:["&& denotes a mnemonic"]},"&&Yes"),d("cancel","Cancel")]},this.issueReporterWindow);e===0&&this.issueReporterWindow&&(this.issueReporterWindow.destroy(),this.issueReporterWindow=null)}}async $showClipboardDialog(){if(this.issueReporterWindow){const{response:e}=await this.dialogMainService.showMessageBox({type:"warning",message:d("issueReporterWriteToClipboard","There is too much data to send to GitHub directly. The data will be copied to the clipboard, please paste it into the GitHub issue page that is opened."),buttons:[d({key:"ok",comment:["&& denotes a mnemonic"]},"&&OK"),d("cancel","Cancel")]},this.issueReporterWindow);return e===0}return!1}issueReporterWindowCheck(){if(!this.issueReporterParentWindow)throw new Error("Issue reporter window not available");const e=this.windowsMainService.getWindowById(this.issueReporterParentWindow.id);if(!e)throw new Error("Window not found");return e}async $sendReporterMenu(e,t){const r=this.issueReporterWindowCheck(),o="vscode:triggerReporterMenu",n=new b;return r.sendWhenReady(o,n.token,{replyChannel:o,extensionId:e,extensionName:t}),await S(new Promise(s=>M.once(`vscode:triggerReporterMenuResponse:${e}`,(w,v)=>s(v))),5e3,()=>{this.logService.error(`Error: Extension ${e} timed out waiting for menu response`),n.cancel()})}async $closeReporter(){this.issueReporterWindow?.close()}focusWindow(e){e.isMinimized()&&e.restore(),e.focus()}createBrowserWindow(e,t,r,o){const n={fullscreen:!1,skipTaskbar:!1,resizable:!0,width:e.width,height:e.height,minWidth:300,minHeight:200,x:e.x,y:e.y,title:r.title,backgroundColor:r.backgroundColor||l.DEFAULT_BACKGROUND_COLOR,webPreferences:{preload:m.asFileUri("vs/base/parts/sandbox/electron-sandbox/preload.js").fsPath,additionalArguments:[`--vscode-window-config=${t.resource.toString()}`],v8CacheOptions:this.environmentMainService.useCodeCache?"bypassHeatCheck":"none",enableWebSQL:!1,spellcheck:!1,zoomFactor:T(r.zoomLevel),sandbox:!0},alwaysOnTop:r.alwaysOnTop,experimentalDarkMode:!0},i=new h(n);return i.setMenuBarVisibility(!1),i}getWindowPosition(e,t,r){let o;const n=c.getAllDisplays();if(n.length===1)o=n[0];else{if(C){const w=c.getCursorScreenPoint();o=c.getDisplayNearestPoint(w)}!o&&e&&(o=c.getDisplayMatching(e.getBounds())),o||(o=c.getPrimaryDisplay()||n[0])}const i=o.bounds,s={width:t,height:r,x:i.x+i.width/2-t/2,y:i.y+i.height/2-r/2};return i.width>0&&i.height>0&&(s.x<i.x&&(s.x=i.x),s.y<i.y&&(s.y=i.y),s.x>i.x+i.width&&(s.x=i.x),s.y>i.y+i.height&&(s.y=i.y),s.width>i.width&&(s.width=i.width),s.height>i.height&&(s.height=i.height)),s}};l=u([a(1,x),a(2,B),a(3,O),a(4,k),a(5,L),a(6,U),a(7,z)],l);export{l as IssueMainService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var IssueMainService_1;
+import { BrowserWindow, screen } from 'electron';
+import { arch, release, type } from 'os';
+import { raceTimeout } from '../../../base/common/async.js';
+import { CancellationTokenSource } from '../../../base/common/cancellation.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { FileAccess } from '../../../base/common/network.js';
+import { isMacintosh } from '../../../base/common/platform.js';
+import { validatedIpcMain } from '../../../base/parts/ipc/electron-main/ipcMain.js';
+import { getNLSLanguage, getNLSMessages, localize } from '../../../nls.js';
+import { IDialogMainService } from '../../dialogs/electron-main/dialogMainService.js';
+import { IEnvironmentMainService } from '../../environment/electron-main/environmentMainService.js';
+import { ILogService } from '../../log/common/log.js';
+import { INativeHostMainService } from '../../native/electron-main/nativeHostMainService.js';
+import product from '../../product/common/product.js';
+import { IProtocolMainService } from '../../protocol/electron-main/protocol.js';
+import { zoomLevelToZoomFactor } from '../../window/common/window.js';
+import { IWindowsMainService } from '../../windows/electron-main/windows.js';
+import { ICSSDevelopmentService } from '../../cssDev/node/cssDevService.js';
+let IssueMainService = class IssueMainService {
+    static { IssueMainService_1 = this; }
+    static { this.DEFAULT_BACKGROUND_COLOR = '#1E1E1E'; }
+    constructor(userEnv, environmentMainService, logService, dialogMainService, nativeHostMainService, protocolMainService, windowsMainService, cssDevelopmentService) {
+        this.userEnv = userEnv;
+        this.environmentMainService = environmentMainService;
+        this.logService = logService;
+        this.dialogMainService = dialogMainService;
+        this.nativeHostMainService = nativeHostMainService;
+        this.protocolMainService = protocolMainService;
+        this.windowsMainService = windowsMainService;
+        this.cssDevelopmentService = cssDevelopmentService;
+        this.issueReporterWindow = null;
+        this.issueReporterParentWindow = null;
+    }
+    async openReporter(data) {
+        if (!this.issueReporterWindow) {
+            this.issueReporterParentWindow = BrowserWindow.getFocusedWindow();
+            if (this.issueReporterParentWindow) {
+                const issueReporterDisposables = new DisposableStore();
+                const issueReporterWindowConfigUrl = issueReporterDisposables.add(this.protocolMainService.createIPCObjectUrl());
+                const position = this.getWindowPosition(this.issueReporterParentWindow, 700, 800);
+                this.issueReporterWindow = this.createBrowserWindow(position, issueReporterWindowConfigUrl, {
+                    backgroundColor: data.styles.backgroundColor,
+                    title: localize('issueReporter', "Issue Reporter"),
+                    zoomLevel: data.zoomLevel,
+                    alwaysOnTop: false
+                }, 'issue-reporter');
+                issueReporterWindowConfigUrl.update({
+                    appRoot: this.environmentMainService.appRoot,
+                    windowId: this.issueReporterWindow.id,
+                    userEnv: this.userEnv,
+                    data,
+                    disableExtensions: !!this.environmentMainService.disableExtensions,
+                    os: {
+                        type: type(),
+                        arch: arch(),
+                        release: release(),
+                    },
+                    product,
+                    nls: {
+                        messages: getNLSMessages(),
+                        language: getNLSLanguage()
+                    },
+                    cssModules: this.cssDevelopmentService.isEnabled ? await this.cssDevelopmentService.getCssModules() : undefined
+                });
+                this.issueReporterWindow.loadURL(FileAccess.asBrowserUri(`vs/workbench/contrib/issue/electron-sandbox/issueReporter${this.environmentMainService.isBuilt ? '' : '-dev'}.html`).toString(true));
+                this.issueReporterWindow.on('close', () => {
+                    this.issueReporterWindow = null;
+                    issueReporterDisposables.dispose();
+                });
+                this.issueReporterParentWindow.on('closed', () => {
+                    if (this.issueReporterWindow) {
+                        this.issueReporterWindow.close();
+                        this.issueReporterWindow = null;
+                        issueReporterDisposables.dispose();
+                    }
+                });
+            }
+        }
+        else if (this.issueReporterWindow) {
+            this.focusWindow(this.issueReporterWindow);
+        }
+    }
+    async $reloadWithExtensionsDisabled() {
+        if (this.issueReporterParentWindow) {
+            try {
+                await this.nativeHostMainService.reload(this.issueReporterParentWindow.id, { disableExtensions: true });
+            }
+            catch (error) {
+                this.logService.error(error);
+            }
+        }
+    }
+    async $showConfirmCloseDialog() {
+        if (this.issueReporterWindow) {
+            const { response } = await this.dialogMainService.showMessageBox({
+                type: 'warning',
+                message: localize('confirmCloseIssueReporter', "Your input will not be saved. Are you sure you want to close this window?"),
+                buttons: [
+                    localize({ key: 'yes', comment: ['&& denotes a mnemonic'] }, "&&Yes"),
+                    localize('cancel', "Cancel")
+                ]
+            }, this.issueReporterWindow);
+            if (response === 0) {
+                if (this.issueReporterWindow) {
+                    this.issueReporterWindow.destroy();
+                    this.issueReporterWindow = null;
+                }
+            }
+        }
+    }
+    async $showClipboardDialog() {
+        if (this.issueReporterWindow) {
+            const { response } = await this.dialogMainService.showMessageBox({
+                type: 'warning',
+                message: localize('issueReporterWriteToClipboard', "There is too much data to send to GitHub directly. The data will be copied to the clipboard, please paste it into the GitHub issue page that is opened."),
+                buttons: [
+                    localize({ key: 'ok', comment: ['&& denotes a mnemonic'] }, "&&OK"),
+                    localize('cancel', "Cancel")
+                ]
+            }, this.issueReporterWindow);
+            return response === 0;
+        }
+        return false;
+    }
+    issueReporterWindowCheck() {
+        if (!this.issueReporterParentWindow) {
+            throw new Error('Issue reporter window not available');
+        }
+        const window = this.windowsMainService.getWindowById(this.issueReporterParentWindow.id);
+        if (!window) {
+            throw new Error('Window not found');
+        }
+        return window;
+    }
+    async $sendReporterMenu(extensionId, extensionName) {
+        const window = this.issueReporterWindowCheck();
+        const replyChannel = `vscode:triggerReporterMenu`;
+        const cts = new CancellationTokenSource();
+        window.sendWhenReady(replyChannel, cts.token, { replyChannel, extensionId, extensionName });
+        const result = await raceTimeout(new Promise(resolve => validatedIpcMain.once(`vscode:triggerReporterMenuResponse:${extensionId}`, (_, data) => resolve(data))), 5000, () => {
+            this.logService.error(`Error: Extension ${extensionId} timed out waiting for menu response`);
+            cts.cancel();
+        });
+        return result;
+    }
+    async $closeReporter() {
+        this.issueReporterWindow?.close();
+    }
+    focusWindow(window) {
+        if (window.isMinimized()) {
+            window.restore();
+        }
+        window.focus();
+    }
+    createBrowserWindow(position, ipcObjectUrl, options, windowKind) {
+        const windowOptions = {
+            fullscreen: false,
+            skipTaskbar: false,
+            resizable: true,
+            width: position.width,
+            height: position.height,
+            minWidth: 300,
+            minHeight: 200,
+            x: position.x,
+            y: position.y,
+            title: options.title,
+            backgroundColor: options.backgroundColor || IssueMainService_1.DEFAULT_BACKGROUND_COLOR,
+            webPreferences: {
+                preload: FileAccess.asFileUri('vs/base/parts/sandbox/electron-sandbox/preload.js').fsPath,
+                additionalArguments: [`--vscode-window-config=${ipcObjectUrl.resource.toString()}`],
+                v8CacheOptions: this.environmentMainService.useCodeCache ? 'bypassHeatCheck' : 'none',
+                enableWebSQL: false,
+                spellcheck: false,
+                zoomFactor: zoomLevelToZoomFactor(options.zoomLevel),
+                sandbox: true
+            },
+            alwaysOnTop: options.alwaysOnTop,
+            experimentalDarkMode: true
+        };
+        const window = new BrowserWindow(windowOptions);
+        window.setMenuBarVisibility(false);
+        return window;
+    }
+    getWindowPosition(parentWindow, defaultWidth, defaultHeight) {
+        let displayToUse;
+        const displays = screen.getAllDisplays();
+        if (displays.length === 1) {
+            displayToUse = displays[0];
+        }
+        else {
+            if (isMacintosh) {
+                const cursorPoint = screen.getCursorScreenPoint();
+                displayToUse = screen.getDisplayNearestPoint(cursorPoint);
+            }
+            if (!displayToUse && parentWindow) {
+                displayToUse = screen.getDisplayMatching(parentWindow.getBounds());
+            }
+            if (!displayToUse) {
+                displayToUse = screen.getPrimaryDisplay() || displays[0];
+            }
+        }
+        const displayBounds = displayToUse.bounds;
+        const state = {
+            width: defaultWidth,
+            height: defaultHeight,
+            x: displayBounds.x + (displayBounds.width / 2) - (defaultWidth / 2),
+            y: displayBounds.y + (displayBounds.height / 2) - (defaultHeight / 2)
+        };
+        if (displayBounds.width > 0 && displayBounds.height > 0) {
+            if (state.x < displayBounds.x) {
+                state.x = displayBounds.x;
+            }
+            if (state.y < displayBounds.y) {
+                state.y = displayBounds.y;
+            }
+            if (state.x > (displayBounds.x + displayBounds.width)) {
+                state.x = displayBounds.x;
+            }
+            if (state.y > (displayBounds.y + displayBounds.height)) {
+                state.y = displayBounds.y;
+            }
+            if (state.width > displayBounds.width) {
+                state.width = displayBounds.width;
+            }
+            if (state.height > displayBounds.height) {
+                state.height = displayBounds.height;
+            }
+        }
+        return state;
+    }
+};
+IssueMainService = IssueMainService_1 = __decorate([
+    __param(1, IEnvironmentMainService),
+    __param(2, ILogService),
+    __param(3, IDialogMainService),
+    __param(4, INativeHostMainService),
+    __param(5, IProtocolMainService),
+    __param(6, IWindowsMainService),
+    __param(7, ICSSDevelopmentService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], IssueMainService);
+export { IssueMainService };

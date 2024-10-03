@@ -1,1 +1,118 @@
-import"../../common/core/position.js";import"../../common/core/range.js";import"../../common/viewLayout/viewLinesViewportData.js";import"../../common/viewModel.js";class s{_restrictedRenderingContextBrand=void 0;viewportData;scrollWidth;scrollHeight;visibleRange;bigNumbersDelta;scrollTop;scrollLeft;viewportWidth;viewportHeight;_viewLayout;constructor(e,i){this._viewLayout=e,this.viewportData=i,this.scrollWidth=this._viewLayout.getScrollWidth(),this.scrollHeight=this._viewLayout.getScrollHeight(),this.visibleRange=this.viewportData.visibleRange,this.bigNumbersDelta=this.viewportData.bigNumbersDelta;const t=this._viewLayout.getCurrentViewport();this.scrollTop=t.top,this.scrollLeft=t.left,this.viewportWidth=t.width,this.viewportHeight=t.height}getScrolledTopFromAbsoluteTop(e){return e-this.scrollTop}getVerticalOffsetForLineNumber(e,i){return this._viewLayout.getVerticalOffsetForLineNumber(e,i)}getVerticalOffsetAfterLineNumber(e,i){return this._viewLayout.getVerticalOffsetAfterLineNumber(e,i)}getDecorationsInViewport(){return this.viewportData.getDecorationsInViewport()}}class f extends s{_renderingContextBrand=void 0;_viewLines;_viewLinesGpu;constructor(e,i,t,r){super(e,i),this._viewLines=t,this._viewLinesGpu=r}linesVisibleRangesForRange(e,i){return this._viewLines.linesVisibleRangesForRange(e,i)??this._viewLinesGpu?.linesVisibleRangesForRange(e,i)??null}visibleRangeForPosition(e){return this._viewLines.visibleRangeForPosition(e)??this._viewLinesGpu?.visibleRangeForPosition(e)??null}}class m{constructor(e,i,t,r){this.outsideRenderedLine=e;this.lineNumber=i;this.ranges=t;this.continuesOnNextLine=r}static firstLine(e){if(!e)return null;let i=null;for(const t of e)(!i||t.lineNumber<i.lineNumber)&&(i=t);return i}static lastLine(e){if(!e)return null;let i=null;for(const t of e)(!i||t.lineNumber>i.lineNumber)&&(i=t);return i}}class l{_horizontalRangeBrand=void 0;left;width;static from(e){const i=new Array(e.length);for(let t=0,r=e.length;t<r;t++){const o=e[t];i[t]=new l(o.left,o.width)}return i}constructor(e,i){this.left=Math.round(e),this.width=Math.round(i)}toString(){return`[${this.left},${this.width}]`}}class L{_floatHorizontalRangeBrand=void 0;left;width;constructor(e,i){this.left=e,this.width=i}toString(){return`[${this.left},${this.width}]`}static compare(e,i){return e.left-i.left}}class R{outsideRenderedLine;left;originalLeft;constructor(e,i){this.outsideRenderedLine=e,this.originalLeft=i,this.left=Math.round(this.originalLeft)}}class v{constructor(e,i){this.outsideRenderedLine=e;this.ranges=i}}export{L as FloatHorizontalRange,R as HorizontalPosition,l as HorizontalRange,m as LineVisibleRanges,f as RenderingContext,s as RestrictedRenderingContext,v as VisibleRanges};
+export class RestrictedRenderingContext {
+    constructor(viewLayout, viewportData) {
+        this._restrictedRenderingContextBrand = undefined;
+        this._viewLayout = viewLayout;
+        this.viewportData = viewportData;
+        this.scrollWidth = this._viewLayout.getScrollWidth();
+        this.scrollHeight = this._viewLayout.getScrollHeight();
+        this.visibleRange = this.viewportData.visibleRange;
+        this.bigNumbersDelta = this.viewportData.bigNumbersDelta;
+        const vInfo = this._viewLayout.getCurrentViewport();
+        this.scrollTop = vInfo.top;
+        this.scrollLeft = vInfo.left;
+        this.viewportWidth = vInfo.width;
+        this.viewportHeight = vInfo.height;
+    }
+    getScrolledTopFromAbsoluteTop(absoluteTop) {
+        return absoluteTop - this.scrollTop;
+    }
+    getVerticalOffsetForLineNumber(lineNumber, includeViewZones) {
+        return this._viewLayout.getVerticalOffsetForLineNumber(lineNumber, includeViewZones);
+    }
+    getVerticalOffsetAfterLineNumber(lineNumber, includeViewZones) {
+        return this._viewLayout.getVerticalOffsetAfterLineNumber(lineNumber, includeViewZones);
+    }
+    getDecorationsInViewport() {
+        return this.viewportData.getDecorationsInViewport();
+    }
+}
+export class RenderingContext extends RestrictedRenderingContext {
+    constructor(viewLayout, viewportData, viewLines, viewLinesGpu) {
+        super(viewLayout, viewportData);
+        this._renderingContextBrand = undefined;
+        this._viewLines = viewLines;
+        this._viewLinesGpu = viewLinesGpu;
+    }
+    linesVisibleRangesForRange(range, includeNewLines) {
+        return this._viewLines.linesVisibleRangesForRange(range, includeNewLines) ?? this._viewLinesGpu?.linesVisibleRangesForRange(range, includeNewLines) ?? null;
+    }
+    visibleRangeForPosition(position) {
+        return this._viewLines.visibleRangeForPosition(position) ?? this._viewLinesGpu?.visibleRangeForPosition(position) ?? null;
+    }
+}
+export class LineVisibleRanges {
+    static firstLine(ranges) {
+        if (!ranges) {
+            return null;
+        }
+        let result = null;
+        for (const range of ranges) {
+            if (!result || range.lineNumber < result.lineNumber) {
+                result = range;
+            }
+        }
+        return result;
+    }
+    static lastLine(ranges) {
+        if (!ranges) {
+            return null;
+        }
+        let result = null;
+        for (const range of ranges) {
+            if (!result || range.lineNumber > result.lineNumber) {
+                result = range;
+            }
+        }
+        return result;
+    }
+    constructor(outsideRenderedLine, lineNumber, ranges, continuesOnNextLine) {
+        this.outsideRenderedLine = outsideRenderedLine;
+        this.lineNumber = lineNumber;
+        this.ranges = ranges;
+        this.continuesOnNextLine = continuesOnNextLine;
+    }
+}
+export class HorizontalRange {
+    static from(ranges) {
+        const result = new Array(ranges.length);
+        for (let i = 0, len = ranges.length; i < len; i++) {
+            const range = ranges[i];
+            result[i] = new HorizontalRange(range.left, range.width);
+        }
+        return result;
+    }
+    constructor(left, width) {
+        this._horizontalRangeBrand = undefined;
+        this.left = Math.round(left);
+        this.width = Math.round(width);
+    }
+    toString() {
+        return `[${this.left},${this.width}]`;
+    }
+}
+export class FloatHorizontalRange {
+    constructor(left, width) {
+        this._floatHorizontalRangeBrand = undefined;
+        this.left = left;
+        this.width = width;
+    }
+    toString() {
+        return `[${this.left},${this.width}]`;
+    }
+    static compare(a, b) {
+        return a.left - b.left;
+    }
+}
+export class HorizontalPosition {
+    constructor(outsideRenderedLine, left) {
+        this.outsideRenderedLine = outsideRenderedLine;
+        this.originalLeft = left;
+        this.left = Math.round(this.originalLeft);
+    }
+}
+export class VisibleRanges {
+    constructor(outsideRenderedLine, ranges) {
+        this.outsideRenderedLine = outsideRenderedLine;
+        this.ranges = ranges;
+    }
+}

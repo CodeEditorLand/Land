@@ -1,2 +1,676 @@
-var J=Object.defineProperty;var X=Object.getOwnPropertyDescriptor;var x=(n,t,i,o)=>{for(var e=o>1?void 0:o?X(t,i):t,s=n.length-1,c;s>=0;s--)(c=n[s])&&(e=(o?c(t,i,e):c(e))||e);return o&&e&&J(t,i,e),e},p=(n,t)=>(i,o)=>t(i,o,n);import{RunOnceScheduler as T}from"../../../../base/common/async.js";import{CharCode as Y}from"../../../../base/common/charCode.js";import{Codicon as Z}from"../../../../base/common/codicons.js";import{MarkdownString as ee}from"../../../../base/common/htmlContent.js";import{Disposable as U}from"../../../../base/common/lifecycle.js";import*as ie from"../../../../base/common/platform.js";import{InvisibleCharacters as L,isBasicASCII as te}from"../../../../base/common/strings.js";import"./unicodeHighlighter.css";import"../../../browser/editorBrowser.js";import{EditorAction as C,EditorContributionInstantiation as oe,registerEditorAction as O,registerEditorContribution as ne}from"../../../browser/editorExtensions.js";import{inUntrustedWorkspace as E,EditorOption as R,unicodeHighlightConfigKeys as g}from"../../../common/config/editorOptions.js";import"../../../common/core/range.js";import"../../../common/editorCommon.js";import{TrackedRangeStickiness as re}from"../../../common/model.js";import{ModelDecorationOptions as se}from"../../../common/model/textModel.js";import{UnicodeHighlighterReasonKind as m,UnicodeTextModelHighlighter as z}from"../../../common/services/unicodeTextModelHighlighter.js";import{IEditorWorkerService as V}from"../../../common/services/editorWorker.js";import{ILanguageService as ae}from"../../../common/languages/language.js";import{isModelDecorationInComment as W,isModelDecorationInString as N,isModelDecorationVisible as $}from"../../../common/viewModel/viewModelDecorations.js";import{HoverAnchorType as F,HoverParticipantRegistry as ce}from"../../hover/browser/hoverTypes.js";import{MarkdownHover as le,renderMarkdownHovers as he}from"../../hover/browser/markdownHoverParticipant.js";import{BannerController as de}from"./bannerController.js";import*as r from"../../../../nls.js";import{ConfigurationTarget as b,IConfigurationService as v}from"../../../../platform/configuration/common/configuration.js";import{IInstantiationService as ge}from"../../../../platform/instantiation/common/instantiation.js";import{IOpenerService as ue}from"../../../../platform/opener/common/opener.js";import{IQuickInputService as pe}from"../../../../platform/quickinput/common/quickInput.js";import{registerIcon as me}from"../../../../platform/theme/common/iconRegistry.js";import{IWorkspaceTrustManagementService as be}from"../../../../platform/workspace/common/workspaceTrust.js";const fe=me("extensions-warning-message",Z.warning,r.localize("warningIcon","Icon shown with a warning message in the extensions editor."));let f=class extends U{constructor(i,o,e,s){super();this._editor=i;this._editorWorkerService=o;this._workspaceTrustService=e;this._bannerController=this._register(s.createInstance(de,i)),this._register(this._editor.onDidChangeModel(()=>{this._bannerClosed=!1,this._updateHighlighter()})),this._options=i.getOption(R.unicodeHighlighting),this._register(e.onDidChangeTrust(c=>{this._updateHighlighter()})),this._register(i.onDidChangeConfiguration(c=>{c.hasChanged(R.unicodeHighlighting)&&(this._options=i.getOption(R.unicodeHighlighting),this._updateHighlighter())})),this._updateHighlighter()}static ID="editor.contrib.unicodeHighlighter";_highlighter=null;_options;_bannerController;_bannerClosed=!1;dispose(){this._highlighter&&(this._highlighter.dispose(),this._highlighter=null),super.dispose()}_updateState=i=>{if(i&&i.hasMore){if(this._bannerClosed)return;const o=Math.max(i.ambiguousCharacterCount,i.nonBasicAsciiCharacterCount,i.invisibleCharacterCount);let e;if(i.nonBasicAsciiCharacterCount>=o)e={message:r.localize("unicodeHighlighting.thisDocumentHasManyNonBasicAsciiUnicodeCharacters","This document contains many non-basic ASCII unicode characters"),command:new y};else if(i.ambiguousCharacterCount>=o)e={message:r.localize("unicodeHighlighting.thisDocumentHasManyAmbiguousUnicodeCharacters","This document contains many ambiguous unicode characters"),command:new I};else if(i.invisibleCharacterCount>=o)e={message:r.localize("unicodeHighlighting.thisDocumentHasManyInvisibleUnicodeCharacters","This document contains many invisible unicode characters"),command:new D};else throw new Error("Unreachable");this._bannerController.show({id:"unicodeHighlightBanner",message:e.message,icon:fe,actions:[{label:e.command.shortLabel,href:`command:${e.command.id}`}],onClose:()=>{this._bannerClosed=!0}})}else this._bannerController.hide()};_updateHighlighter(){if(this._updateState(null),this._highlighter&&(this._highlighter.dispose(),this._highlighter=null),!this._editor.hasModel())return;const i=Ie(this._workspaceTrustService.isWorkspaceTrusted(),this._options);if([i.nonBasicASCII,i.ambiguousCharacters,i.invisibleCharacters].every(e=>e===!1))return;const o={nonBasicASCII:i.nonBasicASCII,ambiguousCharacters:i.ambiguousCharacters,invisibleCharacters:i.invisibleCharacters,includeComments:i.includeComments,includeStrings:i.includeStrings,allowedCodePoints:Object.keys(i.allowedCharacters).map(e=>e.codePointAt(0)),allowedLocales:Object.keys(i.allowedLocales).map(e=>e==="_os"?new Intl.NumberFormat().resolvedOptions().locale:e==="_vscode"?ie.language:e)};this._editorWorkerService.canComputeUnicodeHighlights(this._editor.getModel().uri)?this._highlighter=new _(this._editor,o,this._updateState,this._editorWorkerService):this._highlighter=new Ce(this._editor,o,this._updateState)}getDecorationInfo(i){return this._highlighter?this._highlighter.getDecorationInfo(i):null}};f=x([p(1,V),p(2,be),p(3,ge)],f);function Ie(n,t){return{nonBasicASCII:t.nonBasicASCII===E?!n:t.nonBasicASCII,ambiguousCharacters:t.ambiguousCharacters,invisibleCharacters:t.invisibleCharacters,includeComments:t.includeComments===E?!n:t.includeComments,includeStrings:t.includeStrings===E?!n:t.includeStrings,allowedCharacters:t.allowedCharacters,allowedLocales:t.allowedLocales}}let _=class extends U{constructor(i,o,e,s){super();this._editor=i;this._options=o;this._updateState=e;this._editorWorkerService=s;this._updateSoon=this._register(new T(()=>this._update(),250)),this._register(this._editor.onDidChangeModelContent(()=>{this._updateSoon.schedule()})),this._updateSoon.schedule()}_model=this._editor.getModel();_updateSoon;_decorations=this._editor.createDecorationsCollection();dispose(){this._decorations.clear(),super.dispose()}_update(){if(this._model.isDisposed())return;if(!this._model.mightContainNonBasicASCII()){this._decorations.clear();return}const i=this._model.getVersionId();this._editorWorkerService.computedUnicodeHighlights(this._model.uri,this._options).then(o=>{if(this._model.isDisposed()||this._model.getVersionId()!==i)return;this._updateState(o);const e=[];if(!o.hasMore)for(const s of o.ranges)e.push({range:s,options:M.instance.getDecorationFromOptions(this._options)});this._decorations.set(e)})}getDecorationInfo(i){if(!this._decorations.has(i))return null;const o=this._editor.getModel();if(!$(o,i))return null;const e=o.getValueInRange(i.range);return{reason:K(e,this._options),inComment:W(o,i),inString:N(o,i)}}};_=x([p(3,V)],_);class Ce extends U{constructor(i,o,e){super();this._editor=i;this._options=o;this._updateState=e;this._updateSoon=this._register(new T(()=>this._update(),250)),this._register(this._editor.onDidLayoutChange(()=>{this._updateSoon.schedule()})),this._register(this._editor.onDidScrollChange(()=>{this._updateSoon.schedule()})),this._register(this._editor.onDidChangeHiddenAreas(()=>{this._updateSoon.schedule()})),this._register(this._editor.onDidChangeModelContent(()=>{this._updateSoon.schedule()})),this._updateSoon.schedule()}_model=this._editor.getModel();_updateSoon;_decorations=this._editor.createDecorationsCollection();dispose(){this._decorations.clear(),super.dispose()}_update(){if(this._model.isDisposed())return;if(!this._model.mightContainNonBasicASCII()){this._decorations.clear();return}const i=this._editor.getVisibleRanges(),o=[],e={ranges:[],ambiguousCharacterCount:0,invisibleCharacterCount:0,nonBasicAsciiCharacterCount:0,hasMore:!1};for(const s of i){const c=z.computeUnicodeHighlights(this._model,this._options,s);for(const H of c.ranges)e.ranges.push(H);e.ambiguousCharacterCount+=e.ambiguousCharacterCount,e.invisibleCharacterCount+=e.invisibleCharacterCount,e.nonBasicAsciiCharacterCount+=e.nonBasicAsciiCharacterCount,e.hasMore=e.hasMore||c.hasMore}if(!e.hasMore)for(const s of e.ranges)o.push({range:s,options:M.instance.getDecorationFromOptions(this._options)});this._updateState(e),this._decorations.set(o)}getDecorationInfo(i){if(!this._decorations.has(i))return null;const o=this._editor.getModel(),e=o.getValueInRange(i.range);return $(o,i)?{reason:K(e,this._options),inComment:W(o,i),inString:N(o,i)}:null}}class Ci{constructor(t,i,o){this.owner=t;this.range=i;this.decoration=o}isValidForHoverAnchor(t){return t.type===F.Range&&this.range.startColumn<=t.range.startColumn&&this.range.endColumn>=t.range.endColumn}}const j=r.localize("unicodeHighlight.configureUnicodeHighlightOptions","Configure Unicode Highlight Options");let A=class{constructor(t,i,o){this._editor=t;this._languageService=i;this._openerService=o}hoverOrdinal=5;computeSync(t,i){if(!this._editor.hasModel()||t.type!==F.Range)return[];const o=this._editor.getModel(),e=this._editor.getContribution(f.ID);if(!e)return[];const s=[],c=new Set;let H=300;for(const S of i){const h=e.getDecorationInfo(S);if(!h)continue;const w=o.getValueInRange(S.range).codePointAt(0),l=B(w);let d;switch(h.reason.kind){case m.Ambiguous:{te(h.reason.confusableWith)?d=r.localize("unicodeHighlight.characterIsAmbiguousASCII","The character {0} could be confused with the ASCII character {1}, which is more common in source code.",l,B(h.reason.confusableWith.codePointAt(0))):d=r.localize("unicodeHighlight.characterIsAmbiguous","The character {0} could be confused with the character {1}, which is more common in source code.",l,B(h.reason.confusableWith.codePointAt(0)));break}case m.Invisible:d=r.localize("unicodeHighlight.characterIsInvisible","The character {0} is invisible.",l);break;case m.NonBasicAscii:d=r.localize("unicodeHighlight.characterIsNonBasicAscii","The character {0} is not a basic ASCII character.",l);break}if(c.has(d))continue;c.add(d);const a={codePoint:w,reason:h.reason,inComment:h.inComment,inString:h.inString},Q=r.localize("unicodeHighlight.adjustSettings","Adjust settings"),q=`command:${k.ID}?${encodeURIComponent(JSON.stringify(a))}`,G=new ee("",!0).appendMarkdown(d).appendText(" ").appendLink(q,Q,j);s.push(new le(this,S.range,[G],!1,H++))}return s}renderHoverParts(t,i){return he(t,i,this._editor,this._languageService,this._openerService)}getAccessibleContent(t){return t.contents.map(i=>i.value).join(`
-`)}};A=x([p(1,ae),p(2,ue)],A);function P(n){return`U+${n.toString(16).padStart(4,"0")}`}function B(n){let t=`\`${P(n)}\``;return L.isInvisibleCharacter(n)||(t+=` "${`${ve(n)}`}"`),t}function ve(n){return n===Y.BackTick?"`` ` ``":"`"+String.fromCodePoint(n)+"`"}function K(n,t){return z.computeUnicodeHighlightReason(n,t)}class M{static instance=new M;map=new Map;getDecorationFromOptions(t){return this.getDecoration(!t.includeComments,!t.includeStrings)}getDecoration(t,i){const o=`${t}${i}`;let e=this.map.get(o);return e||(e=se.createDynamic({description:"unicode-highlight",stickiness:re.NeverGrowsWhenTypingAtEdges,className:"unicode-highlight",showIfCollapsed:!0,overviewRuler:null,minimap:null,hideInCommentTokens:t,hideInStringTokens:i}),this.map.set(o,e)),e}}class He extends C{static ID="editor.action.unicodeHighlight.disableHighlightingInComments";shortLabel=r.localize("unicodeHighlight.disableHighlightingInComments.shortLabel","Disable Highlight In Comments");constructor(){super({id:I.ID,label:r.localize("action.unicodeHighlight.disableHighlightingInComments","Disable highlighting of characters in comments"),alias:"Disable highlighting of characters in comments",precondition:void 0})}async run(t,i,o){const e=t?.get(v);e&&this.runAction(e)}async runAction(t){await t.updateValue(g.includeComments,!1,b.USER)}}class Se extends C{static ID="editor.action.unicodeHighlight.disableHighlightingInStrings";shortLabel=r.localize("unicodeHighlight.disableHighlightingInStrings.shortLabel","Disable Highlight In Strings");constructor(){super({id:I.ID,label:r.localize("action.unicodeHighlight.disableHighlightingInStrings","Disable highlighting of characters in strings"),alias:"Disable highlighting of characters in strings",precondition:void 0})}async run(t,i,o){const e=t?.get(v);e&&this.runAction(e)}async runAction(t){await t.updateValue(g.includeStrings,!1,b.USER)}}class I extends C{static ID="editor.action.unicodeHighlight.disableHighlightingOfAmbiguousCharacters";shortLabel=r.localize("unicodeHighlight.disableHighlightingOfAmbiguousCharacters.shortLabel","Disable Ambiguous Highlight");constructor(){super({id:I.ID,label:r.localize("action.unicodeHighlight.disableHighlightingOfAmbiguousCharacters","Disable highlighting of ambiguous characters"),alias:"Disable highlighting of ambiguous characters",precondition:void 0})}async run(t,i,o){const e=t?.get(v);e&&this.runAction(e)}async runAction(t){await t.updateValue(g.ambiguousCharacters,!1,b.USER)}}class D extends C{static ID="editor.action.unicodeHighlight.disableHighlightingOfInvisibleCharacters";shortLabel=r.localize("unicodeHighlight.disableHighlightingOfInvisibleCharacters.shortLabel","Disable Invisible Highlight");constructor(){super({id:D.ID,label:r.localize("action.unicodeHighlight.disableHighlightingOfInvisibleCharacters","Disable highlighting of invisible characters"),alias:"Disable highlighting of invisible characters",precondition:void 0})}async run(t,i,o){const e=t?.get(v);e&&this.runAction(e)}async runAction(t){await t.updateValue(g.invisibleCharacters,!1,b.USER)}}class y extends C{static ID="editor.action.unicodeHighlight.disableHighlightingOfNonBasicAsciiCharacters";shortLabel=r.localize("unicodeHighlight.disableHighlightingOfNonBasicAsciiCharacters.shortLabel","Disable Non ASCII Highlight");constructor(){super({id:y.ID,label:r.localize("action.unicodeHighlight.disableHighlightingOfNonBasicAsciiCharacters","Disable highlighting of non basic ASCII characters"),alias:"Disable highlighting of non basic ASCII characters",precondition:void 0})}async run(t,i,o){const e=t?.get(v);e&&this.runAction(e)}async runAction(t){await t.updateValue(g.nonBasicASCII,!1,b.USER)}}class k extends C{static ID="editor.action.unicodeHighlight.showExcludeOptions";constructor(){super({id:k.ID,label:r.localize("action.unicodeHighlight.showExcludeOptions","Show Exclude Options"),alias:"Show Exclude Options",precondition:void 0})}async run(t,i,o){const{codePoint:e,reason:s,inString:c,inComment:H}=o,S=String.fromCodePoint(e),h=t.get(pe),u=t.get(v);function w(a){return L.isInvisibleCharacter(a)?r.localize("unicodeHighlight.excludeInvisibleCharFromBeingHighlighted","Exclude {0} (invisible character) from being highlighted",P(a)):r.localize("unicodeHighlight.excludeCharFromBeingHighlighted","Exclude {0} from being highlighted",`${P(a)} "${S}"`)}const l=[];if(s.kind===m.Ambiguous)for(const a of s.notAmbiguousInLocales)l.push({label:r.localize("unicodeHighlight.allowCommonCharactersInLanguage",'Allow unicode characters that are more common in the language "{0}".',a),run:async()=>{Ae(u,[a])}});if(l.push({label:w(e),run:()=>_e(u,[e])}),H){const a=new He;l.push({label:a.label,run:async()=>a.runAction(u)})}else if(c){const a=new Se;l.push({label:a.label,run:async()=>a.runAction(u)})}if(s.kind===m.Ambiguous){const a=new I;l.push({label:a.label,run:async()=>a.runAction(u)})}else if(s.kind===m.Invisible){const a=new D;l.push({label:a.label,run:async()=>a.runAction(u)})}else if(s.kind===m.NonBasicAscii){const a=new y;l.push({label:a.label,run:async()=>a.runAction(u)})}else De(s);const d=await h.pick(l,{title:j});d&&await d.run()}}async function _e(n,t){const i=n.getValue(g.allowedCharacters);let o;typeof i=="object"&&i?o=i:o={};for(const e of t)o[String.fromCodePoint(e)]=!0;await n.updateValue(g.allowedCharacters,o,b.USER)}async function Ae(n,t){const i=n.inspect(g.allowedLocales).user?.value;let o;typeof i=="object"&&i?o=Object.assign({},i):o={};for(const e of t)o[e]=!0;await n.updateValue(g.allowedLocales,o,b.USER)}function De(n){throw new Error(`Unexpected value: ${n}`)}O(I),O(D),O(y),O(k),ne(f.ID,f,oe.AfterFirstRender),ce.register(A);export{He as DisableHighlightingInCommentsAction,Se as DisableHighlightingInStringsAction,I as DisableHighlightingOfAmbiguousCharactersAction,D as DisableHighlightingOfInvisibleCharactersAction,y as DisableHighlightingOfNonBasicAsciiCharactersAction,k as ShowExcludeOptions,f as UnicodeHighlighter,Ci as UnicodeHighlighterHover,A as UnicodeHighlighterHoverParticipant,fe as warningIcon};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { RunOnceScheduler } from '../../../../base/common/async.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import * as platform from '../../../../base/common/platform.js';
+import { InvisibleCharacters, isBasicASCII } from '../../../../base/common/strings.js';
+import './unicodeHighlighter.css';
+import { EditorAction, registerEditorAction, registerEditorContribution } from '../../../browser/editorExtensions.js';
+import { inUntrustedWorkspace, unicodeHighlightConfigKeys } from '../../../common/config/editorOptions.js';
+import { ModelDecorationOptions } from '../../../common/model/textModel.js';
+import { UnicodeTextModelHighlighter } from '../../../common/services/unicodeTextModelHighlighter.js';
+import { IEditorWorkerService } from '../../../common/services/editorWorker.js';
+import { ILanguageService } from '../../../common/languages/language.js';
+import { isModelDecorationInComment, isModelDecorationInString, isModelDecorationVisible } from '../../../common/viewModel/viewModelDecorations.js';
+import { HoverParticipantRegistry } from '../../hover/browser/hoverTypes.js';
+import { MarkdownHover, renderMarkdownHovers } from '../../hover/browser/markdownHoverParticipant.js';
+import { BannerController } from './bannerController.js';
+import * as nls from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { registerIcon } from '../../../../platform/theme/common/iconRegistry.js';
+import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
+export const warningIcon = registerIcon('extensions-warning-message', Codicon.warning, nls.localize('warningIcon', 'Icon shown with a warning message in the extensions editor.'));
+let UnicodeHighlighter = class UnicodeHighlighter extends Disposable {
+    static { this.ID = 'editor.contrib.unicodeHighlighter'; }
+    constructor(_editor, _editorWorkerService, _workspaceTrustService, instantiationService) {
+        super();
+        this._editor = _editor;
+        this._editorWorkerService = _editorWorkerService;
+        this._workspaceTrustService = _workspaceTrustService;
+        this._highlighter = null;
+        this._bannerClosed = false;
+        this._updateState = (state) => {
+            if (state && state.hasMore) {
+                if (this._bannerClosed) {
+                    return;
+                }
+                const max = Math.max(state.ambiguousCharacterCount, state.nonBasicAsciiCharacterCount, state.invisibleCharacterCount);
+                let data;
+                if (state.nonBasicAsciiCharacterCount >= max) {
+                    data = {
+                        message: nls.localize('unicodeHighlighting.thisDocumentHasManyNonBasicAsciiUnicodeCharacters', 'This document contains many non-basic ASCII unicode characters'),
+                        command: new DisableHighlightingOfNonBasicAsciiCharactersAction(),
+                    };
+                }
+                else if (state.ambiguousCharacterCount >= max) {
+                    data = {
+                        message: nls.localize('unicodeHighlighting.thisDocumentHasManyAmbiguousUnicodeCharacters', 'This document contains many ambiguous unicode characters'),
+                        command: new DisableHighlightingOfAmbiguousCharactersAction(),
+                    };
+                }
+                else if (state.invisibleCharacterCount >= max) {
+                    data = {
+                        message: nls.localize('unicodeHighlighting.thisDocumentHasManyInvisibleUnicodeCharacters', 'This document contains many invisible unicode characters'),
+                        command: new DisableHighlightingOfInvisibleCharactersAction(),
+                    };
+                }
+                else {
+                    throw new Error('Unreachable');
+                }
+                this._bannerController.show({
+                    id: 'unicodeHighlightBanner',
+                    message: data.message,
+                    icon: warningIcon,
+                    actions: [
+                        {
+                            label: data.command.shortLabel,
+                            href: `command:${data.command.id}`
+                        }
+                    ],
+                    onClose: () => {
+                        this._bannerClosed = true;
+                    },
+                });
+            }
+            else {
+                this._bannerController.hide();
+            }
+        };
+        this._bannerController = this._register(instantiationService.createInstance(BannerController, _editor));
+        this._register(this._editor.onDidChangeModel(() => {
+            this._bannerClosed = false;
+            this._updateHighlighter();
+        }));
+        this._options = _editor.getOption(128);
+        this._register(_workspaceTrustService.onDidChangeTrust(e => {
+            this._updateHighlighter();
+        }));
+        this._register(_editor.onDidChangeConfiguration(e => {
+            if (e.hasChanged(128)) {
+                this._options = _editor.getOption(128);
+                this._updateHighlighter();
+            }
+        }));
+        this._updateHighlighter();
+    }
+    dispose() {
+        if (this._highlighter) {
+            this._highlighter.dispose();
+            this._highlighter = null;
+        }
+        super.dispose();
+    }
+    _updateHighlighter() {
+        this._updateState(null);
+        if (this._highlighter) {
+            this._highlighter.dispose();
+            this._highlighter = null;
+        }
+        if (!this._editor.hasModel()) {
+            return;
+        }
+        const options = resolveOptions(this._workspaceTrustService.isWorkspaceTrusted(), this._options);
+        if ([
+            options.nonBasicASCII,
+            options.ambiguousCharacters,
+            options.invisibleCharacters,
+        ].every((option) => option === false)) {
+            return;
+        }
+        const highlightOptions = {
+            nonBasicASCII: options.nonBasicASCII,
+            ambiguousCharacters: options.ambiguousCharacters,
+            invisibleCharacters: options.invisibleCharacters,
+            includeComments: options.includeComments,
+            includeStrings: options.includeStrings,
+            allowedCodePoints: Object.keys(options.allowedCharacters).map(c => c.codePointAt(0)),
+            allowedLocales: Object.keys(options.allowedLocales).map(locale => {
+                if (locale === '_os') {
+                    const osLocale = new Intl.NumberFormat().resolvedOptions().locale;
+                    return osLocale;
+                }
+                else if (locale === '_vscode') {
+                    return platform.language;
+                }
+                return locale;
+            }),
+        };
+        if (this._editorWorkerService.canComputeUnicodeHighlights(this._editor.getModel().uri)) {
+            this._highlighter = new DocumentUnicodeHighlighter(this._editor, highlightOptions, this._updateState, this._editorWorkerService);
+        }
+        else {
+            this._highlighter = new ViewportUnicodeHighlighter(this._editor, highlightOptions, this._updateState);
+        }
+    }
+    getDecorationInfo(decoration) {
+        if (this._highlighter) {
+            return this._highlighter.getDecorationInfo(decoration);
+        }
+        return null;
+    }
+};
+UnicodeHighlighter = __decorate([
+    __param(1, IEditorWorkerService),
+    __param(2, IWorkspaceTrustManagementService),
+    __param(3, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], UnicodeHighlighter);
+export { UnicodeHighlighter };
+function resolveOptions(trusted, options) {
+    return {
+        nonBasicASCII: options.nonBasicASCII === inUntrustedWorkspace ? !trusted : options.nonBasicASCII,
+        ambiguousCharacters: options.ambiguousCharacters,
+        invisibleCharacters: options.invisibleCharacters,
+        includeComments: options.includeComments === inUntrustedWorkspace ? !trusted : options.includeComments,
+        includeStrings: options.includeStrings === inUntrustedWorkspace ? !trusted : options.includeStrings,
+        allowedCharacters: options.allowedCharacters,
+        allowedLocales: options.allowedLocales,
+    };
+}
+let DocumentUnicodeHighlighter = class DocumentUnicodeHighlighter extends Disposable {
+    constructor(_editor, _options, _updateState, _editorWorkerService) {
+        super();
+        this._editor = _editor;
+        this._options = _options;
+        this._updateState = _updateState;
+        this._editorWorkerService = _editorWorkerService;
+        this._model = this._editor.getModel();
+        this._decorations = this._editor.createDecorationsCollection();
+        this._updateSoon = this._register(new RunOnceScheduler(() => this._update(), 250));
+        this._register(this._editor.onDidChangeModelContent(() => {
+            this._updateSoon.schedule();
+        }));
+        this._updateSoon.schedule();
+    }
+    dispose() {
+        this._decorations.clear();
+        super.dispose();
+    }
+    _update() {
+        if (this._model.isDisposed()) {
+            return;
+        }
+        if (!this._model.mightContainNonBasicASCII()) {
+            this._decorations.clear();
+            return;
+        }
+        const modelVersionId = this._model.getVersionId();
+        this._editorWorkerService
+            .computedUnicodeHighlights(this._model.uri, this._options)
+            .then((info) => {
+            if (this._model.isDisposed()) {
+                return;
+            }
+            if (this._model.getVersionId() !== modelVersionId) {
+                return;
+            }
+            this._updateState(info);
+            const decorations = [];
+            if (!info.hasMore) {
+                for (const range of info.ranges) {
+                    decorations.push({
+                        range: range,
+                        options: Decorations.instance.getDecorationFromOptions(this._options),
+                    });
+                }
+            }
+            this._decorations.set(decorations);
+        });
+    }
+    getDecorationInfo(decoration) {
+        if (!this._decorations.has(decoration)) {
+            return null;
+        }
+        const model = this._editor.getModel();
+        if (!isModelDecorationVisible(model, decoration)) {
+            return null;
+        }
+        const text = model.getValueInRange(decoration.range);
+        return {
+            reason: computeReason(text, this._options),
+            inComment: isModelDecorationInComment(model, decoration),
+            inString: isModelDecorationInString(model, decoration),
+        };
+    }
+};
+DocumentUnicodeHighlighter = __decorate([
+    __param(3, IEditorWorkerService),
+    __metadata("design:paramtypes", [Object, Object, Function, Object])
+], DocumentUnicodeHighlighter);
+class ViewportUnicodeHighlighter extends Disposable {
+    constructor(_editor, _options, _updateState) {
+        super();
+        this._editor = _editor;
+        this._options = _options;
+        this._updateState = _updateState;
+        this._model = this._editor.getModel();
+        this._decorations = this._editor.createDecorationsCollection();
+        this._updateSoon = this._register(new RunOnceScheduler(() => this._update(), 250));
+        this._register(this._editor.onDidLayoutChange(() => {
+            this._updateSoon.schedule();
+        }));
+        this._register(this._editor.onDidScrollChange(() => {
+            this._updateSoon.schedule();
+        }));
+        this._register(this._editor.onDidChangeHiddenAreas(() => {
+            this._updateSoon.schedule();
+        }));
+        this._register(this._editor.onDidChangeModelContent(() => {
+            this._updateSoon.schedule();
+        }));
+        this._updateSoon.schedule();
+    }
+    dispose() {
+        this._decorations.clear();
+        super.dispose();
+    }
+    _update() {
+        if (this._model.isDisposed()) {
+            return;
+        }
+        if (!this._model.mightContainNonBasicASCII()) {
+            this._decorations.clear();
+            return;
+        }
+        const ranges = this._editor.getVisibleRanges();
+        const decorations = [];
+        const totalResult = {
+            ranges: [],
+            ambiguousCharacterCount: 0,
+            invisibleCharacterCount: 0,
+            nonBasicAsciiCharacterCount: 0,
+            hasMore: false,
+        };
+        for (const range of ranges) {
+            const result = UnicodeTextModelHighlighter.computeUnicodeHighlights(this._model, this._options, range);
+            for (const r of result.ranges) {
+                totalResult.ranges.push(r);
+            }
+            totalResult.ambiguousCharacterCount += totalResult.ambiguousCharacterCount;
+            totalResult.invisibleCharacterCount += totalResult.invisibleCharacterCount;
+            totalResult.nonBasicAsciiCharacterCount += totalResult.nonBasicAsciiCharacterCount;
+            totalResult.hasMore = totalResult.hasMore || result.hasMore;
+        }
+        if (!totalResult.hasMore) {
+            for (const range of totalResult.ranges) {
+                decorations.push({ range, options: Decorations.instance.getDecorationFromOptions(this._options) });
+            }
+        }
+        this._updateState(totalResult);
+        this._decorations.set(decorations);
+    }
+    getDecorationInfo(decoration) {
+        if (!this._decorations.has(decoration)) {
+            return null;
+        }
+        const model = this._editor.getModel();
+        const text = model.getValueInRange(decoration.range);
+        if (!isModelDecorationVisible(model, decoration)) {
+            return null;
+        }
+        return {
+            reason: computeReason(text, this._options),
+            inComment: isModelDecorationInComment(model, decoration),
+            inString: isModelDecorationInString(model, decoration),
+        };
+    }
+}
+export class UnicodeHighlighterHover {
+    constructor(owner, range, decoration) {
+        this.owner = owner;
+        this.range = range;
+        this.decoration = decoration;
+    }
+    isValidForHoverAnchor(anchor) {
+        return (anchor.type === 1
+            && this.range.startColumn <= anchor.range.startColumn
+            && this.range.endColumn >= anchor.range.endColumn);
+    }
+}
+const configureUnicodeHighlightOptionsStr = nls.localize('unicodeHighlight.configureUnicodeHighlightOptions', 'Configure Unicode Highlight Options');
+let UnicodeHighlighterHoverParticipant = class UnicodeHighlighterHoverParticipant {
+    constructor(_editor, _languageService, _openerService) {
+        this._editor = _editor;
+        this._languageService = _languageService;
+        this._openerService = _openerService;
+        this.hoverOrdinal = 5;
+    }
+    computeSync(anchor, lineDecorations) {
+        if (!this._editor.hasModel() || anchor.type !== 1) {
+            return [];
+        }
+        const model = this._editor.getModel();
+        const unicodeHighlighter = this._editor.getContribution(UnicodeHighlighter.ID);
+        if (!unicodeHighlighter) {
+            return [];
+        }
+        const result = [];
+        const existedReason = new Set();
+        let index = 300;
+        for (const d of lineDecorations) {
+            const highlightInfo = unicodeHighlighter.getDecorationInfo(d);
+            if (!highlightInfo) {
+                continue;
+            }
+            const char = model.getValueInRange(d.range);
+            const codePoint = char.codePointAt(0);
+            const codePointStr = formatCodePointMarkdown(codePoint);
+            let reason;
+            switch (highlightInfo.reason.kind) {
+                case 0: {
+                    if (isBasicASCII(highlightInfo.reason.confusableWith)) {
+                        reason = nls.localize('unicodeHighlight.characterIsAmbiguousASCII', 'The character {0} could be confused with the ASCII character {1}, which is more common in source code.', codePointStr, formatCodePointMarkdown(highlightInfo.reason.confusableWith.codePointAt(0)));
+                    }
+                    else {
+                        reason = nls.localize('unicodeHighlight.characterIsAmbiguous', 'The character {0} could be confused with the character {1}, which is more common in source code.', codePointStr, formatCodePointMarkdown(highlightInfo.reason.confusableWith.codePointAt(0)));
+                    }
+                    break;
+                }
+                case 1:
+                    reason = nls.localize('unicodeHighlight.characterIsInvisible', 'The character {0} is invisible.', codePointStr);
+                    break;
+                case 2:
+                    reason = nls.localize('unicodeHighlight.characterIsNonBasicAscii', 'The character {0} is not a basic ASCII character.', codePointStr);
+                    break;
+            }
+            if (existedReason.has(reason)) {
+                continue;
+            }
+            existedReason.add(reason);
+            const adjustSettingsArgs = {
+                codePoint: codePoint,
+                reason: highlightInfo.reason,
+                inComment: highlightInfo.inComment,
+                inString: highlightInfo.inString,
+            };
+            const adjustSettings = nls.localize('unicodeHighlight.adjustSettings', 'Adjust settings');
+            const uri = `command:${ShowExcludeOptions.ID}?${encodeURIComponent(JSON.stringify(adjustSettingsArgs))}`;
+            const markdown = new MarkdownString('', true)
+                .appendMarkdown(reason)
+                .appendText(' ')
+                .appendLink(uri, adjustSettings, configureUnicodeHighlightOptionsStr);
+            result.push(new MarkdownHover(this, d.range, [markdown], false, index++));
+        }
+        return result;
+    }
+    renderHoverParts(context, hoverParts) {
+        return renderMarkdownHovers(context, hoverParts, this._editor, this._languageService, this._openerService);
+    }
+    getAccessibleContent(hoverPart) {
+        return hoverPart.contents.map(c => c.value).join('\n');
+    }
+};
+UnicodeHighlighterHoverParticipant = __decorate([
+    __param(1, ILanguageService),
+    __param(2, IOpenerService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], UnicodeHighlighterHoverParticipant);
+export { UnicodeHighlighterHoverParticipant };
+function codePointToHex(codePoint) {
+    return `U+${codePoint.toString(16).padStart(4, '0')}`;
+}
+function formatCodePointMarkdown(codePoint) {
+    let value = `\`${codePointToHex(codePoint)}\``;
+    if (!InvisibleCharacters.isInvisibleCharacter(codePoint)) {
+        value += ` "${`${renderCodePointAsInlineCode(codePoint)}`}"`;
+    }
+    return value;
+}
+function renderCodePointAsInlineCode(codePoint) {
+    if (codePoint === 96) {
+        return '`` ` ``';
+    }
+    return '`' + String.fromCodePoint(codePoint) + '`';
+}
+function computeReason(char, options) {
+    return UnicodeTextModelHighlighter.computeUnicodeHighlightReason(char, options);
+}
+class Decorations {
+    constructor() {
+        this.map = new Map();
+    }
+    static { this.instance = new Decorations(); }
+    getDecorationFromOptions(options) {
+        return this.getDecoration(!options.includeComments, !options.includeStrings);
+    }
+    getDecoration(hideInComments, hideInStrings) {
+        const key = `${hideInComments}${hideInStrings}`;
+        let options = this.map.get(key);
+        if (!options) {
+            options = ModelDecorationOptions.createDynamic({
+                description: 'unicode-highlight',
+                stickiness: 1,
+                className: 'unicode-highlight',
+                showIfCollapsed: true,
+                overviewRuler: null,
+                minimap: null,
+                hideInCommentTokens: hideInComments,
+                hideInStringTokens: hideInStrings,
+            });
+            this.map.set(key, options);
+        }
+        return options;
+    }
+}
+export class DisableHighlightingInCommentsAction extends EditorAction {
+    static { this.ID = 'editor.action.unicodeHighlight.disableHighlightingInComments'; }
+    constructor() {
+        super({
+            id: DisableHighlightingOfAmbiguousCharactersAction.ID,
+            label: nls.localize('action.unicodeHighlight.disableHighlightingInComments', 'Disable highlighting of characters in comments'),
+            alias: 'Disable highlighting of characters in comments',
+            precondition: undefined
+        });
+        this.shortLabel = nls.localize('unicodeHighlight.disableHighlightingInComments.shortLabel', 'Disable Highlight In Comments');
+    }
+    async run(accessor, editor, args) {
+        const configurationService = accessor?.get(IConfigurationService);
+        if (configurationService) {
+            this.runAction(configurationService);
+        }
+    }
+    async runAction(configurationService) {
+        await configurationService.updateValue(unicodeHighlightConfigKeys.includeComments, false, 2);
+    }
+}
+export class DisableHighlightingInStringsAction extends EditorAction {
+    static { this.ID = 'editor.action.unicodeHighlight.disableHighlightingInStrings'; }
+    constructor() {
+        super({
+            id: DisableHighlightingOfAmbiguousCharactersAction.ID,
+            label: nls.localize('action.unicodeHighlight.disableHighlightingInStrings', 'Disable highlighting of characters in strings'),
+            alias: 'Disable highlighting of characters in strings',
+            precondition: undefined
+        });
+        this.shortLabel = nls.localize('unicodeHighlight.disableHighlightingInStrings.shortLabel', 'Disable Highlight In Strings');
+    }
+    async run(accessor, editor, args) {
+        const configurationService = accessor?.get(IConfigurationService);
+        if (configurationService) {
+            this.runAction(configurationService);
+        }
+    }
+    async runAction(configurationService) {
+        await configurationService.updateValue(unicodeHighlightConfigKeys.includeStrings, false, 2);
+    }
+}
+export class DisableHighlightingOfAmbiguousCharactersAction extends EditorAction {
+    static { this.ID = 'editor.action.unicodeHighlight.disableHighlightingOfAmbiguousCharacters'; }
+    constructor() {
+        super({
+            id: DisableHighlightingOfAmbiguousCharactersAction.ID,
+            label: nls.localize('action.unicodeHighlight.disableHighlightingOfAmbiguousCharacters', 'Disable highlighting of ambiguous characters'),
+            alias: 'Disable highlighting of ambiguous characters',
+            precondition: undefined
+        });
+        this.shortLabel = nls.localize('unicodeHighlight.disableHighlightingOfAmbiguousCharacters.shortLabel', 'Disable Ambiguous Highlight');
+    }
+    async run(accessor, editor, args) {
+        const configurationService = accessor?.get(IConfigurationService);
+        if (configurationService) {
+            this.runAction(configurationService);
+        }
+    }
+    async runAction(configurationService) {
+        await configurationService.updateValue(unicodeHighlightConfigKeys.ambiguousCharacters, false, 2);
+    }
+}
+export class DisableHighlightingOfInvisibleCharactersAction extends EditorAction {
+    static { this.ID = 'editor.action.unicodeHighlight.disableHighlightingOfInvisibleCharacters'; }
+    constructor() {
+        super({
+            id: DisableHighlightingOfInvisibleCharactersAction.ID,
+            label: nls.localize('action.unicodeHighlight.disableHighlightingOfInvisibleCharacters', 'Disable highlighting of invisible characters'),
+            alias: 'Disable highlighting of invisible characters',
+            precondition: undefined
+        });
+        this.shortLabel = nls.localize('unicodeHighlight.disableHighlightingOfInvisibleCharacters.shortLabel', 'Disable Invisible Highlight');
+    }
+    async run(accessor, editor, args) {
+        const configurationService = accessor?.get(IConfigurationService);
+        if (configurationService) {
+            this.runAction(configurationService);
+        }
+    }
+    async runAction(configurationService) {
+        await configurationService.updateValue(unicodeHighlightConfigKeys.invisibleCharacters, false, 2);
+    }
+}
+export class DisableHighlightingOfNonBasicAsciiCharactersAction extends EditorAction {
+    static { this.ID = 'editor.action.unicodeHighlight.disableHighlightingOfNonBasicAsciiCharacters'; }
+    constructor() {
+        super({
+            id: DisableHighlightingOfNonBasicAsciiCharactersAction.ID,
+            label: nls.localize('action.unicodeHighlight.disableHighlightingOfNonBasicAsciiCharacters', 'Disable highlighting of non basic ASCII characters'),
+            alias: 'Disable highlighting of non basic ASCII characters',
+            precondition: undefined
+        });
+        this.shortLabel = nls.localize('unicodeHighlight.disableHighlightingOfNonBasicAsciiCharacters.shortLabel', 'Disable Non ASCII Highlight');
+    }
+    async run(accessor, editor, args) {
+        const configurationService = accessor?.get(IConfigurationService);
+        if (configurationService) {
+            this.runAction(configurationService);
+        }
+    }
+    async runAction(configurationService) {
+        await configurationService.updateValue(unicodeHighlightConfigKeys.nonBasicASCII, false, 2);
+    }
+}
+export class ShowExcludeOptions extends EditorAction {
+    static { this.ID = 'editor.action.unicodeHighlight.showExcludeOptions'; }
+    constructor() {
+        super({
+            id: ShowExcludeOptions.ID,
+            label: nls.localize('action.unicodeHighlight.showExcludeOptions', "Show Exclude Options"),
+            alias: 'Show Exclude Options',
+            precondition: undefined
+        });
+    }
+    async run(accessor, editor, args) {
+        const { codePoint, reason, inString, inComment } = args;
+        const char = String.fromCodePoint(codePoint);
+        const quickPickService = accessor.get(IQuickInputService);
+        const configurationService = accessor.get(IConfigurationService);
+        function getExcludeCharFromBeingHighlightedLabel(codePoint) {
+            if (InvisibleCharacters.isInvisibleCharacter(codePoint)) {
+                return nls.localize('unicodeHighlight.excludeInvisibleCharFromBeingHighlighted', 'Exclude {0} (invisible character) from being highlighted', codePointToHex(codePoint));
+            }
+            return nls.localize('unicodeHighlight.excludeCharFromBeingHighlighted', 'Exclude {0} from being highlighted', `${codePointToHex(codePoint)} "${char}"`);
+        }
+        const options = [];
+        if (reason.kind === 0) {
+            for (const locale of reason.notAmbiguousInLocales) {
+                options.push({
+                    label: nls.localize("unicodeHighlight.allowCommonCharactersInLanguage", "Allow unicode characters that are more common in the language \"{0}\".", locale),
+                    run: async () => {
+                        excludeLocaleFromBeingHighlighted(configurationService, [locale]);
+                    },
+                });
+            }
+        }
+        options.push({
+            label: getExcludeCharFromBeingHighlightedLabel(codePoint),
+            run: () => excludeCharFromBeingHighlighted(configurationService, [codePoint])
+        });
+        if (inComment) {
+            const action = new DisableHighlightingInCommentsAction();
+            options.push({ label: action.label, run: async () => action.runAction(configurationService) });
+        }
+        else if (inString) {
+            const action = new DisableHighlightingInStringsAction();
+            options.push({ label: action.label, run: async () => action.runAction(configurationService) });
+        }
+        if (reason.kind === 0) {
+            const action = new DisableHighlightingOfAmbiguousCharactersAction();
+            options.push({ label: action.label, run: async () => action.runAction(configurationService) });
+        }
+        else if (reason.kind === 1) {
+            const action = new DisableHighlightingOfInvisibleCharactersAction();
+            options.push({ label: action.label, run: async () => action.runAction(configurationService) });
+        }
+        else if (reason.kind === 2) {
+            const action = new DisableHighlightingOfNonBasicAsciiCharactersAction();
+            options.push({ label: action.label, run: async () => action.runAction(configurationService) });
+        }
+        else {
+            expectNever(reason);
+        }
+        const result = await quickPickService.pick(options, { title: configureUnicodeHighlightOptionsStr });
+        if (result) {
+            await result.run();
+        }
+    }
+}
+async function excludeCharFromBeingHighlighted(configurationService, charCodes) {
+    const existingValue = configurationService.getValue(unicodeHighlightConfigKeys.allowedCharacters);
+    let value;
+    if ((typeof existingValue === 'object') && existingValue) {
+        value = existingValue;
+    }
+    else {
+        value = {};
+    }
+    for (const charCode of charCodes) {
+        value[String.fromCodePoint(charCode)] = true;
+    }
+    await configurationService.updateValue(unicodeHighlightConfigKeys.allowedCharacters, value, 2);
+}
+async function excludeLocaleFromBeingHighlighted(configurationService, locales) {
+    const existingValue = configurationService.inspect(unicodeHighlightConfigKeys.allowedLocales).user?.value;
+    let value;
+    if ((typeof existingValue === 'object') && existingValue) {
+        value = Object.assign({}, existingValue);
+    }
+    else {
+        value = {};
+    }
+    for (const locale of locales) {
+        value[locale] = true;
+    }
+    await configurationService.updateValue(unicodeHighlightConfigKeys.allowedLocales, value, 2);
+}
+function expectNever(value) {
+    throw new Error(`Unexpected value: ${value}`);
+}
+registerEditorAction(DisableHighlightingOfAmbiguousCharactersAction);
+registerEditorAction(DisableHighlightingOfInvisibleCharactersAction);
+registerEditorAction(DisableHighlightingOfNonBasicAsciiCharactersAction);
+registerEditorAction(ShowExcludeOptions);
+registerEditorContribution(UnicodeHighlighter.ID, UnicodeHighlighter, 1);
+HoverParticipantRegistry.register(UnicodeHighlighterHoverParticipant);

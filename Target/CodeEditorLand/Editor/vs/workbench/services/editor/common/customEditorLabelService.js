@@ -1,1 +1,205 @@
-var u=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var g=(l,o,t,e)=>{for(var n=e>1?void 0:e?v(o,t):o,r=l.length-1,i;r>=0;r--)(i=l[r])&&(n=(e?i(o,t,n):i(n))||n);return e&&n&&u(o,t,n),n},h=(l,o)=>(t,e)=>o(t,e,l);import{Emitter as E}from"../../../../base/common/event.js";import{parse as I}from"../../../../base/common/glob.js";import{Disposable as b}from"../../../../base/common/lifecycle.js";import{isAbsolute as P,parse as x,dirname as N}from"../../../../base/common/path.js";import{dirname as D,relativePath as y}from"../../../../base/common/resources.js";import"../../../../base/common/uri.js";import{IConfigurationService as C}from"../../../../platform/configuration/common/configuration.js";import{InstantiationType as T,registerSingleton as S}from"../../../../platform/instantiation/common/extensions.js";import{createDecorator as _}from"../../../../platform/instantiation/common/instantiation.js";import{IWorkspaceContextService as L}from"../../../../platform/workspace/common/workspace.js";import{MRUCache as R}from"../../../../base/common/map.js";let a=class extends b{constructor(t,e){super();this.configurationService=t;this.workspaceContextService=e;this.storeEnablementState(),this.storeCustomPatterns(),this.registerListeners()}_serviceBrand;static SETTING_ID_PATTERNS="workbench.editor.customLabels.patterns";static SETTING_ID_ENABLED="workbench.editor.customLabels.enabled";_onDidChange=this._register(new E);onDidChange=this._onDidChange.event;patterns=[];enabled=!0;cache=new R(1e3);registerListeners(){this._register(this.configurationService.onDidChangeConfiguration(t=>{if(t.affectsConfiguration(a.SETTING_ID_ENABLED)){const e=this.enabled;this.storeEnablementState(),e!==this.enabled&&this.patterns.length>0&&this._onDidChange.fire()}else t.affectsConfiguration(a.SETTING_ID_PATTERNS)&&(this.cache.clear(),this.storeCustomPatterns(),this._onDidChange.fire())}))}storeEnablementState(){this.enabled=this.configurationService.getValue(a.SETTING_ID_ENABLED)}_templateRegexValidation=/[a-zA-Z0-9]/;storeCustomPatterns(){this.patterns=[];const t=this.configurationService.getValue(a.SETTING_ID_PATTERNS);for(const e in t){const n=t[e];if(!this._templateRegexValidation.test(n))continue;const r=P(e),i=I(e);this.patterns.push({pattern:e,template:n,isAbsolutePath:r,parsedPattern:i})}this.patterns.sort((e,n)=>this.patternWeight(n.pattern)-this.patternWeight(e.pattern))}patternWeight(t){let e=0;for(const n of t.split("/"))n==="**"?e+=1:n==="*"?e+=10:n.includes("*")||n.includes("?")?e+=50:n!==""&&(e+=100);return e}getName(t){if(!this.enabled||this.patterns.length===0)return;const e=t.toString(),n=this.cache.get(e);if(n!==void 0)return n??void 0;const r=this.applyPatterns(t);return this.cache.set(e,r??null),r}applyPatterns(t){const e=this.workspaceContextService.getWorkspaceFolder(t);let n;for(const r of this.patterns){let i;if(e&&!r.isAbsolutePath?(n||(n=y(D(e.uri),t)??t.path),i=n):i=t.path,r.parsedPattern(i))return this.applyTemplate(r.template,t,i)}}_parsedTemplateExpression=/\$\{(dirname|filename|extname|extname\((?<extnameN>[-+]?\d+)\)|dirname\((?<dirnameN>[-+]?\d+)\))\}/g;_filenameCaptureExpression=/(?<filename>^\.*[^.]*)/;applyTemplate(t,e,n){let r;return t.replace(this._parsedTemplateExpression,(i,p,...m)=>{r=r??x(e.path);const{dirnameN:f="0",extnameN:c="0"}=m.pop();if(p==="filename"){const{filename:s}=this._filenameCaptureExpression.exec(r.base)?.groups??{};if(s)return s}else if(p==="extname"){const s=this.getExtnames(r.base);if(s)return s}else if(p.startsWith("extname")){const s=parseInt(c),d=this.getNthExtname(r.base,s);if(d)return d}else if(p.startsWith("dirname")){const s=parseInt(f),d=this.getNthDirname(N(n),s);if(d)return d}return i})}removeLeadingDot(t){let e=t;for(;e.startsWith(".");)e=e.slice(1);return e}getNthDirname(t,e){t=t.startsWith("/")?t.slice(1):t;const n=t.split("/");return this.getNthFragment(n,e)}getExtnames(t){return this.removeLeadingDot(t).split(".").slice(1).join(".")}getNthExtname(t,e){const n=this.removeLeadingDot(t).split(".");return n.shift(),this.getNthFragment(n,e)}getNthFragment(t,e){const n=t.length;let r;e<0?r=Math.abs(e)-1:r=n-e-1;const i=t[r];if(!(i===void 0||i===""))return i}};a=g([h(0,C),h(1,L)],a);const A=_("ICustomEditorLabelService");S(A,a,T.Delayed);export{a as CustomEditorLabelService,A as ICustomEditorLabelService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var CustomEditorLabelService_1;
+import { Emitter } from '../../../../base/common/event.js';
+import { parse as parseGlob } from '../../../../base/common/glob.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { isAbsolute, parse as parsePath, dirname } from '../../../../base/common/path.js';
+import { dirname as resourceDirname, relativePath as getRelativePath } from '../../../../base/common/resources.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { MRUCache } from '../../../../base/common/map.js';
+let CustomEditorLabelService = class CustomEditorLabelService extends Disposable {
+    static { CustomEditorLabelService_1 = this; }
+    static { this.SETTING_ID_PATTERNS = 'workbench.editor.customLabels.patterns'; }
+    static { this.SETTING_ID_ENABLED = 'workbench.editor.customLabels.enabled'; }
+    constructor(configurationService, workspaceContextService) {
+        super();
+        this.configurationService = configurationService;
+        this.workspaceContextService = workspaceContextService;
+        this._onDidChange = this._register(new Emitter());
+        this.onDidChange = this._onDidChange.event;
+        this.patterns = [];
+        this.enabled = true;
+        this.cache = new MRUCache(1000);
+        this._templateRegexValidation = /[a-zA-Z0-9]/;
+        this._parsedTemplateExpression = /\$\{(dirname|filename|extname|extname\((?<extnameN>[-+]?\d+)\)|dirname\((?<dirnameN>[-+]?\d+)\))\}/g;
+        this._filenameCaptureExpression = /(?<filename>^\.*[^.]*)/;
+        this.storeEnablementState();
+        this.storeCustomPatterns();
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration(CustomEditorLabelService_1.SETTING_ID_ENABLED)) {
+                const oldEnablement = this.enabled;
+                this.storeEnablementState();
+                if (oldEnablement !== this.enabled && this.patterns.length > 0) {
+                    this._onDidChange.fire();
+                }
+            }
+            else if (e.affectsConfiguration(CustomEditorLabelService_1.SETTING_ID_PATTERNS)) {
+                this.cache.clear();
+                this.storeCustomPatterns();
+                this._onDidChange.fire();
+            }
+        }));
+    }
+    storeEnablementState() {
+        this.enabled = this.configurationService.getValue(CustomEditorLabelService_1.SETTING_ID_ENABLED);
+    }
+    storeCustomPatterns() {
+        this.patterns = [];
+        const customLabelPatterns = this.configurationService.getValue(CustomEditorLabelService_1.SETTING_ID_PATTERNS);
+        for (const pattern in customLabelPatterns) {
+            const template = customLabelPatterns[pattern];
+            if (!this._templateRegexValidation.test(template)) {
+                continue;
+            }
+            const isAbsolutePath = isAbsolute(pattern);
+            const parsedPattern = parseGlob(pattern);
+            this.patterns.push({ pattern, template, isAbsolutePath, parsedPattern });
+        }
+        this.patterns.sort((a, b) => this.patternWeight(b.pattern) - this.patternWeight(a.pattern));
+    }
+    patternWeight(pattern) {
+        let weight = 0;
+        for (const fragment of pattern.split('/')) {
+            if (fragment === '**') {
+                weight += 1;
+            }
+            else if (fragment === '*') {
+                weight += 10;
+            }
+            else if (fragment.includes('*') || fragment.includes('?')) {
+                weight += 50;
+            }
+            else if (fragment !== '') {
+                weight += 100;
+            }
+        }
+        return weight;
+    }
+    getName(resource) {
+        if (!this.enabled || this.patterns.length === 0) {
+            return undefined;
+        }
+        const key = resource.toString();
+        const cached = this.cache.get(key);
+        if (cached !== undefined) {
+            return cached ?? undefined;
+        }
+        const result = this.applyPatterns(resource);
+        this.cache.set(key, result ?? null);
+        return result;
+    }
+    applyPatterns(resource) {
+        const root = this.workspaceContextService.getWorkspaceFolder(resource);
+        let relativePath;
+        for (const pattern of this.patterns) {
+            let relevantPath;
+            if (root && !pattern.isAbsolutePath) {
+                if (!relativePath) {
+                    relativePath = getRelativePath(resourceDirname(root.uri), resource) ?? resource.path;
+                }
+                relevantPath = relativePath;
+            }
+            else {
+                relevantPath = resource.path;
+            }
+            if (pattern.parsedPattern(relevantPath)) {
+                return this.applyTemplate(pattern.template, resource, relevantPath);
+            }
+        }
+        return undefined;
+    }
+    applyTemplate(template, resource, relevantPath) {
+        let parsedPath;
+        return template.replace(this._parsedTemplateExpression, (match, variable, ...args) => {
+            parsedPath = parsedPath ?? parsePath(resource.path);
+            const { dirnameN = '0', extnameN = '0' } = args.pop();
+            if (variable === 'filename') {
+                const { filename } = this._filenameCaptureExpression.exec(parsedPath.base)?.groups ?? {};
+                if (filename) {
+                    return filename;
+                }
+            }
+            else if (variable === 'extname') {
+                const extension = this.getExtnames(parsedPath.base);
+                if (extension) {
+                    return extension;
+                }
+            }
+            else if (variable.startsWith('extname')) {
+                const n = parseInt(extnameN);
+                const nthExtname = this.getNthExtname(parsedPath.base, n);
+                if (nthExtname) {
+                    return nthExtname;
+                }
+            }
+            else if (variable.startsWith('dirname')) {
+                const n = parseInt(dirnameN);
+                const nthDir = this.getNthDirname(dirname(relevantPath), n);
+                if (nthDir) {
+                    return nthDir;
+                }
+            }
+            return match;
+        });
+    }
+    removeLeadingDot(path) {
+        let withoutLeadingDot = path;
+        while (withoutLeadingDot.startsWith('.')) {
+            withoutLeadingDot = withoutLeadingDot.slice(1);
+        }
+        return withoutLeadingDot;
+    }
+    getNthDirname(path, n) {
+        path = path.startsWith('/') ? path.slice(1) : path;
+        const pathFragments = path.split('/');
+        return this.getNthFragment(pathFragments, n);
+    }
+    getExtnames(fullFileName) {
+        return this.removeLeadingDot(fullFileName).split('.').slice(1).join('.');
+    }
+    getNthExtname(fullFileName, n) {
+        const extensionNameFragments = this.removeLeadingDot(fullFileName).split('.');
+        extensionNameFragments.shift();
+        return this.getNthFragment(extensionNameFragments, n);
+    }
+    getNthFragment(fragments, n) {
+        const length = fragments.length;
+        let nth;
+        if (n < 0) {
+            nth = Math.abs(n) - 1;
+        }
+        else {
+            nth = length - n - 1;
+        }
+        const nthFragment = fragments[nth];
+        if (nthFragment === undefined || nthFragment === '') {
+            return undefined;
+        }
+        return nthFragment;
+    }
+};
+CustomEditorLabelService = CustomEditorLabelService_1 = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, IWorkspaceContextService),
+    __metadata("design:paramtypes", [Object, Object])
+], CustomEditorLabelService);
+export { CustomEditorLabelService };
+export const ICustomEditorLabelService = createDecorator('ICustomEditorLabelService');
+registerSingleton(ICustomEditorLabelService, CustomEditorLabelService, 1);

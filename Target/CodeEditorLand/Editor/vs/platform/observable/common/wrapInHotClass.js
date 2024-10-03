@@ -1,1 +1,64 @@
-var v=Object.defineProperty;var b=Object.getOwnPropertyDescriptor;var d=(e,n,r,i)=>{for(var t=i>1?void 0:i?b(n,r):n,s=e.length-1,a;s>=0;s--)(a=e[s])&&(t=(i?a(n,r,t):a(t))||t);return i&&t&&v(n,r,t),t},u=(e,n)=>(r,i)=>n(r,i,e);import{isHotReloadEnabled as l}from"../../../base/common/hotReload.js";import"../../../base/common/lifecycle.js";import{autorunWithStore as S}from"../../../base/common/observable.js";import{IInstantiationService as I}from"../../instantiation/common/instantiation.js";function w(e){return e instanceof p?e._instance:e}function O(e){return l()?g(e,o):e.get()}class p{constructor(n){this.instantiationService=n}_instance;init(...n){}}function g(e,n){return class extends n{_autorun=void 0;init(...i){this._autorun=S((t,s)=>{const a=e.read(t);this._instance=s.add(this.instantiationService.createInstance(a,...i))})}dispose(){this._autorun?.dispose()}}}let o=class extends p{constructor(n){super(n),this.init()}};o=d([u(0,I)],o);function G(e){return l()?g(e,c):e.get()}let c=class extends p{constructor(n,r){super(r),this.init(n)}};c=d([u(1,I)],c);export{w as hotClassGetOriginalInstance,O as wrapInHotClass0,G as wrapInHotClass1};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { isHotReloadEnabled } from '../../../base/common/hotReload.js';
+import { autorunWithStore } from '../../../base/common/observable.js';
+import { IInstantiationService } from '../../instantiation/common/instantiation.js';
+export function hotClassGetOriginalInstance(value) {
+    if (value instanceof BaseClass) {
+        return value._instance;
+    }
+    return value;
+}
+export function wrapInHotClass0(clazz) {
+    return !isHotReloadEnabled() ? clazz.get() : createWrapper(clazz, BaseClass0);
+}
+class BaseClass {
+    constructor(instantiationService) {
+        this.instantiationService = instantiationService;
+    }
+    init(...params) { }
+}
+function createWrapper(clazz, B) {
+    return (class ReloadableWrapper extends B {
+        constructor() {
+            super(...arguments);
+            this._autorun = undefined;
+        }
+        init(...params) {
+            this._autorun = autorunWithStore((reader, store) => {
+                const clazz_ = clazz.read(reader);
+                this._instance = store.add(this.instantiationService.createInstance(clazz_, ...params));
+            });
+        }
+        dispose() {
+            this._autorun?.dispose();
+        }
+    });
+}
+let BaseClass0 = class BaseClass0 extends BaseClass {
+    constructor(i) { super(i); this.init(); }
+};
+BaseClass0 = __decorate([
+    __param(0, IInstantiationService),
+    __metadata("design:paramtypes", [Object])
+], BaseClass0);
+export function wrapInHotClass1(clazz) {
+    return !isHotReloadEnabled() ? clazz.get() : createWrapper(clazz, BaseClass1);
+}
+let BaseClass1 = class BaseClass1 extends BaseClass {
+    constructor(param1, i) { super(i); this.init(param1); }
+};
+BaseClass1 = __decorate([
+    __param(1, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object])
+], BaseClass1);

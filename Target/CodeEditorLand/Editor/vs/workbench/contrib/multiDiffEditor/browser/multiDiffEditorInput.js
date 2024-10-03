@@ -1,1 +1,357 @@
-var F=Object.defineProperty;var k=Object.getOwnPropertyDescriptor;var b=(n,r,e,i)=>{for(var t=i>1?void 0:i?k(r,e):r,o=n.length-1,a;o>=0;o--)(a=n[o])&&(t=(i?a(r,e,t):a(t))||t);return i&&t&&F(r,e,t),t},u=(n,r)=>(e,i)=>r(e,i,n);import{LazyStatefulPromise as P,raceTimeout as z}from"../../../../base/common/async.js";import{BugIndicatingError as L,onUnexpectedError as M}from"../../../../base/common/errors.js";import{Event as V,ValueWithChangeEvent as W}from"../../../../base/common/event.js";import"../../../../base/common/htmlContent.js";import{Disposable as K,DisposableStore as A}from"../../../../base/common/lifecycle.js";import{parse as N}from"../../../../base/common/marshalling.js";import{Schemas as j}from"../../../../base/common/network.js";import{deepClone as R}from"../../../../base/common/objects.js";import{ObservableLazyPromise as G,ValueWithChangeEventFromObservable as H,autorun as q,constObservable as E,derived as g,mapObservableArrayCached as O,observableFromEvent as J,observableFromValueWithChangeEvent as B,observableValue as $,recomputeInitiallyAndOnChange as Q}from"../../../../base/common/observable.js";import"../../../../base/common/themables.js";import{isDefined as X,isObject as Y}from"../../../../base/common/types.js";import{URI as v}from"../../../../base/common/uri.js";import{RefCounted as Z}from"../../../../editor/browser/widget/diffEditor/utils.js";import"../../../../editor/browser/widget/multiDiffEditor/model.js";import{MultiDiffEditorViewModel as ee}from"../../../../editor/browser/widget/multiDiffEditor/multiDiffEditorViewModel.js";import"../../../../editor/common/config/editorOptions.js";import{ITextModelService as ie}from"../../../../editor/common/services/resolverService.js";import{ITextResourceConfigurationService as te}from"../../../../editor/common/services/textResourceConfiguration.js";import{localize as x}from"../../../../nls.js";import{ConfirmResult as re}from"../../../../platform/dialogs/common/dialogs.js";import{IInstantiationService as w}from"../../../../platform/instantiation/common/instantiation.js";import"../../../browser/parts/editor/textEditor.js";import{DEFAULT_EDITOR_ASSOCIATION as I,EditorInputCapabilities as oe}from"../../../common/editor.js";import{EditorInput as ne}from"../../../common/editor/editorInput.js";import{IEditorResolverService as se,RegisteredEditorPriority as ae}from"../../../services/editor/common/editorResolverService.js";import{ITextFileService as de}from"../../../services/textfile/common/textfiles.js";import{MultiDiffEditorIcon as le}from"./icons.contribution.js";import{IMultiDiffSourceResolverService as fe,MultiDiffEditorItem as U}from"./multiDiffSourceResolverService.js";let d=class extends ne{constructor(e,i,t,o=!1,a,f,S,s,p){super();this.multiDiffSource=e;this.label=i;this.initialResources=t;this.isTransient=o;this._textModelService=a;this._textResourceConfigurationService=f;this._instantiationService=S;this._multiDiffSourceResolverService=s;this._textFileService=p;this._register(q(c=>{const l=this.resources.read(c),m=this.label??x("name","Multi Diff Editor");l?this._name=m+x({key:"files",comment:["the number of files being shown"]}," ({0} files)",l.length):this._name=m,this._onDidChangeLabel.fire()}))}static fromResourceMultiDiffEditorInput(e,i){if(!e.multiDiffSource&&!e.resources)throw new L("MultiDiffEditorInput requires either multiDiffSource or resources");const t=e.multiDiffSource??v.parse(`multi-diff-editor:${new Date().getMilliseconds().toString()+Math.random().toString()}`);return i.createInstance(d,t,e.label,e.resources?.map(o=>new U(o.original.resource,o.modified.resource,o.goToFileResource)),e.isTransient??!1)}static fromSerialized(e,i){return i.createInstance(d,v.parse(e.multiDiffSourceUri),e.label,e.resources?.map(t=>new U(t.originalUri?v.parse(t.originalUri):void 0,t.modifiedUri?v.parse(t.modifiedUri):void 0,t.goToFileUri?v.parse(t.goToFileUri):void 0)),!1)}static ID="workbench.input.multiDiffEditor";get resource(){return this.multiDiffSource}get capabilities(){return oe.Readonly}get typeId(){return d.ID}_name="";getName(){return this._name}get editorId(){return I.id}getIcon(){return le}serialize(){return{label:this.label,multiDiffSourceUri:this.multiDiffSource.toString(),resources:this.initialResources?.map(e=>({originalUri:e.originalUri?.toString(),modifiedUri:e.modifiedUri?.toString(),goToFileUri:e.goToFileUri?.toString()}))}}setLanguageId(e,i){const o=this._viewModel.requireValue().activeDiffItem.get()?.documentDiffItem;if(!o)return;const a=o.modified??o.original;a&&a.setLanguage(e,i)}async getViewModel(){return this._viewModel.getPromise()}_viewModel=new P(async()=>{const e=await this._createModel();this._register(e);const i=new ee(e,this._instantiationService);return this._register(i),await z(i.waitForDiffs(),1e3),i});async _createModel(){const e=await this._resolvedSource.getPromise(),i=this._textResourceConfigurationService,t=O(this,e.resources,async(s,p)=>{let c,l;const m=new A;try{[c,l]=await Promise.all([s.originalUri?this._textModelService.createModelReference(s.originalUri):void 0,s.modifiedUri?this._textModelService.createModelReference(s.modifiedUri):void 0]),c&&m.add(c),l&&m.add(l)}catch(y){M(y);return}const D=s.modifiedUri??s.originalUri,C={multiDiffEditorItem:s,original:c?.object.textEditorModel,modified:l?.object.textEditorModel,contextKeys:s.contextKeys,get options(){return{...ce(l?.object.isReadonly()??!0),...me(i.getValue(D))}},onOptionsDidChange:y=>this._textResourceConfigurationService.onDidChangeConfiguration(_=>{(_.affectsConfiguration(D,"editor")||_.affectsConfiguration(D,"diffEditor"))&&y()})};return p.add(Z.createOfNonDisposable(C,m,this))},s=>JSON.stringify([s.modifiedUri?.toString(),s.originalUri?.toString()])),o=$("documents","loading"),a=g(async s=>{const p=t.read(s),l=(await Promise.all(p)).filter(X);o.set(l,void 0)}),f=Q(a);return await a.get(),{dispose:()=>f.dispose(),documents:new H(o),contextKeys:e.source?.contextKeys}}_resolvedSource=new G(async()=>{const e=this.initialResources?{resources:W.const(this.initialResources)}:await this._multiDiffSourceResolverService.resolve(this.multiDiffSource);return{source:e,resources:e?B(this,e.resources):E([])}});matches(e){return super.matches(e)?!0:e instanceof d?this.multiDiffSource.toString()===e.multiDiffSource.toString():!1}resources=g(this,e=>this._resolvedSource.cachedPromiseResult.read(e)?.data?.resources.read(e));textFileServiceOnDidChange=new ue(this._textFileService.files.onDidChangeDirty,e=>e.resource.toString(),e=>e.toString());_isDirtyObservables=O(this,this.resources.map(e=>e??[]),e=>{const i=e.modifiedUri?T(this.textFileServiceOnDidChange,this._textFileService,e.modifiedUri):E(!1),t=e.originalUri?T(this.textFileServiceOnDidChange,this._textFileService,e.originalUri):E(!1);return g(o=>i.read(o)||t.read(o))},e=>e.getKey());_isDirtyObservable=g(this,e=>this._isDirtyObservables.read(e).some(i=>i.read(e))).keepObserved(this._store);onDidChangeDirty=V.fromObservableLight(this._isDirtyObservable);isDirty(){return this._isDirtyObservable.get()}async save(e,i){return await this.doSaveOrRevert("save",e,i),this}revert(e,i){return this.doSaveOrRevert("revert",e,i)}async doSaveOrRevert(e,i,t){const o=this._viewModel.currentValue?.items.get();o&&await Promise.all(o.map(async a=>{const f=a.diffEditorViewModel.model,S=f.original.uri.scheme!==j.untitled&&this._textFileService.isDirty(f.original.uri);await Promise.all([S?e==="save"?this._textFileService.save(f.original.uri,t):this._textFileService.revert(f.original.uri,t):Promise.resolve(),e==="save"?this._textFileService.save(f.modified.uri,t):this._textFileService.revert(f.modified.uri,t)])}))}closeHandler={async confirm(){return re.DONT_SAVE},showConfirm(){return!1}}};d=b([u(4,ie),u(5,te),u(6,w),u(7,fe),u(8,de)],d);class ue{constructor(r,e,i){this._event=r;this._getEventArgsKey=e;this._keyToString=i}_count=0;_buckets=new Map;_eventSubscription;filteredEvent(r){return e=>{const i=this._keyToString(r);let t=this._buckets.get(i);return t||(t=new Set,this._buckets.set(i,t)),t.add(e),this._count++,this._count===1&&(this._eventSubscription=this._event(this._handleEventChange)),{dispose:()=>{t.delete(e),t.size===0&&this._buckets.delete(i),this._count--,this._count===0&&(this._eventSubscription?.dispose(),this._eventSubscription=void 0)}}}}_handleEventChange=r=>{const e=this._getEventArgsKey(r),i=this._buckets.get(e);if(i)for(const t of i)t(r)}}function T(n,r,e){return J(n.filteredEvent(e),()=>r.isDirty(e))}function ce(n){return{readOnly:!!n,readOnlyMessage:typeof n!="boolean"?n:void 0}}function me(n){const r=R(n.editor);if(Y(n.diffEditor)){const e=R(n.diffEditor);e.diffCodeLens=e.codeLens,delete e.codeLens,e.diffWordWrap=e.wordWrap,delete e.wordWrap,Object.assign(r,e)}return r}let h=class extends K{static ID="workbench.contrib.multiDiffEditorResolver";constructor(r,e){super(),this._register(r.registerEditor("*",{id:I.id,label:I.displayName,detail:I.providerDisplayName,priority:ae.builtin},{},{createMultiDiffEditorInput:i=>({editor:d.fromResourceMultiDiffEditorInput(i,e)})}))}};h=b([u(0,se),u(1,w)],h);class li{canSerialize(r){return r instanceof d&&!r.isTransient}serialize(r){if(this.canSerialize(r))return JSON.stringify(r.serialize())}deserialize(r,e){try{const i=N(e);return d.fromSerialized(i,r)}catch(i){M(i);return}}}export{d as MultiDiffEditorInput,h as MultiDiffEditorResolverContribution,li as MultiDiffEditorSerializer};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var MultiDiffEditorInput_1;
+import { LazyStatefulPromise, raceTimeout } from '../../../../base/common/async.js';
+import { BugIndicatingError, onUnexpectedError } from '../../../../base/common/errors.js';
+import { Event, ValueWithChangeEvent } from '../../../../base/common/event.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { parse } from '../../../../base/common/marshalling.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { deepClone } from '../../../../base/common/objects.js';
+import { ObservableLazyPromise, ValueWithChangeEventFromObservable, autorun, constObservable, derived, mapObservableArrayCached, observableFromEvent, observableFromValueWithChangeEvent, observableValue, recomputeInitiallyAndOnChange } from '../../../../base/common/observable.js';
+import { isDefined, isObject } from '../../../../base/common/types.js';
+import { URI } from '../../../../base/common/uri.js';
+import { RefCounted } from '../../../../editor/browser/widget/diffEditor/utils.js';
+import { MultiDiffEditorViewModel } from '../../../../editor/browser/widget/multiDiffEditor/multiDiffEditorViewModel.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { ITextResourceConfigurationService } from '../../../../editor/common/services/textResourceConfiguration.js';
+import { localize } from '../../../../nls.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { DEFAULT_EDITOR_ASSOCIATION } from '../../../common/editor.js';
+import { EditorInput } from '../../../common/editor/editorInput.js';
+import { IEditorResolverService, RegisteredEditorPriority } from '../../../services/editor/common/editorResolverService.js';
+import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
+import { MultiDiffEditorIcon } from './icons.contribution.js';
+import { IMultiDiffSourceResolverService, MultiDiffEditorItem } from './multiDiffSourceResolverService.js';
+let MultiDiffEditorInput = class MultiDiffEditorInput extends EditorInput {
+    static { MultiDiffEditorInput_1 = this; }
+    static fromResourceMultiDiffEditorInput(input, instantiationService) {
+        if (!input.multiDiffSource && !input.resources) {
+            throw new BugIndicatingError('MultiDiffEditorInput requires either multiDiffSource or resources');
+        }
+        const multiDiffSource = input.multiDiffSource ?? URI.parse(`multi-diff-editor:${new Date().getMilliseconds().toString() + Math.random().toString()}`);
+        return instantiationService.createInstance(MultiDiffEditorInput_1, multiDiffSource, input.label, input.resources?.map(resource => {
+            return new MultiDiffEditorItem(resource.original.resource, resource.modified.resource, resource.goToFileResource);
+        }), input.isTransient ?? false);
+    }
+    static fromSerialized(data, instantiationService) {
+        return instantiationService.createInstance(MultiDiffEditorInput_1, URI.parse(data.multiDiffSourceUri), data.label, data.resources?.map(resource => new MultiDiffEditorItem(resource.originalUri ? URI.parse(resource.originalUri) : undefined, resource.modifiedUri ? URI.parse(resource.modifiedUri) : undefined, resource.goToFileUri ? URI.parse(resource.goToFileUri) : undefined)), false);
+    }
+    static { this.ID = 'workbench.input.multiDiffEditor'; }
+    get resource() { return this.multiDiffSource; }
+    get capabilities() { return 2; }
+    get typeId() { return MultiDiffEditorInput_1.ID; }
+    getName() { return this._name; }
+    get editorId() { return DEFAULT_EDITOR_ASSOCIATION.id; }
+    getIcon() { return MultiDiffEditorIcon; }
+    constructor(multiDiffSource, label, initialResources, isTransient = false, _textModelService, _textResourceConfigurationService, _instantiationService, _multiDiffSourceResolverService, _textFileService) {
+        super();
+        this.multiDiffSource = multiDiffSource;
+        this.label = label;
+        this.initialResources = initialResources;
+        this.isTransient = isTransient;
+        this._textModelService = _textModelService;
+        this._textResourceConfigurationService = _textResourceConfigurationService;
+        this._instantiationService = _instantiationService;
+        this._multiDiffSourceResolverService = _multiDiffSourceResolverService;
+        this._textFileService = _textFileService;
+        this._name = '';
+        this._viewModel = new LazyStatefulPromise(async () => {
+            const model = await this._createModel();
+            this._register(model);
+            const vm = new MultiDiffEditorViewModel(model, this._instantiationService);
+            this._register(vm);
+            await raceTimeout(vm.waitForDiffs(), 1000);
+            return vm;
+        });
+        this._resolvedSource = new ObservableLazyPromise(async () => {
+            const source = this.initialResources
+                ? { resources: ValueWithChangeEvent.const(this.initialResources) }
+                : await this._multiDiffSourceResolverService.resolve(this.multiDiffSource);
+            return {
+                source,
+                resources: source ? observableFromValueWithChangeEvent(this, source.resources) : constObservable([]),
+            };
+        });
+        this.resources = derived(this, reader => this._resolvedSource.cachedPromiseResult.read(reader)?.data?.resources.read(reader));
+        this.textFileServiceOnDidChange = new FastEventDispatcher(this._textFileService.files.onDidChangeDirty, item => item.resource.toString(), uri => uri.toString());
+        this._isDirtyObservables = mapObservableArrayCached(this, this.resources.map(r => r ?? []), res => {
+            const isModifiedDirty = res.modifiedUri ? isUriDirty(this.textFileServiceOnDidChange, this._textFileService, res.modifiedUri) : constObservable(false);
+            const isOriginalDirty = res.originalUri ? isUriDirty(this.textFileServiceOnDidChange, this._textFileService, res.originalUri) : constObservable(false);
+            return derived(reader => isModifiedDirty.read(reader) || isOriginalDirty.read(reader));
+        }, i => i.getKey());
+        this._isDirtyObservable = derived(this, reader => this._isDirtyObservables.read(reader).some(isDirty => isDirty.read(reader)))
+            .keepObserved(this._store);
+        this.onDidChangeDirty = Event.fromObservableLight(this._isDirtyObservable);
+        this.closeHandler = {
+            async confirm() {
+                return 1;
+            },
+            showConfirm() {
+                return false;
+            }
+        };
+        this._register(autorun((reader) => {
+            const resources = this.resources.read(reader);
+            const label = this.label ?? localize('name', "Multi Diff Editor");
+            if (resources) {
+                this._name = label + localize({
+                    key: 'files',
+                    comment: ['the number of files being shown']
+                }, " ({0} files)", resources.length);
+            }
+            else {
+                this._name = label;
+            }
+            this._onDidChangeLabel.fire();
+        }));
+    }
+    serialize() {
+        return {
+            label: this.label,
+            multiDiffSourceUri: this.multiDiffSource.toString(),
+            resources: this.initialResources?.map(resource => ({
+                originalUri: resource.originalUri?.toString(),
+                modifiedUri: resource.modifiedUri?.toString(),
+                goToFileUri: resource.goToFileUri?.toString(),
+            })),
+        };
+    }
+    setLanguageId(languageId, source) {
+        const activeDiffItem = this._viewModel.requireValue().activeDiffItem.get();
+        const value = activeDiffItem?.documentDiffItem;
+        if (!value) {
+            return;
+        }
+        const target = value.modified ?? value.original;
+        if (!target) {
+            return;
+        }
+        target.setLanguage(languageId, source);
+    }
+    async getViewModel() {
+        return this._viewModel.getPromise();
+    }
+    async _createModel() {
+        const source = await this._resolvedSource.getPromise();
+        const textResourceConfigurationService = this._textResourceConfigurationService;
+        const documentsWithPromises = mapObservableArrayCached(this, source.resources, async (r, store) => {
+            let original;
+            let modified;
+            const multiDiffItemStore = new DisposableStore();
+            try {
+                [original, modified] = await Promise.all([
+                    r.originalUri ? this._textModelService.createModelReference(r.originalUri) : undefined,
+                    r.modifiedUri ? this._textModelService.createModelReference(r.modifiedUri) : undefined,
+                ]);
+                if (original) {
+                    multiDiffItemStore.add(original);
+                }
+                if (modified) {
+                    multiDiffItemStore.add(modified);
+                }
+            }
+            catch (e) {
+                console.error(e);
+                onUnexpectedError(e);
+                return undefined;
+            }
+            const uri = (r.modifiedUri ?? r.originalUri);
+            const result = {
+                multiDiffEditorItem: r,
+                original: original?.object.textEditorModel,
+                modified: modified?.object.textEditorModel,
+                contextKeys: r.contextKeys,
+                get options() {
+                    return {
+                        ...getReadonlyConfiguration(modified?.object.isReadonly() ?? true),
+                        ...computeOptions(textResourceConfigurationService.getValue(uri)),
+                    };
+                },
+                onOptionsDidChange: h => this._textResourceConfigurationService.onDidChangeConfiguration(e => {
+                    if (e.affectsConfiguration(uri, 'editor') || e.affectsConfiguration(uri, 'diffEditor')) {
+                        h();
+                    }
+                }),
+            };
+            return store.add(RefCounted.createOfNonDisposable(result, multiDiffItemStore, this));
+        }, i => JSON.stringify([i.modifiedUri?.toString(), i.originalUri?.toString()]));
+        const documents = observableValue('documents', 'loading');
+        const updateDocuments = derived(async (reader) => {
+            const docsPromises = documentsWithPromises.read(reader);
+            const docs = await Promise.all(docsPromises);
+            const newDocuments = docs.filter(isDefined);
+            documents.set(newDocuments, undefined);
+        });
+        const a = recomputeInitiallyAndOnChange(updateDocuments);
+        await updateDocuments.get();
+        const result = {
+            dispose: () => a.dispose(),
+            documents: new ValueWithChangeEventFromObservable(documents),
+            contextKeys: source.source?.contextKeys,
+        };
+        return result;
+    }
+    matches(otherInput) {
+        if (super.matches(otherInput)) {
+            return true;
+        }
+        if (otherInput instanceof MultiDiffEditorInput_1) {
+            return this.multiDiffSource.toString() === otherInput.multiDiffSource.toString();
+        }
+        return false;
+    }
+    isDirty() { return this._isDirtyObservable.get(); }
+    async save(group, options) {
+        await this.doSaveOrRevert('save', group, options);
+        return this;
+    }
+    revert(group, options) {
+        return this.doSaveOrRevert('revert', group, options);
+    }
+    async doSaveOrRevert(mode, group, options) {
+        const items = this._viewModel.currentValue?.items.get();
+        if (items) {
+            await Promise.all(items.map(async (item) => {
+                const model = item.diffEditorViewModel.model;
+                const handleOriginal = model.original.uri.scheme !== Schemas.untitled && this._textFileService.isDirty(model.original.uri);
+                await Promise.all([
+                    handleOriginal ? mode === 'save' ? this._textFileService.save(model.original.uri, options) : this._textFileService.revert(model.original.uri, options) : Promise.resolve(),
+                    mode === 'save' ? this._textFileService.save(model.modified.uri, options) : this._textFileService.revert(model.modified.uri, options),
+                ]);
+            }));
+        }
+        return undefined;
+    }
+};
+MultiDiffEditorInput = MultiDiffEditorInput_1 = __decorate([
+    __param(4, ITextModelService),
+    __param(5, ITextResourceConfigurationService),
+    __param(6, IInstantiationService),
+    __param(7, IMultiDiffSourceResolverService),
+    __param(8, ITextFileService),
+    __metadata("design:paramtypes", [URI, Object, Object, Boolean, Object, Object, Object, Object, Object])
+], MultiDiffEditorInput);
+export { MultiDiffEditorInput };
+class FastEventDispatcher {
+    constructor(_event, _getEventArgsKey, _keyToString) {
+        this._event = _event;
+        this._getEventArgsKey = _getEventArgsKey;
+        this._keyToString = _keyToString;
+        this._count = 0;
+        this._buckets = new Map();
+        this._handleEventChange = (e) => {
+            const key = this._getEventArgsKey(e);
+            const bucket = this._buckets.get(key);
+            if (bucket) {
+                for (const listener of bucket) {
+                    listener(e);
+                }
+            }
+        };
+    }
+    filteredEvent(filter) {
+        return listener => {
+            const key = this._keyToString(filter);
+            let bucket = this._buckets.get(key);
+            if (!bucket) {
+                bucket = new Set();
+                this._buckets.set(key, bucket);
+            }
+            bucket.add(listener);
+            this._count++;
+            if (this._count === 1) {
+                this._eventSubscription = this._event(this._handleEventChange);
+            }
+            return {
+                dispose: () => {
+                    bucket.delete(listener);
+                    if (bucket.size === 0) {
+                        this._buckets.delete(key);
+                    }
+                    this._count--;
+                    if (this._count === 0) {
+                        this._eventSubscription?.dispose();
+                        this._eventSubscription = undefined;
+                    }
+                }
+            };
+        };
+    }
+}
+function isUriDirty(onDidChangeDirty, textFileService, uri) {
+    return observableFromEvent(onDidChangeDirty.filteredEvent(uri), () => textFileService.isDirty(uri));
+}
+function getReadonlyConfiguration(isReadonly) {
+    return {
+        readOnly: !!isReadonly,
+        readOnlyMessage: typeof isReadonly !== 'boolean' ? isReadonly : undefined
+    };
+}
+function computeOptions(configuration) {
+    const editorConfiguration = deepClone(configuration.editor);
+    if (isObject(configuration.diffEditor)) {
+        const diffEditorConfiguration = deepClone(configuration.diffEditor);
+        diffEditorConfiguration.diffCodeLens = diffEditorConfiguration.codeLens;
+        delete diffEditorConfiguration.codeLens;
+        diffEditorConfiguration.diffWordWrap = diffEditorConfiguration.wordWrap;
+        delete diffEditorConfiguration.wordWrap;
+        Object.assign(editorConfiguration, diffEditorConfiguration);
+    }
+    return editorConfiguration;
+}
+let MultiDiffEditorResolverContribution = class MultiDiffEditorResolverContribution extends Disposable {
+    static { this.ID = 'workbench.contrib.multiDiffEditorResolver'; }
+    constructor(editorResolverService, instantiationService) {
+        super();
+        this._register(editorResolverService.registerEditor(`*`, {
+            id: DEFAULT_EDITOR_ASSOCIATION.id,
+            label: DEFAULT_EDITOR_ASSOCIATION.displayName,
+            detail: DEFAULT_EDITOR_ASSOCIATION.providerDisplayName,
+            priority: RegisteredEditorPriority.builtin
+        }, {}, {
+            createMultiDiffEditorInput: (multiDiffEditor) => {
+                return {
+                    editor: MultiDiffEditorInput.fromResourceMultiDiffEditorInput(multiDiffEditor, instantiationService),
+                };
+            },
+        }));
+    }
+};
+MultiDiffEditorResolverContribution = __decorate([
+    __param(0, IEditorResolverService),
+    __param(1, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object])
+], MultiDiffEditorResolverContribution);
+export { MultiDiffEditorResolverContribution };
+export class MultiDiffEditorSerializer {
+    canSerialize(editor) {
+        return editor instanceof MultiDiffEditorInput && !editor.isTransient;
+    }
+    serialize(editor) {
+        if (!this.canSerialize(editor)) {
+            return undefined;
+        }
+        return JSON.stringify(editor.serialize());
+    }
+    deserialize(instantiationService, serializedEditor) {
+        try {
+            const data = parse(serializedEditor);
+            return MultiDiffEditorInput.fromSerialized(data, instantiationService);
+        }
+        catch (err) {
+            onUnexpectedError(err);
+            return undefined;
+        }
+    }
+}

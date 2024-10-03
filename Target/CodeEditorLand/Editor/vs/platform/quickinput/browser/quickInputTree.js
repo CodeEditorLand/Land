@@ -1,1 +1,1278 @@
-var B=Object.defineProperty;var V=Object.getOwnPropertyDescriptor;var E=(c,n,e,t)=>{for(var i=t>1?void 0:t?V(n,e):n,r=c.length-1,s;r>=0;r--)(s=c[r])&&(i=(t?s(n,e,i):s(i))||i);return t&&i&&B(n,e,i),i},L=(c,n)=>(e,t)=>n(e,t,c);import*as o from"../../../base/browser/dom.js";import{Emitter as y,Event as b,EventBufferer as N}from"../../../base/common/event.js";import"../../../base/browser/ui/hover/hoverDelegate.js";import"../../../base/browser/ui/list/list.js";import{TreeVisibility as C}from"../../../base/browser/ui/tree/tree.js";import{localize as q}from"../../../nls.js";import{IInstantiationService as W}from"../../instantiation/common/instantiation.js";import{WorkbenchObjectTree as R}from"../../list/browser/listService.js";import{IThemeService as z}from"../../theme/common/themeService.js";import{Disposable as K,DisposableStore as T}from"../../../base/common/lifecycle.js";import{QuickPickFocus as p}from"../common/quickInput.js";import"../../../base/common/htmlContent.js";import"../../../base/common/filters.js";import"../../../base/browser/ui/list/listWidget.js";import"../../../base/browser/ui/aria/aria.js";import{StandardKeyboardEvent as U}from"../../../base/browser/keyboardEvent.js";import{KeyCode as $}from"../../../base/common/keyCodes.js";import{OS as j}from"../../../base/common/platform.js";import{memoize as O}from"../../../base/common/decorators.js";import{IconLabel as w}from"../../../base/browser/ui/iconLabel/iconLabel.js";import{KeybindingLabel as G}from"../../../base/browser/ui/keybindingLabel/keybindingLabel.js";import{ActionBar as X}from"../../../base/browser/ui/actionbar/actionbar.js";import{isDark as J}from"../../theme/common/theme.js";import{URI as Y}from"../../../base/common/uri.js";import{quickInputButtonToAction as M}from"./quickInputUtils.js";import{Lazy as Z}from"../../../base/common/lazy.js";import{getCodiconAriaLabel as ee,matchesFuzzyIconAware as H,parseLabelWithIcons as S}from"../../../base/common/iconLabels.js";import{HoverPosition as te}from"../../../base/browser/ui/hover/hoverWidget.js";import{compareAnything as ie}from"../../../base/common/comparers.js";import{ltrim as re}from"../../../base/common/strings.js";import{RenderIndentGuides as ne}from"../../../base/browser/ui/tree/abstractTree.js";import{ThrottledDelayer as se}from"../../../base/common/async.js";import{isCancellationError as ae}from"../../../base/common/errors.js";import{IAccessibilityService as oe}from"../../accessibility/common/accessibility.js";import{observableValue as Q,observableValueOpts as le,transaction as ce}from"../../../base/common/observable.js";import{equals as he}from"../../../base/common/arrays.js";const m=o.$;class x{constructor(n,e,t){this.index=n;this.hasCheckbox=e;this._init=new Z(()=>{const i=t.label??"",r=S(i).text.trim(),s=t.ariaLabel||[i,this.saneDescription,this.saneDetail].map(l=>ee(l)).filter(l=>!!l).join(", ");return{saneLabel:i,saneSortLabel:r,saneAriaLabel:s}}),this._saneDescription=t.description,this._saneTooltip=t.tooltip}_init;get saneLabel(){return this._init.value.saneLabel}get saneSortLabel(){return this._init.value.saneSortLabel}get saneAriaLabel(){return this._init.value.saneAriaLabel}_element;get element(){return this._element}set element(n){this._element=n}_hidden=!1;get hidden(){return this._hidden}set hidden(n){this._hidden=n}_saneDescription;get saneDescription(){return this._saneDescription}set saneDescription(n){this._saneDescription=n}_saneDetail;get saneDetail(){return this._saneDetail}set saneDetail(n){this._saneDetail=n}_saneTooltip;get saneTooltip(){return this._saneTooltip}set saneTooltip(n){this._saneTooltip=n}_labelHighlights;get labelHighlights(){return this._labelHighlights}set labelHighlights(n){this._labelHighlights=n}_descriptionHighlights;get descriptionHighlights(){return this._descriptionHighlights}set descriptionHighlights(n){this._descriptionHighlights=n}_detailHighlights;get detailHighlights(){return this._detailHighlights}set detailHighlights(n){this._detailHighlights=n}}class h extends x{constructor(e,t,i,r,s,l){super(e,t,s);this.fireButtonTriggered=i;this._onChecked=r;this.item=s;this._separator=l;this.onChecked=t?b.map(b.filter(this._onChecked.event,a=>a.element===this),a=>a.checked):b.None,this._saneDetail=s.detail,this._labelHighlights=s.highlights?.label,this._descriptionHighlights=s.highlights?.description,this._detailHighlights=s.highlights?.detail}onChecked;get separator(){return this._separator}set separator(e){this._separator=e}_checked=!1;get checked(){return this._checked}set checked(e){e!==this._checked&&(this._checked=e,this._onChecked.fire({element:this,checked:e}))}get checkboxDisabled(){return!!this.item.disabled}}var de=(t=>(t[t.NONE=0]="NONE",t[t.MOUSE_HOVER=1]="MOUSE_HOVER",t[t.ACTIVE_ITEM=2]="ACTIVE_ITEM",t))(de||{});class v extends x{constructor(e,t,i){super(e,!1,i);this.fireSeparatorButtonTriggered=t;this.separator=i}children=new Array;focusInsideSeparator=0}class ue{getHeight(n){return n instanceof v?30:n.saneDetail?44:22}getTemplateId(n){return n instanceof h?_.ID:D.ID}}class pe{getWidgetAriaLabel(){return q("quickInput","Quick Input")}getAriaLabel(n){return n.separator?.label?`${n.saneAriaLabel}, ${n.separator.label}`:n.saneAriaLabel}getWidgetRole(){return"listbox"}getRole(n){return n.hasCheckbox?"checkbox":"option"}isChecked(n){if(!(!n.hasCheckbox||!(n instanceof h)))return{get value(){return n.checked},onDidChange:e=>n.onChecked(()=>e())}}}class F{constructor(n){this.hoverDelegate=n}renderTemplate(n){const e=Object.create(null);e.toDisposeElement=new T,e.toDisposeTemplate=new T,e.entry=o.append(n,m(".quick-input-list-entry"));const t=o.append(e.entry,m("label.quick-input-list-label"));e.toDisposeTemplate.add(o.addStandardDisposableListener(t,o.EventType.CLICK,d=>{e.checkbox.offsetParent||d.preventDefault()})),e.checkbox=o.append(t,m("input.quick-input-list-checkbox")),e.checkbox.type="checkbox";const i=o.append(t,m(".quick-input-list-rows")),r=o.append(i,m(".quick-input-list-row")),s=o.append(i,m(".quick-input-list-row"));e.label=new w(r,{supportHighlights:!0,supportDescriptionHighlights:!0,supportIcons:!0,hoverDelegate:this.hoverDelegate}),e.toDisposeTemplate.add(e.label),e.icon=o.prepend(e.label.element,m(".quick-input-list-icon"));const l=o.append(r,m(".quick-input-list-entry-keybinding"));e.keybinding=new G(l,j),e.toDisposeTemplate.add(e.keybinding);const a=o.append(s,m(".quick-input-list-label-meta"));return e.detail=new w(a,{supportHighlights:!0,supportIcons:!0,hoverDelegate:this.hoverDelegate}),e.toDisposeTemplate.add(e.detail),e.separator=o.append(e.entry,m(".quick-input-list-separator")),e.actionBar=new X(e.entry,this.hoverDelegate?{hoverDelegate:this.hoverDelegate}:void 0),e.actionBar.domNode.classList.add("quick-input-list-entry-action-bar"),e.toDisposeTemplate.add(e.actionBar),e}disposeTemplate(n){n.toDisposeElement.dispose(),n.toDisposeTemplate.dispose()}disposeElement(n,e,t){t.toDisposeElement.clear(),t.actionBar.clear()}}let _=class extends F{constructor(e,t){super(e);this.themeService=t}static ID="quickpickitem";_itemsWithSeparatorsFrequency=new Map;get templateId(){return _.ID}renderTemplate(e){const t=super.renderTemplate(e);return t.toDisposeTemplate.add(o.addStandardDisposableListener(t.checkbox,o.EventType.CHANGE,i=>{t.element.checked=t.checkbox.checked})),t}renderElement(e,t,i){const r=e.element;i.element=r,r.element=i.entry??void 0;const s=r.item;i.checkbox.checked=r.checked,i.toDisposeElement.add(r.onChecked(u=>i.checkbox.checked=u)),i.checkbox.disabled=r.checkboxDisabled;const{labelHighlights:l,descriptionHighlights:a,detailHighlights:d}=r;if(s.iconPath){const u=J(this.themeService.getColorTheme().type)?s.iconPath.dark:s.iconPath.light??s.iconPath.dark,P=Y.revive(u);i.icon.className="quick-input-list-icon",i.icon.style.backgroundImage=o.asCSSUrl(P)}else i.icon.style.backgroundImage="",i.icon.className=s.iconClass?`quick-input-list-icon ${s.iconClass}`:"";let f;!r.saneTooltip&&r.saneDescription&&(f={markdown:{value:r.saneDescription,supportThemeIcons:!0},markdownNotSupportedFallback:r.saneDescription});const g={matches:l||[],descriptionTitle:f,descriptionMatches:a||[],labelEscapeNewLines:!0};if(g.extraClasses=s.iconClasses,g.italic=s.italic,g.strikethrough=s.strikethrough,i.entry.classList.remove("quick-input-list-separator-as-item"),i.label.setLabel(r.saneLabel,r.saneDescription,g),i.keybinding.set(s.keybinding),r.saneDetail){let u;r.saneTooltip||(u={markdown:{value:r.saneDetail,supportThemeIcons:!0},markdownNotSupportedFallback:r.saneDetail}),i.detail.element.style.display="",i.detail.setLabel(r.saneDetail,void 0,{matches:d,title:u,labelEscapeNewLines:!0})}else i.detail.element.style.display="none";r.separator?.label?(i.separator.textContent=r.separator.label,i.separator.style.display="",this.addItemWithSeparator(r)):i.separator.style.display="none",i.entry.classList.toggle("quick-input-list-separator-border",!!r.separator);const k=s.buttons;k&&k.length?(i.actionBar.push(k.map((u,P)=>M(u,`id-${P}`,()=>r.fireButtonTriggered({button:u,item:r.item}))),{icon:!0,label:!1}),i.entry.classList.add("has-actions")):i.entry.classList.remove("has-actions")}disposeElement(e,t,i){this.removeItemWithSeparator(e.element),super.disposeElement(e,t,i)}isItemWithSeparatorVisible(e){return this._itemsWithSeparatorsFrequency.has(e)}addItemWithSeparator(e){this._itemsWithSeparatorsFrequency.set(e,(this._itemsWithSeparatorsFrequency.get(e)||0)+1)}removeItemWithSeparator(e){const t=this._itemsWithSeparatorsFrequency.get(e)||0;t>1?this._itemsWithSeparatorsFrequency.set(e,t-1):this._itemsWithSeparatorsFrequency.delete(e)}};_=E([L(1,z)],_);class D extends F{static ID="quickpickseparator";_visibleSeparatorsFrequency=new Map;get templateId(){return D.ID}get visibleSeparators(){return[...this._visibleSeparatorsFrequency.keys()]}isSeparatorVisible(n){return this._visibleSeparatorsFrequency.has(n)}renderTemplate(n){const e=super.renderTemplate(n);return e.checkbox.style.display="none",e}renderElement(n,e,t){const i=n.element;t.element=i,i.element=t.entry??void 0,i.element.classList.toggle("focus-inside",!!i.focusInsideSeparator);const r=i.separator,{labelHighlights:s,descriptionHighlights:l,detailHighlights:a}=i;t.icon.style.backgroundImage="",t.icon.className="";let d;!i.saneTooltip&&i.saneDescription&&(d={markdown:{value:i.saneDescription,supportThemeIcons:!0},markdownNotSupportedFallback:i.saneDescription});const f={matches:s||[],descriptionTitle:d,descriptionMatches:l||[],labelEscapeNewLines:!0};if(t.entry.classList.add("quick-input-list-separator-as-item"),t.label.setLabel(i.saneLabel,i.saneDescription,f),i.saneDetail){let k;i.saneTooltip||(k={markdown:{value:i.saneDetail,supportThemeIcons:!0},markdownNotSupportedFallback:i.saneDetail}),t.detail.element.style.display="",t.detail.setLabel(i.saneDetail,void 0,{matches:a,title:k,labelEscapeNewLines:!0})}else t.detail.element.style.display="none";t.separator.style.display="none",t.entry.classList.add("quick-input-list-separator-border");const g=r.buttons;g&&g.length?(t.actionBar.push(g.map((k,u)=>M(k,`id-${u}`,()=>i.fireSeparatorButtonTriggered({button:k,separator:i.separator}))),{icon:!0,label:!1}),t.entry.classList.add("has-actions")):t.entry.classList.remove("has-actions"),this.addSeparator(i)}disposeElement(n,e,t){this.removeSeparator(n.element),this.isSeparatorVisible(n.element)||n.element.element?.classList.remove("focus-inside"),super.disposeElement(n,e,t)}addSeparator(n){this._visibleSeparatorsFrequency.set(n,(this._visibleSeparatorsFrequency.get(n)||0)+1)}removeSeparator(n){const e=this._visibleSeparatorsFrequency.get(n)||0;e>1?this._visibleSeparatorsFrequency.set(n,e-1):this._visibleSeparatorsFrequency.delete(n)}}let I=class extends K{constructor(e,t,i,r,s,l){super();this.parent=e;this.hoverDelegate=t;this.linkOpenerDelegate=i;this.accessibilityService=l;this._container=o.append(this.parent,m(".quick-input-list")),this._separatorRenderer=new D(t),this._itemRenderer=s.createInstance(_,t),this._tree=this._register(s.createInstance(R,"QuickInput",this._container,new ue,[this._itemRenderer,this._separatorRenderer],{filter:{filter(a){return a.hidden?C.Hidden:a instanceof v?C.Recurse:C.Visible}},sorter:{compare:(a,d)=>{if(!this.sortByLabel||!this._lastQueryString)return 0;const f=this._lastQueryString.toLowerCase();return fe(a,d,f)}},accessibilityProvider:new pe,setRowLineHeight:!1,multipleSelectionSupport:!1,hideTwistiesOfChildlessElements:!0,renderIndentGuides:ne.None,findWidgetEnabled:!1,indent:0,horizontalScrolling:!1,allowNonCollapsibleParents:!0,alwaysConsumeMouseWheel:!0})),this._tree.getHTMLElement().id=r,this._registerListeners()}_onKeyDown=new y;onKeyDown=this._onKeyDown.event;_onLeave=new y;onLeave=this._onLeave.event;_visibleCountObservable=Q("VisibleCount",0);onChangedVisibleCount=b.fromObservable(this._visibleCountObservable,this._store);_allVisibleCheckedObservable=Q("AllVisibleChecked",!1);onChangedAllVisibleChecked=b.fromObservable(this._allVisibleCheckedObservable,this._store);_checkedCountObservable=Q("CheckedCount",0);onChangedCheckedCount=b.fromObservable(this._checkedCountObservable,this._store);_checkedElementsObservable=le({equalsFn:he},new Array);onChangedCheckedElements=b.fromObservable(this._checkedElementsObservable,this._store);_onButtonTriggered=new y;onButtonTriggered=this._onButtonTriggered.event;_onSeparatorButtonTriggered=new y;onSeparatorButtonTriggered=this._onSeparatorButtonTriggered.event;_elementChecked=new y;_elementCheckedEventBufferer=new N;_hasCheckboxes=!1;_container;_tree;_separatorRenderer;_itemRenderer;_inputElements=new Array;_elementTree=new Array;_itemElements=new Array;_elementDisposable=this._register(new T);_lastHover;_lastQueryString;get onDidChangeFocus(){return b.map(this._tree.onDidChangeFocus,e=>e.elements.filter(t=>t instanceof h).map(t=>t.item),this._store)}get onDidChangeSelection(){return b.map(this._tree.onDidChangeSelection,e=>({items:e.elements.filter(t=>t instanceof h).map(t=>t.item),event:e.browserEvent}),this._store)}get displayed(){return this._container.style.display!=="none"}set displayed(e){this._container.style.display=e?"":"none"}get scrollTop(){return this._tree.scrollTop}set scrollTop(e){this._tree.scrollTop=e}get ariaLabel(){return this._tree.ariaLabel}set ariaLabel(e){this._tree.ariaLabel=e??""}set enabled(e){this._tree.getHTMLElement().style.pointerEvents=e?"":"none"}_matchOnDescription=!1;get matchOnDescription(){return this._matchOnDescription}set matchOnDescription(e){this._matchOnDescription=e}_matchOnDetail=!1;get matchOnDetail(){return this._matchOnDetail}set matchOnDetail(e){this._matchOnDetail=e}_matchOnLabel=!0;get matchOnLabel(){return this._matchOnLabel}set matchOnLabel(e){this._matchOnLabel=e}_matchOnLabelMode="fuzzy";get matchOnLabelMode(){return this._matchOnLabelMode}set matchOnLabelMode(e){this._matchOnLabelMode=e}_matchOnMeta=!0;get matchOnMeta(){return this._matchOnMeta}set matchOnMeta(e){this._matchOnMeta=e}_sortByLabel=!0;get sortByLabel(){return this._sortByLabel}set sortByLabel(e){this._sortByLabel=e}_shouldLoop=!0;get shouldLoop(){return this._shouldLoop}set shouldLoop(e){this._shouldLoop=e}_registerListeners(){this._registerOnKeyDown(),this._registerOnContainerClick(),this._registerOnMouseMiddleClick(),this._registerOnTreeModelChanged(),this._registerOnElementChecked(),this._registerOnContextMenu(),this._registerHoverListeners(),this._registerSelectionChangeListener(),this._registerSeparatorActionShowingListeners()}_registerOnKeyDown(){this._register(this._tree.onKeyDown(e=>{const t=new U(e);switch(t.keyCode){case $.Space:this.toggleCheckbox();break}this._onKeyDown.fire(t)}))}_registerOnContainerClick(){this._register(o.addDisposableListener(this._container,o.EventType.CLICK,e=>{(e.x||e.y)&&this._onLeave.fire()}))}_registerOnMouseMiddleClick(){this._register(o.addDisposableListener(this._container,o.EventType.AUXCLICK,e=>{e.button===1&&this._onLeave.fire()}))}_registerOnTreeModelChanged(){this._register(this._tree.onDidChangeModel(()=>{const e=this._itemElements.filter(t=>!t.hidden).length;this._visibleCountObservable.set(e,void 0),this._hasCheckboxes&&this._updateCheckedObservables()}))}_registerOnElementChecked(){this._register(this._elementCheckedEventBufferer.wrapEvent(this._elementChecked.event,(e,t)=>t)(e=>this._updateCheckedObservables()))}_registerOnContextMenu(){this._register(this._tree.onContextMenu(e=>{e.element&&(e.browserEvent.preventDefault(),this._tree.setSelection([e.element]))}))}_registerHoverListeners(){const e=this._register(new se(this.hoverDelegate.delay));this._register(this._tree.onMouseOver(async t=>{if(o.isHTMLAnchorElement(t.browserEvent.target)){e.cancel();return}if(!(!o.isHTMLAnchorElement(t.browserEvent.relatedTarget)&&o.isAncestor(t.browserEvent.relatedTarget,t.element?.element)))try{await e.trigger(async()=>{t.element instanceof h&&this.showHover(t.element)})}catch(i){if(!ae(i))throw i}})),this._register(this._tree.onMouseOut(t=>{o.isAncestor(t.browserEvent.relatedTarget,t.element?.element)||e.cancel()}))}_registerSeparatorActionShowingListeners(){this._register(this._tree.onDidChangeFocus(e=>{const t=e.elements[0]?this._tree.getParentElement(e.elements[0]):null;for(const i of this._separatorRenderer.visibleSeparators){const r=i===t;!!(i.focusInsideSeparator&2)!==r&&(r?i.focusInsideSeparator|=2:i.focusInsideSeparator&=-3,this._tree.rerender(i))}})),this._register(this._tree.onMouseOver(e=>{const t=e.element?this._tree.getParentElement(e.element):null;for(const i of this._separatorRenderer.visibleSeparators){if(i!==t)continue;!!(i.focusInsideSeparator&1)||(i.focusInsideSeparator|=1,this._tree.rerender(i))}})),this._register(this._tree.onMouseOut(e=>{const t=e.element?this._tree.getParentElement(e.element):null;for(const i of this._separatorRenderer.visibleSeparators){if(i!==t)continue;!!(i.focusInsideSeparator&1)&&(i.focusInsideSeparator&=-2,this._tree.rerender(i))}}))}_registerSelectionChangeListener(){this._register(this._tree.onDidChangeSelection(e=>{const t=e.elements.filter(i=>i instanceof h);t.length!==e.elements.length&&(e.elements.length===1&&e.elements[0]instanceof v&&(this._tree.setFocus([e.elements[0].children[0]]),this._tree.reveal(e.elements[0],0)),this._tree.setSelection(t))}))}setAllVisibleChecked(e){this._elementCheckedEventBufferer.bufferEvents(()=>{this._itemElements.forEach(t=>{!t.hidden&&!t.checkboxDisabled&&(t.checked=e)})})}setElements(e){this._elementDisposable.clear(),this._lastQueryString=void 0,this._inputElements=e,this._hasCheckboxes=this.parent.classList.contains("show-checkboxes");let t;this._itemElements=new Array,this._elementTree=e.reduce((i,r,s)=>{let l;if(r.type==="separator"){if(!r.buttons)return i;t=new v(s,a=>this._onSeparatorButtonTriggered.fire(a),r),l=t}else{const a=s>0?e[s-1]:void 0;let d;a&&a.type==="separator"&&!a.buttons&&(t=void 0,d=a);const f=new h(s,this._hasCheckboxes,g=>this._onButtonTriggered.fire(g),this._elementChecked,r,d);if(this._itemElements.push(f),t)return t.children.push(f),i;l=f}return i.push(l),i},new Array),this._setElementsToTree(this._elementTree),this.accessibilityService.isScreenReaderOptimized()&&setTimeout(()=>{const i=this._tree.getHTMLElement().querySelector(".monaco-list-row.focused"),r=i?.parentNode;if(i&&r){const s=i.nextSibling;i.remove(),r.insertBefore(i,s)}},0)}setFocusedElements(e){const t=e.map(i=>this._itemElements.find(r=>r.item===i)).filter(i=>!!i).filter(i=>!i.hidden);if(this._tree.setFocus(t),e.length>0){const i=this._tree.getFocus()[0];i&&this._tree.reveal(i)}}getActiveDescendant(){return this._tree.getHTMLElement().getAttribute("aria-activedescendant")}setSelectedElements(e){const t=e.map(i=>this._itemElements.find(r=>r.item===i)).filter(i=>!!i);this._tree.setSelection(t)}getCheckedElements(){return this._itemElements.filter(e=>e.checked).map(e=>e.item)}setCheckedElements(e){this._elementCheckedEventBufferer.bufferEvents(()=>{const t=new Set;for(const i of e)t.add(i);for(const i of this._itemElements)i.checked=t.has(i.item)})}focus(e){if(this._itemElements.length)switch(e===p.Second&&this._itemElements.length<2&&(e=p.First),e){case p.First:this._tree.scrollTop=0,this._tree.focusFirst(void 0,t=>t.element instanceof h);break;case p.Second:{this._tree.scrollTop=0;let t=!1;this._tree.focusFirst(void 0,i=>i.element instanceof h?t?!0:(t=!t,!1):!1);break}case p.Last:this._tree.scrollTop=this._tree.scrollHeight,this._tree.focusLast(void 0,t=>t.element instanceof h);break;case p.Next:{const t=this._tree.getFocus();this._tree.focusNext(void 0,this._shouldLoop,void 0,r=>r.element instanceof h?(this._tree.reveal(r.element),!0):!1);const i=this._tree.getFocus();t.length&&t[0]===i[0]&&t[0]===this._itemElements[this._itemElements.length-1]&&this._onLeave.fire();break}case p.Previous:{const t=this._tree.getFocus();this._tree.focusPrevious(void 0,this._shouldLoop,void 0,r=>{if(!(r.element instanceof h))return!1;const s=this._tree.getParentElement(r.element);return s===null||s.children[0]!==r.element?this._tree.reveal(r.element):this._tree.reveal(s),!0});const i=this._tree.getFocus();t.length&&t[0]===i[0]&&t[0]===this._itemElements[0]&&this._onLeave.fire();break}case p.NextPage:this._tree.focusNextPage(void 0,t=>t.element instanceof h?(this._tree.reveal(t.element),!0):!1);break;case p.PreviousPage:this._tree.focusPreviousPage(void 0,t=>{if(!(t.element instanceof h))return!1;const i=this._tree.getParentElement(t.element);return i===null||i.children[0]!==t.element?this._tree.reveal(t.element):this._tree.reveal(i),!0});break;case p.NextSeparator:{let t=!1;const i=this._tree.getFocus()[0];this._tree.focusNext(void 0,!0,void 0,s=>{if(t)return!0;if(s.element instanceof v)t=!0,this._separatorRenderer.isSeparatorVisible(s.element)?this._tree.reveal(s.element.children[0]):this._tree.reveal(s.element,0);else if(s.element instanceof h){if(s.element.separator)return this._itemRenderer.isItemWithSeparatorVisible(s.element)?this._tree.reveal(s.element):this._tree.reveal(s.element,0),!0;if(s.element===this._elementTree[0])return this._tree.reveal(s.element,0),!0}return!1});const r=this._tree.getFocus()[0];i===r&&(this._tree.scrollTop=this._tree.scrollHeight,this._tree.focusLast(void 0,s=>s.element instanceof h));break}case p.PreviousSeparator:{let t,i=!!this._tree.getFocus()[0]?.separator;this._tree.focusPrevious(void 0,!0,void 0,r=>{if(r.element instanceof v)i?t||(this._separatorRenderer.isSeparatorVisible(r.element)?this._tree.reveal(r.element):this._tree.reveal(r.element,0),t=r.element.children[0]):i=!0;else if(r.element instanceof h&&!t){if(r.element.separator)this._itemRenderer.isItemWithSeparatorVisible(r.element)?this._tree.reveal(r.element):this._tree.reveal(r.element,0),t=r.element;else if(r.element===this._elementTree[0])return this._tree.reveal(r.element,0),!0}return!1}),t&&this._tree.setFocus([t]);break}}}clearFocus(){this._tree.setFocus([])}domFocus(){this._tree.domFocus()}layout(e){this._tree.getHTMLElement().style.maxHeight=e?`${Math.floor(e/44)*44+6}px`:"",this._tree.layout()}filter(e){if(this._lastQueryString=e,!(this._sortByLabel||this._matchOnLabel||this._matchOnDescription||this._matchOnDetail))return this._tree.layout(),!1;const t=e;if(e=e.trim(),!e||!(this.matchOnLabel||this.matchOnDescription||this.matchOnDetail))this._itemElements.forEach(i=>{i.labelHighlights=void 0,i.descriptionHighlights=void 0,i.detailHighlights=void 0,i.hidden=!1;const r=i.index&&this._inputElements[i.index-1];i.item&&(i.separator=r&&r.type==="separator"&&!r.buttons?r:void 0)});else{let i;this._itemElements.forEach(r=>{let s;this.matchOnLabelMode==="fuzzy"?s=this.matchOnLabel?H(e,S(r.saneLabel))??void 0:void 0:s=this.matchOnLabel?me(t,S(r.saneLabel))??void 0:void 0;const l=this.matchOnDescription?H(e,S(r.saneDescription||""))??void 0:void 0,a=this.matchOnDetail?H(e,S(r.saneDetail||""))??void 0:void 0;if(s||l||a?(r.labelHighlights=s,r.descriptionHighlights=l,r.detailHighlights=a,r.hidden=!1):(r.labelHighlights=void 0,r.descriptionHighlights=void 0,r.detailHighlights=void 0,r.hidden=r.item?!r.item.alwaysShow:!0),r.item?r.separator=void 0:r.separator&&(r.hidden=!0),!this.sortByLabel){const d=r.index&&this._inputElements[r.index-1]||void 0;d?.type==="separator"&&!d.buttons&&(i=d),i&&!r.hidden&&(r.separator=i,i=void 0)}})}return this._setElementsToTree(this._sortByLabel&&e?this._itemElements:this._elementTree),this._tree.layout(),!0}toggleCheckbox(){this._elementCheckedEventBufferer.bufferEvents(()=>{const e=this._tree.getFocus().filter(i=>i instanceof h),t=this._allVisibleChecked(e);for(const i of e)i.checkboxDisabled||(i.checked=!t)})}style(e){this._tree.style(e)}toggleHover(){const e=this._tree.getFocus()[0];if(!e?.saneTooltip||!(e instanceof h))return;if(this._lastHover&&!this._lastHover.isDisposed){this._lastHover.dispose();return}this.showHover(e);const t=new T;t.add(this._tree.onDidChangeFocus(i=>{i.elements[0]instanceof h&&this.showHover(i.elements[0])})),this._lastHover&&t.add(this._lastHover),this._elementDisposable.add(t)}_setElementsToTree(e){const t=new Array;for(const i of e)i instanceof v?t.push({element:i,collapsible:!1,collapsed:!1,children:i.children.map(r=>({element:r,collapsible:!1,collapsed:!1}))}):t.push({element:i,collapsible:!1,collapsed:!1});this._tree.setChildren(null,t)}_allVisibleChecked(e,t=!0){for(let i=0,r=e.length;i<r;i++){const s=e[i];if(!s.hidden)if(s.checked)t=!0;else return!1}return t}_updateCheckedObservables(){ce(e=>{this._allVisibleCheckedObservable.set(this._allVisibleChecked(this._itemElements,!1),e);const t=this._itemElements.filter(i=>i.checked).length;this._checkedCountObservable.set(t,e),this._checkedElementsObservable.set(this.getCheckedElements(),e)})}showHover(e){this._lastHover&&!this._lastHover.isDisposed&&(this.hoverDelegate.onDidHideHover?.(),this._lastHover?.dispose()),!(!e.element||!e.saneTooltip)&&(this._lastHover=this.hoverDelegate.showHover({content:e.saneTooltip,target:e.element,linkHandler:t=>{this.linkOpenerDelegate(t)},appearance:{showPointer:!0},container:this._container,position:{hoverPosition:te.RIGHT}},!1))}};E([O],I.prototype,"onDidChangeFocus",1),E([O],I.prototype,"onDidChangeSelection",1),I=E([L(4,W),L(5,oe)],I);function me(c,n){const{text:e,iconOffsets:t}=n;if(!t||t.length===0)return A(c,e);const i=re(e," "),r=e.length-i.length,s=A(c,i);if(s)for(const l of s){const a=t[l.start+r]+r;l.start+=a,l.end+=a}return s}function A(c,n){const e=n.toLowerCase().indexOf(c.toLowerCase());return e!==-1?[{start:e,end:e+c.length}]:null}function fe(c,n,e){const t=c.labelHighlights||[],i=n.labelHighlights||[];return t.length&&!i.length?-1:!t.length&&i.length?1:t.length===0&&i.length===0?0:ie(c.saneSortLabel,n.saneSortLabel,e)}export{I as QuickInputTree};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var QuickPickItemElementRenderer_1;
+import * as dom from '../../../base/browser/dom.js';
+import { Emitter, Event, EventBufferer } from '../../../base/common/event.js';
+import { localize } from '../../../nls.js';
+import { IInstantiationService } from '../../instantiation/common/instantiation.js';
+import { WorkbenchObjectTree } from '../../list/browser/listService.js';
+import { IThemeService } from '../../theme/common/themeService.js';
+import { Disposable, DisposableStore } from '../../../base/common/lifecycle.js';
+import { QuickPickFocus } from '../common/quickInput.js';
+import { StandardKeyboardEvent } from '../../../base/browser/keyboardEvent.js';
+import { OS } from '../../../base/common/platform.js';
+import { memoize } from '../../../base/common/decorators.js';
+import { IconLabel } from '../../../base/browser/ui/iconLabel/iconLabel.js';
+import { KeybindingLabel } from '../../../base/browser/ui/keybindingLabel/keybindingLabel.js';
+import { ActionBar } from '../../../base/browser/ui/actionbar/actionbar.js';
+import { isDark } from '../../theme/common/theme.js';
+import { URI } from '../../../base/common/uri.js';
+import { quickInputButtonToAction } from './quickInputUtils.js';
+import { Lazy } from '../../../base/common/lazy.js';
+import { getCodiconAriaLabel, matchesFuzzyIconAware, parseLabelWithIcons } from '../../../base/common/iconLabels.js';
+import { compareAnything } from '../../../base/common/comparers.js';
+import { ltrim } from '../../../base/common/strings.js';
+import { RenderIndentGuides } from '../../../base/browser/ui/tree/abstractTree.js';
+import { ThrottledDelayer } from '../../../base/common/async.js';
+import { isCancellationError } from '../../../base/common/errors.js';
+import { IAccessibilityService } from '../../accessibility/common/accessibility.js';
+import { observableValue, observableValueOpts, transaction } from '../../../base/common/observable.js';
+import { equals } from '../../../base/common/arrays.js';
+const $ = dom.$;
+class BaseQuickPickItemElement {
+    constructor(index, hasCheckbox, mainItem) {
+        this.index = index;
+        this.hasCheckbox = hasCheckbox;
+        this._hidden = false;
+        this._init = new Lazy(() => {
+            const saneLabel = mainItem.label ?? '';
+            const saneSortLabel = parseLabelWithIcons(saneLabel).text.trim();
+            const saneAriaLabel = mainItem.ariaLabel || [saneLabel, this.saneDescription, this.saneDetail]
+                .map(s => getCodiconAriaLabel(s))
+                .filter(s => !!s)
+                .join(', ');
+            return {
+                saneLabel,
+                saneSortLabel,
+                saneAriaLabel
+            };
+        });
+        this._saneDescription = mainItem.description;
+        this._saneTooltip = mainItem.tooltip;
+    }
+    get saneLabel() {
+        return this._init.value.saneLabel;
+    }
+    get saneSortLabel() {
+        return this._init.value.saneSortLabel;
+    }
+    get saneAriaLabel() {
+        return this._init.value.saneAriaLabel;
+    }
+    get element() {
+        return this._element;
+    }
+    set element(value) {
+        this._element = value;
+    }
+    get hidden() {
+        return this._hidden;
+    }
+    set hidden(value) {
+        this._hidden = value;
+    }
+    get saneDescription() {
+        return this._saneDescription;
+    }
+    set saneDescription(value) {
+        this._saneDescription = value;
+    }
+    get saneDetail() {
+        return this._saneDetail;
+    }
+    set saneDetail(value) {
+        this._saneDetail = value;
+    }
+    get saneTooltip() {
+        return this._saneTooltip;
+    }
+    set saneTooltip(value) {
+        this._saneTooltip = value;
+    }
+    get labelHighlights() {
+        return this._labelHighlights;
+    }
+    set labelHighlights(value) {
+        this._labelHighlights = value;
+    }
+    get descriptionHighlights() {
+        return this._descriptionHighlights;
+    }
+    set descriptionHighlights(value) {
+        this._descriptionHighlights = value;
+    }
+    get detailHighlights() {
+        return this._detailHighlights;
+    }
+    set detailHighlights(value) {
+        this._detailHighlights = value;
+    }
+}
+class QuickPickItemElement extends BaseQuickPickItemElement {
+    constructor(index, hasCheckbox, fireButtonTriggered, _onChecked, item, _separator) {
+        super(index, hasCheckbox, item);
+        this.fireButtonTriggered = fireButtonTriggered;
+        this._onChecked = _onChecked;
+        this.item = item;
+        this._separator = _separator;
+        this._checked = false;
+        this.onChecked = hasCheckbox
+            ? Event.map(Event.filter(this._onChecked.event, e => e.element === this), e => e.checked)
+            : Event.None;
+        this._saneDetail = item.detail;
+        this._labelHighlights = item.highlights?.label;
+        this._descriptionHighlights = item.highlights?.description;
+        this._detailHighlights = item.highlights?.detail;
+    }
+    get separator() {
+        return this._separator;
+    }
+    set separator(value) {
+        this._separator = value;
+    }
+    get checked() {
+        return this._checked;
+    }
+    set checked(value) {
+        if (value !== this._checked) {
+            this._checked = value;
+            this._onChecked.fire({ element: this, checked: value });
+        }
+    }
+    get checkboxDisabled() {
+        return !!this.item.disabled;
+    }
+}
+var QuickPickSeparatorFocusReason;
+(function (QuickPickSeparatorFocusReason) {
+    QuickPickSeparatorFocusReason[QuickPickSeparatorFocusReason["NONE"] = 0] = "NONE";
+    QuickPickSeparatorFocusReason[QuickPickSeparatorFocusReason["MOUSE_HOVER"] = 1] = "MOUSE_HOVER";
+    QuickPickSeparatorFocusReason[QuickPickSeparatorFocusReason["ACTIVE_ITEM"] = 2] = "ACTIVE_ITEM";
+})(QuickPickSeparatorFocusReason || (QuickPickSeparatorFocusReason = {}));
+class QuickPickSeparatorElement extends BaseQuickPickItemElement {
+    constructor(index, fireSeparatorButtonTriggered, separator) {
+        super(index, false, separator);
+        this.fireSeparatorButtonTriggered = fireSeparatorButtonTriggered;
+        this.separator = separator;
+        this.children = new Array();
+        this.focusInsideSeparator = QuickPickSeparatorFocusReason.NONE;
+    }
+}
+class QuickInputItemDelegate {
+    getHeight(element) {
+        if (element instanceof QuickPickSeparatorElement) {
+            return 30;
+        }
+        return element.saneDetail ? 44 : 22;
+    }
+    getTemplateId(element) {
+        if (element instanceof QuickPickItemElement) {
+            return QuickPickItemElementRenderer.ID;
+        }
+        else {
+            return QuickPickSeparatorElementRenderer.ID;
+        }
+    }
+}
+class QuickInputAccessibilityProvider {
+    getWidgetAriaLabel() {
+        return localize('quickInput', "Quick Input");
+    }
+    getAriaLabel(element) {
+        return element.separator?.label
+            ? `${element.saneAriaLabel}, ${element.separator.label}`
+            : element.saneAriaLabel;
+    }
+    getWidgetRole() {
+        return 'listbox';
+    }
+    getRole(element) {
+        return element.hasCheckbox ? 'checkbox' : 'option';
+    }
+    isChecked(element) {
+        if (!element.hasCheckbox || !(element instanceof QuickPickItemElement)) {
+            return undefined;
+        }
+        return {
+            get value() { return element.checked; },
+            onDidChange: e => element.onChecked(() => e()),
+        };
+    }
+}
+class BaseQuickInputListRenderer {
+    constructor(hoverDelegate) {
+        this.hoverDelegate = hoverDelegate;
+    }
+    renderTemplate(container) {
+        const data = Object.create(null);
+        data.toDisposeElement = new DisposableStore();
+        data.toDisposeTemplate = new DisposableStore();
+        data.entry = dom.append(container, $('.quick-input-list-entry'));
+        const label = dom.append(data.entry, $('label.quick-input-list-label'));
+        data.toDisposeTemplate.add(dom.addStandardDisposableListener(label, dom.EventType.CLICK, e => {
+            if (!data.checkbox.offsetParent) {
+                e.preventDefault();
+            }
+        }));
+        data.checkbox = dom.append(label, $('input.quick-input-list-checkbox'));
+        data.checkbox.type = 'checkbox';
+        const rows = dom.append(label, $('.quick-input-list-rows'));
+        const row1 = dom.append(rows, $('.quick-input-list-row'));
+        const row2 = dom.append(rows, $('.quick-input-list-row'));
+        data.label = new IconLabel(row1, { supportHighlights: true, supportDescriptionHighlights: true, supportIcons: true, hoverDelegate: this.hoverDelegate });
+        data.toDisposeTemplate.add(data.label);
+        data.icon = dom.prepend(data.label.element, $('.quick-input-list-icon'));
+        const keybindingContainer = dom.append(row1, $('.quick-input-list-entry-keybinding'));
+        data.keybinding = new KeybindingLabel(keybindingContainer, OS);
+        data.toDisposeTemplate.add(data.keybinding);
+        const detailContainer = dom.append(row2, $('.quick-input-list-label-meta'));
+        data.detail = new IconLabel(detailContainer, { supportHighlights: true, supportIcons: true, hoverDelegate: this.hoverDelegate });
+        data.toDisposeTemplate.add(data.detail);
+        data.separator = dom.append(data.entry, $('.quick-input-list-separator'));
+        data.actionBar = new ActionBar(data.entry, this.hoverDelegate ? { hoverDelegate: this.hoverDelegate } : undefined);
+        data.actionBar.domNode.classList.add('quick-input-list-entry-action-bar');
+        data.toDisposeTemplate.add(data.actionBar);
+        return data;
+    }
+    disposeTemplate(data) {
+        data.toDisposeElement.dispose();
+        data.toDisposeTemplate.dispose();
+    }
+    disposeElement(_element, _index, data) {
+        data.toDisposeElement.clear();
+        data.actionBar.clear();
+    }
+}
+let QuickPickItemElementRenderer = class QuickPickItemElementRenderer extends BaseQuickInputListRenderer {
+    static { QuickPickItemElementRenderer_1 = this; }
+    static { this.ID = 'quickpickitem'; }
+    constructor(hoverDelegate, themeService) {
+        super(hoverDelegate);
+        this.themeService = themeService;
+        this._itemsWithSeparatorsFrequency = new Map();
+    }
+    get templateId() {
+        return QuickPickItemElementRenderer_1.ID;
+    }
+    renderTemplate(container) {
+        const data = super.renderTemplate(container);
+        data.toDisposeTemplate.add(dom.addStandardDisposableListener(data.checkbox, dom.EventType.CHANGE, e => {
+            data.element.checked = data.checkbox.checked;
+        }));
+        return data;
+    }
+    renderElement(node, index, data) {
+        const element = node.element;
+        data.element = element;
+        element.element = data.entry ?? undefined;
+        const mainItem = element.item;
+        data.checkbox.checked = element.checked;
+        data.toDisposeElement.add(element.onChecked(checked => data.checkbox.checked = checked));
+        data.checkbox.disabled = element.checkboxDisabled;
+        const { labelHighlights, descriptionHighlights, detailHighlights } = element;
+        if (mainItem.iconPath) {
+            const icon = isDark(this.themeService.getColorTheme().type) ? mainItem.iconPath.dark : (mainItem.iconPath.light ?? mainItem.iconPath.dark);
+            const iconUrl = URI.revive(icon);
+            data.icon.className = 'quick-input-list-icon';
+            data.icon.style.backgroundImage = dom.asCSSUrl(iconUrl);
+        }
+        else {
+            data.icon.style.backgroundImage = '';
+            data.icon.className = mainItem.iconClass ? `quick-input-list-icon ${mainItem.iconClass}` : '';
+        }
+        let descriptionTitle;
+        if (!element.saneTooltip && element.saneDescription) {
+            descriptionTitle = {
+                markdown: {
+                    value: element.saneDescription,
+                    supportThemeIcons: true
+                },
+                markdownNotSupportedFallback: element.saneDescription
+            };
+        }
+        const options = {
+            matches: labelHighlights || [],
+            descriptionTitle,
+            descriptionMatches: descriptionHighlights || [],
+            labelEscapeNewLines: true
+        };
+        options.extraClasses = mainItem.iconClasses;
+        options.italic = mainItem.italic;
+        options.strikethrough = mainItem.strikethrough;
+        data.entry.classList.remove('quick-input-list-separator-as-item');
+        data.label.setLabel(element.saneLabel, element.saneDescription, options);
+        data.keybinding.set(mainItem.keybinding);
+        if (element.saneDetail) {
+            let title;
+            if (!element.saneTooltip) {
+                title = {
+                    markdown: {
+                        value: element.saneDetail,
+                        supportThemeIcons: true
+                    },
+                    markdownNotSupportedFallback: element.saneDetail
+                };
+            }
+            data.detail.element.style.display = '';
+            data.detail.setLabel(element.saneDetail, undefined, {
+                matches: detailHighlights,
+                title,
+                labelEscapeNewLines: true
+            });
+        }
+        else {
+            data.detail.element.style.display = 'none';
+        }
+        if (element.separator?.label) {
+            data.separator.textContent = element.separator.label;
+            data.separator.style.display = '';
+            this.addItemWithSeparator(element);
+        }
+        else {
+            data.separator.style.display = 'none';
+        }
+        data.entry.classList.toggle('quick-input-list-separator-border', !!element.separator);
+        const buttons = mainItem.buttons;
+        if (buttons && buttons.length) {
+            data.actionBar.push(buttons.map((button, index) => quickInputButtonToAction(button, `id-${index}`, () => element.fireButtonTriggered({ button, item: element.item }))), { icon: true, label: false });
+            data.entry.classList.add('has-actions');
+        }
+        else {
+            data.entry.classList.remove('has-actions');
+        }
+    }
+    disposeElement(element, _index, data) {
+        this.removeItemWithSeparator(element.element);
+        super.disposeElement(element, _index, data);
+    }
+    isItemWithSeparatorVisible(item) {
+        return this._itemsWithSeparatorsFrequency.has(item);
+    }
+    addItemWithSeparator(item) {
+        this._itemsWithSeparatorsFrequency.set(item, (this._itemsWithSeparatorsFrequency.get(item) || 0) + 1);
+    }
+    removeItemWithSeparator(item) {
+        const frequency = this._itemsWithSeparatorsFrequency.get(item) || 0;
+        if (frequency > 1) {
+            this._itemsWithSeparatorsFrequency.set(item, frequency - 1);
+        }
+        else {
+            this._itemsWithSeparatorsFrequency.delete(item);
+        }
+    }
+};
+QuickPickItemElementRenderer = QuickPickItemElementRenderer_1 = __decorate([
+    __param(1, IThemeService),
+    __metadata("design:paramtypes", [Object, Object])
+], QuickPickItemElementRenderer);
+class QuickPickSeparatorElementRenderer extends BaseQuickInputListRenderer {
+    constructor() {
+        super(...arguments);
+        this._visibleSeparatorsFrequency = new Map();
+    }
+    static { this.ID = 'quickpickseparator'; }
+    get templateId() {
+        return QuickPickSeparatorElementRenderer.ID;
+    }
+    get visibleSeparators() {
+        return [...this._visibleSeparatorsFrequency.keys()];
+    }
+    isSeparatorVisible(separator) {
+        return this._visibleSeparatorsFrequency.has(separator);
+    }
+    renderTemplate(container) {
+        const data = super.renderTemplate(container);
+        data.checkbox.style.display = 'none';
+        return data;
+    }
+    renderElement(node, index, data) {
+        const element = node.element;
+        data.element = element;
+        element.element = data.entry ?? undefined;
+        element.element.classList.toggle('focus-inside', !!element.focusInsideSeparator);
+        const mainItem = element.separator;
+        const { labelHighlights, descriptionHighlights, detailHighlights } = element;
+        data.icon.style.backgroundImage = '';
+        data.icon.className = '';
+        let descriptionTitle;
+        if (!element.saneTooltip && element.saneDescription) {
+            descriptionTitle = {
+                markdown: {
+                    value: element.saneDescription,
+                    supportThemeIcons: true
+                },
+                markdownNotSupportedFallback: element.saneDescription
+            };
+        }
+        const options = {
+            matches: labelHighlights || [],
+            descriptionTitle,
+            descriptionMatches: descriptionHighlights || [],
+            labelEscapeNewLines: true
+        };
+        data.entry.classList.add('quick-input-list-separator-as-item');
+        data.label.setLabel(element.saneLabel, element.saneDescription, options);
+        if (element.saneDetail) {
+            let title;
+            if (!element.saneTooltip) {
+                title = {
+                    markdown: {
+                        value: element.saneDetail,
+                        supportThemeIcons: true
+                    },
+                    markdownNotSupportedFallback: element.saneDetail
+                };
+            }
+            data.detail.element.style.display = '';
+            data.detail.setLabel(element.saneDetail, undefined, {
+                matches: detailHighlights,
+                title,
+                labelEscapeNewLines: true
+            });
+        }
+        else {
+            data.detail.element.style.display = 'none';
+        }
+        data.separator.style.display = 'none';
+        data.entry.classList.add('quick-input-list-separator-border');
+        const buttons = mainItem.buttons;
+        if (buttons && buttons.length) {
+            data.actionBar.push(buttons.map((button, index) => quickInputButtonToAction(button, `id-${index}`, () => element.fireSeparatorButtonTriggered({ button, separator: element.separator }))), { icon: true, label: false });
+            data.entry.classList.add('has-actions');
+        }
+        else {
+            data.entry.classList.remove('has-actions');
+        }
+        this.addSeparator(element);
+    }
+    disposeElement(element, _index, data) {
+        this.removeSeparator(element.element);
+        if (!this.isSeparatorVisible(element.element)) {
+            element.element.element?.classList.remove('focus-inside');
+        }
+        super.disposeElement(element, _index, data);
+    }
+    addSeparator(separator) {
+        this._visibleSeparatorsFrequency.set(separator, (this._visibleSeparatorsFrequency.get(separator) || 0) + 1);
+    }
+    removeSeparator(separator) {
+        const frequency = this._visibleSeparatorsFrequency.get(separator) || 0;
+        if (frequency > 1) {
+            this._visibleSeparatorsFrequency.set(separator, frequency - 1);
+        }
+        else {
+            this._visibleSeparatorsFrequency.delete(separator);
+        }
+    }
+}
+let QuickInputTree = class QuickInputTree extends Disposable {
+    constructor(parent, hoverDelegate, linkOpenerDelegate, id, instantiationService, accessibilityService) {
+        super();
+        this.parent = parent;
+        this.hoverDelegate = hoverDelegate;
+        this.linkOpenerDelegate = linkOpenerDelegate;
+        this.accessibilityService = accessibilityService;
+        this._onKeyDown = new Emitter();
+        this.onKeyDown = this._onKeyDown.event;
+        this._onLeave = new Emitter();
+        this.onLeave = this._onLeave.event;
+        this._visibleCountObservable = observableValue('VisibleCount', 0);
+        this.onChangedVisibleCount = Event.fromObservable(this._visibleCountObservable, this._store);
+        this._allVisibleCheckedObservable = observableValue('AllVisibleChecked', false);
+        this.onChangedAllVisibleChecked = Event.fromObservable(this._allVisibleCheckedObservable, this._store);
+        this._checkedCountObservable = observableValue('CheckedCount', 0);
+        this.onChangedCheckedCount = Event.fromObservable(this._checkedCountObservable, this._store);
+        this._checkedElementsObservable = observableValueOpts({ equalsFn: equals }, new Array());
+        this.onChangedCheckedElements = Event.fromObservable(this._checkedElementsObservable, this._store);
+        this._onButtonTriggered = new Emitter();
+        this.onButtonTriggered = this._onButtonTriggered.event;
+        this._onSeparatorButtonTriggered = new Emitter();
+        this.onSeparatorButtonTriggered = this._onSeparatorButtonTriggered.event;
+        this._elementChecked = new Emitter();
+        this._elementCheckedEventBufferer = new EventBufferer();
+        this._hasCheckboxes = false;
+        this._inputElements = new Array();
+        this._elementTree = new Array();
+        this._itemElements = new Array();
+        this._elementDisposable = this._register(new DisposableStore());
+        this._matchOnDescription = false;
+        this._matchOnDetail = false;
+        this._matchOnLabel = true;
+        this._matchOnLabelMode = 'fuzzy';
+        this._matchOnMeta = true;
+        this._sortByLabel = true;
+        this._shouldLoop = true;
+        this._container = dom.append(this.parent, $('.quick-input-list'));
+        this._separatorRenderer = new QuickPickSeparatorElementRenderer(hoverDelegate);
+        this._itemRenderer = instantiationService.createInstance(QuickPickItemElementRenderer, hoverDelegate);
+        this._tree = this._register(instantiationService.createInstance((WorkbenchObjectTree), 'QuickInput', this._container, new QuickInputItemDelegate(), [this._itemRenderer, this._separatorRenderer], {
+            filter: {
+                filter(element) {
+                    return element.hidden
+                        ? 0
+                        : element instanceof QuickPickSeparatorElement
+                            ? 2
+                            : 1;
+                },
+            },
+            sorter: {
+                compare: (element, otherElement) => {
+                    if (!this.sortByLabel || !this._lastQueryString) {
+                        return 0;
+                    }
+                    const normalizedSearchValue = this._lastQueryString.toLowerCase();
+                    return compareEntries(element, otherElement, normalizedSearchValue);
+                },
+            },
+            accessibilityProvider: new QuickInputAccessibilityProvider(),
+            setRowLineHeight: false,
+            multipleSelectionSupport: false,
+            hideTwistiesOfChildlessElements: true,
+            renderIndentGuides: RenderIndentGuides.None,
+            findWidgetEnabled: false,
+            indent: 0,
+            horizontalScrolling: false,
+            allowNonCollapsibleParents: true,
+            alwaysConsumeMouseWheel: true
+        }));
+        this._tree.getHTMLElement().id = id;
+        this._registerListeners();
+    }
+    get onDidChangeFocus() {
+        return Event.map(this._tree.onDidChangeFocus, e => e.elements.filter((e) => e instanceof QuickPickItemElement).map(e => e.item), this._store);
+    }
+    get onDidChangeSelection() {
+        return Event.map(this._tree.onDidChangeSelection, e => ({
+            items: e.elements.filter((e) => e instanceof QuickPickItemElement).map(e => e.item),
+            event: e.browserEvent
+        }), this._store);
+    }
+    get displayed() {
+        return this._container.style.display !== 'none';
+    }
+    set displayed(value) {
+        this._container.style.display = value ? '' : 'none';
+    }
+    get scrollTop() {
+        return this._tree.scrollTop;
+    }
+    set scrollTop(scrollTop) {
+        this._tree.scrollTop = scrollTop;
+    }
+    get ariaLabel() {
+        return this._tree.ariaLabel;
+    }
+    set ariaLabel(label) {
+        this._tree.ariaLabel = label ?? '';
+    }
+    set enabled(value) {
+        this._tree.getHTMLElement().style.pointerEvents = value ? '' : 'none';
+    }
+    get matchOnDescription() {
+        return this._matchOnDescription;
+    }
+    set matchOnDescription(value) {
+        this._matchOnDescription = value;
+    }
+    get matchOnDetail() {
+        return this._matchOnDetail;
+    }
+    set matchOnDetail(value) {
+        this._matchOnDetail = value;
+    }
+    get matchOnLabel() {
+        return this._matchOnLabel;
+    }
+    set matchOnLabel(value) {
+        this._matchOnLabel = value;
+    }
+    get matchOnLabelMode() {
+        return this._matchOnLabelMode;
+    }
+    set matchOnLabelMode(value) {
+        this._matchOnLabelMode = value;
+    }
+    get matchOnMeta() {
+        return this._matchOnMeta;
+    }
+    set matchOnMeta(value) {
+        this._matchOnMeta = value;
+    }
+    get sortByLabel() {
+        return this._sortByLabel;
+    }
+    set sortByLabel(value) {
+        this._sortByLabel = value;
+    }
+    get shouldLoop() {
+        return this._shouldLoop;
+    }
+    set shouldLoop(value) {
+        this._shouldLoop = value;
+    }
+    _registerListeners() {
+        this._registerOnKeyDown();
+        this._registerOnContainerClick();
+        this._registerOnMouseMiddleClick();
+        this._registerOnTreeModelChanged();
+        this._registerOnElementChecked();
+        this._registerOnContextMenu();
+        this._registerHoverListeners();
+        this._registerSelectionChangeListener();
+        this._registerSeparatorActionShowingListeners();
+    }
+    _registerOnKeyDown() {
+        this._register(this._tree.onKeyDown(e => {
+            const event = new StandardKeyboardEvent(e);
+            switch (event.keyCode) {
+                case 10:
+                    this.toggleCheckbox();
+                    break;
+            }
+            this._onKeyDown.fire(event);
+        }));
+    }
+    _registerOnContainerClick() {
+        this._register(dom.addDisposableListener(this._container, dom.EventType.CLICK, e => {
+            if (e.x || e.y) {
+                this._onLeave.fire();
+            }
+        }));
+    }
+    _registerOnMouseMiddleClick() {
+        this._register(dom.addDisposableListener(this._container, dom.EventType.AUXCLICK, e => {
+            if (e.button === 1) {
+                this._onLeave.fire();
+            }
+        }));
+    }
+    _registerOnTreeModelChanged() {
+        this._register(this._tree.onDidChangeModel(() => {
+            const visibleCount = this._itemElements.filter(e => !e.hidden).length;
+            this._visibleCountObservable.set(visibleCount, undefined);
+            if (this._hasCheckboxes) {
+                this._updateCheckedObservables();
+            }
+        }));
+    }
+    _registerOnElementChecked() {
+        this._register(this._elementCheckedEventBufferer.wrapEvent(this._elementChecked.event, (_, e) => e)(_ => this._updateCheckedObservables()));
+    }
+    _registerOnContextMenu() {
+        this._register(this._tree.onContextMenu(e => {
+            if (e.element) {
+                e.browserEvent.preventDefault();
+                this._tree.setSelection([e.element]);
+            }
+        }));
+    }
+    _registerHoverListeners() {
+        const delayer = this._register(new ThrottledDelayer(this.hoverDelegate.delay));
+        this._register(this._tree.onMouseOver(async (e) => {
+            if (dom.isHTMLAnchorElement(e.browserEvent.target)) {
+                delayer.cancel();
+                return;
+            }
+            if (!(dom.isHTMLAnchorElement(e.browserEvent.relatedTarget)) &&
+                dom.isAncestor(e.browserEvent.relatedTarget, e.element?.element)) {
+                return;
+            }
+            try {
+                await delayer.trigger(async () => {
+                    if (e.element instanceof QuickPickItemElement) {
+                        this.showHover(e.element);
+                    }
+                });
+            }
+            catch (e) {
+                if (!isCancellationError(e)) {
+                    throw e;
+                }
+            }
+        }));
+        this._register(this._tree.onMouseOut(e => {
+            if (dom.isAncestor(e.browserEvent.relatedTarget, e.element?.element)) {
+                return;
+            }
+            delayer.cancel();
+        }));
+    }
+    _registerSeparatorActionShowingListeners() {
+        this._register(this._tree.onDidChangeFocus(e => {
+            const parent = e.elements[0]
+                ? this._tree.getParentElement(e.elements[0])
+                : null;
+            for (const separator of this._separatorRenderer.visibleSeparators) {
+                const value = separator === parent;
+                const currentActive = !!(separator.focusInsideSeparator & QuickPickSeparatorFocusReason.ACTIVE_ITEM);
+                if (currentActive !== value) {
+                    if (value) {
+                        separator.focusInsideSeparator |= QuickPickSeparatorFocusReason.ACTIVE_ITEM;
+                    }
+                    else {
+                        separator.focusInsideSeparator &= ~QuickPickSeparatorFocusReason.ACTIVE_ITEM;
+                    }
+                    this._tree.rerender(separator);
+                }
+            }
+        }));
+        this._register(this._tree.onMouseOver(e => {
+            const parent = e.element
+                ? this._tree.getParentElement(e.element)
+                : null;
+            for (const separator of this._separatorRenderer.visibleSeparators) {
+                if (separator !== parent) {
+                    continue;
+                }
+                const currentMouse = !!(separator.focusInsideSeparator & QuickPickSeparatorFocusReason.MOUSE_HOVER);
+                if (!currentMouse) {
+                    separator.focusInsideSeparator |= QuickPickSeparatorFocusReason.MOUSE_HOVER;
+                    this._tree.rerender(separator);
+                }
+            }
+        }));
+        this._register(this._tree.onMouseOut(e => {
+            const parent = e.element
+                ? this._tree.getParentElement(e.element)
+                : null;
+            for (const separator of this._separatorRenderer.visibleSeparators) {
+                if (separator !== parent) {
+                    continue;
+                }
+                const currentMouse = !!(separator.focusInsideSeparator & QuickPickSeparatorFocusReason.MOUSE_HOVER);
+                if (currentMouse) {
+                    separator.focusInsideSeparator &= ~QuickPickSeparatorFocusReason.MOUSE_HOVER;
+                    this._tree.rerender(separator);
+                }
+            }
+        }));
+    }
+    _registerSelectionChangeListener() {
+        this._register(this._tree.onDidChangeSelection(e => {
+            const elementsWithoutSeparators = e.elements.filter((e) => e instanceof QuickPickItemElement);
+            if (elementsWithoutSeparators.length !== e.elements.length) {
+                if (e.elements.length === 1 && e.elements[0] instanceof QuickPickSeparatorElement) {
+                    this._tree.setFocus([e.elements[0].children[0]]);
+                    this._tree.reveal(e.elements[0], 0);
+                }
+                this._tree.setSelection(elementsWithoutSeparators);
+            }
+        }));
+    }
+    setAllVisibleChecked(checked) {
+        this._elementCheckedEventBufferer.bufferEvents(() => {
+            this._itemElements.forEach(element => {
+                if (!element.hidden && !element.checkboxDisabled) {
+                    element.checked = checked;
+                }
+            });
+        });
+    }
+    setElements(inputElements) {
+        this._elementDisposable.clear();
+        this._lastQueryString = undefined;
+        this._inputElements = inputElements;
+        this._hasCheckboxes = this.parent.classList.contains('show-checkboxes');
+        let currentSeparatorElement;
+        this._itemElements = new Array();
+        this._elementTree = inputElements.reduce((result, item, index) => {
+            let element;
+            if (item.type === 'separator') {
+                if (!item.buttons) {
+                    return result;
+                }
+                currentSeparatorElement = new QuickPickSeparatorElement(index, e => this._onSeparatorButtonTriggered.fire(e), item);
+                element = currentSeparatorElement;
+            }
+            else {
+                const previous = index > 0 ? inputElements[index - 1] : undefined;
+                let separator;
+                if (previous && previous.type === 'separator' && !previous.buttons) {
+                    currentSeparatorElement = undefined;
+                    separator = previous;
+                }
+                const qpi = new QuickPickItemElement(index, this._hasCheckboxes, e => this._onButtonTriggered.fire(e), this._elementChecked, item, separator);
+                this._itemElements.push(qpi);
+                if (currentSeparatorElement) {
+                    currentSeparatorElement.children.push(qpi);
+                    return result;
+                }
+                element = qpi;
+            }
+            result.push(element);
+            return result;
+        }, new Array());
+        this._setElementsToTree(this._elementTree);
+        if (this.accessibilityService.isScreenReaderOptimized()) {
+            setTimeout(() => {
+                const focusedElement = this._tree.getHTMLElement().querySelector(`.monaco-list-row.focused`);
+                const parent = focusedElement?.parentNode;
+                if (focusedElement && parent) {
+                    const nextSibling = focusedElement.nextSibling;
+                    focusedElement.remove();
+                    parent.insertBefore(focusedElement, nextSibling);
+                }
+            }, 0);
+        }
+    }
+    setFocusedElements(items) {
+        const elements = items.map(item => this._itemElements.find(e => e.item === item))
+            .filter((e) => !!e)
+            .filter(e => !e.hidden);
+        this._tree.setFocus(elements);
+        if (items.length > 0) {
+            const focused = this._tree.getFocus()[0];
+            if (focused) {
+                this._tree.reveal(focused);
+            }
+        }
+    }
+    getActiveDescendant() {
+        return this._tree.getHTMLElement().getAttribute('aria-activedescendant');
+    }
+    setSelectedElements(items) {
+        const elements = items.map(item => this._itemElements.find(e => e.item === item))
+            .filter((e) => !!e);
+        this._tree.setSelection(elements);
+    }
+    getCheckedElements() {
+        return this._itemElements.filter(e => e.checked)
+            .map(e => e.item);
+    }
+    setCheckedElements(items) {
+        this._elementCheckedEventBufferer.bufferEvents(() => {
+            const checked = new Set();
+            for (const item of items) {
+                checked.add(item);
+            }
+            for (const element of this._itemElements) {
+                element.checked = checked.has(element.item);
+            }
+        });
+    }
+    focus(what) {
+        if (!this._itemElements.length) {
+            return;
+        }
+        if (what === QuickPickFocus.Second && this._itemElements.length < 2) {
+            what = QuickPickFocus.First;
+        }
+        switch (what) {
+            case QuickPickFocus.First:
+                this._tree.scrollTop = 0;
+                this._tree.focusFirst(undefined, (e) => e.element instanceof QuickPickItemElement);
+                break;
+            case QuickPickFocus.Second: {
+                this._tree.scrollTop = 0;
+                let isSecondItem = false;
+                this._tree.focusFirst(undefined, (e) => {
+                    if (!(e.element instanceof QuickPickItemElement)) {
+                        return false;
+                    }
+                    if (isSecondItem) {
+                        return true;
+                    }
+                    isSecondItem = !isSecondItem;
+                    return false;
+                });
+                break;
+            }
+            case QuickPickFocus.Last:
+                this._tree.scrollTop = this._tree.scrollHeight;
+                this._tree.focusLast(undefined, (e) => e.element instanceof QuickPickItemElement);
+                break;
+            case QuickPickFocus.Next: {
+                const prevFocus = this._tree.getFocus();
+                this._tree.focusNext(undefined, this._shouldLoop, undefined, (e) => {
+                    if (!(e.element instanceof QuickPickItemElement)) {
+                        return false;
+                    }
+                    this._tree.reveal(e.element);
+                    return true;
+                });
+                const currentFocus = this._tree.getFocus();
+                if (prevFocus.length && prevFocus[0] === currentFocus[0] && prevFocus[0] === this._itemElements[this._itemElements.length - 1]) {
+                    this._onLeave.fire();
+                }
+                break;
+            }
+            case QuickPickFocus.Previous: {
+                const prevFocus = this._tree.getFocus();
+                this._tree.focusPrevious(undefined, this._shouldLoop, undefined, (e) => {
+                    if (!(e.element instanceof QuickPickItemElement)) {
+                        return false;
+                    }
+                    const parent = this._tree.getParentElement(e.element);
+                    if (parent === null || parent.children[0] !== e.element) {
+                        this._tree.reveal(e.element);
+                    }
+                    else {
+                        this._tree.reveal(parent);
+                    }
+                    return true;
+                });
+                const currentFocus = this._tree.getFocus();
+                if (prevFocus.length && prevFocus[0] === currentFocus[0] && prevFocus[0] === this._itemElements[0]) {
+                    this._onLeave.fire();
+                }
+                break;
+            }
+            case QuickPickFocus.NextPage:
+                this._tree.focusNextPage(undefined, (e) => {
+                    if (!(e.element instanceof QuickPickItemElement)) {
+                        return false;
+                    }
+                    this._tree.reveal(e.element);
+                    return true;
+                });
+                break;
+            case QuickPickFocus.PreviousPage:
+                this._tree.focusPreviousPage(undefined, (e) => {
+                    if (!(e.element instanceof QuickPickItemElement)) {
+                        return false;
+                    }
+                    const parent = this._tree.getParentElement(e.element);
+                    if (parent === null || parent.children[0] !== e.element) {
+                        this._tree.reveal(e.element);
+                    }
+                    else {
+                        this._tree.reveal(parent);
+                    }
+                    return true;
+                });
+                break;
+            case QuickPickFocus.NextSeparator: {
+                let foundSeparatorAsItem = false;
+                const before = this._tree.getFocus()[0];
+                this._tree.focusNext(undefined, true, undefined, (e) => {
+                    if (foundSeparatorAsItem) {
+                        return true;
+                    }
+                    if (e.element instanceof QuickPickSeparatorElement) {
+                        foundSeparatorAsItem = true;
+                        if (this._separatorRenderer.isSeparatorVisible(e.element)) {
+                            this._tree.reveal(e.element.children[0]);
+                        }
+                        else {
+                            this._tree.reveal(e.element, 0);
+                        }
+                    }
+                    else if (e.element instanceof QuickPickItemElement) {
+                        if (e.element.separator) {
+                            if (this._itemRenderer.isItemWithSeparatorVisible(e.element)) {
+                                this._tree.reveal(e.element);
+                            }
+                            else {
+                                this._tree.reveal(e.element, 0);
+                            }
+                            return true;
+                        }
+                        else if (e.element === this._elementTree[0]) {
+                            this._tree.reveal(e.element, 0);
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+                const after = this._tree.getFocus()[0];
+                if (before === after) {
+                    this._tree.scrollTop = this._tree.scrollHeight;
+                    this._tree.focusLast(undefined, (e) => e.element instanceof QuickPickItemElement);
+                }
+                break;
+            }
+            case QuickPickFocus.PreviousSeparator: {
+                let focusElement;
+                let foundSeparator = !!this._tree.getFocus()[0]?.separator;
+                this._tree.focusPrevious(undefined, true, undefined, (e) => {
+                    if (e.element instanceof QuickPickSeparatorElement) {
+                        if (foundSeparator) {
+                            if (!focusElement) {
+                                if (this._separatorRenderer.isSeparatorVisible(e.element)) {
+                                    this._tree.reveal(e.element);
+                                }
+                                else {
+                                    this._tree.reveal(e.element, 0);
+                                }
+                                focusElement = e.element.children[0];
+                            }
+                        }
+                        else {
+                            foundSeparator = true;
+                        }
+                    }
+                    else if (e.element instanceof QuickPickItemElement) {
+                        if (!focusElement) {
+                            if (e.element.separator) {
+                                if (this._itemRenderer.isItemWithSeparatorVisible(e.element)) {
+                                    this._tree.reveal(e.element);
+                                }
+                                else {
+                                    this._tree.reveal(e.element, 0);
+                                }
+                                focusElement = e.element;
+                            }
+                            else if (e.element === this._elementTree[0]) {
+                                this._tree.reveal(e.element, 0);
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                });
+                if (focusElement) {
+                    this._tree.setFocus([focusElement]);
+                }
+                break;
+            }
+        }
+    }
+    clearFocus() {
+        this._tree.setFocus([]);
+    }
+    domFocus() {
+        this._tree.domFocus();
+    }
+    layout(maxHeight) {
+        this._tree.getHTMLElement().style.maxHeight = maxHeight ? `${Math.floor(maxHeight / 44) * 44
+            + 6}px` : '';
+        this._tree.layout();
+    }
+    filter(query) {
+        this._lastQueryString = query;
+        if (!(this._sortByLabel || this._matchOnLabel || this._matchOnDescription || this._matchOnDetail)) {
+            this._tree.layout();
+            return false;
+        }
+        const queryWithWhitespace = query;
+        query = query.trim();
+        if (!query || !(this.matchOnLabel || this.matchOnDescription || this.matchOnDetail)) {
+            this._itemElements.forEach(element => {
+                element.labelHighlights = undefined;
+                element.descriptionHighlights = undefined;
+                element.detailHighlights = undefined;
+                element.hidden = false;
+                const previous = element.index && this._inputElements[element.index - 1];
+                if (element.item) {
+                    element.separator = previous && previous.type === 'separator' && !previous.buttons ? previous : undefined;
+                }
+            });
+        }
+        else {
+            let currentSeparator;
+            this._itemElements.forEach(element => {
+                let labelHighlights;
+                if (this.matchOnLabelMode === 'fuzzy') {
+                    labelHighlights = this.matchOnLabel ? matchesFuzzyIconAware(query, parseLabelWithIcons(element.saneLabel)) ?? undefined : undefined;
+                }
+                else {
+                    labelHighlights = this.matchOnLabel ? matchesContiguousIconAware(queryWithWhitespace, parseLabelWithIcons(element.saneLabel)) ?? undefined : undefined;
+                }
+                const descriptionHighlights = this.matchOnDescription ? matchesFuzzyIconAware(query, parseLabelWithIcons(element.saneDescription || '')) ?? undefined : undefined;
+                const detailHighlights = this.matchOnDetail ? matchesFuzzyIconAware(query, parseLabelWithIcons(element.saneDetail || '')) ?? undefined : undefined;
+                if (labelHighlights || descriptionHighlights || detailHighlights) {
+                    element.labelHighlights = labelHighlights;
+                    element.descriptionHighlights = descriptionHighlights;
+                    element.detailHighlights = detailHighlights;
+                    element.hidden = false;
+                }
+                else {
+                    element.labelHighlights = undefined;
+                    element.descriptionHighlights = undefined;
+                    element.detailHighlights = undefined;
+                    element.hidden = element.item ? !element.item.alwaysShow : true;
+                }
+                if (element.item) {
+                    element.separator = undefined;
+                }
+                else if (element.separator) {
+                    element.hidden = true;
+                }
+                if (!this.sortByLabel) {
+                    const previous = element.index && this._inputElements[element.index - 1] || undefined;
+                    if (previous?.type === 'separator' && !previous.buttons) {
+                        currentSeparator = previous;
+                    }
+                    if (currentSeparator && !element.hidden) {
+                        element.separator = currentSeparator;
+                        currentSeparator = undefined;
+                    }
+                }
+            });
+        }
+        this._setElementsToTree(this._sortByLabel && query
+            ? this._itemElements
+            : this._elementTree);
+        this._tree.layout();
+        return true;
+    }
+    toggleCheckbox() {
+        this._elementCheckedEventBufferer.bufferEvents(() => {
+            const elements = this._tree.getFocus().filter((e) => e instanceof QuickPickItemElement);
+            const allChecked = this._allVisibleChecked(elements);
+            for (const element of elements) {
+                if (!element.checkboxDisabled) {
+                    element.checked = !allChecked;
+                }
+            }
+        });
+    }
+    style(styles) {
+        this._tree.style(styles);
+    }
+    toggleHover() {
+        const focused = this._tree.getFocus()[0];
+        if (!focused?.saneTooltip || !(focused instanceof QuickPickItemElement)) {
+            return;
+        }
+        if (this._lastHover && !this._lastHover.isDisposed) {
+            this._lastHover.dispose();
+            return;
+        }
+        this.showHover(focused);
+        const store = new DisposableStore();
+        store.add(this._tree.onDidChangeFocus(e => {
+            if (e.elements[0] instanceof QuickPickItemElement) {
+                this.showHover(e.elements[0]);
+            }
+        }));
+        if (this._lastHover) {
+            store.add(this._lastHover);
+        }
+        this._elementDisposable.add(store);
+    }
+    _setElementsToTree(elements) {
+        const treeElements = new Array();
+        for (const element of elements) {
+            if (element instanceof QuickPickSeparatorElement) {
+                treeElements.push({
+                    element,
+                    collapsible: false,
+                    collapsed: false,
+                    children: element.children.map(e => ({
+                        element: e,
+                        collapsible: false,
+                        collapsed: false,
+                    })),
+                });
+            }
+            else {
+                treeElements.push({
+                    element,
+                    collapsible: false,
+                    collapsed: false,
+                });
+            }
+        }
+        this._tree.setChildren(null, treeElements);
+    }
+    _allVisibleChecked(elements, whenNoneVisible = true) {
+        for (let i = 0, n = elements.length; i < n; i++) {
+            const element = elements[i];
+            if (!element.hidden) {
+                if (!element.checked) {
+                    return false;
+                }
+                else {
+                    whenNoneVisible = true;
+                }
+            }
+        }
+        return whenNoneVisible;
+    }
+    _updateCheckedObservables() {
+        transaction((tx) => {
+            this._allVisibleCheckedObservable.set(this._allVisibleChecked(this._itemElements, false), tx);
+            const checkedCount = this._itemElements.filter(element => element.checked).length;
+            this._checkedCountObservable.set(checkedCount, tx);
+            this._checkedElementsObservable.set(this.getCheckedElements(), tx);
+        });
+    }
+    showHover(element) {
+        if (this._lastHover && !this._lastHover.isDisposed) {
+            this.hoverDelegate.onDidHideHover?.();
+            this._lastHover?.dispose();
+        }
+        if (!element.element || !element.saneTooltip) {
+            return;
+        }
+        this._lastHover = this.hoverDelegate.showHover({
+            content: element.saneTooltip,
+            target: element.element,
+            linkHandler: (url) => {
+                this.linkOpenerDelegate(url);
+            },
+            appearance: {
+                showPointer: true,
+            },
+            container: this._container,
+            position: {
+                hoverPosition: 1
+            }
+        }, false);
+    }
+};
+__decorate([
+    memoize,
+    __metadata("design:type", Object),
+    __metadata("design:paramtypes", [])
+], QuickInputTree.prototype, "onDidChangeFocus", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Object),
+    __metadata("design:paramtypes", [])
+], QuickInputTree.prototype, "onDidChangeSelection", null);
+QuickInputTree = __decorate([
+    __param(4, IInstantiationService),
+    __param(5, IAccessibilityService),
+    __metadata("design:paramtypes", [HTMLElement, Object, Function, String, Object, Object])
+], QuickInputTree);
+export { QuickInputTree };
+function matchesContiguousIconAware(query, target) {
+    const { text, iconOffsets } = target;
+    if (!iconOffsets || iconOffsets.length === 0) {
+        return matchesContiguous(query, text);
+    }
+    const wordToMatchAgainstWithoutIconsTrimmed = ltrim(text, ' ');
+    const leadingWhitespaceOffset = text.length - wordToMatchAgainstWithoutIconsTrimmed.length;
+    const matches = matchesContiguous(query, wordToMatchAgainstWithoutIconsTrimmed);
+    if (matches) {
+        for (const match of matches) {
+            const iconOffset = iconOffsets[match.start + leadingWhitespaceOffset] + leadingWhitespaceOffset;
+            match.start += iconOffset;
+            match.end += iconOffset;
+        }
+    }
+    return matches;
+}
+function matchesContiguous(word, wordToMatchAgainst) {
+    const matchIndex = wordToMatchAgainst.toLowerCase().indexOf(word.toLowerCase());
+    if (matchIndex !== -1) {
+        return [{ start: matchIndex, end: matchIndex + word.length }];
+    }
+    return null;
+}
+function compareEntries(elementA, elementB, lookFor) {
+    const labelHighlightsA = elementA.labelHighlights || [];
+    const labelHighlightsB = elementB.labelHighlights || [];
+    if (labelHighlightsA.length && !labelHighlightsB.length) {
+        return -1;
+    }
+    if (!labelHighlightsA.length && labelHighlightsB.length) {
+        return 1;
+    }
+    if (labelHighlightsA.length === 0 && labelHighlightsB.length === 0) {
+        return 0;
+    }
+    return compareAnything(elementA.saneSortLabel, elementB.saneSortLabel, lookFor);
+}

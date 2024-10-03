@@ -1,1 +1,82 @@
-import{isHTMLElement as n}from"../../../../base/browser/dom.js";import{HoverPosition as a}from"../../../../base/browser/ui/hover/hoverWidget.js";import{CancellationTokenSource as s}from"../../../../base/common/cancellation.js";import{isMarkdownString as d}from"../../../../base/common/htmlContent.js";import"../../../../base/common/lifecycle.js";import{isFunction as l,isString as v}from"../../../../base/common/types.js";import{localize as p}from"../../../../nls.js";class w{constructor(e,t,i){this.hoverDelegate=e;this.target=t;this.fadeInAnimation=i}_hoverWidget;_cancellationTokenSource;async update(e,t,i){if(this._cancellationTokenSource&&(this._cancellationTokenSource.dispose(!0),this._cancellationTokenSource=void 0),this.isDisposed)return;let o;if(e===void 0||v(e)||n(e))o=e;else if(!l(e.markdown))o=e.markdown??e.markdownNotSupportedFallback;else{this._hoverWidget||this.show(p("iconLabel.loading","Loading..."),t,i),this._cancellationTokenSource=new s;const r=this._cancellationTokenSource.token;if(o=await e.markdown(r),o===void 0&&(o=e.markdownNotSupportedFallback),this.isDisposed||r.isCancellationRequested)return}this.show(o,t,i)}show(e,t,i){const o=this._hoverWidget;if(this.hasContent(e)){const r={content:e,target:this.target,actions:i?.actions,linkHandler:i?.linkHandler,trapFocus:i?.trapFocus,appearance:{showPointer:this.hoverDelegate.placement==="element",skipFadeInAnimation:!this.fadeInAnimation||!!o,showHoverHint:i?.appearance?.showHoverHint},position:{hoverPosition:a.BELOW}};this._hoverWidget=this.hoverDelegate.showHover(r,t)}o?.dispose()}hasContent(e){return e?d(e)?!!e.value:!0:!1}get isDisposed(){return this._hoverWidget?.isDisposed}dispose(){this._hoverWidget?.dispose(),this._cancellationTokenSource?.dispose(!0),this._cancellationTokenSource=void 0}}export{w as ManagedHoverWidget};
+import { isHTMLElement } from '../../../../base/browser/dom.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { isMarkdownString } from '../../../../base/common/htmlContent.js';
+import { isFunction, isString } from '../../../../base/common/types.js';
+import { localize } from '../../../../nls.js';
+export class ManagedHoverWidget {
+    constructor(hoverDelegate, target, fadeInAnimation) {
+        this.hoverDelegate = hoverDelegate;
+        this.target = target;
+        this.fadeInAnimation = fadeInAnimation;
+    }
+    async update(content, focus, options) {
+        if (this._cancellationTokenSource) {
+            this._cancellationTokenSource.dispose(true);
+            this._cancellationTokenSource = undefined;
+        }
+        if (this.isDisposed) {
+            return;
+        }
+        let resolvedContent;
+        if (content === undefined || isString(content) || isHTMLElement(content)) {
+            resolvedContent = content;
+        }
+        else if (!isFunction(content.markdown)) {
+            resolvedContent = content.markdown ?? content.markdownNotSupportedFallback;
+        }
+        else {
+            if (!this._hoverWidget) {
+                this.show(localize('iconLabel.loading', "Loading..."), focus, options);
+            }
+            this._cancellationTokenSource = new CancellationTokenSource();
+            const token = this._cancellationTokenSource.token;
+            resolvedContent = await content.markdown(token);
+            if (resolvedContent === undefined) {
+                resolvedContent = content.markdownNotSupportedFallback;
+            }
+            if (this.isDisposed || token.isCancellationRequested) {
+                return;
+            }
+        }
+        this.show(resolvedContent, focus, options);
+    }
+    show(content, focus, options) {
+        const oldHoverWidget = this._hoverWidget;
+        if (this.hasContent(content)) {
+            const hoverOptions = {
+                content,
+                target: this.target,
+                actions: options?.actions,
+                linkHandler: options?.linkHandler,
+                trapFocus: options?.trapFocus,
+                appearance: {
+                    showPointer: this.hoverDelegate.placement === 'element',
+                    skipFadeInAnimation: !this.fadeInAnimation || !!oldHoverWidget,
+                    showHoverHint: options?.appearance?.showHoverHint,
+                },
+                position: {
+                    hoverPosition: 2,
+                },
+            };
+            this._hoverWidget = this.hoverDelegate.showHover(hoverOptions, focus);
+        }
+        oldHoverWidget?.dispose();
+    }
+    hasContent(content) {
+        if (!content) {
+            return false;
+        }
+        if (isMarkdownString(content)) {
+            return !!content.value;
+        }
+        return true;
+    }
+    get isDisposed() {
+        return this._hoverWidget?.isDisposed;
+    }
+    dispose() {
+        this._hoverWidget?.dispose();
+        this._cancellationTokenSource?.dispose(true);
+        this._cancellationTokenSource = undefined;
+    }
+}

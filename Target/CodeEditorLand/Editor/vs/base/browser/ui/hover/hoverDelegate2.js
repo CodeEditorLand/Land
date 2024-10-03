@@ -1,1 +1,13 @@
-let e={showHover:()=>{},hideHover:()=>{},showAndFocusLastHover:()=>{},setupManagedHover:()=>null,showManagedHover:()=>{}};function r(o){e=o}function t(){return e}export{t as getBaseLayerHoverDelegate,r as setBaseLayerHoverDelegate};
+let baseHoverDelegate = {
+    showHover: () => undefined,
+    hideHover: () => undefined,
+    showAndFocusLastHover: () => undefined,
+    setupManagedHover: () => null,
+    showManagedHover: () => undefined
+};
+export function setBaseLayerHoverDelegate(hoverDelegate) {
+    baseHoverDelegate = hoverDelegate;
+}
+export function getBaseLayerHoverDelegate() {
+    return baseHoverDelegate;
+}

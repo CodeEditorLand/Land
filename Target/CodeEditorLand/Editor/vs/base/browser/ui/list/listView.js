@@ -1,1 +1,1157 @@
-var Y=Object.defineProperty;var q=Object.getOwnPropertyDescriptor;var D=(b,e,t,i)=>{for(var s=i>1?void 0:i?q(e,t):e,o=b.length-1,n;o>=0;o--)(n=b[o])&&(s=(i?n(e,t,s):n(s))||s);return i&&s&&Y(e,t,s),s};import{DataTransfers as X}from"../../dnd.js";import{$ as j,addDisposableListener as w,animate as J,getContentHeight as K,getContentWidth as L,getTopLeftOffset as Q,getWindow as R,isAncestor as Z,isHTMLElement as ee,isSVGElement as te,scheduleAtNextAnimationFrame as O}from"../../dom.js";import{DomEmitter as v}from"../../event.js";import"../../mouseEvent.js";import{EventType as A,Gesture as ie}from"../../touch.js";import{SmoothScrollableElement as se}from"../scrollbar/scrollableElement.js";import{distinct as ne,equals as oe}from"../../../common/arrays.js";import{Delayer as re,disposableTimeout as z}from"../../../common/async.js";import{memoize as E}from"../../../common/decorators.js";import{Emitter as k,Event as p}from"../../../common/event.js";import{Disposable as M,DisposableStore as le,toDisposable as P}from"../../../common/lifecycle.js";import{Range as T}from"../../../common/range.js";import{Scrollable as ae,ScrollbarVisibility as F}from"../../../common/scrollable.js";import"../../../common/sequence.js";import{ListDragOverEffectPosition as C,ListDragOverEffectType as de}from"./list.js";import{RangeMap as he,shift as U}from"./rangeMap.js";import{RowCache as me}from"./rowCache.js";import{BugIndicatingError as ce}from"../../../common/errors.js";import"../aria/aria.js";import"../scrollbar/scrollableElementOptions.js";import{clamp as pe}from"../../../common/numbers.js";const S={CurrentDragAndDropData:void 0};var ue=(s=>(s[s.TOP=0]="TOP",s[s.CENTER_TOP=1]="CENTER_TOP",s[s.CENTER_BOTTOM=2]="CENTER_BOTTOM",s[s.BOTTOM=3]="BOTTOM",s))(ue||{});const y={useShadows:!0,verticalScrollMode:F.Auto,setRowLineHeight:!0,setRowHeight:!0,supportDynamicHeights:!1,dnd:{getDragElements(b){return[b]},getDragURI(){return null},onDragStart(){},onDragOver(){return!1},drop(){},dispose(){}},horizontalScrolling:!1,transformOptimization:!0,alwaysConsumeMouseWheel:!0};class ge{elements;_context;get context(){return this._context}set context(e){this._context=e}constructor(e){this.elements=e}update(){}getData(){return this.elements}}class fe{elements;constructor(e){this.elements=e}update(){}getData(){return this.elements}}class be{types;files;constructor(){this.types=[],this.files=[]}update(e){if(e.types&&this.types.splice(0,this.types.length,...e.types),e.files){this.files.splice(0,this.files.length);for(let t=0;t<e.files.length;t++){const i=e.files.item(t);i&&(i.size||i.type)&&this.files.push(i)}}}getData(){return{types:this.types,files:this.files}}}function De(b,e){return Array.isArray(b)&&Array.isArray(e)?oe(b,e):b===e}class ve{getSetSize;getPosInSet;getRole;isChecked;constructor(e){e?.getSetSize?this.getSetSize=e.getSetSize.bind(e):this.getSetSize=(t,i,s)=>s,e?.getPosInSet?this.getPosInSet=e.getPosInSet.bind(e):this.getPosInSet=(t,i)=>i+1,e?.getRole?this.getRole=e.getRole.bind(e):this.getRole=t=>"listitem",e?.isChecked?this.isChecked=e.isChecked.bind(e):this.isChecked=t=>{}}}const g=class g{constructor(e,t,i,s=y){this.virtualDelegate=t;if(s.horizontalScrolling&&s.supportDynamicHeights)throw new Error("Horizontal scrolling and dynamic heights not supported simultaneously");this.items=[],this.itemId=0,this.rangeMap=this.createRangeMap(s.paddingTop??0);for(const n of i)this.renderers.set(n.templateId,n);this.cache=this.disposables.add(new me(this.renderers)),this.lastRenderTop=0,this.lastRenderHeight=0,this.domNode=document.createElement("div"),this.domNode.className="monaco-list",this.domNode.classList.add(this.domId),this.domNode.tabIndex=0,this.domNode.classList.toggle("mouse-support",typeof s.mouseSupport=="boolean"?s.mouseSupport:!0),this._horizontalScrolling=s.horizontalScrolling??y.horizontalScrolling,this.domNode.classList.toggle("horizontal-scrolling",this._horizontalScrolling),this.paddingBottom=typeof s.paddingBottom>"u"?0:s.paddingBottom,this.accessibilityProvider=new ve(s.accessibilityProvider),this.rowsContainer=document.createElement("div"),this.rowsContainer.className="monaco-list-rows",(s.transformOptimization??y.transformOptimization)&&(this.rowsContainer.style.transform="translate3d(0px, 0px, 0px)",this.rowsContainer.style.overflow="hidden",this.rowsContainer.style.contain="strict"),this.disposables.add(ie.addTarget(this.rowsContainer)),this.scrollable=this.disposables.add(new ae({forceIntegerValues:!0,smoothScrollDuration:s.smoothScrolling??!1?125:0,scheduleAtNextAnimationFrame:n=>O(R(this.domNode),n)})),this.scrollableElement=this.disposables.add(new se(this.rowsContainer,{alwaysConsumeMouseWheel:s.alwaysConsumeMouseWheel??y.alwaysConsumeMouseWheel,horizontal:F.Auto,vertical:s.verticalScrollMode??y.verticalScrollMode,useShadows:s.useShadows??y.useShadows,mouseWheelScrollSensitivity:s.mouseWheelScrollSensitivity,fastScrollSensitivity:s.fastScrollSensitivity,scrollByPage:s.scrollByPage},this.scrollable)),this.domNode.appendChild(this.scrollableElement.getDomNode()),e.appendChild(this.domNode),this.scrollableElement.onScroll(this.onScroll,this,this.disposables),this.disposables.add(w(this.rowsContainer,A.Change,n=>this.onTouchChange(n))),this.disposables.add(w(this.scrollableElement.getDomNode(),"scroll",n=>n.target.scrollTop=0)),this.disposables.add(w(this.domNode,"dragover",n=>this.onDragOver(this.toDragEvent(n)))),this.disposables.add(w(this.domNode,"drop",n=>this.onDrop(this.toDragEvent(n)))),this.disposables.add(w(this.domNode,"dragleave",n=>this.onDragLeave(this.toDragEvent(n)))),this.disposables.add(w(this.domNode,"dragend",n=>this.onDragEnd(n))),this.setRowLineHeight=s.setRowLineHeight??y.setRowLineHeight,this.setRowHeight=s.setRowHeight??y.setRowHeight,this.supportDynamicHeights=s.supportDynamicHeights??y.supportDynamicHeights,this.dnd=s.dnd??this.disposables.add(y.dnd),this.layout(s.initialSize?.height,s.initialSize?.width)}static InstanceCount=0;domId=`list_id_${++g.InstanceCount}`;domNode;items;itemId;rangeMap;cache;renderers=new Map;lastRenderTop;lastRenderHeight;renderWidth=0;rowsContainer;scrollable;scrollableElement;_scrollHeight=0;scrollableElementUpdateDisposable=null;scrollableElementWidthDelayer=new re(50);splicing=!1;dragOverAnimationDisposable;dragOverAnimationStopDisposable=M.None;dragOverMouseY=0;setRowLineHeight;setRowHeight;supportDynamicHeights;paddingBottom;accessibilityProvider;scrollWidth;dnd;canDrop=!1;currentDragData;currentDragFeedback;currentDragFeedbackPosition;currentDragFeedbackDisposable=M.None;onDragLeaveTimeout=M.None;disposables=new le;_onDidChangeContentHeight=new k;_onDidChangeContentWidth=new k;onDidChangeContentHeight=p.latch(this._onDidChangeContentHeight.event,void 0,this.disposables);onDidChangeContentWidth=p.latch(this._onDidChangeContentWidth.event,void 0,this.disposables);get contentHeight(){return this.rangeMap.size}get contentWidth(){return this.scrollWidth??0}get onDidScroll(){return this.scrollableElement.onScroll}get onWillScroll(){return this.scrollableElement.onWillScroll}get containerDomNode(){return this.rowsContainer}get scrollableElementDomNode(){return this.scrollableElement.getDomNode()}_horizontalScrolling=!1;get horizontalScrolling(){return this._horizontalScrolling}set horizontalScrolling(e){if(e!==this._horizontalScrolling){if(e&&this.supportDynamicHeights)throw new Error("Horizontal scrolling and dynamic heights not supported simultaneously");if(this._horizontalScrolling=e,this.domNode.classList.toggle("horizontal-scrolling",this._horizontalScrolling),this._horizontalScrolling){for(const t of this.items)this.measureItemWidth(t);this.updateScrollWidth(),this.scrollableElement.setScrollDimensions({width:L(this.domNode)}),this.rowsContainer.style.width=`${Math.max(this.scrollWidth||0,this.renderWidth)}px`}else this.scrollableElementWidthDelayer.cancel(),this.scrollableElement.setScrollDimensions({width:this.renderWidth,scrollWidth:this.renderWidth}),this.rowsContainer.style.width=""}}updateOptions(e){e.paddingBottom!==void 0&&(this.paddingBottom=e.paddingBottom,this.scrollableElement.setScrollDimensions({scrollHeight:this.scrollHeight})),e.smoothScrolling!==void 0&&this.scrollable.setSmoothScrollDuration(e.smoothScrolling?125:0),e.horizontalScrolling!==void 0&&(this.horizontalScrolling=e.horizontalScrolling);let t;if(e.scrollByPage!==void 0&&(t={...t??{},scrollByPage:e.scrollByPage}),e.mouseWheelScrollSensitivity!==void 0&&(t={...t??{},mouseWheelScrollSensitivity:e.mouseWheelScrollSensitivity}),e.fastScrollSensitivity!==void 0&&(t={...t??{},fastScrollSensitivity:e.fastScrollSensitivity}),t&&this.scrollableElement.updateOptions(t),e.paddingTop!==void 0&&e.paddingTop!==this.rangeMap.paddingTop){const i=this.getRenderRange(this.lastRenderTop,this.lastRenderHeight),s=e.paddingTop-this.rangeMap.paddingTop;this.rangeMap.paddingTop=e.paddingTop,this.render(i,Math.max(0,this.lastRenderTop+s),this.lastRenderHeight,void 0,void 0,!0),this.setScrollTop(this.lastRenderTop),this.eventuallyUpdateScrollDimensions(),this.supportDynamicHeights&&this._rerender(this.lastRenderTop,this.lastRenderHeight)}}delegateScrollFromMouseWheelEvent(e){this.scrollableElement.delegateScrollFromMouseWheelEvent(e)}delegateVerticalScrollbarPointerDown(e){this.scrollableElement.delegateVerticalScrollbarPointerDown(e)}updateElementHeight(e,t,i){if(e<0||e>=this.items.length)return;const s=this.items[e].size;if(typeof t>"u"){if(!this.supportDynamicHeights)return;this.items[e].lastDynamicHeightWidth=void 0,t=s+this.probeDynamicHeight(e)}if(s===t)return;const o=this.getRenderRange(this.lastRenderTop,this.lastRenderHeight);let n=0;e<o.start||i!==null&&i>e&&i<o.end?n=t-s:n=0,this.rangeMap.splice(e,1,[{size:t}]),this.items[e].size=t,this.render(o,Math.max(0,this.lastRenderTop+n),this.lastRenderHeight,void 0,void 0,!0),this.setScrollTop(this.lastRenderTop),this.eventuallyUpdateScrollDimensions(),this.supportDynamicHeights&&this._rerender(this.lastRenderTop,this.lastRenderHeight)}createRangeMap(e){return new he(e)}splice(e,t,i=[]){if(this.splicing)throw new Error("Can't run recursive splices.");this.splicing=!0;try{return this._splice(e,t,i)}finally{this.splicing=!1,this._onDidChangeContentHeight.fire(this.contentHeight)}}_splice(e,t,i=[]){const s=this.getRenderRange(this.lastRenderTop,this.lastRenderHeight),o={start:e,end:e+t},n=T.intersect(s,o),h=new Map;for(let r=n.end-1;r>=n.start;r--){const d=this.items[r];if(d.dragStartDisposable.dispose(),d.checkedDisposable.dispose(),d.row){let I=h.get(d.templateId);I||(I=[],h.set(d.templateId,I));const H=this.renderers.get(d.templateId);H&&H.disposeElement&&H.disposeElement(d.element,r,d.row.templateData,d.size),I.unshift(d.row)}d.row=null,d.stale=!0}const l={start:e+t,end:this.items.length},u=T.intersect(l,s),m=T.relativeComplement(l,s),a=i.map(r=>({id:String(this.itemId++),element:r,templateId:this.virtualDelegate.getTemplateId(r),size:this.virtualDelegate.getHeight(r),width:void 0,hasDynamicHeight:!!this.virtualDelegate.hasDynamicHeight&&this.virtualDelegate.hasDynamicHeight(r),lastDynamicHeightWidth:void 0,row:null,uri:void 0,dropTarget:!1,dragStartDisposable:M.None,checkedDisposable:M.None,stale:!1}));let c;e===0&&t>=this.items.length?(this.rangeMap=this.createRangeMap(this.rangeMap.paddingTop),this.rangeMap.splice(0,0,a),c=this.items,this.items=a):(this.rangeMap.splice(e,t,a),c=this.items.splice(e,t,...a));const f=i.length-t,N=this.getRenderRange(this.lastRenderTop,this.lastRenderHeight),W=U(u,f),x=T.intersect(N,W);for(let r=x.start;r<x.end;r++)this.updateItemInDOM(this.items[r],r);const V=T.relativeComplement(W,N);for(const r of V)for(let d=r.start;d<r.end;d++)this.removeItemFromDOM(d);const B=m.map(r=>U(r,f)),G=[{start:e,end:e+i.length},...B].map(r=>T.intersect(N,r)).reverse();for(const r of G)for(let d=r.end-1;d>=r.start;d--){const I=this.items[d],$=h.get(I.templateId)?.pop();this.insertItemInDOM(d,$)}for(const r of h.values())for(const d of r)this.cache.release(d);return this.eventuallyUpdateScrollDimensions(),this.supportDynamicHeights&&this._rerender(this.scrollTop,this.renderHeight),c.map(r=>r.element)}eventuallyUpdateScrollDimensions(){this._scrollHeight=this.contentHeight,this.rowsContainer.style.height=`${this._scrollHeight}px`,this.scrollableElementUpdateDisposable||(this.scrollableElementUpdateDisposable=O(R(this.domNode),()=>{this.scrollableElement.setScrollDimensions({scrollHeight:this.scrollHeight}),this.updateScrollWidth(),this.scrollableElementUpdateDisposable=null}))}eventuallyUpdateScrollWidth(){if(!this.horizontalScrolling){this.scrollableElementWidthDelayer.cancel();return}this.scrollableElementWidthDelayer.trigger(()=>this.updateScrollWidth())}updateScrollWidth(){if(!this.horizontalScrolling)return;let e=0;for(const t of this.items)typeof t.width<"u"&&(e=Math.max(e,t.width));this.scrollWidth=e,this.scrollableElement.setScrollDimensions({scrollWidth:e===0?0:e+10}),this._onDidChangeContentWidth.fire(this.scrollWidth)}updateWidth(e){if(!this.horizontalScrolling||typeof this.scrollWidth>"u")return;const t=this.items[e];this.measureItemWidth(t),typeof t.width<"u"&&t.width>this.scrollWidth&&(this.scrollWidth=t.width,this.scrollableElement.setScrollDimensions({scrollWidth:this.scrollWidth+10}),this._onDidChangeContentWidth.fire(this.scrollWidth))}rerender(){if(this.supportDynamicHeights){for(const e of this.items)e.lastDynamicHeightWidth=void 0;this._rerender(this.lastRenderTop,this.lastRenderHeight)}}get length(){return this.items.length}get renderHeight(){return this.scrollableElement.getScrollDimensions().height}get firstVisibleIndex(){return this.getRenderRange(this.lastRenderTop,this.lastRenderHeight).start}get firstMostlyVisibleIndex(){const e=this.firstVisibleIndex,t=this.rangeMap.positionAt(e),i=this.rangeMap.positionAt(e+1);return i!==-1&&(i-t)/2+t<this.scrollTop?e+1:e}get lastVisibleIndex(){return this.getRenderRange(this.lastRenderTop,this.lastRenderHeight).end-1}element(e){return this.items[e].element}indexOf(e){return this.items.findIndex(t=>t.element===e)}domElement(e){const t=this.items[e].row;return t&&t.domNode}elementHeight(e){return this.items[e].size}elementTop(e){return this.rangeMap.positionAt(e)}indexAt(e){return this.rangeMap.indexAt(e)}indexAfter(e){return this.rangeMap.indexAfter(e)}layout(e,t){const i={height:typeof e=="number"?e:K(this.domNode)};this.scrollableElementUpdateDisposable&&(this.scrollableElementUpdateDisposable.dispose(),this.scrollableElementUpdateDisposable=null,i.scrollHeight=this.scrollHeight),this.scrollableElement.setScrollDimensions(i),typeof t<"u"&&(this.renderWidth=t,this.supportDynamicHeights&&this._rerender(this.scrollTop,this.renderHeight)),this.horizontalScrolling&&this.scrollableElement.setScrollDimensions({width:typeof t=="number"?t:L(this.domNode)})}render(e,t,i,s,o,n=!1){const h=this.getRenderRange(t,i),l=T.relativeComplement(h,e).reverse(),u=T.relativeComplement(e,h);if(n){const m=T.intersect(e,h);for(let a=m.start;a<m.end;a++)this.updateItemInDOM(this.items[a],a)}this.cache.transact(()=>{for(const m of u)for(let a=m.start;a<m.end;a++)this.removeItemFromDOM(a);for(const m of l)for(let a=m.end-1;a>=m.start;a--)this.insertItemInDOM(a)}),s!==void 0&&(this.rowsContainer.style.left=`-${s}px`),this.rowsContainer.style.top=`-${t}px`,this.horizontalScrolling&&o!==void 0&&(this.rowsContainer.style.width=`${Math.max(o,this.renderWidth)}px`),this.lastRenderTop=t,this.lastRenderHeight=i}insertItemInDOM(e,t){const i=this.items[e];if(!i.row)if(t)i.row=t,i.stale=!0;else{const l=this.cache.alloc(i.templateId);i.row=l.row,i.stale||=l.isReusingConnectedDomNode}const s=this.accessibilityProvider.getRole(i.element)||"listitem";i.row.domNode.setAttribute("role",s);const o=this.accessibilityProvider.isChecked(i.element);if(typeof o=="boolean")i.row.domNode.setAttribute("aria-checked",String(!!o));else if(o){const l=u=>i.row.domNode.setAttribute("aria-checked",String(!!u));l(o.value),i.checkedDisposable=o.onDidChange(()=>l(o.value))}if(i.stale||!i.row.domNode.parentElement){const l=this.items.at(e+1)?.row?.domNode??null;(i.row.domNode.parentElement!==this.rowsContainer||i.row.domNode.nextElementSibling!==l)&&this.rowsContainer.insertBefore(i.row.domNode,l),i.stale=!1}this.updateItemInDOM(i,e);const n=this.renderers.get(i.templateId);if(!n)throw new Error(`No renderer found for template id ${i.templateId}`);n?.renderElement(i.element,e,i.row.templateData,i.size);const h=this.dnd.getDragURI(i.element);i.dragStartDisposable.dispose(),i.row.domNode.draggable=!!h,h&&(i.dragStartDisposable=w(i.row.domNode,"dragstart",l=>this.onDragStart(i.element,h,l))),this.horizontalScrolling&&(this.measureItemWidth(i),this.eventuallyUpdateScrollWidth())}measureItemWidth(e){if(!e.row||!e.row.domNode)return;e.row.domNode.style.width="fit-content",e.width=L(e.row.domNode);const t=R(e.row.domNode).getComputedStyle(e.row.domNode);t.paddingLeft&&(e.width+=parseFloat(t.paddingLeft)),t.paddingRight&&(e.width+=parseFloat(t.paddingRight)),e.row.domNode.style.width=""}updateItemInDOM(e,t){e.row.domNode.style.top=`${this.elementTop(t)}px`,this.setRowHeight&&(e.row.domNode.style.height=`${e.size}px`),this.setRowLineHeight&&(e.row.domNode.style.lineHeight=`${e.size}px`),e.row.domNode.setAttribute("data-index",`${t}`),e.row.domNode.setAttribute("data-last-element",t===this.length-1?"true":"false"),e.row.domNode.setAttribute("data-parity",t%2===0?"even":"odd"),e.row.domNode.setAttribute("aria-setsize",String(this.accessibilityProvider.getSetSize(e.element,t,this.length))),e.row.domNode.setAttribute("aria-posinset",String(this.accessibilityProvider.getPosInSet(e.element,t))),e.row.domNode.setAttribute("id",this.getElementDomId(t)),e.row.domNode.classList.toggle("drop-target",e.dropTarget)}removeItemFromDOM(e){const t=this.items[e];if(t.dragStartDisposable.dispose(),t.checkedDisposable.dispose(),t.row){const i=this.renderers.get(t.templateId);i&&i.disposeElement&&i.disposeElement(t.element,e,t.row.templateData,t.size),this.cache.release(t.row),t.row=null}this.horizontalScrolling&&this.eventuallyUpdateScrollWidth()}getScrollTop(){return this.scrollableElement.getScrollPosition().scrollTop}setScrollTop(e,t){this.scrollableElementUpdateDisposable&&(this.scrollableElementUpdateDisposable.dispose(),this.scrollableElementUpdateDisposable=null,this.scrollableElement.setScrollDimensions({scrollHeight:this.scrollHeight})),this.scrollableElement.setScrollPosition({scrollTop:e,reuseAnimation:t})}getScrollLeft(){return this.scrollableElement.getScrollPosition().scrollLeft}setScrollLeft(e){this.scrollableElementUpdateDisposable&&(this.scrollableElementUpdateDisposable.dispose(),this.scrollableElementUpdateDisposable=null,this.scrollableElement.setScrollDimensions({scrollWidth:this.scrollWidth})),this.scrollableElement.setScrollPosition({scrollLeft:e})}get scrollTop(){return this.getScrollTop()}set scrollTop(e){this.setScrollTop(e)}get scrollHeight(){return this._scrollHeight+(this.horizontalScrolling?10:0)+this.paddingBottom}get onMouseClick(){return p.map(this.disposables.add(new v(this.domNode,"click")).event,e=>this.toMouseEvent(e),this.disposables)}get onMouseDblClick(){return p.map(this.disposables.add(new v(this.domNode,"dblclick")).event,e=>this.toMouseEvent(e),this.disposables)}get onMouseMiddleClick(){return p.filter(p.map(this.disposables.add(new v(this.domNode,"auxclick")).event,e=>this.toMouseEvent(e),this.disposables),e=>e.browserEvent.button===1,this.disposables)}get onMouseUp(){return p.map(this.disposables.add(new v(this.domNode,"mouseup")).event,e=>this.toMouseEvent(e),this.disposables)}get onMouseDown(){return p.map(this.disposables.add(new v(this.domNode,"mousedown")).event,e=>this.toMouseEvent(e),this.disposables)}get onMouseOver(){return p.map(this.disposables.add(new v(this.domNode,"mouseover")).event,e=>this.toMouseEvent(e),this.disposables)}get onMouseMove(){return p.map(this.disposables.add(new v(this.domNode,"mousemove")).event,e=>this.toMouseEvent(e),this.disposables)}get onMouseOut(){return p.map(this.disposables.add(new v(this.domNode,"mouseout")).event,e=>this.toMouseEvent(e),this.disposables)}get onContextMenu(){return p.any(p.map(this.disposables.add(new v(this.domNode,"contextmenu")).event,e=>this.toMouseEvent(e),this.disposables),p.map(this.disposables.add(new v(this.domNode,A.Contextmenu)).event,e=>this.toGestureEvent(e),this.disposables))}get onTouchStart(){return p.map(this.disposables.add(new v(this.domNode,"touchstart")).event,e=>this.toTouchEvent(e),this.disposables)}get onTap(){return p.map(this.disposables.add(new v(this.rowsContainer,A.Tap)).event,e=>this.toGestureEvent(e),this.disposables)}toMouseEvent(e){const t=this.getItemIndexFromEventTarget(e.target||null),i=typeof t>"u"?void 0:this.items[t],s=i&&i.element;return{browserEvent:e,index:t,element:s}}toTouchEvent(e){const t=this.getItemIndexFromEventTarget(e.target||null),i=typeof t>"u"?void 0:this.items[t],s=i&&i.element;return{browserEvent:e,index:t,element:s}}toGestureEvent(e){const t=this.getItemIndexFromEventTarget(e.initialTarget||null),i=typeof t>"u"?void 0:this.items[t],s=i&&i.element;return{browserEvent:e,index:t,element:s}}toDragEvent(e){const t=this.getItemIndexFromEventTarget(e.target||null),i=typeof t>"u"?void 0:this.items[t],s=i&&i.element,o=this.getTargetSector(e,t);return{browserEvent:e,index:t,element:s,sector:o}}onScroll(e){try{const t=this.getRenderRange(this.lastRenderTop,this.lastRenderHeight);this.render(t,e.scrollTop,e.height,e.scrollLeft,e.scrollWidth),this.supportDynamicHeights&&this._rerender(e.scrollTop,e.height,e.inSmoothScrolling)}catch(t){throw t}}onTouchChange(e){e.preventDefault(),e.stopPropagation(),this.scrollTop-=e.translationY}onDragStart(e,t,i){if(!i.dataTransfer)return;const s=this.dnd.getDragElements(e);if(i.dataTransfer.effectAllowed="copyMove",i.dataTransfer.setData(X.TEXT,t),i.dataTransfer.setDragImage){let o;this.dnd.getDragLabel&&(o=this.dnd.getDragLabel(s,i)),typeof o>"u"&&(o=String(s.length));const n=j(".monaco-drag-image");n.textContent=o,(u=>{for(;u&&!u.classList.contains("monaco-workbench");)u=u.parentElement;return u||this.domNode.ownerDocument})(this.domNode).appendChild(n),i.dataTransfer.setDragImage(n,-10,-10),setTimeout(()=>n.remove(),0)}this.domNode.classList.add("dragging"),this.currentDragData=new ge(s),S.CurrentDragAndDropData=new fe(s),this.dnd.onDragStart?.(this.currentDragData,i)}onDragOver(e){if(e.browserEvent.preventDefault(),this.onDragLeaveTimeout.dispose(),S.CurrentDragAndDropData&&S.CurrentDragAndDropData.getData()==="vscode-ui"||(this.setupDragAndDropScrollTopAnimation(e.browserEvent),!e.browserEvent.dataTransfer))return!1;if(!this.currentDragData)if(S.CurrentDragAndDropData)this.currentDragData=S.CurrentDragAndDropData;else{if(!e.browserEvent.dataTransfer.types)return!1;this.currentDragData=new be}const t=this.dnd.onDragOver(this.currentDragData,e.element,e.index,e.sector,e.browserEvent);if(this.canDrop=typeof t=="boolean"?t:t.accept,!this.canDrop)return this.currentDragFeedback=void 0,this.currentDragFeedbackDisposable.dispose(),!1;e.browserEvent.dataTransfer.dropEffect=typeof t!="boolean"&&t.effect?.type===de.Copy?"copy":"move";let i;typeof t!="boolean"&&t.feedback?i=t.feedback:typeof e.index>"u"?i=[-1]:i=[e.index],i=ne(i).filter(o=>o>=-1&&o<this.length).sort((o,n)=>o-n),i=i[0]===-1?[-1]:i;let s=typeof t!="boolean"&&t.effect&&t.effect.position?t.effect.position:C.Over;if(De(this.currentDragFeedback,i)&&this.currentDragFeedbackPosition===s)return!0;if(this.currentDragFeedback=i,this.currentDragFeedbackPosition=s,this.currentDragFeedbackDisposable.dispose(),i[0]===-1)this.domNode.classList.add(s),this.rowsContainer.classList.add(s),this.currentDragFeedbackDisposable=P(()=>{this.domNode.classList.remove(s),this.rowsContainer.classList.remove(s)});else{if(i.length>1&&s!==C.Over)throw new Error("Can't use multiple feedbacks with position different than 'over'");s===C.After&&i[0]<this.length-1&&(i[0]+=1,s=C.Before);for(const o of i){const n=this.items[o];n.dropTarget=!0,n.row?.domNode.classList.add(s)}this.currentDragFeedbackDisposable=P(()=>{for(const o of i){const n=this.items[o];n.dropTarget=!1,n.row?.domNode.classList.remove(s)}})}return!0}onDragLeave(e){this.onDragLeaveTimeout.dispose(),this.onDragLeaveTimeout=z(()=>this.clearDragOverFeedback(),100,this.disposables),this.currentDragData&&this.dnd.onDragLeave?.(this.currentDragData,e.element,e.index,e.browserEvent)}onDrop(e){if(!this.canDrop)return;const t=this.currentDragData;this.teardownDragAndDropScrollTopAnimation(),this.clearDragOverFeedback(),this.domNode.classList.remove("dragging"),this.currentDragData=void 0,S.CurrentDragAndDropData=void 0,!(!t||!e.browserEvent.dataTransfer)&&(e.browserEvent.preventDefault(),t.update(e.browserEvent.dataTransfer),this.dnd.drop(t,e.element,e.index,e.sector,e.browserEvent))}onDragEnd(e){this.canDrop=!1,this.teardownDragAndDropScrollTopAnimation(),this.clearDragOverFeedback(),this.domNode.classList.remove("dragging"),this.currentDragData=void 0,S.CurrentDragAndDropData=void 0,this.dnd.onDragEnd?.(e)}clearDragOverFeedback(){this.currentDragFeedback=void 0,this.currentDragFeedbackPosition=void 0,this.currentDragFeedbackDisposable.dispose(),this.currentDragFeedbackDisposable=M.None}setupDragAndDropScrollTopAnimation(e){if(!this.dragOverAnimationDisposable){const t=Q(this.domNode).top;this.dragOverAnimationDisposable=J(R(this.domNode),this.animateDragAndDropScrollTop.bind(this,t))}this.dragOverAnimationStopDisposable.dispose(),this.dragOverAnimationStopDisposable=z(()=>{this.dragOverAnimationDisposable&&(this.dragOverAnimationDisposable.dispose(),this.dragOverAnimationDisposable=void 0)},1e3,this.disposables),this.dragOverMouseY=e.pageY}animateDragAndDropScrollTop(e){if(this.dragOverMouseY===void 0)return;const t=this.dragOverMouseY-e,i=this.renderHeight-35;t<35?this.scrollTop+=Math.max(-14,Math.floor(.3*(t-35))):t>i&&(this.scrollTop+=Math.min(14,Math.floor(.3*(t-i))))}teardownDragAndDropScrollTopAnimation(){this.dragOverAnimationStopDisposable.dispose(),this.dragOverAnimationDisposable&&(this.dragOverAnimationDisposable.dispose(),this.dragOverAnimationDisposable=void 0)}getTargetSector(e,t){if(t===void 0)return;const i=e.offsetY/this.items[t].size,s=Math.floor(i/.25);return pe(s,0,3)}getItemIndexFromEventTarget(e){const t=this.scrollableElement.getDomNode();let i=e;for(;(ee(i)||te(i))&&i!==this.rowsContainer&&t.contains(i);){const s=i.getAttribute("data-index");if(s){const o=Number(s);if(!isNaN(o))return o}i=i.parentElement}}getRenderRange(e,t){return{start:this.rangeMap.indexAt(e),end:this.rangeMap.indexAfter(e+t-1)}}_rerender(e,t,i){const s=this.getRenderRange(e,t);let o,n;e===this.elementTop(s.start)?(o=s.start,n=0):s.end-s.start>1&&(o=s.start+1,n=this.elementTop(o)-e);let h=0;for(;;){const l=this.getRenderRange(e,t);let u=!1;for(let m=l.start;m<l.end;m++){const a=this.probeDynamicHeight(m);a!==0&&this.rangeMap.splice(m,1,[this.items[m]]),h+=a,u=u||a!==0}if(!u){h!==0&&this.eventuallyUpdateScrollDimensions();const m=T.relativeComplement(s,l);for(const c of m)for(let f=c.start;f<c.end;f++)this.items[f].row&&this.removeItemFromDOM(f);const a=T.relativeComplement(l,s).reverse();for(const c of a)for(let f=c.end-1;f>=c.start;f--)this.insertItemInDOM(f);for(let c=l.start;c<l.end;c++)this.items[c].row&&this.updateItemInDOM(this.items[c],c);if(typeof o=="number"){const c=this.scrollable.getFutureScrollPosition().scrollTop-e,f=this.elementTop(o)-n+c;this.setScrollTop(f,i)}this._onDidChangeContentHeight.fire(this.contentHeight);return}}}probeDynamicHeight(e){const t=this.items[e];if(this.virtualDelegate.getDynamicHeight){const n=this.virtualDelegate.getDynamicHeight(t.element);if(n!==null){const h=t.size;return t.size=n,t.lastDynamicHeightWidth=this.renderWidth,n-h}}if(!t.hasDynamicHeight||t.lastDynamicHeightWidth===this.renderWidth||this.virtualDelegate.hasDynamicHeight&&!this.virtualDelegate.hasDynamicHeight(t.element))return 0;const i=t.size;if(t.row)return t.row.domNode.style.height="",t.size=t.row.domNode.offsetHeight,t.size===0&&Z(t.row.domNode,R(t.row.domNode).document.body),t.lastDynamicHeightWidth=this.renderWidth,t.size-i;const{row:s}=this.cache.alloc(t.templateId);s.domNode.style.height="",this.rowsContainer.appendChild(s.domNode);const o=this.renderers.get(t.templateId);if(!o)throw new ce("Missing renderer for templateId: "+t.templateId);return o.renderElement(t.element,e,s.templateData,void 0),t.size=s.domNode.offsetHeight,o.disposeElement?.(t.element,e,s.templateData,void 0),this.virtualDelegate.setDynamicHeight?.(t.element,t.size),t.lastDynamicHeightWidth=this.renderWidth,s.domNode.remove(),this.cache.release(s),t.size-i}getElementDomId(e){return`${this.domId}_${e}`}dispose(){for(const e of this.items)if(e.dragStartDisposable.dispose(),e.checkedDisposable.dispose(),e.row){const t=this.renderers.get(e.row.templateId);t&&(t.disposeElement?.(e.element,-1,e.row.templateData,void 0),t.disposeTemplate(e.row.templateData))}this.items=[],this.domNode?.remove(),this.dragOverAnimationDisposable?.dispose(),this.disposables.dispose()}};D([E],g.prototype,"onMouseClick",1),D([E],g.prototype,"onMouseDblClick",1),D([E],g.prototype,"onMouseMiddleClick",1),D([E],g.prototype,"onMouseUp",1),D([E],g.prototype,"onMouseDown",1),D([E],g.prototype,"onMouseOver",1),D([E],g.prototype,"onMouseMove",1),D([E],g.prototype,"onMouseOut",1),D([E],g.prototype,"onContextMenu",1),D([E],g.prototype,"onTouchStart",1),D([E],g.prototype,"onTap",1);let _=g;export{ge as ElementsDragAndDropData,fe as ExternalElementsDragAndDropData,_ as ListView,ue as ListViewTargetSector,be as NativeDragAndDropData};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+import { DataTransfers } from '../../dnd.js';
+import { $, addDisposableListener, animate, getContentHeight, getContentWidth, getTopLeftOffset, getWindow, isAncestor, isHTMLElement, isSVGElement, scheduleAtNextAnimationFrame } from '../../dom.js';
+import { DomEmitter } from '../../event.js';
+import { EventType as TouchEventType, Gesture } from '../../touch.js';
+import { SmoothScrollableElement } from '../scrollbar/scrollableElement.js';
+import { distinct, equals } from '../../../common/arrays.js';
+import { Delayer, disposableTimeout } from '../../../common/async.js';
+import { memoize } from '../../../common/decorators.js';
+import { Emitter, Event } from '../../../common/event.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../common/lifecycle.js';
+import { Range } from '../../../common/range.js';
+import { Scrollable } from '../../../common/scrollable.js';
+import { RangeMap, shift } from './rangeMap.js';
+import { RowCache } from './rowCache.js';
+import { BugIndicatingError } from '../../../common/errors.js';
+import { clamp } from '../../../common/numbers.js';
+const StaticDND = {
+    CurrentDragAndDropData: undefined
+};
+const DefaultOptions = {
+    useShadows: true,
+    verticalScrollMode: 1,
+    setRowLineHeight: true,
+    setRowHeight: true,
+    supportDynamicHeights: false,
+    dnd: {
+        getDragElements(e) { return [e]; },
+        getDragURI() { return null; },
+        onDragStart() { },
+        onDragOver() { return false; },
+        drop() { },
+        dispose() { }
+    },
+    horizontalScrolling: false,
+    transformOptimization: true,
+    alwaysConsumeMouseWheel: true,
+};
+export class ElementsDragAndDropData {
+    get context() {
+        return this._context;
+    }
+    set context(value) {
+        this._context = value;
+    }
+    constructor(elements) {
+        this.elements = elements;
+    }
+    update() { }
+    getData() {
+        return this.elements;
+    }
+}
+export class ExternalElementsDragAndDropData {
+    constructor(elements) {
+        this.elements = elements;
+    }
+    update() { }
+    getData() {
+        return this.elements;
+    }
+}
+export class NativeDragAndDropData {
+    constructor() {
+        this.types = [];
+        this.files = [];
+    }
+    update(dataTransfer) {
+        if (dataTransfer.types) {
+            this.types.splice(0, this.types.length, ...dataTransfer.types);
+        }
+        if (dataTransfer.files) {
+            this.files.splice(0, this.files.length);
+            for (let i = 0; i < dataTransfer.files.length; i++) {
+                const file = dataTransfer.files.item(i);
+                if (file && (file.size || file.type)) {
+                    this.files.push(file);
+                }
+            }
+        }
+    }
+    getData() {
+        return {
+            types: this.types,
+            files: this.files
+        };
+    }
+}
+function equalsDragFeedback(f1, f2) {
+    if (Array.isArray(f1) && Array.isArray(f2)) {
+        return equals(f1, f2);
+    }
+    return f1 === f2;
+}
+class ListViewAccessibilityProvider {
+    constructor(accessibilityProvider) {
+        if (accessibilityProvider?.getSetSize) {
+            this.getSetSize = accessibilityProvider.getSetSize.bind(accessibilityProvider);
+        }
+        else {
+            this.getSetSize = (e, i, l) => l;
+        }
+        if (accessibilityProvider?.getPosInSet) {
+            this.getPosInSet = accessibilityProvider.getPosInSet.bind(accessibilityProvider);
+        }
+        else {
+            this.getPosInSet = (e, i) => i + 1;
+        }
+        if (accessibilityProvider?.getRole) {
+            this.getRole = accessibilityProvider.getRole.bind(accessibilityProvider);
+        }
+        else {
+            this.getRole = _ => 'listitem';
+        }
+        if (accessibilityProvider?.isChecked) {
+            this.isChecked = accessibilityProvider.isChecked.bind(accessibilityProvider);
+        }
+        else {
+            this.isChecked = _ => undefined;
+        }
+    }
+}
+export class ListView {
+    static { this.InstanceCount = 0; }
+    get contentHeight() { return this.rangeMap.size; }
+    get contentWidth() { return this.scrollWidth ?? 0; }
+    get onDidScroll() { return this.scrollableElement.onScroll; }
+    get onWillScroll() { return this.scrollableElement.onWillScroll; }
+    get containerDomNode() { return this.rowsContainer; }
+    get scrollableElementDomNode() { return this.scrollableElement.getDomNode(); }
+    get horizontalScrolling() { return this._horizontalScrolling; }
+    set horizontalScrolling(value) {
+        if (value === this._horizontalScrolling) {
+            return;
+        }
+        if (value && this.supportDynamicHeights) {
+            throw new Error('Horizontal scrolling and dynamic heights not supported simultaneously');
+        }
+        this._horizontalScrolling = value;
+        this.domNode.classList.toggle('horizontal-scrolling', this._horizontalScrolling);
+        if (this._horizontalScrolling) {
+            for (const item of this.items) {
+                this.measureItemWidth(item);
+            }
+            this.updateScrollWidth();
+            this.scrollableElement.setScrollDimensions({ width: getContentWidth(this.domNode) });
+            this.rowsContainer.style.width = `${Math.max(this.scrollWidth || 0, this.renderWidth)}px`;
+        }
+        else {
+            this.scrollableElementWidthDelayer.cancel();
+            this.scrollableElement.setScrollDimensions({ width: this.renderWidth, scrollWidth: this.renderWidth });
+            this.rowsContainer.style.width = '';
+        }
+    }
+    constructor(container, virtualDelegate, renderers, options = DefaultOptions) {
+        this.virtualDelegate = virtualDelegate;
+        this.domId = `list_id_${++ListView.InstanceCount}`;
+        this.renderers = new Map();
+        this.renderWidth = 0;
+        this._scrollHeight = 0;
+        this.scrollableElementUpdateDisposable = null;
+        this.scrollableElementWidthDelayer = new Delayer(50);
+        this.splicing = false;
+        this.dragOverAnimationStopDisposable = Disposable.None;
+        this.dragOverMouseY = 0;
+        this.canDrop = false;
+        this.currentDragFeedbackDisposable = Disposable.None;
+        this.onDragLeaveTimeout = Disposable.None;
+        this.disposables = new DisposableStore();
+        this._onDidChangeContentHeight = new Emitter();
+        this._onDidChangeContentWidth = new Emitter();
+        this.onDidChangeContentHeight = Event.latch(this._onDidChangeContentHeight.event, undefined, this.disposables);
+        this.onDidChangeContentWidth = Event.latch(this._onDidChangeContentWidth.event, undefined, this.disposables);
+        this._horizontalScrolling = false;
+        if (options.horizontalScrolling && options.supportDynamicHeights) {
+            throw new Error('Horizontal scrolling and dynamic heights not supported simultaneously');
+        }
+        this.items = [];
+        this.itemId = 0;
+        this.rangeMap = this.createRangeMap(options.paddingTop ?? 0);
+        for (const renderer of renderers) {
+            this.renderers.set(renderer.templateId, renderer);
+        }
+        this.cache = this.disposables.add(new RowCache(this.renderers));
+        this.lastRenderTop = 0;
+        this.lastRenderHeight = 0;
+        this.domNode = document.createElement('div');
+        this.domNode.className = 'monaco-list';
+        this.domNode.classList.add(this.domId);
+        this.domNode.tabIndex = 0;
+        this.domNode.classList.toggle('mouse-support', typeof options.mouseSupport === 'boolean' ? options.mouseSupport : true);
+        this._horizontalScrolling = options.horizontalScrolling ?? DefaultOptions.horizontalScrolling;
+        this.domNode.classList.toggle('horizontal-scrolling', this._horizontalScrolling);
+        this.paddingBottom = typeof options.paddingBottom === 'undefined' ? 0 : options.paddingBottom;
+        this.accessibilityProvider = new ListViewAccessibilityProvider(options.accessibilityProvider);
+        this.rowsContainer = document.createElement('div');
+        this.rowsContainer.className = 'monaco-list-rows';
+        const transformOptimization = options.transformOptimization ?? DefaultOptions.transformOptimization;
+        if (transformOptimization) {
+            this.rowsContainer.style.transform = 'translate3d(0px, 0px, 0px)';
+            this.rowsContainer.style.overflow = 'hidden';
+            this.rowsContainer.style.contain = 'strict';
+        }
+        this.disposables.add(Gesture.addTarget(this.rowsContainer));
+        this.scrollable = this.disposables.add(new Scrollable({
+            forceIntegerValues: true,
+            smoothScrollDuration: (options.smoothScrolling ?? false) ? 125 : 0,
+            scheduleAtNextAnimationFrame: cb => scheduleAtNextAnimationFrame(getWindow(this.domNode), cb)
+        }));
+        this.scrollableElement = this.disposables.add(new SmoothScrollableElement(this.rowsContainer, {
+            alwaysConsumeMouseWheel: options.alwaysConsumeMouseWheel ?? DefaultOptions.alwaysConsumeMouseWheel,
+            horizontal: 1,
+            vertical: options.verticalScrollMode ?? DefaultOptions.verticalScrollMode,
+            useShadows: options.useShadows ?? DefaultOptions.useShadows,
+            mouseWheelScrollSensitivity: options.mouseWheelScrollSensitivity,
+            fastScrollSensitivity: options.fastScrollSensitivity,
+            scrollByPage: options.scrollByPage
+        }, this.scrollable));
+        this.domNode.appendChild(this.scrollableElement.getDomNode());
+        container.appendChild(this.domNode);
+        this.scrollableElement.onScroll(this.onScroll, this, this.disposables);
+        this.disposables.add(addDisposableListener(this.rowsContainer, TouchEventType.Change, e => this.onTouchChange(e)));
+        this.disposables.add(addDisposableListener(this.scrollableElement.getDomNode(), 'scroll', e => e.target.scrollTop = 0));
+        this.disposables.add(addDisposableListener(this.domNode, 'dragover', e => this.onDragOver(this.toDragEvent(e))));
+        this.disposables.add(addDisposableListener(this.domNode, 'drop', e => this.onDrop(this.toDragEvent(e))));
+        this.disposables.add(addDisposableListener(this.domNode, 'dragleave', e => this.onDragLeave(this.toDragEvent(e))));
+        this.disposables.add(addDisposableListener(this.domNode, 'dragend', e => this.onDragEnd(e)));
+        this.setRowLineHeight = options.setRowLineHeight ?? DefaultOptions.setRowLineHeight;
+        this.setRowHeight = options.setRowHeight ?? DefaultOptions.setRowHeight;
+        this.supportDynamicHeights = options.supportDynamicHeights ?? DefaultOptions.supportDynamicHeights;
+        this.dnd = options.dnd ?? this.disposables.add(DefaultOptions.dnd);
+        this.layout(options.initialSize?.height, options.initialSize?.width);
+    }
+    updateOptions(options) {
+        if (options.paddingBottom !== undefined) {
+            this.paddingBottom = options.paddingBottom;
+            this.scrollableElement.setScrollDimensions({ scrollHeight: this.scrollHeight });
+        }
+        if (options.smoothScrolling !== undefined) {
+            this.scrollable.setSmoothScrollDuration(options.smoothScrolling ? 125 : 0);
+        }
+        if (options.horizontalScrolling !== undefined) {
+            this.horizontalScrolling = options.horizontalScrolling;
+        }
+        let scrollableOptions;
+        if (options.scrollByPage !== undefined) {
+            scrollableOptions = { ...(scrollableOptions ?? {}), scrollByPage: options.scrollByPage };
+        }
+        if (options.mouseWheelScrollSensitivity !== undefined) {
+            scrollableOptions = { ...(scrollableOptions ?? {}), mouseWheelScrollSensitivity: options.mouseWheelScrollSensitivity };
+        }
+        if (options.fastScrollSensitivity !== undefined) {
+            scrollableOptions = { ...(scrollableOptions ?? {}), fastScrollSensitivity: options.fastScrollSensitivity };
+        }
+        if (scrollableOptions) {
+            this.scrollableElement.updateOptions(scrollableOptions);
+        }
+        if (options.paddingTop !== undefined && options.paddingTop !== this.rangeMap.paddingTop) {
+            const lastRenderRange = this.getRenderRange(this.lastRenderTop, this.lastRenderHeight);
+            const offset = options.paddingTop - this.rangeMap.paddingTop;
+            this.rangeMap.paddingTop = options.paddingTop;
+            this.render(lastRenderRange, Math.max(0, this.lastRenderTop + offset), this.lastRenderHeight, undefined, undefined, true);
+            this.setScrollTop(this.lastRenderTop);
+            this.eventuallyUpdateScrollDimensions();
+            if (this.supportDynamicHeights) {
+                this._rerender(this.lastRenderTop, this.lastRenderHeight);
+            }
+        }
+    }
+    delegateScrollFromMouseWheelEvent(browserEvent) {
+        this.scrollableElement.delegateScrollFromMouseWheelEvent(browserEvent);
+    }
+    delegateVerticalScrollbarPointerDown(browserEvent) {
+        this.scrollableElement.delegateVerticalScrollbarPointerDown(browserEvent);
+    }
+    updateElementHeight(index, size, anchorIndex) {
+        if (index < 0 || index >= this.items.length) {
+            return;
+        }
+        const originalSize = this.items[index].size;
+        if (typeof size === 'undefined') {
+            if (!this.supportDynamicHeights) {
+                console.warn('Dynamic heights not supported', new Error().stack);
+                return;
+            }
+            this.items[index].lastDynamicHeightWidth = undefined;
+            size = originalSize + this.probeDynamicHeight(index);
+        }
+        if (originalSize === size) {
+            return;
+        }
+        const lastRenderRange = this.getRenderRange(this.lastRenderTop, this.lastRenderHeight);
+        let heightDiff = 0;
+        if (index < lastRenderRange.start) {
+            heightDiff = size - originalSize;
+        }
+        else {
+            if (anchorIndex !== null && anchorIndex > index && anchorIndex < lastRenderRange.end) {
+                heightDiff = size - originalSize;
+            }
+            else {
+                heightDiff = 0;
+            }
+        }
+        this.rangeMap.splice(index, 1, [{ size: size }]);
+        this.items[index].size = size;
+        this.render(lastRenderRange, Math.max(0, this.lastRenderTop + heightDiff), this.lastRenderHeight, undefined, undefined, true);
+        this.setScrollTop(this.lastRenderTop);
+        this.eventuallyUpdateScrollDimensions();
+        if (this.supportDynamicHeights) {
+            this._rerender(this.lastRenderTop, this.lastRenderHeight);
+        }
+    }
+    createRangeMap(paddingTop) {
+        return new RangeMap(paddingTop);
+    }
+    splice(start, deleteCount, elements = []) {
+        if (this.splicing) {
+            throw new Error('Can\'t run recursive splices.');
+        }
+        this.splicing = true;
+        try {
+            return this._splice(start, deleteCount, elements);
+        }
+        finally {
+            this.splicing = false;
+            this._onDidChangeContentHeight.fire(this.contentHeight);
+        }
+    }
+    _splice(start, deleteCount, elements = []) {
+        const previousRenderRange = this.getRenderRange(this.lastRenderTop, this.lastRenderHeight);
+        const deleteRange = { start, end: start + deleteCount };
+        const removeRange = Range.intersect(previousRenderRange, deleteRange);
+        const rowsToDispose = new Map();
+        for (let i = removeRange.end - 1; i >= removeRange.start; i--) {
+            const item = this.items[i];
+            item.dragStartDisposable.dispose();
+            item.checkedDisposable.dispose();
+            if (item.row) {
+                let rows = rowsToDispose.get(item.templateId);
+                if (!rows) {
+                    rows = [];
+                    rowsToDispose.set(item.templateId, rows);
+                }
+                const renderer = this.renderers.get(item.templateId);
+                if (renderer && renderer.disposeElement) {
+                    renderer.disposeElement(item.element, i, item.row.templateData, item.size);
+                }
+                rows.unshift(item.row);
+            }
+            item.row = null;
+            item.stale = true;
+        }
+        const previousRestRange = { start: start + deleteCount, end: this.items.length };
+        const previousRenderedRestRange = Range.intersect(previousRestRange, previousRenderRange);
+        const previousUnrenderedRestRanges = Range.relativeComplement(previousRestRange, previousRenderRange);
+        const inserted = elements.map(element => ({
+            id: String(this.itemId++),
+            element,
+            templateId: this.virtualDelegate.getTemplateId(element),
+            size: this.virtualDelegate.getHeight(element),
+            width: undefined,
+            hasDynamicHeight: !!this.virtualDelegate.hasDynamicHeight && this.virtualDelegate.hasDynamicHeight(element),
+            lastDynamicHeightWidth: undefined,
+            row: null,
+            uri: undefined,
+            dropTarget: false,
+            dragStartDisposable: Disposable.None,
+            checkedDisposable: Disposable.None,
+            stale: false
+        }));
+        let deleted;
+        if (start === 0 && deleteCount >= this.items.length) {
+            this.rangeMap = this.createRangeMap(this.rangeMap.paddingTop);
+            this.rangeMap.splice(0, 0, inserted);
+            deleted = this.items;
+            this.items = inserted;
+        }
+        else {
+            this.rangeMap.splice(start, deleteCount, inserted);
+            deleted = this.items.splice(start, deleteCount, ...inserted);
+        }
+        const delta = elements.length - deleteCount;
+        const renderRange = this.getRenderRange(this.lastRenderTop, this.lastRenderHeight);
+        const renderedRestRange = shift(previousRenderedRestRange, delta);
+        const updateRange = Range.intersect(renderRange, renderedRestRange);
+        for (let i = updateRange.start; i < updateRange.end; i++) {
+            this.updateItemInDOM(this.items[i], i);
+        }
+        const removeRanges = Range.relativeComplement(renderedRestRange, renderRange);
+        for (const range of removeRanges) {
+            for (let i = range.start; i < range.end; i++) {
+                this.removeItemFromDOM(i);
+            }
+        }
+        const unrenderedRestRanges = previousUnrenderedRestRanges.map(r => shift(r, delta));
+        const elementsRange = { start, end: start + elements.length };
+        const insertRanges = [elementsRange, ...unrenderedRestRanges].map(r => Range.intersect(renderRange, r)).reverse();
+        for (const range of insertRanges) {
+            for (let i = range.end - 1; i >= range.start; i--) {
+                const item = this.items[i];
+                const rows = rowsToDispose.get(item.templateId);
+                const row = rows?.pop();
+                this.insertItemInDOM(i, row);
+            }
+        }
+        for (const rows of rowsToDispose.values()) {
+            for (const row of rows) {
+                this.cache.release(row);
+            }
+        }
+        this.eventuallyUpdateScrollDimensions();
+        if (this.supportDynamicHeights) {
+            this._rerender(this.scrollTop, this.renderHeight);
+        }
+        return deleted.map(i => i.element);
+    }
+    eventuallyUpdateScrollDimensions() {
+        this._scrollHeight = this.contentHeight;
+        this.rowsContainer.style.height = `${this._scrollHeight}px`;
+        if (!this.scrollableElementUpdateDisposable) {
+            this.scrollableElementUpdateDisposable = scheduleAtNextAnimationFrame(getWindow(this.domNode), () => {
+                this.scrollableElement.setScrollDimensions({ scrollHeight: this.scrollHeight });
+                this.updateScrollWidth();
+                this.scrollableElementUpdateDisposable = null;
+            });
+        }
+    }
+    eventuallyUpdateScrollWidth() {
+        if (!this.horizontalScrolling) {
+            this.scrollableElementWidthDelayer.cancel();
+            return;
+        }
+        this.scrollableElementWidthDelayer.trigger(() => this.updateScrollWidth());
+    }
+    updateScrollWidth() {
+        if (!this.horizontalScrolling) {
+            return;
+        }
+        let scrollWidth = 0;
+        for (const item of this.items) {
+            if (typeof item.width !== 'undefined') {
+                scrollWidth = Math.max(scrollWidth, item.width);
+            }
+        }
+        this.scrollWidth = scrollWidth;
+        this.scrollableElement.setScrollDimensions({ scrollWidth: scrollWidth === 0 ? 0 : (scrollWidth + 10) });
+        this._onDidChangeContentWidth.fire(this.scrollWidth);
+    }
+    updateWidth(index) {
+        if (!this.horizontalScrolling || typeof this.scrollWidth === 'undefined') {
+            return;
+        }
+        const item = this.items[index];
+        this.measureItemWidth(item);
+        if (typeof item.width !== 'undefined' && item.width > this.scrollWidth) {
+            this.scrollWidth = item.width;
+            this.scrollableElement.setScrollDimensions({ scrollWidth: this.scrollWidth + 10 });
+            this._onDidChangeContentWidth.fire(this.scrollWidth);
+        }
+    }
+    rerender() {
+        if (!this.supportDynamicHeights) {
+            return;
+        }
+        for (const item of this.items) {
+            item.lastDynamicHeightWidth = undefined;
+        }
+        this._rerender(this.lastRenderTop, this.lastRenderHeight);
+    }
+    get length() {
+        return this.items.length;
+    }
+    get renderHeight() {
+        const scrollDimensions = this.scrollableElement.getScrollDimensions();
+        return scrollDimensions.height;
+    }
+    get firstVisibleIndex() {
+        const range = this.getRenderRange(this.lastRenderTop, this.lastRenderHeight);
+        return range.start;
+    }
+    get firstMostlyVisibleIndex() {
+        const firstVisibleIndex = this.firstVisibleIndex;
+        const firstElTop = this.rangeMap.positionAt(firstVisibleIndex);
+        const nextElTop = this.rangeMap.positionAt(firstVisibleIndex + 1);
+        if (nextElTop !== -1) {
+            const firstElMidpoint = (nextElTop - firstElTop) / 2 + firstElTop;
+            if (firstElMidpoint < this.scrollTop) {
+                return firstVisibleIndex + 1;
+            }
+        }
+        return firstVisibleIndex;
+    }
+    get lastVisibleIndex() {
+        const range = this.getRenderRange(this.lastRenderTop, this.lastRenderHeight);
+        return range.end - 1;
+    }
+    element(index) {
+        return this.items[index].element;
+    }
+    indexOf(element) {
+        return this.items.findIndex(item => item.element === element);
+    }
+    domElement(index) {
+        const row = this.items[index].row;
+        return row && row.domNode;
+    }
+    elementHeight(index) {
+        return this.items[index].size;
+    }
+    elementTop(index) {
+        return this.rangeMap.positionAt(index);
+    }
+    indexAt(position) {
+        return this.rangeMap.indexAt(position);
+    }
+    indexAfter(position) {
+        return this.rangeMap.indexAfter(position);
+    }
+    layout(height, width) {
+        const scrollDimensions = {
+            height: typeof height === 'number' ? height : getContentHeight(this.domNode)
+        };
+        if (this.scrollableElementUpdateDisposable) {
+            this.scrollableElementUpdateDisposable.dispose();
+            this.scrollableElementUpdateDisposable = null;
+            scrollDimensions.scrollHeight = this.scrollHeight;
+        }
+        this.scrollableElement.setScrollDimensions(scrollDimensions);
+        if (typeof width !== 'undefined') {
+            this.renderWidth = width;
+            if (this.supportDynamicHeights) {
+                this._rerender(this.scrollTop, this.renderHeight);
+            }
+        }
+        if (this.horizontalScrolling) {
+            this.scrollableElement.setScrollDimensions({
+                width: typeof width === 'number' ? width : getContentWidth(this.domNode)
+            });
+        }
+    }
+    render(previousRenderRange, renderTop, renderHeight, renderLeft, scrollWidth, updateItemsInDOM = false) {
+        const renderRange = this.getRenderRange(renderTop, renderHeight);
+        const rangesToInsert = Range.relativeComplement(renderRange, previousRenderRange).reverse();
+        const rangesToRemove = Range.relativeComplement(previousRenderRange, renderRange);
+        if (updateItemsInDOM) {
+            const rangesToUpdate = Range.intersect(previousRenderRange, renderRange);
+            for (let i = rangesToUpdate.start; i < rangesToUpdate.end; i++) {
+                this.updateItemInDOM(this.items[i], i);
+            }
+        }
+        this.cache.transact(() => {
+            for (const range of rangesToRemove) {
+                for (let i = range.start; i < range.end; i++) {
+                    this.removeItemFromDOM(i);
+                }
+            }
+            for (const range of rangesToInsert) {
+                for (let i = range.end - 1; i >= range.start; i--) {
+                    this.insertItemInDOM(i);
+                }
+            }
+        });
+        if (renderLeft !== undefined) {
+            this.rowsContainer.style.left = `-${renderLeft}px`;
+        }
+        this.rowsContainer.style.top = `-${renderTop}px`;
+        if (this.horizontalScrolling && scrollWidth !== undefined) {
+            this.rowsContainer.style.width = `${Math.max(scrollWidth, this.renderWidth)}px`;
+        }
+        this.lastRenderTop = renderTop;
+        this.lastRenderHeight = renderHeight;
+    }
+    insertItemInDOM(index, row) {
+        const item = this.items[index];
+        if (!item.row) {
+            if (row) {
+                item.row = row;
+                item.stale = true;
+            }
+            else {
+                const result = this.cache.alloc(item.templateId);
+                item.row = result.row;
+                item.stale ||= result.isReusingConnectedDomNode;
+            }
+        }
+        const role = this.accessibilityProvider.getRole(item.element) || 'listitem';
+        item.row.domNode.setAttribute('role', role);
+        const checked = this.accessibilityProvider.isChecked(item.element);
+        if (typeof checked === 'boolean') {
+            item.row.domNode.setAttribute('aria-checked', String(!!checked));
+        }
+        else if (checked) {
+            const update = (checked) => item.row.domNode.setAttribute('aria-checked', String(!!checked));
+            update(checked.value);
+            item.checkedDisposable = checked.onDidChange(() => update(checked.value));
+        }
+        if (item.stale || !item.row.domNode.parentElement) {
+            const referenceNode = this.items.at(index + 1)?.row?.domNode ?? null;
+            if (item.row.domNode.parentElement !== this.rowsContainer || item.row.domNode.nextElementSibling !== referenceNode) {
+                this.rowsContainer.insertBefore(item.row.domNode, referenceNode);
+            }
+            item.stale = false;
+        }
+        this.updateItemInDOM(item, index);
+        const renderer = this.renderers.get(item.templateId);
+        if (!renderer) {
+            throw new Error(`No renderer found for template id ${item.templateId}`);
+        }
+        renderer?.renderElement(item.element, index, item.row.templateData, item.size);
+        const uri = this.dnd.getDragURI(item.element);
+        item.dragStartDisposable.dispose();
+        item.row.domNode.draggable = !!uri;
+        if (uri) {
+            item.dragStartDisposable = addDisposableListener(item.row.domNode, 'dragstart', event => this.onDragStart(item.element, uri, event));
+        }
+        if (this.horizontalScrolling) {
+            this.measureItemWidth(item);
+            this.eventuallyUpdateScrollWidth();
+        }
+    }
+    measureItemWidth(item) {
+        if (!item.row || !item.row.domNode) {
+            return;
+        }
+        item.row.domNode.style.width = 'fit-content';
+        item.width = getContentWidth(item.row.domNode);
+        const style = getWindow(item.row.domNode).getComputedStyle(item.row.domNode);
+        if (style.paddingLeft) {
+            item.width += parseFloat(style.paddingLeft);
+        }
+        if (style.paddingRight) {
+            item.width += parseFloat(style.paddingRight);
+        }
+        item.row.domNode.style.width = '';
+    }
+    updateItemInDOM(item, index) {
+        item.row.domNode.style.top = `${this.elementTop(index)}px`;
+        if (this.setRowHeight) {
+            item.row.domNode.style.height = `${item.size}px`;
+        }
+        if (this.setRowLineHeight) {
+            item.row.domNode.style.lineHeight = `${item.size}px`;
+        }
+        item.row.domNode.setAttribute('data-index', `${index}`);
+        item.row.domNode.setAttribute('data-last-element', index === this.length - 1 ? 'true' : 'false');
+        item.row.domNode.setAttribute('data-parity', index % 2 === 0 ? 'even' : 'odd');
+        item.row.domNode.setAttribute('aria-setsize', String(this.accessibilityProvider.getSetSize(item.element, index, this.length)));
+        item.row.domNode.setAttribute('aria-posinset', String(this.accessibilityProvider.getPosInSet(item.element, index)));
+        item.row.domNode.setAttribute('id', this.getElementDomId(index));
+        item.row.domNode.classList.toggle('drop-target', item.dropTarget);
+    }
+    removeItemFromDOM(index) {
+        const item = this.items[index];
+        item.dragStartDisposable.dispose();
+        item.checkedDisposable.dispose();
+        if (item.row) {
+            const renderer = this.renderers.get(item.templateId);
+            if (renderer && renderer.disposeElement) {
+                renderer.disposeElement(item.element, index, item.row.templateData, item.size);
+            }
+            this.cache.release(item.row);
+            item.row = null;
+        }
+        if (this.horizontalScrolling) {
+            this.eventuallyUpdateScrollWidth();
+        }
+    }
+    getScrollTop() {
+        const scrollPosition = this.scrollableElement.getScrollPosition();
+        return scrollPosition.scrollTop;
+    }
+    setScrollTop(scrollTop, reuseAnimation) {
+        if (this.scrollableElementUpdateDisposable) {
+            this.scrollableElementUpdateDisposable.dispose();
+            this.scrollableElementUpdateDisposable = null;
+            this.scrollableElement.setScrollDimensions({ scrollHeight: this.scrollHeight });
+        }
+        this.scrollableElement.setScrollPosition({ scrollTop, reuseAnimation });
+    }
+    getScrollLeft() {
+        const scrollPosition = this.scrollableElement.getScrollPosition();
+        return scrollPosition.scrollLeft;
+    }
+    setScrollLeft(scrollLeft) {
+        if (this.scrollableElementUpdateDisposable) {
+            this.scrollableElementUpdateDisposable.dispose();
+            this.scrollableElementUpdateDisposable = null;
+            this.scrollableElement.setScrollDimensions({ scrollWidth: this.scrollWidth });
+        }
+        this.scrollableElement.setScrollPosition({ scrollLeft });
+    }
+    get scrollTop() {
+        return this.getScrollTop();
+    }
+    set scrollTop(scrollTop) {
+        this.setScrollTop(scrollTop);
+    }
+    get scrollHeight() {
+        return this._scrollHeight + (this.horizontalScrolling ? 10 : 0) + this.paddingBottom;
+    }
+    get onMouseClick() { return Event.map(this.disposables.add(new DomEmitter(this.domNode, 'click')).event, e => this.toMouseEvent(e), this.disposables); }
+    get onMouseDblClick() { return Event.map(this.disposables.add(new DomEmitter(this.domNode, 'dblclick')).event, e => this.toMouseEvent(e), this.disposables); }
+    get onMouseMiddleClick() { return Event.filter(Event.map(this.disposables.add(new DomEmitter(this.domNode, 'auxclick')).event, e => this.toMouseEvent(e), this.disposables), e => e.browserEvent.button === 1, this.disposables); }
+    get onMouseUp() { return Event.map(this.disposables.add(new DomEmitter(this.domNode, 'mouseup')).event, e => this.toMouseEvent(e), this.disposables); }
+    get onMouseDown() { return Event.map(this.disposables.add(new DomEmitter(this.domNode, 'mousedown')).event, e => this.toMouseEvent(e), this.disposables); }
+    get onMouseOver() { return Event.map(this.disposables.add(new DomEmitter(this.domNode, 'mouseover')).event, e => this.toMouseEvent(e), this.disposables); }
+    get onMouseMove() { return Event.map(this.disposables.add(new DomEmitter(this.domNode, 'mousemove')).event, e => this.toMouseEvent(e), this.disposables); }
+    get onMouseOut() { return Event.map(this.disposables.add(new DomEmitter(this.domNode, 'mouseout')).event, e => this.toMouseEvent(e), this.disposables); }
+    get onContextMenu() { return Event.any(Event.map(this.disposables.add(new DomEmitter(this.domNode, 'contextmenu')).event, e => this.toMouseEvent(e), this.disposables), Event.map(this.disposables.add(new DomEmitter(this.domNode, TouchEventType.Contextmenu)).event, e => this.toGestureEvent(e), this.disposables)); }
+    get onTouchStart() { return Event.map(this.disposables.add(new DomEmitter(this.domNode, 'touchstart')).event, e => this.toTouchEvent(e), this.disposables); }
+    get onTap() { return Event.map(this.disposables.add(new DomEmitter(this.rowsContainer, TouchEventType.Tap)).event, e => this.toGestureEvent(e), this.disposables); }
+    toMouseEvent(browserEvent) {
+        const index = this.getItemIndexFromEventTarget(browserEvent.target || null);
+        const item = typeof index === 'undefined' ? undefined : this.items[index];
+        const element = item && item.element;
+        return { browserEvent, index, element };
+    }
+    toTouchEvent(browserEvent) {
+        const index = this.getItemIndexFromEventTarget(browserEvent.target || null);
+        const item = typeof index === 'undefined' ? undefined : this.items[index];
+        const element = item && item.element;
+        return { browserEvent, index, element };
+    }
+    toGestureEvent(browserEvent) {
+        const index = this.getItemIndexFromEventTarget(browserEvent.initialTarget || null);
+        const item = typeof index === 'undefined' ? undefined : this.items[index];
+        const element = item && item.element;
+        return { browserEvent, index, element };
+    }
+    toDragEvent(browserEvent) {
+        const index = this.getItemIndexFromEventTarget(browserEvent.target || null);
+        const item = typeof index === 'undefined' ? undefined : this.items[index];
+        const element = item && item.element;
+        const sector = this.getTargetSector(browserEvent, index);
+        return { browserEvent, index, element, sector };
+    }
+    onScroll(e) {
+        try {
+            const previousRenderRange = this.getRenderRange(this.lastRenderTop, this.lastRenderHeight);
+            this.render(previousRenderRange, e.scrollTop, e.height, e.scrollLeft, e.scrollWidth);
+            if (this.supportDynamicHeights) {
+                this._rerender(e.scrollTop, e.height, e.inSmoothScrolling);
+            }
+        }
+        catch (err) {
+            console.error('Got bad scroll event:', e);
+            throw err;
+        }
+    }
+    onTouchChange(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.scrollTop -= event.translationY;
+    }
+    onDragStart(element, uri, event) {
+        if (!event.dataTransfer) {
+            return;
+        }
+        const elements = this.dnd.getDragElements(element);
+        event.dataTransfer.effectAllowed = 'copyMove';
+        event.dataTransfer.setData(DataTransfers.TEXT, uri);
+        if (event.dataTransfer.setDragImage) {
+            let label;
+            if (this.dnd.getDragLabel) {
+                label = this.dnd.getDragLabel(elements, event);
+            }
+            if (typeof label === 'undefined') {
+                label = String(elements.length);
+            }
+            const dragImage = $('.monaco-drag-image');
+            dragImage.textContent = label;
+            const getDragImageContainer = (e) => {
+                while (e && !e.classList.contains('monaco-workbench')) {
+                    e = e.parentElement;
+                }
+                return e || this.domNode.ownerDocument;
+            };
+            const container = getDragImageContainer(this.domNode);
+            container.appendChild(dragImage);
+            event.dataTransfer.setDragImage(dragImage, -10, -10);
+            setTimeout(() => dragImage.remove(), 0);
+        }
+        this.domNode.classList.add('dragging');
+        this.currentDragData = new ElementsDragAndDropData(elements);
+        StaticDND.CurrentDragAndDropData = new ExternalElementsDragAndDropData(elements);
+        this.dnd.onDragStart?.(this.currentDragData, event);
+    }
+    onDragOver(event) {
+        event.browserEvent.preventDefault();
+        this.onDragLeaveTimeout.dispose();
+        if (StaticDND.CurrentDragAndDropData && StaticDND.CurrentDragAndDropData.getData() === 'vscode-ui') {
+            return false;
+        }
+        this.setupDragAndDropScrollTopAnimation(event.browserEvent);
+        if (!event.browserEvent.dataTransfer) {
+            return false;
+        }
+        if (!this.currentDragData) {
+            if (StaticDND.CurrentDragAndDropData) {
+                this.currentDragData = StaticDND.CurrentDragAndDropData;
+            }
+            else {
+                if (!event.browserEvent.dataTransfer.types) {
+                    return false;
+                }
+                this.currentDragData = new NativeDragAndDropData();
+            }
+        }
+        const result = this.dnd.onDragOver(this.currentDragData, event.element, event.index, event.sector, event.browserEvent);
+        this.canDrop = typeof result === 'boolean' ? result : result.accept;
+        if (!this.canDrop) {
+            this.currentDragFeedback = undefined;
+            this.currentDragFeedbackDisposable.dispose();
+            return false;
+        }
+        event.browserEvent.dataTransfer.dropEffect = (typeof result !== 'boolean' && result.effect?.type === 0) ? 'copy' : 'move';
+        let feedback;
+        if (typeof result !== 'boolean' && result.feedback) {
+            feedback = result.feedback;
+        }
+        else {
+            if (typeof event.index === 'undefined') {
+                feedback = [-1];
+            }
+            else {
+                feedback = [event.index];
+            }
+        }
+        feedback = distinct(feedback).filter(i => i >= -1 && i < this.length).sort((a, b) => a - b);
+        feedback = feedback[0] === -1 ? [-1] : feedback;
+        let dragOverEffectPosition = typeof result !== 'boolean' && result.effect && result.effect.position ? result.effect.position : "drop-target";
+        if (equalsDragFeedback(this.currentDragFeedback, feedback) && this.currentDragFeedbackPosition === dragOverEffectPosition) {
+            return true;
+        }
+        this.currentDragFeedback = feedback;
+        this.currentDragFeedbackPosition = dragOverEffectPosition;
+        this.currentDragFeedbackDisposable.dispose();
+        if (feedback[0] === -1) {
+            this.domNode.classList.add(dragOverEffectPosition);
+            this.rowsContainer.classList.add(dragOverEffectPosition);
+            this.currentDragFeedbackDisposable = toDisposable(() => {
+                this.domNode.classList.remove(dragOverEffectPosition);
+                this.rowsContainer.classList.remove(dragOverEffectPosition);
+            });
+        }
+        else {
+            if (feedback.length > 1 && dragOverEffectPosition !== "drop-target") {
+                throw new Error('Can\'t use multiple feedbacks with position different than \'over\'');
+            }
+            if (dragOverEffectPosition === "drop-target-after") {
+                if (feedback[0] < this.length - 1) {
+                    feedback[0] += 1;
+                    dragOverEffectPosition = "drop-target-before";
+                }
+            }
+            for (const index of feedback) {
+                const item = this.items[index];
+                item.dropTarget = true;
+                item.row?.domNode.classList.add(dragOverEffectPosition);
+            }
+            this.currentDragFeedbackDisposable = toDisposable(() => {
+                for (const index of feedback) {
+                    const item = this.items[index];
+                    item.dropTarget = false;
+                    item.row?.domNode.classList.remove(dragOverEffectPosition);
+                }
+            });
+        }
+        return true;
+    }
+    onDragLeave(event) {
+        this.onDragLeaveTimeout.dispose();
+        this.onDragLeaveTimeout = disposableTimeout(() => this.clearDragOverFeedback(), 100, this.disposables);
+        if (this.currentDragData) {
+            this.dnd.onDragLeave?.(this.currentDragData, event.element, event.index, event.browserEvent);
+        }
+    }
+    onDrop(event) {
+        if (!this.canDrop) {
+            return;
+        }
+        const dragData = this.currentDragData;
+        this.teardownDragAndDropScrollTopAnimation();
+        this.clearDragOverFeedback();
+        this.domNode.classList.remove('dragging');
+        this.currentDragData = undefined;
+        StaticDND.CurrentDragAndDropData = undefined;
+        if (!dragData || !event.browserEvent.dataTransfer) {
+            return;
+        }
+        event.browserEvent.preventDefault();
+        dragData.update(event.browserEvent.dataTransfer);
+        this.dnd.drop(dragData, event.element, event.index, event.sector, event.browserEvent);
+    }
+    onDragEnd(event) {
+        this.canDrop = false;
+        this.teardownDragAndDropScrollTopAnimation();
+        this.clearDragOverFeedback();
+        this.domNode.classList.remove('dragging');
+        this.currentDragData = undefined;
+        StaticDND.CurrentDragAndDropData = undefined;
+        this.dnd.onDragEnd?.(event);
+    }
+    clearDragOverFeedback() {
+        this.currentDragFeedback = undefined;
+        this.currentDragFeedbackPosition = undefined;
+        this.currentDragFeedbackDisposable.dispose();
+        this.currentDragFeedbackDisposable = Disposable.None;
+    }
+    setupDragAndDropScrollTopAnimation(event) {
+        if (!this.dragOverAnimationDisposable) {
+            const viewTop = getTopLeftOffset(this.domNode).top;
+            this.dragOverAnimationDisposable = animate(getWindow(this.domNode), this.animateDragAndDropScrollTop.bind(this, viewTop));
+        }
+        this.dragOverAnimationStopDisposable.dispose();
+        this.dragOverAnimationStopDisposable = disposableTimeout(() => {
+            if (this.dragOverAnimationDisposable) {
+                this.dragOverAnimationDisposable.dispose();
+                this.dragOverAnimationDisposable = undefined;
+            }
+        }, 1000, this.disposables);
+        this.dragOverMouseY = event.pageY;
+    }
+    animateDragAndDropScrollTop(viewTop) {
+        if (this.dragOverMouseY === undefined) {
+            return;
+        }
+        const diff = this.dragOverMouseY - viewTop;
+        const upperLimit = this.renderHeight - 35;
+        if (diff < 35) {
+            this.scrollTop += Math.max(-14, Math.floor(0.3 * (diff - 35)));
+        }
+        else if (diff > upperLimit) {
+            this.scrollTop += Math.min(14, Math.floor(0.3 * (diff - upperLimit)));
+        }
+    }
+    teardownDragAndDropScrollTopAnimation() {
+        this.dragOverAnimationStopDisposable.dispose();
+        if (this.dragOverAnimationDisposable) {
+            this.dragOverAnimationDisposable.dispose();
+            this.dragOverAnimationDisposable = undefined;
+        }
+    }
+    getTargetSector(browserEvent, targetIndex) {
+        if (targetIndex === undefined) {
+            return undefined;
+        }
+        const relativePosition = browserEvent.offsetY / this.items[targetIndex].size;
+        const sector = Math.floor(relativePosition / 0.25);
+        return clamp(sector, 0, 3);
+    }
+    getItemIndexFromEventTarget(target) {
+        const scrollableElement = this.scrollableElement.getDomNode();
+        let element = target;
+        while ((isHTMLElement(element) || isSVGElement(element)) && element !== this.rowsContainer && scrollableElement.contains(element)) {
+            const rawIndex = element.getAttribute('data-index');
+            if (rawIndex) {
+                const index = Number(rawIndex);
+                if (!isNaN(index)) {
+                    return index;
+                }
+            }
+            element = element.parentElement;
+        }
+        return undefined;
+    }
+    getRenderRange(renderTop, renderHeight) {
+        return {
+            start: this.rangeMap.indexAt(renderTop),
+            end: this.rangeMap.indexAfter(renderTop + renderHeight - 1)
+        };
+    }
+    _rerender(renderTop, renderHeight, inSmoothScrolling) {
+        const previousRenderRange = this.getRenderRange(renderTop, renderHeight);
+        let anchorElementIndex;
+        let anchorElementTopDelta;
+        if (renderTop === this.elementTop(previousRenderRange.start)) {
+            anchorElementIndex = previousRenderRange.start;
+            anchorElementTopDelta = 0;
+        }
+        else if (previousRenderRange.end - previousRenderRange.start > 1) {
+            anchorElementIndex = previousRenderRange.start + 1;
+            anchorElementTopDelta = this.elementTop(anchorElementIndex) - renderTop;
+        }
+        let heightDiff = 0;
+        while (true) {
+            const renderRange = this.getRenderRange(renderTop, renderHeight);
+            let didChange = false;
+            for (let i = renderRange.start; i < renderRange.end; i++) {
+                const diff = this.probeDynamicHeight(i);
+                if (diff !== 0) {
+                    this.rangeMap.splice(i, 1, [this.items[i]]);
+                }
+                heightDiff += diff;
+                didChange = didChange || diff !== 0;
+            }
+            if (!didChange) {
+                if (heightDiff !== 0) {
+                    this.eventuallyUpdateScrollDimensions();
+                }
+                const unrenderRanges = Range.relativeComplement(previousRenderRange, renderRange);
+                for (const range of unrenderRanges) {
+                    for (let i = range.start; i < range.end; i++) {
+                        if (this.items[i].row) {
+                            this.removeItemFromDOM(i);
+                        }
+                    }
+                }
+                const renderRanges = Range.relativeComplement(renderRange, previousRenderRange).reverse();
+                for (const range of renderRanges) {
+                    for (let i = range.end - 1; i >= range.start; i--) {
+                        this.insertItemInDOM(i);
+                    }
+                }
+                for (let i = renderRange.start; i < renderRange.end; i++) {
+                    if (this.items[i].row) {
+                        this.updateItemInDOM(this.items[i], i);
+                    }
+                }
+                if (typeof anchorElementIndex === 'number') {
+                    const deltaScrollTop = this.scrollable.getFutureScrollPosition().scrollTop - renderTop;
+                    const newScrollTop = this.elementTop(anchorElementIndex) - anchorElementTopDelta + deltaScrollTop;
+                    this.setScrollTop(newScrollTop, inSmoothScrolling);
+                }
+                this._onDidChangeContentHeight.fire(this.contentHeight);
+                return;
+            }
+        }
+    }
+    probeDynamicHeight(index) {
+        const item = this.items[index];
+        if (!!this.virtualDelegate.getDynamicHeight) {
+            const newSize = this.virtualDelegate.getDynamicHeight(item.element);
+            if (newSize !== null) {
+                const size = item.size;
+                item.size = newSize;
+                item.lastDynamicHeightWidth = this.renderWidth;
+                return newSize - size;
+            }
+        }
+        if (!item.hasDynamicHeight || item.lastDynamicHeightWidth === this.renderWidth) {
+            return 0;
+        }
+        if (!!this.virtualDelegate.hasDynamicHeight && !this.virtualDelegate.hasDynamicHeight(item.element)) {
+            return 0;
+        }
+        const size = item.size;
+        if (item.row) {
+            item.row.domNode.style.height = '';
+            item.size = item.row.domNode.offsetHeight;
+            if (item.size === 0 && !isAncestor(item.row.domNode, getWindow(item.row.domNode).document.body)) {
+                console.warn('Measuring item node that is not in DOM! Add ListView to the DOM before measuring row height!', new Error().stack);
+            }
+            item.lastDynamicHeightWidth = this.renderWidth;
+            return item.size - size;
+        }
+        const { row } = this.cache.alloc(item.templateId);
+        row.domNode.style.height = '';
+        this.rowsContainer.appendChild(row.domNode);
+        const renderer = this.renderers.get(item.templateId);
+        if (!renderer) {
+            throw new BugIndicatingError('Missing renderer for templateId: ' + item.templateId);
+        }
+        renderer.renderElement(item.element, index, row.templateData, undefined);
+        item.size = row.domNode.offsetHeight;
+        renderer.disposeElement?.(item.element, index, row.templateData, undefined);
+        this.virtualDelegate.setDynamicHeight?.(item.element, item.size);
+        item.lastDynamicHeightWidth = this.renderWidth;
+        row.domNode.remove();
+        this.cache.release(row);
+        return item.size - size;
+    }
+    getElementDomId(index) {
+        return `${this.domId}_${index}`;
+    }
+    dispose() {
+        for (const item of this.items) {
+            item.dragStartDisposable.dispose();
+            item.checkedDisposable.dispose();
+            if (item.row) {
+                const renderer = this.renderers.get(item.row.templateId);
+                if (renderer) {
+                    renderer.disposeElement?.(item.element, -1, item.row.templateData, undefined);
+                    renderer.disposeTemplate(item.row.templateData);
+                }
+            }
+        }
+        this.items = [];
+        this.domNode?.remove();
+        this.dragOverAnimationDisposable?.dispose();
+        this.disposables.dispose();
+    }
+}
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], ListView.prototype, "onMouseClick", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], ListView.prototype, "onMouseDblClick", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], ListView.prototype, "onMouseMiddleClick", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], ListView.prototype, "onMouseUp", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], ListView.prototype, "onMouseDown", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], ListView.prototype, "onMouseOver", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], ListView.prototype, "onMouseMove", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], ListView.prototype, "onMouseOut", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], ListView.prototype, "onContextMenu", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], ListView.prototype, "onTouchStart", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [])
+], ListView.prototype, "onTap", null);

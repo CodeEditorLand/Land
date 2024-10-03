@@ -1,1 +1,105 @@
-var P=Object.defineProperty;var g=Object.getOwnPropertyDescriptor;var p=(l,e,t,r)=>{for(var i=r>1?void 0:r?g(e,t):e,o=l.length-1,s;o>=0;o--)(s=l[o])&&(i=(r?s(e,t,i):s(i))||i);return r&&i&&P(e,t,i),i},f=(l,e)=>(t,r)=>e(t,r,l);import{BroadcastDataChannel as m}from"../../../base/browser/broadcast.js";import{revive as v}from"../../../base/common/marshalling.js";import"../../../base/common/uri.js";import{IEnvironmentService as I}from"../../environment/common/environment.js";import{IFileService as D}from"../../files/common/files.js";import{ILogService as O}from"../../log/common/log.js";import{IUriIdentityService as u}from"../../uriIdentity/common/uriIdentity.js";import{reviveProfile as d,UserDataProfilesService as n}from"../common/userDataProfile.js";let c=class extends n{changesBroadcastChannel;constructor(e,t,r,i){super(e,t,r,i),this.changesBroadcastChannel=this._register(new m(`${n.PROFILES_KEY}.changes`)),this._register(this.changesBroadcastChannel.onDidReceiveData(o=>{try{this._profilesObject=void 0;const s=o.added.map(a=>d(a,this.profilesHome.scheme)),h=o.removed.map(a=>d(a,this.profilesHome.scheme)),S=o.updated.map(a=>d(a,this.profilesHome.scheme));this.updateTransientProfiles(s.filter(a=>a.isTransient),h.filter(a=>a.isTransient),S.filter(a=>a.isTransient)),this._onDidChangeProfiles.fire({added:s,removed:h,updated:S,all:this.profiles})}catch{}}))}updateTransientProfiles(e,t,r){if(e.length&&this.transientProfilesObject.profiles.push(...e),t.length||r.length){const i=this.transientProfilesObject.profiles;this.transientProfilesObject.profiles=[];for(const o of i)t.some(s=>o.id===s.id)||this.transientProfilesObject.profiles.push(r.find(s=>o.id===s.id)??o)}}getStoredProfiles(){try{const e=localStorage.getItem(n.PROFILES_KEY);if(e)return v(JSON.parse(e))}catch(e){this.logService.error(e)}return[]}triggerProfilesChanges(e,t,r){super.triggerProfilesChanges(e,t,r),this.changesBroadcastChannel.postData({added:e,removed:t,updated:r})}saveStoredProfiles(e){localStorage.setItem(n.PROFILES_KEY,JSON.stringify(e))}getStoredProfileAssociations(){const e="profileAssociationsMigration";try{const t=localStorage.getItem(n.PROFILE_ASSOCIATIONS_KEY);if(t){let r=JSON.parse(t);return localStorage.getItem(e)||(r=this.migrateStoredProfileAssociations(r),this.saveStoredProfileAssociations(r),localStorage.setItem(e,"true")),r}}catch(t){this.logService.error(t)}return{}}saveStoredProfileAssociations(e){localStorage.setItem(n.PROFILE_ASSOCIATIONS_KEY,JSON.stringify(e))}};c=p([f(0,I),f(1,D),f(2,u),f(3,O)],c);export{c as BrowserUserDataProfilesService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { BroadcastDataChannel } from '../../../base/browser/broadcast.js';
+import { revive } from '../../../base/common/marshalling.js';
+import { IEnvironmentService } from '../../environment/common/environment.js';
+import { IFileService } from '../../files/common/files.js';
+import { ILogService } from '../../log/common/log.js';
+import { IUriIdentityService } from '../../uriIdentity/common/uriIdentity.js';
+import { reviveProfile, UserDataProfilesService } from '../common/userDataProfile.js';
+let BrowserUserDataProfilesService = class BrowserUserDataProfilesService extends UserDataProfilesService {
+    constructor(environmentService, fileService, uriIdentityService, logService) {
+        super(environmentService, fileService, uriIdentityService, logService);
+        this.changesBroadcastChannel = this._register(new BroadcastDataChannel(`${UserDataProfilesService.PROFILES_KEY}.changes`));
+        this._register(this.changesBroadcastChannel.onDidReceiveData(changes => {
+            try {
+                this._profilesObject = undefined;
+                const added = changes.added.map(p => reviveProfile(p, this.profilesHome.scheme));
+                const removed = changes.removed.map(p => reviveProfile(p, this.profilesHome.scheme));
+                const updated = changes.updated.map(p => reviveProfile(p, this.profilesHome.scheme));
+                this.updateTransientProfiles(added.filter(a => a.isTransient), removed.filter(a => a.isTransient), updated.filter(a => a.isTransient));
+                this._onDidChangeProfiles.fire({
+                    added,
+                    removed,
+                    updated,
+                    all: this.profiles
+                });
+            }
+            catch (error) { }
+        }));
+    }
+    updateTransientProfiles(added, removed, updated) {
+        if (added.length) {
+            this.transientProfilesObject.profiles.push(...added);
+        }
+        if (removed.length || updated.length) {
+            const allTransientProfiles = this.transientProfilesObject.profiles;
+            this.transientProfilesObject.profiles = [];
+            for (const profile of allTransientProfiles) {
+                if (removed.some(p => profile.id === p.id)) {
+                    continue;
+                }
+                this.transientProfilesObject.profiles.push(updated.find(p => profile.id === p.id) ?? profile);
+            }
+        }
+    }
+    getStoredProfiles() {
+        try {
+            const value = localStorage.getItem(UserDataProfilesService.PROFILES_KEY);
+            if (value) {
+                return revive(JSON.parse(value));
+            }
+        }
+        catch (error) {
+            this.logService.error(error);
+        }
+        return [];
+    }
+    triggerProfilesChanges(added, removed, updated) {
+        super.triggerProfilesChanges(added, removed, updated);
+        this.changesBroadcastChannel.postData({ added, removed, updated });
+    }
+    saveStoredProfiles(storedProfiles) {
+        localStorage.setItem(UserDataProfilesService.PROFILES_KEY, JSON.stringify(storedProfiles));
+    }
+    getStoredProfileAssociations() {
+        const migrateKey = 'profileAssociationsMigration';
+        try {
+            const value = localStorage.getItem(UserDataProfilesService.PROFILE_ASSOCIATIONS_KEY);
+            if (value) {
+                let associations = JSON.parse(value);
+                if (!localStorage.getItem(migrateKey)) {
+                    associations = this.migrateStoredProfileAssociations(associations);
+                    this.saveStoredProfileAssociations(associations);
+                    localStorage.setItem(migrateKey, 'true');
+                }
+                return associations;
+            }
+        }
+        catch (error) {
+            this.logService.error(error);
+        }
+        return {};
+    }
+    saveStoredProfileAssociations(storedProfileAssociations) {
+        localStorage.setItem(UserDataProfilesService.PROFILE_ASSOCIATIONS_KEY, JSON.stringify(storedProfileAssociations));
+    }
+};
+BrowserUserDataProfilesService = __decorate([
+    __param(0, IEnvironmentService),
+    __param(1, IFileService),
+    __param(2, IUriIdentityService),
+    __param(3, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], BrowserUserDataProfilesService);
+export { BrowserUserDataProfilesService };

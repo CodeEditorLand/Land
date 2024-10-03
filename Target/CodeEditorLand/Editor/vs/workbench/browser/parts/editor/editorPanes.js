@@ -1,1 +1,340 @@
-var C=Object.defineProperty;var R=Object.getOwnPropertyDescriptor;var m=(p,u,e,t)=>{for(var i=t>1?void 0:t?R(u,e):u,r=p.length-1,o;r>=0;r--)(o=p[r])&&(i=(t?o(u,e,i):o(i))||i);return t&&i&&C(u,e,i),i},d=(p,u)=>(e,t)=>u(e,t,p);import{localize as v}from"../../../../nls.js";import"../../../../base/common/actions.js";import{Emitter as f}from"../../../../base/common/event.js";import P from"../../../../base/common/severity.js";import{Disposable as T,DisposableStore as A}from"../../../../base/common/lifecycle.js";import{EditorExtensions as k,EditorInputCapabilities as g,isEditorOpenError as I}from"../../../common/editor.js";import"../../../common/editor/editorInput.js";import{Dimension as S,show as W,hide as H,isAncestor as V,getActiveElement as y,getWindowById as B,isEditableElement as L}from"../../../../base/browser/dom.js";import{Registry as M}from"../../../../platform/registry/common/platform.js";import"../../editor.js";import{IWorkbenchLayoutService as x}from"../../../services/layout/browser/layoutService.js";import"./editorPane.js";import{IInstantiationService as F}from"../../../../platform/instantiation/common/instantiation.js";import{IEditorProgressService as N,LongRunningOperation as z}from"../../../../platform/progress/common/progress.js";import{DEFAULT_EDITOR_MIN_DIMENSIONS as D,DEFAULT_EDITOR_MAX_DIMENSIONS as O}from"./editor.js";import{assertIsDefined as w}from"../../../../base/common/types.js";import{IWorkspaceTrustManagementService as G}from"../../../../platform/workspace/common/workspaceTrust.js";import{ErrorPlaceholderEditor as U,WorkspaceTrustRequiredPlaceholderEditor as q}from"./editorPlaceholder.js";import{EditorOpenSource as j}from"../../../../platform/editor/common/editor.js";import{isCancellationError as K}from"../../../../base/common/errors.js";import{toErrorMessage as b}from"../../../../base/common/errorMessage.js";import{ILogService as X}from"../../../../platform/log/common/log.js";import{IDialogService as J}from"../../../../platform/dialogs/common/dialogs.js";import"../../../../base/browser/ui/sash/sash.js";import{IHostService as Q}from"../../../services/host/browser/host.js";let E=class extends T{constructor(e,t,i,r,o,n,a,s,c,l){super();this.editorGroupParent=e;this.editorPanesParent=t;this.groupView=i;this.layoutService=r;this.instantiationService=o;this.editorProgressService=n;this.workspaceTrustService=a;this.logService=s;this.dialogService=c;this.hostService=l;this.registerListeners()}_onDidFocus=this._register(new f);onDidFocus=this._onDidFocus.event;_onDidChangeSizeConstraints=this._register(new f);onDidChangeSizeConstraints=this._onDidChangeSizeConstraints.event;get minimumWidth(){return this._activeEditorPane?.minimumWidth??D.width}get minimumHeight(){return this._activeEditorPane?.minimumHeight??D.height}get maximumWidth(){return this._activeEditorPane?.maximumWidth??O.width}get maximumHeight(){return this._activeEditorPane?.maximumHeight??O.height}_activeEditorPane=null;get activeEditorPane(){return this._activeEditorPane}editorPanes=[];mapEditorPaneToPendingSetInput=new Map;activeEditorPaneDisposables=this._register(new A);pagePosition;boundarySashes;editorOperation=this._register(new z(this.editorProgressService));editorPanesRegistry=M.as(k.EditorPane);registerListeners(){this._register(this.workspaceTrustService.onDidChangeTrust(()=>this.onDidChangeWorkspaceTrust()))}onDidChangeWorkspaceTrust(){const e=this._activeEditorPane?.input,t=this._activeEditorPane?.options;e?.hasCapability(g.RequiresTrust)&&this.groupView.openEditor(e,t)}async openEditor(e,t,i,r=Object.create(null)){try{return await this.doOpenEditor(this.getEditorPaneDescriptor(e),e,t,i,r)}catch(o){return t?.ignoreError?{error:o}:this.doShowError(o,e,t,i,r)}}async doShowError(e,t,i,r,o){this.logService.error(e);let n=!1;if(i?.source===j.USER&&(!I(e)||e.allowDialog)&&(n=await this.doShowErrorDialog(e,t)),n)return{error:e};const a={...i};return K(e)||(a.error=e),{...await this.doOpenEditor(U.DESCRIPTOR,t,a,r,o),error:e}}async doShowErrorDialog(e,t){let i=P.Error,r,o=b(e),n;I(e)&&(n=e.actions,i=e.forceSeverity??P.Error,e.forceMessage&&(r=e.message,o=void 0)),r||(r=v("editorOpenErrorDialog","Unable to open '{0}'",t.getName()));const a=[];if(n&&n.length>0)for(const h of n)a.push({label:h.label,run:()=>h});else a.push({label:v({key:"ok",comment:["&& denotes a mnemonic"]},"&&OK"),run:()=>{}});let s;a.length===1&&(s={run:()=>{c=!0}});let c=!1;const{result:l}=await this.dialogService.prompt({type:i,message:r,detail:o,buttons:a,cancelButton:s});if(l){const h=l.run();h instanceof Promise&&h.catch(_=>this.dialogService.error(b(_))),c=!0}return c}async doOpenEditor(e,t,i,r,o=Object.create(null)){const n=this.doShowEditorPane(e),a=y(),{changed:s,cancelled:c}=await this.doSetInput(n,t,i,o);return c||((!i||!i.preserveFocus)&&this.shouldRestoreFocus(a)?n.focus():r?.preserveWindowOrder||this.hostService.moveTop(B(this.groupView.windowId,!0).window)),{pane:n,changed:s,cancelled:c}}shouldRestoreFocus(e){if(!this.layoutService.isRestored()||!e)return!0;const t=y();return!!(!t||t===e.ownerDocument.body||e===t||!L(t)||V(t,this.editorGroupParent))}getEditorPaneDescriptor(e){return e.hasCapability(g.RequiresTrust)&&!this.workspaceTrustService.isWorkspaceTrusted()?q.DESCRIPTOR:w(this.editorPanesRegistry.getEditorPane(e))}doShowEditorPane(e){if(this._activeEditorPane&&e.describes(this._activeEditorPane))return this._activeEditorPane;this.doHideActiveEditorPane();const t=this.doCreateEditorPane(e);this.doSetActiveEditorPane(t);const i=w(t.getContainer());return this.editorPanesParent.appendChild(i),W(i),t.setVisible(!0),this.pagePosition&&t.layout(new S(this.pagePosition.width,this.pagePosition.height),{top:this.pagePosition.top,left:this.pagePosition.left}),this.boundarySashes&&t.setBoundarySashes(this.boundarySashes),t}doCreateEditorPane(e){const t=this.doInstantiateEditorPane(e);if(!t.getContainer()){const i=document.createElement("div");i.classList.add("editor-instance"),this.editorPanesParent.appendChild(i),t.create(i)}return t}doInstantiateEditorPane(e){const t=this.editorPanes.find(r=>e.describes(r));if(t)return t;const i=this._register(e.instantiate(this.instantiationService,this.groupView));return this.editorPanes.push(i),i}doSetActiveEditorPane(e){this._activeEditorPane=e,this.activeEditorPaneDisposables.clear(),e&&(this.activeEditorPaneDisposables.add(e.onDidChangeSizeConstraints(t=>this._onDidChangeSizeConstraints.fire(t))),this.activeEditorPaneDisposables.add(e.onDidFocus(()=>this._onDidFocus.fire()))),this._onDidChangeSizeConstraints.fire(void 0)}async doSetInput(e,t,i,r){let o=e.input?.matches(t);if(o&&!i?.forceReload)return this.mapEditorPaneToPendingSetInput.has(e)&&await this.mapEditorPaneToPendingSetInput.get(e),o=e.input?.matches(t),o&&e.setOptions(i),{changed:!1,cancelled:!o};const n=this.editorOperation.start(this.layoutService.isRestored()?800:3200);let a=!1;try{e.clearInput();const s=e.setInput(t,i,r,n.token);this.mapEditorPaneToPendingSetInput.set(e,s),await s,n.isCurrent()||(a=!0)}catch(s){if(!n.isCurrent())a=!0;else throw s}finally{n.isCurrent()&&this.mapEditorPaneToPendingSetInput.delete(e),n.stop()}return{changed:!o,cancelled:a}}doHideActiveEditorPane(){if(!this._activeEditorPane)return;this.editorOperation.stop(),this.safeRun(()=>this._activeEditorPane?.clearInput()),this.safeRun(()=>this._activeEditorPane?.setVisible(!1)),this.mapEditorPaneToPendingSetInput.delete(this._activeEditorPane);const e=this._activeEditorPane.getContainer();e&&(e.remove(),H(e)),this.doSetActiveEditorPane(null)}closeEditor(e){this._activeEditorPane?.input&&e.matches(this._activeEditorPane.input)&&this.doHideActiveEditorPane()}setVisible(e){this.safeRun(()=>this._activeEditorPane?.setVisible(e))}layout(e){this.pagePosition=e,this.safeRun(()=>this._activeEditorPane?.layout(new S(e.width,e.height),e))}setBoundarySashes(e){this.boundarySashes=e,this.safeRun(()=>this._activeEditorPane?.setBoundarySashes(e))}safeRun(e){try{e()}catch(t){this.logService.error(t)}}};E=m([d(3,x),d(4,F),d(5,N),d(6,G),d(7,X),d(8,J),d(9,Q)],E);export{E as EditorPanes};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { localize } from '../../../../nls.js';
+import { Emitter } from '../../../../base/common/event.js';
+import Severity from '../../../../base/common/severity.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { EditorExtensions, isEditorOpenError } from '../../../common/editor.js';
+import { Dimension, show, hide, isAncestor, getActiveElement, getWindowById, isEditableElement } from '../../../../base/browser/dom.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IEditorProgressService, LongRunningOperation } from '../../../../platform/progress/common/progress.js';
+import { DEFAULT_EDITOR_MIN_DIMENSIONS, DEFAULT_EDITOR_MAX_DIMENSIONS } from './editor.js';
+import { assertIsDefined } from '../../../../base/common/types.js';
+import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
+import { ErrorPlaceholderEditor, WorkspaceTrustRequiredPlaceholderEditor } from './editorPlaceholder.js';
+import { EditorOpenSource } from '../../../../platform/editor/common/editor.js';
+import { isCancellationError } from '../../../../base/common/errors.js';
+import { toErrorMessage } from '../../../../base/common/errorMessage.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+let EditorPanes = class EditorPanes extends Disposable {
+    get minimumWidth() { return this._activeEditorPane?.minimumWidth ?? DEFAULT_EDITOR_MIN_DIMENSIONS.width; }
+    get minimumHeight() { return this._activeEditorPane?.minimumHeight ?? DEFAULT_EDITOR_MIN_DIMENSIONS.height; }
+    get maximumWidth() { return this._activeEditorPane?.maximumWidth ?? DEFAULT_EDITOR_MAX_DIMENSIONS.width; }
+    get maximumHeight() { return this._activeEditorPane?.maximumHeight ?? DEFAULT_EDITOR_MAX_DIMENSIONS.height; }
+    get activeEditorPane() { return this._activeEditorPane; }
+    constructor(editorGroupParent, editorPanesParent, groupView, layoutService, instantiationService, editorProgressService, workspaceTrustService, logService, dialogService, hostService) {
+        super();
+        this.editorGroupParent = editorGroupParent;
+        this.editorPanesParent = editorPanesParent;
+        this.groupView = groupView;
+        this.layoutService = layoutService;
+        this.instantiationService = instantiationService;
+        this.editorProgressService = editorProgressService;
+        this.workspaceTrustService = workspaceTrustService;
+        this.logService = logService;
+        this.dialogService = dialogService;
+        this.hostService = hostService;
+        this._onDidFocus = this._register(new Emitter());
+        this.onDidFocus = this._onDidFocus.event;
+        this._onDidChangeSizeConstraints = this._register(new Emitter());
+        this.onDidChangeSizeConstraints = this._onDidChangeSizeConstraints.event;
+        this._activeEditorPane = null;
+        this.editorPanes = [];
+        this.mapEditorPaneToPendingSetInput = new Map();
+        this.activeEditorPaneDisposables = this._register(new DisposableStore());
+        this.editorOperation = this._register(new LongRunningOperation(this.editorProgressService));
+        this.editorPanesRegistry = Registry.as(EditorExtensions.EditorPane);
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.workspaceTrustService.onDidChangeTrust(() => this.onDidChangeWorkspaceTrust()));
+    }
+    onDidChangeWorkspaceTrust() {
+        const editor = this._activeEditorPane?.input;
+        const options = this._activeEditorPane?.options;
+        if (editor?.hasCapability(16)) {
+            this.groupView.openEditor(editor, options);
+        }
+    }
+    async openEditor(editor, options, internalOptions, context = Object.create(null)) {
+        try {
+            return await this.doOpenEditor(this.getEditorPaneDescriptor(editor), editor, options, internalOptions, context);
+        }
+        catch (error) {
+            if (options?.ignoreError) {
+                return { error };
+            }
+            return this.doShowError(error, editor, options, internalOptions, context);
+        }
+    }
+    async doShowError(error, editor, options, internalOptions, context) {
+        this.logService.error(error);
+        let errorHandled = false;
+        if (options?.source === EditorOpenSource.USER && (!isEditorOpenError(error) || error.allowDialog)) {
+            errorHandled = await this.doShowErrorDialog(error, editor);
+        }
+        if (errorHandled) {
+            return { error };
+        }
+        const editorPlaceholderOptions = { ...options };
+        if (!isCancellationError(error)) {
+            editorPlaceholderOptions.error = error;
+        }
+        return {
+            ...(await this.doOpenEditor(ErrorPlaceholderEditor.DESCRIPTOR, editor, editorPlaceholderOptions, internalOptions, context)),
+            error
+        };
+    }
+    async doShowErrorDialog(error, editor) {
+        let severity = Severity.Error;
+        let message = undefined;
+        let detail = toErrorMessage(error);
+        let errorActions = undefined;
+        if (isEditorOpenError(error)) {
+            errorActions = error.actions;
+            severity = error.forceSeverity ?? Severity.Error;
+            if (error.forceMessage) {
+                message = error.message;
+                detail = undefined;
+            }
+        }
+        if (!message) {
+            message = localize('editorOpenErrorDialog', "Unable to open '{0}'", editor.getName());
+        }
+        const buttons = [];
+        if (errorActions && errorActions.length > 0) {
+            for (const errorAction of errorActions) {
+                buttons.push({
+                    label: errorAction.label,
+                    run: () => errorAction
+                });
+            }
+        }
+        else {
+            buttons.push({
+                label: localize({ key: 'ok', comment: ['&& denotes a mnemonic'] }, "&&OK"),
+                run: () => undefined
+            });
+        }
+        let cancelButton = undefined;
+        if (buttons.length === 1) {
+            cancelButton = {
+                run: () => {
+                    errorHandled = true;
+                    return undefined;
+                }
+            };
+        }
+        let errorHandled = false;
+        const { result } = await this.dialogService.prompt({
+            type: severity,
+            message,
+            detail,
+            buttons,
+            cancelButton
+        });
+        if (result) {
+            const errorActionResult = result.run();
+            if (errorActionResult instanceof Promise) {
+                errorActionResult.catch(error => this.dialogService.error(toErrorMessage(error)));
+            }
+            errorHandled = true;
+        }
+        return errorHandled;
+    }
+    async doOpenEditor(descriptor, editor, options, internalOptions, context = Object.create(null)) {
+        const pane = this.doShowEditorPane(descriptor);
+        const activeElement = getActiveElement();
+        const { changed, cancelled } = await this.doSetInput(pane, editor, options, context);
+        if (!cancelled) {
+            const focus = !options || !options.preserveFocus;
+            if (focus && this.shouldRestoreFocus(activeElement)) {
+                pane.focus();
+            }
+            else if (!internalOptions?.preserveWindowOrder) {
+                this.hostService.moveTop(getWindowById(this.groupView.windowId, true).window);
+            }
+        }
+        return { pane, changed, cancelled };
+    }
+    shouldRestoreFocus(expectedActiveElement) {
+        if (!this.layoutService.isRestored()) {
+            return true;
+        }
+        if (!expectedActiveElement) {
+            return true;
+        }
+        const activeElement = getActiveElement();
+        if (!activeElement || activeElement === expectedActiveElement.ownerDocument.body) {
+            return true;
+        }
+        const same = expectedActiveElement === activeElement;
+        if (same) {
+            return true;
+        }
+        if (!isEditableElement(activeElement)) {
+            return true;
+        }
+        if (isAncestor(activeElement, this.editorGroupParent)) {
+            return true;
+        }
+        return false;
+    }
+    getEditorPaneDescriptor(editor) {
+        if (editor.hasCapability(16) && !this.workspaceTrustService.isWorkspaceTrusted()) {
+            return WorkspaceTrustRequiredPlaceholderEditor.DESCRIPTOR;
+        }
+        return assertIsDefined(this.editorPanesRegistry.getEditorPane(editor));
+    }
+    doShowEditorPane(descriptor) {
+        if (this._activeEditorPane && descriptor.describes(this._activeEditorPane)) {
+            return this._activeEditorPane;
+        }
+        this.doHideActiveEditorPane();
+        const editorPane = this.doCreateEditorPane(descriptor);
+        this.doSetActiveEditorPane(editorPane);
+        const container = assertIsDefined(editorPane.getContainer());
+        this.editorPanesParent.appendChild(container);
+        show(container);
+        editorPane.setVisible(true);
+        if (this.pagePosition) {
+            editorPane.layout(new Dimension(this.pagePosition.width, this.pagePosition.height), { top: this.pagePosition.top, left: this.pagePosition.left });
+        }
+        if (this.boundarySashes) {
+            editorPane.setBoundarySashes(this.boundarySashes);
+        }
+        return editorPane;
+    }
+    doCreateEditorPane(descriptor) {
+        const editorPane = this.doInstantiateEditorPane(descriptor);
+        if (!editorPane.getContainer()) {
+            const editorPaneContainer = document.createElement('div');
+            editorPaneContainer.classList.add('editor-instance');
+            this.editorPanesParent.appendChild(editorPaneContainer);
+            editorPane.create(editorPaneContainer);
+        }
+        return editorPane;
+    }
+    doInstantiateEditorPane(descriptor) {
+        const existingEditorPane = this.editorPanes.find(editorPane => descriptor.describes(editorPane));
+        if (existingEditorPane) {
+            return existingEditorPane;
+        }
+        const editorPane = this._register(descriptor.instantiate(this.instantiationService, this.groupView));
+        this.editorPanes.push(editorPane);
+        return editorPane;
+    }
+    doSetActiveEditorPane(editorPane) {
+        this._activeEditorPane = editorPane;
+        this.activeEditorPaneDisposables.clear();
+        if (editorPane) {
+            this.activeEditorPaneDisposables.add(editorPane.onDidChangeSizeConstraints(e => this._onDidChangeSizeConstraints.fire(e)));
+            this.activeEditorPaneDisposables.add(editorPane.onDidFocus(() => this._onDidFocus.fire()));
+        }
+        this._onDidChangeSizeConstraints.fire(undefined);
+    }
+    async doSetInput(editorPane, editor, options, context) {
+        let inputMatches = editorPane.input?.matches(editor);
+        if (inputMatches && !options?.forceReload) {
+            if (this.mapEditorPaneToPendingSetInput.has(editorPane)) {
+                await this.mapEditorPaneToPendingSetInput.get(editorPane);
+            }
+            inputMatches = editorPane.input?.matches(editor);
+            if (inputMatches) {
+                editorPane.setOptions(options);
+            }
+            return { changed: false, cancelled: !inputMatches };
+        }
+        const operation = this.editorOperation.start(this.layoutService.isRestored() ? 800 : 3200);
+        let cancelled = false;
+        try {
+            editorPane.clearInput();
+            const pendingSetInput = editorPane.setInput(editor, options, context, operation.token);
+            this.mapEditorPaneToPendingSetInput.set(editorPane, pendingSetInput);
+            await pendingSetInput;
+            if (!operation.isCurrent()) {
+                cancelled = true;
+            }
+        }
+        catch (error) {
+            if (!operation.isCurrent()) {
+                cancelled = true;
+            }
+            else {
+                throw error;
+            }
+        }
+        finally {
+            if (operation.isCurrent()) {
+                this.mapEditorPaneToPendingSetInput.delete(editorPane);
+            }
+            operation.stop();
+        }
+        return { changed: !inputMatches, cancelled };
+    }
+    doHideActiveEditorPane() {
+        if (!this._activeEditorPane) {
+            return;
+        }
+        this.editorOperation.stop();
+        this.safeRun(() => this._activeEditorPane?.clearInput());
+        this.safeRun(() => this._activeEditorPane?.setVisible(false));
+        this.mapEditorPaneToPendingSetInput.delete(this._activeEditorPane);
+        const editorPaneContainer = this._activeEditorPane.getContainer();
+        if (editorPaneContainer) {
+            editorPaneContainer.remove();
+            hide(editorPaneContainer);
+        }
+        this.doSetActiveEditorPane(null);
+    }
+    closeEditor(editor) {
+        if (this._activeEditorPane?.input && editor.matches(this._activeEditorPane.input)) {
+            this.doHideActiveEditorPane();
+        }
+    }
+    setVisible(visible) {
+        this.safeRun(() => this._activeEditorPane?.setVisible(visible));
+    }
+    layout(pagePosition) {
+        this.pagePosition = pagePosition;
+        this.safeRun(() => this._activeEditorPane?.layout(new Dimension(pagePosition.width, pagePosition.height), pagePosition));
+    }
+    setBoundarySashes(sashes) {
+        this.boundarySashes = sashes;
+        this.safeRun(() => this._activeEditorPane?.setBoundarySashes(sashes));
+    }
+    safeRun(fn) {
+        try {
+            fn();
+        }
+        catch (error) {
+            this.logService.error(error);
+        }
+    }
+};
+EditorPanes = __decorate([
+    __param(3, IWorkbenchLayoutService),
+    __param(4, IInstantiationService),
+    __param(5, IEditorProgressService),
+    __param(6, IWorkspaceTrustManagementService),
+    __param(7, ILogService),
+    __param(8, IDialogService),
+    __param(9, IHostService),
+    __metadata("design:paramtypes", [HTMLElement,
+        HTMLElement, Object, Object, Object, Object, Object, Object, Object, Object])
+], EditorPanes);
+export { EditorPanes };

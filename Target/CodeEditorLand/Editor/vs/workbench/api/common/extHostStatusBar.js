@@ -1,1 +1,247 @@
-import{StatusBarAlignment as r,Disposable as u,ThemeColor as l,asStatusBarItemIdentifier as _}from"./extHostTypes.js";import{MainContext as g}from"./extHost.protocol.js";import{localize as h}from"../../../nls.js";import"./extHostCommands.js";import{DisposableStore as p}from"../../../base/common/lifecycle.js";import"../../../platform/extensions/common/extensions.js";import{MarkdownString as f}from"./extHostTypeConverters.js";import{isNumber as b}from"../../../base/common/types.js";class a{static ID_GEN=0;static ALLOWED_BACKGROUND_COLORS=new Map([["statusBarItem.errorBackground",new l("statusBarItem.errorForeground")],["statusBarItem.warningBackground",new l("statusBarItem.warningForeground")]]);#t;#e;_entryId;_extension;_id;_alignment;_priority;_disposed=!1;_visible;_text="";_tooltip;_name;_color;_backgroundColor;_latestCommandRegistration;_staleCommandRegistrations=new p;_command;_timeoutHandle;_accessibilityInformation;constructor(t,e,i,s,o,m=r.Left,d){if(this.#t=t,this.#e=e,o&&s){this._entryId=_(s.identifier,o);const n=i.get(this._entryId);n&&(m=n.alignLeft?r.Left:r.Right,d=n.priority,this._visible=!0,this.name=n.name,this.text=n.text,this.tooltip=n.tooltip,this.command=n.command,this.accessibilityInformation=n.accessibilityInformation)}else this._entryId=String(a.ID_GEN++);this._extension=s,this._id=o,this._alignment=m,this._priority=this.validatePriority(d)}validatePriority(t){if(b(t))return t===Number.POSITIVE_INFINITY?Number.MAX_VALUE:t===Number.NEGATIVE_INFINITY?-Number.MAX_VALUE:t}get id(){return this._id??this._extension.identifier.value}get alignment(){return this._alignment}get priority(){return this._priority}get text(){return this._text}get name(){return this._name}get tooltip(){return this._tooltip}get color(){return this._color}get backgroundColor(){return this._backgroundColor}get command(){return this._command?.fromApi}get accessibilityInformation(){return this._accessibilityInformation}set text(t){this._text=t,this.update()}set name(t){this._name=t,this.update()}set tooltip(t){this._tooltip=t,this.update()}set color(t){this._color=t,this.update()}set backgroundColor(t){t&&!a.ALLOWED_BACKGROUND_COLORS.has(t.id)&&(t=void 0),this._backgroundColor=t,this.update()}set command(t){this._command?.fromApi!==t&&(this._latestCommandRegistration&&this._staleCommandRegistrations.add(this._latestCommandRegistration),this._latestCommandRegistration=new p,typeof t=="string"?this._command={fromApi:t,internal:this.#e.toInternal({title:"",command:t},this._latestCommandRegistration)}:t?this._command={fromApi:t,internal:this.#e.toInternal(t,this._latestCommandRegistration)}:this._command=void 0,this.update())}set accessibilityInformation(t){this._accessibilityInformation=t,this.update()}show(){this._visible=!0,this.update()}hide(){clearTimeout(this._timeoutHandle),this._visible=!1,this.#t.$disposeEntry(this._entryId)}update(){this._disposed||!this._visible||(clearTimeout(this._timeoutHandle),this._timeoutHandle=setTimeout(()=>{this._timeoutHandle=void 0;let t;this._extension?this._id?t=`${this._extension.identifier.value}.${this._id}`:t=this._extension.identifier.value:t=this._id;let e;this._name?e=this._name:e=h("extensionLabel","{0} (Extension)",this._extension.displayName||this._extension.name);let i=this._color;this._backgroundColor&&(i=a.ALLOWED_BACKGROUND_COLORS.get(this._backgroundColor.id));const s=f.fromStrict(this._tooltip);this.#t.$setEntry(this._entryId,t,this._extension?.identifier.value,e,this._text,s,this._command?.internal,i,this._backgroundColor,this._alignment===r.Left,this._priority,this._accessibilityInformation),this._staleCommandRegistrations.clear()},0))}dispose(){this.hide(),this._disposed=!0}}class v{_item;_messages=[];constructor(t){this._item=t.createStatusBarEntry(void 0,"status.extensionMessage",r.Left,Number.MIN_VALUE),this._item.name=h("status.extensionMessage","Extension Status")}dispose(){this._messages.length=0,this._item.dispose()}setMessage(t){const e={message:t};return this._messages.unshift(e),this._update(),new u(()=>{const i=this._messages.indexOf(e);i>=0&&(this._messages.splice(i,1),this._update())})}_update(){this._messages.length>0?(this._item.text=this._messages[0].message,this._item.show()):this._item.hide()}}class k{_proxy;_commands;_statusMessage;_existingItems=new Map;constructor(t,e){this._proxy=t.getProxy(g.MainThreadStatusBar),this._commands=e,this._statusMessage=new v(this)}$acceptStaticEntries(t){for(const e of t)this._existingItems.set(e.entryId,e)}createStatusBarEntry(t,e,i,s){return new a(this._proxy,this._commands,this._existingItems,t,e,i,s)}setStatusBarMessage(t,e){const i=this._statusMessage.setMessage(t);let s;return typeof e=="number"?s=setTimeout(()=>i.dispose(),e):typeof e<"u"&&e.then(()=>i.dispose(),()=>i.dispose()),new u(()=>{i.dispose(),clearTimeout(s)})}}export{k as ExtHostStatusBar,a as ExtHostStatusBarEntry};
+import { StatusBarAlignment as ExtHostStatusBarAlignment, Disposable, ThemeColor, asStatusBarItemIdentifier } from './extHostTypes.js';
+import { MainContext } from './extHost.protocol.js';
+import { localize } from '../../../nls.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { MarkdownString } from './extHostTypeConverters.js';
+import { isNumber } from '../../../base/common/types.js';
+export class ExtHostStatusBarEntry {
+    static { this.ID_GEN = 0; }
+    static { this.ALLOWED_BACKGROUND_COLORS = new Map([
+        ['statusBarItem.errorBackground', new ThemeColor('statusBarItem.errorForeground')],
+        ['statusBarItem.warningBackground', new ThemeColor('statusBarItem.warningForeground')]
+    ]); }
+    #proxy;
+    #commands;
+    constructor(proxy, commands, staticItems, extension, id, alignment = ExtHostStatusBarAlignment.Left, priority) {
+        this._disposed = false;
+        this._text = '';
+        this._staleCommandRegistrations = new DisposableStore();
+        this.#proxy = proxy;
+        this.#commands = commands;
+        if (id && extension) {
+            this._entryId = asStatusBarItemIdentifier(extension.identifier, id);
+            const item = staticItems.get(this._entryId);
+            if (item) {
+                alignment = item.alignLeft ? ExtHostStatusBarAlignment.Left : ExtHostStatusBarAlignment.Right;
+                priority = item.priority;
+                this._visible = true;
+                this.name = item.name;
+                this.text = item.text;
+                this.tooltip = item.tooltip;
+                this.command = item.command;
+                this.accessibilityInformation = item.accessibilityInformation;
+            }
+        }
+        else {
+            this._entryId = String(ExtHostStatusBarEntry.ID_GEN++);
+        }
+        this._extension = extension;
+        this._id = id;
+        this._alignment = alignment;
+        this._priority = this.validatePriority(priority);
+    }
+    validatePriority(priority) {
+        if (!isNumber(priority)) {
+            return undefined;
+        }
+        if (priority === Number.POSITIVE_INFINITY) {
+            return Number.MAX_VALUE;
+        }
+        if (priority === Number.NEGATIVE_INFINITY) {
+            return -Number.MAX_VALUE;
+        }
+        return priority;
+    }
+    get id() {
+        return this._id ?? this._extension.identifier.value;
+    }
+    get alignment() {
+        return this._alignment;
+    }
+    get priority() {
+        return this._priority;
+    }
+    get text() {
+        return this._text;
+    }
+    get name() {
+        return this._name;
+    }
+    get tooltip() {
+        return this._tooltip;
+    }
+    get color() {
+        return this._color;
+    }
+    get backgroundColor() {
+        return this._backgroundColor;
+    }
+    get command() {
+        return this._command?.fromApi;
+    }
+    get accessibilityInformation() {
+        return this._accessibilityInformation;
+    }
+    set text(text) {
+        this._text = text;
+        this.update();
+    }
+    set name(name) {
+        this._name = name;
+        this.update();
+    }
+    set tooltip(tooltip) {
+        this._tooltip = tooltip;
+        this.update();
+    }
+    set color(color) {
+        this._color = color;
+        this.update();
+    }
+    set backgroundColor(color) {
+        if (color && !ExtHostStatusBarEntry.ALLOWED_BACKGROUND_COLORS.has(color.id)) {
+            color = undefined;
+        }
+        this._backgroundColor = color;
+        this.update();
+    }
+    set command(command) {
+        if (this._command?.fromApi === command) {
+            return;
+        }
+        if (this._latestCommandRegistration) {
+            this._staleCommandRegistrations.add(this._latestCommandRegistration);
+        }
+        this._latestCommandRegistration = new DisposableStore();
+        if (typeof command === 'string') {
+            this._command = {
+                fromApi: command,
+                internal: this.#commands.toInternal({ title: '', command }, this._latestCommandRegistration),
+            };
+        }
+        else if (command) {
+            this._command = {
+                fromApi: command,
+                internal: this.#commands.toInternal(command, this._latestCommandRegistration),
+            };
+        }
+        else {
+            this._command = undefined;
+        }
+        this.update();
+    }
+    set accessibilityInformation(accessibilityInformation) {
+        this._accessibilityInformation = accessibilityInformation;
+        this.update();
+    }
+    show() {
+        this._visible = true;
+        this.update();
+    }
+    hide() {
+        clearTimeout(this._timeoutHandle);
+        this._visible = false;
+        this.#proxy.$disposeEntry(this._entryId);
+    }
+    update() {
+        if (this._disposed || !this._visible) {
+            return;
+        }
+        clearTimeout(this._timeoutHandle);
+        this._timeoutHandle = setTimeout(() => {
+            this._timeoutHandle = undefined;
+            let id;
+            if (this._extension) {
+                if (this._id) {
+                    id = `${this._extension.identifier.value}.${this._id}`;
+                }
+                else {
+                    id = this._extension.identifier.value;
+                }
+            }
+            else {
+                id = this._id;
+            }
+            let name;
+            if (this._name) {
+                name = this._name;
+            }
+            else {
+                name = localize('extensionLabel', "{0} (Extension)", this._extension.displayName || this._extension.name);
+            }
+            let color = this._color;
+            if (this._backgroundColor) {
+                color = ExtHostStatusBarEntry.ALLOWED_BACKGROUND_COLORS.get(this._backgroundColor.id);
+            }
+            const tooltip = MarkdownString.fromStrict(this._tooltip);
+            this.#proxy.$setEntry(this._entryId, id, this._extension?.identifier.value, name, this._text, tooltip, this._command?.internal, color, this._backgroundColor, this._alignment === ExtHostStatusBarAlignment.Left, this._priority, this._accessibilityInformation);
+            this._staleCommandRegistrations.clear();
+        }, 0);
+    }
+    dispose() {
+        this.hide();
+        this._disposed = true;
+    }
+}
+class StatusBarMessage {
+    constructor(statusBar) {
+        this._messages = [];
+        this._item = statusBar.createStatusBarEntry(undefined, 'status.extensionMessage', ExtHostStatusBarAlignment.Left, Number.MIN_VALUE);
+        this._item.name = localize('status.extensionMessage', "Extension Status");
+    }
+    dispose() {
+        this._messages.length = 0;
+        this._item.dispose();
+    }
+    setMessage(message) {
+        const data = { message };
+        this._messages.unshift(data);
+        this._update();
+        return new Disposable(() => {
+            const idx = this._messages.indexOf(data);
+            if (idx >= 0) {
+                this._messages.splice(idx, 1);
+                this._update();
+            }
+        });
+    }
+    _update() {
+        if (this._messages.length > 0) {
+            this._item.text = this._messages[0].message;
+            this._item.show();
+        }
+        else {
+            this._item.hide();
+        }
+    }
+}
+export class ExtHostStatusBar {
+    constructor(mainContext, commands) {
+        this._existingItems = new Map();
+        this._proxy = mainContext.getProxy(MainContext.MainThreadStatusBar);
+        this._commands = commands;
+        this._statusMessage = new StatusBarMessage(this);
+    }
+    $acceptStaticEntries(added) {
+        for (const item of added) {
+            this._existingItems.set(item.entryId, item);
+        }
+    }
+    createStatusBarEntry(extension, id, alignment, priority) {
+        return new ExtHostStatusBarEntry(this._proxy, this._commands, this._existingItems, extension, id, alignment, priority);
+    }
+    setStatusBarMessage(text, timeoutOrThenable) {
+        const d = this._statusMessage.setMessage(text);
+        let handle;
+        if (typeof timeoutOrThenable === 'number') {
+            handle = setTimeout(() => d.dispose(), timeoutOrThenable);
+        }
+        else if (typeof timeoutOrThenable !== 'undefined') {
+            timeoutOrThenable.then(() => d.dispose(), () => d.dispose());
+        }
+        return new Disposable(() => {
+            d.dispose();
+            clearTimeout(handle);
+        });
+    }
+}

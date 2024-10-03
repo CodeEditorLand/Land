@@ -1,27 +1,458 @@
-import"./media/processExplorer.css";import"../../../base/browser/ui/codicons/codiconStyles.js";import{localize as d}from"../../../nls.js";import{$ as m,append as l,createStyleSheet as v}from"../../../base/browser/dom.js";import"../../../base/browser/ui/list/list.js";import{DataTree as T}from"../../../base/browser/ui/tree/dataTree.js";import"../../../base/browser/ui/tree/tree.js";import{RunOnceScheduler as b}from"../../../base/common/async.js";import"../../../base/common/processes.js";import"../../../base/parts/contextmenu/common/contextmenu.js";import{popup as w}from"../../../base/parts/contextmenu/electron-sandbox/contextmenu.js";import{ipcRenderer as p}from"../../../base/parts/sandbox/electron-sandbox/globals.js";import{isRemoteDiagnosticError as h}from"../../../platform/diagnostics/common/diagnostics.js";import{ByteSize as x}from"../../../platform/files/common/files.js";import{ElectronIPCMainProcessService as S}from"../../../platform/ipc/electron-sandbox/mainProcessService.js";import"../../../platform/issue/common/issue.js";import"../../../platform/native/common/native.js";import{NativeHostService as E}from"../../../platform/native/common/nativeHostService.js";import{getIconsStyleSheet as C}from"../../../platform/theme/browser/iconsStyleSheet.js";import{applyZoom as D,zoomIn as R,zoomOut as y}from"../../../platform/window/electron-sandbox/window.js";import{StandardKeyboardEvent as M}from"../../../base/browser/keyboardEvent.js";import{KeyCode as k}from"../../../base/common/keyCodes.js";import{mainWindow as n}from"../../../base/browser/window.js";const g=/\s--inspect(?:-brk|port)?=(?<port>\d+)?/,H=/\s--inspect-port=(?<port>\d+)/;class N{getHeight(e){return 22}getTemplateId(e){return f(e)?"process":P(e)?"machine":h(e)?"error":I(e)?"header":""}}class L{hasChildren(e){return h(e)?!1:f(e)?!!e.children?.length:!0}getChildren(e){return f(e)?e.children?e.children:[]:h(e)?[]:I(e)?e.processRoots.length>1?e.processRoots:[e.processRoots[0].rootProcess]:P(e)?[e.rootProcess]:[e.processes]}}class ${templateId="header";renderTemplate(e){const r=l(e,m(".row")),o=l(r,m(".nameLabel")),a=l(r,m(".cpu")),t=l(r,m(".memory")),i=l(r,m(".pid"));return{name:o,CPU:a,memory:t,PID:i}}renderElement(e,r,o,a){o.name.textContent=d("name","Process Name"),o.CPU.textContent=d("cpu","CPU (%)"),o.PID.textContent=d("pid","PID"),o.memory.textContent=d("memory","Memory (MB)")}disposeTemplate(e){}}class B{templateId="machine";renderTemplate(e){const r=Object.create(null),o=l(e,m(".row"));return r.name=l(o,m(".nameLabel")),r}renderElement(e,r,o,a){o.name.textContent=e.element.name}disposeTemplate(e){}}class F{templateId="error";renderTemplate(e){const r=Object.create(null),o=l(e,m(".row"));return r.name=l(o,m(".nameLabel")),r}renderElement(e,r,o,a){o.name.textContent=e.element.errorMessage}disposeTemplate(e){}}class A{constructor(e,r,o){this.platform=e;this.totalMem=r;this.mapPidToName=o}templateId="process";renderTemplate(e){const r=l(e,m(".row")),o=l(r,m(".nameLabel")),a=l(r,m(".cpu")),t=l(r,m(".memory")),i=l(r,m(".pid"));return{name:o,CPU:a,PID:i,memory:t}}renderElement(e,r,o,a){const{element:t}=e,i=t.pid.toFixed(0);let c=t.name;this.mapPidToName.has(t.pid)&&(c=this.mapPidToName.get(t.pid)),o.name.textContent=c,o.name.title=t.cmd,o.CPU.textContent=t.load.toFixed(0),o.PID.textContent=i,o.PID.parentElement.id=`pid-${i}`;const u=this.platform==="win32"?t.mem:this.totalMem*(t.mem/100);o.memory.textContent=(u/x.MB).toFixed(0)}disposeTemplate(e){}}function P(s){return!!s.name&&!!s.rootProcess}function I(s){return!!s.processRoots}function f(s){return!!s.pid}class K{constructor(e,r){this.data=r;const o=new S(e);this.nativeHostService=new E(e,o),this.applyStyles(r.styles),this.setEventHandlers(r),p.on("vscode:pidToNameResponse",(a,t)=>{this.mapPidToName.clear();for(const[i,c]of t)this.mapPidToName.set(i,c)}),p.on("vscode:listProcessesResponse",async(a,t)=>{t.forEach((i,c)=>{f(i.rootProcess)&&(i.rootProcess.name=c===0?`${this.data.applicationName} main`:"remote agent")}),this.tree?(this.tree.setInput({processes:{processRoots:t}}),this.tree.layout(n.innerHeight,n.innerWidth)):await this.createProcessTree(t),this.requestProcessList(0)}),this.lastRequestTime=Date.now(),p.send("vscode:pidToNameRequest"),p.send("vscode:listProcesses")}lastRequestTime;mapPidToName=new Map;nativeHostService;tree;setEventHandlers(e){n.document.onkeydown=r=>{const o=e.platform==="darwin"?r.metaKey:r.ctrlKey;o&&r.keyCode===87&&(r.stopPropagation(),r.preventDefault(),p.send("vscode:closeProcessExplorer")),o&&r.keyCode===187&&R(n),o&&r.keyCode===189&&y(n)}}async createProcessTree(e){const r=n.document.getElementById("process-list");if(!r)return;const{totalmem:o}=await this.nativeHostService.getOSStatistics(),a=[new A(this.data.platform,o,this.mapPidToName),new $,new B,new F];this.tree=new T("processExplorer",r,new N,a,new L,{identityProvider:{getId:t=>f(t)?t.pid.toString():h(t)?t.hostName:I(t)?"processes":P(t)?t.name:"header"}}),this.tree.setInput({processes:{processRoots:e}}),this.tree.layout(n.innerHeight,n.innerWidth),this.tree.onKeyDown(t=>{const i=new M(t);if(i.keyCode===k.KeyE&&i.altKey){const c=this.getSelectedPids();Promise.all(c.map(u=>this.nativeHostService.killProcess(u,"SIGTERM"))).then(()=>this.tree?.refresh())}}),this.tree.onContextMenu(t=>{f(t.element)&&this.showContextMenu(t.element,!0)}),r.style.height=`${n.innerHeight}px`,n.addEventListener("resize",()=>{r.style.height=`${n.innerHeight}px`,this.tree?.layout(n.innerHeight,n.innerWidth)})}isDebuggable(e){const r=g.exec(e);return r&&r.groups.port!=="0"||e.indexOf("node ")>=0||e.indexOf("node.exe")>=0}attachTo(e){const r={type:"node",request:"attach",name:`process ${e.pid}`};let o=g.exec(e.cmd);o?r.port=Number(o.groups.port):r.processId=String(e.pid),o=H.exec(e.cmd),o&&(r.port=Number(o.groups.port)),p.send("vscode:workbenchCommand",{id:"debug.startFromConfig",from:"processExplorer",args:[r]})}applyStyles(e){const r=v(),o=[];e.listFocusBackground&&(o.push(`.monaco-list:focus .monaco-list-row.focused { background-color: ${e.listFocusBackground}; }`),o.push(`.monaco-list:focus .monaco-list-row.focused:hover { background-color: ${e.listFocusBackground}; }`)),e.listFocusForeground&&o.push(`.monaco-list:focus .monaco-list-row.focused { color: ${e.listFocusForeground}; }`),e.listActiveSelectionBackground&&(o.push(`.monaco-list:focus .monaco-list-row.selected { background-color: ${e.listActiveSelectionBackground}; }`),o.push(`.monaco-list:focus .monaco-list-row.selected:hover { background-color: ${e.listActiveSelectionBackground}; }`)),e.listActiveSelectionForeground&&o.push(`.monaco-list:focus .monaco-list-row.selected { color: ${e.listActiveSelectionForeground}; }`),e.listHoverBackground&&o.push(`.monaco-list-row:hover:not(.selected):not(.focused) { background-color: ${e.listHoverBackground}; }`),e.listHoverForeground&&o.push(`.monaco-list-row:hover:not(.selected):not(.focused) { color: ${e.listHoverForeground}; }`),e.listFocusOutline&&o.push(`.monaco-list:focus .monaco-list-row.focused { outline: 1px solid ${e.listFocusOutline}; outline-offset: -1px; }`),e.listHoverOutline&&o.push(`.monaco-list-row:hover { outline: 1px dashed ${e.listHoverOutline}; outline-offset: -1px; }`),e.scrollbarShadowColor&&o.push(`
+import './media/processExplorer.css';
+import '../../../base/browser/ui/codicons/codiconStyles.js';
+import { localize } from '../../../nls.js';
+import { $, append, createStyleSheet } from '../../../base/browser/dom.js';
+import { DataTree } from '../../../base/browser/ui/tree/dataTree.js';
+import { RunOnceScheduler } from '../../../base/common/async.js';
+import { popup } from '../../../base/parts/contextmenu/electron-sandbox/contextmenu.js';
+import { ipcRenderer } from '../../../base/parts/sandbox/electron-sandbox/globals.js';
+import { isRemoteDiagnosticError } from '../../../platform/diagnostics/common/diagnostics.js';
+import { ByteSize } from '../../../platform/files/common/files.js';
+import { ElectronIPCMainProcessService } from '../../../platform/ipc/electron-sandbox/mainProcessService.js';
+import { NativeHostService } from '../../../platform/native/common/nativeHostService.js';
+import { getIconsStyleSheet } from '../../../platform/theme/browser/iconsStyleSheet.js';
+import { applyZoom, zoomIn, zoomOut } from '../../../platform/window/electron-sandbox/window.js';
+import { StandardKeyboardEvent } from '../../../base/browser/keyboardEvent.js';
+import { mainWindow } from '../../../base/browser/window.js';
+const DEBUG_FLAGS_PATTERN = /\s--inspect(?:-brk|port)?=(?<port>\d+)?/;
+const DEBUG_PORT_PATTERN = /\s--inspect-port=(?<port>\d+)/;
+class ProcessListDelegate {
+    getHeight(element) {
+        return 22;
+    }
+    getTemplateId(element) {
+        if (isProcessItem(element)) {
+            return 'process';
+        }
+        if (isMachineProcessInformation(element)) {
+            return 'machine';
+        }
+        if (isRemoteDiagnosticError(element)) {
+            return 'error';
+        }
+        if (isProcessInformation(element)) {
+            return 'header';
+        }
+        return '';
+    }
+}
+class ProcessTreeDataSource {
+    hasChildren(element) {
+        if (isRemoteDiagnosticError(element)) {
+            return false;
+        }
+        if (isProcessItem(element)) {
+            return !!element.children?.length;
+        }
+        else {
+            return true;
+        }
+    }
+    getChildren(element) {
+        if (isProcessItem(element)) {
+            return element.children ? element.children : [];
+        }
+        if (isRemoteDiagnosticError(element)) {
+            return [];
+        }
+        if (isProcessInformation(element)) {
+            if (element.processRoots.length > 1) {
+                return element.processRoots;
+            }
+            else {
+                return [element.processRoots[0].rootProcess];
+            }
+        }
+        if (isMachineProcessInformation(element)) {
+            return [element.rootProcess];
+        }
+        return [element.processes];
+    }
+}
+class ProcessHeaderTreeRenderer {
+    constructor() {
+        this.templateId = 'header';
+    }
+    renderTemplate(container) {
+        const row = append(container, $('.row'));
+        const name = append(row, $('.nameLabel'));
+        const CPU = append(row, $('.cpu'));
+        const memory = append(row, $('.memory'));
+        const PID = append(row, $('.pid'));
+        return { name, CPU, memory, PID };
+    }
+    renderElement(node, index, templateData, height) {
+        templateData.name.textContent = localize('name', "Process Name");
+        templateData.CPU.textContent = localize('cpu', "CPU (%)");
+        templateData.PID.textContent = localize('pid', "PID");
+        templateData.memory.textContent = localize('memory', "Memory (MB)");
+    }
+    disposeTemplate(templateData) {
+    }
+}
+class MachineRenderer {
+    constructor() {
+        this.templateId = 'machine';
+    }
+    renderTemplate(container) {
+        const data = Object.create(null);
+        const row = append(container, $('.row'));
+        data.name = append(row, $('.nameLabel'));
+        return data;
+    }
+    renderElement(node, index, templateData, height) {
+        templateData.name.textContent = node.element.name;
+    }
+    disposeTemplate(templateData) {
+    }
+}
+class ErrorRenderer {
+    constructor() {
+        this.templateId = 'error';
+    }
+    renderTemplate(container) {
+        const data = Object.create(null);
+        const row = append(container, $('.row'));
+        data.name = append(row, $('.nameLabel'));
+        return data;
+    }
+    renderElement(node, index, templateData, height) {
+        templateData.name.textContent = node.element.errorMessage;
+    }
+    disposeTemplate(templateData) {
+    }
+}
+class ProcessRenderer {
+    constructor(platform, totalMem, mapPidToName) {
+        this.platform = platform;
+        this.totalMem = totalMem;
+        this.mapPidToName = mapPidToName;
+        this.templateId = 'process';
+    }
+    renderTemplate(container) {
+        const row = append(container, $('.row'));
+        const name = append(row, $('.nameLabel'));
+        const CPU = append(row, $('.cpu'));
+        const memory = append(row, $('.memory'));
+        const PID = append(row, $('.pid'));
+        return { name, CPU, PID, memory };
+    }
+    renderElement(node, index, templateData, height) {
+        const { element } = node;
+        const pid = element.pid.toFixed(0);
+        let name = element.name;
+        if (this.mapPidToName.has(element.pid)) {
+            name = this.mapPidToName.get(element.pid);
+        }
+        templateData.name.textContent = name;
+        templateData.name.title = element.cmd;
+        templateData.CPU.textContent = element.load.toFixed(0);
+        templateData.PID.textContent = pid;
+        templateData.PID.parentElement.id = `pid-${pid}`;
+        const memory = this.platform === 'win32' ? element.mem : (this.totalMem * (element.mem / 100));
+        templateData.memory.textContent = (memory / ByteSize.MB).toFixed(0);
+    }
+    disposeTemplate(templateData) {
+    }
+}
+function isMachineProcessInformation(item) {
+    return !!item.name && !!item.rootProcess;
+}
+function isProcessInformation(item) {
+    return !!item.processRoots;
+}
+function isProcessItem(item) {
+    return !!item.pid;
+}
+class ProcessExplorer {
+    constructor(windowId, data) {
+        this.data = data;
+        this.mapPidToName = new Map();
+        const mainProcessService = new ElectronIPCMainProcessService(windowId);
+        this.nativeHostService = new NativeHostService(windowId, mainProcessService);
+        this.applyStyles(data.styles);
+        this.setEventHandlers(data);
+        ipcRenderer.on('vscode:pidToNameResponse', (event, pidToNames) => {
+            this.mapPidToName.clear();
+            for (const [pid, name] of pidToNames) {
+                this.mapPidToName.set(pid, name);
+            }
+        });
+        ipcRenderer.on('vscode:listProcessesResponse', async (event, processRoots) => {
+            processRoots.forEach((info, index) => {
+                if (isProcessItem(info.rootProcess)) {
+                    info.rootProcess.name = index === 0 ? `${this.data.applicationName} main` : 'remote agent';
+                }
+            });
+            if (!this.tree) {
+                await this.createProcessTree(processRoots);
+            }
+            else {
+                this.tree.setInput({ processes: { processRoots } });
+                this.tree.layout(mainWindow.innerHeight, mainWindow.innerWidth);
+            }
+            this.requestProcessList(0);
+        });
+        this.lastRequestTime = Date.now();
+        ipcRenderer.send('vscode:pidToNameRequest');
+        ipcRenderer.send('vscode:listProcesses');
+    }
+    setEventHandlers(data) {
+        mainWindow.document.onkeydown = (e) => {
+            const cmdOrCtrlKey = data.platform === 'darwin' ? e.metaKey : e.ctrlKey;
+            if (cmdOrCtrlKey && e.keyCode === 87) {
+                e.stopPropagation();
+                e.preventDefault();
+                ipcRenderer.send('vscode:closeProcessExplorer');
+            }
+            if (cmdOrCtrlKey && e.keyCode === 187) {
+                zoomIn(mainWindow);
+            }
+            if (cmdOrCtrlKey && e.keyCode === 189) {
+                zoomOut(mainWindow);
+            }
+        };
+    }
+    async createProcessTree(processRoots) {
+        const container = mainWindow.document.getElementById('process-list');
+        if (!container) {
+            return;
+        }
+        const { totalmem } = await this.nativeHostService.getOSStatistics();
+        const renderers = [
+            new ProcessRenderer(this.data.platform, totalmem, this.mapPidToName),
+            new ProcessHeaderTreeRenderer(),
+            new MachineRenderer(),
+            new ErrorRenderer()
+        ];
+        this.tree = new DataTree('processExplorer', container, new ProcessListDelegate(), renderers, new ProcessTreeDataSource(), {
+            identityProvider: {
+                getId: (element) => {
+                    if (isProcessItem(element)) {
+                        return element.pid.toString();
+                    }
+                    if (isRemoteDiagnosticError(element)) {
+                        return element.hostName;
+                    }
+                    if (isProcessInformation(element)) {
+                        return 'processes';
+                    }
+                    if (isMachineProcessInformation(element)) {
+                        return element.name;
+                    }
+                    return 'header';
+                }
+            }
+        });
+        this.tree.setInput({ processes: { processRoots } });
+        this.tree.layout(mainWindow.innerHeight, mainWindow.innerWidth);
+        this.tree.onKeyDown(e => {
+            const event = new StandardKeyboardEvent(e);
+            if (event.keyCode === 35 && event.altKey) {
+                const selectionPids = this.getSelectedPids();
+                void Promise.all(selectionPids.map((pid) => this.nativeHostService.killProcess(pid, 'SIGTERM'))).then(() => this.tree?.refresh());
+            }
+        });
+        this.tree.onContextMenu(e => {
+            if (isProcessItem(e.element)) {
+                this.showContextMenu(e.element, true);
+            }
+        });
+        container.style.height = `${mainWindow.innerHeight}px`;
+        mainWindow.addEventListener('resize', () => {
+            container.style.height = `${mainWindow.innerHeight}px`;
+            this.tree?.layout(mainWindow.innerHeight, mainWindow.innerWidth);
+        });
+    }
+    isDebuggable(cmd) {
+        const matches = DEBUG_FLAGS_PATTERN.exec(cmd);
+        return (matches && matches.groups.port !== '0') || cmd.indexOf('node ') >= 0 || cmd.indexOf('node.exe') >= 0;
+    }
+    attachTo(item) {
+        const config = {
+            type: 'node',
+            request: 'attach',
+            name: `process ${item.pid}`
+        };
+        let matches = DEBUG_FLAGS_PATTERN.exec(item.cmd);
+        if (matches) {
+            config.port = Number(matches.groups.port);
+        }
+        else {
+            config.processId = String(item.pid);
+        }
+        matches = DEBUG_PORT_PATTERN.exec(item.cmd);
+        if (matches) {
+            config.port = Number(matches.groups.port);
+        }
+        ipcRenderer.send('vscode:workbenchCommand', { id: 'debug.startFromConfig', from: 'processExplorer', args: [config] });
+    }
+    applyStyles(styles) {
+        const styleElement = createStyleSheet();
+        const content = [];
+        if (styles.listFocusBackground) {
+            content.push(`.monaco-list:focus .monaco-list-row.focused { background-color: ${styles.listFocusBackground}; }`);
+            content.push(`.monaco-list:focus .monaco-list-row.focused:hover { background-color: ${styles.listFocusBackground}; }`);
+        }
+        if (styles.listFocusForeground) {
+            content.push(`.monaco-list:focus .monaco-list-row.focused { color: ${styles.listFocusForeground}; }`);
+        }
+        if (styles.listActiveSelectionBackground) {
+            content.push(`.monaco-list:focus .monaco-list-row.selected { background-color: ${styles.listActiveSelectionBackground}; }`);
+            content.push(`.monaco-list:focus .monaco-list-row.selected:hover { background-color: ${styles.listActiveSelectionBackground}; }`);
+        }
+        if (styles.listActiveSelectionForeground) {
+            content.push(`.monaco-list:focus .monaco-list-row.selected { color: ${styles.listActiveSelectionForeground}; }`);
+        }
+        if (styles.listHoverBackground) {
+            content.push(`.monaco-list-row:hover:not(.selected):not(.focused) { background-color: ${styles.listHoverBackground}; }`);
+        }
+        if (styles.listHoverForeground) {
+            content.push(`.monaco-list-row:hover:not(.selected):not(.focused) { color: ${styles.listHoverForeground}; }`);
+        }
+        if (styles.listFocusOutline) {
+            content.push(`.monaco-list:focus .monaco-list-row.focused { outline: 1px solid ${styles.listFocusOutline}; outline-offset: -1px; }`);
+        }
+        if (styles.listHoverOutline) {
+            content.push(`.monaco-list-row:hover { outline: 1px dashed ${styles.listHoverOutline}; outline-offset: -1px; }`);
+        }
+        if (styles.scrollbarShadowColor) {
+            content.push(`
 				.monaco-scrollable-element > .shadow.top {
-					box-shadow: ${e.scrollbarShadowColor} 0 6px 6px -6px inset;
+					box-shadow: ${styles.scrollbarShadowColor} 0 6px 6px -6px inset;
 				}
 
 				.monaco-scrollable-element > .shadow.left {
-					box-shadow: ${e.scrollbarShadowColor} 6px 0 6px -6px inset;
+					box-shadow: ${styles.scrollbarShadowColor} 6px 0 6px -6px inset;
 				}
 
 				.monaco-scrollable-element > .shadow.top.left {
-					box-shadow: ${e.scrollbarShadowColor} 6px 6px 6px -6px inset;
+					box-shadow: ${styles.scrollbarShadowColor} 6px 6px 6px -6px inset;
 				}
-			`),e.scrollbarSliderBackgroundColor&&o.push(`
+			`);
+        }
+        if (styles.scrollbarSliderBackgroundColor) {
+            content.push(`
 				.monaco-scrollable-element > .scrollbar > .slider {
-					background: ${e.scrollbarSliderBackgroundColor};
+					background: ${styles.scrollbarSliderBackgroundColor};
 				}
-			`),e.scrollbarSliderHoverBackgroundColor&&o.push(`
+			`);
+        }
+        if (styles.scrollbarSliderHoverBackgroundColor) {
+            content.push(`
 				.monaco-scrollable-element > .scrollbar > .slider:hover {
-					background: ${e.scrollbarSliderHoverBackgroundColor};
+					background: ${styles.scrollbarSliderHoverBackgroundColor};
 				}
-			`),e.scrollbarSliderActiveBackgroundColor&&o.push(`
+			`);
+        }
+        if (styles.scrollbarSliderActiveBackgroundColor) {
+            content.push(`
 				.monaco-scrollable-element > .scrollbar > .slider.active {
-					background: ${e.scrollbarSliderActiveBackgroundColor};
+					background: ${styles.scrollbarSliderActiveBackgroundColor};
 				}
-			`),r.textContent=o.join(`
-`),e.color&&(n.document.body.style.color=e.color)}showContextMenu(e,r){const o=[],a=Number(e.pid);r&&(o.push({accelerator:"Alt+E",label:d("killProcess","Kill Process"),click:()=>{this.nativeHostService.killProcess(a,"SIGTERM")}}),o.push({label:d("forceKillProcess","Force Kill Process"),click:()=>{this.nativeHostService.killProcess(a,"SIGKILL")}}),o.push({type:"separator"})),o.push({label:d("copy","Copy"),click:()=>{const t=this.getSelectedPids();t?.includes(a)||(t.length=0,t.push(a));const i=t?.map(c=>n.document.getElementById(`pid-${c}`)).filter(c=>!!c);if(i){const c=i.map(u=>u.innerText).filter(u=>!!u);this.nativeHostService.writeClipboardText(c.join(`
-`))}}}),o.push({label:d("copyAll","Copy All"),click:()=>{const t=n.document.getElementById("process-list");t&&this.nativeHostService.writeClipboardText(t.innerText)}}),e&&r&&this.isDebuggable(e.cmd)&&(o.push({type:"separator"}),o.push({label:d("debug","Debug"),click:()=>{this.attachTo(e)}})),w(o)}requestProcessList(e){setTimeout(()=>{const r=Date.now(),o=e+r-this.lastRequestTime;this.lastRequestTime=r,o>1e3?(p.send("vscode:pidToNameRequest"),p.send("vscode:listProcesses")):this.requestProcessList(o)},200)}getSelectedPids(){return this.tree?.getSelection()?.map(e=>{if(!(!e||!("pid"in e)))return e.pid}).filter(e=>!!e)}}function O(){const s=v();s.id="codiconStyles";const e=C(void 0);function r(){s.textContent=e.getCSS()}const o=new b(r,0);e.onDidChange(()=>o.schedule()),o.schedule()}function be(s){const e=s.data.platform==="win32"?"windows":s.data.platform==="linux"?"linux":"mac";n.document.body.classList.add(e),O(),D(s.data.zoomLevel,n),new K(s.windowId,s.data)}export{be as startup};
+			`);
+        }
+        styleElement.textContent = content.join('\n');
+        if (styles.color) {
+            mainWindow.document.body.style.color = styles.color;
+        }
+    }
+    showContextMenu(item, isLocal) {
+        const items = [];
+        const pid = Number(item.pid);
+        if (isLocal) {
+            items.push({
+                accelerator: 'Alt+E',
+                label: localize('killProcess', "Kill Process"),
+                click: () => {
+                    this.nativeHostService.killProcess(pid, 'SIGTERM');
+                }
+            });
+            items.push({
+                label: localize('forceKillProcess', "Force Kill Process"),
+                click: () => {
+                    this.nativeHostService.killProcess(pid, 'SIGKILL');
+                }
+            });
+            items.push({
+                type: 'separator'
+            });
+        }
+        items.push({
+            label: localize('copy', "Copy"),
+            click: () => {
+                const selectionPids = this.getSelectedPids();
+                if (!selectionPids?.includes(pid)) {
+                    selectionPids.length = 0;
+                    selectionPids.push(pid);
+                }
+                const rows = selectionPids?.map(e => mainWindow.document.getElementById(`pid-${e}`)).filter(e => !!e);
+                if (rows) {
+                    const text = rows.map(e => e.innerText).filter(e => !!e);
+                    this.nativeHostService.writeClipboardText(text.join('\n'));
+                }
+            }
+        });
+        items.push({
+            label: localize('copyAll', "Copy All"),
+            click: () => {
+                const processList = mainWindow.document.getElementById('process-list');
+                if (processList) {
+                    this.nativeHostService.writeClipboardText(processList.innerText);
+                }
+            }
+        });
+        if (item && isLocal && this.isDebuggable(item.cmd)) {
+            items.push({
+                type: 'separator'
+            });
+            items.push({
+                label: localize('debug', "Debug"),
+                click: () => {
+                    this.attachTo(item);
+                }
+            });
+        }
+        popup(items);
+    }
+    requestProcessList(totalWaitTime) {
+        setTimeout(() => {
+            const nextRequestTime = Date.now();
+            const waited = totalWaitTime + nextRequestTime - this.lastRequestTime;
+            this.lastRequestTime = nextRequestTime;
+            if (waited > 1000) {
+                ipcRenderer.send('vscode:pidToNameRequest');
+                ipcRenderer.send('vscode:listProcesses');
+            }
+            else {
+                this.requestProcessList(waited);
+            }
+        }, 200);
+    }
+    getSelectedPids() {
+        return this.tree?.getSelection()?.map(e => {
+            if (!e || !('pid' in e)) {
+                return undefined;
+            }
+            return e.pid;
+        }).filter(e => !!e);
+    }
+}
+function createCodiconStyleSheet() {
+    const codiconStyleSheet = createStyleSheet();
+    codiconStyleSheet.id = 'codiconStyles';
+    const iconsStyleSheet = getIconsStyleSheet(undefined);
+    function updateAll() {
+        codiconStyleSheet.textContent = iconsStyleSheet.getCSS();
+    }
+    const delayer = new RunOnceScheduler(updateAll, 0);
+    iconsStyleSheet.onDidChange(() => delayer.schedule());
+    delayer.schedule();
+}
+export function startup(configuration) {
+    const platformClass = configuration.data.platform === 'win32' ? 'windows' : configuration.data.platform === 'linux' ? 'linux' : 'mac';
+    mainWindow.document.body.classList.add(platformClass);
+    createCodiconStyleSheet();
+    applyZoom(configuration.data.zoomLevel, mainWindow);
+    new ProcessExplorer(configuration.windowId, configuration.data);
+}

@@ -1,1 +1,455 @@
-import*as M from"../../../../base/browser/browser.js";import{createFastDomNode as y}from"../../../../base/browser/fastDomNode.js";import*as C from"../../../../base/common/platform.js";import"../../view/viewLayer.js";import{RangeUtil as _}from"./rangeUtil.js";import"../../../common/core/stringBuilder.js";import{FloatHorizontalRange as f,VisibleRanges as V}from"../../view/renderingContext.js";import{LineDecoration as x}from"../../../common/viewLayout/lineDecorations.js";import{ForeignElementType as u,RenderLineInput as W,renderViewLine as I,LineRange as H,DomPosition as E}from"../../../common/viewLayout/viewLineRenderer.js";import"../../../common/viewLayout/viewLinesViewportData.js";import{InlineDecorationType as v}from"../../../common/viewModel.js";import{isHighContrast as w}from"../../../../platform/theme/common/theme.js";import{EditorFontLigatures as P}from"../../../common/config/editorOptions.js";import"./domReadingContext.js";import{ViewGpuContext as S}from"../../gpu/viewGpuContext.js";const z=function(){return C.isNative?!0:!(C.isLinux||M.isFirefox||M.isSafari)}();let p=!0;class N{static CLASS_NAME="view-line";_options;_isMaybeInvalid;_renderedViewLine;constructor(e){this._options=e,this._isMaybeInvalid=!0,this._renderedViewLine=null}getDomNode(){return this._renderedViewLine&&this._renderedViewLine.domNode?this._renderedViewLine.domNode.domNode:null}setDomNode(e){if(this._renderedViewLine)this._renderedViewLine.domNode=y(e);else throw new Error("I have no rendered view line to set the dom node to...")}onContentChanged(){this._isMaybeInvalid=!0}onTokensChanged(){this._isMaybeInvalid=!0}onDecorationsChanged(){this._isMaybeInvalid=!0}onOptionsChanged(e){this._isMaybeInvalid=!0,this._options=e}onSelectionChanged(){return w(this._options.themeType)||this._options.renderWhitespace==="selection"?(this._isMaybeInvalid=!0,!0):!1}renderLine(e,n,o,i,t){if(this._options.useGpu&&S.canRender(this._options,i,e))return this._renderedViewLine?.domNode?.domNode.remove(),this._renderedViewLine=null,!1;if(this._isMaybeInvalid===!1)return!1;this._isMaybeInvalid=!1;const r=i.getViewLineRenderingData(e),a=this._options,s=x.filter(r.inlineDecorations,e,r.minColumn,r.maxColumn);let d=null;if(w(a.themeType)||this._options.renderWhitespace==="selection"){const T=i.selections;for(const h of T){if(h.endLineNumber<e||h.startLineNumber>e)continue;const b=h.startLineNumber===e?h.startColumn:r.minColumn,R=h.endLineNumber===e?h.endColumn:r.maxColumn;b<R&&(w(a.themeType)&&s.push(new x(b,R,"inline-selected-text",v.Regular)),this._options.renderWhitespace==="selection"&&(d||(d=[]),d.push(new H(b-1,R-1))))}}const m=new W(a.useMonospaceOptimizations,a.canUseHalfwidthRightwardsArrow,r.content,r.continuesWithWrappedLine,r.isBasicASCII,r.containsRTL,r.minColumn-1,r.tokens,s,r.tabSize,r.startVisibleColumn,a.spaceWidth,a.middotWidth,a.wsmiddotWidth,a.stopRenderingLineAfter,a.renderWhitespace,a.renderControlCharacters,a.fontLigatures!==P.OFF,d);if(this._renderedViewLine&&this._renderedViewLine.input.equals(m))return!1;t.appendString('<div style="top:'),t.appendString(String(n)),t.appendString("px;height:"),t.appendString(String(o)),t.appendString('px;" class="'),t.appendString(N.CLASS_NAME),t.appendString('">');const c=I(m,t);t.appendString("</div>");let g=null;return p&&z&&r.isBasicASCII&&a.useMonospaceOptimizations&&c.containsForeignElements===u.None&&(g=new L(this._renderedViewLine?this._renderedViewLine.domNode:null,m,c.characterMapping)),g||(g=F(this._renderedViewLine?this._renderedViewLine.domNode:null,m,c.characterMapping,c.containsRTL,c.containsForeignElements)),this._renderedViewLine=g,!0}layoutLine(e,n,o){this._renderedViewLine&&this._renderedViewLine.domNode&&(this._renderedViewLine.domNode.setTop(n),this._renderedViewLine.domNode.setHeight(o))}getWidth(e){return this._renderedViewLine?this._renderedViewLine.getWidth(e):0}getWidthIsFast(){return this._renderedViewLine?this._renderedViewLine.getWidthIsFast():!0}needsMonospaceFontCheck(){return this._renderedViewLine?this._renderedViewLine instanceof L:!1}monospaceAssumptionsAreValid(){return this._renderedViewLine&&this._renderedViewLine instanceof L?this._renderedViewLine.monospaceAssumptionsAreValid():p}onMonospaceAssumptionsInvalidated(){this._renderedViewLine&&this._renderedViewLine instanceof L&&(this._renderedViewLine=this._renderedViewLine.toSlowRenderedLine())}getVisibleRangesForRange(e,n,o,i){if(!this._renderedViewLine)return null;n=Math.min(this._renderedViewLine.input.lineContent.length+1,Math.max(1,n)),o=Math.min(this._renderedViewLine.input.lineContent.length+1,Math.max(1,o));const t=this._renderedViewLine.input.stopRenderingLineAfter;if(t!==-1&&n>t+1&&o>t+1)return new V(!0,[new f(this.getWidth(i),0)]);t!==-1&&n>t+1&&(n=t+1),t!==-1&&o>t+1&&(o=t+1);const r=this._renderedViewLine.getVisibleRangesForRange(e,n,o,i);return r&&r.length>0?new V(!1,r):null}getColumnOfNodeOffset(e,n){return this._renderedViewLine?this._renderedViewLine.getColumnOfNodeOffset(e,n):1}}var A=(e=>(e[e.MaxMonospaceDistance=300]="MaxMonospaceDistance",e))(A||{});class L{domNode;input;_characterMapping;_charWidth;_keyColumnPixelOffsetCache;_cachedWidth=-1;constructor(e,n,o){this.domNode=e,this.input=n;const i=Math.floor(n.lineContent.length/300);if(i>0){this._keyColumnPixelOffsetCache=new Float32Array(i);for(let t=0;t<i;t++)this._keyColumnPixelOffsetCache[t]=-1}else this._keyColumnPixelOffsetCache=null;this._characterMapping=o,this._charWidth=n.spaceWidth}getWidth(e){if(!this.domNode||this.input.lineContent.length<300){const n=this._characterMapping.getHorizontalOffset(this._characterMapping.length);return Math.round(this._charWidth*n)}return this._cachedWidth===-1&&(this._cachedWidth=this._getReadingTarget(this.domNode).offsetWidth,e?.markDidDomLayout()),this._cachedWidth}getWidthIsFast(){return this.input.lineContent.length<300||this._cachedWidth!==-1}monospaceAssumptionsAreValid(){if(!this.domNode)return p;if(this.input.lineContent.length<300){const e=this.getWidth(null),n=this.domNode.domNode.firstChild.offsetWidth;Math.abs(e-n)>=2&&(p=!1)}return p}toSlowRenderedLine(){return F(this.domNode,this.input,this._characterMapping,!1,u.None)}getVisibleRangesForRange(e,n,o,i){const t=this._getColumnPixelOffset(e,n,i),r=this._getColumnPixelOffset(e,o,i);return[new f(t,r-t)]}_getColumnPixelOffset(e,n,o){if(n<=300){const d=this._characterMapping.getHorizontalOffset(n);return this._charWidth*d}const i=Math.floor((n-1)/300)-1,t=(i+1)*300+1;let r=-1;if(this._keyColumnPixelOffsetCache&&(r=this._keyColumnPixelOffsetCache[i],r===-1&&(r=this._actualReadPixelOffset(e,t,o),this._keyColumnPixelOffsetCache[i]=r)),r===-1){const d=this._characterMapping.getHorizontalOffset(n);return this._charWidth*d}const a=this._characterMapping.getHorizontalOffset(t),s=this._characterMapping.getHorizontalOffset(n);return r+this._charWidth*(s-a)}_getReadingTarget(e){return e.domNode.firstChild}_actualReadPixelOffset(e,n,o){if(!this.domNode)return-1;const i=this._characterMapping.getDomPosition(n),t=_.readHorizontalRanges(this._getReadingTarget(this.domNode),i.partIndex,i.charIndex,i.partIndex,i.charIndex,o);return!t||t.length===0?-1:t[0].left}getColumnOfNodeOffset(e,n){return D(this._characterMapping,e,n)}}class O{domNode;input;_characterMapping;_isWhitespaceOnly;_containsForeignElements;_cachedWidth;_pixelOffsetCache;constructor(e,n,o,i,t){if(this.domNode=e,this.input=n,this._characterMapping=o,this._isWhitespaceOnly=/^\s*$/.test(n.lineContent),this._containsForeignElements=t,this._cachedWidth=-1,this._pixelOffsetCache=null,!i||this._characterMapping.length===0){this._pixelOffsetCache=new Float32Array(Math.max(2,this._characterMapping.length+1));for(let r=0,a=this._characterMapping.length;r<=a;r++)this._pixelOffsetCache[r]=-1}}_getReadingTarget(e){return e.domNode.firstChild}getWidth(e){return this.domNode?(this._cachedWidth===-1&&(this._cachedWidth=this._getReadingTarget(this.domNode).offsetWidth,e?.markDidDomLayout()),this._cachedWidth):0}getWidthIsFast(){return this._cachedWidth!==-1}getVisibleRangesForRange(e,n,o,i){if(!this.domNode)return null;if(this._pixelOffsetCache!==null){const t=this._readPixelOffset(this.domNode,e,n,i);if(t===-1)return null;const r=this._readPixelOffset(this.domNode,e,o,i);return r===-1?null:[new f(t,r-t)]}return this._readVisibleRangesForRange(this.domNode,e,n,o,i)}_readVisibleRangesForRange(e,n,o,i,t){if(o===i){const r=this._readPixelOffset(e,n,o,t);return r===-1?null:[new f(r,0)]}else return this._readRawVisibleRangesForRange(e,o,i,t)}_readPixelOffset(e,n,o,i){if(this._characterMapping.length===0){if(this._containsForeignElements===u.None||this._containsForeignElements===u.After)return 0;if(this._containsForeignElements===u.Before)return this.getWidth(i);const t=this._getReadingTarget(e);return t.firstChild?(i.markDidDomLayout(),t.firstChild.offsetWidth):0}if(this._pixelOffsetCache!==null){const t=this._pixelOffsetCache[o];if(t!==-1)return t;const r=this._actualReadPixelOffset(e,n,o,i);return this._pixelOffsetCache[o]=r,r}return this._actualReadPixelOffset(e,n,o,i)}_actualReadPixelOffset(e,n,o,i){if(this._characterMapping.length===0){const s=_.readHorizontalRanges(this._getReadingTarget(e),0,0,0,0,i);return!s||s.length===0?-1:s[0].left}if(o===this._characterMapping.length&&this._isWhitespaceOnly&&this._containsForeignElements===u.None)return this.getWidth(i);const t=this._characterMapping.getDomPosition(o),r=_.readHorizontalRanges(this._getReadingTarget(e),t.partIndex,t.charIndex,t.partIndex,t.charIndex,i);if(!r||r.length===0)return-1;const a=r[0].left;if(this.input.isBasicASCII){const s=this._characterMapping.getHorizontalOffset(o),d=Math.round(this.input.spaceWidth*s);if(Math.abs(d-a)<=1)return d}return a}_readRawVisibleRangesForRange(e,n,o,i){if(n===1&&o===this._characterMapping.length)return[new f(0,this.getWidth(i))];const t=this._characterMapping.getDomPosition(n),r=this._characterMapping.getDomPosition(o);return _.readHorizontalRanges(this._getReadingTarget(e),t.partIndex,t.charIndex,r.partIndex,r.charIndex,i)}getColumnOfNodeOffset(e,n){return D(this._characterMapping,e,n)}}class k extends O{_readVisibleRangesForRange(e,n,o,i,t){const r=super._readVisibleRangesForRange(e,n,o,i,t);if(!r||r.length===0||o===i||o===1&&i===this._characterMapping.length)return r;if(!this.input.containsRTL){const a=this._readPixelOffset(e,n,i,t);if(a!==-1){const s=r[r.length-1];s.left<a&&(s.width=a-s.left)}}return r}}const F=function(){return M.isWebKit?B:K}();function B(l,e,n,o,i){return new k(l,e,n,o,i)}function K(l,e,n,o,i){return new O(l,e,n,o,i)}function D(l,e,n){const o=e.textContent.length;let i=-1;for(;e;)e=e.previousSibling,i++;return l.getColumn(new E(i,n),o)}export{N as ViewLine,D as getColumnOfNodeOffset};
+import * as browser from '../../../../base/browser/browser.js';
+import { createFastDomNode } from '../../../../base/browser/fastDomNode.js';
+import * as platform from '../../../../base/common/platform.js';
+import { RangeUtil } from './rangeUtil.js';
+import { FloatHorizontalRange, VisibleRanges } from '../../view/renderingContext.js';
+import { LineDecoration } from '../../../common/viewLayout/lineDecorations.js';
+import { RenderLineInput, renderViewLine, LineRange, DomPosition } from '../../../common/viewLayout/viewLineRenderer.js';
+import { isHighContrast } from '../../../../platform/theme/common/theme.js';
+import { EditorFontLigatures } from '../../../common/config/editorOptions.js';
+import { ViewGpuContext } from '../../gpu/viewGpuContext.js';
+const canUseFastRenderedViewLine = (function () {
+    if (platform.isNative) {
+        return true;
+    }
+    if (platform.isLinux || browser.isFirefox || browser.isSafari) {
+        return false;
+    }
+    return true;
+})();
+let monospaceAssumptionsAreValid = true;
+export class ViewLine {
+    static { this.CLASS_NAME = 'view-line'; }
+    constructor(options) {
+        this._options = options;
+        this._isMaybeInvalid = true;
+        this._renderedViewLine = null;
+    }
+    getDomNode() {
+        if (this._renderedViewLine && this._renderedViewLine.domNode) {
+            return this._renderedViewLine.domNode.domNode;
+        }
+        return null;
+    }
+    setDomNode(domNode) {
+        if (this._renderedViewLine) {
+            this._renderedViewLine.domNode = createFastDomNode(domNode);
+        }
+        else {
+            throw new Error('I have no rendered view line to set the dom node to...');
+        }
+    }
+    onContentChanged() {
+        this._isMaybeInvalid = true;
+    }
+    onTokensChanged() {
+        this._isMaybeInvalid = true;
+    }
+    onDecorationsChanged() {
+        this._isMaybeInvalid = true;
+    }
+    onOptionsChanged(newOptions) {
+        this._isMaybeInvalid = true;
+        this._options = newOptions;
+    }
+    onSelectionChanged() {
+        if (isHighContrast(this._options.themeType) || this._options.renderWhitespace === 'selection') {
+            this._isMaybeInvalid = true;
+            return true;
+        }
+        return false;
+    }
+    renderLine(lineNumber, deltaTop, lineHeight, viewportData, sb) {
+        if (this._options.useGpu && ViewGpuContext.canRender(this._options, viewportData, lineNumber)) {
+            this._renderedViewLine?.domNode?.domNode.remove();
+            this._renderedViewLine = null;
+            return false;
+        }
+        if (this._isMaybeInvalid === false) {
+            return false;
+        }
+        this._isMaybeInvalid = false;
+        const lineData = viewportData.getViewLineRenderingData(lineNumber);
+        const options = this._options;
+        const actualInlineDecorations = LineDecoration.filter(lineData.inlineDecorations, lineNumber, lineData.minColumn, lineData.maxColumn);
+        let selectionsOnLine = null;
+        if (isHighContrast(options.themeType) || this._options.renderWhitespace === 'selection') {
+            const selections = viewportData.selections;
+            for (const selection of selections) {
+                if (selection.endLineNumber < lineNumber || selection.startLineNumber > lineNumber) {
+                    continue;
+                }
+                const startColumn = (selection.startLineNumber === lineNumber ? selection.startColumn : lineData.minColumn);
+                const endColumn = (selection.endLineNumber === lineNumber ? selection.endColumn : lineData.maxColumn);
+                if (startColumn < endColumn) {
+                    if (isHighContrast(options.themeType)) {
+                        actualInlineDecorations.push(new LineDecoration(startColumn, endColumn, 'inline-selected-text', 0));
+                    }
+                    if (this._options.renderWhitespace === 'selection') {
+                        if (!selectionsOnLine) {
+                            selectionsOnLine = [];
+                        }
+                        selectionsOnLine.push(new LineRange(startColumn - 1, endColumn - 1));
+                    }
+                }
+            }
+        }
+        const renderLineInput = new RenderLineInput(options.useMonospaceOptimizations, options.canUseHalfwidthRightwardsArrow, lineData.content, lineData.continuesWithWrappedLine, lineData.isBasicASCII, lineData.containsRTL, lineData.minColumn - 1, lineData.tokens, actualInlineDecorations, lineData.tabSize, lineData.startVisibleColumn, options.spaceWidth, options.middotWidth, options.wsmiddotWidth, options.stopRenderingLineAfter, options.renderWhitespace, options.renderControlCharacters, options.fontLigatures !== EditorFontLigatures.OFF, selectionsOnLine);
+        if (this._renderedViewLine && this._renderedViewLine.input.equals(renderLineInput)) {
+            return false;
+        }
+        sb.appendString('<div style="top:');
+        sb.appendString(String(deltaTop));
+        sb.appendString('px;height:');
+        sb.appendString(String(lineHeight));
+        sb.appendString('px;" class="');
+        sb.appendString(ViewLine.CLASS_NAME);
+        sb.appendString('">');
+        const output = renderViewLine(renderLineInput, sb);
+        sb.appendString('</div>');
+        let renderedViewLine = null;
+        if (monospaceAssumptionsAreValid && canUseFastRenderedViewLine && lineData.isBasicASCII && options.useMonospaceOptimizations && output.containsForeignElements === 0) {
+            renderedViewLine = new FastRenderedViewLine(this._renderedViewLine ? this._renderedViewLine.domNode : null, renderLineInput, output.characterMapping);
+        }
+        if (!renderedViewLine) {
+            renderedViewLine = createRenderedLine(this._renderedViewLine ? this._renderedViewLine.domNode : null, renderLineInput, output.characterMapping, output.containsRTL, output.containsForeignElements);
+        }
+        this._renderedViewLine = renderedViewLine;
+        return true;
+    }
+    layoutLine(lineNumber, deltaTop, lineHeight) {
+        if (this._renderedViewLine && this._renderedViewLine.domNode) {
+            this._renderedViewLine.domNode.setTop(deltaTop);
+            this._renderedViewLine.domNode.setHeight(lineHeight);
+        }
+    }
+    getWidth(context) {
+        if (!this._renderedViewLine) {
+            return 0;
+        }
+        return this._renderedViewLine.getWidth(context);
+    }
+    getWidthIsFast() {
+        if (!this._renderedViewLine) {
+            return true;
+        }
+        return this._renderedViewLine.getWidthIsFast();
+    }
+    needsMonospaceFontCheck() {
+        if (!this._renderedViewLine) {
+            return false;
+        }
+        return (this._renderedViewLine instanceof FastRenderedViewLine);
+    }
+    monospaceAssumptionsAreValid() {
+        if (!this._renderedViewLine) {
+            return monospaceAssumptionsAreValid;
+        }
+        if (this._renderedViewLine instanceof FastRenderedViewLine) {
+            return this._renderedViewLine.monospaceAssumptionsAreValid();
+        }
+        return monospaceAssumptionsAreValid;
+    }
+    onMonospaceAssumptionsInvalidated() {
+        if (this._renderedViewLine && this._renderedViewLine instanceof FastRenderedViewLine) {
+            this._renderedViewLine = this._renderedViewLine.toSlowRenderedLine();
+        }
+    }
+    getVisibleRangesForRange(lineNumber, startColumn, endColumn, context) {
+        if (!this._renderedViewLine) {
+            return null;
+        }
+        startColumn = Math.min(this._renderedViewLine.input.lineContent.length + 1, Math.max(1, startColumn));
+        endColumn = Math.min(this._renderedViewLine.input.lineContent.length + 1, Math.max(1, endColumn));
+        const stopRenderingLineAfter = this._renderedViewLine.input.stopRenderingLineAfter;
+        if (stopRenderingLineAfter !== -1 && startColumn > stopRenderingLineAfter + 1 && endColumn > stopRenderingLineAfter + 1) {
+            return new VisibleRanges(true, [new FloatHorizontalRange(this.getWidth(context), 0)]);
+        }
+        if (stopRenderingLineAfter !== -1 && startColumn > stopRenderingLineAfter + 1) {
+            startColumn = stopRenderingLineAfter + 1;
+        }
+        if (stopRenderingLineAfter !== -1 && endColumn > stopRenderingLineAfter + 1) {
+            endColumn = stopRenderingLineAfter + 1;
+        }
+        const horizontalRanges = this._renderedViewLine.getVisibleRangesForRange(lineNumber, startColumn, endColumn, context);
+        if (horizontalRanges && horizontalRanges.length > 0) {
+            return new VisibleRanges(false, horizontalRanges);
+        }
+        return null;
+    }
+    getColumnOfNodeOffset(spanNode, offset) {
+        if (!this._renderedViewLine) {
+            return 1;
+        }
+        return this._renderedViewLine.getColumnOfNodeOffset(spanNode, offset);
+    }
+}
+class FastRenderedViewLine {
+    constructor(domNode, renderLineInput, characterMapping) {
+        this._cachedWidth = -1;
+        this.domNode = domNode;
+        this.input = renderLineInput;
+        const keyColumnCount = Math.floor(renderLineInput.lineContent.length / 300);
+        if (keyColumnCount > 0) {
+            this._keyColumnPixelOffsetCache = new Float32Array(keyColumnCount);
+            for (let i = 0; i < keyColumnCount; i++) {
+                this._keyColumnPixelOffsetCache[i] = -1;
+            }
+        }
+        else {
+            this._keyColumnPixelOffsetCache = null;
+        }
+        this._characterMapping = characterMapping;
+        this._charWidth = renderLineInput.spaceWidth;
+    }
+    getWidth(context) {
+        if (!this.domNode || this.input.lineContent.length < 300) {
+            const horizontalOffset = this._characterMapping.getHorizontalOffset(this._characterMapping.length);
+            return Math.round(this._charWidth * horizontalOffset);
+        }
+        if (this._cachedWidth === -1) {
+            this._cachedWidth = this._getReadingTarget(this.domNode).offsetWidth;
+            context?.markDidDomLayout();
+        }
+        return this._cachedWidth;
+    }
+    getWidthIsFast() {
+        return (this.input.lineContent.length < 300) || this._cachedWidth !== -1;
+    }
+    monospaceAssumptionsAreValid() {
+        if (!this.domNode) {
+            return monospaceAssumptionsAreValid;
+        }
+        if (this.input.lineContent.length < 300) {
+            const expectedWidth = this.getWidth(null);
+            const actualWidth = this.domNode.domNode.firstChild.offsetWidth;
+            if (Math.abs(expectedWidth - actualWidth) >= 2) {
+                console.warn(`monospace assumptions have been violated, therefore disabling monospace optimizations!`);
+                monospaceAssumptionsAreValid = false;
+            }
+        }
+        return monospaceAssumptionsAreValid;
+    }
+    toSlowRenderedLine() {
+        return createRenderedLine(this.domNode, this.input, this._characterMapping, false, 0);
+    }
+    getVisibleRangesForRange(lineNumber, startColumn, endColumn, context) {
+        const startPosition = this._getColumnPixelOffset(lineNumber, startColumn, context);
+        const endPosition = this._getColumnPixelOffset(lineNumber, endColumn, context);
+        return [new FloatHorizontalRange(startPosition, endPosition - startPosition)];
+    }
+    _getColumnPixelOffset(lineNumber, column, context) {
+        if (column <= 300) {
+            const horizontalOffset = this._characterMapping.getHorizontalOffset(column);
+            return this._charWidth * horizontalOffset;
+        }
+        const keyColumnOrdinal = Math.floor((column - 1) / 300) - 1;
+        const keyColumn = (keyColumnOrdinal + 1) * 300 + 1;
+        let keyColumnPixelOffset = -1;
+        if (this._keyColumnPixelOffsetCache) {
+            keyColumnPixelOffset = this._keyColumnPixelOffsetCache[keyColumnOrdinal];
+            if (keyColumnPixelOffset === -1) {
+                keyColumnPixelOffset = this._actualReadPixelOffset(lineNumber, keyColumn, context);
+                this._keyColumnPixelOffsetCache[keyColumnOrdinal] = keyColumnPixelOffset;
+            }
+        }
+        if (keyColumnPixelOffset === -1) {
+            const horizontalOffset = this._characterMapping.getHorizontalOffset(column);
+            return this._charWidth * horizontalOffset;
+        }
+        const keyColumnHorizontalOffset = this._characterMapping.getHorizontalOffset(keyColumn);
+        const horizontalOffset = this._characterMapping.getHorizontalOffset(column);
+        return keyColumnPixelOffset + this._charWidth * (horizontalOffset - keyColumnHorizontalOffset);
+    }
+    _getReadingTarget(myDomNode) {
+        return myDomNode.domNode.firstChild;
+    }
+    _actualReadPixelOffset(lineNumber, column, context) {
+        if (!this.domNode) {
+            return -1;
+        }
+        const domPosition = this._characterMapping.getDomPosition(column);
+        const r = RangeUtil.readHorizontalRanges(this._getReadingTarget(this.domNode), domPosition.partIndex, domPosition.charIndex, domPosition.partIndex, domPosition.charIndex, context);
+        if (!r || r.length === 0) {
+            return -1;
+        }
+        return r[0].left;
+    }
+    getColumnOfNodeOffset(spanNode, offset) {
+        return getColumnOfNodeOffset(this._characterMapping, spanNode, offset);
+    }
+}
+class RenderedViewLine {
+    constructor(domNode, renderLineInput, characterMapping, containsRTL, containsForeignElements) {
+        this.domNode = domNode;
+        this.input = renderLineInput;
+        this._characterMapping = characterMapping;
+        this._isWhitespaceOnly = /^\s*$/.test(renderLineInput.lineContent);
+        this._containsForeignElements = containsForeignElements;
+        this._cachedWidth = -1;
+        this._pixelOffsetCache = null;
+        if (!containsRTL || this._characterMapping.length === 0) {
+            this._pixelOffsetCache = new Float32Array(Math.max(2, this._characterMapping.length + 1));
+            for (let column = 0, len = this._characterMapping.length; column <= len; column++) {
+                this._pixelOffsetCache[column] = -1;
+            }
+        }
+    }
+    _getReadingTarget(myDomNode) {
+        return myDomNode.domNode.firstChild;
+    }
+    getWidth(context) {
+        if (!this.domNode) {
+            return 0;
+        }
+        if (this._cachedWidth === -1) {
+            this._cachedWidth = this._getReadingTarget(this.domNode).offsetWidth;
+            context?.markDidDomLayout();
+        }
+        return this._cachedWidth;
+    }
+    getWidthIsFast() {
+        if (this._cachedWidth === -1) {
+            return false;
+        }
+        return true;
+    }
+    getVisibleRangesForRange(lineNumber, startColumn, endColumn, context) {
+        if (!this.domNode) {
+            return null;
+        }
+        if (this._pixelOffsetCache !== null) {
+            const startOffset = this._readPixelOffset(this.domNode, lineNumber, startColumn, context);
+            if (startOffset === -1) {
+                return null;
+            }
+            const endOffset = this._readPixelOffset(this.domNode, lineNumber, endColumn, context);
+            if (endOffset === -1) {
+                return null;
+            }
+            return [new FloatHorizontalRange(startOffset, endOffset - startOffset)];
+        }
+        return this._readVisibleRangesForRange(this.domNode, lineNumber, startColumn, endColumn, context);
+    }
+    _readVisibleRangesForRange(domNode, lineNumber, startColumn, endColumn, context) {
+        if (startColumn === endColumn) {
+            const pixelOffset = this._readPixelOffset(domNode, lineNumber, startColumn, context);
+            if (pixelOffset === -1) {
+                return null;
+            }
+            else {
+                return [new FloatHorizontalRange(pixelOffset, 0)];
+            }
+        }
+        else {
+            return this._readRawVisibleRangesForRange(domNode, startColumn, endColumn, context);
+        }
+    }
+    _readPixelOffset(domNode, lineNumber, column, context) {
+        if (this._characterMapping.length === 0) {
+            if (this._containsForeignElements === 0) {
+                return 0;
+            }
+            if (this._containsForeignElements === 2) {
+                return 0;
+            }
+            if (this._containsForeignElements === 1) {
+                return this.getWidth(context);
+            }
+            const readingTarget = this._getReadingTarget(domNode);
+            if (readingTarget.firstChild) {
+                context.markDidDomLayout();
+                return readingTarget.firstChild.offsetWidth;
+            }
+            else {
+                return 0;
+            }
+        }
+        if (this._pixelOffsetCache !== null) {
+            const cachedPixelOffset = this._pixelOffsetCache[column];
+            if (cachedPixelOffset !== -1) {
+                return cachedPixelOffset;
+            }
+            const result = this._actualReadPixelOffset(domNode, lineNumber, column, context);
+            this._pixelOffsetCache[column] = result;
+            return result;
+        }
+        return this._actualReadPixelOffset(domNode, lineNumber, column, context);
+    }
+    _actualReadPixelOffset(domNode, lineNumber, column, context) {
+        if (this._characterMapping.length === 0) {
+            const r = RangeUtil.readHorizontalRanges(this._getReadingTarget(domNode), 0, 0, 0, 0, context);
+            if (!r || r.length === 0) {
+                return -1;
+            }
+            return r[0].left;
+        }
+        if (column === this._characterMapping.length && this._isWhitespaceOnly && this._containsForeignElements === 0) {
+            return this.getWidth(context);
+        }
+        const domPosition = this._characterMapping.getDomPosition(column);
+        const r = RangeUtil.readHorizontalRanges(this._getReadingTarget(domNode), domPosition.partIndex, domPosition.charIndex, domPosition.partIndex, domPosition.charIndex, context);
+        if (!r || r.length === 0) {
+            return -1;
+        }
+        const result = r[0].left;
+        if (this.input.isBasicASCII) {
+            const horizontalOffset = this._characterMapping.getHorizontalOffset(column);
+            const expectedResult = Math.round(this.input.spaceWidth * horizontalOffset);
+            if (Math.abs(expectedResult - result) <= 1) {
+                return expectedResult;
+            }
+        }
+        return result;
+    }
+    _readRawVisibleRangesForRange(domNode, startColumn, endColumn, context) {
+        if (startColumn === 1 && endColumn === this._characterMapping.length) {
+            return [new FloatHorizontalRange(0, this.getWidth(context))];
+        }
+        const startDomPosition = this._characterMapping.getDomPosition(startColumn);
+        const endDomPosition = this._characterMapping.getDomPosition(endColumn);
+        return RangeUtil.readHorizontalRanges(this._getReadingTarget(domNode), startDomPosition.partIndex, startDomPosition.charIndex, endDomPosition.partIndex, endDomPosition.charIndex, context);
+    }
+    getColumnOfNodeOffset(spanNode, offset) {
+        return getColumnOfNodeOffset(this._characterMapping, spanNode, offset);
+    }
+}
+class WebKitRenderedViewLine extends RenderedViewLine {
+    _readVisibleRangesForRange(domNode, lineNumber, startColumn, endColumn, context) {
+        const output = super._readVisibleRangesForRange(domNode, lineNumber, startColumn, endColumn, context);
+        if (!output || output.length === 0 || startColumn === endColumn || (startColumn === 1 && endColumn === this._characterMapping.length)) {
+            return output;
+        }
+        if (!this.input.containsRTL) {
+            const endPixelOffset = this._readPixelOffset(domNode, lineNumber, endColumn, context);
+            if (endPixelOffset !== -1) {
+                const lastRange = output[output.length - 1];
+                if (lastRange.left < endPixelOffset) {
+                    lastRange.width = endPixelOffset - lastRange.left;
+                }
+            }
+        }
+        return output;
+    }
+}
+const createRenderedLine = (function () {
+    if (browser.isWebKit) {
+        return createWebKitRenderedLine;
+    }
+    return createNormalRenderedLine;
+})();
+function createWebKitRenderedLine(domNode, renderLineInput, characterMapping, containsRTL, containsForeignElements) {
+    return new WebKitRenderedViewLine(domNode, renderLineInput, characterMapping, containsRTL, containsForeignElements);
+}
+function createNormalRenderedLine(domNode, renderLineInput, characterMapping, containsRTL, containsForeignElements) {
+    return new RenderedViewLine(domNode, renderLineInput, characterMapping, containsRTL, containsForeignElements);
+}
+export function getColumnOfNodeOffset(characterMapping, spanNode, offset) {
+    const spanNodeTextContentLength = spanNode.textContent.length;
+    let spanIndex = -1;
+    while (spanNode) {
+        spanNode = spanNode.previousSibling;
+        spanIndex++;
+    }
+    return characterMapping.getColumn(new DomPosition(spanIndex, offset), spanNodeTextContentLength);
+}

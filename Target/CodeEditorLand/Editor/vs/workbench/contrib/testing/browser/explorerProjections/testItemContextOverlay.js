@@ -1,1 +1,15 @@
-import"../../common/testTypes.js";import{capabilityContextKeys as o}from"../../common/testProfileService.js";import{TestId as m}from"../../common/testId.js";import{TestingContextKeys as e}from"../../common/testingContextKeys.js";const a=(t,r)=>{if(!t)return[];const n=m.fromString(t.item.extId);return[[e.testItemExtId.key,n.localId],[e.controllerId.key,t.controllerId],[e.testItemHasUri.key,!!t.item.uri],...o(r)]};export{a as getTestItemContextOverlay};
+import { capabilityContextKeys } from '../../common/testProfileService.js';
+import { TestId } from '../../common/testId.js';
+import { TestingContextKeys } from '../../common/testingContextKeys.js';
+export const getTestItemContextOverlay = (test, capabilities) => {
+    if (!test) {
+        return [];
+    }
+    const testId = TestId.fromString(test.item.extId);
+    return [
+        [TestingContextKeys.testItemExtId.key, testId.localId],
+        [TestingContextKeys.controllerId.key, test.controllerId],
+        [TestingContextKeys.testItemHasUri.key, !!test.item.uri],
+        ...capabilityContextKeys(capabilities),
+    ];
+};

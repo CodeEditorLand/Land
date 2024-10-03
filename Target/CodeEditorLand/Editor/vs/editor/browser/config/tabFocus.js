@@ -1,1 +1,16 @@
-import{Emitter as e}from"../../../base/common/event.js";class a{_tabFocus=!1;_onDidChangeTabFocus=new e;onDidChangeTabFocus=this._onDidChangeTabFocus.event;getTabFocusMode(){return this._tabFocus}setTabFocusMode(o){this._tabFocus=o,this._onDidChangeTabFocus.fire(this._tabFocus)}}const b=new a;export{b as TabFocus};
+import { Emitter } from '../../../base/common/event.js';
+class TabFocusImpl {
+    constructor() {
+        this._tabFocus = false;
+        this._onDidChangeTabFocus = new Emitter();
+        this.onDidChangeTabFocus = this._onDidChangeTabFocus.event;
+    }
+    getTabFocusMode() {
+        return this._tabFocus;
+    }
+    setTabFocusMode(tabFocusMode) {
+        this._tabFocus = tabFocusMode;
+        this._onDidChangeTabFocus.fire(this._tabFocus);
+    }
+}
+export const TabFocus = new TabFocusImpl();

@@ -1,1 +1,173 @@
-var m=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var N=(r,o,t,i)=>{for(var e=i>1?void 0:i?S(o,t):o,a=r.length-1,n;a>=0;a--)(n=r[a])&&(e=(i?n(o,t,e):n(e))||e);return i&&e&&m(o,t,e),e},h=(r,o)=>(t,i)=>o(t,i,r);import{NotificationChangeType as d,StatusMessageChangeType as p}from"../../../common/notifications.js";import{IStatusbarService as C,StatusbarAlignment as b}from"../../../services/statusbar/browser/statusbar.js";import{Disposable as I,dispose as g}from"../../../../base/common/lifecycle.js";import{HIDE_NOTIFICATIONS_CENTER as v,SHOW_NOTIFICATIONS_CENTER as w}from"./notificationsCommands.js";import{localize as s}from"../../../../nls.js";import{INotificationService as M,NotificationsFilter as E}from"../../../../platform/notification/common/notification.js";let c=class extends I{constructor(t,i,e){super();this.model=t;this.statusbarService=i;this.notificationService=e;this.updateNotificationsCenterStatusItem(),t.statusMessage&&this.doSetStatusMessage(t.statusMessage),this.registerListeners()}notificationsCenterStatusItem;newNotificationsCount=0;currentStatusMessage;isNotificationsCenterVisible=!1;isNotificationsToastsVisible=!1;registerListeners(){this._register(this.model.onDidChangeNotification(t=>this.onDidChangeNotification(t))),this._register(this.model.onDidChangeStatusMessage(t=>this.onDidChangeStatusMessage(t))),this._register(this.notificationService.onDidChangeFilter(()=>this.updateNotificationsCenterStatusItem()))}onDidChangeNotification(t){this.isNotificationsCenterVisible||(t.kind===d.ADD?this.newNotificationsCount++:t.kind===d.REMOVE&&this.newNotificationsCount>0&&this.newNotificationsCount--),this.updateNotificationsCenterStatusItem()}updateNotificationsCenterStatusItem(){let t=0;if(!this.isNotificationsCenterVisible&&!this.isNotificationsToastsVisible)for(const e of this.model.notifications)e.hasProgress&&t++;let i={name:s("status.notifications","Notifications"),text:`${t>0||this.newNotificationsCount>0?"$(bell-dot)":"$(bell)"}`,ariaLabel:s("status.notifications","Notifications"),command:this.isNotificationsCenterVisible?v:w,tooltip:this.getTooltip(t),showBeak:this.isNotificationsCenterVisible};this.notificationService.getFilter()===E.ERROR&&(i={...i,text:`${t>0||this.newNotificationsCount>0?"$(bell-slash-dot)":"$(bell-slash)"}`,ariaLabel:s("status.doNotDisturb","Do Not Disturb"),tooltip:s("status.doNotDisturbTooltip","Do Not Disturb Mode is Enabled")}),this.notificationsCenterStatusItem?this.notificationsCenterStatusItem.update(i):this.notificationsCenterStatusItem=this.statusbarService.addEntry(i,"status.notifications",b.RIGHT,-Number.MAX_VALUE)}getTooltip(t){return this.isNotificationsCenterVisible?s("hideNotifications","Hide Notifications"):this.model.notifications.length===0?s("zeroNotifications","No Notifications"):t===0?this.newNotificationsCount===0?s("noNotifications","No New Notifications"):this.newNotificationsCount===1?s("oneNotification","1 New Notification"):s({key:"notifications",comment:["{0} will be replaced by a number"]},"{0} New Notifications",this.newNotificationsCount):this.newNotificationsCount===0?s({key:"noNotificationsWithProgress",comment:["{0} will be replaced by a number"]},"No New Notifications ({0} in progress)",t):this.newNotificationsCount===1?s({key:"oneNotificationWithProgress",comment:["{0} will be replaced by a number"]},"1 New Notification ({0} in progress)",t):s({key:"notificationsWithProgress",comment:["{0} and {1} will be replaced by a number"]},"{0} New Notifications ({1} in progress)",this.newNotificationsCount,t)}update(t,i){let e=!1;this.isNotificationsCenterVisible!==t&&(this.isNotificationsCenterVisible=t,this.newNotificationsCount=0,e=!0),this.isNotificationsToastsVisible!==i&&(this.isNotificationsToastsVisible=i,e=!0),e&&this.updateNotificationsCenterStatusItem()}onDidChangeStatusMessage(t){const i=t.item;switch(t.kind){case p.ADD:this.doSetStatusMessage(i);break;case p.REMOVE:this.currentStatusMessage&&this.currentStatusMessage[0]===i&&(g(this.currentStatusMessage[1]),this.currentStatusMessage=void 0);break}}doSetStatusMessage(t){const i=t.message,e=t.options&&typeof t.options.showAfter=="number"?t.options.showAfter:0,a=t.options&&typeof t.options.hideAfter=="number"?t.options.hideAfter:-1;this.currentStatusMessage&&g(this.currentStatusMessage[1]);let n,u=setTimeout(()=>{n=this.statusbarService.addEntry({name:s("status.message","Status Message"),text:i,ariaLabel:i},"status.message",b.LEFT,-Number.MAX_VALUE),u=null},e),f;const l={dispose:()=>{u&&clearTimeout(u),f&&clearTimeout(f),n?.dispose()}};a>0&&(f=setTimeout(()=>l.dispose(),a)),this.currentStatusMessage=[t,l]}};c=N([h(1,C),h(2,M)],c);export{c as NotificationsStatus};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IStatusbarService } from '../../../services/statusbar/browser/statusbar.js';
+import { Disposable, dispose } from '../../../../base/common/lifecycle.js';
+import { HIDE_NOTIFICATIONS_CENTER, SHOW_NOTIFICATIONS_CENTER } from './notificationsCommands.js';
+import { localize } from '../../../../nls.js';
+import { INotificationService, NotificationsFilter } from '../../../../platform/notification/common/notification.js';
+let NotificationsStatus = class NotificationsStatus extends Disposable {
+    constructor(model, statusbarService, notificationService) {
+        super();
+        this.model = model;
+        this.statusbarService = statusbarService;
+        this.notificationService = notificationService;
+        this.newNotificationsCount = 0;
+        this.isNotificationsCenterVisible = false;
+        this.isNotificationsToastsVisible = false;
+        this.updateNotificationsCenterStatusItem();
+        if (model.statusMessage) {
+            this.doSetStatusMessage(model.statusMessage);
+        }
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.model.onDidChangeNotification(e => this.onDidChangeNotification(e)));
+        this._register(this.model.onDidChangeStatusMessage(e => this.onDidChangeStatusMessage(e)));
+        this._register(this.notificationService.onDidChangeFilter(() => this.updateNotificationsCenterStatusItem()));
+    }
+    onDidChangeNotification(e) {
+        if (!this.isNotificationsCenterVisible) {
+            if (e.kind === 0) {
+                this.newNotificationsCount++;
+            }
+            else if (e.kind === 3 && this.newNotificationsCount > 0) {
+                this.newNotificationsCount--;
+            }
+        }
+        this.updateNotificationsCenterStatusItem();
+    }
+    updateNotificationsCenterStatusItem() {
+        let notificationsInProgress = 0;
+        if (!this.isNotificationsCenterVisible && !this.isNotificationsToastsVisible) {
+            for (const notification of this.model.notifications) {
+                if (notification.hasProgress) {
+                    notificationsInProgress++;
+                }
+            }
+        }
+        let statusProperties = {
+            name: localize('status.notifications', "Notifications"),
+            text: `${notificationsInProgress > 0 || this.newNotificationsCount > 0 ? '$(bell-dot)' : '$(bell)'}`,
+            ariaLabel: localize('status.notifications', "Notifications"),
+            command: this.isNotificationsCenterVisible ? HIDE_NOTIFICATIONS_CENTER : SHOW_NOTIFICATIONS_CENTER,
+            tooltip: this.getTooltip(notificationsInProgress),
+            showBeak: this.isNotificationsCenterVisible
+        };
+        if (this.notificationService.getFilter() === NotificationsFilter.ERROR) {
+            statusProperties = {
+                ...statusProperties,
+                text: `${notificationsInProgress > 0 || this.newNotificationsCount > 0 ? '$(bell-slash-dot)' : '$(bell-slash)'}`,
+                ariaLabel: localize('status.doNotDisturb', "Do Not Disturb"),
+                tooltip: localize('status.doNotDisturbTooltip', "Do Not Disturb Mode is Enabled")
+            };
+        }
+        if (!this.notificationsCenterStatusItem) {
+            this.notificationsCenterStatusItem = this.statusbarService.addEntry(statusProperties, 'status.notifications', 1, -Number.MAX_VALUE);
+        }
+        else {
+            this.notificationsCenterStatusItem.update(statusProperties);
+        }
+    }
+    getTooltip(notificationsInProgress) {
+        if (this.isNotificationsCenterVisible) {
+            return localize('hideNotifications', "Hide Notifications");
+        }
+        if (this.model.notifications.length === 0) {
+            return localize('zeroNotifications', "No Notifications");
+        }
+        if (notificationsInProgress === 0) {
+            if (this.newNotificationsCount === 0) {
+                return localize('noNotifications', "No New Notifications");
+            }
+            if (this.newNotificationsCount === 1) {
+                return localize('oneNotification', "1 New Notification");
+            }
+            return localize({ key: 'notifications', comment: ['{0} will be replaced by a number'] }, "{0} New Notifications", this.newNotificationsCount);
+        }
+        if (this.newNotificationsCount === 0) {
+            return localize({ key: 'noNotificationsWithProgress', comment: ['{0} will be replaced by a number'] }, "No New Notifications ({0} in progress)", notificationsInProgress);
+        }
+        if (this.newNotificationsCount === 1) {
+            return localize({ key: 'oneNotificationWithProgress', comment: ['{0} will be replaced by a number'] }, "1 New Notification ({0} in progress)", notificationsInProgress);
+        }
+        return localize({ key: 'notificationsWithProgress', comment: ['{0} and {1} will be replaced by a number'] }, "{0} New Notifications ({1} in progress)", this.newNotificationsCount, notificationsInProgress);
+    }
+    update(isCenterVisible, isToastsVisible) {
+        let updateNotificationsCenterStatusItem = false;
+        if (this.isNotificationsCenterVisible !== isCenterVisible) {
+            this.isNotificationsCenterVisible = isCenterVisible;
+            this.newNotificationsCount = 0;
+            updateNotificationsCenterStatusItem = true;
+        }
+        if (this.isNotificationsToastsVisible !== isToastsVisible) {
+            this.isNotificationsToastsVisible = isToastsVisible;
+            updateNotificationsCenterStatusItem = true;
+        }
+        if (updateNotificationsCenterStatusItem) {
+            this.updateNotificationsCenterStatusItem();
+        }
+    }
+    onDidChangeStatusMessage(e) {
+        const statusItem = e.item;
+        switch (e.kind) {
+            case 0:
+                this.doSetStatusMessage(statusItem);
+                break;
+            case 1:
+                if (this.currentStatusMessage && this.currentStatusMessage[0] === statusItem) {
+                    dispose(this.currentStatusMessage[1]);
+                    this.currentStatusMessage = undefined;
+                }
+                break;
+        }
+    }
+    doSetStatusMessage(item) {
+        const message = item.message;
+        const showAfter = item.options && typeof item.options.showAfter === 'number' ? item.options.showAfter : 0;
+        const hideAfter = item.options && typeof item.options.hideAfter === 'number' ? item.options.hideAfter : -1;
+        if (this.currentStatusMessage) {
+            dispose(this.currentStatusMessage[1]);
+        }
+        let statusMessageEntry;
+        let showHandle = setTimeout(() => {
+            statusMessageEntry = this.statusbarService.addEntry({
+                name: localize('status.message', "Status Message"),
+                text: message,
+                ariaLabel: message
+            }, 'status.message', 0, -Number.MAX_VALUE);
+            showHandle = null;
+        }, showAfter);
+        let hideHandle;
+        const statusMessageDispose = {
+            dispose: () => {
+                if (showHandle) {
+                    clearTimeout(showHandle);
+                }
+                if (hideHandle) {
+                    clearTimeout(hideHandle);
+                }
+                statusMessageEntry?.dispose();
+            }
+        };
+        if (hideAfter > 0) {
+            hideHandle = setTimeout(() => statusMessageDispose.dispose(), hideAfter);
+        }
+        this.currentStatusMessage = [item, statusMessageDispose];
+    }
+};
+NotificationsStatus = __decorate([
+    __param(1, IStatusbarService),
+    __param(2, INotificationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], NotificationsStatus);
+export { NotificationsStatus };

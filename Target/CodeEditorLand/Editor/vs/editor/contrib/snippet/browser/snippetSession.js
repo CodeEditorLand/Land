@@ -1,1 +1,575 @@
-var te=Object.defineProperty;var ie=Object.getOwnPropertyDescriptor;var y=(x,e,t,n)=>{for(var i=n>1?void 0:n?ie(e,t):e,o=x.length-1,a;o>=0;o--)(a=x[o])&&(i=(n?a(e,t,i):a(i))||i);return n&&i&&te(e,t,i),i},F=(x,e)=>(t,n)=>e(t,n,x);import{groupBy as O}from"../../../../base/common/arrays.js";import{CharCode as N}from"../../../../base/common/charCode.js";import{dispose as ne}from"../../../../base/common/lifecycle.js";import{getLeadingWhitespace as oe}from"../../../../base/common/strings.js";import"./snippetSession.css";import"../../../browser/editorBrowser.js";import{EditorOption as V}from"../../../common/config/editorOptions.js";import{EditOperation as M}from"../../../common/core/editOperation.js";import"../../../common/core/position.js";import{Range as v}from"../../../common/core/range.js";import{Selection as w}from"../../../common/core/selection.js";import"../../../common/core/textChange.js";import{ILanguageConfigurationService as se}from"../../../common/languages/languageConfigurationRegistry.js";import{TrackedRangeStickiness as L}from"../../../common/model.js";import{ModelDecorationOptions as E}from"../../../common/model/textModel.js";import"../../suggest/browser/suggestOvertypingCapturer.js";import{ILabelService as j}from"../../../../platform/label/common/label.js";import{IWorkspaceContextService as k}from"../../../../platform/workspace/common/workspace.js";import{Choice as B,Placeholder as A,SnippetParser as z,Text as G,TextmateSnippet as re}from"./snippetParser.js";import{ClipboardBasedVariableResolver as U,CommentBasedVariableResolver as $,CompositeSnippetVariableResolver as q,ModelBasedVariableResolver as H,RandomBasedVariableResolver as J,SelectionBasedVariableResolver as K,TimeBasedVariableResolver as Q,WorkspaceBasedVariableResolver as X}from"./snippetVariables.js";class m{constructor(e,t,n){this._editor=e;this._snippet=t;this._snippetLineLeadingWhitespace=n;this._placeholderGroups=O(t.placeholders,A.compareByIndex),this._placeholderGroupsIdx=-1}_placeholderDecorations;_placeholderGroups;_offset=-1;_placeholderGroupsIdx;_nestingLevel=1;static _decor={active:E.register({description:"snippet-placeholder-1",stickiness:L.AlwaysGrowsWhenTypingAtEdges,className:"snippet-placeholder"}),inactive:E.register({description:"snippet-placeholder-2",stickiness:L.NeverGrowsWhenTypingAtEdges,className:"snippet-placeholder"}),activeFinal:E.register({description:"snippet-placeholder-3",stickiness:L.NeverGrowsWhenTypingAtEdges,className:"finish-snippet-placeholder"}),inactiveFinal:E.register({description:"snippet-placeholder-4",stickiness:L.NeverGrowsWhenTypingAtEdges,className:"finish-snippet-placeholder"})};initialize(e){this._offset=e.newPosition}dispose(){this._placeholderDecorations&&this._editor.removeDecorations([...this._placeholderDecorations.values()]),this._placeholderGroups.length=0}_initDecorations(){if(this._offset===-1)throw new Error("Snippet not initialized!");if(this._placeholderDecorations)return;this._placeholderDecorations=new Map;const e=this._editor.getModel();this._editor.changeDecorations(t=>{for(const n of this._snippet.placeholders){const i=this._snippet.offset(n),o=this._snippet.fullLen(n),a=v.fromPositions(e.getPositionAt(this._offset+i),e.getPositionAt(this._offset+i+o)),l=n.isFinalTabstop?m._decor.inactiveFinal:m._decor.inactive,s=t.addDecoration(a,l);this._placeholderDecorations.set(n,s)}})}move(e){if(!this._editor.hasModel())return[];if(this._initDecorations(),this._placeholderGroupsIdx>=0){const i=[];for(const o of this._placeholderGroups[this._placeholderGroupsIdx])if(o.transform){const a=this._placeholderDecorations.get(o),l=this._editor.getModel().getDecorationRange(a),s=this._editor.getModel().getValueInRange(l),r=o.transform.resolve(s).split(/\r\n|\r|\n/);for(let c=1;c<r.length;c++)r[c]=this._editor.getModel().normalizeIndentation(this._snippetLineLeadingWhitespace+r[c]);i.push(M.replace(l,r.join(this._editor.getModel().getEOL())))}i.length>0&&this._editor.executeEdits("snippet.placeholderTransform",i)}let t=!1;e===!0&&this._placeholderGroupsIdx<this._placeholderGroups.length-1?(this._placeholderGroupsIdx+=1,t=!0):e===!1&&this._placeholderGroupsIdx>0&&(this._placeholderGroupsIdx-=1,t=!0);const n=this._editor.getModel().changeDecorations(i=>{const o=new Set,a=[];for(const l of this._placeholderGroups[this._placeholderGroupsIdx]){const s=this._placeholderDecorations.get(l),r=this._editor.getModel().getDecorationRange(s);a.push(new w(r.startLineNumber,r.startColumn,r.endLineNumber,r.endColumn)),t=t&&this._hasPlaceholderBeenCollapsed(l),i.changeDecorationOptions(s,l.isFinalTabstop?m._decor.activeFinal:m._decor.active),o.add(l);for(const c of this._snippet.enclosingPlaceholders(l)){const h=this._placeholderDecorations.get(c);i.changeDecorationOptions(h,c.isFinalTabstop?m._decor.activeFinal:m._decor.active),o.add(c)}}for(const[l,s]of this._placeholderDecorations)o.has(l)||i.changeDecorationOptions(s,l.isFinalTabstop?m._decor.inactiveFinal:m._decor.inactive);return a});return t?this.move(e):n??[]}_hasPlaceholderBeenCollapsed(e){let t=e;for(;t;){if(t instanceof A){const n=this._placeholderDecorations.get(t);if(this._editor.getModel().getDecorationRange(n).isEmpty()&&t.toString().length>0)return!0}t=t.parent}return!1}get isAtFirstPlaceholder(){return this._placeholderGroupsIdx<=0||this._placeholderGroups.length===0}get isAtLastPlaceholder(){return this._placeholderGroupsIdx===this._placeholderGroups.length-1}get hasPlaceholder(){return this._snippet.placeholders.length>0}get isTrivialSnippet(){if(this._snippet.placeholders.length===0)return!0;if(this._snippet.placeholders.length===1){const[e]=this._snippet.placeholders;if(e.isFinalTabstop&&this._snippet.rightMostDescendant===e)return!0}return!1}computePossibleSelections(){const e=new Map;for(const t of this._placeholderGroups){let n;for(const i of t){if(i.isFinalTabstop)break;n||(n=[],e.set(i.index,n));const o=this._placeholderDecorations.get(i),a=this._editor.getModel().getDecorationRange(o);if(!a){e.delete(i.index);break}n.push(a)}}return e}get activeChoice(){if(!this._placeholderDecorations)return;const e=this._placeholderGroups[this._placeholderGroupsIdx][0];if(!e?.choice)return;const t=this._placeholderDecorations.get(e);if(!t)return;const n=this._editor.getModel().getDecorationRange(t);if(n)return{range:n,choice:e.choice}}get hasChoice(){let e=!1;return this._snippet.walk(t=>(e=t instanceof B,!e)),e}merge(e){const t=this._editor.getModel();this._nestingLevel*=10,this._editor.changeDecorations(n=>{for(const i of this._placeholderGroups[this._placeholderGroupsIdx]){const o=e.shift(),a=o._snippet.placeholderInfo.last.index;for(const s of o._snippet.placeholderInfo.all)s.isFinalTabstop?s.index=i.index+(a+1)/this._nestingLevel:s.index=i.index+s.index/this._nestingLevel;this._snippet.replace(i,o._snippet.children);const l=this._placeholderDecorations.get(i);n.removeDecoration(l),this._placeholderDecorations.delete(i);for(const s of o._snippet.placeholders){const r=o._snippet.offset(s),c=o._snippet.fullLen(s),h=v.fromPositions(t.getPositionAt(o._offset+r),t.getPositionAt(o._offset+r+c)),p=n.addDecoration(h,m._decor.inactive);this._placeholderDecorations.set(s,p)}}this._placeholderGroups=O(this._snippet.placeholders,A.compareByIndex)})}getEnclosingRange(){let e;const t=this._editor.getModel();for(const n of this._placeholderDecorations.values()){const i=t.getDecorationRange(n)??void 0;e?e=e.plusRange(i):e=i}return e}}const Y={overwriteBefore:0,overwriteAfter:0,adjustWhitespace:!0,clipboardText:void 0,overtypingCapturer:void 0};let f=class{constructor(e,t,n=Y,i){this._editor=e;this._template=t;this._options=n;this._languageConfigurationService=i}static adjustWhitespace(e,t,n,i,o){const a=e.getLineContent(t.lineNumber),l=oe(a,0,t.column-1);let s;return i.walk(r=>{if(!(r instanceof G)||r.parent instanceof B||o&&!o.has(r))return!0;const c=r.value.split(/\r\n|\r|\n/);if(n){const p=i.offset(r);if(p===0)c[0]=e.normalizeIndentation(c[0]);else{s=s??i.toString();const _=s.charCodeAt(p-1);(_===N.LineFeed||_===N.CarriageReturn)&&(c[0]=e.normalizeIndentation(l+c[0]))}for(let _=1;_<c.length;_++)c[_]=e.normalizeIndentation(l+c[_])}const h=c.join(e.getEOL());return h!==r.value&&(r.parent.replace(r,[new G(h)]),s=void 0),!0}),l}static adjustSelection(e,t,n,i){if(n!==0||i!==0){const{positionLineNumber:o,positionColumn:a}=t,l=a-n,s=a+i,r=e.validateRange({startLineNumber:o,startColumn:l,endLineNumber:o,endColumn:s});t=w.createWithDirection(r.startLineNumber,r.startColumn,r.endLineNumber,r.endColumn,t.getDirection())}return t}static createEditsAndSnippetsFromSelections(e,t,n,i,o,a,l,s,r){const c=[],h=[];if(!e.hasModel())return{edits:c,snippets:h};const p=e.getModel(),_=e.invokeWithinContext(d=>d.get(k)),g=e.invokeWithinContext(d=>new H(d.get(j),p)),I=()=>l,D=p.getValueInRange(f.adjustSelection(p,e.getSelection(),n,0)),T=p.getValueInRange(f.adjustSelection(p,e.getSelection(),0,i)),C=p.getLineFirstNonWhitespaceColumn(e.getSelection().positionLineNumber),P=e.getSelections().map((d,u)=>({selection:d,idx:u})).sort((d,u)=>v.compareRangesUsingStarts(d.selection,u.selection));for(const{selection:d,idx:u}of P){let b=f.adjustSelection(p,d,n,0),S=f.adjustSelection(p,d,0,i);D!==p.getValueInRange(b)&&(b=d),T!==p.getValueInRange(S)&&(S=d);const W=d.setStartPosition(b.startLineNumber,b.startColumn).setEndPosition(S.endLineNumber,S.endColumn),R=new z().parse(t,!0,o),Z=W.getStartPosition(),ee=f.adjustWhitespace(p,Z,a||u>0&&C!==p.getLineFirstNonWhitespaceColumn(d.positionLineNumber),R);R.resolveVariables(new q([g,new U(I,u,P.length,e.getOption(V.multiCursorPaste)==="spread"),new K(p,d,u,s),new $(p,d,r),new Q,new X(_),new J])),c[u]=M.replace(W,R.toString()),c[u].identifier={major:u,minor:0},c[u]._isTracked=!0,h[u]=new m(e,R,ee)}return{edits:c,snippets:h}}static createEditsAndSnippetsFromEdits(e,t,n,i,o,a,l){if(!e.hasModel()||t.length===0)return{edits:[],snippets:[]};const s=[],r=e.getModel(),c=new z,h=new re,p=new q([e.invokeWithinContext(g=>new H(g.get(j),r)),new U(()=>o,0,e.getSelections().length,e.getOption(V.multiCursorPaste)==="spread"),new K(r,e.getSelection(),0,a),new $(r,e.getSelection(),l),new Q,new X(e.invokeWithinContext(g=>g.get(k))),new J]);t=t.sort((g,I)=>v.compareRangesUsingStarts(g.range,I.range));let _=0;for(let g=0;g<t.length;g++){const{range:I,template:D}=t[g];if(g>0){const u=t[g-1].range,b=v.fromPositions(u.getEndPosition(),I.getStartPosition()),S=new G(r.getValueInRange(b));h.appendChild(S),_+=S.value.length}const T=c.parseFragment(D,h);f.adjustWhitespace(r,I.getStartPosition(),!0,h,new Set(T)),h.resolveVariables(p);const C=h.toString(),P=C.slice(_);_=C.length;const d=M.replace(I,P);d.identifier={major:g,minor:0},d._isTracked=!0,s.push(d)}return c.ensureFinalTabstop(h,n,!0),{edits:s,snippets:[new m(e,h,"")]}}_templateMerges=[];_snippets=[];dispose(){ne(this._snippets)}_logInfo(){return`template="${this._template}", merged_templates="${this._templateMerges.join(" -> ")}"`}insert(){if(!this._editor.hasModel())return;const{edits:e,snippets:t}=typeof this._template=="string"?f.createEditsAndSnippetsFromSelections(this._editor,this._template,this._options.overwriteBefore,this._options.overwriteAfter,!1,this._options.adjustWhitespace,this._options.clipboardText,this._options.overtypingCapturer,this._languageConfigurationService):f.createEditsAndSnippetsFromEdits(this._editor,this._template,!1,this._options.adjustWhitespace,this._options.clipboardText,this._options.overtypingCapturer,this._languageConfigurationService);this._snippets=t,this._editor.executeEdits("snippet",e,n=>{const i=n.filter(o=>!!o.identifier);for(let o=0;o<t.length;o++)t[o].initialize(i[o].textChange);return this._snippets[0].hasPlaceholder?this._move(!0):i.map(o=>w.fromPositions(o.range.getEndPosition()))}),this._editor.revealRange(this._editor.getSelections()[0])}merge(e,t=Y){if(!this._editor.hasModel())return;this._templateMerges.push([this._snippets[0]._nestingLevel,this._snippets[0]._placeholderGroupsIdx,e]);const{edits:n,snippets:i}=f.createEditsAndSnippetsFromSelections(this._editor,e,t.overwriteBefore,t.overwriteAfter,!0,t.adjustWhitespace,t.clipboardText,t.overtypingCapturer,this._languageConfigurationService);this._editor.executeEdits("snippet",n,o=>{const a=o.filter(s=>!!s.identifier);for(let s=0;s<i.length;s++)i[s].initialize(a[s].textChange);const l=i[0].isTrivialSnippet;if(!l)for(const s of this._snippets)s.merge(i);return this._snippets[0].hasPlaceholder&&!l?this._move(void 0):a.map(s=>w.fromPositions(s.range.getEndPosition()))})}next(){const e=this._move(!0);this._editor.setSelections(e),this._editor.revealPositionInCenterIfOutsideViewport(e[0].getPosition())}prev(){const e=this._move(!1);this._editor.setSelections(e),this._editor.revealPositionInCenterIfOutsideViewport(e[0].getPosition())}_move(e){const t=[];for(const n of this._snippets){const i=n.move(e);t.push(...i)}return t}get isAtFirstPlaceholder(){return this._snippets[0].isAtFirstPlaceholder}get isAtLastPlaceholder(){return this._snippets[0].isAtLastPlaceholder}get hasPlaceholder(){return this._snippets[0].hasPlaceholder}get hasChoice(){return this._snippets[0].hasChoice}get activeChoice(){return this._snippets[0].activeChoice}isSelectionWithinPlaceholders(){if(!this.hasPlaceholder)return!1;const e=this._editor.getSelections();if(e.length<this._snippets.length)return!1;const t=new Map;for(const n of this._snippets){const i=n.computePossibleSelections();if(t.size===0)for(const[o,a]of i){a.sort(v.compareRangesUsingStarts);for(const l of e)if(a[0].containsRange(l)){t.set(o,[]);break}}if(t.size===0)return!1;t.forEach((o,a)=>{o.push(...i.get(a))})}e.sort(v.compareRangesUsingStarts);for(const[n,i]of t){if(i.length!==e.length){t.delete(n);continue}i.sort(v.compareRangesUsingStarts);for(let o=0;o<i.length;o++)if(!i[o].containsRange(e[o])){t.delete(n);continue}}return t.size>0}getEnclosingRange(){let e;for(const t of this._snippets){const n=t.getEnclosingRange();e?e=e.plusRange(n):e=n}return e}};f=y([F(3,se)],f);export{m as OneSnippet,f as SnippetSession};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SnippetSession_1;
+import { groupBy } from '../../../../base/common/arrays.js';
+import { dispose } from '../../../../base/common/lifecycle.js';
+import { getLeadingWhitespace } from '../../../../base/common/strings.js';
+import './snippetSession.css';
+import { EditOperation } from '../../../common/core/editOperation.js';
+import { Range } from '../../../common/core/range.js';
+import { Selection } from '../../../common/core/selection.js';
+import { ILanguageConfigurationService } from '../../../common/languages/languageConfigurationRegistry.js';
+import { ModelDecorationOptions } from '../../../common/model/textModel.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { Choice, Placeholder, SnippetParser, Text, TextmateSnippet } from './snippetParser.js';
+import { ClipboardBasedVariableResolver, CommentBasedVariableResolver, CompositeSnippetVariableResolver, ModelBasedVariableResolver, RandomBasedVariableResolver, SelectionBasedVariableResolver, TimeBasedVariableResolver, WorkspaceBasedVariableResolver } from './snippetVariables.js';
+export class OneSnippet {
+    static { this._decor = {
+        active: ModelDecorationOptions.register({ description: 'snippet-placeholder-1', stickiness: 0, className: 'snippet-placeholder' }),
+        inactive: ModelDecorationOptions.register({ description: 'snippet-placeholder-2', stickiness: 1, className: 'snippet-placeholder' }),
+        activeFinal: ModelDecorationOptions.register({ description: 'snippet-placeholder-3', stickiness: 1, className: 'finish-snippet-placeholder' }),
+        inactiveFinal: ModelDecorationOptions.register({ description: 'snippet-placeholder-4', stickiness: 1, className: 'finish-snippet-placeholder' }),
+    }; }
+    constructor(_editor, _snippet, _snippetLineLeadingWhitespace) {
+        this._editor = _editor;
+        this._snippet = _snippet;
+        this._snippetLineLeadingWhitespace = _snippetLineLeadingWhitespace;
+        this._offset = -1;
+        this._nestingLevel = 1;
+        this._placeholderGroups = groupBy(_snippet.placeholders, Placeholder.compareByIndex);
+        this._placeholderGroupsIdx = -1;
+    }
+    initialize(textChange) {
+        this._offset = textChange.newPosition;
+    }
+    dispose() {
+        if (this._placeholderDecorations) {
+            this._editor.removeDecorations([...this._placeholderDecorations.values()]);
+        }
+        this._placeholderGroups.length = 0;
+    }
+    _initDecorations() {
+        if (this._offset === -1) {
+            throw new Error(`Snippet not initialized!`);
+        }
+        if (this._placeholderDecorations) {
+            return;
+        }
+        this._placeholderDecorations = new Map();
+        const model = this._editor.getModel();
+        this._editor.changeDecorations(accessor => {
+            for (const placeholder of this._snippet.placeholders) {
+                const placeholderOffset = this._snippet.offset(placeholder);
+                const placeholderLen = this._snippet.fullLen(placeholder);
+                const range = Range.fromPositions(model.getPositionAt(this._offset + placeholderOffset), model.getPositionAt(this._offset + placeholderOffset + placeholderLen));
+                const options = placeholder.isFinalTabstop ? OneSnippet._decor.inactiveFinal : OneSnippet._decor.inactive;
+                const handle = accessor.addDecoration(range, options);
+                this._placeholderDecorations.set(placeholder, handle);
+            }
+        });
+    }
+    move(fwd) {
+        if (!this._editor.hasModel()) {
+            return [];
+        }
+        this._initDecorations();
+        if (this._placeholderGroupsIdx >= 0) {
+            const operations = [];
+            for (const placeholder of this._placeholderGroups[this._placeholderGroupsIdx]) {
+                if (placeholder.transform) {
+                    const id = this._placeholderDecorations.get(placeholder);
+                    const range = this._editor.getModel().getDecorationRange(id);
+                    const currentValue = this._editor.getModel().getValueInRange(range);
+                    const transformedValueLines = placeholder.transform.resolve(currentValue).split(/\r\n|\r|\n/);
+                    for (let i = 1; i < transformedValueLines.length; i++) {
+                        transformedValueLines[i] = this._editor.getModel().normalizeIndentation(this._snippetLineLeadingWhitespace + transformedValueLines[i]);
+                    }
+                    operations.push(EditOperation.replace(range, transformedValueLines.join(this._editor.getModel().getEOL())));
+                }
+            }
+            if (operations.length > 0) {
+                this._editor.executeEdits('snippet.placeholderTransform', operations);
+            }
+        }
+        let couldSkipThisPlaceholder = false;
+        if (fwd === true && this._placeholderGroupsIdx < this._placeholderGroups.length - 1) {
+            this._placeholderGroupsIdx += 1;
+            couldSkipThisPlaceholder = true;
+        }
+        else if (fwd === false && this._placeholderGroupsIdx > 0) {
+            this._placeholderGroupsIdx -= 1;
+            couldSkipThisPlaceholder = true;
+        }
+        else {
+        }
+        const newSelections = this._editor.getModel().changeDecorations(accessor => {
+            const activePlaceholders = new Set();
+            const selections = [];
+            for (const placeholder of this._placeholderGroups[this._placeholderGroupsIdx]) {
+                const id = this._placeholderDecorations.get(placeholder);
+                const range = this._editor.getModel().getDecorationRange(id);
+                selections.push(new Selection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn));
+                couldSkipThisPlaceholder = couldSkipThisPlaceholder && this._hasPlaceholderBeenCollapsed(placeholder);
+                accessor.changeDecorationOptions(id, placeholder.isFinalTabstop ? OneSnippet._decor.activeFinal : OneSnippet._decor.active);
+                activePlaceholders.add(placeholder);
+                for (const enclosingPlaceholder of this._snippet.enclosingPlaceholders(placeholder)) {
+                    const id = this._placeholderDecorations.get(enclosingPlaceholder);
+                    accessor.changeDecorationOptions(id, enclosingPlaceholder.isFinalTabstop ? OneSnippet._decor.activeFinal : OneSnippet._decor.active);
+                    activePlaceholders.add(enclosingPlaceholder);
+                }
+            }
+            for (const [placeholder, id] of this._placeholderDecorations) {
+                if (!activePlaceholders.has(placeholder)) {
+                    accessor.changeDecorationOptions(id, placeholder.isFinalTabstop ? OneSnippet._decor.inactiveFinal : OneSnippet._decor.inactive);
+                }
+            }
+            return selections;
+        });
+        return !couldSkipThisPlaceholder ? newSelections ?? [] : this.move(fwd);
+    }
+    _hasPlaceholderBeenCollapsed(placeholder) {
+        let marker = placeholder;
+        while (marker) {
+            if (marker instanceof Placeholder) {
+                const id = this._placeholderDecorations.get(marker);
+                const range = this._editor.getModel().getDecorationRange(id);
+                if (range.isEmpty() && marker.toString().length > 0) {
+                    return true;
+                }
+            }
+            marker = marker.parent;
+        }
+        return false;
+    }
+    get isAtFirstPlaceholder() {
+        return this._placeholderGroupsIdx <= 0 || this._placeholderGroups.length === 0;
+    }
+    get isAtLastPlaceholder() {
+        return this._placeholderGroupsIdx === this._placeholderGroups.length - 1;
+    }
+    get hasPlaceholder() {
+        return this._snippet.placeholders.length > 0;
+    }
+    get isTrivialSnippet() {
+        if (this._snippet.placeholders.length === 0) {
+            return true;
+        }
+        if (this._snippet.placeholders.length === 1) {
+            const [placeholder] = this._snippet.placeholders;
+            if (placeholder.isFinalTabstop) {
+                if (this._snippet.rightMostDescendant === placeholder) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    computePossibleSelections() {
+        const result = new Map();
+        for (const placeholdersWithEqualIndex of this._placeholderGroups) {
+            let ranges;
+            for (const placeholder of placeholdersWithEqualIndex) {
+                if (placeholder.isFinalTabstop) {
+                    break;
+                }
+                if (!ranges) {
+                    ranges = [];
+                    result.set(placeholder.index, ranges);
+                }
+                const id = this._placeholderDecorations.get(placeholder);
+                const range = this._editor.getModel().getDecorationRange(id);
+                if (!range) {
+                    result.delete(placeholder.index);
+                    break;
+                }
+                ranges.push(range);
+            }
+        }
+        return result;
+    }
+    get activeChoice() {
+        if (!this._placeholderDecorations) {
+            return undefined;
+        }
+        const placeholder = this._placeholderGroups[this._placeholderGroupsIdx][0];
+        if (!placeholder?.choice) {
+            return undefined;
+        }
+        const id = this._placeholderDecorations.get(placeholder);
+        if (!id) {
+            return undefined;
+        }
+        const range = this._editor.getModel().getDecorationRange(id);
+        if (!range) {
+            return undefined;
+        }
+        return { range, choice: placeholder.choice };
+    }
+    get hasChoice() {
+        let result = false;
+        this._snippet.walk(marker => {
+            result = marker instanceof Choice;
+            return !result;
+        });
+        return result;
+    }
+    merge(others) {
+        const model = this._editor.getModel();
+        this._nestingLevel *= 10;
+        this._editor.changeDecorations(accessor => {
+            for (const placeholder of this._placeholderGroups[this._placeholderGroupsIdx]) {
+                const nested = others.shift();
+                console.assert(nested._offset !== -1);
+                console.assert(!nested._placeholderDecorations);
+                const indexLastPlaceholder = nested._snippet.placeholderInfo.last.index;
+                for (const nestedPlaceholder of nested._snippet.placeholderInfo.all) {
+                    if (nestedPlaceholder.isFinalTabstop) {
+                        nestedPlaceholder.index = placeholder.index + ((indexLastPlaceholder + 1) / this._nestingLevel);
+                    }
+                    else {
+                        nestedPlaceholder.index = placeholder.index + (nestedPlaceholder.index / this._nestingLevel);
+                    }
+                }
+                this._snippet.replace(placeholder, nested._snippet.children);
+                const id = this._placeholderDecorations.get(placeholder);
+                accessor.removeDecoration(id);
+                this._placeholderDecorations.delete(placeholder);
+                for (const placeholder of nested._snippet.placeholders) {
+                    const placeholderOffset = nested._snippet.offset(placeholder);
+                    const placeholderLen = nested._snippet.fullLen(placeholder);
+                    const range = Range.fromPositions(model.getPositionAt(nested._offset + placeholderOffset), model.getPositionAt(nested._offset + placeholderOffset + placeholderLen));
+                    const handle = accessor.addDecoration(range, OneSnippet._decor.inactive);
+                    this._placeholderDecorations.set(placeholder, handle);
+                }
+            }
+            this._placeholderGroups = groupBy(this._snippet.placeholders, Placeholder.compareByIndex);
+        });
+    }
+    getEnclosingRange() {
+        let result;
+        const model = this._editor.getModel();
+        for (const decorationId of this._placeholderDecorations.values()) {
+            const placeholderRange = model.getDecorationRange(decorationId) ?? undefined;
+            if (!result) {
+                result = placeholderRange;
+            }
+            else {
+                result = result.plusRange(placeholderRange);
+            }
+        }
+        return result;
+    }
+}
+const _defaultOptions = {
+    overwriteBefore: 0,
+    overwriteAfter: 0,
+    adjustWhitespace: true,
+    clipboardText: undefined,
+    overtypingCapturer: undefined
+};
+let SnippetSession = SnippetSession_1 = class SnippetSession {
+    static adjustWhitespace(model, position, adjustIndentation, snippet, filter) {
+        const line = model.getLineContent(position.lineNumber);
+        const lineLeadingWhitespace = getLeadingWhitespace(line, 0, position.column - 1);
+        let snippetTextString;
+        snippet.walk(marker => {
+            if (!(marker instanceof Text) || marker.parent instanceof Choice) {
+                return true;
+            }
+            if (filter && !filter.has(marker)) {
+                return true;
+            }
+            const lines = marker.value.split(/\r\n|\r|\n/);
+            if (adjustIndentation) {
+                const offset = snippet.offset(marker);
+                if (offset === 0) {
+                    lines[0] = model.normalizeIndentation(lines[0]);
+                }
+                else {
+                    snippetTextString = snippetTextString ?? snippet.toString();
+                    const prevChar = snippetTextString.charCodeAt(offset - 1);
+                    if (prevChar === 10 || prevChar === 13) {
+                        lines[0] = model.normalizeIndentation(lineLeadingWhitespace + lines[0]);
+                    }
+                }
+                for (let i = 1; i < lines.length; i++) {
+                    lines[i] = model.normalizeIndentation(lineLeadingWhitespace + lines[i]);
+                }
+            }
+            const newValue = lines.join(model.getEOL());
+            if (newValue !== marker.value) {
+                marker.parent.replace(marker, [new Text(newValue)]);
+                snippetTextString = undefined;
+            }
+            return true;
+        });
+        return lineLeadingWhitespace;
+    }
+    static adjustSelection(model, selection, overwriteBefore, overwriteAfter) {
+        if (overwriteBefore !== 0 || overwriteAfter !== 0) {
+            const { positionLineNumber, positionColumn } = selection;
+            const positionColumnBefore = positionColumn - overwriteBefore;
+            const positionColumnAfter = positionColumn + overwriteAfter;
+            const range = model.validateRange({
+                startLineNumber: positionLineNumber,
+                startColumn: positionColumnBefore,
+                endLineNumber: positionLineNumber,
+                endColumn: positionColumnAfter
+            });
+            selection = Selection.createWithDirection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn, selection.getDirection());
+        }
+        return selection;
+    }
+    static createEditsAndSnippetsFromSelections(editor, template, overwriteBefore, overwriteAfter, enforceFinalTabstop, adjustWhitespace, clipboardText, overtypingCapturer, languageConfigurationService) {
+        const edits = [];
+        const snippets = [];
+        if (!editor.hasModel()) {
+            return { edits, snippets };
+        }
+        const model = editor.getModel();
+        const workspaceService = editor.invokeWithinContext(accessor => accessor.get(IWorkspaceContextService));
+        const modelBasedVariableResolver = editor.invokeWithinContext(accessor => new ModelBasedVariableResolver(accessor.get(ILabelService), model));
+        const readClipboardText = () => clipboardText;
+        const firstBeforeText = model.getValueInRange(SnippetSession_1.adjustSelection(model, editor.getSelection(), overwriteBefore, 0));
+        const firstAfterText = model.getValueInRange(SnippetSession_1.adjustSelection(model, editor.getSelection(), 0, overwriteAfter));
+        const firstLineFirstNonWhitespace = model.getLineFirstNonWhitespaceColumn(editor.getSelection().positionLineNumber);
+        const indexedSelections = editor.getSelections()
+            .map((selection, idx) => ({ selection, idx }))
+            .sort((a, b) => Range.compareRangesUsingStarts(a.selection, b.selection));
+        for (const { selection, idx } of indexedSelections) {
+            let extensionBefore = SnippetSession_1.adjustSelection(model, selection, overwriteBefore, 0);
+            let extensionAfter = SnippetSession_1.adjustSelection(model, selection, 0, overwriteAfter);
+            if (firstBeforeText !== model.getValueInRange(extensionBefore)) {
+                extensionBefore = selection;
+            }
+            if (firstAfterText !== model.getValueInRange(extensionAfter)) {
+                extensionAfter = selection;
+            }
+            const snippetSelection = selection
+                .setStartPosition(extensionBefore.startLineNumber, extensionBefore.startColumn)
+                .setEndPosition(extensionAfter.endLineNumber, extensionAfter.endColumn);
+            const snippet = new SnippetParser().parse(template, true, enforceFinalTabstop);
+            const start = snippetSelection.getStartPosition();
+            const snippetLineLeadingWhitespace = SnippetSession_1.adjustWhitespace(model, start, adjustWhitespace || (idx > 0 && firstLineFirstNonWhitespace !== model.getLineFirstNonWhitespaceColumn(selection.positionLineNumber)), snippet);
+            snippet.resolveVariables(new CompositeSnippetVariableResolver([
+                modelBasedVariableResolver,
+                new ClipboardBasedVariableResolver(readClipboardText, idx, indexedSelections.length, editor.getOption(81) === 'spread'),
+                new SelectionBasedVariableResolver(model, selection, idx, overtypingCapturer),
+                new CommentBasedVariableResolver(model, selection, languageConfigurationService),
+                new TimeBasedVariableResolver,
+                new WorkspaceBasedVariableResolver(workspaceService),
+                new RandomBasedVariableResolver,
+            ]));
+            edits[idx] = EditOperation.replace(snippetSelection, snippet.toString());
+            edits[idx].identifier = { major: idx, minor: 0 };
+            edits[idx]._isTracked = true;
+            snippets[idx] = new OneSnippet(editor, snippet, snippetLineLeadingWhitespace);
+        }
+        return { edits, snippets };
+    }
+    static createEditsAndSnippetsFromEdits(editor, snippetEdits, enforceFinalTabstop, adjustWhitespace, clipboardText, overtypingCapturer, languageConfigurationService) {
+        if (!editor.hasModel() || snippetEdits.length === 0) {
+            return { edits: [], snippets: [] };
+        }
+        const edits = [];
+        const model = editor.getModel();
+        const parser = new SnippetParser();
+        const snippet = new TextmateSnippet();
+        const resolver = new CompositeSnippetVariableResolver([
+            editor.invokeWithinContext(accessor => new ModelBasedVariableResolver(accessor.get(ILabelService), model)),
+            new ClipboardBasedVariableResolver(() => clipboardText, 0, editor.getSelections().length, editor.getOption(81) === 'spread'),
+            new SelectionBasedVariableResolver(model, editor.getSelection(), 0, overtypingCapturer),
+            new CommentBasedVariableResolver(model, editor.getSelection(), languageConfigurationService),
+            new TimeBasedVariableResolver,
+            new WorkspaceBasedVariableResolver(editor.invokeWithinContext(accessor => accessor.get(IWorkspaceContextService))),
+            new RandomBasedVariableResolver,
+        ]);
+        snippetEdits = snippetEdits.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range));
+        let offset = 0;
+        for (let i = 0; i < snippetEdits.length; i++) {
+            const { range, template } = snippetEdits[i];
+            if (i > 0) {
+                const lastRange = snippetEdits[i - 1].range;
+                const textRange = Range.fromPositions(lastRange.getEndPosition(), range.getStartPosition());
+                const textNode = new Text(model.getValueInRange(textRange));
+                snippet.appendChild(textNode);
+                offset += textNode.value.length;
+            }
+            const newNodes = parser.parseFragment(template, snippet);
+            SnippetSession_1.adjustWhitespace(model, range.getStartPosition(), true, snippet, new Set(newNodes));
+            snippet.resolveVariables(resolver);
+            const snippetText = snippet.toString();
+            const snippetFragmentText = snippetText.slice(offset);
+            offset = snippetText.length;
+            const edit = EditOperation.replace(range, snippetFragmentText);
+            edit.identifier = { major: i, minor: 0 };
+            edit._isTracked = true;
+            edits.push(edit);
+        }
+        parser.ensureFinalTabstop(snippet, enforceFinalTabstop, true);
+        return {
+            edits,
+            snippets: [new OneSnippet(editor, snippet, '')]
+        };
+    }
+    constructor(_editor, _template, _options = _defaultOptions, _languageConfigurationService) {
+        this._editor = _editor;
+        this._template = _template;
+        this._options = _options;
+        this._languageConfigurationService = _languageConfigurationService;
+        this._templateMerges = [];
+        this._snippets = [];
+    }
+    dispose() {
+        dispose(this._snippets);
+    }
+    _logInfo() {
+        return `template="${this._template}", merged_templates="${this._templateMerges.join(' -> ')}"`;
+    }
+    insert() {
+        if (!this._editor.hasModel()) {
+            return;
+        }
+        const { edits, snippets } = typeof this._template === 'string'
+            ? SnippetSession_1.createEditsAndSnippetsFromSelections(this._editor, this._template, this._options.overwriteBefore, this._options.overwriteAfter, false, this._options.adjustWhitespace, this._options.clipboardText, this._options.overtypingCapturer, this._languageConfigurationService)
+            : SnippetSession_1.createEditsAndSnippetsFromEdits(this._editor, this._template, false, this._options.adjustWhitespace, this._options.clipboardText, this._options.overtypingCapturer, this._languageConfigurationService);
+        this._snippets = snippets;
+        this._editor.executeEdits('snippet', edits, _undoEdits => {
+            const undoEdits = _undoEdits.filter(edit => !!edit.identifier);
+            for (let idx = 0; idx < snippets.length; idx++) {
+                snippets[idx].initialize(undoEdits[idx].textChange);
+            }
+            if (this._snippets[0].hasPlaceholder) {
+                return this._move(true);
+            }
+            else {
+                return undoEdits
+                    .map(edit => Selection.fromPositions(edit.range.getEndPosition()));
+            }
+        });
+        this._editor.revealRange(this._editor.getSelections()[0]);
+    }
+    merge(template, options = _defaultOptions) {
+        if (!this._editor.hasModel()) {
+            return;
+        }
+        this._templateMerges.push([this._snippets[0]._nestingLevel, this._snippets[0]._placeholderGroupsIdx, template]);
+        const { edits, snippets } = SnippetSession_1.createEditsAndSnippetsFromSelections(this._editor, template, options.overwriteBefore, options.overwriteAfter, true, options.adjustWhitespace, options.clipboardText, options.overtypingCapturer, this._languageConfigurationService);
+        this._editor.executeEdits('snippet', edits, _undoEdits => {
+            const undoEdits = _undoEdits.filter(edit => !!edit.identifier);
+            for (let idx = 0; idx < snippets.length; idx++) {
+                snippets[idx].initialize(undoEdits[idx].textChange);
+            }
+            const isTrivialSnippet = snippets[0].isTrivialSnippet;
+            if (!isTrivialSnippet) {
+                for (const snippet of this._snippets) {
+                    snippet.merge(snippets);
+                }
+                console.assert(snippets.length === 0);
+            }
+            if (this._snippets[0].hasPlaceholder && !isTrivialSnippet) {
+                return this._move(undefined);
+            }
+            else {
+                return undoEdits.map(edit => Selection.fromPositions(edit.range.getEndPosition()));
+            }
+        });
+    }
+    next() {
+        const newSelections = this._move(true);
+        this._editor.setSelections(newSelections);
+        this._editor.revealPositionInCenterIfOutsideViewport(newSelections[0].getPosition());
+    }
+    prev() {
+        const newSelections = this._move(false);
+        this._editor.setSelections(newSelections);
+        this._editor.revealPositionInCenterIfOutsideViewport(newSelections[0].getPosition());
+    }
+    _move(fwd) {
+        const selections = [];
+        for (const snippet of this._snippets) {
+            const oneSelection = snippet.move(fwd);
+            selections.push(...oneSelection);
+        }
+        return selections;
+    }
+    get isAtFirstPlaceholder() {
+        return this._snippets[0].isAtFirstPlaceholder;
+    }
+    get isAtLastPlaceholder() {
+        return this._snippets[0].isAtLastPlaceholder;
+    }
+    get hasPlaceholder() {
+        return this._snippets[0].hasPlaceholder;
+    }
+    get hasChoice() {
+        return this._snippets[0].hasChoice;
+    }
+    get activeChoice() {
+        return this._snippets[0].activeChoice;
+    }
+    isSelectionWithinPlaceholders() {
+        if (!this.hasPlaceholder) {
+            return false;
+        }
+        const selections = this._editor.getSelections();
+        if (selections.length < this._snippets.length) {
+            return false;
+        }
+        const allPossibleSelections = new Map();
+        for (const snippet of this._snippets) {
+            const possibleSelections = snippet.computePossibleSelections();
+            if (allPossibleSelections.size === 0) {
+                for (const [index, ranges] of possibleSelections) {
+                    ranges.sort(Range.compareRangesUsingStarts);
+                    for (const selection of selections) {
+                        if (ranges[0].containsRange(selection)) {
+                            allPossibleSelections.set(index, []);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (allPossibleSelections.size === 0) {
+                return false;
+            }
+            allPossibleSelections.forEach((array, index) => {
+                array.push(...possibleSelections.get(index));
+            });
+        }
+        selections.sort(Range.compareRangesUsingStarts);
+        for (const [index, ranges] of allPossibleSelections) {
+            if (ranges.length !== selections.length) {
+                allPossibleSelections.delete(index);
+                continue;
+            }
+            ranges.sort(Range.compareRangesUsingStarts);
+            for (let i = 0; i < ranges.length; i++) {
+                if (!ranges[i].containsRange(selections[i])) {
+                    allPossibleSelections.delete(index);
+                    continue;
+                }
+            }
+        }
+        return allPossibleSelections.size > 0;
+    }
+    getEnclosingRange() {
+        let result;
+        for (const snippet of this._snippets) {
+            const snippetRange = snippet.getEnclosingRange();
+            if (!result) {
+                result = snippetRange;
+            }
+            else {
+                result = result.plusRange(snippetRange);
+            }
+        }
+        return result;
+    }
+};
+SnippetSession = SnippetSession_1 = __decorate([
+    __param(3, ILanguageConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], SnippetSession);
+export { SnippetSession };

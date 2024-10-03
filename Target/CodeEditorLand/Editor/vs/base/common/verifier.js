@@ -1,1 +1,61 @@
-import{isObject as o}from"./types.js";class i{constructor(e){this.defaultValue=e}verify(e){return this.isType(e)?e:this.defaultValue}}class l extends i{isType(e){return typeof e=="boolean"}}class c extends i{isType(e){return typeof e=="number"}}class T extends i{isType(e){return e instanceof Set}}class f extends i{allowedValues;constructor(e,r){super(e),this.allowedValues=r}isType(e){return this.allowedValues.includes(e)}}class p extends i{constructor(r,n){super(r);this.verifier=n}verify(r){return this.isType(r)?a(this.verifier,r):this.defaultValue}isType(r){return o(r)}}function a(t,e){const r=Object.create(null);for(const n in t)if(Object.hasOwnProperty.call(t,n)){const s=t[n];r[n]=s.verify(e[n])}return r}export{l as BooleanVerifier,f as EnumVerifier,c as NumberVerifier,p as ObjectVerifier,T as SetVerifier,a as verifyObject};
+import { isObject } from './types.js';
+class Verifier {
+    constructor(defaultValue) {
+        this.defaultValue = defaultValue;
+    }
+    verify(value) {
+        if (!this.isType(value)) {
+            return this.defaultValue;
+        }
+        return value;
+    }
+}
+export class BooleanVerifier extends Verifier {
+    isType(value) {
+        return typeof value === 'boolean';
+    }
+}
+export class NumberVerifier extends Verifier {
+    isType(value) {
+        return typeof value === 'number';
+    }
+}
+export class SetVerifier extends Verifier {
+    isType(value) {
+        return value instanceof Set;
+    }
+}
+export class EnumVerifier extends Verifier {
+    constructor(defaultValue, allowedValues) {
+        super(defaultValue);
+        this.allowedValues = allowedValues;
+    }
+    isType(value) {
+        return this.allowedValues.includes(value);
+    }
+}
+export class ObjectVerifier extends Verifier {
+    constructor(defaultValue, verifier) {
+        super(defaultValue);
+        this.verifier = verifier;
+    }
+    verify(value) {
+        if (!this.isType(value)) {
+            return this.defaultValue;
+        }
+        return verifyObject(this.verifier, value);
+    }
+    isType(value) {
+        return isObject(value);
+    }
+}
+export function verifyObject(verifiers, value) {
+    const result = Object.create(null);
+    for (const key in verifiers) {
+        if (Object.hasOwnProperty.call(verifiers, key)) {
+            const verifier = verifiers[key];
+            result[key] = verifier.verify(value[key]);
+        }
+    }
+    return result;
+}

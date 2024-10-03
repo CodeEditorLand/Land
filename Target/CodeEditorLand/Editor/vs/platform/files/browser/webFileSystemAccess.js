@@ -1,1 +1,26 @@
-var i;(l=>{function t(e){return typeof e?.showDirectoryPicker=="function"}l.supported=t;function r(e){const n=e;return n?typeof n.kind=="string"&&typeof n.queryPermission=="function"&&typeof n.requestPermission=="function":!1}l.isFileSystemHandle=r;function o(e){return e.kind==="file"}l.isFileSystemFileHandle=o;function s(e){return e.kind==="directory"}l.isFileSystemDirectoryHandle=s})(i||={});export{i as WebFileSystemAccess};
+export var WebFileSystemAccess;
+(function (WebFileSystemAccess) {
+    function supported(obj) {
+        if (typeof obj?.showDirectoryPicker === 'function') {
+            return true;
+        }
+        return false;
+    }
+    WebFileSystemAccess.supported = supported;
+    function isFileSystemHandle(handle) {
+        const candidate = handle;
+        if (!candidate) {
+            return false;
+        }
+        return typeof candidate.kind === 'string' && typeof candidate.queryPermission === 'function' && typeof candidate.requestPermission === 'function';
+    }
+    WebFileSystemAccess.isFileSystemHandle = isFileSystemHandle;
+    function isFileSystemFileHandle(handle) {
+        return handle.kind === 'file';
+    }
+    WebFileSystemAccess.isFileSystemFileHandle = isFileSystemFileHandle;
+    function isFileSystemDirectoryHandle(handle) {
+        return handle.kind === 'directory';
+    }
+    WebFileSystemAccess.isFileSystemDirectoryHandle = isFileSystemDirectoryHandle;
+})(WebFileSystemAccess || (WebFileSystemAccess = {}));

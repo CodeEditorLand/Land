@@ -1,1 +1,126 @@
-var I=Object.defineProperty;var k=Object.getOwnPropertyDescriptor;var y=(c,s,e,i)=>{for(var r=i>1?void 0:i?k(s,e):s,o=c.length-1,n;o>=0;o--)(n=c[o])&&(r=(i?n(s,e,r):n(r))||r);return i&&r&&I(s,e,r),r},t=(c,s)=>(e,i)=>s(e,i,c);import{Disposable as w}from"../../../base/common/lifecycle.js";import{createDecorator as S}from"../../instantiation/common/instantiation.js";import{ILogService as p}from"../../log/common/log.js";import"../common/utilityProcessWorkerService.js";import{IWindowsMainService as m}from"../../windows/electron-main/windows.js";import{WindowUtilityProcess as f}from"./utilityProcess.js";import{ITelemetryService as v}from"../../telemetry/common/telemetry.js";import{hash as g}from"../../../base/common/hash.js";import{Event as u,Emitter as P}from"../../../base/common/event.js";import{DeferredPromise as W}from"../../../base/common/async.js";import{ILifecycleMainService as h}from"../../lifecycle/electron-main/lifecycleMainService.js";const V=S("utilityProcessWorker");let a=class extends w{constructor(e,i,r,o){super();this.logService=e;this.windowsMainService=i;this.telemetryService=r;this.lifecycleMainService=o}workers=new Map;async createWorker(e){const i=`window: ${e.reply.windowId}, moduleId: ${e.process.moduleId}`;this.logService.trace(`[UtilityProcessWorker]: createWorker(${i})`);const r=this.hash(e);this.workers.has(r)&&(this.logService.warn(`[UtilityProcessWorker]: createWorker() found an existing worker that will be terminated (${i})`),this.disposeWorker(e));const o=new d(this.logService,this.windowsMainService,this.telemetryService,this.lifecycleMainService,e);if(!o.spawn())return{reason:{code:1,signal:"EINVALID"}};this.workers.set(r,o);const n=new W;return u.once(o.onDidTerminate)(l=>{l.code===0?this.logService.trace(`[UtilityProcessWorker]: terminated normally with code ${l.code}, signal: ${l.signal}`):this.logService.error(`[UtilityProcessWorker]: terminated unexpectedly with code ${l.code}, signal: ${l.signal}`),this.workers.delete(r),n.complete({reason:l})}),n.p}hash(e){return g({moduleId:e.process.moduleId,windowId:e.reply.windowId})}async disposeWorker(e){const i=this.hash(e),r=this.workers.get(i);r&&(this.logService.trace(`[UtilityProcessWorker]: disposeWorker(window: ${e.reply.windowId}, moduleId: ${e.process.moduleId})`),r.kill(),r.dispose(),this.workers.delete(i))}};a=y([t(0,p),t(1,m),t(2,v),t(3,h)],a);let d=class extends w{constructor(e,i,r,o,n){super();this.logService=e;this.windowsMainService=i;this.telemetryService=r;this.lifecycleMainService=o;this.configuration=n;this.registerListeners()}_onDidTerminate=this._register(new P);onDidTerminate=this._onDidTerminate.event;utilityProcess=this._register(new f(this.logService,this.windowsMainService,this.telemetryService,this.lifecycleMainService));registerListeners(){this._register(this.utilityProcess.onExit(e=>this._onDidTerminate.fire({code:e.code,signal:e.signal}))),this._register(this.utilityProcess.onCrash(e=>this._onDidTerminate.fire({code:e.code,signal:"ECRASH"})))}spawn(){const i=this.windowsMainService.getWindowById(this.configuration.reply.windowId)?.win?.webContents.getOSProcessId();return this.utilityProcess.start({type:this.configuration.process.type,entryPoint:this.configuration.process.moduleId,parentLifecycleBound:i,windowLifecycleBound:!0,correlationId:`${this.configuration.reply.windowId}`,responseWindowId:this.configuration.reply.windowId,responseChannel:this.configuration.reply.channel,responseNonce:this.configuration.reply.nonce})}kill(){this.utilityProcess.kill()}};d=y([t(0,p),t(1,m),t(2,v),t(3,h)],d);export{V as IUtilityProcessWorkerMainService,a as UtilityProcessWorkerMainService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { ILogService } from '../../log/common/log.js';
+import { IWindowsMainService } from '../../windows/electron-main/windows.js';
+import { WindowUtilityProcess } from './utilityProcess.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+import { hash } from '../../../base/common/hash.js';
+import { Event, Emitter } from '../../../base/common/event.js';
+import { DeferredPromise } from '../../../base/common/async.js';
+import { ILifecycleMainService } from '../../lifecycle/electron-main/lifecycleMainService.js';
+export const IUtilityProcessWorkerMainService = createDecorator('utilityProcessWorker');
+let UtilityProcessWorkerMainService = class UtilityProcessWorkerMainService extends Disposable {
+    constructor(logService, windowsMainService, telemetryService, lifecycleMainService) {
+        super();
+        this.logService = logService;
+        this.windowsMainService = windowsMainService;
+        this.telemetryService = telemetryService;
+        this.lifecycleMainService = lifecycleMainService;
+        this.workers = new Map();
+    }
+    async createWorker(configuration) {
+        const workerLogId = `window: ${configuration.reply.windowId}, moduleId: ${configuration.process.moduleId}`;
+        this.logService.trace(`[UtilityProcessWorker]: createWorker(${workerLogId})`);
+        const workerId = this.hash(configuration);
+        if (this.workers.has(workerId)) {
+            this.logService.warn(`[UtilityProcessWorker]: createWorker() found an existing worker that will be terminated (${workerLogId})`);
+            this.disposeWorker(configuration);
+        }
+        const worker = new UtilityProcessWorker(this.logService, this.windowsMainService, this.telemetryService, this.lifecycleMainService, configuration);
+        if (!worker.spawn()) {
+            return { reason: { code: 1, signal: 'EINVALID' } };
+        }
+        this.workers.set(workerId, worker);
+        const onDidTerminate = new DeferredPromise();
+        Event.once(worker.onDidTerminate)(reason => {
+            if (reason.code === 0) {
+                this.logService.trace(`[UtilityProcessWorker]: terminated normally with code ${reason.code}, signal: ${reason.signal}`);
+            }
+            else {
+                this.logService.error(`[UtilityProcessWorker]: terminated unexpectedly with code ${reason.code}, signal: ${reason.signal}`);
+            }
+            this.workers.delete(workerId);
+            onDidTerminate.complete({ reason });
+        });
+        return onDidTerminate.p;
+    }
+    hash(configuration) {
+        return hash({
+            moduleId: configuration.process.moduleId,
+            windowId: configuration.reply.windowId
+        });
+    }
+    async disposeWorker(configuration) {
+        const workerId = this.hash(configuration);
+        const worker = this.workers.get(workerId);
+        if (!worker) {
+            return;
+        }
+        this.logService.trace(`[UtilityProcessWorker]: disposeWorker(window: ${configuration.reply.windowId}, moduleId: ${configuration.process.moduleId})`);
+        worker.kill();
+        worker.dispose();
+        this.workers.delete(workerId);
+    }
+};
+UtilityProcessWorkerMainService = __decorate([
+    __param(0, ILogService),
+    __param(1, IWindowsMainService),
+    __param(2, ITelemetryService),
+    __param(3, ILifecycleMainService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], UtilityProcessWorkerMainService);
+export { UtilityProcessWorkerMainService };
+let UtilityProcessWorker = class UtilityProcessWorker extends Disposable {
+    constructor(logService, windowsMainService, telemetryService, lifecycleMainService, configuration) {
+        super();
+        this.logService = logService;
+        this.windowsMainService = windowsMainService;
+        this.telemetryService = telemetryService;
+        this.lifecycleMainService = lifecycleMainService;
+        this.configuration = configuration;
+        this._onDidTerminate = this._register(new Emitter());
+        this.onDidTerminate = this._onDidTerminate.event;
+        this.utilityProcess = this._register(new WindowUtilityProcess(this.logService, this.windowsMainService, this.telemetryService, this.lifecycleMainService));
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.utilityProcess.onExit(e => this._onDidTerminate.fire({ code: e.code, signal: e.signal })));
+        this._register(this.utilityProcess.onCrash(e => this._onDidTerminate.fire({ code: e.code, signal: 'ECRASH' })));
+    }
+    spawn() {
+        const window = this.windowsMainService.getWindowById(this.configuration.reply.windowId);
+        const windowPid = window?.win?.webContents.getOSProcessId();
+        return this.utilityProcess.start({
+            type: this.configuration.process.type,
+            entryPoint: this.configuration.process.moduleId,
+            parentLifecycleBound: windowPid,
+            windowLifecycleBound: true,
+            correlationId: `${this.configuration.reply.windowId}`,
+            responseWindowId: this.configuration.reply.windowId,
+            responseChannel: this.configuration.reply.channel,
+            responseNonce: this.configuration.reply.nonce
+        });
+    }
+    kill() {
+        this.utilityProcess.kill();
+    }
+};
+UtilityProcessWorker = __decorate([
+    __param(0, ILogService),
+    __param(1, IWindowsMainService),
+    __param(2, ITelemetryService),
+    __param(3, ILifecycleMainService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], UtilityProcessWorker);

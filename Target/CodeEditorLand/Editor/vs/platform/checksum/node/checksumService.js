@@ -1,1 +1,36 @@
-var l=Object.defineProperty;var d=Object.getOwnPropertyDescriptor;var m=(s,e,t,i)=>{for(var r=i>1?void 0:i?d(e,t):e,o=s.length-1,a;o>=0;o--)(a=s[o])&&(r=(i?a(e,t,r):a(r))||r);return i&&r&&l(e,t,r),r},c=(s,e)=>(t,i)=>e(t,i,s);import{createHash as f}from"crypto";import{listenStream as p}from"../../../base/common/stream.js";import"../../../base/common/uri.js";import"../common/checksumService.js";import{IFileService as u}from"../../files/common/files.js";let n=class{constructor(e){this.fileService=e}async checksum(e){const t=(await this.fileService.readFileStream(e)).value;return new Promise((i,r)=>{const o=f("sha256");p(t,{onData:a=>o.update(a.buffer),onError:a=>r(a),onEnd:()=>i(o.digest("base64").replace(/=+$/,""))})})}};n=m([c(0,u)],n);export{n as ChecksumService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { createHash } from 'crypto';
+import { listenStream } from '../../../base/common/stream.js';
+import { IFileService } from '../../files/common/files.js';
+let ChecksumService = class ChecksumService {
+    constructor(fileService) {
+        this.fileService = fileService;
+    }
+    async checksum(resource) {
+        const stream = (await this.fileService.readFileStream(resource)).value;
+        return new Promise((resolve, reject) => {
+            const hash = createHash('sha256');
+            listenStream(stream, {
+                onData: data => hash.update(data.buffer),
+                onError: error => reject(error),
+                onEnd: () => resolve(hash.digest('base64').replace(/=+$/, ''))
+            });
+        });
+    }
+};
+ChecksumService = __decorate([
+    __param(0, IFileService),
+    __metadata("design:paramtypes", [Object])
+], ChecksumService);
+export { ChecksumService };

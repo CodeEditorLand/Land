@@ -1,1 +1,11 @@
-import{timeout as o}from"../../../../base/common/async.js";async function s(e,i){return new Promise((r,n)=>{const t=o(2e3);t.then(()=>n("Writing to xterm is taking longer than 2 seconds")),e.write(i,()=>{t.cancel(),r()})})}export{s as writeP};
+import { timeout } from '../../../../base/common/async.js';
+export async function writeP(terminal, data) {
+    return new Promise((resolve, reject) => {
+        const failTimeout = timeout(2000);
+        failTimeout.then(() => reject('Writing to xterm is taking longer than 2 seconds'));
+        terminal.write(data, () => {
+            failTimeout.cancel();
+            resolve();
+        });
+    });
+}

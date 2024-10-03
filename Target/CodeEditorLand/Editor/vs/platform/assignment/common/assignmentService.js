@@ -1,1 +1,67 @@
-import{TelemetryLevel as l}from"../../telemetry/common/telemetry.js";import"../../configuration/common/configuration.js";import"../../product/common/productService.js";import{getTelemetryLevel as m}from"../../telemetry/common/telemetryUtils.js";import{AssignmentFilterProvider as c,ASSIGNMENT_REFETCH_INTERVAL as d,ASSIGNMENT_STORAGE_KEY as u,TargetPopulation as n}from"./assignment.js";import{importAMDNodeModule as p}from"../../../amdX.js";import"../../environment/common/environment.js";class V{constructor(i,r,e,t,g,y){this.machineId=i;this.configurationService=r;this.productService=e;this.environmentService=t;this.telemetry=g;this.keyValueStorage=y;!(t.extensionTestsLocationURI!==void 0)&&e.tasConfig&&this.experimentsEnabled&&m(this.configurationService)===l.USAGE&&(this.tasClient=this.setupTASClient());const o=this.configurationService.getValue("experiments.overrideDelay"),a=typeof o=="number"?o:0;this.overrideInitDelay=new Promise(s=>setTimeout(s,a))}_serviceBrand;tasClient;networkInitialized=!1;overrideInitDelay;get experimentsEnabled(){return!0}async getTreatment(i){await this.overrideInitDelay;const r=this.configurationService.getValue("experiments.override."+i);if(r!==void 0)return r;if(!this.tasClient||!this.experimentsEnabled)return;let e;const t=await this.tasClient;return this.networkInitialized?e=t.getTreatmentVariable("vscode",i):e=await t.getTreatmentVariableAsync("vscode",i,!0),e=t.getTreatmentVariable("vscode",i),e}async setupTASClient(){const i=this.productService.quality==="stable"?n.Public:this.productService.quality==="exploration"?n.Exploration:n.Insiders,r=new c(this.productService.version,this.productService.nameLong,this.machineId,i),e=this.productService.tasConfig,t=new(await p("tas-client-umd","lib/tas-client-umd.js")).ExperimentationService({filterProviders:[r],telemetry:this.telemetry,storageKey:u,keyValueStorage:this.keyValueStorage,assignmentContextTelemetryPropertyName:e.assignmentContextTelemetryPropertyName,telemetryEventName:e.telemetryEventName,endpoint:e.endpoint,refetchInterval:d});return await t.initializePromise,t.initialFetch.then(()=>this.networkInitialized=!0),t}}export{V as BaseAssignmentService};
+import { getTelemetryLevel } from '../../telemetry/common/telemetryUtils.js';
+import { AssignmentFilterProvider, ASSIGNMENT_REFETCH_INTERVAL, ASSIGNMENT_STORAGE_KEY, TargetPopulation } from './assignment.js';
+import { importAMDNodeModule } from '../../../amdX.js';
+export class BaseAssignmentService {
+    get experimentsEnabled() {
+        return true;
+    }
+    constructor(machineId, configurationService, productService, environmentService, telemetry, keyValueStorage) {
+        this.machineId = machineId;
+        this.configurationService = configurationService;
+        this.productService = productService;
+        this.environmentService = environmentService;
+        this.telemetry = telemetry;
+        this.keyValueStorage = keyValueStorage;
+        this.networkInitialized = false;
+        const isTesting = environmentService.extensionTestsLocationURI !== undefined;
+        if (!isTesting && productService.tasConfig && this.experimentsEnabled && getTelemetryLevel(this.configurationService) === 3) {
+            this.tasClient = this.setupTASClient();
+        }
+        const overrideDelaySetting = this.configurationService.getValue('experiments.overrideDelay');
+        const overrideDelay = typeof overrideDelaySetting === 'number' ? overrideDelaySetting : 0;
+        this.overrideInitDelay = new Promise(resolve => setTimeout(resolve, overrideDelay));
+    }
+    async getTreatment(name) {
+        await this.overrideInitDelay;
+        const override = this.configurationService.getValue('experiments.override.' + name);
+        if (override !== undefined) {
+            return override;
+        }
+        if (!this.tasClient) {
+            return undefined;
+        }
+        if (!this.experimentsEnabled) {
+            return undefined;
+        }
+        let result;
+        const client = await this.tasClient;
+        if (this.networkInitialized) {
+            result = client.getTreatmentVariable('vscode', name);
+        }
+        else {
+            result = await client.getTreatmentVariableAsync('vscode', name, true);
+        }
+        result = client.getTreatmentVariable('vscode', name);
+        return result;
+    }
+    async setupTASClient() {
+        const targetPopulation = this.productService.quality === 'stable' ?
+            TargetPopulation.Public : (this.productService.quality === 'exploration' ?
+            TargetPopulation.Exploration : TargetPopulation.Insiders);
+        const filterProvider = new AssignmentFilterProvider(this.productService.version, this.productService.nameLong, this.machineId, targetPopulation);
+        const tasConfig = this.productService.tasConfig;
+        const tasClient = new (await importAMDNodeModule('tas-client-umd', 'lib/tas-client-umd.js')).ExperimentationService({
+            filterProviders: [filterProvider],
+            telemetry: this.telemetry,
+            storageKey: ASSIGNMENT_STORAGE_KEY,
+            keyValueStorage: this.keyValueStorage,
+            assignmentContextTelemetryPropertyName: tasConfig.assignmentContextTelemetryPropertyName,
+            telemetryEventName: tasConfig.telemetryEventName,
+            endpoint: tasConfig.endpoint,
+            refetchInterval: ASSIGNMENT_REFETCH_INTERVAL,
+        });
+        await tasClient.initializePromise;
+        tasClient.initialFetch.then(() => this.networkInitialized = true);
+        return tasClient;
+    }
+}

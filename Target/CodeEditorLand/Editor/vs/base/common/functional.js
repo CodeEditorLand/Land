@@ -1,1 +1,23 @@
-function i(t,e){const r=this;let u=!1,n;return function(){if(u)return n;if(u=!0,e)try{n=t.apply(r,arguments)}finally{e()}else n=t.apply(r,arguments);return n}}export{i as createSingleCallFunction};
+export function createSingleCallFunction(fn, fnDidRunCallback) {
+    const _this = this;
+    let didCall = false;
+    let result;
+    return function () {
+        if (didCall) {
+            return result;
+        }
+        didCall = true;
+        if (fnDidRunCallback) {
+            try {
+                result = fn.apply(_this, arguments);
+            }
+            finally {
+                fnDidRunCallback();
+            }
+        }
+        else {
+            result = fn.apply(_this, arguments);
+        }
+        return result;
+    };
+}

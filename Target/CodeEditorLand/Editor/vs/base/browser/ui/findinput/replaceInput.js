@@ -1,1 +1,207 @@
-import*as m from"../../dom.js";import"../../keyboardEvent.js";import"../../mouseEvent.js";import{Toggle as f}from"../toggle/toggle.js";import"../contextview/contextview.js";import"./findInputToggles.js";import{HistoryInputBox as x}from"../inputbox/inputBox.js";import{Widget as C}from"../widget.js";import{Codicon as w}from"../../../common/codicons.js";import{Emitter as s}from"../../../common/event.js";import{KeyCode as n}from"../../../common/keyCodes.js";import"./findInput.css";import*as p from"../../../../nls.js";import{getDefaultHoverDelegate as I}from"../hover/hoverDelegateFactory.js";const E=p.localize("defaultLabel","input"),_=p.localize("label.preserveCaseToggle","Preserve Case");class O extends f{constructor(o){super({icon:w.preserveCase,title:_+o.appendTitle,isChecked:o.isChecked,hoverDelegate:o.hoverDelegate??I("element"),inputActiveOptionBorder:o.inputActiveOptionBorder,inputActiveOptionForeground:o.inputActiveOptionForeground,inputActiveOptionBackground:o.inputActiveOptionBackground})}}class Q extends C{constructor(i,u,B,t){super();this._showOptionButtons=B;this.contextViewProvider=u,this.placeholder=t.placeholder||"",this.validation=t.validation,this.label=t.label||E;const c=t.appendPreserveCaseLabel||"",v=t.history||[],g=!!t.flexibleHeight,b=!!t.flexibleWidth,y=t.flexibleMaxHeight;this.domNode=document.createElement("div"),this.domNode.classList.add("monaco-findInput"),this.inputBox=this._register(new x(this.domNode,this.contextViewProvider,{ariaLabel:this.label||"",placeholder:this.placeholder||"",validationOptions:{validation:this.validation},history:v,showHistoryHint:t.showHistoryHint,flexibleHeight:g,flexibleWidth:b,flexibleMaxHeight:y,inputBoxStyles:t.inputBoxStyles})),this.preserveCase=this._register(new O({appendTitle:c,isChecked:!1,...t.toggleStyles})),this._register(this.preserveCase.onChange(e=>{this._onDidOptionChange.fire(e),!e&&this.fixFocusOnOptionClickEnabled&&this.inputBox.focus(),this.validate()})),this._register(this.preserveCase.onKeyDown(e=>{this._onPreserveCaseKeyDown.fire(e)})),this._showOptionButtons?this.cachedOptionsWidth=this.preserveCase.width():this.cachedOptionsWidth=0;const r=[this.preserveCase.domNode];this.onkeydown(this.domNode,e=>{if(e.equals(n.LeftArrow)||e.equals(n.RightArrow)||e.equals(n.Escape)){const l=r.indexOf(this.domNode.ownerDocument.activeElement);if(l>=0){let a=-1;e.equals(n.RightArrow)?a=(l+1)%r.length:e.equals(n.LeftArrow)&&(l===0?a=r.length-1:a=l-1),e.equals(n.Escape)?(r[l].blur(),this.inputBox.focus()):a>=0&&r[a].focus(),m.EventHelper.stop(e,!0)}}});const d=document.createElement("div");d.className="controls",d.style.display=this._showOptionButtons?"block":"none",d.appendChild(this.preserveCase.domNode),this.domNode.appendChild(d),i?.appendChild(this.domNode),this.onkeydown(this.inputBox.inputElement,e=>this._onKeyDown.fire(e)),this.onkeyup(this.inputBox.inputElement,e=>this._onKeyUp.fire(e)),this.oninput(this.inputBox.inputElement,e=>this._onInput.fire()),this.onmousedown(this.inputBox.inputElement,e=>this._onMouseDown.fire(e))}static OPTION_CHANGE="optionChange";contextViewProvider;placeholder;validation;label;fixFocusOnOptionClickEnabled=!0;preserveCase;cachedOptionsWidth=0;domNode;inputBox;_onDidOptionChange=this._register(new s);onDidOptionChange=this._onDidOptionChange.event;_onKeyDown=this._register(new s);onKeyDown=this._onKeyDown.event;_onMouseDown=this._register(new s);onMouseDown=this._onMouseDown.event;_onInput=this._register(new s);onInput=this._onInput.event;_onKeyUp=this._register(new s);onKeyUp=this._onKeyUp.event;_onPreserveCaseKeyDown=this._register(new s);onPreserveCaseKeyDown=this._onPreserveCaseKeyDown.event;enable(){this.domNode.classList.remove("disabled"),this.inputBox.enable(),this.preserveCase.enable()}disable(){this.domNode.classList.add("disabled"),this.inputBox.disable(),this.preserveCase.disable()}setFocusInputOnOptionClick(i){this.fixFocusOnOptionClickEnabled=i}setEnabled(i){i?this.enable():this.disable()}clear(){this.clearValidation(),this.setValue(""),this.focus()}getValue(){return this.inputBox.value}setValue(i){this.inputBox.value!==i&&(this.inputBox.value=i)}onSearchSubmit(){this.inputBox.addToHistory()}applyStyles(){}select(){this.inputBox.select()}focus(){this.inputBox.focus()}getPreserveCase(){return this.preserveCase.checked}setPreserveCase(i){this.preserveCase.checked=i}focusOnPreserve(){this.preserveCase.focus()}_lastHighlightFindOptions=0;highlightFindOptions(){this.domNode.classList.remove("highlight-"+this._lastHighlightFindOptions),this._lastHighlightFindOptions=1-this._lastHighlightFindOptions,this.domNode.classList.add("highlight-"+this._lastHighlightFindOptions)}validate(){this.inputBox?.validate()}showMessage(i){this.inputBox?.showMessage(i)}clearMessage(){this.inputBox?.hideMessage()}clearValidation(){this.inputBox?.hideMessage()}set width(i){this.inputBox.paddingRight=this.cachedOptionsWidth,this.domNode.style.width=i+"px"}dispose(){super.dispose()}}export{Q as ReplaceInput};
+import * as dom from '../../dom.js';
+import { Toggle } from '../toggle/toggle.js';
+import { HistoryInputBox } from '../inputbox/inputBox.js';
+import { Widget } from '../widget.js';
+import { Codicon } from '../../../common/codicons.js';
+import { Emitter } from '../../../common/event.js';
+import './findInput.css';
+import * as nls from '../../../../nls.js';
+import { getDefaultHoverDelegate } from '../hover/hoverDelegateFactory.js';
+const NLS_DEFAULT_LABEL = nls.localize('defaultLabel', "input");
+const NLS_PRESERVE_CASE_LABEL = nls.localize('label.preserveCaseToggle', "Preserve Case");
+class PreserveCaseToggle extends Toggle {
+    constructor(opts) {
+        super({
+            icon: Codicon.preserveCase,
+            title: NLS_PRESERVE_CASE_LABEL + opts.appendTitle,
+            isChecked: opts.isChecked,
+            hoverDelegate: opts.hoverDelegate ?? getDefaultHoverDelegate('element'),
+            inputActiveOptionBorder: opts.inputActiveOptionBorder,
+            inputActiveOptionForeground: opts.inputActiveOptionForeground,
+            inputActiveOptionBackground: opts.inputActiveOptionBackground,
+        });
+    }
+}
+export class ReplaceInput extends Widget {
+    static { this.OPTION_CHANGE = 'optionChange'; }
+    constructor(parent, contextViewProvider, _showOptionButtons, options) {
+        super();
+        this._showOptionButtons = _showOptionButtons;
+        this.fixFocusOnOptionClickEnabled = true;
+        this.cachedOptionsWidth = 0;
+        this._onDidOptionChange = this._register(new Emitter());
+        this.onDidOptionChange = this._onDidOptionChange.event;
+        this._onKeyDown = this._register(new Emitter());
+        this.onKeyDown = this._onKeyDown.event;
+        this._onMouseDown = this._register(new Emitter());
+        this.onMouseDown = this._onMouseDown.event;
+        this._onInput = this._register(new Emitter());
+        this.onInput = this._onInput.event;
+        this._onKeyUp = this._register(new Emitter());
+        this.onKeyUp = this._onKeyUp.event;
+        this._onPreserveCaseKeyDown = this._register(new Emitter());
+        this.onPreserveCaseKeyDown = this._onPreserveCaseKeyDown.event;
+        this._lastHighlightFindOptions = 0;
+        this.contextViewProvider = contextViewProvider;
+        this.placeholder = options.placeholder || '';
+        this.validation = options.validation;
+        this.label = options.label || NLS_DEFAULT_LABEL;
+        const appendPreserveCaseLabel = options.appendPreserveCaseLabel || '';
+        const history = options.history || [];
+        const flexibleHeight = !!options.flexibleHeight;
+        const flexibleWidth = !!options.flexibleWidth;
+        const flexibleMaxHeight = options.flexibleMaxHeight;
+        this.domNode = document.createElement('div');
+        this.domNode.classList.add('monaco-findInput');
+        this.inputBox = this._register(new HistoryInputBox(this.domNode, this.contextViewProvider, {
+            ariaLabel: this.label || '',
+            placeholder: this.placeholder || '',
+            validationOptions: {
+                validation: this.validation
+            },
+            history,
+            showHistoryHint: options.showHistoryHint,
+            flexibleHeight,
+            flexibleWidth,
+            flexibleMaxHeight,
+            inputBoxStyles: options.inputBoxStyles
+        }));
+        this.preserveCase = this._register(new PreserveCaseToggle({
+            appendTitle: appendPreserveCaseLabel,
+            isChecked: false,
+            ...options.toggleStyles
+        }));
+        this._register(this.preserveCase.onChange(viaKeyboard => {
+            this._onDidOptionChange.fire(viaKeyboard);
+            if (!viaKeyboard && this.fixFocusOnOptionClickEnabled) {
+                this.inputBox.focus();
+            }
+            this.validate();
+        }));
+        this._register(this.preserveCase.onKeyDown(e => {
+            this._onPreserveCaseKeyDown.fire(e);
+        }));
+        if (this._showOptionButtons) {
+            this.cachedOptionsWidth = this.preserveCase.width();
+        }
+        else {
+            this.cachedOptionsWidth = 0;
+        }
+        const indexes = [this.preserveCase.domNode];
+        this.onkeydown(this.domNode, (event) => {
+            if (event.equals(15) || event.equals(17) || event.equals(9)) {
+                const index = indexes.indexOf(this.domNode.ownerDocument.activeElement);
+                if (index >= 0) {
+                    let newIndex = -1;
+                    if (event.equals(17)) {
+                        newIndex = (index + 1) % indexes.length;
+                    }
+                    else if (event.equals(15)) {
+                        if (index === 0) {
+                            newIndex = indexes.length - 1;
+                        }
+                        else {
+                            newIndex = index - 1;
+                        }
+                    }
+                    if (event.equals(9)) {
+                        indexes[index].blur();
+                        this.inputBox.focus();
+                    }
+                    else if (newIndex >= 0) {
+                        indexes[newIndex].focus();
+                    }
+                    dom.EventHelper.stop(event, true);
+                }
+            }
+        });
+        const controls = document.createElement('div');
+        controls.className = 'controls';
+        controls.style.display = this._showOptionButtons ? 'block' : 'none';
+        controls.appendChild(this.preserveCase.domNode);
+        this.domNode.appendChild(controls);
+        parent?.appendChild(this.domNode);
+        this.onkeydown(this.inputBox.inputElement, (e) => this._onKeyDown.fire(e));
+        this.onkeyup(this.inputBox.inputElement, (e) => this._onKeyUp.fire(e));
+        this.oninput(this.inputBox.inputElement, (e) => this._onInput.fire());
+        this.onmousedown(this.inputBox.inputElement, (e) => this._onMouseDown.fire(e));
+    }
+    enable() {
+        this.domNode.classList.remove('disabled');
+        this.inputBox.enable();
+        this.preserveCase.enable();
+    }
+    disable() {
+        this.domNode.classList.add('disabled');
+        this.inputBox.disable();
+        this.preserveCase.disable();
+    }
+    setFocusInputOnOptionClick(value) {
+        this.fixFocusOnOptionClickEnabled = value;
+    }
+    setEnabled(enabled) {
+        if (enabled) {
+            this.enable();
+        }
+        else {
+            this.disable();
+        }
+    }
+    clear() {
+        this.clearValidation();
+        this.setValue('');
+        this.focus();
+    }
+    getValue() {
+        return this.inputBox.value;
+    }
+    setValue(value) {
+        if (this.inputBox.value !== value) {
+            this.inputBox.value = value;
+        }
+    }
+    onSearchSubmit() {
+        this.inputBox.addToHistory();
+    }
+    applyStyles() {
+    }
+    select() {
+        this.inputBox.select();
+    }
+    focus() {
+        this.inputBox.focus();
+    }
+    getPreserveCase() {
+        return this.preserveCase.checked;
+    }
+    setPreserveCase(value) {
+        this.preserveCase.checked = value;
+    }
+    focusOnPreserve() {
+        this.preserveCase.focus();
+    }
+    highlightFindOptions() {
+        this.domNode.classList.remove('highlight-' + (this._lastHighlightFindOptions));
+        this._lastHighlightFindOptions = 1 - this._lastHighlightFindOptions;
+        this.domNode.classList.add('highlight-' + (this._lastHighlightFindOptions));
+    }
+    validate() {
+        this.inputBox?.validate();
+    }
+    showMessage(message) {
+        this.inputBox?.showMessage(message);
+    }
+    clearMessage() {
+        this.inputBox?.hideMessage();
+    }
+    clearValidation() {
+        this.inputBox?.hideMessage();
+    }
+    set width(newWidth) {
+        this.inputBox.paddingRight = this.cachedOptionsWidth;
+        this.domNode.style.width = newWidth + 'px';
+    }
+    dispose() {
+        super.dispose();
+    }
+}

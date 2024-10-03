@@ -1,3 +1,86 @@
-import"../../../../base/browser/ui/list/listWidget.js";import{Event as s,Emitter as u}from"../../../../base/common/event.js";import{Disposable as g}from"../../../../base/common/lifecycle.js";import{observableFromEvent as v}from"../../../../base/common/observable.js";import*as r from"../../../../nls.js";import"../../../../platform/configuration/common/configuration.js";import"../../../../platform/keybinding/common/keybinding.js";import{AccessibilityVerbositySettingId as d}from"../../accessibility/browser/accessibilityConfiguration.js";import{AccessibilityCommandId as m}from"../../accessibility/common/accessibilityCommands.js";import"./viewModel/notebookViewModelImpl.js";import{CellKind as p,NotebookCellExecutionState as c}from"../common/notebookCommon.js";import{NotebookExecutionType as h}from"../common/notebookExecutionStateService.js";class O extends g{constructor(e,t,i,o,y){super();this.notebookExecutionStateService=e;this.viewModel=t;this.keybindingService=i;this.configurationService=o;this.isReplHistory=y;this._register(s.debounce(this.notebookExecutionStateService.onDidChangeExecution,(l,n)=>this.mergeEvents(l,n),100)(l=>{const n=this.viewModel();if(n)for(const b of l){const a=n.getCellByHandle(b);a&&this._onDidAriaLabelChange.fire(a)}},this))}_onDidAriaLabelChange=new u;onDidAriaLabelChange=this._onDidAriaLabelChange.event;get verbositySettingId(){return this.isReplHistory?d.ReplEditor:d.Notebook}getAriaLabel(e){const t=s.filter(this.onDidAriaLabelChange,i=>i===e);return v(this,t,()=>{const i=this.viewModel();if(!i)return"";const o=i.getCellIndex(e);return o>=0?this.getLabel(o,e):""})}createItemLabel(e,t,i){return this.isReplHistory?`item${e}`:`${i===p.Markup?"markdown":"code"} cell${e}`}getLabel(e,t){const i=this.notebookExecutionStateService.getCellExecution(t.uri)?.state,o=i===c.Executing?", executing":i===c.Pending?", pending":"";return this.createItemLabel(o,e,t.cellKind)}get widgetAriaLabelName(){return this.isReplHistory?r.localize("replHistoryTreeAriaLabel","REPL Editor History"):r.localize("notebookTreeAriaLabel","Notebook")}getWidgetAriaLabel(){const e=this.keybindingService.lookupKeybinding(m.OpenAccessibilityHelp)?.getLabel();return this.configurationService.getValue(this.verbositySettingId)?e?r.localize("notebookTreeAriaLabelHelp",`{0}
-Use {1} for accessibility help`,this.widgetAriaLabelName,e):r.localize("notebookTreeAriaLabelHelpNoKb",`{0}
-Run the Open Accessibility Help command for more information`,this.widgetAriaLabelName):this.widgetAriaLabelName}mergeEvents(e,t){const i=this.viewModel(),o=e||[];return i&&t.type===h.cell&&t.affectsNotebook(i.uri)&&o.indexOf(t.cellHandle)<0&&o.push(t.cellHandle),o}}export{O as NotebookAccessibilityProvider};
+import { Event, Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { observableFromEvent } from '../../../../base/common/observable.js';
+import * as nls from '../../../../nls.js';
+import { CellKind, NotebookCellExecutionState } from '../common/notebookCommon.js';
+import { NotebookExecutionType } from '../common/notebookExecutionStateService.js';
+export class NotebookAccessibilityProvider extends Disposable {
+    constructor(notebookExecutionStateService, viewModel, keybindingService, configurationService, isReplHistory) {
+        super();
+        this.notebookExecutionStateService = notebookExecutionStateService;
+        this.viewModel = viewModel;
+        this.keybindingService = keybindingService;
+        this.configurationService = configurationService;
+        this.isReplHistory = isReplHistory;
+        this._onDidAriaLabelChange = new Emitter();
+        this.onDidAriaLabelChange = this._onDidAriaLabelChange.event;
+        this._register(Event.debounce(this.notebookExecutionStateService.onDidChangeExecution, (last, e) => this.mergeEvents(last, e), 100)((cellHandles) => {
+            const viewModel = this.viewModel();
+            if (viewModel) {
+                for (const handle of cellHandles) {
+                    const cellModel = viewModel.getCellByHandle(handle);
+                    if (cellModel) {
+                        this._onDidAriaLabelChange.fire(cellModel);
+                    }
+                }
+            }
+        }, this));
+    }
+    get verbositySettingId() {
+        return this.isReplHistory ?
+            "accessibility.verbosity.notebook" :
+            "accessibility.verbosity.notebook";
+    }
+    getAriaLabel(element) {
+        const event = Event.filter(this.onDidAriaLabelChange, e => e === element);
+        return observableFromEvent(this, event, () => {
+            const viewModel = this.viewModel();
+            if (!viewModel) {
+                return '';
+            }
+            const index = viewModel.getCellIndex(element);
+            if (index >= 0) {
+                return this.getLabel(index, element);
+            }
+            return '';
+        });
+    }
+    createItemLabel(executionLabel, index, cellKind) {
+        return this.isReplHistory ?
+            `item${executionLabel}` :
+            `${cellKind === CellKind.Markup ? 'markdown' : 'code'} cell${executionLabel}`;
+    }
+    getLabel(index, element) {
+        const executionState = this.notebookExecutionStateService.getCellExecution(element.uri)?.state;
+        const executionLabel = executionState === NotebookCellExecutionState.Executing
+            ? ', executing'
+            : executionState === NotebookCellExecutionState.Pending
+                ? ', pending'
+                : '';
+        return this.createItemLabel(executionLabel, index, element.cellKind);
+    }
+    get widgetAriaLabelName() {
+        return this.isReplHistory ?
+            nls.localize('replHistoryTreeAriaLabel', "REPL Editor History") :
+            nls.localize('notebookTreeAriaLabel', "Notebook");
+    }
+    getWidgetAriaLabel() {
+        const keybinding = this.keybindingService.lookupKeybinding("editor.action.accessibilityHelp")?.getLabel();
+        if (this.configurationService.getValue(this.verbositySettingId)) {
+            return keybinding
+                ? nls.localize('notebookTreeAriaLabelHelp', "{0}\nUse {1} for accessibility help", this.widgetAriaLabelName, keybinding)
+                : nls.localize('notebookTreeAriaLabelHelpNoKb', "{0}\nRun the Open Accessibility Help command for more information", this.widgetAriaLabelName);
+        }
+        return this.widgetAriaLabelName;
+    }
+    mergeEvents(last, e) {
+        const viewModel = this.viewModel();
+        const result = last || [];
+        if (viewModel && e.type === NotebookExecutionType.cell && e.affectsNotebook(viewModel.uri)) {
+            if (result.indexOf(e.cellHandle) < 0) {
+                result.push(e.cellHandle);
+            }
+        }
+        return result;
+    }
+}

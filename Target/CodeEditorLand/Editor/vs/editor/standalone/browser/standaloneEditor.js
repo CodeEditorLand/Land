@@ -1,1 +1,341 @@
-import{mainWindow as v}from"../../../base/browser/window.js";import{Disposable as x,DisposableStore as T}from"../../../base/common/lifecycle.js";import{splitLines as D}from"../../../base/common/strings.js";import{URI as h}from"../../../base/common/uri.js";import"./standalone-tokens.css";import{FontMeasurements as O}from"../../browser/config/fontMeasurements.js";import"../../browser/editorBrowser.js";import{EditorCommand as L}from"../../browser/editorExtensions.js";import{ICodeEditorService as l}from"../../browser/services/codeEditorService.js";import{createWebWorker as R}from"./standaloneWebWorker.js";import{ApplyUpdateResult as z,ConfigurationChangedEvent as A,EditorOptions as P}from"../../common/config/editorOptions.js";import{EditorZoom as W}from"../../common/config/editorZoom.js";import{BareFontInfo as w,FontInfo as K}from"../../common/config/fontInfo.js";import"../../common/core/position.js";import"../../common/core/range.js";import{EditorType as F}from"../../common/editorCommon.js";import*as M from"../../common/languages.js";import{ILanguageService as u}from"../../common/languages/language.js";import{PLAINTEXT_LANGUAGE_ID as U}from"../../common/languages/modesRegistry.js";import{NullState as H,nullTokenize as B}from"../../common/languages/nullTokenize.js";import{FindMatch as N,TextModelResolvedOptions as G}from"../../common/model.js";import{IModelService as c}from"../../common/services/model.js";import*as i from"../../common/standalone/standaloneEnums.js";import{Colorizer as S}from"./colorizer.js";import{StandaloneDiffEditor2 as q,StandaloneEditor as j,createTextModel as V}from"./standaloneCodeEditor.js";import{StandaloneKeybindingService as b,StandaloneServices as t}from"./standaloneServices.js";import"./standaloneThemeService.js";import{IStandaloneThemeService as m}from"../common/standaloneTheme.js";import{MenuId as Z,MenuRegistry as _}from"../../../platform/actions/common/actions.js";import{CommandsRegistry as y}from"../../../platform/commands/common/commands.js";import{ContextKeyExpr as g}from"../../../platform/contextkey/common/contextkey.js";import"../../../platform/editor/common/editor.js";import{IKeybindingService as C}from"../../../platform/keybinding/common/keybinding.js";import{IMarkerService as p}from"../../../platform/markers/common/markers.js";import{IOpenerService as X}from"../../../platform/opener/common/opener.js";import{MultiDiffEditorWidget as J}from"../../browser/widget/multiDiffEditor/multiDiffEditorWidget.js";function Q(e,n,o){return t.initialize(o||{}).createInstance(j,e,n)}function Y(e){return t.get(l).onCodeEditorAdd(o=>{e(o)})}function $(e){return t.get(l).onDiffEditorAdd(o=>{e(o)})}function ee(){return t.get(l).listCodeEditors()}function ne(){return t.get(l).listDiffEditors()}function oe(e,n,o){return t.initialize(o||{}).createInstance(q,e,n)}function te(e,n){const o=t.initialize(n||{});return new J(e,{},o)}function re(e){if(typeof e.id!="string"||typeof e.run!="function")throw new Error("Invalid command descriptor, `id` and `run` are required properties!");return y.registerCommand(e.id,e.run)}function ie(e){if(typeof e.id!="string"||typeof e.label!="string"||typeof e.run!="function")throw new Error("Invalid action descriptor, `id`, `label` and `run` are required properties!");const n=g.deserialize(e.precondition),o=(a,...d)=>L.runEditorCommand(a,d,n,(s,f,I)=>Promise.resolve(e.run(f,...I))),r=new T;if(r.add(y.registerCommand(e.id,o)),e.contextMenuGroupId){const a={command:{id:e.id,title:e.label},when:n,group:e.contextMenuGroupId,order:e.contextMenuOrder||0};r.add(_.appendMenuItem(Z.EditorContext,a))}if(Array.isArray(e.keybindings)){const a=t.get(C);if(a instanceof b){const d=g.and(n,g.deserialize(e.keybindingContext));r.add(a.addDynamicKeybindings(e.keybindings.map(s=>({keybinding:s,command:e.id,when:d}))))}}return r}function ae(e){return k([e])}function k(e){const n=t.get(C);return n instanceof b?n.addDynamicKeybindings(e.map(o=>({keybinding:o.keybinding,command:o.command,commandArgs:o.commandArgs,when:g.deserialize(o.when)}))):x.None}function de(e,n,o){const r=t.get(u),a=r.getLanguageIdByMimeType(n)||n;return V(t.get(c),r,e,a,o)}function se(e,n){const o=t.get(u),r=o.getLanguageIdByMimeType(n)||n||U;e.setLanguage(o.createById(r))}function ce(e,n,o){e&&t.get(p).changeOne(n,e.uri,o)}function le(e){t.get(p).changeAll(e,[])}function me(e){return t.get(p).read(e)}function ue(e){return t.get(p).onMarkerChanged(e)}function ge(e){return t.get(c).getModel(e)}function pe(){return t.get(c).getModels()}function fe(e){return t.get(c).onModelAdded(e)}function Ie(e){return t.get(c).onModelRemoved(e)}function Se(e){return t.get(c).onModelLanguageChanged(o=>{e({model:o.model,oldLanguage:o.oldLanguageId})})}function ye(e){return R(t.get(c),e)}function Ee(e,n){const o=t.get(u),r=t.get(m);return S.colorizeElement(r,o,e,n).then(()=>{r.registerEditorContainer(e)})}function ve(e,n,o){const r=t.get(u);return t.get(m).registerEditorContainer(v.document.body),S.colorize(r,e,n,o)}function Me(e,n,o=4){return t.get(m).registerEditorContainer(v.document.body),S.colorizeModelLine(e,n,o)}function be(e){const n=M.TokenizationRegistry.get(e);return n||{getInitialState:()=>H,tokenize:(o,r,a)=>B(e,a)}}function Ce(e,n){M.TokenizationRegistry.getOrCreate(n);const o=be(n),r=D(e),a=[];let d=o.getInitialState();for(let s=0,f=r.length;s<f;s++){const I=r[s],E=o.tokenize(I,!0,d);a[s]=E.tokens,d=E.endState}return a}function ke(e,n){t.get(m).defineTheme(e,n)}function xe(e){t.get(m).setTheme(e)}function Te(){O.clearAllFontInfos()}function De(e,n){return y.registerCommand({id:e,handler:n})}function he(e){return t.get(X).registerOpener({async open(o){return typeof o=="string"&&(o=h.parse(o)),e.open(o)}})}function Oe(e){return t.get(l).registerCodeEditorOpenHandler(async(o,r,a)=>{if(!r)return null;const d=o.options?.selection;let s;return d&&typeof d.endLineNumber=="number"&&typeof d.endColumn=="number"?s=d:d&&(s={lineNumber:d.startLineNumber,column:d.startColumn}),await e.openCodeEditor(r,o.resource,s)?r:null})}function Wn(){return{create:Q,getEditors:ee,getDiffEditors:ne,onDidCreateEditor:Y,onDidCreateDiffEditor:$,createDiffEditor:oe,addCommand:re,addEditorAction:ie,addKeybindingRule:ae,addKeybindingRules:k,createModel:de,setModelLanguage:se,setModelMarkers:ce,getModelMarkers:me,removeAllMarkers:le,onDidChangeMarkers:ue,getModels:pe,getModel:ge,onDidCreateModel:fe,onWillDisposeModel:Ie,onDidChangeModelLanguage:Se,createWebWorker:ye,colorizeElement:Ee,colorize:ve,colorizeModelLine:Me,tokenize:Ce,defineTheme:ke,setTheme:xe,remeasureFonts:Te,registerCommand:De,registerLinkOpener:he,registerEditorOpener:Oe,AccessibilitySupport:i.AccessibilitySupport,ContentWidgetPositionPreference:i.ContentWidgetPositionPreference,CursorChangeReason:i.CursorChangeReason,DefaultEndOfLine:i.DefaultEndOfLine,EditorAutoIndentStrategy:i.EditorAutoIndentStrategy,EditorOption:i.EditorOption,EndOfLinePreference:i.EndOfLinePreference,EndOfLineSequence:i.EndOfLineSequence,MinimapPosition:i.MinimapPosition,MinimapSectionHeaderStyle:i.MinimapSectionHeaderStyle,MouseTargetType:i.MouseTargetType,OverlayWidgetPositionPreference:i.OverlayWidgetPositionPreference,OverviewRulerLane:i.OverviewRulerLane,GlyphMarginLane:i.GlyphMarginLane,RenderLineNumbersType:i.RenderLineNumbersType,RenderMinimap:i.RenderMinimap,ScrollbarVisibility:i.ScrollbarVisibility,ScrollType:i.ScrollType,TextEditorCursorBlinkingStyle:i.TextEditorCursorBlinkingStyle,TextEditorCursorStyle:i.TextEditorCursorStyle,TrackedRangeStickiness:i.TrackedRangeStickiness,WrappingIndent:i.WrappingIndent,InjectedTextCursorStops:i.InjectedTextCursorStops,PositionAffinity:i.PositionAffinity,ShowLightbulbIconMode:i.ShowLightbulbIconMode,ConfigurationChangedEvent:A,BareFontInfo:w,FontInfo:K,TextModelResolvedOptions:G,FindMatch:N,ApplyUpdateResult:z,EditorZoom:W,createMultiFileDiffEditor:te,EditorType:F,EditorOptions:P}}export{re as addCommand,ie as addEditorAction,ae as addKeybindingRule,k as addKeybindingRules,ve as colorize,Ee as colorizeElement,Me as colorizeModelLine,Q as create,oe as createDiffEditor,de as createModel,Wn as createMonacoEditorAPI,te as createMultiFileDiffEditor,ye as createWebWorker,ke as defineTheme,ne as getDiffEditors,ee as getEditors,ge as getModel,me as getModelMarkers,pe as getModels,ue as onDidChangeMarkers,Se as onDidChangeModelLanguage,$ as onDidCreateDiffEditor,Y as onDidCreateEditor,fe as onDidCreateModel,Ie as onWillDisposeModel,De as registerCommand,Oe as registerEditorOpener,he as registerLinkOpener,Te as remeasureFonts,le as removeAllMarkers,se as setModelLanguage,ce as setModelMarkers,xe as setTheme,Ce as tokenize};
+import { mainWindow } from '../../../base/browser/window.js';
+import { Disposable, DisposableStore } from '../../../base/common/lifecycle.js';
+import { splitLines } from '../../../base/common/strings.js';
+import { URI } from '../../../base/common/uri.js';
+import './standalone-tokens.css';
+import { FontMeasurements } from '../../browser/config/fontMeasurements.js';
+import { EditorCommand } from '../../browser/editorExtensions.js';
+import { ICodeEditorService } from '../../browser/services/codeEditorService.js';
+import { createWebWorker as actualCreateWebWorker } from './standaloneWebWorker.js';
+import { ApplyUpdateResult, ConfigurationChangedEvent, EditorOptions } from '../../common/config/editorOptions.js';
+import { EditorZoom } from '../../common/config/editorZoom.js';
+import { BareFontInfo, FontInfo } from '../../common/config/fontInfo.js';
+import { EditorType } from '../../common/editorCommon.js';
+import * as languages from '../../common/languages.js';
+import { ILanguageService } from '../../common/languages/language.js';
+import { PLAINTEXT_LANGUAGE_ID } from '../../common/languages/modesRegistry.js';
+import { NullState, nullTokenize } from '../../common/languages/nullTokenize.js';
+import { FindMatch, TextModelResolvedOptions } from '../../common/model.js';
+import { IModelService } from '../../common/services/model.js';
+import * as standaloneEnums from '../../common/standalone/standaloneEnums.js';
+import { Colorizer } from './colorizer.js';
+import { StandaloneDiffEditor2, StandaloneEditor, createTextModel } from './standaloneCodeEditor.js';
+import { StandaloneKeybindingService, StandaloneServices } from './standaloneServices.js';
+import { IStandaloneThemeService } from '../common/standaloneTheme.js';
+import { MenuId, MenuRegistry } from '../../../platform/actions/common/actions.js';
+import { CommandsRegistry } from '../../../platform/commands/common/commands.js';
+import { ContextKeyExpr } from '../../../platform/contextkey/common/contextkey.js';
+import { IKeybindingService } from '../../../platform/keybinding/common/keybinding.js';
+import { IMarkerService } from '../../../platform/markers/common/markers.js';
+import { IOpenerService } from '../../../platform/opener/common/opener.js';
+import { MultiDiffEditorWidget } from '../../browser/widget/multiDiffEditor/multiDiffEditorWidget.js';
+export function create(domElement, options, override) {
+    const instantiationService = StandaloneServices.initialize(override || {});
+    return instantiationService.createInstance(StandaloneEditor, domElement, options);
+}
+export function onDidCreateEditor(listener) {
+    const codeEditorService = StandaloneServices.get(ICodeEditorService);
+    return codeEditorService.onCodeEditorAdd((editor) => {
+        listener(editor);
+    });
+}
+export function onDidCreateDiffEditor(listener) {
+    const codeEditorService = StandaloneServices.get(ICodeEditorService);
+    return codeEditorService.onDiffEditorAdd((editor) => {
+        listener(editor);
+    });
+}
+export function getEditors() {
+    const codeEditorService = StandaloneServices.get(ICodeEditorService);
+    return codeEditorService.listCodeEditors();
+}
+export function getDiffEditors() {
+    const codeEditorService = StandaloneServices.get(ICodeEditorService);
+    return codeEditorService.listDiffEditors();
+}
+export function createDiffEditor(domElement, options, override) {
+    const instantiationService = StandaloneServices.initialize(override || {});
+    return instantiationService.createInstance(StandaloneDiffEditor2, domElement, options);
+}
+export function createMultiFileDiffEditor(domElement, override) {
+    const instantiationService = StandaloneServices.initialize(override || {});
+    return new MultiDiffEditorWidget(domElement, {}, instantiationService);
+}
+export function addCommand(descriptor) {
+    if ((typeof descriptor.id !== 'string') || (typeof descriptor.run !== 'function')) {
+        throw new Error('Invalid command descriptor, `id` and `run` are required properties!');
+    }
+    return CommandsRegistry.registerCommand(descriptor.id, descriptor.run);
+}
+export function addEditorAction(descriptor) {
+    if ((typeof descriptor.id !== 'string') || (typeof descriptor.label !== 'string') || (typeof descriptor.run !== 'function')) {
+        throw new Error('Invalid action descriptor, `id`, `label` and `run` are required properties!');
+    }
+    const precondition = ContextKeyExpr.deserialize(descriptor.precondition);
+    const run = (accessor, ...args) => {
+        return EditorCommand.runEditorCommand(accessor, args, precondition, (accessor, editor, args) => Promise.resolve(descriptor.run(editor, ...args)));
+    };
+    const toDispose = new DisposableStore();
+    toDispose.add(CommandsRegistry.registerCommand(descriptor.id, run));
+    if (descriptor.contextMenuGroupId) {
+        const menuItem = {
+            command: {
+                id: descriptor.id,
+                title: descriptor.label
+            },
+            when: precondition,
+            group: descriptor.contextMenuGroupId,
+            order: descriptor.contextMenuOrder || 0
+        };
+        toDispose.add(MenuRegistry.appendMenuItem(MenuId.EditorContext, menuItem));
+    }
+    if (Array.isArray(descriptor.keybindings)) {
+        const keybindingService = StandaloneServices.get(IKeybindingService);
+        if (!(keybindingService instanceof StandaloneKeybindingService)) {
+            console.warn('Cannot add keybinding because the editor is configured with an unrecognized KeybindingService');
+        }
+        else {
+            const keybindingsWhen = ContextKeyExpr.and(precondition, ContextKeyExpr.deserialize(descriptor.keybindingContext));
+            toDispose.add(keybindingService.addDynamicKeybindings(descriptor.keybindings.map((keybinding) => {
+                return {
+                    keybinding,
+                    command: descriptor.id,
+                    when: keybindingsWhen
+                };
+            })));
+        }
+    }
+    return toDispose;
+}
+export function addKeybindingRule(rule) {
+    return addKeybindingRules([rule]);
+}
+export function addKeybindingRules(rules) {
+    const keybindingService = StandaloneServices.get(IKeybindingService);
+    if (!(keybindingService instanceof StandaloneKeybindingService)) {
+        console.warn('Cannot add keybinding because the editor is configured with an unrecognized KeybindingService');
+        return Disposable.None;
+    }
+    return keybindingService.addDynamicKeybindings(rules.map((rule) => {
+        return {
+            keybinding: rule.keybinding,
+            command: rule.command,
+            commandArgs: rule.commandArgs,
+            when: ContextKeyExpr.deserialize(rule.when),
+        };
+    }));
+}
+export function createModel(value, language, uri) {
+    const languageService = StandaloneServices.get(ILanguageService);
+    const languageId = languageService.getLanguageIdByMimeType(language) || language;
+    return createTextModel(StandaloneServices.get(IModelService), languageService, value, languageId, uri);
+}
+export function setModelLanguage(model, mimeTypeOrLanguageId) {
+    const languageService = StandaloneServices.get(ILanguageService);
+    const languageId = languageService.getLanguageIdByMimeType(mimeTypeOrLanguageId) || mimeTypeOrLanguageId || PLAINTEXT_LANGUAGE_ID;
+    model.setLanguage(languageService.createById(languageId));
+}
+export function setModelMarkers(model, owner, markers) {
+    if (model) {
+        const markerService = StandaloneServices.get(IMarkerService);
+        markerService.changeOne(owner, model.uri, markers);
+    }
+}
+export function removeAllMarkers(owner) {
+    const markerService = StandaloneServices.get(IMarkerService);
+    markerService.changeAll(owner, []);
+}
+export function getModelMarkers(filter) {
+    const markerService = StandaloneServices.get(IMarkerService);
+    return markerService.read(filter);
+}
+export function onDidChangeMarkers(listener) {
+    const markerService = StandaloneServices.get(IMarkerService);
+    return markerService.onMarkerChanged(listener);
+}
+export function getModel(uri) {
+    const modelService = StandaloneServices.get(IModelService);
+    return modelService.getModel(uri);
+}
+export function getModels() {
+    const modelService = StandaloneServices.get(IModelService);
+    return modelService.getModels();
+}
+export function onDidCreateModel(listener) {
+    const modelService = StandaloneServices.get(IModelService);
+    return modelService.onModelAdded(listener);
+}
+export function onWillDisposeModel(listener) {
+    const modelService = StandaloneServices.get(IModelService);
+    return modelService.onModelRemoved(listener);
+}
+export function onDidChangeModelLanguage(listener) {
+    const modelService = StandaloneServices.get(IModelService);
+    return modelService.onModelLanguageChanged((e) => {
+        listener({
+            model: e.model,
+            oldLanguage: e.oldLanguageId
+        });
+    });
+}
+export function createWebWorker(opts) {
+    return actualCreateWebWorker(StandaloneServices.get(IModelService), opts);
+}
+export function colorizeElement(domNode, options) {
+    const languageService = StandaloneServices.get(ILanguageService);
+    const themeService = StandaloneServices.get(IStandaloneThemeService);
+    return Colorizer.colorizeElement(themeService, languageService, domNode, options).then(() => {
+        themeService.registerEditorContainer(domNode);
+    });
+}
+export function colorize(text, languageId, options) {
+    const languageService = StandaloneServices.get(ILanguageService);
+    const themeService = StandaloneServices.get(IStandaloneThemeService);
+    themeService.registerEditorContainer(mainWindow.document.body);
+    return Colorizer.colorize(languageService, text, languageId, options);
+}
+export function colorizeModelLine(model, lineNumber, tabSize = 4) {
+    const themeService = StandaloneServices.get(IStandaloneThemeService);
+    themeService.registerEditorContainer(mainWindow.document.body);
+    return Colorizer.colorizeModelLine(model, lineNumber, tabSize);
+}
+function getSafeTokenizationSupport(language) {
+    const tokenizationSupport = languages.TokenizationRegistry.get(language);
+    if (tokenizationSupport) {
+        return tokenizationSupport;
+    }
+    return {
+        getInitialState: () => NullState,
+        tokenize: (line, hasEOL, state) => nullTokenize(language, state)
+    };
+}
+export function tokenize(text, languageId) {
+    languages.TokenizationRegistry.getOrCreate(languageId);
+    const tokenizationSupport = getSafeTokenizationSupport(languageId);
+    const lines = splitLines(text);
+    const result = [];
+    let state = tokenizationSupport.getInitialState();
+    for (let i = 0, len = lines.length; i < len; i++) {
+        const line = lines[i];
+        const tokenizationResult = tokenizationSupport.tokenize(line, true, state);
+        result[i] = tokenizationResult.tokens;
+        state = tokenizationResult.endState;
+    }
+    return result;
+}
+export function defineTheme(themeName, themeData) {
+    const standaloneThemeService = StandaloneServices.get(IStandaloneThemeService);
+    standaloneThemeService.defineTheme(themeName, themeData);
+}
+export function setTheme(themeName) {
+    const standaloneThemeService = StandaloneServices.get(IStandaloneThemeService);
+    standaloneThemeService.setTheme(themeName);
+}
+export function remeasureFonts() {
+    FontMeasurements.clearAllFontInfos();
+}
+export function registerCommand(id, handler) {
+    return CommandsRegistry.registerCommand({ id, handler });
+}
+export function registerLinkOpener(opener) {
+    const openerService = StandaloneServices.get(IOpenerService);
+    return openerService.registerOpener({
+        async open(resource) {
+            if (typeof resource === 'string') {
+                resource = URI.parse(resource);
+            }
+            return opener.open(resource);
+        }
+    });
+}
+export function registerEditorOpener(opener) {
+    const codeEditorService = StandaloneServices.get(ICodeEditorService);
+    return codeEditorService.registerCodeEditorOpenHandler(async (input, source, sideBySide) => {
+        if (!source) {
+            return null;
+        }
+        const selection = input.options?.selection;
+        let selectionOrPosition;
+        if (selection && typeof selection.endLineNumber === 'number' && typeof selection.endColumn === 'number') {
+            selectionOrPosition = selection;
+        }
+        else if (selection) {
+            selectionOrPosition = { lineNumber: selection.startLineNumber, column: selection.startColumn };
+        }
+        if (await opener.openCodeEditor(source, input.resource, selectionOrPosition)) {
+            return source;
+        }
+        return null;
+    });
+}
+export function createMonacoEditorAPI() {
+    return {
+        create: create,
+        getEditors: getEditors,
+        getDiffEditors: getDiffEditors,
+        onDidCreateEditor: onDidCreateEditor,
+        onDidCreateDiffEditor: onDidCreateDiffEditor,
+        createDiffEditor: createDiffEditor,
+        addCommand: addCommand,
+        addEditorAction: addEditorAction,
+        addKeybindingRule: addKeybindingRule,
+        addKeybindingRules: addKeybindingRules,
+        createModel: createModel,
+        setModelLanguage: setModelLanguage,
+        setModelMarkers: setModelMarkers,
+        getModelMarkers: getModelMarkers,
+        removeAllMarkers: removeAllMarkers,
+        onDidChangeMarkers: onDidChangeMarkers,
+        getModels: getModels,
+        getModel: getModel,
+        onDidCreateModel: onDidCreateModel,
+        onWillDisposeModel: onWillDisposeModel,
+        onDidChangeModelLanguage: onDidChangeModelLanguage,
+        createWebWorker: createWebWorker,
+        colorizeElement: colorizeElement,
+        colorize: colorize,
+        colorizeModelLine: colorizeModelLine,
+        tokenize: tokenize,
+        defineTheme: defineTheme,
+        setTheme: setTheme,
+        remeasureFonts: remeasureFonts,
+        registerCommand: registerCommand,
+        registerLinkOpener: registerLinkOpener,
+        registerEditorOpener: registerEditorOpener,
+        AccessibilitySupport: standaloneEnums.AccessibilitySupport,
+        ContentWidgetPositionPreference: standaloneEnums.ContentWidgetPositionPreference,
+        CursorChangeReason: standaloneEnums.CursorChangeReason,
+        DefaultEndOfLine: standaloneEnums.DefaultEndOfLine,
+        EditorAutoIndentStrategy: standaloneEnums.EditorAutoIndentStrategy,
+        EditorOption: standaloneEnums.EditorOption,
+        EndOfLinePreference: standaloneEnums.EndOfLinePreference,
+        EndOfLineSequence: standaloneEnums.EndOfLineSequence,
+        MinimapPosition: standaloneEnums.MinimapPosition,
+        MinimapSectionHeaderStyle: standaloneEnums.MinimapSectionHeaderStyle,
+        MouseTargetType: standaloneEnums.MouseTargetType,
+        OverlayWidgetPositionPreference: standaloneEnums.OverlayWidgetPositionPreference,
+        OverviewRulerLane: standaloneEnums.OverviewRulerLane,
+        GlyphMarginLane: standaloneEnums.GlyphMarginLane,
+        RenderLineNumbersType: standaloneEnums.RenderLineNumbersType,
+        RenderMinimap: standaloneEnums.RenderMinimap,
+        ScrollbarVisibility: standaloneEnums.ScrollbarVisibility,
+        ScrollType: standaloneEnums.ScrollType,
+        TextEditorCursorBlinkingStyle: standaloneEnums.TextEditorCursorBlinkingStyle,
+        TextEditorCursorStyle: standaloneEnums.TextEditorCursorStyle,
+        TrackedRangeStickiness: standaloneEnums.TrackedRangeStickiness,
+        WrappingIndent: standaloneEnums.WrappingIndent,
+        InjectedTextCursorStops: standaloneEnums.InjectedTextCursorStops,
+        PositionAffinity: standaloneEnums.PositionAffinity,
+        ShowLightbulbIconMode: standaloneEnums.ShowLightbulbIconMode,
+        ConfigurationChangedEvent: ConfigurationChangedEvent,
+        BareFontInfo: BareFontInfo,
+        FontInfo: FontInfo,
+        TextModelResolvedOptions: TextModelResolvedOptions,
+        FindMatch: FindMatch,
+        ApplyUpdateResult: ApplyUpdateResult,
+        EditorZoom: EditorZoom,
+        createMultiFileDiffEditor: createMultiFileDiffEditor,
+        EditorType: EditorType,
+        EditorOptions: EditorOptions
+    };
+}

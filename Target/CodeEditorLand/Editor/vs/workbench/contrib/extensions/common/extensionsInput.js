@@ -1,1 +1,41 @@
-import{Schemas as n}from"../../../../base/common/network.js";import{URI as r}from"../../../../base/common/uri.js";import{localize as i}from"../../../../nls.js";import{EditorInputCapabilities as o}from"../../../common/editor.js";import{EditorInput as s}from"../../../common/editor/editorInput.js";import"./extensions.js";import{areSameExtensions as d}from"../../../../platform/extensionManagement/common/extensionManagementUtil.js";import{join as a}from"../../../../base/common/path.js";import"../../../../platform/editor/common/editor.js";import"../../../../base/common/themables.js";import{Codicon as m}from"../../../../base/common/codicons.js";import{registerIcon as p}from"../../../../platform/theme/common/iconRegistry.js";const x=p("extensions-editor-label-icon",m.extensions,i("extensionsEditorLabelIcon","Icon of the extensions editor label."));class t extends s{constructor(e){super();this._extension=e}static ID="workbench.extensions.input2";get typeId(){return t.ID}get capabilities(){return o.Readonly|o.Singleton}get resource(){return r.from({scheme:n.extension,path:a(this._extension.identifier.id,"extension")})}get extension(){return this._extension}getName(){return i("extensionsInputName","Extension: {0}",this._extension.displayName)}getIcon(){return x}matches(e){return super.matches(e)?!0:e instanceof t&&d(this._extension.identifier,e._extension.identifier)}}export{t as ExtensionsInput};
+import { Schemas } from '../../../../base/common/network.js';
+import { URI } from '../../../../base/common/uri.js';
+import { localize } from '../../../../nls.js';
+import { EditorInput } from '../../../common/editor/editorInput.js';
+import { areSameExtensions } from '../../../../platform/extensionManagement/common/extensionManagementUtil.js';
+import { join } from '../../../../base/common/path.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { registerIcon } from '../../../../platform/theme/common/iconRegistry.js';
+const ExtensionEditorIcon = registerIcon('extensions-editor-label-icon', Codicon.extensions, localize('extensionsEditorLabelIcon', 'Icon of the extensions editor label.'));
+export class ExtensionsInput extends EditorInput {
+    static { this.ID = 'workbench.extensions.input2'; }
+    get typeId() {
+        return ExtensionsInput.ID;
+    }
+    get capabilities() {
+        return 2 | 8;
+    }
+    get resource() {
+        return URI.from({
+            scheme: Schemas.extension,
+            path: join(this._extension.identifier.id, 'extension')
+        });
+    }
+    constructor(_extension) {
+        super();
+        this._extension = _extension;
+    }
+    get extension() { return this._extension; }
+    getName() {
+        return localize('extensionsInputName', "Extension: {0}", this._extension.displayName);
+    }
+    getIcon() {
+        return ExtensionEditorIcon;
+    }
+    matches(other) {
+        if (super.matches(other)) {
+            return true;
+        }
+        return other instanceof ExtensionsInput && areSameExtensions(this._extension.identifier, other._extension.identifier);
+    }
+}

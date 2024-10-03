@@ -1,1 +1,43 @@
-import{timeout as p}from"../../../../../base/common/async.js";import{Disposable as a}from"../../../../../base/common/lifecycle.js";import{isWindows as h}from"../../../../../base/common/platform.js";import"../../../../log/common/log.js";import"../../../common/terminal.js";class v extends a{_pointer=0;_paused=!1;_throttled=!1;constructor(r,t,s,n){super(),this._register(r.onProcessData(e=>{if(this._paused||this._throttled)return;const o=typeof e=="string"?e:e.data;for(let i=0;i<o.length;i++)o[i]===t[this._pointer]?this._pointer++:this._reset(),this._pointer===t.length&&(n.debug(`Auto reply match: "${t}", response: "${s}"`),r.input(s),this._throttled=!0,p(1e3).then(()=>this._throttled=!1),this._reset())}))}_reset(){this._pointer=0}handleResize(){h&&(this._paused=!0)}handleInput(){this._paused=!1}}export{v as TerminalAutoResponder};
+import { timeout } from '../../../../../base/common/async.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { isWindows } from '../../../../../base/common/platform.js';
+export class TerminalAutoResponder extends Disposable {
+    constructor(proc, matchWord, response, logService) {
+        super();
+        this._pointer = 0;
+        this._paused = false;
+        this._throttled = false;
+        this._register(proc.onProcessData(e => {
+            if (this._paused || this._throttled) {
+                return;
+            }
+            const data = typeof e === 'string' ? e : e.data;
+            for (let i = 0; i < data.length; i++) {
+                if (data[i] === matchWord[this._pointer]) {
+                    this._pointer++;
+                }
+                else {
+                    this._reset();
+                }
+                if (this._pointer === matchWord.length) {
+                    logService.debug(`Auto reply match: "${matchWord}", response: "${response}"`);
+                    proc.input(response);
+                    this._throttled = true;
+                    timeout(1000).then(() => this._throttled = false);
+                    this._reset();
+                }
+            }
+        }));
+    }
+    _reset() {
+        this._pointer = 0;
+    }
+    handleResize() {
+        if (isWindows) {
+            this._paused = true;
+        }
+    }
+    handleInput() {
+        this._paused = false;
+    }
+}

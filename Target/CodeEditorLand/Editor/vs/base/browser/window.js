@@ -1,1 +1,16 @@
-function i(o,d){const e=o;typeof e.vscodeWindowId!="number"&&Object.defineProperty(e,"vscodeWindowId",{get:()=>d})}const n=window;function t(o){return o===n?!1:typeof o?.vscodeWindowId=="number"}export{i as ensureCodeWindow,t as isAuxiliaryWindow,n as mainWindow};
+export function ensureCodeWindow(targetWindow, fallbackWindowId) {
+    const codeWindow = targetWindow;
+    if (typeof codeWindow.vscodeWindowId !== 'number') {
+        Object.defineProperty(codeWindow, 'vscodeWindowId', {
+            get: () => fallbackWindowId
+        });
+    }
+}
+export const mainWindow = window;
+export function isAuxiliaryWindow(obj) {
+    if (obj === mainWindow) {
+        return false;
+    }
+    const candidate = obj;
+    return typeof candidate?.vscodeWindowId === 'number';
+}

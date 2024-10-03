@@ -1,1 +1,106 @@
-import{Disposable as u,dispose as c}from"../../../../base/common/lifecycle.js";import"../../../../editor/browser/editorBrowser.js";import"../../../../editor/common/core/range.js";import{CommentThreadCollapsibleState as a}from"../../../../editor/common/languages.js";import"../../../../editor/common/model.js";import{ModelDecorationOptions as p}from"../../../../editor/common/model/textModel.js";import"./commentService.js";class l{constructor(e,o){this.range=e;this.options=o}_decorationId;get id(){return this._decorationId}set id(e){this._decorationId=e}}class d extends u{static description="comment-thread-range-decorator";decorationOptions;activeDecorationOptions;decorationIds=[];activeDecorationIds=[];editor;threadCollapseStateListeners=[];currentThreadCollapseStateListener;constructor(e){super();const o={description:d.description,isWholeLine:!1,zIndex:20,className:"comment-thread-range",shouldFillLineOnLineBreak:!0};this.decorationOptions=p.createDynamic(o);const t={description:d.description,isWholeLine:!1,zIndex:20,className:"comment-thread-range-current",shouldFillLineOnLineBreak:!0};this.activeDecorationOptions=p.createDynamic(t),this._register(e.onDidChangeCurrentCommentThread(i=>{this.updateCurrent(i)})),this._register(e.onDidUpdateCommentThreads(()=>{this.updateCurrent(void 0)}))}updateCurrent(e){if(!this.editor||e?.resource&&e.resource?.toString()!==this.editor.getModel()?.uri.toString())return;this.currentThreadCollapseStateListener?.dispose();const o=[];if(e){const t=e.range;t&&!(t.startLineNumber===t.endLineNumber&&t.startColumn===t.endColumn)&&e.collapsibleState===a.Expanded&&(this.currentThreadCollapseStateListener=e.onDidChangeCollapsibleState(i=>{i===a.Collapsed&&this.updateCurrent(void 0)}),o.push(new l(t,this.activeDecorationOptions)))}this.editor.changeDecorations(t=>{this.activeDecorationIds=t.deltaDecorations(this.activeDecorationIds,o),o.forEach((i,s)=>i.id=this.decorationIds[s])})}update(e,o){const t=e?.getModel();if(!e||!t)return;c(this.threadCollapseStateListeners),this.editor=e;const i=[];for(const s of o)s.threads.forEach(r=>{if(r.isDisposed)return;const n=r.range;!n||n.startLineNumber===n.endLineNumber&&n.startColumn===n.endColumn||(this.threadCollapseStateListeners.push(r.onDidChangeCollapsibleState(()=>{this.update(e,o)})),r.collapsibleState!==a.Collapsed&&i.push(new l(n,this.decorationOptions)))});e.changeDecorations(s=>{this.decorationIds=s.deltaDecorations(this.decorationIds,i),i.forEach((r,n)=>r.id=this.decorationIds[n])})}dispose(){c(this.threadCollapseStateListeners),this.currentThreadCollapseStateListener?.dispose(),super.dispose()}}export{d as CommentThreadRangeDecorator};
+import { Disposable, dispose } from '../../../../base/common/lifecycle.js';
+import { CommentThreadCollapsibleState } from '../../../../editor/common/languages.js';
+import { ModelDecorationOptions } from '../../../../editor/common/model/textModel.js';
+class CommentThreadRangeDecoration {
+    get id() {
+        return this._decorationId;
+    }
+    set id(id) {
+        this._decorationId = id;
+    }
+    constructor(range, options) {
+        this.range = range;
+        this.options = options;
+    }
+}
+export class CommentThreadRangeDecorator extends Disposable {
+    static { this.description = 'comment-thread-range-decorator'; }
+    constructor(commentService) {
+        super();
+        this.decorationIds = [];
+        this.activeDecorationIds = [];
+        this.threadCollapseStateListeners = [];
+        const decorationOptions = {
+            description: CommentThreadRangeDecorator.description,
+            isWholeLine: false,
+            zIndex: 20,
+            className: 'comment-thread-range',
+            shouldFillLineOnLineBreak: true
+        };
+        this.decorationOptions = ModelDecorationOptions.createDynamic(decorationOptions);
+        const activeDecorationOptions = {
+            description: CommentThreadRangeDecorator.description,
+            isWholeLine: false,
+            zIndex: 20,
+            className: 'comment-thread-range-current',
+            shouldFillLineOnLineBreak: true
+        };
+        this.activeDecorationOptions = ModelDecorationOptions.createDynamic(activeDecorationOptions);
+        this._register(commentService.onDidChangeCurrentCommentThread(thread => {
+            this.updateCurrent(thread);
+        }));
+        this._register(commentService.onDidUpdateCommentThreads(() => {
+            this.updateCurrent(undefined);
+        }));
+    }
+    updateCurrent(thread) {
+        if (!this.editor || (thread?.resource && (thread.resource?.toString() !== this.editor.getModel()?.uri.toString()))) {
+            return;
+        }
+        this.currentThreadCollapseStateListener?.dispose();
+        const newDecoration = [];
+        if (thread) {
+            const range = thread.range;
+            if (range && !((range.startLineNumber === range.endLineNumber) && (range.startColumn === range.endColumn))) {
+                if (thread.collapsibleState === CommentThreadCollapsibleState.Expanded) {
+                    this.currentThreadCollapseStateListener = thread.onDidChangeCollapsibleState(state => {
+                        if (state === CommentThreadCollapsibleState.Collapsed) {
+                            this.updateCurrent(undefined);
+                        }
+                    });
+                    newDecoration.push(new CommentThreadRangeDecoration(range, this.activeDecorationOptions));
+                }
+            }
+        }
+        this.editor.changeDecorations((changeAccessor) => {
+            this.activeDecorationIds = changeAccessor.deltaDecorations(this.activeDecorationIds, newDecoration);
+            newDecoration.forEach((decoration, index) => decoration.id = this.decorationIds[index]);
+        });
+    }
+    update(editor, commentInfos) {
+        const model = editor?.getModel();
+        if (!editor || !model) {
+            return;
+        }
+        dispose(this.threadCollapseStateListeners);
+        this.editor = editor;
+        const commentThreadRangeDecorations = [];
+        for (const info of commentInfos) {
+            info.threads.forEach(thread => {
+                if (thread.isDisposed) {
+                    return;
+                }
+                const range = thread.range;
+                if (!range || (range.startLineNumber === range.endLineNumber) && (range.startColumn === range.endColumn)) {
+                    return;
+                }
+                this.threadCollapseStateListeners.push(thread.onDidChangeCollapsibleState(() => {
+                    this.update(editor, commentInfos);
+                }));
+                if (thread.collapsibleState === CommentThreadCollapsibleState.Collapsed) {
+                    return;
+                }
+                commentThreadRangeDecorations.push(new CommentThreadRangeDecoration(range, this.decorationOptions));
+            });
+        }
+        editor.changeDecorations((changeAccessor) => {
+            this.decorationIds = changeAccessor.deltaDecorations(this.decorationIds, commentThreadRangeDecorations);
+            commentThreadRangeDecorations.forEach((decoration, index) => decoration.id = this.decorationIds[index]);
+        });
+    }
+    dispose() {
+        dispose(this.threadCollapseStateListeners);
+        this.currentThreadCollapseStateListener?.dispose();
+        super.dispose();
+    }
+}

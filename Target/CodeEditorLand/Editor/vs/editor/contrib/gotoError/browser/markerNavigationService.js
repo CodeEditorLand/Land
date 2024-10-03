@@ -1,1 +1,195 @@
-var x=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var u=(d,e,i,r)=>{for(var n=r>1?void 0:r?S(e,i):e,s=d.length-1,o;s>=0;s--)(o=d[s])&&(n=(r?o(e,i,n):o(n))||n);return r&&n&&x(e,i,n),n},f=(d,e)=>(i,r)=>e(i,r,d);import{binarySearch as M}from"../../../../base/common/arrays.js";import{Emitter as y}from"../../../../base/common/event.js";import{DisposableStore as b,toDisposable as P}from"../../../../base/common/lifecycle.js";import{LinkedList as C}from"../../../../base/common/linkedList.js";import{compare as I}from"../../../../base/common/strings.js";import{URI as g}from"../../../../base/common/uri.js";import"../../../common/core/position.js";import{Range as h}from"../../../common/core/range.js";import"../../../common/model.js";import{InstantiationType as L,registerSingleton as U}from"../../../../platform/instantiation/common/extensions.js";import{createDecorator as D}from"../../../../platform/instantiation/common/instantiation.js";import{IMarkerService as k,MarkerSeverity as m}from"../../../../platform/markers/common/markers.js";import{IConfigurationService as p}from"../../../../platform/configuration/common/configuration.js";class v{constructor(e,i,r){this.marker=e;this.index=i;this.total=r}}let c=class{constructor(e,i,r){this._markerService=i;this._configService=r;g.isUri(e)?this._resourceFilter=t=>t.toString()===e.toString():e&&(this._resourceFilter=e);const n=this._configService.getValue("problems.sortOrder"),s=(t,a)=>{let _=I(t.resource.toString(),a.resource.toString());return _===0&&(n==="position"?_=h.compareRangesUsingStarts(t,a)||m.compare(t.severity,a.severity):_=m.compare(t.severity,a.severity)||h.compareRangesUsingStarts(t,a)),_},o=()=>{this._markers=this._markerService.read({resource:g.isUri(e)?e:void 0,severities:m.Error|m.Warning|m.Info}),typeof e=="function"&&(this._markers=this._markers.filter(t=>this._resourceFilter(t.resource))),this._markers.sort(s)};o(),this._dispoables.add(i.onMarkerChanged(t=>{(!this._resourceFilter||t.some(a=>this._resourceFilter(a)))&&(o(),this._nextIdx=-1,this._onDidChange.fire())}))}_onDidChange=new y;onDidChange=this._onDidChange.event;_resourceFilter;_dispoables=new b;_markers=[];_nextIdx=-1;dispose(){this._dispoables.dispose(),this._onDidChange.dispose()}matches(e){return!this._resourceFilter&&!e?!0:!this._resourceFilter||!e?!1:this._resourceFilter(e)}get selected(){const e=this._markers[this._nextIdx];return e&&new v(e,this._nextIdx+1,this._markers.length)}_initIdx(e,i,r){let n=!1,s=this._markers.findIndex(o=>o.resource.toString()===e.uri.toString());s<0&&(s=M(this._markers,{resource:e.uri},(o,t)=>I(o.resource.toString(),t.resource.toString())),s<0&&(s=~s));for(let o=s;o<this._markers.length;o++){let t=h.lift(this._markers[o]);if(t.isEmpty()){const a=e.getWordAtPosition(t.getStartPosition());a&&(t=new h(t.startLineNumber,a.startColumn,t.startLineNumber,a.endColumn))}if(i&&(t.containsPosition(i)||i.isBeforeOrEqual(t.getStartPosition()))){this._nextIdx=o,n=!0;break}if(this._markers[o].resource.toString()!==e.uri.toString())break}n||(this._nextIdx=r?0:this._markers.length-1),this._nextIdx<0&&(this._nextIdx=this._markers.length-1)}resetIndex(){this._nextIdx=-1}move(e,i,r){if(this._markers.length===0)return!1;const n=this._nextIdx;return this._nextIdx===-1?this._initIdx(i,r,e):e?this._nextIdx=(this._nextIdx+1)%this._markers.length:e||(this._nextIdx=(this._nextIdx-1+this._markers.length)%this._markers.length),n!==this._nextIdx}find(e,i){let r=this._markers.findIndex(n=>n.resource.toString()===e.toString());if(!(r<0)){for(;r<this._markers.length;r++)if(h.containsPosition(this._markers[r],i))return new v(this._markers[r],r+1,this._markers.length)}}};c=u([f(1,k),f(2,p)],c);const R=D("IMarkerNavigationService");let l=class{constructor(e,i){this._markerService=e;this._configService=i}_serviceBrand;_provider=new C;registerProvider(e){const i=this._provider.unshift(e);return P(()=>i())}getMarkerList(e){for(const i of this._provider){const r=i.getMarkerList(e);if(r)return r}return new c(e,this._markerService,this._configService)}};l=u([f(0,k),f(1,p)],l),U(R,l,L.Delayed);export{R as IMarkerNavigationService,v as MarkerCoordinate,c as MarkerList};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { binarySearch } from '../../../../base/common/arrays.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { LinkedList } from '../../../../base/common/linkedList.js';
+import { compare } from '../../../../base/common/strings.js';
+import { URI } from '../../../../base/common/uri.js';
+import { Range } from '../../../common/core/range.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IMarkerService, MarkerSeverity } from '../../../../platform/markers/common/markers.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+export class MarkerCoordinate {
+    constructor(marker, index, total) {
+        this.marker = marker;
+        this.index = index;
+        this.total = total;
+    }
+}
+let MarkerList = class MarkerList {
+    constructor(resourceFilter, _markerService, _configService) {
+        this._markerService = _markerService;
+        this._configService = _configService;
+        this._onDidChange = new Emitter();
+        this.onDidChange = this._onDidChange.event;
+        this._dispoables = new DisposableStore();
+        this._markers = [];
+        this._nextIdx = -1;
+        if (URI.isUri(resourceFilter)) {
+            this._resourceFilter = uri => uri.toString() === resourceFilter.toString();
+        }
+        else if (resourceFilter) {
+            this._resourceFilter = resourceFilter;
+        }
+        const compareOrder = this._configService.getValue('problems.sortOrder');
+        const compareMarker = (a, b) => {
+            let res = compare(a.resource.toString(), b.resource.toString());
+            if (res === 0) {
+                if (compareOrder === 'position') {
+                    res = Range.compareRangesUsingStarts(a, b) || MarkerSeverity.compare(a.severity, b.severity);
+                }
+                else {
+                    res = MarkerSeverity.compare(a.severity, b.severity) || Range.compareRangesUsingStarts(a, b);
+                }
+            }
+            return res;
+        };
+        const updateMarker = () => {
+            this._markers = this._markerService.read({
+                resource: URI.isUri(resourceFilter) ? resourceFilter : undefined,
+                severities: MarkerSeverity.Error | MarkerSeverity.Warning | MarkerSeverity.Info
+            });
+            if (typeof resourceFilter === 'function') {
+                this._markers = this._markers.filter(m => this._resourceFilter(m.resource));
+            }
+            this._markers.sort(compareMarker);
+        };
+        updateMarker();
+        this._dispoables.add(_markerService.onMarkerChanged(uris => {
+            if (!this._resourceFilter || uris.some(uri => this._resourceFilter(uri))) {
+                updateMarker();
+                this._nextIdx = -1;
+                this._onDidChange.fire();
+            }
+        }));
+    }
+    dispose() {
+        this._dispoables.dispose();
+        this._onDidChange.dispose();
+    }
+    matches(uri) {
+        if (!this._resourceFilter && !uri) {
+            return true;
+        }
+        if (!this._resourceFilter || !uri) {
+            return false;
+        }
+        return this._resourceFilter(uri);
+    }
+    get selected() {
+        const marker = this._markers[this._nextIdx];
+        return marker && new MarkerCoordinate(marker, this._nextIdx + 1, this._markers.length);
+    }
+    _initIdx(model, position, fwd) {
+        let found = false;
+        let idx = this._markers.findIndex(marker => marker.resource.toString() === model.uri.toString());
+        if (idx < 0) {
+            idx = binarySearch(this._markers, { resource: model.uri }, (a, b) => compare(a.resource.toString(), b.resource.toString()));
+            if (idx < 0) {
+                idx = ~idx;
+            }
+        }
+        for (let i = idx; i < this._markers.length; i++) {
+            let range = Range.lift(this._markers[i]);
+            if (range.isEmpty()) {
+                const word = model.getWordAtPosition(range.getStartPosition());
+                if (word) {
+                    range = new Range(range.startLineNumber, word.startColumn, range.startLineNumber, word.endColumn);
+                }
+            }
+            if (position && (range.containsPosition(position) || position.isBeforeOrEqual(range.getStartPosition()))) {
+                this._nextIdx = i;
+                found = true;
+                break;
+            }
+            if (this._markers[i].resource.toString() !== model.uri.toString()) {
+                break;
+            }
+        }
+        if (!found) {
+            this._nextIdx = fwd ? 0 : this._markers.length - 1;
+        }
+        if (this._nextIdx < 0) {
+            this._nextIdx = this._markers.length - 1;
+        }
+    }
+    resetIndex() {
+        this._nextIdx = -1;
+    }
+    move(fwd, model, position) {
+        if (this._markers.length === 0) {
+            return false;
+        }
+        const oldIdx = this._nextIdx;
+        if (this._nextIdx === -1) {
+            this._initIdx(model, position, fwd);
+        }
+        else if (fwd) {
+            this._nextIdx = (this._nextIdx + 1) % this._markers.length;
+        }
+        else if (!fwd) {
+            this._nextIdx = (this._nextIdx - 1 + this._markers.length) % this._markers.length;
+        }
+        if (oldIdx !== this._nextIdx) {
+            return true;
+        }
+        return false;
+    }
+    find(uri, position) {
+        let idx = this._markers.findIndex(marker => marker.resource.toString() === uri.toString());
+        if (idx < 0) {
+            return undefined;
+        }
+        for (; idx < this._markers.length; idx++) {
+            if (Range.containsPosition(this._markers[idx], position)) {
+                return new MarkerCoordinate(this._markers[idx], idx + 1, this._markers.length);
+            }
+        }
+        return undefined;
+    }
+};
+MarkerList = __decorate([
+    __param(1, IMarkerService),
+    __param(2, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], MarkerList);
+export { MarkerList };
+export const IMarkerNavigationService = createDecorator('IMarkerNavigationService');
+let MarkerNavigationService = class MarkerNavigationService {
+    constructor(_markerService, _configService) {
+        this._markerService = _markerService;
+        this._configService = _configService;
+        this._provider = new LinkedList();
+    }
+    registerProvider(provider) {
+        const remove = this._provider.unshift(provider);
+        return toDisposable(() => remove());
+    }
+    getMarkerList(resource) {
+        for (const provider of this._provider) {
+            const result = provider.getMarkerList(resource);
+            if (result) {
+                return result;
+            }
+        }
+        return new MarkerList(resource, this._markerService, this._configService);
+    }
+};
+MarkerNavigationService = __decorate([
+    __param(0, IMarkerService),
+    __param(1, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object])
+], MarkerNavigationService);
+registerSingleton(IMarkerNavigationService, MarkerNavigationService, 1);

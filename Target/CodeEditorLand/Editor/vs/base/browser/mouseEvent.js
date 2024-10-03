@@ -1,1 +1,131 @@
-import*as i from"./browser.js";import{IframeUtils as h}from"./iframe.js";import*as d from"../common/platform.js";class b{browserEvent;leftButton;middleButton;rightButton;buttons;target;detail;posx;posy;ctrlKey;shiftKey;altKey;metaKey;timestamp;constructor(e,t){this.timestamp=Date.now(),this.browserEvent=t,this.leftButton=t.button===0,this.middleButton=t.button===1,this.rightButton=t.button===2,this.buttons=t.buttons,this.target=t.target,this.detail=t.detail||1,t.type==="dblclick"&&(this.detail=2),this.ctrlKey=t.ctrlKey,this.shiftKey=t.shiftKey,this.altKey=t.altKey,this.metaKey=t.metaKey,typeof t.pageX=="number"?(this.posx=t.pageX,this.posy=t.pageY):(this.posx=t.clientX+this.target.ownerDocument.body.scrollLeft+this.target.ownerDocument.documentElement.scrollLeft,this.posy=t.clientY+this.target.ownerDocument.body.scrollTop+this.target.ownerDocument.documentElement.scrollTop);const a=h.getPositionOfChildWindowRelativeToAncestorWindow(e,t.view);this.posx-=a.left,this.posy-=a.top}preventDefault(){this.browserEvent.preventDefault()}stopPropagation(){this.browserEvent.stopPropagation()}}class c extends b{dataTransfer;constructor(e,t){super(e,t),this.dataTransfer=t.dataTransfer}}class y{browserEvent;deltaY;deltaX;target;constructor(e,t=0,a=0){this.browserEvent=e||null,this.target=e?e.target||e.targetNode||e.srcElement:null,this.deltaY=a,this.deltaX=t;let r=!1;if(i.isChrome){const l=navigator.userAgent.match(/Chrome\/(\d+)/);r=(l?parseInt(l[1]):123)<=122}if(e){const l=e,o=e,s=e.view?.devicePixelRatio||1;if(typeof l.wheelDeltaY<"u")r?this.deltaY=l.wheelDeltaY/(120*s):this.deltaY=l.wheelDeltaY/120;else if(typeof o.VERTICAL_AXIS<"u"&&o.axis===o.VERTICAL_AXIS)this.deltaY=-o.detail/3;else if(e.type==="wheel"){const n=e;n.deltaMode===n.DOM_DELTA_LINE?i.isFirefox&&!d.isMacintosh?this.deltaY=-e.deltaY/3:this.deltaY=-e.deltaY:this.deltaY=-e.deltaY/40}if(typeof l.wheelDeltaX<"u")i.isSafari&&d.isWindows?this.deltaX=-(l.wheelDeltaX/120):r?this.deltaX=l.wheelDeltaX/(120*s):this.deltaX=l.wheelDeltaX/120;else if(typeof o.HORIZONTAL_AXIS<"u"&&o.axis===o.HORIZONTAL_AXIS)this.deltaX=-e.detail/3;else if(e.type==="wheel"){const n=e;n.deltaMode===n.DOM_DELTA_LINE?i.isFirefox&&!d.isMacintosh?this.deltaX=-e.deltaX/3:this.deltaX=-e.deltaX:this.deltaX=-e.deltaX/40}this.deltaY===0&&this.deltaX===0&&e.wheelDelta&&(r?this.deltaY=e.wheelDelta/(120*s):this.deltaY=e.wheelDelta/120)}}preventDefault(){this.browserEvent?.preventDefault()}stopPropagation(){this.browserEvent?.stopPropagation()}}export{c as DragMouseEvent,b as StandardMouseEvent,y as StandardWheelEvent};
+import * as browser from './browser.js';
+import { IframeUtils } from './iframe.js';
+import * as platform from '../common/platform.js';
+export class StandardMouseEvent {
+    constructor(targetWindow, e) {
+        this.timestamp = Date.now();
+        this.browserEvent = e;
+        this.leftButton = e.button === 0;
+        this.middleButton = e.button === 1;
+        this.rightButton = e.button === 2;
+        this.buttons = e.buttons;
+        this.target = e.target;
+        this.detail = e.detail || 1;
+        if (e.type === 'dblclick') {
+            this.detail = 2;
+        }
+        this.ctrlKey = e.ctrlKey;
+        this.shiftKey = e.shiftKey;
+        this.altKey = e.altKey;
+        this.metaKey = e.metaKey;
+        if (typeof e.pageX === 'number') {
+            this.posx = e.pageX;
+            this.posy = e.pageY;
+        }
+        else {
+            this.posx = e.clientX + this.target.ownerDocument.body.scrollLeft + this.target.ownerDocument.documentElement.scrollLeft;
+            this.posy = e.clientY + this.target.ownerDocument.body.scrollTop + this.target.ownerDocument.documentElement.scrollTop;
+        }
+        const iframeOffsets = IframeUtils.getPositionOfChildWindowRelativeToAncestorWindow(targetWindow, e.view);
+        this.posx -= iframeOffsets.left;
+        this.posy -= iframeOffsets.top;
+    }
+    preventDefault() {
+        this.browserEvent.preventDefault();
+    }
+    stopPropagation() {
+        this.browserEvent.stopPropagation();
+    }
+}
+export class DragMouseEvent extends StandardMouseEvent {
+    constructor(targetWindow, e) {
+        super(targetWindow, e);
+        this.dataTransfer = e.dataTransfer;
+    }
+}
+export class StandardWheelEvent {
+    constructor(e, deltaX = 0, deltaY = 0) {
+        this.browserEvent = e || null;
+        this.target = e ? (e.target || e.targetNode || e.srcElement) : null;
+        this.deltaY = deltaY;
+        this.deltaX = deltaX;
+        let shouldFactorDPR = false;
+        if (browser.isChrome) {
+            const chromeVersionMatch = navigator.userAgent.match(/Chrome\/(\d+)/);
+            const chromeMajorVersion = chromeVersionMatch ? parseInt(chromeVersionMatch[1]) : 123;
+            shouldFactorDPR = chromeMajorVersion <= 122;
+        }
+        if (e) {
+            const e1 = e;
+            const e2 = e;
+            const devicePixelRatio = e.view?.devicePixelRatio || 1;
+            if (typeof e1.wheelDeltaY !== 'undefined') {
+                if (shouldFactorDPR) {
+                    this.deltaY = e1.wheelDeltaY / (120 * devicePixelRatio);
+                }
+                else {
+                    this.deltaY = e1.wheelDeltaY / 120;
+                }
+            }
+            else if (typeof e2.VERTICAL_AXIS !== 'undefined' && e2.axis === e2.VERTICAL_AXIS) {
+                this.deltaY = -e2.detail / 3;
+            }
+            else if (e.type === 'wheel') {
+                const ev = e;
+                if (ev.deltaMode === ev.DOM_DELTA_LINE) {
+                    if (browser.isFirefox && !platform.isMacintosh) {
+                        this.deltaY = -e.deltaY / 3;
+                    }
+                    else {
+                        this.deltaY = -e.deltaY;
+                    }
+                }
+                else {
+                    this.deltaY = -e.deltaY / 40;
+                }
+            }
+            if (typeof e1.wheelDeltaX !== 'undefined') {
+                if (browser.isSafari && platform.isWindows) {
+                    this.deltaX = -(e1.wheelDeltaX / 120);
+                }
+                else if (shouldFactorDPR) {
+                    this.deltaX = e1.wheelDeltaX / (120 * devicePixelRatio);
+                }
+                else {
+                    this.deltaX = e1.wheelDeltaX / 120;
+                }
+            }
+            else if (typeof e2.HORIZONTAL_AXIS !== 'undefined' && e2.axis === e2.HORIZONTAL_AXIS) {
+                this.deltaX = -e.detail / 3;
+            }
+            else if (e.type === 'wheel') {
+                const ev = e;
+                if (ev.deltaMode === ev.DOM_DELTA_LINE) {
+                    if (browser.isFirefox && !platform.isMacintosh) {
+                        this.deltaX = -e.deltaX / 3;
+                    }
+                    else {
+                        this.deltaX = -e.deltaX;
+                    }
+                }
+                else {
+                    this.deltaX = -e.deltaX / 40;
+                }
+            }
+            if (this.deltaY === 0 && this.deltaX === 0 && e.wheelDelta) {
+                if (shouldFactorDPR) {
+                    this.deltaY = e.wheelDelta / (120 * devicePixelRatio);
+                }
+                else {
+                    this.deltaY = e.wheelDelta / 120;
+                }
+            }
+        }
+    }
+    preventDefault() {
+        this.browserEvent?.preventDefault();
+    }
+    stopPropagation() {
+        this.browserEvent?.stopPropagation();
+    }
+}

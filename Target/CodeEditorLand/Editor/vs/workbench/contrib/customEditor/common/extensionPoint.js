@@ -1,1 +1,132 @@
-import{coalesce as l}from"../../../../base/common/arrays.js";import"../../../../base/common/jsonSchema.js";import{Disposable as m}from"../../../../base/common/lifecycle.js";import*as e from"../../../../nls.js";import"../../../../platform/extensions/common/extensions.js";import{SyncDescriptor as u}from"../../../../platform/instantiation/common/descriptors.js";import{Registry as p}from"../../../../platform/registry/common/platform.js";import{CustomEditorPriority as a}from"./customEditor.js";import{Extensions as y}from"../../../services/extensionManagement/common/extensionFeatures.js";import{ExtensionsRegistry as f}from"../../../services/extensions/common/extensionsRegistry.js";import{languagesExtPoint as h}from"../../../services/language/common/languageService.js";const t=Object.freeze({viewType:"viewType",displayName:"displayName",selector:"selector",priority:"priority"}),E={description:e.localize("contributes.customEditors","Contributed custom editors."),type:"array",defaultSnippets:[{body:[{[t.viewType]:"$1",[t.displayName]:"$2",[t.selector]:[{filenamePattern:"$3"}]}]}],items:{type:"object",required:[t.viewType,t.displayName,t.selector],properties:{[t.viewType]:{type:"string",markdownDescription:e.localize("contributes.viewType","Identifier for the custom editor. This must be unique across all custom editors, so we recommend including your extension id as part of `viewType`. The `viewType` is used when registering custom editors with `vscode.registerCustomEditorProvider` and in the `onCustomEditor:${id}` [activation event](https://code.visualstudio.com/api/references/activation-events).")},[t.displayName]:{type:"string",description:e.localize("contributes.displayName","Human readable name of the custom editor. This is displayed to users when selecting which editor to use.")},[t.selector]:{type:"array",description:e.localize("contributes.selector","Set of globs that the custom editor is enabled for."),items:{type:"object",defaultSnippets:[{body:{filenamePattern:"$1"}}],properties:{filenamePattern:{type:"string",description:e.localize("contributes.selector.filenamePattern","Glob that the custom editor is enabled for.")}}}},[t.priority]:{type:"string",markdownDeprecationMessage:e.localize("contributes.priority","Controls if the custom editor is enabled automatically when the user opens a file. This may be overridden by users using the `workbench.editorAssociations` setting."),enum:[a.default,a.option],markdownEnumDescriptions:[e.localize("contributes.priority.default","The editor is automatically used when the user opens a resource, provided that no other default custom editors are registered for that resource."),e.localize("contributes.priority.option","The editor is not automatically used when the user opens a resource, but a user can switch to the editor using the `Reopen With` command.")],default:"default"}}}},O=f.registerExtensionPoint({extensionPoint:"customEditors",deps:[h],jsonSchema:E,activationEventsGenerator:(n,o)=>{for(const i of n){const r=i[t.viewType];r&&o.push(`onCustomEditor:${r}`)}}});class b extends m{type="table";shouldRender(o){return!!o.contributes?.customEditors}render(o){const i=o.contributes?.customEditors||[];if(!i.length)return{data:{headers:[],rows:[]},dispose:()=>{}};const r=[e.localize("customEditors view type","View Type"),e.localize("customEditors priority","Priority"),e.localize("customEditors filenamePattern","Filename Pattern")],d=i.map(s=>[s.viewType,s.priority??"",l(s.selector.map(c=>c.filenamePattern)).join(", ")]);return{data:{headers:r,rows:d},dispose:()=>{}}}}p.as(y.ExtensionFeaturesRegistry).registerExtensionFeature({id:"customEditors",label:e.localize("customEditors","Custom Editors"),access:{canToggle:!1},renderer:new u(b)});export{O as customEditorsExtensionPoint};
+import { coalesce } from '../../../../base/common/arrays.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import * as nls from '../../../../nls.js';
+import { SyncDescriptor } from '../../../../platform/instantiation/common/descriptors.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Extensions } from '../../../services/extensionManagement/common/extensionFeatures.js';
+import { ExtensionsRegistry } from '../../../services/extensions/common/extensionsRegistry.js';
+import { languagesExtPoint } from '../../../services/language/common/languageService.js';
+const Fields = Object.freeze({
+    viewType: 'viewType',
+    displayName: 'displayName',
+    selector: 'selector',
+    priority: 'priority',
+});
+const CustomEditorsContribution = {
+    description: nls.localize('contributes.customEditors', 'Contributed custom editors.'),
+    type: 'array',
+    defaultSnippets: [{
+            body: [{
+                    [Fields.viewType]: '$1',
+                    [Fields.displayName]: '$2',
+                    [Fields.selector]: [{
+                            filenamePattern: '$3'
+                        }],
+                }]
+        }],
+    items: {
+        type: 'object',
+        required: [
+            Fields.viewType,
+            Fields.displayName,
+            Fields.selector,
+        ],
+        properties: {
+            [Fields.viewType]: {
+                type: 'string',
+                markdownDescription: nls.localize('contributes.viewType', 'Identifier for the custom editor. This must be unique across all custom editors, so we recommend including your extension id as part of `viewType`. The `viewType` is used when registering custom editors with `vscode.registerCustomEditorProvider` and in the `onCustomEditor:${id}` [activation event](https://code.visualstudio.com/api/references/activation-events).'),
+            },
+            [Fields.displayName]: {
+                type: 'string',
+                description: nls.localize('contributes.displayName', 'Human readable name of the custom editor. This is displayed to users when selecting which editor to use.'),
+            },
+            [Fields.selector]: {
+                type: 'array',
+                description: nls.localize('contributes.selector', 'Set of globs that the custom editor is enabled for.'),
+                items: {
+                    type: 'object',
+                    defaultSnippets: [{
+                            body: {
+                                filenamePattern: '$1',
+                            }
+                        }],
+                    properties: {
+                        filenamePattern: {
+                            type: 'string',
+                            description: nls.localize('contributes.selector.filenamePattern', 'Glob that the custom editor is enabled for.'),
+                        },
+                    }
+                }
+            },
+            [Fields.priority]: {
+                type: 'string',
+                markdownDeprecationMessage: nls.localize('contributes.priority', 'Controls if the custom editor is enabled automatically when the user opens a file. This may be overridden by users using the `workbench.editorAssociations` setting.'),
+                enum: [
+                    "default",
+                    "option",
+                ],
+                markdownEnumDescriptions: [
+                    nls.localize('contributes.priority.default', 'The editor is automatically used when the user opens a resource, provided that no other default custom editors are registered for that resource.'),
+                    nls.localize('contributes.priority.option', 'The editor is not automatically used when the user opens a resource, but a user can switch to the editor using the `Reopen With` command.'),
+                ],
+                default: 'default'
+            }
+        }
+    }
+};
+export const customEditorsExtensionPoint = ExtensionsRegistry.registerExtensionPoint({
+    extensionPoint: 'customEditors',
+    deps: [languagesExtPoint],
+    jsonSchema: CustomEditorsContribution,
+    activationEventsGenerator: (contribs, result) => {
+        for (const contrib of contribs) {
+            const viewType = contrib[Fields.viewType];
+            if (viewType) {
+                result.push(`onCustomEditor:${viewType}`);
+            }
+        }
+    },
+});
+class CustomEditorsDataRenderer extends Disposable {
+    constructor() {
+        super(...arguments);
+        this.type = 'table';
+    }
+    shouldRender(manifest) {
+        return !!manifest.contributes?.customEditors;
+    }
+    render(manifest) {
+        const customEditors = manifest.contributes?.customEditors || [];
+        if (!customEditors.length) {
+            return { data: { headers: [], rows: [] }, dispose: () => { } };
+        }
+        const headers = [
+            nls.localize('customEditors view type', "View Type"),
+            nls.localize('customEditors priority', "Priority"),
+            nls.localize('customEditors filenamePattern', "Filename Pattern"),
+        ];
+        const rows = customEditors
+            .map(customEditor => {
+            return [
+                customEditor.viewType,
+                customEditor.priority ?? '',
+                coalesce(customEditor.selector.map(x => x.filenamePattern)).join(', ')
+            ];
+        });
+        return {
+            data: {
+                headers,
+                rows
+            },
+            dispose: () => { }
+        };
+    }
+}
+Registry.as(Extensions.ExtensionFeaturesRegistry).registerExtensionFeature({
+    id: 'customEditors',
+    label: nls.localize('customEditors', "Custom Editors"),
+    access: {
+        canToggle: false
+    },
+    renderer: new SyncDescriptor(CustomEditorsDataRenderer),
+});

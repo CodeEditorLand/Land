@@ -1,1 +1,42 @@
-var s=(t=>(t[t.OK=0]="OK",t[t.Info=1]="Info",t[t.Warning=2]="Warning",t[t.Error=3]="Error",t[t.Fatal=4]="Fatal",t))(s||{});class o{_state;constructor(){this._state=0}get state(){return this._state}set state(r){r>this._state&&(this._state=r)}isOK(){return this._state===0}isFatal(){return this._state===4}}class i{_problemReporter;constructor(r){this._problemReporter=r}reset(){this._problemReporter.status.state=0}get problemReporter(){return this._problemReporter}info(r){this._problemReporter.info(r)}warn(r){this._problemReporter.warn(r)}error(r){this._problemReporter.error(r)}fatal(r){this._problemReporter.fatal(r)}}export{i as Parser,s as ValidationState,o as ValidationStatus};
+export class ValidationStatus {
+    constructor() {
+        this._state = 0;
+    }
+    get state() {
+        return this._state;
+    }
+    set state(value) {
+        if (value > this._state) {
+            this._state = value;
+        }
+    }
+    isOK() {
+        return this._state === 0;
+    }
+    isFatal() {
+        return this._state === 4;
+    }
+}
+export class Parser {
+    constructor(problemReporter) {
+        this._problemReporter = problemReporter;
+    }
+    reset() {
+        this._problemReporter.status.state = 0;
+    }
+    get problemReporter() {
+        return this._problemReporter;
+    }
+    info(message) {
+        this._problemReporter.info(message);
+    }
+    warn(message) {
+        this._problemReporter.warn(message);
+    }
+    error(message) {
+        this._problemReporter.error(message);
+    }
+    fatal(message) {
+        this._problemReporter.fatal(message);
+    }
+}

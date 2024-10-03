@@ -1,1 +1,583 @@
-var b=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var g=(s,c,e,r)=>{for(var t=r>1?void 0:r?T(c,e):c,i=s.length-1,o;i>=0;i--)(o=s[i])&&(t=(r?o(c,e,t):o(t))||t);return r&&t&&b(c,e,t),t},k=(s,c)=>(e,r)=>c(e,r,s);import{coalesce as S}from"../../../../../base/common/arrays.js";import{Disposable as I,DisposableStore as D,MutableDisposable as B,dispose as C}from"../../../../../base/common/lifecycle.js";import"../terminal.js";import{TerminalCapability as f}from"../../../../../platform/terminal/common/capabilities/capabilities.js";import{timeout as L}from"../../../../../base/common/async.js";import{IThemeService as w}from"../../../../../platform/theme/common/themeService.js";import{TERMINAL_OVERVIEW_RULER_CURSOR_FOREGROUND_COLOR as y}from"../../common/terminalColorRegistry.js";import{getWindow as v}from"../../../../../base/browser/dom.js";import"../../../../../platform/terminal/common/capabilities/commandDetection/terminalCommand.js";import{IConfigurationService as P}from"../../../../../platform/configuration/common/configuration.js";import{TerminalContribSettingId as R}from"../../terminalContribExports.js";var O=(e=>(e[e.Top=0]="Top",e[e.Bottom=1]="Bottom",e))(O||{}),Y=(e=>(e[e.Top=0]="Top",e[e.Middle=1]="Middle",e))(Y||{});let m=class extends I{constructor(e,r,t){super();this._capabilities=e;this._configurationService=r;this._themeService=t}_currentMarker=1;_selectionStart=null;_isDisposable=!1;_terminal;_navigationDecorations;_activeCommandGuide;_commandGuideDecorations=this._register(new B);activate(e){this._terminal=e,this._register(this._terminal.onData(()=>{this._currentMarker=1}))}_getMarkers(e){const r=this._capabilities.get(f.CommandDetection),t=this._capabilities.get(f.PartialCommandDetection),i=this._capabilities.get(f.BufferMarkDetection);let o=[];if(r?(o=S(r.commands.filter(n=>e?n.exitCode!==void 0:!0).map(n=>n.promptStartMarker??n.marker)),r.currentCommand?.promptStartMarker&&r.currentCommand.commandExecutedMarker&&o.push(r.currentCommand?.promptStartMarker)):t&&o.push(...t.commands),i&&!e){let n=i.markers().next()?.value;const a=[];for(;n;)a.push(n),n=i.markers().next()?.value;o=a}return o}_findCommand(e){const r=this._capabilities.get(f.CommandDetection);if(r){const t=r.commands.find(i=>i.marker?.line===e.line||i.promptStartMarker?.line===e.line);if(t)return t;if(r.currentCommand)return r.currentCommand}}clear(){this._currentMarker=1,this._resetNavigationDecorations(),this._selectionStart=null}_resetNavigationDecorations(){this._navigationDecorations&&C(this._navigationDecorations),this._navigationDecorations=[]}_isEmptyCommand(e){return e===1?!0:e===0?!this._getMarkers(!0).map(r=>r.line).includes(0):!this._getMarkers(!0).includes(e)}scrollToPreviousMark(e=1,r=!1,t=!0){if(!this._terminal)return;r||(this._selectionStart=null);let i;const o=typeof this._currentMarker=="object"?this.getTargetScrollLine(this._currentMarker.line,e):Math.min(_(this._terminal,this._currentMarker),this._terminal.buffer.active.baseY),n=this._terminal.buffer.active.viewportY;if(typeof this._currentMarker=="object"?!this._isMarkerInViewport(this._terminal,this._currentMarker):o!==n){const a=this._getMarkers(t).filter(l=>l.line>=n).length;i=this._getMarkers(t).length-a-1}else this._currentMarker===1?i=this._getMarkers(t).length-1:this._currentMarker===0?i=-1:this._isDisposable?(i=this._findPreviousMarker(t),this._currentMarker.dispose(),this._isDisposable=!1):t&&this._isEmptyCommand(this._currentMarker)?i=this._findPreviousMarker(!0):i=this._getMarkers(t).indexOf(this._currentMarker)-1;if(i<0){this._currentMarker=0,this._terminal.scrollToTop(),this._resetNavigationDecorations();return}this._currentMarker=this._getMarkers(t)[i],this._scrollToCommand(this._currentMarker,e)}scrollToNextMark(e=1,r=!1,t=!0){if(!this._terminal)return;r||(this._selectionStart=null);let i;const o=typeof this._currentMarker=="object"?this.getTargetScrollLine(this._currentMarker.line,e):Math.min(_(this._terminal,this._currentMarker),this._terminal.buffer.active.baseY),n=this._terminal.buffer.active.viewportY;if((typeof this._currentMarker=="object"?!this._isMarkerInViewport(this._terminal,this._currentMarker):o!==n)?i=this._getMarkers(t).filter(l=>l.line<=n).length:this._currentMarker===1?i=this._getMarkers(t).length:this._currentMarker===0?i=0:this._isDisposable?(i=this._findNextMarker(t),this._currentMarker.dispose(),this._isDisposable=!1):t&&this._isEmptyCommand(this._currentMarker)?i=this._findNextMarker(!0):i=this._getMarkers(t).indexOf(this._currentMarker)+1,i>=this._getMarkers(t).length){this._currentMarker=1,this._terminal.scrollToBottom(),this._resetNavigationDecorations();return}this._currentMarker=this._getMarkers(t)[i],this._scrollToCommand(this._currentMarker,e)}_scrollToCommand(e,r){const t=this._findCommand(e);t?this.revealCommand(t,r):this._scrollToMarker(e,r)}_scrollToMarker(e,r,t,i){if(this._terminal){if(!this._isMarkerInViewport(this._terminal,e)||i?.forceScroll){const o=this.getTargetScrollLine(h(e),r);this._terminal.scrollToLine(o)}i?.hideDecoration||(i?.bufferRange?this._highlightBufferRange(i.bufferRange):this.registerTemporaryDecoration(e,t,!0))}}_createMarkerForOffset(e,r){if(r===0&&p(e))return e;{const t=this._terminal?.registerMarker(-this._terminal.buffer.active.cursorY+h(e)-this._terminal.buffer.active.baseY+r);if(t)return t;throw new Error(`Could not register marker with offset ${h(e)}, ${r}`)}}revealCommand(e,r=1){const t="getOutput"in e?e.marker:e.commandStartMarker;if(!this._terminal||!t)return;const i=h(t),o=e.getPromptRowCount(),n=e.getCommandRowCount();this._scrollToMarker(i-(o-1),r,i+(n-1))}revealRange(e){this._scrollToMarker(e.start.y-1,1,e.end.y-1,{bufferRange:e,forceScroll:!!this._configurationService.getValue(R.StickyScrollEnabled)})}showCommandGuide(e){if(this._terminal){if(!e){this._commandGuideDecorations.clear(),this._activeCommandGuide=void 0;return}if(this._activeCommandGuide!==e&&e.marker){this._activeCommandGuide=e;const r=this._commandGuideDecorations.value=new D;if(!e.executedMarker||!e.endMarker)return;const t=e.marker.line-(e.getPromptRowCount()-1),i=h(e.endMarker)-t;if(i>200)return;for(let o=0;o<i;o++){const n=this._terminal.registerDecoration({marker:this._createMarkerForOffset(t,o)});if(n){r.add(n);let a;r.add(n.onRender(l=>{a||(a=l,l.classList.add("terminal-command-guide"),o===0&&l.classList.add("top"),o===i-1&&l.classList.add("bottom")),this._terminal?.element&&(l.style.marginLeft=`-${v(this._terminal.element).getComputedStyle(this._terminal.element).paddingLeft}`)}))}}}}}_scrollState;saveScrollState(){this._scrollState={viewportY:this._terminal?.buffer.active.viewportY??0}}restoreScrollState(){this._scrollState&&this._terminal&&(this._terminal.scrollToLine(this._scrollState.viewportY),this._scrollState=void 0)}_highlightBufferRange(e){if(!this._terminal)return;this._resetNavigationDecorations();const r=e.start.y,t=e.end.y-e.start.y+1;for(let i=0;i<t;i++){const o=this._terminal.registerDecoration({marker:this._createMarkerForOffset(r-1,i),x:e.start.x-1,width:e.end.x-1-(e.start.x-1)+1,overviewRulerOptions:void 0});if(o){this._navigationDecorations?.push(o);let n;o.onRender(a=>{n||(n=a,a.classList.add("terminal-range-highlight"))}),o.onDispose(()=>{this._navigationDecorations=this._navigationDecorations?.filter(a=>a!==o)})}}}registerTemporaryDecoration(e,r,t){if(!this._terminal)return;this._resetNavigationDecorations();const i=this._themeService.getColorTheme().getColor(y),o=h(e),n=r?h(r)-o+1:1;for(let a=0;a<n;a++){const l=this._terminal.registerDecoration({marker:this._createMarkerForOffset(e,a),width:this._terminal.cols,overviewRulerOptions:a===0?{color:i?.toString()||"#a0a0a0cc"}:void 0});if(l){this._navigationDecorations?.push(l);let d;l.onRender(u=>{d?u.classList.add("terminal-scroll-highlight"):(d=u,u.classList.add("terminal-scroll-highlight"),t&&u.classList.add("terminal-scroll-highlight-outline"),a===0&&u.classList.add("top"),a===n-1&&u.classList.add("bottom")),this._terminal?.element&&(u.style.marginLeft=`-${v(this._terminal.element).getComputedStyle(this._terminal.element).paddingLeft}`)}),l.onDispose(()=>{this._navigationDecorations=this._navigationDecorations?.filter(u=>u!==l)}),t&&L(350).then(()=>{d&&d.classList.remove("terminal-scroll-highlight-outline")})}}}scrollToLine(e,r){this._terminal?.scrollToLine(this.getTargetScrollLine(e,r))}getTargetScrollLine(e,r){return this._terminal&&r===1?Math.max(e-Math.floor(this._terminal.rows/4),0):e}_isMarkerInViewport(e,r){const t=e.buffer.active.viewportY,i=h(r);return i>=t&&i<t+e.rows}scrollToClosestMarker(e,r,t){const i=this._capabilities.get(f.BufferMarkDetection);if(!i)return;const o=i.getMark(e);if(!o)return;const n=r?i.getMark(r):o;this._scrollToMarker(o,0,n,{hideDecoration:!t})}selectToPreviousMark(){this._terminal&&(this._selectionStart===null&&(this._selectionStart=this._currentMarker),this._capabilities.has(f.CommandDetection)?this.scrollToPreviousMark(1,!0,!0):this.scrollToPreviousMark(1,!0,!1),M(this._terminal,this._currentMarker,this._selectionStart))}selectToNextMark(){this._terminal&&(this._selectionStart===null&&(this._selectionStart=this._currentMarker),this._capabilities.has(f.CommandDetection)?this.scrollToNextMark(1,!0,!0):this.scrollToNextMark(1,!0,!1),M(this._terminal,this._currentMarker,this._selectionStart))}selectToPreviousLine(){this._terminal&&(this._selectionStart===null&&(this._selectionStart=this._currentMarker),this.scrollToPreviousLine(this._terminal,1,!0),M(this._terminal,this._currentMarker,this._selectionStart))}selectToNextLine(){this._terminal&&(this._selectionStart===null&&(this._selectionStart=this._currentMarker),this.scrollToNextLine(this._terminal,1,!0),M(this._terminal,this._currentMarker,this._selectionStart))}scrollToPreviousLine(e,r=1,t=!1){if(t||(this._selectionStart=null),this._currentMarker===0){e.scrollToTop();return}if(this._currentMarker===1)this._currentMarker=this._registerMarkerOrThrow(e,this._getOffset(e)-1);else{const i=this._getOffset(e);this._isDisposable&&this._currentMarker.dispose(),this._currentMarker=this._registerMarkerOrThrow(e,i-1)}this._isDisposable=!0,this._scrollToMarker(this._currentMarker,r)}scrollToNextLine(e,r=1,t=!1){if(t||(this._selectionStart=null),this._currentMarker===1){e.scrollToBottom();return}if(this._currentMarker===0)this._currentMarker=this._registerMarkerOrThrow(e,this._getOffset(e)+1);else{const i=this._getOffset(e);this._isDisposable&&this._currentMarker.dispose(),this._currentMarker=this._registerMarkerOrThrow(e,i+1)}this._isDisposable=!0,this._scrollToMarker(this._currentMarker,r)}_registerMarkerOrThrow(e,r){const t=e.registerMarker(r);if(!t)throw new Error(`Could not create marker for ${r}`);return t}_getOffset(e){if(this._currentMarker===1)return 0;if(this._currentMarker===0)return 0-(e.buffer.active.baseY+e.buffer.active.cursorY);{let r=_(e,this._currentMarker);return r-=e.buffer.active.baseY+e.buffer.active.cursorY,r}}_findPreviousMarker(e=!1){if(this._currentMarker===0)return 0;if(this._currentMarker===1)return this._getMarkers(e).length-1;let r;for(r=this._getMarkers(e).length-1;r>=0;r--)if(this._getMarkers(e)[r].line<this._currentMarker.line)return r;return-1}_findNextMarker(e=!1){if(this._currentMarker===0)return 0;if(this._currentMarker===1)return this._getMarkers(e).length-1;let r;for(r=0;r<this._getMarkers(e).length;r++)if(this._getMarkers(e)[r].line>this._currentMarker.line)return r;return this._getMarkers(e).length}};m=g([k(1,P),k(2,w)],m);function _(s,c){return c===1?s.buffer.active.baseY+s.rows-1:c===0?0:c.line}function M(s,c,e){e===null&&(e=1);let r=_(s,c),t=_(s,e);if(r>t){const i=r;r=t,t=i}t-=1,s.selectLines(r,t)}function p(s){return typeof s!="number"}function h(s){return p(s)?s.line:s}export{m as MarkNavigationAddon,Y as ScrollPosition,_ as getLine,M as selectLines};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { coalesce } from '../../../../../base/common/arrays.js';
+import { Disposable, DisposableStore, MutableDisposable, dispose } from '../../../../../base/common/lifecycle.js';
+import { timeout } from '../../../../../base/common/async.js';
+import { IThemeService } from '../../../../../platform/theme/common/themeService.js';
+import { TERMINAL_OVERVIEW_RULER_CURSOR_FOREGROUND_COLOR } from '../../common/terminalColorRegistry.js';
+import { getWindow } from '../../../../../base/browser/dom.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+var Boundary;
+(function (Boundary) {
+    Boundary[Boundary["Top"] = 0] = "Top";
+    Boundary[Boundary["Bottom"] = 1] = "Bottom";
+})(Boundary || (Boundary = {}));
+let MarkNavigationAddon = class MarkNavigationAddon extends Disposable {
+    activate(terminal) {
+        this._terminal = terminal;
+        this._register(this._terminal.onData(() => {
+            this._currentMarker = Boundary.Bottom;
+        }));
+    }
+    constructor(_capabilities, _configurationService, _themeService) {
+        super();
+        this._capabilities = _capabilities;
+        this._configurationService = _configurationService;
+        this._themeService = _themeService;
+        this._currentMarker = Boundary.Bottom;
+        this._selectionStart = null;
+        this._isDisposable = false;
+        this._commandGuideDecorations = this._register(new MutableDisposable());
+    }
+    _getMarkers(skipEmptyCommands) {
+        const commandCapability = this._capabilities.get(2);
+        const partialCommandCapability = this._capabilities.get(3);
+        const markCapability = this._capabilities.get(4);
+        let markers = [];
+        if (commandCapability) {
+            markers = coalesce(commandCapability.commands.filter(e => skipEmptyCommands ? e.exitCode !== undefined : true).map(e => e.promptStartMarker ?? e.marker));
+            if (commandCapability.currentCommand?.promptStartMarker && commandCapability.currentCommand.commandExecutedMarker) {
+                markers.push(commandCapability.currentCommand?.promptStartMarker);
+            }
+        }
+        else if (partialCommandCapability) {
+            markers.push(...partialCommandCapability.commands);
+        }
+        if (markCapability && !skipEmptyCommands) {
+            let next = markCapability.markers().next()?.value;
+            const arr = [];
+            while (next) {
+                arr.push(next);
+                next = markCapability.markers().next()?.value;
+            }
+            markers = arr;
+        }
+        return markers;
+    }
+    _findCommand(marker) {
+        const commandCapability = this._capabilities.get(2);
+        if (commandCapability) {
+            const command = commandCapability.commands.find(e => e.marker?.line === marker.line || e.promptStartMarker?.line === marker.line);
+            if (command) {
+                return command;
+            }
+            if (commandCapability.currentCommand) {
+                return commandCapability.currentCommand;
+            }
+        }
+        return undefined;
+    }
+    clear() {
+        this._currentMarker = Boundary.Bottom;
+        this._resetNavigationDecorations();
+        this._selectionStart = null;
+    }
+    _resetNavigationDecorations() {
+        if (this._navigationDecorations) {
+            dispose(this._navigationDecorations);
+        }
+        this._navigationDecorations = [];
+    }
+    _isEmptyCommand(marker) {
+        if (marker === Boundary.Bottom) {
+            return true;
+        }
+        if (marker === Boundary.Top) {
+            return !this._getMarkers(true).map(e => e.line).includes(0);
+        }
+        return !this._getMarkers(true).includes(marker);
+    }
+    scrollToPreviousMark(scrollPosition = 1, retainSelection = false, skipEmptyCommands = true) {
+        if (!this._terminal) {
+            return;
+        }
+        if (!retainSelection) {
+            this._selectionStart = null;
+        }
+        let markerIndex;
+        const currentLineY = typeof this._currentMarker === 'object'
+            ? this.getTargetScrollLine(this._currentMarker.line, scrollPosition)
+            : Math.min(getLine(this._terminal, this._currentMarker), this._terminal.buffer.active.baseY);
+        const viewportY = this._terminal.buffer.active.viewportY;
+        if (typeof this._currentMarker === 'object' ? !this._isMarkerInViewport(this._terminal, this._currentMarker) : currentLineY !== viewportY) {
+            const markersBelowViewport = this._getMarkers(skipEmptyCommands).filter(e => e.line >= viewportY).length;
+            markerIndex = this._getMarkers(skipEmptyCommands).length - markersBelowViewport - 1;
+        }
+        else if (this._currentMarker === Boundary.Bottom) {
+            markerIndex = this._getMarkers(skipEmptyCommands).length - 1;
+        }
+        else if (this._currentMarker === Boundary.Top) {
+            markerIndex = -1;
+        }
+        else if (this._isDisposable) {
+            markerIndex = this._findPreviousMarker(skipEmptyCommands);
+            this._currentMarker.dispose();
+            this._isDisposable = false;
+        }
+        else {
+            if (skipEmptyCommands && this._isEmptyCommand(this._currentMarker)) {
+                markerIndex = this._findPreviousMarker(true);
+            }
+            else {
+                markerIndex = this._getMarkers(skipEmptyCommands).indexOf(this._currentMarker) - 1;
+            }
+        }
+        if (markerIndex < 0) {
+            this._currentMarker = Boundary.Top;
+            this._terminal.scrollToTop();
+            this._resetNavigationDecorations();
+            return;
+        }
+        this._currentMarker = this._getMarkers(skipEmptyCommands)[markerIndex];
+        this._scrollToCommand(this._currentMarker, scrollPosition);
+    }
+    scrollToNextMark(scrollPosition = 1, retainSelection = false, skipEmptyCommands = true) {
+        if (!this._terminal) {
+            return;
+        }
+        if (!retainSelection) {
+            this._selectionStart = null;
+        }
+        let markerIndex;
+        const currentLineY = typeof this._currentMarker === 'object'
+            ? this.getTargetScrollLine(this._currentMarker.line, scrollPosition)
+            : Math.min(getLine(this._terminal, this._currentMarker), this._terminal.buffer.active.baseY);
+        const viewportY = this._terminal.buffer.active.viewportY;
+        if (typeof this._currentMarker === 'object' ? !this._isMarkerInViewport(this._terminal, this._currentMarker) : currentLineY !== viewportY) {
+            const markersAboveViewport = this._getMarkers(skipEmptyCommands).filter(e => e.line <= viewportY).length;
+            markerIndex = markersAboveViewport;
+        }
+        else if (this._currentMarker === Boundary.Bottom) {
+            markerIndex = this._getMarkers(skipEmptyCommands).length;
+        }
+        else if (this._currentMarker === Boundary.Top) {
+            markerIndex = 0;
+        }
+        else if (this._isDisposable) {
+            markerIndex = this._findNextMarker(skipEmptyCommands);
+            this._currentMarker.dispose();
+            this._isDisposable = false;
+        }
+        else {
+            if (skipEmptyCommands && this._isEmptyCommand(this._currentMarker)) {
+                markerIndex = this._findNextMarker(true);
+            }
+            else {
+                markerIndex = this._getMarkers(skipEmptyCommands).indexOf(this._currentMarker) + 1;
+            }
+        }
+        if (markerIndex >= this._getMarkers(skipEmptyCommands).length) {
+            this._currentMarker = Boundary.Bottom;
+            this._terminal.scrollToBottom();
+            this._resetNavigationDecorations();
+            return;
+        }
+        this._currentMarker = this._getMarkers(skipEmptyCommands)[markerIndex];
+        this._scrollToCommand(this._currentMarker, scrollPosition);
+    }
+    _scrollToCommand(marker, position) {
+        const command = this._findCommand(marker);
+        if (command) {
+            this.revealCommand(command, position);
+        }
+        else {
+            this._scrollToMarker(marker, position);
+        }
+    }
+    _scrollToMarker(start, position, end, options) {
+        if (!this._terminal) {
+            return;
+        }
+        if (!this._isMarkerInViewport(this._terminal, start) || options?.forceScroll) {
+            const line = this.getTargetScrollLine(toLineIndex(start), position);
+            this._terminal.scrollToLine(line);
+        }
+        if (!options?.hideDecoration) {
+            if (options?.bufferRange) {
+                this._highlightBufferRange(options.bufferRange);
+            }
+            else {
+                this.registerTemporaryDecoration(start, end, true);
+            }
+        }
+    }
+    _createMarkerForOffset(marker, offset) {
+        if (offset === 0 && isMarker(marker)) {
+            return marker;
+        }
+        else {
+            const offsetMarker = this._terminal?.registerMarker(-this._terminal.buffer.active.cursorY + toLineIndex(marker) - this._terminal.buffer.active.baseY + offset);
+            if (offsetMarker) {
+                return offsetMarker;
+            }
+            else {
+                throw new Error(`Could not register marker with offset ${toLineIndex(marker)}, ${offset}`);
+            }
+        }
+    }
+    revealCommand(command, position = 1) {
+        const marker = 'getOutput' in command ? command.marker : command.commandStartMarker;
+        if (!this._terminal || !marker) {
+            return;
+        }
+        const line = toLineIndex(marker);
+        const promptRowCount = command.getPromptRowCount();
+        const commandRowCount = command.getCommandRowCount();
+        this._scrollToMarker(line - (promptRowCount - 1), position, line + (commandRowCount - 1));
+    }
+    revealRange(range) {
+        this._scrollToMarker(range.start.y - 1, 1, range.end.y - 1, {
+            bufferRange: range,
+            forceScroll: !!this._configurationService.getValue("terminal.integrated.stickyScroll.enabled")
+        });
+    }
+    showCommandGuide(command) {
+        if (!this._terminal) {
+            return;
+        }
+        if (!command) {
+            this._commandGuideDecorations.clear();
+            this._activeCommandGuide = undefined;
+            return;
+        }
+        if (this._activeCommandGuide === command) {
+            return;
+        }
+        if (command.marker) {
+            this._activeCommandGuide = command;
+            const store = this._commandGuideDecorations.value = new DisposableStore();
+            if (!command.executedMarker || !command.endMarker) {
+                return;
+            }
+            const startLine = command.marker.line - (command.getPromptRowCount() - 1);
+            const decorationCount = toLineIndex(command.endMarker) - startLine;
+            if (decorationCount > 200) {
+                return;
+            }
+            for (let i = 0; i < decorationCount; i++) {
+                const decoration = this._terminal.registerDecoration({
+                    marker: this._createMarkerForOffset(startLine, i)
+                });
+                if (decoration) {
+                    store.add(decoration);
+                    let renderedElement;
+                    store.add(decoration.onRender(element => {
+                        if (!renderedElement) {
+                            renderedElement = element;
+                            element.classList.add('terminal-command-guide');
+                            if (i === 0) {
+                                element.classList.add('top');
+                            }
+                            if (i === decorationCount - 1) {
+                                element.classList.add('bottom');
+                            }
+                        }
+                        if (this._terminal?.element) {
+                            element.style.marginLeft = `-${getWindow(this._terminal.element).getComputedStyle(this._terminal.element).paddingLeft}`;
+                        }
+                    }));
+                }
+            }
+        }
+    }
+    saveScrollState() {
+        this._scrollState = { viewportY: this._terminal?.buffer.active.viewportY ?? 0 };
+    }
+    restoreScrollState() {
+        if (this._scrollState && this._terminal) {
+            this._terminal.scrollToLine(this._scrollState.viewportY);
+            this._scrollState = undefined;
+        }
+    }
+    _highlightBufferRange(range) {
+        if (!this._terminal) {
+            return;
+        }
+        this._resetNavigationDecorations();
+        const startLine = range.start.y;
+        const decorationCount = range.end.y - range.start.y + 1;
+        for (let i = 0; i < decorationCount; i++) {
+            const decoration = this._terminal.registerDecoration({
+                marker: this._createMarkerForOffset(startLine - 1, i),
+                x: range.start.x - 1,
+                width: (range.end.x - 1) - (range.start.x - 1) + 1,
+                overviewRulerOptions: undefined
+            });
+            if (decoration) {
+                this._navigationDecorations?.push(decoration);
+                let renderedElement;
+                decoration.onRender(element => {
+                    if (!renderedElement) {
+                        renderedElement = element;
+                        element.classList.add('terminal-range-highlight');
+                    }
+                });
+                decoration.onDispose(() => { this._navigationDecorations = this._navigationDecorations?.filter(d => d !== decoration); });
+            }
+        }
+    }
+    registerTemporaryDecoration(marker, endMarker, showOutline) {
+        if (!this._terminal) {
+            return;
+        }
+        this._resetNavigationDecorations();
+        const color = this._themeService.getColorTheme().getColor(TERMINAL_OVERVIEW_RULER_CURSOR_FOREGROUND_COLOR);
+        const startLine = toLineIndex(marker);
+        const decorationCount = endMarker ? toLineIndex(endMarker) - startLine + 1 : 1;
+        for (let i = 0; i < decorationCount; i++) {
+            const decoration = this._terminal.registerDecoration({
+                marker: this._createMarkerForOffset(marker, i),
+                width: this._terminal.cols,
+                overviewRulerOptions: i === 0 ? {
+                    color: color?.toString() || '#a0a0a0cc'
+                } : undefined
+            });
+            if (decoration) {
+                this._navigationDecorations?.push(decoration);
+                let renderedElement;
+                decoration.onRender(element => {
+                    if (!renderedElement) {
+                        renderedElement = element;
+                        element.classList.add('terminal-scroll-highlight');
+                        if (showOutline) {
+                            element.classList.add('terminal-scroll-highlight-outline');
+                        }
+                        if (i === 0) {
+                            element.classList.add('top');
+                        }
+                        if (i === decorationCount - 1) {
+                            element.classList.add('bottom');
+                        }
+                    }
+                    else {
+                        element.classList.add('terminal-scroll-highlight');
+                    }
+                    if (this._terminal?.element) {
+                        element.style.marginLeft = `-${getWindow(this._terminal.element).getComputedStyle(this._terminal.element).paddingLeft}`;
+                    }
+                });
+                decoration.onDispose(() => { this._navigationDecorations = this._navigationDecorations?.filter(d => d !== decoration); });
+                if (showOutline) {
+                    timeout(350).then(() => {
+                        if (renderedElement) {
+                            renderedElement.classList.remove('terminal-scroll-highlight-outline');
+                        }
+                    });
+                }
+            }
+        }
+    }
+    scrollToLine(line, position) {
+        this._terminal?.scrollToLine(this.getTargetScrollLine(line, position));
+    }
+    getTargetScrollLine(line, position) {
+        if (this._terminal && position === 1) {
+            return Math.max(line - Math.floor(this._terminal.rows / 4), 0);
+        }
+        return line;
+    }
+    _isMarkerInViewport(terminal, marker) {
+        const viewportY = terminal.buffer.active.viewportY;
+        const line = toLineIndex(marker);
+        return line >= viewportY && line < viewportY + terminal.rows;
+    }
+    scrollToClosestMarker(startMarkerId, endMarkerId, highlight) {
+        const detectionCapability = this._capabilities.get(4);
+        if (!detectionCapability) {
+            return;
+        }
+        const startMarker = detectionCapability.getMark(startMarkerId);
+        if (!startMarker) {
+            return;
+        }
+        const endMarker = endMarkerId ? detectionCapability.getMark(endMarkerId) : startMarker;
+        this._scrollToMarker(startMarker, 0, endMarker, { hideDecoration: !highlight });
+    }
+    selectToPreviousMark() {
+        if (!this._terminal) {
+            return;
+        }
+        if (this._selectionStart === null) {
+            this._selectionStart = this._currentMarker;
+        }
+        if (this._capabilities.has(2)) {
+            this.scrollToPreviousMark(1, true, true);
+        }
+        else {
+            this.scrollToPreviousMark(1, true, false);
+        }
+        selectLines(this._terminal, this._currentMarker, this._selectionStart);
+    }
+    selectToNextMark() {
+        if (!this._terminal) {
+            return;
+        }
+        if (this._selectionStart === null) {
+            this._selectionStart = this._currentMarker;
+        }
+        if (this._capabilities.has(2)) {
+            this.scrollToNextMark(1, true, true);
+        }
+        else {
+            this.scrollToNextMark(1, true, false);
+        }
+        selectLines(this._terminal, this._currentMarker, this._selectionStart);
+    }
+    selectToPreviousLine() {
+        if (!this._terminal) {
+            return;
+        }
+        if (this._selectionStart === null) {
+            this._selectionStart = this._currentMarker;
+        }
+        this.scrollToPreviousLine(this._terminal, 1, true);
+        selectLines(this._terminal, this._currentMarker, this._selectionStart);
+    }
+    selectToNextLine() {
+        if (!this._terminal) {
+            return;
+        }
+        if (this._selectionStart === null) {
+            this._selectionStart = this._currentMarker;
+        }
+        this.scrollToNextLine(this._terminal, 1, true);
+        selectLines(this._terminal, this._currentMarker, this._selectionStart);
+    }
+    scrollToPreviousLine(xterm, scrollPosition = 1, retainSelection = false) {
+        if (!retainSelection) {
+            this._selectionStart = null;
+        }
+        if (this._currentMarker === Boundary.Top) {
+            xterm.scrollToTop();
+            return;
+        }
+        if (this._currentMarker === Boundary.Bottom) {
+            this._currentMarker = this._registerMarkerOrThrow(xterm, this._getOffset(xterm) - 1);
+        }
+        else {
+            const offset = this._getOffset(xterm);
+            if (this._isDisposable) {
+                this._currentMarker.dispose();
+            }
+            this._currentMarker = this._registerMarkerOrThrow(xterm, offset - 1);
+        }
+        this._isDisposable = true;
+        this._scrollToMarker(this._currentMarker, scrollPosition);
+    }
+    scrollToNextLine(xterm, scrollPosition = 1, retainSelection = false) {
+        if (!retainSelection) {
+            this._selectionStart = null;
+        }
+        if (this._currentMarker === Boundary.Bottom) {
+            xterm.scrollToBottom();
+            return;
+        }
+        if (this._currentMarker === Boundary.Top) {
+            this._currentMarker = this._registerMarkerOrThrow(xterm, this._getOffset(xterm) + 1);
+        }
+        else {
+            const offset = this._getOffset(xterm);
+            if (this._isDisposable) {
+                this._currentMarker.dispose();
+            }
+            this._currentMarker = this._registerMarkerOrThrow(xterm, offset + 1);
+        }
+        this._isDisposable = true;
+        this._scrollToMarker(this._currentMarker, scrollPosition);
+    }
+    _registerMarkerOrThrow(xterm, cursorYOffset) {
+        const marker = xterm.registerMarker(cursorYOffset);
+        if (!marker) {
+            throw new Error(`Could not create marker for ${cursorYOffset}`);
+        }
+        return marker;
+    }
+    _getOffset(xterm) {
+        if (this._currentMarker === Boundary.Bottom) {
+            return 0;
+        }
+        else if (this._currentMarker === Boundary.Top) {
+            return 0 - (xterm.buffer.active.baseY + xterm.buffer.active.cursorY);
+        }
+        else {
+            let offset = getLine(xterm, this._currentMarker);
+            offset -= xterm.buffer.active.baseY + xterm.buffer.active.cursorY;
+            return offset;
+        }
+    }
+    _findPreviousMarker(skipEmptyCommands = false) {
+        if (this._currentMarker === Boundary.Top) {
+            return 0;
+        }
+        else if (this._currentMarker === Boundary.Bottom) {
+            return this._getMarkers(skipEmptyCommands).length - 1;
+        }
+        let i;
+        for (i = this._getMarkers(skipEmptyCommands).length - 1; i >= 0; i--) {
+            if (this._getMarkers(skipEmptyCommands)[i].line < this._currentMarker.line) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    _findNextMarker(skipEmptyCommands = false) {
+        if (this._currentMarker === Boundary.Top) {
+            return 0;
+        }
+        else if (this._currentMarker === Boundary.Bottom) {
+            return this._getMarkers(skipEmptyCommands).length - 1;
+        }
+        let i;
+        for (i = 0; i < this._getMarkers(skipEmptyCommands).length; i++) {
+            if (this._getMarkers(skipEmptyCommands)[i].line > this._currentMarker.line) {
+                return i;
+            }
+        }
+        return this._getMarkers(skipEmptyCommands).length;
+    }
+};
+MarkNavigationAddon = __decorate([
+    __param(1, IConfigurationService),
+    __param(2, IThemeService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], MarkNavigationAddon);
+export { MarkNavigationAddon };
+export function getLine(xterm, marker) {
+    if (marker === Boundary.Bottom) {
+        return xterm.buffer.active.baseY + xterm.rows - 1;
+    }
+    if (marker === Boundary.Top) {
+        return 0;
+    }
+    return marker.line;
+}
+export function selectLines(xterm, start, end) {
+    if (end === null) {
+        end = Boundary.Bottom;
+    }
+    let startLine = getLine(xterm, start);
+    let endLine = getLine(xterm, end);
+    if (startLine > endLine) {
+        const temp = startLine;
+        startLine = endLine;
+        endLine = temp;
+    }
+    endLine -= 1;
+    xterm.selectLines(startLine, endLine);
+}
+function isMarker(value) {
+    return typeof value !== 'number';
+}
+function toLineIndex(line) {
+    return isMarker(line) ? line.line : line;
+}

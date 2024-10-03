@@ -1,2 +1,377 @@
-import"../../../../base/common/uri.js";import*as T from"../../../../nls.js";import*as K from"../../../../base/common/path.js";import*as M from"../../../../base/common/resources.js";import*as U from"../../../../base/common/json.js";import{ExtensionData as J}from"../common/workbenchThemeService.js";import{getParseErrorMessage as Y}from"../../../../base/common/jsonErrorMessages.js";import{asCSSUrl as y}from"../../../../base/browser/dom.js";import{StorageScope as W,StorageTarget as q}from"../../../../platform/storage/common/storage.js";import"../../../../platform/extensionResourceLoader/common/extensionResourceLoader.js";import"../../../../editor/common/languages/language.js";import{mainWindow as B}from"../../../../base/browser/window.js";class m{static STORAGE_KEY="iconThemeData";id;label;settingsId;description;hasFileIcons;hasFolderIcons;hidesExplorerArrows;isLoaded;location;extensionData;watch;styleSheetContent;constructor(e,r,o){this.id=e,this.label=r,this.settingsId=o,this.isLoaded=!1,this.hasFileIcons=!1,this.hasFolderIcons=!1,this.hidesExplorerArrows=!1}ensureLoaded(e){return this.isLoaded?Promise.resolve(this.styleSheetContent):this.load(e)}reload(e){return this.load(e)}load(e){return e.load(this)}static fromExtensionTheme(e,r,o){const s=o.extensionId+"-"+e.id,d=e.label||K.basename(e.path),S=e.id,u=new m(s,d,S);return u.description=e.description,u.location=r,u.extensionData=o,u.watch=e._watch,u.isLoaded=!1,u}static _noIconTheme=null;static get noIconTheme(){let e=m._noIconTheme;return e||(e=m._noIconTheme=new m("","",null),e.hasFileIcons=!1,e.hasFolderIcons=!1,e.hidesExplorerArrows=!1,e.isLoaded=!0,e.extensionData=void 0,e.watch=!1),e}static createUnloadedTheme(e){const r=new m(e,"","__"+e);return r.isLoaded=!1,r.hasFileIcons=!1,r.hasFolderIcons=!1,r.hidesExplorerArrows=!1,r.extensionData=void 0,r.watch=!1,r}static fromStorageData(e){const r=e.get(m.STORAGE_KEY,W.PROFILE);if(r)try{const o=JSON.parse(r),s=new m("","",null);for(const d in o)switch(d){case"id":case"label":case"description":case"settingsId":case"styleSheetContent":case"hasFileIcons":case"hidesExplorerArrows":case"hasFolderIcons":case"watch":s[d]=o[d];break;case"location":break;case"extensionData":s.extensionData=J.fromJSONObject(o.extensionData);break}return s}catch{return}}toStorage(e){const r=JSON.stringify({id:this.id,label:this.label,description:this.description,settingsId:this.settingsId,styleSheetContent:this.styleSheetContent,hasFileIcons:this.hasFileIcons,hasFolderIcons:this.hasFolderIcons,hidesExplorerArrows:this.hidesExplorerArrows,extensionData:J.toJSONObject(this.extensionData),watch:this.watch});e.store(m.STORAGE_KEY,r,W.PROFILE,q.MACHINE)}}class le{constructor(e,r){this.fileService=e;this.languageService=r}load(e){return e.location?this.loadIconThemeDocument(e.location).then(r=>{const o=this.processIconThemeDocument(e.id,e.location,r);return e.styleSheetContent=o.content,e.hasFileIcons=o.hasFileIcons,e.hasFolderIcons=o.hasFolderIcons,e.hidesExplorerArrows=o.hidesExplorerArrows,e.isLoaded=!0,e.styleSheetContent}):Promise.resolve(e.styleSheetContent)}loadIconThemeDocument(e){return this.fileService.readExtensionResource(e).then(r=>{const o=[],s=U.parse(r,o);return o.length>0?Promise.reject(new Error(T.localize("error.cannotparseicontheme","Problems parsing file icons file: {0}",o.map(d=>Y(d.error)).join(", ")))):U.getNodeType(s)!=="object"?Promise.reject(new Error(T.localize("error.invalidformat","Invalid format for file icons theme file: Object expected."))):Promise.resolve(s)})}processIconThemeDocument(e,r,o){const s={content:"",hasFileIcons:!1,hasFolderIcons:!1,hidesExplorerArrows:!!o.hidesExplorerArrows};let d=!1;if(!o.iconDefinitions)return s;const S={},u={},G=M.dirname(r);function k(t){return M.joinPath(G,t)}function E(t,c){function n(i,f){if(f){let $=S[f];$||($=S[f]=[]),$.push(i)}}if(t){let i=".show-file-icons";c&&(i=c+" "+i);const f=".monaco-tl-twistie.collapsible:not(.collapsed) + .monaco-tl-contents";t.folder&&(n(`${i} .folder-icon::before`,t.folder),s.hasFolderIcons=!0),t.folderExpanded&&(n(`${i} ${f} .folder-icon::before`,t.folderExpanded),s.hasFolderIcons=!0);const $=t.rootFolder||t.folder,O=t.rootFolderExpanded||t.folderExpanded;$&&(n(`${i} .rootfolder-icon::before`,$),s.hasFolderIcons=!0),O&&(n(`${i} ${f} .rootfolder-icon::before`,O),s.hasFolderIcons=!0),t.file&&(n(`${i} .file-icon::before`,t.file),s.hasFileIcons=!0);const v=t.folderNames;if(v)for(const l in v){const a=[],F=L(l.toLowerCase(),a);a.push(`.${h(F)}-name-folder-icon`),n(`${i} ${a.join("")}.folder-icon::before`,v[l]),s.hasFolderIcons=!0}const C=t.folderNamesExpanded;if(C)for(const l in C){const a=[],F=L(l.toLowerCase(),a);a.push(`.${h(F)}-name-folder-icon`),n(`${i} ${f} ${a.join("")}.folder-icon::before`,C[l]),s.hasFolderIcons=!0}const A=t.rootFolderNames;if(A)for(const l in A){const a=l.toLowerCase();n(`${i} .${h(a)}-root-name-folder-icon.rootfolder-icon::before`,A[l]),s.hasFolderIcons=!0}const P=t.rootFolderNamesExpanded;if(P)for(const l in P){const a=l.toLowerCase();n(`${i} ${f} .${h(a)}-root-name-folder-icon.rootfolder-icon::before`,P[l]),s.hasFolderIcons=!0}const I=t.languageIds;if(I){!I.jsonc&&I.json&&(I.jsonc=I.json);for(const l in I)n(`${i} .${h(l)}-lang-file-icon.file-icon::before`,I[l]),s.hasFileIcons=!0,d=!0,u[l]=!0}const j=t.fileExtensions;if(j)for(const l in j){const a=[],x=L(l.toLowerCase(),a).split(".");if(x.length){for(let b=0;b<x.length;b++)a.push(`.${h(x.slice(b).join("."))}-ext-file-icon`);a.push(".ext-file-icon")}n(`${i} ${a.join("")}.file-icon::before`,j[l]),s.hasFileIcons=!0,d=!0}const D=t.fileNames;if(D)for(const l in D){const a=[],F=L(l.toLowerCase(),a);a.push(`.${h(F)}-name-file-icon`),a.push(".name-file-icon");const x=F.split(".");if(x.length){for(let b=1;b<x.length;b++)a.push(`.${h(x.slice(b).join("."))}-ext-file-icon`);a.push(".ext-file-icon")}n(`${i} ${a.join("")}.file-icon::before`,D[l]),s.hasFileIcons=!0,d=!0}}}if(E(o),E(o.light,".vs"),E(o.highContrast,".hc-black"),E(o.highContrast,".hc-light"),!s.hasFileIcons&&!s.hasFolderIcons)return s;const z=o.showLanguageModeIcons===!0||d&&o.showLanguageModeIcons!==!1,p=[],w=o.fonts,R=new Map;if(Array.isArray(w)){const t=this.tryNormalizeFontSize(w[0].size)||"150%";w.forEach(c=>{const n=c.src.map(f=>`${y(k(f.path))} format('${f.format}')`).join(", ");p.push(`@font-face { src: ${n}; font-family: '${c.id}'; font-weight: ${c.weight}; font-style: ${c.style}; font-display: block; }`);const i=this.tryNormalizeFontSize(c.size);i!==void 0&&i!==t&&R.set(c.id,i)}),p.push(`.show-file-icons .file-icon::before, .show-file-icons .folder-icon::before, .show-file-icons .rootfolder-icon::before { font-family: '${w[0].id}'; font-size: ${t}; }`)}const N="\\2001";for(const t in S){const c=S[t],n=o.iconDefinitions[t];if(n){if(n.iconPath)p.push(`${c.join(", ")} { content: '${N}'; background-image: ${y(k(n.iconPath))}; }`);else if(n.fontCharacter||n.fontColor){const i=[];n.fontColor&&i.push(`color: ${n.fontColor};`),n.fontCharacter&&i.push(`content: '${n.fontCharacter}';`);const f=n.fontSize??(n.fontId?R.get(n.fontId):void 0);f&&i.push(`font-size: ${f};`),n.fontId&&i.push(`font-family: ${n.fontId};`),z&&i.push("background-image: unset;"),p.push(`${c.join(", ")} { ${i.join(" ")} }`)}}}if(z){for(const t of this.languageService.getRegisteredLanguageIds())if(!u[t]){const c=this.languageService.getIcon(t);if(c){const n=`.show-file-icons .${h(t)}-lang-file-icon.file-icon::before`;p.push(`${n} { content: '${N}'; background-image: ${y(c.dark)}; }`),p.push(`.vs ${n} { content: '${N}'; background-image: ${y(c.light)}; }`)}}}return s.content=p.join(`
-`),s}tryNormalizeFontSize(e){if(!e)return;const r=13;if(e.endsWith("px")){const o=parseInt(e,10);if(!isNaN(o))return Math.round(o/r*100)+"%"}return e}}function L(g,e){const r=g.lastIndexOf("/");if(r>=0){const o=g.substring(0,r);return e.push(`.${h(o)}-name-dir-icon`),g.substring(r+1)}return g}function h(g){return g=g.replace(/[\s]/g,"/"),B.CSS.escape(g)}export{m as FileIconThemeData,le as FileIconThemeLoader};
+import * as nls from '../../../../nls.js';
+import * as paths from '../../../../base/common/path.js';
+import * as resources from '../../../../base/common/resources.js';
+import * as Json from '../../../../base/common/json.js';
+import { ExtensionData } from '../common/workbenchThemeService.js';
+import { getParseErrorMessage } from '../../../../base/common/jsonErrorMessages.js';
+import { asCSSUrl } from '../../../../base/browser/dom.js';
+import { mainWindow } from '../../../../base/browser/window.js';
+export class FileIconThemeData {
+    static { this.STORAGE_KEY = 'iconThemeData'; }
+    constructor(id, label, settingsId) {
+        this.id = id;
+        this.label = label;
+        this.settingsId = settingsId;
+        this.isLoaded = false;
+        this.hasFileIcons = false;
+        this.hasFolderIcons = false;
+        this.hidesExplorerArrows = false;
+    }
+    ensureLoaded(themeLoader) {
+        return !this.isLoaded ? this.load(themeLoader) : Promise.resolve(this.styleSheetContent);
+    }
+    reload(themeLoader) {
+        return this.load(themeLoader);
+    }
+    load(themeLoader) {
+        return themeLoader.load(this);
+    }
+    static fromExtensionTheme(iconTheme, iconThemeLocation, extensionData) {
+        const id = extensionData.extensionId + '-' + iconTheme.id;
+        const label = iconTheme.label || paths.basename(iconTheme.path);
+        const settingsId = iconTheme.id;
+        const themeData = new FileIconThemeData(id, label, settingsId);
+        themeData.description = iconTheme.description;
+        themeData.location = iconThemeLocation;
+        themeData.extensionData = extensionData;
+        themeData.watch = iconTheme._watch;
+        themeData.isLoaded = false;
+        return themeData;
+    }
+    static { this._noIconTheme = null; }
+    static get noIconTheme() {
+        let themeData = FileIconThemeData._noIconTheme;
+        if (!themeData) {
+            themeData = FileIconThemeData._noIconTheme = new FileIconThemeData('', '', null);
+            themeData.hasFileIcons = false;
+            themeData.hasFolderIcons = false;
+            themeData.hidesExplorerArrows = false;
+            themeData.isLoaded = true;
+            themeData.extensionData = undefined;
+            themeData.watch = false;
+        }
+        return themeData;
+    }
+    static createUnloadedTheme(id) {
+        const themeData = new FileIconThemeData(id, '', '__' + id);
+        themeData.isLoaded = false;
+        themeData.hasFileIcons = false;
+        themeData.hasFolderIcons = false;
+        themeData.hidesExplorerArrows = false;
+        themeData.extensionData = undefined;
+        themeData.watch = false;
+        return themeData;
+    }
+    static fromStorageData(storageService) {
+        const input = storageService.get(FileIconThemeData.STORAGE_KEY, 0);
+        if (!input) {
+            return undefined;
+        }
+        try {
+            const data = JSON.parse(input);
+            const theme = new FileIconThemeData('', '', null);
+            for (const key in data) {
+                switch (key) {
+                    case 'id':
+                    case 'label':
+                    case 'description':
+                    case 'settingsId':
+                    case 'styleSheetContent':
+                    case 'hasFileIcons':
+                    case 'hidesExplorerArrows':
+                    case 'hasFolderIcons':
+                    case 'watch':
+                        theme[key] = data[key];
+                        break;
+                    case 'location':
+                        break;
+                    case 'extensionData':
+                        theme.extensionData = ExtensionData.fromJSONObject(data.extensionData);
+                        break;
+                }
+            }
+            return theme;
+        }
+        catch (e) {
+            return undefined;
+        }
+    }
+    toStorage(storageService) {
+        const data = JSON.stringify({
+            id: this.id,
+            label: this.label,
+            description: this.description,
+            settingsId: this.settingsId,
+            styleSheetContent: this.styleSheetContent,
+            hasFileIcons: this.hasFileIcons,
+            hasFolderIcons: this.hasFolderIcons,
+            hidesExplorerArrows: this.hidesExplorerArrows,
+            extensionData: ExtensionData.toJSONObject(this.extensionData),
+            watch: this.watch
+        });
+        storageService.store(FileIconThemeData.STORAGE_KEY, data, 0, 1);
+    }
+}
+export class FileIconThemeLoader {
+    constructor(fileService, languageService) {
+        this.fileService = fileService;
+        this.languageService = languageService;
+    }
+    load(data) {
+        if (!data.location) {
+            return Promise.resolve(data.styleSheetContent);
+        }
+        return this.loadIconThemeDocument(data.location).then(iconThemeDocument => {
+            const result = this.processIconThemeDocument(data.id, data.location, iconThemeDocument);
+            data.styleSheetContent = result.content;
+            data.hasFileIcons = result.hasFileIcons;
+            data.hasFolderIcons = result.hasFolderIcons;
+            data.hidesExplorerArrows = result.hidesExplorerArrows;
+            data.isLoaded = true;
+            return data.styleSheetContent;
+        });
+    }
+    loadIconThemeDocument(location) {
+        return this.fileService.readExtensionResource(location).then((content) => {
+            const errors = [];
+            const contentValue = Json.parse(content, errors);
+            if (errors.length > 0) {
+                return Promise.reject(new Error(nls.localize('error.cannotparseicontheme', "Problems parsing file icons file: {0}", errors.map(e => getParseErrorMessage(e.error)).join(', '))));
+            }
+            else if (Json.getNodeType(contentValue) !== 'object') {
+                return Promise.reject(new Error(nls.localize('error.invalidformat', "Invalid format for file icons theme file: Object expected.")));
+            }
+            return Promise.resolve(contentValue);
+        });
+    }
+    processIconThemeDocument(id, iconThemeDocumentLocation, iconThemeDocument) {
+        const result = { content: '', hasFileIcons: false, hasFolderIcons: false, hidesExplorerArrows: !!iconThemeDocument.hidesExplorerArrows };
+        let hasSpecificFileIcons = false;
+        if (!iconThemeDocument.iconDefinitions) {
+            return result;
+        }
+        const selectorByDefinitionId = {};
+        const coveredLanguages = {};
+        const iconThemeDocumentLocationDirname = resources.dirname(iconThemeDocumentLocation);
+        function resolvePath(path) {
+            return resources.joinPath(iconThemeDocumentLocationDirname, path);
+        }
+        function collectSelectors(associations, baseThemeClassName) {
+            function addSelector(selector, defId) {
+                if (defId) {
+                    let list = selectorByDefinitionId[defId];
+                    if (!list) {
+                        list = selectorByDefinitionId[defId] = [];
+                    }
+                    list.push(selector);
+                }
+            }
+            if (associations) {
+                let qualifier = '.show-file-icons';
+                if (baseThemeClassName) {
+                    qualifier = baseThemeClassName + ' ' + qualifier;
+                }
+                const expanded = '.monaco-tl-twistie.collapsible:not(.collapsed) + .monaco-tl-contents';
+                if (associations.folder) {
+                    addSelector(`${qualifier} .folder-icon::before`, associations.folder);
+                    result.hasFolderIcons = true;
+                }
+                if (associations.folderExpanded) {
+                    addSelector(`${qualifier} ${expanded} .folder-icon::before`, associations.folderExpanded);
+                    result.hasFolderIcons = true;
+                }
+                const rootFolder = associations.rootFolder || associations.folder;
+                const rootFolderExpanded = associations.rootFolderExpanded || associations.folderExpanded;
+                if (rootFolder) {
+                    addSelector(`${qualifier} .rootfolder-icon::before`, rootFolder);
+                    result.hasFolderIcons = true;
+                }
+                if (rootFolderExpanded) {
+                    addSelector(`${qualifier} ${expanded} .rootfolder-icon::before`, rootFolderExpanded);
+                    result.hasFolderIcons = true;
+                }
+                if (associations.file) {
+                    addSelector(`${qualifier} .file-icon::before`, associations.file);
+                    result.hasFileIcons = true;
+                }
+                const folderNames = associations.folderNames;
+                if (folderNames) {
+                    for (const key in folderNames) {
+                        const selectors = [];
+                        const name = handleParentFolder(key.toLowerCase(), selectors);
+                        selectors.push(`.${escapeCSS(name)}-name-folder-icon`);
+                        addSelector(`${qualifier} ${selectors.join('')}.folder-icon::before`, folderNames[key]);
+                        result.hasFolderIcons = true;
+                    }
+                }
+                const folderNamesExpanded = associations.folderNamesExpanded;
+                if (folderNamesExpanded) {
+                    for (const key in folderNamesExpanded) {
+                        const selectors = [];
+                        const name = handleParentFolder(key.toLowerCase(), selectors);
+                        selectors.push(`.${escapeCSS(name)}-name-folder-icon`);
+                        addSelector(`${qualifier} ${expanded} ${selectors.join('')}.folder-icon::before`, folderNamesExpanded[key]);
+                        result.hasFolderIcons = true;
+                    }
+                }
+                const rootFolderNames = associations.rootFolderNames;
+                if (rootFolderNames) {
+                    for (const key in rootFolderNames) {
+                        const name = key.toLowerCase();
+                        addSelector(`${qualifier} .${escapeCSS(name)}-root-name-folder-icon.rootfolder-icon::before`, rootFolderNames[key]);
+                        result.hasFolderIcons = true;
+                    }
+                }
+                const rootFolderNamesExpanded = associations.rootFolderNamesExpanded;
+                if (rootFolderNamesExpanded) {
+                    for (const key in rootFolderNamesExpanded) {
+                        const name = key.toLowerCase();
+                        addSelector(`${qualifier} ${expanded} .${escapeCSS(name)}-root-name-folder-icon.rootfolder-icon::before`, rootFolderNamesExpanded[key]);
+                        result.hasFolderIcons = true;
+                    }
+                }
+                const languageIds = associations.languageIds;
+                if (languageIds) {
+                    if (!languageIds.jsonc && languageIds.json) {
+                        languageIds.jsonc = languageIds.json;
+                    }
+                    for (const languageId in languageIds) {
+                        addSelector(`${qualifier} .${escapeCSS(languageId)}-lang-file-icon.file-icon::before`, languageIds[languageId]);
+                        result.hasFileIcons = true;
+                        hasSpecificFileIcons = true;
+                        coveredLanguages[languageId] = true;
+                    }
+                }
+                const fileExtensions = associations.fileExtensions;
+                if (fileExtensions) {
+                    for (const key in fileExtensions) {
+                        const selectors = [];
+                        const name = handleParentFolder(key.toLowerCase(), selectors);
+                        const segments = name.split('.');
+                        if (segments.length) {
+                            for (let i = 0; i < segments.length; i++) {
+                                selectors.push(`.${escapeCSS(segments.slice(i).join('.'))}-ext-file-icon`);
+                            }
+                            selectors.push('.ext-file-icon');
+                        }
+                        addSelector(`${qualifier} ${selectors.join('')}.file-icon::before`, fileExtensions[key]);
+                        result.hasFileIcons = true;
+                        hasSpecificFileIcons = true;
+                    }
+                }
+                const fileNames = associations.fileNames;
+                if (fileNames) {
+                    for (const key in fileNames) {
+                        const selectors = [];
+                        const fileName = handleParentFolder(key.toLowerCase(), selectors);
+                        selectors.push(`.${escapeCSS(fileName)}-name-file-icon`);
+                        selectors.push('.name-file-icon');
+                        const segments = fileName.split('.');
+                        if (segments.length) {
+                            for (let i = 1; i < segments.length; i++) {
+                                selectors.push(`.${escapeCSS(segments.slice(i).join('.'))}-ext-file-icon`);
+                            }
+                            selectors.push('.ext-file-icon');
+                        }
+                        addSelector(`${qualifier} ${selectors.join('')}.file-icon::before`, fileNames[key]);
+                        result.hasFileIcons = true;
+                        hasSpecificFileIcons = true;
+                    }
+                }
+            }
+        }
+        collectSelectors(iconThemeDocument);
+        collectSelectors(iconThemeDocument.light, '.vs');
+        collectSelectors(iconThemeDocument.highContrast, '.hc-black');
+        collectSelectors(iconThemeDocument.highContrast, '.hc-light');
+        if (!result.hasFileIcons && !result.hasFolderIcons) {
+            return result;
+        }
+        const showLanguageModeIcons = iconThemeDocument.showLanguageModeIcons === true || (hasSpecificFileIcons && iconThemeDocument.showLanguageModeIcons !== false);
+        const cssRules = [];
+        const fonts = iconThemeDocument.fonts;
+        const fontSizes = new Map();
+        if (Array.isArray(fonts)) {
+            const defaultFontSize = this.tryNormalizeFontSize(fonts[0].size) || '150%';
+            fonts.forEach(font => {
+                const src = font.src.map(l => `${asCSSUrl(resolvePath(l.path))} format('${l.format}')`).join(', ');
+                cssRules.push(`@font-face { src: ${src}; font-family: '${font.id}'; font-weight: ${font.weight}; font-style: ${font.style}; font-display: block; }`);
+                const fontSize = this.tryNormalizeFontSize(font.size);
+                if (fontSize !== undefined && fontSize !== defaultFontSize) {
+                    fontSizes.set(font.id, fontSize);
+                }
+            });
+            cssRules.push(`.show-file-icons .file-icon::before, .show-file-icons .folder-icon::before, .show-file-icons .rootfolder-icon::before { font-family: '${fonts[0].id}'; font-size: ${defaultFontSize}; }`);
+        }
+        const emQuad = '\\2001';
+        for (const defId in selectorByDefinitionId) {
+            const selectors = selectorByDefinitionId[defId];
+            const definition = iconThemeDocument.iconDefinitions[defId];
+            if (definition) {
+                if (definition.iconPath) {
+                    cssRules.push(`${selectors.join(', ')} { content: '${emQuad}'; background-image: ${asCSSUrl(resolvePath(definition.iconPath))}; }`);
+                }
+                else if (definition.fontCharacter || definition.fontColor) {
+                    const body = [];
+                    if (definition.fontColor) {
+                        body.push(`color: ${definition.fontColor};`);
+                    }
+                    if (definition.fontCharacter) {
+                        body.push(`content: '${definition.fontCharacter}';`);
+                    }
+                    const fontSize = definition.fontSize ?? (definition.fontId ? fontSizes.get(definition.fontId) : undefined);
+                    if (fontSize) {
+                        body.push(`font-size: ${fontSize};`);
+                    }
+                    if (definition.fontId) {
+                        body.push(`font-family: ${definition.fontId};`);
+                    }
+                    if (showLanguageModeIcons) {
+                        body.push(`background-image: unset;`);
+                    }
+                    cssRules.push(`${selectors.join(', ')} { ${body.join(' ')} }`);
+                }
+            }
+        }
+        if (showLanguageModeIcons) {
+            for (const languageId of this.languageService.getRegisteredLanguageIds()) {
+                if (!coveredLanguages[languageId]) {
+                    const icon = this.languageService.getIcon(languageId);
+                    if (icon) {
+                        const selector = `.show-file-icons .${escapeCSS(languageId)}-lang-file-icon.file-icon::before`;
+                        cssRules.push(`${selector} { content: '${emQuad}'; background-image: ${asCSSUrl(icon.dark)}; }`);
+                        cssRules.push(`.vs ${selector} { content: '${emQuad}'; background-image: ${asCSSUrl(icon.light)}; }`);
+                    }
+                }
+            }
+        }
+        result.content = cssRules.join('\n');
+        return result;
+    }
+    tryNormalizeFontSize(size) {
+        if (!size) {
+            return undefined;
+        }
+        const defaultFontSizeInPx = 13;
+        if (size.endsWith('px')) {
+            const value = parseInt(size, 10);
+            if (!isNaN(value)) {
+                return Math.round((value / defaultFontSizeInPx) * 100) + '%';
+            }
+        }
+        return size;
+    }
+}
+function handleParentFolder(key, selectors) {
+    const lastIndexOfSlash = key.lastIndexOf('/');
+    if (lastIndexOfSlash >= 0) {
+        const parentFolder = key.substring(0, lastIndexOfSlash);
+        selectors.push(`.${escapeCSS(parentFolder)}-name-dir-icon`);
+        return key.substring(lastIndexOfSlash + 1);
+    }
+    return key;
+}
+function escapeCSS(str) {
+    str = str.replace(/[\s]/g, '/');
+    return mainWindow.CSS.escape(str);
+}

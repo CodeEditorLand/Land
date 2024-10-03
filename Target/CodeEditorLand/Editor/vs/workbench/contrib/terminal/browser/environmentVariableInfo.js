@@ -1,5 +1,127 @@
-var x=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var p=(o,e,n,t)=>{for(var i=t>1?void 0:t?w(e,n):e,r=o.length-1,a;r>=0;r--)(a=o[r])&&(i=(t?a(e,n,i):a(i))||i);return t&&i&&x(e,n,i),i},l=(o,e)=>(n,t)=>e(n,t,o);import"../common/environmentVariable.js";import{TerminalCommandId as I}from"../common/terminal.js";import{ITerminalService as C}from"./terminal.js";import{localize as c}from"../../../../nls.js";import{Codicon as y}from"../../../../base/common/codicons.js";import"../../../../platform/terminal/common/environmentVariable.js";import{TerminalStatus as g}from"./terminalStatusList.js";import h from"../../../../base/common/severity.js";import{ICommandService as T}from"../../../../platform/commands/common/commands.js";import{IExtensionService as b}from"../../../services/extensions/common/extensions.js";let d=class{constructor(e,n,t,i,r){this._diff=e;this._terminalId=n;this._collection=t;this._terminalService=i;this._extensionService=r}requiresAction=!0;_getInfo(e){const n=new Set;v(n,this._diff.added.values()),v(n,this._diff.removed.values()),v(n,this._diff.changed.values());let t=c("extensionEnvironmentContributionInfoStale","The following extensions want to relaunch the terminal to contribute to its environment:");return t+=E(this._collection,e,this._extensionService,n),t}_getActions(){return[{label:c("relaunchTerminalLabel","Relaunch Terminal"),run:()=>this._terminalService.getInstanceFromId(this._terminalId)?.relaunch(),commandId:I.Relaunch}]}getStatus(e){return{id:g.RelaunchNeeded,severity:h.Warning,icon:y.warning,tooltip:this._getInfo(e),hoverActions:this._getActions()}}};d=p([l(3,C),l(4,b)],d);let u=class{constructor(e,n,t){this._collection=e;this._commandService=n;this._extensionService=t}requiresAction=!1;_getInfo(e){const n=new Set;v(n,this._collection.getVariableMap(e).values());let t=c("extensionEnvironmentContributionInfoActive","The following extensions have contributed to this terminal's environment:");return t+=E(this._collection,e,this._extensionService,n),t}_getActions(e){return[{label:c("showEnvironmentContributions","Show Environment Contributions"),run:()=>this._commandService.executeCommand(I.ShowEnvironmentContributions,e),commandId:I.ShowEnvironmentContributions}]}getStatus(e){return{id:g.EnvironmentVariableInfoChangesActive,severity:h.Info,tooltip:this._getInfo(e),hoverActions:this._getActions(e)}}};u=p([l(1,T),l(2,b)],u);function E(o,e,n,t){const i=[`
-`],r=o.getDescriptionMap(void 0),a=o.getDescriptionMap(e);for(const s of t){const m=r.get(s);m&&(i.push(`
-- \`${S(s,n)}\``),i.push(`: ${m}`));const f=a.get(s);if(f){const _=m?` (${c("ScopedEnvironmentContributionInfo","workspace")})`:"";i.push(`
-- \`${S(s,n)}${_}\``),i.push(`: ${f}`)}!m&&!f&&i.push(`
-- \`${S(s,n)}\``)}return i.join("")}function v(o,e){for(const n of e)for(const t of n)o.add(t.extensionIdentifier)}function S(o,e){return e.extensions.find(n=>n.id===o)?.displayName||o}export{u as EnvironmentVariableInfoChangesActive,d as EnvironmentVariableInfoStale};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ITerminalService } from './terminal.js';
+import { localize } from '../../../../nls.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import Severity from '../../../../base/common/severity.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+let EnvironmentVariableInfoStale = class EnvironmentVariableInfoStale {
+    constructor(_diff, _terminalId, _collection, _terminalService, _extensionService) {
+        this._diff = _diff;
+        this._terminalId = _terminalId;
+        this._collection = _collection;
+        this._terminalService = _terminalService;
+        this._extensionService = _extensionService;
+        this.requiresAction = true;
+    }
+    _getInfo(scope) {
+        const extSet = new Set();
+        addExtensionIdentifiers(extSet, this._diff.added.values());
+        addExtensionIdentifiers(extSet, this._diff.removed.values());
+        addExtensionIdentifiers(extSet, this._diff.changed.values());
+        let message = localize('extensionEnvironmentContributionInfoStale', "The following extensions want to relaunch the terminal to contribute to its environment:");
+        message += getMergedDescription(this._collection, scope, this._extensionService, extSet);
+        return message;
+    }
+    _getActions() {
+        return [{
+                label: localize('relaunchTerminalLabel', "Relaunch Terminal"),
+                run: () => this._terminalService.getInstanceFromId(this._terminalId)?.relaunch(),
+                commandId: "workbench.action.terminal.relaunch"
+            }];
+    }
+    getStatus(scope) {
+        return {
+            id: "relaunch-needed",
+            severity: Severity.Warning,
+            icon: Codicon.warning,
+            tooltip: this._getInfo(scope),
+            hoverActions: this._getActions()
+        };
+    }
+};
+EnvironmentVariableInfoStale = __decorate([
+    __param(3, ITerminalService),
+    __param(4, IExtensionService),
+    __metadata("design:paramtypes", [Object, Number, Object, Object, Object])
+], EnvironmentVariableInfoStale);
+export { EnvironmentVariableInfoStale };
+let EnvironmentVariableInfoChangesActive = class EnvironmentVariableInfoChangesActive {
+    constructor(_collection, _commandService, _extensionService) {
+        this._collection = _collection;
+        this._commandService = _commandService;
+        this._extensionService = _extensionService;
+        this.requiresAction = false;
+    }
+    _getInfo(scope) {
+        const extSet = new Set();
+        addExtensionIdentifiers(extSet, this._collection.getVariableMap(scope).values());
+        let message = localize('extensionEnvironmentContributionInfoActive', "The following extensions have contributed to this terminal's environment:");
+        message += getMergedDescription(this._collection, scope, this._extensionService, extSet);
+        return message;
+    }
+    _getActions(scope) {
+        return [{
+                label: localize('showEnvironmentContributions', "Show Environment Contributions"),
+                run: () => this._commandService.executeCommand("workbench.action.terminal.showEnvironmentContributions", scope),
+                commandId: "workbench.action.terminal.showEnvironmentContributions"
+            }];
+    }
+    getStatus(scope) {
+        return {
+            id: "env-var-info-changes-active",
+            severity: Severity.Info,
+            tooltip: this._getInfo(scope),
+            hoverActions: this._getActions(scope)
+        };
+    }
+};
+EnvironmentVariableInfoChangesActive = __decorate([
+    __param(1, ICommandService),
+    __param(2, IExtensionService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], EnvironmentVariableInfoChangesActive);
+export { EnvironmentVariableInfoChangesActive };
+function getMergedDescription(collection, scope, extensionService, extSet) {
+    const message = ['\n'];
+    const globalDescriptions = collection.getDescriptionMap(undefined);
+    const workspaceDescriptions = collection.getDescriptionMap(scope);
+    for (const ext of extSet) {
+        const globalDescription = globalDescriptions.get(ext);
+        if (globalDescription) {
+            message.push(`\n- \`${getExtensionName(ext, extensionService)}\``);
+            message.push(`: ${globalDescription}`);
+        }
+        const workspaceDescription = workspaceDescriptions.get(ext);
+        if (workspaceDescription) {
+            const workspaceSuffix = globalDescription ? ` (${localize('ScopedEnvironmentContributionInfo', 'workspace')})` : '';
+            message.push(`\n- \`${getExtensionName(ext, extensionService)}${workspaceSuffix}\``);
+            message.push(`: ${workspaceDescription}`);
+        }
+        if (!globalDescription && !workspaceDescription) {
+            message.push(`\n- \`${getExtensionName(ext, extensionService)}\``);
+        }
+    }
+    return message.join('');
+}
+function addExtensionIdentifiers(extSet, diff) {
+    for (const mutators of diff) {
+        for (const mutator of mutators) {
+            extSet.add(mutator.extensionIdentifier);
+        }
+    }
+}
+function getExtensionName(id, extensionService) {
+    return extensionService.extensions.find(e => e.id === id)?.displayName || id;
+}

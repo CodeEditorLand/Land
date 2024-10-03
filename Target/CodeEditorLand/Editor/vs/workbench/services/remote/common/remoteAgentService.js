@@ -1,1 +1,58 @@
-import{createDecorator as r}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/remote/common/remoteAgentEnvironment.js";import"../../../../base/parts/ipc/common/ipc.js";import"../../../../platform/diagnostics/common/diagnostics.js";import"../../../../base/common/event.js";import"../../../../platform/remote/common/remoteAgentConnection.js";import"../../../../platform/telemetry/common/telemetry.js";import{timeout as a}from"../../../../base/common/async.js";const L=r("remoteAgentService"),M=new class{maxSampleCount=5;sampleDelay=2e3;initial=[];maxInitialCount=3;average=[];maxAverageCount=100;highLatencyMultiple=2;highLatencyMinThreshold=500;highLatencyMaxThreshold=1500;lastMeasurement=void 0;get latency(){return this.lastMeasurement}async measure(o){let e=1/0;for(let n=0;n<this.maxSampleCount;n++){const t=await o.getRoundTripTime();if(t===void 0)return;e=Math.min(e,t/2),await a(this.sampleDelay)}this.average.push(e),this.average.length>this.maxAverageCount&&this.average.shift();let i;return this.initial.length<this.maxInitialCount?this.initial.push(e):i=this.initial.reduce((n,t)=>n+t,0)/this.initial.length,this.lastMeasurement={initial:i,current:e,average:this.average.reduce((n,t)=>n+t,0)/this.average.length,high:typeof i>"u"?!1:e>this.highLatencyMaxThreshold||e>this.highLatencyMinThreshold&&e>i*this.highLatencyMultiple},this.lastMeasurement}};export{L as IRemoteAgentService,M as remoteConnectionLatencyMeasurer};
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { timeout } from '../../../../base/common/async.js';
+export const IRemoteAgentService = createDecorator('remoteAgentService');
+export const remoteConnectionLatencyMeasurer = new class {
+    constructor() {
+        this.maxSampleCount = 5;
+        this.sampleDelay = 2000;
+        this.initial = [];
+        this.maxInitialCount = 3;
+        this.average = [];
+        this.maxAverageCount = 100;
+        this.highLatencyMultiple = 2;
+        this.highLatencyMinThreshold = 500;
+        this.highLatencyMaxThreshold = 1500;
+        this.lastMeasurement = undefined;
+    }
+    get latency() { return this.lastMeasurement; }
+    async measure(remoteAgentService) {
+        let currentLatency = Infinity;
+        for (let i = 0; i < this.maxSampleCount; i++) {
+            const rtt = await remoteAgentService.getRoundTripTime();
+            if (rtt === undefined) {
+                return undefined;
+            }
+            currentLatency = Math.min(currentLatency, rtt / 2);
+            await timeout(this.sampleDelay);
+        }
+        this.average.push(currentLatency);
+        if (this.average.length > this.maxAverageCount) {
+            this.average.shift();
+        }
+        let initialLatency = undefined;
+        if (this.initial.length < this.maxInitialCount) {
+            this.initial.push(currentLatency);
+        }
+        else {
+            initialLatency = this.initial.reduce((sum, value) => sum + value, 0) / this.initial.length;
+        }
+        this.lastMeasurement = {
+            initial: initialLatency,
+            current: currentLatency,
+            average: this.average.reduce((sum, value) => sum + value, 0) / this.average.length,
+            high: (() => {
+                if (typeof initialLatency === 'undefined') {
+                    return false;
+                }
+                if (currentLatency > this.highLatencyMaxThreshold) {
+                    return true;
+                }
+                if (currentLatency > this.highLatencyMinThreshold && currentLatency > initialLatency * this.highLatencyMultiple) {
+                    return true;
+                }
+                return false;
+            })()
+        };
+        return this.lastMeasurement;
+    }
+};

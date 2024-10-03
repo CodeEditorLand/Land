@@ -1,7 +1,111 @@
-import{equals as c}from"../../../../../base/common/arrays.js";import{splitLines as a}from"../../../../../base/common/strings.js";import{Position as u}from"../../../../common/core/position.js";import{Range as i}from"../../../../common/core/range.js";import{SingleTextEdit as s,TextEdit as o}from"../../../../common/core/textEdit.js";import"../utils.js";class m{constructor(e,t){this.lineNumber=e;this.parts=t}equals(e){return this.lineNumber===e.lineNumber&&this.parts.length===e.parts.length&&this.parts.every((t,n)=>t.equals(e.parts[n]))}render(e,t=!1){return new o([...this.parts.map(n=>new s(i.fromPositions(new u(this.lineNumber,n.column)),t?`[${n.lines.join(`
-`)}]`:n.lines.join(`
-`)))]).applyToString(e)}renderForScreenReader(e){if(this.parts.length===0)return"";const t=this.parts[this.parts.length-1],n=e.substr(0,t.column-1);return new o([...this.parts.map(l=>new s(i.fromPositions(new u(1,l.column)),l.lines.join(`
-`)))]).applyToString(n).substring(this.parts[0].column-1)}isEmpty(){return this.parts.every(e=>e.lines.length===0)}get lineCount(){return 1+this.parts.reduce((e,t)=>e+t.lines.length-1,0)}}class g{constructor(e,t,n){this.column=e;this.text=t;this.preview=n}lines=a(this.text);equals(e){return this.column===e.column&&this.lines.length===e.lines.length&&this.lines.every((t,n)=>t===e.lines[n])}}class p{constructor(e,t,n,h=0){this.lineNumber=e;this.columnRange=t;this.text=n;this.additionalReservedLineCount=h}parts=[new g(this.columnRange.endColumnExclusive,this.text,!1)];newLines=a(this.text);renderForScreenReader(e){return this.newLines.join(`
-`)}render(e,t=!1){const n=this.columnRange.toRange(this.lineNumber);return t?new o([new s(i.fromPositions(n.getStartPosition()),"("),new s(i.fromPositions(n.getEndPosition()),`)[${this.newLines.join(`
-`)}]`)]).applyToString(e):new o([new s(n,this.newLines.join(`
-`))]).applyToString(e)}get lineCount(){return this.newLines.length}isEmpty(){return this.parts.every(e=>e.lines.length===0)}equals(e){return this.lineNumber===e.lineNumber&&this.columnRange.equals(e.columnRange)&&this.newLines.length===e.newLines.length&&this.newLines.every((t,n)=>t===e.newLines[n])&&this.additionalReservedLineCount===e.additionalReservedLineCount}}function G(r,e){return c(r,e,d)}function d(r,e){return r===e?!0:!r||!e?!1:r instanceof m&&e instanceof m||r instanceof p&&e instanceof p?r.equals(e):!1}export{m as GhostText,g as GhostTextPart,p as GhostTextReplacement,d as ghostTextOrReplacementEquals,G as ghostTextsOrReplacementsEqual};
+import { equals } from '../../../../../base/common/arrays.js';
+import { splitLines } from '../../../../../base/common/strings.js';
+import { Position } from '../../../../common/core/position.js';
+import { Range } from '../../../../common/core/range.js';
+import { SingleTextEdit, TextEdit } from '../../../../common/core/textEdit.js';
+export class GhostText {
+    constructor(lineNumber, parts) {
+        this.lineNumber = lineNumber;
+        this.parts = parts;
+    }
+    equals(other) {
+        return this.lineNumber === other.lineNumber &&
+            this.parts.length === other.parts.length &&
+            this.parts.every((part, index) => part.equals(other.parts[index]));
+    }
+    render(documentText, debug = false) {
+        return new TextEdit([
+            ...this.parts.map(p => new SingleTextEdit(Range.fromPositions(new Position(this.lineNumber, p.column)), debug ? `[${p.lines.join('\n')}]` : p.lines.join('\n'))),
+        ]).applyToString(documentText);
+    }
+    renderForScreenReader(lineText) {
+        if (this.parts.length === 0) {
+            return '';
+        }
+        const lastPart = this.parts[this.parts.length - 1];
+        const cappedLineText = lineText.substr(0, lastPart.column - 1);
+        const text = new TextEdit([
+            ...this.parts.map(p => new SingleTextEdit(Range.fromPositions(new Position(1, p.column)), p.lines.join('\n'))),
+        ]).applyToString(cappedLineText);
+        return text.substring(this.parts[0].column - 1);
+    }
+    isEmpty() {
+        return this.parts.every(p => p.lines.length === 0);
+    }
+    get lineCount() {
+        return 1 + this.parts.reduce((r, p) => r + p.lines.length - 1, 0);
+    }
+}
+export class GhostTextPart {
+    constructor(column, text, preview) {
+        this.column = column;
+        this.text = text;
+        this.preview = preview;
+        this.lines = splitLines(this.text);
+    }
+    equals(other) {
+        return this.column === other.column &&
+            this.lines.length === other.lines.length &&
+            this.lines.every((line, index) => line === other.lines[index]);
+    }
+}
+export class GhostTextReplacement {
+    constructor(lineNumber, columnRange, text, additionalReservedLineCount = 0) {
+        this.lineNumber = lineNumber;
+        this.columnRange = columnRange;
+        this.text = text;
+        this.additionalReservedLineCount = additionalReservedLineCount;
+        this.parts = [
+            new GhostTextPart(this.columnRange.endColumnExclusive, this.text, false),
+        ];
+        this.newLines = splitLines(this.text);
+    }
+    renderForScreenReader(_lineText) {
+        return this.newLines.join('\n');
+    }
+    render(documentText, debug = false) {
+        const replaceRange = this.columnRange.toRange(this.lineNumber);
+        if (debug) {
+            return new TextEdit([
+                new SingleTextEdit(Range.fromPositions(replaceRange.getStartPosition()), '('),
+                new SingleTextEdit(Range.fromPositions(replaceRange.getEndPosition()), `)[${this.newLines.join('\n')}]`),
+            ]).applyToString(documentText);
+        }
+        else {
+            return new TextEdit([
+                new SingleTextEdit(replaceRange, this.newLines.join('\n')),
+            ]).applyToString(documentText);
+        }
+    }
+    get lineCount() {
+        return this.newLines.length;
+    }
+    isEmpty() {
+        return this.parts.every(p => p.lines.length === 0);
+    }
+    equals(other) {
+        return this.lineNumber === other.lineNumber &&
+            this.columnRange.equals(other.columnRange) &&
+            this.newLines.length === other.newLines.length &&
+            this.newLines.every((line, index) => line === other.newLines[index]) &&
+            this.additionalReservedLineCount === other.additionalReservedLineCount;
+    }
+}
+export function ghostTextsOrReplacementsEqual(a, b) {
+    return equals(a, b, ghostTextOrReplacementEquals);
+}
+export function ghostTextOrReplacementEquals(a, b) {
+    if (a === b) {
+        return true;
+    }
+    if (!a || !b) {
+        return false;
+    }
+    if (a instanceof GhostText && b instanceof GhostText) {
+        return a.equals(b);
+    }
+    if (a instanceof GhostTextReplacement && b instanceof GhostTextReplacement) {
+        return a.equals(b);
+    }
+    return false;
+}

@@ -1,1 +1,45 @@
-var u=Object.defineProperty;var l=Object.getOwnPropertyDescriptor;var m=(n,i,e,t)=>{for(var r=t>1?void 0:t?l(i,e):i,a=n.length-1,s;a>=0;a--)(s=n[a])&&(r=(t?s(i,e,r):s(r))||r);return t&&r&&u(i,e,r),r},c=(n,i)=>(e,t)=>i(e,t,n);import{MainContext as p}from"../common/extHost.protocol.js";import{extHostNamedCustomer as g}from"../../services/extensions/common/extHostCustomers.js";import{URI as v}from"../../../base/common/uri.js";import{IFileService as f}from"../../../platform/files/common/files.js";import{Disposable as d}from"../../../base/common/lifecycle.js";import{ILanguagePackService as x}from"../../../platform/languagePacks/common/languagePacks.js";let o=class extends d{constructor(e,t,r){super();this.fileService=t;this.languagePackService=r}async $fetchBuiltInBundleUri(e,t){try{return await this.languagePackService.getBuiltInExtensionTranslationsUri(e,t)}catch{return}}async $fetchBundleContents(e){return(await this.fileService.readFile(v.revive(e))).value.toString()}};o=m([g(p.MainThreadLocalization),c(1,f),c(2,x)],o);export{o as MainThreadLocalization};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { MainContext } from '../common/extHost.protocol.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+import { URI } from '../../../base/common/uri.js';
+import { IFileService } from '../../../platform/files/common/files.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { ILanguagePackService } from '../../../platform/languagePacks/common/languagePacks.js';
+let MainThreadLocalization = class MainThreadLocalization extends Disposable {
+    constructor(extHostContext, fileService, languagePackService) {
+        super();
+        this.fileService = fileService;
+        this.languagePackService = languagePackService;
+    }
+    async $fetchBuiltInBundleUri(id, language) {
+        try {
+            const uri = await this.languagePackService.getBuiltInExtensionTranslationsUri(id, language);
+            return uri;
+        }
+        catch (e) {
+            return undefined;
+        }
+    }
+    async $fetchBundleContents(uriComponents) {
+        const contents = await this.fileService.readFile(URI.revive(uriComponents));
+        return contents.value.toString();
+    }
+};
+MainThreadLocalization = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadLocalization),
+    __param(1, IFileService),
+    __param(2, ILanguagePackService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], MainThreadLocalization);
+export { MainThreadLocalization };

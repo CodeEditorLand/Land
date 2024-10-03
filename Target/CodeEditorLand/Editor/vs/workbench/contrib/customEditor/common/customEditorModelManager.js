@@ -1,1 +1,60 @@
-import{createSingleCallFunction as n}from"../../../../base/common/functional.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import"./customEditor.js";class p{_references=new Map;async getAllModels(r){const e=`${r.toString()}@@@`,o=[];for(const[t,s]of this._references)t.startsWith(e)&&s.model&&o.push(await s.model);return o}async get(r,e){const o=this.key(r,e);return this._references.get(o)?.model}tryRetain(r,e){const o=this.key(r,e),t=this._references.get(o);if(t)return t.counter++,t.model.then(s=>({object:s,dispose:n(()=>{--t.counter<=0&&(t.model.then(i=>i.dispose()),this._references.delete(o))})}))}add(r,e,o){const t=this.key(r,e);if(this._references.get(t))throw new Error("Model already exists");return this._references.set(t,{viewType:e,model:o,counter:0}),this.tryRetain(r,e)}disposeAllModelsForView(r){for(const[e,o]of this._references)o.viewType===r&&(o.model.then(t=>t.dispose()),this._references.delete(e))}key(r,e){return`${r.toString()}@@@${e}`}}export{p as CustomEditorModelManager};
+import { createSingleCallFunction } from '../../../../base/common/functional.js';
+export class CustomEditorModelManager {
+    constructor() {
+        this._references = new Map();
+    }
+    async getAllModels(resource) {
+        const keyStart = `${resource.toString()}@@@`;
+        const models = [];
+        for (const [key, entry] of this._references) {
+            if (key.startsWith(keyStart) && entry.model) {
+                models.push(await entry.model);
+            }
+        }
+        return models;
+    }
+    async get(resource, viewType) {
+        const key = this.key(resource, viewType);
+        const entry = this._references.get(key);
+        return entry?.model;
+    }
+    tryRetain(resource, viewType) {
+        const key = this.key(resource, viewType);
+        const entry = this._references.get(key);
+        if (!entry) {
+            return undefined;
+        }
+        entry.counter++;
+        return entry.model.then(model => {
+            return {
+                object: model,
+                dispose: createSingleCallFunction(() => {
+                    if (--entry.counter <= 0) {
+                        entry.model.then(x => x.dispose());
+                        this._references.delete(key);
+                    }
+                }),
+            };
+        });
+    }
+    add(resource, viewType, model) {
+        const key = this.key(resource, viewType);
+        const existing = this._references.get(key);
+        if (existing) {
+            throw new Error('Model already exists');
+        }
+        this._references.set(key, { viewType, model, counter: 0 });
+        return this.tryRetain(resource, viewType);
+    }
+    disposeAllModelsForView(viewType) {
+        for (const [key, value] of this._references) {
+            if (value.viewType === viewType) {
+                value.model.then(x => x.dispose());
+                this._references.delete(key);
+            }
+        }
+    }
+    key(resource, viewType) {
+        return `${resource.toString()}@@@${viewType}`;
+    }
+}

@@ -1,1 +1,125 @@
-var y=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var h=(t,r,n,a)=>{for(var i=a>1?void 0:a?f(r,n):r,l=t.length-1,p;l>=0;l--)(p=t[l])&&(i=(a?p(r,n,i):p(i))||i);return a&&i&&y(r,n,i),i},c=(t,r)=>(n,a)=>r(n,a,t);import{KeyCode as e,KeyMod as s}from"../../../../base/common/keyCodes.js";import{Lazy as v}from"../../../../base/common/lazy.js";import{Disposable as E}from"../../../../base/common/lifecycle.js";import"../../../browser/editorBrowser.js";import{EditorAction as I,EditorCommand as x,EditorContributionInstantiation as A,registerEditorAction as H,registerEditorCommand as g,registerEditorContribution as P}from"../../../browser/editorExtensions.js";import"../../../common/editorCommon.js";import{EditorContextKeys as d}from"../../../common/editorContextKeys.js";import*as S from"../../../common/languages.js";import{ILanguageFeaturesService as k}from"../../../common/services/languageFeatures.js";import{ParameterHintsModel as K}from"./parameterHintsModel.js";import{Context as m}from"./provideSignatureHelp.js";import*as D from"../../../../nls.js";import{ContextKeyExpr as b}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as T}from"../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as C}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{ParameterHintsWidget as V}from"./parameterHintsWidget.js";let o=class extends E{static ID="editor.controller.parameterHints";static get(r){return r.getContribution(o.ID)}editor;model;widget;constructor(r,n,a){super(),this.editor=r,this.model=this._register(new K(r,a.signatureHelpProvider)),this._register(this.model.onChangedHints(i=>{i?(this.widget.value.show(),this.widget.value.render(i)):this.widget.rawValue?.hide()})),this.widget=new v(()=>this._register(n.createInstance(V,this.editor,this.model)))}cancel(){this.model.cancel()}previous(){this.widget.rawValue?.previous()}next(){this.widget.rawValue?.next()}trigger(r){this.model.trigger(r,0)}};o=h([c(1,T),c(2,k)],o);class M extends I{constructor(){super({id:"editor.action.triggerParameterHints",label:D.localize("parameterHints.trigger.label","Trigger Parameter Hints"),alias:"Trigger Parameter Hints",precondition:d.hasSignatureHelpProvider,kbOpts:{kbExpr:d.editorTextFocus,primary:s.CtrlCmd|s.Shift|e.Space,weight:C.EditorContrib}})}run(r,n){o.get(n)?.trigger({triggerKind:S.SignatureHelpTriggerKind.Invoke})}}P(o.ID,o,A.BeforeFirstInteraction),H(M);const u=C.EditorContrib+75,w=x.bindToContribution(o.get);g(new w({id:"closeParameterHints",precondition:m.Visible,handler:t=>t.cancel(),kbOpts:{weight:u,kbExpr:d.focus,primary:e.Escape,secondary:[s.Shift|e.Escape]}})),g(new w({id:"showPrevParameterHint",precondition:b.and(m.Visible,m.MultipleSignatures),handler:t=>t.previous(),kbOpts:{weight:u,kbExpr:d.focus,primary:e.UpArrow,secondary:[s.Alt|e.UpArrow],mac:{primary:e.UpArrow,secondary:[s.Alt|e.UpArrow,s.WinCtrl|e.KeyP]}}})),g(new w({id:"showNextParameterHint",precondition:b.and(m.Visible,m.MultipleSignatures),handler:t=>t.next(),kbOpts:{weight:u,kbExpr:d.focus,primary:e.DownArrow,secondary:[s.Alt|e.DownArrow],mac:{primary:e.DownArrow,secondary:[s.Alt|e.DownArrow,s.WinCtrl|e.KeyN]}}}));export{o as ParameterHintsController,M as TriggerParameterHintsAction};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ParameterHintsController_1;
+import { Lazy } from '../../../../base/common/lazy.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { EditorAction, EditorCommand, registerEditorAction, registerEditorCommand, registerEditorContribution } from '../../../browser/editorExtensions.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import * as languages from '../../../common/languages.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { ParameterHintsModel } from './parameterHintsModel.js';
+import { Context } from './provideSignatureHelp.js';
+import * as nls from '../../../../nls.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ParameterHintsWidget } from './parameterHintsWidget.js';
+let ParameterHintsController = class ParameterHintsController extends Disposable {
+    static { ParameterHintsController_1 = this; }
+    static { this.ID = 'editor.controller.parameterHints'; }
+    static get(editor) {
+        return editor.getContribution(ParameterHintsController_1.ID);
+    }
+    constructor(editor, instantiationService, languageFeaturesService) {
+        super();
+        this.editor = editor;
+        this.model = this._register(new ParameterHintsModel(editor, languageFeaturesService.signatureHelpProvider));
+        this._register(this.model.onChangedHints(newParameterHints => {
+            if (newParameterHints) {
+                this.widget.value.show();
+                this.widget.value.render(newParameterHints);
+            }
+            else {
+                this.widget.rawValue?.hide();
+            }
+        }));
+        this.widget = new Lazy(() => this._register(instantiationService.createInstance(ParameterHintsWidget, this.editor, this.model)));
+    }
+    cancel() {
+        this.model.cancel();
+    }
+    previous() {
+        this.widget.rawValue?.previous();
+    }
+    next() {
+        this.widget.rawValue?.next();
+    }
+    trigger(context) {
+        this.model.trigger(context, 0);
+    }
+};
+ParameterHintsController = ParameterHintsController_1 = __decorate([
+    __param(1, IInstantiationService),
+    __param(2, ILanguageFeaturesService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], ParameterHintsController);
+export { ParameterHintsController };
+export class TriggerParameterHintsAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.triggerParameterHints',
+            label: nls.localize('parameterHints.trigger.label', "Trigger Parameter Hints"),
+            alias: 'Trigger Parameter Hints',
+            precondition: EditorContextKeys.hasSignatureHelpProvider,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 2048 | 1024 | 10,
+                weight: 100
+            }
+        });
+    }
+    run(accessor, editor) {
+        const controller = ParameterHintsController.get(editor);
+        controller?.trigger({
+            triggerKind: languages.SignatureHelpTriggerKind.Invoke
+        });
+    }
+}
+registerEditorContribution(ParameterHintsController.ID, ParameterHintsController, 2);
+registerEditorAction(TriggerParameterHintsAction);
+const weight = 100 + 75;
+const ParameterHintsCommand = EditorCommand.bindToContribution(ParameterHintsController.get);
+registerEditorCommand(new ParameterHintsCommand({
+    id: 'closeParameterHints',
+    precondition: Context.Visible,
+    handler: x => x.cancel(),
+    kbOpts: {
+        weight: weight,
+        kbExpr: EditorContextKeys.focus,
+        primary: 9,
+        secondary: [1024 | 9]
+    }
+}));
+registerEditorCommand(new ParameterHintsCommand({
+    id: 'showPrevParameterHint',
+    precondition: ContextKeyExpr.and(Context.Visible, Context.MultipleSignatures),
+    handler: x => x.previous(),
+    kbOpts: {
+        weight: weight,
+        kbExpr: EditorContextKeys.focus,
+        primary: 16,
+        secondary: [512 | 16],
+        mac: { primary: 16, secondary: [512 | 16, 256 | 46] }
+    }
+}));
+registerEditorCommand(new ParameterHintsCommand({
+    id: 'showNextParameterHint',
+    precondition: ContextKeyExpr.and(Context.Visible, Context.MultipleSignatures),
+    handler: x => x.next(),
+    kbOpts: {
+        weight: weight,
+        kbExpr: EditorContextKeys.focus,
+        primary: 18,
+        secondary: [512 | 18],
+        mac: { primary: 18, secondary: [512 | 18, 256 | 44] }
+    }
+}));

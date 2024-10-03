@@ -1,1 +1,27 @@
-class a{constructor(e){this.id=e}static enableDebugLogging=!1;_data=new Map;_idPool=1;add(e){const t=this._idPool++;return this._data.set(t,e),this.logDebugInfo(),t}get(e,t){return this._data.has(e)?this._data.get(e)[t]:void 0}delete(e){this._data.delete(e),this.logDebugInfo()}logDebugInfo(){a.enableDebugLogging}}export{a as Cache};
+export class Cache {
+    static { this.enableDebugLogging = false; }
+    constructor(id) {
+        this.id = id;
+        this._data = new Map();
+        this._idPool = 1;
+    }
+    add(item) {
+        const id = this._idPool++;
+        this._data.set(id, item);
+        this.logDebugInfo();
+        return id;
+    }
+    get(pid, id) {
+        return this._data.has(pid) ? this._data.get(pid)[id] : undefined;
+    }
+    delete(id) {
+        this._data.delete(id);
+        this.logDebugInfo();
+    }
+    logDebugInfo() {
+        if (!Cache.enableDebugLogging) {
+            return;
+        }
+        console.log(`${this.id} cache size - ${this._data.size}`);
+    }
+}

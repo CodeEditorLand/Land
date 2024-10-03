@@ -1,1 +1,204 @@
-var h=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var g=(l,e,t,r)=>{for(var o=r>1?void 0:r?T(e,t):e,i=l.length-1,s;i>=0;i--)(s=l[i])&&(o=(r?s(e,t,o):s(o))||o);return r&&o&&h(e,t,o),o},u=(l,e)=>(t,r)=>e(t,r,l);import{Emitter as b}from"../../../../base/common/event.js";import{Iterable as m}from"../../../../base/common/iterator.js";import{Disposable as D}from"../../../../base/common/lifecycle.js";import{deepClone as C}from"../../../../base/common/objects.js";import{IContextKeyService as R}from"../../../../platform/contextkey/common/contextkey.js";import{createDecorator as v}from"../../../../platform/instantiation/common/instantiation.js";import{IStorageService as x,StorageScope as I,StorageTarget as y}from"../../../../platform/storage/common/storage.js";import{StoredValue as E}from"./storedValue.js";import{TestId as P}from"./testId.js";import"./testService.js";import{TestRunProfileBitset as n,testRunProfileBitsetList as M}from"./testTypes.js";import{TestingContextKeys as f}from"./testingContextKeys.js";const J=v("testProfileService"),Q=(l,e)=>l.controllerId===e.controllerId&&(P.isRoot(e.item.extId)||!l.tag||e.item.tags.includes(l.tag)),d=(l,e)=>l.isDefault!==e.isDefault?l.isDefault?-1:1:l.label.localeCompare(e.label),X=l=>[[f.hasRunnableTests.key,(l&n.Run)!==0],[f.hasDebuggableTests.key,(l&n.Debug)!==0],[f.hasCoverableTests.key,(l&n.Coverage)!==0]];let a=class extends D{userDefaults;capabilitiesContexts;changeEmitter=this._register(new b);controllerProfiles=new Map;onDidChange=this.changeEmitter.event;constructor(e,t){super(),t.remove("testingPreferredProfiles",I.WORKSPACE),this.userDefaults=this._register(new E({key:"testingPreferredProfiles2",scope:I.WORKSPACE,target:y.MACHINE},t)),this.capabilitiesContexts={[n.Run]:f.hasRunnableTests.bindTo(e),[n.Debug]:f.hasDebuggableTests.bindTo(e),[n.Coverage]:f.hasCoverableTests.bindTo(e),[n.HasNonDefaultProfile]:f.hasNonDefaultProfile.bindTo(e),[n.HasConfigurable]:f.hasConfigurableProfile.bindTo(e),[n.SupportsContinuousRun]:f.supportsContinuousRun.bindTo(e)},this.refreshContextKeys()}addProfile(e,t){const r=this.userDefaults.get()?.[e.id]?.[t.profileId],o={...t,isDefault:r??t.isDefault,wasInitiallyDefault:t.isDefault};let i=this.controllerProfiles.get(t.controllerId);i?(i.profiles.push(o),i.profiles.sort(d)):(i={profiles:[o],controller:e},this.controllerProfiles.set(t.controllerId,i)),this.refreshContextKeys(),this.changeEmitter.fire()}updateProfile(e,t,r){const o=this.controllerProfiles.get(e);if(!o)return;const i=o.profiles.find(s=>s.controllerId===e&&s.profileId===t);if(i){if(Object.assign(i,r),o.profiles.sort(d),r.isDefault!==void 0){const s=C(this.userDefaults.get({}));c(s,i,r.isDefault),this.userDefaults.store(s)}this.changeEmitter.fire()}}configure(e,t){this.controllerProfiles.get(e)?.controller.configureRunProfile(t)}removeProfile(e,t){const r=this.controllerProfiles.get(e);if(!r)return;if(!t){this.controllerProfiles.delete(e),this.changeEmitter.fire();return}const o=r.profiles.findIndex(i=>i.profileId===t);o!==-1&&(r.profiles.splice(o,1),this.refreshContextKeys(),this.changeEmitter.fire())}capabilitiesForTest(e){const t=this.controllerProfiles.get(P.root(e.extId));if(!t)return 0;let r=0;for(const o of t.profiles)(!o.tag||e.tags.includes(o.tag))&&(r|=r&o.group?n.HasNonDefaultProfile:o.group);return r}all(){return this.controllerProfiles.values()}getControllerProfiles(e){return this.controllerProfiles.get(e)?.profiles??[]}getGroupDefaultProfiles(e,t){const r=t?this.controllerProfiles.get(t)?.profiles||[]:[...m.flatMap(this.controllerProfiles.values(),i=>i.profiles)],o=r.filter(i=>i.group===e&&i.isDefault);if(o.length===0){const i=r.find(s=>s.group===e);i&&o.push(i)}return o}setGroupDefaultProfiles(e,t){const r={};for(const o of this.controllerProfiles.values()){r[o.controller.id]={};for(const i of o.profiles)i.group===e&&c(r,i,t.some(s=>s.profileId===i.profileId));for(const i of o.profiles){if(i.group===e)continue;const s=o.profiles.find(p=>p.group===e&&p.label===i.label);s&&c(r,i,s.isDefault)}o.profiles.sort(d)}this.userDefaults.store(r),this.changeEmitter.fire()}refreshContextKeys(){let e=0;for(const{profiles:t}of this.controllerProfiles.values())for(const r of t)e|=e&r.group?n.HasNonDefaultProfile:r.group,e|=r.supportsContinuousRun?n.SupportsContinuousRun:0;for(const t of M)this.capabilitiesContexts[t].set((e&t)!==0)}};a=g([u(0,R),u(1,x)],a);const c=(l,e,t)=>{e.isDefault=t,l[e.controllerId]??={},e.isDefault!==e.wasInitiallyDefault?l[e.controllerId][e.profileId]=e.isDefault:delete l[e.controllerId][e.profileId]};export{J as ITestProfileService,a as TestProfileService,Q as canUseProfileWithTest,X as capabilityContextKeys};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter } from '../../../../base/common/event.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { deepClone } from '../../../../base/common/objects.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { StoredValue } from './storedValue.js';
+import { TestId } from './testId.js';
+import { testRunProfileBitsetList } from './testTypes.js';
+import { TestingContextKeys } from './testingContextKeys.js';
+export const ITestProfileService = createDecorator('testProfileService');
+export const canUseProfileWithTest = (profile, test) => profile.controllerId === test.controllerId && (TestId.isRoot(test.item.extId) || !profile.tag || test.item.tags.includes(profile.tag));
+const sorter = (a, b) => {
+    if (a.isDefault !== b.isDefault) {
+        return a.isDefault ? -1 : 1;
+    }
+    return a.label.localeCompare(b.label);
+};
+export const capabilityContextKeys = (capabilities) => [
+    [TestingContextKeys.hasRunnableTests.key, (capabilities & 2) !== 0],
+    [TestingContextKeys.hasDebuggableTests.key, (capabilities & 4) !== 0],
+    [TestingContextKeys.hasCoverableTests.key, (capabilities & 8) !== 0],
+];
+let TestProfileService = class TestProfileService extends Disposable {
+    constructor(contextKeyService, storageService) {
+        super();
+        this.changeEmitter = this._register(new Emitter());
+        this.controllerProfiles = new Map();
+        this.onDidChange = this.changeEmitter.event;
+        storageService.remove('testingPreferredProfiles', 1);
+        this.userDefaults = this._register(new StoredValue({
+            key: 'testingPreferredProfiles2',
+            scope: 1,
+            target: 1,
+        }, storageService));
+        this.capabilitiesContexts = {
+            [2]: TestingContextKeys.hasRunnableTests.bindTo(contextKeyService),
+            [4]: TestingContextKeys.hasDebuggableTests.bindTo(contextKeyService),
+            [8]: TestingContextKeys.hasCoverableTests.bindTo(contextKeyService),
+            [16]: TestingContextKeys.hasNonDefaultProfile.bindTo(contextKeyService),
+            [32]: TestingContextKeys.hasConfigurableProfile.bindTo(contextKeyService),
+            [64]: TestingContextKeys.supportsContinuousRun.bindTo(contextKeyService),
+        };
+        this.refreshContextKeys();
+    }
+    addProfile(controller, profile) {
+        const previousExplicitDefaultValue = this.userDefaults.get()?.[controller.id]?.[profile.profileId];
+        const extended = {
+            ...profile,
+            isDefault: previousExplicitDefaultValue ?? profile.isDefault,
+            wasInitiallyDefault: profile.isDefault,
+        };
+        let record = this.controllerProfiles.get(profile.controllerId);
+        if (record) {
+            record.profiles.push(extended);
+            record.profiles.sort(sorter);
+        }
+        else {
+            record = {
+                profiles: [extended],
+                controller,
+            };
+            this.controllerProfiles.set(profile.controllerId, record);
+        }
+        this.refreshContextKeys();
+        this.changeEmitter.fire();
+    }
+    updateProfile(controllerId, profileId, update) {
+        const ctrl = this.controllerProfiles.get(controllerId);
+        if (!ctrl) {
+            return;
+        }
+        const profile = ctrl.profiles.find(c => c.controllerId === controllerId && c.profileId === profileId);
+        if (!profile) {
+            return;
+        }
+        Object.assign(profile, update);
+        ctrl.profiles.sort(sorter);
+        if (update.isDefault !== undefined) {
+            const map = deepClone(this.userDefaults.get({}));
+            setIsDefault(map, profile, update.isDefault);
+            this.userDefaults.store(map);
+        }
+        this.changeEmitter.fire();
+    }
+    configure(controllerId, profileId) {
+        this.controllerProfiles.get(controllerId)?.controller.configureRunProfile(profileId);
+    }
+    removeProfile(controllerId, profileId) {
+        const ctrl = this.controllerProfiles.get(controllerId);
+        if (!ctrl) {
+            return;
+        }
+        if (!profileId) {
+            this.controllerProfiles.delete(controllerId);
+            this.changeEmitter.fire();
+            return;
+        }
+        const index = ctrl.profiles.findIndex(c => c.profileId === profileId);
+        if (index === -1) {
+            return;
+        }
+        ctrl.profiles.splice(index, 1);
+        this.refreshContextKeys();
+        this.changeEmitter.fire();
+    }
+    capabilitiesForTest(test) {
+        const ctrl = this.controllerProfiles.get(TestId.root(test.extId));
+        if (!ctrl) {
+            return 0;
+        }
+        let capabilities = 0;
+        for (const profile of ctrl.profiles) {
+            if (!profile.tag || test.tags.includes(profile.tag)) {
+                capabilities |= capabilities & profile.group ? 16 : profile.group;
+            }
+        }
+        return capabilities;
+    }
+    all() {
+        return this.controllerProfiles.values();
+    }
+    getControllerProfiles(profileId) {
+        return this.controllerProfiles.get(profileId)?.profiles ?? [];
+    }
+    getGroupDefaultProfiles(group, controllerId) {
+        const allProfiles = controllerId
+            ? (this.controllerProfiles.get(controllerId)?.profiles || [])
+            : [...Iterable.flatMap(this.controllerProfiles.values(), c => c.profiles)];
+        const defaults = allProfiles.filter(c => c.group === group && c.isDefault);
+        if (defaults.length === 0) {
+            const first = allProfiles.find(p => p.group === group);
+            if (first) {
+                defaults.push(first);
+            }
+        }
+        return defaults;
+    }
+    setGroupDefaultProfiles(group, profiles) {
+        const next = {};
+        for (const ctrl of this.controllerProfiles.values()) {
+            next[ctrl.controller.id] = {};
+            for (const profile of ctrl.profiles) {
+                if (profile.group !== group) {
+                    continue;
+                }
+                setIsDefault(next, profile, profiles.some(p => p.profileId === profile.profileId));
+            }
+            for (const profile of ctrl.profiles) {
+                if (profile.group === group) {
+                    continue;
+                }
+                const matching = ctrl.profiles.find(p => p.group === group && p.label === profile.label);
+                if (matching) {
+                    setIsDefault(next, profile, matching.isDefault);
+                }
+            }
+            ctrl.profiles.sort(sorter);
+        }
+        this.userDefaults.store(next);
+        this.changeEmitter.fire();
+    }
+    refreshContextKeys() {
+        let allCapabilities = 0;
+        for (const { profiles } of this.controllerProfiles.values()) {
+            for (const profile of profiles) {
+                allCapabilities |= allCapabilities & profile.group ? 16 : profile.group;
+                allCapabilities |= profile.supportsContinuousRun ? 64 : 0;
+            }
+        }
+        for (const group of testRunProfileBitsetList) {
+            this.capabilitiesContexts[group].set((allCapabilities & group) !== 0);
+        }
+    }
+};
+TestProfileService = __decorate([
+    __param(0, IContextKeyService),
+    __param(1, IStorageService),
+    __metadata("design:paramtypes", [Object, Object])
+], TestProfileService);
+export { TestProfileService };
+const setIsDefault = (map, profile, isDefault) => {
+    profile.isDefault = isDefault;
+    map[profile.controllerId] ??= {};
+    if (profile.isDefault !== profile.wasInitiallyDefault) {
+        map[profile.controllerId][profile.profileId] = profile.isDefault;
+    }
+    else {
+        delete map[profile.controllerId][profile.profileId];
+    }
+};

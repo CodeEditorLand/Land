@@ -1,1 +1,649 @@
-import*as h from"../../../../nls.js";import*as y from"../../../../base/common/types.js";import*as v from"../../../../base/common/resources.js";import"../../../../base/common/jsonSchema.js";import*as E from"../../../../base/common/objects.js";import"../../../../base/common/uri.js";import"./problemMatcher.js";import"../../../../platform/workspace/common/workspace.js";import{RawContextKey as P}from"../../../../platform/contextkey/common/contextkey.js";import{TaskDefinitionRegistry as M}from"./taskDefinitionRegistry.js";import"../../../../platform/extensions/common/extensions.js";import{ConfigurationTarget as I}from"../../../../platform/configuration/common/configuration.js";import"../../../../platform/terminal/common/terminal.js";const O="settings",ge=new P("taskRunning",!1,h.localize("tasks.taskRunningContext","Whether a task is currently running.")),ke=h.localize2("tasksCategory","Tasks");var T=(t=>(t[t.Escape=1]="Escape",t[t.Strong=2]="Strong",t[t.Weak=3]="Weak",t))(T||{});const F="$customized";(e=>{function d(r){if(!r)return 2;switch(r.toLowerCase()){case"escape":return 1;case"strong":return 2;case"weak":return 3;default:return 2}}e.from=d})(T||={});var R;(e=>e.defaults={cwd:"${workspaceFolder}"})(R||={});var b=(t=>(t[t.Always=1]="Always",t[t.Silent=2]="Silent",t[t.Never=3]="Never",t))(b||{});(e=>{function d(r){switch(r.toLowerCase()){case"always":return 1;case"silent":return 2;case"never":return 3;default:return 1}}e.fromString=d})(b||={});var _=(t=>(t[t.Never=1]="Never",t[t.OnProblem=2]="OnProblem",t[t.Always=3]="Always",t))(_||{});(e=>{function d(r){switch(r.toLowerCase()){case"always":return 3;case"never":return 1;case"onproblem":return 2;default:return 2}}e.fromString=d})(_||={});var C=(t=>(t[t.Shared=1]="Shared",t[t.Dedicated=2]="Dedicated",t[t.New=3]="New",t))(C||{});(e=>{function d(r){switch(r.toLowerCase()){case"shared":return 1;case"dedicated":return 2;case"new":return 3;default:return 1}}e.fromString=d})(C||={});var W;(e=>e.defaults={echo:!0,reveal:1,revealProblems:1,focus:!1,panel:1,showReuseMessage:!0,clear:!1})(W||={});var S=(t=>(t[t.Shell=1]="Shell",t[t.Process=2]="Process",t[t.CustomExecution=3]="CustomExecution",t))(S||{});(r=>{function d(t){switch(t.toLowerCase()){case"shell":return 1;case"process":return 2;case"customExecution":return 3;default:return 2}}r.fromString=d;function e(t){switch(t){case 1:return"shell";case 2:return"process";case 3:return"customExecution";default:return"process"}}r.toString=e})(S||={});var D;(e=>{function d(r){return y.isString(r)?r:r.value}e.value=d})(D||={});var A;(s=>{s.Clean={_id:"clean",isDefault:!1},s.Build={_id:"build",isDefault:!1},s.Rebuild={_id:"rebuild",isDefault:!1},s.Test={_id:"test",isDefault:!1};function a(o){return o===s.Clean._id||o===s.Build._id||o===s.Rebuild._id||o===s.Test._id}s.is=a;function n(o){if(o!==void 0)return y.isString(o)?a(o)?{_id:o,isDefault:!1}:void 0:o}s.from=n})(A||={});var N=(t=>(t[t.Global=1]="Global",t[t.Workspace=2]="Workspace",t[t.Folder=3]="Folder",t))(N||{}),l;(s=>{s.Workspace="workspace",s.Extension="extension",s.InMemory="inMemory",s.WorkspaceFile="workspaceFile",s.User="user";function n(o){switch(o){case s.User:return I.USER;case s.WorkspaceFile:return I.WORKSPACE;default:return I.WORKSPACE_FOLDER}}s.toConfigurationTarget=n})(l||={});var B=(r=>(r.parallel="parallel",r.sequence="sequence",r))(B||{}),L=(r=>(r[r.default=1]="default",r[r.folderOpen=2]="folderOpen",r))(L||{}),$;(e=>e.defaults={reevaluateOnRerun:!0,runOn:1,instanceLimit:1})($||={});class f{_id;_label="";type;runOptions;configurationProperties;_source;_taskLoadMessages;constructor(e,r,t,a,n,s){this._id=e,r&&(this._label=r),t&&(this.type=t),this.runOptions=a,this.configurationProperties=n,this._source=s}getDefinition(e){}getMapKey(){return this._id}getKey(){}getCommonTaskId(){const e={folder:this.getFolderId(),id:this._id};return JSON.stringify(e)}clone(){return this.fromObject(Object.assign({},this))}getWorkspaceFolder(){}getWorkspaceFileName(){}getTelemetryKind(){return"unknown"}matches(e,r=!1){if(e===void 0)return!1;if(y.isString(e))return e===this._label||e===this.configurationProperties.identifier||r&&e===this._id;const t=this.getDefinition(!0);return t!==void 0&&t._key===e._key}getQualifiedLabel(){const e=this.getWorkspaceFolder();return e?`${this._label} (${e.name})`:this._label}getTaskExecution(){return{id:this._id,task:this}}addTaskLoadMessages(e){this._taskLoadMessages===void 0&&(this._taskLoadMessages=[]),e&&(this._taskLoadMessages=this._taskLoadMessages.concat(e))}get taskLoadMessages(){return this._taskLoadMessages}}class g extends f{instance;_source;hasDefinedMatchers;command={};constructor(e,r,t,a,n,s,o,i){super(e,t,void 0,o,i,r),this._source=r,this.hasDefinedMatchers=s,n&&(this.command=n)}clone(){return new g(this._id,this._source,this._label,this.type,this.command,this.hasDefinedMatchers,this.runOptions,this.configurationProperties)}customizes(){if(this._source&&this._source.customizes)return this._source.customizes}getDefinition(e=!1){if(e&&this._source.customizes!==void 0)return this._source.customizes;{let r;switch(this.command?this.command.runtime:void 0){case 1:r="shell";break;case 2:r="process";break;case 3:r="customExecution";break;case void 0:r="$composite";break;default:throw new Error("Unexpected task runtime")}return{type:r,_key:this._id,id:this._id}}}static is(e){return e instanceof g}getMapKey(){const e=this._source.config.workspaceFolder;return e?`${e.uri.toString()}|${this._id}|${this.instance}`:`${this._id}|${this.instance}`}getFolderId(){return this._source.kind===l.User?O:this._source.config.workspaceFolder?.uri.toString()}getCommonTaskId(){return this._source.customizes?super.getCommonTaskId():this.getKey()??super.getCommonTaskId()}getKey(){const e=this.getFolderId();if(!e)return;let r=this.configurationProperties.identifier;return this._source.kind!==l.Workspace&&(r+=this._source.kind),JSON.stringify({type:F,folder:e,id:r})}getWorkspaceFolder(){return this._source.config.workspaceFolder}getWorkspaceFileName(){return this._source.config.workspace&&this._source.config.workspace.configuration?v.basename(this._source.config.workspace.configuration):void 0}getTelemetryKind(){return this._source.customizes?"workspace>extension":"workspace"}fromObject(e){return new g(e._id,e._source,e._label,e.type,e.command,e.hasDefinedMatchers,e.runOptions,e.configurationProperties)}}class K extends f{_source;configures;constructor(e,r,t,a,n,s,o){super(e,t,a,s,o,r),this._source=r,this.configures=n}static is(e){return e instanceof K}fromObject(e){return e}getDefinition(){return this.configures}getWorkspaceFileName(){return this._source.config.workspace&&this._source.config.workspace.configuration?v.basename(this._source.config.workspace.configuration):void 0}getWorkspaceFolder(){return this._source.config.workspaceFolder}getFolderId(){return this._source.kind===l.User?O:this._source.config.workspaceFolder?.uri.toString()}getKey(){const e=this.getFolderId();if(!e)return;let r=this.configurationProperties.identifier;return this._source.kind!==l.Workspace&&(r+=this._source.kind),JSON.stringify({type:F,folder:e,id:r})}}class k extends f{instance;defines;hasDefinedMatchers;command;icon;hide;constructor(e,r,t,a,n,s,o,i,c){super(e,t,a,i,c,r),this.defines=n,this.hasDefinedMatchers=o,this.command=s,this.icon=c.icon,this.hide=c.hide}clone(){return new k(this._id,this._source,this._label,this.type,this.defines,this.command,this.hasDefinedMatchers,this.runOptions,this.configurationProperties)}getDefinition(){return this.defines}static is(e){return e instanceof k}getMapKey(){const e=this._source.workspaceFolder;return e?`${this._source.scope.toString()}|${e.uri.toString()}|${this._id}|${this.instance}`:`${this._source.scope.toString()}|${this._id}|${this.instance}`}getFolderId(){if(this._source.scope===3&&this._source.workspaceFolder)return this._source.workspaceFolder.uri.toString()}getKey(){const e={type:"contributed",scope:this._source.scope,id:this._id};return e.folder=this.getFolderId(),JSON.stringify(e)}getWorkspaceFolder(){return this._source.workspaceFolder}getTelemetryKind(){return"extension"}fromObject(e){return new k(e._id,e._source,e._label,e.type,e.defines,e.command,e.hasDefinedMatchers,e.runOptions,e.configurationProperties)}}class m extends f{_source;instance;constructor(e,r,t,a,n,s){super(e,t,a,n,s,r),this._source=r}clone(){return new m(this._id,this._source,this._label,this.type,this.runOptions,this.configurationProperties)}static is(e){return e instanceof m}getTelemetryKind(){return"composite"}getMapKey(){return`${this._id}|${this.instance}`}getFolderId(){}fromObject(e){return new m(e._id,e._source,e._label,e.type,e.runOptions,e.configurationProperties)}}var w=(r=>(r[r.Process=1]="Process",r[r.Terminal=2]="Terminal",r))(w||{});(e=>e._default=2)(w||={});var U=(r=>(r[r.V0_1_0=1]="V0_1_0",r[r.V2_0_0=2]="V2_0_0",r))(U||{});class me{_order=new Map;constructor(e){for(let r=0;r<e.length;r++)this._order.set(e[r].uri.toString(),r)}compare(e,r){const t=e.getWorkspaceFolder(),a=r.getWorkspaceFolder();if(t&&a){let n=this._order.get(t.uri.toString());n=n===void 0?0:n+1;let s=this._order.get(a.uri.toString());return s=s===void 0?0:s+1,n===s?e._label.localeCompare(r._label):n-s}else return!t&&a?-1:t&&!a?1:0}}var q=(u=>(u.DependsOnStarted="dependsOnStarted",u.AcquiredInput="acquiredInput",u.Start="start",u.ProcessStarted="processStarted",u.Active="active",u.Inactive="inactive",u.Changed="changed",u.Terminated="terminated",u.ProcessEnded="processEnded",u.End="end",u))(q||{}),z=(r=>(r.SingleRun="singleRun",r.Background="background",r))(z||{}),Q=(n=>(n[n.System=0]="System",n[n.User=1]="User",n[n.FolderOpen=2]="FolderOpen",n[n.ConfigurationChange=3]="ConfigurationChange",n[n.Reconnect=4]="Reconnect",n))(Q||{}),G;(o=>{function d(i){return{taskId:i._id,taskName:i.configurationProperties.name,runType:i.configurationProperties.isBackground?"background":"singleRun",group:i.configurationProperties.group,__task:i}}function e(i,c,u){return{...d(i),kind:"start",terminalId:c,resolvedVariables:u}}o.start=e;function r(i,c,u){return{...d(i),kind:"processStarted",terminalId:c,processId:u}}o.processStarted=r;function t(i,c,u){return{...d(i),kind:"processEnded",terminalId:c,exitCode:u}}o.processEnded=t;function a(i,c,u){return{...d(i),kind:"terminated",exitReason:u,terminalId:c}}o.terminated=a;function n(i,c,u){return{...d(c),kind:i,terminalId:u}}o.general=n;function s(){return{kind:"changed"}}o.changed=s})(G||={});var x;(r=>{function d(t){const a=Object.keys(t).sort();let n="";for(const s of a){let o=t[s];o instanceof Object?o=d(o):typeof o=="string"&&(o=o.replace(/,/g,",,")),n+=s+","+o+","}return n}function e(t){const n={_key:d(t),type:t.taskType};return Object.assign(n,t),n}r.create=e})(x||={});var J=(p=>(p.AutoDetect="task.autoDetect",p.SaveBeforeRun="task.saveBeforeRun",p.ShowDecorations="task.showDecorations",p.ProblemMatchersNeverPrompt="task.problemMatchers.neverPrompt",p.SlowProviderWarning="task.slowProviderWarning",p.QuickOpenHistory="task.quickOpen.history",p.QuickOpenDetail="task.quickOpen.detail",p.QuickOpenSkip="task.quickOpen.skip",p.QuickOpenShowAll="task.quickOpen.showAll",p.AllowAutomaticTasks="task.allowAutomaticTasks",p.Reconnection="task.reconnection",p.VerboseLogging="task.verboseLogging",p))(J||{}),Y=(i=>(i.Tasks="tasks",i.SuppressTaskName="tasks.suppressTaskName",i.Windows="tasks.windows",i.Osx="tasks.osx",i.Linux="tasks.linux",i.ShowOutput="tasks.showOutput",i.IsShellCommand="tasks.isShellCommand",i.ServiceTestSetting="tasks.service.testSetting",i))(Y||{}),H;(e=>{function d(r,t){const a=M.get(r.type);if(a===void 0){const i=E.deepClone(r);return delete i._key,x.create(i)}const n=Object.create(null);n.type=a.taskType;const s=new Set;a.required.forEach(i=>s.add(i));const o=a.properties;for(const i of Object.keys(o)){const c=r[i];if(c!=null)n[i]=c;else if(s.has(i)){const u=o[i];if(u.default!==void 0)n[i]=E.deepClone(u.default);else switch(u.type){case"boolean":n[i]=!1;break;case"number":case"integer":n[i]=0;break;case"string":n[i]="";break;default:t.error(h.localize("TaskDefinition.missingRequiredProperty","Error: the task identifier '{0}' is missing the required property '{1}'. The task identifier will be ignored.",JSON.stringify(r,void 0,0),i));return}}}return x.create(n)}e.createTaskIdentifier=d})(H||={});export{F as CUSTOMIZED_TASK_TYPE,R as CommandOptions,D as CommandString,f as CommonTask,K as ConfiguringTask,k as ContributedTask,g as CustomTask,B as DependsOrder,w as ExecutionEngine,m as InMemoryTask,U as JsonSchemaVersion,x as KeyedTaskIdentifier,C as PanelKind,W as PresentationOptions,b as RevealKind,_ as RevealProblemKind,L as RunOnOptions,$ as RunOptions,S as RuntimeType,T as ShellQuoting,ke as TASKS_CATEGORY,ge as TASK_RUNNING_STATE,H as TaskDefinition,G as TaskEvent,q as TaskEventKind,A as TaskGroup,Q as TaskRunSource,z as TaskRunType,N as TaskScope,J as TaskSettingId,me as TaskSorter,l as TaskSourceKind,Y as TasksSchemaProperties,O as USER_TASKS_GROUP_KEY};
+import * as nls from '../../../../nls.js';
+import * as Types from '../../../../base/common/types.js';
+import * as resources from '../../../../base/common/resources.js';
+import * as Objects from '../../../../base/common/objects.js';
+import { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { TaskDefinitionRegistry } from './taskDefinitionRegistry.js';
+export const USER_TASKS_GROUP_KEY = 'settings';
+export const TASK_RUNNING_STATE = new RawContextKey('taskRunning', false, nls.localize('tasks.taskRunningContext', "Whether a task is currently running."));
+export const TASKS_CATEGORY = nls.localize2('tasksCategory', "Tasks");
+export var ShellQuoting;
+(function (ShellQuoting) {
+    ShellQuoting[ShellQuoting["Escape"] = 1] = "Escape";
+    ShellQuoting[ShellQuoting["Strong"] = 2] = "Strong";
+    ShellQuoting[ShellQuoting["Weak"] = 3] = "Weak";
+})(ShellQuoting || (ShellQuoting = {}));
+export const CUSTOMIZED_TASK_TYPE = '$customized';
+(function (ShellQuoting) {
+    function from(value) {
+        if (!value) {
+            return ShellQuoting.Strong;
+        }
+        switch (value.toLowerCase()) {
+            case 'escape':
+                return ShellQuoting.Escape;
+            case 'strong':
+                return ShellQuoting.Strong;
+            case 'weak':
+                return ShellQuoting.Weak;
+            default:
+                return ShellQuoting.Strong;
+        }
+    }
+    ShellQuoting.from = from;
+})(ShellQuoting || (ShellQuoting = {}));
+export var CommandOptions;
+(function (CommandOptions) {
+    CommandOptions.defaults = { cwd: '${workspaceFolder}' };
+})(CommandOptions || (CommandOptions = {}));
+export var RevealKind;
+(function (RevealKind) {
+    RevealKind[RevealKind["Always"] = 1] = "Always";
+    RevealKind[RevealKind["Silent"] = 2] = "Silent";
+    RevealKind[RevealKind["Never"] = 3] = "Never";
+})(RevealKind || (RevealKind = {}));
+(function (RevealKind) {
+    function fromString(value) {
+        switch (value.toLowerCase()) {
+            case 'always':
+                return RevealKind.Always;
+            case 'silent':
+                return RevealKind.Silent;
+            case 'never':
+                return RevealKind.Never;
+            default:
+                return RevealKind.Always;
+        }
+    }
+    RevealKind.fromString = fromString;
+})(RevealKind || (RevealKind = {}));
+export var RevealProblemKind;
+(function (RevealProblemKind) {
+    RevealProblemKind[RevealProblemKind["Never"] = 1] = "Never";
+    RevealProblemKind[RevealProblemKind["OnProblem"] = 2] = "OnProblem";
+    RevealProblemKind[RevealProblemKind["Always"] = 3] = "Always";
+})(RevealProblemKind || (RevealProblemKind = {}));
+(function (RevealProblemKind) {
+    function fromString(value) {
+        switch (value.toLowerCase()) {
+            case 'always':
+                return RevealProblemKind.Always;
+            case 'never':
+                return RevealProblemKind.Never;
+            case 'onproblem':
+                return RevealProblemKind.OnProblem;
+            default:
+                return RevealProblemKind.OnProblem;
+        }
+    }
+    RevealProblemKind.fromString = fromString;
+})(RevealProblemKind || (RevealProblemKind = {}));
+export var PanelKind;
+(function (PanelKind) {
+    PanelKind[PanelKind["Shared"] = 1] = "Shared";
+    PanelKind[PanelKind["Dedicated"] = 2] = "Dedicated";
+    PanelKind[PanelKind["New"] = 3] = "New";
+})(PanelKind || (PanelKind = {}));
+(function (PanelKind) {
+    function fromString(value) {
+        switch (value.toLowerCase()) {
+            case 'shared':
+                return PanelKind.Shared;
+            case 'dedicated':
+                return PanelKind.Dedicated;
+            case 'new':
+                return PanelKind.New;
+            default:
+                return PanelKind.Shared;
+        }
+    }
+    PanelKind.fromString = fromString;
+})(PanelKind || (PanelKind = {}));
+export var PresentationOptions;
+(function (PresentationOptions) {
+    PresentationOptions.defaults = {
+        echo: true, reveal: RevealKind.Always, revealProblems: RevealProblemKind.Never, focus: false, panel: PanelKind.Shared, showReuseMessage: true, clear: false
+    };
+})(PresentationOptions || (PresentationOptions = {}));
+export var RuntimeType;
+(function (RuntimeType) {
+    RuntimeType[RuntimeType["Shell"] = 1] = "Shell";
+    RuntimeType[RuntimeType["Process"] = 2] = "Process";
+    RuntimeType[RuntimeType["CustomExecution"] = 3] = "CustomExecution";
+})(RuntimeType || (RuntimeType = {}));
+(function (RuntimeType) {
+    function fromString(value) {
+        switch (value.toLowerCase()) {
+            case 'shell':
+                return RuntimeType.Shell;
+            case 'process':
+                return RuntimeType.Process;
+            case 'customExecution':
+                return RuntimeType.CustomExecution;
+            default:
+                return RuntimeType.Process;
+        }
+    }
+    RuntimeType.fromString = fromString;
+    function toString(value) {
+        switch (value) {
+            case RuntimeType.Shell: return 'shell';
+            case RuntimeType.Process: return 'process';
+            case RuntimeType.CustomExecution: return 'customExecution';
+            default: return 'process';
+        }
+    }
+    RuntimeType.toString = toString;
+})(RuntimeType || (RuntimeType = {}));
+export var CommandString;
+(function (CommandString) {
+    function value(value) {
+        if (Types.isString(value)) {
+            return value;
+        }
+        else {
+            return value.value;
+        }
+    }
+    CommandString.value = value;
+})(CommandString || (CommandString = {}));
+export var TaskGroup;
+(function (TaskGroup) {
+    TaskGroup.Clean = { _id: 'clean', isDefault: false };
+    TaskGroup.Build = { _id: 'build', isDefault: false };
+    TaskGroup.Rebuild = { _id: 'rebuild', isDefault: false };
+    TaskGroup.Test = { _id: 'test', isDefault: false };
+    function is(value) {
+        return value === TaskGroup.Clean._id || value === TaskGroup.Build._id || value === TaskGroup.Rebuild._id || value === TaskGroup.Test._id;
+    }
+    TaskGroup.is = is;
+    function from(value) {
+        if (value === undefined) {
+            return undefined;
+        }
+        else if (Types.isString(value)) {
+            if (is(value)) {
+                return { _id: value, isDefault: false };
+            }
+            return undefined;
+        }
+        else {
+            return value;
+        }
+    }
+    TaskGroup.from = from;
+})(TaskGroup || (TaskGroup = {}));
+export var TaskSourceKind;
+(function (TaskSourceKind) {
+    TaskSourceKind.Workspace = 'workspace';
+    TaskSourceKind.Extension = 'extension';
+    TaskSourceKind.InMemory = 'inMemory';
+    TaskSourceKind.WorkspaceFile = 'workspaceFile';
+    TaskSourceKind.User = 'user';
+    function toConfigurationTarget(kind) {
+        switch (kind) {
+            case TaskSourceKind.User: return 2;
+            case TaskSourceKind.WorkspaceFile: return 5;
+            default: return 6;
+        }
+    }
+    TaskSourceKind.toConfigurationTarget = toConfigurationTarget;
+})(TaskSourceKind || (TaskSourceKind = {}));
+export var RunOnOptions;
+(function (RunOnOptions) {
+    RunOnOptions[RunOnOptions["default"] = 1] = "default";
+    RunOnOptions[RunOnOptions["folderOpen"] = 2] = "folderOpen";
+})(RunOnOptions || (RunOnOptions = {}));
+export var RunOptions;
+(function (RunOptions) {
+    RunOptions.defaults = { reevaluateOnRerun: true, runOn: RunOnOptions.default, instanceLimit: 1 };
+})(RunOptions || (RunOptions = {}));
+export class CommonTask {
+    constructor(id, label, type, runOptions, configurationProperties, source) {
+        this._label = '';
+        this._id = id;
+        if (label) {
+            this._label = label;
+        }
+        if (type) {
+            this.type = type;
+        }
+        this.runOptions = runOptions;
+        this.configurationProperties = configurationProperties;
+        this._source = source;
+    }
+    getDefinition(useSource) {
+        return undefined;
+    }
+    getMapKey() {
+        return this._id;
+    }
+    getKey() {
+        return undefined;
+    }
+    getCommonTaskId() {
+        const key = { folder: this.getFolderId(), id: this._id };
+        return JSON.stringify(key);
+    }
+    clone() {
+        return this.fromObject(Object.assign({}, this));
+    }
+    getWorkspaceFolder() {
+        return undefined;
+    }
+    getWorkspaceFileName() {
+        return undefined;
+    }
+    getTelemetryKind() {
+        return 'unknown';
+    }
+    matches(key, compareId = false) {
+        if (key === undefined) {
+            return false;
+        }
+        if (Types.isString(key)) {
+            return key === this._label || key === this.configurationProperties.identifier || (compareId && key === this._id);
+        }
+        const identifier = this.getDefinition(true);
+        return identifier !== undefined && identifier._key === key._key;
+    }
+    getQualifiedLabel() {
+        const workspaceFolder = this.getWorkspaceFolder();
+        if (workspaceFolder) {
+            return `${this._label} (${workspaceFolder.name})`;
+        }
+        else {
+            return this._label;
+        }
+    }
+    getTaskExecution() {
+        const result = {
+            id: this._id,
+            task: this
+        };
+        return result;
+    }
+    addTaskLoadMessages(messages) {
+        if (this._taskLoadMessages === undefined) {
+            this._taskLoadMessages = [];
+        }
+        if (messages) {
+            this._taskLoadMessages = this._taskLoadMessages.concat(messages);
+        }
+    }
+    get taskLoadMessages() {
+        return this._taskLoadMessages;
+    }
+}
+export class CustomTask extends CommonTask {
+    constructor(id, source, label, type, command, hasDefinedMatchers, runOptions, configurationProperties) {
+        super(id, label, undefined, runOptions, configurationProperties, source);
+        this.command = {};
+        this._source = source;
+        this.hasDefinedMatchers = hasDefinedMatchers;
+        if (command) {
+            this.command = command;
+        }
+    }
+    clone() {
+        return new CustomTask(this._id, this._source, this._label, this.type, this.command, this.hasDefinedMatchers, this.runOptions, this.configurationProperties);
+    }
+    customizes() {
+        if (this._source && this._source.customizes) {
+            return this._source.customizes;
+        }
+        return undefined;
+    }
+    getDefinition(useSource = false) {
+        if (useSource && this._source.customizes !== undefined) {
+            return this._source.customizes;
+        }
+        else {
+            let type;
+            const commandRuntime = this.command ? this.command.runtime : undefined;
+            switch (commandRuntime) {
+                case RuntimeType.Shell:
+                    type = 'shell';
+                    break;
+                case RuntimeType.Process:
+                    type = 'process';
+                    break;
+                case RuntimeType.CustomExecution:
+                    type = 'customExecution';
+                    break;
+                case undefined:
+                    type = '$composite';
+                    break;
+                default:
+                    throw new Error('Unexpected task runtime');
+            }
+            const result = {
+                type,
+                _key: this._id,
+                id: this._id
+            };
+            return result;
+        }
+    }
+    static is(value) {
+        return value instanceof CustomTask;
+    }
+    getMapKey() {
+        const workspaceFolder = this._source.config.workspaceFolder;
+        return workspaceFolder ? `${workspaceFolder.uri.toString()}|${this._id}|${this.instance}` : `${this._id}|${this.instance}`;
+    }
+    getFolderId() {
+        return this._source.kind === TaskSourceKind.User ? USER_TASKS_GROUP_KEY : this._source.config.workspaceFolder?.uri.toString();
+    }
+    getCommonTaskId() {
+        return this._source.customizes ? super.getCommonTaskId() : (this.getKey() ?? super.getCommonTaskId());
+    }
+    getKey() {
+        const workspaceFolder = this.getFolderId();
+        if (!workspaceFolder) {
+            return undefined;
+        }
+        let id = this.configurationProperties.identifier;
+        if (this._source.kind !== TaskSourceKind.Workspace) {
+            id += this._source.kind;
+        }
+        const key = { type: CUSTOMIZED_TASK_TYPE, folder: workspaceFolder, id };
+        return JSON.stringify(key);
+    }
+    getWorkspaceFolder() {
+        return this._source.config.workspaceFolder;
+    }
+    getWorkspaceFileName() {
+        return (this._source.config.workspace && this._source.config.workspace.configuration) ? resources.basename(this._source.config.workspace.configuration) : undefined;
+    }
+    getTelemetryKind() {
+        if (this._source.customizes) {
+            return 'workspace>extension';
+        }
+        else {
+            return 'workspace';
+        }
+    }
+    fromObject(object) {
+        return new CustomTask(object._id, object._source, object._label, object.type, object.command, object.hasDefinedMatchers, object.runOptions, object.configurationProperties);
+    }
+}
+export class ConfiguringTask extends CommonTask {
+    constructor(id, source, label, type, configures, runOptions, configurationProperties) {
+        super(id, label, type, runOptions, configurationProperties, source);
+        this._source = source;
+        this.configures = configures;
+    }
+    static is(value) {
+        return value instanceof ConfiguringTask;
+    }
+    fromObject(object) {
+        return object;
+    }
+    getDefinition() {
+        return this.configures;
+    }
+    getWorkspaceFileName() {
+        return (this._source.config.workspace && this._source.config.workspace.configuration) ? resources.basename(this._source.config.workspace.configuration) : undefined;
+    }
+    getWorkspaceFolder() {
+        return this._source.config.workspaceFolder;
+    }
+    getFolderId() {
+        return this._source.kind === TaskSourceKind.User ? USER_TASKS_GROUP_KEY : this._source.config.workspaceFolder?.uri.toString();
+    }
+    getKey() {
+        const workspaceFolder = this.getFolderId();
+        if (!workspaceFolder) {
+            return undefined;
+        }
+        let id = this.configurationProperties.identifier;
+        if (this._source.kind !== TaskSourceKind.Workspace) {
+            id += this._source.kind;
+        }
+        const key = { type: CUSTOMIZED_TASK_TYPE, folder: workspaceFolder, id };
+        return JSON.stringify(key);
+    }
+}
+export class ContributedTask extends CommonTask {
+    constructor(id, source, label, type, defines, command, hasDefinedMatchers, runOptions, configurationProperties) {
+        super(id, label, type, runOptions, configurationProperties, source);
+        this.defines = defines;
+        this.hasDefinedMatchers = hasDefinedMatchers;
+        this.command = command;
+        this.icon = configurationProperties.icon;
+        this.hide = configurationProperties.hide;
+    }
+    clone() {
+        return new ContributedTask(this._id, this._source, this._label, this.type, this.defines, this.command, this.hasDefinedMatchers, this.runOptions, this.configurationProperties);
+    }
+    getDefinition() {
+        return this.defines;
+    }
+    static is(value) {
+        return value instanceof ContributedTask;
+    }
+    getMapKey() {
+        const workspaceFolder = this._source.workspaceFolder;
+        return workspaceFolder
+            ? `${this._source.scope.toString()}|${workspaceFolder.uri.toString()}|${this._id}|${this.instance}`
+            : `${this._source.scope.toString()}|${this._id}|${this.instance}`;
+    }
+    getFolderId() {
+        if (this._source.scope === 3 && this._source.workspaceFolder) {
+            return this._source.workspaceFolder.uri.toString();
+        }
+        return undefined;
+    }
+    getKey() {
+        const key = { type: 'contributed', scope: this._source.scope, id: this._id };
+        key.folder = this.getFolderId();
+        return JSON.stringify(key);
+    }
+    getWorkspaceFolder() {
+        return this._source.workspaceFolder;
+    }
+    getTelemetryKind() {
+        return 'extension';
+    }
+    fromObject(object) {
+        return new ContributedTask(object._id, object._source, object._label, object.type, object.defines, object.command, object.hasDefinedMatchers, object.runOptions, object.configurationProperties);
+    }
+}
+export class InMemoryTask extends CommonTask {
+    constructor(id, source, label, type, runOptions, configurationProperties) {
+        super(id, label, type, runOptions, configurationProperties, source);
+        this._source = source;
+    }
+    clone() {
+        return new InMemoryTask(this._id, this._source, this._label, this.type, this.runOptions, this.configurationProperties);
+    }
+    static is(value) {
+        return value instanceof InMemoryTask;
+    }
+    getTelemetryKind() {
+        return 'composite';
+    }
+    getMapKey() {
+        return `${this._id}|${this.instance}`;
+    }
+    getFolderId() {
+        return undefined;
+    }
+    fromObject(object) {
+        return new InMemoryTask(object._id, object._source, object._label, object.type, object.runOptions, object.configurationProperties);
+    }
+}
+export var ExecutionEngine;
+(function (ExecutionEngine) {
+    ExecutionEngine[ExecutionEngine["Process"] = 1] = "Process";
+    ExecutionEngine[ExecutionEngine["Terminal"] = 2] = "Terminal";
+})(ExecutionEngine || (ExecutionEngine = {}));
+(function (ExecutionEngine) {
+    ExecutionEngine._default = ExecutionEngine.Terminal;
+})(ExecutionEngine || (ExecutionEngine = {}));
+export class TaskSorter {
+    constructor(workspaceFolders) {
+        this._order = new Map();
+        for (let i = 0; i < workspaceFolders.length; i++) {
+            this._order.set(workspaceFolders[i].uri.toString(), i);
+        }
+    }
+    compare(a, b) {
+        const aw = a.getWorkspaceFolder();
+        const bw = b.getWorkspaceFolder();
+        if (aw && bw) {
+            let ai = this._order.get(aw.uri.toString());
+            ai = ai === undefined ? 0 : ai + 1;
+            let bi = this._order.get(bw.uri.toString());
+            bi = bi === undefined ? 0 : bi + 1;
+            if (ai === bi) {
+                return a._label.localeCompare(b._label);
+            }
+            else {
+                return ai - bi;
+            }
+        }
+        else if (!aw && bw) {
+            return -1;
+        }
+        else if (aw && !bw) {
+            return +1;
+        }
+        else {
+            return 0;
+        }
+    }
+}
+export var TaskEvent;
+(function (TaskEvent) {
+    function common(task) {
+        return {
+            taskId: task._id,
+            taskName: task.configurationProperties.name,
+            runType: task.configurationProperties.isBackground ? "background" : "singleRun",
+            group: task.configurationProperties.group,
+            __task: task,
+        };
+    }
+    function start(task, terminalId, resolvedVariables) {
+        return {
+            ...common(task),
+            kind: "start",
+            terminalId,
+            resolvedVariables,
+        };
+    }
+    TaskEvent.start = start;
+    function processStarted(task, terminalId, processId) {
+        return {
+            ...common(task),
+            kind: "processStarted",
+            terminalId,
+            processId,
+        };
+    }
+    TaskEvent.processStarted = processStarted;
+    function processEnded(task, terminalId, exitCode) {
+        return {
+            ...common(task),
+            kind: "processEnded",
+            terminalId,
+            exitCode,
+        };
+    }
+    TaskEvent.processEnded = processEnded;
+    function terminated(task, terminalId, exitReason) {
+        return {
+            ...common(task),
+            kind: "terminated",
+            exitReason,
+            terminalId,
+        };
+    }
+    TaskEvent.terminated = terminated;
+    function general(kind, task, terminalId) {
+        return {
+            ...common(task),
+            kind,
+            terminalId,
+        };
+    }
+    TaskEvent.general = general;
+    function changed() {
+        return { kind: "changed" };
+    }
+    TaskEvent.changed = changed;
+})(TaskEvent || (TaskEvent = {}));
+export var KeyedTaskIdentifier;
+(function (KeyedTaskIdentifier) {
+    function sortedStringify(literal) {
+        const keys = Object.keys(literal).sort();
+        let result = '';
+        for (const key of keys) {
+            let stringified = literal[key];
+            if (stringified instanceof Object) {
+                stringified = sortedStringify(stringified);
+            }
+            else if (typeof stringified === 'string') {
+                stringified = stringified.replace(/,/g, ',,');
+            }
+            result += key + ',' + stringified + ',';
+        }
+        return result;
+    }
+    function create(value) {
+        const resultKey = sortedStringify(value);
+        const result = { _key: resultKey, type: value.taskType };
+        Object.assign(result, value);
+        return result;
+    }
+    KeyedTaskIdentifier.create = create;
+})(KeyedTaskIdentifier || (KeyedTaskIdentifier = {}));
+export var TaskDefinition;
+(function (TaskDefinition) {
+    function createTaskIdentifier(external, reporter) {
+        const definition = TaskDefinitionRegistry.get(external.type);
+        if (definition === undefined) {
+            const copy = Objects.deepClone(external);
+            delete copy._key;
+            return KeyedTaskIdentifier.create(copy);
+        }
+        const literal = Object.create(null);
+        literal.type = definition.taskType;
+        const required = new Set();
+        definition.required.forEach(element => required.add(element));
+        const properties = definition.properties;
+        for (const property of Object.keys(properties)) {
+            const value = external[property];
+            if (value !== undefined && value !== null) {
+                literal[property] = value;
+            }
+            else if (required.has(property)) {
+                const schema = properties[property];
+                if (schema.default !== undefined) {
+                    literal[property] = Objects.deepClone(schema.default);
+                }
+                else {
+                    switch (schema.type) {
+                        case 'boolean':
+                            literal[property] = false;
+                            break;
+                        case 'number':
+                        case 'integer':
+                            literal[property] = 0;
+                            break;
+                        case 'string':
+                            literal[property] = '';
+                            break;
+                        default:
+                            reporter.error(nls.localize('TaskDefinition.missingRequiredProperty', 'Error: the task identifier \'{0}\' is missing the required property \'{1}\'. The task identifier will be ignored.', JSON.stringify(external, undefined, 0), property));
+                            return undefined;
+                    }
+                }
+            }
+        }
+        return KeyedTaskIdentifier.create(literal);
+    }
+    TaskDefinition.createTaskIdentifier = createTaskIdentifier;
+})(TaskDefinition || (TaskDefinition = {}));

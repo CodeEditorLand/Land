@@ -1,1 +1,297 @@
-import{equalsIgnoreCase as l}from"../../../../base/common/strings.js";import"./debug.js";import{URI as c}from"../../../../base/common/uri.js";import{isAbsolute as k}from"../../../../base/common/path.js";import{deepClone as p}from"../../../../base/common/objects.js";import{Schemas as g}from"../../../../base/common/network.js";import"../../../services/editor/common/editorService.js";import"../../../../platform/configuration/common/configuration.js";import"../../../../editor/common/model.js";import"../../../../editor/common/core/position.js";import{Range as P}from"../../../../editor/common/core/range.js";import{CancellationToken as E}from"../../../../base/common/cancellation.js";import{coalesce as x}from"../../../../base/common/arrays.js";import"../../../../editor/common/services/languageFeatures.js";const y=/{([^}]+)}/g;function X(t,e,n){return t.replace(y,function(r,o){return e&&o.length>0&&o[0]!=="_"?r:n&&n.hasOwnProperty(o)?n[o]:r})}function Y(t){const e={};for(const n of Object.keys(t))n.startsWith("!")||(e[n]=t[n]);return e}function D(t){return t.configuration.request==="attach"&&!f(t)&&(!t.parentSession||D(t.parentSession))}function f(t){let e=t.configuration.type;if(e)return e==="vslsShare"&&(e=t.configuration.adapterProxy.configuration.type),l(e,"extensionhost")||l(e,"pwa-extensionhost")?t:t.parentSession?f(t.parentSession):void 0}function $(t){return t.type&&(t.label||t.program||t.runtime)}function v(t,e,n){let r,o=0;const s=/([^()\[\]{}<>\s+\-/%~#^;=|,`!]|\->)+/g;let i=null;for(;i=s.exec(t);){const a=i.index+1,u=a+i[0].length;if(a<=e&&u>=n){r=i[0],o=a;break}}if(r){const a=/(\w|\p{L})+/gu;let u=null;for(;(u=a.exec(r))&&!(u.index+1+o+u[0].length>=n););u&&(r=r.substring(0,a.lastIndex))}return r?{start:o,end:o+r.length-1}:{start:0,end:0}}async function ee(t,e,n,r){if(t.evaluatableExpressionProvider.has(e)){const o=t.evaluatableExpressionProvider.ordered(e),s=x(await Promise.all(o.map(async i=>{try{return await i.provideEvaluatableExpression(e,n,r??E.None)}catch{return}})));if(s.length>0){let i=s[0].expression;const a=s[0].range;return i||(i=e.getLineContent(n.lineNumber).substring(a.startColumn-1,a.endColumn-1)),{range:a,matchingExpression:i}}}else{const o=e.getLineContent(n.lineNumber),{start:s,end:i}=v(o,n.column,n.column),a=o.substring(s-1,i);return{matchingExpression:a,range:new P(n.lineNumber,s,n.lineNumber,s+a.length)}}return null}const C=/^[a-zA-Z][a-zA-Z0-9\+\-\.]+:/;function I(t){return!!(t&&t.match(C))}function b(t){if(typeof t.path=="string"&&!(typeof t.sourceReference=="number"&&t.sourceReference>0)){if(I(t.path))return c.parse(t.path);if(k(t.path))return c.file(t.path)}return t.path}function d(t){if(typeof t.path=="object"){const e=c.revive(t.path);if(e)return e.scheme===g.file?e.fsPath:e.toString()}return t.path}function te(t,e){const n=e?b:d,r=p(t);return m(r,(o,s)=>{o&&s&&(s.path=n(s))}),r}function ne(t,e){const n=e?b:d,r=p(t);return m(r,(o,s)=>{!o&&s&&(s.path=n(s))}),r}function m(t,e){switch(t.type){case"event":{const n=t;switch(n.event){case"output":e(!1,n.body.source);break;case"loadedSource":e(!1,n.body.source);break;case"breakpoint":e(!1,n.body.breakpoint.source);break;default:break}break}case"request":{const n=t;switch(n.command){case"setBreakpoints":e(!0,n.arguments.source);break;case"breakpointLocations":e(!0,n.arguments.source);break;case"source":e(!0,n.arguments.source);break;case"gotoTargets":e(!0,n.arguments.source);break;case"launchVSCode":n.arguments.args.forEach(r=>e(!1,r));break;default:break}break}case"response":{const n=t;if(n.success&&n.body)switch(n.command){case"stackTrace":n.body.stackFrames.forEach(r=>e(!1,r.source));break;case"loadedSources":n.body.sources.forEach(r=>e(!1,r));break;case"scopes":n.body.scopes.forEach(r=>e(!1,r.source));break;case"setFunctionBreakpoints":n.body.breakpoints.forEach(r=>e(!1,r.source));break;case"setBreakpoints":n.body.breakpoints.forEach(r=>e(!1,r.source));break;case"disassemble":n.body?.instructions.forEach(o=>e(!1,o.location));break;case"locations":e(!1,n.body?.source);break;default:break}break}}}function re(t){return t.filter(e=>!e.presentation?.hidden).sort((e,n)=>e.presentation?n.presentation?e.presentation.group?n.presentation.group?e.presentation.group!==n.presentation.group?e.presentation.group.localeCompare(n.presentation.group):h(e.presentation.order,n.presentation.order):-1:n.presentation.group?1:h(e.presentation.order,n.presentation.order):-1:n.presentation?1:0)}function h(t,e){return typeof t!="number"?typeof e!="number"?0:1:typeof e!="number"?-1:t-e}async function oe(t,e){const n=t.getValue("debug.saveBeforeStart",{overrideIdentifier:e.activeTextEditorLanguageId});if(n!=="none"&&(await e.saveAll(),n==="allEditorsInActiveGroup")){const r=e.activeEditorPane;r&&r.input.resource?.scheme===g.untitled&&await e.save({editor:r.input,groupId:r.group.id})}await t.reloadConfiguration()}const se=(t,e)=>!t||!e?t===e:t.name===e.name&&t.path===e.path&&t.sourceReference===e.sourceReference;export{te as convertToDAPaths,ne as convertToVSCPaths,Y as filterExceptionsFromTelemetry,X as formatPII,ee as getEvaluatableExpressionAtPosition,v as getExactExpressionStartAndEnd,f as getExtensionHostDebugSession,re as getVisibleAndSorted,$ as isDebuggerMainContribution,D as isSessionAttach,I as isUri,oe as saveAllBeforeDebugStart,se as sourcesEqual};
+import { equalsIgnoreCase } from '../../../../base/common/strings.js';
+import { URI as uri } from '../../../../base/common/uri.js';
+import { isAbsolute } from '../../../../base/common/path.js';
+import { deepClone } from '../../../../base/common/objects.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { coalesce } from '../../../../base/common/arrays.js';
+const _formatPIIRegexp = /{([^}]+)}/g;
+export function formatPII(value, excludePII, args) {
+    return value.replace(_formatPIIRegexp, function (match, group) {
+        if (excludePII && group.length > 0 && group[0] !== '_') {
+            return match;
+        }
+        return args && args.hasOwnProperty(group) ?
+            args[group] :
+            match;
+    });
+}
+export function filterExceptionsFromTelemetry(data) {
+    const output = {};
+    for (const key of Object.keys(data)) {
+        if (!key.startsWith('!')) {
+            output[key] = data[key];
+        }
+    }
+    return output;
+}
+export function isSessionAttach(session) {
+    return session.configuration.request === 'attach' && !getExtensionHostDebugSession(session) && (!session.parentSession || isSessionAttach(session.parentSession));
+}
+export function getExtensionHostDebugSession(session) {
+    let type = session.configuration.type;
+    if (!type) {
+        return;
+    }
+    if (type === 'vslsShare') {
+        type = session.configuration.adapterProxy.configuration.type;
+    }
+    if (equalsIgnoreCase(type, 'extensionhost') || equalsIgnoreCase(type, 'pwa-extensionhost')) {
+        return session;
+    }
+    return session.parentSession ? getExtensionHostDebugSession(session.parentSession) : undefined;
+}
+export function isDebuggerMainContribution(dbg) {
+    return dbg.type && (dbg.label || dbg.program || dbg.runtime);
+}
+export function getExactExpressionStartAndEnd(lineContent, looseStart, looseEnd) {
+    let matchingExpression = undefined;
+    let startOffset = 0;
+    const expression = /([^()\[\]{}<>\s+\-/%~#^;=|,`!]|\->)+/g;
+    let result = null;
+    while (result = expression.exec(lineContent)) {
+        const start = result.index + 1;
+        const end = start + result[0].length;
+        if (start <= looseStart && end >= looseEnd) {
+            matchingExpression = result[0];
+            startOffset = start;
+            break;
+        }
+    }
+    if (matchingExpression) {
+        const subExpression = /(\w|\p{L})+/gu;
+        let subExpressionResult = null;
+        while (subExpressionResult = subExpression.exec(matchingExpression)) {
+            const subEnd = subExpressionResult.index + 1 + startOffset + subExpressionResult[0].length;
+            if (subEnd >= looseEnd) {
+                break;
+            }
+        }
+        if (subExpressionResult) {
+            matchingExpression = matchingExpression.substring(0, subExpression.lastIndex);
+        }
+    }
+    return matchingExpression ?
+        { start: startOffset, end: startOffset + matchingExpression.length - 1 } :
+        { start: 0, end: 0 };
+}
+export async function getEvaluatableExpressionAtPosition(languageFeaturesService, model, position, token) {
+    if (languageFeaturesService.evaluatableExpressionProvider.has(model)) {
+        const supports = languageFeaturesService.evaluatableExpressionProvider.ordered(model);
+        const results = coalesce(await Promise.all(supports.map(async (support) => {
+            try {
+                return await support.provideEvaluatableExpression(model, position, token ?? CancellationToken.None);
+            }
+            catch (err) {
+                return undefined;
+            }
+        })));
+        if (results.length > 0) {
+            let matchingExpression = results[0].expression;
+            const range = results[0].range;
+            if (!matchingExpression) {
+                const lineContent = model.getLineContent(position.lineNumber);
+                matchingExpression = lineContent.substring(range.startColumn - 1, range.endColumn - 1);
+            }
+            return { range, matchingExpression };
+        }
+    }
+    else {
+        const lineContent = model.getLineContent(position.lineNumber);
+        const { start, end } = getExactExpressionStartAndEnd(lineContent, position.column, position.column);
+        const matchingExpression = lineContent.substring(start - 1, end);
+        return {
+            matchingExpression,
+            range: new Range(position.lineNumber, start, position.lineNumber, start + matchingExpression.length)
+        };
+    }
+    return null;
+}
+const _schemePattern = /^[a-zA-Z][a-zA-Z0-9\+\-\.]+:/;
+export function isUri(s) {
+    return !!(s && s.match(_schemePattern));
+}
+function stringToUri(source) {
+    if (typeof source.path === 'string') {
+        if (typeof source.sourceReference === 'number' && source.sourceReference > 0) {
+        }
+        else {
+            if (isUri(source.path)) {
+                return uri.parse(source.path);
+            }
+            else {
+                if (isAbsolute(source.path)) {
+                    return uri.file(source.path);
+                }
+                else {
+                }
+            }
+        }
+    }
+    return source.path;
+}
+function uriToString(source) {
+    if (typeof source.path === 'object') {
+        const u = uri.revive(source.path);
+        if (u) {
+            if (u.scheme === Schemas.file) {
+                return u.fsPath;
+            }
+            else {
+                return u.toString();
+            }
+        }
+    }
+    return source.path;
+}
+export function convertToDAPaths(message, toUri) {
+    const fixPath = toUri ? stringToUri : uriToString;
+    const msg = deepClone(message);
+    convertPaths(msg, (toDA, source) => {
+        if (toDA && source) {
+            source.path = fixPath(source);
+        }
+    });
+    return msg;
+}
+export function convertToVSCPaths(message, toUri) {
+    const fixPath = toUri ? stringToUri : uriToString;
+    const msg = deepClone(message);
+    convertPaths(msg, (toDA, source) => {
+        if (!toDA && source) {
+            source.path = fixPath(source);
+        }
+    });
+    return msg;
+}
+function convertPaths(msg, fixSourcePath) {
+    switch (msg.type) {
+        case 'event': {
+            const event = msg;
+            switch (event.event) {
+                case 'output':
+                    fixSourcePath(false, event.body.source);
+                    break;
+                case 'loadedSource':
+                    fixSourcePath(false, event.body.source);
+                    break;
+                case 'breakpoint':
+                    fixSourcePath(false, event.body.breakpoint.source);
+                    break;
+                default:
+                    break;
+            }
+            break;
+        }
+        case 'request': {
+            const request = msg;
+            switch (request.command) {
+                case 'setBreakpoints':
+                    fixSourcePath(true, request.arguments.source);
+                    break;
+                case 'breakpointLocations':
+                    fixSourcePath(true, request.arguments.source);
+                    break;
+                case 'source':
+                    fixSourcePath(true, request.arguments.source);
+                    break;
+                case 'gotoTargets':
+                    fixSourcePath(true, request.arguments.source);
+                    break;
+                case 'launchVSCode':
+                    request.arguments.args.forEach((arg) => fixSourcePath(false, arg));
+                    break;
+                default:
+                    break;
+            }
+            break;
+        }
+        case 'response': {
+            const response = msg;
+            if (response.success && response.body) {
+                switch (response.command) {
+                    case 'stackTrace':
+                        response.body.stackFrames.forEach(frame => fixSourcePath(false, frame.source));
+                        break;
+                    case 'loadedSources':
+                        response.body.sources.forEach(source => fixSourcePath(false, source));
+                        break;
+                    case 'scopes':
+                        response.body.scopes.forEach(scope => fixSourcePath(false, scope.source));
+                        break;
+                    case 'setFunctionBreakpoints':
+                        response.body.breakpoints.forEach(bp => fixSourcePath(false, bp.source));
+                        break;
+                    case 'setBreakpoints':
+                        response.body.breakpoints.forEach(bp => fixSourcePath(false, bp.source));
+                        break;
+                    case 'disassemble':
+                        {
+                            const di = response;
+                            di.body?.instructions.forEach(di => fixSourcePath(false, di.location));
+                        }
+                        break;
+                    case 'locations':
+                        fixSourcePath(false, response.body?.source);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            break;
+        }
+    }
+}
+export function getVisibleAndSorted(array) {
+    return array.filter(config => !config.presentation?.hidden).sort((first, second) => {
+        if (!first.presentation) {
+            if (!second.presentation) {
+                return 0;
+            }
+            return 1;
+        }
+        if (!second.presentation) {
+            return -1;
+        }
+        if (!first.presentation.group) {
+            if (!second.presentation.group) {
+                return compareOrders(first.presentation.order, second.presentation.order);
+            }
+            return 1;
+        }
+        if (!second.presentation.group) {
+            return -1;
+        }
+        if (first.presentation.group !== second.presentation.group) {
+            return first.presentation.group.localeCompare(second.presentation.group);
+        }
+        return compareOrders(first.presentation.order, second.presentation.order);
+    });
+}
+function compareOrders(first, second) {
+    if (typeof first !== 'number') {
+        if (typeof second !== 'number') {
+            return 0;
+        }
+        return 1;
+    }
+    if (typeof second !== 'number') {
+        return -1;
+    }
+    return first - second;
+}
+export async function saveAllBeforeDebugStart(configurationService, editorService) {
+    const saveBeforeStartConfig = configurationService.getValue('debug.saveBeforeStart', { overrideIdentifier: editorService.activeTextEditorLanguageId });
+    if (saveBeforeStartConfig !== 'none') {
+        await editorService.saveAll();
+        if (saveBeforeStartConfig === 'allEditorsInActiveGroup') {
+            const activeEditor = editorService.activeEditorPane;
+            if (activeEditor && activeEditor.input.resource?.scheme === Schemas.untitled) {
+                await editorService.save({ editor: activeEditor.input, groupId: activeEditor.group.id });
+            }
+        }
+    }
+    await configurationService.reloadConfiguration();
+}
+export const sourcesEqual = (a, b) => !a || !b ? a === b : a.name === b.name && a.path === b.path && a.sourceReference === b.sourceReference;

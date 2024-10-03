@@ -1,1 +1,87 @@
-import{CancellationToken as C}from"../../../../base/common/cancellation.js";import{illegalArgument as d,onUnexpectedExternalError as f}from"../../../../base/common/errors.js";import"../../../../base/common/uri.js";import"../../../common/core/range.js";import"../../../common/model.js";import"../../../common/languages.js";import{IModelService as I}from"../../../common/services/model.js";import{ILanguageFeaturesService as p}from"../../../common/services/languageFeatures.js";import"../../../common/languageFeatureRegistry.js";import{DefaultDocumentColorProvider as D}from"./defaultDocumentColorProvider.js";import{IConfigurationService as P}from"../../../../platform/configuration/common/configuration.js";import"../../../browser/editorExtensions.js";async function z(n,o,r,e=!0){return v(new g,n,o,r,e)}function B(n,o,r,e){return Promise.resolve(r.provideColorPresentations(n,o,e))}class g{constructor(){}async compute(o,r,e,l){const t=await o.provideDocumentColors(r,e);if(Array.isArray(t))for(const a of t)l.push({colorInfo:a,provider:o});return Array.isArray(t)}}class G{constructor(){}async compute(o,r,e,l){const t=await o.provideDocumentColors(r,e);if(Array.isArray(t))for(const a of t)l.push({range:a.range,color:[a.color.red,a.color.green,a.color.blue,a.color.alpha]});return Array.isArray(t)}}class H{constructor(o){this.colorInfo=o}async compute(o,r,e,l){const t=await o.provideColorPresentations(r,this.colorInfo,C.None);return Array.isArray(t)&&l.push(...t),Array.isArray(t)}}async function v(n,o,r,e,l){let t=!1,a;const i=[],m=o.ordered(r);for(let c=m.length-1;c>=0;c--){const s=m[c];if(s instanceof D)a=s;else try{await n.compute(s,r,e,i)&&(t=!0)}catch(u){f(u)}}return t?i:a&&l?(await n.compute(a,r,e,i),i):[]}function J(n,o){const{colorProvider:r}=n.get(p),e=n.get(I).getModel(o);if(!e)throw d();const l=n.get(P).getValue("editor.defaultColorDecorators",{resource:o});return{model:e,colorProviderRegistry:r,isDefaultColorDecoratorsEnabled:l}}export{H as ColorPresentationsCollector,G as ExtColorDataCollector,v as _findColorData,J as _setupColorCommand,B as getColorPresentations,z as getColors};
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { illegalArgument, onUnexpectedExternalError } from '../../../../base/common/errors.js';
+import { IModelService } from '../../../common/services/model.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { DefaultDocumentColorProvider } from './defaultDocumentColorProvider.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+export async function getColors(colorProviderRegistry, model, token, isDefaultColorDecoratorsEnabled = true) {
+    return _findColorData(new ColorDataCollector(), colorProviderRegistry, model, token, isDefaultColorDecoratorsEnabled);
+}
+export function getColorPresentations(model, colorInfo, provider, token) {
+    return Promise.resolve(provider.provideColorPresentations(model, colorInfo, token));
+}
+class ColorDataCollector {
+    constructor() { }
+    async compute(provider, model, token, colors) {
+        const documentColors = await provider.provideDocumentColors(model, token);
+        if (Array.isArray(documentColors)) {
+            for (const colorInfo of documentColors) {
+                colors.push({ colorInfo, provider });
+            }
+        }
+        return Array.isArray(documentColors);
+    }
+}
+export class ExtColorDataCollector {
+    constructor() { }
+    async compute(provider, model, token, colors) {
+        const documentColors = await provider.provideDocumentColors(model, token);
+        if (Array.isArray(documentColors)) {
+            for (const colorInfo of documentColors) {
+                colors.push({ range: colorInfo.range, color: [colorInfo.color.red, colorInfo.color.green, colorInfo.color.blue, colorInfo.color.alpha] });
+            }
+        }
+        return Array.isArray(documentColors);
+    }
+}
+export class ColorPresentationsCollector {
+    constructor(colorInfo) {
+        this.colorInfo = colorInfo;
+    }
+    async compute(provider, model, _token, colors) {
+        const documentColors = await provider.provideColorPresentations(model, this.colorInfo, CancellationToken.None);
+        if (Array.isArray(documentColors)) {
+            colors.push(...documentColors);
+        }
+        return Array.isArray(documentColors);
+    }
+}
+export async function _findColorData(collector, colorProviderRegistry, model, token, isDefaultColorDecoratorsEnabled) {
+    let validDocumentColorProviderFound = false;
+    let defaultProvider;
+    const colorData = [];
+    const documentColorProviders = colorProviderRegistry.ordered(model);
+    for (let i = documentColorProviders.length - 1; i >= 0; i--) {
+        const provider = documentColorProviders[i];
+        if (provider instanceof DefaultDocumentColorProvider) {
+            defaultProvider = provider;
+        }
+        else {
+            try {
+                if (await collector.compute(provider, model, token, colorData)) {
+                    validDocumentColorProviderFound = true;
+                }
+            }
+            catch (e) {
+                onUnexpectedExternalError(e);
+            }
+        }
+    }
+    if (validDocumentColorProviderFound) {
+        return colorData;
+    }
+    if (defaultProvider && isDefaultColorDecoratorsEnabled) {
+        await collector.compute(defaultProvider, model, token, colorData);
+        return colorData;
+    }
+    return [];
+}
+export function _setupColorCommand(accessor, resource) {
+    const { colorProvider: colorProviderRegistry } = accessor.get(ILanguageFeaturesService);
+    const model = accessor.get(IModelService).getModel(resource);
+    if (!model) {
+        throw illegalArgument();
+    }
+    const isDefaultColorDecoratorsEnabled = accessor.get(IConfigurationService).getValue('editor.defaultColorDecorators', { resource });
+    return { model, colorProviderRegistry, isDefaultColorDecoratorsEnabled };
+}

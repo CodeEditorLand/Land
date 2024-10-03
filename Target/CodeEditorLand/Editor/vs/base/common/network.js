@@ -1,1 +1,228 @@
-import*as R from"./errors.js";import*as v from"./platform.js";import{equalsIgnoreCase as x,startsWithIgnoreCase as f}from"./strings.js";import{URI as a}from"./uri.js";import*as h from"./path.js";var c;(t=>(t.inMemory="inmemory",t.vscode="vscode",t.internal="private",t.walkThrough="walkThrough",t.walkThroughSnippet="walkThroughSnippet",t.http="http",t.https="https",t.file="file",t.mailto="mailto",t.untitled="untitled",t.data="data",t.command="command",t.vscodeRemote="vscode-remote",t.vscodeRemoteResource="vscode-remote-resource",t.vscodeManagedRemoteResource="vscode-managed-remote-resource",t.vscodeUserData="vscode-userdata",t.vscodeCustomEditor="vscode-custom-editor",t.vscodeNotebookCell="vscode-notebook-cell",t.vscodeNotebookCellMetadata="vscode-notebook-cell-metadata",t.vscodeNotebookCellMetadataDiff="vscode-notebook-cell-metadata-diff",t.vscodeNotebookCellOutput="vscode-notebook-cell-output",t.vscodeNotebookCellOutputDiff="vscode-notebook-cell-output-diff",t.vscodeNotebookMetadata="vscode-notebook-metadata",t.vscodeInteractiveInput="vscode-interactive-input",t.vscodeSettings="vscode-settings",t.vscodeWorkspaceTrust="vscode-workspace-trust",t.vscodeTerminal="vscode-terminal",t.vscodeChatCodeBlock="vscode-chat-code-block",t.vscodeChatCodeCompareBlock="vscode-chat-code-compare-block",t.vscodeChatSesssion="vscode-chat-editor",t.webviewPanel="webview-panel",t.vscodeWebview="vscode-webview",t.extension="extension",t.vscodeFileResource="vscode-file",t.tmp="tmp",t.vsls="vsls",t.vscodeSourceControl="vscode-scm",t.commentsInput="comment",t.codeSetting="code-setting",t.outputChannel="output",t.accessibleView="accessible-view"))(c||={});function m(n,e){return a.isUri(n)?x(n.scheme,e):f(n,e+":")}function ne(n,...e){return e.some(o=>m(n,o))}const ie="vscode-tkn",U="tkn";class b{_hosts=Object.create(null);_ports=Object.create(null);_connectionTokens=Object.create(null);_preferredWebSchema="http";_delegate=null;_serverRootPath="/";setPreferredWebSchema(e){this._preferredWebSchema=e}setDelegate(e){this._delegate=e}setServerRootPath(e,o){this._serverRootPath=k(e,o)}getServerRootPath(){return this._serverRootPath}get _remoteResourcesPath(){return h.posix.join(this._serverRootPath,c.vscodeRemoteResource)}set(e,o,r){this._hosts[e]=o,this._ports[e]=r}setConnectionToken(e,o){this._connectionTokens[e]=o}getPreferredWebSchema(){return this._preferredWebSchema}rewrite(e){if(this._delegate)try{return this._delegate(e)}catch(i){return R.onUnexpectedError(i),e}const o=e.authority;let r=this._hosts[o];r&&r.indexOf(":")!==-1&&r.indexOf("[")===-1&&(r=`[${r}]`);const d=this._ports[o],l=this._connectionTokens[o];let s=`path=${encodeURIComponent(e.path)}`;return typeof l=="string"&&(s+=`&${U}=${encodeURIComponent(l)}`),a.from({scheme:v.isWeb?this._preferredWebSchema:c.vscodeRemoteResource,authority:`${r}:${d}`,path:this._remoteResourcesPath,query:s})}}const P=new b;function k(n,e){return h.posix.join(e??"/",`${n.quality??"oss"}-${n.commit??"dev"}`)}const ce="vs/../../extensions",ae="vs/../../node_modules",pe="vs/../../node_modules.asar",de="vs/../../node_modules.asar.unpacked",$="vscode-app";class u{static FALLBACK_AUTHORITY=$;asBrowserUri(e){const o=this.toUri(e);return this.uriToBrowserUri(o)}uriToBrowserUri(e){return e.scheme===c.vscodeRemote?P.rewrite(e):e.scheme===c.file&&(v.isNative||v.webWorkerOrigin===`${c.vscodeFileResource}://${u.FALLBACK_AUTHORITY}`)?e.with({scheme:c.vscodeFileResource,authority:e.authority||u.FALLBACK_AUTHORITY,query:null,fragment:null}):e}asFileUri(e){const o=this.toUri(e);return this.uriToFileUri(o)}uriToFileUri(e){return e.scheme===c.vscodeFileResource?e.with({scheme:c.file,authority:e.authority!==u.FALLBACK_AUTHORITY?e.authority:null,query:null,fragment:null}):e}toUri(e,o){if(a.isUri(e))return e;if(globalThis._VSCODE_FILE_ROOT){const r=globalThis._VSCODE_FILE_ROOT;if(/^\w[\w\d+.-]*:\/\//.test(r))return a.joinPath(a.parse(r,!0),e);const d=h.join(r,e);return a.file(d)}return a.parse(o.toUrl(e))}}const le=new u;var y;(l=>{const n=new Map([["1",{"Cross-Origin-Opener-Policy":"same-origin"}],["2",{"Cross-Origin-Embedder-Policy":"require-corp"}],["3",{"Cross-Origin-Opener-Policy":"same-origin","Cross-Origin-Embedder-Policy":"require-corp"}]]);l.CoopAndCoep=Object.freeze(n.get("3"));const o="vscode-coi";function r(s){let i;typeof s=="string"?i=new URL(s).searchParams:s instanceof URL?i=s.searchParams:a.isUri(s)&&(i=new URL(s.toString(!0)).searchParams);const p=i?.get(o);if(p)return n.get(p)}l.getHeadersFromQuery=r;function d(s,i,p){if(!globalThis.crossOriginIsolated)return;const g=i&&p?"3":p?"2":"1";s instanceof URLSearchParams?s.set(o,g):s[o]=g}l.addSearchParam=d})(y||={});export{y as COI,le as FileAccess,P as RemoteAuthorities,c as Schemas,$ as VSCODE_AUTHORITY,ce as builtinExtensionsPath,ie as connectionTokenCookieName,U as connectionTokenQueryName,k as getServerRootPath,m as matchesScheme,ne as matchesSomeScheme,pe as nodeModulesAsarPath,de as nodeModulesAsarUnpackedPath,ae as nodeModulesPath};
+import * as errors from './errors.js';
+import * as platform from './platform.js';
+import { equalsIgnoreCase, startsWithIgnoreCase } from './strings.js';
+import { URI } from './uri.js';
+import * as paths from './path.js';
+export var Schemas;
+(function (Schemas) {
+    Schemas.inMemory = 'inmemory';
+    Schemas.vscode = 'vscode';
+    Schemas.internal = 'private';
+    Schemas.walkThrough = 'walkThrough';
+    Schemas.walkThroughSnippet = 'walkThroughSnippet';
+    Schemas.http = 'http';
+    Schemas.https = 'https';
+    Schemas.file = 'file';
+    Schemas.mailto = 'mailto';
+    Schemas.untitled = 'untitled';
+    Schemas.data = 'data';
+    Schemas.command = 'command';
+    Schemas.vscodeRemote = 'vscode-remote';
+    Schemas.vscodeRemoteResource = 'vscode-remote-resource';
+    Schemas.vscodeManagedRemoteResource = 'vscode-managed-remote-resource';
+    Schemas.vscodeUserData = 'vscode-userdata';
+    Schemas.vscodeCustomEditor = 'vscode-custom-editor';
+    Schemas.vscodeNotebookCell = 'vscode-notebook-cell';
+    Schemas.vscodeNotebookCellMetadata = 'vscode-notebook-cell-metadata';
+    Schemas.vscodeNotebookCellMetadataDiff = 'vscode-notebook-cell-metadata-diff';
+    Schemas.vscodeNotebookCellOutput = 'vscode-notebook-cell-output';
+    Schemas.vscodeNotebookCellOutputDiff = 'vscode-notebook-cell-output-diff';
+    Schemas.vscodeNotebookMetadata = 'vscode-notebook-metadata';
+    Schemas.vscodeInteractiveInput = 'vscode-interactive-input';
+    Schemas.vscodeSettings = 'vscode-settings';
+    Schemas.vscodeWorkspaceTrust = 'vscode-workspace-trust';
+    Schemas.vscodeTerminal = 'vscode-terminal';
+    Schemas.vscodeChatCodeBlock = 'vscode-chat-code-block';
+    Schemas.vscodeChatCodeCompareBlock = 'vscode-chat-code-compare-block';
+    Schemas.vscodeChatSesssion = 'vscode-chat-editor';
+    Schemas.webviewPanel = 'webview-panel';
+    Schemas.vscodeWebview = 'vscode-webview';
+    Schemas.extension = 'extension';
+    Schemas.vscodeFileResource = 'vscode-file';
+    Schemas.tmp = 'tmp';
+    Schemas.vsls = 'vsls';
+    Schemas.vscodeSourceControl = 'vscode-scm';
+    Schemas.commentsInput = 'comment';
+    Schemas.codeSetting = 'code-setting';
+    Schemas.outputChannel = 'output';
+    Schemas.accessibleView = 'accessible-view';
+})(Schemas || (Schemas = {}));
+export function matchesScheme(target, scheme) {
+    if (URI.isUri(target)) {
+        return equalsIgnoreCase(target.scheme, scheme);
+    }
+    else {
+        return startsWithIgnoreCase(target, scheme + ':');
+    }
+}
+export function matchesSomeScheme(target, ...schemes) {
+    return schemes.some(scheme => matchesScheme(target, scheme));
+}
+export const connectionTokenCookieName = 'vscode-tkn';
+export const connectionTokenQueryName = 'tkn';
+class RemoteAuthoritiesImpl {
+    constructor() {
+        this._hosts = Object.create(null);
+        this._ports = Object.create(null);
+        this._connectionTokens = Object.create(null);
+        this._preferredWebSchema = 'http';
+        this._delegate = null;
+        this._serverRootPath = '/';
+    }
+    setPreferredWebSchema(schema) {
+        this._preferredWebSchema = schema;
+    }
+    setDelegate(delegate) {
+        this._delegate = delegate;
+    }
+    setServerRootPath(product, serverBasePath) {
+        this._serverRootPath = getServerRootPath(product, serverBasePath);
+    }
+    getServerRootPath() {
+        return this._serverRootPath;
+    }
+    get _remoteResourcesPath() {
+        return paths.posix.join(this._serverRootPath, Schemas.vscodeRemoteResource);
+    }
+    set(authority, host, port) {
+        this._hosts[authority] = host;
+        this._ports[authority] = port;
+    }
+    setConnectionToken(authority, connectionToken) {
+        this._connectionTokens[authority] = connectionToken;
+    }
+    getPreferredWebSchema() {
+        return this._preferredWebSchema;
+    }
+    rewrite(uri) {
+        if (this._delegate) {
+            try {
+                return this._delegate(uri);
+            }
+            catch (err) {
+                errors.onUnexpectedError(err);
+                return uri;
+            }
+        }
+        const authority = uri.authority;
+        let host = this._hosts[authority];
+        if (host && host.indexOf(':') !== -1 && host.indexOf('[') === -1) {
+            host = `[${host}]`;
+        }
+        const port = this._ports[authority];
+        const connectionToken = this._connectionTokens[authority];
+        let query = `path=${encodeURIComponent(uri.path)}`;
+        if (typeof connectionToken === 'string') {
+            query += `&${connectionTokenQueryName}=${encodeURIComponent(connectionToken)}`;
+        }
+        return URI.from({
+            scheme: platform.isWeb ? this._preferredWebSchema : Schemas.vscodeRemoteResource,
+            authority: `${host}:${port}`,
+            path: this._remoteResourcesPath,
+            query
+        });
+    }
+}
+export const RemoteAuthorities = new RemoteAuthoritiesImpl();
+export function getServerRootPath(product, basePath) {
+    return paths.posix.join(basePath ?? '/', `${product.quality ?? 'oss'}-${product.commit ?? 'dev'}`);
+}
+export const builtinExtensionsPath = 'vs/../../extensions';
+export const nodeModulesPath = 'vs/../../node_modules';
+export const nodeModulesAsarPath = 'vs/../../node_modules.asar';
+export const nodeModulesAsarUnpackedPath = 'vs/../../node_modules.asar.unpacked';
+export const VSCODE_AUTHORITY = 'vscode-app';
+class FileAccessImpl {
+    static { this.FALLBACK_AUTHORITY = VSCODE_AUTHORITY; }
+    asBrowserUri(resourcePath) {
+        const uri = this.toUri(resourcePath);
+        return this.uriToBrowserUri(uri);
+    }
+    uriToBrowserUri(uri) {
+        if (uri.scheme === Schemas.vscodeRemote) {
+            return RemoteAuthorities.rewrite(uri);
+        }
+        if (uri.scheme === Schemas.file &&
+            (platform.isNative ||
+                (platform.webWorkerOrigin === `${Schemas.vscodeFileResource}://${FileAccessImpl.FALLBACK_AUTHORITY}`))) {
+            return uri.with({
+                scheme: Schemas.vscodeFileResource,
+                authority: uri.authority || FileAccessImpl.FALLBACK_AUTHORITY,
+                query: null,
+                fragment: null
+            });
+        }
+        return uri;
+    }
+    asFileUri(resourcePath) {
+        const uri = this.toUri(resourcePath);
+        return this.uriToFileUri(uri);
+    }
+    uriToFileUri(uri) {
+        if (uri.scheme === Schemas.vscodeFileResource) {
+            return uri.with({
+                scheme: Schemas.file,
+                authority: uri.authority !== FileAccessImpl.FALLBACK_AUTHORITY ? uri.authority : null,
+                query: null,
+                fragment: null
+            });
+        }
+        return uri;
+    }
+    toUri(uriOrModule, moduleIdToUrl) {
+        if (URI.isUri(uriOrModule)) {
+            return uriOrModule;
+        }
+        if (globalThis._VSCODE_FILE_ROOT) {
+            const rootUriOrPath = globalThis._VSCODE_FILE_ROOT;
+            if (/^\w[\w\d+.-]*:\/\//.test(rootUriOrPath)) {
+                return URI.joinPath(URI.parse(rootUriOrPath, true), uriOrModule);
+            }
+            const modulePath = paths.join(rootUriOrPath, uriOrModule);
+            return URI.file(modulePath);
+        }
+        return URI.parse(moduleIdToUrl.toUrl(uriOrModule));
+    }
+}
+export const FileAccess = new FileAccessImpl();
+export var COI;
+(function (COI) {
+    const coiHeaders = new Map([
+        ['1', { 'Cross-Origin-Opener-Policy': 'same-origin' }],
+        ['2', { 'Cross-Origin-Embedder-Policy': 'require-corp' }],
+        ['3', { 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Embedder-Policy': 'require-corp' }],
+    ]);
+    COI.CoopAndCoep = Object.freeze(coiHeaders.get('3'));
+    const coiSearchParamName = 'vscode-coi';
+    function getHeadersFromQuery(url) {
+        let params;
+        if (typeof url === 'string') {
+            params = new URL(url).searchParams;
+        }
+        else if (url instanceof URL) {
+            params = url.searchParams;
+        }
+        else if (URI.isUri(url)) {
+            params = new URL(url.toString(true)).searchParams;
+        }
+        const value = params?.get(coiSearchParamName);
+        if (!value) {
+            return undefined;
+        }
+        return coiHeaders.get(value);
+    }
+    COI.getHeadersFromQuery = getHeadersFromQuery;
+    function addSearchParam(urlOrSearch, coop, coep) {
+        if (!globalThis.crossOriginIsolated) {
+            return;
+        }
+        const value = coop && coep ? '3' : coep ? '2' : '1';
+        if (urlOrSearch instanceof URLSearchParams) {
+            urlOrSearch.set(coiSearchParamName, value);
+        }
+        else {
+            urlOrSearch[coiSearchParamName] = value;
+        }
+    }
+    COI.addSearchParam = addSearchParam;
+})(COI || (COI = {}));

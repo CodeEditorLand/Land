@@ -1,1 +1,184 @@
-var C=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var c=(o,e,r,t)=>{for(var s=t>1?void 0:t?T(e,r):e,i=o.length-1,a;i>=0;i--)(a=o[i])&&(s=(t?a(e,r,s):a(s))||s);return t&&s&&C(e,r,s),s},l=(o,e)=>(r,t)=>e(r,t,o);import*as b from"../../../../../base/browser/dom.js";import"../../../../../base/browser/ui/list/list.js";import"../../../../../base/browser/ui/tree/asyncDataTree.js";import"../../../../../base/browser/ui/tree/compressedObjectTreeModel.js";import"../../../../../base/browser/ui/tree/objectTree.js";import"../../../../../base/browser/ui/tree/tree.js";import{Emitter as D}from"../../../../../base/common/event.js";import{Disposable as I,DisposableStore as u}from"../../../../../base/common/lifecycle.js";import{localize as R}from"../../../../../nls.js";import{IConfigurationService as f}from"../../../../../platform/configuration/common/configuration.js";import{FileKind as p,FileType as v}from"../../../../../platform/files/common/files.js";import{IInstantiationService as F}from"../../../../../platform/instantiation/common/instantiation.js";import{WorkbenchCompressibleAsyncDataTree as y}from"../../../../../platform/list/browser/listService.js";import{IOpenerService as P}from"../../../../../platform/opener/common/opener.js";import{IThemeService as L}from"../../../../../platform/theme/common/themeService.js";import{ResourceLabels as S}from"../../../../browser/labels.js";import"../chat.js";import{ResourcePool as _}from"./chatCollections.js";import"./chatContentParts.js";import"../../common/chatModel.js";import"../../common/chatService.js";import{createFileIconThemableTreeContainerScope as E}from"../../../files/browser/views/explorerView.js";import"../../../files/common/files.js";const x=b.$;let h=class extends I{constructor(r,t,s,i,a){super();this.openerService=a;const g=this._register(s.get());this.tree=g.object,this.onDidFocus=this.tree.onDidFocus,this._register(this.tree.onDidOpen(n=>{n.element&&!("children"in n.element)&&this.openerService.open(n.element.uri)})),this._register(this.tree.onDidChangeCollapseState(()=>{this._onDidChangeHeight.fire()})),this._register(this.tree.onContextMenu(n=>{n.browserEvent.preventDefault(),n.browserEvent.stopPropagation()})),this.tree.setInput(r).then(()=>{g.isStale()||(this.tree.layout(),this._onDidChangeHeight.fire())}),this.domNode=this.tree.getHTMLElement().parentElement}domNode;_onDidChangeHeight=this._register(new D);onDidChangeHeight=this._onDidChangeHeight.event;onDidFocus;tree;domFocus(){this.tree.domFocus()}hasSameContent(r){return r.kind==="treeData"}addDisposable(r){this._register(r)}};h=c([l(4,P)],h);let m=class extends I{constructor(r,t,s,i){super();this._onDidChangeVisibility=r;this.instantiationService=t;this.configService=s;this.themeService=i;this._pool=this._register(new _(()=>this.treeFactory()))}_pool;get inUse(){return this._pool.inUse}treeFactory(){const r=this._register(this.instantiationService.createInstance(S,{onDidChangeVisibility:this._onDidChangeVisibility})),t=x(".interactive-response-progress-tree");return this._register(E(t,this.themeService)),this.instantiationService.createInstance(y,"ChatListRenderer",t,new d,new H,[new w(r,this.configService.getValue("explorer.decorations"))],new A,{collapseByDefault:()=>!1,expandOnlyOnTwistieClick:()=>!1,identityProvider:{getId:i=>i.uri.toString()},accessibilityProvider:{getAriaLabel:i=>i.label,getWidgetAriaLabel:()=>R("treeAriaLabel","File Tree")},alwaysConsumeMouseWheel:!1})}get(){const r=this._pool.get();let t=!1;return{object:r,isStale:()=>t,dispose:()=>{t=!0,this._pool.release(r)}}}};m=c([l(1,F),l(2,f),l(3,L)],m);class d{static ITEM_HEIGHT=22;getHeight(e){return d.ITEM_HEIGHT}getTemplateId(e){return"chatListTreeTemplate"}}class H{isIncompressible(e){return!e.children}}class w{constructor(e,r){this.labels=e;this.decorations=r}templateId="chatListTreeTemplate";renderCompressedElements(e,r,t,s){t.label.element.style.display="flex";const i=e.element.elements.map(a=>a.label);t.label.setResource({resource:e.element.elements[0].uri,name:i},{title:e.element.elements[0].label,fileKind:e.children?p.FOLDER:p.FILE,extraClasses:["explorer-item"],fileDecorations:this.decorations})}renderTemplate(e){const r=new u,t=r.add(this.labels.create(e,{supportHighlights:!0}));return{templateDisposables:r,label:t}}renderElement(e,r,t,s){t.label.element.style.display="flex",!e.children.length&&e.element.type!==v.Directory?t.label.setFile(e.element.uri,{fileKind:p.FILE,hidePath:!0,fileDecorations:this.decorations}):t.label.setResource({resource:e.element.uri,name:e.element.label},{title:e.element.label,fileKind:p.FOLDER,fileDecorations:this.decorations})}disposeTemplate(e){e.templateDisposables.dispose()}}class A{hasChildren(e){return!!e.children}async getChildren(e){return e.children??[]}}export{h as ChatTreeContentPart,m as TreePool};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../../base/browser/dom.js';
+import { Emitter, Event } from '../../../../../base/common/event.js';
+import { Disposable, DisposableStore } from '../../../../../base/common/lifecycle.js';
+import { localize } from '../../../../../nls.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { FileKind, FileType } from '../../../../../platform/files/common/files.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { WorkbenchCompressibleAsyncDataTree } from '../../../../../platform/list/browser/listService.js';
+import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
+import { IThemeService } from '../../../../../platform/theme/common/themeService.js';
+import { ResourceLabels } from '../../../../browser/labels.js';
+import { ResourcePool } from './chatCollections.js';
+import { createFileIconThemableTreeContainerScope } from '../../../files/browser/views/explorerView.js';
+const $ = dom.$;
+let ChatTreeContentPart = class ChatTreeContentPart extends Disposable {
+    constructor(data, element, treePool, treeDataIndex, openerService) {
+        super();
+        this.openerService = openerService;
+        this._onDidChangeHeight = this._register(new Emitter());
+        this.onDidChangeHeight = this._onDidChangeHeight.event;
+        const ref = this._register(treePool.get());
+        this.tree = ref.object;
+        this.onDidFocus = this.tree.onDidFocus;
+        this._register(this.tree.onDidOpen((e) => {
+            if (e.element && !('children' in e.element)) {
+                this.openerService.open(e.element.uri);
+            }
+        }));
+        this._register(this.tree.onDidChangeCollapseState(() => {
+            this._onDidChangeHeight.fire();
+        }));
+        this._register(this.tree.onContextMenu((e) => {
+            e.browserEvent.preventDefault();
+            e.browserEvent.stopPropagation();
+        }));
+        this.tree.setInput(data).then(() => {
+            if (!ref.isStale()) {
+                this.tree.layout();
+                this._onDidChangeHeight.fire();
+            }
+        });
+        this.domNode = this.tree.getHTMLElement().parentElement;
+    }
+    domFocus() {
+        this.tree.domFocus();
+    }
+    hasSameContent(other) {
+        return other.kind === 'treeData';
+    }
+    addDisposable(disposable) {
+        this._register(disposable);
+    }
+};
+ChatTreeContentPart = __decorate([
+    __param(4, IOpenerService),
+    __metadata("design:paramtypes", [Object, Object, TreePool, Number, Object])
+], ChatTreeContentPart);
+export { ChatTreeContentPart };
+let TreePool = class TreePool extends Disposable {
+    get inUse() {
+        return this._pool.inUse;
+    }
+    constructor(_onDidChangeVisibility, instantiationService, configService, themeService) {
+        super();
+        this._onDidChangeVisibility = _onDidChangeVisibility;
+        this.instantiationService = instantiationService;
+        this.configService = configService;
+        this.themeService = themeService;
+        this._pool = this._register(new ResourcePool(() => this.treeFactory()));
+    }
+    treeFactory() {
+        const resourceLabels = this._register(this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this._onDidChangeVisibility }));
+        const container = $('.interactive-response-progress-tree');
+        this._register(createFileIconThemableTreeContainerScope(container, this.themeService));
+        const tree = this.instantiationService.createInstance((WorkbenchCompressibleAsyncDataTree), 'ChatListRenderer', container, new ChatListTreeDelegate(), new ChatListTreeCompressionDelegate(), [new ChatListTreeRenderer(resourceLabels, this.configService.getValue('explorer.decorations'))], new ChatListTreeDataSource(), {
+            collapseByDefault: () => false,
+            expandOnlyOnTwistieClick: () => false,
+            identityProvider: {
+                getId: (e) => e.uri.toString()
+            },
+            accessibilityProvider: {
+                getAriaLabel: (element) => element.label,
+                getWidgetAriaLabel: () => localize('treeAriaLabel', "File Tree")
+            },
+            alwaysConsumeMouseWheel: false
+        });
+        return tree;
+    }
+    get() {
+        const object = this._pool.get();
+        let stale = false;
+        return {
+            object,
+            isStale: () => stale,
+            dispose: () => {
+                stale = true;
+                this._pool.release(object);
+            }
+        };
+    }
+};
+TreePool = __decorate([
+    __param(1, IInstantiationService),
+    __param(2, IConfigurationService),
+    __param(3, IThemeService),
+    __metadata("design:paramtypes", [Function, Object, Object, Object])
+], TreePool);
+export { TreePool };
+class ChatListTreeDelegate {
+    static { this.ITEM_HEIGHT = 22; }
+    getHeight(element) {
+        return ChatListTreeDelegate.ITEM_HEIGHT;
+    }
+    getTemplateId(element) {
+        return 'chatListTreeTemplate';
+    }
+}
+class ChatListTreeCompressionDelegate {
+    isIncompressible(element) {
+        return !element.children;
+    }
+}
+class ChatListTreeRenderer {
+    constructor(labels, decorations) {
+        this.labels = labels;
+        this.decorations = decorations;
+        this.templateId = 'chatListTreeTemplate';
+    }
+    renderCompressedElements(element, index, templateData, height) {
+        templateData.label.element.style.display = 'flex';
+        const label = element.element.elements.map((e) => e.label);
+        templateData.label.setResource({ resource: element.element.elements[0].uri, name: label }, {
+            title: element.element.elements[0].label,
+            fileKind: element.children ? FileKind.FOLDER : FileKind.FILE,
+            extraClasses: ['explorer-item'],
+            fileDecorations: this.decorations
+        });
+    }
+    renderTemplate(container) {
+        const templateDisposables = new DisposableStore();
+        const label = templateDisposables.add(this.labels.create(container, { supportHighlights: true }));
+        return { templateDisposables, label };
+    }
+    renderElement(element, index, templateData, height) {
+        templateData.label.element.style.display = 'flex';
+        if (!element.children.length && element.element.type !== FileType.Directory) {
+            templateData.label.setFile(element.element.uri, {
+                fileKind: FileKind.FILE,
+                hidePath: true,
+                fileDecorations: this.decorations,
+            });
+        }
+        else {
+            templateData.label.setResource({ resource: element.element.uri, name: element.element.label }, {
+                title: element.element.label,
+                fileKind: FileKind.FOLDER,
+                fileDecorations: this.decorations
+            });
+        }
+    }
+    disposeTemplate(templateData) {
+        templateData.templateDisposables.dispose();
+    }
+}
+class ChatListTreeDataSource {
+    hasChildren(element) {
+        return !!element.children;
+    }
+    async getChildren(element) {
+        return element.children ?? [];
+    }
+}

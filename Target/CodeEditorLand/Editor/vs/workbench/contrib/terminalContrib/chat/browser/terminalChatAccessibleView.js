@@ -1,1 +1,23 @@
-import{AccessibleViewProviderId as i,AccessibleViewType as r,AccessibleContentProvider as o}from"../../../../../platform/accessibility/browser/accessibleView.js";import{AccessibilityVerbositySettingId as s}from"../../../accessibility/browser/accessibilityConfiguration.js";import{ITerminalService as l}from"../../../terminal/browser/terminal.js";import{TerminalChatController as c}from"./terminalChatController.js";import"../../../../../platform/accessibility/browser/accessibleViewRegistry.js";import"../../../../../platform/instantiation/common/instantiation.js";import{TerminalChatContextKeys as a}from"./terminalChat.js";class h{priority=105;name="terminalInlineChat";type=r.View;when=a.focused;getProvider(t){const e=t.get(l).activeInstance?.getContribution(c.ID)??void 0;if(!e?.lastResponseContent)return;const n=e.lastResponseContent;return new o(i.TerminalChat,{type:r.View},()=>n,()=>{e.focus()},s.InlineChat)}}export{h as TerminalInlineChatAccessibleView};
+import { AccessibleContentProvider } from '../../../../../platform/accessibility/browser/accessibleView.js';
+import { ITerminalService } from '../../../terminal/browser/terminal.js';
+import { TerminalChatController } from './terminalChatController.js';
+import { TerminalChatContextKeys } from './terminalChat.js';
+export class TerminalInlineChatAccessibleView {
+    constructor() {
+        this.priority = 105;
+        this.name = 'terminalInlineChat';
+        this.type = "view";
+        this.when = TerminalChatContextKeys.focused;
+    }
+    getProvider(accessor) {
+        const terminalService = accessor.get(ITerminalService);
+        const controller = terminalService.activeInstance?.getContribution(TerminalChatController.ID) ?? undefined;
+        if (!controller?.lastResponseContent) {
+            return;
+        }
+        const responseContent = controller.lastResponseContent;
+        return new AccessibleContentProvider("terminal-chat", { type: "view" }, () => { return responseContent; }, () => {
+            controller.focus();
+        }, "accessibility.verbosity.inlineChat");
+    }
+}

@@ -1,4 +1,463 @@
-import{Emitter as M}from"../../../../base/common/event.js";import*as C from"../../../../base/common/strings.js";import"../../core/position.js";import{Range as L}from"../../core/range.js";import{ApplyEditsResult as S,EndOfLinePreference as O}from"../../model.js";import{PieceTreeBase as B}from"./pieceTreeBase.js";import{countEOL as x,StringEOL as R}from"../../core/eolCounter.js";import{TextChange as V}from"../../core/textChange.js";import{Disposable as w}from"../../../../base/common/lifecycle.js";class N extends w{_pieceTree;_BOM;_mightContainRTL;_mightContainUnusualLineTerminators;_mightContainNonBasicASCII;_onDidChangeContent=this._register(new M);onDidChangeContent=this._onDidChangeContent.event;constructor(e,t,n,i,a,l,c){super(),this._BOM=t,this._mightContainNonBasicASCII=!l,this._mightContainRTL=i,this._mightContainUnusualLineTerminators=a,this._pieceTree=new B(e,n,c)}equals(e){return!(e instanceof N)||this._BOM!==e._BOM||this.getEOL()!==e.getEOL()?!1:this._pieceTree.equal(e._pieceTree)}mightContainRTL(){return this._mightContainRTL}mightContainUnusualLineTerminators(){return this._mightContainUnusualLineTerminators}resetMightContainUnusualLineTerminators(){this._mightContainUnusualLineTerminators=!1}mightContainNonBasicASCII(){return this._mightContainNonBasicASCII}getBOM(){return this._BOM}getEOL(){return this._pieceTree.getEOL()}createSnapshot(e){return this._pieceTree.createSnapshot(e?this._BOM:"")}getOffsetAt(e,t){return this._pieceTree.getOffsetAt(e,t)}getPositionAt(e){return this._pieceTree.getPositionAt(e)}getRangeAt(e,t){const n=e+t,i=this.getPositionAt(e),a=this.getPositionAt(n);return new L(i.lineNumber,i.column,a.lineNumber,a.column)}getValueInRange(e,t=O.TextDefined){if(e.isEmpty())return"";const n=this._getEndOfLine(t);return this._pieceTree.getValueInRange(e,n)}getValueLengthInRange(e,t=O.TextDefined){if(e.isEmpty())return 0;if(e.startLineNumber===e.endLineNumber)return e.endColumn-e.startColumn;const n=this.getOffsetAt(e.startLineNumber,e.startColumn),i=this.getOffsetAt(e.endLineNumber,e.endColumn);let a=0;const l=this._getEndOfLine(t),c=this.getEOL();if(l.length!==c.length){const r=l.length-c.length,g=e.endLineNumber-e.startLineNumber;a=r*g}return i-n+a}getCharacterCountInRange(e,t=O.TextDefined){if(this._mightContainNonBasicASCII){let n=0;const i=e.startLineNumber,a=e.endLineNumber;for(let l=i;l<=a;l++){const c=this.getLineContent(l),r=l===i?e.startColumn-1:0,g=l===a?e.endColumn-1:c.length;for(let h=r;h<g;h++)C.isHighSurrogate(c.charCodeAt(h))?(n=n+1,h=h+1):n=n+1}return n+=this._getEndOfLine(t).length*(a-i),n}return this.getValueLengthInRange(e,t)}getNearestChunk(e){return this._pieceTree.getNearestChunk(e)}getLength(){return this._pieceTree.getLength()}getLineCount(){return this._pieceTree.getLineCount()}getLinesContent(){return this._pieceTree.getLinesContent()}getLineContent(e){return this._pieceTree.getLineContent(e)}getLineCharCode(e,t){return this._pieceTree.getLineCharCode(e,t)}getCharCode(e){return this._pieceTree.getCharCode(e)}getLineLength(e){return this._pieceTree.getLineLength(e)}getLineMinColumn(e){return 1}getLineMaxColumn(e){return this.getLineLength(e)+1}getLineFirstNonWhitespaceColumn(e){const t=C.firstNonWhitespaceIndex(this.getLineContent(e));return t===-1?0:t+1}getLineLastNonWhitespaceColumn(e){const t=C.lastNonWhitespaceIndex(this.getLineContent(e));return t===-1?0:t+2}_getEndOfLine(e){switch(e){case O.LF:return`
-`;case O.CRLF:return`\r
-`;case O.TextDefined:return this.getEOL();default:throw new Error("Unknown EOL preference")}}setEOL(e){this._pieceTree.setEOL(e)}applyEdits(e,t,n){let i=this._mightContainRTL,a=this._mightContainUnusualLineTerminators,l=this._mightContainNonBasicASCII,c=!0,r=[];for(let o=0;o<e.length;o++){const s=e[o];c&&s._isTracked&&(c=!1);const u=s.range;if(s.text){let b=!0;l||(b=!C.isBasicASCII(s.text),l=b),!i&&b&&(i=C.containsRTL(s.text)),!a&&b&&(a=C.containsUnusualLineTerminators(s.text))}let m="",f=0,_=0,T=0;if(s.text){let b;[f,_,T,b]=x(s.text);const v=this.getEOL(),A=v===`\r
-`?R.CRLF:R.LF;b===R.Unknown||b===A?m=s.text:m=s.text.replace(/\r\n|\r|\n/g,v)}r[o]={sortIndex:o,identifier:s.identifier||null,range:u,rangeOffset:this.getOffsetAt(u.startLineNumber,u.startColumn),rangeLength:this.getValueLengthInRange(u),text:m,eolCount:f,firstLineLength:_,lastLineLength:T,forceMoveMarkers:!!s.forceMoveMarkers,isAutoWhitespaceEdit:s.isAutoWhitespaceEdit||!1}}r.sort(N._sortOpsAscending);let g=!1;for(let o=0,s=r.length-1;o<s;o++){const u=r[o].range.getEndPosition(),m=r[o+1].range.getStartPosition();if(m.isBeforeOrEqual(u)){if(m.isBefore(u))throw new Error("Overlapping ranges are not allowed!");g=!0}}c&&(r=this._reduceOperations(r));const h=n||t?N._getInverseEditRanges(r):[],d=[];if(t)for(let o=0;o<r.length;o++){const s=r[o],u=h[o];if(s.isAutoWhitespaceEdit&&s.range.isEmpty())for(let m=u.startLineNumber;m<=u.endLineNumber;m++){let f="";m===u.startLineNumber&&(f=this.getLineContent(s.range.startLineNumber),C.firstNonWhitespaceIndex(f)!==-1)||d.push({lineNumber:m,oldContent:f})}}let p=null;if(n){let o=0;p=[];for(let s=0;s<r.length;s++){const u=r[s],m=h[s],f=this.getValueInRange(u.range),_=u.rangeOffset+o;o+=u.text.length-f.length,p[s]={sortIndex:u.sortIndex,identifier:u.identifier,range:m,text:f,textChange:new V(u.rangeOffset,f,_,u.text)}}g||p.sort((s,u)=>s.sortIndex-u.sortIndex)}this._mightContainRTL=i,this._mightContainUnusualLineTerminators=a,this._mightContainNonBasicASCII=l;const E=this._doApplyEdits(r);let I=null;if(t&&d.length>0){d.sort((o,s)=>s.lineNumber-o.lineNumber),I=[];for(let o=0,s=d.length;o<s;o++){const u=d[o].lineNumber;if(o>0&&d[o-1].lineNumber===u)continue;const m=d[o].oldContent,f=this.getLineContent(u);f.length===0||f===m||C.firstNonWhitespaceIndex(f)!==-1||I.push(u)}}return this._onDidChangeContent.fire(),new S(p,E,I)}_reduceOperations(e){return e.length<1e3?e:[this._toSingleEditOperation(e)]}_toSingleEditOperation(e){let t=!1;const n=e[0].range,i=e[e.length-1].range,a=new L(n.startLineNumber,n.startColumn,i.endLineNumber,i.endColumn);let l=n.startLineNumber,c=n.startColumn;const r=[];for(let E=0,I=e.length;E<I;E++){const o=e[E],s=o.range;t=t||o.forceMoveMarkers,r.push(this.getValueInRange(new L(l,c,s.startLineNumber,s.startColumn))),o.text.length>0&&r.push(o.text),l=s.endLineNumber,c=s.endColumn}const g=r.join(""),[h,d,p]=x(g);return{sortIndex:0,identifier:e[0].identifier,range:a,rangeOffset:this.getOffsetAt(a.startLineNumber,a.startColumn),rangeLength:this.getValueLengthInRange(a,O.TextDefined),text:g,eolCount:h,firstLineLength:d,lastLineLength:p,forceMoveMarkers:t,isAutoWhitespaceEdit:!1}}_doApplyEdits(e){e.sort(N._sortOpsDescending);const t=[];for(let n=0;n<e.length;n++){const i=e[n],a=i.range.startLineNumber,l=i.range.startColumn,c=i.range.endLineNumber,r=i.range.endColumn;if(a===c&&l===r&&i.text.length===0)continue;i.text?(this._pieceTree.delete(i.rangeOffset,i.rangeLength),this._pieceTree.insert(i.rangeOffset,i.text,!0)):this._pieceTree.delete(i.rangeOffset,i.rangeLength);const g=new L(a,l,c,r);t.push({range:g,rangeLength:i.rangeLength,text:i.text,rangeOffset:i.rangeOffset,forceMoveMarkers:i.forceMoveMarkers})}return t}findMatchesLineByLine(e,t,n,i){return this._pieceTree.findMatchesLineByLine(e,t,n,i)}getPieceTree(){return this._pieceTree}static _getInverseEditRange(e,t){const n=e.startLineNumber,i=e.startColumn,[a,l,c]=x(t);let r;if(t.length>0){const g=a+1;g===1?r=new L(n,i,n,i+l):r=new L(n,i,n+g-1,c+1)}else r=new L(n,i,n,i);return r}static _getInverseEditRanges(e){const t=[];let n=0,i=0,a=null;for(let l=0,c=e.length;l<c;l++){const r=e[l];let g,h;a?a.range.endLineNumber===r.range.startLineNumber?(g=n,h=i+(r.range.startColumn-a.range.endColumn)):(g=n+(r.range.startLineNumber-a.range.endLineNumber),h=r.range.startColumn):(g=r.range.startLineNumber,h=r.range.startColumn);let d;if(r.text.length>0){const p=r.eolCount+1;p===1?d=new L(g,h,g,h+r.firstLineLength):d=new L(g,h,g+p-1,r.lastLineLength+1)}else d=new L(g,h,g,h);n=d.endLineNumber,i=d.endColumn,t.push(d),a=r}return t}static _sortOpsAscending(e,t){const n=L.compareRangesUsingEnds(e.range,t.range);return n===0?e.sortIndex-t.sortIndex:n}static _sortOpsDescending(e,t){const n=L.compareRangesUsingEnds(e.range,t.range);return n===0?t.sortIndex-e.sortIndex:-n}}export{N as PieceTreeTextBuffer};
+import { Emitter } from '../../../../base/common/event.js';
+import * as strings from '../../../../base/common/strings.js';
+import { Range } from '../../core/range.js';
+import { ApplyEditsResult } from '../../model.js';
+import { PieceTreeBase } from './pieceTreeBase.js';
+import { countEOL } from '../../core/eolCounter.js';
+import { TextChange } from '../../core/textChange.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+export class PieceTreeTextBuffer extends Disposable {
+    constructor(chunks, BOM, eol, containsRTL, containsUnusualLineTerminators, isBasicASCII, eolNormalized) {
+        super();
+        this._onDidChangeContent = this._register(new Emitter());
+        this.onDidChangeContent = this._onDidChangeContent.event;
+        this._BOM = BOM;
+        this._mightContainNonBasicASCII = !isBasicASCII;
+        this._mightContainRTL = containsRTL;
+        this._mightContainUnusualLineTerminators = containsUnusualLineTerminators;
+        this._pieceTree = new PieceTreeBase(chunks, eol, eolNormalized);
+    }
+    equals(other) {
+        if (!(other instanceof PieceTreeTextBuffer)) {
+            return false;
+        }
+        if (this._BOM !== other._BOM) {
+            return false;
+        }
+        if (this.getEOL() !== other.getEOL()) {
+            return false;
+        }
+        return this._pieceTree.equal(other._pieceTree);
+    }
+    mightContainRTL() {
+        return this._mightContainRTL;
+    }
+    mightContainUnusualLineTerminators() {
+        return this._mightContainUnusualLineTerminators;
+    }
+    resetMightContainUnusualLineTerminators() {
+        this._mightContainUnusualLineTerminators = false;
+    }
+    mightContainNonBasicASCII() {
+        return this._mightContainNonBasicASCII;
+    }
+    getBOM() {
+        return this._BOM;
+    }
+    getEOL() {
+        return this._pieceTree.getEOL();
+    }
+    createSnapshot(preserveBOM) {
+        return this._pieceTree.createSnapshot(preserveBOM ? this._BOM : '');
+    }
+    getOffsetAt(lineNumber, column) {
+        return this._pieceTree.getOffsetAt(lineNumber, column);
+    }
+    getPositionAt(offset) {
+        return this._pieceTree.getPositionAt(offset);
+    }
+    getRangeAt(start, length) {
+        const end = start + length;
+        const startPosition = this.getPositionAt(start);
+        const endPosition = this.getPositionAt(end);
+        return new Range(startPosition.lineNumber, startPosition.column, endPosition.lineNumber, endPosition.column);
+    }
+    getValueInRange(range, eol = 0) {
+        if (range.isEmpty()) {
+            return '';
+        }
+        const lineEnding = this._getEndOfLine(eol);
+        return this._pieceTree.getValueInRange(range, lineEnding);
+    }
+    getValueLengthInRange(range, eol = 0) {
+        if (range.isEmpty()) {
+            return 0;
+        }
+        if (range.startLineNumber === range.endLineNumber) {
+            return (range.endColumn - range.startColumn);
+        }
+        const startOffset = this.getOffsetAt(range.startLineNumber, range.startColumn);
+        const endOffset = this.getOffsetAt(range.endLineNumber, range.endColumn);
+        let eolOffsetCompensation = 0;
+        const desiredEOL = this._getEndOfLine(eol);
+        const actualEOL = this.getEOL();
+        if (desiredEOL.length !== actualEOL.length) {
+            const delta = desiredEOL.length - actualEOL.length;
+            const eolCount = range.endLineNumber - range.startLineNumber;
+            eolOffsetCompensation = delta * eolCount;
+        }
+        return endOffset - startOffset + eolOffsetCompensation;
+    }
+    getCharacterCountInRange(range, eol = 0) {
+        if (this._mightContainNonBasicASCII) {
+            let result = 0;
+            const fromLineNumber = range.startLineNumber;
+            const toLineNumber = range.endLineNumber;
+            for (let lineNumber = fromLineNumber; lineNumber <= toLineNumber; lineNumber++) {
+                const lineContent = this.getLineContent(lineNumber);
+                const fromOffset = (lineNumber === fromLineNumber ? range.startColumn - 1 : 0);
+                const toOffset = (lineNumber === toLineNumber ? range.endColumn - 1 : lineContent.length);
+                for (let offset = fromOffset; offset < toOffset; offset++) {
+                    if (strings.isHighSurrogate(lineContent.charCodeAt(offset))) {
+                        result = result + 1;
+                        offset = offset + 1;
+                    }
+                    else {
+                        result = result + 1;
+                    }
+                }
+            }
+            result += this._getEndOfLine(eol).length * (toLineNumber - fromLineNumber);
+            return result;
+        }
+        return this.getValueLengthInRange(range, eol);
+    }
+    getNearestChunk(offset) {
+        return this._pieceTree.getNearestChunk(offset);
+    }
+    getLength() {
+        return this._pieceTree.getLength();
+    }
+    getLineCount() {
+        return this._pieceTree.getLineCount();
+    }
+    getLinesContent() {
+        return this._pieceTree.getLinesContent();
+    }
+    getLineContent(lineNumber) {
+        return this._pieceTree.getLineContent(lineNumber);
+    }
+    getLineCharCode(lineNumber, index) {
+        return this._pieceTree.getLineCharCode(lineNumber, index);
+    }
+    getCharCode(offset) {
+        return this._pieceTree.getCharCode(offset);
+    }
+    getLineLength(lineNumber) {
+        return this._pieceTree.getLineLength(lineNumber);
+    }
+    getLineMinColumn(lineNumber) {
+        return 1;
+    }
+    getLineMaxColumn(lineNumber) {
+        return this.getLineLength(lineNumber) + 1;
+    }
+    getLineFirstNonWhitespaceColumn(lineNumber) {
+        const result = strings.firstNonWhitespaceIndex(this.getLineContent(lineNumber));
+        if (result === -1) {
+            return 0;
+        }
+        return result + 1;
+    }
+    getLineLastNonWhitespaceColumn(lineNumber) {
+        const result = strings.lastNonWhitespaceIndex(this.getLineContent(lineNumber));
+        if (result === -1) {
+            return 0;
+        }
+        return result + 2;
+    }
+    _getEndOfLine(eol) {
+        switch (eol) {
+            case 1:
+                return '\n';
+            case 2:
+                return '\r\n';
+            case 0:
+                return this.getEOL();
+            default:
+                throw new Error('Unknown EOL preference');
+        }
+    }
+    setEOL(newEOL) {
+        this._pieceTree.setEOL(newEOL);
+    }
+    applyEdits(rawOperations, recordTrimAutoWhitespace, computeUndoEdits) {
+        let mightContainRTL = this._mightContainRTL;
+        let mightContainUnusualLineTerminators = this._mightContainUnusualLineTerminators;
+        let mightContainNonBasicASCII = this._mightContainNonBasicASCII;
+        let canReduceOperations = true;
+        let operations = [];
+        for (let i = 0; i < rawOperations.length; i++) {
+            const op = rawOperations[i];
+            if (canReduceOperations && op._isTracked) {
+                canReduceOperations = false;
+            }
+            const validatedRange = op.range;
+            if (op.text) {
+                let textMightContainNonBasicASCII = true;
+                if (!mightContainNonBasicASCII) {
+                    textMightContainNonBasicASCII = !strings.isBasicASCII(op.text);
+                    mightContainNonBasicASCII = textMightContainNonBasicASCII;
+                }
+                if (!mightContainRTL && textMightContainNonBasicASCII) {
+                    mightContainRTL = strings.containsRTL(op.text);
+                }
+                if (!mightContainUnusualLineTerminators && textMightContainNonBasicASCII) {
+                    mightContainUnusualLineTerminators = strings.containsUnusualLineTerminators(op.text);
+                }
+            }
+            let validText = '';
+            let eolCount = 0;
+            let firstLineLength = 0;
+            let lastLineLength = 0;
+            if (op.text) {
+                let strEOL;
+                [eolCount, firstLineLength, lastLineLength, strEOL] = countEOL(op.text);
+                const bufferEOL = this.getEOL();
+                const expectedStrEOL = (bufferEOL === '\r\n' ? 2 : 1);
+                if (strEOL === 0 || strEOL === expectedStrEOL) {
+                    validText = op.text;
+                }
+                else {
+                    validText = op.text.replace(/\r\n|\r|\n/g, bufferEOL);
+                }
+            }
+            operations[i] = {
+                sortIndex: i,
+                identifier: op.identifier || null,
+                range: validatedRange,
+                rangeOffset: this.getOffsetAt(validatedRange.startLineNumber, validatedRange.startColumn),
+                rangeLength: this.getValueLengthInRange(validatedRange),
+                text: validText,
+                eolCount: eolCount,
+                firstLineLength: firstLineLength,
+                lastLineLength: lastLineLength,
+                forceMoveMarkers: Boolean(op.forceMoveMarkers),
+                isAutoWhitespaceEdit: op.isAutoWhitespaceEdit || false
+            };
+        }
+        operations.sort(PieceTreeTextBuffer._sortOpsAscending);
+        let hasTouchingRanges = false;
+        for (let i = 0, count = operations.length - 1; i < count; i++) {
+            const rangeEnd = operations[i].range.getEndPosition();
+            const nextRangeStart = operations[i + 1].range.getStartPosition();
+            if (nextRangeStart.isBeforeOrEqual(rangeEnd)) {
+                if (nextRangeStart.isBefore(rangeEnd)) {
+                    throw new Error('Overlapping ranges are not allowed!');
+                }
+                hasTouchingRanges = true;
+            }
+        }
+        if (canReduceOperations) {
+            operations = this._reduceOperations(operations);
+        }
+        const reverseRanges = (computeUndoEdits || recordTrimAutoWhitespace ? PieceTreeTextBuffer._getInverseEditRanges(operations) : []);
+        const newTrimAutoWhitespaceCandidates = [];
+        if (recordTrimAutoWhitespace) {
+            for (let i = 0; i < operations.length; i++) {
+                const op = operations[i];
+                const reverseRange = reverseRanges[i];
+                if (op.isAutoWhitespaceEdit && op.range.isEmpty()) {
+                    for (let lineNumber = reverseRange.startLineNumber; lineNumber <= reverseRange.endLineNumber; lineNumber++) {
+                        let currentLineContent = '';
+                        if (lineNumber === reverseRange.startLineNumber) {
+                            currentLineContent = this.getLineContent(op.range.startLineNumber);
+                            if (strings.firstNonWhitespaceIndex(currentLineContent) !== -1) {
+                                continue;
+                            }
+                        }
+                        newTrimAutoWhitespaceCandidates.push({ lineNumber: lineNumber, oldContent: currentLineContent });
+                    }
+                }
+            }
+        }
+        let reverseOperations = null;
+        if (computeUndoEdits) {
+            let reverseRangeDeltaOffset = 0;
+            reverseOperations = [];
+            for (let i = 0; i < operations.length; i++) {
+                const op = operations[i];
+                const reverseRange = reverseRanges[i];
+                const bufferText = this.getValueInRange(op.range);
+                const reverseRangeOffset = op.rangeOffset + reverseRangeDeltaOffset;
+                reverseRangeDeltaOffset += (op.text.length - bufferText.length);
+                reverseOperations[i] = {
+                    sortIndex: op.sortIndex,
+                    identifier: op.identifier,
+                    range: reverseRange,
+                    text: bufferText,
+                    textChange: new TextChange(op.rangeOffset, bufferText, reverseRangeOffset, op.text)
+                };
+            }
+            if (!hasTouchingRanges) {
+                reverseOperations.sort((a, b) => a.sortIndex - b.sortIndex);
+            }
+        }
+        this._mightContainRTL = mightContainRTL;
+        this._mightContainUnusualLineTerminators = mightContainUnusualLineTerminators;
+        this._mightContainNonBasicASCII = mightContainNonBasicASCII;
+        const contentChanges = this._doApplyEdits(operations);
+        let trimAutoWhitespaceLineNumbers = null;
+        if (recordTrimAutoWhitespace && newTrimAutoWhitespaceCandidates.length > 0) {
+            newTrimAutoWhitespaceCandidates.sort((a, b) => b.lineNumber - a.lineNumber);
+            trimAutoWhitespaceLineNumbers = [];
+            for (let i = 0, len = newTrimAutoWhitespaceCandidates.length; i < len; i++) {
+                const lineNumber = newTrimAutoWhitespaceCandidates[i].lineNumber;
+                if (i > 0 && newTrimAutoWhitespaceCandidates[i - 1].lineNumber === lineNumber) {
+                    continue;
+                }
+                const prevContent = newTrimAutoWhitespaceCandidates[i].oldContent;
+                const lineContent = this.getLineContent(lineNumber);
+                if (lineContent.length === 0 || lineContent === prevContent || strings.firstNonWhitespaceIndex(lineContent) !== -1) {
+                    continue;
+                }
+                trimAutoWhitespaceLineNumbers.push(lineNumber);
+            }
+        }
+        this._onDidChangeContent.fire();
+        return new ApplyEditsResult(reverseOperations, contentChanges, trimAutoWhitespaceLineNumbers);
+    }
+    _reduceOperations(operations) {
+        if (operations.length < 1000) {
+            return operations;
+        }
+        return [this._toSingleEditOperation(operations)];
+    }
+    _toSingleEditOperation(operations) {
+        let forceMoveMarkers = false;
+        const firstEditRange = operations[0].range;
+        const lastEditRange = operations[operations.length - 1].range;
+        const entireEditRange = new Range(firstEditRange.startLineNumber, firstEditRange.startColumn, lastEditRange.endLineNumber, lastEditRange.endColumn);
+        let lastEndLineNumber = firstEditRange.startLineNumber;
+        let lastEndColumn = firstEditRange.startColumn;
+        const result = [];
+        for (let i = 0, len = operations.length; i < len; i++) {
+            const operation = operations[i];
+            const range = operation.range;
+            forceMoveMarkers = forceMoveMarkers || operation.forceMoveMarkers;
+            result.push(this.getValueInRange(new Range(lastEndLineNumber, lastEndColumn, range.startLineNumber, range.startColumn)));
+            if (operation.text.length > 0) {
+                result.push(operation.text);
+            }
+            lastEndLineNumber = range.endLineNumber;
+            lastEndColumn = range.endColumn;
+        }
+        const text = result.join('');
+        const [eolCount, firstLineLength, lastLineLength] = countEOL(text);
+        return {
+            sortIndex: 0,
+            identifier: operations[0].identifier,
+            range: entireEditRange,
+            rangeOffset: this.getOffsetAt(entireEditRange.startLineNumber, entireEditRange.startColumn),
+            rangeLength: this.getValueLengthInRange(entireEditRange, 0),
+            text: text,
+            eolCount: eolCount,
+            firstLineLength: firstLineLength,
+            lastLineLength: lastLineLength,
+            forceMoveMarkers: forceMoveMarkers,
+            isAutoWhitespaceEdit: false
+        };
+    }
+    _doApplyEdits(operations) {
+        operations.sort(PieceTreeTextBuffer._sortOpsDescending);
+        const contentChanges = [];
+        for (let i = 0; i < operations.length; i++) {
+            const op = operations[i];
+            const startLineNumber = op.range.startLineNumber;
+            const startColumn = op.range.startColumn;
+            const endLineNumber = op.range.endLineNumber;
+            const endColumn = op.range.endColumn;
+            if (startLineNumber === endLineNumber && startColumn === endColumn && op.text.length === 0) {
+                continue;
+            }
+            if (op.text) {
+                this._pieceTree.delete(op.rangeOffset, op.rangeLength);
+                this._pieceTree.insert(op.rangeOffset, op.text, true);
+            }
+            else {
+                this._pieceTree.delete(op.rangeOffset, op.rangeLength);
+            }
+            const contentChangeRange = new Range(startLineNumber, startColumn, endLineNumber, endColumn);
+            contentChanges.push({
+                range: contentChangeRange,
+                rangeLength: op.rangeLength,
+                text: op.text,
+                rangeOffset: op.rangeOffset,
+                forceMoveMarkers: op.forceMoveMarkers
+            });
+        }
+        return contentChanges;
+    }
+    findMatchesLineByLine(searchRange, searchData, captureMatches, limitResultCount) {
+        return this._pieceTree.findMatchesLineByLine(searchRange, searchData, captureMatches, limitResultCount);
+    }
+    getPieceTree() {
+        return this._pieceTree;
+    }
+    static _getInverseEditRange(range, text) {
+        const startLineNumber = range.startLineNumber;
+        const startColumn = range.startColumn;
+        const [eolCount, firstLineLength, lastLineLength] = countEOL(text);
+        let resultRange;
+        if (text.length > 0) {
+            const lineCount = eolCount + 1;
+            if (lineCount === 1) {
+                resultRange = new Range(startLineNumber, startColumn, startLineNumber, startColumn + firstLineLength);
+            }
+            else {
+                resultRange = new Range(startLineNumber, startColumn, startLineNumber + lineCount - 1, lastLineLength + 1);
+            }
+        }
+        else {
+            resultRange = new Range(startLineNumber, startColumn, startLineNumber, startColumn);
+        }
+        return resultRange;
+    }
+    static _getInverseEditRanges(operations) {
+        const result = [];
+        let prevOpEndLineNumber = 0;
+        let prevOpEndColumn = 0;
+        let prevOp = null;
+        for (let i = 0, len = operations.length; i < len; i++) {
+            const op = operations[i];
+            let startLineNumber;
+            let startColumn;
+            if (prevOp) {
+                if (prevOp.range.endLineNumber === op.range.startLineNumber) {
+                    startLineNumber = prevOpEndLineNumber;
+                    startColumn = prevOpEndColumn + (op.range.startColumn - prevOp.range.endColumn);
+                }
+                else {
+                    startLineNumber = prevOpEndLineNumber + (op.range.startLineNumber - prevOp.range.endLineNumber);
+                    startColumn = op.range.startColumn;
+                }
+            }
+            else {
+                startLineNumber = op.range.startLineNumber;
+                startColumn = op.range.startColumn;
+            }
+            let resultRange;
+            if (op.text.length > 0) {
+                const lineCount = op.eolCount + 1;
+                if (lineCount === 1) {
+                    resultRange = new Range(startLineNumber, startColumn, startLineNumber, startColumn + op.firstLineLength);
+                }
+                else {
+                    resultRange = new Range(startLineNumber, startColumn, startLineNumber + lineCount - 1, op.lastLineLength + 1);
+                }
+            }
+            else {
+                resultRange = new Range(startLineNumber, startColumn, startLineNumber, startColumn);
+            }
+            prevOpEndLineNumber = resultRange.endLineNumber;
+            prevOpEndColumn = resultRange.endColumn;
+            result.push(resultRange);
+            prevOp = op;
+        }
+        return result;
+    }
+    static _sortOpsAscending(a, b) {
+        const r = Range.compareRangesUsingEnds(a.range, b.range);
+        if (r === 0) {
+            return a.sortIndex - b.sortIndex;
+        }
+        return r;
+    }
+    static _sortOpsDescending(a, b) {
+        const r = Range.compareRangesUsingEnds(a.range, b.range);
+        if (r === 0) {
+            return b.sortIndex - a.sortIndex;
+        }
+        return -r;
+    }
+}

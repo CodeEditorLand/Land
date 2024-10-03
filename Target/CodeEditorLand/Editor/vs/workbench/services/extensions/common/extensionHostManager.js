@@ -1,7 +1,520 @@
-var A=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var E=(s,r,t,n)=>{for(var e=n>1?void 0:n?D(r,t):r,i=s.length-1,a;i>=0;i--)(a=s[i])&&(e=(n?a(r,t,e):a(e))||e);return n&&e&&A(r,t,e),e},h=(s,r)=>(t,n)=>r(t,n,s);import{IntervalTimer as T}from"../../../../base/common/async.js";import{VSBuffer as L}from"../../../../base/common/buffer.js";import*as _ from"../../../../base/common/errors.js";import{Emitter as k}from"../../../../base/common/event.js";import{Disposable as $}from"../../../../base/common/lifecycle.js";import{StopWatch as g}from"../../../../base/common/stopwatch.js";import"../../../../base/common/uri.js";import"../../../../base/parts/ipc/common/ipc.js";import*as M from"../../../../nls.js";import{Categories as U}from"../../../../platform/action/common/actionCommonCategories.js";import{Action2 as O,registerAction2 as N}from"../../../../platform/actions/common/actions.js";import"../../../../platform/extensions/common/extensions.js";import{IInstantiationService as B}from"../../../../platform/instantiation/common/instantiation.js";import{ILogService as q}from"../../../../platform/log/common/log.js";import{RemoteAuthorityResolverErrorCode as I,getRemoteAuthorityPrefix as K}from"../../../../platform/remote/common/remoteAuthorityResolver.js";import{ITelemetryService as b}from"../../../../platform/telemetry/common/telemetry.js";import{IEditorService as W}from"../../editor/common/editorService.js";import{IWorkbenchEnvironmentService as F}from"../../environment/common/environmentService.js";import{ExtHostCustomersRegistry as H}from"./extHostCustomers.js";import{extensionHostKindToString as m}from"./extensionHostKind.js";import"./extensionHostManagers.js";import"./extensionHostProtocol.js";import"./extensionHostProxy.js";import"./extensionRunningLocation.js";import{ActivationKind as R}from"./extensions.js";import"./proxyIdentifier.js";import{RPCProtocol as Z,RequestInitiator as S}from"./rpcProtocol.js";const j=!1,z=!0;let d=class extends ${constructor(t,n,e,i,a,l,u){super();this._internalExtensionService=e;this._instantiationService=i;this._environmentService=a;this._telemetryService=l;this._logService=u;this._cachedActivationEvents=new Map,this._resolvedActivationEvents=new Set,this._rpcProtocol=null,this._customers=[],this._extensionHost=t,this.onDidExit=this._extensionHost.onExit;const p={time:Date.now(),action:"starting",kind:m(this.kind)};this._telemetryService.publicLog2("extensionHostStartup",p),this._proxy=this._extensionHost.start().then(o=>{this._hasStarted=!0;const c={time:Date.now(),action:"success",kind:m(this.kind)};return this._telemetryService.publicLog2("extensionHostStartup",c),this._createExtensionHostCustomers(this.kind,o)},o=>{this._logService.error(`Error received from starting extension host (kind: ${m(this.kind)})`),this._logService.error(o);const c={time:Date.now(),action:"error",kind:m(this.kind)};return o&&o.name&&(c.errorName=o.name),o&&o.message&&(c.errorMessage=o.message),o&&o.stack&&(c.errorStack=o.stack),this._telemetryService.publicLog2("extensionHostStartup",c),null}),this._proxy.then(()=>{n.forEach(o=>this.activateByEvent(o,R.Normal)),this._register(Q({measure:()=>this.measure()}))})}onDidExit;_onDidChangeResponsiveState=this._register(new k);onDidChangeResponsiveState=this._onDidChangeResponsiveState.event;_cachedActivationEvents;_resolvedActivationEvents;_rpcProtocol;_customers;_extensionHost;_proxy;_hasStarted=!1;get pid(){return this._extensionHost.pid}get kind(){return this._extensionHost.runningLocation.kind}get startup(){return this._extensionHost.startup}get friendyName(){return G(this.kind,this.pid)}async disconnect(){await this._extensionHost?.disconnect?.()}dispose(){this._extensionHost?.dispose(),this._rpcProtocol?.dispose();for(let t=0,n=this._customers.length;t<n;t++){const e=this._customers[t];try{e.dispose()}catch(i){_.onUnexpectedError(i)}}this._proxy=null,super.dispose()}async measure(){const t=await this._proxy;if(!t)return null;const n=await this._measureLatency(t),e=await this._measureDown(t),i=await this._measureUp(t);return{remoteAuthority:this._extensionHost.remoteAuthority,latency:n,down:e,up:i}}async ready(){await this._proxy}async _measureLatency(t){let e=0;for(let i=0;i<10;i++){const a=g.create();await t.test_latency(i),a.stop(),e+=a.elapsed()}return e/10}static _convert(t,n){return t*1e3*8/n}async _measureUp(t){const e=L.alloc(10485760),i=Math.ceil(Math.random()*256);for(let l=0;l<e.byteLength;l++)e.writeUInt8(l,i);const a=g.create();return await t.test_up(e),a.stop(),d._convert(10485760,a.elapsed())}async _measureDown(t){const e=g.create();return await t.test_down(10485760),e.stop(),d._convert(10485760,e.elapsed())}_createExtensionHostCustomers(t,n){let e=null;j||this._environmentService.logExtensionHostCommunication?e=new J(t):y.isEnabled()&&(e=new y(this._telemetryService)),this._rpcProtocol=new Z(n,e),this._register(this._rpcProtocol.onDidChangeResponsiveState(o=>this._onDidChangeResponsiveState.fire(o)));let i=null,a=[];const l={remoteAuthority:this._extensionHost.remoteAuthority,extensionHostKind:this.kind,getProxy:o=>this._rpcProtocol.getProxy(o),set:(o,c)=>this._rpcProtocol.set(o,c),dispose:()=>this._rpcProtocol.dispose(),assertRegistered:o=>this._rpcProtocol.assertRegistered(o),drain:()=>this._rpcProtocol.drain(),internalExtensionService:this._internalExtensionService,_setExtensionHostProxy:o=>{i=o},_setAllMainProxyIdentifiers:o=>{a=o}},u=H.getNamedCustomers();for(let o=0,c=u.length;o<c;o++){const[P,C]=u[o];try{const x=this._instantiationService.createInstance(C,l);this._customers.push(x),this._rpcProtocol.set(P,x)}catch(x){this._logService.error(`Cannot instantiate named customer: '${P.sid}'`),this._logService.error(x),_.onUnexpectedError(x)}}const p=H.getCustomers();for(const o of p)try{const c=this._instantiationService.createInstance(o,l);this._customers.push(c)}catch(c){this._logService.error(c),_.onUnexpectedError(c)}if(!i)throw new Error("Missing IExtensionHostProxy!");return this._rpcProtocol.assertRegistered(a),i}async activate(t,n){const e=await this._proxy;return e?e.activate(t,n):!1}activateByEvent(t,n){return n===R.Immediate&&!this._hasStarted?Promise.resolve():(this._cachedActivationEvents.has(t)||this._cachedActivationEvents.set(t,this._activateByEvent(t,n)),this._cachedActivationEvents.get(t))}activationEventIsDone(t){return this._resolvedActivationEvents.has(t)}async _activateByEvent(t,n){if(!this._proxy)return;const e=await this._proxy;if(e){if(!this._extensionHost.extensions.containsActivationEvent(t)){this._resolvedActivationEvents.add(t);return}await e.activateByEvent(t,n),this._resolvedActivationEvents.add(t)}}async getInspectPort(t){if(this._extensionHost){t&&await this._extensionHost.enableInspectPort();const n=this._extensionHost.getInspectPort();if(n)return n}}async resolveAuthority(t,n){const e=g.create(!1),i=()=>`[${m(this._extensionHost.runningLocation.kind)}${this._extensionHost.runningLocation.affinity}][resolveAuthority(${K(t)},${n})][${e.elapsed()}ms] `,a=o=>this._logService.info(`${i()}${o}`),l=(o,c=void 0)=>this._logService.error(`${i()}${o}`,c);a("obtaining proxy...");const u=await this._proxy;if(!u)return l("no proxy"),{type:"error",error:{message:"Cannot resolve authority",code:I.Unknown,detail:void 0}};a("invoking...");const p=new T;try{p.cancelAndSet(()=>a("waiting..."),1e3);const o=await u.resolveAuthority(t,n);return p.dispose(),o.type==="ok"?a(`returned ${o.value.authority.connectTo}`):l("returned an error",o.error),o}catch(o){return p.dispose(),l("returned an error",o),{type:"error",error:{message:o.message,code:I.Unknown,detail:o}}}}async getCanonicalURI(t,n){const e=await this._proxy;if(!e)throw new Error("Cannot resolve canonical URI");return e.getCanonicalURI(t,n)}async start(t,n,e){const i=await this._proxy;if(!i)return;const a=this._extensionHost.extensions.set(t,n,e);return i.startExtensionHost(a)}async extensionTestsExecute(){const t=await this._proxy;if(!t)throw new Error("Could not obtain Extension Host Proxy");return t.extensionTestsExecute()}representsRunningLocation(t){return this._extensionHost.runningLocation.equals(t)}async deltaExtensions(t){const n=await this._proxy;if(!n)return;const e=this._extensionHost.extensions.delta(t);if(e)return n.deltaExtensions(e)}containsExtension(t){return this._extensionHost.extensions?.containsExtension(t)??!1}async setRemoteEnvironment(t){const n=await this._proxy;if(n)return n.setRemoteEnvironment(t)}};d=E([h(3,B),h(4,F),h(5,b),h(6,q)],d);function G(s,r){return r?`${m(s)} pid: ${r}`:`${m(s)}`}const V=[["#2977B1","#FC802D","#34A13A","#D3282F","#9366BA"],["#8B564C","#E177C0","#7F7F7F","#BBBE3D","#2EBECD"]];function w(s){if(Array.isArray(s))return s;if(s&&typeof s=="object"&&typeof s.toString=="function"){const r=s.toString();if(r!=="[object Object]")return r}return s}function X(s){return Array.isArray(s)?s.map(w):w(s)}class J{constructor(r){this._kind=r}_totalIncoming=0;_totalOutgoing=0;_log(r,t,n,e,i,a,l){l=X(l);const u=V[i],p=z?u[e%u.length]:"#000000";let o=[`%c[${m(this._kind)}][${r}]%c[${String(t).padStart(7)}]%c[len: ${String(n).padStart(5)}]%c${String(e).padStart(5)} - ${a}`,"color: darkgreen","color: grey","color: grey",`color: ${p}`];/\($/.test(a)?(o=o.concat(l),o.push(")")):o.push(l)}logIncoming(r,t,n,e,i){this._totalIncoming+=r,this._log("Ext \u2192 Win",this._totalIncoming,r,t,n,e,i)}logOutgoing(r,t,n,e,i){this._totalOutgoing+=r,this._log("Win \u2192 Ext",this._totalOutgoing,r,t,n,e,i)}}let y=class{constructor(r){this._telemetryService=r}static isEnabled(){return Math.trunc(Math.random()*1e3)<.5}_pendingRequests=new Map;logIncoming(r,t,n,e){if(n===S.LocalSide&&/^receiveReply(Err)?:/.test(e)){const i=this._pendingRequests.get(t)??"unknown_reply";this._pendingRequests.delete(t),this._telemetryService.publicLog2("extensionhost.incoming",{type:`${e} ${i}`,length:r})}n===S.OtherSide&&/^receiveRequest /.test(e)&&this._telemetryService.publicLog2("extensionhost.incoming",{type:`${e}`,length:r})}logOutgoing(r,t,n,e){n===S.LocalSide&&e.startsWith("request: ")&&(this._pendingRequests.set(t,e),this._telemetryService.publicLog2("extensionhost.outgoing",{type:e,length:r}))}};y=E([h(0,b)],y);const v=[];function Q(s){return v.push(s),{dispose:()=>{for(let r=0;r<v.length;r++)if(v[r]===s){v.splice(r,1);return}}}}function Y(){return v.slice(0)}N(class f extends O{constructor(){super({id:"editor.action.measureExtHostLatency",title:M.localize2("measureExtHostLatency","Measure Extension Host Latency"),category:U.Developer,f1:!0})}async run(r){const t=r.get(W),n=await Promise.all(Y().map(e=>e.measure()));t.openEditor({resource:void 0,contents:n.map(f._print).join(`
-
-`),options:{pinned:!0}})}static _print(r){return r?`${r.remoteAuthority?`Authority: ${r.remoteAuthority}
-`:""}Roundtrip latency: ${r.latency.toFixed(3)}ms
-Up: ${f._printSpeed(r.up)}
-Down: ${f._printSpeed(r.down)}
-`:""}static _printSpeed(r){return r<=1024?`${r} bps`:r<1024*1024?`${(r/1024).toFixed(1)} kbps`:`${(r/1024/1024).toFixed(1)} Mbps`}});export{d as ExtensionHostManager,G as friendlyExtHostName};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ExtensionHostManager_1;
+import { IntervalTimer } from '../../../../base/common/async.js';
+import { VSBuffer } from '../../../../base/common/buffer.js';
+import * as errors from '../../../../base/common/errors.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { StopWatch } from '../../../../base/common/stopwatch.js';
+import * as nls from '../../../../nls.js';
+import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
+import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { RemoteAuthorityResolverErrorCode, getRemoteAuthorityPrefix } from '../../../../platform/remote/common/remoteAuthorityResolver.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { IEditorService } from '../../editor/common/editorService.js';
+import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
+import { ExtHostCustomersRegistry } from './extHostCustomers.js';
+import { extensionHostKindToString } from './extensionHostKind.js';
+import { RPCProtocol } from './rpcProtocol.js';
+const LOG_EXTENSION_HOST_COMMUNICATION = false;
+const LOG_USE_COLORS = true;
+let ExtensionHostManager = ExtensionHostManager_1 = class ExtensionHostManager extends Disposable {
+    get pid() {
+        return this._extensionHost.pid;
+    }
+    get kind() {
+        return this._extensionHost.runningLocation.kind;
+    }
+    get startup() {
+        return this._extensionHost.startup;
+    }
+    get friendyName() {
+        return friendlyExtHostName(this.kind, this.pid);
+    }
+    constructor(extensionHost, initialActivationEvents, _internalExtensionService, _instantiationService, _environmentService, _telemetryService, _logService) {
+        super();
+        this._internalExtensionService = _internalExtensionService;
+        this._instantiationService = _instantiationService;
+        this._environmentService = _environmentService;
+        this._telemetryService = _telemetryService;
+        this._logService = _logService;
+        this._onDidChangeResponsiveState = this._register(new Emitter());
+        this.onDidChangeResponsiveState = this._onDidChangeResponsiveState.event;
+        this._hasStarted = false;
+        this._cachedActivationEvents = new Map();
+        this._resolvedActivationEvents = new Set();
+        this._rpcProtocol = null;
+        this._customers = [];
+        this._extensionHost = extensionHost;
+        this.onDidExit = this._extensionHost.onExit;
+        const startingTelemetryEvent = {
+            time: Date.now(),
+            action: 'starting',
+            kind: extensionHostKindToString(this.kind)
+        };
+        this._telemetryService.publicLog2('extensionHostStartup', startingTelemetryEvent);
+        this._proxy = this._extensionHost.start().then((protocol) => {
+            this._hasStarted = true;
+            const successTelemetryEvent = {
+                time: Date.now(),
+                action: 'success',
+                kind: extensionHostKindToString(this.kind)
+            };
+            this._telemetryService.publicLog2('extensionHostStartup', successTelemetryEvent);
+            return this._createExtensionHostCustomers(this.kind, protocol);
+        }, (err) => {
+            this._logService.error(`Error received from starting extension host (kind: ${extensionHostKindToString(this.kind)})`);
+            this._logService.error(err);
+            const failureTelemetryEvent = {
+                time: Date.now(),
+                action: 'error',
+                kind: extensionHostKindToString(this.kind)
+            };
+            if (err && err.name) {
+                failureTelemetryEvent.errorName = err.name;
+            }
+            if (err && err.message) {
+                failureTelemetryEvent.errorMessage = err.message;
+            }
+            if (err && err.stack) {
+                failureTelemetryEvent.errorStack = err.stack;
+            }
+            this._telemetryService.publicLog2('extensionHostStartup', failureTelemetryEvent);
+            return null;
+        });
+        this._proxy.then(() => {
+            initialActivationEvents.forEach((activationEvent) => this.activateByEvent(activationEvent, 0));
+            this._register(registerLatencyTestProvider({
+                measure: () => this.measure()
+            }));
+        });
+    }
+    async disconnect() {
+        await this._extensionHost?.disconnect?.();
+    }
+    dispose() {
+        this._extensionHost?.dispose();
+        this._rpcProtocol?.dispose();
+        for (let i = 0, len = this._customers.length; i < len; i++) {
+            const customer = this._customers[i];
+            try {
+                customer.dispose();
+            }
+            catch (err) {
+                errors.onUnexpectedError(err);
+            }
+        }
+        this._proxy = null;
+        super.dispose();
+    }
+    async measure() {
+        const proxy = await this._proxy;
+        if (!proxy) {
+            return null;
+        }
+        const latency = await this._measureLatency(proxy);
+        const down = await this._measureDown(proxy);
+        const up = await this._measureUp(proxy);
+        return {
+            remoteAuthority: this._extensionHost.remoteAuthority,
+            latency,
+            down,
+            up
+        };
+    }
+    async ready() {
+        await this._proxy;
+    }
+    async _measureLatency(proxy) {
+        const COUNT = 10;
+        let sum = 0;
+        for (let i = 0; i < COUNT; i++) {
+            const sw = StopWatch.create();
+            await proxy.test_latency(i);
+            sw.stop();
+            sum += sw.elapsed();
+        }
+        return (sum / COUNT);
+    }
+    static _convert(byteCount, elapsedMillis) {
+        return (byteCount * 1000 * 8) / elapsedMillis;
+    }
+    async _measureUp(proxy) {
+        const SIZE = 10 * 1024 * 1024;
+        const buff = VSBuffer.alloc(SIZE);
+        const value = Math.ceil(Math.random() * 256);
+        for (let i = 0; i < buff.byteLength; i++) {
+            buff.writeUInt8(i, value);
+        }
+        const sw = StopWatch.create();
+        await proxy.test_up(buff);
+        sw.stop();
+        return ExtensionHostManager_1._convert(SIZE, sw.elapsed());
+    }
+    async _measureDown(proxy) {
+        const SIZE = 10 * 1024 * 1024;
+        const sw = StopWatch.create();
+        await proxy.test_down(SIZE);
+        sw.stop();
+        return ExtensionHostManager_1._convert(SIZE, sw.elapsed());
+    }
+    _createExtensionHostCustomers(kind, protocol) {
+        let logger = null;
+        if (LOG_EXTENSION_HOST_COMMUNICATION || this._environmentService.logExtensionHostCommunication) {
+            logger = new RPCLogger(kind);
+        }
+        else if (TelemetryRPCLogger.isEnabled()) {
+            logger = new TelemetryRPCLogger(this._telemetryService);
+        }
+        this._rpcProtocol = new RPCProtocol(protocol, logger);
+        this._register(this._rpcProtocol.onDidChangeResponsiveState((responsiveState) => this._onDidChangeResponsiveState.fire(responsiveState)));
+        let extensionHostProxy = null;
+        let mainProxyIdentifiers = [];
+        const extHostContext = {
+            remoteAuthority: this._extensionHost.remoteAuthority,
+            extensionHostKind: this.kind,
+            getProxy: (identifier) => this._rpcProtocol.getProxy(identifier),
+            set: (identifier, instance) => this._rpcProtocol.set(identifier, instance),
+            dispose: () => this._rpcProtocol.dispose(),
+            assertRegistered: (identifiers) => this._rpcProtocol.assertRegistered(identifiers),
+            drain: () => this._rpcProtocol.drain(),
+            internalExtensionService: this._internalExtensionService,
+            _setExtensionHostProxy: (value) => {
+                extensionHostProxy = value;
+            },
+            _setAllMainProxyIdentifiers: (value) => {
+                mainProxyIdentifiers = value;
+            },
+        };
+        const namedCustomers = ExtHostCustomersRegistry.getNamedCustomers();
+        for (let i = 0, len = namedCustomers.length; i < len; i++) {
+            const [id, ctor] = namedCustomers[i];
+            try {
+                const instance = this._instantiationService.createInstance(ctor, extHostContext);
+                this._customers.push(instance);
+                this._rpcProtocol.set(id, instance);
+            }
+            catch (err) {
+                this._logService.error(`Cannot instantiate named customer: '${id.sid}'`);
+                this._logService.error(err);
+                errors.onUnexpectedError(err);
+            }
+        }
+        const customers = ExtHostCustomersRegistry.getCustomers();
+        for (const ctor of customers) {
+            try {
+                const instance = this._instantiationService.createInstance(ctor, extHostContext);
+                this._customers.push(instance);
+            }
+            catch (err) {
+                this._logService.error(err);
+                errors.onUnexpectedError(err);
+            }
+        }
+        if (!extensionHostProxy) {
+            throw new Error(`Missing IExtensionHostProxy!`);
+        }
+        this._rpcProtocol.assertRegistered(mainProxyIdentifiers);
+        return extensionHostProxy;
+    }
+    async activate(extension, reason) {
+        const proxy = await this._proxy;
+        if (!proxy) {
+            return false;
+        }
+        return proxy.activate(extension, reason);
+    }
+    activateByEvent(activationEvent, activationKind) {
+        if (activationKind === 1 && !this._hasStarted) {
+            return Promise.resolve();
+        }
+        if (!this._cachedActivationEvents.has(activationEvent)) {
+            this._cachedActivationEvents.set(activationEvent, this._activateByEvent(activationEvent, activationKind));
+        }
+        return this._cachedActivationEvents.get(activationEvent);
+    }
+    activationEventIsDone(activationEvent) {
+        return this._resolvedActivationEvents.has(activationEvent);
+    }
+    async _activateByEvent(activationEvent, activationKind) {
+        if (!this._proxy) {
+            return;
+        }
+        const proxy = await this._proxy;
+        if (!proxy) {
+            return;
+        }
+        if (!this._extensionHost.extensions.containsActivationEvent(activationEvent)) {
+            this._resolvedActivationEvents.add(activationEvent);
+            return;
+        }
+        await proxy.activateByEvent(activationEvent, activationKind);
+        this._resolvedActivationEvents.add(activationEvent);
+    }
+    async getInspectPort(tryEnableInspector) {
+        if (this._extensionHost) {
+            if (tryEnableInspector) {
+                await this._extensionHost.enableInspectPort();
+            }
+            const port = this._extensionHost.getInspectPort();
+            if (port) {
+                return port;
+            }
+        }
+        return undefined;
+    }
+    async resolveAuthority(remoteAuthority, resolveAttempt) {
+        const sw = StopWatch.create(false);
+        const prefix = () => `[${extensionHostKindToString(this._extensionHost.runningLocation.kind)}${this._extensionHost.runningLocation.affinity}][resolveAuthority(${getRemoteAuthorityPrefix(remoteAuthority)},${resolveAttempt})][${sw.elapsed()}ms] `;
+        const logInfo = (msg) => this._logService.info(`${prefix()}${msg}`);
+        const logError = (msg, err = undefined) => this._logService.error(`${prefix()}${msg}`, err);
+        logInfo(`obtaining proxy...`);
+        const proxy = await this._proxy;
+        if (!proxy) {
+            logError(`no proxy`);
+            return {
+                type: 'error',
+                error: {
+                    message: `Cannot resolve authority`,
+                    code: RemoteAuthorityResolverErrorCode.Unknown,
+                    detail: undefined
+                }
+            };
+        }
+        logInfo(`invoking...`);
+        const intervalLogger = new IntervalTimer();
+        try {
+            intervalLogger.cancelAndSet(() => logInfo('waiting...'), 1000);
+            const resolverResult = await proxy.resolveAuthority(remoteAuthority, resolveAttempt);
+            intervalLogger.dispose();
+            if (resolverResult.type === 'ok') {
+                logInfo(`returned ${resolverResult.value.authority.connectTo}`);
+            }
+            else {
+                logError(`returned an error`, resolverResult.error);
+            }
+            return resolverResult;
+        }
+        catch (err) {
+            intervalLogger.dispose();
+            logError(`returned an error`, err);
+            return {
+                type: 'error',
+                error: {
+                    message: err.message,
+                    code: RemoteAuthorityResolverErrorCode.Unknown,
+                    detail: err
+                }
+            };
+        }
+    }
+    async getCanonicalURI(remoteAuthority, uri) {
+        const proxy = await this._proxy;
+        if (!proxy) {
+            throw new Error(`Cannot resolve canonical URI`);
+        }
+        return proxy.getCanonicalURI(remoteAuthority, uri);
+    }
+    async start(extensionRegistryVersionId, allExtensions, myExtensions) {
+        const proxy = await this._proxy;
+        if (!proxy) {
+            return;
+        }
+        const deltaExtensions = this._extensionHost.extensions.set(extensionRegistryVersionId, allExtensions, myExtensions);
+        return proxy.startExtensionHost(deltaExtensions);
+    }
+    async extensionTestsExecute() {
+        const proxy = await this._proxy;
+        if (!proxy) {
+            throw new Error('Could not obtain Extension Host Proxy');
+        }
+        return proxy.extensionTestsExecute();
+    }
+    representsRunningLocation(runningLocation) {
+        return this._extensionHost.runningLocation.equals(runningLocation);
+    }
+    async deltaExtensions(incomingExtensionsDelta) {
+        const proxy = await this._proxy;
+        if (!proxy) {
+            return;
+        }
+        const outgoingExtensionsDelta = this._extensionHost.extensions.delta(incomingExtensionsDelta);
+        if (!outgoingExtensionsDelta) {
+            return;
+        }
+        return proxy.deltaExtensions(outgoingExtensionsDelta);
+    }
+    containsExtension(extensionId) {
+        return this._extensionHost.extensions?.containsExtension(extensionId) ?? false;
+    }
+    async setRemoteEnvironment(env) {
+        const proxy = await this._proxy;
+        if (!proxy) {
+            return;
+        }
+        return proxy.setRemoteEnvironment(env);
+    }
+};
+ExtensionHostManager = ExtensionHostManager_1 = __decorate([
+    __param(3, IInstantiationService),
+    __param(4, IWorkbenchEnvironmentService),
+    __param(5, ITelemetryService),
+    __param(6, ILogService),
+    __metadata("design:paramtypes", [Object, Array, Object, Object, Object, Object, Object])
+], ExtensionHostManager);
+export { ExtensionHostManager };
+export function friendlyExtHostName(kind, pid) {
+    if (pid) {
+        return `${extensionHostKindToString(kind)} pid: ${pid}`;
+    }
+    return `${extensionHostKindToString(kind)}`;
+}
+const colorTables = [
+    ['#2977B1', '#FC802D', '#34A13A', '#D3282F', '#9366BA'],
+    ['#8B564C', '#E177C0', '#7F7F7F', '#BBBE3D', '#2EBECD']
+];
+function prettyWithoutArrays(data) {
+    if (Array.isArray(data)) {
+        return data;
+    }
+    if (data && typeof data === 'object' && typeof data.toString === 'function') {
+        const result = data.toString();
+        if (result !== '[object Object]') {
+            return result;
+        }
+    }
+    return data;
+}
+function pretty(data) {
+    if (Array.isArray(data)) {
+        return data.map(prettyWithoutArrays);
+    }
+    return prettyWithoutArrays(data);
+}
+class RPCLogger {
+    constructor(_kind) {
+        this._kind = _kind;
+        this._totalIncoming = 0;
+        this._totalOutgoing = 0;
+    }
+    _log(direction, totalLength, msgLength, req, initiator, str, data) {
+        data = pretty(data);
+        const colorTable = colorTables[initiator];
+        const color = LOG_USE_COLORS ? colorTable[req % colorTable.length] : '#000000';
+        let args = [`%c[${extensionHostKindToString(this._kind)}][${direction}]%c[${String(totalLength).padStart(7)}]%c[len: ${String(msgLength).padStart(5)}]%c${String(req).padStart(5)} - ${str}`, 'color: darkgreen', 'color: grey', 'color: grey', `color: ${color}`];
+        if (/\($/.test(str)) {
+            args = args.concat(data);
+            args.push(')');
+        }
+        else {
+            args.push(data);
+        }
+        console.log.apply(console, args);
+    }
+    logIncoming(msgLength, req, initiator, str, data) {
+        this._totalIncoming += msgLength;
+        this._log('Ext \u2192 Win', this._totalIncoming, msgLength, req, initiator, str, data);
+    }
+    logOutgoing(msgLength, req, initiator, str, data) {
+        this._totalOutgoing += msgLength;
+        this._log('Win \u2192 Ext', this._totalOutgoing, msgLength, req, initiator, str, data);
+    }
+}
+let TelemetryRPCLogger = class TelemetryRPCLogger {
+    static isEnabled() {
+        return Math.trunc(Math.random() * 1000) < 0.5;
+    }
+    constructor(_telemetryService) {
+        this._telemetryService = _telemetryService;
+        this._pendingRequests = new Map();
+    }
+    logIncoming(msgLength, req, initiator, str) {
+        if (initiator === 0 && /^receiveReply(Err)?:/.test(str)) {
+            const requestStr = this._pendingRequests.get(req) ?? 'unknown_reply';
+            this._pendingRequests.delete(req);
+            this._telemetryService.publicLog2('extensionhost.incoming', {
+                type: `${str} ${requestStr}`,
+                length: msgLength
+            });
+        }
+        if (initiator === 1 && /^receiveRequest /.test(str)) {
+            this._telemetryService.publicLog2('extensionhost.incoming', {
+                type: `${str}`,
+                length: msgLength
+            });
+        }
+    }
+    logOutgoing(msgLength, req, initiator, str) {
+        if (initiator === 0 && str.startsWith('request: ')) {
+            this._pendingRequests.set(req, str);
+            this._telemetryService.publicLog2('extensionhost.outgoing', {
+                type: str,
+                length: msgLength
+            });
+        }
+    }
+};
+TelemetryRPCLogger = __decorate([
+    __param(0, ITelemetryService),
+    __metadata("design:paramtypes", [Object])
+], TelemetryRPCLogger);
+const providers = [];
+function registerLatencyTestProvider(provider) {
+    providers.push(provider);
+    return {
+        dispose: () => {
+            for (let i = 0; i < providers.length; i++) {
+                if (providers[i] === provider) {
+                    providers.splice(i, 1);
+                    return;
+                }
+            }
+        }
+    };
+}
+function getLatencyTestProviders() {
+    return providers.slice(0);
+}
+registerAction2(class MeasureExtHostLatencyAction extends Action2 {
+    constructor() {
+        super({
+            id: 'editor.action.measureExtHostLatency',
+            title: nls.localize2('measureExtHostLatency', "Measure Extension Host Latency"),
+            category: Categories.Developer,
+            f1: true
+        });
+    }
+    async run(accessor) {
+        const editorService = accessor.get(IEditorService);
+        const measurements = await Promise.all(getLatencyTestProviders().map(provider => provider.measure()));
+        editorService.openEditor({ resource: undefined, contents: measurements.map(MeasureExtHostLatencyAction._print).join('\n\n'), options: { pinned: true } });
+    }
+    static _print(m) {
+        if (!m) {
+            return '';
+        }
+        return `${m.remoteAuthority ? `Authority: ${m.remoteAuthority}\n` : ``}Roundtrip latency: ${m.latency.toFixed(3)}ms\nUp: ${MeasureExtHostLatencyAction._printSpeed(m.up)}\nDown: ${MeasureExtHostLatencyAction._printSpeed(m.down)}\n`;
+    }
+    static _printSpeed(n) {
+        if (n <= 1024) {
+            return `${n} bps`;
+        }
+        if (n < 1024 * 1024) {
+            return `${(n / 1024).toFixed(1)} kbps`;
+        }
+        return `${(n / 1024 / 1024).toFixed(1)} Mbps`;
+    }
+});

@@ -1,1 +1,113 @@
-import{Codicon as n}from"../../../../base/common/codicons.js";import{localize as i,localize2 as u}from"../../../../nls.js";import{Action2 as y,MenuId as t,MenuRegistry as h,registerAction2 as m}from"../../../../platform/actions/common/actions.js";import{ContextKeyExpr as o}from"../../../../platform/contextkey/common/contextkey.js";import{registerIcon as c}from"../../../../platform/theme/common/iconRegistry.js";import{Categories as f}from"../../../../platform/action/common/actionCommonCategories.js";import{AuxiliaryBarVisibleContext as l}from"../../../common/contextkeys.js";import{ViewContainerLocation as p,ViewContainerLocationToString as B}from"../../../common/views.js";import{IWorkbenchLayoutService as b,Parts as s}from"../../../services/layout/browser/layoutService.js";import{IPaneCompositePartService as I}from"../../../services/panecomposite/browser/panecomposite.js";import"../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as S}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{KeyCode as x,KeyMod as A}from"../../../../base/common/keyCodes.js";const L=c("auxiliarybar-right-layout-icon",n.layoutSidebarRight,i("toggleAuxiliaryIconRight","Icon to toggle the auxiliary bar off in its right position.")),w=c("auxiliarybar-right-off-layout-icon",n.layoutSidebarRightOff,i("toggleAuxiliaryIconRightOn","Icon to toggle the auxiliary bar on in its right position.")),C=c("auxiliarybar-left-layout-icon",n.layoutSidebarLeft,i("toggleAuxiliaryIconLeft","Icon to toggle the auxiliary bar in its left position.")),R=c("auxiliarybar-left-off-layout-icon",n.layoutSidebarLeftOff,i("toggleAuxiliaryIconLeftOn","Icon to toggle the auxiliary bar on in its left position."));class e extends y{static ID="workbench.action.toggleAuxiliaryBar";static LABEL=u("toggleAuxiliaryBar","Toggle Secondary Side Bar Visibility");constructor(){super({id:e.ID,title:e.LABEL,toggled:{condition:l,title:i("secondary sidebar","Secondary Side Bar"),mnemonicTitle:i({key:"secondary sidebar mnemonic",comment:["&& denotes a mnemonic"]},"Secondary Si&&de Bar")},category:f.View,f1:!0,keybinding:{weight:S.WorkbenchContrib,primary:A.CtrlCmd|A.Alt|x.KeyB},menu:[{id:t.LayoutControlMenuSubmenu,group:"0_workbench_layout",order:1},{id:t.MenubarAppearanceMenu,group:"2_workbench_layout",order:2}]})}async run(r){const a=r.get(b);a.setPartHidden(a.isVisible(s.AUXILIARYBAR_PART),s.AUXILIARYBAR_PART)}}m(e),m(class d extends y{static ID="workbench.action.focusAuxiliaryBar";static LABEL=u("focusAuxiliaryBar","Focus into Secondary Side Bar");constructor(){super({id:d.ID,title:d.LABEL,category:f.View,f1:!0})}async run(r){const a=r.get(I),g=r.get(b);g.isVisible(s.AUXILIARYBAR_PART)||g.setPartHidden(!1,s.AUXILIARYBAR_PART),a.getActivePaneComposite(p.AuxiliaryBar)?.focus()}}),h.appendMenuItems([{id:t.LayoutControlMenu,item:{group:"0_workbench_toggles",command:{id:e.ID,title:i("toggleSecondarySideBar","Toggle Secondary Side Bar"),toggled:{condition:l,icon:C},icon:R},when:o.and(o.or(o.equals("config.workbench.layoutControl.type","toggles"),o.equals("config.workbench.layoutControl.type","both")),o.equals("config.workbench.sideBar.location","right")),order:0}},{id:t.LayoutControlMenu,item:{group:"0_workbench_toggles",command:{id:e.ID,title:i("toggleSecondarySideBar","Toggle Secondary Side Bar"),toggled:{condition:l,icon:L},icon:w},when:o.and(o.or(o.equals("config.workbench.layoutControl.type","toggles"),o.equals("config.workbench.layoutControl.type","both")),o.equals("config.workbench.sideBar.location","left")),order:2}},{id:t.ViewTitleContext,item:{group:"3_workbench_layout_move",command:{id:e.ID,title:u("hideAuxiliaryBar","Hide Secondary Side Bar")},when:o.and(l,o.equals("viewLocation",B(p.AuxiliaryBar))),order:2}}]);export{e as ToggleAuxiliaryBarAction};
+import { Codicon } from '../../../../base/common/codicons.js';
+import { localize, localize2 } from '../../../../nls.js';
+import { Action2, MenuId, MenuRegistry, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { registerIcon } from '../../../../platform/theme/common/iconRegistry.js';
+import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
+import { AuxiliaryBarVisibleContext } from '../../../common/contextkeys.js';
+import { ViewContainerLocationToString } from '../../../common/views.js';
+import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
+import { IPaneCompositePartService } from '../../../services/panecomposite/browser/panecomposite.js';
+const auxiliaryBarRightIcon = registerIcon('auxiliarybar-right-layout-icon', Codicon.layoutSidebarRight, localize('toggleAuxiliaryIconRight', 'Icon to toggle the auxiliary bar off in its right position.'));
+const auxiliaryBarRightOffIcon = registerIcon('auxiliarybar-right-off-layout-icon', Codicon.layoutSidebarRightOff, localize('toggleAuxiliaryIconRightOn', 'Icon to toggle the auxiliary bar on in its right position.'));
+const auxiliaryBarLeftIcon = registerIcon('auxiliarybar-left-layout-icon', Codicon.layoutSidebarLeft, localize('toggleAuxiliaryIconLeft', 'Icon to toggle the auxiliary bar in its left position.'));
+const auxiliaryBarLeftOffIcon = registerIcon('auxiliarybar-left-off-layout-icon', Codicon.layoutSidebarLeftOff, localize('toggleAuxiliaryIconLeftOn', 'Icon to toggle the auxiliary bar on in its left position.'));
+export class ToggleAuxiliaryBarAction extends Action2 {
+    static { this.ID = 'workbench.action.toggleAuxiliaryBar'; }
+    static { this.LABEL = localize2('toggleAuxiliaryBar', "Toggle Secondary Side Bar Visibility"); }
+    constructor() {
+        super({
+            id: ToggleAuxiliaryBarAction.ID,
+            title: ToggleAuxiliaryBarAction.LABEL,
+            toggled: {
+                condition: AuxiliaryBarVisibleContext,
+                title: localize('secondary sidebar', "Secondary Side Bar"),
+                mnemonicTitle: localize({ key: 'secondary sidebar mnemonic', comment: ['&& denotes a mnemonic'] }, "Secondary Si&&de Bar"),
+            },
+            category: Categories.View,
+            f1: true,
+            keybinding: {
+                weight: 200,
+                primary: 2048 | 512 | 32
+            },
+            menu: [
+                {
+                    id: MenuId.LayoutControlMenuSubmenu,
+                    group: '0_workbench_layout',
+                    order: 1
+                },
+                {
+                    id: MenuId.MenubarAppearanceMenu,
+                    group: '2_workbench_layout',
+                    order: 2
+                }
+            ]
+        });
+    }
+    async run(accessor) {
+        const layoutService = accessor.get(IWorkbenchLayoutService);
+        layoutService.setPartHidden(layoutService.isVisible("workbench.parts.auxiliarybar"), "workbench.parts.auxiliarybar");
+    }
+}
+registerAction2(ToggleAuxiliaryBarAction);
+registerAction2(class FocusAuxiliaryBarAction extends Action2 {
+    static { this.ID = 'workbench.action.focusAuxiliaryBar'; }
+    static { this.LABEL = localize2('focusAuxiliaryBar', "Focus into Secondary Side Bar"); }
+    constructor() {
+        super({
+            id: FocusAuxiliaryBarAction.ID,
+            title: FocusAuxiliaryBarAction.LABEL,
+            category: Categories.View,
+            f1: true,
+        });
+    }
+    async run(accessor) {
+        const paneCompositeService = accessor.get(IPaneCompositePartService);
+        const layoutService = accessor.get(IWorkbenchLayoutService);
+        if (!layoutService.isVisible("workbench.parts.auxiliarybar")) {
+            layoutService.setPartHidden(false, "workbench.parts.auxiliarybar");
+        }
+        const composite = paneCompositeService.getActivePaneComposite(2);
+        composite?.focus();
+    }
+});
+MenuRegistry.appendMenuItems([
+    {
+        id: MenuId.LayoutControlMenu,
+        item: {
+            group: '0_workbench_toggles',
+            command: {
+                id: ToggleAuxiliaryBarAction.ID,
+                title: localize('toggleSecondarySideBar', "Toggle Secondary Side Bar"),
+                toggled: { condition: AuxiliaryBarVisibleContext, icon: auxiliaryBarLeftIcon },
+                icon: auxiliaryBarLeftOffIcon,
+            },
+            when: ContextKeyExpr.and(ContextKeyExpr.or(ContextKeyExpr.equals('config.workbench.layoutControl.type', 'toggles'), ContextKeyExpr.equals('config.workbench.layoutControl.type', 'both')), ContextKeyExpr.equals('config.workbench.sideBar.location', 'right')),
+            order: 0
+        }
+    }, {
+        id: MenuId.LayoutControlMenu,
+        item: {
+            group: '0_workbench_toggles',
+            command: {
+                id: ToggleAuxiliaryBarAction.ID,
+                title: localize('toggleSecondarySideBar', "Toggle Secondary Side Bar"),
+                toggled: { condition: AuxiliaryBarVisibleContext, icon: auxiliaryBarRightIcon },
+                icon: auxiliaryBarRightOffIcon,
+            },
+            when: ContextKeyExpr.and(ContextKeyExpr.or(ContextKeyExpr.equals('config.workbench.layoutControl.type', 'toggles'), ContextKeyExpr.equals('config.workbench.layoutControl.type', 'both')), ContextKeyExpr.equals('config.workbench.sideBar.location', 'left')),
+            order: 2
+        }
+    }, {
+        id: MenuId.ViewTitleContext,
+        item: {
+            group: '3_workbench_layout_move',
+            command: {
+                id: ToggleAuxiliaryBarAction.ID,
+                title: localize2('hideAuxiliaryBar', 'Hide Secondary Side Bar'),
+            },
+            when: ContextKeyExpr.and(AuxiliaryBarVisibleContext, ContextKeyExpr.equals('viewLocation', ViewContainerLocationToString(2))),
+            order: 2
+        }
+    }
+]);

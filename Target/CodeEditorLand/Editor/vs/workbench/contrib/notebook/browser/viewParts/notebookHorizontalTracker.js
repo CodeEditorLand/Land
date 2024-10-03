@@ -1,1 +1,46 @@
-import{addDisposableListener as s,EventType as n,getWindow as h}from"../../../../../base/browser/dom.js";import"../../../../../base/browser/mouseEvent.js";import{Disposable as f}from"../../../../../base/common/lifecycle.js";import{isChrome as a}from"../../../../../base/common/platform.js";import"../../../../../editor/browser/widget/codeEditor/codeEditorWidget.js";import"../notebookBrowser.js";class k extends f{constructor(c,E){super();this._notebookEditor=c;this._listViewScrollablement=E;this._register(s(this._listViewScrollablement,n.MOUSE_WHEEL,e=>{if(e.deltaX===0)return;const t=this._notebookEditor.codeEditors.find(l=>{const r=l[1].getLayoutInfo();if(r.contentWidth===r.width)return!1;const i=l[1].getDomNode();return!!(i&&i.contains(e.target))});if(!t)return;const o=h(e),d={deltaMode:e.deltaMode,deltaX:e.deltaX,deltaY:0,deltaZ:0,wheelDelta:e.wheelDelta&&a?e.wheelDelta/o.devicePixelRatio:e.wheelDelta,wheelDeltaX:e.wheelDeltaX&&a?e.wheelDeltaX/o.devicePixelRatio:e.wheelDeltaX,wheelDeltaY:0,detail:e.detail,shiftKey:e.shiftKey,type:e.type,defaultPrevented:!1,preventDefault:()=>{},stopPropagation:()=>{}};t[1].delegateScrollFromMouseWheelEvent(d)}))}}export{k as NotebookHorizontalTracker};
+import { addDisposableListener, EventType, getWindow } from '../../../../../base/browser/dom.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { isChrome } from '../../../../../base/common/platform.js';
+export class NotebookHorizontalTracker extends Disposable {
+    constructor(_notebookEditor, _listViewScrollablement) {
+        super();
+        this._notebookEditor = _notebookEditor;
+        this._listViewScrollablement = _listViewScrollablement;
+        this._register(addDisposableListener(this._listViewScrollablement, EventType.MOUSE_WHEEL, (event) => {
+            if (event.deltaX === 0) {
+                return;
+            }
+            const hoveringOnEditor = this._notebookEditor.codeEditors.find(editor => {
+                const editorLayout = editor[1].getLayoutInfo();
+                if (editorLayout.contentWidth === editorLayout.width) {
+                    return false;
+                }
+                const editorDOM = editor[1].getDomNode();
+                if (editorDOM && editorDOM.contains(event.target)) {
+                    return true;
+                }
+                return false;
+            });
+            if (!hoveringOnEditor) {
+                return;
+            }
+            const targetWindow = getWindow(event);
+            const evt = {
+                deltaMode: event.deltaMode,
+                deltaX: event.deltaX,
+                deltaY: 0,
+                deltaZ: 0,
+                wheelDelta: event.wheelDelta && isChrome ? (event.wheelDelta / targetWindow.devicePixelRatio) : event.wheelDelta,
+                wheelDeltaX: event.wheelDeltaX && isChrome ? (event.wheelDeltaX / targetWindow.devicePixelRatio) : event.wheelDeltaX,
+                wheelDeltaY: 0,
+                detail: event.detail,
+                shiftKey: event.shiftKey,
+                type: event.type,
+                defaultPrevented: false,
+                preventDefault: () => { },
+                stopPropagation: () => { }
+            };
+            hoveringOnEditor[1].delegateScrollFromMouseWheelEvent(evt);
+        }));
+    }
+}

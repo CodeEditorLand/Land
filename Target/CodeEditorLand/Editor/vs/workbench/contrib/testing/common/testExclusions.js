@@ -1,1 +1,58 @@
-var u=Object.defineProperty;var c=Object.getOwnPropertyDescriptor;var n=(l,i,e,t)=>{for(var r=t>1?void 0:t?c(i,e):i,d=l.length-1,o;d>=0;d--)(o=l[d])&&(r=(t?o(i,e,r):o(r))||r);return t&&r&&u(i,e,r),r},s=(l,i)=>(e,t)=>i(e,t,l);import"../../../../base/common/event.js";import{Iterable as m}from"../../../../base/common/iterator.js";import{Disposable as p}from"../../../../base/common/lifecycle.js";import{IStorageService as v,StorageScope as h,StorageTarget as S}from"../../../../platform/storage/common/storage.js";import{MutableObservableValue as g}from"./observableValue.js";import{StoredValue as x}from"./storedValue.js";import"./testTypes.js";let a=class extends p{constructor(e){super();this.storageService=e}excluded=this._register(g.stored(new x({key:"excludedTestItems",scope:h.WORKSPACE,target:S.MACHINE,serialization:{deserialize:e=>new Set(JSON.parse(e)),serialize:e=>JSON.stringify([...e])}},this.storageService),new Set));onTestExclusionsChanged=this.excluded.onDidChange;get hasAny(){return this.excluded.value.size>0}get all(){return this.excluded.value}toggle(e,t){t!==!0&&this.excluded.value.has(e.item.extId)?this.excluded.value=new Set(m.filter(this.excluded.value,r=>r!==e.item.extId)):t!==!1&&!this.excluded.value.has(e.item.extId)&&(this.excluded.value=new Set([...this.excluded.value,e.item.extId]))}contains(e){return this.excluded.value.has(e.item.extId)}clear(){this.excluded.value=new Set}};a=n([s(0,v)],a);export{a as TestExclusions};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Iterable } from '../../../../base/common/iterator.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { MutableObservableValue } from './observableValue.js';
+import { StoredValue } from './storedValue.js';
+let TestExclusions = class TestExclusions extends Disposable {
+    constructor(storageService) {
+        super();
+        this.storageService = storageService;
+        this.excluded = this._register(MutableObservableValue.stored(new StoredValue({
+            key: 'excludedTestItems',
+            scope: 1,
+            target: 1,
+            serialization: {
+                deserialize: v => new Set(JSON.parse(v)),
+                serialize: v => JSON.stringify([...v])
+            },
+        }, this.storageService), new Set()));
+        this.onTestExclusionsChanged = this.excluded.onDidChange;
+    }
+    get hasAny() {
+        return this.excluded.value.size > 0;
+    }
+    get all() {
+        return this.excluded.value;
+    }
+    toggle(test, exclude) {
+        if (exclude !== true && this.excluded.value.has(test.item.extId)) {
+            this.excluded.value = new Set(Iterable.filter(this.excluded.value, e => e !== test.item.extId));
+        }
+        else if (exclude !== false && !this.excluded.value.has(test.item.extId)) {
+            this.excluded.value = new Set([...this.excluded.value, test.item.extId]);
+        }
+    }
+    contains(test) {
+        return this.excluded.value.has(test.item.extId);
+    }
+    clear() {
+        this.excluded.value = new Set();
+    }
+};
+TestExclusions = __decorate([
+    __param(0, IStorageService),
+    __metadata("design:paramtypes", [Object])
+], TestExclusions);
+export { TestExclusions };

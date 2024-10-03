@@ -1,1 +1,8 @@
-import{InstantiationType as r,registerSingleton as o}from"../../../../platform/instantiation/common/extensions.js";import{IReplaceService as t}from"./replace.js";import{ReplaceService as i,ReplacePreviewContentProvider as e}from"./replaceService.js";import{WorkbenchPhase as n,registerWorkbenchContribution2 as p}from"../../../common/contributions.js";function s(){o(t,i,r.Delayed),p(e.ID,e,n.BlockStartup)}export{s as registerContributions};
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IReplaceService } from './replace.js';
+import { ReplaceService, ReplacePreviewContentProvider } from './replaceService.js';
+import { registerWorkbenchContribution2 } from '../../../common/contributions.js';
+export function registerContributions() {
+    registerSingleton(IReplaceService, ReplaceService, 1);
+    registerWorkbenchContribution2(ReplacePreviewContentProvider.ID, ReplacePreviewContentProvider, 1);
+}

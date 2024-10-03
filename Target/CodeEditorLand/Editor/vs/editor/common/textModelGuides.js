@@ -1,1 +1,25 @@
-import"./core/position.js";var u=(e=>(e[e.Disabled=0]="Disabled",e[e.EnabledForActive=1]="EnabledForActive",e[e.Enabled=2]="Enabled",e))(u||{});class m{constructor(n,r,e,o,t,b){this.visibleColumn=n;this.column=r;this.className=e;this.horizontalLine=o;this.forWrappedLinesAfterColumn=t;this.forWrappedLinesBeforeOrAtColumn=b;if(n!==-1==(r!==-1))throw new Error}}class c{constructor(n,r){this.top=n;this.endColumn=r}}export{u as HorizontalGuidesState,m as IndentGuide,c as IndentGuideHorizontalLine};
+export var HorizontalGuidesState;
+(function (HorizontalGuidesState) {
+    HorizontalGuidesState[HorizontalGuidesState["Disabled"] = 0] = "Disabled";
+    HorizontalGuidesState[HorizontalGuidesState["EnabledForActive"] = 1] = "EnabledForActive";
+    HorizontalGuidesState[HorizontalGuidesState["Enabled"] = 2] = "Enabled";
+})(HorizontalGuidesState || (HorizontalGuidesState = {}));
+export class IndentGuide {
+    constructor(visibleColumn, column, className, horizontalLine, forWrappedLinesAfterColumn, forWrappedLinesBeforeOrAtColumn) {
+        this.visibleColumn = visibleColumn;
+        this.column = column;
+        this.className = className;
+        this.horizontalLine = horizontalLine;
+        this.forWrappedLinesAfterColumn = forWrappedLinesAfterColumn;
+        this.forWrappedLinesBeforeOrAtColumn = forWrappedLinesBeforeOrAtColumn;
+        if ((visibleColumn !== -1) === (column !== -1)) {
+            throw new Error();
+        }
+    }
+}
+export class IndentGuideHorizontalLine {
+    constructor(top, endColumn) {
+        this.top = top;
+        this.endColumn = endColumn;
+    }
+}

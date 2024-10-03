@@ -1,1 +1,14 @@
-import{TestId as l}from"../../common/testId.js";function a(n,e){e instanceof l||(e=l.fromString(e));let r=n;for(const t of e.path){if(!r.children?.hasOwnProperty(t))return;r=r.children[t]}return r.collapsed}export{a as isCollapsedInSerializedTestTree};
+import { TestId } from '../../common/testId.js';
+export function isCollapsedInSerializedTestTree(serialized, id) {
+    if (!(id instanceof TestId)) {
+        id = TestId.fromString(id);
+    }
+    let node = serialized;
+    for (const part of id.path) {
+        if (!node.children?.hasOwnProperty(part)) {
+            return undefined;
+        }
+        node = node.children[part];
+    }
+    return node.collapsed;
+}

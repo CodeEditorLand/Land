@@ -1,0 +1,72 @@
+import { URI } from './uri.js';
+export declare function originalFSPath(uri: URI): string;
+export interface IExtUri {
+    compare(uri1: URI, uri2: URI, ignoreFragment?: boolean): number;
+    isEqual(uri1: URI | undefined, uri2: URI | undefined, ignoreFragment?: boolean): boolean;
+    isEqualOrParent(base: URI, parentCandidate: URI, ignoreFragment?: boolean): boolean;
+    getComparisonKey(uri: URI, ignoreFragment?: boolean): string;
+    ignorePathCasing(uri: URI): boolean;
+    basenameOrAuthority(resource: URI): string;
+    basename(resource: URI): string;
+    extname(resource: URI): string;
+    dirname(resource: URI): URI;
+    joinPath(resource: URI, ...pathFragment: string[]): URI;
+    normalizePath(resource: URI): URI;
+    relativePath(from: URI, to: URI): string | undefined;
+    resolvePath(base: URI, path: string): URI;
+    isAbsolutePath(resource: URI): boolean;
+    isEqualAuthority(a1: string, a2: string): boolean;
+    hasTrailingPathSeparator(resource: URI, sep?: string): boolean;
+    removeTrailingPathSeparator(resource: URI, sep?: string): URI;
+    addTrailingPathSeparator(resource: URI, sep?: string): URI;
+}
+export declare class ExtUri implements IExtUri {
+    private _ignorePathCasing;
+    constructor(_ignorePathCasing: (uri: URI) => boolean);
+    compare(uri1: URI, uri2: URI, ignoreFragment?: boolean): number;
+    isEqual(uri1: URI | undefined, uri2: URI | undefined, ignoreFragment?: boolean): boolean;
+    getComparisonKey(uri: URI, ignoreFragment?: boolean): string;
+    ignorePathCasing(uri: URI): boolean;
+    isEqualOrParent(base: URI, parentCandidate: URI, ignoreFragment?: boolean): boolean;
+    joinPath(resource: URI, ...pathFragment: string[]): URI;
+    basenameOrAuthority(resource: URI): string;
+    basename(resource: URI): string;
+    extname(resource: URI): string;
+    dirname(resource: URI): URI;
+    normalizePath(resource: URI): URI;
+    relativePath(from: URI, to: URI): string | undefined;
+    resolvePath(base: URI, path: string): URI;
+    isAbsolutePath(resource: URI): boolean;
+    isEqualAuthority(a1: string | undefined, a2: string | undefined): boolean;
+    hasTrailingPathSeparator(resource: URI, sep?: string): boolean;
+    removeTrailingPathSeparator(resource: URI, sep?: string): URI;
+    addTrailingPathSeparator(resource: URI, sep?: string): URI;
+}
+export declare const extUri: ExtUri;
+export declare const extUriBiasedIgnorePathCase: ExtUri;
+export declare const extUriIgnorePathCase: ExtUri;
+export declare const isEqual: (uri1: URI | undefined, uri2: URI | undefined, ignoreFragment?: boolean) => boolean;
+export declare const isEqualOrParent: (base: URI, parentCandidate: URI, ignoreFragment?: boolean) => boolean;
+export declare const getComparisonKey: (uri: URI, ignoreFragment?: boolean) => string;
+export declare const basenameOrAuthority: (resource: URI) => string;
+export declare const basename: (resource: URI) => string;
+export declare const extname: (resource: URI) => string;
+export declare const dirname: (resource: URI) => URI;
+export declare const joinPath: (resource: URI, ...pathFragment: string[]) => URI;
+export declare const normalizePath: (resource: URI) => URI;
+export declare const relativePath: (from: URI, to: URI) => string | undefined;
+export declare const resolvePath: (base: URI, path: string) => URI;
+export declare const isAbsolutePath: (resource: URI) => boolean;
+export declare const isEqualAuthority: (a1: string | undefined, a2: string | undefined) => boolean;
+export declare const hasTrailingPathSeparator: (resource: URI, sep?: string) => boolean;
+export declare const removeTrailingPathSeparator: (resource: URI, sep?: string) => URI;
+export declare const addTrailingPathSeparator: (resource: URI, sep?: string) => URI;
+export declare function distinctParents<T>(items: T[], resourceAccessor: (item: T) => URI): T[];
+export declare namespace DataUri {
+    const META_DATA_LABEL = "label";
+    const META_DATA_DESCRIPTION = "description";
+    const META_DATA_SIZE = "size";
+    const META_DATA_MIME = "mime";
+    function parseMetaData(dataUri: URI): Map<string, string>;
+}
+export declare function toLocalResource(resource: URI, authority: string | undefined, localScheme: string): URI;

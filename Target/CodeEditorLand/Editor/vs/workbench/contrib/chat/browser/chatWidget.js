@@ -1,3 +1,902 @@
-var K=Object.defineProperty;var Q=Object.getOwnPropertyDescriptor;var R=(u,d,e,i)=>{for(var t=i>1?void 0:i?Q(d,e):d,n=u.length-1,o;n>=0;n--)(o=u[n])&&(t=(i?o(d,e,t):o(t))||t);return i&&t&&K(d,e,t),t},c=(u,d)=>(e,i)=>d(e,i,u);import*as h from"../../../../base/browser/dom.js";import{renderIcon as X}from"../../../../base/browser/ui/iconLabel/iconLabels.js";import"../../../../base/browser/ui/tree/tree.js";import{disposableTimeout as j,timeout as z}from"../../../../base/common/async.js";import{toErrorMessage as G}from"../../../../base/common/errorMessage.js";import{Emitter as p,Event as J}from"../../../../base/common/event.js";import{MarkdownString as O}from"../../../../base/common/htmlContent.js";import{Disposable as Y,DisposableStore as W,MutableDisposable as Z,combinedDisposable as ee,toDisposable as te}from"../../../../base/common/lifecycle.js";import{Schemas as ie}from"../../../../base/common/network.js";import{extUri as ne,isEqual as se}from"../../../../base/common/resources.js";import{isDefined as oe}from"../../../../base/common/types.js";import"../../../../base/common/uri.js";import"../../../../editor/browser/editorBrowser.js";import{ICodeEditorService as re}from"../../../../editor/browser/services/codeEditorService.js";import{MarkdownRenderer as ae}from"../../../../editor/browser/widget/markdownRenderer/browser/markdownRenderer.js";import{localize as k}from"../../../../nls.js";import{MenuId as B}from"../../../../platform/actions/common/actions.js";import{IContextKeyService as V}from"../../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as de}from"../../../../platform/contextview/browser/contextView.js";import"../../../../platform/editor/common/editor.js";import{IInstantiationService as he}from"../../../../platform/instantiation/common/instantiation.js";import{ServiceCollection as le}from"../../../../platform/instantiation/common/serviceCollection.js";import{WorkbenchObjectTree as ce}from"../../../../platform/list/browser/listService.js";import{ILogService as ue}from"../../../../platform/log/common/log.js";import{IStorageService as ge,StorageScope as N,StorageTarget as pe}from"../../../../platform/storage/common/storage.js";import{IThemeService as Ce}from"../../../../platform/theme/common/themeService.js";import{TerminalChatController as me}from"../../terminal/terminalContribChatExports.js";import{ChatAgentLocation as Ie,IChatAgentService as ve,isChatWelcomeMessageContent as fe}from"../common/chatAgents.js";import{CONTEXT_CHAT_INPUT_HAS_AGENT as ye,CONTEXT_CHAT_LOCATION as Se,CONTEXT_CHAT_REQUEST_IN_PROGRESS as we,CONTEXT_IN_CHAT_SESSION as De,CONTEXT_IN_QUICK_CHAT as _e,CONTEXT_LAST_ITEM_ID as be,CONTEXT_PARTICIPANT_SUPPORTS_MODEL_PICKER as Me,CONTEXT_RESPONSE_FILTERED as Te}from"../common/chatContextKeys.js";import{ChatEditingSessionState as Ee,IChatEditingService as Pe}from"../common/chatEditingService.js";import"../common/chatModel.js";import{ChatRequestAgentPart as Ae,chatAgentLeader as xe,chatSubcommandLeader as q,formatChatQuestion as Fe}from"../common/chatParserTypes.js";import{ChatRequestParser as Le}from"../common/chatRequestParser.js";import{IChatService as He}from"../common/chatService.js";import{IChatSlashCommandService as Re}from"../common/chatSlashCommands.js";import{ChatViewModel as Oe,isRequestVM as A,isResponseVM as C}from"../common/chatViewModel.js";import{CodeBlockModelCollection as We}from"../common/codeBlockModelCollection.js";import{IChatAccessibilityService as ke,IChatWidgetService as Be}from"./chat.js";import{ChatAccessibilityProvider as Ve}from"./chatAccessibilityProvider.js";import{ChatDragAndDrop as Ne}from"./chatDragAndDrop.js";import{ChatImageDropAndPaste as qe}from"./chatImagePaste.js";import{ChatInputPart as $e}from"./chatInputPart.js";import{ChatListDelegate as Ue,ChatListItemRenderer as Ke}from"./chatListRenderer.js";import{ChatEditorOptions as Qe}from"./chatOptions.js";import"./media/chat.css";import"./media/chatAgentHover.css";const m=h.$;function I(u){u.scrollTop=u.scrollHeight-u.renderHeight}function Xe(u){return"viewContext"in u&&"isQuickChat"in u.viewContext&&!!u.viewContext.isQuickChat}const $="chat.welcomeMessageContent";let v=class extends Y{constructor(e,i,t,n,o,r,s,l,g,f,x,F,b,je,ze,Ge,U){super();this.viewOptions=t;this.styles=n;this.contextKeyService=r;this.instantiationService=s;this.chatService=l;this.chatAgentService=g;this.contextMenuService=x;this.chatAccessibilityService=F;this.logService=b;this.themeService=je;this.chatSlashCommandService=ze;this.chatEditingService=Ge;this.storageService=U;this.viewContext=i??{},typeof e=="object"?this._location=e:this._location={location:e},De.bindTo(r).set(!0),Se.bindTo(r).set(this._location.location),_e.bindTo(r).set(Xe(this)),this.agentInInput=ye.bindTo(r),this.agentSupportsModelPicker=Me.bindTo(r),this.requestInProgress=we.bindTo(r),this._register(f.register(this)),this._codeBlockModelCollection=this._register(s.createInstance(We));const S=this._register(new W);if(this._register(this.chatEditingService.onDidCreateEditingSession(a=>{a.chatSessionId===this.viewModel?.sessionId&&(S.clear(),this.renderChatEditingSessionState(null),S.add(a.onDidChange(()=>{this.renderChatEditingSessionState(a)})),S.add(a.onDidDispose(()=>{S.clear(),this.renderChatEditingSessionState(null)})),this.renderChatEditingSessionState(a))})),this._location.location===Ie.EditingSession){let a;this._register(this.onDidChangeViewModel(async()=>{const w=this._viewModel?.sessionId;w!==a?.chatSessionId&&(a&&a.state.get()!==Ee.Disposed&&await a.stop(),w?a=await this.chatEditingService.startOrContinueEditingSession(w,{silent:!0}):a=void 0)}))}this._register(o.registerCodeEditorOpenHandler(async(a,w,Je)=>{const M=a.resource;if(M.scheme!==ie.vscodeChatCodeBlock)return null;const H=M.path.split("/").at(1);if(!H)return null;const T=this.viewModel?.getItems().find(D=>D.id===H);if(!T)return null;this.reveal(T),await z(0);for(const D of this.renderer.editorsInUse())if(ne.isEqual(D.uri,M,!0)){const y=D.editor;let E=0;const P=y.getDomNode();if(P){const _=h.findParentWithClass(P,"monaco-list-row");_&&(E=h.getTopLeftOffset(P).top-h.getTopLeftOffset(_).top)}if(a.options?.selection){const _=y.getTopForPosition(a.options.selection.startLineNumber,a.options.selection.startColumn);E+=_,y.focus(),y.setSelection({startLineNumber:a.options.selection.startLineNumber,startColumn:a.options.selection.startColumn,endLineNumber:a.options.selection.endLineNumber??a.options.selection.startLineNumber,endColumn:a.options.selection.endColumn??a.options.selection.startColumn})}return this.reveal(T,E),y}return null}));const L=U.getObject(`${$}.${this.location}`,N.APPLICATION);fe(L)&&(this.persistedWelcomeMessage=L),this._register(this.onDidChangeParsedInput(()=>this.updateChatInputContext()))}static CONTRIBS=[];_onDidSubmitAgent=this._register(new p);onDidSubmitAgent=this._onDidSubmitAgent.event;_onDidChangeAgent=this._register(new p);onDidChangeAgent=this._onDidChangeAgent.event;_onDidFocus=this._register(new p);onDidFocus=this._onDidFocus.event;_onDidChangeViewModel=this._register(new p);onDidChangeViewModel=this._onDidChangeViewModel.event;_onDidScroll=this._register(new p);onDidScroll=this._onDidScroll.event;_onDidClear=this._register(new p);onDidClear=this._onDidClear.event;_onDidAcceptInput=this._register(new p);onDidAcceptInput=this._onDidAcceptInput.event;_onDidChangeContext=this._register(new p);onDidChangeContext=this._onDidChangeContext.event;_onDidHide=this._register(new p);onDidHide=this._onDidHide.event;_onDidChangeParsedInput=this._register(new p);onDidChangeParsedInput=this._onDidChangeParsedInput.event;_onWillMaybeChangeHeight=new p;onWillMaybeChangeHeight=this._onWillMaybeChangeHeight.event;_onDidChangeHeight=this._register(new p);onDidChangeHeight=this._onDidChangeHeight.event;_onDidChangeContentHeight=new p;onDidChangeContentHeight=this._onDidChangeContentHeight.event;contribs=[];tree;renderer;_codeBlockModelCollection;inputPart;editorOptions;listContainer;container;welcomeMessageContainer;persistedWelcomeMessage;bodyDimension;visibleChangeCount=0;requestInProgress;agentInInput;agentSupportsModelPicker;_visible=!1;get visible(){return this._visible}previousTreeScrollHeight=0;viewModelDisposables=this._register(new W);_viewModel;set viewModel(e){this._viewModel!==e&&(this.viewModelDisposables.clear(),this._viewModel=e,e&&this.viewModelDisposables.add(e),this._onDidChangeViewModel.fire())}get viewModel(){return this._viewModel}parsedChatRequest;get parsedInput(){if(this.parsedChatRequest===void 0){if(!this.viewModel)return{text:"",parts:[]};this.parsedChatRequest=this.instantiationService.createInstance(Le).parseChatRequest(this.viewModel.sessionId,this.getInput(),this.location,{selectedAgent:this._lastSelectedAgent})}return this.parsedChatRequest}get scopedContextKeyService(){return this.contextKeyService}_location;get location(){return this._location.location}viewContext;_lastSelectedAgent;set lastSelectedAgent(e){this.parsedChatRequest=void 0,this._lastSelectedAgent=e,this._onDidChangeParsedInput.fire()}get lastSelectedAgent(){return this._lastSelectedAgent}get supportsFileReferences(){return!!this.viewOptions.supportsFileReferences}get input(){return this.inputPart}get inputEditor(){return this.inputPart.inputEditor}get inputUri(){return this.inputPart.inputUri}get contentHeight(){return this.inputPart.contentHeight+this.tree.contentHeight}render(e){const i="viewId"in this.viewContext?this.viewContext.viewId:void 0;this.editorOptions=this._register(this.instantiationService.createInstance(Qe,i,this.styles.listForeground,this.styles.inputEditorBackground,this.styles.resultEditorBackground));const t=this.viewOptions.renderInputOnTop??!1,n=this.viewOptions.renderFollowups??!t,o=this.viewOptions.renderStyle;this.container=h.append(e,m(".interactive-session")),this.welcomeMessageContainer=h.append(this.container,m(".chat-welcome-view",{style:"display: none"})),this.renderWelcomeViewContentIfNeeded(),t?(this.createInput(this.container,{renderFollowups:n,renderStyle:o}),this.listContainer=h.append(this.container,m(".interactive-list"))):(this.listContainer=h.append(this.container,m(".interactive-list")),this.createInput(this.container,{renderFollowups:n,renderStyle:o})),this.createList(this.listContainer,{...this.viewOptions.rendererOptions,renderStyle:o}),this._register(this.editorOptions.onDidChange(()=>this.onDidStyleChange())),this.onDidStyleChange(),this.viewModel&&(this.onDidChangeItems(),I(this.tree)),this.contribs=v.CONTRIBS.map(r=>{try{return this._register(this.instantiationService.createInstance(r,this))}catch(s){this.logService.error("Failed to instantiate chat widget contrib",G(s));return}}).filter(oe),this._register(this.instantiationService.createInstance(Ne,this.container,this.inputPart,this.styles)),this._register(this.instantiationService.createInstance(qe,this.inputPart))}getContrib(e){return this.contribs.find(i=>i.id===e)}focusInput(){this.inputPart.focus()}hasInputFocus(){return this.inputPart.hasFocus()}getSibling(e,i){if(!C(e))return;const t=this.viewModel?.getItems();if(!t)return;const n=t.filter(s=>C(s)),o=n.indexOf(e);if(o===void 0)return;const r=i==="next"?o+1:o-1;if(!(r<0||r>n.length-1))return n[r]}clear(){this._dynamicMessageLayoutData&&(this._dynamicMessageLayoutData.enabled=!0),this._onDidClear.fire()}onDidChangeItems(e){if(this.tree&&this._visible){const i=(this.viewModel?.getItems()??[]).map(n=>({element:n,collapsed:!1,collapsible:!1}));this.renderWelcomeViewContentIfNeeded(),this._onWillMaybeChangeHeight.fire(),this.tree.setChildren(null,i,{diffIdentityProvider:{getId:n=>n.dataId+`${A(n)}${C(n)&&n.renderData?`_${this.visibleChangeCount}`:""}`+(C(n)?`_${n.contentReferences.length}`:"")+(A(n)&&n.contentReferences?`_${n.contentReferences?.length}`:"")}}),!e&&this._dynamicMessageLayoutData&&this.layoutDynamicChatTreeItemMode();const t=i[i.length-1]?.element;t&&be.bindTo(this.contextKeyService).set([t.id]),t&&C(t)&&t.isComplete?this.renderFollowups(t.replyFollowups,t):!i.length&&this.viewModel?this.renderFollowups(this.viewModel.model.sampleQuestions):this.renderFollowups(void 0)}}renderWelcomeViewContentIfNeeded(){const e=this.viewModel?.model.welcomeMessage??this.persistedWelcomeMessage;if(e&&this.welcomeMessageContainer.children.length===0&&!this.viewOptions.renderStyle){const i=h.append(this.welcomeMessageContainer,m(".chat-welcome-view-icon")),t=h.append(this.welcomeMessageContainer,m(".chat-welcome-view-title")),n=h.append(this.welcomeMessageContainer,m(".chat-welcome-view-message")),o=h.append(this.welcomeMessageContainer,m(".chat-welcome-view-tips"));i.appendChild(X(e.icon)),t.textContent=e.title;const r=this.instantiationService.createInstance(ae,{}),s=this._register(r.render(e.message));h.append(n,s.element);const l=this.viewOptions.supportsAdditionalParticipants?new O(k("chatWidget.tips",`{0} to attach context
-
-{1} to chat with extensions`,"$(attach)","$(mention)"),{supportThemeIcons:!0}):new O(k("chatWidget.tips.withoutParticipants","{0} to attach context","$(attach)"),{supportThemeIcons:!0}),g=this._register(r.render(l));o.appendChild(g.element)}if(!this.viewOptions.renderStyle&&this.viewModel){const i=this.viewModel.getItems();h.setVisibility(i.length===0,this.welcomeMessageContainer),h.setVisibility(i.length!==0,this.listContainer)}}async renderChatEditingSessionState(e){this.inputPart.renderChatEditingSessionState(e,void 0,this),this.bodyDimension&&this.layout(this.bodyDimension.height,this.bodyDimension.width)}async renderFollowups(e,i){this.inputPart.renderFollowups(e,i),this.bodyDimension&&this.layout(this.bodyDimension.height,this.bodyDimension.width)}setVisible(e){const i=this._visible;this._visible=e,this.visibleChangeCount++,this.renderer.setVisible(e),this.input.setVisible(e),e?this._register(j(()=>{this._visible&&this.onDidChangeItems(!0)},0)):i&&this._onDidHide.fire()}createList(e,i){const t=this._register(this._register(this.instantiationService.createChild(new le([V,this.contextKeyService])))),n=t.createInstance(Ue,this.viewOptions.defaultElementHeight??200),o={getListLength:()=>this.tree.getNode(null).visibleChildrenCount,onDidScroll:this.onDidScroll},r=document.createElement("div");r.classList.add("chat-overflow-widget-container","monaco-editor"),e.append(r),this.renderer=this._register(t.createInstance(Ke,this.editorOptions,i,o,this._codeBlockModelCollection,r)),this._register(this.renderer.onDidClickFollowup(s=>{this.acceptInput(s.message)})),this._register(this.renderer.onDidClickRerunWithAgentOrCommandDetection(s=>{const l=this.chatService.getSession(s.sessionId)?.getRequests().find(g=>g.id===s.requestId);l&&this.chatService.resendRequest(l,{noCommandDetection:!0,attempt:l.attempt+1,location:this.location}).catch(g=>this.logService.error("FAILED to rerun request",g))})),this.tree=this._register(t.createInstance(ce,"Chat",e,n,[this.renderer],{identityProvider:{getId:s=>s.id},horizontalScrolling:!1,alwaysConsumeMouseWheel:!1,supportDynamicHeights:!0,hideTwistiesOfChildlessElements:!0,accessibilityProvider:this.instantiationService.createInstance(Ve),keyboardNavigationLabelProvider:{getKeyboardNavigationLabel:s=>A(s)?s.message:C(s)?s.response.value:""},setRowLineHeight:!1,filter:this.viewOptions.filter?{filter:this.viewOptions.filter.bind(this.viewOptions)}:void 0,overrideStyles:{listFocusBackground:this.styles.listBackground,listInactiveFocusBackground:this.styles.listBackground,listActiveSelectionBackground:this.styles.listBackground,listFocusAndSelectionBackground:this.styles.listBackground,listInactiveSelectionBackground:this.styles.listBackground,listHoverBackground:this.styles.listBackground,listBackground:this.styles.listBackground,listFocusForeground:this.styles.listForeground,listHoverForeground:this.styles.listForeground,listInactiveFocusForeground:this.styles.listForeground,listInactiveSelectionForeground:this.styles.listForeground,listActiveSelectionForeground:this.styles.listForeground,listFocusAndSelectionForeground:this.styles.listForeground,listActiveSelectionIconForeground:void 0,listInactiveSelectionIconForeground:void 0}})),this._register(this.tree.onContextMenu(s=>this.onContextMenu(s))),this._register(this.tree.onDidChangeContentHeight(()=>{this.onDidChangeTreeContentHeight()})),this._register(this.renderer.onDidChangeItemHeight(s=>{this.tree.updateElementHeight(s.element,s.height)})),this._register(this.tree.onDidFocus(()=>{this._onDidFocus.fire()})),this._register(this.tree.onDidScroll(()=>{this._onDidScroll.fire()}))}onContextMenu(e){e.browserEvent.preventDefault(),e.browserEvent.stopPropagation();const i=e.element,t=this.contextKeyService.createOverlay([[Te.key,C(i)&&!!i.errorDetails?.responseIsFiltered]]);this.contextMenuService.showContextMenu({menuId:B.ChatContext,menuActionOptions:{shouldForwardArgs:!0},contextKeyService:t,getAnchor:()=>e.anchor,getActionsContext:()=>i})}onDidChangeTreeContentHeight(){this.tree.scrollHeight!==this.previousTreeScrollHeight&&this.tree.scrollTop+this.tree.renderHeight>=this.previousTreeScrollHeight-2&&h.scheduleAtNextAnimationFrame(h.getWindow(this.listContainer),()=>{I(this.tree)},0),this.previousTreeScrollHeight=this.tree.scrollHeight,this._onDidChangeContentHeight.fire()}createInput(e,i){this.inputPart=this._register(this.instantiationService.createInstance($e,this.location,{renderFollowups:i?.renderFollowups??!0,renderStyle:i?.renderStyle==="minimal"?"compact":i?.renderStyle,menus:{executeToolbar:B.ChatExecute,...this.viewOptions.menus},editorOverflowWidgetsDomNode:this.viewOptions.editorOverflowWidgetsDomNode},()=>this.collectInputState())),this.inputPart.render(e,"",this),this._register(this.inputPart.onDidLoadInputState(t=>{this.contribs.forEach(n=>{if(n.setInputState){const o=(typeof t=="object"&&t?.[n.id])??{};n.setInputState(o)}})})),this._register(this.inputPart.onDidFocus(()=>this._onDidFocus.fire())),this._register(this.inputPart.onDidChangeContext(t=>this._onDidChangeContext.fire(t))),this._register(this.inputPart.onDidAcceptFollowup(t=>{if(!this.viewModel)return;let n="";if(t.followup.agentId&&t.followup.agentId!==this.chatAgentService.getDefaultAgent(this.location)?.id){const o=this.chatAgentService.getAgent(t.followup.agentId);if(!o)return;this.lastSelectedAgent=o,n=`${xe}${o.name} `,t.followup.subCommand&&(n+=`${q}${t.followup.subCommand} `)}else!t.followup.agentId&&t.followup.subCommand&&this.chatSlashCommandService.hasCommand(t.followup.subCommand)&&(n=`${q}${t.followup.subCommand} `);n+=t.followup.message,this.acceptInput(n),t.response&&this.chatService.notifyUserAction({sessionId:this.viewModel.sessionId,requestId:t.response.requestId,agentId:t.response.agent?.id,command:t.response.slashCommand?.name,result:t.response.result,action:{kind:"followUp",followup:t.followup}})})),this._register(this.inputPart.onDidChangeHeight(()=>{this.bodyDimension&&this.layout(this.bodyDimension.height,this.bodyDimension.width),this._onDidChangeContentHeight.fire()})),this._register(this.inputEditor.onDidChangeModelContent(()=>{this.parsedChatRequest=void 0,this.updateChatInputContext()})),this._register(this.chatAgentService.onDidChangeAgents(()=>this.parsedChatRequest=void 0))}onDidStyleChange(){this.container.style.setProperty("--vscode-interactive-result-editor-background-color",this.editorOptions.configuration.resultEditor.backgroundColor?.toString()??""),this.container.style.setProperty("--vscode-interactive-session-foreground",this.editorOptions.configuration.foreground?.toString()??""),this.container.style.setProperty("--vscode-chat-list-background",this.themeService.getColorTheme().getColor(this.styles.listBackground)?.toString()??"")}setModel(e,i){if(!this.container)throw new Error("Call render() before setModel()");e.sessionId!==this.viewModel?.sessionId&&(this._codeBlockModelCollection.clear(),this.container.setAttribute("data-session-id",e.sessionId),this.viewModel=this.instantiationService.createInstance(Oe,e,this._codeBlockModelCollection),this.viewModelDisposables.add(J.accumulate(this.viewModel.onDidChange,0)(t=>{this.viewModel&&(this.requestInProgress.set(this.viewModel.requestInProgress),this.onDidChangeItems(),t.some(n=>n?.kind==="addRequest")&&this.visible&&(I(this.tree),this.focusInput()))})),this.viewModelDisposables.add(this.viewModel.onDidDisposeModel(()=>{this.inputPart.saveState(),this.viewModel=void 0,this.onDidChangeItems()})),this.inputPart.initForNewChatModel(i),this.contribs.forEach(t=>{t.setInputState&&i.inputState?.[t.id]&&t.setInputState(i.inputState?.[t.id])}),this.viewModelDisposables.add(e.onDidChange(t=>{t.kind==="setAgent"&&this._onDidChangeAgent.fire({agent:t.agent,slashCommand:t.command})})),this.tree&&(this.onDidChangeItems(),I(this.tree)),this.updateChatInputContext())}getFocus(){return this.tree.getFocus()[0]??void 0}reveal(e,i){this.tree.reveal(e,i)}focus(e){const t=this.tree.getNode(null).children.find(n=>n.element?.id===e.id);t&&(this.tree.setFocus([t.element]),this.tree.domFocus())}refilter(){this.tree.refilter()}setInputPlaceholder(e){this.viewModel?.setInputPlaceholder(e)}resetInputPlaceholder(){this.viewModel?.resetInputPlaceholder()}setInput(e=""){this.inputPart.setValue(e,!1)}getInput(){return this.inputPart.inputEditor.getValue()}logInputHistory(){this.inputPart.logInputHistory()}async acceptInput(e,i){return this._acceptInput(e?{query:e}:void 0,i)}async acceptInputWithPrefix(e){this._acceptInput({prefix:e})}collectInputState(){const e={};return this.contribs.forEach(i=>{i.getInputState&&(e[i.id]=i.getInputState())}),e}async _acceptInput(e,i){if(this.viewModel){this._onDidAcceptInput.fire();const t=this.getInput(),n=this.chatAccessibilityService.acceptRequest(),o=e?"query"in e?e.query:`${e.prefix} ${t}`:t,r=!e||"prefix"in e,s=await this.chatService.sendRequest(this.viewModel.sessionId,o,{userSelectedModelId:this.inputPart.currentLanguageModel,location:this.location,locationData:this._location.resolveData?.(),parserContext:{selectedAgent:this._lastSelectedAgent},attachedContext:[...this.inputPart.attachedContext.values()]});if(s)return this.inputPart.acceptInput(r),this._onDidSubmitAgent.fire({agent:s.agent,slashCommand:s.slashCommand}),s.responseCompletePromise.then(()=>{const l=this.viewModel?.getItems().filter(C),g=l?.[l.length-1];if(this.chatAccessibilityService.acceptResponse(g,n,i),g?.result?.nextQuestion){const{prompt:f,participant:x,command:F}=g.result.nextQuestion,b=Fe(this.chatAgentService,this.location,f,x,F);b&&this.input.setValue(b,!1)}}),s.responseCreatedPromise}}setContext(e,...i){this.inputPart.attachContext(e,...i),this.chatEditingService.currentEditingSession&&this.renderChatEditingSessionState(this.chatEditingService.currentEditingSession)}getCodeBlockInfosForResponse(e){return this.renderer.getCodeBlockInfosForResponse(e)}getCodeBlockInfoForEditor(e){return this.renderer.getCodeBlockInfoForEditor(e)}getFileTreeInfosForResponse(e){return this.renderer.getFileTreeInfosForResponse(e)}getLastFocusedFileTreeForResponse(e){return this.renderer.getLastFocusedFileTreeForResponse(e)}focusLastMessage(){if(!this.viewModel)return;const e=this.tree.getNode(null).children,i=e[e.length-1];i&&(this.tree.setFocus([i.element]),this.tree.domFocus())}layout(e,i){i=Math.min(i,850),this.bodyDimension=new h.Dimension(i,e);const t=this._dynamicMessageLayoutData?.enabled?this._dynamicMessageLayoutData.maxHeight:e;this.inputPart.layout(t,i);const n=this.inputPart.inputPartHeight,o=this.tree.scrollTop+this.tree.renderHeight>=this.tree.scrollHeight,r=e-n;this.tree.layout(r,i),this.tree.getHTMLElement().style.height=`${r}px`;const s=Math.max(100-this.inputPart.followupsHeight,0);this.welcomeMessageContainer.style.height=`${r-s}px`,this.welcomeMessageContainer.style.paddingBottom=`${s}px`,this.renderer.layout(i),o&&I(this.tree),this.listContainer.style.height=`${e-n}px`,this._onDidChangeHeight.fire(e)}_dynamicMessageLayoutData;setDynamicChatTreeItemLayout(e,i){this._dynamicMessageLayoutData={numOfMessages:e,maxHeight:i,enabled:!0},this._register(this.renderer.onDidChangeItemHeight(()=>this.layoutDynamicChatTreeItemMode()));const t=this._register(new Z);this._register(this.tree.onDidScroll(n=>{this._dynamicMessageLayoutData?.enabled&&(t.value=h.scheduleAtNextAnimationFrame(h.getWindow(this.listContainer),()=>{if(!n.scrollTopChanged||n.heightChanged||n.scrollHeightChanged)return;const o=n.height,r=n.scrollHeight-o-n.scrollTop;if(r===0)return;const s=this._dynamicMessageLayoutData?.maxHeight??i,l=this.bodyDimension?.width??this.container.offsetWidth;this.inputPart.layout(s,l);const g=this.inputPart.inputPartHeight,f=Math.min(o+r,s-g);this.layout(f+g,l)}))}))}updateDynamicChatTreeItemLayout(e,i){this._dynamicMessageLayoutData={numOfMessages:e,maxHeight:i,enabled:!0};let t=!1,n=this.bodyDimension.height,o=this.bodyDimension.width;i<this.bodyDimension.height&&(n=i,t=!0);const r=this.container.offsetWidth;this.bodyDimension?.width!==r&&(o=r,t=!0),t&&this.layout(n,o)}get isDynamicChatTreeItemLayoutEnabled(){return this._dynamicMessageLayoutData?.enabled??!1}set isDynamicChatTreeItemLayoutEnabled(e){this._dynamicMessageLayoutData&&(this._dynamicMessageLayoutData.enabled=e)}layoutDynamicChatTreeItemMode(){if(!this.viewModel||!this._dynamicMessageLayoutData?.enabled)return;const e=this.bodyDimension?.width??this.container.offsetWidth;this.inputPart.layout(this._dynamicMessageLayoutData.maxHeight,e);const i=this.inputPart.inputPartHeight,t=this.viewModel.getItems(),n=t.slice(-this._dynamicMessageLayoutData.numOfMessages),o=n.some(s=>s.currentRenderedHeight===void 0),r=o?this._dynamicMessageLayoutData.maxHeight:n.reduce((s,l)=>s+l.currentRenderedHeight,0);this.layout(Math.min(i+r+(t.length>2?18:0),this._dynamicMessageLayoutData.maxHeight),e),(o||!r)&&I(this.tree)}saveState(){this.inputPart.saveState(),this.viewModel?.model.welcomeMessage&&this.storageService.store($,this.viewModel?.model.welcomeMessage,N.APPLICATION,pe.MACHINE)}getViewState(){return{inputValue:this.getInput(),inputState:this.collectInputState(),selectedLanguageModelId:this.inputPart.currentLanguageModel}}updateChatInputContext(){const e=this.parsedInput.parts.find(i=>i instanceof Ae);this.agentInInput.set(!!e),this.agentSupportsModelPicker.set(!e||!!e.agent.supportsModelPicker)}};v=R([c(4,re),c(5,V),c(6,he),c(7,He),c(8,ve),c(9,Be),c(10,de),c(11,ke),c(12,ue),c(13,Ce),c(14,Re),c(15,Pe),c(16,ge)],v);class mi{_widgets=[];_lastFocusedWidget=void 0;get lastFocusedWidget(){return me.activeChatController?.chatWidget??this._lastFocusedWidget}constructor(){}getWidgetByInputUri(d){return this._widgets.find(e=>se(e.inputUri,d))}getWidgetByLocation(d){return this._widgets.filter(e=>e.location===d)}getWidgetBySessionId(d){return this._widgets.find(e=>e.viewModel?.sessionId===d)}setLastFocusedWidget(d){d!==this._lastFocusedWidget&&(this._lastFocusedWidget=d)}register(d){if(this._widgets.some(e=>e===d))throw new Error("Cannot register the same widget multiple times");return this._widgets.push(d),ee(d.onDidFocus(()=>this.setLastFocusedWidget(d)),te(()=>this._widgets.splice(this._widgets.indexOf(d),1)))}}export{v as ChatWidget,mi as ChatWidgetService,Xe as isQuickChat};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ChatWidget_1;
+import * as dom from '../../../../base/browser/dom.js';
+import { renderIcon } from '../../../../base/browser/ui/iconLabel/iconLabels.js';
+import { disposableTimeout, timeout } from '../../../../base/common/async.js';
+import { toErrorMessage } from '../../../../base/common/errorMessage.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
+import { Disposable, DisposableStore, MutableDisposable, combinedDisposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { extUri, isEqual } from '../../../../base/common/resources.js';
+import { isDefined } from '../../../../base/common/types.js';
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { MarkdownRenderer } from '../../../../editor/browser/widget/markdownRenderer/browser/markdownRenderer.js';
+import { localize } from '../../../../nls.js';
+import { MenuId } from '../../../../platform/actions/common/actions.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { WorkbenchObjectTree } from '../../../../platform/list/browser/listService.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { TerminalChatController } from '../../terminal/terminalContribChatExports.js';
+import { ChatAgentLocation, IChatAgentService, isChatWelcomeMessageContent } from '../common/chatAgents.js';
+import { CONTEXT_CHAT_INPUT_HAS_AGENT, CONTEXT_CHAT_LOCATION, CONTEXT_CHAT_REQUEST_IN_PROGRESS, CONTEXT_IN_CHAT_SESSION, CONTEXT_IN_QUICK_CHAT, CONTEXT_LAST_ITEM_ID, CONTEXT_PARTICIPANT_SUPPORTS_MODEL_PICKER, CONTEXT_RESPONSE_FILTERED } from '../common/chatContextKeys.js';
+import { IChatEditingService } from '../common/chatEditingService.js';
+import { ChatRequestAgentPart, chatAgentLeader, chatSubcommandLeader, formatChatQuestion } from '../common/chatParserTypes.js';
+import { ChatRequestParser } from '../common/chatRequestParser.js';
+import { IChatService } from '../common/chatService.js';
+import { IChatSlashCommandService } from '../common/chatSlashCommands.js';
+import { ChatViewModel, isRequestVM, isResponseVM } from '../common/chatViewModel.js';
+import { CodeBlockModelCollection } from '../common/codeBlockModelCollection.js';
+import { IChatAccessibilityService, IChatWidgetService } from './chat.js';
+import { ChatAccessibilityProvider } from './chatAccessibilityProvider.js';
+import { ChatDragAndDrop } from './chatDragAndDrop.js';
+import { ChatImageDropAndPaste } from './chatImagePaste.js';
+import { ChatInputPart } from './chatInputPart.js';
+import { ChatListDelegate, ChatListItemRenderer } from './chatListRenderer.js';
+import { ChatEditorOptions } from './chatOptions.js';
+import './media/chat.css';
+import './media/chatAgentHover.css';
+const $ = dom.$;
+function revealLastElement(list) {
+    list.scrollTop = list.scrollHeight - list.renderHeight;
+}
+export function isQuickChat(widget) {
+    return 'viewContext' in widget && 'isQuickChat' in widget.viewContext && Boolean(widget.viewContext.isQuickChat);
+}
+const PersistWelcomeMessageContentKey = 'chat.welcomeMessageContent';
+let ChatWidget = class ChatWidget extends Disposable {
+    static { ChatWidget_1 = this; }
+    static { this.CONTRIBS = []; }
+    get visible() {
+        return this._visible;
+    }
+    set viewModel(viewModel) {
+        if (this._viewModel === viewModel) {
+            return;
+        }
+        this.viewModelDisposables.clear();
+        this._viewModel = viewModel;
+        if (viewModel) {
+            this.viewModelDisposables.add(viewModel);
+        }
+        this._onDidChangeViewModel.fire();
+    }
+    get viewModel() {
+        return this._viewModel;
+    }
+    get parsedInput() {
+        if (this.parsedChatRequest === undefined) {
+            if (!this.viewModel) {
+                return { text: '', parts: [] };
+            }
+            this.parsedChatRequest = this.instantiationService.createInstance(ChatRequestParser).parseChatRequest(this.viewModel.sessionId, this.getInput(), this.location, { selectedAgent: this._lastSelectedAgent });
+        }
+        return this.parsedChatRequest;
+    }
+    get scopedContextKeyService() {
+        return this.contextKeyService;
+    }
+    get location() {
+        return this._location.location;
+    }
+    constructor(location, _viewContext, viewOptions, styles, codeEditorService, contextKeyService, instantiationService, chatService, chatAgentService, chatWidgetService, contextMenuService, chatAccessibilityService, logService, themeService, chatSlashCommandService, chatEditingService, storageService) {
+        super();
+        this.viewOptions = viewOptions;
+        this.styles = styles;
+        this.contextKeyService = contextKeyService;
+        this.instantiationService = instantiationService;
+        this.chatService = chatService;
+        this.chatAgentService = chatAgentService;
+        this.contextMenuService = contextMenuService;
+        this.chatAccessibilityService = chatAccessibilityService;
+        this.logService = logService;
+        this.themeService = themeService;
+        this.chatSlashCommandService = chatSlashCommandService;
+        this.chatEditingService = chatEditingService;
+        this.storageService = storageService;
+        this._onDidSubmitAgent = this._register(new Emitter());
+        this.onDidSubmitAgent = this._onDidSubmitAgent.event;
+        this._onDidChangeAgent = this._register(new Emitter());
+        this.onDidChangeAgent = this._onDidChangeAgent.event;
+        this._onDidFocus = this._register(new Emitter());
+        this.onDidFocus = this._onDidFocus.event;
+        this._onDidChangeViewModel = this._register(new Emitter());
+        this.onDidChangeViewModel = this._onDidChangeViewModel.event;
+        this._onDidScroll = this._register(new Emitter());
+        this.onDidScroll = this._onDidScroll.event;
+        this._onDidClear = this._register(new Emitter());
+        this.onDidClear = this._onDidClear.event;
+        this._onDidAcceptInput = this._register(new Emitter());
+        this.onDidAcceptInput = this._onDidAcceptInput.event;
+        this._onDidChangeContext = this._register(new Emitter());
+        this.onDidChangeContext = this._onDidChangeContext.event;
+        this._onDidHide = this._register(new Emitter());
+        this.onDidHide = this._onDidHide.event;
+        this._onDidChangeParsedInput = this._register(new Emitter());
+        this.onDidChangeParsedInput = this._onDidChangeParsedInput.event;
+        this._onWillMaybeChangeHeight = new Emitter();
+        this.onWillMaybeChangeHeight = this._onWillMaybeChangeHeight.event;
+        this._onDidChangeHeight = this._register(new Emitter());
+        this.onDidChangeHeight = this._onDidChangeHeight.event;
+        this._onDidChangeContentHeight = new Emitter();
+        this.onDidChangeContentHeight = this._onDidChangeContentHeight.event;
+        this.contribs = [];
+        this.visibleChangeCount = 0;
+        this._visible = false;
+        this.previousTreeScrollHeight = 0;
+        this.viewModelDisposables = this._register(new DisposableStore());
+        this.viewContext = _viewContext ?? {};
+        if (typeof location === 'object') {
+            this._location = location;
+        }
+        else {
+            this._location = { location };
+        }
+        CONTEXT_IN_CHAT_SESSION.bindTo(contextKeyService).set(true);
+        CONTEXT_CHAT_LOCATION.bindTo(contextKeyService).set(this._location.location);
+        CONTEXT_IN_QUICK_CHAT.bindTo(contextKeyService).set(isQuickChat(this));
+        this.agentInInput = CONTEXT_CHAT_INPUT_HAS_AGENT.bindTo(contextKeyService);
+        this.agentSupportsModelPicker = CONTEXT_PARTICIPANT_SUPPORTS_MODEL_PICKER.bindTo(contextKeyService);
+        this.requestInProgress = CONTEXT_CHAT_REQUEST_IN_PROGRESS.bindTo(contextKeyService);
+        this._register(chatWidgetService.register(this));
+        this._codeBlockModelCollection = this._register(instantiationService.createInstance(CodeBlockModelCollection));
+        const chatEditingSessionDisposables = this._register(new DisposableStore());
+        this._register(this.chatEditingService.onDidCreateEditingSession((session) => {
+            if (session.chatSessionId !== this.viewModel?.sessionId) {
+                return;
+            }
+            chatEditingSessionDisposables.clear();
+            this.renderChatEditingSessionState(null);
+            chatEditingSessionDisposables.add(session.onDidChange(() => {
+                this.renderChatEditingSessionState(session);
+            }));
+            chatEditingSessionDisposables.add(session.onDidDispose(() => {
+                chatEditingSessionDisposables.clear();
+                this.renderChatEditingSessionState(null);
+            }));
+            this.renderChatEditingSessionState(session);
+        }));
+        if (this._location.location === ChatAgentLocation.EditingSession) {
+            let currentEditSession = undefined;
+            this._register(this.onDidChangeViewModel(async () => {
+                const sessionId = this._viewModel?.sessionId;
+                if (sessionId !== currentEditSession?.chatSessionId) {
+                    if (currentEditSession && (currentEditSession.state.get() !== 3)) {
+                        await currentEditSession.stop();
+                    }
+                    if (sessionId) {
+                        currentEditSession = await this.chatEditingService.startOrContinueEditingSession(sessionId, { silent: true });
+                    }
+                    else {
+                        currentEditSession = undefined;
+                    }
+                }
+            }));
+        }
+        this._register(codeEditorService.registerCodeEditorOpenHandler(async (input, _source, _sideBySide) => {
+            const resource = input.resource;
+            if (resource.scheme !== Schemas.vscodeChatCodeBlock) {
+                return null;
+            }
+            const responseId = resource.path.split('/').at(1);
+            if (!responseId) {
+                return null;
+            }
+            const item = this.viewModel?.getItems().find(item => item.id === responseId);
+            if (!item) {
+                return null;
+            }
+            this.reveal(item);
+            await timeout(0);
+            for (const codeBlockPart of this.renderer.editorsInUse()) {
+                if (extUri.isEqual(codeBlockPart.uri, resource, true)) {
+                    const editor = codeBlockPart.editor;
+                    let relativeTop = 0;
+                    const editorDomNode = editor.getDomNode();
+                    if (editorDomNode) {
+                        const row = dom.findParentWithClass(editorDomNode, 'monaco-list-row');
+                        if (row) {
+                            relativeTop = dom.getTopLeftOffset(editorDomNode).top - dom.getTopLeftOffset(row).top;
+                        }
+                    }
+                    if (input.options?.selection) {
+                        const editorSelectionTopOffset = editor.getTopForPosition(input.options.selection.startLineNumber, input.options.selection.startColumn);
+                        relativeTop += editorSelectionTopOffset;
+                        editor.focus();
+                        editor.setSelection({
+                            startLineNumber: input.options.selection.startLineNumber,
+                            startColumn: input.options.selection.startColumn,
+                            endLineNumber: input.options.selection.endLineNumber ?? input.options.selection.startLineNumber,
+                            endColumn: input.options.selection.endColumn ?? input.options.selection.startColumn
+                        });
+                    }
+                    this.reveal(item, relativeTop);
+                    return editor;
+                }
+            }
+            return null;
+        }));
+        const loadedWelcomeContent = storageService.getObject(`${PersistWelcomeMessageContentKey}.${this.location}`, -1);
+        if (isChatWelcomeMessageContent(loadedWelcomeContent)) {
+            this.persistedWelcomeMessage = loadedWelcomeContent;
+        }
+        this._register(this.onDidChangeParsedInput(() => this.updateChatInputContext()));
+    }
+    set lastSelectedAgent(agent) {
+        this.parsedChatRequest = undefined;
+        this._lastSelectedAgent = agent;
+        this._onDidChangeParsedInput.fire();
+    }
+    get lastSelectedAgent() {
+        return this._lastSelectedAgent;
+    }
+    get supportsFileReferences() {
+        return !!this.viewOptions.supportsFileReferences;
+    }
+    get input() {
+        return this.inputPart;
+    }
+    get inputEditor() {
+        return this.inputPart.inputEditor;
+    }
+    get inputUri() {
+        return this.inputPart.inputUri;
+    }
+    get contentHeight() {
+        return this.inputPart.contentHeight + this.tree.contentHeight;
+    }
+    render(parent) {
+        const viewId = 'viewId' in this.viewContext ? this.viewContext.viewId : undefined;
+        this.editorOptions = this._register(this.instantiationService.createInstance(ChatEditorOptions, viewId, this.styles.listForeground, this.styles.inputEditorBackground, this.styles.resultEditorBackground));
+        const renderInputOnTop = this.viewOptions.renderInputOnTop ?? false;
+        const renderFollowups = this.viewOptions.renderFollowups ?? !renderInputOnTop;
+        const renderStyle = this.viewOptions.renderStyle;
+        this.container = dom.append(parent, $('.interactive-session'));
+        this.welcomeMessageContainer = dom.append(this.container, $('.chat-welcome-view', { style: 'display: none' }));
+        this.renderWelcomeViewContentIfNeeded();
+        if (renderInputOnTop) {
+            this.createInput(this.container, { renderFollowups, renderStyle });
+            this.listContainer = dom.append(this.container, $(`.interactive-list`));
+        }
+        else {
+            this.listContainer = dom.append(this.container, $(`.interactive-list`));
+            this.createInput(this.container, { renderFollowups, renderStyle });
+        }
+        this.createList(this.listContainer, { ...this.viewOptions.rendererOptions, renderStyle });
+        this._register(this.editorOptions.onDidChange(() => this.onDidStyleChange()));
+        this.onDidStyleChange();
+        if (this.viewModel) {
+            this.onDidChangeItems();
+            revealLastElement(this.tree);
+        }
+        this.contribs = ChatWidget_1.CONTRIBS.map(contrib => {
+            try {
+                return this._register(this.instantiationService.createInstance(contrib, this));
+            }
+            catch (err) {
+                this.logService.error('Failed to instantiate chat widget contrib', toErrorMessage(err));
+                return undefined;
+            }
+        }).filter(isDefined);
+        this._register(this.instantiationService.createInstance(ChatDragAndDrop, this.container, this.inputPart, this.styles));
+        this._register(this.instantiationService.createInstance(ChatImageDropAndPaste, this.inputPart));
+    }
+    getContrib(id) {
+        return this.contribs.find(c => c.id === id);
+    }
+    focusInput() {
+        this.inputPart.focus();
+    }
+    hasInputFocus() {
+        return this.inputPart.hasFocus();
+    }
+    getSibling(item, type) {
+        if (!isResponseVM(item)) {
+            return;
+        }
+        const items = this.viewModel?.getItems();
+        if (!items) {
+            return;
+        }
+        const responseItems = items.filter(i => isResponseVM(i));
+        const targetIndex = responseItems.indexOf(item);
+        if (targetIndex === undefined) {
+            return;
+        }
+        const indexToFocus = type === 'next' ? targetIndex + 1 : targetIndex - 1;
+        if (indexToFocus < 0 || indexToFocus > responseItems.length - 1) {
+            return;
+        }
+        return responseItems[indexToFocus];
+    }
+    clear() {
+        if (this._dynamicMessageLayoutData) {
+            this._dynamicMessageLayoutData.enabled = true;
+        }
+        this._onDidClear.fire();
+    }
+    onDidChangeItems(skipDynamicLayout) {
+        if (this.tree && this._visible) {
+            const treeItems = (this.viewModel?.getItems() ?? [])
+                .map((item) => {
+                return {
+                    element: item,
+                    collapsed: false,
+                    collapsible: false
+                };
+            });
+            this.renderWelcomeViewContentIfNeeded();
+            this._onWillMaybeChangeHeight.fire();
+            this.tree.setChildren(null, treeItems, {
+                diffIdentityProvider: {
+                    getId: (element) => {
+                        return element.dataId +
+                            `${(isRequestVM(element))}` +
+                            `${isResponseVM(element) && element.renderData ? `_${this.visibleChangeCount}` : ''}` +
+                            (isResponseVM(element) ? `_${element.contentReferences.length}` : '') +
+                            (isRequestVM(element) && element.contentReferences ? `_${element.contentReferences?.length}` : '');
+                    },
+                }
+            });
+            if (!skipDynamicLayout && this._dynamicMessageLayoutData) {
+                this.layoutDynamicChatTreeItemMode();
+            }
+            const lastItem = treeItems[treeItems.length - 1]?.element;
+            if (lastItem) {
+                CONTEXT_LAST_ITEM_ID.bindTo(this.contextKeyService).set([lastItem.id]);
+            }
+            if (lastItem && isResponseVM(lastItem) && lastItem.isComplete) {
+                this.renderFollowups(lastItem.replyFollowups, lastItem);
+            }
+            else if (!treeItems.length && this.viewModel) {
+                this.renderFollowups(this.viewModel.model.sampleQuestions);
+            }
+            else {
+                this.renderFollowups(undefined);
+            }
+        }
+    }
+    renderWelcomeViewContentIfNeeded() {
+        const welcomeContent = this.viewModel?.model.welcomeMessage ?? this.persistedWelcomeMessage;
+        if (welcomeContent && this.welcomeMessageContainer.children.length === 0 && !this.viewOptions.renderStyle) {
+            const icon = dom.append(this.welcomeMessageContainer, $('.chat-welcome-view-icon'));
+            const title = dom.append(this.welcomeMessageContainer, $('.chat-welcome-view-title'));
+            const message = dom.append(this.welcomeMessageContainer, $('.chat-welcome-view-message'));
+            const tips = dom.append(this.welcomeMessageContainer, $('.chat-welcome-view-tips'));
+            icon.appendChild(renderIcon(welcomeContent.icon));
+            title.textContent = welcomeContent.title;
+            const renderer = this.instantiationService.createInstance(MarkdownRenderer, {});
+            const messageResult = this._register(renderer.render(welcomeContent.message));
+            dom.append(message, messageResult.element);
+            const tipsString = this.viewOptions.supportsAdditionalParticipants
+                ? new MarkdownString(localize('chatWidget.tips', "{0} to attach context\n\n{1} to chat with extensions", '$(attach)', '$(mention)'), { supportThemeIcons: true })
+                : new MarkdownString(localize('chatWidget.tips.withoutParticipants', "{0} to attach context", '$(attach)'), { supportThemeIcons: true });
+            const tipsResult = this._register(renderer.render(tipsString));
+            tips.appendChild(tipsResult.element);
+        }
+        if (!this.viewOptions.renderStyle && this.viewModel) {
+            const treeItems = this.viewModel.getItems();
+            dom.setVisibility(treeItems.length === 0, this.welcomeMessageContainer);
+            dom.setVisibility(treeItems.length !== 0, this.listContainer);
+        }
+    }
+    async renderChatEditingSessionState(session) {
+        this.inputPart.renderChatEditingSessionState(session, undefined, this);
+        if (this.bodyDimension) {
+            this.layout(this.bodyDimension.height, this.bodyDimension.width);
+        }
+    }
+    async renderFollowups(items, response) {
+        this.inputPart.renderFollowups(items, response);
+        if (this.bodyDimension) {
+            this.layout(this.bodyDimension.height, this.bodyDimension.width);
+        }
+    }
+    setVisible(visible) {
+        const wasVisible = this._visible;
+        this._visible = visible;
+        this.visibleChangeCount++;
+        this.renderer.setVisible(visible);
+        this.input.setVisible(visible);
+        if (visible) {
+            this._register(disposableTimeout(() => {
+                if (this._visible) {
+                    this.onDidChangeItems(true);
+                }
+            }, 0));
+        }
+        else if (wasVisible) {
+            this._onDidHide.fire();
+        }
+    }
+    createList(listContainer, options) {
+        const scopedInstantiationService = this._register(this._register(this.instantiationService.createChild(new ServiceCollection([IContextKeyService, this.contextKeyService]))));
+        const delegate = scopedInstantiationService.createInstance(ChatListDelegate, this.viewOptions.defaultElementHeight ?? 200);
+        const rendererDelegate = {
+            getListLength: () => this.tree.getNode(null).visibleChildrenCount,
+            onDidScroll: this.onDidScroll,
+        };
+        const overflowWidgetsContainer = document.createElement('div');
+        overflowWidgetsContainer.classList.add('chat-overflow-widget-container', 'monaco-editor');
+        listContainer.append(overflowWidgetsContainer);
+        this.renderer = this._register(scopedInstantiationService.createInstance(ChatListItemRenderer, this.editorOptions, options, rendererDelegate, this._codeBlockModelCollection, overflowWidgetsContainer));
+        this._register(this.renderer.onDidClickFollowup(item => {
+            this.acceptInput(item.message);
+        }));
+        this._register(this.renderer.onDidClickRerunWithAgentOrCommandDetection(item => {
+            const request = this.chatService.getSession(item.sessionId)?.getRequests().find(candidate => candidate.id === item.requestId);
+            if (request) {
+                this.chatService.resendRequest(request, { noCommandDetection: true, attempt: request.attempt + 1, location: this.location }).catch(e => this.logService.error('FAILED to rerun request', e));
+            }
+        }));
+        this.tree = this._register(scopedInstantiationService.createInstance(WorkbenchObjectTree, 'Chat', listContainer, delegate, [this.renderer], {
+            identityProvider: { getId: (e) => e.id },
+            horizontalScrolling: false,
+            alwaysConsumeMouseWheel: false,
+            supportDynamicHeights: true,
+            hideTwistiesOfChildlessElements: true,
+            accessibilityProvider: this.instantiationService.createInstance(ChatAccessibilityProvider),
+            keyboardNavigationLabelProvider: { getKeyboardNavigationLabel: (e) => isRequestVM(e) ? e.message : isResponseVM(e) ? e.response.value : '' },
+            setRowLineHeight: false,
+            filter: this.viewOptions.filter ? { filter: this.viewOptions.filter.bind(this.viewOptions), } : undefined,
+            overrideStyles: {
+                listFocusBackground: this.styles.listBackground,
+                listInactiveFocusBackground: this.styles.listBackground,
+                listActiveSelectionBackground: this.styles.listBackground,
+                listFocusAndSelectionBackground: this.styles.listBackground,
+                listInactiveSelectionBackground: this.styles.listBackground,
+                listHoverBackground: this.styles.listBackground,
+                listBackground: this.styles.listBackground,
+                listFocusForeground: this.styles.listForeground,
+                listHoverForeground: this.styles.listForeground,
+                listInactiveFocusForeground: this.styles.listForeground,
+                listInactiveSelectionForeground: this.styles.listForeground,
+                listActiveSelectionForeground: this.styles.listForeground,
+                listFocusAndSelectionForeground: this.styles.listForeground,
+                listActiveSelectionIconForeground: undefined,
+                listInactiveSelectionIconForeground: undefined,
+            }
+        }));
+        this._register(this.tree.onContextMenu(e => this.onContextMenu(e)));
+        this._register(this.tree.onDidChangeContentHeight(() => {
+            this.onDidChangeTreeContentHeight();
+        }));
+        this._register(this.renderer.onDidChangeItemHeight(e => {
+            this.tree.updateElementHeight(e.element, e.height);
+        }));
+        this._register(this.tree.onDidFocus(() => {
+            this._onDidFocus.fire();
+        }));
+        this._register(this.tree.onDidScroll(() => {
+            this._onDidScroll.fire();
+        }));
+    }
+    onContextMenu(e) {
+        e.browserEvent.preventDefault();
+        e.browserEvent.stopPropagation();
+        const selected = e.element;
+        const scopedContextKeyService = this.contextKeyService.createOverlay([
+            [CONTEXT_RESPONSE_FILTERED.key, isResponseVM(selected) && !!selected.errorDetails?.responseIsFiltered]
+        ]);
+        this.contextMenuService.showContextMenu({
+            menuId: MenuId.ChatContext,
+            menuActionOptions: { shouldForwardArgs: true },
+            contextKeyService: scopedContextKeyService,
+            getAnchor: () => e.anchor,
+            getActionsContext: () => selected,
+        });
+    }
+    onDidChangeTreeContentHeight() {
+        if (this.tree.scrollHeight !== this.previousTreeScrollHeight) {
+            const lastElementWasVisible = this.tree.scrollTop + this.tree.renderHeight >= this.previousTreeScrollHeight - 2;
+            if (lastElementWasVisible) {
+                dom.scheduleAtNextAnimationFrame(dom.getWindow(this.listContainer), () => {
+                    revealLastElement(this.tree);
+                }, 0);
+            }
+        }
+        this.previousTreeScrollHeight = this.tree.scrollHeight;
+        this._onDidChangeContentHeight.fire();
+    }
+    createInput(container, options) {
+        this.inputPart = this._register(this.instantiationService.createInstance(ChatInputPart, this.location, {
+            renderFollowups: options?.renderFollowups ?? true,
+            renderStyle: options?.renderStyle === 'minimal' ? 'compact' : options?.renderStyle,
+            menus: { executeToolbar: MenuId.ChatExecute, ...this.viewOptions.menus },
+            editorOverflowWidgetsDomNode: this.viewOptions.editorOverflowWidgetsDomNode,
+        }, () => this.collectInputState()));
+        this.inputPart.render(container, '', this);
+        this._register(this.inputPart.onDidLoadInputState(state => {
+            this.contribs.forEach(c => {
+                if (c.setInputState) {
+                    const contribState = (typeof state === 'object' && state?.[c.id]) ?? {};
+                    c.setInputState(contribState);
+                }
+            });
+        }));
+        this._register(this.inputPart.onDidFocus(() => this._onDidFocus.fire()));
+        this._register(this.inputPart.onDidChangeContext((e) => this._onDidChangeContext.fire(e)));
+        this._register(this.inputPart.onDidAcceptFollowup(e => {
+            if (!this.viewModel) {
+                return;
+            }
+            let msg = '';
+            if (e.followup.agentId && e.followup.agentId !== this.chatAgentService.getDefaultAgent(this.location)?.id) {
+                const agent = this.chatAgentService.getAgent(e.followup.agentId);
+                if (!agent) {
+                    return;
+                }
+                this.lastSelectedAgent = agent;
+                msg = `${chatAgentLeader}${agent.name} `;
+                if (e.followup.subCommand) {
+                    msg += `${chatSubcommandLeader}${e.followup.subCommand} `;
+                }
+            }
+            else if (!e.followup.agentId && e.followup.subCommand && this.chatSlashCommandService.hasCommand(e.followup.subCommand)) {
+                msg = `${chatSubcommandLeader}${e.followup.subCommand} `;
+            }
+            msg += e.followup.message;
+            this.acceptInput(msg);
+            if (!e.response) {
+                return;
+            }
+            this.chatService.notifyUserAction({
+                sessionId: this.viewModel.sessionId,
+                requestId: e.response.requestId,
+                agentId: e.response.agent?.id,
+                command: e.response.slashCommand?.name,
+                result: e.response.result,
+                action: {
+                    kind: 'followUp',
+                    followup: e.followup
+                },
+            });
+        }));
+        this._register(this.inputPart.onDidChangeHeight(() => {
+            if (this.bodyDimension) {
+                this.layout(this.bodyDimension.height, this.bodyDimension.width);
+            }
+            this._onDidChangeContentHeight.fire();
+        }));
+        this._register(this.inputEditor.onDidChangeModelContent(() => {
+            this.parsedChatRequest = undefined;
+            this.updateChatInputContext();
+        }));
+        this._register(this.chatAgentService.onDidChangeAgents(() => this.parsedChatRequest = undefined));
+    }
+    onDidStyleChange() {
+        this.container.style.setProperty('--vscode-interactive-result-editor-background-color', this.editorOptions.configuration.resultEditor.backgroundColor?.toString() ?? '');
+        this.container.style.setProperty('--vscode-interactive-session-foreground', this.editorOptions.configuration.foreground?.toString() ?? '');
+        this.container.style.setProperty('--vscode-chat-list-background', this.themeService.getColorTheme().getColor(this.styles.listBackground)?.toString() ?? '');
+    }
+    setModel(model, viewState) {
+        if (!this.container) {
+            throw new Error('Call render() before setModel()');
+        }
+        if (model.sessionId === this.viewModel?.sessionId) {
+            return;
+        }
+        this._codeBlockModelCollection.clear();
+        this.container.setAttribute('data-session-id', model.sessionId);
+        this.viewModel = this.instantiationService.createInstance(ChatViewModel, model, this._codeBlockModelCollection);
+        this.viewModelDisposables.add(Event.accumulate(this.viewModel.onDidChange, 0)(events => {
+            if (!this.viewModel) {
+                return;
+            }
+            this.requestInProgress.set(this.viewModel.requestInProgress);
+            this.onDidChangeItems();
+            if (events.some(e => e?.kind === 'addRequest') && this.visible) {
+                revealLastElement(this.tree);
+                this.focusInput();
+            }
+        }));
+        this.viewModelDisposables.add(this.viewModel.onDidDisposeModel(() => {
+            this.inputPart.saveState();
+            this.viewModel = undefined;
+            this.onDidChangeItems();
+        }));
+        this.inputPart.initForNewChatModel(viewState);
+        this.contribs.forEach(c => {
+            if (c.setInputState && viewState.inputState?.[c.id]) {
+                c.setInputState(viewState.inputState?.[c.id]);
+            }
+        });
+        this.viewModelDisposables.add(model.onDidChange((e) => {
+            if (e.kind === 'setAgent') {
+                this._onDidChangeAgent.fire({ agent: e.agent, slashCommand: e.command });
+            }
+        }));
+        if (this.tree) {
+            this.onDidChangeItems();
+            revealLastElement(this.tree);
+        }
+        this.updateChatInputContext();
+    }
+    getFocus() {
+        return this.tree.getFocus()[0] ?? undefined;
+    }
+    reveal(item, relativeTop) {
+        this.tree.reveal(item, relativeTop);
+    }
+    focus(item) {
+        const items = this.tree.getNode(null).children;
+        const node = items.find(i => i.element?.id === item.id);
+        if (!node) {
+            return;
+        }
+        this.tree.setFocus([node.element]);
+        this.tree.domFocus();
+    }
+    refilter() {
+        this.tree.refilter();
+    }
+    setInputPlaceholder(placeholder) {
+        this.viewModel?.setInputPlaceholder(placeholder);
+    }
+    resetInputPlaceholder() {
+        this.viewModel?.resetInputPlaceholder();
+    }
+    setInput(value = '') {
+        this.inputPart.setValue(value, false);
+    }
+    getInput() {
+        return this.inputPart.inputEditor.getValue();
+    }
+    logInputHistory() {
+        this.inputPart.logInputHistory();
+    }
+    async acceptInput(query, isVoiceInput) {
+        return this._acceptInput(query ? { query } : undefined, isVoiceInput);
+    }
+    async acceptInputWithPrefix(prefix) {
+        this._acceptInput({ prefix });
+    }
+    collectInputState() {
+        const inputState = {};
+        this.contribs.forEach(c => {
+            if (c.getInputState) {
+                inputState[c.id] = c.getInputState();
+            }
+        });
+        return inputState;
+    }
+    async _acceptInput(opts, isVoiceInput) {
+        if (this.viewModel) {
+            this._onDidAcceptInput.fire();
+            const editorValue = this.getInput();
+            const requestId = this.chatAccessibilityService.acceptRequest();
+            const input = !opts ? editorValue :
+                'query' in opts ? opts.query :
+                    `${opts.prefix} ${editorValue}`;
+            const isUserQuery = !opts || 'prefix' in opts;
+            const result = await this.chatService.sendRequest(this.viewModel.sessionId, input, {
+                userSelectedModelId: this.inputPart.currentLanguageModel,
+                location: this.location,
+                locationData: this._location.resolveData?.(),
+                parserContext: { selectedAgent: this._lastSelectedAgent },
+                attachedContext: [...this.inputPart.attachedContext.values()]
+            });
+            if (result) {
+                this.inputPart.acceptInput(isUserQuery);
+                this._onDidSubmitAgent.fire({ agent: result.agent, slashCommand: result.slashCommand });
+                result.responseCompletePromise.then(() => {
+                    const responses = this.viewModel?.getItems().filter(isResponseVM);
+                    const lastResponse = responses?.[responses.length - 1];
+                    this.chatAccessibilityService.acceptResponse(lastResponse, requestId, isVoiceInput);
+                    if (lastResponse?.result?.nextQuestion) {
+                        const { prompt, participant, command } = lastResponse.result.nextQuestion;
+                        const question = formatChatQuestion(this.chatAgentService, this.location, prompt, participant, command);
+                        if (question) {
+                            this.input.setValue(question, false);
+                        }
+                    }
+                });
+                return result.responseCreatedPromise;
+            }
+        }
+        return undefined;
+    }
+    setContext(overwrite, ...contentReferences) {
+        this.inputPart.attachContext(overwrite, ...contentReferences);
+        if (this.chatEditingService.currentEditingSession) {
+            this.renderChatEditingSessionState(this.chatEditingService.currentEditingSession);
+        }
+    }
+    getCodeBlockInfosForResponse(response) {
+        return this.renderer.getCodeBlockInfosForResponse(response);
+    }
+    getCodeBlockInfoForEditor(uri) {
+        return this.renderer.getCodeBlockInfoForEditor(uri);
+    }
+    getFileTreeInfosForResponse(response) {
+        return this.renderer.getFileTreeInfosForResponse(response);
+    }
+    getLastFocusedFileTreeForResponse(response) {
+        return this.renderer.getLastFocusedFileTreeForResponse(response);
+    }
+    focusLastMessage() {
+        if (!this.viewModel) {
+            return;
+        }
+        const items = this.tree.getNode(null).children;
+        const lastItem = items[items.length - 1];
+        if (!lastItem) {
+            return;
+        }
+        this.tree.setFocus([lastItem.element]);
+        this.tree.domFocus();
+    }
+    layout(height, width) {
+        width = Math.min(width, 850);
+        this.bodyDimension = new dom.Dimension(width, height);
+        const inputPartMaxHeight = this._dynamicMessageLayoutData?.enabled ? this._dynamicMessageLayoutData.maxHeight : height;
+        this.inputPart.layout(inputPartMaxHeight, width);
+        const inputPartHeight = this.inputPart.inputPartHeight;
+        const lastElementVisible = this.tree.scrollTop + this.tree.renderHeight >= this.tree.scrollHeight;
+        const listHeight = height - inputPartHeight;
+        this.tree.layout(listHeight, width);
+        this.tree.getHTMLElement().style.height = `${listHeight}px`;
+        const followupsOffset = Math.max(100 - this.inputPart.followupsHeight, 0);
+        this.welcomeMessageContainer.style.height = `${listHeight - followupsOffset}px`;
+        this.welcomeMessageContainer.style.paddingBottom = `${followupsOffset}px`;
+        this.renderer.layout(width);
+        if (lastElementVisible) {
+            revealLastElement(this.tree);
+        }
+        this.listContainer.style.height = `${height - inputPartHeight}px`;
+        this._onDidChangeHeight.fire(height);
+    }
+    setDynamicChatTreeItemLayout(numOfChatTreeItems, maxHeight) {
+        this._dynamicMessageLayoutData = { numOfMessages: numOfChatTreeItems, maxHeight, enabled: true };
+        this._register(this.renderer.onDidChangeItemHeight(() => this.layoutDynamicChatTreeItemMode()));
+        const mutableDisposable = this._register(new MutableDisposable());
+        this._register(this.tree.onDidScroll((e) => {
+            if (!this._dynamicMessageLayoutData?.enabled) {
+                return;
+            }
+            mutableDisposable.value = dom.scheduleAtNextAnimationFrame(dom.getWindow(this.listContainer), () => {
+                if (!e.scrollTopChanged || e.heightChanged || e.scrollHeightChanged) {
+                    return;
+                }
+                const renderHeight = e.height;
+                const diff = e.scrollHeight - renderHeight - e.scrollTop;
+                if (diff === 0) {
+                    return;
+                }
+                const possibleMaxHeight = (this._dynamicMessageLayoutData?.maxHeight ?? maxHeight);
+                const width = this.bodyDimension?.width ?? this.container.offsetWidth;
+                this.inputPart.layout(possibleMaxHeight, width);
+                const inputPartHeight = this.inputPart.inputPartHeight;
+                const newHeight = Math.min(renderHeight + diff, possibleMaxHeight - inputPartHeight);
+                this.layout(newHeight + inputPartHeight, width);
+            });
+        }));
+    }
+    updateDynamicChatTreeItemLayout(numOfChatTreeItems, maxHeight) {
+        this._dynamicMessageLayoutData = { numOfMessages: numOfChatTreeItems, maxHeight, enabled: true };
+        let hasChanged = false;
+        let height = this.bodyDimension.height;
+        let width = this.bodyDimension.width;
+        if (maxHeight < this.bodyDimension.height) {
+            height = maxHeight;
+            hasChanged = true;
+        }
+        const containerWidth = this.container.offsetWidth;
+        if (this.bodyDimension?.width !== containerWidth) {
+            width = containerWidth;
+            hasChanged = true;
+        }
+        if (hasChanged) {
+            this.layout(height, width);
+        }
+    }
+    get isDynamicChatTreeItemLayoutEnabled() {
+        return this._dynamicMessageLayoutData?.enabled ?? false;
+    }
+    set isDynamicChatTreeItemLayoutEnabled(value) {
+        if (!this._dynamicMessageLayoutData) {
+            return;
+        }
+        this._dynamicMessageLayoutData.enabled = value;
+    }
+    layoutDynamicChatTreeItemMode() {
+        if (!this.viewModel || !this._dynamicMessageLayoutData?.enabled) {
+            return;
+        }
+        const width = this.bodyDimension?.width ?? this.container.offsetWidth;
+        this.inputPart.layout(this._dynamicMessageLayoutData.maxHeight, width);
+        const inputHeight = this.inputPart.inputPartHeight;
+        const totalMessages = this.viewModel.getItems();
+        const messages = totalMessages.slice(-this._dynamicMessageLayoutData.numOfMessages);
+        const needsRerender = messages.some(m => m.currentRenderedHeight === undefined);
+        const listHeight = needsRerender
+            ? this._dynamicMessageLayoutData.maxHeight
+            : messages.reduce((acc, message) => acc + message.currentRenderedHeight, 0);
+        this.layout(Math.min(inputHeight + listHeight + (totalMessages.length > 2 ? 18 : 0), this._dynamicMessageLayoutData.maxHeight), width);
+        if (needsRerender || !listHeight) {
+            revealLastElement(this.tree);
+        }
+    }
+    saveState() {
+        this.inputPart.saveState();
+        if (this.viewModel?.model.welcomeMessage) {
+            this.storageService.store(PersistWelcomeMessageContentKey, this.viewModel?.model.welcomeMessage, -1, 1);
+        }
+    }
+    getViewState() {
+        return {
+            inputValue: this.getInput(),
+            inputState: this.collectInputState(),
+            selectedLanguageModelId: this.inputPart.currentLanguageModel
+        };
+    }
+    updateChatInputContext() {
+        const currentAgent = this.parsedInput.parts.find(part => part instanceof ChatRequestAgentPart);
+        this.agentInInput.set(!!currentAgent);
+        this.agentSupportsModelPicker.set(!currentAgent || !!currentAgent.agent.supportsModelPicker);
+    }
+};
+ChatWidget = ChatWidget_1 = __decorate([
+    __param(4, ICodeEditorService),
+    __param(5, IContextKeyService),
+    __param(6, IInstantiationService),
+    __param(7, IChatService),
+    __param(8, IChatAgentService),
+    __param(9, IChatWidgetService),
+    __param(10, IContextMenuService),
+    __param(11, IChatAccessibilityService),
+    __param(12, ILogService),
+    __param(13, IThemeService),
+    __param(14, IChatSlashCommandService),
+    __param(15, IChatEditingService),
+    __param(16, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], ChatWidget);
+export { ChatWidget };
+export class ChatWidgetService {
+    get lastFocusedWidget() {
+        return TerminalChatController.activeChatController?.chatWidget ?? this._lastFocusedWidget;
+    }
+    constructor() {
+        this._widgets = [];
+        this._lastFocusedWidget = undefined;
+    }
+    getWidgetByInputUri(uri) {
+        return this._widgets.find(w => isEqual(w.inputUri, uri));
+    }
+    getWidgetByLocation(location) {
+        return this._widgets.filter(w => w.location === location);
+    }
+    getWidgetBySessionId(sessionId) {
+        return this._widgets.find(w => w.viewModel?.sessionId === sessionId);
+    }
+    setLastFocusedWidget(widget) {
+        if (widget === this._lastFocusedWidget) {
+            return;
+        }
+        this._lastFocusedWidget = widget;
+    }
+    register(newWidget) {
+        if (this._widgets.some(widget => widget === newWidget)) {
+            throw new Error('Cannot register the same widget multiple times');
+        }
+        this._widgets.push(newWidget);
+        return combinedDisposable(newWidget.onDidFocus(() => this.setLastFocusedWidget(newWidget)), toDisposable(() => this._widgets.splice(this._widgets.indexOf(newWidget), 1)));
+    }
+}

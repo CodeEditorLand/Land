@@ -1,1 +1,22 @@
-import{CharCode as i}from"../../../base/common/charCode.js";function u(t,r){let e=0,n=0;const o=t.length;for(;n<o;){const c=t.charCodeAt(n);if(c===i.Space)e++;else if(c===i.Tab)e=e-e%r+r;else break;n++}return n===o?-1:e}export{u as computeIndentLevel};
+export function computeIndentLevel(line, tabSize) {
+    let indent = 0;
+    let i = 0;
+    const len = line.length;
+    while (i < len) {
+        const chCode = line.charCodeAt(i);
+        if (chCode === 32) {
+            indent++;
+        }
+        else if (chCode === 9) {
+            indent = indent - indent % tabSize + tabSize;
+        }
+        else {
+            break;
+        }
+        i++;
+    }
+    if (i === len) {
+        return -1;
+    }
+    return indent;
+}

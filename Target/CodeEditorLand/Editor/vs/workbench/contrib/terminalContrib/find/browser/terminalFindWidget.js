@@ -1,3 +1,179 @@
-var I=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var g=(c,r,e,t)=>{for(var i=t>1?void 0:t?S(r,e):r,n=c.length-1,d;n>=0;n--)(d=c[n])&&(i=(t?d(r,e,i):d(i))||i);return t&&i&&I(r,e,i),i},o=(c,r)=>(e,t)=>r(e,t,c);import*as h from"../../../../../base/browser/dom.js";import{SimpleFindWidget as C}from"../../../codeEditor/browser/find/simpleFindWidget.js";import{IContextMenuService as x,IContextViewService as W}from"../../../../../platform/contextview/browser/contextView.js";import{IContextKeyService as b}from"../../../../../platform/contextkey/common/contextkey.js";import{XtermTerminalConstants as V}from"../../../terminal/browser/terminal.js";import{TerminalContextKeys as p}from"../../../terminal/common/terminalContextKey.js";import{IThemeService as F}from"../../../../../platform/theme/common/themeService.js";import{IConfigurationService as D}from"../../../../../platform/configuration/common/configuration.js";import{IKeybindingService as T}from"../../../../../platform/keybinding/common/keybinding.js";import{Event as m}from"../../../../../base/common/event.js";import{IClipboardService as y}from"../../../../../platform/clipboard/common/clipboardService.js";import{openContextMenu as w}from"./textInputContextMenu.js";import"../../../../../base/common/lifecycle.js";import{IHoverService as P}from"../../../../../platform/hover/browser/hover.js";import{TerminalFindCommandId as a}from"../common/terminal.find.js";const R=419;let u=class extends C{constructor(e,t,i,n,d,v,f,A,K){super({showCommonFindToggles:!0,checkImeCompletionState:!0,showResultCount:!0,initialWidth:R,enableSash:!0,appendCaseSensitiveActionId:a.ToggleFindCaseSensitive,appendRegexActionId:a.ToggleFindRegex,appendWholeWordsActionId:a.ToggleFindWholeWord,previousMatchActionId:a.FindPrevious,nextMatchActionId:a.FindNext,closeWidgetActionId:a.FindHide,type:"Terminal",matchesLimit:V.SearchHighlightLimit},t,n,f,i);this._instance=e;this._contextKeyService=n;this._themeService=A;this._configurationService=K;this._register(this.state.onFindReplaceStateChange(()=>{this.show()})),this._findInputFocused=p.findInputFocus.bindTo(this._contextKeyService),this._findWidgetFocused=p.findFocus.bindTo(this._contextKeyService),this._findWidgetVisible=p.findVisible.bindTo(this._contextKeyService);const l=this.getDomNode().firstChild;l&&(this._register(h.addDisposableListener(l,"mousedown",s=>{s.stopPropagation()})),this._register(h.addDisposableListener(l,"contextmenu",s=>{s.stopPropagation()})));const _=this.getFindInputDomNode();this._register(h.addDisposableListener(_,"contextmenu",s=>{w(h.getWindow(_),s,v,d),s.stopPropagation()})),this._register(this._themeService.onDidColorThemeChange(()=>{this.isVisible()&&this.find(!0,!0)})),this._register(this._configurationService.onDidChangeConfiguration(s=>{s.affectsConfiguration("workbench.colorCustomizations")&&this.isVisible()&&this.find(!0,!0)})),this.updateResultCount()}_findInputFocused;_findWidgetFocused;_findWidgetVisible;_overrideCopyOnSelectionDisposable;find(e,t){const i=this._instance.xterm;i&&(e?this._findPreviousWithEvent(i,this.inputValue,{regex:this._getRegexValue(),wholeWord:this._getWholeWordValue(),caseSensitive:this._getCaseSensitiveValue(),incremental:t}):this._findNextWithEvent(i,this.inputValue,{regex:this._getRegexValue(),wholeWord:this._getWholeWordValue(),caseSensitive:this._getCaseSensitiveValue()}))}reveal(){const t=(this._instance.hasSelection()&&!this._instance.selection.includes(`
-`)?this._instance.selection:void 0)??this.inputValue,i=this._instance.xterm;i&&t&&t!==""&&this._findPreviousWithEvent(i,t,{incremental:!0,regex:this._getRegexValue(),wholeWord:this._getWholeWordValue(),caseSensitive:this._getCaseSensitiveValue()}).then(n=>{this.updateButtons(n),this._register(m.once(i.onDidChangeSelection)(()=>i.clearActiveSearchDecoration()))}),this.updateButtons(!1),super.reveal(t),this._findWidgetVisible.set(!0)}show(){const e=this._instance.hasSelection()&&!this._instance.selection.includes(`
-`)?this._instance.selection:void 0;super.show(e),this._findWidgetVisible.set(!0)}hide(){super.hide(),this._findWidgetVisible.reset(),this._instance.focus(!0),this._instance.xterm?.clearSearchDecorations()}async _getResultCount(){return this._instance.xterm?.findResult}_onInputChanged(){const e=this._instance.xterm;return e&&this._findPreviousWithEvent(e,this.inputValue,{regex:this._getRegexValue(),wholeWord:this._getWholeWordValue(),caseSensitive:this._getCaseSensitiveValue(),incremental:!0}).then(t=>{this.updateButtons(t)}),!1}_onFocusTrackerFocus(){"overrideCopyOnSelection"in this._instance&&(this._overrideCopyOnSelectionDisposable=this._instance.overrideCopyOnSelection(!1)),this._findWidgetFocused.set(!0)}_onFocusTrackerBlur(){this._overrideCopyOnSelectionDisposable?.dispose(),this._instance.xterm?.clearActiveSearchDecoration(),this._findWidgetFocused.reset()}_onFindInputFocusTrackerFocus(){this._findInputFocused.set(!0)}_onFindInputFocusTrackerBlur(){this._findInputFocused.reset()}findFirst(){const e=this._instance;e.hasSelection()&&e.clearSelection();const t=e.xterm;t&&this._findPreviousWithEvent(t,this.inputValue,{regex:this._getRegexValue(),wholeWord:this._getWholeWordValue(),caseSensitive:this._getCaseSensitiveValue()})}async _findNextWithEvent(e,t,i){return e.findNext(t,i).then(n=>(this._register(m.once(e.onDidChangeSelection)(()=>e.clearActiveSearchDecoration())),n))}async _findPreviousWithEvent(e,t,i){return e.findPrevious(t,i).then(n=>(this._register(m.once(e.onDidChangeSelection)(()=>e.clearActiveSearchDecoration())),n))}};u=g([o(1,W),o(2,T),o(3,b),o(4,x),o(5,y),o(6,P),o(7,F),o(8,D)],u);export{u as TerminalFindWidget};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../../base/browser/dom.js';
+import { SimpleFindWidget } from '../../../codeEditor/browser/find/simpleFindWidget.js';
+import { IContextMenuService, IContextViewService } from '../../../../../platform/contextview/browser/contextView.js';
+import { IContextKeyService } from '../../../../../platform/contextkey/common/contextkey.js';
+import { TerminalContextKeys } from '../../../terminal/common/terminalContextKey.js';
+import { IThemeService } from '../../../../../platform/theme/common/themeService.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { IKeybindingService } from '../../../../../platform/keybinding/common/keybinding.js';
+import { Event } from '../../../../../base/common/event.js';
+import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
+import { openContextMenu } from './textInputContextMenu.js';
+import { IHoverService } from '../../../../../platform/hover/browser/hover.js';
+const TERMINAL_FIND_WIDGET_INITIAL_WIDTH = 419;
+let TerminalFindWidget = class TerminalFindWidget extends SimpleFindWidget {
+    constructor(_instance, _contextViewService, keybindingService, _contextKeyService, _contextMenuService, _clipboardService, hoverService, _themeService, _configurationService) {
+        super({
+            showCommonFindToggles: true,
+            checkImeCompletionState: true,
+            showResultCount: true,
+            initialWidth: TERMINAL_FIND_WIDGET_INITIAL_WIDTH,
+            enableSash: true,
+            appendCaseSensitiveActionId: "workbench.action.terminal.toggleFindCaseSensitive",
+            appendRegexActionId: "workbench.action.terminal.toggleFindRegex",
+            appendWholeWordsActionId: "workbench.action.terminal.toggleFindWholeWord",
+            previousMatchActionId: "workbench.action.terminal.findPrevious",
+            nextMatchActionId: "workbench.action.terminal.findNext",
+            closeWidgetActionId: "workbench.action.terminal.hideFind",
+            type: 'Terminal',
+            matchesLimit: 1000
+        }, _contextViewService, _contextKeyService, hoverService, keybindingService);
+        this._instance = _instance;
+        this._contextKeyService = _contextKeyService;
+        this._themeService = _themeService;
+        this._configurationService = _configurationService;
+        this._register(this.state.onFindReplaceStateChange(() => {
+            this.show();
+        }));
+        this._findInputFocused = TerminalContextKeys.findInputFocus.bindTo(this._contextKeyService);
+        this._findWidgetFocused = TerminalContextKeys.findFocus.bindTo(this._contextKeyService);
+        this._findWidgetVisible = TerminalContextKeys.findVisible.bindTo(this._contextKeyService);
+        const innerDom = this.getDomNode().firstChild;
+        if (innerDom) {
+            this._register(dom.addDisposableListener(innerDom, 'mousedown', (event) => {
+                event.stopPropagation();
+            }));
+            this._register(dom.addDisposableListener(innerDom, 'contextmenu', (event) => {
+                event.stopPropagation();
+            }));
+        }
+        const findInputDomNode = this.getFindInputDomNode();
+        this._register(dom.addDisposableListener(findInputDomNode, 'contextmenu', (event) => {
+            openContextMenu(dom.getWindow(findInputDomNode), event, _clipboardService, _contextMenuService);
+            event.stopPropagation();
+        }));
+        this._register(this._themeService.onDidColorThemeChange(() => {
+            if (this.isVisible()) {
+                this.find(true, true);
+            }
+        }));
+        this._register(this._configurationService.onDidChangeConfiguration((e) => {
+            if (e.affectsConfiguration('workbench.colorCustomizations') && this.isVisible()) {
+                this.find(true, true);
+            }
+        }));
+        this.updateResultCount();
+    }
+    find(previous, update) {
+        const xterm = this._instance.xterm;
+        if (!xterm) {
+            return;
+        }
+        if (previous) {
+            this._findPreviousWithEvent(xterm, this.inputValue, { regex: this._getRegexValue(), wholeWord: this._getWholeWordValue(), caseSensitive: this._getCaseSensitiveValue(), incremental: update });
+        }
+        else {
+            this._findNextWithEvent(xterm, this.inputValue, { regex: this._getRegexValue(), wholeWord: this._getWholeWordValue(), caseSensitive: this._getCaseSensitiveValue() });
+        }
+    }
+    reveal() {
+        const initialInput = this._instance.hasSelection() && !this._instance.selection.includes('\n') ? this._instance.selection : undefined;
+        const inputValue = initialInput ?? this.inputValue;
+        const xterm = this._instance.xterm;
+        if (xterm && inputValue && inputValue !== '') {
+            this._findPreviousWithEvent(xterm, inputValue, { incremental: true, regex: this._getRegexValue(), wholeWord: this._getWholeWordValue(), caseSensitive: this._getCaseSensitiveValue() }).then(foundMatch => {
+                this.updateButtons(foundMatch);
+                this._register(Event.once(xterm.onDidChangeSelection)(() => xterm.clearActiveSearchDecoration()));
+            });
+        }
+        this.updateButtons(false);
+        super.reveal(inputValue);
+        this._findWidgetVisible.set(true);
+    }
+    show() {
+        const initialInput = this._instance.hasSelection() && !this._instance.selection.includes('\n') ? this._instance.selection : undefined;
+        super.show(initialInput);
+        this._findWidgetVisible.set(true);
+    }
+    hide() {
+        super.hide();
+        this._findWidgetVisible.reset();
+        this._instance.focus(true);
+        this._instance.xterm?.clearSearchDecorations();
+    }
+    async _getResultCount() {
+        return this._instance.xterm?.findResult;
+    }
+    _onInputChanged() {
+        const xterm = this._instance.xterm;
+        if (xterm) {
+            this._findPreviousWithEvent(xterm, this.inputValue, { regex: this._getRegexValue(), wholeWord: this._getWholeWordValue(), caseSensitive: this._getCaseSensitiveValue(), incremental: true }).then(foundMatch => {
+                this.updateButtons(foundMatch);
+            });
+        }
+        return false;
+    }
+    _onFocusTrackerFocus() {
+        if ('overrideCopyOnSelection' in this._instance) {
+            this._overrideCopyOnSelectionDisposable = this._instance.overrideCopyOnSelection(false);
+        }
+        this._findWidgetFocused.set(true);
+    }
+    _onFocusTrackerBlur() {
+        this._overrideCopyOnSelectionDisposable?.dispose();
+        this._instance.xterm?.clearActiveSearchDecoration();
+        this._findWidgetFocused.reset();
+    }
+    _onFindInputFocusTrackerFocus() {
+        this._findInputFocused.set(true);
+    }
+    _onFindInputFocusTrackerBlur() {
+        this._findInputFocused.reset();
+    }
+    findFirst() {
+        const instance = this._instance;
+        if (instance.hasSelection()) {
+            instance.clearSelection();
+        }
+        const xterm = instance.xterm;
+        if (xterm) {
+            this._findPreviousWithEvent(xterm, this.inputValue, { regex: this._getRegexValue(), wholeWord: this._getWholeWordValue(), caseSensitive: this._getCaseSensitiveValue() });
+        }
+    }
+    async _findNextWithEvent(xterm, term, options) {
+        return xterm.findNext(term, options).then(foundMatch => {
+            this._register(Event.once(xterm.onDidChangeSelection)(() => xterm.clearActiveSearchDecoration()));
+            return foundMatch;
+        });
+    }
+    async _findPreviousWithEvent(xterm, term, options) {
+        return xterm.findPrevious(term, options).then(foundMatch => {
+            this._register(Event.once(xterm.onDidChangeSelection)(() => xterm.clearActiveSearchDecoration()));
+            return foundMatch;
+        });
+    }
+};
+TerminalFindWidget = __decorate([
+    __param(1, IContextViewService),
+    __param(2, IKeybindingService),
+    __param(3, IContextKeyService),
+    __param(4, IContextMenuService),
+    __param(5, IClipboardService),
+    __param(6, IHoverService),
+    __param(7, IThemeService),
+    __param(8, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], TerminalFindWidget);
+export { TerminalFindWidget };

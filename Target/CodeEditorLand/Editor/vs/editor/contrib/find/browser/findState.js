@@ -1,1 +1,238 @@
-import{Emitter as f}from"../../../../base/common/event.js";import{Disposable as v}from"../../../../base/common/lifecycle.js";import{Range as l}from"../../../common/core/range.js";import{MATCHES_LIMIT as g}from"./findModel.js";var _=(s=>(s[s.NotSet=0]="NotSet",s[s.True=1]="True",s[s.False=2]="False",s))(_||{});function a(o,e){return o===1?!0:o===2?!1:e}class S extends v{_searchString;_replaceString;_isRevealed;_isReplaceRevealed;_isRegex;_isRegexOverride;_wholeWord;_wholeWordOverride;_matchCase;_matchCaseOverride;_preserveCase;_preserveCaseOverride;_searchScope;_matchesPosition;_matchesCount;_currentMatch;_loop;_isSearching;_filters;_onFindReplaceStateChange=this._register(new f);get searchString(){return this._searchString}get replaceString(){return this._replaceString}get isRevealed(){return this._isRevealed}get isReplaceRevealed(){return this._isReplaceRevealed}get isRegex(){return a(this._isRegexOverride,this._isRegex)}get wholeWord(){return a(this._wholeWordOverride,this._wholeWord)}get matchCase(){return a(this._matchCaseOverride,this._matchCase)}get preserveCase(){return a(this._preserveCaseOverride,this._preserveCase)}get actualIsRegex(){return this._isRegex}get actualWholeWord(){return this._wholeWord}get actualMatchCase(){return this._matchCase}get actualPreserveCase(){return this._preserveCase}get searchScope(){return this._searchScope}get matchesPosition(){return this._matchesPosition}get matchesCount(){return this._matchesCount}get currentMatch(){return this._currentMatch}get isSearching(){return this._isSearching}get filters(){return this._filters}onFindReplaceStateChange=this._onFindReplaceStateChange.event;constructor(){super(),this._searchString="",this._replaceString="",this._isRevealed=!1,this._isReplaceRevealed=!1,this._isRegex=!1,this._isRegexOverride=0,this._wholeWord=!1,this._wholeWordOverride=0,this._matchCase=!1,this._matchCaseOverride=0,this._preserveCase=!1,this._preserveCaseOverride=0,this._searchScope=null,this._matchesPosition=0,this._matchesCount=0,this._currentMatch=null,this._loop=!0,this._isSearching=!1,this._filters=null}changeMatchInfo(e,t,s){const i={moveCursor:!1,updateHistory:!1,searchString:!1,replaceString:!1,isRevealed:!1,isReplaceRevealed:!1,isRegex:!1,wholeWord:!1,matchCase:!1,preserveCase:!1,searchScope:!1,matchesPosition:!1,matchesCount:!1,currentMatch:!1,loop:!1,isSearching:!1,filters:!1};let r=!1;t===0&&(e=0),e>t&&(e=t),this._matchesPosition!==e&&(this._matchesPosition=e,i.matchesPosition=!0,r=!0),this._matchesCount!==t&&(this._matchesCount=t,i.matchesCount=!0,r=!0),typeof s<"u"&&(l.equalsRange(this._currentMatch,s)||(this._currentMatch=s,i.currentMatch=!0,r=!0)),r&&this._onFindReplaceStateChange.fire(i)}change(e,t,s=!0){const i={moveCursor:t,updateHistory:s,searchString:!1,replaceString:!1,isRevealed:!1,isReplaceRevealed:!1,isRegex:!1,wholeWord:!1,matchCase:!1,preserveCase:!1,searchScope:!1,matchesPosition:!1,matchesCount:!1,currentMatch:!1,loop:!1,isSearching:!1,filters:!1};let r=!1;const n=this.isRegex,h=this.wholeWord,c=this.matchCase,p=this.preserveCase;typeof e.searchString<"u"&&this._searchString!==e.searchString&&(this._searchString=e.searchString,i.searchString=!0,r=!0),typeof e.replaceString<"u"&&this._replaceString!==e.replaceString&&(this._replaceString=e.replaceString,i.replaceString=!0,r=!0),typeof e.isRevealed<"u"&&this._isRevealed!==e.isRevealed&&(this._isRevealed=e.isRevealed,i.isRevealed=!0,r=!0),typeof e.isReplaceRevealed<"u"&&this._isReplaceRevealed!==e.isReplaceRevealed&&(this._isReplaceRevealed=e.isReplaceRevealed,i.isReplaceRevealed=!0,r=!0),typeof e.isRegex<"u"&&(this._isRegex=e.isRegex),typeof e.wholeWord<"u"&&(this._wholeWord=e.wholeWord),typeof e.matchCase<"u"&&(this._matchCase=e.matchCase),typeof e.preserveCase<"u"&&(this._preserveCase=e.preserveCase),typeof e.searchScope<"u"&&(e.searchScope?.every(d=>this._searchScope?.some(u=>!l.equalsRange(u,d)))||(this._searchScope=e.searchScope,i.searchScope=!0,r=!0)),typeof e.loop<"u"&&this._loop!==e.loop&&(this._loop=e.loop,i.loop=!0,r=!0),typeof e.isSearching<"u"&&this._isSearching!==e.isSearching&&(this._isSearching=e.isSearching,i.isSearching=!0,r=!0),typeof e.filters<"u"&&(this._filters?this._filters.update(e.filters):this._filters=e.filters,i.filters=!0,r=!0),this._isRegexOverride=typeof e.isRegexOverride<"u"?e.isRegexOverride:0,this._wholeWordOverride=typeof e.wholeWordOverride<"u"?e.wholeWordOverride:0,this._matchCaseOverride=typeof e.matchCaseOverride<"u"?e.matchCaseOverride:0,this._preserveCaseOverride=typeof e.preserveCaseOverride<"u"?e.preserveCaseOverride:0,n!==this.isRegex&&(r=!0,i.isRegex=!0),h!==this.wholeWord&&(r=!0,i.wholeWord=!0),c!==this.matchCase&&(r=!0,i.matchCase=!0),p!==this.preserveCase&&(r=!0,i.preserveCase=!0),r&&this._onFindReplaceStateChange.fire(i)}canNavigateBack(){return this.canNavigateInLoop()||this.matchesPosition!==1}canNavigateForward(){return this.canNavigateInLoop()||this.matchesPosition<this.matchesCount}canNavigateInLoop(){return this._loop||this.matchesCount>=g}}export{_ as FindOptionOverride,S as FindReplaceState};
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { Range } from '../../../common/core/range.js';
+import { MATCHES_LIMIT } from './findModel.js';
+function effectiveOptionValue(override, value) {
+    if (override === 1) {
+        return true;
+    }
+    if (override === 2) {
+        return false;
+    }
+    return value;
+}
+export class FindReplaceState extends Disposable {
+    get searchString() { return this._searchString; }
+    get replaceString() { return this._replaceString; }
+    get isRevealed() { return this._isRevealed; }
+    get isReplaceRevealed() { return this._isReplaceRevealed; }
+    get isRegex() { return effectiveOptionValue(this._isRegexOverride, this._isRegex); }
+    get wholeWord() { return effectiveOptionValue(this._wholeWordOverride, this._wholeWord); }
+    get matchCase() { return effectiveOptionValue(this._matchCaseOverride, this._matchCase); }
+    get preserveCase() { return effectiveOptionValue(this._preserveCaseOverride, this._preserveCase); }
+    get actualIsRegex() { return this._isRegex; }
+    get actualWholeWord() { return this._wholeWord; }
+    get actualMatchCase() { return this._matchCase; }
+    get actualPreserveCase() { return this._preserveCase; }
+    get searchScope() { return this._searchScope; }
+    get matchesPosition() { return this._matchesPosition; }
+    get matchesCount() { return this._matchesCount; }
+    get currentMatch() { return this._currentMatch; }
+    get isSearching() { return this._isSearching; }
+    get filters() { return this._filters; }
+    constructor() {
+        super();
+        this._onFindReplaceStateChange = this._register(new Emitter());
+        this.onFindReplaceStateChange = this._onFindReplaceStateChange.event;
+        this._searchString = '';
+        this._replaceString = '';
+        this._isRevealed = false;
+        this._isReplaceRevealed = false;
+        this._isRegex = false;
+        this._isRegexOverride = 0;
+        this._wholeWord = false;
+        this._wholeWordOverride = 0;
+        this._matchCase = false;
+        this._matchCaseOverride = 0;
+        this._preserveCase = false;
+        this._preserveCaseOverride = 0;
+        this._searchScope = null;
+        this._matchesPosition = 0;
+        this._matchesCount = 0;
+        this._currentMatch = null;
+        this._loop = true;
+        this._isSearching = false;
+        this._filters = null;
+    }
+    changeMatchInfo(matchesPosition, matchesCount, currentMatch) {
+        const changeEvent = {
+            moveCursor: false,
+            updateHistory: false,
+            searchString: false,
+            replaceString: false,
+            isRevealed: false,
+            isReplaceRevealed: false,
+            isRegex: false,
+            wholeWord: false,
+            matchCase: false,
+            preserveCase: false,
+            searchScope: false,
+            matchesPosition: false,
+            matchesCount: false,
+            currentMatch: false,
+            loop: false,
+            isSearching: false,
+            filters: false
+        };
+        let somethingChanged = false;
+        if (matchesCount === 0) {
+            matchesPosition = 0;
+        }
+        if (matchesPosition > matchesCount) {
+            matchesPosition = matchesCount;
+        }
+        if (this._matchesPosition !== matchesPosition) {
+            this._matchesPosition = matchesPosition;
+            changeEvent.matchesPosition = true;
+            somethingChanged = true;
+        }
+        if (this._matchesCount !== matchesCount) {
+            this._matchesCount = matchesCount;
+            changeEvent.matchesCount = true;
+            somethingChanged = true;
+        }
+        if (typeof currentMatch !== 'undefined') {
+            if (!Range.equalsRange(this._currentMatch, currentMatch)) {
+                this._currentMatch = currentMatch;
+                changeEvent.currentMatch = true;
+                somethingChanged = true;
+            }
+        }
+        if (somethingChanged) {
+            this._onFindReplaceStateChange.fire(changeEvent);
+        }
+    }
+    change(newState, moveCursor, updateHistory = true) {
+        const changeEvent = {
+            moveCursor: moveCursor,
+            updateHistory: updateHistory,
+            searchString: false,
+            replaceString: false,
+            isRevealed: false,
+            isReplaceRevealed: false,
+            isRegex: false,
+            wholeWord: false,
+            matchCase: false,
+            preserveCase: false,
+            searchScope: false,
+            matchesPosition: false,
+            matchesCount: false,
+            currentMatch: false,
+            loop: false,
+            isSearching: false,
+            filters: false
+        };
+        let somethingChanged = false;
+        const oldEffectiveIsRegex = this.isRegex;
+        const oldEffectiveWholeWords = this.wholeWord;
+        const oldEffectiveMatchCase = this.matchCase;
+        const oldEffectivePreserveCase = this.preserveCase;
+        if (typeof newState.searchString !== 'undefined') {
+            if (this._searchString !== newState.searchString) {
+                this._searchString = newState.searchString;
+                changeEvent.searchString = true;
+                somethingChanged = true;
+            }
+        }
+        if (typeof newState.replaceString !== 'undefined') {
+            if (this._replaceString !== newState.replaceString) {
+                this._replaceString = newState.replaceString;
+                changeEvent.replaceString = true;
+                somethingChanged = true;
+            }
+        }
+        if (typeof newState.isRevealed !== 'undefined') {
+            if (this._isRevealed !== newState.isRevealed) {
+                this._isRevealed = newState.isRevealed;
+                changeEvent.isRevealed = true;
+                somethingChanged = true;
+            }
+        }
+        if (typeof newState.isReplaceRevealed !== 'undefined') {
+            if (this._isReplaceRevealed !== newState.isReplaceRevealed) {
+                this._isReplaceRevealed = newState.isReplaceRevealed;
+                changeEvent.isReplaceRevealed = true;
+                somethingChanged = true;
+            }
+        }
+        if (typeof newState.isRegex !== 'undefined') {
+            this._isRegex = newState.isRegex;
+        }
+        if (typeof newState.wholeWord !== 'undefined') {
+            this._wholeWord = newState.wholeWord;
+        }
+        if (typeof newState.matchCase !== 'undefined') {
+            this._matchCase = newState.matchCase;
+        }
+        if (typeof newState.preserveCase !== 'undefined') {
+            this._preserveCase = newState.preserveCase;
+        }
+        if (typeof newState.searchScope !== 'undefined') {
+            if (!newState.searchScope?.every((newSearchScope) => {
+                return this._searchScope?.some(existingSearchScope => {
+                    return !Range.equalsRange(existingSearchScope, newSearchScope);
+                });
+            })) {
+                this._searchScope = newState.searchScope;
+                changeEvent.searchScope = true;
+                somethingChanged = true;
+            }
+        }
+        if (typeof newState.loop !== 'undefined') {
+            if (this._loop !== newState.loop) {
+                this._loop = newState.loop;
+                changeEvent.loop = true;
+                somethingChanged = true;
+            }
+        }
+        if (typeof newState.isSearching !== 'undefined') {
+            if (this._isSearching !== newState.isSearching) {
+                this._isSearching = newState.isSearching;
+                changeEvent.isSearching = true;
+                somethingChanged = true;
+            }
+        }
+        if (typeof newState.filters !== 'undefined') {
+            if (this._filters) {
+                this._filters.update(newState.filters);
+            }
+            else {
+                this._filters = newState.filters;
+            }
+            changeEvent.filters = true;
+            somethingChanged = true;
+        }
+        this._isRegexOverride = (typeof newState.isRegexOverride !== 'undefined' ? newState.isRegexOverride : 0);
+        this._wholeWordOverride = (typeof newState.wholeWordOverride !== 'undefined' ? newState.wholeWordOverride : 0);
+        this._matchCaseOverride = (typeof newState.matchCaseOverride !== 'undefined' ? newState.matchCaseOverride : 0);
+        this._preserveCaseOverride = (typeof newState.preserveCaseOverride !== 'undefined' ? newState.preserveCaseOverride : 0);
+        if (oldEffectiveIsRegex !== this.isRegex) {
+            somethingChanged = true;
+            changeEvent.isRegex = true;
+        }
+        if (oldEffectiveWholeWords !== this.wholeWord) {
+            somethingChanged = true;
+            changeEvent.wholeWord = true;
+        }
+        if (oldEffectiveMatchCase !== this.matchCase) {
+            somethingChanged = true;
+            changeEvent.matchCase = true;
+        }
+        if (oldEffectivePreserveCase !== this.preserveCase) {
+            somethingChanged = true;
+            changeEvent.preserveCase = true;
+        }
+        if (somethingChanged) {
+            this._onFindReplaceStateChange.fire(changeEvent);
+        }
+    }
+    canNavigateBack() {
+        return this.canNavigateInLoop() || (this.matchesPosition !== 1);
+    }
+    canNavigateForward() {
+        return this.canNavigateInLoop() || (this.matchesPosition < this.matchesCount);
+    }
+    canNavigateInLoop() {
+        return this._loop || (this.matchesCount >= MATCHES_LIMIT);
+    }
+}

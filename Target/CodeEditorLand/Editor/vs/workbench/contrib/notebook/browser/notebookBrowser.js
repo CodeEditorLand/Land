@@ -1,1 +1,119 @@
-import"../../../../base/browser/window.js";import"../../../../base/common/cancellation.js";import"../../../../base/common/event.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import"../../../../editor/browser/editorExtensions.js";import"../../../../editor/common/editorCommon.js";import"../../../../editor/common/config/fontInfo.js";import"../../../../editor/common/core/position.js";import"../../../../editor/common/core/range.js";import"../../../../editor/common/core/selection.js";import"../../../../editor/common/model.js";import"../../../../platform/actions/common/actions.js";import"../../../../platform/editor/common/editor.js";import"../../../../platform/instantiation/common/instantiation.js";import"../../../common/editor.js";import"./notebookViewEvents.js";import"../common/model/notebookCellTextModel.js";import"../common/model/notebookTextModel.js";import{NOTEBOOK_EDITOR_ID as c}from"../common/notebookCommon.js";import{isCompositeNotebookEditorInput as b}from"../common/notebookEditorInput.js";import"../common/notebookKernelService.js";import"./notebookOptions.js";import{cellRangesToIndexes as m,reduceCellRanges as a}from"../common/notebookRange.js";import"../../webview/browser/webview.js";import"../../../../editor/common/config/editorOptions.js";import"../../../../platform/contextkey/common/contextkey.js";import"../../../../editor/browser/editorBrowser.js";import"../../../../base/common/observable.js";const qe="notebook.cell.expandCellInput",ze="notebook.cell.execute",Je="notebook.cell.detectLanguage",Ye="notebook.cell.changeLanguage",je="notebook.cell.quitEdit",Qe="notebook.cell.expandCellOutput",r="jupyter-notebook",s="ms-toolsai.jupyter",$e=new Map([[r,s]]),u=new Map;u.set(r,new Map),u.get(r)?.set("python",{extensionIds:["ms-python.python",s],displayName:"Python + Jupyter"});var p=(o=>(o[o.Html=0]="Html",o[o.Extension=1]="Extension",o))(p||{}),g=(o=>(o[o.fullCell=0]="fullCell",o[o.firstLine=1]="firstLine",o))(g||{}),C=(e=>(e[e.Uninitialized=0]="Uninitialized",e[e.Estimated=1]="Estimated",e[e.FromCache=2]="FromCache",e[e.Measured=3]="Measured",e))(C||{}),f=(i=>(i[i.Fold=0]="Fold",i))(f||{}),x=(e=>(e[e.Left=1]="Left",e[e.Center=2]="Center",e[e.Right=4]="Right",e[e.Full=7]="Full",e))(x||{}),y=(n=>(n[n.Default=1]="Default",n[n.Top=2]="Top",n[n.Center=3]="Center",n[n.CenterIfOutsideViewport=4]="CenterIfOutsideViewport",n[n.NearTopIfOutsideViewport=5]="NearTopIfOutsideViewport",n[n.FirstLineIfOutsideViewport=6]="FirstLineIfOutsideViewport",n))(y||{}),M=(t=>(t[t.Default=1]="Default",t[t.Center=2]="Center",t[t.CenterIfOutsideViewport=3]="CenterIfOutsideViewport",t))(M||{}),E=(o=>(o[o.Preview=0]="Preview",o[o.Editing=1]="Editing",o))(E||{}),w=(e=>(e[e.Container=0]="Container",e[e.Editor=1]="Editor",e[e.Output=2]="Output",e[e.ChatInput=3]="ChatInput",e))(w||{}),v=(e=>(e[e.None=0]="None",e[e.Top=1]="Top",e[e.Bottom=2]="Bottom",e[e.Both=3]="Both",e))(v||{}),h=(e=>(e[e.None=0]="None",e[e.Start=1]="Start",e[e.End=2]="End",e[e.Both=3]="Both",e))(h||{});function eo(l){if(!l)return;if(l.getId()===c)return l.getControl();const i=l.input;if(i&&b(i))return l.getControl()?.notebookEditor}function oo(l,i){const o=m(i),t=[];return o.forEach(e=>{if(!l.cellAt(e))return;const n=l.getViewIndexByModelIndex(e);if(n<0)return;const I=n+1,d=l.getCellRangeFromViewRange(n,I);d&&t.push(d)}),a(t)}function to(l,i){const o=[];return a(i).forEach(t=>{o.push(...l.getCellsInRange(t))}),o}var k=(t=>(t[t.None=0]="None",t[t.Expanded=1]="Expanded",t[t.Collapsed=2]="Collapsed",t))(k||{});export{Ye as CHANGE_CELL_LANGUAGE,E as CellEditState,w as CellFocusMode,k as CellFoldingState,f as CellLayoutContext,C as CellLayoutState,M as CellRevealRangeType,y as CellRevealType,v as CursorAtBoundary,h as CursorAtLineBoundary,Je as DETECT_CELL_LANGUAGE,ze as EXECUTE_CELL_COMMAND_ID,qe as EXPAND_CELL_INPUT_COMMAND_ID,Qe as EXPAND_CELL_OUTPUT_COMMAND_ID,r as IPYNB_VIEW_TYPE,s as JUPYTER_EXTENSION_ID,$e as KERNEL_EXTENSIONS,u as KERNEL_RECOMMENDATIONS,x as NotebookOverviewRulerLane,je as QUIT_EDIT_CELL_COMMAND_ID,p as RenderOutputType,g as ScrollToRevealBehavior,to as cellRangeToViewCells,oo as expandCellRangesWithHiddenCells,eo as getNotebookEditorFromEditorPane};
+import { NOTEBOOK_EDITOR_ID } from '../common/notebookCommon.js';
+import { isCompositeNotebookEditorInput } from '../common/notebookEditorInput.js';
+import { cellRangesToIndexes, reduceCellRanges } from '../common/notebookRange.js';
+export const EXPAND_CELL_INPUT_COMMAND_ID = 'notebook.cell.expandCellInput';
+export const EXECUTE_CELL_COMMAND_ID = 'notebook.cell.execute';
+export const DETECT_CELL_LANGUAGE = 'notebook.cell.detectLanguage';
+export const CHANGE_CELL_LANGUAGE = 'notebook.cell.changeLanguage';
+export const QUIT_EDIT_CELL_COMMAND_ID = 'notebook.cell.quitEdit';
+export const EXPAND_CELL_OUTPUT_COMMAND_ID = 'notebook.cell.expandCellOutput';
+export const IPYNB_VIEW_TYPE = 'jupyter-notebook';
+export const JUPYTER_EXTENSION_ID = 'ms-toolsai.jupyter';
+export const KERNEL_EXTENSIONS = new Map([
+    [IPYNB_VIEW_TYPE, JUPYTER_EXTENSION_ID],
+]);
+export const KERNEL_RECOMMENDATIONS = new Map();
+KERNEL_RECOMMENDATIONS.set(IPYNB_VIEW_TYPE, new Map());
+KERNEL_RECOMMENDATIONS.get(IPYNB_VIEW_TYPE)?.set('python', {
+    extensionIds: [
+        'ms-python.python',
+        JUPYTER_EXTENSION_ID
+    ],
+    displayName: 'Python + Jupyter',
+});
+export var ScrollToRevealBehavior;
+(function (ScrollToRevealBehavior) {
+    ScrollToRevealBehavior[ScrollToRevealBehavior["fullCell"] = 0] = "fullCell";
+    ScrollToRevealBehavior[ScrollToRevealBehavior["firstLine"] = 1] = "firstLine";
+})(ScrollToRevealBehavior || (ScrollToRevealBehavior = {}));
+export var CellLayoutState;
+(function (CellLayoutState) {
+    CellLayoutState[CellLayoutState["Uninitialized"] = 0] = "Uninitialized";
+    CellLayoutState[CellLayoutState["Estimated"] = 1] = "Estimated";
+    CellLayoutState[CellLayoutState["FromCache"] = 2] = "FromCache";
+    CellLayoutState[CellLayoutState["Measured"] = 3] = "Measured";
+})(CellLayoutState || (CellLayoutState = {}));
+export var CellLayoutContext;
+(function (CellLayoutContext) {
+    CellLayoutContext[CellLayoutContext["Fold"] = 0] = "Fold";
+})(CellLayoutContext || (CellLayoutContext = {}));
+export var NotebookOverviewRulerLane;
+(function (NotebookOverviewRulerLane) {
+    NotebookOverviewRulerLane[NotebookOverviewRulerLane["Left"] = 1] = "Left";
+    NotebookOverviewRulerLane[NotebookOverviewRulerLane["Center"] = 2] = "Center";
+    NotebookOverviewRulerLane[NotebookOverviewRulerLane["Right"] = 4] = "Right";
+    NotebookOverviewRulerLane[NotebookOverviewRulerLane["Full"] = 7] = "Full";
+})(NotebookOverviewRulerLane || (NotebookOverviewRulerLane = {}));
+export var CellRevealRangeType;
+(function (CellRevealRangeType) {
+    CellRevealRangeType[CellRevealRangeType["Default"] = 1] = "Default";
+    CellRevealRangeType[CellRevealRangeType["Center"] = 2] = "Center";
+    CellRevealRangeType[CellRevealRangeType["CenterIfOutsideViewport"] = 3] = "CenterIfOutsideViewport";
+})(CellRevealRangeType || (CellRevealRangeType = {}));
+export var CellEditState;
+(function (CellEditState) {
+    CellEditState[CellEditState["Preview"] = 0] = "Preview";
+    CellEditState[CellEditState["Editing"] = 1] = "Editing";
+})(CellEditState || (CellEditState = {}));
+export var CellFocusMode;
+(function (CellFocusMode) {
+    CellFocusMode[CellFocusMode["Container"] = 0] = "Container";
+    CellFocusMode[CellFocusMode["Editor"] = 1] = "Editor";
+    CellFocusMode[CellFocusMode["Output"] = 2] = "Output";
+    CellFocusMode[CellFocusMode["ChatInput"] = 3] = "ChatInput";
+})(CellFocusMode || (CellFocusMode = {}));
+export var CursorAtBoundary;
+(function (CursorAtBoundary) {
+    CursorAtBoundary[CursorAtBoundary["None"] = 0] = "None";
+    CursorAtBoundary[CursorAtBoundary["Top"] = 1] = "Top";
+    CursorAtBoundary[CursorAtBoundary["Bottom"] = 2] = "Bottom";
+    CursorAtBoundary[CursorAtBoundary["Both"] = 3] = "Both";
+})(CursorAtBoundary || (CursorAtBoundary = {}));
+export var CursorAtLineBoundary;
+(function (CursorAtLineBoundary) {
+    CursorAtLineBoundary[CursorAtLineBoundary["None"] = 0] = "None";
+    CursorAtLineBoundary[CursorAtLineBoundary["Start"] = 1] = "Start";
+    CursorAtLineBoundary[CursorAtLineBoundary["End"] = 2] = "End";
+    CursorAtLineBoundary[CursorAtLineBoundary["Both"] = 3] = "Both";
+})(CursorAtLineBoundary || (CursorAtLineBoundary = {}));
+export function getNotebookEditorFromEditorPane(editorPane) {
+    if (!editorPane) {
+        return;
+    }
+    if (editorPane.getId() === NOTEBOOK_EDITOR_ID) {
+        return editorPane.getControl();
+    }
+    const input = editorPane.input;
+    const isCompositeNotebook = input && isCompositeNotebookEditorInput(input);
+    if (isCompositeNotebook) {
+        return editorPane.getControl()?.notebookEditor;
+    }
+    return undefined;
+}
+export function expandCellRangesWithHiddenCells(editor, ranges) {
+    const indexes = cellRangesToIndexes(ranges);
+    const modelRanges = [];
+    indexes.forEach(index => {
+        const viewCell = editor.cellAt(index);
+        if (!viewCell) {
+            return;
+        }
+        const viewIndex = editor.getViewIndexByModelIndex(index);
+        if (viewIndex < 0) {
+            return;
+        }
+        const nextViewIndex = viewIndex + 1;
+        const range = editor.getCellRangeFromViewRange(viewIndex, nextViewIndex);
+        if (range) {
+            modelRanges.push(range);
+        }
+    });
+    return reduceCellRanges(modelRanges);
+}
+export function cellRangeToViewCells(editor, ranges) {
+    const cells = [];
+    reduceCellRanges(ranges).forEach(range => {
+        cells.push(...editor.getCellsInRange(range));
+    });
+    return cells;
+}

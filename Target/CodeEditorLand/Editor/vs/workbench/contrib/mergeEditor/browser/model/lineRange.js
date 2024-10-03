@@ -1,1 +1,94 @@
-import{compareBy as b,numberComparator as m}from"../../../../../base/common/arrays.js";import{BugIndicatingError as a}from"../../../../../base/common/errors.js";import{Constants as s}from"../../../../../base/common/uint.js";import{Range as r}from"../../../../../editor/common/core/range.js";import"../../../../../editor/common/model.js";class i{constructor(e,n){this.startLineNumber=e;this.lineCount=n;if(n<0)throw new a}static compareByStart=b(e=>e.startLineNumber,m);static join(e){if(e.length===0)return;let n=Number.MAX_SAFE_INTEGER,t=0;for(const u of e)n=Math.min(n,u.startLineNumber),t=Math.max(t,u.startLineNumber+u.lineCount);return new i(n,t-n)}static fromLineNumbers(e,n){return new i(e,n-e)}join(e){return new i(Math.min(this.startLineNumber,e.startLineNumber),Math.max(this.endLineNumberExclusive,e.endLineNumberExclusive)-this.startLineNumber)}get endLineNumberExclusive(){return this.startLineNumber+this.lineCount}get isEmpty(){return this.lineCount===0}touches(e){return this.endLineNumberExclusive>=e.startLineNumber&&e.endLineNumberExclusive>=this.startLineNumber}isAfter(e){return this.startLineNumber>=e.endLineNumberExclusive}isBefore(e){return e.startLineNumber>=this.endLineNumberExclusive}delta(e){return new i(this.startLineNumber+e,this.lineCount)}toString(){return`[${this.startLineNumber},${this.endLineNumberExclusive})`}equals(e){return this.startLineNumber===e.startLineNumber&&this.lineCount===e.lineCount}contains(e){return this.startLineNumber<=e&&e<this.endLineNumberExclusive}deltaEnd(e){return new i(this.startLineNumber,this.lineCount+e)}deltaStart(e){return new i(this.startLineNumber+e,this.lineCount-e)}getLines(e){const n=new Array(this.lineCount);for(let t=0;t<this.lineCount;t++)n[t]=e.getLineContent(this.startLineNumber+t);return n}containsRange(e){return this.startLineNumber<=e.startLineNumber&&e.endLineNumberExclusive<=this.endLineNumberExclusive}toRange(){return new r(this.startLineNumber,1,this.endLineNumberExclusive,1)}toInclusiveRange(){if(!this.isEmpty)return new r(this.startLineNumber,1,this.endLineNumberExclusive-1,s.MAX_SAFE_SMALL_INTEGER)}toInclusiveRangeOrEmpty(){return this.isEmpty?new r(this.startLineNumber,1,this.startLineNumber,1):new r(this.startLineNumber,1,this.endLineNumberExclusive-1,s.MAX_SAFE_SMALL_INTEGER)}intersects(e){return this.startLineNumber<=e.endLineNumberExclusive&&e.startLineNumber<=this.endLineNumberExclusive}}export{i as LineRange};
+import { compareBy, numberComparator } from '../../../../../base/common/arrays.js';
+import { BugIndicatingError } from '../../../../../base/common/errors.js';
+import { Range } from '../../../../../editor/common/core/range.js';
+export class LineRange {
+    static { this.compareByStart = compareBy(l => l.startLineNumber, numberComparator); }
+    static join(ranges) {
+        if (ranges.length === 0) {
+            return undefined;
+        }
+        let startLineNumber = Number.MAX_SAFE_INTEGER;
+        let endLineNumber = 0;
+        for (const range of ranges) {
+            startLineNumber = Math.min(startLineNumber, range.startLineNumber);
+            endLineNumber = Math.max(endLineNumber, range.startLineNumber + range.lineCount);
+        }
+        return new LineRange(startLineNumber, endLineNumber - startLineNumber);
+    }
+    static fromLineNumbers(startLineNumber, endExclusiveLineNumber) {
+        return new LineRange(startLineNumber, endExclusiveLineNumber - startLineNumber);
+    }
+    constructor(startLineNumber, lineCount) {
+        this.startLineNumber = startLineNumber;
+        this.lineCount = lineCount;
+        if (lineCount < 0) {
+            throw new BugIndicatingError();
+        }
+    }
+    join(other) {
+        return new LineRange(Math.min(this.startLineNumber, other.startLineNumber), Math.max(this.endLineNumberExclusive, other.endLineNumberExclusive) - this.startLineNumber);
+    }
+    get endLineNumberExclusive() {
+        return this.startLineNumber + this.lineCount;
+    }
+    get isEmpty() {
+        return this.lineCount === 0;
+    }
+    touches(other) {
+        return (this.endLineNumberExclusive >= other.startLineNumber &&
+            other.endLineNumberExclusive >= this.startLineNumber);
+    }
+    isAfter(range) {
+        return this.startLineNumber >= range.endLineNumberExclusive;
+    }
+    isBefore(range) {
+        return range.startLineNumber >= this.endLineNumberExclusive;
+    }
+    delta(lineDelta) {
+        return new LineRange(this.startLineNumber + lineDelta, this.lineCount);
+    }
+    toString() {
+        return `[${this.startLineNumber},${this.endLineNumberExclusive})`;
+    }
+    equals(originalRange) {
+        return this.startLineNumber === originalRange.startLineNumber && this.lineCount === originalRange.lineCount;
+    }
+    contains(lineNumber) {
+        return this.startLineNumber <= lineNumber && lineNumber < this.endLineNumberExclusive;
+    }
+    deltaEnd(delta) {
+        return new LineRange(this.startLineNumber, this.lineCount + delta);
+    }
+    deltaStart(lineDelta) {
+        return new LineRange(this.startLineNumber + lineDelta, this.lineCount - lineDelta);
+    }
+    getLines(model) {
+        const result = new Array(this.lineCount);
+        for (let i = 0; i < this.lineCount; i++) {
+            result[i] = model.getLineContent(this.startLineNumber + i);
+        }
+        return result;
+    }
+    containsRange(range) {
+        return this.startLineNumber <= range.startLineNumber && range.endLineNumberExclusive <= this.endLineNumberExclusive;
+    }
+    toRange() {
+        return new Range(this.startLineNumber, 1, this.endLineNumberExclusive, 1);
+    }
+    toInclusiveRange() {
+        if (this.isEmpty) {
+            return undefined;
+        }
+        return new Range(this.startLineNumber, 1, this.endLineNumberExclusive - 1, 1073741824);
+    }
+    toInclusiveRangeOrEmpty() {
+        if (this.isEmpty) {
+            return new Range(this.startLineNumber, 1, this.startLineNumber, 1);
+        }
+        return new Range(this.startLineNumber, 1, this.endLineNumberExclusive - 1, 1073741824);
+    }
+    intersects(lineRange) {
+        return this.startLineNumber <= lineRange.endLineNumberExclusive
+            && lineRange.startLineNumber <= this.endLineNumberExclusive;
+    }
+}

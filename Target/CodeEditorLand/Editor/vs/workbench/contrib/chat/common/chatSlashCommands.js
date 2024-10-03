@@ -1,1 +1,66 @@
-var c=Object.defineProperty;var C=Object.getOwnPropertyDescriptor;var h=(r,t,e,a)=>{for(var o=a>1?void 0:a?C(t,e):t,n=r.length-1,s;n>=0;n--)(s=r[n])&&(o=(a?s(t,e,o):s(o))||o);return a&&o&&c(t,e,o),o},l=(r,t)=>(e,a)=>t(e,a,r);import"../../../../base/common/cancellation.js";import{Emitter as g}from"../../../../base/common/event.js";import{Disposable as p,toDisposable as I}from"../../../../base/common/lifecycle.js";import{createDecorator as v}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/progress/common/progress.js";import"./languageModels.js";import"./chatService.js";import{IExtensionService as f}from"../../../services/extensions/common/extensions.js";import"./chatAgents.js";const U=v("chatSlashCommandService");let m=class extends p{constructor(e){super();this._extensionService=e}_commands=new Map;_onDidChangeCommands=this._register(new g);onDidChangeCommands=this._onDidChangeCommands.event;dispose(){super.dispose(),this._commands.clear()}registerSlashCommand(e,a){if(this._commands.has(e.command))throw new Error(`Already registered a command with id ${e.command}}`);return this._commands.set(e.command,{data:e,command:a}),this._onDidChangeCommands.fire(),I(()=>{this._commands.delete(e.command)&&this._onDidChangeCommands.fire()})}getCommands(e){return Array.from(this._commands.values(),a=>a.data).filter(a=>a.locations.includes(e))}hasCommand(e){return this._commands.has(e)}async executeCommand(e,a,o,n,s,d){const i=this._commands.get(e);if(!i)throw new Error("No command with id ${id} NOT registered");if(i.command||await this._extensionService.activateByEvent(`onSlash:${e}`),!i.command)throw new Error(`No command with id ${e} NOT resolved`);return await i.command(a,o,n,s,d)}};m=h([l(0,f)],m);export{m as ChatSlashCommandService,U as IChatSlashCommandService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+export const IChatSlashCommandService = createDecorator('chatSlashCommandService');
+let ChatSlashCommandService = class ChatSlashCommandService extends Disposable {
+    constructor(_extensionService) {
+        super();
+        this._extensionService = _extensionService;
+        this._commands = new Map();
+        this._onDidChangeCommands = this._register(new Emitter());
+        this.onDidChangeCommands = this._onDidChangeCommands.event;
+    }
+    dispose() {
+        super.dispose();
+        this._commands.clear();
+    }
+    registerSlashCommand(data, command) {
+        if (this._commands.has(data.command)) {
+            throw new Error(`Already registered a command with id ${data.command}}`);
+        }
+        this._commands.set(data.command, { data, command });
+        this._onDidChangeCommands.fire();
+        return toDisposable(() => {
+            if (this._commands.delete(data.command)) {
+                this._onDidChangeCommands.fire();
+            }
+        });
+    }
+    getCommands(location) {
+        return Array.from(this._commands.values(), v => v.data).filter(c => c.locations.includes(location));
+    }
+    hasCommand(id) {
+        return this._commands.has(id);
+    }
+    async executeCommand(id, prompt, progress, history, location, token) {
+        const data = this._commands.get(id);
+        if (!data) {
+            throw new Error('No command with id ${id} NOT registered');
+        }
+        if (!data.command) {
+            await this._extensionService.activateByEvent(`onSlash:${id}`);
+        }
+        if (!data.command) {
+            throw new Error(`No command with id ${id} NOT resolved`);
+        }
+        return await data.command(prompt, progress, history, location, token);
+    }
+};
+ChatSlashCommandService = __decorate([
+    __param(0, IExtensionService),
+    __metadata("design:paramtypes", [Object])
+], ChatSlashCommandService);
+export { ChatSlashCommandService };

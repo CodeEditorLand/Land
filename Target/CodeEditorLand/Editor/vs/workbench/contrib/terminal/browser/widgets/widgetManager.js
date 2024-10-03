@@ -1,1 +1,35 @@
-import"../../../../../base/common/lifecycle.js";import"./widgets.js";class o{_container;_attached=new Map;attachToElement(e){this._container||(this._container=document.createElement("div"),this._container.classList.add("terminal-widget-container"),e.appendChild(this._container))}dispose(){this._container&&(this._container.remove(),this._container=void 0)}attachWidget(e){if(this._container)return this._attached.get(e.id)?.dispose(),e.attach(this._container),this._attached.set(e.id,e),{dispose:()=>{this._attached.get(e.id)===e&&(this._attached.delete(e.id),e.dispose())}}}}export{o as TerminalWidgetManager};
+export class TerminalWidgetManager {
+    constructor() {
+        this._attached = new Map();
+    }
+    attachToElement(terminalWrapper) {
+        if (!this._container) {
+            this._container = document.createElement('div');
+            this._container.classList.add('terminal-widget-container');
+            terminalWrapper.appendChild(this._container);
+        }
+    }
+    dispose() {
+        if (this._container) {
+            this._container.remove();
+            this._container = undefined;
+        }
+    }
+    attachWidget(widget) {
+        if (!this._container) {
+            return;
+        }
+        this._attached.get(widget.id)?.dispose();
+        widget.attach(this._container);
+        this._attached.set(widget.id, widget);
+        return {
+            dispose: () => {
+                const current = this._attached.get(widget.id);
+                if (current === widget) {
+                    this._attached.delete(widget.id);
+                    widget.dispose();
+                }
+            }
+        };
+    }
+}

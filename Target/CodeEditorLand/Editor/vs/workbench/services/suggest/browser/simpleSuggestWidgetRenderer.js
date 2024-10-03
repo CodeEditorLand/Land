@@ -1,1 +1,79 @@
-import{$ as t,append as n,show as H}from"../../../../base/browser/dom.js";import{IconLabel as C}from"../../../../base/browser/ui/iconLabel/iconLabel.js";import"../../../../base/browser/ui/list/list.js";import"./simpleCompletionItem.js";import{Codicon as v}from"../../../../base/common/codicons.js";import{Emitter as F}from"../../../../base/common/event.js";import{createMatches as M}from"../../../../base/common/filters.js";import{DisposableStore as w}from"../../../../base/common/lifecycle.js";import{ThemeIcon as W}from"../../../../base/common/themables.js";function N(s){return`simple-suggest-aria-id:${s}`}class Q{constructor(o){this._getFontInfo=o}_onDidToggleDetails=new F;onDidToggleDetails=this._onDidToggleDetails.event;templateId="suggestion";dispose(){this._onDidToggleDetails.dispose()}renderTemplate(o){const r=new w,e=o;e.classList.add("show-file-icons");const i=n(o,t(".icon")),p=n(i,t("span.colorspan")),d=n(o,t(".contents")),l=n(d,t(".main")),f=n(l,t(".icon-label.codicon")),a=n(l,t("span.left")),c=n(l,t("span.right")),g=new C(a,{supportHighlights:!0,supportIcons:!0});r.add(g);const u=n(a,t("span.signature-label")),b=n(a,t("span.qualifier-label")),L=n(c,t("span.details-label"));return(()=>{const S="",{fontFamily:y,fontSize:I,lineHeight:h,fontWeight:T,letterSpacing:x}=this._getFontInfo(),D=`${I}px`,m=`${h}px`,E=`${x}px`;e.style.fontSize=D,e.style.fontWeight=T,e.style.letterSpacing=E,l.style.fontFamily=y,l.style.fontFeatureSettings=S,l.style.lineHeight=m,i.style.height=m,i.style.width=m})(),{root:e,left:a,right:c,icon:i,colorspan:p,iconLabel:g,iconContainer:f,parametersLabel:u,qualifierLabel:b,detailsLabel:L,disposables:r}}renderElement(o,r,e){const{completion:i}=o;e.root.id=N(r),e.colorspan.style.backgroundColor="";const p={labelEscapeNewLines:!0,matches:M(o.score)};e.icon.className="icon hide",e.iconContainer.className="",e.iconContainer.classList.add("suggest-icon",...W.asClassNameArray(i.icon||v.symbolText)),e.iconLabel.setLabel(i.label,void 0,p),e.parametersLabel.textContent="",e.detailsLabel.textContent=_(i.detail||""),e.root.classList.add("string-label"),H(e.detailsLabel),e.right.classList.remove("can-expand-details")}disposeTemplate(o){o.disposables.dispose()}}function _(s){return s.replace(/\r\n|\r|\n/g,"")}export{Q as SimpleSuggestWidgetItemRenderer,N as getAriaId};
+import { $, append, show } from '../../../../base/browser/dom.js';
+import { IconLabel } from '../../../../base/browser/ui/iconLabel/iconLabel.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { createMatches } from '../../../../base/common/filters.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+export function getAriaId(index) {
+    return `simple-suggest-aria-id:${index}`;
+}
+export class SimpleSuggestWidgetItemRenderer {
+    constructor(_getFontInfo) {
+        this._getFontInfo = _getFontInfo;
+        this._onDidToggleDetails = new Emitter();
+        this.onDidToggleDetails = this._onDidToggleDetails.event;
+        this.templateId = 'suggestion';
+    }
+    dispose() {
+        this._onDidToggleDetails.dispose();
+    }
+    renderTemplate(container) {
+        const disposables = new DisposableStore();
+        const root = container;
+        root.classList.add('show-file-icons');
+        const icon = append(container, $('.icon'));
+        const colorspan = append(icon, $('span.colorspan'));
+        const text = append(container, $('.contents'));
+        const main = append(text, $('.main'));
+        const iconContainer = append(main, $('.icon-label.codicon'));
+        const left = append(main, $('span.left'));
+        const right = append(main, $('span.right'));
+        const iconLabel = new IconLabel(left, { supportHighlights: true, supportIcons: true });
+        disposables.add(iconLabel);
+        const parametersLabel = append(left, $('span.signature-label'));
+        const qualifierLabel = append(left, $('span.qualifier-label'));
+        const detailsLabel = append(right, $('span.details-label'));
+        const configureFont = () => {
+            const fontFeatureSettings = '';
+            const { fontFamily, fontSize, lineHeight, fontWeight, letterSpacing } = this._getFontInfo();
+            const fontSizePx = `${fontSize}px`;
+            const lineHeightPx = `${lineHeight}px`;
+            const letterSpacingPx = `${letterSpacing}px`;
+            root.style.fontSize = fontSizePx;
+            root.style.fontWeight = fontWeight;
+            root.style.letterSpacing = letterSpacingPx;
+            main.style.fontFamily = fontFamily;
+            main.style.fontFeatureSettings = fontFeatureSettings;
+            main.style.lineHeight = lineHeightPx;
+            icon.style.height = lineHeightPx;
+            icon.style.width = lineHeightPx;
+        };
+        configureFont();
+        return { root, left, right, icon, colorspan, iconLabel, iconContainer, parametersLabel, qualifierLabel, detailsLabel, disposables };
+    }
+    renderElement(element, index, data) {
+        const { completion } = element;
+        data.root.id = getAriaId(index);
+        data.colorspan.style.backgroundColor = '';
+        const labelOptions = {
+            labelEscapeNewLines: true,
+            matches: createMatches(element.score)
+        };
+        data.icon.className = 'icon hide';
+        data.iconContainer.className = '';
+        data.iconContainer.classList.add('suggest-icon', ...ThemeIcon.asClassNameArray(completion.icon || Codicon.symbolText));
+        data.iconLabel.setLabel(completion.label, undefined, labelOptions);
+        data.parametersLabel.textContent = '';
+        data.detailsLabel.textContent = stripNewLines(completion.detail || '');
+        data.root.classList.add('string-label');
+        show(data.detailsLabel);
+        data.right.classList.remove('can-expand-details');
+    }
+    disposeTemplate(templateData) {
+        templateData.disposables.dispose();
+    }
+}
+function stripNewLines(str) {
+    return str.replace(/\r\n|\r|\n/g, '');
+}

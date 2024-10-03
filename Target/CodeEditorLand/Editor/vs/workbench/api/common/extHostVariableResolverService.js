@@ -1,1 +1,142 @@
-var E=Object.defineProperty;var x=Object.getOwnPropertyDescriptor;var v=(d,o,n,r)=>{for(var i=r>1?void 0:r?x(o,n):o,s=d.length-1,a;s>=0;s--)(a=d[s])&&(i=(r?a(o,n,i):a(i))||i);return r&&i&&E(o,n,i),i},c=(d,o)=>(n,r)=>o(n,r,d);import{Lazy as I}from"../../../base/common/lazy.js";import{Disposable as b}from"../../../base/common/lifecycle.js";import*as g from"../../../base/common/path.js";import*as p from"../../../base/common/process.js";import"../../../base/common/uri.js";import{createDecorator as h}from"../../../platform/instantiation/common/instantiation.js";import{IExtHostDocumentsAndEditors as H}from"./extHostDocumentsAndEditors.js";import{IExtHostEditorTabs as C}from"./extHostEditorTabs.js";import{IExtHostExtensionService as T}from"./extHostExtensionService.js";import{CustomEditorTabInput as k,NotebookDiffEditorTabInput as P,NotebookEditorTabInput as y,TextDiffTabInput as R,TextTabInput as D}from"./extHostTypes.js";import{IExtHostWorkspace as S}from"./extHostWorkspace.js";import"../../services/configurationResolver/common/configurationResolver.js";import{AbstractVariableResolverService as w}from"../../services/configurationResolver/common/variableResolver.js";import"vscode";import{IExtHostConfiguration as F}from"./extHostConfiguration.js";const Y=h("IExtHostVariableResolverProvider");class W extends w{constructor(o,n,r,i,s,a,l){function m(){if(r){const e=r.activeEditor();if(e)return e.document.uri;const t=i.tabGroups.all.find(u=>u.isActive)?.activeTab;if(t!==void 0){if(t.input instanceof R||t.input instanceof P)return t.input.modified;if(t.input instanceof D||t.input instanceof y||t.input instanceof k)return t.input.uri}}}super({getFolderUri:e=>{const t=a.folders.filter(u=>u.name===e);if(t&&t.length>0)return t[0].uri},getWorkspaceFolderCount:()=>a.folders.length,getConfigurationValue:(e,t)=>s.getConfiguration(void 0,e).get(t),getAppRoot:()=>p.cwd(),getExecPath:()=>p.env.VSCODE_EXEC_PATH,getFilePath:()=>{const e=m();if(e)return g.normalize(e.fsPath)},getWorkspaceFolderPathForFile:()=>{if(n){const e=m();if(e){const t=n.getWorkspaceFolder(e);if(t)return g.normalize(t.uri.fsPath)}}},getSelectedText:()=>{if(r){const e=r.activeEditor();if(e&&!e.selection.isEmpty)return e.document.getText(e.selection)}},getLineNumber:()=>{if(r){const e=r.activeEditor();if(e)return String(e.selection.end.line+1)}},getExtension:e=>o.getExtension(e)},void 0,l?Promise.resolve(l):void 0,Promise.resolve(p.env))}}let f=class extends b{constructor(n,r,i,s,a){super();this.extensionService=n;this.workspaceService=r;this.editorService=i;this.configurationService=s;this.editorTabs=a}_resolver=new I(async()=>{const n=await this.configurationService.getConfigProvider(),i={folders:await this.workspaceService.getWorkspaceFolders2()||[]};return this._register(this.workspaceService.onDidChangeWorkspace(async s=>{i.folders=await this.workspaceService.getWorkspaceFolders2()||[]})),new W(this.extensionService,this.workspaceService,this.editorService,this.editorTabs,n,i,this.homeDir())});getResolver(){return this._resolver.value}homeDir(){}};f=v([c(0,T),c(1,S),c(2,H),c(3,F),c(4,C)],f);export{f as ExtHostVariableResolverProviderService,Y as IExtHostVariableResolverProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Lazy } from '../../../base/common/lazy.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import * as path from '../../../base/common/path.js';
+import * as process from '../../../base/common/process.js';
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+import { IExtHostDocumentsAndEditors } from './extHostDocumentsAndEditors.js';
+import { IExtHostEditorTabs } from './extHostEditorTabs.js';
+import { IExtHostExtensionService } from './extHostExtensionService.js';
+import { CustomEditorTabInput, NotebookDiffEditorTabInput, NotebookEditorTabInput, TextDiffTabInput, TextTabInput } from './extHostTypes.js';
+import { IExtHostWorkspace } from './extHostWorkspace.js';
+import { AbstractVariableResolverService } from '../../services/configurationResolver/common/variableResolver.js';
+import { IExtHostConfiguration } from './extHostConfiguration.js';
+export const IExtHostVariableResolverProvider = createDecorator('IExtHostVariableResolverProvider');
+class ExtHostVariableResolverService extends AbstractVariableResolverService {
+    constructor(extensionService, workspaceService, editorService, editorTabs, configProvider, context, homeDir) {
+        function getActiveUri() {
+            if (editorService) {
+                const activeEditor = editorService.activeEditor();
+                if (activeEditor) {
+                    return activeEditor.document.uri;
+                }
+                const activeTab = editorTabs.tabGroups.all.find(group => group.isActive)?.activeTab;
+                if (activeTab !== undefined) {
+                    if (activeTab.input instanceof TextDiffTabInput || activeTab.input instanceof NotebookDiffEditorTabInput) {
+                        return activeTab.input.modified;
+                    }
+                    else if (activeTab.input instanceof TextTabInput || activeTab.input instanceof NotebookEditorTabInput || activeTab.input instanceof CustomEditorTabInput) {
+                        return activeTab.input.uri;
+                    }
+                }
+            }
+            return undefined;
+        }
+        super({
+            getFolderUri: (folderName) => {
+                const found = context.folders.filter(f => f.name === folderName);
+                if (found && found.length > 0) {
+                    return found[0].uri;
+                }
+                return undefined;
+            },
+            getWorkspaceFolderCount: () => {
+                return context.folders.length;
+            },
+            getConfigurationValue: (folderUri, section) => {
+                return configProvider.getConfiguration(undefined, folderUri).get(section);
+            },
+            getAppRoot: () => {
+                return process.cwd();
+            },
+            getExecPath: () => {
+                return process.env['VSCODE_EXEC_PATH'];
+            },
+            getFilePath: () => {
+                const activeUri = getActiveUri();
+                if (activeUri) {
+                    return path.normalize(activeUri.fsPath);
+                }
+                return undefined;
+            },
+            getWorkspaceFolderPathForFile: () => {
+                if (workspaceService) {
+                    const activeUri = getActiveUri();
+                    if (activeUri) {
+                        const ws = workspaceService.getWorkspaceFolder(activeUri);
+                        if (ws) {
+                            return path.normalize(ws.uri.fsPath);
+                        }
+                    }
+                }
+                return undefined;
+            },
+            getSelectedText: () => {
+                if (editorService) {
+                    const activeEditor = editorService.activeEditor();
+                    if (activeEditor && !activeEditor.selection.isEmpty) {
+                        return activeEditor.document.getText(activeEditor.selection);
+                    }
+                }
+                return undefined;
+            },
+            getLineNumber: () => {
+                if (editorService) {
+                    const activeEditor = editorService.activeEditor();
+                    if (activeEditor) {
+                        return String(activeEditor.selection.end.line + 1);
+                    }
+                }
+                return undefined;
+            },
+            getExtension: (id) => {
+                return extensionService.getExtension(id);
+            },
+        }, undefined, homeDir ? Promise.resolve(homeDir) : undefined, Promise.resolve(process.env));
+    }
+}
+let ExtHostVariableResolverProviderService = class ExtHostVariableResolverProviderService extends Disposable {
+    constructor(extensionService, workspaceService, editorService, configurationService, editorTabs) {
+        super();
+        this.extensionService = extensionService;
+        this.workspaceService = workspaceService;
+        this.editorService = editorService;
+        this.configurationService = configurationService;
+        this.editorTabs = editorTabs;
+        this._resolver = new Lazy(async () => {
+            const configProvider = await this.configurationService.getConfigProvider();
+            const folders = await this.workspaceService.getWorkspaceFolders2() || [];
+            const dynamic = { folders };
+            this._register(this.workspaceService.onDidChangeWorkspace(async (e) => {
+                dynamic.folders = await this.workspaceService.getWorkspaceFolders2() || [];
+            }));
+            return new ExtHostVariableResolverService(this.extensionService, this.workspaceService, this.editorService, this.editorTabs, configProvider, dynamic, this.homeDir());
+        });
+    }
+    getResolver() {
+        return this._resolver.value;
+    }
+    homeDir() {
+        return undefined;
+    }
+};
+ExtHostVariableResolverProviderService = __decorate([
+    __param(0, IExtHostExtensionService),
+    __param(1, IExtHostWorkspace),
+    __param(2, IExtHostDocumentsAndEditors),
+    __param(3, IExtHostConfiguration),
+    __param(4, IExtHostEditorTabs),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], ExtHostVariableResolverProviderService);
+export { ExtHostVariableResolverProviderService };

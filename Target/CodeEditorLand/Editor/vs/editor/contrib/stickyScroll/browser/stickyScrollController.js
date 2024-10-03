@@ -1,1 +1,518 @@
-var D=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var E=(y,g,e,o)=>{for(var i=o>1?void 0:o?T(g,e):g,s=y.length-1,t;s>=0;s--)(t=y[s])&&(i=(o?t(g,e,i):t(i))||i);return o&&i&&D(g,e,i),i},S=(y,g)=>(e,o)=>g(e,o,y);import{Disposable as w,DisposableStore as b,toDisposable as L}from"../../../../base/common/lifecycle.js";import{MouseTargetType as x}from"../../../browser/editorBrowser.js";import{ScrollType as R}from"../../../common/editorCommon.js";import{ILanguageFeaturesService as P}from"../../../common/services/languageFeatures.js";import{EditorOption as u,RenderLineNumbersType as O}from"../../../common/config/editorOptions.js";import{StickyScrollWidget as K,StickyScrollWidgetState as C}from"./stickyScrollWidget.js";import{StickyLineCandidateProvider as V}from"./stickyScrollProvider.js";import"../../../common/textModelEvents.js";import{IInstantiationService as A}from"../../../../platform/instantiation/common/instantiation.js";import{IContextMenuService as H}from"../../../../platform/contextview/browser/contextView.js";import{MenuId as U}from"../../../../platform/actions/common/actions.js";import{IContextKeyService as G}from"../../../../platform/contextkey/common/contextkey.js";import{EditorContextKeys as N}from"../../../common/editorContextKeys.js";import{ClickLinkGesture as j}from"../../gotoSymbol/browser/link/clickLinkGesture.js";import{Range as F}from"../../../common/core/range.js";import{getDefinitionsAtPosition as B}from"../../gotoSymbol/browser/goToSymbol.js";import{goToDefinitionWithLocation as z}from"../../inlayHints/browser/inlayHintsLocations.js";import{Position as I}from"../../../common/core/position.js";import{CancellationTokenSource as X}from"../../../../base/common/cancellation.js";import{ILanguageConfigurationService as q}from"../../../common/languages/languageConfigurationRegistry.js";import{ILanguageFeatureDebounceService as Y}from"../../../common/services/languageFeatureDebounce.js";import*as h from"../../../../base/browser/dom.js";import{StickyRange as J}from"./stickyScrollElement.js";import{StandardMouseEvent as Q}from"../../../../base/browser/mouseEvent.js";import{FoldingController as Z}from"../../folding/browser/folding.js";import{toggleCollapseState as $}from"../../folding/browser/foldingModel.js";let m=class extends w{constructor(e,o,i,s,t,n,r){super();this._editor=e;this._contextMenuService=o;this._languageFeaturesService=i;this._instaService=s;this._contextKeyService=r;this._stickyScrollWidget=new K(this._editor),this._stickyLineCandidateProvider=new V(this._editor,i,t),this._register(this._stickyScrollWidget),this._register(this._stickyLineCandidateProvider),this._widgetState=C.Empty,this._onDidResize(),this._readConfiguration();const d=this._stickyScrollWidget.getDomNode();this._register(this._editor.onDidChangeConfiguration(l=>{this._readConfigurationChange(l)})),this._register(h.addDisposableListener(d,h.EventType.CONTEXT_MENU,async l=>{this._onContextMenu(h.getWindow(d),l)})),this._stickyScrollFocusedContextKey=N.stickyScrollFocused.bindTo(this._contextKeyService),this._stickyScrollVisibleContextKey=N.stickyScrollVisible.bindTo(this._contextKeyService);const c=this._register(h.trackFocus(d));this._register(c.onDidBlur(l=>{this._positionRevealed===!1&&d.clientHeight===0?(this._focusedStickyElementIndex=-1,this.focus()):this._disposeFocusStickyScrollStore()})),this._register(c.onDidFocus(l=>{this.focus()})),this._registerMouseListeners(),this._register(h.addDisposableListener(d,h.EventType.MOUSE_DOWN,l=>{this._onMouseDown=!0}))}static ID="store.contrib.stickyScrollController";_stickyScrollWidget;_stickyLineCandidateProvider;_sessionStore=new b;_widgetState;_foldingModel;_maxStickyLines=Number.MAX_SAFE_INTEGER;_stickyRangeProjectedOnEditor;_candidateDefinitionsLength=-1;_stickyScrollFocusedContextKey;_stickyScrollVisibleContextKey;_focusDisposableStore;_focusedStickyElementIndex=-1;_enabled=!1;_focused=!1;_positionRevealed=!1;_onMouseDown=!1;_endLineNumbers=[];_showEndForLine;_minRebuildFromLine;get stickyScrollCandidateProvider(){return this._stickyLineCandidateProvider}get stickyScrollWidgetState(){return this._widgetState}static get(e){return e.getContribution(m.ID)}_disposeFocusStickyScrollStore(){this._stickyScrollFocusedContextKey.set(!1),this._focusDisposableStore?.dispose(),this._focused=!1,this._positionRevealed=!1,this._onMouseDown=!1}focus(){if(this._onMouseDown){this._onMouseDown=!1,this._editor.focus();return}this._stickyScrollFocusedContextKey.get()!==!0&&(this._focused=!0,this._focusDisposableStore=new b,this._stickyScrollFocusedContextKey.set(!0),this._focusedStickyElementIndex=this._stickyScrollWidget.lineNumbers.length-1,this._stickyScrollWidget.focusLineWithIndex(this._focusedStickyElementIndex))}focusNext(){this._focusedStickyElementIndex<this._stickyScrollWidget.lineNumberCount-1&&this._focusNav(!0)}focusPrevious(){this._focusedStickyElementIndex>0&&this._focusNav(!1)}selectEditor(){this._editor.focus()}_focusNav(e){this._focusedStickyElementIndex=e?this._focusedStickyElementIndex+1:this._focusedStickyElementIndex-1,this._stickyScrollWidget.focusLineWithIndex(this._focusedStickyElementIndex)}goToFocused(){const e=this._stickyScrollWidget.lineNumbers;this._disposeFocusStickyScrollStore(),this._revealPosition({lineNumber:e[this._focusedStickyElementIndex],column:1})}_revealPosition(e){this._reveaInEditor(e,()=>this._editor.revealPosition(e))}_revealLineInCenterIfOutsideViewport(e){this._reveaInEditor(e,()=>this._editor.revealLineInCenterIfOutsideViewport(e.lineNumber,R.Smooth))}_reveaInEditor(e,o){this._focused&&this._disposeFocusStickyScrollStore(),this._positionRevealed=!0,o(),this._editor.setSelection(F.fromPositions(e)),this._editor.focus()}_registerMouseListeners(){const e=this._register(new b),o=this._register(new j(this._editor,{extractLineNumberFromMouseEvent:t=>{const n=this._stickyScrollWidget.getEditorPositionFromNode(t.target.element);return n?n.lineNumber:0}})),i=t=>{if(!this._editor.hasModel()||t.target.type!==x.OVERLAY_WIDGET||t.target.detail!==this._stickyScrollWidget.getId())return null;const n=t.target.element;if(!n||n.innerText!==n.innerHTML)return null;const r=this._stickyScrollWidget.getEditorPositionFromNode(n);return r?{range:new F(r.lineNumber,r.column,r.lineNumber,r.column+n.innerText.length),textElement:n}:null},s=this._stickyScrollWidget.getDomNode();this._register(h.addStandardDisposableListener(s,h.EventType.CLICK,t=>{if(t.ctrlKey||t.altKey||t.metaKey||!t.leftButton)return;if(t.shiftKey){const c=this._stickyScrollWidget.getLineIndexFromChildDomNode(t.target);if(c===null)return;const l=new I(this._endLineNumbers[c],1);this._revealLineInCenterIfOutsideViewport(l);return}if(this._stickyScrollWidget.isInFoldingIconDomNode(t.target)){const c=this._stickyScrollWidget.getLineNumberFromChildDomNode(t.target);this._toggleFoldingRegionForLine(c);return}if(!this._stickyScrollWidget.isInStickyLine(t.target))return;let d=this._stickyScrollWidget.getEditorPositionFromNode(t.target);if(!d){const c=this._stickyScrollWidget.getLineNumberFromChildDomNode(t.target);if(c===null)return;d=new I(c,1)}this._revealPosition(d)})),this._register(h.addStandardDisposableListener(s,h.EventType.MOUSE_MOVE,t=>{if(t.shiftKey){const n=this._stickyScrollWidget.getLineIndexFromChildDomNode(t.target);if(n===null||this._showEndForLine!==null&&this._showEndForLine===n)return;this._showEndForLine=n,this._renderStickyScroll();return}this._showEndForLine!==void 0&&(this._showEndForLine=void 0,this._renderStickyScroll())})),this._register(h.addDisposableListener(s,h.EventType.MOUSE_LEAVE,t=>{this._showEndForLine!==void 0&&(this._showEndForLine=void 0,this._renderStickyScroll())})),this._register(o.onMouseMoveOrRelevantKeyDown(([t,n])=>{const r=i(t);if(!r||!t.hasTriggerModifier||!this._editor.hasModel()){e.clear();return}const{range:d,textElement:c}=r;if(!d.equalsRange(this._stickyRangeProjectedOnEditor))this._stickyRangeProjectedOnEditor=d,e.clear();else if(c.style.textDecoration==="underline")return;const l=new X;e.add(L(()=>l.dispose(!0)));let a;B(this._languageFeaturesService.definitionProvider,this._editor.getModel(),new I(d.startLineNumber,d.startColumn+1),!1,l.token).then(_=>{if(!l.token.isCancellationRequested)if(_.length!==0){this._candidateDefinitionsLength=_.length;const f=c;a!==f?(e.clear(),a=f,a.style.textDecoration="underline",e.add(L(()=>{a.style.textDecoration="none"}))):a||(a=f,a.style.textDecoration="underline",e.add(L(()=>{a.style.textDecoration="none"})))}else e.clear()})})),this._register(o.onCancel(()=>{e.clear()})),this._register(o.onExecute(async t=>{if(t.target.type!==x.OVERLAY_WIDGET||t.target.detail!==this._stickyScrollWidget.getId())return;const n=this._stickyScrollWidget.getEditorPositionFromNode(t.target.element);n&&(!this._editor.hasModel()||!this._stickyRangeProjectedOnEditor||(this._candidateDefinitionsLength>1&&(this._focused&&this._disposeFocusStickyScrollStore(),this._revealPosition({lineNumber:n.lineNumber,column:1})),this._instaService.invokeFunction(z,t,this._editor,{uri:this._editor.getModel().uri,range:this._stickyRangeProjectedOnEditor})))}))}_onContextMenu(e,o){const i=new Q(e,o);this._contextMenuService.showContextMenu({menuId:U.StickyScrollContext,getAnchor:()=>i})}_toggleFoldingRegionForLine(e){if(!this._foldingModel||e===null)return;const o=this._stickyScrollWidget.getRenderedStickyLine(e),i=o?.foldingIcon;if(!i)return;$(this._foldingModel,Number.MAX_VALUE,[e]),i.isCollapsed=!i.isCollapsed;const s=(i.isCollapsed?this._editor.getTopForLineNumber(i.foldingEndLine):this._editor.getTopForLineNumber(i.foldingStartLine))-this._editor.getOption(u.lineHeight)*o.index+1;this._editor.setScrollTop(s),this._renderStickyScroll(e)}_readConfiguration(){const e=this._editor.getOption(u.stickyScroll);if(e.enabled===!1){this._editor.removeOverlayWidget(this._stickyScrollWidget),this._sessionStore.clear(),this._enabled=!1;return}else e.enabled&&!this._enabled&&(this._editor.addOverlayWidget(this._stickyScrollWidget),this._sessionStore.add(this._editor.onDidScrollChange(i=>{i.scrollTopChanged&&(this._showEndForLine=void 0,this._renderStickyScroll())})),this._sessionStore.add(this._editor.onDidLayoutChange(()=>this._onDidResize())),this._sessionStore.add(this._editor.onDidChangeModelTokens(i=>this._onTokensChange(i))),this._sessionStore.add(this._stickyLineCandidateProvider.onDidChangeStickyScroll(()=>{this._showEndForLine=void 0,this._renderStickyScroll()})),this._enabled=!0);this._editor.getOption(u.lineNumbers).renderType===O.Relative&&this._sessionStore.add(this._editor.onDidChangeCursorPosition(()=>{this._showEndForLine=void 0,this._renderStickyScroll(0)}))}_readConfigurationChange(e){(e.hasChanged(u.stickyScroll)||e.hasChanged(u.minimap)||e.hasChanged(u.lineHeight)||e.hasChanged(u.showFoldingControls)||e.hasChanged(u.lineNumbers))&&this._readConfiguration(),e.hasChanged(u.lineNumbers)&&this._renderStickyScroll(0)}_needsUpdate(e){const o=this._stickyScrollWidget.getCurrentLines();for(const i of o)for(const s of e.ranges)if(i>=s.fromLineNumber&&i<=s.toLineNumber)return!0;return!1}_onTokensChange(e){this._needsUpdate(e)&&this._renderStickyScroll(0)}_onDidResize(){const o=this._editor.getLayoutInfo().height/this._editor.getOption(u.lineHeight);this._maxStickyLines=Math.round(o*.25)}async _renderStickyScroll(e){const o=this._editor.getModel();if(!o||o.isTooLargeForTokenization()){this._resetState();return}const i=this._updateAndGetMinRebuildFromLine(e),s=this._stickyLineCandidateProvider.getVersionId();if(s===void 0||s===o.getVersionId())if(!this._focused)await this._updateState(i);else if(this._focusedStickyElementIndex===-1)await this._updateState(i),this._focusedStickyElementIndex=this._stickyScrollWidget.lineNumberCount-1,this._focusedStickyElementIndex!==-1&&this._stickyScrollWidget.focusLineWithIndex(this._focusedStickyElementIndex);else{const n=this._stickyScrollWidget.lineNumbers[this._focusedStickyElementIndex];await this._updateState(i),this._stickyScrollWidget.lineNumberCount===0?this._focusedStickyElementIndex=-1:(this._stickyScrollWidget.lineNumbers.includes(n)||(this._focusedStickyElementIndex=this._stickyScrollWidget.lineNumberCount-1),this._stickyScrollWidget.focusLineWithIndex(this._focusedStickyElementIndex))}}_updateAndGetMinRebuildFromLine(e){if(e!==void 0){const o=this._minRebuildFromLine!==void 0?this._minRebuildFromLine:1/0;this._minRebuildFromLine=Math.min(e,o)}return this._minRebuildFromLine}async _updateState(e){this._minRebuildFromLine=void 0,this._foldingModel=await Z.get(this._editor)?.getFoldingModel()??void 0,this._widgetState=this.findScrollWidgetState();const o=this._widgetState.startLineNumbers.length>0;this._stickyScrollVisibleContextKey.set(o),this._stickyScrollWidget.setState(this._widgetState,this._foldingModel,e)}async _resetState(){this._minRebuildFromLine=void 0,this._foldingModel=void 0,this._widgetState=C.Empty,this._stickyScrollVisibleContextKey.set(!1),this._stickyScrollWidget.setState(void 0,void 0)}findScrollWidgetState(){const e=this._editor.getOption(u.lineHeight),o=Math.min(this._maxStickyLines,this._editor.getOption(u.stickyScroll).maxLineCount),i=this._editor.getScrollTop();let s=0;const t=[],n=[],r=this._editor.getVisibleRanges();if(r.length!==0){const d=new J(r[0].startLineNumber,r[r.length-1].endLineNumber),c=this._stickyLineCandidateProvider.getCandidateStickyLinesIntersecting(d);for(const l of c){const a=l.startLineNumber,_=l.endLineNumber,f=l.nestingDepth;if(_-a>0){const k=(f-1)*e,v=f*e,M=this._editor.getBottomForLineNumber(a)-i,W=this._editor.getTopForLineNumber(_)-i,p=this._editor.getBottomForLineNumber(_)-i;if(k>W&&k<=p){t.push(a),n.push(_+1),k>p-e&&(s=p-v);break}else v>M&&v<=p&&(t.push(a),n.push(_+1));if(t.length===o)break}}}return this._endLineNumbers=n,new C(t,n,s,this._showEndForLine)}dispose(){super.dispose(),this._sessionStore.dispose()}};m=E([S(1,H),S(2,P),S(3,A),S(4,q),S(5,Y),S(6,G)],m);export{m as StickyScrollController};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var StickyScrollController_1;
+import { Disposable, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { StickyScrollWidget, StickyScrollWidgetState } from './stickyScrollWidget.js';
+import { StickyLineCandidateProvider } from './stickyScrollProvider.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { MenuId } from '../../../../platform/actions/common/actions.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import { ClickLinkGesture } from '../../gotoSymbol/browser/link/clickLinkGesture.js';
+import { Range } from '../../../common/core/range.js';
+import { getDefinitionsAtPosition } from '../../gotoSymbol/browser/goToSymbol.js';
+import { goToDefinitionWithLocation } from '../../inlayHints/browser/inlayHintsLocations.js';
+import { Position } from '../../../common/core/position.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { ILanguageConfigurationService } from '../../../common/languages/languageConfigurationRegistry.js';
+import { ILanguageFeatureDebounceService } from '../../../common/services/languageFeatureDebounce.js';
+import * as dom from '../../../../base/browser/dom.js';
+import { StickyRange } from './stickyScrollElement.js';
+import { StandardMouseEvent } from '../../../../base/browser/mouseEvent.js';
+import { FoldingController } from '../../folding/browser/folding.js';
+import { toggleCollapseState } from '../../folding/browser/foldingModel.js';
+let StickyScrollController = class StickyScrollController extends Disposable {
+    static { StickyScrollController_1 = this; }
+    static { this.ID = 'store.contrib.stickyScrollController'; }
+    constructor(_editor, _contextMenuService, _languageFeaturesService, _instaService, _languageConfigurationService, _languageFeatureDebounceService, _contextKeyService) {
+        super();
+        this._editor = _editor;
+        this._contextMenuService = _contextMenuService;
+        this._languageFeaturesService = _languageFeaturesService;
+        this._instaService = _instaService;
+        this._contextKeyService = _contextKeyService;
+        this._sessionStore = new DisposableStore();
+        this._maxStickyLines = Number.MAX_SAFE_INTEGER;
+        this._candidateDefinitionsLength = -1;
+        this._focusedStickyElementIndex = -1;
+        this._enabled = false;
+        this._focused = false;
+        this._positionRevealed = false;
+        this._onMouseDown = false;
+        this._endLineNumbers = [];
+        this._stickyScrollWidget = new StickyScrollWidget(this._editor);
+        this._stickyLineCandidateProvider = new StickyLineCandidateProvider(this._editor, _languageFeaturesService, _languageConfigurationService);
+        this._register(this._stickyScrollWidget);
+        this._register(this._stickyLineCandidateProvider);
+        this._widgetState = StickyScrollWidgetState.Empty;
+        this._onDidResize();
+        this._readConfiguration();
+        const stickyScrollDomNode = this._stickyScrollWidget.getDomNode();
+        this._register(this._editor.onDidChangeConfiguration(e => {
+            this._readConfigurationChange(e);
+        }));
+        this._register(dom.addDisposableListener(stickyScrollDomNode, dom.EventType.CONTEXT_MENU, async (event) => {
+            this._onContextMenu(dom.getWindow(stickyScrollDomNode), event);
+        }));
+        this._stickyScrollFocusedContextKey = EditorContextKeys.stickyScrollFocused.bindTo(this._contextKeyService);
+        this._stickyScrollVisibleContextKey = EditorContextKeys.stickyScrollVisible.bindTo(this._contextKeyService);
+        const focusTracker = this._register(dom.trackFocus(stickyScrollDomNode));
+        this._register(focusTracker.onDidBlur(_ => {
+            if (this._positionRevealed === false && stickyScrollDomNode.clientHeight === 0) {
+                this._focusedStickyElementIndex = -1;
+                this.focus();
+            }
+            else {
+                this._disposeFocusStickyScrollStore();
+            }
+        }));
+        this._register(focusTracker.onDidFocus(_ => {
+            this.focus();
+        }));
+        this._registerMouseListeners();
+        this._register(dom.addDisposableListener(stickyScrollDomNode, dom.EventType.MOUSE_DOWN, (e) => {
+            this._onMouseDown = true;
+        }));
+    }
+    get stickyScrollCandidateProvider() {
+        return this._stickyLineCandidateProvider;
+    }
+    get stickyScrollWidgetState() {
+        return this._widgetState;
+    }
+    static get(editor) {
+        return editor.getContribution(StickyScrollController_1.ID);
+    }
+    _disposeFocusStickyScrollStore() {
+        this._stickyScrollFocusedContextKey.set(false);
+        this._focusDisposableStore?.dispose();
+        this._focused = false;
+        this._positionRevealed = false;
+        this._onMouseDown = false;
+    }
+    focus() {
+        if (this._onMouseDown) {
+            this._onMouseDown = false;
+            this._editor.focus();
+            return;
+        }
+        const focusState = this._stickyScrollFocusedContextKey.get();
+        if (focusState === true) {
+            return;
+        }
+        this._focused = true;
+        this._focusDisposableStore = new DisposableStore();
+        this._stickyScrollFocusedContextKey.set(true);
+        this._focusedStickyElementIndex = this._stickyScrollWidget.lineNumbers.length - 1;
+        this._stickyScrollWidget.focusLineWithIndex(this._focusedStickyElementIndex);
+    }
+    focusNext() {
+        if (this._focusedStickyElementIndex < this._stickyScrollWidget.lineNumberCount - 1) {
+            this._focusNav(true);
+        }
+    }
+    focusPrevious() {
+        if (this._focusedStickyElementIndex > 0) {
+            this._focusNav(false);
+        }
+    }
+    selectEditor() {
+        this._editor.focus();
+    }
+    _focusNav(direction) {
+        this._focusedStickyElementIndex = direction ? this._focusedStickyElementIndex + 1 : this._focusedStickyElementIndex - 1;
+        this._stickyScrollWidget.focusLineWithIndex(this._focusedStickyElementIndex);
+    }
+    goToFocused() {
+        const lineNumbers = this._stickyScrollWidget.lineNumbers;
+        this._disposeFocusStickyScrollStore();
+        this._revealPosition({ lineNumber: lineNumbers[this._focusedStickyElementIndex], column: 1 });
+    }
+    _revealPosition(position) {
+        this._reveaInEditor(position, () => this._editor.revealPosition(position));
+    }
+    _revealLineInCenterIfOutsideViewport(position) {
+        this._reveaInEditor(position, () => this._editor.revealLineInCenterIfOutsideViewport(position.lineNumber, 0));
+    }
+    _reveaInEditor(position, revealFunction) {
+        if (this._focused) {
+            this._disposeFocusStickyScrollStore();
+        }
+        this._positionRevealed = true;
+        revealFunction();
+        this._editor.setSelection(Range.fromPositions(position));
+        this._editor.focus();
+    }
+    _registerMouseListeners() {
+        const sessionStore = this._register(new DisposableStore());
+        const gesture = this._register(new ClickLinkGesture(this._editor, {
+            extractLineNumberFromMouseEvent: (e) => {
+                const position = this._stickyScrollWidget.getEditorPositionFromNode(e.target.element);
+                return position ? position.lineNumber : 0;
+            }
+        }));
+        const getMouseEventTarget = (mouseEvent) => {
+            if (!this._editor.hasModel()) {
+                return null;
+            }
+            if (mouseEvent.target.type !== 12 || mouseEvent.target.detail !== this._stickyScrollWidget.getId()) {
+                return null;
+            }
+            const mouseTargetElement = mouseEvent.target.element;
+            if (!mouseTargetElement || mouseTargetElement.innerText !== mouseTargetElement.innerHTML) {
+                return null;
+            }
+            const position = this._stickyScrollWidget.getEditorPositionFromNode(mouseTargetElement);
+            if (!position) {
+                return null;
+            }
+            return {
+                range: new Range(position.lineNumber, position.column, position.lineNumber, position.column + mouseTargetElement.innerText.length),
+                textElement: mouseTargetElement
+            };
+        };
+        const stickyScrollWidgetDomNode = this._stickyScrollWidget.getDomNode();
+        this._register(dom.addStandardDisposableListener(stickyScrollWidgetDomNode, dom.EventType.CLICK, (mouseEvent) => {
+            if (mouseEvent.ctrlKey || mouseEvent.altKey || mouseEvent.metaKey) {
+                return;
+            }
+            if (!mouseEvent.leftButton) {
+                return;
+            }
+            if (mouseEvent.shiftKey) {
+                const lineIndex = this._stickyScrollWidget.getLineIndexFromChildDomNode(mouseEvent.target);
+                if (lineIndex === null) {
+                    return;
+                }
+                const position = new Position(this._endLineNumbers[lineIndex], 1);
+                this._revealLineInCenterIfOutsideViewport(position);
+                return;
+            }
+            const isInFoldingIconDomNode = this._stickyScrollWidget.isInFoldingIconDomNode(mouseEvent.target);
+            if (isInFoldingIconDomNode) {
+                const lineNumber = this._stickyScrollWidget.getLineNumberFromChildDomNode(mouseEvent.target);
+                this._toggleFoldingRegionForLine(lineNumber);
+                return;
+            }
+            const isInStickyLine = this._stickyScrollWidget.isInStickyLine(mouseEvent.target);
+            if (!isInStickyLine) {
+                return;
+            }
+            let position = this._stickyScrollWidget.getEditorPositionFromNode(mouseEvent.target);
+            if (!position) {
+                const lineNumber = this._stickyScrollWidget.getLineNumberFromChildDomNode(mouseEvent.target);
+                if (lineNumber === null) {
+                    return;
+                }
+                position = new Position(lineNumber, 1);
+            }
+            this._revealPosition(position);
+        }));
+        this._register(dom.addStandardDisposableListener(stickyScrollWidgetDomNode, dom.EventType.MOUSE_MOVE, (mouseEvent) => {
+            if (mouseEvent.shiftKey) {
+                const currentEndForLineIndex = this._stickyScrollWidget.getLineIndexFromChildDomNode(mouseEvent.target);
+                if (currentEndForLineIndex === null || this._showEndForLine !== null && this._showEndForLine === currentEndForLineIndex) {
+                    return;
+                }
+                this._showEndForLine = currentEndForLineIndex;
+                this._renderStickyScroll();
+                return;
+            }
+            if (this._showEndForLine !== undefined) {
+                this._showEndForLine = undefined;
+                this._renderStickyScroll();
+            }
+        }));
+        this._register(dom.addDisposableListener(stickyScrollWidgetDomNode, dom.EventType.MOUSE_LEAVE, (e) => {
+            if (this._showEndForLine !== undefined) {
+                this._showEndForLine = undefined;
+                this._renderStickyScroll();
+            }
+        }));
+        this._register(gesture.onMouseMoveOrRelevantKeyDown(([mouseEvent, _keyboardEvent]) => {
+            const mouseTarget = getMouseEventTarget(mouseEvent);
+            if (!mouseTarget || !mouseEvent.hasTriggerModifier || !this._editor.hasModel()) {
+                sessionStore.clear();
+                return;
+            }
+            const { range, textElement } = mouseTarget;
+            if (!range.equalsRange(this._stickyRangeProjectedOnEditor)) {
+                this._stickyRangeProjectedOnEditor = range;
+                sessionStore.clear();
+            }
+            else if (textElement.style.textDecoration === 'underline') {
+                return;
+            }
+            const cancellationToken = new CancellationTokenSource();
+            sessionStore.add(toDisposable(() => cancellationToken.dispose(true)));
+            let currentHTMLChild;
+            getDefinitionsAtPosition(this._languageFeaturesService.definitionProvider, this._editor.getModel(), new Position(range.startLineNumber, range.startColumn + 1), false, cancellationToken.token).then((candidateDefinitions => {
+                if (cancellationToken.token.isCancellationRequested) {
+                    return;
+                }
+                if (candidateDefinitions.length !== 0) {
+                    this._candidateDefinitionsLength = candidateDefinitions.length;
+                    const childHTML = textElement;
+                    if (currentHTMLChild !== childHTML) {
+                        sessionStore.clear();
+                        currentHTMLChild = childHTML;
+                        currentHTMLChild.style.textDecoration = 'underline';
+                        sessionStore.add(toDisposable(() => {
+                            currentHTMLChild.style.textDecoration = 'none';
+                        }));
+                    }
+                    else if (!currentHTMLChild) {
+                        currentHTMLChild = childHTML;
+                        currentHTMLChild.style.textDecoration = 'underline';
+                        sessionStore.add(toDisposable(() => {
+                            currentHTMLChild.style.textDecoration = 'none';
+                        }));
+                    }
+                }
+                else {
+                    sessionStore.clear();
+                }
+            }));
+        }));
+        this._register(gesture.onCancel(() => {
+            sessionStore.clear();
+        }));
+        this._register(gesture.onExecute(async (e) => {
+            if (e.target.type !== 12 || e.target.detail !== this._stickyScrollWidget.getId()) {
+                return;
+            }
+            const position = this._stickyScrollWidget.getEditorPositionFromNode(e.target.element);
+            if (!position) {
+                return;
+            }
+            if (!this._editor.hasModel() || !this._stickyRangeProjectedOnEditor) {
+                return;
+            }
+            if (this._candidateDefinitionsLength > 1) {
+                if (this._focused) {
+                    this._disposeFocusStickyScrollStore();
+                }
+                this._revealPosition({ lineNumber: position.lineNumber, column: 1 });
+            }
+            this._instaService.invokeFunction(goToDefinitionWithLocation, e, this._editor, { uri: this._editor.getModel().uri, range: this._stickyRangeProjectedOnEditor });
+        }));
+    }
+    _onContextMenu(targetWindow, e) {
+        const event = new StandardMouseEvent(targetWindow, e);
+        this._contextMenuService.showContextMenu({
+            menuId: MenuId.StickyScrollContext,
+            getAnchor: () => event,
+        });
+    }
+    _toggleFoldingRegionForLine(line) {
+        if (!this._foldingModel || line === null) {
+            return;
+        }
+        const stickyLine = this._stickyScrollWidget.getRenderedStickyLine(line);
+        const foldingIcon = stickyLine?.foldingIcon;
+        if (!foldingIcon) {
+            return;
+        }
+        toggleCollapseState(this._foldingModel, Number.MAX_VALUE, [line]);
+        foldingIcon.isCollapsed = !foldingIcon.isCollapsed;
+        const scrollTop = (foldingIcon.isCollapsed ?
+            this._editor.getTopForLineNumber(foldingIcon.foldingEndLine)
+            : this._editor.getTopForLineNumber(foldingIcon.foldingStartLine))
+            - this._editor.getOption(69) * stickyLine.index + 1;
+        this._editor.setScrollTop(scrollTop);
+        this._renderStickyScroll(line);
+    }
+    _readConfiguration() {
+        const options = this._editor.getOption(118);
+        if (options.enabled === false) {
+            this._editor.removeOverlayWidget(this._stickyScrollWidget);
+            this._sessionStore.clear();
+            this._enabled = false;
+            return;
+        }
+        else if (options.enabled && !this._enabled) {
+            this._editor.addOverlayWidget(this._stickyScrollWidget);
+            this._sessionStore.add(this._editor.onDidScrollChange((e) => {
+                if (e.scrollTopChanged) {
+                    this._showEndForLine = undefined;
+                    this._renderStickyScroll();
+                }
+            }));
+            this._sessionStore.add(this._editor.onDidLayoutChange(() => this._onDidResize()));
+            this._sessionStore.add(this._editor.onDidChangeModelTokens((e) => this._onTokensChange(e)));
+            this._sessionStore.add(this._stickyLineCandidateProvider.onDidChangeStickyScroll(() => {
+                this._showEndForLine = undefined;
+                this._renderStickyScroll();
+            }));
+            this._enabled = true;
+        }
+        const lineNumberOption = this._editor.getOption(70);
+        if (lineNumberOption.renderType === 2) {
+            this._sessionStore.add(this._editor.onDidChangeCursorPosition(() => {
+                this._showEndForLine = undefined;
+                this._renderStickyScroll(0);
+            }));
+        }
+    }
+    _readConfigurationChange(event) {
+        if (event.hasChanged(118)
+            || event.hasChanged(75)
+            || event.hasChanged(69)
+            || event.hasChanged(113)
+            || event.hasChanged(70)) {
+            this._readConfiguration();
+        }
+        if (event.hasChanged(70)) {
+            this._renderStickyScroll(0);
+        }
+    }
+    _needsUpdate(event) {
+        const stickyLineNumbers = this._stickyScrollWidget.getCurrentLines();
+        for (const stickyLineNumber of stickyLineNumbers) {
+            for (const range of event.ranges) {
+                if (stickyLineNumber >= range.fromLineNumber && stickyLineNumber <= range.toLineNumber) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    _onTokensChange(event) {
+        if (this._needsUpdate(event)) {
+            this._renderStickyScroll(0);
+        }
+    }
+    _onDidResize() {
+        const layoutInfo = this._editor.getLayoutInfo();
+        const theoreticalLines = layoutInfo.height / this._editor.getOption(69);
+        this._maxStickyLines = Math.round(theoreticalLines * .25);
+    }
+    async _renderStickyScroll(rebuildFromLine) {
+        const model = this._editor.getModel();
+        if (!model || model.isTooLargeForTokenization()) {
+            this._resetState();
+            return;
+        }
+        const nextRebuildFromLine = this._updateAndGetMinRebuildFromLine(rebuildFromLine);
+        const stickyWidgetVersion = this._stickyLineCandidateProvider.getVersionId();
+        const shouldUpdateState = stickyWidgetVersion === undefined || stickyWidgetVersion === model.getVersionId();
+        if (shouldUpdateState) {
+            if (!this._focused) {
+                await this._updateState(nextRebuildFromLine);
+            }
+            else {
+                if (this._focusedStickyElementIndex === -1) {
+                    await this._updateState(nextRebuildFromLine);
+                    this._focusedStickyElementIndex = this._stickyScrollWidget.lineNumberCount - 1;
+                    if (this._focusedStickyElementIndex !== -1) {
+                        this._stickyScrollWidget.focusLineWithIndex(this._focusedStickyElementIndex);
+                    }
+                }
+                else {
+                    const focusedStickyElementLineNumber = this._stickyScrollWidget.lineNumbers[this._focusedStickyElementIndex];
+                    await this._updateState(nextRebuildFromLine);
+                    if (this._stickyScrollWidget.lineNumberCount === 0) {
+                        this._focusedStickyElementIndex = -1;
+                    }
+                    else {
+                        const previousFocusedLineNumberExists = this._stickyScrollWidget.lineNumbers.includes(focusedStickyElementLineNumber);
+                        if (!previousFocusedLineNumberExists) {
+                            this._focusedStickyElementIndex = this._stickyScrollWidget.lineNumberCount - 1;
+                        }
+                        this._stickyScrollWidget.focusLineWithIndex(this._focusedStickyElementIndex);
+                    }
+                }
+            }
+        }
+    }
+    _updateAndGetMinRebuildFromLine(rebuildFromLine) {
+        if (rebuildFromLine !== undefined) {
+            const minRebuildFromLineOrInfinity = this._minRebuildFromLine !== undefined ? this._minRebuildFromLine : Infinity;
+            this._minRebuildFromLine = Math.min(rebuildFromLine, minRebuildFromLineOrInfinity);
+        }
+        return this._minRebuildFromLine;
+    }
+    async _updateState(rebuildFromLine) {
+        this._minRebuildFromLine = undefined;
+        this._foldingModel = await FoldingController.get(this._editor)?.getFoldingModel() ?? undefined;
+        this._widgetState = this.findScrollWidgetState();
+        const stickyWidgetHasLines = this._widgetState.startLineNumbers.length > 0;
+        this._stickyScrollVisibleContextKey.set(stickyWidgetHasLines);
+        this._stickyScrollWidget.setState(this._widgetState, this._foldingModel, rebuildFromLine);
+    }
+    async _resetState() {
+        this._minRebuildFromLine = undefined;
+        this._foldingModel = undefined;
+        this._widgetState = StickyScrollWidgetState.Empty;
+        this._stickyScrollVisibleContextKey.set(false);
+        this._stickyScrollWidget.setState(undefined, undefined);
+    }
+    findScrollWidgetState() {
+        const lineHeight = this._editor.getOption(69);
+        const maxNumberStickyLines = Math.min(this._maxStickyLines, this._editor.getOption(118).maxLineCount);
+        const scrollTop = this._editor.getScrollTop();
+        let lastLineRelativePosition = 0;
+        const startLineNumbers = [];
+        const endLineNumbers = [];
+        const arrayVisibleRanges = this._editor.getVisibleRanges();
+        if (arrayVisibleRanges.length !== 0) {
+            const fullVisibleRange = new StickyRange(arrayVisibleRanges[0].startLineNumber, arrayVisibleRanges[arrayVisibleRanges.length - 1].endLineNumber);
+            const candidateRanges = this._stickyLineCandidateProvider.getCandidateStickyLinesIntersecting(fullVisibleRange);
+            for (const range of candidateRanges) {
+                const start = range.startLineNumber;
+                const end = range.endLineNumber;
+                const depth = range.nestingDepth;
+                if (end - start > 0) {
+                    const topOfElementAtDepth = (depth - 1) * lineHeight;
+                    const bottomOfElementAtDepth = depth * lineHeight;
+                    const bottomOfBeginningLine = this._editor.getBottomForLineNumber(start) - scrollTop;
+                    const topOfEndLine = this._editor.getTopForLineNumber(end) - scrollTop;
+                    const bottomOfEndLine = this._editor.getBottomForLineNumber(end) - scrollTop;
+                    if (topOfElementAtDepth > topOfEndLine && topOfElementAtDepth <= bottomOfEndLine) {
+                        startLineNumbers.push(start);
+                        endLineNumbers.push(end + 1);
+                        if (topOfElementAtDepth > bottomOfEndLine - lineHeight) {
+                            lastLineRelativePosition = bottomOfEndLine - bottomOfElementAtDepth;
+                        }
+                        break;
+                    }
+                    else if (bottomOfElementAtDepth > bottomOfBeginningLine && bottomOfElementAtDepth <= bottomOfEndLine) {
+                        startLineNumbers.push(start);
+                        endLineNumbers.push(end + 1);
+                    }
+                    if (startLineNumbers.length === maxNumberStickyLines) {
+                        break;
+                    }
+                }
+            }
+        }
+        this._endLineNumbers = endLineNumbers;
+        return new StickyScrollWidgetState(startLineNumbers, endLineNumbers, lastLineRelativePosition, this._showEndForLine);
+    }
+    dispose() {
+        super.dispose();
+        this._sessionStore.dispose();
+    }
+};
+StickyScrollController = StickyScrollController_1 = __decorate([
+    __param(1, IContextMenuService),
+    __param(2, ILanguageFeaturesService),
+    __param(3, IInstantiationService),
+    __param(4, ILanguageConfigurationService),
+    __param(5, ILanguageFeatureDebounceService),
+    __param(6, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], StickyScrollController);
+export { StickyScrollController };

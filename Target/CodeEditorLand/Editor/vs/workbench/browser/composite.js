@@ -1,1 +1,142 @@
-import{ActionRunner as d}from"../../base/common/actions.js";import{Component as c}from"../common/component.js";import"../../platform/telemetry/common/telemetry.js";import"../common/composite.js";import{Emitter as n}from"../../base/common/event.js";import"../../platform/theme/common/themeService.js";import"../../platform/instantiation/common/instantiation.js";import{trackFocus as a}from"../../base/browser/dom.js";import"../../platform/storage/common/storage.js";import{Disposable as u}from"../../base/common/lifecycle.js";import{assertIsDefined as p}from"../../base/common/types.js";import"../../base/browser/ui/actionbar/actionbar.js";import"../../platform/actions/common/actions.js";import"../../base/browser/ui/sash/sash.js";import"../../base/browser/ui/actionbar/actionViewItems.js";class G extends c{constructor(e,i,o,r){super(e,o,r);this.telemetryService=i}_onTitleAreaUpdate=this._register(new n);onTitleAreaUpdate=this._onTitleAreaUpdate.event;_onDidFocus;get onDidFocus(){return this._onDidFocus||(this._onDidFocus=this.registerFocusTrackEvents().onDidFocus),this._onDidFocus.event}_onDidBlur;get onDidBlur(){return this._onDidBlur||(this._onDidBlur=this.registerFocusTrackEvents().onDidBlur),this._onDidBlur.event}_hasFocus=!1;hasFocus(){return this._hasFocus}registerFocusTrackEvents(){const e=p(this.getContainer()),i=this._register(a(e)),o=this._onDidFocus=this._register(new n);this._register(i.onDidFocus(()=>{this._hasFocus=!0,o.fire()}));const r=this._onDidBlur=this._register(new n);return this._register(i.onDidBlur(()=>{this._hasFocus=!1,r.fire()})),{onDidFocus:o,onDidBlur:r}}actionRunner;visible=!1;parent;getTitle(){}create(e){this.parent=e}getContainer(){return this.parent}setVisible(e){this.visible!==!!e&&(this.visible=e)}focus(){}getMenuIds(){return[]}getActions(){return[]}getSecondaryActions(){return[]}getContextMenuActions(){return[]}getActionViewItem(e,i){}getActionsContext(){return null}getActionRunner(){return this.actionRunner||(this.actionRunner=this._register(new d)),this.actionRunner}updateTitleArea(){this._onTitleAreaUpdate.fire()}isVisible(){return this.visible}getControl(){}}class J{constructor(t,e,i,o,r,m){this.ctor=t;this.id=e;this.name=i;this.cssClass=o;this.order=r;this.requestedIndex=m}instantiate(t){return t.createInstance(this.ctor)}}class K extends u{_onDidRegister=this._register(new n);onDidRegister=this._onDidRegister.event;_onDidDeregister=this._register(new n);onDidDeregister=this._onDidDeregister.event;composites=[];registerComposite(t){this.compositeById(t.id)||(this.composites.push(t),this._onDidRegister.fire(t))}deregisterComposite(t){const e=this.compositeById(t);e&&(this.composites.splice(this.composites.indexOf(e),1),this._onDidDeregister.fire(e))}getComposite(t){return this.compositeById(t)}getComposites(){return this.composites.slice(0)}compositeById(t){return this.composites.find(e=>e.id===t)}}export{G as Composite,J as CompositeDescriptor,K as CompositeRegistry};
+import { ActionRunner } from '../../base/common/actions.js';
+import { Component } from '../common/component.js';
+import { Emitter } from '../../base/common/event.js';
+import { trackFocus } from '../../base/browser/dom.js';
+import { Disposable } from '../../base/common/lifecycle.js';
+import { assertIsDefined } from '../../base/common/types.js';
+export class Composite extends Component {
+    get onDidFocus() {
+        if (!this._onDidFocus) {
+            this._onDidFocus = this.registerFocusTrackEvents().onDidFocus;
+        }
+        return this._onDidFocus.event;
+    }
+    get onDidBlur() {
+        if (!this._onDidBlur) {
+            this._onDidBlur = this.registerFocusTrackEvents().onDidBlur;
+        }
+        return this._onDidBlur.event;
+    }
+    hasFocus() {
+        return this._hasFocus;
+    }
+    registerFocusTrackEvents() {
+        const container = assertIsDefined(this.getContainer());
+        const focusTracker = this._register(trackFocus(container));
+        const onDidFocus = this._onDidFocus = this._register(new Emitter());
+        this._register(focusTracker.onDidFocus(() => {
+            this._hasFocus = true;
+            onDidFocus.fire();
+        }));
+        const onDidBlur = this._onDidBlur = this._register(new Emitter());
+        this._register(focusTracker.onDidBlur(() => {
+            this._hasFocus = false;
+            onDidBlur.fire();
+        }));
+        return { onDidFocus, onDidBlur };
+    }
+    constructor(id, telemetryService, themeService, storageService) {
+        super(id, themeService, storageService);
+        this.telemetryService = telemetryService;
+        this._onTitleAreaUpdate = this._register(new Emitter());
+        this.onTitleAreaUpdate = this._onTitleAreaUpdate.event;
+        this._hasFocus = false;
+        this.visible = false;
+    }
+    getTitle() {
+        return undefined;
+    }
+    create(parent) {
+        this.parent = parent;
+    }
+    getContainer() {
+        return this.parent;
+    }
+    setVisible(visible) {
+        if (this.visible !== !!visible) {
+            this.visible = visible;
+        }
+    }
+    focus() {
+    }
+    getMenuIds() {
+        return [];
+    }
+    getActions() {
+        return [];
+    }
+    getSecondaryActions() {
+        return [];
+    }
+    getContextMenuActions() {
+        return [];
+    }
+    getActionViewItem(action, options) {
+        return undefined;
+    }
+    getActionsContext() {
+        return null;
+    }
+    getActionRunner() {
+        if (!this.actionRunner) {
+            this.actionRunner = this._register(new ActionRunner());
+        }
+        return this.actionRunner;
+    }
+    updateTitleArea() {
+        this._onTitleAreaUpdate.fire();
+    }
+    isVisible() {
+        return this.visible;
+    }
+    getControl() {
+        return undefined;
+    }
+}
+export class CompositeDescriptor {
+    constructor(ctor, id, name, cssClass, order, requestedIndex) {
+        this.ctor = ctor;
+        this.id = id;
+        this.name = name;
+        this.cssClass = cssClass;
+        this.order = order;
+        this.requestedIndex = requestedIndex;
+    }
+    instantiate(instantiationService) {
+        return instantiationService.createInstance(this.ctor);
+    }
+}
+export class CompositeRegistry extends Disposable {
+    constructor() {
+        super(...arguments);
+        this._onDidRegister = this._register(new Emitter());
+        this.onDidRegister = this._onDidRegister.event;
+        this._onDidDeregister = this._register(new Emitter());
+        this.onDidDeregister = this._onDidDeregister.event;
+        this.composites = [];
+    }
+    registerComposite(descriptor) {
+        if (this.compositeById(descriptor.id)) {
+            return;
+        }
+        this.composites.push(descriptor);
+        this._onDidRegister.fire(descriptor);
+    }
+    deregisterComposite(id) {
+        const descriptor = this.compositeById(id);
+        if (!descriptor) {
+            return;
+        }
+        this.composites.splice(this.composites.indexOf(descriptor), 1);
+        this._onDidDeregister.fire(descriptor);
+    }
+    getComposite(id) {
+        return this.compositeById(id);
+    }
+    getComposites() {
+        return this.composites.slice(0);
+    }
+    compositeById(id) {
+        return this.composites.find(composite => composite.id === id);
+    }
+}

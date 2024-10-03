@@ -1,1 +1,379 @@
-var D=Object.defineProperty;var M=Object.getOwnPropertyDescriptor;var k=(c,t,e,r)=>{for(var o=r>1?void 0:r?M(t,e):t,i=c.length-1,n;i>=0;i--)(n=c[i])&&(o=(r?n(t,e,o):n(o))||o);return r&&o&&D(t,e,o),o},m=(c,t)=>(e,r)=>t(e,r,c);import{timeout as b}from"../../../base/common/async.js";import{Disposable as w}from"../../../base/common/lifecycle.js";import"../../../base/common/uri.js";import{logOnceWebWorkerWarning as W}from"../../../base/common/worker/simpleWorker.js";import{createWebWorker as x}from"../../../base/browser/defaultWorkerFactory.js";import"../../common/core/position.js";import{Range as _}from"../../common/core/range.js";import"../../common/model.js";import*as P from"../../common/languages.js";import{ILanguageConfigurationService as T}from"../../common/languages/languageConfigurationRegistry.js";import{EditorSimpleWorker as E}from"../../common/services/editorSimpleWorker.js";import"../../common/services/editorWorker.js";import{IModelService as I}from"../../common/services/model.js";import{ITextResourceConfigurationService as U}from"../../common/services/textResourceConfiguration.js";import{isNonEmptyArray as y}from"../../../base/common/arrays.js";import{ILogService as L}from"../../../platform/log/common/log.js";import{StopWatch as C}from"../../../base/common/stopwatch.js";import{canceled as H,onUnexpectedError as O}from"../../../base/common/errors.js";import"../../common/services/unicodeTextModelHighlighter.js";import{ILanguageFeaturesService as $}from"../../common/services/languageFeatures.js";import"../../common/diff/legacyLinesDiffComputer.js";import"../../common/diff/documentDiffProvider.js";import{MovedText as F}from"../../common/diff/linesDiffComputer.js";import{DetailedLineRangeMapping as N,RangeMapping as A,LineRangeMapping as B}from"../../common/diff/rangeMapping.js";import{LineRange as S}from"../../common/core/lineRange.js";import"../../common/services/findSectionHeaders.js";import{mainWindow as V}from"../../../base/browser/window.js";import{WindowIntervalTimer as j}from"../../../base/browser/dom.js";import{WorkerTextModelSyncClient as q}from"../../common/services/textModelSync/textModelSync.impl.js";import{EditorWorkerHost as K}from"../../common/services/editorWorkerHost.js";const R=5*60*1e3;function u(c,t){const e=c.getModel(t);return!(!e||e.isTooLargeForSyncing())}let v=class extends w{constructor(e,r,o,i,n,s){super();this._languageConfigurationService=n;this._modelService=r,this._workerManager=this._register(new h(e,this._modelService)),this._logService=i,this._register(s.linkProvider.register({language:"*",hasAccessToAllModels:!0},{provideLinks:async(d,p)=>{if(!u(this._modelService,d.uri))return Promise.resolve({links:[]});const a=await(await this._workerWithResources([d.uri])).$computeLinks(d.uri.toString());return a&&{links:a}}})),this._register(s.completionProvider.register("*",new z(this._workerManager,o,this._modelService,this._languageConfigurationService)))}_modelService;_workerManager;_logService;dispose(){super.dispose()}canComputeUnicodeHighlights(e){return u(this._modelService,e)}async computedUnicodeHighlights(e,r,o){return(await this._workerWithResources([e])).$computeUnicodeHighlights(e.toString(),r,o)}async computeDiff(e,r,o,i){const s=await(await this._workerWithResources([e,r],!0)).$computeDiff(e.toString(),r.toString(),o,i);if(!s)return null;return{identical:s.identical,quitEarly:s.quitEarly,changes:p(s.changes),moves:s.moves.map(l=>new F(new B(new S(l[0],l[1]),new S(l[2],l[3])),p(l[4])))};function p(l){return l.map(a=>new N(new S(a[0],a[1]),new S(a[2],a[3]),a[4]?.map(g=>new A(new _(g[0],g[1],g[2],g[3]),new _(g[4],g[5],g[6],g[7])))))}}canComputeDirtyDiff(e,r){return u(this._modelService,e)&&u(this._modelService,r)}async computeDirtyDiff(e,r,o){return(await this._workerWithResources([e,r])).$computeDirtyDiff(e.toString(),r.toString(),o)}async computeMoreMinimalEdits(e,r,o=!1){if(y(r)){if(!u(this._modelService,e))return Promise.resolve(r);const i=C.create(),n=this._workerWithResources([e]).then(s=>s.$computeMoreMinimalEdits(e.toString(),r,o));return n.finally(()=>this._logService.trace("FORMAT#computeMoreMinimalEdits",e.toString(!0),i.elapsed())),Promise.race([n,b(1e3).then(()=>r)])}else return Promise.resolve(void 0)}computeHumanReadableDiff(e,r){if(y(r)){if(!u(this._modelService,e))return Promise.resolve(r);const o=C.create(),i={ignoreTrimWhitespace:!1,maxComputationTimeMs:1e3,computeMoves:!1},n=this._workerWithResources([e]).then(s=>s.$computeHumanReadableDiff(e.toString(),r,i)).catch(s=>(O(s),this.computeMoreMinimalEdits(e,r,!0)));return n.finally(()=>this._logService.trace("FORMAT#computeHumanReadableDiff",e.toString(!0),o.elapsed())),n}else return Promise.resolve(void 0)}canNavigateValueSet(e){return u(this._modelService,e)}async navigateValueSet(e,r,o){const i=this._modelService.getModel(e);if(!i)return null;const n=this._languageConfigurationService.getLanguageConfiguration(i.getLanguageId()).getWordDefinition(),s=n.source,d=n.flags;return(await this._workerWithResources([e])).$navigateValueSet(e.toString(),r,o,s,d)}canComputeWordRanges(e){return u(this._modelService,e)}async computeWordRanges(e,r){const o=this._modelService.getModel(e);if(!o)return Promise.resolve(null);const i=this._languageConfigurationService.getLanguageConfiguration(o.getLanguageId()).getWordDefinition(),n=i.source,s=i.flags;return(await this._workerWithResources([e])).$computeWordRanges(e.toString(),r,n,s)}async findSectionHeaders(e,r){return(await this._workerWithResources([e])).$findSectionHeaders(e.toString(),r)}async computeDefaultDocumentColors(e){return(await this._workerWithResources([e])).$computeDefaultDocumentColors(e.toString())}async _workerWithResources(e,r=!1){return await(await this._workerManager.withWorker()).workerWithSyncedResources(e,r)}};v=k([m(1,I),m(2,U),m(3,L),m(4,T),m(5,$)],v);class z{constructor(t,e,r,o){this.languageConfigurationService=o;this._workerManager=t,this._configurationService=e,this._modelService=r}_workerManager;_configurationService;_modelService;_debugDisplayName="wordbasedCompletions";async provideCompletionItems(t,e){const r=this._configurationService.getValue(t.uri,e,"editor");if(r.wordBasedSuggestions==="off")return;const o=[];if(r.wordBasedSuggestions==="currentDocument")u(this._modelService,t.uri)&&o.push(t.uri);else for(const a of this._modelService.getModels())u(this._modelService,a.uri)&&(a===t?o.unshift(a.uri):(r.wordBasedSuggestions==="allDocuments"||a.getLanguageId()===t.getLanguageId())&&o.push(a.uri));if(o.length===0)return;const i=this.languageConfigurationService.getLanguageConfiguration(t.getLanguageId()).getWordDefinition(),n=t.getWordAtPosition(e),s=n?new _(e.lineNumber,n.startColumn,e.lineNumber,n.endColumn):_.fromPositions(e),d=s.setEndPosition(e.lineNumber,e.column),l=await(await this._workerManager.withWorker()).textualSuggest(o,n?.word,i);if(l)return{duration:l.duration,suggestions:l.words.map(a=>({kind:P.CompletionItemKind.Text,label:a,insertText:a,range:{insert:d,replace:s}}))}}}let h=class extends w{constructor(e,r){super();this._workerDescriptor=e;this._modelService=r,this._editorWorkerClient=null,this._lastWorkerUsedTime=new Date().getTime(),this._register(new j).cancelAndSet(()=>this._checkStopIdleWorker(),Math.round(R/2),V),this._register(this._modelService.onModelRemoved(i=>this._checkStopEmptyWorker()))}_modelService;_editorWorkerClient;_lastWorkerUsedTime;dispose(){this._editorWorkerClient&&(this._editorWorkerClient.dispose(),this._editorWorkerClient=null),super.dispose()}_checkStopEmptyWorker(){if(!this._editorWorkerClient)return;this._modelService.getModels().length===0&&(this._editorWorkerClient.dispose(),this._editorWorkerClient=null)}_checkStopIdleWorker(){if(!this._editorWorkerClient)return;new Date().getTime()-this._lastWorkerUsedTime>R&&(this._editorWorkerClient.dispose(),this._editorWorkerClient=null)}withWorker(){return this._lastWorkerUsedTime=new Date().getTime(),this._editorWorkerClient||(this._editorWorkerClient=new f(this._workerDescriptor,!1,this._modelService)),Promise.resolve(this._editorWorkerClient)}};h=k([m(1,I)],h);class G{_instance;proxy;constructor(t){this._instance=t,this.proxy=this._instance}dispose(){this._instance.dispose()}setChannel(t,e){throw new Error("Not supported")}getChannel(t){throw new Error("Not supported")}}let f=class extends w{constructor(e,r,o){super();this._workerDescriptor=e;this._modelService=o,this._keepIdleModels=r,this._worker=null,this._modelManager=null}_modelService;_keepIdleModels;_worker;_modelManager;_disposed=!1;fhr(e,r){throw new Error("Not implemented!")}_getOrCreateWorker(){if(!this._worker)try{this._worker=this._register(x(this._workerDescriptor)),K.setChannel(this._worker,this._createEditorWorkerHost())}catch(e){W(e),this._worker=this._createFallbackLocalWorker()}return this._worker}async _getProxy(){try{const e=this._getOrCreateWorker().proxy;return await e.$ping(),e}catch(e){return W(e),this._worker=this._createFallbackLocalWorker(),this._worker.proxy}}_createFallbackLocalWorker(){return new G(new E(this._createEditorWorkerHost(),null))}_createEditorWorkerHost(){return{$fhr:(e,r)=>this.fhr(e,r)}}_getOrCreateModelManager(e){return this._modelManager||(this._modelManager=this._register(new q(e,this._modelService,this._keepIdleModels))),this._modelManager}async workerWithSyncedResources(e,r=!1){if(this._disposed)return Promise.reject(H());const o=await this._getProxy();return this._getOrCreateModelManager(o).ensureSyncedResources(e,r),o}async textualSuggest(e,r,o){const i=await this.workerWithSyncedResources(e),n=o.source,s=o.flags;return i.$textualSuggest(e.map(d=>d.toString()),r,n,s)}dispose(){super.dispose(),this._disposed=!0}};f=k([m(2,I)],f);export{f as EditorWorkerClient,v as EditorWorkerService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { timeout } from '../../../base/common/async.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { logOnceWebWorkerWarning } from '../../../base/common/worker/simpleWorker.js';
+import { createWebWorker } from '../../../base/browser/defaultWorkerFactory.js';
+import { Range } from '../../common/core/range.js';
+import { ILanguageConfigurationService } from '../../common/languages/languageConfigurationRegistry.js';
+import { EditorSimpleWorker } from '../../common/services/editorSimpleWorker.js';
+import { IModelService } from '../../common/services/model.js';
+import { ITextResourceConfigurationService } from '../../common/services/textResourceConfiguration.js';
+import { isNonEmptyArray } from '../../../base/common/arrays.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { StopWatch } from '../../../base/common/stopwatch.js';
+import { canceled, onUnexpectedError } from '../../../base/common/errors.js';
+import { ILanguageFeaturesService } from '../../common/services/languageFeatures.js';
+import { MovedText } from '../../common/diff/linesDiffComputer.js';
+import { DetailedLineRangeMapping, RangeMapping, LineRangeMapping } from '../../common/diff/rangeMapping.js';
+import { LineRange } from '../../common/core/lineRange.js';
+import { mainWindow } from '../../../base/browser/window.js';
+import { WindowIntervalTimer } from '../../../base/browser/dom.js';
+import { WorkerTextModelSyncClient } from '../../common/services/textModelSync/textModelSync.impl.js';
+import { EditorWorkerHost } from '../../common/services/editorWorkerHost.js';
+const STOP_WORKER_DELTA_TIME_MS = 5 * 60 * 1000;
+function canSyncModel(modelService, resource) {
+    const model = modelService.getModel(resource);
+    if (!model) {
+        return false;
+    }
+    if (model.isTooLargeForSyncing()) {
+        return false;
+    }
+    return true;
+}
+let EditorWorkerService = class EditorWorkerService extends Disposable {
+    constructor(workerDescriptor, modelService, configurationService, logService, _languageConfigurationService, languageFeaturesService) {
+        super();
+        this._languageConfigurationService = _languageConfigurationService;
+        this._modelService = modelService;
+        this._workerManager = this._register(new WorkerManager(workerDescriptor, this._modelService));
+        this._logService = logService;
+        this._register(languageFeaturesService.linkProvider.register({ language: '*', hasAccessToAllModels: true }, {
+            provideLinks: async (model, token) => {
+                if (!canSyncModel(this._modelService, model.uri)) {
+                    return Promise.resolve({ links: [] });
+                }
+                const worker = await this._workerWithResources([model.uri]);
+                const links = await worker.$computeLinks(model.uri.toString());
+                return links && { links };
+            }
+        }));
+        this._register(languageFeaturesService.completionProvider.register('*', new WordBasedCompletionItemProvider(this._workerManager, configurationService, this._modelService, this._languageConfigurationService)));
+    }
+    dispose() {
+        super.dispose();
+    }
+    canComputeUnicodeHighlights(uri) {
+        return canSyncModel(this._modelService, uri);
+    }
+    async computedUnicodeHighlights(uri, options, range) {
+        const worker = await this._workerWithResources([uri]);
+        return worker.$computeUnicodeHighlights(uri.toString(), options, range);
+    }
+    async computeDiff(original, modified, options, algorithm) {
+        const worker = await this._workerWithResources([original, modified], true);
+        const result = await worker.$computeDiff(original.toString(), modified.toString(), options, algorithm);
+        if (!result) {
+            return null;
+        }
+        const diff = {
+            identical: result.identical,
+            quitEarly: result.quitEarly,
+            changes: toLineRangeMappings(result.changes),
+            moves: result.moves.map(m => new MovedText(new LineRangeMapping(new LineRange(m[0], m[1]), new LineRange(m[2], m[3])), toLineRangeMappings(m[4])))
+        };
+        return diff;
+        function toLineRangeMappings(changes) {
+            return changes.map((c) => new DetailedLineRangeMapping(new LineRange(c[0], c[1]), new LineRange(c[2], c[3]), c[4]?.map((c) => new RangeMapping(new Range(c[0], c[1], c[2], c[3]), new Range(c[4], c[5], c[6], c[7])))));
+        }
+    }
+    canComputeDirtyDiff(original, modified) {
+        return (canSyncModel(this._modelService, original) && canSyncModel(this._modelService, modified));
+    }
+    async computeDirtyDiff(original, modified, ignoreTrimWhitespace) {
+        const worker = await this._workerWithResources([original, modified]);
+        return worker.$computeDirtyDiff(original.toString(), modified.toString(), ignoreTrimWhitespace);
+    }
+    async computeMoreMinimalEdits(resource, edits, pretty = false) {
+        if (isNonEmptyArray(edits)) {
+            if (!canSyncModel(this._modelService, resource)) {
+                return Promise.resolve(edits);
+            }
+            const sw = StopWatch.create();
+            const result = this._workerWithResources([resource]).then(worker => worker.$computeMoreMinimalEdits(resource.toString(), edits, pretty));
+            result.finally(() => this._logService.trace('FORMAT#computeMoreMinimalEdits', resource.toString(true), sw.elapsed()));
+            return Promise.race([result, timeout(1000).then(() => edits)]);
+        }
+        else {
+            return Promise.resolve(undefined);
+        }
+    }
+    computeHumanReadableDiff(resource, edits) {
+        if (isNonEmptyArray(edits)) {
+            if (!canSyncModel(this._modelService, resource)) {
+                return Promise.resolve(edits);
+            }
+            const sw = StopWatch.create();
+            const opts = { ignoreTrimWhitespace: false, maxComputationTimeMs: 1000, computeMoves: false };
+            const result = (this._workerWithResources([resource])
+                .then(worker => worker.$computeHumanReadableDiff(resource.toString(), edits, opts))
+                .catch((err) => {
+                onUnexpectedError(err);
+                return this.computeMoreMinimalEdits(resource, edits, true);
+            }));
+            result.finally(() => this._logService.trace('FORMAT#computeHumanReadableDiff', resource.toString(true), sw.elapsed()));
+            return result;
+        }
+        else {
+            return Promise.resolve(undefined);
+        }
+    }
+    canNavigateValueSet(resource) {
+        return (canSyncModel(this._modelService, resource));
+    }
+    async navigateValueSet(resource, range, up) {
+        const model = this._modelService.getModel(resource);
+        if (!model) {
+            return null;
+        }
+        const wordDefRegExp = this._languageConfigurationService.getLanguageConfiguration(model.getLanguageId()).getWordDefinition();
+        const wordDef = wordDefRegExp.source;
+        const wordDefFlags = wordDefRegExp.flags;
+        const worker = await this._workerWithResources([resource]);
+        return worker.$navigateValueSet(resource.toString(), range, up, wordDef, wordDefFlags);
+    }
+    canComputeWordRanges(resource) {
+        return canSyncModel(this._modelService, resource);
+    }
+    async computeWordRanges(resource, range) {
+        const model = this._modelService.getModel(resource);
+        if (!model) {
+            return Promise.resolve(null);
+        }
+        const wordDefRegExp = this._languageConfigurationService.getLanguageConfiguration(model.getLanguageId()).getWordDefinition();
+        const wordDef = wordDefRegExp.source;
+        const wordDefFlags = wordDefRegExp.flags;
+        const worker = await this._workerWithResources([resource]);
+        return worker.$computeWordRanges(resource.toString(), range, wordDef, wordDefFlags);
+    }
+    async findSectionHeaders(uri, options) {
+        const worker = await this._workerWithResources([uri]);
+        return worker.$findSectionHeaders(uri.toString(), options);
+    }
+    async computeDefaultDocumentColors(uri) {
+        const worker = await this._workerWithResources([uri]);
+        return worker.$computeDefaultDocumentColors(uri.toString());
+    }
+    async _workerWithResources(resources, forceLargeModels = false) {
+        const worker = await this._workerManager.withWorker();
+        return await worker.workerWithSyncedResources(resources, forceLargeModels);
+    }
+};
+EditorWorkerService = __decorate([
+    __param(1, IModelService),
+    __param(2, ITextResourceConfigurationService),
+    __param(3, ILogService),
+    __param(4, ILanguageConfigurationService),
+    __param(5, ILanguageFeaturesService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], EditorWorkerService);
+export { EditorWorkerService };
+class WordBasedCompletionItemProvider {
+    constructor(workerManager, configurationService, modelService, languageConfigurationService) {
+        this.languageConfigurationService = languageConfigurationService;
+        this._debugDisplayName = 'wordbasedCompletions';
+        this._workerManager = workerManager;
+        this._configurationService = configurationService;
+        this._modelService = modelService;
+    }
+    async provideCompletionItems(model, position) {
+        const config = this._configurationService.getValue(model.uri, position, 'editor');
+        if (config.wordBasedSuggestions === 'off') {
+            return undefined;
+        }
+        const models = [];
+        if (config.wordBasedSuggestions === 'currentDocument') {
+            if (canSyncModel(this._modelService, model.uri)) {
+                models.push(model.uri);
+            }
+        }
+        else {
+            for (const candidate of this._modelService.getModels()) {
+                if (!canSyncModel(this._modelService, candidate.uri)) {
+                    continue;
+                }
+                if (candidate === model) {
+                    models.unshift(candidate.uri);
+                }
+                else if (config.wordBasedSuggestions === 'allDocuments' || candidate.getLanguageId() === model.getLanguageId()) {
+                    models.push(candidate.uri);
+                }
+            }
+        }
+        if (models.length === 0) {
+            return undefined;
+        }
+        const wordDefRegExp = this.languageConfigurationService.getLanguageConfiguration(model.getLanguageId()).getWordDefinition();
+        const word = model.getWordAtPosition(position);
+        const replace = !word ? Range.fromPositions(position) : new Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn);
+        const insert = replace.setEndPosition(position.lineNumber, position.column);
+        const client = await this._workerManager.withWorker();
+        const data = await client.textualSuggest(models, word?.word, wordDefRegExp);
+        if (!data) {
+            return undefined;
+        }
+        return {
+            duration: data.duration,
+            suggestions: data.words.map((word) => {
+                return {
+                    kind: 18,
+                    label: word,
+                    insertText: word,
+                    range: { insert, replace }
+                };
+            }),
+        };
+    }
+}
+let WorkerManager = class WorkerManager extends Disposable {
+    constructor(_workerDescriptor, modelService) {
+        super();
+        this._workerDescriptor = _workerDescriptor;
+        this._modelService = modelService;
+        this._editorWorkerClient = null;
+        this._lastWorkerUsedTime = (new Date()).getTime();
+        const stopWorkerInterval = this._register(new WindowIntervalTimer());
+        stopWorkerInterval.cancelAndSet(() => this._checkStopIdleWorker(), Math.round(STOP_WORKER_DELTA_TIME_MS / 2), mainWindow);
+        this._register(this._modelService.onModelRemoved(_ => this._checkStopEmptyWorker()));
+    }
+    dispose() {
+        if (this._editorWorkerClient) {
+            this._editorWorkerClient.dispose();
+            this._editorWorkerClient = null;
+        }
+        super.dispose();
+    }
+    _checkStopEmptyWorker() {
+        if (!this._editorWorkerClient) {
+            return;
+        }
+        const models = this._modelService.getModels();
+        if (models.length === 0) {
+            this._editorWorkerClient.dispose();
+            this._editorWorkerClient = null;
+        }
+    }
+    _checkStopIdleWorker() {
+        if (!this._editorWorkerClient) {
+            return;
+        }
+        const timeSinceLastWorkerUsedTime = (new Date()).getTime() - this._lastWorkerUsedTime;
+        if (timeSinceLastWorkerUsedTime > STOP_WORKER_DELTA_TIME_MS) {
+            this._editorWorkerClient.dispose();
+            this._editorWorkerClient = null;
+        }
+    }
+    withWorker() {
+        this._lastWorkerUsedTime = (new Date()).getTime();
+        if (!this._editorWorkerClient) {
+            this._editorWorkerClient = new EditorWorkerClient(this._workerDescriptor, false, this._modelService);
+        }
+        return Promise.resolve(this._editorWorkerClient);
+    }
+};
+WorkerManager = __decorate([
+    __param(1, IModelService),
+    __metadata("design:paramtypes", [Object, Object])
+], WorkerManager);
+class SynchronousWorkerClient {
+    constructor(instance) {
+        this._instance = instance;
+        this.proxy = this._instance;
+    }
+    dispose() {
+        this._instance.dispose();
+    }
+    setChannel(channel, handler) {
+        throw new Error(`Not supported`);
+    }
+    getChannel(channel) {
+        throw new Error(`Not supported`);
+    }
+}
+let EditorWorkerClient = class EditorWorkerClient extends Disposable {
+    constructor(_workerDescriptor, keepIdleModels, modelService) {
+        super();
+        this._workerDescriptor = _workerDescriptor;
+        this._disposed = false;
+        this._modelService = modelService;
+        this._keepIdleModels = keepIdleModels;
+        this._worker = null;
+        this._modelManager = null;
+    }
+    fhr(method, args) {
+        throw new Error(`Not implemented!`);
+    }
+    _getOrCreateWorker() {
+        if (!this._worker) {
+            try {
+                this._worker = this._register(createWebWorker(this._workerDescriptor));
+                EditorWorkerHost.setChannel(this._worker, this._createEditorWorkerHost());
+            }
+            catch (err) {
+                logOnceWebWorkerWarning(err);
+                this._worker = this._createFallbackLocalWorker();
+            }
+        }
+        return this._worker;
+    }
+    async _getProxy() {
+        try {
+            const proxy = this._getOrCreateWorker().proxy;
+            await proxy.$ping();
+            return proxy;
+        }
+        catch (err) {
+            logOnceWebWorkerWarning(err);
+            this._worker = this._createFallbackLocalWorker();
+            return this._worker.proxy;
+        }
+    }
+    _createFallbackLocalWorker() {
+        return new SynchronousWorkerClient(new EditorSimpleWorker(this._createEditorWorkerHost(), null));
+    }
+    _createEditorWorkerHost() {
+        return {
+            $fhr: (method, args) => this.fhr(method, args)
+        };
+    }
+    _getOrCreateModelManager(proxy) {
+        if (!this._modelManager) {
+            this._modelManager = this._register(new WorkerTextModelSyncClient(proxy, this._modelService, this._keepIdleModels));
+        }
+        return this._modelManager;
+    }
+    async workerWithSyncedResources(resources, forceLargeModels = false) {
+        if (this._disposed) {
+            return Promise.reject(canceled());
+        }
+        const proxy = await this._getProxy();
+        this._getOrCreateModelManager(proxy).ensureSyncedResources(resources, forceLargeModels);
+        return proxy;
+    }
+    async textualSuggest(resources, leadingWord, wordDefRegExp) {
+        const proxy = await this.workerWithSyncedResources(resources);
+        const wordDef = wordDefRegExp.source;
+        const wordDefFlags = wordDefRegExp.flags;
+        return proxy.$textualSuggest(resources.map(r => r.toString()), leadingWord, wordDef, wordDefFlags);
+    }
+    dispose() {
+        super.dispose();
+        this._disposed = true;
+    }
+};
+EditorWorkerClient = __decorate([
+    __param(2, IModelService),
+    __metadata("design:paramtypes", [Object, Boolean, Object])
+], EditorWorkerClient);
+export { EditorWorkerClient };

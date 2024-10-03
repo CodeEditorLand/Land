@@ -1,1 +1,247 @@
-var P=Object.defineProperty;var L=Object.getOwnPropertyDescriptor;var v=(d,e,i,o)=>{for(var t=o>1?void 0:o?L(e,i):e,r=d.length-1,n;r>=0;r--)(n=d[r])&&(t=(o?n(e,i,t):n(t))||t);return o&&t&&P(e,i,t),t},c=(d,e)=>(i,o)=>e(i,o,d);import"../../../../../base/browser/keyboardEvent.js";import{createCancelablePromise as D}from"../../../../../base/common/async.js";import"../../../../../base/common/cancellation.js";import{onUnexpectedError as f}from"../../../../../base/common/errors.js";import{MarkdownString as k}from"../../../../../base/common/htmlContent.js";import{DisposableStore as I}from"../../../../../base/common/lifecycle.js";import"./goToDefinitionAtPosition.css";import{CodeEditorStateFlag as u,EditorState as b}from"../../../editorState/browser/editorState.js";import{MouseTargetType as C}from"../../../../browser/editorBrowser.js";import{EditorContributionInstantiation as y,registerEditorContribution as S}from"../../../../browser/editorExtensions.js";import{EditorOption as M}from"../../../../common/config/editorOptions.js";import"../../../../common/core/position.js";import{Range as m}from"../../../../common/core/range.js";import"../../../../common/editorCommon.js";import"../../../../common/model.js";import"../../../../common/languages.js";import{ILanguageService as E}from"../../../../common/languages/language.js";import{ITextModelService as w}from"../../../../common/services/resolverService.js";import{ClickLinkGesture as F}from"./clickLinkGesture.js";import{PeekContext as R}from"../../../peekView/browser/peekView.js";import*as W from"../../../../../nls.js";import{IContextKeyService as T}from"../../../../../platform/contextkey/common/contextkey.js";import"../../../../../platform/instantiation/common/instantiation.js";import{DefinitionAction as U}from"../goToCommands.js";import{getDefinitionsAtPosition as x}from"../goToSymbol.js";import"../../../../common/core/wordHelper.js";import{ILanguageFeaturesService as A}from"../../../../common/services/languageFeatures.js";import{ModelDecorationInjectedTextOptions as N}from"../../../../common/model/textModel.js";let a=class{constructor(e,i,o,t){this.textModelResolverService=i;this.languageService=o;this.languageFeaturesService=t;this.editor=e,this.linkDecorations=this.editor.createDecorationsCollection();const r=new F(e);this.toUnhook.add(r),this.toUnhook.add(r.onMouseMoveOrRelevantKeyDown(([n,s])=>{this.startFindDefinitionFromMouse(n,s??void 0)})),this.toUnhook.add(r.onExecute(n=>{this.isEnabled(n)&&this.gotoDefinition(n.target.position,n.hasSideBySideModifier).catch(s=>{f(s)}).finally(()=>{this.removeLinkDecorations()})})),this.toUnhook.add(r.onCancel(()=>{this.removeLinkDecorations(),this.currentWordAtPosition=null}))}static ID="editor.contrib.gotodefinitionatposition";static MAX_SOURCE_PREVIEW_LINES=8;editor;toUnhook=new I;toUnhookForKeyboard=new I;linkDecorations;currentWordAtPosition=null;previousPromise=null;static get(e){return e.getContribution(a.ID)}async startFindDefinitionFromCursor(e){await this.startFindDefinition(e),this.toUnhookForKeyboard.add(this.editor.onDidChangeCursorPosition(()=>{this.currentWordAtPosition=null,this.removeLinkDecorations(),this.toUnhookForKeyboard.clear()})),this.toUnhookForKeyboard.add(this.editor.onKeyDown(i=>{i&&(this.currentWordAtPosition=null,this.removeLinkDecorations(),this.toUnhookForKeyboard.clear())}))}startFindDefinitionFromMouse(e,i){if(e.target.type===C.CONTENT_WIDGET&&this.linkDecorations.length>0)return;if(!this.editor.hasModel()||!this.isEnabled(e,i)){this.currentWordAtPosition=null,this.removeLinkDecorations();return}const o=e.target.position;this.startFindDefinition(o)}async startFindDefinition(e){this.toUnhookForKeyboard.clear();const i=e?this.editor.getModel()?.getWordAtPosition(e):null;if(!i){this.currentWordAtPosition=null,this.removeLinkDecorations();return}if(this.currentWordAtPosition&&this.currentWordAtPosition.startColumn===i.startColumn&&this.currentWordAtPosition.endColumn===i.endColumn&&this.currentWordAtPosition.word===i.word)return;this.currentWordAtPosition=i;const o=new b(this.editor,u.Position|u.Value|u.Selection|u.Scroll);this.previousPromise&&(this.previousPromise.cancel(),this.previousPromise=null),this.previousPromise=D(n=>this.findDefinition(e,n));let t;try{t=await this.previousPromise}catch(n){f(n);return}if(!t||!t.length||!o.validate(this.editor)){this.removeLinkDecorations();return}const r=t[0].originSelectionRange?m.lift(t[0].originSelectionRange):new m(e.lineNumber,i.startColumn,e.lineNumber,i.endColumn);if(t.length>1){let n=r;for(const{originSelectionRange:s}of t)s&&(n=m.plusRange(n,s));this.addDecoration(n,new k().appendText(W.localize("multipleResults","Click to show {0} definitions.",t.length)))}else{const n=t[0];if(!n.uri)return;this.textModelResolverService.createModelReference(n.uri).then(s=>{if(!s.object||!s.object.textEditorModel){s.dispose();return}const{object:{textEditorModel:l}}=s,{startLineNumber:h}=n.range;if(h<1||h>l.getLineCount()){s.dispose();return}const g=this.getPreviewValue(l,h,n),p=this.languageService.guessLanguageIdByFilepathOrFirstLine(l.uri);this.addDecoration(r,g?new k().appendCodeblock(p||"",g):void 0),s.dispose()})}}getPreviewValue(e,i,o){let t=o.range;return t.endLineNumber-t.startLineNumber>=a.MAX_SOURCE_PREVIEW_LINES&&(t=this.getPreviewRangeBasedOnIndentation(e,i)),this.stripIndentationFromPreviewRange(e,i,t)}stripIndentationFromPreviewRange(e,i,o){let r=e.getLineFirstNonWhitespaceColumn(i);for(let s=i+1;s<o.endLineNumber;s++){const l=e.getLineFirstNonWhitespaceColumn(s);r=Math.min(r,l)}return e.getValueInRange(o).replace(new RegExp(`^\\s{${r-1}}`,"gm"),"").trim()}getPreviewRangeBasedOnIndentation(e,i){const o=e.getLineFirstNonWhitespaceColumn(i),t=Math.min(e.getLineCount(),i+a.MAX_SOURCE_PREVIEW_LINES);let r=i+1;for(;r<t;r++){const n=e.getLineFirstNonWhitespaceColumn(r);if(o===n)break}return new m(i,1,r+1,1)}addDecoration(e,i){const o={range:e,options:{description:"goto-definition-link",inlineClassName:"goto-definition-link",hoverMessage:i}};this.linkDecorations.set([o])}removeLinkDecorations(){this.linkDecorations.clear()}isEnabled(e,i){return this.editor.hasModel()&&e.isLeftClick&&e.isNoneOrSingleMouseDown&&e.target.type===C.CONTENT_TEXT&&!(e.target.detail.injectedText?.options instanceof N)&&(e.hasTriggerModifier||(i?i.keyCodeIsTriggerKey:!1))&&this.languageFeaturesService.definitionProvider.has(this.editor.getModel())}findDefinition(e,i){const o=this.editor.getModel();return o?x(this.languageFeaturesService.definitionProvider,o,e,!1,i):Promise.resolve(null)}gotoDefinition(e,i){return this.editor.setPosition(e),this.editor.invokeWithinContext(o=>{const t=!i&&this.editor.getOption(M.definitionLinkOpensInPeek)&&!this.isInPeekEditor(o);return new U({openToSide:i,openInPeek:t,muteMessage:!0},{title:{value:"",original:""},id:"",precondition:void 0}).run(o)})}isInPeekEditor(e){const i=e.get(T);return R.inPeekEditor.getValue(i)}dispose(){this.toUnhook.dispose(),this.toUnhookForKeyboard.dispose()}};a=v([c(1,w),c(2,E),c(3,A)],a),S(a.ID,a,y.BeforeFirstInteraction);export{a as GotoDefinitionAtPositionEditorContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var GotoDefinitionAtPositionEditorContribution_1;
+import { createCancelablePromise } from '../../../../../base/common/async.js';
+import { onUnexpectedError } from '../../../../../base/common/errors.js';
+import { MarkdownString } from '../../../../../base/common/htmlContent.js';
+import { DisposableStore } from '../../../../../base/common/lifecycle.js';
+import './goToDefinitionAtPosition.css';
+import { EditorState } from '../../../editorState/browser/editorState.js';
+import { registerEditorContribution } from '../../../../browser/editorExtensions.js';
+import { Range } from '../../../../common/core/range.js';
+import { ILanguageService } from '../../../../common/languages/language.js';
+import { ITextModelService } from '../../../../common/services/resolverService.js';
+import { ClickLinkGesture } from './clickLinkGesture.js';
+import { PeekContext } from '../../../peekView/browser/peekView.js';
+import * as nls from '../../../../../nls.js';
+import { IContextKeyService } from '../../../../../platform/contextkey/common/contextkey.js';
+import { DefinitionAction } from '../goToCommands.js';
+import { getDefinitionsAtPosition } from '../goToSymbol.js';
+import { ILanguageFeaturesService } from '../../../../common/services/languageFeatures.js';
+import { ModelDecorationInjectedTextOptions } from '../../../../common/model/textModel.js';
+let GotoDefinitionAtPositionEditorContribution = class GotoDefinitionAtPositionEditorContribution {
+    static { GotoDefinitionAtPositionEditorContribution_1 = this; }
+    static { this.ID = 'editor.contrib.gotodefinitionatposition'; }
+    static { this.MAX_SOURCE_PREVIEW_LINES = 8; }
+    constructor(editor, textModelResolverService, languageService, languageFeaturesService) {
+        this.textModelResolverService = textModelResolverService;
+        this.languageService = languageService;
+        this.languageFeaturesService = languageFeaturesService;
+        this.toUnhook = new DisposableStore();
+        this.toUnhookForKeyboard = new DisposableStore();
+        this.currentWordAtPosition = null;
+        this.previousPromise = null;
+        this.editor = editor;
+        this.linkDecorations = this.editor.createDecorationsCollection();
+        const linkGesture = new ClickLinkGesture(editor);
+        this.toUnhook.add(linkGesture);
+        this.toUnhook.add(linkGesture.onMouseMoveOrRelevantKeyDown(([mouseEvent, keyboardEvent]) => {
+            this.startFindDefinitionFromMouse(mouseEvent, keyboardEvent ?? undefined);
+        }));
+        this.toUnhook.add(linkGesture.onExecute((mouseEvent) => {
+            if (this.isEnabled(mouseEvent)) {
+                this.gotoDefinition(mouseEvent.target.position, mouseEvent.hasSideBySideModifier)
+                    .catch((error) => {
+                    onUnexpectedError(error);
+                })
+                    .finally(() => {
+                    this.removeLinkDecorations();
+                });
+            }
+        }));
+        this.toUnhook.add(linkGesture.onCancel(() => {
+            this.removeLinkDecorations();
+            this.currentWordAtPosition = null;
+        }));
+    }
+    static get(editor) {
+        return editor.getContribution(GotoDefinitionAtPositionEditorContribution_1.ID);
+    }
+    async startFindDefinitionFromCursor(position) {
+        await this.startFindDefinition(position);
+        this.toUnhookForKeyboard.add(this.editor.onDidChangeCursorPosition(() => {
+            this.currentWordAtPosition = null;
+            this.removeLinkDecorations();
+            this.toUnhookForKeyboard.clear();
+        }));
+        this.toUnhookForKeyboard.add(this.editor.onKeyDown((e) => {
+            if (e) {
+                this.currentWordAtPosition = null;
+                this.removeLinkDecorations();
+                this.toUnhookForKeyboard.clear();
+            }
+        }));
+    }
+    startFindDefinitionFromMouse(mouseEvent, withKey) {
+        if (mouseEvent.target.type === 9 && this.linkDecorations.length > 0) {
+            return;
+        }
+        if (!this.editor.hasModel() || !this.isEnabled(mouseEvent, withKey)) {
+            this.currentWordAtPosition = null;
+            this.removeLinkDecorations();
+            return;
+        }
+        const position = mouseEvent.target.position;
+        this.startFindDefinition(position);
+    }
+    async startFindDefinition(position) {
+        this.toUnhookForKeyboard.clear();
+        const word = position ? this.editor.getModel()?.getWordAtPosition(position) : null;
+        if (!word) {
+            this.currentWordAtPosition = null;
+            this.removeLinkDecorations();
+            return;
+        }
+        if (this.currentWordAtPosition && this.currentWordAtPosition.startColumn === word.startColumn && this.currentWordAtPosition.endColumn === word.endColumn && this.currentWordAtPosition.word === word.word) {
+            return;
+        }
+        this.currentWordAtPosition = word;
+        const state = new EditorState(this.editor, 4 | 1 | 2 | 8);
+        if (this.previousPromise) {
+            this.previousPromise.cancel();
+            this.previousPromise = null;
+        }
+        this.previousPromise = createCancelablePromise(token => this.findDefinition(position, token));
+        let results;
+        try {
+            results = await this.previousPromise;
+        }
+        catch (error) {
+            onUnexpectedError(error);
+            return;
+        }
+        if (!results || !results.length || !state.validate(this.editor)) {
+            this.removeLinkDecorations();
+            return;
+        }
+        const linkRange = results[0].originSelectionRange
+            ? Range.lift(results[0].originSelectionRange)
+            : new Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn);
+        if (results.length > 1) {
+            let combinedRange = linkRange;
+            for (const { originSelectionRange } of results) {
+                if (originSelectionRange) {
+                    combinedRange = Range.plusRange(combinedRange, originSelectionRange);
+                }
+            }
+            this.addDecoration(combinedRange, new MarkdownString().appendText(nls.localize('multipleResults', "Click to show {0} definitions.", results.length)));
+        }
+        else {
+            const result = results[0];
+            if (!result.uri) {
+                return;
+            }
+            this.textModelResolverService.createModelReference(result.uri).then(ref => {
+                if (!ref.object || !ref.object.textEditorModel) {
+                    ref.dispose();
+                    return;
+                }
+                const { object: { textEditorModel } } = ref;
+                const { startLineNumber } = result.range;
+                if (startLineNumber < 1 || startLineNumber > textEditorModel.getLineCount()) {
+                    ref.dispose();
+                    return;
+                }
+                const previewValue = this.getPreviewValue(textEditorModel, startLineNumber, result);
+                const languageId = this.languageService.guessLanguageIdByFilepathOrFirstLine(textEditorModel.uri);
+                this.addDecoration(linkRange, previewValue ? new MarkdownString().appendCodeblock(languageId ? languageId : '', previewValue) : undefined);
+                ref.dispose();
+            });
+        }
+    }
+    getPreviewValue(textEditorModel, startLineNumber, result) {
+        let rangeToUse = result.range;
+        const numberOfLinesInRange = rangeToUse.endLineNumber - rangeToUse.startLineNumber;
+        if (numberOfLinesInRange >= GotoDefinitionAtPositionEditorContribution_1.MAX_SOURCE_PREVIEW_LINES) {
+            rangeToUse = this.getPreviewRangeBasedOnIndentation(textEditorModel, startLineNumber);
+        }
+        const previewValue = this.stripIndentationFromPreviewRange(textEditorModel, startLineNumber, rangeToUse);
+        return previewValue;
+    }
+    stripIndentationFromPreviewRange(textEditorModel, startLineNumber, previewRange) {
+        const startIndent = textEditorModel.getLineFirstNonWhitespaceColumn(startLineNumber);
+        let minIndent = startIndent;
+        for (let endLineNumber = startLineNumber + 1; endLineNumber < previewRange.endLineNumber; endLineNumber++) {
+            const endIndent = textEditorModel.getLineFirstNonWhitespaceColumn(endLineNumber);
+            minIndent = Math.min(minIndent, endIndent);
+        }
+        const previewValue = textEditorModel.getValueInRange(previewRange).replace(new RegExp(`^\\s{${minIndent - 1}}`, 'gm'), '').trim();
+        return previewValue;
+    }
+    getPreviewRangeBasedOnIndentation(textEditorModel, startLineNumber) {
+        const startIndent = textEditorModel.getLineFirstNonWhitespaceColumn(startLineNumber);
+        const maxLineNumber = Math.min(textEditorModel.getLineCount(), startLineNumber + GotoDefinitionAtPositionEditorContribution_1.MAX_SOURCE_PREVIEW_LINES);
+        let endLineNumber = startLineNumber + 1;
+        for (; endLineNumber < maxLineNumber; endLineNumber++) {
+            const endIndent = textEditorModel.getLineFirstNonWhitespaceColumn(endLineNumber);
+            if (startIndent === endIndent) {
+                break;
+            }
+        }
+        return new Range(startLineNumber, 1, endLineNumber + 1, 1);
+    }
+    addDecoration(range, hoverMessage) {
+        const newDecorations = {
+            range: range,
+            options: {
+                description: 'goto-definition-link',
+                inlineClassName: 'goto-definition-link',
+                hoverMessage
+            }
+        };
+        this.linkDecorations.set([newDecorations]);
+    }
+    removeLinkDecorations() {
+        this.linkDecorations.clear();
+    }
+    isEnabled(mouseEvent, withKey) {
+        return this.editor.hasModel()
+            && mouseEvent.isLeftClick
+            && mouseEvent.isNoneOrSingleMouseDown
+            && mouseEvent.target.type === 6
+            && !(mouseEvent.target.detail.injectedText?.options instanceof ModelDecorationInjectedTextOptions)
+            && (mouseEvent.hasTriggerModifier || (withKey ? withKey.keyCodeIsTriggerKey : false))
+            && this.languageFeaturesService.definitionProvider.has(this.editor.getModel());
+    }
+    findDefinition(position, token) {
+        const model = this.editor.getModel();
+        if (!model) {
+            return Promise.resolve(null);
+        }
+        return getDefinitionsAtPosition(this.languageFeaturesService.definitionProvider, model, position, false, token);
+    }
+    gotoDefinition(position, openToSide) {
+        this.editor.setPosition(position);
+        return this.editor.invokeWithinContext((accessor) => {
+            const canPeek = !openToSide && this.editor.getOption(91) && !this.isInPeekEditor(accessor);
+            const action = new DefinitionAction({ openToSide, openInPeek: canPeek, muteMessage: true }, { title: { value: '', original: '' }, id: '', precondition: undefined });
+            return action.run(accessor);
+        });
+    }
+    isInPeekEditor(accessor) {
+        const contextKeyService = accessor.get(IContextKeyService);
+        return PeekContext.inPeekEditor.getValue(contextKeyService);
+    }
+    dispose() {
+        this.toUnhook.dispose();
+        this.toUnhookForKeyboard.dispose();
+    }
+};
+GotoDefinitionAtPositionEditorContribution = GotoDefinitionAtPositionEditorContribution_1 = __decorate([
+    __param(1, ITextModelService),
+    __param(2, ILanguageService),
+    __param(3, ILanguageFeaturesService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], GotoDefinitionAtPositionEditorContribution);
+export { GotoDefinitionAtPositionEditorContribution };
+registerEditorContribution(GotoDefinitionAtPositionEditorContribution.ID, GotoDefinitionAtPositionEditorContribution, 2);

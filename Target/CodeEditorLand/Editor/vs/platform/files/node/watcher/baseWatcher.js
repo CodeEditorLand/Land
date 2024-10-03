@@ -1,1 +1,195 @@
-import{watchFile as u,unwatchFile as p}from"fs";import{Disposable as W,DisposableMap as g,DisposableStore as v,toDisposable as I}from"../../../../base/common/lifecycle.js";import{isWatchRequestWithCorrelation as R,requestFilterToString as f}from"../../common/watcher.js";import{Emitter as o}from"../../../../base/common/event.js";import{FileChangeType as a}from"../../common/files.js";import{URI as m}from"../../../../base/common/uri.js";import{DeferredPromise as d,ThrottledDelayer as D}from"../../../../base/common/async.js";import{hash as b}from"../../../../base/common/hash.js";import{onUnexpectedError as y}from"../../../../base/common/errors.js";class z extends W{_onDidChangeFile=this._register(new o);onDidChangeFile=this._onDidChangeFile.event;_onDidLogMessage=this._register(new o);onDidLogMessage=this._onDidLogMessage.event;_onDidWatchFail=this._register(new o);onDidWatchFail=this._onDidWatchFail.event;correlatedWatchRequests=new Map;nonCorrelatedWatchRequests=new Map;suspendedWatchRequests=this._register(new g);suspendedWatchRequestsWithPolling=new Set;updateWatchersDelayer=this._register(new D(this.getUpdateWatchersDelay()));suspendedWatchRequestPollingInterval=5007;joinWatch=new d;constructor(){super(),this._register(this.onDidWatchFail(e=>this.suspendWatchRequest({id:this.computeId(e),correlationId:this.isCorrelated(e)?e.correlationId:void 0,path:e.path})))}isCorrelated(e){return R(e)}computeId(e){return this.isCorrelated(e)?e.correlationId:b(e)}async watch(e){this.joinWatch.isSettled||this.joinWatch.complete(),this.joinWatch=new d;try{this.correlatedWatchRequests.clear(),this.nonCorrelatedWatchRequests.clear();for(const t of e)this.isCorrelated(t)?this.correlatedWatchRequests.set(t.correlationId,t):this.nonCorrelatedWatchRequests.set(this.computeId(t),t);for(const[t]of this.suspendedWatchRequests)!this.nonCorrelatedWatchRequests.has(t)&&!this.correlatedWatchRequests.has(t)&&(this.suspendedWatchRequests.deleteAndDispose(t),this.suspendedWatchRequestsWithPolling.delete(t));return await this.updateWatchers(!1)}finally{this.joinWatch.complete()}}updateWatchers(e){const t=[];for(const[s,r]of[...this.nonCorrelatedWatchRequests,...this.correlatedWatchRequests])this.suspendedWatchRequests.has(s)||t.push(r);return this.updateWatchersDelayer.trigger(()=>this.doWatch(t),e?this.getUpdateWatchersDelay():0).catch(s=>y(s))}getUpdateWatchersDelay(){return 800}isSuspended(e){const t=this.computeId(e);return this.suspendedWatchRequestsWithPolling.has(t)?"polling":this.suspendedWatchRequests.has(t)}async suspendWatchRequest(e){if(this.suspendedWatchRequests.has(e.id))return;const t=new v;this.suspendedWatchRequests.set(e.id,t),await this.joinWatch.p,!t.isDisposed&&(this.monitorSuspendedWatchRequest(e,t),this.updateWatchers(!0))}resumeWatchRequest(e){this.suspendedWatchRequests.deleteAndDispose(e.id),this.suspendedWatchRequestsWithPolling.delete(e.id),this.updateWatchers(!1)}monitorSuspendedWatchRequest(e,t){this.doMonitorWithExistingWatcher(e,t)?(this.trace(`reusing an existing recursive watcher to monitor ${e.path}`),this.suspendedWatchRequestsWithPolling.delete(e.id)):(this.doMonitorWithNodeJS(e,t),this.suspendedWatchRequestsWithPolling.add(e.id))}doMonitorWithExistingWatcher(e,t){const s=this.recursiveWatcher?.subscribe(e.path,(r,i)=>{t.isDisposed||(r?this.monitorSuspendedWatchRequest(e,t):i?.type===a.ADDED&&this.onMonitoredPathAdded(e))});return s?(t.add(s),!0):!1}doMonitorWithNodeJS(e,t){let s=!1;const r=(i,h)=>{if(t.isDisposed)return;const n=this.isPathNotFound(i),c=this.isPathNotFound(h),l=s;s=n,!n&&(c||l)&&this.onMonitoredPathAdded(e)};this.trace(`starting fs.watchFile() on ${e.path} (correlationId: ${e.correlationId})`);try{u(e.path,{persistent:!1,interval:this.suspendedWatchRequestPollingInterval},r)}catch(i){this.warn(`fs.watchFile() failed with error ${i} on path ${e.path} (correlationId: ${e.correlationId})`)}t.add(I(()=>{this.trace(`stopping fs.watchFile() on ${e.path} (correlationId: ${e.correlationId})`);try{p(e.path,r)}catch(i){this.warn(`fs.unwatchFile() failed with error ${i} on path ${e.path} (correlationId: ${e.correlationId})`)}}))}onMonitoredPathAdded(e){this.trace(`detected ${e.path} exists again, resuming watcher (correlationId: ${e.correlationId})`);const t={resource:m.file(e.path),type:a.ADDED,cId:e.correlationId};this._onDidChangeFile.fire([t]),this.traceEvent(t,e),this.resumeWatchRequest(e)}isPathNotFound(e){return e.ctimeMs===0&&e.ino===0}async stop(){this.suspendedWatchRequests.clearAndDisposeAll(),this.suspendedWatchRequestsWithPolling.clear()}traceEvent(e,t){if(this.verboseLogging){const s=` >> normalized ${e.type===a.ADDED?"[ADDED]":e.type===a.DELETED?"[DELETED]":"[CHANGED]"} ${e.resource.fsPath}`;this.traceWithCorrelation(s,t)}}traceWithCorrelation(e,t){this.verboseLogging&&this.trace(`${e}${typeof t.correlationId=="number"?` <${t.correlationId}> `:""}`)}requestToString(e){return`${e.path} (excludes: ${e.excludes.length>0?e.excludes:"<none>"}, includes: ${e.includes&&e.includes.length>0?JSON.stringify(e.includes):"<all>"}, filter: ${f(e.filter)}, correlationId: ${typeof e.correlationId=="number"?e.correlationId:"<none>"})`}verboseLogging=!1;async setVerboseLogging(e){this.verboseLogging=e}}export{z as BaseWatcher};
+import { watchFile, unwatchFile } from 'fs';
+import { Disposable, DisposableMap, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { isWatchRequestWithCorrelation, requestFilterToString } from '../../common/watcher.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { URI } from '../../../../base/common/uri.js';
+import { DeferredPromise, ThrottledDelayer } from '../../../../base/common/async.js';
+import { hash } from '../../../../base/common/hash.js';
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+export class BaseWatcher extends Disposable {
+    constructor() {
+        super();
+        this._onDidChangeFile = this._register(new Emitter());
+        this.onDidChangeFile = this._onDidChangeFile.event;
+        this._onDidLogMessage = this._register(new Emitter());
+        this.onDidLogMessage = this._onDidLogMessage.event;
+        this._onDidWatchFail = this._register(new Emitter());
+        this.onDidWatchFail = this._onDidWatchFail.event;
+        this.correlatedWatchRequests = new Map();
+        this.nonCorrelatedWatchRequests = new Map();
+        this.suspendedWatchRequests = this._register(new DisposableMap());
+        this.suspendedWatchRequestsWithPolling = new Set();
+        this.updateWatchersDelayer = this._register(new ThrottledDelayer(this.getUpdateWatchersDelay()));
+        this.suspendedWatchRequestPollingInterval = 5007;
+        this.joinWatch = new DeferredPromise();
+        this.verboseLogging = false;
+        this._register(this.onDidWatchFail(request => this.suspendWatchRequest({
+            id: this.computeId(request),
+            correlationId: this.isCorrelated(request) ? request.correlationId : undefined,
+            path: request.path
+        })));
+    }
+    isCorrelated(request) {
+        return isWatchRequestWithCorrelation(request);
+    }
+    computeId(request) {
+        if (this.isCorrelated(request)) {
+            return request.correlationId;
+        }
+        else {
+            return hash(request);
+        }
+    }
+    async watch(requests) {
+        if (!this.joinWatch.isSettled) {
+            this.joinWatch.complete();
+        }
+        this.joinWatch = new DeferredPromise();
+        try {
+            this.correlatedWatchRequests.clear();
+            this.nonCorrelatedWatchRequests.clear();
+            for (const request of requests) {
+                if (this.isCorrelated(request)) {
+                    this.correlatedWatchRequests.set(request.correlationId, request);
+                }
+                else {
+                    this.nonCorrelatedWatchRequests.set(this.computeId(request), request);
+                }
+            }
+            for (const [id] of this.suspendedWatchRequests) {
+                if (!this.nonCorrelatedWatchRequests.has(id) && !this.correlatedWatchRequests.has(id)) {
+                    this.suspendedWatchRequests.deleteAndDispose(id);
+                    this.suspendedWatchRequestsWithPolling.delete(id);
+                }
+            }
+            return await this.updateWatchers(false);
+        }
+        finally {
+            this.joinWatch.complete();
+        }
+    }
+    updateWatchers(delayed) {
+        const nonSuspendedRequests = [];
+        for (const [id, request] of [...this.nonCorrelatedWatchRequests, ...this.correlatedWatchRequests]) {
+            if (!this.suspendedWatchRequests.has(id)) {
+                nonSuspendedRequests.push(request);
+            }
+        }
+        return this.updateWatchersDelayer.trigger(() => this.doWatch(nonSuspendedRequests), delayed ? this.getUpdateWatchersDelay() : 0).catch(error => onUnexpectedError(error));
+    }
+    getUpdateWatchersDelay() {
+        return 800;
+    }
+    isSuspended(request) {
+        const id = this.computeId(request);
+        return this.suspendedWatchRequestsWithPolling.has(id) ? 'polling' : this.suspendedWatchRequests.has(id);
+    }
+    async suspendWatchRequest(request) {
+        if (this.suspendedWatchRequests.has(request.id)) {
+            return;
+        }
+        const disposables = new DisposableStore();
+        this.suspendedWatchRequests.set(request.id, disposables);
+        await this.joinWatch.p;
+        if (disposables.isDisposed) {
+            return;
+        }
+        this.monitorSuspendedWatchRequest(request, disposables);
+        this.updateWatchers(true);
+    }
+    resumeWatchRequest(request) {
+        this.suspendedWatchRequests.deleteAndDispose(request.id);
+        this.suspendedWatchRequestsWithPolling.delete(request.id);
+        this.updateWatchers(false);
+    }
+    monitorSuspendedWatchRequest(request, disposables) {
+        if (this.doMonitorWithExistingWatcher(request, disposables)) {
+            this.trace(`reusing an existing recursive watcher to monitor ${request.path}`);
+            this.suspendedWatchRequestsWithPolling.delete(request.id);
+        }
+        else {
+            this.doMonitorWithNodeJS(request, disposables);
+            this.suspendedWatchRequestsWithPolling.add(request.id);
+        }
+    }
+    doMonitorWithExistingWatcher(request, disposables) {
+        const subscription = this.recursiveWatcher?.subscribe(request.path, (error, change) => {
+            if (disposables.isDisposed) {
+                return;
+            }
+            if (error) {
+                this.monitorSuspendedWatchRequest(request, disposables);
+            }
+            else if (change?.type === 1) {
+                this.onMonitoredPathAdded(request);
+            }
+        });
+        if (subscription) {
+            disposables.add(subscription);
+            return true;
+        }
+        return false;
+    }
+    doMonitorWithNodeJS(request, disposables) {
+        let pathNotFound = false;
+        const watchFileCallback = (curr, prev) => {
+            if (disposables.isDisposed) {
+                return;
+            }
+            const currentPathNotFound = this.isPathNotFound(curr);
+            const previousPathNotFound = this.isPathNotFound(prev);
+            const oldPathNotFound = pathNotFound;
+            pathNotFound = currentPathNotFound;
+            if (!currentPathNotFound && (previousPathNotFound || oldPathNotFound)) {
+                this.onMonitoredPathAdded(request);
+            }
+        };
+        this.trace(`starting fs.watchFile() on ${request.path} (correlationId: ${request.correlationId})`);
+        try {
+            watchFile(request.path, { persistent: false, interval: this.suspendedWatchRequestPollingInterval }, watchFileCallback);
+        }
+        catch (error) {
+            this.warn(`fs.watchFile() failed with error ${error} on path ${request.path} (correlationId: ${request.correlationId})`);
+        }
+        disposables.add(toDisposable(() => {
+            this.trace(`stopping fs.watchFile() on ${request.path} (correlationId: ${request.correlationId})`);
+            try {
+                unwatchFile(request.path, watchFileCallback);
+            }
+            catch (error) {
+                this.warn(`fs.unwatchFile() failed with error ${error} on path ${request.path} (correlationId: ${request.correlationId})`);
+            }
+        }));
+    }
+    onMonitoredPathAdded(request) {
+        this.trace(`detected ${request.path} exists again, resuming watcher (correlationId: ${request.correlationId})`);
+        const event = { resource: URI.file(request.path), type: 1, cId: request.correlationId };
+        this._onDidChangeFile.fire([event]);
+        this.traceEvent(event, request);
+        this.resumeWatchRequest(request);
+    }
+    isPathNotFound(stats) {
+        return stats.ctimeMs === 0 && stats.ino === 0;
+    }
+    async stop() {
+        this.suspendedWatchRequests.clearAndDisposeAll();
+        this.suspendedWatchRequestsWithPolling.clear();
+    }
+    traceEvent(event, request) {
+        if (this.verboseLogging) {
+            const traceMsg = ` >> normalized ${event.type === 1 ? '[ADDED]' : event.type === 2 ? '[DELETED]' : '[CHANGED]'} ${event.resource.fsPath}`;
+            this.traceWithCorrelation(traceMsg, request);
+        }
+    }
+    traceWithCorrelation(message, request) {
+        if (this.verboseLogging) {
+            this.trace(`${message}${typeof request.correlationId === 'number' ? ` <${request.correlationId}> ` : ``}`);
+        }
+    }
+    requestToString(request) {
+        return `${request.path} (excludes: ${request.excludes.length > 0 ? request.excludes : '<none>'}, includes: ${request.includes && request.includes.length > 0 ? JSON.stringify(request.includes) : '<all>'}, filter: ${requestFilterToString(request.filter)}, correlationId: ${typeof request.correlationId === 'number' ? request.correlationId : '<none>'})`;
+    }
+    async setVerboseLogging(enabled) {
+        this.verboseLogging = enabled;
+    }
+}

@@ -1,1 +1,95 @@
-import*as s from"fs";import"../common/cancellation.js";import{basename as l,dirname as u,join as a,normalize as w,sep as p}from"../common/path.js";import{isLinux as m}from"../common/platform.js";import{rtrim as C}from"../common/strings.js";import{Promises as d,readdirSync as P}from"./pfs.js";function g(r){if(m)return r;const t=u(r);if(r===t)return r;const n=(l(r)||r).toLowerCase();try{const o=P(t).filter(e=>e.toLowerCase()===n);if(o.length===1){const e=g(t);if(e)return a(e,o[0])}else if(o.length>1){const e=o.indexOf(n);if(e>=0){const i=g(t);if(i)return a(i,o[e])}}}catch{}return null}async function x(r,t){if(m)return r;const n=u(r);if(r===n)return r;const c=(l(r)||r).toLowerCase();try{if(t?.isCancellationRequested)return null;const e=(await d.readdir(n)).filter(i=>i.toLowerCase()===c);if(e.length===1){const i=await x(n,t);if(i)return a(i,e[0])}else if(e.length>1){const i=e.indexOf(c);if(i>=0){const f=await x(n,t);if(f)return a(f,e[i])}}}catch{}return null}async function K(r){try{return await d.realpath(r)}catch{const n=y(r);return await s.promises.access(n,s.constants.R_OK),n}}function T(r){try{return s.realpathSync(r)}catch{const n=y(r);return s.accessSync(n,s.constants.R_OK),n}}function y(r){return C(w(r),p)}export{x as realcase,g as realcaseSync,K as realpath,T as realpathSync};
+import * as fs from 'fs';
+import { basename, dirname, join, normalize, sep } from '../common/path.js';
+import { isLinux } from '../common/platform.js';
+import { rtrim } from '../common/strings.js';
+import { Promises, readdirSync } from './pfs.js';
+export function realcaseSync(path) {
+    if (isLinux) {
+        return path;
+    }
+    const dir = dirname(path);
+    if (path === dir) {
+        return path;
+    }
+    const name = (basename(path) || path).toLowerCase();
+    try {
+        const entries = readdirSync(dir);
+        const found = entries.filter(e => e.toLowerCase() === name);
+        if (found.length === 1) {
+            const prefix = realcaseSync(dir);
+            if (prefix) {
+                return join(prefix, found[0]);
+            }
+        }
+        else if (found.length > 1) {
+            const ix = found.indexOf(name);
+            if (ix >= 0) {
+                const prefix = realcaseSync(dir);
+                if (prefix) {
+                    return join(prefix, found[ix]);
+                }
+            }
+        }
+    }
+    catch (error) {
+    }
+    return null;
+}
+export async function realcase(path, token) {
+    if (isLinux) {
+        return path;
+    }
+    const dir = dirname(path);
+    if (path === dir) {
+        return path;
+    }
+    const name = (basename(path) || path).toLowerCase();
+    try {
+        if (token?.isCancellationRequested) {
+            return null;
+        }
+        const entries = await Promises.readdir(dir);
+        const found = entries.filter(e => e.toLowerCase() === name);
+        if (found.length === 1) {
+            const prefix = await realcase(dir, token);
+            if (prefix) {
+                return join(prefix, found[0]);
+            }
+        }
+        else if (found.length > 1) {
+            const ix = found.indexOf(name);
+            if (ix >= 0) {
+                const prefix = await realcase(dir, token);
+                if (prefix) {
+                    return join(prefix, found[ix]);
+                }
+            }
+        }
+    }
+    catch (error) {
+    }
+    return null;
+}
+export async function realpath(path) {
+    try {
+        return await Promises.realpath(path);
+    }
+    catch (error) {
+        const normalizedPath = normalizePath(path);
+        await fs.promises.access(normalizedPath, fs.constants.R_OK);
+        return normalizedPath;
+    }
+}
+export function realpathSync(path) {
+    try {
+        return fs.realpathSync(path);
+    }
+    catch (error) {
+        const normalizedPath = normalizePath(path);
+        fs.accessSync(normalizedPath, fs.constants.R_OK);
+        return normalizedPath;
+    }
+}
+function normalizePath(path) {
+    return rtrim(normalize(path), sep);
+}

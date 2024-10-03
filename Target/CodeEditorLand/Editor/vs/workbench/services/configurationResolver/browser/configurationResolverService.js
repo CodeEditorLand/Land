@@ -1,1 +1,43 @@
-var f=Object.defineProperty;var s=Object.getOwnPropertyDescriptor;var p=(m,o,t,i)=>{for(var r=i>1?void 0:i?s(o,t):o,c=m.length-1,n;c>=0;c--)(n=m[c])&&(r=(i?n(o,t,r):n(r))||r);return i&&r&&f(o,t,r),r},e=(m,o)=>(t,i)=>o(t,i,m);import{ICommandService as d}from"../../../../platform/commands/common/commands.js";import{IConfigurationService as u}from"../../../../platform/configuration/common/configuration.js";import{InstantiationType as g,registerSingleton as l}from"../../../../platform/instantiation/common/extensions.js";import{ILabelService as x}from"../../../../platform/label/common/label.js";import{IQuickInputService as C}from"../../../../platform/quickinput/common/quickInput.js";import{IStorageService as E}from"../../../../platform/storage/common/storage.js";import{IWorkspaceContextService as k}from"../../../../platform/workspace/common/workspace.js";import{BaseConfigurationResolverService as P}from"./baseConfigurationResolverService.js";import{IConfigurationResolverService as b}from"../common/configurationResolver.js";import{IEditorService as h}from"../../editor/common/editorService.js";import{IExtensionService as y}from"../../extensions/common/extensions.js";import{IPathService as L}from"../../path/common/pathService.js";let I=class extends P{constructor(o,t,i,r,c,n,S,a,v){super({getAppRoot:()=>{},getExecPath:()=>{}},Promise.resolve(Object.create(null)),o,t,i,r,c,n,S,a,v)}};I=p([e(0,h),e(1,u),e(2,d),e(3,k),e(4,C),e(5,x),e(6,L),e(7,y),e(8,E)],I),l(b,I,g.Delayed);export{I as ConfigurationResolverService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { BaseConfigurationResolverService } from './baseConfigurationResolverService.js';
+import { IConfigurationResolverService } from '../common/configurationResolver.js';
+import { IEditorService } from '../../editor/common/editorService.js';
+import { IExtensionService } from '../../extensions/common/extensions.js';
+import { IPathService } from '../../path/common/pathService.js';
+let ConfigurationResolverService = class ConfigurationResolverService extends BaseConfigurationResolverService {
+    constructor(editorService, configurationService, commandService, workspaceContextService, quickInputService, labelService, pathService, extensionService, storageService) {
+        super({ getAppRoot: () => undefined, getExecPath: () => undefined }, Promise.resolve(Object.create(null)), editorService, configurationService, commandService, workspaceContextService, quickInputService, labelService, pathService, extensionService, storageService);
+    }
+};
+ConfigurationResolverService = __decorate([
+    __param(0, IEditorService),
+    __param(1, IConfigurationService),
+    __param(2, ICommandService),
+    __param(3, IWorkspaceContextService),
+    __param(4, IQuickInputService),
+    __param(5, ILabelService),
+    __param(6, IPathService),
+    __param(7, IExtensionService),
+    __param(8, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], ConfigurationResolverService);
+export { ConfigurationResolverService };
+registerSingleton(IConfigurationResolverService, ConfigurationResolverService, 1);

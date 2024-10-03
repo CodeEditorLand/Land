@@ -1,1 +1,513 @@
-var T=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var g=(n,e,t,r)=>{for(var s=r>1?void 0:r?w(e,t):e,i=n.length-1,o;i>=0;i--)(o=n[i])&&(s=(r?o(e,t,s):o(s))||s);return r&&s&&T(e,t,s),s},_=(n,e)=>(t,r)=>e(t,r,n);import{PauseableEmitter as A}from"../../../base/common/event.js";import{Iterable as h}from"../../../base/common/iterator.js";import{Disposable as D,MutableDisposable as N}from"../../../base/common/lifecycle.js";import"../../../base/common/marshalling.js";import{MarshalledId as R}from"../../../base/common/marshallingIds.js";import{cloneAndChange as k,distinct as b}from"../../../base/common/objects.js";import{TernarySearchTree as O}from"../../../base/common/ternarySearchTree.js";import{URI as m}from"../../../base/common/uri.js";import{localize as P}from"../../../nls.js";import{CommandsRegistry as p}from"../../commands/common/commands.js";import{ConfigurationTarget as M,IConfigurationService as L}from"../../configuration/common/configuration.js";import{IContextKeyService as j,RawContextKey as I}from"../common/contextkey.js";import"../../instantiation/common/instantiation.js";const c="data-keybinding-context";class x{_parent;_value;_id;constructor(e,t){this._id=e,this._parent=t,this._value=Object.create(null),this._value._contextId=e}get value(){return{...this._value}}setValue(e,t){return this._value[e]!==t?(this._value[e]=t,!0):!1}removeValue(e){return e in this._value?(delete this._value[e],!0):!1}getValue(e){const t=this._value[e];return typeof t>"u"&&this._parent?this._parent.getValue(e):t}updateParent(e){this._parent=e}collectAllValues(){let e=this._parent?this._parent.collectAllValues():Object.create(null);return e={...e,...this._value},delete e._contextId,e}}class a extends x{static INSTANCE=new a;constructor(){super(-1,null)}setValue(e,t){return!1}removeValue(e){return!1}getValue(e){}collectAllValues(){return Object.create(null)}}class C extends x{constructor(t,r,s){super(t,null);this._configurationService=r;this._listener=this._configurationService.onDidChangeConfiguration(i=>{if(i.source===M.DEFAULT){const o=Array.from(this._values,([l])=>l);this._values.clear(),s.fire(new y(o))}else{const o=[];for(const l of i.affectedKeys){const u=`config.${l}`,f=this._values.findSuperstr(u);f!==void 0&&(o.push(...h.map(f,([E])=>E)),this._values.deleteSuperstr(u)),this._values.has(u)&&(o.push(u),this._values.delete(u))}s.fire(new y(o))}})}static _keyPrefix="config.";_values=O.forConfigKeys();_listener;dispose(){this._listener.dispose()}getValue(t){if(t.indexOf(C._keyPrefix)!==0)return super.getValue(t);if(this._values.has(t))return this._values.get(t);const r=t.substr(C._keyPrefix.length),s=this._configurationService.getValue(r);let i;switch(typeof s){case"number":case"boolean":case"string":i=s;break;default:Array.isArray(s)?i=JSON.stringify(s):i=s}return this._values.set(t,i),i}setValue(t,r){return super.setValue(t,r)}removeValue(t){return super.removeValue(t)}collectAllValues(){const t=Object.create(null);return this._values.forEach((r,s)=>t[s]=r),{...t,...super.collectAllValues()}}}class U{_service;_key;_defaultValue;constructor(e,t,r){this._service=e,this._key=t,this._defaultValue=r,this.reset()}set(e){this._service.setContext(this._key,e)}reset(){typeof this._defaultValue>"u"?this._service.removeContext(this._key):this._service.setContext(this._key,this._defaultValue)}get(){return this._service.getContextKeyValue(this._key)}}class K{constructor(e){this.key=e}affectsSome(e){return e.has(this.key)}allKeysContainedIn(e){return this.affectsSome(e)}}class y{constructor(e){this.keys=e}affectsSome(e){for(const t of this.keys)if(e.has(t))return!0;return!1}allKeysContainedIn(e){return this.keys.every(t=>e.has(t))}}class B{constructor(e){this.events=e}affectsSome(e){for(const t of this.events)if(t.affectsSome(e))return!0;return!1}allKeysContainedIn(e){return this.events.every(t=>t.allKeysContainedIn(e))}}function F(n,e){return n.allKeysContainedIn(new Set(Object.keys(e)))}class S extends D{_isDisposed;_myContextId;_onDidChangeContext=this._register(new A({merge:e=>new B(e)}));onDidChangeContext=this._onDidChangeContext.event;constructor(e){super(),this._isDisposed=!1,this._myContextId=e}get contextId(){return this._myContextId}createKey(e,t){if(this._isDisposed)throw new Error("AbstractContextKeyService has been disposed");return new U(this,e,t)}bufferChangeEvents(e){this._onDidChangeContext.pause();try{e()}finally{this._onDidChangeContext.resume()}}createScoped(e){if(this._isDisposed)throw new Error("AbstractContextKeyService has been disposed");return new $(this,e)}createOverlay(e=h.empty()){if(this._isDisposed)throw new Error("AbstractContextKeyService has been disposed");return new v(this,e)}contextMatchesRules(e){if(this._isDisposed)throw new Error("AbstractContextKeyService has been disposed");const t=this.getContextValuesContainer(this._myContextId);return e?e.evaluate(t):!0}getContextKeyValue(e){if(!this._isDisposed)return this.getContextValuesContainer(this._myContextId).getValue(e)}setContext(e,t){if(this._isDisposed)return;const r=this.getContextValuesContainer(this._myContextId);r&&r.setValue(e,t)&&this._onDidChangeContext.fire(new K(e))}removeContext(e){this._isDisposed||this.getContextValuesContainer(this._myContextId).removeValue(e)&&this._onDidChangeContext.fire(new K(e))}getContext(e){return this._isDisposed?a.INSTANCE:this.getContextValuesContainer(H(e))}dispose(){super.dispose(),this._isDisposed=!0}}let d=class extends S{_lastContextId;_contexts=new Map;constructor(e){super(0),this._lastContextId=0;const t=this._register(new C(this._myContextId,e,this._onDidChangeContext));this._contexts.set(this._myContextId,t)}getContextValuesContainer(e){return this._isDisposed?a.INSTANCE:this._contexts.get(e)||a.INSTANCE}createChildContext(e=this._myContextId){if(this._isDisposed)throw new Error("ContextKeyService has been disposed");const t=++this._lastContextId;return this._contexts.set(t,new x(t,this.getContextValuesContainer(e))),t}disposeContext(e){this._isDisposed||this._contexts.delete(e)}updateParent(e){throw new Error("Cannot update parent of root ContextKeyService")}};d=g([_(0,L)],d);class $ extends S{_parent;_domNode;_parentChangeListener=this._register(new N);constructor(e,t){if(super(e.createChildContext()),this._parent=e,this._updateParentChangeListener(),this._domNode=t,this._domNode.hasAttribute(c)){let r="";this._domNode.classList&&(r=Array.from(this._domNode.classList.values()).join(", "))}this._domNode.setAttribute(c,String(this._myContextId))}_updateParentChangeListener(){this._parentChangeListener.value=this._parent.onDidChangeContext(e=>{const r=this._parent.getContextValuesContainer(this._myContextId).value;F(e,r)||this._onDidChangeContext.fire(e)})}dispose(){this._isDisposed||(this._parent.disposeContext(this._myContextId),this._domNode.removeAttribute(c),super.dispose())}getContextValuesContainer(e){return this._isDisposed?a.INSTANCE:this._parent.getContextValuesContainer(e)}createChildContext(e=this._myContextId){if(this._isDisposed)throw new Error("ScopedContextKeyService has been disposed");return this._parent.createChildContext(e)}disposeContext(e){this._isDisposed||this._parent.disposeContext(e)}updateParent(e){if(this._parent===e)return;const t=this._parent.getContextValuesContainer(this._myContextId),r=t.collectAllValues();this._parent=e,this._updateParentChangeListener();const s=this._parent.getContextValuesContainer(this._parent.contextId);t.updateParent(s);const i=t.collectAllValues(),o={...b(r,i),...b(i,r)},l=Object.keys(o);this._onDidChangeContext.fire(new y(l))}}class V{constructor(e,t){this.parent=e;this.overlay=t}getValue(e){return this.overlay.has(e)?this.overlay.get(e):this.parent.getValue(e)}}class v{constructor(e,t){this.parent=e;this.overlay=new Map(t)}overlay;get contextId(){return this.parent.contextId}get onDidChangeContext(){return this.parent.onDidChangeContext}bufferChangeEvents(e){this.parent.bufferChangeEvents(e)}createKey(){throw new Error("Not supported.")}getContext(e){return new V(this.parent.getContext(e),this.overlay)}getContextValuesContainer(e){const t=this.parent.getContextValuesContainer(e);return new V(t,this.overlay)}contextMatchesRules(e){const t=this.getContextValuesContainer(this.contextId);return e?e.evaluate(t):!0}getContextKeyValue(e){return this.overlay.has(e)?this.overlay.get(e):this.parent.getContextKeyValue(e)}createScoped(){throw new Error("Not supported.")}createOverlay(e=h.empty()){return new v(this,e)}updateParent(){throw new Error("Not supported.")}}function H(n){for(;n;){if(n.hasAttribute(c)){const e=n.getAttribute(c);return e?parseInt(e,10):NaN}n=n.parentElement}return 0}function J(n,e,t){n.get(j).createKey(String(e),z(t))}function z(n){return k(n,e=>{if(typeof e=="object"&&e.$mid===R.Uri)return m.revive(e).toString();if(e instanceof m)return e.toString()})}p.registerCommand("_setContext",J),p.registerCommand({id:"getContextKeyInfo",handler(){return[...I.all()].sort((n,e)=>n.key.localeCompare(e.key))},metadata:{description:P("getContextKeyInfo","A command that returns information about context keys"),args:[]}}),p.registerCommand("_generateContextKeyInfo",function(){const n=[],e=new Set;for(const t of I.all())e.has(t.key)||(e.add(t.key),n.push(t));n.sort((t,r)=>t.key.localeCompare(r.key))});export{S as AbstractContextKeyService,x as Context,d as ContextKeyService,J as setContext};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { PauseableEmitter } from '../../../base/common/event.js';
+import { Iterable } from '../../../base/common/iterator.js';
+import { Disposable, MutableDisposable } from '../../../base/common/lifecycle.js';
+import { cloneAndChange, distinct } from '../../../base/common/objects.js';
+import { TernarySearchTree } from '../../../base/common/ternarySearchTree.js';
+import { URI } from '../../../base/common/uri.js';
+import { localize } from '../../../nls.js';
+import { CommandsRegistry } from '../../commands/common/commands.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { IContextKeyService, RawContextKey } from '../common/contextkey.js';
+const KEYBINDING_CONTEXT_ATTR = 'data-keybinding-context';
+export class Context {
+    constructor(id, parent) {
+        this._id = id;
+        this._parent = parent;
+        this._value = Object.create(null);
+        this._value['_contextId'] = id;
+    }
+    get value() {
+        return { ...this._value };
+    }
+    setValue(key, value) {
+        if (this._value[key] !== value) {
+            this._value[key] = value;
+            return true;
+        }
+        return false;
+    }
+    removeValue(key) {
+        if (key in this._value) {
+            delete this._value[key];
+            return true;
+        }
+        return false;
+    }
+    getValue(key) {
+        const ret = this._value[key];
+        if (typeof ret === 'undefined' && this._parent) {
+            return this._parent.getValue(key);
+        }
+        return ret;
+    }
+    updateParent(parent) {
+        this._parent = parent;
+    }
+    collectAllValues() {
+        let result = this._parent ? this._parent.collectAllValues() : Object.create(null);
+        result = { ...result, ...this._value };
+        delete result['_contextId'];
+        return result;
+    }
+}
+class NullContext extends Context {
+    static { this.INSTANCE = new NullContext(); }
+    constructor() {
+        super(-1, null);
+    }
+    setValue(key, value) {
+        return false;
+    }
+    removeValue(key) {
+        return false;
+    }
+    getValue(key) {
+        return undefined;
+    }
+    collectAllValues() {
+        return Object.create(null);
+    }
+}
+class ConfigAwareContextValuesContainer extends Context {
+    static { this._keyPrefix = 'config.'; }
+    constructor(id, _configurationService, emitter) {
+        super(id, null);
+        this._configurationService = _configurationService;
+        this._values = TernarySearchTree.forConfigKeys();
+        this._listener = this._configurationService.onDidChangeConfiguration(event => {
+            if (event.source === 7) {
+                const allKeys = Array.from(this._values, ([k]) => k);
+                this._values.clear();
+                emitter.fire(new ArrayContextKeyChangeEvent(allKeys));
+            }
+            else {
+                const changedKeys = [];
+                for (const configKey of event.affectedKeys) {
+                    const contextKey = `config.${configKey}`;
+                    const cachedItems = this._values.findSuperstr(contextKey);
+                    if (cachedItems !== undefined) {
+                        changedKeys.push(...Iterable.map(cachedItems, ([key]) => key));
+                        this._values.deleteSuperstr(contextKey);
+                    }
+                    if (this._values.has(contextKey)) {
+                        changedKeys.push(contextKey);
+                        this._values.delete(contextKey);
+                    }
+                }
+                emitter.fire(new ArrayContextKeyChangeEvent(changedKeys));
+            }
+        });
+    }
+    dispose() {
+        this._listener.dispose();
+    }
+    getValue(key) {
+        if (key.indexOf(ConfigAwareContextValuesContainer._keyPrefix) !== 0) {
+            return super.getValue(key);
+        }
+        if (this._values.has(key)) {
+            return this._values.get(key);
+        }
+        const configKey = key.substr(ConfigAwareContextValuesContainer._keyPrefix.length);
+        const configValue = this._configurationService.getValue(configKey);
+        let value = undefined;
+        switch (typeof configValue) {
+            case 'number':
+            case 'boolean':
+            case 'string':
+                value = configValue;
+                break;
+            default:
+                if (Array.isArray(configValue)) {
+                    value = JSON.stringify(configValue);
+                }
+                else {
+                    value = configValue;
+                }
+        }
+        this._values.set(key, value);
+        return value;
+    }
+    setValue(key, value) {
+        return super.setValue(key, value);
+    }
+    removeValue(key) {
+        return super.removeValue(key);
+    }
+    collectAllValues() {
+        const result = Object.create(null);
+        this._values.forEach((value, index) => result[index] = value);
+        return { ...result, ...super.collectAllValues() };
+    }
+}
+class ContextKey {
+    constructor(service, key, defaultValue) {
+        this._service = service;
+        this._key = key;
+        this._defaultValue = defaultValue;
+        this.reset();
+    }
+    set(value) {
+        this._service.setContext(this._key, value);
+    }
+    reset() {
+        if (typeof this._defaultValue === 'undefined') {
+            this._service.removeContext(this._key);
+        }
+        else {
+            this._service.setContext(this._key, this._defaultValue);
+        }
+    }
+    get() {
+        return this._service.getContextKeyValue(this._key);
+    }
+}
+class SimpleContextKeyChangeEvent {
+    constructor(key) {
+        this.key = key;
+    }
+    affectsSome(keys) {
+        return keys.has(this.key);
+    }
+    allKeysContainedIn(keys) {
+        return this.affectsSome(keys);
+    }
+}
+class ArrayContextKeyChangeEvent {
+    constructor(keys) {
+        this.keys = keys;
+    }
+    affectsSome(keys) {
+        for (const key of this.keys) {
+            if (keys.has(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    allKeysContainedIn(keys) {
+        return this.keys.every(key => keys.has(key));
+    }
+}
+class CompositeContextKeyChangeEvent {
+    constructor(events) {
+        this.events = events;
+    }
+    affectsSome(keys) {
+        for (const e of this.events) {
+            if (e.affectsSome(keys)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    allKeysContainedIn(keys) {
+        return this.events.every(evt => evt.allKeysContainedIn(keys));
+    }
+}
+function allEventKeysInContext(event, context) {
+    return event.allKeysContainedIn(new Set(Object.keys(context)));
+}
+export class AbstractContextKeyService extends Disposable {
+    constructor(myContextId) {
+        super();
+        this._onDidChangeContext = this._register(new PauseableEmitter({ merge: input => new CompositeContextKeyChangeEvent(input) }));
+        this.onDidChangeContext = this._onDidChangeContext.event;
+        this._isDisposed = false;
+        this._myContextId = myContextId;
+    }
+    get contextId() {
+        return this._myContextId;
+    }
+    createKey(key, defaultValue) {
+        if (this._isDisposed) {
+            throw new Error(`AbstractContextKeyService has been disposed`);
+        }
+        return new ContextKey(this, key, defaultValue);
+    }
+    bufferChangeEvents(callback) {
+        this._onDidChangeContext.pause();
+        try {
+            callback();
+        }
+        finally {
+            this._onDidChangeContext.resume();
+        }
+    }
+    createScoped(domNode) {
+        if (this._isDisposed) {
+            throw new Error(`AbstractContextKeyService has been disposed`);
+        }
+        return new ScopedContextKeyService(this, domNode);
+    }
+    createOverlay(overlay = Iterable.empty()) {
+        if (this._isDisposed) {
+            throw new Error(`AbstractContextKeyService has been disposed`);
+        }
+        return new OverlayContextKeyService(this, overlay);
+    }
+    contextMatchesRules(rules) {
+        if (this._isDisposed) {
+            throw new Error(`AbstractContextKeyService has been disposed`);
+        }
+        const context = this.getContextValuesContainer(this._myContextId);
+        const result = (rules ? rules.evaluate(context) : true);
+        return result;
+    }
+    getContextKeyValue(key) {
+        if (this._isDisposed) {
+            return undefined;
+        }
+        return this.getContextValuesContainer(this._myContextId).getValue(key);
+    }
+    setContext(key, value) {
+        if (this._isDisposed) {
+            return;
+        }
+        const myContext = this.getContextValuesContainer(this._myContextId);
+        if (!myContext) {
+            return;
+        }
+        if (myContext.setValue(key, value)) {
+            this._onDidChangeContext.fire(new SimpleContextKeyChangeEvent(key));
+        }
+    }
+    removeContext(key) {
+        if (this._isDisposed) {
+            return;
+        }
+        if (this.getContextValuesContainer(this._myContextId).removeValue(key)) {
+            this._onDidChangeContext.fire(new SimpleContextKeyChangeEvent(key));
+        }
+    }
+    getContext(target) {
+        if (this._isDisposed) {
+            return NullContext.INSTANCE;
+        }
+        return this.getContextValuesContainer(findContextAttr(target));
+    }
+    dispose() {
+        super.dispose();
+        this._isDisposed = true;
+    }
+}
+let ContextKeyService = class ContextKeyService extends AbstractContextKeyService {
+    constructor(configurationService) {
+        super(0);
+        this._contexts = new Map();
+        this._lastContextId = 0;
+        const myContext = this._register(new ConfigAwareContextValuesContainer(this._myContextId, configurationService, this._onDidChangeContext));
+        this._contexts.set(this._myContextId, myContext);
+    }
+    getContextValuesContainer(contextId) {
+        if (this._isDisposed) {
+            return NullContext.INSTANCE;
+        }
+        return this._contexts.get(contextId) || NullContext.INSTANCE;
+    }
+    createChildContext(parentContextId = this._myContextId) {
+        if (this._isDisposed) {
+            throw new Error(`ContextKeyService has been disposed`);
+        }
+        const id = (++this._lastContextId);
+        this._contexts.set(id, new Context(id, this.getContextValuesContainer(parentContextId)));
+        return id;
+    }
+    disposeContext(contextId) {
+        if (!this._isDisposed) {
+            this._contexts.delete(contextId);
+        }
+    }
+    updateParent(_parentContextKeyService) {
+        throw new Error('Cannot update parent of root ContextKeyService');
+    }
+};
+ContextKeyService = __decorate([
+    __param(0, IConfigurationService),
+    __metadata("design:paramtypes", [Object])
+], ContextKeyService);
+export { ContextKeyService };
+class ScopedContextKeyService extends AbstractContextKeyService {
+    constructor(parent, domNode) {
+        super(parent.createChildContext());
+        this._parentChangeListener = this._register(new MutableDisposable());
+        this._parent = parent;
+        this._updateParentChangeListener();
+        this._domNode = domNode;
+        if (this._domNode.hasAttribute(KEYBINDING_CONTEXT_ATTR)) {
+            let extraInfo = '';
+            if (this._domNode.classList) {
+                extraInfo = Array.from(this._domNode.classList.values()).join(', ');
+            }
+            console.error(`Element already has context attribute${extraInfo ? ': ' + extraInfo : ''}`);
+        }
+        this._domNode.setAttribute(KEYBINDING_CONTEXT_ATTR, String(this._myContextId));
+    }
+    _updateParentChangeListener() {
+        this._parentChangeListener.value = this._parent.onDidChangeContext(e => {
+            const thisContainer = this._parent.getContextValuesContainer(this._myContextId);
+            const thisContextValues = thisContainer.value;
+            if (!allEventKeysInContext(e, thisContextValues)) {
+                this._onDidChangeContext.fire(e);
+            }
+        });
+    }
+    dispose() {
+        if (this._isDisposed) {
+            return;
+        }
+        this._parent.disposeContext(this._myContextId);
+        this._domNode.removeAttribute(KEYBINDING_CONTEXT_ATTR);
+        super.dispose();
+    }
+    getContextValuesContainer(contextId) {
+        if (this._isDisposed) {
+            return NullContext.INSTANCE;
+        }
+        return this._parent.getContextValuesContainer(contextId);
+    }
+    createChildContext(parentContextId = this._myContextId) {
+        if (this._isDisposed) {
+            throw new Error(`ScopedContextKeyService has been disposed`);
+        }
+        return this._parent.createChildContext(parentContextId);
+    }
+    disposeContext(contextId) {
+        if (this._isDisposed) {
+            return;
+        }
+        this._parent.disposeContext(contextId);
+    }
+    updateParent(parentContextKeyService) {
+        if (this._parent === parentContextKeyService) {
+            return;
+        }
+        const thisContainer = this._parent.getContextValuesContainer(this._myContextId);
+        const oldAllValues = thisContainer.collectAllValues();
+        this._parent = parentContextKeyService;
+        this._updateParentChangeListener();
+        const newParentContainer = this._parent.getContextValuesContainer(this._parent.contextId);
+        thisContainer.updateParent(newParentContainer);
+        const newAllValues = thisContainer.collectAllValues();
+        const allValuesDiff = {
+            ...distinct(oldAllValues, newAllValues),
+            ...distinct(newAllValues, oldAllValues)
+        };
+        const changedKeys = Object.keys(allValuesDiff);
+        this._onDidChangeContext.fire(new ArrayContextKeyChangeEvent(changedKeys));
+    }
+}
+class OverlayContext {
+    constructor(parent, overlay) {
+        this.parent = parent;
+        this.overlay = overlay;
+    }
+    getValue(key) {
+        return this.overlay.has(key) ? this.overlay.get(key) : this.parent.getValue(key);
+    }
+}
+class OverlayContextKeyService {
+    get contextId() {
+        return this.parent.contextId;
+    }
+    get onDidChangeContext() {
+        return this.parent.onDidChangeContext;
+    }
+    constructor(parent, overlay) {
+        this.parent = parent;
+        this.overlay = new Map(overlay);
+    }
+    bufferChangeEvents(callback) {
+        this.parent.bufferChangeEvents(callback);
+    }
+    createKey() {
+        throw new Error('Not supported.');
+    }
+    getContext(target) {
+        return new OverlayContext(this.parent.getContext(target), this.overlay);
+    }
+    getContextValuesContainer(contextId) {
+        const parentContext = this.parent.getContextValuesContainer(contextId);
+        return new OverlayContext(parentContext, this.overlay);
+    }
+    contextMatchesRules(rules) {
+        const context = this.getContextValuesContainer(this.contextId);
+        const result = (rules ? rules.evaluate(context) : true);
+        return result;
+    }
+    getContextKeyValue(key) {
+        return this.overlay.has(key) ? this.overlay.get(key) : this.parent.getContextKeyValue(key);
+    }
+    createScoped() {
+        throw new Error('Not supported.');
+    }
+    createOverlay(overlay = Iterable.empty()) {
+        return new OverlayContextKeyService(this, overlay);
+    }
+    updateParent() {
+        throw new Error('Not supported.');
+    }
+}
+function findContextAttr(domNode) {
+    while (domNode) {
+        if (domNode.hasAttribute(KEYBINDING_CONTEXT_ATTR)) {
+            const attr = domNode.getAttribute(KEYBINDING_CONTEXT_ATTR);
+            if (attr) {
+                return parseInt(attr, 10);
+            }
+            return NaN;
+        }
+        domNode = domNode.parentElement;
+    }
+    return 0;
+}
+export function setContext(accessor, contextKey, contextValue) {
+    const contextKeyService = accessor.get(IContextKeyService);
+    contextKeyService.createKey(String(contextKey), stringifyURIs(contextValue));
+}
+function stringifyURIs(contextValue) {
+    return cloneAndChange(contextValue, (obj) => {
+        if (typeof obj === 'object' && obj.$mid === 1) {
+            return URI.revive(obj).toString();
+        }
+        if (obj instanceof URI) {
+            return obj.toString();
+        }
+        return undefined;
+    });
+}
+CommandsRegistry.registerCommand('_setContext', setContext);
+CommandsRegistry.registerCommand({
+    id: 'getContextKeyInfo',
+    handler() {
+        return [...RawContextKey.all()].sort((a, b) => a.key.localeCompare(b.key));
+    },
+    metadata: {
+        description: localize('getContextKeyInfo', "A command that returns information about context keys"),
+        args: []
+    }
+});
+CommandsRegistry.registerCommand('_generateContextKeyInfo', function () {
+    const result = [];
+    const seen = new Set();
+    for (const info of RawContextKey.all()) {
+        if (!seen.has(info.key)) {
+            seen.add(info.key);
+            result.push(info);
+        }
+    }
+    result.sort((a, b) => a.key.localeCompare(b.key));
+    console.log(JSON.stringify(result, undefined, 2));
+});

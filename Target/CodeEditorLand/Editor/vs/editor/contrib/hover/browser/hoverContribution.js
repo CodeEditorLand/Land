@@ -1,1 +1,39 @@
-import{DecreaseHoverVerbosityLevel as p,GoToBottomHoverAction as v,GoToTopHoverAction as l,IncreaseHoverVerbosityLevel as d,PageDownHoverAction as H,PageUpHoverAction as f,ScrollDownHoverAction as g,ScrollLeftHoverAction as A,ScrollRightHoverAction as h,ScrollUpHoverAction as w,ShowDefinitionPreviewHoverAction as b,ShowOrFocusHoverAction as y}from"./hoverActions.js";import{EditorContributionInstantiation as i,registerEditorAction as o,registerEditorContribution as n}from"../../../browser/editorExtensions.js";import{editorHoverBorder as P}from"../../../../platform/theme/common/colorRegistry.js";import{registerThemingParticipant as u}from"../../../../platform/theme/common/themeService.js";import{HoverParticipantRegistry as c}from"./hoverTypes.js";import{MarkdownHoverParticipant as C}from"./markdownHoverParticipant.js";import{MarkerHoverParticipant as D}from"./markerHoverParticipant.js";import{ContentHoverController as s}from"./contentHoverController.js";import{GlyphHoverController as a}from"./glyphHoverController.js";import"./hover.css";import{AccessibleViewRegistry as t}from"../../../../platform/accessibility/browser/accessibleViewRegistry.js";import{ExtHoverAccessibleView as I,HoverAccessibilityHelp as R,HoverAccessibleView as S}from"./hoverAccessibleViews.js";n(s.ID,s,i.BeforeFirstInteraction),n(a.ID,a,i.BeforeFirstInteraction),o(y),o(b),o(w),o(g),o(A),o(h),o(f),o(H),o(l),o(v),o(d),o(p),c.register(C),c.register(D),u((m,e)=>{const r=m.getColor(P);r&&(e.addRule(`.monaco-editor .monaco-hover .hover-row:not(:first-child):not(:empty) { border-top: 1px solid ${r.transparent(.5)}; }`),e.addRule(`.monaco-editor .monaco-hover hr { border-top: 1px solid ${r.transparent(.5)}; }`),e.addRule(`.monaco-editor .monaco-hover hr { border-bottom: 0px solid ${r.transparent(.5)}; }`))}),t.register(new S),t.register(new R),t.register(new I);
+import { DecreaseHoverVerbosityLevel, GoToBottomHoverAction, GoToTopHoverAction, IncreaseHoverVerbosityLevel, PageDownHoverAction, PageUpHoverAction, ScrollDownHoverAction, ScrollLeftHoverAction, ScrollRightHoverAction, ScrollUpHoverAction, ShowDefinitionPreviewHoverAction, ShowOrFocusHoverAction } from './hoverActions.js';
+import { registerEditorAction, registerEditorContribution } from '../../../browser/editorExtensions.js';
+import { editorHoverBorder } from '../../../../platform/theme/common/colorRegistry.js';
+import { registerThemingParticipant } from '../../../../platform/theme/common/themeService.js';
+import { HoverParticipantRegistry } from './hoverTypes.js';
+import { MarkdownHoverParticipant } from './markdownHoverParticipant.js';
+import { MarkerHoverParticipant } from './markerHoverParticipant.js';
+import { ContentHoverController } from './contentHoverController.js';
+import { GlyphHoverController } from './glyphHoverController.js';
+import './hover.css';
+import { AccessibleViewRegistry } from '../../../../platform/accessibility/browser/accessibleViewRegistry.js';
+import { ExtHoverAccessibleView, HoverAccessibilityHelp, HoverAccessibleView } from './hoverAccessibleViews.js';
+registerEditorContribution(ContentHoverController.ID, ContentHoverController, 2);
+registerEditorContribution(GlyphHoverController.ID, GlyphHoverController, 2);
+registerEditorAction(ShowOrFocusHoverAction);
+registerEditorAction(ShowDefinitionPreviewHoverAction);
+registerEditorAction(ScrollUpHoverAction);
+registerEditorAction(ScrollDownHoverAction);
+registerEditorAction(ScrollLeftHoverAction);
+registerEditorAction(ScrollRightHoverAction);
+registerEditorAction(PageUpHoverAction);
+registerEditorAction(PageDownHoverAction);
+registerEditorAction(GoToTopHoverAction);
+registerEditorAction(GoToBottomHoverAction);
+registerEditorAction(IncreaseHoverVerbosityLevel);
+registerEditorAction(DecreaseHoverVerbosityLevel);
+HoverParticipantRegistry.register(MarkdownHoverParticipant);
+HoverParticipantRegistry.register(MarkerHoverParticipant);
+registerThemingParticipant((theme, collector) => {
+    const hoverBorder = theme.getColor(editorHoverBorder);
+    if (hoverBorder) {
+        collector.addRule(`.monaco-editor .monaco-hover .hover-row:not(:first-child):not(:empty) { border-top: 1px solid ${hoverBorder.transparent(0.5)}; }`);
+        collector.addRule(`.monaco-editor .monaco-hover hr { border-top: 1px solid ${hoverBorder.transparent(0.5)}; }`);
+        collector.addRule(`.monaco-editor .monaco-hover hr { border-bottom: 0px solid ${hoverBorder.transparent(0.5)}; }`);
+    }
+});
+AccessibleViewRegistry.register(new HoverAccessibleView());
+AccessibleViewRegistry.register(new HoverAccessibilityHelp());
+AccessibleViewRegistry.register(new ExtHoverAccessibleView());

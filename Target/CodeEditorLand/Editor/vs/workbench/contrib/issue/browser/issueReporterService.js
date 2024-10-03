@@ -1,1 +1,49 @@
-var m=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var c=(i,t,r,e)=>{for(var s=e>1?void 0:e?h(t,r):t,o=i.length-1,n;o>=0;o--)(n=i[o])&&(s=(e?n(t,r,s):n(s))||s);return e&&s&&m(t,r,s),s},u=(i,t)=>(r,e)=>t(r,e,i);import"../../../../base/common/product.js";import{localize as v}from"../../../../nls.js";import{IThemeService as I}from"../../../../platform/theme/common/themeService.js";import{BaseIssueReporterService as f}from"./baseIssueReporterService.js";import{IIssueFormService as g}from"../common/issue.js";let a=class extends f{constructor(t,r,e,s,o,n,l){super(t,r,e,s,o,!0,n,l);const p=this.window.document.querySelector(".block-system .block-info"),d=this.window.navigator.userAgent;d&&(p?.appendChild(this.window.document.createTextNode(d)),this.receivedSystemInfo=!0,this.issueReporterModel.update({systemInfoWeb:d})),this.setEventHandlers()}setEventHandlers(){super.setEventHandlers(),this.addEventListener("issue-type","change",t=>{const r=parseInt(t.target.value);this.issueReporterModel.update({issueType:r});const e=this.getElementById("issue-title");e&&(e.placeholder=v("undefinedPlaceholder","Please enter a title")),this.updatePreviewButtonState(),this.setSourceOptions(),this.render()})}};a=c([u(5,g),u(6,I)],a);export{a as IssueWebReporter};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { localize } from '../../../../nls.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { BaseIssueReporterService } from './baseIssueReporterService.js';
+import { IIssueFormService } from '../common/issue.js';
+let IssueWebReporter = class IssueWebReporter extends BaseIssueReporterService {
+    constructor(disableExtensions, data, os, product, window, issueFormService, themeService) {
+        super(disableExtensions, data, os, product, window, true, issueFormService, themeService);
+        const target = this.window.document.querySelector('.block-system .block-info');
+        const webInfo = this.window.navigator.userAgent;
+        if (webInfo) {
+            target?.appendChild(this.window.document.createTextNode(webInfo));
+            this.receivedSystemInfo = true;
+            this.issueReporterModel.update({ systemInfoWeb: webInfo });
+        }
+        this.setEventHandlers();
+    }
+    setEventHandlers() {
+        super.setEventHandlers();
+        this.addEventListener('issue-type', 'change', (event) => {
+            const issueType = parseInt(event.target.value);
+            this.issueReporterModel.update({ issueType: issueType });
+            const descriptionTextArea = this.getElementById('issue-title');
+            if (descriptionTextArea) {
+                descriptionTextArea.placeholder = localize('undefinedPlaceholder', "Please enter a title");
+            }
+            this.updatePreviewButtonState();
+            this.setSourceOptions();
+            this.render();
+        });
+    }
+};
+IssueWebReporter = __decorate([
+    __param(5, IIssueFormService),
+    __param(6, IThemeService),
+    __metadata("design:paramtypes", [Boolean, Object, Object, Object, Window, Object, Object])
+], IssueWebReporter);
+export { IssueWebReporter };

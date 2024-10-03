@@ -1,5 +1,286 @@
-import*as i from"../../dom.js";import"../../mouseEvent.js";import{DomScrollableElement as u}from"../scrollbar/scrollableElement.js";import{commonPrefixLength as h}from"../../../common/arrays.js";import{ThemeIcon as _}from"../../../common/themables.js";import{Emitter as a}from"../../../common/event.js";import{DisposableStore as l,dispose as b}from"../../../common/lifecycle.js";import{ScrollbarVisibility as c}from"../../../common/scrollable.js";import"./breadcrumbsWidget.css";class L{}class N{_disposables=new l;_domNode;_scrollable;_onDidSelectItem=new a;_onDidFocusItem=new a;_onDidChangeFocus=new a;onDidSelectItem=this._onDidSelectItem.event;onDidFocusItem=this._onDidFocusItem.event;onDidChangeFocus=this._onDidChangeFocus.event;_items=new Array;_nodes=new Array;_freeNodes=new Array;_separatorIcon;_enabled=!0;_focusedItemIdx=-1;_selectedItemIdx=-1;_pendingDimLayout;_pendingLayout;_dimension;constructor(e,s,t,o){this._domNode=document.createElement("div"),this._domNode.className="monaco-breadcrumbs",this._domNode.tabIndex=0,this._domNode.setAttribute("role","list"),this._scrollable=new u(this._domNode,{vertical:c.Hidden,horizontal:c.Auto,horizontalScrollbarSize:s,useShadows:!1,scrollYToX:!0}),this._separatorIcon=t,this._disposables.add(this._scrollable),this._disposables.add(i.addStandardDisposableListener(this._domNode,"click",n=>this._onClick(n))),e.appendChild(this._scrollable.getDomNode());const d=i.createStyleSheet(this._domNode);this._style(d,o);const r=i.trackFocus(this._domNode);this._disposables.add(r),this._disposables.add(r.onDidBlur(n=>this._onDidChangeFocus.fire(!1))),this._disposables.add(r.onDidFocus(n=>this._onDidChangeFocus.fire(!0)))}setHorizontalScrollbarSize(e){this._scrollable.updateOptions({horizontalScrollbarSize:e})}dispose(){this._disposables.dispose(),this._pendingLayout?.dispose(),this._pendingDimLayout?.dispose(),this._onDidSelectItem.dispose(),this._onDidFocusItem.dispose(),this._onDidChangeFocus.dispose(),this._domNode.remove(),this._nodes.length=0,this._freeNodes.length=0}layout(e){e&&i.Dimension.equals(e,this._dimension)||(e?(this._pendingDimLayout?.dispose(),this._pendingDimLayout=this._updateDimensions(e)):(this._pendingLayout?.dispose(),this._pendingLayout=this._updateScrollbar()))}_updateDimensions(e){const s=new l;return s.add(i.modify(i.getWindow(this._domNode),()=>{this._dimension=e,this._domNode.style.width=`${e.width}px`,this._domNode.style.height=`${e.height}px`,s.add(this._updateScrollbar())})),s}_updateScrollbar(){return i.measure(i.getWindow(this._domNode),()=>{i.measure(i.getWindow(this._domNode),()=>{this._scrollable.setRevealOnScroll(!1),this._scrollable.scanDomNode(),this._scrollable.setRevealOnScroll(!0)})})}_style(e,s){let t="";s.breadcrumbsBackground&&(t+=`.monaco-breadcrumbs { background-color: ${s.breadcrumbsBackground}}`),s.breadcrumbsForeground&&(t+=`.monaco-breadcrumbs .monaco-breadcrumb-item { color: ${s.breadcrumbsForeground}}
-`),s.breadcrumbsFocusForeground&&(t+=`.monaco-breadcrumbs .monaco-breadcrumb-item.focused { color: ${s.breadcrumbsFocusForeground}}
-`),s.breadcrumbsFocusAndSelectionForeground&&(t+=`.monaco-breadcrumbs .monaco-breadcrumb-item.focused.selected { color: ${s.breadcrumbsFocusAndSelectionForeground}}
-`),s.breadcrumbsHoverForeground&&(t+=`.monaco-breadcrumbs:not(.disabled	) .monaco-breadcrumb-item:hover:not(.focused):not(.selected) { color: ${s.breadcrumbsHoverForeground}}
-`),e.innerText=t}setEnabled(e){this._enabled=e,this._domNode.classList.toggle("disabled",!this._enabled)}domFocus(){const e=this._focusedItemIdx>=0?this._focusedItemIdx:this._items.length-1;e>=0&&e<this._items.length?this._focus(e,void 0):this._domNode.focus()}isDOMFocused(){return i.isAncestorOfActiveElement(this._domNode)}getFocused(){return this._items[this._focusedItemIdx]}setFocused(e,s){this._focus(this._items.indexOf(e),s)}focusPrev(e){this._focusedItemIdx>0&&this._focus(this._focusedItemIdx-1,e)}focusNext(e){this._focusedItemIdx+1<this._nodes.length&&this._focus(this._focusedItemIdx+1,e)}_focus(e,s){this._focusedItemIdx=-1;for(let t=0;t<this._nodes.length;t++){const o=this._nodes[t];t!==e?o.classList.remove("focused"):(this._focusedItemIdx=t,o.classList.add("focused"),o.focus())}this._reveal(this._focusedItemIdx,!0),this._onDidFocusItem.fire({type:"focus",item:this._items[this._focusedItemIdx],node:this._nodes[this._focusedItemIdx],payload:s})}reveal(e){const s=this._items.indexOf(e);s>=0&&this._reveal(s,!1)}revealLast(){this._reveal(this._items.length-1,!1)}_reveal(e,s){if(e<0||e>=this._nodes.length)return;const t=this._nodes[e];if(!t)return;const{width:o}=this._scrollable.getScrollDimensions(),{scrollLeft:d}=this._scrollable.getScrollPosition();(!s||t.offsetLeft>d+o||t.offsetLeft<d)&&(this._scrollable.setRevealOnScroll(!1),this._scrollable.setScrollPosition({scrollLeft:t.offsetLeft}),this._scrollable.setRevealOnScroll(!0))}getSelection(){return this._items[this._selectedItemIdx]}setSelection(e,s){this._select(this._items.indexOf(e),s)}_select(e,s){this._selectedItemIdx=-1;for(let t=0;t<this._nodes.length;t++){const o=this._nodes[t];t!==e?o.classList.remove("selected"):(this._selectedItemIdx=t,o.classList.add("selected"))}this._onDidSelectItem.fire({type:"select",item:this._items[this._selectedItemIdx],node:this._nodes[this._selectedItemIdx],payload:s})}getItems(){return this._items}setItems(e){let s,t=[];try{s=h(this._items,e,(o,d)=>o.equals(d)),t=this._items.splice(s,this._items.length-s,...e.slice(s)),this._render(s),b(t),this._focus(-1,void 0)}catch(o){const d=new Error(`BreadcrumbsItem#setItems: newItems: ${e.length}, prefix: ${s}, removed: ${t.length}`);throw d.name=o.name,d.stack=o.stack,d}}_render(e){let s=!1;for(;e<this._items.length&&e<this._nodes.length;e++){const t=this._items[e],o=this._nodes[e];this._renderItem(t,o),s=!0}for(;e<this._nodes.length;){const t=this._nodes.pop();t&&(this._freeNodes.push(t),t.remove(),s=!0)}for(;e<this._items.length;e++){const t=this._items[e],o=this._freeNodes.length>0?this._freeNodes.pop():document.createElement("div");o&&(this._renderItem(t,o),this._domNode.appendChild(o),this._nodes.push(o),s=!0)}s&&this.layout(void 0)}_renderItem(e,s){i.clearNode(s),s.className="";try{e.render(s)}catch{s.innerText="<<RENDER ERROR>>"}s.tabIndex=-1,s.setAttribute("role","listitem"),s.classList.add("monaco-breadcrumb-item");const t=i.$(_.asCSSSelector(this._separatorIcon));s.appendChild(t)}_onClick(e){if(this._enabled)for(let s=e.target;s;s=s.parentElement){const t=this._nodes.indexOf(s);if(t>=0){this._focus(t,e),this._select(t,e);break}}}}export{L as BreadcrumbsItem,N as BreadcrumbsWidget};
+import * as dom from '../../dom.js';
+import { DomScrollableElement } from '../scrollbar/scrollableElement.js';
+import { commonPrefixLength } from '../../../common/arrays.js';
+import { ThemeIcon } from '../../../common/themables.js';
+import { Emitter } from '../../../common/event.js';
+import { DisposableStore, dispose } from '../../../common/lifecycle.js';
+import './breadcrumbsWidget.css';
+export class BreadcrumbsItem {
+}
+export class BreadcrumbsWidget {
+    constructor(container, horizontalScrollbarSize, separatorIcon, styles) {
+        this._disposables = new DisposableStore();
+        this._onDidSelectItem = new Emitter();
+        this._onDidFocusItem = new Emitter();
+        this._onDidChangeFocus = new Emitter();
+        this.onDidSelectItem = this._onDidSelectItem.event;
+        this.onDidFocusItem = this._onDidFocusItem.event;
+        this.onDidChangeFocus = this._onDidChangeFocus.event;
+        this._items = new Array();
+        this._nodes = new Array();
+        this._freeNodes = new Array();
+        this._enabled = true;
+        this._focusedItemIdx = -1;
+        this._selectedItemIdx = -1;
+        this._domNode = document.createElement('div');
+        this._domNode.className = 'monaco-breadcrumbs';
+        this._domNode.tabIndex = 0;
+        this._domNode.setAttribute('role', 'list');
+        this._scrollable = new DomScrollableElement(this._domNode, {
+            vertical: 2,
+            horizontal: 1,
+            horizontalScrollbarSize,
+            useShadows: false,
+            scrollYToX: true
+        });
+        this._separatorIcon = separatorIcon;
+        this._disposables.add(this._scrollable);
+        this._disposables.add(dom.addStandardDisposableListener(this._domNode, 'click', e => this._onClick(e)));
+        container.appendChild(this._scrollable.getDomNode());
+        const styleElement = dom.createStyleSheet(this._domNode);
+        this._style(styleElement, styles);
+        const focusTracker = dom.trackFocus(this._domNode);
+        this._disposables.add(focusTracker);
+        this._disposables.add(focusTracker.onDidBlur(_ => this._onDidChangeFocus.fire(false)));
+        this._disposables.add(focusTracker.onDidFocus(_ => this._onDidChangeFocus.fire(true)));
+    }
+    setHorizontalScrollbarSize(size) {
+        this._scrollable.updateOptions({
+            horizontalScrollbarSize: size
+        });
+    }
+    dispose() {
+        this._disposables.dispose();
+        this._pendingLayout?.dispose();
+        this._pendingDimLayout?.dispose();
+        this._onDidSelectItem.dispose();
+        this._onDidFocusItem.dispose();
+        this._onDidChangeFocus.dispose();
+        this._domNode.remove();
+        this._nodes.length = 0;
+        this._freeNodes.length = 0;
+    }
+    layout(dim) {
+        if (dim && dom.Dimension.equals(dim, this._dimension)) {
+            return;
+        }
+        if (dim) {
+            this._pendingDimLayout?.dispose();
+            this._pendingDimLayout = this._updateDimensions(dim);
+        }
+        else {
+            this._pendingLayout?.dispose();
+            this._pendingLayout = this._updateScrollbar();
+        }
+    }
+    _updateDimensions(dim) {
+        const disposables = new DisposableStore();
+        disposables.add(dom.modify(dom.getWindow(this._domNode), () => {
+            this._dimension = dim;
+            this._domNode.style.width = `${dim.width}px`;
+            this._domNode.style.height = `${dim.height}px`;
+            disposables.add(this._updateScrollbar());
+        }));
+        return disposables;
+    }
+    _updateScrollbar() {
+        return dom.measure(dom.getWindow(this._domNode), () => {
+            dom.measure(dom.getWindow(this._domNode), () => {
+                this._scrollable.setRevealOnScroll(false);
+                this._scrollable.scanDomNode();
+                this._scrollable.setRevealOnScroll(true);
+            });
+        });
+    }
+    _style(styleElement, style) {
+        let content = '';
+        if (style.breadcrumbsBackground) {
+            content += `.monaco-breadcrumbs { background-color: ${style.breadcrumbsBackground}}`;
+        }
+        if (style.breadcrumbsForeground) {
+            content += `.monaco-breadcrumbs .monaco-breadcrumb-item { color: ${style.breadcrumbsForeground}}\n`;
+        }
+        if (style.breadcrumbsFocusForeground) {
+            content += `.monaco-breadcrumbs .monaco-breadcrumb-item.focused { color: ${style.breadcrumbsFocusForeground}}\n`;
+        }
+        if (style.breadcrumbsFocusAndSelectionForeground) {
+            content += `.monaco-breadcrumbs .monaco-breadcrumb-item.focused.selected { color: ${style.breadcrumbsFocusAndSelectionForeground}}\n`;
+        }
+        if (style.breadcrumbsHoverForeground) {
+            content += `.monaco-breadcrumbs:not(.disabled	) .monaco-breadcrumb-item:hover:not(.focused):not(.selected) { color: ${style.breadcrumbsHoverForeground}}\n`;
+        }
+        styleElement.innerText = content;
+    }
+    setEnabled(value) {
+        this._enabled = value;
+        this._domNode.classList.toggle('disabled', !this._enabled);
+    }
+    domFocus() {
+        const idx = this._focusedItemIdx >= 0 ? this._focusedItemIdx : this._items.length - 1;
+        if (idx >= 0 && idx < this._items.length) {
+            this._focus(idx, undefined);
+        }
+        else {
+            this._domNode.focus();
+        }
+    }
+    isDOMFocused() {
+        return dom.isAncestorOfActiveElement(this._domNode);
+    }
+    getFocused() {
+        return this._items[this._focusedItemIdx];
+    }
+    setFocused(item, payload) {
+        this._focus(this._items.indexOf(item), payload);
+    }
+    focusPrev(payload) {
+        if (this._focusedItemIdx > 0) {
+            this._focus(this._focusedItemIdx - 1, payload);
+        }
+    }
+    focusNext(payload) {
+        if (this._focusedItemIdx + 1 < this._nodes.length) {
+            this._focus(this._focusedItemIdx + 1, payload);
+        }
+    }
+    _focus(nth, payload) {
+        this._focusedItemIdx = -1;
+        for (let i = 0; i < this._nodes.length; i++) {
+            const node = this._nodes[i];
+            if (i !== nth) {
+                node.classList.remove('focused');
+            }
+            else {
+                this._focusedItemIdx = i;
+                node.classList.add('focused');
+                node.focus();
+            }
+        }
+        this._reveal(this._focusedItemIdx, true);
+        this._onDidFocusItem.fire({ type: 'focus', item: this._items[this._focusedItemIdx], node: this._nodes[this._focusedItemIdx], payload });
+    }
+    reveal(item) {
+        const idx = this._items.indexOf(item);
+        if (idx >= 0) {
+            this._reveal(idx, false);
+        }
+    }
+    revealLast() {
+        this._reveal(this._items.length - 1, false);
+    }
+    _reveal(nth, minimal) {
+        if (nth < 0 || nth >= this._nodes.length) {
+            return;
+        }
+        const node = this._nodes[nth];
+        if (!node) {
+            return;
+        }
+        const { width } = this._scrollable.getScrollDimensions();
+        const { scrollLeft } = this._scrollable.getScrollPosition();
+        if (!minimal || node.offsetLeft > scrollLeft + width || node.offsetLeft < scrollLeft) {
+            this._scrollable.setRevealOnScroll(false);
+            this._scrollable.setScrollPosition({ scrollLeft: node.offsetLeft });
+            this._scrollable.setRevealOnScroll(true);
+        }
+    }
+    getSelection() {
+        return this._items[this._selectedItemIdx];
+    }
+    setSelection(item, payload) {
+        this._select(this._items.indexOf(item), payload);
+    }
+    _select(nth, payload) {
+        this._selectedItemIdx = -1;
+        for (let i = 0; i < this._nodes.length; i++) {
+            const node = this._nodes[i];
+            if (i !== nth) {
+                node.classList.remove('selected');
+            }
+            else {
+                this._selectedItemIdx = i;
+                node.classList.add('selected');
+            }
+        }
+        this._onDidSelectItem.fire({ type: 'select', item: this._items[this._selectedItemIdx], node: this._nodes[this._selectedItemIdx], payload });
+    }
+    getItems() {
+        return this._items;
+    }
+    setItems(items) {
+        let prefix;
+        let removed = [];
+        try {
+            prefix = commonPrefixLength(this._items, items, (a, b) => a.equals(b));
+            removed = this._items.splice(prefix, this._items.length - prefix, ...items.slice(prefix));
+            this._render(prefix);
+            dispose(removed);
+            this._focus(-1, undefined);
+        }
+        catch (e) {
+            const newError = new Error(`BreadcrumbsItem#setItems: newItems: ${items.length}, prefix: ${prefix}, removed: ${removed.length}`);
+            newError.name = e.name;
+            newError.stack = e.stack;
+            throw newError;
+        }
+    }
+    _render(start) {
+        let didChange = false;
+        for (; start < this._items.length && start < this._nodes.length; start++) {
+            const item = this._items[start];
+            const node = this._nodes[start];
+            this._renderItem(item, node);
+            didChange = true;
+        }
+        while (start < this._nodes.length) {
+            const free = this._nodes.pop();
+            if (free) {
+                this._freeNodes.push(free);
+                free.remove();
+                didChange = true;
+            }
+        }
+        for (; start < this._items.length; start++) {
+            const item = this._items[start];
+            const node = this._freeNodes.length > 0 ? this._freeNodes.pop() : document.createElement('div');
+            if (node) {
+                this._renderItem(item, node);
+                this._domNode.appendChild(node);
+                this._nodes.push(node);
+                didChange = true;
+            }
+        }
+        if (didChange) {
+            this.layout(undefined);
+        }
+    }
+    _renderItem(item, container) {
+        dom.clearNode(container);
+        container.className = '';
+        try {
+            item.render(container);
+        }
+        catch (err) {
+            container.innerText = '<<RENDER ERROR>>';
+            console.error(err);
+        }
+        container.tabIndex = -1;
+        container.setAttribute('role', 'listitem');
+        container.classList.add('monaco-breadcrumb-item');
+        const iconContainer = dom.$(ThemeIcon.asCSSSelector(this._separatorIcon));
+        container.appendChild(iconContainer);
+    }
+    _onClick(event) {
+        if (!this._enabled) {
+            return;
+        }
+        for (let el = event.target; el; el = el.parentElement) {
+            const idx = this._nodes.indexOf(el);
+            if (idx >= 0) {
+                this._focus(idx, event);
+                this._select(idx, event);
+                break;
+            }
+        }
+    }
+}

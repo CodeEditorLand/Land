@@ -1,1 +1,123 @@
-import{groupBy as g}from"../../../../base/common/arrays.js";import{URI as T}from"../../../../base/common/uri.js";import"../../../../editor/common/languages.js";import{localize as f}from"../../../../nls.js";import{ResourceWithCommentThreads as u}from"../common/commentModel.js";import{Disposable as R}from"../../../../base/common/lifecycle.js";import{isMarkdownString as b}from"../../../../base/common/htmlContent.js";function M(p){return!!p.comments&&!!p.comments.length&&p.comments.some(e=>b(e.body)?e.body.value.length>0:e.body.length>0)}class C extends R{_serviceBrand;_resourceCommentThreads;get resourceCommentThreads(){return this._resourceCommentThreads}commentThreadsMap;constructor(){super(),this._resourceCommentThreads=[],this.commentThreadsMap=new Map}updateResourceCommentThreads(){const e=this.commentThreadsMap.size>1;this._resourceCommentThreads=[...this.commentThreadsMap.values()].map(r=>r.resourceWithCommentThreads.map(s=>(s.ownerLabel=e?r.ownerLabel:void 0,s)).flat()).flat()}setCommentThreads(e,r,s,n){this.commentThreadsMap.set(e,{ownerLabel:s,resourceWithCommentThreads:this.groupByResource(e,r,n)}),this.updateResourceCommentThreads()}deleteCommentsByOwner(e){if(e){const r=this.commentThreadsMap.get(e);this.commentThreadsMap.set(e,{ownerLabel:r?.ownerLabel,resourceWithCommentThreads:[]})}else this.commentThreadsMap.clear();this.updateResourceCommentThreads()}updateCommentThreads(e){const{uniqueOwner:r,owner:s,ownerLabel:n,removed:i,changed:h,added:l}=e,m=this.commentThreadsMap.get(r)?.resourceWithCommentThreads||[];return i.forEach(t=>{const a=m.findIndex(c=>c.id===t.resource),o=a>=0?m[a]:void 0,d=o?.commentThreads.findIndex(c=>c.threadId===t.threadId)??0;d>=0&&o?.commentThreads.splice(d,1),o?.commentThreads.length===0&&m.splice(a,1)}),h.forEach(t=>{const a=m.findIndex(c=>c.id===t.resource),o=a>=0?m[a]:void 0;if(!o)return;const d=o.commentThreads.findIndex(c=>c.threadId===t.threadId);d>=0?o.commentThreads[d]=u.createCommentNode(r,s,T.parse(o.id),t):t.comments&&t.comments.length&&o.commentThreads.push(u.createCommentNode(r,s,T.parse(o.id),t))}),l.forEach(t=>{const a=m.filter(o=>o.resource.toString()===t.resource);if(a.length){const o=a[0];t.comments&&t.comments.length&&o.commentThreads.push(u.createCommentNode(r,s,o.resource,t))}else m.push(new u(r,s,T.parse(t.resource),[t]))}),this.commentThreadsMap.set(r,{ownerLabel:n,resourceWithCommentThreads:m}),this.updateResourceCommentThreads(),i.length>0||h.length>0||l.length>0}hasCommentThreads(){return!!this._resourceCommentThreads.length&&this._resourceCommentThreads.some(e=>e.commentThreads.length>0&&e.commentThreads.some(r=>M(r.thread)))}getMessage(){return this._resourceCommentThreads.length?"":f("noComments","There are no comments in this workspace yet.")}groupByResource(e,r,s){const n=[],i=new Map;for(const h of g(s,C._compareURIs))i.set(h[0].resource,new u(e,r,T.parse(h[0].resource),h));return i.forEach((h,l,m)=>{n.push(h)}),n}static _compareURIs(e,r){const s=e.resource.toString(),n=r.resource.toString();return s<n?-1:s>n?1:0}}export{C as CommentsModel,M as threadHasMeaningfulComments};
+import { groupBy } from '../../../../base/common/arrays.js';
+import { URI } from '../../../../base/common/uri.js';
+import { localize } from '../../../../nls.js';
+import { ResourceWithCommentThreads } from '../common/commentModel.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { isMarkdownString } from '../../../../base/common/htmlContent.js';
+export function threadHasMeaningfulComments(thread) {
+    return !!thread.comments && !!thread.comments.length && thread.comments.some(comment => isMarkdownString(comment.body) ? comment.body.value.length > 0 : comment.body.length > 0);
+}
+export class CommentsModel extends Disposable {
+    get resourceCommentThreads() { return this._resourceCommentThreads; }
+    constructor() {
+        super();
+        this._resourceCommentThreads = [];
+        this.commentThreadsMap = new Map();
+    }
+    updateResourceCommentThreads() {
+        const includeLabel = this.commentThreadsMap.size > 1;
+        this._resourceCommentThreads = [...this.commentThreadsMap.values()].map(value => {
+            return value.resourceWithCommentThreads.map(resource => {
+                resource.ownerLabel = includeLabel ? value.ownerLabel : undefined;
+                return resource;
+            }).flat();
+        }).flat();
+    }
+    setCommentThreads(uniqueOwner, owner, ownerLabel, commentThreads) {
+        this.commentThreadsMap.set(uniqueOwner, { ownerLabel, resourceWithCommentThreads: this.groupByResource(uniqueOwner, owner, commentThreads) });
+        this.updateResourceCommentThreads();
+    }
+    deleteCommentsByOwner(uniqueOwner) {
+        if (uniqueOwner) {
+            const existingOwner = this.commentThreadsMap.get(uniqueOwner);
+            this.commentThreadsMap.set(uniqueOwner, { ownerLabel: existingOwner?.ownerLabel, resourceWithCommentThreads: [] });
+        }
+        else {
+            this.commentThreadsMap.clear();
+        }
+        this.updateResourceCommentThreads();
+    }
+    updateCommentThreads(event) {
+        const { uniqueOwner, owner, ownerLabel, removed, changed, added } = event;
+        const threadsForOwner = this.commentThreadsMap.get(uniqueOwner)?.resourceWithCommentThreads || [];
+        removed.forEach(thread => {
+            const matchingResourceIndex = threadsForOwner.findIndex((resourceData) => resourceData.id === thread.resource);
+            const matchingResourceData = matchingResourceIndex >= 0 ? threadsForOwner[matchingResourceIndex] : undefined;
+            const index = matchingResourceData?.commentThreads.findIndex((commentThread) => commentThread.threadId === thread.threadId) ?? 0;
+            if (index >= 0) {
+                matchingResourceData?.commentThreads.splice(index, 1);
+            }
+            if (matchingResourceData?.commentThreads.length === 0) {
+                threadsForOwner.splice(matchingResourceIndex, 1);
+            }
+        });
+        changed.forEach(thread => {
+            const matchingResourceIndex = threadsForOwner.findIndex((resourceData) => resourceData.id === thread.resource);
+            const matchingResourceData = matchingResourceIndex >= 0 ? threadsForOwner[matchingResourceIndex] : undefined;
+            if (!matchingResourceData) {
+                return;
+            }
+            const index = matchingResourceData.commentThreads.findIndex((commentThread) => commentThread.threadId === thread.threadId);
+            if (index >= 0) {
+                matchingResourceData.commentThreads[index] = ResourceWithCommentThreads.createCommentNode(uniqueOwner, owner, URI.parse(matchingResourceData.id), thread);
+            }
+            else if (thread.comments && thread.comments.length) {
+                matchingResourceData.commentThreads.push(ResourceWithCommentThreads.createCommentNode(uniqueOwner, owner, URI.parse(matchingResourceData.id), thread));
+            }
+        });
+        added.forEach(thread => {
+            const existingResource = threadsForOwner.filter(resourceWithThreads => resourceWithThreads.resource.toString() === thread.resource);
+            if (existingResource.length) {
+                const resource = existingResource[0];
+                if (thread.comments && thread.comments.length) {
+                    resource.commentThreads.push(ResourceWithCommentThreads.createCommentNode(uniqueOwner, owner, resource.resource, thread));
+                }
+            }
+            else {
+                threadsForOwner.push(new ResourceWithCommentThreads(uniqueOwner, owner, URI.parse(thread.resource), [thread]));
+            }
+        });
+        this.commentThreadsMap.set(uniqueOwner, { ownerLabel, resourceWithCommentThreads: threadsForOwner });
+        this.updateResourceCommentThreads();
+        return removed.length > 0 || changed.length > 0 || added.length > 0;
+    }
+    hasCommentThreads() {
+        return !!this._resourceCommentThreads.length && this._resourceCommentThreads.some(resource => {
+            return (resource.commentThreads.length > 0) && resource.commentThreads.some(thread => {
+                return threadHasMeaningfulComments(thread.thread);
+            });
+        });
+    }
+    getMessage() {
+        if (!this._resourceCommentThreads.length) {
+            return localize('noComments', "There are no comments in this workspace yet.");
+        }
+        else {
+            return '';
+        }
+    }
+    groupByResource(uniqueOwner, owner, commentThreads) {
+        const resourceCommentThreads = [];
+        const commentThreadsByResource = new Map();
+        for (const group of groupBy(commentThreads, CommentsModel._compareURIs)) {
+            commentThreadsByResource.set(group[0].resource, new ResourceWithCommentThreads(uniqueOwner, owner, URI.parse(group[0].resource), group));
+        }
+        commentThreadsByResource.forEach((v, i, m) => {
+            resourceCommentThreads.push(v);
+        });
+        return resourceCommentThreads;
+    }
+    static _compareURIs(a, b) {
+        const resourceA = a.resource.toString();
+        const resourceB = b.resource.toString();
+        if (resourceA < resourceB) {
+            return -1;
+        }
+        else if (resourceA > resourceB) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+}

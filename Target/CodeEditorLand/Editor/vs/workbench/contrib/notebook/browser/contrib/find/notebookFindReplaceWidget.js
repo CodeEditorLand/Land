@@ -1,6 +1,701 @@
-var A=Object.defineProperty;var E=Object.getOwnPropertyDescriptor;var N=(c,a,e,t)=>{for(var i=t>1?void 0:t?E(a,e):a,o=c.length-1,s;o>=0;o--)(s=c[o])&&(i=(t?s(a,e,i):s(i))||i);return t&&i&&A(a,e,i),i},h=(c,a)=>(e,t)=>a(e,t,c);import*as n from"../../../../../../nls.js";import*as d from"../../../../../../base/browser/dom.js";import"./notebookFindReplaceWidget.css";import{ActionBar as w}from"../../../../../../base/browser/ui/actionbar/actionbar.js";import"../../../../../../base/browser/ui/actionbar/actionViewItems.js";import{AnchorAlignment as L}from"../../../../../../base/browser/ui/contextview/contextview.js";import{DropdownMenuActionViewItem as V}from"../../../../../../base/browser/ui/dropdown/dropdownActionViewItem.js";import{FindInput as O}from"../../../../../../base/browser/ui/findinput/findInput.js";import"../../../../../../base/browser/ui/findinput/replaceInput.js";import"../../../../../../base/browser/ui/inputbox/inputBox.js";import{ProgressBar as M}from"../../../../../../base/browser/ui/progressbar/progressbar.js";import{Orientation as P,Sash as W}from"../../../../../../base/browser/ui/sash/sash.js";import{Toggle as H}from"../../../../../../base/browser/ui/toggle/toggle.js";import{Widget as z}from"../../../../../../base/browser/ui/widget.js";import{Action as K,ActionRunner as U,Separator as G}from"../../../../../../base/common/actions.js";import{Delayer as $}from"../../../../../../base/common/async.js";import{Codicon as X}from"../../../../../../base/common/codicons.js";import{KeyCode as q}from"../../../../../../base/common/keyCodes.js";import{Disposable as Z}from"../../../../../../base/common/lifecycle.js";import{isSafari as j}from"../../../../../../base/common/platform.js";import{ThemeIcon as J}from"../../../../../../base/common/themables.js";import"../../../../../../editor/common/core/range.js";import{FindReplaceState as Q}from"../../../../../../editor/contrib/find/browser/findState.js";import{findNextMatchIcon as Y,findPreviousMatchIcon as ee,findReplaceAllIcon as te,findReplaceIcon as ie,findSelectionIcon as oe,SimpleButton as _}from"../../../../../../editor/contrib/find/browser/findWidget.js";import{parseReplaceString as ne,ReplacePattern as se}from"../../../../../../editor/contrib/find/browser/replacePattern.js";import{createAndFillInActionBarActions as k}from"../../../../../../platform/actions/browser/menuEntryActionViewItem.js";import"../../../../../../platform/actions/common/actions.js";import{IConfigurationService as re}from"../../../../../../platform/configuration/common/configuration.js";import{IContextKeyService as le}from"../../../../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as F,IContextViewService as ae}from"../../../../../../platform/contextview/browser/contextView.js";import{ContextScopedReplaceInput as de,registerAndCreateHistoryNavigationContext as ce}from"../../../../../../platform/history/browser/contextScopedHistoryWidget.js";import{IHoverService as pe}from"../../../../../../platform/hover/browser/hover.js";import{IInstantiationService as he}from"../../../../../../platform/instantiation/common/instantiation.js";import{defaultInputBoxStyles as B,defaultProgressBarStyles as ue,defaultToggleStyles as D}from"../../../../../../platform/theme/browser/defaultStyles.js";import{asCssVariable as C,inputActiveOptionBackground as _e,inputActiveOptionBorder as fe,inputActiveOptionForeground as ge}from"../../../../../../platform/theme/common/colorRegistry.js";import{registerIcon as me,widgetClose as Ie}from"../../../../../../platform/theme/common/iconRegistry.js";import{registerThemingParticipant as be}from"../../../../../../platform/theme/common/themeService.js";import{filterIcon as ve}from"../../../../extensions/browser/extensionsIcons.js";import{NotebookFindFilters as Se}from"./findFilters.js";import"./notebookFindWidget.js";import"../../notebookBrowser.js";import{NotebookFindScopeType as m,NotebookSetting as Ne}from"../../../common/notebookCommon.js";import"../../../common/notebookRange.js";const Ce=n.localize("label.find","Find"),Te=n.localize("placeholder.find","Find"),ye=n.localize("label.previousMatchButton","Previous Match"),ke=n.localize("label.nextMatchButton","Next Match"),Fe=n.localize("label.toggleSelectionFind","Find in Selection"),Be=n.localize("label.closeButton","Close"),De=n.localize("label.toggleReplaceButton","Toggle Replace"),Re=n.localize("label.replace","Replace"),xe=n.localize("placeholder.replace","Replace"),Ae=n.localize("label.replaceButton","Replace"),Ee=n.localize("label.replaceAllButton","Replace All"),Zt=me("find-filter",X.filter,n.localize("findFilterIcon","Icon for Find Filter in find widget.")),we=n.localize("notebook.find.filter.filterAction","Find Filters"),Le=n.localize("notebook.find.filter.findInMarkupInput","Markdown Source"),Ve=n.localize("notebook.find.filter.findInMarkupPreview","Rendered Markdown"),Oe=n.localize("notebook.find.filter.findInCodeInput","Code Cell Source"),Me=n.localize("notebook.find.filter.findInCodeOutput","Code Cell Output"),f=419,R=4;let I=class extends V{constructor(e,t,i,o,s){super(t,{getActions:()=>this.getActions()},s,{...i,actionRunner:o,classNames:t.class,anchorAlignmentProvider:()=>L.RIGHT});this.filters=e}render(e){super.render(e),this.updateChecked()}getActions(){const e={checked:this.filters.markupInput,class:void 0,enabled:!0,id:"findInMarkdownInput",label:Le,run:async()=>{this.filters.markupInput=!this.filters.markupInput},tooltip:""},t={checked:this.filters.markupPreview,class:void 0,enabled:!0,id:"findInMarkdownInput",label:Ve,run:async()=>{this.filters.markupPreview=!this.filters.markupPreview},tooltip:""},i={checked:this.filters.codeInput,class:void 0,enabled:!0,id:"findInCodeInput",label:Oe,run:async()=>{this.filters.codeInput=!this.filters.codeInput},tooltip:""},o={checked:this.filters.codeOutput,class:void 0,enabled:!0,id:"findInCodeOutput",label:Me,run:async()=>{this.filters.codeOutput=!this.filters.codeOutput},tooltip:"",dispose:()=>null};return j?[e,i]:[e,t,new G,i,o]}updateChecked(){this.element.classList.toggle("checked",this._action.checked)}};I=N([h(4,F)],I);class Pe extends Z{constructor(e,t,i,o,s=we){super();this.filters=e;this.contextMenuService=t;this.instantiationService=i;this._toggleStyles=o.toggleStyles,this._filtersAction=new K("notebookFindFilterAction",s,"notebook-filters "+J.asClassName(ve)),this._filtersAction.checked=!1,this._filterButtonContainer=d.$(".find-filter-button"),this._filterButtonContainer.classList.add("monaco-custom-toggle"),this.createFilters(this._filterButtonContainer)}_filterButtonContainer;_actionbar=null;_filtersAction;_toggleStyles;get container(){return this._filterButtonContainer}width(){return 22}enable(){this.container.setAttribute("aria-disabled",String(!1))}disable(){this.container.setAttribute("aria-disabled",String(!0))}set visible(e){this._filterButtonContainer.style.display=e?"":"none"}get visible(){return this._filterButtonContainer.style.display!=="none"}applyStyles(e){const t=this._toggleStyles;this._filterButtonContainer.style.border="1px solid transparent",this._filterButtonContainer.style.borderRadius="3px",this._filterButtonContainer.style.borderColor=e&&t.inputActiveOptionBorder||"",this._filterButtonContainer.style.color=e&&t.inputActiveOptionForeground||"inherit",this._filterButtonContainer.style.backgroundColor=e&&t.inputActiveOptionBackground||""}createFilters(e){this._actionbar=this._register(new w(e,{actionViewItemProvider:(t,i)=>{if(t.id===this._filtersAction.id)return this.instantiationService.createInstance(I,this.filters,t,i,new U)}})),this._actionbar.push(this._filtersAction,{icon:!0,label:!1})}}class We extends O{constructor(e,t,i,o,s,p,S){super(s,p,S);this.filters=e;this.contextMenuService=i;this.instantiationService=o;this._register(ce(t,this.inputBox)),this._findFilter=this._register(new Pe(e,i,o,S)),this.inputBox.paddingRight=(this.caseSensitive?.width()??0)+(this.wholeWords?.width()??0)+(this.regex?.width()??0)+this._findFilter.width(),this.controls.appendChild(this._findFilter.container)}_findFilter;_filterChecked=!1;setEnabled(e){super.setEnabled(e),e&&!this._filterChecked?this.regex?.enable():this.regex?.disable()}updateFilterState(e){this._filterChecked=e,this.regex&&(this._filterChecked?(this.regex.disable(),this.regex.domNode.tabIndex=-1,this.regex.domNode.classList.toggle("disabled",!0)):(this.regex.enable(),this.regex.domNode.tabIndex=0,this.regex.domNode.classList.toggle("disabled",!1))),this._findFilter.applyStyles(this._filterChecked)}getCellToolbarActions(e){const o={primary:[],secondary:[]};return k(e,{shouldForwardArgs:!0},o,s=>/^inline/.test(s)),o}}let v=class extends z{constructor(e,t,i,o,s,p,S=new Q,He){super();this._contextViewService=e;this._configurationService=i;this.contextMenuService=o;this.instantiationService=s;this._state=S;this._notebookEditor=He;const b=this._configurationService.getValue(Ne.findFilters)??{markupSource:!0,markupPreview:!0,codeSource:!0,codeOutput:!0};this._filters=new Se(b.markupSource,b.markupPreview,b.codeSource,b.codeOutput,{findScopeType:m.None}),this._state.change({filters:this._filters},!1),this._filters.onDidChange(()=>{this._state.change({filters:this._filters},!1)}),this._domNode=document.createElement("div"),this._domNode.classList.add("simple-fr-find-part-wrapper"),this._register(this._state.onFindReplaceStateChange(r=>this._onStateChanged(r))),this._scopedContextKeyService=t.createScoped(this._domNode);const T=d.$(".find-replace-progress");this._progressBar=new M(T,ue),this._domNode.appendChild(T);const y=t.getContextKeyValue("notebookType")==="interactive";this._toggleReplaceBtn=this._register(new _({label:De,className:"codicon toggle left",onTrigger:y?()=>{}:()=>{this._isReplaceVisible=!this._isReplaceVisible,this._state.change({isReplaceRevealed:this._isReplaceVisible},!1),this._updateReplaceViewDisplay()}},p)),this._toggleReplaceBtn.setEnabled(!y),this._toggleReplaceBtn.setExpanded(this._isReplaceVisible),this._domNode.appendChild(this._toggleReplaceBtn.domNode),this._innerFindDomNode=document.createElement("div"),this._innerFindDomNode.classList.add("simple-fr-find-part"),this._findInput=this._register(new We(this._filters,this._scopedContextKeyService,this.contextMenuService,this.instantiationService,null,this._contextViewService,{label:Ce,placeholder:Te,validation:r=>{if(r.length===0||!this._findInput.getRegex())return null;try{return new RegExp(r),null}catch(l){return this.foundMatch=!1,this.updateButtons(this.foundMatch),{content:l.message}}},flexibleWidth:!0,showCommonFindToggles:!0,inputBoxStyles:B,toggleStyles:D})),this._updateHistoryDelayer=new $(500),this.oninput(this._findInput.domNode,r=>{this.foundMatch=this.onInputChanged(),this.updateButtons(this.foundMatch),this._delayedUpdateHistory()}),this._register(this._findInput.inputBox.onDidChange(()=>{this._state.change({searchString:this._findInput.getValue()},!0)})),this._findInput.setRegex(!!this._state.isRegex),this._findInput.setCaseSensitive(!!this._state.matchCase),this._findInput.setWholeWords(!!this._state.wholeWord),this._register(this._findInput.onDidOptionChange(()=>{this._state.change({isRegex:this._findInput.getRegex(),wholeWord:this._findInput.getWholeWords(),matchCase:this._findInput.getCaseSensitive()},!0)})),this._register(this._state.onFindReplaceStateChange(()=>{this._findInput.setRegex(this._state.isRegex),this._findInput.setWholeWords(this._state.wholeWord),this._findInput.setCaseSensitive(this._state.matchCase),this._replaceInput.setPreserveCase(this._state.preserveCase)})),this._matchesCount=document.createElement("div"),this._matchesCount.className="matchesCount",this._updateMatchesCount(),this.prevBtn=this._register(new _({label:ye,icon:ee,onTrigger:()=>{this.find(!0)}},p)),this.nextBtn=this._register(new _({label:ke,icon:Y,onTrigger:()=>{this.find(!1)}},p)),this.inSelectionToggle=this._register(new H({icon:oe,title:Fe,isChecked:!1,inputActiveOptionBackground:C(_e),inputActiveOptionBorder:C(fe),inputActiveOptionForeground:C(ge)})),this.inSelectionToggle.domNode.style.display="inline",this.inSelectionToggle.onChange(()=>{if(this.inSelectionToggle.checked){const l=this._notebookEditor.getSelections(),u=this._notebookEditor.getSelectionViewModels()[0].getSelections();l.length>1||l.some(g=>g.end-g.start>1)?(this._filters.findScope={findScopeType:m.Cells,selectedCellRanges:l},this.setCellSelectionDecorations()):u.length>1||u.some(g=>g.endLineNumber-g.startLineNumber>=1)?(this._filters.findScope={findScopeType:m.Text,selectedCellRanges:l,selectedTextRanges:u},this.setTextSelectionDecorations(u,this._notebookEditor.getSelectionViewModels()[0])):(this._filters.findScope={findScopeType:m.Cells,selectedCellRanges:l},this.setCellSelectionDecorations())}else this._filters.findScope={findScopeType:m.None},this.clearCellSelectionDecorations(),this.clearTextSelectionDecorations()});const x=this._register(new _({label:Be,icon:Ie,onTrigger:()=>{this.hide()}},p));this._innerFindDomNode.appendChild(this._findInput.domNode),this._innerFindDomNode.appendChild(this._matchesCount),this._innerFindDomNode.appendChild(this.prevBtn.domNode),this._innerFindDomNode.appendChild(this.nextBtn.domNode),this._innerFindDomNode.appendChild(this.inSelectionToggle.domNode),this._innerFindDomNode.appendChild(x.domNode),this._domNode.appendChild(this._innerFindDomNode),this.onkeyup(this._innerFindDomNode,r=>{if(r.equals(q.Escape)){this.hide(),r.preventDefault();return}}),this._focusTracker=this._register(d.trackFocus(this._domNode)),this._register(this._focusTracker.onDidFocus(this.onFocusTrackerFocus.bind(this))),this._register(this._focusTracker.onDidBlur(this.onFocusTrackerBlur.bind(this))),this._findInputFocusTracker=this._register(d.trackFocus(this._findInput.domNode)),this._register(this._findInputFocusTracker.onDidFocus(this.onFindInputFocusTrackerFocus.bind(this))),this._register(this._findInputFocusTracker.onDidBlur(this.onFindInputFocusTrackerBlur.bind(this))),this._register(d.addDisposableListener(this._innerFindDomNode,"click",r=>{r.stopPropagation()})),this._innerReplaceDomNode=document.createElement("div"),this._innerReplaceDomNode.classList.add("simple-fr-replace-part"),this._replaceInput=this._register(new de(null,void 0,{label:Re,placeholder:xe,history:[],inputBoxStyles:B,toggleStyles:D},t,!1)),this._innerReplaceDomNode.appendChild(this._replaceInput.domNode),this._replaceInputFocusTracker=this._register(d.trackFocus(this._replaceInput.domNode)),this._register(this._replaceInputFocusTracker.onDidFocus(this.onReplaceInputFocusTrackerFocus.bind(this))),this._register(this._replaceInputFocusTracker.onDidBlur(this.onReplaceInputFocusTrackerBlur.bind(this))),this._register(this._replaceInput.inputBox.onDidChange(()=>{this._state.change({replaceString:this._replaceInput.getValue()},!0)})),this._domNode.appendChild(this._innerReplaceDomNode),this._updateReplaceViewDisplay(),this._replaceBtn=this._register(new _({label:Ae,icon:ie,onTrigger:()=>{this.replaceOne()}},p)),this._replaceAllBtn=this._register(new _({label:Ee,icon:te,onTrigger:()=>{this.replaceAll()}},p)),this._innerReplaceDomNode.appendChild(this._replaceBtn.domNode),this._innerReplaceDomNode.appendChild(this._replaceAllBtn.domNode),this._resizeSash=this._register(new W(this._domNode,{getVerticalSashLeft:()=>0},{orientation:P.VERTICAL,size:2})),this._register(this._resizeSash.onDidStart(()=>{this._resizeOriginalWidth=this._getDomWidth()})),this._register(this._resizeSash.onDidChange(r=>{let l=this._resizeOriginalWidth+r.startX-r.currentX;l<f&&(l=f);const u=this._getMaxWidth();l>u&&(l=u),this._domNode.style.width=`${l}px`,this._isReplaceVisible&&(this._replaceInput.width=d.getTotalWidth(this._findInput.domNode)),this._findInput.inputBox.layout()})),this._register(this._resizeSash.onDidReset(()=>{const r=this._getDomWidth();let l=f;r<=f&&(l=this._getMaxWidth()),this._domNode.style.width=`${l}px`,this._isReplaceVisible&&(this._replaceInput.width=d.getTotalWidth(this._findInput.domNode)),this._findInput.inputBox.layout()}))}_findInput;_domNode;_innerFindDomNode;_focusTracker;_findInputFocusTracker;_updateHistoryDelayer;_matchesCount;prevBtn;nextBtn;_replaceInput;_innerReplaceDomNode;_toggleReplaceBtn;_replaceInputFocusTracker;_replaceBtn;_replaceAllBtn;_resizeSash;_resizeOriginalWidth=f;_isVisible=!1;_isReplaceVisible=!1;foundMatch=!1;_progressBar;_scopedContextKeyService;_filters;inSelectionToggle;cellSelectionDecorationIds=[];textSelectionDecorationIds=[];_getMaxWidth(){return this._notebookEditor.getLayoutInfo().width-64}_getDomWidth(){return d.getTotalWidth(this._domNode)-R*2}getCellToolbarActions(e){const o={primary:[],secondary:[]};return k(e,{shouldForwardArgs:!0},o,s=>/^inline/.test(s)),o}get inputValue(){return this._findInput.getValue()}get replaceValue(){return this._replaceInput.getValue()}get replacePattern(){return this._state.isRegex?ne(this.replaceValue):se.fromStaticValue(this.replaceValue)}get focusTracker(){return this._focusTracker}_onStateChanged(e){this._updateButtons(),this._updateMatchesCount()}_updateButtons(){this._findInput.setEnabled(this._isVisible),this._replaceInput.setEnabled(this._isVisible&&this._isReplaceVisible);const e=this._state.searchString.length>0;this._replaceBtn.setEnabled(this._isVisible&&this._isReplaceVisible&&e),this._replaceAllBtn.setEnabled(this._isVisible&&this._isReplaceVisible&&e),this._domNode.classList.toggle("replaceToggled",this._isReplaceVisible),this._toggleReplaceBtn.setExpanded(this._isReplaceVisible),this.foundMatch=this._state.matchesCount>0,this.updateButtons(this.foundMatch)}setCellSelectionDecorations(){const e=[];this._notebookEditor.getSelectionViewModels().forEach(i=>{e.push(i.handle)});const t=[];for(const i of e)t.push({handle:i,options:{className:"nb-multiCellHighlight",outputClassName:"nb-multiCellHighlight"}});this.cellSelectionDecorationIds=this._notebookEditor.deltaCellDecorations([],t)}clearCellSelectionDecorations(){this._notebookEditor.deltaCellDecorations(this.cellSelectionDecorationIds,[])}setTextSelectionDecorations(e,t){this._notebookEditor.changeModelDecorations(i=>{const o=[];for(const s of e)o.push({ownerId:t.handle,decorations:[{range:s,options:{description:"text search range for notebook search scope",isWholeLine:!0,className:"nb-findScope"}}]});this.textSelectionDecorationIds=i.deltaDecorations([],o)})}clearTextSelectionDecorations(){this._notebookEditor.changeModelDecorations(e=>{e.deltaDecorations(this.textSelectionDecorationIds,[])})}_updateMatchesCount(){}dispose(){super.dispose(),this._domNode.remove()}getDomNode(){return this._domNode}reveal(e){if(e&&this._findInput.setValue(e),this._isVisible){this._findInput.select();return}this._isVisible=!0,this.updateButtons(this.foundMatch),setTimeout(()=>{this._domNode.classList.add("visible","visible-transition"),this._domNode.setAttribute("aria-hidden","false"),this._findInput.select()},0)}focus(){this._findInput.focus()}show(e,t){e&&this._findInput.setValue(e),this._isVisible=!0,setTimeout(()=>{this._domNode.classList.add("visible","visible-transition"),this._domNode.setAttribute("aria-hidden","false"),(t?.focus??!0)&&this.focus()},0)}showWithReplace(e,t){e&&this._findInput.setValue(e),t&&this._replaceInput.setValue(t),this._isVisible=!0,this._isReplaceVisible=!0,this._state.change({isReplaceRevealed:this._isReplaceVisible},!1),this._updateReplaceViewDisplay(),setTimeout(()=>{this._domNode.classList.add("visible","visible-transition"),this._domNode.setAttribute("aria-hidden","false"),this._updateButtons(),this._replaceInput.focus()},0)}_updateReplaceViewDisplay(){this._isReplaceVisible?this._innerReplaceDomNode.style.display="flex":this._innerReplaceDomNode.style.display="none",this._replaceInput.width=d.getTotalWidth(this._findInput.domNode)}hide(){this._isVisible&&(this.inSelectionToggle.checked=!1,this._notebookEditor.deltaCellDecorations(this.cellSelectionDecorationIds,[]),this._notebookEditor.changeModelDecorations(e=>{e.deltaDecorations(this.textSelectionDecorationIds,[])}),this._domNode.classList.remove("visible-transition"),this._domNode.setAttribute("aria-hidden","true"),setTimeout(()=>{this._isVisible=!1,this.updateButtons(this.foundMatch),this._domNode.classList.remove("visible")},200))}_delayedUpdateHistory(){this._updateHistoryDelayer.trigger(this._updateHistory.bind(this))}_updateHistory(){this._findInput.inputBox.addToHistory()}_getRegexValue(){return this._findInput.getRegex()}_getWholeWordValue(){return this._findInput.getWholeWords()}_getCaseSensitiveValue(){return this._findInput.getCaseSensitive()}updateButtons(e){const t=this.inputValue.length>0;this.prevBtn.setEnabled(this._isVisible&&t&&e),this.nextBtn.setEnabled(this._isVisible&&t&&e)}};v=N([h(0,ae),h(1,le),h(2,re),h(3,F),h(4,he),h(5,pe)],v),be((c,a)=>{a.addRule(`
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as nls from '../../../../../../nls.js';
+import * as dom from '../../../../../../base/browser/dom.js';
+import './notebookFindReplaceWidget.css';
+import { ActionBar } from '../../../../../../base/browser/ui/actionbar/actionbar.js';
+import { DropdownMenuActionViewItem } from '../../../../../../base/browser/ui/dropdown/dropdownActionViewItem.js';
+import { FindInput } from '../../../../../../base/browser/ui/findinput/findInput.js';
+import { ProgressBar } from '../../../../../../base/browser/ui/progressbar/progressbar.js';
+import { Sash } from '../../../../../../base/browser/ui/sash/sash.js';
+import { Toggle } from '../../../../../../base/browser/ui/toggle/toggle.js';
+import { Widget } from '../../../../../../base/browser/ui/widget.js';
+import { Action, ActionRunner, Separator } from '../../../../../../base/common/actions.js';
+import { Delayer } from '../../../../../../base/common/async.js';
+import { Codicon } from '../../../../../../base/common/codicons.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+import { isSafari } from '../../../../../../base/common/platform.js';
+import { ThemeIcon } from '../../../../../../base/common/themables.js';
+import { FindReplaceState } from '../../../../../../editor/contrib/find/browser/findState.js';
+import { findNextMatchIcon, findPreviousMatchIcon, findReplaceAllIcon, findReplaceIcon, findSelectionIcon, SimpleButton } from '../../../../../../editor/contrib/find/browser/findWidget.js';
+import { parseReplaceString, ReplacePattern } from '../../../../../../editor/contrib/find/browser/replacePattern.js';
+import { createAndFillInActionBarActions } from '../../../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService, IContextViewService } from '../../../../../../platform/contextview/browser/contextView.js';
+import { ContextScopedReplaceInput, registerAndCreateHistoryNavigationContext } from '../../../../../../platform/history/browser/contextScopedHistoryWidget.js';
+import { IHoverService } from '../../../../../../platform/hover/browser/hover.js';
+import { IInstantiationService } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { defaultInputBoxStyles, defaultProgressBarStyles, defaultToggleStyles } from '../../../../../../platform/theme/browser/defaultStyles.js';
+import { asCssVariable, inputActiveOptionBackground, inputActiveOptionBorder, inputActiveOptionForeground } from '../../../../../../platform/theme/common/colorRegistry.js';
+import { registerIcon, widgetClose } from '../../../../../../platform/theme/common/iconRegistry.js';
+import { registerThemingParticipant } from '../../../../../../platform/theme/common/themeService.js';
+import { filterIcon } from '../../../../extensions/browser/extensionsIcons.js';
+import { NotebookFindFilters } from './findFilters.js';
+import { NotebookFindScopeType, NotebookSetting } from '../../../common/notebookCommon.js';
+const NLS_FIND_INPUT_LABEL = nls.localize('label.find', "Find");
+const NLS_FIND_INPUT_PLACEHOLDER = nls.localize('placeholder.find', "Find");
+const NLS_PREVIOUS_MATCH_BTN_LABEL = nls.localize('label.previousMatchButton', "Previous Match");
+const NLS_NEXT_MATCH_BTN_LABEL = nls.localize('label.nextMatchButton', "Next Match");
+const NLS_TOGGLE_SELECTION_FIND_TITLE = nls.localize('label.toggleSelectionFind', "Find in Selection");
+const NLS_CLOSE_BTN_LABEL = nls.localize('label.closeButton', "Close");
+const NLS_TOGGLE_REPLACE_MODE_BTN_LABEL = nls.localize('label.toggleReplaceButton', "Toggle Replace");
+const NLS_REPLACE_INPUT_LABEL = nls.localize('label.replace', "Replace");
+const NLS_REPLACE_INPUT_PLACEHOLDER = nls.localize('placeholder.replace', "Replace");
+const NLS_REPLACE_BTN_LABEL = nls.localize('label.replaceButton', "Replace");
+const NLS_REPLACE_ALL_BTN_LABEL = nls.localize('label.replaceAllButton', "Replace All");
+export const findFilterButton = registerIcon('find-filter', Codicon.filter, nls.localize('findFilterIcon', 'Icon for Find Filter in find widget.'));
+const NOTEBOOK_FIND_FILTERS = nls.localize('notebook.find.filter.filterAction', "Find Filters");
+const NOTEBOOK_FIND_IN_MARKUP_INPUT = nls.localize('notebook.find.filter.findInMarkupInput', "Markdown Source");
+const NOTEBOOK_FIND_IN_MARKUP_PREVIEW = nls.localize('notebook.find.filter.findInMarkupPreview', "Rendered Markdown");
+const NOTEBOOK_FIND_IN_CODE_INPUT = nls.localize('notebook.find.filter.findInCodeInput', "Code Cell Source");
+const NOTEBOOK_FIND_IN_CODE_OUTPUT = nls.localize('notebook.find.filter.findInCodeOutput', "Code Cell Output");
+const NOTEBOOK_FIND_WIDGET_INITIAL_WIDTH = 419;
+const NOTEBOOK_FIND_WIDGET_INITIAL_HORIZONTAL_PADDING = 4;
+let NotebookFindFilterActionViewItem = class NotebookFindFilterActionViewItem extends DropdownMenuActionViewItem {
+    constructor(filters, action, options, actionRunner, contextMenuService) {
+        super(action, { getActions: () => this.getActions() }, contextMenuService, {
+            ...options,
+            actionRunner,
+            classNames: action.class,
+            anchorAlignmentProvider: () => 1
+        });
+        this.filters = filters;
+    }
+    render(container) {
+        super.render(container);
+        this.updateChecked();
+    }
+    getActions() {
+        const markdownInput = {
+            checked: this.filters.markupInput,
+            class: undefined,
+            enabled: true,
+            id: 'findInMarkdownInput',
+            label: NOTEBOOK_FIND_IN_MARKUP_INPUT,
+            run: async () => {
+                this.filters.markupInput = !this.filters.markupInput;
+            },
+            tooltip: ''
+        };
+        const markdownPreview = {
+            checked: this.filters.markupPreview,
+            class: undefined,
+            enabled: true,
+            id: 'findInMarkdownInput',
+            label: NOTEBOOK_FIND_IN_MARKUP_PREVIEW,
+            run: async () => {
+                this.filters.markupPreview = !this.filters.markupPreview;
+            },
+            tooltip: ''
+        };
+        const codeInput = {
+            checked: this.filters.codeInput,
+            class: undefined,
+            enabled: true,
+            id: 'findInCodeInput',
+            label: NOTEBOOK_FIND_IN_CODE_INPUT,
+            run: async () => {
+                this.filters.codeInput = !this.filters.codeInput;
+            },
+            tooltip: ''
+        };
+        const codeOutput = {
+            checked: this.filters.codeOutput,
+            class: undefined,
+            enabled: true,
+            id: 'findInCodeOutput',
+            label: NOTEBOOK_FIND_IN_CODE_OUTPUT,
+            run: async () => {
+                this.filters.codeOutput = !this.filters.codeOutput;
+            },
+            tooltip: '',
+            dispose: () => null
+        };
+        if (isSafari) {
+            return [
+                markdownInput,
+                codeInput
+            ];
+        }
+        else {
+            return [
+                markdownInput,
+                markdownPreview,
+                new Separator(),
+                codeInput,
+                codeOutput,
+            ];
+        }
+    }
+    updateChecked() {
+        this.element.classList.toggle('checked', this._action.checked);
+    }
+};
+NotebookFindFilterActionViewItem = __decorate([
+    __param(4, IContextMenuService),
+    __metadata("design:paramtypes", [NotebookFindFilters, Object, Object, Object, Object])
+], NotebookFindFilterActionViewItem);
+export class NotebookFindInputFilterButton extends Disposable {
+    constructor(filters, contextMenuService, instantiationService, options, tooltip = NOTEBOOK_FIND_FILTERS) {
+        super();
+        this.filters = filters;
+        this.contextMenuService = contextMenuService;
+        this.instantiationService = instantiationService;
+        this._actionbar = null;
+        this._toggleStyles = options.toggleStyles;
+        this._filtersAction = new Action('notebookFindFilterAction', tooltip, 'notebook-filters ' + ThemeIcon.asClassName(filterIcon));
+        this._filtersAction.checked = false;
+        this._filterButtonContainer = dom.$('.find-filter-button');
+        this._filterButtonContainer.classList.add('monaco-custom-toggle');
+        this.createFilters(this._filterButtonContainer);
+    }
+    get container() {
+        return this._filterButtonContainer;
+    }
+    width() {
+        return 2 + 2 + 2 + 16;
+    }
+    enable() {
+        this.container.setAttribute('aria-disabled', String(false));
+    }
+    disable() {
+        this.container.setAttribute('aria-disabled', String(true));
+    }
+    set visible(visible) {
+        this._filterButtonContainer.style.display = visible ? '' : 'none';
+    }
+    get visible() {
+        return this._filterButtonContainer.style.display !== 'none';
+    }
+    applyStyles(filterChecked) {
+        const toggleStyles = this._toggleStyles;
+        this._filterButtonContainer.style.border = '1px solid transparent';
+        this._filterButtonContainer.style.borderRadius = '3px';
+        this._filterButtonContainer.style.borderColor = (filterChecked && toggleStyles.inputActiveOptionBorder) || '';
+        this._filterButtonContainer.style.color = (filterChecked && toggleStyles.inputActiveOptionForeground) || 'inherit';
+        this._filterButtonContainer.style.backgroundColor = (filterChecked && toggleStyles.inputActiveOptionBackground) || '';
+    }
+    createFilters(container) {
+        this._actionbar = this._register(new ActionBar(container, {
+            actionViewItemProvider: (action, options) => {
+                if (action.id === this._filtersAction.id) {
+                    return this.instantiationService.createInstance(NotebookFindFilterActionViewItem, this.filters, action, options, new ActionRunner());
+                }
+                return undefined;
+            }
+        }));
+        this._actionbar.push(this._filtersAction, { icon: true, label: false });
+    }
+}
+export class NotebookFindInput extends FindInput {
+    constructor(filters, contextKeyService, contextMenuService, instantiationService, parent, contextViewProvider, options) {
+        super(parent, contextViewProvider, options);
+        this.filters = filters;
+        this.contextMenuService = contextMenuService;
+        this.instantiationService = instantiationService;
+        this._filterChecked = false;
+        this._register(registerAndCreateHistoryNavigationContext(contextKeyService, this.inputBox));
+        this._findFilter = this._register(new NotebookFindInputFilterButton(filters, contextMenuService, instantiationService, options));
+        this.inputBox.paddingRight = (this.caseSensitive?.width() ?? 0) + (this.wholeWords?.width() ?? 0) + (this.regex?.width() ?? 0) + this._findFilter.width();
+        this.controls.appendChild(this._findFilter.container);
+    }
+    setEnabled(enabled) {
+        super.setEnabled(enabled);
+        if (enabled && !this._filterChecked) {
+            this.regex?.enable();
+        }
+        else {
+            this.regex?.disable();
+        }
+    }
+    updateFilterState(changed) {
+        this._filterChecked = changed;
+        if (this.regex) {
+            if (this._filterChecked) {
+                this.regex.disable();
+                this.regex.domNode.tabIndex = -1;
+                this.regex.domNode.classList.toggle('disabled', true);
+            }
+            else {
+                this.regex.enable();
+                this.regex.domNode.tabIndex = 0;
+                this.regex.domNode.classList.toggle('disabled', false);
+            }
+        }
+        this._findFilter.applyStyles(this._filterChecked);
+    }
+    getCellToolbarActions(menu) {
+        const primary = [];
+        const secondary = [];
+        const result = { primary, secondary };
+        createAndFillInActionBarActions(menu, { shouldForwardArgs: true }, result, g => /^inline/.test(g));
+        return result;
+    }
+}
+let SimpleFindReplaceWidget = class SimpleFindReplaceWidget extends Widget {
+    constructor(_contextViewService, contextKeyService, _configurationService, contextMenuService, instantiationService, hoverService, _state = new FindReplaceState(), _notebookEditor) {
+        super();
+        this._contextViewService = _contextViewService;
+        this._configurationService = _configurationService;
+        this.contextMenuService = contextMenuService;
+        this.instantiationService = instantiationService;
+        this._state = _state;
+        this._notebookEditor = _notebookEditor;
+        this._resizeOriginalWidth = NOTEBOOK_FIND_WIDGET_INITIAL_WIDTH;
+        this._isVisible = false;
+        this._isReplaceVisible = false;
+        this.foundMatch = false;
+        this.cellSelectionDecorationIds = [];
+        this.textSelectionDecorationIds = [];
+        const findFilters = this._configurationService.getValue(NotebookSetting.findFilters) ?? { markupSource: true, markupPreview: true, codeSource: true, codeOutput: true };
+        this._filters = new NotebookFindFilters(findFilters.markupSource, findFilters.markupPreview, findFilters.codeSource, findFilters.codeOutput, { findScopeType: NotebookFindScopeType.None });
+        this._state.change({ filters: this._filters }, false);
+        this._filters.onDidChange(() => {
+            this._state.change({ filters: this._filters }, false);
+        });
+        this._domNode = document.createElement('div');
+        this._domNode.classList.add('simple-fr-find-part-wrapper');
+        this._register(this._state.onFindReplaceStateChange((e) => this._onStateChanged(e)));
+        this._scopedContextKeyService = contextKeyService.createScoped(this._domNode);
+        const progressContainer = dom.$('.find-replace-progress');
+        this._progressBar = new ProgressBar(progressContainer, defaultProgressBarStyles);
+        this._domNode.appendChild(progressContainer);
+        const isInteractiveWindow = contextKeyService.getContextKeyValue('notebookType') === 'interactive';
+        this._toggleReplaceBtn = this._register(new SimpleButton({
+            label: NLS_TOGGLE_REPLACE_MODE_BTN_LABEL,
+            className: 'codicon toggle left',
+            onTrigger: isInteractiveWindow ? () => { } :
+                () => {
+                    this._isReplaceVisible = !this._isReplaceVisible;
+                    this._state.change({ isReplaceRevealed: this._isReplaceVisible }, false);
+                    this._updateReplaceViewDisplay();
+                }
+        }, hoverService));
+        this._toggleReplaceBtn.setEnabled(!isInteractiveWindow);
+        this._toggleReplaceBtn.setExpanded(this._isReplaceVisible);
+        this._domNode.appendChild(this._toggleReplaceBtn.domNode);
+        this._innerFindDomNode = document.createElement('div');
+        this._innerFindDomNode.classList.add('simple-fr-find-part');
+        this._findInput = this._register(new NotebookFindInput(this._filters, this._scopedContextKeyService, this.contextMenuService, this.instantiationService, null, this._contextViewService, {
+            label: NLS_FIND_INPUT_LABEL,
+            placeholder: NLS_FIND_INPUT_PLACEHOLDER,
+            validation: (value) => {
+                if (value.length === 0 || !this._findInput.getRegex()) {
+                    return null;
+                }
+                try {
+                    new RegExp(value);
+                    return null;
+                }
+                catch (e) {
+                    this.foundMatch = false;
+                    this.updateButtons(this.foundMatch);
+                    return { content: e.message };
+                }
+            },
+            flexibleWidth: true,
+            showCommonFindToggles: true,
+            inputBoxStyles: defaultInputBoxStyles,
+            toggleStyles: defaultToggleStyles
+        }));
+        this._updateHistoryDelayer = new Delayer(500);
+        this.oninput(this._findInput.domNode, (e) => {
+            this.foundMatch = this.onInputChanged();
+            this.updateButtons(this.foundMatch);
+            this._delayedUpdateHistory();
+        });
+        this._register(this._findInput.inputBox.onDidChange(() => {
+            this._state.change({ searchString: this._findInput.getValue() }, true);
+        }));
+        this._findInput.setRegex(!!this._state.isRegex);
+        this._findInput.setCaseSensitive(!!this._state.matchCase);
+        this._findInput.setWholeWords(!!this._state.wholeWord);
+        this._register(this._findInput.onDidOptionChange(() => {
+            this._state.change({
+                isRegex: this._findInput.getRegex(),
+                wholeWord: this._findInput.getWholeWords(),
+                matchCase: this._findInput.getCaseSensitive()
+            }, true);
+        }));
+        this._register(this._state.onFindReplaceStateChange(() => {
+            this._findInput.setRegex(this._state.isRegex);
+            this._findInput.setWholeWords(this._state.wholeWord);
+            this._findInput.setCaseSensitive(this._state.matchCase);
+            this._replaceInput.setPreserveCase(this._state.preserveCase);
+        }));
+        this._matchesCount = document.createElement('div');
+        this._matchesCount.className = 'matchesCount';
+        this._updateMatchesCount();
+        this.prevBtn = this._register(new SimpleButton({
+            label: NLS_PREVIOUS_MATCH_BTN_LABEL,
+            icon: findPreviousMatchIcon,
+            onTrigger: () => {
+                this.find(true);
+            }
+        }, hoverService));
+        this.nextBtn = this._register(new SimpleButton({
+            label: NLS_NEXT_MATCH_BTN_LABEL,
+            icon: findNextMatchIcon,
+            onTrigger: () => {
+                this.find(false);
+            }
+        }, hoverService));
+        this.inSelectionToggle = this._register(new Toggle({
+            icon: findSelectionIcon,
+            title: NLS_TOGGLE_SELECTION_FIND_TITLE,
+            isChecked: false,
+            inputActiveOptionBackground: asCssVariable(inputActiveOptionBackground),
+            inputActiveOptionBorder: asCssVariable(inputActiveOptionBorder),
+            inputActiveOptionForeground: asCssVariable(inputActiveOptionForeground),
+        }));
+        this.inSelectionToggle.domNode.style.display = 'inline';
+        this.inSelectionToggle.onChange(() => {
+            const checked = this.inSelectionToggle.checked;
+            if (checked) {
+                const cellSelection = this._notebookEditor.getSelections();
+                const textSelection = this._notebookEditor.getSelectionViewModels()[0].getSelections();
+                if (cellSelection.length > 1 || cellSelection.some(range => range.end - range.start > 1)) {
+                    this._filters.findScope = {
+                        findScopeType: NotebookFindScopeType.Cells,
+                        selectedCellRanges: cellSelection
+                    };
+                    this.setCellSelectionDecorations();
+                }
+                else if (textSelection.length > 1 || textSelection.some(range => range.endLineNumber - range.startLineNumber >= 1)) {
+                    this._filters.findScope = {
+                        findScopeType: NotebookFindScopeType.Text,
+                        selectedCellRanges: cellSelection,
+                        selectedTextRanges: textSelection
+                    };
+                    this.setTextSelectionDecorations(textSelection, this._notebookEditor.getSelectionViewModels()[0]);
+                }
+                else {
+                    this._filters.findScope = {
+                        findScopeType: NotebookFindScopeType.Cells,
+                        selectedCellRanges: cellSelection
+                    };
+                    this.setCellSelectionDecorations();
+                }
+            }
+            else {
+                this._filters.findScope = {
+                    findScopeType: NotebookFindScopeType.None
+                };
+                this.clearCellSelectionDecorations();
+                this.clearTextSelectionDecorations();
+            }
+        });
+        const closeBtn = this._register(new SimpleButton({
+            label: NLS_CLOSE_BTN_LABEL,
+            icon: widgetClose,
+            onTrigger: () => {
+                this.hide();
+            }
+        }, hoverService));
+        this._innerFindDomNode.appendChild(this._findInput.domNode);
+        this._innerFindDomNode.appendChild(this._matchesCount);
+        this._innerFindDomNode.appendChild(this.prevBtn.domNode);
+        this._innerFindDomNode.appendChild(this.nextBtn.domNode);
+        this._innerFindDomNode.appendChild(this.inSelectionToggle.domNode);
+        this._innerFindDomNode.appendChild(closeBtn.domNode);
+        this._domNode.appendChild(this._innerFindDomNode);
+        this.onkeyup(this._innerFindDomNode, e => {
+            if (e.equals(9)) {
+                this.hide();
+                e.preventDefault();
+                return;
+            }
+        });
+        this._focusTracker = this._register(dom.trackFocus(this._domNode));
+        this._register(this._focusTracker.onDidFocus(this.onFocusTrackerFocus.bind(this)));
+        this._register(this._focusTracker.onDidBlur(this.onFocusTrackerBlur.bind(this)));
+        this._findInputFocusTracker = this._register(dom.trackFocus(this._findInput.domNode));
+        this._register(this._findInputFocusTracker.onDidFocus(this.onFindInputFocusTrackerFocus.bind(this)));
+        this._register(this._findInputFocusTracker.onDidBlur(this.onFindInputFocusTrackerBlur.bind(this)));
+        this._register(dom.addDisposableListener(this._innerFindDomNode, 'click', (event) => {
+            event.stopPropagation();
+        }));
+        this._innerReplaceDomNode = document.createElement('div');
+        this._innerReplaceDomNode.classList.add('simple-fr-replace-part');
+        this._replaceInput = this._register(new ContextScopedReplaceInput(null, undefined, {
+            label: NLS_REPLACE_INPUT_LABEL,
+            placeholder: NLS_REPLACE_INPUT_PLACEHOLDER,
+            history: [],
+            inputBoxStyles: defaultInputBoxStyles,
+            toggleStyles: defaultToggleStyles
+        }, contextKeyService, false));
+        this._innerReplaceDomNode.appendChild(this._replaceInput.domNode);
+        this._replaceInputFocusTracker = this._register(dom.trackFocus(this._replaceInput.domNode));
+        this._register(this._replaceInputFocusTracker.onDidFocus(this.onReplaceInputFocusTrackerFocus.bind(this)));
+        this._register(this._replaceInputFocusTracker.onDidBlur(this.onReplaceInputFocusTrackerBlur.bind(this)));
+        this._register(this._replaceInput.inputBox.onDidChange(() => {
+            this._state.change({ replaceString: this._replaceInput.getValue() }, true);
+        }));
+        this._domNode.appendChild(this._innerReplaceDomNode);
+        this._updateReplaceViewDisplay();
+        this._replaceBtn = this._register(new SimpleButton({
+            label: NLS_REPLACE_BTN_LABEL,
+            icon: findReplaceIcon,
+            onTrigger: () => {
+                this.replaceOne();
+            }
+        }, hoverService));
+        this._replaceAllBtn = this._register(new SimpleButton({
+            label: NLS_REPLACE_ALL_BTN_LABEL,
+            icon: findReplaceAllIcon,
+            onTrigger: () => {
+                this.replaceAll();
+            }
+        }, hoverService));
+        this._innerReplaceDomNode.appendChild(this._replaceBtn.domNode);
+        this._innerReplaceDomNode.appendChild(this._replaceAllBtn.domNode);
+        this._resizeSash = this._register(new Sash(this._domNode, { getVerticalSashLeft: () => 0 }, { orientation: 0, size: 2 }));
+        this._register(this._resizeSash.onDidStart(() => {
+            this._resizeOriginalWidth = this._getDomWidth();
+        }));
+        this._register(this._resizeSash.onDidChange((evt) => {
+            let width = this._resizeOriginalWidth + evt.startX - evt.currentX;
+            if (width < NOTEBOOK_FIND_WIDGET_INITIAL_WIDTH) {
+                width = NOTEBOOK_FIND_WIDGET_INITIAL_WIDTH;
+            }
+            const maxWidth = this._getMaxWidth();
+            if (width > maxWidth) {
+                width = maxWidth;
+            }
+            this._domNode.style.width = `${width}px`;
+            if (this._isReplaceVisible) {
+                this._replaceInput.width = dom.getTotalWidth(this._findInput.domNode);
+            }
+            this._findInput.inputBox.layout();
+        }));
+        this._register(this._resizeSash.onDidReset(() => {
+            const currentWidth = this._getDomWidth();
+            let width = NOTEBOOK_FIND_WIDGET_INITIAL_WIDTH;
+            if (currentWidth <= NOTEBOOK_FIND_WIDGET_INITIAL_WIDTH) {
+                width = this._getMaxWidth();
+            }
+            this._domNode.style.width = `${width}px`;
+            if (this._isReplaceVisible) {
+                this._replaceInput.width = dom.getTotalWidth(this._findInput.domNode);
+            }
+            this._findInput.inputBox.layout();
+        }));
+    }
+    _getMaxWidth() {
+        return this._notebookEditor.getLayoutInfo().width - 64;
+    }
+    _getDomWidth() {
+        return dom.getTotalWidth(this._domNode) - (NOTEBOOK_FIND_WIDGET_INITIAL_HORIZONTAL_PADDING * 2);
+    }
+    getCellToolbarActions(menu) {
+        const primary = [];
+        const secondary = [];
+        const result = { primary, secondary };
+        createAndFillInActionBarActions(menu, { shouldForwardArgs: true }, result, g => /^inline/.test(g));
+        return result;
+    }
+    get inputValue() {
+        return this._findInput.getValue();
+    }
+    get replaceValue() {
+        return this._replaceInput.getValue();
+    }
+    get replacePattern() {
+        if (this._state.isRegex) {
+            return parseReplaceString(this.replaceValue);
+        }
+        return ReplacePattern.fromStaticValue(this.replaceValue);
+    }
+    get focusTracker() {
+        return this._focusTracker;
+    }
+    _onStateChanged(e) {
+        this._updateButtons();
+        this._updateMatchesCount();
+    }
+    _updateButtons() {
+        this._findInput.setEnabled(this._isVisible);
+        this._replaceInput.setEnabled(this._isVisible && this._isReplaceVisible);
+        const findInputIsNonEmpty = (this._state.searchString.length > 0);
+        this._replaceBtn.setEnabled(this._isVisible && this._isReplaceVisible && findInputIsNonEmpty);
+        this._replaceAllBtn.setEnabled(this._isVisible && this._isReplaceVisible && findInputIsNonEmpty);
+        this._domNode.classList.toggle('replaceToggled', this._isReplaceVisible);
+        this._toggleReplaceBtn.setExpanded(this._isReplaceVisible);
+        this.foundMatch = this._state.matchesCount > 0;
+        this.updateButtons(this.foundMatch);
+    }
+    setCellSelectionDecorations() {
+        const cellHandles = [];
+        this._notebookEditor.getSelectionViewModels().forEach(viewModel => {
+            cellHandles.push(viewModel.handle);
+        });
+        const decorations = [];
+        for (const handle of cellHandles) {
+            decorations.push({
+                handle: handle,
+                options: { className: 'nb-multiCellHighlight', outputClassName: 'nb-multiCellHighlight' }
+            });
+        }
+        this.cellSelectionDecorationIds = this._notebookEditor.deltaCellDecorations([], decorations);
+    }
+    clearCellSelectionDecorations() {
+        this._notebookEditor.deltaCellDecorations(this.cellSelectionDecorationIds, []);
+    }
+    setTextSelectionDecorations(textRanges, cell) {
+        this._notebookEditor.changeModelDecorations(changeAccessor => {
+            const decorations = [];
+            for (const range of textRanges) {
+                decorations.push({
+                    ownerId: cell.handle,
+                    decorations: [{
+                            range: range,
+                            options: {
+                                description: 'text search range for notebook search scope',
+                                isWholeLine: true,
+                                className: 'nb-findScope'
+                            }
+                        }]
+                });
+            }
+            this.textSelectionDecorationIds = changeAccessor.deltaDecorations([], decorations);
+        });
+    }
+    clearTextSelectionDecorations() {
+        this._notebookEditor.changeModelDecorations(changeAccessor => {
+            changeAccessor.deltaDecorations(this.textSelectionDecorationIds, []);
+        });
+    }
+    _updateMatchesCount() {
+    }
+    dispose() {
+        super.dispose();
+        this._domNode.remove();
+    }
+    getDomNode() {
+        return this._domNode;
+    }
+    reveal(initialInput) {
+        if (initialInput) {
+            this._findInput.setValue(initialInput);
+        }
+        if (this._isVisible) {
+            this._findInput.select();
+            return;
+        }
+        this._isVisible = true;
+        this.updateButtons(this.foundMatch);
+        setTimeout(() => {
+            this._domNode.classList.add('visible', 'visible-transition');
+            this._domNode.setAttribute('aria-hidden', 'false');
+            this._findInput.select();
+        }, 0);
+    }
+    focus() {
+        this._findInput.focus();
+    }
+    show(initialInput, options) {
+        if (initialInput) {
+            this._findInput.setValue(initialInput);
+        }
+        this._isVisible = true;
+        setTimeout(() => {
+            this._domNode.classList.add('visible', 'visible-transition');
+            this._domNode.setAttribute('aria-hidden', 'false');
+            if (options?.focus ?? true) {
+                this.focus();
+            }
+        }, 0);
+    }
+    showWithReplace(initialInput, replaceInput) {
+        if (initialInput) {
+            this._findInput.setValue(initialInput);
+        }
+        if (replaceInput) {
+            this._replaceInput.setValue(replaceInput);
+        }
+        this._isVisible = true;
+        this._isReplaceVisible = true;
+        this._state.change({ isReplaceRevealed: this._isReplaceVisible }, false);
+        this._updateReplaceViewDisplay();
+        setTimeout(() => {
+            this._domNode.classList.add('visible', 'visible-transition');
+            this._domNode.setAttribute('aria-hidden', 'false');
+            this._updateButtons();
+            this._replaceInput.focus();
+        }, 0);
+    }
+    _updateReplaceViewDisplay() {
+        if (this._isReplaceVisible) {
+            this._innerReplaceDomNode.style.display = 'flex';
+        }
+        else {
+            this._innerReplaceDomNode.style.display = 'none';
+        }
+        this._replaceInput.width = dom.getTotalWidth(this._findInput.domNode);
+    }
+    hide() {
+        if (this._isVisible) {
+            this.inSelectionToggle.checked = false;
+            this._notebookEditor.deltaCellDecorations(this.cellSelectionDecorationIds, []);
+            this._notebookEditor.changeModelDecorations(changeAccessor => {
+                changeAccessor.deltaDecorations(this.textSelectionDecorationIds, []);
+            });
+            this._domNode.classList.remove('visible-transition');
+            this._domNode.setAttribute('aria-hidden', 'true');
+            setTimeout(() => {
+                this._isVisible = false;
+                this.updateButtons(this.foundMatch);
+                this._domNode.classList.remove('visible');
+            }, 200);
+        }
+    }
+    _delayedUpdateHistory() {
+        this._updateHistoryDelayer.trigger(this._updateHistory.bind(this));
+    }
+    _updateHistory() {
+        this._findInput.inputBox.addToHistory();
+    }
+    _getRegexValue() {
+        return this._findInput.getRegex();
+    }
+    _getWholeWordValue() {
+        return this._findInput.getWholeWords();
+    }
+    _getCaseSensitiveValue() {
+        return this._findInput.getCaseSensitive();
+    }
+    updateButtons(foundMatch) {
+        const hasInput = this.inputValue.length > 0;
+        this.prevBtn.setEnabled(this._isVisible && hasInput && foundMatch);
+        this.nextBtn.setEnabled(this._isVisible && hasInput && foundMatch);
+    }
+};
+SimpleFindReplaceWidget = __decorate([
+    __param(0, IContextViewService),
+    __param(1, IContextKeyService),
+    __param(2, IConfigurationService),
+    __param(3, IContextMenuService),
+    __param(4, IInstantiationService),
+    __param(5, IHoverService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, FindReplaceState, Object])
+], SimpleFindReplaceWidget);
+export { SimpleFindReplaceWidget };
+registerThemingParticipant((theme, collector) => {
+    collector.addRule(`
 	.notebook-editor {
-		--notebook-find-width: ${f}px;
-		--notebook-find-horizontal-padding: ${R}px;
+		--notebook-find-width: ${NOTEBOOK_FIND_WIDGET_INITIAL_WIDTH}px;
+		--notebook-find-horizontal-padding: ${NOTEBOOK_FIND_WIDGET_INITIAL_HORIZONTAL_PADDING}px;
 	}
-	`)});export{We as NotebookFindInput,Pe as NotebookFindInputFilterButton,v as SimpleFindReplaceWidget,Zt as findFilterButton};
+	`);
+});

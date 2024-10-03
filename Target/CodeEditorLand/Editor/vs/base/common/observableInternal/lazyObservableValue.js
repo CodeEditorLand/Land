@@ -1,1 +1,108 @@
-import"./commonFacade/deps.js";import{BaseObservable as i,TransactionImpl as o}from"./base.js";import"./debugName.js";class m extends i{constructor(e,t,a){super();this._debugNameData=e;this._equalityComparator=a;this._value=t}_value;_isUpToDate=!0;_deltas=[];get debugName(){return this._debugNameData.getDebugName(this)??"LazyObservableValue"}get(){return this._update(),this._value}_update(){if(!this._isUpToDate)if(this._isUpToDate=!0,this._deltas.length>0){for(const e of this.observers)for(const t of this._deltas)e.handleChange(this,t);this._deltas.length=0}else for(const e of this.observers)e.handleChange(this,void 0)}_updateCounter=0;_beginUpdate(){if(this._updateCounter++,this._updateCounter===1)for(const e of this.observers)e.beginUpdate(this)}_endUpdate(){if(this._updateCounter--,this._updateCounter===0){this._update();const e=[...this.observers];for(const t of e)t.endUpdate(this)}}addObserver(e){const t=!this.observers.has(e)&&this._updateCounter>0;super.addObserver(e),t&&e.beginUpdate(this)}removeObserver(e){const t=this.observers.has(e)&&this._updateCounter>0;super.removeObserver(e),t&&e.endUpdate(this)}set(e,t,a){if(a===void 0&&this._equalityComparator(this._value,e))return;let s;t||(t=s=new o(()=>{},()=>`Setting ${this.debugName}`));try{if(this._isUpToDate=!1,this._setValue(e),a!==void 0&&this._deltas.push(a),t.updateObserver({beginUpdate:()=>this._beginUpdate(),endUpdate:()=>this._endUpdate(),handleChange:(r,h)=>{},handlePossibleChange:r=>{}},this),this._updateCounter>1)for(const r of this.observers)r.handlePossibleChange(this)}finally{s&&s.finish()}}toString(){return`${this.debugName}: ${this._value}`}_setValue(e){this._value=e}}export{m as LazyObservableValue};
+import { BaseObservable, TransactionImpl } from './base.js';
+export class LazyObservableValue extends BaseObservable {
+    get debugName() {
+        return this._debugNameData.getDebugName(this) ?? 'LazyObservableValue';
+    }
+    constructor(_debugNameData, initialValue, _equalityComparator) {
+        super();
+        this._debugNameData = _debugNameData;
+        this._equalityComparator = _equalityComparator;
+        this._isUpToDate = true;
+        this._deltas = [];
+        this._updateCounter = 0;
+        this._value = initialValue;
+    }
+    get() {
+        this._update();
+        return this._value;
+    }
+    _update() {
+        if (this._isUpToDate) {
+            return;
+        }
+        this._isUpToDate = true;
+        if (this._deltas.length > 0) {
+            for (const observer of this.observers) {
+                for (const change of this._deltas) {
+                    observer.handleChange(this, change);
+                }
+            }
+            this._deltas.length = 0;
+        }
+        else {
+            for (const observer of this.observers) {
+                observer.handleChange(this, undefined);
+            }
+        }
+    }
+    _beginUpdate() {
+        this._updateCounter++;
+        if (this._updateCounter === 1) {
+            for (const observer of this.observers) {
+                observer.beginUpdate(this);
+            }
+        }
+    }
+    _endUpdate() {
+        this._updateCounter--;
+        if (this._updateCounter === 0) {
+            this._update();
+            const observers = [...this.observers];
+            for (const r of observers) {
+                r.endUpdate(this);
+            }
+        }
+    }
+    addObserver(observer) {
+        const shouldCallBeginUpdate = !this.observers.has(observer) && this._updateCounter > 0;
+        super.addObserver(observer);
+        if (shouldCallBeginUpdate) {
+            observer.beginUpdate(this);
+        }
+    }
+    removeObserver(observer) {
+        const shouldCallEndUpdate = this.observers.has(observer) && this._updateCounter > 0;
+        super.removeObserver(observer);
+        if (shouldCallEndUpdate) {
+            observer.endUpdate(this);
+        }
+    }
+    set(value, tx, change) {
+        if (change === undefined && this._equalityComparator(this._value, value)) {
+            return;
+        }
+        let _tx;
+        if (!tx) {
+            tx = _tx = new TransactionImpl(() => { }, () => `Setting ${this.debugName}`);
+        }
+        try {
+            this._isUpToDate = false;
+            this._setValue(value);
+            if (change !== undefined) {
+                this._deltas.push(change);
+            }
+            tx.updateObserver({
+                beginUpdate: () => this._beginUpdate(),
+                endUpdate: () => this._endUpdate(),
+                handleChange: (observable, change) => { },
+                handlePossibleChange: (observable) => { },
+            }, this);
+            if (this._updateCounter > 1) {
+                for (const observer of this.observers) {
+                    observer.handlePossibleChange(this);
+                }
+            }
+        }
+        finally {
+            if (_tx) {
+                _tx.finish();
+            }
+        }
+    }
+    toString() {
+        return `${this.debugName}: ${this._value}`;
+    }
+    _setValue(newValue) {
+        this._value = newValue;
+    }
+}

@@ -1,1 +1,106 @@
-var b=Object.defineProperty;var k=Object.getOwnPropertyDescriptor;var a=(n,i,t,o)=>{for(var e=o>1?void 0:o?k(i,t):i,r=n.length-1,l;r>=0;r--)(l=n[r])&&(e=(o?l(i,t,e):l(e))||e);return o&&e&&b(i,t,e),e},p=(n,i)=>(t,o)=>i(t,o,n);import{RunOnceScheduler as m}from"../../../../../../base/common/async.js";import{Disposable as f}from"../../../../../../base/common/lifecycle.js";import{IAccessibilityService as E}from"../../../../../../platform/accessibility/common/accessibility.js";import{CellEditState as h,RenderOutputType as v}from"../../notebookBrowser.js";import{registerNotebookContribution as C}from"../../notebookEditorExtensions.js";import{outputDisplayLimit as I}from"../../viewModel/codeCellViewModel.js";import{CellKind as d}from"../../../common/notebookCommon.js";import{cellRangesToIndexes as g}from"../../../common/notebookRange.js";import{INotebookService as M}from"../../../common/notebookService.js";let s=class extends f{constructor(t,o,e){super();this._notebookEditor=t;this._notebookService=o;this._warmupViewport=new m(()=>this._warmupViewportNow(),200),this._register(this._warmupViewport),this._register(this._notebookEditor.onDidScroll(()=>{this._warmupViewport.schedule()})),this._warmupDocument=new m(()=>this._warmupDocumentNow(),200),this._register(this._warmupDocument),this._register(this._notebookEditor.onDidAttachViewModel(()=>{this._notebookEditor.hasModel()&&this._warmupDocument?.schedule()})),this._notebookEditor.hasModel()&&this._warmupDocument?.schedule()}static id="workbench.notebook.viewportWarmup";_warmupViewport;_warmupDocument=null;_warmupDocumentNow(){if(this._notebookEditor.hasModel())for(let t=0;t<this._notebookEditor.getLength();t++){const o=this._notebookEditor.cellAt(t);o?.cellKind===d.Markup&&o?.getEditState()===h.Preview&&!o.isInputCollapsed||o?.cellKind===d.Code&&this._warmupCodeCell(o)}}_warmupViewportNow(){if(this._notebookEditor.isDisposed||!this._notebookEditor.hasModel())return;const t=this._notebookEditor.getVisibleRangesPlusViewportAboveAndBelow();g(t).forEach(o=>{const e=this._notebookEditor.cellAt(o);e?.cellKind===d.Markup&&e?.getEditState()===h.Preview&&!e.isInputCollapsed?this._notebookEditor.createMarkupPreview(e):e?.cellKind===d.Code&&this._warmupCodeCell(e)})}_warmupCodeCell(t){if(t.isOutputCollapsed)return;const o=t.outputsViewModels;for(const e of o.slice(0,I)){const[r,l]=e.resolveMimeTypes(this._notebookEditor.textModel,void 0);if(!r.find(w=>w.isTrusted)||r.length===0)continue;const u=r[l];if(!u||!this._notebookEditor.hasModel())return;const c=this._notebookService.getRendererInfo(u.rendererId);if(!c)return;const _={type:v.Extension,renderer:c,source:e,mimeType:u.mimeType};this._notebookEditor.createOutput(t,_,0,!0)}}};s=a([p(1,M),p(2,E)],s),C(s.id,s);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { RunOnceScheduler } from '../../../../../../base/common/async.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+import { IAccessibilityService } from '../../../../../../platform/accessibility/common/accessibility.js';
+import { CellEditState } from '../../notebookBrowser.js';
+import { registerNotebookContribution } from '../../notebookEditorExtensions.js';
+import { outputDisplayLimit } from '../../viewModel/codeCellViewModel.js';
+import { CellKind } from '../../../common/notebookCommon.js';
+import { cellRangesToIndexes } from '../../../common/notebookRange.js';
+import { INotebookService } from '../../../common/notebookService.js';
+let NotebookViewportContribution = class NotebookViewportContribution extends Disposable {
+    static { this.id = 'workbench.notebook.viewportWarmup'; }
+    constructor(_notebookEditor, _notebookService, accessibilityService) {
+        super();
+        this._notebookEditor = _notebookEditor;
+        this._notebookService = _notebookService;
+        this._warmupDocument = null;
+        this._warmupViewport = new RunOnceScheduler(() => this._warmupViewportNow(), 200);
+        this._register(this._warmupViewport);
+        this._register(this._notebookEditor.onDidScroll(() => {
+            this._warmupViewport.schedule();
+        }));
+        this._warmupDocument = new RunOnceScheduler(() => this._warmupDocumentNow(), 200);
+        this._register(this._warmupDocument);
+        this._register(this._notebookEditor.onDidAttachViewModel(() => {
+            if (this._notebookEditor.hasModel()) {
+                this._warmupDocument?.schedule();
+            }
+        }));
+        if (this._notebookEditor.hasModel()) {
+            this._warmupDocument?.schedule();
+        }
+    }
+    _warmupDocumentNow() {
+        if (this._notebookEditor.hasModel()) {
+            for (let i = 0; i < this._notebookEditor.getLength(); i++) {
+                const cell = this._notebookEditor.cellAt(i);
+                if (cell?.cellKind === CellKind.Markup && cell?.getEditState() === CellEditState.Preview && !cell.isInputCollapsed) {
+                }
+                else if (cell?.cellKind === CellKind.Code) {
+                    this._warmupCodeCell(cell);
+                }
+            }
+        }
+    }
+    _warmupViewportNow() {
+        if (this._notebookEditor.isDisposed) {
+            return;
+        }
+        if (!this._notebookEditor.hasModel()) {
+            return;
+        }
+        const visibleRanges = this._notebookEditor.getVisibleRangesPlusViewportAboveAndBelow();
+        cellRangesToIndexes(visibleRanges).forEach(index => {
+            const cell = this._notebookEditor.cellAt(index);
+            if (cell?.cellKind === CellKind.Markup && cell?.getEditState() === CellEditState.Preview && !cell.isInputCollapsed) {
+                this._notebookEditor.createMarkupPreview(cell);
+            }
+            else if (cell?.cellKind === CellKind.Code) {
+                this._warmupCodeCell(cell);
+            }
+        });
+    }
+    _warmupCodeCell(viewCell) {
+        if (viewCell.isOutputCollapsed) {
+            return;
+        }
+        const outputs = viewCell.outputsViewModels;
+        for (const output of outputs.slice(0, outputDisplayLimit)) {
+            const [mimeTypes, pick] = output.resolveMimeTypes(this._notebookEditor.textModel, undefined);
+            if (!mimeTypes.find(mimeType => mimeType.isTrusted) || mimeTypes.length === 0) {
+                continue;
+            }
+            const pickedMimeTypeRenderer = mimeTypes[pick];
+            if (!pickedMimeTypeRenderer) {
+                return;
+            }
+            if (!this._notebookEditor.hasModel()) {
+                return;
+            }
+            const renderer = this._notebookService.getRendererInfo(pickedMimeTypeRenderer.rendererId);
+            if (!renderer) {
+                return;
+            }
+            const result = { type: 1, renderer, source: output, mimeType: pickedMimeTypeRenderer.mimeType };
+            this._notebookEditor.createOutput(viewCell, result, 0, true);
+        }
+    }
+};
+NotebookViewportContribution = __decorate([
+    __param(1, INotebookService),
+    __param(2, IAccessibilityService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], NotebookViewportContribution);
+registerNotebookContribution(NotebookViewportContribution.id, NotebookViewportContribution);

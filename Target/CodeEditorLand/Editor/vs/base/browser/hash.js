@@ -1,1 +1,14 @@
-import{VSBuffer as o}from"../common/buffer.js";import{StringSHA1 as s,toHexString as n}from"../common/hash.js";async function u(e){if(globalThis?.crypto?.subtle){const t=o.fromString(e,{dontUseNodeBuffer:!0}).buffer,r=await globalThis.crypto.subtle.digest({name:"sha-1"},t);return n(r)}else{const t=new s;return t.update(e),t.digest()}}export{u as sha1Hex};
+import { VSBuffer } from '../common/buffer.js';
+import { StringSHA1, toHexString } from '../common/hash.js';
+export async function sha1Hex(str) {
+    if (globalThis?.crypto?.subtle) {
+        const buffer = VSBuffer.fromString(str, { dontUseNodeBuffer: true }).buffer;
+        const hash = await globalThis.crypto.subtle.digest({ name: 'sha-1' }, buffer);
+        return toHexString(hash);
+    }
+    else {
+        const computer = new StringSHA1();
+        computer.update(str);
+        return computer.digest();
+    }
+}

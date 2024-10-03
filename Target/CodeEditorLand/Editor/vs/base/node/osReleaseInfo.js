@@ -1,1 +1,55 @@
-import{constants as l,promises as f}from"fs";import{createInterface as I}from"readline";import*as a from"../common/platform.js";async function m(o){if(a.isMacintosh||a.isWindows)return;let n;for(const i of["/etc/os-release","/usr/lib/os-release","/etc/lsb-release"])try{n=await f.open(i,l.R_OK);break}catch{}if(!n){o("Unable to retrieve release information from known identifier paths.");return}try{const i=new Set(["ID","DISTRIB_ID","ID_LIKE","VERSION_ID","DISTRIB_RELEASE"]),s={id:"unknown"};for await(const r of I({input:n.createReadStream(),crlfDelay:1/0})){if(!r.includes("="))continue;const e=r.split("=")[0].toUpperCase().trim();if(i.has(e)){const t=r.split("=")[1].replace(/"/g,"").toLowerCase().trim();e==="ID"||e==="DISTRIB_ID"?s.id=t:e==="ID_LIKE"?s.id_like=t:(e==="VERSION_ID"||e==="DISTRIB_RELEASE")&&(s.version_id=t)}}return s}catch(i){o(i)}}export{m as getOSReleaseInfo};
+import { constants as FSConstants, promises as FSPromises } from 'fs';
+import { createInterface as readLines } from 'readline';
+import * as Platform from '../common/platform.js';
+export async function getOSReleaseInfo(errorLogger) {
+    if (Platform.isMacintosh || Platform.isWindows) {
+        return;
+    }
+    let handle;
+    for (const filePath of ['/etc/os-release', '/usr/lib/os-release', '/etc/lsb-release']) {
+        try {
+            handle = await FSPromises.open(filePath, FSConstants.R_OK);
+            break;
+        }
+        catch (err) { }
+    }
+    if (!handle) {
+        errorLogger('Unable to retrieve release information from known identifier paths.');
+        return;
+    }
+    try {
+        const osReleaseKeys = new Set([
+            'ID',
+            'DISTRIB_ID',
+            'ID_LIKE',
+            'VERSION_ID',
+            'DISTRIB_RELEASE',
+        ]);
+        const releaseInfo = {
+            id: 'unknown'
+        };
+        for await (const line of readLines({ input: handle.createReadStream(), crlfDelay: Infinity })) {
+            if (!line.includes('=')) {
+                continue;
+            }
+            const key = line.split('=')[0].toUpperCase().trim();
+            if (osReleaseKeys.has(key)) {
+                const value = line.split('=')[1].replace(/"/g, '').toLowerCase().trim();
+                if (key === 'ID' || key === 'DISTRIB_ID') {
+                    releaseInfo.id = value;
+                }
+                else if (key === 'ID_LIKE') {
+                    releaseInfo.id_like = value;
+                }
+                else if (key === 'VERSION_ID' || key === 'DISTRIB_RELEASE') {
+                    releaseInfo.version_id = value;
+                }
+            }
+        }
+        return releaseInfo;
+    }
+    catch (err) {
+        errorLogger(err);
+    }
+    return;
+}

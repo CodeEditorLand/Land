@@ -1,1 +1,78 @@
-var y=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var d=(o,e,n,i)=>{for(var t=i>1?void 0:i?w(e,n):e,r=o.length-1,l;r>=0;r--)(l=o[r])&&(t=(i?l(e,n,t):l(t))||t);return i&&t&&y(e,n,t),t},v=(o,e)=>(n,i)=>e(n,i,o);import"../../../../base/browser/dom.js";import"../../../../base/browser/mouseEvent.js";import"../../../../base/browser/window.js";import{equals as p}from"../../../../base/common/arrays.js";import"../../../../base/common/event.js";import"../../../../base/common/lifecycle.js";import{isEqual as b}from"../../../../base/common/resources.js";import"../../../../base/common/uri.js";import{generateUuid as g}from"../../../../base/common/uuid.js";import{RawContextKey as c}from"../../../../platform/contextkey/common/contextkey.js";import"../../../../platform/extensions/common/extensions.js";import{createDecorator as I}from"../../../../platform/instantiation/common/instantiation.js";import{IStorageService as m,StorageScope as f,StorageTarget as u}from"../../../../platform/storage/common/storage.js";import"../../../../platform/webview/common/webviewPortMapping.js";import{Memento as W}from"../../../common/memento.js";const z=new c("webviewFindWidgetVisible",!1),Q=new c("webviewFindWidgetFocused",!1),Z=new c("webviewFindWidgetEnabled",!1),$=I("webviewService");var E=(i=>(i.NotebookRenderer="notebookRenderer",i.CustomEditor="customEditor",i.WebviewView="webviewView",i))(E||{});function ee(o,e){return o.allowMultipleAPIAcquire===e.allowMultipleAPIAcquire&&o.allowScripts===e.allowScripts&&o.allowForms===e.allowForms&&p(o.localResourceRoots,e.localResourceRoots,b)&&p(o.portMapping,e.portMapping,(n,i)=>n.extensionHostPort===i.extensionHostPort&&n.webviewPort===i.webviewPort)&&x(o,e)}function x(o,e){return o.enableCommandUris===e.enableCommandUris?!0:Array.isArray(o.enableCommandUris)&&Array.isArray(e.enableCommandUris)?p(o.enableCommandUris,e.enableCommandUris):!1}let a=class{_memento;_state;constructor(e,n){this._memento=new W(e,n),this._state=this._memento.getMemento(f.APPLICATION,u.MACHINE)}getOrigin(e,n){const i=this._getKey(e,n),t=this._state[i];if(t&&typeof t=="string")return t;const r=g();return this._state[i]=r,this._memento.saveMemento(),r}_getKey(e,n){return JSON.stringify({viewType:e,key:n})}};a=d([v(1,m)],a);let s=class{_store;constructor(e,n){this._store=new a(e,n)}getOrigin(e,n){return this._store.getOrigin(e,n.value)}};s=d([v(1,m)],s);export{s as ExtensionKeyedWebviewOriginStore,$ as IWebviewService,Z as KEYBINDING_CONTEXT_WEBVIEW_FIND_WIDGET_ENABLED,Q as KEYBINDING_CONTEXT_WEBVIEW_FIND_WIDGET_FOCUSED,z as KEYBINDING_CONTEXT_WEBVIEW_FIND_WIDGET_VISIBLE,E as WebviewContentPurpose,a as WebviewOriginStore,ee as areWebviewContentOptionsEqual};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { equals } from '../../../../base/common/arrays.js';
+import { isEqual } from '../../../../base/common/resources.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
+import { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { Memento } from '../../../common/memento.js';
+export const KEYBINDING_CONTEXT_WEBVIEW_FIND_WIDGET_VISIBLE = new RawContextKey('webviewFindWidgetVisible', false);
+export const KEYBINDING_CONTEXT_WEBVIEW_FIND_WIDGET_FOCUSED = new RawContextKey('webviewFindWidgetFocused', false);
+export const KEYBINDING_CONTEXT_WEBVIEW_FIND_WIDGET_ENABLED = new RawContextKey('webviewFindWidgetEnabled', false);
+export const IWebviewService = createDecorator('webviewService');
+export function areWebviewContentOptionsEqual(a, b) {
+    return (a.allowMultipleAPIAcquire === b.allowMultipleAPIAcquire
+        && a.allowScripts === b.allowScripts
+        && a.allowForms === b.allowForms
+        && equals(a.localResourceRoots, b.localResourceRoots, isEqual)
+        && equals(a.portMapping, b.portMapping, (a, b) => a.extensionHostPort === b.extensionHostPort && a.webviewPort === b.webviewPort)
+        && areEnableCommandUrisEqual(a, b));
+}
+function areEnableCommandUrisEqual(a, b) {
+    if (a.enableCommandUris === b.enableCommandUris) {
+        return true;
+    }
+    if (Array.isArray(a.enableCommandUris) && Array.isArray(b.enableCommandUris)) {
+        return equals(a.enableCommandUris, b.enableCommandUris);
+    }
+    return false;
+}
+let WebviewOriginStore = class WebviewOriginStore {
+    constructor(rootStorageKey, storageService) {
+        this._memento = new Memento(rootStorageKey, storageService);
+        this._state = this._memento.getMemento(-1, 1);
+    }
+    getOrigin(viewType, additionalKey) {
+        const key = this._getKey(viewType, additionalKey);
+        const existing = this._state[key];
+        if (existing && typeof existing === 'string') {
+            return existing;
+        }
+        const newOrigin = generateUuid();
+        this._state[key] = newOrigin;
+        this._memento.saveMemento();
+        return newOrigin;
+    }
+    _getKey(viewType, additionalKey) {
+        return JSON.stringify({ viewType, key: additionalKey });
+    }
+};
+WebviewOriginStore = __decorate([
+    __param(1, IStorageService),
+    __metadata("design:paramtypes", [String, Object])
+], WebviewOriginStore);
+export { WebviewOriginStore };
+let ExtensionKeyedWebviewOriginStore = class ExtensionKeyedWebviewOriginStore {
+    constructor(rootStorageKey, storageService) {
+        this._store = new WebviewOriginStore(rootStorageKey, storageService);
+    }
+    getOrigin(viewType, extId) {
+        return this._store.getOrigin(viewType, extId.value);
+    }
+};
+ExtensionKeyedWebviewOriginStore = __decorate([
+    __param(1, IStorageService),
+    __metadata("design:paramtypes", [String, Object])
+], ExtensionKeyedWebviewOriginStore);
+export { ExtensionKeyedWebviewOriginStore };

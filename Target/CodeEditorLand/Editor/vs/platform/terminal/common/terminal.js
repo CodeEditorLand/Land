@@ -1,1 +1,66 @@
-import"../../../base/common/event.js";import"../../../base/common/platform.js";import"../../../base/common/uri.js";import{createDecorator as l}from"../../instantiation/common/instantiation.js";import"./capabilities/capabilities.js";import"./terminalProcess.js";import"../../../base/common/themables.js";import"./environmentVariable.js";import{RawContextKey as c}from"../../contextkey/common/contextkey.js";import"../../workspace/common/workspace.js";import{Registry as d}from"../../registry/common/platform.js";import"../../log/common/log.js";const te=new c("terminalTabFocusMode",!1,!0);var m=(n=>(n.AutomationProfile="terminal.integrated.automationProfile.",n.DefaultProfile="terminal.integrated.defaultProfile.",n.Profiles="terminal.integrated.profiles.",n))(m||{}),u=(e=>(e.SendKeybindingsToShell="terminal.integrated.sendKeybindingsToShell",e.AutomationProfileLinux="terminal.integrated.automationProfile.linux",e.AutomationProfileMacOs="terminal.integrated.automationProfile.osx",e.AutomationProfileWindows="terminal.integrated.automationProfile.windows",e.ProfilesWindows="terminal.integrated.profiles.windows",e.ProfilesMacOs="terminal.integrated.profiles.osx",e.ProfilesLinux="terminal.integrated.profiles.linux",e.DefaultProfileLinux="terminal.integrated.defaultProfile.linux",e.DefaultProfileMacOs="terminal.integrated.defaultProfile.osx",e.DefaultProfileWindows="terminal.integrated.defaultProfile.windows",e.UseWslProfiles="terminal.integrated.useWslProfiles",e.TabsDefaultColor="terminal.integrated.tabs.defaultColor",e.TabsDefaultIcon="terminal.integrated.tabs.defaultIcon",e.TabsEnabled="terminal.integrated.tabs.enabled",e.TabsEnableAnimation="terminal.integrated.tabs.enableAnimation",e.TabsHideCondition="terminal.integrated.tabs.hideCondition",e.TabsShowActiveTerminal="terminal.integrated.tabs.showActiveTerminal",e.TabsShowActions="terminal.integrated.tabs.showActions",e.TabsLocation="terminal.integrated.tabs.location",e.TabsFocusMode="terminal.integrated.tabs.focusMode",e.MacOptionIsMeta="terminal.integrated.macOptionIsMeta",e.MacOptionClickForcesSelection="terminal.integrated.macOptionClickForcesSelection",e.AltClickMovesCursor="terminal.integrated.altClickMovesCursor",e.CopyOnSelection="terminal.integrated.copyOnSelection",e.EnableMultiLinePasteWarning="terminal.integrated.enableMultiLinePasteWarning",e.DrawBoldTextInBrightColors="terminal.integrated.drawBoldTextInBrightColors",e.FontFamily="terminal.integrated.fontFamily",e.FontSize="terminal.integrated.fontSize",e.LetterSpacing="terminal.integrated.letterSpacing",e.LineHeight="terminal.integrated.lineHeight",e.MinimumContrastRatio="terminal.integrated.minimumContrastRatio",e.TabStopWidth="terminal.integrated.tabStopWidth",e.FastScrollSensitivity="terminal.integrated.fastScrollSensitivity",e.MouseWheelScrollSensitivity="terminal.integrated.mouseWheelScrollSensitivity",e.BellDuration="terminal.integrated.bellDuration",e.FontWeight="terminal.integrated.fontWeight",e.FontWeightBold="terminal.integrated.fontWeightBold",e.CursorBlinking="terminal.integrated.cursorBlinking",e.CursorStyle="terminal.integrated.cursorStyle",e.CursorStyleInactive="terminal.integrated.cursorStyleInactive",e.CursorWidth="terminal.integrated.cursorWidth",e.Scrollback="terminal.integrated.scrollback",e.DetectLocale="terminal.integrated.detectLocale",e.DefaultLocation="terminal.integrated.defaultLocation",e.GpuAcceleration="terminal.integrated.gpuAcceleration",e.TerminalTitleSeparator="terminal.integrated.tabs.separator",e.TerminalTitle="terminal.integrated.tabs.title",e.TerminalDescription="terminal.integrated.tabs.description",e.RightClickBehavior="terminal.integrated.rightClickBehavior",e.MiddleClickBehavior="terminal.integrated.middleClickBehavior",e.Cwd="terminal.integrated.cwd",e.ConfirmOnExit="terminal.integrated.confirmOnExit",e.ConfirmOnKill="terminal.integrated.confirmOnKill",e.EnableBell="terminal.integrated.enableBell",e.EnableVisualBell="terminal.integrated.enableVisualBell",e.CommandsToSkipShell="terminal.integrated.commandsToSkipShell",e.AllowChords="terminal.integrated.allowChords",e.AllowMnemonics="terminal.integrated.allowMnemonics",e.TabFocusMode="terminal.integrated.tabFocusMode",e.EnvMacOs="terminal.integrated.env.osx",e.EnvLinux="terminal.integrated.env.linux",e.EnvWindows="terminal.integrated.env.windows",e.EnvironmentChangesIndicator="terminal.integrated.environmentChangesIndicator",e.EnvironmentChangesRelaunch="terminal.integrated.environmentChangesRelaunch",e.ExperimentalWindowsUseConptyDll="terminal.integrated.experimental.windowsUseConptyDll",e.ShowExitAlert="terminal.integrated.showExitAlert",e.SplitCwd="terminal.integrated.splitCwd",e.WindowsEnableConpty="terminal.integrated.windowsEnableConpty",e.WordSeparators="terminal.integrated.wordSeparators",e.EnableFileLinks="terminal.integrated.enableFileLinks",e.AllowedLinkSchemes="terminal.integrated.allowedLinkSchemes",e.UnicodeVersion="terminal.integrated.unicodeVersion",e.EnablePersistentSessions="terminal.integrated.enablePersistentSessions",e.PersistentSessionReviveProcess="terminal.integrated.persistentSessionReviveProcess",e.HideOnStartup="terminal.integrated.hideOnStartup",e.CustomGlyphs="terminal.integrated.customGlyphs",e.RescaleOverlappingGlyphs="terminal.integrated.rescaleOverlappingGlyphs",e.PersistentSessionScrollback="terminal.integrated.persistentSessionScrollback",e.InheritEnv="terminal.integrated.inheritEnv",e.ShowLinkHover="terminal.integrated.showLinkHover",e.IgnoreProcessNames="terminal.integrated.ignoreProcessNames",e.ShellIntegrationEnabled="terminal.integrated.shellIntegration.enabled",e.ShellIntegrationShowWelcome="terminal.integrated.shellIntegration.showWelcome",e.ShellIntegrationDecorationsEnabled="terminal.integrated.shellIntegration.decorationsEnabled",e.ShellIntegrationCommandHistory="terminal.integrated.shellIntegration.history",e.EnableImages="terminal.integrated.enableImages",e.SmoothScrolling="terminal.integrated.smoothScrolling",e.IgnoreBracketedPasteMode="terminal.integrated.ignoreBracketedPasteMode",e.FocusAfterRun="terminal.integrated.focusAfterRun",e.DeveloperPtyHostLatency="terminal.integrated.developer.ptyHost.latency",e.DeveloperPtyHostStartupDelay="terminal.integrated.developer.ptyHost.startupDelay",e.DevMode="terminal.integrated.developer.devMode",e))(u||{}),p=(a=>(a.Bash="bash",a.Fish="fish",a.Sh="sh",a.Csh="csh",a.Ksh="ksh",a.Zsh="zsh",a))(p||{}),P=(n=>(n.CommandPrompt="cmd",n.Wsl="wsl",n.GitBash="gitbash",n))(P||{}),g=(i=>(i.PowerShell="pwsh",i.Python="python",i.Julia="julia",i.NuShell="nu",i))(g||{}),b=(i=>(i[i.Api=0]="Api",i[i.Process=1]="Process",i[i.Sequence=2]="Sequence",i[i.Config=3]="Config",i))(b||{}),f=(r=>(r.LocalPty="localPty",r.PtyHost="ptyHost",r.PtyHostWindow="ptyHostWindow",r.Logger="logger",r.Heartbeat="heartbeat",r))(f||{}),v=(o=>(o.Cwd="cwd",o.InitialCwd="initialCwd",o.FixedDimensions="fixedDimensions",o.Title="title",o.ShellType="shellType",o.HasChildProcesses="hasChildProcesses",o.ResolvedShellLaunchConfig="resolvedShellLaunchConfig",o.OverrideDimensions="overrideDimensions",o.FailedShellIntegrationActivation="failedShellIntegrationActivation",o.UsedShellIntegrationInjection="usedShellIntegrationInjection",o))(v||{});const ie=l("ptyService");var y=(r=>(r[r.BeatInterval=5e3]="BeatInterval",r[r.ConnectingBeatInterval=2e4]="ConnectingBeatInterval",r[r.FirstWaitMultiplier=1.2]="FirstWaitMultiplier",r[r.SecondWaitMultiplier=1]="SecondWaitMultiplier",r[r.CreateProcessTimeout=5e3]="CreateProcessTimeout",r))(y||{}),h=(t=>(t[t.Panel=1]="Panel",t[t.Editor=2]="Editor",t))(h||{}),I=(t=>(t.TerminalView="view",t.Editor="editor",t))(I||{}),x=(t=>(t[t.GraceTime=6e4]="GraceTime",t[t.ShortGraceTime=6e3]="ShortGraceTime",t))(x||{}),w=(n=>(n[n.HighWatermarkChars=1e5]="HighWatermarkChars",n[n.LowWatermarkChars=5e3]="LowWatermarkChars",n[n.CharCountAckSize=5e3]="CharCountAckSize",n))(w||{}),E=(t=>(t.GitBash="Git Bash",t.Pwsh="PowerShell",t))(E||{}),C=(n=>(n[n.Off=0]="Off",n[n.FinalTerm=1]="FinalTerm",n[n.VSCode=2]="VSCode",n))(C||{}),k=(r=>(r[r.Unknown=0]="Unknown",r[r.Shutdown=1]="Shutdown",r[r.Process=2]="Process",r[r.User=3]="User",r[r.Extension=4]="Extension",r))(k||{});const T={Backend:"workbench.contributions.terminal.processBackend"};class R{_backends=new Map;get backends(){return this._backends}registerTerminalBackend(s){const t=this._sanitizeRemoteAuthority(s.remoteAuthority);if(this._backends.has(t))throw new Error(`A terminal backend with remote authority '${t}' was already registered.`);this._backends.set(t,s)}getTerminalBackend(s){return this._backends.get(this._sanitizeRemoteAuthority(s))}_sanitizeRemoteAuthority(s){return s?.toLowerCase()??""}}d.add(T.Backend,new R);const oe=l("localPtyService"),se=l("terminalLogService");export{w as FlowControlConstants,g as GeneralShellType,y as HeartbeatConstants,oe as ILocalPtyService,ie as IPtyService,se as ITerminalLogService,x as LocalReconnectConstants,p as PosixShellType,v as ProcessPropertyType,E as ProfileSource,C as ShellIntegrationStatus,k as TerminalExitReason,T as TerminalExtensions,f as TerminalIpcChannels,h as TerminalLocation,I as TerminalLocationString,u as TerminalSettingId,m as TerminalSettingPrefix,b as TitleEventSource,P as WindowsShellType,te as terminalTabFocusModeContextKey};
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { RawContextKey } from '../../contextkey/common/contextkey.js';
+import { Registry } from '../../registry/common/platform.js';
+export const terminalTabFocusModeContextKey = new RawContextKey('terminalTabFocusMode', false, true);
+export var TitleEventSource;
+(function (TitleEventSource) {
+    TitleEventSource[TitleEventSource["Api"] = 0] = "Api";
+    TitleEventSource[TitleEventSource["Process"] = 1] = "Process";
+    TitleEventSource[TitleEventSource["Sequence"] = 2] = "Sequence";
+    TitleEventSource[TitleEventSource["Config"] = 3] = "Config";
+})(TitleEventSource || (TitleEventSource = {}));
+export var TerminalIpcChannels;
+(function (TerminalIpcChannels) {
+    TerminalIpcChannels["LocalPty"] = "localPty";
+    TerminalIpcChannels["PtyHost"] = "ptyHost";
+    TerminalIpcChannels["PtyHostWindow"] = "ptyHostWindow";
+    TerminalIpcChannels["Logger"] = "logger";
+    TerminalIpcChannels["Heartbeat"] = "heartbeat";
+})(TerminalIpcChannels || (TerminalIpcChannels = {}));
+export const IPtyService = createDecorator('ptyService');
+export var HeartbeatConstants;
+(function (HeartbeatConstants) {
+    HeartbeatConstants[HeartbeatConstants["BeatInterval"] = 5000] = "BeatInterval";
+    HeartbeatConstants[HeartbeatConstants["ConnectingBeatInterval"] = 20000] = "ConnectingBeatInterval";
+    HeartbeatConstants[HeartbeatConstants["FirstWaitMultiplier"] = 1.2] = "FirstWaitMultiplier";
+    HeartbeatConstants[HeartbeatConstants["SecondWaitMultiplier"] = 1] = "SecondWaitMultiplier";
+    HeartbeatConstants[HeartbeatConstants["CreateProcessTimeout"] = 5000] = "CreateProcessTimeout";
+})(HeartbeatConstants || (HeartbeatConstants = {}));
+export var TerminalLocation;
+(function (TerminalLocation) {
+    TerminalLocation[TerminalLocation["Panel"] = 1] = "Panel";
+    TerminalLocation[TerminalLocation["Editor"] = 2] = "Editor";
+})(TerminalLocation || (TerminalLocation = {}));
+export var TerminalExitReason;
+(function (TerminalExitReason) {
+    TerminalExitReason[TerminalExitReason["Unknown"] = 0] = "Unknown";
+    TerminalExitReason[TerminalExitReason["Shutdown"] = 1] = "Shutdown";
+    TerminalExitReason[TerminalExitReason["Process"] = 2] = "Process";
+    TerminalExitReason[TerminalExitReason["User"] = 3] = "User";
+    TerminalExitReason[TerminalExitReason["Extension"] = 4] = "Extension";
+})(TerminalExitReason || (TerminalExitReason = {}));
+export const TerminalExtensions = {
+    Backend: 'workbench.contributions.terminal.processBackend'
+};
+class TerminalBackendRegistry {
+    constructor() {
+        this._backends = new Map();
+    }
+    get backends() { return this._backends; }
+    registerTerminalBackend(backend) {
+        const key = this._sanitizeRemoteAuthority(backend.remoteAuthority);
+        if (this._backends.has(key)) {
+            throw new Error(`A terminal backend with remote authority '${key}' was already registered.`);
+        }
+        this._backends.set(key, backend);
+    }
+    getTerminalBackend(remoteAuthority) {
+        return this._backends.get(this._sanitizeRemoteAuthority(remoteAuthority));
+    }
+    _sanitizeRemoteAuthority(remoteAuthority) {
+        return remoteAuthority?.toLowerCase() ?? '';
+    }
+}
+Registry.add(TerminalExtensions.Backend, new TerminalBackendRegistry());
+export const ILocalPtyService = createDecorator('localPtyService');
+export const ITerminalLogService = createDecorator('terminalLogService');

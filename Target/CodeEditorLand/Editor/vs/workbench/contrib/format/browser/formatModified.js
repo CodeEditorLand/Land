@@ -1,1 +1,62 @@
-import{isNonEmptyArray as m}from"../../../../base/common/arrays.js";import{CancellationToken as u}from"../../../../base/common/cancellation.js";import"../../../../editor/browser/editorBrowser.js";import{EditorAction as l,registerEditorAction as g}from"../../../../editor/browser/editorExtensions.js";import{Range as p}from"../../../../editor/common/core/range.js";import{EditorContextKeys as f}from"../../../../editor/common/editorContextKeys.js";import{shouldSynchronizeModel as v}from"../../../../editor/common/model.js";import{IEditorWorkerService as S}from"../../../../editor/common/services/editorWorker.js";import{ITextModelService as E}from"../../../../editor/common/services/resolverService.js";import{formatDocumentRangesWithSelectedProvider as M,FormattingMode as y}from"../../../../editor/contrib/format/browser/format.js";import*as I from"../../../../nls.js";import{ContextKeyExpr as h}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as x}from"../../../../platform/instantiation/common/instantiation.js";import{Progress as A}from"../../../../platform/progress/common/progress.js";import{getOriginalResource as R}from"../../scm/browser/dirtydiffDecorator.js";import{IQuickDiffService as C}from"../../scm/common/quickDiff.js";g(class extends l{constructor(){super({id:"editor.action.formatChanges",label:I.localize("formatChanges","Format Modified Lines"),alias:"Format Modified Lines",precondition:h.and(f.writable,f.hasDocumentSelectionFormattingProvider)})}async run(e,r){const o=e.get(x);if(!r.hasModel())return;const t=await o.invokeFunction(D,r.getModel());if(m(t))return o.invokeFunction(M,r,t,y.Explicit,A.None,u.None,!0)}});async function D(i,e){const r=i.get(C),o=i.get(S),t=i.get(E),n=await R(r,e.uri,e.getLanguageId(),v(e));if(!n)return null;const c=[],d=await t.createModelReference(n);try{if(!o.canComputeDirtyDiff(n,e.uri))return;const s=await o.computeDirtyDiff(n,e.uri,!1);if(!m(s))return;for(const a of s)c.push(e.validateRange(new p(a.modifiedStartLineNumber,1,a.modifiedEndLineNumber||a.modifiedStartLineNumber,Number.MAX_SAFE_INTEGER)))}finally{d.dispose()}return c}export{D as getModifiedRanges};
+import { isNonEmptyArray } from '../../../../base/common/arrays.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { EditorAction, registerEditorAction } from '../../../../editor/browser/editorExtensions.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
+import { shouldSynchronizeModel } from '../../../../editor/common/model.js';
+import { IEditorWorkerService } from '../../../../editor/common/services/editorWorker.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { formatDocumentRangesWithSelectedProvider } from '../../../../editor/contrib/format/browser/format.js';
+import * as nls from '../../../../nls.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { Progress } from '../../../../platform/progress/common/progress.js';
+import { getOriginalResource } from '../../scm/browser/dirtydiffDecorator.js';
+import { IQuickDiffService } from '../../scm/common/quickDiff.js';
+registerEditorAction(class FormatModifiedAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.formatChanges',
+            label: nls.localize('formatChanges', "Format Modified Lines"),
+            alias: 'Format Modified Lines',
+            precondition: ContextKeyExpr.and(EditorContextKeys.writable, EditorContextKeys.hasDocumentSelectionFormattingProvider),
+        });
+    }
+    async run(accessor, editor) {
+        const instaService = accessor.get(IInstantiationService);
+        if (!editor.hasModel()) {
+            return;
+        }
+        const ranges = await instaService.invokeFunction(getModifiedRanges, editor.getModel());
+        if (isNonEmptyArray(ranges)) {
+            return instaService.invokeFunction(formatDocumentRangesWithSelectedProvider, editor, ranges, 1, Progress.None, CancellationToken.None, true);
+        }
+    }
+});
+export async function getModifiedRanges(accessor, modified) {
+    const quickDiffService = accessor.get(IQuickDiffService);
+    const workerService = accessor.get(IEditorWorkerService);
+    const modelService = accessor.get(ITextModelService);
+    const original = await getOriginalResource(quickDiffService, modified.uri, modified.getLanguageId(), shouldSynchronizeModel(modified));
+    if (!original) {
+        return null;
+    }
+    const ranges = [];
+    const ref = await modelService.createModelReference(original);
+    try {
+        if (!workerService.canComputeDirtyDiff(original, modified.uri)) {
+            return undefined;
+        }
+        const changes = await workerService.computeDirtyDiff(original, modified.uri, false);
+        if (!isNonEmptyArray(changes)) {
+            return undefined;
+        }
+        for (const change of changes) {
+            ranges.push(modified.validateRange(new Range(change.modifiedStartLineNumber, 1, change.modifiedEndLineNumber || change.modifiedStartLineNumber, Number.MAX_SAFE_INTEGER)));
+        }
+    }
+    finally {
+        ref.dispose();
+    }
+    return ranges;
+}

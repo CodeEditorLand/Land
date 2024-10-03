@@ -1,1 +1,62 @@
-import"../../../base/common/cancellation.js";import{AsyncEmitter as d}from"../../../base/common/event.js";import{URI as v}from"../../../base/common/uri.js";import"../../../platform/extensions/common/extensions.js";import"../../../platform/log/common/log.js";import"./extHost.protocol.js";import"./extHostNotebook.js";import{TextDocumentSaveReason as p,WorkspaceEdit as u}from"./extHostTypeConverters.js";import{WorkspaceEdit as E}from"./extHostTypes.js";import"../../common/editor.js";import{SerializableObjectWithBuffers as k}from"../../services/extensions/common/proxyIdentifier.js";import"vscode";class O{constructor(n,i,e,r={timeout:1500,errors:3}){this._logService=n;this._notebooksAndEditors=i;this._mainThreadBulkEdits=e;this._thresholds=r}_onWillSaveNotebookDocumentEvent=new d;dispose(){}getOnWillSaveNotebookDocumentEvent(n){return(i,e,r)=>{const o=function(t){i.call(e,t)};return o.extension=n,this._onWillSaveNotebookDocumentEvent.event(o,void 0,r)}}async $participateInSave(n,i,e){const r=v.revive(n),o=this._notebooksAndEditors.getNotebookDocument(r);if(!o)throw new Error("Unable to resolve notebook document");const a=[];if(await this._onWillSaveNotebookDocumentEvent.fireAsync({notebook:o.apiNotebook,reason:p.to(i)},e,async(l,s)=>{const m=Date.now(),c=await await Promise.resolve(l);Date.now()-m>this._thresholds.timeout&&this._logService.warn("onWillSaveNotebookDocument-listener from extension",s.extension.identifier),!e.isCancellationRequested&&c&&(c instanceof E?a.push(c):this._logService.warn("onWillSaveNotebookDocument-listener from extension",s.extension.identifier,"ignored due to invalid data"))}),e.isCancellationRequested)return!1;if(a.length===0)return!0;const t={edits:[]};for(const l of a){const{edits:s}=u.from(l);t.edits=t.edits.concat(s)}return this._mainThreadBulkEdits.$tryApplyWorkspaceEdit(new k(t))}}export{O as ExtHostNotebookDocumentSaveParticipant};
+import { AsyncEmitter } from '../../../base/common/event.js';
+import { URI } from '../../../base/common/uri.js';
+import { TextDocumentSaveReason, WorkspaceEdit as WorksapceEditConverter } from './extHostTypeConverters.js';
+import { WorkspaceEdit } from './extHostTypes.js';
+import { SerializableObjectWithBuffers } from '../../services/extensions/common/proxyIdentifier.js';
+export class ExtHostNotebookDocumentSaveParticipant {
+    constructor(_logService, _notebooksAndEditors, _mainThreadBulkEdits, _thresholds = { timeout: 1500, errors: 3 }) {
+        this._logService = _logService;
+        this._notebooksAndEditors = _notebooksAndEditors;
+        this._mainThreadBulkEdits = _mainThreadBulkEdits;
+        this._thresholds = _thresholds;
+        this._onWillSaveNotebookDocumentEvent = new AsyncEmitter();
+    }
+    dispose() {
+    }
+    getOnWillSaveNotebookDocumentEvent(extension) {
+        return (listener, thisArg, disposables) => {
+            const wrappedListener = function wrapped(e) { listener.call(thisArg, e); };
+            wrappedListener.extension = extension;
+            return this._onWillSaveNotebookDocumentEvent.event(wrappedListener, undefined, disposables);
+        };
+    }
+    async $participateInSave(resource, reason, token) {
+        const revivedUri = URI.revive(resource);
+        const document = this._notebooksAndEditors.getNotebookDocument(revivedUri);
+        if (!document) {
+            throw new Error('Unable to resolve notebook document');
+        }
+        const edits = [];
+        await this._onWillSaveNotebookDocumentEvent.fireAsync({ notebook: document.apiNotebook, reason: TextDocumentSaveReason.to(reason) }, token, async (thenable, listener) => {
+            const now = Date.now();
+            const data = await await Promise.resolve(thenable);
+            if (Date.now() - now > this._thresholds.timeout) {
+                this._logService.warn('onWillSaveNotebookDocument-listener from extension', listener.extension.identifier);
+            }
+            if (token.isCancellationRequested) {
+                return;
+            }
+            if (data) {
+                if (data instanceof WorkspaceEdit) {
+                    edits.push(data);
+                }
+                else {
+                    this._logService.warn('onWillSaveNotebookDocument-listener from extension', listener.extension.identifier, 'ignored due to invalid data');
+                }
+            }
+            return;
+        });
+        if (token.isCancellationRequested) {
+            return false;
+        }
+        if (edits.length === 0) {
+            return true;
+        }
+        const dto = { edits: [] };
+        for (const edit of edits) {
+            const { edits } = WorksapceEditConverter.from(edit);
+            dto.edits = dto.edits.concat(edits);
+        }
+        return this._mainThreadBulkEdits.$tryApplyWorkspaceEdit(new SerializableObjectWithBuffers(dto));
+    }
+}

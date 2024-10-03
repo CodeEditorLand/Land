@@ -1,1 +1,91 @@
-var E=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var v=(r,o,e,t)=>{for(var n=t>1?void 0:t?u(o,e):o,i=r.length-1,a;i>=0;i--)(a=r[i])&&(n=(t?a(o,e,n):a(n))||n);return t&&n&&E(o,e,n),n},s=(r,o)=>(e,t)=>o(e,t,r);import{IInstantiationService as _}from"../../../../platform/instantiation/common/instantiation.js";import{ICommandService as x,CommandsRegistry as c}from"../../../../platform/commands/common/commands.js";import{IExtensionService as y}from"../../extensions/common/extensions.js";import{Event as d,Emitter as l}from"../../../../base/common/event.js";import{Disposable as h}from"../../../../base/common/lifecycle.js";import{ILogService as C}from"../../../../platform/log/common/log.js";import{InstantiationType as I,registerSingleton as p}from"../../../../platform/instantiation/common/extensions.js";import{timeout as S}from"../../../../base/common/async.js";let m=class extends h{constructor(e,t,n){super();this._instantiationService=e;this._extensionService=t;this._logService=n;this._extensionService.whenInstalledExtensionsRegistered().then(i=>this._extensionHostIsReady=i),this._starActivation=null}_extensionHostIsReady=!1;_starActivation;_onWillExecuteCommand=this._register(new l);onWillExecuteCommand=this._onWillExecuteCommand.event;_onDidExecuteCommand=new l;onDidExecuteCommand=this._onDidExecuteCommand.event;_activateStar(){return this._starActivation||(this._starActivation=Promise.race([this._extensionService.activateByEvent("*"),S(3e4)])),this._starActivation}async executeCommand(e,...t){this._logService.trace("CommandService#executeCommand",e);const n=`onCommand:${e}`;return c.getCommand(e)?this._extensionService.activationEventIsDone(n)?this._tryExecuteCommand(e,t):this._extensionHostIsReady?(await this._extensionService.activateByEvent(n),this._tryExecuteCommand(e,t)):(this._extensionService.activateByEvent(n),this._tryExecuteCommand(e,t)):(await Promise.all([this._extensionService.activateByEvent(n),Promise.race([this._activateStar(),d.toPromise(d.filter(c.onDidRegisterCommand,a=>a===e))])]),this._tryExecuteCommand(e,t))}_tryExecuteCommand(e,t){const n=c.getCommand(e);if(!n)return Promise.reject(new Error(`command '${e}' not found`));try{this._onWillExecuteCommand.fire({commandId:e,args:t});const i=this._instantiationService.invokeFunction(n.handler,...t);return this._onDidExecuteCommand.fire({commandId:e,args:t}),Promise.resolve(i)}catch(i){return Promise.reject(i)}}};m=v([s(0,_),s(1,y),s(2,C)],m),p(x,m,I.Delayed);export{m as CommandService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ICommandService, CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { IExtensionService } from '../../extensions/common/extensions.js';
+import { Event, Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { timeout } from '../../../../base/common/async.js';
+let CommandService = class CommandService extends Disposable {
+    constructor(_instantiationService, _extensionService, _logService) {
+        super();
+        this._instantiationService = _instantiationService;
+        this._extensionService = _extensionService;
+        this._logService = _logService;
+        this._extensionHostIsReady = false;
+        this._onWillExecuteCommand = this._register(new Emitter());
+        this.onWillExecuteCommand = this._onWillExecuteCommand.event;
+        this._onDidExecuteCommand = new Emitter();
+        this.onDidExecuteCommand = this._onDidExecuteCommand.event;
+        this._extensionService.whenInstalledExtensionsRegistered().then(value => this._extensionHostIsReady = value);
+        this._starActivation = null;
+    }
+    _activateStar() {
+        if (!this._starActivation) {
+            this._starActivation = Promise.race([
+                this._extensionService.activateByEvent(`*`),
+                timeout(30000)
+            ]);
+        }
+        return this._starActivation;
+    }
+    async executeCommand(id, ...args) {
+        this._logService.trace('CommandService#executeCommand', id);
+        const activationEvent = `onCommand:${id}`;
+        const commandIsRegistered = !!CommandsRegistry.getCommand(id);
+        if (commandIsRegistered) {
+            if (this._extensionService.activationEventIsDone(activationEvent)) {
+                return this._tryExecuteCommand(id, args);
+            }
+            if (!this._extensionHostIsReady) {
+                this._extensionService.activateByEvent(activationEvent);
+                return this._tryExecuteCommand(id, args);
+            }
+            await this._extensionService.activateByEvent(activationEvent);
+            return this._tryExecuteCommand(id, args);
+        }
+        await Promise.all([
+            this._extensionService.activateByEvent(activationEvent),
+            Promise.race([
+                this._activateStar(),
+                Event.toPromise(Event.filter(CommandsRegistry.onDidRegisterCommand, e => e === id))
+            ]),
+        ]);
+        return this._tryExecuteCommand(id, args);
+    }
+    _tryExecuteCommand(id, args) {
+        const command = CommandsRegistry.getCommand(id);
+        if (!command) {
+            return Promise.reject(new Error(`command '${id}' not found`));
+        }
+        try {
+            this._onWillExecuteCommand.fire({ commandId: id, args });
+            const result = this._instantiationService.invokeFunction(command.handler, ...args);
+            this._onDidExecuteCommand.fire({ commandId: id, args });
+            return Promise.resolve(result);
+        }
+        catch (err) {
+            return Promise.reject(err);
+        }
+    }
+};
+CommandService = __decorate([
+    __param(0, IInstantiationService),
+    __param(1, IExtensionService),
+    __param(2, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], CommandService);
+export { CommandService };
+registerSingleton(ICommandService, CommandService, 1);

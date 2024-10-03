@@ -1,1 +1,208 @@
-import{KeyCode as c,KeyMod as h}from"../../../../base/common/keyCodes.js";import{Disposable as p}from"../../../../base/common/lifecycle.js";import{localize as t}from"../../../../nls.js";import"../../../../platform/instantiation/common/instantiation.js";import{ContextKeyExpr as m,RawContextKey as d}from"../../../../platform/contextkey/common/contextkey.js";import{Emitter as f}from"../../../../base/common/event.js";import{CommentsViewFilterFocusContextKey as g}from"./comments.js";import{MenuId as S,MenuRegistry as I,registerAction2 as n}from"../../../../platform/actions/common/actions.js";import{ViewAction as i}from"../../../browser/parts/views/viewPane.js";import{KeybindingWeight as l}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{COMMENTS_VIEW_ID as s}from"./commentsTreeViewer.js";import{FocusedViewContext as b}from"../../../common/contextkeys.js";import{viewFilterSubmenu as a}from"../../../browser/parts/views/viewFilter.js";import{Codicon as w}from"../../../../base/common/codicons.js";var _=(o=>(o.ResourceAscending="resourceAscending",o.UpdatedAtDescending="updatedAtDescending",o))(_||{});const C=new d("commentsView.showResolvedFilter",!0),y=new d("commentsView.showUnResolvedFilter",!0),v=new d("commentsView.sortBy","resourceAscending");class $ extends p{constructor(o,V){super();this.contextKeyService=V;this._showResolved.set(o.showResolved),this._showUnresolved.set(o.showUnresolved),this._sortBy.set(o.sortBy)}_onDidChange=this._register(new f);onDidChange=this._onDidChange.event;_showUnresolved=y.bindTo(this.contextKeyService);get showUnresolved(){return!!this._showUnresolved.get()}set showUnresolved(o){this._showUnresolved.get()!==o&&(this._showUnresolved.set(o),this._onDidChange.fire({showUnresolved:!0}))}_showResolved=C.bindTo(this.contextKeyService);get showResolved(){return!!this._showResolved.get()}set showResolved(o){this._showResolved.get()!==o&&(this._showResolved.set(o),this._onDidChange.fire({showResolved:!0}))}_sortBy=v.bindTo(this.contextKeyService);get sortBy(){return this._sortBy.get()??"resourceAscending"}set sortBy(o){this._sortBy.get()!==o&&(this._sortBy.set(o),this._onDidChange.fire({sortBy:o}))}}n(class extends i{constructor(){super({id:"commentsFocusViewFromFilter",title:t("focusCommentsList","Focus Comments view"),keybinding:{when:g,weight:l.WorkbenchContrib,primary:h.CtrlCmd|c.DownArrow},viewId:s})}async runInView(r,e){e.focus()}}),n(class extends i{constructor(){super({id:"commentsClearFilterText",title:t("commentsClearFilterText","Clear filter text"),keybinding:{when:g,weight:l.WorkbenchContrib,primary:c.Escape},viewId:s})}async runInView(r,e){e.clearFilterText()}}),n(class extends i{constructor(){super({id:"commentsFocusFilter",title:t("focusCommentsFilter","Focus comments filter"),keybinding:{when:b.isEqualTo(s),weight:l.WorkbenchContrib,primary:h.CtrlCmd|c.KeyF},viewId:s})}async runInView(r,e){e.focusFilter()}}),n(class extends i{constructor(){super({id:`workbench.actions.${s}.toggleUnResolvedComments`,title:t("toggle unresolved","Show Unresolved"),category:t("comments","Comments"),toggled:{condition:y,title:t("unresolved","Show Unresolved")},menu:{id:a,group:"1_filter",when:m.equals("view",s),order:1},viewId:s})}async runInView(r,e){e.filters.showUnresolved=!e.filters.showUnresolved}}),n(class extends i{constructor(){super({id:`workbench.actions.${s}.toggleResolvedComments`,title:t("toggle resolved","Show Resolved"),category:t("comments","Comments"),toggled:{condition:C,title:t("resolved","Show Resolved")},menu:{id:a,group:"1_filter",when:m.equals("view",s),order:1},viewId:s})}async runInView(r,e){e.filters.showResolved=!e.filters.showResolved}});const u=new S("submenu.filter.commentSort");I.appendMenuItem(a,{submenu:u,title:t("comment sorts","Sort By"),group:"2_sort",icon:w.history,when:m.equals("view",s)}),n(class extends i{constructor(){super({id:`workbench.actions.${s}.toggleSortByUpdatedAt`,title:t("toggle sorting by updated at","Updated Time"),category:t("comments","Comments"),icon:w.history,viewId:s,toggled:{condition:m.equals(v.key,"updatedAtDescending"),title:t("sorting by updated at","Updated Time")},menu:{id:u,group:"navigation",order:1,isHiddenByDefault:!1}})}async runInView(r,e){e.filters.sortBy="updatedAtDescending"}}),n(class extends i{constructor(){super({id:`workbench.actions.${s}.toggleSortByResource`,title:t("toggle sorting by resource","Position in File"),category:t("comments","Comments"),icon:w.history,viewId:s,toggled:{condition:m.equals(v.key,"resourceAscending"),title:t("sorting by position in file","Position in File")},menu:{id:u,group:"navigation",order:0,isHiddenByDefault:!1}})}async runInView(r,e){e.filters.sortBy="resourceAscending"}});export{$ as CommentsFilters,_ as CommentsSortOrder};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { localize } from '../../../../nls.js';
+import { ContextKeyExpr, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { CommentsViewFilterFocusContextKey } from './comments.js';
+import { MenuId, MenuRegistry, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { ViewAction } from '../../../browser/parts/views/viewPane.js';
+import { COMMENTS_VIEW_ID } from './commentsTreeViewer.js';
+import { FocusedViewContext } from '../../../common/contextkeys.js';
+import { viewFilterSubmenu } from '../../../browser/parts/views/viewFilter.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+const CONTEXT_KEY_SHOW_RESOLVED = new RawContextKey('commentsView.showResolvedFilter', true);
+const CONTEXT_KEY_SHOW_UNRESOLVED = new RawContextKey('commentsView.showUnResolvedFilter', true);
+const CONTEXT_KEY_SORT_BY = new RawContextKey('commentsView.sortBy', "resourceAscending");
+export class CommentsFilters extends Disposable {
+    constructor(options, contextKeyService) {
+        super();
+        this.contextKeyService = contextKeyService;
+        this._onDidChange = this._register(new Emitter());
+        this.onDidChange = this._onDidChange.event;
+        this._showUnresolved = CONTEXT_KEY_SHOW_UNRESOLVED.bindTo(this.contextKeyService);
+        this._showResolved = CONTEXT_KEY_SHOW_RESOLVED.bindTo(this.contextKeyService);
+        this._sortBy = CONTEXT_KEY_SORT_BY.bindTo(this.contextKeyService);
+        this._showResolved.set(options.showResolved);
+        this._showUnresolved.set(options.showUnresolved);
+        this._sortBy.set(options.sortBy);
+    }
+    get showUnresolved() {
+        return !!this._showUnresolved.get();
+    }
+    set showUnresolved(showUnresolved) {
+        if (this._showUnresolved.get() !== showUnresolved) {
+            this._showUnresolved.set(showUnresolved);
+            this._onDidChange.fire({ showUnresolved: true });
+        }
+    }
+    get showResolved() {
+        return !!this._showResolved.get();
+    }
+    set showResolved(showResolved) {
+        if (this._showResolved.get() !== showResolved) {
+            this._showResolved.set(showResolved);
+            this._onDidChange.fire({ showResolved: true });
+        }
+    }
+    get sortBy() {
+        return this._sortBy.get() ?? "resourceAscending";
+    }
+    set sortBy(sortBy) {
+        if (this._sortBy.get() !== sortBy) {
+            this._sortBy.set(sortBy);
+            this._onDidChange.fire({ sortBy });
+        }
+    }
+}
+registerAction2(class extends ViewAction {
+    constructor() {
+        super({
+            id: 'commentsFocusViewFromFilter',
+            title: localize('focusCommentsList', "Focus Comments view"),
+            keybinding: {
+                when: CommentsViewFilterFocusContextKey,
+                weight: 200,
+                primary: 2048 | 18
+            },
+            viewId: COMMENTS_VIEW_ID
+        });
+    }
+    async runInView(serviceAccessor, commentsView) {
+        commentsView.focus();
+    }
+});
+registerAction2(class extends ViewAction {
+    constructor() {
+        super({
+            id: 'commentsClearFilterText',
+            title: localize('commentsClearFilterText', "Clear filter text"),
+            keybinding: {
+                when: CommentsViewFilterFocusContextKey,
+                weight: 200,
+                primary: 9
+            },
+            viewId: COMMENTS_VIEW_ID
+        });
+    }
+    async runInView(serviceAccessor, commentsView) {
+        commentsView.clearFilterText();
+    }
+});
+registerAction2(class extends ViewAction {
+    constructor() {
+        super({
+            id: 'commentsFocusFilter',
+            title: localize('focusCommentsFilter', "Focus comments filter"),
+            keybinding: {
+                when: FocusedViewContext.isEqualTo(COMMENTS_VIEW_ID),
+                weight: 200,
+                primary: 2048 | 36
+            },
+            viewId: COMMENTS_VIEW_ID
+        });
+    }
+    async runInView(serviceAccessor, commentsView) {
+        commentsView.focusFilter();
+    }
+});
+registerAction2(class extends ViewAction {
+    constructor() {
+        super({
+            id: `workbench.actions.${COMMENTS_VIEW_ID}.toggleUnResolvedComments`,
+            title: localize('toggle unresolved', "Show Unresolved"),
+            category: localize('comments', "Comments"),
+            toggled: {
+                condition: CONTEXT_KEY_SHOW_UNRESOLVED,
+                title: localize('unresolved', "Show Unresolved"),
+            },
+            menu: {
+                id: viewFilterSubmenu,
+                group: '1_filter',
+                when: ContextKeyExpr.equals('view', COMMENTS_VIEW_ID),
+                order: 1
+            },
+            viewId: COMMENTS_VIEW_ID
+        });
+    }
+    async runInView(serviceAccessor, view) {
+        view.filters.showUnresolved = !view.filters.showUnresolved;
+    }
+});
+registerAction2(class extends ViewAction {
+    constructor() {
+        super({
+            id: `workbench.actions.${COMMENTS_VIEW_ID}.toggleResolvedComments`,
+            title: localize('toggle resolved', "Show Resolved"),
+            category: localize('comments', "Comments"),
+            toggled: {
+                condition: CONTEXT_KEY_SHOW_RESOLVED,
+                title: localize('resolved', "Show Resolved"),
+            },
+            menu: {
+                id: viewFilterSubmenu,
+                group: '1_filter',
+                when: ContextKeyExpr.equals('view', COMMENTS_VIEW_ID),
+                order: 1
+            },
+            viewId: COMMENTS_VIEW_ID
+        });
+    }
+    async runInView(serviceAccessor, view) {
+        view.filters.showResolved = !view.filters.showResolved;
+    }
+});
+const commentSortSubmenu = new MenuId('submenu.filter.commentSort');
+MenuRegistry.appendMenuItem(viewFilterSubmenu, {
+    submenu: commentSortSubmenu,
+    title: localize('comment sorts', "Sort By"),
+    group: '2_sort',
+    icon: Codicon.history,
+    when: ContextKeyExpr.equals('view', COMMENTS_VIEW_ID),
+});
+registerAction2(class extends ViewAction {
+    constructor() {
+        super({
+            id: `workbench.actions.${COMMENTS_VIEW_ID}.toggleSortByUpdatedAt`,
+            title: localize('toggle sorting by updated at', "Updated Time"),
+            category: localize('comments', "Comments"),
+            icon: Codicon.history,
+            viewId: COMMENTS_VIEW_ID,
+            toggled: {
+                condition: ContextKeyExpr.equals(CONTEXT_KEY_SORT_BY.key, "updatedAtDescending"),
+                title: localize('sorting by updated at', "Updated Time"),
+            },
+            menu: {
+                id: commentSortSubmenu,
+                group: 'navigation',
+                order: 1,
+                isHiddenByDefault: false,
+            },
+        });
+    }
+    async runInView(serviceAccessor, view) {
+        view.filters.sortBy = "updatedAtDescending";
+    }
+});
+registerAction2(class extends ViewAction {
+    constructor() {
+        super({
+            id: `workbench.actions.${COMMENTS_VIEW_ID}.toggleSortByResource`,
+            title: localize('toggle sorting by resource', "Position in File"),
+            category: localize('comments', "Comments"),
+            icon: Codicon.history,
+            viewId: COMMENTS_VIEW_ID,
+            toggled: {
+                condition: ContextKeyExpr.equals(CONTEXT_KEY_SORT_BY.key, "resourceAscending"),
+                title: localize('sorting by position in file', "Position in File"),
+            },
+            menu: {
+                id: commentSortSubmenu,
+                group: 'navigation',
+                order: 0,
+                isHiddenByDefault: false,
+            },
+        });
+    }
+    async runInView(serviceAccessor, view) {
+        view.filters.sortBy = "resourceAscending";
+    }
+});

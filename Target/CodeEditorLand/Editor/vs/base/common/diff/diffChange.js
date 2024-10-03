@@ -1,1 +1,14 @@
-class u{originalStart;originalLength;modifiedStart;modifiedLength;constructor(i,t,r,e){this.originalStart=i,this.originalLength=t,this.modifiedStart=r,this.modifiedLength=e}getOriginalEnd(){return this.originalStart+this.originalLength}getModifiedEnd(){return this.modifiedStart+this.modifiedLength}}export{u as DiffChange};
+export class DiffChange {
+    constructor(originalStart, originalLength, modifiedStart, modifiedLength) {
+        this.originalStart = originalStart;
+        this.originalLength = originalLength;
+        this.modifiedStart = modifiedStart;
+        this.modifiedLength = modifiedLength;
+    }
+    getOriginalEnd() {
+        return this.originalStart + this.originalLength;
+    }
+    getModifiedEnd() {
+        return this.modifiedStart + this.modifiedLength;
+    }
+}

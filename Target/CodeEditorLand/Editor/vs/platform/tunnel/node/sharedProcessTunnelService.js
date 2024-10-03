@@ -1,1 +1,109 @@
-var _=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var c=(o,n,e,s)=>{for(var r=s>1?void 0:s?v(n,e):n,t=o.length-1,l;t>=0;t--)(l=o[t])&&(r=(s?l(n,e,r):l(r))||r);return s&&r&&_(n,e,r),r},u=(o,n)=>(e,s)=>n(e,s,o);import{ILogService as f}from"../../log/common/log.js";import"../../remote/common/sharedProcessTunnelService.js";import{ISharedTunnelsService as g}from"../common/tunnel.js";import"../../remote/common/remoteAgentConnection.js";import{Disposable as p}from"../../../base/common/lifecycle.js";import{canceled as P}from"../../../base/common/errors.js";import{DeferredPromise as T}from"../../../base/common/async.js";class I extends p{_address;_addressPromise;constructor(){super(),this._address=null,this._addressPromise=null}async getAddress(){return this._address?this._address:(this._addressPromise||(this._addressPromise=new T),this._addressPromise.p)}setAddress(n){this._address=n,this._addressPromise&&(this._addressPromise.complete(n),this._addressPromise=null)}setTunnel(n){this._register(n)}}let d=class extends p{constructor(e,s){super();this._tunnelService=e;this._logService=s}_serviceBrand;static _lastId=0;_tunnels=new Map;_disposedTunnels=new Set;dispose(){super.dispose(),this._tunnels.forEach(e=>e.dispose())}async createTunnel(){return{id:String(++d._lastId)}}async startTunnel(e,s,r,t,l,m,h){const a=new I,i=await Promise.resolve(this._tunnelService.openTunnel(e,a,r,t,l,m,h));if(!i||typeof i=="string")throw this._logService.info(`[SharedProcessTunnelService] Could not create a tunnel to ${r}:${t} (remote).`),a.dispose(),new Error("Could not create tunnel");if(this._disposedTunnels.has(s))throw this._disposedTunnels.delete(s),a.dispose(),await i.dispose(),P();return a.setTunnel(i),this._tunnels.set(s,a),this._logService.info(`[SharedProcessTunnelService] Created tunnel ${s}: ${i.localAddress} (local) to ${r}:${t} (remote).`),{tunnelLocalPort:i.tunnelLocalPort,localAddress:i.localAddress}}async setAddress(e,s){const r=this._tunnels.get(e);r&&r.setAddress(s)}async destroyTunnel(e){const s=this._tunnels.get(e);if(s){this._logService.info(`[SharedProcessTunnelService] Disposing tunnel ${e}.`),this._tunnels.delete(e),await s.dispose();return}this._disposedTunnels.add(e)}};d=c([u(0,g),u(1,f)],d);export{d as SharedProcessTunnelService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SharedProcessTunnelService_1;
+import { ILogService } from '../../log/common/log.js';
+import { ISharedTunnelsService } from '../common/tunnel.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { canceled } from '../../../base/common/errors.js';
+import { DeferredPromise } from '../../../base/common/async.js';
+class TunnelData extends Disposable {
+    constructor() {
+        super();
+        this._address = null;
+        this._addressPromise = null;
+    }
+    async getAddress() {
+        if (this._address) {
+            return this._address;
+        }
+        if (!this._addressPromise) {
+            this._addressPromise = new DeferredPromise();
+        }
+        return this._addressPromise.p;
+    }
+    setAddress(address) {
+        this._address = address;
+        if (this._addressPromise) {
+            this._addressPromise.complete(address);
+            this._addressPromise = null;
+        }
+    }
+    setTunnel(tunnel) {
+        this._register(tunnel);
+    }
+}
+let SharedProcessTunnelService = class SharedProcessTunnelService extends Disposable {
+    static { SharedProcessTunnelService_1 = this; }
+    static { this._lastId = 0; }
+    constructor(_tunnelService, _logService) {
+        super();
+        this._tunnelService = _tunnelService;
+        this._logService = _logService;
+        this._tunnels = new Map();
+        this._disposedTunnels = new Set();
+    }
+    dispose() {
+        super.dispose();
+        this._tunnels.forEach((tunnel) => tunnel.dispose());
+    }
+    async createTunnel() {
+        const id = String(++SharedProcessTunnelService_1._lastId);
+        return { id };
+    }
+    async startTunnel(authority, id, tunnelRemoteHost, tunnelRemotePort, tunnelLocalHost, tunnelLocalPort, elevateIfNeeded) {
+        const tunnelData = new TunnelData();
+        const tunnel = await Promise.resolve(this._tunnelService.openTunnel(authority, tunnelData, tunnelRemoteHost, tunnelRemotePort, tunnelLocalHost, tunnelLocalPort, elevateIfNeeded));
+        if (!tunnel || (typeof tunnel === 'string')) {
+            this._logService.info(`[SharedProcessTunnelService] Could not create a tunnel to ${tunnelRemoteHost}:${tunnelRemotePort} (remote).`);
+            tunnelData.dispose();
+            throw new Error(`Could not create tunnel`);
+        }
+        if (this._disposedTunnels.has(id)) {
+            this._disposedTunnels.delete(id);
+            tunnelData.dispose();
+            await tunnel.dispose();
+            throw canceled();
+        }
+        tunnelData.setTunnel(tunnel);
+        this._tunnels.set(id, tunnelData);
+        this._logService.info(`[SharedProcessTunnelService] Created tunnel ${id}: ${tunnel.localAddress} (local) to ${tunnelRemoteHost}:${tunnelRemotePort} (remote).`);
+        const result = {
+            tunnelLocalPort: tunnel.tunnelLocalPort,
+            localAddress: tunnel.localAddress
+        };
+        return result;
+    }
+    async setAddress(id, address) {
+        const tunnel = this._tunnels.get(id);
+        if (!tunnel) {
+            return;
+        }
+        tunnel.setAddress(address);
+    }
+    async destroyTunnel(id) {
+        const tunnel = this._tunnels.get(id);
+        if (tunnel) {
+            this._logService.info(`[SharedProcessTunnelService] Disposing tunnel ${id}.`);
+            this._tunnels.delete(id);
+            await tunnel.dispose();
+            return;
+        }
+        this._disposedTunnels.add(id);
+    }
+};
+SharedProcessTunnelService = SharedProcessTunnelService_1 = __decorate([
+    __param(0, ISharedTunnelsService),
+    __param(1, ILogService),
+    __metadata("design:paramtypes", [Object, Object])
+], SharedProcessTunnelService);
+export { SharedProcessTunnelService };

@@ -1,1 +1,86 @@
-var v=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var m=(n,i,o,e)=>{for(var r=e>1?void 0:e?f(i,o):i,d=n.length-1,a;d>=0;d--)(a=n[d])&&(r=(e?a(i,o,r):a(r))||r);return e&&r&&v(i,o,r),r},c=(n,i)=>(o,e)=>i(o,e,n);import{localize as p,localize2 as y}from"../../../../../nls.js";import{IQuickInputService as I}from"../../../../../platform/quickinput/common/quickInput.js";import{IEditorService as E}from"../../../../services/editor/common/editorService.js";import"../../../../../editor/common/core/range.js";import{AbstractGotoLineQuickAccessProvider as u}from"../../../../../editor/contrib/quickAccess/browser/gotoLineQuickAccess.js";import{Registry as h}from"../../../../../platform/registry/common/platform.js";import{Extensions as S}from"../../../../../platform/quickinput/common/quickAccess.js";import{IConfigurationService as C}from"../../../../../platform/configuration/common/configuration.js";import"../../../../common/editor.js";import{Action2 as k,registerAction2 as b}from"../../../../../platform/actions/common/actions.js";import{KeyMod as l,KeyCode as g}from"../../../../../base/common/keyCodes.js";import"../../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as x}from"../../../../../platform/keybinding/common/keybindingsRegistry.js";import"../../../../../editor/contrib/quickAccess/browser/editorNavigationQuickAccess.js";import"../../../../../platform/editor/common/editor.js";import{IEditorGroupsService as A}from"../../../../services/editor/common/editorGroupsService.js";let t=class extends u{constructor(o,e,r){super();this.editorService=o;this.editorGroupService=e;this.configurationService=r}onDidActiveTextEditorControlChange=this.editorService.onDidActiveEditorChange;get configuration(){const o=this.configurationService.getValue().workbench?.editor;return{openEditorPinned:!o?.enablePreviewFromQuickOpen||!o?.enablePreview}}get activeTextEditorControl(){return this.editorService.activeTextEditorControl}gotoLocation(o,e){if((e.keyMods.alt||this.configuration.openEditorPinned&&e.keyMods.ctrlCmd||e.forceSideBySide)&&this.editorService.activeEditor){o.restoreViewState?.();const r={selection:e.range,pinned:e.keyMods.ctrlCmd||this.configuration.openEditorPinned,preserveFocus:e.preserveFocus};this.editorGroupService.sideGroup.openEditor(this.editorService.activeEditor,r)}else super.gotoLocation(o,e)}};t=m([c(0,E),c(1,A),c(2,C)],t);class s extends k{static ID="workbench.action.gotoLine";constructor(){super({id:s.ID,title:y("gotoLine","Go to Line/Column..."),f1:!0,keybinding:{weight:x.WorkbenchContrib,when:null,primary:l.CtrlCmd|g.KeyG,mac:{primary:l.WinCtrl|g.KeyG}}})}async run(i){i.get(I).quickAccess.show(t.PREFIX)}}b(s),h.as(S.Quickaccess).registerQuickAccessProvider({ctor:t,prefix:u.PREFIX,placeholder:p("gotoLineQuickAccessPlaceholder","Type the line number and optional column to go to (e.g. 42:5 for line 42 and column 5)."),helpEntries:[{description:p("gotoLineQuickAccess","Go to Line/Column"),commandId:s.ID}]});export{t as GotoLineQuickAccessProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { localize, localize2 } from '../../../../../nls.js';
+import { IQuickInputService } from '../../../../../platform/quickinput/common/quickInput.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+import { AbstractGotoLineQuickAccessProvider } from '../../../../../editor/contrib/quickAccess/browser/gotoLineQuickAccess.js';
+import { Registry } from '../../../../../platform/registry/common/platform.js';
+import { Extensions as QuickaccesExtensions } from '../../../../../platform/quickinput/common/quickAccess.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { Action2, registerAction2 } from '../../../../../platform/actions/common/actions.js';
+import { IEditorGroupsService } from '../../../../services/editor/common/editorGroupsService.js';
+let GotoLineQuickAccessProvider = class GotoLineQuickAccessProvider extends AbstractGotoLineQuickAccessProvider {
+    constructor(editorService, editorGroupService, configurationService) {
+        super();
+        this.editorService = editorService;
+        this.editorGroupService = editorGroupService;
+        this.configurationService = configurationService;
+        this.onDidActiveTextEditorControlChange = this.editorService.onDidActiveEditorChange;
+    }
+    get configuration() {
+        const editorConfig = this.configurationService.getValue().workbench?.editor;
+        return {
+            openEditorPinned: !editorConfig?.enablePreviewFromQuickOpen || !editorConfig?.enablePreview
+        };
+    }
+    get activeTextEditorControl() {
+        return this.editorService.activeTextEditorControl;
+    }
+    gotoLocation(context, options) {
+        if ((options.keyMods.alt || (this.configuration.openEditorPinned && options.keyMods.ctrlCmd) || options.forceSideBySide) && this.editorService.activeEditor) {
+            context.restoreViewState?.();
+            const editorOptions = {
+                selection: options.range,
+                pinned: options.keyMods.ctrlCmd || this.configuration.openEditorPinned,
+                preserveFocus: options.preserveFocus
+            };
+            this.editorGroupService.sideGroup.openEditor(this.editorService.activeEditor, editorOptions);
+        }
+        else {
+            super.gotoLocation(context, options);
+        }
+    }
+};
+GotoLineQuickAccessProvider = __decorate([
+    __param(0, IEditorService),
+    __param(1, IEditorGroupsService),
+    __param(2, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], GotoLineQuickAccessProvider);
+export { GotoLineQuickAccessProvider };
+class GotoLineAction extends Action2 {
+    static { this.ID = 'workbench.action.gotoLine'; }
+    constructor() {
+        super({
+            id: GotoLineAction.ID,
+            title: localize2('gotoLine', 'Go to Line/Column...'),
+            f1: true,
+            keybinding: {
+                weight: 200,
+                when: null,
+                primary: 2048 | 37,
+                mac: { primary: 256 | 37 }
+            }
+        });
+    }
+    async run(accessor) {
+        accessor.get(IQuickInputService).quickAccess.show(GotoLineQuickAccessProvider.PREFIX);
+    }
+}
+registerAction2(GotoLineAction);
+Registry.as(QuickaccesExtensions.Quickaccess).registerQuickAccessProvider({
+    ctor: GotoLineQuickAccessProvider,
+    prefix: AbstractGotoLineQuickAccessProvider.PREFIX,
+    placeholder: localize('gotoLineQuickAccessPlaceholder', "Type the line number and optional column to go to (e.g. 42:5 for line 42 and column 5)."),
+    helpEntries: [{ description: localize('gotoLineQuickAccess', "Go to Line/Column"), commandId: GotoLineAction.ID }]
+});

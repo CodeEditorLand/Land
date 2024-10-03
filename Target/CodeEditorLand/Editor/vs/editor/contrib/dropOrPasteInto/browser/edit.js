@@ -1,1 +1,69 @@
-import"../../../../base/common/uri.js";import{ResourceTextEdit as c}from"../../../browser/services/bulkEditService.js";import"../../../common/languages.js";import"../../../common/core/range.js";import{SnippetParser as f}from"../../snippet/browser/snippetParser.js";import"../../../../base/common/hierarchicalKind.js";function w(n,p,t){return(typeof t.insertText=="string"?t.insertText==="":t.insertText.snippet==="")?{edits:t.additionalEdit?.edits??[]}:{edits:[...p.map(d=>new c(n,{range:d,text:typeof t.insertText=="string"?f.escape(t.insertText)+"$0":t.insertText.snippet,insertAsSnippet:!0})),...t.additionalEdit?.edits??[]]}}function M(n){function p(e,i){return"mimeType"in e?e.mimeType===i.handledMimeType:!!i.kind&&e.kind.contains(i.kind)}const t=new Map;for(const e of n)for(const i of e.yieldTo??[])for(const o of n)if(o!==e&&p(i,o)){let r=t.get(e);r||(r=[],t.set(e,r)),r.push(o)}if(!t.size)return Array.from(n);const d=new Set,a=[];function s(e){if(!e.length)return[];const i=e[0];if(a.includes(i))return e;if(d.has(i))return s(e.slice(1));let o=[];const r=t.get(i);return r&&(a.push(i),o=s(r),a.pop()),d.add(i),[...o,i,...s(e.slice(1))]}return s(Array.from(n))}export{w as createCombinedWorkspaceEdit,M as sortEditsByYieldTo};
+import { ResourceTextEdit } from '../../../browser/services/bulkEditService.js';
+import { SnippetParser } from '../../snippet/browser/snippetParser.js';
+export function createCombinedWorkspaceEdit(uri, ranges, edit) {
+    if (typeof edit.insertText === 'string' ? edit.insertText === '' : edit.insertText.snippet === '') {
+        return {
+            edits: edit.additionalEdit?.edits ?? []
+        };
+    }
+    return {
+        edits: [
+            ...ranges.map(range => new ResourceTextEdit(uri, { range, text: typeof edit.insertText === 'string' ? SnippetParser.escape(edit.insertText) + '$0' : edit.insertText.snippet, insertAsSnippet: true })),
+            ...(edit.additionalEdit?.edits ?? [])
+        ]
+    };
+}
+export function sortEditsByYieldTo(edits) {
+    function yieldsTo(yTo, other) {
+        if ('mimeType' in yTo) {
+            return yTo.mimeType === other.handledMimeType;
+        }
+        return !!other.kind && yTo.kind.contains(other.kind);
+    }
+    const yieldsToMap = new Map();
+    for (const edit of edits) {
+        for (const yTo of edit.yieldTo ?? []) {
+            for (const other of edits) {
+                if (other === edit) {
+                    continue;
+                }
+                if (yieldsTo(yTo, other)) {
+                    let arr = yieldsToMap.get(edit);
+                    if (!arr) {
+                        arr = [];
+                        yieldsToMap.set(edit, arr);
+                    }
+                    arr.push(other);
+                }
+            }
+        }
+    }
+    if (!yieldsToMap.size) {
+        return Array.from(edits);
+    }
+    const visited = new Set();
+    const tempStack = [];
+    function visit(nodes) {
+        if (!nodes.length) {
+            return [];
+        }
+        const node = nodes[0];
+        if (tempStack.includes(node)) {
+            console.warn('Yield to cycle detected', node);
+            return nodes;
+        }
+        if (visited.has(node)) {
+            return visit(nodes.slice(1));
+        }
+        let pre = [];
+        const yTo = yieldsToMap.get(node);
+        if (yTo) {
+            tempStack.push(node);
+            pre = visit(yTo);
+            tempStack.pop();
+        }
+        visited.add(node);
+        return [...pre, node, ...visit(nodes.slice(1))];
+    }
+    return visit(Array.from(edits));
+}

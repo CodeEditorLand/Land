@@ -1,1 +1,13 @@
-import"../../../../platform/contextkey/common/contextkey.js";import{CONTEXT_DEBUG_PROTOCOL_VARIABLE_MENU_CONTEXT as i,CONTEXT_VARIABLE_EVALUATE_NAME_PRESENT as E,CONTEXT_CAN_VIEW_MEMORY as s,CONTEXT_VARIABLE_IS_READONLY as _,CONTEXT_DEBUG_TYPE as T}from"./debug.js";import"./debugModel.js";function N(n,e,o=[]){const t=e.getSession(),r=[[i.key,e.variableMenuContext||""],[E.key,!!e.evaluateName],[s.key,!!t?.capabilities.supportsReadMemoryRequest&&e.memoryReference!==void 0],[_.key,!!e.presentationHint?.attributes?.includes("readOnly")||e.presentationHint?.lazy],[T.key,t?.configuration.type],...o];return n.createOverlay(r)}export{N as getContextForVariable};
+import { CONTEXT_DEBUG_PROTOCOL_VARIABLE_MENU_CONTEXT, CONTEXT_VARIABLE_EVALUATE_NAME_PRESENT, CONTEXT_CAN_VIEW_MEMORY, CONTEXT_VARIABLE_IS_READONLY, CONTEXT_DEBUG_TYPE } from './debug.js';
+export function getContextForVariable(parentContext, variable, additionalContext = []) {
+    const session = variable.getSession();
+    const contextKeys = [
+        [CONTEXT_DEBUG_PROTOCOL_VARIABLE_MENU_CONTEXT.key, variable.variableMenuContext || ''],
+        [CONTEXT_VARIABLE_EVALUATE_NAME_PRESENT.key, !!variable.evaluateName],
+        [CONTEXT_CAN_VIEW_MEMORY.key, !!session?.capabilities.supportsReadMemoryRequest && variable.memoryReference !== undefined],
+        [CONTEXT_VARIABLE_IS_READONLY.key, !!variable.presentationHint?.attributes?.includes('readOnly') || variable.presentationHint?.lazy],
+        [CONTEXT_DEBUG_TYPE.key, session?.configuration.type],
+        ...additionalContext,
+    ];
+    return parentContext.createOverlay(contextKeys);
+}

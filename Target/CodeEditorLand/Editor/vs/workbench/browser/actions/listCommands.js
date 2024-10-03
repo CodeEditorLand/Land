@@ -1,1 +1,793 @@
-import{KeyMod as d,KeyCode as r,KeyChord as I}from"../../../base/common/keyCodes.js";import"../../../platform/instantiation/common/instantiation.js";import{KeybindingsRegistry as a,KeybindingWeight as l}from"../../../platform/keybinding/common/keybindingsRegistry.js";import{List as k}from"../../../base/browser/ui/list/listWidget.js";import{WorkbenchListFocusContextKey as g,IListService as c,WorkbenchListSupportsMultiSelectContextKey as E,WorkbenchListHasSelectionOrFocus as q,getSelectionKeyboardEvent as D,WorkbenchListSelectionNavigation as P,WorkbenchTreeElementCanCollapse as z,WorkbenchTreeElementHasParent as j,WorkbenchTreeElementHasChild as B,WorkbenchTreeElementCanExpand as G,RawWorkbenchListFocusContextKey as H,WorkbenchTreeFindOpen as J,WorkbenchListSupportsFind as Q,WorkbenchListScrollAtBottomContextKey as X,WorkbenchListScrollAtTopContextKey as Y,WorkbenchTreeStickyScrollFocused as L}from"../../../platform/list/browser/listService.js";import{PagedList as C}from"../../../base/browser/ui/list/listPaging.js";import{equals as N,range as Z}from"../../../base/common/arrays.js";import{ContextKeyExpr as h}from"../../../platform/contextkey/common/contextkey.js";import{ObjectTree as b}from"../../../base/browser/ui/tree/objectTree.js";import{AsyncDataTree as u}from"../../../base/browser/ui/tree/asyncDataTree.js";import{DataTree as w}from"../../../base/browser/ui/tree/dataTree.js";import"../../../base/browser/ui/tree/tree.js";import{CommandsRegistry as K}from"../../../platform/commands/common/commands.js";import{Table as F}from"../../../base/browser/ui/table/tableWidget.js";import{AbstractTree as S,TreeFindMatchType as W,TreeFindMode as T}from"../../../base/browser/ui/tree/abstractTree.js";import{isActiveElement as _}from"../../../base/browser/dom.js";import{Action2 as $,registerAction2 as ee}from"../../../platform/actions/common/actions.js";import{IConfigurationService as te}from"../../../platform/configuration/common/configuration.js";import{localize as O,localize2 as ne}from"../../../nls.js";import{IHoverService as oe}from"../../../platform/hover/browser/hover.js";function R(n){const e=n?.getHTMLElement();e&&!_(e)&&n?.domFocus()}async function ie(n,e){if(!P.getValue(n.contextKeyService))return e(n);const t=n.getFocus(),o=n.getSelection();await e(n);const i=n.getFocus();if(o.length>1||!N(t,o)||N(t,i))return;const s=new KeyboardEvent("keydown");n.setSelection(i,s)}async function y(n,e){if(!n)return;await ie(n,e);const t=n.getFocus();t.length&&n.reveal(t[0]),n.setAnchor(t[0]),R(n)}a.registerCommandAndKeybindingRule({id:"list.focusDown",weight:l.WorkbenchContrib,when:g,primary:r.DownArrow,mac:{primary:r.DownArrow,secondary:[d.WinCtrl|r.KeyN]},handler:(n,e)=>{y(n.get(c).lastFocusedList,async t=>{const o=new KeyboardEvent("keydown");await t.focusNext(typeof e=="number"?e:1,!1,o)})}}),a.registerCommandAndKeybindingRule({id:"list.focusUp",weight:l.WorkbenchContrib,when:g,primary:r.UpArrow,mac:{primary:r.UpArrow,secondary:[d.WinCtrl|r.KeyP]},handler:(n,e)=>{y(n.get(c).lastFocusedList,async t=>{const o=new KeyboardEvent("keydown");await t.focusPrevious(typeof e=="number"?e:1,!1,o)})}}),a.registerCommandAndKeybindingRule({id:"list.focusAnyDown",weight:l.WorkbenchContrib,when:g,primary:d.Alt|r.DownArrow,mac:{primary:d.Alt|r.DownArrow,secondary:[d.WinCtrl|d.Alt|r.KeyN]},handler:(n,e)=>{y(n.get(c).lastFocusedList,async t=>{const o=new KeyboardEvent("keydown",{altKey:!0});await t.focusNext(typeof e=="number"?e:1,!1,o)})}}),a.registerCommandAndKeybindingRule({id:"list.focusAnyUp",weight:l.WorkbenchContrib,when:g,primary:d.Alt|r.UpArrow,mac:{primary:d.Alt|r.UpArrow,secondary:[d.WinCtrl|d.Alt|r.KeyP]},handler:(n,e)=>{y(n.get(c).lastFocusedList,async t=>{const o=new KeyboardEvent("keydown",{altKey:!0});await t.focusPrevious(typeof e=="number"?e:1,!1,o)})}}),a.registerCommandAndKeybindingRule({id:"list.focusPageDown",weight:l.WorkbenchContrib,when:g,primary:r.PageDown,handler:n=>{y(n.get(c).lastFocusedList,async e=>{const t=new KeyboardEvent("keydown");await e.focusNextPage(t)})}}),a.registerCommandAndKeybindingRule({id:"list.focusPageUp",weight:l.WorkbenchContrib,when:g,primary:r.PageUp,handler:n=>{y(n.get(c).lastFocusedList,async e=>{const t=new KeyboardEvent("keydown");await e.focusPreviousPage(t)})}}),a.registerCommandAndKeybindingRule({id:"list.focusFirst",weight:l.WorkbenchContrib,when:g,primary:r.Home,handler:n=>{y(n.get(c).lastFocusedList,async e=>{const t=new KeyboardEvent("keydown");await e.focusFirst(t)})}}),a.registerCommandAndKeybindingRule({id:"list.focusLast",weight:l.WorkbenchContrib,when:g,primary:r.End,handler:n=>{y(n.get(c).lastFocusedList,async e=>{const t=new KeyboardEvent("keydown");await e.focusLast(t)})}}),a.registerCommandAndKeybindingRule({id:"list.focusAnyFirst",weight:l.WorkbenchContrib,when:g,primary:d.Alt|r.Home,handler:n=>{y(n.get(c).lastFocusedList,async e=>{const t=new KeyboardEvent("keydown",{altKey:!0});await e.focusFirst(t)})}}),a.registerCommandAndKeybindingRule({id:"list.focusAnyLast",weight:l.WorkbenchContrib,when:g,primary:d.Alt|r.End,handler:n=>{y(n.get(c).lastFocusedList,async e=>{const t=new KeyboardEvent("keydown",{altKey:!0});await e.focusLast(t)})}});function U(n,e){if(n instanceof k||n instanceof C||n instanceof F){const t=n,o=t.getFocus()?t.getFocus()[0]:void 0,i=t.getSelection();i&&typeof o=="number"&&i.indexOf(o)>=0?t.setSelection(i.filter(s=>s!==e)):typeof o=="number"&&t.setSelection(i.concat(o))}else if(n instanceof b||n instanceof w||n instanceof u){const t=n,o=t.getFocus()?t.getFocus()[0]:void 0;if(e===o)return;const i=t.getSelection(),s=new KeyboardEvent("keydown",{shiftKey:!0});i&&i.indexOf(o)>=0?t.setSelection(i.filter(f=>f!==e),s):t.setSelection(i.concat(o),s)}}function x(n,e){const t=n.getStickyScrollFocus();if(t.length===0)throw new Error("StickyScroll has no focus");if(t.length>1)throw new Error("StickyScroll can only have a single focused item");n.reveal(t[0]),n.getHTMLElement().focus(),n.setFocus(t),e?.(t[0])}a.registerCommandAndKeybindingRule({id:"list.expandSelectionDown",weight:l.WorkbenchContrib,when:h.and(g,E),primary:d.Shift|r.DownArrow,handler:(n,e)=>{const t=n.get(c).lastFocusedList;if(!t)return;const o=t.getFocus()?t.getFocus()[0]:void 0,i=new KeyboardEvent("keydown");t.focusNext(typeof e=="number"?e:1,!1,i),U(t,o);const s=t.getFocus();s.length&&t.reveal(s[0]),R(t)}}),a.registerCommandAndKeybindingRule({id:"list.expandSelectionUp",weight:l.WorkbenchContrib,when:h.and(g,E),primary:d.Shift|r.UpArrow,handler:(n,e)=>{const t=n.get(c).lastFocusedList;if(!t)return;const o=t.getFocus()?t.getFocus()[0]:void 0,i=new KeyboardEvent("keydown");t.focusPrevious(typeof e=="number"?e:1,!1,i),U(t,o);const s=t.getFocus();s.length&&t.reveal(s[0]),R(t)}}),a.registerCommandAndKeybindingRule({id:"list.collapse",weight:l.WorkbenchContrib,when:h.and(g,h.or(z,j)),primary:r.LeftArrow,mac:{primary:r.LeftArrow,secondary:[d.CtrlCmd|r.UpArrow]},handler:n=>{const e=n.get(c).lastFocusedList;if(!e||!(e instanceof b||e instanceof w||e instanceof u))return;const t=e,o=t.getFocus();if(o.length===0)return;const i=o[0];if(!t.collapse(i)){const s=t.getParentElement(i);s&&y(e,f=>{const m=new KeyboardEvent("keydown");f.setFocus([s],m)})}}}),a.registerCommandAndKeybindingRule({id:"list.stickyScroll.collapse",weight:l.WorkbenchContrib+50,when:L,primary:r.LeftArrow,mac:{primary:r.LeftArrow,secondary:[d.CtrlCmd|r.UpArrow]},handler:n=>{const e=n.get(c).lastFocusedList;!e||!(e instanceof b||e instanceof w||e instanceof u)||x(e,t=>e.collapse(t))}}),a.registerCommandAndKeybindingRule({id:"list.collapseAll",weight:l.WorkbenchContrib,when:g,primary:d.CtrlCmd|r.LeftArrow,mac:{primary:d.CtrlCmd|r.LeftArrow,secondary:[d.CtrlCmd|d.Shift|r.UpArrow]},handler:n=>{const e=n.get(c).lastFocusedList;e&&!(e instanceof k||e instanceof C||e instanceof F)&&e.collapseAll()}}),a.registerCommandAndKeybindingRule({id:"list.collapseAllToFocus",weight:l.WorkbenchContrib,when:g,handler:n=>{const e=n.get(c).lastFocusedList,t=D("keydown",!0);if(e instanceof b||e instanceof w||e instanceof u){const o=e,i=o.getFocus();i.length>0&&o.collapse(i[0],!0),o.setSelection(i,t),o.setAnchor(i[0])}}}),a.registerCommandAndKeybindingRule({id:"list.focusParent",weight:l.WorkbenchContrib,when:g,handler:n=>{const e=n.get(c).lastFocusedList;if(!e||!(e instanceof b||e instanceof w||e instanceof u))return;const t=e,o=t.getFocus();if(o.length===0)return;const i=o[0],s=t.getParentElement(i);s&&y(e,f=>{const m=new KeyboardEvent("keydown");f.setFocus([s],m)})}}),a.registerCommandAndKeybindingRule({id:"list.expand",weight:l.WorkbenchContrib,when:h.and(g,h.or(G,B)),primary:r.RightArrow,handler:n=>{const e=n.get(c).lastFocusedList;if(e){if(e instanceof b||e instanceof w){const t=e.getFocus();if(t.length===0)return;const o=t[0];if(!e.expand(o)){const i=e.getFirstElementChild(o);i&&e.getNode(i).visible&&y(e,f=>{const m=new KeyboardEvent("keydown");f.setFocus([i],m)})}}else if(e instanceof u){const t=e.getFocus();if(t.length===0)return;const o=t[0];e.expand(o).then(i=>{if(o&&!i){const s=e.getFirstElementChild(o);s&&e.getNode(s).visible&&y(e,m=>{const p=new KeyboardEvent("keydown");m.setFocus([s],p)})}})}}}});function M(n,e){const t=n.get(c).lastFocusedList,o=D("keydown",e);if(t instanceof k||t instanceof C||t instanceof F){const i=t;i.setAnchor(i.getFocus()[0]),i.setSelection(i.getFocus(),o)}else if(t instanceof b||t instanceof w||t instanceof u){const i=t,s=i.getFocus();if(s.length>0){let f=!0;(i.expandOnlyOnTwistieClick===!0||typeof i.expandOnlyOnTwistieClick!="boolean"&&i.expandOnlyOnTwistieClick(s[0]))&&(f=!1),f&&i.toggleCollapsed(s[0])}i.setAnchor(s[0]),i.setSelection(s,o)}}a.registerCommandAndKeybindingRule({id:"list.select",weight:l.WorkbenchContrib,when:g,primary:r.Enter,mac:{primary:r.Enter,secondary:[d.CtrlCmd|r.DownArrow]},handler:n=>{M(n,!1)}}),a.registerCommandAndKeybindingRule({id:"list.stickyScrollselect",weight:l.WorkbenchContrib+50,when:L,primary:r.Enter,mac:{primary:r.Enter,secondary:[d.CtrlCmd|r.DownArrow]},handler:n=>{const e=n.get(c).lastFocusedList;!e||!(e instanceof b||e instanceof w||e instanceof u)||x(e,t=>e.setSelection([t]))}}),a.registerCommandAndKeybindingRule({id:"list.selectAndPreserveFocus",weight:l.WorkbenchContrib,when:g,handler:n=>{M(n,!0)}}),a.registerCommandAndKeybindingRule({id:"list.selectAll",weight:l.WorkbenchContrib,when:h.and(g,E),primary:d.CtrlCmd|r.KeyA,handler:n=>{const e=n.get(c).lastFocusedList;if(e instanceof k||e instanceof C||e instanceof F){const t=e,o=new KeyboardEvent("keydown");t.setSelection(Z(t.length),o)}else if(e instanceof b||e instanceof w||e instanceof u){const t=e,o=t.getFocus(),i=t.getSelection();let s;o.length>0&&(i.length===0||!i.includes(o[0]))&&(s=o[0]),!s&&i.length>0&&(s=i[0]);let f;s?f=t.getParentElement(s):f=void 0;const m=[],p=V=>{for(const A of V.children)A.visible&&(m.push(A.element),A.collapsed||p(A))};p(t.getNode(f)),f&&i.length===m.length&&m.unshift(f);const v=new KeyboardEvent("keydown");t.setSelection(m,v)}}}),a.registerCommandAndKeybindingRule({id:"list.toggleSelection",weight:l.WorkbenchContrib,when:g,primary:d.CtrlCmd|d.Shift|r.Enter,handler:n=>{const e=n.get(c).lastFocusedList;if(!e)return;const t=e.getFocus();if(t.length===0)return;const o=e.getSelection(),i=o.indexOf(t[0]);i>-1?e.setSelection([...o.slice(0,i),...o.slice(i+1)]):e.setSelection([...o,t[0]])}}),a.registerCommandAndKeybindingRule({id:"list.showHover",weight:l.WorkbenchContrib,primary:I(d.CtrlCmd|r.KeyK,d.CtrlCmd|r.KeyI),when:g,handler:async(n,...e)=>{const o=n.get(c).lastFocusedList;if(!o)return;const i=o.getFocus();if(!i||i.length===0)return;const p=o.getHTMLElement().querySelector(".monaco-scrollable-element")?.querySelector(".monaco-list-rows")?.querySelector(".focused");if(!p)return;const v=re(p);v&&n.get(oe).showManagedHover(v)}});function re(n){if(n.matches('[custom-hover="true"]'))return n;const e=n.querySelector('[custom-hover="true"]:not([tabindex]):not(.action-item)');if(e)return e}a.registerCommandAndKeybindingRule({id:"list.toggleExpand",weight:l.WorkbenchContrib,when:g,primary:r.Space,handler:n=>{const e=n.get(c).lastFocusedList;if(e instanceof b||e instanceof w||e instanceof u){const t=e,o=t.getFocus();if(o.length>0&&t.isCollapsible(o[0])){t.toggleCollapsed(o[0]);return}}M(n,!0)}}),a.registerCommandAndKeybindingRule({id:"list.stickyScrolltoggleExpand",weight:l.WorkbenchContrib+50,when:L,primary:r.Space,handler:n=>{const e=n.get(c).lastFocusedList;!e||!(e instanceof b||e instanceof w||e instanceof u)||x(e)}}),a.registerCommandAndKeybindingRule({id:"list.clear",weight:l.WorkbenchContrib,when:h.and(g,q),primary:r.Escape,handler:n=>{const e=n.get(c).lastFocusedList;if(!e)return;const t=e.getSelection(),o=new KeyboardEvent("keydown");if(t.length>1)if(P.getValue(e.contextKeyService)){const s=e.getFocus();e.setSelection([s[0]],o)}else e.setSelection([],o);else e.setSelection([],o),e.setFocus([],o);e.setAnchor(void 0)}}),K.registerCommand({id:"list.triggerTypeNavigation",handler:n=>{n.get(c).lastFocusedList?.triggerTypeNavigation()}}),K.registerCommand({id:"list.toggleFindMode",handler:n=>{const e=n.get(c).lastFocusedList;if(e instanceof S||e instanceof u){const t=e;t.findMode=t.findMode===T.Filter?T.Highlight:T.Filter}}}),K.registerCommand({id:"list.toggleFindMatchType",handler:n=>{const e=n.get(c).lastFocusedList;if(e instanceof S||e instanceof u){const t=e;t.findMatchType=t.findMatchType===W.Contiguous?W.Fuzzy:W.Contiguous}}}),K.registerCommandAlias("list.toggleKeyboardNavigation","list.triggerTypeNavigation"),K.registerCommandAlias("list.toggleFilterOnType","list.toggleFindMode"),a.registerCommandAndKeybindingRule({id:"list.find",weight:l.WorkbenchContrib,when:h.and(H,Q),primary:d.CtrlCmd|d.Alt|r.KeyF,secondary:[r.F3],handler:n=>{const e=n.get(c).lastFocusedList;e instanceof k||e instanceof C||e instanceof F||(e instanceof S||e instanceof u)&&e.openFind()}}),a.registerCommandAndKeybindingRule({id:"list.closeFind",weight:l.WorkbenchContrib,when:h.and(H,J),primary:r.Escape,handler:n=>{const e=n.get(c).lastFocusedList;(e instanceof S||e instanceof u)&&e.closeFind()}}),a.registerCommandAndKeybindingRule({id:"list.scrollUp",weight:l.WorkbenchContrib,when:h.and(g,Y?.negate()),primary:d.CtrlCmd|r.UpArrow,handler:n=>{const e=n.get(c).lastFocusedList;e&&(e.scrollTop-=10)}}),a.registerCommandAndKeybindingRule({id:"list.scrollDown",weight:l.WorkbenchContrib,when:h.and(g,X?.negate()),primary:d.CtrlCmd|r.DownArrow,handler:n=>{const e=n.get(c).lastFocusedList;e&&(e.scrollTop+=10)}}),a.registerCommandAndKeybindingRule({id:"list.scrollLeft",weight:l.WorkbenchContrib,when:g,handler:n=>{const e=n.get(c).lastFocusedList;e&&(e.scrollLeft-=10)}}),a.registerCommandAndKeybindingRule({id:"list.scrollRight",weight:l.WorkbenchContrib,when:g,handler:n=>{const e=n.get(c).lastFocusedList;e&&(e.scrollLeft+=10)}}),ee(class extends ${constructor(){super({id:"tree.toggleStickyScroll",title:{...ne("toggleTreeStickyScroll","Toggle Tree Sticky Scroll"),mnemonicTitle:O({key:"mitoggleTreeStickyScroll",comment:["&& denotes a mnemonic"]},"&&Toggle Tree Sticky Scroll")},category:"View",metadata:{description:O("toggleTreeStickyScrollDescription","Toggles Sticky Scroll widget at the top of tree structures such as the File Explorer and Debug variables View.")},f1:!0})}run(e){const t=e.get(te),o=!t.getValue("workbench.tree.enableStickyScroll");t.updateValue("workbench.tree.enableStickyScroll",o)}});
+import { KeyChord } from '../../../base/common/keyCodes.js';
+import { KeybindingsRegistry } from '../../../platform/keybinding/common/keybindingsRegistry.js';
+import { List } from '../../../base/browser/ui/list/listWidget.js';
+import { WorkbenchListFocusContextKey, IListService, WorkbenchListSupportsMultiSelectContextKey, WorkbenchListHasSelectionOrFocus, getSelectionKeyboardEvent, WorkbenchListSelectionNavigation, WorkbenchTreeElementCanCollapse, WorkbenchTreeElementHasParent, WorkbenchTreeElementHasChild, WorkbenchTreeElementCanExpand, RawWorkbenchListFocusContextKey, WorkbenchTreeFindOpen, WorkbenchListSupportsFind, WorkbenchListScrollAtBottomContextKey, WorkbenchListScrollAtTopContextKey, WorkbenchTreeStickyScrollFocused } from '../../../platform/list/browser/listService.js';
+import { PagedList } from '../../../base/browser/ui/list/listPaging.js';
+import { equals, range } from '../../../base/common/arrays.js';
+import { ContextKeyExpr } from '../../../platform/contextkey/common/contextkey.js';
+import { ObjectTree } from '../../../base/browser/ui/tree/objectTree.js';
+import { AsyncDataTree } from '../../../base/browser/ui/tree/asyncDataTree.js';
+import { DataTree } from '../../../base/browser/ui/tree/dataTree.js';
+import { CommandsRegistry } from '../../../platform/commands/common/commands.js';
+import { Table } from '../../../base/browser/ui/table/tableWidget.js';
+import { AbstractTree, TreeFindMatchType, TreeFindMode } from '../../../base/browser/ui/tree/abstractTree.js';
+import { isActiveElement } from '../../../base/browser/dom.js';
+import { Action2, registerAction2 } from '../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../platform/configuration/common/configuration.js';
+import { localize, localize2 } from '../../../nls.js';
+import { IHoverService } from '../../../platform/hover/browser/hover.js';
+function ensureDOMFocus(widget) {
+    const element = widget?.getHTMLElement();
+    if (element && !isActiveElement(element)) {
+        widget?.domFocus();
+    }
+}
+async function updateFocus(widget, updateFocusFn) {
+    if (!WorkbenchListSelectionNavigation.getValue(widget.contextKeyService)) {
+        return updateFocusFn(widget);
+    }
+    const focus = widget.getFocus();
+    const selection = widget.getSelection();
+    await updateFocusFn(widget);
+    const newFocus = widget.getFocus();
+    if (selection.length > 1 || !equals(focus, selection) || equals(focus, newFocus)) {
+        return;
+    }
+    const fakeKeyboardEvent = new KeyboardEvent('keydown');
+    widget.setSelection(newFocus, fakeKeyboardEvent);
+}
+async function navigate(widget, updateFocusFn) {
+    if (!widget) {
+        return;
+    }
+    await updateFocus(widget, updateFocusFn);
+    const listFocus = widget.getFocus();
+    if (listFocus.length) {
+        widget.reveal(listFocus[0]);
+    }
+    widget.setAnchor(listFocus[0]);
+    ensureDOMFocus(widget);
+}
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.focusDown',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 18,
+    mac: {
+        primary: 18,
+        secondary: [256 | 44]
+    },
+    handler: (accessor, arg2) => {
+        navigate(accessor.get(IListService).lastFocusedList, async (widget) => {
+            const fakeKeyboardEvent = new KeyboardEvent('keydown');
+            await widget.focusNext(typeof arg2 === 'number' ? arg2 : 1, false, fakeKeyboardEvent);
+        });
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.focusUp',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 16,
+    mac: {
+        primary: 16,
+        secondary: [256 | 46]
+    },
+    handler: (accessor, arg2) => {
+        navigate(accessor.get(IListService).lastFocusedList, async (widget) => {
+            const fakeKeyboardEvent = new KeyboardEvent('keydown');
+            await widget.focusPrevious(typeof arg2 === 'number' ? arg2 : 1, false, fakeKeyboardEvent);
+        });
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.focusAnyDown',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 512 | 18,
+    mac: {
+        primary: 512 | 18,
+        secondary: [256 | 512 | 44]
+    },
+    handler: (accessor, arg2) => {
+        navigate(accessor.get(IListService).lastFocusedList, async (widget) => {
+            const fakeKeyboardEvent = new KeyboardEvent('keydown', { altKey: true });
+            await widget.focusNext(typeof arg2 === 'number' ? arg2 : 1, false, fakeKeyboardEvent);
+        });
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.focusAnyUp',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 512 | 16,
+    mac: {
+        primary: 512 | 16,
+        secondary: [256 | 512 | 46]
+    },
+    handler: (accessor, arg2) => {
+        navigate(accessor.get(IListService).lastFocusedList, async (widget) => {
+            const fakeKeyboardEvent = new KeyboardEvent('keydown', { altKey: true });
+            await widget.focusPrevious(typeof arg2 === 'number' ? arg2 : 1, false, fakeKeyboardEvent);
+        });
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.focusPageDown',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 12,
+    handler: (accessor) => {
+        navigate(accessor.get(IListService).lastFocusedList, async (widget) => {
+            const fakeKeyboardEvent = new KeyboardEvent('keydown');
+            await widget.focusNextPage(fakeKeyboardEvent);
+        });
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.focusPageUp',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 11,
+    handler: (accessor) => {
+        navigate(accessor.get(IListService).lastFocusedList, async (widget) => {
+            const fakeKeyboardEvent = new KeyboardEvent('keydown');
+            await widget.focusPreviousPage(fakeKeyboardEvent);
+        });
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.focusFirst',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 14,
+    handler: (accessor) => {
+        navigate(accessor.get(IListService).lastFocusedList, async (widget) => {
+            const fakeKeyboardEvent = new KeyboardEvent('keydown');
+            await widget.focusFirst(fakeKeyboardEvent);
+        });
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.focusLast',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 13,
+    handler: (accessor) => {
+        navigate(accessor.get(IListService).lastFocusedList, async (widget) => {
+            const fakeKeyboardEvent = new KeyboardEvent('keydown');
+            await widget.focusLast(fakeKeyboardEvent);
+        });
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.focusAnyFirst',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 512 | 14,
+    handler: (accessor) => {
+        navigate(accessor.get(IListService).lastFocusedList, async (widget) => {
+            const fakeKeyboardEvent = new KeyboardEvent('keydown', { altKey: true });
+            await widget.focusFirst(fakeKeyboardEvent);
+        });
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.focusAnyLast',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 512 | 13,
+    handler: (accessor) => {
+        navigate(accessor.get(IListService).lastFocusedList, async (widget) => {
+            const fakeKeyboardEvent = new KeyboardEvent('keydown', { altKey: true });
+            await widget.focusLast(fakeKeyboardEvent);
+        });
+    }
+});
+function expandMultiSelection(focused, previousFocus) {
+    if (focused instanceof List || focused instanceof PagedList || focused instanceof Table) {
+        const list = focused;
+        const focus = list.getFocus() ? list.getFocus()[0] : undefined;
+        const selection = list.getSelection();
+        if (selection && typeof focus === 'number' && selection.indexOf(focus) >= 0) {
+            list.setSelection(selection.filter(s => s !== previousFocus));
+        }
+        else {
+            if (typeof focus === 'number') {
+                list.setSelection(selection.concat(focus));
+            }
+        }
+    }
+    else if (focused instanceof ObjectTree || focused instanceof DataTree || focused instanceof AsyncDataTree) {
+        const list = focused;
+        const focus = list.getFocus() ? list.getFocus()[0] : undefined;
+        if (previousFocus === focus) {
+            return;
+        }
+        const selection = list.getSelection();
+        const fakeKeyboardEvent = new KeyboardEvent('keydown', { shiftKey: true });
+        if (selection && selection.indexOf(focus) >= 0) {
+            list.setSelection(selection.filter(s => s !== previousFocus), fakeKeyboardEvent);
+        }
+        else {
+            list.setSelection(selection.concat(focus), fakeKeyboardEvent);
+        }
+    }
+}
+function revealFocusedStickyScroll(tree, postRevealAction) {
+    const focus = tree.getStickyScrollFocus();
+    if (focus.length === 0) {
+        throw new Error(`StickyScroll has no focus`);
+    }
+    if (focus.length > 1) {
+        throw new Error(`StickyScroll can only have a single focused item`);
+    }
+    tree.reveal(focus[0]);
+    tree.getHTMLElement().focus();
+    tree.setFocus(focus);
+    postRevealAction?.(focus[0]);
+}
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.expandSelectionDown',
+    weight: 200,
+    when: ContextKeyExpr.and(WorkbenchListFocusContextKey, WorkbenchListSupportsMultiSelectContextKey),
+    primary: 1024 | 18,
+    handler: (accessor, arg2) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (!widget) {
+            return;
+        }
+        const previousFocus = widget.getFocus() ? widget.getFocus()[0] : undefined;
+        const fakeKeyboardEvent = new KeyboardEvent('keydown');
+        widget.focusNext(typeof arg2 === 'number' ? arg2 : 1, false, fakeKeyboardEvent);
+        expandMultiSelection(widget, previousFocus);
+        const focus = widget.getFocus();
+        if (focus.length) {
+            widget.reveal(focus[0]);
+        }
+        ensureDOMFocus(widget);
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.expandSelectionUp',
+    weight: 200,
+    when: ContextKeyExpr.and(WorkbenchListFocusContextKey, WorkbenchListSupportsMultiSelectContextKey),
+    primary: 1024 | 16,
+    handler: (accessor, arg2) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (!widget) {
+            return;
+        }
+        const previousFocus = widget.getFocus() ? widget.getFocus()[0] : undefined;
+        const fakeKeyboardEvent = new KeyboardEvent('keydown');
+        widget.focusPrevious(typeof arg2 === 'number' ? arg2 : 1, false, fakeKeyboardEvent);
+        expandMultiSelection(widget, previousFocus);
+        const focus = widget.getFocus();
+        if (focus.length) {
+            widget.reveal(focus[0]);
+        }
+        ensureDOMFocus(widget);
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.collapse',
+    weight: 200,
+    when: ContextKeyExpr.and(WorkbenchListFocusContextKey, ContextKeyExpr.or(WorkbenchTreeElementCanCollapse, WorkbenchTreeElementHasParent)),
+    primary: 15,
+    mac: {
+        primary: 15,
+        secondary: [2048 | 16]
+    },
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (!widget || !(widget instanceof ObjectTree || widget instanceof DataTree || widget instanceof AsyncDataTree)) {
+            return;
+        }
+        const tree = widget;
+        const focusedElements = tree.getFocus();
+        if (focusedElements.length === 0) {
+            return;
+        }
+        const focus = focusedElements[0];
+        if (!tree.collapse(focus)) {
+            const parent = tree.getParentElement(focus);
+            if (parent) {
+                navigate(widget, widget => {
+                    const fakeKeyboardEvent = new KeyboardEvent('keydown');
+                    widget.setFocus([parent], fakeKeyboardEvent);
+                });
+            }
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.stickyScroll.collapse',
+    weight: 200 + 50,
+    when: WorkbenchTreeStickyScrollFocused,
+    primary: 15,
+    mac: {
+        primary: 15,
+        secondary: [2048 | 16]
+    },
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (!widget || !(widget instanceof ObjectTree || widget instanceof DataTree || widget instanceof AsyncDataTree)) {
+            return;
+        }
+        revealFocusedStickyScroll(widget, focus => widget.collapse(focus));
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.collapseAll',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 2048 | 15,
+    mac: {
+        primary: 2048 | 15,
+        secondary: [2048 | 1024 | 16]
+    },
+    handler: (accessor) => {
+        const focused = accessor.get(IListService).lastFocusedList;
+        if (focused && !(focused instanceof List || focused instanceof PagedList || focused instanceof Table)) {
+            focused.collapseAll();
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.collapseAllToFocus',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    handler: accessor => {
+        const focused = accessor.get(IListService).lastFocusedList;
+        const fakeKeyboardEvent = getSelectionKeyboardEvent('keydown', true);
+        if (focused instanceof ObjectTree || focused instanceof DataTree || focused instanceof AsyncDataTree) {
+            const tree = focused;
+            const focus = tree.getFocus();
+            if (focus.length > 0) {
+                tree.collapse(focus[0], true);
+            }
+            tree.setSelection(focus, fakeKeyboardEvent);
+            tree.setAnchor(focus[0]);
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.focusParent',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (!widget || !(widget instanceof ObjectTree || widget instanceof DataTree || widget instanceof AsyncDataTree)) {
+            return;
+        }
+        const tree = widget;
+        const focusedElements = tree.getFocus();
+        if (focusedElements.length === 0) {
+            return;
+        }
+        const focus = focusedElements[0];
+        const parent = tree.getParentElement(focus);
+        if (parent) {
+            navigate(widget, widget => {
+                const fakeKeyboardEvent = new KeyboardEvent('keydown');
+                widget.setFocus([parent], fakeKeyboardEvent);
+            });
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.expand',
+    weight: 200,
+    when: ContextKeyExpr.and(WorkbenchListFocusContextKey, ContextKeyExpr.or(WorkbenchTreeElementCanExpand, WorkbenchTreeElementHasChild)),
+    primary: 17,
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (!widget) {
+            return;
+        }
+        if (widget instanceof ObjectTree || widget instanceof DataTree) {
+            const focusedElements = widget.getFocus();
+            if (focusedElements.length === 0) {
+                return;
+            }
+            const focus = focusedElements[0];
+            if (!widget.expand(focus)) {
+                const child = widget.getFirstElementChild(focus);
+                if (child) {
+                    const node = widget.getNode(child);
+                    if (node.visible) {
+                        navigate(widget, widget => {
+                            const fakeKeyboardEvent = new KeyboardEvent('keydown');
+                            widget.setFocus([child], fakeKeyboardEvent);
+                        });
+                    }
+                }
+            }
+        }
+        else if (widget instanceof AsyncDataTree) {
+            const focusedElements = widget.getFocus();
+            if (focusedElements.length === 0) {
+                return;
+            }
+            const focus = focusedElements[0];
+            widget.expand(focus).then(didExpand => {
+                if (focus && !didExpand) {
+                    const child = widget.getFirstElementChild(focus);
+                    if (child) {
+                        const node = widget.getNode(child);
+                        if (node.visible) {
+                            navigate(widget, widget => {
+                                const fakeKeyboardEvent = new KeyboardEvent('keydown');
+                                widget.setFocus([child], fakeKeyboardEvent);
+                            });
+                        }
+                    }
+                }
+            });
+        }
+    }
+});
+function selectElement(accessor, retainCurrentFocus) {
+    const focused = accessor.get(IListService).lastFocusedList;
+    const fakeKeyboardEvent = getSelectionKeyboardEvent('keydown', retainCurrentFocus);
+    if (focused instanceof List || focused instanceof PagedList || focused instanceof Table) {
+        const list = focused;
+        list.setAnchor(list.getFocus()[0]);
+        list.setSelection(list.getFocus(), fakeKeyboardEvent);
+    }
+    else if (focused instanceof ObjectTree || focused instanceof DataTree || focused instanceof AsyncDataTree) {
+        const tree = focused;
+        const focus = tree.getFocus();
+        if (focus.length > 0) {
+            let toggleCollapsed = true;
+            if (tree.expandOnlyOnTwistieClick === true) {
+                toggleCollapsed = false;
+            }
+            else if (typeof tree.expandOnlyOnTwistieClick !== 'boolean' && tree.expandOnlyOnTwistieClick(focus[0])) {
+                toggleCollapsed = false;
+            }
+            if (toggleCollapsed) {
+                tree.toggleCollapsed(focus[0]);
+            }
+        }
+        tree.setAnchor(focus[0]);
+        tree.setSelection(focus, fakeKeyboardEvent);
+    }
+}
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.select',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 3,
+    mac: {
+        primary: 3,
+        secondary: [2048 | 18]
+    },
+    handler: (accessor) => {
+        selectElement(accessor, false);
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.stickyScrollselect',
+    weight: 200 + 50,
+    when: WorkbenchTreeStickyScrollFocused,
+    primary: 3,
+    mac: {
+        primary: 3,
+        secondary: [2048 | 18]
+    },
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (!widget || !(widget instanceof ObjectTree || widget instanceof DataTree || widget instanceof AsyncDataTree)) {
+            return;
+        }
+        revealFocusedStickyScroll(widget, focus => widget.setSelection([focus]));
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.selectAndPreserveFocus',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    handler: accessor => {
+        selectElement(accessor, true);
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.selectAll',
+    weight: 200,
+    when: ContextKeyExpr.and(WorkbenchListFocusContextKey, WorkbenchListSupportsMultiSelectContextKey),
+    primary: 2048 | 31,
+    handler: (accessor) => {
+        const focused = accessor.get(IListService).lastFocusedList;
+        if (focused instanceof List || focused instanceof PagedList || focused instanceof Table) {
+            const list = focused;
+            const fakeKeyboardEvent = new KeyboardEvent('keydown');
+            list.setSelection(range(list.length), fakeKeyboardEvent);
+        }
+        else if (focused instanceof ObjectTree || focused instanceof DataTree || focused instanceof AsyncDataTree) {
+            const tree = focused;
+            const focus = tree.getFocus();
+            const selection = tree.getSelection();
+            let start = undefined;
+            if (focus.length > 0 && (selection.length === 0 || !selection.includes(focus[0]))) {
+                start = focus[0];
+            }
+            if (!start && selection.length > 0) {
+                start = selection[0];
+            }
+            let scope = undefined;
+            if (!start) {
+                scope = undefined;
+            }
+            else {
+                scope = tree.getParentElement(start);
+            }
+            const newSelection = [];
+            const visit = (node) => {
+                for (const child of node.children) {
+                    if (child.visible) {
+                        newSelection.push(child.element);
+                        if (!child.collapsed) {
+                            visit(child);
+                        }
+                    }
+                }
+            };
+            visit(tree.getNode(scope));
+            if (scope && selection.length === newSelection.length) {
+                newSelection.unshift(scope);
+            }
+            const fakeKeyboardEvent = new KeyboardEvent('keydown');
+            tree.setSelection(newSelection, fakeKeyboardEvent);
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.toggleSelection',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 2048 | 1024 | 3,
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (!widget) {
+            return;
+        }
+        const focus = widget.getFocus();
+        if (focus.length === 0) {
+            return;
+        }
+        const selection = widget.getSelection();
+        const index = selection.indexOf(focus[0]);
+        if (index > -1) {
+            widget.setSelection([...selection.slice(0, index), ...selection.slice(index + 1)]);
+        }
+        else {
+            widget.setSelection([...selection, focus[0]]);
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.showHover',
+    weight: 200,
+    primary: KeyChord(2048 | 41, 2048 | 39),
+    when: WorkbenchListFocusContextKey,
+    handler: async (accessor, ...args) => {
+        const listService = accessor.get(IListService);
+        const lastFocusedList = listService.lastFocusedList;
+        if (!lastFocusedList) {
+            return;
+        }
+        const focus = lastFocusedList.getFocus();
+        if (!focus || (focus.length === 0)) {
+            return;
+        }
+        const treeDOM = lastFocusedList.getHTMLElement();
+        const scrollableElement = treeDOM.querySelector('.monaco-scrollable-element');
+        const listRows = scrollableElement?.querySelector('.monaco-list-rows');
+        const focusedElement = listRows?.querySelector('.focused');
+        if (!focusedElement) {
+            return;
+        }
+        const elementWithHover = getCustomHoverForElement(focusedElement);
+        if (elementWithHover) {
+            accessor.get(IHoverService).showManagedHover(elementWithHover);
+        }
+    },
+});
+function getCustomHoverForElement(element) {
+    if (element.matches('[custom-hover="true"]')) {
+        return element;
+    }
+    const noneFocusableElementWithHover = element.querySelector('[custom-hover="true"]:not([tabindex]):not(.action-item)');
+    if (noneFocusableElementWithHover) {
+        return noneFocusableElementWithHover;
+    }
+    return undefined;
+}
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.toggleExpand',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    primary: 10,
+    handler: (accessor) => {
+        const focused = accessor.get(IListService).lastFocusedList;
+        if (focused instanceof ObjectTree || focused instanceof DataTree || focused instanceof AsyncDataTree) {
+            const tree = focused;
+            const focus = tree.getFocus();
+            if (focus.length > 0 && tree.isCollapsible(focus[0])) {
+                tree.toggleCollapsed(focus[0]);
+                return;
+            }
+        }
+        selectElement(accessor, true);
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.stickyScrolltoggleExpand',
+    weight: 200 + 50,
+    when: WorkbenchTreeStickyScrollFocused,
+    primary: 10,
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (!widget || !(widget instanceof ObjectTree || widget instanceof DataTree || widget instanceof AsyncDataTree)) {
+            return;
+        }
+        revealFocusedStickyScroll(widget);
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.clear',
+    weight: 200,
+    when: ContextKeyExpr.and(WorkbenchListFocusContextKey, WorkbenchListHasSelectionOrFocus),
+    primary: 9,
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (!widget) {
+            return;
+        }
+        const selection = widget.getSelection();
+        const fakeKeyboardEvent = new KeyboardEvent('keydown');
+        if (selection.length > 1) {
+            const useSelectionNavigation = WorkbenchListSelectionNavigation.getValue(widget.contextKeyService);
+            if (useSelectionNavigation) {
+                const focus = widget.getFocus();
+                widget.setSelection([focus[0]], fakeKeyboardEvent);
+            }
+            else {
+                widget.setSelection([], fakeKeyboardEvent);
+            }
+        }
+        else {
+            widget.setSelection([], fakeKeyboardEvent);
+            widget.setFocus([], fakeKeyboardEvent);
+        }
+        widget.setAnchor(undefined);
+    }
+});
+CommandsRegistry.registerCommand({
+    id: 'list.triggerTypeNavigation',
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        widget?.triggerTypeNavigation();
+    }
+});
+CommandsRegistry.registerCommand({
+    id: 'list.toggleFindMode',
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (widget instanceof AbstractTree || widget instanceof AsyncDataTree) {
+            const tree = widget;
+            tree.findMode = tree.findMode === TreeFindMode.Filter ? TreeFindMode.Highlight : TreeFindMode.Filter;
+        }
+    }
+});
+CommandsRegistry.registerCommand({
+    id: 'list.toggleFindMatchType',
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (widget instanceof AbstractTree || widget instanceof AsyncDataTree) {
+            const tree = widget;
+            tree.findMatchType = tree.findMatchType === TreeFindMatchType.Contiguous ? TreeFindMatchType.Fuzzy : TreeFindMatchType.Contiguous;
+        }
+    }
+});
+CommandsRegistry.registerCommandAlias('list.toggleKeyboardNavigation', 'list.triggerTypeNavigation');
+CommandsRegistry.registerCommandAlias('list.toggleFilterOnType', 'list.toggleFindMode');
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.find',
+    weight: 200,
+    when: ContextKeyExpr.and(RawWorkbenchListFocusContextKey, WorkbenchListSupportsFind),
+    primary: 2048 | 512 | 36,
+    secondary: [61],
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (widget instanceof List || widget instanceof PagedList || widget instanceof Table) {
+        }
+        else if (widget instanceof AbstractTree || widget instanceof AsyncDataTree) {
+            const tree = widget;
+            tree.openFind();
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.closeFind',
+    weight: 200,
+    when: ContextKeyExpr.and(RawWorkbenchListFocusContextKey, WorkbenchTreeFindOpen),
+    primary: 9,
+    handler: (accessor) => {
+        const widget = accessor.get(IListService).lastFocusedList;
+        if (widget instanceof AbstractTree || widget instanceof AsyncDataTree) {
+            const tree = widget;
+            tree.closeFind();
+        }
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.scrollUp',
+    weight: 200,
+    when: ContextKeyExpr.and(WorkbenchListFocusContextKey, WorkbenchListScrollAtTopContextKey?.negate()),
+    primary: 2048 | 16,
+    handler: accessor => {
+        const focused = accessor.get(IListService).lastFocusedList;
+        if (!focused) {
+            return;
+        }
+        focused.scrollTop -= 10;
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.scrollDown',
+    weight: 200,
+    when: ContextKeyExpr.and(WorkbenchListFocusContextKey, WorkbenchListScrollAtBottomContextKey?.negate()),
+    primary: 2048 | 18,
+    handler: accessor => {
+        const focused = accessor.get(IListService).lastFocusedList;
+        if (!focused) {
+            return;
+        }
+        focused.scrollTop += 10;
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.scrollLeft',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    handler: accessor => {
+        const focused = accessor.get(IListService).lastFocusedList;
+        if (!focused) {
+            return;
+        }
+        focused.scrollLeft -= 10;
+    }
+});
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+    id: 'list.scrollRight',
+    weight: 200,
+    when: WorkbenchListFocusContextKey,
+    handler: accessor => {
+        const focused = accessor.get(IListService).lastFocusedList;
+        if (!focused) {
+            return;
+        }
+        focused.scrollLeft += 10;
+    }
+});
+registerAction2(class ToggleStickyScroll extends Action2 {
+    constructor() {
+        super({
+            id: 'tree.toggleStickyScroll',
+            title: {
+                ...localize2('toggleTreeStickyScroll', "Toggle Tree Sticky Scroll"),
+                mnemonicTitle: localize({ key: 'mitoggleTreeStickyScroll', comment: ['&& denotes a mnemonic'] }, "&&Toggle Tree Sticky Scroll"),
+            },
+            category: 'View',
+            metadata: { description: localize('toggleTreeStickyScrollDescription', "Toggles Sticky Scroll widget at the top of tree structures such as the File Explorer and Debug variables View.") },
+            f1: true
+        });
+    }
+    run(accessor) {
+        const configurationService = accessor.get(IConfigurationService);
+        const newValue = !configurationService.getValue('workbench.tree.enableStickyScroll');
+        configurationService.updateValue('workbench.tree.enableStickyScroll', newValue);
+    }
+});

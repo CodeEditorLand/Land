@@ -1,3 +1,312 @@
-import{URI as x}from"../../../../../base/common/uri.js";import{localize as l}from"../../../../../nls.js";import{TerminalQuickFixType as u}from"./quickFix.js";const m=/git/,g=/and can be fast-forwarded/,d=/git\s+push/,f=/error: did you mean `--(.+)` \(with two dashes\)\?/,F=/(?:(most similar commands? (is|are)))/,M=/(?:address already in use (?:0\.0\.0\.0|127\.0\.0\.1|localhost|::):|Unable to bind [^ ]*:|can't listen on port |listen EADDRINUSE [^ ]*:)(?<portNumber>\d{4,5})/,T=/git push --set-upstream origin (?<branchName>[^\s]+)/,C=/remote:\s*(?<link>https:\/\/github\.com\/.+\/.+\/pull\/new\/.+)/,p=/Suggestion \[General\]:/,h=/Suggestion \[cmd-not-found\]:/;var k=(t=>(t.Builtin="builtin",t))(k||{});function G(){return{id:"Git Similar",type:"internal",commandLineMatcher:m,outputMatcher:{lineMatcher:F,anchor:"bottom",offset:0,length:10},commandExitResult:"error",getQuickFixes:n=>{const t=n.outputMatch?.regexMatch[0];if(!t||!n.outputMatch)return;const e=[],i=n.outputMatch.outputLines.findIndex(r=>r.includes(t))+1,o=n.outputMatch.outputLines.map(r=>r.trim());for(let r=i;r<o.length;r++){const a=o[r];a&&e.push({id:"Git Similar",type:u.TerminalCommand,terminalCommand:n.commandLine.replace(/git\s+[^\s]+/,()=>`git ${a}`),shouldExecute:!0,source:"builtin"})}return e}}}function w(){return{id:"Git Fast Forward Pull",type:"internal",commandLineMatcher:m,outputMatcher:{lineMatcher:g,anchor:"bottom",offset:0,length:8},commandExitResult:"success",getQuickFixes:n=>({type:u.TerminalCommand,id:"Git Fast Forward Pull",terminalCommand:"git pull",shouldExecute:!0,source:"builtin"})}}function S(){return{id:"Git Two Dashes",type:"internal",commandLineMatcher:m,outputMatcher:{lineMatcher:f,anchor:"bottom",offset:0,length:2},commandExitResult:"error",getQuickFixes:n=>{const t=n?.outputMatch?.regexMatch?.[1];if(t)return{type:u.TerminalCommand,id:"Git Two Dashes",terminalCommand:n.commandLine.replace(` -${t}`,()=>` --${t}`),shouldExecute:!0,source:"builtin"}}}}function O(n){return{id:"Free Port",type:"internal",commandLineMatcher:/.+/,outputMatcher:{lineMatcher:M,anchor:"bottom",offset:0,length:30},commandExitResult:"error",getQuickFixes:t=>{const e=t?.outputMatch?.regexMatch?.groups?.portNumber;if(!e)return;const i=l("terminal.freePort","Free port {0}",e);return{type:u.Port,class:void 0,tooltip:i,id:"Free Port",label:i,enabled:!0,source:"builtin",run:()=>n(e,t.commandLine)}}}}function L(){return{id:"Git Push Set Upstream",type:"internal",commandLineMatcher:d,outputMatcher:{lineMatcher:T,anchor:"bottom",offset:0,length:8},commandExitResult:"error",getQuickFixes:n=>{const t=n.outputMatch,e="git push --set-upstream origin ${group:branchName}";if(!t)return;const i=t.regexMatch.groups;if(!i)return;const o=[];let r=e;for(const[a,c]of Object.entries(i)){const s=`\${group:${a}}`;if(!e.includes(s))return[];r=r.replaceAll(s,()=>c)}if(r)return o.push({type:u.TerminalCommand,id:"Git Push Set Upstream",terminalCommand:r,shouldExecute:!0,source:"builtin"}),o}}}function U(){return{id:"Git Create Pr",type:"internal",commandLineMatcher:d,outputMatcher:{lineMatcher:C,anchor:"bottom",offset:4,length:12},commandExitResult:"success",getQuickFixes:n=>{const t=n?.outputMatch?.regexMatch?.groups?.link?.trimEnd();return t?{id:"Git Create Pr",label:l("terminal.createPR","Create PR {0}",t),enabled:!0,type:u.Opener,uri:x.parse(t),source:"builtin"}:void 0}}}function B(){return{id:"Pwsh General Error",type:"internal",commandLineMatcher:/.+/,outputMatcher:{lineMatcher:p,anchor:"bottom",offset:0,length:10},commandExitResult:"error",getQuickFixes:n=>{const t=n.outputMatch?.regexMatch.input?.split(`
-`);if(!t)return;let e=0,i=!1;for(;e<t.length;e++)if(t[e].match(p)){i=!0;break}if(!i)return;const o=t[e+1].match(/The most similar commands are: (?<values>.+)./)?.groups?.values?.split(", ");if(!o)return;const r=[];for(const a of o)r.push({id:"Pwsh General Error",type:u.TerminalCommand,terminalCommand:a,source:"builtin"});return r}}}function N(){return{id:"Unix Command Not Found",type:"internal",commandLineMatcher:/.+/,outputMatcher:{lineMatcher:h,anchor:"bottom",offset:0,length:10},commandExitResult:"error",getQuickFixes:n=>{const t=n.outputMatch?.regexMatch.input?.split(`
-`);if(!t)return;let e=0,i=!1;for(;e<t.length;e++)if(t[e].match(h)){i=!0;break}if(!i)return;const o=[];let r=!1;for(;e<t.length;e++){const a=t[e].trim();if(a.length===0)break;const c=a.match(/You also have .+ installed, you can run '(?<command>.+)' instead./)?.groups?.command;if(c){o.push({id:"Pwsh Unix Command Not Found Error",type:u.TerminalCommand,terminalCommand:c,source:"builtin"}),r=!1;continue}if(a.match(/Command '.+' not found, but can be installed with:/)){r=!0;continue}r&&o.push({id:"Pwsh Unix Command Not Found Error",type:u.TerminalCommand,terminalCommand:a.trim(),source:"builtin"})}return o}}}export{M as FreePortOutputRegex,m as GitCommandLineRegex,C as GitCreatePrOutputRegex,g as GitFastForwardPullOutputRegex,d as GitPushCommandLineRegex,T as GitPushOutputRegex,F as GitSimilarOutputRegex,f as GitTwoDashesRegex,p as PwshGeneralErrorOutputRegex,h as PwshUnixCommandNotFoundErrorOutputRegex,k as QuickFixSource,O as freePort,U as gitCreatePr,w as gitFastForwardPull,L as gitPushSetUpstream,G as gitSimilar,S as gitTwoDashes,B as pwshGeneralError,N as pwshUnixCommandNotFoundError};
+import { URI } from '../../../../../base/common/uri.js';
+import { localize } from '../../../../../nls.js';
+import { TerminalQuickFixType } from './quickFix.js';
+export const GitCommandLineRegex = /git/;
+export const GitFastForwardPullOutputRegex = /and can be fast-forwarded/;
+export const GitPushCommandLineRegex = /git\s+push/;
+export const GitTwoDashesRegex = /error: did you mean `--(.+)` \(with two dashes\)\?/;
+export const GitSimilarOutputRegex = /(?:(most similar commands? (is|are)))/;
+export const FreePortOutputRegex = /(?:address already in use (?:0\.0\.0\.0|127\.0\.0\.1|localhost|::):|Unable to bind [^ ]*:|can't listen on port |listen EADDRINUSE [^ ]*:)(?<portNumber>\d{4,5})/;
+export const GitPushOutputRegex = /git push --set-upstream origin (?<branchName>[^\s]+)/;
+export const GitCreatePrOutputRegex = /remote:\s*(?<link>https:\/\/github\.com\/.+\/.+\/pull\/new\/.+)/;
+export const PwshGeneralErrorOutputRegex = /Suggestion \[General\]:/;
+export const PwshUnixCommandNotFoundErrorOutputRegex = /Suggestion \[cmd-not-found\]:/;
+export function gitSimilar() {
+    return {
+        id: 'Git Similar',
+        type: 'internal',
+        commandLineMatcher: GitCommandLineRegex,
+        outputMatcher: {
+            lineMatcher: GitSimilarOutputRegex,
+            anchor: 'bottom',
+            offset: 0,
+            length: 10
+        },
+        commandExitResult: 'error',
+        getQuickFixes: (matchResult) => {
+            const regexMatch = matchResult.outputMatch?.regexMatch[0];
+            if (!regexMatch || !matchResult.outputMatch) {
+                return;
+            }
+            const actions = [];
+            const startIndex = matchResult.outputMatch.outputLines.findIndex(l => l.includes(regexMatch)) + 1;
+            const results = matchResult.outputMatch.outputLines.map(r => r.trim());
+            for (let i = startIndex; i < results.length; i++) {
+                const fixedCommand = results[i];
+                if (fixedCommand) {
+                    actions.push({
+                        id: 'Git Similar',
+                        type: TerminalQuickFixType.TerminalCommand,
+                        terminalCommand: matchResult.commandLine.replace(/git\s+[^\s]+/, () => `git ${fixedCommand}`),
+                        shouldExecute: true,
+                        source: "builtin"
+                    });
+                }
+            }
+            return actions;
+        }
+    };
+}
+export function gitFastForwardPull() {
+    return {
+        id: 'Git Fast Forward Pull',
+        type: 'internal',
+        commandLineMatcher: GitCommandLineRegex,
+        outputMatcher: {
+            lineMatcher: GitFastForwardPullOutputRegex,
+            anchor: 'bottom',
+            offset: 0,
+            length: 8
+        },
+        commandExitResult: 'success',
+        getQuickFixes: (matchResult) => {
+            return {
+                type: TerminalQuickFixType.TerminalCommand,
+                id: 'Git Fast Forward Pull',
+                terminalCommand: `git pull`,
+                shouldExecute: true,
+                source: "builtin"
+            };
+        }
+    };
+}
+export function gitTwoDashes() {
+    return {
+        id: 'Git Two Dashes',
+        type: 'internal',
+        commandLineMatcher: GitCommandLineRegex,
+        outputMatcher: {
+            lineMatcher: GitTwoDashesRegex,
+            anchor: 'bottom',
+            offset: 0,
+            length: 2
+        },
+        commandExitResult: 'error',
+        getQuickFixes: (matchResult) => {
+            const problemArg = matchResult?.outputMatch?.regexMatch?.[1];
+            if (!problemArg) {
+                return;
+            }
+            return {
+                type: TerminalQuickFixType.TerminalCommand,
+                id: 'Git Two Dashes',
+                terminalCommand: matchResult.commandLine.replace(` -${problemArg}`, () => ` --${problemArg}`),
+                shouldExecute: true,
+                source: "builtin"
+            };
+        }
+    };
+}
+export function freePort(runCallback) {
+    return {
+        id: 'Free Port',
+        type: 'internal',
+        commandLineMatcher: /.+/,
+        outputMatcher: {
+            lineMatcher: FreePortOutputRegex,
+            anchor: 'bottom',
+            offset: 0,
+            length: 30
+        },
+        commandExitResult: 'error',
+        getQuickFixes: (matchResult) => {
+            const port = matchResult?.outputMatch?.regexMatch?.groups?.portNumber;
+            if (!port) {
+                return;
+            }
+            const label = localize("terminal.freePort", "Free port {0}", port);
+            return {
+                type: TerminalQuickFixType.Port,
+                class: undefined,
+                tooltip: label,
+                id: 'Free Port',
+                label,
+                enabled: true,
+                source: "builtin",
+                run: () => runCallback(port, matchResult.commandLine)
+            };
+        }
+    };
+}
+export function gitPushSetUpstream() {
+    return {
+        id: 'Git Push Set Upstream',
+        type: 'internal',
+        commandLineMatcher: GitPushCommandLineRegex,
+        outputMatcher: {
+            lineMatcher: GitPushOutputRegex,
+            anchor: 'bottom',
+            offset: 0,
+            length: 8
+        },
+        commandExitResult: 'error',
+        getQuickFixes: (matchResult) => {
+            const matches = matchResult.outputMatch;
+            const commandToRun = 'git push --set-upstream origin ${group:branchName}';
+            if (!matches) {
+                return;
+            }
+            const groups = matches.regexMatch.groups;
+            if (!groups) {
+                return;
+            }
+            const actions = [];
+            let fixedCommand = commandToRun;
+            for (const [key, value] of Object.entries(groups)) {
+                const varToResolve = '${group:' + `${key}` + '}';
+                if (!commandToRun.includes(varToResolve)) {
+                    return [];
+                }
+                fixedCommand = fixedCommand.replaceAll(varToResolve, () => value);
+            }
+            if (fixedCommand) {
+                actions.push({
+                    type: TerminalQuickFixType.TerminalCommand,
+                    id: 'Git Push Set Upstream',
+                    terminalCommand: fixedCommand,
+                    shouldExecute: true,
+                    source: "builtin"
+                });
+                return actions;
+            }
+            return;
+        }
+    };
+}
+export function gitCreatePr() {
+    return {
+        id: 'Git Create Pr',
+        type: 'internal',
+        commandLineMatcher: GitPushCommandLineRegex,
+        outputMatcher: {
+            lineMatcher: GitCreatePrOutputRegex,
+            anchor: 'bottom',
+            offset: 4,
+            length: 12
+        },
+        commandExitResult: 'success',
+        getQuickFixes: (matchResult) => {
+            const link = matchResult?.outputMatch?.regexMatch?.groups?.link?.trimEnd();
+            if (!link) {
+                return;
+            }
+            const label = localize("terminal.createPR", "Create PR {0}", link);
+            return {
+                id: 'Git Create Pr',
+                label,
+                enabled: true,
+                type: TerminalQuickFixType.Opener,
+                uri: URI.parse(link),
+                source: "builtin"
+            };
+        }
+    };
+}
+export function pwshGeneralError() {
+    return {
+        id: 'Pwsh General Error',
+        type: 'internal',
+        commandLineMatcher: /.+/,
+        outputMatcher: {
+            lineMatcher: PwshGeneralErrorOutputRegex,
+            anchor: 'bottom',
+            offset: 0,
+            length: 10
+        },
+        commandExitResult: 'error',
+        getQuickFixes: (matchResult) => {
+            const lines = matchResult.outputMatch?.regexMatch.input?.split('\n');
+            if (!lines) {
+                return;
+            }
+            let i = 0;
+            let inFeedbackProvider = false;
+            for (; i < lines.length; i++) {
+                if (lines[i].match(PwshGeneralErrorOutputRegex)) {
+                    inFeedbackProvider = true;
+                    break;
+                }
+            }
+            if (!inFeedbackProvider) {
+                return;
+            }
+            const suggestions = lines[i + 1].match(/The most similar commands are: (?<values>.+)./)?.groups?.values?.split(', ');
+            if (!suggestions) {
+                return;
+            }
+            const result = [];
+            for (const suggestion of suggestions) {
+                result.push({
+                    id: 'Pwsh General Error',
+                    type: TerminalQuickFixType.TerminalCommand,
+                    terminalCommand: suggestion,
+                    source: "builtin"
+                });
+            }
+            return result;
+        }
+    };
+}
+export function pwshUnixCommandNotFoundError() {
+    return {
+        id: 'Unix Command Not Found',
+        type: 'internal',
+        commandLineMatcher: /.+/,
+        outputMatcher: {
+            lineMatcher: PwshUnixCommandNotFoundErrorOutputRegex,
+            anchor: 'bottom',
+            offset: 0,
+            length: 10
+        },
+        commandExitResult: 'error',
+        getQuickFixes: (matchResult) => {
+            const lines = matchResult.outputMatch?.regexMatch.input?.split('\n');
+            if (!lines) {
+                return;
+            }
+            let i = 0;
+            let inFeedbackProvider = false;
+            for (; i < lines.length; i++) {
+                if (lines[i].match(PwshUnixCommandNotFoundErrorOutputRegex)) {
+                    inFeedbackProvider = true;
+                    break;
+                }
+            }
+            if (!inFeedbackProvider) {
+                return;
+            }
+            const result = [];
+            let inSuggestions = false;
+            for (; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.length === 0) {
+                    break;
+                }
+                const installCommand = line.match(/You also have .+ installed, you can run '(?<command>.+)' instead./)?.groups?.command;
+                if (installCommand) {
+                    result.push({
+                        id: 'Pwsh Unix Command Not Found Error',
+                        type: TerminalQuickFixType.TerminalCommand,
+                        terminalCommand: installCommand,
+                        source: "builtin"
+                    });
+                    inSuggestions = false;
+                    continue;
+                }
+                if (line.match(/Command '.+' not found, but can be installed with:/)) {
+                    inSuggestions = true;
+                    continue;
+                }
+                if (inSuggestions) {
+                    result.push({
+                        id: 'Pwsh Unix Command Not Found Error',
+                        type: TerminalQuickFixType.TerminalCommand,
+                        terminalCommand: line.trim(),
+                        source: "builtin"
+                    });
+                }
+            }
+            return result;
+        }
+    };
+}

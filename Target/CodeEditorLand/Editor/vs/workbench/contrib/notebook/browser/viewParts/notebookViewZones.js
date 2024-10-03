@@ -1,1 +1,135 @@
-import{createFastDomNode as m}from"../../../../../base/browser/fastDomNode.js";import{onUnexpectedError as v}from"../../../../../base/common/errors.js";import{Disposable as w}from"../../../../../base/common/lifecycle.js";import"../notebookBrowser.js";import"../view/notebookCellListView.js";import"../view/notebookRenderingCommon.js";import"../viewModel/notebookViewModelImpl.js";const a=()=>{throw new Error("Invalid notebook view zone change accessor")};class M extends w{constructor(e,o){super();this.listView=e;this.coordinator=o;this.domNode=m(document.createElement("div")),this.domNode.setClassName("view-zones"),this.domNode.setPosition("absolute"),this.domNode.setAttribute("role","presentation"),this.domNode.setAttribute("aria-hidden","true"),this.domNode.setWidth("100%"),this._zones={},this.listView.containerDomNode.appendChild(this.domNode.domNode)}_zones;domNode;changeViewZones(e){let o=!1;const i={addZone:t=>(o=!0,this._addZone(t)),removeZone:t=>{o=!0,this._removeZone(t)},layoutZone:t=>{o=!0,this._layoutZone(t)}};return g(e,i),i.addZone=a,i.removeZone=a,i.layoutZone=a,o}onCellsChanged(e){e.splices.slice().reverse().forEach(i=>{const[t,s,I]=i,l=t,p=t+s;for(const n in this._zones){const d=this._zones[n].zone,r=d.afterModelPosition-1;if(r>=l&&r<p)d.afterModelPosition=l,this._updateWhitespace(this._zones[n]);else if(r>=p){const N=I.length-s;d.afterModelPosition+=N,this._updateWhitespace(this._zones[n])}}})}onHiddenRangesChange(){for(const e in this._zones)this._updateWhitespace(this._zones[e])}_updateWhitespace(e){const o=e.whitespaceId,i=this.coordinator.convertModelIndexToViewIndex(e.zone.afterModelPosition),t=this._isInHiddenRanges(e.zone);e.isInHiddenArea=t,this.listView.changeOneWhitespace(o,i,t?0:e.zone.heightInPx)}layout(){for(const e in this._zones)this._layoutZone(e)}_addZone(e){const o=this.coordinator.convertModelIndexToViewIndex(e.afterModelPosition),i=this.listView.insertWhitespace(o,e.heightInPx),t=this._isInHiddenRanges(e),s={whitespaceId:i,zone:e,domNode:m(e.domNode),isInHiddenArea:t};return this._zones[i]=s,s.domNode.setPosition("absolute"),s.domNode.domNode.style.width="100%",s.domNode.setDisplay("none"),s.domNode.setAttribute("notebook-view-zone",i),this.domNode.appendChild(s.domNode),i}_removeZone(e){this.listView.removeWhitespace(e),delete this._zones[e]}_layoutZone(e){const o=this._zones[e];if(!o)return;if(this._updateWhitespace(this._zones[e]),this._isInHiddenRanges(o.zone))o.domNode.setDisplay("none");else{const t=this.listView.getWhitespacePosition(o.whitespaceId);o.domNode.setTop(t),o.domNode.setDisplay("block"),o.domNode.setHeight(o.zone.heightInPx)}}_isInHiddenRanges(e){const o=e.afterModelPosition;return!this.coordinator.modelIndexIsVisible(o)}dispose(){super.dispose(),this._zones={}}}function g(c,h){try{c(h)}catch(e){v(e)}}export{M as NotebookViewZones};
+import { createFastDomNode } from '../../../../../base/browser/fastDomNode.js';
+import { onUnexpectedError } from '../../../../../base/common/errors.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+const invalidFunc = () => { throw new Error(`Invalid notebook view zone change accessor`); };
+export class NotebookViewZones extends Disposable {
+    constructor(listView, coordinator) {
+        super();
+        this.listView = listView;
+        this.coordinator = coordinator;
+        this.domNode = createFastDomNode(document.createElement('div'));
+        this.domNode.setClassName('view-zones');
+        this.domNode.setPosition('absolute');
+        this.domNode.setAttribute('role', 'presentation');
+        this.domNode.setAttribute('aria-hidden', 'true');
+        this.domNode.setWidth('100%');
+        this._zones = {};
+        this.listView.containerDomNode.appendChild(this.domNode.domNode);
+    }
+    changeViewZones(callback) {
+        let zonesHaveChanged = false;
+        const changeAccessor = {
+            addZone: (zone) => {
+                zonesHaveChanged = true;
+                return this._addZone(zone);
+            },
+            removeZone: (id) => {
+                zonesHaveChanged = true;
+                this._removeZone(id);
+            },
+            layoutZone: (id) => {
+                zonesHaveChanged = true;
+                this._layoutZone(id);
+            }
+        };
+        safeInvoke1Arg(callback, changeAccessor);
+        changeAccessor.addZone = invalidFunc;
+        changeAccessor.removeZone = invalidFunc;
+        changeAccessor.layoutZone = invalidFunc;
+        return zonesHaveChanged;
+    }
+    onCellsChanged(e) {
+        const splices = e.splices.slice().reverse();
+        splices.forEach(splice => {
+            const [start, deleted, newCells] = splice;
+            const fromIndex = start;
+            const toIndex = start + deleted;
+            for (const id in this._zones) {
+                const zone = this._zones[id].zone;
+                const cellBeforeWhitespaceIndex = zone.afterModelPosition - 1;
+                if (cellBeforeWhitespaceIndex >= fromIndex && cellBeforeWhitespaceIndex < toIndex) {
+                    zone.afterModelPosition = fromIndex;
+                    this._updateWhitespace(this._zones[id]);
+                }
+                else if (cellBeforeWhitespaceIndex >= toIndex) {
+                    const insertLength = newCells.length;
+                    const offset = insertLength - deleted;
+                    zone.afterModelPosition += offset;
+                    this._updateWhitespace(this._zones[id]);
+                }
+            }
+        });
+    }
+    onHiddenRangesChange() {
+        for (const id in this._zones) {
+            this._updateWhitespace(this._zones[id]);
+        }
+    }
+    _updateWhitespace(zone) {
+        const whitespaceId = zone.whitespaceId;
+        const viewPosition = this.coordinator.convertModelIndexToViewIndex(zone.zone.afterModelPosition);
+        const isInHiddenArea = this._isInHiddenRanges(zone.zone);
+        zone.isInHiddenArea = isInHiddenArea;
+        this.listView.changeOneWhitespace(whitespaceId, viewPosition, isInHiddenArea ? 0 : zone.zone.heightInPx);
+    }
+    layout() {
+        for (const id in this._zones) {
+            this._layoutZone(id);
+        }
+    }
+    _addZone(zone) {
+        const viewPosition = this.coordinator.convertModelIndexToViewIndex(zone.afterModelPosition);
+        const whitespaceId = this.listView.insertWhitespace(viewPosition, zone.heightInPx);
+        const isInHiddenArea = this._isInHiddenRanges(zone);
+        const myZone = {
+            whitespaceId: whitespaceId,
+            zone: zone,
+            domNode: createFastDomNode(zone.domNode),
+            isInHiddenArea: isInHiddenArea
+        };
+        this._zones[whitespaceId] = myZone;
+        myZone.domNode.setPosition('absolute');
+        myZone.domNode.domNode.style.width = '100%';
+        myZone.domNode.setDisplay('none');
+        myZone.domNode.setAttribute('notebook-view-zone', whitespaceId);
+        this.domNode.appendChild(myZone.domNode);
+        return whitespaceId;
+    }
+    _removeZone(id) {
+        this.listView.removeWhitespace(id);
+        delete this._zones[id];
+    }
+    _layoutZone(id) {
+        const zoneWidget = this._zones[id];
+        if (!zoneWidget) {
+            return;
+        }
+        this._updateWhitespace(this._zones[id]);
+        const isInHiddenArea = this._isInHiddenRanges(zoneWidget.zone);
+        if (isInHiddenArea) {
+            zoneWidget.domNode.setDisplay('none');
+        }
+        else {
+            const top = this.listView.getWhitespacePosition(zoneWidget.whitespaceId);
+            zoneWidget.domNode.setTop(top);
+            zoneWidget.domNode.setDisplay('block');
+            zoneWidget.domNode.setHeight(zoneWidget.zone.heightInPx);
+        }
+    }
+    _isInHiddenRanges(zone) {
+        const afterIndex = zone.afterModelPosition;
+        return !this.coordinator.modelIndexIsVisible(afterIndex);
+    }
+    dispose() {
+        super.dispose();
+        this._zones = {};
+    }
+}
+function safeInvoke1Arg(func, arg1) {
+    try {
+        func(arg1);
+    }
+    catch (e) {
+        onUnexpectedError(e);
+    }
+}

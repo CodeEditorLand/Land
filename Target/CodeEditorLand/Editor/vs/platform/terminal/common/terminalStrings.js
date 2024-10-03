@@ -1,3 +1,15 @@
-function t(r,n={}){let e="";return n.excludeLeadingNewLine||(e+=`\r
-`),e+="\x1B[0m\x1B[7m * ",n.loudFormatting?e+="\x1B[0;104m":e+="\x1B[0m",e+=` ${r} \x1B[0m
-\r`,e}export{t as formatMessageForTerminal};
+export function formatMessageForTerminal(message, options = {}) {
+    let result = '';
+    if (!options.excludeLeadingNewLine) {
+        result += '\r\n';
+    }
+    result += '\x1b[0m\x1b[7m * ';
+    if (options.loudFormatting) {
+        result += '\x1b[0;104m';
+    }
+    else {
+        result += '\x1b[0m';
+    }
+    result += ` ${message} \x1b[0m\n\r`;
+    return result;
+}

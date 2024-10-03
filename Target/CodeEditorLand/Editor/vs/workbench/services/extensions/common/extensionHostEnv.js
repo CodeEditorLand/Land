@@ -1,1 +1,53 @@
-import"../../../../base/common/platform.js";var c=(t=>(t[t.IPC=1]="IPC",t[t.Socket=2]="Socket",t[t.MessagePort=3]="MessagePort",t))(c||{});class n{constructor(e){this.pipeName=e}static ENV_KEY="VSCODE_EXTHOST_IPC_HOOK";type=1;serialize(e){e[n.ENV_KEY]=this.pipeName}}class i{static ENV_KEY="VSCODE_EXTHOST_WILL_SEND_SOCKET";type=2;serialize(e){e[i.ENV_KEY]="1"}}class r{static ENV_KEY="VSCODE_WILL_SEND_MESSAGE_PORT";type=3;serialize(e){e[r.ENV_KEY]="1"}}function s(o){delete o[n.ENV_KEY],delete o[i.ENV_KEY],delete o[r.ENV_KEY]}function p(o,e){s(e),o.serialize(e)}function u(o){if(o[n.ENV_KEY])return E(o,new n(o[n.ENV_KEY]));if(o[i.ENV_KEY])return E(o,new i);if(o[r.ENV_KEY])return E(o,new r);throw new Error("No connection information defined in environment!")}function E(o,e){return s(o),e}export{c as ExtHostConnectionType,n as IPCExtHostConnection,r as MessagePortExtHostConnection,i as SocketExtHostConnection,u as readExtHostConnection,p as writeExtHostConnection};
+export class IPCExtHostConnection {
+    static { this.ENV_KEY = 'VSCODE_EXTHOST_IPC_HOOK'; }
+    constructor(pipeName) {
+        this.pipeName = pipeName;
+        this.type = 1;
+    }
+    serialize(env) {
+        env[IPCExtHostConnection.ENV_KEY] = this.pipeName;
+    }
+}
+export class SocketExtHostConnection {
+    constructor() {
+        this.type = 2;
+    }
+    static { this.ENV_KEY = 'VSCODE_EXTHOST_WILL_SEND_SOCKET'; }
+    serialize(env) {
+        env[SocketExtHostConnection.ENV_KEY] = '1';
+    }
+}
+export class MessagePortExtHostConnection {
+    constructor() {
+        this.type = 3;
+    }
+    static { this.ENV_KEY = 'VSCODE_WILL_SEND_MESSAGE_PORT'; }
+    serialize(env) {
+        env[MessagePortExtHostConnection.ENV_KEY] = '1';
+    }
+}
+function clean(env) {
+    delete env[IPCExtHostConnection.ENV_KEY];
+    delete env[SocketExtHostConnection.ENV_KEY];
+    delete env[MessagePortExtHostConnection.ENV_KEY];
+}
+export function writeExtHostConnection(connection, env) {
+    clean(env);
+    connection.serialize(env);
+}
+export function readExtHostConnection(env) {
+    if (env[IPCExtHostConnection.ENV_KEY]) {
+        return cleanAndReturn(env, new IPCExtHostConnection(env[IPCExtHostConnection.ENV_KEY]));
+    }
+    if (env[SocketExtHostConnection.ENV_KEY]) {
+        return cleanAndReturn(env, new SocketExtHostConnection());
+    }
+    if (env[MessagePortExtHostConnection.ENV_KEY]) {
+        return cleanAndReturn(env, new MessagePortExtHostConnection());
+    }
+    throw new Error(`No connection information defined in environment!`);
+}
+function cleanAndReturn(env, result) {
+    clean(env);
+    return result;
+}

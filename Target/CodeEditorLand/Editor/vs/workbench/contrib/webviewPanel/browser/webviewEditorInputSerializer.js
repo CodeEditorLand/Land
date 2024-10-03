@@ -1,1 +1,131 @@
-var l=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var c=(n,e,t,i)=>{for(var o=i>1?void 0:i?u(e,t):e,d=n.length-1,a;d>=0;d--)(a=n[d])&&(o=(i?a(e,t,o):a(o))||o);return i&&o&&l(e,t,o),o},p=(n,e)=>(t,i)=>e(t,i,n);import{URI as v}from"../../../../base/common/uri.js";import{ExtensionIdentifier as f}from"../../../../platform/extensions/common/extensions.js";import"../../../../platform/instantiation/common/instantiation.js";import"../../../common/editor.js";import"../../webview/browser/webview.js";import"./webviewIconManager.js";import{WebviewInput as w}from"./webviewEditorInput.js";import{IWebviewWorkbenchService as b}from"./webviewWorkbenchService.js";let r=class{constructor(e){this._webviewWorkbenchService=e}static ID=w.typeId;canSerialize(e){return this._webviewWorkbenchService.shouldPersist(e)}serialize(e){if(!this.canSerialize(e))return;const t=this.toJson(e);try{return JSON.stringify(t)}catch{return}}deserialize(e,t){const i=this.fromJson(JSON.parse(t));return this._webviewWorkbenchService.openRevivedWebview({webviewInitInfo:{providedViewType:i.providedId,origin:i.origin,title:i.title,options:i.webviewOptions,contentOptions:i.contentOptions,extension:i.extension},viewType:i.viewType,title:i.title,iconPath:i.iconPath,state:i.state,group:i.group})}fromJson(e){return{...e,extension:g(e.extensionId,e.extensionLocation),iconPath:y(e.iconPath),state:W(e.state),webviewOptions:e.options,contentOptions:m(e.options)}}toJson(e){return{origin:e.webview.origin,viewType:e.viewType,providedId:e.providedId,title:e.getName(),options:{...e.webview.options,...e.webview.contentOptions},extensionLocation:e.extension?.location,extensionId:e.extension?.id.value,state:e.webview.state,iconPath:e.iconPath?{light:e.iconPath.light,dark:e.iconPath.dark}:void 0,group:e.group}}};r=c([p(0,b)],r);function g(n,e){if(!n)return;const t=s(e);if(t)return{id:new f(n),location:t}}function y(n){if(!n)return;const e=s(n.light),t=s(n.dark);return e&&t?{light:e,dark:t}:void 0}function s(n){if(n)try{return typeof n=="string"?v.parse(n):v.from(n)}catch{return}}function W(n){return typeof n=="string"?n:void 0}function L(n){return n}function m(n){return{...n,localResourceRoots:n.localResourceRoots?.map(e=>s(e))}}export{r as WebviewEditorInputSerializer,m as restoreWebviewContentOptions,L as restoreWebviewOptions,g as reviveWebviewExtensionDescription};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { URI } from '../../../../base/common/uri.js';
+import { ExtensionIdentifier } from '../../../../platform/extensions/common/extensions.js';
+import { WebviewInput } from './webviewEditorInput.js';
+import { IWebviewWorkbenchService } from './webviewWorkbenchService.js';
+let WebviewEditorInputSerializer = class WebviewEditorInputSerializer {
+    static { this.ID = WebviewInput.typeId; }
+    constructor(_webviewWorkbenchService) {
+        this._webviewWorkbenchService = _webviewWorkbenchService;
+    }
+    canSerialize(input) {
+        return this._webviewWorkbenchService.shouldPersist(input);
+    }
+    serialize(input) {
+        if (!this.canSerialize(input)) {
+            return undefined;
+        }
+        const data = this.toJson(input);
+        try {
+            return JSON.stringify(data);
+        }
+        catch {
+            return undefined;
+        }
+    }
+    deserialize(_instantiationService, serializedEditorInput) {
+        const data = this.fromJson(JSON.parse(serializedEditorInput));
+        return this._webviewWorkbenchService.openRevivedWebview({
+            webviewInitInfo: {
+                providedViewType: data.providedId,
+                origin: data.origin,
+                title: data.title,
+                options: data.webviewOptions,
+                contentOptions: data.contentOptions,
+                extension: data.extension,
+            },
+            viewType: data.viewType,
+            title: data.title,
+            iconPath: data.iconPath,
+            state: data.state,
+            group: data.group
+        });
+    }
+    fromJson(data) {
+        return {
+            ...data,
+            extension: reviveWebviewExtensionDescription(data.extensionId, data.extensionLocation),
+            iconPath: reviveIconPath(data.iconPath),
+            state: reviveState(data.state),
+            webviewOptions: restoreWebviewOptions(data.options),
+            contentOptions: restoreWebviewContentOptions(data.options),
+        };
+    }
+    toJson(input) {
+        return {
+            origin: input.webview.origin,
+            viewType: input.viewType,
+            providedId: input.providedId,
+            title: input.getName(),
+            options: { ...input.webview.options, ...input.webview.contentOptions },
+            extensionLocation: input.extension?.location,
+            extensionId: input.extension?.id.value,
+            state: input.webview.state,
+            iconPath: input.iconPath ? { light: input.iconPath.light, dark: input.iconPath.dark, } : undefined,
+            group: input.group
+        };
+    }
+};
+WebviewEditorInputSerializer = __decorate([
+    __param(0, IWebviewWorkbenchService),
+    __metadata("design:paramtypes", [Object])
+], WebviewEditorInputSerializer);
+export { WebviewEditorInputSerializer };
+export function reviveWebviewExtensionDescription(extensionId, extensionLocation) {
+    if (!extensionId) {
+        return undefined;
+    }
+    const location = reviveUri(extensionLocation);
+    if (!location) {
+        return undefined;
+    }
+    return {
+        id: new ExtensionIdentifier(extensionId),
+        location,
+    };
+}
+function reviveIconPath(data) {
+    if (!data) {
+        return undefined;
+    }
+    const light = reviveUri(data.light);
+    const dark = reviveUri(data.dark);
+    return light && dark ? { light, dark } : undefined;
+}
+function reviveUri(data) {
+    if (!data) {
+        return undefined;
+    }
+    try {
+        if (typeof data === 'string') {
+            return URI.parse(data);
+        }
+        return URI.from(data);
+    }
+    catch {
+        return undefined;
+    }
+}
+function reviveState(state) {
+    return typeof state === 'string' ? state : undefined;
+}
+export function restoreWebviewOptions(options) {
+    return options;
+}
+export function restoreWebviewContentOptions(options) {
+    return {
+        ...options,
+        localResourceRoots: options.localResourceRoots?.map(uri => reviveUri(uri)),
+    };
+}

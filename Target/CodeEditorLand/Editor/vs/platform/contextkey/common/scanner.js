@@ -1,1 +1,257 @@
-import{CharCode as r}from"../../../base/common/charCode.js";import{illegalState as c}from"../../../base/common/errors.js";import{localize as o}from"../../../nls.js";var T=(e=>(e[e.LParen=0]="LParen",e[e.RParen=1]="RParen",e[e.Neg=2]="Neg",e[e.Eq=3]="Eq",e[e.NotEq=4]="NotEq",e[e.Lt=5]="Lt",e[e.LtEq=6]="LtEq",e[e.Gt=7]="Gt",e[e.GtEq=8]="GtEq",e[e.RegexOp=9]="RegexOp",e[e.RegexStr=10]="RegexStr",e[e.True=11]="True",e[e.False=12]="False",e[e.In=13]="In",e[e.Not=14]="Not",e[e.And=15]="And",e[e.Or=16]="Or",e[e.Str=17]="Str",e[e.QuotedStr=18]="QuotedStr",e[e.Error=19]="Error",e[e.EOF=20]="EOF",e))(T||{});function h(...i){switch(i.length){case 1:return o("contextkey.scanner.hint.didYouMean1","Did you mean {0}?",i[0]);case 2:return o("contextkey.scanner.hint.didYouMean2","Did you mean {0} or {1}?",i[0],i[1]);case 3:return o("contextkey.scanner.hint.didYouMean3","Did you mean {0}, {1} or {2}?",i[0],i[1],i[2]);default:return}}const _=o("contextkey.scanner.hint.didYouForgetToOpenOrCloseQuote","Did you forget to open or close the quote?"),f=o("contextkey.scanner.hint.didYouForgetToEscapeSlash","Did you forget to escape the '/' (slash) character? Put two backslashes before it to escape, e.g., '\\\\/'.");class p{static getLexeme(t){switch(t.type){case 0:return"(";case 1:return")";case 2:return"!";case 3:return t.isTripleEq?"===":"==";case 4:return t.isTripleEq?"!==":"!=";case 5:return"<";case 6:return"<=";case 7:return">=";case 8:return">=";case 9:return"=~";case 10:return t.lexeme;case 11:return"true";case 12:return"false";case 13:return"in";case 14:return"not";case 15:return"&&";case 16:return"||";case 17:return t.lexeme;case 18:return t.lexeme;case 19:return t.lexeme;case 20:return"EOF";default:throw c(`unhandled token type: ${JSON.stringify(t)}; have you forgotten to add a case?`)}}static _regexFlags=new Set(["i","g","s","m","y","u"].map(t=>t.charCodeAt(0)));static _keywords=new Map([["not",14],["in",13],["false",12],["true",11]]);_input="";_start=0;_current=0;_tokens=[];_errors=[];get errors(){return this._errors}reset(t){return this._input=t,this._start=0,this._current=0,this._tokens=[],this._errors=[],this}scan(){for(;!this._isAtEnd();)switch(this._start=this._current,this._advance()){case r.OpenParen:this._addToken(0);break;case r.CloseParen:this._addToken(1);break;case r.ExclamationMark:if(this._match(r.Equals)){const s=this._match(r.Equals);this._tokens.push({type:4,offset:this._start,isTripleEq:s})}else this._addToken(2);break;case r.SingleQuote:this._quotedString();break;case r.Slash:this._regex();break;case r.Equals:if(this._match(r.Equals)){const s=this._match(r.Equals);this._tokens.push({type:3,offset:this._start,isTripleEq:s})}else this._match(r.Tilde)?this._addToken(9):this._error(h("==","=~"));break;case r.LessThan:this._addToken(this._match(r.Equals)?6:5);break;case r.GreaterThan:this._addToken(this._match(r.Equals)?8:7);break;case r.Ampersand:this._match(r.Ampersand)?this._addToken(15):this._error(h("&&"));break;case r.Pipe:this._match(r.Pipe)?this._addToken(16):this._error(h("||"));break;case r.Space:case r.CarriageReturn:case r.Tab:case r.LineFeed:case r.NoBreakSpace:break;default:this._string()}return this._start=this._current,this._addToken(20),Array.from(this._tokens)}_match(t){return this._isAtEnd()||this._input.charCodeAt(this._current)!==t?!1:(this._current++,!0)}_advance(){return this._input.charCodeAt(this._current++)}_peek(){return this._isAtEnd()?r.Null:this._input.charCodeAt(this._current)}_addToken(t){this._tokens.push({type:t,offset:this._start})}_error(t){const s=this._start,n=this._input.substring(this._start,this._current),u={type:19,offset:this._start,lexeme:n};this._errors.push({offset:s,lexeme:n,additionalInfo:t}),this._tokens.push(u)}stringRe=/[a-zA-Z0-9_<>\-\./\\:\*\?\+\[\]\^,#@;"%\$\p{L}-]+/uy;_string(){this.stringRe.lastIndex=this._start;const t=this.stringRe.exec(this._input);if(t){this._current=this._start+t[0].length;const s=this._input.substring(this._start,this._current),n=p._keywords.get(s);n?this._addToken(n):this._tokens.push({type:17,lexeme:s,offset:this._start})}}_quotedString(){for(;this._peek()!==r.SingleQuote&&!this._isAtEnd();)this._advance();if(this._isAtEnd()){this._error(_);return}this._advance(),this._tokens.push({type:18,lexeme:this._input.substring(this._start+1,this._current-1),offset:this._start+1})}_regex(){let t=this._current,s=!1,n=!1;for(;;){if(t>=this._input.length){this._current=t,this._error(f);return}const a=this._input.charCodeAt(t);if(s)s=!1;else if(a===r.Slash&&!n){t++;break}else a===r.OpenSquareBracket?n=!0:a===r.Backslash?s=!0:a===r.CloseSquareBracket&&(n=!1);t++}for(;t<this._input.length&&p._regexFlags.has(this._input.charCodeAt(t));)t++;this._current=t;const u=this._input.substring(this._start,this._current);this._tokens.push({type:10,lexeme:u,offset:this._start})}_isAtEnd(){return this._current>=this._input.length}}export{p as Scanner,T as TokenType};
+import { illegalState } from '../../../base/common/errors.js';
+import { localize } from '../../../nls.js';
+function hintDidYouMean(...meant) {
+    switch (meant.length) {
+        case 1:
+            return localize('contextkey.scanner.hint.didYouMean1', "Did you mean {0}?", meant[0]);
+        case 2:
+            return localize('contextkey.scanner.hint.didYouMean2', "Did you mean {0} or {1}?", meant[0], meant[1]);
+        case 3:
+            return localize('contextkey.scanner.hint.didYouMean3', "Did you mean {0}, {1} or {2}?", meant[0], meant[1], meant[2]);
+        default:
+            return undefined;
+    }
+}
+const hintDidYouForgetToOpenOrCloseQuote = localize('contextkey.scanner.hint.didYouForgetToOpenOrCloseQuote', "Did you forget to open or close the quote?");
+const hintDidYouForgetToEscapeSlash = localize('contextkey.scanner.hint.didYouForgetToEscapeSlash', "Did you forget to escape the '/' (slash) character? Put two backslashes before it to escape, e.g., '\\\\/\'.");
+export class Scanner {
+    constructor() {
+        this._input = '';
+        this._start = 0;
+        this._current = 0;
+        this._tokens = [];
+        this._errors = [];
+        this.stringRe = /[a-zA-Z0-9_<>\-\./\\:\*\?\+\[\]\^,#@;"%\$\p{L}-]+/uy;
+    }
+    static getLexeme(token) {
+        switch (token.type) {
+            case 0:
+                return '(';
+            case 1:
+                return ')';
+            case 2:
+                return '!';
+            case 3:
+                return token.isTripleEq ? '===' : '==';
+            case 4:
+                return token.isTripleEq ? '!==' : '!=';
+            case 5:
+                return '<';
+            case 6:
+                return '<=';
+            case 7:
+                return '>=';
+            case 8:
+                return '>=';
+            case 9:
+                return '=~';
+            case 10:
+                return token.lexeme;
+            case 11:
+                return 'true';
+            case 12:
+                return 'false';
+            case 13:
+                return 'in';
+            case 14:
+                return 'not';
+            case 15:
+                return '&&';
+            case 16:
+                return '||';
+            case 17:
+                return token.lexeme;
+            case 18:
+                return token.lexeme;
+            case 19:
+                return token.lexeme;
+            case 20:
+                return 'EOF';
+            default:
+                throw illegalState(`unhandled token type: ${JSON.stringify(token)}; have you forgotten to add a case?`);
+        }
+    }
+    static { this._regexFlags = new Set(['i', 'g', 's', 'm', 'y', 'u'].map(ch => ch.charCodeAt(0))); }
+    static { this._keywords = new Map([
+        ['not', 14],
+        ['in', 13],
+        ['false', 12],
+        ['true', 11],
+    ]); }
+    get errors() {
+        return this._errors;
+    }
+    reset(value) {
+        this._input = value;
+        this._start = 0;
+        this._current = 0;
+        this._tokens = [];
+        this._errors = [];
+        return this;
+    }
+    scan() {
+        while (!this._isAtEnd()) {
+            this._start = this._current;
+            const ch = this._advance();
+            switch (ch) {
+                case 40:
+                    this._addToken(0);
+                    break;
+                case 41:
+                    this._addToken(1);
+                    break;
+                case 33:
+                    if (this._match(61)) {
+                        const isTripleEq = this._match(61);
+                        this._tokens.push({ type: 4, offset: this._start, isTripleEq });
+                    }
+                    else {
+                        this._addToken(2);
+                    }
+                    break;
+                case 39:
+                    this._quotedString();
+                    break;
+                case 47:
+                    this._regex();
+                    break;
+                case 61:
+                    if (this._match(61)) {
+                        const isTripleEq = this._match(61);
+                        this._tokens.push({ type: 3, offset: this._start, isTripleEq });
+                    }
+                    else if (this._match(126)) {
+                        this._addToken(9);
+                    }
+                    else {
+                        this._error(hintDidYouMean('==', '=~'));
+                    }
+                    break;
+                case 60:
+                    this._addToken(this._match(61) ? 6 : 5);
+                    break;
+                case 62:
+                    this._addToken(this._match(61) ? 8 : 7);
+                    break;
+                case 38:
+                    if (this._match(38)) {
+                        this._addToken(15);
+                    }
+                    else {
+                        this._error(hintDidYouMean('&&'));
+                    }
+                    break;
+                case 124:
+                    if (this._match(124)) {
+                        this._addToken(16);
+                    }
+                    else {
+                        this._error(hintDidYouMean('||'));
+                    }
+                    break;
+                case 32:
+                case 13:
+                case 9:
+                case 10:
+                case 160:
+                    break;
+                default:
+                    this._string();
+            }
+        }
+        this._start = this._current;
+        this._addToken(20);
+        return Array.from(this._tokens);
+    }
+    _match(expected) {
+        if (this._isAtEnd()) {
+            return false;
+        }
+        if (this._input.charCodeAt(this._current) !== expected) {
+            return false;
+        }
+        this._current++;
+        return true;
+    }
+    _advance() {
+        return this._input.charCodeAt(this._current++);
+    }
+    _peek() {
+        return this._isAtEnd() ? 0 : this._input.charCodeAt(this._current);
+    }
+    _addToken(type) {
+        this._tokens.push({ type, offset: this._start });
+    }
+    _error(additional) {
+        const offset = this._start;
+        const lexeme = this._input.substring(this._start, this._current);
+        const errToken = { type: 19, offset: this._start, lexeme };
+        this._errors.push({ offset, lexeme, additionalInfo: additional });
+        this._tokens.push(errToken);
+    }
+    _string() {
+        this.stringRe.lastIndex = this._start;
+        const match = this.stringRe.exec(this._input);
+        if (match) {
+            this._current = this._start + match[0].length;
+            const lexeme = this._input.substring(this._start, this._current);
+            const keyword = Scanner._keywords.get(lexeme);
+            if (keyword) {
+                this._addToken(keyword);
+            }
+            else {
+                this._tokens.push({ type: 17, lexeme, offset: this._start });
+            }
+        }
+    }
+    _quotedString() {
+        while (this._peek() !== 39 && !this._isAtEnd()) {
+            this._advance();
+        }
+        if (this._isAtEnd()) {
+            this._error(hintDidYouForgetToOpenOrCloseQuote);
+            return;
+        }
+        this._advance();
+        this._tokens.push({ type: 18, lexeme: this._input.substring(this._start + 1, this._current - 1), offset: this._start + 1 });
+    }
+    _regex() {
+        let p = this._current;
+        let inEscape = false;
+        let inCharacterClass = false;
+        while (true) {
+            if (p >= this._input.length) {
+                this._current = p;
+                this._error(hintDidYouForgetToEscapeSlash);
+                return;
+            }
+            const ch = this._input.charCodeAt(p);
+            if (inEscape) {
+                inEscape = false;
+            }
+            else if (ch === 47 && !inCharacterClass) {
+                p++;
+                break;
+            }
+            else if (ch === 91) {
+                inCharacterClass = true;
+            }
+            else if (ch === 92) {
+                inEscape = true;
+            }
+            else if (ch === 93) {
+                inCharacterClass = false;
+            }
+            p++;
+        }
+        while (p < this._input.length && Scanner._regexFlags.has(this._input.charCodeAt(p))) {
+            p++;
+        }
+        this._current = p;
+        const lexeme = this._input.substring(this._start, this._current);
+        this._tokens.push({ type: 10, lexeme, offset: this._start });
+    }
+    _isAtEnd() {
+        return this._current >= this._input.length;
+    }
+}

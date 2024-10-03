@@ -1,1 +1,38 @@
-var d=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var m=(i,o,e,n)=>{for(var t=n>1?void 0:n?p(o,e):o,s=i.length-1,c;s>=0;s--)(c=i[s])&&(t=(n?c(o,e,t):c(t))||t);return n&&t&&d(o,e,t),t},a=(i,o)=>(e,n)=>o(e,n,i);import{ExtensionRecommendations as x}from"./extensionRecommendations.js";import{IProductService as v}from"../../../../platform/product/common/productService.js";import{ExtensionRecommendationReason as E}from"../../../services/extensionRecommendations/common/extensionRecommendations.js";let r=class extends x{constructor(e){super();this.productService=e}_recommendations=[];get recommendations(){return this._recommendations}async doActivate(){this.productService.languageExtensionTips&&(this._recommendations=this.productService.languageExtensionTips.map(e=>({extension:e.toLowerCase(),reason:{reasonId:E.Application,reasonText:""}})))}};r=m([a(0,v)],r);export{r as LanguageRecommendations};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ExtensionRecommendations } from './extensionRecommendations.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+let LanguageRecommendations = class LanguageRecommendations extends ExtensionRecommendations {
+    get recommendations() { return this._recommendations; }
+    constructor(productService) {
+        super();
+        this.productService = productService;
+        this._recommendations = [];
+    }
+    async doActivate() {
+        if (this.productService.languageExtensionTips) {
+            this._recommendations = this.productService.languageExtensionTips.map((extensionId) => ({
+                extension: extensionId.toLowerCase(),
+                reason: {
+                    reasonId: 6,
+                    reasonText: ''
+                }
+            }));
+        }
+    }
+};
+LanguageRecommendations = __decorate([
+    __param(0, IProductService),
+    __metadata("design:paramtypes", [Object])
+], LanguageRecommendations);
+export { LanguageRecommendations };

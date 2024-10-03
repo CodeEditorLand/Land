@@ -1,1 +1,556 @@
-var K=Object.defineProperty;var J=Object.getOwnPropertyDescriptor;var D=(y,c,e,t)=>{for(var s=t>1?void 0:t?J(c,e):c,o=y.length-1,i;o>=0;o--)(i=y[o])&&(s=(t?i(c,e,s):i(s))||s);return t&&s&&K(c,e,s),s},d=(y,c)=>(e,t)=>c(e,t,y);import{createCancelablePromise as Q,timeout as V}from"../../../base/common/async.js";import{CancellationToken as f}from"../../../base/common/cancellation.js";import{getErrorMessage as W,isCancellationError as Z}from"../../../base/common/errors.js";import{Emitter as R,Event as ee}from"../../../base/common/event.js";import{Disposable as L,DisposableStore as te,toDisposable as se}from"../../../base/common/lifecycle.js";import{Mimes as M}from"../../../base/common/mime.js";import{isWeb as b}from"../../../base/common/platform.js";import"../../../base/common/product.js";import{joinPath as h,relativePath as re}from"../../../base/common/resources.js";import{isObject as oe,isString as ie}from"../../../base/common/types.js";import{URI as q}from"../../../base/common/uri.js";import{generateUuid as ne}from"../../../base/common/uuid.js";import"../../../base/parts/request/common/request.js";import{IConfigurationService as F}from"../../configuration/common/configuration.js";import{IEnvironmentService as j}from"../../environment/common/environment.js";import{IFileService as G}from"../../files/common/files.js";import{IProductService as T}from"../../product/common/productService.js";import{asJson as Y,asText as ae,asTextOrError as P,hasNoContent as ue,IRequestService as X,isSuccess as ce,isSuccess as de}from"../../request/common/request.js";import{getServiceMachineId as Se}from"../../externalServices/common/serviceMachineId.js";import{IStorageService as E,StorageScope as l,StorageTarget as I}from"../../storage/common/storage.js";import{HEADER_EXECUTION_ID as le,HEADER_OPERATION_ID as p,IUserDataSyncLogService as z,IUserDataSyncStoreManagementService as he,SYNC_SERVICE_URL_TYPE as O,UserDataSyncErrorCode as a,UserDataSyncStoreError as u}from"./userDataSync.js";import"../../../base/common/buffer.js";const B="configurationSync.store",H="sync.previous.store",x="sync.donot-make-requests-until",N="sync.user-session-id",$="sync.machine-session-id",fe=100,ye=1e3*60*5;let w=class extends L{constructor(e,t,s){super();this.productService=e;this.configurationService=t;this.storageService=s;this.updateUserDataSyncStore();const o=this._register(new te);this._register(ee.filter(s.onDidChangeValue(l.APPLICATION,O,o),()=>this.userDataSyncStoreType!==this.userDataSyncStore?.type,o)(()=>this.updateUserDataSyncStore()))}_serviceBrand;_onDidChangeUserDataSyncStore=this._register(new R);onDidChangeUserDataSyncStore=this._onDidChangeUserDataSyncStore.event;_userDataSyncStore;get userDataSyncStore(){return this._userDataSyncStore}get userDataSyncStoreType(){return this.storageService.get(O,l.APPLICATION)}set userDataSyncStoreType(e){this.storageService.store(O,e,l.APPLICATION,b?I.USER:I.MACHINE)}updateUserDataSyncStore(){this._userDataSyncStore=this.toUserDataSyncStore(this.productService[B]),this._onDidChangeUserDataSyncStore.fire()}toUserDataSyncStore(e){if(e&&(e=b&&e.web?{...e,...e.web}:e,ie(e.url)&&oe(e.authenticationProviders)&&Object.keys(e.authenticationProviders).every(t=>Array.isArray(e.authenticationProviders[t].scopes)))){const t=e,s=!!t.canSwitch,o=t.url===t.insidersUrl?"insiders":"stable",i=(s?this.userDataSyncStoreType:void 0)||o,r=i==="insiders"?t.insidersUrl:i==="stable"?t.stableUrl:t.url;return{url:q.parse(r),type:i,defaultType:o,defaultUrl:q.parse(t.url),stableUrl:q.parse(t.stableUrl),insidersUrl:q.parse(t.insidersUrl),canSwitch:s,authenticationProviders:Object.keys(t.authenticationProviders).reduce((n,S)=>(n.push({id:S,scopes:t.authenticationProviders[S].scopes}),n),[])}}}};w=D([d(0,T),d(1,F),d(2,E)],w);let _=class extends w{previousConfigurationSyncStore;constructor(c,e,t){super(c,e,t);const s=this.storageService.get(H,l.APPLICATION);s&&(this.previousConfigurationSyncStore=JSON.parse(s));const o=this.productService[B];o?this.storageService.store(H,JSON.stringify(o),l.APPLICATION,I.MACHINE):this.storageService.remove(H,l.APPLICATION)}async switch(c){c!==this.userDataSyncStoreType&&(this.userDataSyncStoreType=c,this.updateUserDataSyncStore())}async getPreviousUserDataSyncStore(){return this.toUserDataSyncStore(this.previousConfigurationSyncStore)}};_=D([d(0,T),d(1,F),d(2,E)],_);let C=class extends L{constructor(e,t,s,o,i,r,n){super();this.requestService=s;this.logService=o;this.storageService=n;this.updateUserDataSyncStoreUrl(e),this.commonHeadersPromise=Se(i,r,n).then(S=>{const g={"X-Client-Name":`${t.applicationName}${b?"-web":""}`,"X-Client-Version":t.version};return t.commit&&(g["X-Client-Commit"]=t.commit),g}),this.session=new pe(fe,ye,this.requestService,this.logService),this.initDonotMakeRequestsUntil(),this._register(se(()=>{this.resetDonotMakeRequestsUntilPromise&&(this.resetDonotMakeRequestsUntilPromise.cancel(),this.resetDonotMakeRequestsUntilPromise=void 0)}))}userDataSyncStoreUrl;authToken;commonHeadersPromise;session;_onTokenFailed=this._register(new R);onTokenFailed=this._onTokenFailed.event;_onTokenSucceed=this._register(new R);onTokenSucceed=this._onTokenSucceed.event;_donotMakeRequestsUntil=void 0;get donotMakeRequestsUntil(){return this._donotMakeRequestsUntil}_onDidChangeDonotMakeRequestsUntil=this._register(new R);onDidChangeDonotMakeRequestsUntil=this._onDidChangeDonotMakeRequestsUntil.event;setAuthToken(e,t){this.authToken={token:e,type:t}}updateUserDataSyncStoreUrl(e){this.userDataSyncStoreUrl=e?h(e,"v1"):void 0}initDonotMakeRequestsUntil(){const e=this.storageService.getNumber(x,l.APPLICATION);e&&Date.now()<e&&this.setDonotMakeRequestsUntil(new Date(e))}resetDonotMakeRequestsUntilPromise=void 0;setDonotMakeRequestsUntil(e){this._donotMakeRequestsUntil?.getTime()!==e?.getTime()&&(this._donotMakeRequestsUntil=e,this.resetDonotMakeRequestsUntilPromise&&(this.resetDonotMakeRequestsUntilPromise.cancel(),this.resetDonotMakeRequestsUntilPromise=void 0),this._donotMakeRequestsUntil?(this.storageService.store(x,this._donotMakeRequestsUntil.getTime(),l.APPLICATION,I.MACHINE),this.resetDonotMakeRequestsUntilPromise=Q(t=>V(this._donotMakeRequestsUntil.getTime()-Date.now(),t).then(()=>this.setDonotMakeRequestsUntil(void 0))),this.resetDonotMakeRequestsUntilPromise.then(null,t=>null)):this.storageService.remove(x,l.APPLICATION),this._onDidChangeDonotMakeRequestsUntil.fire())}async getAllCollections(e={}){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");const t=h(this.userDataSyncStoreUrl,"collection").toString();e={...e},e["Content-Type"]="application/json";const s=await this.request(t,{type:"GET",headers:e},[],f.None);return(await Y(s))?.map(({id:o})=>o)||[]}async createCollection(e={}){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");const t=h(this.userDataSyncStoreUrl,"collection").toString();e={...e},e["Content-Type"]=M.text;const s=await this.request(t,{type:"POST",headers:e},[],f.None),o=await P(s);if(!o)throw new u("Server did not return the collection id",t,a.NoCollection,s.res.statusCode,s.res.headers[p]);return o}async deleteCollection(e,t={}){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");const s=e?h(this.userDataSyncStoreUrl,"collection",e).toString():h(this.userDataSyncStoreUrl,"collection").toString();t={...t},await this.request(s,{type:"DELETE",headers:t},[],f.None)}async getAllResourceRefs(e,t){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");const s=this.getResourceUrl(this.userDataSyncStoreUrl,t,e),o={},i=await this.request(s.toString(),{type:"GET",headers:o},[],f.None);return(await Y(i)||[]).map(({url:n,created:S})=>({ref:re(s,s.with({path:n})),created:S*1e3}))}async resolveResourceContent(e,t,s,o={}){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");const i=h(this.getResourceUrl(this.userDataSyncStoreUrl,s,e),t).toString();o={...o},o["Cache-Control"]="no-cache";const r=await this.request(i,{type:"GET",headers:o},[],f.None);return await P(r)}async deleteResource(e,t,s){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");const o=t!==null?h(this.getResourceUrl(this.userDataSyncStoreUrl,s,e),t).toString():this.getResourceUrl(this.userDataSyncStoreUrl,s,e).toString(),i={};await this.request(o,{type:"DELETE",headers:i},[],f.None)}async deleteResources(){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");const e=h(this.userDataSyncStoreUrl,"resource").toString(),t={"Content-Type":M.text};await this.request(e,{type:"DELETE",headers:t},[],f.None)}async readResource(e,t,s,o={}){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");const i=h(this.getResourceUrl(this.userDataSyncStoreUrl,s,e),"latest").toString();o={...o},o["Cache-Control"]="no-cache",t&&(o["If-None-Match"]=t.ref);const r=await this.request(i,{type:"GET",headers:o},[304],f.None);let n=null;if(r.res.statusCode===304&&(n=t),n===null){const S=r.res.headers.etag;if(!S)throw new u("Server did not return the ref",i,a.NoRef,r.res.statusCode,r.res.headers[p]);const g=await P(r);if(!g&&r.res.statusCode===304)throw new u("Empty response",i,a.EmptyResponse,r.res.statusCode,r.res.headers[p]);n={ref:S,content:g}}return n}async writeResource(e,t,s,o,i={}){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");const r=this.getResourceUrl(this.userDataSyncStoreUrl,o,e).toString();i={...i},i["Content-Type"]=M.text,s&&(i["If-Match"]=s);const n=await this.request(r,{type:"POST",data:t,headers:i},[],f.None),S=n.res.headers.etag;if(!S)throw new u("Server did not return the ref",r,a.NoRef,n.res.statusCode,n.res.headers[p]);return S}async manifest(e,t={}){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");const s=h(this.userDataSyncStoreUrl,"manifest").toString();t={...t},t["Content-Type"]="application/json",e&&(t["If-None-Match"]=e.ref);const o=await this.request(s,{type:"GET",headers:t},[304],f.None);let i=null;if(o.res.statusCode===304&&(i=e),!i){const n=o.res.headers.etag;if(!n)throw new u("Server did not return the ref",s,a.NoRef,o.res.statusCode,o.res.headers[p]);const S=await P(o);if(!S&&o.res.statusCode===304)throw new u("Empty response",s,a.EmptyResponse,o.res.statusCode,o.res.headers[p]);S&&(i={...JSON.parse(S),ref:n})}const r=this.storageService.get(N,l.APPLICATION);return r&&i&&r!==i.session&&this.clearSession(),i===null&&r&&this.clearSession(),i&&this.storageService.store(N,i.session,l.APPLICATION,I.MACHINE),i}async clear(){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");await this.deleteCollection(),await this.deleteResources(),this.clearSession()}async getActivityData(){if(!this.userDataSyncStoreUrl)throw new Error("No settings sync store url configured.");const e=h(this.userDataSyncStoreUrl,"download").toString(),t={},s=await this.request(e,{type:"GET",headers:t},[],f.None);if(!ce(s))throw new u("Server returned "+s.res.statusCode,e,a.EmptyResponse,s.res.statusCode,s.res.headers[p]);if(ue(s))throw new u("Empty response",e,a.EmptyResponse,s.res.statusCode,s.res.headers[p]);return s.stream}getResourceUrl(e,t,s){return t?h(e,"collection",t,"resource",s):h(e,"resource",s)}clearSession(){this.storageService.remove(N,l.APPLICATION),this.storageService.remove($,l.APPLICATION)}async request(e,t,s,o){if(!this.authToken)throw new u("No Auth Token Available",e,a.Unauthorized,void 0,void 0);if(this._donotMakeRequestsUntil&&Date.now()<this._donotMakeRequestsUntil.getTime())throw new u(`${t.type} request '${e}' failed because of too many requests (429).`,e,a.TooManyRequestsAndRetryAfter,void 0,void 0);this.setDonotMakeRequestsUntil(void 0);const i=await this.commonHeadersPromise;t.headers={...t.headers||{},...i,"X-Account-Type":this.authToken.type,authorization:`Bearer ${this.authToken.token}`},this.addSessionHeaders(t.headers),this.logService.trace("Sending request to server",{url:e,type:t.type,headers:{...t.headers,authorization:void 0}});let r;try{r=await this.session.request(e,t,o)}catch(m){if(!(m instanceof u)){let v=a.RequestFailed;const U=W(m).toLowerCase();U.includes("xhr timeout")?v=a.RequestTimeout:U.includes("protocol")&&U.includes("not supported")?v=a.RequestProtocolNotSupported:U.includes("request path contains unescaped characters")?v=a.RequestPathNotEscaped:U.includes("headers must be an object")?v=a.RequestHeadersNotObject:Z(m)&&(v=a.RequestCanceled),m=new u(`Connection refused for the request '${e}'.`,e,v,void 0,void 0)}throw this.logService.info("Request failed",e),m}const n=r.res.headers[p],S={url:e,status:r.res.statusCode,"execution-id":t.headers[le],"operation-id":n},g=de(r)||r.res.statusCode&&s.includes(r.res.statusCode);let A="";if(g?this.logService.trace("Request succeeded",S):(A=await ae(r)||"",this.logService.info("Request failed",S,A)),r.res.statusCode===401||r.res.statusCode===403){if(this.authToken=void 0,r.res.statusCode===401)throw this._onTokenFailed.fire(a.Unauthorized),new u(`${t.type} request '${e}' failed because of Unauthorized (401).`,e,a.Unauthorized,r.res.statusCode,n);if(r.res.statusCode===403)throw this._onTokenFailed.fire(a.Forbidden),new u(`${t.type} request '${e}' failed because the access is forbidden (403).`,e,a.Forbidden,r.res.statusCode,n)}if(this._onTokenSucceed.fire(),r.res.statusCode===404)throw new u(`${t.type} request '${e}' failed because the requested resource is not found (404).`,e,a.NotFound,r.res.statusCode,n);if(r.res.statusCode===405)throw new u(`${t.type} request '${e}' failed because the requested endpoint is not found (405). ${A}`,e,a.MethodNotFound,r.res.statusCode,n);if(r.res.statusCode===409)throw new u(`${t.type} request '${e}' failed because of Conflict (409). There is new data for this resource. Make the request again with latest data.`,e,a.Conflict,r.res.statusCode,n);if(r.res.statusCode===410)throw new u(`${t.type} request '${e}' failed because the requested resource is not longer available (410).`,e,a.Gone,r.res.statusCode,n);if(r.res.statusCode===412)throw new u(`${t.type} request '${e}' failed because of Precondition Failed (412). There is new data for this resource. Make the request again with latest data.`,e,a.PreconditionFailed,r.res.statusCode,n);if(r.res.statusCode===413)throw new u(`${t.type} request '${e}' failed because of too large payload (413).`,e,a.TooLarge,r.res.statusCode,n);if(r.res.statusCode===426)throw new u(`${t.type} request '${e}' failed with status Upgrade Required (426). Please upgrade the client and try again.`,e,a.UpgradeRequired,r.res.statusCode,n);if(r.res.statusCode===429){const m=r.res.headers["retry-after"];throw m?(this.setDonotMakeRequestsUntil(new Date(Date.now()+parseInt(m)*1e3)),new u(`${t.type} request '${e}' failed because of too many requests (429).`,e,a.TooManyRequestsAndRetryAfter,r.res.statusCode,n)):new u(`${t.type} request '${e}' failed because of too many requests (429).`,e,a.TooManyRequests,r.res.statusCode,n)}if(!g)throw new u("Server returned "+r.res.statusCode,e,a.Unknown,r.res.statusCode,n);return r}addSessionHeaders(e){let t=this.storageService.get($,l.APPLICATION);t===void 0&&(t=ne(),this.storageService.store($,t,l.APPLICATION,I.MACHINE)),e["X-Machine-Session-Id"]=t;const s=this.storageService.get(N,l.APPLICATION);s!==void 0&&(e["X-User-Session-Id"]=s)}};C=D([d(1,T),d(2,X),d(3,z),d(4,j),d(5,G),d(6,E)],C);let k=class extends C{_serviceBrand;constructor(c,e,t,s,o,i,r){super(c.userDataSyncStore?.url,e,t,s,o,i,r),this._register(c.onDidChangeUserDataSyncStore(()=>this.updateUserDataSyncStoreUrl(c.userDataSyncStore?.url)))}};k=D([d(0,he),d(1,T),d(2,X),d(3,z),d(4,j),d(5,G),d(6,E)],k);class pe{constructor(c,e,t,s){this.limit=c;this.interval=e;this.requestService=t;this.logService=s}requests=[];startTime=void 0;request(c,e,t){if(this.isExpired()&&this.reset(),e.url=c,this.requests.length>=this.limit)throw this.logService.info("Too many requests",...this.requests),new u(`Too many requests. Only ${this.limit} requests allowed in ${this.interval/(1e3*60)} minutes.`,c,a.LocalTooManyRequests,void 0,void 0);return this.startTime=this.startTime||new Date,this.requests.push(c),this.requestService.request(e,t)}isExpired(){return this.startTime!==void 0&&new Date().getTime()-this.startTime.getTime()>this.interval}reset(){this.requests=[],this.startTime=void 0}}export{w as AbstractUserDataSyncStoreManagementService,pe as RequestsSession,C as UserDataSyncStoreClient,_ as UserDataSyncStoreManagementService,k as UserDataSyncStoreService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { createCancelablePromise, timeout } from '../../../base/common/async.js';
+import { CancellationToken } from '../../../base/common/cancellation.js';
+import { getErrorMessage, isCancellationError } from '../../../base/common/errors.js';
+import { Emitter, Event } from '../../../base/common/event.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../base/common/lifecycle.js';
+import { Mimes } from '../../../base/common/mime.js';
+import { isWeb } from '../../../base/common/platform.js';
+import { joinPath, relativePath } from '../../../base/common/resources.js';
+import { isObject, isString } from '../../../base/common/types.js';
+import { URI } from '../../../base/common/uri.js';
+import { generateUuid } from '../../../base/common/uuid.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { IEnvironmentService } from '../../environment/common/environment.js';
+import { IFileService } from '../../files/common/files.js';
+import { IProductService } from '../../product/common/productService.js';
+import { asJson, asText, asTextOrError, hasNoContent, IRequestService, isSuccess, isSuccess as isSuccessContext } from '../../request/common/request.js';
+import { getServiceMachineId } from '../../externalServices/common/serviceMachineId.js';
+import { IStorageService } from '../../storage/common/storage.js';
+import { HEADER_EXECUTION_ID, HEADER_OPERATION_ID, IUserDataSyncLogService, IUserDataSyncStoreManagementService, SYNC_SERVICE_URL_TYPE, UserDataSyncStoreError } from './userDataSync.js';
+const CONFIGURATION_SYNC_STORE_KEY = 'configurationSync.store';
+const SYNC_PREVIOUS_STORE = 'sync.previous.store';
+const DONOT_MAKE_REQUESTS_UNTIL_KEY = 'sync.donot-make-requests-until';
+const USER_SESSION_ID_KEY = 'sync.user-session-id';
+const MACHINE_SESSION_ID_KEY = 'sync.machine-session-id';
+const REQUEST_SESSION_LIMIT = 100;
+const REQUEST_SESSION_INTERVAL = 1000 * 60 * 5;
+let AbstractUserDataSyncStoreManagementService = class AbstractUserDataSyncStoreManagementService extends Disposable {
+    get userDataSyncStore() { return this._userDataSyncStore; }
+    get userDataSyncStoreType() {
+        return this.storageService.get(SYNC_SERVICE_URL_TYPE, -1);
+    }
+    set userDataSyncStoreType(type) {
+        this.storageService.store(SYNC_SERVICE_URL_TYPE, type, -1, isWeb ? 0 : 1);
+    }
+    constructor(productService, configurationService, storageService) {
+        super();
+        this.productService = productService;
+        this.configurationService = configurationService;
+        this.storageService = storageService;
+        this._onDidChangeUserDataSyncStore = this._register(new Emitter());
+        this.onDidChangeUserDataSyncStore = this._onDidChangeUserDataSyncStore.event;
+        this.updateUserDataSyncStore();
+        const disposable = this._register(new DisposableStore());
+        this._register(Event.filter(storageService.onDidChangeValue(-1, SYNC_SERVICE_URL_TYPE, disposable), () => this.userDataSyncStoreType !== this.userDataSyncStore?.type, disposable)(() => this.updateUserDataSyncStore()));
+    }
+    updateUserDataSyncStore() {
+        this._userDataSyncStore = this.toUserDataSyncStore(this.productService[CONFIGURATION_SYNC_STORE_KEY]);
+        this._onDidChangeUserDataSyncStore.fire();
+    }
+    toUserDataSyncStore(configurationSyncStore) {
+        if (!configurationSyncStore) {
+            return undefined;
+        }
+        configurationSyncStore = isWeb && configurationSyncStore.web ? { ...configurationSyncStore, ...configurationSyncStore.web } : configurationSyncStore;
+        if (isString(configurationSyncStore.url)
+            && isObject(configurationSyncStore.authenticationProviders)
+            && Object.keys(configurationSyncStore.authenticationProviders).every(authenticationProviderId => Array.isArray(configurationSyncStore.authenticationProviders[authenticationProviderId].scopes))) {
+            const syncStore = configurationSyncStore;
+            const canSwitch = !!syncStore.canSwitch;
+            const defaultType = syncStore.url === syncStore.insidersUrl ? 'insiders' : 'stable';
+            const type = (canSwitch ? this.userDataSyncStoreType : undefined) || defaultType;
+            const url = type === 'insiders' ? syncStore.insidersUrl
+                : type === 'stable' ? syncStore.stableUrl
+                    : syncStore.url;
+            return {
+                url: URI.parse(url),
+                type,
+                defaultType,
+                defaultUrl: URI.parse(syncStore.url),
+                stableUrl: URI.parse(syncStore.stableUrl),
+                insidersUrl: URI.parse(syncStore.insidersUrl),
+                canSwitch,
+                authenticationProviders: Object.keys(syncStore.authenticationProviders).reduce((result, id) => {
+                    result.push({ id, scopes: syncStore.authenticationProviders[id].scopes });
+                    return result;
+                }, [])
+            };
+        }
+        return undefined;
+    }
+};
+AbstractUserDataSyncStoreManagementService = __decorate([
+    __param(0, IProductService),
+    __param(1, IConfigurationService),
+    __param(2, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], AbstractUserDataSyncStoreManagementService);
+export { AbstractUserDataSyncStoreManagementService };
+let UserDataSyncStoreManagementService = class UserDataSyncStoreManagementService extends AbstractUserDataSyncStoreManagementService {
+    constructor(productService, configurationService, storageService) {
+        super(productService, configurationService, storageService);
+        const previousConfigurationSyncStore = this.storageService.get(SYNC_PREVIOUS_STORE, -1);
+        if (previousConfigurationSyncStore) {
+            this.previousConfigurationSyncStore = JSON.parse(previousConfigurationSyncStore);
+        }
+        const syncStore = this.productService[CONFIGURATION_SYNC_STORE_KEY];
+        if (syncStore) {
+            this.storageService.store(SYNC_PREVIOUS_STORE, JSON.stringify(syncStore), -1, 1);
+        }
+        else {
+            this.storageService.remove(SYNC_PREVIOUS_STORE, -1);
+        }
+    }
+    async switch(type) {
+        if (type !== this.userDataSyncStoreType) {
+            this.userDataSyncStoreType = type;
+            this.updateUserDataSyncStore();
+        }
+    }
+    async getPreviousUserDataSyncStore() {
+        return this.toUserDataSyncStore(this.previousConfigurationSyncStore);
+    }
+};
+UserDataSyncStoreManagementService = __decorate([
+    __param(0, IProductService),
+    __param(1, IConfigurationService),
+    __param(2, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], UserDataSyncStoreManagementService);
+export { UserDataSyncStoreManagementService };
+let UserDataSyncStoreClient = class UserDataSyncStoreClient extends Disposable {
+    get donotMakeRequestsUntil() { return this._donotMakeRequestsUntil; }
+    constructor(userDataSyncStoreUrl, productService, requestService, logService, environmentService, fileService, storageService) {
+        super();
+        this.requestService = requestService;
+        this.logService = logService;
+        this.storageService = storageService;
+        this._onTokenFailed = this._register(new Emitter());
+        this.onTokenFailed = this._onTokenFailed.event;
+        this._onTokenSucceed = this._register(new Emitter());
+        this.onTokenSucceed = this._onTokenSucceed.event;
+        this._donotMakeRequestsUntil = undefined;
+        this._onDidChangeDonotMakeRequestsUntil = this._register(new Emitter());
+        this.onDidChangeDonotMakeRequestsUntil = this._onDidChangeDonotMakeRequestsUntil.event;
+        this.resetDonotMakeRequestsUntilPromise = undefined;
+        this.updateUserDataSyncStoreUrl(userDataSyncStoreUrl);
+        this.commonHeadersPromise = getServiceMachineId(environmentService, fileService, storageService)
+            .then(uuid => {
+            const headers = {
+                'X-Client-Name': `${productService.applicationName}${isWeb ? '-web' : ''}`,
+                'X-Client-Version': productService.version,
+            };
+            if (productService.commit) {
+                headers['X-Client-Commit'] = productService.commit;
+            }
+            return headers;
+        });
+        this.session = new RequestsSession(REQUEST_SESSION_LIMIT, REQUEST_SESSION_INTERVAL, this.requestService, this.logService);
+        this.initDonotMakeRequestsUntil();
+        this._register(toDisposable(() => {
+            if (this.resetDonotMakeRequestsUntilPromise) {
+                this.resetDonotMakeRequestsUntilPromise.cancel();
+                this.resetDonotMakeRequestsUntilPromise = undefined;
+            }
+        }));
+    }
+    setAuthToken(token, type) {
+        this.authToken = { token, type };
+    }
+    updateUserDataSyncStoreUrl(userDataSyncStoreUrl) {
+        this.userDataSyncStoreUrl = userDataSyncStoreUrl ? joinPath(userDataSyncStoreUrl, 'v1') : undefined;
+    }
+    initDonotMakeRequestsUntil() {
+        const donotMakeRequestsUntil = this.storageService.getNumber(DONOT_MAKE_REQUESTS_UNTIL_KEY, -1);
+        if (donotMakeRequestsUntil && Date.now() < donotMakeRequestsUntil) {
+            this.setDonotMakeRequestsUntil(new Date(donotMakeRequestsUntil));
+        }
+    }
+    setDonotMakeRequestsUntil(donotMakeRequestsUntil) {
+        if (this._donotMakeRequestsUntil?.getTime() !== donotMakeRequestsUntil?.getTime()) {
+            this._donotMakeRequestsUntil = donotMakeRequestsUntil;
+            if (this.resetDonotMakeRequestsUntilPromise) {
+                this.resetDonotMakeRequestsUntilPromise.cancel();
+                this.resetDonotMakeRequestsUntilPromise = undefined;
+            }
+            if (this._donotMakeRequestsUntil) {
+                this.storageService.store(DONOT_MAKE_REQUESTS_UNTIL_KEY, this._donotMakeRequestsUntil.getTime(), -1, 1);
+                this.resetDonotMakeRequestsUntilPromise = createCancelablePromise(token => timeout(this._donotMakeRequestsUntil.getTime() - Date.now(), token).then(() => this.setDonotMakeRequestsUntil(undefined)));
+                this.resetDonotMakeRequestsUntilPromise.then(null, e => null);
+            }
+            else {
+                this.storageService.remove(DONOT_MAKE_REQUESTS_UNTIL_KEY, -1);
+            }
+            this._onDidChangeDonotMakeRequestsUntil.fire();
+        }
+    }
+    async getAllCollections(headers = {}) {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        const url = joinPath(this.userDataSyncStoreUrl, 'collection').toString();
+        headers = { ...headers };
+        headers['Content-Type'] = 'application/json';
+        const context = await this.request(url, { type: 'GET', headers }, [], CancellationToken.None);
+        return (await asJson(context))?.map(({ id }) => id) || [];
+    }
+    async createCollection(headers = {}) {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        const url = joinPath(this.userDataSyncStoreUrl, 'collection').toString();
+        headers = { ...headers };
+        headers['Content-Type'] = Mimes.text;
+        const context = await this.request(url, { type: 'POST', headers }, [], CancellationToken.None);
+        const collectionId = await asTextOrError(context);
+        if (!collectionId) {
+            throw new UserDataSyncStoreError('Server did not return the collection id', url, "NoCollection", context.res.statusCode, context.res.headers[HEADER_OPERATION_ID]);
+        }
+        return collectionId;
+    }
+    async deleteCollection(collection, headers = {}) {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        const url = collection ? joinPath(this.userDataSyncStoreUrl, 'collection', collection).toString() : joinPath(this.userDataSyncStoreUrl, 'collection').toString();
+        headers = { ...headers };
+        await this.request(url, { type: 'DELETE', headers }, [], CancellationToken.None);
+    }
+    async getAllResourceRefs(resource, collection) {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        const uri = this.getResourceUrl(this.userDataSyncStoreUrl, collection, resource);
+        const headers = {};
+        const context = await this.request(uri.toString(), { type: 'GET', headers }, [], CancellationToken.None);
+        const result = await asJson(context) || [];
+        return result.map(({ url, created }) => ({ ref: relativePath(uri, uri.with({ path: url })), created: created * 1000 }));
+    }
+    async resolveResourceContent(resource, ref, collection, headers = {}) {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        const url = joinPath(this.getResourceUrl(this.userDataSyncStoreUrl, collection, resource), ref).toString();
+        headers = { ...headers };
+        headers['Cache-Control'] = 'no-cache';
+        const context = await this.request(url, { type: 'GET', headers }, [], CancellationToken.None);
+        const content = await asTextOrError(context);
+        return content;
+    }
+    async deleteResource(resource, ref, collection) {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        const url = ref !== null ? joinPath(this.getResourceUrl(this.userDataSyncStoreUrl, collection, resource), ref).toString() : this.getResourceUrl(this.userDataSyncStoreUrl, collection, resource).toString();
+        const headers = {};
+        await this.request(url, { type: 'DELETE', headers }, [], CancellationToken.None);
+    }
+    async deleteResources() {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        const url = joinPath(this.userDataSyncStoreUrl, 'resource').toString();
+        const headers = { 'Content-Type': Mimes.text };
+        await this.request(url, { type: 'DELETE', headers }, [], CancellationToken.None);
+    }
+    async readResource(resource, oldValue, collection, headers = {}) {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        const url = joinPath(this.getResourceUrl(this.userDataSyncStoreUrl, collection, resource), 'latest').toString();
+        headers = { ...headers };
+        headers['Cache-Control'] = 'no-cache';
+        if (oldValue) {
+            headers['If-None-Match'] = oldValue.ref;
+        }
+        const context = await this.request(url, { type: 'GET', headers }, [304], CancellationToken.None);
+        let userData = null;
+        if (context.res.statusCode === 304) {
+            userData = oldValue;
+        }
+        if (userData === null) {
+            const ref = context.res.headers['etag'];
+            if (!ref) {
+                throw new UserDataSyncStoreError('Server did not return the ref', url, "NoRef", context.res.statusCode, context.res.headers[HEADER_OPERATION_ID]);
+            }
+            const content = await asTextOrError(context);
+            if (!content && context.res.statusCode === 304) {
+                throw new UserDataSyncStoreError('Empty response', url, "EmptyResponse", context.res.statusCode, context.res.headers[HEADER_OPERATION_ID]);
+            }
+            userData = { ref, content };
+        }
+        return userData;
+    }
+    async writeResource(resource, data, ref, collection, headers = {}) {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        const url = this.getResourceUrl(this.userDataSyncStoreUrl, collection, resource).toString();
+        headers = { ...headers };
+        headers['Content-Type'] = Mimes.text;
+        if (ref) {
+            headers['If-Match'] = ref;
+        }
+        const context = await this.request(url, { type: 'POST', data, headers }, [], CancellationToken.None);
+        const newRef = context.res.headers['etag'];
+        if (!newRef) {
+            throw new UserDataSyncStoreError('Server did not return the ref', url, "NoRef", context.res.statusCode, context.res.headers[HEADER_OPERATION_ID]);
+        }
+        return newRef;
+    }
+    async manifest(oldValue, headers = {}) {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        const url = joinPath(this.userDataSyncStoreUrl, 'manifest').toString();
+        headers = { ...headers };
+        headers['Content-Type'] = 'application/json';
+        if (oldValue) {
+            headers['If-None-Match'] = oldValue.ref;
+        }
+        const context = await this.request(url, { type: 'GET', headers }, [304], CancellationToken.None);
+        let manifest = null;
+        if (context.res.statusCode === 304) {
+            manifest = oldValue;
+        }
+        if (!manifest) {
+            const ref = context.res.headers['etag'];
+            if (!ref) {
+                throw new UserDataSyncStoreError('Server did not return the ref', url, "NoRef", context.res.statusCode, context.res.headers[HEADER_OPERATION_ID]);
+            }
+            const content = await asTextOrError(context);
+            if (!content && context.res.statusCode === 304) {
+                throw new UserDataSyncStoreError('Empty response', url, "EmptyResponse", context.res.statusCode, context.res.headers[HEADER_OPERATION_ID]);
+            }
+            if (content) {
+                manifest = { ...JSON.parse(content), ref };
+            }
+        }
+        const currentSessionId = this.storageService.get(USER_SESSION_ID_KEY, -1);
+        if (currentSessionId && manifest && currentSessionId !== manifest.session) {
+            this.clearSession();
+        }
+        if (manifest === null && currentSessionId) {
+            this.clearSession();
+        }
+        if (manifest) {
+            this.storageService.store(USER_SESSION_ID_KEY, manifest.session, -1, 1);
+        }
+        return manifest;
+    }
+    async clear() {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        await this.deleteCollection();
+        await this.deleteResources();
+        this.clearSession();
+    }
+    async getActivityData() {
+        if (!this.userDataSyncStoreUrl) {
+            throw new Error('No settings sync store url configured.');
+        }
+        const url = joinPath(this.userDataSyncStoreUrl, 'download').toString();
+        const headers = {};
+        const context = await this.request(url, { type: 'GET', headers }, [], CancellationToken.None);
+        if (!isSuccess(context)) {
+            throw new UserDataSyncStoreError('Server returned ' + context.res.statusCode, url, "EmptyResponse", context.res.statusCode, context.res.headers[HEADER_OPERATION_ID]);
+        }
+        if (hasNoContent(context)) {
+            throw new UserDataSyncStoreError('Empty response', url, "EmptyResponse", context.res.statusCode, context.res.headers[HEADER_OPERATION_ID]);
+        }
+        return context.stream;
+    }
+    getResourceUrl(userDataSyncStoreUrl, collection, resource) {
+        return collection ? joinPath(userDataSyncStoreUrl, 'collection', collection, 'resource', resource) : joinPath(userDataSyncStoreUrl, 'resource', resource);
+    }
+    clearSession() {
+        this.storageService.remove(USER_SESSION_ID_KEY, -1);
+        this.storageService.remove(MACHINE_SESSION_ID_KEY, -1);
+    }
+    async request(url, options, successCodes, token) {
+        if (!this.authToken) {
+            throw new UserDataSyncStoreError('No Auth Token Available', url, "Unauthorized", undefined, undefined);
+        }
+        if (this._donotMakeRequestsUntil && Date.now() < this._donotMakeRequestsUntil.getTime()) {
+            throw new UserDataSyncStoreError(`${options.type} request '${url}' failed because of too many requests (429).`, url, "TooManyRequestsAndRetryAfter", undefined, undefined);
+        }
+        this.setDonotMakeRequestsUntil(undefined);
+        const commonHeaders = await this.commonHeadersPromise;
+        options.headers = {
+            ...(options.headers || {}),
+            ...commonHeaders,
+            'X-Account-Type': this.authToken.type,
+            'authorization': `Bearer ${this.authToken.token}`,
+        };
+        this.addSessionHeaders(options.headers);
+        this.logService.trace('Sending request to server', { url, type: options.type, headers: { ...options.headers, ...{ authorization: undefined } } });
+        let context;
+        try {
+            context = await this.session.request(url, options, token);
+        }
+        catch (e) {
+            if (!(e instanceof UserDataSyncStoreError)) {
+                let code = "RequestFailed";
+                const errorMessage = getErrorMessage(e).toLowerCase();
+                if (errorMessage.includes('xhr timeout')) {
+                    code = "RequestTimeout";
+                }
+                else if (errorMessage.includes('protocol') && errorMessage.includes('not supported')) {
+                    code = "RequestProtocolNotSupported";
+                }
+                else if (errorMessage.includes('request path contains unescaped characters')) {
+                    code = "RequestPathNotEscaped";
+                }
+                else if (errorMessage.includes('headers must be an object')) {
+                    code = "RequestHeadersNotObject";
+                }
+                else if (isCancellationError(e)) {
+                    code = "RequestCanceled";
+                }
+                e = new UserDataSyncStoreError(`Connection refused for the request '${url}'.`, url, code, undefined, undefined);
+            }
+            this.logService.info('Request failed', url);
+            throw e;
+        }
+        const operationId = context.res.headers[HEADER_OPERATION_ID];
+        const requestInfo = { url, status: context.res.statusCode, 'execution-id': options.headers[HEADER_EXECUTION_ID], 'operation-id': operationId };
+        const isSuccess = isSuccessContext(context) || (context.res.statusCode && successCodes.includes(context.res.statusCode));
+        let failureMessage = '';
+        if (isSuccess) {
+            this.logService.trace('Request succeeded', requestInfo);
+        }
+        else {
+            failureMessage = await asText(context) || '';
+            this.logService.info('Request failed', requestInfo, failureMessage);
+        }
+        if (context.res.statusCode === 401 || context.res.statusCode === 403) {
+            this.authToken = undefined;
+            if (context.res.statusCode === 401) {
+                this._onTokenFailed.fire("Unauthorized");
+                throw new UserDataSyncStoreError(`${options.type} request '${url}' failed because of Unauthorized (401).`, url, "Unauthorized", context.res.statusCode, operationId);
+            }
+            if (context.res.statusCode === 403) {
+                this._onTokenFailed.fire("Forbidden");
+                throw new UserDataSyncStoreError(`${options.type} request '${url}' failed because the access is forbidden (403).`, url, "Forbidden", context.res.statusCode, operationId);
+            }
+        }
+        this._onTokenSucceed.fire();
+        if (context.res.statusCode === 404) {
+            throw new UserDataSyncStoreError(`${options.type} request '${url}' failed because the requested resource is not found (404).`, url, "NotFound", context.res.statusCode, operationId);
+        }
+        if (context.res.statusCode === 405) {
+            throw new UserDataSyncStoreError(`${options.type} request '${url}' failed because the requested endpoint is not found (405). ${failureMessage}`, url, "MethodNotFound", context.res.statusCode, operationId);
+        }
+        if (context.res.statusCode === 409) {
+            throw new UserDataSyncStoreError(`${options.type} request '${url}' failed because of Conflict (409). There is new data for this resource. Make the request again with latest data.`, url, "Conflict", context.res.statusCode, operationId);
+        }
+        if (context.res.statusCode === 410) {
+            throw new UserDataSyncStoreError(`${options.type} request '${url}' failed because the requested resource is not longer available (410).`, url, "Gone", context.res.statusCode, operationId);
+        }
+        if (context.res.statusCode === 412) {
+            throw new UserDataSyncStoreError(`${options.type} request '${url}' failed because of Precondition Failed (412). There is new data for this resource. Make the request again with latest data.`, url, "PreconditionFailed", context.res.statusCode, operationId);
+        }
+        if (context.res.statusCode === 413) {
+            throw new UserDataSyncStoreError(`${options.type} request '${url}' failed because of too large payload (413).`, url, "TooLarge", context.res.statusCode, operationId);
+        }
+        if (context.res.statusCode === 426) {
+            throw new UserDataSyncStoreError(`${options.type} request '${url}' failed with status Upgrade Required (426). Please upgrade the client and try again.`, url, "UpgradeRequired", context.res.statusCode, operationId);
+        }
+        if (context.res.statusCode === 429) {
+            const retryAfter = context.res.headers['retry-after'];
+            if (retryAfter) {
+                this.setDonotMakeRequestsUntil(new Date(Date.now() + (parseInt(retryAfter) * 1000)));
+                throw new UserDataSyncStoreError(`${options.type} request '${url}' failed because of too many requests (429).`, url, "TooManyRequestsAndRetryAfter", context.res.statusCode, operationId);
+            }
+            else {
+                throw new UserDataSyncStoreError(`${options.type} request '${url}' failed because of too many requests (429).`, url, "RemoteTooManyRequests", context.res.statusCode, operationId);
+            }
+        }
+        if (!isSuccess) {
+            throw new UserDataSyncStoreError('Server returned ' + context.res.statusCode, url, "Unknown", context.res.statusCode, operationId);
+        }
+        return context;
+    }
+    addSessionHeaders(headers) {
+        let machineSessionId = this.storageService.get(MACHINE_SESSION_ID_KEY, -1);
+        if (machineSessionId === undefined) {
+            machineSessionId = generateUuid();
+            this.storageService.store(MACHINE_SESSION_ID_KEY, machineSessionId, -1, 1);
+        }
+        headers['X-Machine-Session-Id'] = machineSessionId;
+        const userSessionId = this.storageService.get(USER_SESSION_ID_KEY, -1);
+        if (userSessionId !== undefined) {
+            headers['X-User-Session-Id'] = userSessionId;
+        }
+    }
+};
+UserDataSyncStoreClient = __decorate([
+    __param(1, IProductService),
+    __param(2, IRequestService),
+    __param(3, IUserDataSyncLogService),
+    __param(4, IEnvironmentService),
+    __param(5, IFileService),
+    __param(6, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], UserDataSyncStoreClient);
+export { UserDataSyncStoreClient };
+let UserDataSyncStoreService = class UserDataSyncStoreService extends UserDataSyncStoreClient {
+    constructor(userDataSyncStoreManagementService, productService, requestService, logService, environmentService, fileService, storageService) {
+        super(userDataSyncStoreManagementService.userDataSyncStore?.url, productService, requestService, logService, environmentService, fileService, storageService);
+        this._register(userDataSyncStoreManagementService.onDidChangeUserDataSyncStore(() => this.updateUserDataSyncStoreUrl(userDataSyncStoreManagementService.userDataSyncStore?.url)));
+    }
+};
+UserDataSyncStoreService = __decorate([
+    __param(0, IUserDataSyncStoreManagementService),
+    __param(1, IProductService),
+    __param(2, IRequestService),
+    __param(3, IUserDataSyncLogService),
+    __param(4, IEnvironmentService),
+    __param(5, IFileService),
+    __param(6, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], UserDataSyncStoreService);
+export { UserDataSyncStoreService };
+export class RequestsSession {
+    constructor(limit, interval, requestService, logService) {
+        this.limit = limit;
+        this.interval = interval;
+        this.requestService = requestService;
+        this.logService = logService;
+        this.requests = [];
+        this.startTime = undefined;
+    }
+    request(url, options, token) {
+        if (this.isExpired()) {
+            this.reset();
+        }
+        options.url = url;
+        if (this.requests.length >= this.limit) {
+            this.logService.info('Too many requests', ...this.requests);
+            throw new UserDataSyncStoreError(`Too many requests. Only ${this.limit} requests allowed in ${this.interval / (1000 * 60)} minutes.`, url, "LocalTooManyRequests", undefined, undefined);
+        }
+        this.startTime = this.startTime || new Date();
+        this.requests.push(url);
+        return this.requestService.request(options, token);
+    }
+    isExpired() {
+        return this.startTime !== undefined && new Date().getTime() - this.startTime.getTime() > this.interval;
+    }
+    reset() {
+        this.requests = [];
+        this.startTime = undefined;
+    }
+}

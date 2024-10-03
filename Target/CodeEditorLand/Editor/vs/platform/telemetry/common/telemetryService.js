@@ -1,19 +1,189 @@
-var S=Object.defineProperty;var P=Object.getOwnPropertyDescriptor;var g=(o,e,t,r)=>{for(var i=r>1?void 0:r?P(e,t):e,a=o.length-1,m;a>=0;a--)(m=o[a])&&(i=(r?m(e,t,i):m(i))||i);return r&&i&&S(e,t,i),i},d=(o,e)=>(t,r)=>e(t,r,o);import{DisposableStore as L}from"../../../base/common/lifecycle.js";import{mixin as h}from"../../../base/common/objects.js";import{isWeb as C}from"../../../base/common/platform.js";import{escapeRegExpCharacters as f}from"../../../base/common/strings.js";import{localize as s}from"../../../nls.js";import{IConfigurationService as D}from"../../configuration/common/configuration.js";import{ConfigurationScope as u,Extensions as v}from"../../configuration/common/configurationRegistry.js";import n from"../../product/common/product.js";import{IProductService as R}from"../../product/common/productService.js";import{Registry as T}from"../../registry/common/platform.js";import"./gdprTypings.js";import{TelemetryConfiguration as p,TelemetryLevel as l,TELEMETRY_CRASH_REPORTER_SETTING_ID as x,TELEMETRY_OLD_SETTING_ID as _,TELEMETRY_SECTION_ID as E,TELEMETRY_SETTING_ID as y}from"./telemetry.js";import{cleanData as w,getTelemetryLevel as O}from"./telemetryUtils.js";let c=class{constructor(e,t,r){this._configurationService=t;this._productService=r;this._appenders=e.appenders,this._commonProperties=e.commonProperties??Object.create(null),this.sessionId=this._commonProperties.sessionID,this.machineId=this._commonProperties["common.machineId"],this.sqmId=this._commonProperties["common.sqmId"],this.devDeviceId=this._commonProperties["common.devDeviceId"],this.firstSessionDate=this._commonProperties["common.firstSessionDate"],this.msftInternal=this._commonProperties["common.msftInternal"],this._piiPaths=e.piiPaths||[],this._telemetryLevel=l.USAGE,this._sendErrorTelemetry=!!e.sendErrorTelemetry,this._cleanupPatterns=[/(vscode-)?file:\/\/\/.*?\/resources\/app\//gi];for(const i of this._piiPaths)this._cleanupPatterns.push(new RegExp(f(i),"gi")),i.indexOf("\\")>=0&&this._cleanupPatterns.push(new RegExp(f(i.replace(/\\/g,"/")),"gi"));this._updateTelemetryLevel(),this._disposables.add(this._configurationService.onDidChangeConfiguration(i=>{(i.affectsConfiguration(y)||i.affectsConfiguration(_)||i.affectsConfiguration(x))&&this._updateTelemetryLevel()}))}static IDLE_START_EVENT_NAME="UserIdleStart";static IDLE_STOP_EVENT_NAME="UserIdleStop";sessionId;machineId;sqmId;devDeviceId;firstSessionDate;msftInternal;_appenders;_commonProperties;_experimentProperties={};_piiPaths;_telemetryLevel;_sendErrorTelemetry;_disposables=new L;_cleanupPatterns=[];setExperimentProperty(e,t){this._experimentProperties[e]=t}_updateTelemetryLevel(){let e=O(this._configurationService);const t=this._productService.enabledTelemetryLevels;if(t){this._sendErrorTelemetry=this.sendErrorTelemetry?t.error:!1;const r=t.usage?l.USAGE:t.error?l.ERROR:l.NONE;e=Math.min(e,r)}this._telemetryLevel=e}get sendErrorTelemetry(){return this._sendErrorTelemetry}get telemetryLevel(){return this._telemetryLevel}dispose(){this._disposables.dispose()}_log(e,t,r){this._telemetryLevel<t||(r=h(r,this._experimentProperties),r=w(r,this._cleanupPatterns),r=h(r,this._commonProperties),this._appenders.forEach(i=>i.log(e,r)))}publicLog(e,t){this._log(e,l.USAGE,t)}publicLog2(e,t){this.publicLog(e,t)}publicLogError(e,t){this._sendErrorTelemetry&&this._log(e,l.ERROR,t)}publicLogError2(e,t){this.publicLogError(e,t)}};c=g([d(1,D),d(2,R)],c);function A(){const o=s("telemetry.telemetryLevelMd","Controls {0} telemetry, first-party extension telemetry, and participating third-party extension telemetry. Some third party extensions might not respect this setting. Consult the specific extension's documentation to be sure. Telemetry helps us better understand how {0} is performing, where improvements need to be made, and how features are being used.",n.nameLong),e=n.privacyStatementUrl?s("telemetry.docsAndPrivacyStatement","Read more about the [data we collect]({0}) and our [privacy statement]({1}).","https://aka.ms/vscode-telemetry",n.privacyStatementUrl):s("telemetry.docsStatement","Read more about the [data we collect]({0}).","https://aka.ms/vscode-telemetry"),t=C?"":s("telemetry.restart","A full restart of the application is necessary for crash reporting changes to take effect."),r=s("telemetry.crashReports","Crash Reports"),i=s("telemetry.errors","Error Telemetry"),a=s("telemetry.usage","Usage Data"),m=s("telemetry.telemetryLevel.tableDescription","The following table outlines the data sent with each setting:"),I=`
-|       | ${r} | ${i} | ${a} |
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { mixin } from '../../../base/common/objects.js';
+import { isWeb } from '../../../base/common/platform.js';
+import { escapeRegExpCharacters } from '../../../base/common/strings.js';
+import { localize } from '../../../nls.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { Extensions } from '../../configuration/common/configurationRegistry.js';
+import product from '../../product/common/product.js';
+import { IProductService } from '../../product/common/productService.js';
+import { Registry } from '../../registry/common/platform.js';
+import { TELEMETRY_CRASH_REPORTER_SETTING_ID, TELEMETRY_OLD_SETTING_ID, TELEMETRY_SECTION_ID, TELEMETRY_SETTING_ID } from './telemetry.js';
+import { cleanData, getTelemetryLevel } from './telemetryUtils.js';
+let TelemetryService = class TelemetryService {
+    static { this.IDLE_START_EVENT_NAME = 'UserIdleStart'; }
+    static { this.IDLE_STOP_EVENT_NAME = 'UserIdleStop'; }
+    constructor(config, _configurationService, _productService) {
+        this._configurationService = _configurationService;
+        this._productService = _productService;
+        this._experimentProperties = {};
+        this._disposables = new DisposableStore();
+        this._cleanupPatterns = [];
+        this._appenders = config.appenders;
+        this._commonProperties = config.commonProperties ?? Object.create(null);
+        this.sessionId = this._commonProperties['sessionID'];
+        this.machineId = this._commonProperties['common.machineId'];
+        this.sqmId = this._commonProperties['common.sqmId'];
+        this.devDeviceId = this._commonProperties['common.devDeviceId'];
+        this.firstSessionDate = this._commonProperties['common.firstSessionDate'];
+        this.msftInternal = this._commonProperties['common.msftInternal'];
+        this._piiPaths = config.piiPaths || [];
+        this._telemetryLevel = 3;
+        this._sendErrorTelemetry = !!config.sendErrorTelemetry;
+        this._cleanupPatterns = [/(vscode-)?file:\/\/\/.*?\/resources\/app\//gi];
+        for (const piiPath of this._piiPaths) {
+            this._cleanupPatterns.push(new RegExp(escapeRegExpCharacters(piiPath), 'gi'));
+            if (piiPath.indexOf('\\') >= 0) {
+                this._cleanupPatterns.push(new RegExp(escapeRegExpCharacters(piiPath.replace(/\\/g, '/')), 'gi'));
+            }
+        }
+        this._updateTelemetryLevel();
+        this._disposables.add(this._configurationService.onDidChangeConfiguration(e => {
+            const affectsTelemetryConfig = e.affectsConfiguration(TELEMETRY_SETTING_ID)
+                || e.affectsConfiguration(TELEMETRY_OLD_SETTING_ID)
+                || e.affectsConfiguration(TELEMETRY_CRASH_REPORTER_SETTING_ID);
+            if (affectsTelemetryConfig) {
+                this._updateTelemetryLevel();
+            }
+        }));
+    }
+    setExperimentProperty(name, value) {
+        this._experimentProperties[name] = value;
+    }
+    _updateTelemetryLevel() {
+        let level = getTelemetryLevel(this._configurationService);
+        const collectableTelemetry = this._productService.enabledTelemetryLevels;
+        if (collectableTelemetry) {
+            this._sendErrorTelemetry = this.sendErrorTelemetry ? collectableTelemetry.error : false;
+            const maxCollectableTelemetryLevel = collectableTelemetry.usage ? 3 : collectableTelemetry.error ? 2 : 0;
+            level = Math.min(level, maxCollectableTelemetryLevel);
+        }
+        this._telemetryLevel = level;
+    }
+    get sendErrorTelemetry() {
+        return this._sendErrorTelemetry;
+    }
+    get telemetryLevel() {
+        return this._telemetryLevel;
+    }
+    dispose() {
+        this._disposables.dispose();
+    }
+    _log(eventName, eventLevel, data) {
+        if (this._telemetryLevel < eventLevel) {
+            return;
+        }
+        data = mixin(data, this._experimentProperties);
+        data = cleanData(data, this._cleanupPatterns);
+        data = mixin(data, this._commonProperties);
+        this._appenders.forEach(a => a.log(eventName, data));
+    }
+    publicLog(eventName, data) {
+        this._log(eventName, 3, data);
+    }
+    publicLog2(eventName, data) {
+        this.publicLog(eventName, data);
+    }
+    publicLogError(errorEventName, data) {
+        if (!this._sendErrorTelemetry) {
+            return;
+        }
+        this._log(errorEventName, 2, data);
+    }
+    publicLogError2(eventName, data) {
+        this.publicLogError(eventName, data);
+    }
+};
+TelemetryService = __decorate([
+    __param(1, IConfigurationService),
+    __param(2, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], TelemetryService);
+export { TelemetryService };
+function getTelemetryLevelSettingDescription() {
+    const telemetryText = localize('telemetry.telemetryLevelMd', "Controls {0} telemetry, first-party extension telemetry, and participating third-party extension telemetry. Some third party extensions might not respect this setting. Consult the specific extension's documentation to be sure. Telemetry helps us better understand how {0} is performing, where improvements need to be made, and how features are being used.", product.nameLong);
+    const externalLinksStatement = !product.privacyStatementUrl ?
+        localize("telemetry.docsStatement", "Read more about the [data we collect]({0}).", 'https://aka.ms/vscode-telemetry') :
+        localize("telemetry.docsAndPrivacyStatement", "Read more about the [data we collect]({0}) and our [privacy statement]({1}).", 'https://aka.ms/vscode-telemetry', product.privacyStatementUrl);
+    const restartString = !isWeb ? localize('telemetry.restart', 'A full restart of the application is necessary for crash reporting changes to take effect.') : '';
+    const crashReportsHeader = localize('telemetry.crashReports', "Crash Reports");
+    const errorsHeader = localize('telemetry.errors', "Error Telemetry");
+    const usageHeader = localize('telemetry.usage', "Usage Data");
+    const telemetryTableDescription = localize('telemetry.telemetryLevel.tableDescription', "The following table outlines the data sent with each setting:");
+    const telemetryTable = `
+|       | ${crashReportsHeader} | ${errorsHeader} | ${usageHeader} |
 |:------|:---------------------:|:---------------:|:--------------:|
-| all   |            \u2713          |        \u2713        |        \u2713       |
-| error |            \u2713          |        \u2713        |        -       |
-| crash |            \u2713          |        -        |        -       |
+| all   |            ✓          |        ✓        |        ✓       |
+| error |            ✓          |        ✓        |        -       |
+| crash |            ✓          |        -        |        -       |
 | off   |            -          |        -        |        -       |
-`,b=s("telemetry.telemetryLevel.deprecated","****Note:*** If this setting is 'off', no telemetry will be sent regardless of other telemetry settings. If this setting is set to anything except 'off' and telemetry is disabled with deprecated settings, no telemetry will be sent.*");return`
-${o} ${e} ${t}
+`;
+    const deprecatedSettingNote = localize('telemetry.telemetryLevel.deprecated', "****Note:*** If this setting is 'off', no telemetry will be sent regardless of other telemetry settings. If this setting is set to anything except 'off' and telemetry is disabled with deprecated settings, no telemetry will be sent.*");
+    const telemetryDescription = `
+${telemetryText} ${externalLinksStatement} ${restartString}
 
 &nbsp;
 
-${m}
-${I}
+${telemetryTableDescription}
+${telemetryTable}
 
 &nbsp;
 
-${b}
-`}T.as(v.Configuration).registerConfiguration({id:E,order:1,type:"object",title:s("telemetryConfigurationTitle","Telemetry"),properties:{[y]:{type:"string",enum:[p.ON,p.ERROR,p.CRASH,p.OFF],enumDescriptions:[s("telemetry.telemetryLevel.default","Sends usage data, errors, and crash reports."),s("telemetry.telemetryLevel.error","Sends general error telemetry and crash reports."),s("telemetry.telemetryLevel.crash","Sends OS level crash reports."),s("telemetry.telemetryLevel.off","Disables all product telemetry.")],markdownDescription:A(),default:p.ON,restricted:!0,scope:u.APPLICATION,tags:["usesOnlineServices","telemetry"]}}}),T.as(v.Configuration).registerConfiguration({id:E,order:110,type:"object",title:s("telemetryConfigurationTitle","Telemetry"),properties:{[_]:{type:"boolean",markdownDescription:n.privacyStatementUrl?s("telemetry.enableTelemetryMd","Enable diagnostic data to be collected. This helps us to better understand how {0} is performing and where improvements need to be made. [Read more]({1}) about what we collect and our privacy statement.",n.nameLong,n.privacyStatementUrl):s("telemetry.enableTelemetry","Enable diagnostic data to be collected. This helps us to better understand how {0} is performing and where improvements need to be made.",n.nameLong),default:!0,restricted:!0,markdownDeprecationMessage:s("enableTelemetryDeprecated","If this setting is false, no telemetry will be sent regardless of the new setting's value. Deprecated in favor of the {0} setting.",`\`#${y}#\``),scope:u.APPLICATION,tags:["usesOnlineServices","telemetry"]}}});export{c as TelemetryService};
+${deprecatedSettingNote}
+`;
+    return telemetryDescription;
+}
+Registry.as(Extensions.Configuration).registerConfiguration({
+    'id': TELEMETRY_SECTION_ID,
+    'order': 1,
+    'type': 'object',
+    'title': localize('telemetryConfigurationTitle', "Telemetry"),
+    'properties': {
+        [TELEMETRY_SETTING_ID]: {
+            'type': 'string',
+            'enum': ["all", "error", "crash", "off"],
+            'enumDescriptions': [
+                localize('telemetry.telemetryLevel.default', "Sends usage data, errors, and crash reports."),
+                localize('telemetry.telemetryLevel.error', "Sends general error telemetry and crash reports."),
+                localize('telemetry.telemetryLevel.crash', "Sends OS level crash reports."),
+                localize('telemetry.telemetryLevel.off', "Disables all product telemetry.")
+            ],
+            'markdownDescription': getTelemetryLevelSettingDescription(),
+            'default': "all",
+            'restricted': true,
+            'scope': 1,
+            'tags': ['usesOnlineServices', 'telemetry']
+        }
+    }
+});
+Registry.as(Extensions.Configuration).registerConfiguration({
+    'id': TELEMETRY_SECTION_ID,
+    'order': 110,
+    'type': 'object',
+    'title': localize('telemetryConfigurationTitle', "Telemetry"),
+    'properties': {
+        [TELEMETRY_OLD_SETTING_ID]: {
+            'type': 'boolean',
+            'markdownDescription': !product.privacyStatementUrl ?
+                localize('telemetry.enableTelemetry', "Enable diagnostic data to be collected. This helps us to better understand how {0} is performing and where improvements need to be made.", product.nameLong) :
+                localize('telemetry.enableTelemetryMd', "Enable diagnostic data to be collected. This helps us to better understand how {0} is performing and where improvements need to be made. [Read more]({1}) about what we collect and our privacy statement.", product.nameLong, product.privacyStatementUrl),
+            'default': true,
+            'restricted': true,
+            'markdownDeprecationMessage': localize('enableTelemetryDeprecated', "If this setting is false, no telemetry will be sent regardless of the new setting's value. Deprecated in favor of the {0} setting.", `\`#${TELEMETRY_SETTING_ID}#\``),
+            'scope': 1,
+            'tags': ['usesOnlineServices', 'telemetry']
+        }
+    }
+});

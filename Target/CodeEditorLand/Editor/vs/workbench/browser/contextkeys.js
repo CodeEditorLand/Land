@@ -1,1 +1,246 @@
-var y=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var l=(c,r,e,t)=>{for(var i=t>1?void 0:t?S(r,e):r,n=c.length-1,p;n>=0;n--)(p=c[n])&&(i=(t?p(r,e,i):p(i))||i);return t&&i&&y(r,e,i),i},o=(c,r)=>(e,t)=>r(e,t,c);import{Event as v}from"../../base/common/event.js";import{Disposable as b}from"../../base/common/lifecycle.js";import{IContextKeyService as m,setConstant as K}from"../../platform/contextkey/common/contextkey.js";import{InputFocusedContext as g,IsMacContext as E,IsLinuxContext as I,IsWindowsContext as k,IsWebContext as W,IsMacNativeContext as T,IsDevelopmentContext as u,IsIOSContext as A,ProductQualityContext as G,IsMobileContext as V}from"../../platform/contextkey/common/contextkeys.js";import{SplitEditorsVertically as f,InEditorZenModeContext as P,AuxiliaryBarVisibleContext as D,SideBarVisibleContext as F,PanelAlignmentContext as M,PanelMaximizedContext as _,PanelVisibleContext as B,EmbedderIdentifierContext as L,EditorTabsVisibleContext as w,IsMainEditorCenteredLayoutContext as R,MainEditorAreaVisibleContext as O,DirtyWorkingCopiesContext as N,EmptyWorkspaceSupportContext as z,EnterMultiRootWorkspaceSupportContext as Z,HasWebFileSystemAccess as U,IsMainWindowFullscreenContext as Y,OpenFolderWorkspaceSupportContext as X,RemoteNameContext as q,VirtualWorkspaceContext as Q,WorkbenchStateContext as j,WorkspaceFolderCountContext as J,PanelPositionContext as $,TemporaryWorkspaceContext as H,TitleBarVisibleContext as ee,TitleBarStyleContext as te,IsAuxiliaryWindowFocusedContext as ie,ActiveEditorGroupEmptyContext as oe,ActiveEditorGroupIndexContext as re,ActiveEditorGroupLastContext as ne,ActiveEditorGroupLockedContext as se,MultipleEditorGroupsContext as ae,EditorsVisibleContext as ce}from"../common/contextkeys.js";import{trackFocus as pe,addDisposableListener as de,EventType as xe,onDidRegisterWindow as he,getActiveWindow as Ce,isEditableElement as le}from"../../base/browser/dom.js";import{preferredSideBySideGroupDirection as ve,GroupDirection as ue,IEditorGroupsService as ye}from"../services/editor/common/editorGroupsService.js";import{IConfigurationService as Se}from"../../platform/configuration/common/configuration.js";import{IWorkbenchEnvironmentService as be}from"../services/environment/common/environmentService.js";import{WorkbenchState as x,IWorkspaceContextService as me,isTemporaryWorkspace as Ke}from"../../platform/workspace/common/workspace.js";import{IWorkbenchLayoutService as ge,Parts as s,positionToString as Ee}from"../services/layout/browser/layoutService.js";import{getRemoteName as Ie}from"../../platform/remote/common/remoteHosts.js";import{getVirtualWorkspaceScheme as ke}from"../../platform/workspace/common/virtualWorkspace.js";import{IWorkingCopyService as We}from"../services/workingCopy/common/workingCopyService.js";import{isNative as h}from"../../base/common/platform.js";import{IPaneCompositePartService as Te}from"../services/panecomposite/browser/panecomposite.js";import{WebFileSystemAccess as Ae}from"../../platform/files/browser/webFileSystemAccess.js";import{IProductService as Ge}from"../../platform/product/common/productService.js";import{getTitleBarStyle as Ve}from"../../platform/window/common/window.js";import{mainWindow as a}from"../../base/browser/window.js";import{isFullscreen as fe,onDidChangeFullscreen as Pe}from"../../base/browser/browser.js";import{IEditorService as De}from"../services/editor/common/editorService.js";let d=class extends b{constructor(e,t,i,n,p,Fe,Me,_e,Be,Le){super();this.contextKeyService=e;this.contextService=t;this.configurationService=i;this.environmentService=n;this.productService=p;this.editorGroupService=Fe;this.editorService=Me;this.layoutService=_e;this.paneCompositeService=Be;this.workingCopyService=Le;E.bindTo(this.contextKeyService),I.bindTo(this.contextKeyService),k.bindTo(this.contextKeyService),W.bindTo(this.contextKeyService),T.bindTo(this.contextKeyService),A.bindTo(this.contextKeyService),V.bindTo(this.contextKeyService),q.bindTo(this.contextKeyService).set(Ie(this.environmentService.remoteAuthority)||""),this.virtualWorkspaceContext=Q.bindTo(this.contextKeyService),this.temporaryWorkspaceContext=H.bindTo(this.contextKeyService),this.updateWorkspaceContextKeys(),U.bindTo(this.contextKeyService).set(Ae.supported(a));const C=!this.environmentService.isBuilt||this.environmentService.isExtensionDevelopment;u.bindTo(this.contextKeyService).set(C),K(u.key,C),G.bindTo(this.contextKeyService).set(this.productService.quality||""),L.bindTo(this.contextKeyService).set(p.embedderIdentifier),this.activeEditorGroupEmpty=oe.bindTo(this.contextKeyService),this.activeEditorGroupIndex=re.bindTo(this.contextKeyService),this.activeEditorGroupLast=ne.bindTo(this.contextKeyService),this.activeEditorGroupLocked=se.bindTo(this.contextKeyService),this.multipleEditorGroupsContext=ae.bindTo(this.contextKeyService),this.editorsVisibleContext=ce.bindTo(this.contextKeyService),this.dirtyWorkingCopiesContext=N.bindTo(this.contextKeyService),this.dirtyWorkingCopiesContext.set(this.workingCopyService.hasDirty),this.inputFocusedContext=g.bindTo(this.contextKeyService),this.workbenchStateContext=j.bindTo(this.contextKeyService),this.updateWorkbenchStateContextKey(),this.workspaceFolderCountContext=J.bindTo(this.contextKeyService),this.updateWorkspaceFolderCountContextKey(),this.openFolderWorkspaceSupportContext=X.bindTo(this.contextKeyService),this.openFolderWorkspaceSupportContext.set(h||typeof this.environmentService.remoteAuthority=="string"),this.emptyWorkspaceSupportContext=z.bindTo(this.contextKeyService),this.emptyWorkspaceSupportContext.set(h||typeof this.environmentService.remoteAuthority=="string"),this.enterMultiRootWorkspaceSupportContext=Z.bindTo(this.contextKeyService),this.enterMultiRootWorkspaceSupportContext.set(h||typeof this.environmentService.remoteAuthority=="string"),this.splitEditorsVerticallyContext=f.bindTo(this.contextKeyService),this.updateSplitEditorsVerticallyContext(),this.isMainWindowFullscreenContext=Y.bindTo(this.contextKeyService),this.isAuxiliaryWindowFocusedContext=ie.bindTo(this.contextKeyService),this.inZenModeContext=P.bindTo(this.contextKeyService),this.isMainEditorCenteredLayoutContext=R.bindTo(this.contextKeyService),this.mainEditorAreaVisibleContext=O.bindTo(this.contextKeyService),this.editorTabsVisibleContext=w.bindTo(this.contextKeyService),this.sideBarVisibleContext=F.bindTo(this.contextKeyService),this.titleAreaVisibleContext=ee.bindTo(this.contextKeyService),this.titleBarStyleContext=te.bindTo(this.contextKeyService),this.updateTitleBarContextKeys(),this.panelPositionContext=$.bindTo(this.contextKeyService),this.panelPositionContext.set(Ee(this.layoutService.getPanelPosition())),this.panelVisibleContext=B.bindTo(this.contextKeyService),this.panelVisibleContext.set(this.layoutService.isVisible(s.PANEL_PART)),this.panelMaximizedContext=_.bindTo(this.contextKeyService),this.panelMaximizedContext.set(this.layoutService.isPanelMaximized()),this.panelAlignmentContext=M.bindTo(this.contextKeyService),this.panelAlignmentContext.set(this.layoutService.getPanelAlignment()),this.auxiliaryBarVisibleContext=D.bindTo(this.contextKeyService),this.auxiliaryBarVisibleContext.set(this.layoutService.isVisible(s.AUXILIARYBAR_PART)),this.registerListeners()}inputFocusedContext;dirtyWorkingCopiesContext;activeEditorGroupEmpty;activeEditorGroupIndex;activeEditorGroupLast;activeEditorGroupLocked;multipleEditorGroupsContext;editorsVisibleContext;splitEditorsVerticallyContext;workbenchStateContext;workspaceFolderCountContext;openFolderWorkspaceSupportContext;enterMultiRootWorkspaceSupportContext;emptyWorkspaceSupportContext;virtualWorkspaceContext;temporaryWorkspaceContext;inZenModeContext;isMainWindowFullscreenContext;isAuxiliaryWindowFocusedContext;isMainEditorCenteredLayoutContext;sideBarVisibleContext;mainEditorAreaVisibleContext;panelPositionContext;panelVisibleContext;panelAlignmentContext;panelMaximizedContext;auxiliaryBarVisibleContext;editorTabsVisibleContext;titleAreaVisibleContext;titleBarStyleContext;registerListeners(){this.editorGroupService.whenReady.then(()=>{this.updateEditorAreaContextKeys(),this.updateActiveEditorGroupContextKeys(),this.updateVisiblePanesContextKeys()}),this._register(this.editorService.onDidActiveEditorChange(()=>this.updateActiveEditorGroupContextKeys())),this._register(this.editorService.onDidVisibleEditorsChange(()=>this.updateVisiblePanesContextKeys())),this._register(this.editorGroupService.onDidAddGroup(()=>this.updateEditorGroupsContextKeys())),this._register(this.editorGroupService.onDidRemoveGroup(()=>this.updateEditorGroupsContextKeys())),this._register(this.editorGroupService.onDidChangeGroupIndex(()=>this.updateActiveEditorGroupContextKeys())),this._register(this.editorGroupService.onDidChangeGroupLocked(()=>this.updateActiveEditorGroupContextKeys())),this._register(this.editorGroupService.onDidChangeEditorPartOptions(()=>this.updateEditorAreaContextKeys())),this._register(v.runAndSubscribe(he,({window:e,disposables:t})=>t.add(de(e,xe.FOCUS_IN,()=>this.updateInputContextKeys(e.document),!0)),{window:a,disposables:this._store})),this._register(this.contextService.onDidChangeWorkbenchState(()=>this.updateWorkbenchStateContextKey())),this._register(this.contextService.onDidChangeWorkspaceFolders(()=>{this.updateWorkspaceFolderCountContextKey(),this.updateWorkspaceContextKeys()})),this._register(this.configurationService.onDidChangeConfiguration(e=>{e.affectsConfiguration("workbench.editor.openSideBySideDirection")&&this.updateSplitEditorsVerticallyContext()})),this._register(this.layoutService.onDidChangeZenMode(e=>this.inZenModeContext.set(e))),this._register(this.layoutService.onDidChangeActiveContainer(()=>this.isAuxiliaryWindowFocusedContext.set(this.layoutService.activeContainer!==this.layoutService.mainContainer))),this._register(Pe(e=>{e===a.vscodeWindowId&&this.isMainWindowFullscreenContext.set(fe(a))})),this._register(this.layoutService.onDidChangeMainEditorCenteredLayout(e=>this.isMainEditorCenteredLayoutContext.set(e))),this._register(this.layoutService.onDidChangePanelPosition(e=>this.panelPositionContext.set(e))),this._register(this.layoutService.onDidChangePanelAlignment(e=>this.panelAlignmentContext.set(e))),this._register(this.paneCompositeService.onDidPaneCompositeClose(()=>this.updateSideBarContextKeys())),this._register(this.paneCompositeService.onDidPaneCompositeOpen(()=>this.updateSideBarContextKeys())),this._register(this.layoutService.onDidChangePartVisibility(()=>{this.mainEditorAreaVisibleContext.set(this.layoutService.isVisible(s.EDITOR_PART,a)),this.panelVisibleContext.set(this.layoutService.isVisible(s.PANEL_PART)),this.panelMaximizedContext.set(this.layoutService.isPanelMaximized()),this.auxiliaryBarVisibleContext.set(this.layoutService.isVisible(s.AUXILIARYBAR_PART)),this.updateTitleBarContextKeys()})),this._register(this.workingCopyService.onDidChangeDirty(e=>this.dirtyWorkingCopiesContext.set(e.isDirty()||this.workingCopyService.hasDirty)))}updateVisiblePanesContextKeys(){this.editorService.visibleEditorPanes.length>0?this.editorsVisibleContext.set(!0):this.editorsVisibleContext.reset()}updateActiveEditorGroupContextKeys(){this.editorService.activeEditor?this.activeEditorGroupEmpty.reset():this.activeEditorGroupEmpty.set(!0);const e=this.editorGroupService.activeGroup;this.activeEditorGroupIndex.set(e.index+1),this.activeEditorGroupLocked.set(e.isLocked),this.updateEditorGroupsContextKeys()}updateEditorGroupsContextKeys(){const e=this.editorGroupService.count;e>1?this.multipleEditorGroupsContext.set(!0):this.multipleEditorGroupsContext.reset();const t=this.editorGroupService.activeGroup;this.activeEditorGroupLast.set(t.index===e-1)}updateEditorAreaContextKeys(){this.editorTabsVisibleContext.set(this.editorGroupService.partOptions.showTabs==="multiple")}updateInputContextKeys(e){function t(){return!!e.activeElement&&le(e.activeElement)}const i=t();if(this.inputFocusedContext.set(i),i){const n=pe(e.activeElement);v.once(n.onDidBlur)(()=>{Ce().document===e&&this.inputFocusedContext.set(t()),n.dispose()})}}updateWorkbenchStateContextKey(){this.workbenchStateContext.set(this.getWorkbenchStateString())}updateWorkspaceFolderCountContextKey(){this.workspaceFolderCountContext.set(this.contextService.getWorkspace().folders.length)}updateSplitEditorsVerticallyContext(){const e=ve(this.configurationService);this.splitEditorsVerticallyContext.set(e===ue.DOWN)}getWorkbenchStateString(){switch(this.contextService.getWorkbenchState()){case x.EMPTY:return"empty";case x.FOLDER:return"folder";case x.WORKSPACE:return"workspace"}}updateSideBarContextKeys(){this.sideBarVisibleContext.set(this.layoutService.isVisible(s.SIDEBAR_PART))}updateTitleBarContextKeys(){this.titleAreaVisibleContext.set(this.layoutService.isVisible(s.TITLEBAR_PART,a)),this.titleBarStyleContext.set(Ve(this.configurationService))}updateWorkspaceContextKeys(){this.virtualWorkspaceContext.set(ke(this.contextService.getWorkspace())||""),this.temporaryWorkspaceContext.set(Ke(this.contextService.getWorkspace()))}};d=l([o(0,m),o(1,me),o(2,Se),o(3,be),o(4,Ge),o(5,ye),o(6,De),o(7,ge),o(8,Te),o(9,We)],d);export{d as WorkbenchContextKeysHandler};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Event } from '../../base/common/event.js';
+import { Disposable } from '../../base/common/lifecycle.js';
+import { IContextKeyService, setConstant as setConstantContextKey } from '../../platform/contextkey/common/contextkey.js';
+import { InputFocusedContext, IsMacContext, IsLinuxContext, IsWindowsContext, IsWebContext, IsMacNativeContext, IsDevelopmentContext, IsIOSContext, ProductQualityContext, IsMobileContext } from '../../platform/contextkey/common/contextkeys.js';
+import { SplitEditorsVertically, InEditorZenModeContext, AuxiliaryBarVisibleContext, SideBarVisibleContext, PanelAlignmentContext, PanelMaximizedContext, PanelVisibleContext, EmbedderIdentifierContext, EditorTabsVisibleContext, IsMainEditorCenteredLayoutContext, MainEditorAreaVisibleContext, DirtyWorkingCopiesContext, EmptyWorkspaceSupportContext, EnterMultiRootWorkspaceSupportContext, HasWebFileSystemAccess, IsMainWindowFullscreenContext, OpenFolderWorkspaceSupportContext, RemoteNameContext, VirtualWorkspaceContext, WorkbenchStateContext, WorkspaceFolderCountContext, PanelPositionContext, TemporaryWorkspaceContext, TitleBarVisibleContext, TitleBarStyleContext, IsAuxiliaryWindowFocusedContext, ActiveEditorGroupEmptyContext, ActiveEditorGroupIndexContext, ActiveEditorGroupLastContext, ActiveEditorGroupLockedContext, MultipleEditorGroupsContext, EditorsVisibleContext } from '../common/contextkeys.js';
+import { trackFocus, addDisposableListener, EventType, onDidRegisterWindow, getActiveWindow, isEditableElement } from '../../base/browser/dom.js';
+import { preferredSideBySideGroupDirection, IEditorGroupsService } from '../services/editor/common/editorGroupsService.js';
+import { IConfigurationService } from '../../platform/configuration/common/configuration.js';
+import { IWorkbenchEnvironmentService } from '../services/environment/common/environmentService.js';
+import { IWorkspaceContextService, isTemporaryWorkspace } from '../../platform/workspace/common/workspace.js';
+import { IWorkbenchLayoutService, positionToString } from '../services/layout/browser/layoutService.js';
+import { getRemoteName } from '../../platform/remote/common/remoteHosts.js';
+import { getVirtualWorkspaceScheme } from '../../platform/workspace/common/virtualWorkspace.js';
+import { IWorkingCopyService } from '../services/workingCopy/common/workingCopyService.js';
+import { isNative } from '../../base/common/platform.js';
+import { IPaneCompositePartService } from '../services/panecomposite/browser/panecomposite.js';
+import { WebFileSystemAccess } from '../../platform/files/browser/webFileSystemAccess.js';
+import { IProductService } from '../../platform/product/common/productService.js';
+import { getTitleBarStyle } from '../../platform/window/common/window.js';
+import { mainWindow } from '../../base/browser/window.js';
+import { isFullscreen, onDidChangeFullscreen } from '../../base/browser/browser.js';
+import { IEditorService } from '../services/editor/common/editorService.js';
+let WorkbenchContextKeysHandler = class WorkbenchContextKeysHandler extends Disposable {
+    constructor(contextKeyService, contextService, configurationService, environmentService, productService, editorGroupService, editorService, layoutService, paneCompositeService, workingCopyService) {
+        super();
+        this.contextKeyService = contextKeyService;
+        this.contextService = contextService;
+        this.configurationService = configurationService;
+        this.environmentService = environmentService;
+        this.productService = productService;
+        this.editorGroupService = editorGroupService;
+        this.editorService = editorService;
+        this.layoutService = layoutService;
+        this.paneCompositeService = paneCompositeService;
+        this.workingCopyService = workingCopyService;
+        IsMacContext.bindTo(this.contextKeyService);
+        IsLinuxContext.bindTo(this.contextKeyService);
+        IsWindowsContext.bindTo(this.contextKeyService);
+        IsWebContext.bindTo(this.contextKeyService);
+        IsMacNativeContext.bindTo(this.contextKeyService);
+        IsIOSContext.bindTo(this.contextKeyService);
+        IsMobileContext.bindTo(this.contextKeyService);
+        RemoteNameContext.bindTo(this.contextKeyService).set(getRemoteName(this.environmentService.remoteAuthority) || '');
+        this.virtualWorkspaceContext = VirtualWorkspaceContext.bindTo(this.contextKeyService);
+        this.temporaryWorkspaceContext = TemporaryWorkspaceContext.bindTo(this.contextKeyService);
+        this.updateWorkspaceContextKeys();
+        HasWebFileSystemAccess.bindTo(this.contextKeyService).set(WebFileSystemAccess.supported(mainWindow));
+        const isDevelopment = !this.environmentService.isBuilt || this.environmentService.isExtensionDevelopment;
+        IsDevelopmentContext.bindTo(this.contextKeyService).set(isDevelopment);
+        setConstantContextKey(IsDevelopmentContext.key, isDevelopment);
+        ProductQualityContext.bindTo(this.contextKeyService).set(this.productService.quality || '');
+        EmbedderIdentifierContext.bindTo(this.contextKeyService).set(productService.embedderIdentifier);
+        this.activeEditorGroupEmpty = ActiveEditorGroupEmptyContext.bindTo(this.contextKeyService);
+        this.activeEditorGroupIndex = ActiveEditorGroupIndexContext.bindTo(this.contextKeyService);
+        this.activeEditorGroupLast = ActiveEditorGroupLastContext.bindTo(this.contextKeyService);
+        this.activeEditorGroupLocked = ActiveEditorGroupLockedContext.bindTo(this.contextKeyService);
+        this.multipleEditorGroupsContext = MultipleEditorGroupsContext.bindTo(this.contextKeyService);
+        this.editorsVisibleContext = EditorsVisibleContext.bindTo(this.contextKeyService);
+        this.dirtyWorkingCopiesContext = DirtyWorkingCopiesContext.bindTo(this.contextKeyService);
+        this.dirtyWorkingCopiesContext.set(this.workingCopyService.hasDirty);
+        this.inputFocusedContext = InputFocusedContext.bindTo(this.contextKeyService);
+        this.workbenchStateContext = WorkbenchStateContext.bindTo(this.contextKeyService);
+        this.updateWorkbenchStateContextKey();
+        this.workspaceFolderCountContext = WorkspaceFolderCountContext.bindTo(this.contextKeyService);
+        this.updateWorkspaceFolderCountContextKey();
+        this.openFolderWorkspaceSupportContext = OpenFolderWorkspaceSupportContext.bindTo(this.contextKeyService);
+        this.openFolderWorkspaceSupportContext.set(isNative || typeof this.environmentService.remoteAuthority === 'string');
+        this.emptyWorkspaceSupportContext = EmptyWorkspaceSupportContext.bindTo(this.contextKeyService);
+        this.emptyWorkspaceSupportContext.set(isNative || typeof this.environmentService.remoteAuthority === 'string');
+        this.enterMultiRootWorkspaceSupportContext = EnterMultiRootWorkspaceSupportContext.bindTo(this.contextKeyService);
+        this.enterMultiRootWorkspaceSupportContext.set(isNative || typeof this.environmentService.remoteAuthority === 'string');
+        this.splitEditorsVerticallyContext = SplitEditorsVertically.bindTo(this.contextKeyService);
+        this.updateSplitEditorsVerticallyContext();
+        this.isMainWindowFullscreenContext = IsMainWindowFullscreenContext.bindTo(this.contextKeyService);
+        this.isAuxiliaryWindowFocusedContext = IsAuxiliaryWindowFocusedContext.bindTo(this.contextKeyService);
+        this.inZenModeContext = InEditorZenModeContext.bindTo(this.contextKeyService);
+        this.isMainEditorCenteredLayoutContext = IsMainEditorCenteredLayoutContext.bindTo(this.contextKeyService);
+        this.mainEditorAreaVisibleContext = MainEditorAreaVisibleContext.bindTo(this.contextKeyService);
+        this.editorTabsVisibleContext = EditorTabsVisibleContext.bindTo(this.contextKeyService);
+        this.sideBarVisibleContext = SideBarVisibleContext.bindTo(this.contextKeyService);
+        this.titleAreaVisibleContext = TitleBarVisibleContext.bindTo(this.contextKeyService);
+        this.titleBarStyleContext = TitleBarStyleContext.bindTo(this.contextKeyService);
+        this.updateTitleBarContextKeys();
+        this.panelPositionContext = PanelPositionContext.bindTo(this.contextKeyService);
+        this.panelPositionContext.set(positionToString(this.layoutService.getPanelPosition()));
+        this.panelVisibleContext = PanelVisibleContext.bindTo(this.contextKeyService);
+        this.panelVisibleContext.set(this.layoutService.isVisible("workbench.parts.panel"));
+        this.panelMaximizedContext = PanelMaximizedContext.bindTo(this.contextKeyService);
+        this.panelMaximizedContext.set(this.layoutService.isPanelMaximized());
+        this.panelAlignmentContext = PanelAlignmentContext.bindTo(this.contextKeyService);
+        this.panelAlignmentContext.set(this.layoutService.getPanelAlignment());
+        this.auxiliaryBarVisibleContext = AuxiliaryBarVisibleContext.bindTo(this.contextKeyService);
+        this.auxiliaryBarVisibleContext.set(this.layoutService.isVisible("workbench.parts.auxiliarybar"));
+        this.registerListeners();
+    }
+    registerListeners() {
+        this.editorGroupService.whenReady.then(() => {
+            this.updateEditorAreaContextKeys();
+            this.updateActiveEditorGroupContextKeys();
+            this.updateVisiblePanesContextKeys();
+        });
+        this._register(this.editorService.onDidActiveEditorChange(() => this.updateActiveEditorGroupContextKeys()));
+        this._register(this.editorService.onDidVisibleEditorsChange(() => this.updateVisiblePanesContextKeys()));
+        this._register(this.editorGroupService.onDidAddGroup(() => this.updateEditorGroupsContextKeys()));
+        this._register(this.editorGroupService.onDidRemoveGroup(() => this.updateEditorGroupsContextKeys()));
+        this._register(this.editorGroupService.onDidChangeGroupIndex(() => this.updateActiveEditorGroupContextKeys()));
+        this._register(this.editorGroupService.onDidChangeGroupLocked(() => this.updateActiveEditorGroupContextKeys()));
+        this._register(this.editorGroupService.onDidChangeEditorPartOptions(() => this.updateEditorAreaContextKeys()));
+        this._register(Event.runAndSubscribe(onDidRegisterWindow, ({ window, disposables }) => disposables.add(addDisposableListener(window, EventType.FOCUS_IN, () => this.updateInputContextKeys(window.document), true)), { window: mainWindow, disposables: this._store }));
+        this._register(this.contextService.onDidChangeWorkbenchState(() => this.updateWorkbenchStateContextKey()));
+        this._register(this.contextService.onDidChangeWorkspaceFolders(() => {
+            this.updateWorkspaceFolderCountContextKey();
+            this.updateWorkspaceContextKeys();
+        }));
+        this._register(this.configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('workbench.editor.openSideBySideDirection')) {
+                this.updateSplitEditorsVerticallyContext();
+            }
+        }));
+        this._register(this.layoutService.onDidChangeZenMode(enabled => this.inZenModeContext.set(enabled)));
+        this._register(this.layoutService.onDidChangeActiveContainer(() => this.isAuxiliaryWindowFocusedContext.set(this.layoutService.activeContainer !== this.layoutService.mainContainer)));
+        this._register(onDidChangeFullscreen(windowId => {
+            if (windowId === mainWindow.vscodeWindowId) {
+                this.isMainWindowFullscreenContext.set(isFullscreen(mainWindow));
+            }
+        }));
+        this._register(this.layoutService.onDidChangeMainEditorCenteredLayout(centered => this.isMainEditorCenteredLayoutContext.set(centered)));
+        this._register(this.layoutService.onDidChangePanelPosition(position => this.panelPositionContext.set(position)));
+        this._register(this.layoutService.onDidChangePanelAlignment(alignment => this.panelAlignmentContext.set(alignment)));
+        this._register(this.paneCompositeService.onDidPaneCompositeClose(() => this.updateSideBarContextKeys()));
+        this._register(this.paneCompositeService.onDidPaneCompositeOpen(() => this.updateSideBarContextKeys()));
+        this._register(this.layoutService.onDidChangePartVisibility(() => {
+            this.mainEditorAreaVisibleContext.set(this.layoutService.isVisible("workbench.parts.editor", mainWindow));
+            this.panelVisibleContext.set(this.layoutService.isVisible("workbench.parts.panel"));
+            this.panelMaximizedContext.set(this.layoutService.isPanelMaximized());
+            this.auxiliaryBarVisibleContext.set(this.layoutService.isVisible("workbench.parts.auxiliarybar"));
+            this.updateTitleBarContextKeys();
+        }));
+        this._register(this.workingCopyService.onDidChangeDirty(workingCopy => this.dirtyWorkingCopiesContext.set(workingCopy.isDirty() || this.workingCopyService.hasDirty)));
+    }
+    updateVisiblePanesContextKeys() {
+        const visibleEditorPanes = this.editorService.visibleEditorPanes;
+        if (visibleEditorPanes.length > 0) {
+            this.editorsVisibleContext.set(true);
+        }
+        else {
+            this.editorsVisibleContext.reset();
+        }
+    }
+    updateActiveEditorGroupContextKeys() {
+        if (!this.editorService.activeEditor) {
+            this.activeEditorGroupEmpty.set(true);
+        }
+        else {
+            this.activeEditorGroupEmpty.reset();
+        }
+        const activeGroup = this.editorGroupService.activeGroup;
+        this.activeEditorGroupIndex.set(activeGroup.index + 1);
+        this.activeEditorGroupLocked.set(activeGroup.isLocked);
+        this.updateEditorGroupsContextKeys();
+    }
+    updateEditorGroupsContextKeys() {
+        const groupCount = this.editorGroupService.count;
+        if (groupCount > 1) {
+            this.multipleEditorGroupsContext.set(true);
+        }
+        else {
+            this.multipleEditorGroupsContext.reset();
+        }
+        const activeGroup = this.editorGroupService.activeGroup;
+        this.activeEditorGroupLast.set(activeGroup.index === groupCount - 1);
+    }
+    updateEditorAreaContextKeys() {
+        this.editorTabsVisibleContext.set(this.editorGroupService.partOptions.showTabs === 'multiple');
+    }
+    updateInputContextKeys(ownerDocument) {
+        function activeElementIsInput() {
+            return !!ownerDocument.activeElement && isEditableElement(ownerDocument.activeElement);
+        }
+        const isInputFocused = activeElementIsInput();
+        this.inputFocusedContext.set(isInputFocused);
+        if (isInputFocused) {
+            const tracker = trackFocus(ownerDocument.activeElement);
+            Event.once(tracker.onDidBlur)(() => {
+                if (getActiveWindow().document === ownerDocument) {
+                    this.inputFocusedContext.set(activeElementIsInput());
+                }
+                tracker.dispose();
+            });
+        }
+    }
+    updateWorkbenchStateContextKey() {
+        this.workbenchStateContext.set(this.getWorkbenchStateString());
+    }
+    updateWorkspaceFolderCountContextKey() {
+        this.workspaceFolderCountContext.set(this.contextService.getWorkspace().folders.length);
+    }
+    updateSplitEditorsVerticallyContext() {
+        const direction = preferredSideBySideGroupDirection(this.configurationService);
+        this.splitEditorsVerticallyContext.set(direction === 1);
+    }
+    getWorkbenchStateString() {
+        switch (this.contextService.getWorkbenchState()) {
+            case 1: return 'empty';
+            case 2: return 'folder';
+            case 3: return 'workspace';
+        }
+    }
+    updateSideBarContextKeys() {
+        this.sideBarVisibleContext.set(this.layoutService.isVisible("workbench.parts.sidebar"));
+    }
+    updateTitleBarContextKeys() {
+        this.titleAreaVisibleContext.set(this.layoutService.isVisible("workbench.parts.titlebar", mainWindow));
+        this.titleBarStyleContext.set(getTitleBarStyle(this.configurationService));
+    }
+    updateWorkspaceContextKeys() {
+        this.virtualWorkspaceContext.set(getVirtualWorkspaceScheme(this.contextService.getWorkspace()) || '');
+        this.temporaryWorkspaceContext.set(isTemporaryWorkspace(this.contextService.getWorkspace()));
+    }
+};
+WorkbenchContextKeysHandler = __decorate([
+    __param(0, IContextKeyService),
+    __param(1, IWorkspaceContextService),
+    __param(2, IConfigurationService),
+    __param(3, IWorkbenchEnvironmentService),
+    __param(4, IProductService),
+    __param(5, IEditorGroupsService),
+    __param(6, IEditorService),
+    __param(7, IWorkbenchLayoutService),
+    __param(8, IPaneCompositePartService),
+    __param(9, IWorkingCopyService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], WorkbenchContextKeysHandler);
+export { WorkbenchContextKeysHandler };

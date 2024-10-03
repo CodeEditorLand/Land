@@ -1,1 +1,32 @@
-import{Codicon as i}from"../../../../base/common/codicons.js";import{Schemas as s}from"../../../../base/common/network.js";import"../../../../base/common/themables.js";import{URI as n}from"../../../../base/common/uri.js";import{localize as o}from"../../../../nls.js";import{registerIcon as a}from"../../../../platform/theme/common/iconRegistry.js";import{EditorInputCapabilities as t}from"../../../common/editor.js";import{EditorInput as p}from"../../../common/editor/editorInput.js";const c=a("workspace-trust-editor-label-icon",i.shield,o("workspaceTrustEditorLabelIcon","Icon of the workspace trust editor label."));class r extends p{static ID="workbench.input.workspaceTrust";get capabilities(){return t.Readonly|t.Singleton}get typeId(){return r.ID}resource=n.from({scheme:s.vscodeWorkspaceTrust,path:"workspaceTrustEditor"});matches(e){return super.matches(e)||e instanceof r}getName(){return o("workspaceTrustEditorInputName","Workspace Trust")}getIcon(){return c}}export{r as WorkspaceTrustEditorInput};
+import { Codicon } from '../../../../base/common/codicons.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { URI } from '../../../../base/common/uri.js';
+import { localize } from '../../../../nls.js';
+import { registerIcon } from '../../../../platform/theme/common/iconRegistry.js';
+import { EditorInput } from '../../../common/editor/editorInput.js';
+const WorkspaceTrustEditorIcon = registerIcon('workspace-trust-editor-label-icon', Codicon.shield, localize('workspaceTrustEditorLabelIcon', 'Icon of the workspace trust editor label.'));
+export class WorkspaceTrustEditorInput extends EditorInput {
+    constructor() {
+        super(...arguments);
+        this.resource = URI.from({
+            scheme: Schemas.vscodeWorkspaceTrust,
+            path: `workspaceTrustEditor`
+        });
+    }
+    static { this.ID = 'workbench.input.workspaceTrust'; }
+    get capabilities() {
+        return 2 | 8;
+    }
+    get typeId() {
+        return WorkspaceTrustEditorInput.ID;
+    }
+    matches(otherInput) {
+        return super.matches(otherInput) || otherInput instanceof WorkspaceTrustEditorInput;
+    }
+    getName() {
+        return localize('workspaceTrustEditorInputName', "Workspace Trust");
+    }
+    getIcon() {
+        return WorkspaceTrustEditorIcon;
+    }
+}

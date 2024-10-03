@@ -1,1 +1,145 @@
-var m=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var d=(a,o,t,e)=>{for(var s=e>1?void 0:e?p(o,t):o,i=a.length-1,r;i>=0;i--)(r=a[i])&&(s=(e?r(o,t,s):r(s))||s);return e&&s&&m(o,t,s),s},c=(a,o)=>(t,e)=>o(t,e,a);import{Promises as v}from"../../../base/common/async.js";import{canceled as l}from"../../../base/common/errors.js";import{Event as g}from"../../../base/common/event.js";import{Disposable as x}from"../../../base/common/lifecycle.js";import"../common/extensionHostStarter.js";import{ILifecycleMainService as u}from"../../lifecycle/electron-main/lifecycleMainService.js";import{ILogService as _}from"../../log/common/log.js";import{ITelemetryService as w}from"../../telemetry/common/telemetry.js";import{WindowUtilityProcess as f}from"../../utilityProcess/electron-main/utilityProcess.js";import{IWindowsMainService as y}from"../../windows/electron-main/windows.js";let n=class extends x{constructor(t,e,s,i){super();this._logService=t;this._lifecycleMainService=e;this._windowsMainService=s;this._telemetryService=i;this._register(this._lifecycleMainService.onWillShutdown(r=>{this._shutdown=!0,r.join("extHostStarter",this._waitForAllExit(6e3))}))}_serviceBrand;static _lastId=0;_extHosts=new Map;_shutdown=!1;dispose(){super.dispose()}_getExtHost(t){const e=this._extHosts.get(t);if(!e)throw new Error("Unknown extension host!");return e}onDynamicStdout(t){return this._getExtHost(t).onStdout}onDynamicStderr(t){return this._getExtHost(t).onStderr}onDynamicMessage(t){return this._getExtHost(t).onMessage}onDynamicExit(t){return this._getExtHost(t).onExit}async createExtensionHost(){if(this._shutdown)throw l();const t=String(++n._lastId),e=new f(this._logService,this._windowsMainService,this._telemetryService,this._lifecycleMainService);this._extHosts.set(t,e);const s=e.onExit(({pid:i,code:r,signal:h})=>{s.dispose(),this._logService.info(`Extension host with pid ${i} exited with code: ${r}, signal: ${h}.`),setTimeout(()=>{e.dispose(),this._extHosts.delete(t)}),setTimeout(()=>{try{process.kill(i,0),this._logService.error(`Extension host with pid ${i} still exists, forcefully killing it...`),process.kill(i)}catch{}},1e3)});return{id:t}}async start(t,e){if(this._shutdown)throw l();const s=this._getExtHost(t);return s.start({...e,type:"extensionHost",entryPoint:"vs/workbench/api/node/extensionHostProcess",args:["--skipWorkspaceStorageLock"],execArgv:e.execArgv,allowLoadingUnsignedLibraries:!0,respondToAuthRequestsFromMainProcess:!0,correlationId:t}),{pid:await g.toPromise(s.onSpawn)}}async enableInspectPort(t){if(this._shutdown)throw l();const e=this._extHosts.get(t);return e?e.enableInspectPort():!1}async kill(t){if(this._shutdown)throw l();const e=this._extHosts.get(t);e&&e.kill()}async _killAllNow(){for(const[,t]of this._extHosts)t.kill()}async _waitForAllExit(t){const e=[];for(const[,s]of this._extHosts)e.push(s.waitForExit(t));return v.settled(e).then(()=>{})}};n=d([c(0,_),c(1,u),c(2,y),c(3,w)],n);export{n as ExtensionHostStarter};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ExtensionHostStarter_1;
+import { Promises } from '../../../base/common/async.js';
+import { canceled } from '../../../base/common/errors.js';
+import { Event } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { ILifecycleMainService } from '../../lifecycle/electron-main/lifecycleMainService.js';
+import { ILogService } from '../../log/common/log.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+import { WindowUtilityProcess } from '../../utilityProcess/electron-main/utilityProcess.js';
+import { IWindowsMainService } from '../../windows/electron-main/windows.js';
+let ExtensionHostStarter = class ExtensionHostStarter extends Disposable {
+    static { ExtensionHostStarter_1 = this; }
+    static { this._lastId = 0; }
+    constructor(_logService, _lifecycleMainService, _windowsMainService, _telemetryService) {
+        super();
+        this._logService = _logService;
+        this._lifecycleMainService = _lifecycleMainService;
+        this._windowsMainService = _windowsMainService;
+        this._telemetryService = _telemetryService;
+        this._extHosts = new Map();
+        this._shutdown = false;
+        this._register(this._lifecycleMainService.onWillShutdown(e => {
+            this._shutdown = true;
+            e.join('extHostStarter', this._waitForAllExit(6000));
+        }));
+    }
+    dispose() {
+        super.dispose();
+    }
+    _getExtHost(id) {
+        const extHostProcess = this._extHosts.get(id);
+        if (!extHostProcess) {
+            throw new Error(`Unknown extension host!`);
+        }
+        return extHostProcess;
+    }
+    onDynamicStdout(id) {
+        return this._getExtHost(id).onStdout;
+    }
+    onDynamicStderr(id) {
+        return this._getExtHost(id).onStderr;
+    }
+    onDynamicMessage(id) {
+        return this._getExtHost(id).onMessage;
+    }
+    onDynamicExit(id) {
+        return this._getExtHost(id).onExit;
+    }
+    async createExtensionHost() {
+        if (this._shutdown) {
+            throw canceled();
+        }
+        const id = String(++ExtensionHostStarter_1._lastId);
+        const extHost = new WindowUtilityProcess(this._logService, this._windowsMainService, this._telemetryService, this._lifecycleMainService);
+        this._extHosts.set(id, extHost);
+        const disposable = extHost.onExit(({ pid, code, signal }) => {
+            disposable.dispose();
+            this._logService.info(`Extension host with pid ${pid} exited with code: ${code}, signal: ${signal}.`);
+            setTimeout(() => {
+                extHost.dispose();
+                this._extHosts.delete(id);
+            });
+            setTimeout(() => {
+                try {
+                    process.kill(pid, 0);
+                    this._logService.error(`Extension host with pid ${pid} still exists, forcefully killing it...`);
+                    process.kill(pid);
+                }
+                catch (er) {
+                }
+            }, 1000);
+        });
+        return { id };
+    }
+    async start(id, opts) {
+        if (this._shutdown) {
+            throw canceled();
+        }
+        const extHost = this._getExtHost(id);
+        extHost.start({
+            ...opts,
+            type: 'extensionHost',
+            entryPoint: 'vs/workbench/api/node/extensionHostProcess',
+            args: ['--skipWorkspaceStorageLock'],
+            execArgv: opts.execArgv,
+            allowLoadingUnsignedLibraries: true,
+            respondToAuthRequestsFromMainProcess: true,
+            correlationId: id
+        });
+        const pid = await Event.toPromise(extHost.onSpawn);
+        return { pid };
+    }
+    async enableInspectPort(id) {
+        if (this._shutdown) {
+            throw canceled();
+        }
+        const extHostProcess = this._extHosts.get(id);
+        if (!extHostProcess) {
+            return false;
+        }
+        return extHostProcess.enableInspectPort();
+    }
+    async kill(id) {
+        if (this._shutdown) {
+            throw canceled();
+        }
+        const extHostProcess = this._extHosts.get(id);
+        if (!extHostProcess) {
+            return;
+        }
+        extHostProcess.kill();
+    }
+    async _killAllNow() {
+        for (const [, extHost] of this._extHosts) {
+            extHost.kill();
+        }
+    }
+    async _waitForAllExit(maxWaitTimeMs) {
+        const exitPromises = [];
+        for (const [, extHost] of this._extHosts) {
+            exitPromises.push(extHost.waitForExit(maxWaitTimeMs));
+        }
+        return Promises.settled(exitPromises).then(() => { });
+    }
+};
+ExtensionHostStarter = ExtensionHostStarter_1 = __decorate([
+    __param(0, ILogService),
+    __param(1, ILifecycleMainService),
+    __param(2, IWindowsMainService),
+    __param(3, ITelemetryService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], ExtensionHostStarter);
+export { ExtensionHostStarter };

@@ -1,1 +1,355 @@
-import{$ as r,addDisposableListener as f,clearNode as E,EventHelper as b,EventType as w,getWindow as v,hide as B,isActiveElement as I,isAncestor as x,show as T}from"../../dom.js";import{StandardKeyboardEvent as k}from"../../keyboardEvent.js";import{ActionBar as L}from"../actionbar/actionbar.js";import{ButtonBar as S,ButtonWithDescription as A}from"../button/button.js";import{Checkbox as D}from"../toggle/toggle.js";import{InputBox as M}from"../inputbox/inputBox.js";import{Action as F}from"../../../common/actions.js";import{Codicon as u}from"../../../common/codicons.js";import{ThemeIcon as h}from"../../../common/themables.js";import{KeyCode as p,KeyMod as C}from"../../../common/keyCodes.js";import{mnemonicButtonLabel as H}from"../../../common/labels.js";import{Disposable as R}from"../../../common/lifecycle.js";import{isLinux as q,isMacintosh as N,isWindows as _}from"../../../common/platform.js";import"./dialog.css";import*as m from"../../../../nls.js";class se extends R{constructor(o,d,s,c){super();this.container=o;this.message=d;this.options=c;this.modalElement=this.container.appendChild(r(".monaco-dialog-modal-block.dimmed")),this.shadowElement=this.modalElement.appendChild(r(".dialog-shadow")),this.element=this.shadowElement.appendChild(r(".monaco-dialog-box")),this.element.setAttribute("role","dialog"),this.element.tabIndex=-1,B(this.element),this.buttonStyles=c.buttonStyles,Array.isArray(s)&&s.length>0?this.buttons=s:this.options.disableDefaultAction?this.buttons=[]:this.buttons=[m.localize("ok","OK")];const g=this.element.appendChild(r(".dialog-buttons-row"));this.buttonsContainer=g.appendChild(r(".dialog-buttons"));const n=this.element.appendChild(r(".dialog-message-row"));if(this.iconElement=n.appendChild(r("#monaco-dialog-icon.dialog-icon")),this.iconElement.setAttribute("aria-label",this.getIconAriaLabel()),this.messageContainer=n.appendChild(r(".dialog-message-container")),this.options.detail||this.options.renderBody){const e=this.messageContainer.appendChild(r(".dialog-message")).appendChild(r("#monaco-dialog-message-text.dialog-message-text"));e.innerText=this.message}if(this.messageDetailElement=this.messageContainer.appendChild(r("#monaco-dialog-message-detail.dialog-message-detail")),this.options.detail||!this.options.renderBody?this.messageDetailElement.innerText=this.options.detail?this.options.detail:d:this.messageDetailElement.style.display="none",this.options.renderBody){const a=this.messageContainer.appendChild(r("#monaco-dialog-message-body.dialog-message-body"));this.options.renderBody(a);for(const e of this.messageContainer.querySelectorAll("a"))e.tabIndex=0}if(this.options.inputs?this.inputs=this.options.inputs.map(a=>{const e=this.messageContainer.appendChild(r(".dialog-message-input")),i=this._register(new M(e,void 0,{placeholder:a.placeholder,type:a.type??"text",inputBoxStyles:c.inputBoxStyles}));return a.value&&(i.value=a.value),i}):this.inputs=[],this.options.checkboxLabel){const a=this.messageContainer.appendChild(r(".dialog-checkbox-row")),e=this.checkbox=this._register(new D(this.options.checkboxLabel,!!this.options.checkboxChecked,c.checkboxStyles));a.appendChild(e.domNode);const i=a.appendChild(r(".dialog-checkbox-message"));i.innerText=this.options.checkboxLabel,this._register(f(i,w.CLICK,()=>e.checked=!e.checked))}const t=this.element.appendChild(r(".dialog-toolbar-row"));this.toolbarContainer=t.appendChild(r(".dialog-toolbar")),this.applyStyles()}element;shadowElement;modalElement;buttonsContainer;messageDetailElement;messageContainer;iconElement;checkbox;toolbarContainer;buttonBar;focusToReturn;inputs;buttons;buttonStyles;getIconAriaLabel(){let o=m.localize("dialogInfoMessage","Info");switch(this.options.type){case"error":o=m.localize("dialogErrorMessage","Error");break;case"warning":o=m.localize("dialogWarningMessage","Warning");break;case"pending":o=m.localize("dialogPendingMessage","In Progress");break;case"none":case"info":case"question":default:break}return o}updateMessage(o){this.messageDetailElement.innerText=o}async show(){return this.focusToReturn=this.container.ownerDocument.activeElement,new Promise(o=>{E(this.buttonsContainer);const d=this.buttonBar=this._register(new S(this.buttonsContainer)),s=this.rearrangeButtons(this.buttons,this.options.cancelId);s.forEach((n,t)=>{const a=s[t].index===0,e=this.options.buttonDetails?this._register(d.addButtonWithDescription({secondary:!a,...this.buttonStyles})):this._register(d.addButton({secondary:!a,...this.buttonStyles}));e.label=H(s[t].label,!0),e instanceof A&&(e.description=this.options.buttonDetails[s[t].index]),this._register(e.onDidClick(i=>{i&&b.stop(i),o({button:s[t].index,checkboxChecked:this.checkbox?this.checkbox.checked:void 0,values:this.inputs.length>0?this.inputs.map(l=>l.value):void 0})}))});const c=v(this.container);this._register(f(c,"keydown",n=>{const t=new k(n);if(t.equals(C.Alt)&&t.preventDefault(),t.equals(p.Enter)){this.inputs.some(e=>e.hasFocus())&&(b.stop(n),o({button:s.find(e=>e.index!==this.options.cancelId)?.index??0,checkboxChecked:this.checkbox?this.checkbox.checked:void 0,values:this.inputs.length>0?this.inputs.map(e=>e.value):void 0}));return}if(t.equals(p.Space))return;let a=!1;if(t.equals(p.Tab)||t.equals(p.RightArrow)||t.equals(C.Shift|p.Tab)||t.equals(p.LeftArrow)){const e=[];let i=-1;if(this.messageContainer){const l=this.messageContainer.querySelectorAll("a");for(const y of l)e.push(y),I(y)&&(i=e.length-1)}for(const l of this.inputs)e.push(l),l.hasFocus()&&(i=e.length-1);if(this.checkbox&&(e.push(this.checkbox),this.checkbox.hasFocus()&&(i=e.length-1)),this.buttonBar)for(const l of this.buttonBar.buttons)e.push(l),l.hasFocus()&&(i=e.length-1);if(t.equals(p.Tab)||t.equals(p.RightArrow)){i===-1&&(i=0);const l=(i+1)%e.length;e[l].focus()}else{i===-1&&(i=e.length);let l=i-1;l===-1&&(l=e.length-1),e[l].focus()}a=!0}a?b.stop(n,!0):this.options.keyEventProcessor&&this.options.keyEventProcessor(t)},!0)),this._register(f(c,"keyup",n=>{b.stop(n,!0);const t=new k(n);!this.options.disableCloseAction&&t.equals(p.Escape)&&o({button:this.options.cancelId||0,checkboxChecked:this.checkbox?this.checkbox.checked:void 0})},!0)),this._register(f(this.element,"focusout",n=>{n.relatedTarget&&this.element&&(x(n.relatedTarget,this.element)||(this.focusToReturn=n.relatedTarget,n.target&&(n.target.focus(),b.stop(n,!0))))},!1));const g="codicon-modifier-spin";if(this.iconElement.classList.remove(...h.asClassNameArray(u.dialogError),...h.asClassNameArray(u.dialogWarning),...h.asClassNameArray(u.dialogInfo),...h.asClassNameArray(u.loading),g),this.options.icon)this.iconElement.classList.add(...h.asClassNameArray(this.options.icon));else switch(this.options.type){case"error":this.iconElement.classList.add(...h.asClassNameArray(u.dialogError));break;case"warning":this.iconElement.classList.add(...h.asClassNameArray(u.dialogWarning));break;case"pending":this.iconElement.classList.add(...h.asClassNameArray(u.loading),g);break;case"none":this.iconElement.classList.add("no-codicon");break;case"info":case"question":default:this.iconElement.classList.add(...h.asClassNameArray(u.dialogInfo));break}if(!this.options.disableCloseAction){const n=this._register(new L(this.toolbarContainer,{})),t=this._register(new F("dialog.close",m.localize("dialogClose","Close Dialog"),h.asClassName(u.dialogClose),!0,async()=>{o({button:this.options.cancelId||0,checkboxChecked:this.checkbox?this.checkbox.checked:void 0})}));n.push(t,{icon:!0,label:!1})}this.applyStyles(),this.element.setAttribute("aria-modal","true"),this.element.setAttribute("aria-labelledby","monaco-dialog-icon monaco-dialog-message-text"),this.element.setAttribute("aria-describedby","monaco-dialog-icon monaco-dialog-message-text monaco-dialog-message-detail monaco-dialog-message-body"),T(this.element),this.inputs.length>0?(this.inputs[0].focus(),this.inputs[0].select()):s.forEach((n,t)=>{n.index===0&&d.buttons[t].focus()})})}applyStyles(){const o=this.options.dialogStyles,d=o.dialogForeground,s=o.dialogBackground,c=o.dialogShadow?`0 0px 8px ${o.dialogShadow}`:"",g=o.dialogBorder?`1px solid ${o.dialogBorder}`:"",n=o.textLinkForeground;if(this.shadowElement.style.boxShadow=c,this.element.style.color=d??"",this.element.style.backgroundColor=s??"",this.element.style.border=g,n)for(const a of this.messageContainer.getElementsByTagName("a"))a.style.color=n;let t;switch(this.options.type){case"error":t=o.errorIconForeground;break;case"warning":t=o.warningIconForeground;break;default:t=o.infoIconForeground;break}t&&(this.iconElement.style.color=t)}dispose(){super.dispose(),this.modalElement&&(this.modalElement.remove(),this.modalElement=void 0),this.focusToReturn&&x(this.focusToReturn,this.container.ownerDocument.body)&&(this.focusToReturn.focus(),this.focusToReturn=void 0)}rearrangeButtons(o,d){const s=o.map((c,g)=>({label:c,index:g}));if(o.length<2)return s;if(N||q){if(typeof d=="number"&&s[d]){const c=s.splice(d,1)[0];s.splice(1,0,c)}s.reverse()}else if(_&&typeof d=="number"&&s[d]){const c=s.splice(d,1)[0];s.push(c)}return s}}export{se as Dialog};
+import { $, addDisposableListener, clearNode, EventHelper, EventType, getWindow, hide, isActiveElement, isAncestor, show } from '../../dom.js';
+import { StandardKeyboardEvent } from '../../keyboardEvent.js';
+import { ActionBar } from '../actionbar/actionbar.js';
+import { ButtonBar, ButtonWithDescription } from '../button/button.js';
+import { Checkbox } from '../toggle/toggle.js';
+import { InputBox } from '../inputbox/inputBox.js';
+import { Action } from '../../../common/actions.js';
+import { Codicon } from '../../../common/codicons.js';
+import { ThemeIcon } from '../../../common/themables.js';
+import { mnemonicButtonLabel } from '../../../common/labels.js';
+import { Disposable } from '../../../common/lifecycle.js';
+import { isLinux, isMacintosh, isWindows } from '../../../common/platform.js';
+import './dialog.css';
+import * as nls from '../../../../nls.js';
+export class Dialog extends Disposable {
+    constructor(container, message, buttons, options) {
+        super();
+        this.container = container;
+        this.message = message;
+        this.options = options;
+        this.modalElement = this.container.appendChild($(`.monaco-dialog-modal-block.dimmed`));
+        this.shadowElement = this.modalElement.appendChild($('.dialog-shadow'));
+        this.element = this.shadowElement.appendChild($('.monaco-dialog-box'));
+        this.element.setAttribute('role', 'dialog');
+        this.element.tabIndex = -1;
+        hide(this.element);
+        this.buttonStyles = options.buttonStyles;
+        if (Array.isArray(buttons) && buttons.length > 0) {
+            this.buttons = buttons;
+        }
+        else if (!this.options.disableDefaultAction) {
+            this.buttons = [nls.localize('ok', "OK")];
+        }
+        else {
+            this.buttons = [];
+        }
+        const buttonsRowElement = this.element.appendChild($('.dialog-buttons-row'));
+        this.buttonsContainer = buttonsRowElement.appendChild($('.dialog-buttons'));
+        const messageRowElement = this.element.appendChild($('.dialog-message-row'));
+        this.iconElement = messageRowElement.appendChild($('#monaco-dialog-icon.dialog-icon'));
+        this.iconElement.setAttribute('aria-label', this.getIconAriaLabel());
+        this.messageContainer = messageRowElement.appendChild($('.dialog-message-container'));
+        if (this.options.detail || this.options.renderBody) {
+            const messageElement = this.messageContainer.appendChild($('.dialog-message'));
+            const messageTextElement = messageElement.appendChild($('#monaco-dialog-message-text.dialog-message-text'));
+            messageTextElement.innerText = this.message;
+        }
+        this.messageDetailElement = this.messageContainer.appendChild($('#monaco-dialog-message-detail.dialog-message-detail'));
+        if (this.options.detail || !this.options.renderBody) {
+            this.messageDetailElement.innerText = this.options.detail ? this.options.detail : message;
+        }
+        else {
+            this.messageDetailElement.style.display = 'none';
+        }
+        if (this.options.renderBody) {
+            const customBody = this.messageContainer.appendChild($('#monaco-dialog-message-body.dialog-message-body'));
+            this.options.renderBody(customBody);
+            for (const el of this.messageContainer.querySelectorAll('a')) {
+                el.tabIndex = 0;
+            }
+        }
+        if (this.options.inputs) {
+            this.inputs = this.options.inputs.map(input => {
+                const inputRowElement = this.messageContainer.appendChild($('.dialog-message-input'));
+                const inputBox = this._register(new InputBox(inputRowElement, undefined, {
+                    placeholder: input.placeholder,
+                    type: input.type ?? 'text',
+                    inputBoxStyles: options.inputBoxStyles
+                }));
+                if (input.value) {
+                    inputBox.value = input.value;
+                }
+                return inputBox;
+            });
+        }
+        else {
+            this.inputs = [];
+        }
+        if (this.options.checkboxLabel) {
+            const checkboxRowElement = this.messageContainer.appendChild($('.dialog-checkbox-row'));
+            const checkbox = this.checkbox = this._register(new Checkbox(this.options.checkboxLabel, !!this.options.checkboxChecked, options.checkboxStyles));
+            checkboxRowElement.appendChild(checkbox.domNode);
+            const checkboxMessageElement = checkboxRowElement.appendChild($('.dialog-checkbox-message'));
+            checkboxMessageElement.innerText = this.options.checkboxLabel;
+            this._register(addDisposableListener(checkboxMessageElement, EventType.CLICK, () => checkbox.checked = !checkbox.checked));
+        }
+        const toolbarRowElement = this.element.appendChild($('.dialog-toolbar-row'));
+        this.toolbarContainer = toolbarRowElement.appendChild($('.dialog-toolbar'));
+        this.applyStyles();
+    }
+    getIconAriaLabel() {
+        let typeLabel = nls.localize('dialogInfoMessage', 'Info');
+        switch (this.options.type) {
+            case 'error':
+                typeLabel = nls.localize('dialogErrorMessage', 'Error');
+                break;
+            case 'warning':
+                typeLabel = nls.localize('dialogWarningMessage', 'Warning');
+                break;
+            case 'pending':
+                typeLabel = nls.localize('dialogPendingMessage', 'In Progress');
+                break;
+            case 'none':
+            case 'info':
+            case 'question':
+            default:
+                break;
+        }
+        return typeLabel;
+    }
+    updateMessage(message) {
+        this.messageDetailElement.innerText = message;
+    }
+    async show() {
+        this.focusToReturn = this.container.ownerDocument.activeElement;
+        return new Promise((resolve) => {
+            clearNode(this.buttonsContainer);
+            const buttonBar = this.buttonBar = this._register(new ButtonBar(this.buttonsContainer));
+            const buttonMap = this.rearrangeButtons(this.buttons, this.options.cancelId);
+            buttonMap.forEach((entry, index) => {
+                const primary = buttonMap[index].index === 0;
+                const button = this.options.buttonDetails ? this._register(buttonBar.addButtonWithDescription({ secondary: !primary, ...this.buttonStyles })) : this._register(buttonBar.addButton({ secondary: !primary, ...this.buttonStyles }));
+                button.label = mnemonicButtonLabel(buttonMap[index].label, true);
+                if (button instanceof ButtonWithDescription) {
+                    button.description = this.options.buttonDetails[buttonMap[index].index];
+                }
+                this._register(button.onDidClick(e => {
+                    if (e) {
+                        EventHelper.stop(e);
+                    }
+                    resolve({
+                        button: buttonMap[index].index,
+                        checkboxChecked: this.checkbox ? this.checkbox.checked : undefined,
+                        values: this.inputs.length > 0 ? this.inputs.map(input => input.value) : undefined
+                    });
+                }));
+            });
+            const window = getWindow(this.container);
+            this._register(addDisposableListener(window, 'keydown', e => {
+                const evt = new StandardKeyboardEvent(e);
+                if (evt.equals(512)) {
+                    evt.preventDefault();
+                }
+                if (evt.equals(3)) {
+                    if (this.inputs.some(input => input.hasFocus())) {
+                        EventHelper.stop(e);
+                        resolve({
+                            button: buttonMap.find(button => button.index !== this.options.cancelId)?.index ?? 0,
+                            checkboxChecked: this.checkbox ? this.checkbox.checked : undefined,
+                            values: this.inputs.length > 0 ? this.inputs.map(input => input.value) : undefined
+                        });
+                    }
+                    return;
+                }
+                if (evt.equals(10)) {
+                    return;
+                }
+                let eventHandled = false;
+                if (evt.equals(2) || evt.equals(17) || evt.equals(1024 | 2) || evt.equals(15)) {
+                    const focusableElements = [];
+                    let focusedIndex = -1;
+                    if (this.messageContainer) {
+                        const links = this.messageContainer.querySelectorAll('a');
+                        for (const link of links) {
+                            focusableElements.push(link);
+                            if (isActiveElement(link)) {
+                                focusedIndex = focusableElements.length - 1;
+                            }
+                        }
+                    }
+                    for (const input of this.inputs) {
+                        focusableElements.push(input);
+                        if (input.hasFocus()) {
+                            focusedIndex = focusableElements.length - 1;
+                        }
+                    }
+                    if (this.checkbox) {
+                        focusableElements.push(this.checkbox);
+                        if (this.checkbox.hasFocus()) {
+                            focusedIndex = focusableElements.length - 1;
+                        }
+                    }
+                    if (this.buttonBar) {
+                        for (const button of this.buttonBar.buttons) {
+                            focusableElements.push(button);
+                            if (button.hasFocus()) {
+                                focusedIndex = focusableElements.length - 1;
+                            }
+                        }
+                    }
+                    if (evt.equals(2) || evt.equals(17)) {
+                        if (focusedIndex === -1) {
+                            focusedIndex = 0;
+                        }
+                        const newFocusedIndex = (focusedIndex + 1) % focusableElements.length;
+                        focusableElements[newFocusedIndex].focus();
+                    }
+                    else {
+                        if (focusedIndex === -1) {
+                            focusedIndex = focusableElements.length;
+                        }
+                        let newFocusedIndex = focusedIndex - 1;
+                        if (newFocusedIndex === -1) {
+                            newFocusedIndex = focusableElements.length - 1;
+                        }
+                        focusableElements[newFocusedIndex].focus();
+                    }
+                    eventHandled = true;
+                }
+                if (eventHandled) {
+                    EventHelper.stop(e, true);
+                }
+                else if (this.options.keyEventProcessor) {
+                    this.options.keyEventProcessor(evt);
+                }
+            }, true));
+            this._register(addDisposableListener(window, 'keyup', e => {
+                EventHelper.stop(e, true);
+                const evt = new StandardKeyboardEvent(e);
+                if (!this.options.disableCloseAction && evt.equals(9)) {
+                    resolve({
+                        button: this.options.cancelId || 0,
+                        checkboxChecked: this.checkbox ? this.checkbox.checked : undefined
+                    });
+                }
+            }, true));
+            this._register(addDisposableListener(this.element, 'focusout', e => {
+                if (!!e.relatedTarget && !!this.element) {
+                    if (!isAncestor(e.relatedTarget, this.element)) {
+                        this.focusToReturn = e.relatedTarget;
+                        if (e.target) {
+                            e.target.focus();
+                            EventHelper.stop(e, true);
+                        }
+                    }
+                }
+            }, false));
+            const spinModifierClassName = 'codicon-modifier-spin';
+            this.iconElement.classList.remove(...ThemeIcon.asClassNameArray(Codicon.dialogError), ...ThemeIcon.asClassNameArray(Codicon.dialogWarning), ...ThemeIcon.asClassNameArray(Codicon.dialogInfo), ...ThemeIcon.asClassNameArray(Codicon.loading), spinModifierClassName);
+            if (this.options.icon) {
+                this.iconElement.classList.add(...ThemeIcon.asClassNameArray(this.options.icon));
+            }
+            else {
+                switch (this.options.type) {
+                    case 'error':
+                        this.iconElement.classList.add(...ThemeIcon.asClassNameArray(Codicon.dialogError));
+                        break;
+                    case 'warning':
+                        this.iconElement.classList.add(...ThemeIcon.asClassNameArray(Codicon.dialogWarning));
+                        break;
+                    case 'pending':
+                        this.iconElement.classList.add(...ThemeIcon.asClassNameArray(Codicon.loading), spinModifierClassName);
+                        break;
+                    case 'none':
+                        this.iconElement.classList.add('no-codicon');
+                        break;
+                    case 'info':
+                    case 'question':
+                    default:
+                        this.iconElement.classList.add(...ThemeIcon.asClassNameArray(Codicon.dialogInfo));
+                        break;
+                }
+            }
+            if (!this.options.disableCloseAction) {
+                const actionBar = this._register(new ActionBar(this.toolbarContainer, {}));
+                const action = this._register(new Action('dialog.close', nls.localize('dialogClose', "Close Dialog"), ThemeIcon.asClassName(Codicon.dialogClose), true, async () => {
+                    resolve({
+                        button: this.options.cancelId || 0,
+                        checkboxChecked: this.checkbox ? this.checkbox.checked : undefined
+                    });
+                }));
+                actionBar.push(action, { icon: true, label: false });
+            }
+            this.applyStyles();
+            this.element.setAttribute('aria-modal', 'true');
+            this.element.setAttribute('aria-labelledby', 'monaco-dialog-icon monaco-dialog-message-text');
+            this.element.setAttribute('aria-describedby', 'monaco-dialog-icon monaco-dialog-message-text monaco-dialog-message-detail monaco-dialog-message-body');
+            show(this.element);
+            if (this.inputs.length > 0) {
+                this.inputs[0].focus();
+                this.inputs[0].select();
+            }
+            else {
+                buttonMap.forEach((value, index) => {
+                    if (value.index === 0) {
+                        buttonBar.buttons[index].focus();
+                    }
+                });
+            }
+        });
+    }
+    applyStyles() {
+        const style = this.options.dialogStyles;
+        const fgColor = style.dialogForeground;
+        const bgColor = style.dialogBackground;
+        const shadowColor = style.dialogShadow ? `0 0px 8px ${style.dialogShadow}` : '';
+        const border = style.dialogBorder ? `1px solid ${style.dialogBorder}` : '';
+        const linkFgColor = style.textLinkForeground;
+        this.shadowElement.style.boxShadow = shadowColor;
+        this.element.style.color = fgColor ?? '';
+        this.element.style.backgroundColor = bgColor ?? '';
+        this.element.style.border = border;
+        if (linkFgColor) {
+            for (const el of this.messageContainer.getElementsByTagName('a')) {
+                el.style.color = linkFgColor;
+            }
+        }
+        let color;
+        switch (this.options.type) {
+            case 'error':
+                color = style.errorIconForeground;
+                break;
+            case 'warning':
+                color = style.warningIconForeground;
+                break;
+            default:
+                color = style.infoIconForeground;
+                break;
+        }
+        if (color) {
+            this.iconElement.style.color = color;
+        }
+    }
+    dispose() {
+        super.dispose();
+        if (this.modalElement) {
+            this.modalElement.remove();
+            this.modalElement = undefined;
+        }
+        if (this.focusToReturn && isAncestor(this.focusToReturn, this.container.ownerDocument.body)) {
+            this.focusToReturn.focus();
+            this.focusToReturn = undefined;
+        }
+    }
+    rearrangeButtons(buttons, cancelId) {
+        const buttonMap = buttons.map((label, index) => ({ label, index }));
+        if (buttons.length < 2) {
+            return buttonMap;
+        }
+        if (isMacintosh || isLinux) {
+            if (typeof cancelId === 'number' && buttonMap[cancelId]) {
+                const cancelButton = buttonMap.splice(cancelId, 1)[0];
+                buttonMap.splice(1, 0, cancelButton);
+            }
+            buttonMap.reverse();
+        }
+        else if (isWindows) {
+            if (typeof cancelId === 'number' && buttonMap[cancelId]) {
+                const cancelButton = buttonMap.splice(cancelId, 1)[0];
+                buttonMap.push(cancelButton);
+            }
+        }
+        return buttonMap;
+    }
+}

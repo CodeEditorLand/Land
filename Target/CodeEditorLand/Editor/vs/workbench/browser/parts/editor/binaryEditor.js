@@ -1,1 +1,66 @@
-var h=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var p=(o,n,e,i)=>{for(var t=i>1?void 0:i?f(n,e):n,r=o.length-1,a;r>=0;r--)(a=o[r])&&(t=(i?a(n,e,t):a(t))||t);return i&&t&&h(n,e,t),t},l=(o,n)=>(e,i)=>n(e,i,o);import{localize as s}from"../../../../nls.js";import{Emitter as m}from"../../../../base/common/event.js";import"../../../common/editor/editorInput.js";import{BinaryEditorModel as I}from"../../../common/editor/binaryEditorModel.js";import"../../../../platform/telemetry/common/telemetry.js";import"../../../../platform/theme/common/themeService.js";import{IStorageService as g}from"../../../../platform/storage/common/storage.js";import{ByteSize as u}from"../../../../platform/files/common/files.js";import"../../../../platform/editor/common/editor.js";import{EditorPlaceholder as v}from"./editorPlaceholder.js";import"../../../services/editor/common/editorGroupsService.js";let d=class extends v{constructor(e,i,t,r,a,c){super(e,i,r,a,c);this.callbacks=t}_onDidChangeMetadata=this._register(new m);onDidChangeMetadata=this._onDidChangeMetadata.event;_onDidOpenInPlace=this._register(new m);onDidOpenInPlace=this._onDidOpenInPlace.event;metadata;getTitle(){return this.input?this.input.getName():s("binaryEditor","Binary Viewer")}async getContents(e,i){const t=await e.resolve();if(!(t instanceof I))throw new Error("Unable to open file as binary");const r=t.getSize();return this.handleMetadataChanged(typeof r=="number"?u.formatSize(r):""),{icon:"$(warning)",label:s("binaryError","The file is not displayed in the text editor because it is either binary or uses an unsupported text encoding."),actions:[{label:s("openAnyway","Open Anyway"),run:async()=>{await this.callbacks.openInternal(e,i),this._onDidOpenInPlace.fire()}}]}}handleMetadataChanged(e){this.metadata=e,this._onDidChangeMetadata.fire()}getMetadata(){return this.metadata}};d=p([l(5,g)],d);export{d as BaseBinaryResourceEditor};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { localize } from '../../../../nls.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { BinaryEditorModel } from '../../../common/editor/binaryEditorModel.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { ByteSize } from '../../../../platform/files/common/files.js';
+import { EditorPlaceholder } from './editorPlaceholder.js';
+let BaseBinaryResourceEditor = class BaseBinaryResourceEditor extends EditorPlaceholder {
+    constructor(id, group, callbacks, telemetryService, themeService, storageService) {
+        super(id, group, telemetryService, themeService, storageService);
+        this.callbacks = callbacks;
+        this._onDidChangeMetadata = this._register(new Emitter());
+        this.onDidChangeMetadata = this._onDidChangeMetadata.event;
+        this._onDidOpenInPlace = this._register(new Emitter());
+        this.onDidOpenInPlace = this._onDidOpenInPlace.event;
+    }
+    getTitle() {
+        return this.input ? this.input.getName() : localize('binaryEditor', "Binary Viewer");
+    }
+    async getContents(input, options) {
+        const model = await input.resolve();
+        if (!(model instanceof BinaryEditorModel)) {
+            throw new Error('Unable to open file as binary');
+        }
+        const size = model.getSize();
+        this.handleMetadataChanged(typeof size === 'number' ? ByteSize.formatSize(size) : '');
+        return {
+            icon: '$(warning)',
+            label: localize('binaryError', "The file is not displayed in the text editor because it is either binary or uses an unsupported text encoding."),
+            actions: [
+                {
+                    label: localize('openAnyway', "Open Anyway"),
+                    run: async () => {
+                        await this.callbacks.openInternal(input, options);
+                        this._onDidOpenInPlace.fire();
+                    }
+                }
+            ]
+        };
+    }
+    handleMetadataChanged(meta) {
+        this.metadata = meta;
+        this._onDidChangeMetadata.fire();
+    }
+    getMetadata() {
+        return this.metadata;
+    }
+};
+BaseBinaryResourceEditor = __decorate([
+    __param(5, IStorageService),
+    __metadata("design:paramtypes", [String, Object, Object, Object, Object, Object])
+], BaseBinaryResourceEditor);
+export { BaseBinaryResourceEditor };

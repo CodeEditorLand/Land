@@ -1,1 +1,32 @@
-import{isMacintosh as o,isWindows as t}from"./platform.js";let e;const s=globalThis.vscode;if(typeof s<"u"&&typeof s.process<"u"){const r=s.process;e={get platform(){return r.platform},get arch(){return r.arch},get env(){return r.env},cwd(){return r.cwd()}}}else typeof process<"u"&&typeof process?.versions?.node=="string"?e={get platform(){return process.platform},get arch(){return process.arch},get env(){return process.env},cwd(){return process.env.VSCODE_CWD||process.cwd()}}:e={get platform(){return t?"win32":o?"darwin":"linux"},get arch(){},get env(){return{}},cwd(){return"/"}};const d=e.cwd,p=e.env,a=e.platform,f=e.arch;export{f as arch,d as cwd,p as env,a as platform};
+import { isMacintosh, isWindows } from './platform.js';
+let safeProcess;
+const vscodeGlobal = globalThis.vscode;
+if (typeof vscodeGlobal !== 'undefined' && typeof vscodeGlobal.process !== 'undefined') {
+    const sandboxProcess = vscodeGlobal.process;
+    safeProcess = {
+        get platform() { return sandboxProcess.platform; },
+        get arch() { return sandboxProcess.arch; },
+        get env() { return sandboxProcess.env; },
+        cwd() { return sandboxProcess.cwd(); }
+    };
+}
+else if (typeof process !== 'undefined' && typeof process?.versions?.node === 'string') {
+    safeProcess = {
+        get platform() { return process.platform; },
+        get arch() { return process.arch; },
+        get env() { return process.env; },
+        cwd() { return process.env['VSCODE_CWD'] || process.cwd(); }
+    };
+}
+else {
+    safeProcess = {
+        get platform() { return isWindows ? 'win32' : isMacintosh ? 'darwin' : 'linux'; },
+        get arch() { return undefined; },
+        get env() { return {}; },
+        cwd() { return '/'; }
+    };
+}
+export const cwd = safeProcess.cwd;
+export const env = safeProcess.env;
+export const platform = safeProcess.platform;
+export const arch = safeProcess.arch;

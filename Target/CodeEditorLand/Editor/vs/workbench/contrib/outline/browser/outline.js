@@ -1,1 +1,9 @@
-import{RawContextKey as e}from"../../../../platform/contextkey/common/contextkey.js";var l=(o=>(o[o.ByPosition=0]="ByPosition",o[o.ByName=1]="ByName",o[o.ByKind=2]="ByKind",o))(l||{}),n;(t=>t.Id="outline")(n||={});const a=new e("outlineFollowsCursor",!1),p=new e("outlineFiltersOnType",!1),r=new e("outlineSortMode",0),x=new e("outlineAllCollapsed",!1);export{n as IOutlinePane,l as OutlineSortOrder,x as ctxAllCollapsed,p as ctxFilterOnType,a as ctxFollowsCursor,r as ctxSortMode};
+import { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+export var IOutlinePane;
+(function (IOutlinePane) {
+    IOutlinePane.Id = 'outline';
+})(IOutlinePane || (IOutlinePane = {}));
+export const ctxFollowsCursor = new RawContextKey('outlineFollowsCursor', false);
+export const ctxFilterOnType = new RawContextKey('outlineFiltersOnType', false);
+export const ctxSortMode = new RawContextKey('outlineSortMode', 0);
+export const ctxAllCollapsed = new RawContextKey('outlineAllCollapsed', false);

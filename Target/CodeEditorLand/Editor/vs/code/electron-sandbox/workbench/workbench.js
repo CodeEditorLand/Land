@@ -1,1 +1,208 @@
-(async function(){performance.mark("code/didStartRenderer");const B=window.MonacoBootstrapWindow,m=window.vscode;function w(o){performance.mark("code/willShowPartsSplash");let s=o.partsSplash;s&&(o.autoDetectHighContrast&&o.colorScheme.highContrast?(o.colorScheme.dark&&s.baseTheme!=="hc-black"||!o.colorScheme.dark&&s.baseTheme!=="hc-light")&&(s=void 0):o.autoDetectColorScheme&&(o.colorScheme.dark&&s.baseTheme!=="vs-dark"||!o.colorScheme.dark&&s.baseTheme!=="vs")&&(s=void 0)),s&&o.extensionDevelopmentPath&&(s.layoutInfo=void 0);let c,h,p;s?(c=s.baseTheme,h=s.colorInfo.editorBackground,p=s.colorInfo.foreground):o.autoDetectHighContrast&&o.colorScheme.highContrast?o.colorScheme.dark?(c="hc-black",h="#000000",p="#FFFFFF"):(c="hc-light",h="#FFFFFF",p="#000000"):o.autoDetectColorScheme&&(o.colorScheme.dark?(c="vs-dark",h="#1E1E1E",p="#CCCCCC"):(c="vs",h="#FFFFFF",p="#000000"));const y=document.createElement("style");if(y.className="initialShellColors",window.document.head.appendChild(y),y.textContent=`body {	background-color: ${h}; color: ${p}; margin: 0; padding: 0; }`,typeof s?.zoomLevel=="number"&&typeof m?.webFrame?.setZoomLevel=="function"&&m.webFrame.setZoomLevel(s.zoomLevel),s?.layoutInfo){const{layoutInfo:t,colorInfo:i}=s,r=document.createElement("div");r.id="monaco-parts-splash",r.className=c??"vs-dark",t.windowBorder&&i.windowBorder&&(r.style.position="relative",r.style.height="calc(100vh - 2px)",r.style.width="calc(100vw - 2px)",r.style.border="1px solid var(--window-border-color)",r.style.setProperty("--window-border-color",i.windowBorder),t.windowBorderRadius&&(r.style.borderRadius=t.windowBorderRadius)),t.sideBarWidth=Math.min(t.sideBarWidth,window.innerWidth-(t.activityBarWidth+t.editorPartMinWidth));const a=document.createElement("div");if(a.style.position="absolute",a.style.width="100%",a.style.height=`${t.titleBarHeight}px`,a.style.left="0",a.style.top="0",a.style.backgroundColor=`${i.titleBarBackground}`,a.style["-webkit-app-region"]="drag",r.appendChild(a),i.titleBarBorder&&t.titleBarHeight>0){const e=document.createElement("div");e.style.position="absolute",e.style.width="100%",e.style.height="1px",e.style.left="0",e.style.bottom="0",e.style.borderBottom=`1px solid ${i.titleBarBorder}`,a.appendChild(e)}const d=document.createElement("div");if(d.style.position="absolute",d.style.width=`${t.activityBarWidth}px`,d.style.height=`calc(100% - ${t.titleBarHeight+t.statusBarHeight}px)`,d.style.top=`${t.titleBarHeight}px`,t.sideBarSide==="left"?d.style.left="0":d.style.right="0",d.style.backgroundColor=`${i.activityBarBackground}`,r.appendChild(d),i.activityBarBorder&&t.activityBarWidth>0){const e=document.createElement("div");e.style.position="absolute",e.style.width="1px",e.style.height="100%",e.style.top="0",t.sideBarSide==="left"?(e.style.right="0",e.style.borderRight=`1px solid ${i.activityBarBorder}`):(e.style.left="0",e.style.borderLeft=`1px solid ${i.activityBarBorder}`),d.appendChild(e)}if(o.workspace){const e=document.createElement("div");if(e.style.position="absolute",e.style.width=`${t.sideBarWidth}px`,e.style.height=`calc(100% - ${t.titleBarHeight+t.statusBarHeight}px)`,e.style.top=`${t.titleBarHeight}px`,t.sideBarSide==="left"?e.style.left=`${t.activityBarWidth}px`:e.style.right=`${t.activityBarWidth}px`,e.style.backgroundColor=`${i.sideBarBackground}`,r.appendChild(e),i.sideBarBorder&&t.sideBarWidth>0){const n=document.createElement("div");n.style.position="absolute",n.style.width="1px",n.style.height="100%",n.style.top="0",n.style.right="0",t.sideBarSide==="left"?n.style.borderRight=`1px solid ${i.sideBarBorder}`:(n.style.left="0",n.style.borderLeft=`1px solid ${i.sideBarBorder}`),e.appendChild(n)}}const l=document.createElement("div");if(l.style.position="absolute",l.style.width="100%",l.style.height=`${t.statusBarHeight}px`,l.style.bottom="0",l.style.left="0",o.workspace&&i.statusBarBackground?l.style.backgroundColor=i.statusBarBackground:!o.workspace&&i.statusBarNoFolderBackground&&(l.style.backgroundColor=i.statusBarNoFolderBackground),r.appendChild(l),i.statusBarBorder&&t.statusBarHeight>0){const e=document.createElement("div");e.style.position="absolute",e.style.width="100%",e.style.height="1px",e.style.top="0",e.style.borderTop=`1px solid ${i.statusBarBorder}`,l.appendChild(e)}window.document.body.appendChild(r)}performance.mark("code/didShowPartsSplash")}const{result:b,configuration:u}=await B.load("vs/workbench/workbench.desktop.main",{configureDeveloperSettings:function(o){return{forceDisableShowDevtoolsOnError:typeof o.extensionTestsPath=="string"||o["enable-smoke-test-driver"]===!0,forceEnableDeveloperKeybindings:Array.isArray(o.extensionDevelopmentPath)&&o.extensionDevelopmentPath.length>0,removeDeveloperKeybindingsAfterLoad:!0}},beforeImport:function(o){w(o),Object.defineProperty(window,"vscodeWindowId",{get:()=>o.windowId}),window.requestIdleCallback(()=>{const s=document.createElement("canvas");s.getContext("2d")?.clearRect(0,0,s.width,s.height),s.remove()},{timeout:50}),performance.mark("code/willLoadWorkbenchMain")}});performance.mark("code/didLoadWorkbenchMain"),b.main(u)})();
+"use strict";
+(async function () {
+    performance.mark('code/didStartRenderer');
+    const bootstrapWindow = window.MonacoBootstrapWindow;
+    const preloadGlobals = window.vscode;
+    function showSplash(configuration) {
+        performance.mark('code/willShowPartsSplash');
+        let data = configuration.partsSplash;
+        if (data) {
+            if (configuration.autoDetectHighContrast && configuration.colorScheme.highContrast) {
+                if ((configuration.colorScheme.dark && data.baseTheme !== 'hc-black') || (!configuration.colorScheme.dark && data.baseTheme !== 'hc-light')) {
+                    data = undefined;
+                }
+            }
+            else if (configuration.autoDetectColorScheme) {
+                if ((configuration.colorScheme.dark && data.baseTheme !== 'vs-dark') || (!configuration.colorScheme.dark && data.baseTheme !== 'vs')) {
+                    data = undefined;
+                }
+            }
+        }
+        if (data && configuration.extensionDevelopmentPath) {
+            data.layoutInfo = undefined;
+        }
+        let baseTheme;
+        let shellBackground;
+        let shellForeground;
+        if (data) {
+            baseTheme = data.baseTheme;
+            shellBackground = data.colorInfo.editorBackground;
+            shellForeground = data.colorInfo.foreground;
+        }
+        else if (configuration.autoDetectHighContrast && configuration.colorScheme.highContrast) {
+            if (configuration.colorScheme.dark) {
+                baseTheme = 'hc-black';
+                shellBackground = '#000000';
+                shellForeground = '#FFFFFF';
+            }
+            else {
+                baseTheme = 'hc-light';
+                shellBackground = '#FFFFFF';
+                shellForeground = '#000000';
+            }
+        }
+        else if (configuration.autoDetectColorScheme) {
+            if (configuration.colorScheme.dark) {
+                baseTheme = 'vs-dark';
+                shellBackground = '#1E1E1E';
+                shellForeground = '#CCCCCC';
+            }
+            else {
+                baseTheme = 'vs';
+                shellBackground = '#FFFFFF';
+                shellForeground = '#000000';
+            }
+        }
+        const style = document.createElement('style');
+        style.className = 'initialShellColors';
+        window.document.head.appendChild(style);
+        style.textContent = `body {	background-color: ${shellBackground}; color: ${shellForeground}; margin: 0; padding: 0; }`;
+        if (typeof data?.zoomLevel === 'number' && typeof preloadGlobals?.webFrame?.setZoomLevel === 'function') {
+            preloadGlobals.webFrame.setZoomLevel(data.zoomLevel);
+        }
+        if (data?.layoutInfo) {
+            const { layoutInfo, colorInfo } = data;
+            const splash = document.createElement('div');
+            splash.id = 'monaco-parts-splash';
+            splash.className = baseTheme ?? 'vs-dark';
+            if (layoutInfo.windowBorder && colorInfo.windowBorder) {
+                splash.style.position = 'relative';
+                splash.style.height = 'calc(100vh - 2px)';
+                splash.style.width = 'calc(100vw - 2px)';
+                splash.style.border = `1px solid var(--window-border-color)`;
+                splash.style.setProperty('--window-border-color', colorInfo.windowBorder);
+                if (layoutInfo.windowBorderRadius) {
+                    splash.style.borderRadius = layoutInfo.windowBorderRadius;
+                }
+            }
+            layoutInfo.sideBarWidth = Math.min(layoutInfo.sideBarWidth, window.innerWidth - (layoutInfo.activityBarWidth + layoutInfo.editorPartMinWidth));
+            const titleDiv = document.createElement('div');
+            titleDiv.style.position = 'absolute';
+            titleDiv.style.width = '100%';
+            titleDiv.style.height = `${layoutInfo.titleBarHeight}px`;
+            titleDiv.style.left = '0';
+            titleDiv.style.top = '0';
+            titleDiv.style.backgroundColor = `${colorInfo.titleBarBackground}`;
+            titleDiv.style['-webkit-app-region'] = 'drag';
+            splash.appendChild(titleDiv);
+            if (colorInfo.titleBarBorder && layoutInfo.titleBarHeight > 0) {
+                const titleBorder = document.createElement('div');
+                titleBorder.style.position = 'absolute';
+                titleBorder.style.width = '100%';
+                titleBorder.style.height = '1px';
+                titleBorder.style.left = '0';
+                titleBorder.style.bottom = '0';
+                titleBorder.style.borderBottom = `1px solid ${colorInfo.titleBarBorder}`;
+                titleDiv.appendChild(titleBorder);
+            }
+            const activityDiv = document.createElement('div');
+            activityDiv.style.position = 'absolute';
+            activityDiv.style.width = `${layoutInfo.activityBarWidth}px`;
+            activityDiv.style.height = `calc(100% - ${layoutInfo.titleBarHeight + layoutInfo.statusBarHeight}px)`;
+            activityDiv.style.top = `${layoutInfo.titleBarHeight}px`;
+            if (layoutInfo.sideBarSide === 'left') {
+                activityDiv.style.left = '0';
+            }
+            else {
+                activityDiv.style.right = '0';
+            }
+            activityDiv.style.backgroundColor = `${colorInfo.activityBarBackground}`;
+            splash.appendChild(activityDiv);
+            if (colorInfo.activityBarBorder && layoutInfo.activityBarWidth > 0) {
+                const activityBorderDiv = document.createElement('div');
+                activityBorderDiv.style.position = 'absolute';
+                activityBorderDiv.style.width = '1px';
+                activityBorderDiv.style.height = '100%';
+                activityBorderDiv.style.top = '0';
+                if (layoutInfo.sideBarSide === 'left') {
+                    activityBorderDiv.style.right = '0';
+                    activityBorderDiv.style.borderRight = `1px solid ${colorInfo.activityBarBorder}`;
+                }
+                else {
+                    activityBorderDiv.style.left = '0';
+                    activityBorderDiv.style.borderLeft = `1px solid ${colorInfo.activityBarBorder}`;
+                }
+                activityDiv.appendChild(activityBorderDiv);
+            }
+            if (configuration.workspace) {
+                const sideDiv = document.createElement('div');
+                sideDiv.style.position = 'absolute';
+                sideDiv.style.width = `${layoutInfo.sideBarWidth}px`;
+                sideDiv.style.height = `calc(100% - ${layoutInfo.titleBarHeight + layoutInfo.statusBarHeight}px)`;
+                sideDiv.style.top = `${layoutInfo.titleBarHeight}px`;
+                if (layoutInfo.sideBarSide === 'left') {
+                    sideDiv.style.left = `${layoutInfo.activityBarWidth}px`;
+                }
+                else {
+                    sideDiv.style.right = `${layoutInfo.activityBarWidth}px`;
+                }
+                sideDiv.style.backgroundColor = `${colorInfo.sideBarBackground}`;
+                splash.appendChild(sideDiv);
+                if (colorInfo.sideBarBorder && layoutInfo.sideBarWidth > 0) {
+                    const sideBorderDiv = document.createElement('div');
+                    sideBorderDiv.style.position = 'absolute';
+                    sideBorderDiv.style.width = '1px';
+                    sideBorderDiv.style.height = '100%';
+                    sideBorderDiv.style.top = '0';
+                    sideBorderDiv.style.right = '0';
+                    if (layoutInfo.sideBarSide === 'left') {
+                        sideBorderDiv.style.borderRight = `1px solid ${colorInfo.sideBarBorder}`;
+                    }
+                    else {
+                        sideBorderDiv.style.left = '0';
+                        sideBorderDiv.style.borderLeft = `1px solid ${colorInfo.sideBarBorder}`;
+                    }
+                    sideDiv.appendChild(sideBorderDiv);
+                }
+            }
+            const statusDiv = document.createElement('div');
+            statusDiv.style.position = 'absolute';
+            statusDiv.style.width = '100%';
+            statusDiv.style.height = `${layoutInfo.statusBarHeight}px`;
+            statusDiv.style.bottom = '0';
+            statusDiv.style.left = '0';
+            if (configuration.workspace && colorInfo.statusBarBackground) {
+                statusDiv.style.backgroundColor = colorInfo.statusBarBackground;
+            }
+            else if (!configuration.workspace && colorInfo.statusBarNoFolderBackground) {
+                statusDiv.style.backgroundColor = colorInfo.statusBarNoFolderBackground;
+            }
+            splash.appendChild(statusDiv);
+            if (colorInfo.statusBarBorder && layoutInfo.statusBarHeight > 0) {
+                const statusBorderDiv = document.createElement('div');
+                statusBorderDiv.style.position = 'absolute';
+                statusBorderDiv.style.width = '100%';
+                statusBorderDiv.style.height = '1px';
+                statusBorderDiv.style.top = '0';
+                statusBorderDiv.style.borderTop = `1px solid ${colorInfo.statusBarBorder}`;
+                statusDiv.appendChild(statusBorderDiv);
+            }
+            window.document.body.appendChild(splash);
+        }
+        performance.mark('code/didShowPartsSplash');
+    }
+    const { result, configuration } = await bootstrapWindow.load('vs/workbench/workbench.desktop.main', {
+        configureDeveloperSettings: function (windowConfig) {
+            return {
+                forceDisableShowDevtoolsOnError: typeof windowConfig.extensionTestsPath === 'string' || windowConfig['enable-smoke-test-driver'] === true,
+                forceEnableDeveloperKeybindings: Array.isArray(windowConfig.extensionDevelopmentPath) && windowConfig.extensionDevelopmentPath.length > 0,
+                removeDeveloperKeybindingsAfterLoad: true
+            };
+        },
+        beforeImport: function (windowConfig) {
+            showSplash(windowConfig);
+            Object.defineProperty(window, 'vscodeWindowId', {
+                get: () => windowConfig.windowId
+            });
+            window.requestIdleCallback(() => {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                context?.clearRect(0, 0, canvas.width, canvas.height);
+                canvas.remove();
+            }, { timeout: 50 });
+            performance.mark('code/willLoadWorkbenchMain');
+        }
+    });
+    performance.mark('code/didLoadWorkbenchMain');
+    result.main(configuration);
+}());

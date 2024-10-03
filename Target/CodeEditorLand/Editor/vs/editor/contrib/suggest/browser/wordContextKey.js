@@ -1,1 +1,65 @@
-var h=Object.defineProperty;var _=Object.getOwnPropertyDescriptor;var a=(r,e,t,i)=>{for(var o=i>1?void 0:i?_(e,t):e,s=r.length-1,d;s>=0;s--)(d=r[s])&&(o=(i?d(e,t,o):d(o))||o);return i&&o&&h(e,t,o),o},l=(r,e)=>(t,i)=>e(t,i,r);import"../../../../base/common/lifecycle.js";import"../../../browser/editorBrowser.js";import{EditorOption as c}from"../../../common/config/editorOptions.js";import{IContextKeyService as p,RawContextKey as f}from"../../../../platform/contextkey/common/contextkey.js";let n=class{constructor(e,t){this._editor=e;this._ckAtEnd=n.AtEnd.bindTo(t),this._configListener=this._editor.onDidChangeConfiguration(i=>i.hasChanged(c.tabCompletion)&&this._update()),this._update()}static AtEnd=new f("atEndOfWord",!1);_ckAtEnd;_configListener;_enabled=!1;_selectionListener;dispose(){this._configListener.dispose(),this._selectionListener?.dispose(),this._ckAtEnd.reset()}_update(){const e=this._editor.getOption(c.tabCompletion)==="on";if(this._enabled!==e)if(this._enabled=e,this._enabled){const t=()=>{if(!this._editor.hasModel()){this._ckAtEnd.set(!1);return}const i=this._editor.getModel(),o=this._editor.getSelection(),s=i.getWordAtPosition(o.getStartPosition());if(!s){this._ckAtEnd.set(!1);return}this._ckAtEnd.set(s.endColumn===o.getStartPosition().column)};this._selectionListener=this._editor.onDidChangeCursorSelection(t),t()}else this._selectionListener&&(this._ckAtEnd.reset(),this._selectionListener.dispose(),this._selectionListener=void 0)}};n=a([l(1,p)],n);export{n as WordContextKey};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var WordContextKey_1;
+import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+let WordContextKey = class WordContextKey {
+    static { WordContextKey_1 = this; }
+    static { this.AtEnd = new RawContextKey('atEndOfWord', false); }
+    constructor(_editor, contextKeyService) {
+        this._editor = _editor;
+        this._enabled = false;
+        this._ckAtEnd = WordContextKey_1.AtEnd.bindTo(contextKeyService);
+        this._configListener = this._editor.onDidChangeConfiguration(e => e.hasChanged(126) && this._update());
+        this._update();
+    }
+    dispose() {
+        this._configListener.dispose();
+        this._selectionListener?.dispose();
+        this._ckAtEnd.reset();
+    }
+    _update() {
+        const enabled = this._editor.getOption(126) === 'on';
+        if (this._enabled === enabled) {
+            return;
+        }
+        this._enabled = enabled;
+        if (this._enabled) {
+            const checkForWordEnd = () => {
+                if (!this._editor.hasModel()) {
+                    this._ckAtEnd.set(false);
+                    return;
+                }
+                const model = this._editor.getModel();
+                const selection = this._editor.getSelection();
+                const word = model.getWordAtPosition(selection.getStartPosition());
+                if (!word) {
+                    this._ckAtEnd.set(false);
+                    return;
+                }
+                this._ckAtEnd.set(word.endColumn === selection.getStartPosition().column);
+            };
+            this._selectionListener = this._editor.onDidChangeCursorSelection(checkForWordEnd);
+            checkForWordEnd();
+        }
+        else if (this._selectionListener) {
+            this._ckAtEnd.reset();
+            this._selectionListener.dispose();
+            this._selectionListener = undefined;
+        }
+    }
+};
+WordContextKey = WordContextKey_1 = __decorate([
+    __param(1, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object])
+], WordContextKey);
+export { WordContextKey };

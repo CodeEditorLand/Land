@@ -1,1 +1,96 @@
-var v=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var n=(a,e,r,o)=>{for(var t=o>1?void 0:o?m(e,r):e,c=a.length-1,p;c>=0;c--)(p=a[c])&&(t=(o?p(e,r,t):p(t))||t);return o&&t&&v(e,r,t),t};import{memoize as s}from"../../../base/common/decorators.js";import{join as d}from"../../../base/common/path.js";import{isLinux as l}from"../../../base/common/platform.js";import{createStaticIPCHandle as u}from"../../../base/parts/ipc/node/ipc.net.js";import{IEnvironmentService as h}from"../common/environment.js";import{NativeEnvironmentService as f}from"../node/environmentService.js";import{refineServiceDecorator as g}from"../../instantiation/common/instantiation.js";const k=g(h);class i extends f{_snapEnv={};get backupHome(){return d(this.userDataPath,"Backups")}get mainIPCHandle(){return u(this.userDataPath,"main",this.productService.version)}get mainLockfile(){return d(this.userDataPath,"code.lock")}get disableUpdates(){return!!this.args["disable-updates"]}get crossOriginIsolated(){return!!this.args["enable-coi"]}get codeCachePath(){return process.env.VSCODE_CODE_CACHE_PATH||void 0}get useCodeCache(){return!!this.codeCachePath}unsetSnapExportedVariables(){if(l){for(const e in process.env)if(e.endsWith("_VSCODE_SNAP_ORIG")){const r=e.slice(0,-17);if(this._snapEnv[r])continue;process.env[r]&&(this._snapEnv[r]=process.env[r]),process.env[e]?process.env[r]=process.env[e]:delete process.env[r]}}}restoreSnapExportedVariables(){if(l)for(const e in this._snapEnv)process.env[e]=this._snapEnv[e],delete this._snapEnv[e]}}n([s],i.prototype,"backupHome",1),n([s],i.prototype,"mainIPCHandle",1),n([s],i.prototype,"mainLockfile",1),n([s],i.prototype,"disableUpdates",1),n([s],i.prototype,"crossOriginIsolated",1),n([s],i.prototype,"codeCachePath",1),n([s],i.prototype,"useCodeCache",1);export{i as EnvironmentMainService,k as IEnvironmentMainService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+import { memoize } from '../../../base/common/decorators.js';
+import { join } from '../../../base/common/path.js';
+import { isLinux } from '../../../base/common/platform.js';
+import { createStaticIPCHandle } from '../../../base/parts/ipc/node/ipc.net.js';
+import { IEnvironmentService } from '../common/environment.js';
+import { NativeEnvironmentService } from '../node/environmentService.js';
+import { refineServiceDecorator } from '../../instantiation/common/instantiation.js';
+export const IEnvironmentMainService = refineServiceDecorator(IEnvironmentService);
+export class EnvironmentMainService extends NativeEnvironmentService {
+    constructor() {
+        super(...arguments);
+        this._snapEnv = {};
+    }
+    get backupHome() { return join(this.userDataPath, 'Backups'); }
+    get mainIPCHandle() { return createStaticIPCHandle(this.userDataPath, 'main', this.productService.version); }
+    get mainLockfile() { return join(this.userDataPath, 'code.lock'); }
+    get disableUpdates() { return !!this.args['disable-updates']; }
+    get crossOriginIsolated() { return !!this.args['enable-coi']; }
+    get codeCachePath() { return process.env['VSCODE_CODE_CACHE_PATH'] || undefined; }
+    get useCodeCache() { return !!this.codeCachePath; }
+    unsetSnapExportedVariables() {
+        if (!isLinux) {
+            return;
+        }
+        for (const key in process.env) {
+            if (key.endsWith('_VSCODE_SNAP_ORIG')) {
+                const originalKey = key.slice(0, -17);
+                if (this._snapEnv[originalKey]) {
+                    continue;
+                }
+                if (process.env[originalKey]) {
+                    this._snapEnv[originalKey] = process.env[originalKey];
+                }
+                if (process.env[key]) {
+                    process.env[originalKey] = process.env[key];
+                }
+                else {
+                    delete process.env[originalKey];
+                }
+            }
+        }
+    }
+    restoreSnapExportedVariables() {
+        if (!isLinux) {
+            return;
+        }
+        for (const key in this._snapEnv) {
+            process.env[key] = this._snapEnv[key];
+            delete this._snapEnv[key];
+        }
+    }
+}
+__decorate([
+    memoize,
+    __metadata("design:type", String),
+    __metadata("design:paramtypes", [])
+], EnvironmentMainService.prototype, "backupHome", null);
+__decorate([
+    memoize,
+    __metadata("design:type", String),
+    __metadata("design:paramtypes", [])
+], EnvironmentMainService.prototype, "mainIPCHandle", null);
+__decorate([
+    memoize,
+    __metadata("design:type", String),
+    __metadata("design:paramtypes", [])
+], EnvironmentMainService.prototype, "mainLockfile", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Boolean),
+    __metadata("design:paramtypes", [])
+], EnvironmentMainService.prototype, "disableUpdates", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Boolean),
+    __metadata("design:paramtypes", [])
+], EnvironmentMainService.prototype, "crossOriginIsolated", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Object),
+    __metadata("design:paramtypes", [])
+], EnvironmentMainService.prototype, "codeCachePath", null);
+__decorate([
+    memoize,
+    __metadata("design:type", Boolean),
+    __metadata("design:paramtypes", [])
+], EnvironmentMainService.prototype, "useCodeCache", null);

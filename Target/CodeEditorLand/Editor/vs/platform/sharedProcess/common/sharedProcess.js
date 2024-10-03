@@ -1,1 +1,13 @@
-const e={exit:"vscode:electron-main->shared-process=exit",ipcReady:"vscode:shared-process->electron-main=ipc-ready",initDone:"vscode:shared-process->electron-main=init-done"},o={request:"vscode:createSharedProcessChannelConnection",response:"vscode:createSharedProcessChannelConnectionResult"},s={request:"vscode:createSharedProcessRawConnection",response:"vscode:createSharedProcessRawConnectionResult"};export{o as SharedProcessChannelConnection,e as SharedProcessLifecycle,s as SharedProcessRawConnection};
+export const SharedProcessLifecycle = {
+    exit: 'vscode:electron-main->shared-process=exit',
+    ipcReady: 'vscode:shared-process->electron-main=ipc-ready',
+    initDone: 'vscode:shared-process->electron-main=init-done'
+};
+export const SharedProcessChannelConnection = {
+    request: 'vscode:createSharedProcessChannelConnection',
+    response: 'vscode:createSharedProcessChannelConnectionResult'
+};
+export const SharedProcessRawConnection = {
+    request: 'vscode:createSharedProcessRawConnection',
+    response: 'vscode:createSharedProcessRawConnectionResult'
+};

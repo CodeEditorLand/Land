@@ -1,1 +1,154 @@
-import*as f from"../../../editor/common/core/range.js";import{createPrivateApiFor as g,getPrivateApiFor as p}from"./extHostTestingPrivateApi.js";import{TestId as b,TestIdPathParts as v}from"../../contrib/testing/common/testId.js";import{createTestItemChildren as x,TestItemCollection as h,TestItemEventOp as c}from"../../contrib/testing/common/testItemCollection.js";import{denamespaceTestTag as y}from"../../contrib/testing/common/testTypes.js";import*as l from"./extHostTypeConverters.js";import{URI as C}from"../../../base/common/uri.js";import"./extHostDocumentsAndEditors.js";const d=(t,r,e,n)=>{let s=r;return{enumerable:!0,configurable:!1,get(){return s},set(o){if(!e(s,o)){const T=s;s=o,t.listener?.(n(o,T))}}}},a=(t,r)=>t===r,i={range:(t,r)=>t===r?!0:!t||!r?!1:t.isEqual(r),label:a,description:a,sortText:a,busy:a,error:a,canResolveChildren:a,tags:(t,r)=>!(t.length!==r.length||t.some(e=>!r.find(n=>e.id===n.id)))},m=t=>r=>({op:c.SetProp,update:t(r)}),R=(t,r)=>({range:(()=>{let e;const n=m(s=>({range:f.Range.lift(l.Range.from(s))}));return{enumerable:!0,configurable:!1,get(){return e},set(s){t.listener?.({op:c.DocumentSynced}),i.range(e,s)||(e=s,t.listener?.(n(s)))}}})(),label:d(t,r,i.label,m(e=>({label:e}))),description:d(t,void 0,i.description,m(e=>({description:e}))),sortText:d(t,void 0,i.sortText,m(e=>({sortText:e}))),canResolveChildren:d(t,!1,i.canResolveChildren,e=>({op:c.UpdateCanResolveChildren,state:e})),busy:d(t,!1,i.busy,m(e=>({busy:e}))),error:d(t,void 0,i.error,m(e=>({error:l.MarkdownString.fromStrict(e)||null}))),tags:d(t,[],i.tags,(e,n)=>({op:c.SetTags,new:e.map(l.TestTag.from),old:n.map(l.TestTag.from)}))}),E=t=>{const r=b.fromString(t.extId),e=new u(r.controllerId,r.localId,t.label,C.revive(t.uri)||void 0);return e.range=l.Range.to(t.range||void 0),e.description=t.description||void 0,e.sortText=t.sortText||void 0,e.tags=t.tags.map(n=>l.TestTag.to({id:y(n).tagId})),e},M=t=>{let r;for(const e of t.tests){const n=E(e.item);p(n).parent=r,r=n}return r};class u{id;uri;children;parent;range;description;sortText;label;error;busy;canResolveChildren;tags;constructor(r,e,n,s){if(e.includes(v.Delimiter))throw new Error(`Test IDs may not include the ${JSON.stringify(e)} symbol`);const o=g(this,r);Object.defineProperties(this,{id:{value:e,enumerable:!0,writable:!1},uri:{value:s,enumerable:!0,writable:!1},parent:{enumerable:!1,get(){return o.parent instanceof I?void 0:o.parent}},children:{value:x(o,p,u),enumerable:!0,writable:!1},...R(o,n)})}}class I extends u{_isRoot=!0;constructor(r,e){super(r,r,e,void 0)}}class V extends h{constructor(r,e,n){super({controllerId:r,getDocumentVersion:s=>s&&n.getDocument(s)?.version,getApiFor:p,getChildren:s=>s.children,root:new I(r,e),toITestItem:l.TestItem.from})}}export{V as ExtHostTestItemCollection,u as TestItemImpl,I as TestItemRootImpl,M as toItemFromContext};
+import * as editorRange from '../../../editor/common/core/range.js';
+import { createPrivateApiFor, getPrivateApiFor } from './extHostTestingPrivateApi.js';
+import { TestId } from '../../contrib/testing/common/testId.js';
+import { createTestItemChildren, TestItemCollection } from '../../contrib/testing/common/testItemCollection.js';
+import { denamespaceTestTag } from '../../contrib/testing/common/testTypes.js';
+import * as Convert from './extHostTypeConverters.js';
+import { URI } from '../../../base/common/uri.js';
+const testItemPropAccessor = (api, defaultValue, equals, toUpdate) => {
+    let value = defaultValue;
+    return {
+        enumerable: true,
+        configurable: false,
+        get() {
+            return value;
+        },
+        set(newValue) {
+            if (!equals(value, newValue)) {
+                const oldValue = value;
+                value = newValue;
+                api.listener?.(toUpdate(newValue, oldValue));
+            }
+        },
+    };
+};
+const strictEqualComparator = (a, b) => a === b;
+const propComparators = {
+    range: (a, b) => {
+        if (a === b) {
+            return true;
+        }
+        if (!a || !b) {
+            return false;
+        }
+        return a.isEqual(b);
+    },
+    label: strictEqualComparator,
+    description: strictEqualComparator,
+    sortText: strictEqualComparator,
+    busy: strictEqualComparator,
+    error: strictEqualComparator,
+    canResolveChildren: strictEqualComparator,
+    tags: (a, b) => {
+        if (a.length !== b.length) {
+            return false;
+        }
+        if (a.some(t1 => !b.find(t2 => t1.id === t2.id))) {
+            return false;
+        }
+        return true;
+    },
+};
+const evSetProps = (fn) => v => ({ op: 4, update: fn(v) });
+const makePropDescriptors = (api, label) => ({
+    range: (() => {
+        let value;
+        const updateProps = evSetProps(r => ({ range: editorRange.Range.lift(Convert.Range.from(r)) }));
+        return {
+            enumerable: true,
+            configurable: false,
+            get() {
+                return value;
+            },
+            set(newValue) {
+                api.listener?.({ op: 6 });
+                if (!propComparators.range(value, newValue)) {
+                    value = newValue;
+                    api.listener?.(updateProps(newValue));
+                }
+            },
+        };
+    })(),
+    label: testItemPropAccessor(api, label, propComparators.label, evSetProps(label => ({ label }))),
+    description: testItemPropAccessor(api, undefined, propComparators.description, evSetProps(description => ({ description }))),
+    sortText: testItemPropAccessor(api, undefined, propComparators.sortText, evSetProps(sortText => ({ sortText }))),
+    canResolveChildren: testItemPropAccessor(api, false, propComparators.canResolveChildren, state => ({
+        op: 2,
+        state,
+    })),
+    busy: testItemPropAccessor(api, false, propComparators.busy, evSetProps(busy => ({ busy }))),
+    error: testItemPropAccessor(api, undefined, propComparators.error, evSetProps(error => ({ error: Convert.MarkdownString.fromStrict(error) || null }))),
+    tags: testItemPropAccessor(api, [], propComparators.tags, (current, previous) => ({
+        op: 1,
+        new: current.map(Convert.TestTag.from),
+        old: previous.map(Convert.TestTag.from),
+    })),
+});
+const toItemFromPlain = (item) => {
+    const testId = TestId.fromString(item.extId);
+    const testItem = new TestItemImpl(testId.controllerId, testId.localId, item.label, URI.revive(item.uri) || undefined);
+    testItem.range = Convert.Range.to(item.range || undefined);
+    testItem.description = item.description || undefined;
+    testItem.sortText = item.sortText || undefined;
+    testItem.tags = item.tags.map(t => Convert.TestTag.to({ id: denamespaceTestTag(t).tagId }));
+    return testItem;
+};
+export const toItemFromContext = (context) => {
+    let node;
+    for (const test of context.tests) {
+        const next = toItemFromPlain(test.item);
+        getPrivateApiFor(next).parent = node;
+        node = next;
+    }
+    return node;
+};
+export class TestItemImpl {
+    constructor(controllerId, id, label, uri) {
+        if (id.includes("\0")) {
+            throw new Error(`Test IDs may not include the ${JSON.stringify(id)} symbol`);
+        }
+        const api = createPrivateApiFor(this, controllerId);
+        Object.defineProperties(this, {
+            id: {
+                value: id,
+                enumerable: true,
+                writable: false,
+            },
+            uri: {
+                value: uri,
+                enumerable: true,
+                writable: false,
+            },
+            parent: {
+                enumerable: false,
+                get() {
+                    return api.parent instanceof TestItemRootImpl ? undefined : api.parent;
+                },
+            },
+            children: {
+                value: createTestItemChildren(api, getPrivateApiFor, TestItemImpl),
+                enumerable: true,
+                writable: false,
+            },
+            ...makePropDescriptors(api, label),
+        });
+    }
+}
+export class TestItemRootImpl extends TestItemImpl {
+    constructor(controllerId, label) {
+        super(controllerId, controllerId, label, undefined);
+        this._isRoot = true;
+    }
+}
+export class ExtHostTestItemCollection extends TestItemCollection {
+    constructor(controllerId, controllerLabel, editors) {
+        super({
+            controllerId,
+            getDocumentVersion: uri => uri && editors.getDocument(uri)?.version,
+            getApiFor: getPrivateApiFor,
+            getChildren: (item) => item.children,
+            root: new TestItemRootImpl(controllerId, controllerLabel),
+            toITestItem: Convert.TestItem.from,
+        });
+    }
+}

@@ -1,1 +1,40 @@
-import*as t from"../dom.js";import{StandardKeyboardEvent as s}from"../keyboardEvent.js";import{StandardMouseEvent as i}from"../mouseEvent.js";import{Gesture as r}from"../touch.js";import{Disposable as d}from"../../common/lifecycle.js";class b extends d{onclick(e,o){this._register(t.addDisposableListener(e,t.EventType.CLICK,n=>o(new i(t.getWindow(e),n))))}onmousedown(e,o){this._register(t.addDisposableListener(e,t.EventType.MOUSE_DOWN,n=>o(new i(t.getWindow(e),n))))}onmouseover(e,o){this._register(t.addDisposableListener(e,t.EventType.MOUSE_OVER,n=>o(new i(t.getWindow(e),n))))}onmouseleave(e,o){this._register(t.addDisposableListener(e,t.EventType.MOUSE_LEAVE,n=>o(new i(t.getWindow(e),n))))}onkeydown(e,o){this._register(t.addDisposableListener(e,t.EventType.KEY_DOWN,n=>o(new s(n))))}onkeyup(e,o){this._register(t.addDisposableListener(e,t.EventType.KEY_UP,n=>o(new s(n))))}oninput(e,o){this._register(t.addDisposableListener(e,t.EventType.INPUT,o))}onblur(e,o){this._register(t.addDisposableListener(e,t.EventType.BLUR,o))}onfocus(e,o){this._register(t.addDisposableListener(e,t.EventType.FOCUS,o))}onchange(e,o){this._register(t.addDisposableListener(e,t.EventType.CHANGE,o))}ignoreGesture(e){return r.ignoreTarget(e)}}export{b as Widget};
+import * as dom from '../dom.js';
+import { StandardKeyboardEvent } from '../keyboardEvent.js';
+import { StandardMouseEvent } from '../mouseEvent.js';
+import { Gesture } from '../touch.js';
+import { Disposable } from '../../common/lifecycle.js';
+export class Widget extends Disposable {
+    onclick(domNode, listener) {
+        this._register(dom.addDisposableListener(domNode, dom.EventType.CLICK, (e) => listener(new StandardMouseEvent(dom.getWindow(domNode), e))));
+    }
+    onmousedown(domNode, listener) {
+        this._register(dom.addDisposableListener(domNode, dom.EventType.MOUSE_DOWN, (e) => listener(new StandardMouseEvent(dom.getWindow(domNode), e))));
+    }
+    onmouseover(domNode, listener) {
+        this._register(dom.addDisposableListener(domNode, dom.EventType.MOUSE_OVER, (e) => listener(new StandardMouseEvent(dom.getWindow(domNode), e))));
+    }
+    onmouseleave(domNode, listener) {
+        this._register(dom.addDisposableListener(domNode, dom.EventType.MOUSE_LEAVE, (e) => listener(new StandardMouseEvent(dom.getWindow(domNode), e))));
+    }
+    onkeydown(domNode, listener) {
+        this._register(dom.addDisposableListener(domNode, dom.EventType.KEY_DOWN, (e) => listener(new StandardKeyboardEvent(e))));
+    }
+    onkeyup(domNode, listener) {
+        this._register(dom.addDisposableListener(domNode, dom.EventType.KEY_UP, (e) => listener(new StandardKeyboardEvent(e))));
+    }
+    oninput(domNode, listener) {
+        this._register(dom.addDisposableListener(domNode, dom.EventType.INPUT, listener));
+    }
+    onblur(domNode, listener) {
+        this._register(dom.addDisposableListener(domNode, dom.EventType.BLUR, listener));
+    }
+    onfocus(domNode, listener) {
+        this._register(dom.addDisposableListener(domNode, dom.EventType.FOCUS, listener));
+    }
+    onchange(domNode, listener) {
+        this._register(dom.addDisposableListener(domNode, dom.EventType.CHANGE, listener));
+    }
+    ignoreGesture(domNode) {
+        return Gesture.ignoreTarget(domNode);
+    }
+}

@@ -1,1 +1,16 @@
-import{EditorAction2 as s}from"../../../../../editor/browser/editorExtensions.js";import{localize2 as i}from"../../../../../nls.js";import{Action2 as c}from"../../../../../platform/actions/common/actions.js";const o={category:i("snippets","Snippets")};class d extends c{constructor(t){super({...o,...t})}}class l extends s{constructor(t){super({...o,...t})}}export{l as SnippetEditorAction,d as SnippetsAction};
+import { EditorAction2 } from '../../../../../editor/browser/editorExtensions.js';
+import { localize2 } from '../../../../../nls.js';
+import { Action2 } from '../../../../../platform/actions/common/actions.js';
+const defaultOptions = {
+    category: localize2('snippets', "Snippets"),
+};
+export class SnippetsAction extends Action2 {
+    constructor(desc) {
+        super({ ...defaultOptions, ...desc });
+    }
+}
+export class SnippetEditorAction extends EditorAction2 {
+    constructor(desc) {
+        super({ ...defaultOptions, ...desc });
+    }
+}

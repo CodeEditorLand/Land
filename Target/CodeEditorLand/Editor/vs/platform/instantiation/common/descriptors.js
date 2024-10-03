@@ -1,1 +1,7 @@
-class o{ctor;staticArguments;supportsDelayedInstantiation;constructor(t,n=[],a=!1){this.ctor=t,this.staticArguments=n,this.supportsDelayedInstantiation=a}}export{o as SyncDescriptor};
+export class SyncDescriptor {
+    constructor(ctor, staticArguments = [], supportsDelayedInstantiation = false) {
+        this.ctor = ctor;
+        this.staticArguments = staticArguments;
+        this.supportsDelayedInstantiation = supportsDelayedInstantiation;
+    }
+}

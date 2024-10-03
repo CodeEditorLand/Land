@@ -1,1 +1,21 @@
-import{basename as n,isAbsolute as t,join as o}from"../../../base/common/path.js";import{createDecorator as l}from"../../instantiation/common/instantiation.js";const p=l("IV8InspectProfilingService");var s;(c=>{function a(r){return!!(r.samples&&r.timeDeltas)}c.isValidProfile=a;function m(r,i="noAbsolutePaths"){for(const e of r.nodes)e.callFrame&&e.callFrame.url&&(t(e.callFrame.url)||/^\w[\w\d+.-]*:\/\/\/?/.test(e.callFrame.url))&&(e.callFrame.url=o(i,n(e.callFrame.url)));return r}c.rewriteAbsolutePaths=m})(s||={});export{p as IV8InspectProfilingService,s as Utils};
+import { basename, isAbsolute, join } from '../../../base/common/path.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const IV8InspectProfilingService = createDecorator('IV8InspectProfilingService');
+export var Utils;
+(function (Utils) {
+    function isValidProfile(profile) {
+        return Boolean(profile.samples && profile.timeDeltas);
+    }
+    Utils.isValidProfile = isValidProfile;
+    function rewriteAbsolutePaths(profile, replace = 'noAbsolutePaths') {
+        for (const node of profile.nodes) {
+            if (node.callFrame && node.callFrame.url) {
+                if (isAbsolute(node.callFrame.url) || /^\w[\w\d+.-]*:\/\/\/?/.test(node.callFrame.url)) {
+                    node.callFrame.url = join(replace, basename(node.callFrame.url));
+                }
+            }
+        }
+        return profile;
+    }
+    Utils.rewriteAbsolutePaths = rewriteAbsolutePaths;
+})(Utils || (Utils = {}));

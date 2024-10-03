@@ -1,1 +1,108 @@
-import{getWindow as r,runWhenWindowIdle as s}from"../../../../base/browser/dom.js";import{onUnexpectedError as a}from"../../../../base/common/errors.js";import{Disposable as d,DisposableMap as c}from"../../../../base/common/lifecycle.js";import"../../editorBrowser.js";import{EditorContributionInstantiation as e}from"../../editorExtensions.js";import"../../../common/editorCommon.js";import"../../../../platform/instantiation/common/instantiation.js";class y extends d{_editor=null;_instantiationService=null;_instances=this._register(new c);_pending=new Map;_finishedInstantiation=[];constructor(){super(),this._finishedInstantiation[e.Eager]=!1,this._finishedInstantiation[e.AfterFirstRender]=!1,this._finishedInstantiation[e.BeforeFirstInteraction]=!1,this._finishedInstantiation[e.Eventually]=!1}initialize(t,i,n){this._editor=t,this._instantiationService=n;for(const o of i){if(this._pending.has(o.id)){a(new Error(`Cannot have two contributions with the same id ${o.id}`));continue}this._pending.set(o.id,o)}this._instantiateSome(e.Eager),this._register(s(r(this._editor.getDomNode()),()=>{this._instantiateSome(e.AfterFirstRender)})),this._register(s(r(this._editor.getDomNode()),()=>{this._instantiateSome(e.BeforeFirstInteraction)})),this._register(s(r(this._editor.getDomNode()),()=>{this._instantiateSome(e.Eventually)},5e3))}saveViewState(){const t={};for(const[i,n]of this._instances)typeof n.saveViewState=="function"&&(t[i]=n.saveViewState());return t}restoreViewState(t){for(const[i,n]of this._instances)typeof n.restoreViewState=="function"&&n.restoreViewState(t[i])}get(t){return this._instantiateById(t),this._instances.get(t)||null}set(t,i){this._instances.set(t,i)}onBeforeInteractionEvent(){this._instantiateSome(e.BeforeFirstInteraction)}onAfterModelAttached(){return s(r(this._editor?.getDomNode()),()=>{this._instantiateSome(e.AfterFirstRender)},50)}_instantiateSome(t){if(this._finishedInstantiation[t])return;this._finishedInstantiation[t]=!0;const i=this._findPendingContributionsByInstantiation(t);for(const n of i)this._instantiateById(n.id)}_findPendingContributionsByInstantiation(t){const i=[];for(const[,n]of this._pending)n.instantiation===t&&i.push(n);return i}_instantiateById(t){const i=this._pending.get(t);if(i){if(this._pending.delete(t),!this._instantiationService||!this._editor)throw new Error("Cannot instantiate contributions before being initialized!");try{const n=this._instantiationService.createInstance(i.ctor,this._editor);this._instances.set(i.id,n),typeof n.restoreViewState=="function"&&(i.instantiation,e.Eager)}catch(n){a(n)}}}}export{y as CodeEditorContributions};
+import { getWindow, runWhenWindowIdle } from '../../../../base/browser/dom.js';
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+import { Disposable, DisposableMap } from '../../../../base/common/lifecycle.js';
+export class CodeEditorContributions extends Disposable {
+    constructor() {
+        super();
+        this._editor = null;
+        this._instantiationService = null;
+        this._instances = this._register(new DisposableMap());
+        this._pending = new Map();
+        this._finishedInstantiation = [];
+        this._finishedInstantiation[0] = false;
+        this._finishedInstantiation[1] = false;
+        this._finishedInstantiation[2] = false;
+        this._finishedInstantiation[3] = false;
+    }
+    initialize(editor, contributions, instantiationService) {
+        this._editor = editor;
+        this._instantiationService = instantiationService;
+        for (const desc of contributions) {
+            if (this._pending.has(desc.id)) {
+                onUnexpectedError(new Error(`Cannot have two contributions with the same id ${desc.id}`));
+                continue;
+            }
+            this._pending.set(desc.id, desc);
+        }
+        this._instantiateSome(0);
+        this._register(runWhenWindowIdle(getWindow(this._editor.getDomNode()), () => {
+            this._instantiateSome(1);
+        }));
+        this._register(runWhenWindowIdle(getWindow(this._editor.getDomNode()), () => {
+            this._instantiateSome(2);
+        }));
+        this._register(runWhenWindowIdle(getWindow(this._editor.getDomNode()), () => {
+            this._instantiateSome(3);
+        }, 5000));
+    }
+    saveViewState() {
+        const contributionsState = {};
+        for (const [id, contribution] of this._instances) {
+            if (typeof contribution.saveViewState === 'function') {
+                contributionsState[id] = contribution.saveViewState();
+            }
+        }
+        return contributionsState;
+    }
+    restoreViewState(contributionsState) {
+        for (const [id, contribution] of this._instances) {
+            if (typeof contribution.restoreViewState === 'function') {
+                contribution.restoreViewState(contributionsState[id]);
+            }
+        }
+    }
+    get(id) {
+        this._instantiateById(id);
+        return this._instances.get(id) || null;
+    }
+    set(id, value) {
+        this._instances.set(id, value);
+    }
+    onBeforeInteractionEvent() {
+        this._instantiateSome(2);
+    }
+    onAfterModelAttached() {
+        return runWhenWindowIdle(getWindow(this._editor?.getDomNode()), () => {
+            this._instantiateSome(1);
+        }, 50);
+    }
+    _instantiateSome(instantiation) {
+        if (this._finishedInstantiation[instantiation]) {
+            return;
+        }
+        this._finishedInstantiation[instantiation] = true;
+        const contribs = this._findPendingContributionsByInstantiation(instantiation);
+        for (const contrib of contribs) {
+            this._instantiateById(contrib.id);
+        }
+    }
+    _findPendingContributionsByInstantiation(instantiation) {
+        const result = [];
+        for (const [, desc] of this._pending) {
+            if (desc.instantiation === instantiation) {
+                result.push(desc);
+            }
+        }
+        return result;
+    }
+    _instantiateById(id) {
+        const desc = this._pending.get(id);
+        if (!desc) {
+            return;
+        }
+        this._pending.delete(id);
+        if (!this._instantiationService || !this._editor) {
+            throw new Error(`Cannot instantiate contributions before being initialized!`);
+        }
+        try {
+            const instance = this._instantiationService.createInstance(desc.ctor, this._editor);
+            this._instances.set(desc.id, instance);
+            if (typeof instance.restoreViewState === 'function' && desc.instantiation !== 0) {
+                console.warn(`Editor contribution '${desc.id}' should be eager instantiated because it uses saveViewState / restoreViewState.`);
+            }
+        }
+        catch (err) {
+            onUnexpectedError(err);
+        }
+    }
+}

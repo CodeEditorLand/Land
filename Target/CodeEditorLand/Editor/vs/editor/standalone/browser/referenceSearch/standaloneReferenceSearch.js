@@ -1,1 +1,36 @@
-var S=Object.defineProperty;var a=Object.getOwnPropertyDescriptor;var p=(m,o,t,r)=>{for(var i=r>1?void 0:r?a(o,t):o,I=m.length-1,c;I>=0;I--)(c=m[I])&&(i=(r?c(o,t,i):c(i))||i);return r&&i&&S(o,t,i),i},e=(m,o)=>(t,r)=>o(t,r,m);import"../../../browser/editorBrowser.js";import{EditorContributionInstantiation as d,registerEditorContribution as u}from"../../../browser/editorExtensions.js";import{ICodeEditorService as C}from"../../../browser/services/codeEditorService.js";import{ReferencesController as v}from"../../../contrib/gotoSymbol/browser/peek/referencesController.js";import{IConfigurationService as s}from"../../../../platform/configuration/common/configuration.js";import{IContextKeyService as E}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as g}from"../../../../platform/instantiation/common/instantiation.js";import{INotificationService as x}from"../../../../platform/notification/common/notification.js";import{IStorageService as b}from"../../../../platform/storage/common/storage.js";let n=class extends v{constructor(o,t,r,i,I,c,f){super(!0,o,t,r,i,I,c,f)}};n=p([e(1,E),e(2,C),e(3,x),e(4,g),e(5,b),e(6,s)],n),u(v.ID,n,d.Lazy);export{n as StandaloneReferencesController};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { registerEditorContribution } from '../../../browser/editorExtensions.js';
+import { ICodeEditorService } from '../../../browser/services/codeEditorService.js';
+import { ReferencesController } from '../../../contrib/gotoSymbol/browser/peek/referencesController.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+let StandaloneReferencesController = class StandaloneReferencesController extends ReferencesController {
+    constructor(editor, contextKeyService, editorService, notificationService, instantiationService, storageService, configurationService) {
+        super(true, editor, contextKeyService, editorService, notificationService, instantiationService, storageService, configurationService);
+    }
+};
+StandaloneReferencesController = __decorate([
+    __param(1, IContextKeyService),
+    __param(2, ICodeEditorService),
+    __param(3, INotificationService),
+    __param(4, IInstantiationService),
+    __param(5, IStorageService),
+    __param(6, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], StandaloneReferencesController);
+export { StandaloneReferencesController };
+registerEditorContribution(ReferencesController.ID, StandaloneReferencesController, 4);

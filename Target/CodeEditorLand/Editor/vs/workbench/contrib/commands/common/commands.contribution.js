@@ -1,1 +1,126 @@
-import{safeStringify as i}from"../../../../base/common/objects.js";import*as a from"../../../../nls.js";import{Action2 as d,registerAction2 as c}from"../../../../platform/actions/common/actions.js";import{ICommandService as u}from"../../../../platform/commands/common/commands.js";import"../../../../platform/instantiation/common/instantiation.js";import{ILogService as f}from"../../../../platform/log/common/log.js";import{INotificationService as g}from"../../../../platform/notification/common/notification.js";class l extends d{constructor(){super({id:"runCommands",title:a.localize2("runCommands","Run Commands"),f1:!1,metadata:{description:a.localize("runCommands.description","Run several commands"),args:[{name:"args",schema:{type:"object",required:["commands"],properties:{commands:{type:"array",description:a.localize("runCommands.commands","Commands to run"),items:{anyOf:[{$ref:"vscode://schemas/keybindings#/definitions/commandNames"},{type:"string"},{type:"object",required:["command"],properties:{command:{anyOf:[{$ref:"vscode://schemas/keybindings#/definitions/commandNames"},{type:"string"}]}},$ref:"vscode://schemas/keybindings#/definitions/commandsSchemas"}]}}}}}]}})}async run(n,e){const m=n.get(g);if(!this._isCommandArgs(e)){m.error(a.localize("runCommands.invalidArgs","'runCommands' has received an argument with incorrect type. Please, review the argument passed to the command."));return}if(e.commands.length===0){m.warn(a.localize("runCommands.noCommandsToRun","'runCommands' has not received commands to run. Did you forget to pass commands in the 'runCommands' argument?"));return}const o=n.get(u),s=n.get(f);let t=0;try{for(;t<e.commands.length;++t){const r=e.commands[t];s.debug(`runCommands: executing ${t}-th command: ${i(r)}`),await this._runCommand(o,r),s.debug(`runCommands: executed ${t}-th command`)}}catch(r){s.debug(`runCommands: executing ${t}-th command resulted in an error: ${r instanceof Error?r.message:i(r)}`),m.error(r)}}_isCommandArgs(n){if(!n||typeof n!="object"||!("commands"in n)||!Array.isArray(n.commands))return!1;for(const e of n.commands)if(typeof e!="string"&&!(typeof e=="object"&&typeof e.command=="string"))return!1;return!0}_runCommand(n,e){let m,o;return typeof e=="string"?m=e:(m=e.command,o=e.args),o===void 0?n.executeCommand(m):Array.isArray(o)?n.executeCommand(m,...o):n.executeCommand(m,o)}}c(l);
+import { safeStringify } from '../../../../base/common/objects.js';
+import * as nls from '../../../../nls.js';
+import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
+class RunCommands extends Action2 {
+    constructor() {
+        super({
+            id: 'runCommands',
+            title: nls.localize2('runCommands', "Run Commands"),
+            f1: false,
+            metadata: {
+                description: nls.localize('runCommands.description', "Run several commands"),
+                args: [
+                    {
+                        name: 'args',
+                        schema: {
+                            type: 'object',
+                            required: ['commands'],
+                            properties: {
+                                commands: {
+                                    type: 'array',
+                                    description: nls.localize('runCommands.commands', "Commands to run"),
+                                    items: {
+                                        anyOf: [
+                                            {
+                                                $ref: 'vscode://schemas/keybindings#/definitions/commandNames'
+                                            },
+                                            {
+                                                type: 'string',
+                                            },
+                                            {
+                                                type: 'object',
+                                                required: ['command'],
+                                                properties: {
+                                                    command: {
+                                                        'anyOf': [
+                                                            {
+                                                                $ref: 'vscode://schemas/keybindings#/definitions/commandNames'
+                                                            },
+                                                            {
+                                                                type: 'string'
+                                                            },
+                                                        ]
+                                                    }
+                                                },
+                                                $ref: 'vscode://schemas/keybindings#/definitions/commandsSchemas'
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        });
+    }
+    async run(accessor, args) {
+        const notificationService = accessor.get(INotificationService);
+        if (!this._isCommandArgs(args)) {
+            notificationService.error(nls.localize('runCommands.invalidArgs', "'runCommands' has received an argument with incorrect type. Please, review the argument passed to the command."));
+            return;
+        }
+        if (args.commands.length === 0) {
+            notificationService.warn(nls.localize('runCommands.noCommandsToRun', "'runCommands' has not received commands to run. Did you forget to pass commands in the 'runCommands' argument?"));
+            return;
+        }
+        const commandService = accessor.get(ICommandService);
+        const logService = accessor.get(ILogService);
+        let i = 0;
+        try {
+            for (; i < args.commands.length; ++i) {
+                const cmd = args.commands[i];
+                logService.debug(`runCommands: executing ${i}-th command: ${safeStringify(cmd)}`);
+                await this._runCommand(commandService, cmd);
+                logService.debug(`runCommands: executed ${i}-th command`);
+            }
+        }
+        catch (err) {
+            logService.debug(`runCommands: executing ${i}-th command resulted in an error: ${err instanceof Error ? err.message : safeStringify(err)}`);
+            notificationService.error(err);
+        }
+    }
+    _isCommandArgs(args) {
+        if (!args || typeof args !== 'object') {
+            return false;
+        }
+        if (!('commands' in args) || !Array.isArray(args.commands)) {
+            return false;
+        }
+        for (const cmd of args.commands) {
+            if (typeof cmd === 'string') {
+                continue;
+            }
+            if (typeof cmd === 'object' && typeof cmd.command === 'string') {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+    _runCommand(commandService, cmd) {
+        let commandID, commandArgs;
+        if (typeof cmd === 'string') {
+            commandID = cmd;
+        }
+        else {
+            commandID = cmd.command;
+            commandArgs = cmd.args;
+        }
+        if (commandArgs === undefined) {
+            return commandService.executeCommand(commandID);
+        }
+        else {
+            if (Array.isArray(commandArgs)) {
+                return commandService.executeCommand(commandID, ...commandArgs);
+            }
+            else {
+                return commandService.executeCommand(commandID, commandArgs);
+            }
+        }
+    }
+}
+registerAction2(RunCommands);

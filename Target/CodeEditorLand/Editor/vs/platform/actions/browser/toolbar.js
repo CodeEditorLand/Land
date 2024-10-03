@@ -1,1 +1,246 @@
-var B=Object.defineProperty;var H=Object.getOwnPropertyDescriptor;var b=(g,l,d,e)=>{for(var r=e>1?void 0:e?H(l,d):l,i=g.length-1,m;i>=0;i--)(m=g[i])&&(r=(e?m(l,d,r):m(r))||r);return e&&r&&B(l,d,r),r},a=(g,l)=>(d,e)=>l(d,e,g);import{addDisposableListener as P,getWindow as L}from"../../../base/browser/dom.js";import{StandardMouseEvent as R}from"../../../base/browser/mouseEvent.js";import{ToggleMenuAction as G,ToolBar as V}from"../../../base/browser/ui/toolbar/toolbar.js";import{Separator as A,toAction as x}from"../../../base/common/actions.js";import{coalesceInPlace as C}from"../../../base/common/arrays.js";import{intersection as W}from"../../../base/common/collections.js";import{BugIndicatingError as z}from"../../../base/common/errors.js";import{Emitter as j}from"../../../base/common/event.js";import{Iterable as F}from"../../../base/common/iterator.js";import{DisposableStore as N}from"../../../base/common/lifecycle.js";import{localize as w}from"../../../nls.js";import{createActionViewItem as U,createAndFillInActionBarActions as q}from"./menuEntryActionViewItem.js";import{IMenuService as D,MenuItemAction as M,SubmenuItemAction as _}from"../common/actions.js";import{createConfigureKeybindingAction as J}from"../common/menuService.js";import{ICommandService as O}from"../../commands/common/commands.js";import{IContextKeyService as E}from"../../contextkey/common/contextkey.js";import{IContextMenuService as T}from"../../contextview/browser/contextView.js";import{IKeybindingService as k}from"../../keybinding/common/keybinding.js";import{ITelemetryService as K}from"../../telemetry/common/telemetry.js";import{IActionViewItemService as Q}from"./actionViewItemService.js";import{IInstantiationService as X}from"../../instantiation/common/instantiation.js";var Y=(e=>(e[e.NoHide=-1]="NoHide",e[e.Ignore=0]="Ignore",e[e.RenderInSecondaryGroup=1]="RenderInSecondaryGroup",e))(Y||{});let y=class extends V{constructor(d,e,r,i,m,u,v,p){super(d,m,{getKeyBinding:s=>u.lookupKeybinding(s.id)??void 0,...e,allowContextMenu:!0,skipTelemetry:typeof e?.telemetrySource=="string"});this._options=e;this._menuService=r;this._contextKeyService=i;this._contextMenuService=m;this._keybindingService=u;this._commandService=v;const h=e?.telemetrySource;h&&this._store.add(this.actionBar.onDidRun(s=>p.publicLog2("workbenchActionExecuted",{id:s.action.id,from:h})))}_sessionDisposables=this._store.add(new N);setActions(d,e=[],r){this._sessionDisposables.clear();const i=d.slice(),m=e.slice(),u=[];let v=0;const p=[];let h=!1;if(this._options?.hiddenItemStrategy!==-1)for(let s=0;s<i.length;s++){const o=i[s];!(o instanceof M)&&!(o instanceof _)||o.hideActions&&(u.push(o.hideActions.toggle),o.hideActions.toggle.checked&&v++,o.hideActions.isHidden&&(h=!0,i[s]=void 0,this._options?.hiddenItemStrategy!==0&&(p[s]=o)))}if(this._options?.overflowBehavior!==void 0){const s=W(new Set(this._options.overflowBehavior.exempted),F.map(i,t=>t?.id)),o=this._options.overflowBehavior.maxItems-s.size;let n=0;for(let t=0;t<i.length;t++){const c=i[t];c&&(n++,!s.has(c.id)&&n>=o&&(i[t]=void 0,p[t]=c))}}C(i),C(p),super.setActions(i,A.join(p,m)),(u.length>0||i.length>0)&&this._sessionDisposables.add(P(this.getElement(),"contextmenu",s=>{const o=new R(L(this.getElement()),s),n=this.getItemAction(o.target);if(!n)return;o.preventDefault(),o.stopPropagation();const t=[];if(n instanceof M&&n.menuKeybinding)t.push(n.menuKeybinding);else if(!(n instanceof _||n instanceof G)){const f=!!this._keybindingService.lookupKeybinding(n.id);t.push(J(this._commandService,this._keybindingService,n.id,void 0,f))}if(u.length>0){let f=!1;if(v===1&&this._options?.hiddenItemStrategy===0){f=!0;for(let I=0;I<u.length;I++)if(u[I].checked){u[I]=x({id:n.id,label:n.label,checked:!0,enabled:!1,run(){}});break}}if(!f&&(n instanceof M||n instanceof _)){if(!n.hideActions)return;t.push(n.hideActions.hide)}else t.push(x({id:"label",label:w("hide","Hide"),enabled:!1,run(){}}))}const c=A.join(t,u);this._options?.resetMenu&&!r&&(r=[this._options.resetMenu]),h&&r&&(c.push(new A),c.push(x({id:"resetThisMenu",label:w("resetThisMenu","Reset Menu"),run:()=>this._menuService.resetHiddenStates(r)}))),c.length!==0&&this._contextMenuService.showContextMenu({getAnchor:()=>o,getActions:()=>c,menuId:this._options?.contextMenu,menuActionOptions:{renderShortTitle:!0,...this._options?.menuOptions},skipTelemetry:typeof this._options?.telemetrySource=="string",contextKeyService:this._contextKeyService})}))}};y=b([a(2,D),a(3,E),a(4,T),a(5,k),a(6,O),a(7,K)],y);let S=class extends y{_onDidChangeMenuItems=this._store.add(new j);onDidChangeMenuItems=this._onDidChangeMenuItems.event;constructor(l,d,e,r,i,m,u,v,p,h,s){super(l,{resetMenu:d,...e,actionViewItemProvider:(t,c)=>{let f=h.lookUp(d,t.id);f||(f=e?.actionViewItemProvider);const I=f?.(t,c);return I||U(s,t,c)}},r,i,m,u,v,p);const o=this._store.add(r.createMenu(d,i,{emitEventsForSubmenuChanges:!0,eventDebounceDelay:e?.eventDebounceDelay})),n=()=>{const t=[],c=[];q(o,e?.menuOptions,{primary:t,secondary:c},e?.toolbarOptions?.primaryGroup,e?.toolbarOptions?.shouldInlineSubmenu,e?.toolbarOptions?.useSeparatorsInPrimaryActions),l.classList.toggle("has-no-actions",t.length===0&&c.length===0),super.setActions(t,c)};this._store.add(o.onDidChange(()=>{n(),this._onDidChangeMenuItems.fire(this)})),this._store.add(h.onDidChange(t=>{t===d&&n()})),n()}setActions(){throw new z("This toolbar is populated from a menu.")}};S=b([a(3,D),a(4,E),a(5,T),a(6,k),a(7,O),a(8,K),a(9,Q),a(10,X)],S);export{Y as HiddenItemStrategy,S as MenuWorkbenchToolBar,y as WorkbenchToolBar};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { addDisposableListener, getWindow } from '../../../base/browser/dom.js';
+import { StandardMouseEvent } from '../../../base/browser/mouseEvent.js';
+import { ToggleMenuAction, ToolBar } from '../../../base/browser/ui/toolbar/toolbar.js';
+import { Separator, toAction } from '../../../base/common/actions.js';
+import { coalesceInPlace } from '../../../base/common/arrays.js';
+import { intersection } from '../../../base/common/collections.js';
+import { BugIndicatingError } from '../../../base/common/errors.js';
+import { Emitter } from '../../../base/common/event.js';
+import { Iterable } from '../../../base/common/iterator.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { localize } from '../../../nls.js';
+import { createActionViewItem, createAndFillInActionBarActions } from './menuEntryActionViewItem.js';
+import { IMenuService, MenuId, MenuItemAction, SubmenuItemAction } from '../common/actions.js';
+import { createConfigureKeybindingAction } from '../common/menuService.js';
+import { ICommandService } from '../../commands/common/commands.js';
+import { IContextKeyService } from '../../contextkey/common/contextkey.js';
+import { IContextMenuService } from '../../contextview/browser/contextView.js';
+import { IKeybindingService } from '../../keybinding/common/keybinding.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+import { IActionViewItemService } from './actionViewItemService.js';
+import { IInstantiationService } from '../../instantiation/common/instantiation.js';
+let WorkbenchToolBar = class WorkbenchToolBar extends ToolBar {
+    constructor(container, _options, _menuService, _contextKeyService, _contextMenuService, _keybindingService, _commandService, telemetryService) {
+        super(container, _contextMenuService, {
+            getKeyBinding: (action) => _keybindingService.lookupKeybinding(action.id) ?? undefined,
+            ..._options,
+            allowContextMenu: true,
+            skipTelemetry: typeof _options?.telemetrySource === 'string',
+        });
+        this._options = _options;
+        this._menuService = _menuService;
+        this._contextKeyService = _contextKeyService;
+        this._contextMenuService = _contextMenuService;
+        this._keybindingService = _keybindingService;
+        this._commandService = _commandService;
+        this._sessionDisposables = this._store.add(new DisposableStore());
+        const telemetrySource = _options?.telemetrySource;
+        if (telemetrySource) {
+            this._store.add(this.actionBar.onDidRun(e => telemetryService.publicLog2('workbenchActionExecuted', { id: e.action.id, from: telemetrySource })));
+        }
+    }
+    setActions(_primary, _secondary = [], menuIds) {
+        this._sessionDisposables.clear();
+        const primary = _primary.slice();
+        const secondary = _secondary.slice();
+        const toggleActions = [];
+        let toggleActionsCheckedCount = 0;
+        const extraSecondary = [];
+        let someAreHidden = false;
+        if (this._options?.hiddenItemStrategy !== -1) {
+            for (let i = 0; i < primary.length; i++) {
+                const action = primary[i];
+                if (!(action instanceof MenuItemAction) && !(action instanceof SubmenuItemAction)) {
+                    continue;
+                }
+                if (!action.hideActions) {
+                    continue;
+                }
+                toggleActions.push(action.hideActions.toggle);
+                if (action.hideActions.toggle.checked) {
+                    toggleActionsCheckedCount++;
+                }
+                if (action.hideActions.isHidden) {
+                    someAreHidden = true;
+                    primary[i] = undefined;
+                    if (this._options?.hiddenItemStrategy !== 0) {
+                        extraSecondary[i] = action;
+                    }
+                }
+            }
+        }
+        if (this._options?.overflowBehavior !== undefined) {
+            const exemptedIds = intersection(new Set(this._options.overflowBehavior.exempted), Iterable.map(primary, a => a?.id));
+            const maxItems = this._options.overflowBehavior.maxItems - exemptedIds.size;
+            let count = 0;
+            for (let i = 0; i < primary.length; i++) {
+                const action = primary[i];
+                if (!action) {
+                    continue;
+                }
+                count++;
+                if (exemptedIds.has(action.id)) {
+                    continue;
+                }
+                if (count >= maxItems) {
+                    primary[i] = undefined;
+                    extraSecondary[i] = action;
+                }
+            }
+        }
+        coalesceInPlace(primary);
+        coalesceInPlace(extraSecondary);
+        super.setActions(primary, Separator.join(extraSecondary, secondary));
+        if (toggleActions.length > 0 || primary.length > 0) {
+            this._sessionDisposables.add(addDisposableListener(this.getElement(), 'contextmenu', e => {
+                const event = new StandardMouseEvent(getWindow(this.getElement()), e);
+                const action = this.getItemAction(event.target);
+                if (!(action)) {
+                    return;
+                }
+                event.preventDefault();
+                event.stopPropagation();
+                const primaryActions = [];
+                if (action instanceof MenuItemAction && action.menuKeybinding) {
+                    primaryActions.push(action.menuKeybinding);
+                }
+                else if (!(action instanceof SubmenuItemAction || action instanceof ToggleMenuAction)) {
+                    const supportsKeybindings = !!this._keybindingService.lookupKeybinding(action.id);
+                    primaryActions.push(createConfigureKeybindingAction(this._commandService, this._keybindingService, action.id, undefined, supportsKeybindings));
+                }
+                if (toggleActions.length > 0) {
+                    let noHide = false;
+                    if (toggleActionsCheckedCount === 1 && this._options?.hiddenItemStrategy === 0) {
+                        noHide = true;
+                        for (let i = 0; i < toggleActions.length; i++) {
+                            if (toggleActions[i].checked) {
+                                toggleActions[i] = toAction({
+                                    id: action.id,
+                                    label: action.label,
+                                    checked: true,
+                                    enabled: false,
+                                    run() { }
+                                });
+                                break;
+                            }
+                        }
+                    }
+                    if (!noHide && (action instanceof MenuItemAction || action instanceof SubmenuItemAction)) {
+                        if (!action.hideActions) {
+                            return;
+                        }
+                        primaryActions.push(action.hideActions.hide);
+                    }
+                    else {
+                        primaryActions.push(toAction({
+                            id: 'label',
+                            label: localize('hide', "Hide"),
+                            enabled: false,
+                            run() { }
+                        }));
+                    }
+                }
+                const actions = Separator.join(primaryActions, toggleActions);
+                if (this._options?.resetMenu && !menuIds) {
+                    menuIds = [this._options.resetMenu];
+                }
+                if (someAreHidden && menuIds) {
+                    actions.push(new Separator());
+                    actions.push(toAction({
+                        id: 'resetThisMenu',
+                        label: localize('resetThisMenu', "Reset Menu"),
+                        run: () => this._menuService.resetHiddenStates(menuIds)
+                    }));
+                }
+                if (actions.length === 0) {
+                    return;
+                }
+                this._contextMenuService.showContextMenu({
+                    getAnchor: () => event,
+                    getActions: () => actions,
+                    menuId: this._options?.contextMenu,
+                    menuActionOptions: { renderShortTitle: true, ...this._options?.menuOptions },
+                    skipTelemetry: typeof this._options?.telemetrySource === 'string',
+                    contextKeyService: this._contextKeyService,
+                });
+            }));
+        }
+    }
+};
+WorkbenchToolBar = __decorate([
+    __param(2, IMenuService),
+    __param(3, IContextKeyService),
+    __param(4, IContextMenuService),
+    __param(5, IKeybindingService),
+    __param(6, ICommandService),
+    __param(7, ITelemetryService),
+    __metadata("design:paramtypes", [HTMLElement, Object, Object, Object, Object, Object, Object, Object])
+], WorkbenchToolBar);
+export { WorkbenchToolBar };
+let MenuWorkbenchToolBar = class MenuWorkbenchToolBar extends WorkbenchToolBar {
+    constructor(container, menuId, options, menuService, contextKeyService, contextMenuService, keybindingService, commandService, telemetryService, actionViewService, instaService) {
+        super(container, {
+            resetMenu: menuId,
+            ...options,
+            actionViewItemProvider: (action, opts) => {
+                let provider = actionViewService.lookUp(menuId, action.id);
+                if (!provider) {
+                    provider = options?.actionViewItemProvider;
+                }
+                const viewItem = provider?.(action, opts);
+                if (viewItem) {
+                    return viewItem;
+                }
+                return createActionViewItem(instaService, action, opts);
+            }
+        }, menuService, contextKeyService, contextMenuService, keybindingService, commandService, telemetryService);
+        this._onDidChangeMenuItems = this._store.add(new Emitter());
+        this.onDidChangeMenuItems = this._onDidChangeMenuItems.event;
+        const menu = this._store.add(menuService.createMenu(menuId, contextKeyService, { emitEventsForSubmenuChanges: true, eventDebounceDelay: options?.eventDebounceDelay }));
+        const updateToolbar = () => {
+            const primary = [];
+            const secondary = [];
+            createAndFillInActionBarActions(menu, options?.menuOptions, { primary, secondary }, options?.toolbarOptions?.primaryGroup, options?.toolbarOptions?.shouldInlineSubmenu, options?.toolbarOptions?.useSeparatorsInPrimaryActions);
+            container.classList.toggle('has-no-actions', primary.length === 0 && secondary.length === 0);
+            super.setActions(primary, secondary);
+        };
+        this._store.add(menu.onDidChange(() => {
+            updateToolbar();
+            this._onDidChangeMenuItems.fire(this);
+        }));
+        this._store.add(actionViewService.onDidChange(e => {
+            if (e === menuId) {
+                updateToolbar();
+            }
+        }));
+        updateToolbar();
+    }
+    setActions() {
+        throw new BugIndicatingError('This toolbar is populated from a menu.');
+    }
+};
+MenuWorkbenchToolBar = __decorate([
+    __param(3, IMenuService),
+    __param(4, IContextKeyService),
+    __param(5, IContextMenuService),
+    __param(6, IKeybindingService),
+    __param(7, ICommandService),
+    __param(8, ITelemetryService),
+    __param(9, IActionViewItemService),
+    __param(10, IInstantiationService),
+    __metadata("design:paramtypes", [HTMLElement,
+        MenuId, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], MenuWorkbenchToolBar);
+export { MenuWorkbenchToolBar };

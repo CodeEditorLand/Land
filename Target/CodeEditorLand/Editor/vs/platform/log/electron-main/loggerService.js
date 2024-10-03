@@ -1,1 +1,73 @@
-import{ResourceMap as t}from"../../../base/common/map.js";import"../../../base/common/uri.js";import{Event as i}from"../../../base/common/event.js";import{refineServiceDecorator as s}from"../../instantiation/common/instantiation.js";import{ILoggerService as n,isLogLevel as d}from"../common/log.js";import{LoggerService as L}from"../node/loggerService.js";const E=s(n);class y extends L{loggerResourcesByWindow=new t;createLogger(e,r,o){o!==void 0&&this.loggerResourcesByWindow.set(this.toResource(e),o);try{return super.createLogger(e,r)}catch(g){throw this.loggerResourcesByWindow.delete(this.toResource(e)),g}}registerLogger(e,r){r!==void 0&&this.loggerResourcesByWindow.set(e.resource,r),super.registerLogger(e)}deregisterLogger(e){this.loggerResourcesByWindow.delete(e),super.deregisterLogger(e)}getRegisteredLoggers(e){const r=[];for(const o of super.getRegisteredLoggers())e===this.loggerResourcesByWindow.get(o.resource)&&r.push(o);return r}getOnDidChangeLogLevelEvent(e){return i.filter(this.onDidChangeLogLevel,r=>d(r)||this.isInterestedLoggerResource(r[0],e))}getOnDidChangeVisibilityEvent(e){return i.filter(this.onDidChangeVisibility,([r])=>this.isInterestedLoggerResource(r,e))}getOnDidChangeLoggersEvent(e){return i.filter(i.map(this.onDidChangeLoggers,r=>({added:[...r.added].filter(g=>this.isInterestedLoggerResource(g.resource,e)),removed:[...r.removed].filter(g=>this.isInterestedLoggerResource(g.resource,e))})),r=>r.added.length>0||r.removed.length>0)}deregisterLoggers(e){for(const[r,o]of this.loggerResourcesByWindow)o===e&&this.deregisterLogger(r)}isInterestedLoggerResource(e,r){const o=this.loggerResourcesByWindow.get(e);return o===void 0||o===r}dispose(){super.dispose(),this.loggerResourcesByWindow.clear()}}export{E as ILoggerMainService,y as LoggerMainService};
+import { ResourceMap } from '../../../base/common/map.js';
+import { Event } from '../../../base/common/event.js';
+import { refineServiceDecorator } from '../../instantiation/common/instantiation.js';
+import { ILoggerService, isLogLevel } from '../common/log.js';
+import { LoggerService } from '../node/loggerService.js';
+export const ILoggerMainService = refineServiceDecorator(ILoggerService);
+export class LoggerMainService extends LoggerService {
+    constructor() {
+        super(...arguments);
+        this.loggerResourcesByWindow = new ResourceMap();
+    }
+    createLogger(idOrResource, options, windowId) {
+        if (windowId !== undefined) {
+            this.loggerResourcesByWindow.set(this.toResource(idOrResource), windowId);
+        }
+        try {
+            return super.createLogger(idOrResource, options);
+        }
+        catch (error) {
+            this.loggerResourcesByWindow.delete(this.toResource(idOrResource));
+            throw error;
+        }
+    }
+    registerLogger(resource, windowId) {
+        if (windowId !== undefined) {
+            this.loggerResourcesByWindow.set(resource.resource, windowId);
+        }
+        super.registerLogger(resource);
+    }
+    deregisterLogger(resource) {
+        this.loggerResourcesByWindow.delete(resource);
+        super.deregisterLogger(resource);
+    }
+    getRegisteredLoggers(windowId) {
+        const resources = [];
+        for (const resource of super.getRegisteredLoggers()) {
+            if (windowId === this.loggerResourcesByWindow.get(resource.resource)) {
+                resources.push(resource);
+            }
+        }
+        return resources;
+    }
+    getOnDidChangeLogLevelEvent(windowId) {
+        return Event.filter(this.onDidChangeLogLevel, arg => isLogLevel(arg) || this.isInterestedLoggerResource(arg[0], windowId));
+    }
+    getOnDidChangeVisibilityEvent(windowId) {
+        return Event.filter(this.onDidChangeVisibility, ([resource]) => this.isInterestedLoggerResource(resource, windowId));
+    }
+    getOnDidChangeLoggersEvent(windowId) {
+        return Event.filter(Event.map(this.onDidChangeLoggers, e => {
+            const r = {
+                added: [...e.added].filter(loggerResource => this.isInterestedLoggerResource(loggerResource.resource, windowId)),
+                removed: [...e.removed].filter(loggerResource => this.isInterestedLoggerResource(loggerResource.resource, windowId)),
+            };
+            return r;
+        }), e => e.added.length > 0 || e.removed.length > 0);
+    }
+    deregisterLoggers(windowId) {
+        for (const [resource, resourceWindow] of this.loggerResourcesByWindow) {
+            if (resourceWindow === windowId) {
+                this.deregisterLogger(resource);
+            }
+        }
+    }
+    isInterestedLoggerResource(resource, windowId) {
+        const loggerWindowId = this.loggerResourcesByWindow.get(resource);
+        return loggerWindowId === undefined || loggerWindowId === windowId;
+    }
+    dispose() {
+        super.dispose();
+        this.loggerResourcesByWindow.clear();
+    }
+}

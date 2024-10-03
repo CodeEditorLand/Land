@@ -1,1 +1,14 @@
-import{InstantiationType as e,registerSingleton as o}from"../../../../platform/instantiation/common/extensions.js";import{registerMainProcessRemoteService as i}from"../../../../platform/ipc/electron-sandbox/services.js";import{Registry as t}from"../../../../platform/registry/common/platform.js";import{ILocalPtyService as n,TerminalIpcChannels as m}from"../../../../platform/terminal/common/terminal.js";import{WorkbenchPhase as s,Extensions as c,registerWorkbenchContribution2 as a}from"../../../common/contributions.js";import{ITerminalProfileResolverService as l}from"../common/terminal.js";import{TerminalNativeContribution as b}from"./terminalNativeContribution.js";import{ElectronTerminalProfileResolverService as f}from"./terminalProfileResolverService.js";import{LifecyclePhase as p}from"../../../services/lifecycle/common/lifecycle.js";import{LocalTerminalBackendContribution as r}from"./localTerminalBackend.js";i(n,m.LocalPty),o(l,f,e.Delayed);const h=t.as(c.Workbench);a(r.ID,r,s.BlockStartup),h.registerWorkbenchContribution(b,p.Restored);
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { registerMainProcessRemoteService } from '../../../../platform/ipc/electron-sandbox/services.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { ILocalPtyService, TerminalIpcChannels } from '../../../../platform/terminal/common/terminal.js';
+import { Extensions as WorkbenchExtensions, registerWorkbenchContribution2 } from '../../../common/contributions.js';
+import { ITerminalProfileResolverService } from '../common/terminal.js';
+import { TerminalNativeContribution } from './terminalNativeContribution.js';
+import { ElectronTerminalProfileResolverService } from './terminalProfileResolverService.js';
+import { LocalTerminalBackendContribution } from './localTerminalBackend.js';
+registerMainProcessRemoteService(ILocalPtyService, TerminalIpcChannels.LocalPty);
+registerSingleton(ITerminalProfileResolverService, ElectronTerminalProfileResolverService, 1);
+const workbenchRegistry = Registry.as(WorkbenchExtensions.Workbench);
+registerWorkbenchContribution2(LocalTerminalBackendContribution.ID, LocalTerminalBackendContribution, 1);
+workbenchRegistry.registerWorkbenchContribution(TerminalNativeContribution, 3);

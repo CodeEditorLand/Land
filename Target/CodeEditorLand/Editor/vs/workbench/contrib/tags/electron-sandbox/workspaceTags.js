@@ -1,1 +1,181 @@
-var d=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var l=(c,e,t,r)=>{for(var i=r>1?void 0:r?h(e,t):e,o=c.length-1,s;o>=0;o--)(s=c[o])&&(i=(r?s(e,t,i):s(i))||i);return r&&i&&d(e,t,i),i},a=(c,e)=>(t,r)=>e(t,r,c);import{onUnexpectedError as m}from"../../../../base/common/errors.js";import"../../../../base/common/uri.js";import{IFileService as u}from"../../../../platform/files/common/files.js";import{ITelemetryService as S,TelemetryLevel as f}from"../../../../platform/telemetry/common/telemetry.js";import{IWorkspaceContextService as g}from"../../../../platform/workspace/common/workspace.js";import"../../../common/contributions.js";import{ITextFileService as I}from"../../../services/textfile/common/textfiles.js";import{IWorkspaceTagsService as y,getHashedRemotesFromConfig as T}from"../common/workspaceTags.js";import{IDiagnosticsService as w}from"../../../../platform/diagnostics/common/diagnostics.js";import{IRequestService as x}from"../../../../platform/request/common/request.js";import{isWindows as R}from"../../../../base/common/platform.js";import{AllowedSecondLevelDomains as W,getDomainsOfRemotes as k}from"../../../../platform/extensionManagement/common/configRemotes.js";import{INativeHostService as P}from"../../../../platform/native/common/native.js";import{IProductService as A}from"../../../../platform/product/common/productService.js";import{hashAsync as b}from"../../../../base/common/hash.js";async function Q(c,e=!1){return T(c,e,b)}let p=class{constructor(e,t,r,i,o,s,n,v,C){this.fileService=e;this.contextService=t;this.telemetryService=r;this.requestService=i;this.textFileService=o;this.workspaceTagsService=s;this.diagnosticsService=n;this.productService=v;this.nativeHostService=C;this.telemetryService.telemetryLevel===f.USAGE&&this.report()}async report(){this.reportWindowsEdition(),this.workspaceTagsService.getTags().then(e=>this.reportWorkspaceTags(e),e=>m(e)),this.reportCloudStats(),this.reportProxyStats(),this.getWorkspaceInformation().then(e=>this.diagnosticsService.reportWorkspaceStats(e))}async reportWindowsEdition(){if(!R)return;let e=await this.nativeHostService.windowsGetStringRegKey("HKEY_LOCAL_MACHINE","SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion","EditionID");e===void 0&&(e="Unknown"),this.telemetryService.publicLog2("windowsEdition",{edition:e})}async getWorkspaceInformation(){const e=this.contextService.getWorkspace(),t=this.contextService.getWorkbenchState(),r=await this.workspaceTagsService.getTelemetryWorkspaceId(e,t);return{id:e.id,telemetryId:r,rendererSessionId:this.telemetryService.sessionId,folders:e.folders,transient:e.transient,configuration:e.configuration}}reportWorkspaceTags(e){this.telemetryService.publicLog("workspce.tags",e)}reportRemoteDomains(e){Promise.all(e.map(t=>{const r=t.path,i=t.with({path:`${r!=="/"?r:""}/.git/config`});return this.fileService.exists(i).then(o=>o?this.textFileService.read(i,{acceptTextOnly:!0}).then(s=>k(s.value,W),s=>[]):[])})).then(t=>{const r=t.reduce((o,s)=>s.reduce((n,v)=>n.add(v),o),new Set),i=[];r.forEach(o=>i.push(o)),this.telemetryService.publicLog("workspace.remotes",{domains:i.sort()})},m)}reportRemotes(e){Promise.all(e.map(t=>this.workspaceTagsService.getHashedRemotesFromUri(t,!0))).then(()=>{},m)}reportAzureNode(e,t){const r=e.map(i=>{const o=i.path;return i.with({path:`${o!=="/"?o:""}/node_modules`})});return this.fileService.resolveAll(r.map(i=>({resource:i}))).then(i=>{const o=[].concat(...i.map(n=>n.success?n.stat.children||[]:[])).map(n=>n.name);return p.searchArray(o,/azure/i)&&(t.node=!0),t},i=>t)}static searchArray(e,t){return e.some(r=>r.search(t)>-1)||void 0}reportAzureJava(e,t){return Promise.all(e.map(r=>{const i=r.path,o=r.with({path:`${i!=="/"?i:""}/pom.xml`});return this.fileService.exists(o).then(s=>s?this.textFileService.read(o,{acceptTextOnly:!0}).then(n=>!!n.value.match(/azure/i),n=>!1):!1)})).then(r=>(r.indexOf(!0)!==-1&&(t.java=!0),t))}reportAzure(e){const t=Object.create(null);this.reportAzureNode(e,t).then(r=>this.reportAzureJava(e,r)).then(r=>{Object.keys(r).length&&this.telemetryService.publicLog("workspace.azure",r)}).then(void 0,m)}reportCloudStats(){const e=this.contextService.getWorkspace().folders.map(t=>t.uri);e.length&&this.fileService&&(this.reportRemoteDomains(e),this.reportRemotes(e),this.reportAzure(e))}reportProxyStats(){const e=this.productService.downloadUrl;e&&this.requestService.resolveProxy(e).then(t=>{let r=t?String(t).trim().split(/\s+/,1)[0]:"EMPTY";["DIRECT","PROXY","HTTPS","SOCKS","EMPTY"].indexOf(r)===-1&&(r="UNKNOWN")}).then(void 0,m)}};p=l([a(0,u),a(1,g),a(2,S),a(3,x),a(4,I),a(5,y),a(6,w),a(7,A),a(8,P)],p);export{p as WorkspaceTags,Q as getHashedRemotesFromConfig};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var WorkspaceTags_1;
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { ITextFileService, } from '../../../services/textfile/common/textfiles.js';
+import { IWorkspaceTagsService, getHashedRemotesFromConfig as baseGetHashedRemotesFromConfig } from '../common/workspaceTags.js';
+import { IDiagnosticsService } from '../../../../platform/diagnostics/common/diagnostics.js';
+import { IRequestService } from '../../../../platform/request/common/request.js';
+import { isWindows } from '../../../../base/common/platform.js';
+import { AllowedSecondLevelDomains, getDomainsOfRemotes } from '../../../../platform/extensionManagement/common/configRemotes.js';
+import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { hashAsync } from '../../../../base/common/hash.js';
+export async function getHashedRemotesFromConfig(text, stripEndingDotGit = false) {
+    return baseGetHashedRemotesFromConfig(text, stripEndingDotGit, hashAsync);
+}
+let WorkspaceTags = WorkspaceTags_1 = class WorkspaceTags {
+    constructor(fileService, contextService, telemetryService, requestService, textFileService, workspaceTagsService, diagnosticsService, productService, nativeHostService) {
+        this.fileService = fileService;
+        this.contextService = contextService;
+        this.telemetryService = telemetryService;
+        this.requestService = requestService;
+        this.textFileService = textFileService;
+        this.workspaceTagsService = workspaceTagsService;
+        this.diagnosticsService = diagnosticsService;
+        this.productService = productService;
+        this.nativeHostService = nativeHostService;
+        if (this.telemetryService.telemetryLevel === 3) {
+            this.report();
+        }
+    }
+    async report() {
+        this.reportWindowsEdition();
+        this.workspaceTagsService.getTags()
+            .then(tags => this.reportWorkspaceTags(tags), error => onUnexpectedError(error));
+        this.reportCloudStats();
+        this.reportProxyStats();
+        this.getWorkspaceInformation().then(stats => this.diagnosticsService.reportWorkspaceStats(stats));
+    }
+    async reportWindowsEdition() {
+        if (!isWindows) {
+            return;
+        }
+        let value = await this.nativeHostService.windowsGetStringRegKey('HKEY_LOCAL_MACHINE', 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion', 'EditionID');
+        if (value === undefined) {
+            value = 'Unknown';
+        }
+        this.telemetryService.publicLog2('windowsEdition', { edition: value });
+    }
+    async getWorkspaceInformation() {
+        const workspace = this.contextService.getWorkspace();
+        const state = this.contextService.getWorkbenchState();
+        const telemetryId = await this.workspaceTagsService.getTelemetryWorkspaceId(workspace, state);
+        return {
+            id: workspace.id,
+            telemetryId,
+            rendererSessionId: this.telemetryService.sessionId,
+            folders: workspace.folders,
+            transient: workspace.transient,
+            configuration: workspace.configuration
+        };
+    }
+    reportWorkspaceTags(tags) {
+        this.telemetryService.publicLog('workspce.tags', tags);
+    }
+    reportRemoteDomains(workspaceUris) {
+        Promise.all(workspaceUris.map(workspaceUri => {
+            const path = workspaceUri.path;
+            const uri = workspaceUri.with({ path: `${path !== '/' ? path : ''}/.git/config` });
+            return this.fileService.exists(uri).then(exists => {
+                if (!exists) {
+                    return [];
+                }
+                return this.textFileService.read(uri, { acceptTextOnly: true }).then(content => getDomainsOfRemotes(content.value, AllowedSecondLevelDomains), err => []);
+            });
+        })).then(domains => {
+            const set = domains.reduce((set, list) => list.reduce((set, item) => set.add(item), set), new Set());
+            const list = [];
+            set.forEach(item => list.push(item));
+            this.telemetryService.publicLog('workspace.remotes', { domains: list.sort() });
+        }, onUnexpectedError);
+    }
+    reportRemotes(workspaceUris) {
+        Promise.all(workspaceUris.map(workspaceUri => {
+            return this.workspaceTagsService.getHashedRemotesFromUri(workspaceUri, true);
+        })).then(() => { }, onUnexpectedError);
+    }
+    reportAzureNode(workspaceUris, tags) {
+        const uris = workspaceUris.map(workspaceUri => {
+            const path = workspaceUri.path;
+            return workspaceUri.with({ path: `${path !== '/' ? path : ''}/node_modules` });
+        });
+        return this.fileService.resolveAll(uris.map(resource => ({ resource }))).then(results => {
+            const names = [].concat(...results.map(result => result.success ? (result.stat.children || []) : [])).map(c => c.name);
+            const referencesAzure = WorkspaceTags_1.searchArray(names, /azure/i);
+            if (referencesAzure) {
+                tags['node'] = true;
+            }
+            return tags;
+        }, err => {
+            return tags;
+        });
+    }
+    static searchArray(arr, regEx) {
+        return arr.some(v => v.search(regEx) > -1) || undefined;
+    }
+    reportAzureJava(workspaceUris, tags) {
+        return Promise.all(workspaceUris.map(workspaceUri => {
+            const path = workspaceUri.path;
+            const uri = workspaceUri.with({ path: `${path !== '/' ? path : ''}/pom.xml` });
+            return this.fileService.exists(uri).then(exists => {
+                if (!exists) {
+                    return false;
+                }
+                return this.textFileService.read(uri, { acceptTextOnly: true }).then(content => !!content.value.match(/azure/i), err => false);
+            });
+        })).then(javas => {
+            if (javas.indexOf(true) !== -1) {
+                tags['java'] = true;
+            }
+            return tags;
+        });
+    }
+    reportAzure(uris) {
+        const tags = Object.create(null);
+        this.reportAzureNode(uris, tags).then((tags) => {
+            return this.reportAzureJava(uris, tags);
+        }).then((tags) => {
+            if (Object.keys(tags).length) {
+                this.telemetryService.publicLog('workspace.azure', tags);
+            }
+        }).then(undefined, onUnexpectedError);
+    }
+    reportCloudStats() {
+        const uris = this.contextService.getWorkspace().folders.map(folder => folder.uri);
+        if (uris.length && this.fileService) {
+            this.reportRemoteDomains(uris);
+            this.reportRemotes(uris);
+            this.reportAzure(uris);
+        }
+    }
+    reportProxyStats() {
+        const downloadUrl = this.productService.downloadUrl;
+        if (!downloadUrl) {
+            return;
+        }
+        this.requestService.resolveProxy(downloadUrl)
+            .then(proxy => {
+            let type = proxy ? String(proxy).trim().split(/\s+/, 1)[0] : 'EMPTY';
+            if (['DIRECT', 'PROXY', 'HTTPS', 'SOCKS', 'EMPTY'].indexOf(type) === -1) {
+                type = 'UNKNOWN';
+            }
+        }).then(undefined, onUnexpectedError);
+    }
+};
+WorkspaceTags = WorkspaceTags_1 = __decorate([
+    __param(0, IFileService),
+    __param(1, IWorkspaceContextService),
+    __param(2, ITelemetryService),
+    __param(3, IRequestService),
+    __param(4, ITextFileService),
+    __param(5, IWorkspaceTagsService),
+    __param(6, IDiagnosticsService),
+    __param(7, IProductService),
+    __param(8, INativeHostService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], WorkspaceTags);
+export { WorkspaceTags };

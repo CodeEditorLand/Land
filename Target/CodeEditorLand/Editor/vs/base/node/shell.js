@@ -1,1 +1,49 @@
-import{userInfo as l}from"os";import*as t from"../common/platform.js";import{getFirstAvailablePowerShellInstallation as o}from"./powershell.js";import*as a from"./processes.js";async function p(n,e){return n===t.OperatingSystem.Windows?t.isWindows?f():a.getWindowsShell(e):m(n,e)}let r=null;function m(n,e){if(t.isLinux&&n===t.OperatingSystem.Macintosh||t.isMacintosh&&n===t.OperatingSystem.Linux)return"/bin/bash";if(!r){let i;if(t.isWindows)i="/bin/bash";else{if(i=e.SHELL,!i)try{i=l().shell}catch{}i||(i="sh"),i==="/bin/false"&&(i="/bin/bash")}r=i}return r}let s=null;async function f(){return s||(s=(await o()).exePath),s}export{p as getSystemShell};
+import { userInfo } from 'os';
+import * as platform from '../common/platform.js';
+import { getFirstAvailablePowerShellInstallation } from './powershell.js';
+import * as processes from './processes.js';
+export async function getSystemShell(os, env) {
+    if (os === 1) {
+        if (platform.isWindows) {
+            return getSystemShellWindows();
+        }
+        return processes.getWindowsShell(env);
+    }
+    return getSystemShellUnixLike(os, env);
+}
+let _TERMINAL_DEFAULT_SHELL_UNIX_LIKE = null;
+function getSystemShellUnixLike(os, env) {
+    if (platform.isLinux && os === 2 || platform.isMacintosh && os === 3) {
+        return '/bin/bash';
+    }
+    if (!_TERMINAL_DEFAULT_SHELL_UNIX_LIKE) {
+        let unixLikeTerminal;
+        if (platform.isWindows) {
+            unixLikeTerminal = '/bin/bash';
+        }
+        else {
+            unixLikeTerminal = env['SHELL'];
+            if (!unixLikeTerminal) {
+                try {
+                    unixLikeTerminal = userInfo().shell;
+                }
+                catch (err) { }
+            }
+            if (!unixLikeTerminal) {
+                unixLikeTerminal = 'sh';
+            }
+            if (unixLikeTerminal === '/bin/false') {
+                unixLikeTerminal = '/bin/bash';
+            }
+        }
+        _TERMINAL_DEFAULT_SHELL_UNIX_LIKE = unixLikeTerminal;
+    }
+    return _TERMINAL_DEFAULT_SHELL_UNIX_LIKE;
+}
+let _TERMINAL_DEFAULT_SHELL_WINDOWS = null;
+async function getSystemShellWindows() {
+    if (!_TERMINAL_DEFAULT_SHELL_WINDOWS) {
+        _TERMINAL_DEFAULT_SHELL_WINDOWS = (await getFirstAvailablePowerShellInstallation()).exePath;
+    }
+    return _TERMINAL_DEFAULT_SHELL_WINDOWS;
+}

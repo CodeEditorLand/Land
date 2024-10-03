@@ -1,1 +1,65 @@
-import{Emitter as s}from"../../../../base/common/event.js";import{StorageScope as o,StorageTarget as n}from"../../../../platform/storage/common/storage.js";import{OutlineSortOrder as i}from"./outline.js";class O{_followCursor=!1;_filterOnType=!0;_sortBy=i.ByPosition;_onDidChange=new s;onDidChange=this._onDidChange.event;dispose(){this._onDidChange.dispose()}set followCursor(t){t!==this._followCursor&&(this._followCursor=t,this._onDidChange.fire({followCursor:!0}))}get followCursor(){return this._followCursor}get filterOnType(){return this._filterOnType}set filterOnType(t){t!==this._filterOnType&&(this._filterOnType=t,this._onDidChange.fire({filterOnType:!0}))}set sortBy(t){t!==this._sortBy&&(this._sortBy=t,this._onDidChange.fire({sortBy:!0}))}get sortBy(){return this._sortBy}persist(t){t.store("outline/state",JSON.stringify({followCursor:this.followCursor,sortBy:this.sortBy,filterOnType:this.filterOnType}),o.WORKSPACE,n.MACHINE)}restore(t){const r=t.get("outline/state",o.WORKSPACE);if(!r)return;let e;try{e=JSON.parse(r)}catch{return}this.followCursor=e.followCursor,this.sortBy=e.sortBy??i.ByPosition,typeof e.filterOnType=="boolean"&&(this.filterOnType=e.filterOnType)}}export{O as OutlineViewState};
+import { Emitter } from '../../../../base/common/event.js';
+export class OutlineViewState {
+    constructor() {
+        this._followCursor = false;
+        this._filterOnType = true;
+        this._sortBy = 0;
+        this._onDidChange = new Emitter();
+        this.onDidChange = this._onDidChange.event;
+    }
+    dispose() {
+        this._onDidChange.dispose();
+    }
+    set followCursor(value) {
+        if (value !== this._followCursor) {
+            this._followCursor = value;
+            this._onDidChange.fire({ followCursor: true });
+        }
+    }
+    get followCursor() {
+        return this._followCursor;
+    }
+    get filterOnType() {
+        return this._filterOnType;
+    }
+    set filterOnType(value) {
+        if (value !== this._filterOnType) {
+            this._filterOnType = value;
+            this._onDidChange.fire({ filterOnType: true });
+        }
+    }
+    set sortBy(value) {
+        if (value !== this._sortBy) {
+            this._sortBy = value;
+            this._onDidChange.fire({ sortBy: true });
+        }
+    }
+    get sortBy() {
+        return this._sortBy;
+    }
+    persist(storageService) {
+        storageService.store('outline/state', JSON.stringify({
+            followCursor: this.followCursor,
+            sortBy: this.sortBy,
+            filterOnType: this.filterOnType,
+        }), 1, 1);
+    }
+    restore(storageService) {
+        const raw = storageService.get('outline/state', 1);
+        if (!raw) {
+            return;
+        }
+        let data;
+        try {
+            data = JSON.parse(raw);
+        }
+        catch (e) {
+            return;
+        }
+        this.followCursor = data.followCursor;
+        this.sortBy = data.sortBy ?? 0;
+        if (typeof data.filterOnType === 'boolean') {
+            this.filterOnType = data.filterOnType;
+        }
+    }
+}

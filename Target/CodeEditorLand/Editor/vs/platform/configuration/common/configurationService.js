@@ -1,3 +1,168 @@
-import{distinct as E,equals as O}from"../../../base/common/arrays.js";import{Queue as S,RunOnceScheduler as w}from"../../../base/common/async.js";import{VSBuffer as D}from"../../../base/common/buffer.js";import{Emitter as P}from"../../../base/common/event.js";import{parse as U}from"../../../base/common/json.js";import{applyEdits as M,setProperty as T}from"../../../base/common/jsonEdit.js";import"../../../base/common/jsonFormatter.js";import{Disposable as V}from"../../../base/common/lifecycle.js";import{ResourceMap as d}from"../../../base/common/map.js";import{equals as _}from"../../../base/common/objects.js";import{OS as h,OperatingSystem as p}from"../../../base/common/platform.js";import{extUriBiasedIgnorePathCase as F}from"../../../base/common/resources.js";import"../../../base/common/uri.js";import{ConfigurationTarget as u,isConfigurationOverrides as g,isConfigurationUpdateOverrides as R}from"./configuration.js";import{Configuration as C,ConfigurationChangeEvent as b,ConfigurationModel as s,UserSettings as q}from"./configurationModels.js";import{keyFromOverrideIdentifiers as L}from"./configurationRegistry.js";import{DefaultConfiguration as N,NullPolicyConfiguration as z,PolicyConfiguration as A}from"./configurations.js";import{FileOperationResult as k}from"../../files/common/files.js";import"../../log/common/log.js";import{NullPolicyService as x}from"../../policy/common/policy.js";class Ti extends V{constructor(i,e,t,n){super();this.settingsResource=i;this.logService=n;this.defaultConfiguration=this._register(new N(n)),this.policyConfiguration=t instanceof x?new z:this._register(new A(this.defaultConfiguration,t,n)),this.userConfiguration=this._register(new q(this.settingsResource,{},F,e,n)),this.configuration=new C(this.defaultConfiguration.configurationModel,this.policyConfiguration.configurationModel,s.createEmptyModel(n),s.createEmptyModel(n),s.createEmptyModel(n),s.createEmptyModel(n),new d,s.createEmptyModel(n),new d,n),this.configurationEditing=new J(i,e,this),this.reloadConfigurationScheduler=this._register(new w(()=>this.reloadConfiguration(),50)),this._register(this.defaultConfiguration.onDidChangeConfiguration(({defaults:a,properties:o})=>this.onDidDefaultConfigurationChange(a,o))),this._register(this.policyConfiguration.onDidChangeConfiguration(a=>this.onDidPolicyConfigurationChange(a))),this._register(this.userConfiguration.onDidChange(()=>this.reloadConfigurationScheduler.schedule()))}configuration;defaultConfiguration;policyConfiguration;userConfiguration;reloadConfigurationScheduler;_onDidChangeConfiguration=this._register(new P);onDidChangeConfiguration=this._onDidChangeConfiguration.event;configurationEditing;async initialize(){const[i,e,t]=await Promise.all([this.defaultConfiguration.initialize(),this.policyConfiguration.initialize(),this.userConfiguration.loadConfiguration()]);this.configuration=new C(i,e,s.createEmptyModel(this.logService),t,s.createEmptyModel(this.logService),s.createEmptyModel(this.logService),new d,s.createEmptyModel(this.logService),new d,this.logService)}getConfigurationData(){return this.configuration.toData()}getValue(i,e){const t=typeof i=="string"?i:void 0,n=g(i)?i:g(e)?e:{};return this.configuration.getValue(t,n,void 0)}async updateValue(i,e,t,n,a){const o=R(t)?t:g(t)?{resource:t.resource,overrideIdentifiers:t.overrideIdentifier?[t.overrideIdentifier]:void 0}:void 0,f=o?n:t;if(f!==void 0&&f!==u.USER_LOCAL&&f!==u.USER)throw new Error(`Unable to write ${i} to target ${f}.`);o?.overrideIdentifiers&&(o.overrideIdentifiers=E(o.overrideIdentifiers),o.overrideIdentifiers=o.overrideIdentifiers.length?o.overrideIdentifiers:void 0);const l=this.inspect(i,{resource:o?.resource,overrideIdentifier:o?.overrideIdentifiers?o.overrideIdentifiers[0]:void 0});if(l.policyValue!==void 0)throw new Error(`Unable to write ${i} because it is configured in system policy.`);if(_(e,l.defaultValue)&&(e=void 0),o?.overrideIdentifiers?.length&&o.overrideIdentifiers.length>1){const y=o.overrideIdentifiers.sort(),c=this.configuration.localUserConfiguration.overrides.find(I=>O([...I.identifiers].sort(),y));c&&(o.overrideIdentifiers=c.identifiers)}const m=o?.overrideIdentifiers?.length?[L(o.overrideIdentifiers),i]:[i];await this.configurationEditing.write(m,e),await this.reloadConfiguration()}inspect(i,e={}){return this.configuration.inspect(i,e,void 0)}keys(){return this.configuration.keys(void 0)}async reloadConfiguration(){const i=await this.userConfiguration.loadConfiguration();this.onDidChangeUserConfiguration(i)}onDidChangeUserConfiguration(i){const e=this.configuration.toData(),t=this.configuration.compareAndUpdateLocalUserConfiguration(i);this.trigger(t,e,u.USER)}onDidDefaultConfigurationChange(i,e){const t=this.configuration.toData(),n=this.configuration.compareAndUpdateDefaultConfiguration(i,e);this.trigger(n,t,u.DEFAULT)}onDidPolicyConfigurationChange(i){const e=this.configuration.toData(),t=this.configuration.compareAndUpdatePolicyConfiguration(i);this.trigger(t,e,u.DEFAULT)}trigger(i,e,t){const n=new b(i,{data:e},this.configuration,void 0,this.logService);n.source=t,this._onDidChangeConfiguration.fire(n)}}class J{constructor(r,i,e){this.settingsResource=r;this.fileService=i;this.configurationService=e;this.queue=new S}queue;write(r,i){return this.queue.queue(()=>this.doWriteConfiguration(r,i))}async doWriteConfiguration(r,i){let e;try{e=(await this.fileService.readFile(this.settingsResource)).value.toString()}catch(a){if(a.fileOperationResult===k.FILE_NOT_FOUND)e="{}";else throw a}const t=[];if(U(e,t,{allowTrailingComma:!0,allowEmptyContent:!0}),t.length>0)throw new Error("Unable to write into the settings file. Please open the file to correct errors/warnings in the file and try again.");const n=this.getEdits(e,r,i);e=M(e,n),await this.fileService.writeFile(this.settingsResource,D.fromString(e))}getEdits(r,i,e){const{tabSize:t,insertSpaces:n,eol:a}=this.formattingOptions;if(!i.length){const o=JSON.stringify(e,null,n?" ".repeat(t):"	");return[{content:o,length:o.length,offset:0}]}return T(r,i,e,{tabSize:t,insertSpaces:n,eol:a})}_formattingOptions;get formattingOptions(){if(!this._formattingOptions){let r=h===p.Linux||h===p.Macintosh?`
-`:`\r
-`;const i=this.configurationService.getValue("files.eol",{overrideIdentifier:"jsonc"});i&&typeof i=="string"&&i!=="auto"&&(r=i),this._formattingOptions={eol:r,insertSpaces:!!this.configurationService.getValue("editor.insertSpaces",{overrideIdentifier:"jsonc"}),tabSize:this.configurationService.getValue("editor.tabSize",{overrideIdentifier:"jsonc"})}}return this._formattingOptions}}export{Ti as ConfigurationService};
+import { distinct, equals as arrayEquals } from '../../../base/common/arrays.js';
+import { Queue, RunOnceScheduler } from '../../../base/common/async.js';
+import { VSBuffer } from '../../../base/common/buffer.js';
+import { Emitter } from '../../../base/common/event.js';
+import { parse } from '../../../base/common/json.js';
+import { applyEdits, setProperty } from '../../../base/common/jsonEdit.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { ResourceMap } from '../../../base/common/map.js';
+import { equals } from '../../../base/common/objects.js';
+import { OS } from '../../../base/common/platform.js';
+import { extUriBiasedIgnorePathCase } from '../../../base/common/resources.js';
+import { isConfigurationOverrides, isConfigurationUpdateOverrides } from './configuration.js';
+import { Configuration, ConfigurationChangeEvent, ConfigurationModel, UserSettings } from './configurationModels.js';
+import { keyFromOverrideIdentifiers } from './configurationRegistry.js';
+import { DefaultConfiguration, NullPolicyConfiguration, PolicyConfiguration } from './configurations.js';
+import { NullPolicyService } from '../../policy/common/policy.js';
+export class ConfigurationService extends Disposable {
+    constructor(settingsResource, fileService, policyService, logService) {
+        super();
+        this.settingsResource = settingsResource;
+        this.logService = logService;
+        this._onDidChangeConfiguration = this._register(new Emitter());
+        this.onDidChangeConfiguration = this._onDidChangeConfiguration.event;
+        this.defaultConfiguration = this._register(new DefaultConfiguration(logService));
+        this.policyConfiguration = policyService instanceof NullPolicyService ? new NullPolicyConfiguration() : this._register(new PolicyConfiguration(this.defaultConfiguration, policyService, logService));
+        this.userConfiguration = this._register(new UserSettings(this.settingsResource, {}, extUriBiasedIgnorePathCase, fileService, logService));
+        this.configuration = new Configuration(this.defaultConfiguration.configurationModel, this.policyConfiguration.configurationModel, ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), new ResourceMap(), ConfigurationModel.createEmptyModel(logService), new ResourceMap(), logService);
+        this.configurationEditing = new ConfigurationEditing(settingsResource, fileService, this);
+        this.reloadConfigurationScheduler = this._register(new RunOnceScheduler(() => this.reloadConfiguration(), 50));
+        this._register(this.defaultConfiguration.onDidChangeConfiguration(({ defaults, properties }) => this.onDidDefaultConfigurationChange(defaults, properties)));
+        this._register(this.policyConfiguration.onDidChangeConfiguration(model => this.onDidPolicyConfigurationChange(model)));
+        this._register(this.userConfiguration.onDidChange(() => this.reloadConfigurationScheduler.schedule()));
+    }
+    async initialize() {
+        const [defaultModel, policyModel, userModel] = await Promise.all([this.defaultConfiguration.initialize(), this.policyConfiguration.initialize(), this.userConfiguration.loadConfiguration()]);
+        this.configuration = new Configuration(defaultModel, policyModel, ConfigurationModel.createEmptyModel(this.logService), userModel, ConfigurationModel.createEmptyModel(this.logService), ConfigurationModel.createEmptyModel(this.logService), new ResourceMap(), ConfigurationModel.createEmptyModel(this.logService), new ResourceMap(), this.logService);
+    }
+    getConfigurationData() {
+        return this.configuration.toData();
+    }
+    getValue(arg1, arg2) {
+        const section = typeof arg1 === 'string' ? arg1 : undefined;
+        const overrides = isConfigurationOverrides(arg1) ? arg1 : isConfigurationOverrides(arg2) ? arg2 : {};
+        return this.configuration.getValue(section, overrides, undefined);
+    }
+    async updateValue(key, value, arg3, arg4, options) {
+        const overrides = isConfigurationUpdateOverrides(arg3) ? arg3
+            : isConfigurationOverrides(arg3) ? { resource: arg3.resource, overrideIdentifiers: arg3.overrideIdentifier ? [arg3.overrideIdentifier] : undefined } : undefined;
+        const target = overrides ? arg4 : arg3;
+        if (target !== undefined) {
+            if (target !== 3 && target !== 2) {
+                throw new Error(`Unable to write ${key} to target ${target}.`);
+            }
+        }
+        if (overrides?.overrideIdentifiers) {
+            overrides.overrideIdentifiers = distinct(overrides.overrideIdentifiers);
+            overrides.overrideIdentifiers = overrides.overrideIdentifiers.length ? overrides.overrideIdentifiers : undefined;
+        }
+        const inspect = this.inspect(key, { resource: overrides?.resource, overrideIdentifier: overrides?.overrideIdentifiers ? overrides.overrideIdentifiers[0] : undefined });
+        if (inspect.policyValue !== undefined) {
+            throw new Error(`Unable to write ${key} because it is configured in system policy.`);
+        }
+        if (equals(value, inspect.defaultValue)) {
+            value = undefined;
+        }
+        if (overrides?.overrideIdentifiers?.length && overrides.overrideIdentifiers.length > 1) {
+            const overrideIdentifiers = overrides.overrideIdentifiers.sort();
+            const existingOverrides = this.configuration.localUserConfiguration.overrides.find(override => arrayEquals([...override.identifiers].sort(), overrideIdentifiers));
+            if (existingOverrides) {
+                overrides.overrideIdentifiers = existingOverrides.identifiers;
+            }
+        }
+        const path = overrides?.overrideIdentifiers?.length ? [keyFromOverrideIdentifiers(overrides.overrideIdentifiers), key] : [key];
+        await this.configurationEditing.write(path, value);
+        await this.reloadConfiguration();
+    }
+    inspect(key, overrides = {}) {
+        return this.configuration.inspect(key, overrides, undefined);
+    }
+    keys() {
+        return this.configuration.keys(undefined);
+    }
+    async reloadConfiguration() {
+        const configurationModel = await this.userConfiguration.loadConfiguration();
+        this.onDidChangeUserConfiguration(configurationModel);
+    }
+    onDidChangeUserConfiguration(userConfigurationModel) {
+        const previous = this.configuration.toData();
+        const change = this.configuration.compareAndUpdateLocalUserConfiguration(userConfigurationModel);
+        this.trigger(change, previous, 2);
+    }
+    onDidDefaultConfigurationChange(defaultConfigurationModel, properties) {
+        const previous = this.configuration.toData();
+        const change = this.configuration.compareAndUpdateDefaultConfiguration(defaultConfigurationModel, properties);
+        this.trigger(change, previous, 7);
+    }
+    onDidPolicyConfigurationChange(policyConfiguration) {
+        const previous = this.configuration.toData();
+        const change = this.configuration.compareAndUpdatePolicyConfiguration(policyConfiguration);
+        this.trigger(change, previous, 7);
+    }
+    trigger(configurationChange, previous, source) {
+        const event = new ConfigurationChangeEvent(configurationChange, { data: previous }, this.configuration, undefined, this.logService);
+        event.source = source;
+        this._onDidChangeConfiguration.fire(event);
+    }
+}
+class ConfigurationEditing {
+    constructor(settingsResource, fileService, configurationService) {
+        this.settingsResource = settingsResource;
+        this.fileService = fileService;
+        this.configurationService = configurationService;
+        this.queue = new Queue();
+    }
+    write(path, value) {
+        return this.queue.queue(() => this.doWriteConfiguration(path, value));
+    }
+    async doWriteConfiguration(path, value) {
+        let content;
+        try {
+            const fileContent = await this.fileService.readFile(this.settingsResource);
+            content = fileContent.value.toString();
+        }
+        catch (error) {
+            if (error.fileOperationResult === 1) {
+                content = '{}';
+            }
+            else {
+                throw error;
+            }
+        }
+        const parseErrors = [];
+        parse(content, parseErrors, { allowTrailingComma: true, allowEmptyContent: true });
+        if (parseErrors.length > 0) {
+            throw new Error('Unable to write into the settings file. Please open the file to correct errors/warnings in the file and try again.');
+        }
+        const edits = this.getEdits(content, path, value);
+        content = applyEdits(content, edits);
+        await this.fileService.writeFile(this.settingsResource, VSBuffer.fromString(content));
+    }
+    getEdits(content, path, value) {
+        const { tabSize, insertSpaces, eol } = this.formattingOptions;
+        if (!path.length) {
+            const content = JSON.stringify(value, null, insertSpaces ? ' '.repeat(tabSize) : '\t');
+            return [{
+                    content,
+                    length: content.length,
+                    offset: 0
+                }];
+        }
+        return setProperty(content, path, value, { tabSize, insertSpaces, eol });
+    }
+    get formattingOptions() {
+        if (!this._formattingOptions) {
+            let eol = OS === 3 || OS === 2 ? '\n' : '\r\n';
+            const configuredEol = this.configurationService.getValue('files.eol', { overrideIdentifier: 'jsonc' });
+            if (configuredEol && typeof configuredEol === 'string' && configuredEol !== 'auto') {
+                eol = configuredEol;
+            }
+            this._formattingOptions = {
+                eol,
+                insertSpaces: !!this.configurationService.getValue('editor.insertSpaces', { overrideIdentifier: 'jsonc' }),
+                tabSize: this.configurationService.getValue('editor.tabSize', { overrideIdentifier: 'jsonc' })
+            };
+        }
+        return this._formattingOptions;
+    }
+}

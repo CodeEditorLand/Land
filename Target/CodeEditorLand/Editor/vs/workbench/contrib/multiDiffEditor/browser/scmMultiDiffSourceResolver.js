@@ -1,1 +1,120 @@
-var I=Object.defineProperty;var U=Object.getOwnPropertyDescriptor;var f=(c,e,r,i)=>{for(var t=i>1?void 0:i?U(e,r):e,s=c.length-1,a;s>=0;s--)(a=c[s])&&(t=(i?a(e,r,t):a(t))||t);return i&&t&&I(e,r,t),t},p=(c,e)=>(r,i)=>e(r,i,c);import{Disposable as h}from"../../../../base/common/lifecycle.js";import{observableFromEvent as d,ValueWithChangeEventFromObservable as S,waitForState as l}from"../../../../base/common/observable.js";import{URI as m}from"../../../../base/common/uri.js";import"../../../../editor/browser/widget/multiDiffEditor/multiDiffEditorWidgetImpl.js";import{localize2 as D}from"../../../../nls.js";import{Action2 as w}from"../../../../platform/actions/common/actions.js";import"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as M}from"../../../../platform/instantiation/common/instantiation.js";import{IActivityService as R,ProgressBadge as C}from"../../../services/activity/common/activity.js";import{IEditorService as E}from"../../../services/editor/common/editorService.js";import{ISCMService as _}from"../../scm/common/scm.js";import{IMultiDiffSourceResolverService as b,MultiDiffEditorItem as A}from"./multiDiffSourceResolverService.js";let o=class{constructor(e,r){this._scmService=e;this._activityService=r}static _scheme="scm-multi-diff-source";static getMultiDiffSourceUri(e,r){return m.from({scheme:o._scheme,query:JSON.stringify({repositoryUri:e,groupId:r})})}static parseUri(e){if(e.scheme!==o._scheme)return;let r;try{r=JSON.parse(e.query)}catch{return}if(typeof r!="object"||r===null)return;const{repositoryUri:i,groupId:t}=r;if(!(typeof i!="string"||typeof t!="string"))return{repositoryUri:m.parse(i),groupId:t}}canHandleUri(e){return o.parseUri(e)!==void 0}async resolveDiffSource(e){const{repositoryUri:r,groupId:i}=o.parseUri(e),t=await l(d(this,this._scmService.onDidAddRepository,()=>[...this._scmService.repositories].find(n=>n.provider.rootUri?.toString()===r.toString()))),s=await l(d(this,t.provider.onDidChangeResourceGroups,()=>t.provider.groups.find(n=>n.id===i))),g=d(this._activityService.onDidChangeActivity,()=>[...this._activityService.getViewContainerActivities("workbench.view.scm")]).map(n=>!n.some(y=>y.badge instanceof C));return await l(g,n=>n),new O(s,t)}};o=f([p(0,_),p(1,R)],o);class O{constructor(e,r){this._group=e;this._repository=r}_resources=d(this._group.onDidChangeResources,()=>this._group.resources.map(e=>new A(e.multiDiffEditorOriginalUri,e.multiDiffEditorModifiedUri,e.sourceUri)));resources=new S(this._resources);contextKeys={scmResourceGroup:this._group.id,scmProvider:this._repository.provider.contextValue}}let u=class extends h{static ID="workbench.contrib.scmMultiDiffSourceResolver";constructor(e,r){super(),this._register(r.registerResolver(e.createInstance(o)))}};u=f([p(0,M),p(1,b)],u);class v extends w{static async openMultiFileDiffEditor(e,r,i,t,s){if(!i)return;const a=o.getMultiDiffSourceUri(i.toString(),t);return await e.openEditor({label:r,multiDiffSource:a,options:s})}constructor(){super({id:"_workbench.openScmMultiDiffEditor",title:D("viewChanges","View Changes"),f1:!1})}async run(e,r){const i=e.get(E);await v.openMultiFileDiffEditor(i,r.title,m.revive(r.repositoryUri),r.resourceGroupId)}}export{v as OpenScmGroupAction,o as ScmMultiDiffSourceResolver,u as ScmMultiDiffSourceResolverContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ScmMultiDiffSourceResolver_1;
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { observableFromEvent, ValueWithChangeEventFromObservable, waitForState } from '../../../../base/common/observable.js';
+import { URI } from '../../../../base/common/uri.js';
+import { localize2 } from '../../../../nls.js';
+import { Action2 } from '../../../../platform/actions/common/actions.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IActivityService, ProgressBadge } from '../../../services/activity/common/activity.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { ISCMService } from '../../scm/common/scm.js';
+import { IMultiDiffSourceResolverService, MultiDiffEditorItem } from './multiDiffSourceResolverService.js';
+let ScmMultiDiffSourceResolver = class ScmMultiDiffSourceResolver {
+    static { ScmMultiDiffSourceResolver_1 = this; }
+    static { this._scheme = 'scm-multi-diff-source'; }
+    static getMultiDiffSourceUri(repositoryUri, groupId) {
+        return URI.from({
+            scheme: ScmMultiDiffSourceResolver_1._scheme,
+            query: JSON.stringify({ repositoryUri, groupId }),
+        });
+    }
+    static parseUri(uri) {
+        if (uri.scheme !== ScmMultiDiffSourceResolver_1._scheme) {
+            return undefined;
+        }
+        let query;
+        try {
+            query = JSON.parse(uri.query);
+        }
+        catch (e) {
+            return undefined;
+        }
+        if (typeof query !== 'object' || query === null) {
+            return undefined;
+        }
+        const { repositoryUri, groupId } = query;
+        if (typeof repositoryUri !== 'string' || typeof groupId !== 'string') {
+            return undefined;
+        }
+        return { repositoryUri: URI.parse(repositoryUri), groupId };
+    }
+    constructor(_scmService, _activityService) {
+        this._scmService = _scmService;
+        this._activityService = _activityService;
+    }
+    canHandleUri(uri) {
+        return ScmMultiDiffSourceResolver_1.parseUri(uri) !== undefined;
+    }
+    async resolveDiffSource(uri) {
+        const { repositoryUri, groupId } = ScmMultiDiffSourceResolver_1.parseUri(uri);
+        const repository = await waitForState(observableFromEvent(this, this._scmService.onDidAddRepository, () => [...this._scmService.repositories].find(r => r.provider.rootUri?.toString() === repositoryUri.toString())));
+        const group = await waitForState(observableFromEvent(this, repository.provider.onDidChangeResourceGroups, () => repository.provider.groups.find(g => g.id === groupId)));
+        const scmActivities = observableFromEvent(this._activityService.onDidChangeActivity, () => [...this._activityService.getViewContainerActivities('workbench.view.scm')]);
+        const scmViewHasNoProgressBadge = scmActivities.map(activities => !activities.some(a => a.badge instanceof ProgressBadge));
+        await waitForState(scmViewHasNoProgressBadge, v => v);
+        return new ScmResolvedMultiDiffSource(group, repository);
+    }
+};
+ScmMultiDiffSourceResolver = ScmMultiDiffSourceResolver_1 = __decorate([
+    __param(0, ISCMService),
+    __param(1, IActivityService),
+    __metadata("design:paramtypes", [Object, Object])
+], ScmMultiDiffSourceResolver);
+export { ScmMultiDiffSourceResolver };
+class ScmResolvedMultiDiffSource {
+    constructor(_group, _repository) {
+        this._group = _group;
+        this._repository = _repository;
+        this._resources = observableFromEvent(this._group.onDidChangeResources, () => this._group.resources.map(e => new MultiDiffEditorItem(e.multiDiffEditorOriginalUri, e.multiDiffEditorModifiedUri, e.sourceUri)));
+        this.resources = new ValueWithChangeEventFromObservable(this._resources);
+        this.contextKeys = {
+            scmResourceGroup: this._group.id,
+            scmProvider: this._repository.provider.contextValue,
+        };
+    }
+}
+let ScmMultiDiffSourceResolverContribution = class ScmMultiDiffSourceResolverContribution extends Disposable {
+    static { this.ID = 'workbench.contrib.scmMultiDiffSourceResolver'; }
+    constructor(instantiationService, multiDiffSourceResolverService) {
+        super();
+        this._register(multiDiffSourceResolverService.registerResolver(instantiationService.createInstance(ScmMultiDiffSourceResolver)));
+    }
+};
+ScmMultiDiffSourceResolverContribution = __decorate([
+    __param(0, IInstantiationService),
+    __param(1, IMultiDiffSourceResolverService),
+    __metadata("design:paramtypes", [Object, Object])
+], ScmMultiDiffSourceResolverContribution);
+export { ScmMultiDiffSourceResolverContribution };
+export class OpenScmGroupAction extends Action2 {
+    static async openMultiFileDiffEditor(editorService, label, repositoryRootUri, resourceGroupId, options) {
+        if (!repositoryRootUri) {
+            return;
+        }
+        const multiDiffSource = ScmMultiDiffSourceResolver.getMultiDiffSourceUri(repositoryRootUri.toString(), resourceGroupId);
+        return await editorService.openEditor({ label, multiDiffSource, options });
+    }
+    constructor() {
+        super({
+            id: '_workbench.openScmMultiDiffEditor',
+            title: localize2('viewChanges', 'View Changes'),
+            f1: false
+        });
+    }
+    async run(accessor, options) {
+        const editorService = accessor.get(IEditorService);
+        await OpenScmGroupAction.openMultiFileDiffEditor(editorService, options.title, URI.revive(options.repositoryUri), options.resourceGroupId);
+    }
+}

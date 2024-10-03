@@ -1,2 +1,467 @@
-var N=Object.defineProperty;var A=Object.getOwnPropertyDescriptor;var m=(n,s,e,t)=>{for(var i=t>1?void 0:t?A(s,e):s,r=n.length-1,o;r>=0;r--)(o=n[r])&&(i=(t?o(s,e,i):o(i))||i);return t&&i&&N(s,e,i),i},u=(n,s)=>(e,t)=>s(e,t,n);import*as T from"../../../../../base/browser/dom.js";import{Delayer as B}from"../../../../../base/common/async.js";import"../../../../../base/common/buffer.js";import{Event as E}from"../../../../../base/common/event.js";import{Iterable as F}from"../../../../../base/common/iterator.js";import{Lazy as z}from"../../../../../base/common/lazy.js";import{Disposable as v,MutableDisposable as c,combinedDisposable as V,toDisposable as H}from"../../../../../base/common/lifecycle.js";import"../../../../../base/common/uri.js";import"../../../../../editor/browser/editorBrowser.js";import{CodeEditorWidget as U}from"../../../../../editor/browser/widget/codeEditor/codeEditorWidget.js";import{EmbeddedCodeEditorWidget as G}from"../../../../../editor/browser/widget/codeEditor/embeddedCodeEditorWidget.js";import{DiffEditorWidget as K}from"../../../../../editor/browser/widget/diffEditor/diffEditorWidget.js";import{EmbeddedDiffEditorWidget as P}from"../../../../../editor/browser/widget/diffEditor/embeddedDiffEditorWidget.js";import{MarkdownRenderer as X}from"../../../../../editor/browser/widget/markdownRenderer/browser/markdownRenderer.js";import"../../../../../editor/common/config/editorOptions.js";import{ITextModelService as R}from"../../../../../editor/common/services/resolverService.js";import{peekViewResultsBackground as $}from"../../../../../editor/contrib/peekView/browser/peekView.js";import{localize as p}from"../../../../../nls.js";import{IInstantiationService as C}from"../../../../../platform/instantiation/common/instantiation.js";import{TerminalCapability as M}from"../../../../../platform/terminal/common/capabilities/capabilities.js";import{TerminalCapabilityStore as q}from"../../../../../platform/terminal/common/capabilities/terminalCapabilityStore.js";import{formatMessageForTerminal as J}from"../../../../../platform/terminal/common/terminalStrings.js";import{IWorkspaceContextService as Q}from"../../../../../platform/workspace/common/workspace.js";import{EditorModel as Y}from"../../../../common/editor/editorModel.js";import{PANEL_BACKGROUND as Z,SIDE_BAR_BACKGROUND as j}from"../../../../common/theme.js";import{IViewDescriptorService as ee,ViewContainerLocation as te}from"../../../../common/views.js";import{DetachedProcessInfo as ie}from"../../../terminal/browser/detachedTerminal.js";import{ITerminalService as re}from"../../../terminal/browser/terminal.js";import{getXtermScaledDimensions as oe}from"../../../terminal/browser/xterm/xtermTerminal.js";import{TERMINAL_BACKGROUND_COLOR as ae}from"../../../terminal/common/terminalColorRegistry.js";import{colorizeTestMessageInEditor as ne}from"../testMessageColorizer.js";import{MessageSubject as f,TaskSubject as se,TestOutputSubject as x}from"./testResultsSubject.js";import{Testing as le}from"../../common/constants.js";import{MutableObservableValue as L}from"../../common/observableValue.js";import{LiveTestResult as k,TestResultItemChangeReason as de}from"../../common/testResult.js";import{ITestMessage as O,TestMessageType as h,getMarkId as W}from"../../common/testTypes.js";class ue extends Y{constructor(e,t){super();this._original=e;this._modified=t}original=this._original.object.textEditorModel;modified=this._modified.object.textEditorModel;dispose(){super.dispose(),this._original.dispose(),this._modified.dispose()}}const I={scrollBeyondLastLine:!1,links:!0,lineNumbers:"off",glyphMargin:!1,scrollbar:{verticalScrollbarSize:14,horizontal:"auto",useShadows:!1,verticalHasArrows:!1,horizontalHasArrows:!1,alwaysConsumeMouseWheel:!1},overviewRulerLanes:0,fixedOverflowWidgets:!0,readOnly:!0,stickyScroll:{enabled:!1},minimap:{enabled:!1},automaticLayout:!1},w={...I,enableSplitViewResizing:!0,isInEmbeddedEditor:!0,renderOverviewRuler:!1,ignoreTrimWhitespace:!1,renderSideBySide:!0,useInlineViewWhenSpaceIsLimited:!1,originalAriaLabel:p("testingOutputExpected","Expected result"),modifiedAriaLabel:p("testingOutputActual","Actual result"),diffAlgorithm:"advanced"};let y=class extends v{constructor(e,t,i,r){super();this.editor=e;this.container=t;this.instantiationService=i;this.modelService=r}widget=this._register(new c);model=this._register(new c);dimension;get onDidContentSizeChange(){return this.widget.value?.onDidContentSizeChange||E.None}async update(e){if(!(e instanceof f))return this.clear(),!1;const t=e.message;if(!O.isDiffable(t))return this.clear(),!1;const[i,r]=await Promise.all([this.modelService.createModelReference(e.expectedUri),this.modelService.createModelReference(e.actualUri)]),o=this.model.value=new ue(i,r);return this.widget.value||(this.widget.value=this.editor?this.instantiationService.createInstance(P,this.container,w,{},this.editor):this.instantiationService.createInstance(K,this.container,w,{}),this.dimension&&this.widget.value.layout(this.dimension)),this.widget.value.setModel(o),this.widget.value.updateOptions(this.getOptions(_(t.expected)||_(t.actual))),!0}clear(){this.model.clear(),this.widget.clear()}layout(e,t){this.dimension=e;const i=this.widget.value;if(!i)return;if(i.layout(e),!t)return e.height;const r=Math.min(1e4,Math.max(i.getOriginalEditor().getContentHeight(),i.getModifiedEditor().getContentHeight()));return i.layout({height:r,width:e.width}),r}getOptions(e){return e?{...w,lineNumbers:"on"}:{...w,lineNumbers:"off"}}};y=m([u(2,C),u(3,R)],y);let D=class extends v{constructor(e,t){super();this.container=e;this.instantiationService=t;this._register(H(()=>this.clear()))}markdown=new z(()=>this._register(this.instantiationService.createInstance(X,{})));element;async update(e){if(!(e instanceof f))return this.clear(),!1;const t=e.message;if(O.isDiffable(t)||typeof t.message=="string")return this.clear(),!1;const i=this._register(this.markdown.value.render(t.message,{}));return i.element.style.userSelect="text",i.element.classList.add("preview-text"),this.container.appendChild(i.element),this.element=i.element,!0}layout(e){if(this.element)return this.element.style.width=`${e.width-32}px`,this.element.clientHeight}clear(){this.element&&(this.element.remove(),this.element=void 0)}};D=m([u(1,C)],D);let S=class extends v{constructor(e,t,i,r){super();this.editor=e;this.container=t;this.instantiationService=i;this.modelService=r}widgetDecorations=this._register(new c);widget=this._register(new c);model=this._register(new c);dimension;get onDidContentSizeChange(){return this.widget.value?.onDidContentSizeChange||E.None}async update(e){if(!(e instanceof f))return this.clear(),!1;const t=e.message;if(O.isDiffable(t)||t.type===h.Output||typeof t.message!="string")return this.clear(),!1;const i=this.model.value=await this.modelService.createModelReference(e.messageUri);return this.widget.value||(this.widget.value=this.editor?this.instantiationService.createInstance(G,this.container,I,{},this.editor):this.instantiationService.createInstance(U,this.container,I,{isSimpleWidget:!0}),this.dimension&&this.widget.value.layout(this.dimension)),this.widget.value.setModel(i.object.textEditorModel),this.widget.value.updateOptions(I),this.widgetDecorations.value=ne(t.message,this.widget.value),!0}clear(){this.widgetDecorations.clear(),this.widget.clear(),this.model.clear()}layout(e,t){this.dimension=e;const i=this.widget.value;if(!i)return;if(i.layout(e),!t)return e.height;const r=i.getContentHeight();return i.layout({height:r,width:e.width}),r}};S=m([u(2,C),u(3,R)],S);let b=class extends v{constructor(e,t,i,r,o){super();this.container=e;this.isInPeekView=t;this.terminalService=i;this.viewDescriptorService=r;this.workspaceContext=o}dimensions;terminalCwd=this._register(new L(""));xtermLayoutDelayer=this._register(new B(50));terminal=this._register(new c);outputDataListener=this._register(new c);async makeTerminal(){const e=this.terminal.value;if(e)return e.xterm.clearBuffer(),e.xterm.clearSearchDecorations(),e.xterm.write("\x1Bc"),e;const t=new q,i=this.terminalCwd;return t.add(M.CwdDetection,{type:M.CwdDetection,get cwds(){return[i.value]},onDidChangeCwd:i.onDidChange,getCwd:()=>i.value,updateCwd:()=>{}}),this.terminal.value=await this.terminalService.createDetachedTerminal({rows:10,cols:80,readonly:!0,capabilities:t,processInfo:new ie({initialCwd:i.value}),colorProvider:{getBackgroundColor:r=>{const o=r.getColor(ae);return o||(this.isInPeekView?r.getColor($):this.viewDescriptorService.getViewLocationById(le.ResultsViewId)===te.Panel?r.getColor(Z):r.getColor(j))}}})}async update(e){if(this.outputDataListener.clear(),e instanceof se)await this.updateForTaskSubject(e);else if(e instanceof x||e instanceof f&&e.message.type===h.Output)await this.updateForTestSubject(e);else return this.clear(),!1;return!0}async updateForTestSubject(e){const t=this,i=e instanceof x?e.test.item:e.test,r=await this.updateGenerically({subject:e,noOutputMessage:p("caseNoOutput","The test case did not report any output."),getTarget:o=>o?.tasks[e.taskIndex].output,*doInitialWrite(o,d){t.updateCwd(i.uri);const l=e instanceof x?e.test:d.getStateById(i.extId);if(l)for(const a of l.tasks[e.taskIndex].messages)a.type===h.Output&&(yield*o.getRangeIter(a.offset,a.length))},doListenForMoreData:(o,d,l)=>d.onChange(a=>{if(a.reason===de.NewMessage&&a.item.item.extId===i.extId&&a.message.type===h.Output)for(const g of o.getRangeIter(a.message.offset,a.message.length))l(g.buffer)})});e instanceof f&&e.message.type===h.Output&&e.message.marker!==void 0&&r?.xterm.selectMarkedRange(W(e.message.marker,!0),W(e.message.marker,!1),!0)}updateForTaskSubject(e){return this.updateGenerically({subject:e,noOutputMessage:p("runNoOutput","The test run did not record any output."),getTarget:t=>t?.tasks[e.taskIndex],doInitialWrite:(t,i)=>(this.updateCwd(F.find(i.tests,r=>!!r.item.uri)?.item.uri),t.output.buffers),doListenForMoreData:(t,i,r)=>t.output.onDidWriteData(o=>r(o.buffer))})}async updateGenerically(e){const t=e.subject.result,i=e.getTarget(t);if(!i)return this.clear();const r=await this.makeTerminal();let o=!1;const d=new L(0);if(t instanceof k)for(const l of e.doInitialWrite(i,t))o||=l.byteLength>0,d.value++,r.xterm.write(l.buffer,()=>d.value--);else o=!0,this.writeNotice(r,p("runNoOutputForPast","Test output is only available for new test runs."));if(this.attachTerminalToDom(r),this.outputDataListener.clear(),t instanceof k&&!t.completedAt){const l=t.onComplete(()=>{o||this.writeNotice(r,e.noOutputMessage)}),a=e.doListenForMoreData(i,t,g=>{r.xterm.write(g),o||=g.byteLength>0});this.outputDataListener.value=V(l,a)}return!this.outputDataListener.value&&!o&&this.writeNotice(r,e.noOutputMessage),d.value>0&&await new Promise(l=>{const a=d.onDidChange(()=>{d.value===0&&(a.dispose(),l())})}),r}updateCwd(e){const t=e&&this.workspaceContext.getWorkspaceFolder(e)||this.workspaceContext.getWorkspace().folders[0];t&&(this.terminalCwd.value=t.uri.fsPath)}writeNotice(e,t){e.xterm.write(J(t))}attachTerminalToDom(e){e.xterm.write("\x1B[?25l"),T.scheduleAtNextAnimationFrame(T.getWindow(this.container),()=>this.layoutTerminal(e)),e.attachToElement(this.container,{enableGpu:!1})}clear(){this.outputDataListener.clear(),this.xtermLayoutDelayer.cancel(),this.terminal.clear()}layout(e){if(this.dimensions=e,this.terminal.value)return this.layoutTerminal(this.terminal.value,e.width,e.height),e.height}layoutTerminal({xterm:e},t=this.dimensions?.width??this.container.clientWidth,i=this.dimensions?.height??this.container.clientHeight){t-=30,this.xtermLayoutDelayer.trigger(()=>{const r=oe(T.getWindow(this.container),e.getFont(),t,i);r&&e.resize(r.cols,r.rows)})}};b=m([u(2,re),u(3,ee),u(4,Q)],b);const _=n=>!!n&&n.includes(`
-`);export{y as DiffContentProvider,D as MarkdownTestMessagePeek,S as PlainTextMessagePeek,b as TerminalMessagePeek};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../../base/browser/dom.js';
+import { Delayer } from '../../../../../base/common/async.js';
+import { Event } from '../../../../../base/common/event.js';
+import { Iterable } from '../../../../../base/common/iterator.js';
+import { Lazy } from '../../../../../base/common/lazy.js';
+import { Disposable, MutableDisposable, combinedDisposable, toDisposable } from '../../../../../base/common/lifecycle.js';
+import { CodeEditorWidget } from '../../../../../editor/browser/widget/codeEditor/codeEditorWidget.js';
+import { EmbeddedCodeEditorWidget } from '../../../../../editor/browser/widget/codeEditor/embeddedCodeEditorWidget.js';
+import { DiffEditorWidget } from '../../../../../editor/browser/widget/diffEditor/diffEditorWidget.js';
+import { EmbeddedDiffEditorWidget } from '../../../../../editor/browser/widget/diffEditor/embeddedDiffEditorWidget.js';
+import { MarkdownRenderer } from '../../../../../editor/browser/widget/markdownRenderer/browser/markdownRenderer.js';
+import { ITextModelService } from '../../../../../editor/common/services/resolverService.js';
+import { peekViewResultsBackground } from '../../../../../editor/contrib/peekView/browser/peekView.js';
+import { localize } from '../../../../../nls.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { TerminalCapabilityStore } from '../../../../../platform/terminal/common/capabilities/terminalCapabilityStore.js';
+import { formatMessageForTerminal } from '../../../../../platform/terminal/common/terminalStrings.js';
+import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
+import { EditorModel } from '../../../../common/editor/editorModel.js';
+import { PANEL_BACKGROUND, SIDE_BAR_BACKGROUND } from '../../../../common/theme.js';
+import { IViewDescriptorService } from '../../../../common/views.js';
+import { DetachedProcessInfo } from '../../../terminal/browser/detachedTerminal.js';
+import { ITerminalService } from '../../../terminal/browser/terminal.js';
+import { getXtermScaledDimensions } from '../../../terminal/browser/xterm/xtermTerminal.js';
+import { TERMINAL_BACKGROUND_COLOR } from '../../../terminal/common/terminalColorRegistry.js';
+import { colorizeTestMessageInEditor } from '../testMessageColorizer.js';
+import { MessageSubject, TaskSubject, TestOutputSubject } from './testResultsSubject.js';
+import { MutableObservableValue } from '../../common/observableValue.js';
+import { LiveTestResult } from '../../common/testResult.js';
+import { ITestMessage, getMarkId } from '../../common/testTypes.js';
+class SimpleDiffEditorModel extends EditorModel {
+    constructor(_original, _modified) {
+        super();
+        this._original = _original;
+        this._modified = _modified;
+        this.original = this._original.object.textEditorModel;
+        this.modified = this._modified.object.textEditorModel;
+    }
+    dispose() {
+        super.dispose();
+        this._original.dispose();
+        this._modified.dispose();
+    }
+}
+const commonEditorOptions = {
+    scrollBeyondLastLine: false,
+    links: true,
+    lineNumbers: 'off',
+    glyphMargin: false,
+    scrollbar: {
+        verticalScrollbarSize: 14,
+        horizontal: 'auto',
+        useShadows: false,
+        verticalHasArrows: false,
+        horizontalHasArrows: false,
+        alwaysConsumeMouseWheel: false
+    },
+    overviewRulerLanes: 0,
+    fixedOverflowWidgets: true,
+    readOnly: true,
+    stickyScroll: { enabled: false },
+    minimap: { enabled: false },
+    automaticLayout: false,
+};
+const diffEditorOptions = {
+    ...commonEditorOptions,
+    enableSplitViewResizing: true,
+    isInEmbeddedEditor: true,
+    renderOverviewRuler: false,
+    ignoreTrimWhitespace: false,
+    renderSideBySide: true,
+    useInlineViewWhenSpaceIsLimited: false,
+    originalAriaLabel: localize('testingOutputExpected', 'Expected result'),
+    modifiedAriaLabel: localize('testingOutputActual', 'Actual result'),
+    diffAlgorithm: 'advanced',
+};
+let DiffContentProvider = class DiffContentProvider extends Disposable {
+    get onDidContentSizeChange() {
+        return this.widget.value?.onDidContentSizeChange || Event.None;
+    }
+    constructor(editor, container, instantiationService, modelService) {
+        super();
+        this.editor = editor;
+        this.container = container;
+        this.instantiationService = instantiationService;
+        this.modelService = modelService;
+        this.widget = this._register(new MutableDisposable());
+        this.model = this._register(new MutableDisposable());
+    }
+    async update(subject) {
+        if (!(subject instanceof MessageSubject)) {
+            this.clear();
+            return false;
+        }
+        const message = subject.message;
+        if (!ITestMessage.isDiffable(message)) {
+            this.clear();
+            return false;
+        }
+        const [original, modified] = await Promise.all([
+            this.modelService.createModelReference(subject.expectedUri),
+            this.modelService.createModelReference(subject.actualUri),
+        ]);
+        const model = this.model.value = new SimpleDiffEditorModel(original, modified);
+        if (!this.widget.value) {
+            this.widget.value = this.editor ? this.instantiationService.createInstance(EmbeddedDiffEditorWidget, this.container, diffEditorOptions, {}, this.editor) : this.instantiationService.createInstance(DiffEditorWidget, this.container, diffEditorOptions, {});
+            if (this.dimension) {
+                this.widget.value.layout(this.dimension);
+            }
+        }
+        this.widget.value.setModel(model);
+        this.widget.value.updateOptions(this.getOptions(isMultiline(message.expected) || isMultiline(message.actual)));
+        return true;
+    }
+    clear() {
+        this.model.clear();
+        this.widget.clear();
+    }
+    layout(dimensions, hasMultipleFrames) {
+        this.dimension = dimensions;
+        const editor = this.widget.value;
+        if (!editor) {
+            return;
+        }
+        editor.layout(dimensions);
+        if (!hasMultipleFrames) {
+            return dimensions.height;
+        }
+        const height = Math.min(10000, Math.max(editor.getOriginalEditor().getContentHeight(), editor.getModifiedEditor().getContentHeight()));
+        editor.layout({ height, width: dimensions.width });
+        return height;
+    }
+    getOptions(isMultiline) {
+        return isMultiline
+            ? { ...diffEditorOptions, lineNumbers: 'on' }
+            : { ...diffEditorOptions, lineNumbers: 'off' };
+    }
+};
+DiffContentProvider = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, ITextModelService),
+    __metadata("design:paramtypes", [Object, HTMLElement, Object, Object])
+], DiffContentProvider);
+export { DiffContentProvider };
+let MarkdownTestMessagePeek = class MarkdownTestMessagePeek extends Disposable {
+    constructor(container, instantiationService) {
+        super();
+        this.container = container;
+        this.instantiationService = instantiationService;
+        this.markdown = new Lazy(() => this._register(this.instantiationService.createInstance(MarkdownRenderer, {})));
+        this._register(toDisposable(() => this.clear()));
+    }
+    async update(subject) {
+        if (!(subject instanceof MessageSubject)) {
+            this.clear();
+            return false;
+        }
+        const message = subject.message;
+        if (ITestMessage.isDiffable(message) || typeof message.message === 'string') {
+            this.clear();
+            return false;
+        }
+        const rendered = this._register(this.markdown.value.render(message.message, {}));
+        rendered.element.style.userSelect = 'text';
+        rendered.element.classList.add('preview-text');
+        this.container.appendChild(rendered.element);
+        this.element = rendered.element;
+        return true;
+    }
+    layout(dimension) {
+        if (!this.element) {
+            return undefined;
+        }
+        this.element.style.width = `${dimension.width - 32}px`;
+        return this.element.clientHeight;
+    }
+    clear() {
+        if (this.element) {
+            this.element.remove();
+            this.element = undefined;
+        }
+    }
+};
+MarkdownTestMessagePeek = __decorate([
+    __param(1, IInstantiationService),
+    __metadata("design:paramtypes", [HTMLElement, Object])
+], MarkdownTestMessagePeek);
+export { MarkdownTestMessagePeek };
+let PlainTextMessagePeek = class PlainTextMessagePeek extends Disposable {
+    get onDidContentSizeChange() {
+        return this.widget.value?.onDidContentSizeChange || Event.None;
+    }
+    constructor(editor, container, instantiationService, modelService) {
+        super();
+        this.editor = editor;
+        this.container = container;
+        this.instantiationService = instantiationService;
+        this.modelService = modelService;
+        this.widgetDecorations = this._register(new MutableDisposable());
+        this.widget = this._register(new MutableDisposable());
+        this.model = this._register(new MutableDisposable());
+    }
+    async update(subject) {
+        if (!(subject instanceof MessageSubject)) {
+            this.clear();
+            return false;
+        }
+        const message = subject.message;
+        if (ITestMessage.isDiffable(message) || message.type === 1 || typeof message.message !== 'string') {
+            this.clear();
+            return false;
+        }
+        const modelRef = this.model.value = await this.modelService.createModelReference(subject.messageUri);
+        if (!this.widget.value) {
+            this.widget.value = this.editor ? this.instantiationService.createInstance(EmbeddedCodeEditorWidget, this.container, commonEditorOptions, {}, this.editor) : this.instantiationService.createInstance(CodeEditorWidget, this.container, commonEditorOptions, { isSimpleWidget: true });
+            if (this.dimension) {
+                this.widget.value.layout(this.dimension);
+            }
+        }
+        this.widget.value.setModel(modelRef.object.textEditorModel);
+        this.widget.value.updateOptions(commonEditorOptions);
+        this.widgetDecorations.value = colorizeTestMessageInEditor(message.message, this.widget.value);
+        return true;
+    }
+    clear() {
+        this.widgetDecorations.clear();
+        this.widget.clear();
+        this.model.clear();
+    }
+    layout(dimensions, hasMultipleFrames) {
+        this.dimension = dimensions;
+        const editor = this.widget.value;
+        if (!editor) {
+            return;
+        }
+        editor.layout(dimensions);
+        if (!hasMultipleFrames) {
+            return dimensions.height;
+        }
+        const height = editor.getContentHeight();
+        editor.layout({ height, width: dimensions.width });
+        return height;
+    }
+};
+PlainTextMessagePeek = __decorate([
+    __param(2, IInstantiationService),
+    __param(3, ITextModelService),
+    __metadata("design:paramtypes", [Object, HTMLElement, Object, Object])
+], PlainTextMessagePeek);
+export { PlainTextMessagePeek };
+let TerminalMessagePeek = class TerminalMessagePeek extends Disposable {
+    constructor(container, isInPeekView, terminalService, viewDescriptorService, workspaceContext) {
+        super();
+        this.container = container;
+        this.isInPeekView = isInPeekView;
+        this.terminalService = terminalService;
+        this.viewDescriptorService = viewDescriptorService;
+        this.workspaceContext = workspaceContext;
+        this.terminalCwd = this._register(new MutableObservableValue(''));
+        this.xtermLayoutDelayer = this._register(new Delayer(50));
+        this.terminal = this._register(new MutableDisposable());
+        this.outputDataListener = this._register(new MutableDisposable());
+    }
+    async makeTerminal() {
+        const prev = this.terminal.value;
+        if (prev) {
+            prev.xterm.clearBuffer();
+            prev.xterm.clearSearchDecorations();
+            prev.xterm.write(`\x1bc`);
+            return prev;
+        }
+        const capabilities = new TerminalCapabilityStore();
+        const cwd = this.terminalCwd;
+        capabilities.add(0, {
+            type: 0,
+            get cwds() { return [cwd.value]; },
+            onDidChangeCwd: cwd.onDidChange,
+            getCwd: () => cwd.value,
+            updateCwd: () => { },
+        });
+        return this.terminal.value = await this.terminalService.createDetachedTerminal({
+            rows: 10,
+            cols: 80,
+            readonly: true,
+            capabilities,
+            processInfo: new DetachedProcessInfo({ initialCwd: cwd.value }),
+            colorProvider: {
+                getBackgroundColor: theme => {
+                    const terminalBackground = theme.getColor(TERMINAL_BACKGROUND_COLOR);
+                    if (terminalBackground) {
+                        return terminalBackground;
+                    }
+                    if (this.isInPeekView) {
+                        return theme.getColor(peekViewResultsBackground);
+                    }
+                    const location = this.viewDescriptorService.getViewLocationById("workbench.panel.testResults.view");
+                    return location === 1
+                        ? theme.getColor(PANEL_BACKGROUND)
+                        : theme.getColor(SIDE_BAR_BACKGROUND);
+                },
+            }
+        });
+    }
+    async update(subject) {
+        this.outputDataListener.clear();
+        if (subject instanceof TaskSubject) {
+            await this.updateForTaskSubject(subject);
+        }
+        else if (subject instanceof TestOutputSubject || (subject instanceof MessageSubject && subject.message.type === 1)) {
+            await this.updateForTestSubject(subject);
+        }
+        else {
+            this.clear();
+            return false;
+        }
+        return true;
+    }
+    async updateForTestSubject(subject) {
+        const that = this;
+        const testItem = subject instanceof TestOutputSubject ? subject.test.item : subject.test;
+        const terminal = await this.updateGenerically({
+            subject,
+            noOutputMessage: localize('caseNoOutput', 'The test case did not report any output.'),
+            getTarget: result => result?.tasks[subject.taskIndex].output,
+            *doInitialWrite(output, results) {
+                that.updateCwd(testItem.uri);
+                const state = subject instanceof TestOutputSubject ? subject.test : results.getStateById(testItem.extId);
+                if (!state) {
+                    return;
+                }
+                for (const message of state.tasks[subject.taskIndex].messages) {
+                    if (message.type === 1) {
+                        yield* output.getRangeIter(message.offset, message.length);
+                    }
+                }
+            },
+            doListenForMoreData: (output, result, write) => result.onChange(e => {
+                if (e.reason === 2 && e.item.item.extId === testItem.extId && e.message.type === 1) {
+                    for (const chunk of output.getRangeIter(e.message.offset, e.message.length)) {
+                        write(chunk.buffer);
+                    }
+                }
+            }),
+        });
+        if (subject instanceof MessageSubject && subject.message.type === 1 && subject.message.marker !== undefined) {
+            terminal?.xterm.selectMarkedRange(getMarkId(subject.message.marker, true), getMarkId(subject.message.marker, false), true);
+        }
+    }
+    updateForTaskSubject(subject) {
+        return this.updateGenerically({
+            subject,
+            noOutputMessage: localize('runNoOutput', 'The test run did not record any output.'),
+            getTarget: result => result?.tasks[subject.taskIndex],
+            doInitialWrite: (task, result) => {
+                this.updateCwd(Iterable.find(result.tests, t => !!t.item.uri)?.item.uri);
+                return task.output.buffers;
+            },
+            doListenForMoreData: (task, _result, write) => task.output.onDidWriteData(e => write(e.buffer)),
+        });
+    }
+    async updateGenerically(opts) {
+        const result = opts.subject.result;
+        const target = opts.getTarget(result);
+        if (!target) {
+            return this.clear();
+        }
+        const terminal = await this.makeTerminal();
+        let didWriteData = false;
+        const pendingWrites = new MutableObservableValue(0);
+        if (result instanceof LiveTestResult) {
+            for (const chunk of opts.doInitialWrite(target, result)) {
+                didWriteData ||= chunk.byteLength > 0;
+                pendingWrites.value++;
+                terminal.xterm.write(chunk.buffer, () => pendingWrites.value--);
+            }
+        }
+        else {
+            didWriteData = true;
+            this.writeNotice(terminal, localize('runNoOutputForPast', 'Test output is only available for new test runs.'));
+        }
+        this.attachTerminalToDom(terminal);
+        this.outputDataListener.clear();
+        if (result instanceof LiveTestResult && !result.completedAt) {
+            const l1 = result.onComplete(() => {
+                if (!didWriteData) {
+                    this.writeNotice(terminal, opts.noOutputMessage);
+                }
+            });
+            const l2 = opts.doListenForMoreData(target, result, data => {
+                terminal.xterm.write(data);
+                didWriteData ||= data.byteLength > 0;
+            });
+            this.outputDataListener.value = combinedDisposable(l1, l2);
+        }
+        if (!this.outputDataListener.value && !didWriteData) {
+            this.writeNotice(terminal, opts.noOutputMessage);
+        }
+        if (pendingWrites.value > 0) {
+            await new Promise(resolve => {
+                const l = pendingWrites.onDidChange(() => {
+                    if (pendingWrites.value === 0) {
+                        l.dispose();
+                        resolve();
+                    }
+                });
+            });
+        }
+        return terminal;
+    }
+    updateCwd(testUri) {
+        const wf = (testUri && this.workspaceContext.getWorkspaceFolder(testUri))
+            || this.workspaceContext.getWorkspace().folders[0];
+        if (wf) {
+            this.terminalCwd.value = wf.uri.fsPath;
+        }
+    }
+    writeNotice(terminal, str) {
+        terminal.xterm.write(formatMessageForTerminal(str));
+    }
+    attachTerminalToDom(terminal) {
+        terminal.xterm.write('\x1b[?25l');
+        dom.scheduleAtNextAnimationFrame(dom.getWindow(this.container), () => this.layoutTerminal(terminal));
+        terminal.attachToElement(this.container, { enableGpu: false });
+    }
+    clear() {
+        this.outputDataListener.clear();
+        this.xtermLayoutDelayer.cancel();
+        this.terminal.clear();
+    }
+    layout(dimensions) {
+        this.dimensions = dimensions;
+        if (this.terminal.value) {
+            this.layoutTerminal(this.terminal.value, dimensions.width, dimensions.height);
+            return dimensions.height;
+        }
+        return undefined;
+    }
+    layoutTerminal({ xterm }, width = this.dimensions?.width ?? this.container.clientWidth, height = this.dimensions?.height ?? this.container.clientHeight) {
+        width -= 10 + 20;
+        this.xtermLayoutDelayer.trigger(() => {
+            const scaled = getXtermScaledDimensions(dom.getWindow(this.container), xterm.getFont(), width, height);
+            if (scaled) {
+                xterm.resize(scaled.cols, scaled.rows);
+            }
+        });
+    }
+};
+TerminalMessagePeek = __decorate([
+    __param(2, ITerminalService),
+    __param(3, IViewDescriptorService),
+    __param(4, IWorkspaceContextService),
+    __metadata("design:paramtypes", [HTMLElement, Boolean, Object, Object, Object])
+], TerminalMessagePeek);
+export { TerminalMessagePeek };
+const isMultiline = (str) => !!str && str.includes('\n');

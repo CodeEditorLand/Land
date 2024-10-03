@@ -1,1 +1,1 @@
-const e="comments";export{e as COMMENTS_SECTION};
+export const COMMENTS_SECTION = 'comments';

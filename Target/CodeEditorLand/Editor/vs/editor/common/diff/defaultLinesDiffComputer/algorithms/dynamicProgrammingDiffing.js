@@ -1,1 +1,83 @@
-import{OffsetRange as S}from"../../../core/offsetRange.js";import{SequenceDiff as c,InfiniteTimeout as L,DiffAlgorithmResult as u}from"./diffAlgorithm.js";import{Array2D as D}from"../utils.js";class y{compute(n,i,d=L.instance,p){if(n.length===0||i.length===0)return u.trivial(n,i);const m=new D(n.length,i.length),r=new D(n.length,i.length),o=new D(n.length,i.length);for(let t=0;t<n.length;t++)for(let e=0;e<i.length;e++){if(!d.isValid())return u.trivialTimedOut(n,i);const A=t===0?0:m.get(t-1,e),I=e===0?0:m.get(t,e-1);let l;n.getElement(t)===i.getElement(e)?(t===0||e===0?l=0:l=m.get(t-1,e-1),t>0&&e>0&&r.get(t-1,e-1)===3&&(l+=o.get(t-1,e-1)),l+=p?p(t,e):1):l=-1;const s=Math.max(A,I,l);if(s===l){const v=t>0&&e>0?o.get(t-1,e-1):0;o.set(t,e,v+1),r.set(t,e,3)}else s===A?(o.set(t,e,0),r.set(t,e,1)):s===I&&(o.set(t,e,0),r.set(t,e,2));m.set(t,e,s)}const h=[];let a=n.length,b=i.length;function w(t,e){(t+1!==a||e+1!==b)&&h.push(new c(new S(t+1,a),new S(e+1,b))),a=t,b=e}let g=n.length-1,f=i.length-1;for(;g>=0&&f>=0;)r.get(g,f)===3?(w(g,f),g--,f--):r.get(g,f)===1?g--:f--;return w(-1,-1),h.reverse(),new u(h,!1)}}export{y as DynamicProgrammingDiffing};
+import { OffsetRange } from '../../../core/offsetRange.js';
+import { SequenceDiff, InfiniteTimeout, DiffAlgorithmResult } from './diffAlgorithm.js';
+import { Array2D } from '../utils.js';
+export class DynamicProgrammingDiffing {
+    compute(sequence1, sequence2, timeout = InfiniteTimeout.instance, equalityScore) {
+        if (sequence1.length === 0 || sequence2.length === 0) {
+            return DiffAlgorithmResult.trivial(sequence1, sequence2);
+        }
+        const lcsLengths = new Array2D(sequence1.length, sequence2.length);
+        const directions = new Array2D(sequence1.length, sequence2.length);
+        const lengths = new Array2D(sequence1.length, sequence2.length);
+        for (let s1 = 0; s1 < sequence1.length; s1++) {
+            for (let s2 = 0; s2 < sequence2.length; s2++) {
+                if (!timeout.isValid()) {
+                    return DiffAlgorithmResult.trivialTimedOut(sequence1, sequence2);
+                }
+                const horizontalLen = s1 === 0 ? 0 : lcsLengths.get(s1 - 1, s2);
+                const verticalLen = s2 === 0 ? 0 : lcsLengths.get(s1, s2 - 1);
+                let extendedSeqScore;
+                if (sequence1.getElement(s1) === sequence2.getElement(s2)) {
+                    if (s1 === 0 || s2 === 0) {
+                        extendedSeqScore = 0;
+                    }
+                    else {
+                        extendedSeqScore = lcsLengths.get(s1 - 1, s2 - 1);
+                    }
+                    if (s1 > 0 && s2 > 0 && directions.get(s1 - 1, s2 - 1) === 3) {
+                        extendedSeqScore += lengths.get(s1 - 1, s2 - 1);
+                    }
+                    extendedSeqScore += (equalityScore ? equalityScore(s1, s2) : 1);
+                }
+                else {
+                    extendedSeqScore = -1;
+                }
+                const newValue = Math.max(horizontalLen, verticalLen, extendedSeqScore);
+                if (newValue === extendedSeqScore) {
+                    const prevLen = s1 > 0 && s2 > 0 ? lengths.get(s1 - 1, s2 - 1) : 0;
+                    lengths.set(s1, s2, prevLen + 1);
+                    directions.set(s1, s2, 3);
+                }
+                else if (newValue === horizontalLen) {
+                    lengths.set(s1, s2, 0);
+                    directions.set(s1, s2, 1);
+                }
+                else if (newValue === verticalLen) {
+                    lengths.set(s1, s2, 0);
+                    directions.set(s1, s2, 2);
+                }
+                lcsLengths.set(s1, s2, newValue);
+            }
+        }
+        const result = [];
+        let lastAligningPosS1 = sequence1.length;
+        let lastAligningPosS2 = sequence2.length;
+        function reportDecreasingAligningPositions(s1, s2) {
+            if (s1 + 1 !== lastAligningPosS1 || s2 + 1 !== lastAligningPosS2) {
+                result.push(new SequenceDiff(new OffsetRange(s1 + 1, lastAligningPosS1), new OffsetRange(s2 + 1, lastAligningPosS2)));
+            }
+            lastAligningPosS1 = s1;
+            lastAligningPosS2 = s2;
+        }
+        let s1 = sequence1.length - 1;
+        let s2 = sequence2.length - 1;
+        while (s1 >= 0 && s2 >= 0) {
+            if (directions.get(s1, s2) === 3) {
+                reportDecreasingAligningPositions(s1, s2);
+                s1--;
+                s2--;
+            }
+            else {
+                if (directions.get(s1, s2) === 1) {
+                    s1--;
+                }
+                else {
+                    s2--;
+                }
+            }
+        }
+        reportDecreasingAligningPositions(-1, -1);
+        result.reverse();
+        return new DiffAlgorithmResult(result, false);
+    }
+}

@@ -1,1 +1,78 @@
-import{Codicon as f}from"../../../../base/common/codicons.js";import{AccessibleDiffViewerNext as s,AccessibleDiffViewerPrev as a,CollapseAllUnchangedRegions as g,ExitCompareMove as h,RevertHunkOrSelection as c,ShowAllUnchangedRegions as w,SwitchSide as E,ToggleCollapseUnchangedRegions as I,ToggleShowMovedCodeBlocks as l,ToggleUseInlineViewWhenSpaceIsLimited as m}from"./commands.js";import{EditorContextKeys as o}from"../../../common/editorContextKeys.js";import{localize as d}from"../../../../nls.js";import{MenuId as n,MenuRegistry as r,registerAction2 as i}from"../../../../platform/actions/common/actions.js";import{CommandsRegistry as p}from"../../../../platform/commands/common/commands.js";import{ContextKeyEqualsExpr as u,ContextKeyExpr as e}from"../../../../platform/contextkey/common/contextkey.js";import"./registrations.contribution.js";i(I),i(l),i(m),r.appendMenuItem(n.EditorTitle,{command:{id:new m().desc.id,title:d("useInlineViewWhenSpaceIsLimited","Use Inline View When Space Is Limited"),toggled:e.has("config.diffEditor.useInlineViewWhenSpaceIsLimited"),precondition:e.has("isInDiffEditor")},order:11,group:"1_diff",when:e.and(o.diffEditorRenderSideBySideInlineBreakpointReached,e.has("isInDiffEditor"))}),r.appendMenuItem(n.EditorTitle,{command:{id:new l().desc.id,title:d("showMoves","Show Moved Code Blocks"),icon:f.move,toggled:u.create("config.diffEditor.experimental.showMoves",!0),precondition:e.has("isInDiffEditor")},order:10,group:"1_diff",when:e.has("isInDiffEditor")}),i(c);for(const t of[{icon:f.arrowRight,key:o.diffEditorInlineMode.toNegated()},{icon:f.discard,key:o.diffEditorInlineMode}])r.appendMenuItem(n.DiffEditorHunkToolbar,{command:{id:new c().desc.id,title:d("revertHunk","Revert Block"),icon:t.icon},when:e.and(o.diffEditorModifiedWritable,t.key),order:5,group:"primary"}),r.appendMenuItem(n.DiffEditorSelectionToolbar,{command:{id:new c().desc.id,title:d("revertSelection","Revert Selection"),icon:t.icon},when:e.and(o.diffEditorModifiedWritable,t.key),order:5,group:"primary"});i(E),i(h),i(g),i(w),r.appendMenuItem(n.EditorTitle,{command:{id:s.id,title:d("Open Accessible Diff Viewer","Open Accessible Diff Viewer"),precondition:e.has("isInDiffEditor")},order:10,group:"2_diff",when:e.and(o.accessibleDiffViewerVisible.negate(),e.has("isInDiffEditor"))}),p.registerCommandAlias("editor.action.diffReview.next",s.id),i(s),p.registerCommandAlias("editor.action.diffReview.prev",a.id),i(a);
+import { Codicon } from '../../../../base/common/codicons.js';
+import { AccessibleDiffViewerNext, AccessibleDiffViewerPrev, CollapseAllUnchangedRegions, ExitCompareMove, RevertHunkOrSelection, ShowAllUnchangedRegions, SwitchSide, ToggleCollapseUnchangedRegions, ToggleShowMovedCodeBlocks, ToggleUseInlineViewWhenSpaceIsLimited } from './commands.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import { localize } from '../../../../nls.js';
+import { MenuId, MenuRegistry, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { ContextKeyEqualsExpr, ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import './registrations.contribution.js';
+registerAction2(ToggleCollapseUnchangedRegions);
+registerAction2(ToggleShowMovedCodeBlocks);
+registerAction2(ToggleUseInlineViewWhenSpaceIsLimited);
+MenuRegistry.appendMenuItem(MenuId.EditorTitle, {
+    command: {
+        id: new ToggleUseInlineViewWhenSpaceIsLimited().desc.id,
+        title: localize('useInlineViewWhenSpaceIsLimited', "Use Inline View When Space Is Limited"),
+        toggled: ContextKeyExpr.has('config.diffEditor.useInlineViewWhenSpaceIsLimited'),
+        precondition: ContextKeyExpr.has('isInDiffEditor'),
+    },
+    order: 11,
+    group: '1_diff',
+    when: ContextKeyExpr.and(EditorContextKeys.diffEditorRenderSideBySideInlineBreakpointReached, ContextKeyExpr.has('isInDiffEditor')),
+});
+MenuRegistry.appendMenuItem(MenuId.EditorTitle, {
+    command: {
+        id: new ToggleShowMovedCodeBlocks().desc.id,
+        title: localize('showMoves', "Show Moved Code Blocks"),
+        icon: Codicon.move,
+        toggled: ContextKeyEqualsExpr.create('config.diffEditor.experimental.showMoves', true),
+        precondition: ContextKeyExpr.has('isInDiffEditor'),
+    },
+    order: 10,
+    group: '1_diff',
+    when: ContextKeyExpr.has('isInDiffEditor'),
+});
+registerAction2(RevertHunkOrSelection);
+for (const ctx of [
+    { icon: Codicon.arrowRight, key: EditorContextKeys.diffEditorInlineMode.toNegated() },
+    { icon: Codicon.discard, key: EditorContextKeys.diffEditorInlineMode }
+]) {
+    MenuRegistry.appendMenuItem(MenuId.DiffEditorHunkToolbar, {
+        command: {
+            id: new RevertHunkOrSelection().desc.id,
+            title: localize('revertHunk', "Revert Block"),
+            icon: ctx.icon,
+        },
+        when: ContextKeyExpr.and(EditorContextKeys.diffEditorModifiedWritable, ctx.key),
+        order: 5,
+        group: 'primary',
+    });
+    MenuRegistry.appendMenuItem(MenuId.DiffEditorSelectionToolbar, {
+        command: {
+            id: new RevertHunkOrSelection().desc.id,
+            title: localize('revertSelection', "Revert Selection"),
+            icon: ctx.icon,
+        },
+        when: ContextKeyExpr.and(EditorContextKeys.diffEditorModifiedWritable, ctx.key),
+        order: 5,
+        group: 'primary',
+    });
+}
+registerAction2(SwitchSide);
+registerAction2(ExitCompareMove);
+registerAction2(CollapseAllUnchangedRegions);
+registerAction2(ShowAllUnchangedRegions);
+MenuRegistry.appendMenuItem(MenuId.EditorTitle, {
+    command: {
+        id: AccessibleDiffViewerNext.id,
+        title: localize('Open Accessible Diff Viewer', "Open Accessible Diff Viewer"),
+        precondition: ContextKeyExpr.has('isInDiffEditor'),
+    },
+    order: 10,
+    group: '2_diff',
+    when: ContextKeyExpr.and(EditorContextKeys.accessibleDiffViewerVisible.negate(), ContextKeyExpr.has('isInDiffEditor')),
+});
+CommandsRegistry.registerCommandAlias('editor.action.diffReview.next', AccessibleDiffViewerNext.id);
+registerAction2(AccessibleDiffViewerNext);
+CommandsRegistry.registerCommandAlias('editor.action.diffReview.prev', AccessibleDiffViewerPrev.id);
+registerAction2(AccessibleDiffViewerPrev);

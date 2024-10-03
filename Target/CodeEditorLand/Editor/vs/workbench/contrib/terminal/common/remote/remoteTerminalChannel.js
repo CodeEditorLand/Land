@@ -1,1 +1,265 @@
-var k=Object.defineProperty;var w=Object.getOwnPropertyDescriptor;var _=(m,e,r,t)=>{for(var i=t>1?void 0:t?w(e,r):e,l=m.length-1,c;l>=0;l--)(c=m[l])&&(i=(t?c(e,r,i):c(i))||i);return t&&i&&k(e,r,i),i},s=(m,e)=>(r,t)=>e(r,t,m);import"../../../../../base/common/event.js";import"../../../../../base/common/uri.js";import"../../../../../base/parts/ipc/common/ipc.js";import{IWorkbenchConfigurationService as D}from"../../../../services/configuration/common/configuration.js";import{IRemoteAuthorityResolverService as A}from"../../../../../platform/remote/common/remoteAuthorityResolver.js";import{IWorkspaceContextService as L}from"../../../../../platform/workspace/common/workspace.js";import{serializeEnvironmentDescriptionMap as x,serializeEnvironmentVariableCollection as V}from"../../../../../platform/terminal/common/environmentVariableShared.js";import{IConfigurationResolverService as O}from"../../../../services/configurationResolver/common/configurationResolver.js";import{SideBySideEditor as H,EditorResourceAccessor as M}from"../../../../common/editor.js";import{IEditorService as W}from"../../../../services/editor/common/editorService.js";import{Schemas as P}from"../../../../../base/common/network.js";import{ILabelService as q}from"../../../../../platform/label/common/label.js";import{IEnvironmentVariableService as F}from"../environmentVariable.js";import{ITerminalLogService as G}from"../../../../../platform/terminal/common/terminal.js";import"../../../../../platform/terminal/common/terminalProcess.js";import"../../../../../base/common/platform.js";import"../terminal.js";import"../../../../../platform/terminal/common/capabilities/capabilities.js";import"../../../../../platform/terminal/common/environmentVariable.js";import{RemoteTerminalChannelEvent as o,RemoteTerminalChannelRequest as n}from"./terminal.js";const qe="remoteterminal";let v=class{constructor(e,r,t,i,l,c,I,y,d,g){this._remoteAuthority=e;this._channel=r;this._configurationService=t;this._workspaceContextService=i;this._resolverService=l;this._environmentVariableService=c;this._remoteAuthorityResolverService=I;this._logService=y;this._editorService=d;this._labelService=g}get onPtyHostExit(){return this._channel.listen(o.OnPtyHostExitEvent)}get onPtyHostStart(){return this._channel.listen(o.OnPtyHostStartEvent)}get onPtyHostUnresponsive(){return this._channel.listen(o.OnPtyHostUnresponsiveEvent)}get onPtyHostResponsive(){return this._channel.listen(o.OnPtyHostResponsiveEvent)}get onPtyHostRequestResolveVariables(){return this._channel.listen(o.OnPtyHostRequestResolveVariablesEvent)}get onProcessData(){return this._channel.listen(o.OnProcessDataEvent)}get onProcessExit(){return this._channel.listen(o.OnProcessExitEvent)}get onProcessReady(){return this._channel.listen(o.OnProcessReadyEvent)}get onProcessReplay(){return this._channel.listen(o.OnProcessReplayEvent)}get onProcessOrphanQuestion(){return this._channel.listen(o.OnProcessOrphanQuestion)}get onExecuteCommand(){return this._channel.listen(o.OnExecuteCommand)}get onDidRequestDetach(){return this._channel.listen(o.OnDidRequestDetach)}get onDidChangeProperty(){return this._channel.listen(o.OnDidChangeProperty)}restartPtyHost(){return this._channel.call(n.RestartPtyHost,[])}async createProcess(e,r,t,i,l,c,I,y){await this._configurationService.whenRemoteConfigurationLoaded();const d=Object.create(null),g=t?this._workspaceContextService.getWorkspaceFolder(t)??void 0:void 0;let h;try{h=(await this._resolverService.resolveAnyMap(g,{shellLaunchConfig:e,configuration:r})).resolvedVariables}catch(a){this._logService.error(a)}if(h)for(const[a,u]of h.entries())(/^config:/.test(a)||a==="selectedText"||a==="lineNumber")&&(d[a]=u);const b=[];for(const[a,u]of this._environmentVariableService.collections.entries())b.push([a,V(u.map),x(u.descriptionMap)]);const f=await this._remoteAuthorityResolverService.resolveAuthority(this._remoteAuthority),E=f.options&&f.options.extensionHostEnv,p=this._workspaceContextService.getWorkspace(),S=p.folders,R=t?this._workspaceContextService.getWorkspaceFolder(t):null,T=M.getOriginalUri(this._editorService.activeEditor,{supportSideBySide:H.PRIMARY,filterByScheme:[P.file,P.vscodeUserData,P.vscodeRemote]}),C={configuration:r,resolvedVariables:d,envVariableCollections:b,shellLaunchConfig:e,workspaceId:p.id,workspaceName:this._labelService.getWorkspaceLabel(p),workspaceFolders:S,activeWorkspaceFolder:R,activeFileResource:T,shouldPersistTerminal:l,options:i,cols:c,rows:I,unicodeVersion:y,resolverEnv:E};return await this._channel.call(n.CreateProcess,C)}requestDetachInstance(e,r){return this._channel.call(n.RequestDetachInstance,[e,r])}acceptDetachInstanceReply(e,r){return this._channel.call(n.AcceptDetachInstanceReply,[e,r])}attachToProcess(e){return this._channel.call(n.AttachToProcess,[e])}detachFromProcess(e,r){return this._channel.call(n.DetachFromProcess,[e,r])}listProcesses(){return this._channel.call(n.ListProcesses)}getLatency(){return this._channel.call(n.GetLatency)}getPerformanceMarks(){return this._channel.call(n.GetPerformanceMarks)}reduceConnectionGraceTime(){return this._channel.call(n.ReduceConnectionGraceTime)}processBinary(e,r){return this._channel.call(n.ProcessBinary,[e,r])}start(e){return this._channel.call(n.Start,[e])}input(e,r){return this._channel.call(n.Input,[e,r])}acknowledgeDataEvent(e,r){return this._channel.call(n.AcknowledgeDataEvent,[e,r])}setUnicodeVersion(e,r){return this._channel.call(n.SetUnicodeVersion,[e,r])}shutdown(e,r){return this._channel.call(n.Shutdown,[e,r])}resize(e,r,t){return this._channel.call(n.Resize,[e,r,t])}clearBuffer(e){return this._channel.call(n.ClearBuffer,[e])}getInitialCwd(e){return this._channel.call(n.GetInitialCwd,[e])}getCwd(e){return this._channel.call(n.GetCwd,[e])}orphanQuestionReply(e){return this._channel.call(n.OrphanQuestionReply,[e])}sendCommandResult(e,r,t){return this._channel.call(n.SendCommandResult,[e,r,t])}freePortKillProcess(e){return this._channel.call(n.FreePortKillProcess,[e])}getDefaultSystemShell(e){return this._channel.call(n.GetDefaultSystemShell,[e])}getProfiles(e,r,t){return this._channel.call(n.GetProfiles,[this._workspaceContextService.getWorkspace().id,e,r,t])}acceptPtyHostResolvedVariables(e,r){return this._channel.call(n.AcceptPtyHostResolvedVariables,[e,r])}getEnvironment(){return this._channel.call(n.GetEnvironment)}getWslPath(e,r){return this._channel.call(n.GetWslPath,[e,r])}setTerminalLayoutInfo(e){const t={workspaceId:this._workspaceContextService.getWorkspace().id,tabs:e?e.tabs:[]};return this._channel.call(n.SetTerminalLayoutInfo,t)}updateTitle(e,r,t){return this._channel.call(n.UpdateTitle,[e,r,t])}updateIcon(e,r,t,i){return this._channel.call(n.UpdateIcon,[e,r,t,i])}refreshProperty(e,r){return this._channel.call(n.RefreshProperty,[e,r])}updateProperty(e,r,t){return this._channel.call(n.UpdateProperty,[e,r,t])}getTerminalLayoutInfo(){const r={workspaceId:this._workspaceContextService.getWorkspace().id};return this._channel.call(n.GetTerminalLayoutInfo,r)}reviveTerminalProcesses(e,r,t){return this._channel.call(n.ReviveTerminalProcesses,[e,r,t])}getRevivedPtyNewId(e){return this._channel.call(n.GetRevivedPtyNewId,[e])}serializeTerminalState(e){return this._channel.call(n.SerializeTerminalState,[e])}installAutoReply(e,r){return this._channel.call(n.InstallAutoReply,[e,r])}uninstallAllAutoReplies(){return this._channel.call(n.UninstallAllAutoReplies,[])}};v=_([s(2,D),s(3,L),s(4,O),s(5,F),s(6,A),s(7,G),s(8,W),s(9,q)],v);export{qe as REMOTE_TERMINAL_CHANNEL_NAME,v as RemoteTerminalChannelClient};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IWorkbenchConfigurationService } from '../../../../services/configuration/common/configuration.js';
+import { IRemoteAuthorityResolverService } from '../../../../../platform/remote/common/remoteAuthorityResolver.js';
+import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
+import { serializeEnvironmentDescriptionMap, serializeEnvironmentVariableCollection } from '../../../../../platform/terminal/common/environmentVariableShared.js';
+import { IConfigurationResolverService } from '../../../../services/configurationResolver/common/configurationResolver.js';
+import { SideBySideEditor, EditorResourceAccessor } from '../../../../common/editor.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+import { Schemas } from '../../../../../base/common/network.js';
+import { ILabelService } from '../../../../../platform/label/common/label.js';
+import { IEnvironmentVariableService } from '../environmentVariable.js';
+import { ITerminalLogService } from '../../../../../platform/terminal/common/terminal.js';
+export const REMOTE_TERMINAL_CHANNEL_NAME = 'remoteterminal';
+let RemoteTerminalChannelClient = class RemoteTerminalChannelClient {
+    get onPtyHostExit() {
+        return this._channel.listen("$onPtyHostExitEvent");
+    }
+    get onPtyHostStart() {
+        return this._channel.listen("$onPtyHostStartEvent");
+    }
+    get onPtyHostUnresponsive() {
+        return this._channel.listen("$onPtyHostUnresponsiveEvent");
+    }
+    get onPtyHostResponsive() {
+        return this._channel.listen("$onPtyHostResponsiveEvent");
+    }
+    get onPtyHostRequestResolveVariables() {
+        return this._channel.listen("$onPtyHostRequestResolveVariablesEvent");
+    }
+    get onProcessData() {
+        return this._channel.listen("$onProcessDataEvent");
+    }
+    get onProcessExit() {
+        return this._channel.listen("$onProcessExitEvent");
+    }
+    get onProcessReady() {
+        return this._channel.listen("$onProcessReadyEvent");
+    }
+    get onProcessReplay() {
+        return this._channel.listen("$onProcessReplayEvent");
+    }
+    get onProcessOrphanQuestion() {
+        return this._channel.listen("$onProcessOrphanQuestion");
+    }
+    get onExecuteCommand() {
+        return this._channel.listen("$onExecuteCommand");
+    }
+    get onDidRequestDetach() {
+        return this._channel.listen("$onDidRequestDetach");
+    }
+    get onDidChangeProperty() {
+        return this._channel.listen("$onDidChangeProperty");
+    }
+    constructor(_remoteAuthority, _channel, _configurationService, _workspaceContextService, _resolverService, _environmentVariableService, _remoteAuthorityResolverService, _logService, _editorService, _labelService) {
+        this._remoteAuthority = _remoteAuthority;
+        this._channel = _channel;
+        this._configurationService = _configurationService;
+        this._workspaceContextService = _workspaceContextService;
+        this._resolverService = _resolverService;
+        this._environmentVariableService = _environmentVariableService;
+        this._remoteAuthorityResolverService = _remoteAuthorityResolverService;
+        this._logService = _logService;
+        this._editorService = _editorService;
+        this._labelService = _labelService;
+    }
+    restartPtyHost() {
+        return this._channel.call("$restartPtyHost", []);
+    }
+    async createProcess(shellLaunchConfig, configuration, activeWorkspaceRootUri, options, shouldPersistTerminal, cols, rows, unicodeVersion) {
+        await this._configurationService.whenRemoteConfigurationLoaded();
+        const resolvedVariables = Object.create(null);
+        const lastActiveWorkspace = activeWorkspaceRootUri ? this._workspaceContextService.getWorkspaceFolder(activeWorkspaceRootUri) ?? undefined : undefined;
+        let allResolvedVariables = undefined;
+        try {
+            allResolvedVariables = (await this._resolverService.resolveAnyMap(lastActiveWorkspace, {
+                shellLaunchConfig,
+                configuration
+            })).resolvedVariables;
+        }
+        catch (err) {
+            this._logService.error(err);
+        }
+        if (allResolvedVariables) {
+            for (const [name, value] of allResolvedVariables.entries()) {
+                if (/^config:/.test(name) || name === 'selectedText' || name === 'lineNumber') {
+                    resolvedVariables[name] = value;
+                }
+            }
+        }
+        const envVariableCollections = [];
+        for (const [k, v] of this._environmentVariableService.collections.entries()) {
+            envVariableCollections.push([k, serializeEnvironmentVariableCollection(v.map), serializeEnvironmentDescriptionMap(v.descriptionMap)]);
+        }
+        const resolverResult = await this._remoteAuthorityResolverService.resolveAuthority(this._remoteAuthority);
+        const resolverEnv = resolverResult.options && resolverResult.options.extensionHostEnv;
+        const workspace = this._workspaceContextService.getWorkspace();
+        const workspaceFolders = workspace.folders;
+        const activeWorkspaceFolder = activeWorkspaceRootUri ? this._workspaceContextService.getWorkspaceFolder(activeWorkspaceRootUri) : null;
+        const activeFileResource = EditorResourceAccessor.getOriginalUri(this._editorService.activeEditor, {
+            supportSideBySide: SideBySideEditor.PRIMARY,
+            filterByScheme: [Schemas.file, Schemas.vscodeUserData, Schemas.vscodeRemote]
+        });
+        const args = {
+            configuration,
+            resolvedVariables,
+            envVariableCollections,
+            shellLaunchConfig,
+            workspaceId: workspace.id,
+            workspaceName: this._labelService.getWorkspaceLabel(workspace),
+            workspaceFolders,
+            activeWorkspaceFolder,
+            activeFileResource,
+            shouldPersistTerminal,
+            options,
+            cols,
+            rows,
+            unicodeVersion,
+            resolverEnv
+        };
+        return await this._channel.call("$createProcess", args);
+    }
+    requestDetachInstance(workspaceId, instanceId) {
+        return this._channel.call("$requestDetachInstance", [workspaceId, instanceId]);
+    }
+    acceptDetachInstanceReply(requestId, persistentProcessId) {
+        return this._channel.call("$acceptDetachInstanceReply", [requestId, persistentProcessId]);
+    }
+    attachToProcess(id) {
+        return this._channel.call("$attachToProcess", [id]);
+    }
+    detachFromProcess(id, forcePersist) {
+        return this._channel.call("$detachFromProcess", [id, forcePersist]);
+    }
+    listProcesses() {
+        return this._channel.call("$listProcesses");
+    }
+    getLatency() {
+        return this._channel.call("$getLatency");
+    }
+    getPerformanceMarks() {
+        return this._channel.call("$getPerformanceMarks");
+    }
+    reduceConnectionGraceTime() {
+        return this._channel.call("$reduceConnectionGraceTime");
+    }
+    processBinary(id, data) {
+        return this._channel.call("$processBinary", [id, data]);
+    }
+    start(id) {
+        return this._channel.call("$start", [id]);
+    }
+    input(id, data) {
+        return this._channel.call("$input", [id, data]);
+    }
+    acknowledgeDataEvent(id, charCount) {
+        return this._channel.call("$acknowledgeDataEvent", [id, charCount]);
+    }
+    setUnicodeVersion(id, version) {
+        return this._channel.call("$setUnicodeVersion", [id, version]);
+    }
+    shutdown(id, immediate) {
+        return this._channel.call("$shutdown", [id, immediate]);
+    }
+    resize(id, cols, rows) {
+        return this._channel.call("$resize", [id, cols, rows]);
+    }
+    clearBuffer(id) {
+        return this._channel.call("$clearBuffer", [id]);
+    }
+    getInitialCwd(id) {
+        return this._channel.call("$getInitialCwd", [id]);
+    }
+    getCwd(id) {
+        return this._channel.call("$getCwd", [id]);
+    }
+    orphanQuestionReply(id) {
+        return this._channel.call("$orphanQuestionReply", [id]);
+    }
+    sendCommandResult(reqId, isError, payload) {
+        return this._channel.call("$sendCommandResult", [reqId, isError, payload]);
+    }
+    freePortKillProcess(port) {
+        return this._channel.call("$freePortKillProcess", [port]);
+    }
+    getDefaultSystemShell(osOverride) {
+        return this._channel.call("$getDefaultSystemShell", [osOverride]);
+    }
+    getProfiles(profiles, defaultProfile, includeDetectedProfiles) {
+        return this._channel.call("$getProfiles", [this._workspaceContextService.getWorkspace().id, profiles, defaultProfile, includeDetectedProfiles]);
+    }
+    acceptPtyHostResolvedVariables(requestId, resolved) {
+        return this._channel.call("$acceptPtyHostResolvedVariables", [requestId, resolved]);
+    }
+    getEnvironment() {
+        return this._channel.call("$getEnvironment");
+    }
+    getWslPath(original, direction) {
+        return this._channel.call("$getWslPath", [original, direction]);
+    }
+    setTerminalLayoutInfo(layout) {
+        const workspace = this._workspaceContextService.getWorkspace();
+        const args = {
+            workspaceId: workspace.id,
+            tabs: layout ? layout.tabs : []
+        };
+        return this._channel.call("$setTerminalLayoutInfo", args);
+    }
+    updateTitle(id, title, titleSource) {
+        return this._channel.call("$updateTitle", [id, title, titleSource]);
+    }
+    updateIcon(id, userInitiated, icon, color) {
+        return this._channel.call("$updateIcon", [id, userInitiated, icon, color]);
+    }
+    refreshProperty(id, property) {
+        return this._channel.call("$refreshProperty", [id, property]);
+    }
+    updateProperty(id, property, value) {
+        return this._channel.call("$updateProperty", [id, property, value]);
+    }
+    getTerminalLayoutInfo() {
+        const workspace = this._workspaceContextService.getWorkspace();
+        const args = {
+            workspaceId: workspace.id,
+        };
+        return this._channel.call("$getTerminalLayoutInfo", args);
+    }
+    reviveTerminalProcesses(workspaceId, state, dateTimeFormatLocate) {
+        return this._channel.call("$reviveTerminalProcesses", [workspaceId, state, dateTimeFormatLocate]);
+    }
+    getRevivedPtyNewId(id) {
+        return this._channel.call("$getRevivedPtyNewId", [id]);
+    }
+    serializeTerminalState(ids) {
+        return this._channel.call("$serializeTerminalState", [ids]);
+    }
+    installAutoReply(match, reply) {
+        return this._channel.call("$installAutoReply", [match, reply]);
+    }
+    uninstallAllAutoReplies() {
+        return this._channel.call("$uninstallAllAutoReplies", []);
+    }
+};
+RemoteTerminalChannelClient = __decorate([
+    __param(2, IWorkbenchConfigurationService),
+    __param(3, IWorkspaceContextService),
+    __param(4, IConfigurationResolverService),
+    __param(5, IEnvironmentVariableService),
+    __param(6, IRemoteAuthorityResolverService),
+    __param(7, ITerminalLogService),
+    __param(8, IEditorService),
+    __param(9, ILabelService),
+    __metadata("design:paramtypes", [String, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], RemoteTerminalChannelClient);
+export { RemoteTerminalChannelClient };

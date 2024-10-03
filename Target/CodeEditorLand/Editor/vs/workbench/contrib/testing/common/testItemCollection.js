@@ -1,1 +1,476 @@
-import{Barrier as T,isThenable as g,RunOnceScheduler as C}from"../../../../base/common/async.js";import{Emitter as b}from"../../../../base/common/event.js";import{Disposable as E}from"../../../../base/common/lifecycle.js";import{assertNever as S}from"../../../../base/common/assert.js";import{applyTestItemUpdate as v,namespaceTestTag as h,TestDiffOpType as l,TestItemExpandState as p}from"./testTypes.js";import{TestId as c}from"./testId.js";import"../../../../base/common/uri.js";var y=(n=>(n[n.Upsert=0]="Upsert",n[n.SetTags=1]="SetTags",n[n.UpdateCanResolveChildren=2]="UpdateCanResolveChildren",n[n.RemoveChild=3]="RemoveChild",n[n.SetProp=4]="SetProp",n[n.Bulk=5]="Bulk",n[n.DocumentSynced=6]="DocumentSynced",n))(y||{});const m=(d,r)=>d===r,D={range:(d,r)=>d===r?!0:!d||!r?!1:d.equalsRange(r),busy:m,label:m,description:m,error:m,sortText:m,tags:(d,r)=>!(d.length!==r.length||d.some(e=>!r.includes(e)))},k=Object.entries(D),R=(d,r)=>{let e;for(const[t,i]of k)i(d[t],r[t])||(e?e[t]=r[t]:e={[t]:r[t]});return e};class z extends E{constructor(e){super();this.options=e;this.root.canResolveChildren=!0,this.upsertItem(this.root,void 0)}debounceSendDiff=this._register(new C(()=>this.flushDiff(),200));diffOpEmitter=this._register(new b);_resolveHandler;get root(){return this.options.root}tree=new Map;tags=new Map;diff=[];set resolveHandler(e){this._resolveHandler=e;for(const t of this.tree.values())this.updateExpandability(t)}get resolveHandler(){return this._resolveHandler}onDidGenerateDiff=this.diffOpEmitter.event;collectDiff(){const e=this.diff;return this.diff=[],e}pushDiff(e){switch(e.op){case l.DocumentSynced:{for(const t of this.diff)if(t.op===l.DocumentSynced&&t.uri===e.uri){t.docv=e.docv;return}break}case l.Update:{const t=this.diff[this.diff.length-1];if(t){if(t.op===l.Update&&t.item.extId===e.item.extId){v(t.item,e.item);return}if(t.op===l.Add&&t.item.item.extId===e.item.extId){v(t.item,e.item);return}}break}}this.diff.push(e),this.debounceSendDiff.isScheduled()||this.debounceSendDiff.schedule()}expand(e,t){const i=this.tree.get(e);if(i){if((i.expandLevels===void 0||t>i.expandLevels)&&(i.expandLevels=t),i.expand===p.Expandable){const o=this.resolveChildren(i);return o.isOpen()?this.expandChildren(i,t-1):o.wait().then(()=>this.expandChildren(i,t-1))}else if(i.expand===p.Expanded)return i.resolveBarrier?.isOpen()===!1?i.resolveBarrier.wait().then(()=>this.expandChildren(i,t-1)):this.expandChildren(i,t-1)}}dispose(){for(const e of this.tree.values())this.options.getApiFor(e.actual).listener=void 0;this.tree.clear(),this.diff=[],super.dispose()}onTestItemEvent(e,t){switch(t.op){case 3:this.removeItem(c.joinToString(e.fullId,t.id));break;case 0:this.upsertItem(t.item,e);break;case 5:for(const i of t.ops)this.onTestItemEvent(e,i);break;case 1:this.diffTagRefs(t.new,t.old,e.fullId.toString());break;case 2:this.updateExpandability(e);break;case 4:this.pushDiff({op:l.Update,item:{extId:e.fullId.toString(),item:t.update}});break;case 6:this.documentSynced(e.actual.uri);break;default:S(t)}}documentSynced(e){e&&this.pushDiff({op:l.DocumentSynced,uri:e,docv:this.options.getDocumentVersion(e)})}upsertItem(e,t){const i=c.fromExtHostTestItem(e,this.root.id,t?.actual),o=this.options.getApiFor(e);o.parent&&o.parent!==t?.actual&&this.options.getChildren(o.parent).delete(e.id);let s=this.tree.get(i.toString());if(!s){s={fullId:i,actual:e,expandLevels:t?.expandLevels?t.expandLevels-1:void 0,expand:p.NotExpandable},e.tags.forEach(this.incrementTagRefs,this),this.tree.set(s.fullId.toString(),s),this.setItemParent(e,t),this.pushDiff({op:l.Add,item:{controllerId:this.options.controllerId,expand:s.expand,item:this.options.toITestItem(e)}}),this.connectItemAndChildren(e,s,t);return}if(s.actual===e){this.connectItem(e,s,t);return}if(s.actual.uri?.toString()!==e.uri?.toString())return this.removeItem(i.toString()),this.upsertItem(e,t);const n=this.options.getChildren(s.actual),a=s.actual,f=R(this.options.toITestItem(a),this.options.toITestItem(e));this.options.getApiFor(a).listener=void 0,s.actual=e,s.resolveBarrier=void 0,s.expand=p.NotExpandable,f&&(f.hasOwnProperty("tags")&&(this.diffTagRefs(e.tags,a.tags,i.toString()),delete f.tags),this.onTestItemEvent(s,{op:4,update:f})),this.connectItemAndChildren(e,s,t);for(const[A,u]of n)this.options.getChildren(e).get(u.id)||this.removeItem(c.joinToString(i,u.id));const I=s.expandLevels;I!==void 0&&queueMicrotask(()=>{s.expand===p.Expandable&&(s.expandLevels=void 0,this.expand(i.toString(),I))}),this.documentSynced(s.actual.uri)}diffTagRefs(e,t,i){const o=new Set(t.map(s=>s.id));for(const s of e)o.delete(s.id)||this.incrementTagRefs(s);this.pushDiff({op:l.Update,item:{extId:i,item:{tags:e.map(s=>h(this.options.controllerId,s.id))}}}),o.forEach(this.decrementTagRefs,this)}incrementTagRefs(e){const t=this.tags.get(e.id);t?t.refCount++:(this.tags.set(e.id,{refCount:1}),this.pushDiff({op:l.AddTag,tag:{id:h(this.options.controllerId,e.id)}}))}decrementTagRefs(e){const t=this.tags.get(e);t&&!--t.refCount&&(this.tags.delete(e),this.pushDiff({op:l.RemoveTag,id:h(this.options.controllerId,e)}))}setItemParent(e,t){this.options.getApiFor(e).parent=t&&t.actual!==this.root?t.actual:void 0}connectItem(e,t,i){this.setItemParent(e,i);const o=this.options.getApiFor(e);o.parent=i?.actual,o.listener=s=>this.onTestItemEvent(t,s),this.updateExpandability(t)}connectItemAndChildren(e,t,i){this.connectItem(e,t,i);for(const[o,s]of this.options.getChildren(e))this.upsertItem(s,t)}updateExpandability(e){let t;this._resolveHandler?e.resolveBarrier?t=e.resolveBarrier.isOpen()?p.Expanded:p.BusyExpanding:t=e.actual.canResolveChildren?p.Expandable:p.NotExpandable:t=p.NotExpandable,t!==e.expand&&(e.expand=t,this.pushDiff({op:l.Update,item:{extId:e.fullId.toString(),expand:t}}),t===p.Expandable&&e.expandLevels!==void 0&&this.resolveChildren(e))}expandChildren(e,t){if(t<0)return;const i=[];for(const[o,s]of this.options.getChildren(e.actual)){const n=this.expand(c.joinToString(e.fullId,s.id),t);g(n)&&i.push(n)}if(i.length)return Promise.all(i).then(()=>{})}resolveChildren(e){if(e.resolveBarrier)return e.resolveBarrier;if(!this._resolveHandler){const s=new T;return s.open(),s}e.expand=p.BusyExpanding,this.pushExpandStateUpdate(e);const t=e.resolveBarrier=new T,i=s=>{};let o;try{o=this._resolveHandler(e.actual===this.root?void 0:e.actual)}catch(s){i(s)}return g(o)?o.catch(i).then(()=>{t.open(),this.updateExpandability(e)}):(t.open(),this.updateExpandability(e)),e.resolveBarrier}pushExpandStateUpdate(e){this.pushDiff({op:l.Update,item:{extId:e.fullId.toString(),expand:e.expand}})}removeItem(e){const t=this.tree.get(e);if(!t)throw new Error("attempting to remove non-existent child");this.pushDiff({op:l.Remove,itemId:e});const i=[t];for(;i.length;){const o=i.pop();if(o){this.options.getApiFor(o.actual).listener=void 0;for(const s of o.actual.tags)this.decrementTagRefs(s.id);this.tree.delete(o.fullId.toString());for(const[s,n]of this.options.getChildren(o.actual))i.push(this.tree.get(c.joinToString(o.fullId,n.id)))}}}flushDiff(){const e=this.collectDiff();e.length&&this.diffOpEmitter.fire(e)}}class w extends Error{constructor(r){super(`Attempted to insert a duplicate test item ID ${r}`)}}class x extends Error{constructor(r){super(`TestItem with ID "${r}" is invalid. Make sure to create it from the createTestItem method.`)}}class U extends Error{constructor(r,e,t){super(`TestItem with ID "${r}" is from controller "${e}" and cannot be added as a child of an item from controller "${t}".`)}}const K=(d,r,e)=>{let t=new Map;return{get size(){return t.size},forEach(i,o){for(const s of t.values())i.call(o,s,this)},[Symbol.iterator](){return t.entries()},replace(i){const o=new Map,s=new Set(t.keys()),n={op:5,ops:[]};for(const a of i){if(!(a instanceof e))throw new x(a.id);const f=r(a).controllerId;if(f!==d.controllerId)throw new U(a.id,f,d.controllerId);if(o.has(a.id))throw new w(a.id);o.set(a.id,a),s.delete(a.id),n.ops.push({op:0,item:a})}for(const a of s.keys())n.ops.push({op:3,id:a});d.listener?.(n),t=o},add(i){if(!(i instanceof e))throw new x(i.id);t.set(i.id,i),d.listener?.({op:0,item:i})},delete(i){t.delete(i)&&d.listener?.({op:3,id:i})},get(i){return t.get(i)},toJSON(){return Array.from(t.values())}}};export{w as DuplicateTestItemError,x as InvalidTestItemError,U as MixedTestItemController,z as TestItemCollection,y as TestItemEventOp,K as createTestItemChildren};
+import { Barrier, isThenable, RunOnceScheduler } from '../../../../base/common/async.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { assertNever } from '../../../../base/common/assert.js';
+import { applyTestItemUpdate, namespaceTestTag } from './testTypes.js';
+import { TestId } from './testId.js';
+const strictEqualComparator = (a, b) => a === b;
+const diffableProps = {
+    range: (a, b) => {
+        if (a === b) {
+            return true;
+        }
+        if (!a || !b) {
+            return false;
+        }
+        return a.equalsRange(b);
+    },
+    busy: strictEqualComparator,
+    label: strictEqualComparator,
+    description: strictEqualComparator,
+    error: strictEqualComparator,
+    sortText: strictEqualComparator,
+    tags: (a, b) => {
+        if (a.length !== b.length) {
+            return false;
+        }
+        if (a.some(t1 => !b.includes(t1))) {
+            return false;
+        }
+        return true;
+    },
+};
+const diffableEntries = Object.entries(diffableProps);
+const diffTestItems = (a, b) => {
+    let output;
+    for (const [key, cmp] of diffableEntries) {
+        if (!cmp(a[key], b[key])) {
+            if (output) {
+                output[key] = b[key];
+            }
+            else {
+                output = { [key]: b[key] };
+            }
+        }
+    }
+    return output;
+};
+export class TestItemCollection extends Disposable {
+    get root() {
+        return this.options.root;
+    }
+    constructor(options) {
+        super();
+        this.options = options;
+        this.debounceSendDiff = this._register(new RunOnceScheduler(() => this.flushDiff(), 200));
+        this.diffOpEmitter = this._register(new Emitter());
+        this.tree = new Map();
+        this.tags = new Map();
+        this.diff = [];
+        this.onDidGenerateDiff = this.diffOpEmitter.event;
+        this.root.canResolveChildren = true;
+        this.upsertItem(this.root, undefined);
+    }
+    set resolveHandler(handler) {
+        this._resolveHandler = handler;
+        for (const test of this.tree.values()) {
+            this.updateExpandability(test);
+        }
+    }
+    get resolveHandler() {
+        return this._resolveHandler;
+    }
+    collectDiff() {
+        const diff = this.diff;
+        this.diff = [];
+        return diff;
+    }
+    pushDiff(diff) {
+        switch (diff.op) {
+            case 2: {
+                for (const existing of this.diff) {
+                    if (existing.op === 2 && existing.uri === diff.uri) {
+                        existing.docv = diff.docv;
+                        return;
+                    }
+                }
+                break;
+            }
+            case 1: {
+                const last = this.diff[this.diff.length - 1];
+                if (last) {
+                    if (last.op === 1 && last.item.extId === diff.item.extId) {
+                        applyTestItemUpdate(last.item, diff.item);
+                        return;
+                    }
+                    if (last.op === 0 && last.item.item.extId === diff.item.extId) {
+                        applyTestItemUpdate(last.item, diff.item);
+                        return;
+                    }
+                }
+                break;
+            }
+        }
+        this.diff.push(diff);
+        if (!this.debounceSendDiff.isScheduled()) {
+            this.debounceSendDiff.schedule();
+        }
+    }
+    expand(testId, levels) {
+        const internal = this.tree.get(testId);
+        if (!internal) {
+            return;
+        }
+        if (internal.expandLevels === undefined || levels > internal.expandLevels) {
+            internal.expandLevels = levels;
+        }
+        if (internal.expand === 1) {
+            const r = this.resolveChildren(internal);
+            return !r.isOpen()
+                ? r.wait().then(() => this.expandChildren(internal, levels - 1))
+                : this.expandChildren(internal, levels - 1);
+        }
+        else if (internal.expand === 3) {
+            return internal.resolveBarrier?.isOpen() === false
+                ? internal.resolveBarrier.wait().then(() => this.expandChildren(internal, levels - 1))
+                : this.expandChildren(internal, levels - 1);
+        }
+    }
+    dispose() {
+        for (const item of this.tree.values()) {
+            this.options.getApiFor(item.actual).listener = undefined;
+        }
+        this.tree.clear();
+        this.diff = [];
+        super.dispose();
+    }
+    onTestItemEvent(internal, evt) {
+        switch (evt.op) {
+            case 3:
+                this.removeItem(TestId.joinToString(internal.fullId, evt.id));
+                break;
+            case 0:
+                this.upsertItem(evt.item, internal);
+                break;
+            case 5:
+                for (const op of evt.ops) {
+                    this.onTestItemEvent(internal, op);
+                }
+                break;
+            case 1:
+                this.diffTagRefs(evt.new, evt.old, internal.fullId.toString());
+                break;
+            case 2:
+                this.updateExpandability(internal);
+                break;
+            case 4:
+                this.pushDiff({
+                    op: 1,
+                    item: {
+                        extId: internal.fullId.toString(),
+                        item: evt.update,
+                    }
+                });
+                break;
+            case 6:
+                this.documentSynced(internal.actual.uri);
+                break;
+            default:
+                assertNever(evt);
+        }
+    }
+    documentSynced(uri) {
+        if (uri) {
+            this.pushDiff({
+                op: 2,
+                uri,
+                docv: this.options.getDocumentVersion(uri)
+            });
+        }
+    }
+    upsertItem(actual, parent) {
+        const fullId = TestId.fromExtHostTestItem(actual, this.root.id, parent?.actual);
+        const privateApi = this.options.getApiFor(actual);
+        if (privateApi.parent && privateApi.parent !== parent?.actual) {
+            this.options.getChildren(privateApi.parent).delete(actual.id);
+        }
+        let internal = this.tree.get(fullId.toString());
+        if (!internal) {
+            internal = {
+                fullId,
+                actual,
+                expandLevels: parent?.expandLevels ? parent.expandLevels - 1 : undefined,
+                expand: 0,
+            };
+            actual.tags.forEach(this.incrementTagRefs, this);
+            this.tree.set(internal.fullId.toString(), internal);
+            this.setItemParent(actual, parent);
+            this.pushDiff({
+                op: 0,
+                item: {
+                    controllerId: this.options.controllerId,
+                    expand: internal.expand,
+                    item: this.options.toITestItem(actual),
+                },
+            });
+            this.connectItemAndChildren(actual, internal, parent);
+            return;
+        }
+        if (internal.actual === actual) {
+            this.connectItem(actual, internal, parent);
+            return;
+        }
+        if (internal.actual.uri?.toString() !== actual.uri?.toString()) {
+            this.removeItem(fullId.toString());
+            return this.upsertItem(actual, parent);
+        }
+        const oldChildren = this.options.getChildren(internal.actual);
+        const oldActual = internal.actual;
+        const update = diffTestItems(this.options.toITestItem(oldActual), this.options.toITestItem(actual));
+        this.options.getApiFor(oldActual).listener = undefined;
+        internal.actual = actual;
+        internal.resolveBarrier = undefined;
+        internal.expand = 0;
+        if (update) {
+            if (update.hasOwnProperty('tags')) {
+                this.diffTagRefs(actual.tags, oldActual.tags, fullId.toString());
+                delete update.tags;
+            }
+            this.onTestItemEvent(internal, { op: 4, update });
+        }
+        this.connectItemAndChildren(actual, internal, parent);
+        for (const [_, child] of oldChildren) {
+            if (!this.options.getChildren(actual).get(child.id)) {
+                this.removeItem(TestId.joinToString(fullId, child.id));
+            }
+        }
+        const expandLevels = internal.expandLevels;
+        if (expandLevels !== undefined) {
+            queueMicrotask(() => {
+                if (internal.expand === 1) {
+                    internal.expandLevels = undefined;
+                    this.expand(fullId.toString(), expandLevels);
+                }
+            });
+        }
+        this.documentSynced(internal.actual.uri);
+    }
+    diffTagRefs(newTags, oldTags, extId) {
+        const toDelete = new Set(oldTags.map(t => t.id));
+        for (const tag of newTags) {
+            if (!toDelete.delete(tag.id)) {
+                this.incrementTagRefs(tag);
+            }
+        }
+        this.pushDiff({
+            op: 1,
+            item: { extId, item: { tags: newTags.map(v => namespaceTestTag(this.options.controllerId, v.id)) } }
+        });
+        toDelete.forEach(this.decrementTagRefs, this);
+    }
+    incrementTagRefs(tag) {
+        const existing = this.tags.get(tag.id);
+        if (existing) {
+            existing.refCount++;
+        }
+        else {
+            this.tags.set(tag.id, { refCount: 1 });
+            this.pushDiff({
+                op: 6, tag: {
+                    id: namespaceTestTag(this.options.controllerId, tag.id),
+                }
+            });
+        }
+    }
+    decrementTagRefs(tagId) {
+        const existing = this.tags.get(tagId);
+        if (existing && !--existing.refCount) {
+            this.tags.delete(tagId);
+            this.pushDiff({ op: 7, id: namespaceTestTag(this.options.controllerId, tagId) });
+        }
+    }
+    setItemParent(actual, parent) {
+        this.options.getApiFor(actual).parent = parent && parent.actual !== this.root ? parent.actual : undefined;
+    }
+    connectItem(actual, internal, parent) {
+        this.setItemParent(actual, parent);
+        const api = this.options.getApiFor(actual);
+        api.parent = parent?.actual;
+        api.listener = evt => this.onTestItemEvent(internal, evt);
+        this.updateExpandability(internal);
+    }
+    connectItemAndChildren(actual, internal, parent) {
+        this.connectItem(actual, internal, parent);
+        for (const [_, child] of this.options.getChildren(actual)) {
+            this.upsertItem(child, internal);
+        }
+    }
+    updateExpandability(internal) {
+        let newState;
+        if (!this._resolveHandler) {
+            newState = 0;
+        }
+        else if (internal.resolveBarrier) {
+            newState = internal.resolveBarrier.isOpen()
+                ? 3
+                : 2;
+        }
+        else {
+            newState = internal.actual.canResolveChildren
+                ? 1
+                : 0;
+        }
+        if (newState === internal.expand) {
+            return;
+        }
+        internal.expand = newState;
+        this.pushDiff({ op: 1, item: { extId: internal.fullId.toString(), expand: newState } });
+        if (newState === 1 && internal.expandLevels !== undefined) {
+            this.resolveChildren(internal);
+        }
+    }
+    expandChildren(internal, levels) {
+        if (levels < 0) {
+            return;
+        }
+        const expandRequests = [];
+        for (const [_, child] of this.options.getChildren(internal.actual)) {
+            const promise = this.expand(TestId.joinToString(internal.fullId, child.id), levels);
+            if (isThenable(promise)) {
+                expandRequests.push(promise);
+            }
+        }
+        if (expandRequests.length) {
+            return Promise.all(expandRequests).then(() => { });
+        }
+    }
+    resolveChildren(internal) {
+        if (internal.resolveBarrier) {
+            return internal.resolveBarrier;
+        }
+        if (!this._resolveHandler) {
+            const b = new Barrier();
+            b.open();
+            return b;
+        }
+        internal.expand = 2;
+        this.pushExpandStateUpdate(internal);
+        const barrier = internal.resolveBarrier = new Barrier();
+        const applyError = (err) => {
+            console.error(`Unhandled error in resolveHandler of test controller "${this.options.controllerId}"`, err);
+        };
+        let r;
+        try {
+            r = this._resolveHandler(internal.actual === this.root ? undefined : internal.actual);
+        }
+        catch (err) {
+            applyError(err);
+        }
+        if (isThenable(r)) {
+            r.catch(applyError).then(() => {
+                barrier.open();
+                this.updateExpandability(internal);
+            });
+        }
+        else {
+            barrier.open();
+            this.updateExpandability(internal);
+        }
+        return internal.resolveBarrier;
+    }
+    pushExpandStateUpdate(internal) {
+        this.pushDiff({ op: 1, item: { extId: internal.fullId.toString(), expand: internal.expand } });
+    }
+    removeItem(childId) {
+        const childItem = this.tree.get(childId);
+        if (!childItem) {
+            throw new Error('attempting to remove non-existent child');
+        }
+        this.pushDiff({ op: 3, itemId: childId });
+        const queue = [childItem];
+        while (queue.length) {
+            const item = queue.pop();
+            if (!item) {
+                continue;
+            }
+            this.options.getApiFor(item.actual).listener = undefined;
+            for (const tag of item.actual.tags) {
+                this.decrementTagRefs(tag.id);
+            }
+            this.tree.delete(item.fullId.toString());
+            for (const [_, child] of this.options.getChildren(item.actual)) {
+                queue.push(this.tree.get(TestId.joinToString(item.fullId, child.id)));
+            }
+        }
+    }
+    flushDiff() {
+        const diff = this.collectDiff();
+        if (diff.length) {
+            this.diffOpEmitter.fire(diff);
+        }
+    }
+}
+export class DuplicateTestItemError extends Error {
+    constructor(id) {
+        super(`Attempted to insert a duplicate test item ID ${id}`);
+    }
+}
+export class InvalidTestItemError extends Error {
+    constructor(id) {
+        super(`TestItem with ID "${id}" is invalid. Make sure to create it from the createTestItem method.`);
+    }
+}
+export class MixedTestItemController extends Error {
+    constructor(id, ctrlA, ctrlB) {
+        super(`TestItem with ID "${id}" is from controller "${ctrlA}" and cannot be added as a child of an item from controller "${ctrlB}".`);
+    }
+}
+export const createTestItemChildren = (api, getApi, checkCtor) => {
+    let mapped = new Map();
+    return {
+        get size() {
+            return mapped.size;
+        },
+        forEach(callback, thisArg) {
+            for (const item of mapped.values()) {
+                callback.call(thisArg, item, this);
+            }
+        },
+        [Symbol.iterator]() {
+            return mapped.entries();
+        },
+        replace(items) {
+            const newMapped = new Map();
+            const toDelete = new Set(mapped.keys());
+            const bulk = { op: 5, ops: [] };
+            for (const item of items) {
+                if (!(item instanceof checkCtor)) {
+                    throw new InvalidTestItemError(item.id);
+                }
+                const itemController = getApi(item).controllerId;
+                if (itemController !== api.controllerId) {
+                    throw new MixedTestItemController(item.id, itemController, api.controllerId);
+                }
+                if (newMapped.has(item.id)) {
+                    throw new DuplicateTestItemError(item.id);
+                }
+                newMapped.set(item.id, item);
+                toDelete.delete(item.id);
+                bulk.ops.push({ op: 0, item });
+            }
+            for (const id of toDelete.keys()) {
+                bulk.ops.push({ op: 3, id });
+            }
+            api.listener?.(bulk);
+            mapped = newMapped;
+        },
+        add(item) {
+            if (!(item instanceof checkCtor)) {
+                throw new InvalidTestItemError(item.id);
+            }
+            mapped.set(item.id, item);
+            api.listener?.({ op: 0, item });
+        },
+        delete(id) {
+            if (mapped.delete(id)) {
+                api.listener?.({ op: 3, id });
+            }
+        },
+        get(itemId) {
+            return mapped.get(itemId);
+        },
+        toJSON() {
+            return Array.from(mapped.values());
+        },
+    };
+};

@@ -1,1 +1,5 @@
-const i="editor.action.inlineEdit.accept",t="editor.action.inlineEdit.trigger",n="editor.action.inlineEdit.reject",e="editor.action.inlineEdit.jumpTo",o="editor.action.inlineEdit.jumpBack";export{i as inlineEditAcceptId,o as inlineEditJumpBackId,e as inlineEditJumpToId,n as inlineEditRejectId,t as inlineEditTriggerId};
+export const inlineEditAcceptId = 'editor.action.inlineEdit.accept';
+export const inlineEditTriggerId = 'editor.action.inlineEdit.trigger';
+export const inlineEditRejectId = 'editor.action.inlineEdit.reject';
+export const inlineEditJumpToId = 'editor.action.inlineEdit.jumpTo';
+export const inlineEditJumpBackId = 'editor.action.inlineEdit.jumpBack';

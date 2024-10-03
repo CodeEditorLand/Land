@@ -1,1 +1,105 @@
-var v=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var S=(c,e,i,t)=>{for(var r=t>1?void 0:t?f(e,i):e,n=c.length-1,o;n>=0;n--)(o=c[n])&&(r=(t?o(e,i,r):o(r))||r);return t&&r&&v(e,i,r),r},l=(c,e)=>(i,t)=>e(i,t,c);import"../../../../base/common/uri.js";import{localize as p}from"../../../../nls.js";import{getMimeTypes as h}from"../../../../editor/common/services/languagesAssociations.js";import"../../../../editor/common/model.js";import{IModelService as I}from"../../../../editor/common/services/model.js";import{ILanguageService as M}from"../../../../editor/common/languages/language.js";import{ITextModelService as T}from"../../../../editor/common/services/resolverService.js";import"../../../common/contributions.js";import{DEBUG_SCHEME as b,IDebugService as E}from"./debug.js";import{Source as y}from"./debugSource.js";import{IEditorWorkerService as C}from"../../../../editor/common/services/editorWorker.js";import{EditOperation as x}from"../../../../editor/common/core/editOperation.js";import{Range as N}from"../../../../editor/common/core/range.js";import{CancellationTokenSource as U}from"../../../../base/common/cancellation.js";import{PLAINTEXT_LANGUAGE_ID as k}from"../../../../editor/common/languages/modesRegistry.js";import{ErrorNoTelemetry as A}from"../../../../base/common/errors.js";let a=class{constructor(e,i,t,r,n){this.debugService=i;this.modelService=t;this.languageService=r;this.editorWorkerService=n;e.registerTextModelContentProvider(b,this),a.INSTANCE=this}static INSTANCE;pendingUpdates=new Map;dispose(){this.pendingUpdates.forEach(e=>e.dispose())}provideTextContent(e){return this.createOrUpdateContentModel(e,!0)}static refreshDebugContent(e){a.INSTANCE?.createOrUpdateContentModel(e,!1)}createOrUpdateContentModel(e,i){const t=this.modelService.getModel(e);if(!t&&!i)return null;let r;if(e.query){const o=y.getEncodedDebugData(e);r=this.debugService.getModel().getSession(o.sessionId)}if(r||(r=this.debugService.getViewModel().focusedSession),!r)return Promise.reject(new A(p("unable","Unable to resolve the resource without a debug session")));const n=o=>{this.debugService.sourceIsNotAvailable(e);const d=this.languageService.createById(k),s=o?p("canNotResolveSourceWithError","Could not load source '{0}': {1}.",e.path,o):p("canNotResolveSource","Could not load source '{0}'.",e.path);return this.modelService.createModel(s,d,e)};return r.loadSource(e).then(o=>{if(o&&o.body)if(t){const d=o.body.content;this.pendingUpdates.get(t.id)?.cancel();const u=new U;return this.pendingUpdates.set(t.id,u),this.editorWorkerService.computeMoreMinimalEdits(t.uri,[{text:d,range:t.getFullModelRange()}]).then(m=>(this.pendingUpdates.delete(t.id),!u.token.isCancellationRequested&&m&&m.length>0&&t.applyEdits(m.map(g=>x.replace(N.lift(g.range),g.text))),t))}else{const d=o.body.mimeType||h(e)[0],s=this.languageService.createByMimeType(d);return this.modelService.createModel(o.body.content,s,e)}return n()},o=>n(o.message))}};a=S([l(0,T),l(1,E),l(2,I),l(3,M),l(4,C)],a);export{a as DebugContentProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var DebugContentProvider_1;
+import { localize } from '../../../../nls.js';
+import { getMimeTypes } from '../../../../editor/common/services/languagesAssociations.js';
+import { IModelService } from '../../../../editor/common/services/model.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { DEBUG_SCHEME, IDebugService } from './debug.js';
+import { Source } from './debugSource.js';
+import { IEditorWorkerService } from '../../../../editor/common/services/editorWorker.js';
+import { EditOperation } from '../../../../editor/common/core/editOperation.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { PLAINTEXT_LANGUAGE_ID } from '../../../../editor/common/languages/modesRegistry.js';
+import { ErrorNoTelemetry } from '../../../../base/common/errors.js';
+let DebugContentProvider = class DebugContentProvider {
+    static { DebugContentProvider_1 = this; }
+    constructor(textModelResolverService, debugService, modelService, languageService, editorWorkerService) {
+        this.debugService = debugService;
+        this.modelService = modelService;
+        this.languageService = languageService;
+        this.editorWorkerService = editorWorkerService;
+        this.pendingUpdates = new Map();
+        textModelResolverService.registerTextModelContentProvider(DEBUG_SCHEME, this);
+        DebugContentProvider_1.INSTANCE = this;
+    }
+    dispose() {
+        this.pendingUpdates.forEach(cancellationSource => cancellationSource.dispose());
+    }
+    provideTextContent(resource) {
+        return this.createOrUpdateContentModel(resource, true);
+    }
+    static refreshDebugContent(resource) {
+        DebugContentProvider_1.INSTANCE?.createOrUpdateContentModel(resource, false);
+    }
+    createOrUpdateContentModel(resource, createIfNotExists) {
+        const model = this.modelService.getModel(resource);
+        if (!model && !createIfNotExists) {
+            return null;
+        }
+        let session;
+        if (resource.query) {
+            const data = Source.getEncodedDebugData(resource);
+            session = this.debugService.getModel().getSession(data.sessionId);
+        }
+        if (!session) {
+            session = this.debugService.getViewModel().focusedSession;
+        }
+        if (!session) {
+            return Promise.reject(new ErrorNoTelemetry(localize('unable', "Unable to resolve the resource without a debug session")));
+        }
+        const createErrModel = (errMsg) => {
+            this.debugService.sourceIsNotAvailable(resource);
+            const languageSelection = this.languageService.createById(PLAINTEXT_LANGUAGE_ID);
+            const message = errMsg
+                ? localize('canNotResolveSourceWithError', "Could not load source '{0}': {1}.", resource.path, errMsg)
+                : localize('canNotResolveSource', "Could not load source '{0}'.", resource.path);
+            return this.modelService.createModel(message, languageSelection, resource);
+        };
+        return session.loadSource(resource).then(response => {
+            if (response && response.body) {
+                if (model) {
+                    const newContent = response.body.content;
+                    const cancellationSource = this.pendingUpdates.get(model.id);
+                    cancellationSource?.cancel();
+                    const myToken = new CancellationTokenSource();
+                    this.pendingUpdates.set(model.id, myToken);
+                    return this.editorWorkerService.computeMoreMinimalEdits(model.uri, [{ text: newContent, range: model.getFullModelRange() }]).then(edits => {
+                        this.pendingUpdates.delete(model.id);
+                        if (!myToken.token.isCancellationRequested && edits && edits.length > 0) {
+                            model.applyEdits(edits.map(edit => EditOperation.replace(Range.lift(edit.range), edit.text)));
+                        }
+                        return model;
+                    });
+                }
+                else {
+                    const mime = response.body.mimeType || getMimeTypes(resource)[0];
+                    const languageSelection = this.languageService.createByMimeType(mime);
+                    return this.modelService.createModel(response.body.content, languageSelection, resource);
+                }
+            }
+            return createErrModel();
+        }, (err) => createErrModel(err.message));
+    }
+};
+DebugContentProvider = DebugContentProvider_1 = __decorate([
+    __param(0, ITextModelService),
+    __param(1, IDebugService),
+    __param(2, IModelService),
+    __param(3, ILanguageService),
+    __param(4, IEditorWorkerService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], DebugContentProvider);
+export { DebugContentProvider };

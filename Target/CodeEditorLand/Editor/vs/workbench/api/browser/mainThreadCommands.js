@@ -1,6 +1,108 @@
-var C=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var c=(i,e,t,o)=>{for(var n=o>1?void 0:o?p(e,t):e,a=i.length-1,m;a>=0;a--)(m=i[a])&&(n=(o?m(e,t,n):m(n))||n);return o&&n&&C(e,t,n),n},d=(i,e)=>(t,o)=>e(t,o,i);import{DisposableMap as u}from"../../../base/common/lifecycle.js";import{revive as g}from"../../../base/common/marshalling.js";import{CommandsRegistry as r,ICommandService as v}from"../../../platform/commands/common/commands.js";import{extHostNamedCustomer as f}from"../../services/extensions/common/extHostCustomers.js";import{IExtensionService as l}from"../../services/extensions/common/extensions.js";import{SerializableObjectWithBuffers as h}from"../../services/extensions/common/proxyIdentifier.js";import{ExtHostContext as x,MainContext as _}from"../common/extHost.protocol.js";import{isString as y}from"../../../base/common/types.js";let s=class{constructor(e,t,o){this._commandService=t;this._extensionService=o;this._proxy=e.getProxy(x.ExtHostCommands),this._generateCommandsDocumentationRegistration=r.registerCommand("_generateCommandsDocumentation",()=>this._generateCommandsDocumentation())}_commandRegistrations=new u;_generateCommandsDocumentationRegistration;_proxy;dispose(){this._commandRegistrations.dispose(),this._generateCommandsDocumentationRegistration.dispose()}async _generateCommandsDocumentation(){const e=await this._proxy.$getContributedCommandMetadata(),t=r.getCommands();for(const[n,a]of t)a.metadata&&(e[n]=a.metadata);const o=[];for(const n in e)o.push("`"+n+"` - "+S(e[n]))}$registerCommand(e){this._commandRegistrations.set(e,r.registerCommand(e,(t,...o)=>this._proxy.$executeContributedCommand(e,...o).then(n=>g(n))))}$unregisterCommand(e){this._commandRegistrations.deleteAndDispose(e)}$fireCommandActivationEvent(e){const t=`onCommand:${e}`;this._extensionService.activationEventIsDone(t)||this._extensionService.activateByEvent(t)}async $executeCommand(e,t,o){t instanceof h&&(t=t.value);for(let n=0;n<t.length;n++)t[n]=g(t[n]);if(o&&t.length>0&&!r.getCommand(e))throw await this._extensionService.activateByEvent(`onCommand:${e}`),new Error("$executeCommand:retry");return this._commandService.executeCommand(e,...t)}$getCommands(){return Promise.resolve([...r.getCommands().keys()])}};s=c([f(_.MainThreadCommands),d(1,v),d(2,l)],s);function S(i){if(typeof i=="string")return i;{const t=[y(i.description)?i.description:i.description.original];if(t.push(`
-
-`),i.args)for(const o of i.args)t.push(`* _${o.name}_ - ${o.description||""}
-`);return i.returns&&t.push(`* _(returns)_ - ${i.returns}`),t.push(`
-
-`),t.join("")}}export{s as MainThreadCommands};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { DisposableMap } from '../../../base/common/lifecycle.js';
+import { revive } from '../../../base/common/marshalling.js';
+import { CommandsRegistry, ICommandService } from '../../../platform/commands/common/commands.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+import { IExtensionService } from '../../services/extensions/common/extensions.js';
+import { SerializableObjectWithBuffers } from '../../services/extensions/common/proxyIdentifier.js';
+import { ExtHostContext, MainContext } from '../common/extHost.protocol.js';
+import { isString } from '../../../base/common/types.js';
+let MainThreadCommands = class MainThreadCommands {
+    constructor(extHostContext, _commandService, _extensionService) {
+        this._commandService = _commandService;
+        this._extensionService = _extensionService;
+        this._commandRegistrations = new DisposableMap();
+        this._proxy = extHostContext.getProxy(ExtHostContext.ExtHostCommands);
+        this._generateCommandsDocumentationRegistration = CommandsRegistry.registerCommand('_generateCommandsDocumentation', () => this._generateCommandsDocumentation());
+    }
+    dispose() {
+        this._commandRegistrations.dispose();
+        this._generateCommandsDocumentationRegistration.dispose();
+    }
+    async _generateCommandsDocumentation() {
+        const result = await this._proxy.$getContributedCommandMetadata();
+        const commands = CommandsRegistry.getCommands();
+        for (const [id, command] of commands) {
+            if (command.metadata) {
+                result[id] = command.metadata;
+            }
+        }
+        const all = [];
+        for (const id in result) {
+            all.push('`' + id + '` - ' + _generateMarkdown(result[id]));
+        }
+        console.log(all.join('\n'));
+    }
+    $registerCommand(id) {
+        this._commandRegistrations.set(id, CommandsRegistry.registerCommand(id, (accessor, ...args) => {
+            return this._proxy.$executeContributedCommand(id, ...args).then(result => {
+                return revive(result);
+            });
+        }));
+    }
+    $unregisterCommand(id) {
+        this._commandRegistrations.deleteAndDispose(id);
+    }
+    $fireCommandActivationEvent(id) {
+        const activationEvent = `onCommand:${id}`;
+        if (!this._extensionService.activationEventIsDone(activationEvent)) {
+            this._extensionService.activateByEvent(activationEvent);
+        }
+    }
+    async $executeCommand(id, args, retry) {
+        if (args instanceof SerializableObjectWithBuffers) {
+            args = args.value;
+        }
+        for (let i = 0; i < args.length; i++) {
+            args[i] = revive(args[i]);
+        }
+        if (retry && args.length > 0 && !CommandsRegistry.getCommand(id)) {
+            await this._extensionService.activateByEvent(`onCommand:${id}`);
+            throw new Error('$executeCommand:retry');
+        }
+        return this._commandService.executeCommand(id, ...args);
+    }
+    $getCommands() {
+        return Promise.resolve([...CommandsRegistry.getCommands().keys()]);
+    }
+};
+MainThreadCommands = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadCommands),
+    __param(1, ICommandService),
+    __param(2, IExtensionService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], MainThreadCommands);
+export { MainThreadCommands };
+function _generateMarkdown(description) {
+    if (typeof description === 'string') {
+        return description;
+    }
+    else {
+        const descriptionString = isString(description.description)
+            ? description.description
+            : description.description.original;
+        const parts = [descriptionString];
+        parts.push('\n\n');
+        if (description.args) {
+            for (const arg of description.args) {
+                parts.push(`* _${arg.name}_ - ${arg.description || ''}\n`);
+            }
+        }
+        if (description.returns) {
+            parts.push(`* _(returns)_ - ${description.returns}`);
+        }
+        parts.push('\n\n');
+        return parts.join('');
+    }
+}

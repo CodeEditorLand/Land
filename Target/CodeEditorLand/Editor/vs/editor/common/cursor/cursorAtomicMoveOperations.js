@@ -1,1 +1,103 @@
-import{CharCode as c}from"../../../base/common/charCode.js";import{CursorColumns as f}from"../core/cursorColumns.js";var C=(e=>(e[e.Left=0]="Left",e[e.Right=1]="Right",e[e.Nearest=2]="Nearest",e))(C||{});class p{static whitespaceVisibleColumn(s,a,e){const b=s.length;let r=0,o=-1,u=-1;for(let t=0;t<b;t++){if(t===a)return[o,u,r];switch(r%e===0&&(o=t,u=r),s.charCodeAt(t)){case c.Space:r+=1;break;case c.Tab:r=f.nextRenderTabStop(r,e);break;default:return[-1,-1,-1]}}return a===b?[o,u,r]:[-1,-1,-1]}static atomicPosition(s,a,e,b){const r=s.length,[o,u,t]=p.whitespaceVisibleColumn(s,a,e);if(t===-1)return-1;let l;switch(b){case 0:l=!0;break;case 1:l=!1;break;case 2:if(t%e===0)return a;l=t%e<=e/2;break}if(l){if(o===-1)return-1;let n=u;for(let m=o;m<r;++m){if(n===u+e)return o;switch(s.charCodeAt(m)){case c.Space:n+=1;break;case c.Tab:n=f.nextRenderTabStop(n,e);break;default:return-1}}return n===u+e?o:-1}const h=f.nextRenderTabStop(t,e);let i=t;for(let n=a;n<r;n++){if(i===h)return n;switch(s.charCodeAt(n)){case c.Space:i+=1;break;case c.Tab:i=f.nextRenderTabStop(i,e);break;default:return-1}}return i===h?r:-1}}export{p as AtomicTabMoveOperations,C as Direction};
+import { CursorColumns } from '../core/cursorColumns.js';
+export class AtomicTabMoveOperations {
+    static whitespaceVisibleColumn(lineContent, position, tabSize) {
+        const lineLength = lineContent.length;
+        let visibleColumn = 0;
+        let prevTabStopPosition = -1;
+        let prevTabStopVisibleColumn = -1;
+        for (let i = 0; i < lineLength; i++) {
+            if (i === position) {
+                return [prevTabStopPosition, prevTabStopVisibleColumn, visibleColumn];
+            }
+            if (visibleColumn % tabSize === 0) {
+                prevTabStopPosition = i;
+                prevTabStopVisibleColumn = visibleColumn;
+            }
+            const chCode = lineContent.charCodeAt(i);
+            switch (chCode) {
+                case 32:
+                    visibleColumn += 1;
+                    break;
+                case 9:
+                    visibleColumn = CursorColumns.nextRenderTabStop(visibleColumn, tabSize);
+                    break;
+                default:
+                    return [-1, -1, -1];
+            }
+        }
+        if (position === lineLength) {
+            return [prevTabStopPosition, prevTabStopVisibleColumn, visibleColumn];
+        }
+        return [-1, -1, -1];
+    }
+    static atomicPosition(lineContent, position, tabSize, direction) {
+        const lineLength = lineContent.length;
+        const [prevTabStopPosition, prevTabStopVisibleColumn, visibleColumn] = AtomicTabMoveOperations.whitespaceVisibleColumn(lineContent, position, tabSize);
+        if (visibleColumn === -1) {
+            return -1;
+        }
+        let left;
+        switch (direction) {
+            case 0:
+                left = true;
+                break;
+            case 1:
+                left = false;
+                break;
+            case 2:
+                if (visibleColumn % tabSize === 0) {
+                    return position;
+                }
+                left = visibleColumn % tabSize <= (tabSize / 2);
+                break;
+        }
+        if (left) {
+            if (prevTabStopPosition === -1) {
+                return -1;
+            }
+            let currentVisibleColumn = prevTabStopVisibleColumn;
+            for (let i = prevTabStopPosition; i < lineLength; ++i) {
+                if (currentVisibleColumn === prevTabStopVisibleColumn + tabSize) {
+                    return prevTabStopPosition;
+                }
+                const chCode = lineContent.charCodeAt(i);
+                switch (chCode) {
+                    case 32:
+                        currentVisibleColumn += 1;
+                        break;
+                    case 9:
+                        currentVisibleColumn = CursorColumns.nextRenderTabStop(currentVisibleColumn, tabSize);
+                        break;
+                    default:
+                        return -1;
+                }
+            }
+            if (currentVisibleColumn === prevTabStopVisibleColumn + tabSize) {
+                return prevTabStopPosition;
+            }
+            return -1;
+        }
+        const targetVisibleColumn = CursorColumns.nextRenderTabStop(visibleColumn, tabSize);
+        let currentVisibleColumn = visibleColumn;
+        for (let i = position; i < lineLength; i++) {
+            if (currentVisibleColumn === targetVisibleColumn) {
+                return i;
+            }
+            const chCode = lineContent.charCodeAt(i);
+            switch (chCode) {
+                case 32:
+                    currentVisibleColumn += 1;
+                    break;
+                case 9:
+                    currentVisibleColumn = CursorColumns.nextRenderTabStop(currentVisibleColumn, tabSize);
+                    break;
+                default:
+                    return -1;
+            }
+        }
+        if (currentVisibleColumn === targetVisibleColumn) {
+            return lineLength;
+        }
+        return -1;
+    }
+}

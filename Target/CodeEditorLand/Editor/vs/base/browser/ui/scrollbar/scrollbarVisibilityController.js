@@ -1,1 +1,82 @@
-import"../../fastDomNode.js";import{TimeoutTimer as l}from"../../../common/async.js";import{Disposable as o}from"../../../common/lifecycle.js";import{ScrollbarVisibility as e}from"../../../common/scrollable.js";class u extends o{_visibility;_visibleClassName;_invisibleClassName;_domNode;_rawShouldBeVisible;_shouldBeVisible;_isNeeded;_isVisible;_revealTimer;constructor(i,s,t){super(),this._visibility=i,this._visibleClassName=s,this._invisibleClassName=t,this._domNode=null,this._isVisible=!1,this._isNeeded=!1,this._rawShouldBeVisible=!1,this._shouldBeVisible=!1,this._revealTimer=this._register(new l)}setVisibility(i){this._visibility!==i&&(this._visibility=i,this._updateShouldBeVisible())}setShouldBeVisible(i){this._rawShouldBeVisible=i,this._updateShouldBeVisible()}_applyVisibilitySetting(){return this._visibility===e.Hidden?!1:this._visibility===e.Visible?!0:this._rawShouldBeVisible}_updateShouldBeVisible(){const i=this._applyVisibilitySetting();this._shouldBeVisible!==i&&(this._shouldBeVisible=i,this.ensureVisibility())}setIsNeeded(i){this._isNeeded!==i&&(this._isNeeded=i,this.ensureVisibility())}setDomNode(i){this._domNode=i,this._domNode.setClassName(this._invisibleClassName),this.setShouldBeVisible(!1)}ensureVisibility(){if(!this._isNeeded){this._hide(!1);return}this._shouldBeVisible?this._reveal():this._hide(!0)}_reveal(){this._isVisible||(this._isVisible=!0,this._revealTimer.setIfNotSet(()=>{this._domNode?.setClassName(this._visibleClassName)},0))}_hide(i){this._revealTimer.cancel(),this._isVisible&&(this._isVisible=!1,this._domNode?.setClassName(this._invisibleClassName+(i?" fade":"")))}}export{u as ScrollbarVisibilityController};
+import { TimeoutTimer } from '../../../common/async.js';
+import { Disposable } from '../../../common/lifecycle.js';
+export class ScrollbarVisibilityController extends Disposable {
+    constructor(visibility, visibleClassName, invisibleClassName) {
+        super();
+        this._visibility = visibility;
+        this._visibleClassName = visibleClassName;
+        this._invisibleClassName = invisibleClassName;
+        this._domNode = null;
+        this._isVisible = false;
+        this._isNeeded = false;
+        this._rawShouldBeVisible = false;
+        this._shouldBeVisible = false;
+        this._revealTimer = this._register(new TimeoutTimer());
+    }
+    setVisibility(visibility) {
+        if (this._visibility !== visibility) {
+            this._visibility = visibility;
+            this._updateShouldBeVisible();
+        }
+    }
+    setShouldBeVisible(rawShouldBeVisible) {
+        this._rawShouldBeVisible = rawShouldBeVisible;
+        this._updateShouldBeVisible();
+    }
+    _applyVisibilitySetting() {
+        if (this._visibility === 2) {
+            return false;
+        }
+        if (this._visibility === 3) {
+            return true;
+        }
+        return this._rawShouldBeVisible;
+    }
+    _updateShouldBeVisible() {
+        const shouldBeVisible = this._applyVisibilitySetting();
+        if (this._shouldBeVisible !== shouldBeVisible) {
+            this._shouldBeVisible = shouldBeVisible;
+            this.ensureVisibility();
+        }
+    }
+    setIsNeeded(isNeeded) {
+        if (this._isNeeded !== isNeeded) {
+            this._isNeeded = isNeeded;
+            this.ensureVisibility();
+        }
+    }
+    setDomNode(domNode) {
+        this._domNode = domNode;
+        this._domNode.setClassName(this._invisibleClassName);
+        this.setShouldBeVisible(false);
+    }
+    ensureVisibility() {
+        if (!this._isNeeded) {
+            this._hide(false);
+            return;
+        }
+        if (this._shouldBeVisible) {
+            this._reveal();
+        }
+        else {
+            this._hide(true);
+        }
+    }
+    _reveal() {
+        if (this._isVisible) {
+            return;
+        }
+        this._isVisible = true;
+        this._revealTimer.setIfNotSet(() => {
+            this._domNode?.setClassName(this._visibleClassName);
+        }, 0);
+    }
+    _hide(withFadeAway) {
+        this._revealTimer.cancel();
+        if (!this._isVisible) {
+            return;
+        }
+        this._isVisible = false;
+        this._domNode?.setClassName(this._invisibleClassName + (withFadeAway ? ' fade' : ''));
+    }
+}

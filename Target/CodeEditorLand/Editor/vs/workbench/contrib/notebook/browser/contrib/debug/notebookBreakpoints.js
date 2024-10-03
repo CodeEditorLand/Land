@@ -1,1 +1,117 @@
-var C=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var h=(d,c,n,t)=>{for(var i=t>1?void 0:t?S(c,n):c,e=d.length-1,o;e>=0;e--)(o=d[e])&&(i=(t?o(c,n,i):o(i))||i);return t&&i&&C(c,n,i),i},g=(d,c)=>(n,t)=>c(n,t,d);import{Disposable as I}from"../../../../../../base/common/lifecycle.js";import{ResourceMap as p}from"../../../../../../base/common/map.js";import{Schemas as E}from"../../../../../../base/common/network.js";import{isEqual as M}from"../../../../../../base/common/resources.js";import{Registry as B}from"../../../../../../platform/registry/common/platform.js";import{Extensions as _}from"../../../../../common/contributions.js";import{IDebugService as W}from"../../../../debug/common/debug.js";import{getNotebookEditorFromEditorPane as y}from"../../notebookBrowser.js";import"../../../common/model/notebookTextModel.js";import{CellUri as m,NotebookCellsChangeType as x}from"../../../common/notebookCommon.js";import{INotebookService as D}from"../../../common/notebookService.js";import{IEditorService as N}from"../../../../../services/editor/common/editorService.js";import{LifecyclePhase as R}from"../../../../../services/lifecycle/common/lifecycle.js";let u=class extends I{constructor(n,t,i){super();this._debugService=n;this._editorService=i;const e=new p;this._register(t.onWillAddNotebookDocument(o=>{e.set(o.uri,o.onWillAddRemoveCells(s=>{const r=this._debugService.getModel();if(r.getBreakpoints().length&&s.rawEvent.kind===x.ModelChange)for(const l of s.rawEvent.changes){const[a,f]=l;if(f>0){const b=o.cells.slice(a,a+f);for(const v of b)r.getBreakpoints({uri:v.uri}).forEach(k=>this._debugService.removeBreakpoints(k.getId()))}}}))})),this._register(t.onWillRemoveNotebookDocument(o=>{this.updateBreakpoints(o),e.get(o.uri)?.dispose(),e.delete(o.uri)})),this._register(this._debugService.getModel().onDidChangeBreakpoints(o=>{const s=o?.added?.find(r=>"uri"in r&&r.uri.scheme===E.vscodeNotebookCell);if(s){const r=m.parse(s.uri);if(!r)return;const l=y(this._editorService.activeEditorPane);if(!l||!l.hasModel()||l.textModel.uri.toString()!==r.notebook.toString())return;const a=l.getCellByHandle(r.handle);if(!a)return;l.focusElement(a)}}))}updateBreakpoints(n){const t=this._debugService.getModel().getBreakpoints();if(!t.length||!n.cells.length)return;const i=new p;n.cells.forEach((e,o)=>{i.set(e.uri,o)}),t.forEach(e=>{const o=i.get(e.uri);if(typeof o!="number")return;const s=m.parse(e.uri)?.notebook;if(!s)return;const r=m.generate(s,o);M(r,e.uri)||(this._debugService.removeBreakpoints(e.getId()),this._debugService.addBreakpoints(r,[{column:e.column,condition:e.condition,enabled:e.enabled,hitCondition:e.hitCondition,logMessage:e.logMessage,lineNumber:e.lineNumber}]))})}};u=h([g(0,W),g(1,D),g(2,N)],u),B.as(_.Workbench).registerWorkbenchContribution(u,R.Restored);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+import { ResourceMap } from '../../../../../../base/common/map.js';
+import { Schemas } from '../../../../../../base/common/network.js';
+import { isEqual } from '../../../../../../base/common/resources.js';
+import { Registry } from '../../../../../../platform/registry/common/platform.js';
+import { Extensions as WorkbenchExtensions } from '../../../../../common/contributions.js';
+import { IDebugService } from '../../../../debug/common/debug.js';
+import { getNotebookEditorFromEditorPane } from '../../notebookBrowser.js';
+import { CellUri, NotebookCellsChangeType } from '../../../common/notebookCommon.js';
+import { INotebookService } from '../../../common/notebookService.js';
+import { IEditorService } from '../../../../../services/editor/common/editorService.js';
+let NotebookBreakpoints = class NotebookBreakpoints extends Disposable {
+    constructor(_debugService, _notebookService, _editorService) {
+        super();
+        this._debugService = _debugService;
+        this._editorService = _editorService;
+        const listeners = new ResourceMap();
+        this._register(_notebookService.onWillAddNotebookDocument(model => {
+            listeners.set(model.uri, model.onWillAddRemoveCells(e => {
+                const debugModel = this._debugService.getModel();
+                if (!debugModel.getBreakpoints().length) {
+                    return;
+                }
+                if (e.rawEvent.kind !== NotebookCellsChangeType.ModelChange) {
+                    return;
+                }
+                for (const change of e.rawEvent.changes) {
+                    const [start, deleteCount] = change;
+                    if (deleteCount > 0) {
+                        const deleted = model.cells.slice(start, start + deleteCount);
+                        for (const deletedCell of deleted) {
+                            const cellBps = debugModel.getBreakpoints({ uri: deletedCell.uri });
+                            cellBps.forEach(cellBp => this._debugService.removeBreakpoints(cellBp.getId()));
+                        }
+                    }
+                }
+            }));
+        }));
+        this._register(_notebookService.onWillRemoveNotebookDocument(model => {
+            this.updateBreakpoints(model);
+            listeners.get(model.uri)?.dispose();
+            listeners.delete(model.uri);
+        }));
+        this._register(this._debugService.getModel().onDidChangeBreakpoints(e => {
+            const newCellBp = e?.added?.find(bp => 'uri' in bp && bp.uri.scheme === Schemas.vscodeNotebookCell);
+            if (newCellBp) {
+                const parsed = CellUri.parse(newCellBp.uri);
+                if (!parsed) {
+                    return;
+                }
+                const editor = getNotebookEditorFromEditorPane(this._editorService.activeEditorPane);
+                if (!editor || !editor.hasModel() || editor.textModel.uri.toString() !== parsed.notebook.toString()) {
+                    return;
+                }
+                const cell = editor.getCellByHandle(parsed.handle);
+                if (!cell) {
+                    return;
+                }
+                editor.focusElement(cell);
+            }
+        }));
+    }
+    updateBreakpoints(model) {
+        const bps = this._debugService.getModel().getBreakpoints();
+        if (!bps.length || !model.cells.length) {
+            return;
+        }
+        const idxMap = new ResourceMap();
+        model.cells.forEach((cell, i) => {
+            idxMap.set(cell.uri, i);
+        });
+        bps.forEach(bp => {
+            const idx = idxMap.get(bp.uri);
+            if (typeof idx !== 'number') {
+                return;
+            }
+            const notebook = CellUri.parse(bp.uri)?.notebook;
+            if (!notebook) {
+                return;
+            }
+            const newUri = CellUri.generate(notebook, idx);
+            if (isEqual(newUri, bp.uri)) {
+                return;
+            }
+            this._debugService.removeBreakpoints(bp.getId());
+            this._debugService.addBreakpoints(newUri, [
+                {
+                    column: bp.column,
+                    condition: bp.condition,
+                    enabled: bp.enabled,
+                    hitCondition: bp.hitCondition,
+                    logMessage: bp.logMessage,
+                    lineNumber: bp.lineNumber
+                }
+            ]);
+        });
+    }
+};
+NotebookBreakpoints = __decorate([
+    __param(0, IDebugService),
+    __param(1, INotebookService),
+    __param(2, IEditorService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], NotebookBreakpoints);
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(NotebookBreakpoints, 3);

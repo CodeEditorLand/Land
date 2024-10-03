@@ -1,1 +1,33 @@
-import{asArray as p}from"../../../../base/common/arrays.js";import{isEmptyMarkdownString as m}from"../../../../base/common/htmlContent.js";import"../../../browser/editorBrowser.js";import"./hoverOperation.js";import{GlyphMarginLane as l}from"../../../common/model.js";class I{constructor(r){this._editor=r}computeSync(r){const s=e=>({value:e}),t=this._editor.getLineDecorations(r.lineNumber),o=[],i=r.laneOrLine==="lineNo";if(!t)return o;for(const e of t){const a=e.options.glyphMargin?.position??l.Center;if(!i&&a!==r.laneOrLine)continue;const n=i?e.options.lineNumberHoverMessage:e.options.glyphMarginHoverMessage;!n||m(n)||o.push(...p(n).map(s))}return o}}export{I as GlyphHoverComputer};
+import { asArray } from '../../../../base/common/arrays.js';
+import { isEmptyMarkdownString } from '../../../../base/common/htmlContent.js';
+import { GlyphMarginLane } from '../../../common/model.js';
+export class GlyphHoverComputer {
+    constructor(_editor) {
+        this._editor = _editor;
+    }
+    computeSync(opts) {
+        const toHoverMessage = (contents) => {
+            return {
+                value: contents
+            };
+        };
+        const lineDecorations = this._editor.getLineDecorations(opts.lineNumber);
+        const result = [];
+        const isLineHover = opts.laneOrLine === 'lineNo';
+        if (!lineDecorations) {
+            return result;
+        }
+        for (const d of lineDecorations) {
+            const lane = d.options.glyphMargin?.position ?? GlyphMarginLane.Center;
+            if (!isLineHover && lane !== opts.laneOrLine) {
+                continue;
+            }
+            const hoverMessage = isLineHover ? d.options.lineNumberHoverMessage : d.options.glyphMarginHoverMessage;
+            if (!hoverMessage || isEmptyMarkdownString(hoverMessage)) {
+                continue;
+            }
+            result.push(...asArray(hoverMessage).map(toHoverMessage));
+        }
+        return result;
+    }
+}

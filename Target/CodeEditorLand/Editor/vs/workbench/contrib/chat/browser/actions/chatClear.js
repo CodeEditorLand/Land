@@ -1,1 +1,16 @@
-import"../../../../../platform/instantiation/common/instantiation.js";import"../chatEditor.js";import{ChatEditorInput as o}from"../chatEditorInput.js";import{IEditorService as s}from"../../../../services/editor/common/editorService.js";async function m(t,e){const r=t.get(s);if(!e){const i=r.activeEditor;e=i instanceof o?i:void 0}if(e instanceof o){const i=r.findEditors(e.resource)[0];await r.replaceEditors([{editor:e,replacement:{resource:o.getNewEditorUri(),options:{pinned:!0}}}],i.groupId)}}export{m as clearChatEditor};
+import { ChatEditorInput } from '../chatEditorInput.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+export async function clearChatEditor(accessor, chatEditorInput) {
+    const editorService = accessor.get(IEditorService);
+    if (!chatEditorInput) {
+        const editorInput = editorService.activeEditor;
+        chatEditorInput = editorInput instanceof ChatEditorInput ? editorInput : undefined;
+    }
+    if (chatEditorInput instanceof ChatEditorInput) {
+        const identifier = editorService.findEditors(chatEditorInput.resource)[0];
+        await editorService.replaceEditors([{
+                editor: chatEditorInput,
+                replacement: { resource: ChatEditorInput.getNewEditorUri(), options: { pinned: true } }
+            }], identifier.groupId);
+    }
+}

@@ -1,1 +1,407 @@
-var B=Object.defineProperty;var W=Object.getOwnPropertyDescriptor;var M=(d,e,r,t)=>{for(var o=t>1?void 0:t?W(e,r):e,i=d.length-1,n;i>=0;i--)(n=d[i])&&(o=(t?n(e,r,o):n(o))||o);return t&&o&&B(e,r,o),o},h=(d,e)=>(r,t)=>e(r,t,d);import*as k from"../../../../base/browser/dom.js";import{asArray as Y,compareBy as C,numberComparator as R}from"../../../../base/common/arrays.js";import{CancellationTokenSource as j}from"../../../../base/common/cancellation.js";import{isEmptyMarkdownString as S,MarkdownString as $}from"../../../../base/common/htmlContent.js";import{DisposableStore as y,toDisposable as q}from"../../../../base/common/lifecycle.js";import{MarkdownRenderer as U}from"../../../browser/widget/markdownRenderer/browser/markdownRenderer.js";import{DECREASE_HOVER_VERBOSITY_ACTION_ID as A,INCREASE_HOVER_VERBOSITY_ACTION_ID as E}from"./hoverActionIds.js";import"../../../browser/editorBrowser.js";import"../../../common/core/position.js";import{Range as L}from"../../../common/core/range.js";import"../../../common/model.js";import{ILanguageService as G}from"../../../common/languages/language.js";import{HoverAnchorType as _,RenderedHoverParts as J}from"./hoverTypes.js";import*as m from"../../../../nls.js";import{IConfigurationService as Q}from"../../../../platform/configuration/common/configuration.js";import{IOpenerService as X}from"../../../../platform/opener/common/opener.js";import{ILanguageFeaturesService as Z}from"../../../common/services/languageFeatures.js";import{EditorOption as ee}from"../../../common/config/editorOptions.js";import{HoverVerbosityAction as l}from"../../../common/languages.js";import{registerIcon as V}from"../../../../platform/theme/common/iconRegistry.js";import{Codicon as x}from"../../../../base/common/codicons.js";import{ThemeIcon as re}from"../../../../base/common/themables.js";import{onUnexpectedExternalError as oe}from"../../../../base/common/errors.js";import{IKeybindingService as ne}from"../../../../platform/keybinding/common/keybinding.js";import{ClickAction as te,HoverPosition as ie,KeyDownAction as se}from"../../../../base/browser/ui/hover/hoverWidget.js";import{KeyCode as T}from"../../../../base/common/keyCodes.js";import{IHoverService as ae,WorkbenchHoverDelegate as de}from"../../../../platform/hover/browser/hover.js";import{AsyncIterableObject as D}from"../../../../base/common/async.js";import"../../../common/languageFeatureRegistry.js";import{getHoverProviderResultsAsAsyncIterable as ve}from"./getHover.js";import{ICommandService as ce}from"../../../../platform/commands/common/commands.js";const g=k.$,le=V("hover-increase-verbosity",x.add,m.localize("increaseHoverVerbosity","Icon for increaseing hover verbosity.")),ue=V("hover-decrease-verbosity",x.remove,m.localize("decreaseHoverVerbosity","Icon for decreasing hover verbosity."));class b{constructor(e,r,t,o,i,n=void 0){this.owner=e;this.range=r;this.contents=t;this.isBeforeContent=o;this.ordinal=i;this.source=n}isValidForHoverAnchor(e){return e.type===_.Range&&this.range.startColumn<=e.range.startColumn&&this.range.endColumn>=e.range.endColumn}}class O{constructor(e,r,t){this.hover=e;this.hoverProvider=r;this.hoverPosition=t}supportsVerbosityAction(e){switch(e){case l.Increase:return this.hover.canIncreaseVerbosity??!1;case l.Decrease:return this.hover.canDecreaseVerbosity??!1}}}let w=class{constructor(e,r,t,o,i,n,a,s){this._editor=e;this._languageService=r;this._openerService=t;this._configurationService=o;this._languageFeaturesService=i;this._keybindingService=n;this._hoverService=a;this._commandService=s}hoverOrdinal=3;_renderedHoverParts;createLoadingMessage(e){return new b(this,e.range,[new $().appendText(m.localize("modesContentHover.loading","Loading..."))],!1,2e3)}computeSync(e,r){if(!this._editor.hasModel()||e.type!==_.Range)return[];const t=this._editor.getModel(),o=e.range.startLineNumber,i=t.getLineMaxColumn(o),n=[];let a=1e3;const s=t.getLineLength(o),v=t.getLanguageIdAtPosition(e.range.startLineNumber,e.range.startColumn),c=this._editor.getOption(ee.stopRenderingLineAfter),u=this._configurationService.getValue("editor.maxTokenizationLineLength",{overrideIdentifier:v});let p=!1;c>=0&&s>c&&e.range.startColumn>=c&&(p=!0,n.push(new b(this,e.range,[{value:m.localize("stopped rendering","Rendering paused for long line for performance reasons. This can be configured via `editor.stopRenderingLineAfter`.")}],!1,a++))),!p&&typeof u=="number"&&s>=u&&n.push(new b(this,e.range,[{value:m.localize("too many characters","Tokenization is skipped for long lines for performance reasons. This can be configured via `editor.maxTokenizationLineLength`.")}],!1,a++));let f=!1;for(const H of r){const z=H.range.startLineNumber===o?H.range.startColumn:1,N=H.range.endLineNumber===o?H.range.endColumn:i,P=H.options.hoverMessage;if(!P||S(P))continue;H.options.beforeContentClassName&&(f=!0);const K=new L(e.range.startLineNumber,z,e.range.startLineNumber,N);n.push(new b(this,K,Y(P),f,a++))}return n}computeAsync(e,r,t){if(!this._editor.hasModel()||e.type!==_.Range)return D.EMPTY;const o=this._editor.getModel(),i=this._languageFeaturesService.hoverProvider;return i.has(o)?this._getMarkdownHovers(i,o,e,t):D.EMPTY}_getMarkdownHovers(e,r,t,o){const i=t.range.getStartPosition();return ve(e,r,i,o).filter(s=>!S(s.hover.contents)).map(s=>{const v=s.hover.range?L.lift(s.hover.range):t.range,c=new O(s.hover,s.provider,i);return new b(this,v,s.hover.contents,!1,s.ordinal,c)})}renderHoverParts(e,r){return this._renderedHoverParts=new pe(r,e.fragment,this,this._editor,this._languageService,this._openerService,this._commandService,this._keybindingService,this._hoverService,this._configurationService,e.onContentsChanged),this._renderedHoverParts}getAccessibleContent(e){return this._renderedHoverParts?.getAccessibleContent(e)??""}doesMarkdownHoverAtIndexSupportVerbosityAction(e,r){return this._renderedHoverParts?.doesMarkdownHoverAtIndexSupportVerbosityAction(e,r)??!1}updateMarkdownHoverVerbosityLevel(e,r,t){return Promise.resolve(this._renderedHoverParts?.updateMarkdownHoverPartVerbosityLevel(e,r,t))}};w=M([h(1,G),h(2,X),h(3,Q),h(4,Z),h(5,ne),h(6,ae),h(7,ce)],w);class I{constructor(e,r,t){this.hoverPart=e;this.hoverElement=r;this.disposables=t}get hoverAccessibleContent(){return this.hoverElement.innerText.trim()}dispose(){this.disposables.dispose()}}class pe{constructor(e,r,t,o,i,n,a,s,v,c,u){this._hoverParticipant=t;this._editor=o;this._languageService=i;this._openerService=n;this._commandService=a;this._keybindingService=s;this._hoverService=v;this._configurationService=c;this._onFinishedRendering=u;this.renderedHoverParts=this._renderHoverParts(e,r,this._onFinishedRendering),this._disposables.add(q(()=>{this.renderedHoverParts.forEach(p=>{p.dispose()}),this._ongoingHoverOperations.forEach(p=>{p.tokenSource.dispose(!0)})}))}renderedHoverParts;_ongoingHoverOperations=new Map;_disposables=new y;_renderHoverParts(e,r,t){return e.sort(C(o=>o.ordinal,R)),e.map(o=>{const i=this._renderHoverPart(o,t);return r.appendChild(i.hoverElement),i})}_renderHoverPart(e,r){const t=this._renderMarkdownHover(e,r),o=t.hoverElement,i=e.source,n=new y;if(n.add(t),!i)return new I(e,o,n);const a=i.supportsVerbosityAction(l.Increase),s=i.supportsVerbosityAction(l.Decrease);if(!a&&!s)return new I(e,o,n);const v=g("div.verbosity-actions");return o.prepend(v),n.add(this._renderHoverExpansionAction(v,l.Increase,a)),n.add(this._renderHoverExpansionAction(v,l.Decrease,s)),new I(e,o,n)}_renderMarkdownHover(e,r){return F(this._editor,e,this._languageService,this._openerService,r)}_renderHoverExpansionAction(e,r,t){const o=new y,i=r===l.Increase,n=k.append(e,g(re.asCSSSelector(i?le:ue)));n.tabIndex=0;const a=new de("mouse",!1,{target:e,position:{hoverPosition:ie.LEFT}},this._configurationService,this._hoverService);if(o.add(this._hoverService.setupManagedHover(a,n,me(this._keybindingService,r))),!t)return n.classList.add("disabled"),o;n.classList.add("enabled");const s=()=>this._commandService.executeCommand(r===l.Increase?E:A);return o.add(new te(n,s)),o.add(new se(n,s,[T.Enter,T.Space])),o}async updateMarkdownHoverPartVerbosityLevel(e,r,t=!0){const o=this._editor.getModel();if(!o)return;const i=this._getRenderedHoverPartAtIndex(r),n=i?.hoverPart.source;if(!i||!n?.supportsVerbosityAction(e))return;const a=await this._fetchHover(n,o,e);if(!a)return;const s=new O(a,n.hoverProvider,n.hoverPosition),v=i.hoverPart,c=new b(this._hoverParticipant,v.range,a.contents,v.isBeforeContent,v.ordinal,s),u=this._renderHoverPart(c,this._onFinishedRendering);return this._replaceRenderedHoverPartAtIndex(r,u,c),t&&this._focusOnHoverPartWithIndex(r),{hoverPart:c,hoverElement:u.hoverElement}}getAccessibleContent(e){const r=this.renderedHoverParts.findIndex(n=>n.hoverPart===e);if(r===-1)return;const t=this._getRenderedHoverPartAtIndex(r);return t?t.hoverElement.innerText.replace(/[^\S\n\r]+/gu," "):void 0}doesMarkdownHoverAtIndexSupportVerbosityAction(e,r){const t=this._getRenderedHoverPartAtIndex(e),o=t?.hoverPart.source;return!(!t||!o?.supportsVerbosityAction(r))}async _fetchHover(e,r,t){let o=t===l.Increase?1:-1;const i=e.hoverProvider,n=this._ongoingHoverOperations.get(i);n&&(n.tokenSource.cancel(),o+=n.verbosityDelta);const a=new j;this._ongoingHoverOperations.set(i,{verbosityDelta:o,tokenSource:a});const s={verbosityRequest:{verbosityDelta:o,previousHover:e.hover}};let v;try{v=await Promise.resolve(i.provideHover(r,e.hoverPosition,a.token,s))}catch(c){oe(c)}return a.dispose(),this._ongoingHoverOperations.delete(i),v}_replaceRenderedHoverPartAtIndex(e,r,t){if(e>=this.renderedHoverParts.length||e<0)return;const o=this.renderedHoverParts[e],i=o.hoverElement,n=r.hoverElement,a=Array.from(n.children);i.replaceChildren(...a);const s=new I(t,i,r.disposables);i.focus(),o.dispose(),this.renderedHoverParts[e]=s}_focusOnHoverPartWithIndex(e){this.renderedHoverParts[e].hoverElement.focus()}_getRenderedHoverPartAtIndex(e){return this.renderedHoverParts[e]}dispose(){this._disposables.dispose()}}function dr(d,e,r,t,o){e.sort(C(n=>n.ordinal,R));const i=[];for(const n of e)i.push(F(r,n,t,o,d.onContentsChanged));return new J(i)}function F(d,e,r,t,o){const i=new y,n=g("div.hover-row"),a=g("div.hover-row-contents");n.appendChild(a);const s=e.contents;for(const c of s){if(S(c))continue;const u=g("div.markdown-hover"),p=k.append(u,g("div.hover-contents")),f=i.add(new U({editor:d},r,t));i.add(f.onDidRenderAsync(()=>{p.className="hover-contents code-hover-contents",o()}));const H=i.add(f.render(c));p.appendChild(H.element),a.appendChild(u)}return{hoverPart:e,hoverElement:n,dispose(){i.dispose()}}}function me(d,e){switch(e){case l.Increase:{const r=d.lookupKeybinding(E);return r?m.localize("increaseVerbosityWithKb","Increase Hover Verbosity ({0})",r.getLabel()):m.localize("increaseVerbosity","Increase Hover Verbosity")}case l.Decrease:{const r=d.lookupKeybinding(A);return r?m.localize("decreaseVerbosityWithKb","Decrease Hover Verbosity ({0})",r.getLabel()):m.localize("decreaseVerbosity","Decrease Hover Verbosity")}}}export{b as MarkdownHover,w as MarkdownHoverParticipant,me as labelForHoverVerbosityAction,dr as renderMarkdownHovers};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../base/browser/dom.js';
+import { asArray, compareBy, numberComparator } from '../../../../base/common/arrays.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { isEmptyMarkdownString, MarkdownString } from '../../../../base/common/htmlContent.js';
+import { DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { MarkdownRenderer } from '../../../browser/widget/markdownRenderer/browser/markdownRenderer.js';
+import { DECREASE_HOVER_VERBOSITY_ACTION_ID, INCREASE_HOVER_VERBOSITY_ACTION_ID } from './hoverActionIds.js';
+import { Range } from '../../../common/core/range.js';
+import { ILanguageService } from '../../../common/languages/language.js';
+import { RenderedHoverParts } from './hoverTypes.js';
+import * as nls from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { HoverVerbosityAction } from '../../../common/languages.js';
+import { registerIcon } from '../../../../platform/theme/common/iconRegistry.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { onUnexpectedExternalError } from '../../../../base/common/errors.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { ClickAction, KeyDownAction } from '../../../../base/browser/ui/hover/hoverWidget.js';
+import { IHoverService, WorkbenchHoverDelegate } from '../../../../platform/hover/browser/hover.js';
+import { AsyncIterableObject } from '../../../../base/common/async.js';
+import { getHoverProviderResultsAsAsyncIterable } from './getHover.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+const $ = dom.$;
+const increaseHoverVerbosityIcon = registerIcon('hover-increase-verbosity', Codicon.add, nls.localize('increaseHoverVerbosity', 'Icon for increaseing hover verbosity.'));
+const decreaseHoverVerbosityIcon = registerIcon('hover-decrease-verbosity', Codicon.remove, nls.localize('decreaseHoverVerbosity', 'Icon for decreasing hover verbosity.'));
+export class MarkdownHover {
+    constructor(owner, range, contents, isBeforeContent, ordinal, source = undefined) {
+        this.owner = owner;
+        this.range = range;
+        this.contents = contents;
+        this.isBeforeContent = isBeforeContent;
+        this.ordinal = ordinal;
+        this.source = source;
+    }
+    isValidForHoverAnchor(anchor) {
+        return (anchor.type === 1
+            && this.range.startColumn <= anchor.range.startColumn
+            && this.range.endColumn >= anchor.range.endColumn);
+    }
+}
+class HoverSource {
+    constructor(hover, hoverProvider, hoverPosition) {
+        this.hover = hover;
+        this.hoverProvider = hoverProvider;
+        this.hoverPosition = hoverPosition;
+    }
+    supportsVerbosityAction(hoverVerbosityAction) {
+        switch (hoverVerbosityAction) {
+            case HoverVerbosityAction.Increase:
+                return this.hover.canIncreaseVerbosity ?? false;
+            case HoverVerbosityAction.Decrease:
+                return this.hover.canDecreaseVerbosity ?? false;
+        }
+    }
+}
+let MarkdownHoverParticipant = class MarkdownHoverParticipant {
+    constructor(_editor, _languageService, _openerService, _configurationService, _languageFeaturesService, _keybindingService, _hoverService, _commandService) {
+        this._editor = _editor;
+        this._languageService = _languageService;
+        this._openerService = _openerService;
+        this._configurationService = _configurationService;
+        this._languageFeaturesService = _languageFeaturesService;
+        this._keybindingService = _keybindingService;
+        this._hoverService = _hoverService;
+        this._commandService = _commandService;
+        this.hoverOrdinal = 3;
+    }
+    createLoadingMessage(anchor) {
+        return new MarkdownHover(this, anchor.range, [new MarkdownString().appendText(nls.localize('modesContentHover.loading', "Loading..."))], false, 2000);
+    }
+    computeSync(anchor, lineDecorations) {
+        if (!this._editor.hasModel() || anchor.type !== 1) {
+            return [];
+        }
+        const model = this._editor.getModel();
+        const lineNumber = anchor.range.startLineNumber;
+        const maxColumn = model.getLineMaxColumn(lineNumber);
+        const result = [];
+        let index = 1000;
+        const lineLength = model.getLineLength(lineNumber);
+        const languageId = model.getLanguageIdAtPosition(anchor.range.startLineNumber, anchor.range.startColumn);
+        const stopRenderingLineAfter = this._editor.getOption(120);
+        const maxTokenizationLineLength = this._configurationService.getValue('editor.maxTokenizationLineLength', {
+            overrideIdentifier: languageId
+        });
+        let stopRenderingMessage = false;
+        if (stopRenderingLineAfter >= 0 && lineLength > stopRenderingLineAfter && anchor.range.startColumn >= stopRenderingLineAfter) {
+            stopRenderingMessage = true;
+            result.push(new MarkdownHover(this, anchor.range, [{
+                    value: nls.localize('stopped rendering', "Rendering paused for long line for performance reasons. This can be configured via `editor.stopRenderingLineAfter`.")
+                }], false, index++));
+        }
+        if (!stopRenderingMessage && typeof maxTokenizationLineLength === 'number' && lineLength >= maxTokenizationLineLength) {
+            result.push(new MarkdownHover(this, anchor.range, [{
+                    value: nls.localize('too many characters', "Tokenization is skipped for long lines for performance reasons. This can be configured via `editor.maxTokenizationLineLength`.")
+                }], false, index++));
+        }
+        let isBeforeContent = false;
+        for (const d of lineDecorations) {
+            const startColumn = (d.range.startLineNumber === lineNumber) ? d.range.startColumn : 1;
+            const endColumn = (d.range.endLineNumber === lineNumber) ? d.range.endColumn : maxColumn;
+            const hoverMessage = d.options.hoverMessage;
+            if (!hoverMessage || isEmptyMarkdownString(hoverMessage)) {
+                continue;
+            }
+            if (d.options.beforeContentClassName) {
+                isBeforeContent = true;
+            }
+            const range = new Range(anchor.range.startLineNumber, startColumn, anchor.range.startLineNumber, endColumn);
+            result.push(new MarkdownHover(this, range, asArray(hoverMessage), isBeforeContent, index++));
+        }
+        return result;
+    }
+    computeAsync(anchor, lineDecorations, token) {
+        if (!this._editor.hasModel() || anchor.type !== 1) {
+            return AsyncIterableObject.EMPTY;
+        }
+        const model = this._editor.getModel();
+        const hoverProviderRegistry = this._languageFeaturesService.hoverProvider;
+        if (!hoverProviderRegistry.has(model)) {
+            return AsyncIterableObject.EMPTY;
+        }
+        const markdownHovers = this._getMarkdownHovers(hoverProviderRegistry, model, anchor, token);
+        return markdownHovers;
+    }
+    _getMarkdownHovers(hoverProviderRegistry, model, anchor, token) {
+        const position = anchor.range.getStartPosition();
+        const hoverProviderResults = getHoverProviderResultsAsAsyncIterable(hoverProviderRegistry, model, position, token);
+        const markdownHovers = hoverProviderResults.filter(item => !isEmptyMarkdownString(item.hover.contents))
+            .map(item => {
+            const range = item.hover.range ? Range.lift(item.hover.range) : anchor.range;
+            const hoverSource = new HoverSource(item.hover, item.provider, position);
+            return new MarkdownHover(this, range, item.hover.contents, false, item.ordinal, hoverSource);
+        });
+        return markdownHovers;
+    }
+    renderHoverParts(context, hoverParts) {
+        this._renderedHoverParts = new MarkdownRenderedHoverParts(hoverParts, context.fragment, this, this._editor, this._languageService, this._openerService, this._commandService, this._keybindingService, this._hoverService, this._configurationService, context.onContentsChanged);
+        return this._renderedHoverParts;
+    }
+    getAccessibleContent(hoverPart) {
+        return this._renderedHoverParts?.getAccessibleContent(hoverPart) ?? '';
+    }
+    doesMarkdownHoverAtIndexSupportVerbosityAction(index, action) {
+        return this._renderedHoverParts?.doesMarkdownHoverAtIndexSupportVerbosityAction(index, action) ?? false;
+    }
+    updateMarkdownHoverVerbosityLevel(action, index, focus) {
+        return Promise.resolve(this._renderedHoverParts?.updateMarkdownHoverPartVerbosityLevel(action, index, focus));
+    }
+};
+MarkdownHoverParticipant = __decorate([
+    __param(1, ILanguageService),
+    __param(2, IOpenerService),
+    __param(3, IConfigurationService),
+    __param(4, ILanguageFeaturesService),
+    __param(5, IKeybindingService),
+    __param(6, IHoverService),
+    __param(7, ICommandService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], MarkdownHoverParticipant);
+export { MarkdownHoverParticipant };
+class RenderedMarkdownHoverPart {
+    constructor(hoverPart, hoverElement, disposables) {
+        this.hoverPart = hoverPart;
+        this.hoverElement = hoverElement;
+        this.disposables = disposables;
+    }
+    get hoverAccessibleContent() {
+        return this.hoverElement.innerText.trim();
+    }
+    dispose() {
+        this.disposables.dispose();
+    }
+}
+class MarkdownRenderedHoverParts {
+    constructor(hoverParts, hoverPartsContainer, _hoverParticipant, _editor, _languageService, _openerService, _commandService, _keybindingService, _hoverService, _configurationService, _onFinishedRendering) {
+        this._hoverParticipant = _hoverParticipant;
+        this._editor = _editor;
+        this._languageService = _languageService;
+        this._openerService = _openerService;
+        this._commandService = _commandService;
+        this._keybindingService = _keybindingService;
+        this._hoverService = _hoverService;
+        this._configurationService = _configurationService;
+        this._onFinishedRendering = _onFinishedRendering;
+        this._ongoingHoverOperations = new Map();
+        this._disposables = new DisposableStore();
+        this.renderedHoverParts = this._renderHoverParts(hoverParts, hoverPartsContainer, this._onFinishedRendering);
+        this._disposables.add(toDisposable(() => {
+            this.renderedHoverParts.forEach(renderedHoverPart => {
+                renderedHoverPart.dispose();
+            });
+            this._ongoingHoverOperations.forEach(operation => {
+                operation.tokenSource.dispose(true);
+            });
+        }));
+    }
+    _renderHoverParts(hoverParts, hoverPartsContainer, onFinishedRendering) {
+        hoverParts.sort(compareBy(hover => hover.ordinal, numberComparator));
+        return hoverParts.map(hoverPart => {
+            const renderedHoverPart = this._renderHoverPart(hoverPart, onFinishedRendering);
+            hoverPartsContainer.appendChild(renderedHoverPart.hoverElement);
+            return renderedHoverPart;
+        });
+    }
+    _renderHoverPart(hoverPart, onFinishedRendering) {
+        const renderedMarkdownPart = this._renderMarkdownHover(hoverPart, onFinishedRendering);
+        const renderedMarkdownElement = renderedMarkdownPart.hoverElement;
+        const hoverSource = hoverPart.source;
+        const disposables = new DisposableStore();
+        disposables.add(renderedMarkdownPart);
+        if (!hoverSource) {
+            return new RenderedMarkdownHoverPart(hoverPart, renderedMarkdownElement, disposables);
+        }
+        const canIncreaseVerbosity = hoverSource.supportsVerbosityAction(HoverVerbosityAction.Increase);
+        const canDecreaseVerbosity = hoverSource.supportsVerbosityAction(HoverVerbosityAction.Decrease);
+        if (!canIncreaseVerbosity && !canDecreaseVerbosity) {
+            return new RenderedMarkdownHoverPart(hoverPart, renderedMarkdownElement, disposables);
+        }
+        const actionsContainer = $('div.verbosity-actions');
+        renderedMarkdownElement.prepend(actionsContainer);
+        disposables.add(this._renderHoverExpansionAction(actionsContainer, HoverVerbosityAction.Increase, canIncreaseVerbosity));
+        disposables.add(this._renderHoverExpansionAction(actionsContainer, HoverVerbosityAction.Decrease, canDecreaseVerbosity));
+        return new RenderedMarkdownHoverPart(hoverPart, renderedMarkdownElement, disposables);
+    }
+    _renderMarkdownHover(markdownHover, onFinishedRendering) {
+        const renderedMarkdownHover = renderMarkdownInContainer(this._editor, markdownHover, this._languageService, this._openerService, onFinishedRendering);
+        return renderedMarkdownHover;
+    }
+    _renderHoverExpansionAction(container, action, actionEnabled) {
+        const store = new DisposableStore();
+        const isActionIncrease = action === HoverVerbosityAction.Increase;
+        const actionElement = dom.append(container, $(ThemeIcon.asCSSSelector(isActionIncrease ? increaseHoverVerbosityIcon : decreaseHoverVerbosityIcon)));
+        actionElement.tabIndex = 0;
+        const hoverDelegate = new WorkbenchHoverDelegate('mouse', false, { target: container, position: { hoverPosition: 0 } }, this._configurationService, this._hoverService);
+        store.add(this._hoverService.setupManagedHover(hoverDelegate, actionElement, labelForHoverVerbosityAction(this._keybindingService, action)));
+        if (!actionEnabled) {
+            actionElement.classList.add('disabled');
+            return store;
+        }
+        actionElement.classList.add('enabled');
+        const actionFunction = () => this._commandService.executeCommand(action === HoverVerbosityAction.Increase ? INCREASE_HOVER_VERBOSITY_ACTION_ID : DECREASE_HOVER_VERBOSITY_ACTION_ID);
+        store.add(new ClickAction(actionElement, actionFunction));
+        store.add(new KeyDownAction(actionElement, actionFunction, [3, 10]));
+        return store;
+    }
+    async updateMarkdownHoverPartVerbosityLevel(action, index, focus = true) {
+        const model = this._editor.getModel();
+        if (!model) {
+            return undefined;
+        }
+        const hoverRenderedPart = this._getRenderedHoverPartAtIndex(index);
+        const hoverSource = hoverRenderedPart?.hoverPart.source;
+        if (!hoverRenderedPart || !hoverSource?.supportsVerbosityAction(action)) {
+            return undefined;
+        }
+        const newHover = await this._fetchHover(hoverSource, model, action);
+        if (!newHover) {
+            return undefined;
+        }
+        const newHoverSource = new HoverSource(newHover, hoverSource.hoverProvider, hoverSource.hoverPosition);
+        const initialHoverPart = hoverRenderedPart.hoverPart;
+        const newHoverPart = new MarkdownHover(this._hoverParticipant, initialHoverPart.range, newHover.contents, initialHoverPart.isBeforeContent, initialHoverPart.ordinal, newHoverSource);
+        const newHoverRenderedPart = this._renderHoverPart(newHoverPart, this._onFinishedRendering);
+        this._replaceRenderedHoverPartAtIndex(index, newHoverRenderedPart, newHoverPart);
+        if (focus) {
+            this._focusOnHoverPartWithIndex(index);
+        }
+        return {
+            hoverPart: newHoverPart,
+            hoverElement: newHoverRenderedPart.hoverElement
+        };
+    }
+    getAccessibleContent(hoverPart) {
+        const renderedHoverPartIndex = this.renderedHoverParts.findIndex(renderedHoverPart => renderedHoverPart.hoverPart === hoverPart);
+        if (renderedHoverPartIndex === -1) {
+            return undefined;
+        }
+        const renderedHoverPart = this._getRenderedHoverPartAtIndex(renderedHoverPartIndex);
+        if (!renderedHoverPart) {
+            return undefined;
+        }
+        const hoverElementInnerText = renderedHoverPart.hoverElement.innerText;
+        const accessibleContent = hoverElementInnerText.replace(/[^\S\n\r]+/gu, ' ');
+        return accessibleContent;
+    }
+    doesMarkdownHoverAtIndexSupportVerbosityAction(index, action) {
+        const hoverRenderedPart = this._getRenderedHoverPartAtIndex(index);
+        const hoverSource = hoverRenderedPart?.hoverPart.source;
+        if (!hoverRenderedPart || !hoverSource?.supportsVerbosityAction(action)) {
+            return false;
+        }
+        return true;
+    }
+    async _fetchHover(hoverSource, model, action) {
+        let verbosityDelta = action === HoverVerbosityAction.Increase ? 1 : -1;
+        const provider = hoverSource.hoverProvider;
+        const ongoingHoverOperation = this._ongoingHoverOperations.get(provider);
+        if (ongoingHoverOperation) {
+            ongoingHoverOperation.tokenSource.cancel();
+            verbosityDelta += ongoingHoverOperation.verbosityDelta;
+        }
+        const tokenSource = new CancellationTokenSource();
+        this._ongoingHoverOperations.set(provider, { verbosityDelta, tokenSource });
+        const context = { verbosityRequest: { verbosityDelta, previousHover: hoverSource.hover } };
+        let hover;
+        try {
+            hover = await Promise.resolve(provider.provideHover(model, hoverSource.hoverPosition, tokenSource.token, context));
+        }
+        catch (e) {
+            onUnexpectedExternalError(e);
+        }
+        tokenSource.dispose();
+        this._ongoingHoverOperations.delete(provider);
+        return hover;
+    }
+    _replaceRenderedHoverPartAtIndex(index, renderedHoverPart, hoverPart) {
+        if (index >= this.renderedHoverParts.length || index < 0) {
+            return;
+        }
+        const currentRenderedHoverPart = this.renderedHoverParts[index];
+        const currentRenderedMarkdown = currentRenderedHoverPart.hoverElement;
+        const renderedMarkdown = renderedHoverPart.hoverElement;
+        const renderedChildrenElements = Array.from(renderedMarkdown.children);
+        currentRenderedMarkdown.replaceChildren(...renderedChildrenElements);
+        const newRenderedHoverPart = new RenderedMarkdownHoverPart(hoverPart, currentRenderedMarkdown, renderedHoverPart.disposables);
+        currentRenderedMarkdown.focus();
+        currentRenderedHoverPart.dispose();
+        this.renderedHoverParts[index] = newRenderedHoverPart;
+    }
+    _focusOnHoverPartWithIndex(index) {
+        this.renderedHoverParts[index].hoverElement.focus();
+    }
+    _getRenderedHoverPartAtIndex(index) {
+        return this.renderedHoverParts[index];
+    }
+    dispose() {
+        this._disposables.dispose();
+    }
+}
+export function renderMarkdownHovers(context, markdownHovers, editor, languageService, openerService) {
+    markdownHovers.sort(compareBy(hover => hover.ordinal, numberComparator));
+    const renderedHoverParts = [];
+    for (const markdownHover of markdownHovers) {
+        renderedHoverParts.push(renderMarkdownInContainer(editor, markdownHover, languageService, openerService, context.onContentsChanged));
+    }
+    return new RenderedHoverParts(renderedHoverParts);
+}
+function renderMarkdownInContainer(editor, markdownHover, languageService, openerService, onFinishedRendering) {
+    const disposables = new DisposableStore();
+    const renderedMarkdown = $('div.hover-row');
+    const renderedMarkdownContents = $('div.hover-row-contents');
+    renderedMarkdown.appendChild(renderedMarkdownContents);
+    const markdownStrings = markdownHover.contents;
+    for (const markdownString of markdownStrings) {
+        if (isEmptyMarkdownString(markdownString)) {
+            continue;
+        }
+        const markdownHoverElement = $('div.markdown-hover');
+        const hoverContentsElement = dom.append(markdownHoverElement, $('div.hover-contents'));
+        const renderer = disposables.add(new MarkdownRenderer({ editor }, languageService, openerService));
+        disposables.add(renderer.onDidRenderAsync(() => {
+            hoverContentsElement.className = 'hover-contents code-hover-contents';
+            onFinishedRendering();
+        }));
+        const renderedContents = disposables.add(renderer.render(markdownString));
+        hoverContentsElement.appendChild(renderedContents.element);
+        renderedMarkdownContents.appendChild(markdownHoverElement);
+    }
+    const renderedHoverPart = {
+        hoverPart: markdownHover,
+        hoverElement: renderedMarkdown,
+        dispose() { disposables.dispose(); }
+    };
+    return renderedHoverPart;
+}
+export function labelForHoverVerbosityAction(keybindingService, action) {
+    switch (action) {
+        case HoverVerbosityAction.Increase: {
+            const kb = keybindingService.lookupKeybinding(INCREASE_HOVER_VERBOSITY_ACTION_ID);
+            return kb ?
+                nls.localize('increaseVerbosityWithKb', "Increase Hover Verbosity ({0})", kb.getLabel()) :
+                nls.localize('increaseVerbosity', "Increase Hover Verbosity");
+        }
+        case HoverVerbosityAction.Decrease: {
+            const kb = keybindingService.lookupKeybinding(DECREASE_HOVER_VERBOSITY_ACTION_ID);
+            return kb ?
+                nls.localize('decreaseVerbosityWithKb', "Decrease Hover Verbosity ({0})", kb.getLabel()) :
+                nls.localize('decreaseVerbosity', "Decrease Hover Verbosity");
+        }
+    }
+}

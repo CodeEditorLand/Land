@@ -1,1 +1,38 @@
-import{isUndefined as t}from"../../../../base/common/types.js";import"../../../../base/common/event.js";import{localize as n,localize2 as l}from"../../../../nls.js";import{createDecorator as i}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/userDataProfile/common/userDataProfile.js";import{RawContextKey as o}from"../../../../platform/contextkey/common/contextkey.js";import{URI as s}from"../../../../base/common/uri.js";import{registerIcon as f}from"../../../../platform/theme/common/iconRegistry.js";import{Codicon as P}from"../../../../base/common/codicons.js";import"../../../common/views.js";import"../../../../base/common/cancellation.js";import"../../../../base/common/lifecycle.js";import"../../../../platform/product/common/productService.js";const H=i("IUserDataProfileService"),X=i("IUserDataProfileManagementService");function B(r){const e=r;return!!(e&&typeof e=="object"&&(t(e.settings)||typeof e.settings=="string")&&(t(e.globalState)||typeof e.globalState=="string")&&(t(e.extensions)||typeof e.extensions=="string"))}const a="profile";function M(r,e){return s.from({scheme:e.urlProtocol,authority:a,path:r.startsWith("/")?r:`/${r}`})}const p="profile-";function z(r){return r.authority===a||new RegExp(`^${p}`).test(r.authority)}const Y=i("IUserDataProfileImportExportService"),j=f("defaultProfile-icon",P.settings,n("defaultProfileIcon","Icon for Default Profile.")),I=l("profiles","Profiles"),$={...I},c="code-profile",G=[{name:n("profile","Profile"),extensions:[c]}],K=new o("profiles.enabled",!0),W=new o("currentProfile",""),q=new o("isCurrentProfileTransient",!1),J=new o("hasProfiles",!1);export{W as CURRENT_PROFILE_CONTEXT,J as HAS_PROFILES_CONTEXT,q as IS_CURRENT_PROFILE_TRANSIENT_CONTEXT,Y as IUserDataProfileImportExportService,X as IUserDataProfileManagementService,H as IUserDataProfileService,$ as PROFILES_CATEGORY,K as PROFILES_ENABLEMENT_CONTEXT,I as PROFILES_TITLE,c as PROFILE_EXTENSION,G as PROFILE_FILTER,a as PROFILE_URL_AUTHORITY,p as PROFILE_URL_AUTHORITY_PREFIX,j as defaultUserDataProfileIcon,z as isProfileURL,B as isUserDataProfileTemplate,M as toUserDataProfileUri};
+import { isUndefined } from '../../../../base/common/types.js';
+import { localize, localize2 } from '../../../../nls.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { URI } from '../../../../base/common/uri.js';
+import { registerIcon } from '../../../../platform/theme/common/iconRegistry.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+export const IUserDataProfileService = createDecorator('IUserDataProfileService');
+export const IUserDataProfileManagementService = createDecorator('IUserDataProfileManagementService');
+export function isUserDataProfileTemplate(thing) {
+    const candidate = thing;
+    return !!(candidate && typeof candidate === 'object'
+        && (isUndefined(candidate.settings) || typeof candidate.settings === 'string')
+        && (isUndefined(candidate.globalState) || typeof candidate.globalState === 'string')
+        && (isUndefined(candidate.extensions) || typeof candidate.extensions === 'string'));
+}
+export const PROFILE_URL_AUTHORITY = 'profile';
+export function toUserDataProfileUri(path, productService) {
+    return URI.from({
+        scheme: productService.urlProtocol,
+        authority: PROFILE_URL_AUTHORITY,
+        path: path.startsWith('/') ? path : `/${path}`
+    });
+}
+export const PROFILE_URL_AUTHORITY_PREFIX = 'profile-';
+export function isProfileURL(uri) {
+    return uri.authority === PROFILE_URL_AUTHORITY || new RegExp(`^${PROFILE_URL_AUTHORITY_PREFIX}`).test(uri.authority);
+}
+export const IUserDataProfileImportExportService = createDecorator('IUserDataProfileImportExportService');
+export const defaultUserDataProfileIcon = registerIcon('defaultProfile-icon', Codicon.settings, localize('defaultProfileIcon', 'Icon for Default Profile.'));
+export const PROFILES_TITLE = localize2('profiles', 'Profiles');
+export const PROFILES_CATEGORY = { ...PROFILES_TITLE };
+export const PROFILE_EXTENSION = 'code-profile';
+export const PROFILE_FILTER = [{ name: localize('profile', "Profile"), extensions: [PROFILE_EXTENSION] }];
+export const PROFILES_ENABLEMENT_CONTEXT = new RawContextKey('profiles.enabled', true);
+export const CURRENT_PROFILE_CONTEXT = new RawContextKey('currentProfile', '');
+export const IS_CURRENT_PROFILE_TRANSIENT_CONTEXT = new RawContextKey('isCurrentProfileTransient', false);
+export const HAS_PROFILES_CONTEXT = new RawContextKey('hasProfiles', false);

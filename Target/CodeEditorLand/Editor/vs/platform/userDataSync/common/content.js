@@ -1,1 +1,42 @@
-import"../../../base/common/json.js";import{setProperty as f}from"../../../base/common/jsonEdit.js";import"../../../base/common/jsonFormatter.js";function m(i,r,n,t){const e=f(i,r,n,t)[0];return e&&(i=i.substring(0,e.offset)+e.content+i.substring(e.offset+e.length)),i}function p(i,r,n){let t=n;for(;t>=0;){if(i.charAt(t)===r.charAt(r.length-1)&&r.length===1)return t+1;if(t--,r.length===2&&t>=0&&i.charAt(t)===r.charAt(0))return t+2}return 0}function A(i,r,n){let t=n;for(;t>=0;)if(i.charAt(t)===r.charAt(r.length-1)&&r.length===1||(t++,r.length===2&&t>=0&&i.charAt(t)===r.charAt(1)))return t;return i.length-1}export{m as edit,A as getLineEndOffset,p as getLineStartOffset};
+import { setProperty } from '../../../base/common/jsonEdit.js';
+export function edit(content, originalPath, value, formattingOptions) {
+    const edit = setProperty(content, originalPath, value, formattingOptions)[0];
+    if (edit) {
+        content = content.substring(0, edit.offset) + edit.content + content.substring(edit.offset + edit.length);
+    }
+    return content;
+}
+export function getLineStartOffset(content, eol, atOffset) {
+    let lineStartingOffset = atOffset;
+    while (lineStartingOffset >= 0) {
+        if (content.charAt(lineStartingOffset) === eol.charAt(eol.length - 1)) {
+            if (eol.length === 1) {
+                return lineStartingOffset + 1;
+            }
+        }
+        lineStartingOffset--;
+        if (eol.length === 2) {
+            if (lineStartingOffset >= 0 && content.charAt(lineStartingOffset) === eol.charAt(0)) {
+                return lineStartingOffset + 2;
+            }
+        }
+    }
+    return 0;
+}
+export function getLineEndOffset(content, eol, atOffset) {
+    let lineEndOffset = atOffset;
+    while (lineEndOffset >= 0) {
+        if (content.charAt(lineEndOffset) === eol.charAt(eol.length - 1)) {
+            if (eol.length === 1) {
+                return lineEndOffset;
+            }
+        }
+        lineEndOffset++;
+        if (eol.length === 2) {
+            if (lineEndOffset >= 0 && content.charAt(lineEndOffset) === eol.charAt(1)) {
+                return lineEndOffset;
+            }
+        }
+    }
+    return content.length - 1;
+}

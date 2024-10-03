@@ -1,1 +1,34 @@
-import{Schemas as r}from"../../../base/common/network.js";import{ExtUri as o}from"../../../base/common/resources.js";import"../../../base/common/uri.js";import{FileSystemProviderCapabilities as i}from"../../../platform/files/common/files.js";import{createDecorator as s}from"../../../platform/instantiation/common/instantiation.js";import"./extHost.protocol.js";class h{_systemSchemes=new Set(Object.keys(r));_providerInfo=new Map;extUri;constructor(){this.extUri=new o(e=>{const t=this._providerInfo.get(e.scheme);return!(t===void 0||t&i.PathCaseSensitive)})}$acceptProviderInfos(e,t){t===null?this._providerInfo.delete(e.scheme):this._providerInfo.set(e.scheme,t)}isFreeScheme(e){return!this._providerInfo.has(e)&&!this._systemSchemes.has(e)}getCapabilities(e){return this._providerInfo.get(e)}}const y=s("IExtHostFileSystemInfo");export{h as ExtHostFileSystemInfo,y as IExtHostFileSystemInfo};
+import { Schemas } from '../../../base/common/network.js';
+import { ExtUri } from '../../../base/common/resources.js';
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+export class ExtHostFileSystemInfo {
+    constructor() {
+        this._systemSchemes = new Set(Object.keys(Schemas));
+        this._providerInfo = new Map();
+        this.extUri = new ExtUri(uri => {
+            const capabilities = this._providerInfo.get(uri.scheme);
+            if (capabilities === undefined) {
+                return false;
+            }
+            if (capabilities & 1024) {
+                return false;
+            }
+            return true;
+        });
+    }
+    $acceptProviderInfos(uri, capabilities) {
+        if (capabilities === null) {
+            this._providerInfo.delete(uri.scheme);
+        }
+        else {
+            this._providerInfo.set(uri.scheme, capabilities);
+        }
+    }
+    isFreeScheme(scheme) {
+        return !this._providerInfo.has(scheme) && !this._systemSchemes.has(scheme);
+    }
+    getCapabilities(scheme) {
+        return this._providerInfo.get(scheme);
+    }
+}
+export const IExtHostFileSystemInfo = createDecorator('IExtHostFileSystemInfo');

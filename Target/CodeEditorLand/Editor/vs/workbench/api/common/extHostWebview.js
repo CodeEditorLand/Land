@@ -1,1 +1,216 @@
-import"../../../base/common/buffer.js";import{Emitter as w}from"../../../base/common/event.js";import{Disposable as x}from"../../../base/common/lifecycle.js";import{Schemas as c}from"../../../base/common/network.js";import*as W from"../../../base/common/objects.js";import{URI as b}from"../../../base/common/uri.js";import{normalizeVersion as m,parseVersion as u}from"../../../platform/extensions/common/extensionValidator.js";import"../../../platform/extensions/common/extensions.js";import"../../../platform/log/common/log.js";import"./extHostApiDeprecationService.js";import{deserializeWebviewMessage as g,serializeWebviewMessage as H}from"./extHostWebviewMessaging.js";import"./extHostWorkspace.js";import{asWebviewUri as h,webviewGenericCspSource as f}from"../../contrib/webview/common/webview.js";import"../../services/extensions/common/proxyIdentifier.js";import*as I from"./extHost.protocol.js";class E{#t;#o;#p;#l;#d;#e;#i="";#s;#r=!1;#n=!1;#v;#a;constructor(e,t,i,n,s,r,a){this.#t=e,this.#o=t,this.#s=i,this.#l=n,this.#d=s,this.#e=r,this.#v=y(r),this.#a=D(r),this.#p=a}_onMessageEmitter=new w;onDidReceiveMessage=this._onMessageEmitter.event;#c=new w;_onDidDispose=this.#c.event;dispose(){this.#r=!0,this.#c.fire(),this.#c.dispose(),this._onMessageEmitter.dispose()}asWebviewUri(e){return this.#n=!0,h(e,this.#l)}get cspSource(){const e=this.#e.extensionLocation;if(e.scheme===c.https||e.scheme===c.http){let t=e.toString();return t.endsWith("/")||(t+="/"),t+" "+f}return f}get html(){return this.assertNotDisposed(),this.#i}set html(e){this.assertNotDisposed(),this.#i!==e&&(this.#i=e,this.#a&&!this.#n&&/(["'])vscode-resource:([^\s'"]+?)(["'])/i.test(e)&&(this.#n=!0,this.#p.report("Webview vscode-resource: uris",this.#e,"Please migrate to use the 'webview.asWebviewUri' api instead: https://aka.ms/vscode-webview-use-aswebviewuri")),this.#o.$setHtml(this.#t,this.rewriteOldResourceUrlsIfNeeded(e)))}get options(){return this.assertNotDisposed(),this.#s}set options(e){this.assertNotDisposed(),W.equals(this.#s,e)||this.#o.$setOptions(this.#t,S(this.#e,this.#d,e)),this.#s=e}async postMessage(e){if(this.#r)return!1;const t=H(e,{serializeBuffersForPostMessage:this.#v});return this.#o.$postMessage(this.#t,t.message,...t.buffers)}assertNotDisposed(){if(this.#r)throw new Error("Webview is disposed")}rewriteOldResourceUrlsIfNeeded(e){if(!this.#a)return e;const t=this.#e.extensionLocation?.scheme===c.vscodeRemote,i=this.#e.extensionLocation.scheme===c.vscodeRemote?this.#e.extensionLocation.authority:void 0;return e.replace(/(["'])(?:vscode-resource):(\/\/([^\s\/'"]+?)(?=\/))?([^\s'"]+?)(["'])/gi,(n,s,r,a,p,l)=>{const d=b.from({scheme:a||"file",path:decodeURIComponent(p)}),v=h(d,{isRemote:t,authority:i}).toString();return`${s}${v}${l}`}).replace(/(["'])(?:vscode-webview-resource):(\/\/[^\s\/'"]+\/([^\s\/'"]+?)(?=\/))?([^\s'"]+?)(["'])/gi,(n,s,r,a,p,l)=>{const d=b.from({scheme:a||"file",path:decodeURIComponent(p)}),v=h(d,{isRemote:t,authority:i}).toString();return`${s}${v}${l}`})}}function y(o){try{const e=m(u(o.engines.vscode));return!!e&&e.majorBase>=1&&e.minorBase>=57}catch{return!1}}function D(o){try{const e=m(u(o.engines.vscode));return e?e.majorBase<1||e.majorBase===1&&e.minorBase<60:!1}catch{return!1}}class X extends x{constructor(t,i,n,s,r){super();this.remoteInfo=i;this.workspace=n;this._logService=s;this._deprecationService=r;this._webviewProxy=t.getProxy(I.MainContext.MainThreadWebviews)}_webviewProxy;_webviews=new Map;dispose(){super.dispose();for(const t of this._webviews.values())t.dispose();this._webviews.clear()}$onMessage(t,i,n){const s=this.getWebview(t);if(s){const{message:r}=g(i,n.value);s._onMessageEmitter.fire(r)}}$onMissingCsp(t,i){this._logService.warn(`${i} created a webview without a content security policy: https://aka.ms/vscode-webview-missing-csp`)}createNewWebview(t,i,n){const s=new E(t,this._webviewProxy,R(i),this.remoteInfo,this.workspace,n,this._deprecationService);this._webviews.set(t,s);const r=s._onDidDispose(()=>{r.dispose(),this.deleteWebview(t)});return s}deleteWebview(t){this._webviews.delete(t)}getWebview(t){return this._webviews.get(t)}}function Y(o){return{id:o.identifier,location:o.extensionLocation}}function S(o,e,t){return{enableCommandUris:t.enableCommandUris,enableScripts:t.enableScripts,enableForms:t.enableForms,portMapping:t.portMapping,localResourceRoots:t.localResourceRoots||M(o,e)}}function R(o){return{enableCommandUris:o.enableCommandUris,enableScripts:o.enableScripts,enableForms:o.enableForms,portMapping:o.portMapping,localResourceRoots:o.localResourceRoots?.map(e=>b.from(e))}}function M(o,e){return[...(e?.getWorkspaceFolders()||[]).map(t=>t.uri),o.extensionLocation]}export{E as ExtHostWebview,X as ExtHostWebviews,S as serializeWebviewOptions,y as shouldSerializeBuffersForPostMessage,Y as toExtensionData};
+import { Emitter } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { Schemas } from '../../../base/common/network.js';
+import * as objects from '../../../base/common/objects.js';
+import { URI } from '../../../base/common/uri.js';
+import { normalizeVersion, parseVersion } from '../../../platform/extensions/common/extensionValidator.js';
+import { deserializeWebviewMessage, serializeWebviewMessage } from './extHostWebviewMessaging.js';
+import { asWebviewUri, webviewGenericCspSource } from '../../contrib/webview/common/webview.js';
+import * as extHostProtocol from './extHost.protocol.js';
+export class ExtHostWebview {
+    #handle;
+    #proxy;
+    #deprecationService;
+    #remoteInfo;
+    #workspace;
+    #extension;
+    #html;
+    #options;
+    #isDisposed;
+    #hasCalledAsWebviewUri;
+    #serializeBuffersForPostMessage;
+    #shouldRewriteOldResourceUris;
+    constructor(handle, proxy, options, remoteInfo, workspace, extension, deprecationService) {
+        this.#html = '';
+        this.#isDisposed = false;
+        this.#hasCalledAsWebviewUri = false;
+        this._onMessageEmitter = new Emitter();
+        this.onDidReceiveMessage = this._onMessageEmitter.event;
+        this.#onDidDisposeEmitter = new Emitter();
+        this._onDidDispose = this.#onDidDisposeEmitter.event;
+        this.#handle = handle;
+        this.#proxy = proxy;
+        this.#options = options;
+        this.#remoteInfo = remoteInfo;
+        this.#workspace = workspace;
+        this.#extension = extension;
+        this.#serializeBuffersForPostMessage = shouldSerializeBuffersForPostMessage(extension);
+        this.#shouldRewriteOldResourceUris = shouldTryRewritingOldResourceUris(extension);
+        this.#deprecationService = deprecationService;
+    }
+    #onDidDisposeEmitter;
+    dispose() {
+        this.#isDisposed = true;
+        this.#onDidDisposeEmitter.fire();
+        this.#onDidDisposeEmitter.dispose();
+        this._onMessageEmitter.dispose();
+    }
+    asWebviewUri(resource) {
+        this.#hasCalledAsWebviewUri = true;
+        return asWebviewUri(resource, this.#remoteInfo);
+    }
+    get cspSource() {
+        const extensionLocation = this.#extension.extensionLocation;
+        if (extensionLocation.scheme === Schemas.https || extensionLocation.scheme === Schemas.http) {
+            let extensionCspRule = extensionLocation.toString();
+            if (!extensionCspRule.endsWith('/')) {
+                extensionCspRule += '/';
+            }
+            return extensionCspRule + ' ' + webviewGenericCspSource;
+        }
+        return webviewGenericCspSource;
+    }
+    get html() {
+        this.assertNotDisposed();
+        return this.#html;
+    }
+    set html(value) {
+        this.assertNotDisposed();
+        if (this.#html !== value) {
+            this.#html = value;
+            if (this.#shouldRewriteOldResourceUris && !this.#hasCalledAsWebviewUri && /(["'])vscode-resource:([^\s'"]+?)(["'])/i.test(value)) {
+                this.#hasCalledAsWebviewUri = true;
+                this.#deprecationService.report('Webview vscode-resource: uris', this.#extension, `Please migrate to use the 'webview.asWebviewUri' api instead: https://aka.ms/vscode-webview-use-aswebviewuri`);
+            }
+            this.#proxy.$setHtml(this.#handle, this.rewriteOldResourceUrlsIfNeeded(value));
+        }
+    }
+    get options() {
+        this.assertNotDisposed();
+        return this.#options;
+    }
+    set options(newOptions) {
+        this.assertNotDisposed();
+        if (!objects.equals(this.#options, newOptions)) {
+            this.#proxy.$setOptions(this.#handle, serializeWebviewOptions(this.#extension, this.#workspace, newOptions));
+        }
+        this.#options = newOptions;
+    }
+    async postMessage(message) {
+        if (this.#isDisposed) {
+            return false;
+        }
+        const serialized = serializeWebviewMessage(message, { serializeBuffersForPostMessage: this.#serializeBuffersForPostMessage });
+        return this.#proxy.$postMessage(this.#handle, serialized.message, ...serialized.buffers);
+    }
+    assertNotDisposed() {
+        if (this.#isDisposed) {
+            throw new Error('Webview is disposed');
+        }
+    }
+    rewriteOldResourceUrlsIfNeeded(value) {
+        if (!this.#shouldRewriteOldResourceUris) {
+            return value;
+        }
+        const isRemote = this.#extension.extensionLocation?.scheme === Schemas.vscodeRemote;
+        const remoteAuthority = this.#extension.extensionLocation.scheme === Schemas.vscodeRemote ? this.#extension.extensionLocation.authority : undefined;
+        return value
+            .replace(/(["'])(?:vscode-resource):(\/\/([^\s\/'"]+?)(?=\/))?([^\s'"]+?)(["'])/gi, (_match, startQuote, _1, scheme, path, endQuote) => {
+            const uri = URI.from({
+                scheme: scheme || 'file',
+                path: decodeURIComponent(path),
+            });
+            const webviewUri = asWebviewUri(uri, { isRemote, authority: remoteAuthority }).toString();
+            return `${startQuote}${webviewUri}${endQuote}`;
+        })
+            .replace(/(["'])(?:vscode-webview-resource):(\/\/[^\s\/'"]+\/([^\s\/'"]+?)(?=\/))?([^\s'"]+?)(["'])/gi, (_match, startQuote, _1, scheme, path, endQuote) => {
+            const uri = URI.from({
+                scheme: scheme || 'file',
+                path: decodeURIComponent(path),
+            });
+            const webviewUri = asWebviewUri(uri, { isRemote, authority: remoteAuthority }).toString();
+            return `${startQuote}${webviewUri}${endQuote}`;
+        });
+    }
+}
+export function shouldSerializeBuffersForPostMessage(extension) {
+    try {
+        const version = normalizeVersion(parseVersion(extension.engines.vscode));
+        return !!version && version.majorBase >= 1 && version.minorBase >= 57;
+    }
+    catch {
+        return false;
+    }
+}
+function shouldTryRewritingOldResourceUris(extension) {
+    try {
+        const version = normalizeVersion(parseVersion(extension.engines.vscode));
+        if (!version) {
+            return false;
+        }
+        return version.majorBase < 1 || (version.majorBase === 1 && version.minorBase < 60);
+    }
+    catch {
+        return false;
+    }
+}
+export class ExtHostWebviews extends Disposable {
+    constructor(mainContext, remoteInfo, workspace, _logService, _deprecationService) {
+        super();
+        this.remoteInfo = remoteInfo;
+        this.workspace = workspace;
+        this._logService = _logService;
+        this._deprecationService = _deprecationService;
+        this._webviews = new Map();
+        this._webviewProxy = mainContext.getProxy(extHostProtocol.MainContext.MainThreadWebviews);
+    }
+    dispose() {
+        super.dispose();
+        for (const webview of this._webviews.values()) {
+            webview.dispose();
+        }
+        this._webviews.clear();
+    }
+    $onMessage(handle, jsonMessage, buffers) {
+        const webview = this.getWebview(handle);
+        if (webview) {
+            const { message } = deserializeWebviewMessage(jsonMessage, buffers.value);
+            webview._onMessageEmitter.fire(message);
+        }
+    }
+    $onMissingCsp(_handle, extensionId) {
+        this._logService.warn(`${extensionId} created a webview without a content security policy: https://aka.ms/vscode-webview-missing-csp`);
+    }
+    createNewWebview(handle, options, extension) {
+        const webview = new ExtHostWebview(handle, this._webviewProxy, reviveOptions(options), this.remoteInfo, this.workspace, extension, this._deprecationService);
+        this._webviews.set(handle, webview);
+        const sub = webview._onDidDispose(() => {
+            sub.dispose();
+            this.deleteWebview(handle);
+        });
+        return webview;
+    }
+    deleteWebview(handle) {
+        this._webviews.delete(handle);
+    }
+    getWebview(handle) {
+        return this._webviews.get(handle);
+    }
+}
+export function toExtensionData(extension) {
+    return { id: extension.identifier, location: extension.extensionLocation };
+}
+export function serializeWebviewOptions(extension, workspace, options) {
+    return {
+        enableCommandUris: options.enableCommandUris,
+        enableScripts: options.enableScripts,
+        enableForms: options.enableForms,
+        portMapping: options.portMapping,
+        localResourceRoots: options.localResourceRoots || getDefaultLocalResourceRoots(extension, workspace)
+    };
+}
+function reviveOptions(options) {
+    return {
+        enableCommandUris: options.enableCommandUris,
+        enableScripts: options.enableScripts,
+        enableForms: options.enableForms,
+        portMapping: options.portMapping,
+        localResourceRoots: options.localResourceRoots?.map(components => URI.from(components)),
+    };
+}
+function getDefaultLocalResourceRoots(extension, workspace) {
+    return [
+        ...(workspace?.getWorkspaceFolders() || []).map(x => x.uri),
+        extension.extensionLocation,
+    ];
+}

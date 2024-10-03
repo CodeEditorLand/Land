@@ -1,1 +1,51 @@
-import{ExtensionIdentifierMap as c}from"../../../../platform/extensions/common/extensions.js";import{localize as o}from"../../../../nls.js";import"../../../../platform/log/common/log.js";import*as p from"../../../../base/common/semver/semver.js";import"../../../../base/common/types.js";function m(r,s,a,f,e){const n=new c;return r.forEach(i=>{const t=n.get(i.identifier);t&&e.warn(o("overwritingExtension","Overwriting extension {0} with {1}.",t.extensionLocation.fsPath,i.extensionLocation.fsPath)),n.set(i.identifier,i)}),s.forEach(i=>{const t=n.get(i.identifier);if(t)if(t.isBuiltin){if(p.gte(t.version,i.version)){e.warn(`Skipping extension ${i.extensionLocation.path} in favour of the builtin extension ${t.extensionLocation.path}.`);return}i.isBuiltin=!0}else e.warn(o("overwritingExtension","Overwriting extension {0} with {1}.",t.extensionLocation.fsPath,i.extensionLocation.fsPath));else if(i.isBuiltin){e.warn(`Skipping obsolete builtin extension ${i.extensionLocation.path}`);return}n.set(i.identifier,i)}),a.forEach(i=>{const t=n.get(i.identifier);t&&e.warn(o("overwritingWithWorkspaceExtension","Overwriting {0} with Workspace Extension {1}.",t.extensionLocation.fsPath,i.extensionLocation.fsPath)),n.set(i.identifier,i)}),f.forEach(i=>{e.info(o("extensionUnderDevelopment","Loading development extension at {0}",i.extensionLocation.fsPath));const t=n.get(i.identifier);t&&t.isBuiltin&&(i.isBuiltin=!0),n.set(i.identifier,i)}),Array.from(n.values())}export{m as dedupExtensions};
+import { ExtensionIdentifierMap } from '../../../../platform/extensions/common/extensions.js';
+import { localize } from '../../../../nls.js';
+import * as semver from '../../../../base/common/semver/semver.js';
+export function dedupExtensions(system, user, workspace, development, logService) {
+    const result = new ExtensionIdentifierMap();
+    system.forEach((systemExtension) => {
+        const extension = result.get(systemExtension.identifier);
+        if (extension) {
+            logService.warn(localize('overwritingExtension', "Overwriting extension {0} with {1}.", extension.extensionLocation.fsPath, systemExtension.extensionLocation.fsPath));
+        }
+        result.set(systemExtension.identifier, systemExtension);
+    });
+    user.forEach((userExtension) => {
+        const extension = result.get(userExtension.identifier);
+        if (extension) {
+            if (extension.isBuiltin) {
+                if (semver.gte(extension.version, userExtension.version)) {
+                    logService.warn(`Skipping extension ${userExtension.extensionLocation.path} in favour of the builtin extension ${extension.extensionLocation.path}.`);
+                    return;
+                }
+                userExtension.isBuiltin = true;
+            }
+            else {
+                logService.warn(localize('overwritingExtension', "Overwriting extension {0} with {1}.", extension.extensionLocation.fsPath, userExtension.extensionLocation.fsPath));
+            }
+        }
+        else if (userExtension.isBuiltin) {
+            logService.warn(`Skipping obsolete builtin extension ${userExtension.extensionLocation.path}`);
+            return;
+        }
+        result.set(userExtension.identifier, userExtension);
+    });
+    workspace.forEach(workspaceExtension => {
+        const extension = result.get(workspaceExtension.identifier);
+        if (extension) {
+            logService.warn(localize('overwritingWithWorkspaceExtension', "Overwriting {0} with Workspace Extension {1}.", extension.extensionLocation.fsPath, workspaceExtension.extensionLocation.fsPath));
+        }
+        result.set(workspaceExtension.identifier, workspaceExtension);
+    });
+    development.forEach(developedExtension => {
+        logService.info(localize('extensionUnderDevelopment', "Loading development extension at {0}", developedExtension.extensionLocation.fsPath));
+        const extension = result.get(developedExtension.identifier);
+        if (extension) {
+            if (extension.isBuiltin) {
+                developedExtension.isBuiltin = true;
+            }
+        }
+        result.set(developedExtension.identifier, developedExtension);
+    });
+    return Array.from(result.values());
+}

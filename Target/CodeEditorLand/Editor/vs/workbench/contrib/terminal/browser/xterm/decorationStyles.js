@@ -1,5 +1,114 @@
-var h=Object.defineProperty;var x=Object.getOwnPropertyDescriptor;var C=(n,o,t,e)=>{for(var i=e>1?void 0:e?x(o,t):o,r=n.length-1,a;r>=0;r--)(a=n[r])&&(i=(e?a(o,t,i):a(i))||i);return e&&i&&h(o,t,i),i},m=(n,o)=>(t,e)=>o(t,e,n);import*as l from"../../../../../base/browser/dom.js";import{Delayer as v}from"../../../../../base/common/async.js";import{fromNow as u,getDurationString as y}from"../../../../../base/common/date.js";import{MarkdownString as b}from"../../../../../base/common/htmlContent.js";import{combinedDisposable as D,Disposable as E}from"../../../../../base/common/lifecycle.js";import{localize as d}from"../../../../../nls.js";import{IConfigurationService as _}from"../../../../../platform/configuration/common/configuration.js";import{IContextMenuService as c}from"../../../../../platform/contextview/browser/contextView.js";import"../../../../../platform/terminal/common/capabilities/capabilities.js";import{TerminalSettingId as f}from"../../../../../platform/terminal/common/terminal.js";import{IHoverService as g}from"../../../../../platform/hover/browser/hover.js";var S=(t=>(t[t.DefaultDimension=16]="DefaultDimension",t[t.MarginLeft=-17]="MarginLeft",t))(S||{}),I=(s=>(s.CommandDecoration="terminal-command-decoration",s.Hide="hide",s.ErrorColor="error",s.DefaultColor="default-color",s.Default="default",s.Codicon="codicon",s.XtermDecoration="xterm-decoration",s.OverviewRuler=".xterm-decoration-overview-ruler",s))(I||{});let p=class extends E{constructor(t,e,i){super();this._hoverService=t;this._register(i.onDidShowContextMenu(()=>this._contextMenuVisible=!0)),this._register(i.onDidHideContextMenu(()=>this._contextMenuVisible=!1)),this._hoverDelayer=this._register(new v(e.getValue("workbench.hover.delay")))}_hoverDelayer;_contextMenuVisible=!1;hideHover(){this._hoverDelayer.cancel(),this._hoverService.hideHover()}createHover(t,e,i){return D(l.addDisposableListener(t,l.EventType.MOUSE_ENTER,()=>{this._contextMenuVisible||this._hoverDelayer.trigger(()=>{let r=`${d("terminalPromptContextMenu","Show Command Actions")}`;if(r+=`
-
----
-
-`,e)if(e.markProperties||i)if(e.markProperties?.hoverMessage||i)r=e.markProperties?.hoverMessage||i||"";else return;else if(e.duration){const a=y(e.duration);e.exitCode?e.exitCode===-1?r+=d("terminalPromptCommandFailed.duration","Command executed {0}, took {1} and failed",u(e.timestamp,!0),a):r+=d("terminalPromptCommandFailedWithExitCode.duration","Command executed {0}, took {1} and failed (Exit Code {2})",u(e.timestamp,!0),a,e.exitCode):r+=d("terminalPromptCommandSuccess.duration","Command executed {0} and took {1}",u(e.timestamp,!0),a)}else e.exitCode?e.exitCode===-1?r+=d("terminalPromptCommandFailed","Command executed {0} and failed",u(e.timestamp,!0)):r+=d("terminalPromptCommandFailedWithExitCode","Command executed {0} and failed (Exit Code {1})",u(e.timestamp,!0),e.exitCode):r+=d("terminalPromptCommandSuccess","Command executed {0}",u(e.timestamp,!0));else if(i)r=i;else return;this._hoverService.showHover({content:new b(r),target:t})})}),l.addDisposableListener(t,l.EventType.MOUSE_LEAVE,()=>this.hideHover()),l.addDisposableListener(t,l.EventType.MOUSE_OUT,()=>this.hideHover()))}};p=C([m(0,g),m(1,_),m(2,c)],p);function A(n,o){if(!o)return;const t=n.inspect(f.FontSize).value,e=n.inspect(f.FontSize).defaultValue,i=n.inspect(f.LineHeight).value;if(typeof t=="number"&&typeof e=="number"&&typeof i=="number"){const r=t/e<=1?t/e:1;o.style.width=`${r*16}px`,o.style.height=`${r*16*i}px`,o.style.fontSize=`${r*16}px`,o.style.marginLeft=`${r*-17}px`}}export{I as DecorationSelector,p as TerminalDecorationHoverManager,A as updateLayout};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../../base/browser/dom.js';
+import { Delayer } from '../../../../../base/common/async.js';
+import { fromNow, getDurationString } from '../../../../../base/common/date.js';
+import { MarkdownString } from '../../../../../base/common/htmlContent.js';
+import { combinedDisposable, Disposable } from '../../../../../base/common/lifecycle.js';
+import { localize } from '../../../../../nls.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { IContextMenuService } from '../../../../../platform/contextview/browser/contextView.js';
+import { IHoverService } from '../../../../../platform/hover/browser/hover.js';
+let TerminalDecorationHoverManager = class TerminalDecorationHoverManager extends Disposable {
+    constructor(_hoverService, configurationService, contextMenuService) {
+        super();
+        this._hoverService = _hoverService;
+        this._contextMenuVisible = false;
+        this._register(contextMenuService.onDidShowContextMenu(() => this._contextMenuVisible = true));
+        this._register(contextMenuService.onDidHideContextMenu(() => this._contextMenuVisible = false));
+        this._hoverDelayer = this._register(new Delayer(configurationService.getValue('workbench.hover.delay')));
+    }
+    hideHover() {
+        this._hoverDelayer.cancel();
+        this._hoverService.hideHover();
+    }
+    createHover(element, command, hoverMessage) {
+        return combinedDisposable(dom.addDisposableListener(element, dom.EventType.MOUSE_ENTER, () => {
+            if (this._contextMenuVisible) {
+                return;
+            }
+            this._hoverDelayer.trigger(() => {
+                let hoverContent = `${localize('terminalPromptContextMenu', "Show Command Actions")}`;
+                hoverContent += '\n\n---\n\n';
+                if (!command) {
+                    if (hoverMessage) {
+                        hoverContent = hoverMessage;
+                    }
+                    else {
+                        return;
+                    }
+                }
+                else if (command.markProperties || hoverMessage) {
+                    if (command.markProperties?.hoverMessage || hoverMessage) {
+                        hoverContent = command.markProperties?.hoverMessage || hoverMessage || '';
+                    }
+                    else {
+                        return;
+                    }
+                }
+                else {
+                    if (command.duration) {
+                        const durationText = getDurationString(command.duration);
+                        if (command.exitCode) {
+                            if (command.exitCode === -1) {
+                                hoverContent += localize('terminalPromptCommandFailed.duration', 'Command executed {0}, took {1} and failed', fromNow(command.timestamp, true), durationText);
+                            }
+                            else {
+                                hoverContent += localize('terminalPromptCommandFailedWithExitCode.duration', 'Command executed {0}, took {1} and failed (Exit Code {2})', fromNow(command.timestamp, true), durationText, command.exitCode);
+                            }
+                        }
+                        else {
+                            hoverContent += localize('terminalPromptCommandSuccess.duration', 'Command executed {0} and took {1}', fromNow(command.timestamp, true), durationText);
+                        }
+                    }
+                    else {
+                        if (command.exitCode) {
+                            if (command.exitCode === -1) {
+                                hoverContent += localize('terminalPromptCommandFailed', 'Command executed {0} and failed', fromNow(command.timestamp, true));
+                            }
+                            else {
+                                hoverContent += localize('terminalPromptCommandFailedWithExitCode', 'Command executed {0} and failed (Exit Code {1})', fromNow(command.timestamp, true), command.exitCode);
+                            }
+                        }
+                        else {
+                            hoverContent += localize('terminalPromptCommandSuccess', 'Command executed {0}', fromNow(command.timestamp, true));
+                        }
+                    }
+                }
+                this._hoverService.showHover({ content: new MarkdownString(hoverContent), target: element });
+            });
+        }), dom.addDisposableListener(element, dom.EventType.MOUSE_LEAVE, () => this.hideHover()), dom.addDisposableListener(element, dom.EventType.MOUSE_OUT, () => this.hideHover()));
+    }
+};
+TerminalDecorationHoverManager = __decorate([
+    __param(0, IHoverService),
+    __param(1, IConfigurationService),
+    __param(2, IContextMenuService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], TerminalDecorationHoverManager);
+export { TerminalDecorationHoverManager };
+export function updateLayout(configurationService, element) {
+    if (!element) {
+        return;
+    }
+    const fontSize = configurationService.inspect("terminal.integrated.fontSize").value;
+    const defaultFontSize = configurationService.inspect("terminal.integrated.fontSize").defaultValue;
+    const lineHeight = configurationService.inspect("terminal.integrated.lineHeight").value;
+    if (typeof fontSize === 'number' && typeof defaultFontSize === 'number' && typeof lineHeight === 'number') {
+        const scalar = (fontSize / defaultFontSize) <= 1 ? (fontSize / defaultFontSize) : 1;
+        element.style.width = `${scalar * 16}px`;
+        element.style.height = `${scalar * 16 * lineHeight}px`;
+        element.style.fontSize = `${scalar * 16}px`;
+        element.style.marginLeft = `${scalar * -17}px`;
+    }
+}

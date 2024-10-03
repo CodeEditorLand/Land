@@ -1,5 +1,585 @@
-import"./media/actions.css";import{localize as a,localize2 as h}from"../../../nls.js";import{IKeybindingService as me}from"../../../platform/keybinding/common/keybinding.js";import{DomEmitter as b}from"../../../base/browser/event.js";import{Color as ge}from"../../../base/common/color.js";import{Emitter as I,Event as V}from"../../../base/common/event.js";import{toDisposable as N,dispose as fe,DisposableStore as q,setDisposableTracker as se,DisposableTracker as ye}from"../../../base/common/lifecycle.js";import{getDomNodePagePosition as ve,createStyleSheet as be,createCSSRule as he,append as L,$ as T,getActiveDocument as Se,onDidRegisterWindow as ie,getWindows as ae}from"../../../base/browser/dom.js";import{IConfigurationService as ke}from"../../../platform/configuration/common/configuration.js";import{ContextKeyExpr as Ce,IContextKeyService as W,RawContextKey as we}from"../../../platform/contextkey/common/contextkey.js";import"../../../platform/contextkey/browser/contextKeyService.js";import{StandardKeyboardEvent as Ie}from"../../../base/browser/keyboardEvent.js";import{RunOnceScheduler as De}from"../../../base/common/async.js";import{ILayoutService as Me}from"../../../platform/layout/browser/layoutService.js";import{Registry as xe}from"../../../platform/registry/common/platform.js";import{registerAction2 as S,Action2 as k,MenuRegistry as Ee}from"../../../platform/actions/common/actions.js";import{IStorageService as ce,StorageScope as R,StorageTarget as j}from"../../../platform/storage/common/storage.js";import{clamp as F}from"../../../base/common/numbers.js";import{KeyCode as A}from"../../../base/common/keyCodes.js";import{Extensions as Ke}from"../../../platform/configuration/common/configurationRegistry.js";import{ILogService as Le}from"../../../platform/log/common/log.js";import{IWorkingCopyService as Te}from"../../services/workingCopy/common/workingCopyService.js";import"../../../platform/instantiation/common/instantiation.js";import{Categories as C}from"../../../platform/action/common/actionCommonCategories.js";import{IWorkingCopyBackupService as Re}from"../../services/workingCopy/common/workingCopyBackup.js";import{ResultKind as de}from"../../../platform/keybinding/common/keybindingResolver.js";import{IDialogService as le}from"../../../platform/dialogs/common/dialogs.js";import{IOutputService as Ae}from"../../services/output/common/output.js";import{windowLogId as Oe}from"../../services/log/common/logConstants.js";import{ByteSize as Pe}from"../../../platform/files/common/files.js";import{IQuickInputService as ze}from"../../../platform/quickinput/common/quickInput.js";import{IUserDataProfileService as $e}from"../../services/userDataProfile/common/userDataProfile.js";import{IEditorService as Be}from"../../services/editor/common/editorService.js";import We from"../../../platform/product/common/product.js";import{CommandsRegistry as Fe}from"../../../platform/commands/common/commands.js";import{IEnvironmentService as Ge}from"../../../platform/environment/common/environment.js";class He extends k{constructor(){super({id:"workbench.action.inspectContextKeys",title:h("inspect context keys","Inspect Context Keys"),category:C.Developer,f1:!0})}run(n){const r=n.get(W),t=new q,f=be(void 0,void 0,t);he("*","cursor: crosshair !important;",f);const e=document.createElement("div"),m=Se();m.body.appendChild(e),t.add(N(()=>e.remove())),e.style.position="absolute",e.style.pointerEvents="none",e.style.backgroundColor="rgba(255, 0, 0, 0.5)",e.style.zIndex="1000";const l=t.add(new b(m,"mousemove",!0));t.add(l.event(g=>{const d=g.target,u=ve(d);e.style.top=`${u.top}px`,e.style.left=`${u.left}px`,e.style.width=`${u.width}px`,e.style.height=`${u.height}px`}));const c=t.add(new b(m,"mousedown",!0));V.once(c.event)(g=>{g.preventDefault(),g.stopPropagation()},null,t);const x=t.add(new b(m,"mouseup",!0));V.once(x.event)(g=>{g.preventDefault(),g.stopPropagation();const d=r.getContext(g.target);fe(t)},null,t)}}class O extends k{static disposable;constructor(){super({id:"workbench.action.toggleScreencastMode",title:h("toggle screencast mode","Toggle Screencast Mode"),category:C.Developer,f1:!0})}run(n){if(O.disposable){O.disposable.dispose(),O.disposable=void 0;return}const r=n.get(Me),t=n.get(ke),f=n.get(me),e=new q,m=r.activeContainer,l=L(m,T(".screencast-mouse"));e.add(N(()=>l.remove()));const c=L(m,T(".screencast-keyboard"));e.add(N(()=>c.remove()));const x=e.add(new I),g=e.add(new I),d=e.add(new I);function u(o,s){s.add(s.add(new b(o,"mousedown",!0)).event(i=>x.fire(i))),s.add(s.add(new b(o,"mouseup",!0)).event(i=>g.fire(i))),s.add(s.add(new b(o,"mousemove",!0)).event(i=>d.fire(i)))}for(const{window:o,disposables:s}of ae())u(r.getContainer(o),s);e.add(ie(({window:o,disposables:s})=>u(r.getContainer(o),s))),e.add(r.onDidChangeActiveContainer(()=>{r.activeContainer.appendChild(l),r.activeContainer.appendChild(c)}));const p=()=>{l.style.borderColor=ge.fromHex(t.getValue("screencastMode.mouseIndicatorColor")).toString()};let y;const X=()=>{y=F(t.getValue("screencastMode.mouseIndicatorSize")||20,20,100),l.style.height=`${y}px`,l.style.width=`${y}px`};p(),X(),e.add(x.event(o=>{l.style.top=`${o.clientY-y/2}px`,l.style.left=`${o.clientX-y/2}px`,l.style.display="block",l.style.transform="scale(1)",l.style.transition="transform 0.1s";const s=d.event(i=>{l.style.top=`${i.clientY-y/2}px`,l.style.left=`${i.clientX-y/2}px`,l.style.transform=`scale(${.8})`});V.once(g.event)(()=>{l.style.display="none",s.dispose()})}));const Y=()=>{c.style.fontSize=`${F(t.getValue("screencastMode.fontSize")||56,20,100)}px`},Z=()=>{c.style.bottom=`${F(t.getValue("screencastMode.verticalOffset")||0,0,90)}%`};let _;const J=()=>{_=F(t.getValue("screencastMode.keyboardOverlayTimeout")||800,500,5e3)};Y(),Z(),J(),e.add(t.onDidChangeConfiguration(o=>{o.affectsConfiguration("screencastMode.verticalOffset")&&Z(),o.affectsConfiguration("screencastMode.fontSize")&&Y(),o.affectsConfiguration("screencastMode.keyboardOverlayTimeout")&&J(),o.affectsConfiguration("screencastMode.mouseIndicatorColor")&&p(),o.affectsConfiguration("screencastMode.mouseIndicatorSize")&&X()}));const ee=e.add(new I),oe=e.add(new I),te=e.add(new I),ne=e.add(new I);function re(o,s){s.add(s.add(new b(o,"keydown",!0)).event(i=>ee.fire(i))),s.add(s.add(new b(o,"compositionstart",!0)).event(i=>oe.fire(i))),s.add(s.add(new b(o,"compositionupdate",!0)).event(i=>te.fire(i))),s.add(s.add(new b(o,"compositionend",!0)).event(i=>ne.fire(i)))}for(const{window:o,disposables:s}of ae())re(o,s);e.add(ie(({window:o,disposables:s})=>re(o,s)));let w=0,E,K=!1;const H=new De(()=>{c.textContent="",E=void 0,w=0},_);e.add(oe.event(o=>{K=!0})),e.add(te.event(o=>{o.data&&K?(w>20&&(c.innerText="",w=0),E=E??L(c,T("span.key")),E.textContent=o.data):K&&(c.innerText="",L(c,T("span.key",{},"Backspace"))),H.schedule()})),e.add(ne.event(o=>{E=void 0,w++})),e.add(ee.event(o=>{if(o.key==="Process"||/[\uac00-\ud787\u3131-\u314e\u314f-\u3163\u3041-\u3094\u30a1-\u30f4\u30fc\u3005\u3006\u3024\u4e00-\u9fa5]/u.test(o.key)){o.code==="Backspace"||o.code.includes("Key")?K=!0:(E=void 0,K=!1),H.schedule();return}if(o.isComposing)return;const s=t.getValue("screencastMode.keyboardOptions"),i=new Ie(o),v=f.softDispatch(i,i.target);if(v.kind===de.KbFound&&v.commandId&&!(s.showSingleEditorCursorMoves??!0)&&["cursorLeft","cursorRight","cursorUp","cursorDown"].includes(v.commandId))return;(i.ctrlKey||i.altKey||i.metaKey||i.shiftKey||w>20||i.keyCode===A.Backspace||i.keyCode===A.Escape||i.keyCode===A.UpArrow||i.keyCode===A.DownArrow||i.keyCode===A.LeftArrow||i.keyCode===A.RightArrow)&&(c.innerText="",w=0);const pe=f.resolveKeyboardEvent(i),$=this._isKbFound(v)&&v.commandId?this.getCommandDetails(v.commandId):void 0;let B=$?.title,z=pe.getLabel();if($&&((s.showCommandGroups??!1)&&$.category&&(B=`${$.category}: ${B} `),this._isKbFound(v)&&v.commandId)){const U=f.lookupKeybindings(v.commandId).filter(ue=>ue.getLabel()?.endsWith(z??""));U.length>0&&(z=U[U.length-1].getLabel())}(s.showCommands??!0)&&B&&L(c,T("span.title",{},`${B} `)),((s.showKeys??!0)||(s.showKeybindings??!0)&&this._isKbFound(v))&&(z=z?.replace("UpArrow","\u2191")?.replace("DownArrow","\u2193")?.replace("LeftArrow","\u2190")?.replace("RightArrow","\u2192"),L(c,T("span.key",{},z??""))),w++,H.schedule()})),O.disposable=e}_isKbFound(n){return n.kind===de.KbFound}getCommandDetails(n){const r=Ee.getCommand(n);if(r)return{title:typeof r.title=="string"?r.title:r.title.value,category:r.category?typeof r.category=="string"?r.category:r.category.value:void 0};const t=Fe.getCommand(n);if(t&&t.metadata?.description)return{title:typeof t.metadata.description=="string"?t.metadata.description:t.metadata.description.value}}}class Ue extends k{constructor(){super({id:"workbench.action.logStorage",title:h({key:"logStorage",comment:["A developer only action to log the contents of the storage for the current window."]},"Log Storage Database Contents"),category:C.Developer,f1:!0})}run(n){const r=n.get(ce),t=n.get(le);r.log(),t.info(a("storageLogDialogMessage","The storage database contents have been logged to the developer tools."),a("storageLogDialogDetails","Open developer tools from the menu and select the Console tab."))}}class Ve extends k{constructor(){super({id:"workbench.action.logWorkingCopies",title:h({key:"logWorkingCopies",comment:["A developer only action to log the working copies that exist."]},"Log Working Copies"),category:C.Developer,f1:!0})}async run(n){const r=n.get(Te),t=n.get(Re),f=n.get(Le),e=n.get(Ae),m=await t.getBackups(),l=["","[Working Copies]",...r.workingCopies.length>0?r.workingCopies.map(c=>`${c.isDirty()?"\u25CF ":""}${c.resource.toString(!0)} (typeId: ${c.typeId||"<no typeId>"})`):["<none>"],"","[Backups]",...m.length>0?m.map(c=>`${c.resource.toString(!0)} (typeId: ${c.typeId||"<no typeId>"})`):["<none>"]];f.info(l.join(`
-`)),e.showChannel(Oe,!0)}}class Q extends k{static SIZE_THRESHOLD=1024*16;constructor(){super({id:"workbench.action.removeLargeStorageDatabaseEntries",title:h("removeLargeStorageDatabaseEntries","Remove Large Storage Database Entries..."),category:C.Developer,f1:!0})}async run(n){const r=n.get(ce),t=n.get(ze),f=n.get($e),e=n.get(le),m=n.get(Ge),l=[];for(const d of[R.APPLICATION,R.PROFILE,R.WORKSPACE])if(!(d===R.PROFILE&&f.currentProfile.isDefault))for(const u of[j.MACHINE,j.USER])for(const p of r.keys(d,u)){const y=r.get(p,d);y&&(!m.isBuilt||y.length>Q.SIZE_THRESHOLD)&&l.push({key:p,scope:d,target:u,size:y.length,label:p,description:Pe.formatSize(y.length),detail:a("largeStorageItemDetail","Scope: {0}, Target: {1}",d===R.APPLICATION?a("global","Global"):d===R.PROFILE?a("profile","Profile"):a("workspace","Workspace"),u===j.MACHINE?a("machine","Machine"):a("user","User"))})}l.sort((d,u)=>u.size-d.size);const c=await new Promise(d=>{const u=new q,p=u.add(t.createQuickPick());p.items=l,p.canSelectMany=!0,p.ok=!1,p.customButton=!0,p.hideCheckAll=!0,p.customLabel=a("removeLargeStorageEntriesPickerButton","Remove"),p.placeholder=a("removeLargeStorageEntriesPickerPlaceholder","Select large entries to remove from storage"),l.length===0&&(p.description=a("removeLargeStorageEntriesPickerDescriptionNoEntries","There are no large storage entries to remove.")),p.show(),u.add(p.onDidCustom(()=>{d(p.selectedItems),p.hide()})),u.add(p.onDidHide(()=>u.dispose()))});if(c.length===0)return;const{confirmed:x}=await e.confirm({type:"warning",message:a("removeLargeStorageEntriesConfirmRemove","Do you want to remove the selected storage entries from the database?"),detail:a("removeLargeStorageEntriesConfirmRemoveDetail",`{0}
-
-This action is irreversible and may result in data loss!`,c.map(d=>d.label).join(`
-`)),primaryButton:a({key:"removeLargeStorageEntriesButtonLabel",comment:["&& denotes a mnemonic"]},"&&Remove")});if(!x)return;const g=new Set;for(const d of c)r.remove(d.key,d.scope),g.add(d.scope);for(const d of g)await r.optimize(d)}}let D,G=new Set;const M=new we("dirtyWorkingCopies","stopped");class Ne extends k{constructor(){super({id:"workbench.action.startTrackDisposables",title:h("startTrackDisposables","Start Tracking Disposables"),category:C.Developer,f1:!0,precondition:Ce.and(M.isEqualTo("pending").negate(),M.isEqualTo("started").negate())})}run(n){M.bindTo(n.get(W)).set("started"),G.clear(),D=new ye,se(D)}}class qe extends k{constructor(){super({id:"workbench.action.snapshotTrackedDisposables",title:h("snapshotTrackedDisposables","Snapshot Tracked Disposables"),category:C.Developer,f1:!0,precondition:M.isEqualTo("started")})}run(n){M.bindTo(n.get(W)).set("pending"),G=new Set(D?.computeLeakingDisposables(1e3)?.leaks.map(t=>t.value))}}class je extends k{constructor(){super({id:"workbench.action.stopTrackDisposables",title:h("stopTrackDisposables","Stop Tracking Disposables"),category:C.Developer,f1:!0,precondition:M.isEqualTo("pending")})}run(n){const r=n.get(Be);if(M.bindTo(n.get(W)).set("stopped"),D){const f=new Set;for(const m of new Set(D.computeLeakingDisposables(1e3)?.leaks)??[])G.has(m.value)&&f.add(m);const e=D.computeLeakingDisposables(1e3,Array.from(f));e&&r.openEditor({resource:void 0,contents:e.details})}se(null),D=void 0,G.clear()}}S(He),S(O),S(Ue),S(Ve),S(Q),We.commit||(S(Ne),S(qe),S(je));const Qe=xe.as(Ke.Configuration);Qe.registerConfiguration({id:"screencastMode",order:9,title:a("screencastModeConfigurationTitle","Screencast Mode"),type:"object",properties:{"screencastMode.verticalOffset":{type:"number",default:20,minimum:0,maximum:90,description:a("screencastMode.location.verticalPosition","Controls the vertical offset of the screencast mode overlay from the bottom as a percentage of the workbench height.")},"screencastMode.fontSize":{type:"number",default:56,minimum:20,maximum:100,description:a("screencastMode.fontSize","Controls the font size (in pixels) of the screencast mode keyboard.")},"screencastMode.keyboardOptions":{type:"object",description:a("screencastMode.keyboardOptions.description","Options for customizing the keyboard overlay in screencast mode."),properties:{showKeys:{type:"boolean",default:!0,description:a("screencastMode.keyboardOptions.showKeys","Show raw keys.")},showKeybindings:{type:"boolean",default:!0,description:a("screencastMode.keyboardOptions.showKeybindings","Show keyboard shortcuts.")},showCommands:{type:"boolean",default:!0,description:a("screencastMode.keyboardOptions.showCommands","Show command names.")},showCommandGroups:{type:"boolean",default:!1,description:a("screencastMode.keyboardOptions.showCommandGroups","Show command group names, when commands are also shown.")},showSingleEditorCursorMoves:{type:"boolean",default:!0,description:a("screencastMode.keyboardOptions.showSingleEditorCursorMoves","Show single editor cursor move commands.")}},default:{showKeys:!0,showKeybindings:!0,showCommands:!0,showCommandGroups:!1,showSingleEditorCursorMoves:!0},additionalProperties:!1},"screencastMode.keyboardOverlayTimeout":{type:"number",default:800,minimum:500,maximum:5e3,description:a("screencastMode.keyboardOverlayTimeout","Controls how long (in milliseconds) the keyboard overlay is shown in screencast mode.")},"screencastMode.mouseIndicatorColor":{type:"string",format:"color-hex",default:"#FF0000",description:a("screencastMode.mouseIndicatorColor","Controls the color in hex (#RGB, #RGBA, #RRGGBB or #RRGGBBAA) of the mouse indicator in screencast mode.")},"screencastMode.mouseIndicatorSize":{type:"number",default:20,minimum:20,maximum:100,description:a("screencastMode.mouseIndicatorSize","Controls the size (in pixels) of the mouse indicator in screencast mode.")}}});
+import './media/actions.css';
+import { localize, localize2 } from '../../../nls.js';
+import { IKeybindingService } from '../../../platform/keybinding/common/keybinding.js';
+import { DomEmitter } from '../../../base/browser/event.js';
+import { Color } from '../../../base/common/color.js';
+import { Emitter, Event } from '../../../base/common/event.js';
+import { toDisposable, dispose, DisposableStore, setDisposableTracker, DisposableTracker } from '../../../base/common/lifecycle.js';
+import { getDomNodePagePosition, createStyleSheet, createCSSRule, append, $, getActiveDocument, onDidRegisterWindow, getWindows } from '../../../base/browser/dom.js';
+import { IConfigurationService } from '../../../platform/configuration/common/configuration.js';
+import { ContextKeyExpr, IContextKeyService, RawContextKey } from '../../../platform/contextkey/common/contextkey.js';
+import { StandardKeyboardEvent } from '../../../base/browser/keyboardEvent.js';
+import { RunOnceScheduler } from '../../../base/common/async.js';
+import { ILayoutService } from '../../../platform/layout/browser/layoutService.js';
+import { Registry } from '../../../platform/registry/common/platform.js';
+import { registerAction2, Action2, MenuRegistry } from '../../../platform/actions/common/actions.js';
+import { IStorageService } from '../../../platform/storage/common/storage.js';
+import { clamp } from '../../../base/common/numbers.js';
+import { Extensions as ConfigurationExtensions } from '../../../platform/configuration/common/configurationRegistry.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { IWorkingCopyService } from '../../services/workingCopy/common/workingCopyService.js';
+import { Categories } from '../../../platform/action/common/actionCommonCategories.js';
+import { IWorkingCopyBackupService } from '../../services/workingCopy/common/workingCopyBackup.js';
+import { IDialogService } from '../../../platform/dialogs/common/dialogs.js';
+import { IOutputService } from '../../services/output/common/output.js';
+import { windowLogId } from '../../services/log/common/logConstants.js';
+import { ByteSize } from '../../../platform/files/common/files.js';
+import { IQuickInputService } from '../../../platform/quickinput/common/quickInput.js';
+import { IUserDataProfileService } from '../../services/userDataProfile/common/userDataProfile.js';
+import { IEditorService } from '../../services/editor/common/editorService.js';
+import product from '../../../platform/product/common/product.js';
+import { CommandsRegistry } from '../../../platform/commands/common/commands.js';
+import { IEnvironmentService } from '../../../platform/environment/common/environment.js';
+class InspectContextKeysAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.inspectContextKeys',
+            title: localize2('inspect context keys', 'Inspect Context Keys'),
+            category: Categories.Developer,
+            f1: true
+        });
+    }
+    run(accessor) {
+        const contextKeyService = accessor.get(IContextKeyService);
+        const disposables = new DisposableStore();
+        const stylesheet = createStyleSheet(undefined, undefined, disposables);
+        createCSSRule('*', 'cursor: crosshair !important;', stylesheet);
+        const hoverFeedback = document.createElement('div');
+        const activeDocument = getActiveDocument();
+        activeDocument.body.appendChild(hoverFeedback);
+        disposables.add(toDisposable(() => hoverFeedback.remove()));
+        hoverFeedback.style.position = 'absolute';
+        hoverFeedback.style.pointerEvents = 'none';
+        hoverFeedback.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
+        hoverFeedback.style.zIndex = '1000';
+        const onMouseMove = disposables.add(new DomEmitter(activeDocument, 'mousemove', true));
+        disposables.add(onMouseMove.event(e => {
+            const target = e.target;
+            const position = getDomNodePagePosition(target);
+            hoverFeedback.style.top = `${position.top}px`;
+            hoverFeedback.style.left = `${position.left}px`;
+            hoverFeedback.style.width = `${position.width}px`;
+            hoverFeedback.style.height = `${position.height}px`;
+        }));
+        const onMouseDown = disposables.add(new DomEmitter(activeDocument, 'mousedown', true));
+        Event.once(onMouseDown.event)(e => { e.preventDefault(); e.stopPropagation(); }, null, disposables);
+        const onMouseUp = disposables.add(new DomEmitter(activeDocument, 'mouseup', true));
+        Event.once(onMouseUp.event)(e => {
+            e.preventDefault();
+            e.stopPropagation();
+            const context = contextKeyService.getContext(e.target);
+            console.log(context.collectAllValues());
+            dispose(disposables);
+        }, null, disposables);
+    }
+}
+class ToggleScreencastModeAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.toggleScreencastMode',
+            title: localize2('toggle screencast mode', 'Toggle Screencast Mode'),
+            category: Categories.Developer,
+            f1: true
+        });
+    }
+    run(accessor) {
+        if (ToggleScreencastModeAction.disposable) {
+            ToggleScreencastModeAction.disposable.dispose();
+            ToggleScreencastModeAction.disposable = undefined;
+            return;
+        }
+        const layoutService = accessor.get(ILayoutService);
+        const configurationService = accessor.get(IConfigurationService);
+        const keybindingService = accessor.get(IKeybindingService);
+        const disposables = new DisposableStore();
+        const container = layoutService.activeContainer;
+        const mouseMarker = append(container, $('.screencast-mouse'));
+        disposables.add(toDisposable(() => mouseMarker.remove()));
+        const keyboardMarker = append(container, $('.screencast-keyboard'));
+        disposables.add(toDisposable(() => keyboardMarker.remove()));
+        const onMouseDown = disposables.add(new Emitter());
+        const onMouseUp = disposables.add(new Emitter());
+        const onMouseMove = disposables.add(new Emitter());
+        function registerContainerListeners(container, disposables) {
+            disposables.add(disposables.add(new DomEmitter(container, 'mousedown', true)).event(e => onMouseDown.fire(e)));
+            disposables.add(disposables.add(new DomEmitter(container, 'mouseup', true)).event(e => onMouseUp.fire(e)));
+            disposables.add(disposables.add(new DomEmitter(container, 'mousemove', true)).event(e => onMouseMove.fire(e)));
+        }
+        for (const { window, disposables } of getWindows()) {
+            registerContainerListeners(layoutService.getContainer(window), disposables);
+        }
+        disposables.add(onDidRegisterWindow(({ window, disposables }) => registerContainerListeners(layoutService.getContainer(window), disposables)));
+        disposables.add(layoutService.onDidChangeActiveContainer(() => {
+            layoutService.activeContainer.appendChild(mouseMarker);
+            layoutService.activeContainer.appendChild(keyboardMarker);
+        }));
+        const updateMouseIndicatorColor = () => {
+            mouseMarker.style.borderColor = Color.fromHex(configurationService.getValue('screencastMode.mouseIndicatorColor')).toString();
+        };
+        let mouseIndicatorSize;
+        const updateMouseIndicatorSize = () => {
+            mouseIndicatorSize = clamp(configurationService.getValue('screencastMode.mouseIndicatorSize') || 20, 20, 100);
+            mouseMarker.style.height = `${mouseIndicatorSize}px`;
+            mouseMarker.style.width = `${mouseIndicatorSize}px`;
+        };
+        updateMouseIndicatorColor();
+        updateMouseIndicatorSize();
+        disposables.add(onMouseDown.event(e => {
+            mouseMarker.style.top = `${e.clientY - mouseIndicatorSize / 2}px`;
+            mouseMarker.style.left = `${e.clientX - mouseIndicatorSize / 2}px`;
+            mouseMarker.style.display = 'block';
+            mouseMarker.style.transform = `scale(${1})`;
+            mouseMarker.style.transition = 'transform 0.1s';
+            const mouseMoveListener = onMouseMove.event(e => {
+                mouseMarker.style.top = `${e.clientY - mouseIndicatorSize / 2}px`;
+                mouseMarker.style.left = `${e.clientX - mouseIndicatorSize / 2}px`;
+                mouseMarker.style.transform = `scale(${.8})`;
+            });
+            Event.once(onMouseUp.event)(() => {
+                mouseMarker.style.display = 'none';
+                mouseMoveListener.dispose();
+            });
+        }));
+        const updateKeyboardFontSize = () => {
+            keyboardMarker.style.fontSize = `${clamp(configurationService.getValue('screencastMode.fontSize') || 56, 20, 100)}px`;
+        };
+        const updateKeyboardMarker = () => {
+            keyboardMarker.style.bottom = `${clamp(configurationService.getValue('screencastMode.verticalOffset') || 0, 0, 90)}%`;
+        };
+        let keyboardMarkerTimeout;
+        const updateKeyboardMarkerTimeout = () => {
+            keyboardMarkerTimeout = clamp(configurationService.getValue('screencastMode.keyboardOverlayTimeout') || 800, 500, 5000);
+        };
+        updateKeyboardFontSize();
+        updateKeyboardMarker();
+        updateKeyboardMarkerTimeout();
+        disposables.add(configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('screencastMode.verticalOffset')) {
+                updateKeyboardMarker();
+            }
+            if (e.affectsConfiguration('screencastMode.fontSize')) {
+                updateKeyboardFontSize();
+            }
+            if (e.affectsConfiguration('screencastMode.keyboardOverlayTimeout')) {
+                updateKeyboardMarkerTimeout();
+            }
+            if (e.affectsConfiguration('screencastMode.mouseIndicatorColor')) {
+                updateMouseIndicatorColor();
+            }
+            if (e.affectsConfiguration('screencastMode.mouseIndicatorSize')) {
+                updateMouseIndicatorSize();
+            }
+        }));
+        const onKeyDown = disposables.add(new Emitter());
+        const onCompositionStart = disposables.add(new Emitter());
+        const onCompositionUpdate = disposables.add(new Emitter());
+        const onCompositionEnd = disposables.add(new Emitter());
+        function registerWindowListeners(window, disposables) {
+            disposables.add(disposables.add(new DomEmitter(window, 'keydown', true)).event(e => onKeyDown.fire(e)));
+            disposables.add(disposables.add(new DomEmitter(window, 'compositionstart', true)).event(e => onCompositionStart.fire(e)));
+            disposables.add(disposables.add(new DomEmitter(window, 'compositionupdate', true)).event(e => onCompositionUpdate.fire(e)));
+            disposables.add(disposables.add(new DomEmitter(window, 'compositionend', true)).event(e => onCompositionEnd.fire(e)));
+        }
+        for (const { window, disposables } of getWindows()) {
+            registerWindowListeners(window, disposables);
+        }
+        disposables.add(onDidRegisterWindow(({ window, disposables }) => registerWindowListeners(window, disposables)));
+        let length = 0;
+        let composing = undefined;
+        let imeBackSpace = false;
+        const clearKeyboardScheduler = new RunOnceScheduler(() => {
+            keyboardMarker.textContent = '';
+            composing = undefined;
+            length = 0;
+        }, keyboardMarkerTimeout);
+        disposables.add(onCompositionStart.event(e => {
+            imeBackSpace = true;
+        }));
+        disposables.add(onCompositionUpdate.event(e => {
+            if (e.data && imeBackSpace) {
+                if (length > 20) {
+                    keyboardMarker.innerText = '';
+                    length = 0;
+                }
+                composing = composing ?? append(keyboardMarker, $('span.key'));
+                composing.textContent = e.data;
+            }
+            else if (imeBackSpace) {
+                keyboardMarker.innerText = '';
+                append(keyboardMarker, $('span.key', {}, `Backspace`));
+            }
+            clearKeyboardScheduler.schedule();
+        }));
+        disposables.add(onCompositionEnd.event(e => {
+            composing = undefined;
+            length++;
+        }));
+        disposables.add(onKeyDown.event(e => {
+            if (e.key === 'Process' || /[\uac00-\ud787\u3131-\u314e\u314f-\u3163\u3041-\u3094\u30a1-\u30f4\u30fc\u3005\u3006\u3024\u4e00-\u9fa5]/u.test(e.key)) {
+                if (e.code === 'Backspace') {
+                    imeBackSpace = true;
+                }
+                else if (!e.code.includes('Key')) {
+                    composing = undefined;
+                    imeBackSpace = false;
+                }
+                else {
+                    imeBackSpace = true;
+                }
+                clearKeyboardScheduler.schedule();
+                return;
+            }
+            if (e.isComposing) {
+                return;
+            }
+            const options = configurationService.getValue('screencastMode.keyboardOptions');
+            const event = new StandardKeyboardEvent(e);
+            const shortcut = keybindingService.softDispatch(event, event.target);
+            if (shortcut.kind === 2 && shortcut.commandId && !(options.showSingleEditorCursorMoves ?? true) && (['cursorLeft', 'cursorRight', 'cursorUp', 'cursorDown'].includes(shortcut.commandId))) {
+                return;
+            }
+            if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey
+                || length > 20
+                || event.keyCode === 1 || event.keyCode === 9
+                || event.keyCode === 16 || event.keyCode === 18
+                || event.keyCode === 15 || event.keyCode === 17) {
+                keyboardMarker.innerText = '';
+                length = 0;
+            }
+            const keybinding = keybindingService.resolveKeyboardEvent(event);
+            const commandDetails = (this._isKbFound(shortcut) && shortcut.commandId) ? this.getCommandDetails(shortcut.commandId) : undefined;
+            let commandAndGroupLabel = commandDetails?.title;
+            let keyLabel = keybinding.getLabel();
+            if (commandDetails) {
+                if ((options.showCommandGroups ?? false) && commandDetails.category) {
+                    commandAndGroupLabel = `${commandDetails.category}: ${commandAndGroupLabel} `;
+                }
+                if (this._isKbFound(shortcut) && shortcut.commandId) {
+                    const keybindings = keybindingService.lookupKeybindings(shortcut.commandId)
+                        .filter(k => k.getLabel()?.endsWith(keyLabel ?? ''));
+                    if (keybindings.length > 0) {
+                        keyLabel = keybindings[keybindings.length - 1].getLabel();
+                    }
+                }
+            }
+            if ((options.showCommands ?? true) && commandAndGroupLabel) {
+                append(keyboardMarker, $('span.title', {}, `${commandAndGroupLabel} `));
+            }
+            if ((options.showKeys ?? true) || ((options.showKeybindings ?? true) && this._isKbFound(shortcut))) {
+                keyLabel = keyLabel?.replace('UpArrow', '↑')
+                    ?.replace('DownArrow', '↓')
+                    ?.replace('LeftArrow', '←')
+                    ?.replace('RightArrow', '→');
+                append(keyboardMarker, $('span.key', {}, keyLabel ?? ''));
+            }
+            length++;
+            clearKeyboardScheduler.schedule();
+        }));
+        ToggleScreencastModeAction.disposable = disposables;
+    }
+    _isKbFound(resolutionResult) {
+        return resolutionResult.kind === 2;
+    }
+    getCommandDetails(commandId) {
+        const fromMenuRegistry = MenuRegistry.getCommand(commandId);
+        if (fromMenuRegistry) {
+            return {
+                title: typeof fromMenuRegistry.title === 'string' ? fromMenuRegistry.title : fromMenuRegistry.title.value,
+                category: fromMenuRegistry.category ? (typeof fromMenuRegistry.category === 'string' ? fromMenuRegistry.category : fromMenuRegistry.category.value) : undefined
+            };
+        }
+        const fromCommandsRegistry = CommandsRegistry.getCommand(commandId);
+        if (fromCommandsRegistry && fromCommandsRegistry.metadata?.description) {
+            return { title: typeof fromCommandsRegistry.metadata.description === 'string' ? fromCommandsRegistry.metadata.description : fromCommandsRegistry.metadata.description.value };
+        }
+        return undefined;
+    }
+}
+class LogStorageAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.logStorage',
+            title: localize2({ key: 'logStorage', comment: ['A developer only action to log the contents of the storage for the current window.'] }, "Log Storage Database Contents"),
+            category: Categories.Developer,
+            f1: true
+        });
+    }
+    run(accessor) {
+        const storageService = accessor.get(IStorageService);
+        const dialogService = accessor.get(IDialogService);
+        storageService.log();
+        dialogService.info(localize('storageLogDialogMessage', "The storage database contents have been logged to the developer tools."), localize('storageLogDialogDetails', "Open developer tools from the menu and select the Console tab."));
+    }
+}
+class LogWorkingCopiesAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.logWorkingCopies',
+            title: localize2({ key: 'logWorkingCopies', comment: ['A developer only action to log the working copies that exist.'] }, "Log Working Copies"),
+            category: Categories.Developer,
+            f1: true
+        });
+    }
+    async run(accessor) {
+        const workingCopyService = accessor.get(IWorkingCopyService);
+        const workingCopyBackupService = accessor.get(IWorkingCopyBackupService);
+        const logService = accessor.get(ILogService);
+        const outputService = accessor.get(IOutputService);
+        const backups = await workingCopyBackupService.getBackups();
+        const msg = [
+            ``,
+            `[Working Copies]`,
+            ...(workingCopyService.workingCopies.length > 0) ?
+                workingCopyService.workingCopies.map(workingCopy => `${workingCopy.isDirty() ? '● ' : ''}${workingCopy.resource.toString(true)} (typeId: ${workingCopy.typeId || '<no typeId>'})`) :
+                ['<none>'],
+            ``,
+            `[Backups]`,
+            ...(backups.length > 0) ?
+                backups.map(backup => `${backup.resource.toString(true)} (typeId: ${backup.typeId || '<no typeId>'})`) :
+                ['<none>'],
+        ];
+        logService.info(msg.join('\n'));
+        outputService.showChannel(windowLogId, true);
+    }
+}
+class RemoveLargeStorageEntriesAction extends Action2 {
+    static { this.SIZE_THRESHOLD = 1024 * 16; }
+    constructor() {
+        super({
+            id: 'workbench.action.removeLargeStorageDatabaseEntries',
+            title: localize2('removeLargeStorageDatabaseEntries', 'Remove Large Storage Database Entries...'),
+            category: Categories.Developer,
+            f1: true
+        });
+    }
+    async run(accessor) {
+        const storageService = accessor.get(IStorageService);
+        const quickInputService = accessor.get(IQuickInputService);
+        const userDataProfileService = accessor.get(IUserDataProfileService);
+        const dialogService = accessor.get(IDialogService);
+        const environmentService = accessor.get(IEnvironmentService);
+        const items = [];
+        for (const scope of [-1, 0, 1]) {
+            if (scope === 0 && userDataProfileService.currentProfile.isDefault) {
+                continue;
+            }
+            for (const target of [1, 0]) {
+                for (const key of storageService.keys(scope, target)) {
+                    const value = storageService.get(key, scope);
+                    if (value && (!environmentService.isBuilt || value.length > RemoveLargeStorageEntriesAction.SIZE_THRESHOLD)) {
+                        items.push({
+                            key,
+                            scope,
+                            target,
+                            size: value.length,
+                            label: key,
+                            description: ByteSize.formatSize(value.length),
+                            detail: localize('largeStorageItemDetail', "Scope: {0}, Target: {1}", scope === -1 ? localize('global', "Global") : scope === 0 ? localize('profile', "Profile") : localize('workspace', "Workspace"), target === 1 ? localize('machine', "Machine") : localize('user', "User")),
+                        });
+                    }
+                }
+            }
+        }
+        items.sort((itemA, itemB) => itemB.size - itemA.size);
+        const selectedItems = await new Promise(resolve => {
+            const disposables = new DisposableStore();
+            const picker = disposables.add(quickInputService.createQuickPick());
+            picker.items = items;
+            picker.canSelectMany = true;
+            picker.ok = false;
+            picker.customButton = true;
+            picker.hideCheckAll = true;
+            picker.customLabel = localize('removeLargeStorageEntriesPickerButton', "Remove");
+            picker.placeholder = localize('removeLargeStorageEntriesPickerPlaceholder', "Select large entries to remove from storage");
+            if (items.length === 0) {
+                picker.description = localize('removeLargeStorageEntriesPickerDescriptionNoEntries', "There are no large storage entries to remove.");
+            }
+            picker.show();
+            disposables.add(picker.onDidCustom(() => {
+                resolve(picker.selectedItems);
+                picker.hide();
+            }));
+            disposables.add(picker.onDidHide(() => disposables.dispose()));
+        });
+        if (selectedItems.length === 0) {
+            return;
+        }
+        const { confirmed } = await dialogService.confirm({
+            type: 'warning',
+            message: localize('removeLargeStorageEntriesConfirmRemove', "Do you want to remove the selected storage entries from the database?"),
+            detail: localize('removeLargeStorageEntriesConfirmRemoveDetail', "{0}\n\nThis action is irreversible and may result in data loss!", selectedItems.map(item => item.label).join('\n')),
+            primaryButton: localize({ key: 'removeLargeStorageEntriesButtonLabel', comment: ['&& denotes a mnemonic'] }, "&&Remove")
+        });
+        if (!confirmed) {
+            return;
+        }
+        const scopesToOptimize = new Set();
+        for (const item of selectedItems) {
+            storageService.remove(item.key, item.scope);
+            scopesToOptimize.add(item.scope);
+        }
+        for (const scope of scopesToOptimize) {
+            await storageService.optimize(scope);
+        }
+    }
+}
+let tracker = undefined;
+let trackedDisposables = new Set();
+const DisposablesSnapshotStateContext = new RawContextKey('dirtyWorkingCopies', 'stopped');
+class StartTrackDisposables extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.startTrackDisposables',
+            title: localize2('startTrackDisposables', 'Start Tracking Disposables'),
+            category: Categories.Developer,
+            f1: true,
+            precondition: ContextKeyExpr.and(DisposablesSnapshotStateContext.isEqualTo('pending').negate(), DisposablesSnapshotStateContext.isEqualTo('started').negate())
+        });
+    }
+    run(accessor) {
+        const disposablesSnapshotStateContext = DisposablesSnapshotStateContext.bindTo(accessor.get(IContextKeyService));
+        disposablesSnapshotStateContext.set('started');
+        trackedDisposables.clear();
+        tracker = new DisposableTracker();
+        setDisposableTracker(tracker);
+    }
+}
+class SnapshotTrackedDisposables extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.snapshotTrackedDisposables',
+            title: localize2('snapshotTrackedDisposables', 'Snapshot Tracked Disposables'),
+            category: Categories.Developer,
+            f1: true,
+            precondition: DisposablesSnapshotStateContext.isEqualTo('started')
+        });
+    }
+    run(accessor) {
+        const disposablesSnapshotStateContext = DisposablesSnapshotStateContext.bindTo(accessor.get(IContextKeyService));
+        disposablesSnapshotStateContext.set('pending');
+        trackedDisposables = new Set(tracker?.computeLeakingDisposables(1000)?.leaks.map(disposable => disposable.value));
+    }
+}
+class StopTrackDisposables extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.stopTrackDisposables',
+            title: localize2('stopTrackDisposables', 'Stop Tracking Disposables'),
+            category: Categories.Developer,
+            f1: true,
+            precondition: DisposablesSnapshotStateContext.isEqualTo('pending')
+        });
+    }
+    run(accessor) {
+        const editorService = accessor.get(IEditorService);
+        const disposablesSnapshotStateContext = DisposablesSnapshotStateContext.bindTo(accessor.get(IContextKeyService));
+        disposablesSnapshotStateContext.set('stopped');
+        if (tracker) {
+            const disposableLeaks = new Set();
+            for (const disposable of new Set(tracker.computeLeakingDisposables(1000)?.leaks) ?? []) {
+                if (trackedDisposables.has(disposable.value)) {
+                    disposableLeaks.add(disposable);
+                }
+            }
+            const leaks = tracker.computeLeakingDisposables(1000, Array.from(disposableLeaks));
+            if (leaks) {
+                editorService.openEditor({ resource: undefined, contents: leaks.details });
+            }
+        }
+        setDisposableTracker(null);
+        tracker = undefined;
+        trackedDisposables.clear();
+    }
+}
+registerAction2(InspectContextKeysAction);
+registerAction2(ToggleScreencastModeAction);
+registerAction2(LogStorageAction);
+registerAction2(LogWorkingCopiesAction);
+registerAction2(RemoveLargeStorageEntriesAction);
+if (!product.commit) {
+    registerAction2(StartTrackDisposables);
+    registerAction2(SnapshotTrackedDisposables);
+    registerAction2(StopTrackDisposables);
+}
+const configurationRegistry = Registry.as(ConfigurationExtensions.Configuration);
+configurationRegistry.registerConfiguration({
+    id: 'screencastMode',
+    order: 9,
+    title: localize('screencastModeConfigurationTitle', "Screencast Mode"),
+    type: 'object',
+    properties: {
+        'screencastMode.verticalOffset': {
+            type: 'number',
+            default: 20,
+            minimum: 0,
+            maximum: 90,
+            description: localize('screencastMode.location.verticalPosition', "Controls the vertical offset of the screencast mode overlay from the bottom as a percentage of the workbench height.")
+        },
+        'screencastMode.fontSize': {
+            type: 'number',
+            default: 56,
+            minimum: 20,
+            maximum: 100,
+            description: localize('screencastMode.fontSize', "Controls the font size (in pixels) of the screencast mode keyboard.")
+        },
+        'screencastMode.keyboardOptions': {
+            type: 'object',
+            description: localize('screencastMode.keyboardOptions.description', "Options for customizing the keyboard overlay in screencast mode."),
+            properties: {
+                'showKeys': {
+                    type: 'boolean',
+                    default: true,
+                    description: localize('screencastMode.keyboardOptions.showKeys', "Show raw keys.")
+                },
+                'showKeybindings': {
+                    type: 'boolean',
+                    default: true,
+                    description: localize('screencastMode.keyboardOptions.showKeybindings', "Show keyboard shortcuts.")
+                },
+                'showCommands': {
+                    type: 'boolean',
+                    default: true,
+                    description: localize('screencastMode.keyboardOptions.showCommands', "Show command names.")
+                },
+                'showCommandGroups': {
+                    type: 'boolean',
+                    default: false,
+                    description: localize('screencastMode.keyboardOptions.showCommandGroups', "Show command group names, when commands are also shown.")
+                },
+                'showSingleEditorCursorMoves': {
+                    type: 'boolean',
+                    default: true,
+                    description: localize('screencastMode.keyboardOptions.showSingleEditorCursorMoves', "Show single editor cursor move commands.")
+                }
+            },
+            default: {
+                'showKeys': true,
+                'showKeybindings': true,
+                'showCommands': true,
+                'showCommandGroups': false,
+                'showSingleEditorCursorMoves': true
+            },
+            additionalProperties: false
+        },
+        'screencastMode.keyboardOverlayTimeout': {
+            type: 'number',
+            default: 800,
+            minimum: 500,
+            maximum: 5000,
+            description: localize('screencastMode.keyboardOverlayTimeout', "Controls how long (in milliseconds) the keyboard overlay is shown in screencast mode.")
+        },
+        'screencastMode.mouseIndicatorColor': {
+            type: 'string',
+            format: 'color-hex',
+            default: '#FF0000',
+            description: localize('screencastMode.mouseIndicatorColor', "Controls the color in hex (#RGB, #RGBA, #RRGGBB or #RRGGBBAA) of the mouse indicator in screencast mode.")
+        },
+        'screencastMode.mouseIndicatorSize': {
+            type: 'number',
+            default: 20,
+            minimum: 20,
+            maximum: 100,
+            description: localize('screencastMode.mouseIndicatorSize', "Controls the size (in pixels) of the mouse indicator in screencast mode.")
+        },
+    }
+});

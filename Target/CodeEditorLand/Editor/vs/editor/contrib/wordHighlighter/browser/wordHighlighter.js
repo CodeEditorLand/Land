@@ -1,1 +1,734 @@
-var U=Object.defineProperty;var L=Object.getOwnPropertyDescriptor;var v=(c,e,i,t)=>{for(var o=t>1?void 0:t?L(e,i):e,r=c.length-1,n;r>=0;r--)(n=c[r])&&(o=(t?n(e,i,o):n(o))||o);return t&&o&&U(e,i,o),o},g=(c,e)=>(i,t)=>e(i,t,c);import*as I from"../../../../nls.js";import{alert as R}from"../../../../base/browser/ui/aria/aria.js";import{createCancelablePromise as O,Delayer as V,first as b}from"../../../../base/common/async.js";import{CancellationToken as K}from"../../../../base/common/cancellation.js";import{onUnexpectedError as y,onUnexpectedExternalError as k}from"../../../../base/common/errors.js";import{KeyCode as x,KeyMod as B}from"../../../../base/common/keyCodes.js";import{Disposable as $,DisposableStore as z}from"../../../../base/common/lifecycle.js";import{ResourceMap as m}from"../../../../base/common/map.js";import{matchesScheme as G,Schemas as h}from"../../../../base/common/network.js";import{isEqual as H}from"../../../../base/common/resources.js";import"../../../../base/common/uri.js";import{IContextKeyService as j,RawContextKey as Q}from"../../../../platform/contextkey/common/contextkey.js";import"../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as D}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{isDiffEditor as J}from"../../../browser/editorBrowser.js";import{EditorAction as P,EditorContributionInstantiation as W,registerEditorAction as w,registerEditorContribution as X,registerModelAndPositionCommand as Y}from"../../../browser/editorExtensions.js";import{ICodeEditorService as T}from"../../../browser/services/codeEditorService.js";import{EditorOption as f}from"../../../common/config/editorOptions.js";import"../../../common/core/position.js";import{Range as q}from"../../../common/core/range.js";import"../../../common/core/selection.js";import"../../../common/core/wordHelper.js";import{CursorChangeReason as Z}from"../../../common/cursorEvents.js";import"../../../common/editorCommon.js";import{EditorContextKeys as C}from"../../../common/editorContextKeys.js";import{registerEditorFeature as ee}from"../../../common/editorFeatures.js";import"../../../common/languageFeatureRegistry.js";import"../../../common/languages.js";import{score as te}from"../../../common/languageSelector.js";import{shouldSynchronizeModel as oe}from"../../../common/model.js";import{ILanguageFeaturesService as S}from"../../../common/services/languageFeatures.js";import{ITextModelService as _}from"../../../common/services/resolverService.js";import{getHighlightDecorationOptions as ie}from"./highlightDecorations.js";import{TextualMultiDocumentHighlightFeature as re}from"./textualHighlightProvider.js";const M=new Q("hasWordHighlights",!1);function E(c,e,i,t){const o=c.ordered(e);return b(o.map(r=>()=>Promise.resolve(r.provideDocumentHighlights(e,i,t)).then(void 0,k)),r=>r!=null).then(r=>{if(r){const n=new m;return n.set(e.uri,r),n}return new m})}function ne(c,e,i,t,o){const r=c.ordered(e);return b(r.map(n=>()=>{const l=o.filter(d=>oe(d)).filter(d=>te(n.selector,d.uri,d.getLanguageId(),!0,void 0,void 0)>0);return Promise.resolve(n.provideMultiDocumentHighlights(e,i,l,t)).then(void 0,k)}),n=>n!=null)}class A{constructor(e,i,t){this._model=e;this._selection=i;this._wordSeparators=t;this._wordRange=this._getCurrentWordRange(e,i),this._result=null}_wordRange;_result;get result(){return this._result||(this._result=O(e=>this._compute(this._model,this._selection,this._wordSeparators,e))),this._result}_getCurrentWordRange(e,i){const t=e.getWordAtPosition(i.getPosition());return t?new q(i.startLineNumber,t.startColumn,i.startLineNumber,t.endColumn):null}isValid(e,i,t){const o=i.startLineNumber,r=i.startColumn,n=i.endColumn,l=this._getCurrentWordRange(e,i);let d=!!(this._wordRange&&this._wordRange.equalsRange(l));for(let a=0,F=t.length;!d&&a<F;a++){const p=t.getRange(a);p&&p.startLineNumber===o&&p.startColumn<=r&&p.endColumn>=n&&(d=!0)}return d}cancel(){this.result.cancel()}}class se extends A{_providers;constructor(e,i,t,o){super(e,i,t),this._providers=o}_compute(e,i,t,o){return E(this._providers,e,i.getPosition(),o).then(r=>r||new m)}}class le extends A{_providers;_otherModels;constructor(e,i,t,o,r){super(e,i,t),this._providers=o,this._otherModels=r}_compute(e,i,t,o){return ne(this._providers,e,i.getPosition(),o,this._otherModels).then(r=>r||new m)}}function de(c,e,i,t){return new se(e,i,t,c)}function ce(c,e,i,t,o){return new le(e,i,t,c,o)}Y("_executeDocumentHighlights",async(c,e,i)=>{const t=c.get(S);return(await E(t.documentHighlightProvider,e,i,K.None))?.get(e.uri)});let s=class{editor;providers;multiDocumentProviders;model;decorations;toUnhook=new z;textModelService;codeEditorService;occurrencesHighlight;workerRequestTokenId=0;workerRequest;workerRequestCompleted=!1;workerRequestValue=new m;lastCursorPositionChangeTime=0;renderDecorationsTimer=-1;_hasWordHighlights;_ignorePositionChangeEvent;runDelayer=this.toUnhook.add(new V(25));static storedDecorationIDs=new m;static query=null;constructor(e,i,t,o,r,n){this.editor=e,this.providers=i,this.multiDocumentProviders=t,this.codeEditorService=n,this.textModelService=r,this._hasWordHighlights=M.bindTo(o),this._ignorePositionChangeEvent=!1,this.occurrencesHighlight=this.editor.getOption(f.occurrencesHighlight),this.model=this.editor.getModel(),this.toUnhook.add(e.onDidChangeCursorPosition(l=>{this._ignorePositionChangeEvent||this.occurrencesHighlight!=="off"&&this.runDelayer.trigger(()=>{this._onPositionChanged(l)})})),this.toUnhook.add(e.onDidFocusEditorText(l=>{this.occurrencesHighlight!=="off"&&(this.workerRequest||this.runDelayer.trigger(()=>{this._run()}))})),this.toUnhook.add(e.onDidChangeModelContent(l=>{G(this.model.uri,"output")||this._stopAll()})),this.toUnhook.add(e.onDidChangeModel(l=>{!l.newModelUrl&&l.oldModelUrl?this._stopSingular():s.query&&this._run()})),this.toUnhook.add(e.onDidChangeConfiguration(l=>{const d=this.editor.getOption(f.occurrencesHighlight);if(this.occurrencesHighlight!==d)switch(this.occurrencesHighlight=d,d){case"off":this._stopAll();break;case"singleFile":this._stopAll(s.query?.modelInfo?.modelURI);break;case"multiFile":s.query&&this._run(!0);break;default:break}})),this.toUnhook.add(e.onDidBlurEditorWidget(()=>{const l=this.codeEditorService.getFocusedCodeEditor();l?l.getModel()?.uri.scheme===h.vscodeNotebookCell&&this.editor.getModel()?.uri.scheme!==h.vscodeNotebookCell&&this._stopAll():this._stopAll()})),this.decorations=this.editor.createDecorationsCollection(),this.workerRequestTokenId=0,this.workerRequest=null,this.workerRequestCompleted=!1,this.lastCursorPositionChangeTime=0,this.renderDecorationsTimer=-1,s.query&&this._run()}hasDecorations(){return this.decorations.length>0}restore(){this.occurrencesHighlight!=="off"&&(this.runDelayer.cancel(),this._run())}trigger(){this.runDelayer.cancel(),this._run(!1,!0)}stop(){this.occurrencesHighlight!=="off"&&this._stopAll()}_getSortedHighlights(){return this.decorations.getRanges().sort(q.compareRangesUsingStarts)}moveNext(){const e=this._getSortedHighlights(),t=(e.findIndex(r=>r.containsPosition(this.editor.getPosition()))+1)%e.length,o=e[t];try{this._ignorePositionChangeEvent=!0,this.editor.setPosition(o.getStartPosition()),this.editor.revealRangeInCenterIfOutsideViewport(o);const r=this._getWord();if(r){const n=this.editor.getModel().getLineContent(o.startLineNumber);R(`${n}, ${t+1} of ${e.length} for '${r.word}'`)}}finally{this._ignorePositionChangeEvent=!1}}moveBack(){const e=this._getSortedHighlights(),t=(e.findIndex(r=>r.containsPosition(this.editor.getPosition()))-1+e.length)%e.length,o=e[t];try{this._ignorePositionChangeEvent=!0,this.editor.setPosition(o.getStartPosition()),this.editor.revealRangeInCenterIfOutsideViewport(o);const r=this._getWord();if(r){const n=this.editor.getModel().getLineContent(o.startLineNumber);R(`${n}, ${t+1} of ${e.length} for '${r.word}'`)}}finally{this._ignorePositionChangeEvent=!1}}_removeSingleDecorations(){if(!this.editor.hasModel())return;const e=s.storedDecorationIDs.get(this.editor.getModel().uri);e&&(this.editor.removeDecorations(e),s.storedDecorationIDs.delete(this.editor.getModel().uri),this.decorations.length>0&&(this.decorations.clear(),this._hasWordHighlights.set(!1)))}_removeAllDecorations(e){const i=this.codeEditorService.listCodeEditors(),t=[];for(const o of i){if(!o.hasModel()||H(o.getModel().uri,e))continue;const r=s.storedDecorationIDs.get(o.getModel().uri);if(!r)continue;o.removeDecorations(r),t.push(o.getModel().uri);const n=u.get(o);n?.wordHighlighter&&n.wordHighlighter.decorations.length>0&&(n.wordHighlighter.decorations.clear(),n.wordHighlighter.workerRequest=null,n.wordHighlighter._hasWordHighlights.set(!1))}for(const o of t)s.storedDecorationIDs.delete(o)}_stopSingular(){this._removeSingleDecorations(),this.editor.hasTextFocus()&&(this.editor.getModel()?.uri.scheme!==h.vscodeNotebookCell&&s.query?.modelInfo?.modelURI.scheme!==h.vscodeNotebookCell?(s.query=null,this._run()):s.query?.modelInfo&&(s.query.modelInfo=null)),this.renderDecorationsTimer!==-1&&(clearTimeout(this.renderDecorationsTimer),this.renderDecorationsTimer=-1),this.workerRequest!==null&&(this.workerRequest.cancel(),this.workerRequest=null),this.workerRequestCompleted||(this.workerRequestTokenId++,this.workerRequestCompleted=!0)}_stopAll(e){this._removeAllDecorations(e),this.renderDecorationsTimer!==-1&&(clearTimeout(this.renderDecorationsTimer),this.renderDecorationsTimer=-1),this.workerRequest!==null&&(this.workerRequest.cancel(),this.workerRequest=null),this.workerRequestCompleted||(this.workerRequestTokenId++,this.workerRequestCompleted=!0)}_onPositionChanged(e){if(this.occurrencesHighlight==="off"){this._stopAll();return}if(e.reason!==Z.Explicit&&this.editor.getModel()?.uri.scheme!==h.vscodeNotebookCell){this._stopAll();return}this._run()}_getWord(){const e=this.editor.getSelection(),i=e.startLineNumber,t=e.startColumn;return this.model.isDisposed()?null:this.model.getWordAtPosition({lineNumber:i,column:t})}getOtherModelsToHighlight(e){if(!e)return[];if(e.uri.scheme===h.vscodeNotebookCell){const r=[],n=this.codeEditorService.listCodeEditors();for(const l of n){const d=l.getModel();d&&d!==e&&d.uri.scheme===h.vscodeNotebookCell&&r.push(d)}return r}const t=[],o=this.codeEditorService.listCodeEditors();for(const r of o){if(!J(r))continue;const n=r.getModel();n&&e===n.modified&&t.push(n.modified)}if(t.length)return t;if(this.occurrencesHighlight==="singleFile")return[];for(const r of o){const n=r.getModel();n&&n!==e&&t.push(n)}return t}async _run(e,i){if(this.editor.hasTextFocus()){const o=this.editor.getSelection();if(!o||o.startLineNumber!==o.endLineNumber){s.query=null,this._stopAll();return}const r=o.startColumn,n=o.endColumn,l=this._getWord();if(!l||l.startColumn>r||l.endColumn<n){s.query=null,this._stopAll();return}s.query={modelInfo:{modelURI:this.model.uri,selection:o}}}else if(!s.query){this._stopAll();return}if(this.lastCursorPositionChangeTime=new Date().getTime(),H(this.editor.getModel().uri,s.query.modelInfo?.modelURI)){if(!e){const d=this.decorations.getRanges();for(const a of d)if(a.containsPosition(this.editor.getPosition()))return}this._stopAll(e?this.model.uri:void 0);const o=++this.workerRequestTokenId;this.workerRequestCompleted=!1;const r=this.getOtherModelsToHighlight(this.editor.getModel());if(!s.query||!s.query.modelInfo)return;const l=(await this.textModelService.createModelReference(s.query.modelInfo.modelURI)).object.textEditorModel;this.workerRequest=this.computeWithModel(l,s.query.modelInfo.selection,r),this.workerRequest?.result.then(d=>{o===this.workerRequestTokenId&&(this.workerRequestCompleted=!0,this.workerRequestValue=d||[],this._beginRenderDecorations())},y)}else if(this.model.uri.scheme===h.vscodeNotebookCell){const o=++this.workerRequestTokenId;if(this.workerRequestCompleted=!1,!s.query||!s.query.modelInfo)return;const n=(await this.textModelService.createModelReference(s.query.modelInfo.modelURI)).object.textEditorModel;this.workerRequest=this.computeWithModel(n,s.query.modelInfo.selection,[this.model]),this.workerRequest?.result.then(l=>{o===this.workerRequestTokenId&&(this.workerRequestCompleted=!0,this.workerRequestValue=l||[],this._beginRenderDecorations(i))},y)}}computeWithModel(e,i,t){return t.length?ce(this.multiDocumentProviders,e,i,this.editor.getOption(f.wordSeparators),t):de(this.providers,e,i,this.editor.getOption(f.wordSeparators))}_beginRenderDecorations(e){const i=new Date().getTime(),t=this.lastCursorPositionChangeTime+(e?0:250);i>=t?(this.renderDecorationsTimer=-1,this.renderDecorations()):this.renderDecorationsTimer=setTimeout(()=>{this.renderDecorations()},t-i)}renderDecorations(){this.renderDecorationsTimer=-1;const e=this.codeEditorService.listCodeEditors();for(const i of e){const t=u.get(i);if(!t)continue;const o=[],r=i.getModel()?.uri;if(r&&this.workerRequestValue.has(r)){const n=s.storedDecorationIDs.get(r),l=this.workerRequestValue.get(r);if(l)for(const a of l)a.range&&o.push({range:a.range,options:ie(a.kind)});let d=[];i.changeDecorations(a=>{d=a.deltaDecorations(n??[],o)}),s.storedDecorationIDs=s.storedDecorationIDs.set(r,d),o.length>0&&(t.wordHighlighter?.decorations.set(o),t.wordHighlighter?._hasWordHighlights.set(!0))}}this.workerRequest=null}dispose(){this._stopSingular(),this.toUnhook.dispose()}};s=v([g(4,_),g(5,T)],s);let u=class extends ${static ID="editor.contrib.wordHighlighter";static get(e){return e.getContribution(u.ID)}_wordHighlighter;constructor(e,i,t,o,r){super(),this._wordHighlighter=null;const n=()=>{e.hasModel()&&!e.getModel().isTooLargeForTokenization()&&(this._wordHighlighter=new s(e,t.documentHighlightProvider,t.multiDocumentHighlightProvider,i,r,o))};this._register(e.onDidChangeModel(l=>{this._wordHighlighter&&(!l.newModelUrl&&l.oldModelUrl?.scheme!==h.vscodeNotebookCell&&this.wordHighlighter?.stop(),this._wordHighlighter.dispose(),this._wordHighlighter=null),n()})),n()}get wordHighlighter(){return this._wordHighlighter}saveViewState(){return!!(this._wordHighlighter&&this._wordHighlighter.hasDecorations())}moveNext(){this._wordHighlighter?.moveNext()}moveBack(){this._wordHighlighter?.moveBack()}restoreViewState(e){this._wordHighlighter&&e&&this._wordHighlighter.restore()}stopHighlighting(){this._wordHighlighter?.stop()}dispose(){this._wordHighlighter&&(this._wordHighlighter.dispose(),this._wordHighlighter=null),super.dispose()}};u=v([g(1,j),g(2,S),g(3,T),g(4,_)],u);class N extends P{_isNext;constructor(e,i){super(i),this._isNext=e}run(e,i){const t=u.get(i);t&&(this._isNext?t.moveNext():t.moveBack())}}class ue extends N{constructor(){super(!0,{id:"editor.action.wordHighlight.next",label:I.localize("wordHighlight.next.label","Go to Next Symbol Highlight"),alias:"Go to Next Symbol Highlight",precondition:M,kbOpts:{kbExpr:C.editorTextFocus,primary:x.F7,weight:D.EditorContrib}})}}class ae extends N{constructor(){super(!1,{id:"editor.action.wordHighlight.prev",label:I.localize("wordHighlight.previous.label","Go to Previous Symbol Highlight"),alias:"Go to Previous Symbol Highlight",precondition:M,kbOpts:{kbExpr:C.editorTextFocus,primary:B.Shift|x.F7,weight:D.EditorContrib}})}}class he extends P{constructor(){super({id:"editor.action.wordHighlight.trigger",label:I.localize("wordHighlight.trigger.label","Trigger Symbol Highlight"),alias:"Trigger Symbol Highlight",precondition:void 0,kbOpts:{kbExpr:C.editorTextFocus,primary:0,weight:D.EditorContrib}})}run(e,i,t){const o=u.get(i);o&&o.restoreViewState(!0)}}X(u.ID,u,W.Eager),w(ue),w(ae),w(he),ee(re);export{u as WordHighlighterContribution,ne as getOccurrencesAcrossMultipleModels,E as getOccurrencesAtPosition};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var WordHighlighter_1, WordHighlighterContribution_1;
+import * as nls from '../../../../nls.js';
+import { alert } from '../../../../base/browser/ui/aria/aria.js';
+import { createCancelablePromise, Delayer, first } from '../../../../base/common/async.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { onUnexpectedError, onUnexpectedExternalError } from '../../../../base/common/errors.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { ResourceMap } from '../../../../base/common/map.js';
+import { matchesScheme, Schemas } from '../../../../base/common/network.js';
+import { isEqual } from '../../../../base/common/resources.js';
+import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { isDiffEditor } from '../../../browser/editorBrowser.js';
+import { EditorAction, registerEditorAction, registerEditorContribution, registerModelAndPositionCommand } from '../../../browser/editorExtensions.js';
+import { ICodeEditorService } from '../../../browser/services/codeEditorService.js';
+import { Range } from '../../../common/core/range.js';
+import { EditorContextKeys } from '../../../common/editorContextKeys.js';
+import { registerEditorFeature } from '../../../common/editorFeatures.js';
+import { LanguageFeatureRegistry } from '../../../common/languageFeatureRegistry.js';
+import { score } from '../../../common/languageSelector.js';
+import { shouldSynchronizeModel } from '../../../common/model.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { ITextModelService } from '../../../common/services/resolverService.js';
+import { getHighlightDecorationOptions } from './highlightDecorations.js';
+import { TextualMultiDocumentHighlightFeature } from './textualHighlightProvider.js';
+const ctxHasWordHighlights = new RawContextKey('hasWordHighlights', false);
+export function getOccurrencesAtPosition(registry, model, position, token) {
+    const orderedByScore = registry.ordered(model);
+    return first(orderedByScore.map(provider => () => {
+        return Promise.resolve(provider.provideDocumentHighlights(model, position, token))
+            .then(undefined, onUnexpectedExternalError);
+    }), (result) => result !== undefined && result !== null).then(result => {
+        if (result) {
+            const map = new ResourceMap();
+            map.set(model.uri, result);
+            return map;
+        }
+        return new ResourceMap();
+    });
+}
+export function getOccurrencesAcrossMultipleModels(registry, model, position, token, otherModels) {
+    const orderedByScore = registry.ordered(model);
+    return first(orderedByScore.map(provider => () => {
+        const filteredModels = otherModels.filter(otherModel => {
+            return shouldSynchronizeModel(otherModel);
+        }).filter(otherModel => {
+            return score(provider.selector, otherModel.uri, otherModel.getLanguageId(), true, undefined, undefined) > 0;
+        });
+        return Promise.resolve(provider.provideMultiDocumentHighlights(model, position, filteredModels, token))
+            .then(undefined, onUnexpectedExternalError);
+    }), (result) => result !== undefined && result !== null);
+}
+class OccurenceAtPositionRequest {
+    constructor(_model, _selection, _wordSeparators) {
+        this._model = _model;
+        this._selection = _selection;
+        this._wordSeparators = _wordSeparators;
+        this._wordRange = this._getCurrentWordRange(_model, _selection);
+        this._result = null;
+    }
+    get result() {
+        if (!this._result) {
+            this._result = createCancelablePromise(token => this._compute(this._model, this._selection, this._wordSeparators, token));
+        }
+        return this._result;
+    }
+    _getCurrentWordRange(model, selection) {
+        const word = model.getWordAtPosition(selection.getPosition());
+        if (word) {
+            return new Range(selection.startLineNumber, word.startColumn, selection.startLineNumber, word.endColumn);
+        }
+        return null;
+    }
+    isValid(model, selection, decorations) {
+        const lineNumber = selection.startLineNumber;
+        const startColumn = selection.startColumn;
+        const endColumn = selection.endColumn;
+        const currentWordRange = this._getCurrentWordRange(model, selection);
+        let requestIsValid = Boolean(this._wordRange && this._wordRange.equalsRange(currentWordRange));
+        for (let i = 0, len = decorations.length; !requestIsValid && i < len; i++) {
+            const range = decorations.getRange(i);
+            if (range && range.startLineNumber === lineNumber) {
+                if (range.startColumn <= startColumn && range.endColumn >= endColumn) {
+                    requestIsValid = true;
+                }
+            }
+        }
+        return requestIsValid;
+    }
+    cancel() {
+        this.result.cancel();
+    }
+}
+class SemanticOccurenceAtPositionRequest extends OccurenceAtPositionRequest {
+    constructor(model, selection, wordSeparators, providers) {
+        super(model, selection, wordSeparators);
+        this._providers = providers;
+    }
+    _compute(model, selection, wordSeparators, token) {
+        return getOccurrencesAtPosition(this._providers, model, selection.getPosition(), token).then(value => {
+            if (!value) {
+                return new ResourceMap();
+            }
+            return value;
+        });
+    }
+}
+class MultiModelOccurenceRequest extends OccurenceAtPositionRequest {
+    constructor(model, selection, wordSeparators, providers, otherModels) {
+        super(model, selection, wordSeparators);
+        this._providers = providers;
+        this._otherModels = otherModels;
+    }
+    _compute(model, selection, wordSeparators, token) {
+        return getOccurrencesAcrossMultipleModels(this._providers, model, selection.getPosition(), token, this._otherModels).then(value => {
+            if (!value) {
+                return new ResourceMap();
+            }
+            return value;
+        });
+    }
+}
+function computeOccurencesAtPosition(registry, model, selection, wordSeparators) {
+    return new SemanticOccurenceAtPositionRequest(model, selection, wordSeparators, registry);
+}
+function computeOccurencesMultiModel(registry, model, selection, wordSeparators, otherModels) {
+    return new MultiModelOccurenceRequest(model, selection, wordSeparators, registry, otherModels);
+}
+registerModelAndPositionCommand('_executeDocumentHighlights', async (accessor, model, position) => {
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const map = await getOccurrencesAtPosition(languageFeaturesService.documentHighlightProvider, model, position, CancellationToken.None);
+    return map?.get(model.uri);
+});
+let WordHighlighter = class WordHighlighter {
+    static { WordHighlighter_1 = this; }
+    static { this.storedDecorationIDs = new ResourceMap(); }
+    static { this.query = null; }
+    constructor(editor, providers, multiProviders, contextKeyService, textModelService, codeEditorService) {
+        this.toUnhook = new DisposableStore();
+        this.workerRequestTokenId = 0;
+        this.workerRequestCompleted = false;
+        this.workerRequestValue = new ResourceMap();
+        this.lastCursorPositionChangeTime = 0;
+        this.renderDecorationsTimer = -1;
+        this.runDelayer = this.toUnhook.add(new Delayer(25));
+        this.editor = editor;
+        this.providers = providers;
+        this.multiDocumentProviders = multiProviders;
+        this.codeEditorService = codeEditorService;
+        this.textModelService = textModelService;
+        this._hasWordHighlights = ctxHasWordHighlights.bindTo(contextKeyService);
+        this._ignorePositionChangeEvent = false;
+        this.occurrencesHighlight = this.editor.getOption(83);
+        this.model = this.editor.getModel();
+        this.toUnhook.add(editor.onDidChangeCursorPosition((e) => {
+            if (this._ignorePositionChangeEvent) {
+                return;
+            }
+            if (this.occurrencesHighlight === 'off') {
+                return;
+            }
+            this.runDelayer.trigger(() => { this._onPositionChanged(e); });
+        }));
+        this.toUnhook.add(editor.onDidFocusEditorText((e) => {
+            if (this.occurrencesHighlight === 'off') {
+                return;
+            }
+            if (!this.workerRequest) {
+                this.runDelayer.trigger(() => { this._run(); });
+            }
+        }));
+        this.toUnhook.add(editor.onDidChangeModelContent((e) => {
+            if (!matchesScheme(this.model.uri, 'output')) {
+                this._stopAll();
+            }
+        }));
+        this.toUnhook.add(editor.onDidChangeModel((e) => {
+            if (!e.newModelUrl && e.oldModelUrl) {
+                this._stopSingular();
+            }
+            else if (WordHighlighter_1.query) {
+                this._run();
+            }
+        }));
+        this.toUnhook.add(editor.onDidChangeConfiguration((e) => {
+            const newValue = this.editor.getOption(83);
+            if (this.occurrencesHighlight !== newValue) {
+                this.occurrencesHighlight = newValue;
+                switch (newValue) {
+                    case 'off':
+                        this._stopAll();
+                        break;
+                    case 'singleFile':
+                        this._stopAll(WordHighlighter_1.query?.modelInfo?.modelURI);
+                        break;
+                    case 'multiFile':
+                        if (WordHighlighter_1.query) {
+                            this._run(true);
+                        }
+                        break;
+                    default:
+                        console.warn('Unknown occurrencesHighlight setting value:', newValue);
+                        break;
+                }
+            }
+        }));
+        this.toUnhook.add(editor.onDidBlurEditorWidget(() => {
+            const activeEditor = this.codeEditorService.getFocusedCodeEditor();
+            if (!activeEditor) {
+                this._stopAll();
+            }
+            else if (activeEditor.getModel()?.uri.scheme === Schemas.vscodeNotebookCell && this.editor.getModel()?.uri.scheme !== Schemas.vscodeNotebookCell) {
+                this._stopAll();
+            }
+        }));
+        this.decorations = this.editor.createDecorationsCollection();
+        this.workerRequestTokenId = 0;
+        this.workerRequest = null;
+        this.workerRequestCompleted = false;
+        this.lastCursorPositionChangeTime = 0;
+        this.renderDecorationsTimer = -1;
+        if (WordHighlighter_1.query) {
+            this._run();
+        }
+    }
+    hasDecorations() {
+        return (this.decorations.length > 0);
+    }
+    restore() {
+        if (this.occurrencesHighlight === 'off') {
+            return;
+        }
+        this.runDelayer.cancel();
+        this._run();
+    }
+    trigger() {
+        this.runDelayer.cancel();
+        this._run(false, true);
+    }
+    stop() {
+        if (this.occurrencesHighlight === 'off') {
+            return;
+        }
+        this._stopAll();
+    }
+    _getSortedHighlights() {
+        return (this.decorations.getRanges()
+            .sort(Range.compareRangesUsingStarts));
+    }
+    moveNext() {
+        const highlights = this._getSortedHighlights();
+        const index = highlights.findIndex((range) => range.containsPosition(this.editor.getPosition()));
+        const newIndex = ((index + 1) % highlights.length);
+        const dest = highlights[newIndex];
+        try {
+            this._ignorePositionChangeEvent = true;
+            this.editor.setPosition(dest.getStartPosition());
+            this.editor.revealRangeInCenterIfOutsideViewport(dest);
+            const word = this._getWord();
+            if (word) {
+                const lineContent = this.editor.getModel().getLineContent(dest.startLineNumber);
+                alert(`${lineContent}, ${newIndex + 1} of ${highlights.length} for '${word.word}'`);
+            }
+        }
+        finally {
+            this._ignorePositionChangeEvent = false;
+        }
+    }
+    moveBack() {
+        const highlights = this._getSortedHighlights();
+        const index = highlights.findIndex((range) => range.containsPosition(this.editor.getPosition()));
+        const newIndex = ((index - 1 + highlights.length) % highlights.length);
+        const dest = highlights[newIndex];
+        try {
+            this._ignorePositionChangeEvent = true;
+            this.editor.setPosition(dest.getStartPosition());
+            this.editor.revealRangeInCenterIfOutsideViewport(dest);
+            const word = this._getWord();
+            if (word) {
+                const lineContent = this.editor.getModel().getLineContent(dest.startLineNumber);
+                alert(`${lineContent}, ${newIndex + 1} of ${highlights.length} for '${word.word}'`);
+            }
+        }
+        finally {
+            this._ignorePositionChangeEvent = false;
+        }
+    }
+    _removeSingleDecorations() {
+        if (!this.editor.hasModel()) {
+            return;
+        }
+        const currentDecorationIDs = WordHighlighter_1.storedDecorationIDs.get(this.editor.getModel().uri);
+        if (!currentDecorationIDs) {
+            return;
+        }
+        this.editor.removeDecorations(currentDecorationIDs);
+        WordHighlighter_1.storedDecorationIDs.delete(this.editor.getModel().uri);
+        if (this.decorations.length > 0) {
+            this.decorations.clear();
+            this._hasWordHighlights.set(false);
+        }
+    }
+    _removeAllDecorations(preservedModel) {
+        const currentEditors = this.codeEditorService.listCodeEditors();
+        const deleteURI = [];
+        for (const editor of currentEditors) {
+            if (!editor.hasModel() || isEqual(editor.getModel().uri, preservedModel)) {
+                continue;
+            }
+            const currentDecorationIDs = WordHighlighter_1.storedDecorationIDs.get(editor.getModel().uri);
+            if (!currentDecorationIDs) {
+                continue;
+            }
+            editor.removeDecorations(currentDecorationIDs);
+            deleteURI.push(editor.getModel().uri);
+            const editorHighlighterContrib = WordHighlighterContribution.get(editor);
+            if (!editorHighlighterContrib?.wordHighlighter) {
+                continue;
+            }
+            if (editorHighlighterContrib.wordHighlighter.decorations.length > 0) {
+                editorHighlighterContrib.wordHighlighter.decorations.clear();
+                editorHighlighterContrib.wordHighlighter.workerRequest = null;
+                editorHighlighterContrib.wordHighlighter._hasWordHighlights.set(false);
+            }
+        }
+        for (const uri of deleteURI) {
+            WordHighlighter_1.storedDecorationIDs.delete(uri);
+        }
+    }
+    _stopSingular() {
+        this._removeSingleDecorations();
+        if (this.editor.hasTextFocus()) {
+            if (this.editor.getModel()?.uri.scheme !== Schemas.vscodeNotebookCell && WordHighlighter_1.query?.modelInfo?.modelURI.scheme !== Schemas.vscodeNotebookCell) {
+                WordHighlighter_1.query = null;
+                this._run();
+            }
+            else {
+                if (WordHighlighter_1.query?.modelInfo) {
+                    WordHighlighter_1.query.modelInfo = null;
+                }
+            }
+        }
+        if (this.renderDecorationsTimer !== -1) {
+            clearTimeout(this.renderDecorationsTimer);
+            this.renderDecorationsTimer = -1;
+        }
+        if (this.workerRequest !== null) {
+            this.workerRequest.cancel();
+            this.workerRequest = null;
+        }
+        if (!this.workerRequestCompleted) {
+            this.workerRequestTokenId++;
+            this.workerRequestCompleted = true;
+        }
+    }
+    _stopAll(preservedModel) {
+        this._removeAllDecorations(preservedModel);
+        if (this.renderDecorationsTimer !== -1) {
+            clearTimeout(this.renderDecorationsTimer);
+            this.renderDecorationsTimer = -1;
+        }
+        if (this.workerRequest !== null) {
+            this.workerRequest.cancel();
+            this.workerRequest = null;
+        }
+        if (!this.workerRequestCompleted) {
+            this.workerRequestTokenId++;
+            this.workerRequestCompleted = true;
+        }
+    }
+    _onPositionChanged(e) {
+        if (this.occurrencesHighlight === 'off') {
+            this._stopAll();
+            return;
+        }
+        if (e.reason !== 3 && this.editor.getModel()?.uri.scheme !== Schemas.vscodeNotebookCell) {
+            this._stopAll();
+            return;
+        }
+        this._run();
+    }
+    _getWord() {
+        const editorSelection = this.editor.getSelection();
+        const lineNumber = editorSelection.startLineNumber;
+        const startColumn = editorSelection.startColumn;
+        if (this.model.isDisposed()) {
+            return null;
+        }
+        return this.model.getWordAtPosition({
+            lineNumber: lineNumber,
+            column: startColumn
+        });
+    }
+    getOtherModelsToHighlight(model) {
+        if (!model) {
+            return [];
+        }
+        const isNotebookEditor = model.uri.scheme === Schemas.vscodeNotebookCell;
+        if (isNotebookEditor) {
+            const currentModels = [];
+            const currentEditors = this.codeEditorService.listCodeEditors();
+            for (const editor of currentEditors) {
+                const tempModel = editor.getModel();
+                if (tempModel && tempModel !== model && tempModel.uri.scheme === Schemas.vscodeNotebookCell) {
+                    currentModels.push(tempModel);
+                }
+            }
+            return currentModels;
+        }
+        const currentModels = [];
+        const currentEditors = this.codeEditorService.listCodeEditors();
+        for (const editor of currentEditors) {
+            if (!isDiffEditor(editor)) {
+                continue;
+            }
+            const diffModel = editor.getModel();
+            if (!diffModel) {
+                continue;
+            }
+            if (model === diffModel.modified) {
+                currentModels.push(diffModel.modified);
+            }
+        }
+        if (currentModels.length) {
+            return currentModels;
+        }
+        if (this.occurrencesHighlight === 'singleFile') {
+            return [];
+        }
+        for (const editor of currentEditors) {
+            const tempModel = editor.getModel();
+            const isValidModel = tempModel && tempModel !== model;
+            if (isValidModel) {
+                currentModels.push(tempModel);
+            }
+        }
+        return currentModels;
+    }
+    async _run(multiFileConfigChange, noDelay) {
+        const hasTextFocus = this.editor.hasTextFocus();
+        if (!hasTextFocus) {
+            if (!WordHighlighter_1.query) {
+                this._stopAll();
+                return;
+            }
+        }
+        else {
+            const editorSelection = this.editor.getSelection();
+            if (!editorSelection || editorSelection.startLineNumber !== editorSelection.endLineNumber) {
+                WordHighlighter_1.query = null;
+                this._stopAll();
+                return;
+            }
+            const startColumn = editorSelection.startColumn;
+            const endColumn = editorSelection.endColumn;
+            const word = this._getWord();
+            if (!word || word.startColumn > startColumn || word.endColumn < endColumn) {
+                WordHighlighter_1.query = null;
+                this._stopAll();
+                return;
+            }
+            WordHighlighter_1.query = {
+                modelInfo: {
+                    modelURI: this.model.uri,
+                    selection: editorSelection,
+                }
+            };
+        }
+        this.lastCursorPositionChangeTime = (new Date()).getTime();
+        if (isEqual(this.editor.getModel().uri, WordHighlighter_1.query.modelInfo?.modelURI)) {
+            if (!multiFileConfigChange) {
+                const currentModelDecorationRanges = this.decorations.getRanges();
+                for (const storedRange of currentModelDecorationRanges) {
+                    if (storedRange.containsPosition(this.editor.getPosition())) {
+                        return;
+                    }
+                }
+            }
+            this._stopAll(multiFileConfigChange ? this.model.uri : undefined);
+            const myRequestId = ++this.workerRequestTokenId;
+            this.workerRequestCompleted = false;
+            const otherModelsToHighlight = this.getOtherModelsToHighlight(this.editor.getModel());
+            if (!WordHighlighter_1.query || !WordHighlighter_1.query.modelInfo) {
+                return;
+            }
+            const queryModelRef = await this.textModelService.createModelReference(WordHighlighter_1.query.modelInfo.modelURI);
+            const queryModel = queryModelRef.object.textEditorModel;
+            this.workerRequest = this.computeWithModel(queryModel, WordHighlighter_1.query.modelInfo.selection, otherModelsToHighlight);
+            this.workerRequest?.result.then(data => {
+                if (myRequestId === this.workerRequestTokenId) {
+                    this.workerRequestCompleted = true;
+                    this.workerRequestValue = data || [];
+                    this._beginRenderDecorations();
+                }
+            }, onUnexpectedError);
+        }
+        else if (this.model.uri.scheme === Schemas.vscodeNotebookCell) {
+            const myRequestId = ++this.workerRequestTokenId;
+            this.workerRequestCompleted = false;
+            if (!WordHighlighter_1.query || !WordHighlighter_1.query.modelInfo) {
+                return;
+            }
+            const queryModelRef = await this.textModelService.createModelReference(WordHighlighter_1.query.modelInfo.modelURI);
+            const queryModel = queryModelRef.object.textEditorModel;
+            this.workerRequest = this.computeWithModel(queryModel, WordHighlighter_1.query.modelInfo.selection, [this.model]);
+            this.workerRequest?.result.then(data => {
+                if (myRequestId === this.workerRequestTokenId) {
+                    this.workerRequestCompleted = true;
+                    this.workerRequestValue = data || [];
+                    this._beginRenderDecorations(noDelay);
+                }
+            }, onUnexpectedError);
+        }
+    }
+    computeWithModel(model, selection, otherModels) {
+        if (!otherModels.length) {
+            return computeOccurencesAtPosition(this.providers, model, selection, this.editor.getOption(134));
+        }
+        else {
+            return computeOccurencesMultiModel(this.multiDocumentProviders, model, selection, this.editor.getOption(134), otherModels);
+        }
+    }
+    _beginRenderDecorations(noDelay) {
+        const currentTime = (new Date()).getTime();
+        const minimumRenderTime = this.lastCursorPositionChangeTime + (noDelay ? 0 : 250);
+        if (currentTime >= minimumRenderTime) {
+            this.renderDecorationsTimer = -1;
+            this.renderDecorations();
+        }
+        else {
+            this.renderDecorationsTimer = setTimeout(() => {
+                this.renderDecorations();
+            }, (minimumRenderTime - currentTime));
+        }
+    }
+    renderDecorations() {
+        this.renderDecorationsTimer = -1;
+        const currentEditors = this.codeEditorService.listCodeEditors();
+        for (const editor of currentEditors) {
+            const editorHighlighterContrib = WordHighlighterContribution.get(editor);
+            if (!editorHighlighterContrib) {
+                continue;
+            }
+            const newDecorations = [];
+            const uri = editor.getModel()?.uri;
+            if (uri && this.workerRequestValue.has(uri)) {
+                const oldDecorationIDs = WordHighlighter_1.storedDecorationIDs.get(uri);
+                const newDocumentHighlights = this.workerRequestValue.get(uri);
+                if (newDocumentHighlights) {
+                    for (const highlight of newDocumentHighlights) {
+                        if (!highlight.range) {
+                            continue;
+                        }
+                        newDecorations.push({
+                            range: highlight.range,
+                            options: getHighlightDecorationOptions(highlight.kind)
+                        });
+                    }
+                }
+                let newDecorationIDs = [];
+                editor.changeDecorations((changeAccessor) => {
+                    newDecorationIDs = changeAccessor.deltaDecorations(oldDecorationIDs ?? [], newDecorations);
+                });
+                WordHighlighter_1.storedDecorationIDs = WordHighlighter_1.storedDecorationIDs.set(uri, newDecorationIDs);
+                if (newDecorations.length > 0) {
+                    editorHighlighterContrib.wordHighlighter?.decorations.set(newDecorations);
+                    editorHighlighterContrib.wordHighlighter?._hasWordHighlights.set(true);
+                }
+            }
+        }
+        this.workerRequest = null;
+    }
+    dispose() {
+        this._stopSingular();
+        this.toUnhook.dispose();
+    }
+};
+WordHighlighter = WordHighlighter_1 = __decorate([
+    __param(4, ITextModelService),
+    __param(5, ICodeEditorService),
+    __metadata("design:paramtypes", [Object, LanguageFeatureRegistry,
+        LanguageFeatureRegistry, Object, Object, Object])
+], WordHighlighter);
+let WordHighlighterContribution = class WordHighlighterContribution extends Disposable {
+    static { WordHighlighterContribution_1 = this; }
+    static { this.ID = 'editor.contrib.wordHighlighter'; }
+    static get(editor) {
+        return editor.getContribution(WordHighlighterContribution_1.ID);
+    }
+    constructor(editor, contextKeyService, languageFeaturesService, codeEditorService, textModelService) {
+        super();
+        this._wordHighlighter = null;
+        const createWordHighlighterIfPossible = () => {
+            if (editor.hasModel() && !editor.getModel().isTooLargeForTokenization()) {
+                this._wordHighlighter = new WordHighlighter(editor, languageFeaturesService.documentHighlightProvider, languageFeaturesService.multiDocumentHighlightProvider, contextKeyService, textModelService, codeEditorService);
+            }
+        };
+        this._register(editor.onDidChangeModel((e) => {
+            if (this._wordHighlighter) {
+                if (!e.newModelUrl && e.oldModelUrl?.scheme !== Schemas.vscodeNotebookCell) {
+                    this.wordHighlighter?.stop();
+                }
+                this._wordHighlighter.dispose();
+                this._wordHighlighter = null;
+            }
+            createWordHighlighterIfPossible();
+        }));
+        createWordHighlighterIfPossible();
+    }
+    get wordHighlighter() {
+        return this._wordHighlighter;
+    }
+    saveViewState() {
+        if (this._wordHighlighter && this._wordHighlighter.hasDecorations()) {
+            return true;
+        }
+        return false;
+    }
+    moveNext() {
+        this._wordHighlighter?.moveNext();
+    }
+    moveBack() {
+        this._wordHighlighter?.moveBack();
+    }
+    restoreViewState(state) {
+        if (this._wordHighlighter && state) {
+            this._wordHighlighter.restore();
+        }
+    }
+    stopHighlighting() {
+        this._wordHighlighter?.stop();
+    }
+    dispose() {
+        if (this._wordHighlighter) {
+            this._wordHighlighter.dispose();
+            this._wordHighlighter = null;
+        }
+        super.dispose();
+    }
+};
+WordHighlighterContribution = WordHighlighterContribution_1 = __decorate([
+    __param(1, IContextKeyService),
+    __param(2, ILanguageFeaturesService),
+    __param(3, ICodeEditorService),
+    __param(4, ITextModelService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], WordHighlighterContribution);
+export { WordHighlighterContribution };
+class WordHighlightNavigationAction extends EditorAction {
+    constructor(next, opts) {
+        super(opts);
+        this._isNext = next;
+    }
+    run(accessor, editor) {
+        const controller = WordHighlighterContribution.get(editor);
+        if (!controller) {
+            return;
+        }
+        if (this._isNext) {
+            controller.moveNext();
+        }
+        else {
+            controller.moveBack();
+        }
+    }
+}
+class NextWordHighlightAction extends WordHighlightNavigationAction {
+    constructor() {
+        super(true, {
+            id: 'editor.action.wordHighlight.next',
+            label: nls.localize('wordHighlight.next.label', "Go to Next Symbol Highlight"),
+            alias: 'Go to Next Symbol Highlight',
+            precondition: ctxHasWordHighlights,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 65,
+                weight: 100
+            }
+        });
+    }
+}
+class PrevWordHighlightAction extends WordHighlightNavigationAction {
+    constructor() {
+        super(false, {
+            id: 'editor.action.wordHighlight.prev',
+            label: nls.localize('wordHighlight.previous.label', "Go to Previous Symbol Highlight"),
+            alias: 'Go to Previous Symbol Highlight',
+            precondition: ctxHasWordHighlights,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 1024 | 65,
+                weight: 100
+            }
+        });
+    }
+}
+class TriggerWordHighlightAction extends EditorAction {
+    constructor() {
+        super({
+            id: 'editor.action.wordHighlight.trigger',
+            label: nls.localize('wordHighlight.trigger.label', "Trigger Symbol Highlight"),
+            alias: 'Trigger Symbol Highlight',
+            precondition: undefined,
+            kbOpts: {
+                kbExpr: EditorContextKeys.editorTextFocus,
+                primary: 0,
+                weight: 100
+            }
+        });
+    }
+    run(accessor, editor, args) {
+        const controller = WordHighlighterContribution.get(editor);
+        if (!controller) {
+            return;
+        }
+        controller.restoreViewState(true);
+    }
+}
+registerEditorContribution(WordHighlighterContribution.ID, WordHighlighterContribution, 0);
+registerEditorAction(NextWordHighlightAction);
+registerEditorAction(PrevWordHighlightAction);
+registerEditorAction(TriggerWordHighlightAction);
+registerEditorFeature(TextualMultiDocumentHighlightFeature);

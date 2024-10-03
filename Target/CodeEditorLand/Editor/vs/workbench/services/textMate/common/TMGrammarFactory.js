@@ -1,1 +1,117 @@
-import{Disposable as d}from"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import{TMScopeRegistry as l}from"./TMScopeRegistry.js";const c="No TM Grammar registered for this language.";class I extends d{_host;_initialState;_scopeRegistry;_injections;_injectedEmbeddedLanguages;_languageToScope;_grammarRegistry;constructor(s,o,i,n){super(),this._host=s,this._initialState=i.INITIAL,this._scopeRegistry=new l,this._injections={},this._injectedEmbeddedLanguages={},this._languageToScope=new Map,this._grammarRegistry=this._register(new i.Registry({onigLib:n,loadGrammar:async e=>{const r=this._scopeRegistry.getGrammarDefinition(e);if(!r)return this._host.logTrace(`No grammar found for scope ${e}`),null;const t=r.location;try{const a=await this._host.readFile(t);return i.parseRawGrammar(a,t.path)}catch(a){return this._host.logError(`Unable to load and parse grammar for scope ${e} from ${t}`,a),null}},getInjections:e=>{const r=e.split(".");let t=[];for(let a=1;a<=r.length;a++){const g=r.slice(0,a).join(".");t=[...t,...this._injections[g]||[]]}return t}}));for(const e of o){if(this._scopeRegistry.register(e),e.injectTo){for(const r of e.injectTo){let t=this._injections[r];t||(this._injections[r]=t=[]),t.push(e.scopeName)}if(e.embeddedLanguages)for(const r of e.injectTo){let t=this._injectedEmbeddedLanguages[r];t||(this._injectedEmbeddedLanguages[r]=t=[]),t.push(e.embeddedLanguages)}}e.language&&this._languageToScope.set(e.language,e.scopeName)}}has(s){return this._languageToScope.has(s)}setTheme(s,o){this._grammarRegistry.setTheme(s,o)}getColorMap(){return this._grammarRegistry.getColorMap()}async createGrammar(s,o){const i=this._languageToScope.get(s);if(typeof i!="string")throw new Error(c);const n=this._scopeRegistry.getGrammarDefinition(i);if(!n)throw new Error(c);const e=n.embeddedLanguages;if(this._injectedEmbeddedLanguages[i]){const a=this._injectedEmbeddedLanguages[i];for(const g of a)for(const m of Object.keys(g))e[m]=g[m]}const r=Object.keys(e).length>0;let t;try{t=await this._grammarRegistry.loadGrammarWithConfiguration(i,o,{embeddedLanguages:e,tokenTypes:n.tokenTypes,balancedBracketSelectors:n.balancedBracketSelectors,unbalancedBracketSelectors:n.unbalancedBracketSelectors})}catch(a){throw a.message&&a.message.startsWith("No grammar provided for")?new Error(c):a}return{languageId:s,grammar:t,initialState:this._initialState,containsEmbeddedLanguages:r,sourceExtensionId:n.sourceExtensionId}}}export{I as TMGrammarFactory,c as missingTMGrammarErrorMessage};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { TMScopeRegistry } from './TMScopeRegistry.js';
+export const missingTMGrammarErrorMessage = 'No TM Grammar registered for this language.';
+export class TMGrammarFactory extends Disposable {
+    constructor(host, grammarDefinitions, vscodeTextmate, onigLib) {
+        super();
+        this._host = host;
+        this._initialState = vscodeTextmate.INITIAL;
+        this._scopeRegistry = new TMScopeRegistry();
+        this._injections = {};
+        this._injectedEmbeddedLanguages = {};
+        this._languageToScope = new Map();
+        this._grammarRegistry = this._register(new vscodeTextmate.Registry({
+            onigLib: onigLib,
+            loadGrammar: async (scopeName) => {
+                const grammarDefinition = this._scopeRegistry.getGrammarDefinition(scopeName);
+                if (!grammarDefinition) {
+                    this._host.logTrace(`No grammar found for scope ${scopeName}`);
+                    return null;
+                }
+                const location = grammarDefinition.location;
+                try {
+                    const content = await this._host.readFile(location);
+                    return vscodeTextmate.parseRawGrammar(content, location.path);
+                }
+                catch (e) {
+                    this._host.logError(`Unable to load and parse grammar for scope ${scopeName} from ${location}`, e);
+                    return null;
+                }
+            },
+            getInjections: (scopeName) => {
+                const scopeParts = scopeName.split('.');
+                let injections = [];
+                for (let i = 1; i <= scopeParts.length; i++) {
+                    const subScopeName = scopeParts.slice(0, i).join('.');
+                    injections = [...injections, ...(this._injections[subScopeName] || [])];
+                }
+                return injections;
+            }
+        }));
+        for (const validGrammar of grammarDefinitions) {
+            this._scopeRegistry.register(validGrammar);
+            if (validGrammar.injectTo) {
+                for (const injectScope of validGrammar.injectTo) {
+                    let injections = this._injections[injectScope];
+                    if (!injections) {
+                        this._injections[injectScope] = injections = [];
+                    }
+                    injections.push(validGrammar.scopeName);
+                }
+                if (validGrammar.embeddedLanguages) {
+                    for (const injectScope of validGrammar.injectTo) {
+                        let injectedEmbeddedLanguages = this._injectedEmbeddedLanguages[injectScope];
+                        if (!injectedEmbeddedLanguages) {
+                            this._injectedEmbeddedLanguages[injectScope] = injectedEmbeddedLanguages = [];
+                        }
+                        injectedEmbeddedLanguages.push(validGrammar.embeddedLanguages);
+                    }
+                }
+            }
+            if (validGrammar.language) {
+                this._languageToScope.set(validGrammar.language, validGrammar.scopeName);
+            }
+        }
+    }
+    has(languageId) {
+        return this._languageToScope.has(languageId);
+    }
+    setTheme(theme, colorMap) {
+        this._grammarRegistry.setTheme(theme, colorMap);
+    }
+    getColorMap() {
+        return this._grammarRegistry.getColorMap();
+    }
+    async createGrammar(languageId, encodedLanguageId) {
+        const scopeName = this._languageToScope.get(languageId);
+        if (typeof scopeName !== 'string') {
+            throw new Error(missingTMGrammarErrorMessage);
+        }
+        const grammarDefinition = this._scopeRegistry.getGrammarDefinition(scopeName);
+        if (!grammarDefinition) {
+            throw new Error(missingTMGrammarErrorMessage);
+        }
+        const embeddedLanguages = grammarDefinition.embeddedLanguages;
+        if (this._injectedEmbeddedLanguages[scopeName]) {
+            const injectedEmbeddedLanguages = this._injectedEmbeddedLanguages[scopeName];
+            for (const injected of injectedEmbeddedLanguages) {
+                for (const scope of Object.keys(injected)) {
+                    embeddedLanguages[scope] = injected[scope];
+                }
+            }
+        }
+        const containsEmbeddedLanguages = (Object.keys(embeddedLanguages).length > 0);
+        let grammar;
+        try {
+            grammar = await this._grammarRegistry.loadGrammarWithConfiguration(scopeName, encodedLanguageId, {
+                embeddedLanguages,
+                tokenTypes: grammarDefinition.tokenTypes,
+                balancedBracketSelectors: grammarDefinition.balancedBracketSelectors,
+                unbalancedBracketSelectors: grammarDefinition.unbalancedBracketSelectors,
+            });
+        }
+        catch (err) {
+            if (err.message && err.message.startsWith('No grammar provided for')) {
+                throw new Error(missingTMGrammarErrorMessage);
+            }
+            throw err;
+        }
+        return {
+            languageId: languageId,
+            grammar: grammar,
+            initialState: this._initialState,
+            containsEmbeddedLanguages: containsEmbeddedLanguages,
+            sourceExtensionId: grammarDefinition.sourceExtensionId,
+        };
+    }
+}

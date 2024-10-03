@@ -1,1 +1,63 @@
-var u=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var I=(c,r,o,t)=>{for(var i=t>1?void 0:t?D(r,o):r,m=c.length-1,n;m>=0;m--)(n=c[m])&&(i=(t?n(r,o,i):n(i))||i);return t&&i&&u(r,o,i),i},e=(c,r)=>(o,t)=>r(o,t,c);import{IWorkspaceContextService as h}from"../../../../platform/workspace/common/workspace.js";import{IJSONEditingService as U}from"../../configuration/common/jsonEditing.js";import{IWorkspacesService as F}from"../../../../platform/workspaces/common/workspaces.js";import"../../configuration/browser/configurationService.js";import{ICommandService as b}from"../../../../platform/commands/common/commands.js";import{INotificationService as x}from"../../../../platform/notification/common/notification.js";import{IFileService as y}from"../../../../platform/files/common/files.js";import{IWorkbenchEnvironmentService as C}from"../../environment/common/environmentService.js";import{IFileDialogService as P,IDialogService as T}from"../../../../platform/dialogs/common/dialogs.js";import{ITextFileService as E}from"../../textfile/common/textfiles.js";import{IHostService as N}from"../../host/browser/host.js";import{AbstractWorkspaceEditingService as R}from"./abstractWorkspaceEditingService.js";import{IWorkspaceEditingService as H}from"../common/workspaceEditing.js";import{InstantiationType as J,registerSingleton as M}from"../../../../platform/instantiation/common/extensions.js";import"../../../../base/common/uri.js";import{IUriIdentityService as O}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{IWorkspaceTrustManagementService as A}from"../../../../platform/workspace/common/workspaceTrust.js";import{IWorkbenchConfigurationService as j}from"../../configuration/common/configuration.js";import{IUserDataProfilesService as q}from"../../../../platform/userDataProfile/common/userDataProfile.js";import{IUserDataProfileService as w}from"../../userDataProfile/common/userDataProfile.js";let a=class extends R{constructor(r,o,t,i,m,n,v,S,s,p,f,l,W,d,g,k){super(r,o,t,i,m,n,v,S,s,p,f,l,W,d,g,k)}async enterWorkspace(r){await this.doEnterWorkspace(r)&&await this.hostService.openWindow([{workspaceUri:r}],{forceReuseWindow:!0})}};a=I([e(0,U),e(1,h),e(2,j),e(3,x),e(4,b),e(5,y),e(6,E),e(7,F),e(8,C),e(9,P),e(10,T),e(11,N),e(12,O),e(13,A),e(14,q),e(15,w)],a),M(H,a,J.Delayed);export{a as BrowserWorkspaceEditingService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { IJSONEditingService } from '../../configuration/common/jsonEditing.js';
+import { IWorkspacesService } from '../../../../platform/workspaces/common/workspaces.js';
+import { WorkspaceService } from '../../configuration/browser/configurationService.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
+import { IFileDialogService, IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { ITextFileService } from '../../textfile/common/textfiles.js';
+import { IHostService } from '../../host/browser/host.js';
+import { AbstractWorkspaceEditingService } from './abstractWorkspaceEditingService.js';
+import { IWorkspaceEditingService } from '../common/workspaceEditing.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
+import { IWorkbenchConfigurationService } from '../../configuration/common/configuration.js';
+import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
+import { IUserDataProfileService } from '../../userDataProfile/common/userDataProfile.js';
+let BrowserWorkspaceEditingService = class BrowserWorkspaceEditingService extends AbstractWorkspaceEditingService {
+    constructor(jsonEditingService, contextService, configurationService, notificationService, commandService, fileService, textFileService, workspacesService, environmentService, fileDialogService, dialogService, hostService, uriIdentityService, workspaceTrustManagementService, userDataProfilesService, userDataProfileService) {
+        super(jsonEditingService, contextService, configurationService, notificationService, commandService, fileService, textFileService, workspacesService, environmentService, fileDialogService, dialogService, hostService, uriIdentityService, workspaceTrustManagementService, userDataProfilesService, userDataProfileService);
+    }
+    async enterWorkspace(workspaceUri) {
+        const result = await this.doEnterWorkspace(workspaceUri);
+        if (result) {
+            await this.hostService.openWindow([{ workspaceUri }], { forceReuseWindow: true });
+        }
+    }
+};
+BrowserWorkspaceEditingService = __decorate([
+    __param(0, IJSONEditingService),
+    __param(1, IWorkspaceContextService),
+    __param(2, IWorkbenchConfigurationService),
+    __param(3, INotificationService),
+    __param(4, ICommandService),
+    __param(5, IFileService),
+    __param(6, ITextFileService),
+    __param(7, IWorkspacesService),
+    __param(8, IWorkbenchEnvironmentService),
+    __param(9, IFileDialogService),
+    __param(10, IDialogService),
+    __param(11, IHostService),
+    __param(12, IUriIdentityService),
+    __param(13, IWorkspaceTrustManagementService),
+    __param(14, IUserDataProfilesService),
+    __param(15, IUserDataProfileService),
+    __metadata("design:paramtypes", [Object, WorkspaceService, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], BrowserWorkspaceEditingService);
+export { BrowserWorkspaceEditingService };
+registerSingleton(IWorkspaceEditingService, BrowserWorkspaceEditingService, 1);

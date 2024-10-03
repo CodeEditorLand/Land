@@ -1,1 +1,149 @@
-import{createCancelableAsyncIterable as c,RunOnceScheduler as l}from"../../../../base/common/async.js";import"../../../../base/common/cancellation.js";import{onUnexpectedError as u}from"../../../../base/common/errors.js";import{Emitter as h}from"../../../../base/common/event.js";import{Disposable as o}from"../../../../base/common/lifecycle.js";import"../../../browser/editorBrowser.js";import{EditorOption as d}from"../../../common/config/editorOptions.js";var _=(i=>(i[i.Idle=0]="Idle",i[i.FirstWait=1]="FirstWait",i[i.SecondWait=2]="SecondWait",i[i.WaitingForAsync=3]="WaitingForAsync",i[i.WaitingForAsyncShowingLoading=4]="WaitingForAsyncShowingLoading",i))(_||{}),p=(e=>(e[e.Delayed=0]="Delayed",e[e.Immediate=1]="Immediate",e))(p||{}),g=(e=>(e[e.Mouse=0]="Mouse",e[e.Keyboard=1]="Keyboard",e))(g||{});class m{constructor(s,e,t,n){this.value=s;this.isComplete=e;this.hasLoadingMessage=t;this.options=n}}class O extends o{constructor(e,t){super();this._editor=e;this._computer=t}_onResult=this._register(new h);onResult=this._onResult.event;_asyncComputationScheduler=this._register(new r(e=>this._triggerAsyncComputation(e),0));_syncComputationScheduler=this._register(new r(e=>this._triggerSyncComputation(e),0));_loadingMessageScheduler=this._register(new r(e=>this._triggerLoadingMessage(e),0));_state=0;_asyncIterable=null;_asyncIterableDone=!1;_result=[];_options;dispose(){this._asyncIterable&&(this._asyncIterable.cancel(),this._asyncIterable=null),this._options=void 0,super.dispose()}get _hoverTime(){return this._editor.getOption(d.hover).delay}get _firstWaitTime(){return this._hoverTime/2}get _secondWaitTime(){return this._hoverTime-this._firstWaitTime}get _loadingMessageTime(){return 3*this._hoverTime}_setState(e,t){this._state=e,this._fireResult(t)}_triggerAsyncComputation(e){this._setState(2,e),this._syncComputationScheduler.schedule(e,this._secondWaitTime),this._computer.computeAsync?(this._asyncIterableDone=!1,this._asyncIterable=c(t=>this._computer.computeAsync(e,t)),(async()=>{try{for await(const t of this._asyncIterable)t&&(this._result.push(t),this._fireResult(e));this._asyncIterableDone=!0,(this._state===3||this._state===4)&&this._setState(0,e)}catch(t){u(t)}})()):this._asyncIterableDone=!0}_triggerSyncComputation(e){this._computer.computeSync&&(this._result=this._result.concat(this._computer.computeSync(e))),this._setState(this._asyncIterableDone?0:3,e)}_triggerLoadingMessage(e){this._state===3&&this._setState(4,e)}_fireResult(e){if(this._state===1||this._state===2)return;const t=this._state===0,n=this._state===4;this._onResult.fire(new m(this._result.slice(0),t,n,e))}start(e,t){if(e===0)this._state===0&&(this._setState(1,t),this._asyncComputationScheduler.schedule(t,this._firstWaitTime),this._loadingMessageScheduler.schedule(t,this._loadingMessageTime));else switch(this._state){case 0:this._triggerAsyncComputation(t),this._syncComputationScheduler.cancel(),this._triggerSyncComputation(t);break;case 2:this._syncComputationScheduler.cancel(),this._triggerSyncComputation(t);break}}cancel(){this._asyncComputationScheduler.cancel(),this._syncComputationScheduler.cancel(),this._loadingMessageScheduler.cancel(),this._asyncIterable&&(this._asyncIterable.cancel(),this._asyncIterable=null),this._result=[],this._options=void 0,this._state=0}get options(){return this._options}}class r extends o{_scheduler;_options;constructor(s,e){super(),this._scheduler=this._register(new l(()=>s(this._options),e))}schedule(s,e){this._options=s,this._scheduler.schedule(e)}cancel(){this._scheduler.cancel()}}export{O as HoverOperation,m as HoverResult,p as HoverStartMode,g as HoverStartSource};
+import { createCancelableAsyncIterable, RunOnceScheduler } from '../../../../base/common/async.js';
+import { onUnexpectedError } from '../../../../base/common/errors.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+export class HoverResult {
+    constructor(value, isComplete, hasLoadingMessage, options) {
+        this.value = value;
+        this.isComplete = isComplete;
+        this.hasLoadingMessage = hasLoadingMessage;
+        this.options = options;
+    }
+}
+export class HoverOperation extends Disposable {
+    constructor(_editor, _computer) {
+        super();
+        this._editor = _editor;
+        this._computer = _computer;
+        this._onResult = this._register(new Emitter());
+        this.onResult = this._onResult.event;
+        this._asyncComputationScheduler = this._register(new Debouncer((options) => this._triggerAsyncComputation(options), 0));
+        this._syncComputationScheduler = this._register(new Debouncer((options) => this._triggerSyncComputation(options), 0));
+        this._loadingMessageScheduler = this._register(new Debouncer((options) => this._triggerLoadingMessage(options), 0));
+        this._state = 0;
+        this._asyncIterable = null;
+        this._asyncIterableDone = false;
+        this._result = [];
+    }
+    dispose() {
+        if (this._asyncIterable) {
+            this._asyncIterable.cancel();
+            this._asyncIterable = null;
+        }
+        this._options = undefined;
+        super.dispose();
+    }
+    get _hoverTime() {
+        return this._editor.getOption(62).delay;
+    }
+    get _firstWaitTime() {
+        return this._hoverTime / 2;
+    }
+    get _secondWaitTime() {
+        return this._hoverTime - this._firstWaitTime;
+    }
+    get _loadingMessageTime() {
+        return 3 * this._hoverTime;
+    }
+    _setState(state, options) {
+        this._state = state;
+        this._fireResult(options);
+    }
+    _triggerAsyncComputation(options) {
+        this._setState(2, options);
+        this._syncComputationScheduler.schedule(options, this._secondWaitTime);
+        if (this._computer.computeAsync) {
+            this._asyncIterableDone = false;
+            this._asyncIterable = createCancelableAsyncIterable(token => this._computer.computeAsync(options, token));
+            (async () => {
+                try {
+                    for await (const item of this._asyncIterable) {
+                        if (item) {
+                            this._result.push(item);
+                            this._fireResult(options);
+                        }
+                    }
+                    this._asyncIterableDone = true;
+                    if (this._state === 3 || this._state === 4) {
+                        this._setState(0, options);
+                    }
+                }
+                catch (e) {
+                    onUnexpectedError(e);
+                }
+            })();
+        }
+        else {
+            this._asyncIterableDone = true;
+        }
+    }
+    _triggerSyncComputation(options) {
+        if (this._computer.computeSync) {
+            this._result = this._result.concat(this._computer.computeSync(options));
+        }
+        this._setState(this._asyncIterableDone ? 0 : 3, options);
+    }
+    _triggerLoadingMessage(options) {
+        if (this._state === 3) {
+            this._setState(4, options);
+        }
+    }
+    _fireResult(options) {
+        if (this._state === 1 || this._state === 2) {
+            return;
+        }
+        const isComplete = (this._state === 0);
+        const hasLoadingMessage = (this._state === 4);
+        this._onResult.fire(new HoverResult(this._result.slice(0), isComplete, hasLoadingMessage, options));
+    }
+    start(mode, options) {
+        if (mode === 0) {
+            if (this._state === 0) {
+                this._setState(1, options);
+                this._asyncComputationScheduler.schedule(options, this._firstWaitTime);
+                this._loadingMessageScheduler.schedule(options, this._loadingMessageTime);
+            }
+        }
+        else {
+            switch (this._state) {
+                case 0:
+                    this._triggerAsyncComputation(options);
+                    this._syncComputationScheduler.cancel();
+                    this._triggerSyncComputation(options);
+                    break;
+                case 2:
+                    this._syncComputationScheduler.cancel();
+                    this._triggerSyncComputation(options);
+                    break;
+            }
+        }
+    }
+    cancel() {
+        this._asyncComputationScheduler.cancel();
+        this._syncComputationScheduler.cancel();
+        this._loadingMessageScheduler.cancel();
+        if (this._asyncIterable) {
+            this._asyncIterable.cancel();
+            this._asyncIterable = null;
+        }
+        this._result = [];
+        this._options = undefined;
+        this._state = 0;
+    }
+    get options() {
+        return this._options;
+    }
+}
+class Debouncer extends Disposable {
+    constructor(runner, debounceTimeMs) {
+        super();
+        this._scheduler = this._register(new RunOnceScheduler(() => runner(this._options), debounceTimeMs));
+    }
+    schedule(options, debounceTimeMs) {
+        this._options = options;
+        this._scheduler.schedule(debounceTimeMs);
+    }
+    cancel() {
+        this._scheduler.cancel();
+    }
+}

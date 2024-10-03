@@ -1,1 +1,183 @@
-var E=Object.defineProperty;var z=Object.getOwnPropertyDescriptor;var v=(l,e,t,n)=>{for(var o=n>1?void 0:n?z(e,t):e,r=l.length-1,a;r>=0;r--)(a=l[r])&&(o=(n?a(e,t,o):a(o))||o);return n&&o&&E(e,t,o),o},f=(l,e)=>(t,n)=>e(t,n,l);import{MarkdownString as K}from"../../../../base/common/htmlContent.js";import{compare as B,compareSubstring as U}from"../../../../base/common/strings.js";import{Position as O}from"../../../../editor/common/core/position.js";import{Range as T}from"../../../../editor/common/core/range.js";import"../../../../editor/common/model.js";import{CompletionItemKind as $,CompletionItemInsertTextRule as D,CompletionTriggerKind as j}from"../../../../editor/common/languages.js";import{ILanguageService as q}from"../../../../editor/common/languages/language.js";import{SnippetParser as F}from"../../../../editor/contrib/snippet/browser/snippetParser.js";import{localize as x}from"../../../../nls.js";import{ISnippetsService as R}from"./snippets.js";import{Snippet as G,SnippetSource as H}from"./snippetsFile.js";import{isPatternInWord as J}from"../../../../base/common/filters.js";import{StopWatch as Q}from"../../../../base/common/stopwatch.js";import{ILanguageConfigurationService as V}from"../../../../editor/common/languages/languageConfigurationRegistry.js";import"../../../../platform/extensions/common/extensions.js";import{CommandsRegistry as X}from"../../../../platform/commands/common/commands.js";import"../../../../editor/common/core/wordHelper.js";const _="_snippet.markAsUsed";X.registerCommand(_,(l,...e)=>{const t=l.get(R),[n]=e;n instanceof G&&t.updateUsageTimestamp(n)});class d{constructor(e,t){this.snippet=e;this.label={label:e.prefix,description:e.name},this.detail=x("detail.snippet","{0} ({1})",e.description||e.name,e.source),this.insertText=e.codeSnippet,this.extensionId=e.extensionId,this.range=t,this.sortText=`${e.snippetSource===H.Extension?"z":"a"}-${e.prefix}`,this.kind=$.Snippet,this.insertTextRules=D.InsertAsSnippet,this.command={id:_,title:"",arguments:[e]}}label;detail;insertText;documentation;range;sortText;kind;insertTextRules;extensionId;command;resolve(){return this.documentation=new K().appendCodeblock("",F.asInsertText(this.snippet.codeSnippet)),this}static compareByLabel(e,t){return B(e.label.label,t.label.label)}}let C=class{constructor(e,t,n){this._languageService=e;this._snippets=t;this._languageConfigurationService=n}_debugDisplayName="snippetCompletions";async provideCompletionItems(e,t,n){const o=new Q,r=t.lineNumber,a=e.getWordAtPosition(t)??{startColumn:t.column,endColumn:t.column,word:""},s=e.getLineContent(t.lineNumber).toLowerCase(),A=s.substring(0,a.startColumn+a.word.length-1),W=this._computeSnippetPositions(e,r,a,A),m=t.column-1,b=n.triggerCharacter?.toLowerCase()??"",S=this._getLanguageIdAtPosition(e,t),k=this._languageConfigurationService.getLanguageConfiguration(S),I=new Set(await this._snippets.getSnippets(S)),g=[];for(const i of I){if(n.triggerKind===j.TriggerCharacter&&!i.prefixLow.startsWith(b))continue;let p;for(const c of W)if(!(c.prefixLow.match(/^\s/)&&!i.prefixLow.match(/^\s/))&&J(c.prefixLow,0,c.prefixLow.length,i.prefixLow,0,i.prefixLow.length)){p=c;break}if(!p)continue;const u=p.startColumn-1,L=i.prefixLow.length-(m-u),y=U(s,i.prefixLow,m,m+L,m-u),N=t.with(void 0,u+1);let w=y===0?t.column+L:t.column;m<s.length&&k.getAutoClosingPairs().autoClosingPairsCloseSingleChar.get(s[m])?.some(h=>h.open===s[N.column-1]&&i.prefix.startsWith(h.open)&&i.prefix[i.prefix.length-1]===h.close)&&w++;const P=T.fromPositions({lineNumber:r,column:p.startColumn},{lineNumber:r,column:w}),M=P.setEndPosition(r,t.column);g.push(new d(i,{replace:P,insert:M})),I.delete(i)}if(!b&&(/\s/.test(s[t.column-2])||!s))for(const i of I){const p=T.fromPositions(t),u=s.indexOf(i.prefixLow,m)===m?p.setEndPosition(t.lineNumber,t.column+i.prefixLow.length):p;g.push(new d(i,{replace:u,insert:p}))}return this._disambiguateSnippets(g),{suggestions:g,duration:o.elapsed()}}_disambiguateSnippets(e){e.sort(d.compareByLabel);for(let t=0;t<e.length;t++){const n=e[t];let o=t+1;for(;o<e.length&&n.label===e[o].label;o++)e[o].label.label=x("snippetSuggest.longLabel","{0}, {1}",e[o].label.label,e[o].snippet.name);o>t+1&&(e[t].label.label=x("snippetSuggest.longLabel","{0}, {1}",e[t].label.label,e[t].snippet.name),t=o)}}resolveCompletionItem(e){return e instanceof d?e.resolve():e}_computeSnippetPositions(e,t,n,o){const r=[];for(let a=1;a<n.startColumn;a++){const s=e.getWordAtPosition(new O(t,a));r.push({startColumn:a,prefixLow:o.substring(a-1),isWord:!!s}),s&&(a=s.endColumn,r.push({startColumn:s.endColumn,prefixLow:o.substring(s.endColumn-1),isWord:!1}))}return(n.word.length>0||r.length===0)&&r.push({startColumn:n.startColumn,prefixLow:o.substring(n.startColumn-1),isWord:!0}),r}_getLanguageIdAtPosition(e,t){e.tokenization.tokenizeIfCheap(t.lineNumber);let n=e.getLanguageIdAtPosition(t.lineNumber,t.column);return this._languageService.getLanguageName(n)||(n=e.getLanguageId()),n}};C=v([f(0,q),f(1,R),f(2,V)],C);export{d as SnippetCompletion,C as SnippetCompletionProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
+import { compare, compareSubstring } from '../../../../base/common/strings.js';
+import { Position } from '../../../../editor/common/core/position.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+import { SnippetParser } from '../../../../editor/contrib/snippet/browser/snippetParser.js';
+import { localize } from '../../../../nls.js';
+import { ISnippetsService } from './snippets.js';
+import { Snippet } from './snippetsFile.js';
+import { isPatternInWord } from '../../../../base/common/filters.js';
+import { StopWatch } from '../../../../base/common/stopwatch.js';
+import { ILanguageConfigurationService } from '../../../../editor/common/languages/languageConfigurationRegistry.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+const markSnippetAsUsed = '_snippet.markAsUsed';
+CommandsRegistry.registerCommand(markSnippetAsUsed, (accessor, ...args) => {
+    const snippetsService = accessor.get(ISnippetsService);
+    const [first] = args;
+    if (first instanceof Snippet) {
+        snippetsService.updateUsageTimestamp(first);
+    }
+});
+export class SnippetCompletion {
+    constructor(snippet, range) {
+        this.snippet = snippet;
+        this.label = { label: snippet.prefix, description: snippet.name };
+        this.detail = localize('detail.snippet', "{0} ({1})", snippet.description || snippet.name, snippet.source);
+        this.insertText = snippet.codeSnippet;
+        this.extensionId = snippet.extensionId;
+        this.range = range;
+        this.sortText = `${snippet.snippetSource === 3 ? 'z' : 'a'}-${snippet.prefix}`;
+        this.kind = 27;
+        this.insertTextRules = 4;
+        this.command = { id: markSnippetAsUsed, title: '', arguments: [snippet] };
+    }
+    resolve() {
+        this.documentation = new MarkdownString().appendCodeblock('', SnippetParser.asInsertText(this.snippet.codeSnippet));
+        return this;
+    }
+    static compareByLabel(a, b) {
+        return compare(a.label.label, b.label.label);
+    }
+}
+let SnippetCompletionProvider = class SnippetCompletionProvider {
+    constructor(_languageService, _snippets, _languageConfigurationService) {
+        this._languageService = _languageService;
+        this._snippets = _snippets;
+        this._languageConfigurationService = _languageConfigurationService;
+        this._debugDisplayName = 'snippetCompletions';
+    }
+    async provideCompletionItems(model, position, context) {
+        const sw = new StopWatch();
+        const line = position.lineNumber;
+        const word = model.getWordAtPosition(position) ?? { startColumn: position.column, endColumn: position.column, word: '' };
+        const lineContentLow = model.getLineContent(position.lineNumber).toLowerCase();
+        const lineContentWithWordLow = lineContentLow.substring(0, word.startColumn + word.word.length - 1);
+        const anchors = this._computeSnippetPositions(model, line, word, lineContentWithWordLow);
+        const columnOffset = position.column - 1;
+        const triggerCharacterLow = context.triggerCharacter?.toLowerCase() ?? '';
+        const languageId = this._getLanguageIdAtPosition(model, position);
+        const languageConfig = this._languageConfigurationService.getLanguageConfiguration(languageId);
+        const snippets = new Set(await this._snippets.getSnippets(languageId));
+        const suggestions = [];
+        for (const snippet of snippets) {
+            if (context.triggerKind === 1 && !snippet.prefixLow.startsWith(triggerCharacterLow)) {
+                continue;
+            }
+            let candidate;
+            for (const anchor of anchors) {
+                if (anchor.prefixLow.match(/^\s/) && !snippet.prefixLow.match(/^\s/)) {
+                    continue;
+                }
+                if (isPatternInWord(anchor.prefixLow, 0, anchor.prefixLow.length, snippet.prefixLow, 0, snippet.prefixLow.length)) {
+                    candidate = anchor;
+                    break;
+                }
+            }
+            if (!candidate) {
+                continue;
+            }
+            const pos = candidate.startColumn - 1;
+            const prefixRestLen = snippet.prefixLow.length - (columnOffset - pos);
+            const endsWithPrefixRest = compareSubstring(lineContentLow, snippet.prefixLow, columnOffset, columnOffset + prefixRestLen, columnOffset - pos);
+            const startPosition = position.with(undefined, pos + 1);
+            let endColumn = endsWithPrefixRest === 0 ? position.column + prefixRestLen : position.column;
+            if (columnOffset < lineContentLow.length) {
+                const autoClosingPairs = languageConfig.getAutoClosingPairs();
+                const standardAutoClosingPairConditionals = autoClosingPairs.autoClosingPairsCloseSingleChar.get(lineContentLow[columnOffset]);
+                if (standardAutoClosingPairConditionals?.some(p => p.open === lineContentLow[startPosition.column - 1] &&
+                    snippet.prefix.startsWith(p.open) &&
+                    snippet.prefix[snippet.prefix.length - 1] === p.close)) {
+                    endColumn++;
+                }
+            }
+            const replace = Range.fromPositions({ lineNumber: line, column: candidate.startColumn }, { lineNumber: line, column: endColumn });
+            const insert = replace.setEndPosition(line, position.column);
+            suggestions.push(new SnippetCompletion(snippet, { replace, insert }));
+            snippets.delete(snippet);
+        }
+        if (!triggerCharacterLow && (/\s/.test(lineContentLow[position.column - 2]) || !lineContentLow)) {
+            for (const snippet of snippets) {
+                const insert = Range.fromPositions(position);
+                const replace = lineContentLow.indexOf(snippet.prefixLow, columnOffset) === columnOffset ? insert.setEndPosition(position.lineNumber, position.column + snippet.prefixLow.length) : insert;
+                suggestions.push(new SnippetCompletion(snippet, { replace, insert }));
+            }
+        }
+        this._disambiguateSnippets(suggestions);
+        return {
+            suggestions,
+            duration: sw.elapsed()
+        };
+    }
+    _disambiguateSnippets(suggestions) {
+        suggestions.sort(SnippetCompletion.compareByLabel);
+        for (let i = 0; i < suggestions.length; i++) {
+            const item = suggestions[i];
+            let to = i + 1;
+            for (; to < suggestions.length && item.label === suggestions[to].label; to++) {
+                suggestions[to].label.label = localize('snippetSuggest.longLabel', "{0}, {1}", suggestions[to].label.label, suggestions[to].snippet.name);
+            }
+            if (to > i + 1) {
+                suggestions[i].label.label = localize('snippetSuggest.longLabel', "{0}, {1}", suggestions[i].label.label, suggestions[i].snippet.name);
+                i = to;
+            }
+        }
+    }
+    resolveCompletionItem(item) {
+        return (item instanceof SnippetCompletion) ? item.resolve() : item;
+    }
+    _computeSnippetPositions(model, line, word, lineContentWithWordLow) {
+        const result = [];
+        for (let column = 1; column < word.startColumn; column++) {
+            const wordInfo = model.getWordAtPosition(new Position(line, column));
+            result.push({
+                startColumn: column,
+                prefixLow: lineContentWithWordLow.substring(column - 1),
+                isWord: Boolean(wordInfo)
+            });
+            if (wordInfo) {
+                column = wordInfo.endColumn;
+                result.push({
+                    startColumn: wordInfo.endColumn,
+                    prefixLow: lineContentWithWordLow.substring(wordInfo.endColumn - 1),
+                    isWord: false
+                });
+            }
+        }
+        if (word.word.length > 0 || result.length === 0) {
+            result.push({
+                startColumn: word.startColumn,
+                prefixLow: lineContentWithWordLow.substring(word.startColumn - 1),
+                isWord: true
+            });
+        }
+        return result;
+    }
+    _getLanguageIdAtPosition(model, position) {
+        model.tokenization.tokenizeIfCheap(position.lineNumber);
+        let languageId = model.getLanguageIdAtPosition(position.lineNumber, position.column);
+        if (!this._languageService.getLanguageName(languageId)) {
+            languageId = model.getLanguageId();
+        }
+        return languageId;
+    }
+};
+SnippetCompletionProvider = __decorate([
+    __param(0, ILanguageService),
+    __param(1, ISnippetsService),
+    __param(2, ILanguageConfigurationService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], SnippetCompletionProvider);
+export { SnippetCompletionProvider };

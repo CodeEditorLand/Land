@@ -1,1 +1,1429 @@
-var lt=Object.defineProperty;var ct=Object.getOwnPropertyDescriptor;var X=(x,f,t,e)=>{for(var i=e>1?void 0:e?ct(f,t):f,o=x.length-1,r;o>=0;o--)(r=x[o])&&(i=(e?r(f,t,i):r(i))||i);return e&&i&&lt(f,t,i),i},p=(x,f)=>(t,e)=>f(t,e,x);import"./media/editorgroupview.css";import{EditorGroupModel as q,isGroupEditorCloseEvent as pt,isGroupEditorOpenEvent as ht,isSerializedEditorGroupModel as ut}from"../../../common/editor/editorGroupModel.js";import{CloseDirection as Et,SaveReason as U,EditorsOrder as C,EditorResourceAccessor as b,EditorInputCapabilities as w,DEFAULT_EDITOR_ASSOCIATION as mt,SideBySideEditor as h,EditorCloseContext as D,GroupModelChangeKind as l,TEXT_DIFF_EDITOR_ID as vt}from"../../../common/editor.js";import{ActiveEditorGroupLockedContext as ft,ActiveEditorDirtyContext as Ct,EditorGroupEditorsCountContext as It,ActiveEditorStickyContext as gt,ActiveEditorPinnedContext as yt,ActiveEditorLastInGroupContext as St,ActiveEditorFirstInGroupContext as bt,ResourceContextKey as Ot,applyAvailableEditorIds as wt,ActiveEditorAvailableEditorIdsContext as Dt,ActiveEditorCanSplitInGroupContext as Tt,SideBySideEditorActiveContext as Pt,TextCompareEditorVisibleContext as xt,TextCompareEditorActiveContext as At,ActiveEditorContext as _t,ActiveEditorReadonlyContext as Rt,ActiveEditorCanRevertContext as Gt,ActiveEditorCanToggleReadonlyContext as Lt,ActiveCompareEditorCanSwapContext as kt,MultipleEditorsSelectedInGroupContext as Mt,TwoEditorsSelectedInGroupContext as Vt,SelectedEditorsInGroupFileOrUntitledResourceContextKey as Ft}from"../../../common/contextkeys.js";import"../../../common/editor/editorInput.js";import{SideBySideEditorInput as T}from"../../../common/editor/sideBySideEditorInput.js";import{Emitter as m,Relay as Bt}from"../../../../base/common/event.js";import{IInstantiationService as Nt}from"../../../../platform/instantiation/common/instantiation.js";import{Dimension as $,trackFocus as Ht,addDisposableListener as O,EventType as _,EventHelper as J,findParentWithClass as Z,isAncestor as Ut,isMouseEvent as Wt,isActiveElement as Kt,getWindow as tt,getActiveElement as et}from"../../../../base/browser/dom.js";import{ServiceCollection as Yt}from"../../../../platform/instantiation/common/serviceCollection.js";import{IContextKeyService as it}from"../../../../platform/contextkey/common/contextkey.js";import{ProgressBar as zt}from"../../../../base/browser/ui/progressbar/progressbar.js";import{IThemeService as Qt,Themable as jt}from"../../../../platform/theme/common/themeService.js";import{editorBackground as Xt,contrastBorder as qt}from"../../../../platform/theme/common/colorRegistry.js";import{EDITOR_GROUP_HEADER_TABS_BACKGROUND as $t,EDITOR_GROUP_HEADER_NO_TABS_BACKGROUND as Jt,EDITOR_GROUP_EMPTY_BACKGROUND as Zt,EDITOR_GROUP_HEADER_BORDER as te}from"../../../common/theme.js";import{GroupsOrder as ee}from"../../../services/editor/common/editorGroupsService.js";import{EditorPanes as ie}from"./editorPanes.js";import{IEditorProgressService as oe}from"../../../../platform/progress/common/progress.js";import{EditorProgressIndicator as re}from"../../../services/progress/browser/progressIndicator.js";import{localize as I}from"../../../../nls.js";import{coalesce as ot}from"../../../../base/common/arrays.js";import{MutableDisposable as rt,toDisposable as se}from"../../../../base/common/lifecycle.js";import{ITelemetryService as ne}from"../../../../platform/telemetry/common/telemetry.js";import{DeferredPromise as de,Promises as ae,RunOnceWorker as le}from"../../../../base/common/async.js";import{EventType as st}from"../../../../base/browser/touch.js";import{fillActiveEditorViewState as nt}from"./editor.js";import{ActionBar as ce}from"../../../../base/browser/ui/actionbar/actionbar.js";import{IKeybindingService as pe}from"../../../../platform/keybinding/common/keybinding.js";import"../../../../base/common/actions.js";import{IMenuService as he,MenuId as W}from"../../../../platform/actions/common/actions.js";import{StandardMouseEvent as ue}from"../../../../base/browser/mouseEvent.js";import{createAndFillInActionBarActions as dt}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import{IContextMenuService as Ee}from"../../../../platform/contextview/browser/contextView.js";import{IEditorService as me}from"../../../services/editor/common/editorService.js";import{hash as ve}from"../../../../base/common/hash.js";import{getMimeTypes as fe}from"../../../../editor/common/services/languagesAssociations.js";import{extname as Ce,isEqual as K}from"../../../../base/common/resources.js";import{Schemas as R}from"../../../../base/common/network.js";import{EditorActivation as P}from"../../../../platform/editor/common/editor.js";import{IFileDialogService as Ie,ConfirmResult as g,IDialogService as ge}from"../../../../platform/dialogs/common/dialogs.js";import{IFilesConfigurationService as ye,AutoSaveMode as at}from"../../../services/filesConfiguration/common/filesConfigurationService.js";import{URI as Se}from"../../../../base/common/uri.js";import{IUriIdentityService as be}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{isLinux as Oe,isMacintosh as we,isNative as De,isWindows as Te}from"../../../../base/common/platform.js";import{ILogService as Pe}from"../../../../platform/log/common/log.js";import{TelemetryTrustedValue as xe}from"../../../../platform/telemetry/common/telemetryUtils.js";import{defaultProgressBarStyles as Ae}from"../../../../platform/theme/browser/defaultStyles.js";import"../../../../base/browser/ui/sash/sash.js";import{EditorGroupWatermark as _e}from"./editorGroupWatermark.js";import{EditorTitleControl as Re}from"./editorTitleControl.js";import{EditorPane as Ge}from"./editorPane.js";import{IEditorResolverService as Le}from"../../../services/editor/common/editorResolverService.js";import{IHostService as ke}from"../../../services/host/browser/host.js";import{DiffEditorInput as Me}from"../../../common/editor/diffEditorInput.js";import{FileSystemProviderCapabilities as Ve,IFileService as Fe}from"../../../../platform/files/common/files.js";let E=class extends jt{constructor(t,e,i,o,r,s,n,d,c,v,y,G,L,k,M,Y,z,Q,V,F,B,N){super(c);this.editorPartsView=e;this.groupsView=i;this.groupsLabel=o;this._index=r;this.instantiationService=n;this.contextKeyService=d;this.telemetryService=v;this.keybindingService=y;this.menuService=G;this.contextMenuService=L;this.fileDialogService=k;this.editorService=M;this.filesConfigurationService=Y;this.uriIdentityService=z;this.logService=Q;this.editorResolverService=V;this.hostService=F;this.dialogService=B;this.fileService=N;t instanceof E?this.model=this._register(t.model.clone()):ut(t)?this.model=this._register(n.createInstance(q,t)):this.model=this._register(n.createInstance(q,void 0)),this.scopedContextKeyService=this._register(this.contextKeyService.createScoped(this.element)),this.element.classList.add(...ot(["editor-group-container",this.model.isLocked?"locked":void 0])),this.registerContainerListeners(),this.createContainerToolbar(),this.createContainerContextMenu(),this._register(this.instantiationService.createInstance(_e,this.element)),this.progressBar=this._register(new zt(this.element,Ae)),this.progressBar.hide(),this.scopedInstantiationService=this._register(this.instantiationService.createChild(new Yt([it,this.scopedContextKeyService],[oe,this._register(new re(this.progressBar,this))]))),this.resourceContext=this._register(this.scopedInstantiationService.createInstance(Ot)),this.handleGroupContextKeys(),this.titleContainer=document.createElement("div"),this.titleContainer.classList.add("title"),this.element.appendChild(this.titleContainer),this.titleControl=this._register(this.scopedInstantiationService.createInstance(Re,this.titleContainer,this.editorPartsView,this.groupsView,this,this.model)),this.editorContainer=document.createElement("div"),this.editorContainer.classList.add("editor-container"),this.element.appendChild(this.editorContainer),this.editorPane=this._register(this.scopedInstantiationService.createInstance(ie,this.element,this.editorContainer,this)),this._onDidChange.input=this.editorPane.onDidChangeSizeConstraints,this.doTrackFocus(),this.updateTitleContainer(),this.updateContainer(),this.updateStyles(),(this.restoreEditors(t,s)??Promise.resolve()).finally(()=>{this.whenRestoredPromise.complete()}),this.registerListeners()}static createNew(t,e,i,o,r,s){return r.createInstance(E,null,t,e,i,o,s)}static createFromSerialized(t,e,i,o,r,s,n){return s.createInstance(E,t,e,i,o,r,n)}static createCopy(t,e,i,o,r,s,n){return s.createInstance(E,t,e,i,o,r,n)}scopedContextKeyService;_onDidFocus=this._register(new m);onDidFocus=this._onDidFocus.event;_onWillDispose=this._register(new m);onWillDispose=this._onWillDispose.event;_onDidModelChange=this._register(new m);onDidModelChange=this._onDidModelChange.event;_onDidActiveEditorChange=this._register(new m);onDidActiveEditorChange=this._onDidActiveEditorChange.event;_onDidOpenEditorFail=this._register(new m);onDidOpenEditorFail=this._onDidOpenEditorFail.event;_onWillCloseEditor=this._register(new m);onWillCloseEditor=this._onWillCloseEditor.event;_onDidCloseEditor=this._register(new m);onDidCloseEditor=this._onDidCloseEditor.event;_onWillMoveEditor=this._register(new m);onWillMoveEditor=this._onWillMoveEditor.event;_onWillOpenEditor=this._register(new m);onWillOpenEditor=this._onWillOpenEditor.event;model;active;lastLayout;scopedInstantiationService;resourceContext;titleContainer;titleControl;progressBar;editorContainer;editorPane;disposedEditorsWorker=this._register(new le(t=>this.handleDisposedEditors(t),0));mapEditorToPendingConfirmation=new Map;containerToolBarMenuDisposable=this._register(new rt);whenRestoredPromise=new de;whenRestored=this.whenRestoredPromise.p;handleGroupContextKeys(){const t=this.editorPartsView.bind(Ct,this),e=this.editorPartsView.bind(yt,this),i=this.editorPartsView.bind(bt,this),o=this.editorPartsView.bind(St,this),r=this.editorPartsView.bind(gt,this),s=this.editorPartsView.bind(It,this),n=this.editorPartsView.bind(ft,this),d=Mt.bindTo(this.scopedContextKeyService),c=Vt.bindTo(this.scopedContextKeyService),v=Ft.bindTo(this.scopedContextKeyService),y=this.editorPartsView.bind(_t,this),G=this.editorPartsView.bind(Rt,this),L=this.editorPartsView.bind(Gt,this),k=this.editorPartsView.bind(Lt,this),M=this.editorPartsView.bind(kt,this),Y=this.editorPartsView.bind(xt,this),z=this.editorPartsView.bind(At,this),Q=this.editorPartsView.bind(Dt,this),V=this.editorPartsView.bind(Tt,this),F=this.editorPartsView.bind(Pt,this),B=this._register(new rt),N=()=>{B.clear(),this.scopedContextKeyService.bufferChangeEvents(()=>{const a=this.activeEditor,u=this.activeEditorPane;if(this.resourceContext.set(b.getOriginalUri(a,{supportSideBySide:h.PRIMARY})),wt(Q,a,this.editorResolverService),a?(V.set(a.hasCapability(w.CanSplitInGroup)),F.set(a.typeId===T.ID),t.set(a.isDirty()&&!a.isSaving()),B.value=a.onDidChangeDirty(()=>{t.set(a.isDirty()&&!a.isSaving())})):(V.set(!1),F.set(!1),t.set(!1)),u){y.set(u.getId()),L.set(!u.input.hasCapability(w.Untitled)),G.set(!!u.input.isReadonly());const S=b.getOriginalUri(u.input,{supportSideBySide:h.PRIMARY}),H=b.getOriginalUri(u.input,{supportSideBySide:h.SECONDARY});M.set(u.input instanceof Me&&!u.input.original.isReadonly()&&!!S&&(this.fileService.hasProvider(S)||S.scheme===R.untitled)&&!!H&&(this.fileService.hasProvider(H)||H.scheme===R.untitled)),k.set(!!S&&this.fileService.hasProvider(S)&&!this.fileService.hasCapability(S,Ve.Readonly));const j=u?.getId()===vt;z.set(j),Y.set(j)}else y.reset(),L.reset(),G.reset(),M.reset(),k.reset()})},A=a=>{switch(a.kind){case l.GROUP_LOCKED:n.set(this.isLocked);break;case l.EDITOR_ACTIVE:i.set(this.model.isFirst(this.model.activeEditor)),o.set(this.model.isLast(this.model.activeEditor)),e.set(this.model.activeEditor?this.model.isPinned(this.model.activeEditor):!1),r.set(this.model.activeEditor?this.model.isSticky(this.model.activeEditor):!1);break;case l.EDITOR_CLOSE:e.set(this.model.activeEditor?this.model.isPinned(this.model.activeEditor):!1),r.set(this.model.activeEditor?this.model.isSticky(this.model.activeEditor):!1);case l.EDITOR_OPEN:case l.EDITOR_MOVE:i.set(this.model.isFirst(this.model.activeEditor)),o.set(this.model.isLast(this.model.activeEditor));break;case l.EDITOR_PIN:a.editor&&a.editor===this.model.activeEditor&&e.set(this.model.isPinned(this.model.activeEditor));break;case l.EDITOR_STICKY:a.editor&&a.editor===this.model.activeEditor&&r.set(this.model.isSticky(this.model.activeEditor));break;case l.EDITORS_SELECTION:d.set(this.model.selectedEditors.length>1),c.set(this.model.selectedEditors.length===2),v.set(this.model.selectedEditors.every(u=>u.resource&&(this.fileService.hasProvider(u.resource)||u.resource.scheme===R.untitled)));break}s.set(this.count)};this._register(this.onDidModelChange(a=>A(a))),this._register(this.onDidActiveEditorChange(()=>N())),N(),A({kind:l.EDITOR_ACTIVE}),A({kind:l.GROUP_LOCKED})}registerContainerListeners(){this._register(O(this.element,_.DBLCLICK,t=>{this.isEmpty&&(J.stop(t),this.editorService.openEditor({resource:void 0,options:{pinned:!0,override:mt.id}},this.id))})),this._register(O(this.element,_.AUXCLICK,t=>{this.isEmpty&&t.button===1&&(J.stop(t,!0),this.groupsView.removeGroup(this))}))}createContainerToolbar(){const t=document.createElement("div");t.classList.add("editor-group-container-toolbar"),this.element.appendChild(t);const e=this._register(new ce(t,{ariaLabel:I("ariaLabelGroupActions","Empty editor group actions"),highlightToggledItems:!0})),i=this._register(this.menuService.createMenu(W.EmptyEditorGroup,this.scopedContextKeyService)),o=()=>{const r={primary:[],secondary:[]};this.containerToolBarMenuDisposable.value=se(()=>e.clear()),dt(i,{arg:{groupId:this.id},shouldForwardArgs:!0},r,"navigation");for(const s of[...r.primary,...r.secondary]){const n=this.keybindingService.lookupKeybinding(s.id);e.push(s,{icon:!0,label:!1,keybinding:n?.getLabel()})}};o(),this._register(i.onDidChange(o))}createContainerContextMenu(){this._register(O(this.element,_.CONTEXT_MENU,t=>this.onShowContainerContextMenu(t))),this._register(O(this.element,st.Contextmenu,()=>this.onShowContainerContextMenu()))}onShowContainerContextMenu(t){if(!this.isEmpty)return;let e=this.element;t&&(e=new ue(tt(this.element),t)),this.contextMenuService.showContextMenu({menuId:W.EmptyEditorGroupContext,contextKeyService:this.contextKeyService,getAnchor:()=>e,onHide:()=>{this.focus()}})}doTrackFocus(){const t=this._register(Ht(this.element));this._register(t.onDidFocus(()=>{this.isEmpty&&this._onDidFocus.fire()}));const e=i=>{let o;if(Wt(i)){if(i.button!==0||we&&i.ctrlKey)return;o=i.target}else o=i.initialTarget;Z(o,"monaco-action-bar",this.titleContainer)||Z(o,"monaco-breadcrumb-item",this.titleContainer)||setTimeout(()=>{this.focus()})};this._register(O(this.titleContainer,_.MOUSE_DOWN,i=>e(i))),this._register(O(this.titleContainer,st.Tap,i=>e(i))),this._register(this.editorPane.onDidFocus(()=>{this._onDidFocus.fire()}))}updateContainer(){this.isEmpty?(this.element.classList.add("empty"),this.element.tabIndex=0,this.element.setAttribute("aria-label",I("emptyEditorGroup","{0} (empty)",this.ariaLabel))):(this.element.classList.remove("empty"),this.element.removeAttribute("tabIndex"),this.element.removeAttribute("aria-label")),this.updateStyles()}updateTitleContainer(){this.titleContainer.classList.toggle("tabs",this.groupsView.partOptions.showTabs==="multiple"),this.titleContainer.classList.toggle("show-file-icons",this.groupsView.partOptions.showIcons)}restoreEditors(t,e){if(this.count===0)return;let i;t instanceof E?i=nt(t):i=Object.create(null);const o=this.model.activeEditor;if(!o)return;i.pinned=this.model.isPinned(o),i.sticky=this.model.isSticky(o),i.preserveFocus=!0;const r={preserveWindowOrder:!0,skipTitleUpdate:!0},s=et(),n=this.doShowEditor(o,{active:!0,isNew:!1},i,r).then(()=>{this.groupsView.activeGroup===this&&s&&Kt(s)&&!e?.preserveFocus&&this.focus()});return this.titleControl.openEditors(this.editors),n}registerListeners(){this._register(this.model.onDidModelChange(t=>this.onDidGroupModelChange(t))),this._register(this.groupsView.onDidChangeEditorPartOptions(t=>this.onDidChangeEditorPartOptions(t))),this._register(this.groupsView.onDidVisibilityChange(t=>this.onDidVisibilityChange(t))),this._register(this.onDidFocus(()=>this.onDidGainFocus()))}onDidGroupModelChange(t){switch(this._onDidModelChange.fire(t),t.kind){case l.GROUP_LOCKED:this.element.classList.toggle("locked",this.isLocked);break;case l.EDITORS_SELECTION:this.onDidChangeEditorSelection();break}if(t.editor)switch(t.kind){case l.EDITOR_OPEN:ht(t)&&this.onDidOpenEditor(t.editor,t.editorIndex);break;case l.EDITOR_CLOSE:pt(t)&&this.handleOnDidCloseEditor(t.editor,t.editorIndex,t.context,t.sticky);break;case l.EDITOR_WILL_DISPOSE:this.onWillDisposeEditor(t.editor);break;case l.EDITOR_DIRTY:this.onDidChangeEditorDirty(t.editor);break;case l.EDITOR_TRANSIENT:this.onDidChangeEditorTransient(t.editor);break;case l.EDITOR_LABEL:this.onDidChangeEditorLabel(t.editor);break}}onDidOpenEditor(t,e){this.telemetryService.publicLog("editorOpened",this.toEditorTelemetryDescriptor(t)),this.updateContainer()}handleOnDidCloseEditor(t,e,i,o){this._onWillCloseEditor.fire({groupId:this.id,editor:t,context:i,index:e,sticky:o});const r=[t];t instanceof T&&r.push(t.primary,t.secondary);for(const s of r)this.canDispose(s)&&s.dispose();this.telemetryService.publicLog("editorClosed",this.toEditorTelemetryDescriptor(t)),this.updateContainer(),this._onDidCloseEditor.fire({groupId:this.id,editor:t,context:i,index:e,sticky:o})}canDispose(t){for(const e of this.editorPartsView.groups)if(e instanceof E&&e.model.contains(t,{strictEquals:!0,supportSideBySide:h.ANY}))return!1;return!0}toResourceTelemetryDescriptor(t){if(!t)return;const e=t?t.scheme===R.file?t.fsPath:t.path:void 0;if(!e)return;let i=Ce(t);const o=i.indexOf("?");return i=o!==-1?i.substr(0,o):i,{mimeType:new xe(fe(t).join(", ")),scheme:t.scheme,ext:i,path:ve(e)}}toEditorTelemetryDescriptor(t){const e=t.getTelemetryDescriptor(),i=b.getOriginalUri(t,{supportSideBySide:h.BOTH});return Se.isUri(i)?(e.resource=this.toResourceTelemetryDescriptor(i),e):(i&&(i.primary&&(e.resource=this.toResourceTelemetryDescriptor(i.primary)),i.secondary&&(e.resourceSecondary=this.toResourceTelemetryDescriptor(i.secondary))),e)}onWillDisposeEditor(t){this.disposedEditorsWorker.work(t)}handleDisposedEditors(t){let e;const i=[];for(const o of t){const r=this.model.findEditor(o);if(!r)continue;const s=r[0];s.isDisposed()&&(this.model.isActive(s)?e=s:i.push(s))}for(const o of i)this.doCloseEditor(o,!0);e&&this.doCloseEditor(e,!0)}onDidChangeEditorPartOptions(t){this.updateTitleContainer(),this.titleControl.updateOptions(t.oldPartOptions,t.newPartOptions),(t.oldPartOptions.showTabs!==t.newPartOptions.showTabs||t.oldPartOptions.tabHeight!==t.newPartOptions.tabHeight||t.oldPartOptions.showTabs==="multiple"&&t.oldPartOptions.pinnedTabsOnSeparateRow!==t.newPartOptions.pinnedTabsOnSeparateRow)&&(this.relayout(),this.model.activeEditor&&this.titleControl.openEditors(this.model.getEditors(C.SEQUENTIAL))),this.updateStyles(),t.oldPartOptions.enablePreview&&!t.newPartOptions.enablePreview&&this.model.previewEditor&&this.pinEditor(this.model.previewEditor)}onDidChangeEditorDirty(t){this.pinEditor(t),this.titleControl.updateEditorDirty(t)}onDidChangeEditorTransient(t){!this.model.isTransient(t)&&!this.groupsView.partOptions.enablePreview&&this.pinEditor(t)}onDidChangeEditorLabel(t){this.titleControl.updateEditorLabel(t)}onDidChangeEditorSelection(){this.titleControl.updateEditorSelections()}onDidVisibilityChange(t){this.editorPane.setVisible(t)}onDidGainFocus(){this.activeEditor&&this.model.setTransient(this.activeEditor,!1)}get index(){return this._index}get label(){return this.groupsLabel?I("groupLabelLong","{0}: Group {1}",this.groupsLabel,this._index+1):I("groupLabel","Group {0}",this._index+1)}get ariaLabel(){return this.groupsLabel?I("groupAriaLabelLong","{0}: Editor Group {1}",this.groupsLabel,this._index+1):I("groupAriaLabel","Editor Group {0}",this._index+1)}_disposed=!1;get disposed(){return this._disposed}get isEmpty(){return this.count===0}get titleHeight(){return this.titleControl.getHeight()}notifyIndexChanged(t){this._index!==t&&(this._index=t,this.model.setIndex(t))}notifyLabelChanged(t){this.groupsLabel!==t&&(this.groupsLabel=t,this.model.setLabel(t))}setActive(t){this.active=t,!t&&this.activeEditor&&this.selectedEditors.length>1&&this.setSelection(this.activeEditor,[]),this.element.classList.toggle("active",t),this.element.classList.toggle("inactive",!t),this.titleControl.setActive(t),this.updateStyles(),this.model.setActive(void 0)}get id(){return this.model.id}get windowId(){return this.groupsView.windowId}get editors(){return this.model.getEditors(C.SEQUENTIAL)}get count(){return this.model.count}get stickyCount(){return this.model.stickyCount}get activeEditorPane(){return this.editorPane?this.editorPane.activeEditorPane??void 0:void 0}get activeEditor(){return this.model.activeEditor}get selectedEditors(){return this.model.selectedEditors}get previewEditor(){return this.model.previewEditor}isPinned(t){return this.model.isPinned(t)}isSticky(t){return this.model.isSticky(t)}isSelected(t){return this.model.isSelected(t)}isTransient(t){return this.model.isTransient(t)}isActive(t){return this.model.isActive(t)}async setSelection(t,e){this.isActive(t)?this.model.setSelection(t,e):await this.openEditor(t,{activation:P.ACTIVATE},{inactiveSelection:e})}contains(t,e){return this.model.contains(t,e)}getEditors(t,e){return this.model.getEditors(t,e)}findEditors(t,e){const i=this.uriIdentityService.asCanonicalUri(t);return this.getEditors(C.SEQUENTIAL).filter(o=>{if(o.resource&&K(o.resource,i))return!0;if(e?.supportSideBySide===h.PRIMARY||e?.supportSideBySide===h.ANY){const r=b.getCanonicalUri(o,{supportSideBySide:h.PRIMARY});if(r&&K(r,i))return!0}if(e?.supportSideBySide===h.SECONDARY||e?.supportSideBySide===h.ANY){const r=b.getCanonicalUri(o,{supportSideBySide:h.SECONDARY});if(r&&K(r,i))return!0}return!1})}getEditorByIndex(t){return this.model.getEditorByIndex(t)}getIndexOfEditor(t){return this.model.indexOf(t)}isFirst(t){return this.model.isFirst(t)}isLast(t){return this.model.isLast(t)}focus(){this.activeEditorPane?this.activeEditorPane.focus():this.element.focus(),this._onDidFocus.fire()}pinEditor(t=this.activeEditor||void 0){if(t&&!this.model.isPinned(t)){const e=this.model.pin(t);e&&this.titleControl.pinEditor(e)}}stickEditor(t=this.activeEditor||void 0){this.doStickEditor(t,!0)}unstickEditor(t=this.activeEditor||void 0){this.doStickEditor(t,!1)}doStickEditor(t,e){if(t&&this.model.isSticky(t)!==e){const i=this.getIndexOfEditor(t),o=e?this.model.stick(t):this.model.unstick(t);if(!o)return;const r=this.getIndexOfEditor(o);r!==i&&this.titleControl.moveEditor(o,i,r,!0),e?this.titleControl.stickEditor(o):this.titleControl.unstickEditor(o)}}async openEditor(t,e,i){return this.doOpenEditor(t,e,{...i,supportSideBySide:h.BOTH})}async doOpenEditor(t,e,i){if(!t||t.isDisposed())return;this._onWillOpenEditor.fire({editor:t,groupId:this.id});const o=e?.sticky||!this.groupsView.partOptions.enablePreview&&!e?.transient||t.isDirty()||(e?.pinned??typeof e?.index=="number")||typeof e?.index=="number"&&this.model.isSticky(e.index)||t.hasCapability(w.Scratchpad),r={index:e?e.index:void 0,pinned:o,sticky:e?.sticky||typeof e?.index=="number"&&this.model.isSticky(e.index),transient:!!e?.transient,inactiveSelection:i?.inactiveSelection,active:this.count===0||!e||!e.inactive,supportSideBySide:i?.supportSideBySide};!r.active&&!r.pinned&&this.model.activeEditor&&!this.model.isPinned(this.model.activeEditor)&&(r.active=!0);let s=!1,n=!1;if(e?.activation===P.ACTIVATE?s=!0:e?.activation===P.RESTORE?n=!0:e?.activation===P.PRESERVE?(s=!1,n=!1):r.active&&(s=!e||!e.preserveFocus,n=!s),typeof r.index=="number"){const y=this.model.indexOf(t);y!==-1&&y!==r.index&&this.doMoveEditorInsideGroup(t,r)}const{editor:d,isNew:c}=this.model.openEditor(t,r);c&&this.count===1&&this.editorPartsView.groups.length>1&&d.editorId&&this.groupsView.partOptions.autoLockGroups?.has(d.editorId)&&this.lock(!0);const v=this.doShowEditor(d,{active:!!r.active,isNew:c},e,i);return s?this.groupsView.activateGroup(this):n&&this.groupsView.restoreGroup(this),v}doShowEditor(t,e,i,o){let r;return e.active?r=(async()=>{const{pane:s,changed:n,cancelled:d,error:c}=await this.editorPane.openEditor(t,i,o,{newInGroup:e.isNew});if(!d)return n&&this._onDidActiveEditorChange.fire({editor:t}),c&&this._onDidOpenEditorFail.fire(t),!s&&this.activeEditor===t&&this.doCloseEditor(t,i?.preserveFocus,{fromError:!0}),s})():r=Promise.resolve(void 0),o?.skipTitleUpdate||this.titleControl.openEditor(t,o),r}async openEditors(t){const e=ot(t).filter(({editor:n})=>!n.isDisposed()),i=e.at(0);if(!i)return;const o={supportSideBySide:h.BOTH};await this.doOpenEditor(i.editor,i.options,o);const r=e.slice(1),s=this.getIndexOfEditor(i.editor)+1;return await ae.settled(r.map(({editor:n,options:d},c)=>this.doOpenEditor(n,{...d,inactive:!0,pinned:!0,index:s+c},{...o,skipTitleUpdate:!0}))),this.titleControl.openEditors(r.map(({editor:n})=>n)),this.editorPane.activeEditorPane??void 0}moveEditors(t,e){const i={skipTitleUpdate:this!==e};let o=!1;const r=new Set;for(const{editor:s,options:n}of t)this.moveEditor(s,e,n,i)?r.add(s):o=!0;return i.skipTitleUpdate&&(e.titleControl.openEditors(Array.from(r)),this.titleControl.closeEditors(Array.from(r))),!o}moveEditor(t,e,i,o){return this===e?(this.doMoveEditorInsideGroup(t,i),!0):this.doMoveOrCopyEditorAcrossGroups(t,e,i,{...o,keepCopy:!1})}doMoveEditorInsideGroup(t,e){const i=e?e.index:void 0;if(typeof i!="number")return;const o=this.model.indexOf(t),r=this.model.getEditorByIndex(o);if(r){if(o!==i){const s=this.model.stickyCount;this.model.moveEditor(r,i),this.model.pin(r),this.titleControl.moveEditor(r,o,i,s!==this.model.stickyCount),this.titleControl.pinEditor(r)}e?.sticky&&this.stickEditor(r)}}doMoveOrCopyEditorAcrossGroups(t,e,i,o){const r=o?.keepCopy;if(!r||t.hasCapability(w.Singleton)){const n=t.canMove(this.id,e.id);if(typeof n=="string")return this.dialogService.error(n,I("moveErrorDetails","Try saving or reverting the editor first and then try again.")),!1}const s=nt(this,t,{...i,pinned:!0,sticky:i?.sticky??(!r&&this.model.isSticky(t))});return r||this._onWillMoveEditor.fire({groupId:this.id,editor:t,target:e.id}),e.doOpenEditor(r?t.copy():t,s,o),r||this.doCloseEditor(t,!0,{...o,context:D.MOVE}),!0}copyEditors(t,e){const i={skipTitleUpdate:this!==e};for(const{editor:o,options:r}of t)this.copyEditor(o,e,r,i);if(i.skipTitleUpdate){const o=t.map(({editor:r})=>r);e.titleControl.openEditors(o)}}copyEditor(t,e,i,o){this===e?this.doMoveEditorInsideGroup(t,i):this.doMoveOrCopyEditorAcrossGroups(t,e,i,{...o,keepCopy:!0})}async closeEditor(t=this.activeEditor||void 0,e){return this.doCloseEditorWithConfirmationHandling(t,e)}async doCloseEditorWithConfirmationHandling(t=this.activeEditor||void 0,e,i){return!t||await this.handleCloseConfirmation([t])?!1:(this.doCloseEditor(t,e?.preserveFocus,i),!0)}doCloseEditor(t,e=this.groupsView.activeGroup!==this,i){i?.skipTitleUpdate||this.titleControl.beforeCloseEditor(t),this.model.isActive(t)?this.doCloseActiveEditor(e,i):this.doCloseInactiveEditor(t,i),i?.skipTitleUpdate||this.titleControl.closeEditor(t)}doCloseActiveEditor(t=this.groupsView.activeGroup!==this,e){const i=this.activeEditor,o=!t&&this.shouldRestoreFocus(this.element),r=this.groupsView.partOptions.closeEmptyGroups;if(r&&this.active&&this.count===1){const d=this.groupsView.getGroups(ee.MOST_RECENTLY_ACTIVE)[1];d&&(o?d.focus():this.groupsView.activateGroup(d,!0))}i&&this.model.closeEditor(i,e?.context);const s=this.model.activeEditor;if(s){let n;t&&this.groupsView.activeGroup!==this&&(n=P.PRESERVE);const d={preserveFocus:t,activation:n,ignoreError:e?.fromError},c={preserveWindowOrder:!0};this.doOpenEditor(s,d,c)}else i&&this.editorPane.closeEditor(i),o&&!r&&this.focus(),this._onDidActiveEditorChange.fire({editor:void 0}),r&&this.groupsView.removeGroup(this,t)}shouldRestoreFocus(t){const e=et();return e===t.ownerDocument.body?!0:Ut(e,t)}doCloseInactiveEditor(t,e){this.model.closeEditor(t,e?.context)}async handleCloseConfirmation(t){if(!t.length)return!1;const e=t.shift();let i=this.mapEditorToPendingConfirmation.get(e);i||(i=this.doHandleCloseConfirmation(e),this.mapEditorToPendingConfirmation.set(e,i));let o;try{o=await i}finally{this.mapEditorToPendingConfirmation.delete(e)}return o||this.handleCloseConfirmation(t)}async doHandleCloseConfirmation(t,e){if(!this.shouldConfirmClose(t)||t instanceof T&&this.model.contains(t.primary)||this.editorPartsView.groups.some(s=>{if(s===this)return!1;const n=s;return!!(n.contains(t,{supportSideBySide:h.BOTH})||t instanceof T&&n.contains(t.primary))}))return!1;let i=g.CANCEL,o=U.EXPLICIT,r=!1;if(!t.hasCapability(w.Untitled)&&!e?.skipAutoSave&&!t.closeHandler&&(this.filesConfigurationService.getAutoSaveMode(t).mode===at.ON_FOCUS_CHANGE?(r=!0,i=g.SAVE,o=U.FOCUS_CHANGE):De&&(Te||Oe)&&this.filesConfigurationService.getAutoSaveMode(t).mode===at.ON_WINDOW_CHANGE&&(r=!0,i=g.SAVE,o=U.WINDOW_CHANGE)),!r)if((!this.activeEditor||!this.activeEditor.matches(t))&&await this.doOpenEditor(t),await this.hostService.focus(tt(this.element)),typeof t.closeHandler?.confirm=="function")i=await t.closeHandler.confirm([{editor:t,groupId:this.id}]);else{let s;t instanceof T?s=t.primary.getName():s=t.getName(),i=await this.fileDialogService.showSaveConfirm([s])}if(!t.closeHandler&&!this.shouldConfirmClose(t))return i===g.CANCEL;switch(i){case g.SAVE:return!await t.save(this.id,{reason:o})&&r?this.doHandleCloseConfirmation(t,{skipAutoSave:!0}):t.isDirty();case g.DONT_SAVE:try{return await t.revert(this.id),t.isDirty()}catch(s){return this.logService.error(s),await t.revert(this.id,{soft:!0}),t.isDirty()}case g.CANCEL:return!0}}shouldConfirmClose(t){return t.closeHandler?t.closeHandler.showConfirm():t.isDirty()&&!t.isSaving()}async closeEditors(t,e){if(this.isEmpty)return!0;const i=this.doGetEditorsToClose(t);return await this.handleCloseConfirmation(i.slice(0))?!1:(this.doCloseEditors(i,e),!0)}doGetEditorsToClose(t){if(Array.isArray(t))return t;const e=t,i=typeof e.direction=="number";let o=this.model.getEditors(i?C.SEQUENTIAL:C.MOST_RECENTLY_ACTIVE,e);return e.savedOnly?o=o.filter(r=>!r.isDirty()||r.isSaving()):i&&e.except?o=e.direction===Et.LEFT?o.slice(0,this.model.indexOf(e.except,o)):o.slice(this.model.indexOf(e.except,o)+1):e.except&&(o=o.filter(r=>e.except&&!r.matches(e.except))),o}doCloseEditors(t,e){let i=!1;for(const o of t)this.isActive(o)?i=!0:this.doCloseInactiveEditor(o);i&&this.doCloseActiveEditor(e?.preserveFocus),t.length&&this.titleControl.closeEditors(t)}async closeAllEditors(t){if(this.isEmpty)return this.groupsView.partOptions.closeEmptyGroups&&this.groupsView.removeGroup(this),!0;let e=this.model.getEditors(C.MOST_RECENTLY_ACTIVE,t);return t?.excludeConfirming&&(e=e.filter(o=>!this.shouldConfirmClose(o))),await this.handleCloseConfirmation(e)?!1:(this.doCloseAllEditors(t),!0)}doCloseAllEditors(t){let e=this.model.getEditors(C.SEQUENTIAL,t);t?.excludeConfirming&&(e=e.filter(o=>!this.shouldConfirmClose(o)));const i=[];for(const o of e)this.isActive(o)||this.doCloseInactiveEditor(o),i.push(o);this.activeEditor&&i.includes(this.activeEditor)&&this.doCloseActiveEditor(),i.length&&this.titleControl.closeEditors(i)}async replaceEditors(t){let e;const i=[];for(let{editor:o,replacement:r,forceReplaceDirty:s,options:n}of t){const d=this.getIndexOfEditor(o);if(d>=0){const c=this.isActive(o);n?n.index=d:n={index:d},n.inactive=!c,n.pinned=n.pinned??!0;const v={editor:o,replacement:r,forceReplaceDirty:s,options:n};c?e=v:i.push(v)}}for(const{editor:o,replacement:r,forceReplaceDirty:s,options:n}of i)if(await this.doOpenEditor(r,n),!o.matches(r)){let d=!1;if(s?(this.doCloseEditor(o,!0,{context:D.REPLACE}),d=!0):d=await this.doCloseEditorWithConfirmationHandling(o,{preserveFocus:!0},{context:D.REPLACE}),!d)return}if(e){const o=this.doOpenEditor(e.replacement,e.options);e.editor.matches(e.replacement)||(e.forceReplaceDirty?this.doCloseEditor(e.editor,!0,{context:D.REPLACE}):await this.doCloseEditorWithConfirmationHandling(e.editor,{preserveFocus:!0},{context:D.REPLACE})),await o}}get isLocked(){return this.model.isLocked}lock(t){this.model.lock(t)}createEditorActions(t){const e=[],i=[];let o;const r=this.activeEditorPane;if(r instanceof Ge){const s=r.scopedContextKeyService??this.scopedContextKeyService,n=t.add(this.menuService.createMenu(W.EditorTitle,s,{emitEventsForSubmenuChanges:!0,eventDebounceDelay:0}));o=n.onDidChange;const d=(c,v)=>v==="navigation"&&c.actions.length<=1;dt(n,{arg:this.resourceContext.get(),shouldForwardArgs:!0},{primary:e,secondary:i},"navigation",d)}else{const s=t.add(new m);o=s.event,t.add(this.onDidActiveEditorChange(()=>s.fire()))}return{actions:{primary:e,secondary:i},onDidChange:o}}updateStyles(){const t=this.isEmpty;t?this.element.style.backgroundColor=this.getColor(Zt)||"":this.element.style.backgroundColor="";const e=this.getColor(te)||this.getColor(qt);!t&&e?(this.titleContainer.classList.add("title-border-bottom"),this.titleContainer.style.setProperty("--title-border-bottom-color",e)):(this.titleContainer.classList.remove("title-border-bottom"),this.titleContainer.style.removeProperty("--title-border-bottom-color"));const{showTabs:i}=this.groupsView.partOptions;this.titleContainer.style.backgroundColor=this.getColor(i==="multiple"?$t:Jt)||"",this.editorContainer.style.backgroundColor=this.getColor(Xt)||""}element=document.createElement("div");get minimumWidth(){return this.editorPane.minimumWidth}get minimumHeight(){return this.editorPane.minimumHeight}get maximumWidth(){return this.editorPane.maximumWidth}get maximumHeight(){return this.editorPane.maximumHeight}get proportionalLayout(){return this.lastLayout?!(this.lastLayout.width===this.minimumWidth||this.lastLayout.height===this.minimumHeight):!0}_onDidChange=this._register(new Bt);onDidChange=this._onDidChange.event;layout(t,e,i,o){this.lastLayout={width:t,height:e,top:i,left:o},this.element.classList.toggle("max-height-478px",e<=478);const r=this.titleControl.layout({container:new $(t,e),available:new $(t,e-this.editorPane.minimumHeight)});this.progressBar.getContainer().style.top=`${Math.max(this.titleHeight.offset-2,0)}px`;const s=Math.max(0,e-r.height);this.editorContainer.style.height=`${s}px`,this.editorPane.layout({width:t,height:s,top:i+r.height,left:o})}relayout(){if(this.lastLayout){const{width:t,height:e,top:i,left:o}=this.lastLayout;this.layout(t,e,i,o)}}setBoundarySashes(t){this.editorPane.setBoundarySashes(t)}toJSON(){return this.model.serialize()}dispose(){this._disposed=!0,this._onWillDispose.fire(),super.dispose()}};E=X([p(6,Nt),p(7,it),p(8,Qt),p(9,ne),p(10,pe),p(11,he),p(12,Ee),p(13,Ie),p(14,me),p(15,ye),p(16,be),p(17,Pe),p(18,Le),p(19,ke),p(20,ge),p(21,Fe)],E);export{E as EditorGroupView};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var EditorGroupView_1;
+import './media/editorgroupview.css';
+import { EditorGroupModel, isGroupEditorCloseEvent, isGroupEditorOpenEvent, isSerializedEditorGroupModel } from '../../../common/editor/editorGroupModel.js';
+import { EditorResourceAccessor, DEFAULT_EDITOR_ASSOCIATION, SideBySideEditor, EditorCloseContext, TEXT_DIFF_EDITOR_ID } from '../../../common/editor.js';
+import { ActiveEditorGroupLockedContext, ActiveEditorDirtyContext, EditorGroupEditorsCountContext, ActiveEditorStickyContext, ActiveEditorPinnedContext, ActiveEditorLastInGroupContext, ActiveEditorFirstInGroupContext, ResourceContextKey, applyAvailableEditorIds, ActiveEditorAvailableEditorIdsContext, ActiveEditorCanSplitInGroupContext, SideBySideEditorActiveContext, TextCompareEditorVisibleContext, TextCompareEditorActiveContext, ActiveEditorContext, ActiveEditorReadonlyContext, ActiveEditorCanRevertContext, ActiveEditorCanToggleReadonlyContext, ActiveCompareEditorCanSwapContext, MultipleEditorsSelectedInGroupContext, TwoEditorsSelectedInGroupContext, SelectedEditorsInGroupFileOrUntitledResourceContextKey } from '../../../common/contextkeys.js';
+import { SideBySideEditorInput } from '../../../common/editor/sideBySideEditorInput.js';
+import { Emitter, Relay } from '../../../../base/common/event.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { Dimension, trackFocus, addDisposableListener, EventType, EventHelper, findParentWithClass, isAncestor, isMouseEvent, isActiveElement, getWindow, getActiveElement } from '../../../../base/browser/dom.js';
+import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { ProgressBar } from '../../../../base/browser/ui/progressbar/progressbar.js';
+import { IThemeService, Themable } from '../../../../platform/theme/common/themeService.js';
+import { editorBackground, contrastBorder } from '../../../../platform/theme/common/colorRegistry.js';
+import { EDITOR_GROUP_HEADER_TABS_BACKGROUND, EDITOR_GROUP_HEADER_NO_TABS_BACKGROUND, EDITOR_GROUP_EMPTY_BACKGROUND, EDITOR_GROUP_HEADER_BORDER } from '../../../common/theme.js';
+import { EditorPanes } from './editorPanes.js';
+import { IEditorProgressService } from '../../../../platform/progress/common/progress.js';
+import { EditorProgressIndicator } from '../../../services/progress/browser/progressIndicator.js';
+import { localize } from '../../../../nls.js';
+import { coalesce } from '../../../../base/common/arrays.js';
+import { MutableDisposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { DeferredPromise, Promises, RunOnceWorker } from '../../../../base/common/async.js';
+import { EventType as TouchEventType } from '../../../../base/browser/touch.js';
+import { fillActiveEditorViewState } from './editor.js';
+import { ActionBar } from '../../../../base/browser/ui/actionbar/actionbar.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { IMenuService, MenuId } from '../../../../platform/actions/common/actions.js';
+import { StandardMouseEvent } from '../../../../base/browser/mouseEvent.js';
+import { createAndFillInActionBarActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { hash } from '../../../../base/common/hash.js';
+import { getMimeTypes } from '../../../../editor/common/services/languagesAssociations.js';
+import { extname, isEqual } from '../../../../base/common/resources.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { EditorActivation } from '../../../../platform/editor/common/editor.js';
+import { IFileDialogService, IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { IFilesConfigurationService } from '../../../services/filesConfiguration/common/filesConfigurationService.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { isLinux, isMacintosh, isNative, isWindows } from '../../../../base/common/platform.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { TelemetryTrustedValue } from '../../../../platform/telemetry/common/telemetryUtils.js';
+import { defaultProgressBarStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+import { EditorGroupWatermark } from './editorGroupWatermark.js';
+import { EditorTitleControl } from './editorTitleControl.js';
+import { EditorPane } from './editorPane.js';
+import { IEditorResolverService } from '../../../services/editor/common/editorResolverService.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+import { DiffEditorInput } from '../../../common/editor/diffEditorInput.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+let EditorGroupView = EditorGroupView_1 = class EditorGroupView extends Themable {
+    static createNew(editorPartsView, groupsView, groupsLabel, groupIndex, instantiationService, options) {
+        return instantiationService.createInstance(EditorGroupView_1, null, editorPartsView, groupsView, groupsLabel, groupIndex, options);
+    }
+    static createFromSerialized(serialized, editorPartsView, groupsView, groupsLabel, groupIndex, instantiationService, options) {
+        return instantiationService.createInstance(EditorGroupView_1, serialized, editorPartsView, groupsView, groupsLabel, groupIndex, options);
+    }
+    static createCopy(copyFrom, editorPartsView, groupsView, groupsLabel, groupIndex, instantiationService, options) {
+        return instantiationService.createInstance(EditorGroupView_1, copyFrom, editorPartsView, groupsView, groupsLabel, groupIndex, options);
+    }
+    constructor(from, editorPartsView, groupsView, groupsLabel, _index, options, instantiationService, contextKeyService, themeService, telemetryService, keybindingService, menuService, contextMenuService, fileDialogService, editorService, filesConfigurationService, uriIdentityService, logService, editorResolverService, hostService, dialogService, fileService) {
+        super(themeService);
+        this.editorPartsView = editorPartsView;
+        this.groupsView = groupsView;
+        this.groupsLabel = groupsLabel;
+        this._index = _index;
+        this.instantiationService = instantiationService;
+        this.contextKeyService = contextKeyService;
+        this.telemetryService = telemetryService;
+        this.keybindingService = keybindingService;
+        this.menuService = menuService;
+        this.contextMenuService = contextMenuService;
+        this.fileDialogService = fileDialogService;
+        this.editorService = editorService;
+        this.filesConfigurationService = filesConfigurationService;
+        this.uriIdentityService = uriIdentityService;
+        this.logService = logService;
+        this.editorResolverService = editorResolverService;
+        this.hostService = hostService;
+        this.dialogService = dialogService;
+        this.fileService = fileService;
+        this._onDidFocus = this._register(new Emitter());
+        this.onDidFocus = this._onDidFocus.event;
+        this._onWillDispose = this._register(new Emitter());
+        this.onWillDispose = this._onWillDispose.event;
+        this._onDidModelChange = this._register(new Emitter());
+        this.onDidModelChange = this._onDidModelChange.event;
+        this._onDidActiveEditorChange = this._register(new Emitter());
+        this.onDidActiveEditorChange = this._onDidActiveEditorChange.event;
+        this._onDidOpenEditorFail = this._register(new Emitter());
+        this.onDidOpenEditorFail = this._onDidOpenEditorFail.event;
+        this._onWillCloseEditor = this._register(new Emitter());
+        this.onWillCloseEditor = this._onWillCloseEditor.event;
+        this._onDidCloseEditor = this._register(new Emitter());
+        this.onDidCloseEditor = this._onDidCloseEditor.event;
+        this._onWillMoveEditor = this._register(new Emitter());
+        this.onWillMoveEditor = this._onWillMoveEditor.event;
+        this._onWillOpenEditor = this._register(new Emitter());
+        this.onWillOpenEditor = this._onWillOpenEditor.event;
+        this.disposedEditorsWorker = this._register(new RunOnceWorker(editors => this.handleDisposedEditors(editors), 0));
+        this.mapEditorToPendingConfirmation = new Map();
+        this.containerToolBarMenuDisposable = this._register(new MutableDisposable());
+        this.whenRestoredPromise = new DeferredPromise();
+        this.whenRestored = this.whenRestoredPromise.p;
+        this._disposed = false;
+        this.element = document.createElement('div');
+        this._onDidChange = this._register(new Relay());
+        this.onDidChange = this._onDidChange.event;
+        if (from instanceof EditorGroupView_1) {
+            this.model = this._register(from.model.clone());
+        }
+        else if (isSerializedEditorGroupModel(from)) {
+            this.model = this._register(instantiationService.createInstance(EditorGroupModel, from));
+        }
+        else {
+            this.model = this._register(instantiationService.createInstance(EditorGroupModel, undefined));
+        }
+        {
+            this.scopedContextKeyService = this._register(this.contextKeyService.createScoped(this.element));
+            this.element.classList.add(...coalesce(['editor-group-container', this.model.isLocked ? 'locked' : undefined]));
+            this.registerContainerListeners();
+            this.createContainerToolbar();
+            this.createContainerContextMenu();
+            this._register(this.instantiationService.createInstance(EditorGroupWatermark, this.element));
+            this.progressBar = this._register(new ProgressBar(this.element, defaultProgressBarStyles));
+            this.progressBar.hide();
+            this.scopedInstantiationService = this._register(this.instantiationService.createChild(new ServiceCollection([IContextKeyService, this.scopedContextKeyService], [IEditorProgressService, this._register(new EditorProgressIndicator(this.progressBar, this))])));
+            this.resourceContext = this._register(this.scopedInstantiationService.createInstance(ResourceContextKey));
+            this.handleGroupContextKeys();
+            this.titleContainer = document.createElement('div');
+            this.titleContainer.classList.add('title');
+            this.element.appendChild(this.titleContainer);
+            this.titleControl = this._register(this.scopedInstantiationService.createInstance(EditorTitleControl, this.titleContainer, this.editorPartsView, this.groupsView, this, this.model));
+            this.editorContainer = document.createElement('div');
+            this.editorContainer.classList.add('editor-container');
+            this.element.appendChild(this.editorContainer);
+            this.editorPane = this._register(this.scopedInstantiationService.createInstance(EditorPanes, this.element, this.editorContainer, this));
+            this._onDidChange.input = this.editorPane.onDidChangeSizeConstraints;
+            this.doTrackFocus();
+            this.updateTitleContainer();
+            this.updateContainer();
+            this.updateStyles();
+        }
+        const restoreEditorsPromise = this.restoreEditors(from, options) ?? Promise.resolve();
+        restoreEditorsPromise.finally(() => {
+            this.whenRestoredPromise.complete();
+        });
+        this.registerListeners();
+    }
+    handleGroupContextKeys() {
+        const groupActiveEditorDirtyContext = this.editorPartsView.bind(ActiveEditorDirtyContext, this);
+        const groupActiveEditorPinnedContext = this.editorPartsView.bind(ActiveEditorPinnedContext, this);
+        const groupActiveEditorFirstContext = this.editorPartsView.bind(ActiveEditorFirstInGroupContext, this);
+        const groupActiveEditorLastContext = this.editorPartsView.bind(ActiveEditorLastInGroupContext, this);
+        const groupActiveEditorStickyContext = this.editorPartsView.bind(ActiveEditorStickyContext, this);
+        const groupEditorsCountContext = this.editorPartsView.bind(EditorGroupEditorsCountContext, this);
+        const groupLockedContext = this.editorPartsView.bind(ActiveEditorGroupLockedContext, this);
+        const multipleEditorsSelectedContext = MultipleEditorsSelectedInGroupContext.bindTo(this.scopedContextKeyService);
+        const twoEditorsSelectedContext = TwoEditorsSelectedInGroupContext.bindTo(this.scopedContextKeyService);
+        const selectedEditorsHaveFileOrUntitledResourceContext = SelectedEditorsInGroupFileOrUntitledResourceContextKey.bindTo(this.scopedContextKeyService);
+        const groupActiveEditorContext = this.editorPartsView.bind(ActiveEditorContext, this);
+        const groupActiveEditorIsReadonly = this.editorPartsView.bind(ActiveEditorReadonlyContext, this);
+        const groupActiveEditorCanRevert = this.editorPartsView.bind(ActiveEditorCanRevertContext, this);
+        const groupActiveEditorCanToggleReadonly = this.editorPartsView.bind(ActiveEditorCanToggleReadonlyContext, this);
+        const groupActiveCompareEditorCanSwap = this.editorPartsView.bind(ActiveCompareEditorCanSwapContext, this);
+        const groupTextCompareEditorVisibleContext = this.editorPartsView.bind(TextCompareEditorVisibleContext, this);
+        const groupTextCompareEditorActiveContext = this.editorPartsView.bind(TextCompareEditorActiveContext, this);
+        const groupActiveEditorAvailableEditorIds = this.editorPartsView.bind(ActiveEditorAvailableEditorIdsContext, this);
+        const groupActiveEditorCanSplitInGroupContext = this.editorPartsView.bind(ActiveEditorCanSplitInGroupContext, this);
+        const groupActiveEditorIsSideBySideEditorContext = this.editorPartsView.bind(SideBySideEditorActiveContext, this);
+        const activeEditorListener = this._register(new MutableDisposable());
+        const observeActiveEditor = () => {
+            activeEditorListener.clear();
+            this.scopedContextKeyService.bufferChangeEvents(() => {
+                const activeEditor = this.activeEditor;
+                const activeEditorPane = this.activeEditorPane;
+                this.resourceContext.set(EditorResourceAccessor.getOriginalUri(activeEditor, { supportSideBySide: SideBySideEditor.PRIMARY }));
+                applyAvailableEditorIds(groupActiveEditorAvailableEditorIds, activeEditor, this.editorResolverService);
+                if (activeEditor) {
+                    groupActiveEditorCanSplitInGroupContext.set(activeEditor.hasCapability(32));
+                    groupActiveEditorIsSideBySideEditorContext.set(activeEditor.typeId === SideBySideEditorInput.ID);
+                    groupActiveEditorDirtyContext.set(activeEditor.isDirty() && !activeEditor.isSaving());
+                    activeEditorListener.value = activeEditor.onDidChangeDirty(() => {
+                        groupActiveEditorDirtyContext.set(activeEditor.isDirty() && !activeEditor.isSaving());
+                    });
+                }
+                else {
+                    groupActiveEditorCanSplitInGroupContext.set(false);
+                    groupActiveEditorIsSideBySideEditorContext.set(false);
+                    groupActiveEditorDirtyContext.set(false);
+                }
+                if (activeEditorPane) {
+                    groupActiveEditorContext.set(activeEditorPane.getId());
+                    groupActiveEditorCanRevert.set(!activeEditorPane.input.hasCapability(4));
+                    groupActiveEditorIsReadonly.set(!!activeEditorPane.input.isReadonly());
+                    const primaryEditorResource = EditorResourceAccessor.getOriginalUri(activeEditorPane.input, { supportSideBySide: SideBySideEditor.PRIMARY });
+                    const secondaryEditorResource = EditorResourceAccessor.getOriginalUri(activeEditorPane.input, { supportSideBySide: SideBySideEditor.SECONDARY });
+                    groupActiveCompareEditorCanSwap.set(activeEditorPane.input instanceof DiffEditorInput && !activeEditorPane.input.original.isReadonly() && !!primaryEditorResource && (this.fileService.hasProvider(primaryEditorResource) || primaryEditorResource.scheme === Schemas.untitled) && !!secondaryEditorResource && (this.fileService.hasProvider(secondaryEditorResource) || secondaryEditorResource.scheme === Schemas.untitled));
+                    groupActiveEditorCanToggleReadonly.set(!!primaryEditorResource && this.fileService.hasProvider(primaryEditorResource) && !this.fileService.hasCapability(primaryEditorResource, 2048));
+                    const activePaneDiffEditor = activeEditorPane?.getId() === TEXT_DIFF_EDITOR_ID;
+                    groupTextCompareEditorActiveContext.set(activePaneDiffEditor);
+                    groupTextCompareEditorVisibleContext.set(activePaneDiffEditor);
+                }
+                else {
+                    groupActiveEditorContext.reset();
+                    groupActiveEditorCanRevert.reset();
+                    groupActiveEditorIsReadonly.reset();
+                    groupActiveCompareEditorCanSwap.reset();
+                    groupActiveEditorCanToggleReadonly.reset();
+                }
+            });
+        };
+        const updateGroupContextKeys = (e) => {
+            switch (e.kind) {
+                case 3:
+                    groupLockedContext.set(this.isLocked);
+                    break;
+                case 8:
+                    groupActiveEditorFirstContext.set(this.model.isFirst(this.model.activeEditor));
+                    groupActiveEditorLastContext.set(this.model.isLast(this.model.activeEditor));
+                    groupActiveEditorPinnedContext.set(this.model.activeEditor ? this.model.isPinned(this.model.activeEditor) : false);
+                    groupActiveEditorStickyContext.set(this.model.activeEditor ? this.model.isSticky(this.model.activeEditor) : false);
+                    break;
+                case 6:
+                    groupActiveEditorPinnedContext.set(this.model.activeEditor ? this.model.isPinned(this.model.activeEditor) : false);
+                    groupActiveEditorStickyContext.set(this.model.activeEditor ? this.model.isSticky(this.model.activeEditor) : false);
+                case 5:
+                case 7:
+                    groupActiveEditorFirstContext.set(this.model.isFirst(this.model.activeEditor));
+                    groupActiveEditorLastContext.set(this.model.isLast(this.model.activeEditor));
+                    break;
+                case 11:
+                    if (e.editor && e.editor === this.model.activeEditor) {
+                        groupActiveEditorPinnedContext.set(this.model.isPinned(this.model.activeEditor));
+                    }
+                    break;
+                case 13:
+                    if (e.editor && e.editor === this.model.activeEditor) {
+                        groupActiveEditorStickyContext.set(this.model.isSticky(this.model.activeEditor));
+                    }
+                    break;
+                case 4:
+                    multipleEditorsSelectedContext.set(this.model.selectedEditors.length > 1);
+                    twoEditorsSelectedContext.set(this.model.selectedEditors.length === 2);
+                    selectedEditorsHaveFileOrUntitledResourceContext.set(this.model.selectedEditors.every(e => e.resource && (this.fileService.hasProvider(e.resource) || e.resource.scheme === Schemas.untitled)));
+                    break;
+            }
+            groupEditorsCountContext.set(this.count);
+        };
+        this._register(this.onDidModelChange(e => updateGroupContextKeys(e)));
+        this._register(this.onDidActiveEditorChange(() => observeActiveEditor()));
+        observeActiveEditor();
+        updateGroupContextKeys({ kind: 8 });
+        updateGroupContextKeys({ kind: 3 });
+    }
+    registerContainerListeners() {
+        this._register(addDisposableListener(this.element, EventType.DBLCLICK, e => {
+            if (this.isEmpty) {
+                EventHelper.stop(e);
+                this.editorService.openEditor({
+                    resource: undefined,
+                    options: {
+                        pinned: true,
+                        override: DEFAULT_EDITOR_ASSOCIATION.id
+                    }
+                }, this.id);
+            }
+        }));
+        this._register(addDisposableListener(this.element, EventType.AUXCLICK, e => {
+            if (this.isEmpty && e.button === 1) {
+                EventHelper.stop(e, true);
+                this.groupsView.removeGroup(this);
+            }
+        }));
+    }
+    createContainerToolbar() {
+        const toolbarContainer = document.createElement('div');
+        toolbarContainer.classList.add('editor-group-container-toolbar');
+        this.element.appendChild(toolbarContainer);
+        const containerToolbar = this._register(new ActionBar(toolbarContainer, {
+            ariaLabel: localize('ariaLabelGroupActions', "Empty editor group actions"),
+            highlightToggledItems: true
+        }));
+        const containerToolbarMenu = this._register(this.menuService.createMenu(MenuId.EmptyEditorGroup, this.scopedContextKeyService));
+        const updateContainerToolbar = () => {
+            const actions = { primary: [], secondary: [] };
+            this.containerToolBarMenuDisposable.value = toDisposable(() => containerToolbar.clear());
+            createAndFillInActionBarActions(containerToolbarMenu, { arg: { groupId: this.id }, shouldForwardArgs: true }, actions, 'navigation');
+            for (const action of [...actions.primary, ...actions.secondary]) {
+                const keybinding = this.keybindingService.lookupKeybinding(action.id);
+                containerToolbar.push(action, { icon: true, label: false, keybinding: keybinding?.getLabel() });
+            }
+        };
+        updateContainerToolbar();
+        this._register(containerToolbarMenu.onDidChange(updateContainerToolbar));
+    }
+    createContainerContextMenu() {
+        this._register(addDisposableListener(this.element, EventType.CONTEXT_MENU, e => this.onShowContainerContextMenu(e)));
+        this._register(addDisposableListener(this.element, TouchEventType.Contextmenu, () => this.onShowContainerContextMenu()));
+    }
+    onShowContainerContextMenu(e) {
+        if (!this.isEmpty) {
+            return;
+        }
+        let anchor = this.element;
+        if (e) {
+            anchor = new StandardMouseEvent(getWindow(this.element), e);
+        }
+        this.contextMenuService.showContextMenu({
+            menuId: MenuId.EmptyEditorGroupContext,
+            contextKeyService: this.contextKeyService,
+            getAnchor: () => anchor,
+            onHide: () => {
+                this.focus();
+            }
+        });
+    }
+    doTrackFocus() {
+        const containerFocusTracker = this._register(trackFocus(this.element));
+        this._register(containerFocusTracker.onDidFocus(() => {
+            if (this.isEmpty) {
+                this._onDidFocus.fire();
+            }
+        }));
+        const handleTitleClickOrTouch = (e) => {
+            let target;
+            if (isMouseEvent(e)) {
+                if (e.button !== 0 || (isMacintosh && e.ctrlKey)) {
+                    return undefined;
+                }
+                target = e.target;
+            }
+            else {
+                target = e.initialTarget;
+            }
+            if (findParentWithClass(target, 'monaco-action-bar', this.titleContainer) ||
+                findParentWithClass(target, 'monaco-breadcrumb-item', this.titleContainer)) {
+                return;
+            }
+            setTimeout(() => {
+                this.focus();
+            });
+        };
+        this._register(addDisposableListener(this.titleContainer, EventType.MOUSE_DOWN, e => handleTitleClickOrTouch(e)));
+        this._register(addDisposableListener(this.titleContainer, TouchEventType.Tap, e => handleTitleClickOrTouch(e)));
+        this._register(this.editorPane.onDidFocus(() => {
+            this._onDidFocus.fire();
+        }));
+    }
+    updateContainer() {
+        if (this.isEmpty) {
+            this.element.classList.add('empty');
+            this.element.tabIndex = 0;
+            this.element.setAttribute('aria-label', localize('emptyEditorGroup', "{0} (empty)", this.ariaLabel));
+        }
+        else {
+            this.element.classList.remove('empty');
+            this.element.removeAttribute('tabIndex');
+            this.element.removeAttribute('aria-label');
+        }
+        this.updateStyles();
+    }
+    updateTitleContainer() {
+        this.titleContainer.classList.toggle('tabs', this.groupsView.partOptions.showTabs === 'multiple');
+        this.titleContainer.classList.toggle('show-file-icons', this.groupsView.partOptions.showIcons);
+    }
+    restoreEditors(from, groupViewOptions) {
+        if (this.count === 0) {
+            return;
+        }
+        let options;
+        if (from instanceof EditorGroupView_1) {
+            options = fillActiveEditorViewState(from);
+        }
+        else {
+            options = Object.create(null);
+        }
+        const activeEditor = this.model.activeEditor;
+        if (!activeEditor) {
+            return;
+        }
+        options.pinned = this.model.isPinned(activeEditor);
+        options.sticky = this.model.isSticky(activeEditor);
+        options.preserveFocus = true;
+        const internalOptions = {
+            preserveWindowOrder: true,
+            skipTitleUpdate: true,
+        };
+        const activeElement = getActiveElement();
+        const result = this.doShowEditor(activeEditor, { active: true, isNew: false }, options, internalOptions).then(() => {
+            if (this.groupsView.activeGroup === this && activeElement && isActiveElement(activeElement) && !groupViewOptions?.preserveFocus) {
+                this.focus();
+            }
+        });
+        this.titleControl.openEditors(this.editors);
+        return result;
+    }
+    registerListeners() {
+        this._register(this.model.onDidModelChange(e => this.onDidGroupModelChange(e)));
+        this._register(this.groupsView.onDidChangeEditorPartOptions(e => this.onDidChangeEditorPartOptions(e)));
+        this._register(this.groupsView.onDidVisibilityChange(e => this.onDidVisibilityChange(e)));
+        this._register(this.onDidFocus(() => this.onDidGainFocus()));
+    }
+    onDidGroupModelChange(e) {
+        this._onDidModelChange.fire(e);
+        switch (e.kind) {
+            case 3:
+                this.element.classList.toggle('locked', this.isLocked);
+                break;
+            case 4:
+                this.onDidChangeEditorSelection();
+                break;
+        }
+        if (!e.editor) {
+            return;
+        }
+        switch (e.kind) {
+            case 5:
+                if (isGroupEditorOpenEvent(e)) {
+                    this.onDidOpenEditor(e.editor, e.editorIndex);
+                }
+                break;
+            case 6:
+                if (isGroupEditorCloseEvent(e)) {
+                    this.handleOnDidCloseEditor(e.editor, e.editorIndex, e.context, e.sticky);
+                }
+                break;
+            case 15:
+                this.onWillDisposeEditor(e.editor);
+                break;
+            case 14:
+                this.onDidChangeEditorDirty(e.editor);
+                break;
+            case 12:
+                this.onDidChangeEditorTransient(e.editor);
+                break;
+            case 9:
+                this.onDidChangeEditorLabel(e.editor);
+                break;
+        }
+    }
+    onDidOpenEditor(editor, editorIndex) {
+        this.telemetryService.publicLog('editorOpened', this.toEditorTelemetryDescriptor(editor));
+        this.updateContainer();
+    }
+    handleOnDidCloseEditor(editor, editorIndex, context, sticky) {
+        this._onWillCloseEditor.fire({ groupId: this.id, editor, context, index: editorIndex, sticky });
+        const editorsToClose = [editor];
+        if (editor instanceof SideBySideEditorInput) {
+            editorsToClose.push(editor.primary, editor.secondary);
+        }
+        for (const editor of editorsToClose) {
+            if (this.canDispose(editor)) {
+                editor.dispose();
+            }
+        }
+        this.telemetryService.publicLog('editorClosed', this.toEditorTelemetryDescriptor(editor));
+        this.updateContainer();
+        this._onDidCloseEditor.fire({ groupId: this.id, editor, context, index: editorIndex, sticky });
+    }
+    canDispose(editor) {
+        for (const groupView of this.editorPartsView.groups) {
+            if (groupView instanceof EditorGroupView_1 && groupView.model.contains(editor, {
+                strictEquals: true,
+                supportSideBySide: SideBySideEditor.ANY
+            })) {
+                return false;
+            }
+        }
+        return true;
+    }
+    toResourceTelemetryDescriptor(resource) {
+        if (!resource) {
+            return undefined;
+        }
+        const path = resource ? resource.scheme === Schemas.file ? resource.fsPath : resource.path : undefined;
+        if (!path) {
+            return undefined;
+        }
+        let resourceExt = extname(resource);
+        const queryStringLocation = resourceExt.indexOf('?');
+        resourceExt = queryStringLocation !== -1 ? resourceExt.substr(0, queryStringLocation) : resourceExt;
+        return {
+            mimeType: new TelemetryTrustedValue(getMimeTypes(resource).join(', ')),
+            scheme: resource.scheme,
+            ext: resourceExt,
+            path: hash(path)
+        };
+    }
+    toEditorTelemetryDescriptor(editor) {
+        const descriptor = editor.getTelemetryDescriptor();
+        const resource = EditorResourceAccessor.getOriginalUri(editor, { supportSideBySide: SideBySideEditor.BOTH });
+        if (URI.isUri(resource)) {
+            descriptor['resource'] = this.toResourceTelemetryDescriptor(resource);
+            return descriptor;
+        }
+        else if (resource) {
+            if (resource.primary) {
+                descriptor['resource'] = this.toResourceTelemetryDescriptor(resource.primary);
+            }
+            if (resource.secondary) {
+                descriptor['resourceSecondary'] = this.toResourceTelemetryDescriptor(resource.secondary);
+            }
+            return descriptor;
+        }
+        return descriptor;
+    }
+    onWillDisposeEditor(editor) {
+        this.disposedEditorsWorker.work(editor);
+    }
+    handleDisposedEditors(disposedEditors) {
+        let activeEditor;
+        const inactiveEditors = [];
+        for (const disposedEditor of disposedEditors) {
+            const editorFindResult = this.model.findEditor(disposedEditor);
+            if (!editorFindResult) {
+                continue;
+            }
+            const editor = editorFindResult[0];
+            if (!editor.isDisposed()) {
+                continue;
+            }
+            if (this.model.isActive(editor)) {
+                activeEditor = editor;
+            }
+            else {
+                inactiveEditors.push(editor);
+            }
+        }
+        for (const inactiveEditor of inactiveEditors) {
+            this.doCloseEditor(inactiveEditor, true);
+        }
+        if (activeEditor) {
+            this.doCloseEditor(activeEditor, true);
+        }
+    }
+    onDidChangeEditorPartOptions(event) {
+        this.updateTitleContainer();
+        this.titleControl.updateOptions(event.oldPartOptions, event.newPartOptions);
+        if (event.oldPartOptions.showTabs !== event.newPartOptions.showTabs ||
+            event.oldPartOptions.tabHeight !== event.newPartOptions.tabHeight ||
+            (event.oldPartOptions.showTabs === 'multiple' && event.oldPartOptions.pinnedTabsOnSeparateRow !== event.newPartOptions.pinnedTabsOnSeparateRow)) {
+            this.relayout();
+            if (this.model.activeEditor) {
+                this.titleControl.openEditors(this.model.getEditors(1));
+            }
+        }
+        this.updateStyles();
+        if (event.oldPartOptions.enablePreview && !event.newPartOptions.enablePreview) {
+            if (this.model.previewEditor) {
+                this.pinEditor(this.model.previewEditor);
+            }
+        }
+    }
+    onDidChangeEditorDirty(editor) {
+        this.pinEditor(editor);
+        this.titleControl.updateEditorDirty(editor);
+    }
+    onDidChangeEditorTransient(editor) {
+        const transient = this.model.isTransient(editor);
+        if (!transient && !this.groupsView.partOptions.enablePreview) {
+            this.pinEditor(editor);
+        }
+    }
+    onDidChangeEditorLabel(editor) {
+        this.titleControl.updateEditorLabel(editor);
+    }
+    onDidChangeEditorSelection() {
+        this.titleControl.updateEditorSelections();
+    }
+    onDidVisibilityChange(visible) {
+        this.editorPane.setVisible(visible);
+    }
+    onDidGainFocus() {
+        if (this.activeEditor) {
+            this.model.setTransient(this.activeEditor, false);
+        }
+    }
+    get index() {
+        return this._index;
+    }
+    get label() {
+        if (this.groupsLabel) {
+            return localize('groupLabelLong', "{0}: Group {1}", this.groupsLabel, this._index + 1);
+        }
+        return localize('groupLabel', "Group {0}", this._index + 1);
+    }
+    get ariaLabel() {
+        if (this.groupsLabel) {
+            return localize('groupAriaLabelLong', "{0}: Editor Group {1}", this.groupsLabel, this._index + 1);
+        }
+        return localize('groupAriaLabel', "Editor Group {0}", this._index + 1);
+    }
+    get disposed() {
+        return this._disposed;
+    }
+    get isEmpty() {
+        return this.count === 0;
+    }
+    get titleHeight() {
+        return this.titleControl.getHeight();
+    }
+    notifyIndexChanged(newIndex) {
+        if (this._index !== newIndex) {
+            this._index = newIndex;
+            this.model.setIndex(newIndex);
+        }
+    }
+    notifyLabelChanged(newLabel) {
+        if (this.groupsLabel !== newLabel) {
+            this.groupsLabel = newLabel;
+            this.model.setLabel(newLabel);
+        }
+    }
+    setActive(isActive) {
+        this.active = isActive;
+        if (!isActive && this.activeEditor && this.selectedEditors.length > 1) {
+            this.setSelection(this.activeEditor, []);
+        }
+        this.element.classList.toggle('active', isActive);
+        this.element.classList.toggle('inactive', !isActive);
+        this.titleControl.setActive(isActive);
+        this.updateStyles();
+        this.model.setActive(undefined);
+    }
+    get id() {
+        return this.model.id;
+    }
+    get windowId() {
+        return this.groupsView.windowId;
+    }
+    get editors() {
+        return this.model.getEditors(1);
+    }
+    get count() {
+        return this.model.count;
+    }
+    get stickyCount() {
+        return this.model.stickyCount;
+    }
+    get activeEditorPane() {
+        return this.editorPane ? this.editorPane.activeEditorPane ?? undefined : undefined;
+    }
+    get activeEditor() {
+        return this.model.activeEditor;
+    }
+    get selectedEditors() {
+        return this.model.selectedEditors;
+    }
+    get previewEditor() {
+        return this.model.previewEditor;
+    }
+    isPinned(editorOrIndex) {
+        return this.model.isPinned(editorOrIndex);
+    }
+    isSticky(editorOrIndex) {
+        return this.model.isSticky(editorOrIndex);
+    }
+    isSelected(editor) {
+        return this.model.isSelected(editor);
+    }
+    isTransient(editorOrIndex) {
+        return this.model.isTransient(editorOrIndex);
+    }
+    isActive(editor) {
+        return this.model.isActive(editor);
+    }
+    async setSelection(activeSelectedEditor, inactiveSelectedEditors) {
+        if (!this.isActive(activeSelectedEditor)) {
+            await this.openEditor(activeSelectedEditor, { activation: EditorActivation.ACTIVATE }, { inactiveSelection: inactiveSelectedEditors });
+        }
+        else {
+            this.model.setSelection(activeSelectedEditor, inactiveSelectedEditors);
+        }
+    }
+    contains(candidate, options) {
+        return this.model.contains(candidate, options);
+    }
+    getEditors(order, options) {
+        return this.model.getEditors(order, options);
+    }
+    findEditors(resource, options) {
+        const canonicalResource = this.uriIdentityService.asCanonicalUri(resource);
+        return this.getEditors(1).filter(editor => {
+            if (editor.resource && isEqual(editor.resource, canonicalResource)) {
+                return true;
+            }
+            if (options?.supportSideBySide === SideBySideEditor.PRIMARY || options?.supportSideBySide === SideBySideEditor.ANY) {
+                const primaryResource = EditorResourceAccessor.getCanonicalUri(editor, { supportSideBySide: SideBySideEditor.PRIMARY });
+                if (primaryResource && isEqual(primaryResource, canonicalResource)) {
+                    return true;
+                }
+            }
+            if (options?.supportSideBySide === SideBySideEditor.SECONDARY || options?.supportSideBySide === SideBySideEditor.ANY) {
+                const secondaryResource = EditorResourceAccessor.getCanonicalUri(editor, { supportSideBySide: SideBySideEditor.SECONDARY });
+                if (secondaryResource && isEqual(secondaryResource, canonicalResource)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+    getEditorByIndex(index) {
+        return this.model.getEditorByIndex(index);
+    }
+    getIndexOfEditor(editor) {
+        return this.model.indexOf(editor);
+    }
+    isFirst(editor) {
+        return this.model.isFirst(editor);
+    }
+    isLast(editor) {
+        return this.model.isLast(editor);
+    }
+    focus() {
+        if (this.activeEditorPane) {
+            this.activeEditorPane.focus();
+        }
+        else {
+            this.element.focus();
+        }
+        this._onDidFocus.fire();
+    }
+    pinEditor(candidate = this.activeEditor || undefined) {
+        if (candidate && !this.model.isPinned(candidate)) {
+            const editor = this.model.pin(candidate);
+            if (editor) {
+                this.titleControl.pinEditor(editor);
+            }
+        }
+    }
+    stickEditor(candidate = this.activeEditor || undefined) {
+        this.doStickEditor(candidate, true);
+    }
+    unstickEditor(candidate = this.activeEditor || undefined) {
+        this.doStickEditor(candidate, false);
+    }
+    doStickEditor(candidate, sticky) {
+        if (candidate && this.model.isSticky(candidate) !== sticky) {
+            const oldIndexOfEditor = this.getIndexOfEditor(candidate);
+            const editor = sticky ? this.model.stick(candidate) : this.model.unstick(candidate);
+            if (!editor) {
+                return;
+            }
+            const newIndexOfEditor = this.getIndexOfEditor(editor);
+            if (newIndexOfEditor !== oldIndexOfEditor) {
+                this.titleControl.moveEditor(editor, oldIndexOfEditor, newIndexOfEditor, true);
+            }
+            if (sticky) {
+                this.titleControl.stickEditor(editor);
+            }
+            else {
+                this.titleControl.unstickEditor(editor);
+            }
+        }
+    }
+    async openEditor(editor, options, internalOptions) {
+        return this.doOpenEditor(editor, options, {
+            ...internalOptions,
+            supportSideBySide: SideBySideEditor.BOTH
+        });
+    }
+    async doOpenEditor(editor, options, internalOptions) {
+        if (!editor || editor.isDisposed()) {
+            return;
+        }
+        this._onWillOpenEditor.fire({ editor, groupId: this.id });
+        const pinned = options?.sticky
+            || (!this.groupsView.partOptions.enablePreview && !options?.transient)
+            || editor.isDirty()
+            || (options?.pinned ?? typeof options?.index === 'number')
+            || (typeof options?.index === 'number' && this.model.isSticky(options.index))
+            || editor.hasCapability(512);
+        const openEditorOptions = {
+            index: options ? options.index : undefined,
+            pinned,
+            sticky: options?.sticky || (typeof options?.index === 'number' && this.model.isSticky(options.index)),
+            transient: !!options?.transient,
+            inactiveSelection: internalOptions?.inactiveSelection,
+            active: this.count === 0 || !options || !options.inactive,
+            supportSideBySide: internalOptions?.supportSideBySide
+        };
+        if (!openEditorOptions.active && !openEditorOptions.pinned && this.model.activeEditor && !this.model.isPinned(this.model.activeEditor)) {
+            openEditorOptions.active = true;
+        }
+        let activateGroup = false;
+        let restoreGroup = false;
+        if (options?.activation === EditorActivation.ACTIVATE) {
+            activateGroup = true;
+        }
+        else if (options?.activation === EditorActivation.RESTORE) {
+            restoreGroup = true;
+        }
+        else if (options?.activation === EditorActivation.PRESERVE) {
+            activateGroup = false;
+            restoreGroup = false;
+        }
+        else if (openEditorOptions.active) {
+            activateGroup = !options || !options.preserveFocus;
+            restoreGroup = !activateGroup;
+        }
+        if (typeof openEditorOptions.index === 'number') {
+            const indexOfEditor = this.model.indexOf(editor);
+            if (indexOfEditor !== -1 && indexOfEditor !== openEditorOptions.index) {
+                this.doMoveEditorInsideGroup(editor, openEditorOptions);
+            }
+        }
+        const { editor: openedEditor, isNew } = this.model.openEditor(editor, openEditorOptions);
+        if (isNew &&
+            this.count === 1 &&
+            this.editorPartsView.groups.length > 1) {
+            if (openedEditor.editorId && this.groupsView.partOptions.autoLockGroups?.has(openedEditor.editorId)) {
+                this.lock(true);
+            }
+        }
+        const showEditorResult = this.doShowEditor(openedEditor, { active: !!openEditorOptions.active, isNew }, options, internalOptions);
+        if (activateGroup) {
+            this.groupsView.activateGroup(this);
+        }
+        else if (restoreGroup) {
+            this.groupsView.restoreGroup(this);
+        }
+        return showEditorResult;
+    }
+    doShowEditor(editor, context, options, internalOptions) {
+        let openEditorPromise;
+        if (context.active) {
+            openEditorPromise = (async () => {
+                const { pane, changed, cancelled, error } = await this.editorPane.openEditor(editor, options, internalOptions, { newInGroup: context.isNew });
+                if (cancelled) {
+                    return undefined;
+                }
+                if (changed) {
+                    this._onDidActiveEditorChange.fire({ editor });
+                }
+                if (error) {
+                    this._onDidOpenEditorFail.fire(editor);
+                }
+                if (!pane && this.activeEditor === editor) {
+                    this.doCloseEditor(editor, options?.preserveFocus, { fromError: true });
+                }
+                return pane;
+            })();
+        }
+        else {
+            openEditorPromise = Promise.resolve(undefined);
+        }
+        if (!internalOptions?.skipTitleUpdate) {
+            this.titleControl.openEditor(editor, internalOptions);
+        }
+        return openEditorPromise;
+    }
+    async openEditors(editors) {
+        const editorsToOpen = coalesce(editors).filter(({ editor }) => !editor.isDisposed());
+        const firstEditor = editorsToOpen.at(0);
+        if (!firstEditor) {
+            return;
+        }
+        const openEditorsOptions = {
+            supportSideBySide: SideBySideEditor.BOTH
+        };
+        await this.doOpenEditor(firstEditor.editor, firstEditor.options, openEditorsOptions);
+        const inactiveEditors = editorsToOpen.slice(1);
+        const startingIndex = this.getIndexOfEditor(firstEditor.editor) + 1;
+        await Promises.settled(inactiveEditors.map(({ editor, options }, index) => {
+            return this.doOpenEditor(editor, {
+                ...options,
+                inactive: true,
+                pinned: true,
+                index: startingIndex + index
+            }, {
+                ...openEditorsOptions,
+                skipTitleUpdate: true
+            });
+        }));
+        this.titleControl.openEditors(inactiveEditors.map(({ editor }) => editor));
+        return this.editorPane.activeEditorPane ?? undefined;
+    }
+    moveEditors(editors, target) {
+        const internalOptions = {
+            skipTitleUpdate: this !== target
+        };
+        let moveFailed = false;
+        const movedEditors = new Set();
+        for (const { editor, options } of editors) {
+            if (this.moveEditor(editor, target, options, internalOptions)) {
+                movedEditors.add(editor);
+            }
+            else {
+                moveFailed = true;
+            }
+        }
+        if (internalOptions.skipTitleUpdate) {
+            target.titleControl.openEditors(Array.from(movedEditors));
+            this.titleControl.closeEditors(Array.from(movedEditors));
+        }
+        return !moveFailed;
+    }
+    moveEditor(editor, target, options, internalOptions) {
+        if (this === target) {
+            this.doMoveEditorInsideGroup(editor, options);
+            return true;
+        }
+        else {
+            return this.doMoveOrCopyEditorAcrossGroups(editor, target, options, { ...internalOptions, keepCopy: false });
+        }
+    }
+    doMoveEditorInsideGroup(candidate, options) {
+        const moveToIndex = options ? options.index : undefined;
+        if (typeof moveToIndex !== 'number') {
+            return;
+        }
+        const currentIndex = this.model.indexOf(candidate);
+        const editor = this.model.getEditorByIndex(currentIndex);
+        if (!editor) {
+            return;
+        }
+        if (currentIndex !== moveToIndex) {
+            const oldStickyCount = this.model.stickyCount;
+            this.model.moveEditor(editor, moveToIndex);
+            this.model.pin(editor);
+            this.titleControl.moveEditor(editor, currentIndex, moveToIndex, oldStickyCount !== this.model.stickyCount);
+            this.titleControl.pinEditor(editor);
+        }
+        if (options?.sticky) {
+            this.stickEditor(editor);
+        }
+    }
+    doMoveOrCopyEditorAcrossGroups(editor, target, openOptions, internalOptions) {
+        const keepCopy = internalOptions?.keepCopy;
+        if (!keepCopy || editor.hasCapability(8)) {
+            const canMoveVeto = editor.canMove(this.id, target.id);
+            if (typeof canMoveVeto === 'string') {
+                this.dialogService.error(canMoveVeto, localize('moveErrorDetails', "Try saving or reverting the editor first and then try again."));
+                return false;
+            }
+        }
+        const options = fillActiveEditorViewState(this, editor, {
+            ...openOptions,
+            pinned: true,
+            sticky: openOptions?.sticky ?? (!keepCopy && this.model.isSticky(editor))
+        });
+        if (!keepCopy) {
+            this._onWillMoveEditor.fire({
+                groupId: this.id,
+                editor,
+                target: target.id
+            });
+        }
+        target.doOpenEditor(keepCopy ? editor.copy() : editor, options, internalOptions);
+        if (!keepCopy) {
+            this.doCloseEditor(editor, true, { ...internalOptions, context: EditorCloseContext.MOVE });
+        }
+        return true;
+    }
+    copyEditors(editors, target) {
+        const internalOptions = {
+            skipTitleUpdate: this !== target
+        };
+        for (const { editor, options } of editors) {
+            this.copyEditor(editor, target, options, internalOptions);
+        }
+        if (internalOptions.skipTitleUpdate) {
+            const copiedEditors = editors.map(({ editor }) => editor);
+            target.titleControl.openEditors(copiedEditors);
+        }
+    }
+    copyEditor(editor, target, options, internalOptions) {
+        if (this === target) {
+            this.doMoveEditorInsideGroup(editor, options);
+        }
+        else {
+            this.doMoveOrCopyEditorAcrossGroups(editor, target, options, { ...internalOptions, keepCopy: true });
+        }
+    }
+    async closeEditor(editor = this.activeEditor || undefined, options) {
+        return this.doCloseEditorWithConfirmationHandling(editor, options);
+    }
+    async doCloseEditorWithConfirmationHandling(editor = this.activeEditor || undefined, options, internalOptions) {
+        if (!editor) {
+            return false;
+        }
+        const veto = await this.handleCloseConfirmation([editor]);
+        if (veto) {
+            return false;
+        }
+        this.doCloseEditor(editor, options?.preserveFocus, internalOptions);
+        return true;
+    }
+    doCloseEditor(editor, preserveFocus = (this.groupsView.activeGroup !== this), internalOptions) {
+        if (!internalOptions?.skipTitleUpdate) {
+            this.titleControl.beforeCloseEditor(editor);
+        }
+        if (this.model.isActive(editor)) {
+            this.doCloseActiveEditor(preserveFocus, internalOptions);
+        }
+        else {
+            this.doCloseInactiveEditor(editor, internalOptions);
+        }
+        if (!internalOptions?.skipTitleUpdate) {
+            this.titleControl.closeEditor(editor);
+        }
+    }
+    doCloseActiveEditor(preserveFocus = (this.groupsView.activeGroup !== this), internalOptions) {
+        const editorToClose = this.activeEditor;
+        const restoreFocus = !preserveFocus && this.shouldRestoreFocus(this.element);
+        const closeEmptyGroup = this.groupsView.partOptions.closeEmptyGroups;
+        if (closeEmptyGroup && this.active && this.count === 1) {
+            const mostRecentlyActiveGroups = this.groupsView.getGroups(1);
+            const nextActiveGroup = mostRecentlyActiveGroups[1];
+            if (nextActiveGroup) {
+                if (restoreFocus) {
+                    nextActiveGroup.focus();
+                }
+                else {
+                    this.groupsView.activateGroup(nextActiveGroup, true);
+                }
+            }
+        }
+        if (editorToClose) {
+            this.model.closeEditor(editorToClose, internalOptions?.context);
+        }
+        const nextActiveEditor = this.model.activeEditor;
+        if (nextActiveEditor) {
+            let activation = undefined;
+            if (preserveFocus && this.groupsView.activeGroup !== this) {
+                activation = EditorActivation.PRESERVE;
+            }
+            const options = {
+                preserveFocus,
+                activation,
+                ignoreError: internalOptions?.fromError
+            };
+            const internalEditorOpenOptions = {
+                preserveWindowOrder: true
+            };
+            this.doOpenEditor(nextActiveEditor, options, internalEditorOpenOptions);
+        }
+        else {
+            if (editorToClose) {
+                this.editorPane.closeEditor(editorToClose);
+            }
+            if (restoreFocus && !closeEmptyGroup) {
+                this.focus();
+            }
+            this._onDidActiveEditorChange.fire({ editor: undefined });
+            if (closeEmptyGroup) {
+                this.groupsView.removeGroup(this, preserveFocus);
+            }
+        }
+    }
+    shouldRestoreFocus(target) {
+        const activeElement = getActiveElement();
+        if (activeElement === target.ownerDocument.body) {
+            return true;
+        }
+        return isAncestor(activeElement, target);
+    }
+    doCloseInactiveEditor(editor, internalOptions) {
+        this.model.closeEditor(editor, internalOptions?.context);
+    }
+    async handleCloseConfirmation(editors) {
+        if (!editors.length) {
+            return false;
+        }
+        const editor = editors.shift();
+        let handleCloseConfirmationPromise = this.mapEditorToPendingConfirmation.get(editor);
+        if (!handleCloseConfirmationPromise) {
+            handleCloseConfirmationPromise = this.doHandleCloseConfirmation(editor);
+            this.mapEditorToPendingConfirmation.set(editor, handleCloseConfirmationPromise);
+        }
+        let veto;
+        try {
+            veto = await handleCloseConfirmationPromise;
+        }
+        finally {
+            this.mapEditorToPendingConfirmation.delete(editor);
+        }
+        if (veto) {
+            return veto;
+        }
+        return this.handleCloseConfirmation(editors);
+    }
+    async doHandleCloseConfirmation(editor, options) {
+        if (!this.shouldConfirmClose(editor)) {
+            return false;
+        }
+        if (editor instanceof SideBySideEditorInput && this.model.contains(editor.primary)) {
+            return false;
+        }
+        if (this.editorPartsView.groups.some(groupView => {
+            if (groupView === this) {
+                return false;
+            }
+            const otherGroup = groupView;
+            if (otherGroup.contains(editor, { supportSideBySide: SideBySideEditor.BOTH })) {
+                return true;
+            }
+            if (editor instanceof SideBySideEditorInput && otherGroup.contains(editor.primary)) {
+                return true;
+            }
+            return false;
+        })) {
+            return false;
+        }
+        let confirmation = 2;
+        let saveReason = 1;
+        let autoSave = false;
+        if (!editor.hasCapability(4) && !options?.skipAutoSave && !editor.closeHandler) {
+            if (this.filesConfigurationService.getAutoSaveMode(editor).mode === 3) {
+                autoSave = true;
+                confirmation = 0;
+                saveReason = 3;
+            }
+            else if ((isNative && (isWindows || isLinux)) && this.filesConfigurationService.getAutoSaveMode(editor).mode === 4) {
+                autoSave = true;
+                confirmation = 0;
+                saveReason = 4;
+            }
+        }
+        if (!autoSave) {
+            if (!this.activeEditor || !this.activeEditor.matches(editor)) {
+                await this.doOpenEditor(editor);
+            }
+            await this.hostService.focus(getWindow(this.element));
+            if (typeof editor.closeHandler?.confirm === 'function') {
+                confirmation = await editor.closeHandler.confirm([{ editor, groupId: this.id }]);
+            }
+            else {
+                let name;
+                if (editor instanceof SideBySideEditorInput) {
+                    name = editor.primary.getName();
+                }
+                else {
+                    name = editor.getName();
+                }
+                confirmation = await this.fileDialogService.showSaveConfirm([name]);
+            }
+        }
+        if (!editor.closeHandler && !this.shouldConfirmClose(editor)) {
+            return confirmation === 2 ? true : false;
+        }
+        switch (confirmation) {
+            case 0: {
+                const result = await editor.save(this.id, { reason: saveReason });
+                if (!result && autoSave) {
+                    return this.doHandleCloseConfirmation(editor, { skipAutoSave: true });
+                }
+                return editor.isDirty();
+            }
+            case 1:
+                try {
+                    await editor.revert(this.id);
+                    return editor.isDirty();
+                }
+                catch (error) {
+                    this.logService.error(error);
+                    await editor.revert(this.id, { soft: true });
+                    return editor.isDirty();
+                }
+            case 2:
+                return true;
+        }
+    }
+    shouldConfirmClose(editor) {
+        if (editor.closeHandler) {
+            return editor.closeHandler.showConfirm();
+        }
+        return editor.isDirty() && !editor.isSaving();
+    }
+    async closeEditors(args, options) {
+        if (this.isEmpty) {
+            return true;
+        }
+        const editors = this.doGetEditorsToClose(args);
+        const veto = await this.handleCloseConfirmation(editors.slice(0));
+        if (veto) {
+            return false;
+        }
+        this.doCloseEditors(editors, options);
+        return true;
+    }
+    doGetEditorsToClose(args) {
+        if (Array.isArray(args)) {
+            return args;
+        }
+        const filter = args;
+        const hasDirection = typeof filter.direction === 'number';
+        let editorsToClose = this.model.getEditors(hasDirection ? 1 : 0, filter);
+        if (filter.savedOnly) {
+            editorsToClose = editorsToClose.filter(editor => !editor.isDirty() || editor.isSaving());
+        }
+        else if (hasDirection && filter.except) {
+            editorsToClose = (filter.direction === 0) ?
+                editorsToClose.slice(0, this.model.indexOf(filter.except, editorsToClose)) :
+                editorsToClose.slice(this.model.indexOf(filter.except, editorsToClose) + 1);
+        }
+        else if (filter.except) {
+            editorsToClose = editorsToClose.filter(editor => filter.except && !editor.matches(filter.except));
+        }
+        return editorsToClose;
+    }
+    doCloseEditors(editors, options) {
+        let closeActiveEditor = false;
+        for (const editor of editors) {
+            if (!this.isActive(editor)) {
+                this.doCloseInactiveEditor(editor);
+            }
+            else {
+                closeActiveEditor = true;
+            }
+        }
+        if (closeActiveEditor) {
+            this.doCloseActiveEditor(options?.preserveFocus);
+        }
+        if (editors.length) {
+            this.titleControl.closeEditors(editors);
+        }
+    }
+    async closeAllEditors(options) {
+        if (this.isEmpty) {
+            if (this.groupsView.partOptions.closeEmptyGroups) {
+                this.groupsView.removeGroup(this);
+            }
+            return true;
+        }
+        let editors = this.model.getEditors(0, options);
+        if (options?.excludeConfirming) {
+            editors = editors.filter(editor => !this.shouldConfirmClose(editor));
+        }
+        const veto = await this.handleCloseConfirmation(editors);
+        if (veto) {
+            return false;
+        }
+        this.doCloseAllEditors(options);
+        return true;
+    }
+    doCloseAllEditors(options) {
+        let editors = this.model.getEditors(1, options);
+        if (options?.excludeConfirming) {
+            editors = editors.filter(editor => !this.shouldConfirmClose(editor));
+        }
+        const editorsToClose = [];
+        for (const editor of editors) {
+            if (!this.isActive(editor)) {
+                this.doCloseInactiveEditor(editor);
+            }
+            editorsToClose.push(editor);
+        }
+        if (this.activeEditor && editorsToClose.includes(this.activeEditor)) {
+            this.doCloseActiveEditor();
+        }
+        if (editorsToClose.length) {
+            this.titleControl.closeEditors(editorsToClose);
+        }
+    }
+    async replaceEditors(editors) {
+        let activeReplacement;
+        const inactiveReplacements = [];
+        for (let { editor, replacement, forceReplaceDirty, options } of editors) {
+            const index = this.getIndexOfEditor(editor);
+            if (index >= 0) {
+                const isActiveEditor = this.isActive(editor);
+                if (options) {
+                    options.index = index;
+                }
+                else {
+                    options = { index };
+                }
+                options.inactive = !isActiveEditor;
+                options.pinned = options.pinned ?? true;
+                const editorToReplace = { editor, replacement, forceReplaceDirty, options };
+                if (isActiveEditor) {
+                    activeReplacement = editorToReplace;
+                }
+                else {
+                    inactiveReplacements.push(editorToReplace);
+                }
+            }
+        }
+        for (const { editor, replacement, forceReplaceDirty, options } of inactiveReplacements) {
+            await this.doOpenEditor(replacement, options);
+            if (!editor.matches(replacement)) {
+                let closed = false;
+                if (forceReplaceDirty) {
+                    this.doCloseEditor(editor, true, { context: EditorCloseContext.REPLACE });
+                    closed = true;
+                }
+                else {
+                    closed = await this.doCloseEditorWithConfirmationHandling(editor, { preserveFocus: true }, { context: EditorCloseContext.REPLACE });
+                }
+                if (!closed) {
+                    return;
+                }
+            }
+        }
+        if (activeReplacement) {
+            const openEditorResult = this.doOpenEditor(activeReplacement.replacement, activeReplacement.options);
+            if (!activeReplacement.editor.matches(activeReplacement.replacement)) {
+                if (activeReplacement.forceReplaceDirty) {
+                    this.doCloseEditor(activeReplacement.editor, true, { context: EditorCloseContext.REPLACE });
+                }
+                else {
+                    await this.doCloseEditorWithConfirmationHandling(activeReplacement.editor, { preserveFocus: true }, { context: EditorCloseContext.REPLACE });
+                }
+            }
+            await openEditorResult;
+        }
+    }
+    get isLocked() {
+        return this.model.isLocked;
+    }
+    lock(locked) {
+        this.model.lock(locked);
+    }
+    createEditorActions(disposables) {
+        const primary = [];
+        const secondary = [];
+        let onDidChange;
+        const activeEditorPane = this.activeEditorPane;
+        if (activeEditorPane instanceof EditorPane) {
+            const editorScopedContextKeyService = activeEditorPane.scopedContextKeyService ?? this.scopedContextKeyService;
+            const editorTitleMenu = disposables.add(this.menuService.createMenu(MenuId.EditorTitle, editorScopedContextKeyService, { emitEventsForSubmenuChanges: true, eventDebounceDelay: 0 }));
+            onDidChange = editorTitleMenu.onDidChange;
+            const shouldInlineGroup = (action, group) => group === 'navigation' && action.actions.length <= 1;
+            createAndFillInActionBarActions(editorTitleMenu, { arg: this.resourceContext.get(), shouldForwardArgs: true }, { primary, secondary }, 'navigation', shouldInlineGroup);
+        }
+        else {
+            const _onDidChange = disposables.add(new Emitter());
+            onDidChange = _onDidChange.event;
+            disposables.add(this.onDidActiveEditorChange(() => _onDidChange.fire()));
+        }
+        return { actions: { primary, secondary }, onDidChange };
+    }
+    updateStyles() {
+        const isEmpty = this.isEmpty;
+        if (isEmpty) {
+            this.element.style.backgroundColor = this.getColor(EDITOR_GROUP_EMPTY_BACKGROUND) || '';
+        }
+        else {
+            this.element.style.backgroundColor = '';
+        }
+        const borderColor = this.getColor(EDITOR_GROUP_HEADER_BORDER) || this.getColor(contrastBorder);
+        if (!isEmpty && borderColor) {
+            this.titleContainer.classList.add('title-border-bottom');
+            this.titleContainer.style.setProperty('--title-border-bottom-color', borderColor);
+        }
+        else {
+            this.titleContainer.classList.remove('title-border-bottom');
+            this.titleContainer.style.removeProperty('--title-border-bottom-color');
+        }
+        const { showTabs } = this.groupsView.partOptions;
+        this.titleContainer.style.backgroundColor = this.getColor(showTabs === 'multiple' ? EDITOR_GROUP_HEADER_TABS_BACKGROUND : EDITOR_GROUP_HEADER_NO_TABS_BACKGROUND) || '';
+        this.editorContainer.style.backgroundColor = this.getColor(editorBackground) || '';
+    }
+    get minimumWidth() { return this.editorPane.minimumWidth; }
+    get minimumHeight() { return this.editorPane.minimumHeight; }
+    get maximumWidth() { return this.editorPane.maximumWidth; }
+    get maximumHeight() { return this.editorPane.maximumHeight; }
+    get proportionalLayout() {
+        if (!this.lastLayout) {
+            return true;
+        }
+        return !(this.lastLayout.width === this.minimumWidth || this.lastLayout.height === this.minimumHeight);
+    }
+    layout(width, height, top, left) {
+        this.lastLayout = { width, height, top, left };
+        this.element.classList.toggle('max-height-478px', height <= 478);
+        const titleControlSize = this.titleControl.layout({
+            container: new Dimension(width, height),
+            available: new Dimension(width, height - this.editorPane.minimumHeight)
+        });
+        this.progressBar.getContainer().style.top = `${Math.max(this.titleHeight.offset - 2, 0)}px`;
+        const editorHeight = Math.max(0, height - titleControlSize.height);
+        this.editorContainer.style.height = `${editorHeight}px`;
+        this.editorPane.layout({ width, height: editorHeight, top: top + titleControlSize.height, left });
+    }
+    relayout() {
+        if (this.lastLayout) {
+            const { width, height, top, left } = this.lastLayout;
+            this.layout(width, height, top, left);
+        }
+    }
+    setBoundarySashes(sashes) {
+        this.editorPane.setBoundarySashes(sashes);
+    }
+    toJSON() {
+        return this.model.serialize();
+    }
+    dispose() {
+        this._disposed = true;
+        this._onWillDispose.fire();
+        super.dispose();
+    }
+};
+EditorGroupView = EditorGroupView_1 = __decorate([
+    __param(6, IInstantiationService),
+    __param(7, IContextKeyService),
+    __param(8, IThemeService),
+    __param(9, ITelemetryService),
+    __param(10, IKeybindingService),
+    __param(11, IMenuService),
+    __param(12, IContextMenuService),
+    __param(13, IFileDialogService),
+    __param(14, IEditorService),
+    __param(15, IFilesConfigurationService),
+    __param(16, IUriIdentityService),
+    __param(17, ILogService),
+    __param(18, IEditorResolverService),
+    __param(19, IHostService),
+    __param(20, IDialogService),
+    __param(21, IFileService),
+    __metadata("design:paramtypes", [Object, Object, Object, String, Number, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], EditorGroupView);
+export { EditorGroupView };

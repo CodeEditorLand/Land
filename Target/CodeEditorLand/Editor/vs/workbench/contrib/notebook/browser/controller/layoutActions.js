@@ -1,1 +1,248 @@
-import{Codicon as v}from"../../../../../base/common/codicons.js";import{DisposableStore as T}from"../../../../../base/common/lifecycle.js";import{URI as N}from"../../../../../base/common/uri.js";import{localize as u,localize2 as r}from"../../../../../nls.js";import{Categories as E}from"../../../../../platform/action/common/actionCommonCategories.js";import{Action2 as c,MenuId as t,MenuRegistry as C,registerAction2 as l}from"../../../../../platform/actions/common/actions.js";import{ICommandService as m}from"../../../../../platform/commands/common/commands.js";import{ConfigurationTarget as p,IConfigurationService as w}from"../../../../../platform/configuration/common/configuration.js";import{ContextKeyExpr as i}from"../../../../../platform/contextkey/common/contextkey.js";import"../../../../../platform/instantiation/common/instantiation.js";import{IQuickInputService as L}from"../../../../../platform/quickinput/common/quickInput.js";import{NOTEBOOK_ACTIONS_CATEGORY as g}from"./coreActions.js";import{getNotebookEditorFromEditorPane as h}from"../notebookBrowser.js";import{INotebookEditorService as I}from"../services/notebookEditorService.js";import{NotebookSetting as f}from"../../common/notebookCommon.js";import{NOTEBOOK_EDITOR_FOCUSED as A,NOTEBOOK_IS_ACTIVE_EDITOR as d}from"../../common/notebookContextKeys.js";import{INotebookService as O}from"../../common/notebookService.js";import{IEditorService as P}from"../../../../services/editor/common/editorService.js";import{IPreferencesService as y}from"../../../../services/preferences/common/preferences.js";l(class extends c{constructor(){super({id:"workbench.notebook.layout.select",title:r("workbench.notebook.layout.select.label","Select between Notebook Layouts"),f1:!0,precondition:i.equals(`config.${f.openGettingStarted}`,!0),category:g,menu:[{id:t.EditorTitle,group:"notebookLayout",when:i.and(d,i.notEquals("config.notebook.globalToolbar",!0),i.equals(`config.${f.openGettingStarted}`,!0)),order:0},{id:t.NotebookToolbar,group:"notebookLayout",when:i.and(i.equals("config.notebook.globalToolbar",!0),i.equals(`config.${f.openGettingStarted}`,!0)),order:0}]})}run(o){o.get(m).executeCommand("workbench.action.openWalkthrough",{category:"notebooks",step:"notebookProfile"},!0)}}),l(class extends c{constructor(){super({id:"workbench.notebook.layout.configure",title:r("workbench.notebook.layout.configure.label","Customize Notebook Layout"),f1:!0,category:g,menu:[{id:t.NotebookToolbar,group:"notebookLayout",when:i.equals("config.notebook.globalToolbar",!0),order:1}]})}run(o){o.get(y).openSettings({jsonEditor:!1,query:"@tag:notebookLayout"})}}),l(class extends c{constructor(){super({id:"workbench.notebook.layout.configure.editorTitle",title:r("workbench.notebook.layout.configure.label","Customize Notebook Layout"),f1:!1,category:g,menu:[{id:t.NotebookEditorLayoutConfigure,group:"notebookLayout",when:d,order:1}]})}run(o){o.get(y).openSettings({jsonEditor:!1,query:"@tag:notebookLayout"})}}),C.appendMenuItem(t.EditorTitle,{submenu:t.NotebookEditorLayoutConfigure,rememberDefaultAction:!1,title:r("customizeNotebook","Customize Notebook..."),icon:v.gear,group:"navigation",order:-1,when:d}),l(class extends c{constructor(){super({id:"notebook.toggleLineNumbersFromEditorTitle",title:r("notebook.toggleLineNumbers","Toggle Notebook Line Numbers"),precondition:A,menu:[{id:t.NotebookEditorLayoutConfigure,group:"notebookLayoutDetails",order:1,when:d}],category:g,f1:!0,toggled:{condition:i.notEquals("config.notebook.lineNumbers","off"),title:u("notebook.showLineNumbers","Notebook Line Numbers")}})}async run(o){return o.get(m).executeCommand("notebook.toggleLineNumbers")}}),l(class extends c{constructor(){super({id:"notebook.toggleCellToolbarPositionFromEditorTitle",title:r("notebook.toggleCellToolbarPosition","Toggle Cell Toolbar Position"),menu:[{id:t.NotebookEditorLayoutConfigure,group:"notebookLayoutDetails",order:3}],category:g,f1:!1})}async run(o,...n){return o.get(m).executeCommand("notebook.toggleCellToolbarPosition",...n)}}),l(class extends c{constructor(){super({id:"breadcrumbs.toggleFromEditorTitle",title:r("notebook.toggleBreadcrumb","Toggle Breadcrumbs"),menu:[{id:t.NotebookEditorLayoutConfigure,group:"notebookLayoutDetails",order:2}],f1:!1})}async run(o){return o.get(m).executeCommand("breadcrumbs.toggle")}}),l(class extends c{constructor(){super({id:"notebook.saveMimeTypeOrder",title:r("notebook.saveMimeTypeOrder","Save Mimetype Display Order"),f1:!0,category:g,precondition:d})}run(o){const n=o.get(O),a=new T,e=a.add(o.get(L).createQuickPick());e.placeholder=u("notebook.placeholder","Settings file to save in"),e.items=[{target:p.USER,label:u("saveTarget.machine","User Settings")},{target:p.WORKSPACE,label:u("saveTarget.workspace","Workspace Settings")}],a.add(e.onDidAccept(()=>{const k=e.selectedItems[0]?.target;k!==void 0&&n.saveMimeDisplayOrder(k),e.dispose()})),a.add(e.onDidHide(()=>a.dispose())),e.show()}}),l(class extends c{constructor(){super({id:"workbench.notebook.layout.webview.reset",title:r("workbench.notebook.layout.webview.reset.label","Reset Notebook Webview"),f1:!1,category:g})}run(o,n){const a=o.get(P);if(n){const e=N.revive(n),S=o.get(I).listNotebookEditors().filter(b=>b.hasModel()&&b.textModel.uri.toString()===e.toString());for(const b of S)b.hasModel()&&b.getInnerWebview()?.reload()}else{const e=h(a.activeEditorPane);if(!e)return;e.getInnerWebview()?.reload()}}}),l(class extends c{constructor(){super({id:"notebook.action.toggleNotebookStickyScroll",title:{...r("toggleStickyScroll","Toggle Notebook Sticky Scroll"),mnemonicTitle:u({key:"mitoggleNotebookStickyScroll",comment:["&& denotes a mnemonic"]},"&&Toggle Notebook Sticky Scroll")},category:E.View,toggled:{condition:i.equals("config.notebook.stickyScroll.enabled",!0),title:u("notebookStickyScroll","Toggle Notebook Sticky Scroll"),mnemonicTitle:u({key:"mitoggleNotebookStickyScroll",comment:["&& denotes a mnemonic"]},"&&Toggle Notebook Sticky Scroll")},menu:[{id:t.CommandPalette},{id:t.NotebookStickyScrollContext,group:"notebookView",order:2}]})}async run(o){const n=o.get(w),a=!n.getValue("notebook.stickyScroll.enabled");return n.updateValue("notebook.stickyScroll.enabled",a)}});
+import { Codicon } from '../../../../../base/common/codicons.js';
+import { DisposableStore } from '../../../../../base/common/lifecycle.js';
+import { URI } from '../../../../../base/common/uri.js';
+import { localize, localize2 } from '../../../../../nls.js';
+import { Categories } from '../../../../../platform/action/common/actionCommonCategories.js';
+import { Action2, MenuId, MenuRegistry, registerAction2 } from '../../../../../platform/actions/common/actions.js';
+import { ICommandService } from '../../../../../platform/commands/common/commands.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
+import { IQuickInputService } from '../../../../../platform/quickinput/common/quickInput.js';
+import { NOTEBOOK_ACTIONS_CATEGORY } from './coreActions.js';
+import { getNotebookEditorFromEditorPane } from '../notebookBrowser.js';
+import { INotebookEditorService } from '../services/notebookEditorService.js';
+import { NotebookSetting } from '../../common/notebookCommon.js';
+import { NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_IS_ACTIVE_EDITOR } from '../../common/notebookContextKeys.js';
+import { INotebookService } from '../../common/notebookService.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+import { IPreferencesService } from '../../../../services/preferences/common/preferences.js';
+registerAction2(class NotebookConfigureLayoutAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.notebook.layout.select',
+            title: localize2('workbench.notebook.layout.select.label', "Select between Notebook Layouts"),
+            f1: true,
+            precondition: ContextKeyExpr.equals(`config.${NotebookSetting.openGettingStarted}`, true),
+            category: NOTEBOOK_ACTIONS_CATEGORY,
+            menu: [
+                {
+                    id: MenuId.EditorTitle,
+                    group: 'notebookLayout',
+                    when: ContextKeyExpr.and(NOTEBOOK_IS_ACTIVE_EDITOR, ContextKeyExpr.notEquals('config.notebook.globalToolbar', true), ContextKeyExpr.equals(`config.${NotebookSetting.openGettingStarted}`, true)),
+                    order: 0
+                },
+                {
+                    id: MenuId.NotebookToolbar,
+                    group: 'notebookLayout',
+                    when: ContextKeyExpr.and(ContextKeyExpr.equals('config.notebook.globalToolbar', true), ContextKeyExpr.equals(`config.${NotebookSetting.openGettingStarted}`, true)),
+                    order: 0
+                }
+            ]
+        });
+    }
+    run(accessor) {
+        accessor.get(ICommandService).executeCommand('workbench.action.openWalkthrough', { category: 'notebooks', step: 'notebookProfile' }, true);
+    }
+});
+registerAction2(class NotebookConfigureLayoutAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.notebook.layout.configure',
+            title: localize2('workbench.notebook.layout.configure.label', "Customize Notebook Layout"),
+            f1: true,
+            category: NOTEBOOK_ACTIONS_CATEGORY,
+            menu: [
+                {
+                    id: MenuId.NotebookToolbar,
+                    group: 'notebookLayout',
+                    when: ContextKeyExpr.equals('config.notebook.globalToolbar', true),
+                    order: 1
+                }
+            ]
+        });
+    }
+    run(accessor) {
+        accessor.get(IPreferencesService).openSettings({ jsonEditor: false, query: '@tag:notebookLayout' });
+    }
+});
+registerAction2(class NotebookConfigureLayoutFromEditorTitle extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.notebook.layout.configure.editorTitle',
+            title: localize2('workbench.notebook.layout.configure.label', "Customize Notebook Layout"),
+            f1: false,
+            category: NOTEBOOK_ACTIONS_CATEGORY,
+            menu: [
+                {
+                    id: MenuId.NotebookEditorLayoutConfigure,
+                    group: 'notebookLayout',
+                    when: NOTEBOOK_IS_ACTIVE_EDITOR,
+                    order: 1
+                }
+            ]
+        });
+    }
+    run(accessor) {
+        accessor.get(IPreferencesService).openSettings({ jsonEditor: false, query: '@tag:notebookLayout' });
+    }
+});
+MenuRegistry.appendMenuItem(MenuId.EditorTitle, {
+    submenu: MenuId.NotebookEditorLayoutConfigure,
+    rememberDefaultAction: false,
+    title: localize2('customizeNotebook', "Customize Notebook..."),
+    icon: Codicon.gear,
+    group: 'navigation',
+    order: -1,
+    when: NOTEBOOK_IS_ACTIVE_EDITOR
+});
+registerAction2(class ToggleLineNumberFromEditorTitle extends Action2 {
+    constructor() {
+        super({
+            id: 'notebook.toggleLineNumbersFromEditorTitle',
+            title: localize2('notebook.toggleLineNumbers', 'Toggle Notebook Line Numbers'),
+            precondition: NOTEBOOK_EDITOR_FOCUSED,
+            menu: [
+                {
+                    id: MenuId.NotebookEditorLayoutConfigure,
+                    group: 'notebookLayoutDetails',
+                    order: 1,
+                    when: NOTEBOOK_IS_ACTIVE_EDITOR
+                }
+            ],
+            category: NOTEBOOK_ACTIONS_CATEGORY,
+            f1: true,
+            toggled: {
+                condition: ContextKeyExpr.notEquals('config.notebook.lineNumbers', 'off'),
+                title: localize('notebook.showLineNumbers', "Notebook Line Numbers"),
+            }
+        });
+    }
+    async run(accessor) {
+        return accessor.get(ICommandService).executeCommand('notebook.toggleLineNumbers');
+    }
+});
+registerAction2(class ToggleCellToolbarPositionFromEditorTitle extends Action2 {
+    constructor() {
+        super({
+            id: 'notebook.toggleCellToolbarPositionFromEditorTitle',
+            title: localize2('notebook.toggleCellToolbarPosition', 'Toggle Cell Toolbar Position'),
+            menu: [{
+                    id: MenuId.NotebookEditorLayoutConfigure,
+                    group: 'notebookLayoutDetails',
+                    order: 3
+                }],
+            category: NOTEBOOK_ACTIONS_CATEGORY,
+            f1: false
+        });
+    }
+    async run(accessor, ...args) {
+        return accessor.get(ICommandService).executeCommand('notebook.toggleCellToolbarPosition', ...args);
+    }
+});
+registerAction2(class ToggleBreadcrumbFromEditorTitle extends Action2 {
+    constructor() {
+        super({
+            id: 'breadcrumbs.toggleFromEditorTitle',
+            title: localize2('notebook.toggleBreadcrumb', 'Toggle Breadcrumbs'),
+            menu: [{
+                    id: MenuId.NotebookEditorLayoutConfigure,
+                    group: 'notebookLayoutDetails',
+                    order: 2
+                }],
+            f1: false
+        });
+    }
+    async run(accessor) {
+        return accessor.get(ICommandService).executeCommand('breadcrumbs.toggle');
+    }
+});
+registerAction2(class SaveMimeTypeDisplayOrder extends Action2 {
+    constructor() {
+        super({
+            id: 'notebook.saveMimeTypeOrder',
+            title: localize2('notebook.saveMimeTypeOrder', "Save Mimetype Display Order"),
+            f1: true,
+            category: NOTEBOOK_ACTIONS_CATEGORY,
+            precondition: NOTEBOOK_IS_ACTIVE_EDITOR,
+        });
+    }
+    run(accessor) {
+        const service = accessor.get(INotebookService);
+        const disposables = new DisposableStore();
+        const qp = disposables.add(accessor.get(IQuickInputService).createQuickPick());
+        qp.placeholder = localize('notebook.placeholder', 'Settings file to save in');
+        qp.items = [
+            { target: 2, label: localize('saveTarget.machine', 'User Settings') },
+            { target: 5, label: localize('saveTarget.workspace', 'Workspace Settings') },
+        ];
+        disposables.add(qp.onDidAccept(() => {
+            const target = qp.selectedItems[0]?.target;
+            if (target !== undefined) {
+                service.saveMimeDisplayOrder(target);
+            }
+            qp.dispose();
+        }));
+        disposables.add(qp.onDidHide(() => disposables.dispose()));
+        qp.show();
+    }
+});
+registerAction2(class NotebookWebviewResetAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.notebook.layout.webview.reset',
+            title: localize2('workbench.notebook.layout.webview.reset.label', "Reset Notebook Webview"),
+            f1: false,
+            category: NOTEBOOK_ACTIONS_CATEGORY
+        });
+    }
+    run(accessor, args) {
+        const editorService = accessor.get(IEditorService);
+        if (args) {
+            const uri = URI.revive(args);
+            const notebookEditorService = accessor.get(INotebookEditorService);
+            const widgets = notebookEditorService.listNotebookEditors().filter(widget => widget.hasModel() && widget.textModel.uri.toString() === uri.toString());
+            for (const widget of widgets) {
+                if (widget.hasModel()) {
+                    widget.getInnerWebview()?.reload();
+                }
+            }
+        }
+        else {
+            const editor = getNotebookEditorFromEditorPane(editorService.activeEditorPane);
+            if (!editor) {
+                return;
+            }
+            editor.getInnerWebview()?.reload();
+        }
+    }
+});
+registerAction2(class ToggleNotebookStickyScroll extends Action2 {
+    constructor() {
+        super({
+            id: 'notebook.action.toggleNotebookStickyScroll',
+            title: {
+                ...localize2('toggleStickyScroll', "Toggle Notebook Sticky Scroll"),
+                mnemonicTitle: localize({ key: 'mitoggleNotebookStickyScroll', comment: ['&& denotes a mnemonic'] }, "&&Toggle Notebook Sticky Scroll"),
+            },
+            category: Categories.View,
+            toggled: {
+                condition: ContextKeyExpr.equals('config.notebook.stickyScroll.enabled', true),
+                title: localize('notebookStickyScroll', "Toggle Notebook Sticky Scroll"),
+                mnemonicTitle: localize({ key: 'mitoggleNotebookStickyScroll', comment: ['&& denotes a mnemonic'] }, "&&Toggle Notebook Sticky Scroll"),
+            },
+            menu: [
+                { id: MenuId.CommandPalette },
+                {
+                    id: MenuId.NotebookStickyScrollContext,
+                    group: 'notebookView',
+                    order: 2
+                }
+            ]
+        });
+    }
+    async run(accessor) {
+        const configurationService = accessor.get(IConfigurationService);
+        const newValue = !configurationService.getValue('notebook.stickyScroll.enabled');
+        return configurationService.updateValue('notebook.stickyScroll.enabled', newValue);
+    }
+});

@@ -1,1 +1,353 @@
-import{asArray as G,isNonEmptyArray as W}from"../../../../base/common/arrays.js";import{CancellationToken as M}from"../../../../base/common/cancellation.js";import{onUnexpectedExternalError as C}from"../../../../base/common/errors.js";import{Iterable as H}from"../../../../base/common/iterator.js";import"../../../../base/common/lifecycle.js";import{LinkedList as J}from"../../../../base/common/linkedList.js";import{assertType as P}from"../../../../base/common/types.js";import{URI as b}from"../../../../base/common/uri.js";import{CodeEditorStateFlag as D,EditorStateCancellationTokenSource as U,TextModelCancellationTokenSource as q}from"../../editorState/browser/editorState.js";import{isCodeEditor as S}from"../../../browser/editorBrowser.js";import"../../../browser/editorExtensions.js";import{Position as j}from"../../../common/core/position.js";import{Range as p}from"../../../common/core/range.js";import{Selection as h}from"../../../common/core/selection.js";import{ScrollType as V}from"../../../common/editorCommon.js";import"../../../common/model.js";import"../../../common/languages.js";import{IEditorWorkerService as y}from"../../../common/services/editorWorker.js";import{ITextModelService as L}from"../../../common/services/resolverService.js";import{FormattingEdit as _}from"./formattingEdit.js";import{CommandsRegistry as A}from"../../../../platform/commands/common/commands.js";import{ExtensionIdentifierSet as Q}from"../../../../platform/extensions/common/extensions.js";import{IInstantiationService as K}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/progress/common/progress.js";import{ILanguageFeaturesService as w}from"../../../common/services/languageFeatures.js";import"../../../common/languageFeatureRegistry.js";import{ILogService as X}from"../../../../platform/log/common/log.js";import{AccessibilitySignal as z,IAccessibilitySignalService as B}from"../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js";function N(o,t,e){const a=[],i=new Q,s=o.ordered(e);for(const n of s)a.push(n),n.extensionId&&i.add(n.extensionId);const u=t.ordered(e);for(const n of u){if(n.extensionId){if(i.has(n.extensionId))continue;i.add(n.extensionId)}a.push({displayName:n.displayName,extensionId:n.extensionId,provideDocumentFormattingEdits(c,m,g){return n.provideDocumentRangeFormattingEdits(c,c.getFullModelRange(),m,g)}})}return a}var Y=(e=>(e[e.File=1]="File",e[e.Selection=2]="Selection",e))(Y||{}),Z=(e=>(e[e.Explicit=1]="Explicit",e[e.Silent=2]="Silent",e))(Z||{});class R{static _selectors=new J;static setFormatterSelector(t){return{dispose:R._selectors.unshift(t)}}static async select(t,e,a,i){if(t.length===0)return;const s=H.first(R._selectors);if(s)return await s(t,e,a,i)}}async function Ke(o,t,e,a,i,s,u){const n=o.get(K),{documentRangeFormattingEditProvider:c}=o.get(w),m=S(t)?t.getModel():t,g=c.ordered(m),d=await R.select(g,m,a,2);d&&(i.report(d),await n.invokeFunction($,d,t,e,s,u))}async function $(o,t,e,a,i,s){const u=o.get(y),n=o.get(X),c=o.get(B);let m,g;S(e)?(m=e.getModel(),g=new U(e,D.Value|D.Position,void 0,i)):(m=e,g=new q(e,i));const d=[];let E=0;for(const r of G(a).sort(p.compareRangesUsingStarts))E>0&&p.areIntersectingOrTouching(d[E-1],r)?d[E-1]=p.fromPositions(d[E-1].getStartPosition(),r.getEndPosition()):E=d.push(r);const x=async r=>{n.trace("[format][provideDocumentRangeFormattingEdits] (request)",t.extensionId?.value,r);const l=await t.provideDocumentRangeFormattingEdits(m,r,m.getFormattingOptions(),g.token)||[];return n.trace("[format][provideDocumentRangeFormattingEdits] (response)",t.extensionId?.value,l),l},I=(r,l)=>{if(!r.length||!l.length)return!1;const v=r.reduce((f,k)=>p.plusRange(f,k.range),r[0].range);if(!l.some(f=>p.intersectRanges(v,f.range)))return!1;for(const f of r)for(const k of l)if(p.intersectRanges(f.range,k.range))return!0;return!1},T=[],F=[];try{if(typeof t.provideDocumentRangesFormattingEdits=="function"){n.trace("[format][provideDocumentRangeFormattingEdits] (request)",t.extensionId?.value,d);const r=await t.provideDocumentRangesFormattingEdits(m,d,m.getFormattingOptions(),g.token)||[];n.trace("[format][provideDocumentRangeFormattingEdits] (response)",t.extensionId?.value,r),F.push(r)}else{for(const r of d){if(g.token.isCancellationRequested)return!0;F.push(await x(r))}for(let r=0;r<d.length;++r)for(let l=r+1;l<d.length;++l){if(g.token.isCancellationRequested)return!0;if(I(F[r],F[l])){const v=p.plusRange(d[r],d[l]),f=await x(v);d.splice(l,1),d.splice(r,1),d.push(v),F.splice(l,1),F.splice(r,1),F.push(f),r=0,l=0}}}for(const r of F){if(g.token.isCancellationRequested)return!0;const l=await u.computeMoreMinimalEdits(m.uri,r);l&&T.push(...l)}}finally{g.dispose()}if(T.length===0)return!1;if(S(e))_.execute(e,T,!0),e.revealPositionInCenterIfOutsideViewport(e.getPosition(),V.Immediate);else{const[{range:r}]=T,l=new h(r.startLineNumber,r.startColumn,r.endLineNumber,r.endColumn);m.pushEditOperations([l],T.map(v=>({text:v.text,range:p.lift(v.range),forceMoveMarkers:!0})),v=>{for(const{range:f}of v)if(p.areIntersectingOrTouching(f,l))return[new h(f.startLineNumber,f.startColumn,f.endLineNumber,f.endColumn)];return null})}return c.playSignal(z.format,{userGesture:s}),!0}async function ze(o,t,e,a,i,s){const u=o.get(K),n=o.get(w),c=S(t)?t.getModel():t,m=N(n.documentFormattingEditProvider,n.documentRangeFormattingEditProvider,c),g=await R.select(m,c,e,1);g&&(a.report(g),await u.invokeFunction(O,g,t,e,i,s))}async function O(o,t,e,a,i,s){const u=o.get(y),n=o.get(B);let c,m;S(e)?(c=e.getModel(),m=new U(e,D.Value|D.Position,void 0,i)):(c=e,m=new q(e,i));let g;try{const d=await t.provideDocumentFormattingEdits(c,c.getFormattingOptions(),m.token);if(g=await u.computeMoreMinimalEdits(c.uri,d),m.token.isCancellationRequested)return!0}finally{m.dispose()}if(!g||g.length===0)return!1;if(S(e))_.execute(e,g,a!==2),a!==2&&e.revealPositionInCenterIfOutsideViewport(e.getPosition(),V.Immediate);else{const[{range:d}]=g,E=new h(d.startLineNumber,d.startColumn,d.endLineNumber,d.endColumn);c.pushEditOperations([E],g.map(x=>({text:x.text,range:p.lift(x.range),forceMoveMarkers:!0})),x=>{for(const{range:I}of x)if(p.areIntersectingOrTouching(I,E))return[new h(I.startLineNumber,I.startColumn,I.endLineNumber,I.endColumn)];return null})}return n.playSignal(z.format,{userGesture:s}),!0}async function ee(o,t,e,a,i,s){const u=t.documentRangeFormattingEditProvider.ordered(e);for(const n of u){const c=await Promise.resolve(n.provideDocumentRangeFormattingEdits(e,a,i,s)).catch(C);if(W(c))return await o.computeMoreMinimalEdits(e.uri,c)}}async function te(o,t,e,a,i){const s=N(t.documentFormattingEditProvider,t.documentRangeFormattingEditProvider,e);for(const u of s){const n=await Promise.resolve(u.provideDocumentFormattingEdits(e,a,i)).catch(C);if(W(n))return await o.computeMoreMinimalEdits(e.uri,n)}}async function Be(o,t,e,a,i){const s=S(e)?e.getModel():e,u=N(t.documentFormattingEditProvider,t.documentRangeFormattingEditProvider,s),n=await R.select(u,s,a,1);if(n){const c=await Promise.resolve(n.provideDocumentFormattingEdits(s,s.getOptions(),i)).catch(C);return await o.computeMoreMinimalEdits(s.uri,c)}}function ne(o,t,e,a,i,s,u){const n=t.onTypeFormattingEditProvider.ordered(e);return n.length===0||n[0].autoFormatTriggerCharacters.indexOf(i)<0?Promise.resolve(void 0):Promise.resolve(n[0].provideOnTypeFormattingEdits(e,a,i,s,u)).catch(C).then(c=>o.computeMoreMinimalEdits(e.uri,c))}A.registerCommand("_executeFormatRangeProvider",async function(o,...t){const[e,a,i]=t;P(b.isUri(e)),P(p.isIRange(a));const s=o.get(L),u=o.get(y),n=o.get(w),c=await s.createModelReference(e);try{return ee(u,n,c.object.textEditorModel,p.lift(a),i,M.None)}finally{c.dispose()}}),A.registerCommand("_executeFormatDocumentProvider",async function(o,...t){const[e,a]=t;P(b.isUri(e));const i=o.get(L),s=o.get(y),u=o.get(w),n=await i.createModelReference(e);try{return te(s,u,n.object.textEditorModel,a,M.None)}finally{n.dispose()}}),A.registerCommand("_executeFormatOnTypeProvider",async function(o,...t){const[e,a,i,s]=t;P(b.isUri(e)),P(j.isIPosition(a)),P(typeof i=="string");const u=o.get(L),n=o.get(y),c=o.get(w),m=await u.createModelReference(e);try{return ne(n,c,m.object.textEditorModel,j.lift(a),i,s,M.None)}finally{m.dispose()}});export{R as FormattingConflicts,Y as FormattingKind,Z as FormattingMode,$ as formatDocumentRangesWithProvider,Ke as formatDocumentRangesWithSelectedProvider,O as formatDocumentWithProvider,ze as formatDocumentWithSelectedProvider,te as getDocumentFormattingEditsUntilResult,Be as getDocumentFormattingEditsWithSelectedProvider,ee as getDocumentRangeFormattingEditsUntilResult,ne as getOnTypeFormattingEdits,N as getRealAndSyntheticDocumentFormattersOrdered};
+import { asArray, isNonEmptyArray } from '../../../../base/common/arrays.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { onUnexpectedExternalError } from '../../../../base/common/errors.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { LinkedList } from '../../../../base/common/linkedList.js';
+import { assertType } from '../../../../base/common/types.js';
+import { URI } from '../../../../base/common/uri.js';
+import { EditorStateCancellationTokenSource, TextModelCancellationTokenSource } from '../../editorState/browser/editorState.js';
+import { isCodeEditor } from '../../../browser/editorBrowser.js';
+import { Position } from '../../../common/core/position.js';
+import { Range } from '../../../common/core/range.js';
+import { Selection } from '../../../common/core/selection.js';
+import { IEditorWorkerService } from '../../../common/services/editorWorker.js';
+import { ITextModelService } from '../../../common/services/resolverService.js';
+import { FormattingEdit } from './formattingEdit.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { ExtensionIdentifierSet } from '../../../../platform/extensions/common/extensions.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { AccessibilitySignal, IAccessibilitySignalService } from '../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+export function getRealAndSyntheticDocumentFormattersOrdered(documentFormattingEditProvider, documentRangeFormattingEditProvider, model) {
+    const result = [];
+    const seen = new ExtensionIdentifierSet();
+    const docFormatter = documentFormattingEditProvider.ordered(model);
+    for (const formatter of docFormatter) {
+        result.push(formatter);
+        if (formatter.extensionId) {
+            seen.add(formatter.extensionId);
+        }
+    }
+    const rangeFormatter = documentRangeFormattingEditProvider.ordered(model);
+    for (const formatter of rangeFormatter) {
+        if (formatter.extensionId) {
+            if (seen.has(formatter.extensionId)) {
+                continue;
+            }
+            seen.add(formatter.extensionId);
+        }
+        result.push({
+            displayName: formatter.displayName,
+            extensionId: formatter.extensionId,
+            provideDocumentFormattingEdits(model, options, token) {
+                return formatter.provideDocumentRangeFormattingEdits(model, model.getFullModelRange(), options, token);
+            }
+        });
+    }
+    return result;
+}
+export class FormattingConflicts {
+    static { this._selectors = new LinkedList(); }
+    static setFormatterSelector(selector) {
+        const remove = FormattingConflicts._selectors.unshift(selector);
+        return { dispose: remove };
+    }
+    static async select(formatter, document, mode, kind) {
+        if (formatter.length === 0) {
+            return undefined;
+        }
+        const selector = Iterable.first(FormattingConflicts._selectors);
+        if (selector) {
+            return await selector(formatter, document, mode, kind);
+        }
+        return undefined;
+    }
+}
+export async function formatDocumentRangesWithSelectedProvider(accessor, editorOrModel, rangeOrRanges, mode, progress, token, userGesture) {
+    const instaService = accessor.get(IInstantiationService);
+    const { documentRangeFormattingEditProvider: documentRangeFormattingEditProviderRegistry } = accessor.get(ILanguageFeaturesService);
+    const model = isCodeEditor(editorOrModel) ? editorOrModel.getModel() : editorOrModel;
+    const provider = documentRangeFormattingEditProviderRegistry.ordered(model);
+    const selected = await FormattingConflicts.select(provider, model, mode, 2);
+    if (selected) {
+        progress.report(selected);
+        await instaService.invokeFunction(formatDocumentRangesWithProvider, selected, editorOrModel, rangeOrRanges, token, userGesture);
+    }
+}
+export async function formatDocumentRangesWithProvider(accessor, provider, editorOrModel, rangeOrRanges, token, userGesture) {
+    const workerService = accessor.get(IEditorWorkerService);
+    const logService = accessor.get(ILogService);
+    const accessibilitySignalService = accessor.get(IAccessibilitySignalService);
+    let model;
+    let cts;
+    if (isCodeEditor(editorOrModel)) {
+        model = editorOrModel.getModel();
+        cts = new EditorStateCancellationTokenSource(editorOrModel, 1 | 4, undefined, token);
+    }
+    else {
+        model = editorOrModel;
+        cts = new TextModelCancellationTokenSource(editorOrModel, token);
+    }
+    const ranges = [];
+    let len = 0;
+    for (const range of asArray(rangeOrRanges).sort(Range.compareRangesUsingStarts)) {
+        if (len > 0 && Range.areIntersectingOrTouching(ranges[len - 1], range)) {
+            ranges[len - 1] = Range.fromPositions(ranges[len - 1].getStartPosition(), range.getEndPosition());
+        }
+        else {
+            len = ranges.push(range);
+        }
+    }
+    const computeEdits = async (range) => {
+        logService.trace(`[format][provideDocumentRangeFormattingEdits] (request)`, provider.extensionId?.value, range);
+        const result = (await provider.provideDocumentRangeFormattingEdits(model, range, model.getFormattingOptions(), cts.token)) || [];
+        logService.trace(`[format][provideDocumentRangeFormattingEdits] (response)`, provider.extensionId?.value, result);
+        return result;
+    };
+    const hasIntersectingEdit = (a, b) => {
+        if (!a.length || !b.length) {
+            return false;
+        }
+        const mergedA = a.reduce((acc, val) => { return Range.plusRange(acc, val.range); }, a[0].range);
+        if (!b.some(x => { return Range.intersectRanges(mergedA, x.range); })) {
+            return false;
+        }
+        for (const edit of a) {
+            for (const otherEdit of b) {
+                if (Range.intersectRanges(edit.range, otherEdit.range)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    const allEdits = [];
+    const rawEditsList = [];
+    try {
+        if (typeof provider.provideDocumentRangesFormattingEdits === 'function') {
+            logService.trace(`[format][provideDocumentRangeFormattingEdits] (request)`, provider.extensionId?.value, ranges);
+            const result = (await provider.provideDocumentRangesFormattingEdits(model, ranges, model.getFormattingOptions(), cts.token)) || [];
+            logService.trace(`[format][provideDocumentRangeFormattingEdits] (response)`, provider.extensionId?.value, result);
+            rawEditsList.push(result);
+        }
+        else {
+            for (const range of ranges) {
+                if (cts.token.isCancellationRequested) {
+                    return true;
+                }
+                rawEditsList.push(await computeEdits(range));
+            }
+            for (let i = 0; i < ranges.length; ++i) {
+                for (let j = i + 1; j < ranges.length; ++j) {
+                    if (cts.token.isCancellationRequested) {
+                        return true;
+                    }
+                    if (hasIntersectingEdit(rawEditsList[i], rawEditsList[j])) {
+                        const mergedRange = Range.plusRange(ranges[i], ranges[j]);
+                        const edits = await computeEdits(mergedRange);
+                        ranges.splice(j, 1);
+                        ranges.splice(i, 1);
+                        ranges.push(mergedRange);
+                        rawEditsList.splice(j, 1);
+                        rawEditsList.splice(i, 1);
+                        rawEditsList.push(edits);
+                        i = 0;
+                        j = 0;
+                    }
+                }
+            }
+        }
+        for (const rawEdits of rawEditsList) {
+            if (cts.token.isCancellationRequested) {
+                return true;
+            }
+            const minimalEdits = await workerService.computeMoreMinimalEdits(model.uri, rawEdits);
+            if (minimalEdits) {
+                allEdits.push(...minimalEdits);
+            }
+        }
+    }
+    finally {
+        cts.dispose();
+    }
+    if (allEdits.length === 0) {
+        return false;
+    }
+    if (isCodeEditor(editorOrModel)) {
+        FormattingEdit.execute(editorOrModel, allEdits, true);
+        editorOrModel.revealPositionInCenterIfOutsideViewport(editorOrModel.getPosition(), 1);
+    }
+    else {
+        const [{ range }] = allEdits;
+        const initialSelection = new Selection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
+        model.pushEditOperations([initialSelection], allEdits.map(edit => {
+            return {
+                text: edit.text,
+                range: Range.lift(edit.range),
+                forceMoveMarkers: true
+            };
+        }), undoEdits => {
+            for (const { range } of undoEdits) {
+                if (Range.areIntersectingOrTouching(range, initialSelection)) {
+                    return [new Selection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn)];
+                }
+            }
+            return null;
+        });
+    }
+    accessibilitySignalService.playSignal(AccessibilitySignal.format, { userGesture });
+    return true;
+}
+export async function formatDocumentWithSelectedProvider(accessor, editorOrModel, mode, progress, token, userGesture) {
+    const instaService = accessor.get(IInstantiationService);
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const model = isCodeEditor(editorOrModel) ? editorOrModel.getModel() : editorOrModel;
+    const provider = getRealAndSyntheticDocumentFormattersOrdered(languageFeaturesService.documentFormattingEditProvider, languageFeaturesService.documentRangeFormattingEditProvider, model);
+    const selected = await FormattingConflicts.select(provider, model, mode, 1);
+    if (selected) {
+        progress.report(selected);
+        await instaService.invokeFunction(formatDocumentWithProvider, selected, editorOrModel, mode, token, userGesture);
+    }
+}
+export async function formatDocumentWithProvider(accessor, provider, editorOrModel, mode, token, userGesture) {
+    const workerService = accessor.get(IEditorWorkerService);
+    const accessibilitySignalService = accessor.get(IAccessibilitySignalService);
+    let model;
+    let cts;
+    if (isCodeEditor(editorOrModel)) {
+        model = editorOrModel.getModel();
+        cts = new EditorStateCancellationTokenSource(editorOrModel, 1 | 4, undefined, token);
+    }
+    else {
+        model = editorOrModel;
+        cts = new TextModelCancellationTokenSource(editorOrModel, token);
+    }
+    let edits;
+    try {
+        const rawEdits = await provider.provideDocumentFormattingEdits(model, model.getFormattingOptions(), cts.token);
+        edits = await workerService.computeMoreMinimalEdits(model.uri, rawEdits);
+        if (cts.token.isCancellationRequested) {
+            return true;
+        }
+    }
+    finally {
+        cts.dispose();
+    }
+    if (!edits || edits.length === 0) {
+        return false;
+    }
+    if (isCodeEditor(editorOrModel)) {
+        FormattingEdit.execute(editorOrModel, edits, mode !== 2);
+        if (mode !== 2) {
+            editorOrModel.revealPositionInCenterIfOutsideViewport(editorOrModel.getPosition(), 1);
+        }
+    }
+    else {
+        const [{ range }] = edits;
+        const initialSelection = new Selection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
+        model.pushEditOperations([initialSelection], edits.map(edit => {
+            return {
+                text: edit.text,
+                range: Range.lift(edit.range),
+                forceMoveMarkers: true
+            };
+        }), undoEdits => {
+            for (const { range } of undoEdits) {
+                if (Range.areIntersectingOrTouching(range, initialSelection)) {
+                    return [new Selection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn)];
+                }
+            }
+            return null;
+        });
+    }
+    accessibilitySignalService.playSignal(AccessibilitySignal.format, { userGesture });
+    return true;
+}
+export async function getDocumentRangeFormattingEditsUntilResult(workerService, languageFeaturesService, model, range, options, token) {
+    const providers = languageFeaturesService.documentRangeFormattingEditProvider.ordered(model);
+    for (const provider of providers) {
+        const rawEdits = await Promise.resolve(provider.provideDocumentRangeFormattingEdits(model, range, options, token)).catch(onUnexpectedExternalError);
+        if (isNonEmptyArray(rawEdits)) {
+            return await workerService.computeMoreMinimalEdits(model.uri, rawEdits);
+        }
+    }
+    return undefined;
+}
+export async function getDocumentFormattingEditsUntilResult(workerService, languageFeaturesService, model, options, token) {
+    const providers = getRealAndSyntheticDocumentFormattersOrdered(languageFeaturesService.documentFormattingEditProvider, languageFeaturesService.documentRangeFormattingEditProvider, model);
+    for (const provider of providers) {
+        const rawEdits = await Promise.resolve(provider.provideDocumentFormattingEdits(model, options, token)).catch(onUnexpectedExternalError);
+        if (isNonEmptyArray(rawEdits)) {
+            return await workerService.computeMoreMinimalEdits(model.uri, rawEdits);
+        }
+    }
+    return undefined;
+}
+export async function getDocumentFormattingEditsWithSelectedProvider(workerService, languageFeaturesService, editorOrModel, mode, token) {
+    const model = isCodeEditor(editorOrModel) ? editorOrModel.getModel() : editorOrModel;
+    const provider = getRealAndSyntheticDocumentFormattersOrdered(languageFeaturesService.documentFormattingEditProvider, languageFeaturesService.documentRangeFormattingEditProvider, model);
+    const selected = await FormattingConflicts.select(provider, model, mode, 1);
+    if (selected) {
+        const rawEdits = await Promise.resolve(selected.provideDocumentFormattingEdits(model, model.getOptions(), token)).catch(onUnexpectedExternalError);
+        return await workerService.computeMoreMinimalEdits(model.uri, rawEdits);
+    }
+    return undefined;
+}
+export function getOnTypeFormattingEdits(workerService, languageFeaturesService, model, position, ch, options, token) {
+    const providers = languageFeaturesService.onTypeFormattingEditProvider.ordered(model);
+    if (providers.length === 0) {
+        return Promise.resolve(undefined);
+    }
+    if (providers[0].autoFormatTriggerCharacters.indexOf(ch) < 0) {
+        return Promise.resolve(undefined);
+    }
+    return Promise.resolve(providers[0].provideOnTypeFormattingEdits(model, position, ch, options, token)).catch(onUnexpectedExternalError).then(edits => {
+        return workerService.computeMoreMinimalEdits(model.uri, edits);
+    });
+}
+CommandsRegistry.registerCommand('_executeFormatRangeProvider', async function (accessor, ...args) {
+    const [resource, range, options] = args;
+    assertType(URI.isUri(resource));
+    assertType(Range.isIRange(range));
+    const resolverService = accessor.get(ITextModelService);
+    const workerService = accessor.get(IEditorWorkerService);
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const reference = await resolverService.createModelReference(resource);
+    try {
+        return getDocumentRangeFormattingEditsUntilResult(workerService, languageFeaturesService, reference.object.textEditorModel, Range.lift(range), options, CancellationToken.None);
+    }
+    finally {
+        reference.dispose();
+    }
+});
+CommandsRegistry.registerCommand('_executeFormatDocumentProvider', async function (accessor, ...args) {
+    const [resource, options] = args;
+    assertType(URI.isUri(resource));
+    const resolverService = accessor.get(ITextModelService);
+    const workerService = accessor.get(IEditorWorkerService);
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const reference = await resolverService.createModelReference(resource);
+    try {
+        return getDocumentFormattingEditsUntilResult(workerService, languageFeaturesService, reference.object.textEditorModel, options, CancellationToken.None);
+    }
+    finally {
+        reference.dispose();
+    }
+});
+CommandsRegistry.registerCommand('_executeFormatOnTypeProvider', async function (accessor, ...args) {
+    const [resource, position, ch, options] = args;
+    assertType(URI.isUri(resource));
+    assertType(Position.isIPosition(position));
+    assertType(typeof ch === 'string');
+    const resolverService = accessor.get(ITextModelService);
+    const workerService = accessor.get(IEditorWorkerService);
+    const languageFeaturesService = accessor.get(ILanguageFeaturesService);
+    const reference = await resolverService.createModelReference(resource);
+    try {
+        return getOnTypeFormattingEdits(workerService, languageFeaturesService, reference.object.textEditorModel, Position.lift(position), ch, options, CancellationToken.None);
+    }
+    finally {
+        reference.dispose();
+    }
+});

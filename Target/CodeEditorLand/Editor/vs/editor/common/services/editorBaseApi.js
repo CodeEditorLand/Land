@@ -1,1 +1,36 @@
-import{CancellationTokenSource as n}from"../../../base/common/cancellation.js";import{Emitter as i}from"../../../base/common/event.js";import{KeyChord as a,KeyMod as e}from"../../../base/common/keyCodes.js";import{URI as m}from"../../../base/common/uri.js";import{Position as c}from"../core/position.js";import{Range as l}from"../core/range.js";import{Selection as u}from"../core/selection.js";import{Token as d}from"../languages.js";import*as r from"../standalone/standaloneEnums.js";class p{static CtrlCmd=e.CtrlCmd;static Shift=e.Shift;static Alt=e.Alt;static WinCtrl=e.WinCtrl;static chord(o,t){return a(o,t)}}function g(){return{editor:void 0,languages:void 0,CancellationTokenSource:n,Emitter:i,KeyCode:r.KeyCode,KeyMod:p,Position:c,Range:l,Selection:u,SelectionDirection:r.SelectionDirection,MarkerSeverity:r.MarkerSeverity,MarkerTag:r.MarkerTag,Uri:m,Token:d}}export{p as KeyMod,g as createMonacoBaseAPI};
+import { CancellationTokenSource } from '../../../base/common/cancellation.js';
+import { Emitter } from '../../../base/common/event.js';
+import { KeyChord } from '../../../base/common/keyCodes.js';
+import { URI } from '../../../base/common/uri.js';
+import { Position } from '../core/position.js';
+import { Range } from '../core/range.js';
+import { Selection } from '../core/selection.js';
+import { Token } from '../languages.js';
+import * as standaloneEnums from '../standalone/standaloneEnums.js';
+export class KeyMod {
+    static { this.CtrlCmd = 2048; }
+    static { this.Shift = 1024; }
+    static { this.Alt = 512; }
+    static { this.WinCtrl = 256; }
+    static chord(firstPart, secondPart) {
+        return KeyChord(firstPart, secondPart);
+    }
+}
+export function createMonacoBaseAPI() {
+    return {
+        editor: undefined,
+        languages: undefined,
+        CancellationTokenSource: CancellationTokenSource,
+        Emitter: Emitter,
+        KeyCode: standaloneEnums.KeyCode,
+        KeyMod: KeyMod,
+        Position: Position,
+        Range: Range,
+        Selection: Selection,
+        SelectionDirection: standaloneEnums.SelectionDirection,
+        MarkerSeverity: standaloneEnums.MarkerSeverity,
+        MarkerTag: standaloneEnums.MarkerTag,
+        Uri: URI,
+        Token: Token
+    };
+}

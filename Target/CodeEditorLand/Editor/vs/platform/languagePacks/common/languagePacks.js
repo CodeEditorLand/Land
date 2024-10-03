@@ -1,1 +1,91 @@
-var m=Object.defineProperty;var d=Object.getOwnPropertyDescriptor;var g=(o,r,t,n)=>{for(var a=n>1?void 0:n?d(r,t):r,i=o.length-1,e;i>=0;i--)(e=o[i])&&(a=(n?e(r,t,a):e(a))||a);return n&&a&&m(r,t,a),a},u=(o,r)=>(t,n)=>r(t,n,o);import{CancellationTokenSource as I}from"../../../base/common/cancellation.js";import{Disposable as k}from"../../../base/common/lifecycle.js";import{language as p}from"../../../base/common/platform.js";import"../../../base/common/uri.js";import"../../quickinput/common/quickInput.js";import{localize as f}from"../../../nls.js";import{IExtensionGalleryService as x}from"../../extensionManagement/common/extensionManagement.js";import{createDecorator as P}from"../../instantiation/common/instantiation.js";function y(o){return o.tags.find(r=>r.startsWith("lp-"))?.split("lp-")[1]}const z=P("languagePackService");let c=class extends k{constructor(t){super();this.extensionGalleryService=t}async getAvailableLanguages(){const t=new I;setTimeout(()=>t.cancel(),1e3);let n;try{n=await this.extensionGalleryService.query({text:'category:"language packs"',pageSize:20},t.token)}catch{return[]}const i=n.firstPage.filter(e=>e.properties.localizedLanguages?.length&&e.tags.some(s=>s.startsWith("lp-"))).map(e=>{const s=e.properties.localizedLanguages?.[0],l=y(e);return{...this.createQuickPickItem(l,s,e),extensionId:e.identifier.id,galleryExtension:e}});return i.push(this.createQuickPickItem("en","English")),i}createQuickPickItem(t,n,a){const i=n??t;let e;if(i!==t&&(e=`(${t})`),t.toLowerCase()===p.toLowerCase()&&(e??="",e+=f("currentDisplayLanguage"," (Current)")),a?.installCount){e??="";const s=a.installCount;let l;s>1e6?l=`${Math.floor(s/1e5)/10}M`:s>1e3?l=`${Math.floor(s/1e3)}K`:l=String(s),e+=` $(cloud-download) ${l}`}return{id:t,label:i,description:e}}};c=g([u(0,x)],c);export{z as ILanguagePackService,c as LanguagePackBaseService,y as getLocale};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { CancellationTokenSource } from '../../../base/common/cancellation.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { language } from '../../../base/common/platform.js';
+import { localize } from '../../../nls.js';
+import { IExtensionGalleryService } from '../../extensionManagement/common/extensionManagement.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export function getLocale(extension) {
+    return extension.tags.find(t => t.startsWith('lp-'))?.split('lp-')[1];
+}
+export const ILanguagePackService = createDecorator('languagePackService');
+let LanguagePackBaseService = class LanguagePackBaseService extends Disposable {
+    constructor(extensionGalleryService) {
+        super();
+        this.extensionGalleryService = extensionGalleryService;
+    }
+    async getAvailableLanguages() {
+        const timeout = new CancellationTokenSource();
+        setTimeout(() => timeout.cancel(), 1000);
+        let result;
+        try {
+            result = await this.extensionGalleryService.query({
+                text: 'category:"language packs"',
+                pageSize: 20
+            }, timeout.token);
+        }
+        catch (_) {
+            return [];
+        }
+        const languagePackExtensions = result.firstPage.filter(e => e.properties.localizedLanguages?.length && e.tags.some(t => t.startsWith('lp-')));
+        const allFromMarketplace = languagePackExtensions.map(lp => {
+            const languageName = lp.properties.localizedLanguages?.[0];
+            const locale = getLocale(lp);
+            const baseQuickPick = this.createQuickPickItem(locale, languageName, lp);
+            return {
+                ...baseQuickPick,
+                extensionId: lp.identifier.id,
+                galleryExtension: lp
+            };
+        });
+        allFromMarketplace.push(this.createQuickPickItem('en', 'English'));
+        return allFromMarketplace;
+    }
+    createQuickPickItem(locale, languageName, languagePack) {
+        const label = languageName ?? locale;
+        let description;
+        if (label !== locale) {
+            description = `(${locale})`;
+        }
+        if (locale.toLowerCase() === language.toLowerCase()) {
+            description ??= '';
+            description += localize('currentDisplayLanguage', " (Current)");
+        }
+        if (languagePack?.installCount) {
+            description ??= '';
+            const count = languagePack.installCount;
+            let countLabel;
+            if (count > 1000000) {
+                countLabel = `${Math.floor(count / 100000) / 10}M`;
+            }
+            else if (count > 1000) {
+                countLabel = `${Math.floor(count / 1000)}K`;
+            }
+            else {
+                countLabel = String(count);
+            }
+            description += ` $(cloud-download) ${countLabel}`;
+        }
+        return {
+            id: locale,
+            label,
+            description
+        };
+    }
+};
+LanguagePackBaseService = __decorate([
+    __param(0, IExtensionGalleryService),
+    __metadata("design:paramtypes", [Object])
+], LanguagePackBaseService);
+export { LanguagePackBaseService };

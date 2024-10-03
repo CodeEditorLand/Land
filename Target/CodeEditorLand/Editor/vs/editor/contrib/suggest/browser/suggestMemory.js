@@ -1,1 +1,242 @@
-var S=Object.defineProperty;var _=Object.getOwnPropertyDescriptor;var h=(l,t,o,e)=>{for(var r=e>1?void 0:e?_(t,o):t,s=l.length-1,i;s>=0;s--)(i=l[s])&&(r=(e?i(t,o,r):i(r))||r);return e&&r&&S(t,o,r),r},u=(l,t)=>(o,e)=>t(o,e,l);import{RunOnceScheduler as x}from"../../../../base/common/async.js";import{DisposableStore as v}from"../../../../base/common/lifecycle.js";import{LRUCache as M}from"../../../../base/common/map.js";import{TernarySearchTree as b}from"../../../../base/common/ternarySearchTree.js";import"../../../common/core/position.js";import"../../../common/model.js";import{CompletionItemKinds as f}from"../../../common/languages.js";import"./suggest.js";import{IConfigurationService as P}from"../../../../platform/configuration/common/configuration.js";import{InstantiationType as T,registerSingleton as C}from"../../../../platform/instantiation/common/extensions.js";import{createDecorator as O}from"../../../../platform/instantiation/common/instantiation.js";import{IStorageService as N,StorageScope as d,StorageTarget as k,WillSaveStateReason as w}from"../../../../platform/storage/common/storage.js";class g{constructor(t){this.name=t}select(t,o,e){if(e.length===0)return 0;const r=e[0].score[0];for(let s=0;s<e.length;s++){const{score:i,completion:n}=e[s];if(i[0]!==r)break;if(n.preselect)return s}return 0}}class I extends g{constructor(){super("first")}memorize(t,o,e){}toJSON(){}fromJSON(){}}class $ extends g{constructor(){super("recentlyUsed")}_cache=new M(300,.66);_seq=0;memorize(t,o,e){const r=`${t.getLanguageId()}/${e.textLabel}`;this._cache.set(r,{touch:this._seq++,type:e.completion.kind,insertText:e.completion.insertText})}select(t,o,e){if(e.length===0)return 0;const r=t.getLineContent(o.lineNumber).substr(o.column-10,o.column-1);if(/\s$/.test(r))return super.select(t,o,e);const s=e[0].score[0];let i=-1,n=-1,p=-1;for(let c=0;c<e.length&&e[c].score[0]===s;c++){const y=`${t.getLanguageId()}/${e[c].textLabel}`,m=this._cache.peek(y);if(m&&m.touch>p&&m.type===e[c].completion.kind&&m.insertText===e[c].completion.insertText&&(p=m.touch,n=c),e[c].completion.preselect&&i===-1)return i=c}return n!==-1?n:i!==-1?i:0}toJSON(){return this._cache.toJSON()}fromJSON(t){this._cache.clear();const o=0;for(const[e,r]of t)r.touch=o,r.type=typeof r.type=="number"?r.type:f.fromString(r.type),this._cache.set(e,r);this._seq=this._cache.size}}class J extends g{constructor(){super("recentlyUsedByPrefix")}_trie=b.forStrings();_seq=0;memorize(t,o,e){const{word:r}=t.getWordUntilPosition(o),s=`${t.getLanguageId()}/${r}`;this._trie.set(s,{type:e.completion.kind,insertText:e.completion.insertText,touch:this._seq++})}select(t,o,e){const{word:r}=t.getWordUntilPosition(o);if(!r)return super.select(t,o,e);const s=`${t.getLanguageId()}/${r}`;let i=this._trie.get(s);if(i||(i=this._trie.findSubstr(s)),i)for(let n=0;n<e.length;n++){const{kind:p,insertText:c}=e[n].completion;if(p===i.type&&c===i.insertText)return n}return super.select(t,o,e)}toJSON(){const t=[];return this._trie.forEach((o,e)=>t.push([e,o])),t.sort((o,e)=>-(o[1].touch-e[1].touch)).forEach((o,e)=>o[1].touch=e),t.slice(0,200)}fromJSON(t){if(this._trie.clear(),t.length>0){this._seq=t[0][1].touch+1;for(const[o,e]of t)e.type=typeof e.type=="number"?e.type:f.fromString(e.type),this._trie.set(o,e)}}}let a=class{constructor(t,o){this._storageService=t;this._configService=o;this._persistSoon=new x(()=>this._saveState(),500),this._disposables.add(t.onWillSaveState(e=>{e.reason===w.SHUTDOWN&&this._saveState()}))}static _strategyCtors=new Map([["recentlyUsedByPrefix",J],["recentlyUsed",$],["first",I]]);static _storagePrefix="suggest/memories";_serviceBrand;_persistSoon;_disposables=new v;_strategy;dispose(){this._disposables.dispose(),this._persistSoon.dispose()}memorize(t,o,e){this._withStrategy(t,o).memorize(t,o,e),this._persistSoon.schedule()}select(t,o,e){return this._withStrategy(t,o).select(t,o,e)}_withStrategy(t,o){const e=this._configService.getValue("editor.suggestSelection",{overrideIdentifier:t.getLanguageIdAtPosition(o.lineNumber,o.column),resource:t.uri});if(this._strategy?.name!==e){this._saveState();const r=a._strategyCtors.get(e)||I;this._strategy=new r;try{const i=this._configService.getValue("editor.suggest.shareSuggestSelections")?d.PROFILE:d.WORKSPACE,n=this._storageService.get(`${a._storagePrefix}/${e}`,i);n&&this._strategy.fromJSON(JSON.parse(n))}catch{}}return this._strategy}_saveState(){if(this._strategy){const o=this._configService.getValue("editor.suggest.shareSuggestSelections")?d.PROFILE:d.WORKSPACE,e=JSON.stringify(this._strategy);this._storageService.store(`${a._storagePrefix}/${this._strategy.name}`,e,o,k.MACHINE)}}};a=h([u(0,N),u(1,P)],a);const L=O("ISuggestMemories");C(L,a,T.Delayed);export{L as ISuggestMemoryService,$ as LRUMemory,g as Memory,I as NoMemory,J as PrefixMemory,a as SuggestMemoryService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SuggestMemoryService_1;
+import { RunOnceScheduler } from '../../../../base/common/async.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { LRUCache } from '../../../../base/common/map.js';
+import { TernarySearchTree } from '../../../../base/common/ternarySearchTree.js';
+import { CompletionItemKinds } from '../../../common/languages.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IStorageService, WillSaveStateReason } from '../../../../platform/storage/common/storage.js';
+export class Memory {
+    constructor(name) {
+        this.name = name;
+    }
+    select(model, pos, items) {
+        if (items.length === 0) {
+            return 0;
+        }
+        const topScore = items[0].score[0];
+        for (let i = 0; i < items.length; i++) {
+            const { score, completion: suggestion } = items[i];
+            if (score[0] !== topScore) {
+                break;
+            }
+            if (suggestion.preselect) {
+                return i;
+            }
+        }
+        return 0;
+    }
+}
+export class NoMemory extends Memory {
+    constructor() {
+        super('first');
+    }
+    memorize(model, pos, item) {
+    }
+    toJSON() {
+        return undefined;
+    }
+    fromJSON() {
+    }
+}
+export class LRUMemory extends Memory {
+    constructor() {
+        super('recentlyUsed');
+        this._cache = new LRUCache(300, 0.66);
+        this._seq = 0;
+    }
+    memorize(model, pos, item) {
+        const key = `${model.getLanguageId()}/${item.textLabel}`;
+        this._cache.set(key, {
+            touch: this._seq++,
+            type: item.completion.kind,
+            insertText: item.completion.insertText
+        });
+    }
+    select(model, pos, items) {
+        if (items.length === 0) {
+            return 0;
+        }
+        const lineSuffix = model.getLineContent(pos.lineNumber).substr(pos.column - 10, pos.column - 1);
+        if (/\s$/.test(lineSuffix)) {
+            return super.select(model, pos, items);
+        }
+        const topScore = items[0].score[0];
+        let indexPreselect = -1;
+        let indexRecency = -1;
+        let seq = -1;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].score[0] !== topScore) {
+                break;
+            }
+            const key = `${model.getLanguageId()}/${items[i].textLabel}`;
+            const item = this._cache.peek(key);
+            if (item && item.touch > seq && item.type === items[i].completion.kind && item.insertText === items[i].completion.insertText) {
+                seq = item.touch;
+                indexRecency = i;
+            }
+            if (items[i].completion.preselect && indexPreselect === -1) {
+                return indexPreselect = i;
+            }
+        }
+        if (indexRecency !== -1) {
+            return indexRecency;
+        }
+        else if (indexPreselect !== -1) {
+            return indexPreselect;
+        }
+        else {
+            return 0;
+        }
+    }
+    toJSON() {
+        return this._cache.toJSON();
+    }
+    fromJSON(data) {
+        this._cache.clear();
+        const seq = 0;
+        for (const [key, value] of data) {
+            value.touch = seq;
+            value.type = typeof value.type === 'number' ? value.type : CompletionItemKinds.fromString(value.type);
+            this._cache.set(key, value);
+        }
+        this._seq = this._cache.size;
+    }
+}
+export class PrefixMemory extends Memory {
+    constructor() {
+        super('recentlyUsedByPrefix');
+        this._trie = TernarySearchTree.forStrings();
+        this._seq = 0;
+    }
+    memorize(model, pos, item) {
+        const { word } = model.getWordUntilPosition(pos);
+        const key = `${model.getLanguageId()}/${word}`;
+        this._trie.set(key, {
+            type: item.completion.kind,
+            insertText: item.completion.insertText,
+            touch: this._seq++
+        });
+    }
+    select(model, pos, items) {
+        const { word } = model.getWordUntilPosition(pos);
+        if (!word) {
+            return super.select(model, pos, items);
+        }
+        const key = `${model.getLanguageId()}/${word}`;
+        let item = this._trie.get(key);
+        if (!item) {
+            item = this._trie.findSubstr(key);
+        }
+        if (item) {
+            for (let i = 0; i < items.length; i++) {
+                const { kind, insertText } = items[i].completion;
+                if (kind === item.type && insertText === item.insertText) {
+                    return i;
+                }
+            }
+        }
+        return super.select(model, pos, items);
+    }
+    toJSON() {
+        const entries = [];
+        this._trie.forEach((value, key) => entries.push([key, value]));
+        entries
+            .sort((a, b) => -(a[1].touch - b[1].touch))
+            .forEach((value, i) => value[1].touch = i);
+        return entries.slice(0, 200);
+    }
+    fromJSON(data) {
+        this._trie.clear();
+        if (data.length > 0) {
+            this._seq = data[0][1].touch + 1;
+            for (const [key, value] of data) {
+                value.type = typeof value.type === 'number' ? value.type : CompletionItemKinds.fromString(value.type);
+                this._trie.set(key, value);
+            }
+        }
+    }
+}
+let SuggestMemoryService = class SuggestMemoryService {
+    static { SuggestMemoryService_1 = this; }
+    static { this._strategyCtors = new Map([
+        ['recentlyUsedByPrefix', PrefixMemory],
+        ['recentlyUsed', LRUMemory],
+        ['first', NoMemory]
+    ]); }
+    static { this._storagePrefix = 'suggest/memories'; }
+    constructor(_storageService, _configService) {
+        this._storageService = _storageService;
+        this._configService = _configService;
+        this._disposables = new DisposableStore();
+        this._persistSoon = new RunOnceScheduler(() => this._saveState(), 500);
+        this._disposables.add(_storageService.onWillSaveState(e => {
+            if (e.reason === WillSaveStateReason.SHUTDOWN) {
+                this._saveState();
+            }
+        }));
+    }
+    dispose() {
+        this._disposables.dispose();
+        this._persistSoon.dispose();
+    }
+    memorize(model, pos, item) {
+        this._withStrategy(model, pos).memorize(model, pos, item);
+        this._persistSoon.schedule();
+    }
+    select(model, pos, items) {
+        return this._withStrategy(model, pos).select(model, pos, items);
+    }
+    _withStrategy(model, pos) {
+        const mode = this._configService.getValue('editor.suggestSelection', {
+            overrideIdentifier: model.getLanguageIdAtPosition(pos.lineNumber, pos.column),
+            resource: model.uri
+        });
+        if (this._strategy?.name !== mode) {
+            this._saveState();
+            const ctor = SuggestMemoryService_1._strategyCtors.get(mode) || NoMemory;
+            this._strategy = new ctor();
+            try {
+                const share = this._configService.getValue('editor.suggest.shareSuggestSelections');
+                const scope = share ? 0 : 1;
+                const raw = this._storageService.get(`${SuggestMemoryService_1._storagePrefix}/${mode}`, scope);
+                if (raw) {
+                    this._strategy.fromJSON(JSON.parse(raw));
+                }
+            }
+            catch (e) {
+            }
+        }
+        return this._strategy;
+    }
+    _saveState() {
+        if (this._strategy) {
+            const share = this._configService.getValue('editor.suggest.shareSuggestSelections');
+            const scope = share ? 0 : 1;
+            const raw = JSON.stringify(this._strategy);
+            this._storageService.store(`${SuggestMemoryService_1._storagePrefix}/${this._strategy.name}`, raw, scope, 1);
+        }
+    }
+};
+SuggestMemoryService = SuggestMemoryService_1 = __decorate([
+    __param(0, IStorageService),
+    __param(1, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object])
+], SuggestMemoryService);
+export { SuggestMemoryService };
+export const ISuggestMemoryService = createDecorator('ISuggestMemories');
+registerSingleton(ISuggestMemoryService, SuggestMemoryService, 1);

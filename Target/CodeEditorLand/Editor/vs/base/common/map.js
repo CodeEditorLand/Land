@@ -1,1 +1,757 @@
-import"./uri.js";function m(s,e,t){let r=s.get(e);return r===void 0&&(r=t,s.set(e,r)),r}function _(s){const e=[];return s.forEach((t,r)=>{e.push(`${r} => ${t}`)}),`Map(${s.size}) {${e.join(", ")}}`}function v(s){const e=[];return s.forEach(t=>{e.push(t)}),`Set(${s.size}) {${e.join(", ")}}`}class d{constructor(e,t){this.uri=e;this.value=t}}function h(s){return Array.isArray(s)}class n{static defaultToKey=e=>e.toString();[Symbol.toStringTag]="ResourceMap";map;toKey;constructor(e,t){if(e instanceof n)this.map=new Map(e.map),this.toKey=t??n.defaultToKey;else if(h(e)){this.map=new Map,this.toKey=t??n.defaultToKey;for(const[r,i]of e)this.set(r,i)}else this.map=new Map,this.toKey=e??n.defaultToKey}set(e,t){return this.map.set(this.toKey(e),new d(e,t)),this}get(e){return this.map.get(this.toKey(e))?.value}has(e){return this.map.has(this.toKey(e))}get size(){return this.map.size}clear(){this.map.clear()}delete(e){return this.map.delete(this.toKey(e))}forEach(e,t){typeof t<"u"&&(e=e.bind(t));for(const[r,i]of this.map)e(i.value,i.uri,this)}*values(){for(const e of this.map.values())yield e.value}*keys(){for(const e of this.map.values())yield e.uri}*entries(){for(const e of this.map.values())yield[e.uri,e.value]}*[Symbol.iterator](){for(const[,e]of this.map)yield[e.uri,e.value]}}class T{[Symbol.toStringTag]="ResourceSet";_map;constructor(e,t){!e||typeof e=="function"?this._map=new n(e):(this._map=new n(t),e.forEach(this.add,this))}get size(){return this._map.size}add(e){return this._map.set(e,e),this}clear(){this._map.clear()}delete(e){return this._map.delete(e)}forEach(e,t){this._map.forEach((r,i)=>e.call(t,i,i,this))}has(e){return this._map.has(e)}entries(){return this._map.entries()}keys(){return this._map.keys()}values(){return this._map.keys()}[Symbol.iterator](){return this.keys()}}var l=(r=>(r[r.None=0]="None",r[r.AsOld=1]="AsOld",r[r.AsNew=2]="AsNew",r))(l||{});class p{[Symbol.toStringTag]="LinkedMap";_map;_head;_tail;_size;_state;constructor(){this._map=new Map,this._head=void 0,this._tail=void 0,this._size=0,this._state=0}clear(){this._map.clear(),this._head=void 0,this._tail=void 0,this._size=0,this._state++}isEmpty(){return!this._head&&!this._tail}get size(){return this._size}get first(){return this._head?.value}get last(){return this._tail?.value}has(e){return this._map.has(e)}get(e,t=0){const r=this._map.get(e);if(r)return t!==0&&this.touch(r,t),r.value}set(e,t,r=0){let i=this._map.get(e);if(i)i.value=t,r!==0&&this.touch(i,r);else{switch(i={key:e,value:t,next:void 0,previous:void 0},r){case 0:this.addItemLast(i);break;case 1:this.addItemFirst(i);break;case 2:this.addItemLast(i);break;default:this.addItemLast(i);break}this._map.set(e,i),this._size++}return this}delete(e){return!!this.remove(e)}remove(e){const t=this._map.get(e);if(t)return this._map.delete(e),this.removeItem(t),this._size--,t.value}shift(){if(!this._head&&!this._tail)return;if(!this._head||!this._tail)throw new Error("Invalid list");const e=this._head;return this._map.delete(e.key),this.removeItem(e),this._size--,e.value}forEach(e,t){const r=this._state;let i=this._head;for(;i;){if(t?e.bind(t)(i.value,i.key,this):e(i.value,i.key,this),this._state!==r)throw new Error("LinkedMap got modified during iteration.");i=i.next}}keys(){const e=this,t=this._state;let r=this._head;const i={[Symbol.iterator](){return i},next(){if(e._state!==t)throw new Error("LinkedMap got modified during iteration.");if(r){const a={value:r.key,done:!1};return r=r.next,a}else return{value:void 0,done:!0}}};return i}values(){const e=this,t=this._state;let r=this._head;const i={[Symbol.iterator](){return i},next(){if(e._state!==t)throw new Error("LinkedMap got modified during iteration.");if(r){const a={value:r.value,done:!1};return r=r.next,a}else return{value:void 0,done:!0}}};return i}entries(){const e=this,t=this._state;let r=this._head;const i={[Symbol.iterator](){return i},next(){if(e._state!==t)throw new Error("LinkedMap got modified during iteration.");if(r){const a={value:[r.key,r.value],done:!1};return r=r.next,a}else return{value:void 0,done:!0}}};return i}[Symbol.iterator](){return this.entries()}trimOld(e){if(e>=this.size)return;if(e===0){this.clear();return}let t=this._head,r=this.size;for(;t&&r>e;)this._map.delete(t.key),t=t.next,r--;this._head=t,this._size=r,t&&(t.previous=void 0),this._state++}trimNew(e){if(e>=this.size)return;if(e===0){this.clear();return}let t=this._tail,r=this.size;for(;t&&r>e;)this._map.delete(t.key),t=t.previous,r--;this._tail=t,this._size=r,t&&(t.next=void 0),this._state++}addItemFirst(e){if(!this._head&&!this._tail)this._tail=e;else if(this._head)e.next=this._head,this._head.previous=e;else throw new Error("Invalid list");this._head=e,this._state++}addItemLast(e){if(!this._head&&!this._tail)this._head=e;else if(this._tail)e.previous=this._tail,this._tail.next=e;else throw new Error("Invalid list");this._tail=e,this._state++}removeItem(e){if(e===this._head&&e===this._tail)this._head=void 0,this._tail=void 0;else if(e===this._head){if(!e.next)throw new Error("Invalid list");e.next.previous=void 0,this._head=e.next}else if(e===this._tail){if(!e.previous)throw new Error("Invalid list");e.previous.next=void 0,this._tail=e.previous}else{const t=e.next,r=e.previous;if(!t||!r)throw new Error("Invalid list");t.previous=r,r.next=t}e.next=void 0,e.previous=void 0,this._state++}touch(e,t){if(!this._head||!this._tail)throw new Error("Invalid list");if(!(t!==1&&t!==2)){if(t===1){if(e===this._head)return;const r=e.next,i=e.previous;e===this._tail?(i.next=void 0,this._tail=i):(r.previous=i,i.next=r),e.previous=void 0,e.next=this._head,this._head.previous=e,this._head=e,this._state++}else if(t===2){if(e===this._tail)return;const r=e.next,i=e.previous;e===this._head?(r.previous=void 0,this._head=r):(r.previous=i,i.next=r),e.next=void 0,e.previous=this._tail,this._tail.next=e,this._tail=e,this._state++}}}toJSON(){const e=[];return this.forEach((t,r)=>{e.push([r,t])}),e}fromJSON(e){this.clear();for(const[t,r]of e)this.set(t,r)}}class u extends p{_limit;_ratio;constructor(e,t=1){super(),this._limit=e,this._ratio=Math.min(Math.max(0,t),1)}get limit(){return this._limit}set limit(e){this._limit=e,this.checkTrim()}get ratio(){return this._ratio}set ratio(e){this._ratio=Math.min(Math.max(0,e),1),this.checkTrim()}get(e,t=2){return super.get(e,t)}peek(e){return super.get(e,0)}set(e,t){return super.set(e,t,2),this}checkTrim(){this.size>this._limit&&this.trim(Math.round(this._limit*this._ratio))}}class y extends u{constructor(e,t=1){super(e,t)}trim(e){this.trimOld(e)}set(e,t){return super.set(e,t),this.checkTrim(),this}}class I extends u{constructor(e,t=1){super(e,t)}trim(e){this.trimNew(e)}set(e,t){return this._limit<=this.size&&!this.has(e)&&this.trim(Math.round(this._limit*this._ratio)-1),super.set(e,t),this}}class K{map=new Map;add(e){return this.map.set(e,(this.map.get(e)||0)+1),this}delete(e){let t=this.map.get(e)||0;return t===0?!1:(t--,t===0?this.map.delete(e):this.map.set(e,t),!0)}has(e){return this.map.has(e)}}class b{_m1=new Map;_m2=new Map;constructor(e){if(e)for(const[t,r]of e)this.set(t,r)}clear(){this._m1.clear(),this._m2.clear()}set(e,t){this._m1.set(e,t),this._m2.set(t,e)}get(e){return this._m1.get(e)}getKey(e){return this._m2.get(e)}delete(e){const t=this._m1.get(e);return t===void 0?!1:(this._m1.delete(e),this._m2.delete(t),!0)}forEach(e,t){this._m1.forEach((r,i)=>{e.call(t,r,i,this)})}keys(){return this._m1.keys()}values(){return this._m1.values()}}class V{map=new Map;add(e,t){let r=this.map.get(e);r||(r=new Set,this.map.set(e,r)),r.add(t)}delete(e,t){const r=this.map.get(e);r&&(r.delete(t),r.size===0&&this.map.delete(e))}forEach(e,t){const r=this.map.get(e);r&&r.forEach(t)}get(e){const t=this.map.get(e);return t||new Set}}function g(s,e){if(s===e)return!0;if(s.size!==e.size)return!1;for(const[t,r]of s)if(!e.has(t)||e.get(t)!==r)return!1;for(const[t]of e)if(!s.has(t))return!1;return!0}class o{_data={};set(e,t,r){this._data[e]||(this._data[e]={}),this._data[e][t]=r}get(e,t){return this._data[e]?.[t]}clear(){this._data={}}*values(){for(const e in this._data)for(const t in this._data[e]){const r=this._data[e][t];r&&(yield r)}}}class x{_data={};set(e,t,r,i){this._data[e]||(this._data[e]=new o),this._data[e].set(t,r,i)}get(e,t,r){return this._data[e]?.get(t,r)}clear(){this._data={}}*values(){for(const e in this._data)for(const t of this._data[e].values())t&&(yield t)}}class R{_data=new o;set(e,t,r,i,a){this._data.get(e,t)||this._data.set(e,t,new o),this._data.get(e,t).set(r,i,a)}get(e,t,r,i){return this._data.get(e,t)?.get(r,i)}clear(){this._data.clear()}}export{b as BidirectionalMap,K as CounterSet,R as FourKeyMap,y as LRUCache,p as LinkedMap,I as MRUCache,n as ResourceMap,T as ResourceSet,V as SetMap,x as ThreeKeyMap,l as Touch,o as TwoKeyMap,m as getOrSet,_ as mapToString,g as mapsStrictEqualIgnoreOrder,v as setToString};
+var _a, _b, _c;
+export function getOrSet(map, key, value) {
+    let result = map.get(key);
+    if (result === undefined) {
+        result = value;
+        map.set(key, result);
+    }
+    return result;
+}
+export function mapToString(map) {
+    const entries = [];
+    map.forEach((value, key) => {
+        entries.push(`${key} => ${value}`);
+    });
+    return `Map(${map.size}) {${entries.join(', ')}}`;
+}
+export function setToString(set) {
+    const entries = [];
+    set.forEach(value => {
+        entries.push(value);
+    });
+    return `Set(${set.size}) {${entries.join(', ')}}`;
+}
+class ResourceMapEntry {
+    constructor(uri, value) {
+        this.uri = uri;
+        this.value = value;
+    }
+}
+function isEntries(arg) {
+    return Array.isArray(arg);
+}
+export class ResourceMap {
+    static { this.defaultToKey = (resource) => resource.toString(); }
+    constructor(arg, toKey) {
+        this[_a] = 'ResourceMap';
+        if (arg instanceof ResourceMap) {
+            this.map = new Map(arg.map);
+            this.toKey = toKey ?? ResourceMap.defaultToKey;
+        }
+        else if (isEntries(arg)) {
+            this.map = new Map();
+            this.toKey = toKey ?? ResourceMap.defaultToKey;
+            for (const [resource, value] of arg) {
+                this.set(resource, value);
+            }
+        }
+        else {
+            this.map = new Map();
+            this.toKey = arg ?? ResourceMap.defaultToKey;
+        }
+    }
+    set(resource, value) {
+        this.map.set(this.toKey(resource), new ResourceMapEntry(resource, value));
+        return this;
+    }
+    get(resource) {
+        return this.map.get(this.toKey(resource))?.value;
+    }
+    has(resource) {
+        return this.map.has(this.toKey(resource));
+    }
+    get size() {
+        return this.map.size;
+    }
+    clear() {
+        this.map.clear();
+    }
+    delete(resource) {
+        return this.map.delete(this.toKey(resource));
+    }
+    forEach(clb, thisArg) {
+        if (typeof thisArg !== 'undefined') {
+            clb = clb.bind(thisArg);
+        }
+        for (const [_, entry] of this.map) {
+            clb(entry.value, entry.uri, this);
+        }
+    }
+    *values() {
+        for (const entry of this.map.values()) {
+            yield entry.value;
+        }
+    }
+    *keys() {
+        for (const entry of this.map.values()) {
+            yield entry.uri;
+        }
+    }
+    *entries() {
+        for (const entry of this.map.values()) {
+            yield [entry.uri, entry.value];
+        }
+    }
+    *[(_a = Symbol.toStringTag, Symbol.iterator)]() {
+        for (const [, entry] of this.map) {
+            yield [entry.uri, entry.value];
+        }
+    }
+}
+export class ResourceSet {
+    constructor(entriesOrKey, toKey) {
+        this[_b] = 'ResourceSet';
+        if (!entriesOrKey || typeof entriesOrKey === 'function') {
+            this._map = new ResourceMap(entriesOrKey);
+        }
+        else {
+            this._map = new ResourceMap(toKey);
+            entriesOrKey.forEach(this.add, this);
+        }
+    }
+    get size() {
+        return this._map.size;
+    }
+    add(value) {
+        this._map.set(value, value);
+        return this;
+    }
+    clear() {
+        this._map.clear();
+    }
+    delete(value) {
+        return this._map.delete(value);
+    }
+    forEach(callbackfn, thisArg) {
+        this._map.forEach((_value, key) => callbackfn.call(thisArg, key, key, this));
+    }
+    has(value) {
+        return this._map.has(value);
+    }
+    entries() {
+        return this._map.entries();
+    }
+    keys() {
+        return this._map.keys();
+    }
+    values() {
+        return this._map.keys();
+    }
+    [(_b = Symbol.toStringTag, Symbol.iterator)]() {
+        return this.keys();
+    }
+}
+export class LinkedMap {
+    constructor() {
+        this[_c] = 'LinkedMap';
+        this._map = new Map();
+        this._head = undefined;
+        this._tail = undefined;
+        this._size = 0;
+        this._state = 0;
+    }
+    clear() {
+        this._map.clear();
+        this._head = undefined;
+        this._tail = undefined;
+        this._size = 0;
+        this._state++;
+    }
+    isEmpty() {
+        return !this._head && !this._tail;
+    }
+    get size() {
+        return this._size;
+    }
+    get first() {
+        return this._head?.value;
+    }
+    get last() {
+        return this._tail?.value;
+    }
+    has(key) {
+        return this._map.has(key);
+    }
+    get(key, touch = 0) {
+        const item = this._map.get(key);
+        if (!item) {
+            return undefined;
+        }
+        if (touch !== 0) {
+            this.touch(item, touch);
+        }
+        return item.value;
+    }
+    set(key, value, touch = 0) {
+        let item = this._map.get(key);
+        if (item) {
+            item.value = value;
+            if (touch !== 0) {
+                this.touch(item, touch);
+            }
+        }
+        else {
+            item = { key, value, next: undefined, previous: undefined };
+            switch (touch) {
+                case 0:
+                    this.addItemLast(item);
+                    break;
+                case 1:
+                    this.addItemFirst(item);
+                    break;
+                case 2:
+                    this.addItemLast(item);
+                    break;
+                default:
+                    this.addItemLast(item);
+                    break;
+            }
+            this._map.set(key, item);
+            this._size++;
+        }
+        return this;
+    }
+    delete(key) {
+        return !!this.remove(key);
+    }
+    remove(key) {
+        const item = this._map.get(key);
+        if (!item) {
+            return undefined;
+        }
+        this._map.delete(key);
+        this.removeItem(item);
+        this._size--;
+        return item.value;
+    }
+    shift() {
+        if (!this._head && !this._tail) {
+            return undefined;
+        }
+        if (!this._head || !this._tail) {
+            throw new Error('Invalid list');
+        }
+        const item = this._head;
+        this._map.delete(item.key);
+        this.removeItem(item);
+        this._size--;
+        return item.value;
+    }
+    forEach(callbackfn, thisArg) {
+        const state = this._state;
+        let current = this._head;
+        while (current) {
+            if (thisArg) {
+                callbackfn.bind(thisArg)(current.value, current.key, this);
+            }
+            else {
+                callbackfn(current.value, current.key, this);
+            }
+            if (this._state !== state) {
+                throw new Error(`LinkedMap got modified during iteration.`);
+            }
+            current = current.next;
+        }
+    }
+    keys() {
+        const map = this;
+        const state = this._state;
+        let current = this._head;
+        const iterator = {
+            [Symbol.iterator]() {
+                return iterator;
+            },
+            next() {
+                if (map._state !== state) {
+                    throw new Error(`LinkedMap got modified during iteration.`);
+                }
+                if (current) {
+                    const result = { value: current.key, done: false };
+                    current = current.next;
+                    return result;
+                }
+                else {
+                    return { value: undefined, done: true };
+                }
+            }
+        };
+        return iterator;
+    }
+    values() {
+        const map = this;
+        const state = this._state;
+        let current = this._head;
+        const iterator = {
+            [Symbol.iterator]() {
+                return iterator;
+            },
+            next() {
+                if (map._state !== state) {
+                    throw new Error(`LinkedMap got modified during iteration.`);
+                }
+                if (current) {
+                    const result = { value: current.value, done: false };
+                    current = current.next;
+                    return result;
+                }
+                else {
+                    return { value: undefined, done: true };
+                }
+            }
+        };
+        return iterator;
+    }
+    entries() {
+        const map = this;
+        const state = this._state;
+        let current = this._head;
+        const iterator = {
+            [Symbol.iterator]() {
+                return iterator;
+            },
+            next() {
+                if (map._state !== state) {
+                    throw new Error(`LinkedMap got modified during iteration.`);
+                }
+                if (current) {
+                    const result = { value: [current.key, current.value], done: false };
+                    current = current.next;
+                    return result;
+                }
+                else {
+                    return { value: undefined, done: true };
+                }
+            }
+        };
+        return iterator;
+    }
+    [(_c = Symbol.toStringTag, Symbol.iterator)]() {
+        return this.entries();
+    }
+    trimOld(newSize) {
+        if (newSize >= this.size) {
+            return;
+        }
+        if (newSize === 0) {
+            this.clear();
+            return;
+        }
+        let current = this._head;
+        let currentSize = this.size;
+        while (current && currentSize > newSize) {
+            this._map.delete(current.key);
+            current = current.next;
+            currentSize--;
+        }
+        this._head = current;
+        this._size = currentSize;
+        if (current) {
+            current.previous = undefined;
+        }
+        this._state++;
+    }
+    trimNew(newSize) {
+        if (newSize >= this.size) {
+            return;
+        }
+        if (newSize === 0) {
+            this.clear();
+            return;
+        }
+        let current = this._tail;
+        let currentSize = this.size;
+        while (current && currentSize > newSize) {
+            this._map.delete(current.key);
+            current = current.previous;
+            currentSize--;
+        }
+        this._tail = current;
+        this._size = currentSize;
+        if (current) {
+            current.next = undefined;
+        }
+        this._state++;
+    }
+    addItemFirst(item) {
+        if (!this._head && !this._tail) {
+            this._tail = item;
+        }
+        else if (!this._head) {
+            throw new Error('Invalid list');
+        }
+        else {
+            item.next = this._head;
+            this._head.previous = item;
+        }
+        this._head = item;
+        this._state++;
+    }
+    addItemLast(item) {
+        if (!this._head && !this._tail) {
+            this._head = item;
+        }
+        else if (!this._tail) {
+            throw new Error('Invalid list');
+        }
+        else {
+            item.previous = this._tail;
+            this._tail.next = item;
+        }
+        this._tail = item;
+        this._state++;
+    }
+    removeItem(item) {
+        if (item === this._head && item === this._tail) {
+            this._head = undefined;
+            this._tail = undefined;
+        }
+        else if (item === this._head) {
+            if (!item.next) {
+                throw new Error('Invalid list');
+            }
+            item.next.previous = undefined;
+            this._head = item.next;
+        }
+        else if (item === this._tail) {
+            if (!item.previous) {
+                throw new Error('Invalid list');
+            }
+            item.previous.next = undefined;
+            this._tail = item.previous;
+        }
+        else {
+            const next = item.next;
+            const previous = item.previous;
+            if (!next || !previous) {
+                throw new Error('Invalid list');
+            }
+            next.previous = previous;
+            previous.next = next;
+        }
+        item.next = undefined;
+        item.previous = undefined;
+        this._state++;
+    }
+    touch(item, touch) {
+        if (!this._head || !this._tail) {
+            throw new Error('Invalid list');
+        }
+        if ((touch !== 1 && touch !== 2)) {
+            return;
+        }
+        if (touch === 1) {
+            if (item === this._head) {
+                return;
+            }
+            const next = item.next;
+            const previous = item.previous;
+            if (item === this._tail) {
+                previous.next = undefined;
+                this._tail = previous;
+            }
+            else {
+                next.previous = previous;
+                previous.next = next;
+            }
+            item.previous = undefined;
+            item.next = this._head;
+            this._head.previous = item;
+            this._head = item;
+            this._state++;
+        }
+        else if (touch === 2) {
+            if (item === this._tail) {
+                return;
+            }
+            const next = item.next;
+            const previous = item.previous;
+            if (item === this._head) {
+                next.previous = undefined;
+                this._head = next;
+            }
+            else {
+                next.previous = previous;
+                previous.next = next;
+            }
+            item.next = undefined;
+            item.previous = this._tail;
+            this._tail.next = item;
+            this._tail = item;
+            this._state++;
+        }
+    }
+    toJSON() {
+        const data = [];
+        this.forEach((value, key) => {
+            data.push([key, value]);
+        });
+        return data;
+    }
+    fromJSON(data) {
+        this.clear();
+        for (const [key, value] of data) {
+            this.set(key, value);
+        }
+    }
+}
+class Cache extends LinkedMap {
+    constructor(limit, ratio = 1) {
+        super();
+        this._limit = limit;
+        this._ratio = Math.min(Math.max(0, ratio), 1);
+    }
+    get limit() {
+        return this._limit;
+    }
+    set limit(limit) {
+        this._limit = limit;
+        this.checkTrim();
+    }
+    get ratio() {
+        return this._ratio;
+    }
+    set ratio(ratio) {
+        this._ratio = Math.min(Math.max(0, ratio), 1);
+        this.checkTrim();
+    }
+    get(key, touch = 2) {
+        return super.get(key, touch);
+    }
+    peek(key) {
+        return super.get(key, 0);
+    }
+    set(key, value) {
+        super.set(key, value, 2);
+        return this;
+    }
+    checkTrim() {
+        if (this.size > this._limit) {
+            this.trim(Math.round(this._limit * this._ratio));
+        }
+    }
+}
+export class LRUCache extends Cache {
+    constructor(limit, ratio = 1) {
+        super(limit, ratio);
+    }
+    trim(newSize) {
+        this.trimOld(newSize);
+    }
+    set(key, value) {
+        super.set(key, value);
+        this.checkTrim();
+        return this;
+    }
+}
+export class MRUCache extends Cache {
+    constructor(limit, ratio = 1) {
+        super(limit, ratio);
+    }
+    trim(newSize) {
+        this.trimNew(newSize);
+    }
+    set(key, value) {
+        if (this._limit <= this.size && !this.has(key)) {
+            this.trim(Math.round(this._limit * this._ratio) - 1);
+        }
+        super.set(key, value);
+        return this;
+    }
+}
+export class CounterSet {
+    constructor() {
+        this.map = new Map();
+    }
+    add(value) {
+        this.map.set(value, (this.map.get(value) || 0) + 1);
+        return this;
+    }
+    delete(value) {
+        let counter = this.map.get(value) || 0;
+        if (counter === 0) {
+            return false;
+        }
+        counter--;
+        if (counter === 0) {
+            this.map.delete(value);
+        }
+        else {
+            this.map.set(value, counter);
+        }
+        return true;
+    }
+    has(value) {
+        return this.map.has(value);
+    }
+}
+export class BidirectionalMap {
+    constructor(entries) {
+        this._m1 = new Map();
+        this._m2 = new Map();
+        if (entries) {
+            for (const [key, value] of entries) {
+                this.set(key, value);
+            }
+        }
+    }
+    clear() {
+        this._m1.clear();
+        this._m2.clear();
+    }
+    set(key, value) {
+        this._m1.set(key, value);
+        this._m2.set(value, key);
+    }
+    get(key) {
+        return this._m1.get(key);
+    }
+    getKey(value) {
+        return this._m2.get(value);
+    }
+    delete(key) {
+        const value = this._m1.get(key);
+        if (value === undefined) {
+            return false;
+        }
+        this._m1.delete(key);
+        this._m2.delete(value);
+        return true;
+    }
+    forEach(callbackfn, thisArg) {
+        this._m1.forEach((value, key) => {
+            callbackfn.call(thisArg, value, key, this);
+        });
+    }
+    keys() {
+        return this._m1.keys();
+    }
+    values() {
+        return this._m1.values();
+    }
+}
+export class SetMap {
+    constructor() {
+        this.map = new Map();
+    }
+    add(key, value) {
+        let values = this.map.get(key);
+        if (!values) {
+            values = new Set();
+            this.map.set(key, values);
+        }
+        values.add(value);
+    }
+    delete(key, value) {
+        const values = this.map.get(key);
+        if (!values) {
+            return;
+        }
+        values.delete(value);
+        if (values.size === 0) {
+            this.map.delete(key);
+        }
+    }
+    forEach(key, fn) {
+        const values = this.map.get(key);
+        if (!values) {
+            return;
+        }
+        values.forEach(fn);
+    }
+    get(key) {
+        const values = this.map.get(key);
+        if (!values) {
+            return new Set();
+        }
+        return values;
+    }
+}
+export function mapsStrictEqualIgnoreOrder(a, b) {
+    if (a === b) {
+        return true;
+    }
+    if (a.size !== b.size) {
+        return false;
+    }
+    for (const [key, value] of a) {
+        if (!b.has(key) || b.get(key) !== value) {
+            return false;
+        }
+    }
+    for (const [key] of b) {
+        if (!a.has(key)) {
+            return false;
+        }
+    }
+    return true;
+}
+export class TwoKeyMap {
+    constructor() {
+        this._data = {};
+    }
+    set(first, second, value) {
+        if (!this._data[first]) {
+            this._data[first] = {};
+        }
+        this._data[first][second] = value;
+    }
+    get(first, second) {
+        return this._data[first]?.[second];
+    }
+    clear() {
+        this._data = {};
+    }
+    *values() {
+        for (const first in this._data) {
+            for (const second in this._data[first]) {
+                const value = this._data[first][second];
+                if (value) {
+                    yield value;
+                }
+            }
+        }
+    }
+}
+export class ThreeKeyMap {
+    constructor() {
+        this._data = {};
+    }
+    set(first, second, third, value) {
+        if (!this._data[first]) {
+            this._data[first] = new TwoKeyMap();
+        }
+        this._data[first].set(second, third, value);
+    }
+    get(first, second, third) {
+        return this._data[first]?.get(second, third);
+    }
+    clear() {
+        this._data = {};
+    }
+    *values() {
+        for (const first in this._data) {
+            for (const value of this._data[first].values()) {
+                if (value) {
+                    yield value;
+                }
+            }
+        }
+    }
+}
+export class FourKeyMap {
+    constructor() {
+        this._data = new TwoKeyMap();
+    }
+    set(first, second, third, fourth, value) {
+        if (!this._data.get(first, second)) {
+            this._data.set(first, second, new TwoKeyMap());
+        }
+        this._data.get(first, second).set(third, fourth, value);
+    }
+    get(first, second, third, fourth) {
+        return this._data.get(first, second)?.get(third, fourth);
+    }
+    clear() {
+        this._data.clear();
+    }
+}

@@ -1,1 +1,92 @@
-var E=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var I=(d,i,n,t)=>{for(var e=t>1?void 0:t?S(i,n):i,s=d.length-1,a;s>=0;s--)(a=d[s])&&(e=(t?a(i,n,e):a(e))||e);return t&&e&&E(i,n,e),e},c=(d,i)=>(n,t)=>i(n,t,d);import"../../../../../base/common/cancellation.js";import{Disposable as g}from"../../../../../base/common/lifecycle.js";import{autorunWithStore as x,observableSignalFromEvent as P}from"../../../../../base/common/observable.js";import{IConfigurationService as h}from"../../../../../platform/configuration/common/configuration.js";import{IInstantiationService as F}from"../../../../../platform/instantiation/common/instantiation.js";import{observableConfigValue as b}from"../../../../../platform/observable/common/platformObservableUtils.js";import"../../../../browser/editorBrowser.js";import"../../../../common/core/position.js";import{InlineEditTriggerKind as y}from"../../../../common/languages.js";import"../../../../common/model.js";import{ILanguageFeaturesService as T}from"../../../../common/services/languageFeatures.js";let l=class extends g{constructor(n,t){super();this.instantiationService=t;l.isFirst&&(l.isFirst=!1,this.instantiationService.createInstance(o))}static ID="editor.contrib.inlineEditsAdapter";static isFirst=!0};l=I([c(1,F)],l);let o=class extends g{constructor(n,t){super();this._languageFeaturesService=n;this._configurationService=t;const e=P("didChangeSignal",this._languageFeaturesService.inlineEditProvider.onDidChange);this._register(x((s,a)=>{this._inlineCompletionInlineEdits.read(s)&&(e.read(s),a.add(this._languageFeaturesService.inlineCompletionsProvider.register("*",new class{async provideInlineCompletions(m,p,_,f){const C=n.inlineEditProvider.all(m),u=(await Promise.all(C.map(async r=>{const v=await r.provideInlineEdit(m,{triggerKind:y.Automatic},f);if(v)return{result:v,provider:r}}))).filter(r=>!!r);return{edits:u,items:u.map(r=>({range:r.result.range,insertText:r.result.text,command:r.result.accepted,isInlineEdit:!0}))}}freeInlineCompletions(m){for(const p of m.edits)p.provider.freeInlineEdit(p.result)}})))}))}static experimentalInlineEditsEnabled="editor.inlineSuggest.experimentalInlineEditsEnabled";_inlineCompletionInlineEdits=b(o.experimentalInlineEditsEnabled,!1,this._configurationService)};o=I([c(0,T),c(1,h)],o);export{o as InlineEditsAdapter,l as InlineEditsAdapterContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var InlineEditsAdapterContribution_1, InlineEditsAdapter_1;
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { autorunWithStore, observableSignalFromEvent } from '../../../../../base/common/observable.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { observableConfigValue } from '../../../../../platform/observable/common/platformObservableUtils.js';
+import { InlineEditTriggerKind } from '../../../../common/languages.js';
+import { ILanguageFeaturesService } from '../../../../common/services/languageFeatures.js';
+let InlineEditsAdapterContribution = class InlineEditsAdapterContribution extends Disposable {
+    static { InlineEditsAdapterContribution_1 = this; }
+    static { this.ID = 'editor.contrib.inlineEditsAdapter'; }
+    static { this.isFirst = true; }
+    constructor(_editor, instantiationService) {
+        super();
+        this.instantiationService = instantiationService;
+        if (InlineEditsAdapterContribution_1.isFirst) {
+            InlineEditsAdapterContribution_1.isFirst = false;
+            this.instantiationService.createInstance(InlineEditsAdapter);
+        }
+    }
+};
+InlineEditsAdapterContribution = InlineEditsAdapterContribution_1 = __decorate([
+    __param(1, IInstantiationService),
+    __metadata("design:paramtypes", [Object, Object])
+], InlineEditsAdapterContribution);
+export { InlineEditsAdapterContribution };
+let InlineEditsAdapter = class InlineEditsAdapter extends Disposable {
+    static { InlineEditsAdapter_1 = this; }
+    static { this.experimentalInlineEditsEnabled = 'editor.inlineSuggest.experimentalInlineEditsEnabled'; }
+    constructor(_languageFeaturesService, _configurationService) {
+        super();
+        this._languageFeaturesService = _languageFeaturesService;
+        this._configurationService = _configurationService;
+        this._inlineCompletionInlineEdits = observableConfigValue(InlineEditsAdapter_1.experimentalInlineEditsEnabled, false, this._configurationService);
+        const didChangeSignal = observableSignalFromEvent('didChangeSignal', this._languageFeaturesService.inlineEditProvider.onDidChange);
+        this._register(autorunWithStore((reader, store) => {
+            if (!this._inlineCompletionInlineEdits.read(reader)) {
+                return;
+            }
+            didChangeSignal.read(reader);
+            store.add(this._languageFeaturesService.inlineCompletionsProvider.register('*', new class {
+                async provideInlineCompletions(model, position, context, token) {
+                    const allInlineEditProvider = _languageFeaturesService.inlineEditProvider.all(model);
+                    const inlineEdits = await Promise.all(allInlineEditProvider.map(async (provider) => {
+                        const result = await provider.provideInlineEdit(model, {
+                            triggerKind: InlineEditTriggerKind.Automatic,
+                        }, token);
+                        if (!result) {
+                            return undefined;
+                        }
+                        return { result, provider };
+                    }));
+                    const definedEdits = inlineEdits.filter(e => !!e);
+                    return {
+                        edits: definedEdits,
+                        items: definedEdits.map(e => {
+                            return {
+                                range: e.result.range,
+                                insertText: e.result.text,
+                                command: e.result.accepted,
+                                isInlineEdit: true,
+                            };
+                        }),
+                    };
+                }
+                freeInlineCompletions(c) {
+                    for (const e of c.edits) {
+                        e.provider.freeInlineEdit(e.result);
+                    }
+                }
+            }));
+        }));
+    }
+};
+InlineEditsAdapter = InlineEditsAdapter_1 = __decorate([
+    __param(0, ILanguageFeaturesService),
+    __param(1, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object])
+], InlineEditsAdapter);
+export { InlineEditsAdapter };

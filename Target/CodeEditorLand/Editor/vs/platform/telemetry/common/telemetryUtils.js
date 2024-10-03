@@ -1,1 +1,218 @@
-import{cloneAndChange as g,safeStringify as c}from"../../../base/common/objects.js";import{isObject as y}from"../../../base/common/types.js";import"../../../base/common/uri.js";import"../../configuration/common/configuration.js";import"../../environment/common/environment.js";import"../../product/common/productService.js";import{getRemoteName as T}from"../../remote/common/remoteHosts.js";import{verifyMicrosoftInternalDomain as I}from"./commonProperties.js";import{TelemetryConfiguration as u,TelemetryLevel as a,TELEMETRY_CRASH_REPORTER_SETTING_ID as x,TELEMETRY_OLD_SETTING_ID as E,TELEMETRY_SETTING_ID as b}from"./telemetry.js";class h{constructor(r){this.value=r}isTrustedTelemetryValue=!0}class v{telemetryLevel=a.NONE;sessionId="someValue.sessionId";machineId="someValue.machineId";sqmId="someValue.sqmId";devDeviceId="someValue.devDeviceId";firstSessionDate="someValue.firstSessionDate";sendErrorTelemetry=!1;publicLog(){}publicLog2(){}publicLogError(){}publicLogError2(){}setExperimentProperty(){}}const F=new v;class Y{_serviceBrand;async publicLog(r,t,o){}async publicLogError(r,t,o){}}const k="telemetry",q="extensionTelemetryLog",K={log:()=>null,flush:()=>Promise.resolve(void 0)};function j(e,r){return!r.isBuilt&&!r.disableTelemetry?!0:!(r.disableTelemetry||!e.enableTelemetry)}function W(e,r){return r.extensionTestsLocationURI?!0:!(r.isBuilt||r.disableTelemetry||e.enableTelemetry&&e.aiConfig?.ariaKey)}function J(e){const r=e.getValue(b),t=e.getValue(x);if(e.getValue(E)===!1||t===!1)return a.NONE;switch(r??u.ON){case u.ON:return a.USAGE;case u.ERROR:return a.ERROR;case u.CRASH:return a.CRASH;case u.OFF:return a.NONE}}function Q(e){const r={},t={},o={};d(e,o);for(let i in o){i=i.length>150?i.substr(i.length-149):i;const n=o[i];typeof n=="number"?t[i]=n:typeof n=="boolean"?t[i]=n?1:0:typeof n=="string"?(n.length>8192,r[i]=n.substring(0,8191)):typeof n<"u"&&n!==null&&(r[i]=n)}return{properties:r,measurements:t}}const R=new Set(["ssh-remote","dev-container","attached-container","wsl","tunnel","codespaces","amlext"]);function X(e){if(!e)return"none";const r=T(e);return R.has(r)?r:"other"}function d(e,r,t=0,o){if(e)for(const i of Object.getOwnPropertyNames(e)){const n=e[i],s=o?o+i:i;Array.isArray(n)?r[s]=c(n):n instanceof Date?r[s]=n.toISOString():y(n)?t<2?d(n,r,t+1,s+"."):r[s]=c(n):r[s]=n}}function ee(e,r){const t=e.msftInternalDomains||[],o=r.getValue("telemetry.internalTesting");return I(t)||o}function re(e){return[e.appRoot,e.extensionsPath,e.userHome.fsPath,e.tmpDir.fsPath,e.userDataPath]}function P(e,r){if(!e||!e.includes("/")&&!e.includes("\\"))return e;let t=e;const o=[];for(const l of r)for(;;){const m=l.exec(e);if(!m)break;o.push([m.index,l.lastIndex])}const i=/^[\\\/]?(node_modules|node_modules\.asar)[\\\/]/,n=/(file:\/\/)?([a-zA-Z]:(\\\\|\\|\/)|(\\\\|\\|\/))?([\w-\._]+(\\\\|\\|\/))+[\w-\._]*/g;let s=0;for(t="";;){const l=n.exec(e);if(!l)break;const m=o.some(([f,p])=>l.index<p&&f<n.lastIndex);!i.test(l[0])&&!m&&(t+=e.substring(s,l.index)+"<REDACTED: user-file-path>",s=n.lastIndex)}return s<e.length&&(t+=e.substr(s)),t}function D(e){if(!e)return e;const r=[{label:"Google API Key",regex:/AIza[A-Za-z0-9_\\\-]{35}/},{label:"Slack Token",regex:/xox[pbar]\-[A-Za-z0-9]/},{label:"GitHub Token",regex:/(gh[psuro]_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59})/},{label:"Generic Secret",regex:/(key|token|sig|secret|signature|password|passwd|pwd|android:value)[^a-zA-Z0-9]/i},{label:"CLI Credentials",regex:/((login|psexec|(certutil|psexec)\.exe).{1,50}(\s-u(ser(name)?)?\s+.{3,100})?\s-(admin|user|vm|root)?p(ass(word)?)?\s+["']?[^$\-\/\s]|(^|[\s\r\n\\])net(\.exe)?.{1,5}(user\s+|share\s+\/user:| user -? secrets ? set) \s + [^ $\s \/])/},{label:"Email",regex:/@[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+/}];for(const t of r)if(t.regex.test(e))return`<REDACTED: ${t.label}>`;return e}function te(e,r){return g(e,t=>{if(t instanceof h||Object.hasOwnProperty.call(t,"isTrustedTelemetryValue"))return t.value;if(typeof t=="string"){let o=t.replaceAll("%20"," ");o=P(o,r);for(const i of r)o=o.replace(i,"");return o=D(o),o}})}export{K as NullAppender,Y as NullEndpointTelemetryService,F as NullTelemetryService,v as NullTelemetryServiceShape,h as TelemetryTrustedValue,te as cleanData,X as cleanRemoteAuthority,q as extensionTelemetryLogChannelId,re as getPiiPathsFromEnvironment,J as getTelemetryLevel,ee as isInternalTelemetry,W as isLoggingOnly,j as supportsTelemetry,k as telemetryLogId,Q as validateTelemetryData};
+import { cloneAndChange, safeStringify } from '../../../base/common/objects.js';
+import { isObject } from '../../../base/common/types.js';
+import { getRemoteName } from '../../remote/common/remoteHosts.js';
+import { verifyMicrosoftInternalDomain } from './commonProperties.js';
+import { TELEMETRY_CRASH_REPORTER_SETTING_ID, TELEMETRY_OLD_SETTING_ID, TELEMETRY_SETTING_ID } from './telemetry.js';
+export class TelemetryTrustedValue {
+    constructor(value) {
+        this.value = value;
+        this.isTrustedTelemetryValue = true;
+    }
+}
+export class NullTelemetryServiceShape {
+    constructor() {
+        this.telemetryLevel = 0;
+        this.sessionId = 'someValue.sessionId';
+        this.machineId = 'someValue.machineId';
+        this.sqmId = 'someValue.sqmId';
+        this.devDeviceId = 'someValue.devDeviceId';
+        this.firstSessionDate = 'someValue.firstSessionDate';
+        this.sendErrorTelemetry = false;
+    }
+    publicLog() { }
+    publicLog2() { }
+    publicLogError() { }
+    publicLogError2() { }
+    setExperimentProperty() { }
+}
+export const NullTelemetryService = new NullTelemetryServiceShape();
+export class NullEndpointTelemetryService {
+    async publicLog(_endpoint, _eventName, _data) {
+    }
+    async publicLogError(_endpoint, _errorEventName, _data) {
+    }
+}
+export const telemetryLogId = 'telemetry';
+export const extensionTelemetryLogChannelId = 'extensionTelemetryLog';
+export const NullAppender = { log: () => null, flush: () => Promise.resolve(undefined) };
+export function supportsTelemetry(productService, environmentService) {
+    if (!environmentService.isBuilt && !environmentService.disableTelemetry) {
+        return true;
+    }
+    return !(environmentService.disableTelemetry || !productService.enableTelemetry);
+}
+export function isLoggingOnly(productService, environmentService) {
+    if (environmentService.extensionTestsLocationURI) {
+        return true;
+    }
+    if (environmentService.isBuilt) {
+        return false;
+    }
+    if (environmentService.disableTelemetry) {
+        return false;
+    }
+    if (productService.enableTelemetry && productService.aiConfig?.ariaKey) {
+        return false;
+    }
+    return true;
+}
+export function getTelemetryLevel(configurationService) {
+    const newConfig = configurationService.getValue(TELEMETRY_SETTING_ID);
+    const crashReporterConfig = configurationService.getValue(TELEMETRY_CRASH_REPORTER_SETTING_ID);
+    const oldConfig = configurationService.getValue(TELEMETRY_OLD_SETTING_ID);
+    if (oldConfig === false || crashReporterConfig === false) {
+        return 0;
+    }
+    switch (newConfig ?? "all") {
+        case "all":
+            return 3;
+        case "error":
+            return 2;
+        case "crash":
+            return 1;
+        case "off":
+            return 0;
+    }
+}
+export function validateTelemetryData(data) {
+    const properties = {};
+    const measurements = {};
+    const flat = {};
+    flatten(data, flat);
+    for (let prop in flat) {
+        prop = prop.length > 150 ? prop.substr(prop.length - 149) : prop;
+        const value = flat[prop];
+        if (typeof value === 'number') {
+            measurements[prop] = value;
+        }
+        else if (typeof value === 'boolean') {
+            measurements[prop] = value ? 1 : 0;
+        }
+        else if (typeof value === 'string') {
+            if (value.length > 8192) {
+                console.warn(`Telemetry property: ${prop} has been trimmed to 8192, the original length is ${value.length}`);
+            }
+            properties[prop] = value.substring(0, 8191);
+        }
+        else if (typeof value !== 'undefined' && value !== null) {
+            properties[prop] = value;
+        }
+    }
+    return {
+        properties,
+        measurements
+    };
+}
+const telemetryAllowedAuthorities = new Set(['ssh-remote', 'dev-container', 'attached-container', 'wsl', 'tunnel', 'codespaces', 'amlext']);
+export function cleanRemoteAuthority(remoteAuthority) {
+    if (!remoteAuthority) {
+        return 'none';
+    }
+    const remoteName = getRemoteName(remoteAuthority);
+    return telemetryAllowedAuthorities.has(remoteName) ? remoteName : 'other';
+}
+function flatten(obj, result, order = 0, prefix) {
+    if (!obj) {
+        return;
+    }
+    for (const item of Object.getOwnPropertyNames(obj)) {
+        const value = obj[item];
+        const index = prefix ? prefix + item : item;
+        if (Array.isArray(value)) {
+            result[index] = safeStringify(value);
+        }
+        else if (value instanceof Date) {
+            result[index] = value.toISOString();
+        }
+        else if (isObject(value)) {
+            if (order < 2) {
+                flatten(value, result, order + 1, index + '.');
+            }
+            else {
+                result[index] = safeStringify(value);
+            }
+        }
+        else {
+            result[index] = value;
+        }
+    }
+}
+export function isInternalTelemetry(productService, configService) {
+    const msftInternalDomains = productService.msftInternalDomains || [];
+    const internalTesting = configService.getValue('telemetry.internalTesting');
+    return verifyMicrosoftInternalDomain(msftInternalDomains) || internalTesting;
+}
+export function getPiiPathsFromEnvironment(paths) {
+    return [paths.appRoot, paths.extensionsPath, paths.userHome.fsPath, paths.tmpDir.fsPath, paths.userDataPath];
+}
+function anonymizeFilePaths(stack, cleanupPatterns) {
+    if (!stack || (!stack.includes('/') && !stack.includes('\\'))) {
+        return stack;
+    }
+    let updatedStack = stack;
+    const cleanUpIndexes = [];
+    for (const regexp of cleanupPatterns) {
+        while (true) {
+            const result = regexp.exec(stack);
+            if (!result) {
+                break;
+            }
+            cleanUpIndexes.push([result.index, regexp.lastIndex]);
+        }
+    }
+    const nodeModulesRegex = /^[\\\/]?(node_modules|node_modules\.asar)[\\\/]/;
+    const fileRegex = /(file:\/\/)?([a-zA-Z]:(\\\\|\\|\/)|(\\\\|\\|\/))?([\w-\._]+(\\\\|\\|\/))+[\w-\._]*/g;
+    let lastIndex = 0;
+    updatedStack = '';
+    while (true) {
+        const result = fileRegex.exec(stack);
+        if (!result) {
+            break;
+        }
+        const overlappingRange = cleanUpIndexes.some(([start, end]) => result.index < end && start < fileRegex.lastIndex);
+        if (!nodeModulesRegex.test(result[0]) && !overlappingRange) {
+            updatedStack += stack.substring(lastIndex, result.index) + '<REDACTED: user-file-path>';
+            lastIndex = fileRegex.lastIndex;
+        }
+    }
+    if (lastIndex < stack.length) {
+        updatedStack += stack.substr(lastIndex);
+    }
+    return updatedStack;
+}
+function removePropertiesWithPossibleUserInfo(property) {
+    if (!property) {
+        return property;
+    }
+    const userDataRegexes = [
+        { label: 'Google API Key', regex: /AIza[A-Za-z0-9_\\\-]{35}/ },
+        { label: 'Slack Token', regex: /xox[pbar]\-[A-Za-z0-9]/ },
+        { label: 'GitHub Token', regex: /(gh[psuro]_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59})/ },
+        { label: 'Generic Secret', regex: /(key|token|sig|secret|signature|password|passwd|pwd|android:value)[^a-zA-Z0-9]/i },
+        { label: 'CLI Credentials', regex: /((login|psexec|(certutil|psexec)\.exe).{1,50}(\s-u(ser(name)?)?\s+.{3,100})?\s-(admin|user|vm|root)?p(ass(word)?)?\s+["']?[^$\-\/\s]|(^|[\s\r\n\\])net(\.exe)?.{1,5}(user\s+|share\s+\/user:| user -? secrets ? set) \s + [^ $\s \/])/ },
+        { label: 'Email', regex: /@[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+/ }
+    ];
+    for (const secretRegex of userDataRegexes) {
+        if (secretRegex.regex.test(property)) {
+            return `<REDACTED: ${secretRegex.label}>`;
+        }
+    }
+    return property;
+}
+export function cleanData(data, cleanUpPatterns) {
+    return cloneAndChange(data, value => {
+        if (value instanceof TelemetryTrustedValue || Object.hasOwnProperty.call(value, 'isTrustedTelemetryValue')) {
+            return value.value;
+        }
+        if (typeof value === 'string') {
+            let updatedProperty = value.replaceAll('%20', ' ');
+            updatedProperty = anonymizeFilePaths(updatedProperty, cleanUpPatterns);
+            for (const regexp of cleanUpPatterns) {
+                updatedProperty = updatedProperty.replace(regexp, '');
+            }
+            updatedProperty = removePropertiesWithPossibleUserInfo(updatedProperty);
+            return updatedProperty;
+        }
+        return undefined;
+    });
+}

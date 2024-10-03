@@ -1,1 +1,26 @@
-import"../../../../editor/common/config/fontInfo.js";import"../common/model/notebookCellTextModel.js";import"../common/notebookCommon.js";var n=(e=>(e[e.LayoutChanged=1]="LayoutChanged",e[e.MetadataChanged=2]="MetadataChanged",e[e.CellStateChanged=3]="CellStateChanged",e))(n||{});class b{constructor(a,t){this.source=a;this.value=t}type=1}class u{constructor(a){this.source=a}type=2}class y{constructor(a,t){this.source=a;this.cell=t}type=3}export{y as NotebookCellStateChangedEvent,b as NotebookLayoutChangedEvent,u as NotebookMetadataChangedEvent,n as NotebookViewEventType};
+export var NotebookViewEventType;
+(function (NotebookViewEventType) {
+    NotebookViewEventType[NotebookViewEventType["LayoutChanged"] = 1] = "LayoutChanged";
+    NotebookViewEventType[NotebookViewEventType["MetadataChanged"] = 2] = "MetadataChanged";
+    NotebookViewEventType[NotebookViewEventType["CellStateChanged"] = 3] = "CellStateChanged";
+})(NotebookViewEventType || (NotebookViewEventType = {}));
+export class NotebookLayoutChangedEvent {
+    constructor(source, value) {
+        this.source = source;
+        this.value = value;
+        this.type = NotebookViewEventType.LayoutChanged;
+    }
+}
+export class NotebookMetadataChangedEvent {
+    constructor(source) {
+        this.source = source;
+        this.type = NotebookViewEventType.MetadataChanged;
+    }
+}
+export class NotebookCellStateChangedEvent {
+    constructor(source, cell) {
+        this.source = source;
+        this.cell = cell;
+        this.type = NotebookViewEventType.CellStateChanged;
+    }
+}

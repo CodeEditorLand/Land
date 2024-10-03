@@ -1,1 +1,172 @@
-import*as s from"net";function E(e,n,o,u=1){let r=!1;return new Promise(i=>{const d=setTimeout(()=>{if(!r)return r=!0,i(0)},o);f(e,n,u,t=>{if(!r)return r=!0,clearTimeout(d),i(t)})})}function f(e,n,o,u){if(n===0)return u(0);const r=new s.Socket;r.once("connect",()=>(b(r),f(e+o,n-1,o,u))),r.once("data",()=>{}),r.once("error",i=>(b(r),i.code!=="ECONNREFUSED"?f(e+o,n-1,o,u):u(e))),r.connect(e,"127.0.0.1")}const a={1:!0,7:!0,9:!0,11:!0,13:!0,15:!0,17:!0,19:!0,20:!0,21:!0,22:!0,23:!0,25:!0,37:!0,42:!0,43:!0,53:!0,69:!0,77:!0,79:!0,87:!0,95:!0,101:!0,102:!0,103:!0,104:!0,109:!0,110:!0,111:!0,113:!0,115:!0,117:!0,119:!0,123:!0,135:!0,137:!0,139:!0,143:!0,161:!0,179:!0,389:!0,427:!0,465:!0,512:!0,513:!0,514:!0,515:!0,526:!0,530:!0,531:!0,532:!0,540:!0,548:!0,554:!0,556:!0,563:!0,587:!0,601:!0,636:!0,989:!0,990:!0,993:!0,995:!0,1719:!0,1720:!0,1723:!0,2049:!0,3659:!0,4045:!0,5060:!0,5061:!0,6e3:!0,6566:!0,6665:!0,6666:!0,6667:!0,6668:!0,6669:!0,6697:!0,10080:!0};function S(e,n,o,u="127.0.0.1"){let r=!1,i,d=1;const t=s.createServer({pauseOnConnect:!0});function l(m,c){r||(r=!0,t.removeAllListeners(),t.close(),i&&clearTimeout(i),c(m))}return new Promise(m=>{i=setTimeout(()=>{l(0,m)},o),t.on("listening",()=>{l(e,m)}),t.on("error",c=>{c&&(c.code==="EADDRINUSE"||c.code==="EACCES")&&d<n?(e++,d++,t.listen(e,u)):l(0,m)}),t.on("close",()=>{l(0,m)}),t.listen(e,u)})}function b(e){try{e.removeAllListeners("connect"),e.removeAllListeners("error"),e.end(),e.destroy(),e.unref()}catch{}}export{a as BROWSER_RESTRICTED_PORTS,E as findFreePort,S as findFreePortFaster};
+import * as net from 'net';
+export function findFreePort(startPort, giveUpAfter, timeout, stride = 1) {
+    let done = false;
+    return new Promise(resolve => {
+        const timeoutHandle = setTimeout(() => {
+            if (!done) {
+                done = true;
+                return resolve(0);
+            }
+        }, timeout);
+        doFindFreePort(startPort, giveUpAfter, stride, (port) => {
+            if (!done) {
+                done = true;
+                clearTimeout(timeoutHandle);
+                return resolve(port);
+            }
+        });
+    });
+}
+function doFindFreePort(startPort, giveUpAfter, stride, clb) {
+    if (giveUpAfter === 0) {
+        return clb(0);
+    }
+    const client = new net.Socket();
+    client.once('connect', () => {
+        dispose(client);
+        return doFindFreePort(startPort + stride, giveUpAfter - 1, stride, clb);
+    });
+    client.once('data', () => {
+    });
+    client.once('error', (err) => {
+        dispose(client);
+        if (err.code !== 'ECONNREFUSED') {
+            return doFindFreePort(startPort + stride, giveUpAfter - 1, stride, clb);
+        }
+        return clb(startPort);
+    });
+    client.connect(startPort, '127.0.0.1');
+}
+export const BROWSER_RESTRICTED_PORTS = {
+    1: true,
+    7: true,
+    9: true,
+    11: true,
+    13: true,
+    15: true,
+    17: true,
+    19: true,
+    20: true,
+    21: true,
+    22: true,
+    23: true,
+    25: true,
+    37: true,
+    42: true,
+    43: true,
+    53: true,
+    69: true,
+    77: true,
+    79: true,
+    87: true,
+    95: true,
+    101: true,
+    102: true,
+    103: true,
+    104: true,
+    109: true,
+    110: true,
+    111: true,
+    113: true,
+    115: true,
+    117: true,
+    119: true,
+    123: true,
+    135: true,
+    137: true,
+    139: true,
+    143: true,
+    161: true,
+    179: true,
+    389: true,
+    427: true,
+    465: true,
+    512: true,
+    513: true,
+    514: true,
+    515: true,
+    526: true,
+    530: true,
+    531: true,
+    532: true,
+    540: true,
+    548: true,
+    554: true,
+    556: true,
+    563: true,
+    587: true,
+    601: true,
+    636: true,
+    989: true,
+    990: true,
+    993: true,
+    995: true,
+    1719: true,
+    1720: true,
+    1723: true,
+    2049: true,
+    3659: true,
+    4045: true,
+    5060: true,
+    5061: true,
+    6000: true,
+    6566: true,
+    6665: true,
+    6666: true,
+    6667: true,
+    6668: true,
+    6669: true,
+    6697: true,
+    10080: true
+};
+export function findFreePortFaster(startPort, giveUpAfter, timeout, hostname = '127.0.0.1') {
+    let resolved = false;
+    let timeoutHandle = undefined;
+    let countTried = 1;
+    const server = net.createServer({ pauseOnConnect: true });
+    function doResolve(port, resolve) {
+        if (!resolved) {
+            resolved = true;
+            server.removeAllListeners();
+            server.close();
+            if (timeoutHandle) {
+                clearTimeout(timeoutHandle);
+            }
+            resolve(port);
+        }
+    }
+    return new Promise(resolve => {
+        timeoutHandle = setTimeout(() => {
+            doResolve(0, resolve);
+        }, timeout);
+        server.on('listening', () => {
+            doResolve(startPort, resolve);
+        });
+        server.on('error', err => {
+            if (err && (err.code === 'EADDRINUSE' || err.code === 'EACCES') && (countTried < giveUpAfter)) {
+                startPort++;
+                countTried++;
+                server.listen(startPort, hostname);
+            }
+            else {
+                doResolve(0, resolve);
+            }
+        });
+        server.on('close', () => {
+            doResolve(0, resolve);
+        });
+        server.listen(startPort, hostname);
+    });
+}
+function dispose(socket) {
+    try {
+        socket.removeAllListeners('connect');
+        socket.removeAllListeners('error');
+        socket.end();
+        socket.destroy();
+        socket.unref();
+    }
+    catch (error) {
+        console.error(error);
+    }
+}

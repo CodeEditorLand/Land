@@ -1,1 +1,7 @@
-import"../../../../base/common/event.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import"../../../../editor/common/core/range.js";import{createDecorator as o}from"../../../../platform/instantiation/common/instantiation.js";import"./notebookCommon.js";import"./notebookExecutionService.js";var t=(e=>(e[e.cell=0]="cell",e[e.notebook=1]="notebook",e))(t||{});const f=o("INotebookExecutionStateService");export{f as INotebookExecutionStateService,t as NotebookExecutionType};
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export var NotebookExecutionType;
+(function (NotebookExecutionType) {
+    NotebookExecutionType[NotebookExecutionType["cell"] = 0] = "cell";
+    NotebookExecutionType[NotebookExecutionType["notebook"] = 1] = "notebook";
+})(NotebookExecutionType || (NotebookExecutionType = {}));
+export const INotebookExecutionStateService = createDecorator('INotebookExecutionStateService');

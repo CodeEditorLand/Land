@@ -1,1 +1,130 @@
-import"../common/history.js";import"../common/scm.js";import{MenuItemAction as I}from"../../../../platform/actions/common/actions.js";import"../../../../base/browser/ui/actionbar/actionbar.js";import"../../../../base/common/lifecycle.js";import{Action as p}from"../../../../base/common/actions.js";import{createActionViewItem as l,createAndFillInActionBarActions as M,createAndFillInContextMenuActions as S}from"../../../../platform/actions/browser/menuEntryActionViewItem.js";import{equals as a}from"../../../../base/common/arrays.js";import{ActionViewItem as C}from"../../../../base/browser/ui/actionbar/actionViewItems.js";import{renderLabelWithIcons as f}from"../../../../base/browser/ui/iconLabel/iconLabels.js";import"../../../../platform/commands/common/commands.js";import"../../../../editor/common/languages.js";import{reset as y}from"../../../../base/browser/dom.js";import"../../../../platform/instantiation/common/instantiation.js";import{ResourceTree as A}from"../../../../base/common/resourceTree.js";function se(e){return Array.isArray(e.repositories)&&Array.isArray(e.visibleRepositories)}function ce(e){return!!e.provider&&!!e.input}function ue(e){return!!e.validateInput&&typeof e.value=="string"}function Ie(e){return e.type==="actionButton"}function m(e){return!!e.provider&&!!e.resources}function ae(e){return!!e.sourceUri&&m(e.resourceGroup)}function me(e){return A.isResourceNode(e)&&m(e.context)}function de(e){return e.type==="historyItemViewModel"}function pe(e){return e.type==="historyItemLoadMore"}const d=(e,t)=>e instanceof I&&t instanceof I?e.id===t.id&&e.enabled===t.enabled&&e.hideActions?.isHidden===t.hideActions?.isHidden:e.id===t.id&&e.enabled===t.enabled;function R(e,t,r){let n=[],c=[];const s=()=>{const o=[],i=[];M(e,{shouldForwardArgs:!0},{primary:o,secondary:i},r),!(a(n,o,d)&&a(c,i,d))&&(n=o,c=i,t(o,i))};return s(),e.onDidChange(s)}function le(e,t){return R(e,r=>{t.clear(),t.push(r,{icon:!0,label:!1})},"inline")}function Me(e){const t=[],r=[];return S(e,{shouldForwardArgs:!0},{primary:t,secondary:r},"inline"),r}class v extends p{constructor(r,n){super(`statusbaraction{${r.id}}`,r.title,"",!0);this.command=r;this.commandService=n;this.tooltip=r.tooltip||""}run(){return this.commandService.executeCommand(this.command.id,...this.command.arguments||[])}}class x extends C{constructor(t,r){super(null,t,{...r,icon:!1,label:!0})}updateLabel(){this.options.label&&this.label&&y(this.label,...f(this.action.label))}}function Se(e){return(t,r)=>t instanceof v?new x(t,r):l(e,t,r)}function Ce(e){return`${e.contextValue}:${e.label}${e.rootUri?`:${e.rootUri.toString()}`:""}`}function fe(e){return e.groups.reduce((t,r)=>t+r.resources.length,0)}function ye(e,t=20){const r=e.subject.length<=t?e.subject:`${e.subject.substring(0,t)}\u2026`;return`${e.displayId??e.id} - ${r}`}function Ae(e,t,r,n,c){const s=u=>u.id===r?.id?1:u.id===n?.id?2:u.id===c?.id?3:u.color!==void 0?4:99,o=s(e),i=s(t);return o-i}export{v as StatusBarAction,Me as collectContextMenuActions,Ae as compareHistoryItemRefs,R as connectPrimaryMenu,le as connectPrimaryMenuToInlineActionBar,Se as getActionViewItemProvider,ye as getHistoryItemEditorTitle,Ce as getProviderKey,fe as getRepositoryResourceCount,Ie as isSCMActionButton,pe as isSCMHistoryItemLoadMoreTreeElement,de as isSCMHistoryItemViewModelTreeElement,ue as isSCMInput,ce as isSCMRepository,ae as isSCMResource,m as isSCMResourceGroup,me as isSCMResourceNode,se as isSCMViewService};
+import { MenuItemAction } from '../../../../platform/actions/common/actions.js';
+import { Action } from '../../../../base/common/actions.js';
+import { createActionViewItem, createAndFillInActionBarActions, createAndFillInContextMenuActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { equals } from '../../../../base/common/arrays.js';
+import { ActionViewItem } from '../../../../base/browser/ui/actionbar/actionViewItems.js';
+import { renderLabelWithIcons } from '../../../../base/browser/ui/iconLabel/iconLabels.js';
+import { reset } from '../../../../base/browser/dom.js';
+import { ResourceTree } from '../../../../base/common/resourceTree.js';
+export function isSCMViewService(element) {
+    return Array.isArray(element.repositories) && Array.isArray(element.visibleRepositories);
+}
+export function isSCMRepository(element) {
+    return !!element.provider && !!element.input;
+}
+export function isSCMInput(element) {
+    return !!element.validateInput && typeof element.value === 'string';
+}
+export function isSCMActionButton(element) {
+    return element.type === 'actionButton';
+}
+export function isSCMResourceGroup(element) {
+    return !!element.provider && !!element.resources;
+}
+export function isSCMResource(element) {
+    return !!element.sourceUri && isSCMResourceGroup(element.resourceGroup);
+}
+export function isSCMResourceNode(element) {
+    return ResourceTree.isResourceNode(element) && isSCMResourceGroup(element.context);
+}
+export function isSCMHistoryItemViewModelTreeElement(element) {
+    return element.type === 'historyItemViewModel';
+}
+export function isSCMHistoryItemLoadMoreTreeElement(element) {
+    return element.type === 'historyItemLoadMore';
+}
+const compareActions = (a, b) => {
+    if (a instanceof MenuItemAction && b instanceof MenuItemAction) {
+        return a.id === b.id && a.enabled === b.enabled && a.hideActions?.isHidden === b.hideActions?.isHidden;
+    }
+    return a.id === b.id && a.enabled === b.enabled;
+};
+export function connectPrimaryMenu(menu, callback, primaryGroup) {
+    let cachedPrimary = [];
+    let cachedSecondary = [];
+    const updateActions = () => {
+        const primary = [];
+        const secondary = [];
+        createAndFillInActionBarActions(menu, { shouldForwardArgs: true }, { primary, secondary }, primaryGroup);
+        if (equals(cachedPrimary, primary, compareActions) && equals(cachedSecondary, secondary, compareActions)) {
+            return;
+        }
+        cachedPrimary = primary;
+        cachedSecondary = secondary;
+        callback(primary, secondary);
+    };
+    updateActions();
+    return menu.onDidChange(updateActions);
+}
+export function connectPrimaryMenuToInlineActionBar(menu, actionBar) {
+    return connectPrimaryMenu(menu, (primary) => {
+        actionBar.clear();
+        actionBar.push(primary, { icon: true, label: false });
+    }, 'inline');
+}
+export function collectContextMenuActions(menu) {
+    const primary = [];
+    const actions = [];
+    createAndFillInContextMenuActions(menu, { shouldForwardArgs: true }, { primary, secondary: actions }, 'inline');
+    return actions;
+}
+export class StatusBarAction extends Action {
+    constructor(command, commandService) {
+        super(`statusbaraction{${command.id}}`, command.title, '', true);
+        this.command = command;
+        this.commandService = commandService;
+        this.tooltip = command.tooltip || '';
+    }
+    run() {
+        return this.commandService.executeCommand(this.command.id, ...(this.command.arguments || []));
+    }
+}
+class StatusBarActionViewItem extends ActionViewItem {
+    constructor(action, options) {
+        super(null, action, { ...options, icon: false, label: true });
+    }
+    updateLabel() {
+        if (this.options.label && this.label) {
+            reset(this.label, ...renderLabelWithIcons(this.action.label));
+        }
+    }
+}
+export function getActionViewItemProvider(instaService) {
+    return (action, options) => {
+        if (action instanceof StatusBarAction) {
+            return new StatusBarActionViewItem(action, options);
+        }
+        return createActionViewItem(instaService, action, options);
+    };
+}
+export function getProviderKey(provider) {
+    return `${provider.contextValue}:${provider.label}${provider.rootUri ? `:${provider.rootUri.toString()}` : ''}`;
+}
+export function getRepositoryResourceCount(provider) {
+    return provider.groups.reduce((r, g) => r + g.resources.length, 0);
+}
+export function getHistoryItemEditorTitle(historyItem, maxLength = 20) {
+    const title = historyItem.subject.length <= maxLength ?
+        historyItem.subject : `${historyItem.subject.substring(0, maxLength)}\u2026`;
+    return `${historyItem.displayId ?? historyItem.id} - ${title}`;
+}
+export function compareHistoryItemRefs(ref1, ref2, currentHistoryItemRef, currentHistoryItemRemoteRef, currentHistoryItemBaseRef) {
+    const getHistoryItemRefOrder = (ref) => {
+        if (ref.id === currentHistoryItemRef?.id) {
+            return 1;
+        }
+        else if (ref.id === currentHistoryItemRemoteRef?.id) {
+            return 2;
+        }
+        else if (ref.id === currentHistoryItemBaseRef?.id) {
+            return 3;
+        }
+        else if (ref.color !== undefined) {
+            return 4;
+        }
+        return 99;
+    };
+    const ref1Order = getHistoryItemRefOrder(ref1);
+    const ref2Order = getHistoryItemRefOrder(ref2);
+    return ref1Order - ref2Order;
+}

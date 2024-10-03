@@ -1,1 +1,59 @@
-import"../../../../base/browser/ui/codicons/codiconStyles.js";import{Codicon as e}from"../../../../base/common/codicons.js";import"../../../../base/common/themables.js";import"../../../../base/common/keybindings.js";import"../../../common/languages.js";import{CodeActionKind as n}from"../common/types.js";import"../../symbolIcons/browser/symbolIcons.js";import{localize as o}from"../../../../nls.js";import{ActionListItemKind as d}from"../../../../platform/actionWidget/browser/actionList.js";import{HierarchicalKind as a}from"../../../../base/common/hierarchicalKind.js";const s=Object.freeze({kind:a.Empty,title:o("codeAction.widget.id.more","More Actions...")}),f=Object.freeze([{kind:n.QuickFix,title:o("codeAction.widget.id.quickfix","Quick Fix")},{kind:n.RefactorExtract,title:o("codeAction.widget.id.extract","Extract"),icon:e.wrench},{kind:n.RefactorInline,title:o("codeAction.widget.id.inline","Inline"),icon:e.wrench},{kind:n.RefactorRewrite,title:o("codeAction.widget.id.convert","Rewrite"),icon:e.wrench},{kind:n.RefactorMove,title:o("codeAction.widget.id.move","Move"),icon:e.wrench},{kind:n.SurroundWith,title:o("codeAction.widget.id.surround","Surround With"),icon:e.surroundWith},{kind:n.Source,title:o("codeAction.widget.id.source","Source Action"),icon:e.symbolFile},s]);function L(m,u,A){if(!u)return m.map(i=>({kind:d.Action,item:i,group:s,disabled:!!i.action.disabled,label:i.action.disabled||i.action.title,canPreview:!!i.action.edit?.edits.length}));const l=f.map(i=>({group:i,actions:[]}));for(const i of m){const t=i.action.kind?new a(i.action.kind):a.None;for(const c of l)if(c.group.kind.contains(t)){c.actions.push(i);break}}const r=[];for(const i of l)if(i.actions.length){r.push({kind:d.Header,group:i.group});for(const t of i.actions){const c=i.group;r.push({kind:d.Action,item:t,group:t.action.isAI?{title:c.title,kind:c.kind,icon:e.sparkle}:c,label:t.action.title,disabled:!!t.action.disabled,keybinding:A(t.action)})}}return r}export{L as toMenuItems};
+import '../../../../base/browser/ui/codicons/codiconStyles.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { CodeActionKind } from '../common/types.js';
+import '../../symbolIcons/browser/symbolIcons.js';
+import { localize } from '../../../../nls.js';
+import { HierarchicalKind } from '../../../../base/common/hierarchicalKind.js';
+const uncategorizedCodeActionGroup = Object.freeze({ kind: HierarchicalKind.Empty, title: localize('codeAction.widget.id.more', 'More Actions...') });
+const codeActionGroups = Object.freeze([
+    { kind: CodeActionKind.QuickFix, title: localize('codeAction.widget.id.quickfix', 'Quick Fix') },
+    { kind: CodeActionKind.RefactorExtract, title: localize('codeAction.widget.id.extract', 'Extract'), icon: Codicon.wrench },
+    { kind: CodeActionKind.RefactorInline, title: localize('codeAction.widget.id.inline', 'Inline'), icon: Codicon.wrench },
+    { kind: CodeActionKind.RefactorRewrite, title: localize('codeAction.widget.id.convert', 'Rewrite'), icon: Codicon.wrench },
+    { kind: CodeActionKind.RefactorMove, title: localize('codeAction.widget.id.move', 'Move'), icon: Codicon.wrench },
+    { kind: CodeActionKind.SurroundWith, title: localize('codeAction.widget.id.surround', 'Surround With'), icon: Codicon.surroundWith },
+    { kind: CodeActionKind.Source, title: localize('codeAction.widget.id.source', 'Source Action'), icon: Codicon.symbolFile },
+    uncategorizedCodeActionGroup,
+]);
+export function toMenuItems(inputCodeActions, showHeaders, keybindingResolver) {
+    if (!showHeaders) {
+        return inputCodeActions.map((action) => {
+            return {
+                kind: "action",
+                item: action,
+                group: uncategorizedCodeActionGroup,
+                disabled: !!action.action.disabled,
+                label: action.action.disabled || action.action.title,
+                canPreview: !!action.action.edit?.edits.length,
+            };
+        });
+    }
+    const menuEntries = codeActionGroups.map(group => ({ group, actions: [] }));
+    for (const action of inputCodeActions) {
+        const kind = action.action.kind ? new HierarchicalKind(action.action.kind) : HierarchicalKind.None;
+        for (const menuEntry of menuEntries) {
+            if (menuEntry.group.kind.contains(kind)) {
+                menuEntry.actions.push(action);
+                break;
+            }
+        }
+    }
+    const allMenuItems = [];
+    for (const menuEntry of menuEntries) {
+        if (menuEntry.actions.length) {
+            allMenuItems.push({ kind: "header", group: menuEntry.group });
+            for (const action of menuEntry.actions) {
+                const group = menuEntry.group;
+                allMenuItems.push({
+                    kind: "action",
+                    item: action,
+                    group: action.action.isAI ? { title: group.title, kind: group.kind, icon: Codicon.sparkle } : group,
+                    label: action.action.title,
+                    disabled: !!action.action.disabled,
+                    keybinding: keybindingResolver(action.action),
+                });
+            }
+        }
+    }
+    return allMenuItems;
+}

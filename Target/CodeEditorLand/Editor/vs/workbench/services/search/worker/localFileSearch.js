@@ -1,1 +1,282 @@
-import*as w from"../../../../base/common/glob.js";import{URI as R}from"../../../../base/common/uri.js";import"../../../../base/common/worker/simpleWorker.js";import{LocalFileSearchSimpleWorkerHost as A}from"../common/localFileSearchWorkerTypes.js";import"../common/search.js";import*as O from"../../../../base/common/path.js";import{CancellationTokenSource as $}from"../../../../base/common/cancellation.js";import{getFileResults as j}from"../common/getFileResults.js";import{IgnoreFile as G}from"../common/ignoreFile.js";import{createRegExp as _}from"../../../../base/common/strings.js";import{Promises as z}from"../../../../base/common/async.js";import{ExtUri as U}from"../../../../base/common/resources.js";import{revive as E}from"../../../../base/common/marshalling.js";const N=!1,ve=+new Date,M={},P=async(e,t)=>{if(!N)return t();const n=Date.now(),s=(M[e]??0)+1;M[e]=s;const a=await t(),l=Date.now();return a};function xe(e){return new J(e)}class J{_requestHandlerBrand;host;cancellationTokens=new Map;constructor(t){this.host=A.getChannel(t)}$cancelQuery(t){this.cancellationTokens.get(t)?.cancel()}registerCancellationToken(t){const n=new $;return this.cancellationTokens.set(t,n),n}async $listDirectory(t,n,s,a,l){const m=b(s),v=new U(()=>a),c=this.registerCancellationToken(l),f=[];let g=!1,p=0;const y=n.maxResults||512,h=n.filePattern?u=>n.filePattern.split("").every(I=>u.includes(I)):u=>!0;return await P("listDirectory",()=>this.walkFolderQuery(t,B(n),m,v,u=>{if(h(u.name))return p++,y&&p>y&&(g=!0,c.cancel()),f.push(u.path)},c.token)),{results:f,limitHit:g}}async $searchDirectory(t,n,s,a,l){const m=b(s),v=new U(()=>a);return P("searchInFiles",async()=>{const c=this.registerCancellationToken(l),f=[],g=K(n.contentPattern),p=[];let y=0,h=0;const u=!1,I=async k=>{if(c.token.isCancellationRequested)return;y++;const r=await k.resolve();if(c.token.isCancellationRequested)return;const i=new Uint8Array(r),o=j(i,g,{surroundingContext:n.surroundingContext??0,previewOptions:n.previewOptions,remainingResultQuota:n.maxResults?n.maxResults-h:1e4});if(o.length){h+=o.length,n.maxResults&&h>n.maxResults&&c.cancel();const d={resource:R.joinPath(m.folder,k.path),results:o};this.host.$sendTextSearchMatch(d,l),f.push(d)}};return await P("walkFolderToResolve",()=>this.walkFolderQuery(t,B(n),m,v,async k=>p.push(I(k)),c.token)),await P("resolveOngoingProcesses",()=>Promise.all(p)),{results:f,limitHit:u}})}async walkFolderQuery(t,n,s,a,l,m){const v=s.excludePattern?.map(r=>w.parse(r.pattern??{},{trimForExclusions:!0})),c=(r,i,o)=>v?.some(d=>d(r,i,o)),f=(r,i,o)=>(r=r.slice(1),!!(c(r,i,o)||V(n,r))),g=(r,i,o)=>(r=r.slice(1),!(c(r,i,o)||!X(n,r,a))),p=(r,i)=>({type:"file",name:r.name,path:i,resolve:()=>r.getFile().then(d=>d.arrayBuffer())}),y=r=>r.kind==="directory",h=r=>r.kind==="file",u=async(r,i,o)=>{if(!s.disregardIgnoreFiles){const H=await Promise.all([r.getFileHandle(".gitignore").catch(F=>{}),r.getFileHandle(".ignore").catch(F=>{})]);await Promise.all(H.map(async F=>{if(!F)return;const Q=new TextDecoder("utf8").decode(new Uint8Array(await(await F.getFile()).arrayBuffer()));o=new G(Q,i,o)}))}const d=z.withAsyncBody(async H=>{const F=[],Q=[],W=[],D=new Set;for await(const S of r.entries())W.push(S),D.add(S[0]);for(const[S,x]of W){if(m.isCancellationRequested)break;const C=i+S;if(o&&!o.isPathIncludedInTraversal(C,x.kind==="directory"))continue;const T=L=>D.has(L);y(x)&&!f(C,S,T)?Q.push(u(x,C+"/",o)):h(x)&&g(C,S,T)&&F.push(p(x,C))}H([...await Promise.all(Q),...F])});return{type:"dir",name:r.name,entries:d}},I=async(r,i)=>{m.isCancellationRequested||await Promise.all((await r.entries).sort((o,d)=>-(o.type==="dir"?0:1)+(d.type==="dir"?0:1)).map(async o=>o.type==="dir"?I(o,i):i(o)))},k=await P("process",()=>u(t,"/"));await P("resolve",()=>I(k,l))}}function K(e){return _(e.pattern,!!e.isRegExp,{wholeWord:e.isWordMatch,global:!0,matchCase:e.isCaseSensitive,multiline:!0,unicode:!0})}function b(e){return E({...E(e),excludePattern:e.excludePattern?.map(t=>({folder:R.revive(t.folder),pattern:t.pattern})),folder:R.revive(e.folder)})}function B(e){return{...e,extraFileResources:e.extraFileResources?.map(t=>R.revive(t)),folderQueries:e.folderQueries.map(t=>b(t))}}function V(e,t){return!!(e.excludePattern&&w.match(e.excludePattern,t))}function X(e,t,n){return e.excludePattern&&w.match(e.excludePattern,t)?!1:e.includePattern||e.usingSearchPaths?e.includePattern&&w.match(e.includePattern,t)?!0:e.usingSearchPaths?!!e.folderQueries&&e.folderQueries.some(s=>{const a=s.folder,l=R.file(t);if(n.isEqualOrParent(l,a)){const m=O.relative(a.path,l.path);return!s.includePattern||!!w.match(s.includePattern,m)}else return!1}):!1:!0}export{J as LocalFileSearchSimpleWorker,xe as create};
+import * as glob from '../../../../base/common/glob.js';
+import { URI } from '../../../../base/common/uri.js';
+import { LocalFileSearchSimpleWorkerHost } from '../common/localFileSearchWorkerTypes.js';
+import * as paths from '../../../../base/common/path.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { getFileResults } from '../common/getFileResults.js';
+import { IgnoreFile } from '../common/ignoreFile.js';
+import { createRegExp } from '../../../../base/common/strings.js';
+import { Promises } from '../../../../base/common/async.js';
+import { ExtUri } from '../../../../base/common/resources.js';
+import { revive } from '../../../../base/common/marshalling.js';
+const PERF = false;
+const globalStart = +new Date();
+const itrcount = {};
+const time = async (name, task) => {
+    if (!PERF) {
+        return task();
+    }
+    const start = Date.now();
+    const itr = (itrcount[name] ?? 0) + 1;
+    console.info(name, itr, 'starting', Math.round((start - globalStart) * 10) / 10000);
+    itrcount[name] = itr;
+    const r = await task();
+    const end = Date.now();
+    console.info(name, itr, 'took', end - start);
+    return r;
+};
+export function create(workerServer) {
+    return new LocalFileSearchSimpleWorker(workerServer);
+}
+export class LocalFileSearchSimpleWorker {
+    constructor(workerServer) {
+        this.cancellationTokens = new Map();
+        this.host = LocalFileSearchSimpleWorkerHost.getChannel(workerServer);
+    }
+    $cancelQuery(queryId) {
+        this.cancellationTokens.get(queryId)?.cancel();
+    }
+    registerCancellationToken(queryId) {
+        const source = new CancellationTokenSource();
+        this.cancellationTokens.set(queryId, source);
+        return source;
+    }
+    async $listDirectory(handle, query, folderQuery, ignorePathCasing, queryId) {
+        const revivedFolderQuery = reviveFolderQuery(folderQuery);
+        const extUri = new ExtUri(() => ignorePathCasing);
+        const token = this.registerCancellationToken(queryId);
+        const entries = [];
+        let limitHit = false;
+        let count = 0;
+        const max = query.maxResults || 512;
+        const filePatternMatcher = query.filePattern
+            ? (name) => query.filePattern.split('').every(c => name.includes(c))
+            : (name) => true;
+        await time('listDirectory', () => this.walkFolderQuery(handle, reviveQueryProps(query), revivedFolderQuery, extUri, file => {
+            if (!filePatternMatcher(file.name)) {
+                return;
+            }
+            count++;
+            if (max && count > max) {
+                limitHit = true;
+                token.cancel();
+            }
+            return entries.push(file.path);
+        }, token.token));
+        return {
+            results: entries,
+            limitHit
+        };
+    }
+    async $searchDirectory(handle, query, folderQuery, ignorePathCasing, queryId) {
+        const revivedQuery = reviveFolderQuery(folderQuery);
+        const extUri = new ExtUri(() => ignorePathCasing);
+        return time('searchInFiles', async () => {
+            const token = this.registerCancellationToken(queryId);
+            const results = [];
+            const pattern = createSearchRegExp(query.contentPattern);
+            const onGoingProcesses = [];
+            let fileCount = 0;
+            let resultCount = 0;
+            const limitHit = false;
+            const processFile = async (file) => {
+                if (token.token.isCancellationRequested) {
+                    return;
+                }
+                fileCount++;
+                const contents = await file.resolve();
+                if (token.token.isCancellationRequested) {
+                    return;
+                }
+                const bytes = new Uint8Array(contents);
+                const fileResults = getFileResults(bytes, pattern, {
+                    surroundingContext: query.surroundingContext ?? 0,
+                    previewOptions: query.previewOptions,
+                    remainingResultQuota: query.maxResults ? (query.maxResults - resultCount) : 10000,
+                });
+                if (fileResults.length) {
+                    resultCount += fileResults.length;
+                    if (query.maxResults && resultCount > query.maxResults) {
+                        token.cancel();
+                    }
+                    const match = {
+                        resource: URI.joinPath(revivedQuery.folder, file.path),
+                        results: fileResults,
+                    };
+                    this.host.$sendTextSearchMatch(match, queryId);
+                    results.push(match);
+                }
+            };
+            await time('walkFolderToResolve', () => this.walkFolderQuery(handle, reviveQueryProps(query), revivedQuery, extUri, async (file) => onGoingProcesses.push(processFile(file)), token.token));
+            await time('resolveOngoingProcesses', () => Promise.all(onGoingProcesses));
+            if (PERF) {
+                console.log('Searched in', fileCount, 'files');
+            }
+            return {
+                results,
+                limitHit,
+            };
+        });
+    }
+    async walkFolderQuery(handle, queryProps, folderQuery, extUri, onFile, token) {
+        const folderExcludes = folderQuery.excludePattern?.map(excludePattern => glob.parse(excludePattern.pattern ?? {}, { trimForExclusions: true }));
+        const evalFolderExcludes = (path, basename, hasSibling) => {
+            return folderExcludes?.some(folderExclude => {
+                return folderExclude(path, basename, hasSibling);
+            });
+        };
+        const isFolderExcluded = (path, basename, hasSibling) => {
+            path = path.slice(1);
+            if (evalFolderExcludes(path, basename, hasSibling)) {
+                return true;
+            }
+            if (pathExcludedInQuery(queryProps, path)) {
+                return true;
+            }
+            return false;
+        };
+        const isFileIncluded = (path, basename, hasSibling) => {
+            path = path.slice(1);
+            if (evalFolderExcludes(path, basename, hasSibling)) {
+                return false;
+            }
+            if (!pathIncludedInQuery(queryProps, path, extUri)) {
+                return false;
+            }
+            return true;
+        };
+        const processFile = (file, prior) => {
+            const resolved = {
+                type: 'file',
+                name: file.name,
+                path: prior,
+                resolve: () => file.getFile().then(r => r.arrayBuffer())
+            };
+            return resolved;
+        };
+        const isFileSystemDirectoryHandle = (handle) => {
+            return handle.kind === 'directory';
+        };
+        const isFileSystemFileHandle = (handle) => {
+            return handle.kind === 'file';
+        };
+        const processDirectory = async (directory, prior, ignoreFile) => {
+            if (!folderQuery.disregardIgnoreFiles) {
+                const ignoreFiles = await Promise.all([
+                    directory.getFileHandle('.gitignore').catch(e => undefined),
+                    directory.getFileHandle('.ignore').catch(e => undefined),
+                ]);
+                await Promise.all(ignoreFiles.map(async (file) => {
+                    if (!file) {
+                        return;
+                    }
+                    const ignoreContents = new TextDecoder('utf8').decode(new Uint8Array(await (await file.getFile()).arrayBuffer()));
+                    ignoreFile = new IgnoreFile(ignoreContents, prior, ignoreFile);
+                }));
+            }
+            const entries = Promises.withAsyncBody(async (c) => {
+                const files = [];
+                const dirs = [];
+                const entries = [];
+                const sibilings = new Set();
+                for await (const entry of directory.entries()) {
+                    entries.push(entry);
+                    sibilings.add(entry[0]);
+                }
+                for (const [basename, handle] of entries) {
+                    if (token.isCancellationRequested) {
+                        break;
+                    }
+                    const path = prior + basename;
+                    if (ignoreFile && !ignoreFile.isPathIncludedInTraversal(path, handle.kind === 'directory')) {
+                        continue;
+                    }
+                    const hasSibling = (query) => sibilings.has(query);
+                    if (isFileSystemDirectoryHandle(handle) && !isFolderExcluded(path, basename, hasSibling)) {
+                        dirs.push(processDirectory(handle, path + '/', ignoreFile));
+                    }
+                    else if (isFileSystemFileHandle(handle) && isFileIncluded(path, basename, hasSibling)) {
+                        files.push(processFile(handle, path));
+                    }
+                }
+                c([...await Promise.all(dirs), ...files]);
+            });
+            return {
+                type: 'dir',
+                name: directory.name,
+                entries
+            };
+        };
+        const resolveDirectory = async (directory, onFile) => {
+            if (token.isCancellationRequested) {
+                return;
+            }
+            await Promise.all((await directory.entries)
+                .sort((a, b) => -(a.type === 'dir' ? 0 : 1) + (b.type === 'dir' ? 0 : 1))
+                .map(async (entry) => {
+                if (entry.type === 'dir') {
+                    return resolveDirectory(entry, onFile);
+                }
+                else {
+                    return onFile(entry);
+                }
+            }));
+        };
+        const processed = await time('process', () => processDirectory(handle, '/'));
+        await time('resolve', () => resolveDirectory(processed, onFile));
+    }
+}
+function createSearchRegExp(options) {
+    return createRegExp(options.pattern, !!options.isRegExp, {
+        wholeWord: options.isWordMatch,
+        global: true,
+        matchCase: options.isCaseSensitive,
+        multiline: true,
+        unicode: true,
+    });
+}
+function reviveFolderQuery(folderQuery) {
+    return revive({
+        ...revive(folderQuery),
+        excludePattern: folderQuery.excludePattern?.map(ep => ({ folder: URI.revive(ep.folder), pattern: ep.pattern })),
+        folder: URI.revive(folderQuery.folder),
+    });
+}
+function reviveQueryProps(queryProps) {
+    return {
+        ...queryProps,
+        extraFileResources: queryProps.extraFileResources?.map(r => URI.revive(r)),
+        folderQueries: queryProps.folderQueries.map(fq => reviveFolderQuery(fq)),
+    };
+}
+function pathExcludedInQuery(queryProps, fsPath) {
+    if (queryProps.excludePattern && glob.match(queryProps.excludePattern, fsPath)) {
+        return true;
+    }
+    return false;
+}
+function pathIncludedInQuery(queryProps, path, extUri) {
+    if (queryProps.excludePattern && glob.match(queryProps.excludePattern, path)) {
+        return false;
+    }
+    if (queryProps.includePattern || queryProps.usingSearchPaths) {
+        if (queryProps.includePattern && glob.match(queryProps.includePattern, path)) {
+            return true;
+        }
+        if (queryProps.usingSearchPaths) {
+            return !!queryProps.folderQueries && queryProps.folderQueries.some(fq => {
+                const searchPath = fq.folder;
+                const uri = URI.file(path);
+                if (extUri.isEqualOrParent(uri, searchPath)) {
+                    const relPath = paths.relative(searchPath.path, uri.path);
+                    return !fq.includePattern || !!glob.match(fq.includePattern, relPath);
+                }
+                else {
+                    return false;
+                }
+            });
+        }
+        return false;
+    }
+    return true;
+}

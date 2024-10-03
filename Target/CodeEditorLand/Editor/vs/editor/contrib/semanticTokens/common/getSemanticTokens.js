@@ -1,1 +1,189 @@
-import{CancellationToken as T}from"../../../../base/common/cancellation.js";import{onUnexpectedExternalError as P}from"../../../../base/common/errors.js";import{URI as m}from"../../../../base/common/uri.js";import"../../../common/model.js";import"../../../common/languages.js";import{IModelService as d}from"../../../common/services/model.js";import{CommandsRegistry as l,ICommandService as p}from"../../../../platform/commands/common/commands.js";import{assertType as c}from"../../../../base/common/types.js";import"../../../../base/common/buffer.js";import{encodeSemanticTokensDto as v}from"../../../common/services/semanticTokensDto.js";import{Range as g}from"../../../common/core/range.js";import"../../../common/languageFeatureRegistry.js";import{ILanguageFeaturesService as f}from"../../../common/services/languageFeatures.js";function k(e){return e&&!!e.data}function L(e){return e&&Array.isArray(e.edits)}class x{constructor(t,n,i){this.provider=t;this.tokens=n;this.error=i}}function h(e,t){return e.has(t)}function I(e,t){const n=e.orderedGroups(t);return n.length>0?n[0]:[]}async function M(e,t,n,i,s){const a=I(e,t),r=await Promise.all(a.map(async o=>{let u,S=null;try{u=await o.provideDocumentSemanticTokens(t,o===n?i:null,s)}catch(y){S=y,u=null}return(!u||!k(u)&&!L(u))&&(u=null),new x(o,u,S)}));for(const o of r){if(o.error)throw o.error;if(o.tokens)return o}return r.length>0?r[0]:null}function w(e,t){const n=e.orderedGroups(t);return n.length>0?n[0]:null}class C{constructor(t,n){this.provider=t;this.tokens=n}}function Z(e,t){return e.has(t)}function R(e,t){const n=e.orderedGroups(t);return n.length>0?n[0]:[]}async function D(e,t,n,i){const s=R(e,t),a=await Promise.all(s.map(async r=>{let o;try{o=await r.provideDocumentRangeSemanticTokens(t,n,i)}catch(u){P(u),o=null}return(!o||!k(o))&&(o=null),new C(r,o)}));for(const r of a)if(r.tokens)return r;return a.length>0?a[0]:null}l.registerCommand("_provideDocumentSemanticTokensLegend",async(e,...t)=>{const[n]=t;c(n instanceof m);const i=e.get(d).getModel(n);if(!i)return;const{documentSemanticTokensProvider:s}=e.get(f),a=w(s,i);return a?a[0].getLegend():e.get(p).executeCommand("_provideDocumentRangeSemanticTokensLegend",n)}),l.registerCommand("_provideDocumentSemanticTokens",async(e,...t)=>{const[n]=t;c(n instanceof m);const i=e.get(d).getModel(n);if(!i)return;const{documentSemanticTokensProvider:s}=e.get(f);if(!h(s,i))return e.get(p).executeCommand("_provideDocumentRangeSemanticTokens",n,i.getFullModelRange());const a=await M(s,i,null,null,T.None);if(!a)return;const{provider:r,tokens:o}=a;if(!o||!k(o))return;const u=v({id:0,type:"full",data:o.data});return o.resultId&&r.releaseDocumentSemanticTokens(o.resultId),u}),l.registerCommand("_provideDocumentRangeSemanticTokensLegend",async(e,...t)=>{const[n,i]=t;c(n instanceof m);const s=e.get(d).getModel(n);if(!s)return;const{documentRangeSemanticTokensProvider:a}=e.get(f),r=R(a,s);if(r.length===0)return;if(r.length===1||!i||!g.isIRange(i))return r[0].getLegend();const o=await D(a,s,g.lift(i),T.None);if(o)return o.provider.getLegend()}),l.registerCommand("_provideDocumentRangeSemanticTokens",async(e,...t)=>{const[n,i]=t;c(n instanceof m),c(g.isIRange(i));const s=e.get(d).getModel(n);if(!s)return;const{documentRangeSemanticTokensProvider:a}=e.get(f),r=await D(a,s,g.lift(i),T.None);if(!(!r||!r.tokens))return v({id:0,type:"full",data:r.tokens.data})});export{x as DocumentSemanticTokensResult,D as getDocumentRangeSemanticTokens,M as getDocumentSemanticTokens,Z as hasDocumentRangeSemanticTokensProvider,h as hasDocumentSemanticTokensProvider,k as isSemanticTokens,L as isSemanticTokensEdits};
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { onUnexpectedExternalError } from '../../../../base/common/errors.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IModelService } from '../../../common/services/model.js';
+import { CommandsRegistry, ICommandService } from '../../../../platform/commands/common/commands.js';
+import { assertType } from '../../../../base/common/types.js';
+import { encodeSemanticTokensDto } from '../../../common/services/semanticTokensDto.js';
+import { Range } from '../../../common/core/range.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+export function isSemanticTokens(v) {
+    return v && !!(v.data);
+}
+export function isSemanticTokensEdits(v) {
+    return v && Array.isArray(v.edits);
+}
+export class DocumentSemanticTokensResult {
+    constructor(provider, tokens, error) {
+        this.provider = provider;
+        this.tokens = tokens;
+        this.error = error;
+    }
+}
+export function hasDocumentSemanticTokensProvider(registry, model) {
+    return registry.has(model);
+}
+function getDocumentSemanticTokensProviders(registry, model) {
+    const groups = registry.orderedGroups(model);
+    return (groups.length > 0 ? groups[0] : []);
+}
+export async function getDocumentSemanticTokens(registry, model, lastProvider, lastResultId, token) {
+    const providers = getDocumentSemanticTokensProviders(registry, model);
+    const results = await Promise.all(providers.map(async (provider) => {
+        let result;
+        let error = null;
+        try {
+            result = await provider.provideDocumentSemanticTokens(model, (provider === lastProvider ? lastResultId : null), token);
+        }
+        catch (err) {
+            error = err;
+            result = null;
+        }
+        if (!result || (!isSemanticTokens(result) && !isSemanticTokensEdits(result))) {
+            result = null;
+        }
+        return new DocumentSemanticTokensResult(provider, result, error);
+    }));
+    for (const result of results) {
+        if (result.error) {
+            throw result.error;
+        }
+        if (result.tokens) {
+            return result;
+        }
+    }
+    if (results.length > 0) {
+        return results[0];
+    }
+    return null;
+}
+function _getDocumentSemanticTokensProviderHighestGroup(registry, model) {
+    const result = registry.orderedGroups(model);
+    return (result.length > 0 ? result[0] : null);
+}
+class DocumentRangeSemanticTokensResult {
+    constructor(provider, tokens) {
+        this.provider = provider;
+        this.tokens = tokens;
+    }
+}
+export function hasDocumentRangeSemanticTokensProvider(providers, model) {
+    return providers.has(model);
+}
+function getDocumentRangeSemanticTokensProviders(providers, model) {
+    const groups = providers.orderedGroups(model);
+    return (groups.length > 0 ? groups[0] : []);
+}
+export async function getDocumentRangeSemanticTokens(registry, model, range, token) {
+    const providers = getDocumentRangeSemanticTokensProviders(registry, model);
+    const results = await Promise.all(providers.map(async (provider) => {
+        let result;
+        try {
+            result = await provider.provideDocumentRangeSemanticTokens(model, range, token);
+        }
+        catch (err) {
+            onUnexpectedExternalError(err);
+            result = null;
+        }
+        if (!result || !isSemanticTokens(result)) {
+            result = null;
+        }
+        return new DocumentRangeSemanticTokensResult(provider, result);
+    }));
+    for (const result of results) {
+        if (result.tokens) {
+            return result;
+        }
+    }
+    if (results.length > 0) {
+        return results[0];
+    }
+    return null;
+}
+CommandsRegistry.registerCommand('_provideDocumentSemanticTokensLegend', async (accessor, ...args) => {
+    const [uri] = args;
+    assertType(uri instanceof URI);
+    const model = accessor.get(IModelService).getModel(uri);
+    if (!model) {
+        return undefined;
+    }
+    const { documentSemanticTokensProvider } = accessor.get(ILanguageFeaturesService);
+    const providers = _getDocumentSemanticTokensProviderHighestGroup(documentSemanticTokensProvider, model);
+    if (!providers) {
+        return accessor.get(ICommandService).executeCommand('_provideDocumentRangeSemanticTokensLegend', uri);
+    }
+    return providers[0].getLegend();
+});
+CommandsRegistry.registerCommand('_provideDocumentSemanticTokens', async (accessor, ...args) => {
+    const [uri] = args;
+    assertType(uri instanceof URI);
+    const model = accessor.get(IModelService).getModel(uri);
+    if (!model) {
+        return undefined;
+    }
+    const { documentSemanticTokensProvider } = accessor.get(ILanguageFeaturesService);
+    if (!hasDocumentSemanticTokensProvider(documentSemanticTokensProvider, model)) {
+        return accessor.get(ICommandService).executeCommand('_provideDocumentRangeSemanticTokens', uri, model.getFullModelRange());
+    }
+    const r = await getDocumentSemanticTokens(documentSemanticTokensProvider, model, null, null, CancellationToken.None);
+    if (!r) {
+        return undefined;
+    }
+    const { provider, tokens } = r;
+    if (!tokens || !isSemanticTokens(tokens)) {
+        return undefined;
+    }
+    const buff = encodeSemanticTokensDto({
+        id: 0,
+        type: 'full',
+        data: tokens.data
+    });
+    if (tokens.resultId) {
+        provider.releaseDocumentSemanticTokens(tokens.resultId);
+    }
+    return buff;
+});
+CommandsRegistry.registerCommand('_provideDocumentRangeSemanticTokensLegend', async (accessor, ...args) => {
+    const [uri, range] = args;
+    assertType(uri instanceof URI);
+    const model = accessor.get(IModelService).getModel(uri);
+    if (!model) {
+        return undefined;
+    }
+    const { documentRangeSemanticTokensProvider } = accessor.get(ILanguageFeaturesService);
+    const providers = getDocumentRangeSemanticTokensProviders(documentRangeSemanticTokensProvider, model);
+    if (providers.length === 0) {
+        return undefined;
+    }
+    if (providers.length === 1) {
+        return providers[0].getLegend();
+    }
+    if (!range || !Range.isIRange(range)) {
+        console.warn(`provideDocumentRangeSemanticTokensLegend might be out-of-sync with provideDocumentRangeSemanticTokens unless a range argument is passed in`);
+        return providers[0].getLegend();
+    }
+    const result = await getDocumentRangeSemanticTokens(documentRangeSemanticTokensProvider, model, Range.lift(range), CancellationToken.None);
+    if (!result) {
+        return undefined;
+    }
+    return result.provider.getLegend();
+});
+CommandsRegistry.registerCommand('_provideDocumentRangeSemanticTokens', async (accessor, ...args) => {
+    const [uri, range] = args;
+    assertType(uri instanceof URI);
+    assertType(Range.isIRange(range));
+    const model = accessor.get(IModelService).getModel(uri);
+    if (!model) {
+        return undefined;
+    }
+    const { documentRangeSemanticTokensProvider } = accessor.get(ILanguageFeaturesService);
+    const result = await getDocumentRangeSemanticTokens(documentRangeSemanticTokensProvider, model, Range.lift(range), CancellationToken.None);
+    if (!result || !result.tokens) {
+        return undefined;
+    }
+    return encodeSemanticTokensDto({
+        id: 0,
+        type: 'full',
+        data: result.tokens.data
+    });
+});

@@ -1,1 +1,83 @@
-import{localize as a}from"../../../../nls.js";import"../../../../base/common/event.js";import{isLinux as s}from"../../../../base/common/platform.js";import"../../../../platform/files/common/files.js";import{AbstractDiskFileSystemProvider as n}from"../../../../platform/files/common/diskFileSystemProvider.js";import"../../../../platform/ipc/common/mainProcessService.js";import"../../../../base/common/cancellation.js";import"../../../../base/common/stream.js";import"../../../../base/common/uri.js";import{DiskFileSystemProviderClient as l,LOCAL_FILE_SYSTEM_CHANNEL_NAME as d}from"../../../../platform/files/common/diskFileSystemProviderClient.js";import"../../../../platform/files/common/watcher.js";import{UniversalWatcherClient as p}from"./watcherClient.js";import"../../../../platform/log/common/log.js";import"../../utilityProcess/electron-sandbox/utilityProcessWorkerWorkbenchService.js";import{LogService as v}from"../../../../platform/log/common/logService.js";class ie extends n{constructor(e,i,r,t){super(r,{watcher:{forceUniversal:!0}});this.mainProcessService=e;this.utilityProcessWorkerWorkbenchService=i;this.loggerService=t;this.registerListeners()}provider=this._register(new l(this.mainProcessService.getChannel(d),{pathCaseSensitive:s,trash:!0}));registerListeners(){this._register(this.provider.onDidChangeFile(e=>this._onDidChangeFile.fire(e))),this._register(this.provider.onDidWatchError(e=>this._onDidWatchError.fire(e)))}get onDidChangeCapabilities(){return this.provider.onDidChangeCapabilities}get capabilities(){return this.provider.capabilities}stat(e){return this.provider.stat(e)}readdir(e){return this.provider.readdir(e)}readFile(e,i){return this.provider.readFile(e,i)}readFileStream(e,i,r){return this.provider.readFileStream(e,i,r)}writeFile(e,i,r){return this.provider.writeFile(e,i,r)}open(e,i){return this.provider.open(e,i)}close(e){return this.provider.close(e)}read(e,i,r,t,o){return this.provider.read(e,i,r,t,o)}write(e,i,r,t,o){return this.provider.write(e,i,r,t,o)}mkdir(e){return this.provider.mkdir(e)}delete(e,i){return this.provider.delete(e,i)}rename(e,i,r){return this.provider.rename(e,i,r)}copy(e,i,r){return this.provider.copy(e,i,r)}cloneFile(e,i){return this.provider.cloneFile(e,i)}createUniversalWatcher(e,i,r){return new p(t=>e(t),t=>i(t),r,this.utilityProcessWorkerWorkbenchService)}createNonRecursiveWatcher(){throw new Error("Method not implemented in sandbox.")}_watcherLogService=void 0;get watcherLogService(){return this._watcherLogService||(this._watcherLogService=new v(this.loggerService.createLogger("fileWatcher",{name:a("fileWatcher","File Watcher")}))),this._watcherLogService}logWatcherMessage(e){this.watcherLogService[e.type](e.message),e.type!=="trace"&&e.type!=="debug"&&super.logWatcherMessage(e)}}export{ie as DiskFileSystemProvider};
+import { localize } from '../../../../nls.js';
+import { isLinux } from '../../../../base/common/platform.js';
+import { AbstractDiskFileSystemProvider } from '../../../../platform/files/common/diskFileSystemProvider.js';
+import { DiskFileSystemProviderClient, LOCAL_FILE_SYSTEM_CHANNEL_NAME } from '../../../../platform/files/common/diskFileSystemProviderClient.js';
+import { UniversalWatcherClient } from './watcherClient.js';
+import { LogService } from '../../../../platform/log/common/logService.js';
+export class DiskFileSystemProvider extends AbstractDiskFileSystemProvider {
+    constructor(mainProcessService, utilityProcessWorkerWorkbenchService, logService, loggerService) {
+        super(logService, { watcher: { forceUniversal: true } });
+        this.mainProcessService = mainProcessService;
+        this.utilityProcessWorkerWorkbenchService = utilityProcessWorkerWorkbenchService;
+        this.loggerService = loggerService;
+        this.provider = this._register(new DiskFileSystemProviderClient(this.mainProcessService.getChannel(LOCAL_FILE_SYSTEM_CHANNEL_NAME), { pathCaseSensitive: isLinux, trash: true }));
+        this._watcherLogService = undefined;
+        this.registerListeners();
+    }
+    registerListeners() {
+        this._register(this.provider.onDidChangeFile(changes => this._onDidChangeFile.fire(changes)));
+        this._register(this.provider.onDidWatchError(error => this._onDidWatchError.fire(error)));
+    }
+    get onDidChangeCapabilities() { return this.provider.onDidChangeCapabilities; }
+    get capabilities() { return this.provider.capabilities; }
+    stat(resource) {
+        return this.provider.stat(resource);
+    }
+    readdir(resource) {
+        return this.provider.readdir(resource);
+    }
+    readFile(resource, opts) {
+        return this.provider.readFile(resource, opts);
+    }
+    readFileStream(resource, opts, token) {
+        return this.provider.readFileStream(resource, opts, token);
+    }
+    writeFile(resource, content, opts) {
+        return this.provider.writeFile(resource, content, opts);
+    }
+    open(resource, opts) {
+        return this.provider.open(resource, opts);
+    }
+    close(fd) {
+        return this.provider.close(fd);
+    }
+    read(fd, pos, data, offset, length) {
+        return this.provider.read(fd, pos, data, offset, length);
+    }
+    write(fd, pos, data, offset, length) {
+        return this.provider.write(fd, pos, data, offset, length);
+    }
+    mkdir(resource) {
+        return this.provider.mkdir(resource);
+    }
+    delete(resource, opts) {
+        return this.provider.delete(resource, opts);
+    }
+    rename(from, to, opts) {
+        return this.provider.rename(from, to, opts);
+    }
+    copy(from, to, opts) {
+        return this.provider.copy(from, to, opts);
+    }
+    cloneFile(from, to) {
+        return this.provider.cloneFile(from, to);
+    }
+    createUniversalWatcher(onChange, onLogMessage, verboseLogging) {
+        return new UniversalWatcherClient(changes => onChange(changes), msg => onLogMessage(msg), verboseLogging, this.utilityProcessWorkerWorkbenchService);
+    }
+    createNonRecursiveWatcher() {
+        throw new Error('Method not implemented in sandbox.');
+    }
+    get watcherLogService() {
+        if (!this._watcherLogService) {
+            this._watcherLogService = new LogService(this.loggerService.createLogger('fileWatcher', { name: localize('fileWatcher', "File Watcher") }));
+        }
+        return this._watcherLogService;
+    }
+    logWatcherMessage(msg) {
+        this.watcherLogService[msg.type](msg.message);
+        if (msg.type !== 'trace' && msg.type !== 'debug') {
+            super.logWatcherMessage(msg);
+        }
+    }
+}

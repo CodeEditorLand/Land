@@ -1,1 +1,202 @@
-var w=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var x=(h,o,r,e)=>{for(var t=e>1?void 0:e?T(o,r):o,s=h.length-1,i;s>=0;s--)(i=h[s])&&(t=(e?i(o,r,t):i(t))||t);return e&&t&&w(o,r,t),t},g=(h,o)=>(r,e)=>o(r,e,h);import{CancellationToken as S}from"../../../../../../base/common/cancellation.js";import{codiconsLibrary as y}from"../../../../../../base/common/codiconsLibrary.js";import{Disposable as L}from"../../../../../../base/common/lifecycle.js";import"../../../../../../editor/common/core/position.js";import{Range as N}from"../../../../../../editor/common/core/range.js";import"../../../../../../editor/common/core/wordHelper.js";import{CompletionItemKind as P}from"../../../../../../editor/common/languages.js";import"../../../../../../editor/common/model.js";import{ILanguageFeaturesService as R}from"../../../../../../editor/common/services/languageFeatures.js";import{localize as E}from"../../../../../../nls.js";import{Action2 as $,registerAction2 as _}from"../../../../../../platform/actions/common/actions.js";import{IContextKeyService as M}from"../../../../../../platform/contextkey/common/contextkey.js";import"../../../../../../platform/instantiation/common/instantiation.js";import{IQuickInputService as F}from"../../../../../../platform/quickinput/common/quickInput.js";import{registerWorkbenchContribution2 as H,WorkbenchPhase as B}from"../../../../../common/contributions.js";import{IEditorService as V}from"../../../../../services/editor/common/editorService.js";import{IChatWidgetService as z}from"../../../../chat/browser/chat.js";import{ChatInputPart as O}from"../../../../chat/browser/chatInputPart.js";import{ChatContextAttachments as Q}from"../../../../chat/browser/contrib/chatContextAttachments.js";import{ChatDynamicVariableModel as q}from"../../../../chat/browser/contrib/chatDynamicVariables.js";import{computeCompletionRanges as U}from"../../../../chat/browser/contrib/chatInputCompletions.js";import{ChatAgentLocation as K,IChatAgentService as G}from"../../../../chat/common/chatAgents.js";import{chatVariableLeader as u}from"../../../../chat/common/chatParserTypes.js";import{INotebookKernelService as D}from"../../../common/notebookKernelService.js";import{getNotebookEditorFromEditorPane as A}from"../../notebookBrowser.js";import"./cellChatActions.js";import{CTX_NOTEBOOK_CHAT_HAS_AGENT as X}from"./notebookChatContext.js";const I="kernelVariable";let f=class extends L{constructor(r,e,t,s,i,n){super();this.editorService=t;this.chatWidgetService=s;this.notebookKernelService=i;this.languageFeaturesService=n;this._ctxHasProvider=X.bindTo(r);const l=()=>{const c=!!e.getDefaultAgent(K.Notebook);this._ctxHasProvider.set(c)};l(),this._register(e.onDidChangeAgents(l)),this._register(this.languageFeaturesService.completionProvider.register({scheme:O.INPUT_SCHEME,hasAccessToAllModels:!0},{_debugDisplayName:"chatKernelDynamicCompletions",triggerCharacters:[u],provideCompletionItems:async(c,d,a,k)=>{const p=this.chatWidgetService.getWidgetByInputUri(c.uri);if(!p||!p.supportsFileReferences||p.location!==K.Notebook)return null;const C=new RegExp(`${u}\\w*`,"g"),m=U(c,d,C,!0);if(!m)return null;const b={suggestions:[]},W=new N(d.lineNumber,m.replace.startColumn,d.lineNumber,m.replace.startColumn+`${u}${I}:`.length);return b.suggestions.push({label:`${u}${I}`,insertText:`${u}${I}:`,detail:E("pickKernelVariableLabel","Pick a variable from the kernel"),range:m,kind:P.Text,command:{id:v.ID,title:v.ID,arguments:[{widget:p,range:W}]},sortText:"z"}),await this.addKernelVariableCompletion(p,b,m,k),b}}))}static ID="workbench.contrib.notebookChatContribution";_ctxHasProvider;async addKernelVariableCompletion(r,e,t,s){let i;t.varWord?.word&&t.varWord.word.startsWith(u)&&(i=t.varWord.word.toLowerCase().slice(1));const n=A(this.editorService.activeEditorPane)?.getViewModel()?.notebookDocument;if(!n)return;const l=this.notebookKernelService.getMatchingKernel(n).selected;if(!l?.hasVariableProvider)return;const d=await l.provideVariables(n.uri,void 0,"named",0,S.None);for await(const a of d)i&&!a.name.toLowerCase().includes(i)||e.suggestions.push({label:{label:a.name,description:a.type},insertText:`${u}${I}:${a.name} `,filterText:`${u}${a.name}`,range:t,kind:P.Variable,sortText:"z",command:{id:v.ID,title:v.ID,arguments:[{widget:r,range:t.insert,variable:a.name}]},detail:a.type,documentation:a.value})}};f=x([g(0,M),g(1,G),g(2,V),g(3,z),g(4,D),g(5,R)],f);class v extends ${constructor(){super({id:v.ID,title:""})}static ID="notebook.chat.selectAndInsertKernelVariable";async run(o,...r){const e=o.get(V),t=o.get(D),s=o.get(F),i=A(e.activeEditorPane)?.getViewModel()?.notebookDocument;if(!i)return;const n=r[0];if(!n||!("widget"in n)||!("range"in n))return;const l=n.widget,c=n.range,d=n.variable;if(d!==void 0){this.addVariableReference(l,d,c,!1);return}const a=t.getMatchingKernel(i).selected;if(!a?.hasVariableProvider)return;const p=await a.provideVariables(i.uri,void 0,"named",0,S.None),C=[];for await(const b of p)C.push({label:b.name,description:b.value,detail:b.type});const m=await s.pick(C,{placeHolder:"Select a kernel variable"});m&&this.addVariableReference(l,m.label,c,!0)}addVariableReference(o,r,e,t){if(e){const s=`#kernelVariable:${r}`;if(t&&!o.inputEditor.executeEdits("chatInsertFile",[{range:e,text:s+" "}]))return;o.getContrib(q.ID)?.addReference({id:"vscode.notebook.variable",range:{startLineNumber:e.startLineNumber,startColumn:e.startColumn,endLineNumber:e.endLineNumber,endColumn:e.startColumn+s.length},data:r,fullName:r,icon:y.variable})}else o.getContrib(Q.ID)?.setContext(!1,{id:"vscode.notebook.variable",name:r,value:r,icon:y.variable,isDynamic:!0})}}_(v),H(f.ID,f,B.BlockRestore);export{v as SelectAndInsertKernelVariableAction};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { CancellationToken } from '../../../../../../base/common/cancellation.js';
+import { codiconsLibrary } from '../../../../../../base/common/codiconsLibrary.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+import { Range } from '../../../../../../editor/common/core/range.js';
+import { ILanguageFeaturesService } from '../../../../../../editor/common/services/languageFeatures.js';
+import { localize } from '../../../../../../nls.js';
+import { Action2, registerAction2 } from '../../../../../../platform/actions/common/actions.js';
+import { IContextKeyService } from '../../../../../../platform/contextkey/common/contextkey.js';
+import { IQuickInputService } from '../../../../../../platform/quickinput/common/quickInput.js';
+import { registerWorkbenchContribution2 } from '../../../../../common/contributions.js';
+import { IEditorService } from '../../../../../services/editor/common/editorService.js';
+import { IChatWidgetService } from '../../../../chat/browser/chat.js';
+import { ChatInputPart } from '../../../../chat/browser/chatInputPart.js';
+import { ChatContextAttachments } from '../../../../chat/browser/contrib/chatContextAttachments.js';
+import { ChatDynamicVariableModel } from '../../../../chat/browser/contrib/chatDynamicVariables.js';
+import { computeCompletionRanges } from '../../../../chat/browser/contrib/chatInputCompletions.js';
+import { ChatAgentLocation, IChatAgentService } from '../../../../chat/common/chatAgents.js';
+import { chatVariableLeader } from '../../../../chat/common/chatParserTypes.js';
+import { INotebookKernelService } from '../../../common/notebookKernelService.js';
+import { getNotebookEditorFromEditorPane } from '../../notebookBrowser.js';
+import './cellChatActions.js';
+import { CTX_NOTEBOOK_CHAT_HAS_AGENT } from './notebookChatContext.js';
+const NotebookKernelVariableKey = 'kernelVariable';
+let NotebookChatContribution = class NotebookChatContribution extends Disposable {
+    static { this.ID = 'workbench.contrib.notebookChatContribution'; }
+    constructor(contextKeyService, chatAgentService, editorService, chatWidgetService, notebookKernelService, languageFeaturesService) {
+        super();
+        this.editorService = editorService;
+        this.chatWidgetService = chatWidgetService;
+        this.notebookKernelService = notebookKernelService;
+        this.languageFeaturesService = languageFeaturesService;
+        this._ctxHasProvider = CTX_NOTEBOOK_CHAT_HAS_AGENT.bindTo(contextKeyService);
+        const updateNotebookAgentStatus = () => {
+            const hasNotebookAgent = Boolean(chatAgentService.getDefaultAgent(ChatAgentLocation.Notebook));
+            this._ctxHasProvider.set(hasNotebookAgent);
+        };
+        updateNotebookAgentStatus();
+        this._register(chatAgentService.onDidChangeAgents(updateNotebookAgentStatus));
+        this._register(this.languageFeaturesService.completionProvider.register({ scheme: ChatInputPart.INPUT_SCHEME, hasAccessToAllModels: true }, {
+            _debugDisplayName: 'chatKernelDynamicCompletions',
+            triggerCharacters: [chatVariableLeader],
+            provideCompletionItems: async (model, position, _context, token) => {
+                const widget = this.chatWidgetService.getWidgetByInputUri(model.uri);
+                if (!widget || !widget.supportsFileReferences) {
+                    return null;
+                }
+                if (widget.location !== ChatAgentLocation.Notebook) {
+                    return null;
+                }
+                const variableNameDef = new RegExp(`${chatVariableLeader}\\w*`, 'g');
+                const range = computeCompletionRanges(model, position, variableNameDef, true);
+                if (!range) {
+                    return null;
+                }
+                const result = { suggestions: [] };
+                const afterRange = new Range(position.lineNumber, range.replace.startColumn, position.lineNumber, range.replace.startColumn + `${chatVariableLeader}${NotebookKernelVariableKey}:`.length);
+                result.suggestions.push({
+                    label: `${chatVariableLeader}${NotebookKernelVariableKey}`,
+                    insertText: `${chatVariableLeader}${NotebookKernelVariableKey}:`,
+                    detail: localize('pickKernelVariableLabel', "Pick a variable from the kernel"),
+                    range,
+                    kind: 18,
+                    command: { id: SelectAndInsertKernelVariableAction.ID, title: SelectAndInsertKernelVariableAction.ID, arguments: [{ widget, range: afterRange }] },
+                    sortText: 'z'
+                });
+                await this.addKernelVariableCompletion(widget, result, range, token);
+                return result;
+            }
+        }));
+    }
+    async addKernelVariableCompletion(widget, result, info, token) {
+        let pattern;
+        if (info.varWord?.word && info.varWord.word.startsWith(chatVariableLeader)) {
+            pattern = info.varWord.word.toLowerCase().slice(1);
+        }
+        const notebook = getNotebookEditorFromEditorPane(this.editorService.activeEditorPane)?.getViewModel()?.notebookDocument;
+        if (!notebook) {
+            return;
+        }
+        const selectedKernel = this.notebookKernelService.getMatchingKernel(notebook).selected;
+        const hasVariableProvider = selectedKernel?.hasVariableProvider;
+        if (!hasVariableProvider) {
+            return;
+        }
+        const variables = await selectedKernel.provideVariables(notebook.uri, undefined, 'named', 0, CancellationToken.None);
+        for await (const variable of variables) {
+            if (pattern && !variable.name.toLowerCase().includes(pattern)) {
+                continue;
+            }
+            result.suggestions.push({
+                label: { label: variable.name, description: variable.type },
+                insertText: `${chatVariableLeader}${NotebookKernelVariableKey}:${variable.name} `,
+                filterText: `${chatVariableLeader}${variable.name}`,
+                range: info,
+                kind: 4,
+                sortText: 'z',
+                command: { id: SelectAndInsertKernelVariableAction.ID, title: SelectAndInsertKernelVariableAction.ID, arguments: [{ widget, range: info.insert, variable: variable.name }] },
+                detail: variable.type,
+                documentation: variable.value,
+            });
+        }
+    }
+};
+NotebookChatContribution = __decorate([
+    __param(0, IContextKeyService),
+    __param(1, IChatAgentService),
+    __param(2, IEditorService),
+    __param(3, IChatWidgetService),
+    __param(4, INotebookKernelService),
+    __param(5, ILanguageFeaturesService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], NotebookChatContribution);
+export class SelectAndInsertKernelVariableAction extends Action2 {
+    constructor() {
+        super({
+            id: SelectAndInsertKernelVariableAction.ID,
+            title: ''
+        });
+    }
+    static { this.ID = 'notebook.chat.selectAndInsertKernelVariable'; }
+    async run(accessor, ...args) {
+        const editorService = accessor.get(IEditorService);
+        const notebookKernelService = accessor.get(INotebookKernelService);
+        const quickInputService = accessor.get(IQuickInputService);
+        const notebook = getNotebookEditorFromEditorPane(editorService.activeEditorPane)?.getViewModel()?.notebookDocument;
+        if (!notebook) {
+            return;
+        }
+        const context = args[0];
+        if (!context || !('widget' in context) || !('range' in context)) {
+            return;
+        }
+        const widget = context.widget;
+        const range = context.range;
+        const variable = context.variable;
+        if (variable !== undefined) {
+            this.addVariableReference(widget, variable, range, false);
+            return;
+        }
+        const selectedKernel = notebookKernelService.getMatchingKernel(notebook).selected;
+        const hasVariableProvider = selectedKernel?.hasVariableProvider;
+        if (!hasVariableProvider) {
+            return;
+        }
+        const variables = await selectedKernel.provideVariables(notebook.uri, undefined, 'named', 0, CancellationToken.None);
+        const quickPickItems = [];
+        for await (const variable of variables) {
+            quickPickItems.push({
+                label: variable.name,
+                description: variable.value,
+                detail: variable.type,
+            });
+        }
+        const pickedVariable = await quickInputService.pick(quickPickItems, { placeHolder: 'Select a kernel variable' });
+        if (!pickedVariable) {
+            return;
+        }
+        this.addVariableReference(widget, pickedVariable.label, range, true);
+    }
+    addVariableReference(widget, variableName, range, updateText) {
+        if (range) {
+            const text = `#kernelVariable:${variableName}`;
+            if (updateText) {
+                const editor = widget.inputEditor;
+                const success = editor.executeEdits('chatInsertFile', [{ range, text: text + ' ' }]);
+                if (!success) {
+                    return;
+                }
+            }
+            widget.getContrib(ChatDynamicVariableModel.ID)?.addReference({
+                id: 'vscode.notebook.variable',
+                range: { startLineNumber: range.startLineNumber, startColumn: range.startColumn, endLineNumber: range.endLineNumber, endColumn: range.startColumn + text.length },
+                data: variableName,
+                fullName: variableName,
+                icon: codiconsLibrary.variable,
+            });
+        }
+        else {
+            widget.getContrib(ChatContextAttachments.ID)?.setContext(false, ...[{
+                    id: 'vscode.notebook.variable',
+                    name: variableName,
+                    value: variableName,
+                    icon: codiconsLibrary.variable,
+                    isDynamic: true
+                }]);
+        }
+    }
+}
+registerAction2(SelectAndInsertKernelVariableAction);
+registerWorkbenchContribution2(NotebookChatContribution.ID, NotebookChatContribution, 2);

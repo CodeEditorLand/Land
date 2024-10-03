@@ -1,1 +1,410 @@
-import{createFastDomNode as L}from"../../../base/browser/fastDomNode.js";import{createTrustedTypesPolicy as f}from"../../../base/browser/trustedTypes.js";import{BugIndicatingError as g}from"../../../base/common/errors.js";import{EditorOption as N}from"../../common/config/editorOptions.js";import{StringBuilder as _}from"../../common/core/stringBuilder.js";import"../../common/viewEvents.js";import"../../common/viewLayout/viewLinesViewportData.js";class v{constructor(e){this._lineFactory=e;this._set(1,[])}_lines;_rendLineNumberStart;flush(){this._set(1,[])}_set(e,t){this._lines=t,this._rendLineNumberStart=e}_get(){return{rendLineNumberStart:this._rendLineNumberStart,lines:this._lines}}getStartLineNumber(){return this._rendLineNumberStart}getEndLineNumber(){return this._rendLineNumberStart+this._lines.length-1}getCount(){return this._lines.length}getLine(e){const t=e-this._rendLineNumberStart;if(t<0||t>=this._lines.length)throw new g("Illegal value for lineNumber");return this._lines[t]}onLinesDeleted(e,t){if(this.getCount()===0)return null;const i=this.getStartLineNumber(),o=this.getEndLineNumber();if(t<i){const l=t-e+1;return this._rendLineNumberStart-=l,null}if(e>o)return null;let n=0,r=0;for(let l=i;l<=o;l++){const a=l-this._rendLineNumberStart;e<=l&&l<=t&&(r===0?(n=a,r=1):r++)}if(e<i){let l=0;t<i?l=t-e+1:l=i-e,this._rendLineNumberStart-=l}return this._lines.splice(n,r)}onLinesChanged(e,t){const i=e+t-1;if(this.getCount()===0)return!1;const o=this.getStartLineNumber(),n=this.getEndLineNumber();let r=!1;for(let s=e;s<=i;s++)s>=o&&s<=n&&(this._lines[s-this._rendLineNumberStart].onContentChanged(),r=!0);return r}onLinesInserted(e,t){if(this.getCount()===0)return null;const i=t-e+1,o=this.getStartLineNumber(),n=this.getEndLineNumber();if(e<=o)return this._rendLineNumberStart+=i,null;if(e>n)return null;if(i+e>n)return this._lines.splice(e-this._rendLineNumberStart,n-e+1);const r=[];for(let d=0;d<i;d++)r[d]=this._lineFactory.createLine();const s=e-this._rendLineNumberStart,l=this._lines.slice(0,s),a=this._lines.slice(s,this._lines.length-i),u=this._lines.slice(this._lines.length-i,this._lines.length);return this._lines=l.concat(r).concat(a),u}onTokensChanged(e){if(this.getCount()===0)return!1;const t=this.getStartLineNumber(),i=this.getEndLineNumber();let o=!1;for(let n=0,r=e.length;n<r;n++){const s=e[n];if(s.toLineNumber<t||s.fromLineNumber>i)continue;const l=Math.max(t,s.fromLineNumber),a=Math.min(i,s.toLineNumber);for(let u=l;u<=a;u++){const d=u-this._rendLineNumberStart;this._lines[d].onTokensChanged(),o=!0}}return o}}class x{constructor(e){this._lineFactory=e}domNode=this._createDomNode();_linesCollection=new v(this._lineFactory);_createDomNode(){const e=L(document.createElement("div"));return e.setClassName("view-layer"),e.setPosition("absolute"),e.domNode.setAttribute("role","presentation"),e.domNode.setAttribute("aria-hidden","true"),e}onConfigurationChanged(e){return!!e.hasChanged(N.layoutInfo)}onFlushed(e){return this._linesCollection.flush(),!0}onLinesChanged(e){return this._linesCollection.onLinesChanged(e.fromLineNumber,e.count)}onLinesDeleted(e){const t=this._linesCollection.onLinesDeleted(e.fromLineNumber,e.toLineNumber);if(t)for(let i=0,o=t.length;i<o;i++)t[i].getDomNode()?.remove();return!0}onLinesInserted(e){const t=this._linesCollection.onLinesInserted(e.fromLineNumber,e.toLineNumber);if(t)for(let i=0,o=t.length;i<o;i++)t[i].getDomNode()?.remove();return!0}onScrollChanged(e){return e.scrollTopChanged}onTokensChanged(e){return this._linesCollection.onTokensChanged(e.ranges)}onZonesChanged(e){return!0}getStartLineNumber(){return this._linesCollection.getStartLineNumber()}getEndLineNumber(){return this._linesCollection.getEndLineNumber()}getVisibleLine(e){return this._linesCollection.getLine(e)}renderLines(e){const t=this._linesCollection._get(),i=new m(this.domNode.domNode,this._lineFactory,e),o={rendLineNumberStart:t.rendLineNumberStart,lines:t.lines,linesLength:t.lines.length},n=i.render(o,e.startLineNumber,e.endLineNumber,e.relativeVerticalOffset);this._linesCollection._set(n.rendLineNumberStart,n.lines)}}class m{constructor(e,t,i){this._domNode=e;this._lineFactory=t;this._viewportData=i}static _ttPolicy=f("editorViewLayer",{createHTML:e=>e});render(e,t,i,o){const n={rendLineNumberStart:e.rendLineNumberStart,lines:e.lines.slice(0),linesLength:e.linesLength};if(n.rendLineNumberStart+n.linesLength-1<t||i<n.rendLineNumberStart){n.rendLineNumberStart=t,n.linesLength=i-t+1,n.lines=[];for(let r=t;r<=i;r++)n.lines[r-t]=this._lineFactory.createLine();return this._finishRendering(n,!0,o),n}if(this._renderUntouchedLines(n,Math.max(t-n.rendLineNumberStart,0),Math.min(i-n.rendLineNumberStart,n.linesLength-1),o,t),n.rendLineNumberStart>t){const r=t,s=Math.min(i,n.rendLineNumberStart-1);r<=s&&(this._insertLinesBefore(n,r,s,o,t),n.linesLength+=s-r+1)}else if(n.rendLineNumberStart<t){const r=Math.min(n.linesLength,t-n.rendLineNumberStart);r>0&&(this._removeLinesBefore(n,r),n.linesLength-=r)}if(n.rendLineNumberStart=t,n.rendLineNumberStart+n.linesLength-1<i){const r=n.rendLineNumberStart+n.linesLength,s=i;r<=s&&(this._insertLinesAfter(n,r,s,o,t),n.linesLength+=s-r+1)}else if(n.rendLineNumberStart+n.linesLength-1>i){const r=Math.max(0,i-n.rendLineNumberStart+1),l=n.linesLength-1-r+1;l>0&&(this._removeLinesAfter(n,l),n.linesLength-=l)}return this._finishRendering(n,!1,o),n}_renderUntouchedLines(e,t,i,o,n){const r=e.rendLineNumberStart,s=e.lines;for(let l=t;l<=i;l++){const a=r+l;s[l].layoutLine(a,o[a-n],this._viewportData.lineHeight)}}_insertLinesBefore(e,t,i,o,n){const r=[];let s=0;for(let l=t;l<=i;l++)r[s++]=this._lineFactory.createLine();e.lines=r.concat(e.lines)}_removeLinesBefore(e,t){for(let i=0;i<t;i++)e.lines[i].getDomNode()?.remove();e.lines.splice(0,t)}_insertLinesAfter(e,t,i,o,n){const r=[];let s=0;for(let l=t;l<=i;l++)r[s++]=this._lineFactory.createLine();e.lines=e.lines.concat(r)}_removeLinesAfter(e,t){const i=e.linesLength-t;for(let o=0;o<t;o++)e.lines[i+o].getDomNode()?.remove();e.lines.splice(i,t)}_finishRenderingNewLines(e,t,i,o){m._ttPolicy&&(i=m._ttPolicy.createHTML(i));const n=this._domNode.lastChild;t||!n?this._domNode.innerHTML=i:n.insertAdjacentHTML("afterend",i);let r=this._domNode.lastChild;for(let s=e.linesLength-1;s>=0;s--){const l=e.lines[s];o[s]&&(l.setDomNode(r),r=r.previousSibling)}}_finishRenderingInvalidLines(e,t,i){const o=document.createElement("div");m._ttPolicy&&(t=m._ttPolicy.createHTML(t)),o.innerHTML=t;for(let n=0;n<e.linesLength;n++){const r=e.lines[n];if(i[n]){const s=o.firstChild,l=r.getDomNode();l.parentNode.replaceChild(s,l),r.setDomNode(s)}}}static _sb=new _(1e5);_finishRendering(e,t,i){const o=m._sb,n=e.linesLength,r=e.lines,s=e.rendLineNumberStart,l=[];{o.reset();let a=!1;for(let u=0;u<n;u++){const d=r[u];l[u]=!1,!(d.getDomNode()||!d.renderLine(u+s,i[u],this._viewportData.lineHeight,this._viewportData,o))&&(l[u]=!0,a=!0)}a&&this._finishRenderingNewLines(e,t,o.build(),l)}{o.reset();let a=!1;const u=[];for(let d=0;d<n;d++){const c=r[d];u[d]=!1,!(l[d]||!c.renderLine(d+s,i[d],this._viewportData.lineHeight,this._viewportData,o))&&(u[d]=!0,a=!0)}a&&this._finishRenderingInvalidLines(e,o.build(),u)}}}export{v as RenderedLinesCollection,x as VisibleLinesCollection};
+import { createFastDomNode } from '../../../base/browser/fastDomNode.js';
+import { createTrustedTypesPolicy } from '../../../base/browser/trustedTypes.js';
+import { BugIndicatingError } from '../../../base/common/errors.js';
+import { StringBuilder } from '../../common/core/stringBuilder.js';
+export class RenderedLinesCollection {
+    constructor(_lineFactory) {
+        this._lineFactory = _lineFactory;
+        this._set(1, []);
+    }
+    flush() {
+        this._set(1, []);
+    }
+    _set(rendLineNumberStart, lines) {
+        this._lines = lines;
+        this._rendLineNumberStart = rendLineNumberStart;
+    }
+    _get() {
+        return {
+            rendLineNumberStart: this._rendLineNumberStart,
+            lines: this._lines
+        };
+    }
+    getStartLineNumber() {
+        return this._rendLineNumberStart;
+    }
+    getEndLineNumber() {
+        return this._rendLineNumberStart + this._lines.length - 1;
+    }
+    getCount() {
+        return this._lines.length;
+    }
+    getLine(lineNumber) {
+        const lineIndex = lineNumber - this._rendLineNumberStart;
+        if (lineIndex < 0 || lineIndex >= this._lines.length) {
+            throw new BugIndicatingError('Illegal value for lineNumber');
+        }
+        return this._lines[lineIndex];
+    }
+    onLinesDeleted(deleteFromLineNumber, deleteToLineNumber) {
+        if (this.getCount() === 0) {
+            return null;
+        }
+        const startLineNumber = this.getStartLineNumber();
+        const endLineNumber = this.getEndLineNumber();
+        if (deleteToLineNumber < startLineNumber) {
+            const deleteCnt = deleteToLineNumber - deleteFromLineNumber + 1;
+            this._rendLineNumberStart -= deleteCnt;
+            return null;
+        }
+        if (deleteFromLineNumber > endLineNumber) {
+            return null;
+        }
+        let deleteStartIndex = 0;
+        let deleteCount = 0;
+        for (let lineNumber = startLineNumber; lineNumber <= endLineNumber; lineNumber++) {
+            const lineIndex = lineNumber - this._rendLineNumberStart;
+            if (deleteFromLineNumber <= lineNumber && lineNumber <= deleteToLineNumber) {
+                if (deleteCount === 0) {
+                    deleteStartIndex = lineIndex;
+                    deleteCount = 1;
+                }
+                else {
+                    deleteCount++;
+                }
+            }
+        }
+        if (deleteFromLineNumber < startLineNumber) {
+            let deleteAboveCount = 0;
+            if (deleteToLineNumber < startLineNumber) {
+                deleteAboveCount = deleteToLineNumber - deleteFromLineNumber + 1;
+            }
+            else {
+                deleteAboveCount = startLineNumber - deleteFromLineNumber;
+            }
+            this._rendLineNumberStart -= deleteAboveCount;
+        }
+        const deleted = this._lines.splice(deleteStartIndex, deleteCount);
+        return deleted;
+    }
+    onLinesChanged(changeFromLineNumber, changeCount) {
+        const changeToLineNumber = changeFromLineNumber + changeCount - 1;
+        if (this.getCount() === 0) {
+            return false;
+        }
+        const startLineNumber = this.getStartLineNumber();
+        const endLineNumber = this.getEndLineNumber();
+        let someoneNotified = false;
+        for (let changedLineNumber = changeFromLineNumber; changedLineNumber <= changeToLineNumber; changedLineNumber++) {
+            if (changedLineNumber >= startLineNumber && changedLineNumber <= endLineNumber) {
+                this._lines[changedLineNumber - this._rendLineNumberStart].onContentChanged();
+                someoneNotified = true;
+            }
+        }
+        return someoneNotified;
+    }
+    onLinesInserted(insertFromLineNumber, insertToLineNumber) {
+        if (this.getCount() === 0) {
+            return null;
+        }
+        const insertCnt = insertToLineNumber - insertFromLineNumber + 1;
+        const startLineNumber = this.getStartLineNumber();
+        const endLineNumber = this.getEndLineNumber();
+        if (insertFromLineNumber <= startLineNumber) {
+            this._rendLineNumberStart += insertCnt;
+            return null;
+        }
+        if (insertFromLineNumber > endLineNumber) {
+            return null;
+        }
+        if (insertCnt + insertFromLineNumber > endLineNumber) {
+            const deleted = this._lines.splice(insertFromLineNumber - this._rendLineNumberStart, endLineNumber - insertFromLineNumber + 1);
+            return deleted;
+        }
+        const newLines = [];
+        for (let i = 0; i < insertCnt; i++) {
+            newLines[i] = this._lineFactory.createLine();
+        }
+        const insertIndex = insertFromLineNumber - this._rendLineNumberStart;
+        const beforeLines = this._lines.slice(0, insertIndex);
+        const afterLines = this._lines.slice(insertIndex, this._lines.length - insertCnt);
+        const deletedLines = this._lines.slice(this._lines.length - insertCnt, this._lines.length);
+        this._lines = beforeLines.concat(newLines).concat(afterLines);
+        return deletedLines;
+    }
+    onTokensChanged(ranges) {
+        if (this.getCount() === 0) {
+            return false;
+        }
+        const startLineNumber = this.getStartLineNumber();
+        const endLineNumber = this.getEndLineNumber();
+        let notifiedSomeone = false;
+        for (let i = 0, len = ranges.length; i < len; i++) {
+            const rng = ranges[i];
+            if (rng.toLineNumber < startLineNumber || rng.fromLineNumber > endLineNumber) {
+                continue;
+            }
+            const from = Math.max(startLineNumber, rng.fromLineNumber);
+            const to = Math.min(endLineNumber, rng.toLineNumber);
+            for (let lineNumber = from; lineNumber <= to; lineNumber++) {
+                const lineIndex = lineNumber - this._rendLineNumberStart;
+                this._lines[lineIndex].onTokensChanged();
+                notifiedSomeone = true;
+            }
+        }
+        return notifiedSomeone;
+    }
+}
+export class VisibleLinesCollection {
+    constructor(_lineFactory) {
+        this._lineFactory = _lineFactory;
+        this.domNode = this._createDomNode();
+        this._linesCollection = new RenderedLinesCollection(this._lineFactory);
+    }
+    _createDomNode() {
+        const domNode = createFastDomNode(document.createElement('div'));
+        domNode.setClassName('view-layer');
+        domNode.setPosition('absolute');
+        domNode.domNode.setAttribute('role', 'presentation');
+        domNode.domNode.setAttribute('aria-hidden', 'true');
+        return domNode;
+    }
+    onConfigurationChanged(e) {
+        if (e.hasChanged(148)) {
+            return true;
+        }
+        return false;
+    }
+    onFlushed(e) {
+        this._linesCollection.flush();
+        return true;
+    }
+    onLinesChanged(e) {
+        return this._linesCollection.onLinesChanged(e.fromLineNumber, e.count);
+    }
+    onLinesDeleted(e) {
+        const deleted = this._linesCollection.onLinesDeleted(e.fromLineNumber, e.toLineNumber);
+        if (deleted) {
+            for (let i = 0, len = deleted.length; i < len; i++) {
+                const lineDomNode = deleted[i].getDomNode();
+                lineDomNode?.remove();
+            }
+        }
+        return true;
+    }
+    onLinesInserted(e) {
+        const deleted = this._linesCollection.onLinesInserted(e.fromLineNumber, e.toLineNumber);
+        if (deleted) {
+            for (let i = 0, len = deleted.length; i < len; i++) {
+                const lineDomNode = deleted[i].getDomNode();
+                lineDomNode?.remove();
+            }
+        }
+        return true;
+    }
+    onScrollChanged(e) {
+        return e.scrollTopChanged;
+    }
+    onTokensChanged(e) {
+        return this._linesCollection.onTokensChanged(e.ranges);
+    }
+    onZonesChanged(e) {
+        return true;
+    }
+    getStartLineNumber() {
+        return this._linesCollection.getStartLineNumber();
+    }
+    getEndLineNumber() {
+        return this._linesCollection.getEndLineNumber();
+    }
+    getVisibleLine(lineNumber) {
+        return this._linesCollection.getLine(lineNumber);
+    }
+    renderLines(viewportData) {
+        const inp = this._linesCollection._get();
+        const renderer = new ViewLayerRenderer(this.domNode.domNode, this._lineFactory, viewportData);
+        const ctx = {
+            rendLineNumberStart: inp.rendLineNumberStart,
+            lines: inp.lines,
+            linesLength: inp.lines.length
+        };
+        const resCtx = renderer.render(ctx, viewportData.startLineNumber, viewportData.endLineNumber, viewportData.relativeVerticalOffset);
+        this._linesCollection._set(resCtx.rendLineNumberStart, resCtx.lines);
+    }
+}
+class ViewLayerRenderer {
+    static { this._ttPolicy = createTrustedTypesPolicy('editorViewLayer', { createHTML: value => value }); }
+    constructor(_domNode, _lineFactory, _viewportData) {
+        this._domNode = _domNode;
+        this._lineFactory = _lineFactory;
+        this._viewportData = _viewportData;
+    }
+    render(inContext, startLineNumber, stopLineNumber, deltaTop) {
+        const ctx = {
+            rendLineNumberStart: inContext.rendLineNumberStart,
+            lines: inContext.lines.slice(0),
+            linesLength: inContext.linesLength
+        };
+        if ((ctx.rendLineNumberStart + ctx.linesLength - 1 < startLineNumber) || (stopLineNumber < ctx.rendLineNumberStart)) {
+            ctx.rendLineNumberStart = startLineNumber;
+            ctx.linesLength = stopLineNumber - startLineNumber + 1;
+            ctx.lines = [];
+            for (let x = startLineNumber; x <= stopLineNumber; x++) {
+                ctx.lines[x - startLineNumber] = this._lineFactory.createLine();
+            }
+            this._finishRendering(ctx, true, deltaTop);
+            return ctx;
+        }
+        this._renderUntouchedLines(ctx, Math.max(startLineNumber - ctx.rendLineNumberStart, 0), Math.min(stopLineNumber - ctx.rendLineNumberStart, ctx.linesLength - 1), deltaTop, startLineNumber);
+        if (ctx.rendLineNumberStart > startLineNumber) {
+            const fromLineNumber = startLineNumber;
+            const toLineNumber = Math.min(stopLineNumber, ctx.rendLineNumberStart - 1);
+            if (fromLineNumber <= toLineNumber) {
+                this._insertLinesBefore(ctx, fromLineNumber, toLineNumber, deltaTop, startLineNumber);
+                ctx.linesLength += toLineNumber - fromLineNumber + 1;
+            }
+        }
+        else if (ctx.rendLineNumberStart < startLineNumber) {
+            const removeCnt = Math.min(ctx.linesLength, startLineNumber - ctx.rendLineNumberStart);
+            if (removeCnt > 0) {
+                this._removeLinesBefore(ctx, removeCnt);
+                ctx.linesLength -= removeCnt;
+            }
+        }
+        ctx.rendLineNumberStart = startLineNumber;
+        if (ctx.rendLineNumberStart + ctx.linesLength - 1 < stopLineNumber) {
+            const fromLineNumber = ctx.rendLineNumberStart + ctx.linesLength;
+            const toLineNumber = stopLineNumber;
+            if (fromLineNumber <= toLineNumber) {
+                this._insertLinesAfter(ctx, fromLineNumber, toLineNumber, deltaTop, startLineNumber);
+                ctx.linesLength += toLineNumber - fromLineNumber + 1;
+            }
+        }
+        else if (ctx.rendLineNumberStart + ctx.linesLength - 1 > stopLineNumber) {
+            const fromLineNumber = Math.max(0, stopLineNumber - ctx.rendLineNumberStart + 1);
+            const toLineNumber = ctx.linesLength - 1;
+            const removeCnt = toLineNumber - fromLineNumber + 1;
+            if (removeCnt > 0) {
+                this._removeLinesAfter(ctx, removeCnt);
+                ctx.linesLength -= removeCnt;
+            }
+        }
+        this._finishRendering(ctx, false, deltaTop);
+        return ctx;
+    }
+    _renderUntouchedLines(ctx, startIndex, endIndex, deltaTop, deltaLN) {
+        const rendLineNumberStart = ctx.rendLineNumberStart;
+        const lines = ctx.lines;
+        for (let i = startIndex; i <= endIndex; i++) {
+            const lineNumber = rendLineNumberStart + i;
+            lines[i].layoutLine(lineNumber, deltaTop[lineNumber - deltaLN], this._viewportData.lineHeight);
+        }
+    }
+    _insertLinesBefore(ctx, fromLineNumber, toLineNumber, deltaTop, deltaLN) {
+        const newLines = [];
+        let newLinesLen = 0;
+        for (let lineNumber = fromLineNumber; lineNumber <= toLineNumber; lineNumber++) {
+            newLines[newLinesLen++] = this._lineFactory.createLine();
+        }
+        ctx.lines = newLines.concat(ctx.lines);
+    }
+    _removeLinesBefore(ctx, removeCount) {
+        for (let i = 0; i < removeCount; i++) {
+            const lineDomNode = ctx.lines[i].getDomNode();
+            lineDomNode?.remove();
+        }
+        ctx.lines.splice(0, removeCount);
+    }
+    _insertLinesAfter(ctx, fromLineNumber, toLineNumber, deltaTop, deltaLN) {
+        const newLines = [];
+        let newLinesLen = 0;
+        for (let lineNumber = fromLineNumber; lineNumber <= toLineNumber; lineNumber++) {
+            newLines[newLinesLen++] = this._lineFactory.createLine();
+        }
+        ctx.lines = ctx.lines.concat(newLines);
+    }
+    _removeLinesAfter(ctx, removeCount) {
+        const removeIndex = ctx.linesLength - removeCount;
+        for (let i = 0; i < removeCount; i++) {
+            const lineDomNode = ctx.lines[removeIndex + i].getDomNode();
+            lineDomNode?.remove();
+        }
+        ctx.lines.splice(removeIndex, removeCount);
+    }
+    _finishRenderingNewLines(ctx, domNodeIsEmpty, newLinesHTML, wasNew) {
+        if (ViewLayerRenderer._ttPolicy) {
+            newLinesHTML = ViewLayerRenderer._ttPolicy.createHTML(newLinesHTML);
+        }
+        const lastChild = this._domNode.lastChild;
+        if (domNodeIsEmpty || !lastChild) {
+            this._domNode.innerHTML = newLinesHTML;
+        }
+        else {
+            lastChild.insertAdjacentHTML('afterend', newLinesHTML);
+        }
+        let currChild = this._domNode.lastChild;
+        for (let i = ctx.linesLength - 1; i >= 0; i--) {
+            const line = ctx.lines[i];
+            if (wasNew[i]) {
+                line.setDomNode(currChild);
+                currChild = currChild.previousSibling;
+            }
+        }
+    }
+    _finishRenderingInvalidLines(ctx, invalidLinesHTML, wasInvalid) {
+        const hugeDomNode = document.createElement('div');
+        if (ViewLayerRenderer._ttPolicy) {
+            invalidLinesHTML = ViewLayerRenderer._ttPolicy.createHTML(invalidLinesHTML);
+        }
+        hugeDomNode.innerHTML = invalidLinesHTML;
+        for (let i = 0; i < ctx.linesLength; i++) {
+            const line = ctx.lines[i];
+            if (wasInvalid[i]) {
+                const source = hugeDomNode.firstChild;
+                const lineDomNode = line.getDomNode();
+                lineDomNode.parentNode.replaceChild(source, lineDomNode);
+                line.setDomNode(source);
+            }
+        }
+    }
+    static { this._sb = new StringBuilder(100000); }
+    _finishRendering(ctx, domNodeIsEmpty, deltaTop) {
+        const sb = ViewLayerRenderer._sb;
+        const linesLength = ctx.linesLength;
+        const lines = ctx.lines;
+        const rendLineNumberStart = ctx.rendLineNumberStart;
+        const wasNew = [];
+        {
+            sb.reset();
+            let hadNewLine = false;
+            for (let i = 0; i < linesLength; i++) {
+                const line = lines[i];
+                wasNew[i] = false;
+                const lineDomNode = line.getDomNode();
+                if (lineDomNode) {
+                    continue;
+                }
+                const renderResult = line.renderLine(i + rendLineNumberStart, deltaTop[i], this._viewportData.lineHeight, this._viewportData, sb);
+                if (!renderResult) {
+                    continue;
+                }
+                wasNew[i] = true;
+                hadNewLine = true;
+            }
+            if (hadNewLine) {
+                this._finishRenderingNewLines(ctx, domNodeIsEmpty, sb.build(), wasNew);
+            }
+        }
+        {
+            sb.reset();
+            let hadInvalidLine = false;
+            const wasInvalid = [];
+            for (let i = 0; i < linesLength; i++) {
+                const line = lines[i];
+                wasInvalid[i] = false;
+                if (wasNew[i]) {
+                    continue;
+                }
+                const renderResult = line.renderLine(i + rendLineNumberStart, deltaTop[i], this._viewportData.lineHeight, this._viewportData, sb);
+                if (!renderResult) {
+                    continue;
+                }
+                wasInvalid[i] = true;
+                hadInvalidLine = true;
+            }
+            if (hadInvalidLine) {
+                this._finishRenderingInvalidLines(ctx, sb.build(), wasInvalid);
+            }
+        }
+    }
+}

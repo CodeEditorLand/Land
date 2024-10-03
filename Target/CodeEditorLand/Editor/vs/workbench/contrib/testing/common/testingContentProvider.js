@@ -1,1 +1,131 @@
-var y=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var v=(u,o,n,e)=>{for(var s=e>1?void 0:e?T(o,n):o,i=u.length-1,r;i>=0;i--)(r=u[i])&&(s=(e?r(o,n,s):r(s))||s);return e&&s&&y(o,n,s),s},l=(u,o)=>(n,e)=>o(n,e,u);import{VSBuffer as h}from"../../../../base/common/buffer.js";import{DisposableStore as M}from"../../../../base/common/lifecycle.js";import{removeAnsiEscapeCodes as d}from"../../../../base/common/strings.js";import"../../../../base/common/uri.js";import{ILanguageService as b}from"../../../../editor/common/languages/language.js";import"../../../../editor/common/model.js";import{IModelService as R}from"../../../../editor/common/services/model.js";import{ITextModelService as E}from"../../../../editor/common/services/resolverService.js";import{localize as C}from"../../../../nls.js";import"../../../common/contributions.js";import{ITestResultService as D}from"./testResultService.js";import{TestMessageType as g}from"./testTypes.js";import{TEST_DATA_SCHEME as L,TestUriType as p,parseTestUri as O}from"./testingUri.js";let f=class{constructor(o,n,e,s){this.languageService=n;this.modelService=e;this.resultService=s;o.registerTextModelContentProvider(L,this)}async provideTextContent(o){const n=this.modelService.getModel(o);if(n&&!n.isDisposed())return n;const e=O(o);if(!e)return null;const s=this.resultService.getResult(e.resultId);if(!s)return null;if(e.type===p.TaskOutput){const t=s.tasks[e.taskIndex],a=this.modelService.createModel("",null,o,!1),I=m=>a.applyEdits([{range:{startColumn:1,endColumn:1,startLineNumber:1/0,endLineNumber:1/0},text:m}]),x=h.concat(t.output.buffers,t.output.length).toString();I(d(x));let k=x.length>0;const c=new M;return c.add(t.output.onDidWriteData(m=>{k||=m.byteLength>0,I(d(m.toString()))})),t.output.endPromise.then(()=>{c.isDisposed||k||(I(C("runNoOutout","The test run did not record any output.")),c.dispose())}),a.onWillDispose(()=>c.dispose()),a}const i=s?.getStateById(e.testExtId);if(!i)return null;let r,S=null;switch(e.type){case p.ResultActualOutput:{const t=i.tasks[e.taskIndex].messages[e.messageIndex];t?.type===g.Error&&(r=t.actual);break}case p.TestOutput:{r="";const t=s.tasks[e.taskIndex].output;for(const a of i.tasks[e.taskIndex].messages)a.type===g.Output&&(r+=d(t.getRange(a.offset,a.length).toString()));break}case p.ResultExpectedOutput:{const t=i.tasks[e.taskIndex].messages[e.messageIndex];t?.type===g.Error&&(r=t.expected);break}case p.ResultMessage:{const t=i.tasks[e.taskIndex].messages[e.messageIndex];if(!t)break;if(t.type===g.Output){const a=s.tasks[e.taskIndex].output.getRange(t.offset,t.length);r=d(a.toString())}else typeof t.message=="string"?r=d(t.message):(r=t.message.value,S=this.languageService.createById("markdown"))}}return r===void 0?null:this.modelService.createModel(r,S,o,!1)}};f=v([l(0,E),l(1,b),l(2,R),l(3,D)],f);export{f as TestingContentProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { VSBuffer } from '../../../../base/common/buffer.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { removeAnsiEscapeCodes } from '../../../../base/common/strings.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+import { IModelService } from '../../../../editor/common/services/model.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { localize } from '../../../../nls.js';
+import { ITestResultService } from './testResultService.js';
+import { TEST_DATA_SCHEME, parseTestUri } from './testingUri.js';
+let TestingContentProvider = class TestingContentProvider {
+    constructor(textModelResolverService, languageService, modelService, resultService) {
+        this.languageService = languageService;
+        this.modelService = modelService;
+        this.resultService = resultService;
+        textModelResolverService.registerTextModelContentProvider(TEST_DATA_SCHEME, this);
+    }
+    async provideTextContent(resource) {
+        const existing = this.modelService.getModel(resource);
+        if (existing && !existing.isDisposed()) {
+            return existing;
+        }
+        const parsed = parseTestUri(resource);
+        if (!parsed) {
+            return null;
+        }
+        const result = this.resultService.getResult(parsed.resultId);
+        if (!result) {
+            return null;
+        }
+        if (parsed.type === 0) {
+            const task = result.tasks[parsed.taskIndex];
+            const model = this.modelService.createModel('', null, resource, false);
+            const append = (text) => model.applyEdits([{
+                    range: { startColumn: 1, endColumn: 1, startLineNumber: Infinity, endLineNumber: Infinity },
+                    text,
+                }]);
+            const init = VSBuffer.concat(task.output.buffers, task.output.length).toString();
+            append(removeAnsiEscapeCodes(init));
+            let hadContent = init.length > 0;
+            const dispose = new DisposableStore();
+            dispose.add(task.output.onDidWriteData(d => {
+                hadContent ||= d.byteLength > 0;
+                append(removeAnsiEscapeCodes(d.toString()));
+            }));
+            task.output.endPromise.then(() => {
+                if (dispose.isDisposed) {
+                    return;
+                }
+                if (!hadContent) {
+                    append(localize('runNoOutout', 'The test run did not record any output.'));
+                    dispose.dispose();
+                }
+            });
+            model.onWillDispose(() => dispose.dispose());
+            return model;
+        }
+        const test = result?.getStateById(parsed.testExtId);
+        if (!test) {
+            return null;
+        }
+        let text;
+        let language = null;
+        switch (parsed.type) {
+            case 3: {
+                const message = test.tasks[parsed.taskIndex].messages[parsed.messageIndex];
+                if (message?.type === 0) {
+                    text = message.actual;
+                }
+                break;
+            }
+            case 1: {
+                text = '';
+                const output = result.tasks[parsed.taskIndex].output;
+                for (const message of test.tasks[parsed.taskIndex].messages) {
+                    if (message.type === 1) {
+                        text += removeAnsiEscapeCodes(output.getRange(message.offset, message.length).toString());
+                    }
+                }
+                break;
+            }
+            case 4: {
+                const message = test.tasks[parsed.taskIndex].messages[parsed.messageIndex];
+                if (message?.type === 0) {
+                    text = message.expected;
+                }
+                break;
+            }
+            case 2: {
+                const message = test.tasks[parsed.taskIndex].messages[parsed.messageIndex];
+                if (!message) {
+                    break;
+                }
+                if (message.type === 1) {
+                    const content = result.tasks[parsed.taskIndex].output.getRange(message.offset, message.length);
+                    text = removeAnsiEscapeCodes(content.toString());
+                }
+                else if (typeof message.message === 'string') {
+                    text = removeAnsiEscapeCodes(message.message);
+                }
+                else {
+                    text = message.message.value;
+                    language = this.languageService.createById('markdown');
+                }
+            }
+        }
+        if (text === undefined) {
+            return null;
+        }
+        return this.modelService.createModel(text, language, resource, false);
+    }
+};
+TestingContentProvider = __decorate([
+    __param(0, ITextModelService),
+    __param(1, ILanguageService),
+    __param(2, IModelService),
+    __param(3, ITestResultService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], TestingContentProvider);
+export { TestingContentProvider };

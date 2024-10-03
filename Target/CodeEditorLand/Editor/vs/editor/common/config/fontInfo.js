@@ -1,1 +1,126 @@
-import*as m from"../../../base/common/platform.js";import{EditorFontVariations as u,EditorOptions as r,EditorOption as o,EDITOR_FONT_DEFAULTS as b}from"./editorOptions.js";import{EditorZoom as S}from"./editorZoom.js";const y=m.isMacintosh?1.5:1.35,f=8;class d{_bareFontInfoBrand=void 0;static createFromValidatedSettings(t,e,n){const l=t.get(o.fontFamily),a=t.get(o.fontWeight),i=t.get(o.fontSize),h=t.get(o.fontLigatures),g=t.get(o.fontVariations),c=t.get(o.lineHeight),s=t.get(o.letterSpacing);return d._create(l,a,i,h,g,c,s,e,n)}static createFromRawSettings(t,e,n=!1){const l=r.fontFamily.validate(t.fontFamily),a=r.fontWeight.validate(t.fontWeight),i=r.fontSize.validate(t.fontSize),h=r.fontLigatures2.validate(t.fontLigatures),g=r.fontVariations.validate(t.fontVariations),c=r.lineHeight.validate(t.lineHeight),s=r.letterSpacing.validate(t.letterSpacing);return d._create(l,a,i,h,g,c,s,e,n)}static _create(t,e,n,l,a,i,h,g,c){i===0?i=y*n:i<f&&(i=i*n),i=Math.round(i),i<f&&(i=f);const s=1+(c?0:S.getZoomLevel()*.1);return n*=s,i*=s,a===u.TRANSLATE&&(e==="normal"||e==="bold"?a=u.OFF:(a=`'wght' ${parseInt(e,10)}`,e="normal")),new d({pixelRatio:g,fontFamily:t,fontWeight:e,fontSize:n,fontFeatureSettings:l,fontVariationSettings:a,lineHeight:i,letterSpacing:h})}pixelRatio;fontFamily;fontWeight;fontSize;fontFeatureSettings;fontVariationSettings;lineHeight;letterSpacing;constructor(t){this.pixelRatio=t.pixelRatio,this.fontFamily=String(t.fontFamily),this.fontWeight=String(t.fontWeight),this.fontSize=t.fontSize,this.fontFeatureSettings=t.fontFeatureSettings,this.fontVariationSettings=t.fontVariationSettings,this.lineHeight=t.lineHeight|0,this.letterSpacing=t.letterSpacing}getId(){return`${this.pixelRatio}-${this.fontFamily}-${this.fontWeight}-${this.fontSize}-${this.fontFeatureSettings}-${this.fontVariationSettings}-${this.lineHeight}-${this.letterSpacing}`}getMassagedFontFamily(){const t=b.fontFamily,e=d._wrapInQuotes(this.fontFamily);return t&&this.fontFamily!==t?`${e}, ${t}`:e}static _wrapInQuotes(t){return/[,"']/.test(t)?t:/[+ ]/.test(t)?`"${t}"`:t}}const F=2;class E extends d{_editorStylingBrand=void 0;version=F;isTrusted;isMonospace;typicalHalfwidthCharacterWidth;typicalFullwidthCharacterWidth;canUseHalfwidthRightwardsArrow;spaceWidth;middotWidth;wsmiddotWidth;maxDigitWidth;constructor(t,e){super(t),this.isTrusted=e,this.isMonospace=t.isMonospace,this.typicalHalfwidthCharacterWidth=t.typicalHalfwidthCharacterWidth,this.typicalFullwidthCharacterWidth=t.typicalFullwidthCharacterWidth,this.canUseHalfwidthRightwardsArrow=t.canUseHalfwidthRightwardsArrow,this.spaceWidth=t.spaceWidth,this.middotWidth=t.middotWidth,this.wsmiddotWidth=t.wsmiddotWidth,this.maxDigitWidth=t.maxDigitWidth}equals(t){return this.fontFamily===t.fontFamily&&this.fontWeight===t.fontWeight&&this.fontSize===t.fontSize&&this.fontFeatureSettings===t.fontFeatureSettings&&this.fontVariationSettings===t.fontVariationSettings&&this.lineHeight===t.lineHeight&&this.letterSpacing===t.letterSpacing&&this.typicalHalfwidthCharacterWidth===t.typicalHalfwidthCharacterWidth&&this.typicalFullwidthCharacterWidth===t.typicalFullwidthCharacterWidth&&this.canUseHalfwidthRightwardsArrow===t.canUseHalfwidthRightwardsArrow&&this.spaceWidth===t.spaceWidth&&this.middotWidth===t.middotWidth&&this.wsmiddotWidth===t.wsmiddotWidth&&this.maxDigitWidth===t.maxDigitWidth}}export{d as BareFontInfo,E as FontInfo,F as SERIALIZED_FONT_INFO_VERSION};
+import * as platform from '../../../base/common/platform.js';
+import { EditorFontVariations, EditorOptions, EDITOR_FONT_DEFAULTS } from './editorOptions.js';
+import { EditorZoom } from './editorZoom.js';
+const GOLDEN_LINE_HEIGHT_RATIO = platform.isMacintosh ? 1.5 : 1.35;
+const MINIMUM_LINE_HEIGHT = 8;
+export class BareFontInfo {
+    static createFromValidatedSettings(options, pixelRatio, ignoreEditorZoom) {
+        const fontFamily = options.get(51);
+        const fontWeight = options.get(55);
+        const fontSize = options.get(54);
+        const fontFeatureSettings = options.get(53);
+        const fontVariationSettings = options.get(56);
+        const lineHeight = options.get(69);
+        const letterSpacing = options.get(66);
+        return BareFontInfo._create(fontFamily, fontWeight, fontSize, fontFeatureSettings, fontVariationSettings, lineHeight, letterSpacing, pixelRatio, ignoreEditorZoom);
+    }
+    static createFromRawSettings(opts, pixelRatio, ignoreEditorZoom = false) {
+        const fontFamily = EditorOptions.fontFamily.validate(opts.fontFamily);
+        const fontWeight = EditorOptions.fontWeight.validate(opts.fontWeight);
+        const fontSize = EditorOptions.fontSize.validate(opts.fontSize);
+        const fontFeatureSettings = EditorOptions.fontLigatures2.validate(opts.fontLigatures);
+        const fontVariationSettings = EditorOptions.fontVariations.validate(opts.fontVariations);
+        const lineHeight = EditorOptions.lineHeight.validate(opts.lineHeight);
+        const letterSpacing = EditorOptions.letterSpacing.validate(opts.letterSpacing);
+        return BareFontInfo._create(fontFamily, fontWeight, fontSize, fontFeatureSettings, fontVariationSettings, lineHeight, letterSpacing, pixelRatio, ignoreEditorZoom);
+    }
+    static _create(fontFamily, fontWeight, fontSize, fontFeatureSettings, fontVariationSettings, lineHeight, letterSpacing, pixelRatio, ignoreEditorZoom) {
+        if (lineHeight === 0) {
+            lineHeight = GOLDEN_LINE_HEIGHT_RATIO * fontSize;
+        }
+        else if (lineHeight < MINIMUM_LINE_HEIGHT) {
+            lineHeight = lineHeight * fontSize;
+        }
+        lineHeight = Math.round(lineHeight);
+        if (lineHeight < MINIMUM_LINE_HEIGHT) {
+            lineHeight = MINIMUM_LINE_HEIGHT;
+        }
+        const editorZoomLevelMultiplier = 1 + (ignoreEditorZoom ? 0 : EditorZoom.getZoomLevel() * 0.1);
+        fontSize *= editorZoomLevelMultiplier;
+        lineHeight *= editorZoomLevelMultiplier;
+        if (fontVariationSettings === EditorFontVariations.TRANSLATE) {
+            if (fontWeight === 'normal' || fontWeight === 'bold') {
+                fontVariationSettings = EditorFontVariations.OFF;
+            }
+            else {
+                const fontWeightAsNumber = parseInt(fontWeight, 10);
+                fontVariationSettings = `'wght' ${fontWeightAsNumber}`;
+                fontWeight = 'normal';
+            }
+        }
+        return new BareFontInfo({
+            pixelRatio: pixelRatio,
+            fontFamily: fontFamily,
+            fontWeight: fontWeight,
+            fontSize: fontSize,
+            fontFeatureSettings: fontFeatureSettings,
+            fontVariationSettings,
+            lineHeight: lineHeight,
+            letterSpacing: letterSpacing
+        });
+    }
+    constructor(opts) {
+        this._bareFontInfoBrand = undefined;
+        this.pixelRatio = opts.pixelRatio;
+        this.fontFamily = String(opts.fontFamily);
+        this.fontWeight = String(opts.fontWeight);
+        this.fontSize = opts.fontSize;
+        this.fontFeatureSettings = opts.fontFeatureSettings;
+        this.fontVariationSettings = opts.fontVariationSettings;
+        this.lineHeight = opts.lineHeight | 0;
+        this.letterSpacing = opts.letterSpacing;
+    }
+    getId() {
+        return `${this.pixelRatio}-${this.fontFamily}-${this.fontWeight}-${this.fontSize}-${this.fontFeatureSettings}-${this.fontVariationSettings}-${this.lineHeight}-${this.letterSpacing}`;
+    }
+    getMassagedFontFamily() {
+        const fallbackFontFamily = EDITOR_FONT_DEFAULTS.fontFamily;
+        const fontFamily = BareFontInfo._wrapInQuotes(this.fontFamily);
+        if (fallbackFontFamily && this.fontFamily !== fallbackFontFamily) {
+            return `${fontFamily}, ${fallbackFontFamily}`;
+        }
+        return fontFamily;
+    }
+    static _wrapInQuotes(fontFamily) {
+        if (/[,"']/.test(fontFamily)) {
+            return fontFamily;
+        }
+        if (/[+ ]/.test(fontFamily)) {
+            return `"${fontFamily}"`;
+        }
+        return fontFamily;
+    }
+}
+export const SERIALIZED_FONT_INFO_VERSION = 2;
+export class FontInfo extends BareFontInfo {
+    constructor(opts, isTrusted) {
+        super(opts);
+        this._editorStylingBrand = undefined;
+        this.version = SERIALIZED_FONT_INFO_VERSION;
+        this.isTrusted = isTrusted;
+        this.isMonospace = opts.isMonospace;
+        this.typicalHalfwidthCharacterWidth = opts.typicalHalfwidthCharacterWidth;
+        this.typicalFullwidthCharacterWidth = opts.typicalFullwidthCharacterWidth;
+        this.canUseHalfwidthRightwardsArrow = opts.canUseHalfwidthRightwardsArrow;
+        this.spaceWidth = opts.spaceWidth;
+        this.middotWidth = opts.middotWidth;
+        this.wsmiddotWidth = opts.wsmiddotWidth;
+        this.maxDigitWidth = opts.maxDigitWidth;
+    }
+    equals(other) {
+        return (this.fontFamily === other.fontFamily
+            && this.fontWeight === other.fontWeight
+            && this.fontSize === other.fontSize
+            && this.fontFeatureSettings === other.fontFeatureSettings
+            && this.fontVariationSettings === other.fontVariationSettings
+            && this.lineHeight === other.lineHeight
+            && this.letterSpacing === other.letterSpacing
+            && this.typicalHalfwidthCharacterWidth === other.typicalHalfwidthCharacterWidth
+            && this.typicalFullwidthCharacterWidth === other.typicalFullwidthCharacterWidth
+            && this.canUseHalfwidthRightwardsArrow === other.canUseHalfwidthRightwardsArrow
+            && this.spaceWidth === other.spaceWidth
+            && this.middotWidth === other.middotWidth
+            && this.wsmiddotWidth === other.wsmiddotWidth
+            && this.maxDigitWidth === other.maxDigitWidth);
+    }
+}

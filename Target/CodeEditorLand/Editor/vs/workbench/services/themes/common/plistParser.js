@@ -1,1 +1,438 @@
-var q=(a=>(a[a.BOM=65279]="BOM",a[a.SPACE=32]="SPACE",a[a.TAB=9]="TAB",a[a.CARRIAGE_RETURN=13]="CARRIAGE_RETURN",a[a.LINE_FEED=10]="LINE_FEED",a[a.SLASH=47]="SLASH",a[a.LESS_THAN=60]="LESS_THAN",a[a.QUESTION_MARK=63]="QUESTION_MARK",a[a.EXCLAMATION_MARK=33]="EXCLAMATION_MARK",a))(q||{}),G=(f=>(f[f.ROOT_STATE=0]="ROOT_STATE",f[f.DICT_STATE=1]="DICT_STATE",f[f.ARR_STATE=2]="ARR_STATE",f))(G||{});function V(l){return Q(l,null,null)}function Q(l,_,o){const f=l.length;let s=0,E=1,p=0;f>0&&l.charCodeAt(0)===65279&&(s=1);function A(e){if(o===null)s=s+e;else for(;e>0;)l.charCodeAt(s)===10?(s++,E++,p=0):(s++,p++),e--}function d(e){o===null?s=e:A(e-s)}function a(){for(;s<f;){const e=l.charCodeAt(s);if(e!==32&&e!==9&&e!==13&&e!==10)break;A(1)}}function R(e){return l.substr(s,e.length)===e?(A(e.length),!0):!1}function S(e){const r=l.indexOf(e,s);d(r!==-1?r+e.length:f)}function I(e){const r=l.indexOf(e,s);if(r!==-1){const c=l.substring(s,r);return d(r+e.length),c}else{const c=l.substr(s);return d(f),c}}let i=0,t=null;const h=[],D=[];let n=null;function g(e,r){h.push(i),D.push(t),i=e,t=r}function y(){if(h.length===0)return u("illegal state stack");i=h.pop(),t=D.pop()}function u(e){throw new Error("Near offset "+s+": "+e+" ~~~"+l.substr(s,50)+"~~~")}const C={enterDict:function(){if(n===null)return u("missing <key>");const e={};o!==null&&(e[o]={filename:_,line:E,char:p}),t[n]=e,n=null,g(1,e)},enterArray:function(){if(n===null)return u("missing <key>");const e=[];t[n]=e,n=null,g(2,e)}},k={enterDict:function(){const e={};o!==null&&(e[o]={filename:_,line:E,char:p}),t.push(e),g(1,e)},enterArray:function(){const e=[];t.push(e),g(2,e)}};function b(){i===1?C.enterDict():i===2?k.enterDict():(t={},o!==null&&(t[o]={filename:_,line:E,char:p}),g(1,t))}function m(){if(i===1)y();else return u("unexpected </dict>")}function w(){i===1?C.enterArray():i===2?k.enterArray():(t=[],g(2,t))}function x(){if(i===1)return u("unexpected </array>");if(i===2)y();else return u("unexpected </array>")}function L(e){if(i===1){if(n!==null)return u("too many <key>");n=e}else return u("unexpected <key>")}function N(e){if(i===1){if(n===null)return u("missing <key>");t[n]=e,n=null}else i===2?t.push(e):t=e}function P(e){if(isNaN(e))return u("cannot parse float");if(i===1){if(n===null)return u("missing <key>");t[n]=e,n=null}else i===2?t.push(e):t=e}function M(e){if(isNaN(e))return u("cannot parse integer");if(i===1){if(n===null)return u("missing <key>");t[n]=e,n=null}else i===2?t.push(e):t=e}function B(e){if(i===1){if(n===null)return u("missing <key>");t[n]=e,n=null}else i===2?t.push(e):t=e}function U(e){if(i===1){if(n===null)return u("missing <key>");t[n]=e,n=null}else i===2?t.push(e):t=e}function O(e){if(i===1){if(n===null)return u("missing <key>");t[n]=e,n=null}else i===2?t.push(e):t=e}function H(e){return e.replace(/&#([0-9]+);/g,function(r,c){return String.fromCodePoint(parseInt(c,10))}).replace(/&#x([0-9a-f]+);/g,function(r,c){return String.fromCodePoint(parseInt(c,16))}).replace(/&amp;|&lt;|&gt;|&quot;|&apos;/g,function(r){switch(r){case"&amp;":return"&";case"&lt;":return"<";case"&gt;":return">";case"&quot;":return'"';case"&apos;":return"'"}return r})}function F(){let e=I(">"),r=!1;return e.charCodeAt(e.length-1)===47&&(r=!0,e=e.substring(0,e.length-1)),{name:e.trim(),isClosed:r}}function T(e){if(e.isClosed)return"";const r=I("</");return S(">"),H(r)}for(;s<f&&(a(),!(s>=f));){const e=l.charCodeAt(s);if(A(1),e!==60)return u("expected <");if(s>=f)return u("unexpected end of input");const r=l.charCodeAt(s);if(r===63){A(1),S("?>");continue}if(r===33){if(A(1),R("--")){S("-->");continue}S(">");continue}if(r===47){if(A(1),a(),R("plist")){S(">");continue}if(R("dict")){S(">"),m();continue}if(R("array")){S(">"),x();continue}return u("unexpected closed tag")}const c=F();switch(c.name){case"dict":b(),c.isClosed&&m();continue;case"array":w(),c.isClosed&&x();continue;case"key":L(T(c));continue;case"string":N(T(c));continue;case"real":P(parseFloat(T(c)));continue;case"integer":M(parseInt(T(c),10));continue;case"date":B(new Date(T(c)));continue;case"data":U(T(c));continue;case"true":T(c),O(!0);continue;case"false":T(c),O(!1);continue}if(!/^plist/.test(c.name))return u("unexpected opened tag "+c.name)}return t}export{V as parse};
+export function parse(content) {
+    return _parse(content, null, null);
+}
+function _parse(content, filename, locationKeyName) {
+    const len = content.length;
+    let pos = 0;
+    let line = 1;
+    let char = 0;
+    if (len > 0 && content.charCodeAt(0) === 65279) {
+        pos = 1;
+    }
+    function advancePosBy(by) {
+        if (locationKeyName === null) {
+            pos = pos + by;
+        }
+        else {
+            while (by > 0) {
+                const chCode = content.charCodeAt(pos);
+                if (chCode === 10) {
+                    pos++;
+                    line++;
+                    char = 0;
+                }
+                else {
+                    pos++;
+                    char++;
+                }
+                by--;
+            }
+        }
+    }
+    function advancePosTo(to) {
+        if (locationKeyName === null) {
+            pos = to;
+        }
+        else {
+            advancePosBy(to - pos);
+        }
+    }
+    function skipWhitespace() {
+        while (pos < len) {
+            const chCode = content.charCodeAt(pos);
+            if (chCode !== 32 && chCode !== 9 && chCode !== 13 && chCode !== 10) {
+                break;
+            }
+            advancePosBy(1);
+        }
+    }
+    function advanceIfStartsWith(str) {
+        if (content.substr(pos, str.length) === str) {
+            advancePosBy(str.length);
+            return true;
+        }
+        return false;
+    }
+    function advanceUntil(str) {
+        const nextOccurence = content.indexOf(str, pos);
+        if (nextOccurence !== -1) {
+            advancePosTo(nextOccurence + str.length);
+        }
+        else {
+            advancePosTo(len);
+        }
+    }
+    function captureUntil(str) {
+        const nextOccurence = content.indexOf(str, pos);
+        if (nextOccurence !== -1) {
+            const r = content.substring(pos, nextOccurence);
+            advancePosTo(nextOccurence + str.length);
+            return r;
+        }
+        else {
+            const r = content.substr(pos);
+            advancePosTo(len);
+            return r;
+        }
+    }
+    let state = 0;
+    let cur = null;
+    const stateStack = [];
+    const objStack = [];
+    let curKey = null;
+    function pushState(newState, newCur) {
+        stateStack.push(state);
+        objStack.push(cur);
+        state = newState;
+        cur = newCur;
+    }
+    function popState() {
+        if (stateStack.length === 0) {
+            return fail('illegal state stack');
+        }
+        state = stateStack.pop();
+        cur = objStack.pop();
+    }
+    function fail(msg) {
+        throw new Error('Near offset ' + pos + ': ' + msg + ' ~~~' + content.substr(pos, 50) + '~~~');
+    }
+    const dictState = {
+        enterDict: function () {
+            if (curKey === null) {
+                return fail('missing <key>');
+            }
+            const newDict = {};
+            if (locationKeyName !== null) {
+                newDict[locationKeyName] = {
+                    filename: filename,
+                    line: line,
+                    char: char
+                };
+            }
+            cur[curKey] = newDict;
+            curKey = null;
+            pushState(1, newDict);
+        },
+        enterArray: function () {
+            if (curKey === null) {
+                return fail('missing <key>');
+            }
+            const newArr = [];
+            cur[curKey] = newArr;
+            curKey = null;
+            pushState(2, newArr);
+        }
+    };
+    const arrState = {
+        enterDict: function () {
+            const newDict = {};
+            if (locationKeyName !== null) {
+                newDict[locationKeyName] = {
+                    filename: filename,
+                    line: line,
+                    char: char
+                };
+            }
+            cur.push(newDict);
+            pushState(1, newDict);
+        },
+        enterArray: function () {
+            const newArr = [];
+            cur.push(newArr);
+            pushState(2, newArr);
+        }
+    };
+    function enterDict() {
+        if (state === 1) {
+            dictState.enterDict();
+        }
+        else if (state === 2) {
+            arrState.enterDict();
+        }
+        else {
+            cur = {};
+            if (locationKeyName !== null) {
+                cur[locationKeyName] = {
+                    filename: filename,
+                    line: line,
+                    char: char
+                };
+            }
+            pushState(1, cur);
+        }
+    }
+    function leaveDict() {
+        if (state === 1) {
+            popState();
+        }
+        else if (state === 2) {
+            return fail('unexpected </dict>');
+        }
+        else {
+            return fail('unexpected </dict>');
+        }
+    }
+    function enterArray() {
+        if (state === 1) {
+            dictState.enterArray();
+        }
+        else if (state === 2) {
+            arrState.enterArray();
+        }
+        else {
+            cur = [];
+            pushState(2, cur);
+        }
+    }
+    function leaveArray() {
+        if (state === 1) {
+            return fail('unexpected </array>');
+        }
+        else if (state === 2) {
+            popState();
+        }
+        else {
+            return fail('unexpected </array>');
+        }
+    }
+    function acceptKey(val) {
+        if (state === 1) {
+            if (curKey !== null) {
+                return fail('too many <key>');
+            }
+            curKey = val;
+        }
+        else if (state === 2) {
+            return fail('unexpected <key>');
+        }
+        else {
+            return fail('unexpected <key>');
+        }
+    }
+    function acceptString(val) {
+        if (state === 1) {
+            if (curKey === null) {
+                return fail('missing <key>');
+            }
+            cur[curKey] = val;
+            curKey = null;
+        }
+        else if (state === 2) {
+            cur.push(val);
+        }
+        else {
+            cur = val;
+        }
+    }
+    function acceptReal(val) {
+        if (isNaN(val)) {
+            return fail('cannot parse float');
+        }
+        if (state === 1) {
+            if (curKey === null) {
+                return fail('missing <key>');
+            }
+            cur[curKey] = val;
+            curKey = null;
+        }
+        else if (state === 2) {
+            cur.push(val);
+        }
+        else {
+            cur = val;
+        }
+    }
+    function acceptInteger(val) {
+        if (isNaN(val)) {
+            return fail('cannot parse integer');
+        }
+        if (state === 1) {
+            if (curKey === null) {
+                return fail('missing <key>');
+            }
+            cur[curKey] = val;
+            curKey = null;
+        }
+        else if (state === 2) {
+            cur.push(val);
+        }
+        else {
+            cur = val;
+        }
+    }
+    function acceptDate(val) {
+        if (state === 1) {
+            if (curKey === null) {
+                return fail('missing <key>');
+            }
+            cur[curKey] = val;
+            curKey = null;
+        }
+        else if (state === 2) {
+            cur.push(val);
+        }
+        else {
+            cur = val;
+        }
+    }
+    function acceptData(val) {
+        if (state === 1) {
+            if (curKey === null) {
+                return fail('missing <key>');
+            }
+            cur[curKey] = val;
+            curKey = null;
+        }
+        else if (state === 2) {
+            cur.push(val);
+        }
+        else {
+            cur = val;
+        }
+    }
+    function acceptBool(val) {
+        if (state === 1) {
+            if (curKey === null) {
+                return fail('missing <key>');
+            }
+            cur[curKey] = val;
+            curKey = null;
+        }
+        else if (state === 2) {
+            cur.push(val);
+        }
+        else {
+            cur = val;
+        }
+    }
+    function escapeVal(str) {
+        return str.replace(/&#([0-9]+);/g, function (_, m0) {
+            return String.fromCodePoint(parseInt(m0, 10));
+        }).replace(/&#x([0-9a-f]+);/g, function (_, m0) {
+            return String.fromCodePoint(parseInt(m0, 16));
+        }).replace(/&amp;|&lt;|&gt;|&quot;|&apos;/g, function (_) {
+            switch (_) {
+                case '&amp;': return '&';
+                case '&lt;': return '<';
+                case '&gt;': return '>';
+                case '&quot;': return '"';
+                case '&apos;': return '\'';
+            }
+            return _;
+        });
+    }
+    function parseOpenTag() {
+        let r = captureUntil('>');
+        let isClosed = false;
+        if (r.charCodeAt(r.length - 1) === 47) {
+            isClosed = true;
+            r = r.substring(0, r.length - 1);
+        }
+        return {
+            name: r.trim(),
+            isClosed: isClosed
+        };
+    }
+    function parseTagValue(tag) {
+        if (tag.isClosed) {
+            return '';
+        }
+        const val = captureUntil('</');
+        advanceUntil('>');
+        return escapeVal(val);
+    }
+    while (pos < len) {
+        skipWhitespace();
+        if (pos >= len) {
+            break;
+        }
+        const chCode = content.charCodeAt(pos);
+        advancePosBy(1);
+        if (chCode !== 60) {
+            return fail('expected <');
+        }
+        if (pos >= len) {
+            return fail('unexpected end of input');
+        }
+        const peekChCode = content.charCodeAt(pos);
+        if (peekChCode === 63) {
+            advancePosBy(1);
+            advanceUntil('?>');
+            continue;
+        }
+        if (peekChCode === 33) {
+            advancePosBy(1);
+            if (advanceIfStartsWith('--')) {
+                advanceUntil('-->');
+                continue;
+            }
+            advanceUntil('>');
+            continue;
+        }
+        if (peekChCode === 47) {
+            advancePosBy(1);
+            skipWhitespace();
+            if (advanceIfStartsWith('plist')) {
+                advanceUntil('>');
+                continue;
+            }
+            if (advanceIfStartsWith('dict')) {
+                advanceUntil('>');
+                leaveDict();
+                continue;
+            }
+            if (advanceIfStartsWith('array')) {
+                advanceUntil('>');
+                leaveArray();
+                continue;
+            }
+            return fail('unexpected closed tag');
+        }
+        const tag = parseOpenTag();
+        switch (tag.name) {
+            case 'dict':
+                enterDict();
+                if (tag.isClosed) {
+                    leaveDict();
+                }
+                continue;
+            case 'array':
+                enterArray();
+                if (tag.isClosed) {
+                    leaveArray();
+                }
+                continue;
+            case 'key':
+                acceptKey(parseTagValue(tag));
+                continue;
+            case 'string':
+                acceptString(parseTagValue(tag));
+                continue;
+            case 'real':
+                acceptReal(parseFloat(parseTagValue(tag)));
+                continue;
+            case 'integer':
+                acceptInteger(parseInt(parseTagValue(tag), 10));
+                continue;
+            case 'date':
+                acceptDate(new Date(parseTagValue(tag)));
+                continue;
+            case 'data':
+                acceptData(parseTagValue(tag));
+                continue;
+            case 'true':
+                parseTagValue(tag);
+                acceptBool(true);
+                continue;
+            case 'false':
+                parseTagValue(tag);
+                acceptBool(false);
+                continue;
+        }
+        if (/^plist/.test(tag.name)) {
+            continue;
+        }
+        return fail('unexpected opened tag ' + tag.name);
+    }
+    return cur;
+}

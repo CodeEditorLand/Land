@@ -1,1 +1,118 @@
-import*as o from"../../dom.js";import{getBaseLayerHoverDelegate as l}from"../hover/hoverDelegate2.js";import{getDefaultHoverDelegate as h}from"../hover/hoverDelegateFactory.js";import{UILabelProvider as b}from"../../../common/keybindingLabels.js";import"../../../common/keybindings.js";import{Disposable as y}from"../../../common/lifecycle.js";import{equals as s}from"../../../common/objects.js";import"../../../common/platform.js";import"./keybindingLabel.css";import{localize as p}from"../../../../nls.js";const r=o.$,H={keybindingLabelBackground:void 0,keybindingLabelForeground:void 0,keybindingLabelBorder:void 0,keybindingLabelBottomBorder:void 0,keybindingLabelShadow:void 0};class a extends y{constructor(e,i,n){super();this.os=i;this.options=n||Object.create(null);const t=this.options.keybindingLabelForeground;this.domNode=o.append(e,r(".monaco-keybinding")),t&&(this.domNode.style.color=t),this.hover=this._register(l().setupManagedHover(h("mouse"),this.domNode,"")),this.didEverRender=!1,e.appendChild(this.domNode)}domNode;options;keyElements=new Set;hover;keybinding;matches;didEverRender;get element(){return this.domNode}set(e,i){this.didEverRender&&this.keybinding===e&&a.areSame(this.matches,i)||(this.keybinding=e,this.matches=i,this.render())}render(){if(this.clear(),this.keybinding){const e=this.keybinding.getChords();e[0]&&this.renderChord(this.domNode,e[0],this.matches?this.matches.firstPart:null);for(let n=1;n<e.length;n++)o.append(this.domNode,r("span.monaco-keybinding-key-chord-separator",void 0," ")),this.renderChord(this.domNode,e[n],this.matches?this.matches.chordPart:null);const i=this.options.disableTitle??!1?void 0:this.keybinding.getAriaLabel()||void 0;this.hover.update(i),this.domNode.setAttribute("aria-label",i||"")}else this.options&&this.options.renderUnboundKeybindings&&this.renderUnbound(this.domNode);this.didEverRender=!0}clear(){o.clearNode(this.domNode),this.keyElements.clear()}renderChord(e,i,n){const t=b.modifierLabels[this.os];i.ctrlKey&&this.renderKey(e,t.ctrlKey,!!n?.ctrlKey,t.separator),i.shiftKey&&this.renderKey(e,t.shiftKey,!!n?.shiftKey,t.separator),i.altKey&&this.renderKey(e,t.altKey,!!n?.altKey,t.separator),i.metaKey&&this.renderKey(e,t.metaKey,!!n?.metaKey,t.separator);const d=i.keyLabel;d&&this.renderKey(e,d,!!n?.keyCode,"")}renderKey(e,i,n,t){o.append(e,this.createKeyElement(i,n?".highlight":"")),t&&o.append(e,r("span.monaco-keybinding-key-separator",void 0,t))}renderUnbound(e){o.append(e,this.createKeyElement(p("unbound","Unbound")))}createKeyElement(e,i=""){const n=r("span.monaco-keybinding-key"+i,void 0,e);return this.keyElements.add(n),this.options.keybindingLabelBackground&&(n.style.backgroundColor=this.options.keybindingLabelBackground),this.options.keybindingLabelBorder&&(n.style.borderColor=this.options.keybindingLabelBorder),this.options.keybindingLabelBottomBorder&&(n.style.borderBottomColor=this.options.keybindingLabelBottomBorder),this.options.keybindingLabelShadow&&(n.style.boxShadow=`inset 0 -1px 0 ${this.options.keybindingLabelShadow}`),n}static areSame(e,i){return e===i||!e&&!i?!0:!!e&&!!i&&s(e.firstPart,i.firstPart)&&s(e.chordPart,i.chordPart)}}export{a as KeybindingLabel,H as unthemedKeybindingLabelOptions};
+import * as dom from '../../dom.js';
+import { getBaseLayerHoverDelegate } from '../hover/hoverDelegate2.js';
+import { getDefaultHoverDelegate } from '../hover/hoverDelegateFactory.js';
+import { UILabelProvider } from '../../../common/keybindingLabels.js';
+import { Disposable } from '../../../common/lifecycle.js';
+import { equals } from '../../../common/objects.js';
+import './keybindingLabel.css';
+import { localize } from '../../../../nls.js';
+const $ = dom.$;
+export const unthemedKeybindingLabelOptions = {
+    keybindingLabelBackground: undefined,
+    keybindingLabelForeground: undefined,
+    keybindingLabelBorder: undefined,
+    keybindingLabelBottomBorder: undefined,
+    keybindingLabelShadow: undefined
+};
+export class KeybindingLabel extends Disposable {
+    constructor(container, os, options) {
+        super();
+        this.os = os;
+        this.keyElements = new Set();
+        this.options = options || Object.create(null);
+        const labelForeground = this.options.keybindingLabelForeground;
+        this.domNode = dom.append(container, $('.monaco-keybinding'));
+        if (labelForeground) {
+            this.domNode.style.color = labelForeground;
+        }
+        this.hover = this._register(getBaseLayerHoverDelegate().setupManagedHover(getDefaultHoverDelegate('mouse'), this.domNode, ''));
+        this.didEverRender = false;
+        container.appendChild(this.domNode);
+    }
+    get element() {
+        return this.domNode;
+    }
+    set(keybinding, matches) {
+        if (this.didEverRender && this.keybinding === keybinding && KeybindingLabel.areSame(this.matches, matches)) {
+            return;
+        }
+        this.keybinding = keybinding;
+        this.matches = matches;
+        this.render();
+    }
+    render() {
+        this.clear();
+        if (this.keybinding) {
+            const chords = this.keybinding.getChords();
+            if (chords[0]) {
+                this.renderChord(this.domNode, chords[0], this.matches ? this.matches.firstPart : null);
+            }
+            for (let i = 1; i < chords.length; i++) {
+                dom.append(this.domNode, $('span.monaco-keybinding-key-chord-separator', undefined, ' '));
+                this.renderChord(this.domNode, chords[i], this.matches ? this.matches.chordPart : null);
+            }
+            const title = (this.options.disableTitle ?? false) ? undefined : this.keybinding.getAriaLabel() || undefined;
+            this.hover.update(title);
+            this.domNode.setAttribute('aria-label', title || '');
+        }
+        else if (this.options && this.options.renderUnboundKeybindings) {
+            this.renderUnbound(this.domNode);
+        }
+        this.didEverRender = true;
+    }
+    clear() {
+        dom.clearNode(this.domNode);
+        this.keyElements.clear();
+    }
+    renderChord(parent, chord, match) {
+        const modifierLabels = UILabelProvider.modifierLabels[this.os];
+        if (chord.ctrlKey) {
+            this.renderKey(parent, modifierLabels.ctrlKey, Boolean(match?.ctrlKey), modifierLabels.separator);
+        }
+        if (chord.shiftKey) {
+            this.renderKey(parent, modifierLabels.shiftKey, Boolean(match?.shiftKey), modifierLabels.separator);
+        }
+        if (chord.altKey) {
+            this.renderKey(parent, modifierLabels.altKey, Boolean(match?.altKey), modifierLabels.separator);
+        }
+        if (chord.metaKey) {
+            this.renderKey(parent, modifierLabels.metaKey, Boolean(match?.metaKey), modifierLabels.separator);
+        }
+        const keyLabel = chord.keyLabel;
+        if (keyLabel) {
+            this.renderKey(parent, keyLabel, Boolean(match?.keyCode), '');
+        }
+    }
+    renderKey(parent, label, highlight, separator) {
+        dom.append(parent, this.createKeyElement(label, highlight ? '.highlight' : ''));
+        if (separator) {
+            dom.append(parent, $('span.monaco-keybinding-key-separator', undefined, separator));
+        }
+    }
+    renderUnbound(parent) {
+        dom.append(parent, this.createKeyElement(localize('unbound', "Unbound")));
+    }
+    createKeyElement(label, extraClass = '') {
+        const keyElement = $('span.monaco-keybinding-key' + extraClass, undefined, label);
+        this.keyElements.add(keyElement);
+        if (this.options.keybindingLabelBackground) {
+            keyElement.style.backgroundColor = this.options.keybindingLabelBackground;
+        }
+        if (this.options.keybindingLabelBorder) {
+            keyElement.style.borderColor = this.options.keybindingLabelBorder;
+        }
+        if (this.options.keybindingLabelBottomBorder) {
+            keyElement.style.borderBottomColor = this.options.keybindingLabelBottomBorder;
+        }
+        if (this.options.keybindingLabelShadow) {
+            keyElement.style.boxShadow = `inset 0 -1px 0 ${this.options.keybindingLabelShadow}`;
+        }
+        return keyElement;
+    }
+    static areSame(a, b) {
+        if (a === b || (!a && !b)) {
+            return true;
+        }
+        return !!a && !!b && equals(a.firstPart, b.firstPart) && equals(a.chordPart, b.chordPart);
+    }
+}

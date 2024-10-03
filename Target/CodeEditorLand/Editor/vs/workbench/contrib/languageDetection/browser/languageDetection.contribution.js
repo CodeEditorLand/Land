@@ -1,1 +1,146 @@
-var L=Object.defineProperty;var C=Object.getOwnPropertyDescriptor;var h=(r,e,o,t)=>{for(var i=t>1?void 0:t?C(e,o):e,n=r.length-1,a;n>=0;n--)(a=r[n])&&(i=(t?a(e,o,i):a(i))||i);return t&&i&&L(e,o,i),i},s=(r,e)=>(o,t)=>e(o,t,r);import{DisposableStore as y}from"../../../../base/common/lifecycle.js";import{getCodeEditor as f}from"../../../../editor/browser/editorBrowser.js";import{localize as g,localize2 as k}from"../../../../nls.js";import{Registry as x}from"../../../../platform/registry/common/platform.js";import{Extensions as A}from"../../../common/contributions.js";import{IEditorService as v}from"../../../services/editor/common/editorService.js";import{LifecyclePhase as K}from"../../../services/lifecycle/common/lifecycle.js";import{IStatusbarService as T,StatusbarAlignment as _}from"../../../services/statusbar/browser/statusbar.js";import{ILanguageDetectionService as S,LanguageDetectionLanguageEventSource as W}from"../../../services/languageDetection/common/languageDetectionWorkerService.js";import{ThrottledDelayer as w}from"../../../../base/common/async.js";import{ILanguageService as R}from"../../../../editor/common/languages/language.js";import{IKeybindingService as M}from"../../../../platform/keybinding/common/keybinding.js";import"../../../../editor/browser/editorExtensions.js";import{registerAction2 as H,Action2 as N}from"../../../../platform/actions/common/actions.js";import{INotificationService as U}from"../../../../platform/notification/common/notification.js";import{ContextKeyExpr as B}from"../../../../platform/contextkey/common/contextkey.js";import{KeybindingWeight as O}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{NOTEBOOK_EDITOR_EDITABLE as j}from"../../notebook/common/notebookContextKeys.js";import{KeyCode as P,KeyMod as E}from"../../../../base/common/keyCodes.js";import{EditorContextKeys as z}from"../../../../editor/common/editorContextKeys.js";import{Schemas as G}from"../../../../base/common/network.js";import{IConfigurationService as $}from"../../../../platform/configuration/common/configuration.js";const l="editor.detectLanguage";let d=class{constructor(e,o,t,i,n,a){this._languageDetectionService=e;this._statusBarService=o;this._configurationService=t;this._editorService=i;this._languageService=n;this._keybindingService=a;i.onDidActiveEditorChange(()=>this._update(!0),this,this._disposables),this._update(!1)}static _id="status.languageDetectionStatus";_disposables=new y;_combinedEntry;_delayer=new w(1e3);_renderDisposables=new y;dispose(){this._disposables.dispose(),this._delayer.dispose(),this._combinedEntry?.dispose(),this._renderDisposables.dispose()}_update(e){e&&(this._combinedEntry?.dispose(),this._combinedEntry=void 0),this._delayer.trigger(()=>this._doUpdate())}async _doUpdate(){const e=f(this._editorService.activeTextEditorControl);this._renderDisposables.clear(),e?.onDidChangeModelLanguage(()=>this._update(!0),this,this._renderDisposables),e?.onDidChangeModelContent(()=>this._update(!1),this,this._renderDisposables);const o=e?.getModel(),t=o?.uri,i=o?.getLanguageId(),n=this._configurationService.getValue("workbench.editor.languageDetectionHints");if(!(typeof n=="object"&&n?.untitledEditors)||t?.scheme!==G.untitled||!i||!t)this._combinedEntry?.dispose(),this._combinedEntry=void 0;else{const c=await this._languageDetectionService.detectLanguage(t),I={jsonc:"json"},m=o.getLanguageId();if(c&&c!==m&&I[m]!==c){const D=this._languageService.getLanguageName(c)||c;let p=g("status.autoDetectLanguage","Accept Detected Language: {0}",D);const u=this._keybindingService.lookupKeybinding(l)?.getLabel();u&&(p+=` (${u})`);const b={name:g("langDetection.name","Language Detection"),ariaLabel:g("langDetection.aria","Change to Detected Language: {0}",c),tooltip:p,command:l,text:"$(lightbulb-autofix)"};this._combinedEntry?this._combinedEntry.update(b):this._combinedEntry=this._statusBarService.addEntry(b,d._id,_.RIGHT,{id:"status.editor.mode",alignment:_.RIGHT,compact:!0})}else this._combinedEntry?.dispose(),this._combinedEntry=void 0}}};d=h([s(0,S),s(1,T),s(2,$),s(3,v),s(4,R),s(5,M)],d),x.as(A.Workbench).registerWorkbenchContribution(d,K.Restored),H(class extends N{constructor(){super({id:l,title:k("detectlang","Detect Language from Content"),f1:!0,precondition:B.and(j.toNegated(),z.editorTextFocus),keybinding:{primary:P.KeyD|E.Alt|E.Shift,weight:O.WorkbenchContrib}})}async run(r){const e=r.get(v),o=r.get(S),t=f(e.activeTextEditorControl),i=r.get(U),n=t?.getModel()?.uri;if(n){const a=await o.detectLanguage(n);a?t.getModel()?.setLanguage(a,W):i.warn(g("noDetection","Unable to detect editor language"))}}});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var LanguageDetectionStatusContribution_1;
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { getCodeEditor } from '../../../../editor/browser/editorBrowser.js';
+import { localize, localize2 } from '../../../../nls.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IStatusbarService } from '../../../services/statusbar/browser/statusbar.js';
+import { ILanguageDetectionService, LanguageDetectionLanguageEventSource } from '../../../services/languageDetection/common/languageDetectionWorkerService.js';
+import { ThrottledDelayer } from '../../../../base/common/async.js';
+import { ILanguageService } from '../../../../editor/common/languages/language.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { registerAction2, Action2 } from '../../../../platform/actions/common/actions.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { NOTEBOOK_EDITOR_EDITABLE } from '../../notebook/common/notebookContextKeys.js';
+import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+const detectLanguageCommandId = 'editor.detectLanguage';
+let LanguageDetectionStatusContribution = class LanguageDetectionStatusContribution {
+    static { LanguageDetectionStatusContribution_1 = this; }
+    static { this._id = 'status.languageDetectionStatus'; }
+    constructor(_languageDetectionService, _statusBarService, _configurationService, _editorService, _languageService, _keybindingService) {
+        this._languageDetectionService = _languageDetectionService;
+        this._statusBarService = _statusBarService;
+        this._configurationService = _configurationService;
+        this._editorService = _editorService;
+        this._languageService = _languageService;
+        this._keybindingService = _keybindingService;
+        this._disposables = new DisposableStore();
+        this._delayer = new ThrottledDelayer(1000);
+        this._renderDisposables = new DisposableStore();
+        _editorService.onDidActiveEditorChange(() => this._update(true), this, this._disposables);
+        this._update(false);
+    }
+    dispose() {
+        this._disposables.dispose();
+        this._delayer.dispose();
+        this._combinedEntry?.dispose();
+        this._renderDisposables.dispose();
+    }
+    _update(clear) {
+        if (clear) {
+            this._combinedEntry?.dispose();
+            this._combinedEntry = undefined;
+        }
+        this._delayer.trigger(() => this._doUpdate());
+    }
+    async _doUpdate() {
+        const editor = getCodeEditor(this._editorService.activeTextEditorControl);
+        this._renderDisposables.clear();
+        editor?.onDidChangeModelLanguage(() => this._update(true), this, this._renderDisposables);
+        editor?.onDidChangeModelContent(() => this._update(false), this, this._renderDisposables);
+        const editorModel = editor?.getModel();
+        const editorUri = editorModel?.uri;
+        const existingId = editorModel?.getLanguageId();
+        const enablementConfig = this._configurationService.getValue('workbench.editor.languageDetectionHints');
+        const enabled = typeof enablementConfig === 'object' && enablementConfig?.untitledEditors;
+        const disableLightbulb = !enabled || editorUri?.scheme !== Schemas.untitled || !existingId;
+        if (disableLightbulb || !editorUri) {
+            this._combinedEntry?.dispose();
+            this._combinedEntry = undefined;
+        }
+        else {
+            const lang = await this._languageDetectionService.detectLanguage(editorUri);
+            const skip = { 'jsonc': 'json' };
+            const existing = editorModel.getLanguageId();
+            if (lang && lang !== existing && skip[existing] !== lang) {
+                const detectedName = this._languageService.getLanguageName(lang) || lang;
+                let tooltip = localize('status.autoDetectLanguage', "Accept Detected Language: {0}", detectedName);
+                const keybinding = this._keybindingService.lookupKeybinding(detectLanguageCommandId);
+                const label = keybinding?.getLabel();
+                if (label) {
+                    tooltip += ` (${label})`;
+                }
+                const props = {
+                    name: localize('langDetection.name', "Language Detection"),
+                    ariaLabel: localize('langDetection.aria', "Change to Detected Language: {0}", lang),
+                    tooltip,
+                    command: detectLanguageCommandId,
+                    text: '$(lightbulb-autofix)',
+                };
+                if (!this._combinedEntry) {
+                    this._combinedEntry = this._statusBarService.addEntry(props, LanguageDetectionStatusContribution_1._id, 1, { id: 'status.editor.mode', alignment: 1, compact: true });
+                }
+                else {
+                    this._combinedEntry.update(props);
+                }
+            }
+            else {
+                this._combinedEntry?.dispose();
+                this._combinedEntry = undefined;
+            }
+        }
+    }
+};
+LanguageDetectionStatusContribution = LanguageDetectionStatusContribution_1 = __decorate([
+    __param(0, ILanguageDetectionService),
+    __param(1, IStatusbarService),
+    __param(2, IConfigurationService),
+    __param(3, IEditorService),
+    __param(4, ILanguageService),
+    __param(5, IKeybindingService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], LanguageDetectionStatusContribution);
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(LanguageDetectionStatusContribution, 3);
+registerAction2(class extends Action2 {
+    constructor() {
+        super({
+            id: detectLanguageCommandId,
+            title: localize2('detectlang', "Detect Language from Content"),
+            f1: true,
+            precondition: ContextKeyExpr.and(NOTEBOOK_EDITOR_EDITABLE.toNegated(), EditorContextKeys.editorTextFocus),
+            keybinding: { primary: 34 | 512 | 1024, weight: 200 }
+        });
+    }
+    async run(accessor) {
+        const editorService = accessor.get(IEditorService);
+        const languageDetectionService = accessor.get(ILanguageDetectionService);
+        const editor = getCodeEditor(editorService.activeTextEditorControl);
+        const notificationService = accessor.get(INotificationService);
+        const editorUri = editor?.getModel()?.uri;
+        if (editorUri) {
+            const lang = await languageDetectionService.detectLanguage(editorUri);
+            if (lang) {
+                editor.getModel()?.setLanguage(lang, LanguageDetectionLanguageEventSource);
+            }
+            else {
+                notificationService.warn(localize('noDetection', "Unable to detect editor language"));
+            }
+        }
+    }
+});

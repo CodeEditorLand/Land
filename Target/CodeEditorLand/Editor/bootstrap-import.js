@@ -1,1 +1,38 @@
-import{fileURLToPath as l,pathToFileURL as a}from"node:url";import{promises as s}from"node:fs";import{join as c}from"node:path";const m={};async function u(n){const r=l(new URL("../package.json",a(n))),t=JSON.parse(String(await s.readFile(r)));for(const[e]of Object.entries(t.dependencies))try{const i=c(r,`../node_modules/${e}/package.json`);let{main:o}=JSON.parse(String(await s.readFile(i)));o||(o="index.js"),o.endsWith(".js")||(o+=".js");const d=c(r,`../node_modules/${e}/${o}`);m[e]=a(d).href}catch{}}async function h(n,r,t){const e=m[n];return e!==void 0?{format:"commonjs",shortCircuit:!0,url:e}:t(n,r)}export{u as initialize,h as resolve};
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { promises } from 'node:fs';
+import { join } from 'node:path';
+const _specifierToUrl = {};
+export async function initialize(injectPath) {
+    const injectPackageJSONPath = fileURLToPath(new URL('../package.json', pathToFileURL(injectPath)));
+    const packageJSON = JSON.parse(String(await promises.readFile(injectPackageJSONPath)));
+    for (const [name] of Object.entries(packageJSON.dependencies)) {
+        try {
+            const path = join(injectPackageJSONPath, `../node_modules/${name}/package.json`);
+            let { main } = JSON.parse(String(await promises.readFile(path)));
+            if (!main) {
+                main = 'index.js';
+            }
+            if (!main.endsWith('.js')) {
+                main += '.js';
+            }
+            const mainPath = join(injectPackageJSONPath, `../node_modules/${name}/${main}`);
+            _specifierToUrl[name] = pathToFileURL(mainPath).href;
+        }
+        catch (err) {
+            console.error(name);
+            console.error(err);
+        }
+    }
+    console.log(`[bootstrap-import] Initialized node_modules redirector for: ${injectPath}`);
+}
+export async function resolve(specifier, context, nextResolve) {
+    const newSpecifier = _specifierToUrl[specifier];
+    if (newSpecifier !== undefined) {
+        return {
+            format: 'commonjs',
+            shortCircuit: true,
+            url: newSpecifier
+        };
+    }
+    return nextResolve(specifier, context);
+}

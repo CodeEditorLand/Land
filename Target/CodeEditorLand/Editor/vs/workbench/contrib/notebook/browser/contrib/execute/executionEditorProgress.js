@@ -1,1 +1,85 @@
-var k=Object.defineProperty;var _=Object.getOwnPropertyDescriptor;var l=(n,r,t,o)=>{for(var e=o>1?void 0:o?_(r,t):r,i=n.length-1,c;i>=0;i--)(c=n[i])&&(e=(o?c(r,t,e):c(e))||e);return o&&e&&k(r,t,e),e},u=(n,r)=>(t,o)=>r(t,o,n);import{throttle as v}from"../../../../../../base/common/decorators.js";import{Disposable as E,MutableDisposable as p}from"../../../../../../base/common/lifecycle.js";import"../../notebookBrowser.js";import{registerNotebookContribution as x}from"../../notebookEditorExtensions.js";import{NotebookCellExecutionState as g}from"../../../common/notebookCommon.js";import{INotebookExecutionStateService as f}from"../../../common/notebookExecutionStateService.js";import{IUserActivityService as m}from"../../../../../services/userActivity/common/userActivityService.js";let s=class extends E{constructor(t,o,e){super();this._notebookEditor=t;this._notebookExecutionStateService=o;this._userActivity=e;this._register(t.onDidScroll(()=>this._update())),this._register(o.onDidChangeExecution(i=>{i.notebook.toString()===this._notebookEditor.textModel?.uri.toString()&&this._update()})),this._register(t.onDidChangeModel(()=>this._update()))}static id="workbench.notebook.executionEditorProgress";_activityMutex=this._register(new p);_update(){if(!this._notebookEditor.hasModel())return;const t=this._notebookExecutionStateService.getCellExecutionsForNotebook(this._notebookEditor.textModel?.uri).filter(a=>a.state===g.Executing),o=this._notebookExecutionStateService.getExecution(this._notebookEditor.textModel?.uri),e=a=>{for(const d of this._notebookEditor.visibleRanges)for(const h of this._notebookEditor.getCellsInRange(d))if(h.handle===a.cellHandle){const b=this._notebookEditor.getAbsoluteTopOfElement(h);if(this._notebookEditor.scrollTop<b+5)return!0}return!1},i=t.length||o;i&&!this._activityMutex.value?this._activityMutex.value=this._userActivity.markActive():!i&&this._activityMutex.value&&this._activityMutex.clear();const c=t.length&&!t.some(e)&&!t.some(a=>a.isPaused);!!o||c?this._notebookEditor.showProgress():this._notebookEditor.hideProgress()}};l([v(100)],s.prototype,"_update",1),s=l([u(1,f),u(2,m)],s),x(s.id,s);export{s as ExecutionEditorProgressController};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { throttle } from '../../../../../../base/common/decorators.js';
+import { Disposable, MutableDisposable } from '../../../../../../base/common/lifecycle.js';
+import { registerNotebookContribution } from '../../notebookEditorExtensions.js';
+import { NotebookCellExecutionState } from '../../../common/notebookCommon.js';
+import { INotebookExecutionStateService } from '../../../common/notebookExecutionStateService.js';
+import { IUserActivityService } from '../../../../../services/userActivity/common/userActivityService.js';
+let ExecutionEditorProgressController = class ExecutionEditorProgressController extends Disposable {
+    static { this.id = 'workbench.notebook.executionEditorProgress'; }
+    constructor(_notebookEditor, _notebookExecutionStateService, _userActivity) {
+        super();
+        this._notebookEditor = _notebookEditor;
+        this._notebookExecutionStateService = _notebookExecutionStateService;
+        this._userActivity = _userActivity;
+        this._activityMutex = this._register(new MutableDisposable());
+        this._register(_notebookEditor.onDidScroll(() => this._update()));
+        this._register(_notebookExecutionStateService.onDidChangeExecution(e => {
+            if (e.notebook.toString() !== this._notebookEditor.textModel?.uri.toString()) {
+                return;
+            }
+            this._update();
+        }));
+        this._register(_notebookEditor.onDidChangeModel(() => this._update()));
+    }
+    _update() {
+        if (!this._notebookEditor.hasModel()) {
+            return;
+        }
+        const cellExecutions = this._notebookExecutionStateService.getCellExecutionsForNotebook(this._notebookEditor.textModel?.uri)
+            .filter(exe => exe.state === NotebookCellExecutionState.Executing);
+        const notebookExecution = this._notebookExecutionStateService.getExecution(this._notebookEditor.textModel?.uri);
+        const executionIsVisible = (exe) => {
+            for (const range of this._notebookEditor.visibleRanges) {
+                for (const cell of this._notebookEditor.getCellsInRange(range)) {
+                    if (cell.handle === exe.cellHandle) {
+                        const top = this._notebookEditor.getAbsoluteTopOfElement(cell);
+                        if (this._notebookEditor.scrollTop < top + 5) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        };
+        const hasAnyExecution = cellExecutions.length || notebookExecution;
+        if (hasAnyExecution && !this._activityMutex.value) {
+            this._activityMutex.value = this._userActivity.markActive();
+        }
+        else if (!hasAnyExecution && this._activityMutex.value) {
+            this._activityMutex.clear();
+        }
+        const shouldShowEditorProgressbarForCellExecutions = cellExecutions.length && !cellExecutions.some(executionIsVisible) && !cellExecutions.some(e => e.isPaused);
+        const showEditorProgressBar = !!notebookExecution || shouldShowEditorProgressbarForCellExecutions;
+        if (showEditorProgressBar) {
+            this._notebookEditor.showProgress();
+        }
+        else {
+            this._notebookEditor.hideProgress();
+        }
+    }
+};
+__decorate([
+    throttle(100),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ExecutionEditorProgressController.prototype, "_update", null);
+ExecutionEditorProgressController = __decorate([
+    __param(1, INotebookExecutionStateService),
+    __param(2, IUserActivityService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], ExecutionEditorProgressController);
+export { ExecutionEditorProgressController };
+registerNotebookContribution(ExecutionEditorProgressController.id, ExecutionEditorProgressController);

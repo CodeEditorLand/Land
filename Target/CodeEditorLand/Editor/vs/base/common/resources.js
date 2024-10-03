@@ -1,1 +1,239 @@
-import{CharCode as f}from"./charCode.js";import*as g from"./extpath.js";import{Schemas as p}from"./network.js";import*as s from"./path.js";import{isLinux as b,isWindows as A}from"./platform.js";import{compare as y,equalsIgnoreCase as T}from"./strings.js";import{URI as u,uriToFsPath as E}from"./uri.js";function l(o){return E(o,!0)}class I{constructor(t){this._ignorePathCasing=t}compare(t,e,n=!1){return t===e?0:y(this.getComparisonKey(t,n),this.getComparisonKey(e,n))}isEqual(t,e,n=!1){return t===e?!0:!t||!e?!1:this.getComparisonKey(t,n)===this.getComparisonKey(e,n)}getComparisonKey(t,e=!1){return t.with({path:this._ignorePathCasing(t)?t.path.toLowerCase():void 0,fragment:e?null:void 0}).toString()}ignorePathCasing(t){return this._ignorePathCasing(t)}isEqualOrParent(t,e,n=!1){if(t.scheme===e.scheme){if(t.scheme===p.file)return g.isEqualOrParent(l(t),l(e),this._ignorePathCasing(t))&&t.query===e.query&&(n||t.fragment===e.fragment);if(c(t.authority,e.authority))return g.isEqualOrParent(t.path,e.path,this._ignorePathCasing(t),"/")&&t.query===e.query&&(n||t.fragment===e.fragment)}return!1}joinPath(t,...e){return u.joinPath(t,...e)}basenameOrAuthority(t){return S(t)||t.authority}basename(t){return s.posix.basename(t.path)}extname(t){return s.posix.extname(t.path)}dirname(t){if(t.path.length===0)return t;let e;return t.scheme===p.file?e=u.file(s.dirname(l(t))).path:(e=s.posix.dirname(t.path),t.authority&&e.length&&e.charCodeAt(0)!==f.Slash&&(e="/")),t.with({path:e})}normalizePath(t){if(!t.path.length)return t;let e;return t.scheme===p.file?e=u.file(s.normalize(l(t))).path:e=s.posix.normalize(t.path),t.with({path:e})}relativePath(t,e){if(t.scheme!==e.scheme||!c(t.authority,e.authority))return;if(t.scheme===p.file){const i=s.relative(l(t),l(e));return A?g.toSlashes(i):i}let n=t.path||"/";const a=e.path||"/";if(this._ignorePathCasing(t)){let i=0;for(const h=Math.min(n.length,a.length);i<h&&!(n.charCodeAt(i)!==a.charCodeAt(i)&&n.charAt(i).toLowerCase()!==a.charAt(i).toLowerCase());i++);n=a.substr(0,i)+n.substr(i)}return s.posix.relative(n,a)}resolvePath(t,e){if(t.scheme===p.file){const n=u.file(s.resolve(l(t),e));return t.with({authority:n.authority,path:n.path})}return e=g.toPosixPath(e),t.with({path:s.posix.resolve(t.path,e)})}isAbsolutePath(t){return!!t.path&&t.path[0]==="/"}isEqualAuthority(t,e){return t===e||t!==void 0&&e!==void 0&&T(t,e)}hasTrailingPathSeparator(t,e=s.sep){if(t.scheme===p.file){const n=l(t);return n.length>g.getRoot(n).length&&n[n.length-1]===e}else{const n=t.path;return n.length>1&&n.charCodeAt(n.length-1)===f.Slash&&!/^[a-zA-Z]:(\/$|\\$)/.test(t.fsPath)}}removeTrailingPathSeparator(t,e=s.sep){return U(t,e)?t.with({path:t.path.substr(0,t.path.length-1)}):t}addTrailingPathSeparator(t,e=s.sep){let n=!1;if(t.scheme===p.file){const a=l(t);n=a!==void 0&&a.length===g.getRoot(a).length&&a[a.length-1]===e}else{e="/";const a=t.path;n=a.length===1&&a.charCodeAt(a.length-1)===f.Slash}return!n&&!U(t,e)?t.with({path:t.path+"/"}):t}}const r=new I(()=>!1),K=new I(o=>o.scheme===p.file?!b:!0),L=new I(o=>!0),j=r.isEqual.bind(r),C=r.isEqualOrParent.bind(r),F=r.getComparisonKey.bind(r),$=r.basenameOrAuthority.bind(r),S=r.basename.bind(r),k=r.extname.bind(r),B=r.dirname.bind(r),Z=r.joinPath.bind(r),D=r.normalizePath.bind(r),N=r.relativePath.bind(r),W=r.resolvePath.bind(r),G=r.isAbsolutePath.bind(r),c=r.isEqualAuthority.bind(r),U=r.hasTrailingPathSeparator.bind(r),H=r.removeTrailingPathSeparator.bind(r),J=r.addTrailingPathSeparator.bind(r);function Q(o,t){const e=[];for(let n=0;n<o.length;n++){const a=t(o[n]);o.some((i,h)=>h===n?!1:C(a,t(i)))||e.push(o[n])}return e}var v;(i=>{i.META_DATA_LABEL="label",i.META_DATA_DESCRIPTION="description",i.META_DATA_SIZE="size",i.META_DATA_MIME="mime";function a(h){const m=new Map;h.path.substring(h.path.indexOf(";")+1,h.path.lastIndexOf(";")).split(";").forEach(x=>{const[d,P]=x.split(":");d&&P&&m.set(d,P)});const R=h.path.substring(0,h.path.indexOf(";"));return R&&m.set(i.META_DATA_MIME,R),m}i.parseMetaData=a})(v||={});function V(o,t,e){if(t){let n=o.path;return n&&n[0]!==s.posix.sep&&(n=s.posix.sep+n),o.with({scheme:e,authority:t,path:n})}return o.with({scheme:e})}export{v as DataUri,I as ExtUri,J as addTrailingPathSeparator,S as basename,$ as basenameOrAuthority,B as dirname,Q as distinctParents,r as extUri,K as extUriBiasedIgnorePathCase,L as extUriIgnorePathCase,k as extname,F as getComparisonKey,U as hasTrailingPathSeparator,G as isAbsolutePath,j as isEqual,c as isEqualAuthority,C as isEqualOrParent,Z as joinPath,D as normalizePath,l as originalFSPath,N as relativePath,H as removeTrailingPathSeparator,W as resolvePath,V as toLocalResource};
+import * as extpath from './extpath.js';
+import { Schemas } from './network.js';
+import * as paths from './path.js';
+import { isLinux, isWindows } from './platform.js';
+import { compare as strCompare, equalsIgnoreCase } from './strings.js';
+import { URI, uriToFsPath } from './uri.js';
+export function originalFSPath(uri) {
+    return uriToFsPath(uri, true);
+}
+export class ExtUri {
+    constructor(_ignorePathCasing) {
+        this._ignorePathCasing = _ignorePathCasing;
+    }
+    compare(uri1, uri2, ignoreFragment = false) {
+        if (uri1 === uri2) {
+            return 0;
+        }
+        return strCompare(this.getComparisonKey(uri1, ignoreFragment), this.getComparisonKey(uri2, ignoreFragment));
+    }
+    isEqual(uri1, uri2, ignoreFragment = false) {
+        if (uri1 === uri2) {
+            return true;
+        }
+        if (!uri1 || !uri2) {
+            return false;
+        }
+        return this.getComparisonKey(uri1, ignoreFragment) === this.getComparisonKey(uri2, ignoreFragment);
+    }
+    getComparisonKey(uri, ignoreFragment = false) {
+        return uri.with({
+            path: this._ignorePathCasing(uri) ? uri.path.toLowerCase() : undefined,
+            fragment: ignoreFragment ? null : undefined
+        }).toString();
+    }
+    ignorePathCasing(uri) {
+        return this._ignorePathCasing(uri);
+    }
+    isEqualOrParent(base, parentCandidate, ignoreFragment = false) {
+        if (base.scheme === parentCandidate.scheme) {
+            if (base.scheme === Schemas.file) {
+                return extpath.isEqualOrParent(originalFSPath(base), originalFSPath(parentCandidate), this._ignorePathCasing(base)) && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
+            }
+            if (isEqualAuthority(base.authority, parentCandidate.authority)) {
+                return extpath.isEqualOrParent(base.path, parentCandidate.path, this._ignorePathCasing(base), '/') && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
+            }
+        }
+        return false;
+    }
+    joinPath(resource, ...pathFragment) {
+        return URI.joinPath(resource, ...pathFragment);
+    }
+    basenameOrAuthority(resource) {
+        return basename(resource) || resource.authority;
+    }
+    basename(resource) {
+        return paths.posix.basename(resource.path);
+    }
+    extname(resource) {
+        return paths.posix.extname(resource.path);
+    }
+    dirname(resource) {
+        if (resource.path.length === 0) {
+            return resource;
+        }
+        let dirname;
+        if (resource.scheme === Schemas.file) {
+            dirname = URI.file(paths.dirname(originalFSPath(resource))).path;
+        }
+        else {
+            dirname = paths.posix.dirname(resource.path);
+            if (resource.authority && dirname.length && dirname.charCodeAt(0) !== 47) {
+                console.error(`dirname("${resource.toString})) resulted in a relative path`);
+                dirname = '/';
+            }
+        }
+        return resource.with({
+            path: dirname
+        });
+    }
+    normalizePath(resource) {
+        if (!resource.path.length) {
+            return resource;
+        }
+        let normalizedPath;
+        if (resource.scheme === Schemas.file) {
+            normalizedPath = URI.file(paths.normalize(originalFSPath(resource))).path;
+        }
+        else {
+            normalizedPath = paths.posix.normalize(resource.path);
+        }
+        return resource.with({
+            path: normalizedPath
+        });
+    }
+    relativePath(from, to) {
+        if (from.scheme !== to.scheme || !isEqualAuthority(from.authority, to.authority)) {
+            return undefined;
+        }
+        if (from.scheme === Schemas.file) {
+            const relativePath = paths.relative(originalFSPath(from), originalFSPath(to));
+            return isWindows ? extpath.toSlashes(relativePath) : relativePath;
+        }
+        let fromPath = from.path || '/';
+        const toPath = to.path || '/';
+        if (this._ignorePathCasing(from)) {
+            let i = 0;
+            for (const len = Math.min(fromPath.length, toPath.length); i < len; i++) {
+                if (fromPath.charCodeAt(i) !== toPath.charCodeAt(i)) {
+                    if (fromPath.charAt(i).toLowerCase() !== toPath.charAt(i).toLowerCase()) {
+                        break;
+                    }
+                }
+            }
+            fromPath = toPath.substr(0, i) + fromPath.substr(i);
+        }
+        return paths.posix.relative(fromPath, toPath);
+    }
+    resolvePath(base, path) {
+        if (base.scheme === Schemas.file) {
+            const newURI = URI.file(paths.resolve(originalFSPath(base), path));
+            return base.with({
+                authority: newURI.authority,
+                path: newURI.path
+            });
+        }
+        path = extpath.toPosixPath(path);
+        return base.with({
+            path: paths.posix.resolve(base.path, path)
+        });
+    }
+    isAbsolutePath(resource) {
+        return !!resource.path && resource.path[0] === '/';
+    }
+    isEqualAuthority(a1, a2) {
+        return a1 === a2 || (a1 !== undefined && a2 !== undefined && equalsIgnoreCase(a1, a2));
+    }
+    hasTrailingPathSeparator(resource, sep = paths.sep) {
+        if (resource.scheme === Schemas.file) {
+            const fsp = originalFSPath(resource);
+            return fsp.length > extpath.getRoot(fsp).length && fsp[fsp.length - 1] === sep;
+        }
+        else {
+            const p = resource.path;
+            return (p.length > 1 && p.charCodeAt(p.length - 1) === 47) && !(/^[a-zA-Z]:(\/$|\\$)/.test(resource.fsPath));
+        }
+    }
+    removeTrailingPathSeparator(resource, sep = paths.sep) {
+        if (hasTrailingPathSeparator(resource, sep)) {
+            return resource.with({ path: resource.path.substr(0, resource.path.length - 1) });
+        }
+        return resource;
+    }
+    addTrailingPathSeparator(resource, sep = paths.sep) {
+        let isRootSep = false;
+        if (resource.scheme === Schemas.file) {
+            const fsp = originalFSPath(resource);
+            isRootSep = ((fsp !== undefined) && (fsp.length === extpath.getRoot(fsp).length) && (fsp[fsp.length - 1] === sep));
+        }
+        else {
+            sep = '/';
+            const p = resource.path;
+            isRootSep = p.length === 1 && p.charCodeAt(p.length - 1) === 47;
+        }
+        if (!isRootSep && !hasTrailingPathSeparator(resource, sep)) {
+            return resource.with({ path: resource.path + '/' });
+        }
+        return resource;
+    }
+}
+export const extUri = new ExtUri(() => false);
+export const extUriBiasedIgnorePathCase = new ExtUri(uri => {
+    return uri.scheme === Schemas.file ? !isLinux : true;
+});
+export const extUriIgnorePathCase = new ExtUri(_ => true);
+export const isEqual = extUri.isEqual.bind(extUri);
+export const isEqualOrParent = extUri.isEqualOrParent.bind(extUri);
+export const getComparisonKey = extUri.getComparisonKey.bind(extUri);
+export const basenameOrAuthority = extUri.basenameOrAuthority.bind(extUri);
+export const basename = extUri.basename.bind(extUri);
+export const extname = extUri.extname.bind(extUri);
+export const dirname = extUri.dirname.bind(extUri);
+export const joinPath = extUri.joinPath.bind(extUri);
+export const normalizePath = extUri.normalizePath.bind(extUri);
+export const relativePath = extUri.relativePath.bind(extUri);
+export const resolvePath = extUri.resolvePath.bind(extUri);
+export const isAbsolutePath = extUri.isAbsolutePath.bind(extUri);
+export const isEqualAuthority = extUri.isEqualAuthority.bind(extUri);
+export const hasTrailingPathSeparator = extUri.hasTrailingPathSeparator.bind(extUri);
+export const removeTrailingPathSeparator = extUri.removeTrailingPathSeparator.bind(extUri);
+export const addTrailingPathSeparator = extUri.addTrailingPathSeparator.bind(extUri);
+export function distinctParents(items, resourceAccessor) {
+    const distinctParents = [];
+    for (let i = 0; i < items.length; i++) {
+        const candidateResource = resourceAccessor(items[i]);
+        if (items.some((otherItem, index) => {
+            if (index === i) {
+                return false;
+            }
+            return isEqualOrParent(candidateResource, resourceAccessor(otherItem));
+        })) {
+            continue;
+        }
+        distinctParents.push(items[i]);
+    }
+    return distinctParents;
+}
+export var DataUri;
+(function (DataUri) {
+    DataUri.META_DATA_LABEL = 'label';
+    DataUri.META_DATA_DESCRIPTION = 'description';
+    DataUri.META_DATA_SIZE = 'size';
+    DataUri.META_DATA_MIME = 'mime';
+    function parseMetaData(dataUri) {
+        const metadata = new Map();
+        const meta = dataUri.path.substring(dataUri.path.indexOf(';') + 1, dataUri.path.lastIndexOf(';'));
+        meta.split(';').forEach(property => {
+            const [key, value] = property.split(':');
+            if (key && value) {
+                metadata.set(key, value);
+            }
+        });
+        const mime = dataUri.path.substring(0, dataUri.path.indexOf(';'));
+        if (mime) {
+            metadata.set(DataUri.META_DATA_MIME, mime);
+        }
+        return metadata;
+    }
+    DataUri.parseMetaData = parseMetaData;
+})(DataUri || (DataUri = {}));
+export function toLocalResource(resource, authority, localScheme) {
+    if (authority) {
+        let path = resource.path;
+        if (path && path[0] !== paths.posix.sep) {
+            path = paths.posix.sep + path;
+        }
+        return resource.with({ scheme: localScheme, authority, path });
+    }
+    return resource.with({ scheme: localScheme });
+}

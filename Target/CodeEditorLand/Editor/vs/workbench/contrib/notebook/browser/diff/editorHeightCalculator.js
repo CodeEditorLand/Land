@@ -1,1 +1,71 @@
-var M=Object.defineProperty;var x=Object.getOwnPropertyDescriptor;var l=(m,e,t,i)=>{for(var n=i>1?void 0:i?x(e,t):e,d=m.length-1,s;d>=0;d--)(s=m[d])&&(n=(i?s(e,t,n):s(n))||n);return i&&n&&M(e,t,n),n},c=(m,e)=>(t,i)=>e(t,i,m);import"../../../../../base/common/uri.js";import{UnchangedRegion as E}from"../../../../../editor/browser/widget/diffEditor/diffEditorViewModel.js";import{IEditorWorkerService as I}from"../../../../../editor/common/services/editorWorker.js";import{ITextModelService as y}from"../../../../../editor/common/services/resolverService.js";import{IConfigurationService as H}from"../../../../../platform/configuration/common/configuration.js";import{getEditorPadding as a}from"./diffCellEditorOptions.js";import{HeightOfHiddenLinesRegionInDiffEditor as U}from"./diffElementViewModel.js";let g=class{constructor(e,t,i,n){this.lineHeight=e;this.textModelResolverService=t;this.editorWorkerService=i;this.configurationService=n}async diffAndComputeHeight(e,t){const[i,n]=await Promise.all([this.textModelResolverService.createModelReference(e),this.textModelResolverService.createModelReference(t)]);try{const d=await this.editorWorkerService.computeDiff(e,t,{ignoreTrimWhitespace:!0,maxComputationTimeMs:0,computeMoves:!1},"advanced").then(r=>r?.changes||[]),s=this.configurationService.getValue("diffEditor.hideUnchangedRegions.enabled"),h=this.configurationService.getValue("diffEditor.hideUnchangedRegions.minimumLineCount"),p=this.configurationService.getValue("diffEditor.hideUnchangedRegions.contextLineCount"),b=i.object.textEditorModel.getLineCount(),v=n.object.textEditorModel.getLineCount(),u=s?E.fromDiffs(d,b,v,h??3,p??3):[],R=d.reduce((r,o)=>o.original.isEmpty&&!o.modified.isEmpty?r+o.modified.length:!o.original.isEmpty&&!o.modified.isEmpty&&o.modified.length>o.original.length?r+o.modified.length-o.original.length:r,0),L=i.object.textEditorModel.getLineCount(),S=u.reduce((r,o)=>r+o.lineCount,0),C=u.length*U,f=L+R-S;return f*this.lineHeight+a(f).top+a(f).bottom+C}finally{i.dispose(),n.dispose()}}computeHeightFromLines(e){return e*this.lineHeight+a(e).top+a(e).bottom}};g=l([c(1,y),c(2,I),c(3,H)],g);export{g as DiffEditorHeightCalculatorService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { UnchangedRegion } from '../../../../../editor/browser/widget/diffEditor/diffEditorViewModel.js';
+import { IEditorWorkerService } from '../../../../../editor/common/services/editorWorker.js';
+import { ITextModelService } from '../../../../../editor/common/services/resolverService.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { getEditorPadding } from './diffCellEditorOptions.js';
+import { HeightOfHiddenLinesRegionInDiffEditor } from './diffElementViewModel.js';
+let DiffEditorHeightCalculatorService = class DiffEditorHeightCalculatorService {
+    constructor(lineHeight, textModelResolverService, editorWorkerService, configurationService) {
+        this.lineHeight = lineHeight;
+        this.textModelResolverService = textModelResolverService;
+        this.editorWorkerService = editorWorkerService;
+        this.configurationService = configurationService;
+    }
+    async diffAndComputeHeight(original, modified) {
+        const [originalModel, modifiedModel] = await Promise.all([this.textModelResolverService.createModelReference(original), this.textModelResolverService.createModelReference(modified)]);
+        try {
+            const diffChanges = await this.editorWorkerService.computeDiff(original, modified, {
+                ignoreTrimWhitespace: true,
+                maxComputationTimeMs: 0,
+                computeMoves: false
+            }, 'advanced').then(diff => diff?.changes || []);
+            const unchangedRegionFeatureEnabled = this.configurationService.getValue('diffEditor.hideUnchangedRegions.enabled');
+            const minimumLineCount = this.configurationService.getValue('diffEditor.hideUnchangedRegions.minimumLineCount');
+            const contextLineCount = this.configurationService.getValue('diffEditor.hideUnchangedRegions.contextLineCount');
+            const originalLineCount = originalModel.object.textEditorModel.getLineCount();
+            const modifiedLineCount = modifiedModel.object.textEditorModel.getLineCount();
+            const unchanged = unchangedRegionFeatureEnabled ? UnchangedRegion.fromDiffs(diffChanges, originalLineCount, modifiedLineCount, minimumLineCount ?? 3, contextLineCount ?? 3) : [];
+            const numberOfNewLines = diffChanges.reduce((prev, curr) => {
+                if (curr.original.isEmpty && !curr.modified.isEmpty) {
+                    return prev + curr.modified.length;
+                }
+                if (!curr.original.isEmpty && !curr.modified.isEmpty && curr.modified.length > curr.original.length) {
+                    return prev + curr.modified.length - curr.original.length;
+                }
+                return prev;
+            }, 0);
+            const orginalNumberOfLines = originalModel.object.textEditorModel.getLineCount();
+            const numberOfHiddenLines = unchanged.reduce((prev, curr) => prev + curr.lineCount, 0);
+            const numberOfHiddenSections = unchanged.length;
+            const unchangeRegionsHeight = numberOfHiddenSections * HeightOfHiddenLinesRegionInDiffEditor;
+            const visibleLineCount = orginalNumberOfLines + numberOfNewLines - numberOfHiddenLines;
+            return (visibleLineCount * this.lineHeight) + getEditorPadding(visibleLineCount).top + getEditorPadding(visibleLineCount).bottom + unchangeRegionsHeight;
+        }
+        finally {
+            originalModel.dispose();
+            modifiedModel.dispose();
+        }
+    }
+    computeHeightFromLines(lineCount) {
+        return lineCount * this.lineHeight + getEditorPadding(lineCount).top + getEditorPadding(lineCount).bottom;
+    }
+};
+DiffEditorHeightCalculatorService = __decorate([
+    __param(1, ITextModelService),
+    __param(2, IEditorWorkerService),
+    __param(3, IConfigurationService),
+    __metadata("design:paramtypes", [Number, Object, Object, Object])
+], DiffEditorHeightCalculatorService);
+export { DiffEditorHeightCalculatorService };

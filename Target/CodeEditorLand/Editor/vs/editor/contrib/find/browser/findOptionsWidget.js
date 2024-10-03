@@ -1,1 +1,138 @@
-import*as d from"../../../../base/browser/dom.js";import"./findOptionsWidget.css";import{CaseSensitiveToggle as g,RegexToggle as p,WholeWordsToggle as _}from"../../../../base/browser/ui/findinput/findInputToggles.js";import{Widget as c}from"../../../../base/browser/ui/widget.js";import{RunOnceScheduler as v}from"../../../../base/common/async.js";import{OverlayWidgetPositionPreference as m}from"../../../browser/editorBrowser.js";import{FIND_IDS as n}from"./findModel.js";import"./findState.js";import"../../../../platform/keybinding/common/keybinding.js";import{asCssVariable as a,inputActiveOptionBackground as u,inputActiveOptionBorder as y,inputActiveOptionForeground as b}from"../../../../platform/theme/common/colorRegistry.js";import{createInstantHoverDelegate as f}from"../../../../base/browser/ui/hover/hoverDelegateFactory.js";class h extends c{static ID="editor.contrib.findOptionsWidget";_editor;_state;_keybindingService;_domNode;regex;wholeWords;caseSensitive;constructor(s,i,l){super(),this._editor=s,this._state=i,this._keybindingService=l,this._domNode=document.createElement("div"),this._domNode.className="findOptionsWidget",this._domNode.style.display="none",this._domNode.style.top="10px",this._domNode.style.zIndex="12",this._domNode.setAttribute("role","presentation"),this._domNode.setAttribute("aria-hidden","true");const o={inputActiveOptionBorder:a(y),inputActiveOptionForeground:a(b),inputActiveOptionBackground:a(u)},r=this._register(f());this.caseSensitive=this._register(new g({appendTitle:this._keybindingLabelFor(n.ToggleCaseSensitiveCommand),isChecked:this._state.matchCase,hoverDelegate:r,...o})),this._domNode.appendChild(this.caseSensitive.domNode),this._register(this.caseSensitive.onChange(()=>{this._state.change({matchCase:this.caseSensitive.checked},!1)})),this.wholeWords=this._register(new _({appendTitle:this._keybindingLabelFor(n.ToggleWholeWordCommand),isChecked:this._state.wholeWord,hoverDelegate:r,...o})),this._domNode.appendChild(this.wholeWords.domNode),this._register(this.wholeWords.onChange(()=>{this._state.change({wholeWord:this.wholeWords.checked},!1)})),this.regex=this._register(new p({appendTitle:this._keybindingLabelFor(n.ToggleRegexCommand),isChecked:this._state.isRegex,hoverDelegate:r,...o})),this._domNode.appendChild(this.regex.domNode),this._register(this.regex.onChange(()=>{this._state.change({isRegex:this.regex.checked},!1)})),this._editor.addOverlayWidget(this),this._register(this._state.onFindReplaceStateChange(e=>{let t=!1;e.isRegex&&(this.regex.checked=this._state.isRegex,t=!0),e.wholeWord&&(this.wholeWords.checked=this._state.wholeWord,t=!0),e.matchCase&&(this.caseSensitive.checked=this._state.matchCase,t=!0),!this._state.isRevealed&&t&&this._revealTemporarily()})),this._register(d.addDisposableListener(this._domNode,d.EventType.MOUSE_LEAVE,e=>this._onMouseLeave())),this._register(d.addDisposableListener(this._domNode,"mouseover",e=>this._onMouseOver()))}_keybindingLabelFor(s){const i=this._keybindingService.lookupKeybinding(s);return i?` (${i.getLabel()})`:""}dispose(){this._editor.removeOverlayWidget(this),super.dispose()}getId(){return h.ID}getDomNode(){return this._domNode}getPosition(){return{preference:m.TOP_RIGHT_CORNER}}highlightFindOptions(){this._revealTemporarily()}_hideSoon=this._register(new v(()=>this._hide(),2e3));_revealTemporarily(){this._show(),this._hideSoon.schedule()}_onMouseLeave(){this._hideSoon.schedule()}_onMouseOver(){this._hideSoon.cancel()}_isVisible=!1;_show(){this._isVisible||(this._isVisible=!0,this._domNode.style.display="block")}_hide(){this._isVisible&&(this._isVisible=!1,this._domNode.style.display="none")}}export{h as FindOptionsWidget};
+import * as dom from '../../../../base/browser/dom.js';
+import './findOptionsWidget.css';
+import { CaseSensitiveToggle, RegexToggle, WholeWordsToggle } from '../../../../base/browser/ui/findinput/findInputToggles.js';
+import { Widget } from '../../../../base/browser/ui/widget.js';
+import { RunOnceScheduler } from '../../../../base/common/async.js';
+import { FIND_IDS } from './findModel.js';
+import { asCssVariable, inputActiveOptionBackground, inputActiveOptionBorder, inputActiveOptionForeground } from '../../../../platform/theme/common/colorRegistry.js';
+import { createInstantHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+export class FindOptionsWidget extends Widget {
+    static { this.ID = 'editor.contrib.findOptionsWidget'; }
+    constructor(editor, state, keybindingService) {
+        super();
+        this._hideSoon = this._register(new RunOnceScheduler(() => this._hide(), 2000));
+        this._isVisible = false;
+        this._editor = editor;
+        this._state = state;
+        this._keybindingService = keybindingService;
+        this._domNode = document.createElement('div');
+        this._domNode.className = 'findOptionsWidget';
+        this._domNode.style.display = 'none';
+        this._domNode.style.top = '10px';
+        this._domNode.style.zIndex = '12';
+        this._domNode.setAttribute('role', 'presentation');
+        this._domNode.setAttribute('aria-hidden', 'true');
+        const toggleStyles = {
+            inputActiveOptionBorder: asCssVariable(inputActiveOptionBorder),
+            inputActiveOptionForeground: asCssVariable(inputActiveOptionForeground),
+            inputActiveOptionBackground: asCssVariable(inputActiveOptionBackground),
+        };
+        const hoverDelegate = this._register(createInstantHoverDelegate());
+        this.caseSensitive = this._register(new CaseSensitiveToggle({
+            appendTitle: this._keybindingLabelFor(FIND_IDS.ToggleCaseSensitiveCommand),
+            isChecked: this._state.matchCase,
+            hoverDelegate,
+            ...toggleStyles
+        }));
+        this._domNode.appendChild(this.caseSensitive.domNode);
+        this._register(this.caseSensitive.onChange(() => {
+            this._state.change({
+                matchCase: this.caseSensitive.checked
+            }, false);
+        }));
+        this.wholeWords = this._register(new WholeWordsToggle({
+            appendTitle: this._keybindingLabelFor(FIND_IDS.ToggleWholeWordCommand),
+            isChecked: this._state.wholeWord,
+            hoverDelegate,
+            ...toggleStyles
+        }));
+        this._domNode.appendChild(this.wholeWords.domNode);
+        this._register(this.wholeWords.onChange(() => {
+            this._state.change({
+                wholeWord: this.wholeWords.checked
+            }, false);
+        }));
+        this.regex = this._register(new RegexToggle({
+            appendTitle: this._keybindingLabelFor(FIND_IDS.ToggleRegexCommand),
+            isChecked: this._state.isRegex,
+            hoverDelegate,
+            ...toggleStyles
+        }));
+        this._domNode.appendChild(this.regex.domNode);
+        this._register(this.regex.onChange(() => {
+            this._state.change({
+                isRegex: this.regex.checked
+            }, false);
+        }));
+        this._editor.addOverlayWidget(this);
+        this._register(this._state.onFindReplaceStateChange((e) => {
+            let somethingChanged = false;
+            if (e.isRegex) {
+                this.regex.checked = this._state.isRegex;
+                somethingChanged = true;
+            }
+            if (e.wholeWord) {
+                this.wholeWords.checked = this._state.wholeWord;
+                somethingChanged = true;
+            }
+            if (e.matchCase) {
+                this.caseSensitive.checked = this._state.matchCase;
+                somethingChanged = true;
+            }
+            if (!this._state.isRevealed && somethingChanged) {
+                this._revealTemporarily();
+            }
+        }));
+        this._register(dom.addDisposableListener(this._domNode, dom.EventType.MOUSE_LEAVE, (e) => this._onMouseLeave()));
+        this._register(dom.addDisposableListener(this._domNode, 'mouseover', (e) => this._onMouseOver()));
+    }
+    _keybindingLabelFor(actionId) {
+        const kb = this._keybindingService.lookupKeybinding(actionId);
+        if (!kb) {
+            return '';
+        }
+        return ` (${kb.getLabel()})`;
+    }
+    dispose() {
+        this._editor.removeOverlayWidget(this);
+        super.dispose();
+    }
+    getId() {
+        return FindOptionsWidget.ID;
+    }
+    getDomNode() {
+        return this._domNode;
+    }
+    getPosition() {
+        return {
+            preference: 0
+        };
+    }
+    highlightFindOptions() {
+        this._revealTemporarily();
+    }
+    _revealTemporarily() {
+        this._show();
+        this._hideSoon.schedule();
+    }
+    _onMouseLeave() {
+        this._hideSoon.schedule();
+    }
+    _onMouseOver() {
+        this._hideSoon.cancel();
+    }
+    _show() {
+        if (this._isVisible) {
+            return;
+        }
+        this._isVisible = true;
+        this._domNode.style.display = 'block';
+    }
+    _hide() {
+        if (!this._isVisible) {
+            return;
+        }
+        this._isVisible = false;
+        this._domNode.style.display = 'none';
+    }
+}

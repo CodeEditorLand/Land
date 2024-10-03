@@ -1,1 +1,45 @@
-import{CancellationToken as d}from"../../../../base/common/cancellation.js";import{Color as C,RGBA as f}from"../../../../base/common/color.js";import"../../../browser/editorBrowser.js";import"../../../common/core/editOperation.js";import"../../../common/languages.js";import{TrackedRangeStickiness as P}from"../../../common/model.js";import{getColorPresentations as c}from"./color.js";import{ColorPickerModel as x}from"./colorPickerModel.js";import{Range as g}from"../../../common/core/range.js";async function D(o,r,e){const t=o.getValueInRange(r.range),{red:n,green:a,blue:i,alpha:p}=r.color,m=new f(Math.round(n*255),Math.round(a*255),Math.round(i*255),p),s=new C(m),u=await c(o,r,e,d.None),l=new x(s,[],0);return l.colorPresentations=u||[],l.guessColorPresentation(s,t),{range:g.lift(r.range),model:l,provider:e}}function O(o,r,e){const t=[],n=e.presentation.textEdit??{range:r,text:e.presentation.label,forceMoveMarkers:!1};t.push(n),e.presentation.additionalTextEdits&&t.push(...e.presentation.additionalTextEdits);const a=g.lift(n.range),i=o.getModel()._setTrackedRange(null,a,P.GrowsOnlyWhenTypingAfter);return o.executeEdits("colorpicker",t),o.pushUndoStop(),o.getModel()._getTrackedRange(i)??a}async function G(o,r,e,t,n){const a=await c(o,{range:t,color:{red:e.rgba.r/255,green:e.rgba.g/255,blue:e.rgba.b/255,alpha:e.rgba.a}},n.provider,d.None);r.colorPresentations=a||[]}export{D as createColorHover,G as updateColorPresentations,O as updateEditorModel};
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { Color, RGBA } from '../../../../base/common/color.js';
+import { getColorPresentations } from './color.js';
+import { ColorPickerModel } from './colorPickerModel.js';
+import { Range } from '../../../common/core/range.js';
+export async function createColorHover(editorModel, colorInfo, provider) {
+    const originalText = editorModel.getValueInRange(colorInfo.range);
+    const { red, green, blue, alpha } = colorInfo.color;
+    const rgba = new RGBA(Math.round(red * 255), Math.round(green * 255), Math.round(blue * 255), alpha);
+    const color = new Color(rgba);
+    const colorPresentations = await getColorPresentations(editorModel, colorInfo, provider, CancellationToken.None);
+    const model = new ColorPickerModel(color, [], 0);
+    model.colorPresentations = colorPresentations || [];
+    model.guessColorPresentation(color, originalText);
+    return {
+        range: Range.lift(colorInfo.range),
+        model,
+        provider
+    };
+}
+export function updateEditorModel(editor, range, model) {
+    const textEdits = [];
+    const edit = model.presentation.textEdit ?? { range, text: model.presentation.label, forceMoveMarkers: false };
+    textEdits.push(edit);
+    if (model.presentation.additionalTextEdits) {
+        textEdits.push(...model.presentation.additionalTextEdits);
+    }
+    const replaceRange = Range.lift(edit.range);
+    const trackedRange = editor.getModel()._setTrackedRange(null, replaceRange, 3);
+    editor.executeEdits('colorpicker', textEdits);
+    editor.pushUndoStop();
+    return editor.getModel()._getTrackedRange(trackedRange) ?? replaceRange;
+}
+export async function updateColorPresentations(editorModel, colorPickerModel, color, range, colorHover) {
+    const colorPresentations = await getColorPresentations(editorModel, {
+        range: range,
+        color: {
+            red: color.rgba.r / 255,
+            green: color.rgba.g / 255,
+            blue: color.rgba.b / 255,
+            alpha: color.rgba.a
+        }
+    }, colorHover.provider, CancellationToken.None);
+    colorPickerModel.colorPresentations = colorPresentations || [];
+}

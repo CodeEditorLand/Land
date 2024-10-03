@@ -1,1 +1,54 @@
-import{KeyCode as i,KeyMod as p}from"../../../../base/common/keyCodes.js";import"../../../browser/editorBrowser.js";import{EditorCommand as e,EditorContributionInstantiation as m,registerEditorCommand as t,registerEditorContribution as c}from"../../../browser/editorExtensions.js";import{editorConfigurationBaseNode as g}from"../../../common/config/editorConfigurationSchema.js";import{registerEditorFeature as f}from"../../../common/editorFeatures.js";import{DefaultDropProvidersFeature as u}from"./defaultProviders.js";import*as C from"../../../../nls.js";import{Extensions as l,ConfigurationScope as E}from"../../../../platform/configuration/common/configurationRegistry.js";import{KeybindingWeight as n}from"../../../../platform/keybinding/common/keybindingsRegistry.js";import{Registry as y}from"../../../../platform/registry/common/platform.js";import{DropIntoEditorController as r,changeDropTypeCommandId as b,defaultProviderConfig as I,dropWidgetVisibleCtx as s}from"./dropIntoEditorController.js";c(r.ID,r,m.BeforeFirstInteraction),f(u),t(new class extends e{constructor(){super({id:b,precondition:s,kbOpts:{weight:n.EditorContrib,primary:p.CtrlCmd|i.Period}})}runEditorCommand(d,o,a){r.get(o)?.changeDropType()}}),t(new class extends e{constructor(){super({id:"editor.hideDropWidget",precondition:s,kbOpts:{weight:n.EditorContrib,primary:i.Escape}})}runEditorCommand(d,o,a){r.get(o)?.clearWidgets()}}),y.as(l.Configuration).registerConfiguration({...g,properties:{[I]:{type:"object",scope:E.LANGUAGE_OVERRIDABLE,description:C.localize("defaultProviderDescription","Configures the default drop provider to use for content of a given mime type."),default:{},additionalProperties:{type:"string"}}}});
+import { EditorCommand, registerEditorCommand, registerEditorContribution } from '../../../browser/editorExtensions.js';
+import { editorConfigurationBaseNode } from '../../../common/config/editorConfigurationSchema.js';
+import { registerEditorFeature } from '../../../common/editorFeatures.js';
+import { DefaultDropProvidersFeature } from './defaultProviders.js';
+import * as nls from '../../../../nls.js';
+import { Extensions as ConfigurationExtensions } from '../../../../platform/configuration/common/configurationRegistry.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { DropIntoEditorController, changeDropTypeCommandId, defaultProviderConfig, dropWidgetVisibleCtx } from './dropIntoEditorController.js';
+registerEditorContribution(DropIntoEditorController.ID, DropIntoEditorController, 2);
+registerEditorFeature(DefaultDropProvidersFeature);
+registerEditorCommand(new class extends EditorCommand {
+    constructor() {
+        super({
+            id: changeDropTypeCommandId,
+            precondition: dropWidgetVisibleCtx,
+            kbOpts: {
+                weight: 100,
+                primary: 2048 | 89,
+            }
+        });
+    }
+    runEditorCommand(_accessor, editor, _args) {
+        DropIntoEditorController.get(editor)?.changeDropType();
+    }
+});
+registerEditorCommand(new class extends EditorCommand {
+    constructor() {
+        super({
+            id: 'editor.hideDropWidget',
+            precondition: dropWidgetVisibleCtx,
+            kbOpts: {
+                weight: 100,
+                primary: 9,
+            }
+        });
+    }
+    runEditorCommand(_accessor, editor, _args) {
+        DropIntoEditorController.get(editor)?.clearWidgets();
+    }
+});
+Registry.as(ConfigurationExtensions.Configuration).registerConfiguration({
+    ...editorConfigurationBaseNode,
+    properties: {
+        [defaultProviderConfig]: {
+            type: 'object',
+            scope: 5,
+            description: nls.localize('defaultProviderDescription', "Configures the default drop provider to use for content of a given mime type."),
+            default: {},
+            additionalProperties: {
+                type: 'string',
+            },
+        },
+    }
+});

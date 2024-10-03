@@ -1,1 +1,24 @@
-import"../../../../platform/instantiation/common/instantiation.js";import{Registry as t}from"../../../../platform/registry/common/platform.js";import"./terminal.js";import"./widgets/widgetManager.js";import"../common/terminal.js";function S(r,n,i=!1){e.INSTANCE.registerTerminalContribution({id:r,ctor:n,canRunInDetachedTerminals:i})}var a;(n=>{function r(){return e.INSTANCE.getTerminalContributions()}n.getTerminalContributions=r})(a||={});class e{static INSTANCE=new e;_terminalContributions=[];constructor(){}registerTerminalContribution(n){this._terminalContributions.push(n)}getTerminalContributions(){return this._terminalContributions.slice(0)}}var o=(n=>(n.TerminalContributions="terminal.contributions",n))(o||{});t.add("terminal.contributions",e.INSTANCE);export{a as TerminalExtensionsRegistry,S as registerTerminalContribution};
+import { Registry } from '../../../../platform/registry/common/platform.js';
+export function registerTerminalContribution(id, ctor, canRunInDetachedTerminals = false) {
+    TerminalContributionRegistry.INSTANCE.registerTerminalContribution({ id, ctor, canRunInDetachedTerminals });
+}
+export var TerminalExtensionsRegistry;
+(function (TerminalExtensionsRegistry) {
+    function getTerminalContributions() {
+        return TerminalContributionRegistry.INSTANCE.getTerminalContributions();
+    }
+    TerminalExtensionsRegistry.getTerminalContributions = getTerminalContributions;
+})(TerminalExtensionsRegistry || (TerminalExtensionsRegistry = {}));
+class TerminalContributionRegistry {
+    static { this.INSTANCE = new TerminalContributionRegistry(); }
+    constructor() {
+        this._terminalContributions = [];
+    }
+    registerTerminalContribution(description) {
+        this._terminalContributions.push(description);
+    }
+    getTerminalContributions() {
+        return this._terminalContributions.slice(0);
+    }
+}
+Registry.add("terminal.contributions", TerminalContributionRegistry.INSTANCE);

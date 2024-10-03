@@ -1,1 +1,110 @@
-import"../../../base/common/event.js";import t from"../../../base/common/severity.js";import"../../../base/common/uri.js";import{localize as u}from"../../../nls.js";import{createDecorator as m}from"../../instantiation/common/instantiation.js";var p=(i=>(i[i.Unnecessary=1]="Unnecessary",i[i.Deprecated=2]="Deprecated",i))(p||{}),s=(e=>(e[e.Hint=1]="Hint",e[e.Info=2]="Info",e[e.Warning=4]="Warning",e[e.Error=8]="Error",e))(s||{});(c=>{function n(r,l){return l-r}c.compare=n;const o=Object.create(null);o[8]=u("sev.error","Error"),o[4]=u("sev.warning","Warning"),o[2]=u("sev.info","Info");function i(r){return o[r]||""}c.toString=i;function a(r){switch(r){case t.Error:return 8;case t.Warning:return 4;case t.Info:return 2;case t.Ignore:return 1}}c.fromSeverity=a;function e(r){switch(r){case 8:return t.Error;case 4:return t.Warning;case 2:return t.Info;case 1:return t.Ignore}}c.toSeverity=e})(s||={});var d;(a=>{const n="";function o(e){return i(e,!0)}a.makeKey=o;function i(e,c){const r=[n];return e.source?r.push(e.source.replace("\xA6","\\\xA6")):r.push(n),e.code?typeof e.code=="string"?r.push(e.code.replace("\xA6","\\\xA6")):r.push(e.code.value.replace("\xA6","\\\xA6")):r.push(n),e.severity!==void 0&&e.severity!==null?r.push(s.toString(e.severity)):r.push(n),e.message&&c?r.push(e.message.replace("\xA6","\\\xA6")):r.push(n),e.startLineNumber!==void 0&&e.startLineNumber!==null?r.push(e.startLineNumber.toString()):r.push(n),e.startColumn!==void 0&&e.startColumn!==null?r.push(e.startColumn.toString()):r.push(n),e.endLineNumber!==void 0&&e.endLineNumber!==null?r.push(e.endLineNumber.toString()):r.push(n),e.endColumn!==void 0&&e.endColumn!==null?r.push(e.endColumn.toString()):r.push(n),r.push(n),r.join("\xA6")}a.makeKeyOptionalMessage=i})(d||={});const M=m("markerService");export{d as IMarkerData,M as IMarkerService,s as MarkerSeverity,p as MarkerTag};
+import Severity from '../../../base/common/severity.js';
+import { localize } from '../../../nls.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export var MarkerSeverity;
+(function (MarkerSeverity) {
+    MarkerSeverity[MarkerSeverity["Hint"] = 1] = "Hint";
+    MarkerSeverity[MarkerSeverity["Info"] = 2] = "Info";
+    MarkerSeverity[MarkerSeverity["Warning"] = 4] = "Warning";
+    MarkerSeverity[MarkerSeverity["Error"] = 8] = "Error";
+})(MarkerSeverity || (MarkerSeverity = {}));
+(function (MarkerSeverity) {
+    function compare(a, b) {
+        return b - a;
+    }
+    MarkerSeverity.compare = compare;
+    const _displayStrings = Object.create(null);
+    _displayStrings[MarkerSeverity.Error] = localize('sev.error', "Error");
+    _displayStrings[MarkerSeverity.Warning] = localize('sev.warning', "Warning");
+    _displayStrings[MarkerSeverity.Info] = localize('sev.info', "Info");
+    function toString(a) {
+        return _displayStrings[a] || '';
+    }
+    MarkerSeverity.toString = toString;
+    function fromSeverity(severity) {
+        switch (severity) {
+            case Severity.Error: return MarkerSeverity.Error;
+            case Severity.Warning: return MarkerSeverity.Warning;
+            case Severity.Info: return MarkerSeverity.Info;
+            case Severity.Ignore: return MarkerSeverity.Hint;
+        }
+    }
+    MarkerSeverity.fromSeverity = fromSeverity;
+    function toSeverity(severity) {
+        switch (severity) {
+            case MarkerSeverity.Error: return Severity.Error;
+            case MarkerSeverity.Warning: return Severity.Warning;
+            case MarkerSeverity.Info: return Severity.Info;
+            case MarkerSeverity.Hint: return Severity.Ignore;
+        }
+    }
+    MarkerSeverity.toSeverity = toSeverity;
+})(MarkerSeverity || (MarkerSeverity = {}));
+export var IMarkerData;
+(function (IMarkerData) {
+    const emptyString = '';
+    function makeKey(markerData) {
+        return makeKeyOptionalMessage(markerData, true);
+    }
+    IMarkerData.makeKey = makeKey;
+    function makeKeyOptionalMessage(markerData, useMessage) {
+        const result = [emptyString];
+        if (markerData.source) {
+            result.push(markerData.source.replace('¦', '\\¦'));
+        }
+        else {
+            result.push(emptyString);
+        }
+        if (markerData.code) {
+            if (typeof markerData.code === 'string') {
+                result.push(markerData.code.replace('¦', '\\¦'));
+            }
+            else {
+                result.push(markerData.code.value.replace('¦', '\\¦'));
+            }
+        }
+        else {
+            result.push(emptyString);
+        }
+        if (markerData.severity !== undefined && markerData.severity !== null) {
+            result.push(MarkerSeverity.toString(markerData.severity));
+        }
+        else {
+            result.push(emptyString);
+        }
+        if (markerData.message && useMessage) {
+            result.push(markerData.message.replace('¦', '\\¦'));
+        }
+        else {
+            result.push(emptyString);
+        }
+        if (markerData.startLineNumber !== undefined && markerData.startLineNumber !== null) {
+            result.push(markerData.startLineNumber.toString());
+        }
+        else {
+            result.push(emptyString);
+        }
+        if (markerData.startColumn !== undefined && markerData.startColumn !== null) {
+            result.push(markerData.startColumn.toString());
+        }
+        else {
+            result.push(emptyString);
+        }
+        if (markerData.endLineNumber !== undefined && markerData.endLineNumber !== null) {
+            result.push(markerData.endLineNumber.toString());
+        }
+        else {
+            result.push(emptyString);
+        }
+        if (markerData.endColumn !== undefined && markerData.endColumn !== null) {
+            result.push(markerData.endColumn.toString());
+        }
+        else {
+            result.push(emptyString);
+        }
+        result.push(emptyString);
+        return result.join('¦');
+    }
+    IMarkerData.makeKeyOptionalMessage = makeKeyOptionalMessage;
+})(IMarkerData || (IMarkerData = {}));
+export const IMarkerService = createDecorator('markerService');

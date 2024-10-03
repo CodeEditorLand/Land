@@ -1,0 +1,12 @@
+export declare const terminalViewIcon: import("../../../../base/common/themables.js").ThemeIcon;
+export declare const renameTerminalIcon: import("../../../../base/common/themables.js").ThemeIcon;
+export declare const killTerminalIcon: import("../../../../base/common/themables.js").ThemeIcon;
+export declare const newTerminalIcon: import("../../../../base/common/themables.js").ThemeIcon;
+export declare const configureTerminalProfileIcon: import("../../../../base/common/themables.js").ThemeIcon;
+export declare const terminalDecorationMark: import("../../../../base/common/themables.js").ThemeIcon;
+export declare const terminalDecorationIncomplete: import("../../../../base/common/themables.js").ThemeIcon;
+export declare const terminalDecorationError: import("../../../../base/common/themables.js").ThemeIcon;
+export declare const terminalDecorationSuccess: import("../../../../base/common/themables.js").ThemeIcon;
+export declare const commandHistoryRemoveIcon: import("../../../../base/common/themables.js").ThemeIcon;
+export declare const commandHistoryOutputIcon: import("../../../../base/common/themables.js").ThemeIcon;
+export declare const commandHistoryFuzzySearchIcon: import("../../../../base/common/themables.js").ThemeIcon;

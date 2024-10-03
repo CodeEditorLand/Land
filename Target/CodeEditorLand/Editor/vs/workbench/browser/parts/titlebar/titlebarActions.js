@@ -1,1 +1,215 @@
-import{localize as i,localize2 as f}from"../../../../nls.js";import{IConfigurationService as T}from"../../../../platform/configuration/common/configuration.js";import"../../../../platform/instantiation/common/instantiation.js";import{IStorageService as E,StorageScope as p,StorageTarget as L}from"../../../../platform/storage/common/storage.js";import{LayoutSettings as V}from"../../../services/layout/browser/layoutService.js";import{Action2 as I,MenuId as c,registerAction2 as u}from"../../../../platform/actions/common/actions.js";import{ContextKeyExpr as o,IContextKeyService as h}from"../../../../platform/contextkey/common/contextkey.js";import{ACCOUNTS_ACTIVITY_ID as y,GLOBAL_ACTIVITY_ID as b}from"../../../common/activity.js";import"../../../../base/common/actions.js";import{IsAuxiliaryWindowFocusedContext as w,IsMainWindowFullscreenContext as C,TitleBarStyleContext as A,TitleBarVisibleContext as m}from"../../../common/contextkeys.js";import{CustomTitleBarVisibility as n,TitleBarSetting as r,TitlebarStyle as _}from"../../../../platform/window/common/window.js";class v extends I{constructor(s,t,a,d,B){const S=B?w.toNegated():o.true();super({id:`toggle.${s}`,title:t,metadata:a?{description:a}:void 0,toggled:o.equals(`config.${s}`,!0),menu:[{id:c.TitleBarContext,when:S,order:d,group:"2_config"},{id:c.TitleBarTitleContext,when:S,order:d,group:"2_config"}]});this.section=s}run(s,...t){const a=s.get(T),d=a.getValue(this.section);a.updateValue(this.section,!d)}}u(class extends v{constructor(){super(V.COMMAND_CENTER,i("toggle.commandCenter","Command Center"),i("toggle.commandCenterDescription","Toggle visibility of the Command Center in title bar"),1,!1)}}),u(class extends v{constructor(){super("workbench.layoutControl.enabled",i("toggle.layout","Layout Controls"),i("toggle.layoutDescription","Toggle visibility of the Layout Controls in title bar"),2,!0)}}),u(class extends I{constructor(){super({id:`toggle.${r.CUSTOM_TITLE_BAR_VISIBILITY}`,title:i("toggle.hideCustomTitleBar","Hide Custom Title Bar"),menu:[{id:c.TitleBarContext,order:0,when:o.equals(A.key,_.NATIVE),group:"3_toggle"},{id:c.TitleBarTitleContext,order:0,when:o.equals(A.key,_.NATIVE),group:"3_toggle"}]})}run(e,...s){e.get(T).updateValue(r.CUSTOM_TITLE_BAR_VISIBILITY,n.NEVER)}}),u(class extends I{constructor(){super({id:`toggle.${r.CUSTOM_TITLE_BAR_VISIBILITY}.windowed`,title:i("toggle.hideCustomTitleBarInFullScreen","Hide Custom Title Bar In Full Screen"),menu:[{id:c.TitleBarContext,order:1,when:C,group:"3_toggle"},{id:c.TitleBarTitleContext,order:1,when:C,group:"3_toggle"}]})}run(e,...s){e.get(T).updateValue(r.CUSTOM_TITLE_BAR_VISIBILITY,n.WINDOWED)}});class x extends I{constructor(){super({id:"toggle.toggleCustomTitleBar",title:i("toggle.customTitleBar","Custom Title Bar"),toggled:m,menu:[{id:c.MenubarAppearanceMenu,order:6,when:o.or(o.and(o.equals(A.key,_.NATIVE),o.and(o.equals("config.workbench.layoutControl.enabled",!1),o.equals("config.window.commandCenter",!1),o.notEquals("config.workbench.editor.editorActionsLocation","titleBar"),o.notEquals("config.workbench.activityBar.location","top"),o.notEquals("config.workbench.activityBar.location","bottom"))?.negate()),C),group:"2_workbench_layout"}]})}run(e,...s){const t=e.get(T),a=e.get(h);switch(t.getValue(r.CUSTOM_TITLE_BAR_VISIBILITY)){case n.NEVER:t.updateValue(r.CUSTOM_TITLE_BAR_VISIBILITY,n.AUTO);break;case n.WINDOWED:{C.evaluate(a.getContext(null))?t.updateValue(r.CUSTOM_TITLE_BAR_VISIBILITY,n.AUTO):t.updateValue(r.CUSTOM_TITLE_BAR_VISIBILITY,n.NEVER);break}case n.AUTO:default:t.updateValue(r.CUSTOM_TITLE_BAR_VISIBILITY,n.NEVER);break}}}u(x),u(class extends I{constructor(){super({id:"showCustomTitleBar",title:f("showCustomTitleBar","Show Custom Title Bar"),precondition:m.negate(),f1:!0})}run(e,...s){e.get(T).updateValue(r.CUSTOM_TITLE_BAR_VISIBILITY,n.AUTO)}}),u(class extends I{constructor(){super({id:"hideCustomTitleBar",title:f("hideCustomTitleBar","Hide Custom Title Bar"),precondition:m,f1:!0})}run(e,...s){e.get(T).updateValue(r.CUSTOM_TITLE_BAR_VISIBILITY,n.NEVER)}}),u(class extends I{constructor(){super({id:"hideCustomTitleBarInFullScreen",title:f("hideCustomTitleBarInFullScreen","Hide Custom Title Bar In Full Screen"),precondition:o.and(m,C),f1:!0})}run(e,...s){e.get(T).updateValue(r.CUSTOM_TITLE_BAR_VISIBILITY,n.WINDOWED)}}),u(class l extends I{static settingsID="workbench.editor.editorActionsLocation";constructor(){const e=o.and(o.equals("config.workbench.editor.showTabs","none").negate(),o.equals(`config.${l.settingsID}`,"default"))?.negate();super({id:`toggle.${l.settingsID}`,title:i("toggle.editorActions","Editor Actions"),toggled:o.equals(`config.${l.settingsID}`,"hidden").negate(),menu:[{id:c.TitleBarContext,order:3,when:e,group:"2_config"},{id:c.TitleBarTitleContext,order:3,when:e,group:"2_config"}]})}run(e,...s){const t=e.get(T),a=e.get(E),d=t.getValue(l.settingsID);if(d==="hidden"){if(t.getValue(V.EDITOR_TABS_MODE)!=="none")t.updateValue(l.settingsID,"titleBar");else{const S=a.get(l.settingsID,p.PROFILE);t.updateValue(l.settingsID,S??"default")}a.remove(l.settingsID,p.PROFILE)}else t.updateValue(l.settingsID,"hidden"),a.store(l.settingsID,d,p.PROFILE,L.USER)}});const Z={id:y,label:i("accounts","Accounts"),tooltip:i("accounts","Accounts"),class:void 0,enabled:!0,run:function(){}},ee={id:b,label:i("manage","Manage"),tooltip:i("manage","Manage"),class:void 0,enabled:!0,run:function(){}};export{Z as ACCOUNTS_ACTIVITY_TILE_ACTION,ee as GLOBAL_ACTIVITY_TITLE_ACTION};
+import { localize, localize2 } from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { Action2, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { ContextKeyExpr, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { ACCOUNTS_ACTIVITY_ID, GLOBAL_ACTIVITY_ID } from '../../../common/activity.js';
+import { IsAuxiliaryWindowFocusedContext, IsMainWindowFullscreenContext, TitleBarStyleContext, TitleBarVisibleContext } from '../../../common/contextkeys.js';
+class ToggleConfigAction extends Action2 {
+    constructor(section, title, description, order, mainWindowOnly) {
+        const when = mainWindowOnly ? IsAuxiliaryWindowFocusedContext.toNegated() : ContextKeyExpr.true();
+        super({
+            id: `toggle.${section}`,
+            title,
+            metadata: description ? { description } : undefined,
+            toggled: ContextKeyExpr.equals(`config.${section}`, true),
+            menu: [
+                {
+                    id: MenuId.TitleBarContext,
+                    when,
+                    order,
+                    group: '2_config'
+                },
+                {
+                    id: MenuId.TitleBarTitleContext,
+                    when,
+                    order,
+                    group: '2_config'
+                }
+            ]
+        });
+        this.section = section;
+    }
+    run(accessor, ...args) {
+        const configService = accessor.get(IConfigurationService);
+        const value = configService.getValue(this.section);
+        configService.updateValue(this.section, !value);
+    }
+}
+registerAction2(class ToggleCommandCenter extends ToggleConfigAction {
+    constructor() {
+        super("window.commandCenter", localize('toggle.commandCenter', 'Command Center'), localize('toggle.commandCenterDescription', "Toggle visibility of the Command Center in title bar"), 1, false);
+    }
+});
+registerAction2(class ToggleLayoutControl extends ToggleConfigAction {
+    constructor() {
+        super('workbench.layoutControl.enabled', localize('toggle.layout', 'Layout Controls'), localize('toggle.layoutDescription', "Toggle visibility of the Layout Controls in title bar"), 2, true);
+    }
+});
+registerAction2(class ToggleCustomTitleBar extends Action2 {
+    constructor() {
+        super({
+            id: `toggle.${"window.customTitleBarVisibility"}`,
+            title: localize('toggle.hideCustomTitleBar', 'Hide Custom Title Bar'),
+            menu: [
+                { id: MenuId.TitleBarContext, order: 0, when: ContextKeyExpr.equals(TitleBarStyleContext.key, "native"), group: '3_toggle' },
+                { id: MenuId.TitleBarTitleContext, order: 0, when: ContextKeyExpr.equals(TitleBarStyleContext.key, "native"), group: '3_toggle' },
+            ]
+        });
+    }
+    run(accessor, ...args) {
+        const configService = accessor.get(IConfigurationService);
+        configService.updateValue("window.customTitleBarVisibility", "never");
+    }
+});
+registerAction2(class ToggleCustomTitleBarWindowed extends Action2 {
+    constructor() {
+        super({
+            id: `toggle.${"window.customTitleBarVisibility"}.windowed`,
+            title: localize('toggle.hideCustomTitleBarInFullScreen', 'Hide Custom Title Bar In Full Screen'),
+            menu: [
+                { id: MenuId.TitleBarContext, order: 1, when: IsMainWindowFullscreenContext, group: '3_toggle' },
+                { id: MenuId.TitleBarTitleContext, order: 1, when: IsMainWindowFullscreenContext, group: '3_toggle' },
+            ]
+        });
+    }
+    run(accessor, ...args) {
+        const configService = accessor.get(IConfigurationService);
+        configService.updateValue("window.customTitleBarVisibility", "windowed");
+    }
+});
+class ToggleCustomTitleBar extends Action2 {
+    constructor() {
+        super({
+            id: `toggle.toggleCustomTitleBar`,
+            title: localize('toggle.customTitleBar', 'Custom Title Bar'),
+            toggled: TitleBarVisibleContext,
+            menu: [
+                {
+                    id: MenuId.MenubarAppearanceMenu,
+                    order: 6,
+                    when: ContextKeyExpr.or(ContextKeyExpr.and(ContextKeyExpr.equals(TitleBarStyleContext.key, "native"), ContextKeyExpr.and(ContextKeyExpr.equals('config.workbench.layoutControl.enabled', false), ContextKeyExpr.equals('config.window.commandCenter', false), ContextKeyExpr.notEquals('config.workbench.editor.editorActionsLocation', 'titleBar'), ContextKeyExpr.notEquals('config.workbench.activityBar.location', 'top'), ContextKeyExpr.notEquals('config.workbench.activityBar.location', 'bottom'))?.negate()), IsMainWindowFullscreenContext),
+                    group: '2_workbench_layout'
+                },
+            ],
+        });
+    }
+    run(accessor, ...args) {
+        const configService = accessor.get(IConfigurationService);
+        const contextKeyService = accessor.get(IContextKeyService);
+        const titleBarVisibility = configService.getValue("window.customTitleBarVisibility");
+        switch (titleBarVisibility) {
+            case "never":
+                configService.updateValue("window.customTitleBarVisibility", "auto");
+                break;
+            case "windowed": {
+                const isFullScreen = IsMainWindowFullscreenContext.evaluate(contextKeyService.getContext(null));
+                if (isFullScreen) {
+                    configService.updateValue("window.customTitleBarVisibility", "auto");
+                }
+                else {
+                    configService.updateValue("window.customTitleBarVisibility", "never");
+                }
+                break;
+            }
+            case "auto":
+            default:
+                configService.updateValue("window.customTitleBarVisibility", "never");
+                break;
+        }
+    }
+}
+registerAction2(ToggleCustomTitleBar);
+registerAction2(class ShowCustomTitleBar extends Action2 {
+    constructor() {
+        super({
+            id: `showCustomTitleBar`,
+            title: localize2('showCustomTitleBar', "Show Custom Title Bar"),
+            precondition: TitleBarVisibleContext.negate(),
+            f1: true
+        });
+    }
+    run(accessor, ...args) {
+        const configService = accessor.get(IConfigurationService);
+        configService.updateValue("window.customTitleBarVisibility", "auto");
+    }
+});
+registerAction2(class HideCustomTitleBar extends Action2 {
+    constructor() {
+        super({
+            id: `hideCustomTitleBar`,
+            title: localize2('hideCustomTitleBar', "Hide Custom Title Bar"),
+            precondition: TitleBarVisibleContext,
+            f1: true
+        });
+    }
+    run(accessor, ...args) {
+        const configService = accessor.get(IConfigurationService);
+        configService.updateValue("window.customTitleBarVisibility", "never");
+    }
+});
+registerAction2(class HideCustomTitleBar extends Action2 {
+    constructor() {
+        super({
+            id: `hideCustomTitleBarInFullScreen`,
+            title: localize2('hideCustomTitleBarInFullScreen', "Hide Custom Title Bar In Full Screen"),
+            precondition: ContextKeyExpr.and(TitleBarVisibleContext, IsMainWindowFullscreenContext),
+            f1: true
+        });
+    }
+    run(accessor, ...args) {
+        const configService = accessor.get(IConfigurationService);
+        configService.updateValue("window.customTitleBarVisibility", "windowed");
+    }
+});
+registerAction2(class ToggleEditorActions extends Action2 {
+    static { this.settingsID = `workbench.editor.editorActionsLocation`; }
+    constructor() {
+        const titleBarContextCondition = ContextKeyExpr.and(ContextKeyExpr.equals(`config.workbench.editor.showTabs`, 'none').negate(), ContextKeyExpr.equals(`config.${ToggleEditorActions.settingsID}`, 'default'))?.negate();
+        super({
+            id: `toggle.${ToggleEditorActions.settingsID}`,
+            title: localize('toggle.editorActions', 'Editor Actions'),
+            toggled: ContextKeyExpr.equals(`config.${ToggleEditorActions.settingsID}`, 'hidden').negate(),
+            menu: [
+                { id: MenuId.TitleBarContext, order: 3, when: titleBarContextCondition, group: '2_config' },
+                { id: MenuId.TitleBarTitleContext, order: 3, when: titleBarContextCondition, group: '2_config' }
+            ]
+        });
+    }
+    run(accessor, ...args) {
+        const configService = accessor.get(IConfigurationService);
+        const storageService = accessor.get(IStorageService);
+        const location = configService.getValue(ToggleEditorActions.settingsID);
+        if (location === 'hidden') {
+            const showTabs = configService.getValue("workbench.editor.showTabs");
+            if (showTabs !== 'none') {
+                configService.updateValue(ToggleEditorActions.settingsID, 'titleBar');
+            }
+            else {
+                const storedValue = storageService.get(ToggleEditorActions.settingsID, 0);
+                configService.updateValue(ToggleEditorActions.settingsID, storedValue ?? 'default');
+            }
+            storageService.remove(ToggleEditorActions.settingsID, 0);
+        }
+        else {
+            configService.updateValue(ToggleEditorActions.settingsID, 'hidden');
+            storageService.store(ToggleEditorActions.settingsID, location, 0, 0);
+        }
+    }
+});
+export const ACCOUNTS_ACTIVITY_TILE_ACTION = {
+    id: ACCOUNTS_ACTIVITY_ID,
+    label: localize('accounts', "Accounts"),
+    tooltip: localize('accounts', "Accounts"),
+    class: undefined,
+    enabled: true,
+    run: function () { }
+};
+export const GLOBAL_ACTIVITY_TITLE_ACTION = {
+    id: GLOBAL_ACTIVITY_ID,
+    label: localize('manage', "Manage"),
+    tooltip: localize('manage', "Manage"),
+    class: undefined,
+    enabled: true,
+    run: function () { }
+};

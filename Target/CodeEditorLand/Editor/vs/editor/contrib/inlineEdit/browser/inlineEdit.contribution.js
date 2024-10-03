@@ -1,1 +1,9 @@
-import{EditorContributionInstantiation as n,registerEditorAction as i,registerEditorContribution as r}from"../../../browser/editorExtensions.js";import{AcceptInlineEdit as o,JumpBackInlineEdit as e,JumpToInlineEdit as l,RejectInlineEdit as E,TriggerInlineEdit as d}from"./commands.js";import{InlineEditController as t}from"./inlineEditController.js";i(o),i(E),i(l),i(e),i(d),r(t.ID,t,n.Eventually);
+import { registerEditorAction, registerEditorContribution } from '../../../browser/editorExtensions.js';
+import { AcceptInlineEdit, JumpBackInlineEdit, JumpToInlineEdit, RejectInlineEdit, TriggerInlineEdit } from './commands.js';
+import { InlineEditController } from './inlineEditController.js';
+registerEditorAction(AcceptInlineEdit);
+registerEditorAction(RejectInlineEdit);
+registerEditorAction(JumpToInlineEdit);
+registerEditorAction(JumpBackInlineEdit);
+registerEditorAction(TriggerInlineEdit);
+registerEditorContribution(InlineEditController.ID, InlineEditController, 3);

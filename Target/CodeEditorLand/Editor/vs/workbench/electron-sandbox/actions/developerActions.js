@@ -1,1 +1,92 @@
-import{localize2 as r}from"../../../nls.js";import{INativeHostService as m}from"../../../platform/native/common/native.js";import{IEditorService as g}from"../../services/editor/common/editorService.js";import{Action2 as t,MenuId as p}from"../../../platform/actions/common/actions.js";import{Categories as i}from"../../../platform/action/common/actionCommonCategories.js";import"../../../platform/instantiation/common/instantiation.js";import{IWorkbenchEnvironmentService as f}from"../../services/environment/common/environmentService.js";import{KeybindingWeight as h}from"../../../platform/keybinding/common/keybindingsRegistry.js";import{IsDevelopmentContext as D}from"../../../platform/contextkey/common/contextkeys.js";import{KeyCode as u,KeyMod as n}from"../../../base/common/keyCodes.js";import{IFileService as S}from"../../../platform/files/common/files.js";import{INativeWorkbenchEnvironmentService as b}from"../../services/environment/electron-sandbox/environmentService.js";import{URI as w}from"../../../base/common/uri.js";import{getActiveWindow as y}from"../../../base/browser/dom.js";class N extends t{constructor(){super({id:"workbench.action.toggleDevTools",title:r("toggleDevTools","Toggle Developer Tools"),category:i.Developer,f1:!0,keybinding:{weight:h.WorkbenchContrib+50,when:D,primary:n.CtrlCmd|n.Shift|u.KeyI,mac:{primary:n.CtrlCmd|n.Alt|u.KeyI}},menu:{id:p.MenubarHelpMenu,group:"5_tools",order:1}})}async run(e){return e.get(m).toggleDevTools({targetWindowId:y().vscodeWindowId})}}class O extends t{constructor(){super({id:"workbench.action.configureRuntimeArguments",title:r("configureRuntimeArguments","Configure Runtime Arguments"),category:i.Preferences,f1:!0})}async run(e){const o=e.get(g),c=e.get(f);await o.openEditor({resource:c.argvResource,options:{pinned:!0}})}}class z extends t{constructor(){super({id:"workbench.action.reloadWindowWithExtensionsDisabled",title:r("reloadWindowWithExtensionsDisabled","Reload With Extensions Disabled"),category:i.Developer,f1:!0})}async run(e){return e.get(m).reload({disableExtensions:!0})}}class _ extends t{constructor(){super({id:"workbench.action.openUserDataFolder",title:r("openUserDataFolder","Open User Data Folder"),category:i.Developer,f1:!0})}async run(e){const o=e.get(m),c=e.get(S),v=e.get(b),d=w.file(v.userDataPath),l=await c.resolve(d);let a;return l.children&&l.children.length>0?a=l.children[0].resource:a=d,o.showItemInFolder(a.fsPath)}}export{O as ConfigureRuntimeArgumentsAction,_ as OpenUserDataFolderAction,z as ReloadWindowWithExtensionsDisabledAction,N as ToggleDevToolsAction};
+import { localize2 } from '../../../nls.js';
+import { INativeHostService } from '../../../platform/native/common/native.js';
+import { IEditorService } from '../../services/editor/common/editorService.js';
+import { Action2, MenuId } from '../../../platform/actions/common/actions.js';
+import { Categories } from '../../../platform/action/common/actionCommonCategories.js';
+import { IWorkbenchEnvironmentService } from '../../services/environment/common/environmentService.js';
+import { IsDevelopmentContext } from '../../../platform/contextkey/common/contextkeys.js';
+import { IFileService } from '../../../platform/files/common/files.js';
+import { INativeWorkbenchEnvironmentService } from '../../services/environment/electron-sandbox/environmentService.js';
+import { URI } from '../../../base/common/uri.js';
+import { getActiveWindow } from '../../../base/browser/dom.js';
+export class ToggleDevToolsAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.toggleDevTools',
+            title: localize2('toggleDevTools', 'Toggle Developer Tools'),
+            category: Categories.Developer,
+            f1: true,
+            keybinding: {
+                weight: 200 + 50,
+                when: IsDevelopmentContext,
+                primary: 2048 | 1024 | 39,
+                mac: { primary: 2048 | 512 | 39 }
+            },
+            menu: {
+                id: MenuId.MenubarHelpMenu,
+                group: '5_tools',
+                order: 1
+            }
+        });
+    }
+    async run(accessor) {
+        const nativeHostService = accessor.get(INativeHostService);
+        return nativeHostService.toggleDevTools({ targetWindowId: getActiveWindow().vscodeWindowId });
+    }
+}
+export class ConfigureRuntimeArgumentsAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.configureRuntimeArguments',
+            title: localize2('configureRuntimeArguments', 'Configure Runtime Arguments'),
+            category: Categories.Preferences,
+            f1: true
+        });
+    }
+    async run(accessor) {
+        const editorService = accessor.get(IEditorService);
+        const environmentService = accessor.get(IWorkbenchEnvironmentService);
+        await editorService.openEditor({
+            resource: environmentService.argvResource,
+            options: { pinned: true }
+        });
+    }
+}
+export class ReloadWindowWithExtensionsDisabledAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.reloadWindowWithExtensionsDisabled',
+            title: localize2('reloadWindowWithExtensionsDisabled', 'Reload With Extensions Disabled'),
+            category: Categories.Developer,
+            f1: true
+        });
+    }
+    async run(accessor) {
+        return accessor.get(INativeHostService).reload({ disableExtensions: true });
+    }
+}
+export class OpenUserDataFolderAction extends Action2 {
+    constructor() {
+        super({
+            id: 'workbench.action.openUserDataFolder',
+            title: localize2('openUserDataFolder', 'Open User Data Folder'),
+            category: Categories.Developer,
+            f1: true
+        });
+    }
+    async run(accessor) {
+        const nativeHostService = accessor.get(INativeHostService);
+        const fileService = accessor.get(IFileService);
+        const environmentService = accessor.get(INativeWorkbenchEnvironmentService);
+        const userDataHome = URI.file(environmentService.userDataPath);
+        const file = await fileService.resolve(userDataHome);
+        let itemToShow;
+        if (file.children && file.children.length > 0) {
+            itemToShow = file.children[0].resource;
+        }
+        else {
+            itemToShow = userDataHome;
+        }
+        return nativeHostService.showItemInFolder(itemToShow.fsPath);
+    }
+}

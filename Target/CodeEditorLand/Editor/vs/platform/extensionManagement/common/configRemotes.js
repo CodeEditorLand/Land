@@ -1,1 +1,100 @@
-import{URI as i}from"../../../base/common/uri.js";const u=/^([^@:]+@)?([^:]+):/,m=/^([^@:]+@)?([^:]+):(.+)$/,g=/^([^@]+@)?([^:]+)(:\d+)?$/,h=/([^@:.]+\.[^@:.]+)(:\d+)?$/,s=/^\s*url\s*=\s*(.+\S)\s*$/mg,f=/[^.]/g,w=["github.com","bitbucket.org","visualstudio.com","gitlab.com","heroku.com","azurewebsites.net","ibm.com","amazon.com","amazonaws.com","cloudapp.net","rhcloud.com","google.com","azure.com"];function a(n){const t=n.match(h);return t?t[1]:null}function d(n){if(n.indexOf("://")===-1){const t=n.match(u);return t?a(t[2]):null}try{const t=i.parse(n);if(t.authority)return a(t.authority)}catch{}return null}function p(n,t){const e=new Set;let o;for(;o=s.exec(n);){const r=d(o[1]);r&&e.add(r)}const c=new Set(t);return Array.from(e).map(r=>c.has(r)?r:r.replace(f,"a"))}function x(n){const t=n.match(g);return t?t[2]:null}function l(n,t,e){return n&&t?(e&&t.endsWith(".git")&&(t=t.substr(0,t.length-4)),t.indexOf("/")===0?`${n}${t}`:`${n}/${t}`):null}function b(n,t){if(n.indexOf("://")===-1){const e=n.match(m);if(e)return l(e[2],e[3],t)}try{const e=i.parse(n);if(e.authority)return l(x(e.authority),e.path,t)}catch{}return null}function R(n,t=!1){const e=[];let o;for(;o=s.exec(n);){const c=b(o[1],t);c&&e.push(c)}return e}export{w as AllowedSecondLevelDomains,p as getDomainsOfRemotes,R as getRemotes};
+import { URI } from '../../../base/common/uri.js';
+const SshProtocolMatcher = /^([^@:]+@)?([^:]+):/;
+const SshUrlMatcher = /^([^@:]+@)?([^:]+):(.+)$/;
+const AuthorityMatcher = /^([^@]+@)?([^:]+)(:\d+)?$/;
+const SecondLevelDomainMatcher = /([^@:.]+\.[^@:.]+)(:\d+)?$/;
+const RemoteMatcher = /^\s*url\s*=\s*(.+\S)\s*$/mg;
+const AnyButDot = /[^.]/g;
+export const AllowedSecondLevelDomains = [
+    'github.com',
+    'bitbucket.org',
+    'visualstudio.com',
+    'gitlab.com',
+    'heroku.com',
+    'azurewebsites.net',
+    'ibm.com',
+    'amazon.com',
+    'amazonaws.com',
+    'cloudapp.net',
+    'rhcloud.com',
+    'google.com',
+    'azure.com'
+];
+function stripLowLevelDomains(domain) {
+    const match = domain.match(SecondLevelDomainMatcher);
+    return match ? match[1] : null;
+}
+function extractDomain(url) {
+    if (url.indexOf('://') === -1) {
+        const match = url.match(SshProtocolMatcher);
+        if (match) {
+            return stripLowLevelDomains(match[2]);
+        }
+        else {
+            return null;
+        }
+    }
+    try {
+        const uri = URI.parse(url);
+        if (uri.authority) {
+            return stripLowLevelDomains(uri.authority);
+        }
+    }
+    catch (e) {
+    }
+    return null;
+}
+export function getDomainsOfRemotes(text, allowedDomains) {
+    const domains = new Set();
+    let match;
+    while (match = RemoteMatcher.exec(text)) {
+        const domain = extractDomain(match[1]);
+        if (domain) {
+            domains.add(domain);
+        }
+    }
+    const allowedDomainsSet = new Set(allowedDomains);
+    return Array.from(domains)
+        .map(key => allowedDomainsSet.has(key) ? key : key.replace(AnyButDot, 'a'));
+}
+function stripPort(authority) {
+    const match = authority.match(AuthorityMatcher);
+    return match ? match[2] : null;
+}
+function normalizeRemote(host, path, stripEndingDotGit) {
+    if (host && path) {
+        if (stripEndingDotGit && path.endsWith('.git')) {
+            path = path.substr(0, path.length - 4);
+        }
+        return (path.indexOf('/') === 0) ? `${host}${path}` : `${host}/${path}`;
+    }
+    return null;
+}
+function extractRemote(url, stripEndingDotGit) {
+    if (url.indexOf('://') === -1) {
+        const match = url.match(SshUrlMatcher);
+        if (match) {
+            return normalizeRemote(match[2], match[3], stripEndingDotGit);
+        }
+    }
+    try {
+        const uri = URI.parse(url);
+        if (uri.authority) {
+            return normalizeRemote(stripPort(uri.authority), uri.path, stripEndingDotGit);
+        }
+    }
+    catch (e) {
+    }
+    return null;
+}
+export function getRemotes(text, stripEndingDotGit = false) {
+    const remotes = [];
+    let match;
+    while (match = RemoteMatcher.exec(text)) {
+        const remote = extractRemote(match[1], stripEndingDotGit);
+        if (remote) {
+            remotes.push(remote);
+        }
+    }
+    return remotes;
+}

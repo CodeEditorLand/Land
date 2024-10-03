@@ -1,1 +1,22 @@
-import{CancellationTokenSource as m}from"../../../../base/common/cancellation.js";import"../../../../base/common/uri.js";import{ILanguageFeaturesService as p}from"../../../../editor/common/services/languageFeatures.js";import{ITextModelService as g}from"../../../../editor/common/services/resolverService.js";import{CommandsRegistry as u}from"../../../../platform/commands/common/commands.js";import"../../../../platform/instantiation/common/instantiation.js";import"../../../../editor/common/languages.js";u.registerCommand("_executeMappedEditsProvider",async(o,i,n,s)=>{const a=o.get(g),c=o.get(p),e=await a.createModelReference(i);let t=null;try{const r=c.mappedEditsProvider.ordered(e.object.textEditorModel);if(r.length>0){const d=r[0],l=new m;t=await d.provideMappedEdits(e.object.textEditorModel,n,s,l.token)}}finally{e.dispose()}return t});
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+CommandsRegistry.registerCommand('_executeMappedEditsProvider', async (accessor, documentUri, codeBlocks, context) => {
+    const modelService = accessor.get(ITextModelService);
+    const langFeaturesService = accessor.get(ILanguageFeaturesService);
+    const document = await modelService.createModelReference(documentUri);
+    let result = null;
+    try {
+        const providers = langFeaturesService.mappedEditsProvider.ordered(document.object.textEditorModel);
+        if (providers.length > 0) {
+            const mostRelevantProvider = providers[0];
+            const cancellationTokenSource = new CancellationTokenSource();
+            result = await mostRelevantProvider.provideMappedEdits(document.object.textEditorModel, codeBlocks, context, cancellationTokenSource.token);
+        }
+    }
+    finally {
+        document.dispose();
+    }
+    return result;
+});

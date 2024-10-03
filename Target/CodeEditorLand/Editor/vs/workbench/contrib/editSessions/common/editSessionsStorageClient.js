@@ -1,1 +1,3 @@
-import{UserDataSyncStoreClient as e}from"../../../../platform/userDataSync/common/userDataSyncStoreService.js";class s extends e{_serviceBrand}export{s as EditSessionsStoreClient};
+import { UserDataSyncStoreClient } from '../../../../platform/userDataSync/common/userDataSyncStoreService.js';
+export class EditSessionsStoreClient extends UserDataSyncStoreClient {
+}

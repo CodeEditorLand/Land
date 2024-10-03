@@ -1,1 +1,75 @@
-import"./marginDecorations.css";import{DecorationToRender as u,DedupOverlay as v}from"../glyphMargin/glyphMargin.js";import"../../view/renderingContext.js";import"../../../common/viewModel/viewContext.js";import"../../../common/viewEvents.js";class E extends v{_context;_renderResult;constructor(e){super(),this._context=e,this._renderResult=null,this._context.addEventHandler(this)}dispose(){this._context.removeEventHandler(this),this._renderResult=null,super.dispose()}onConfigurationChanged(e){return!0}onDecorationsChanged(e){return!0}onFlushed(e){return!0}onLinesChanged(e){return!0}onLinesDeleted(e){return!0}onLinesInserted(e){return!0}onScrollChanged(e){return e.scrollTopChanged}onZonesChanged(e){return!0}_getDecorations(e){const n=e.getDecorationsInViewport(),o=[];let l=0;for(let r=0,i=n.length;r<i;r++){const t=n[r],s=t.options.marginClassName,d=t.options.zIndex;s&&(o[l++]=new u(t.range.startLineNumber,t.range.endLineNumber,s,null,d))}return o}prepareRender(e){const n=e.visibleRange.startLineNumber,o=e.visibleRange.endLineNumber,l=this._render(n,o,this._getDecorations(e)),r=[];for(let i=n;i<=o;i++){const t=i-n,s=l[t].getDecorations();let d="";for(const a of s)d+='<div class="cmdr '+a.className+'" style=""></div>';r[t]=d}this._renderResult=r}render(e,n){return this._renderResult?this._renderResult[n-e]:""}}export{E as MarginViewLineDecorationsOverlay};
+import './marginDecorations.css';
+import { DecorationToRender, DedupOverlay } from '../glyphMargin/glyphMargin.js';
+export class MarginViewLineDecorationsOverlay extends DedupOverlay {
+    constructor(context) {
+        super();
+        this._context = context;
+        this._renderResult = null;
+        this._context.addEventHandler(this);
+    }
+    dispose() {
+        this._context.removeEventHandler(this);
+        this._renderResult = null;
+        super.dispose();
+    }
+    onConfigurationChanged(e) {
+        return true;
+    }
+    onDecorationsChanged(e) {
+        return true;
+    }
+    onFlushed(e) {
+        return true;
+    }
+    onLinesChanged(e) {
+        return true;
+    }
+    onLinesDeleted(e) {
+        return true;
+    }
+    onLinesInserted(e) {
+        return true;
+    }
+    onScrollChanged(e) {
+        return e.scrollTopChanged;
+    }
+    onZonesChanged(e) {
+        return true;
+    }
+    _getDecorations(ctx) {
+        const decorations = ctx.getDecorationsInViewport();
+        const r = [];
+        let rLen = 0;
+        for (let i = 0, len = decorations.length; i < len; i++) {
+            const d = decorations[i];
+            const marginClassName = d.options.marginClassName;
+            const zIndex = d.options.zIndex;
+            if (marginClassName) {
+                r[rLen++] = new DecorationToRender(d.range.startLineNumber, d.range.endLineNumber, marginClassName, null, zIndex);
+            }
+        }
+        return r;
+    }
+    prepareRender(ctx) {
+        const visibleStartLineNumber = ctx.visibleRange.startLineNumber;
+        const visibleEndLineNumber = ctx.visibleRange.endLineNumber;
+        const toRender = this._render(visibleStartLineNumber, visibleEndLineNumber, this._getDecorations(ctx));
+        const output = [];
+        for (let lineNumber = visibleStartLineNumber; lineNumber <= visibleEndLineNumber; lineNumber++) {
+            const lineIndex = lineNumber - visibleStartLineNumber;
+            const decorations = toRender[lineIndex].getDecorations();
+            let lineOutput = '';
+            for (const decoration of decorations) {
+                lineOutput += '<div class="cmdr ' + decoration.className + '" style=""></div>';
+            }
+            output[lineIndex] = lineOutput;
+        }
+        this._renderResult = output;
+    }
+    render(startLineNumber, lineNumber) {
+        if (!this._renderResult) {
+            return '';
+        }
+        return this._renderResult[lineNumber - startLineNumber];
+    }
+}

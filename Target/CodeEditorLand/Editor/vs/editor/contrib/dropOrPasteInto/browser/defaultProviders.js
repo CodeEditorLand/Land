@@ -1,1 +1,221 @@
-var E=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var u=(a,e,r,t)=>{for(var i=t>1?void 0:t?v(e,r):e,n=a.length-1,o;n>=0;n--)(o=a[n])&&(i=(t?o(e,r,i):o(i))||i);return t&&i&&E(e,r,i),i},c=(a,e)=>(r,t)=>e(r,t,a);import{coalesce as L}from"../../../../base/common/arrays.js";import"../../../../base/common/cancellation.js";import{UriList as S}from"../../../../base/common/dataTransfer.js";import{HierarchicalKind as y}from"../../../../base/common/hierarchicalKind.js";import{Disposable as g}from"../../../../base/common/lifecycle.js";import{Mimes as s}from"../../../../base/common/mime.js";import{Schemas as M}from"../../../../base/common/network.js";import{relativePath as C}from"../../../../base/common/resources.js";import{URI as w}from"../../../../base/common/uri.js";import"../../../common/core/position.js";import"../../../common/core/range.js";import{DocumentPasteTriggerKind as R}from"../../../common/languages.js";import"../../../common/model.js";import{ILanguageFeaturesService as x}from"../../../common/services/languageFeatures.js";import{localize as l}from"../../../../nls.js";import{IWorkspaceContextService as h}from"../../../../platform/workspace/common/workspace.js";class P{async provideDocumentPasteEdits(e,r,t,i,n){const o=await this.getEdit(t,n);if(o)return{edits:[{insertText:o.insertText,title:o.title,kind:o.kind,handledMimeType:o.handledMimeType,yieldTo:o.yieldTo}],dispose(){}}}async provideDocumentDropEdits(e,r,t,i){const n=await this.getEdit(t,i);if(n)return{edits:[{insertText:n.insertText,title:n.title,kind:n.kind,handledMimeType:n.handledMimeType,yieldTo:n.yieldTo}],dispose(){}}}}class p extends P{static id="text";static kind=new y("text.plain");id=p.id;kind=p.kind;dropMimeTypes=[s.text];pasteMimeTypes=[s.text];async getEdit(e,r){const t=e.get(s.text);if(!t||e.has(s.uriList))return;const i=await t.asString();return{handledMimeType:s.text,title:l("text.label","Insert Plain Text"),insertText:i,kind:this.kind}}}class k extends P{kind=new y("uri.absolute");dropMimeTypes=[s.uriList];pasteMimeTypes=[s.uriList];async getEdit(e,r){const t=await D(e);if(!t.length||r.isCancellationRequested)return;let i=0;const n=t.map(({uri:d,originalText:I})=>d.scheme===M.file?d.fsPath:(i++,I)).join(" ");let o;return i>0?o=t.length>1?l("defaultDropProvider.uriList.uris","Insert Uris"):l("defaultDropProvider.uriList.uri","Insert Uri"):o=t.length>1?l("defaultDropProvider.uriList.paths","Insert Paths"):l("defaultDropProvider.uriList.path","Insert Path"),{handledMimeType:s.uriList,insertText:n,title:o,kind:this.kind}}}let m=class extends P{constructor(r){super();this._workspaceContextService=r}kind=new y("uri.relative");dropMimeTypes=[s.uriList];pasteMimeTypes=[s.uriList];async getEdit(r,t){const i=await D(r);if(!i.length||t.isCancellationRequested)return;const n=L(i.map(({uri:o})=>{const d=this._workspaceContextService.getWorkspaceFolder(o);return d?C(d.uri,o):void 0}));if(n.length)return{handledMimeType:s.uriList,insertText:n.join(" "),title:i.length>1?l("defaultDropProvider.uriList.relativePaths","Insert Relative Paths"):l("defaultDropProvider.uriList.relativePath","Insert Relative Path"),kind:this.kind}}};m=u([c(0,h)],m);class _{kind=new y("html");pasteMimeTypes=["text/html"];_yieldTo=[{mimeType:s.text}];async provideDocumentPasteEdits(e,r,t,i,n){if(i.triggerKind!==R.PasteAs&&!i.only?.contains(this.kind))return;const d=await t.get("text/html")?.asString();if(!(!d||n.isCancellationRequested))return{dispose(){},edits:[{insertText:d,yieldTo:this._yieldTo,title:l("pasteHtmlLabel","Insert HTML"),kind:this.kind}]}}}async function D(a){const e=a.get(s.uriList);if(!e)return[];const r=await e.asString(),t=[];for(const i of S.parse(r))try{t.push({uri:w.parse(i),originalText:i})}catch{}return t}let T=class extends g{constructor(e,r){super(),this._register(e.documentDropEditProvider.register("*",new p)),this._register(e.documentDropEditProvider.register("*",new k)),this._register(e.documentDropEditProvider.register("*",new m(r)))}};T=u([c(0,x),c(1,h)],T);let f=class extends g{constructor(e,r){super(),this._register(e.documentPasteEditProvider.register("*",new p)),this._register(e.documentPasteEditProvider.register("*",new k)),this._register(e.documentPasteEditProvider.register("*",new m(r))),this._register(e.documentPasteEditProvider.register("*",new _))}};f=u([c(0,x),c(1,h)],f);export{T as DefaultDropProvidersFeature,f as DefaultPasteProvidersFeature,p as DefaultTextPasteOrDropEditProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { coalesce } from '../../../../base/common/arrays.js';
+import { UriList } from '../../../../base/common/dataTransfer.js';
+import { HierarchicalKind } from '../../../../base/common/hierarchicalKind.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { Mimes } from '../../../../base/common/mime.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { relativePath } from '../../../../base/common/resources.js';
+import { URI } from '../../../../base/common/uri.js';
+import { DocumentPasteTriggerKind } from '../../../common/languages.js';
+import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
+import { localize } from '../../../../nls.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+class SimplePasteAndDropProvider {
+    async provideDocumentPasteEdits(_model, _ranges, dataTransfer, context, token) {
+        const edit = await this.getEdit(dataTransfer, token);
+        if (!edit) {
+            return undefined;
+        }
+        return {
+            edits: [{ insertText: edit.insertText, title: edit.title, kind: edit.kind, handledMimeType: edit.handledMimeType, yieldTo: edit.yieldTo }],
+            dispose() { },
+        };
+    }
+    async provideDocumentDropEdits(_model, _position, dataTransfer, token) {
+        const edit = await this.getEdit(dataTransfer, token);
+        if (!edit) {
+            return;
+        }
+        return {
+            edits: [{ insertText: edit.insertText, title: edit.title, kind: edit.kind, handledMimeType: edit.handledMimeType, yieldTo: edit.yieldTo }],
+            dispose() { },
+        };
+    }
+}
+export class DefaultTextPasteOrDropEditProvider extends SimplePasteAndDropProvider {
+    constructor() {
+        super(...arguments);
+        this.id = DefaultTextPasteOrDropEditProvider.id;
+        this.kind = DefaultTextPasteOrDropEditProvider.kind;
+        this.dropMimeTypes = [Mimes.text];
+        this.pasteMimeTypes = [Mimes.text];
+    }
+    static { this.id = 'text'; }
+    static { this.kind = new HierarchicalKind('text.plain'); }
+    async getEdit(dataTransfer, _token) {
+        const textEntry = dataTransfer.get(Mimes.text);
+        if (!textEntry) {
+            return;
+        }
+        if (dataTransfer.has(Mimes.uriList)) {
+            return;
+        }
+        const insertText = await textEntry.asString();
+        return {
+            handledMimeType: Mimes.text,
+            title: localize('text.label', "Insert Plain Text"),
+            insertText,
+            kind: this.kind,
+        };
+    }
+}
+class PathProvider extends SimplePasteAndDropProvider {
+    constructor() {
+        super(...arguments);
+        this.kind = new HierarchicalKind('uri.absolute');
+        this.dropMimeTypes = [Mimes.uriList];
+        this.pasteMimeTypes = [Mimes.uriList];
+    }
+    async getEdit(dataTransfer, token) {
+        const entries = await extractUriList(dataTransfer);
+        if (!entries.length || token.isCancellationRequested) {
+            return;
+        }
+        let uriCount = 0;
+        const insertText = entries
+            .map(({ uri, originalText }) => {
+            if (uri.scheme === Schemas.file) {
+                return uri.fsPath;
+            }
+            else {
+                uriCount++;
+                return originalText;
+            }
+        })
+            .join(' ');
+        let label;
+        if (uriCount > 0) {
+            label = entries.length > 1
+                ? localize('defaultDropProvider.uriList.uris', "Insert Uris")
+                : localize('defaultDropProvider.uriList.uri', "Insert Uri");
+        }
+        else {
+            label = entries.length > 1
+                ? localize('defaultDropProvider.uriList.paths', "Insert Paths")
+                : localize('defaultDropProvider.uriList.path', "Insert Path");
+        }
+        return {
+            handledMimeType: Mimes.uriList,
+            insertText,
+            title: label,
+            kind: this.kind,
+        };
+    }
+}
+let RelativePathProvider = class RelativePathProvider extends SimplePasteAndDropProvider {
+    constructor(_workspaceContextService) {
+        super();
+        this._workspaceContextService = _workspaceContextService;
+        this.kind = new HierarchicalKind('uri.relative');
+        this.dropMimeTypes = [Mimes.uriList];
+        this.pasteMimeTypes = [Mimes.uriList];
+    }
+    async getEdit(dataTransfer, token) {
+        const entries = await extractUriList(dataTransfer);
+        if (!entries.length || token.isCancellationRequested) {
+            return;
+        }
+        const relativeUris = coalesce(entries.map(({ uri }) => {
+            const root = this._workspaceContextService.getWorkspaceFolder(uri);
+            return root ? relativePath(root.uri, uri) : undefined;
+        }));
+        if (!relativeUris.length) {
+            return;
+        }
+        return {
+            handledMimeType: Mimes.uriList,
+            insertText: relativeUris.join(' '),
+            title: entries.length > 1
+                ? localize('defaultDropProvider.uriList.relativePaths', "Insert Relative Paths")
+                : localize('defaultDropProvider.uriList.relativePath', "Insert Relative Path"),
+            kind: this.kind,
+        };
+    }
+};
+RelativePathProvider = __decorate([
+    __param(0, IWorkspaceContextService),
+    __metadata("design:paramtypes", [Object])
+], RelativePathProvider);
+class PasteHtmlProvider {
+    constructor() {
+        this.kind = new HierarchicalKind('html');
+        this.pasteMimeTypes = ['text/html'];
+        this._yieldTo = [{ mimeType: Mimes.text }];
+    }
+    async provideDocumentPasteEdits(_model, _ranges, dataTransfer, context, token) {
+        if (context.triggerKind !== DocumentPasteTriggerKind.PasteAs && !context.only?.contains(this.kind)) {
+            return;
+        }
+        const entry = dataTransfer.get('text/html');
+        const htmlText = await entry?.asString();
+        if (!htmlText || token.isCancellationRequested) {
+            return;
+        }
+        return {
+            dispose() { },
+            edits: [{
+                    insertText: htmlText,
+                    yieldTo: this._yieldTo,
+                    title: localize('pasteHtmlLabel', 'Insert HTML'),
+                    kind: this.kind,
+                }],
+        };
+    }
+}
+async function extractUriList(dataTransfer) {
+    const urlListEntry = dataTransfer.get(Mimes.uriList);
+    if (!urlListEntry) {
+        return [];
+    }
+    const strUriList = await urlListEntry.asString();
+    const entries = [];
+    for (const entry of UriList.parse(strUriList)) {
+        try {
+            entries.push({ uri: URI.parse(entry), originalText: entry });
+        }
+        catch {
+        }
+    }
+    return entries;
+}
+let DefaultDropProvidersFeature = class DefaultDropProvidersFeature extends Disposable {
+    constructor(languageFeaturesService, workspaceContextService) {
+        super();
+        this._register(languageFeaturesService.documentDropEditProvider.register('*', new DefaultTextPasteOrDropEditProvider()));
+        this._register(languageFeaturesService.documentDropEditProvider.register('*', new PathProvider()));
+        this._register(languageFeaturesService.documentDropEditProvider.register('*', new RelativePathProvider(workspaceContextService)));
+    }
+};
+DefaultDropProvidersFeature = __decorate([
+    __param(0, ILanguageFeaturesService),
+    __param(1, IWorkspaceContextService),
+    __metadata("design:paramtypes", [Object, Object])
+], DefaultDropProvidersFeature);
+export { DefaultDropProvidersFeature };
+let DefaultPasteProvidersFeature = class DefaultPasteProvidersFeature extends Disposable {
+    constructor(languageFeaturesService, workspaceContextService) {
+        super();
+        this._register(languageFeaturesService.documentPasteEditProvider.register('*', new DefaultTextPasteOrDropEditProvider()));
+        this._register(languageFeaturesService.documentPasteEditProvider.register('*', new PathProvider()));
+        this._register(languageFeaturesService.documentPasteEditProvider.register('*', new RelativePathProvider(workspaceContextService)));
+        this._register(languageFeaturesService.documentPasteEditProvider.register('*', new PasteHtmlProvider()));
+    }
+};
+DefaultPasteProvidersFeature = __decorate([
+    __param(0, ILanguageFeaturesService),
+    __param(1, IWorkspaceContextService),
+    __metadata("design:paramtypes", [Object, Object])
+], DefaultPasteProvidersFeature);
+export { DefaultPasteProvidersFeature };

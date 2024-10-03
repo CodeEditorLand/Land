@@ -1,1 +1,93 @@
-var b=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var v=(s,n,o,t)=>{for(var e=t>1?void 0:t?h(n,o):n,i=s.length-1,r;i>=0;i--)(r=s[i])&&(e=(t?r(n,o,e):r(e))||e);return t&&e&&b(n,o,e),e},l=(s,n)=>(o,t)=>n(o,t,s);import{Disposable as p,DisposableStore as g}from"../../../../../../base/common/lifecycle.js";import{Registry as S}from"../../../../../../platform/registry/common/platform.js";import{Extensions as d}from"../../../../../common/contributions.js";import{INotebookKernelService as f}from"../../../common/notebookKernelService.js";import{INotebookLoggingService as u}from"../../../common/notebookLoggingService.js";import{IExtensionService as _}from"../../../../../services/extensions/common/extensions.js";import{LifecyclePhase as k}from"../../../../../services/lifecycle/common/lifecycle.js";let a=class extends p{constructor(o,t,e){super();this._notebookKernelService=o;this._extensionService=t;this._notebookLoggingService=e;this._registerListeners()}_detectionMap=new Map;_localDisposableStore=this._register(new g);_registerListeners(){this._localDisposableStore.clear(),this._localDisposableStore.add(this._extensionService.onWillActivateByEvent(t=>{if(t.event.startsWith("onNotebook:")){if(this._extensionService.activationEventIsDone(t.event))return;const e=t.event.substring(11);if(e==="*")return;let i=!1;const r=this._extensionService.getExtensionsStatus();if(this._extensionService.extensions.forEach(c=>{r[c.identifier.value].activationTimes||c.activationEvents?.includes(t.event)&&(i=!0)}),i&&!this._detectionMap.has(e)){this._notebookLoggingService.debug("KernelDetection",`start extension activation for ${e}`);const c=this._notebookKernelService.registerNotebookKernelDetectionTask({notebookType:e});this._detectionMap.set(e,c)}}}));let o=null;this._localDisposableStore.add(this._extensionService.onDidChangeExtensionsStatus(()=>{o&&clearTimeout(o),o=setTimeout(()=>{const t=[];for(const[e,i]of this._detectionMap)this._extensionService.activationEventIsDone(`onNotebook:${e}`)&&(this._notebookLoggingService.debug("KernelDetection",`finish extension activation for ${e}`),t.push(e),i.dispose());t.forEach(e=>{this._detectionMap.delete(e)})})})),this._localDisposableStore.add({dispose:()=>{o&&clearTimeout(o)}})}};a=v([l(0,f),l(1,_),l(2,u)],a),S.as(d.Workbench).registerWorkbenchContribution(a,k.Restored);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable, DisposableStore } from '../../../../../../base/common/lifecycle.js';
+import { Registry } from '../../../../../../platform/registry/common/platform.js';
+import { Extensions as WorkbenchExtensions } from '../../../../../common/contributions.js';
+import { INotebookKernelService } from '../../../common/notebookKernelService.js';
+import { INotebookLoggingService } from '../../../common/notebookLoggingService.js';
+import { IExtensionService } from '../../../../../services/extensions/common/extensions.js';
+let NotebookKernelDetection = class NotebookKernelDetection extends Disposable {
+    constructor(_notebookKernelService, _extensionService, _notebookLoggingService) {
+        super();
+        this._notebookKernelService = _notebookKernelService;
+        this._extensionService = _extensionService;
+        this._notebookLoggingService = _notebookLoggingService;
+        this._detectionMap = new Map();
+        this._localDisposableStore = this._register(new DisposableStore());
+        this._registerListeners();
+    }
+    _registerListeners() {
+        this._localDisposableStore.clear();
+        this._localDisposableStore.add(this._extensionService.onWillActivateByEvent(e => {
+            if (e.event.startsWith('onNotebook:')) {
+                if (this._extensionService.activationEventIsDone(e.event)) {
+                    return;
+                }
+                const notebookType = e.event.substring('onNotebook:'.length);
+                if (notebookType === '*') {
+                    return;
+                }
+                let shouldStartDetection = false;
+                const extensionStatus = this._extensionService.getExtensionsStatus();
+                this._extensionService.extensions.forEach(extension => {
+                    if (extensionStatus[extension.identifier.value].activationTimes) {
+                        return;
+                    }
+                    if (extension.activationEvents?.includes(e.event)) {
+                        shouldStartDetection = true;
+                    }
+                });
+                if (shouldStartDetection && !this._detectionMap.has(notebookType)) {
+                    this._notebookLoggingService.debug('KernelDetection', `start extension activation for ${notebookType}`);
+                    const task = this._notebookKernelService.registerNotebookKernelDetectionTask({
+                        notebookType: notebookType
+                    });
+                    this._detectionMap.set(notebookType, task);
+                }
+            }
+        }));
+        let timer = null;
+        this._localDisposableStore.add(this._extensionService.onDidChangeExtensionsStatus(() => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+            timer = setTimeout(() => {
+                const taskToDelete = [];
+                for (const [notebookType, task] of this._detectionMap) {
+                    if (this._extensionService.activationEventIsDone(`onNotebook:${notebookType}`)) {
+                        this._notebookLoggingService.debug('KernelDetection', `finish extension activation for ${notebookType}`);
+                        taskToDelete.push(notebookType);
+                        task.dispose();
+                    }
+                }
+                taskToDelete.forEach(notebookType => {
+                    this._detectionMap.delete(notebookType);
+                });
+            });
+        }));
+        this._localDisposableStore.add({
+            dispose: () => {
+                if (timer) {
+                    clearTimeout(timer);
+                }
+            }
+        });
+    }
+};
+NotebookKernelDetection = __decorate([
+    __param(0, INotebookKernelService),
+    __param(1, IExtensionService),
+    __param(2, INotebookLoggingService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], NotebookKernelDetection);
+Registry.as(WorkbenchExtensions.Workbench).registerWorkbenchContribution(NotebookKernelDetection, 3);

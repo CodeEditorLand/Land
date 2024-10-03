@@ -1,1 +1,46 @@
-import{parse as e}from"../../../../base/common/console.js";import"../../../../platform/log/common/log.js";function m(i,t,r=null){const s=e(t).args;let o=s.shift();if(typeof o=="string")switch(t.severity||(t.severity="info"),r&&(/^\[/.test(r)||(r=`[${r}]`),/ $/.test(r)||(r=`${r} `),o=r+o),t.severity){case"log":case"info":i.info(o,...s);break;case"warn":i.warn(o,...s);break;case"error":i.error(o,...s);break}}function p(i,t,r){const s=e(t).args,o=s.shift();typeof o!="string"||t.severity!=="error"||(/^\[/.test(r)||(r=`[${r}]`),/ $/.test(r)||(r=`${r} `),i.error(r+o,...s))}export{m as logRemoteEntry,p as logRemoteEntryIfError};
+import { parse } from '../../../../base/common/console.js';
+export function logRemoteEntry(logService, entry, label = null) {
+    const args = parse(entry).args;
+    let firstArg = args.shift();
+    if (typeof firstArg !== 'string') {
+        return;
+    }
+    if (!entry.severity) {
+        entry.severity = 'info';
+    }
+    if (label) {
+        if (!/^\[/.test(label)) {
+            label = `[${label}]`;
+        }
+        if (!/ $/.test(label)) {
+            label = `${label} `;
+        }
+        firstArg = label + firstArg;
+    }
+    switch (entry.severity) {
+        case 'log':
+        case 'info':
+            logService.info(firstArg, ...args);
+            break;
+        case 'warn':
+            logService.warn(firstArg, ...args);
+            break;
+        case 'error':
+            logService.error(firstArg, ...args);
+            break;
+    }
+}
+export function logRemoteEntryIfError(logService, entry, label) {
+    const args = parse(entry).args;
+    const firstArg = args.shift();
+    if (typeof firstArg !== 'string' || entry.severity !== 'error') {
+        return;
+    }
+    if (!/^\[/.test(label)) {
+        label = `[${label}]`;
+    }
+    if (!/ $/.test(label)) {
+        label = `${label} `;
+    }
+    logService.error(label + firstArg, ...args);
+}

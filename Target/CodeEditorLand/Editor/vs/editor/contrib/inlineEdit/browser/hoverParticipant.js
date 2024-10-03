@@ -1,1 +1,98 @@
-var p=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var c=(i,r,t,e)=>{for(var o=e>1?void 0:e?h(r,t):r,n=i.length-1,l;n>=0;n--)(l=i[n])&&(o=(e?l(r,t,o):l(o))||o);return e&&o&&p(r,t,o),o},a=(i,r)=>(t,e)=>r(t,e,i);import{DisposableStore as g}from"../../../../base/common/lifecycle.js";import{constObservable as H}from"../../../../base/common/observable.js";import{MouseTargetType as d}from"../../../browser/editorBrowser.js";import{EditorOption as I}from"../../../common/config/editorOptions.js";import"../../../common/core/range.js";import"../../../common/model.js";import{HoverAnchorType as u,HoverForeignElementAnchor as v,RenderedHoverParts as E}from"../../hover/browser/hoverTypes.js";import{IInstantiationService as f}from"../../../../platform/instantiation/common/instantiation.js";import{ITelemetryService as y}from"../../../../platform/telemetry/common/telemetry.js";import{InlineEditController as m}from"./inlineEditController.js";import{InlineEditHintsContentWidget as w}from"./inlineEditHintsWidget.js";import*as T from"../../../../nls.js";class b{constructor(r,t,e){this.owner=r;this.range=t;this.controller=e}isValidForHoverAnchor(r){return r.type===u.Range&&this.range.startColumn<=r.range.startColumn&&this.range.endColumn>=r.range.endColumn}}let s=class{constructor(r,t,e){this._editor=r;this._instantiationService=t;this._telemetryService=e}hoverOrdinal=5;suggestHoverAnchor(r){const t=m.get(this._editor);if(!t)return null;const e=r.target;if(e.type===d.CONTENT_VIEW_ZONE){const o=e.detail;if(t.shouldShowHoverAtViewZone(o.viewZoneId)){const n=e.range;return new v(1e3,this,n,r.event.posx,r.event.posy,!1)}}return e.type===d.CONTENT_EMPTY&&t.shouldShowHoverAt(e.range)?new v(1e3,this,e.range,r.event.posx,r.event.posy,!1):e.type===d.CONTENT_TEXT&&e.detail.mightBeForeignElement&&t.shouldShowHoverAt(e.range)?new v(1e3,this,e.range,r.event.posx,r.event.posy,!1):null}computeSync(r,t){if(this._editor.getOption(I.inlineEdit).showToolbar!=="onHover")return[];const e=m.get(this._editor);return e&&e.shouldShowHoverAt(r.range)?[new b(this,r.range,e)]:[]}renderHoverParts(r,t){const e=new g;this._telemetryService.publicLog2("inlineEditHover.shown");const o=this._instantiationService.createInstance(w,this._editor,!1,H(null));e.add(o);const n=o.getDomNode(),l={hoverPart:t[0],hoverElement:n,dispose:()=>e.dispose()};return new E([l])}getAccessibleContent(r){return T.localize("hoverAccessibilityInlineEdits","There are inline edits here.")}};s=c([a(1,f),a(2,y)],s);export{b as InlineEditHover,s as InlineEditHoverParticipant};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { constObservable } from '../../../../base/common/observable.js';
+import { HoverForeignElementAnchor, RenderedHoverParts } from '../../hover/browser/hoverTypes.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { InlineEditController } from './inlineEditController.js';
+import { InlineEditHintsContentWidget } from './inlineEditHintsWidget.js';
+import * as nls from '../../../../nls.js';
+export class InlineEditHover {
+    constructor(owner, range, controller) {
+        this.owner = owner;
+        this.range = range;
+        this.controller = controller;
+    }
+    isValidForHoverAnchor(anchor) {
+        return (anchor.type === 1
+            && this.range.startColumn <= anchor.range.startColumn
+            && this.range.endColumn >= anchor.range.endColumn);
+    }
+}
+let InlineEditHoverParticipant = class InlineEditHoverParticipant {
+    constructor(_editor, _instantiationService, _telemetryService) {
+        this._editor = _editor;
+        this._instantiationService = _instantiationService;
+        this._telemetryService = _telemetryService;
+        this.hoverOrdinal = 5;
+    }
+    suggestHoverAnchor(mouseEvent) {
+        const controller = InlineEditController.get(this._editor);
+        if (!controller) {
+            return null;
+        }
+        const target = mouseEvent.target;
+        if (target.type === 8) {
+            const viewZoneData = target.detail;
+            if (controller.shouldShowHoverAtViewZone(viewZoneData.viewZoneId)) {
+                const range = target.range;
+                return new HoverForeignElementAnchor(1000, this, range, mouseEvent.event.posx, mouseEvent.event.posy, false);
+            }
+        }
+        if (target.type === 7) {
+            if (controller.shouldShowHoverAt(target.range)) {
+                return new HoverForeignElementAnchor(1000, this, target.range, mouseEvent.event.posx, mouseEvent.event.posy, false);
+            }
+        }
+        if (target.type === 6) {
+            const mightBeForeignElement = target.detail.mightBeForeignElement;
+            if (mightBeForeignElement && controller.shouldShowHoverAt(target.range)) {
+                return new HoverForeignElementAnchor(1000, this, target.range, mouseEvent.event.posx, mouseEvent.event.posy, false);
+            }
+        }
+        return null;
+    }
+    computeSync(anchor, lineDecorations) {
+        if (this._editor.getOption(65).showToolbar !== 'onHover') {
+            return [];
+        }
+        const controller = InlineEditController.get(this._editor);
+        if (controller && controller.shouldShowHoverAt(anchor.range)) {
+            return [new InlineEditHover(this, anchor.range, controller)];
+        }
+        return [];
+    }
+    renderHoverParts(context, hoverParts) {
+        const disposables = new DisposableStore();
+        this._telemetryService.publicLog2('inlineEditHover.shown');
+        const w = this._instantiationService.createInstance(InlineEditHintsContentWidget, this._editor, false, constObservable(null));
+        disposables.add(w);
+        const widgetNode = w.getDomNode();
+        const renderedHoverPart = {
+            hoverPart: hoverParts[0],
+            hoverElement: widgetNode,
+            dispose: () => disposables.dispose()
+        };
+        return new RenderedHoverParts([renderedHoverPart]);
+    }
+    getAccessibleContent(hoverPart) {
+        return nls.localize('hoverAccessibilityInlineEdits', 'There are inline edits here.');
+    }
+};
+InlineEditHoverParticipant = __decorate([
+    __param(1, IInstantiationService),
+    __param(2, ITelemetryService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], InlineEditHoverParticipant);
+export { InlineEditHoverParticipant };

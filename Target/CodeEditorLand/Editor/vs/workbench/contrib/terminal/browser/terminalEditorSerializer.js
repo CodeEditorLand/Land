@@ -1,1 +1,52 @@
-var d=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var a=(n,e,i,r)=>{for(var t=r>1?void 0:r?m(e,i):e,s=n.length-1,l;s>=0;s--)(l=n[s])&&(t=(r?l(e,i,t):l(t))||t);return r&&t&&d(e,i,t),t},c=(n,e)=>(i,r)=>e(i,r,n);import"../../../../platform/instantiation/common/instantiation.js";import"../../../common/editor.js";import"../../../common/editor/editorInput.js";import{ITerminalEditorService as I}from"./terminal.js";import"./terminalEditorInput.js";let o=class{constructor(e){this._terminalEditorService=e}canSerialize(e){return typeof e.terminalInstance?.persistentProcessId=="number"&&e.terminalInstance.shouldPersist}serialize(e){if(this.canSerialize(e))return JSON.stringify(this._toJson(e.terminalInstance))}deserialize(e,i){const r=JSON.parse(i);return this._terminalEditorService.reviveInput(r)}_toJson(e){return{id:e.persistentProcessId,pid:e.processId||0,title:e.title,titleSource:e.titleSource,cwd:"",icon:e.icon,color:e.color,hasChildProcesses:e.hasChildProcesses,isFeatureTerminal:e.shellLaunchConfig.isFeatureTerminal,hideFromUser:e.shellLaunchConfig.hideFromUser,reconnectionProperties:e.shellLaunchConfig.reconnectionProperties,shellIntegrationNonce:e.shellIntegrationNonce}}};o=a([c(0,I)],o);export{o as TerminalInputSerializer};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ITerminalEditorService } from './terminal.js';
+let TerminalInputSerializer = class TerminalInputSerializer {
+    constructor(_terminalEditorService) {
+        this._terminalEditorService = _terminalEditorService;
+    }
+    canSerialize(editorInput) {
+        return typeof editorInput.terminalInstance?.persistentProcessId === 'number' && editorInput.terminalInstance.shouldPersist;
+    }
+    serialize(editorInput) {
+        if (!this.canSerialize(editorInput)) {
+            return;
+        }
+        return JSON.stringify(this._toJson(editorInput.terminalInstance));
+    }
+    deserialize(instantiationService, serializedEditorInput) {
+        const terminalInstance = JSON.parse(serializedEditorInput);
+        return this._terminalEditorService.reviveInput(terminalInstance);
+    }
+    _toJson(instance) {
+        return {
+            id: instance.persistentProcessId,
+            pid: instance.processId || 0,
+            title: instance.title,
+            titleSource: instance.titleSource,
+            cwd: '',
+            icon: instance.icon,
+            color: instance.color,
+            hasChildProcesses: instance.hasChildProcesses,
+            isFeatureTerminal: instance.shellLaunchConfig.isFeatureTerminal,
+            hideFromUser: instance.shellLaunchConfig.hideFromUser,
+            reconnectionProperties: instance.shellLaunchConfig.reconnectionProperties,
+            shellIntegrationNonce: instance.shellIntegrationNonce
+        };
+    }
+};
+TerminalInputSerializer = __decorate([
+    __param(0, ITerminalEditorService),
+    __metadata("design:paramtypes", [Object])
+], TerminalInputSerializer);
+export { TerminalInputSerializer };

@@ -1,1 +1,102 @@
-import"../../../base/common/cancellation.js";import{onUnexpectedExternalError as m}from"../../../base/common/errors.js";import{toDisposable as u}from"../../../base/common/lifecycle.js";import{ThemeIcon as v}from"../../../base/common/themables.js";import"../../../platform/extensions/common/extensions.js";import{MainContext as b}from"./extHost.protocol.js";import*as l from"./extHostTypeConverters.js";import*as p from"./extHostTypes.js";import"../../contrib/chat/common/chatVariables.js";import{checkProposedApiEnabled as C}from"../../services/extensions/common/extensions.js";class d{static _idPool=0;_resolver=new Map;_proxy;constructor(o){this._proxy=o.getProxy(b.MainThreadChatVariables)}async $resolveVariable(o,i,t,s){const e=this._resolver.get(o);if(e)try{if(e.resolver.resolve2){C(e.extension,"chatParticipantAdditions");const r=new R(i,this._proxy),a=await e.resolver.resolve2(e.data.name,{prompt:t},r.apiObject,s);if(a&&a[0])return a[0].value}else{const r=await e.resolver.resolve(e.data.name,{prompt:t},s);if(r&&r[0])return r[0].value}}catch(r){m(r)}}registerVariableResolver(o,i,t,s,e,r,a,f,h){const n=d._idPool++,c=h?v.fromId(h):void 0;return this._resolver.set(n,{extension:o,data:{id:i,name:t,description:s,modelDescription:e,icon:c},resolver:a}),this._proxy.$registerVariable(n,{id:i,name:t,description:s,modelDescription:e,isSlow:r,fullName:f,icon:c}),u(()=>{this._resolver.delete(n),this._proxy.$unregisterVariable(n)})}}class R{constructor(o,i){this._requestId=o;this._proxy=i}_isClosed=!1;_apiObject;close(){this._isClosed=!0}get apiObject(){if(!this._apiObject){let t=function(e){if(i._isClosed){const r=new Error("Response stream has been closed");throw Error.captureStackTrace(r,e),r}};var o=t;const i=this,s=e=>{this._proxy.$handleProgressChunk(this._requestId,e)};this._apiObject={progress(e){t(this.progress);const r=new p.ChatResponseProgressPart(e),a=l.ChatResponseProgressPart.from(r);return s(a),this},reference(e){t(this.reference);const r=new p.ChatResponseReferencePart(e),a=l.ChatResponseReferencePart.from(r);return s(a),this},push(e){return t(this.push),e instanceof p.ChatResponseReferencePart?s(l.ChatResponseReferencePart.from(e)):e instanceof p.ChatResponseProgressPart&&s(l.ChatResponseProgressPart.from(e)),this}}}return this._apiObject}}export{d as ExtHostChatVariables};
+import { onUnexpectedExternalError } from '../../../base/common/errors.js';
+import { toDisposable } from '../../../base/common/lifecycle.js';
+import { ThemeIcon } from '../../../base/common/themables.js';
+import { MainContext } from './extHost.protocol.js';
+import * as typeConvert from './extHostTypeConverters.js';
+import * as extHostTypes from './extHostTypes.js';
+import { checkProposedApiEnabled } from '../../services/extensions/common/extensions.js';
+export class ExtHostChatVariables {
+    static { this._idPool = 0; }
+    constructor(mainContext) {
+        this._resolver = new Map();
+        this._proxy = mainContext.getProxy(MainContext.MainThreadChatVariables);
+    }
+    async $resolveVariable(handle, requestId, messageText, token) {
+        const item = this._resolver.get(handle);
+        if (!item) {
+            return undefined;
+        }
+        try {
+            if (item.resolver.resolve2) {
+                checkProposedApiEnabled(item.extension, 'chatParticipantAdditions');
+                const stream = new ChatVariableResolverResponseStream(requestId, this._proxy);
+                const value = await item.resolver.resolve2(item.data.name, { prompt: messageText }, stream.apiObject, token);
+                if (value && value[0]) {
+                    return value[0].value;
+                }
+            }
+            else {
+                const value = await item.resolver.resolve(item.data.name, { prompt: messageText }, token);
+                if (value && value[0]) {
+                    return value[0].value;
+                }
+            }
+        }
+        catch (err) {
+            onUnexpectedExternalError(err);
+        }
+        return undefined;
+    }
+    registerVariableResolver(extension, id, name, userDescription, modelDescription, isSlow, resolver, fullName, themeIconId) {
+        const handle = ExtHostChatVariables._idPool++;
+        const icon = themeIconId ? ThemeIcon.fromId(themeIconId) : undefined;
+        this._resolver.set(handle, { extension, data: { id, name, description: userDescription, modelDescription, icon }, resolver: resolver });
+        this._proxy.$registerVariable(handle, { id, name, description: userDescription, modelDescription, isSlow, fullName, icon });
+        return toDisposable(() => {
+            this._resolver.delete(handle);
+            this._proxy.$unregisterVariable(handle);
+        });
+    }
+}
+class ChatVariableResolverResponseStream {
+    constructor(_requestId, _proxy) {
+        this._requestId = _requestId;
+        this._proxy = _proxy;
+        this._isClosed = false;
+    }
+    close() {
+        this._isClosed = true;
+    }
+    get apiObject() {
+        if (!this._apiObject) {
+            const that = this;
+            function throwIfDone(source) {
+                if (that._isClosed) {
+                    const err = new Error('Response stream has been closed');
+                    Error.captureStackTrace(err, source);
+                    throw err;
+                }
+            }
+            const _report = (progress) => {
+                this._proxy.$handleProgressChunk(this._requestId, progress);
+            };
+            this._apiObject = {
+                progress(value) {
+                    throwIfDone(this.progress);
+                    const part = new extHostTypes.ChatResponseProgressPart(value);
+                    const dto = typeConvert.ChatResponseProgressPart.from(part);
+                    _report(dto);
+                    return this;
+                },
+                reference(value) {
+                    throwIfDone(this.reference);
+                    const part = new extHostTypes.ChatResponseReferencePart(value);
+                    const dto = typeConvert.ChatResponseReferencePart.from(part);
+                    _report(dto);
+                    return this;
+                },
+                push(part) {
+                    throwIfDone(this.push);
+                    if (part instanceof extHostTypes.ChatResponseReferencePart) {
+                        _report(typeConvert.ChatResponseReferencePart.from(part));
+                    }
+                    else if (part instanceof extHostTypes.ChatResponseProgressPart) {
+                        _report(typeConvert.ChatResponseProgressPart.from(part));
+                    }
+                    return this;
+                }
+            };
+        }
+        return this._apiObject;
+    }
+}

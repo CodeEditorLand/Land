@@ -1,1 +1,154 @@
-import"../../contextmenu.js";import{$ as l,addDisposableListener as r,append as d,EventHelper as h,EventType as s,isMouseEvent as v}from"../../dom.js";import{StandardKeyboardEvent as c}from"../../keyboardEvent.js";import{EventType as p,Gesture as f}from"../../touch.js";import{AnchorAlignment as b}from"../contextview/contextview.js";import{getBaseLayerHoverDelegate as g}from"../hover/hoverDelegate2.js";import{getDefaultHoverDelegate as _}from"../hover/hoverDelegateFactory.js";import"../menu/menu.js";import{ActionRunner as I}from"../../../common/actions.js";import{Emitter as O}from"../../../common/event.js";import{KeyCode as m}from"../../../common/keyCodes.js";import"../../../common/lifecycle.js";import"./dropdown.css";class M extends I{_element;boxContainer;_label;contents;visible;_onDidChangeVisibility=this._register(new O);onDidChangeVisibility=this._onDidChangeVisibility.event;hover;constructor(o,e){super(),this._element=d(o,l(".monaco-dropdown")),this._label=d(this._element,l(".dropdown-label"));let t=e.labelRenderer;t||(t=i=>(i.textContent=e.label||"",null));for(const i of[s.CLICK,s.MOUSE_DOWN,p.Tap])this._register(r(this.element,i,n=>h.stop(n,!0)));for(const i of[s.MOUSE_DOWN,p.Tap])this._register(r(this._label,i,n=>{v(n)&&(n.detail>1||n.button!==0)||(this.visible?this.hide():this.show())}));this._register(r(this._label,s.KEY_UP,i=>{const n=new c(i);(n.equals(m.Enter)||n.equals(m.Space))&&(h.stop(i,!0),this.visible?this.hide():this.show())}));const a=t(this._label);a&&this._register(a),this._register(f.addTarget(this._label))}get element(){return this._element}get label(){return this._label}set tooltip(o){this._label&&(!this.hover&&o!==""?this.hover=this._register(g().setupManagedHover(_("mouse"),this._label,o)):this.hover&&this.hover.update(o))}show(){this.visible||(this.visible=!0,this._onDidChangeVisibility.fire(!0))}hide(){this.visible&&(this.visible=!1,this._onDidChangeVisibility.fire(!1))}isVisible(){return!!this.visible}onEvent(o,e){this.hide()}dispose(){super.dispose(),this.hide(),this.boxContainer&&(this.boxContainer.remove(),this.boxContainer=void 0),this.contents&&(this.contents.remove(),this.contents=void 0),this._label&&(this._label.remove(),this._label=void 0)}}class k extends M{constructor(e,t){super(e,t);this._options=t;this.actions=t.actions||[]}_menuOptions;_actions=[];set menuOptions(e){this._menuOptions=e}get menuOptions(){return this._menuOptions}get actions(){return this._options.actionProvider?this._options.actionProvider.getActions():this._actions}set actions(e){this._actions=e}show(){super.show(),this.element.classList.add("active"),this._options.contextMenuProvider.showContextMenu({getAnchor:()=>this.element,getActions:()=>this.actions,getActionsContext:()=>this.menuOptions?this.menuOptions.context:null,getActionViewItem:(e,t)=>this.menuOptions&&this.menuOptions.actionViewItemProvider?this.menuOptions.actionViewItemProvider(e,t):void 0,getKeyBinding:e=>this.menuOptions&&this.menuOptions.getKeyBinding?this.menuOptions.getKeyBinding(e):void 0,getMenuClassName:()=>this._options.menuClassName||"",onHide:()=>this.onHide(),actionRunner:this.menuOptions?this.menuOptions.actionRunner:void 0,anchorAlignment:this.menuOptions?this.menuOptions.anchorAlignment:b.LEFT,domForShadowRoot:this._options.menuAsChild?this.element:void 0,skipTelemetry:this._options.skipTelemetry})}hide(){super.hide()}onHide(){this.hide(),this.element.classList.remove("active")}}export{k as DropdownMenu};
+import { $, addDisposableListener, append, EventHelper, EventType, isMouseEvent } from '../../dom.js';
+import { StandardKeyboardEvent } from '../../keyboardEvent.js';
+import { EventType as GestureEventType, Gesture } from '../../touch.js';
+import { getBaseLayerHoverDelegate } from '../hover/hoverDelegate2.js';
+import { getDefaultHoverDelegate } from '../hover/hoverDelegateFactory.js';
+import { ActionRunner } from '../../../common/actions.js';
+import { Emitter } from '../../../common/event.js';
+import './dropdown.css';
+class BaseDropdown extends ActionRunner {
+    constructor(container, options) {
+        super();
+        this._onDidChangeVisibility = this._register(new Emitter());
+        this.onDidChangeVisibility = this._onDidChangeVisibility.event;
+        this._element = append(container, $('.monaco-dropdown'));
+        this._label = append(this._element, $('.dropdown-label'));
+        let labelRenderer = options.labelRenderer;
+        if (!labelRenderer) {
+            labelRenderer = (container) => {
+                container.textContent = options.label || '';
+                return null;
+            };
+        }
+        for (const event of [EventType.CLICK, EventType.MOUSE_DOWN, GestureEventType.Tap]) {
+            this._register(addDisposableListener(this.element, event, e => EventHelper.stop(e, true)));
+        }
+        for (const event of [EventType.MOUSE_DOWN, GestureEventType.Tap]) {
+            this._register(addDisposableListener(this._label, event, e => {
+                if (isMouseEvent(e) && (e.detail > 1 || e.button !== 0)) {
+                    return;
+                }
+                if (this.visible) {
+                    this.hide();
+                }
+                else {
+                    this.show();
+                }
+            }));
+        }
+        this._register(addDisposableListener(this._label, EventType.KEY_UP, e => {
+            const event = new StandardKeyboardEvent(e);
+            if (event.equals(3) || event.equals(10)) {
+                EventHelper.stop(e, true);
+                if (this.visible) {
+                    this.hide();
+                }
+                else {
+                    this.show();
+                }
+            }
+        }));
+        const cleanupFn = labelRenderer(this._label);
+        if (cleanupFn) {
+            this._register(cleanupFn);
+        }
+        this._register(Gesture.addTarget(this._label));
+    }
+    get element() {
+        return this._element;
+    }
+    get label() {
+        return this._label;
+    }
+    set tooltip(tooltip) {
+        if (this._label) {
+            if (!this.hover && tooltip !== '') {
+                this.hover = this._register(getBaseLayerHoverDelegate().setupManagedHover(getDefaultHoverDelegate('mouse'), this._label, tooltip));
+            }
+            else if (this.hover) {
+                this.hover.update(tooltip);
+            }
+        }
+    }
+    show() {
+        if (!this.visible) {
+            this.visible = true;
+            this._onDidChangeVisibility.fire(true);
+        }
+    }
+    hide() {
+        if (this.visible) {
+            this.visible = false;
+            this._onDidChangeVisibility.fire(false);
+        }
+    }
+    isVisible() {
+        return !!this.visible;
+    }
+    onEvent(_e, activeElement) {
+        this.hide();
+    }
+    dispose() {
+        super.dispose();
+        this.hide();
+        if (this.boxContainer) {
+            this.boxContainer.remove();
+            this.boxContainer = undefined;
+        }
+        if (this.contents) {
+            this.contents.remove();
+            this.contents = undefined;
+        }
+        if (this._label) {
+            this._label.remove();
+            this._label = undefined;
+        }
+    }
+}
+export class DropdownMenu extends BaseDropdown {
+    constructor(container, _options) {
+        super(container, _options);
+        this._options = _options;
+        this._actions = [];
+        this.actions = _options.actions || [];
+    }
+    set menuOptions(options) {
+        this._menuOptions = options;
+    }
+    get menuOptions() {
+        return this._menuOptions;
+    }
+    get actions() {
+        if (this._options.actionProvider) {
+            return this._options.actionProvider.getActions();
+        }
+        return this._actions;
+    }
+    set actions(actions) {
+        this._actions = actions;
+    }
+    show() {
+        super.show();
+        this.element.classList.add('active');
+        this._options.contextMenuProvider.showContextMenu({
+            getAnchor: () => this.element,
+            getActions: () => this.actions,
+            getActionsContext: () => this.menuOptions ? this.menuOptions.context : null,
+            getActionViewItem: (action, options) => this.menuOptions && this.menuOptions.actionViewItemProvider ? this.menuOptions.actionViewItemProvider(action, options) : undefined,
+            getKeyBinding: action => this.menuOptions && this.menuOptions.getKeyBinding ? this.menuOptions.getKeyBinding(action) : undefined,
+            getMenuClassName: () => this._options.menuClassName || '',
+            onHide: () => this.onHide(),
+            actionRunner: this.menuOptions ? this.menuOptions.actionRunner : undefined,
+            anchorAlignment: this.menuOptions ? this.menuOptions.anchorAlignment : 0,
+            domForShadowRoot: this._options.menuAsChild ? this.element : undefined,
+            skipTelemetry: this._options.skipTelemetry
+        });
+    }
+    hide() {
+        super.hide();
+    }
+    onHide() {
+        this.hide();
+        this.element.classList.remove('active');
+    }
+}

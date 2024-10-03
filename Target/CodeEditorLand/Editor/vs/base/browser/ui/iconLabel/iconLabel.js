@@ -1,1 +1,276 @@
-import"./iconlabel.css";import*as n from"../../dom.js";import{HighlightedLabel as c}from"../highlightedlabel/highlightedLabel.js";import"../hover/hoverDelegate.js";import"../../../common/filters.js";import{Disposable as m}from"../../../common/lifecycle.js";import{equals as h}from"../../../common/objects.js";import{Range as f}from"../../../common/range.js";import{getDefaultHoverDelegate as b}from"../hover/hoverDelegateFactory.js";import{getBaseLayerHoverDelegate as v}from"../hover/hoverDelegate2.js";import{isString as L}from"../../../common/types.js";import{stripIcons as I}from"../../../common/iconLabels.js";import"../../../common/uri.js";class p{constructor(t){this._element=t}disposed;_textContent;_classNames;_empty;get element(){return this._element}set textContent(t){this.disposed||t===this._textContent||(this._textContent=t,this._element.textContent=t)}set classNames(t){this.disposed||h(t,this._classNames)||(this._classNames=t,this._element.classList.value="",this._element.classList.add(...t))}set empty(t){this.disposed||t===this._empty||(this._empty=t,this._element.style.marginLeft=t?"0":"")}dispose(){this.disposed=!0}}class U extends m{creationOptions;domNode;nameContainer;nameNode;descriptionNode;suffixNode;labelContainer;hoverDelegate;customHovers=new Map;constructor(t,i){super(),this.creationOptions=i,this.domNode=this._register(new p(n.append(t,n.$(".monaco-icon-label")))),this.labelContainer=n.append(this.domNode.element,n.$(".monaco-icon-label-container")),this.nameContainer=n.append(this.labelContainer,n.$("span.monaco-icon-name-container")),i?.supportHighlights||i?.supportIcons?this.nameNode=this._register(new C(this.nameContainer,!!i.supportIcons)):this.nameNode=new N(this.nameContainer),this.hoverDelegate=i?.hoverDelegate??b("mouse")}get element(){return this.domNode.element}setLabel(t,i,e){const l=["monaco-icon-label"],o=["monaco-icon-label-container"];let a="";e&&(e.extraClasses&&l.push(...e.extraClasses),e.italic&&l.push("italic"),e.strikethrough&&l.push("strikethrough"),e.disabledCommand&&o.push("disabled"),e.title&&(typeof e.title=="string"?a+=e.title:a+=t));const s=this.domNode.element.querySelector(".monaco-icon-label-iconpath");if(e?.iconPath){let r;!s||!n.isHTMLElement(s)?(r=n.$(".monaco-icon-label-iconpath"),this.domNode.element.prepend(r)):r=s,r.style.backgroundImage=n.asCSSUrl(e?.iconPath)}else s&&s.remove();if(this.domNode.classNames=l,this.domNode.element.setAttribute("aria-label",a),this.labelContainer.classList.value="",this.labelContainer.classList.add(...o),this.setupHover(e?.descriptionTitle?this.labelContainer:this.element,e?.title),this.nameNode.setLabel(t,e),i||this.descriptionNode){const r=this.getOrCreateDescriptionNode();r instanceof c?(r.set(i||"",e?e.descriptionMatches:void 0,void 0,e?.labelEscapeNewLines),this.setupHover(r.element,e?.descriptionTitle)):(r.textContent=i&&e?.labelEscapeNewLines?c.escapeNewLines(i,[]):i||"",this.setupHover(r.element,e?.descriptionTitle||""),r.empty=!i)}if(e?.suffix||this.suffixNode){const r=this.getOrCreateSuffixNode();r.textContent=e?.suffix??""}}setupHover(t,i){const e=this.customHovers.get(t);if(e&&(e.dispose(),this.customHovers.delete(t)),!i){t.removeAttribute("title");return}if(this.hoverDelegate.showNativeHover){let o=function(a,s){L(s)?a.title=I(s):s?.markdownNotSupportedFallback?a.title=s.markdownNotSupportedFallback:a.removeAttribute("title")};var l=o;o(t,i)}else{const o=v().setupManagedHover(this.hoverDelegate,t,i);o&&this.customHovers.set(t,o)}}dispose(){super.dispose();for(const t of this.customHovers.values())t.dispose();this.customHovers.clear()}getOrCreateSuffixNode(){if(!this.suffixNode){const t=this._register(new p(n.after(this.nameContainer,n.$("span.monaco-icon-suffix-container"))));this.suffixNode=this._register(new p(n.append(t.element,n.$("span.label-suffix"))))}return this.suffixNode}getOrCreateDescriptionNode(){if(!this.descriptionNode){const t=this._register(new p(n.append(this.labelContainer,n.$("span.monaco-icon-description-container"))));this.creationOptions?.supportDescriptionHighlights?this.descriptionNode=this._register(new c(n.append(t.element,n.$("span.label-description")),{supportIcons:!!this.creationOptions.supportIcons})):this.descriptionNode=this._register(new p(n.append(t.element,n.$("span.label-description"))))}return this.descriptionNode}}class N{constructor(t){this.container=t}label=void 0;singleLabel=void 0;options;setLabel(t,i){if(!(this.label===t&&h(this.options,i)))if(this.label=t,this.options=i,typeof t=="string")this.singleLabel||(this.container.innerText="",this.container.classList.remove("multiple"),this.singleLabel=n.append(this.container,n.$("a.label-name",{id:i?.domId}))),this.singleLabel.textContent=t;else{this.container.innerText="",this.container.classList.add("multiple"),this.singleLabel=void 0;for(let e=0;e<t.length;e++){const l=t[e],o=i?.domId&&`${i?.domId}_${e}`;n.append(this.container,n.$("a.label-name",{id:o,"data-icon-label-count":t.length,"data-icon-label-index":e,role:"treeitem"},l)),e<t.length-1&&n.append(this.container,n.$("span.label-separator",void 0,i?.separator||"/"))}}}}function H(d,t,i){if(!i)return;let e=0;return d.map(l=>{const o={start:e,end:e+l.length},a=i.map(s=>f.intersect(o,s)).filter(s=>!f.isEmpty(s)).map(({start:s,end:r})=>({start:s-e,end:r-e}));return e=o.end+t.length,a})}class C extends m{constructor(i,e){super();this.container=i;this.supportIcons=e}label=void 0;singleLabel=void 0;options;setLabel(i,e){if(!(this.label===i&&h(this.options,e)))if(this.label=i,this.options=e,typeof i=="string")this.singleLabel||(this.container.innerText="",this.container.classList.remove("multiple"),this.singleLabel=this._register(new c(n.append(this.container,n.$("a.label-name",{id:e?.domId})),{supportIcons:this.supportIcons}))),this.singleLabel.set(i,e?.matches,void 0,e?.labelEscapeNewLines);else{this.container.innerText="",this.container.classList.add("multiple"),this.singleLabel=void 0;const l=e?.separator||"/",o=H(i,l,e?.matches);for(let a=0;a<i.length;a++){const s=i[a],r=o?o[a]:void 0,g=e?.domId&&`${e?.domId}_${a}`,u=n.$("a.label-name",{id:g,"data-icon-label-count":i.length,"data-icon-label-index":a,role:"treeitem"});this._register(new c(n.append(this.container,u),{supportIcons:this.supportIcons})).set(s,r,void 0,e?.labelEscapeNewLines),a<i.length-1&&n.append(u,n.$("span.label-separator",void 0,l))}}}}export{U as IconLabel};
+import './iconlabel.css';
+import * as dom from '../../dom.js';
+import { HighlightedLabel } from '../highlightedlabel/highlightedLabel.js';
+import { Disposable } from '../../../common/lifecycle.js';
+import { equals } from '../../../common/objects.js';
+import { Range } from '../../../common/range.js';
+import { getDefaultHoverDelegate } from '../hover/hoverDelegateFactory.js';
+import { getBaseLayerHoverDelegate } from '../hover/hoverDelegate2.js';
+import { isString } from '../../../common/types.js';
+import { stripIcons } from '../../../common/iconLabels.js';
+class FastLabelNode {
+    constructor(_element) {
+        this._element = _element;
+    }
+    get element() {
+        return this._element;
+    }
+    set textContent(content) {
+        if (this.disposed || content === this._textContent) {
+            return;
+        }
+        this._textContent = content;
+        this._element.textContent = content;
+    }
+    set classNames(classNames) {
+        if (this.disposed || equals(classNames, this._classNames)) {
+            return;
+        }
+        this._classNames = classNames;
+        this._element.classList.value = '';
+        this._element.classList.add(...classNames);
+    }
+    set empty(empty) {
+        if (this.disposed || empty === this._empty) {
+            return;
+        }
+        this._empty = empty;
+        this._element.style.marginLeft = empty ? '0' : '';
+    }
+    dispose() {
+        this.disposed = true;
+    }
+}
+export class IconLabel extends Disposable {
+    constructor(container, options) {
+        super();
+        this.customHovers = new Map();
+        this.creationOptions = options;
+        this.domNode = this._register(new FastLabelNode(dom.append(container, dom.$('.monaco-icon-label'))));
+        this.labelContainer = dom.append(this.domNode.element, dom.$('.monaco-icon-label-container'));
+        this.nameContainer = dom.append(this.labelContainer, dom.$('span.monaco-icon-name-container'));
+        if (options?.supportHighlights || options?.supportIcons) {
+            this.nameNode = this._register(new LabelWithHighlights(this.nameContainer, !!options.supportIcons));
+        }
+        else {
+            this.nameNode = new Label(this.nameContainer);
+        }
+        this.hoverDelegate = options?.hoverDelegate ?? getDefaultHoverDelegate('mouse');
+    }
+    get element() {
+        return this.domNode.element;
+    }
+    setLabel(label, description, options) {
+        const labelClasses = ['monaco-icon-label'];
+        const containerClasses = ['monaco-icon-label-container'];
+        let ariaLabel = '';
+        if (options) {
+            if (options.extraClasses) {
+                labelClasses.push(...options.extraClasses);
+            }
+            if (options.italic) {
+                labelClasses.push('italic');
+            }
+            if (options.strikethrough) {
+                labelClasses.push('strikethrough');
+            }
+            if (options.disabledCommand) {
+                containerClasses.push('disabled');
+            }
+            if (options.title) {
+                if (typeof options.title === 'string') {
+                    ariaLabel += options.title;
+                }
+                else {
+                    ariaLabel += label;
+                }
+            }
+        }
+        const existingIconNode = this.domNode.element.querySelector('.monaco-icon-label-iconpath');
+        if (options?.iconPath) {
+            let iconNode;
+            if (!existingIconNode || !(dom.isHTMLElement(existingIconNode))) {
+                iconNode = dom.$('.monaco-icon-label-iconpath');
+                this.domNode.element.prepend(iconNode);
+            }
+            else {
+                iconNode = existingIconNode;
+            }
+            iconNode.style.backgroundImage = dom.asCSSUrl(options?.iconPath);
+        }
+        else if (existingIconNode) {
+            existingIconNode.remove();
+        }
+        this.domNode.classNames = labelClasses;
+        this.domNode.element.setAttribute('aria-label', ariaLabel);
+        this.labelContainer.classList.value = '';
+        this.labelContainer.classList.add(...containerClasses);
+        this.setupHover(options?.descriptionTitle ? this.labelContainer : this.element, options?.title);
+        this.nameNode.setLabel(label, options);
+        if (description || this.descriptionNode) {
+            const descriptionNode = this.getOrCreateDescriptionNode();
+            if (descriptionNode instanceof HighlightedLabel) {
+                descriptionNode.set(description || '', options ? options.descriptionMatches : undefined, undefined, options?.labelEscapeNewLines);
+                this.setupHover(descriptionNode.element, options?.descriptionTitle);
+            }
+            else {
+                descriptionNode.textContent = description && options?.labelEscapeNewLines ? HighlightedLabel.escapeNewLines(description, []) : (description || '');
+                this.setupHover(descriptionNode.element, options?.descriptionTitle || '');
+                descriptionNode.empty = !description;
+            }
+        }
+        if (options?.suffix || this.suffixNode) {
+            const suffixNode = this.getOrCreateSuffixNode();
+            suffixNode.textContent = options?.suffix ?? '';
+        }
+    }
+    setupHover(htmlElement, tooltip) {
+        const previousCustomHover = this.customHovers.get(htmlElement);
+        if (previousCustomHover) {
+            previousCustomHover.dispose();
+            this.customHovers.delete(htmlElement);
+        }
+        if (!tooltip) {
+            htmlElement.removeAttribute('title');
+            return;
+        }
+        if (this.hoverDelegate.showNativeHover) {
+            function setupNativeHover(htmlElement, tooltip) {
+                if (isString(tooltip)) {
+                    htmlElement.title = stripIcons(tooltip);
+                }
+                else if (tooltip?.markdownNotSupportedFallback) {
+                    htmlElement.title = tooltip.markdownNotSupportedFallback;
+                }
+                else {
+                    htmlElement.removeAttribute('title');
+                }
+            }
+            setupNativeHover(htmlElement, tooltip);
+        }
+        else {
+            const hoverDisposable = getBaseLayerHoverDelegate().setupManagedHover(this.hoverDelegate, htmlElement, tooltip);
+            if (hoverDisposable) {
+                this.customHovers.set(htmlElement, hoverDisposable);
+            }
+        }
+    }
+    dispose() {
+        super.dispose();
+        for (const disposable of this.customHovers.values()) {
+            disposable.dispose();
+        }
+        this.customHovers.clear();
+    }
+    getOrCreateSuffixNode() {
+        if (!this.suffixNode) {
+            const suffixContainer = this._register(new FastLabelNode(dom.after(this.nameContainer, dom.$('span.monaco-icon-suffix-container'))));
+            this.suffixNode = this._register(new FastLabelNode(dom.append(suffixContainer.element, dom.$('span.label-suffix'))));
+        }
+        return this.suffixNode;
+    }
+    getOrCreateDescriptionNode() {
+        if (!this.descriptionNode) {
+            const descriptionContainer = this._register(new FastLabelNode(dom.append(this.labelContainer, dom.$('span.monaco-icon-description-container'))));
+            if (this.creationOptions?.supportDescriptionHighlights) {
+                this.descriptionNode = this._register(new HighlightedLabel(dom.append(descriptionContainer.element, dom.$('span.label-description')), { supportIcons: !!this.creationOptions.supportIcons }));
+            }
+            else {
+                this.descriptionNode = this._register(new FastLabelNode(dom.append(descriptionContainer.element, dom.$('span.label-description'))));
+            }
+        }
+        return this.descriptionNode;
+    }
+}
+class Label {
+    constructor(container) {
+        this.container = container;
+        this.label = undefined;
+        this.singleLabel = undefined;
+    }
+    setLabel(label, options) {
+        if (this.label === label && equals(this.options, options)) {
+            return;
+        }
+        this.label = label;
+        this.options = options;
+        if (typeof label === 'string') {
+            if (!this.singleLabel) {
+                this.container.innerText = '';
+                this.container.classList.remove('multiple');
+                this.singleLabel = dom.append(this.container, dom.$('a.label-name', { id: options?.domId }));
+            }
+            this.singleLabel.textContent = label;
+        }
+        else {
+            this.container.innerText = '';
+            this.container.classList.add('multiple');
+            this.singleLabel = undefined;
+            for (let i = 0; i < label.length; i++) {
+                const l = label[i];
+                const id = options?.domId && `${options?.domId}_${i}`;
+                dom.append(this.container, dom.$('a.label-name', { id, 'data-icon-label-count': label.length, 'data-icon-label-index': i, 'role': 'treeitem' }, l));
+                if (i < label.length - 1) {
+                    dom.append(this.container, dom.$('span.label-separator', undefined, options?.separator || '/'));
+                }
+            }
+        }
+    }
+}
+function splitMatches(labels, separator, matches) {
+    if (!matches) {
+        return undefined;
+    }
+    let labelStart = 0;
+    return labels.map(label => {
+        const labelRange = { start: labelStart, end: labelStart + label.length };
+        const result = matches
+            .map(match => Range.intersect(labelRange, match))
+            .filter(range => !Range.isEmpty(range))
+            .map(({ start, end }) => ({ start: start - labelStart, end: end - labelStart }));
+        labelStart = labelRange.end + separator.length;
+        return result;
+    });
+}
+class LabelWithHighlights extends Disposable {
+    constructor(container, supportIcons) {
+        super();
+        this.container = container;
+        this.supportIcons = supportIcons;
+        this.label = undefined;
+        this.singleLabel = undefined;
+    }
+    setLabel(label, options) {
+        if (this.label === label && equals(this.options, options)) {
+            return;
+        }
+        this.label = label;
+        this.options = options;
+        if (typeof label === 'string') {
+            if (!this.singleLabel) {
+                this.container.innerText = '';
+                this.container.classList.remove('multiple');
+                this.singleLabel = this._register(new HighlightedLabel(dom.append(this.container, dom.$('a.label-name', { id: options?.domId })), { supportIcons: this.supportIcons }));
+            }
+            this.singleLabel.set(label, options?.matches, undefined, options?.labelEscapeNewLines);
+        }
+        else {
+            this.container.innerText = '';
+            this.container.classList.add('multiple');
+            this.singleLabel = undefined;
+            const separator = options?.separator || '/';
+            const matches = splitMatches(label, separator, options?.matches);
+            for (let i = 0; i < label.length; i++) {
+                const l = label[i];
+                const m = matches ? matches[i] : undefined;
+                const id = options?.domId && `${options?.domId}_${i}`;
+                const name = dom.$('a.label-name', { id, 'data-icon-label-count': label.length, 'data-icon-label-index': i, 'role': 'treeitem' });
+                const highlightedLabel = this._register(new HighlightedLabel(dom.append(this.container, name), { supportIcons: this.supportIcons }));
+                highlightedLabel.set(l, m, undefined, options?.labelEscapeNewLines);
+                if (i < label.length - 1) {
+                    dom.append(name, dom.$('span.label-separator', undefined, separator));
+                }
+            }
+        }
+    }
+}

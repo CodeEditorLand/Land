@@ -1,1 +1,584 @@
-import{promises as d}from"fs";import{Barrier as R,retry as C}from"../../../base/common/async.js";import{ResourceMap as W}from"../../../base/common/map.js";import{VSBuffer as S}from"../../../base/common/buffer.js";import"../../../base/common/cancellation.js";import{Event as g}from"../../../base/common/event.js";import{isEqual as k}from"../../../base/common/extpath.js";import{DisposableStore as I,toDisposable as L}from"../../../base/common/lifecycle.js";import{basename as F,dirname as P,join as U}from"../../../base/common/path.js";import{isLinux as O,isWindows as T}from"../../../base/common/platform.js";import{extUriBiasedIgnorePathCase as A,joinPath as E,basename as D,dirname as N}from"../../../base/common/resources.js";import{newWriteableStream as x}from"../../../base/common/stream.js";import"../../../base/common/uri.js";import{Promises as m,RimRafMode as H,SymlinkSupport as u}from"../../../base/node/pfs.js";import{localize as h}from"../../../nls.js";import{createFileSystemProviderError as y,FileSystemProviderCapabilities as c,FileSystemProviderError as M,FileSystemProviderErrorCode as n,FileType as p,isFileOpenForWriteOptions as f,FilePermission as $}from"../common/files.js";import{readFileIntoStream as _}from"../common/io.js";import"../common/watcher.js";import"../../log/common/log.js";import{AbstractDiskFileSystemProvider as z}from"../common/diskFileSystemProvider.js";import{UniversalWatcherClient as B}from"./watcher/watcherClient.js";import{NodeJSWatcherClient as G}from"./watcher/nodejs/nodejsClient.js";class v extends z{static TRACE_LOG_RESOURCE_LOCKS=!1;constructor(e,i){super(e,i)}onDidChangeCapabilities=g.None;_capabilities;get capabilities(){return this._capabilities||(this._capabilities=c.FileReadWrite|c.FileOpenReadWriteClose|c.FileReadStream|c.FileFolderCopy|c.FileWriteUnlock|c.FileAtomicRead|c.FileAtomicWrite|c.FileAtomicDelete|c.FileClone,O&&(this._capabilities|=c.PathCaseSensitive)),this._capabilities}async stat(e){try{const{stat:i,symbolicLink:t}=await u.stat(this.toFilePath(e));return{type:this.toType(i,t),ctime:i.birthtime.getTime(),mtime:i.mtime.getTime(),size:i.size,permissions:i.mode&128?void 0:$.Locked}}catch(i){throw this.toFileSystemProviderError(i)}}async statIgnoreError(e){try{return await this.stat(e)}catch{return}}async readdir(e){try{const i=await m.readdir(this.toFilePath(e),{withFileTypes:!0}),t=[];return await Promise.all(i.map(async r=>{try{let o;r.isSymbolicLink()?o=(await this.stat(E(e,r.name))).type:o=this.toType(r),t.push([r.name,o])}catch(o){this.logService.trace(o)}})),t}catch(i){throw this.toFileSystemProviderError(i)}}toType(e,i){let t;return i?.dangling?t=p.Unknown:e.isFile()?t=p.File:e.isDirectory()?t=p.Directory:t=p.Unknown,i&&(t|=p.SymbolicLink),t}resourceLocks=new W(e=>A.getComparisonKey(e));async createResourceLock(e){const i=this.toFilePath(e);this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - request to acquire resource lock (${i})`);let t;for(;t=this.resourceLocks.get(e);)this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - waiting for resource lock to be released (${i})`),await t.wait();const r=new R;return this.resourceLocks.set(e,r),this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - new resource lock created (${i})`),L(()=>{this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - resource lock dispose() (${i})`),this.resourceLocks.get(e)===r&&(this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - resource lock removed from resource-lock map (${i})`),this.resourceLocks.delete(e)),this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - resource lock barrier open() (${i})`),r.open()})}async readFile(e,i){let t;try{i?.atomic&&(this.traceLock(`[Disk FileSystemProvider]: atomic read operation started (${this.toFilePath(e)})`),t=await this.createResourceLock(e));const r=this.toFilePath(e);return await d.readFile(r)}catch(r){throw this.toFileSystemProviderError(r)}finally{t?.dispose()}}traceLock(e){v.TRACE_LOG_RESOURCE_LOCKS&&this.logService.trace(e)}readFileStream(e,i,t){const r=x(o=>S.concat(o.map(a=>S.wrap(a))).buffer);return _(this,e,r,o=>o.buffer,{...i,bufferSize:256*1024},t),r}async writeFile(e,i,t){return t?.atomic!==!1&&t?.atomic?.postfix&&await this.canWriteFileAtomic(e)?this.doWriteFileAtomic(e,E(N(e),`${D(e)}${t.atomic.postfix}`),i,t):this.doWriteFile(e,i,t)}async canWriteFileAtomic(e){try{const i=this.toFilePath(e),{symbolicLink:t}=await u.stat(i);if(t)return!1}catch{}return!0}async doWriteFileAtomic(e,i,t,r){const o=new I;try{o.add(await this.createResourceLock(e)),o.add(await this.createResourceLock(i)),await this.doWriteFile(i,t,r,!0);try{await this.rename(i,e,{overwrite:!0})}catch(a){try{await this.delete(i,{recursive:!1,useTrash:!1,atomic:!1})}catch{}throw a}}finally{o.dispose()}}async doWriteFile(e,i,t,r){let o;try{const a=this.toFilePath(e);if(!t.create||!t.overwrite){if(await m.exists(a)){if(!t.overwrite)throw y(h("fileExists","File already exists"),n.FileExists)}else if(!t.create)throw y(h("fileNotExists","File does not exist"),n.FileNotFound)}o=await this.open(e,{create:!0,unlock:t.unlock},r),await this.write(o,0,i,0,i.byteLength)}catch(a){throw await this.toFileSystemProviderWriteError(e,a)}finally{typeof o=="number"&&await this.close(o)}}mapHandleToPos=new Map;mapHandleToLock=new Map;writeHandles=new Map;static canFlush=!0;static configureFlushOnWrite(e){v.canFlush=e}async open(e,i,t){const r=this.toFilePath(e);let o;f(i)&&!t&&(o=await this.createResourceLock(e));let a;try{if(f(i)&&i.unlock)try{const{stat:l}=await u.stat(r);l.mode&128||await d.chmod(r,l.mode|128)}catch(l){l.code!=="ENOENT"&&this.logService.trace(l)}let s;if(f(i)){if(T)try{await d.truncate(r,0),s="r+"}catch(l){l.code!=="ENOENT"&&this.logService.trace(l)}s||(s="w")}else s="r";a=await m.open(r,s)}catch(s){throw o?.dispose(),f(i)?await this.toFileSystemProviderWriteError(e,s):this.toFileSystemProviderError(s)}if(this.mapHandleToPos.set(a,0),f(i)&&this.writeHandles.set(a,e),o){const s=this.mapHandleToLock.get(a);this.traceLock(`[Disk FileSystemProvider]: open() - storing lock for handle ${a} (${r})`),this.mapHandleToLock.set(a,o),s&&(this.traceLock(`[Disk FileSystemProvider]: open() - disposing a previous lock that was still stored on same handle ${a} (${r})`),s.dispose())}return a}async close(e){const i=this.mapHandleToLock.get(e);try{if(this.mapHandleToPos.delete(e),this.writeHandles.delete(e)&&v.canFlush)try{await m.fdatasync(e)}catch(t){v.configureFlushOnWrite(!1),this.logService.error(t)}return await m.close(e)}catch(t){throw this.toFileSystemProviderError(t)}finally{i&&(this.mapHandleToLock.get(e)===i&&(this.traceLock(`[Disk FileSystemProvider]: close() - resource lock removed from handle-lock map ${e}`),this.mapHandleToLock.delete(e)),this.traceLock(`[Disk FileSystemProvider]: close() - disposing lock for handle ${e}`),i.dispose())}}async read(e,i,t,r,o){const a=this.normalizePos(e,i);let s=null;try{s=(await m.read(e,t,r,o,a)).bytesRead}catch(l){throw this.toFileSystemProviderError(l)}finally{this.updatePos(e,a,s)}return s}normalizePos(e,i){return i===this.mapHandleToPos.get(e)?null:i}updatePos(e,i,t){const r=this.mapHandleToPos.get(e);typeof r=="number"&&(typeof i=="number"||(typeof t=="number"?this.mapHandleToPos.set(e,r+t):this.mapHandleToPos.delete(e)))}async write(e,i,t,r,o){return C(()=>this.doWrite(e,i,t,r,o),100,3)}async doWrite(e,i,t,r,o){const a=this.normalizePos(e,i);let s=null;try{s=(await m.write(e,t,r,o,a)).bytesWritten}catch(l){throw await this.toFileSystemProviderWriteError(this.writeHandles.get(e),l)}finally{this.updatePos(e,a,s)}return s}async mkdir(e){try{await d.mkdir(this.toFilePath(e))}catch(i){throw this.toFileSystemProviderError(i)}}async delete(e,i){try{const t=this.toFilePath(e);if(i.recursive){let r;i?.atomic!==!1&&i.atomic.postfix&&(r=U(P(t),`${F(t)}${i.atomic.postfix}`)),await m.rm(t,H.MOVE,r)}else try{await d.unlink(t)}catch(r){if(r.code==="EPERM"||r.code==="EISDIR"){let o=!1;try{const{stat:a,symbolicLink:s}=await u.stat(t);o=a.isDirectory()&&!s}catch{}if(o)await d.rmdir(t);else throw r}else throw r}}catch(t){throw this.toFileSystemProviderError(t)}}async rename(e,i,t){const r=this.toFilePath(e),o=this.toFilePath(i);if(r!==o)try{await this.validateMoveCopy(e,i,"move",t.overwrite),await m.rename(r,o)}catch(a){throw(a.code==="EINVAL"||a.code==="EBUSY"||a.code==="ENAMETOOLONG")&&(a=new Error(h("moveError","Unable to move '{0}' into '{1}' ({2}).",F(r),F(P(o)),a.toString()))),this.toFileSystemProviderError(a)}}async copy(e,i,t){const r=this.toFilePath(e),o=this.toFilePath(i);if(r!==o)try{await this.validateMoveCopy(e,i,"copy",t.overwrite),await m.copy(r,o,{preserveSymlinks:!0})}catch(a){throw(a.code==="EINVAL"||a.code==="EBUSY"||a.code==="ENAMETOOLONG")&&(a=new Error(h("copyError","Unable to copy '{0}' into '{1}' ({2}).",F(r),F(P(o)),a.toString()))),this.toFileSystemProviderError(a)}}async validateMoveCopy(e,i,t,r){const o=this.toFilePath(e),a=this.toFilePath(i);let s=!1;if(!!(this.capabilities&c.PathCaseSensitive)||(s=k(o,a,!0)),s){if(t==="copy")throw y(h("fileCopyErrorPathCase","File cannot be copied to same path with different path case"),n.FileExists);if(t==="move")return}const w=await this.statIgnoreError(e);if(!w)throw y(h("fileMoveCopyErrorNotFound","File to move/copy does not exist"),n.FileNotFound);const b=await this.statIgnoreError(i);if(b){if(!r)throw y(h("fileMoveCopyErrorExists","File at target already exists and thus will not be moved/copied to unless overwrite is specified"),n.FileExists);w.type&p.File&&b.type&p.File||await this.delete(i,{recursive:!0,useTrash:!1,atomic:!1})}}async cloneFile(e,i){return this.doCloneFile(e,i,!1)}async doCloneFile(e,i,t){const r=this.toFilePath(e),o=this.toFilePath(i),a=!!(this.capabilities&c.PathCaseSensitive);if(k(r,o,!a))return;const s=new I;try{s.add(await this.createResourceLock(e)),s.add(await this.createResourceLock(i)),t&&await d.mkdir(P(o),{recursive:!0}),await d.copyFile(r,o)}catch(l){if(l.code==="ENOENT"&&!t)return this.doCloneFile(e,i,!0);throw this.toFileSystemProviderError(l)}finally{s.dispose()}}createUniversalWatcher(e,i,t){return new B(r=>e(r),r=>i(r),t)}createNonRecursiveWatcher(e,i,t){return new G(r=>e(r),r=>i(r),t)}toFileSystemProviderError(e){if(e instanceof M)return e;let i=e,t;switch(e.code){case"ENOENT":t=n.FileNotFound;break;case"EISDIR":t=n.FileIsADirectory;break;case"ENOTDIR":t=n.FileNotADirectory;break;case"EEXIST":t=n.FileExists;break;case"EPERM":case"EACCES":t=n.NoPermissions;break;case"ERR_UNC_HOST_NOT_ALLOWED":i=`${e.message}. Please update the 'security.allowedUNCHosts' setting if you want to allow this host.`,t=n.Unknown;break;default:t=n.Unknown}return y(i,t)}async toFileSystemProviderWriteError(e,i){let t=this.toFileSystemProviderError(i);if(e&&t.code===n.NoPermissions)try{const{stat:r}=await u.stat(this.toFilePath(e));r.mode&128||(t=y(i,n.FileWriteLocked))}catch(r){this.logService.trace(r)}return t}}export{v as DiskFileSystemProvider};
+import { promises } from 'fs';
+import { Barrier, retry } from '../../../base/common/async.js';
+import { ResourceMap } from '../../../base/common/map.js';
+import { VSBuffer } from '../../../base/common/buffer.js';
+import { Event } from '../../../base/common/event.js';
+import { isEqual } from '../../../base/common/extpath.js';
+import { DisposableStore, toDisposable } from '../../../base/common/lifecycle.js';
+import { basename, dirname, join } from '../../../base/common/path.js';
+import { isLinux, isWindows } from '../../../base/common/platform.js';
+import { extUriBiasedIgnorePathCase, joinPath, basename as resourcesBasename, dirname as resourcesDirname } from '../../../base/common/resources.js';
+import { newWriteableStream } from '../../../base/common/stream.js';
+import { Promises, RimRafMode, SymlinkSupport } from '../../../base/node/pfs.js';
+import { localize } from '../../../nls.js';
+import { createFileSystemProviderError, FileSystemProviderError, FileSystemProviderErrorCode, FileType, isFileOpenForWriteOptions, FilePermission } from '../common/files.js';
+import { readFileIntoStream } from '../common/io.js';
+import { AbstractDiskFileSystemProvider } from '../common/diskFileSystemProvider.js';
+import { UniversalWatcherClient } from './watcher/watcherClient.js';
+import { NodeJSWatcherClient } from './watcher/nodejs/nodejsClient.js';
+export class DiskFileSystemProvider extends AbstractDiskFileSystemProvider {
+    static { this.TRACE_LOG_RESOURCE_LOCKS = false; }
+    constructor(logService, options) {
+        super(logService, options);
+        this.onDidChangeCapabilities = Event.None;
+        this.resourceLocks = new ResourceMap(resource => extUriBiasedIgnorePathCase.getComparisonKey(resource));
+        this.mapHandleToPos = new Map();
+        this.mapHandleToLock = new Map();
+        this.writeHandles = new Map();
+    }
+    get capabilities() {
+        if (!this._capabilities) {
+            this._capabilities =
+                2 |
+                    4 |
+                    16 |
+                    8 |
+                    8192 |
+                    16384 |
+                    32768 |
+                    65536 |
+                    131072;
+            if (isLinux) {
+                this._capabilities |= 1024;
+            }
+        }
+        return this._capabilities;
+    }
+    async stat(resource) {
+        try {
+            const { stat, symbolicLink } = await SymlinkSupport.stat(this.toFilePath(resource));
+            return {
+                type: this.toType(stat, symbolicLink),
+                ctime: stat.birthtime.getTime(),
+                mtime: stat.mtime.getTime(),
+                size: stat.size,
+                permissions: (stat.mode & 0o200) === 0 ? FilePermission.Locked : undefined
+            };
+        }
+        catch (error) {
+            throw this.toFileSystemProviderError(error);
+        }
+    }
+    async statIgnoreError(resource) {
+        try {
+            return await this.stat(resource);
+        }
+        catch (error) {
+            return undefined;
+        }
+    }
+    async readdir(resource) {
+        try {
+            const children = await Promises.readdir(this.toFilePath(resource), { withFileTypes: true });
+            const result = [];
+            await Promise.all(children.map(async (child) => {
+                try {
+                    let type;
+                    if (child.isSymbolicLink()) {
+                        type = (await this.stat(joinPath(resource, child.name))).type;
+                    }
+                    else {
+                        type = this.toType(child);
+                    }
+                    result.push([child.name, type]);
+                }
+                catch (error) {
+                    this.logService.trace(error);
+                }
+            }));
+            return result;
+        }
+        catch (error) {
+            throw this.toFileSystemProviderError(error);
+        }
+    }
+    toType(entry, symbolicLink) {
+        let type;
+        if (symbolicLink?.dangling) {
+            type = FileType.Unknown;
+        }
+        else if (entry.isFile()) {
+            type = FileType.File;
+        }
+        else if (entry.isDirectory()) {
+            type = FileType.Directory;
+        }
+        else {
+            type = FileType.Unknown;
+        }
+        if (symbolicLink) {
+            type |= FileType.SymbolicLink;
+        }
+        return type;
+    }
+    async createResourceLock(resource) {
+        const filePath = this.toFilePath(resource);
+        this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - request to acquire resource lock (${filePath})`);
+        let existingLock = undefined;
+        while (existingLock = this.resourceLocks.get(resource)) {
+            this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - waiting for resource lock to be released (${filePath})`);
+            await existingLock.wait();
+        }
+        const newLock = new Barrier();
+        this.resourceLocks.set(resource, newLock);
+        this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - new resource lock created (${filePath})`);
+        return toDisposable(() => {
+            this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - resource lock dispose() (${filePath})`);
+            if (this.resourceLocks.get(resource) === newLock) {
+                this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - resource lock removed from resource-lock map (${filePath})`);
+                this.resourceLocks.delete(resource);
+            }
+            this.traceLock(`[Disk FileSystemProvider]: createResourceLock() - resource lock barrier open() (${filePath})`);
+            newLock.open();
+        });
+    }
+    async readFile(resource, options) {
+        let lock = undefined;
+        try {
+            if (options?.atomic) {
+                this.traceLock(`[Disk FileSystemProvider]: atomic read operation started (${this.toFilePath(resource)})`);
+                lock = await this.createResourceLock(resource);
+            }
+            const filePath = this.toFilePath(resource);
+            return await promises.readFile(filePath);
+        }
+        catch (error) {
+            throw this.toFileSystemProviderError(error);
+        }
+        finally {
+            lock?.dispose();
+        }
+    }
+    traceLock(msg) {
+        if (DiskFileSystemProvider.TRACE_LOG_RESOURCE_LOCKS) {
+            this.logService.trace(msg);
+        }
+    }
+    readFileStream(resource, opts, token) {
+        const stream = newWriteableStream(data => VSBuffer.concat(data.map(data => VSBuffer.wrap(data))).buffer);
+        readFileIntoStream(this, resource, stream, data => data.buffer, {
+            ...opts,
+            bufferSize: 256 * 1024
+        }, token);
+        return stream;
+    }
+    async writeFile(resource, content, opts) {
+        if (opts?.atomic !== false && opts?.atomic?.postfix && await this.canWriteFileAtomic(resource)) {
+            return this.doWriteFileAtomic(resource, joinPath(resourcesDirname(resource), `${resourcesBasename(resource)}${opts.atomic.postfix}`), content, opts);
+        }
+        else {
+            return this.doWriteFile(resource, content, opts);
+        }
+    }
+    async canWriteFileAtomic(resource) {
+        try {
+            const filePath = this.toFilePath(resource);
+            const { symbolicLink } = await SymlinkSupport.stat(filePath);
+            if (symbolicLink) {
+                return false;
+            }
+        }
+        catch (error) {
+        }
+        return true;
+    }
+    async doWriteFileAtomic(resource, tempResource, content, opts) {
+        const locks = new DisposableStore();
+        try {
+            locks.add(await this.createResourceLock(resource));
+            locks.add(await this.createResourceLock(tempResource));
+            await this.doWriteFile(tempResource, content, opts, true);
+            try {
+                await this.rename(tempResource, resource, { overwrite: true });
+            }
+            catch (error) {
+                try {
+                    await this.delete(tempResource, { recursive: false, useTrash: false, atomic: false });
+                }
+                catch (error) {
+                }
+                throw error;
+            }
+        }
+        finally {
+            locks.dispose();
+        }
+    }
+    async doWriteFile(resource, content, opts, disableWriteLock) {
+        let handle = undefined;
+        try {
+            const filePath = this.toFilePath(resource);
+            if (!opts.create || !opts.overwrite) {
+                const fileExists = await Promises.exists(filePath);
+                if (fileExists) {
+                    if (!opts.overwrite) {
+                        throw createFileSystemProviderError(localize('fileExists', "File already exists"), FileSystemProviderErrorCode.FileExists);
+                    }
+                }
+                else {
+                    if (!opts.create) {
+                        throw createFileSystemProviderError(localize('fileNotExists', "File does not exist"), FileSystemProviderErrorCode.FileNotFound);
+                    }
+                }
+            }
+            handle = await this.open(resource, { create: true, unlock: opts.unlock }, disableWriteLock);
+            await this.write(handle, 0, content, 0, content.byteLength);
+        }
+        catch (error) {
+            throw await this.toFileSystemProviderWriteError(resource, error);
+        }
+        finally {
+            if (typeof handle === 'number') {
+                await this.close(handle);
+            }
+        }
+    }
+    static { this.canFlush = true; }
+    static configureFlushOnWrite(enabled) {
+        DiskFileSystemProvider.canFlush = enabled;
+    }
+    async open(resource, opts, disableWriteLock) {
+        const filePath = this.toFilePath(resource);
+        let lock = undefined;
+        if (isFileOpenForWriteOptions(opts) && !disableWriteLock) {
+            lock = await this.createResourceLock(resource);
+        }
+        let fd = undefined;
+        try {
+            if (isFileOpenForWriteOptions(opts) && opts.unlock) {
+                try {
+                    const { stat } = await SymlinkSupport.stat(filePath);
+                    if (!(stat.mode & 0o200)) {
+                        await promises.chmod(filePath, stat.mode | 0o200);
+                    }
+                }
+                catch (error) {
+                    if (error.code !== 'ENOENT') {
+                        this.logService.trace(error);
+                    }
+                }
+            }
+            let flags = undefined;
+            if (isFileOpenForWriteOptions(opts)) {
+                if (isWindows) {
+                    try {
+                        await promises.truncate(filePath, 0);
+                        flags = 'r+';
+                    }
+                    catch (error) {
+                        if (error.code !== 'ENOENT') {
+                            this.logService.trace(error);
+                        }
+                    }
+                }
+                if (!flags) {
+                    flags = 'w';
+                }
+            }
+            else {
+                flags = 'r';
+            }
+            fd = await Promises.open(filePath, flags);
+        }
+        catch (error) {
+            lock?.dispose();
+            if (isFileOpenForWriteOptions(opts)) {
+                throw await this.toFileSystemProviderWriteError(resource, error);
+            }
+            else {
+                throw this.toFileSystemProviderError(error);
+            }
+        }
+        this.mapHandleToPos.set(fd, 0);
+        if (isFileOpenForWriteOptions(opts)) {
+            this.writeHandles.set(fd, resource);
+        }
+        if (lock) {
+            const previousLock = this.mapHandleToLock.get(fd);
+            this.traceLock(`[Disk FileSystemProvider]: open() - storing lock for handle ${fd} (${filePath})`);
+            this.mapHandleToLock.set(fd, lock);
+            if (previousLock) {
+                this.traceLock(`[Disk FileSystemProvider]: open() - disposing a previous lock that was still stored on same handle ${fd} (${filePath})`);
+                previousLock.dispose();
+            }
+        }
+        return fd;
+    }
+    async close(fd) {
+        const lockForHandle = this.mapHandleToLock.get(fd);
+        try {
+            this.mapHandleToPos.delete(fd);
+            if (this.writeHandles.delete(fd) && DiskFileSystemProvider.canFlush) {
+                try {
+                    await Promises.fdatasync(fd);
+                }
+                catch (error) {
+                    DiskFileSystemProvider.configureFlushOnWrite(false);
+                    this.logService.error(error);
+                }
+            }
+            return await Promises.close(fd);
+        }
+        catch (error) {
+            throw this.toFileSystemProviderError(error);
+        }
+        finally {
+            if (lockForHandle) {
+                if (this.mapHandleToLock.get(fd) === lockForHandle) {
+                    this.traceLock(`[Disk FileSystemProvider]: close() - resource lock removed from handle-lock map ${fd}`);
+                    this.mapHandleToLock.delete(fd);
+                }
+                this.traceLock(`[Disk FileSystemProvider]: close() - disposing lock for handle ${fd}`);
+                lockForHandle.dispose();
+            }
+        }
+    }
+    async read(fd, pos, data, offset, length) {
+        const normalizedPos = this.normalizePos(fd, pos);
+        let bytesRead = null;
+        try {
+            bytesRead = (await Promises.read(fd, data, offset, length, normalizedPos)).bytesRead;
+        }
+        catch (error) {
+            throw this.toFileSystemProviderError(error);
+        }
+        finally {
+            this.updatePos(fd, normalizedPos, bytesRead);
+        }
+        return bytesRead;
+    }
+    normalizePos(fd, pos) {
+        if (pos === this.mapHandleToPos.get(fd)) {
+            return null;
+        }
+        return pos;
+    }
+    updatePos(fd, pos, bytesLength) {
+        const lastKnownPos = this.mapHandleToPos.get(fd);
+        if (typeof lastKnownPos === 'number') {
+            if (typeof pos === 'number') {
+            }
+            else if (typeof bytesLength === 'number') {
+                this.mapHandleToPos.set(fd, lastKnownPos + bytesLength);
+            }
+            else {
+                this.mapHandleToPos.delete(fd);
+            }
+        }
+    }
+    async write(fd, pos, data, offset, length) {
+        return retry(() => this.doWrite(fd, pos, data, offset, length), 100, 3);
+    }
+    async doWrite(fd, pos, data, offset, length) {
+        const normalizedPos = this.normalizePos(fd, pos);
+        let bytesWritten = null;
+        try {
+            bytesWritten = (await Promises.write(fd, data, offset, length, normalizedPos)).bytesWritten;
+        }
+        catch (error) {
+            throw await this.toFileSystemProviderWriteError(this.writeHandles.get(fd), error);
+        }
+        finally {
+            this.updatePos(fd, normalizedPos, bytesWritten);
+        }
+        return bytesWritten;
+    }
+    async mkdir(resource) {
+        try {
+            await promises.mkdir(this.toFilePath(resource));
+        }
+        catch (error) {
+            throw this.toFileSystemProviderError(error);
+        }
+    }
+    async delete(resource, opts) {
+        try {
+            const filePath = this.toFilePath(resource);
+            if (opts.recursive) {
+                let rmMoveToPath = undefined;
+                if (opts?.atomic !== false && opts.atomic.postfix) {
+                    rmMoveToPath = join(dirname(filePath), `${basename(filePath)}${opts.atomic.postfix}`);
+                }
+                await Promises.rm(filePath, RimRafMode.MOVE, rmMoveToPath);
+            }
+            else {
+                try {
+                    await promises.unlink(filePath);
+                }
+                catch (unlinkError) {
+                    if (unlinkError.code === 'EPERM' || unlinkError.code === 'EISDIR') {
+                        let isDirectory = false;
+                        try {
+                            const { stat, symbolicLink } = await SymlinkSupport.stat(filePath);
+                            isDirectory = stat.isDirectory() && !symbolicLink;
+                        }
+                        catch (statError) {
+                        }
+                        if (isDirectory) {
+                            await promises.rmdir(filePath);
+                        }
+                        else {
+                            throw unlinkError;
+                        }
+                    }
+                    else {
+                        throw unlinkError;
+                    }
+                }
+            }
+        }
+        catch (error) {
+            throw this.toFileSystemProviderError(error);
+        }
+    }
+    async rename(from, to, opts) {
+        const fromFilePath = this.toFilePath(from);
+        const toFilePath = this.toFilePath(to);
+        if (fromFilePath === toFilePath) {
+            return;
+        }
+        try {
+            await this.validateMoveCopy(from, to, 'move', opts.overwrite);
+            await Promises.rename(fromFilePath, toFilePath);
+        }
+        catch (error) {
+            if (error.code === 'EINVAL' || error.code === 'EBUSY' || error.code === 'ENAMETOOLONG') {
+                error = new Error(localize('moveError', "Unable to move '{0}' into '{1}' ({2}).", basename(fromFilePath), basename(dirname(toFilePath)), error.toString()));
+            }
+            throw this.toFileSystemProviderError(error);
+        }
+    }
+    async copy(from, to, opts) {
+        const fromFilePath = this.toFilePath(from);
+        const toFilePath = this.toFilePath(to);
+        if (fromFilePath === toFilePath) {
+            return;
+        }
+        try {
+            await this.validateMoveCopy(from, to, 'copy', opts.overwrite);
+            await Promises.copy(fromFilePath, toFilePath, { preserveSymlinks: true });
+        }
+        catch (error) {
+            if (error.code === 'EINVAL' || error.code === 'EBUSY' || error.code === 'ENAMETOOLONG') {
+                error = new Error(localize('copyError', "Unable to copy '{0}' into '{1}' ({2}).", basename(fromFilePath), basename(dirname(toFilePath)), error.toString()));
+            }
+            throw this.toFileSystemProviderError(error);
+        }
+    }
+    async validateMoveCopy(from, to, mode, overwrite) {
+        const fromFilePath = this.toFilePath(from);
+        const toFilePath = this.toFilePath(to);
+        let isSameResourceWithDifferentPathCase = false;
+        const isPathCaseSensitive = !!(this.capabilities & 1024);
+        if (!isPathCaseSensitive) {
+            isSameResourceWithDifferentPathCase = isEqual(fromFilePath, toFilePath, true);
+        }
+        if (isSameResourceWithDifferentPathCase) {
+            if (mode === 'copy') {
+                throw createFileSystemProviderError(localize('fileCopyErrorPathCase', "File cannot be copied to same path with different path case"), FileSystemProviderErrorCode.FileExists);
+            }
+            else if (mode === 'move') {
+                return;
+            }
+        }
+        const fromStat = await this.statIgnoreError(from);
+        if (!fromStat) {
+            throw createFileSystemProviderError(localize('fileMoveCopyErrorNotFound', "File to move/copy does not exist"), FileSystemProviderErrorCode.FileNotFound);
+        }
+        const toStat = await this.statIgnoreError(to);
+        if (!toStat) {
+            return;
+        }
+        if (!overwrite) {
+            throw createFileSystemProviderError(localize('fileMoveCopyErrorExists', "File at target already exists and thus will not be moved/copied to unless overwrite is specified"), FileSystemProviderErrorCode.FileExists);
+        }
+        if ((fromStat.type & FileType.File) !== 0 && (toStat.type & FileType.File) !== 0) {
+            return;
+        }
+        else {
+            await this.delete(to, { recursive: true, useTrash: false, atomic: false });
+        }
+    }
+    async cloneFile(from, to) {
+        return this.doCloneFile(from, to, false);
+    }
+    async doCloneFile(from, to, mkdir) {
+        const fromFilePath = this.toFilePath(from);
+        const toFilePath = this.toFilePath(to);
+        const isPathCaseSensitive = !!(this.capabilities & 1024);
+        if (isEqual(fromFilePath, toFilePath, !isPathCaseSensitive)) {
+            return;
+        }
+        const locks = new DisposableStore();
+        try {
+            locks.add(await this.createResourceLock(from));
+            locks.add(await this.createResourceLock(to));
+            if (mkdir) {
+                await promises.mkdir(dirname(toFilePath), { recursive: true });
+            }
+            await promises.copyFile(fromFilePath, toFilePath);
+        }
+        catch (error) {
+            if (error.code === 'ENOENT' && !mkdir) {
+                return this.doCloneFile(from, to, true);
+            }
+            throw this.toFileSystemProviderError(error);
+        }
+        finally {
+            locks.dispose();
+        }
+    }
+    createUniversalWatcher(onChange, onLogMessage, verboseLogging) {
+        return new UniversalWatcherClient(changes => onChange(changes), msg => onLogMessage(msg), verboseLogging);
+    }
+    createNonRecursiveWatcher(onChange, onLogMessage, verboseLogging) {
+        return new NodeJSWatcherClient(changes => onChange(changes), msg => onLogMessage(msg), verboseLogging);
+    }
+    toFileSystemProviderError(error) {
+        if (error instanceof FileSystemProviderError) {
+            return error;
+        }
+        let resultError = error;
+        let code;
+        switch (error.code) {
+            case 'ENOENT':
+                code = FileSystemProviderErrorCode.FileNotFound;
+                break;
+            case 'EISDIR':
+                code = FileSystemProviderErrorCode.FileIsADirectory;
+                break;
+            case 'ENOTDIR':
+                code = FileSystemProviderErrorCode.FileNotADirectory;
+                break;
+            case 'EEXIST':
+                code = FileSystemProviderErrorCode.FileExists;
+                break;
+            case 'EPERM':
+            case 'EACCES':
+                code = FileSystemProviderErrorCode.NoPermissions;
+                break;
+            case 'ERR_UNC_HOST_NOT_ALLOWED':
+                resultError = `${error.message}. Please update the 'security.allowedUNCHosts' setting if you want to allow this host.`;
+                code = FileSystemProviderErrorCode.Unknown;
+                break;
+            default:
+                code = FileSystemProviderErrorCode.Unknown;
+        }
+        return createFileSystemProviderError(resultError, code);
+    }
+    async toFileSystemProviderWriteError(resource, error) {
+        let fileSystemProviderWriteError = this.toFileSystemProviderError(error);
+        if (resource && fileSystemProviderWriteError.code === FileSystemProviderErrorCode.NoPermissions) {
+            try {
+                const { stat } = await SymlinkSupport.stat(this.toFilePath(resource));
+                if (!(stat.mode & 0o200)) {
+                    fileSystemProviderWriteError = createFileSystemProviderError(error, FileSystemProviderErrorCode.FileWriteLocked);
+                }
+            }
+            catch (error) {
+                this.logService.trace(error);
+            }
+        }
+        return fileSystemProviderWriteError;
+    }
+}

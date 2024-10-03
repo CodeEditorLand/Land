@@ -1,1 +1,31 @@
-class r{_startIndex;_endIndex;get dataOffset(){return this._startIndex}get dirtySize(){if(!(this._startIndex===void 0||this._endIndex===void 0))return this._endIndex-this._startIndex+1}get isDirty(){return this._startIndex!==void 0}flag(e,n=1){return this._flag(e),n>1&&this._flag(e+n-1),e}_flag(e){(this._startIndex===void 0||e<this._startIndex)&&(this._startIndex=e),(this._endIndex===void 0||e>this._endIndex)&&(this._endIndex=e)}clear(){this._startIndex=void 0,this._endIndex=void 0}}export{r as BufferDirtyTracker};
+export class BufferDirtyTracker {
+    get dataOffset() {
+        return this._startIndex;
+    }
+    get dirtySize() {
+        if (this._startIndex === undefined || this._endIndex === undefined) {
+            return undefined;
+        }
+        return this._endIndex - this._startIndex + 1;
+    }
+    get isDirty() { return this._startIndex !== undefined; }
+    flag(index, length = 1) {
+        this._flag(index);
+        if (length > 1) {
+            this._flag(index + length - 1);
+        }
+        return index;
+    }
+    _flag(index) {
+        if (this._startIndex === undefined || index < this._startIndex) {
+            this._startIndex = index;
+        }
+        if (this._endIndex === undefined || index > this._endIndex) {
+            this._endIndex = index;
+        }
+    }
+    clear() {
+        this._startIndex = undefined;
+        this._endIndex = undefined;
+    }
+}

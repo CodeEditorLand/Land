@@ -1,3 +1,30 @@
-import"../../log/common/log.js";import"./profilingModel.js";import"../../telemetry/common/telemetry.js";import{errorHandler as i}from"../../../base/common/errors.js";function g(r,e,o,n){const{sample:a,perfBaseline:l,source:s}=r;e.publicLog2("unresponsive.sample",{perfBaseline:l,selfTime:a.selfTime,totalTime:a.totalTime,percentage:a.percentage,functionName:a.location,callers:a.caller.map(t=>t.location).join("<"),callersAnnotated:a.caller.map(t=>`${t.percentage}|${t.location}`).join("<"),source:s});const m=new c(r);n?i.onUnexpectedError(m):o.error(m)}class c extends Error{selfTime;constructor(e){super(`PerfSampleError: by ${e.source} in ${e.sample.location}`),this.name="PerfSampleError",this.selfTime=e.sample.selfTime;const o=[e.sample.absLocation,...e.sample.caller.map(n=>n.absLocation)];this.stack=`
-	 at ${o.join(`
-	 at `)}`}}export{g as reportSample};
+import { errorHandler } from '../../../base/common/errors.js';
+export function reportSample(data, telemetryService, logService, sendAsErrorTelemtry) {
+    const { sample, perfBaseline, source } = data;
+    telemetryService.publicLog2(`unresponsive.sample`, {
+        perfBaseline,
+        selfTime: sample.selfTime,
+        totalTime: sample.totalTime,
+        percentage: sample.percentage,
+        functionName: sample.location,
+        callers: sample.caller.map(c => c.location).join('<'),
+        callersAnnotated: sample.caller.map(c => `${c.percentage}|${c.location}`).join('<'),
+        source
+    });
+    const fakeError = new PerformanceError(data);
+    if (sendAsErrorTelemtry) {
+        errorHandler.onUnexpectedError(fakeError);
+    }
+    else {
+        logService.error(fakeError);
+    }
+}
+class PerformanceError extends Error {
+    constructor(data) {
+        super(`PerfSampleError: by ${data.source} in ${data.sample.location}`);
+        this.name = 'PerfSampleError';
+        this.selfTime = data.sample.selfTime;
+        const trace = [data.sample.absLocation, ...data.sample.caller.map(c => c.absLocation)];
+        this.stack = `\n\t at ${trace.join('\n\t at ')}`;
+    }
+}

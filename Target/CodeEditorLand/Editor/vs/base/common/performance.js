@@ -1,1 +1,65 @@
-function a(e){const r=[];typeof e=="number"&&r.push("code/timeOrigin",e);function n(t){r.push(t,Date.now())}function m(){const t=[];for(let o=0;o<r.length;o+=2)t.push({name:r[o],startTime:r[o+1]});return t}return{mark:n,getMarks:m}}function c(){if(typeof performance=="object"&&typeof performance.mark=="function"&&!performance.nodeTiming)return typeof performance.timeOrigin!="number"&&!performance.timing?a():{mark(e){performance.mark(e)},getMarks(){let e=performance.timeOrigin;typeof e!="number"&&(e=performance.timing.navigationStart||performance.timing.redirectStart||performance.timing.fetchStart);const r=[{name:"code/timeOrigin",startTime:Math.round(e)}];for(const n of performance.getEntriesByType("mark"))r.push({name:n.name,startTime:Math.round(e+n.startTime)});return r}};if(typeof process=="object"){const e=performance?.timeOrigin;return a(e)}else return a()}function f(e){return e.MonacoPerformanceMarks||(e.MonacoPerformanceMarks=c()),e.MonacoPerformanceMarks}const i=f(globalThis),s=i.mark,p=i.getMarks;export{p as getMarks,s as mark};
+function _definePolyfillMarks(timeOrigin) {
+    const _data = [];
+    if (typeof timeOrigin === 'number') {
+        _data.push('code/timeOrigin', timeOrigin);
+    }
+    function mark(name) {
+        _data.push(name, Date.now());
+    }
+    function getMarks() {
+        const result = [];
+        for (let i = 0; i < _data.length; i += 2) {
+            result.push({
+                name: _data[i],
+                startTime: _data[i + 1],
+            });
+        }
+        return result;
+    }
+    return { mark, getMarks };
+}
+function _define() {
+    if (typeof performance === 'object' && typeof performance.mark === 'function' && !performance.nodeTiming) {
+        if (typeof performance.timeOrigin !== 'number' && !performance.timing) {
+            return _definePolyfillMarks();
+        }
+        else {
+            return {
+                mark(name) {
+                    performance.mark(name);
+                },
+                getMarks() {
+                    let timeOrigin = performance.timeOrigin;
+                    if (typeof timeOrigin !== 'number') {
+                        timeOrigin = performance.timing.navigationStart || performance.timing.redirectStart || performance.timing.fetchStart;
+                    }
+                    const result = [{ name: 'code/timeOrigin', startTime: Math.round(timeOrigin) }];
+                    for (const entry of performance.getEntriesByType('mark')) {
+                        result.push({
+                            name: entry.name,
+                            startTime: Math.round(timeOrigin + entry.startTime)
+                        });
+                    }
+                    return result;
+                }
+            };
+        }
+    }
+    else if (typeof process === 'object') {
+        const timeOrigin = performance?.timeOrigin;
+        return _definePolyfillMarks(timeOrigin);
+    }
+    else {
+        console.trace('perf-util loaded in UNKNOWN environment');
+        return _definePolyfillMarks();
+    }
+}
+function _factory(sharedObj) {
+    if (!sharedObj.MonacoPerformanceMarks) {
+        sharedObj.MonacoPerformanceMarks = _define();
+    }
+    return sharedObj.MonacoPerformanceMarks;
+}
+const perf = _factory(globalThis);
+export const mark = perf.mark;
+export const getMarks = perf.getMarks;

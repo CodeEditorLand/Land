@@ -1,1 +1,70 @@
-var f=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var c=(t,e,i,s)=>{for(var r=s>1?void 0:s?m(e,i):e,o=t.length-1,p;o>=0;o--)(p=t[o])&&(r=(s?p(e,i,r):p(r))||r);return s&&r&&f(e,i,r),r},a=(t,e)=>(i,s)=>e(i,s,t);import{DisposableMap as y,DisposableStore as v,Disposable as V}from"../../../../base/common/lifecycle.js";import"../../../../editor/browser/editorExtensions.js";import{AccessibleViewType as d,ExtensionContentProvider as b}from"../../../../platform/accessibility/browser/accessibleView.js";import{AccessibleViewRegistry as I}from"../../../../platform/accessibility/browser/accessibleViewRegistry.js";import{IKeybindingService as h}from"../../../../platform/keybinding/common/keybinding.js";import{Registry as l}from"../../../../platform/registry/common/platform.js";import{FocusedViewContext as D}from"../../../common/contextkeys.js";import{Extensions as w}from"../../../common/views.js";import{IViewsService as R}from"../../../services/views/common/viewsService.js";let n=class extends V{static ID="extensionAccessibilityHelpDialogContribution";_viewHelpDialogMap=this._register(new y);constructor(e){super(),this._register(l.as(w.ViewsRegistry).onViewsRegistered(i=>{for(const s of i)for(const r of s.views)r.accessibilityHelpContent&&this._viewHelpDialogMap.set(r.id,g(e,r))})),this._register(l.as(w.ViewsRegistry).onViewsDeregistered(i=>{for(const s of i.views)s.accessibilityHelpContent&&this._viewHelpDialogMap.get(s.id)?.dispose()}))}};n=c([a(0,h)],n);function g(t,e){const i=new v,s=e.accessibilityHelpContent?.value;if(!s)throw new Error("No content provided for the accessibility help dialog");return i.add(I.register({priority:95,name:e.id,type:d.Help,when:D.isEqualTo(e.id),getProvider:r=>{const o=r.get(R);return new b(e.id,{type:d.Help},()=>s,()=>o.openView(e.id,!0))}})),i.add(t.onDidUpdateKeybindings(()=>{i.clear(),i.add(g(t,e))})),i}export{n as ExtensionAccessibilityHelpDialogContribution};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { DisposableMap, DisposableStore, Disposable } from '../../../../base/common/lifecycle.js';
+import { ExtensionContentProvider } from '../../../../platform/accessibility/browser/accessibleView.js';
+import { AccessibleViewRegistry } from '../../../../platform/accessibility/browser/accessibleViewRegistry.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { FocusedViewContext } from '../../../common/contextkeys.js';
+import { Extensions } from '../../../common/views.js';
+import { IViewsService } from '../../../services/views/common/viewsService.js';
+let ExtensionAccessibilityHelpDialogContribution = class ExtensionAccessibilityHelpDialogContribution extends Disposable {
+    static { this.ID = 'extensionAccessibilityHelpDialogContribution'; }
+    constructor(keybindingService) {
+        super();
+        this._viewHelpDialogMap = this._register(new DisposableMap());
+        this._register(Registry.as(Extensions.ViewsRegistry).onViewsRegistered(e => {
+            for (const view of e) {
+                for (const viewDescriptor of view.views) {
+                    if (viewDescriptor.accessibilityHelpContent) {
+                        this._viewHelpDialogMap.set(viewDescriptor.id, registerAccessibilityHelpAction(keybindingService, viewDescriptor));
+                    }
+                }
+            }
+        }));
+        this._register(Registry.as(Extensions.ViewsRegistry).onViewsDeregistered(e => {
+            for (const viewDescriptor of e.views) {
+                if (viewDescriptor.accessibilityHelpContent) {
+                    this._viewHelpDialogMap.get(viewDescriptor.id)?.dispose();
+                }
+            }
+        }));
+    }
+};
+ExtensionAccessibilityHelpDialogContribution = __decorate([
+    __param(0, IKeybindingService),
+    __metadata("design:paramtypes", [Object])
+], ExtensionAccessibilityHelpDialogContribution);
+export { ExtensionAccessibilityHelpDialogContribution };
+function registerAccessibilityHelpAction(keybindingService, viewDescriptor) {
+    const disposableStore = new DisposableStore();
+    const content = viewDescriptor.accessibilityHelpContent?.value;
+    if (!content) {
+        throw new Error('No content provided for the accessibility help dialog');
+    }
+    disposableStore.add(AccessibleViewRegistry.register({
+        priority: 95,
+        name: viewDescriptor.id,
+        type: "help",
+        when: FocusedViewContext.isEqualTo(viewDescriptor.id),
+        getProvider: (accessor) => {
+            const viewsService = accessor.get(IViewsService);
+            return new ExtensionContentProvider(viewDescriptor.id, { type: "help" }, () => content, () => viewsService.openView(viewDescriptor.id, true));
+        },
+    }));
+    disposableStore.add(keybindingService.onDidUpdateKeybindings(() => {
+        disposableStore.clear();
+        disposableStore.add(registerAccessibilityHelpAction(keybindingService, viewDescriptor));
+    }));
+    return disposableStore;
+}

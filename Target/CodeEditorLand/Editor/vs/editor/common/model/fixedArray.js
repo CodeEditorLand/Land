@@ -1,1 +1,59 @@
-import{arrayInsert as l}from"../../../base/common/arrays.js";class c{constructor(t){this._default=t}_store=[];get(t){return t<this._store.length?this._store[t]:this._default}set(t,r){for(;t>=this._store.length;)this._store[this._store.length]=this._default;this._store[t]=r}replace(t,r,e){if(t>=this._store.length)return;if(r===0){this.insert(t,e);return}else if(e===0){this.delete(t,r);return}const s=this._store.slice(0,t),o=this._store.slice(t+r),u=h(e,this._default);this._store=s.concat(u,o)}delete(t,r){r===0||t>=this._store.length||this._store.splice(t,r)}insert(t,r){if(r===0||t>=this._store.length)return;const e=[];for(let s=0;s<r;s++)e[s]=this._default;this._store=l(this._store,t,e)}}function h(i,t){const r=[];for(let e=0;e<i;e++)r[e]=t;return r}export{c as FixedArray};
+import { arrayInsert } from '../../../base/common/arrays.js';
+export class FixedArray {
+    constructor(_default) {
+        this._default = _default;
+        this._store = [];
+    }
+    get(index) {
+        if (index < this._store.length) {
+            return this._store[index];
+        }
+        return this._default;
+    }
+    set(index, value) {
+        while (index >= this._store.length) {
+            this._store[this._store.length] = this._default;
+        }
+        this._store[index] = value;
+    }
+    replace(index, oldLength, newLength) {
+        if (index >= this._store.length) {
+            return;
+        }
+        if (oldLength === 0) {
+            this.insert(index, newLength);
+            return;
+        }
+        else if (newLength === 0) {
+            this.delete(index, oldLength);
+            return;
+        }
+        const before = this._store.slice(0, index);
+        const after = this._store.slice(index + oldLength);
+        const insertArr = arrayFill(newLength, this._default);
+        this._store = before.concat(insertArr, after);
+    }
+    delete(deleteIndex, deleteCount) {
+        if (deleteCount === 0 || deleteIndex >= this._store.length) {
+            return;
+        }
+        this._store.splice(deleteIndex, deleteCount);
+    }
+    insert(insertIndex, insertCount) {
+        if (insertCount === 0 || insertIndex >= this._store.length) {
+            return;
+        }
+        const arr = [];
+        for (let i = 0; i < insertCount; i++) {
+            arr[i] = this._default;
+        }
+        this._store = arrayInsert(this._store, insertIndex, arr);
+    }
+}
+function arrayFill(length, value) {
+    const arr = [];
+    for (let i = 0; i < length; i++) {
+        arr[i] = value;
+    }
+    return arr;
+}

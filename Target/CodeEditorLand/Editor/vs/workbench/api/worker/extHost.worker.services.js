@@ -1,1 +1,10 @@
-import{SyncDescriptor as r}from"../../../platform/instantiation/common/descriptors.js";import{InstantiationType as o,registerSingleton as t}from"../../../platform/instantiation/common/extensions.js";import{ILogService as e}from"../../../platform/log/common/log.js";import{IExtHostExtensionService as i}from"../common/extHostExtensionService.js";import{ExtHostLogService as n}from"../common/extHostLogService.js";import{ExtensionStoragePaths as m,IExtensionStoragePaths as s}from"../common/extHostStoragePaths.js";import{ExtHostExtensionService as p}from"./extHostExtensionService.js";t(e,new r(n,[!0],!0)),t(i,p,o.Eager),t(s,m,o.Eager);
+import { SyncDescriptor } from '../../../platform/instantiation/common/descriptors.js';
+import { registerSingleton } from '../../../platform/instantiation/common/extensions.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { IExtHostExtensionService } from '../common/extHostExtensionService.js';
+import { ExtHostLogService } from '../common/extHostLogService.js';
+import { ExtensionStoragePaths, IExtensionStoragePaths } from '../common/extHostStoragePaths.js';
+import { ExtHostExtensionService } from './extHostExtensionService.js';
+registerSingleton(ILogService, new SyncDescriptor(ExtHostLogService, [true], true));
+registerSingleton(IExtHostExtensionService, ExtHostExtensionService, 0);
+registerSingleton(IExtensionStoragePaths, ExtensionStoragePaths, 0);

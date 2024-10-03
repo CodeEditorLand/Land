@@ -1,1 +1,232 @@
-var D=Object.defineProperty;var F=Object.getOwnPropertyDescriptor;var R=(p,s,e,o)=>{for(var i=o>1?void 0:o?F(s,e):s,r=p.length-1,t;r>=0;r--)(t=p[r])&&(i=(o?t(s,e,i):t(i))||i);return o&&i&&D(s,e,i),i},d=(p,s)=>(e,o)=>s(e,o,p);import{localize as P}from"../../../../nls.js";import{PickerQuickAccessProvider as N,TriggerAction as A}from"../../../../platform/quickinput/browser/pickerQuickAccess.js";import"../../../../base/common/cancellation.js";import"../../../../base/common/lifecycle.js";import{ThrottledDelayer as G}from"../../../../base/common/async.js";import{getWorkspaceSymbols as K}from"../common/search.js";import{SymbolKinds as v,SymbolTag as Y,SymbolKind as l}from"../../../../editor/common/languages.js";import{ILabelService as x}from"../../../../platform/label/common/label.js";import{Schemas as w}from"../../../../base/common/network.js";import{IOpenerService as U}from"../../../../platform/opener/common/opener.js";import{IEditorService as $,SIDE_GROUP as z,ACTIVE_GROUP as V}from"../../../services/editor/common/editorService.js";import{Range as H}from"../../../../editor/common/core/range.js";import{IConfigurationService as X}from"../../../../platform/configuration/common/configuration.js";import"../../../common/editor.js";import"../../../../platform/quickinput/common/quickInput.js";import{ICodeEditorService as j}from"../../../../editor/browser/services/codeEditorService.js";import{getSelectionSearchString as J}from"../../../../editor/contrib/find/browser/findController.js";import{prepareQuery as Z,scoreFuzzy2 as C,pieceToQuery as M}from"../../../../base/common/fuzzyScorer.js";import"../../../../base/common/filters.js";import{Codicon as _}from"../../../../base/common/codicons.js";import{ThemeIcon as W}from"../../../../base/common/themables.js";let c=class extends N{constructor(e,o,i,r,t){super(c.PREFIX,{canAcceptInBackground:!0,noResultsPick:{label:P("noSymbolResults","No matching workspace symbols")}});this.labelService=e;this.openerService=o;this.editorService=i;this.configurationService=r;this.codeEditorService=t}static PREFIX="#";static TYPING_SEARCH_DELAY=200;static TREAT_AS_GLOBAL_SYMBOL_TYPES=new Set([l.Class,l.Enum,l.File,l.Interface,l.Namespace,l.Package,l.Module]);delayer=this._register(new G(c.TYPING_SEARCH_DELAY));get defaultFilterValue(){const e=this.codeEditorService.getFocusedCodeEditor();if(e)return J(e)??void 0}get configuration(){const e=this.configurationService.getValue().workbench?.editor;return{openEditorPinned:!e?.enablePreviewFromQuickOpen||!e?.enablePreview,openSideBySideDirection:e?.openSideBySideDirection}}_getPicks(e,o,i){return this.getSymbolPicks(e,void 0,i)}async getSymbolPicks(e,o,i){return this.delayer.trigger(async()=>i.isCancellationRequested?[]:this.doGetSymbolPicks(Z(e),o,i),o?.delay)}async doGetSymbolPicks(e,o,i){let r,t;e.values&&e.values.length>1?(r=M(e.values[0]),t=M(e.values.slice(1))):r=e;const B=await K(r.original,i);if(i.isCancellationRequested)return[];const b=[],E=this.configuration.openSideBySideDirection;for(const{symbol:n,provider:f}of B){if(o?.skipLocal&&!c.TREAT_AS_GLOBAL_SYMBOL_TYPES.has(n.kind)&&n.containerName)continue;const I=n.name,S=`$(${v.toIcon(n.kind).id}) ${I}`,T=S.length-I.length;let a,k,L=!1;if(r.original.length>0&&(r!==e&&([a,k]=C(S,{...e,values:void 0},0,T),typeof a=="number"&&(L=!0)),typeof a!="number"&&([a,k]=C(S,r,0,T),typeof a!="number")))continue;const g=n.location.uri;let m;if(g){const u=this.labelService.getUriLabel(g,{relative:!0});n.containerName?m=`${n.containerName} \u2022 ${u}`:m=u}let h,O;if(!L&&t&&t.original.length>0){if(m&&([h,O]=C(m,t)),typeof h!="number")continue;typeof a=="number"&&(a+=h)}const Q=n.tags?n.tags.indexOf(Y.Deprecated)>=0:!1;b.push({symbol:n,resource:g,score:a,label:S,ariaLabel:I,highlights:Q?void 0:{label:k,description:O},description:m,strikethrough:Q,buttons:[{iconClass:E==="right"?W.asClassName(_.splitHorizontal):W.asClassName(_.splitVertical),tooltip:E==="right"?P("openToSide","Open to the Side"):P("openToBottom","Open to the Bottom")}],trigger:(u,y)=>(this.openSymbol(f,n,i,{keyMods:y,forceOpenSideBySide:!0}),A.CLOSE_PICKER),accept:async(u,y)=>this.openSymbol(f,n,i,{keyMods:u,preserveFocus:y.inBackground,forcePinned:y.inBackground})})}return o?.skipSorting||b.sort((n,f)=>this.compareSymbols(n,f)),b}async openSymbol(e,o,i,r){let t=o;typeof e.resolveWorkspaceSymbol=="function"&&(t=await e.resolveWorkspaceSymbol(o,i)||o,i.isCancellationRequested)||(t.location.uri.scheme===w.http||t.location.uri.scheme===w.https?await this.openerService.open(t.location.uri,{fromUserGesture:!0,allowContributedOpeners:!0}):await this.editorService.openEditor({resource:t.location.uri,options:{preserveFocus:r?.preserveFocus,pinned:r.keyMods.ctrlCmd||r.forcePinned||this.configuration.openEditorPinned,selection:t.location.range?H.collapseToStart(t.location.range):void 0}},r.keyMods.alt||this.configuration.openEditorPinned&&r.keyMods.ctrlCmd||r?.forceOpenSideBySide?z:V))}compareSymbols(e,o){if(typeof e.score=="number"&&typeof o.score=="number"){if(e.score>o.score)return-1;if(e.score<o.score)return 1}if(e.symbol&&o.symbol){const i=e.symbol.name.toLowerCase(),r=o.symbol.name.toLowerCase(),t=i.localeCompare(r);if(t!==0)return t}if(e.symbol&&o.symbol){const i=v.toIcon(e.symbol.kind).id,r=v.toIcon(o.symbol.kind).id;return i.localeCompare(r)}return 0}};c=R([d(0,x),d(1,U),d(2,$),d(3,X),d(4,j)],c);export{c as SymbolsQuickAccessProvider};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SymbolsQuickAccessProvider_1;
+import { localize } from '../../../../nls.js';
+import { PickerQuickAccessProvider, TriggerAction } from '../../../../platform/quickinput/browser/pickerQuickAccess.js';
+import { ThrottledDelayer } from '../../../../base/common/async.js';
+import { getWorkspaceSymbols } from '../common/search.js';
+import { SymbolKinds } from '../../../../editor/common/languages.js';
+import { ILabelService } from '../../../../platform/label/common/label.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { IEditorService, SIDE_GROUP, ACTIVE_GROUP } from '../../../services/editor/common/editorService.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { getSelectionSearchString } from '../../../../editor/contrib/find/browser/findController.js';
+import { prepareQuery, scoreFuzzy2, pieceToQuery } from '../../../../base/common/fuzzyScorer.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+let SymbolsQuickAccessProvider = class SymbolsQuickAccessProvider extends PickerQuickAccessProvider {
+    static { SymbolsQuickAccessProvider_1 = this; }
+    static { this.PREFIX = '#'; }
+    static { this.TYPING_SEARCH_DELAY = 200; }
+    static { this.TREAT_AS_GLOBAL_SYMBOL_TYPES = new Set([
+        4,
+        9,
+        0,
+        10,
+        2,
+        3,
+        1
+    ]); }
+    get defaultFilterValue() {
+        const editor = this.codeEditorService.getFocusedCodeEditor();
+        if (editor) {
+            return getSelectionSearchString(editor) ?? undefined;
+        }
+        return undefined;
+    }
+    constructor(labelService, openerService, editorService, configurationService, codeEditorService) {
+        super(SymbolsQuickAccessProvider_1.PREFIX, {
+            canAcceptInBackground: true,
+            noResultsPick: {
+                label: localize('noSymbolResults', "No matching workspace symbols")
+            }
+        });
+        this.labelService = labelService;
+        this.openerService = openerService;
+        this.editorService = editorService;
+        this.configurationService = configurationService;
+        this.codeEditorService = codeEditorService;
+        this.delayer = this._register(new ThrottledDelayer(SymbolsQuickAccessProvider_1.TYPING_SEARCH_DELAY));
+    }
+    get configuration() {
+        const editorConfig = this.configurationService.getValue().workbench?.editor;
+        return {
+            openEditorPinned: !editorConfig?.enablePreviewFromQuickOpen || !editorConfig?.enablePreview,
+            openSideBySideDirection: editorConfig?.openSideBySideDirection
+        };
+    }
+    _getPicks(filter, disposables, token) {
+        return this.getSymbolPicks(filter, undefined, token);
+    }
+    async getSymbolPicks(filter, options, token) {
+        return this.delayer.trigger(async () => {
+            if (token.isCancellationRequested) {
+                return [];
+            }
+            return this.doGetSymbolPicks(prepareQuery(filter), options, token);
+        }, options?.delay);
+    }
+    async doGetSymbolPicks(query, options, token) {
+        let symbolQuery;
+        let containerQuery;
+        if (query.values && query.values.length > 1) {
+            symbolQuery = pieceToQuery(query.values[0]);
+            containerQuery = pieceToQuery(query.values.slice(1));
+        }
+        else {
+            symbolQuery = query;
+        }
+        const workspaceSymbols = await getWorkspaceSymbols(symbolQuery.original, token);
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        const symbolPicks = [];
+        const openSideBySideDirection = this.configuration.openSideBySideDirection;
+        for (const { symbol, provider } of workspaceSymbols) {
+            if (options?.skipLocal && !SymbolsQuickAccessProvider_1.TREAT_AS_GLOBAL_SYMBOL_TYPES.has(symbol.kind) && !!symbol.containerName) {
+                continue;
+            }
+            const symbolLabel = symbol.name;
+            const symbolLabelWithIcon = `$(${SymbolKinds.toIcon(symbol.kind).id}) ${symbolLabel}`;
+            const symbolLabelIconOffset = symbolLabelWithIcon.length - symbolLabel.length;
+            let symbolScore = undefined;
+            let symbolMatches = undefined;
+            let skipContainerQuery = false;
+            if (symbolQuery.original.length > 0) {
+                if (symbolQuery !== query) {
+                    [symbolScore, symbolMatches] = scoreFuzzy2(symbolLabelWithIcon, { ...query, values: undefined }, 0, symbolLabelIconOffset);
+                    if (typeof symbolScore === 'number') {
+                        skipContainerQuery = true;
+                    }
+                }
+                if (typeof symbolScore !== 'number') {
+                    [symbolScore, symbolMatches] = scoreFuzzy2(symbolLabelWithIcon, symbolQuery, 0, symbolLabelIconOffset);
+                    if (typeof symbolScore !== 'number') {
+                        continue;
+                    }
+                }
+            }
+            const symbolUri = symbol.location.uri;
+            let containerLabel = undefined;
+            if (symbolUri) {
+                const containerPath = this.labelService.getUriLabel(symbolUri, { relative: true });
+                if (symbol.containerName) {
+                    containerLabel = `${symbol.containerName} • ${containerPath}`;
+                }
+                else {
+                    containerLabel = containerPath;
+                }
+            }
+            let containerScore = undefined;
+            let containerMatches = undefined;
+            if (!skipContainerQuery && containerQuery && containerQuery.original.length > 0) {
+                if (containerLabel) {
+                    [containerScore, containerMatches] = scoreFuzzy2(containerLabel, containerQuery);
+                }
+                if (typeof containerScore !== 'number') {
+                    continue;
+                }
+                if (typeof symbolScore === 'number') {
+                    symbolScore += containerScore;
+                }
+            }
+            const deprecated = symbol.tags ? symbol.tags.indexOf(1) >= 0 : false;
+            symbolPicks.push({
+                symbol,
+                resource: symbolUri,
+                score: symbolScore,
+                label: symbolLabelWithIcon,
+                ariaLabel: symbolLabel,
+                highlights: deprecated ? undefined : {
+                    label: symbolMatches,
+                    description: containerMatches
+                },
+                description: containerLabel,
+                strikethrough: deprecated,
+                buttons: [
+                    {
+                        iconClass: openSideBySideDirection === 'right' ? ThemeIcon.asClassName(Codicon.splitHorizontal) : ThemeIcon.asClassName(Codicon.splitVertical),
+                        tooltip: openSideBySideDirection === 'right' ? localize('openToSide', "Open to the Side") : localize('openToBottom', "Open to the Bottom")
+                    }
+                ],
+                trigger: (buttonIndex, keyMods) => {
+                    this.openSymbol(provider, symbol, token, { keyMods, forceOpenSideBySide: true });
+                    return TriggerAction.CLOSE_PICKER;
+                },
+                accept: async (keyMods, event) => this.openSymbol(provider, symbol, token, { keyMods, preserveFocus: event.inBackground, forcePinned: event.inBackground }),
+            });
+        }
+        if (!options?.skipSorting) {
+            symbolPicks.sort((symbolA, symbolB) => this.compareSymbols(symbolA, symbolB));
+        }
+        return symbolPicks;
+    }
+    async openSymbol(provider, symbol, token, options) {
+        let symbolToOpen = symbol;
+        if (typeof provider.resolveWorkspaceSymbol === 'function') {
+            symbolToOpen = await provider.resolveWorkspaceSymbol(symbol, token) || symbol;
+            if (token.isCancellationRequested) {
+                return;
+            }
+        }
+        if (symbolToOpen.location.uri.scheme === Schemas.http || symbolToOpen.location.uri.scheme === Schemas.https) {
+            await this.openerService.open(symbolToOpen.location.uri, { fromUserGesture: true, allowContributedOpeners: true });
+        }
+        else {
+            await this.editorService.openEditor({
+                resource: symbolToOpen.location.uri,
+                options: {
+                    preserveFocus: options?.preserveFocus,
+                    pinned: options.keyMods.ctrlCmd || options.forcePinned || this.configuration.openEditorPinned,
+                    selection: symbolToOpen.location.range ? Range.collapseToStart(symbolToOpen.location.range) : undefined
+                }
+            }, options.keyMods.alt || (this.configuration.openEditorPinned && options.keyMods.ctrlCmd) || options?.forceOpenSideBySide ? SIDE_GROUP : ACTIVE_GROUP);
+        }
+    }
+    compareSymbols(symbolA, symbolB) {
+        if (typeof symbolA.score === 'number' && typeof symbolB.score === 'number') {
+            if (symbolA.score > symbolB.score) {
+                return -1;
+            }
+            if (symbolA.score < symbolB.score) {
+                return 1;
+            }
+        }
+        if (symbolA.symbol && symbolB.symbol) {
+            const symbolAName = symbolA.symbol.name.toLowerCase();
+            const symbolBName = symbolB.symbol.name.toLowerCase();
+            const res = symbolAName.localeCompare(symbolBName);
+            if (res !== 0) {
+                return res;
+            }
+        }
+        if (symbolA.symbol && symbolB.symbol) {
+            const symbolAKind = SymbolKinds.toIcon(symbolA.symbol.kind).id;
+            const symbolBKind = SymbolKinds.toIcon(symbolB.symbol.kind).id;
+            return symbolAKind.localeCompare(symbolBKind);
+        }
+        return 0;
+    }
+};
+SymbolsQuickAccessProvider = SymbolsQuickAccessProvider_1 = __decorate([
+    __param(0, ILabelService),
+    __param(1, IOpenerService),
+    __param(2, IEditorService),
+    __param(3, IConfigurationService),
+    __param(4, ICodeEditorService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+], SymbolsQuickAccessProvider);
+export { SymbolsQuickAccessProvider };

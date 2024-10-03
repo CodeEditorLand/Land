@@ -1,1 +1,4 @@
-import{Codicon as i}from"../../../../base/common/codicons.js";import{localize as o}from"../../../../nls.js";import{registerIcon as t}from"../../../../platform/theme/common/iconRegistry.js";const e=t("multi-diff-editor-label-icon",i.diffMultiple,o("multiDiffEditorLabelIcon","Icon of the multi diff editor label."));export{e as MultiDiffEditorIcon};
+import { Codicon } from '../../../../base/common/codicons.js';
+import { localize } from '../../../../nls.js';
+import { registerIcon } from '../../../../platform/theme/common/iconRegistry.js';
+export const MultiDiffEditorIcon = registerIcon('multi-diff-editor-label-icon', Codicon.diffMultiple, localize('multiDiffEditorLabelIcon', 'Icon of the multi diff editor label.'));

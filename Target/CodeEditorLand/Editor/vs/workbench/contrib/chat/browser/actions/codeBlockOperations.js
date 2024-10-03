@@ -1,2 +1,424 @@
-var O=Object.defineProperty;var W=Object.getOwnPropertyDescriptor;var h=(r,e,t,i)=>{for(var o=i>1?void 0:i?W(e,t):e,n=r.length-1,s;n>=0;n--)(s=r[n])&&(o=(i?s(e,t,o):s(o))||o);return i&&o&&O(e,t,o),o},d=(r,e)=>(t,i)=>e(t,i,r);import{coalesce as V}from"../../../../../base/common/arrays.js";import{AsyncIterableObject as q}from"../../../../../base/common/async.js";import{VSBuffer as z}from"../../../../../base/common/buffer.js";import{CancellationTokenSource as y}from"../../../../../base/common/cancellation.js";import{CharCode as k}from"../../../../../base/common/charCode.js";import{isCancellationError as _}from"../../../../../base/common/errors.js";import{isEqual as b}from"../../../../../base/common/resources.js";import*as j from"../../../../../base/common/strings.js";import{isCodeEditor as K,isDiffEditor as X}from"../../../../../editor/browser/editorBrowser.js";import{IBulkEditService as w,ResourceTextEdit as g}from"../../../../../editor/browser/services/bulkEditService.js";import{ICodeEditorService as A}from"../../../../../editor/browser/services/codeEditorService.js";import{Range as G}from"../../../../../editor/common/core/range.js";import"../../../../../editor/common/languages.js";import{ILanguageService as M}from"../../../../../editor/common/languages/language.js";import"../../../../../editor/common/model.js";import{ILanguageFeaturesService as H}from"../../../../../editor/common/services/languageFeatures.js";import{localize as v}from"../../../../../nls.js";import{IDialogService as x}from"../../../../../platform/dialogs/common/dialogs.js";import{IFileService as J}from"../../../../../platform/files/common/files.js";import{ILogService as Q}from"../../../../../platform/log/common/log.js";import{IProgressService as Y,ProgressLocation as Z}from"../../../../../platform/progress/common/progress.js";import{IEditorService as T}from"../../../../services/editor/common/editorService.js";import{ITextFileService as P}from"../../../../services/textfile/common/textfiles.js";import{InlineChatController as $}from"../../../inlineChat/browser/inlineChatController.js";import{insertCell as R}from"../../../notebook/browser/controller/cellOperations.js";import"../../../notebook/browser/notebookBrowser.js";import{CellKind as F,NOTEBOOK_EDITOR_ID as ee}from"../../../notebook/common/notebookCommon.js";import{getReferencesAsDocumentContext as te}from"../../common/chatCodeMapperService.js";import{IChatService as N}from"../../common/chatService.js";import{isRequestVM as ie,isResponseVM as C}from"../../common/chatViewModel.js";import"../codeBlockPart.js";let f=class{constructor(e,t,i,o,n,s,a){this.editorService=e;this.textFileService=t;this.bulkEditService=i;this.codeEditorService=o;this.chatService=n;this.languageService=s;this.dialogService=a}async run(e){const t=S(this.editorService);if(t)await this.handleTextEditor(t,e);else{const i=I(this.editorService);i?await this.handleNotebookEditor(i,e):this.notify(v("insertCodeBlock.noActiveEditor","To insert the code block, open a code editor or notebook editor and set the cursor at the location where to insert the code block."))}B(this.chatService,e,{kind:"insert",codeBlockIndex:e.codeBlockIndex,totalCharacters:e.code.length})}async handleNotebookEditor(e,t){if(e.isReadOnly)return this.notify(v("insertCodeBlock.readonlyNotebook","Cannot insert the code block to read-only notebook editor.")),!1;const i=e.getFocus(),o=Math.max(i.end-1,0);return R(this.languageService,e,o,F.Code,"below",t.code,!0),!0}async handleTextEditor(e,t){const i=e.getModel();if(L(i,this.textFileService))return this.notify(v("insertCodeBlock.readonly","Cannot insert the code block to read-only code editor.")),!1;const o=e.getSelection()??new G(i.getLineCount(),1,i.getLineCount(),1),n=se(t.code,i,o.startLineNumber),s=[new g(i.uri,{range:o,text:n})];return await this.bulkEditService.apply(s),this.codeEditorService.listCodeEditors().find(a=>a.getModel()?.uri.toString()===i.uri.toString())?.focus(),!0}notify(e){this.dialogService.info(e)}};f=h([d(0,T),d(1,P),d(2,w),d(3,A),d(4,N),d(5,M),d(6,x)],f);let m=class{constructor(e,t,i,o,n,s,a,l,c,u,p){this.editorService=e;this.textFileService=t;this.bulkEditService=i;this.codeEditorService=o;this.chatService=n;this.languageFeaturesService=s;this.progressService=a;this.languageService=l;this.fileService=c;this.dialogService=u;this.logService=p}inlineChatPreview;async run(e){if(this.inlineChatPreview&&this.inlineChatPreview.isOpen()){await this.dialogService.info(v("overlap","Another code change is being previewed. Please apply or discard the pending changes first."));return}let t=S(this.editorService);if(e.codemapperUri&&!b(t?.getModel().uri,e.codemapperUri))try{await this.fileService.exists(e.codemapperUri)||await this.fileService.writeFile(e.codemapperUri,z.fromString("")),await this.editorService.openEditor({resource:e.codemapperUri}),t=S(this.editorService),t&&this.tryToRevealCodeBlock(t,e.code)}catch(o){this.logService.info("[ApplyCodeBlockOperation] error opening code mapper file",e.codemapperUri,o)}let i;if(t)await this.handleTextEditor(t,e);else{const o=I(this.editorService);o?i=await this.handleNotebookEditor(o,e):this.notify(v("applyCodeBlock.noActiveEditor","To apply this code block, open a code or notebook editor."))}B(this.chatService,e,{kind:"apply",codeBlockIndex:e.codeBlockIndex,totalCharacters:e.code.length,codeMapper:i?.codeMapper,editsProposed:!!i?.edits})}async handleNotebookEditor(e,t){if(e.isReadOnly){this.notify(v("applyCodeBlock.readonlyNotebook","Cannot apply code block to read-only notebook editor."));return}const i=e.getFocus(),o=Math.max(i.end-1,0);R(this.languageService,e,o,F.Code,"below",t.code,!0)}async handleTextEditor(e,t){if(L(e.getModel(),this.textFileService)){this.notify(v("applyCodeBlock.readonly","Cannot apply code block to read-only file."));return}const i=await this.computeEdits(e,t);if(i.edits&&!await this.applyWithInlinePreview(i.edits,e)){await this.bulkEditService.apply(i.edits,{showPreview:!0});const n=e.getModel();this.codeEditorService.listCodeEditors().find(s=>s.getModel()?.uri.toString()===n.uri.toString())?.focus()}return i}async computeEdits(e,t){const i=e.getModel(),o=this.languageFeaturesService.mappedEditsProvider.ordered(i);if(o.length>0){const n=[];oe(e,n),re(t,n);const s=new y;let a;try{const l=await this.progressService.withProgress({location:Z.Notification,delay:500,sticky:!0,cancellable:!0},async c=>{for(const u of o){a=u.displayName,c.report({message:v("applyCodeBlock.progress","Applying code block using {0}...",a)});const p=await u.provideMappedEdits(i,[t.code],{documents:n,conversation:ne(t)},s.token);if(p)return{edits:p.edits,codeMapper:a}}},()=>s.cancel());if(l)return l}catch(l){_(l)||this.notify(v("applyCodeBlock.error","Failed to apply code block: {0}",l.message))}finally{s.dispose()}return{edits:[],codeMapper:a}}return{edits:[],codeMapper:void 0}}async applyWithInlinePreview(e,t){const i=e[0];if(!g.is(i))return!1;const o=i.resource,n=V(e.map(a=>g.is(a)&&b(o,a.resource)?a.textEdit:void 0));if(n.length!==e.length)return!1;const s=await this.codeEditorService.openCodeEditor({resource:o},t);if(s){const a=$.get(s);if(a){const l=new y;let c=!0;const u=n[0];s.revealLineInCenterIfOutsideViewport(u.range.startLineNumber);const p=a.reviewEdits(n[0].range,q.fromArray(n),l.token);return p.finally(()=>{c=!1,l.dispose()}),this.inlineChatPreview={promise:p,isOpen:()=>c,cancel:()=>l.cancel()},!0}}return!1}tryToRevealCodeBlock(e,t){const i=t.match(/(\S[^\n]*)\n/);if(i&&i[1].length>10){const o=e.getModel().findNextMatch(i[1],{lineNumber:1,column:1},!1,!1,null,!1);o&&e.revealRangeInCenter(o.range)}}notify(e){this.dialogService.info(e)}};m=h([d(0,T),d(1,P),d(2,w),d(3,A),d(4,N),d(5,H),d(6,Y),d(7,M),d(8,J),d(9,x),d(10,Q)],m);function B(r,e,t){C(e.element)&&r.notifyUserAction({agentId:e.element.agent?.id,command:e.element.slashCommand?.name,sessionId:e.element.sessionId,requestId:e.element.requestId,result:e.element.result,action:t})}function I(r){const e=r.activeEditorPane;if(e?.getId()===ee){const t=e.getControl();if(t.hasModel())return t}}function S(r){const e=I(r)?.activeCodeEditor;if(e&&e.hasTextFocus()&&e.hasModel())return e;let t=r.activeTextEditorControl;if(X(t)&&(t=t.getOriginalEditor().hasTextFocus()?t.getOriginalEditor():t.getModifiedEditor()),!!K(t)&&t.hasModel())return t}function L(r,e){return!!(e.files.get(r.uri)??e.untitled.get(r.uri))?.isReadonly()}function oe(r,e){const t=r.getModel(),i=t.uri,o=t.getVersionId(),n=r.getSelections();n.length>0&&e.push([{uri:i,version:o,ranges:n}])}function re(r,e){C(r.element)&&r.element.usedContext?.documents&&e.push(r.element.usedContext.documents)}function ne(r){return C(r.element)?[{type:"response",message:r.element.response.toMarkdown(),references:te(r.element.contentReferences)}]:ie(r.element)?[{type:"request",message:r.element.messageText}]:[]}function se(r,e,t){const i=j.splitLines(r);if(i.length===0)return r;const o=e.getFormattingOptions(),n=D(e.getLineContent(t),o.tabSize).level,s=i.map(c=>D(c,o.tabSize)),a=s.reduce((c,u,p)=>u.length!==i[p].length?Math.min(u.level,c):c,Number.MAX_VALUE);if(a===Number.MAX_VALUE||a===n)return r;const l=[];for(let c=0;c<i.length;c++){const{level:u,length:p}=s[c],E=Math.max(0,n+u-a),U=o.insertSpaces?" ".repeat(o.tabSize*E):"	".repeat(E);l.push(U+i[c].substring(p))}return l.join(`
-`)}function D(r,e){let t=0,i=0,o=0,n=0;const s=r.length;for(;o<s;){const a=r.charCodeAt(o);if(a===k.Space)t++,t===e&&(i++,t=0,n=o+1);else if(a===k.Tab)i++,t=0,n=o+1;else break;o++}return{level:i,length:n}}export{m as ApplyCodeBlockOperation,f as InsertCodeBlockOperation,D as computeIndentation};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { coalesce } from '../../../../../base/common/arrays.js';
+import { AsyncIterableObject } from '../../../../../base/common/async.js';
+import { VSBuffer } from '../../../../../base/common/buffer.js';
+import { CancellationTokenSource } from '../../../../../base/common/cancellation.js';
+import { isCancellationError } from '../../../../../base/common/errors.js';
+import { isEqual } from '../../../../../base/common/resources.js';
+import * as strings from '../../../../../base/common/strings.js';
+import { isCodeEditor, isDiffEditor } from '../../../../../editor/browser/editorBrowser.js';
+import { IBulkEditService, ResourceTextEdit } from '../../../../../editor/browser/services/bulkEditService.js';
+import { ICodeEditorService } from '../../../../../editor/browser/services/codeEditorService.js';
+import { Range } from '../../../../../editor/common/core/range.js';
+import { ILanguageService } from '../../../../../editor/common/languages/language.js';
+import { ILanguageFeaturesService } from '../../../../../editor/common/services/languageFeatures.js';
+import { localize } from '../../../../../nls.js';
+import { IDialogService } from '../../../../../platform/dialogs/common/dialogs.js';
+import { IFileService } from '../../../../../platform/files/common/files.js';
+import { ILogService } from '../../../../../platform/log/common/log.js';
+import { IProgressService } from '../../../../../platform/progress/common/progress.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+import { ITextFileService } from '../../../../services/textfile/common/textfiles.js';
+import { InlineChatController } from '../../../inlineChat/browser/inlineChatController.js';
+import { insertCell } from '../../../notebook/browser/controller/cellOperations.js';
+import { CellKind, NOTEBOOK_EDITOR_ID } from '../../../notebook/common/notebookCommon.js';
+import { getReferencesAsDocumentContext } from '../../common/chatCodeMapperService.js';
+import { IChatService } from '../../common/chatService.js';
+import { isRequestVM, isResponseVM } from '../../common/chatViewModel.js';
+let InsertCodeBlockOperation = class InsertCodeBlockOperation {
+    constructor(editorService, textFileService, bulkEditService, codeEditorService, chatService, languageService, dialogService) {
+        this.editorService = editorService;
+        this.textFileService = textFileService;
+        this.bulkEditService = bulkEditService;
+        this.codeEditorService = codeEditorService;
+        this.chatService = chatService;
+        this.languageService = languageService;
+        this.dialogService = dialogService;
+    }
+    async run(context) {
+        const activeEditorControl = getEditableActiveCodeEditor(this.editorService);
+        if (activeEditorControl) {
+            await this.handleTextEditor(activeEditorControl, context);
+        }
+        else {
+            const activeNotebookEditor = getActiveNotebookEditor(this.editorService);
+            if (activeNotebookEditor) {
+                await this.handleNotebookEditor(activeNotebookEditor, context);
+            }
+            else {
+                this.notify(localize('insertCodeBlock.noActiveEditor', "To insert the code block, open a code editor or notebook editor and set the cursor at the location where to insert the code block."));
+            }
+        }
+        notifyUserAction(this.chatService, context, {
+            kind: 'insert',
+            codeBlockIndex: context.codeBlockIndex,
+            totalCharacters: context.code.length
+        });
+    }
+    async handleNotebookEditor(notebookEditor, codeBlockContext) {
+        if (notebookEditor.isReadOnly) {
+            this.notify(localize('insertCodeBlock.readonlyNotebook', "Cannot insert the code block to read-only notebook editor."));
+            return false;
+        }
+        const focusRange = notebookEditor.getFocus();
+        const next = Math.max(focusRange.end - 1, 0);
+        insertCell(this.languageService, notebookEditor, next, CellKind.Code, 'below', codeBlockContext.code, true);
+        return true;
+    }
+    async handleTextEditor(codeEditor, codeBlockContext) {
+        const activeModel = codeEditor.getModel();
+        if (isReadOnly(activeModel, this.textFileService)) {
+            this.notify(localize('insertCodeBlock.readonly', "Cannot insert the code block to read-only code editor."));
+            return false;
+        }
+        const range = codeEditor.getSelection() ?? new Range(activeModel.getLineCount(), 1, activeModel.getLineCount(), 1);
+        const text = reindent(codeBlockContext.code, activeModel, range.startLineNumber);
+        const edits = [new ResourceTextEdit(activeModel.uri, { range, text })];
+        await this.bulkEditService.apply(edits);
+        this.codeEditorService.listCodeEditors().find(editor => editor.getModel()?.uri.toString() === activeModel.uri.toString())?.focus();
+        return true;
+    }
+    notify(message) {
+        this.dialogService.info(message);
+    }
+};
+InsertCodeBlockOperation = __decorate([
+    __param(0, IEditorService),
+    __param(1, ITextFileService),
+    __param(2, IBulkEditService),
+    __param(3, ICodeEditorService),
+    __param(4, IChatService),
+    __param(5, ILanguageService),
+    __param(6, IDialogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object])
+], InsertCodeBlockOperation);
+export { InsertCodeBlockOperation };
+let ApplyCodeBlockOperation = class ApplyCodeBlockOperation {
+    constructor(editorService, textFileService, bulkEditService, codeEditorService, chatService, languageFeaturesService, progressService, languageService, fileService, dialogService, logService) {
+        this.editorService = editorService;
+        this.textFileService = textFileService;
+        this.bulkEditService = bulkEditService;
+        this.codeEditorService = codeEditorService;
+        this.chatService = chatService;
+        this.languageFeaturesService = languageFeaturesService;
+        this.progressService = progressService;
+        this.languageService = languageService;
+        this.fileService = fileService;
+        this.dialogService = dialogService;
+        this.logService = logService;
+    }
+    async run(context) {
+        if (this.inlineChatPreview && this.inlineChatPreview.isOpen()) {
+            await this.dialogService.info(localize('overlap', "Another code change is being previewed. Please apply or discard the pending changes first."));
+            return;
+        }
+        let activeEditorControl = getEditableActiveCodeEditor(this.editorService);
+        if (context.codemapperUri && !isEqual(activeEditorControl?.getModel().uri, context.codemapperUri)) {
+            try {
+                if (!(await this.fileService.exists(context.codemapperUri))) {
+                    await this.fileService.writeFile(context.codemapperUri, VSBuffer.fromString(''));
+                }
+                await this.editorService.openEditor({ resource: context.codemapperUri });
+                activeEditorControl = getEditableActiveCodeEditor(this.editorService);
+                if (activeEditorControl) {
+                    this.tryToRevealCodeBlock(activeEditorControl, context.code);
+                }
+            }
+            catch (e) {
+                this.logService.info('[ApplyCodeBlockOperation] error opening code mapper file', context.codemapperUri, e);
+            }
+        }
+        let result = undefined;
+        if (activeEditorControl) {
+            await this.handleTextEditor(activeEditorControl, context);
+        }
+        else {
+            const activeNotebookEditor = getActiveNotebookEditor(this.editorService);
+            if (activeNotebookEditor) {
+                result = await this.handleNotebookEditor(activeNotebookEditor, context);
+            }
+            else {
+                this.notify(localize('applyCodeBlock.noActiveEditor', "To apply this code block, open a code or notebook editor."));
+            }
+        }
+        notifyUserAction(this.chatService, context, {
+            kind: 'apply',
+            codeBlockIndex: context.codeBlockIndex,
+            totalCharacters: context.code.length,
+            codeMapper: result?.codeMapper,
+            editsProposed: !!result?.edits,
+        });
+    }
+    async handleNotebookEditor(notebookEditor, codeBlockContext) {
+        if (notebookEditor.isReadOnly) {
+            this.notify(localize('applyCodeBlock.readonlyNotebook', "Cannot apply code block to read-only notebook editor."));
+            return undefined;
+        }
+        const focusRange = notebookEditor.getFocus();
+        const next = Math.max(focusRange.end - 1, 0);
+        insertCell(this.languageService, notebookEditor, next, CellKind.Code, 'below', codeBlockContext.code, true);
+        return undefined;
+    }
+    async handleTextEditor(codeEditor, codeBlockContext) {
+        if (isReadOnly(codeEditor.getModel(), this.textFileService)) {
+            this.notify(localize('applyCodeBlock.readonly', "Cannot apply code block to read-only file."));
+            return undefined;
+        }
+        const result = await this.computeEdits(codeEditor, codeBlockContext);
+        if (result.edits) {
+            const showWithPreview = await this.applyWithInlinePreview(result.edits, codeEditor);
+            if (!showWithPreview) {
+                await this.bulkEditService.apply(result.edits, { showPreview: true });
+                const activeModel = codeEditor.getModel();
+                this.codeEditorService.listCodeEditors().find(editor => editor.getModel()?.uri.toString() === activeModel.uri.toString())?.focus();
+            }
+        }
+        return result;
+    }
+    async computeEdits(codeEditor, codeBlockActionContext) {
+        const activeModel = codeEditor.getModel();
+        const mappedEditsProviders = this.languageFeaturesService.mappedEditsProvider.ordered(activeModel);
+        if (mappedEditsProviders.length > 0) {
+            const docRefs = [];
+            collectDocumentContextFromSelections(codeEditor, docRefs);
+            collectDocumentContextFromContext(codeBlockActionContext, docRefs);
+            const cancellationTokenSource = new CancellationTokenSource();
+            let codeMapper;
+            try {
+                const result = await this.progressService.withProgress({ location: 15, delay: 500, sticky: true, cancellable: true }, async (progress) => {
+                    for (const provider of mappedEditsProviders) {
+                        codeMapper = provider.displayName;
+                        progress.report({ message: localize('applyCodeBlock.progress', "Applying code block using {0}...", codeMapper) });
+                        const mappedEdits = await provider.provideMappedEdits(activeModel, [codeBlockActionContext.code], {
+                            documents: docRefs,
+                            conversation: getChatConversation(codeBlockActionContext),
+                        }, cancellationTokenSource.token);
+                        if (mappedEdits) {
+                            return { edits: mappedEdits.edits, codeMapper };
+                        }
+                    }
+                    return undefined;
+                }, () => cancellationTokenSource.cancel());
+                if (result) {
+                    return result;
+                }
+            }
+            catch (e) {
+                if (!isCancellationError(e)) {
+                    this.notify(localize('applyCodeBlock.error', "Failed to apply code block: {0}", e.message));
+                }
+            }
+            finally {
+                cancellationTokenSource.dispose();
+            }
+            return { edits: [], codeMapper };
+        }
+        return { edits: [], codeMapper: undefined };
+    }
+    async applyWithInlinePreview(edits, codeEditor) {
+        const firstEdit = edits[0];
+        if (!ResourceTextEdit.is(firstEdit)) {
+            return false;
+        }
+        const resource = firstEdit.resource;
+        const textEdits = coalesce(edits.map(edit => ResourceTextEdit.is(edit) && isEqual(resource, edit.resource) ? edit.textEdit : undefined));
+        if (textEdits.length !== edits.length) {
+            return false;
+        }
+        const editorToApply = await this.codeEditorService.openCodeEditor({ resource }, codeEditor);
+        if (editorToApply) {
+            const inlineChatController = InlineChatController.get(editorToApply);
+            if (inlineChatController) {
+                const tokenSource = new CancellationTokenSource();
+                let isOpen = true;
+                const firstEdit = textEdits[0];
+                editorToApply.revealLineInCenterIfOutsideViewport(firstEdit.range.startLineNumber);
+                const promise = inlineChatController.reviewEdits(textEdits[0].range, AsyncIterableObject.fromArray(textEdits), tokenSource.token);
+                promise.finally(() => {
+                    isOpen = false;
+                    tokenSource.dispose();
+                });
+                this.inlineChatPreview = {
+                    promise,
+                    isOpen: () => isOpen,
+                    cancel: () => tokenSource.cancel(),
+                };
+                return true;
+            }
+        }
+        return false;
+    }
+    tryToRevealCodeBlock(codeEditor, codeBlock) {
+        const match = codeBlock.match(/(\S[^\n]*)\n/);
+        if (match && match[1].length > 10) {
+            const findMatch = codeEditor.getModel().findNextMatch(match[1], { lineNumber: 1, column: 1 }, false, false, null, false);
+            if (findMatch) {
+                codeEditor.revealRangeInCenter(findMatch.range);
+            }
+        }
+    }
+    notify(message) {
+        this.dialogService.info(message);
+    }
+};
+ApplyCodeBlockOperation = __decorate([
+    __param(0, IEditorService),
+    __param(1, ITextFileService),
+    __param(2, IBulkEditService),
+    __param(3, ICodeEditorService),
+    __param(4, IChatService),
+    __param(5, ILanguageFeaturesService),
+    __param(6, IProgressService),
+    __param(7, ILanguageService),
+    __param(8, IFileService),
+    __param(9, IDialogService),
+    __param(10, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], ApplyCodeBlockOperation);
+export { ApplyCodeBlockOperation };
+function notifyUserAction(chatService, context, action) {
+    if (isResponseVM(context.element)) {
+        chatService.notifyUserAction({
+            agentId: context.element.agent?.id,
+            command: context.element.slashCommand?.name,
+            sessionId: context.element.sessionId,
+            requestId: context.element.requestId,
+            result: context.element.result,
+            action
+        });
+    }
+}
+function getActiveNotebookEditor(editorService) {
+    const activeEditorPane = editorService.activeEditorPane;
+    if (activeEditorPane?.getId() === NOTEBOOK_EDITOR_ID) {
+        const notebookEditor = activeEditorPane.getControl();
+        if (notebookEditor.hasModel()) {
+            return notebookEditor;
+        }
+    }
+    return undefined;
+}
+function getEditableActiveCodeEditor(editorService) {
+    const activeCodeEditorInNotebook = getActiveNotebookEditor(editorService)?.activeCodeEditor;
+    if (activeCodeEditorInNotebook && activeCodeEditorInNotebook.hasTextFocus() && activeCodeEditorInNotebook.hasModel()) {
+        return activeCodeEditorInNotebook;
+    }
+    let activeEditorControl = editorService.activeTextEditorControl;
+    if (isDiffEditor(activeEditorControl)) {
+        activeEditorControl = activeEditorControl.getOriginalEditor().hasTextFocus() ? activeEditorControl.getOriginalEditor() : activeEditorControl.getModifiedEditor();
+    }
+    if (!isCodeEditor(activeEditorControl)) {
+        return undefined;
+    }
+    if (!activeEditorControl.hasModel()) {
+        return undefined;
+    }
+    return activeEditorControl;
+}
+function isReadOnly(model, textFileService) {
+    const activeTextModel = textFileService.files.get(model.uri) ?? textFileService.untitled.get(model.uri);
+    return !!activeTextModel?.isReadonly();
+}
+function collectDocumentContextFromSelections(codeEditor, result) {
+    const activeModel = codeEditor.getModel();
+    const currentDocUri = activeModel.uri;
+    const currentDocVersion = activeModel.getVersionId();
+    const selections = codeEditor.getSelections();
+    if (selections.length > 0) {
+        result.push([
+            {
+                uri: currentDocUri,
+                version: currentDocVersion,
+                ranges: selections,
+            }
+        ]);
+    }
+}
+function collectDocumentContextFromContext(context, result) {
+    if (isResponseVM(context.element) && context.element.usedContext?.documents) {
+        result.push(context.element.usedContext.documents);
+    }
+}
+function getChatConversation(context) {
+    if (isResponseVM(context.element)) {
+        return [{
+                type: 'response',
+                message: context.element.response.toMarkdown(),
+                references: getReferencesAsDocumentContext(context.element.contentReferences)
+            }];
+    }
+    else if (isRequestVM(context.element)) {
+        return [{
+                type: 'request',
+                message: context.element.messageText,
+            }];
+    }
+    else {
+        return [];
+    }
+}
+function reindent(codeBlockContent, model, seletionStartLine) {
+    const newContent = strings.splitLines(codeBlockContent);
+    if (newContent.length === 0) {
+        return codeBlockContent;
+    }
+    const formattingOptions = model.getFormattingOptions();
+    const codeIndentLevel = computeIndentation(model.getLineContent(seletionStartLine), formattingOptions.tabSize).level;
+    const indents = newContent.map(line => computeIndentation(line, formattingOptions.tabSize));
+    const newContentIndentLevel = indents.reduce((min, indent, index) => {
+        if (indent.length !== newContent[index].length) {
+            return Math.min(indent.level, min);
+        }
+        return min;
+    }, Number.MAX_VALUE);
+    if (newContentIndentLevel === Number.MAX_VALUE || newContentIndentLevel === codeIndentLevel) {
+        return codeBlockContent;
+    }
+    const newLines = [];
+    for (let i = 0; i < newContent.length; i++) {
+        const { level, length } = indents[i];
+        const newLevel = Math.max(0, codeIndentLevel + level - newContentIndentLevel);
+        const newIndentation = formattingOptions.insertSpaces ? ' '.repeat(formattingOptions.tabSize * newLevel) : '\t'.repeat(newLevel);
+        newLines.push(newIndentation + newContent[i].substring(length));
+    }
+    return newLines.join('\n');
+}
+export function computeIndentation(line, tabSize) {
+    let nSpaces = 0;
+    let level = 0;
+    let i = 0;
+    let length = 0;
+    const len = line.length;
+    while (i < len) {
+        const chCode = line.charCodeAt(i);
+        if (chCode === 32) {
+            nSpaces++;
+            if (nSpaces === tabSize) {
+                level++;
+                nSpaces = 0;
+                length = i + 1;
+            }
+        }
+        else if (chCode === 9) {
+            level++;
+            nSpaces = 0;
+            length = i + 1;
+        }
+        else {
+            break;
+        }
+        i++;
+    }
+    return { level, length };
+}

@@ -1,1 +1,261 @@
-var T=Object.defineProperty;var W=Object.getOwnPropertyDescriptor;var v=(o,d,i,a)=>{for(var t=a>1?void 0:a?W(d,i):d,r=o.length-1,S;r>=0;r--)(S=o[r])&&(t=(a?S(d,i,t):S(t))||t);return a&&t&&T(d,i,t),t},h=(o,d)=>(i,a)=>d(i,a,o);import*as x from"../../../../../base/browser/dom.js";import{AutoOpenBarrier as A}from"../../../../../base/common/async.js";import{Event as K}from"../../../../../base/common/event.js";import{KeyCode as g,KeyMod as I}from"../../../../../base/common/keyCodes.js";import{DisposableStore as O,MutableDisposable as k,toDisposable as E}from"../../../../../base/common/lifecycle.js";import{isWindows as N}from"../../../../../base/common/platform.js";import{localize2 as l}from"../../../../../nls.js";import{IConfigurationService as V}from"../../../../../platform/configuration/common/configuration.js";import{ContextKeyExpr as s,IContextKeyService as D}from"../../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as R}from"../../../../../platform/instantiation/common/instantiation.js";import{KeybindingWeight as u}from"../../../../../platform/keybinding/common/keybindingsRegistry.js";import{IStorageService as B,StorageScope as C,StorageTarget as M}from"../../../../../platform/storage/common/storage.js";import{GeneralShellType as H,TerminalLocation as q,TerminalSettingId as X}from"../../../../../platform/terminal/common/terminal.js";import{ShellIntegrationOscPs as L}from"../../../../../platform/terminal/common/xterm/shellIntegrationAddon.js";import"../../../terminal/browser/terminal.js";import{registerActiveInstanceAction as m}from"../../../terminal/browser/terminalActions.js";import{registerTerminalContribution as J}from"../../../terminal/browser/terminalExtensions.js";import"../../../terminal/browser/widgets/widgetManager.js";import{TERMINAL_CONFIG_SECTION as z}from"../../../terminal/common/terminal.js";import{TerminalContextKeys as e,TerminalContextKeyStrings as F}from"../../../terminal/common/terminalContextKey.js";import{parseCompletionsFromShell as G,SuggestAddon as U,VSCodeSuggestOscPt as $}from"./terminalSuggestAddon.js";import{TerminalSuggestCommandId as p}from"../common/terminal.suggest.js";import{terminalSuggestConfigSection as P,TerminalSuggestSettingId as b}from"../common/terminalSuggestConfiguration.js";import"../../../../services/suggest/browser/simpleCompletionItem.js";import{registerSendSequenceKeybinding as Y}from"../../../terminal/browser/terminalKeybindings.js";import{CONTEXT_ACCESSIBILITY_MODE_ENABLED as j}from"../../../../../platform/accessibility/common/accessibility.js";var Q=(d=>(d.CachedPwshCommandsStorageKey="terminal.suggest.pwshCommands",d))(Q||{});let n=class extends O{constructor(i,a,t,r,S,y,w){super();this._instance=i;this._contextKeyService=r;this._configurationService=S;this._instantiationService=y;this._storageService=w;if(this.add(E(()=>this._addon?.dispose())),this._terminalSuggestWidgetVisibleContextKey=e.suggestWidgetVisible.bindTo(this._contextKeyService),n._cachedPwshCommands.size===0){const c=this._storageService.get("terminal.suggest.pwshCommands",C.APPLICATION,void 0);if(c!==void 0){const f=JSON.parse(c);for(const _ of f)n._cachedPwshCommands.add(_)}}this.add(this._configurationService.onDidChangeConfiguration(c=>{c.affectsConfiguration(b.Enabled)&&this.clearSuggestCache()}))}static ID="terminal.suggest";static get(i){return i.getContribution(n.ID)}_xterm;_addon=new k;_terminalSuggestWidgetContextKeys=new Set(e.suggestWidgetVisible.key);_terminalSuggestWidgetVisibleContextKey;get addon(){return this._addon.value}static _cachedPwshCommands=new Set;xtermReady(i){this._xterm=i.raw,this._configurationService.getValue(P).enabled&&this.add(i.raw.parser.registerOscHandler(L.VSCode,r=>this._handleVSCodeSequence(r)))}_handleVSCodeSequence(i){if(!this._xterm)return!1;const[a,...t]=i.split(";");switch(a){case $.CompletionsPwshCommands:return this._handleCompletionsPwshCommandsSequence(this._xterm,i,a,t)}return!1}async _handleCompletionsPwshCommandsSequence(i,a,t,r){const S=r[0],y=JSON.parse(a.slice(t.length+S.length+2)),w=G(y),c=n._cachedPwshCommands;c.clear();for(const f of w)c.add(f);return this._storageService.store("terminal.suggest.pwshCommands",JSON.stringify(Array.from(c.values())),C.APPLICATION,M.MACHINE),!0}clearSuggestCache(){n._cachedPwshCommands.clear(),this._storageService.remove("terminal.suggest.pwshCommands",C.APPLICATION)}xtermOpen(i){this._configurationService.getValue(P).enabled&&(this.add(K.runAndSubscribe(this._instance.onDidChangeShellType,async()=>{this._loadSuggestAddon(i.raw)})),this.add(this._contextKeyService.onDidChangeContext(r=>{r.affectsSome(this._terminalSuggestWidgetContextKeys)&&this._loadSuggestAddon(i.raw)})),this.add(this._configurationService.onDidChangeConfiguration(r=>{r.affectsConfiguration(X.SendKeybindingsToShell)&&this._loadSuggestAddon(i.raw)})))}_loadSuggestAddon(i){if(this._configurationService.getValue(z).sendKeybindingsToShell||this._instance.shellType!=="pwsh"){this._addon.clear();return}if(this._terminalSuggestWidgetVisibleContextKey){const t=this._addon.value=this._instantiationService.createInstance(U,n._cachedPwshCommands,this._instance.capabilities,this._terminalSuggestWidgetVisibleContextKey);if(i.loadAddon(t),this._instance.target===q.Editor?t.setContainerWithOverflow(i.element):t.setContainerWithOverflow(x.findParentWithClass(i.element,"panel")),t.setScreen(i.element.querySelector(".xterm-screen")),this.add(this._instance.onDidBlur(()=>t.hideSuggestWidget())),this.add(t.onAcceptedCompletion(async r=>{this._instance.focus(),this._instance.sendText(r,!1)})),this.add(this._instance.onWillPaste(()=>t.isPasting=!0)),this.add(this._instance.onDidPaste(()=>{setTimeout(()=>t.isPasting=!1,100)})),!N){let r;this.add(t.onDidRequestCompletions(()=>{r=new A(2e3),this._instance.pauseInputEvents(r)})),this.add(t.onDidReceiveCompletions(()=>{r?.open(),r=void 0}))}}}};n=v([h(3,D),h(4,V),h(5,R),h(6,B)],n),J(n.ID,n),Y("\x1B[24~e",{when:s.and(e.focus,s.equals(F.ShellType,H.PowerShell),e.terminalShellIntegrationEnabled,j.negate(),s.equals(`config.${b.Enabled}`,!0)),primary:I.CtrlCmd|g.Space,mac:{primary:I.WinCtrl|g.Space}}),m({id:p.SelectPrevSuggestion,title:l("workbench.action.terminal.selectPrevSuggestion","Select the Previous Suggestion"),f1:!1,precondition:s.and(s.or(e.processSupported,e.terminalHasBeenCreated),e.focus,e.isOpen,e.suggestWidgetVisible),keybinding:{primary:g.UpArrow,weight:u.WorkbenchContrib+1},run:o=>n.get(o)?.addon?.selectPreviousSuggestion()}),m({id:p.SelectPrevPageSuggestion,title:l("workbench.action.terminal.selectPrevPageSuggestion","Select the Previous Page Suggestion"),f1:!1,precondition:s.and(s.or(e.processSupported,e.terminalHasBeenCreated),e.focus,e.isOpen,e.suggestWidgetVisible),keybinding:{primary:g.PageUp,weight:u.WorkbenchContrib+1},run:o=>n.get(o)?.addon?.selectPreviousPageSuggestion()}),m({id:p.SelectNextSuggestion,title:l("workbench.action.terminal.selectNextSuggestion","Select the Next Suggestion"),f1:!1,precondition:s.and(s.or(e.processSupported,e.terminalHasBeenCreated),e.focus,e.isOpen,e.suggestWidgetVisible),keybinding:{primary:g.DownArrow,weight:u.WorkbenchContrib+1},run:o=>n.get(o)?.addon?.selectNextSuggestion()}),m({id:p.SelectNextPageSuggestion,title:l("workbench.action.terminal.selectNextPageSuggestion","Select the Next Page Suggestion"),f1:!1,precondition:s.and(s.or(e.processSupported,e.terminalHasBeenCreated),e.focus,e.isOpen,e.suggestWidgetVisible),keybinding:{primary:g.PageDown,weight:u.WorkbenchContrib+1},run:o=>n.get(o)?.addon?.selectNextPageSuggestion()}),m({id:p.AcceptSelectedSuggestion,title:l("workbench.action.terminal.acceptSelectedSuggestion","Accept Selected Suggestion"),f1:!1,precondition:s.and(s.or(e.processSupported,e.terminalHasBeenCreated),e.focus,e.isOpen,e.suggestWidgetVisible),keybinding:{primary:g.Tab,weight:u.WorkbenchContrib+1},run:o=>n.get(o)?.addon?.acceptSelectedSuggestion()}),m({id:p.AcceptSelectedSuggestionEnter,title:l("workbench.action.terminal.acceptSelectedSuggestionEnter","Accept Selected Suggestion (Enter)"),f1:!1,precondition:s.and(s.or(e.processSupported,e.terminalHasBeenCreated),e.focus,e.isOpen,e.suggestWidgetVisible),keybinding:{primary:g.Enter,weight:u.WorkbenchContrib+1,when:s.notEquals(`config.${b.RunOnEnter}`,"ignore")},run:o=>n.get(o)?.addon?.acceptSelectedSuggestion(void 0,!0)}),m({id:p.HideSuggestWidget,title:l("workbench.action.terminal.hideSuggestWidget","Hide Suggest Widget"),f1:!1,precondition:s.and(s.or(e.processSupported,e.terminalHasBeenCreated),e.focus,e.isOpen,e.suggestWidgetVisible),keybinding:{primary:g.Escape,weight:u.WorkbenchContrib+1},run:o=>n.get(o)?.addon?.hideSuggestWidget()}),m({id:p.ClearSuggestCache,title:l("workbench.action.terminal.clearSuggestCache","Clear Suggest Cache"),f1:!0,run:o=>n.get(o)?.clearSuggestCache()});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var TerminalSuggestContribution_1;
+import * as dom from '../../../../../base/browser/dom.js';
+import { AutoOpenBarrier } from '../../../../../base/common/async.js';
+import { Event } from '../../../../../base/common/event.js';
+import { DisposableStore, MutableDisposable, toDisposable } from '../../../../../base/common/lifecycle.js';
+import { isWindows } from '../../../../../base/common/platform.js';
+import { localize2 } from '../../../../../nls.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { ContextKeyExpr, IContextKeyService } from '../../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { IStorageService } from '../../../../../platform/storage/common/storage.js';
+import { TerminalLocation } from '../../../../../platform/terminal/common/terminal.js';
+import { registerActiveInstanceAction } from '../../../terminal/browser/terminalActions.js';
+import { registerTerminalContribution } from '../../../terminal/browser/terminalExtensions.js';
+import { TerminalWidgetManager } from '../../../terminal/browser/widgets/widgetManager.js';
+import { TERMINAL_CONFIG_SECTION } from '../../../terminal/common/terminal.js';
+import { TerminalContextKeys } from '../../../terminal/common/terminalContextKey.js';
+import { parseCompletionsFromShell, SuggestAddon } from './terminalSuggestAddon.js';
+import { terminalSuggestConfigSection } from '../common/terminalSuggestConfiguration.js';
+import { registerSendSequenceKeybinding } from '../../../terminal/browser/terminalKeybindings.js';
+import { CONTEXT_ACCESSIBILITY_MODE_ENABLED } from '../../../../../platform/accessibility/common/accessibility.js';
+let TerminalSuggestContribution = class TerminalSuggestContribution extends DisposableStore {
+    static { TerminalSuggestContribution_1 = this; }
+    static { this.ID = 'terminal.suggest'; }
+    static get(instance) {
+        return instance.getContribution(TerminalSuggestContribution_1.ID);
+    }
+    get addon() { return this._addon.value; }
+    static { this._cachedPwshCommands = new Set(); }
+    constructor(_instance, processManager, widgetManager, _contextKeyService, _configurationService, _instantiationService, _storageService) {
+        super();
+        this._instance = _instance;
+        this._contextKeyService = _contextKeyService;
+        this._configurationService = _configurationService;
+        this._instantiationService = _instantiationService;
+        this._storageService = _storageService;
+        this._addon = new MutableDisposable();
+        this._terminalSuggestWidgetContextKeys = new Set(TerminalContextKeys.suggestWidgetVisible.key);
+        this.add(toDisposable(() => this._addon?.dispose()));
+        this._terminalSuggestWidgetVisibleContextKey = TerminalContextKeys.suggestWidgetVisible.bindTo(this._contextKeyService);
+        if (TerminalSuggestContribution_1._cachedPwshCommands.size === 0) {
+            const config = this._storageService.get("terminal.suggest.pwshCommands", -1, undefined);
+            if (config !== undefined) {
+                const completions = JSON.parse(config);
+                for (const c of completions) {
+                    TerminalSuggestContribution_1._cachedPwshCommands.add(c);
+                }
+            }
+        }
+        this.add(this._configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration("terminal.integrated.suggest.enabled")) {
+                this.clearSuggestCache();
+            }
+        }));
+    }
+    xtermReady(xterm) {
+        this._xterm = xterm.raw;
+        const config = this._configurationService.getValue(terminalSuggestConfigSection);
+        const enabled = config.enabled;
+        if (!enabled) {
+            return;
+        }
+        this.add(xterm.raw.parser.registerOscHandler(633, data => {
+            return this._handleVSCodeSequence(data);
+        }));
+    }
+    _handleVSCodeSequence(data) {
+        if (!this._xterm) {
+            return false;
+        }
+        const [command, ...args] = data.split(';');
+        switch (command) {
+            case "CompletionsPwshCommands":
+                return this._handleCompletionsPwshCommandsSequence(this._xterm, data, command, args);
+        }
+        return false;
+    }
+    async _handleCompletionsPwshCommandsSequence(terminal, data, command, args) {
+        const type = args[0];
+        const rawCompletions = JSON.parse(data.slice(command.length + type.length + 2));
+        const completions = parseCompletionsFromShell(rawCompletions);
+        const set = TerminalSuggestContribution_1._cachedPwshCommands;
+        set.clear();
+        for (const c of completions) {
+            set.add(c);
+        }
+        this._storageService.store("terminal.suggest.pwshCommands", JSON.stringify(Array.from(set.values())), -1, 1);
+        return true;
+    }
+    clearSuggestCache() {
+        TerminalSuggestContribution_1._cachedPwshCommands.clear();
+        this._storageService.remove("terminal.suggest.pwshCommands", -1);
+    }
+    xtermOpen(xterm) {
+        const config = this._configurationService.getValue(terminalSuggestConfigSection);
+        const enabled = config.enabled;
+        if (!enabled) {
+            return;
+        }
+        this.add(Event.runAndSubscribe(this._instance.onDidChangeShellType, async () => {
+            this._loadSuggestAddon(xterm.raw);
+        }));
+        this.add(this._contextKeyService.onDidChangeContext(e => {
+            if (e.affectsSome(this._terminalSuggestWidgetContextKeys)) {
+                this._loadSuggestAddon(xterm.raw);
+            }
+        }));
+        this.add(this._configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration("terminal.integrated.sendKeybindingsToShell")) {
+                this._loadSuggestAddon(xterm.raw);
+            }
+        }));
+    }
+    _loadSuggestAddon(xterm) {
+        const sendingKeybindingsToShell = this._configurationService.getValue(TERMINAL_CONFIG_SECTION).sendKeybindingsToShell;
+        if (sendingKeybindingsToShell || this._instance.shellType !== 'pwsh') {
+            this._addon.clear();
+            return;
+        }
+        if (this._terminalSuggestWidgetVisibleContextKey) {
+            const addon = this._addon.value = this._instantiationService.createInstance(SuggestAddon, TerminalSuggestContribution_1._cachedPwshCommands, this._instance.capabilities, this._terminalSuggestWidgetVisibleContextKey);
+            xterm.loadAddon(addon);
+            if (this._instance.target === TerminalLocation.Editor) {
+                addon.setContainerWithOverflow(xterm.element);
+            }
+            else {
+                addon.setContainerWithOverflow(dom.findParentWithClass(xterm.element, 'panel'));
+            }
+            addon.setScreen(xterm.element.querySelector('.xterm-screen'));
+            this.add(this._instance.onDidBlur(() => addon.hideSuggestWidget()));
+            this.add(addon.onAcceptedCompletion(async (text) => {
+                this._instance.focus();
+                this._instance.sendText(text, false);
+            }));
+            this.add(this._instance.onWillPaste(() => addon.isPasting = true));
+            this.add(this._instance.onDidPaste(() => {
+                setTimeout(() => addon.isPasting = false, 100);
+            }));
+            if (!isWindows) {
+                let barrier;
+                this.add(addon.onDidRequestCompletions(() => {
+                    barrier = new AutoOpenBarrier(2000);
+                    this._instance.pauseInputEvents(barrier);
+                }));
+                this.add(addon.onDidReceiveCompletions(() => {
+                    barrier?.open();
+                    barrier = undefined;
+                }));
+            }
+        }
+    }
+};
+TerminalSuggestContribution = TerminalSuggestContribution_1 = __decorate([
+    __param(3, IContextKeyService),
+    __param(4, IConfigurationService),
+    __param(5, IInstantiationService),
+    __param(6, IStorageService),
+    __metadata("design:paramtypes", [Object, Object, TerminalWidgetManager, Object, Object, Object, Object])
+], TerminalSuggestContribution);
+registerTerminalContribution(TerminalSuggestContribution.ID, TerminalSuggestContribution);
+registerSendSequenceKeybinding('\x1b[24~e', {
+    when: ContextKeyExpr.and(TerminalContextKeys.focus, ContextKeyExpr.equals("terminalShellType", "pwsh"), TerminalContextKeys.terminalShellIntegrationEnabled, CONTEXT_ACCESSIBILITY_MODE_ENABLED.negate(), ContextKeyExpr.equals(`config.${"terminal.integrated.suggest.enabled"}`, true)),
+    primary: 2048 | 10,
+    mac: { primary: 256 | 10 }
+});
+registerActiveInstanceAction({
+    id: "workbench.action.terminal.selectPrevSuggestion",
+    title: localize2('workbench.action.terminal.selectPrevSuggestion', 'Select the Previous Suggestion'),
+    f1: false,
+    precondition: ContextKeyExpr.and(ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated), TerminalContextKeys.focus, TerminalContextKeys.isOpen, TerminalContextKeys.suggestWidgetVisible),
+    keybinding: {
+        primary: 16,
+        weight: 200 + 1
+    },
+    run: (activeInstance) => TerminalSuggestContribution.get(activeInstance)?.addon?.selectPreviousSuggestion()
+});
+registerActiveInstanceAction({
+    id: "workbench.action.terminal.selectPrevPageSuggestion",
+    title: localize2('workbench.action.terminal.selectPrevPageSuggestion', 'Select the Previous Page Suggestion'),
+    f1: false,
+    precondition: ContextKeyExpr.and(ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated), TerminalContextKeys.focus, TerminalContextKeys.isOpen, TerminalContextKeys.suggestWidgetVisible),
+    keybinding: {
+        primary: 11,
+        weight: 200 + 1
+    },
+    run: (activeInstance) => TerminalSuggestContribution.get(activeInstance)?.addon?.selectPreviousPageSuggestion()
+});
+registerActiveInstanceAction({
+    id: "workbench.action.terminal.selectNextSuggestion",
+    title: localize2('workbench.action.terminal.selectNextSuggestion', 'Select the Next Suggestion'),
+    f1: false,
+    precondition: ContextKeyExpr.and(ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated), TerminalContextKeys.focus, TerminalContextKeys.isOpen, TerminalContextKeys.suggestWidgetVisible),
+    keybinding: {
+        primary: 18,
+        weight: 200 + 1
+    },
+    run: (activeInstance) => TerminalSuggestContribution.get(activeInstance)?.addon?.selectNextSuggestion()
+});
+registerActiveInstanceAction({
+    id: "workbench.action.terminal.selectNextPageSuggestion",
+    title: localize2('workbench.action.terminal.selectNextPageSuggestion', 'Select the Next Page Suggestion'),
+    f1: false,
+    precondition: ContextKeyExpr.and(ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated), TerminalContextKeys.focus, TerminalContextKeys.isOpen, TerminalContextKeys.suggestWidgetVisible),
+    keybinding: {
+        primary: 12,
+        weight: 200 + 1
+    },
+    run: (activeInstance) => TerminalSuggestContribution.get(activeInstance)?.addon?.selectNextPageSuggestion()
+});
+registerActiveInstanceAction({
+    id: "workbench.action.terminal.acceptSelectedSuggestion",
+    title: localize2('workbench.action.terminal.acceptSelectedSuggestion', 'Accept Selected Suggestion'),
+    f1: false,
+    precondition: ContextKeyExpr.and(ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated), TerminalContextKeys.focus, TerminalContextKeys.isOpen, TerminalContextKeys.suggestWidgetVisible),
+    keybinding: {
+        primary: 2,
+        weight: 200 + 1
+    },
+    run: (activeInstance) => TerminalSuggestContribution.get(activeInstance)?.addon?.acceptSelectedSuggestion()
+});
+registerActiveInstanceAction({
+    id: "workbench.action.terminal.acceptSelectedSuggestionEnter",
+    title: localize2('workbench.action.terminal.acceptSelectedSuggestionEnter', 'Accept Selected Suggestion (Enter)'),
+    f1: false,
+    precondition: ContextKeyExpr.and(ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated), TerminalContextKeys.focus, TerminalContextKeys.isOpen, TerminalContextKeys.suggestWidgetVisible),
+    keybinding: {
+        primary: 3,
+        weight: 200 + 1,
+        when: ContextKeyExpr.notEquals(`config.${"terminal.integrated.suggest.runOnEnter"}`, 'ignore'),
+    },
+    run: (activeInstance) => TerminalSuggestContribution.get(activeInstance)?.addon?.acceptSelectedSuggestion(undefined, true)
+});
+registerActiveInstanceAction({
+    id: "workbench.action.terminal.hideSuggestWidget",
+    title: localize2('workbench.action.terminal.hideSuggestWidget', 'Hide Suggest Widget'),
+    f1: false,
+    precondition: ContextKeyExpr.and(ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated), TerminalContextKeys.focus, TerminalContextKeys.isOpen, TerminalContextKeys.suggestWidgetVisible),
+    keybinding: {
+        primary: 9,
+        weight: 200 + 1
+    },
+    run: (activeInstance) => TerminalSuggestContribution.get(activeInstance)?.addon?.hideSuggestWidget()
+});
+registerActiveInstanceAction({
+    id: "workbench.action.terminal.clearSuggestCache",
+    title: localize2('workbench.action.terminal.clearSuggestCache', 'Clear Suggest Cache'),
+    f1: true,
+    run: (activeInstance) => TerminalSuggestContribution.get(activeInstance)?.clearSuggestCache()
+});

@@ -1,1 +1,126 @@
-import{Emitter as c}from"../../../../base/common/event.js";import{Iterable as l}from"../../../../base/common/iterator.js";import{ResourceMap as m}from"../../../../base/common/map.js";import"../../../../base/common/uri.js";import"./testService.js";import{AbstractIncrementalTestCollection as a,TestDiffOpType as i}from"./testTypes.js";class U extends a{constructor(e,t){super(e);this.expandActual=t}testsByUrl=new m;busyProvidersChangeEmitter=new c;expandPromises=new WeakMap;get busyProviders(){return this.busyControllerCount}get rootItems(){return this.roots}get all(){return this.getIterator()}get rootIds(){return l.map(this.roots.values(),e=>e.item.extId)}onBusyProvidersChange=this.busyProvidersChangeEmitter.event;expand(e,t){const o=this.items.get(e);if(!o)return Promise.resolve();const r=this.expandPromises.get(o);if(r&&r.pendingLvl>=t)return r.prom;const n=this.expandActual(o.item.extId,t),s={doneLvl:r?r.doneLvl:-1,pendingLvl:t,prom:n};return this.expandPromises.set(o,s),n.then(()=>{s.doneLvl=t})}getNodeById(e){return this.items.get(e)}getNodeByUrl(e){return this.testsByUrl.get(e)||l.empty()}getReviverDiff(){const e=[{op:i.IncrementPendingExtHosts,amount:this.pendingRootCount}],t=[this.rootIds];for(;t.length;)for(const o of t.pop()){const r=this.items.get(o);e.push({op:i.Add,item:{controllerId:r.controllerId,expand:r.expand,item:r.item}}),t.push(r.children)}return e}apply(e){const t=this.busyControllerCount;super.apply(e),t!==this.busyControllerCount&&this.busyProvidersChangeEmitter.fire(this.busyControllerCount)}clear(){const e=[];for(const t of this.roots)e.push({op:i.Remove,itemId:t.item.extId});return this.roots.clear(),this.items.clear(),e}createItem(e){return{...e,children:new Set}}changeCollector={add:e=>{if(!e.item.uri)return;const t=this.testsByUrl.get(e.item.uri);t?t.add(e):this.testsByUrl.set(e.item.uri,new Set([e]))},remove:e=>{if(!e.item.uri)return;const t=this.testsByUrl.get(e.item.uri);t&&(t.delete(e),t.size===0&&this.testsByUrl.delete(e.item.uri))}};createChangeCollector(){return this.changeCollector}*getIterator(){const e=[this.rootIds];for(;e.length;)for(const t of e.pop()){const o=this.getNodeById(t);yield o,e.push(o.children)}}}export{U as MainThreadTestCollection};
+import { Emitter } from '../../../../base/common/event.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { ResourceMap } from '../../../../base/common/map.js';
+import { AbstractIncrementalTestCollection } from './testTypes.js';
+export class MainThreadTestCollection extends AbstractIncrementalTestCollection {
+    get busyProviders() {
+        return this.busyControllerCount;
+    }
+    get rootItems() {
+        return this.roots;
+    }
+    get all() {
+        return this.getIterator();
+    }
+    get rootIds() {
+        return Iterable.map(this.roots.values(), r => r.item.extId);
+    }
+    constructor(uriIdentityService, expandActual) {
+        super(uriIdentityService);
+        this.expandActual = expandActual;
+        this.testsByUrl = new ResourceMap();
+        this.busyProvidersChangeEmitter = new Emitter();
+        this.expandPromises = new WeakMap();
+        this.onBusyProvidersChange = this.busyProvidersChangeEmitter.event;
+        this.changeCollector = {
+            add: node => {
+                if (!node.item.uri) {
+                    return;
+                }
+                const s = this.testsByUrl.get(node.item.uri);
+                if (!s) {
+                    this.testsByUrl.set(node.item.uri, new Set([node]));
+                }
+                else {
+                    s.add(node);
+                }
+            },
+            remove: node => {
+                if (!node.item.uri) {
+                    return;
+                }
+                const s = this.testsByUrl.get(node.item.uri);
+                if (!s) {
+                    return;
+                }
+                s.delete(node);
+                if (s.size === 0) {
+                    this.testsByUrl.delete(node.item.uri);
+                }
+            },
+        };
+    }
+    expand(testId, levels) {
+        const test = this.items.get(testId);
+        if (!test) {
+            return Promise.resolve();
+        }
+        const existing = this.expandPromises.get(test);
+        if (existing && existing.pendingLvl >= levels) {
+            return existing.prom;
+        }
+        const prom = this.expandActual(test.item.extId, levels);
+        const record = { doneLvl: existing ? existing.doneLvl : -1, pendingLvl: levels, prom };
+        this.expandPromises.set(test, record);
+        return prom.then(() => {
+            record.doneLvl = levels;
+        });
+    }
+    getNodeById(id) {
+        return this.items.get(id);
+    }
+    getNodeByUrl(uri) {
+        return this.testsByUrl.get(uri) || Iterable.empty();
+    }
+    getReviverDiff() {
+        const ops = [{ op: 4, amount: this.pendingRootCount }];
+        const queue = [this.rootIds];
+        while (queue.length) {
+            for (const child of queue.pop()) {
+                const item = this.items.get(child);
+                ops.push({
+                    op: 0,
+                    item: {
+                        controllerId: item.controllerId,
+                        expand: item.expand,
+                        item: item.item,
+                    }
+                });
+                queue.push(item.children);
+            }
+        }
+        return ops;
+    }
+    apply(diff) {
+        const prevBusy = this.busyControllerCount;
+        super.apply(diff);
+        if (prevBusy !== this.busyControllerCount) {
+            this.busyProvidersChangeEmitter.fire(this.busyControllerCount);
+        }
+    }
+    clear() {
+        const ops = [];
+        for (const root of this.roots) {
+            ops.push({ op: 3, itemId: root.item.extId });
+        }
+        this.roots.clear();
+        this.items.clear();
+        return ops;
+    }
+    createItem(internal) {
+        return { ...internal, children: new Set() };
+    }
+    createChangeCollector() {
+        return this.changeCollector;
+    }
+    *getIterator() {
+        const queue = [this.rootIds];
+        while (queue.length) {
+            for (const id of queue.pop()) {
+                const node = this.getNodeById(id);
+                yield node;
+                queue.push(node.children);
+            }
+        }
+    }
+}

@@ -1,1 +1,160 @@
-import"../../../base/common/cancellation.js";import"../../../base/common/collections.js";import"../../../base/common/event.js";import"../../../base/common/paging.js";import{Platform as d}from"../../../base/common/platform.js";import"../../../base/common/uri.js";import{localize2 as p}from"../../../nls.js";import{TargetPlatform as e}from"../../extensions/common/extensions.js";import{createDecorator as c}from"../../instantiation/common/instantiation.js";const x="^([a-z0-9A-Z][a-z0-9-A-Z]*)\\.([a-z0-9A-Z][a-z0-9-A-Z]*)$",F=new RegExp(x),V="__web_extension",z="skipWalkthrough",H="extensionInstallSource",Z="dependecyOrPackExtensionInstall",K="clientTargetPlatform";var u=(s=>(s.COMMAND="command",s.SETTINGS_SYNC="settingsSync",s))(u||{});function B(o){switch(o){case e.WIN32_X64:return"Windows 64 bit";case e.WIN32_ARM64:return"Windows ARM";case e.LINUX_X64:return"Linux 64 bit";case e.LINUX_ARM64:return"Linux ARM 64";case e.LINUX_ARMHF:return"Linux ARM";case e.ALPINE_X64:return"Alpine Linux 64 bit";case e.ALPINE_ARM64:return"Alpine ARM 64";case e.DARWIN_X64:return"Mac";case e.DARWIN_ARM64:return"Mac Silicon";case e.WEB:return"Web";case e.UNIVERSAL:return e.UNIVERSAL;case e.UNKNOWN:return e.UNKNOWN;case e.UNDEFINED:return e.UNDEFINED}}function q(o){switch(o){case e.WIN32_X64:return e.WIN32_X64;case e.WIN32_ARM64:return e.WIN32_ARM64;case e.LINUX_X64:return e.LINUX_X64;case e.LINUX_ARM64:return e.LINUX_ARM64;case e.LINUX_ARMHF:return e.LINUX_ARMHF;case e.ALPINE_X64:return e.ALPINE_X64;case e.ALPINE_ARM64:return e.ALPINE_ARM64;case e.DARWIN_X64:return e.DARWIN_X64;case e.DARWIN_ARM64:return e.DARWIN_ARM64;case e.WEB:return e.WEB;case e.UNIVERSAL:return e.UNIVERSAL;default:return e.UNKNOWN}}function Q(o,a){switch(o){case d.Windows:return a==="x64"?e.WIN32_X64:a==="arm64"?e.WIN32_ARM64:e.UNKNOWN;case d.Linux:return a==="x64"?e.LINUX_X64:a==="arm64"?e.LINUX_ARM64:a==="arm"?e.LINUX_ARMHF:e.UNKNOWN;case"alpine":return a==="x64"?e.ALPINE_X64:a==="arm64"?e.ALPINE_ARM64:e.UNKNOWN;case d.Mac:return a==="x64"?e.DARWIN_X64:a==="arm64"?e.DARWIN_ARM64:e.UNKNOWN;case d.Web:return e.WEB}}function f(o,a){return a===e.WEB&&!o.includes(e.WEB)}function j(o,a,s){return f(a,s)?!1:o===e.UNDEFINED||o===e.UNIVERSAL?!0:o===e.UNKNOWN?!1:o===s}function Y(o){return o&&typeof o=="object"&&typeof o.id=="string"&&(!o.uuid||typeof o.uuid=="string")}var g=(i=>(i[i.NoneOrRelevance=0]="NoneOrRelevance",i[i.LastUpdatedDate=1]="LastUpdatedDate",i[i.Title=2]="Title",i[i.PublisherName=3]="PublisherName",i[i.InstallCount=4]="InstallCount",i[i.PublishedDate=10]="PublishedDate",i[i.AverageRating=6]="AverageRating",i[i.WeightedRating=12]="WeightedRating",i))(g||{}),y=(r=>(r[r.Default=0]="Default",r[r.Ascending=1]="Ascending",r[r.Descending=2]="Descending",r))(y||{}),E=(s=>(s.Install="install",s.Uninstall="uninstall",s))(E||{}),m=(l=>(l[l.None=1]="None",l[l.Install=2]="Install",l[l.Update=3]="Update",l[l.Migrate=4]="Migrate",l))(m||{});const $=c("extensionGalleryService");var P=(I=>(I.Timeout="Timeout",I.Cancelled="Cancelled",I.Failed="Failed",I.DownloadFailedWriting="DownloadFailedWriting",I.Offline="Offline",I))(P||{});class J extends Error{constructor(s,r){super(s);this.code=r;this.name=r}}var b=(n=>(n.Unsupported="Unsupported",n.Deprecated="Deprecated",n.Malicious="Malicious",n.Incompatible="Incompatible",n.IncompatibleApi="IncompatibleApi",n.IncompatibleTargetPlatform="IncompatibleTargetPlatform",n.ReleaseVersionNotFound="ReleaseVersionNotFound",n.Invalid="Invalid",n.Download="Download",n.DownloadSignature="DownloadSignature",n.DownloadFailedWriting="DownloadFailedWriting",n.UpdateMetadata="UpdateMetadata",n.Extract="Extract",n.Scanning="Scanning",n.ScanningExtension="ScanningExtension",n.ReadUninstalled="ReadUninstalled",n.UnsetUninstalled="UnsetUninstalled",n.Delete="Delete",n.Rename="Rename",n.IntializeDefaultProfile="IntializeDefaultProfile",n.AddToProfile="AddToProfile",n.InstalledExtensionNotFound="InstalledExtensionNotFound",n.PostInstall="PostInstall",n.CorruptZip="CorruptZip",n.IncompleteZip="IncompleteZip",n.PackageNotSigned="PackageNotSigned",n.SignatureVerificationInternal="SignatureVerificationInternal",n.SignatureVerificationFailed="SignatureVerificationFailed",n.NotAllowed="NotAllowed",n.Gallery="Gallery",n.Cancelled="Cancelled",n.Unknown="Unknown",n.Internal="Internal",n))(b||{}),N=(t=>(t.Success="Success",t.RequiredArgumentMissing="RequiredArgumentMissing",t.InvalidArgument="InvalidArgument",t.PackageIsUnreadable="PackageIsUnreadable",t.UnhandledException="UnhandledException",t.SignatureManifestIsMissing="SignatureManifestIsMissing",t.SignatureManifestIsUnreadable="SignatureManifestIsUnreadable",t.SignatureIsMissing="SignatureIsMissing",t.SignatureIsUnreadable="SignatureIsUnreadable",t.CertificateIsUnreadable="CertificateIsUnreadable",t.SignatureArchiveIsUnreadable="SignatureArchiveIsUnreadable",t.FileAlreadyExists="FileAlreadyExists",t.SignatureArchiveIsInvalidZip="SignatureArchiveIsInvalidZip",t.SignatureArchiveHasSameSignatureFile="SignatureArchiveHasSameSignatureFile",t.PackageIntegrityCheckFailed="PackageIntegrityCheckFailed",t.SignatureIsInvalid="SignatureIsInvalid",t.SignatureManifestIsInvalid="SignatureManifestIsInvalid",t.SignatureIntegrityCheckFailed="SignatureIntegrityCheckFailed",t.EntryIsMissing="EntryIsMissing",t.EntryIsTampered="EntryIsTampered",t.Untrusted="Untrusted",t.CertificateRevoked="CertificateRevoked",t.SignatureIsNotValid="SignatureIsNotValid",t.UnknownError="UnknownError",t.PackageIsInvalidZip="PackageIsInvalidZip",t.SignatureArchiveHasTooManyEntries="SignatureArchiveHasTooManyEntries",t))(N||{});class C extends Error{constructor(s,r){super(s);this.code=r;this.name=r}}const ee=c("extensionManagementService"),ne="extensionsIdentifiers/disabled",te="extensionsIdentifiers/enabled",oe=c("IGlobalExtensionEnablementService"),ie=c("IExtensionTipsService"),ae=p("extensions","Extensions"),se=p("preferences","Preferences");export{ne as DISABLED_EXTENSIONS_STORAGE_PATH,te as ENABLED_EXTENSIONS_STORAGE_PATH,x as EXTENSION_IDENTIFIER_PATTERN,F as EXTENSION_IDENTIFIER_REGEX,K as EXTENSION_INSTALL_CLIENT_TARGET_PLATFORM_CONTEXT,Z as EXTENSION_INSTALL_DEP_PACK_CONTEXT,z as EXTENSION_INSTALL_SKIP_WALKTHROUGH_CONTEXT,H as EXTENSION_INSTALL_SOURCE_CONTEXT,J as ExtensionGalleryError,P as ExtensionGalleryErrorCode,u as ExtensionInstallSource,C as ExtensionManagementError,b as ExtensionManagementErrorCode,N as ExtensionSignatureVerificationCode,ae as ExtensionsLocalizedLabel,$ as IExtensionGalleryService,ee as IExtensionManagementService,ie as IExtensionTipsService,oe as IGlobalExtensionEnablementService,m as InstallOperation,se as PreferencesLocalizedLabel,g as SortBy,y as SortOrder,E as StatisticType,B as TargetPlatformToString,V as WEB_EXTENSION_TAG,Q as getTargetPlatform,Y as isIExtensionIdentifier,f as isNotWebExtensionInWebTargetPlatform,j as isTargetPlatformCompatible,q as toTargetPlatform};
+import { localize2 } from '../../../nls.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const EXTENSION_IDENTIFIER_PATTERN = '^([a-z0-9A-Z][a-z0-9-A-Z]*)\\.([a-z0-9A-Z][a-z0-9-A-Z]*)$';
+export const EXTENSION_IDENTIFIER_REGEX = new RegExp(EXTENSION_IDENTIFIER_PATTERN);
+export const WEB_EXTENSION_TAG = '__web_extension';
+export const EXTENSION_INSTALL_SKIP_WALKTHROUGH_CONTEXT = 'skipWalkthrough';
+export const EXTENSION_INSTALL_SOURCE_CONTEXT = 'extensionInstallSource';
+export const EXTENSION_INSTALL_DEP_PACK_CONTEXT = 'dependecyOrPackExtensionInstall';
+export const EXTENSION_INSTALL_CLIENT_TARGET_PLATFORM_CONTEXT = 'clientTargetPlatform';
+export function TargetPlatformToString(targetPlatform) {
+    switch (targetPlatform) {
+        case "win32-x64": return 'Windows 64 bit';
+        case "win32-arm64": return 'Windows ARM';
+        case "linux-x64": return 'Linux 64 bit';
+        case "linux-arm64": return 'Linux ARM 64';
+        case "linux-armhf": return 'Linux ARM';
+        case "alpine-x64": return 'Alpine Linux 64 bit';
+        case "alpine-arm64": return 'Alpine ARM 64';
+        case "darwin-x64": return 'Mac';
+        case "darwin-arm64": return 'Mac Silicon';
+        case "web": return 'Web';
+        case "universal": return "universal";
+        case "unknown": return "unknown";
+        case "undefined": return "undefined";
+    }
+}
+export function toTargetPlatform(targetPlatform) {
+    switch (targetPlatform) {
+        case "win32-x64": return "win32-x64";
+        case "win32-arm64": return "win32-arm64";
+        case "linux-x64": return "linux-x64";
+        case "linux-arm64": return "linux-arm64";
+        case "linux-armhf": return "linux-armhf";
+        case "alpine-x64": return "alpine-x64";
+        case "alpine-arm64": return "alpine-arm64";
+        case "darwin-x64": return "darwin-x64";
+        case "darwin-arm64": return "darwin-arm64";
+        case "web": return "web";
+        case "universal": return "universal";
+        default: return "unknown";
+    }
+}
+export function getTargetPlatform(platform, arch) {
+    switch (platform) {
+        case 3:
+            if (arch === 'x64') {
+                return "win32-x64";
+            }
+            if (arch === 'arm64') {
+                return "win32-arm64";
+            }
+            return "unknown";
+        case 2:
+            if (arch === 'x64') {
+                return "linux-x64";
+            }
+            if (arch === 'arm64') {
+                return "linux-arm64";
+            }
+            if (arch === 'arm') {
+                return "linux-armhf";
+            }
+            return "unknown";
+        case 'alpine':
+            if (arch === 'x64') {
+                return "alpine-x64";
+            }
+            if (arch === 'arm64') {
+                return "alpine-arm64";
+            }
+            return "unknown";
+        case 1:
+            if (arch === 'x64') {
+                return "darwin-x64";
+            }
+            if (arch === 'arm64') {
+                return "darwin-arm64";
+            }
+            return "unknown";
+        case 0: return "web";
+    }
+}
+export function isNotWebExtensionInWebTargetPlatform(allTargetPlatforms, productTargetPlatform) {
+    return productTargetPlatform === "web" && !allTargetPlatforms.includes("web");
+}
+export function isTargetPlatformCompatible(extensionTargetPlatform, allTargetPlatforms, productTargetPlatform) {
+    if (isNotWebExtensionInWebTargetPlatform(allTargetPlatforms, productTargetPlatform)) {
+        return false;
+    }
+    if (extensionTargetPlatform === "undefined") {
+        return true;
+    }
+    if (extensionTargetPlatform === "universal") {
+        return true;
+    }
+    if (extensionTargetPlatform === "unknown") {
+        return false;
+    }
+    if (extensionTargetPlatform === productTargetPlatform) {
+        return true;
+    }
+    return false;
+}
+export function isIExtensionIdentifier(thing) {
+    return thing
+        && typeof thing === 'object'
+        && typeof thing.id === 'string'
+        && (!thing.uuid || typeof thing.uuid === 'string');
+}
+export const IExtensionGalleryService = createDecorator('extensionGalleryService');
+export class ExtensionGalleryError extends Error {
+    constructor(message, code) {
+        super(message);
+        this.code = code;
+        this.name = code;
+    }
+}
+export var ExtensionSignatureVerificationCode;
+(function (ExtensionSignatureVerificationCode) {
+    ExtensionSignatureVerificationCode["Success"] = "Success";
+    ExtensionSignatureVerificationCode["RequiredArgumentMissing"] = "RequiredArgumentMissing";
+    ExtensionSignatureVerificationCode["InvalidArgument"] = "InvalidArgument";
+    ExtensionSignatureVerificationCode["PackageIsUnreadable"] = "PackageIsUnreadable";
+    ExtensionSignatureVerificationCode["UnhandledException"] = "UnhandledException";
+    ExtensionSignatureVerificationCode["SignatureManifestIsMissing"] = "SignatureManifestIsMissing";
+    ExtensionSignatureVerificationCode["SignatureManifestIsUnreadable"] = "SignatureManifestIsUnreadable";
+    ExtensionSignatureVerificationCode["SignatureIsMissing"] = "SignatureIsMissing";
+    ExtensionSignatureVerificationCode["SignatureIsUnreadable"] = "SignatureIsUnreadable";
+    ExtensionSignatureVerificationCode["CertificateIsUnreadable"] = "CertificateIsUnreadable";
+    ExtensionSignatureVerificationCode["SignatureArchiveIsUnreadable"] = "SignatureArchiveIsUnreadable";
+    ExtensionSignatureVerificationCode["FileAlreadyExists"] = "FileAlreadyExists";
+    ExtensionSignatureVerificationCode["SignatureArchiveIsInvalidZip"] = "SignatureArchiveIsInvalidZip";
+    ExtensionSignatureVerificationCode["SignatureArchiveHasSameSignatureFile"] = "SignatureArchiveHasSameSignatureFile";
+    ExtensionSignatureVerificationCode["PackageIntegrityCheckFailed"] = "PackageIntegrityCheckFailed";
+    ExtensionSignatureVerificationCode["SignatureIsInvalid"] = "SignatureIsInvalid";
+    ExtensionSignatureVerificationCode["SignatureManifestIsInvalid"] = "SignatureManifestIsInvalid";
+    ExtensionSignatureVerificationCode["SignatureIntegrityCheckFailed"] = "SignatureIntegrityCheckFailed";
+    ExtensionSignatureVerificationCode["EntryIsMissing"] = "EntryIsMissing";
+    ExtensionSignatureVerificationCode["EntryIsTampered"] = "EntryIsTampered";
+    ExtensionSignatureVerificationCode["Untrusted"] = "Untrusted";
+    ExtensionSignatureVerificationCode["CertificateRevoked"] = "CertificateRevoked";
+    ExtensionSignatureVerificationCode["SignatureIsNotValid"] = "SignatureIsNotValid";
+    ExtensionSignatureVerificationCode["UnknownError"] = "UnknownError";
+    ExtensionSignatureVerificationCode["PackageIsInvalidZip"] = "PackageIsInvalidZip";
+    ExtensionSignatureVerificationCode["SignatureArchiveHasTooManyEntries"] = "SignatureArchiveHasTooManyEntries";
+})(ExtensionSignatureVerificationCode || (ExtensionSignatureVerificationCode = {}));
+export class ExtensionManagementError extends Error {
+    constructor(message, code) {
+        super(message);
+        this.code = code;
+        this.name = code;
+    }
+}
+export const IExtensionManagementService = createDecorator('extensionManagementService');
+export const DISABLED_EXTENSIONS_STORAGE_PATH = 'extensionsIdentifiers/disabled';
+export const ENABLED_EXTENSIONS_STORAGE_PATH = 'extensionsIdentifiers/enabled';
+export const IGlobalExtensionEnablementService = createDecorator('IGlobalExtensionEnablementService');
+export const IExtensionTipsService = createDecorator('IExtensionTipsService');
+export const ExtensionsLocalizedLabel = localize2('extensions', "Extensions");
+export const PreferencesLocalizedLabel = localize2('preferences', 'Preferences');

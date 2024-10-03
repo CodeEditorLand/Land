@@ -1,1 +1,47 @@
-var p=Object.defineProperty;var a=Object.getOwnPropertyDescriptor;var l=(r,e,i,n)=>{for(var t=n>1?void 0:n?a(e,i):e,s=r.length-1,o;s>=0;s--)(o=r[s])&&(t=(n?o(e,i,t):o(t))||t);return n&&t&&p(e,i,t),t};import{memoize as g}from"./decorators.js";class d{constructor(e){this.nodes=e}toString(){return this.nodes.map(e=>typeof e=="string"?e:e.label).join("")}}l([g],d.prototype,"toString",1);const x=/\[([^\]]+)\]\(((?:https?:\/\/|command:|file:)[^\)\s]+)(?: (["'])(.+?)(\3))?\)/gi;function u(r){const e=[];let i=0,n;for(;n=x.exec(r);){n.index-i>0&&e.push(r.substring(i,n.index));const[,t,s,,o]=n;o?e.push({label:t,href:s,title:o}):e.push({label:t,href:s}),i=n.index+n[0].length}return i<r.length&&e.push(r.substring(i)),new d(e)}export{d as LinkedText,u as parseLinkedText};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+import { memoize } from './decorators.js';
+export class LinkedText {
+    constructor(nodes) {
+        this.nodes = nodes;
+    }
+    toString() {
+        return this.nodes.map(node => typeof node === 'string' ? node : node.label).join('');
+    }
+}
+__decorate([
+    memoize,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", String)
+], LinkedText.prototype, "toString", null);
+const LINK_REGEX = /\[([^\]]+)\]\(((?:https?:\/\/|command:|file:)[^\)\s]+)(?: (["'])(.+?)(\3))?\)/gi;
+export function parseLinkedText(text) {
+    const result = [];
+    let index = 0;
+    let match;
+    while (match = LINK_REGEX.exec(text)) {
+        if (match.index - index > 0) {
+            result.push(text.substring(index, match.index));
+        }
+        const [, label, href, , title] = match;
+        if (title) {
+            result.push({ label, href, title });
+        }
+        else {
+            result.push({ label, href });
+        }
+        index = match.index + match[0].length;
+    }
+    if (index < text.length) {
+        result.push(text.substring(index));
+    }
+    return new LinkedText(result);
+}

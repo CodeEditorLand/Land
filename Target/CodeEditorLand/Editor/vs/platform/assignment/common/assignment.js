@@ -1,1 +1,62 @@
-import*as s from"../../../base/common/platform.js";const u="VSCode.ABExp.FeatureData",l=0;var o=(t=>(t.Insiders="insider",t.Public="public",t.Exploration="exploration",t))(o||{}),i=(e=>(e.Market="X-MSEdge-Market",e.CorpNet="X-FD-Corpnet",e.ApplicationVersion="X-VSCode-AppVersion",e.Build="X-VSCode-Build",e.ClientId="X-MSEdge-ClientId",e.ExtensionName="X-VSCode-ExtensionName",e.ExtensionVersion="X-VSCode-ExtensionVersion",e.Language="X-VSCode-Language",e.TargetPopulation="X-VSCode-TargetPopulation",e))(i||{});class a{constructor(n,r,t,p){this.version=n;this.appName=r;this.machineId=t;this.targetPopulation=p}static trimVersionSuffix(n){const r=/\-[a-zA-Z0-9]+$/;return n.split(r)[0]}getFilterValue(n){switch(n){case"X-VSCode-AppVersion":return a.trimVersionSuffix(this.version);case"X-VSCode-Build":return this.appName;case"X-MSEdge-ClientId":return this.machineId;case"X-VSCode-Language":return s.language;case"X-VSCode-ExtensionName":return"vscode-core";case"X-VSCode-ExtensionVersion":return"999999.0";case"X-VSCode-TargetPopulation":return this.targetPopulation;default:return""}}getFilters(){const n=new Map,r=Object.values(i);for(const t of r)n.set(t,this.getFilterValue(t));return n}}export{l as ASSIGNMENT_REFETCH_INTERVAL,u as ASSIGNMENT_STORAGE_KEY,a as AssignmentFilterProvider,i as Filters,o as TargetPopulation};
+import * as platform from '../../../base/common/platform.js';
+export const ASSIGNMENT_STORAGE_KEY = 'VSCode.ABExp.FeatureData';
+export const ASSIGNMENT_REFETCH_INTERVAL = 0;
+export var TargetPopulation;
+(function (TargetPopulation) {
+    TargetPopulation["Insiders"] = "insider";
+    TargetPopulation["Public"] = "public";
+    TargetPopulation["Exploration"] = "exploration";
+})(TargetPopulation || (TargetPopulation = {}));
+export var Filters;
+(function (Filters) {
+    Filters["Market"] = "X-MSEdge-Market";
+    Filters["CorpNet"] = "X-FD-Corpnet";
+    Filters["ApplicationVersion"] = "X-VSCode-AppVersion";
+    Filters["Build"] = "X-VSCode-Build";
+    Filters["ClientId"] = "X-MSEdge-ClientId";
+    Filters["ExtensionName"] = "X-VSCode-ExtensionName";
+    Filters["ExtensionVersion"] = "X-VSCode-ExtensionVersion";
+    Filters["Language"] = "X-VSCode-Language";
+    Filters["TargetPopulation"] = "X-VSCode-TargetPopulation";
+})(Filters || (Filters = {}));
+export class AssignmentFilterProvider {
+    constructor(version, appName, machineId, targetPopulation) {
+        this.version = version;
+        this.appName = appName;
+        this.machineId = machineId;
+        this.targetPopulation = targetPopulation;
+    }
+    static trimVersionSuffix(version) {
+        const regex = /\-[a-zA-Z0-9]+$/;
+        const result = version.split(regex);
+        return result[0];
+    }
+    getFilterValue(filter) {
+        switch (filter) {
+            case Filters.ApplicationVersion:
+                return AssignmentFilterProvider.trimVersionSuffix(this.version);
+            case Filters.Build:
+                return this.appName;
+            case Filters.ClientId:
+                return this.machineId;
+            case Filters.Language:
+                return platform.language;
+            case Filters.ExtensionName:
+                return 'vscode-core';
+            case Filters.ExtensionVersion:
+                return '999999.0';
+            case Filters.TargetPopulation:
+                return this.targetPopulation;
+            default:
+                return '';
+        }
+    }
+    getFilters() {
+        const filters = new Map();
+        const filterValues = Object.values(Filters);
+        for (const value of filterValues) {
+            filters.set(value, this.getFilterValue(value));
+        }
+        return filters;
+    }
+}

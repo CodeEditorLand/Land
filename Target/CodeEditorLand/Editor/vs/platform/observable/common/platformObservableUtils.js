@@ -1,1 +1,14 @@
-import"../../../base/common/lifecycle.js";import{autorunOpts as i,observableFromEventOpts as a}from"../../../base/common/observable.js";import"../../configuration/common/configuration.js";import"../../contextkey/common/contextkey.js";function I(e,n,t){return a({debugName:()=>`Configuration Key "${e}"`},r=>t.onDidChangeConfiguration(o=>{o.affectsConfiguration(e)&&r(o)}),()=>t.getValue(e)??n)}function K(e,n,t){const r=e.bindTo(n);return i({debugName:()=>`Set Context Key "${e.key}"`},o=>{r.set(t(o))})}export{K as bindContextKey,I as observableConfigValue};
+import { autorunOpts, observableFromEventOpts } from '../../../base/common/observable.js';
+export function observableConfigValue(key, defaultValue, configurationService) {
+    return observableFromEventOpts({ debugName: () => `Configuration Key "${key}"`, }, (handleChange) => configurationService.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration(key)) {
+            handleChange(e);
+        }
+    }), () => configurationService.getValue(key) ?? defaultValue);
+}
+export function bindContextKey(key, service, computeValue) {
+    const boundKey = key.bindTo(service);
+    return autorunOpts({ debugName: () => `Set Context Key "${key.key}"` }, reader => {
+        boundKey.set(computeValue(reader));
+    });
+}

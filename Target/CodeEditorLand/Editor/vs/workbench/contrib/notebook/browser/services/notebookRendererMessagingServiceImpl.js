@@ -1,1 +1,75 @@
-var d=Object.defineProperty;var M=Object.getOwnPropertyDescriptor;var g=(a,o,e,s)=>{for(var t=s>1?void 0:s?M(o,e):o,n=a.length-1,i;n>=0;n--)(i=a[n])&&(t=(s?i(o,e,t):i(t))||t);return s&&t&&d(o,e,t),t},p=(a,o)=>(e,s)=>o(e,s,a);import{Emitter as u}from"../../../../../base/common/event.js";import{Disposable as v}from"../../../../../base/common/lifecycle.js";import"../../common/notebookRendererMessagingService.js";import{IExtensionService as l}from"../../../../services/extensions/common/extensions.js";let r=class extends v{constructor(e){super();this.extensionService=e}activations=new Map;scopedMessaging=new Map;postMessageEmitter=this._register(new u);onShouldPostMessage=this.postMessageEmitter.event;receiveMessage(e,s,t){if(e===void 0){const n=[...this.scopedMessaging.values()].map(i=>i.receiveMessageHandler?.(s,t));return Promise.all(n).then(i=>i.some(c=>!!c))}return this.scopedMessaging.get(e)?.receiveMessageHandler?.(s,t)??Promise.resolve(!1)}prepare(e){if(this.activations.has(e))return;const s=[];this.activations.set(e,s),this.extensionService.activateByEvent(`onRenderer:${e}`).then(()=>{for(const t of s)this.postMessageEmitter.fire(t);this.activations.set(e,void 0)})}getScoped(e){const s=this.scopedMessaging.get(e);if(s)return s;const t={postMessage:(n,i)=>this.postMessage(e,n,i),dispose:()=>this.scopedMessaging.delete(e)};return this.scopedMessaging.set(e,t),t}postMessage(e,s,t){this.activations.has(s)||this.prepare(s);const n=this.activations.get(s),i={rendererId:s,editorId:e,message:t};n===void 0?this.postMessageEmitter.fire(i):n.push(i)}};r=g([p(0,l)],r);export{r as NotebookRendererMessagingService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter } from '../../../../../base/common/event.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { IExtensionService } from '../../../../services/extensions/common/extensions.js';
+let NotebookRendererMessagingService = class NotebookRendererMessagingService extends Disposable {
+    constructor(extensionService) {
+        super();
+        this.extensionService = extensionService;
+        this.activations = new Map();
+        this.scopedMessaging = new Map();
+        this.postMessageEmitter = this._register(new Emitter());
+        this.onShouldPostMessage = this.postMessageEmitter.event;
+    }
+    receiveMessage(editorId, rendererId, message) {
+        if (editorId === undefined) {
+            const sends = [...this.scopedMessaging.values()].map(e => e.receiveMessageHandler?.(rendererId, message));
+            return Promise.all(sends).then(s => s.some(s => !!s));
+        }
+        return this.scopedMessaging.get(editorId)?.receiveMessageHandler?.(rendererId, message) ?? Promise.resolve(false);
+    }
+    prepare(rendererId) {
+        if (this.activations.has(rendererId)) {
+            return;
+        }
+        const queue = [];
+        this.activations.set(rendererId, queue);
+        this.extensionService.activateByEvent(`onRenderer:${rendererId}`).then(() => {
+            for (const message of queue) {
+                this.postMessageEmitter.fire(message);
+            }
+            this.activations.set(rendererId, undefined);
+        });
+    }
+    getScoped(editorId) {
+        const existing = this.scopedMessaging.get(editorId);
+        if (existing) {
+            return existing;
+        }
+        const messaging = {
+            postMessage: (rendererId, message) => this.postMessage(editorId, rendererId, message),
+            dispose: () => this.scopedMessaging.delete(editorId),
+        };
+        this.scopedMessaging.set(editorId, messaging);
+        return messaging;
+    }
+    postMessage(editorId, rendererId, message) {
+        if (!this.activations.has(rendererId)) {
+            this.prepare(rendererId);
+        }
+        const activation = this.activations.get(rendererId);
+        const toSend = { rendererId, editorId, message };
+        if (activation === undefined) {
+            this.postMessageEmitter.fire(toSend);
+        }
+        else {
+            activation.push(toSend);
+        }
+    }
+};
+NotebookRendererMessagingService = __decorate([
+    __param(0, IExtensionService),
+    __metadata("design:paramtypes", [Object])
+], NotebookRendererMessagingService);
+export { NotebookRendererMessagingService };

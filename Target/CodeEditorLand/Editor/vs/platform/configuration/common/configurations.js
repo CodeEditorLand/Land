@@ -1,1 +1,173 @@
-var m=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var y=(g,a,i,o)=>{for(var n=o>1?void 0:o?v(a,i):a,t=g.length-1,r;t>=0;t--)(r=g[t])&&(n=(o?r(a,i,n):r(n))||n);return o&&n&&m(a,i,n),n},p=(g,a)=>(i,o)=>a(i,o,g);import{coalesce as M}from"../../../base/common/arrays.js";import"../../../base/common/collections.js";import{Emitter as h,Event as P}from"../../../base/common/event.js";import{Disposable as C}from"../../../base/common/lifecycle.js";import{equals as D}from"../../../base/common/objects.js";import{isEmptyObject as S}from"../../../base/common/types.js";import{ConfigurationModel as c}from"./configurationModels.js";import{Extensions as l}from"./configurationRegistry.js";import{ILogService as _,NullLogService as I}from"../../log/common/log.js";import{IPolicyService as V}from"../../policy/common/policy.js";import{Registry as f}from"../../registry/common/platform.js";class H extends C{constructor(i){super();this.logService=i}_onDidChangeConfiguration=this._register(new h);onDidChangeConfiguration=this._onDidChangeConfiguration.event;_configurationModel=c.createEmptyModel(this.logService);get configurationModel(){return this._configurationModel}async initialize(){return this.resetConfigurationModel(),this._register(f.as(l.Configuration).onDidUpdateConfiguration(({properties:i,defaultsOverrides:o})=>this.onDidUpdateConfiguration(Array.from(i),o))),this.configurationModel}reload(){return this.resetConfigurationModel(),this.configurationModel}onDidUpdateConfiguration(i,o){this.updateConfigurationModel(i,f.as(l.Configuration).getConfigurationProperties()),this._onDidChangeConfiguration.fire({defaults:this.configurationModel,properties:i})}getConfigurationDefaultOverrides(){return{}}resetConfigurationModel(){this._configurationModel=c.createEmptyModel(this.logService);const i=f.as(l.Configuration).getConfigurationProperties();this.updateConfigurationModel(Object.keys(i),i)}updateConfigurationModel(i,o){const n=this.getConfigurationDefaultOverrides();for(const t of i){const r=n[t],e=o[t];r!==void 0?this._configurationModel.setValue(t,r):e?this._configurationModel.setValue(t,e.default):this._configurationModel.removeValue(t)}}}class J{onDidChangeConfiguration=P.None;configurationModel=c.createEmptyModel(new I);async initialize(){return this.configurationModel}}let d=class extends C{constructor(i,o,n){super();this.defaultConfiguration=i;this.policyService=o;this.logService=n}_onDidChangeConfiguration=this._register(new h);onDidChangeConfiguration=this._onDidChangeConfiguration.event;_configurationModel=c.createEmptyModel(this.logService);get configurationModel(){return this._configurationModel}async initialize(){return this.logService.trace("PolicyConfiguration#initialize"),this.update(await this.updatePolicyDefinitions(this.defaultConfiguration.configurationModel.keys),!1),this._register(this.policyService.onDidChange(i=>this.onDidChangePolicies(i))),this._register(this.defaultConfiguration.onDidChangeConfiguration(async({properties:i})=>this.update(await this.updatePolicyDefinitions(i),!0))),this._configurationModel}async updatePolicyDefinitions(i){this.logService.trace("PolicyConfiguration#updatePolicyDefinitions",i);const o={},n=[],t=f.as(l.Configuration).getConfigurationProperties();for(const r of i){const e=t[r];if(!e){n.push(r);continue}if(e.policy){if(e.type!=="string"&&e.type!=="number"){this.logService.warn(`Policy ${e.policy.name} has unsupported type ${e.type}`);continue}n.push(r),o[e.policy.name]={type:e.type}}}return S(o)||await this.policyService.updatePolicyDefinitions(o),n}onDidChangePolicies(i){this.logService.trace("PolicyConfiguration#onDidChangePolicies",i);const o=f.as(l.Configuration).getPolicyConfigurations(),n=M(i.map(t=>o.get(t)));this.update(n,!0)}update(i,o){this.logService.trace("PolicyConfiguration#update",i);const n=f.as(l.Configuration).getConfigurationProperties(),t=[],r=this._configurationModel.isEmpty();for(const e of i){const s=n[e]?.policy?.name;if(s){const u=this.policyService.getPolicyValue(s);(r?u!==void 0:!D(this._configurationModel.getValue(e),u))&&t.push([e,u])}else this._configurationModel.getValue(e)!==void 0&&t.push([e,void 0])}if(t.length){this.logService.trace("PolicyConfiguration#changed",t);const e=this._configurationModel;this._configurationModel=c.createEmptyModel(this.logService);for(const s of e.keys)this._configurationModel.setValue(s,e.getValue(s));for(const[s,u]of t)u===void 0?this._configurationModel.removeValue(s):this._configurationModel.setValue(s,u);o&&this._onDidChangeConfiguration.fire(this._configurationModel)}}};d=y([p(1,V),p(2,_)],d);export{H as DefaultConfiguration,J as NullPolicyConfiguration,d as PolicyConfiguration};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { coalesce } from '../../../base/common/arrays.js';
+import { Emitter, Event } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { equals } from '../../../base/common/objects.js';
+import { isEmptyObject } from '../../../base/common/types.js';
+import { ConfigurationModel } from './configurationModels.js';
+import { Extensions } from './configurationRegistry.js';
+import { ILogService, NullLogService } from '../../log/common/log.js';
+import { IPolicyService } from '../../policy/common/policy.js';
+import { Registry } from '../../registry/common/platform.js';
+export class DefaultConfiguration extends Disposable {
+    get configurationModel() {
+        return this._configurationModel;
+    }
+    constructor(logService) {
+        super();
+        this.logService = logService;
+        this._onDidChangeConfiguration = this._register(new Emitter());
+        this.onDidChangeConfiguration = this._onDidChangeConfiguration.event;
+        this._configurationModel = ConfigurationModel.createEmptyModel(this.logService);
+    }
+    async initialize() {
+        this.resetConfigurationModel();
+        this._register(Registry.as(Extensions.Configuration).onDidUpdateConfiguration(({ properties, defaultsOverrides }) => this.onDidUpdateConfiguration(Array.from(properties), defaultsOverrides)));
+        return this.configurationModel;
+    }
+    reload() {
+        this.resetConfigurationModel();
+        return this.configurationModel;
+    }
+    onDidUpdateConfiguration(properties, defaultsOverrides) {
+        this.updateConfigurationModel(properties, Registry.as(Extensions.Configuration).getConfigurationProperties());
+        this._onDidChangeConfiguration.fire({ defaults: this.configurationModel, properties });
+    }
+    getConfigurationDefaultOverrides() {
+        return {};
+    }
+    resetConfigurationModel() {
+        this._configurationModel = ConfigurationModel.createEmptyModel(this.logService);
+        const properties = Registry.as(Extensions.Configuration).getConfigurationProperties();
+        this.updateConfigurationModel(Object.keys(properties), properties);
+    }
+    updateConfigurationModel(properties, configurationProperties) {
+        const configurationDefaultsOverrides = this.getConfigurationDefaultOverrides();
+        for (const key of properties) {
+            const defaultOverrideValue = configurationDefaultsOverrides[key];
+            const propertySchema = configurationProperties[key];
+            if (defaultOverrideValue !== undefined) {
+                this._configurationModel.setValue(key, defaultOverrideValue);
+            }
+            else if (propertySchema) {
+                this._configurationModel.setValue(key, propertySchema.default);
+            }
+            else {
+                this._configurationModel.removeValue(key);
+            }
+        }
+    }
+}
+export class NullPolicyConfiguration {
+    constructor() {
+        this.onDidChangeConfiguration = Event.None;
+        this.configurationModel = ConfigurationModel.createEmptyModel(new NullLogService());
+    }
+    async initialize() { return this.configurationModel; }
+}
+let PolicyConfiguration = class PolicyConfiguration extends Disposable {
+    get configurationModel() { return this._configurationModel; }
+    constructor(defaultConfiguration, policyService, logService) {
+        super();
+        this.defaultConfiguration = defaultConfiguration;
+        this.policyService = policyService;
+        this.logService = logService;
+        this._onDidChangeConfiguration = this._register(new Emitter());
+        this.onDidChangeConfiguration = this._onDidChangeConfiguration.event;
+        this._configurationModel = ConfigurationModel.createEmptyModel(this.logService);
+    }
+    async initialize() {
+        this.logService.trace('PolicyConfiguration#initialize');
+        this.update(await this.updatePolicyDefinitions(this.defaultConfiguration.configurationModel.keys), false);
+        this._register(this.policyService.onDidChange(policyNames => this.onDidChangePolicies(policyNames)));
+        this._register(this.defaultConfiguration.onDidChangeConfiguration(async ({ properties }) => this.update(await this.updatePolicyDefinitions(properties), true)));
+        return this._configurationModel;
+    }
+    async updatePolicyDefinitions(properties) {
+        this.logService.trace('PolicyConfiguration#updatePolicyDefinitions', properties);
+        const policyDefinitions = {};
+        const keys = [];
+        const configurationProperties = Registry.as(Extensions.Configuration).getConfigurationProperties();
+        for (const key of properties) {
+            const config = configurationProperties[key];
+            if (!config) {
+                keys.push(key);
+                continue;
+            }
+            if (config.policy) {
+                if (config.type !== 'string' && config.type !== 'number') {
+                    this.logService.warn(`Policy ${config.policy.name} has unsupported type ${config.type}`);
+                    continue;
+                }
+                keys.push(key);
+                policyDefinitions[config.policy.name] = { type: config.type };
+            }
+        }
+        if (!isEmptyObject(policyDefinitions)) {
+            await this.policyService.updatePolicyDefinitions(policyDefinitions);
+        }
+        return keys;
+    }
+    onDidChangePolicies(policyNames) {
+        this.logService.trace('PolicyConfiguration#onDidChangePolicies', policyNames);
+        const policyConfigurations = Registry.as(Extensions.Configuration).getPolicyConfigurations();
+        const keys = coalesce(policyNames.map(policyName => policyConfigurations.get(policyName)));
+        this.update(keys, true);
+    }
+    update(keys, trigger) {
+        this.logService.trace('PolicyConfiguration#update', keys);
+        const configurationProperties = Registry.as(Extensions.Configuration).getConfigurationProperties();
+        const changed = [];
+        const wasEmpty = this._configurationModel.isEmpty();
+        for (const key of keys) {
+            const policyName = configurationProperties[key]?.policy?.name;
+            if (policyName) {
+                const policyValue = this.policyService.getPolicyValue(policyName);
+                if (wasEmpty ? policyValue !== undefined : !equals(this._configurationModel.getValue(key), policyValue)) {
+                    changed.push([key, policyValue]);
+                }
+            }
+            else {
+                if (this._configurationModel.getValue(key) !== undefined) {
+                    changed.push([key, undefined]);
+                }
+            }
+        }
+        if (changed.length) {
+            this.logService.trace('PolicyConfiguration#changed', changed);
+            const old = this._configurationModel;
+            this._configurationModel = ConfigurationModel.createEmptyModel(this.logService);
+            for (const key of old.keys) {
+                this._configurationModel.setValue(key, old.getValue(key));
+            }
+            for (const [key, policyValue] of changed) {
+                if (policyValue === undefined) {
+                    this._configurationModel.removeValue(key);
+                }
+                else {
+                    this._configurationModel.setValue(key, policyValue);
+                }
+            }
+            if (trigger) {
+                this._onDidChangeConfiguration.fire(this._configurationModel);
+            }
+        }
+    }
+};
+PolicyConfiguration = __decorate([
+    __param(1, IPolicyService),
+    __param(2, ILogService),
+    __metadata("design:paramtypes", [DefaultConfiguration, Object, Object])
+], PolicyConfiguration);
+export { PolicyConfiguration };

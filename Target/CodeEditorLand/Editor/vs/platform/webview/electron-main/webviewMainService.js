@@ -1,1 +1,89 @@
-var I=Object.defineProperty;var p=Object.getOwnPropertyDescriptor;var F=(a,t,n,o)=>{for(var e=o>1?void 0:o?p(t,n):t,i=a.length-1,r;i>=0;i--)(r=a[i])&&(e=(o?r(t,n,e):r(e))||e);return o&&e&&I(t,n,e),e},f=(a,t)=>(n,o)=>t(n,o,a);import{webContents as c}from"electron";import{Emitter as b}from"../../../base/common/event.js";import{Disposable as u}from"../../../base/common/lifecycle.js";import"../common/webviewManagerService.js";import{WebviewProtocolProvider as W}from"./webviewProtocolProvider.js";import{IWindowsMainService as l}from"../../windows/electron-main/windows.js";let s=class extends u{constructor(n){super();this.windowsMainService=n;this._register(new W)}_onFoundInFrame=this._register(new b);onFoundInFrame=this._onFoundInFrame.event;async setIgnoreMenuShortcuts(n,o){let e;if(typeof n.windowId=="number"){const{windowId:i}=n,r=this.windowsMainService.getWindowById(i);if(!r?.win)throw new Error(`Invalid windowId: ${i}`);e=r.win.webContents}else{const{webContentsId:i}=n;if(e=c.fromId(i),!e)throw new Error(`Invalid webContentsId: ${i}`)}e.isDestroyed()||e.setIgnoreMenuShortcuts(o)}async findInFrame(n,o,e,i){const d=this.getFrameByName(n,o);if(typeof d.findInFrame=="function"){d.findInFrame(e,{findNext:i.findNext,forward:i.forward});const m=(v,w)=>{w.finalUpdate&&(this._onFoundInFrame.fire(w),d.removeListener("found-in-frame",m))};d.on("found-in-frame",m)}}async stopFindInFrame(n,o,e){const r=this.getFrameByName(n,o);typeof r.stopFindInFrame=="function"&&r.stopFindInFrame(e.keepSelection?"keepSelection":"clearSelection")}getFrameByName(n,o){const e=this.windowsMainService.getWindowById(n.windowId);if(!e?.win)throw new Error(`Invalid windowId: ${n}`);const i=e.win.webContents.mainFrame.framesInSubtree.find(r=>r.name===o);if(!i)throw new Error(`Unknown frame: ${o}`);return i}};s=F([f(0,l)],s);export{s as WebviewMainService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { webContents } from 'electron';
+import { Emitter } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { WebviewProtocolProvider } from './webviewProtocolProvider.js';
+import { IWindowsMainService } from '../../windows/electron-main/windows.js';
+let WebviewMainService = class WebviewMainService extends Disposable {
+    constructor(windowsMainService) {
+        super();
+        this.windowsMainService = windowsMainService;
+        this._onFoundInFrame = this._register(new Emitter());
+        this.onFoundInFrame = this._onFoundInFrame.event;
+        this._register(new WebviewProtocolProvider());
+    }
+    async setIgnoreMenuShortcuts(id, enabled) {
+        let contents;
+        if (typeof id.windowId === 'number') {
+            const { windowId } = id;
+            const window = this.windowsMainService.getWindowById(windowId);
+            if (!window?.win) {
+                throw new Error(`Invalid windowId: ${windowId}`);
+            }
+            contents = window.win.webContents;
+        }
+        else {
+            const { webContentsId } = id;
+            contents = webContents.fromId(webContentsId);
+            if (!contents) {
+                throw new Error(`Invalid webContentsId: ${webContentsId}`);
+            }
+        }
+        if (!contents.isDestroyed()) {
+            contents.setIgnoreMenuShortcuts(enabled);
+        }
+    }
+    async findInFrame(windowId, frameName, text, options) {
+        const initialFrame = this.getFrameByName(windowId, frameName);
+        const frame = initialFrame;
+        if (typeof frame.findInFrame === 'function') {
+            frame.findInFrame(text, {
+                findNext: options.findNext,
+                forward: options.forward,
+            });
+            const foundInFrameHandler = (_, result) => {
+                if (result.finalUpdate) {
+                    this._onFoundInFrame.fire(result);
+                    frame.removeListener('found-in-frame', foundInFrameHandler);
+                }
+            };
+            frame.on('found-in-frame', foundInFrameHandler);
+        }
+    }
+    async stopFindInFrame(windowId, frameName, options) {
+        const initialFrame = this.getFrameByName(windowId, frameName);
+        const frame = initialFrame;
+        if (typeof frame.stopFindInFrame === 'function') {
+            frame.stopFindInFrame(options.keepSelection ? 'keepSelection' : 'clearSelection');
+        }
+    }
+    getFrameByName(windowId, frameName) {
+        const window = this.windowsMainService.getWindowById(windowId.windowId);
+        if (!window?.win) {
+            throw new Error(`Invalid windowId: ${windowId}`);
+        }
+        const frame = window.win.webContents.mainFrame.framesInSubtree.find(frame => {
+            return frame.name === frameName;
+        });
+        if (!frame) {
+            throw new Error(`Unknown frame: ${frameName}`);
+        }
+        return frame;
+    }
+};
+WebviewMainService = __decorate([
+    __param(0, IWindowsMainService),
+    __metadata("design:paramtypes", [Object])
+], WebviewMainService);
+export { WebviewMainService };

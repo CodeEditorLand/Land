@@ -1,1 +1,353 @@
-var D=(t=>(t[t.DependsOnKbLayout=-1]="DependsOnKbLayout",t[t.Unknown=0]="Unknown",t[t.Backspace=1]="Backspace",t[t.Tab=2]="Tab",t[t.Enter=3]="Enter",t[t.Shift=4]="Shift",t[t.Ctrl=5]="Ctrl",t[t.Alt=6]="Alt",t[t.PauseBreak=7]="PauseBreak",t[t.CapsLock=8]="CapsLock",t[t.Escape=9]="Escape",t[t.Space=10]="Space",t[t.PageUp=11]="PageUp",t[t.PageDown=12]="PageDown",t[t.End=13]="End",t[t.Home=14]="Home",t[t.LeftArrow=15]="LeftArrow",t[t.UpArrow=16]="UpArrow",t[t.RightArrow=17]="RightArrow",t[t.DownArrow=18]="DownArrow",t[t.Insert=19]="Insert",t[t.Delete=20]="Delete",t[t.Digit0=21]="Digit0",t[t.Digit1=22]="Digit1",t[t.Digit2=23]="Digit2",t[t.Digit3=24]="Digit3",t[t.Digit4=25]="Digit4",t[t.Digit5=26]="Digit5",t[t.Digit6=27]="Digit6",t[t.Digit7=28]="Digit7",t[t.Digit8=29]="Digit8",t[t.Digit9=30]="Digit9",t[t.KeyA=31]="KeyA",t[t.KeyB=32]="KeyB",t[t.KeyC=33]="KeyC",t[t.KeyD=34]="KeyD",t[t.KeyE=35]="KeyE",t[t.KeyF=36]="KeyF",t[t.KeyG=37]="KeyG",t[t.KeyH=38]="KeyH",t[t.KeyI=39]="KeyI",t[t.KeyJ=40]="KeyJ",t[t.KeyK=41]="KeyK",t[t.KeyL=42]="KeyL",t[t.KeyM=43]="KeyM",t[t.KeyN=44]="KeyN",t[t.KeyO=45]="KeyO",t[t.KeyP=46]="KeyP",t[t.KeyQ=47]="KeyQ",t[t.KeyR=48]="KeyR",t[t.KeyS=49]="KeyS",t[t.KeyT=50]="KeyT",t[t.KeyU=51]="KeyU",t[t.KeyV=52]="KeyV",t[t.KeyW=53]="KeyW",t[t.KeyX=54]="KeyX",t[t.KeyY=55]="KeyY",t[t.KeyZ=56]="KeyZ",t[t.Meta=57]="Meta",t[t.ContextMenu=58]="ContextMenu",t[t.F1=59]="F1",t[t.F2=60]="F2",t[t.F3=61]="F3",t[t.F4=62]="F4",t[t.F5=63]="F5",t[t.F6=64]="F6",t[t.F7=65]="F7",t[t.F8=66]="F8",t[t.F9=67]="F9",t[t.F10=68]="F10",t[t.F11=69]="F11",t[t.F12=70]="F12",t[t.F13=71]="F13",t[t.F14=72]="F14",t[t.F15=73]="F15",t[t.F16=74]="F16",t[t.F17=75]="F17",t[t.F18=76]="F18",t[t.F19=77]="F19",t[t.F20=78]="F20",t[t.F21=79]="F21",t[t.F22=80]="F22",t[t.F23=81]="F23",t[t.F24=82]="F24",t[t.NumLock=83]="NumLock",t[t.ScrollLock=84]="ScrollLock",t[t.Semicolon=85]="Semicolon",t[t.Equal=86]="Equal",t[t.Comma=87]="Comma",t[t.Minus=88]="Minus",t[t.Period=89]="Period",t[t.Slash=90]="Slash",t[t.Backquote=91]="Backquote",t[t.BracketLeft=92]="BracketLeft",t[t.Backslash=93]="Backslash",t[t.BracketRight=94]="BracketRight",t[t.Quote=95]="Quote",t[t.OEM_8=96]="OEM_8",t[t.IntlBackslash=97]="IntlBackslash",t[t.Numpad0=98]="Numpad0",t[t.Numpad1=99]="Numpad1",t[t.Numpad2=100]="Numpad2",t[t.Numpad3=101]="Numpad3",t[t.Numpad4=102]="Numpad4",t[t.Numpad5=103]="Numpad5",t[t.Numpad6=104]="Numpad6",t[t.Numpad7=105]="Numpad7",t[t.Numpad8=106]="Numpad8",t[t.Numpad9=107]="Numpad9",t[t.NumpadMultiply=108]="NumpadMultiply",t[t.NumpadAdd=109]="NumpadAdd",t[t.NUMPAD_SEPARATOR=110]="NUMPAD_SEPARATOR",t[t.NumpadSubtract=111]="NumpadSubtract",t[t.NumpadDecimal=112]="NumpadDecimal",t[t.NumpadDivide=113]="NumpadDivide",t[t.KEY_IN_COMPOSITION=114]="KEY_IN_COMPOSITION",t[t.ABNT_C1=115]="ABNT_C1",t[t.ABNT_C2=116]="ABNT_C2",t[t.AudioVolumeMute=117]="AudioVolumeMute",t[t.AudioVolumeUp=118]="AudioVolumeUp",t[t.AudioVolumeDown=119]="AudioVolumeDown",t[t.BrowserSearch=120]="BrowserSearch",t[t.BrowserHome=121]="BrowserHome",t[t.BrowserBack=122]="BrowserBack",t[t.BrowserForward=123]="BrowserForward",t[t.MediaTrackNext=124]="MediaTrackNext",t[t.MediaTrackPrevious=125]="MediaTrackPrevious",t[t.MediaStop=126]="MediaStop",t[t.MediaPlayPause=127]="MediaPlayPause",t[t.LaunchMediaPlayer=128]="LaunchMediaPlayer",t[t.LaunchMail=129]="LaunchMail",t[t.LaunchApp2=130]="LaunchApp2",t[t.Clear=131]="Clear",t[t.MAX_VALUE=132]="MAX_VALUE",t))(D||{}),L=(n=>(n[n.DependsOnKbLayout=-1]="DependsOnKbLayout",n[n.None=0]="None",n[n.Hyper=1]="Hyper",n[n.Super=2]="Super",n[n.Fn=3]="Fn",n[n.FnLock=4]="FnLock",n[n.Suspend=5]="Suspend",n[n.Resume=6]="Resume",n[n.Turbo=7]="Turbo",n[n.Sleep=8]="Sleep",n[n.WakeUp=9]="WakeUp",n[n.KeyA=10]="KeyA",n[n.KeyB=11]="KeyB",n[n.KeyC=12]="KeyC",n[n.KeyD=13]="KeyD",n[n.KeyE=14]="KeyE",n[n.KeyF=15]="KeyF",n[n.KeyG=16]="KeyG",n[n.KeyH=17]="KeyH",n[n.KeyI=18]="KeyI",n[n.KeyJ=19]="KeyJ",n[n.KeyK=20]="KeyK",n[n.KeyL=21]="KeyL",n[n.KeyM=22]="KeyM",n[n.KeyN=23]="KeyN",n[n.KeyO=24]="KeyO",n[n.KeyP=25]="KeyP",n[n.KeyQ=26]="KeyQ",n[n.KeyR=27]="KeyR",n[n.KeyS=28]="KeyS",n[n.KeyT=29]="KeyT",n[n.KeyU=30]="KeyU",n[n.KeyV=31]="KeyV",n[n.KeyW=32]="KeyW",n[n.KeyX=33]="KeyX",n[n.KeyY=34]="KeyY",n[n.KeyZ=35]="KeyZ",n[n.Digit1=36]="Digit1",n[n.Digit2=37]="Digit2",n[n.Digit3=38]="Digit3",n[n.Digit4=39]="Digit4",n[n.Digit5=40]="Digit5",n[n.Digit6=41]="Digit6",n[n.Digit7=42]="Digit7",n[n.Digit8=43]="Digit8",n[n.Digit9=44]="Digit9",n[n.Digit0=45]="Digit0",n[n.Enter=46]="Enter",n[n.Escape=47]="Escape",n[n.Backspace=48]="Backspace",n[n.Tab=49]="Tab",n[n.Space=50]="Space",n[n.Minus=51]="Minus",n[n.Equal=52]="Equal",n[n.BracketLeft=53]="BracketLeft",n[n.BracketRight=54]="BracketRight",n[n.Backslash=55]="Backslash",n[n.IntlHash=56]="IntlHash",n[n.Semicolon=57]="Semicolon",n[n.Quote=58]="Quote",n[n.Backquote=59]="Backquote",n[n.Comma=60]="Comma",n[n.Period=61]="Period",n[n.Slash=62]="Slash",n[n.CapsLock=63]="CapsLock",n[n.F1=64]="F1",n[n.F2=65]="F2",n[n.F3=66]="F3",n[n.F4=67]="F4",n[n.F5=68]="F5",n[n.F6=69]="F6",n[n.F7=70]="F7",n[n.F8=71]="F8",n[n.F9=72]="F9",n[n.F10=73]="F10",n[n.F11=74]="F11",n[n.F12=75]="F12",n[n.PrintScreen=76]="PrintScreen",n[n.ScrollLock=77]="ScrollLock",n[n.Pause=78]="Pause",n[n.Insert=79]="Insert",n[n.Home=80]="Home",n[n.PageUp=81]="PageUp",n[n.Delete=82]="Delete",n[n.End=83]="End",n[n.PageDown=84]="PageDown",n[n.ArrowRight=85]="ArrowRight",n[n.ArrowLeft=86]="ArrowLeft",n[n.ArrowDown=87]="ArrowDown",n[n.ArrowUp=88]="ArrowUp",n[n.NumLock=89]="NumLock",n[n.NumpadDivide=90]="NumpadDivide",n[n.NumpadMultiply=91]="NumpadMultiply",n[n.NumpadSubtract=92]="NumpadSubtract",n[n.NumpadAdd=93]="NumpadAdd",n[n.NumpadEnter=94]="NumpadEnter",n[n.Numpad1=95]="Numpad1",n[n.Numpad2=96]="Numpad2",n[n.Numpad3=97]="Numpad3",n[n.Numpad4=98]="Numpad4",n[n.Numpad5=99]="Numpad5",n[n.Numpad6=100]="Numpad6",n[n.Numpad7=101]="Numpad7",n[n.Numpad8=102]="Numpad8",n[n.Numpad9=103]="Numpad9",n[n.Numpad0=104]="Numpad0",n[n.NumpadDecimal=105]="NumpadDecimal",n[n.IntlBackslash=106]="IntlBackslash",n[n.ContextMenu=107]="ContextMenu",n[n.Power=108]="Power",n[n.NumpadEqual=109]="NumpadEqual",n[n.F13=110]="F13",n[n.F14=111]="F14",n[n.F15=112]="F15",n[n.F16=113]="F16",n[n.F17=114]="F17",n[n.F18=115]="F18",n[n.F19=116]="F19",n[n.F20=117]="F20",n[n.F21=118]="F21",n[n.F22=119]="F22",n[n.F23=120]="F23",n[n.F24=121]="F24",n[n.Open=122]="Open",n[n.Help=123]="Help",n[n.Select=124]="Select",n[n.Again=125]="Again",n[n.Undo=126]="Undo",n[n.Cut=127]="Cut",n[n.Copy=128]="Copy",n[n.Paste=129]="Paste",n[n.Find=130]="Find",n[n.AudioVolumeMute=131]="AudioVolumeMute",n[n.AudioVolumeUp=132]="AudioVolumeUp",n[n.AudioVolumeDown=133]="AudioVolumeDown",n[n.NumpadComma=134]="NumpadComma",n[n.IntlRo=135]="IntlRo",n[n.KanaMode=136]="KanaMode",n[n.IntlYen=137]="IntlYen",n[n.Convert=138]="Convert",n[n.NonConvert=139]="NonConvert",n[n.Lang1=140]="Lang1",n[n.Lang2=141]="Lang2",n[n.Lang3=142]="Lang3",n[n.Lang4=143]="Lang4",n[n.Lang5=144]="Lang5",n[n.Abort=145]="Abort",n[n.Props=146]="Props",n[n.NumpadParenLeft=147]="NumpadParenLeft",n[n.NumpadParenRight=148]="NumpadParenRight",n[n.NumpadBackspace=149]="NumpadBackspace",n[n.NumpadMemoryStore=150]="NumpadMemoryStore",n[n.NumpadMemoryRecall=151]="NumpadMemoryRecall",n[n.NumpadMemoryClear=152]="NumpadMemoryClear",n[n.NumpadMemoryAdd=153]="NumpadMemoryAdd",n[n.NumpadMemorySubtract=154]="NumpadMemorySubtract",n[n.NumpadClear=155]="NumpadClear",n[n.NumpadClearEntry=156]="NumpadClearEntry",n[n.ControlLeft=157]="ControlLeft",n[n.ShiftLeft=158]="ShiftLeft",n[n.AltLeft=159]="AltLeft",n[n.MetaLeft=160]="MetaLeft",n[n.ControlRight=161]="ControlRight",n[n.ShiftRight=162]="ShiftRight",n[n.AltRight=163]="AltRight",n[n.MetaRight=164]="MetaRight",n[n.BrightnessUp=165]="BrightnessUp",n[n.BrightnessDown=166]="BrightnessDown",n[n.MediaPlay=167]="MediaPlay",n[n.MediaRecord=168]="MediaRecord",n[n.MediaFastForward=169]="MediaFastForward",n[n.MediaRewind=170]="MediaRewind",n[n.MediaTrackNext=171]="MediaTrackNext",n[n.MediaTrackPrevious=172]="MediaTrackPrevious",n[n.MediaStop=173]="MediaStop",n[n.Eject=174]="Eject",n[n.MediaPlayPause=175]="MediaPlayPause",n[n.MediaSelect=176]="MediaSelect",n[n.LaunchMail=177]="LaunchMail",n[n.LaunchApp2=178]="LaunchApp2",n[n.LaunchApp1=179]="LaunchApp1",n[n.SelectTask=180]="SelectTask",n[n.LaunchScreenSaver=181]="LaunchScreenSaver",n[n.BrowserSearch=182]="BrowserSearch",n[n.BrowserHome=183]="BrowserHome",n[n.BrowserBack=184]="BrowserBack",n[n.BrowserForward=185]="BrowserForward",n[n.BrowserStop=186]="BrowserStop",n[n.BrowserRefresh=187]="BrowserRefresh",n[n.BrowserFavorites=188]="BrowserFavorites",n[n.ZoomToggle=189]="ZoomToggle",n[n.MailReply=190]="MailReply",n[n.MailForward=191]="MailForward",n[n.MailSend=192]="MailSend",n[n.MAX_VALUE=193]="MAX_VALUE",n))(L||{});class s{_keyCodeToStr;_strToKeyCode;constructor(){this._keyCodeToStr=[],this._strToKeyCode=Object.create(null)}define(a,u){this._keyCodeToStr[a]=u,this._strToKeyCode[u.toLowerCase()]=a}keyCodeToStr(a){return this._keyCodeToStr[a]}strToKeyCode(a){return this._strToKeyCode[a.toLowerCase()]||0}}const p=new s,m=new s,l=new s,P=new Array(230),d={},A=[],k=Object.create(null),E=Object.create(null),T={lowerCaseToEnum:e=>E[e]||0,toEnum:e=>k[e]||0,toString:e=>A[e]||"None"},U=[],F=[];for(let e=0;e<=193;e++)U[e]=-1;for(let e=0;e<=132;e++)F[e]=-1;(function(){const e="",a=[[1,0,"None",0,"unknown",0,"VK_UNKNOWN",e,e],[1,1,"Hyper",0,e,0,e,e,e],[1,2,"Super",0,e,0,e,e,e],[1,3,"Fn",0,e,0,e,e,e],[1,4,"FnLock",0,e,0,e,e,e],[1,5,"Suspend",0,e,0,e,e,e],[1,6,"Resume",0,e,0,e,e,e],[1,7,"Turbo",0,e,0,e,e,e],[1,8,"Sleep",0,e,0,"VK_SLEEP",e,e],[1,9,"WakeUp",0,e,0,e,e,e],[0,10,"KeyA",31,"A",65,"VK_A",e,e],[0,11,"KeyB",32,"B",66,"VK_B",e,e],[0,12,"KeyC",33,"C",67,"VK_C",e,e],[0,13,"KeyD",34,"D",68,"VK_D",e,e],[0,14,"KeyE",35,"E",69,"VK_E",e,e],[0,15,"KeyF",36,"F",70,"VK_F",e,e],[0,16,"KeyG",37,"G",71,"VK_G",e,e],[0,17,"KeyH",38,"H",72,"VK_H",e,e],[0,18,"KeyI",39,"I",73,"VK_I",e,e],[0,19,"KeyJ",40,"J",74,"VK_J",e,e],[0,20,"KeyK",41,"K",75,"VK_K",e,e],[0,21,"KeyL",42,"L",76,"VK_L",e,e],[0,22,"KeyM",43,"M",77,"VK_M",e,e],[0,23,"KeyN",44,"N",78,"VK_N",e,e],[0,24,"KeyO",45,"O",79,"VK_O",e,e],[0,25,"KeyP",46,"P",80,"VK_P",e,e],[0,26,"KeyQ",47,"Q",81,"VK_Q",e,e],[0,27,"KeyR",48,"R",82,"VK_R",e,e],[0,28,"KeyS",49,"S",83,"VK_S",e,e],[0,29,"KeyT",50,"T",84,"VK_T",e,e],[0,30,"KeyU",51,"U",85,"VK_U",e,e],[0,31,"KeyV",52,"V",86,"VK_V",e,e],[0,32,"KeyW",53,"W",87,"VK_W",e,e],[0,33,"KeyX",54,"X",88,"VK_X",e,e],[0,34,"KeyY",55,"Y",89,"VK_Y",e,e],[0,35,"KeyZ",56,"Z",90,"VK_Z",e,e],[0,36,"Digit1",22,"1",49,"VK_1",e,e],[0,37,"Digit2",23,"2",50,"VK_2",e,e],[0,38,"Digit3",24,"3",51,"VK_3",e,e],[0,39,"Digit4",25,"4",52,"VK_4",e,e],[0,40,"Digit5",26,"5",53,"VK_5",e,e],[0,41,"Digit6",27,"6",54,"VK_6",e,e],[0,42,"Digit7",28,"7",55,"VK_7",e,e],[0,43,"Digit8",29,"8",56,"VK_8",e,e],[0,44,"Digit9",30,"9",57,"VK_9",e,e],[0,45,"Digit0",21,"0",48,"VK_0",e,e],[1,46,"Enter",3,"Enter",13,"VK_RETURN",e,e],[1,47,"Escape",9,"Escape",27,"VK_ESCAPE",e,e],[1,48,"Backspace",1,"Backspace",8,"VK_BACK",e,e],[1,49,"Tab",2,"Tab",9,"VK_TAB",e,e],[1,50,"Space",10,"Space",32,"VK_SPACE",e,e],[0,51,"Minus",88,"-",189,"VK_OEM_MINUS","-","OEM_MINUS"],[0,52,"Equal",86,"=",187,"VK_OEM_PLUS","=","OEM_PLUS"],[0,53,"BracketLeft",92,"[",219,"VK_OEM_4","[","OEM_4"],[0,54,"BracketRight",94,"]",221,"VK_OEM_6","]","OEM_6"],[0,55,"Backslash",93,"\\",220,"VK_OEM_5","\\","OEM_5"],[0,56,"IntlHash",0,e,0,e,e,e],[0,57,"Semicolon",85,";",186,"VK_OEM_1",";","OEM_1"],[0,58,"Quote",95,"'",222,"VK_OEM_7","'","OEM_7"],[0,59,"Backquote",91,"`",192,"VK_OEM_3","`","OEM_3"],[0,60,"Comma",87,",",188,"VK_OEM_COMMA",",","OEM_COMMA"],[0,61,"Period",89,".",190,"VK_OEM_PERIOD",".","OEM_PERIOD"],[0,62,"Slash",90,"/",191,"VK_OEM_2","/","OEM_2"],[1,63,"CapsLock",8,"CapsLock",20,"VK_CAPITAL",e,e],[1,64,"F1",59,"F1",112,"VK_F1",e,e],[1,65,"F2",60,"F2",113,"VK_F2",e,e],[1,66,"F3",61,"F3",114,"VK_F3",e,e],[1,67,"F4",62,"F4",115,"VK_F4",e,e],[1,68,"F5",63,"F5",116,"VK_F5",e,e],[1,69,"F6",64,"F6",117,"VK_F6",e,e],[1,70,"F7",65,"F7",118,"VK_F7",e,e],[1,71,"F8",66,"F8",119,"VK_F8",e,e],[1,72,"F9",67,"F9",120,"VK_F9",e,e],[1,73,"F10",68,"F10",121,"VK_F10",e,e],[1,74,"F11",69,"F11",122,"VK_F11",e,e],[1,75,"F12",70,"F12",123,"VK_F12",e,e],[1,76,"PrintScreen",0,e,0,e,e,e],[1,77,"ScrollLock",84,"ScrollLock",145,"VK_SCROLL",e,e],[1,78,"Pause",7,"PauseBreak",19,"VK_PAUSE",e,e],[1,79,"Insert",19,"Insert",45,"VK_INSERT",e,e],[1,80,"Home",14,"Home",36,"VK_HOME",e,e],[1,81,"PageUp",11,"PageUp",33,"VK_PRIOR",e,e],[1,82,"Delete",20,"Delete",46,"VK_DELETE",e,e],[1,83,"End",13,"End",35,"VK_END",e,e],[1,84,"PageDown",12,"PageDown",34,"VK_NEXT",e,e],[1,85,"ArrowRight",17,"RightArrow",39,"VK_RIGHT","Right",e],[1,86,"ArrowLeft",15,"LeftArrow",37,"VK_LEFT","Left",e],[1,87,"ArrowDown",18,"DownArrow",40,"VK_DOWN","Down",e],[1,88,"ArrowUp",16,"UpArrow",38,"VK_UP","Up",e],[1,89,"NumLock",83,"NumLock",144,"VK_NUMLOCK",e,e],[1,90,"NumpadDivide",113,"NumPad_Divide",111,"VK_DIVIDE",e,e],[1,91,"NumpadMultiply",108,"NumPad_Multiply",106,"VK_MULTIPLY",e,e],[1,92,"NumpadSubtract",111,"NumPad_Subtract",109,"VK_SUBTRACT",e,e],[1,93,"NumpadAdd",109,"NumPad_Add",107,"VK_ADD",e,e],[1,94,"NumpadEnter",3,e,0,e,e,e],[1,95,"Numpad1",99,"NumPad1",97,"VK_NUMPAD1",e,e],[1,96,"Numpad2",100,"NumPad2",98,"VK_NUMPAD2",e,e],[1,97,"Numpad3",101,"NumPad3",99,"VK_NUMPAD3",e,e],[1,98,"Numpad4",102,"NumPad4",100,"VK_NUMPAD4",e,e],[1,99,"Numpad5",103,"NumPad5",101,"VK_NUMPAD5",e,e],[1,100,"Numpad6",104,"NumPad6",102,"VK_NUMPAD6",e,e],[1,101,"Numpad7",105,"NumPad7",103,"VK_NUMPAD7",e,e],[1,102,"Numpad8",106,"NumPad8",104,"VK_NUMPAD8",e,e],[1,103,"Numpad9",107,"NumPad9",105,"VK_NUMPAD9",e,e],[1,104,"Numpad0",98,"NumPad0",96,"VK_NUMPAD0",e,e],[1,105,"NumpadDecimal",112,"NumPad_Decimal",110,"VK_DECIMAL",e,e],[0,106,"IntlBackslash",97,"OEM_102",226,"VK_OEM_102",e,e],[1,107,"ContextMenu",58,"ContextMenu",93,e,e,e],[1,108,"Power",0,e,0,e,e,e],[1,109,"NumpadEqual",0,e,0,e,e,e],[1,110,"F13",71,"F13",124,"VK_F13",e,e],[1,111,"F14",72,"F14",125,"VK_F14",e,e],[1,112,"F15",73,"F15",126,"VK_F15",e,e],[1,113,"F16",74,"F16",127,"VK_F16",e,e],[1,114,"F17",75,"F17",128,"VK_F17",e,e],[1,115,"F18",76,"F18",129,"VK_F18",e,e],[1,116,"F19",77,"F19",130,"VK_F19",e,e],[1,117,"F20",78,"F20",131,"VK_F20",e,e],[1,118,"F21",79,"F21",132,"VK_F21",e,e],[1,119,"F22",80,"F22",133,"VK_F22",e,e],[1,120,"F23",81,"F23",134,"VK_F23",e,e],[1,121,"F24",82,"F24",135,"VK_F24",e,e],[1,122,"Open",0,e,0,e,e,e],[1,123,"Help",0,e,0,e,e,e],[1,124,"Select",0,e,0,e,e,e],[1,125,"Again",0,e,0,e,e,e],[1,126,"Undo",0,e,0,e,e,e],[1,127,"Cut",0,e,0,e,e,e],[1,128,"Copy",0,e,0,e,e,e],[1,129,"Paste",0,e,0,e,e,e],[1,130,"Find",0,e,0,e,e,e],[1,131,"AudioVolumeMute",117,"AudioVolumeMute",173,"VK_VOLUME_MUTE",e,e],[1,132,"AudioVolumeUp",118,"AudioVolumeUp",175,"VK_VOLUME_UP",e,e],[1,133,"AudioVolumeDown",119,"AudioVolumeDown",174,"VK_VOLUME_DOWN",e,e],[1,134,"NumpadComma",110,"NumPad_Separator",108,"VK_SEPARATOR",e,e],[0,135,"IntlRo",115,"ABNT_C1",193,"VK_ABNT_C1",e,e],[1,136,"KanaMode",0,e,0,e,e,e],[0,137,"IntlYen",0,e,0,e,e,e],[1,138,"Convert",0,e,0,e,e,e],[1,139,"NonConvert",0,e,0,e,e,e],[1,140,"Lang1",0,e,0,e,e,e],[1,141,"Lang2",0,e,0,e,e,e],[1,142,"Lang3",0,e,0,e,e,e],[1,143,"Lang4",0,e,0,e,e,e],[1,144,"Lang5",0,e,0,e,e,e],[1,145,"Abort",0,e,0,e,e,e],[1,146,"Props",0,e,0,e,e,e],[1,147,"NumpadParenLeft",0,e,0,e,e,e],[1,148,"NumpadParenRight",0,e,0,e,e,e],[1,149,"NumpadBackspace",0,e,0,e,e,e],[1,150,"NumpadMemoryStore",0,e,0,e,e,e],[1,151,"NumpadMemoryRecall",0,e,0,e,e,e],[1,152,"NumpadMemoryClear",0,e,0,e,e,e],[1,153,"NumpadMemoryAdd",0,e,0,e,e,e],[1,154,"NumpadMemorySubtract",0,e,0,e,e,e],[1,155,"NumpadClear",131,"Clear",12,"VK_CLEAR",e,e],[1,156,"NumpadClearEntry",0,e,0,e,e,e],[1,0,e,5,"Ctrl",17,"VK_CONTROL",e,e],[1,0,e,4,"Shift",16,"VK_SHIFT",e,e],[1,0,e,6,"Alt",18,"VK_MENU",e,e],[1,0,e,57,"Meta",91,"VK_COMMAND",e,e],[1,157,"ControlLeft",5,e,0,"VK_LCONTROL",e,e],[1,158,"ShiftLeft",4,e,0,"VK_LSHIFT",e,e],[1,159,"AltLeft",6,e,0,"VK_LMENU",e,e],[1,160,"MetaLeft",57,e,0,"VK_LWIN",e,e],[1,161,"ControlRight",5,e,0,"VK_RCONTROL",e,e],[1,162,"ShiftRight",4,e,0,"VK_RSHIFT",e,e],[1,163,"AltRight",6,e,0,"VK_RMENU",e,e],[1,164,"MetaRight",57,e,0,"VK_RWIN",e,e],[1,165,"BrightnessUp",0,e,0,e,e,e],[1,166,"BrightnessDown",0,e,0,e,e,e],[1,167,"MediaPlay",0,e,0,e,e,e],[1,168,"MediaRecord",0,e,0,e,e,e],[1,169,"MediaFastForward",0,e,0,e,e,e],[1,170,"MediaRewind",0,e,0,e,e,e],[1,171,"MediaTrackNext",124,"MediaTrackNext",176,"VK_MEDIA_NEXT_TRACK",e,e],[1,172,"MediaTrackPrevious",125,"MediaTrackPrevious",177,"VK_MEDIA_PREV_TRACK",e,e],[1,173,"MediaStop",126,"MediaStop",178,"VK_MEDIA_STOP",e,e],[1,174,"Eject",0,e,0,e,e,e],[1,175,"MediaPlayPause",127,"MediaPlayPause",179,"VK_MEDIA_PLAY_PAUSE",e,e],[1,176,"MediaSelect",128,"LaunchMediaPlayer",181,"VK_MEDIA_LAUNCH_MEDIA_SELECT",e,e],[1,177,"LaunchMail",129,"LaunchMail",180,"VK_MEDIA_LAUNCH_MAIL",e,e],[1,178,"LaunchApp2",130,"LaunchApp2",183,"VK_MEDIA_LAUNCH_APP2",e,e],[1,179,"LaunchApp1",0,e,0,"VK_MEDIA_LAUNCH_APP1",e,e],[1,180,"SelectTask",0,e,0,e,e,e],[1,181,"LaunchScreenSaver",0,e,0,e,e,e],[1,182,"BrowserSearch",120,"BrowserSearch",170,"VK_BROWSER_SEARCH",e,e],[1,183,"BrowserHome",121,"BrowserHome",172,"VK_BROWSER_HOME",e,e],[1,184,"BrowserBack",122,"BrowserBack",166,"VK_BROWSER_BACK",e,e],[1,185,"BrowserForward",123,"BrowserForward",167,"VK_BROWSER_FORWARD",e,e],[1,186,"BrowserStop",0,e,0,"VK_BROWSER_STOP",e,e],[1,187,"BrowserRefresh",0,e,0,"VK_BROWSER_REFRESH",e,e],[1,188,"BrowserFavorites",0,e,0,"VK_BROWSER_FAVORITES",e,e],[1,189,"ZoomToggle",0,e,0,e,e,e],[1,190,"MailReply",0,e,0,e,e,e],[1,191,"MailForward",0,e,0,e,e,e],[1,192,"MailSend",0,e,0,e,e,e],[1,0,e,114,"KeyInComposition",229,e,e,e],[1,0,e,116,"ABNT_C2",194,"VK_ABNT_C2",e,e],[1,0,e,96,"OEM_8",223,"VK_OEM_8",e,e],[1,0,e,0,e,0,"VK_KANA",e,e],[1,0,e,0,e,0,"VK_HANGUL",e,e],[1,0,e,0,e,0,"VK_JUNJA",e,e],[1,0,e,0,e,0,"VK_FINAL",e,e],[1,0,e,0,e,0,"VK_HANJA",e,e],[1,0,e,0,e,0,"VK_KANJI",e,e],[1,0,e,0,e,0,"VK_CONVERT",e,e],[1,0,e,0,e,0,"VK_NONCONVERT",e,e],[1,0,e,0,e,0,"VK_ACCEPT",e,e],[1,0,e,0,e,0,"VK_MODECHANGE",e,e],[1,0,e,0,e,0,"VK_SELECT",e,e],[1,0,e,0,e,0,"VK_PRINT",e,e],[1,0,e,0,e,0,"VK_EXECUTE",e,e],[1,0,e,0,e,0,"VK_SNAPSHOT",e,e],[1,0,e,0,e,0,"VK_HELP",e,e],[1,0,e,0,e,0,"VK_APPS",e,e],[1,0,e,0,e,0,"VK_PROCESSKEY",e,e],[1,0,e,0,e,0,"VK_PACKET",e,e],[1,0,e,0,e,0,"VK_DBE_SBCSCHAR",e,e],[1,0,e,0,e,0,"VK_DBE_DBCSCHAR",e,e],[1,0,e,0,e,0,"VK_ATTN",e,e],[1,0,e,0,e,0,"VK_CRSEL",e,e],[1,0,e,0,e,0,"VK_EXSEL",e,e],[1,0,e,0,e,0,"VK_EREOF",e,e],[1,0,e,0,e,0,"VK_PLAY",e,e],[1,0,e,0,e,0,"VK_ZOOM",e,e],[1,0,e,0,e,0,"VK_NONAME",e,e],[1,0,e,0,e,0,"VK_PA1",e,e],[1,0,e,0,e,0,"VK_OEM_CLEAR",e,e]],u=[],N=[];for(const i of a){const[V,K,r,o,_,w,M,y,g]=i;if(N[K]||(N[K]=!0,A[K]=r,k[r]=K,E[r.toLowerCase()]=K,V&&(U[K]=o,o!==0&&o!==3&&o!==5&&o!==4&&o!==6&&o!==57&&(F[o]=K))),!u[o]){if(u[o]=!0,!_)throw new Error(`String representation missing for key code ${o} around scan code ${r}`);p.define(o,_),m.define(o,y||_),l.define(o,g||y||_)}w&&(P[w]=o),M&&(d[M]=o)}F[3]=46})();var B;(K=>{function e(r){return p.keyCodeToStr(r)}K.toString=e;function a(r){return p.strToKeyCode(r)}K.fromString=a;function u(r){return m.keyCodeToStr(r)}K.toUserSettingsUS=u;function N(r){return l.keyCodeToStr(r)}K.toUserSettingsGeneral=N;function i(r){return m.strToKeyCode(r)||l.strToKeyCode(r)}K.fromUserSettings=i;function V(r){if(r>=98&&r<=113)return null;switch(r){case 16:return"Up";case 18:return"Down";case 15:return"Left";case 17:return"Right"}return p.keyCodeToStr(r)}K.toElectronAccelerator=V})(B||={});var R=(i=>(i[i.CtrlCmd=2048]="CtrlCmd",i[i.Shift=1024]="Shift",i[i.Alt=512]="Alt",i[i.WinCtrl=256]="WinCtrl",i))(R||{});function O(e,a){const u=(a&65535)<<16>>>0;return(e|u)>>>0}export{P as EVENT_KEY_CODE_MAP,U as IMMUTABLE_CODE_TO_KEY_CODE,F as IMMUTABLE_KEY_CODE_TO_CODE,O as KeyChord,D as KeyCode,B as KeyCodeUtils,R as KeyMod,d as NATIVE_WINDOWS_KEY_CODE_TO_KEY_CODE,L as ScanCode,T as ScanCodeUtils};
+class KeyCodeStrMap {
+    constructor() {
+        this._keyCodeToStr = [];
+        this._strToKeyCode = Object.create(null);
+    }
+    define(keyCode, str) {
+        this._keyCodeToStr[keyCode] = str;
+        this._strToKeyCode[str.toLowerCase()] = keyCode;
+    }
+    keyCodeToStr(keyCode) {
+        return this._keyCodeToStr[keyCode];
+    }
+    strToKeyCode(str) {
+        return this._strToKeyCode[str.toLowerCase()] || 0;
+    }
+}
+const uiMap = new KeyCodeStrMap();
+const userSettingsUSMap = new KeyCodeStrMap();
+const userSettingsGeneralMap = new KeyCodeStrMap();
+export const EVENT_KEY_CODE_MAP = new Array(230);
+export const NATIVE_WINDOWS_KEY_CODE_TO_KEY_CODE = {};
+const scanCodeIntToStr = [];
+const scanCodeStrToInt = Object.create(null);
+const scanCodeLowerCaseStrToInt = Object.create(null);
+export const ScanCodeUtils = {
+    lowerCaseToEnum: (scanCode) => scanCodeLowerCaseStrToInt[scanCode] || 0,
+    toEnum: (scanCode) => scanCodeStrToInt[scanCode] || 0,
+    toString: (scanCode) => scanCodeIntToStr[scanCode] || 'None'
+};
+export const IMMUTABLE_CODE_TO_KEY_CODE = [];
+export const IMMUTABLE_KEY_CODE_TO_CODE = [];
+for (let i = 0; i <= 193; i++) {
+    IMMUTABLE_CODE_TO_KEY_CODE[i] = -1;
+}
+for (let i = 0; i <= 132; i++) {
+    IMMUTABLE_KEY_CODE_TO_CODE[i] = -1;
+}
+(function () {
+    const empty = '';
+    const mappings = [
+        [1, 0, 'None', 0, 'unknown', 0, 'VK_UNKNOWN', empty, empty],
+        [1, 1, 'Hyper', 0, empty, 0, empty, empty, empty],
+        [1, 2, 'Super', 0, empty, 0, empty, empty, empty],
+        [1, 3, 'Fn', 0, empty, 0, empty, empty, empty],
+        [1, 4, 'FnLock', 0, empty, 0, empty, empty, empty],
+        [1, 5, 'Suspend', 0, empty, 0, empty, empty, empty],
+        [1, 6, 'Resume', 0, empty, 0, empty, empty, empty],
+        [1, 7, 'Turbo', 0, empty, 0, empty, empty, empty],
+        [1, 8, 'Sleep', 0, empty, 0, 'VK_SLEEP', empty, empty],
+        [1, 9, 'WakeUp', 0, empty, 0, empty, empty, empty],
+        [0, 10, 'KeyA', 31, 'A', 65, 'VK_A', empty, empty],
+        [0, 11, 'KeyB', 32, 'B', 66, 'VK_B', empty, empty],
+        [0, 12, 'KeyC', 33, 'C', 67, 'VK_C', empty, empty],
+        [0, 13, 'KeyD', 34, 'D', 68, 'VK_D', empty, empty],
+        [0, 14, 'KeyE', 35, 'E', 69, 'VK_E', empty, empty],
+        [0, 15, 'KeyF', 36, 'F', 70, 'VK_F', empty, empty],
+        [0, 16, 'KeyG', 37, 'G', 71, 'VK_G', empty, empty],
+        [0, 17, 'KeyH', 38, 'H', 72, 'VK_H', empty, empty],
+        [0, 18, 'KeyI', 39, 'I', 73, 'VK_I', empty, empty],
+        [0, 19, 'KeyJ', 40, 'J', 74, 'VK_J', empty, empty],
+        [0, 20, 'KeyK', 41, 'K', 75, 'VK_K', empty, empty],
+        [0, 21, 'KeyL', 42, 'L', 76, 'VK_L', empty, empty],
+        [0, 22, 'KeyM', 43, 'M', 77, 'VK_M', empty, empty],
+        [0, 23, 'KeyN', 44, 'N', 78, 'VK_N', empty, empty],
+        [0, 24, 'KeyO', 45, 'O', 79, 'VK_O', empty, empty],
+        [0, 25, 'KeyP', 46, 'P', 80, 'VK_P', empty, empty],
+        [0, 26, 'KeyQ', 47, 'Q', 81, 'VK_Q', empty, empty],
+        [0, 27, 'KeyR', 48, 'R', 82, 'VK_R', empty, empty],
+        [0, 28, 'KeyS', 49, 'S', 83, 'VK_S', empty, empty],
+        [0, 29, 'KeyT', 50, 'T', 84, 'VK_T', empty, empty],
+        [0, 30, 'KeyU', 51, 'U', 85, 'VK_U', empty, empty],
+        [0, 31, 'KeyV', 52, 'V', 86, 'VK_V', empty, empty],
+        [0, 32, 'KeyW', 53, 'W', 87, 'VK_W', empty, empty],
+        [0, 33, 'KeyX', 54, 'X', 88, 'VK_X', empty, empty],
+        [0, 34, 'KeyY', 55, 'Y', 89, 'VK_Y', empty, empty],
+        [0, 35, 'KeyZ', 56, 'Z', 90, 'VK_Z', empty, empty],
+        [0, 36, 'Digit1', 22, '1', 49, 'VK_1', empty, empty],
+        [0, 37, 'Digit2', 23, '2', 50, 'VK_2', empty, empty],
+        [0, 38, 'Digit3', 24, '3', 51, 'VK_3', empty, empty],
+        [0, 39, 'Digit4', 25, '4', 52, 'VK_4', empty, empty],
+        [0, 40, 'Digit5', 26, '5', 53, 'VK_5', empty, empty],
+        [0, 41, 'Digit6', 27, '6', 54, 'VK_6', empty, empty],
+        [0, 42, 'Digit7', 28, '7', 55, 'VK_7', empty, empty],
+        [0, 43, 'Digit8', 29, '8', 56, 'VK_8', empty, empty],
+        [0, 44, 'Digit9', 30, '9', 57, 'VK_9', empty, empty],
+        [0, 45, 'Digit0', 21, '0', 48, 'VK_0', empty, empty],
+        [1, 46, 'Enter', 3, 'Enter', 13, 'VK_RETURN', empty, empty],
+        [1, 47, 'Escape', 9, 'Escape', 27, 'VK_ESCAPE', empty, empty],
+        [1, 48, 'Backspace', 1, 'Backspace', 8, 'VK_BACK', empty, empty],
+        [1, 49, 'Tab', 2, 'Tab', 9, 'VK_TAB', empty, empty],
+        [1, 50, 'Space', 10, 'Space', 32, 'VK_SPACE', empty, empty],
+        [0, 51, 'Minus', 88, '-', 189, 'VK_OEM_MINUS', '-', 'OEM_MINUS'],
+        [0, 52, 'Equal', 86, '=', 187, 'VK_OEM_PLUS', '=', 'OEM_PLUS'],
+        [0, 53, 'BracketLeft', 92, '[', 219, 'VK_OEM_4', '[', 'OEM_4'],
+        [0, 54, 'BracketRight', 94, ']', 221, 'VK_OEM_6', ']', 'OEM_6'],
+        [0, 55, 'Backslash', 93, '\\', 220, 'VK_OEM_5', '\\', 'OEM_5'],
+        [0, 56, 'IntlHash', 0, empty, 0, empty, empty, empty],
+        [0, 57, 'Semicolon', 85, ';', 186, 'VK_OEM_1', ';', 'OEM_1'],
+        [0, 58, 'Quote', 95, '\'', 222, 'VK_OEM_7', '\'', 'OEM_7'],
+        [0, 59, 'Backquote', 91, '`', 192, 'VK_OEM_3', '`', 'OEM_3'],
+        [0, 60, 'Comma', 87, ',', 188, 'VK_OEM_COMMA', ',', 'OEM_COMMA'],
+        [0, 61, 'Period', 89, '.', 190, 'VK_OEM_PERIOD', '.', 'OEM_PERIOD'],
+        [0, 62, 'Slash', 90, '/', 191, 'VK_OEM_2', '/', 'OEM_2'],
+        [1, 63, 'CapsLock', 8, 'CapsLock', 20, 'VK_CAPITAL', empty, empty],
+        [1, 64, 'F1', 59, 'F1', 112, 'VK_F1', empty, empty],
+        [1, 65, 'F2', 60, 'F2', 113, 'VK_F2', empty, empty],
+        [1, 66, 'F3', 61, 'F3', 114, 'VK_F3', empty, empty],
+        [1, 67, 'F4', 62, 'F4', 115, 'VK_F4', empty, empty],
+        [1, 68, 'F5', 63, 'F5', 116, 'VK_F5', empty, empty],
+        [1, 69, 'F6', 64, 'F6', 117, 'VK_F6', empty, empty],
+        [1, 70, 'F7', 65, 'F7', 118, 'VK_F7', empty, empty],
+        [1, 71, 'F8', 66, 'F8', 119, 'VK_F8', empty, empty],
+        [1, 72, 'F9', 67, 'F9', 120, 'VK_F9', empty, empty],
+        [1, 73, 'F10', 68, 'F10', 121, 'VK_F10', empty, empty],
+        [1, 74, 'F11', 69, 'F11', 122, 'VK_F11', empty, empty],
+        [1, 75, 'F12', 70, 'F12', 123, 'VK_F12', empty, empty],
+        [1, 76, 'PrintScreen', 0, empty, 0, empty, empty, empty],
+        [1, 77, 'ScrollLock', 84, 'ScrollLock', 145, 'VK_SCROLL', empty, empty],
+        [1, 78, 'Pause', 7, 'PauseBreak', 19, 'VK_PAUSE', empty, empty],
+        [1, 79, 'Insert', 19, 'Insert', 45, 'VK_INSERT', empty, empty],
+        [1, 80, 'Home', 14, 'Home', 36, 'VK_HOME', empty, empty],
+        [1, 81, 'PageUp', 11, 'PageUp', 33, 'VK_PRIOR', empty, empty],
+        [1, 82, 'Delete', 20, 'Delete', 46, 'VK_DELETE', empty, empty],
+        [1, 83, 'End', 13, 'End', 35, 'VK_END', empty, empty],
+        [1, 84, 'PageDown', 12, 'PageDown', 34, 'VK_NEXT', empty, empty],
+        [1, 85, 'ArrowRight', 17, 'RightArrow', 39, 'VK_RIGHT', 'Right', empty],
+        [1, 86, 'ArrowLeft', 15, 'LeftArrow', 37, 'VK_LEFT', 'Left', empty],
+        [1, 87, 'ArrowDown', 18, 'DownArrow', 40, 'VK_DOWN', 'Down', empty],
+        [1, 88, 'ArrowUp', 16, 'UpArrow', 38, 'VK_UP', 'Up', empty],
+        [1, 89, 'NumLock', 83, 'NumLock', 144, 'VK_NUMLOCK', empty, empty],
+        [1, 90, 'NumpadDivide', 113, 'NumPad_Divide', 111, 'VK_DIVIDE', empty, empty],
+        [1, 91, 'NumpadMultiply', 108, 'NumPad_Multiply', 106, 'VK_MULTIPLY', empty, empty],
+        [1, 92, 'NumpadSubtract', 111, 'NumPad_Subtract', 109, 'VK_SUBTRACT', empty, empty],
+        [1, 93, 'NumpadAdd', 109, 'NumPad_Add', 107, 'VK_ADD', empty, empty],
+        [1, 94, 'NumpadEnter', 3, empty, 0, empty, empty, empty],
+        [1, 95, 'Numpad1', 99, 'NumPad1', 97, 'VK_NUMPAD1', empty, empty],
+        [1, 96, 'Numpad2', 100, 'NumPad2', 98, 'VK_NUMPAD2', empty, empty],
+        [1, 97, 'Numpad3', 101, 'NumPad3', 99, 'VK_NUMPAD3', empty, empty],
+        [1, 98, 'Numpad4', 102, 'NumPad4', 100, 'VK_NUMPAD4', empty, empty],
+        [1, 99, 'Numpad5', 103, 'NumPad5', 101, 'VK_NUMPAD5', empty, empty],
+        [1, 100, 'Numpad6', 104, 'NumPad6', 102, 'VK_NUMPAD6', empty, empty],
+        [1, 101, 'Numpad7', 105, 'NumPad7', 103, 'VK_NUMPAD7', empty, empty],
+        [1, 102, 'Numpad8', 106, 'NumPad8', 104, 'VK_NUMPAD8', empty, empty],
+        [1, 103, 'Numpad9', 107, 'NumPad9', 105, 'VK_NUMPAD9', empty, empty],
+        [1, 104, 'Numpad0', 98, 'NumPad0', 96, 'VK_NUMPAD0', empty, empty],
+        [1, 105, 'NumpadDecimal', 112, 'NumPad_Decimal', 110, 'VK_DECIMAL', empty, empty],
+        [0, 106, 'IntlBackslash', 97, 'OEM_102', 226, 'VK_OEM_102', empty, empty],
+        [1, 107, 'ContextMenu', 58, 'ContextMenu', 93, empty, empty, empty],
+        [1, 108, 'Power', 0, empty, 0, empty, empty, empty],
+        [1, 109, 'NumpadEqual', 0, empty, 0, empty, empty, empty],
+        [1, 110, 'F13', 71, 'F13', 124, 'VK_F13', empty, empty],
+        [1, 111, 'F14', 72, 'F14', 125, 'VK_F14', empty, empty],
+        [1, 112, 'F15', 73, 'F15', 126, 'VK_F15', empty, empty],
+        [1, 113, 'F16', 74, 'F16', 127, 'VK_F16', empty, empty],
+        [1, 114, 'F17', 75, 'F17', 128, 'VK_F17', empty, empty],
+        [1, 115, 'F18', 76, 'F18', 129, 'VK_F18', empty, empty],
+        [1, 116, 'F19', 77, 'F19', 130, 'VK_F19', empty, empty],
+        [1, 117, 'F20', 78, 'F20', 131, 'VK_F20', empty, empty],
+        [1, 118, 'F21', 79, 'F21', 132, 'VK_F21', empty, empty],
+        [1, 119, 'F22', 80, 'F22', 133, 'VK_F22', empty, empty],
+        [1, 120, 'F23', 81, 'F23', 134, 'VK_F23', empty, empty],
+        [1, 121, 'F24', 82, 'F24', 135, 'VK_F24', empty, empty],
+        [1, 122, 'Open', 0, empty, 0, empty, empty, empty],
+        [1, 123, 'Help', 0, empty, 0, empty, empty, empty],
+        [1, 124, 'Select', 0, empty, 0, empty, empty, empty],
+        [1, 125, 'Again', 0, empty, 0, empty, empty, empty],
+        [1, 126, 'Undo', 0, empty, 0, empty, empty, empty],
+        [1, 127, 'Cut', 0, empty, 0, empty, empty, empty],
+        [1, 128, 'Copy', 0, empty, 0, empty, empty, empty],
+        [1, 129, 'Paste', 0, empty, 0, empty, empty, empty],
+        [1, 130, 'Find', 0, empty, 0, empty, empty, empty],
+        [1, 131, 'AudioVolumeMute', 117, 'AudioVolumeMute', 173, 'VK_VOLUME_MUTE', empty, empty],
+        [1, 132, 'AudioVolumeUp', 118, 'AudioVolumeUp', 175, 'VK_VOLUME_UP', empty, empty],
+        [1, 133, 'AudioVolumeDown', 119, 'AudioVolumeDown', 174, 'VK_VOLUME_DOWN', empty, empty],
+        [1, 134, 'NumpadComma', 110, 'NumPad_Separator', 108, 'VK_SEPARATOR', empty, empty],
+        [0, 135, 'IntlRo', 115, 'ABNT_C1', 193, 'VK_ABNT_C1', empty, empty],
+        [1, 136, 'KanaMode', 0, empty, 0, empty, empty, empty],
+        [0, 137, 'IntlYen', 0, empty, 0, empty, empty, empty],
+        [1, 138, 'Convert', 0, empty, 0, empty, empty, empty],
+        [1, 139, 'NonConvert', 0, empty, 0, empty, empty, empty],
+        [1, 140, 'Lang1', 0, empty, 0, empty, empty, empty],
+        [1, 141, 'Lang2', 0, empty, 0, empty, empty, empty],
+        [1, 142, 'Lang3', 0, empty, 0, empty, empty, empty],
+        [1, 143, 'Lang4', 0, empty, 0, empty, empty, empty],
+        [1, 144, 'Lang5', 0, empty, 0, empty, empty, empty],
+        [1, 145, 'Abort', 0, empty, 0, empty, empty, empty],
+        [1, 146, 'Props', 0, empty, 0, empty, empty, empty],
+        [1, 147, 'NumpadParenLeft', 0, empty, 0, empty, empty, empty],
+        [1, 148, 'NumpadParenRight', 0, empty, 0, empty, empty, empty],
+        [1, 149, 'NumpadBackspace', 0, empty, 0, empty, empty, empty],
+        [1, 150, 'NumpadMemoryStore', 0, empty, 0, empty, empty, empty],
+        [1, 151, 'NumpadMemoryRecall', 0, empty, 0, empty, empty, empty],
+        [1, 152, 'NumpadMemoryClear', 0, empty, 0, empty, empty, empty],
+        [1, 153, 'NumpadMemoryAdd', 0, empty, 0, empty, empty, empty],
+        [1, 154, 'NumpadMemorySubtract', 0, empty, 0, empty, empty, empty],
+        [1, 155, 'NumpadClear', 131, 'Clear', 12, 'VK_CLEAR', empty, empty],
+        [1, 156, 'NumpadClearEntry', 0, empty, 0, empty, empty, empty],
+        [1, 0, empty, 5, 'Ctrl', 17, 'VK_CONTROL', empty, empty],
+        [1, 0, empty, 4, 'Shift', 16, 'VK_SHIFT', empty, empty],
+        [1, 0, empty, 6, 'Alt', 18, 'VK_MENU', empty, empty],
+        [1, 0, empty, 57, 'Meta', 91, 'VK_COMMAND', empty, empty],
+        [1, 157, 'ControlLeft', 5, empty, 0, 'VK_LCONTROL', empty, empty],
+        [1, 158, 'ShiftLeft', 4, empty, 0, 'VK_LSHIFT', empty, empty],
+        [1, 159, 'AltLeft', 6, empty, 0, 'VK_LMENU', empty, empty],
+        [1, 160, 'MetaLeft', 57, empty, 0, 'VK_LWIN', empty, empty],
+        [1, 161, 'ControlRight', 5, empty, 0, 'VK_RCONTROL', empty, empty],
+        [1, 162, 'ShiftRight', 4, empty, 0, 'VK_RSHIFT', empty, empty],
+        [1, 163, 'AltRight', 6, empty, 0, 'VK_RMENU', empty, empty],
+        [1, 164, 'MetaRight', 57, empty, 0, 'VK_RWIN', empty, empty],
+        [1, 165, 'BrightnessUp', 0, empty, 0, empty, empty, empty],
+        [1, 166, 'BrightnessDown', 0, empty, 0, empty, empty, empty],
+        [1, 167, 'MediaPlay', 0, empty, 0, empty, empty, empty],
+        [1, 168, 'MediaRecord', 0, empty, 0, empty, empty, empty],
+        [1, 169, 'MediaFastForward', 0, empty, 0, empty, empty, empty],
+        [1, 170, 'MediaRewind', 0, empty, 0, empty, empty, empty],
+        [1, 171, 'MediaTrackNext', 124, 'MediaTrackNext', 176, 'VK_MEDIA_NEXT_TRACK', empty, empty],
+        [1, 172, 'MediaTrackPrevious', 125, 'MediaTrackPrevious', 177, 'VK_MEDIA_PREV_TRACK', empty, empty],
+        [1, 173, 'MediaStop', 126, 'MediaStop', 178, 'VK_MEDIA_STOP', empty, empty],
+        [1, 174, 'Eject', 0, empty, 0, empty, empty, empty],
+        [1, 175, 'MediaPlayPause', 127, 'MediaPlayPause', 179, 'VK_MEDIA_PLAY_PAUSE', empty, empty],
+        [1, 176, 'MediaSelect', 128, 'LaunchMediaPlayer', 181, 'VK_MEDIA_LAUNCH_MEDIA_SELECT', empty, empty],
+        [1, 177, 'LaunchMail', 129, 'LaunchMail', 180, 'VK_MEDIA_LAUNCH_MAIL', empty, empty],
+        [1, 178, 'LaunchApp2', 130, 'LaunchApp2', 183, 'VK_MEDIA_LAUNCH_APP2', empty, empty],
+        [1, 179, 'LaunchApp1', 0, empty, 0, 'VK_MEDIA_LAUNCH_APP1', empty, empty],
+        [1, 180, 'SelectTask', 0, empty, 0, empty, empty, empty],
+        [1, 181, 'LaunchScreenSaver', 0, empty, 0, empty, empty, empty],
+        [1, 182, 'BrowserSearch', 120, 'BrowserSearch', 170, 'VK_BROWSER_SEARCH', empty, empty],
+        [1, 183, 'BrowserHome', 121, 'BrowserHome', 172, 'VK_BROWSER_HOME', empty, empty],
+        [1, 184, 'BrowserBack', 122, 'BrowserBack', 166, 'VK_BROWSER_BACK', empty, empty],
+        [1, 185, 'BrowserForward', 123, 'BrowserForward', 167, 'VK_BROWSER_FORWARD', empty, empty],
+        [1, 186, 'BrowserStop', 0, empty, 0, 'VK_BROWSER_STOP', empty, empty],
+        [1, 187, 'BrowserRefresh', 0, empty, 0, 'VK_BROWSER_REFRESH', empty, empty],
+        [1, 188, 'BrowserFavorites', 0, empty, 0, 'VK_BROWSER_FAVORITES', empty, empty],
+        [1, 189, 'ZoomToggle', 0, empty, 0, empty, empty, empty],
+        [1, 190, 'MailReply', 0, empty, 0, empty, empty, empty],
+        [1, 191, 'MailForward', 0, empty, 0, empty, empty, empty],
+        [1, 192, 'MailSend', 0, empty, 0, empty, empty, empty],
+        [1, 0, empty, 114, 'KeyInComposition', 229, empty, empty, empty],
+        [1, 0, empty, 116, 'ABNT_C2', 194, 'VK_ABNT_C2', empty, empty],
+        [1, 0, empty, 96, 'OEM_8', 223, 'VK_OEM_8', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_KANA', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_HANGUL', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_JUNJA', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_FINAL', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_HANJA', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_KANJI', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_CONVERT', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_NONCONVERT', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_ACCEPT', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_MODECHANGE', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_SELECT', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_PRINT', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_EXECUTE', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_SNAPSHOT', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_HELP', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_APPS', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_PROCESSKEY', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_PACKET', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_DBE_SBCSCHAR', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_DBE_DBCSCHAR', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_ATTN', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_CRSEL', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_EXSEL', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_EREOF', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_PLAY', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_ZOOM', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_NONAME', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_PA1', empty, empty],
+        [1, 0, empty, 0, empty, 0, 'VK_OEM_CLEAR', empty, empty],
+    ];
+    const seenKeyCode = [];
+    const seenScanCode = [];
+    for (const mapping of mappings) {
+        const [immutable, scanCode, scanCodeStr, keyCode, keyCodeStr, eventKeyCode, vkey, usUserSettingsLabel, generalUserSettingsLabel] = mapping;
+        if (!seenScanCode[scanCode]) {
+            seenScanCode[scanCode] = true;
+            scanCodeIntToStr[scanCode] = scanCodeStr;
+            scanCodeStrToInt[scanCodeStr] = scanCode;
+            scanCodeLowerCaseStrToInt[scanCodeStr.toLowerCase()] = scanCode;
+            if (immutable) {
+                IMMUTABLE_CODE_TO_KEY_CODE[scanCode] = keyCode;
+                if ((keyCode !== 0)
+                    && (keyCode !== 3)
+                    && (keyCode !== 5)
+                    && (keyCode !== 4)
+                    && (keyCode !== 6)
+                    && (keyCode !== 57)) {
+                    IMMUTABLE_KEY_CODE_TO_CODE[keyCode] = scanCode;
+                }
+            }
+        }
+        if (!seenKeyCode[keyCode]) {
+            seenKeyCode[keyCode] = true;
+            if (!keyCodeStr) {
+                throw new Error(`String representation missing for key code ${keyCode} around scan code ${scanCodeStr}`);
+            }
+            uiMap.define(keyCode, keyCodeStr);
+            userSettingsUSMap.define(keyCode, usUserSettingsLabel || keyCodeStr);
+            userSettingsGeneralMap.define(keyCode, generalUserSettingsLabel || usUserSettingsLabel || keyCodeStr);
+        }
+        if (eventKeyCode) {
+            EVENT_KEY_CODE_MAP[eventKeyCode] = keyCode;
+        }
+        if (vkey) {
+            NATIVE_WINDOWS_KEY_CODE_TO_KEY_CODE[vkey] = keyCode;
+        }
+    }
+    IMMUTABLE_KEY_CODE_TO_CODE[3] = 46;
+})();
+export var KeyCodeUtils;
+(function (KeyCodeUtils) {
+    function toString(keyCode) {
+        return uiMap.keyCodeToStr(keyCode);
+    }
+    KeyCodeUtils.toString = toString;
+    function fromString(key) {
+        return uiMap.strToKeyCode(key);
+    }
+    KeyCodeUtils.fromString = fromString;
+    function toUserSettingsUS(keyCode) {
+        return userSettingsUSMap.keyCodeToStr(keyCode);
+    }
+    KeyCodeUtils.toUserSettingsUS = toUserSettingsUS;
+    function toUserSettingsGeneral(keyCode) {
+        return userSettingsGeneralMap.keyCodeToStr(keyCode);
+    }
+    KeyCodeUtils.toUserSettingsGeneral = toUserSettingsGeneral;
+    function fromUserSettings(key) {
+        return userSettingsUSMap.strToKeyCode(key) || userSettingsGeneralMap.strToKeyCode(key);
+    }
+    KeyCodeUtils.fromUserSettings = fromUserSettings;
+    function toElectronAccelerator(keyCode) {
+        if (keyCode >= 98 && keyCode <= 113) {
+            return null;
+        }
+        switch (keyCode) {
+            case 16:
+                return 'Up';
+            case 18:
+                return 'Down';
+            case 15:
+                return 'Left';
+            case 17:
+                return 'Right';
+        }
+        return uiMap.keyCodeToStr(keyCode);
+    }
+    KeyCodeUtils.toElectronAccelerator = toElectronAccelerator;
+})(KeyCodeUtils || (KeyCodeUtils = {}));
+export function KeyChord(firstPart, secondPart) {
+    const chordPart = ((secondPart & 0x0000FFFF) << 16) >>> 0;
+    return (firstPart | chordPart) >>> 0;
+}

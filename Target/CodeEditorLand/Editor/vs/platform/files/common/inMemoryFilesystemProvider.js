@@ -1,1 +1,219 @@
-import{VSBuffer as h}from"../../../base/common/buffer.js";import{Emitter as f}from"../../../base/common/event.js";import{Disposable as u}from"../../../base/common/lifecycle.js";import*as p from"../../../base/common/resources.js";import{newWriteableStream as D}from"../../../base/common/stream.js";import"../../../base/common/uri.js";import{FileChangeType as m,FileSystemProviderCapabilities as d,FileSystemProviderErrorCode as s,FileType as F,createFileSystemProviderError as a}from"./files.js";class b{type;ctime;mtime;size;name;data;constructor(e){this.type=F.File,this.ctime=Date.now(),this.mtime=Date.now(),this.size=0,this.name=e}}class y{type;ctime;mtime;size;name;entries;constructor(e){this.type=F.Directory,this.ctime=Date.now(),this.mtime=Date.now(),this.size=0,this.name=e,this.entries=new Map}}class V extends u{memoryFdCounter=0;fdMemory=new Map;_onDidChangeCapabilities=this._register(new f);onDidChangeCapabilities=this._onDidChangeCapabilities.event;_capabilities=d.FileReadWrite|d.PathCaseSensitive;get capabilities(){return this._capabilities}setReadOnly(e){const i=!!(this._capabilities&d.Readonly);e!==i&&(this._capabilities=e?d.Readonly|d.PathCaseSensitive|d.FileReadWrite:d.FileReadWrite|d.PathCaseSensitive,this._onDidChangeCapabilities.fire())}root=new y("");async stat(e){return this._lookup(e,!1)}async readdir(e){const i=this._lookupAsDirectory(e,!1),t=[];return i.entries.forEach((r,o)=>t.push([o,r.type])),t}async readFile(e){const i=this._lookupAsFile(e,!1).data;if(i)return i;throw a("file not found",s.FileNotFound)}readFileStream(e){const i=this._lookupAsFile(e,!1).data,t=D(r=>h.concat(r.map(o=>h.wrap(o))).buffer);return t.end(i),t}async writeFile(e,i,t){const r=p.basename(e),o=this._lookupParentDirectory(e);let n=o.entries.get(r);if(n instanceof y)throw a("file is directory",s.FileIsADirectory);if(!n&&!t.create)throw a("file not found",s.FileNotFound);if(n&&t.create&&!t.overwrite)throw a("file exists already",s.FileExists);n||(n=new b(r),o.entries.set(r,n),this._fireSoon({type:m.ADDED,resource:e})),n.mtime=Date.now(),n.size=i.byteLength,n.data=i,this._fireSoon({type:m.UPDATED,resource:e})}open(e,i){const t=this._lookupAsFile(e,!1).data;if(t){const r=this.memoryFdCounter++;return this.fdMemory.set(r,t),Promise.resolve(r)}throw a("file not found",s.FileNotFound)}close(e){return this.fdMemory.delete(e),Promise.resolve()}read(e,i,t,r,o){const n=this.fdMemory.get(e);if(!n)throw a("No file with that descriptor open",s.Unavailable);const l=h.wrap(n).slice(i,i+o);return t.set(l.buffer,r),Promise.resolve(l.byteLength)}write(e,i,t,r,o){const n=this.fdMemory.get(e);if(!n)throw a("No file with that descriptor open",s.Unavailable);const l=h.wrap(t).slice(r,r+o);return n.set(l.buffer,i),Promise.resolve(l.byteLength)}async rename(e,i,t){if(!t.overwrite&&this._lookup(i,!0))throw a("file exists already",s.FileExists);const r=this._lookup(e,!1),o=this._lookupParentDirectory(e),n=this._lookupParentDirectory(i),l=p.basename(i);o.entries.delete(r.name),r.name=l,n.entries.set(l,r),this._fireSoon({type:m.DELETED,resource:e},{type:m.ADDED,resource:i})}async delete(e,i){const t=p.dirname(e),r=p.basename(e),o=this._lookupAsDirectory(t,!1);o.entries.has(r)&&(o.entries.delete(r),o.mtime=Date.now(),o.size-=1,this._fireSoon({type:m.UPDATED,resource:t},{resource:e,type:m.DELETED}))}async mkdir(e){if(this._lookup(e,!0))throw a("file exists already",s.FileExists);const i=p.basename(e),t=p.dirname(e),r=this._lookupAsDirectory(t,!1),o=new y(i);r.entries.set(o.name,o),r.mtime=Date.now(),r.size+=1,this._fireSoon({type:m.UPDATED,resource:t},{type:m.ADDED,resource:e})}_lookup(e,i){const t=e.path.split("/");let r=this.root;for(const o of t){if(!o)continue;let n;if(r instanceof y&&(n=r.entries.get(o)),!n){if(i)return;throw a("file not found",s.FileNotFound)}r=n}return r}_lookupAsDirectory(e,i){const t=this._lookup(e,i);if(t instanceof y)return t;throw a("file not a directory",s.FileNotADirectory)}_lookupAsFile(e,i){const t=this._lookup(e,i);if(t instanceof b)return t;throw a("file is a directory",s.FileIsADirectory)}_lookupParentDirectory(e){const i=p.dirname(e);return this._lookupAsDirectory(i,!1)}_onDidChangeFile=this._register(new f);onDidChangeFile=this._onDidChangeFile.event;_bufferedChanges=[];_fireSoonHandle;watch(e,i){return u.None}_fireSoon(...e){this._bufferedChanges.push(...e),this._fireSoonHandle&&clearTimeout(this._fireSoonHandle),this._fireSoonHandle=setTimeout(()=>{this._onDidChangeFile.fire(this._bufferedChanges),this._bufferedChanges.length=0},5)}dispose(){super.dispose(),this.fdMemory.clear()}}export{V as InMemoryFileSystemProvider};
+import { VSBuffer } from '../../../base/common/buffer.js';
+import { Emitter } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import * as resources from '../../../base/common/resources.js';
+import { newWriteableStream } from '../../../base/common/stream.js';
+import { FileSystemProviderErrorCode, FileType, createFileSystemProviderError } from './files.js';
+class File {
+    constructor(name) {
+        this.type = FileType.File;
+        this.ctime = Date.now();
+        this.mtime = Date.now();
+        this.size = 0;
+        this.name = name;
+    }
+}
+class Directory {
+    constructor(name) {
+        this.type = FileType.Directory;
+        this.ctime = Date.now();
+        this.mtime = Date.now();
+        this.size = 0;
+        this.name = name;
+        this.entries = new Map();
+    }
+}
+export class InMemoryFileSystemProvider extends Disposable {
+    constructor() {
+        super(...arguments);
+        this.memoryFdCounter = 0;
+        this.fdMemory = new Map();
+        this._onDidChangeCapabilities = this._register(new Emitter());
+        this.onDidChangeCapabilities = this._onDidChangeCapabilities.event;
+        this._capabilities = 2 | 1024;
+        this.root = new Directory('');
+        this._onDidChangeFile = this._register(new Emitter());
+        this.onDidChangeFile = this._onDidChangeFile.event;
+        this._bufferedChanges = [];
+    }
+    get capabilities() { return this._capabilities; }
+    setReadOnly(readonly) {
+        const isReadonly = !!(this._capabilities & 2048);
+        if (readonly !== isReadonly) {
+            this._capabilities = readonly ? 2048 | 1024 | 2
+                : 2 | 1024;
+            this._onDidChangeCapabilities.fire();
+        }
+    }
+    async stat(resource) {
+        return this._lookup(resource, false);
+    }
+    async readdir(resource) {
+        const entry = this._lookupAsDirectory(resource, false);
+        const result = [];
+        entry.entries.forEach((child, name) => result.push([name, child.type]));
+        return result;
+    }
+    async readFile(resource) {
+        const data = this._lookupAsFile(resource, false).data;
+        if (data) {
+            return data;
+        }
+        throw createFileSystemProviderError('file not found', FileSystemProviderErrorCode.FileNotFound);
+    }
+    readFileStream(resource) {
+        const data = this._lookupAsFile(resource, false).data;
+        const stream = newWriteableStream(data => VSBuffer.concat(data.map(data => VSBuffer.wrap(data))).buffer);
+        stream.end(data);
+        return stream;
+    }
+    async writeFile(resource, content, opts) {
+        const basename = resources.basename(resource);
+        const parent = this._lookupParentDirectory(resource);
+        let entry = parent.entries.get(basename);
+        if (entry instanceof Directory) {
+            throw createFileSystemProviderError('file is directory', FileSystemProviderErrorCode.FileIsADirectory);
+        }
+        if (!entry && !opts.create) {
+            throw createFileSystemProviderError('file not found', FileSystemProviderErrorCode.FileNotFound);
+        }
+        if (entry && opts.create && !opts.overwrite) {
+            throw createFileSystemProviderError('file exists already', FileSystemProviderErrorCode.FileExists);
+        }
+        if (!entry) {
+            entry = new File(basename);
+            parent.entries.set(basename, entry);
+            this._fireSoon({ type: 1, resource });
+        }
+        entry.mtime = Date.now();
+        entry.size = content.byteLength;
+        entry.data = content;
+        this._fireSoon({ type: 0, resource });
+    }
+    open(resource, opts) {
+        const data = this._lookupAsFile(resource, false).data;
+        if (data) {
+            const fd = this.memoryFdCounter++;
+            this.fdMemory.set(fd, data);
+            return Promise.resolve(fd);
+        }
+        throw createFileSystemProviderError('file not found', FileSystemProviderErrorCode.FileNotFound);
+    }
+    close(fd) {
+        this.fdMemory.delete(fd);
+        return Promise.resolve();
+    }
+    read(fd, pos, data, offset, length) {
+        const memory = this.fdMemory.get(fd);
+        if (!memory) {
+            throw createFileSystemProviderError(`No file with that descriptor open`, FileSystemProviderErrorCode.Unavailable);
+        }
+        const toWrite = VSBuffer.wrap(memory).slice(pos, pos + length);
+        data.set(toWrite.buffer, offset);
+        return Promise.resolve(toWrite.byteLength);
+    }
+    write(fd, pos, data, offset, length) {
+        const memory = this.fdMemory.get(fd);
+        if (!memory) {
+            throw createFileSystemProviderError(`No file with that descriptor open`, FileSystemProviderErrorCode.Unavailable);
+        }
+        const toWrite = VSBuffer.wrap(data).slice(offset, offset + length);
+        memory.set(toWrite.buffer, pos);
+        return Promise.resolve(toWrite.byteLength);
+    }
+    async rename(from, to, opts) {
+        if (!opts.overwrite && this._lookup(to, true)) {
+            throw createFileSystemProviderError('file exists already', FileSystemProviderErrorCode.FileExists);
+        }
+        const entry = this._lookup(from, false);
+        const oldParent = this._lookupParentDirectory(from);
+        const newParent = this._lookupParentDirectory(to);
+        const newName = resources.basename(to);
+        oldParent.entries.delete(entry.name);
+        entry.name = newName;
+        newParent.entries.set(newName, entry);
+        this._fireSoon({ type: 2, resource: from }, { type: 1, resource: to });
+    }
+    async delete(resource, opts) {
+        const dirname = resources.dirname(resource);
+        const basename = resources.basename(resource);
+        const parent = this._lookupAsDirectory(dirname, false);
+        if (parent.entries.has(basename)) {
+            parent.entries.delete(basename);
+            parent.mtime = Date.now();
+            parent.size -= 1;
+            this._fireSoon({ type: 0, resource: dirname }, { resource, type: 2 });
+        }
+    }
+    async mkdir(resource) {
+        if (this._lookup(resource, true)) {
+            throw createFileSystemProviderError('file exists already', FileSystemProviderErrorCode.FileExists);
+        }
+        const basename = resources.basename(resource);
+        const dirname = resources.dirname(resource);
+        const parent = this._lookupAsDirectory(dirname, false);
+        const entry = new Directory(basename);
+        parent.entries.set(entry.name, entry);
+        parent.mtime = Date.now();
+        parent.size += 1;
+        this._fireSoon({ type: 0, resource: dirname }, { type: 1, resource });
+    }
+    _lookup(uri, silent) {
+        const parts = uri.path.split('/');
+        let entry = this.root;
+        for (const part of parts) {
+            if (!part) {
+                continue;
+            }
+            let child;
+            if (entry instanceof Directory) {
+                child = entry.entries.get(part);
+            }
+            if (!child) {
+                if (!silent) {
+                    throw createFileSystemProviderError('file not found', FileSystemProviderErrorCode.FileNotFound);
+                }
+                else {
+                    return undefined;
+                }
+            }
+            entry = child;
+        }
+        return entry;
+    }
+    _lookupAsDirectory(uri, silent) {
+        const entry = this._lookup(uri, silent);
+        if (entry instanceof Directory) {
+            return entry;
+        }
+        throw createFileSystemProviderError('file not a directory', FileSystemProviderErrorCode.FileNotADirectory);
+    }
+    _lookupAsFile(uri, silent) {
+        const entry = this._lookup(uri, silent);
+        if (entry instanceof File) {
+            return entry;
+        }
+        throw createFileSystemProviderError('file is a directory', FileSystemProviderErrorCode.FileIsADirectory);
+    }
+    _lookupParentDirectory(uri) {
+        const dirname = resources.dirname(uri);
+        return this._lookupAsDirectory(dirname, false);
+    }
+    watch(resource, opts) {
+        return Disposable.None;
+    }
+    _fireSoon(...changes) {
+        this._bufferedChanges.push(...changes);
+        if (this._fireSoonHandle) {
+            clearTimeout(this._fireSoonHandle);
+        }
+        this._fireSoonHandle = setTimeout(() => {
+            this._onDidChangeFile.fire(this._bufferedChanges);
+            this._bufferedChanges.length = 0;
+        }, 5);
+    }
+    dispose() {
+        super.dispose();
+        this.fdMemory.clear();
+    }
+}

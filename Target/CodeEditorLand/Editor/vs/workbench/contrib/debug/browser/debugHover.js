@@ -1,1 +1,403 @@
-var w=Object.defineProperty;var A=Object.getOwnPropertyDescriptor;var m=(s,e,o,t)=>{for(var i=t>1?void 0:t?A(e,o):e,r=s.length-1,n;r>=0;r--)(n=s[r])&&(i=(t?n(e,o,i):n(i))||i);return t&&i&&w(e,o,i),i},a=(s,e)=>(o,t)=>e(o,t,s);import*as d from"../../../../base/browser/dom.js";import"../../../../base/browser/keyboardEvent.js";import"../../../../base/browser/mouseEvent.js";import"../../../../base/browser/ui/list/list.js";import"../../../../base/browser/ui/list/listWidget.js";import{DomScrollableElement as V}from"../../../../base/browser/ui/scrollbar/scrollableElement.js";import"../../../../base/browser/ui/tree/asyncDataTree.js";import"../../../../base/browser/ui/tree/tree.js";import{coalesce as b}from"../../../../base/common/arrays.js";import{CancellationTokenSource as L}from"../../../../base/common/cancellation.js";import{KeyCode as N}from"../../../../base/common/keyCodes.js";import*as I from"../../../../base/common/lifecycle.js";import{clamp as P}from"../../../../base/common/numbers.js";import{isMacintosh as H}from"../../../../base/common/platform.js";import{ScrollbarVisibility as M}from"../../../../base/common/scrollable.js";import{ContentWidgetPositionPreference as g}from"../../../../editor/browser/editorBrowser.js";import{EditorOption as R}from"../../../../editor/common/config/editorOptions.js";import"../../../../editor/common/core/dimension.js";import"../../../../editor/common/core/position.js";import{Range as _}from"../../../../editor/common/core/range.js";import{ModelDecorationOptions as O}from"../../../../editor/common/model/textModel.js";import{ILanguageFeaturesService as k}from"../../../../editor/common/services/languageFeatures.js";import*as v from"../../../../nls.js";import{IMenuService as F,MenuId as W}from"../../../../platform/actions/common/actions.js";import{IContextKeyService as B}from"../../../../platform/contextkey/common/contextkey.js";import{IContextMenuService as z}from"../../../../platform/contextview/browser/contextView.js";import{IInstantiationService as K}from"../../../../platform/instantiation/common/instantiation.js";import{WorkbenchAsyncDataTree as G}from"../../../../platform/list/browser/listService.js";import{ILogService as U}from"../../../../platform/log/common/log.js";import{asCssVariable as f,editorHoverBackground as x,editorHoverBorder as q,editorHoverForeground as $}from"../../../../platform/theme/common/colorRegistry.js";import{IDebugService as S}from"../common/debug.js";import{Expression as E,Variable as y,VisualizedExpression as j}from"../common/debugModel.js";import{getEvaluatableExpressionAtPosition as J}from"../common/debugUtils.js";import{AbstractExpressionDataSource as Q}from"./baseDebugView.js";import{DebugExpressionRenderer as X}from"./debugExpressionRenderer.js";import{VariablesRenderer as D,VisualizedVariableRenderer as C,openContextMenuForVariableTreeElement as Y}from"./variablesView.js";const c=d.$;var Z=(t=>(t[t.NOT_CHANGED=0]="NOT_CHANGED",t[t.NOT_AVAILABLE=1]="NOT_AVAILABLE",t[t.CANCELLED=2]="CANCELLED",t))(Z||{});async function T(s,e){if(!s)return null;const t=(await s.getChildren()).filter(i=>e[0]===i.name);return t.length!==1?null:e.length===1?t[0]:T(t[0],e.slice(1))}async function ee(s,e){const t=(await s.getScopes()).filter(r=>!r.expensive),i=b(await Promise.all(t.map(r=>T(r,e))));return i.length>0&&i.every(r=>r.value===i[0].value)?i[0]:void 0}let h=class{constructor(e,o,t,i,r,n){this.editor=e;this.debugService=o;this.instantiationService=t;this.menuService=i;this.contextKeyService=r;this.contextMenuService=n;this.toDispose=[],this.showAtPosition=null,this.positionPreference=[g.ABOVE,g.BELOW],this.debugHoverComputer=this.instantiationService.createInstance(u,this.editor),this.expressionRenderer=this.instantiationService.createInstance(X)}static ID="debug.hoverWidget";allowEditorOverflow=!0;_isVisible;safeTriangle;showCancellationSource;domNode;tree;showAtPosition;positionPreference;highlightDecorations=this.editor.createDecorationsCollection();complexValueContainer;complexValueTitle;valueContainer;treeContainer;toDispose;scrollbar;debugHoverComputer;expressionRenderer;expressionToRender;isUpdatingTree=!1;get isShowingComplexValue(){return this.complexValueContainer?.hidden===!1}create(){this.domNode=c(".debug-hover-widget"),this.complexValueContainer=d.append(this.domNode,c(".complex-value")),this.complexValueTitle=d.append(this.complexValueContainer,c(".title")),this.treeContainer=d.append(this.complexValueContainer,c(".debug-hover-tree")),this.treeContainer.setAttribute("role","tree");const e=d.append(this.complexValueContainer,c(".tip"));e.textContent=v.localize({key:"quickTip",comment:['"switch to editor language hover" means to show the programming language hover widget instead of the debug hover']},"Hold {0} key to switch to editor language hover",H?"Option":"Alt");const o=this.instantiationService.createInstance(ie);this.tree=this.instantiationService.createInstance(G,"DebugHover",this.treeContainer,new oe,[this.instantiationService.createInstance(D,this.expressionRenderer),this.instantiationService.createInstance(C,this.expressionRenderer)],o,{accessibilityProvider:new te,mouseSupport:!1,horizontalScrolling:!0,useShadows:!1,keyboardNavigationLabelProvider:{getKeyboardNavigationLabel:t=>t.name},overrideStyles:{listBackground:x}}),this.toDispose.push(C.rendererOnVisualizationRange(this.debugService.getViewModel(),this.tree)),this.valueContainer=c(".value"),this.valueContainer.tabIndex=0,this.valueContainer.setAttribute("role","tooltip"),this.scrollbar=new V(this.valueContainer,{horizontal:M.Hidden}),this.domNode.appendChild(this.scrollbar.getDomNode()),this.toDispose.push(this.scrollbar),this.editor.applyFontInfo(this.domNode),this.domNode.style.backgroundColor=f(x),this.domNode.style.border=`1px solid ${f(q)}`,this.domNode.style.color=f($),this.toDispose.push(this.tree.onContextMenu(async t=>await this.onContextMenu(t))),this.toDispose.push(this.tree.onDidChangeContentHeight(()=>{this.isUpdatingTree||this.layoutTreeAndContainer()})),this.toDispose.push(this.tree.onDidChangeContentWidth(()=>{this.isUpdatingTree||this.layoutTreeAndContainer()})),this.registerListeners(),this.editor.addContentWidget(this)}async onContextMenu(e){const o=e.element;if(!(!(o instanceof y)||!o.value))return Y(this.contextKeyService,this.menuService,this.contextMenuService,W.DebugHoverContext,e)}registerListeners(){this.toDispose.push(d.addStandardDisposableListener(this.domNode,"keydown",e=>{e.equals(N.Escape)&&this.hide()})),this.toDispose.push(this.editor.onDidChangeConfiguration(e=>{e.hasChanged(R.fontInfo)&&this.editor.applyFontInfo(this.domNode)})),this.toDispose.push(this.debugService.getViewModel().onDidEvaluateLazyExpression(async e=>{e instanceof y&&this.tree.hasNode(e)&&(await this.tree.updateChildren(e,!1,!0),await this.tree.expand(e))}))}isHovered(){return!!this.domNode?.matches(":hover")}isVisible(){return!!this._isVisible}willBeVisible(){return!!this.showCancellationSource}getId(){return h.ID}getDomNode(){return this.domNode}isInSafeTriangle(e,o){return this._isVisible&&!!this.safeTriangle?.contains(e,o)}async showAt(e,o,t){this.showCancellationSource?.dispose(!0);const i=this.showCancellationSource=new L,r=this.debugService.getViewModel().focusedSession;if(!r||!this.editor.hasModel())return this.hide(),1;const n=await this.debugHoverComputer.compute(e,i.token);if(i.token.isCancellationRequested)return this.hide(),2;if(!n.range)return this.hide(),1;if(this.isVisible()&&!n.rangeChanged)return 0;const l=await this.debugHoverComputer.evaluate(r);return i.token.isCancellationRequested?(this.hide(),2):!l||l instanceof E&&!l.available?(this.hide(),1):(this.highlightDecorations.set([{range:n.range,options:h._HOVER_HIGHLIGHT_DECORATION_OPTIONS}]),this.doShow(r,n.range.getStartPosition(),l,o,t))}static _HOVER_HIGHLIGHT_DECORATION_OPTIONS=O.register({description:"bdebug-hover-highlight",className:"hoverHighlight"});async doShow(e,o,t,i,r){this.domNode||this.create(),this.showAtPosition=o;const n=new I.DisposableStore;if(this._isVisible={store:n},!t.hasChildren){this.complexValueContainer.hidden=!0,this.valueContainer.hidden=!1,n.add(this.expressionRenderer.renderValue(this.valueContainer,t,{showChanged:!1,colorize:!0,hover:!1,session:e})),this.valueContainer.title="",this.editor.layoutContentWidget(this),this.scrollbar.scanDomNode(),i&&(this.editor.render(),this.valueContainer.focus());return}this.valueContainer.hidden=!0,this.expressionToRender=t,n.add(this.expressionRenderer.renderValue(this.complexValueTitle,t,{hover:!1,session:e})),this.editor.layoutContentWidget(this),this.tree.scrollTop=0,this.tree.scrollLeft=0,this.complexValueContainer.hidden=!1,this.safeTriangle=r&&new d.SafeTriangle(r.posx,r.posy,this.domNode),i&&(this.editor.render(),this.tree.domFocus())}layoutTreeAndContainer(){this.layoutTree(),this.editor.layoutContentWidget(this)}layoutTree(){let o=1/0;if(this.showAtPosition){const n=this.editor.getDomNode()?.offsetTop||0,l=this.treeContainer.offsetTop+n,p=this.editor.getTopForLineNumber(this.showAtPosition.lineNumber,!0)-this.editor.getScrollTop();l<p&&(o=p+n-22)}const t=Math.min(Math.max(266,this.editor.getLayoutInfo().height*.55),this.tree.contentHeight+10,o),i=this.tree.contentWidth,r=P(i,400,550);this.tree.layout(t,r),this.treeContainer.style.height=`${t}px`,this.scrollbar.scanDomNode()}beforeRender(){if(this.expressionToRender){const e=this.expressionToRender;this.expressionToRender=void 0,this.isUpdatingTree=!0,this.tree.setInput(e).finally(()=>{this.isUpdatingTree=!1})}return null}afterRender(e){e&&(this.positionPreference=[e])}hide(){this.showCancellationSource&&(this.showCancellationSource.dispose(!0),this.showCancellationSource=void 0),this._isVisible&&(d.isAncestorOfActiveElement(this.domNode)&&this.editor.focus(),this._isVisible.store.dispose(),this._isVisible=void 0,this.highlightDecorations.clear(),this.editor.layoutContentWidget(this),this.positionPreference=[g.ABOVE,g.BELOW])}getPosition(){return this._isVisible?{position:this.showAtPosition,preference:this.positionPreference}:null}dispose(){this.toDispose=I.dispose(this.toDispose)}};h=m([a(1,S),a(2,K),a(3,F),a(4,B),a(5,z)],h);class te{getWidgetAriaLabel(){return v.localize("treeAriaLabel","Debug Hover")}getAriaLabel(e){return v.localize({key:"variableAriaLabel",comment:["Do not translate placeholders. Placeholders are name and value of a variable."]},"{0}, value {1}, variables, debug",e.name,e.value)}}class ie extends Q{hasChildren(e){return e.hasChildren}doGetChildren(e){return e.getChildren()}}class oe{getHeight(e){return 18}getTemplateId(e){return e instanceof j?C.ID:D.ID}}let u=class{constructor(e,o,t,i){this.editor=e;this.debugService=o;this.languageFeaturesService=t;this.logService=i}_current;async compute(e,o){if(!this.debugService.getViewModel().focusedSession||!this.editor.hasModel())return{rangeChanged:!1};const i=this.editor.getModel(),r=await J(this.languageFeaturesService,i,e,o);if(!r)return{rangeChanged:!1};const{range:n,matchingExpression:l}=r,p=!this._current?.range.equalsRange(n);return this._current={expression:l,range:_.lift(n)},{rangeChanged:p,range:this._current.range}}async evaluate(e){if(!this._current){this.logService.error("No expression to evaluate");return}const o=this.editor.getModel(),t=o&&e.getSourceForUri(o?.uri);if(e.capabilities.supportsEvaluateForHovers){const i=new E(this._current.expression);return await i.evaluate(e,this.debugService.getViewModel().focusedStackFrame,"hover",void 0,t?{line:this._current.range.startLineNumber,column:this._current.range.startColumn,source:t.raw}:void 0),i}else{const i=this.debugService.getViewModel().focusedStackFrame;if(i)return await ee(i,b(this._current.expression.split(".").map(r=>r.trim())))}}};u=m([a(1,S),a(2,k),a(3,U)],u);export{h as DebugHoverWidget,Z as ShowDebugHoverResult,ee as findExpressionInStackFrame};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var DebugHoverWidget_1;
+import * as dom from '../../../../base/browser/dom.js';
+import { DomScrollableElement } from '../../../../base/browser/ui/scrollbar/scrollableElement.js';
+import { coalesce } from '../../../../base/common/arrays.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import * as lifecycle from '../../../../base/common/lifecycle.js';
+import { clamp } from '../../../../base/common/numbers.js';
+import { isMacintosh } from '../../../../base/common/platform.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { ModelDecorationOptions } from '../../../../editor/common/model/textModel.js';
+import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
+import * as nls from '../../../../nls.js';
+import { IMenuService, MenuId } from '../../../../platform/actions/common/actions.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { WorkbenchAsyncDataTree } from '../../../../platform/list/browser/listService.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { asCssVariable, editorHoverBackground, editorHoverBorder, editorHoverForeground } from '../../../../platform/theme/common/colorRegistry.js';
+import { IDebugService } from '../common/debug.js';
+import { Expression, Variable, VisualizedExpression } from '../common/debugModel.js';
+import { getEvaluatableExpressionAtPosition } from '../common/debugUtils.js';
+import { AbstractExpressionDataSource } from './baseDebugView.js';
+import { DebugExpressionRenderer } from './debugExpressionRenderer.js';
+import { VariablesRenderer, VisualizedVariableRenderer, openContextMenuForVariableTreeElement } from './variablesView.js';
+const $ = dom.$;
+async function doFindExpression(container, namesToFind) {
+    if (!container) {
+        return null;
+    }
+    const children = await container.getChildren();
+    const filtered = children.filter(v => namesToFind[0] === v.name);
+    if (filtered.length !== 1) {
+        return null;
+    }
+    if (namesToFind.length === 1) {
+        return filtered[0];
+    }
+    else {
+        return doFindExpression(filtered[0], namesToFind.slice(1));
+    }
+}
+export async function findExpressionInStackFrame(stackFrame, namesToFind) {
+    const scopes = await stackFrame.getScopes();
+    const nonExpensive = scopes.filter(s => !s.expensive);
+    const expressions = coalesce(await Promise.all(nonExpensive.map(scope => doFindExpression(scope, namesToFind))));
+    return expressions.length > 0 && expressions.every(e => e.value === expressions[0].value) ? expressions[0] : undefined;
+}
+let DebugHoverWidget = class DebugHoverWidget {
+    static { DebugHoverWidget_1 = this; }
+    static { this.ID = 'debug.hoverWidget'; }
+    get isShowingComplexValue() {
+        return this.complexValueContainer?.hidden === false;
+    }
+    constructor(editor, debugService, instantiationService, menuService, contextKeyService, contextMenuService) {
+        this.editor = editor;
+        this.debugService = debugService;
+        this.instantiationService = instantiationService;
+        this.menuService = menuService;
+        this.contextKeyService = contextKeyService;
+        this.contextMenuService = contextMenuService;
+        this.allowEditorOverflow = true;
+        this.highlightDecorations = this.editor.createDecorationsCollection();
+        this.isUpdatingTree = false;
+        this.toDispose = [];
+        this.showAtPosition = null;
+        this.positionPreference = [1, 2];
+        this.debugHoverComputer = this.instantiationService.createInstance(DebugHoverComputer, this.editor);
+        this.expressionRenderer = this.instantiationService.createInstance(DebugExpressionRenderer);
+    }
+    create() {
+        this.domNode = $('.debug-hover-widget');
+        this.complexValueContainer = dom.append(this.domNode, $('.complex-value'));
+        this.complexValueTitle = dom.append(this.complexValueContainer, $('.title'));
+        this.treeContainer = dom.append(this.complexValueContainer, $('.debug-hover-tree'));
+        this.treeContainer.setAttribute('role', 'tree');
+        const tip = dom.append(this.complexValueContainer, $('.tip'));
+        tip.textContent = nls.localize({ key: 'quickTip', comment: ['"switch to editor language hover" means to show the programming language hover widget instead of the debug hover'] }, 'Hold {0} key to switch to editor language hover', isMacintosh ? 'Option' : 'Alt');
+        const dataSource = this.instantiationService.createInstance(DebugHoverDataSource);
+        this.tree = this.instantiationService.createInstance(WorkbenchAsyncDataTree, 'DebugHover', this.treeContainer, new DebugHoverDelegate(), [
+            this.instantiationService.createInstance(VariablesRenderer, this.expressionRenderer),
+            this.instantiationService.createInstance(VisualizedVariableRenderer, this.expressionRenderer),
+        ], dataSource, {
+            accessibilityProvider: new DebugHoverAccessibilityProvider(),
+            mouseSupport: false,
+            horizontalScrolling: true,
+            useShadows: false,
+            keyboardNavigationLabelProvider: { getKeyboardNavigationLabel: (e) => e.name },
+            overrideStyles: {
+                listBackground: editorHoverBackground
+            }
+        });
+        this.toDispose.push(VisualizedVariableRenderer.rendererOnVisualizationRange(this.debugService.getViewModel(), this.tree));
+        this.valueContainer = $('.value');
+        this.valueContainer.tabIndex = 0;
+        this.valueContainer.setAttribute('role', 'tooltip');
+        this.scrollbar = new DomScrollableElement(this.valueContainer, { horizontal: 2 });
+        this.domNode.appendChild(this.scrollbar.getDomNode());
+        this.toDispose.push(this.scrollbar);
+        this.editor.applyFontInfo(this.domNode);
+        this.domNode.style.backgroundColor = asCssVariable(editorHoverBackground);
+        this.domNode.style.border = `1px solid ${asCssVariable(editorHoverBorder)}`;
+        this.domNode.style.color = asCssVariable(editorHoverForeground);
+        this.toDispose.push(this.tree.onContextMenu(async (e) => await this.onContextMenu(e)));
+        this.toDispose.push(this.tree.onDidChangeContentHeight(() => {
+            if (!this.isUpdatingTree) {
+                this.layoutTreeAndContainer();
+            }
+        }));
+        this.toDispose.push(this.tree.onDidChangeContentWidth(() => {
+            if (!this.isUpdatingTree) {
+                this.layoutTreeAndContainer();
+            }
+        }));
+        this.registerListeners();
+        this.editor.addContentWidget(this);
+    }
+    async onContextMenu(e) {
+        const variable = e.element;
+        if (!(variable instanceof Variable) || !variable.value) {
+            return;
+        }
+        return openContextMenuForVariableTreeElement(this.contextKeyService, this.menuService, this.contextMenuService, MenuId.DebugHoverContext, e);
+    }
+    registerListeners() {
+        this.toDispose.push(dom.addStandardDisposableListener(this.domNode, 'keydown', (e) => {
+            if (e.equals(9)) {
+                this.hide();
+            }
+        }));
+        this.toDispose.push(this.editor.onDidChangeConfiguration((e) => {
+            if (e.hasChanged(52)) {
+                this.editor.applyFontInfo(this.domNode);
+            }
+        }));
+        this.toDispose.push(this.debugService.getViewModel().onDidEvaluateLazyExpression(async (e) => {
+            if (e instanceof Variable && this.tree.hasNode(e)) {
+                await this.tree.updateChildren(e, false, true);
+                await this.tree.expand(e);
+            }
+        }));
+    }
+    isHovered() {
+        return !!this.domNode?.matches(':hover');
+    }
+    isVisible() {
+        return !!this._isVisible;
+    }
+    willBeVisible() {
+        return !!this.showCancellationSource;
+    }
+    getId() {
+        return DebugHoverWidget_1.ID;
+    }
+    getDomNode() {
+        return this.domNode;
+    }
+    isInSafeTriangle(x, y) {
+        return this._isVisible && !!this.safeTriangle?.contains(x, y);
+    }
+    async showAt(position, focus, mouseEvent) {
+        this.showCancellationSource?.dispose(true);
+        const cancellationSource = this.showCancellationSource = new CancellationTokenSource();
+        const session = this.debugService.getViewModel().focusedSession;
+        if (!session || !this.editor.hasModel()) {
+            this.hide();
+            return 1;
+        }
+        const result = await this.debugHoverComputer.compute(position, cancellationSource.token);
+        if (cancellationSource.token.isCancellationRequested) {
+            this.hide();
+            return 2;
+        }
+        if (!result.range) {
+            this.hide();
+            return 1;
+        }
+        if (this.isVisible() && !result.rangeChanged) {
+            return 0;
+        }
+        const expression = await this.debugHoverComputer.evaluate(session);
+        if (cancellationSource.token.isCancellationRequested) {
+            this.hide();
+            return 2;
+        }
+        if (!expression || (expression instanceof Expression && !expression.available)) {
+            this.hide();
+            return 1;
+        }
+        this.highlightDecorations.set([{
+                range: result.range,
+                options: DebugHoverWidget_1._HOVER_HIGHLIGHT_DECORATION_OPTIONS
+            }]);
+        return this.doShow(session, result.range.getStartPosition(), expression, focus, mouseEvent);
+    }
+    static { this._HOVER_HIGHLIGHT_DECORATION_OPTIONS = ModelDecorationOptions.register({
+        description: 'bdebug-hover-highlight',
+        className: 'hoverHighlight'
+    }); }
+    async doShow(session, position, expression, focus, mouseEvent) {
+        if (!this.domNode) {
+            this.create();
+        }
+        this.showAtPosition = position;
+        const store = new lifecycle.DisposableStore();
+        this._isVisible = { store };
+        if (!expression.hasChildren) {
+            this.complexValueContainer.hidden = true;
+            this.valueContainer.hidden = false;
+            store.add(this.expressionRenderer.renderValue(this.valueContainer, expression, {
+                showChanged: false,
+                colorize: true,
+                hover: false,
+                session,
+            }));
+            this.valueContainer.title = '';
+            this.editor.layoutContentWidget(this);
+            this.scrollbar.scanDomNode();
+            if (focus) {
+                this.editor.render();
+                this.valueContainer.focus();
+            }
+            return undefined;
+        }
+        this.valueContainer.hidden = true;
+        this.expressionToRender = expression;
+        store.add(this.expressionRenderer.renderValue(this.complexValueTitle, expression, { hover: false, session }));
+        this.editor.layoutContentWidget(this);
+        this.tree.scrollTop = 0;
+        this.tree.scrollLeft = 0;
+        this.complexValueContainer.hidden = false;
+        this.safeTriangle = mouseEvent && new dom.SafeTriangle(mouseEvent.posx, mouseEvent.posy, this.domNode);
+        if (focus) {
+            this.editor.render();
+            this.tree.domFocus();
+        }
+    }
+    layoutTreeAndContainer() {
+        this.layoutTree();
+        this.editor.layoutContentWidget(this);
+    }
+    layoutTree() {
+        const scrollBarHeight = 10;
+        let maxHeightToAvoidCursorOverlay = Infinity;
+        if (this.showAtPosition) {
+            const editorTop = this.editor.getDomNode()?.offsetTop || 0;
+            const containerTop = this.treeContainer.offsetTop + editorTop;
+            const hoveredCharTop = this.editor.getTopForLineNumber(this.showAtPosition.lineNumber, true) - this.editor.getScrollTop();
+            if (containerTop < hoveredCharTop) {
+                maxHeightToAvoidCursorOverlay = hoveredCharTop + editorTop - 22;
+            }
+        }
+        const treeHeight = Math.min(Math.max(266, this.editor.getLayoutInfo().height * 0.55), this.tree.contentHeight + scrollBarHeight, maxHeightToAvoidCursorOverlay);
+        const realTreeWidth = this.tree.contentWidth;
+        const treeWidth = clamp(realTreeWidth, 400, 550);
+        this.tree.layout(treeHeight, treeWidth);
+        this.treeContainer.style.height = `${treeHeight}px`;
+        this.scrollbar.scanDomNode();
+    }
+    beforeRender() {
+        if (this.expressionToRender) {
+            const expression = this.expressionToRender;
+            this.expressionToRender = undefined;
+            this.isUpdatingTree = true;
+            this.tree.setInput(expression).finally(() => {
+                this.isUpdatingTree = false;
+            });
+        }
+        return null;
+    }
+    afterRender(positionPreference) {
+        if (positionPreference) {
+            this.positionPreference = [positionPreference];
+        }
+    }
+    hide() {
+        if (this.showCancellationSource) {
+            this.showCancellationSource.dispose(true);
+            this.showCancellationSource = undefined;
+        }
+        if (!this._isVisible) {
+            return;
+        }
+        if (dom.isAncestorOfActiveElement(this.domNode)) {
+            this.editor.focus();
+        }
+        this._isVisible.store.dispose();
+        this._isVisible = undefined;
+        this.highlightDecorations.clear();
+        this.editor.layoutContentWidget(this);
+        this.positionPreference = [1, 2];
+    }
+    getPosition() {
+        return this._isVisible ? {
+            position: this.showAtPosition,
+            preference: this.positionPreference
+        } : null;
+    }
+    dispose() {
+        this.toDispose = lifecycle.dispose(this.toDispose);
+    }
+};
+DebugHoverWidget = DebugHoverWidget_1 = __decorate([
+    __param(1, IDebugService),
+    __param(2, IInstantiationService),
+    __param(3, IMenuService),
+    __param(4, IContextKeyService),
+    __param(5, IContextMenuService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], DebugHoverWidget);
+export { DebugHoverWidget };
+class DebugHoverAccessibilityProvider {
+    getWidgetAriaLabel() {
+        return nls.localize('treeAriaLabel', "Debug Hover");
+    }
+    getAriaLabel(element) {
+        return nls.localize({ key: 'variableAriaLabel', comment: ['Do not translate placeholders. Placeholders are name and value of a variable.'] }, "{0}, value {1}, variables, debug", element.name, element.value);
+    }
+}
+class DebugHoverDataSource extends AbstractExpressionDataSource {
+    hasChildren(element) {
+        return element.hasChildren;
+    }
+    doGetChildren(element) {
+        return element.getChildren();
+    }
+}
+class DebugHoverDelegate {
+    getHeight(element) {
+        return 18;
+    }
+    getTemplateId(element) {
+        if (element instanceof VisualizedExpression) {
+            return VisualizedVariableRenderer.ID;
+        }
+        return VariablesRenderer.ID;
+    }
+}
+let DebugHoverComputer = class DebugHoverComputer {
+    constructor(editor, debugService, languageFeaturesService, logService) {
+        this.editor = editor;
+        this.debugService = debugService;
+        this.languageFeaturesService = languageFeaturesService;
+        this.logService = logService;
+    }
+    async compute(position, token) {
+        const session = this.debugService.getViewModel().focusedSession;
+        if (!session || !this.editor.hasModel()) {
+            return { rangeChanged: false };
+        }
+        const model = this.editor.getModel();
+        const result = await getEvaluatableExpressionAtPosition(this.languageFeaturesService, model, position, token);
+        if (!result) {
+            return { rangeChanged: false };
+        }
+        const { range, matchingExpression } = result;
+        const rangeChanged = !this._current?.range.equalsRange(range);
+        this._current = { expression: matchingExpression, range: Range.lift(range) };
+        return { rangeChanged, range: this._current.range };
+    }
+    async evaluate(session) {
+        if (!this._current) {
+            this.logService.error('No expression to evaluate');
+            return;
+        }
+        const textModel = this.editor.getModel();
+        const debugSource = textModel && session.getSourceForUri(textModel?.uri);
+        if (session.capabilities.supportsEvaluateForHovers) {
+            const expression = new Expression(this._current.expression);
+            await expression.evaluate(session, this.debugService.getViewModel().focusedStackFrame, 'hover', undefined, debugSource ? {
+                line: this._current.range.startLineNumber,
+                column: this._current.range.startColumn,
+                source: debugSource.raw,
+            } : undefined);
+            return expression;
+        }
+        else {
+            const focusedStackFrame = this.debugService.getViewModel().focusedStackFrame;
+            if (focusedStackFrame) {
+                return await findExpressionInStackFrame(focusedStackFrame, coalesce(this._current.expression.split('.').map(word => word.trim())));
+            }
+        }
+        return undefined;
+    }
+};
+DebugHoverComputer = __decorate([
+    __param(1, IDebugService),
+    __param(2, ILanguageFeaturesService),
+    __param(3, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object])
+], DebugHoverComputer);

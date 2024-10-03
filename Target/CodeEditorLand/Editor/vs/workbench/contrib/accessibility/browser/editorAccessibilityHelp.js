@@ -1,4 +1,122 @@
-var g=Object.defineProperty;var f=Object.getOwnPropertyDescriptor;var l=(r,o,i,e)=>{for(var n=e>1?void 0:e?f(o,i):o,s=r.length-1,c;s>=0;s--)(c=r[s])&&(n=(e?c(o,i,n):c(n))||n);return e&&n&&g(o,i,n),n},a=(r,o)=>(i,e)=>o(i,e,r);import{Disposable as u}from"../../../../base/common/lifecycle.js";import"../../../../editor/browser/editorBrowser.js";import{ICodeEditorService as C}from"../../../../editor/browser/services/codeEditorService.js";import{EditorOption as m}from"../../../../editor/common/config/editorOptions.js";import{AccessibilityHelpNLS as t}from"../../../../editor/common/standaloneStrings.js";import{ICommandService as h}from"../../../../platform/commands/common/commands.js";import{IContextKeyService as y}from"../../../../platform/contextkey/common/contextkey.js";import{IInstantiationService as b}from"../../../../platform/instantiation/common/instantiation.js";import{IKeybindingService as v}from"../../../../platform/keybinding/common/keybinding.js";import{AccessibilityHelpAction as S}from"./accessibleViewActions.js";import{CONTEXT_CHAT_ENABLED as I}from"../../chat/common/chatContextKeys.js";import{CommentAccessibilityHelpNLS as d}from"../../comments/browser/commentsAccessibility.js";import{CommentContextKeys as E}from"../../comments/common/commentContextKeys.js";import{NEW_UNTITLED_FILE_COMMAND_ID as x}from"../../files/browser/fileConstants.js";import{IAccessibleViewService as A,AccessibleViewProviderId as _,AccessibleViewType as K}from"../../../../platform/accessibility/browser/accessibleView.js";import{AccessibilityVerbositySettingId as k}from"./accessibilityConfiguration.js";class Y extends u{static ID;constructor(){super(),this._register(S.addImplementation(90,"editor",async o=>{const i=o.get(C),e=o.get(A),n=o.get(b),s=o.get(h);let c=i.getActiveCodeEditor()||i.getFocusedCodeEditor();c||(await s.executeCommand(x),c=i.getActiveCodeEditor()),e.show(n.createInstance(p,c))}))}}let p=class extends u{constructor(i,e,n){super();this._editor=i;this._keybindingService=e;this._contextKeyService=n}id=_.Editor;onClose(){this._editor.focus()}options={type:K.Help,readMoreUrl:"https://go.microsoft.com/fwlink/?linkid=851010"};verbositySettingKey=k.Editor;provideContent(){const i=this._editor.getOptions(),e=[];i.get(m.inDiffEditor)?i.get(m.readOnly)?e.push(t.readonlyDiffEditor):e.push(t.editableDiffEditor):i.get(m.readOnly)?e.push(t.readonlyEditor):e.push(t.editableEditor),e.push(t.listSignalSounds),e.push(t.listAlerts);const n=D(this._keybindingService,this._contextKeyService);n&&e.push(n);const s=w(this._keybindingService,this._contextKeyService,this._editor);return s&&e.push(s),i.get(m.stickyScroll).enabled&&e.push(t.stickScroll),i.get(m.tabFocusMode)?e.push(t.tabFocusModeOnMsg):e.push(t.tabFocusModeOffMsg),e.push(t.codeFolding),e.push(t.intellisense),e.push(t.showOrFocusHover),e.push(t.goToSymbol),e.push(t.startDebugging),e.push(t.setBreakpoint),e.push(t.debugExecuteSelection),e.push(t.addToWatch),e.join(`
-`)}};p=l([a(1,v),a(2,y)],p);function w(r,o,i){if(o.getContext(i.getDomNode()).getValue(E.activeEditorHasCommentingRange.key))return[d.intro,d.addComment,d.nextCommentThread,d.previousCommentThread,d.nextRange,d.previousRange].join(`
-`)}function D(r,o){if(I.getValue(o))return[t.quickChat,t.startInlineChat].join(`
-`)}export{Y as EditorAccessibilityHelpContribution,D as getChatCommandInfo,w as getCommentCommandInfo};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { AccessibilityHelpNLS } from '../../../../editor/common/standaloneStrings.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { AccessibilityHelpAction } from './accessibleViewActions.js';
+import { CONTEXT_CHAT_ENABLED } from '../../chat/common/chatContextKeys.js';
+import { CommentAccessibilityHelpNLS } from '../../comments/browser/commentsAccessibility.js';
+import { CommentContextKeys } from '../../comments/common/commentContextKeys.js';
+import { NEW_UNTITLED_FILE_COMMAND_ID } from '../../files/browser/fileConstants.js';
+import { IAccessibleViewService } from '../../../../platform/accessibility/browser/accessibleView.js';
+export class EditorAccessibilityHelpContribution extends Disposable {
+    constructor() {
+        super();
+        this._register(AccessibilityHelpAction.addImplementation(90, 'editor', async (accessor) => {
+            const codeEditorService = accessor.get(ICodeEditorService);
+            const accessibleViewService = accessor.get(IAccessibleViewService);
+            const instantiationService = accessor.get(IInstantiationService);
+            const commandService = accessor.get(ICommandService);
+            let codeEditor = codeEditorService.getActiveCodeEditor() || codeEditorService.getFocusedCodeEditor();
+            if (!codeEditor) {
+                await commandService.executeCommand(NEW_UNTITLED_FILE_COMMAND_ID);
+                codeEditor = codeEditorService.getActiveCodeEditor();
+            }
+            accessibleViewService.show(instantiationService.createInstance(EditorAccessibilityHelpProvider, codeEditor));
+        }));
+    }
+}
+let EditorAccessibilityHelpProvider = class EditorAccessibilityHelpProvider extends Disposable {
+    onClose() {
+        this._editor.focus();
+    }
+    constructor(_editor, _keybindingService, _contextKeyService) {
+        super();
+        this._editor = _editor;
+        this._keybindingService = _keybindingService;
+        this._contextKeyService = _contextKeyService;
+        this.id = "editor";
+        this.options = { type: "help", readMoreUrl: 'https://go.microsoft.com/fwlink/?linkid=851010' };
+        this.verbositySettingKey = "accessibility.verbosity.editor";
+    }
+    provideContent() {
+        const options = this._editor.getOptions();
+        const content = [];
+        if (options.get(63)) {
+            if (options.get(94)) {
+                content.push(AccessibilityHelpNLS.readonlyDiffEditor);
+            }
+            else {
+                content.push(AccessibilityHelpNLS.editableDiffEditor);
+            }
+        }
+        else {
+            if (options.get(94)) {
+                content.push(AccessibilityHelpNLS.readonlyEditor);
+            }
+            else {
+                content.push(AccessibilityHelpNLS.editableEditor);
+            }
+        }
+        content.push(AccessibilityHelpNLS.listSignalSounds);
+        content.push(AccessibilityHelpNLS.listAlerts);
+        const chatCommandInfo = getChatCommandInfo(this._keybindingService, this._contextKeyService);
+        if (chatCommandInfo) {
+            content.push(chatCommandInfo);
+        }
+        const commentCommandInfo = getCommentCommandInfo(this._keybindingService, this._contextKeyService, this._editor);
+        if (commentCommandInfo) {
+            content.push(commentCommandInfo);
+        }
+        if (options.get(118).enabled) {
+            content.push(AccessibilityHelpNLS.stickScroll);
+        }
+        if (options.get(147)) {
+            content.push(AccessibilityHelpNLS.tabFocusModeOnMsg);
+        }
+        else {
+            content.push(AccessibilityHelpNLS.tabFocusModeOffMsg);
+        }
+        content.push(AccessibilityHelpNLS.codeFolding);
+        content.push(AccessibilityHelpNLS.intellisense);
+        content.push(AccessibilityHelpNLS.showOrFocusHover);
+        content.push(AccessibilityHelpNLS.goToSymbol);
+        content.push(AccessibilityHelpNLS.startDebugging);
+        content.push(AccessibilityHelpNLS.setBreakpoint);
+        content.push(AccessibilityHelpNLS.debugExecuteSelection);
+        content.push(AccessibilityHelpNLS.addToWatch);
+        return content.join('\n');
+    }
+};
+EditorAccessibilityHelpProvider = __decorate([
+    __param(1, IKeybindingService),
+    __param(2, IContextKeyService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], EditorAccessibilityHelpProvider);
+export function getCommentCommandInfo(keybindingService, contextKeyService, editor) {
+    const editorContext = contextKeyService.getContext(editor.getDomNode());
+    if (editorContext.getValue(CommentContextKeys.activeEditorHasCommentingRange.key)) {
+        return [CommentAccessibilityHelpNLS.intro, CommentAccessibilityHelpNLS.addComment, CommentAccessibilityHelpNLS.nextCommentThread, CommentAccessibilityHelpNLS.previousCommentThread, CommentAccessibilityHelpNLS.nextRange, CommentAccessibilityHelpNLS.previousRange].join('\n');
+    }
+    return;
+}
+export function getChatCommandInfo(keybindingService, contextKeyService) {
+    if (CONTEXT_CHAT_ENABLED.getValue(contextKeyService)) {
+        return [AccessibilityHelpNLS.quickChat, AccessibilityHelpNLS.startInlineChat].join('\n');
+    }
+    return;
+}

@@ -1,1 +1,477 @@
-var V=Object.defineProperty;var A=Object.getOwnPropertyDescriptor;var w=(p,n,e,i)=>{for(var t=i>1?void 0:i?A(n,e):n,o=p.length-1,l;o>=0;o--)(l=p[o])&&(t=(i?l(n,e,t):l(t))||t);return i&&t&&V(n,e,t),t},B=(p,n)=>(e,i)=>n(e,i,p);import{RunOnceScheduler as k}from"../../../../base/common/async.js";import{CancellationTokenSource as q}from"../../../../base/common/cancellation.js";import{Disposable as W,toDisposable as j}from"../../../../base/common/lifecycle.js";import{autorun as G,autorunWithStore as J,derived as x,observableSignal as K,observableSignalFromEvent as Q,observableValue as C,transaction as M,waitForState as X}from"../../../../base/common/observable.js";import{IDiffProviderFactoryService as Y}from"./diffProviderFactoryService.js";import{filterWithPrevious as Z}from"./utils.js";import{readHotReloadableExport as O}from"../../../../base/common/hotReloadHelpers.js";import{LineRange as R,LineRangeSet as $}from"../../../common/core/lineRange.js";import{DefaultLinesDiffComputer as ee}from"../../../common/diff/defaultLinesDiffComputer/defaultLinesDiffComputer.js";import"../../../common/diff/documentDiffProvider.js";import"../../../common/diff/linesDiffComputer.js";import{DetailedLineRangeMapping as H,LineRangeMapping as E,RangeMapping as ie}from"../../../common/diff/rangeMapping.js";import"../../../common/editorCommon.js";import"../../../common/model.js";import{TextEditInfo as S}from"../../../common/model/bracketPairsTextModelPart/bracketPairsTree/beforeEditPositionMapper.js";import{combineTextEditInfos as P}from"../../../common/model/bracketPairsTextModelPart/bracketPairsTree/combineTextEditInfos.js";import"./diffEditorOptions.js";import{optimizeSequenceDiffs as ne}from"../../../common/diff/defaultLinesDiffComputer/heuristicSequenceOptimizations.js";import{isDefined as F}from"../../../../base/common/types.js";import{groupAdjacentBy as te}from"../../../../base/common/arrays.js";import{softAssert as z}from"../../../../base/common/assert.js";let y=class extends W{constructor(e,i,t){super();this.model=e;this._options=i;this._diffProviderFactoryService=t;this._register(j(()=>this._cancellationTokenSource.cancel()));const o=K("contentChangedSignal"),l=this._register(new k(()=>o.trigger(void 0),200));this._register(G(d=>{const f=this._unchangedRegions.read(d);if(!f||f.regions.some(a=>a.isDragged.read(d)))return;const u=f.originalDecorationIds.map(a=>e.original.getDecorationRange(a)).map(a=>a?R.fromRangeInclusive(a):void 0),r=f.modifiedDecorationIds.map(a=>e.modified.getDecorationRange(a)).map(a=>a?R.fromRangeInclusive(a):void 0),g=f.regions.map((a,b)=>!u[b]||!r[b]?void 0:new T(u[b].startLineNumber,r[b].startLineNumber,u[b].length,a.visibleLineCountTop.read(d),a.visibleLineCountBottom.read(d))).filter(F),s=[];let h=!1;for(const a of te(g,(b,c)=>b.getHiddenModifiedRange(d).endLineNumberExclusive===c.getHiddenModifiedRange(d).startLineNumber))if(a.length>1){h=!0;const b=a.reduce((D,_)=>D+_.lineCount,0),c=new T(a[0].originalLineNumber,a[0].modifiedLineNumber,b,a[0].visibleLineCountTop.get(),a[a.length-1].visibleLineCountBottom.get());s.push(c)}else s.push(a[0]);if(h){const a=e.original.deltaDecorations(f.originalDecorationIds,s.map(c=>({range:c.originalUnchangedRange.toInclusiveRange(),options:{description:"unchanged"}}))),b=e.modified.deltaDecorations(f.modifiedDecorationIds,s.map(c=>({range:c.modifiedUnchangedRange.toInclusiveRange(),options:{description:"unchanged"}})));M(c=>{this._unchangedRegions.set({regions:s,originalDecorationIds:a,modifiedDecorationIds:b},c)})}}));const v=(d,f,u)=>{const r=T.fromDiffs(d.changes,e.original.getLineCount(),e.modified.getLineCount(),this._options.hideUnchangedRegionsMinimumLineCount.read(u),this._options.hideUnchangedRegionsContextLineCount.read(u));let g;const s=this._unchangedRegions.get();if(s){const c=s.originalDecorationIds.map(m=>e.original.getDecorationRange(m)).map(m=>m?R.fromRangeInclusive(m):void 0),D=s.modifiedDecorationIds.map(m=>e.modified.getDecorationRange(m)).map(m=>m?R.fromRangeInclusive(m):void 0);let U=Z(s.regions.map((m,L)=>{if(!c[L]||!D[L])return;const N=c[L].length;return new T(c[L].startLineNumber,D[L].startLineNumber,N,Math.min(m.visibleLineCountTop.get(),N),Math.min(m.visibleLineCountBottom.get(),N-m.visibleLineCountTop.get()))}).filter(F),(m,L)=>!L||m.modifiedLineNumber>=L.modifiedLineNumber+L.lineCount&&m.originalLineNumber>=L.originalLineNumber+L.lineCount).map(m=>new E(m.getHiddenOriginalRange(u),m.getHiddenModifiedRange(u)));U=E.clip(U,R.ofLength(1,e.original.getLineCount()),R.ofLength(1,e.modified.getLineCount())),g=E.inverse(U,e.original.getLineCount(),e.modified.getLineCount())}const h=[];if(g)for(const c of r){const D=g.filter(_=>_.original.intersectsStrict(c.originalUnchangedRange)&&_.modified.intersectsStrict(c.modifiedUnchangedRange));h.push(...c.setVisibleRanges(D,f))}else h.push(...r);const a=e.original.deltaDecorations(s?.originalDecorationIds||[],h.map(c=>({range:c.originalUnchangedRange.toInclusiveRange(),options:{description:"unchanged"}}))),b=e.modified.deltaDecorations(s?.modifiedDecorationIds||[],h.map(c=>({range:c.modifiedUnchangedRange.toInclusiveRange(),options:{description:"unchanged"}})));this._unchangedRegions.set({regions:h,originalDecorationIds:a,modifiedDecorationIds:b},f)};this._register(e.modified.onDidChangeContent(d=>{if(this._diff.get()){const u=S.fromModelContentChanges(d.changes),r=(this._lastDiff,e.original,e.modified,void 0);r&&(this._lastDiff=r,M(g=>{this._diff.set(I.fromDiffResult(this._lastDiff),g),v(r,g);const s=this.movedTextToCompare.get();this.movedTextToCompare.set(s?this._lastDiff.moves.find(h=>h.lineRangeMapping.modified.intersect(s.lineRangeMapping.modified)):void 0,g)}))}this._isDiffUpToDate.set(!1,void 0),l.schedule()})),this._register(e.original.onDidChangeContent(d=>{if(this._diff.get()){const u=S.fromModelContentChanges(d.changes),r=(this._lastDiff,e.original,e.modified,void 0);r&&(this._lastDiff=r,M(g=>{this._diff.set(I.fromDiffResult(this._lastDiff),g),v(r,g);const s=this.movedTextToCompare.get();this.movedTextToCompare.set(s?this._lastDiff.moves.find(h=>h.lineRangeMapping.modified.intersect(s.lineRangeMapping.modified)):void 0,g)}))}this._isDiffUpToDate.set(!1,void 0),l.schedule()})),this._register(J(async(d,f)=>{this._options.hideUnchangedRegionsMinimumLineCount.read(d),this._options.hideUnchangedRegionsContextLineCount.read(d),l.cancel(),o.read(d);const u=this._diffProvider.read(d);u.onChangeSignal.read(d),O(ee,d),O(ne,d),this._isDiffUpToDate.set(!1,void 0);let r=[];f.add(e.original.onDidChangeContent(h=>{const a=S.fromModelContentChanges(h.changes);r=P(r,a)}));let g=[];f.add(e.modified.onDidChangeContent(h=>{const a=S.fromModelContentChanges(h.changes);g=P(g,a)}));let s=await u.diffProvider.computeDiff(e.original,e.modified,{ignoreTrimWhitespace:this._options.ignoreTrimWhitespace.read(d),maxComputationTimeMs:this._options.maxComputationTimeMs.read(d),computeMoves:this._options.showMoves.read(d)},this._cancellationTokenSource.token);this._cancellationTokenSource.token.isCancellationRequested||e.original.isDisposed()||e.modified.isDisposed()||(s=oe(s,e.original,e.modified),s=(e.original,e.modified,void 0)??s,s=(e.original,e.modified,void 0)??s,M(h=>{v(s,h),this._lastDiff=s;const a=I.fromDiffResult(s);this._diff.set(a,h),this._isDiffUpToDate.set(!0,h);const b=this.movedTextToCompare.get();this.movedTextToCompare.set(b?this._lastDiff.moves.find(c=>c.lineRangeMapping.modified.intersect(b.lineRangeMapping.modified)):void 0,h)}))}))}_isDiffUpToDate=C(this,!1);isDiffUpToDate=this._isDiffUpToDate;_lastDiff;_diff=C(this,void 0);diff=this._diff;_unchangedRegions=C(this,void 0);unchangedRegions=x(this,e=>this._options.hideUnchangedRegions.read(e)?this._unchangedRegions.read(e)?.regions??[]:(M(i=>{for(const t of this._unchangedRegions.get()?.regions||[])t.collapseAll(i)}),[]));movedTextToCompare=C(this,void 0);_activeMovedText=C(this,void 0);_hoveredMovedText=C(this,void 0);activeMovedText=x(this,e=>this.movedTextToCompare.read(e)??this._hoveredMovedText.read(e)??this._activeMovedText.read(e));setActiveMovedText(e){this._activeMovedText.set(e,void 0)}setHoveredMovedText(e){this._hoveredMovedText.set(e,void 0)}_cancellationTokenSource=new q;_diffProvider=x(this,e=>{const i=this._diffProviderFactoryService.createDiffProvider({diffAlgorithm:this._options.diffAlgorithm.read(e)}),t=Q("onDidChange",i.onDidChange);return{diffProvider:i,onChangeSignal:t}});ensureModifiedLineIsVisible(e,i,t){if(this.diff.get()?.mappings.length===0)return;const o=this._unchangedRegions.get()?.regions||[];for(const l of o)if(l.getHiddenModifiedRange(void 0).contains(e)){l.showModifiedLine(e,i,t);return}}ensureOriginalLineIsVisible(e,i,t){if(this.diff.get()?.mappings.length===0)return;const o=this._unchangedRegions.get()?.regions||[];for(const l of o)if(l.getHiddenOriginalRange(void 0).contains(e)){l.showOriginalLine(e,i,t);return}}async waitForDiff(){await X(this.isDiffUpToDate,e=>e)}serializeState(){return{collapsedRegions:this._unchangedRegions.get()?.regions.map(i=>({range:i.getHiddenModifiedRange(void 0).serialize()}))}}restoreSerializedState(e){const i=e.collapsedRegions?.map(o=>R.deserialize(o.range)),t=this._unchangedRegions.get();!t||!i||M(o=>{for(const l of t.regions)for(const v of i)if(l.modifiedUnchangedRange.intersect(v)){l.setHiddenModifiedRange(v,o);break}})}};y=w([B(2,Y)],y);function oe(p,n,e){return{changes:p.changes.map(i=>new H(i.original,i.modified,i.innerChanges?i.innerChanges.map(t=>se(t,n,e)):void 0)),moves:p.moves,identical:p.identical,quitEarly:p.quitEarly}}function se(p,n,e){let i=p.originalRange,t=p.modifiedRange;return i.startColumn===1&&t.startColumn===1&&(i.endColumn!==1||t.endColumn!==1)&&i.endColumn===n.getLineMaxColumn(i.endLineNumber)&&t.endColumn===e.getLineMaxColumn(t.endLineNumber)&&i.endLineNumber<n.getLineCount()&&t.endLineNumber<e.getLineCount()&&(i=i.setEndPosition(i.endLineNumber+1,1),t=t.setEndPosition(t.endLineNumber+1,1)),new ie(i,t)}class I{constructor(n,e,i,t){this.mappings=n;this.movedTexts=e;this.identical=i;this.quitEarly=t}static fromDiffResult(n){return new I(n.changes.map(e=>new ae(e)),n.moves||[],n.identical,n.quitEarly)}}class ae{constructor(n){this.lineRangeMapping=n}}class T{constructor(n,e,i,t,o){this.originalLineNumber=n;this.modifiedLineNumber=e;this.lineCount=i;const l=Math.max(Math.min(t,this.lineCount),0),v=Math.max(Math.min(o,this.lineCount-t),0);z(t===l),z(o===v),this._visibleLineCountTop.set(l,void 0),this._visibleLineCountBottom.set(v,void 0)}static fromDiffs(n,e,i,t,o){const l=H.inverse(n,e,i),v=[];for(const d of l){let f=d.original.startLineNumber,u=d.modified.startLineNumber,r=d.original.length;const g=f===1&&u===1,s=f+r===e+1&&u+r===i+1;(g||s)&&r>=o+t?(g&&!s&&(r-=o),s&&!g&&(f+=o,u+=o,r-=o),v.push(new T(f,u,r,0,0))):r>=o*2+t&&(f+=o,u+=o,r-=o*2,v.push(new T(f,u,r,0,0)))}return v}get originalUnchangedRange(){return R.ofLength(this.originalLineNumber,this.lineCount)}get modifiedUnchangedRange(){return R.ofLength(this.modifiedLineNumber,this.lineCount)}_visibleLineCountTop=C(this,0);visibleLineCountTop=this._visibleLineCountTop;_visibleLineCountBottom=C(this,0);visibleLineCountBottom=this._visibleLineCountBottom;_shouldHideControls=x(this,n=>this.visibleLineCountTop.read(n)+this.visibleLineCountBottom.read(n)===this.lineCount&&!this.isDragged.read(n));isDragged=C(this,void 0);setVisibleRanges(n,e){const i=[],t=new $(n.map(d=>d.modified)).subtractFrom(this.modifiedUnchangedRange);let o=this.originalLineNumber,l=this.modifiedLineNumber;const v=this.modifiedLineNumber+this.lineCount;if(t.ranges.length===0)this.showAll(e),i.push(this);else{let d=0;for(const f of t.ranges){const u=d===t.ranges.length-1;d++;const r=(u?v:f.endLineNumberExclusive)-l,g=new T(o,l,r,0,0);g.setHiddenModifiedRange(f,e),i.push(g),o=g.originalUnchangedRange.endLineNumberExclusive,l=g.modifiedUnchangedRange.endLineNumberExclusive}}return i}shouldHideControls(n){return this._shouldHideControls.read(n)}getHiddenOriginalRange(n){return R.ofLength(this.originalLineNumber+this._visibleLineCountTop.read(n),this.lineCount-this._visibleLineCountTop.read(n)-this._visibleLineCountBottom.read(n))}getHiddenModifiedRange(n){return R.ofLength(this.modifiedLineNumber+this._visibleLineCountTop.read(n),this.lineCount-this._visibleLineCountTop.read(n)-this._visibleLineCountBottom.read(n))}setHiddenModifiedRange(n,e){const i=n.startLineNumber-this.modifiedLineNumber,t=this.modifiedLineNumber+this.lineCount-n.endLineNumberExclusive;this.setState(i,t,e)}getMaxVisibleLineCountTop(){return this.lineCount-this._visibleLineCountBottom.get()}getMaxVisibleLineCountBottom(){return this.lineCount-this._visibleLineCountTop.get()}showMoreAbove(n=10,e){const i=this.getMaxVisibleLineCountTop();this._visibleLineCountTop.set(Math.min(this._visibleLineCountTop.get()+n,i),e)}showMoreBelow(n=10,e){const i=this.lineCount-this._visibleLineCountTop.get();this._visibleLineCountBottom.set(Math.min(this._visibleLineCountBottom.get()+n,i),e)}showAll(n){this._visibleLineCountBottom.set(this.lineCount-this._visibleLineCountTop.get(),n)}showModifiedLine(n,e,i){const t=n+1-(this.modifiedLineNumber+this._visibleLineCountTop.get()),o=this.modifiedLineNumber-this._visibleLineCountBottom.get()+this.lineCount-n;e===0&&t<o||e===1?this._visibleLineCountTop.set(this._visibleLineCountTop.get()+t,i):this._visibleLineCountBottom.set(this._visibleLineCountBottom.get()+o,i)}showOriginalLine(n,e,i){const t=n-this.originalLineNumber,o=this.originalLineNumber+this.lineCount-n;e===0&&t<o||e===1?this._visibleLineCountTop.set(Math.min(this._visibleLineCountTop.get()+o-t,this.getMaxVisibleLineCountTop()),i):this._visibleLineCountBottom.set(Math.min(this._visibleLineCountBottom.get()+t-o,this.getMaxVisibleLineCountBottom()),i)}collapseAll(n){this._visibleLineCountTop.set(0,n),this._visibleLineCountBottom.set(0,n)}setState(n,e,i){n=Math.max(Math.min(n,this.lineCount),0),e=Math.max(Math.min(e,this.lineCount-n),0),this._visibleLineCountTop.set(n,i),this._visibleLineCountBottom.set(e,i)}}var de=(i=>(i[i.FromCloserSide=0]="FromCloserSide",i[i.FromTop=1]="FromTop",i[i.FromBottom=2]="FromBottom",i))(de||{});function Ae(p,n,e,i){}function ke(p,n,e,i){}export{y as DiffEditorViewModel,ae as DiffMapping,I as DiffState,de as RevealPreference,T as UnchangedRegion};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { RunOnceScheduler } from '../../../../base/common/async.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { Disposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { autorun, autorunWithStore, derived, observableSignal, observableSignalFromEvent, observableValue, transaction, waitForState } from '../../../../base/common/observable.js';
+import { IDiffProviderFactoryService } from './diffProviderFactoryService.js';
+import { filterWithPrevious } from './utils.js';
+import { readHotReloadableExport } from '../../../../base/common/hotReloadHelpers.js';
+import { LineRange, LineRangeSet } from '../../../common/core/lineRange.js';
+import { DefaultLinesDiffComputer } from '../../../common/diff/defaultLinesDiffComputer/defaultLinesDiffComputer.js';
+import { DetailedLineRangeMapping, LineRangeMapping, RangeMapping } from '../../../common/diff/rangeMapping.js';
+import { TextEditInfo } from '../../../common/model/bracketPairsTextModelPart/bracketPairsTree/beforeEditPositionMapper.js';
+import { combineTextEditInfos } from '../../../common/model/bracketPairsTextModelPart/bracketPairsTree/combineTextEditInfos.js';
+import { DiffEditorOptions } from './diffEditorOptions.js';
+import { optimizeSequenceDiffs } from '../../../common/diff/defaultLinesDiffComputer/heuristicSequenceOptimizations.js';
+import { isDefined } from '../../../../base/common/types.js';
+import { groupAdjacentBy } from '../../../../base/common/arrays.js';
+import { softAssert } from '../../../../base/common/assert.js';
+let DiffEditorViewModel = class DiffEditorViewModel extends Disposable {
+    setActiveMovedText(movedText) {
+        this._activeMovedText.set(movedText, undefined);
+    }
+    setHoveredMovedText(movedText) {
+        this._hoveredMovedText.set(movedText, undefined);
+    }
+    constructor(model, _options, _diffProviderFactoryService) {
+        super();
+        this.model = model;
+        this._options = _options;
+        this._diffProviderFactoryService = _diffProviderFactoryService;
+        this._isDiffUpToDate = observableValue(this, false);
+        this.isDiffUpToDate = this._isDiffUpToDate;
+        this._diff = observableValue(this, undefined);
+        this.diff = this._diff;
+        this._unchangedRegions = observableValue(this, undefined);
+        this.unchangedRegions = derived(this, r => {
+            if (this._options.hideUnchangedRegions.read(r)) {
+                return this._unchangedRegions.read(r)?.regions ?? [];
+            }
+            else {
+                transaction(tx => {
+                    for (const r of this._unchangedRegions.get()?.regions || []) {
+                        r.collapseAll(tx);
+                    }
+                });
+                return [];
+            }
+        });
+        this.movedTextToCompare = observableValue(this, undefined);
+        this._activeMovedText = observableValue(this, undefined);
+        this._hoveredMovedText = observableValue(this, undefined);
+        this.activeMovedText = derived(this, r => this.movedTextToCompare.read(r) ?? this._hoveredMovedText.read(r) ?? this._activeMovedText.read(r));
+        this._cancellationTokenSource = new CancellationTokenSource();
+        this._diffProvider = derived(this, reader => {
+            const diffProvider = this._diffProviderFactoryService.createDiffProvider({
+                diffAlgorithm: this._options.diffAlgorithm.read(reader)
+            });
+            const onChangeSignal = observableSignalFromEvent('onDidChange', diffProvider.onDidChange);
+            return {
+                diffProvider,
+                onChangeSignal,
+            };
+        });
+        this._register(toDisposable(() => this._cancellationTokenSource.cancel()));
+        const contentChangedSignal = observableSignal('contentChangedSignal');
+        const debouncer = this._register(new RunOnceScheduler(() => contentChangedSignal.trigger(undefined), 200));
+        this._register(autorun(reader => {
+            const lastUnchangedRegions = this._unchangedRegions.read(reader);
+            if (!lastUnchangedRegions || lastUnchangedRegions.regions.some(r => r.isDragged.read(reader))) {
+                return;
+            }
+            const lastUnchangedRegionsOrigRanges = lastUnchangedRegions.originalDecorationIds
+                .map(id => model.original.getDecorationRange(id))
+                .map(r => r ? LineRange.fromRangeInclusive(r) : undefined);
+            const lastUnchangedRegionsModRanges = lastUnchangedRegions.modifiedDecorationIds
+                .map(id => model.modified.getDecorationRange(id))
+                .map(r => r ? LineRange.fromRangeInclusive(r) : undefined);
+            const updatedLastUnchangedRegions = lastUnchangedRegions.regions.map((r, idx) => (!lastUnchangedRegionsOrigRanges[idx] || !lastUnchangedRegionsModRanges[idx]) ? undefined :
+                new UnchangedRegion(lastUnchangedRegionsOrigRanges[idx].startLineNumber, lastUnchangedRegionsModRanges[idx].startLineNumber, lastUnchangedRegionsOrigRanges[idx].length, r.visibleLineCountTop.read(reader), r.visibleLineCountBottom.read(reader))).filter(isDefined);
+            const newRanges = [];
+            let didChange = false;
+            for (const touching of groupAdjacentBy(updatedLastUnchangedRegions, (a, b) => a.getHiddenModifiedRange(reader).endLineNumberExclusive === b.getHiddenModifiedRange(reader).startLineNumber)) {
+                if (touching.length > 1) {
+                    didChange = true;
+                    const sumLineCount = touching.reduce((sum, r) => sum + r.lineCount, 0);
+                    const r = new UnchangedRegion(touching[0].originalLineNumber, touching[0].modifiedLineNumber, sumLineCount, touching[0].visibleLineCountTop.get(), touching[touching.length - 1].visibleLineCountBottom.get());
+                    newRanges.push(r);
+                }
+                else {
+                    newRanges.push(touching[0]);
+                }
+            }
+            if (didChange) {
+                const originalDecorationIds = model.original.deltaDecorations(lastUnchangedRegions.originalDecorationIds, newRanges.map(r => ({ range: r.originalUnchangedRange.toInclusiveRange(), options: { description: 'unchanged' } })));
+                const modifiedDecorationIds = model.modified.deltaDecorations(lastUnchangedRegions.modifiedDecorationIds, newRanges.map(r => ({ range: r.modifiedUnchangedRange.toInclusiveRange(), options: { description: 'unchanged' } })));
+                transaction(tx => {
+                    this._unchangedRegions.set({
+                        regions: newRanges,
+                        originalDecorationIds,
+                        modifiedDecorationIds
+                    }, tx);
+                });
+            }
+        }));
+        const updateUnchangedRegions = (result, tx, reader) => {
+            const newUnchangedRegions = UnchangedRegion.fromDiffs(result.changes, model.original.getLineCount(), model.modified.getLineCount(), this._options.hideUnchangedRegionsMinimumLineCount.read(reader), this._options.hideUnchangedRegionsContextLineCount.read(reader));
+            let visibleRegions = undefined;
+            const lastUnchangedRegions = this._unchangedRegions.get();
+            if (lastUnchangedRegions) {
+                const lastUnchangedRegionsOrigRanges = lastUnchangedRegions.originalDecorationIds
+                    .map(id => model.original.getDecorationRange(id))
+                    .map(r => r ? LineRange.fromRangeInclusive(r) : undefined);
+                const lastUnchangedRegionsModRanges = lastUnchangedRegions.modifiedDecorationIds
+                    .map(id => model.modified.getDecorationRange(id))
+                    .map(r => r ? LineRange.fromRangeInclusive(r) : undefined);
+                const updatedLastUnchangedRegions = filterWithPrevious(lastUnchangedRegions.regions
+                    .map((r, idx) => {
+                    if (!lastUnchangedRegionsOrigRanges[idx] || !lastUnchangedRegionsModRanges[idx]) {
+                        return undefined;
+                    }
+                    const length = lastUnchangedRegionsOrigRanges[idx].length;
+                    return new UnchangedRegion(lastUnchangedRegionsOrigRanges[idx].startLineNumber, lastUnchangedRegionsModRanges[idx].startLineNumber, length, Math.min(r.visibleLineCountTop.get(), length), Math.min(r.visibleLineCountBottom.get(), length - r.visibleLineCountTop.get()));
+                }).filter(isDefined), (cur, prev) => !prev || (cur.modifiedLineNumber >= prev.modifiedLineNumber + prev.lineCount && cur.originalLineNumber >= prev.originalLineNumber + prev.lineCount));
+                let hiddenRegions = updatedLastUnchangedRegions.map(r => new LineRangeMapping(r.getHiddenOriginalRange(reader), r.getHiddenModifiedRange(reader)));
+                hiddenRegions = LineRangeMapping.clip(hiddenRegions, LineRange.ofLength(1, model.original.getLineCount()), LineRange.ofLength(1, model.modified.getLineCount()));
+                visibleRegions = LineRangeMapping.inverse(hiddenRegions, model.original.getLineCount(), model.modified.getLineCount());
+            }
+            const newUnchangedRegions2 = [];
+            if (visibleRegions) {
+                for (const r of newUnchangedRegions) {
+                    const intersecting = visibleRegions.filter(f => f.original.intersectsStrict(r.originalUnchangedRange) && f.modified.intersectsStrict(r.modifiedUnchangedRange));
+                    newUnchangedRegions2.push(...r.setVisibleRanges(intersecting, tx));
+                }
+            }
+            else {
+                newUnchangedRegions2.push(...newUnchangedRegions);
+            }
+            const originalDecorationIds = model.original.deltaDecorations(lastUnchangedRegions?.originalDecorationIds || [], newUnchangedRegions2.map(r => ({ range: r.originalUnchangedRange.toInclusiveRange(), options: { description: 'unchanged' } })));
+            const modifiedDecorationIds = model.modified.deltaDecorations(lastUnchangedRegions?.modifiedDecorationIds || [], newUnchangedRegions2.map(r => ({ range: r.modifiedUnchangedRange.toInclusiveRange(), options: { description: 'unchanged' } })));
+            this._unchangedRegions.set({
+                regions: newUnchangedRegions2,
+                originalDecorationIds,
+                modifiedDecorationIds
+            }, tx);
+        };
+        this._register(model.modified.onDidChangeContent((e) => {
+            const diff = this._diff.get();
+            if (diff) {
+                const textEdits = TextEditInfo.fromModelContentChanges(e.changes);
+                const result = applyModifiedEdits(this._lastDiff, textEdits, model.original, model.modified);
+                if (result) {
+                    this._lastDiff = result;
+                    transaction(tx => {
+                        this._diff.set(DiffState.fromDiffResult(this._lastDiff), tx);
+                        updateUnchangedRegions(result, tx);
+                        const currentSyncedMovedText = this.movedTextToCompare.get();
+                        this.movedTextToCompare.set(currentSyncedMovedText ? this._lastDiff.moves.find(m => m.lineRangeMapping.modified.intersect(currentSyncedMovedText.lineRangeMapping.modified)) : undefined, tx);
+                    });
+                }
+            }
+            this._isDiffUpToDate.set(false, undefined);
+            debouncer.schedule();
+        }));
+        this._register(model.original.onDidChangeContent((e) => {
+            const diff = this._diff.get();
+            if (diff) {
+                const textEdits = TextEditInfo.fromModelContentChanges(e.changes);
+                const result = applyOriginalEdits(this._lastDiff, textEdits, model.original, model.modified);
+                if (result) {
+                    this._lastDiff = result;
+                    transaction(tx => {
+                        this._diff.set(DiffState.fromDiffResult(this._lastDiff), tx);
+                        updateUnchangedRegions(result, tx);
+                        const currentSyncedMovedText = this.movedTextToCompare.get();
+                        this.movedTextToCompare.set(currentSyncedMovedText ? this._lastDiff.moves.find(m => m.lineRangeMapping.modified.intersect(currentSyncedMovedText.lineRangeMapping.modified)) : undefined, tx);
+                    });
+                }
+            }
+            this._isDiffUpToDate.set(false, undefined);
+            debouncer.schedule();
+        }));
+        this._register(autorunWithStore(async (reader, store) => {
+            this._options.hideUnchangedRegionsMinimumLineCount.read(reader);
+            this._options.hideUnchangedRegionsContextLineCount.read(reader);
+            debouncer.cancel();
+            contentChangedSignal.read(reader);
+            const documentDiffProvider = this._diffProvider.read(reader);
+            documentDiffProvider.onChangeSignal.read(reader);
+            readHotReloadableExport(DefaultLinesDiffComputer, reader);
+            readHotReloadableExport(optimizeSequenceDiffs, reader);
+            this._isDiffUpToDate.set(false, undefined);
+            let originalTextEditInfos = [];
+            store.add(model.original.onDidChangeContent((e) => {
+                const edits = TextEditInfo.fromModelContentChanges(e.changes);
+                originalTextEditInfos = combineTextEditInfos(originalTextEditInfos, edits);
+            }));
+            let modifiedTextEditInfos = [];
+            store.add(model.modified.onDidChangeContent((e) => {
+                const edits = TextEditInfo.fromModelContentChanges(e.changes);
+                modifiedTextEditInfos = combineTextEditInfos(modifiedTextEditInfos, edits);
+            }));
+            let result = await documentDiffProvider.diffProvider.computeDiff(model.original, model.modified, {
+                ignoreTrimWhitespace: this._options.ignoreTrimWhitespace.read(reader),
+                maxComputationTimeMs: this._options.maxComputationTimeMs.read(reader),
+                computeMoves: this._options.showMoves.read(reader),
+            }, this._cancellationTokenSource.token);
+            if (this._cancellationTokenSource.token.isCancellationRequested) {
+                return;
+            }
+            if (model.original.isDisposed() || model.modified.isDisposed()) {
+                return;
+            }
+            result = normalizeDocumentDiff(result, model.original, model.modified);
+            result = applyOriginalEdits(result, originalTextEditInfos, model.original, model.modified) ?? result;
+            result = applyModifiedEdits(result, modifiedTextEditInfos, model.original, model.modified) ?? result;
+            transaction(tx => {
+                updateUnchangedRegions(result, tx);
+                this._lastDiff = result;
+                const state = DiffState.fromDiffResult(result);
+                this._diff.set(state, tx);
+                this._isDiffUpToDate.set(true, tx);
+                const currentSyncedMovedText = this.movedTextToCompare.get();
+                this.movedTextToCompare.set(currentSyncedMovedText ? this._lastDiff.moves.find(m => m.lineRangeMapping.modified.intersect(currentSyncedMovedText.lineRangeMapping.modified)) : undefined, tx);
+            });
+        }));
+    }
+    ensureModifiedLineIsVisible(lineNumber, preference, tx) {
+        if (this.diff.get()?.mappings.length === 0) {
+            return;
+        }
+        const unchangedRegions = this._unchangedRegions.get()?.regions || [];
+        for (const r of unchangedRegions) {
+            if (r.getHiddenModifiedRange(undefined).contains(lineNumber)) {
+                r.showModifiedLine(lineNumber, preference, tx);
+                return;
+            }
+        }
+    }
+    ensureOriginalLineIsVisible(lineNumber, preference, tx) {
+        if (this.diff.get()?.mappings.length === 0) {
+            return;
+        }
+        const unchangedRegions = this._unchangedRegions.get()?.regions || [];
+        for (const r of unchangedRegions) {
+            if (r.getHiddenOriginalRange(undefined).contains(lineNumber)) {
+                r.showOriginalLine(lineNumber, preference, tx);
+                return;
+            }
+        }
+    }
+    async waitForDiff() {
+        await waitForState(this.isDiffUpToDate, s => s);
+    }
+    serializeState() {
+        const regions = this._unchangedRegions.get();
+        return {
+            collapsedRegions: regions?.regions.map(r => ({ range: r.getHiddenModifiedRange(undefined).serialize() }))
+        };
+    }
+    restoreSerializedState(state) {
+        const ranges = state.collapsedRegions?.map(r => LineRange.deserialize(r.range));
+        const regions = this._unchangedRegions.get();
+        if (!regions || !ranges) {
+            return;
+        }
+        transaction(tx => {
+            for (const r of regions.regions) {
+                for (const range of ranges) {
+                    if (r.modifiedUnchangedRange.intersect(range)) {
+                        r.setHiddenModifiedRange(range, tx);
+                        break;
+                    }
+                }
+            }
+        });
+    }
+};
+DiffEditorViewModel = __decorate([
+    __param(2, IDiffProviderFactoryService),
+    __metadata("design:paramtypes", [Object, DiffEditorOptions, Object])
+], DiffEditorViewModel);
+export { DiffEditorViewModel };
+function normalizeDocumentDiff(diff, original, modified) {
+    return {
+        changes: diff.changes.map(c => new DetailedLineRangeMapping(c.original, c.modified, c.innerChanges ? c.innerChanges.map(i => normalizeRangeMapping(i, original, modified)) : undefined)),
+        moves: diff.moves,
+        identical: diff.identical,
+        quitEarly: diff.quitEarly,
+    };
+}
+function normalizeRangeMapping(rangeMapping, original, modified) {
+    let originalRange = rangeMapping.originalRange;
+    let modifiedRange = rangeMapping.modifiedRange;
+    if (originalRange.startColumn === 1 && modifiedRange.startColumn === 1 &&
+        (originalRange.endColumn !== 1 || modifiedRange.endColumn !== 1) &&
+        originalRange.endColumn === original.getLineMaxColumn(originalRange.endLineNumber)
+        && modifiedRange.endColumn === modified.getLineMaxColumn(modifiedRange.endLineNumber)
+        && originalRange.endLineNumber < original.getLineCount()
+        && modifiedRange.endLineNumber < modified.getLineCount()) {
+        originalRange = originalRange.setEndPosition(originalRange.endLineNumber + 1, 1);
+        modifiedRange = modifiedRange.setEndPosition(modifiedRange.endLineNumber + 1, 1);
+    }
+    return new RangeMapping(originalRange, modifiedRange);
+}
+export class DiffState {
+    static fromDiffResult(result) {
+        return new DiffState(result.changes.map(c => new DiffMapping(c)), result.moves || [], result.identical, result.quitEarly);
+    }
+    constructor(mappings, movedTexts, identical, quitEarly) {
+        this.mappings = mappings;
+        this.movedTexts = movedTexts;
+        this.identical = identical;
+        this.quitEarly = quitEarly;
+    }
+}
+export class DiffMapping {
+    constructor(lineRangeMapping) {
+        this.lineRangeMapping = lineRangeMapping;
+    }
+}
+export class UnchangedRegion {
+    static fromDiffs(changes, originalLineCount, modifiedLineCount, minHiddenLineCount, minContext) {
+        const inversedMappings = DetailedLineRangeMapping.inverse(changes, originalLineCount, modifiedLineCount);
+        const result = [];
+        for (const mapping of inversedMappings) {
+            let origStart = mapping.original.startLineNumber;
+            let modStart = mapping.modified.startLineNumber;
+            let length = mapping.original.length;
+            const atStart = origStart === 1 && modStart === 1;
+            const atEnd = origStart + length === originalLineCount + 1 && modStart + length === modifiedLineCount + 1;
+            if ((atStart || atEnd) && length >= minContext + minHiddenLineCount) {
+                if (atStart && !atEnd) {
+                    length -= minContext;
+                }
+                if (atEnd && !atStart) {
+                    origStart += minContext;
+                    modStart += minContext;
+                    length -= minContext;
+                }
+                result.push(new UnchangedRegion(origStart, modStart, length, 0, 0));
+            }
+            else if (length >= minContext * 2 + minHiddenLineCount) {
+                origStart += minContext;
+                modStart += minContext;
+                length -= minContext * 2;
+                result.push(new UnchangedRegion(origStart, modStart, length, 0, 0));
+            }
+        }
+        return result;
+    }
+    get originalUnchangedRange() {
+        return LineRange.ofLength(this.originalLineNumber, this.lineCount);
+    }
+    get modifiedUnchangedRange() {
+        return LineRange.ofLength(this.modifiedLineNumber, this.lineCount);
+    }
+    constructor(originalLineNumber, modifiedLineNumber, lineCount, visibleLineCountTop, visibleLineCountBottom) {
+        this.originalLineNumber = originalLineNumber;
+        this.modifiedLineNumber = modifiedLineNumber;
+        this.lineCount = lineCount;
+        this._visibleLineCountTop = observableValue(this, 0);
+        this.visibleLineCountTop = this._visibleLineCountTop;
+        this._visibleLineCountBottom = observableValue(this, 0);
+        this.visibleLineCountBottom = this._visibleLineCountBottom;
+        this._shouldHideControls = derived(this, reader => this.visibleLineCountTop.read(reader) + this.visibleLineCountBottom.read(reader) === this.lineCount && !this.isDragged.read(reader));
+        this.isDragged = observableValue(this, undefined);
+        const visibleLineCountTop2 = Math.max(Math.min(visibleLineCountTop, this.lineCount), 0);
+        const visibleLineCountBottom2 = Math.max(Math.min(visibleLineCountBottom, this.lineCount - visibleLineCountTop), 0);
+        softAssert(visibleLineCountTop === visibleLineCountTop2);
+        softAssert(visibleLineCountBottom === visibleLineCountBottom2);
+        this._visibleLineCountTop.set(visibleLineCountTop2, undefined);
+        this._visibleLineCountBottom.set(visibleLineCountBottom2, undefined);
+    }
+    setVisibleRanges(visibleRanges, tx) {
+        const result = [];
+        const hiddenModified = new LineRangeSet(visibleRanges.map(r => r.modified)).subtractFrom(this.modifiedUnchangedRange);
+        let originalStartLineNumber = this.originalLineNumber;
+        let modifiedStartLineNumber = this.modifiedLineNumber;
+        const modifiedEndLineNumberEx = this.modifiedLineNumber + this.lineCount;
+        if (hiddenModified.ranges.length === 0) {
+            this.showAll(tx);
+            result.push(this);
+        }
+        else {
+            let i = 0;
+            for (const r of hiddenModified.ranges) {
+                const isLast = i === hiddenModified.ranges.length - 1;
+                i++;
+                const length = (isLast ? modifiedEndLineNumberEx : r.endLineNumberExclusive) - modifiedStartLineNumber;
+                const newR = new UnchangedRegion(originalStartLineNumber, modifiedStartLineNumber, length, 0, 0);
+                newR.setHiddenModifiedRange(r, tx);
+                result.push(newR);
+                originalStartLineNumber = newR.originalUnchangedRange.endLineNumberExclusive;
+                modifiedStartLineNumber = newR.modifiedUnchangedRange.endLineNumberExclusive;
+            }
+        }
+        return result;
+    }
+    shouldHideControls(reader) {
+        return this._shouldHideControls.read(reader);
+    }
+    getHiddenOriginalRange(reader) {
+        return LineRange.ofLength(this.originalLineNumber + this._visibleLineCountTop.read(reader), this.lineCount - this._visibleLineCountTop.read(reader) - this._visibleLineCountBottom.read(reader));
+    }
+    getHiddenModifiedRange(reader) {
+        return LineRange.ofLength(this.modifiedLineNumber + this._visibleLineCountTop.read(reader), this.lineCount - this._visibleLineCountTop.read(reader) - this._visibleLineCountBottom.read(reader));
+    }
+    setHiddenModifiedRange(range, tx) {
+        const visibleLineCountTop = range.startLineNumber - this.modifiedLineNumber;
+        const visibleLineCountBottom = (this.modifiedLineNumber + this.lineCount) - range.endLineNumberExclusive;
+        this.setState(visibleLineCountTop, visibleLineCountBottom, tx);
+    }
+    getMaxVisibleLineCountTop() {
+        return this.lineCount - this._visibleLineCountBottom.get();
+    }
+    getMaxVisibleLineCountBottom() {
+        return this.lineCount - this._visibleLineCountTop.get();
+    }
+    showMoreAbove(count = 10, tx) {
+        const maxVisibleLineCountTop = this.getMaxVisibleLineCountTop();
+        this._visibleLineCountTop.set(Math.min(this._visibleLineCountTop.get() + count, maxVisibleLineCountTop), tx);
+    }
+    showMoreBelow(count = 10, tx) {
+        const maxVisibleLineCountBottom = this.lineCount - this._visibleLineCountTop.get();
+        this._visibleLineCountBottom.set(Math.min(this._visibleLineCountBottom.get() + count, maxVisibleLineCountBottom), tx);
+    }
+    showAll(tx) {
+        this._visibleLineCountBottom.set(this.lineCount - this._visibleLineCountTop.get(), tx);
+    }
+    showModifiedLine(lineNumber, preference, tx) {
+        const top = lineNumber + 1 - (this.modifiedLineNumber + this._visibleLineCountTop.get());
+        const bottom = (this.modifiedLineNumber - this._visibleLineCountBottom.get() + this.lineCount) - lineNumber;
+        if (preference === 0 && top < bottom || preference === 1) {
+            this._visibleLineCountTop.set(this._visibleLineCountTop.get() + top, tx);
+        }
+        else {
+            this._visibleLineCountBottom.set(this._visibleLineCountBottom.get() + bottom, tx);
+        }
+    }
+    showOriginalLine(lineNumber, preference, tx) {
+        const top = lineNumber - this.originalLineNumber;
+        const bottom = (this.originalLineNumber + this.lineCount) - lineNumber;
+        if (preference === 0 && top < bottom || preference === 1) {
+            this._visibleLineCountTop.set(Math.min(this._visibleLineCountTop.get() + bottom - top, this.getMaxVisibleLineCountTop()), tx);
+        }
+        else {
+            this._visibleLineCountBottom.set(Math.min(this._visibleLineCountBottom.get() + top - bottom, this.getMaxVisibleLineCountBottom()), tx);
+        }
+    }
+    collapseAll(tx) {
+        this._visibleLineCountTop.set(0, tx);
+        this._visibleLineCountBottom.set(0, tx);
+    }
+    setState(visibleLineCountTop, visibleLineCountBottom, tx) {
+        visibleLineCountTop = Math.max(Math.min(visibleLineCountTop, this.lineCount), 0);
+        visibleLineCountBottom = Math.max(Math.min(visibleLineCountBottom, this.lineCount - visibleLineCountTop), 0);
+        this._visibleLineCountTop.set(visibleLineCountTop, tx);
+        this._visibleLineCountBottom.set(visibleLineCountBottom, tx);
+    }
+}
+function applyOriginalEdits(diff, textEdits, originalTextModel, modifiedTextModel) {
+    return undefined;
+}
+function applyModifiedEdits(diff, textEdits, originalTextModel, modifiedTextModel) {
+    return undefined;
+}

@@ -1,1 +1,16 @@
-import{Event as r}from"../../../base/common/event.js";import"../../common/model.js";import"../../common/services/treeSitterParserService.js";import"../../common/core/range.js";class m{async getTree(e,n){}onDidUpdateTree=r.None;_serviceBrand;onDidAddLanguage=r.None;getOrInitLanguage(e){}getParseResult(e){}}export{m as StandaloneTreeSitterParserService};
+import { Event } from '../../../base/common/event.js';
+export class StandaloneTreeSitterParserService {
+    constructor() {
+        this.onDidUpdateTree = Event.None;
+        this.onDidAddLanguage = Event.None;
+    }
+    async getTree(content, languageId) {
+        return undefined;
+    }
+    getOrInitLanguage(_languageId) {
+        return undefined;
+    }
+    getParseResult(textModel) {
+        return undefined;
+    }
+}

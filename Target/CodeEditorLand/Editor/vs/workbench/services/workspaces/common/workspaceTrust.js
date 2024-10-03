@@ -1,1 +1,662 @@
-var P=Object.defineProperty;var O=Object.getOwnPropertyDescriptor;var f=(u,i,e,t)=>{for(var r=t>1?void 0:t?O(i,e):i,s=u.length-1,o;s>=0;s--)(o=u[s])&&(r=(t?o(i,e,r):o(r))||r);return t&&r&&P(i,e,r),r},n=(u,i)=>(e,t)=>i(e,t,u);import{Emitter as l,Event as F}from"../../../../base/common/event.js";import{Disposable as T,DisposableStore as b,toDisposable as E}from"../../../../base/common/lifecycle.js";import{LinkedList as q}from"../../../../base/common/linkedList.js";import{Schemas as d}from"../../../../base/common/network.js";import{URI as C}from"../../../../base/common/uri.js";import"../../../../platform/window/common/window.js";import{IConfigurationService as I}from"../../../../platform/configuration/common/configuration.js";import{InstantiationType as A,registerSingleton as D}from"../../../../platform/instantiation/common/extensions.js";import{IRemoteAuthorityResolverService as x}from"../../../../platform/remote/common/remoteAuthorityResolver.js";import{getRemoteAuthority as M}from"../../../../platform/remote/common/remoteHosts.js";import{isVirtualResource as K}from"../../../../platform/workspace/common/virtualWorkspace.js";import{IStorageService as N,StorageScope as v,StorageTarget as _}from"../../../../platform/storage/common/storage.js";import{isSavedWorkspace as R,isSingleFolderWorkspaceIdentifier as g,isTemporaryWorkspace as z,IWorkspaceContextService as L,toWorkspaceIdentifier as S,WorkbenchState as V}from"../../../../platform/workspace/common/workspace.js";import{IWorkspaceTrustManagementService as j,IWorkspaceTrustRequestService as B,WorkspaceTrustUriResponse as p,IWorkspaceTrustEnablementService as G}from"../../../../platform/workspace/common/workspaceTrust.js";import{Memento as J}from"../../../common/memento.js";import{IWorkbenchEnvironmentService as y}from"../../environment/common/environmentService.js";import{IUriIdentityService as Y}from"../../../../platform/uriIdentity/common/uriIdentity.js";import{isEqualAuthority as H}from"../../../../base/common/resources.js";import{isWeb as X}from"../../../../base/common/platform.js";import{IFileService as Q}from"../../../../platform/files/common/files.js";import{promiseWithResolvers as w}from"../../../../base/common/async.js";const Z="security.workspace.trust.enabled",xe="security.workspace.trust.startupPrompt",Me="security.workspace.trust.banner",U="security.workspace.trust.untrustedFiles",$="security.workspace.trust.emptyWindow",Ke="extensions.supportUntrustedWorkspaces",ee="content.trust.model.key";class te{constructor(i,e,t){this.originalWorkspace=i;this.canonicalFolderUris=e;this.canonicalConfiguration=t}get folders(){return this.originalWorkspace.folders.map((i,e)=>({index:i.index,name:i.name,toResource:i.toResource,uri:this.canonicalFolderUris[e]}))}get transient(){return this.originalWorkspace.transient}get configuration(){return this.canonicalConfiguration??this.originalWorkspace.configuration}get id(){return this.originalWorkspace.id}}let m=class extends T{constructor(e,t){super();this.configurationService=e;this.environmentService=t}_serviceBrand;isWorkspaceTrustEnabled(){return this.environmentService.disableWorkspaceTrust?!1:!!this.configurationService.getValue(Z)}};m=f([n(0,I),n(1,y)],m);let k=class extends T{constructor(e,t,r,s,o,a,c,W){super();this.configurationService=e;this.remoteAuthorityResolverService=t;this.storageService=r;this.uriIdentityService=s;this.environmentService=o;this.workspaceService=a;this.workspaceTrustEnablementService=c;this.fileService=W;this._canonicalUrisResolved=!1,this._canonicalWorkspace=this.workspaceService.getWorkspace(),{promise:this._workspaceResolvedPromise,resolve:this._workspaceResolvedPromiseResolve}=w(),{promise:this._workspaceTrustInitializedPromise,resolve:this._workspaceTrustInitializedPromiseResolve}=w(),this._storedTrustState=new se(X&&this.isEmptyWorkspace()?void 0:this.storageService),this._trustTransitionManager=this._register(new re),this._trustStateInfo=this.loadTrustInfo(),this._isTrusted=this.calculateWorkspaceTrust(),this.initializeWorkspaceTrust(),this.registerListeners()}_serviceBrand;storageKey=ee;_workspaceResolvedPromise;_workspaceResolvedPromiseResolve;_workspaceTrustInitializedPromise;_workspaceTrustInitializedPromiseResolve;_onDidChangeTrust=this._register(new l);onDidChangeTrust=this._onDidChangeTrust.event;_onDidChangeTrustedFolders=this._register(new l);onDidChangeTrustedFolders=this._onDidChangeTrustedFolders.event;_canonicalStartupFiles=[];_canonicalWorkspace;_canonicalUrisResolved;_isTrusted;_trustStateInfo;_remoteAuthority;_storedTrustState;_trustTransitionManager;initializeWorkspaceTrust(){this.resolveCanonicalUris().then(async()=>{this._canonicalUrisResolved=!0,await this.updateWorkspaceTrust()}).finally(()=>{this._workspaceResolvedPromiseResolve(),this.environmentService.remoteAuthority||this._workspaceTrustInitializedPromiseResolve()}),this.environmentService.remoteAuthority&&this.remoteAuthorityResolverService.resolveAuthority(this.environmentService.remoteAuthority).then(async e=>{this._remoteAuthority=e,await this.fileService.activateProvider(d.vscodeRemote),await this.updateWorkspaceTrust()}).finally(()=>{this._workspaceTrustInitializedPromiseResolve()}),this.isEmptyWorkspace()&&this._workspaceTrustInitializedPromise.then(()=>{this._storedTrustState.isEmptyWorkspaceTrusted===void 0&&(this._storedTrustState.isEmptyWorkspaceTrusted=this.isWorkspaceTrusted())})}registerListeners(){this._register(this.workspaceService.onDidChangeWorkspaceFolders(async()=>await this.updateWorkspaceTrust())),this._register(this.storageService.onDidChangeValue(v.APPLICATION,this.storageKey,this._register(new b))(async()=>{JSON.stringify(this._trustStateInfo)!==JSON.stringify(this.loadTrustInfo())&&(this._trustStateInfo=this.loadTrustInfo(),this._onDidChangeTrustedFolders.fire(),await this.updateWorkspaceTrust())}))}async getCanonicalUri(e){let t=e;if(this.environmentService.remoteAuthority&&e.scheme===d.vscodeRemote)t=await this.remoteAuthorityResolverService.getCanonicalURI(e);else if(e.scheme==="vscode-vfs"){const r=e.authority.indexOf("+");r!==-1&&(t=e.with({authority:e.authority.substr(0,r)}))}return t.with({query:null,fragment:null})}async resolveCanonicalUris(){const e=[];if(this.environmentService.filesToOpenOrCreate&&e.push(...this.environmentService.filesToOpenOrCreate),this.environmentService.filesToDiff&&e.push(...this.environmentService.filesToDiff),this.environmentService.filesToMerge&&e.push(...this.environmentService.filesToMerge),e.length){const o=e.filter(c=>!!c.fileUri).map(c=>c.fileUri),a=await Promise.all(o.map(c=>this.getCanonicalUri(c)));this._canonicalStartupFiles.push(...a.filter(c=>this._canonicalStartupFiles.every(W=>!this.uriIdentityService.extUri.isEqual(c,W))))}const t=this.workspaceService.getWorkspace().folders.map(o=>o.uri),r=await Promise.all(t.map(o=>this.getCanonicalUri(o)));let s=this.workspaceService.getWorkspace().configuration;s&&R(s,this.environmentService)&&(s=await this.getCanonicalUri(s)),this._canonicalWorkspace=new te(this.workspaceService.getWorkspace(),r,s)}loadTrustInfo(){const e=this.storageService.get(this.storageKey,v.APPLICATION);let t;try{e&&(t=JSON.parse(e))}catch{}return t||(t={uriTrustInfo:[]}),t.uriTrustInfo||(t.uriTrustInfo=[]),t.uriTrustInfo=t.uriTrustInfo.map(r=>({uri:C.revive(r.uri),trusted:r.trusted})),t.uriTrustInfo=t.uriTrustInfo.filter(r=>r.trusted),t}async saveTrustInfo(){this.storageService.store(this.storageKey,JSON.stringify(this._trustStateInfo),v.APPLICATION,_.MACHINE),this._onDidChangeTrustedFolders.fire(),await this.updateWorkspaceTrust()}getWorkspaceUris(){const e=this._canonicalWorkspace.folders.map(r=>r.uri),t=this._canonicalWorkspace.configuration;return t&&R(t,this.environmentService)&&e.push(t),e}calculateWorkspaceTrust(){return this.workspaceTrustEnablementService.isWorkspaceTrustEnabled()?this._canonicalUrisResolved?this.environmentService.remoteAuthority&&this._remoteAuthority?.options?.isTrusted?this._remoteAuthority.options.isTrusted:this.isEmptyWorkspace()?this._storedTrustState.isEmptyWorkspaceTrusted!==void 0?this._storedTrustState.isEmptyWorkspaceTrusted:this._canonicalStartupFiles.length?this.getUrisTrust(this._canonicalStartupFiles):!!this.configurationService.getValue($):this.getUrisTrust(this.getWorkspaceUris()):!1:!0}async updateWorkspaceTrust(e){this.workspaceTrustEnablementService.isWorkspaceTrustEnabled()&&(e===void 0&&(await this.resolveCanonicalUris(),e=this.calculateWorkspaceTrust()),this.isWorkspaceTrusted()!==e&&(this.isTrusted=e,await this._trustTransitionManager.participate(e),this._onDidChangeTrust.fire(e)))}getUrisTrust(e){let t=!0;for(const r of e){const{trusted:s}=this.doGetUriTrustInfo(r);if(!s)return t=s,t}return t}doGetUriTrustInfo(e){if(!this.workspaceTrustEnablementService.isWorkspaceTrustEnabled())return{trusted:!0,uri:e};if(this.isTrustedVirtualResource(e))return{trusted:!0,uri:e};if(this.isTrustedByRemote(e))return{trusted:!0,uri:e};let t=!1,r=-1,s=e;for(const o of this._trustStateInfo.uriTrustInfo)if(this.uriIdentityService.extUri.isEqualOrParent(e,o.uri)){const a=o.uri.fsPath;a.length>r&&(r=a.length,t=o.trusted,s=o.uri)}return{trusted:t,uri:s}}async doSetUrisTrust(e,t){let r=!1;for(const s of e)if(t){if(this.isTrustedVirtualResource(s)||this.isTrustedByRemote(s))continue;this._trustStateInfo.uriTrustInfo.find(a=>this.uriIdentityService.extUri.isEqual(a.uri,s))||(this._trustStateInfo.uriTrustInfo.push({uri:s,trusted:!0}),r=!0)}else{const o=this._trustStateInfo.uriTrustInfo.length;this._trustStateInfo.uriTrustInfo=this._trustStateInfo.uriTrustInfo.filter(a=>!this.uriIdentityService.extUri.isEqual(a.uri,s)),o!==this._trustStateInfo.uriTrustInfo.length&&(r=!0)}r&&await this.saveTrustInfo()}isEmptyWorkspace(){if(this.workspaceService.getWorkbenchState()===V.EMPTY)return!0;const e=this.workspaceService.getWorkspace();return e?z(this.workspaceService.getWorkspace())&&e.folders.length===0:!1}isTrustedVirtualResource(e){return K(e)&&e.scheme!=="vscode-vfs"}isTrustedByRemote(e){return!this.environmentService.remoteAuthority||!this._remoteAuthority?!1:H(M(e),this._remoteAuthority.authority.authority)&&!!this._remoteAuthority.options?.isTrusted}set isTrusted(e){this._isTrusted=e,e||(this._storedTrustState.acceptsOutOfWorkspaceFiles=!1),this.isEmptyWorkspace()&&(this._storedTrustState.isEmptyWorkspaceTrusted=e)}get workspaceResolved(){return this._workspaceResolvedPromise}get workspaceTrustInitialized(){return this._workspaceTrustInitializedPromise}get acceptsOutOfWorkspaceFiles(){return this._storedTrustState.acceptsOutOfWorkspaceFiles}set acceptsOutOfWorkspaceFiles(e){this._storedTrustState.acceptsOutOfWorkspaceFiles=e}isWorkspaceTrusted(){return this._isTrusted}isWorkspaceTrustForced(){return!!(this.environmentService.remoteAuthority&&this._remoteAuthority&&this._remoteAuthority.options?.isTrusted!==void 0||this.getWorkspaceUris().filter(t=>!this.isTrustedVirtualResource(t)).length===0)}canSetParentFolderTrust(){const e=S(this._canonicalWorkspace);if(!g(e)||e.uri.scheme!==d.file&&e.uri.scheme!==d.vscodeRemote)return!1;const t=this.uriIdentityService.extUri.dirname(e.uri);return!this.uriIdentityService.extUri.isEqual(e.uri,t)}async setParentFolderTrust(e){if(this.canSetParentFolderTrust()){const t=S(this._canonicalWorkspace).uri,r=this.uriIdentityService.extUri.dirname(t);await this.setUrisTrust([r],e)}}canSetWorkspaceTrust(){if(this.environmentService.remoteAuthority&&(!this._remoteAuthority||this._remoteAuthority.options?.isTrusted!==void 0))return!1;if(this.isEmptyWorkspace())return!0;if(this.getWorkspaceUris().filter(s=>!this.isTrustedVirtualResource(s)).length===0)return!1;if(!this.isWorkspaceTrusted())return!0;const t=S(this._canonicalWorkspace);if(!g(t)||t.uri.scheme!==d.file&&t.uri.scheme!=="vscode-vfs")return!1;const r=this.doGetUriTrustInfo(t.uri);if(!r.trusted||!this.uriIdentityService.extUri.isEqual(t.uri,r.uri))return!1;if(this.canSetParentFolderTrust()){const s=this.uriIdentityService.extUri.dirname(t.uri);if(this.doGetUriTrustInfo(s).trusted)return!1}return!0}async setWorkspaceTrust(e){if(this.isEmptyWorkspace()){await this.updateWorkspaceTrust(e);return}const t=this.getWorkspaceUris();await this.setUrisTrust(t,e)}async getUriTrustInfo(e){return this.workspaceTrustEnablementService.isWorkspaceTrustEnabled()?this.isTrustedByRemote(e)?{trusted:!0,uri:e}:this.doGetUriTrustInfo(await this.getCanonicalUri(e)):{trusted:!0,uri:e}}async setUrisTrust(e,t){this.doSetUrisTrust(await Promise.all(e.map(r=>this.getCanonicalUri(r))),t)}getTrustedUris(){return this._trustStateInfo.uriTrustInfo.map(e=>e.uri)}async setTrustedUris(e){this._trustStateInfo.uriTrustInfo=[];for(const t of e){const r=await this.getCanonicalUri(t),s=this.uriIdentityService.extUri.removeTrailingPathSeparator(r);let o=!1;for(const a of this._trustStateInfo.uriTrustInfo)if(this.uriIdentityService.extUri.isEqual(a.uri,s)){o=!0;break}o||this._trustStateInfo.uriTrustInfo.push({trusted:!0,uri:s})}await this.saveTrustInfo()}addWorkspaceTrustTransitionParticipant(e){return this._trustTransitionManager.addWorkspaceTrustTransitionParticipant(e)}};k=f([n(0,I),n(1,x),n(2,N),n(3,Y),n(4,y),n(5,L),n(6,G),n(7,Q)],k);let h=class extends T{constructor(e,t){super();this.configurationService=e;this.workspaceTrustManagementService=t}_serviceBrand;_openFilesTrustRequestPromise;_openFilesTrustRequestResolver;_workspaceTrustRequestPromise;_workspaceTrustRequestResolver;_onDidInitiateOpenFilesTrustRequest=this._register(new l);onDidInitiateOpenFilesTrustRequest=this._onDidInitiateOpenFilesTrustRequest.event;_onDidInitiateWorkspaceTrustRequest=this._register(new l);onDidInitiateWorkspaceTrustRequest=this._onDidInitiateWorkspaceTrustRequest.event;_onDidInitiateWorkspaceTrustRequestOnStartup=this._register(new l);onDidInitiateWorkspaceTrustRequestOnStartup=this._onDidInitiateWorkspaceTrustRequestOnStartup.event;get untrustedFilesSetting(){return this.configurationService.getValue(U)}set untrustedFilesSetting(e){this.configurationService.updateValue(U,e)}async completeOpenFilesTrustRequest(e,t){this._openFilesTrustRequestResolver&&(e===p.Open&&(this.workspaceTrustManagementService.acceptsOutOfWorkspaceFiles=!0),t&&(e===p.Open&&(this.untrustedFilesSetting="open"),e===p.OpenInNewWindow&&(this.untrustedFilesSetting="newWindow")),this._openFilesTrustRequestResolver(e),this._openFilesTrustRequestResolver=void 0,this._openFilesTrustRequestPromise=void 0)}async requestOpenFilesTrust(e){if(!this.workspaceTrustManagementService.isWorkspaceTrusted())return p.Open;if((await Promise.all(e.map(r=>this.workspaceTrustManagementService.getUriTrustInfo(r)))).map(r=>r.trusted).every(r=>r))return p.Open;if(this.untrustedFilesSetting!=="prompt"){if(this.untrustedFilesSetting==="newWindow")return p.OpenInNewWindow;if(this.untrustedFilesSetting==="open")return p.Open}if(this.workspaceTrustManagementService.acceptsOutOfWorkspaceFiles)return p.Open;if(!this._openFilesTrustRequestPromise)this._openFilesTrustRequestPromise=new Promise(r=>{this._openFilesTrustRequestResolver=r});else return this._openFilesTrustRequestPromise;return this._onDidInitiateOpenFilesTrustRequest.fire(),this._openFilesTrustRequestPromise}resolveWorkspaceTrustRequest(e){this._workspaceTrustRequestResolver&&(this._workspaceTrustRequestResolver(e??this.workspaceTrustManagementService.isWorkspaceTrusted()),this._workspaceTrustRequestResolver=void 0,this._workspaceTrustRequestPromise=void 0)}cancelWorkspaceTrustRequest(){this._workspaceTrustRequestResolver&&(this._workspaceTrustRequestResolver(void 0),this._workspaceTrustRequestResolver=void 0,this._workspaceTrustRequestPromise=void 0)}async completeWorkspaceTrustRequest(e){if(e===void 0||e===this.workspaceTrustManagementService.isWorkspaceTrusted()){this.resolveWorkspaceTrustRequest(e);return}F.once(this.workspaceTrustManagementService.onDidChangeTrust)(t=>this.resolveWorkspaceTrustRequest(t)),await this.workspaceTrustManagementService.setWorkspaceTrust(e)}async requestWorkspaceTrust(e){if(this.workspaceTrustManagementService.isWorkspaceTrusted())return this.workspaceTrustManagementService.isWorkspaceTrusted();if(!this._workspaceTrustRequestPromise)this._workspaceTrustRequestPromise=new Promise(t=>{this._workspaceTrustRequestResolver=t});else return this._workspaceTrustRequestPromise;return this._onDidInitiateWorkspaceTrustRequest.fire(e),this._workspaceTrustRequestPromise}requestWorkspaceTrustOnStartup(){this._workspaceTrustRequestPromise||(this._workspaceTrustRequestPromise=new Promise(e=>{this._workspaceTrustRequestResolver=e})),this._onDidInitiateWorkspaceTrustRequestOnStartup.fire()}};h=f([n(0,I),n(1,j)],h);class re extends T{participants=new q;addWorkspaceTrustTransitionParticipant(i){const e=this.participants.push(i);return E(()=>e())}async participate(i){for(const e of this.participants)await e.participate(i)}dispose(){this.participants.clear(),super.dispose()}}class se{_memento;_mementoObject;_acceptsOutOfWorkspaceFilesKey="acceptsOutOfWorkspaceFiles";_isEmptyWorkspaceTrustedKey="isEmptyWorkspaceTrusted";constructor(i){i?(this._memento=new J("workspaceTrust",i),this._mementoObject=this._memento.getMemento(v.WORKSPACE,_.MACHINE)):this._mementoObject={}}get acceptsOutOfWorkspaceFiles(){return this._mementoObject[this._acceptsOutOfWorkspaceFilesKey]??!1}set acceptsOutOfWorkspaceFiles(i){this._mementoObject[this._acceptsOutOfWorkspaceFilesKey]=i,this._memento?.saveMemento()}get isEmptyWorkspaceTrusted(){return this._mementoObject[this._isEmptyWorkspaceTrustedKey]}set isEmptyWorkspaceTrusted(i){this._mementoObject[this._isEmptyWorkspaceTrustedKey]=i,this._memento?.saveMemento()}}D(B,h,A.Delayed);export{te as CanonicalWorkspace,Me as WORKSPACE_TRUST_BANNER,$ as WORKSPACE_TRUST_EMPTY_WINDOW,Z as WORKSPACE_TRUST_ENABLED,Ke as WORKSPACE_TRUST_EXTENSION_SUPPORT,xe as WORKSPACE_TRUST_STARTUP_PROMPT,ee as WORKSPACE_TRUST_STORAGE_KEY,U as WORKSPACE_TRUST_UNTRUSTED_FILES,m as WorkspaceTrustEnablementService,k as WorkspaceTrustManagementService,h as WorkspaceTrustRequestService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { LinkedList } from '../../../../base/common/linkedList.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IRemoteAuthorityResolverService } from '../../../../platform/remote/common/remoteAuthorityResolver.js';
+import { getRemoteAuthority } from '../../../../platform/remote/common/remoteHosts.js';
+import { isVirtualResource } from '../../../../platform/workspace/common/virtualWorkspace.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { isSavedWorkspace, isSingleFolderWorkspaceIdentifier, isTemporaryWorkspace, IWorkspaceContextService, toWorkspaceIdentifier } from '../../../../platform/workspace/common/workspace.js';
+import { IWorkspaceTrustManagementService, IWorkspaceTrustRequestService, IWorkspaceTrustEnablementService } from '../../../../platform/workspace/common/workspaceTrust.js';
+import { Memento } from '../../../common/memento.js';
+import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
+import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { isEqualAuthority } from '../../../../base/common/resources.js';
+import { isWeb } from '../../../../base/common/platform.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { promiseWithResolvers } from '../../../../base/common/async.js';
+export const WORKSPACE_TRUST_ENABLED = 'security.workspace.trust.enabled';
+export const WORKSPACE_TRUST_STARTUP_PROMPT = 'security.workspace.trust.startupPrompt';
+export const WORKSPACE_TRUST_BANNER = 'security.workspace.trust.banner';
+export const WORKSPACE_TRUST_UNTRUSTED_FILES = 'security.workspace.trust.untrustedFiles';
+export const WORKSPACE_TRUST_EMPTY_WINDOW = 'security.workspace.trust.emptyWindow';
+export const WORKSPACE_TRUST_EXTENSION_SUPPORT = 'extensions.supportUntrustedWorkspaces';
+export const WORKSPACE_TRUST_STORAGE_KEY = 'content.trust.model.key';
+export class CanonicalWorkspace {
+    constructor(originalWorkspace, canonicalFolderUris, canonicalConfiguration) {
+        this.originalWorkspace = originalWorkspace;
+        this.canonicalFolderUris = canonicalFolderUris;
+        this.canonicalConfiguration = canonicalConfiguration;
+    }
+    get folders() {
+        return this.originalWorkspace.folders.map((folder, index) => {
+            return {
+                index: folder.index,
+                name: folder.name,
+                toResource: folder.toResource,
+                uri: this.canonicalFolderUris[index]
+            };
+        });
+    }
+    get transient() {
+        return this.originalWorkspace.transient;
+    }
+    get configuration() {
+        return this.canonicalConfiguration ?? this.originalWorkspace.configuration;
+    }
+    get id() {
+        return this.originalWorkspace.id;
+    }
+}
+let WorkspaceTrustEnablementService = class WorkspaceTrustEnablementService extends Disposable {
+    constructor(configurationService, environmentService) {
+        super();
+        this.configurationService = configurationService;
+        this.environmentService = environmentService;
+    }
+    isWorkspaceTrustEnabled() {
+        if (this.environmentService.disableWorkspaceTrust) {
+            return false;
+        }
+        return !!this.configurationService.getValue(WORKSPACE_TRUST_ENABLED);
+    }
+};
+WorkspaceTrustEnablementService = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, IWorkbenchEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object])
+], WorkspaceTrustEnablementService);
+export { WorkspaceTrustEnablementService };
+let WorkspaceTrustManagementService = class WorkspaceTrustManagementService extends Disposable {
+    constructor(configurationService, remoteAuthorityResolverService, storageService, uriIdentityService, environmentService, workspaceService, workspaceTrustEnablementService, fileService) {
+        super();
+        this.configurationService = configurationService;
+        this.remoteAuthorityResolverService = remoteAuthorityResolverService;
+        this.storageService = storageService;
+        this.uriIdentityService = uriIdentityService;
+        this.environmentService = environmentService;
+        this.workspaceService = workspaceService;
+        this.workspaceTrustEnablementService = workspaceTrustEnablementService;
+        this.fileService = fileService;
+        this.storageKey = WORKSPACE_TRUST_STORAGE_KEY;
+        this._onDidChangeTrust = this._register(new Emitter());
+        this.onDidChangeTrust = this._onDidChangeTrust.event;
+        this._onDidChangeTrustedFolders = this._register(new Emitter());
+        this.onDidChangeTrustedFolders = this._onDidChangeTrustedFolders.event;
+        this._canonicalStartupFiles = [];
+        this._canonicalUrisResolved = false;
+        this._canonicalWorkspace = this.workspaceService.getWorkspace();
+        ({ promise: this._workspaceResolvedPromise, resolve: this._workspaceResolvedPromiseResolve } = promiseWithResolvers());
+        ({ promise: this._workspaceTrustInitializedPromise, resolve: this._workspaceTrustInitializedPromiseResolve } = promiseWithResolvers());
+        this._storedTrustState = new WorkspaceTrustMemento(isWeb && this.isEmptyWorkspace() ? undefined : this.storageService);
+        this._trustTransitionManager = this._register(new WorkspaceTrustTransitionManager());
+        this._trustStateInfo = this.loadTrustInfo();
+        this._isTrusted = this.calculateWorkspaceTrust();
+        this.initializeWorkspaceTrust();
+        this.registerListeners();
+    }
+    initializeWorkspaceTrust() {
+        this.resolveCanonicalUris()
+            .then(async () => {
+            this._canonicalUrisResolved = true;
+            await this.updateWorkspaceTrust();
+        })
+            .finally(() => {
+            this._workspaceResolvedPromiseResolve();
+            if (!this.environmentService.remoteAuthority) {
+                this._workspaceTrustInitializedPromiseResolve();
+            }
+        });
+        if (this.environmentService.remoteAuthority) {
+            this.remoteAuthorityResolverService.resolveAuthority(this.environmentService.remoteAuthority)
+                .then(async (result) => {
+                this._remoteAuthority = result;
+                await this.fileService.activateProvider(Schemas.vscodeRemote);
+                await this.updateWorkspaceTrust();
+            })
+                .finally(() => {
+                this._workspaceTrustInitializedPromiseResolve();
+            });
+        }
+        if (this.isEmptyWorkspace()) {
+            this._workspaceTrustInitializedPromise.then(() => {
+                if (this._storedTrustState.isEmptyWorkspaceTrusted === undefined) {
+                    this._storedTrustState.isEmptyWorkspaceTrusted = this.isWorkspaceTrusted();
+                }
+            });
+        }
+    }
+    registerListeners() {
+        this._register(this.workspaceService.onDidChangeWorkspaceFolders(async () => await this.updateWorkspaceTrust()));
+        this._register(this.storageService.onDidChangeValue(-1, this.storageKey, this._register(new DisposableStore()))(async () => {
+            if (JSON.stringify(this._trustStateInfo) !== JSON.stringify(this.loadTrustInfo())) {
+                this._trustStateInfo = this.loadTrustInfo();
+                this._onDidChangeTrustedFolders.fire();
+                await this.updateWorkspaceTrust();
+            }
+        }));
+    }
+    async getCanonicalUri(uri) {
+        let canonicalUri = uri;
+        if (this.environmentService.remoteAuthority && uri.scheme === Schemas.vscodeRemote) {
+            canonicalUri = await this.remoteAuthorityResolverService.getCanonicalURI(uri);
+        }
+        else if (uri.scheme === 'vscode-vfs') {
+            const index = uri.authority.indexOf('+');
+            if (index !== -1) {
+                canonicalUri = uri.with({ authority: uri.authority.substr(0, index) });
+            }
+        }
+        return canonicalUri.with({ query: null, fragment: null });
+    }
+    async resolveCanonicalUris() {
+        const filesToOpen = [];
+        if (this.environmentService.filesToOpenOrCreate) {
+            filesToOpen.push(...this.environmentService.filesToOpenOrCreate);
+        }
+        if (this.environmentService.filesToDiff) {
+            filesToOpen.push(...this.environmentService.filesToDiff);
+        }
+        if (this.environmentService.filesToMerge) {
+            filesToOpen.push(...this.environmentService.filesToMerge);
+        }
+        if (filesToOpen.length) {
+            const filesToOpenOrCreateUris = filesToOpen.filter(f => !!f.fileUri).map(f => f.fileUri);
+            const canonicalFilesToOpen = await Promise.all(filesToOpenOrCreateUris.map(uri => this.getCanonicalUri(uri)));
+            this._canonicalStartupFiles.push(...canonicalFilesToOpen.filter(uri => this._canonicalStartupFiles.every(u => !this.uriIdentityService.extUri.isEqual(uri, u))));
+        }
+        const workspaceUris = this.workspaceService.getWorkspace().folders.map(f => f.uri);
+        const canonicalWorkspaceFolders = await Promise.all(workspaceUris.map(uri => this.getCanonicalUri(uri)));
+        let canonicalWorkspaceConfiguration = this.workspaceService.getWorkspace().configuration;
+        if (canonicalWorkspaceConfiguration && isSavedWorkspace(canonicalWorkspaceConfiguration, this.environmentService)) {
+            canonicalWorkspaceConfiguration = await this.getCanonicalUri(canonicalWorkspaceConfiguration);
+        }
+        this._canonicalWorkspace = new CanonicalWorkspace(this.workspaceService.getWorkspace(), canonicalWorkspaceFolders, canonicalWorkspaceConfiguration);
+    }
+    loadTrustInfo() {
+        const infoAsString = this.storageService.get(this.storageKey, -1);
+        let result;
+        try {
+            if (infoAsString) {
+                result = JSON.parse(infoAsString);
+            }
+        }
+        catch { }
+        if (!result) {
+            result = {
+                uriTrustInfo: []
+            };
+        }
+        if (!result.uriTrustInfo) {
+            result.uriTrustInfo = [];
+        }
+        result.uriTrustInfo = result.uriTrustInfo.map(info => { return { uri: URI.revive(info.uri), trusted: info.trusted }; });
+        result.uriTrustInfo = result.uriTrustInfo.filter(info => info.trusted);
+        return result;
+    }
+    async saveTrustInfo() {
+        this.storageService.store(this.storageKey, JSON.stringify(this._trustStateInfo), -1, 1);
+        this._onDidChangeTrustedFolders.fire();
+        await this.updateWorkspaceTrust();
+    }
+    getWorkspaceUris() {
+        const workspaceUris = this._canonicalWorkspace.folders.map(f => f.uri);
+        const workspaceConfiguration = this._canonicalWorkspace.configuration;
+        if (workspaceConfiguration && isSavedWorkspace(workspaceConfiguration, this.environmentService)) {
+            workspaceUris.push(workspaceConfiguration);
+        }
+        return workspaceUris;
+    }
+    calculateWorkspaceTrust() {
+        if (!this.workspaceTrustEnablementService.isWorkspaceTrustEnabled()) {
+            return true;
+        }
+        if (!this._canonicalUrisResolved) {
+            return false;
+        }
+        if (this.environmentService.remoteAuthority && this._remoteAuthority?.options?.isTrusted) {
+            return this._remoteAuthority.options.isTrusted;
+        }
+        if (this.isEmptyWorkspace()) {
+            if (this._storedTrustState.isEmptyWorkspaceTrusted !== undefined) {
+                return this._storedTrustState.isEmptyWorkspaceTrusted;
+            }
+            if (this._canonicalStartupFiles.length) {
+                return this.getUrisTrust(this._canonicalStartupFiles);
+            }
+            return !!this.configurationService.getValue(WORKSPACE_TRUST_EMPTY_WINDOW);
+        }
+        return this.getUrisTrust(this.getWorkspaceUris());
+    }
+    async updateWorkspaceTrust(trusted) {
+        if (!this.workspaceTrustEnablementService.isWorkspaceTrustEnabled()) {
+            return;
+        }
+        if (trusted === undefined) {
+            await this.resolveCanonicalUris();
+            trusted = this.calculateWorkspaceTrust();
+        }
+        if (this.isWorkspaceTrusted() === trusted) {
+            return;
+        }
+        this.isTrusted = trusted;
+        await this._trustTransitionManager.participate(trusted);
+        this._onDidChangeTrust.fire(trusted);
+    }
+    getUrisTrust(uris) {
+        let state = true;
+        for (const uri of uris) {
+            const { trusted } = this.doGetUriTrustInfo(uri);
+            if (!trusted) {
+                state = trusted;
+                return state;
+            }
+        }
+        return state;
+    }
+    doGetUriTrustInfo(uri) {
+        if (!this.workspaceTrustEnablementService.isWorkspaceTrustEnabled()) {
+            return { trusted: true, uri };
+        }
+        if (this.isTrustedVirtualResource(uri)) {
+            return { trusted: true, uri };
+        }
+        if (this.isTrustedByRemote(uri)) {
+            return { trusted: true, uri };
+        }
+        let resultState = false;
+        let maxLength = -1;
+        let resultUri = uri;
+        for (const trustInfo of this._trustStateInfo.uriTrustInfo) {
+            if (this.uriIdentityService.extUri.isEqualOrParent(uri, trustInfo.uri)) {
+                const fsPath = trustInfo.uri.fsPath;
+                if (fsPath.length > maxLength) {
+                    maxLength = fsPath.length;
+                    resultState = trustInfo.trusted;
+                    resultUri = trustInfo.uri;
+                }
+            }
+        }
+        return { trusted: resultState, uri: resultUri };
+    }
+    async doSetUrisTrust(uris, trusted) {
+        let changed = false;
+        for (const uri of uris) {
+            if (trusted) {
+                if (this.isTrustedVirtualResource(uri)) {
+                    continue;
+                }
+                if (this.isTrustedByRemote(uri)) {
+                    continue;
+                }
+                const foundItem = this._trustStateInfo.uriTrustInfo.find(trustInfo => this.uriIdentityService.extUri.isEqual(trustInfo.uri, uri));
+                if (!foundItem) {
+                    this._trustStateInfo.uriTrustInfo.push({ uri, trusted: true });
+                    changed = true;
+                }
+            }
+            else {
+                const previousLength = this._trustStateInfo.uriTrustInfo.length;
+                this._trustStateInfo.uriTrustInfo = this._trustStateInfo.uriTrustInfo.filter(trustInfo => !this.uriIdentityService.extUri.isEqual(trustInfo.uri, uri));
+                if (previousLength !== this._trustStateInfo.uriTrustInfo.length) {
+                    changed = true;
+                }
+            }
+        }
+        if (changed) {
+            await this.saveTrustInfo();
+        }
+    }
+    isEmptyWorkspace() {
+        if (this.workspaceService.getWorkbenchState() === 1) {
+            return true;
+        }
+        const workspace = this.workspaceService.getWorkspace();
+        if (workspace) {
+            return isTemporaryWorkspace(this.workspaceService.getWorkspace()) && workspace.folders.length === 0;
+        }
+        return false;
+    }
+    isTrustedVirtualResource(uri) {
+        return isVirtualResource(uri) && uri.scheme !== 'vscode-vfs';
+    }
+    isTrustedByRemote(uri) {
+        if (!this.environmentService.remoteAuthority) {
+            return false;
+        }
+        if (!this._remoteAuthority) {
+            return false;
+        }
+        return (isEqualAuthority(getRemoteAuthority(uri), this._remoteAuthority.authority.authority)) && !!this._remoteAuthority.options?.isTrusted;
+    }
+    set isTrusted(value) {
+        this._isTrusted = value;
+        if (!value) {
+            this._storedTrustState.acceptsOutOfWorkspaceFiles = false;
+        }
+        if (this.isEmptyWorkspace()) {
+            this._storedTrustState.isEmptyWorkspaceTrusted = value;
+        }
+    }
+    get workspaceResolved() {
+        return this._workspaceResolvedPromise;
+    }
+    get workspaceTrustInitialized() {
+        return this._workspaceTrustInitializedPromise;
+    }
+    get acceptsOutOfWorkspaceFiles() {
+        return this._storedTrustState.acceptsOutOfWorkspaceFiles;
+    }
+    set acceptsOutOfWorkspaceFiles(value) {
+        this._storedTrustState.acceptsOutOfWorkspaceFiles = value;
+    }
+    isWorkspaceTrusted() {
+        return this._isTrusted;
+    }
+    isWorkspaceTrustForced() {
+        if (this.environmentService.remoteAuthority && this._remoteAuthority && this._remoteAuthority.options?.isTrusted !== undefined) {
+            return true;
+        }
+        const workspaceUris = this.getWorkspaceUris().filter(uri => !this.isTrustedVirtualResource(uri));
+        if (workspaceUris.length === 0) {
+            return true;
+        }
+        return false;
+    }
+    canSetParentFolderTrust() {
+        const workspaceIdentifier = toWorkspaceIdentifier(this._canonicalWorkspace);
+        if (!isSingleFolderWorkspaceIdentifier(workspaceIdentifier)) {
+            return false;
+        }
+        if (workspaceIdentifier.uri.scheme !== Schemas.file && workspaceIdentifier.uri.scheme !== Schemas.vscodeRemote) {
+            return false;
+        }
+        const parentFolder = this.uriIdentityService.extUri.dirname(workspaceIdentifier.uri);
+        if (this.uriIdentityService.extUri.isEqual(workspaceIdentifier.uri, parentFolder)) {
+            return false;
+        }
+        return true;
+    }
+    async setParentFolderTrust(trusted) {
+        if (this.canSetParentFolderTrust()) {
+            const workspaceUri = toWorkspaceIdentifier(this._canonicalWorkspace).uri;
+            const parentFolder = this.uriIdentityService.extUri.dirname(workspaceUri);
+            await this.setUrisTrust([parentFolder], trusted);
+        }
+    }
+    canSetWorkspaceTrust() {
+        if (this.environmentService.remoteAuthority && (!this._remoteAuthority || this._remoteAuthority.options?.isTrusted !== undefined)) {
+            return false;
+        }
+        if (this.isEmptyWorkspace()) {
+            return true;
+        }
+        const workspaceUris = this.getWorkspaceUris().filter(uri => !this.isTrustedVirtualResource(uri));
+        if (workspaceUris.length === 0) {
+            return false;
+        }
+        if (!this.isWorkspaceTrusted()) {
+            return true;
+        }
+        const workspaceIdentifier = toWorkspaceIdentifier(this._canonicalWorkspace);
+        if (!isSingleFolderWorkspaceIdentifier(workspaceIdentifier)) {
+            return false;
+        }
+        if (workspaceIdentifier.uri.scheme !== Schemas.file && workspaceIdentifier.uri.scheme !== 'vscode-vfs') {
+            return false;
+        }
+        const trustInfo = this.doGetUriTrustInfo(workspaceIdentifier.uri);
+        if (!trustInfo.trusted || !this.uriIdentityService.extUri.isEqual(workspaceIdentifier.uri, trustInfo.uri)) {
+            return false;
+        }
+        if (this.canSetParentFolderTrust()) {
+            const parentFolder = this.uriIdentityService.extUri.dirname(workspaceIdentifier.uri);
+            const parentPathTrustInfo = this.doGetUriTrustInfo(parentFolder);
+            if (parentPathTrustInfo.trusted) {
+                return false;
+            }
+        }
+        return true;
+    }
+    async setWorkspaceTrust(trusted) {
+        if (this.isEmptyWorkspace()) {
+            await this.updateWorkspaceTrust(trusted);
+            return;
+        }
+        const workspaceFolders = this.getWorkspaceUris();
+        await this.setUrisTrust(workspaceFolders, trusted);
+    }
+    async getUriTrustInfo(uri) {
+        if (!this.workspaceTrustEnablementService.isWorkspaceTrustEnabled()) {
+            return { trusted: true, uri };
+        }
+        if (this.isTrustedByRemote(uri)) {
+            return { trusted: true, uri };
+        }
+        return this.doGetUriTrustInfo(await this.getCanonicalUri(uri));
+    }
+    async setUrisTrust(uris, trusted) {
+        this.doSetUrisTrust(await Promise.all(uris.map(uri => this.getCanonicalUri(uri))), trusted);
+    }
+    getTrustedUris() {
+        return this._trustStateInfo.uriTrustInfo.map(info => info.uri);
+    }
+    async setTrustedUris(uris) {
+        this._trustStateInfo.uriTrustInfo = [];
+        for (const uri of uris) {
+            const canonicalUri = await this.getCanonicalUri(uri);
+            const cleanUri = this.uriIdentityService.extUri.removeTrailingPathSeparator(canonicalUri);
+            let added = false;
+            for (const addedUri of this._trustStateInfo.uriTrustInfo) {
+                if (this.uriIdentityService.extUri.isEqual(addedUri.uri, cleanUri)) {
+                    added = true;
+                    break;
+                }
+            }
+            if (added) {
+                continue;
+            }
+            this._trustStateInfo.uriTrustInfo.push({
+                trusted: true,
+                uri: cleanUri
+            });
+        }
+        await this.saveTrustInfo();
+    }
+    addWorkspaceTrustTransitionParticipant(participant) {
+        return this._trustTransitionManager.addWorkspaceTrustTransitionParticipant(participant);
+    }
+};
+WorkspaceTrustManagementService = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, IRemoteAuthorityResolverService),
+    __param(2, IStorageService),
+    __param(3, IUriIdentityService),
+    __param(4, IWorkbenchEnvironmentService),
+    __param(5, IWorkspaceContextService),
+    __param(6, IWorkspaceTrustEnablementService),
+    __param(7, IFileService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object])
+], WorkspaceTrustManagementService);
+export { WorkspaceTrustManagementService };
+let WorkspaceTrustRequestService = class WorkspaceTrustRequestService extends Disposable {
+    constructor(configurationService, workspaceTrustManagementService) {
+        super();
+        this.configurationService = configurationService;
+        this.workspaceTrustManagementService = workspaceTrustManagementService;
+        this._onDidInitiateOpenFilesTrustRequest = this._register(new Emitter());
+        this.onDidInitiateOpenFilesTrustRequest = this._onDidInitiateOpenFilesTrustRequest.event;
+        this._onDidInitiateWorkspaceTrustRequest = this._register(new Emitter());
+        this.onDidInitiateWorkspaceTrustRequest = this._onDidInitiateWorkspaceTrustRequest.event;
+        this._onDidInitiateWorkspaceTrustRequestOnStartup = this._register(new Emitter());
+        this.onDidInitiateWorkspaceTrustRequestOnStartup = this._onDidInitiateWorkspaceTrustRequestOnStartup.event;
+    }
+    get untrustedFilesSetting() {
+        return this.configurationService.getValue(WORKSPACE_TRUST_UNTRUSTED_FILES);
+    }
+    set untrustedFilesSetting(value) {
+        this.configurationService.updateValue(WORKSPACE_TRUST_UNTRUSTED_FILES, value);
+    }
+    async completeOpenFilesTrustRequest(result, saveResponse) {
+        if (!this._openFilesTrustRequestResolver) {
+            return;
+        }
+        if (result === 1) {
+            this.workspaceTrustManagementService.acceptsOutOfWorkspaceFiles = true;
+        }
+        if (saveResponse) {
+            if (result === 1) {
+                this.untrustedFilesSetting = 'open';
+            }
+            if (result === 2) {
+                this.untrustedFilesSetting = 'newWindow';
+            }
+        }
+        this._openFilesTrustRequestResolver(result);
+        this._openFilesTrustRequestResolver = undefined;
+        this._openFilesTrustRequestPromise = undefined;
+    }
+    async requestOpenFilesTrust(uris) {
+        if (!this.workspaceTrustManagementService.isWorkspaceTrusted()) {
+            return 1;
+        }
+        const openFilesTrustInfo = await Promise.all(uris.map(uri => this.workspaceTrustManagementService.getUriTrustInfo(uri)));
+        if (openFilesTrustInfo.map(info => info.trusted).every(trusted => trusted)) {
+            return 1;
+        }
+        if (this.untrustedFilesSetting !== 'prompt') {
+            if (this.untrustedFilesSetting === 'newWindow') {
+                return 2;
+            }
+            if (this.untrustedFilesSetting === 'open') {
+                return 1;
+            }
+        }
+        if (this.workspaceTrustManagementService.acceptsOutOfWorkspaceFiles) {
+            return 1;
+        }
+        if (!this._openFilesTrustRequestPromise) {
+            this._openFilesTrustRequestPromise = new Promise(resolve => {
+                this._openFilesTrustRequestResolver = resolve;
+            });
+        }
+        else {
+            return this._openFilesTrustRequestPromise;
+        }
+        this._onDidInitiateOpenFilesTrustRequest.fire();
+        return this._openFilesTrustRequestPromise;
+    }
+    resolveWorkspaceTrustRequest(trusted) {
+        if (this._workspaceTrustRequestResolver) {
+            this._workspaceTrustRequestResolver(trusted ?? this.workspaceTrustManagementService.isWorkspaceTrusted());
+            this._workspaceTrustRequestResolver = undefined;
+            this._workspaceTrustRequestPromise = undefined;
+        }
+    }
+    cancelWorkspaceTrustRequest() {
+        if (this._workspaceTrustRequestResolver) {
+            this._workspaceTrustRequestResolver(undefined);
+            this._workspaceTrustRequestResolver = undefined;
+            this._workspaceTrustRequestPromise = undefined;
+        }
+    }
+    async completeWorkspaceTrustRequest(trusted) {
+        if (trusted === undefined || trusted === this.workspaceTrustManagementService.isWorkspaceTrusted()) {
+            this.resolveWorkspaceTrustRequest(trusted);
+            return;
+        }
+        Event.once(this.workspaceTrustManagementService.onDidChangeTrust)(trusted => this.resolveWorkspaceTrustRequest(trusted));
+        await this.workspaceTrustManagementService.setWorkspaceTrust(trusted);
+    }
+    async requestWorkspaceTrust(options) {
+        if (this.workspaceTrustManagementService.isWorkspaceTrusted()) {
+            return this.workspaceTrustManagementService.isWorkspaceTrusted();
+        }
+        if (!this._workspaceTrustRequestPromise) {
+            this._workspaceTrustRequestPromise = new Promise(resolve => {
+                this._workspaceTrustRequestResolver = resolve;
+            });
+        }
+        else {
+            return this._workspaceTrustRequestPromise;
+        }
+        this._onDidInitiateWorkspaceTrustRequest.fire(options);
+        return this._workspaceTrustRequestPromise;
+    }
+    requestWorkspaceTrustOnStartup() {
+        if (!this._workspaceTrustRequestPromise) {
+            this._workspaceTrustRequestPromise = new Promise(resolve => {
+                this._workspaceTrustRequestResolver = resolve;
+            });
+        }
+        this._onDidInitiateWorkspaceTrustRequestOnStartup.fire();
+    }
+};
+WorkspaceTrustRequestService = __decorate([
+    __param(0, IConfigurationService),
+    __param(1, IWorkspaceTrustManagementService),
+    __metadata("design:paramtypes", [Object, Object])
+], WorkspaceTrustRequestService);
+export { WorkspaceTrustRequestService };
+class WorkspaceTrustTransitionManager extends Disposable {
+    constructor() {
+        super(...arguments);
+        this.participants = new LinkedList();
+    }
+    addWorkspaceTrustTransitionParticipant(participant) {
+        const remove = this.participants.push(participant);
+        return toDisposable(() => remove());
+    }
+    async participate(trusted) {
+        for (const participant of this.participants) {
+            await participant.participate(trusted);
+        }
+    }
+    dispose() {
+        this.participants.clear();
+        super.dispose();
+    }
+}
+class WorkspaceTrustMemento {
+    constructor(storageService) {
+        this._acceptsOutOfWorkspaceFilesKey = 'acceptsOutOfWorkspaceFiles';
+        this._isEmptyWorkspaceTrustedKey = 'isEmptyWorkspaceTrusted';
+        if (storageService) {
+            this._memento = new Memento('workspaceTrust', storageService);
+            this._mementoObject = this._memento.getMemento(1, 1);
+        }
+        else {
+            this._mementoObject = {};
+        }
+    }
+    get acceptsOutOfWorkspaceFiles() {
+        return this._mementoObject[this._acceptsOutOfWorkspaceFilesKey] ?? false;
+    }
+    set acceptsOutOfWorkspaceFiles(value) {
+        this._mementoObject[this._acceptsOutOfWorkspaceFilesKey] = value;
+        this._memento?.saveMemento();
+    }
+    get isEmptyWorkspaceTrusted() {
+        return this._mementoObject[this._isEmptyWorkspaceTrustedKey];
+    }
+    set isEmptyWorkspaceTrusted(value) {
+        this._mementoObject[this._isEmptyWorkspaceTrustedKey] = value;
+        this._memento?.saveMemento();
+    }
+}
+registerSingleton(IWorkspaceTrustRequestService, WorkspaceTrustRequestService, 1);

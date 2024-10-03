@@ -1,1 +1,190 @@
-import*as b from"../../../base/common/strings.js";import{Constants as D}from"../../../base/common/uint.js";import{LinePartMetadata as g}from"./linePart.js";import{InlineDecorationType as m}from"../viewModel.js";class l{constructor(e,t,s,n){this.startColumn=e;this.endColumn=t;this.className=s;this.type=n}_lineDecorationBrand=void 0;static _equals(e,t){return e.startColumn===t.startColumn&&e.endColumn===t.endColumn&&e.className===t.className&&e.type===t.type}static equalsArr(e,t){const s=e.length,n=t.length;if(s!==n)return!1;for(let o=0;o<s;o++)if(!l._equals(e[o],t[o]))return!1;return!0}static extractWrapped(e,t,s){if(e.length===0)return e;const n=t+1,o=s+1,c=s-t,u=[];let a=0;for(const r of e)r.endColumn<=n||r.startColumn>=o||(u[a++]=new l(Math.max(1,r.startColumn-n+1),Math.min(c+1,r.endColumn-n+1),r.className,r.type));return u}static filter(e,t,s,n){if(e.length===0)return[];const o=[];let c=0;for(let u=0,a=e.length;u<a;u++){const r=e[u],i=r.range;if(i.endLineNumber<t||i.startLineNumber>t||i.isEmpty()&&(r.type===m.Regular||r.type===m.RegularAffectingLetterSpacing))continue;const h=i.startLineNumber===t?i.startColumn:s,f=i.endLineNumber===t?i.endColumn:n;o[c++]=new l(h,f,r.inlineClassName,r.type)}return o}static _typeCompare(e,t){const s=[2,0,1,3];return s[e]-s[t]}static compare(e,t){if(e.startColumn!==t.startColumn)return e.startColumn-t.startColumn;if(e.endColumn!==t.endColumn)return e.endColumn-t.endColumn;const s=l._typeCompare(e.type,t.type);return s!==0?s:e.className!==t.className?e.className<t.className?-1:1:0}}class y{startOffset;endOffset;className;metadata;constructor(e,t,s,n){this.startOffset=e,this.endOffset=t,this.className=s,this.metadata=n}}class p{count;stopOffsets;classNames;metadata;constructor(){this.stopOffsets=[],this.classNames=[],this.metadata=[],this.count=0}static _metadata(e){let t=0;for(let s=0,n=e.length;s<n;s++)t|=e[s];return t}consumeLowerThan(e,t,s){for(;this.count>0&&this.stopOffsets[0]<e;){let n=0;for(;n+1<this.count&&this.stopOffsets[n]===this.stopOffsets[n+1];)n++;s.push(new y(t,this.stopOffsets[n],this.classNames.join(" "),p._metadata(this.metadata))),t=this.stopOffsets[n]+1,this.stopOffsets.splice(0,n+1),this.classNames.splice(0,n+1),this.metadata.splice(0,n+1),this.count-=n+1}return this.count>0&&t<e&&(s.push(new y(t,e-1,this.classNames.join(" "),p._metadata(this.metadata))),t=e),t}insert(e,t,s){if(this.count===0||this.stopOffsets[this.count-1]<=e)this.stopOffsets.push(e),this.classNames.push(t),this.metadata.push(s);else for(let n=0;n<this.count;n++)if(this.stopOffsets[n]>=e){this.stopOffsets.splice(n,0,e),this.classNames.splice(n,0,t),this.metadata.splice(n,0,s);break}this.count++}}class T{static normalize(e,t){if(t.length===0)return[];const s=[],n=new p;let o=0;for(let c=0,u=t.length;c<u;c++){const a=t[c];let r=a.startColumn,i=a.endColumn;const h=a.className,f=a.type===m.Before?g.PSEUDO_BEFORE:a.type===m.After?g.PSEUDO_AFTER:0;if(r>1){const d=e.charCodeAt(r-2);b.isHighSurrogate(d)&&r--}if(i>1){const d=e.charCodeAt(i-2);b.isHighSurrogate(d)&&i--}const C=r-1,N=i-2;o=n.consumeLowerThan(C,o,s),n.count===0&&(o=C),n.insert(N,h,f)}return n.consumeLowerThan(D.MAX_SAFE_SMALL_INTEGER,o,s),s}}export{y as DecorationSegment,l as LineDecoration,T as LineDecorationsNormalizer};
+import * as strings from '../../../base/common/strings.js';
+export class LineDecoration {
+    constructor(startColumn, endColumn, className, type) {
+        this.startColumn = startColumn;
+        this.endColumn = endColumn;
+        this.className = className;
+        this.type = type;
+        this._lineDecorationBrand = undefined;
+    }
+    static _equals(a, b) {
+        return (a.startColumn === b.startColumn
+            && a.endColumn === b.endColumn
+            && a.className === b.className
+            && a.type === b.type);
+    }
+    static equalsArr(a, b) {
+        const aLen = a.length;
+        const bLen = b.length;
+        if (aLen !== bLen) {
+            return false;
+        }
+        for (let i = 0; i < aLen; i++) {
+            if (!LineDecoration._equals(a[i], b[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    static extractWrapped(arr, startOffset, endOffset) {
+        if (arr.length === 0) {
+            return arr;
+        }
+        const startColumn = startOffset + 1;
+        const endColumn = endOffset + 1;
+        const lineLength = endOffset - startOffset;
+        const r = [];
+        let rLength = 0;
+        for (const dec of arr) {
+            if (dec.endColumn <= startColumn || dec.startColumn >= endColumn) {
+                continue;
+            }
+            r[rLength++] = new LineDecoration(Math.max(1, dec.startColumn - startColumn + 1), Math.min(lineLength + 1, dec.endColumn - startColumn + 1), dec.className, dec.type);
+        }
+        return r;
+    }
+    static filter(lineDecorations, lineNumber, minLineColumn, maxLineColumn) {
+        if (lineDecorations.length === 0) {
+            return [];
+        }
+        const result = [];
+        let resultLen = 0;
+        for (let i = 0, len = lineDecorations.length; i < len; i++) {
+            const d = lineDecorations[i];
+            const range = d.range;
+            if (range.endLineNumber < lineNumber || range.startLineNumber > lineNumber) {
+                continue;
+            }
+            if (range.isEmpty() && (d.type === 0 || d.type === 3)) {
+                continue;
+            }
+            const startColumn = (range.startLineNumber === lineNumber ? range.startColumn : minLineColumn);
+            const endColumn = (range.endLineNumber === lineNumber ? range.endColumn : maxLineColumn);
+            result[resultLen++] = new LineDecoration(startColumn, endColumn, d.inlineClassName, d.type);
+        }
+        return result;
+    }
+    static _typeCompare(a, b) {
+        const ORDER = [2, 0, 1, 3];
+        return ORDER[a] - ORDER[b];
+    }
+    static compare(a, b) {
+        if (a.startColumn !== b.startColumn) {
+            return a.startColumn - b.startColumn;
+        }
+        if (a.endColumn !== b.endColumn) {
+            return a.endColumn - b.endColumn;
+        }
+        const typeCmp = LineDecoration._typeCompare(a.type, b.type);
+        if (typeCmp !== 0) {
+            return typeCmp;
+        }
+        if (a.className !== b.className) {
+            return a.className < b.className ? -1 : 1;
+        }
+        return 0;
+    }
+}
+export class DecorationSegment {
+    constructor(startOffset, endOffset, className, metadata) {
+        this.startOffset = startOffset;
+        this.endOffset = endOffset;
+        this.className = className;
+        this.metadata = metadata;
+    }
+}
+class Stack {
+    constructor() {
+        this.stopOffsets = [];
+        this.classNames = [];
+        this.metadata = [];
+        this.count = 0;
+    }
+    static _metadata(metadata) {
+        let result = 0;
+        for (let i = 0, len = metadata.length; i < len; i++) {
+            result |= metadata[i];
+        }
+        return result;
+    }
+    consumeLowerThan(maxStopOffset, nextStartOffset, result) {
+        while (this.count > 0 && this.stopOffsets[0] < maxStopOffset) {
+            let i = 0;
+            while (i + 1 < this.count && this.stopOffsets[i] === this.stopOffsets[i + 1]) {
+                i++;
+            }
+            result.push(new DecorationSegment(nextStartOffset, this.stopOffsets[i], this.classNames.join(' '), Stack._metadata(this.metadata)));
+            nextStartOffset = this.stopOffsets[i] + 1;
+            this.stopOffsets.splice(0, i + 1);
+            this.classNames.splice(0, i + 1);
+            this.metadata.splice(0, i + 1);
+            this.count -= (i + 1);
+        }
+        if (this.count > 0 && nextStartOffset < maxStopOffset) {
+            result.push(new DecorationSegment(nextStartOffset, maxStopOffset - 1, this.classNames.join(' '), Stack._metadata(this.metadata)));
+            nextStartOffset = maxStopOffset;
+        }
+        return nextStartOffset;
+    }
+    insert(stopOffset, className, metadata) {
+        if (this.count === 0 || this.stopOffsets[this.count - 1] <= stopOffset) {
+            this.stopOffsets.push(stopOffset);
+            this.classNames.push(className);
+            this.metadata.push(metadata);
+        }
+        else {
+            for (let i = 0; i < this.count; i++) {
+                if (this.stopOffsets[i] >= stopOffset) {
+                    this.stopOffsets.splice(i, 0, stopOffset);
+                    this.classNames.splice(i, 0, className);
+                    this.metadata.splice(i, 0, metadata);
+                    break;
+                }
+            }
+        }
+        this.count++;
+        return;
+    }
+}
+export class LineDecorationsNormalizer {
+    static normalize(lineContent, lineDecorations) {
+        if (lineDecorations.length === 0) {
+            return [];
+        }
+        const result = [];
+        const stack = new Stack();
+        let nextStartOffset = 0;
+        for (let i = 0, len = lineDecorations.length; i < len; i++) {
+            const d = lineDecorations[i];
+            let startColumn = d.startColumn;
+            let endColumn = d.endColumn;
+            const className = d.className;
+            const metadata = (d.type === 1
+                ? 2
+                : d.type === 2
+                    ? 4
+                    : 0);
+            if (startColumn > 1) {
+                const charCodeBefore = lineContent.charCodeAt(startColumn - 2);
+                if (strings.isHighSurrogate(charCodeBefore)) {
+                    startColumn--;
+                }
+            }
+            if (endColumn > 1) {
+                const charCodeBefore = lineContent.charCodeAt(endColumn - 2);
+                if (strings.isHighSurrogate(charCodeBefore)) {
+                    endColumn--;
+                }
+            }
+            const currentStartOffset = startColumn - 1;
+            const currentEndOffset = endColumn - 2;
+            nextStartOffset = stack.consumeLowerThan(currentStartOffset, nextStartOffset, result);
+            if (stack.count === 0) {
+                nextStartOffset = currentStartOffset;
+            }
+            stack.insert(currentEndOffset, className, metadata);
+        }
+        stack.consumeLowerThan(1073741824, nextStartOffset, result);
+        return result;
+    }
+}

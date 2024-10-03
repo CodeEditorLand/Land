@@ -1,2 +1,2792 @@
-import{asArray as Qe,coalesce as _,isNonEmptyArray as $e}from"../../../base/common/arrays.js";import{VSBuffer as Ce,encodeBase64 as Je}from"../../../base/common/buffer.js";import{UriList as xe}from"../../../base/common/dataTransfer.js";import{createSingleCallFunction as qe}from"../../../base/common/functional.js";import*as k from"../../../base/common/htmlContent.js";import"../../../base/common/lifecycle.js";import{ResourceMap as Xe,ResourceSet as Ye}from"../../../base/common/map.js";import*as Ie from"../../../base/common/marked/marked.js";import{parse as Ze,revive as L}from"../../../base/common/marshalling.js";import{Mimes as ve}from"../../../base/common/mime.js";import{cloneAndChange as et}from"../../../base/common/objects.js";import{WellDefinedPrefixTree as tt}from"../../../base/common/prefixTree.js";import{basename as nt}from"../../../base/common/resources.js";import{ThemeIcon as ot}from"../../../base/common/themables.js";import{isDefined as rt,isEmptyObject as at,isNumber as it,isString as ye,isUndefinedOrNull as he}from"../../../base/common/types.js";import{URI as p,isUriComponents as be}from"../../../base/common/uri.js";import"../../../base/common/uriIpc.js";import{RenderLineNumbersType as R}from"../../../editor/common/config/editorOptions.js";import"../../../editor/common/core/position.js";import*as Te from"../../../editor/common/core/range.js";import"../../../editor/common/core/selection.js";import"../../../editor/common/editorCommon.js";import*as N from"../../../editor/common/encodedTokenAttributes.js";import"../../../editor/common/languageSelector.js";import*as c from"../../../editor/common/languages.js";import{EndOfLineSequence as H,TrackedRangeStickiness as O}from"../../../editor/common/model.js";import"../../../platform/editor/common/editor.js";import"../../../platform/extensions/common/extensions.js";import{MarkerSeverity as h,MarkerTag as A}from"../../../platform/markers/common/markers.js";import{ProgressLocation as B}from"../../../platform/progress/common/progress.js";import{DEFAULT_EDITOR_ASSOCIATION as st,SaveReason as F}from"../../common/editor.js";import"../../common/views.js";import{ChatAgentLocation as I}from"../../contrib/chat/common/chatAgents.js";import"../../contrib/chat/common/chatModel.js";import"../../contrib/chat/common/chatService.js";import"../../contrib/chat/common/languageModelToolsService.js";import*as S from"../../contrib/chat/common/languageModels.js";import{DebugTreeItemCollapsibleState as ct}from"../../contrib/debug/common/debug.js";import*as v from"../../contrib/notebook/common/notebookCommon.js";import"../../contrib/notebook/common/notebookRange.js";import"../../contrib/search/common/search.js";import{TestId as U}from"../../contrib/testing/common/testId.js";import{DetailType as G,TestMessageType as Re,denamespaceTestTag as lt,namespaceTestTag as dt}from"../../contrib/testing/common/testTypes.js";import"../../services/editor/common/editorGroupColumn.js";import{ACTIVE_GROUP as ut,SIDE_GROUP as mt}from"../../services/editor/common/editorService.js";import"../../services/extensions/common/proxyIdentifier.js";import"./extHost.protocol.js";import"./extHostCommands.js";import{getPrivateApiFor as pt}from"./extHostTestingPrivateApi.js";import*as o from"./extHostTypes.js";var ft;(t=>{function a(e){const{selectionStartLineNumber:n,selectionStartColumn:i,positionLineNumber:l,positionColumn:r}=e,d=new o.Position(n-1,i-1),m=new o.Position(l-1,r-1);return new o.Selection(d,m)}t.to=a;function s(e){const{anchor:n,active:i}=e;return{selectionStartLineNumber:n.line+1,selectionStartColumn:n.character+1,positionLineNumber:i.line+1,positionColumn:i.character+1}}t.from=s})(ft||={});var u;(t=>{function a(e){if(!e)return;const{start:n,end:i}=e;return{startLineNumber:n.line+1,startColumn:n.character+1,endLineNumber:i.line+1,endColumn:i.character+1}}t.from=a;function s(e){if(!e)return;const{startLineNumber:n,startColumn:i,endLineNumber:l,endColumn:r}=e;return new o.Range(n-1,i-1,l-1,r-1)}t.to=s})(u||={});var D;(t=>{function a(e){return{uri:e.uri,range:u.from(e.range)}}t.from=a;function s(e){return new o.Location(p.revive(e.uri),u.to(e.range))}t.to=s})(D||={});var gt;(s=>{function a(t){switch(t){case N.StandardTokenType.Comment:return o.StandardTokenType.Comment;case N.StandardTokenType.Other:return o.StandardTokenType.Other;case N.StandardTokenType.RegEx:return o.StandardTokenType.RegEx;case N.StandardTokenType.String:return o.StandardTokenType.String}}s.to=a})(gt||={});var K;(t=>{function a(e){return new o.Position(e.lineNumber-1,e.column-1)}t.to=a;function s(e){return{lineNumber:e.line+1,column:e.character+1}}t.from=s})(K||={});var Ct;(e=>{function a(n,i,l){return _(Qe(n).map(r=>s(r,i,l)))}e.from=a;function s(n,i,l){if(typeof n=="string")return{$serialized:!0,language:n,isBuiltin:l?.isBuiltin};if(n)return{$serialized:!0,language:n.language,scheme:t(n.scheme,i),pattern:T.from(n.pattern)??void 0,exclusive:n.exclusive,notebookType:n.notebookType,isBuiltin:l?.isBuiltin}}function t(n,i){return i&&typeof n=="string"?i.transformOutgoingScheme(n):n}})(Ct||={});var j;(t=>{function a(e){switch(e){case o.DiagnosticTag.Unnecessary:return A.Unnecessary;case o.DiagnosticTag.Deprecated:return A.Deprecated}}t.from=a;function s(e){switch(e){case A.Unnecessary:return o.DiagnosticTag.Unnecessary;case A.Deprecated:return o.DiagnosticTag.Deprecated;default:return}}t.to=s})(j||={});var xt;(t=>{function a(e){let n;return e.code&&(ye(e.code)||it(e.code)?n=String(e.code):n={value:String(e.code.value),target:e.code.target}),{...u.from(e.range),message:e.message,source:e.source,code:n,severity:Q.from(e.severity),relatedInformation:e.relatedInformation&&e.relatedInformation.map(z.from),tags:Array.isArray(e.tags)?_(e.tags.map(j.from)):void 0}}t.from=a;function s(e){const n=new o.Diagnostic(u.to(e),e.message,Q.to(e.severity));return n.source=e.source,n.code=ye(e.code)?e.code:e.code?.value,n.relatedInformation=e.relatedInformation&&e.relatedInformation.map(z.to),n.tags=e.tags&&_(e.tags.map(j.to)),n}t.to=s})(xt||={});var z;(t=>{function a(e){return{...u.from(e.location.range),message:e.message,resource:e.location.uri}}t.from=a;function s(e){return new o.DiagnosticRelatedInformation(new o.Location(e.resource,u.to(e)),e.message)}t.to=s})(z||={});var Q;(t=>{function a(e){switch(e){case o.DiagnosticSeverity.Error:return h.Error;case o.DiagnosticSeverity.Warning:return h.Warning;case o.DiagnosticSeverity.Information:return h.Info;case o.DiagnosticSeverity.Hint:return h.Hint}return h.Error}t.from=a;function s(e){switch(e){case h.Info:return o.DiagnosticSeverity.Information;case h.Warning:return o.DiagnosticSeverity.Warning;case h.Error:return o.DiagnosticSeverity.Error;case h.Hint:return o.DiagnosticSeverity.Hint;default:return o.DiagnosticSeverity.Error}}t.to=s})(Q||={});var It;(t=>{function a(e){return typeof e=="number"&&e>=o.ViewColumn.One?e-1:e===o.ViewColumn.Beside?mt:ut}t.from=a;function s(e){if(typeof e=="number"&&e>=0)return e+1;throw new Error("invalid 'EditorGroupColumn'")}t.to=s})(It||={});function vt(a){return typeof a.range<"u"}function yt(a){return a.length===0?!0:!!vt(a[0])}var f;(l=>{function a(r){return r.map(l.from)}l.fromMany=a;function s(r){return r&&typeof r=="object"&&typeof r.language=="string"&&typeof r.value=="string"}function t(r){let d;if(s(r)){const{language:g,value:C}=r;d={value:"```"+g+`
-`+C+"\n```\n"}}else o.MarkdownString.isMarkdownString(r)?d={value:r.value,isTrusted:r.isTrusted,supportThemeIcons:r.supportThemeIcons,supportHtml:r.supportHtml,baseUri:r.baseUri}:typeof r=="string"?d={value:r}:d={value:""};const m=Object.create(null);d.uris=m;const x=({href:g})=>{try{let C=p.parse(g,!0);C=C.with({query:e(C.query,m)}),m[g]=C}catch{}return""};return Ie.marked.walkTokens(Ie.marked.lexer(d.value),g=>{g.type==="link"?x({href:g.href}):g.type==="image"&&typeof g.href=="string"&&x(k.parseHrefAndDimensions(g.href))}),d}l.from=t;function e(r,d){if(!r)return r;let m;try{m=Ze(r)}catch{}if(!m)return r;let x=!1;return m=et(m,g=>{if(p.isUri(g)){const C=`__uri_${Math.random().toString(16).slice(2,8)}`;return d[C]=g,x=!0,C}else return}),x?JSON.stringify(m):r}function n(r){const d=new o.MarkdownString(r.value,r.supportThemeIcons);return d.isTrusted=r.isTrusted,d.supportHtml=r.supportHtml,d.baseUri=r.baseUri?p.from(r.baseUri):void 0,d}l.to=n;function i(r){if(r)return typeof r=="string"?r:l.from(r)}l.fromStrict=i})(f||={});function ir(a){return yt(a)?a.map(s=>({range:u.from(s.range),hoverMessage:Array.isArray(s.hoverMessage)?f.fromMany(s.hoverMessage):s.hoverMessage?f.from(s.hoverMessage):void 0,renderOptions:s.renderOptions})):a.map(s=>({range:u.from(s)}))}function $(a){return typeof a>"u"?a:typeof a=="string"?p.file(a):a}var w;(s=>{function a(t){return typeof t>"u"?t:{contentText:t.contentText,contentIconPath:t.contentIconPath?$(t.contentIconPath):void 0,border:t.border,borderColor:t.borderColor,fontStyle:t.fontStyle,fontWeight:t.fontWeight,textDecoration:t.textDecoration,color:t.color,backgroundColor:t.backgroundColor,margin:t.margin,width:t.width,height:t.height}}s.from=a})(w||={});var J;(s=>{function a(t){return typeof t>"u"?t:{backgroundColor:t.backgroundColor,outline:t.outline,outlineColor:t.outlineColor,outlineStyle:t.outlineStyle,outlineWidth:t.outlineWidth,border:t.border,borderColor:t.borderColor,borderRadius:t.borderRadius,borderSpacing:t.borderSpacing,borderStyle:t.borderStyle,borderWidth:t.borderWidth,fontStyle:t.fontStyle,fontWeight:t.fontWeight,textDecoration:t.textDecoration,cursor:t.cursor,color:t.color,opacity:t.opacity,letterSpacing:t.letterSpacing,gutterIconPath:t.gutterIconPath?$(t.gutterIconPath):void 0,gutterIconSize:t.gutterIconSize,overviewRulerColor:t.overviewRulerColor,before:t.before?w.from(t.before):void 0,after:t.after?w.from(t.after):void 0}}s.from=a})(J||={});var Se;(s=>{function a(t){if(typeof t>"u")return t;switch(t){case o.DecorationRangeBehavior.OpenOpen:return O.AlwaysGrowsWhenTypingAtEdges;case o.DecorationRangeBehavior.ClosedClosed:return O.NeverGrowsWhenTypingAtEdges;case o.DecorationRangeBehavior.OpenClosed:return O.GrowsOnlyWhenTypingBefore;case o.DecorationRangeBehavior.ClosedOpen:return O.GrowsOnlyWhenTypingAfter}}s.from=a})(Se||={});var ht;(s=>{function a(t){return{isWholeLine:t.isWholeLine,rangeBehavior:t.rangeBehavior?Se.from(t.rangeBehavior):void 0,overviewRulerLane:t.overviewRulerLane,light:t.light?J.from(t.light):void 0,dark:t.dark?J.from(t.dark):void 0,backgroundColor:t.backgroundColor,outline:t.outline,outlineColor:t.outlineColor,outlineStyle:t.outlineStyle,outlineWidth:t.outlineWidth,border:t.border,borderColor:t.borderColor,borderRadius:t.borderRadius,borderSpacing:t.borderSpacing,borderStyle:t.borderStyle,borderWidth:t.borderWidth,fontStyle:t.fontStyle,fontWeight:t.fontWeight,textDecoration:t.textDecoration,cursor:t.cursor,color:t.color,opacity:t.opacity,letterSpacing:t.letterSpacing,gutterIconPath:t.gutterIconPath?$(t.gutterIconPath):void 0,gutterIconSize:t.gutterIconSize,overviewRulerColor:t.overviewRulerColor,before:t.before?w.from(t.before):void 0,after:t.after?w.from(t.after):void 0}}s.from=a})(ht||={});var y;(t=>{function a(e){return{text:e.newText,eol:e.newEol&&te.from(e.newEol),range:u.from(e.range)}}t.from=a;function s(e){const n=new o.TextEdit(u.to(e.range),e.text);return n.newEol=typeof e.eol>"u"?void 0:te.to(e.eol),n}t.to=s})(y||={});var bt;(t=>{function a(e,n){const i={edits:[]};if(e instanceof o.WorkspaceEdit){const l=new Ye;for(const r of e._allEntries())r._type===o.FileEditType.File&&p.isUri(r.to)&&r.from===void 0&&l.add(r.to);for(const r of e._allEntries())if(r._type===o.FileEditType.File){let d;r.options?.contents&&(ArrayBuffer.isView(r.options.contents)?d={type:"base64",value:Je(Ce.wrap(r.options.contents))}:d={type:"dataTransferItem",id:r.options.contents._itemId}),i.edits.push({oldResource:r.from,newResource:r.to,options:{...r.options,contents:d},metadata:r.metadata})}else r._type===o.FileEditType.Text?i.edits.push({resource:r.uri,textEdit:y.from(r.edit),versionId:l.has(r.uri)?void 0:n?.getTextDocumentVersion(r.uri),metadata:r.metadata}):r._type===o.FileEditType.Snippet?i.edits.push({resource:r.uri,textEdit:{range:u.from(r.range),text:r.edit.value,insertAsSnippet:!0},versionId:l.has(r.uri)?void 0:n?.getTextDocumentVersion(r.uri),metadata:r.metadata}):r._type===o.FileEditType.Cell?i.edits.push({metadata:r.metadata,resource:r.uri,cellEdit:r.edit,notebookMetadata:r.notebookMetadata,notebookVersionId:n?.getNotebookDocumentVersion(r.uri)}):r._type===o.FileEditType.CellReplace&&i.edits.push({metadata:r.metadata,resource:r.uri,notebookVersionId:n?.getNotebookDocumentVersion(r.uri),cellEdit:{editType:v.CellEditType.Replace,index:r.index,count:r.count,cells:r.cells.map(V.from)}})}return i}t.from=a;function s(e){const n=new o.WorkspaceEdit,i=new Xe;for(const l of e.edits)if(l.textEdit){const r=l,d=p.revive(r.resource),m=u.to(r.textEdit.range),x=r.textEdit.text,g=r.textEdit.insertAsSnippet;let C;g?C=o.SnippetTextEdit.replace(m,new o.SnippetString(x)):C=o.TextEdit.replace(m,x);const ge=i.get(d);ge?ge.push(C):i.set(d,[C])}else n.renameFile(p.revive(l.oldResource),p.revive(l.newResource),l.options);for(const[l,r]of i)n.set(l,r);return n}t.to=s})(bt||={});var b;(e=>{const a=Object.create(null);a[o.SymbolKind.File]=c.SymbolKind.File,a[o.SymbolKind.Module]=c.SymbolKind.Module,a[o.SymbolKind.Namespace]=c.SymbolKind.Namespace,a[o.SymbolKind.Package]=c.SymbolKind.Package,a[o.SymbolKind.Class]=c.SymbolKind.Class,a[o.SymbolKind.Method]=c.SymbolKind.Method,a[o.SymbolKind.Property]=c.SymbolKind.Property,a[o.SymbolKind.Field]=c.SymbolKind.Field,a[o.SymbolKind.Constructor]=c.SymbolKind.Constructor,a[o.SymbolKind.Enum]=c.SymbolKind.Enum,a[o.SymbolKind.Interface]=c.SymbolKind.Interface,a[o.SymbolKind.Function]=c.SymbolKind.Function,a[o.SymbolKind.Variable]=c.SymbolKind.Variable,a[o.SymbolKind.Constant]=c.SymbolKind.Constant,a[o.SymbolKind.String]=c.SymbolKind.String,a[o.SymbolKind.Number]=c.SymbolKind.Number,a[o.SymbolKind.Boolean]=c.SymbolKind.Boolean,a[o.SymbolKind.Array]=c.SymbolKind.Array,a[o.SymbolKind.Object]=c.SymbolKind.Object,a[o.SymbolKind.Key]=c.SymbolKind.Key,a[o.SymbolKind.Null]=c.SymbolKind.Null,a[o.SymbolKind.EnumMember]=c.SymbolKind.EnumMember,a[o.SymbolKind.Struct]=c.SymbolKind.Struct,a[o.SymbolKind.Event]=c.SymbolKind.Event,a[o.SymbolKind.Operator]=c.SymbolKind.Operator,a[o.SymbolKind.TypeParameter]=c.SymbolKind.TypeParameter;function s(n){return typeof a[n]=="number"?a[n]:c.SymbolKind.Property}e.from=s;function t(n){for(const i in a)if(a[i]===n)return Number(i);return o.SymbolKind.Property}e.to=t})(b||={});var P;(t=>{function a(e){switch(e){case o.SymbolTag.Deprecated:return c.SymbolTag.Deprecated}}t.from=a;function s(e){switch(e){case c.SymbolTag.Deprecated:return o.SymbolTag.Deprecated}}t.to=s})(P||={});var q;(t=>{function a(e){return{name:e.name,kind:b.from(e.kind),tags:e.tags&&e.tags.map(P.from),containerName:e.containerName,location:E.from(e.location)}}t.from=a;function s(e){const n=new o.SymbolInformation(e.name,b.to(e.kind),e.containerName,E.to(e.location));return n.tags=e.tags&&e.tags.map(P.to),n}t.to=s})(q||={});var Tt;(t=>{function a(e){const n={name:e.name||"!!MISSING: name!!",detail:e.detail,range:u.from(e.range),selectionRange:u.from(e.selectionRange),kind:b.from(e.kind),tags:e.tags?.map(P.from)??[]};return e.children&&(n.children=e.children.map(a)),n}t.from=a;function s(e){const n=new o.DocumentSymbol(e.name,e.detail,b.to(e.kind),u.to(e.range),u.to(e.selectionRange));return $e(e.tags)&&(n.tags=e.tags.map(P.to)),e.children&&(n.children=e.children.map(s)),n}t.to=s})(Tt||={});var X;(t=>{function a(e){const n=new o.CallHierarchyItem(b.to(e.kind),e.name,e.detail||"",p.revive(e.uri),u.to(e.range),u.to(e.selectionRange));return n._sessionId=e._sessionId,n._itemId=e._itemId,n}t.to=a;function s(e,n,i){if(n=n??e._sessionId,i=i??e._itemId,n===void 0||i===void 0)throw new Error("invalid item");return{_sessionId:n,_itemId:i,name:e.name,detail:e.detail,kind:b.from(e.kind),uri:e.uri,range:u.from(e.range),selectionRange:u.from(e.selectionRange),tags:e.tags?.map(P.from)}}t.from=s})(X||={});var Rt;(s=>{function a(t){return new o.CallHierarchyIncomingCall(X.to(t.from),t.fromRanges.map(e=>u.to(e)))}s.to=a})(Rt||={});var St;(s=>{function a(t){return new o.CallHierarchyOutgoingCall(X.to(t.to),t.fromRanges.map(e=>u.to(e)))}s.to=a})(St||={});var E;(t=>{function a(e){return{range:e.range&&u.from(e.range),uri:e.uri}}t.from=a;function s(e){return new o.Location(p.revive(e.uri),u.to(e.range))}t.to=s})(E||={});var Dt;(t=>{function a(e){const n=e,i=e;return{originSelectionRange:n.originSelectionRange?u.from(n.originSelectionRange):void 0,uri:n.targetUri?n.targetUri:i.uri,range:u.from(n.targetRange?n.targetRange:i.range),targetSelectionRange:n.targetSelectionRange?u.from(n.targetSelectionRange):void 0}}t.from=a;function s(e){return{targetUri:p.revive(e.uri),targetRange:u.to(e.range),targetSelectionRange:e.targetSelectionRange?u.to(e.targetSelectionRange):void 0,originSelectionRange:e.originSelectionRange?u.to(e.originSelectionRange):void 0}}t.to=s})(Dt||={});var Pt;(t=>{function a(e){return{range:u.from(e.range),contents:f.fromMany(e.contents),canIncreaseVerbosity:e.canIncreaseVerbosity,canDecreaseVerbosity:e.canDecreaseVerbosity}}t.from=a;function s(e){const n=e.contents.map(f.to),i=u.to(e.range),l=e.canIncreaseVerbosity,r=e.canDecreaseVerbosity;return new o.VerboseHover(n,i,l,r)}t.to=s})(Pt||={});var kt;(t=>{function a(e){return{range:u.from(e.range),expression:e.expression}}t.from=a;function s(e){return new o.EvaluatableExpression(u.to(e.range),e.expression)}t.to=s})(kt||={});var Kt;(t=>{function a(e){if(e instanceof o.InlineValueText)return{type:"text",range:u.from(e.range),text:e.text};if(e instanceof o.InlineValueVariableLookup)return{type:"variable",range:u.from(e.range),variableName:e.variableName,caseSensitiveLookup:e.caseSensitiveLookup};if(e instanceof o.InlineValueEvaluatableExpression)return{type:"expression",range:u.from(e.range),expression:e.expression};throw new Error("Unknown 'InlineValue' type")}t.from=a;function s(e){switch(e.type){case"text":return{range:u.to(e.range),text:e.text};case"variable":return{range:u.to(e.range),variableName:e.variableName,caseSensitiveLookup:e.caseSensitiveLookup};case"expression":return{range:u.to(e.range),expression:e.expression}}}t.to=s})(Kt||={});var wt;(t=>{function a(e){return{frameId:e.frameId,stoppedLocation:u.from(e.stoppedLocation)}}t.from=a;function s(e){return new o.InlineValueContext(e.frameId,u.to(e.stoppedLocation))}t.to=s})(wt||={});var Y;(t=>{function a(e){return{range:u.from(e.range),kind:e.kind}}t.from=a;function s(e){return new o.DocumentHighlight(u.to(e.range),e.kind)}t.to=s})(Y||={});var Et;(t=>{function a(e){return{uri:e.uri,highlights:e.highlights.map(Y.from)}}t.from=a;function s(e){return new o.MultiDocumentHighlight(p.revive(e.uri),e.highlights.map(Y.to))}t.to=s})(Et||={});var De;(s=>{function a(t){switch(t){case c.CompletionTriggerKind.TriggerCharacter:return o.CompletionTriggerKind.TriggerCharacter;case c.CompletionTriggerKind.TriggerForIncompleteCompletions:return o.CompletionTriggerKind.TriggerForIncompleteCompletions;case c.CompletionTriggerKind.Invoke:default:return o.CompletionTriggerKind.Invoke}}s.to=a})(De||={});var Mt;(s=>{function a(t){return{triggerKind:De.to(t.triggerKind),triggerCharacter:t.triggerCharacter}}s.to=a})(Mt||={});var Pe;(t=>{function a(e){switch(e){case o.CompletionItemTag.Deprecated:return c.CompletionItemTag.Deprecated}}t.from=a;function s(e){switch(e){case c.CompletionItemTag.Deprecated:return o.CompletionItemTag.Deprecated}}t.to=s})(Pe||={});var ke;(n=>{const a=new Map([[o.CompletionItemKind.Method,c.CompletionItemKind.Method],[o.CompletionItemKind.Function,c.CompletionItemKind.Function],[o.CompletionItemKind.Constructor,c.CompletionItemKind.Constructor],[o.CompletionItemKind.Field,c.CompletionItemKind.Field],[o.CompletionItemKind.Variable,c.CompletionItemKind.Variable],[o.CompletionItemKind.Class,c.CompletionItemKind.Class],[o.CompletionItemKind.Interface,c.CompletionItemKind.Interface],[o.CompletionItemKind.Struct,c.CompletionItemKind.Struct],[o.CompletionItemKind.Module,c.CompletionItemKind.Module],[o.CompletionItemKind.Property,c.CompletionItemKind.Property],[o.CompletionItemKind.Unit,c.CompletionItemKind.Unit],[o.CompletionItemKind.Value,c.CompletionItemKind.Value],[o.CompletionItemKind.Constant,c.CompletionItemKind.Constant],[o.CompletionItemKind.Enum,c.CompletionItemKind.Enum],[o.CompletionItemKind.EnumMember,c.CompletionItemKind.EnumMember],[o.CompletionItemKind.Keyword,c.CompletionItemKind.Keyword],[o.CompletionItemKind.Snippet,c.CompletionItemKind.Snippet],[o.CompletionItemKind.Text,c.CompletionItemKind.Text],[o.CompletionItemKind.Color,c.CompletionItemKind.Color],[o.CompletionItemKind.File,c.CompletionItemKind.File],[o.CompletionItemKind.Reference,c.CompletionItemKind.Reference],[o.CompletionItemKind.Folder,c.CompletionItemKind.Folder],[o.CompletionItemKind.Event,c.CompletionItemKind.Event],[o.CompletionItemKind.Operator,c.CompletionItemKind.Operator],[o.CompletionItemKind.TypeParameter,c.CompletionItemKind.TypeParameter],[o.CompletionItemKind.Issue,c.CompletionItemKind.Issue],[o.CompletionItemKind.User,c.CompletionItemKind.User]]);function s(i){return a.get(i)??c.CompletionItemKind.Property}n.from=s;const t=new Map([[c.CompletionItemKind.Method,o.CompletionItemKind.Method],[c.CompletionItemKind.Function,o.CompletionItemKind.Function],[c.CompletionItemKind.Constructor,o.CompletionItemKind.Constructor],[c.CompletionItemKind.Field,o.CompletionItemKind.Field],[c.CompletionItemKind.Variable,o.CompletionItemKind.Variable],[c.CompletionItemKind.Class,o.CompletionItemKind.Class],[c.CompletionItemKind.Interface,o.CompletionItemKind.Interface],[c.CompletionItemKind.Struct,o.CompletionItemKind.Struct],[c.CompletionItemKind.Module,o.CompletionItemKind.Module],[c.CompletionItemKind.Property,o.CompletionItemKind.Property],[c.CompletionItemKind.Unit,o.CompletionItemKind.Unit],[c.CompletionItemKind.Value,o.CompletionItemKind.Value],[c.CompletionItemKind.Constant,o.CompletionItemKind.Constant],[c.CompletionItemKind.Enum,o.CompletionItemKind.Enum],[c.CompletionItemKind.EnumMember,o.CompletionItemKind.EnumMember],[c.CompletionItemKind.Keyword,o.CompletionItemKind.Keyword],[c.CompletionItemKind.Snippet,o.CompletionItemKind.Snippet],[c.CompletionItemKind.Text,o.CompletionItemKind.Text],[c.CompletionItemKind.Color,o.CompletionItemKind.Color],[c.CompletionItemKind.File,o.CompletionItemKind.File],[c.CompletionItemKind.Reference,o.CompletionItemKind.Reference],[c.CompletionItemKind.Folder,o.CompletionItemKind.Folder],[c.CompletionItemKind.Event,o.CompletionItemKind.Event],[c.CompletionItemKind.Operator,o.CompletionItemKind.Operator],[c.CompletionItemKind.TypeParameter,o.CompletionItemKind.TypeParameter],[c.CompletionItemKind.User,o.CompletionItemKind.User],[c.CompletionItemKind.Issue,o.CompletionItemKind.Issue]]);function e(i){return t.get(i)??o.CompletionItemKind.Property}n.to=e})(ke||={});var Lt;(s=>{function a(t,e){const n=new o.CompletionItem(t.label);return n.insertText=t.insertText,n.kind=ke.to(t.kind),n.tags=t.tags?.map(Pe.to),n.detail=t.detail,n.documentation=k.isMarkdownString(t.documentation)?f.to(t.documentation):t.documentation,n.sortText=t.sortText,n.filterText=t.filterText,n.preselect=t.preselect,n.commitCharacters=t.commitCharacters,Te.Range.isIRange(t.range)?n.range=u.to(t.range):typeof t.range=="object"&&(n.range={inserting:u.to(t.range.insert),replacing:u.to(t.range.replace)}),n.keepWhitespace=typeof t.insertTextRules>"u"?!1:!!(t.insertTextRules&c.CompletionItemInsertTextRule.KeepWhitespace),typeof t.insertTextRules<"u"&&t.insertTextRules&c.CompletionItemInsertTextRule.InsertAsSnippet?n.insertText=new o.SnippetString(t.insertText):(n.insertText=t.insertText,n.textEdit=n.range instanceof o.Range?new o.TextEdit(n.range,n.insertText):void 0),t.additionalTextEdits&&t.additionalTextEdits.length>0&&(n.additionalTextEdits=t.additionalTextEdits.map(i=>y.to(i))),n.command=e&&t.command?e.fromInternal(t.command):void 0,n}s.to=a})(Lt||={});var Z;(t=>{function a(e){if(typeof e.label!="string"&&!Array.isArray(e.label))throw new TypeError("Invalid label");return{label:e.label,documentation:f.fromStrict(e.documentation)}}t.from=a;function s(e){return{label:e.label,documentation:k.isMarkdownString(e.documentation)?f.to(e.documentation):e.documentation}}t.to=s})(Z||={});var ee;(t=>{function a(e){return{label:e.label,documentation:f.fromStrict(e.documentation),parameters:Array.isArray(e.parameters)?e.parameters.map(Z.from):[],activeParameter:e.activeParameter}}t.from=a;function s(e){return{label:e.label,documentation:k.isMarkdownString(e.documentation)?f.to(e.documentation):e.documentation,parameters:Array.isArray(e.parameters)?e.parameters.map(Z.to):[],activeParameter:e.activeParameter}}t.to=s})(ee||={});var Nt;(t=>{function a(e){return{activeSignature:e.activeSignature,activeParameter:e.activeParameter,signatures:Array.isArray(e.signatures)?e.signatures.map(ee.from):[]}}t.from=a;function s(e){return{activeSignature:e.activeSignature,activeParameter:e.activeParameter,signatures:Array.isArray(e.signatures)?e.signatures.map(ee.to):[]}}t.to=s})(Nt||={});var Ht;(s=>{function a(t,e){const n=new o.InlayHint(K.to(e.position),typeof e.label=="string"?e.label:e.label.map(Ke.to.bind(void 0,t)),e.kind&&we.to(e.kind));return n.textEdits=e.textEdits&&e.textEdits.map(y.to),n.tooltip=k.isMarkdownString(e.tooltip)?f.to(e.tooltip):e.tooltip,n.paddingLeft=e.paddingLeft,n.paddingRight=e.paddingRight,n}s.to=a})(Ht||={});var Ke;(s=>{function a(t,e){const n=new o.InlayHintLabelPart(e.label);return n.tooltip=k.isMarkdownString(e.tooltip)?f.to(e.tooltip):e.tooltip,c.Command.is(e.command)&&(n.command=t.fromInternal(e.command)),e.location&&(n.location=E.to(e.location)),n}s.to=a})(Ke||={});var we;(t=>{function a(e){return e}t.from=a;function s(e){return e}t.to=s})(we||={});var Ot;(t=>{function a(e){return{range:u.from(e.range),url:e.target,tooltip:e.tooltip}}t.from=a;function s(e){let n;if(e.url)try{n=typeof e.url=="string"?p.parse(e.url,!0):p.revive(e.url)}catch{}const i=new o.DocumentLink(u.to(e.range),n);return i.tooltip=e.tooltip,i}t.to=s})(Ot||={});var At;(t=>{function a(e){const n=new o.ColorPresentation(e.label);return e.textEdit&&(n.textEdit=y.to(e.textEdit)),e.additionalTextEdits&&(n.additionalTextEdits=e.additionalTextEdits.map(i=>y.to(i))),n}t.to=a;function s(e){return{label:e.label,textEdit:e.textEdit?y.from(e.textEdit):void 0,additionalTextEdits:e.additionalTextEdits?e.additionalTextEdits.map(n=>y.from(n)):void 0}}t.from=s})(At||={});var Ft;(t=>{function a(e){return new o.Color(e[0],e[1],e[2],e[3])}t.to=a;function s(e){return[e.red,e.green,e.blue,e.alpha]}t.from=s})(Ft||={});var Ut;(t=>{function a(e){return{range:u.from(e.range)}}t.from=a;function s(e){return new o.SelectionRange(u.to(e.range))}t.to=s})(Ut||={});var Wt;(s=>{function a(t){switch(t){case F.AUTO:return o.TextDocumentSaveReason.AfterDelay;case F.EXPLICIT:return o.TextDocumentSaveReason.Manual;case F.FOCUS_CHANGE:case F.WINDOW_CHANGE:return o.TextDocumentSaveReason.FocusOut}}s.to=a})(Wt||={});var Vt;(t=>{function a(e){switch(e){case o.TextEditorLineNumbersStyle.Off:return R.Off;case o.TextEditorLineNumbersStyle.Relative:return R.Relative;case o.TextEditorLineNumbersStyle.Interval:return R.Interval;case o.TextEditorLineNumbersStyle.On:default:return R.On}}t.from=a;function s(e){switch(e){case R.Off:return o.TextEditorLineNumbersStyle.Off;case R.Relative:return o.TextEditorLineNumbersStyle.Relative;case R.Interval:return o.TextEditorLineNumbersStyle.Interval;case R.On:default:return o.TextEditorLineNumbersStyle.On}}t.to=s})(Vt||={});var te;(t=>{function a(e){if(e===o.EndOfLine.CRLF)return H.CRLF;if(e===o.EndOfLine.LF)return H.LF}t.from=a;function s(e){if(e===H.CRLF)return o.EndOfLine.CRLF;if(e===H.LF)return o.EndOfLine.LF}t.to=s})(te||={});var _t;(s=>{function a(t){if(typeof t=="object")return t.viewId;switch(t){case o.ProgressLocation.SourceControl:return B.Scm;case o.ProgressLocation.Window:return B.Window;case o.ProgressLocation.Notification:return B.Notification}throw new Error("Unknown 'ProgressLocation'")}s.from=a})(_t||={});var Bt;(t=>{function a(e){const n={start:e.start+1,end:e.end+1};return e.kind&&(n.kind=ne.from(e.kind)),n}t.from=a;function s(e){const n={start:e.start-1,end:e.end-1};return e.kind&&(n.kind=ne.to(e.kind)),n}t.to=s})(Bt||={});var ne;(t=>{function a(e){if(e)switch(e){case o.FoldingRangeKind.Comment:return c.FoldingRangeKind.Comment;case o.FoldingRangeKind.Imports:return c.FoldingRangeKind.Imports;case o.FoldingRangeKind.Region:return c.FoldingRangeKind.Region}}t.from=a;function s(e){if(e)switch(e.value){case c.FoldingRangeKind.Comment.value:return o.FoldingRangeKind.Comment;case c.FoldingRangeKind.Imports.value:return o.FoldingRangeKind.Imports;case c.FoldingRangeKind.Region.value:return o.FoldingRangeKind.Region}}t.to=s})(ne||={});var Gt;(s=>{function a(t){if(t)return{pinned:typeof t.preview=="boolean"?!t.preview:void 0,inactive:t.background,preserveFocus:t.preserveFocus,selection:typeof t.selection=="object"?u.from(t.selection):void 0,override:typeof t.override=="boolean"?st.id:void 0}}s.from=a})(Gt||={});var T;(n=>{function a(i){return i instanceof o.RelativePattern?i.toJSON():typeof i=="string"?i:s(i)||t(i)?new o.RelativePattern(i.baseUri??i.base,i.pattern).toJSON():i}n.from=a;function s(i){const l=i;return l?p.isUri(l.baseUri)&&typeof l.pattern=="string":!1}function t(i){const l=i;return l?typeof l.base=="string"&&typeof l.pattern=="string":!1}function e(i){return typeof i=="string"?i:new o.RelativePattern(p.revive(i.baseUri),i.pattern)}n.to=e})(T||={});var jt;(s=>{function a(t){if(t){if(Array.isArray(t))return t.map(a);if(typeof t=="string")return t;{const e=t;return{language:e.language,scheme:e.scheme,pattern:T.from(e.pattern),exclusive:e.exclusive,notebookType:e.notebookType}}}else return}s.from=a})(jt||={});var zt;(t=>{function a(e){return!!e&&typeof e=="object"&&"documents"in e&&Array.isArray(e.documents)&&e.documents.every(n=>Array.isArray(n)&&n.every(W.is))}t.is=a;function s(e){return{documents:e.documents.map(n=>n.map(W.from)),conversation:e.conversation?.map(n=>n.type==="request"?{type:"request",message:n.message}:{type:"response",message:n.message,result:n.result?fe.from(n.result):void 0,references:n.references?.map(W.from)})}}t.from=s})(zt||={});var W;(e=>{function a(n){return typeof n=="object"&&n!==null&&"uri"in n&&p.isUri(n.uri)&&"version"in n&&typeof n.version=="number"&&"ranges"in n&&Array.isArray(n.ranges)&&n.ranges.every(i=>i instanceof o.Range)}e.is=a;function s(n){return{uri:n.uri,version:n.version,ranges:n.ranges.map(i=>u.from(i))}}e.from=s;function t(n){return{uri:p.revive(n.uri),version:n.version,ranges:n.ranges.map(i=>u.to(i))}}e.to=t})(W||={});var Qt;(t=>{function a(e){return{start:e.start,end:e.end}}t.from=a;function s(e){return new o.NotebookRange(e.start,e.end)}t.to=s})(Qt||={});var oe;(t=>{function a(e){return{timing:typeof e.runStartTime=="number"&&typeof e.runEndTime=="number"?{startTime:e.runStartTime,endTime:e.runEndTime}:void 0,executionOrder:e.executionOrder,success:e.lastRunSuccess}}t.to=a;function s(e){return{lastRunSuccess:e.success,runStartTime:e.timing?.startTime,runEndTime:e.timing?.endTime,executionOrder:e.executionOrder}}t.from=s})(oe||={});var $t;(s=>{function a(t){if(t===v.NotebookCellExecutionState.Unconfirmed)return o.NotebookCellExecutionState.Pending;if(t===v.NotebookCellExecutionState.Pending)return;if(t===v.NotebookCellExecutionState.Executing)return o.NotebookCellExecutionState.Executing;throw new Error(`Unknown state: ${t}`)}s.to=a})($t||={});var re;(t=>{function a(e){switch(e){case o.NotebookCellKind.Markup:return v.CellKind.Markup;case o.NotebookCellKind.Code:default:return v.CellKind.Code}}t.from=a;function s(e){switch(e){case v.CellKind.Markup:return o.NotebookCellKind.Markup;case v.CellKind.Code:default:return o.NotebookCellKind.Code}}t.to=s})(re||={});var Jt;(t=>{function a(e){const n={metadata:e.metadata??Object.create(null),cells:[]};for(const i of e.cells)o.NotebookCellData.validate(i),n.cells.push(V.from(i));return n}t.from=a;function s(e){const n=new o.NotebookData(e.cells.map(V.to));return at(e.metadata)||(n.metadata=e.metadata),n}t.to=s})(Jt||={});var V;(t=>{function a(e){return{cellKind:re.from(e.kind),language:e.languageId,mime:e.mime,source:e.value,metadata:e.metadata,internalMetadata:oe.from(e.executionSummary??{}),outputs:e.outputs?e.outputs.map(ie.from):[]}}t.from=a;function s(e){return new o.NotebookCellData(re.to(e.cellKind),e.source,e.language,e.mime,e.outputs?e.outputs.map(ie.to):void 0,e.metadata,e.internalMetadata?oe.to(e.internalMetadata):void 0)}t.to=s})(V||={});var ae;(t=>{function a(e){return{mime:e.mime,valueBytes:Ce.wrap(e.data)}}t.from=a;function s(e){return new o.NotebookCellOutputItem(e.valueBytes.buffer,e.mime)}t.to=s})(ae||={});var ie;(t=>{function a(e){return{outputId:e.id,items:e.items.map(ae.from),metadata:e.metadata}}t.from=a;function s(e){const n=e.items.map(ae.to);return new o.NotebookCellOutput(n,e.outputId,e.metadata)}t.to=s})(ie||={});var qt;(e=>{function a(n){return t(n)?{include:T.from(n.include)??void 0,exclude:T.from(n.exclude)??void 0}:T.from(n)??void 0}e.from=a;function s(n){return t(n)?{include:T.to(n.include),exclude:T.to(n.exclude)}:T.to(n)}e.to=s;function t(n){const i=n;return i?!he(i.include)&&!he(i.exclude):!1}})(qt||={});var Xt;(s=>{function a(t,e,n){const i=typeof t.command=="string"?{title:"",command:t.command}:t.command;return{alignment:t.alignment===o.NotebookCellStatusBarAlignment.Left?v.CellStatusbarAlignment.Left:v.CellStatusbarAlignment.Right,command:e.toInternal(i,n),text:t.text,tooltip:t.tooltip,accessibilityInformation:t.accessibilityInformation,priority:t.priority}}s.from=a})(Xt||={});var Yt;(s=>{function a(t,e,n){const i=typeof t.command=="string"?{title:"",command:t.command}:t.command;return{command:e.toInternal(i,n),label:t.label,description:t.description,detail:t.detail,documentation:t.documentation}}s.from=a})(Yt||={});var Zt;(s=>{function a(t){return{transientOutputs:t?.transientOutputs??!1,transientCellMetadata:t?.transientCellMetadata??{},transientDocumentMetadata:t?.transientDocumentMetadata??{},cellContentMetadata:t?.cellContentMetadata??{}}}s.from=a})(Zt||={});var en;(t=>{function a(e){return{uri:e.uri,provides:e.provides}}t.from=a;function s(e){return new o.NotebookRendererScript(p.revive(e.uri),e.provides)}t.to=s})(en||={});var Ee;(t=>{function a(e){return{message:f.fromStrict(e.message)||"",type:Re.Error,expected:e.expectedOutput,actual:e.actualOutput,contextValue:e.contextValue,location:e.location&&{range:u.from(e.location.range),uri:e.location.uri},stackTrace:e.stackTrace?.map(n=>({label:n.label,position:n.position&&K.from(n.position),uri:n.uri&&p.revive(n.uri).toJSON()}))}}t.from=a;function s(e){const n=new o.TestMessage(typeof e.message=="string"?e.message:f.to(e.message));return n.actualOutput=e.actual,n.expectedOutput=e.expected,n.contextValue=e.contextValue,n.location=e.location?E.to(e.location):void 0,n}t.to=s})(Ee||={});var M;(t=>(t.namespace=dt,t.denamespace=lt))(M||={});var Me;(t=>{function a(e){const n=pt(e).controllerId;return{extId:U.fromExtHostTestItem(e,n).toString(),label:e.label,uri:p.revive(e.uri),busy:e.busy,tags:e.tags.map(i=>M.namespace(n,i.id)),range:Te.Range.lift(u.from(e.range)),description:e.description||null,sortText:e.sortText||null,error:e.error&&f.fromStrict(e.error)||null}}t.from=a;function s(e){return{parent:void 0,error:void 0,id:U.fromString(e.extId).localId,label:e.label,uri:p.revive(e.uri),tags:(e.tags||[]).map(n=>{const{tagId:i}=M.denamespace(n);return new o.TestTag(i)}),children:{add:()=>{},delete:()=>{},forEach:()=>{},*[Symbol.iterator](){},get:()=>{},replace:()=>{},size:0},range:u.to(e.range||void 0),canResolveChildren:!1,busy:e.busy,description:e.description||void 0,sortText:e.sortText||void 0}}t.toPlain=s})(Me||={}),(t=>{function a(e){return{id:e.id}}t.from=a;function s(e){return new o.TestTag(e.id)}t.to=s})(M||={});var tn;(t=>{const a=(e,n)=>{const i=e.value;if(!i)return;const l={...Me.toPlain(i.item),parent:n,taskStates:i.tasks.map(r=>({state:r.state,duration:r.duration,messages:r.messages.filter(d=>d.type===Re.Error).map(Ee.to)})),children:[]};if(e.children)for(const r of e.children.values()){const d=a(r,l);d&&l.children.push(d)}return l};function s(e){const n=new tt;for(const r of e.items)n.insert(U.fromString(r.item.extId).path,r);const i=[n.nodes],l=[];for(;i.length;)for(const r of i.pop())r.value?l.push(r):r.children&&i.push(r.children.values());return{completedAt:e.completedAt,results:l.map(r=>a(r)).filter(rt)}}t.to=s})(tn||={});var nn;(l=>{function a(r){return{covered:r.covered,total:r.total}}function s(r){return"line"in r?K.from(r):u.from(r)}function t(r){if(r)return"endLineNumber"in r?u.to(r):K.to(r)}function e(r){if(r.type===G.Statement){const d=[];if(r.branches)for(const m of r.branches)d.push({executed:m.count,location:t(m.location),label:m.label});return new o.StatementCoverage(r.count,t(r.location),r.branches?.map(m=>new o.BranchCoverage(m.count,t(m.location),m.label)))}else return new o.DeclarationCoverage(r.name,r.count,t(r.location))}l.to=e;function n(r){if(typeof r.executed=="number"&&r.executed<0)throw new Error(`Invalid coverage count ${r.executed}`);return"branches"in r?{count:r.executed,location:s(r.location),type:G.Statement,branches:r.branches.length?r.branches.map(d=>({count:d.executed,location:d.location&&s(d.location),label:d.label})):void 0}:{type:G.Declaration,name:r.name,count:r.executed,location:s(r.location)}}l.fromDetails=n;function i(r,d,m){return o.validateTestCoverageCount(m.statementCoverage),o.validateTestCoverageCount(m.branchCoverage),o.validateTestCoverageCount(m.declarationCoverage),{id:d,uri:m.uri,statement:a(m.statementCoverage),branch:m.branchCoverage&&a(m.branchCoverage),declaration:m.declarationCoverage&&a(m.declarationCoverage),testIds:m instanceof o.FileCoverage&&m.fromTests.length?m.fromTests.map(x=>U.fromExtHostTestItem(x,r).toString()):void 0}}l.fromFile=i})(nn||={});var on;(s=>{function a(t){switch(t){case c.CodeActionTriggerType.Invoke:return o.CodeActionTriggerKind.Invoke;case c.CodeActionTriggerType.Auto:return o.CodeActionTriggerKind.Automatic}}s.to=a})(on||={});var rn;(t=>{function a(e){const n=new o.TypeHierarchyItem(b.to(e.kind),e.name,e.detail||"",p.revive(e.uri),u.to(e.range),u.to(e.selectionRange));return n._sessionId=e._sessionId,n._itemId=e._itemId,n}t.to=a;function s(e,n,i){if(n=n??e._sessionId,i=i??e._itemId,n===void 0||i===void 0)throw new Error("invalid item");return{_sessionId:n,_itemId:i,kind:b.from(e.kind),name:e.name,detail:e.detail??"",uri:e.uri,range:u.from(e.range),selectionRange:u.from(e.selectionRange),tags:e.tags?.map(P.from)}}t.from=s})(rn||={});var an;(s=>{function a(t){if(t)return{value:t.value,tooltip:t.tooltip}}s.from=a})(an||={});var se;(n=>{function a(i,l,r){const d=l.fileData;return d?new o.InternalFileDataTransferItem(new o.DataTransferFile(d.name,p.revive(d.uri),d.id,qe(()=>r(d.id)))):i===ve.uriList&&l.uriListData?new o.InternalDataTransferItem(e(l.uriListData)):new o.InternalDataTransferItem(l.asString)}n.to=a;async function s(i,l){const r=await l.asString();if(i===ve.uriList)return{asString:r,fileData:void 0,uriListData:t(r)};const d=l.asFile();return{asString:r,fileData:d?{name:d.name,uri:d.uri,id:d._itemId??d.id}:void 0}}n.from=s;function t(i){return xe.split(i).map(l=>{if(l.startsWith("#"))return l;try{return p.parse(l)}catch{}return l})}function e(i){return xe.create(i.map(l=>typeof l=="string"?l:p.revive(l)))}})(se||={});var sn;(t=>{function a(e,n){const i=e.items.map(([l,r])=>[l,se.to(l,r,n)]);return new o.DataTransfer(i)}t.toDataTransfer=a;async function s(e){const n={items:[]},i=[];for(const[l,r]of e)i.push((async()=>{n.items.push([l,await se.from(l,r)])})());return await Promise.all(i),n}t.from=s})(sn||={});var Le;(t=>{function a(e,n){return{kind:"reply",agentId:e.participant??n?.agentId??"",subCommand:e.command??n?.command,message:e.prompt,title:e.label}}t.from=a;function s(e){return{prompt:e.message,label:e.title,participant:e.agentId,command:e.subCommand}}t.to=s})(Le||={});var ce;(t=>{function a(e){switch(e){case S.ChatMessageRole.System:return o.LanguageModelChatMessageRole.System;case S.ChatMessageRole.User:return o.LanguageModelChatMessageRole.User;case S.ChatMessageRole.Assistant:return o.LanguageModelChatMessageRole.Assistant}}t.to=a;function s(e){switch(e){case o.LanguageModelChatMessageRole.System:return S.ChatMessageRole.System;case o.LanguageModelChatMessageRole.User:return S.ChatMessageRole.User;case o.LanguageModelChatMessageRole.Assistant:return S.ChatMessageRole.Assistant}return S.ChatMessageRole.User}t.from=s})(ce||={});var cn;(t=>{function a(e){const n=e.content.map(d=>d.type==="text"?d.value:d.type==="tool_result"?new o.LanguageModelToolResultPart(d.toolCallId,d.value,d.isError):new o.LanguageModelToolCallPart(d.name,d.toolCallId,d.parameters)),i=n.find(d=>typeof d=="string")??"",l=ce.to(e.role),r=new o.LanguageModelChatMessage(l,i,e.name);return r.content2=n,r}t.to=a;function s(e){const n=ce.from(e.role),i=e.name,l=e.content2.map(r=>{if(r instanceof o.LanguageModelToolResultPart)return{type:"tool_result",toolCallId:r.toolCallId,value:r.content,isError:r.isError};if(r instanceof o.LanguageModelToolCallPart)return{type:"tool_use",toolCallId:r.toolCallId,name:r.name,parameters:r.parameters};if(typeof r!="string")throw new Error("Unexpected chat message content type");return{type:"text",value:r}});return{role:n,name:i,content:l}}t.from=s})(cn||={});var le;(t=>{function a(e){return{kind:"markdownContent",content:f.from(e.value)}}t.from=a;function s(e){return new o.ChatResponseMarkdownPart(f.to(e.content))}t.to=s})(le||={});var Ne;(t=>{function a(e){return{kind:"codeblockUri",uri:e.value}}t.from=a;function s(e){return new o.ChatResponseCodeblockUriPart(p.revive(e.uri))}t.to=s})(Ne||={});var He;(t=>{function a(e){return{kind:"markdownVuln",content:f.from(e.value),vulnerabilities:e.vulnerabilities}}t.from=a;function s(e){return new o.ChatResponseMarkdownWithVulnerabilitiesPart(f.to(e.content),e.vulnerabilities)}t.to=s})(He||={});var Oe;(t=>{function a(e){return{kind:"agentDetection",agentId:e.participant,command:e.command}}t.from=a;function s(e){return new o.ChatResponseDetectedParticipantPart(e.agentId,e.command)}t.to=s})(Oe||={});var Ae;(s=>{function a(t){return{kind:"confirmation",title:t.title,message:t.message,data:t.data,buttons:t.buttons}}s.from=a})(Ae||={});var de;(t=>{function a(e){const{value:n,baseUri:i}=e;function l(r,d){return r.map(m=>{const x=p.joinPath(d,m.name);return{label:m.name,uri:x,children:m.children&&l(m.children,x)}})}return{kind:"treeData",treeData:{label:nt(i),uri:i,children:l(n,i)}}}t.from=a;function s(e){const n=L(e.treeData);function i(d){return d.map(m=>({name:m.label,children:m.children&&i(m.children)}))}const l=n.uri,r=n.children?i(n.children):[];return new o.ChatResponseFileTreePart(r,l)}t.to=s})(de||={});var ue;(t=>{function a(e){const n=l=>p.isUri(l),i=l=>l instanceof o.SymbolInformation;return{kind:"inlineReference",name:e.title,inlineReference:n(e.value)?e.value:i(e.value)?q.from(e.value):D.from(e.value)}}t.from=a;function s(e){const n=L(e);return new o.ChatResponseAnchorPart(p.isUri(n.inlineReference)?n.inlineReference:"location"in n.inlineReference?q.to(n.inlineReference):D.to(n.inlineReference),e.name)}t.to=s})(ue||={});var Fe;(t=>{function a(e){return{kind:"progressMessage",content:f.from(e.value)}}t.from=a;function s(e){return new o.ChatResponseProgressPart(e.content.value)}t.to=s})(Fe||={});var Ue;(t=>{function a(e){return{kind:"warning",content:f.from(e.value)}}t.from=a;function s(e){return new o.ChatResponseWarningPart(e.content.value)}t.to=s})(Ue||={});var We;(t=>{function a(e){return{kind:"move",uri:e.uri,range:u.from(e.range)}}t.from=a;function s(e){return new o.ChatResponseMovePart(p.revive(e.uri),u.to(e.range))}t.to=s})(We||={});var ln;(s=>{function a(t){return{kind:"progressTask",content:f.from(t.value)}}s.from=a})(ln||={});var dn;(s=>{function a(t){return{kind:"progressTaskResult",content:typeof t=="string"?f.from(t):void 0}}s.from=a})(dn||={});var me;(t=>{function a(e,n,i){return{kind:"command",command:n.toInternal(e.value,i)??{command:e.value.command,title:e.value.title}}}t.from=a;function s(e,n){return new o.ChatResponseCommandButtonPart(n.fromInternal(e.command)??{command:e.command.id,title:e.command.title})}t.to=s})(me||={});var Ve;(t=>{function a(e){return{kind:"textEdit",uri:e.uri,edits:e.edits.map(n=>y.from(n))}}t.from=a;function s(e){return new o.ChatResponseTextEditPart(p.revive(e.uri),e.edits.map(n=>y.to(n)))}t.to=s})(Ve||={});var pe;(t=>{function a(e){const n=ot.isThemeIcon(e.iconPath)?e.iconPath:p.isUri(e.iconPath)?{light:p.revive(e.iconPath)}:e.iconPath&&"light"in e.iconPath&&"dark"in e.iconPath&&p.isUri(e.iconPath.light)&&p.isUri(e.iconPath.dark)?{light:p.revive(e.iconPath.light),dark:p.revive(e.iconPath.dark)}:void 0;return typeof e.value=="object"&&"variableName"in e.value?{kind:"reference",reference:{variableName:e.value.variableName,value:p.isUri(e.value.value)||!e.value.value?e.value.value:D.from(e.value.value)},iconPath:n,options:e.options}:{kind:"reference",reference:p.isUri(e.value)||typeof e.value=="string"?e.value:D.from(e.value),iconPath:n,options:e.options}}t.from=a;function s(e){const n=L(e),i=l=>p.isUri(l)?l:D.to(l);return new o.ChatResponseReferencePart(typeof n.reference=="string"?n.reference:"variableName"in n.reference?{variableName:n.reference.variableName,value:n.reference.value&&i(n.reference.value)}:i(n.reference))}t.to=s})(pe||={});var _e;(s=>{function a(t){return{kind:"codeCitation",value:t.value,license:t.license,snippet:t.snippet}}s.from=a})(_e||={});var un;(e=>{function a(n,i,l){return n instanceof o.ChatResponseMarkdownPart?le.from(n):n instanceof o.ChatResponseAnchorPart?ue.from(n):n instanceof o.ChatResponseReferencePart?pe.from(n):n instanceof o.ChatResponseProgressPart?Fe.from(n):n instanceof o.ChatResponseFileTreePart?de.from(n):n instanceof o.ChatResponseCommandButtonPart?me.from(n,i,l):n instanceof o.ChatResponseTextEditPart?Ve.from(n):n instanceof o.ChatResponseMarkdownWithVulnerabilitiesPart?He.from(n):n instanceof o.ChatResponseCodeblockUriPart?Ne.from(n):n instanceof o.ChatResponseDetectedParticipantPart?Oe.from(n):n instanceof o.ChatResponseWarningPart?Ue.from(n):n instanceof o.ChatResponseConfirmationPart?Ae.from(n):n instanceof o.ChatResponseCodeCitationPart?_e.from(n):n instanceof o.ChatResponseMovePart?We.from(n):{kind:"markdownContent",content:f.from("")}}e.from=a;function s(n,i){switch(n.kind){case"reference":return pe.to(n);case"markdownContent":case"inlineReference":case"progressMessage":case"treeData":case"command":return t(n,i)}}e.to=s;function t(n,i){switch(n.kind){case"markdownContent":return le.to(n);case"inlineReference":return ue.to(n);case"progressMessage":return;case"treeData":return de.to(n);case"command":return me.to(n,i)}}e.toContent=t})(un||={});var mn;(s=>{function a(t,e){const n=t.variables.variables.filter(l=>l.isTool),i=t.variables.variables.filter(l=>!l.isTool);return{prompt:t.message,command:t.command,attempt:t.attempt??0,enableCommandDetection:t.enableCommandDetection??!0,isParticipantDetected:t.isParticipantDetected??!1,references:i.map(Ge.to),toolReferences:n.map(je.to),location:Be.to(t.location),acceptedConfirmationData:t.acceptedConfirmationData,rejectedConfirmationData:t.rejectedConfirmationData,location2:e,toolInvocationToken:Object.freeze({sessionId:t.sessionId})}}s.to=a})(mn||={});var Be;(t=>{function a(e){switch(e){case I.Notebook:return o.ChatLocation.Notebook;case I.Terminal:return o.ChatLocation.Terminal;case I.Panel:return o.ChatLocation.Panel;case I.Editor:return o.ChatLocation.Editor;case I.EditingSession:return o.ChatLocation.EditingSession}}t.to=a;function s(e){switch(e){case o.ChatLocation.Notebook:return I.Notebook;case o.ChatLocation.Terminal:return I.Terminal;case o.ChatLocation.Panel:return I.Panel;case o.ChatLocation.Editor:return I.Editor;case o.ChatLocation.EditingSession:return I.EditingSession}}t.from=s})(Be||={});var Ge;(s=>{function a(t){const e=t.value;if(!e)throw new Error("Invalid value reference");return{id:t.id,name:t.name,range:t.range&&[t.range.start,t.range.endExclusive],value:be(e)?p.revive(e):e&&typeof e=="object"&&"uri"in e&&"range"in e&&be(e.uri)?D.to(L(e)):e,modelDescription:t.modelDescription}}s.to=a})(Ge||={});var je;(s=>{function a(t){if(t.value)throw new Error("Invalid tool reference");return{id:t.id,range:t.range&&[t.range.start,t.range.endExclusive]}}s.to=a})(je||={});var pn;(s=>{function a(t,e,n){return{id:t.id,label:t.label,fullName:t.fullName,icon:t.icon?.id,value:t.values[0].value,insertText:t.insertText,detail:t.detail,documentation:t.documentation,command:e.toInternal(t.command,n)}}s.from=a})(pn||={});var fe;(t=>{function a(e){return{errorDetails:e.errorDetails,metadata:e.metadata,nextQuestion:e.nextQuestion}}t.to=a;function s(e){return{errorDetails:e.errorDetails,metadata:e.metadata,nextQuestion:e.nextQuestion}}t.from=s})(fe||={});var fn;(s=>{function a(t,e,n){if(e.action.kind==="vote")return;const i=fe.to(t);if(e.action.kind==="command"){const l=e.action.commandButton.command;return{action:{kind:"command",commandButton:{command:n.fromInternal(l)??{command:l.id,title:l.title}}},result:i}}else return e.action.kind==="followUp"?{action:{kind:"followUp",followup:Le.to(e.action.followup)},result:i}:e.action.kind==="inlineChat"?{action:{kind:"editor",accepted:e.action.action==="accepted"},result:i}:{action:e.action,result:i}}s.to=a})(fn||={});var gn;(s=>{function a(t,e,n){return"terminalCommand"in t?{terminalCommand:t.terminalCommand,shouldExecute:t.shouldExecute}:"uri"in t?{uri:t.uri}:e.toInternal(t,n)}s.from=a})(gn||={});var Cn;(s=>{function a(t){return{kind:ze.to(t.kind)}}s.to=a})(Cn||={});var ze;(s=>{function a(t){switch(t){case c.PartialAcceptTriggerKind.Word:return o.PartialAcceptTriggerKind.Word;case c.PartialAcceptTriggerKind.Line:return o.PartialAcceptTriggerKind.Line;case c.PartialAcceptTriggerKind.Suggest:return o.PartialAcceptTriggerKind.Suggest;default:return o.PartialAcceptTriggerKind.Unknown}}s.to=a})(ze||={});var xn;(s=>{function a(t,e){return{id:e,label:t.label,description:t.description,canEdit:t.canEdit,collapsibleState:t.collapsibleState||ct.None,contextValue:t.contextValue}}s.from=a})(xn||={});var In;(s=>{function a(t){return{id:t.id,modelDescription:t.modelDescription,parametersSchema:t.parametersSchema,displayName:t.displayName,supportedContentTypes:t.supportedContentTypes}}s.to=a})(In||={});export{Rt as CallHierarchyIncomingCall,X as CallHierarchyItem,St as CallHierarchyOutgoingCall,pn as ChatAgentCompletionItem,mn as ChatAgentRequest,fe as ChatAgentResult,fn as ChatAgentUserActionEvent,Le as ChatFollowup,je as ChatLanguageModelToolReference,Be as ChatLocation,Ge as ChatPromptReference,ue as ChatResponseAnchorPart,_e as ChatResponseCodeCitationPart,Ne as ChatResponseCodeblockUriPart,me as ChatResponseCommandButtonPart,Ae as ChatResponseConfirmationPart,Oe as ChatResponseDetectedParticipantPart,de as ChatResponseFilesPart,le as ChatResponseMarkdownPart,He as ChatResponseMarkdownWithVulnerabilitiesPart,We as ChatResponseMovePart,un as ChatResponsePart,Fe as ChatResponseProgressPart,pe as ChatResponseReferencePart,Ve as ChatResponseTextEditPart,Ue as ChatResponseWarningPart,ln as ChatTask,dn as ChatTaskResult,on as CodeActionTriggerKind,Ft as Color,At as ColorPresentation,Mt as CompletionContext,Lt as CompletionItem,ke as CompletionItemKind,Pe as CompletionItemTag,De as CompletionTriggerKind,sn as DataTransfer,se as DataTransferItem,xn as DebugTreeItem,Se as DecorationRangeBehavior,ht as DecorationRenderOptions,Dt as DefinitionLink,xt as Diagnostic,z as DiagnosticRelatedInformation,Q as DiagnosticSeverity,j as DiagnosticTag,W as DocumentContextItem,Y as DocumentHighlight,Ot as DocumentLink,Ct as DocumentSelector,Tt as DocumentSymbol,te as EndOfLine,kt as EvaluatableExpression,Bt as FoldingRange,ne as FoldingRangeKind,T as GlobPattern,Pt as Hover,Ht as InlayHint,we as InlayHintKind,Ke as InlayHintLabelPart,Kt as InlineValue,wt as InlineValueContext,cn as LanguageModelChatMessage,ce as LanguageModelChatMessageRole,In as LanguageModelToolDescription,jt as LanguageSelector,D as Location,zt as MappedEditsContext,f as MarkdownString,Et as MultiDocumentHighlight,V as NotebookCellData,$t as NotebookCellExecutionState,oe as NotebookCellExecutionSummary,re as NotebookCellKind,ie as NotebookCellOutput,ae as NotebookCellOutputItem,Jt as NotebookData,Zt as NotebookDocumentContentOptions,qt as NotebookExclusiveDocumentPattern,Yt as NotebookKernelSourceAction,Qt as NotebookRange,en as NotebookRendererScript,Xt as NotebookStatusBarItem,Z as ParameterInformation,Cn as PartialAcceptInfo,ze as PartialAcceptTriggerKind,K as Position,_t as ProgressLocation,u as Range,ft as Selection,Ut as SelectionRange,Nt as SignatureHelp,ee as SignatureInformation,b as SymbolKind,P as SymbolTag,gn as TerminalQuickFix,nn as TestCoverage,Me as TestItem,Ee as TestMessage,tn as TestResults,M as TestTag,Wt as TextDocumentSaveReason,y as TextEdit,Vt as TextEditorLineNumbersStyle,Gt as TextEditorOpenOptions,w as ThemableDecorationAttachmentRenderOptions,J as ThemableDecorationRenderOptions,gt as TokenType,rn as TypeHierarchyItem,an as ViewBadge,It as ViewColumn,bt as WorkspaceEdit,q as WorkspaceSymbol,ir as fromRangeOrRangeWithMessage,yt as isDecorationOptionsArr,E as location,$ as pathOrURIToURI};
+import { asArray, coalesce, isNonEmptyArray } from '../../../base/common/arrays.js';
+import { VSBuffer, encodeBase64 } from '../../../base/common/buffer.js';
+import { UriList } from '../../../base/common/dataTransfer.js';
+import { createSingleCallFunction } from '../../../base/common/functional.js';
+import * as htmlContent from '../../../base/common/htmlContent.js';
+import { ResourceMap, ResourceSet } from '../../../base/common/map.js';
+import * as marked from '../../../base/common/marked/marked.js';
+import { parse, revive } from '../../../base/common/marshalling.js';
+import { Mimes } from '../../../base/common/mime.js';
+import { cloneAndChange } from '../../../base/common/objects.js';
+import { WellDefinedPrefixTree } from '../../../base/common/prefixTree.js';
+import { basename } from '../../../base/common/resources.js';
+import { ThemeIcon } from '../../../base/common/themables.js';
+import { isDefined, isEmptyObject, isNumber, isString, isUndefinedOrNull } from '../../../base/common/types.js';
+import { URI, isUriComponents } from '../../../base/common/uri.js';
+import * as editorRange from '../../../editor/common/core/range.js';
+import * as languages from '../../../editor/common/languages.js';
+import { MarkerSeverity } from '../../../platform/markers/common/markers.js';
+import { DEFAULT_EDITOR_ASSOCIATION } from '../../common/editor.js';
+import { ChatAgentLocation } from '../../contrib/chat/common/chatAgents.js';
+import * as notebooks from '../../contrib/notebook/common/notebookCommon.js';
+import { TestId } from '../../contrib/testing/common/testId.js';
+import { denamespaceTestTag, namespaceTestTag } from '../../contrib/testing/common/testTypes.js';
+import { ACTIVE_GROUP, SIDE_GROUP } from '../../services/editor/common/editorService.js';
+import { getPrivateApiFor } from './extHostTestingPrivateApi.js';
+import * as types from './extHostTypes.js';
+export var Selection;
+(function (Selection) {
+    function to(selection) {
+        const { selectionStartLineNumber, selectionStartColumn, positionLineNumber, positionColumn } = selection;
+        const start = new types.Position(selectionStartLineNumber - 1, selectionStartColumn - 1);
+        const end = new types.Position(positionLineNumber - 1, positionColumn - 1);
+        return new types.Selection(start, end);
+    }
+    Selection.to = to;
+    function from(selection) {
+        const { anchor, active } = selection;
+        return {
+            selectionStartLineNumber: anchor.line + 1,
+            selectionStartColumn: anchor.character + 1,
+            positionLineNumber: active.line + 1,
+            positionColumn: active.character + 1
+        };
+    }
+    Selection.from = from;
+})(Selection || (Selection = {}));
+export var Range;
+(function (Range) {
+    function from(range) {
+        if (!range) {
+            return undefined;
+        }
+        const { start, end } = range;
+        return {
+            startLineNumber: start.line + 1,
+            startColumn: start.character + 1,
+            endLineNumber: end.line + 1,
+            endColumn: end.character + 1
+        };
+    }
+    Range.from = from;
+    function to(range) {
+        if (!range) {
+            return undefined;
+        }
+        const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
+        return new types.Range(startLineNumber - 1, startColumn - 1, endLineNumber - 1, endColumn - 1);
+    }
+    Range.to = to;
+})(Range || (Range = {}));
+export var Location;
+(function (Location) {
+    function from(location) {
+        return {
+            uri: location.uri,
+            range: Range.from(location.range)
+        };
+    }
+    Location.from = from;
+    function to(location) {
+        return new types.Location(URI.revive(location.uri), Range.to(location.range));
+    }
+    Location.to = to;
+})(Location || (Location = {}));
+export var TokenType;
+(function (TokenType) {
+    function to(type) {
+        switch (type) {
+            case 1: return types.StandardTokenType.Comment;
+            case 0: return types.StandardTokenType.Other;
+            case 3: return types.StandardTokenType.RegEx;
+            case 2: return types.StandardTokenType.String;
+        }
+    }
+    TokenType.to = to;
+})(TokenType || (TokenType = {}));
+export var Position;
+(function (Position) {
+    function to(position) {
+        return new types.Position(position.lineNumber - 1, position.column - 1);
+    }
+    Position.to = to;
+    function from(position) {
+        return { lineNumber: position.line + 1, column: position.character + 1 };
+    }
+    Position.from = from;
+})(Position || (Position = {}));
+export var DocumentSelector;
+(function (DocumentSelector) {
+    function from(value, uriTransformer, extension) {
+        return coalesce(asArray(value).map(sel => _doTransformDocumentSelector(sel, uriTransformer, extension)));
+    }
+    DocumentSelector.from = from;
+    function _doTransformDocumentSelector(selector, uriTransformer, extension) {
+        if (typeof selector === 'string') {
+            return {
+                $serialized: true,
+                language: selector,
+                isBuiltin: extension?.isBuiltin,
+            };
+        }
+        if (selector) {
+            return {
+                $serialized: true,
+                language: selector.language,
+                scheme: _transformScheme(selector.scheme, uriTransformer),
+                pattern: GlobPattern.from(selector.pattern) ?? undefined,
+                exclusive: selector.exclusive,
+                notebookType: selector.notebookType,
+                isBuiltin: extension?.isBuiltin
+            };
+        }
+        return undefined;
+    }
+    function _transformScheme(scheme, uriTransformer) {
+        if (uriTransformer && typeof scheme === 'string') {
+            return uriTransformer.transformOutgoingScheme(scheme);
+        }
+        return scheme;
+    }
+})(DocumentSelector || (DocumentSelector = {}));
+export var DiagnosticTag;
+(function (DiagnosticTag) {
+    function from(value) {
+        switch (value) {
+            case types.DiagnosticTag.Unnecessary:
+                return 1;
+            case types.DiagnosticTag.Deprecated:
+                return 2;
+        }
+        return undefined;
+    }
+    DiagnosticTag.from = from;
+    function to(value) {
+        switch (value) {
+            case 1:
+                return types.DiagnosticTag.Unnecessary;
+            case 2:
+                return types.DiagnosticTag.Deprecated;
+            default:
+                return undefined;
+        }
+    }
+    DiagnosticTag.to = to;
+})(DiagnosticTag || (DiagnosticTag = {}));
+export var Diagnostic;
+(function (Diagnostic) {
+    function from(value) {
+        let code;
+        if (value.code) {
+            if (isString(value.code) || isNumber(value.code)) {
+                code = String(value.code);
+            }
+            else {
+                code = {
+                    value: String(value.code.value),
+                    target: value.code.target,
+                };
+            }
+        }
+        return {
+            ...Range.from(value.range),
+            message: value.message,
+            source: value.source,
+            code,
+            severity: DiagnosticSeverity.from(value.severity),
+            relatedInformation: value.relatedInformation && value.relatedInformation.map(DiagnosticRelatedInformation.from),
+            tags: Array.isArray(value.tags) ? coalesce(value.tags.map(DiagnosticTag.from)) : undefined,
+        };
+    }
+    Diagnostic.from = from;
+    function to(value) {
+        const res = new types.Diagnostic(Range.to(value), value.message, DiagnosticSeverity.to(value.severity));
+        res.source = value.source;
+        res.code = isString(value.code) ? value.code : value.code?.value;
+        res.relatedInformation = value.relatedInformation && value.relatedInformation.map(DiagnosticRelatedInformation.to);
+        res.tags = value.tags && coalesce(value.tags.map(DiagnosticTag.to));
+        return res;
+    }
+    Diagnostic.to = to;
+})(Diagnostic || (Diagnostic = {}));
+export var DiagnosticRelatedInformation;
+(function (DiagnosticRelatedInformation) {
+    function from(value) {
+        return {
+            ...Range.from(value.location.range),
+            message: value.message,
+            resource: value.location.uri
+        };
+    }
+    DiagnosticRelatedInformation.from = from;
+    function to(value) {
+        return new types.DiagnosticRelatedInformation(new types.Location(value.resource, Range.to(value)), value.message);
+    }
+    DiagnosticRelatedInformation.to = to;
+})(DiagnosticRelatedInformation || (DiagnosticRelatedInformation = {}));
+export var DiagnosticSeverity;
+(function (DiagnosticSeverity) {
+    function from(value) {
+        switch (value) {
+            case types.DiagnosticSeverity.Error:
+                return MarkerSeverity.Error;
+            case types.DiagnosticSeverity.Warning:
+                return MarkerSeverity.Warning;
+            case types.DiagnosticSeverity.Information:
+                return MarkerSeverity.Info;
+            case types.DiagnosticSeverity.Hint:
+                return MarkerSeverity.Hint;
+        }
+        return MarkerSeverity.Error;
+    }
+    DiagnosticSeverity.from = from;
+    function to(value) {
+        switch (value) {
+            case MarkerSeverity.Info:
+                return types.DiagnosticSeverity.Information;
+            case MarkerSeverity.Warning:
+                return types.DiagnosticSeverity.Warning;
+            case MarkerSeverity.Error:
+                return types.DiagnosticSeverity.Error;
+            case MarkerSeverity.Hint:
+                return types.DiagnosticSeverity.Hint;
+            default:
+                return types.DiagnosticSeverity.Error;
+        }
+    }
+    DiagnosticSeverity.to = to;
+})(DiagnosticSeverity || (DiagnosticSeverity = {}));
+export var ViewColumn;
+(function (ViewColumn) {
+    function from(column) {
+        if (typeof column === 'number' && column >= types.ViewColumn.One) {
+            return column - 1;
+        }
+        if (column === types.ViewColumn.Beside) {
+            return SIDE_GROUP;
+        }
+        return ACTIVE_GROUP;
+    }
+    ViewColumn.from = from;
+    function to(position) {
+        if (typeof position === 'number' && position >= 0) {
+            return position + 1;
+        }
+        throw new Error(`invalid 'EditorGroupColumn'`);
+    }
+    ViewColumn.to = to;
+})(ViewColumn || (ViewColumn = {}));
+function isDecorationOptions(something) {
+    return (typeof something.range !== 'undefined');
+}
+export function isDecorationOptionsArr(something) {
+    if (something.length === 0) {
+        return true;
+    }
+    return isDecorationOptions(something[0]) ? true : false;
+}
+export var MarkdownString;
+(function (MarkdownString) {
+    function fromMany(markup) {
+        return markup.map(MarkdownString.from);
+    }
+    MarkdownString.fromMany = fromMany;
+    function isCodeblock(thing) {
+        return thing && typeof thing === 'object'
+            && typeof thing.language === 'string'
+            && typeof thing.value === 'string';
+    }
+    function from(markup) {
+        let res;
+        if (isCodeblock(markup)) {
+            const { language, value } = markup;
+            res = { value: '```' + language + '\n' + value + '\n```\n' };
+        }
+        else if (types.MarkdownString.isMarkdownString(markup)) {
+            res = { value: markup.value, isTrusted: markup.isTrusted, supportThemeIcons: markup.supportThemeIcons, supportHtml: markup.supportHtml, baseUri: markup.baseUri };
+        }
+        else if (typeof markup === 'string') {
+            res = { value: markup };
+        }
+        else {
+            res = { value: '' };
+        }
+        const resUris = Object.create(null);
+        res.uris = resUris;
+        const collectUri = ({ href }) => {
+            try {
+                let uri = URI.parse(href, true);
+                uri = uri.with({ query: _uriMassage(uri.query, resUris) });
+                resUris[href] = uri;
+            }
+            catch (e) {
+            }
+            return '';
+        };
+        marked.marked.walkTokens(marked.marked.lexer(res.value), token => {
+            if (token.type === 'link') {
+                collectUri({ href: token.href });
+            }
+            else if (token.type === 'image') {
+                if (typeof token.href === 'string') {
+                    collectUri(htmlContent.parseHrefAndDimensions(token.href));
+                }
+            }
+        });
+        return res;
+    }
+    MarkdownString.from = from;
+    function _uriMassage(part, bucket) {
+        if (!part) {
+            return part;
+        }
+        let data;
+        try {
+            data = parse(part);
+        }
+        catch (e) {
+        }
+        if (!data) {
+            return part;
+        }
+        let changed = false;
+        data = cloneAndChange(data, value => {
+            if (URI.isUri(value)) {
+                const key = `__uri_${Math.random().toString(16).slice(2, 8)}`;
+                bucket[key] = value;
+                changed = true;
+                return key;
+            }
+            else {
+                return undefined;
+            }
+        });
+        if (!changed) {
+            return part;
+        }
+        return JSON.stringify(data);
+    }
+    function to(value) {
+        const result = new types.MarkdownString(value.value, value.supportThemeIcons);
+        result.isTrusted = value.isTrusted;
+        result.supportHtml = value.supportHtml;
+        result.baseUri = value.baseUri ? URI.from(value.baseUri) : undefined;
+        return result;
+    }
+    MarkdownString.to = to;
+    function fromStrict(value) {
+        if (!value) {
+            return undefined;
+        }
+        return typeof value === 'string' ? value : MarkdownString.from(value);
+    }
+    MarkdownString.fromStrict = fromStrict;
+})(MarkdownString || (MarkdownString = {}));
+export function fromRangeOrRangeWithMessage(ranges) {
+    if (isDecorationOptionsArr(ranges)) {
+        return ranges.map((r) => {
+            return {
+                range: Range.from(r.range),
+                hoverMessage: Array.isArray(r.hoverMessage)
+                    ? MarkdownString.fromMany(r.hoverMessage)
+                    : (r.hoverMessage ? MarkdownString.from(r.hoverMessage) : undefined),
+                renderOptions: r.renderOptions
+            };
+        });
+    }
+    else {
+        return ranges.map((r) => {
+            return {
+                range: Range.from(r)
+            };
+        });
+    }
+}
+export function pathOrURIToURI(value) {
+    if (typeof value === 'undefined') {
+        return value;
+    }
+    if (typeof value === 'string') {
+        return URI.file(value);
+    }
+    else {
+        return value;
+    }
+}
+export var ThemableDecorationAttachmentRenderOptions;
+(function (ThemableDecorationAttachmentRenderOptions) {
+    function from(options) {
+        if (typeof options === 'undefined') {
+            return options;
+        }
+        return {
+            contentText: options.contentText,
+            contentIconPath: options.contentIconPath ? pathOrURIToURI(options.contentIconPath) : undefined,
+            border: options.border,
+            borderColor: options.borderColor,
+            fontStyle: options.fontStyle,
+            fontWeight: options.fontWeight,
+            textDecoration: options.textDecoration,
+            color: options.color,
+            backgroundColor: options.backgroundColor,
+            margin: options.margin,
+            width: options.width,
+            height: options.height,
+        };
+    }
+    ThemableDecorationAttachmentRenderOptions.from = from;
+})(ThemableDecorationAttachmentRenderOptions || (ThemableDecorationAttachmentRenderOptions = {}));
+export var ThemableDecorationRenderOptions;
+(function (ThemableDecorationRenderOptions) {
+    function from(options) {
+        if (typeof options === 'undefined') {
+            return options;
+        }
+        return {
+            backgroundColor: options.backgroundColor,
+            outline: options.outline,
+            outlineColor: options.outlineColor,
+            outlineStyle: options.outlineStyle,
+            outlineWidth: options.outlineWidth,
+            border: options.border,
+            borderColor: options.borderColor,
+            borderRadius: options.borderRadius,
+            borderSpacing: options.borderSpacing,
+            borderStyle: options.borderStyle,
+            borderWidth: options.borderWidth,
+            fontStyle: options.fontStyle,
+            fontWeight: options.fontWeight,
+            textDecoration: options.textDecoration,
+            cursor: options.cursor,
+            color: options.color,
+            opacity: options.opacity,
+            letterSpacing: options.letterSpacing,
+            gutterIconPath: options.gutterIconPath ? pathOrURIToURI(options.gutterIconPath) : undefined,
+            gutterIconSize: options.gutterIconSize,
+            overviewRulerColor: options.overviewRulerColor,
+            before: options.before ? ThemableDecorationAttachmentRenderOptions.from(options.before) : undefined,
+            after: options.after ? ThemableDecorationAttachmentRenderOptions.from(options.after) : undefined,
+        };
+    }
+    ThemableDecorationRenderOptions.from = from;
+})(ThemableDecorationRenderOptions || (ThemableDecorationRenderOptions = {}));
+export var DecorationRangeBehavior;
+(function (DecorationRangeBehavior) {
+    function from(value) {
+        if (typeof value === 'undefined') {
+            return value;
+        }
+        switch (value) {
+            case types.DecorationRangeBehavior.OpenOpen:
+                return 0;
+            case types.DecorationRangeBehavior.ClosedClosed:
+                return 1;
+            case types.DecorationRangeBehavior.OpenClosed:
+                return 2;
+            case types.DecorationRangeBehavior.ClosedOpen:
+                return 3;
+        }
+    }
+    DecorationRangeBehavior.from = from;
+})(DecorationRangeBehavior || (DecorationRangeBehavior = {}));
+export var DecorationRenderOptions;
+(function (DecorationRenderOptions) {
+    function from(options) {
+        return {
+            isWholeLine: options.isWholeLine,
+            rangeBehavior: options.rangeBehavior ? DecorationRangeBehavior.from(options.rangeBehavior) : undefined,
+            overviewRulerLane: options.overviewRulerLane,
+            light: options.light ? ThemableDecorationRenderOptions.from(options.light) : undefined,
+            dark: options.dark ? ThemableDecorationRenderOptions.from(options.dark) : undefined,
+            backgroundColor: options.backgroundColor,
+            outline: options.outline,
+            outlineColor: options.outlineColor,
+            outlineStyle: options.outlineStyle,
+            outlineWidth: options.outlineWidth,
+            border: options.border,
+            borderColor: options.borderColor,
+            borderRadius: options.borderRadius,
+            borderSpacing: options.borderSpacing,
+            borderStyle: options.borderStyle,
+            borderWidth: options.borderWidth,
+            fontStyle: options.fontStyle,
+            fontWeight: options.fontWeight,
+            textDecoration: options.textDecoration,
+            cursor: options.cursor,
+            color: options.color,
+            opacity: options.opacity,
+            letterSpacing: options.letterSpacing,
+            gutterIconPath: options.gutterIconPath ? pathOrURIToURI(options.gutterIconPath) : undefined,
+            gutterIconSize: options.gutterIconSize,
+            overviewRulerColor: options.overviewRulerColor,
+            before: options.before ? ThemableDecorationAttachmentRenderOptions.from(options.before) : undefined,
+            after: options.after ? ThemableDecorationAttachmentRenderOptions.from(options.after) : undefined,
+        };
+    }
+    DecorationRenderOptions.from = from;
+})(DecorationRenderOptions || (DecorationRenderOptions = {}));
+export var TextEdit;
+(function (TextEdit) {
+    function from(edit) {
+        return {
+            text: edit.newText,
+            eol: edit.newEol && EndOfLine.from(edit.newEol),
+            range: Range.from(edit.range)
+        };
+    }
+    TextEdit.from = from;
+    function to(edit) {
+        const result = new types.TextEdit(Range.to(edit.range), edit.text);
+        result.newEol = (typeof edit.eol === 'undefined' ? undefined : EndOfLine.to(edit.eol));
+        return result;
+    }
+    TextEdit.to = to;
+})(TextEdit || (TextEdit = {}));
+export var WorkspaceEdit;
+(function (WorkspaceEdit) {
+    function from(value, versionInfo) {
+        const result = {
+            edits: []
+        };
+        if (value instanceof types.WorkspaceEdit) {
+            const toCreate = new ResourceSet();
+            for (const entry of value._allEntries()) {
+                if (entry._type === 1 && URI.isUri(entry.to) && entry.from === undefined) {
+                    toCreate.add(entry.to);
+                }
+            }
+            for (const entry of value._allEntries()) {
+                if (entry._type === 1) {
+                    let contents;
+                    if (entry.options?.contents) {
+                        if (ArrayBuffer.isView(entry.options.contents)) {
+                            contents = { type: 'base64', value: encodeBase64(VSBuffer.wrap(entry.options.contents)) };
+                        }
+                        else {
+                            contents = { type: 'dataTransferItem', id: entry.options.contents._itemId };
+                        }
+                    }
+                    result.edits.push({
+                        oldResource: entry.from,
+                        newResource: entry.to,
+                        options: { ...entry.options, contents },
+                        metadata: entry.metadata
+                    });
+                }
+                else if (entry._type === 2) {
+                    result.edits.push({
+                        resource: entry.uri,
+                        textEdit: TextEdit.from(entry.edit),
+                        versionId: !toCreate.has(entry.uri) ? versionInfo?.getTextDocumentVersion(entry.uri) : undefined,
+                        metadata: entry.metadata
+                    });
+                }
+                else if (entry._type === 6) {
+                    result.edits.push({
+                        resource: entry.uri,
+                        textEdit: {
+                            range: Range.from(entry.range),
+                            text: entry.edit.value,
+                            insertAsSnippet: true
+                        },
+                        versionId: !toCreate.has(entry.uri) ? versionInfo?.getTextDocumentVersion(entry.uri) : undefined,
+                        metadata: entry.metadata
+                    });
+                }
+                else if (entry._type === 3) {
+                    result.edits.push({
+                        metadata: entry.metadata,
+                        resource: entry.uri,
+                        cellEdit: entry.edit,
+                        notebookMetadata: entry.notebookMetadata,
+                        notebookVersionId: versionInfo?.getNotebookDocumentVersion(entry.uri)
+                    });
+                }
+                else if (entry._type === 5) {
+                    result.edits.push({
+                        metadata: entry.metadata,
+                        resource: entry.uri,
+                        notebookVersionId: versionInfo?.getNotebookDocumentVersion(entry.uri),
+                        cellEdit: {
+                            editType: 1,
+                            index: entry.index,
+                            count: entry.count,
+                            cells: entry.cells.map(NotebookCellData.from)
+                        }
+                    });
+                }
+            }
+        }
+        return result;
+    }
+    WorkspaceEdit.from = from;
+    function to(value) {
+        const result = new types.WorkspaceEdit();
+        const edits = new ResourceMap();
+        for (const edit of value.edits) {
+            if (edit.textEdit) {
+                const item = edit;
+                const uri = URI.revive(item.resource);
+                const range = Range.to(item.textEdit.range);
+                const text = item.textEdit.text;
+                const isSnippet = item.textEdit.insertAsSnippet;
+                let editOrSnippetTest;
+                if (isSnippet) {
+                    editOrSnippetTest = types.SnippetTextEdit.replace(range, new types.SnippetString(text));
+                }
+                else {
+                    editOrSnippetTest = types.TextEdit.replace(range, text);
+                }
+                const array = edits.get(uri);
+                if (!array) {
+                    edits.set(uri, [editOrSnippetTest]);
+                }
+                else {
+                    array.push(editOrSnippetTest);
+                }
+            }
+            else {
+                result.renameFile(URI.revive(edit.oldResource), URI.revive(edit.newResource), edit.options);
+            }
+        }
+        for (const [uri, array] of edits) {
+            result.set(uri, array);
+        }
+        return result;
+    }
+    WorkspaceEdit.to = to;
+})(WorkspaceEdit || (WorkspaceEdit = {}));
+export var SymbolKind;
+(function (SymbolKind) {
+    const _fromMapping = Object.create(null);
+    _fromMapping[types.SymbolKind.File] = 0;
+    _fromMapping[types.SymbolKind.Module] = 1;
+    _fromMapping[types.SymbolKind.Namespace] = 2;
+    _fromMapping[types.SymbolKind.Package] = 3;
+    _fromMapping[types.SymbolKind.Class] = 4;
+    _fromMapping[types.SymbolKind.Method] = 5;
+    _fromMapping[types.SymbolKind.Property] = 6;
+    _fromMapping[types.SymbolKind.Field] = 7;
+    _fromMapping[types.SymbolKind.Constructor] = 8;
+    _fromMapping[types.SymbolKind.Enum] = 9;
+    _fromMapping[types.SymbolKind.Interface] = 10;
+    _fromMapping[types.SymbolKind.Function] = 11;
+    _fromMapping[types.SymbolKind.Variable] = 12;
+    _fromMapping[types.SymbolKind.Constant] = 13;
+    _fromMapping[types.SymbolKind.String] = 14;
+    _fromMapping[types.SymbolKind.Number] = 15;
+    _fromMapping[types.SymbolKind.Boolean] = 16;
+    _fromMapping[types.SymbolKind.Array] = 17;
+    _fromMapping[types.SymbolKind.Object] = 18;
+    _fromMapping[types.SymbolKind.Key] = 19;
+    _fromMapping[types.SymbolKind.Null] = 20;
+    _fromMapping[types.SymbolKind.EnumMember] = 21;
+    _fromMapping[types.SymbolKind.Struct] = 22;
+    _fromMapping[types.SymbolKind.Event] = 23;
+    _fromMapping[types.SymbolKind.Operator] = 24;
+    _fromMapping[types.SymbolKind.TypeParameter] = 25;
+    function from(kind) {
+        return typeof _fromMapping[kind] === 'number' ? _fromMapping[kind] : 6;
+    }
+    SymbolKind.from = from;
+    function to(kind) {
+        for (const k in _fromMapping) {
+            if (_fromMapping[k] === kind) {
+                return Number(k);
+            }
+        }
+        return types.SymbolKind.Property;
+    }
+    SymbolKind.to = to;
+})(SymbolKind || (SymbolKind = {}));
+export var SymbolTag;
+(function (SymbolTag) {
+    function from(kind) {
+        switch (kind) {
+            case types.SymbolTag.Deprecated: return 1;
+        }
+    }
+    SymbolTag.from = from;
+    function to(kind) {
+        switch (kind) {
+            case 1: return types.SymbolTag.Deprecated;
+        }
+    }
+    SymbolTag.to = to;
+})(SymbolTag || (SymbolTag = {}));
+export var WorkspaceSymbol;
+(function (WorkspaceSymbol) {
+    function from(info) {
+        return {
+            name: info.name,
+            kind: SymbolKind.from(info.kind),
+            tags: info.tags && info.tags.map(SymbolTag.from),
+            containerName: info.containerName,
+            location: location.from(info.location)
+        };
+    }
+    WorkspaceSymbol.from = from;
+    function to(info) {
+        const result = new types.SymbolInformation(info.name, SymbolKind.to(info.kind), info.containerName, location.to(info.location));
+        result.tags = info.tags && info.tags.map(SymbolTag.to);
+        return result;
+    }
+    WorkspaceSymbol.to = to;
+})(WorkspaceSymbol || (WorkspaceSymbol = {}));
+export var DocumentSymbol;
+(function (DocumentSymbol) {
+    function from(info) {
+        const result = {
+            name: info.name || '!!MISSING: name!!',
+            detail: info.detail,
+            range: Range.from(info.range),
+            selectionRange: Range.from(info.selectionRange),
+            kind: SymbolKind.from(info.kind),
+            tags: info.tags?.map(SymbolTag.from) ?? []
+        };
+        if (info.children) {
+            result.children = info.children.map(from);
+        }
+        return result;
+    }
+    DocumentSymbol.from = from;
+    function to(info) {
+        const result = new types.DocumentSymbol(info.name, info.detail, SymbolKind.to(info.kind), Range.to(info.range), Range.to(info.selectionRange));
+        if (isNonEmptyArray(info.tags)) {
+            result.tags = info.tags.map(SymbolTag.to);
+        }
+        if (info.children) {
+            result.children = info.children.map(to);
+        }
+        return result;
+    }
+    DocumentSymbol.to = to;
+})(DocumentSymbol || (DocumentSymbol = {}));
+export var CallHierarchyItem;
+(function (CallHierarchyItem) {
+    function to(item) {
+        const result = new types.CallHierarchyItem(SymbolKind.to(item.kind), item.name, item.detail || '', URI.revive(item.uri), Range.to(item.range), Range.to(item.selectionRange));
+        result._sessionId = item._sessionId;
+        result._itemId = item._itemId;
+        return result;
+    }
+    CallHierarchyItem.to = to;
+    function from(item, sessionId, itemId) {
+        sessionId = sessionId ?? item._sessionId;
+        itemId = itemId ?? item._itemId;
+        if (sessionId === undefined || itemId === undefined) {
+            throw new Error('invalid item');
+        }
+        return {
+            _sessionId: sessionId,
+            _itemId: itemId,
+            name: item.name,
+            detail: item.detail,
+            kind: SymbolKind.from(item.kind),
+            uri: item.uri,
+            range: Range.from(item.range),
+            selectionRange: Range.from(item.selectionRange),
+            tags: item.tags?.map(SymbolTag.from)
+        };
+    }
+    CallHierarchyItem.from = from;
+})(CallHierarchyItem || (CallHierarchyItem = {}));
+export var CallHierarchyIncomingCall;
+(function (CallHierarchyIncomingCall) {
+    function to(item) {
+        return new types.CallHierarchyIncomingCall(CallHierarchyItem.to(item.from), item.fromRanges.map(r => Range.to(r)));
+    }
+    CallHierarchyIncomingCall.to = to;
+})(CallHierarchyIncomingCall || (CallHierarchyIncomingCall = {}));
+export var CallHierarchyOutgoingCall;
+(function (CallHierarchyOutgoingCall) {
+    function to(item) {
+        return new types.CallHierarchyOutgoingCall(CallHierarchyItem.to(item.to), item.fromRanges.map(r => Range.to(r)));
+    }
+    CallHierarchyOutgoingCall.to = to;
+})(CallHierarchyOutgoingCall || (CallHierarchyOutgoingCall = {}));
+export var location;
+(function (location) {
+    function from(value) {
+        return {
+            range: value.range && Range.from(value.range),
+            uri: value.uri
+        };
+    }
+    location.from = from;
+    function to(value) {
+        return new types.Location(URI.revive(value.uri), Range.to(value.range));
+    }
+    location.to = to;
+})(location || (location = {}));
+export var DefinitionLink;
+(function (DefinitionLink) {
+    function from(value) {
+        const definitionLink = value;
+        const location = value;
+        return {
+            originSelectionRange: definitionLink.originSelectionRange
+                ? Range.from(definitionLink.originSelectionRange)
+                : undefined,
+            uri: definitionLink.targetUri ? definitionLink.targetUri : location.uri,
+            range: Range.from(definitionLink.targetRange ? definitionLink.targetRange : location.range),
+            targetSelectionRange: definitionLink.targetSelectionRange
+                ? Range.from(definitionLink.targetSelectionRange)
+                : undefined,
+        };
+    }
+    DefinitionLink.from = from;
+    function to(value) {
+        return {
+            targetUri: URI.revive(value.uri),
+            targetRange: Range.to(value.range),
+            targetSelectionRange: value.targetSelectionRange
+                ? Range.to(value.targetSelectionRange)
+                : undefined,
+            originSelectionRange: value.originSelectionRange
+                ? Range.to(value.originSelectionRange)
+                : undefined
+        };
+    }
+    DefinitionLink.to = to;
+})(DefinitionLink || (DefinitionLink = {}));
+export var Hover;
+(function (Hover) {
+    function from(hover) {
+        const convertedHover = {
+            range: Range.from(hover.range),
+            contents: MarkdownString.fromMany(hover.contents),
+            canIncreaseVerbosity: hover.canIncreaseVerbosity,
+            canDecreaseVerbosity: hover.canDecreaseVerbosity,
+        };
+        return convertedHover;
+    }
+    Hover.from = from;
+    function to(info) {
+        const contents = info.contents.map(MarkdownString.to);
+        const range = Range.to(info.range);
+        const canIncreaseVerbosity = info.canIncreaseVerbosity;
+        const canDecreaseVerbosity = info.canDecreaseVerbosity;
+        return new types.VerboseHover(contents, range, canIncreaseVerbosity, canDecreaseVerbosity);
+    }
+    Hover.to = to;
+})(Hover || (Hover = {}));
+export var EvaluatableExpression;
+(function (EvaluatableExpression) {
+    function from(expression) {
+        return {
+            range: Range.from(expression.range),
+            expression: expression.expression
+        };
+    }
+    EvaluatableExpression.from = from;
+    function to(info) {
+        return new types.EvaluatableExpression(Range.to(info.range), info.expression);
+    }
+    EvaluatableExpression.to = to;
+})(EvaluatableExpression || (EvaluatableExpression = {}));
+export var InlineValue;
+(function (InlineValue) {
+    function from(inlineValue) {
+        if (inlineValue instanceof types.InlineValueText) {
+            return {
+                type: 'text',
+                range: Range.from(inlineValue.range),
+                text: inlineValue.text
+            };
+        }
+        else if (inlineValue instanceof types.InlineValueVariableLookup) {
+            return {
+                type: 'variable',
+                range: Range.from(inlineValue.range),
+                variableName: inlineValue.variableName,
+                caseSensitiveLookup: inlineValue.caseSensitiveLookup
+            };
+        }
+        else if (inlineValue instanceof types.InlineValueEvaluatableExpression) {
+            return {
+                type: 'expression',
+                range: Range.from(inlineValue.range),
+                expression: inlineValue.expression
+            };
+        }
+        else {
+            throw new Error(`Unknown 'InlineValue' type`);
+        }
+    }
+    InlineValue.from = from;
+    function to(inlineValue) {
+        switch (inlineValue.type) {
+            case 'text':
+                return {
+                    range: Range.to(inlineValue.range),
+                    text: inlineValue.text
+                };
+            case 'variable':
+                return {
+                    range: Range.to(inlineValue.range),
+                    variableName: inlineValue.variableName,
+                    caseSensitiveLookup: inlineValue.caseSensitiveLookup
+                };
+            case 'expression':
+                return {
+                    range: Range.to(inlineValue.range),
+                    expression: inlineValue.expression
+                };
+        }
+    }
+    InlineValue.to = to;
+})(InlineValue || (InlineValue = {}));
+export var InlineValueContext;
+(function (InlineValueContext) {
+    function from(inlineValueContext) {
+        return {
+            frameId: inlineValueContext.frameId,
+            stoppedLocation: Range.from(inlineValueContext.stoppedLocation)
+        };
+    }
+    InlineValueContext.from = from;
+    function to(inlineValueContext) {
+        return new types.InlineValueContext(inlineValueContext.frameId, Range.to(inlineValueContext.stoppedLocation));
+    }
+    InlineValueContext.to = to;
+})(InlineValueContext || (InlineValueContext = {}));
+export var DocumentHighlight;
+(function (DocumentHighlight) {
+    function from(documentHighlight) {
+        return {
+            range: Range.from(documentHighlight.range),
+            kind: documentHighlight.kind
+        };
+    }
+    DocumentHighlight.from = from;
+    function to(occurrence) {
+        return new types.DocumentHighlight(Range.to(occurrence.range), occurrence.kind);
+    }
+    DocumentHighlight.to = to;
+})(DocumentHighlight || (DocumentHighlight = {}));
+export var MultiDocumentHighlight;
+(function (MultiDocumentHighlight) {
+    function from(multiDocumentHighlight) {
+        return {
+            uri: multiDocumentHighlight.uri,
+            highlights: multiDocumentHighlight.highlights.map(DocumentHighlight.from)
+        };
+    }
+    MultiDocumentHighlight.from = from;
+    function to(multiDocumentHighlight) {
+        return new types.MultiDocumentHighlight(URI.revive(multiDocumentHighlight.uri), multiDocumentHighlight.highlights.map(DocumentHighlight.to));
+    }
+    MultiDocumentHighlight.to = to;
+})(MultiDocumentHighlight || (MultiDocumentHighlight = {}));
+export var CompletionTriggerKind;
+(function (CompletionTriggerKind) {
+    function to(kind) {
+        switch (kind) {
+            case 1:
+                return types.CompletionTriggerKind.TriggerCharacter;
+            case 2:
+                return types.CompletionTriggerKind.TriggerForIncompleteCompletions;
+            case 0:
+            default:
+                return types.CompletionTriggerKind.Invoke;
+        }
+    }
+    CompletionTriggerKind.to = to;
+})(CompletionTriggerKind || (CompletionTriggerKind = {}));
+export var CompletionContext;
+(function (CompletionContext) {
+    function to(context) {
+        return {
+            triggerKind: CompletionTriggerKind.to(context.triggerKind),
+            triggerCharacter: context.triggerCharacter
+        };
+    }
+    CompletionContext.to = to;
+})(CompletionContext || (CompletionContext = {}));
+export var CompletionItemTag;
+(function (CompletionItemTag) {
+    function from(kind) {
+        switch (kind) {
+            case types.CompletionItemTag.Deprecated: return 1;
+        }
+    }
+    CompletionItemTag.from = from;
+    function to(kind) {
+        switch (kind) {
+            case 1: return types.CompletionItemTag.Deprecated;
+        }
+    }
+    CompletionItemTag.to = to;
+})(CompletionItemTag || (CompletionItemTag = {}));
+export var CompletionItemKind;
+(function (CompletionItemKind) {
+    const _from = new Map([
+        [types.CompletionItemKind.Method, 0],
+        [types.CompletionItemKind.Function, 1],
+        [types.CompletionItemKind.Constructor, 2],
+        [types.CompletionItemKind.Field, 3],
+        [types.CompletionItemKind.Variable, 4],
+        [types.CompletionItemKind.Class, 5],
+        [types.CompletionItemKind.Interface, 7],
+        [types.CompletionItemKind.Struct, 6],
+        [types.CompletionItemKind.Module, 8],
+        [types.CompletionItemKind.Property, 9],
+        [types.CompletionItemKind.Unit, 12],
+        [types.CompletionItemKind.Value, 13],
+        [types.CompletionItemKind.Constant, 14],
+        [types.CompletionItemKind.Enum, 15],
+        [types.CompletionItemKind.EnumMember, 16],
+        [types.CompletionItemKind.Keyword, 17],
+        [types.CompletionItemKind.Snippet, 27],
+        [types.CompletionItemKind.Text, 18],
+        [types.CompletionItemKind.Color, 19],
+        [types.CompletionItemKind.File, 20],
+        [types.CompletionItemKind.Reference, 21],
+        [types.CompletionItemKind.Folder, 23],
+        [types.CompletionItemKind.Event, 10],
+        [types.CompletionItemKind.Operator, 11],
+        [types.CompletionItemKind.TypeParameter, 24],
+        [types.CompletionItemKind.Issue, 26],
+        [types.CompletionItemKind.User, 25],
+    ]);
+    function from(kind) {
+        return _from.get(kind) ?? 9;
+    }
+    CompletionItemKind.from = from;
+    const _to = new Map([
+        [0, types.CompletionItemKind.Method],
+        [1, types.CompletionItemKind.Function],
+        [2, types.CompletionItemKind.Constructor],
+        [3, types.CompletionItemKind.Field],
+        [4, types.CompletionItemKind.Variable],
+        [5, types.CompletionItemKind.Class],
+        [7, types.CompletionItemKind.Interface],
+        [6, types.CompletionItemKind.Struct],
+        [8, types.CompletionItemKind.Module],
+        [9, types.CompletionItemKind.Property],
+        [12, types.CompletionItemKind.Unit],
+        [13, types.CompletionItemKind.Value],
+        [14, types.CompletionItemKind.Constant],
+        [15, types.CompletionItemKind.Enum],
+        [16, types.CompletionItemKind.EnumMember],
+        [17, types.CompletionItemKind.Keyword],
+        [27, types.CompletionItemKind.Snippet],
+        [18, types.CompletionItemKind.Text],
+        [19, types.CompletionItemKind.Color],
+        [20, types.CompletionItemKind.File],
+        [21, types.CompletionItemKind.Reference],
+        [23, types.CompletionItemKind.Folder],
+        [10, types.CompletionItemKind.Event],
+        [11, types.CompletionItemKind.Operator],
+        [24, types.CompletionItemKind.TypeParameter],
+        [25, types.CompletionItemKind.User],
+        [26, types.CompletionItemKind.Issue],
+    ]);
+    function to(kind) {
+        return _to.get(kind) ?? types.CompletionItemKind.Property;
+    }
+    CompletionItemKind.to = to;
+})(CompletionItemKind || (CompletionItemKind = {}));
+export var CompletionItem;
+(function (CompletionItem) {
+    function to(suggestion, converter) {
+        const result = new types.CompletionItem(suggestion.label);
+        result.insertText = suggestion.insertText;
+        result.kind = CompletionItemKind.to(suggestion.kind);
+        result.tags = suggestion.tags?.map(CompletionItemTag.to);
+        result.detail = suggestion.detail;
+        result.documentation = htmlContent.isMarkdownString(suggestion.documentation) ? MarkdownString.to(suggestion.documentation) : suggestion.documentation;
+        result.sortText = suggestion.sortText;
+        result.filterText = suggestion.filterText;
+        result.preselect = suggestion.preselect;
+        result.commitCharacters = suggestion.commitCharacters;
+        if (editorRange.Range.isIRange(suggestion.range)) {
+            result.range = Range.to(suggestion.range);
+        }
+        else if (typeof suggestion.range === 'object') {
+            result.range = { inserting: Range.to(suggestion.range.insert), replacing: Range.to(suggestion.range.replace) };
+        }
+        result.keepWhitespace = typeof suggestion.insertTextRules === 'undefined' ? false : Boolean(suggestion.insertTextRules & 1);
+        if (typeof suggestion.insertTextRules !== 'undefined' && suggestion.insertTextRules & 4) {
+            result.insertText = new types.SnippetString(suggestion.insertText);
+        }
+        else {
+            result.insertText = suggestion.insertText;
+            result.textEdit = result.range instanceof types.Range ? new types.TextEdit(result.range, result.insertText) : undefined;
+        }
+        if (suggestion.additionalTextEdits && suggestion.additionalTextEdits.length > 0) {
+            result.additionalTextEdits = suggestion.additionalTextEdits.map(e => TextEdit.to(e));
+        }
+        result.command = converter && suggestion.command ? converter.fromInternal(suggestion.command) : undefined;
+        return result;
+    }
+    CompletionItem.to = to;
+})(CompletionItem || (CompletionItem = {}));
+export var ParameterInformation;
+(function (ParameterInformation) {
+    function from(info) {
+        if (typeof info.label !== 'string' && !Array.isArray(info.label)) {
+            throw new TypeError('Invalid label');
+        }
+        return {
+            label: info.label,
+            documentation: MarkdownString.fromStrict(info.documentation)
+        };
+    }
+    ParameterInformation.from = from;
+    function to(info) {
+        return {
+            label: info.label,
+            documentation: htmlContent.isMarkdownString(info.documentation) ? MarkdownString.to(info.documentation) : info.documentation
+        };
+    }
+    ParameterInformation.to = to;
+})(ParameterInformation || (ParameterInformation = {}));
+export var SignatureInformation;
+(function (SignatureInformation) {
+    function from(info) {
+        return {
+            label: info.label,
+            documentation: MarkdownString.fromStrict(info.documentation),
+            parameters: Array.isArray(info.parameters) ? info.parameters.map(ParameterInformation.from) : [],
+            activeParameter: info.activeParameter,
+        };
+    }
+    SignatureInformation.from = from;
+    function to(info) {
+        return {
+            label: info.label,
+            documentation: htmlContent.isMarkdownString(info.documentation) ? MarkdownString.to(info.documentation) : info.documentation,
+            parameters: Array.isArray(info.parameters) ? info.parameters.map(ParameterInformation.to) : [],
+            activeParameter: info.activeParameter,
+        };
+    }
+    SignatureInformation.to = to;
+})(SignatureInformation || (SignatureInformation = {}));
+export var SignatureHelp;
+(function (SignatureHelp) {
+    function from(help) {
+        return {
+            activeSignature: help.activeSignature,
+            activeParameter: help.activeParameter,
+            signatures: Array.isArray(help.signatures) ? help.signatures.map(SignatureInformation.from) : [],
+        };
+    }
+    SignatureHelp.from = from;
+    function to(help) {
+        return {
+            activeSignature: help.activeSignature,
+            activeParameter: help.activeParameter,
+            signatures: Array.isArray(help.signatures) ? help.signatures.map(SignatureInformation.to) : [],
+        };
+    }
+    SignatureHelp.to = to;
+})(SignatureHelp || (SignatureHelp = {}));
+export var InlayHint;
+(function (InlayHint) {
+    function to(converter, hint) {
+        const res = new types.InlayHint(Position.to(hint.position), typeof hint.label === 'string' ? hint.label : hint.label.map(InlayHintLabelPart.to.bind(undefined, converter)), hint.kind && InlayHintKind.to(hint.kind));
+        res.textEdits = hint.textEdits && hint.textEdits.map(TextEdit.to);
+        res.tooltip = htmlContent.isMarkdownString(hint.tooltip) ? MarkdownString.to(hint.tooltip) : hint.tooltip;
+        res.paddingLeft = hint.paddingLeft;
+        res.paddingRight = hint.paddingRight;
+        return res;
+    }
+    InlayHint.to = to;
+})(InlayHint || (InlayHint = {}));
+export var InlayHintLabelPart;
+(function (InlayHintLabelPart) {
+    function to(converter, part) {
+        const result = new types.InlayHintLabelPart(part.label);
+        result.tooltip = htmlContent.isMarkdownString(part.tooltip)
+            ? MarkdownString.to(part.tooltip)
+            : part.tooltip;
+        if (languages.Command.is(part.command)) {
+            result.command = converter.fromInternal(part.command);
+        }
+        if (part.location) {
+            result.location = location.to(part.location);
+        }
+        return result;
+    }
+    InlayHintLabelPart.to = to;
+})(InlayHintLabelPart || (InlayHintLabelPart = {}));
+export var InlayHintKind;
+(function (InlayHintKind) {
+    function from(kind) {
+        return kind;
+    }
+    InlayHintKind.from = from;
+    function to(kind) {
+        return kind;
+    }
+    InlayHintKind.to = to;
+})(InlayHintKind || (InlayHintKind = {}));
+export var DocumentLink;
+(function (DocumentLink) {
+    function from(link) {
+        return {
+            range: Range.from(link.range),
+            url: link.target,
+            tooltip: link.tooltip
+        };
+    }
+    DocumentLink.from = from;
+    function to(link) {
+        let target = undefined;
+        if (link.url) {
+            try {
+                target = typeof link.url === 'string' ? URI.parse(link.url, true) : URI.revive(link.url);
+            }
+            catch (err) {
+            }
+        }
+        const result = new types.DocumentLink(Range.to(link.range), target);
+        result.tooltip = link.tooltip;
+        return result;
+    }
+    DocumentLink.to = to;
+})(DocumentLink || (DocumentLink = {}));
+export var ColorPresentation;
+(function (ColorPresentation) {
+    function to(colorPresentation) {
+        const cp = new types.ColorPresentation(colorPresentation.label);
+        if (colorPresentation.textEdit) {
+            cp.textEdit = TextEdit.to(colorPresentation.textEdit);
+        }
+        if (colorPresentation.additionalTextEdits) {
+            cp.additionalTextEdits = colorPresentation.additionalTextEdits.map(value => TextEdit.to(value));
+        }
+        return cp;
+    }
+    ColorPresentation.to = to;
+    function from(colorPresentation) {
+        return {
+            label: colorPresentation.label,
+            textEdit: colorPresentation.textEdit ? TextEdit.from(colorPresentation.textEdit) : undefined,
+            additionalTextEdits: colorPresentation.additionalTextEdits ? colorPresentation.additionalTextEdits.map(value => TextEdit.from(value)) : undefined
+        };
+    }
+    ColorPresentation.from = from;
+})(ColorPresentation || (ColorPresentation = {}));
+export var Color;
+(function (Color) {
+    function to(c) {
+        return new types.Color(c[0], c[1], c[2], c[3]);
+    }
+    Color.to = to;
+    function from(color) {
+        return [color.red, color.green, color.blue, color.alpha];
+    }
+    Color.from = from;
+})(Color || (Color = {}));
+export var SelectionRange;
+(function (SelectionRange) {
+    function from(obj) {
+        return { range: Range.from(obj.range) };
+    }
+    SelectionRange.from = from;
+    function to(obj) {
+        return new types.SelectionRange(Range.to(obj.range));
+    }
+    SelectionRange.to = to;
+})(SelectionRange || (SelectionRange = {}));
+export var TextDocumentSaveReason;
+(function (TextDocumentSaveReason) {
+    function to(reason) {
+        switch (reason) {
+            case 2:
+                return types.TextDocumentSaveReason.AfterDelay;
+            case 1:
+                return types.TextDocumentSaveReason.Manual;
+            case 3:
+            case 4:
+                return types.TextDocumentSaveReason.FocusOut;
+        }
+    }
+    TextDocumentSaveReason.to = to;
+})(TextDocumentSaveReason || (TextDocumentSaveReason = {}));
+export var TextEditorLineNumbersStyle;
+(function (TextEditorLineNumbersStyle) {
+    function from(style) {
+        switch (style) {
+            case types.TextEditorLineNumbersStyle.Off:
+                return 0;
+            case types.TextEditorLineNumbersStyle.Relative:
+                return 2;
+            case types.TextEditorLineNumbersStyle.Interval:
+                return 3;
+            case types.TextEditorLineNumbersStyle.On:
+            default:
+                return 1;
+        }
+    }
+    TextEditorLineNumbersStyle.from = from;
+    function to(style) {
+        switch (style) {
+            case 0:
+                return types.TextEditorLineNumbersStyle.Off;
+            case 2:
+                return types.TextEditorLineNumbersStyle.Relative;
+            case 3:
+                return types.TextEditorLineNumbersStyle.Interval;
+            case 1:
+            default:
+                return types.TextEditorLineNumbersStyle.On;
+        }
+    }
+    TextEditorLineNumbersStyle.to = to;
+})(TextEditorLineNumbersStyle || (TextEditorLineNumbersStyle = {}));
+export var EndOfLine;
+(function (EndOfLine) {
+    function from(eol) {
+        if (eol === types.EndOfLine.CRLF) {
+            return 1;
+        }
+        else if (eol === types.EndOfLine.LF) {
+            return 0;
+        }
+        return undefined;
+    }
+    EndOfLine.from = from;
+    function to(eol) {
+        if (eol === 1) {
+            return types.EndOfLine.CRLF;
+        }
+        else if (eol === 0) {
+            return types.EndOfLine.LF;
+        }
+        return undefined;
+    }
+    EndOfLine.to = to;
+})(EndOfLine || (EndOfLine = {}));
+export var ProgressLocation;
+(function (ProgressLocation) {
+    function from(loc) {
+        if (typeof loc === 'object') {
+            return loc.viewId;
+        }
+        switch (loc) {
+            case types.ProgressLocation.SourceControl: return 3;
+            case types.ProgressLocation.Window: return 10;
+            case types.ProgressLocation.Notification: return 15;
+        }
+        throw new Error(`Unknown 'ProgressLocation'`);
+    }
+    ProgressLocation.from = from;
+})(ProgressLocation || (ProgressLocation = {}));
+export var FoldingRange;
+(function (FoldingRange) {
+    function from(r) {
+        const range = { start: r.start + 1, end: r.end + 1 };
+        if (r.kind) {
+            range.kind = FoldingRangeKind.from(r.kind);
+        }
+        return range;
+    }
+    FoldingRange.from = from;
+    function to(r) {
+        const range = { start: r.start - 1, end: r.end - 1 };
+        if (r.kind) {
+            range.kind = FoldingRangeKind.to(r.kind);
+        }
+        return range;
+    }
+    FoldingRange.to = to;
+})(FoldingRange || (FoldingRange = {}));
+export var FoldingRangeKind;
+(function (FoldingRangeKind) {
+    function from(kind) {
+        if (kind) {
+            switch (kind) {
+                case types.FoldingRangeKind.Comment:
+                    return languages.FoldingRangeKind.Comment;
+                case types.FoldingRangeKind.Imports:
+                    return languages.FoldingRangeKind.Imports;
+                case types.FoldingRangeKind.Region:
+                    return languages.FoldingRangeKind.Region;
+            }
+        }
+        return undefined;
+    }
+    FoldingRangeKind.from = from;
+    function to(kind) {
+        if (kind) {
+            switch (kind.value) {
+                case languages.FoldingRangeKind.Comment.value:
+                    return types.FoldingRangeKind.Comment;
+                case languages.FoldingRangeKind.Imports.value:
+                    return types.FoldingRangeKind.Imports;
+                case languages.FoldingRangeKind.Region.value:
+                    return types.FoldingRangeKind.Region;
+            }
+        }
+        return undefined;
+    }
+    FoldingRangeKind.to = to;
+})(FoldingRangeKind || (FoldingRangeKind = {}));
+export var TextEditorOpenOptions;
+(function (TextEditorOpenOptions) {
+    function from(options) {
+        if (options) {
+            return {
+                pinned: typeof options.preview === 'boolean' ? !options.preview : undefined,
+                inactive: options.background,
+                preserveFocus: options.preserveFocus,
+                selection: typeof options.selection === 'object' ? Range.from(options.selection) : undefined,
+                override: typeof options.override === 'boolean' ? DEFAULT_EDITOR_ASSOCIATION.id : undefined
+            };
+        }
+        return undefined;
+    }
+    TextEditorOpenOptions.from = from;
+})(TextEditorOpenOptions || (TextEditorOpenOptions = {}));
+export var GlobPattern;
+(function (GlobPattern) {
+    function from(pattern) {
+        if (pattern instanceof types.RelativePattern) {
+            return pattern.toJSON();
+        }
+        if (typeof pattern === 'string') {
+            return pattern;
+        }
+        if (isRelativePatternShape(pattern) || isLegacyRelativePatternShape(pattern)) {
+            return new types.RelativePattern(pattern.baseUri ?? pattern.base, pattern.pattern).toJSON();
+        }
+        return pattern;
+    }
+    GlobPattern.from = from;
+    function isRelativePatternShape(obj) {
+        const rp = obj;
+        if (!rp) {
+            return false;
+        }
+        return URI.isUri(rp.baseUri) && typeof rp.pattern === 'string';
+    }
+    function isLegacyRelativePatternShape(obj) {
+        const rp = obj;
+        if (!rp) {
+            return false;
+        }
+        return typeof rp.base === 'string' && typeof rp.pattern === 'string';
+    }
+    function to(pattern) {
+        if (typeof pattern === 'string') {
+            return pattern;
+        }
+        return new types.RelativePattern(URI.revive(pattern.baseUri), pattern.pattern);
+    }
+    GlobPattern.to = to;
+})(GlobPattern || (GlobPattern = {}));
+export var LanguageSelector;
+(function (LanguageSelector) {
+    function from(selector) {
+        if (!selector) {
+            return undefined;
+        }
+        else if (Array.isArray(selector)) {
+            return selector.map(from);
+        }
+        else if (typeof selector === 'string') {
+            return selector;
+        }
+        else {
+            const filter = selector;
+            return {
+                language: filter.language,
+                scheme: filter.scheme,
+                pattern: GlobPattern.from(filter.pattern),
+                exclusive: filter.exclusive,
+                notebookType: filter.notebookType
+            };
+        }
+    }
+    LanguageSelector.from = from;
+})(LanguageSelector || (LanguageSelector = {}));
+export var MappedEditsContext;
+(function (MappedEditsContext) {
+    function is(v) {
+        return (!!v && typeof v === 'object' &&
+            'documents' in v &&
+            Array.isArray(v.documents) &&
+            v.documents.every(subArr => Array.isArray(subArr) &&
+                subArr.every(DocumentContextItem.is)));
+    }
+    MappedEditsContext.is = is;
+    function from(extContext) {
+        return {
+            documents: extContext.documents.map((subArray) => subArray.map(DocumentContextItem.from)),
+            conversation: extContext.conversation?.map(item => ((item.type === 'request') ?
+                {
+                    type: 'request',
+                    message: item.message,
+                } :
+                {
+                    type: 'response',
+                    message: item.message,
+                    result: item.result ? ChatAgentResult.from(item.result) : undefined,
+                    references: item.references?.map(DocumentContextItem.from)
+                }))
+        };
+    }
+    MappedEditsContext.from = from;
+})(MappedEditsContext || (MappedEditsContext = {}));
+export var DocumentContextItem;
+(function (DocumentContextItem) {
+    function is(item) {
+        return (typeof item === 'object' &&
+            item !== null &&
+            'uri' in item && URI.isUri(item.uri) &&
+            'version' in item && typeof item.version === 'number' &&
+            'ranges' in item && Array.isArray(item.ranges) && item.ranges.every((r) => r instanceof types.Range));
+    }
+    DocumentContextItem.is = is;
+    function from(item) {
+        return {
+            uri: item.uri,
+            version: item.version,
+            ranges: item.ranges.map(r => Range.from(r)),
+        };
+    }
+    DocumentContextItem.from = from;
+    function to(item) {
+        return {
+            uri: URI.revive(item.uri),
+            version: item.version,
+            ranges: item.ranges.map(r => Range.to(r)),
+        };
+    }
+    DocumentContextItem.to = to;
+})(DocumentContextItem || (DocumentContextItem = {}));
+export var NotebookRange;
+(function (NotebookRange) {
+    function from(range) {
+        return { start: range.start, end: range.end };
+    }
+    NotebookRange.from = from;
+    function to(range) {
+        return new types.NotebookRange(range.start, range.end);
+    }
+    NotebookRange.to = to;
+})(NotebookRange || (NotebookRange = {}));
+export var NotebookCellExecutionSummary;
+(function (NotebookCellExecutionSummary) {
+    function to(data) {
+        return {
+            timing: typeof data.runStartTime === 'number' && typeof data.runEndTime === 'number' ? { startTime: data.runStartTime, endTime: data.runEndTime } : undefined,
+            executionOrder: data.executionOrder,
+            success: data.lastRunSuccess
+        };
+    }
+    NotebookCellExecutionSummary.to = to;
+    function from(data) {
+        return {
+            lastRunSuccess: data.success,
+            runStartTime: data.timing?.startTime,
+            runEndTime: data.timing?.endTime,
+            executionOrder: data.executionOrder
+        };
+    }
+    NotebookCellExecutionSummary.from = from;
+})(NotebookCellExecutionSummary || (NotebookCellExecutionSummary = {}));
+export var NotebookCellExecutionState;
+(function (NotebookCellExecutionState) {
+    function to(state) {
+        if (state === notebooks.NotebookCellExecutionState.Unconfirmed) {
+            return types.NotebookCellExecutionState.Pending;
+        }
+        else if (state === notebooks.NotebookCellExecutionState.Pending) {
+            return undefined;
+        }
+        else if (state === notebooks.NotebookCellExecutionState.Executing) {
+            return types.NotebookCellExecutionState.Executing;
+        }
+        else {
+            throw new Error(`Unknown state: ${state}`);
+        }
+    }
+    NotebookCellExecutionState.to = to;
+})(NotebookCellExecutionState || (NotebookCellExecutionState = {}));
+export var NotebookCellKind;
+(function (NotebookCellKind) {
+    function from(data) {
+        switch (data) {
+            case types.NotebookCellKind.Markup:
+                return notebooks.CellKind.Markup;
+            case types.NotebookCellKind.Code:
+            default:
+                return notebooks.CellKind.Code;
+        }
+    }
+    NotebookCellKind.from = from;
+    function to(data) {
+        switch (data) {
+            case notebooks.CellKind.Markup:
+                return types.NotebookCellKind.Markup;
+            case notebooks.CellKind.Code:
+            default:
+                return types.NotebookCellKind.Code;
+        }
+    }
+    NotebookCellKind.to = to;
+})(NotebookCellKind || (NotebookCellKind = {}));
+export var NotebookData;
+(function (NotebookData) {
+    function from(data) {
+        const res = {
+            metadata: data.metadata ?? Object.create(null),
+            cells: [],
+        };
+        for (const cell of data.cells) {
+            types.NotebookCellData.validate(cell);
+            res.cells.push(NotebookCellData.from(cell));
+        }
+        return res;
+    }
+    NotebookData.from = from;
+    function to(data) {
+        const res = new types.NotebookData(data.cells.map(NotebookCellData.to));
+        if (!isEmptyObject(data.metadata)) {
+            res.metadata = data.metadata;
+        }
+        return res;
+    }
+    NotebookData.to = to;
+})(NotebookData || (NotebookData = {}));
+export var NotebookCellData;
+(function (NotebookCellData) {
+    function from(data) {
+        return {
+            cellKind: NotebookCellKind.from(data.kind),
+            language: data.languageId,
+            mime: data.mime,
+            source: data.value,
+            metadata: data.metadata,
+            internalMetadata: NotebookCellExecutionSummary.from(data.executionSummary ?? {}),
+            outputs: data.outputs ? data.outputs.map(NotebookCellOutput.from) : []
+        };
+    }
+    NotebookCellData.from = from;
+    function to(data) {
+        return new types.NotebookCellData(NotebookCellKind.to(data.cellKind), data.source, data.language, data.mime, data.outputs ? data.outputs.map(NotebookCellOutput.to) : undefined, data.metadata, data.internalMetadata ? NotebookCellExecutionSummary.to(data.internalMetadata) : undefined);
+    }
+    NotebookCellData.to = to;
+})(NotebookCellData || (NotebookCellData = {}));
+export var NotebookCellOutputItem;
+(function (NotebookCellOutputItem) {
+    function from(item) {
+        return {
+            mime: item.mime,
+            valueBytes: VSBuffer.wrap(item.data),
+        };
+    }
+    NotebookCellOutputItem.from = from;
+    function to(item) {
+        return new types.NotebookCellOutputItem(item.valueBytes.buffer, item.mime);
+    }
+    NotebookCellOutputItem.to = to;
+})(NotebookCellOutputItem || (NotebookCellOutputItem = {}));
+export var NotebookCellOutput;
+(function (NotebookCellOutput) {
+    function from(output) {
+        return {
+            outputId: output.id,
+            items: output.items.map(NotebookCellOutputItem.from),
+            metadata: output.metadata
+        };
+    }
+    NotebookCellOutput.from = from;
+    function to(output) {
+        const items = output.items.map(NotebookCellOutputItem.to);
+        return new types.NotebookCellOutput(items, output.outputId, output.metadata);
+    }
+    NotebookCellOutput.to = to;
+})(NotebookCellOutput || (NotebookCellOutput = {}));
+export var NotebookExclusiveDocumentPattern;
+(function (NotebookExclusiveDocumentPattern) {
+    function from(pattern) {
+        if (isExclusivePattern(pattern)) {
+            return {
+                include: GlobPattern.from(pattern.include) ?? undefined,
+                exclude: GlobPattern.from(pattern.exclude) ?? undefined,
+            };
+        }
+        return GlobPattern.from(pattern) ?? undefined;
+    }
+    NotebookExclusiveDocumentPattern.from = from;
+    function to(pattern) {
+        if (isExclusivePattern(pattern)) {
+            return {
+                include: GlobPattern.to(pattern.include),
+                exclude: GlobPattern.to(pattern.exclude)
+            };
+        }
+        return GlobPattern.to(pattern);
+    }
+    NotebookExclusiveDocumentPattern.to = to;
+    function isExclusivePattern(obj) {
+        const ep = obj;
+        if (!ep) {
+            return false;
+        }
+        return !isUndefinedOrNull(ep.include) && !isUndefinedOrNull(ep.exclude);
+    }
+})(NotebookExclusiveDocumentPattern || (NotebookExclusiveDocumentPattern = {}));
+export var NotebookStatusBarItem;
+(function (NotebookStatusBarItem) {
+    function from(item, commandsConverter, disposables) {
+        const command = typeof item.command === 'string' ? { title: '', command: item.command } : item.command;
+        return {
+            alignment: item.alignment === types.NotebookCellStatusBarAlignment.Left ? 1 : 2,
+            command: commandsConverter.toInternal(command, disposables),
+            text: item.text,
+            tooltip: item.tooltip,
+            accessibilityInformation: item.accessibilityInformation,
+            priority: item.priority
+        };
+    }
+    NotebookStatusBarItem.from = from;
+})(NotebookStatusBarItem || (NotebookStatusBarItem = {}));
+export var NotebookKernelSourceAction;
+(function (NotebookKernelSourceAction) {
+    function from(item, commandsConverter, disposables) {
+        const command = typeof item.command === 'string' ? { title: '', command: item.command } : item.command;
+        return {
+            command: commandsConverter.toInternal(command, disposables),
+            label: item.label,
+            description: item.description,
+            detail: item.detail,
+            documentation: item.documentation
+        };
+    }
+    NotebookKernelSourceAction.from = from;
+})(NotebookKernelSourceAction || (NotebookKernelSourceAction = {}));
+export var NotebookDocumentContentOptions;
+(function (NotebookDocumentContentOptions) {
+    function from(options) {
+        return {
+            transientOutputs: options?.transientOutputs ?? false,
+            transientCellMetadata: options?.transientCellMetadata ?? {},
+            transientDocumentMetadata: options?.transientDocumentMetadata ?? {},
+            cellContentMetadata: options?.cellContentMetadata ?? {}
+        };
+    }
+    NotebookDocumentContentOptions.from = from;
+})(NotebookDocumentContentOptions || (NotebookDocumentContentOptions = {}));
+export var NotebookRendererScript;
+(function (NotebookRendererScript) {
+    function from(preload) {
+        return {
+            uri: preload.uri,
+            provides: preload.provides
+        };
+    }
+    NotebookRendererScript.from = from;
+    function to(preload) {
+        return new types.NotebookRendererScript(URI.revive(preload.uri), preload.provides);
+    }
+    NotebookRendererScript.to = to;
+})(NotebookRendererScript || (NotebookRendererScript = {}));
+export var TestMessage;
+(function (TestMessage) {
+    function from(message) {
+        return {
+            message: MarkdownString.fromStrict(message.message) || '',
+            type: 0,
+            expected: message.expectedOutput,
+            actual: message.actualOutput,
+            contextValue: message.contextValue,
+            location: message.location && ({ range: Range.from(message.location.range), uri: message.location.uri }),
+            stackTrace: message.stackTrace?.map(s => ({
+                label: s.label,
+                position: s.position && Position.from(s.position),
+                uri: s.uri && URI.revive(s.uri).toJSON(),
+            })),
+        };
+    }
+    TestMessage.from = from;
+    function to(item) {
+        const message = new types.TestMessage(typeof item.message === 'string' ? item.message : MarkdownString.to(item.message));
+        message.actualOutput = item.actual;
+        message.expectedOutput = item.expected;
+        message.contextValue = item.contextValue;
+        message.location = item.location ? location.to(item.location) : undefined;
+        return message;
+    }
+    TestMessage.to = to;
+})(TestMessage || (TestMessage = {}));
+export var TestTag;
+(function (TestTag) {
+    TestTag.namespace = namespaceTestTag;
+    TestTag.denamespace = denamespaceTestTag;
+})(TestTag || (TestTag = {}));
+export var TestItem;
+(function (TestItem) {
+    function from(item) {
+        const ctrlId = getPrivateApiFor(item).controllerId;
+        return {
+            extId: TestId.fromExtHostTestItem(item, ctrlId).toString(),
+            label: item.label,
+            uri: URI.revive(item.uri),
+            busy: item.busy,
+            tags: item.tags.map(t => TestTag.namespace(ctrlId, t.id)),
+            range: editorRange.Range.lift(Range.from(item.range)),
+            description: item.description || null,
+            sortText: item.sortText || null,
+            error: item.error ? (MarkdownString.fromStrict(item.error) || null) : null,
+        };
+    }
+    TestItem.from = from;
+    function toPlain(item) {
+        return {
+            parent: undefined,
+            error: undefined,
+            id: TestId.fromString(item.extId).localId,
+            label: item.label,
+            uri: URI.revive(item.uri),
+            tags: (item.tags || []).map(t => {
+                const { tagId } = TestTag.denamespace(t);
+                return new types.TestTag(tagId);
+            }),
+            children: {
+                add: () => { },
+                delete: () => { },
+                forEach: () => { },
+                *[Symbol.iterator]() { },
+                get: () => undefined,
+                replace: () => { },
+                size: 0,
+            },
+            range: Range.to(item.range || undefined),
+            canResolveChildren: false,
+            busy: item.busy,
+            description: item.description || undefined,
+            sortText: item.sortText || undefined,
+        };
+    }
+    TestItem.toPlain = toPlain;
+})(TestItem || (TestItem = {}));
+(function (TestTag) {
+    function from(tag) {
+        return { id: tag.id };
+    }
+    TestTag.from = from;
+    function to(tag) {
+        return new types.TestTag(tag.id);
+    }
+    TestTag.to = to;
+})(TestTag || (TestTag = {}));
+export var TestResults;
+(function (TestResults) {
+    const convertTestResultItem = (node, parent) => {
+        const item = node.value;
+        if (!item) {
+            return undefined;
+        }
+        const snapshot = ({
+            ...TestItem.toPlain(item.item),
+            parent,
+            taskStates: item.tasks.map(t => ({
+                state: t.state,
+                duration: t.duration,
+                messages: t.messages
+                    .filter((m) => m.type === 0)
+                    .map(TestMessage.to),
+            })),
+            children: [],
+        });
+        if (node.children) {
+            for (const child of node.children.values()) {
+                const c = convertTestResultItem(child, snapshot);
+                if (c) {
+                    snapshot.children.push(c);
+                }
+            }
+        }
+        return snapshot;
+    };
+    function to(serialized) {
+        const tree = new WellDefinedPrefixTree();
+        for (const item of serialized.items) {
+            tree.insert(TestId.fromString(item.item.extId).path, item);
+        }
+        const queue = [tree.nodes];
+        const roots = [];
+        while (queue.length) {
+            for (const node of queue.pop()) {
+                if (node.value) {
+                    roots.push(node);
+                }
+                else if (node.children) {
+                    queue.push(node.children.values());
+                }
+            }
+        }
+        return {
+            completedAt: serialized.completedAt,
+            results: roots.map(r => convertTestResultItem(r)).filter(isDefined),
+        };
+    }
+    TestResults.to = to;
+})(TestResults || (TestResults = {}));
+export var TestCoverage;
+(function (TestCoverage) {
+    function fromCoverageCount(count) {
+        return { covered: count.covered, total: count.total };
+    }
+    function fromLocation(location) {
+        return 'line' in location ? Position.from(location) : Range.from(location);
+    }
+    function toLocation(location) {
+        if (!location) {
+            return undefined;
+        }
+        return 'endLineNumber' in location ? Range.to(location) : Position.to(location);
+    }
+    function to(serialized) {
+        if (serialized.type === 1) {
+            const branches = [];
+            if (serialized.branches) {
+                for (const branch of serialized.branches) {
+                    branches.push({
+                        executed: branch.count,
+                        location: toLocation(branch.location),
+                        label: branch.label
+                    });
+                }
+            }
+            return new types.StatementCoverage(serialized.count, toLocation(serialized.location), serialized.branches?.map(b => new types.BranchCoverage(b.count, toLocation(b.location), b.label)));
+        }
+        else {
+            return new types.DeclarationCoverage(serialized.name, serialized.count, toLocation(serialized.location));
+        }
+    }
+    TestCoverage.to = to;
+    function fromDetails(coverage) {
+        if (typeof coverage.executed === 'number' && coverage.executed < 0) {
+            throw new Error(`Invalid coverage count ${coverage.executed}`);
+        }
+        if ('branches' in coverage) {
+            return {
+                count: coverage.executed,
+                location: fromLocation(coverage.location),
+                type: 1,
+                branches: coverage.branches.length
+                    ? coverage.branches.map(b => ({ count: b.executed, location: b.location && fromLocation(b.location), label: b.label }))
+                    : undefined,
+            };
+        }
+        else {
+            return {
+                type: 0,
+                name: coverage.name,
+                count: coverage.executed,
+                location: fromLocation(coverage.location),
+            };
+        }
+    }
+    TestCoverage.fromDetails = fromDetails;
+    function fromFile(controllerId, id, coverage) {
+        types.validateTestCoverageCount(coverage.statementCoverage);
+        types.validateTestCoverageCount(coverage.branchCoverage);
+        types.validateTestCoverageCount(coverage.declarationCoverage);
+        return {
+            id,
+            uri: coverage.uri,
+            statement: fromCoverageCount(coverage.statementCoverage),
+            branch: coverage.branchCoverage && fromCoverageCount(coverage.branchCoverage),
+            declaration: coverage.declarationCoverage && fromCoverageCount(coverage.declarationCoverage),
+            testIds: coverage instanceof types.FileCoverage && coverage.fromTests.length ?
+                coverage.fromTests.map(t => TestId.fromExtHostTestItem(t, controllerId).toString()) : undefined,
+        };
+    }
+    TestCoverage.fromFile = fromFile;
+})(TestCoverage || (TestCoverage = {}));
+export var CodeActionTriggerKind;
+(function (CodeActionTriggerKind) {
+    function to(value) {
+        switch (value) {
+            case 1:
+                return types.CodeActionTriggerKind.Invoke;
+            case 2:
+                return types.CodeActionTriggerKind.Automatic;
+        }
+    }
+    CodeActionTriggerKind.to = to;
+})(CodeActionTriggerKind || (CodeActionTriggerKind = {}));
+export var TypeHierarchyItem;
+(function (TypeHierarchyItem) {
+    function to(item) {
+        const result = new types.TypeHierarchyItem(SymbolKind.to(item.kind), item.name, item.detail || '', URI.revive(item.uri), Range.to(item.range), Range.to(item.selectionRange));
+        result._sessionId = item._sessionId;
+        result._itemId = item._itemId;
+        return result;
+    }
+    TypeHierarchyItem.to = to;
+    function from(item, sessionId, itemId) {
+        sessionId = sessionId ?? item._sessionId;
+        itemId = itemId ?? item._itemId;
+        if (sessionId === undefined || itemId === undefined) {
+            throw new Error('invalid item');
+        }
+        return {
+            _sessionId: sessionId,
+            _itemId: itemId,
+            kind: SymbolKind.from(item.kind),
+            name: item.name,
+            detail: item.detail ?? '',
+            uri: item.uri,
+            range: Range.from(item.range),
+            selectionRange: Range.from(item.selectionRange),
+            tags: item.tags?.map(SymbolTag.from)
+        };
+    }
+    TypeHierarchyItem.from = from;
+})(TypeHierarchyItem || (TypeHierarchyItem = {}));
+export var ViewBadge;
+(function (ViewBadge) {
+    function from(badge) {
+        if (!badge) {
+            return undefined;
+        }
+        return {
+            value: badge.value,
+            tooltip: badge.tooltip
+        };
+    }
+    ViewBadge.from = from;
+})(ViewBadge || (ViewBadge = {}));
+export var DataTransferItem;
+(function (DataTransferItem) {
+    function to(mime, item, resolveFileData) {
+        const file = item.fileData;
+        if (file) {
+            return new types.InternalFileDataTransferItem(new types.DataTransferFile(file.name, URI.revive(file.uri), file.id, createSingleCallFunction(() => resolveFileData(file.id))));
+        }
+        if (mime === Mimes.uriList && item.uriListData) {
+            return new types.InternalDataTransferItem(reviveUriList(item.uriListData));
+        }
+        return new types.InternalDataTransferItem(item.asString);
+    }
+    DataTransferItem.to = to;
+    async function from(mime, item) {
+        const stringValue = await item.asString();
+        if (mime === Mimes.uriList) {
+            return {
+                asString: stringValue,
+                fileData: undefined,
+                uriListData: serializeUriList(stringValue),
+            };
+        }
+        const fileValue = item.asFile();
+        return {
+            asString: stringValue,
+            fileData: fileValue ? {
+                name: fileValue.name,
+                uri: fileValue.uri,
+                id: fileValue._itemId ?? fileValue.id,
+            } : undefined,
+        };
+    }
+    DataTransferItem.from = from;
+    function serializeUriList(stringValue) {
+        return UriList.split(stringValue).map(part => {
+            if (part.startsWith('#')) {
+                return part;
+            }
+            try {
+                return URI.parse(part);
+            }
+            catch {
+            }
+            return part;
+        });
+    }
+    function reviveUriList(parts) {
+        return UriList.create(parts.map(part => {
+            return typeof part === 'string' ? part : URI.revive(part);
+        }));
+    }
+})(DataTransferItem || (DataTransferItem = {}));
+export var DataTransfer;
+(function (DataTransfer) {
+    function toDataTransfer(value, resolveFileData) {
+        const init = value.items.map(([type, item]) => {
+            return [type, DataTransferItem.to(type, item, resolveFileData)];
+        });
+        return new types.DataTransfer(init);
+    }
+    DataTransfer.toDataTransfer = toDataTransfer;
+    async function from(dataTransfer) {
+        const newDTO = { items: [] };
+        const promises = [];
+        for (const [mime, value] of dataTransfer) {
+            promises.push((async () => {
+                newDTO.items.push([mime, await DataTransferItem.from(mime, value)]);
+            })());
+        }
+        await Promise.all(promises);
+        return newDTO;
+    }
+    DataTransfer.from = from;
+})(DataTransfer || (DataTransfer = {}));
+export var ChatFollowup;
+(function (ChatFollowup) {
+    function from(followup, request) {
+        return {
+            kind: 'reply',
+            agentId: followup.participant ?? request?.agentId ?? '',
+            subCommand: followup.command ?? request?.command,
+            message: followup.prompt,
+            title: followup.label
+        };
+    }
+    ChatFollowup.from = from;
+    function to(followup) {
+        return {
+            prompt: followup.message,
+            label: followup.title,
+            participant: followup.agentId,
+            command: followup.subCommand,
+        };
+    }
+    ChatFollowup.to = to;
+})(ChatFollowup || (ChatFollowup = {}));
+export var LanguageModelChatMessageRole;
+(function (LanguageModelChatMessageRole) {
+    function to(role) {
+        switch (role) {
+            case 0: return types.LanguageModelChatMessageRole.System;
+            case 1: return types.LanguageModelChatMessageRole.User;
+            case 2: return types.LanguageModelChatMessageRole.Assistant;
+        }
+    }
+    LanguageModelChatMessageRole.to = to;
+    function from(role) {
+        switch (role) {
+            case types.LanguageModelChatMessageRole.System: return 0;
+            case types.LanguageModelChatMessageRole.User: return 1;
+            case types.LanguageModelChatMessageRole.Assistant: return 2;
+        }
+        return 1;
+    }
+    LanguageModelChatMessageRole.from = from;
+})(LanguageModelChatMessageRole || (LanguageModelChatMessageRole = {}));
+export var LanguageModelChatMessage;
+(function (LanguageModelChatMessage) {
+    function to(message) {
+        const content2 = message.content.map(c => {
+            if (c.type === 'text') {
+                return c.value;
+            }
+            else if (c.type === 'tool_result') {
+                return new types.LanguageModelToolResultPart(c.toolCallId, c.value, c.isError);
+            }
+            else {
+                return new types.LanguageModelToolCallPart(c.name, c.toolCallId, c.parameters);
+            }
+        });
+        const content = content2.find(c => typeof c === 'string') ?? '';
+        const role = LanguageModelChatMessageRole.to(message.role);
+        const result = new types.LanguageModelChatMessage(role, content, message.name);
+        result.content2 = content2;
+        return result;
+    }
+    LanguageModelChatMessage.to = to;
+    function from(message) {
+        const role = LanguageModelChatMessageRole.from(message.role);
+        const name = message.name;
+        const content = message.content2.map((c) => {
+            if (c instanceof types.LanguageModelToolResultPart) {
+                return {
+                    type: 'tool_result',
+                    toolCallId: c.toolCallId,
+                    value: c.content,
+                    isError: c.isError
+                };
+            }
+            else if (c instanceof types.LanguageModelToolCallPart) {
+                return {
+                    type: 'tool_use',
+                    toolCallId: c.toolCallId,
+                    name: c.name,
+                    parameters: c.parameters
+                };
+            }
+            else {
+                if (typeof c !== 'string') {
+                    throw new Error('Unexpected chat message content type');
+                }
+                return {
+                    type: 'text',
+                    value: c
+                };
+            }
+        });
+        return {
+            role,
+            name,
+            content
+        };
+    }
+    LanguageModelChatMessage.from = from;
+})(LanguageModelChatMessage || (LanguageModelChatMessage = {}));
+export var ChatResponseMarkdownPart;
+(function (ChatResponseMarkdownPart) {
+    function from(part) {
+        return {
+            kind: 'markdownContent',
+            content: MarkdownString.from(part.value)
+        };
+    }
+    ChatResponseMarkdownPart.from = from;
+    function to(part) {
+        return new types.ChatResponseMarkdownPart(MarkdownString.to(part.content));
+    }
+    ChatResponseMarkdownPart.to = to;
+})(ChatResponseMarkdownPart || (ChatResponseMarkdownPart = {}));
+export var ChatResponseCodeblockUriPart;
+(function (ChatResponseCodeblockUriPart) {
+    function from(part) {
+        return {
+            kind: 'codeblockUri',
+            uri: part.value,
+        };
+    }
+    ChatResponseCodeblockUriPart.from = from;
+    function to(part) {
+        return new types.ChatResponseCodeblockUriPart(URI.revive(part.uri));
+    }
+    ChatResponseCodeblockUriPart.to = to;
+})(ChatResponseCodeblockUriPart || (ChatResponseCodeblockUriPart = {}));
+export var ChatResponseMarkdownWithVulnerabilitiesPart;
+(function (ChatResponseMarkdownWithVulnerabilitiesPart) {
+    function from(part) {
+        return {
+            kind: 'markdownVuln',
+            content: MarkdownString.from(part.value),
+            vulnerabilities: part.vulnerabilities,
+        };
+    }
+    ChatResponseMarkdownWithVulnerabilitiesPart.from = from;
+    function to(part) {
+        return new types.ChatResponseMarkdownWithVulnerabilitiesPart(MarkdownString.to(part.content), part.vulnerabilities);
+    }
+    ChatResponseMarkdownWithVulnerabilitiesPart.to = to;
+})(ChatResponseMarkdownWithVulnerabilitiesPart || (ChatResponseMarkdownWithVulnerabilitiesPart = {}));
+export var ChatResponseDetectedParticipantPart;
+(function (ChatResponseDetectedParticipantPart) {
+    function from(part) {
+        return {
+            kind: 'agentDetection',
+            agentId: part.participant,
+            command: part.command,
+        };
+    }
+    ChatResponseDetectedParticipantPart.from = from;
+    function to(part) {
+        return new types.ChatResponseDetectedParticipantPart(part.agentId, part.command);
+    }
+    ChatResponseDetectedParticipantPart.to = to;
+})(ChatResponseDetectedParticipantPart || (ChatResponseDetectedParticipantPart = {}));
+export var ChatResponseConfirmationPart;
+(function (ChatResponseConfirmationPart) {
+    function from(part) {
+        return {
+            kind: 'confirmation',
+            title: part.title,
+            message: part.message,
+            data: part.data,
+            buttons: part.buttons
+        };
+    }
+    ChatResponseConfirmationPart.from = from;
+})(ChatResponseConfirmationPart || (ChatResponseConfirmationPart = {}));
+export var ChatResponseFilesPart;
+(function (ChatResponseFilesPart) {
+    function from(part) {
+        const { value, baseUri } = part;
+        function convert(items, baseUri) {
+            return items.map(item => {
+                const myUri = URI.joinPath(baseUri, item.name);
+                return {
+                    label: item.name,
+                    uri: myUri,
+                    children: item.children && convert(item.children, myUri)
+                };
+            });
+        }
+        return {
+            kind: 'treeData',
+            treeData: {
+                label: basename(baseUri),
+                uri: baseUri,
+                children: convert(value, baseUri)
+            }
+        };
+    }
+    ChatResponseFilesPart.from = from;
+    function to(part) {
+        const treeData = revive(part.treeData);
+        function convert(items) {
+            return items.map(item => {
+                return {
+                    name: item.label,
+                    children: item.children && convert(item.children)
+                };
+            });
+        }
+        const baseUri = treeData.uri;
+        const items = treeData.children ? convert(treeData.children) : [];
+        return new types.ChatResponseFileTreePart(items, baseUri);
+    }
+    ChatResponseFilesPart.to = to;
+})(ChatResponseFilesPart || (ChatResponseFilesPart = {}));
+export var ChatResponseAnchorPart;
+(function (ChatResponseAnchorPart) {
+    function from(part) {
+        const isUri = (thing) => URI.isUri(thing);
+        const isSymbolInformation = (x) => x instanceof types.SymbolInformation;
+        return {
+            kind: 'inlineReference',
+            name: part.title,
+            inlineReference: isUri(part.value)
+                ? part.value
+                : isSymbolInformation(part.value)
+                    ? WorkspaceSymbol.from(part.value)
+                    : Location.from(part.value)
+        };
+    }
+    ChatResponseAnchorPart.from = from;
+    function to(part) {
+        const value = revive(part);
+        return new types.ChatResponseAnchorPart(URI.isUri(value.inlineReference)
+            ? value.inlineReference
+            : 'location' in value.inlineReference
+                ? WorkspaceSymbol.to(value.inlineReference)
+                : Location.to(value.inlineReference), part.name);
+    }
+    ChatResponseAnchorPart.to = to;
+})(ChatResponseAnchorPart || (ChatResponseAnchorPart = {}));
+export var ChatResponseProgressPart;
+(function (ChatResponseProgressPart) {
+    function from(part) {
+        return {
+            kind: 'progressMessage',
+            content: MarkdownString.from(part.value)
+        };
+    }
+    ChatResponseProgressPart.from = from;
+    function to(part) {
+        return new types.ChatResponseProgressPart(part.content.value);
+    }
+    ChatResponseProgressPart.to = to;
+})(ChatResponseProgressPart || (ChatResponseProgressPart = {}));
+export var ChatResponseWarningPart;
+(function (ChatResponseWarningPart) {
+    function from(part) {
+        return {
+            kind: 'warning',
+            content: MarkdownString.from(part.value)
+        };
+    }
+    ChatResponseWarningPart.from = from;
+    function to(part) {
+        return new types.ChatResponseWarningPart(part.content.value);
+    }
+    ChatResponseWarningPart.to = to;
+})(ChatResponseWarningPart || (ChatResponseWarningPart = {}));
+export var ChatResponseMovePart;
+(function (ChatResponseMovePart) {
+    function from(part) {
+        return {
+            kind: 'move',
+            uri: part.uri,
+            range: Range.from(part.range),
+        };
+    }
+    ChatResponseMovePart.from = from;
+    function to(part) {
+        return new types.ChatResponseMovePart(URI.revive(part.uri), Range.to(part.range));
+    }
+    ChatResponseMovePart.to = to;
+})(ChatResponseMovePart || (ChatResponseMovePart = {}));
+export var ChatTask;
+(function (ChatTask) {
+    function from(part) {
+        return {
+            kind: 'progressTask',
+            content: MarkdownString.from(part.value),
+        };
+    }
+    ChatTask.from = from;
+})(ChatTask || (ChatTask = {}));
+export var ChatTaskResult;
+(function (ChatTaskResult) {
+    function from(part) {
+        return {
+            kind: 'progressTaskResult',
+            content: typeof part === 'string' ? MarkdownString.from(part) : undefined
+        };
+    }
+    ChatTaskResult.from = from;
+})(ChatTaskResult || (ChatTaskResult = {}));
+export var ChatResponseCommandButtonPart;
+(function (ChatResponseCommandButtonPart) {
+    function from(part, commandsConverter, commandDisposables) {
+        const command = commandsConverter.toInternal(part.value, commandDisposables) ?? { command: part.value.command, title: part.value.title };
+        return {
+            kind: 'command',
+            command
+        };
+    }
+    ChatResponseCommandButtonPart.from = from;
+    function to(part, commandsConverter) {
+        return new types.ChatResponseCommandButtonPart(commandsConverter.fromInternal(part.command) ?? { command: part.command.id, title: part.command.title });
+    }
+    ChatResponseCommandButtonPart.to = to;
+})(ChatResponseCommandButtonPart || (ChatResponseCommandButtonPart = {}));
+export var ChatResponseTextEditPart;
+(function (ChatResponseTextEditPart) {
+    function from(part) {
+        return {
+            kind: 'textEdit',
+            uri: part.uri,
+            edits: part.edits.map(e => TextEdit.from(e))
+        };
+    }
+    ChatResponseTextEditPart.from = from;
+    function to(part) {
+        return new types.ChatResponseTextEditPart(URI.revive(part.uri), part.edits.map(e => TextEdit.to(e)));
+    }
+    ChatResponseTextEditPart.to = to;
+})(ChatResponseTextEditPart || (ChatResponseTextEditPart = {}));
+export var ChatResponseReferencePart;
+(function (ChatResponseReferencePart) {
+    function from(part) {
+        const iconPath = ThemeIcon.isThemeIcon(part.iconPath) ? part.iconPath
+            : URI.isUri(part.iconPath) ? { light: URI.revive(part.iconPath) }
+                : (part.iconPath && 'light' in part.iconPath && 'dark' in part.iconPath && URI.isUri(part.iconPath.light) && URI.isUri(part.iconPath.dark) ? { light: URI.revive(part.iconPath.light), dark: URI.revive(part.iconPath.dark) }
+                    : undefined);
+        if (typeof part.value === 'object' && 'variableName' in part.value) {
+            return {
+                kind: 'reference',
+                reference: {
+                    variableName: part.value.variableName,
+                    value: URI.isUri(part.value.value) || !part.value.value ?
+                        part.value.value :
+                        Location.from(part.value.value)
+                },
+                iconPath,
+                options: part.options
+            };
+        }
+        return {
+            kind: 'reference',
+            reference: URI.isUri(part.value) || typeof part.value === 'string' ?
+                part.value :
+                Location.from(part.value),
+            iconPath,
+            options: part.options
+        };
+    }
+    ChatResponseReferencePart.from = from;
+    function to(part) {
+        const value = revive(part);
+        const mapValue = (value) => URI.isUri(value) ?
+            value :
+            Location.to(value);
+        return new types.ChatResponseReferencePart(typeof value.reference === 'string' ? value.reference : 'variableName' in value.reference ? {
+            variableName: value.reference.variableName,
+            value: value.reference.value && mapValue(value.reference.value)
+        } :
+            mapValue(value.reference));
+    }
+    ChatResponseReferencePart.to = to;
+})(ChatResponseReferencePart || (ChatResponseReferencePart = {}));
+export var ChatResponseCodeCitationPart;
+(function (ChatResponseCodeCitationPart) {
+    function from(part) {
+        return {
+            kind: 'codeCitation',
+            value: part.value,
+            license: part.license,
+            snippet: part.snippet
+        };
+    }
+    ChatResponseCodeCitationPart.from = from;
+})(ChatResponseCodeCitationPart || (ChatResponseCodeCitationPart = {}));
+export var ChatResponsePart;
+(function (ChatResponsePart) {
+    function from(part, commandsConverter, commandDisposables) {
+        if (part instanceof types.ChatResponseMarkdownPart) {
+            return ChatResponseMarkdownPart.from(part);
+        }
+        else if (part instanceof types.ChatResponseAnchorPart) {
+            return ChatResponseAnchorPart.from(part);
+        }
+        else if (part instanceof types.ChatResponseReferencePart) {
+            return ChatResponseReferencePart.from(part);
+        }
+        else if (part instanceof types.ChatResponseProgressPart) {
+            return ChatResponseProgressPart.from(part);
+        }
+        else if (part instanceof types.ChatResponseFileTreePart) {
+            return ChatResponseFilesPart.from(part);
+        }
+        else if (part instanceof types.ChatResponseCommandButtonPart) {
+            return ChatResponseCommandButtonPart.from(part, commandsConverter, commandDisposables);
+        }
+        else if (part instanceof types.ChatResponseTextEditPart) {
+            return ChatResponseTextEditPart.from(part);
+        }
+        else if (part instanceof types.ChatResponseMarkdownWithVulnerabilitiesPart) {
+            return ChatResponseMarkdownWithVulnerabilitiesPart.from(part);
+        }
+        else if (part instanceof types.ChatResponseCodeblockUriPart) {
+            return ChatResponseCodeblockUriPart.from(part);
+        }
+        else if (part instanceof types.ChatResponseDetectedParticipantPart) {
+            return ChatResponseDetectedParticipantPart.from(part);
+        }
+        else if (part instanceof types.ChatResponseWarningPart) {
+            return ChatResponseWarningPart.from(part);
+        }
+        else if (part instanceof types.ChatResponseConfirmationPart) {
+            return ChatResponseConfirmationPart.from(part);
+        }
+        else if (part instanceof types.ChatResponseCodeCitationPart) {
+            return ChatResponseCodeCitationPart.from(part);
+        }
+        else if (part instanceof types.ChatResponseMovePart) {
+            return ChatResponseMovePart.from(part);
+        }
+        return {
+            kind: 'markdownContent',
+            content: MarkdownString.from('')
+        };
+    }
+    ChatResponsePart.from = from;
+    function to(part, commandsConverter) {
+        switch (part.kind) {
+            case 'reference': return ChatResponseReferencePart.to(part);
+            case 'markdownContent':
+            case 'inlineReference':
+            case 'progressMessage':
+            case 'treeData':
+            case 'command':
+                return toContent(part, commandsConverter);
+        }
+        return undefined;
+    }
+    ChatResponsePart.to = to;
+    function toContent(part, commandsConverter) {
+        switch (part.kind) {
+            case 'markdownContent': return ChatResponseMarkdownPart.to(part);
+            case 'inlineReference': return ChatResponseAnchorPart.to(part);
+            case 'progressMessage': return undefined;
+            case 'treeData': return ChatResponseFilesPart.to(part);
+            case 'command': return ChatResponseCommandButtonPart.to(part, commandsConverter);
+        }
+        return undefined;
+    }
+    ChatResponsePart.toContent = toContent;
+})(ChatResponsePart || (ChatResponsePart = {}));
+export var ChatAgentRequest;
+(function (ChatAgentRequest) {
+    function to(request, location2) {
+        const toolReferences = request.variables.variables.filter(v => v.isTool);
+        const variableReferences = request.variables.variables.filter(v => !v.isTool);
+        return {
+            prompt: request.message,
+            command: request.command,
+            attempt: request.attempt ?? 0,
+            enableCommandDetection: request.enableCommandDetection ?? true,
+            isParticipantDetected: request.isParticipantDetected ?? false,
+            references: variableReferences.map(ChatPromptReference.to),
+            toolReferences: toolReferences.map(ChatLanguageModelToolReference.to),
+            location: ChatLocation.to(request.location),
+            acceptedConfirmationData: request.acceptedConfirmationData,
+            rejectedConfirmationData: request.rejectedConfirmationData,
+            location2,
+            toolInvocationToken: Object.freeze({ sessionId: request.sessionId })
+        };
+    }
+    ChatAgentRequest.to = to;
+})(ChatAgentRequest || (ChatAgentRequest = {}));
+export var ChatLocation;
+(function (ChatLocation) {
+    function to(loc) {
+        switch (loc) {
+            case ChatAgentLocation.Notebook: return types.ChatLocation.Notebook;
+            case ChatAgentLocation.Terminal: return types.ChatLocation.Terminal;
+            case ChatAgentLocation.Panel: return types.ChatLocation.Panel;
+            case ChatAgentLocation.Editor: return types.ChatLocation.Editor;
+            case ChatAgentLocation.EditingSession: return types.ChatLocation.EditingSession;
+        }
+    }
+    ChatLocation.to = to;
+    function from(loc) {
+        switch (loc) {
+            case types.ChatLocation.Notebook: return ChatAgentLocation.Notebook;
+            case types.ChatLocation.Terminal: return ChatAgentLocation.Terminal;
+            case types.ChatLocation.Panel: return ChatAgentLocation.Panel;
+            case types.ChatLocation.Editor: return ChatAgentLocation.Editor;
+            case types.ChatLocation.EditingSession: return ChatAgentLocation.EditingSession;
+        }
+    }
+    ChatLocation.from = from;
+})(ChatLocation || (ChatLocation = {}));
+export var ChatPromptReference;
+(function (ChatPromptReference) {
+    function to(variable) {
+        const value = variable.value;
+        if (!value) {
+            throw new Error('Invalid value reference');
+        }
+        return {
+            id: variable.id,
+            name: variable.name,
+            range: variable.range && [variable.range.start, variable.range.endExclusive],
+            value: isUriComponents(value) ? URI.revive(value) :
+                value && typeof value === 'object' && 'uri' in value && 'range' in value && isUriComponents(value.uri) ?
+                    Location.to(revive(value)) : value,
+            modelDescription: variable.modelDescription
+        };
+    }
+    ChatPromptReference.to = to;
+})(ChatPromptReference || (ChatPromptReference = {}));
+export var ChatLanguageModelToolReference;
+(function (ChatLanguageModelToolReference) {
+    function to(variable) {
+        const value = variable.value;
+        if (value) {
+            throw new Error('Invalid tool reference');
+        }
+        return {
+            id: variable.id,
+            range: variable.range && [variable.range.start, variable.range.endExclusive],
+        };
+    }
+    ChatLanguageModelToolReference.to = to;
+})(ChatLanguageModelToolReference || (ChatLanguageModelToolReference = {}));
+export var ChatAgentCompletionItem;
+(function (ChatAgentCompletionItem) {
+    function from(item, commandsConverter, disposables) {
+        return {
+            id: item.id,
+            label: item.label,
+            fullName: item.fullName,
+            icon: item.icon?.id,
+            value: item.values[0].value,
+            insertText: item.insertText,
+            detail: item.detail,
+            documentation: item.documentation,
+            command: commandsConverter.toInternal(item.command, disposables),
+        };
+    }
+    ChatAgentCompletionItem.from = from;
+})(ChatAgentCompletionItem || (ChatAgentCompletionItem = {}));
+export var ChatAgentResult;
+(function (ChatAgentResult) {
+    function to(result) {
+        return {
+            errorDetails: result.errorDetails,
+            metadata: result.metadata,
+            nextQuestion: result.nextQuestion,
+        };
+    }
+    ChatAgentResult.to = to;
+    function from(result) {
+        return {
+            errorDetails: result.errorDetails,
+            metadata: result.metadata,
+            nextQuestion: result.nextQuestion,
+        };
+    }
+    ChatAgentResult.from = from;
+})(ChatAgentResult || (ChatAgentResult = {}));
+export var ChatAgentUserActionEvent;
+(function (ChatAgentUserActionEvent) {
+    function to(result, event, commandsConverter) {
+        if (event.action.kind === 'vote') {
+            return;
+        }
+        const ehResult = ChatAgentResult.to(result);
+        if (event.action.kind === 'command') {
+            const command = event.action.commandButton.command;
+            const commandButton = {
+                command: commandsConverter.fromInternal(command) ?? { command: command.id, title: command.title },
+            };
+            const commandAction = { kind: 'command', commandButton };
+            return { action: commandAction, result: ehResult };
+        }
+        else if (event.action.kind === 'followUp') {
+            const followupAction = { kind: 'followUp', followup: ChatFollowup.to(event.action.followup) };
+            return { action: followupAction, result: ehResult };
+        }
+        else if (event.action.kind === 'inlineChat') {
+            return { action: { kind: 'editor', accepted: event.action.action === 'accepted' }, result: ehResult };
+        }
+        else {
+            return { action: event.action, result: ehResult };
+        }
+    }
+    ChatAgentUserActionEvent.to = to;
+})(ChatAgentUserActionEvent || (ChatAgentUserActionEvent = {}));
+export var TerminalQuickFix;
+(function (TerminalQuickFix) {
+    function from(quickFix, converter, disposables) {
+        if ('terminalCommand' in quickFix) {
+            return { terminalCommand: quickFix.terminalCommand, shouldExecute: quickFix.shouldExecute };
+        }
+        if ('uri' in quickFix) {
+            return { uri: quickFix.uri };
+        }
+        return converter.toInternal(quickFix, disposables);
+    }
+    TerminalQuickFix.from = from;
+})(TerminalQuickFix || (TerminalQuickFix = {}));
+export var PartialAcceptInfo;
+(function (PartialAcceptInfo) {
+    function to(info) {
+        return {
+            kind: PartialAcceptTriggerKind.to(info.kind),
+        };
+    }
+    PartialAcceptInfo.to = to;
+})(PartialAcceptInfo || (PartialAcceptInfo = {}));
+export var PartialAcceptTriggerKind;
+(function (PartialAcceptTriggerKind) {
+    function to(kind) {
+        switch (kind) {
+            case 0:
+                return types.PartialAcceptTriggerKind.Word;
+            case 1:
+                return types.PartialAcceptTriggerKind.Line;
+            case 2:
+                return types.PartialAcceptTriggerKind.Suggest;
+            default:
+                return types.PartialAcceptTriggerKind.Unknown;
+        }
+    }
+    PartialAcceptTriggerKind.to = to;
+})(PartialAcceptTriggerKind || (PartialAcceptTriggerKind = {}));
+export var DebugTreeItem;
+(function (DebugTreeItem) {
+    function from(item, id) {
+        return {
+            id,
+            label: item.label,
+            description: item.description,
+            canEdit: item.canEdit,
+            collapsibleState: (item.collapsibleState || 0),
+            contextValue: item.contextValue,
+        };
+    }
+    DebugTreeItem.from = from;
+})(DebugTreeItem || (DebugTreeItem = {}));
+export var LanguageModelToolDescription;
+(function (LanguageModelToolDescription) {
+    function to(item) {
+        return {
+            id: item.id,
+            modelDescription: item.modelDescription,
+            parametersSchema: item.parametersSchema,
+            displayName: item.displayName,
+            supportedContentTypes: item.supportedContentTypes,
+        };
+    }
+    LanguageModelToolDescription.to = to;
+})(LanguageModelToolDescription || (LanguageModelToolDescription = {}));

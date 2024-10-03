@@ -1,1 +1,39 @@
-import{Emitter as s}from"../../../../../base/common/event.js";import{Disposable as o}from"../../../../../base/common/lifecycle.js";import"../../common/notebookRange.js";function a(n,t){if(n.length!==t.length)return!1;for(let e=0;e<n.length;e++)if(n[e].start!==t[e].start||n[e].end!==t[e].end)return!1;return!0}class u extends o{_onDidChangeSelection=this._register(new s);get onDidChangeSelection(){return this._onDidChangeSelection.event}_primary=null;_selections=[];get selections(){return this._selections}get focus(){return this._primary??{start:0,end:0}}setState(t,e,l,i){const r=t!==this._primary||!a(this._selections,e);this._primary=t,this._selections=e,(r||l)&&this._onDidChangeSelection.fire(i)}setSelections(t,e,l){this.setState(this._primary,t,e,l)}}export{u as NotebookCellSelectionCollection};
+import { Emitter } from '../../../../../base/common/event.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+function rangesEqual(a, b) {
+    if (a.length !== b.length) {
+        return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+        if (a[i].start !== b[i].start || a[i].end !== b[i].end) {
+            return false;
+        }
+    }
+    return true;
+}
+export class NotebookCellSelectionCollection extends Disposable {
+    constructor() {
+        super(...arguments);
+        this._onDidChangeSelection = this._register(new Emitter());
+        this._primary = null;
+        this._selections = [];
+    }
+    get onDidChangeSelection() { return this._onDidChangeSelection.event; }
+    get selections() {
+        return this._selections;
+    }
+    get focus() {
+        return this._primary ?? { start: 0, end: 0 };
+    }
+    setState(primary, selections, forceEventEmit, source) {
+        const changed = primary !== this._primary || !rangesEqual(this._selections, selections);
+        this._primary = primary;
+        this._selections = selections;
+        if (changed || forceEventEmit) {
+            this._onDidChangeSelection.fire(source);
+        }
+    }
+    setSelections(selections, forceEventEmit, source) {
+        this.setState(this._primary, selections, forceEventEmit, source);
+    }
+}

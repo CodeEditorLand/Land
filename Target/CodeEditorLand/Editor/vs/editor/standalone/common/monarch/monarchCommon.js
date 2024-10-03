@@ -1,1 +1,101 @@
-var p=(e=>(e[e.None=0]="None",e[e.Open=1]="Open",e[e.Close=-1]="Close",e))(p||{});function z(t){return Array.isArray(t)}function m(t){return!z(t)}function d(t){return typeof t=="string"}function h(t){return!d(t)}function o(t){return!t}function u(t,r){return t.ignoreCase&&r?r.toLowerCase():r}function F(t){return t.replace(/[&<>'"_]/g,"-")}function L(t,r){}function w(t,r){return new Error(`${t.languageId}: ${r}`)}function k(t,r,n,e,i){const c=/\$((\$)|(#)|(\d\d?)|[sS](\d\d?)|@(\w+))/g;let s=null;return r.replace(c,function(b,I,f,x,l,g,a,y,A){return o(f)?o(x)?!o(l)&&l<e.length?u(t,e[l]):!o(a)&&t&&typeof t[a]=="string"?t[a]:(s===null&&(s=i.split("."),s.unshift(i)),!o(g)&&g<s.length?u(t,s[g]):""):u(t,n):"$"})}function $(t,r,n){const e=/\$[sS](\d\d?)/g;let i=null;return r.replace(e,function(c,s){return i===null&&(i=n.split("."),i.unshift(n)),!o(s)&&s<i.length?u(t,i[s]):""})}function E(t,r){let n=r;for(;n&&n.length>0;){const e=t.tokenizer[n];if(e)return e;const i=n.lastIndexOf(".");i<0?n=null:n=n.substr(0,i)}return null}function M(t,r){let n=r;for(;n&&n.length>0;){if(t.stateNames[n])return!0;const i=n.lastIndexOf(".");i<0?n=null:n=n.substr(0,i)}return!1}export{p as MonarchBracket,w as createError,o as empty,E as findRules,u as fixCase,m as isFuzzyAction,z as isFuzzyActionArr,h as isIAction,d as isString,L as log,F as sanitize,M as stateExists,k as substituteMatches,$ as substituteMatchesRe};
+export function isFuzzyActionArr(what) {
+    return (Array.isArray(what));
+}
+export function isFuzzyAction(what) {
+    return !isFuzzyActionArr(what);
+}
+export function isString(what) {
+    return (typeof what === 'string');
+}
+export function isIAction(what) {
+    return !isString(what);
+}
+export function empty(s) {
+    return (s ? false : true);
+}
+export function fixCase(lexer, str) {
+    return (lexer.ignoreCase && str ? str.toLowerCase() : str);
+}
+export function sanitize(s) {
+    return s.replace(/[&<>'"_]/g, '-');
+}
+export function log(lexer, msg) {
+    console.log(`${lexer.languageId}: ${msg}`);
+}
+export function createError(lexer, msg) {
+    return new Error(`${lexer.languageId}: ${msg}`);
+}
+export function substituteMatches(lexer, str, id, matches, state) {
+    const re = /\$((\$)|(#)|(\d\d?)|[sS](\d\d?)|@(\w+))/g;
+    let stateMatches = null;
+    return str.replace(re, function (full, sub, dollar, hash, n, s, attr, ofs, total) {
+        if (!empty(dollar)) {
+            return '$';
+        }
+        if (!empty(hash)) {
+            return fixCase(lexer, id);
+        }
+        if (!empty(n) && n < matches.length) {
+            return fixCase(lexer, matches[n]);
+        }
+        if (!empty(attr) && lexer && typeof (lexer[attr]) === 'string') {
+            return lexer[attr];
+        }
+        if (stateMatches === null) {
+            stateMatches = state.split('.');
+            stateMatches.unshift(state);
+        }
+        if (!empty(s) && s < stateMatches.length) {
+            return fixCase(lexer, stateMatches[s]);
+        }
+        return '';
+    });
+}
+export function substituteMatchesRe(lexer, str, state) {
+    const re = /\$[sS](\d\d?)/g;
+    let stateMatches = null;
+    return str.replace(re, function (full, s) {
+        if (stateMatches === null) {
+            stateMatches = state.split('.');
+            stateMatches.unshift(state);
+        }
+        if (!empty(s) && s < stateMatches.length) {
+            return fixCase(lexer, stateMatches[s]);
+        }
+        return '';
+    });
+}
+export function findRules(lexer, inState) {
+    let state = inState;
+    while (state && state.length > 0) {
+        const rules = lexer.tokenizer[state];
+        if (rules) {
+            return rules;
+        }
+        const idx = state.lastIndexOf('.');
+        if (idx < 0) {
+            state = null;
+        }
+        else {
+            state = state.substr(0, idx);
+        }
+    }
+    return null;
+}
+export function stateExists(lexer, inState) {
+    let state = inState;
+    while (state && state.length > 0) {
+        const exist = lexer.stateNames[state];
+        if (exist) {
+            return true;
+        }
+        const idx = state.lastIndexOf('.');
+        if (idx < 0) {
+            state = null;
+        }
+        else {
+            state = state.substr(0, idx);
+        }
+    }
+    return false;
+}

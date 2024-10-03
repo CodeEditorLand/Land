@@ -1,1 +1,84 @@
-import*as s from"../../../../nls.js";import{ISnippetsService as P}from"./snippets.js";import{SnippetSource as a}from"./snippetsFile.js";import{IQuickInputService as h}from"../../../../platform/quickinput/common/quickInput.js";import{Codicon as d}from"../../../../base/common/codicons.js";import{ThemeIcon as k}from"../../../../base/common/themables.js";import{Event as f}from"../../../../base/common/event.js";import"../../../../platform/instantiation/common/instantiation.js";import{DisposableStore as v}from"../../../../base/common/lifecycle.js";async function T(S,l){const o=S.get(P),b=S.get(h);let r;Array.isArray(l)?r=l:r=await o.getSnippets(l,{includeDisabledSnippets:!0,includeNoPrefixSnippets:!0}),r.sort((t,p)=>t.snippetSource-p.snippetSource);const m=()=>{const t=[];let p;for(const i of r){const c={label:i.prefix||i.name,detail:i.description||i.body,snippet:i};if(!p||p.snippetSource!==i.snippetSource||p.source!==i.source){let n="";switch(i.snippetSource){case a.User:n=s.localize("sep.userSnippet","User Snippets");break;case a.Extension:n=i.source;break;case a.Workspace:n=s.localize("sep.workspaceSnippet","Workspace Snippets");break}t.push({type:"separator",label:n})}i.snippetSource===a.Extension&&(o.isEnabled(i)?c.buttons=[{iconClass:k.asClassName(d.eyeClosed),tooltip:s.localize("disableSnippet","Hide from IntelliSense")}]:(c.description=s.localize("isDisabled","(hidden from IntelliSense)"),c.buttons=[{iconClass:k.asClassName(d.eye),tooltip:s.localize("enable.snippet","Show in IntelliSense")}])),t.push(c),p=i}return t},u=new v,e=u.add(b.createQuickPick({useSeparators:!0}));e.placeholder=s.localize("pick.placeholder","Select a snippet"),e.matchOnDetail=!0,e.ignoreFocusOut=!1,e.keepScrollPosition=!0,u.add(e.onDidTriggerItemButton(t=>{const p=o.isEnabled(t.item.snippet);o.updateEnablement(t.item.snippet,!p),e.items=m()})),e.items=m(),e.items.length||(e.validationMessage=s.localize("pick.noSnippetAvailable","No snippet available")),e.show(),await Promise.race([f.toPromise(e.onDidAccept),f.toPromise(e.onDidHide)]);const I=e.selectedItems[0]?.snippet;return u.dispose(),I}export{T as pickSnippet};
+import * as nls from '../../../../nls.js';
+import { ISnippetsService } from './snippets.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { Event } from '../../../../base/common/event.js';
+import { DisposableStore } from '../../../../base/common/lifecycle.js';
+export async function pickSnippet(accessor, languageIdOrSnippets) {
+    const snippetService = accessor.get(ISnippetsService);
+    const quickInputService = accessor.get(IQuickInputService);
+    let snippets;
+    if (Array.isArray(languageIdOrSnippets)) {
+        snippets = languageIdOrSnippets;
+    }
+    else {
+        snippets = (await snippetService.getSnippets(languageIdOrSnippets, { includeDisabledSnippets: true, includeNoPrefixSnippets: true }));
+    }
+    snippets.sort((a, b) => a.snippetSource - b.snippetSource);
+    const makeSnippetPicks = () => {
+        const result = [];
+        let prevSnippet;
+        for (const snippet of snippets) {
+            const pick = {
+                label: snippet.prefix || snippet.name,
+                detail: snippet.description || snippet.body,
+                snippet
+            };
+            if (!prevSnippet || prevSnippet.snippetSource !== snippet.snippetSource || prevSnippet.source !== snippet.source) {
+                let label = '';
+                switch (snippet.snippetSource) {
+                    case 1:
+                        label = nls.localize('sep.userSnippet', "User Snippets");
+                        break;
+                    case 3:
+                        label = snippet.source;
+                        break;
+                    case 2:
+                        label = nls.localize('sep.workspaceSnippet', "Workspace Snippets");
+                        break;
+                }
+                result.push({ type: 'separator', label });
+            }
+            if (snippet.snippetSource === 3) {
+                const isEnabled = snippetService.isEnabled(snippet);
+                if (isEnabled) {
+                    pick.buttons = [{
+                            iconClass: ThemeIcon.asClassName(Codicon.eyeClosed),
+                            tooltip: nls.localize('disableSnippet', 'Hide from IntelliSense')
+                        }];
+                }
+                else {
+                    pick.description = nls.localize('isDisabled', "(hidden from IntelliSense)");
+                    pick.buttons = [{
+                            iconClass: ThemeIcon.asClassName(Codicon.eye),
+                            tooltip: nls.localize('enable.snippet', 'Show in IntelliSense')
+                        }];
+                }
+            }
+            result.push(pick);
+            prevSnippet = snippet;
+        }
+        return result;
+    };
+    const disposables = new DisposableStore();
+    const picker = disposables.add(quickInputService.createQuickPick({ useSeparators: true }));
+    picker.placeholder = nls.localize('pick.placeholder', "Select a snippet");
+    picker.matchOnDetail = true;
+    picker.ignoreFocusOut = false;
+    picker.keepScrollPosition = true;
+    disposables.add(picker.onDidTriggerItemButton(ctx => {
+        const isEnabled = snippetService.isEnabled(ctx.item.snippet);
+        snippetService.updateEnablement(ctx.item.snippet, !isEnabled);
+        picker.items = makeSnippetPicks();
+    }));
+    picker.items = makeSnippetPicks();
+    if (!picker.items.length) {
+        picker.validationMessage = nls.localize('pick.noSnippetAvailable', "No snippet available");
+    }
+    picker.show();
+    await Promise.race([Event.toPromise(picker.onDidAccept), Event.toPromise(picker.onDidHide)]);
+    const result = picker.selectedItems[0]?.snippet;
+    disposables.dispose();
+    return result;
+}

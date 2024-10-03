@@ -1,1 +1,379 @@
-import"../list/list.js";import{getVisibleState as M,isFilterResult as y}from"./indexTreeModel.js";import{ObjectTreeModel as F}from"./objectTreeModel.js";import{TreeError as I,WeakMapper as O}from"./tree.js";import{equals as S}from"../../../common/arrays.js";import{Event as m}from"../../../common/event.js";import{Iterable as n}from"../../../common/iterator.js";function T(o){const e=[o.element],t=o.incompressible||!1;return{element:{elements:e,incompressible:t},children:n.map(n.from(o.children),T),collapsible:o.collapsible,collapsed:o.collapsed}}function u(o){const e=[o.element],t=o.incompressible||!1;let r,l;for(;[l,r]=n.consume(n.from(o.children),2),!(l.length!==1||l[0].incompressible);)o=l[0],e.push(o.element);return{element:{elements:e,incompressible:t},children:n.map(n.concat(l,r),u),collapsible:o.collapsible,collapsed:o.collapsed}}function h(o,e=0){let t;return e<o.element.elements.length-1?t=[h(o,e+1)]:t=n.map(n.from(o.children),r=>h(r,0)),e===0&&o.element.incompressible?{element:o.element.elements[e],children:t,incompressible:!0,collapsible:o.collapsible,collapsed:o.collapsed}:{element:o.element.elements[e],children:t,collapsible:o.collapsible,collapsed:o.collapsed}}function b(o){return h(o,0)}function N(o,e,t){return o.element===e?{...o,children:t}:{...o,children:n.map(n.from(o.children),r=>N(r,e,t))}}const x=o=>({getId(e){return e.elements.map(t=>o.getId(t).toString()).join("\0")}});class P{constructor(e,t={}){this.user=e;this.model=new F(e,t),this.enabled=typeof t.compressionEnabled>"u"?!0:t.compressionEnabled,this.identityProvider=t.identityProvider}rootRef=null;get onDidSpliceRenderedNodes(){return this.model.onDidSpliceRenderedNodes}get onDidSpliceModel(){return this.model.onDidSpliceModel}get onDidChangeCollapseState(){return this.model.onDidChangeCollapseState}get onDidChangeRenderNodeCount(){return this.model.onDidChangeRenderNodeCount}model;nodes=new Map;enabled;identityProvider;get size(){return this.nodes.size}setChildren(e,t=n.empty(),r){const l=r.diffIdentityProvider&&x(r.diffIdentityProvider);if(e===null){const p=n.map(t,this.enabled?u:T);this._setChildren(null,p,{diffIdentityProvider:l,diffDepth:1/0});return}const s=this.nodes.get(e);if(!s)throw new I(this.user,"Unknown compressed tree node");const d=this.model.getNode(s),a=this.model.getParentNodeLocation(s),i=this.model.getNode(a),f=b(d),g=N(f,e,t),c=(this.enabled?u:T)(g),D=r.diffIdentityProvider?(p,E)=>r.diffIdentityProvider.getId(p)===r.diffIdentityProvider.getId(E):void 0;if(S(c.element.elements,d.element.elements,D)){this._setChildren(s,c.children||n.empty(),{diffIdentityProvider:l,diffDepth:1});return}const v=i.children.map(p=>p===d?c:p);this._setChildren(i.element,v,{diffIdentityProvider:l,diffDepth:d.depth-i.depth})}isCompressionEnabled(){return this.enabled}setCompressionEnabled(e){if(e===this.enabled)return;this.enabled=e;const r=this.model.getNode().children,l=n.map(r,b),s=n.map(l,e?u:T);this._setChildren(null,s,{diffIdentityProvider:this.identityProvider,diffDepth:1/0})}_setChildren(e,t,r){const l=new Set,s=a=>{for(const i of a.element.elements)l.add(i),this.nodes.set(i,a.element)},d=a=>{for(const i of a.element.elements)l.has(i)||this.nodes.delete(i)};this.model.setChildren(e,t,{...r,onDidCreateNode:s,onDidDeleteNode:d})}has(e){return this.nodes.has(e)}getListIndex(e){const t=this.getCompressedNode(e);return this.model.getListIndex(t)}getListRenderCount(e){const t=this.getCompressedNode(e);return this.model.getListRenderCount(t)}getNode(e){if(typeof e>"u")return this.model.getNode();const t=this.getCompressedNode(e);return this.model.getNode(t)}getNodeLocation(e){const t=this.model.getNodeLocation(e);return t===null?null:t.elements[t.elements.length-1]}getParentNodeLocation(e){const t=this.getCompressedNode(e),r=this.model.getParentNodeLocation(t);return r===null?null:r.elements[r.elements.length-1]}getFirstElementChild(e){const t=this.getCompressedNode(e);return this.model.getFirstElementChild(t)}getLastElementAncestor(e){const t=typeof e>"u"?void 0:this.getCompressedNode(e);return this.model.getLastElementAncestor(t)}isCollapsible(e){const t=this.getCompressedNode(e);return this.model.isCollapsible(t)}setCollapsible(e,t){const r=this.getCompressedNode(e);return this.model.setCollapsible(r,t)}isCollapsed(e){const t=this.getCompressedNode(e);return this.model.isCollapsed(t)}setCollapsed(e,t,r){const l=this.getCompressedNode(e);return this.model.setCollapsed(l,t,r)}expandTo(e){const t=this.getCompressedNode(e);this.model.expandTo(t)}rerender(e){const t=this.getCompressedNode(e);this.model.rerender(t)}refilter(){this.model.refilter()}resort(e=null,t=!0){const r=this.getCompressedNode(e);this.model.resort(r,t)}getCompressedNode(e){if(e===null)return null;const t=this.nodes.get(e);if(!t)throw new I(this.user,`Tree element not found: ${e}`);return t}}const j=o=>o[o.length-1];class C{constructor(e,t){this.unwrapper=e;this.node=t}get element(){return this.node.element===null?null:this.unwrapper(this.node.element)}get children(){return this.node.children.map(e=>new C(this.unwrapper,e))}get depth(){return this.node.depth}get visibleChildrenCount(){return this.node.visibleChildrenCount}get visibleChildIndex(){return this.node.visibleChildIndex}get collapsible(){return this.node.collapsible}get collapsed(){return this.node.collapsed}get visible(){return this.node.visible}get filterData(){return this.node.filterData}}function L(o,e){return{...e,identityProvider:e.identityProvider&&{getId(t){return e.identityProvider.getId(o(t))}},sorter:e.sorter&&{compare(t,r){return e.sorter.compare(t.elements[0],r.elements[0])}},filter:e.filter&&{filter(t,r){const l=t.elements;for(let s=0;s<l.length-1;s++){const d=e.filter.filter(l[s],r);r=M(y(d)?d.visibility:d)}return e.filter.filter(l[l.length-1],r)}}}}class ee{rootRef=null;get onDidSpliceModel(){return m.map(this.model.onDidSpliceModel,({insertedNodes:e,deletedNodes:t})=>({insertedNodes:e.map(r=>this.nodeMapper.map(r)),deletedNodes:t.map(r=>this.nodeMapper.map(r))}))}get onDidSpliceRenderedNodes(){return m.map(this.model.onDidSpliceRenderedNodes,({start:e,deleteCount:t,elements:r})=>({start:e,deleteCount:t,elements:r.map(l=>this.nodeMapper.map(l))}))}get onDidChangeCollapseState(){return m.map(this.model.onDidChangeCollapseState,({node:e,deep:t})=>({node:this.nodeMapper.map(e),deep:t}))}get onDidChangeRenderNodeCount(){return m.map(this.model.onDidChangeRenderNodeCount,e=>this.nodeMapper.map(e))}elementMapper;nodeMapper;model;constructor(e,t={}){this.elementMapper=t.elementMapper||j;const r=l=>this.elementMapper(l.elements);this.nodeMapper=new O(l=>new C(r,l)),this.model=new P(e,L(r,t))}setChildren(e,t=n.empty(),r={}){this.model.setChildren(e,t,r)}isCompressionEnabled(){return this.model.isCompressionEnabled()}setCompressionEnabled(e){this.model.setCompressionEnabled(e)}has(e){return this.model.has(e)}getListIndex(e){return this.model.getListIndex(e)}getListRenderCount(e){return this.model.getListRenderCount(e)}getNode(e){return this.nodeMapper.map(this.model.getNode(e))}getNodeLocation(e){return e.element}getParentNodeLocation(e){return this.model.getParentNodeLocation(e)}getFirstElementChild(e){const t=this.model.getFirstElementChild(e);return t===null||typeof t>"u"?t:this.elementMapper(t.elements)}getLastElementAncestor(e){const t=this.model.getLastElementAncestor(e);return t===null||typeof t>"u"?t:this.elementMapper(t.elements)}isCollapsible(e){return this.model.isCollapsible(e)}setCollapsible(e,t){return this.model.setCollapsible(e,t)}isCollapsed(e){return this.model.isCollapsed(e)}setCollapsed(e,t,r){return this.model.setCollapsed(e,t,r)}expandTo(e){return this.model.expandTo(e)}rerender(e){return this.model.rerender(e)}refilter(){return this.model.refilter()}resort(e=null,t=!0){return this.model.resort(e,t)}getCompressedTreeNode(e=null){return this.model.getNode(e)}}export{P as CompressedObjectTreeModel,ee as CompressibleObjectTreeModel,j as DefaultElementMapper,u as compress,b as decompress};
+import { getVisibleState, isFilterResult } from './indexTreeModel.js';
+import { ObjectTreeModel } from './objectTreeModel.js';
+import { TreeError, WeakMapper } from './tree.js';
+import { equals } from '../../../common/arrays.js';
+import { Event } from '../../../common/event.js';
+import { Iterable } from '../../../common/iterator.js';
+function noCompress(element) {
+    const elements = [element.element];
+    const incompressible = element.incompressible || false;
+    return {
+        element: { elements, incompressible },
+        children: Iterable.map(Iterable.from(element.children), noCompress),
+        collapsible: element.collapsible,
+        collapsed: element.collapsed
+    };
+}
+export function compress(element) {
+    const elements = [element.element];
+    const incompressible = element.incompressible || false;
+    let childrenIterator;
+    let children;
+    while (true) {
+        [children, childrenIterator] = Iterable.consume(Iterable.from(element.children), 2);
+        if (children.length !== 1) {
+            break;
+        }
+        if (children[0].incompressible) {
+            break;
+        }
+        element = children[0];
+        elements.push(element.element);
+    }
+    return {
+        element: { elements, incompressible },
+        children: Iterable.map(Iterable.concat(children, childrenIterator), compress),
+        collapsible: element.collapsible,
+        collapsed: element.collapsed
+    };
+}
+function _decompress(element, index = 0) {
+    let children;
+    if (index < element.element.elements.length - 1) {
+        children = [_decompress(element, index + 1)];
+    }
+    else {
+        children = Iterable.map(Iterable.from(element.children), el => _decompress(el, 0));
+    }
+    if (index === 0 && element.element.incompressible) {
+        return {
+            element: element.element.elements[index],
+            children,
+            incompressible: true,
+            collapsible: element.collapsible,
+            collapsed: element.collapsed
+        };
+    }
+    return {
+        element: element.element.elements[index],
+        children,
+        collapsible: element.collapsible,
+        collapsed: element.collapsed
+    };
+}
+export function decompress(element) {
+    return _decompress(element, 0);
+}
+function splice(treeElement, element, children) {
+    if (treeElement.element === element) {
+        return { ...treeElement, children };
+    }
+    return { ...treeElement, children: Iterable.map(Iterable.from(treeElement.children), e => splice(e, element, children)) };
+}
+const wrapIdentityProvider = (base) => ({
+    getId(node) {
+        return node.elements.map(e => base.getId(e).toString()).join('\0');
+    }
+});
+export class CompressedObjectTreeModel {
+    get onDidSpliceRenderedNodes() { return this.model.onDidSpliceRenderedNodes; }
+    get onDidSpliceModel() { return this.model.onDidSpliceModel; }
+    get onDidChangeCollapseState() { return this.model.onDidChangeCollapseState; }
+    get onDidChangeRenderNodeCount() { return this.model.onDidChangeRenderNodeCount; }
+    get size() { return this.nodes.size; }
+    constructor(user, options = {}) {
+        this.user = user;
+        this.rootRef = null;
+        this.nodes = new Map();
+        this.model = new ObjectTreeModel(user, options);
+        this.enabled = typeof options.compressionEnabled === 'undefined' ? true : options.compressionEnabled;
+        this.identityProvider = options.identityProvider;
+    }
+    setChildren(element, children = Iterable.empty(), options) {
+        const diffIdentityProvider = options.diffIdentityProvider && wrapIdentityProvider(options.diffIdentityProvider);
+        if (element === null) {
+            const compressedChildren = Iterable.map(children, this.enabled ? compress : noCompress);
+            this._setChildren(null, compressedChildren, { diffIdentityProvider, diffDepth: Infinity });
+            return;
+        }
+        const compressedNode = this.nodes.get(element);
+        if (!compressedNode) {
+            throw new TreeError(this.user, 'Unknown compressed tree node');
+        }
+        const node = this.model.getNode(compressedNode);
+        const compressedParentNode = this.model.getParentNodeLocation(compressedNode);
+        const parent = this.model.getNode(compressedParentNode);
+        const decompressedElement = decompress(node);
+        const splicedElement = splice(decompressedElement, element, children);
+        const recompressedElement = (this.enabled ? compress : noCompress)(splicedElement);
+        const elementComparator = options.diffIdentityProvider
+            ? ((a, b) => options.diffIdentityProvider.getId(a) === options.diffIdentityProvider.getId(b))
+            : undefined;
+        if (equals(recompressedElement.element.elements, node.element.elements, elementComparator)) {
+            this._setChildren(compressedNode, recompressedElement.children || Iterable.empty(), { diffIdentityProvider, diffDepth: 1 });
+            return;
+        }
+        const parentChildren = parent.children
+            .map(child => child === node ? recompressedElement : child);
+        this._setChildren(parent.element, parentChildren, {
+            diffIdentityProvider,
+            diffDepth: node.depth - parent.depth,
+        });
+    }
+    isCompressionEnabled() {
+        return this.enabled;
+    }
+    setCompressionEnabled(enabled) {
+        if (enabled === this.enabled) {
+            return;
+        }
+        this.enabled = enabled;
+        const root = this.model.getNode();
+        const rootChildren = root.children;
+        const decompressedRootChildren = Iterable.map(rootChildren, decompress);
+        const recompressedRootChildren = Iterable.map(decompressedRootChildren, enabled ? compress : noCompress);
+        this._setChildren(null, recompressedRootChildren, {
+            diffIdentityProvider: this.identityProvider,
+            diffDepth: Infinity,
+        });
+    }
+    _setChildren(node, children, options) {
+        const insertedElements = new Set();
+        const onDidCreateNode = (node) => {
+            for (const element of node.element.elements) {
+                insertedElements.add(element);
+                this.nodes.set(element, node.element);
+            }
+        };
+        const onDidDeleteNode = (node) => {
+            for (const element of node.element.elements) {
+                if (!insertedElements.has(element)) {
+                    this.nodes.delete(element);
+                }
+            }
+        };
+        this.model.setChildren(node, children, { ...options, onDidCreateNode, onDidDeleteNode });
+    }
+    has(element) {
+        return this.nodes.has(element);
+    }
+    getListIndex(location) {
+        const node = this.getCompressedNode(location);
+        return this.model.getListIndex(node);
+    }
+    getListRenderCount(location) {
+        const node = this.getCompressedNode(location);
+        return this.model.getListRenderCount(node);
+    }
+    getNode(location) {
+        if (typeof location === 'undefined') {
+            return this.model.getNode();
+        }
+        const node = this.getCompressedNode(location);
+        return this.model.getNode(node);
+    }
+    getNodeLocation(node) {
+        const compressedNode = this.model.getNodeLocation(node);
+        if (compressedNode === null) {
+            return null;
+        }
+        return compressedNode.elements[compressedNode.elements.length - 1];
+    }
+    getParentNodeLocation(location) {
+        const compressedNode = this.getCompressedNode(location);
+        const parentNode = this.model.getParentNodeLocation(compressedNode);
+        if (parentNode === null) {
+            return null;
+        }
+        return parentNode.elements[parentNode.elements.length - 1];
+    }
+    getFirstElementChild(location) {
+        const compressedNode = this.getCompressedNode(location);
+        return this.model.getFirstElementChild(compressedNode);
+    }
+    getLastElementAncestor(location) {
+        const compressedNode = typeof location === 'undefined' ? undefined : this.getCompressedNode(location);
+        return this.model.getLastElementAncestor(compressedNode);
+    }
+    isCollapsible(location) {
+        const compressedNode = this.getCompressedNode(location);
+        return this.model.isCollapsible(compressedNode);
+    }
+    setCollapsible(location, collapsible) {
+        const compressedNode = this.getCompressedNode(location);
+        return this.model.setCollapsible(compressedNode, collapsible);
+    }
+    isCollapsed(location) {
+        const compressedNode = this.getCompressedNode(location);
+        return this.model.isCollapsed(compressedNode);
+    }
+    setCollapsed(location, collapsed, recursive) {
+        const compressedNode = this.getCompressedNode(location);
+        return this.model.setCollapsed(compressedNode, collapsed, recursive);
+    }
+    expandTo(location) {
+        const compressedNode = this.getCompressedNode(location);
+        this.model.expandTo(compressedNode);
+    }
+    rerender(location) {
+        const compressedNode = this.getCompressedNode(location);
+        this.model.rerender(compressedNode);
+    }
+    refilter() {
+        this.model.refilter();
+    }
+    resort(location = null, recursive = true) {
+        const compressedNode = this.getCompressedNode(location);
+        this.model.resort(compressedNode, recursive);
+    }
+    getCompressedNode(element) {
+        if (element === null) {
+            return null;
+        }
+        const node = this.nodes.get(element);
+        if (!node) {
+            throw new TreeError(this.user, `Tree element not found: ${element}`);
+        }
+        return node;
+    }
+}
+export const DefaultElementMapper = elements => elements[elements.length - 1];
+class CompressedTreeNodeWrapper {
+    get element() { return this.node.element === null ? null : this.unwrapper(this.node.element); }
+    get children() { return this.node.children.map(node => new CompressedTreeNodeWrapper(this.unwrapper, node)); }
+    get depth() { return this.node.depth; }
+    get visibleChildrenCount() { return this.node.visibleChildrenCount; }
+    get visibleChildIndex() { return this.node.visibleChildIndex; }
+    get collapsible() { return this.node.collapsible; }
+    get collapsed() { return this.node.collapsed; }
+    get visible() { return this.node.visible; }
+    get filterData() { return this.node.filterData; }
+    constructor(unwrapper, node) {
+        this.unwrapper = unwrapper;
+        this.node = node;
+    }
+}
+function mapOptions(compressedNodeUnwrapper, options) {
+    return {
+        ...options,
+        identityProvider: options.identityProvider && {
+            getId(node) {
+                return options.identityProvider.getId(compressedNodeUnwrapper(node));
+            }
+        },
+        sorter: options.sorter && {
+            compare(node, otherNode) {
+                return options.sorter.compare(node.elements[0], otherNode.elements[0]);
+            }
+        },
+        filter: options.filter && {
+            filter(node, parentVisibility) {
+                const elements = node.elements;
+                for (let i = 0; i < elements.length - 1; i++) {
+                    const result = options.filter.filter(elements[i], parentVisibility);
+                    parentVisibility = getVisibleState(isFilterResult(result) ? result.visibility : result);
+                }
+                return options.filter.filter(elements[elements.length - 1], parentVisibility);
+            }
+        }
+    };
+}
+export class CompressibleObjectTreeModel {
+    get onDidSpliceModel() {
+        return Event.map(this.model.onDidSpliceModel, ({ insertedNodes, deletedNodes }) => ({
+            insertedNodes: insertedNodes.map(node => this.nodeMapper.map(node)),
+            deletedNodes: deletedNodes.map(node => this.nodeMapper.map(node)),
+        }));
+    }
+    get onDidSpliceRenderedNodes() {
+        return Event.map(this.model.onDidSpliceRenderedNodes, ({ start, deleteCount, elements }) => ({
+            start,
+            deleteCount,
+            elements: elements.map(node => this.nodeMapper.map(node))
+        }));
+    }
+    get onDidChangeCollapseState() {
+        return Event.map(this.model.onDidChangeCollapseState, ({ node, deep }) => ({
+            node: this.nodeMapper.map(node),
+            deep
+        }));
+    }
+    get onDidChangeRenderNodeCount() {
+        return Event.map(this.model.onDidChangeRenderNodeCount, node => this.nodeMapper.map(node));
+    }
+    constructor(user, options = {}) {
+        this.rootRef = null;
+        this.elementMapper = options.elementMapper || DefaultElementMapper;
+        const compressedNodeUnwrapper = node => this.elementMapper(node.elements);
+        this.nodeMapper = new WeakMapper(node => new CompressedTreeNodeWrapper(compressedNodeUnwrapper, node));
+        this.model = new CompressedObjectTreeModel(user, mapOptions(compressedNodeUnwrapper, options));
+    }
+    setChildren(element, children = Iterable.empty(), options = {}) {
+        this.model.setChildren(element, children, options);
+    }
+    isCompressionEnabled() {
+        return this.model.isCompressionEnabled();
+    }
+    setCompressionEnabled(enabled) {
+        this.model.setCompressionEnabled(enabled);
+    }
+    has(location) {
+        return this.model.has(location);
+    }
+    getListIndex(location) {
+        return this.model.getListIndex(location);
+    }
+    getListRenderCount(location) {
+        return this.model.getListRenderCount(location);
+    }
+    getNode(location) {
+        return this.nodeMapper.map(this.model.getNode(location));
+    }
+    getNodeLocation(node) {
+        return node.element;
+    }
+    getParentNodeLocation(location) {
+        return this.model.getParentNodeLocation(location);
+    }
+    getFirstElementChild(location) {
+        const result = this.model.getFirstElementChild(location);
+        if (result === null || typeof result === 'undefined') {
+            return result;
+        }
+        return this.elementMapper(result.elements);
+    }
+    getLastElementAncestor(location) {
+        const result = this.model.getLastElementAncestor(location);
+        if (result === null || typeof result === 'undefined') {
+            return result;
+        }
+        return this.elementMapper(result.elements);
+    }
+    isCollapsible(location) {
+        return this.model.isCollapsible(location);
+    }
+    setCollapsible(location, collapsed) {
+        return this.model.setCollapsible(location, collapsed);
+    }
+    isCollapsed(location) {
+        return this.model.isCollapsed(location);
+    }
+    setCollapsed(location, collapsed, recursive) {
+        return this.model.setCollapsed(location, collapsed, recursive);
+    }
+    expandTo(location) {
+        return this.model.expandTo(location);
+    }
+    rerender(location) {
+        return this.model.rerender(location);
+    }
+    refilter() {
+        return this.model.refilter();
+    }
+    resort(element = null, recursive = true) {
+        return this.model.resort(element, recursive);
+    }
+    getCompressedTreeNode(location = null) {
+        return this.model.getNode(location);
+    }
+}

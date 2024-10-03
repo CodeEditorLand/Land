@@ -1,1 +1,82 @@
-var p=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var P=(s,o,e,i)=>{for(var r=i>1?void 0:i?v(o,e):o,c=s.length-1,t;c>=0;c--)(t=s[c])&&(r=(i?t(o,e,r):t(r))||r);return i&&r&&p(o,e,r),r},d=(s,o)=>(e,i)=>o(e,i,s);import{ILogService as k}from"../../../../platform/log/common/log.js";import{Disposable as W,DisposableStore as h,toDisposable as I}from"../../../../base/common/lifecycle.js";import{IMainProcessService as S}from"../../../../platform/ipc/common/mainProcessService.js";import{Client as u}from"../../../../base/parts/ipc/common/ipc.mp.js";import{createDecorator as f}from"../../../../platform/instantiation/common/instantiation.js";import{ProxyChannel as w}from"../../../../base/parts/ipc/common/ipc.js";import{generateUuid as U}from"../../../../base/common/uuid.js";import{acquirePort as g}from"../../../../base/parts/ipc/electron-sandbox/ipc.mp.js";import{ipcUtilityProcessWorkerChannelName as C}from"../../../../platform/utilityProcess/common/utilityProcessWorkerService.js";import{Barrier as b,timeout as D}from"../../../../base/common/async.js";const G=f("utilityProcessWorkerWorkbenchService");let l=class extends W{constructor(e,i,r){super();this.windowId=e;this.logService=i;this.mainProcessService=r}_utilityProcessWorkerService=void 0;get utilityProcessWorkerService(){if(!this._utilityProcessWorkerService){const e=this.mainProcessService.getChannel(C);this._utilityProcessWorkerService=w.toService(e)}return this._utilityProcessWorkerService}restoredBarrier=new b;async createWorker(e){this.logService.trace("Renderer->UtilityProcess#createWorker"),await Promise.race([this.restoredBarrier.wait(),D(2e3)]);const i=U(),r="vscode:createUtilityProcessWorkerMessageChannelResult",c=g(void 0,r,i),t=this.utilityProcessWorkerService.createWorker({process:e,reply:{windowId:this.windowId,channel:r,nonce:i}}),a=new h;a.add(I(()=>{this.logService.trace("Renderer->UtilityProcess#disposeWorker",e),this.utilityProcessWorkerService.disposeWorker({process:e,reply:{windowId:this.windowId}})}));const y=await c,m=a.add(new u(y,`window:${this.windowId},module:${e.moduleId}`));return this.logService.trace("Renderer->UtilityProcess#createWorkerChannel: connection established"),t.then(({reason:n})=>{n?.code===0?this.logService.trace(`[UtilityProcessWorker]: terminated normally with code ${n.code}, signal: ${n.signal}`):this.logService.error(`[UtilityProcessWorker]: terminated unexpectedly with code ${n?.code}, signal: ${n?.signal}`)}),{client:m,onDidTerminate:t,dispose:()=>a.dispose()}}notifyRestored(){this.restoredBarrier.isOpen()||this.restoredBarrier.open()}};l=P([d(1,k),d(2,S)],l);export{G as IUtilityProcessWorkerWorkbenchService,l as UtilityProcessWorkerWorkbenchService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { Disposable, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { IMainProcessService } from '../../../../platform/ipc/common/mainProcessService.js';
+import { Client as MessagePortClient } from '../../../../base/parts/ipc/common/ipc.mp.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { ProxyChannel } from '../../../../base/parts/ipc/common/ipc.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
+import { acquirePort } from '../../../../base/parts/ipc/electron-sandbox/ipc.mp.js';
+import { ipcUtilityProcessWorkerChannelName } from '../../../../platform/utilityProcess/common/utilityProcessWorkerService.js';
+import { Barrier, timeout } from '../../../../base/common/async.js';
+export const IUtilityProcessWorkerWorkbenchService = createDecorator('utilityProcessWorkerWorkbenchService');
+let UtilityProcessWorkerWorkbenchService = class UtilityProcessWorkerWorkbenchService extends Disposable {
+    get utilityProcessWorkerService() {
+        if (!this._utilityProcessWorkerService) {
+            const channel = this.mainProcessService.getChannel(ipcUtilityProcessWorkerChannelName);
+            this._utilityProcessWorkerService = ProxyChannel.toService(channel);
+        }
+        return this._utilityProcessWorkerService;
+    }
+    constructor(windowId, logService, mainProcessService) {
+        super();
+        this.windowId = windowId;
+        this.logService = logService;
+        this.mainProcessService = mainProcessService;
+        this._utilityProcessWorkerService = undefined;
+        this.restoredBarrier = new Barrier();
+    }
+    async createWorker(process) {
+        this.logService.trace('Renderer->UtilityProcess#createWorker');
+        await Promise.race([this.restoredBarrier.wait(), timeout(2000)]);
+        const nonce = generateUuid();
+        const responseChannel = 'vscode:createUtilityProcessWorkerMessageChannelResult';
+        const portPromise = acquirePort(undefined, responseChannel, nonce);
+        const onDidTerminate = this.utilityProcessWorkerService.createWorker({
+            process,
+            reply: { windowId: this.windowId, channel: responseChannel, nonce }
+        });
+        const disposables = new DisposableStore();
+        disposables.add(toDisposable(() => {
+            this.logService.trace('Renderer->UtilityProcess#disposeWorker', process);
+            this.utilityProcessWorkerService.disposeWorker({
+                process,
+                reply: { windowId: this.windowId }
+            });
+        }));
+        const port = await portPromise;
+        const client = disposables.add(new MessagePortClient(port, `window:${this.windowId},module:${process.moduleId}`));
+        this.logService.trace('Renderer->UtilityProcess#createWorkerChannel: connection established');
+        onDidTerminate.then(({ reason }) => {
+            if (reason?.code === 0) {
+                this.logService.trace(`[UtilityProcessWorker]: terminated normally with code ${reason.code}, signal: ${reason.signal}`);
+            }
+            else {
+                this.logService.error(`[UtilityProcessWorker]: terminated unexpectedly with code ${reason?.code}, signal: ${reason?.signal}`);
+            }
+        });
+        return { client, onDidTerminate, dispose: () => disposables.dispose() };
+    }
+    notifyRestored() {
+        if (!this.restoredBarrier.isOpen()) {
+            this.restoredBarrier.open();
+        }
+    }
+};
+UtilityProcessWorkerWorkbenchService = __decorate([
+    __param(1, ILogService),
+    __param(2, IMainProcessService),
+    __metadata("design:paramtypes", [Number, Object, Object])
+], UtilityProcessWorkerWorkbenchService);
+export { UtilityProcessWorkerWorkbenchService };

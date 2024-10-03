@@ -1,1 +1,61 @@
-var g=Object.defineProperty;var v=Object.getOwnPropertyDescriptor;var m=(s,n,i,t)=>{for(var e=t>1?void 0:t?v(n,i):n,r=s.length-1,a;r>=0;r--)(a=s[r])&&(e=(t?a(n,i,e):a(e))||e);return t&&e&&g(n,i,e),e},d=(s,n)=>(i,t)=>n(i,t,s);import*as p from"../../../../base/browser/dom.js";import{Button as f}from"../../../../base/browser/ui/button/button.js";import{MarkdownString as y}from"../../../../base/common/htmlContent.js";import{Disposable as A}from"../../../../base/common/lifecycle.js";import{localize as k}from"../../../../nls.js";import{IChatAgentService as u}from"../common/chatAgents.js";import{formatChatQuestion as L}from"../common/chatParserTypes.js";import"../common/chatService.js";const S=p.$;let c=class extends A{constructor(i,t,e,r,a,l){super();this.location=e;this.options=r;this.clickHandler=a;this.chatAgentService=l;const o=p.append(i,S(".interactive-session-followups"));t.forEach(h=>this.renderFollowup(o,h))}renderFollowup(i,t){if(!this.chatAgentService.getDefaultAgent(this.location))return;const e=L(this.chatAgentService,this.location,"",t.agentId,t.subCommand);if(e===void 0)return;const r=t.kind==="reply"?t.title||t.message:t.title,a=t.kind==="reply"?t.message:t.title,l=(e+("tooltip"in t&&t.tooltip||a)).trim(),o=this._register(new f(i,{...this.options,title:l}));t.kind==="reply"?o.element.classList.add("interactive-followup-reply"):t.kind==="command"&&o.element.classList.add("interactive-followup-command"),o.element.ariaLabel=k("followUpAriaLabel","Follow up question: {0}",r),o.label=new y(r),this._register(o.onDidClick(()=>this.clickHandler(t)))}};c=m([d(5,u)],c);export{c as ChatFollowups};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../base/browser/dom.js';
+import { Button } from '../../../../base/browser/ui/button/button.js';
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { localize } from '../../../../nls.js';
+import { ChatAgentLocation, IChatAgentService } from '../common/chatAgents.js';
+import { formatChatQuestion } from '../common/chatParserTypes.js';
+const $ = dom.$;
+let ChatFollowups = class ChatFollowups extends Disposable {
+    constructor(container, followups, location, options, clickHandler, chatAgentService) {
+        super();
+        this.location = location;
+        this.options = options;
+        this.clickHandler = clickHandler;
+        this.chatAgentService = chatAgentService;
+        const followupsContainer = dom.append(container, $('.interactive-session-followups'));
+        followups.forEach(followup => this.renderFollowup(followupsContainer, followup));
+    }
+    renderFollowup(container, followup) {
+        if (!this.chatAgentService.getDefaultAgent(this.location)) {
+            return;
+        }
+        const tooltipPrefix = formatChatQuestion(this.chatAgentService, this.location, '', followup.agentId, followup.subCommand);
+        if (tooltipPrefix === undefined) {
+            return;
+        }
+        const baseTitle = followup.kind === 'reply' ?
+            (followup.title || followup.message)
+            : followup.title;
+        const message = followup.kind === 'reply' ? followup.message : followup.title;
+        const tooltip = (tooltipPrefix +
+            ('tooltip' in followup && followup.tooltip || message)).trim();
+        const button = this._register(new Button(container, { ...this.options, title: tooltip }));
+        if (followup.kind === 'reply') {
+            button.element.classList.add('interactive-followup-reply');
+        }
+        else if (followup.kind === 'command') {
+            button.element.classList.add('interactive-followup-command');
+        }
+        button.element.ariaLabel = localize('followUpAriaLabel', "Follow up question: {0}", baseTitle);
+        button.label = new MarkdownString(baseTitle);
+        this._register(button.onDidClick(() => this.clickHandler(followup)));
+    }
+};
+ChatFollowups = __decorate([
+    __param(5, IChatAgentService),
+    __metadata("design:paramtypes", [HTMLElement, Array, String, Object, Function, Object])
+], ChatFollowups);
+export { ChatFollowups };

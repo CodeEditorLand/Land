@@ -1,1 +1,42 @@
-import{Emitter as n}from"../../../../../base/common/event.js";import{Disposable as i}from"../../../../../base/common/lifecycle.js";import"./notebookDiffEditorBrowser.js";import"../notebookViewEvents.js";var l=(e=>(e[e.LayoutChanged=1]="LayoutChanged",e[e.CellLayoutChanged=2]="CellLayoutChanged",e))(l||{});class g{constructor(o,e){this.source=o;this.value=e}type=1}class s{constructor(o){this.source=o}type=2}class p extends i{_onDidChangeLayout=this._register(new n);onDidChangeLayout=this._onDidChangeLayout.event;_onDidChangeCellLayout=this._register(new n);onDidChangeCellLayout=this._onDidChangeCellLayout.event;emit(o){for(let e=0,r=o.length;e<r;e++){const t=o[e];switch(t.type){case 1:this._onDidChangeLayout.fire(t);break;case 2:this._onDidChangeCellLayout.fire(t);break}}}}export{s as NotebookCellLayoutChangedEvent,p as NotebookDiffEditorEventDispatcher,g as NotebookDiffLayoutChangedEvent,l as NotebookDiffViewEventType};
+import { Emitter } from '../../../../../base/common/event.js';
+import { Disposable } from '../../../../../base/common/lifecycle.js';
+export var NotebookDiffViewEventType;
+(function (NotebookDiffViewEventType) {
+    NotebookDiffViewEventType[NotebookDiffViewEventType["LayoutChanged"] = 1] = "LayoutChanged";
+    NotebookDiffViewEventType[NotebookDiffViewEventType["CellLayoutChanged"] = 2] = "CellLayoutChanged";
+})(NotebookDiffViewEventType || (NotebookDiffViewEventType = {}));
+export class NotebookDiffLayoutChangedEvent {
+    constructor(source, value) {
+        this.source = source;
+        this.value = value;
+        this.type = NotebookDiffViewEventType.LayoutChanged;
+    }
+}
+export class NotebookCellLayoutChangedEvent {
+    constructor(source) {
+        this.source = source;
+        this.type = NotebookDiffViewEventType.CellLayoutChanged;
+    }
+}
+export class NotebookDiffEditorEventDispatcher extends Disposable {
+    constructor() {
+        super(...arguments);
+        this._onDidChangeLayout = this._register(new Emitter());
+        this.onDidChangeLayout = this._onDidChangeLayout.event;
+        this._onDidChangeCellLayout = this._register(new Emitter());
+        this.onDidChangeCellLayout = this._onDidChangeCellLayout.event;
+    }
+    emit(events) {
+        for (let i = 0, len = events.length; i < len; i++) {
+            const e = events[i];
+            switch (e.type) {
+                case NotebookDiffViewEventType.LayoutChanged:
+                    this._onDidChangeLayout.fire(e);
+                    break;
+                case NotebookDiffViewEventType.CellLayoutChanged:
+                    this._onDidChangeCellLayout.fire(e);
+                    break;
+            }
+        }
+    }
+}

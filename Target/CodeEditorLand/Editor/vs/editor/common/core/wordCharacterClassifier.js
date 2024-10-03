@@ -1,1 +1,77 @@
-import{CharCode as s}from"../../../base/common/charCode.js";import{LRUCache as l}from"../../../base/common/map.js";import{CharacterClassifier as o}from"./characterClassifier.js";var g=(e=>(e[e.Regular=0]="Regular",e[e.Whitespace=1]="Whitespace",e[e.WordSeparator=2]="WordSeparator",e))(g||{});class c extends o{intlSegmenterLocales;_segmenter=null;_cachedLine=null;_cachedSegments=[];constructor(t,n){super(0),this.intlSegmenterLocales=n,this.intlSegmenterLocales.length>0?this._segmenter=new Intl.Segmenter(this.intlSegmenterLocales,{granularity:"word"}):this._segmenter=null;for(let e=0,r=t.length;e<r;e++)this.set(t.charCodeAt(e),2);this.set(s.Space,1),this.set(s.Tab,1)}findPrevIntlWordBeforeOrAtOffset(t,n){let e=null;for(const r of this._getIntlSegmenterWordsOnLine(t)){if(r.index>n)break;e=r}return e}findNextIntlWordAtOrAfterOffset(t,n){for(const e of this._getIntlSegmenterWordsOnLine(t))if(!(e.index<n))return e;return null}_getIntlSegmenterWordsOnLine(t){return this._segmenter?this._cachedLine===t?this._cachedSegments:(this._cachedLine=t,this._cachedSegments=this._filterWordSegments(this._segmenter.segment(t)),this._cachedSegments):[]}_filterWordSegments(t){const n=[];for(const e of t)this._isWordLike(e)&&n.push(e);return n}_isWordLike(t){return!!t.isWordLike}}const a=new l(10);function h(i,t){const n=`${i}/${t.join(",")}`;let e=a.get(n);return e||(e=new c(i,t),a.set(n,e)),e}export{g as WordCharacterClass,c as WordCharacterClassifier,h as getMapForWordSeparators};
+import { LRUCache } from '../../../base/common/map.js';
+import { CharacterClassifier } from './characterClassifier.js';
+export class WordCharacterClassifier extends CharacterClassifier {
+    constructor(wordSeparators, intlSegmenterLocales) {
+        super(0);
+        this._segmenter = null;
+        this._cachedLine = null;
+        this._cachedSegments = [];
+        this.intlSegmenterLocales = intlSegmenterLocales;
+        if (this.intlSegmenterLocales.length > 0) {
+            this._segmenter = new Intl.Segmenter(this.intlSegmenterLocales, { granularity: 'word' });
+        }
+        else {
+            this._segmenter = null;
+        }
+        for (let i = 0, len = wordSeparators.length; i < len; i++) {
+            this.set(wordSeparators.charCodeAt(i), 2);
+        }
+        this.set(32, 1);
+        this.set(9, 1);
+    }
+    findPrevIntlWordBeforeOrAtOffset(line, offset) {
+        let candidate = null;
+        for (const segment of this._getIntlSegmenterWordsOnLine(line)) {
+            if (segment.index > offset) {
+                break;
+            }
+            candidate = segment;
+        }
+        return candidate;
+    }
+    findNextIntlWordAtOrAfterOffset(lineContent, offset) {
+        for (const segment of this._getIntlSegmenterWordsOnLine(lineContent)) {
+            if (segment.index < offset) {
+                continue;
+            }
+            return segment;
+        }
+        return null;
+    }
+    _getIntlSegmenterWordsOnLine(line) {
+        if (!this._segmenter) {
+            return [];
+        }
+        if (this._cachedLine === line) {
+            return this._cachedSegments;
+        }
+        this._cachedLine = line;
+        this._cachedSegments = this._filterWordSegments(this._segmenter.segment(line));
+        return this._cachedSegments;
+    }
+    _filterWordSegments(segments) {
+        const result = [];
+        for (const segment of segments) {
+            if (this._isWordLike(segment)) {
+                result.push(segment);
+            }
+        }
+        return result;
+    }
+    _isWordLike(segment) {
+        if (segment.isWordLike) {
+            return true;
+        }
+        return false;
+    }
+}
+const wordClassifierCache = new LRUCache(10);
+export function getMapForWordSeparators(wordSeparators, intlSegmenterLocales) {
+    const key = `${wordSeparators}/${intlSegmenterLocales.join(',')}`;
+    let result = wordClassifierCache.get(key);
+    if (!result) {
+        result = new WordCharacterClassifier(wordSeparators, intlSegmenterLocales);
+        wordClassifierCache.set(key, result);
+    }
+    return result;
+}

@@ -1,1 +1,382 @@
-var S=Object.defineProperty;var E=Object.getOwnPropertyDescriptor;var y=(l,e,t,n)=>{for(var r=n>1?void 0:n?E(e,t):e,o=l.length-1,i;o>=0;o--)(i=l[o])&&(r=(n?i(e,t,r):i(r))||r);return n&&r&&S(e,t,r),r},f=(l,e)=>(t,n)=>e(t,n,l);import{validateConstraint as _}from"../../../base/common/types.js";import"../../../platform/commands/common/commands.js";import*as c from"./extHostTypes.js";import*as a from"./extHostTypeConverters.js";import{cloneAndChange as C}from"../../../base/common/objects.js";import{MainContext as x}from"./extHost.protocol.js";import{isNonEmptyArray as P}from"../../../base/common/arrays.js";import"../../../editor/common/languages.js";import{ILogService as b}from"../../../platform/log/common/log.js";import{revive as I}from"../../../base/common/marshalling.js";import{Range as v}from"../../../editor/common/core/range.js";import{Position as H}from"../../../editor/common/core/position.js";import{URI as T}from"../../../base/common/uri.js";import{toDisposable as A}from"../../../base/common/lifecycle.js";import{createDecorator as $}from"../../../platform/instantiation/common/instantiation.js";import{IExtHostRpcService as D}from"./extHostRpcService.js";import"../../../editor/common/core/selection.js";import{TestItemImpl as R}from"./extHostTestItem.js";import{VSBuffer as h}from"../../../base/common/buffer.js";import{SerializableObjectWithBuffers as M}from"../../services/extensions/common/proxyIdentifier.js";import{toErrorMessage as V}from"../../../base/common/errorMessage.js";import{StopWatch as k}from"../../../base/common/stopwatch.js";import"../../../platform/extensions/common/extensions.js";import{TelemetryTrustedValue as U}from"../../../platform/telemetry/common/telemetryUtils.js";import{IExtHostTelemetry as O}from"./extHostTelemetry.js";import{generateUuid as L}from"../../../base/common/uuid.js";let p=class{_serviceBrand;#e;_commands=new Map;_apiCommands=new Map;#t;_logService;#n;_argumentProcessors;converter;constructor(e,t,n){this.#e=e.getProxy(x.MainThreadCommands),this._logService=t,this.#n=n,this.#t=e.getProxy(x.MainThreadTelemetry),this.converter=new N(this,r=>{const o=this._apiCommands.get(r);return o?.result===g.Void?o:void 0},t),this._argumentProcessors=[{processArgument(r){return I(r)}},{processArgument(r){return C(r,function(o){if(v.isIRange(o))return a.Range.to(o);if(H.isIPosition(o))return a.Position.to(o);if(v.isIRange(o.range)&&T.isUri(o.uri))return a.location.to(o);if(o instanceof h)return o.buffer.buffer;if(!Array.isArray(o))return o})}}]}registerArgumentProcessor(e){this._argumentProcessors.push(e)}registerApiCommand(e){const t=this.registerCommand(!1,e.id,async(...n)=>{const r=e.args.map((i,m)=>{if(!i.validate(n[m]))throw new Error(`Invalid argument '${i.name}' when running '${e.id}', received: ${typeof n[m]=="object"?JSON.stringify(n[m],null,"	"):n[m]} `);return i.convert(n[m])}),o=await this.executeCommand(e.internalId,...r);return e.result.convert(o,n,this.converter)},void 0,{description:e.description,args:e.args,returns:e.result.description});return this._apiCommands.set(e.id,e),new c.Disposable(()=>{t.dispose(),this._apiCommands.delete(e.id)})}registerCommand(e,t,n,r,o,i){if(this._logService.trace("ExtHostCommands#registerCommand",t),!t.trim().length)throw new Error("invalid id");if(this._commands.has(t))throw new Error(`command '${t}' already exists`);return this._commands.set(t,{callback:n,thisArg:r,metadata:o,extension:i}),e&&this.#e.$registerCommand(t),new c.Disposable(()=>{this._commands.delete(t)&&e&&this.#e.$unregisterCommand(t)})}executeCommand(e,...t){return this._logService.trace("ExtHostCommands#executeCommand",e),this._doExecuteCommand(e,t,!0)}async _doExecuteCommand(e,t,n){if(this._commands.has(e))return this.#e.$fireCommandActivationEvent(e),this._executeContributedCommand(e,t,!1);{let r=!1;const o=C(t,function(i){if(i instanceof c.Position)return a.Position.from(i);if(i instanceof c.Range)return a.Range.from(i);if(i instanceof c.Location)return a.location.from(i);if(c.NotebookRange.isNotebookRange(i))return a.NotebookRange.from(i);if(i instanceof ArrayBuffer)return r=!0,h.wrap(new Uint8Array(i));if(i instanceof Uint8Array)return r=!0,h.wrap(i);if(i instanceof h)return r=!0,i;if(!Array.isArray(i))return i});try{const i=await this.#e.$executeCommand(e,r?new M(o):o,n);return I(i)}catch(i){if(i instanceof Error&&i.message==="$executeCommand:retry")return this._doExecuteCommand(e,t,!1);throw i}}}async _executeContributedCommand(e,t,n){const r=this._commands.get(e);if(!r)throw new Error("Unknown command");const{callback:o,thisArg:i,metadata:m}=r;if(m?.args)for(let d=0;d<m.args.length;d++)try{_(t[d],m.args[d].constraint)}catch{throw new Error(`Running the contributed command: '${e}' failed. Illegal argument '${m.args[d].name}' - ${m.args[d].description}`)}const w=k.create();try{return await o.apply(i,t)}catch(d){if(e===this.converter.delegatingCommandId){const u=this.converter.getActualCommand(...t);u&&(e=u.command)}if(this._logService.error(d,e,r.extension?.identifier),!n)throw d;if(r.extension?.identifier){const u=this.#n.onExtensionError(r.extension.identifier,d);this._logService.trace("forwarded error to extension?",u,r.extension?.identifier)}throw new class extends Error{id=e;source=r.extension?.displayName??r.extension?.name;constructor(){super(V(d))}}}finally{this._reportTelemetry(r,e,w.elapsed())}}_reportTelemetry(e,t,n){e.extension&&this.#t.$publicLog2("Extension:ActionExecuted",{extensionId:e.extension.identifier.value,id:new U(t),duration:n})}$executeContributedCommand(e,...t){this._logService.trace("ExtHostCommands#$executeContributedCommand",e);const n=this._commands.get(e);return n?(t=t.map(r=>this._argumentProcessors.reduce((o,i)=>i.processArgument(o,n.extension?.identifier),r)),this._executeContributedCommand(e,t,!0)):Promise.reject(new Error(`Contributed command '${e}' does not exist.`))}getCommands(e=!1){return this._logService.trace("ExtHostCommands#getCommands",e),this.#e.$getCommands().then(t=>(e&&(t=t.filter(n=>n[0]!=="_")),t))}$getContributedCommandMetadata(){const e=Object.create(null);for(const[t,n]of this._commands){const{metadata:r}=n;r&&(e[t]=r)}return Promise.resolve(e)}};p=y([f(0,D),f(1,b),f(2,O)],p);const Ee=$("IExtHostCommands");class N{constructor(e,t,n){this._commands=e;this._lookupApiCommand=t;this._logService=n;this._commands.registerCommand(!0,this.delegatingCommandId,this._executeConvertedCommand,this)}delegatingCommandId=`__vsc${L()}`;_cache=new Map;_cachIdPool=0;toInternal(e,t){if(!e)return;const n={$ident:void 0,id:e.command,title:e.title,tooltip:e.tooltip};if(!e.command)return n;const r=this._lookupApiCommand(e.command);if(r)n.id=r.internalId,n.arguments=r.args.map((o,i)=>o.convert(e.arguments&&e.arguments[i]));else if(P(e.arguments)){const o=`${e.command} /${++this._cachIdPool}`;this._cache.set(o,e),t.add(A(()=>{this._cache.delete(o),this._logService.trace("CommandsConverter#DISPOSE",o)})),n.$ident=o,n.id=this.delegatingCommandId,n.arguments=[o],this._logService.trace("CommandsConverter#CREATE",e.command,o)}return n}fromInternal(e){return typeof e.$ident=="string"?this._cache.get(e.$ident):{command:e.id,title:e.title,arguments:e.arguments}}getActualCommand(...e){return this._cache.get(e[0])}_executeConvertedCommand(...e){const t=this.getActualCommand(...e);return this._logService.trace("CommandsConverter#EXECUTE",e[0],t?t.command:"MISSING"),t?this._commands.executeCommand(t.command,...t.arguments||[]):Promise.reject(`Actual command not found, wanted to execute ${e[0]}`)}}class s{constructor(e,t,n,r){this.name=e;this.description=t;this.validate=n;this.convert=r}static Uri=new s("uri","Uri of a text document",e=>T.isUri(e),e=>e);static Position=new s("position","A position in a text document",e=>c.Position.isPosition(e),a.Position.from);static Range=new s("range","A range in a text document",e=>c.Range.isRange(e),a.Range.from);static Selection=new s("selection","A selection in a text document",e=>c.Selection.isSelection(e),a.Selection.from);static Number=new s("number","",e=>typeof e=="number",e=>e);static String=new s("string","",e=>typeof e=="string",e=>e);static StringArray=s.Arr(s.String);static Arr(e){return new s(`${e.name}_array`,`Array of ${e.name}, ${e.description}`,t=>Array.isArray(t)&&t.every(n=>e.validate(n)),t=>t.map(n=>e.convert(n)))}static CallHierarchyItem=new s("item","A call hierarchy item",e=>e instanceof c.CallHierarchyItem,a.CallHierarchyItem.from);static TypeHierarchyItem=new s("item","A type hierarchy item",e=>e instanceof c.TypeHierarchyItem,a.TypeHierarchyItem.from);static TestItem=new s("testItem","A VS Code TestItem",e=>e instanceof R,a.TestItem.from);optional(){return new s(this.name,`(optional) ${this.description}`,e=>e==null||this.validate(e),e=>e===void 0?void 0:e===null?null:this.convert(e))}with(e,t){return new s(e??this.name,t??this.description,this.validate,this.convert)}}class g{constructor(e,t){this.description=e;this.convert=t}static Void=new g("no result",e=>e)}class _e{constructor(e,t,n,r,o){this.id=e;this.internalId=t;this.description=n;this.args=r;this.result=o}}export{_e as ApiCommand,s as ApiCommandArgument,g as ApiCommandResult,N as CommandsConverter,p as ExtHostCommands,Ee as IExtHostCommands};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { validateConstraint } from '../../../base/common/types.js';
+import * as extHostTypes from './extHostTypes.js';
+import * as extHostTypeConverter from './extHostTypeConverters.js';
+import { cloneAndChange } from '../../../base/common/objects.js';
+import { MainContext } from './extHost.protocol.js';
+import { isNonEmptyArray } from '../../../base/common/arrays.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { revive } from '../../../base/common/marshalling.js';
+import { Range } from '../../../editor/common/core/range.js';
+import { Position } from '../../../editor/common/core/position.js';
+import { URI } from '../../../base/common/uri.js';
+import { toDisposable } from '../../../base/common/lifecycle.js';
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+import { IExtHostRpcService } from './extHostRpcService.js';
+import { TestItemImpl } from './extHostTestItem.js';
+import { VSBuffer } from '../../../base/common/buffer.js';
+import { SerializableObjectWithBuffers } from '../../services/extensions/common/proxyIdentifier.js';
+import { toErrorMessage } from '../../../base/common/errorMessage.js';
+import { StopWatch } from '../../../base/common/stopwatch.js';
+import { TelemetryTrustedValue } from '../../../platform/telemetry/common/telemetryUtils.js';
+import { IExtHostTelemetry } from './extHostTelemetry.js';
+import { generateUuid } from '../../../base/common/uuid.js';
+let ExtHostCommands = class ExtHostCommands {
+    #proxy;
+    #telemetry;
+    #extHostTelemetry;
+    constructor(extHostRpc, logService, extHostTelemetry) {
+        this._commands = new Map();
+        this._apiCommands = new Map();
+        this.#proxy = extHostRpc.getProxy(MainContext.MainThreadCommands);
+        this._logService = logService;
+        this.#extHostTelemetry = extHostTelemetry;
+        this.#telemetry = extHostRpc.getProxy(MainContext.MainThreadTelemetry);
+        this.converter = new CommandsConverter(this, id => {
+            const candidate = this._apiCommands.get(id);
+            return candidate?.result === ApiCommandResult.Void
+                ? candidate : undefined;
+        }, logService);
+        this._argumentProcessors = [
+            {
+                processArgument(a) {
+                    return revive(a);
+                }
+            },
+            {
+                processArgument(arg) {
+                    return cloneAndChange(arg, function (obj) {
+                        if (Range.isIRange(obj)) {
+                            return extHostTypeConverter.Range.to(obj);
+                        }
+                        if (Position.isIPosition(obj)) {
+                            return extHostTypeConverter.Position.to(obj);
+                        }
+                        if (Range.isIRange(obj.range) && URI.isUri(obj.uri)) {
+                            return extHostTypeConverter.location.to(obj);
+                        }
+                        if (obj instanceof VSBuffer) {
+                            return obj.buffer.buffer;
+                        }
+                        if (!Array.isArray(obj)) {
+                            return obj;
+                        }
+                    });
+                }
+            }
+        ];
+    }
+    registerArgumentProcessor(processor) {
+        this._argumentProcessors.push(processor);
+    }
+    registerApiCommand(apiCommand) {
+        const registration = this.registerCommand(false, apiCommand.id, async (...apiArgs) => {
+            const internalArgs = apiCommand.args.map((arg, i) => {
+                if (!arg.validate(apiArgs[i])) {
+                    throw new Error(`Invalid argument '${arg.name}' when running '${apiCommand.id}', received: ${typeof apiArgs[i] === 'object' ? JSON.stringify(apiArgs[i], null, '\t') : apiArgs[i]} `);
+                }
+                return arg.convert(apiArgs[i]);
+            });
+            const internalResult = await this.executeCommand(apiCommand.internalId, ...internalArgs);
+            return apiCommand.result.convert(internalResult, apiArgs, this.converter);
+        }, undefined, {
+            description: apiCommand.description,
+            args: apiCommand.args,
+            returns: apiCommand.result.description
+        });
+        this._apiCommands.set(apiCommand.id, apiCommand);
+        return new extHostTypes.Disposable(() => {
+            registration.dispose();
+            this._apiCommands.delete(apiCommand.id);
+        });
+    }
+    registerCommand(global, id, callback, thisArg, metadata, extension) {
+        this._logService.trace('ExtHostCommands#registerCommand', id);
+        if (!id.trim().length) {
+            throw new Error('invalid id');
+        }
+        if (this._commands.has(id)) {
+            throw new Error(`command '${id}' already exists`);
+        }
+        this._commands.set(id, { callback, thisArg, metadata, extension });
+        if (global) {
+            this.#proxy.$registerCommand(id);
+        }
+        return new extHostTypes.Disposable(() => {
+            if (this._commands.delete(id)) {
+                if (global) {
+                    this.#proxy.$unregisterCommand(id);
+                }
+            }
+        });
+    }
+    executeCommand(id, ...args) {
+        this._logService.trace('ExtHostCommands#executeCommand', id);
+        return this._doExecuteCommand(id, args, true);
+    }
+    async _doExecuteCommand(id, args, retry) {
+        if (this._commands.has(id)) {
+            this.#proxy.$fireCommandActivationEvent(id);
+            return this._executeContributedCommand(id, args, false);
+        }
+        else {
+            let hasBuffers = false;
+            const toArgs = cloneAndChange(args, function (value) {
+                if (value instanceof extHostTypes.Position) {
+                    return extHostTypeConverter.Position.from(value);
+                }
+                else if (value instanceof extHostTypes.Range) {
+                    return extHostTypeConverter.Range.from(value);
+                }
+                else if (value instanceof extHostTypes.Location) {
+                    return extHostTypeConverter.location.from(value);
+                }
+                else if (extHostTypes.NotebookRange.isNotebookRange(value)) {
+                    return extHostTypeConverter.NotebookRange.from(value);
+                }
+                else if (value instanceof ArrayBuffer) {
+                    hasBuffers = true;
+                    return VSBuffer.wrap(new Uint8Array(value));
+                }
+                else if (value instanceof Uint8Array) {
+                    hasBuffers = true;
+                    return VSBuffer.wrap(value);
+                }
+                else if (value instanceof VSBuffer) {
+                    hasBuffers = true;
+                    return value;
+                }
+                if (!Array.isArray(value)) {
+                    return value;
+                }
+            });
+            try {
+                const result = await this.#proxy.$executeCommand(id, hasBuffers ? new SerializableObjectWithBuffers(toArgs) : toArgs, retry);
+                return revive(result);
+            }
+            catch (e) {
+                if (e instanceof Error && e.message === '$executeCommand:retry') {
+                    return this._doExecuteCommand(id, args, false);
+                }
+                else {
+                    throw e;
+                }
+            }
+        }
+    }
+    async _executeContributedCommand(id, args, annotateError) {
+        const command = this._commands.get(id);
+        if (!command) {
+            throw new Error('Unknown command');
+        }
+        const { callback, thisArg, metadata } = command;
+        if (metadata?.args) {
+            for (let i = 0; i < metadata.args.length; i++) {
+                try {
+                    validateConstraint(args[i], metadata.args[i].constraint);
+                }
+                catch (err) {
+                    throw new Error(`Running the contributed command: '${id}' failed. Illegal argument '${metadata.args[i].name}' - ${metadata.args[i].description}`);
+                }
+            }
+        }
+        const stopWatch = StopWatch.create();
+        try {
+            return await callback.apply(thisArg, args);
+        }
+        catch (err) {
+            if (id === this.converter.delegatingCommandId) {
+                const actual = this.converter.getActualCommand(...args);
+                if (actual) {
+                    id = actual.command;
+                }
+            }
+            this._logService.error(err, id, command.extension?.identifier);
+            if (!annotateError) {
+                throw err;
+            }
+            if (command.extension?.identifier) {
+                const reported = this.#extHostTelemetry.onExtensionError(command.extension.identifier, err);
+                this._logService.trace('forwarded error to extension?', reported, command.extension?.identifier);
+            }
+            throw new class CommandError extends Error {
+                constructor() {
+                    super(toErrorMessage(err));
+                    this.id = id;
+                    this.source = command.extension?.displayName ?? command.extension?.name;
+                }
+            };
+        }
+        finally {
+            this._reportTelemetry(command, id, stopWatch.elapsed());
+        }
+    }
+    _reportTelemetry(command, id, duration) {
+        if (!command.extension) {
+            return;
+        }
+        this.#telemetry.$publicLog2('Extension:ActionExecuted', {
+            extensionId: command.extension.identifier.value,
+            id: new TelemetryTrustedValue(id),
+            duration: duration,
+        });
+    }
+    $executeContributedCommand(id, ...args) {
+        this._logService.trace('ExtHostCommands#$executeContributedCommand', id);
+        const cmdHandler = this._commands.get(id);
+        if (!cmdHandler) {
+            return Promise.reject(new Error(`Contributed command '${id}' does not exist.`));
+        }
+        else {
+            args = args.map(arg => this._argumentProcessors.reduce((r, p) => p.processArgument(r, cmdHandler.extension?.identifier), arg));
+            return this._executeContributedCommand(id, args, true);
+        }
+    }
+    getCommands(filterUnderscoreCommands = false) {
+        this._logService.trace('ExtHostCommands#getCommands', filterUnderscoreCommands);
+        return this.#proxy.$getCommands().then(result => {
+            if (filterUnderscoreCommands) {
+                result = result.filter(command => command[0] !== '_');
+            }
+            return result;
+        });
+    }
+    $getContributedCommandMetadata() {
+        const result = Object.create(null);
+        for (const [id, command] of this._commands) {
+            const { metadata } = command;
+            if (metadata) {
+                result[id] = metadata;
+            }
+        }
+        return Promise.resolve(result);
+    }
+};
+ExtHostCommands = __decorate([
+    __param(0, IExtHostRpcService),
+    __param(1, ILogService),
+    __param(2, IExtHostTelemetry),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], ExtHostCommands);
+export { ExtHostCommands };
+export const IExtHostCommands = createDecorator('IExtHostCommands');
+export class CommandsConverter {
+    constructor(_commands, _lookupApiCommand, _logService) {
+        this._commands = _commands;
+        this._lookupApiCommand = _lookupApiCommand;
+        this._logService = _logService;
+        this.delegatingCommandId = `__vsc${generateUuid()}`;
+        this._cache = new Map();
+        this._cachIdPool = 0;
+        this._commands.registerCommand(true, this.delegatingCommandId, this._executeConvertedCommand, this);
+    }
+    toInternal(command, disposables) {
+        if (!command) {
+            return undefined;
+        }
+        const result = {
+            $ident: undefined,
+            id: command.command,
+            title: command.title,
+            tooltip: command.tooltip
+        };
+        if (!command.command) {
+            return result;
+        }
+        const apiCommand = this._lookupApiCommand(command.command);
+        if (apiCommand) {
+            result.id = apiCommand.internalId;
+            result.arguments = apiCommand.args.map((arg, i) => arg.convert(command.arguments && command.arguments[i]));
+        }
+        else if (isNonEmptyArray(command.arguments)) {
+            const id = `${command.command} /${++this._cachIdPool}`;
+            this._cache.set(id, command);
+            disposables.add(toDisposable(() => {
+                this._cache.delete(id);
+                this._logService.trace('CommandsConverter#DISPOSE', id);
+            }));
+            result.$ident = id;
+            result.id = this.delegatingCommandId;
+            result.arguments = [id];
+            this._logService.trace('CommandsConverter#CREATE', command.command, id);
+        }
+        return result;
+    }
+    fromInternal(command) {
+        if (typeof command.$ident === 'string') {
+            return this._cache.get(command.$ident);
+        }
+        else {
+            return {
+                command: command.id,
+                title: command.title,
+                arguments: command.arguments
+            };
+        }
+    }
+    getActualCommand(...args) {
+        return this._cache.get(args[0]);
+    }
+    _executeConvertedCommand(...args) {
+        const actualCmd = this.getActualCommand(...args);
+        this._logService.trace('CommandsConverter#EXECUTE', args[0], actualCmd ? actualCmd.command : 'MISSING');
+        if (!actualCmd) {
+            return Promise.reject(`Actual command not found, wanted to execute ${args[0]}`);
+        }
+        return this._commands.executeCommand(actualCmd.command, ...(actualCmd.arguments || []));
+    }
+}
+export class ApiCommandArgument {
+    static { this.Uri = new ApiCommandArgument('uri', 'Uri of a text document', v => URI.isUri(v), v => v); }
+    static { this.Position = new ApiCommandArgument('position', 'A position in a text document', v => extHostTypes.Position.isPosition(v), extHostTypeConverter.Position.from); }
+    static { this.Range = new ApiCommandArgument('range', 'A range in a text document', v => extHostTypes.Range.isRange(v), extHostTypeConverter.Range.from); }
+    static { this.Selection = new ApiCommandArgument('selection', 'A selection in a text document', v => extHostTypes.Selection.isSelection(v), extHostTypeConverter.Selection.from); }
+    static { this.Number = new ApiCommandArgument('number', '', v => typeof v === 'number', v => v); }
+    static { this.String = new ApiCommandArgument('string', '', v => typeof v === 'string', v => v); }
+    static { this.StringArray = ApiCommandArgument.Arr(ApiCommandArgument.String); }
+    static Arr(element) {
+        return new ApiCommandArgument(`${element.name}_array`, `Array of ${element.name}, ${element.description}`, (v) => Array.isArray(v) && v.every(e => element.validate(e)), (v) => v.map(e => element.convert(e)));
+    }
+    static { this.CallHierarchyItem = new ApiCommandArgument('item', 'A call hierarchy item', v => v instanceof extHostTypes.CallHierarchyItem, extHostTypeConverter.CallHierarchyItem.from); }
+    static { this.TypeHierarchyItem = new ApiCommandArgument('item', 'A type hierarchy item', v => v instanceof extHostTypes.TypeHierarchyItem, extHostTypeConverter.TypeHierarchyItem.from); }
+    static { this.TestItem = new ApiCommandArgument('testItem', 'A VS Code TestItem', v => v instanceof TestItemImpl, extHostTypeConverter.TestItem.from); }
+    constructor(name, description, validate, convert) {
+        this.name = name;
+        this.description = description;
+        this.validate = validate;
+        this.convert = convert;
+    }
+    optional() {
+        return new ApiCommandArgument(this.name, `(optional) ${this.description}`, value => value === undefined || value === null || this.validate(value), value => value === undefined ? undefined : value === null ? null : this.convert(value));
+    }
+    with(name, description) {
+        return new ApiCommandArgument(name ?? this.name, description ?? this.description, this.validate, this.convert);
+    }
+}
+export class ApiCommandResult {
+    static { this.Void = new ApiCommandResult('no result', v => v); }
+    constructor(description, convert) {
+        this.description = description;
+        this.convert = convert;
+    }
+}
+export class ApiCommand {
+    constructor(id, internalId, description, args, result) {
+        this.id = id;
+        this.internalId = internalId;
+        this.description = description;
+        this.args = args;
+        this.result = result;
+    }
+}

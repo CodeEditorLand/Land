@@ -1,5 +1,65 @@
-import{Range as s}from"../../../common/core/range.js";import{Selection as l,SelectionDirection as u}from"../../../common/core/selection.js";import"../../../common/editorCommon.js";import"../../../common/model.js";class D{_selection;_isCopyingDown;_noop;_selectionDirection;_selectionId;_startLineNumberDelta;_endLineNumberDelta;constructor(t,n,e){this._selection=t,this._isCopyingDown=n,this._noop=e||!1,this._selectionDirection=u.LTR,this._selectionId=null,this._startLineNumberDelta=0,this._endLineNumberDelta=0}getEditOperations(t,n){let e=this._selection;this._startLineNumberDelta=0,this._endLineNumberDelta=0,e.startLineNumber<e.endLineNumber&&e.endColumn===1&&(this._endLineNumberDelta=1,e=e.setEndPosition(e.endLineNumber-1,t.getLineMaxColumn(e.endLineNumber-1)));const r=[];for(let i=e.startLineNumber;i<=e.endLineNumber;i++)r.push(t.getLineContent(i));const o=r.join(`
-`);o===""&&this._isCopyingDown&&(this._startLineNumberDelta++,this._endLineNumberDelta++),this._noop?n.addEditOperation(new s(e.endLineNumber,t.getLineMaxColumn(e.endLineNumber),e.endLineNumber+1,1),e.endLineNumber===t.getLineCount()?"":`
-`):this._isCopyingDown?n.addEditOperation(new s(e.startLineNumber,1,e.startLineNumber,1),o+`
-`):n.addEditOperation(new s(e.endLineNumber,t.getLineMaxColumn(e.endLineNumber),e.endLineNumber,t.getLineMaxColumn(e.endLineNumber)),`
-`+o),this._selectionId=n.trackSelection(e),this._selectionDirection=this._selection.getDirection()}computeCursorState(t,n){let e=n.getTrackedSelection(this._selectionId);if(this._startLineNumberDelta!==0||this._endLineNumberDelta!==0){let r=e.startLineNumber,o=e.startColumn,i=e.endLineNumber,a=e.endColumn;this._startLineNumberDelta!==0&&(r=r+this._startLineNumberDelta,o=1),this._endLineNumberDelta!==0&&(i=i+this._endLineNumberDelta,a=1),e=l.createWithDirection(r,o,i,a,this._selectionDirection)}return e}}export{D as CopyLinesCommand};
+import { Range } from '../../../common/core/range.js';
+import { Selection } from '../../../common/core/selection.js';
+export class CopyLinesCommand {
+    constructor(selection, isCopyingDown, noop) {
+        this._selection = selection;
+        this._isCopyingDown = isCopyingDown;
+        this._noop = noop || false;
+        this._selectionDirection = 0;
+        this._selectionId = null;
+        this._startLineNumberDelta = 0;
+        this._endLineNumberDelta = 0;
+    }
+    getEditOperations(model, builder) {
+        let s = this._selection;
+        this._startLineNumberDelta = 0;
+        this._endLineNumberDelta = 0;
+        if (s.startLineNumber < s.endLineNumber && s.endColumn === 1) {
+            this._endLineNumberDelta = 1;
+            s = s.setEndPosition(s.endLineNumber - 1, model.getLineMaxColumn(s.endLineNumber - 1));
+        }
+        const sourceLines = [];
+        for (let i = s.startLineNumber; i <= s.endLineNumber; i++) {
+            sourceLines.push(model.getLineContent(i));
+        }
+        const sourceText = sourceLines.join('\n');
+        if (sourceText === '') {
+            if (this._isCopyingDown) {
+                this._startLineNumberDelta++;
+                this._endLineNumberDelta++;
+            }
+        }
+        if (this._noop) {
+            builder.addEditOperation(new Range(s.endLineNumber, model.getLineMaxColumn(s.endLineNumber), s.endLineNumber + 1, 1), s.endLineNumber === model.getLineCount() ? '' : '\n');
+        }
+        else {
+            if (!this._isCopyingDown) {
+                builder.addEditOperation(new Range(s.endLineNumber, model.getLineMaxColumn(s.endLineNumber), s.endLineNumber, model.getLineMaxColumn(s.endLineNumber)), '\n' + sourceText);
+            }
+            else {
+                builder.addEditOperation(new Range(s.startLineNumber, 1, s.startLineNumber, 1), sourceText + '\n');
+            }
+        }
+        this._selectionId = builder.trackSelection(s);
+        this._selectionDirection = this._selection.getDirection();
+    }
+    computeCursorState(model, helper) {
+        let result = helper.getTrackedSelection(this._selectionId);
+        if (this._startLineNumberDelta !== 0 || this._endLineNumberDelta !== 0) {
+            let startLineNumber = result.startLineNumber;
+            let startColumn = result.startColumn;
+            let endLineNumber = result.endLineNumber;
+            let endColumn = result.endColumn;
+            if (this._startLineNumberDelta !== 0) {
+                startLineNumber = startLineNumber + this._startLineNumberDelta;
+                startColumn = 1;
+            }
+            if (this._endLineNumberDelta !== 0) {
+                endLineNumber = endLineNumber + this._endLineNumberDelta;
+                endColumn = 1;
+            }
+            result = Selection.createWithDirection(startLineNumber, startColumn, endLineNumber, endColumn, this._selectionDirection);
+        }
+        return result;
+    }
+}

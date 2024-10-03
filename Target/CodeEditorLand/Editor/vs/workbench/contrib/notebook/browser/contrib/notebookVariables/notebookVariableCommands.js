@@ -1,1 +1,53 @@
-import{CancellationToken as u}from"../../../../../../base/common/cancellation.js";import{URI as b}from"../../../../../../base/common/uri.js";import{localize as n}from"../../../../../../nls.js";import{Action2 as c,registerAction2 as a}from"../../../../../../platform/actions/common/actions.js";import{IClipboardService as m}from"../../../../../../platform/clipboard/common/clipboardService.js";import"../../../../../../platform/instantiation/common/instantiation.js";import"./notebookVariablesView.js";import{INotebookKernelService as p}from"../../../common/notebookKernelService.js";import{INotebookService as v}from"../../../common/notebookService.js";const d="workbench.debug.viewlet.action.copyWorkspaceVariableValue",f=n("copyWorkspaceVariableValue","Copy Value");a(class extends c{constructor(){super({id:d,title:f,f1:!1})}run(o,e){const r=o.get(m);e.value&&r.writeText(e.value)}}),a(class extends c{constructor(){super({id:"_executeNotebookVariableProvider",title:n("executeNotebookVariableProvider","Execute Notebook Variable Provider"),f1:!1})}async run(o,e){if(!e)return[];const r=b.revive(e),s=o.get(p),t=o.get(v).getNotebookTextModel(r);if(!t)return[];const i=s.getMatchingKernel(t).selected;return i&&i.hasVariableProvider?await i.provideVariables(t.uri,void 0,"named",0,u.None).map(l=>l).toPromise():[]}});export{d as COPY_NOTEBOOK_VARIABLE_VALUE_ID,f as COPY_NOTEBOOK_VARIABLE_VALUE_LABEL};
+import { CancellationToken } from '../../../../../../base/common/cancellation.js';
+import { URI } from '../../../../../../base/common/uri.js';
+import { localize } from '../../../../../../nls.js';
+import { Action2, registerAction2 } from '../../../../../../platform/actions/common/actions.js';
+import { IClipboardService } from '../../../../../../platform/clipboard/common/clipboardService.js';
+import { INotebookKernelService } from '../../../common/notebookKernelService.js';
+import { INotebookService } from '../../../common/notebookService.js';
+export const COPY_NOTEBOOK_VARIABLE_VALUE_ID = 'workbench.debug.viewlet.action.copyWorkspaceVariableValue';
+export const COPY_NOTEBOOK_VARIABLE_VALUE_LABEL = localize('copyWorkspaceVariableValue', "Copy Value");
+registerAction2(class extends Action2 {
+    constructor() {
+        super({
+            id: COPY_NOTEBOOK_VARIABLE_VALUE_ID,
+            title: COPY_NOTEBOOK_VARIABLE_VALUE_LABEL,
+            f1: false,
+        });
+    }
+    run(accessor, context) {
+        const clipboardService = accessor.get(IClipboardService);
+        if (context.value) {
+            clipboardService.writeText(context.value);
+        }
+    }
+});
+registerAction2(class extends Action2 {
+    constructor() {
+        super({
+            id: '_executeNotebookVariableProvider',
+            title: localize('executeNotebookVariableProvider', "Execute Notebook Variable Provider"),
+            f1: false,
+        });
+    }
+    async run(accessor, resource) {
+        if (!resource) {
+            return [];
+        }
+        const uri = URI.revive(resource);
+        const notebookKernelService = accessor.get(INotebookKernelService);
+        const notebookService = accessor.get(INotebookService);
+        const notebookTextModel = notebookService.getNotebookTextModel(uri);
+        if (!notebookTextModel) {
+            return [];
+        }
+        const selectedKernel = notebookKernelService.getMatchingKernel(notebookTextModel).selected;
+        if (selectedKernel && selectedKernel.hasVariableProvider) {
+            const variables = selectedKernel.provideVariables(notebookTextModel.uri, undefined, 'named', 0, CancellationToken.None);
+            return await variables
+                .map(variable => { return variable; })
+                .toPromise();
+        }
+        return [];
+    }
+});

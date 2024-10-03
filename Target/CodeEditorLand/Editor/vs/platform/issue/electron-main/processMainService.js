@@ -1,2 +1,318 @@
-var S=Object.defineProperty;var y=Object.getOwnPropertyDescriptor;var v=(a,e,s,r)=>{for(var o=r>1?void 0:r?y(e,s):e,n=a.length-1,i;n>=0;n--)(i=a[n])&&(o=(r?i(e,s,o):i(o))||o);return r&&o&&S(e,s,o),o},c=(a,e)=>(s,r)=>e(s,r,a);import{BrowserWindow as h,contentTracing as x,screen as p}from"electron";import{randomPath as W}from"../../../base/common/extpath.js";import{DisposableStore as P}from"../../../base/common/lifecycle.js";import{FileAccess as f}from"../../../base/common/network.js";import{isMacintosh as E}from"../../../base/common/platform.js";import{listProcesses as I}from"../../../base/node/ps.js";import{validatedIpcMain as w}from"../../../base/parts/ipc/electron-main/ipcMain.js";import{getNLSLanguage as M,getNLSMessages as D,localize as m}from"../../../nls.js";import{IDiagnosticsService as b,isRemoteDiagnosticError as C}from"../../diagnostics/common/diagnostics.js";import{IDiagnosticsMainService as k}from"../../diagnostics/electron-main/diagnosticsMainService.js";import{IDialogMainService as B}from"../../dialogs/electron-main/dialogMainService.js";import{IEnvironmentMainService as L}from"../../environment/electron-main/environmentMainService.js";import{ICSSDevelopmentService as O}from"../../cssDev/node/cssDevService.js";import"../common/issue.js";import{ILogService as R}from"../../log/common/log.js";import{INativeHostMainService as T}from"../../native/electron-main/nativeHostMainService.js";import U from"../../product/common/product.js";import{IProductService as N}from"../../product/common/productService.js";import{IProtocolMainService as z}from"../../protocol/electron-main/protocol.js";import{IStateService as A}from"../../state/node/state.js";import{UtilityProcess as F}from"../../utilityProcess/electron-main/utilityProcess.js";import{zoomLevelToZoomFactor as $}from"../../window/common/window.js";import"../../window/electron-main/window.js";const u="issue.processExplorerWindowState";let l=class{constructor(e,s,r,o,n,i,t,d,g,_,K){this.userEnv=e;this.environmentMainService=s;this.logService=r;this.diagnosticsService=o;this.diagnosticsMainService=n;this.dialogMainService=i;this.nativeHostMainService=t;this.protocolMainService=d;this.productService=g;this.stateService=_;this.cssDevelopmentService=K;this.registerListeners()}static DEFAULT_BACKGROUND_COLOR="#1E1E1E";processExplorerWindow=null;processExplorerParentWindow=null;registerListeners(){w.on("vscode:listProcesses",async e=>{const s=[];try{s.push({name:m("local","Local"),rootProcess:await I(process.pid)}),(await this.diagnosticsMainService.getRemoteDiagnostics({includeProcesses:!0})).forEach(o=>{C(o)?s.push({name:o.hostName,rootProcess:o}):o.processes&&s.push({name:o.hostName,rootProcess:o.processes})})}catch(r){this.logService.error(`Listing processes failed: ${r}`)}this.safeSend(e,"vscode:listProcessesResponse",s)}),w.on("vscode:workbenchCommand",(e,s)=>{const{id:r,from:o,args:n}=s;let i;switch(o){case"processExplorer":i=this.processExplorerParentWindow;break;default:throw new Error(`Unexpected command source: ${o}`)}i?.webContents.send("vscode:runAction",{id:r,from:o,args:n})}),w.on("vscode:closeProcessExplorer",e=>{this.processExplorerWindow?.close()}),w.on("vscode:pidToNameRequest",async e=>{const s=await this.diagnosticsMainService.getMainDiagnostics(),r=[];for(const o of s.windows)r.push([o.pid,`window [${o.id}] (${o.title})`]);for(const{pid:o,name:n}of F.getAll())r.push([o,n]);this.safeSend(e,"vscode:pidToNameResponse",r)})}async openProcessExplorer(e){if(!this.processExplorerWindow&&(this.processExplorerParentWindow=h.getFocusedWindow(),this.processExplorerParentWindow)){const s=new P,r=s.add(this.protocolMainService.createIPCObjectUrl()),o=this.stateService.getItem(u,void 0),n=H(o)?o:this.getWindowPosition(this.processExplorerParentWindow,800,500);this.processExplorerWindow=this.createBrowserWindow(n,r,{backgroundColor:e.styles.backgroundColor,title:m("processExplorer","Process Explorer"),zoomLevel:e.zoomLevel,alwaysOnTop:!0},"process-explorer"),r.update({appRoot:this.environmentMainService.appRoot,windowId:this.processExplorerWindow.id,userEnv:this.userEnv,data:e,product:U,nls:{messages:D(),language:M()},cssModules:this.cssDevelopmentService.isEnabled?await this.cssDevelopmentService.getCssModules():void 0}),this.processExplorerWindow.loadURL(f.asBrowserUri(`vs/code/electron-sandbox/processExplorer/processExplorer${this.environmentMainService.isBuilt?"":"-dev"}.html`).toString(!0)),this.processExplorerWindow.on("close",()=>{this.processExplorerWindow=null,s.dispose()}),this.processExplorerParentWindow.on("close",()=>{this.processExplorerWindow&&(this.processExplorerWindow.close(),this.processExplorerWindow=null,s.dispose())});const i=()=>{if(!this.processExplorerWindow)return;const t=this.processExplorerWindow.getSize(),d=this.processExplorerWindow.getPosition();if(!t||!d)return;const g={width:t[0],height:t[1],x:d[0],y:d[1]};this.stateService.setItem(u,g)};this.processExplorerWindow.on("moved",i),this.processExplorerWindow.on("resized",i)}this.processExplorerWindow&&this.focusWindow(this.processExplorerWindow)}focusWindow(e){e.isMinimized()&&e.restore(),e.focus()}getWindowPosition(e,s,r){let o;const n=p.getAllDisplays();if(n.length===1)o=n[0];else{if(E){const d=p.getCursorScreenPoint();o=p.getDisplayNearestPoint(d)}!o&&e&&(o=p.getDisplayMatching(e.getBounds())),o||(o=p.getPrimaryDisplay()||n[0])}const i=o.bounds,t={width:s,height:r,x:i.x+i.width/2-s/2,y:i.y+i.height/2-r/2};return i.width>0&&i.height>0&&(t.x<i.x&&(t.x=i.x),t.y<i.y&&(t.y=i.y),t.x>i.x+i.width&&(t.x=i.x),t.y>i.y+i.height&&(t.y=i.y),t.width>i.width&&(t.width=i.width),t.height>i.height&&(t.height=i.height)),t}async stopTracing(){if(!this.environmentMainService.args.trace)return;const e=await x.stopRecording(`${W(this.environmentMainService.userHome.fsPath,this.productService.applicationName)}.trace.txt`);await this.dialogMainService.showMessageBox({type:"info",message:m("trace.message","Successfully created the trace file"),detail:m("trace.detail",`Please create an issue and manually attach the following file:
-{0}`,e),buttons:[m({key:"trace.ok",comment:["&& denotes a mnemonic"]},"&&OK")]},h.getFocusedWindow()??void 0),this.nativeHostMainService.showItemInFolder(void 0,e)}async getSystemStatus(){const[e,s]=await Promise.all([this.diagnosticsMainService.getMainDiagnostics(),this.diagnosticsMainService.getRemoteDiagnostics({includeProcesses:!1,includeWorkspaceMetadata:!1})]);return this.diagnosticsService.getDiagnostics(e,s)}async $getSystemInfo(){const[e,s]=await Promise.all([this.diagnosticsMainService.getMainDiagnostics(),this.diagnosticsMainService.getRemoteDiagnostics({includeProcesses:!1,includeWorkspaceMetadata:!1})]);return await this.diagnosticsService.getSystemInfo(e,s)}async $getPerformanceInfo(){try{const[e,s]=await Promise.all([this.diagnosticsMainService.getMainDiagnostics(),this.diagnosticsMainService.getRemoteDiagnostics({includeProcesses:!0,includeWorkspaceMetadata:!0})]);return await this.diagnosticsService.getPerformanceInfo(e,s)}catch(e){throw this.logService.warn("issueService#getPerformanceInfo ",e.message),e}}createBrowserWindow(e,s,r,o){const n={fullscreen:!1,skipTaskbar:!1,resizable:!0,width:e.width,height:e.height,minWidth:300,minHeight:200,x:e.x,y:e.y,title:r.title,backgroundColor:r.backgroundColor||l.DEFAULT_BACKGROUND_COLOR,webPreferences:{preload:f.asFileUri("vs/base/parts/sandbox/electron-sandbox/preload.js").fsPath,additionalArguments:[`--vscode-window-config=${s.resource.toString()}`],v8CacheOptions:this.environmentMainService.useCodeCache?"bypassHeatCheck":"none",enableWebSQL:!1,spellcheck:!1,zoomFactor:$(r.zoomLevel),sandbox:!0},alwaysOnTop:r.alwaysOnTop,experimentalDarkMode:!0},i=new h(n);return i.setMenuBarVisibility(!1),i}safeSend(e,s,...r){e.sender.isDestroyed()||e.sender.send(s,...r)}async closeProcessExplorer(){this.processExplorerWindow?.close()}};l=v([c(1,L),c(2,R),c(3,b),c(4,k),c(5,B),c(6,T),c(7,z),c(8,N),c(9,A),c(10,O)],l);function H(a){return typeof a!="object"||a===null?!1:"x"in a&&"y"in a&&"width"in a&&"height"in a}export{l as ProcessMainService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var ProcessMainService_1;
+import { BrowserWindow, contentTracing, screen } from 'electron';
+import { randomPath } from '../../../base/common/extpath.js';
+import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { FileAccess } from '../../../base/common/network.js';
+import { isMacintosh } from '../../../base/common/platform.js';
+import { listProcesses } from '../../../base/node/ps.js';
+import { validatedIpcMain } from '../../../base/parts/ipc/electron-main/ipcMain.js';
+import { getNLSLanguage, getNLSMessages, localize } from '../../../nls.js';
+import { IDiagnosticsService, isRemoteDiagnosticError } from '../../diagnostics/common/diagnostics.js';
+import { IDiagnosticsMainService } from '../../diagnostics/electron-main/diagnosticsMainService.js';
+import { IDialogMainService } from '../../dialogs/electron-main/dialogMainService.js';
+import { IEnvironmentMainService } from '../../environment/electron-main/environmentMainService.js';
+import { ICSSDevelopmentService } from '../../cssDev/node/cssDevService.js';
+import { ILogService } from '../../log/common/log.js';
+import { INativeHostMainService } from '../../native/electron-main/nativeHostMainService.js';
+import product from '../../product/common/product.js';
+import { IProductService } from '../../product/common/productService.js';
+import { IProtocolMainService } from '../../protocol/electron-main/protocol.js';
+import { IStateService } from '../../state/node/state.js';
+import { UtilityProcess } from '../../utilityProcess/electron-main/utilityProcess.js';
+import { zoomLevelToZoomFactor } from '../../window/common/window.js';
+const processExplorerWindowState = 'issue.processExplorerWindowState';
+let ProcessMainService = class ProcessMainService {
+    static { ProcessMainService_1 = this; }
+    static { this.DEFAULT_BACKGROUND_COLOR = '#1E1E1E'; }
+    constructor(userEnv, environmentMainService, logService, diagnosticsService, diagnosticsMainService, dialogMainService, nativeHostMainService, protocolMainService, productService, stateService, cssDevelopmentService) {
+        this.userEnv = userEnv;
+        this.environmentMainService = environmentMainService;
+        this.logService = logService;
+        this.diagnosticsService = diagnosticsService;
+        this.diagnosticsMainService = diagnosticsMainService;
+        this.dialogMainService = dialogMainService;
+        this.nativeHostMainService = nativeHostMainService;
+        this.protocolMainService = protocolMainService;
+        this.productService = productService;
+        this.stateService = stateService;
+        this.cssDevelopmentService = cssDevelopmentService;
+        this.processExplorerWindow = null;
+        this.processExplorerParentWindow = null;
+        this.registerListeners();
+    }
+    registerListeners() {
+        validatedIpcMain.on('vscode:listProcesses', async (event) => {
+            const processes = [];
+            try {
+                processes.push({ name: localize('local', "Local"), rootProcess: await listProcesses(process.pid) });
+                const remoteDiagnostics = await this.diagnosticsMainService.getRemoteDiagnostics({ includeProcesses: true });
+                remoteDiagnostics.forEach(data => {
+                    if (isRemoteDiagnosticError(data)) {
+                        processes.push({
+                            name: data.hostName,
+                            rootProcess: data
+                        });
+                    }
+                    else {
+                        if (data.processes) {
+                            processes.push({
+                                name: data.hostName,
+                                rootProcess: data.processes
+                            });
+                        }
+                    }
+                });
+            }
+            catch (e) {
+                this.logService.error(`Listing processes failed: ${e}`);
+            }
+            this.safeSend(event, 'vscode:listProcessesResponse', processes);
+        });
+        validatedIpcMain.on('vscode:workbenchCommand', (_, commandInfo) => {
+            const { id, from, args } = commandInfo;
+            let parentWindow;
+            switch (from) {
+                case 'processExplorer':
+                    parentWindow = this.processExplorerParentWindow;
+                    break;
+                default:
+                    throw new Error(`Unexpected command source: ${from}`);
+            }
+            parentWindow?.webContents.send('vscode:runAction', { id, from, args });
+        });
+        validatedIpcMain.on('vscode:closeProcessExplorer', event => {
+            this.processExplorerWindow?.close();
+        });
+        validatedIpcMain.on('vscode:pidToNameRequest', async (event) => {
+            const mainProcessInfo = await this.diagnosticsMainService.getMainDiagnostics();
+            const pidToNames = [];
+            for (const window of mainProcessInfo.windows) {
+                pidToNames.push([window.pid, `window [${window.id}] (${window.title})`]);
+            }
+            for (const { pid, name } of UtilityProcess.getAll()) {
+                pidToNames.push([pid, name]);
+            }
+            this.safeSend(event, 'vscode:pidToNameResponse', pidToNames);
+        });
+    }
+    async openProcessExplorer(data) {
+        if (!this.processExplorerWindow) {
+            this.processExplorerParentWindow = BrowserWindow.getFocusedWindow();
+            if (this.processExplorerParentWindow) {
+                const processExplorerDisposables = new DisposableStore();
+                const processExplorerWindowConfigUrl = processExplorerDisposables.add(this.protocolMainService.createIPCObjectUrl());
+                const savedPosition = this.stateService.getItem(processExplorerWindowState, undefined);
+                const position = isStrictWindowState(savedPosition) ? savedPosition : this.getWindowPosition(this.processExplorerParentWindow, 800, 500);
+                this.processExplorerWindow = this.createBrowserWindow(position, processExplorerWindowConfigUrl, {
+                    backgroundColor: data.styles.backgroundColor,
+                    title: localize('processExplorer', "Process Explorer"),
+                    zoomLevel: data.zoomLevel,
+                    alwaysOnTop: true
+                }, 'process-explorer');
+                processExplorerWindowConfigUrl.update({
+                    appRoot: this.environmentMainService.appRoot,
+                    windowId: this.processExplorerWindow.id,
+                    userEnv: this.userEnv,
+                    data,
+                    product,
+                    nls: {
+                        messages: getNLSMessages(),
+                        language: getNLSLanguage()
+                    },
+                    cssModules: this.cssDevelopmentService.isEnabled ? await this.cssDevelopmentService.getCssModules() : undefined
+                });
+                this.processExplorerWindow.loadURL(FileAccess.asBrowserUri(`vs/code/electron-sandbox/processExplorer/processExplorer${this.environmentMainService.isBuilt ? '' : '-dev'}.html`).toString(true));
+                this.processExplorerWindow.on('close', () => {
+                    this.processExplorerWindow = null;
+                    processExplorerDisposables.dispose();
+                });
+                this.processExplorerParentWindow.on('close', () => {
+                    if (this.processExplorerWindow) {
+                        this.processExplorerWindow.close();
+                        this.processExplorerWindow = null;
+                        processExplorerDisposables.dispose();
+                    }
+                });
+                const storeState = () => {
+                    if (!this.processExplorerWindow) {
+                        return;
+                    }
+                    const size = this.processExplorerWindow.getSize();
+                    const position = this.processExplorerWindow.getPosition();
+                    if (!size || !position) {
+                        return;
+                    }
+                    const state = {
+                        width: size[0],
+                        height: size[1],
+                        x: position[0],
+                        y: position[1]
+                    };
+                    this.stateService.setItem(processExplorerWindowState, state);
+                };
+                this.processExplorerWindow.on('moved', storeState);
+                this.processExplorerWindow.on('resized', storeState);
+            }
+        }
+        if (this.processExplorerWindow) {
+            this.focusWindow(this.processExplorerWindow);
+        }
+    }
+    focusWindow(window) {
+        if (window.isMinimized()) {
+            window.restore();
+        }
+        window.focus();
+    }
+    getWindowPosition(parentWindow, defaultWidth, defaultHeight) {
+        let displayToUse;
+        const displays = screen.getAllDisplays();
+        if (displays.length === 1) {
+            displayToUse = displays[0];
+        }
+        else {
+            if (isMacintosh) {
+                const cursorPoint = screen.getCursorScreenPoint();
+                displayToUse = screen.getDisplayNearestPoint(cursorPoint);
+            }
+            if (!displayToUse && parentWindow) {
+                displayToUse = screen.getDisplayMatching(parentWindow.getBounds());
+            }
+            if (!displayToUse) {
+                displayToUse = screen.getPrimaryDisplay() || displays[0];
+            }
+        }
+        const displayBounds = displayToUse.bounds;
+        const state = {
+            width: defaultWidth,
+            height: defaultHeight,
+            x: displayBounds.x + (displayBounds.width / 2) - (defaultWidth / 2),
+            y: displayBounds.y + (displayBounds.height / 2) - (defaultHeight / 2)
+        };
+        if (displayBounds.width > 0 && displayBounds.height > 0) {
+            if (state.x < displayBounds.x) {
+                state.x = displayBounds.x;
+            }
+            if (state.y < displayBounds.y) {
+                state.y = displayBounds.y;
+            }
+            if (state.x > (displayBounds.x + displayBounds.width)) {
+                state.x = displayBounds.x;
+            }
+            if (state.y > (displayBounds.y + displayBounds.height)) {
+                state.y = displayBounds.y;
+            }
+            if (state.width > displayBounds.width) {
+                state.width = displayBounds.width;
+            }
+            if (state.height > displayBounds.height) {
+                state.height = displayBounds.height;
+            }
+        }
+        return state;
+    }
+    async stopTracing() {
+        if (!this.environmentMainService.args.trace) {
+            return;
+        }
+        const path = await contentTracing.stopRecording(`${randomPath(this.environmentMainService.userHome.fsPath, this.productService.applicationName)}.trace.txt`);
+        await this.dialogMainService.showMessageBox({
+            type: 'info',
+            message: localize('trace.message', "Successfully created the trace file"),
+            detail: localize('trace.detail', "Please create an issue and manually attach the following file:\n{0}", path),
+            buttons: [localize({ key: 'trace.ok', comment: ['&& denotes a mnemonic'] }, "&&OK")],
+        }, BrowserWindow.getFocusedWindow() ?? undefined);
+        this.nativeHostMainService.showItemInFolder(undefined, path);
+    }
+    async getSystemStatus() {
+        const [info, remoteData] = await Promise.all([this.diagnosticsMainService.getMainDiagnostics(), this.diagnosticsMainService.getRemoteDiagnostics({ includeProcesses: false, includeWorkspaceMetadata: false })]);
+        return this.diagnosticsService.getDiagnostics(info, remoteData);
+    }
+    async $getSystemInfo() {
+        const [info, remoteData] = await Promise.all([this.diagnosticsMainService.getMainDiagnostics(), this.diagnosticsMainService.getRemoteDiagnostics({ includeProcesses: false, includeWorkspaceMetadata: false })]);
+        const msg = await this.diagnosticsService.getSystemInfo(info, remoteData);
+        return msg;
+    }
+    async $getPerformanceInfo() {
+        try {
+            const [info, remoteData] = await Promise.all([this.diagnosticsMainService.getMainDiagnostics(), this.diagnosticsMainService.getRemoteDiagnostics({ includeProcesses: true, includeWorkspaceMetadata: true })]);
+            return await this.diagnosticsService.getPerformanceInfo(info, remoteData);
+        }
+        catch (error) {
+            this.logService.warn('issueService#getPerformanceInfo ', error.message);
+            throw error;
+        }
+    }
+    createBrowserWindow(position, ipcObjectUrl, options, windowKind) {
+        const browserWindowOptions = {
+            fullscreen: false,
+            skipTaskbar: false,
+            resizable: true,
+            width: position.width,
+            height: position.height,
+            minWidth: 300,
+            minHeight: 200,
+            x: position.x,
+            y: position.y,
+            title: options.title,
+            backgroundColor: options.backgroundColor || ProcessMainService_1.DEFAULT_BACKGROUND_COLOR,
+            webPreferences: {
+                preload: FileAccess.asFileUri('vs/base/parts/sandbox/electron-sandbox/preload.js').fsPath,
+                additionalArguments: [`--vscode-window-config=${ipcObjectUrl.resource.toString()}`],
+                v8CacheOptions: this.environmentMainService.useCodeCache ? 'bypassHeatCheck' : 'none',
+                enableWebSQL: false,
+                spellcheck: false,
+                zoomFactor: zoomLevelToZoomFactor(options.zoomLevel),
+                sandbox: true
+            },
+            alwaysOnTop: options.alwaysOnTop,
+            experimentalDarkMode: true
+        };
+        const window = new BrowserWindow(browserWindowOptions);
+        window.setMenuBarVisibility(false);
+        return window;
+    }
+    safeSend(event, channel, ...args) {
+        if (!event.sender.isDestroyed()) {
+            event.sender.send(channel, ...args);
+        }
+    }
+    async closeProcessExplorer() {
+        this.processExplorerWindow?.close();
+    }
+};
+ProcessMainService = ProcessMainService_1 = __decorate([
+    __param(1, IEnvironmentMainService),
+    __param(2, ILogService),
+    __param(3, IDiagnosticsService),
+    __param(4, IDiagnosticsMainService),
+    __param(5, IDialogMainService),
+    __param(6, INativeHostMainService),
+    __param(7, IProtocolMainService),
+    __param(8, IProductService),
+    __param(9, IStateService),
+    __param(10, ICSSDevelopmentService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], ProcessMainService);
+export { ProcessMainService };
+function isStrictWindowState(obj) {
+    if (typeof obj !== 'object' || obj === null) {
+        return false;
+    }
+    return ('x' in obj &&
+        'y' in obj &&
+        'width' in obj &&
+        'height' in obj);
+}

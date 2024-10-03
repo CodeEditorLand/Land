@@ -1,1 +1,100 @@
-import{Iterable as g}from"../../../../base/common/iterator.js";import{TestResultState as S}from"./testTypes.js";import{makeEmptyCounts as c,maxPriority as A,statePriority as T}from"./testingStates.js";const w=t=>"getOwnDuration"in t,l=(t,e,s=!1)=>{let n=t.getCurrentComputedState(e);if(n===void 0||s){n=t.getOwnState(e)??S.Unset;let r=0;const i=c();for(const u of t.getChildren(e)){const a=l(t,u);r++,i[a]++,n=a===S.Skipped&&n===S.Unset?S.Skipped:A(n,a)}r>I&&b.set(e,i),t.setComputedState(e,n)}return n},D=(t,e,s=!1)=>{let n=t.getCurrentComputedDuration(e);if(n===void 0||s){const r=t.getOwnDuration(e);if(r!==void 0)n=r;else{n=void 0;for(const i of t.getChildren(e)){const u=D(t,i);u!==void 0&&(n=(n||0)+u)}}t.setComputedDuration(e,n)}return n},I=64,b=new WeakMap,x=(t,e,s,n=!0)=>{const r=t.getCurrentComputedState(e),i=T[r],u=s??l(t,e,!0),a=T[u],f=new Set;if(a!==i){t.setComputedState(e,u),f.add(e);let d=r,p=u;for(const o of t.getParents(e)){const m=b.get(o);m&&(m[d]--,m[p]++);const C=t.getCurrentComputedState(o);if(a>i){if(C!==void 0&&T[C]>=a||m&&m[p]>1)break;t.setComputedState(o,u),f.add(o)}else{if(C===void 0||T[C]>i||m&&m[d]>0)break;p=l(t,o,!0),t.setComputedState(o,p),f.add(o)}d=C}}if(w(t)&&n)for(const d of g.concat(g.single(e),t.getParents(e))){const p=t.getCurrentComputedDuration(d),o=D(t,d,!0);if(p===o)break;t.setComputedDuration(d,o),f.add(d)}return f};export{x as refreshComputedState};
+import { Iterable } from '../../../../base/common/iterator.js';
+import { makeEmptyCounts, maxPriority, statePriority } from './testingStates.js';
+const isDurationAccessor = (accessor) => 'getOwnDuration' in accessor;
+const getComputedState = (accessor, node, force = false) => {
+    let computed = accessor.getCurrentComputedState(node);
+    if (computed === undefined || force) {
+        computed = accessor.getOwnState(node) ?? 0;
+        let childrenCount = 0;
+        const stateMap = makeEmptyCounts();
+        for (const child of accessor.getChildren(node)) {
+            const childComputed = getComputedState(accessor, child);
+            childrenCount++;
+            stateMap[childComputed]++;
+            computed = childComputed === 5 && computed === 0
+                ? 5 : maxPriority(computed, childComputed);
+        }
+        if (childrenCount > LARGE_NODE_THRESHOLD) {
+            largeNodeChildrenStates.set(node, stateMap);
+        }
+        accessor.setComputedState(node, computed);
+    }
+    return computed;
+};
+const getComputedDuration = (accessor, node, force = false) => {
+    let computed = accessor.getCurrentComputedDuration(node);
+    if (computed === undefined || force) {
+        const own = accessor.getOwnDuration(node);
+        if (own !== undefined) {
+            computed = own;
+        }
+        else {
+            computed = undefined;
+            for (const child of accessor.getChildren(node)) {
+                const d = getComputedDuration(accessor, child);
+                if (d !== undefined) {
+                    computed = (computed || 0) + d;
+                }
+            }
+        }
+        accessor.setComputedDuration(node, computed);
+    }
+    return computed;
+};
+const LARGE_NODE_THRESHOLD = 64;
+const largeNodeChildrenStates = new WeakMap();
+export const refreshComputedState = (accessor, node, explicitNewComputedState, refreshDuration = true) => {
+    const oldState = accessor.getCurrentComputedState(node);
+    const oldPriority = statePriority[oldState];
+    const newState = explicitNewComputedState ?? getComputedState(accessor, node, true);
+    const newPriority = statePriority[newState];
+    const toUpdate = new Set();
+    if (newPriority !== oldPriority) {
+        accessor.setComputedState(node, newState);
+        toUpdate.add(node);
+        let moveFromState = oldState;
+        let moveToState = newState;
+        for (const parent of accessor.getParents(node)) {
+            const lnm = largeNodeChildrenStates.get(parent);
+            if (lnm) {
+                lnm[moveFromState]--;
+                lnm[moveToState]++;
+            }
+            const prev = accessor.getCurrentComputedState(parent);
+            if (newPriority > oldPriority) {
+                if (prev !== undefined && statePriority[prev] >= newPriority) {
+                    break;
+                }
+                if (lnm && lnm[moveToState] > 1) {
+                    break;
+                }
+                accessor.setComputedState(parent, newState);
+                toUpdate.add(parent);
+            }
+            else {
+                if (prev === undefined || statePriority[prev] > oldPriority) {
+                    break;
+                }
+                if (lnm && lnm[moveFromState] > 0) {
+                    break;
+                }
+                moveToState = getComputedState(accessor, parent, true);
+                accessor.setComputedState(parent, moveToState);
+                toUpdate.add(parent);
+            }
+            moveFromState = prev;
+        }
+    }
+    if (isDurationAccessor(accessor) && refreshDuration) {
+        for (const parent of Iterable.concat(Iterable.single(node), accessor.getParents(node))) {
+            const oldDuration = accessor.getCurrentComputedDuration(parent);
+            const newDuration = getComputedDuration(accessor, parent, true);
+            if (oldDuration === newDuration) {
+                break;
+            }
+            accessor.setComputedDuration(parent, newDuration);
+            toUpdate.add(parent);
+        }
+    }
+    return toUpdate;
+};

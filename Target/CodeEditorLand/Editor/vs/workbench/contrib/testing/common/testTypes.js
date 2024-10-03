@@ -1,1 +1,460 @@
-import"../../../../base/common/htmlContent.js";import"../../../../base/common/marshallingIds.js";import{URI as p}from"../../../../base/common/uri.js";import{Position as I}from"../../../../editor/common/core/position.js";import{Range as u}from"../../../../editor/common/core/range.js";import{TestId as x}from"./testId.js";var M=(s=>(s[s.Unset=0]="Unset",s[s.Queued=1]="Queued",s[s.Running=2]="Running",s[s.Passed=3]="Passed",s[s.Failed=4]="Failed",s[s.Skipped=5]="Skipped",s[s.Errored=6]="Errored",s))(M||{});const K={0:"unset",1:"queued",2:"running",3:"passed",4:"failed",5:"skipped",6:"errored"};var O=(e=>(e[e.Run=1]="Run",e[e.Debug=2]="Debug",e[e.Coverage=3]="Coverage",e))(O||{}),k=(e=>(e[e.Refresh=2]="Refresh",e[e.CodeRelatedToTest=4]="CodeRelatedToTest",e[e.TestRelatedToCode=8]="TestRelatedToCode",e))(k||{}),P=(a=>(a[a.Run=2]="Run",a[a.Debug=4]="Debug",a[a.Coverage=8]="Coverage",a[a.HasNonDefaultProfile=16]="HasNonDefaultProfile",a[a.HasConfigurable=32]="HasConfigurable",a[a.SupportsContinuousRun=64]="SupportsContinuousRun",a))(P||{});const ee=[2,4,8,16,32,64],te=i=>"runId"in i;var c;(n=>(n.serialize=e=>({range:e.range.toJSON(),uri:e.uri.toJSON()}),n.deserialize=(e,t)=>({range:u.lift(t.range),uri:e.asCanonicalUri(p.revive(t.uri))})))(c||={});var E=(n=>(n[n.Error=0]="Error",n[n.Output=1]="Output",n))(E||{}),f;(n=>(n.serialize=e=>({label:e.label,uri:e.uri?.toJSON(),position:e.position?.toJSON()}),n.deserialize=(e,t)=>({label:t.label,uri:t.uri?e.asCanonicalUri(p.revive(t.uri)):void 0,position:t.position?I.lift(t.position):void 0})))(f||={});var T;(n=>(n.serialize=e=>({message:e.message,type:0,expected:e.expected,actual:e.actual,contextValue:e.contextValue,location:e.location&&c.serialize(e.location),stackTrace:e.stackTrace?.map(f.serialize)}),n.deserialize=(e,t)=>({message:t.message,type:0,expected:t.expected,actual:t.actual,contextValue:t.contextValue,location:t.location&&c.deserialize(e,t.location),stackTrace:t.stackTrace&&t.stackTrace.map(o=>f.deserialize(e,o))})))(T||={});const ne=(i,r)=>`${r?"s":"e"}${i}`;var S;(n=>(n.serialize=e=>({message:e.message,type:1,offset:e.offset,length:e.length,location:e.location&&c.serialize(e.location)}),n.deserialize=(e,t)=>({message:t.message,type:1,offset:t.offset,length:t.length,location:t.location&&c.deserialize(e,t.location)})))(S||={});var z;(e=>(e.serialize=t=>t.type===0?T.serialize(t):S.serialize(t),e.deserialize=(t,o)=>o.type===0?T.deserialize(t,o):S.deserialize(t,o),e.isDiffable=t=>t.type===0&&t.actual!==void 0&&t.expected!==void 0))(z||={});var m;(e=>(e.serializeWithoutMessages=t=>({state:t.state,duration:t.duration,messages:[]}),e.serialize=t=>({state:t.state,duration:t.duration,messages:t.messages.map(z.serialize)}),e.deserialize=(t,o)=>({state:o.state,duration:o.duration,messages:o.messages.map(a=>z.deserialize(t,a))})))(m||={});const U="\0",re=(i,r)=>i+U+r,ie=i=>{const r=i.indexOf(U);return{ctrlId:i.slice(0,r),tagId:i.slice(r+1)}};var b;(n=>(n.serialize=e=>({extId:e.extId,label:e.label,tags:e.tags,busy:e.busy,children:void 0,uri:e.uri?.toJSON(),range:e.range?.toJSON()||null,description:e.description,error:e.error,sortText:e.sortText}),n.deserialize=(e,t)=>({extId:t.extId,label:t.label,tags:t.tags,busy:t.busy,children:void 0,uri:t.uri?e.asCanonicalUri(p.revive(t.uri)):void 0,range:t.range?u.lift(t.range):null,description:t.description,error:t.error,sortText:t.sortText})))(b||={});var w=(t=>(t[t.NotExpandable=0]="NotExpandable",t[t.Expandable=1]="Expandable",t[t.BusyExpanding=2]="BusyExpanding",t[t.Expanded=3]="Expanded",t))(w||{}),l;(n=>(n.serialize=e=>({expand:e.expand,item:b.serialize(e.item)}),n.deserialize=(e,t)=>({controllerId:x.root(t.item.extId),expand:t.expand,item:b.deserialize(e,t.item)})))(l||={});var g;(n=>(n.serialize=e=>{let t;return e.item&&(t={},e.item.label!==void 0&&(t.label=e.item.label),e.item.tags!==void 0&&(t.tags=e.item.tags),e.item.busy!==void 0&&(t.busy=e.item.busy),e.item.uri!==void 0&&(t.uri=e.item.uri?.toJSON()),e.item.range!==void 0&&(t.range=e.item.range?.toJSON()),e.item.description!==void 0&&(t.description=e.item.description),e.item.error!==void 0&&(t.error=e.item.error),e.item.sortText!==void 0&&(t.sortText=e.item.sortText)),{extId:e.extId,expand:e.expand,item:t}},n.deserialize=e=>{let t;return e.item&&(t={},e.item.label!==void 0&&(t.label=e.item.label),e.item.tags!==void 0&&(t.tags=e.item.tags),e.item.busy!==void 0&&(t.busy=e.item.busy),e.item.range!==void 0&&(t.range=e.item.range?u.lift(e.item.range):null),e.item.description!==void 0&&(t.description=e.item.description),e.item.error!==void 0&&(t.error=e.item.error),e.item.sortText!==void 0&&(t.sortText=e.item.sortText)),{extId:e.extId,expand:e.expand,item:t}}))(g||={});const A=(i,r)=>{r.expand!==void 0&&(i.expand=r.expand),r.item!==void 0&&(i.item=i.item?Object.assign(i.item,r.item):r.item)};var N;(e=>(e.serializeWithoutMessages=t=>({...l.serialize(t),ownComputedState:t.ownComputedState,computedState:t.computedState,tasks:t.tasks.map(m.serializeWithoutMessages)}),e.serialize=t=>({...l.serialize(t),ownComputedState:t.ownComputedState,computedState:t.computedState,tasks:t.tasks.map(m.serialize)}),e.deserialize=(t,o)=>({...l.deserialize(t,o),ownComputedState:o.ownComputedState,computedState:o.computedState,tasks:o.tasks.map(a=>m.deserialize(t,a)),retired:!0})))(N||={});var D;(n=>(n.empty=()=>({covered:0,total:0}),n.sum=(e,t)=>{e.covered+=t.covered,e.total+=t.total}))(D||={});var H;(e=>(e.serialize=t=>({id:t.id,statement:t.statement,branch:t.branch,declaration:t.declaration,testIds:t.testIds,uri:t.uri.toJSON()}),e.deserialize=(t,o)=>({id:o.id,statement:o.statement,branch:o.branch,declaration:o.declaration,testIds:o.testIds,uri:t.asCanonicalUri(p.revive(o.uri))}),e.empty=(t,o)=>({id:t,uri:o,statement:D.empty()})))(H||={});function C(i){return{...i,location:i.location?.toJSON()}}function y(i){return i.location=i.location?I.isIPosition(i.location)?I.lift(i.location):u.lift(i.location):void 0,i}const oe=3;var F=(e=>(e[e.Declaration=0]="Declaration",e[e.Statement=1]="Statement",e[e.Branch=2]="Branch",e))(F||{}),J;(n=>(n.serialize=e=>e.type===0?h.serialize(e):v.serialize(e),n.deserialize=e=>e.type===0?h.deserialize(e):v.deserialize(e)))(J||={});var R;(n=>(n.serialize=C,n.deserialize=y))(R||={});var h;(n=>(n.serialize=C,n.deserialize=y))(h||={});var v;(n=>(n.serialize=e=>({...C(e),branches:e.branches?.map(R.serialize)}),n.deserialize=e=>({...y(e),branches:e.branches?.map(R.deserialize)})))(v||={});var L=(d=>(d[d.Add=0]="Add",d[d.Update=1]="Update",d[d.DocumentSynced=2]="DocumentSynced",d[d.Remove=3]="Remove",d[d.IncrementPendingExtHosts=4]="IncrementPendingExtHosts",d[d.Retire=5]="Retire",d[d.AddTag=6]="AddTag",d[d.RemoveTag=7]="RemoveTag",d))(L||{}),V;(n=>(n.deserialize=(e,t)=>t.op===0?{op:t.op,item:l.deserialize(e,t.item)}:t.op===1?{op:t.op,item:g.deserialize(t.item)}:t.op===2?{op:t.op,uri:e.asCanonicalUri(p.revive(t.uri)),docv:t.docv}:t,n.serialize=e=>e.op===0?{op:e.op,item:l.serialize(e.item)}:e.op===1?{op:e.op,item:g.serialize(e.item)}:e))(V||={});class ae{constructor(r){this.uriIdentity=r}_tags=new Map;items=new Map;roots=new Set;busyControllerCount=0;pendingRootCount=0;tags=this._tags;apply(r){const n=this.createChangeCollector();for(const e of r)switch(e.op){case 0:this.add(l.deserialize(this.uriIdentity,e.item),n);break;case 1:this.update(g.deserialize(e.item),n);break;case 3:this.remove(e.itemId,n);break;case 5:this.retireTest(e.itemId);break;case 4:this.updatePendingRoots(e.amount);break;case 6:this._tags.set(e.tag.id,e.tag);break;case 7:this._tags.delete(e.id);break}n.complete?.()}add(r,n){const e=x.parentId(r.item.extId)?.toString();let t;if(!e)t=this.createItem(r),this.roots.add(t),this.items.set(r.item.extId,t);else if(this.items.has(e)){const o=this.items.get(e);o.children.add(r.item.extId),t=this.createItem(r,o),this.items.set(r.item.extId,t)}else return;return n.add?.(t),r.expand===2&&this.busyControllerCount++,t}update(r,n){const e=this.items.get(r.extId);if(e)return r.expand!==void 0&&(e.expand===2&&this.busyControllerCount--,r.expand===2&&this.busyControllerCount++),A(e,r),n.update?.(e),e}remove(r,n){const e=this.items.get(r);if(!e)return;const t=x.parentId(e.item.extId)?.toString();t?this.items.get(t).children.delete(e.item.extId):this.roots.delete(e);const o=[[r]];for(;o.length;)for(const a of o.pop()){const s=this.items.get(a);s&&(o.push(s.children),this.items.delete(a),n.remove?.(s,s!==e),s.expand===2&&this.busyControllerCount--)}}retireTest(r){}updatePendingRoots(r){this.pendingRootCount+=r}createChangeCollector(){return{}}}export{ae as AbstractIncrementalTestCollection,J as CoverageDetails,F as DetailType,O as ExtTestRunProfileKind,R as IBranchCoverage,D as ICoverageCount,h as IDeclarationCoverage,H as IFileCoverage,c as IRichLocation,v as IStatementCoverage,T as ITestErrorMessage,b as ITestItem,g as ITestItemUpdate,z as ITestMessage,f as ITestMessageStackFrame,S as ITestOutputMessage,m as ITestTaskState,l as InternalTestItem,oe as KEEP_N_LAST_COVERAGE_REPORTS,k as TestControllerCapability,L as TestDiffOpType,w as TestItemExpandState,E as TestMessageType,N as TestResultItem,M as TestResultState,P as TestRunProfileBitset,V as TestsDiffOp,A as applyTestItemUpdate,ie as denamespaceTestTag,ne as getMarkId,te as isStartControllerTests,re as namespaceTestTag,K as testResultStateToContextValues,ee as testRunProfileBitsetList};
+import { URI } from '../../../../base/common/uri.js';
+import { Position } from '../../../../editor/common/core/position.js';
+import { Range } from '../../../../editor/common/core/range.js';
+import { TestId } from './testId.js';
+export const testResultStateToContextValues = {
+    [0]: 'unset',
+    [1]: 'queued',
+    [2]: 'running',
+    [3]: 'passed',
+    [4]: 'failed',
+    [5]: 'skipped',
+    [6]: 'errored',
+};
+export const testRunProfileBitsetList = [
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+];
+export const isStartControllerTests = (t) => 'runId' in t;
+export var IRichLocation;
+(function (IRichLocation) {
+    IRichLocation.serialize = (location) => ({
+        range: location.range.toJSON(),
+        uri: location.uri.toJSON(),
+    });
+    IRichLocation.deserialize = (uriIdentity, location) => ({
+        range: Range.lift(location.range),
+        uri: uriIdentity.asCanonicalUri(URI.revive(location.uri)),
+    });
+})(IRichLocation || (IRichLocation = {}));
+export var ITestMessageStackFrame;
+(function (ITestMessageStackFrame) {
+    ITestMessageStackFrame.serialize = (stack) => ({
+        label: stack.label,
+        uri: stack.uri?.toJSON(),
+        position: stack.position?.toJSON(),
+    });
+    ITestMessageStackFrame.deserialize = (uriIdentity, stack) => ({
+        label: stack.label,
+        uri: stack.uri ? uriIdentity.asCanonicalUri(URI.revive(stack.uri)) : undefined,
+        position: stack.position ? Position.lift(stack.position) : undefined,
+    });
+})(ITestMessageStackFrame || (ITestMessageStackFrame = {}));
+export var ITestErrorMessage;
+(function (ITestErrorMessage) {
+    ITestErrorMessage.serialize = (message) => ({
+        message: message.message,
+        type: 0,
+        expected: message.expected,
+        actual: message.actual,
+        contextValue: message.contextValue,
+        location: message.location && IRichLocation.serialize(message.location),
+        stackTrace: message.stackTrace?.map(ITestMessageStackFrame.serialize),
+    });
+    ITestErrorMessage.deserialize = (uriIdentity, message) => ({
+        message: message.message,
+        type: 0,
+        expected: message.expected,
+        actual: message.actual,
+        contextValue: message.contextValue,
+        location: message.location && IRichLocation.deserialize(uriIdentity, message.location),
+        stackTrace: message.stackTrace && message.stackTrace.map(s => ITestMessageStackFrame.deserialize(uriIdentity, s)),
+    });
+})(ITestErrorMessage || (ITestErrorMessage = {}));
+export const getMarkId = (marker, start) => `${start ? 's' : 'e'}${marker}`;
+export var ITestOutputMessage;
+(function (ITestOutputMessage) {
+    ITestOutputMessage.serialize = (message) => ({
+        message: message.message,
+        type: 1,
+        offset: message.offset,
+        length: message.length,
+        location: message.location && IRichLocation.serialize(message.location),
+    });
+    ITestOutputMessage.deserialize = (uriIdentity, message) => ({
+        message: message.message,
+        type: 1,
+        offset: message.offset,
+        length: message.length,
+        location: message.location && IRichLocation.deserialize(uriIdentity, message.location),
+    });
+})(ITestOutputMessage || (ITestOutputMessage = {}));
+export var ITestMessage;
+(function (ITestMessage) {
+    ITestMessage.serialize = (message) => message.type === 0 ? ITestErrorMessage.serialize(message) : ITestOutputMessage.serialize(message);
+    ITestMessage.deserialize = (uriIdentity, message) => message.type === 0 ? ITestErrorMessage.deserialize(uriIdentity, message) : ITestOutputMessage.deserialize(uriIdentity, message);
+    ITestMessage.isDiffable = (message) => message.type === 0 && message.actual !== undefined && message.expected !== undefined;
+})(ITestMessage || (ITestMessage = {}));
+export var ITestTaskState;
+(function (ITestTaskState) {
+    ITestTaskState.serializeWithoutMessages = (state) => ({
+        state: state.state,
+        duration: state.duration,
+        messages: [],
+    });
+    ITestTaskState.serialize = (state) => ({
+        state: state.state,
+        duration: state.duration,
+        messages: state.messages.map(ITestMessage.serialize),
+    });
+    ITestTaskState.deserialize = (uriIdentity, state) => ({
+        state: state.state,
+        duration: state.duration,
+        messages: state.messages.map(m => ITestMessage.deserialize(uriIdentity, m)),
+    });
+})(ITestTaskState || (ITestTaskState = {}));
+const testTagDelimiter = '\0';
+export const namespaceTestTag = (ctrlId, tagId) => ctrlId + testTagDelimiter + tagId;
+export const denamespaceTestTag = (namespaced) => {
+    const index = namespaced.indexOf(testTagDelimiter);
+    return { ctrlId: namespaced.slice(0, index), tagId: namespaced.slice(index + 1) };
+};
+export var ITestItem;
+(function (ITestItem) {
+    ITestItem.serialize = (item) => ({
+        extId: item.extId,
+        label: item.label,
+        tags: item.tags,
+        busy: item.busy,
+        children: undefined,
+        uri: item.uri?.toJSON(),
+        range: item.range?.toJSON() || null,
+        description: item.description,
+        error: item.error,
+        sortText: item.sortText
+    });
+    ITestItem.deserialize = (uriIdentity, serialized) => ({
+        extId: serialized.extId,
+        label: serialized.label,
+        tags: serialized.tags,
+        busy: serialized.busy,
+        children: undefined,
+        uri: serialized.uri ? uriIdentity.asCanonicalUri(URI.revive(serialized.uri)) : undefined,
+        range: serialized.range ? Range.lift(serialized.range) : null,
+        description: serialized.description,
+        error: serialized.error,
+        sortText: serialized.sortText
+    });
+})(ITestItem || (ITestItem = {}));
+export var InternalTestItem;
+(function (InternalTestItem) {
+    InternalTestItem.serialize = (item) => ({
+        expand: item.expand,
+        item: ITestItem.serialize(item.item)
+    });
+    InternalTestItem.deserialize = (uriIdentity, serialized) => ({
+        controllerId: TestId.root(serialized.item.extId),
+        expand: serialized.expand,
+        item: ITestItem.deserialize(uriIdentity, serialized.item)
+    });
+})(InternalTestItem || (InternalTestItem = {}));
+export var ITestItemUpdate;
+(function (ITestItemUpdate) {
+    ITestItemUpdate.serialize = (u) => {
+        let item;
+        if (u.item) {
+            item = {};
+            if (u.item.label !== undefined) {
+                item.label = u.item.label;
+            }
+            if (u.item.tags !== undefined) {
+                item.tags = u.item.tags;
+            }
+            if (u.item.busy !== undefined) {
+                item.busy = u.item.busy;
+            }
+            if (u.item.uri !== undefined) {
+                item.uri = u.item.uri?.toJSON();
+            }
+            if (u.item.range !== undefined) {
+                item.range = u.item.range?.toJSON();
+            }
+            if (u.item.description !== undefined) {
+                item.description = u.item.description;
+            }
+            if (u.item.error !== undefined) {
+                item.error = u.item.error;
+            }
+            if (u.item.sortText !== undefined) {
+                item.sortText = u.item.sortText;
+            }
+        }
+        return { extId: u.extId, expand: u.expand, item };
+    };
+    ITestItemUpdate.deserialize = (u) => {
+        let item;
+        if (u.item) {
+            item = {};
+            if (u.item.label !== undefined) {
+                item.label = u.item.label;
+            }
+            if (u.item.tags !== undefined) {
+                item.tags = u.item.tags;
+            }
+            if (u.item.busy !== undefined) {
+                item.busy = u.item.busy;
+            }
+            if (u.item.range !== undefined) {
+                item.range = u.item.range ? Range.lift(u.item.range) : null;
+            }
+            if (u.item.description !== undefined) {
+                item.description = u.item.description;
+            }
+            if (u.item.error !== undefined) {
+                item.error = u.item.error;
+            }
+            if (u.item.sortText !== undefined) {
+                item.sortText = u.item.sortText;
+            }
+        }
+        return { extId: u.extId, expand: u.expand, item };
+    };
+})(ITestItemUpdate || (ITestItemUpdate = {}));
+export const applyTestItemUpdate = (internal, patch) => {
+    if (patch.expand !== undefined) {
+        internal.expand = patch.expand;
+    }
+    if (patch.item !== undefined) {
+        internal.item = internal.item ? Object.assign(internal.item, patch.item) : patch.item;
+    }
+};
+export var TestResultItem;
+(function (TestResultItem) {
+    TestResultItem.serializeWithoutMessages = (original) => ({
+        ...InternalTestItem.serialize(original),
+        ownComputedState: original.ownComputedState,
+        computedState: original.computedState,
+        tasks: original.tasks.map(ITestTaskState.serializeWithoutMessages),
+    });
+    TestResultItem.serialize = (original) => ({
+        ...InternalTestItem.serialize(original),
+        ownComputedState: original.ownComputedState,
+        computedState: original.computedState,
+        tasks: original.tasks.map(ITestTaskState.serialize),
+    });
+    TestResultItem.deserialize = (uriIdentity, serialized) => ({
+        ...InternalTestItem.deserialize(uriIdentity, serialized),
+        ownComputedState: serialized.ownComputedState,
+        computedState: serialized.computedState,
+        tasks: serialized.tasks.map(m => ITestTaskState.deserialize(uriIdentity, m)),
+        retired: true,
+    });
+})(TestResultItem || (TestResultItem = {}));
+export var ICoverageCount;
+(function (ICoverageCount) {
+    ICoverageCount.empty = () => ({ covered: 0, total: 0 });
+    ICoverageCount.sum = (target, src) => {
+        target.covered += src.covered;
+        target.total += src.total;
+    };
+})(ICoverageCount || (ICoverageCount = {}));
+export var IFileCoverage;
+(function (IFileCoverage) {
+    IFileCoverage.serialize = (original) => ({
+        id: original.id,
+        statement: original.statement,
+        branch: original.branch,
+        declaration: original.declaration,
+        testIds: original.testIds,
+        uri: original.uri.toJSON(),
+    });
+    IFileCoverage.deserialize = (uriIdentity, serialized) => ({
+        id: serialized.id,
+        statement: serialized.statement,
+        branch: serialized.branch,
+        declaration: serialized.declaration,
+        testIds: serialized.testIds,
+        uri: uriIdentity.asCanonicalUri(URI.revive(serialized.uri)),
+    });
+    IFileCoverage.empty = (id, uri) => ({
+        id,
+        uri,
+        statement: ICoverageCount.empty(),
+    });
+})(IFileCoverage || (IFileCoverage = {}));
+function serializeThingWithLocation(serialized) {
+    return {
+        ...serialized,
+        location: serialized.location?.toJSON(),
+    };
+}
+function deserializeThingWithLocation(serialized) {
+    serialized.location = serialized.location ? (Position.isIPosition(serialized.location) ? Position.lift(serialized.location) : Range.lift(serialized.location)) : undefined;
+    return serialized;
+}
+export const KEEP_N_LAST_COVERAGE_REPORTS = 3;
+export var CoverageDetails;
+(function (CoverageDetails) {
+    CoverageDetails.serialize = (original) => original.type === 0 ? IDeclarationCoverage.serialize(original) : IStatementCoverage.serialize(original);
+    CoverageDetails.deserialize = (serialized) => serialized.type === 0 ? IDeclarationCoverage.deserialize(serialized) : IStatementCoverage.deserialize(serialized);
+})(CoverageDetails || (CoverageDetails = {}));
+export var IBranchCoverage;
+(function (IBranchCoverage) {
+    IBranchCoverage.serialize = serializeThingWithLocation;
+    IBranchCoverage.deserialize = deserializeThingWithLocation;
+})(IBranchCoverage || (IBranchCoverage = {}));
+export var IDeclarationCoverage;
+(function (IDeclarationCoverage) {
+    IDeclarationCoverage.serialize = serializeThingWithLocation;
+    IDeclarationCoverage.deserialize = deserializeThingWithLocation;
+})(IDeclarationCoverage || (IDeclarationCoverage = {}));
+export var IStatementCoverage;
+(function (IStatementCoverage) {
+    IStatementCoverage.serialize = (original) => ({
+        ...serializeThingWithLocation(original),
+        branches: original.branches?.map(IBranchCoverage.serialize),
+    });
+    IStatementCoverage.deserialize = (serialized) => ({
+        ...deserializeThingWithLocation(serialized),
+        branches: serialized.branches?.map(IBranchCoverage.deserialize),
+    });
+})(IStatementCoverage || (IStatementCoverage = {}));
+export var TestsDiffOp;
+(function (TestsDiffOp) {
+    TestsDiffOp.deserialize = (uriIdentity, u) => {
+        if (u.op === 0) {
+            return { op: u.op, item: InternalTestItem.deserialize(uriIdentity, u.item) };
+        }
+        else if (u.op === 1) {
+            return { op: u.op, item: ITestItemUpdate.deserialize(u.item) };
+        }
+        else if (u.op === 2) {
+            return { op: u.op, uri: uriIdentity.asCanonicalUri(URI.revive(u.uri)), docv: u.docv };
+        }
+        else {
+            return u;
+        }
+    };
+    TestsDiffOp.serialize = (u) => {
+        if (u.op === 0) {
+            return { op: u.op, item: InternalTestItem.serialize(u.item) };
+        }
+        else if (u.op === 1) {
+            return { op: u.op, item: ITestItemUpdate.serialize(u.item) };
+        }
+        else {
+            return u;
+        }
+    };
+})(TestsDiffOp || (TestsDiffOp = {}));
+export class AbstractIncrementalTestCollection {
+    constructor(uriIdentity) {
+        this.uriIdentity = uriIdentity;
+        this._tags = new Map();
+        this.items = new Map();
+        this.roots = new Set();
+        this.busyControllerCount = 0;
+        this.pendingRootCount = 0;
+        this.tags = this._tags;
+    }
+    apply(diff) {
+        const changes = this.createChangeCollector();
+        for (const op of diff) {
+            switch (op.op) {
+                case 0:
+                    this.add(InternalTestItem.deserialize(this.uriIdentity, op.item), changes);
+                    break;
+                case 1:
+                    this.update(ITestItemUpdate.deserialize(op.item), changes);
+                    break;
+                case 3:
+                    this.remove(op.itemId, changes);
+                    break;
+                case 5:
+                    this.retireTest(op.itemId);
+                    break;
+                case 4:
+                    this.updatePendingRoots(op.amount);
+                    break;
+                case 6:
+                    this._tags.set(op.tag.id, op.tag);
+                    break;
+                case 7:
+                    this._tags.delete(op.id);
+                    break;
+            }
+        }
+        changes.complete?.();
+    }
+    add(item, changes) {
+        const parentId = TestId.parentId(item.item.extId)?.toString();
+        let created;
+        if (!parentId) {
+            created = this.createItem(item);
+            this.roots.add(created);
+            this.items.set(item.item.extId, created);
+        }
+        else if (this.items.has(parentId)) {
+            const parent = this.items.get(parentId);
+            parent.children.add(item.item.extId);
+            created = this.createItem(item, parent);
+            this.items.set(item.item.extId, created);
+        }
+        else {
+            console.error(`Test with unknown parent ID: ${JSON.stringify(item)}`);
+            return;
+        }
+        changes.add?.(created);
+        if (item.expand === 2) {
+            this.busyControllerCount++;
+        }
+        return created;
+    }
+    update(patch, changes) {
+        const existing = this.items.get(patch.extId);
+        if (!existing) {
+            return;
+        }
+        if (patch.expand !== undefined) {
+            if (existing.expand === 2) {
+                this.busyControllerCount--;
+            }
+            if (patch.expand === 2) {
+                this.busyControllerCount++;
+            }
+        }
+        applyTestItemUpdate(existing, patch);
+        changes.update?.(existing);
+        return existing;
+    }
+    remove(itemId, changes) {
+        const toRemove = this.items.get(itemId);
+        if (!toRemove) {
+            return;
+        }
+        const parentId = TestId.parentId(toRemove.item.extId)?.toString();
+        if (parentId) {
+            const parent = this.items.get(parentId);
+            parent.children.delete(toRemove.item.extId);
+        }
+        else {
+            this.roots.delete(toRemove);
+        }
+        const queue = [[itemId]];
+        while (queue.length) {
+            for (const itemId of queue.pop()) {
+                const existing = this.items.get(itemId);
+                if (existing) {
+                    queue.push(existing.children);
+                    this.items.delete(itemId);
+                    changes.remove?.(existing, existing !== toRemove);
+                    if (existing.expand === 2) {
+                        this.busyControllerCount--;
+                    }
+                }
+            }
+        }
+    }
+    retireTest(testId) {
+    }
+    updatePendingRoots(delta) {
+        this.pendingRootCount += delta;
+    }
+    createChangeCollector() {
+        return {};
+    }
+}

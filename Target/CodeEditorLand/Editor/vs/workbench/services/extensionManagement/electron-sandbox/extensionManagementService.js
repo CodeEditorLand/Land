@@ -1,1 +1,68 @@
-var y=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var s=(a,t,r,i)=>{for(var o=i>1?void 0:i?D(t,r):t,n=a.length-1,m;n>=0;n--)(m=a[n])&&(o=(i?m(t,r,o):m(o))||o);return i&&o&&y(t,r,o),o},e=(a,t)=>(r,i)=>t(r,i,a);import{generateUuid as h}from"../../../../base/common/uuid.js";import{IExtensionGalleryService as M}from"../../../../platform/extensionManagement/common/extensionManagement.js";import"../../../../base/common/uri.js";import{ExtensionManagementService as P}from"../common/extensionManagementService.js";import{InstantiationType as U,registerSingleton as w}from"../../../../platform/instantiation/common/extensions.js";import{IExtensionManagementServerService as b,IWorkbenchExtensionManagementService as k}from"../common/extensionManagement.js";import{Schemas as L}from"../../../../base/common/network.js";import{IConfigurationService as R}from"../../../../platform/configuration/common/configuration.js";import{IDownloadService as T}from"../../../../platform/download/common/download.js";import{IProductService as W}from"../../../../platform/product/common/productService.js";import{INativeWorkbenchEnvironmentService as q}from"../../environment/electron-sandbox/environmentService.js";import{joinPath as C}from"../../../../base/common/resources.js";import{IUserDataSyncEnablementService as F}from"../../../../platform/userDataSync/common/userDataSync.js";import{IDialogService as G}from"../../../../platform/dialogs/common/dialogs.js";import{IWorkspaceTrustRequestService as N}from"../../../../platform/workspace/common/workspaceTrust.js";import{IExtensionManifestPropertiesService as O}from"../../extensions/common/extensionManifestPropertiesService.js";import{IInstantiationService as V}from"../../../../platform/instantiation/common/instantiation.js";import{IFileService as X}from"../../../../platform/files/common/files.js";import{ILogService as j}from"../../../../platform/log/common/log.js";import{IUserDataProfileService as B}from"../../userDataProfile/common/userDataProfile.js";import{IExtensionsScannerService as z}from"../../../../platform/extensionManagement/common/extensionsScannerService.js";import{ITelemetryService as A}from"../../../../platform/telemetry/common/telemetry.js";let c=class extends P{constructor(r,i,o,n,m,S,v,I,l,p,f,d,E,g,u,x){super(i,o,n,m,S,v,I,l,p,f,d,E,g,u,x);this.environmentService=r}async installVSIXInServer(r,i,o){if(r.scheme===L.vscodeRemote&&i===this.extensionManagementServerService.localExtensionManagementServer){const n=C(this.environmentService.tmpDir,h());await this.downloadService.download(r,n),r=n}return super.installVSIXInServer(r,i,o)}};c=s([e(0,q),e(1,b),e(2,M),e(3,B),e(4,R),e(5,W),e(6,T),e(7,F),e(8,G),e(9,N),e(10,O),e(11,X),e(12,j),e(13,V),e(14,z),e(15,A)],c),w(k,c,U.Delayed);export{c as ExtensionManagementService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { generateUuid } from '../../../../base/common/uuid.js';
+import { IExtensionGalleryService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { ExtensionManagementService as BaseExtensionManagementService } from '../common/extensionManagementService.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IExtensionManagementServerService, IWorkbenchExtensionManagementService } from '../common/extensionManagement.js';
+import { Schemas } from '../../../../base/common/network.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IDownloadService } from '../../../../platform/download/common/download.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { INativeWorkbenchEnvironmentService } from '../../environment/electron-sandbox/environmentService.js';
+import { joinPath } from '../../../../base/common/resources.js';
+import { IUserDataSyncEnablementService } from '../../../../platform/userDataSync/common/userDataSync.js';
+import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { IWorkspaceTrustRequestService } from '../../../../platform/workspace/common/workspaceTrust.js';
+import { IExtensionManifestPropertiesService } from '../../extensions/common/extensionManifestPropertiesService.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IUserDataProfileService } from '../../userDataProfile/common/userDataProfile.js';
+import { IExtensionsScannerService } from '../../../../platform/extensionManagement/common/extensionsScannerService.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+let ExtensionManagementService = class ExtensionManagementService extends BaseExtensionManagementService {
+    constructor(environmentService, extensionManagementServerService, extensionGalleryService, userDataProfileService, configurationService, productService, downloadService, userDataSyncEnablementService, dialogService, workspaceTrustRequestService, extensionManifestPropertiesService, fileService, logService, instantiationService, extensionsScannerService, telemetryService) {
+        super(extensionManagementServerService, extensionGalleryService, userDataProfileService, configurationService, productService, downloadService, userDataSyncEnablementService, dialogService, workspaceTrustRequestService, extensionManifestPropertiesService, fileService, logService, instantiationService, extensionsScannerService, telemetryService);
+        this.environmentService = environmentService;
+    }
+    async installVSIXInServer(vsix, server, options) {
+        if (vsix.scheme === Schemas.vscodeRemote && server === this.extensionManagementServerService.localExtensionManagementServer) {
+            const downloadedLocation = joinPath(this.environmentService.tmpDir, generateUuid());
+            await this.downloadService.download(vsix, downloadedLocation);
+            vsix = downloadedLocation;
+        }
+        return super.installVSIXInServer(vsix, server, options);
+    }
+};
+ExtensionManagementService = __decorate([
+    __param(0, INativeWorkbenchEnvironmentService),
+    __param(1, IExtensionManagementServerService),
+    __param(2, IExtensionGalleryService),
+    __param(3, IUserDataProfileService),
+    __param(4, IConfigurationService),
+    __param(5, IProductService),
+    __param(6, IDownloadService),
+    __param(7, IUserDataSyncEnablementService),
+    __param(8, IDialogService),
+    __param(9, IWorkspaceTrustRequestService),
+    __param(10, IExtensionManifestPropertiesService),
+    __param(11, IFileService),
+    __param(12, ILogService),
+    __param(13, IInstantiationService),
+    __param(14, IExtensionsScannerService),
+    __param(15, ITelemetryService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], ExtensionManagementService);
+export { ExtensionManagementService };
+registerSingleton(IWorkbenchExtensionManagementService, ExtensionManagementService, 1);

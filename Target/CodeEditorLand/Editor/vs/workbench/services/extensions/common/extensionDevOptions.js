@@ -1,1 +1,22 @@
-import{Schemas as r}from"../../../../base/common/network.js";import"../../../../platform/environment/common/environment.js";function l(e){const n=e.isExtensionDevelopment;let o=!0;const s=e.extensionDevelopmentLocationURI;if(s)for(const D of s)D.scheme!==r.file&&(o=!1);const t=o&&typeof e.debugExtensionHost.port=="number",i=o&&!!e.debugExtensionHost.break,x=n&&!!e.extensionTestsLocationURI&&!e.debugExtensionHost.debugId;return{isExtensionDevHost:n,isExtensionDevDebug:t,isExtensionDevDebugBrk:i,isExtensionDevTestFromCli:x}}export{l as parseExtensionDevOptions};
+import { Schemas } from '../../../../base/common/network.js';
+export function parseExtensionDevOptions(environmentService) {
+    const isExtensionDevHost = environmentService.isExtensionDevelopment;
+    let debugOk = true;
+    const extDevLocs = environmentService.extensionDevelopmentLocationURI;
+    if (extDevLocs) {
+        for (const x of extDevLocs) {
+            if (x.scheme !== Schemas.file) {
+                debugOk = false;
+            }
+        }
+    }
+    const isExtensionDevDebug = debugOk && typeof environmentService.debugExtensionHost.port === 'number';
+    const isExtensionDevDebugBrk = debugOk && !!environmentService.debugExtensionHost.break;
+    const isExtensionDevTestFromCli = isExtensionDevHost && !!environmentService.extensionTestsLocationURI && !environmentService.debugExtensionHost.debugId;
+    return {
+        isExtensionDevHost,
+        isExtensionDevDebug,
+        isExtensionDevDebugBrk,
+        isExtensionDevTestFromCli
+    };
+}

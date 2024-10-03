@@ -1,1 +1,14 @@
-import"../../../../platform/workspace/common/workspace.js";import"../../../../base/common/uri.js";import{InstantiationType as o,registerSingleton as s}from"../../../../platform/instantiation/common/extensions.js";import{IWorkspaceTagsService as t}from"../common/workspaceTags.js";class i{getTags(){return Promise.resolve({})}async getTelemetryWorkspaceId(e,r){}getHashedRemotesFromUri(e,r){return Promise.resolve([])}}s(t,i,o.Delayed);export{i as NoOpWorkspaceTagsService};
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IWorkspaceTagsService } from '../common/workspaceTags.js';
+export class NoOpWorkspaceTagsService {
+    getTags() {
+        return Promise.resolve({});
+    }
+    async getTelemetryWorkspaceId(workspace, state) {
+        return undefined;
+    }
+    getHashedRemotesFromUri(workspaceUri, stripEndingDotGit) {
+        return Promise.resolve([]);
+    }
+}
+registerSingleton(IWorkspaceTagsService, NoOpWorkspaceTagsService, 1);

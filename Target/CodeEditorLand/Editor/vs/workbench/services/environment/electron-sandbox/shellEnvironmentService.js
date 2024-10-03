@@ -1,1 +1,10 @@
-import{createDecorator as e}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../base/common/platform.js";import{process as n}from"../../../../base/parts/sandbox/electron-sandbox/globals.js";import{InstantiationType as r,registerSingleton as o}from"../../../../platform/instantiation/common/extensions.js";const i=e("shellEnvironmentService");class t{getShellEnv(){return n.shellEnv()}}o(i,t,r.Delayed);export{i as IShellEnvironmentService,t as ShellEnvironmentService};
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { process } from '../../../../base/parts/sandbox/electron-sandbox/globals.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+export const IShellEnvironmentService = createDecorator('shellEnvironmentService');
+export class ShellEnvironmentService {
+    getShellEnv() {
+        return process.shellEnv();
+    }
+}
+registerSingleton(IShellEnvironmentService, ShellEnvironmentService, 1);

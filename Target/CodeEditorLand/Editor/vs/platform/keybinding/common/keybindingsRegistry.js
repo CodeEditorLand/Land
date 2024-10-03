@@ -1,1 +1,117 @@
-import{decodeKeybinding as m}from"../../../base/common/keybindings.js";import{OperatingSystem as y,OS as o}from"../../../base/common/platform.js";import{CommandsRegistry as l}from"../../commands/common/commands.js";import"../../contextkey/common/contextkey.js";import{Registry as u}from"../../registry/common/platform.js";import{combinedDisposable as b,DisposableStore as c,toDisposable as K}from"../../../base/common/lifecycle.js";import{LinkedList as p}from"../../../base/common/linkedList.js";var I=(i=>(i[i.EditorCore=0]="EditorCore",i[i.EditorContrib=100]="EditorContrib",i[i.WorkbenchContrib=200]="WorkbenchContrib",i[i.BuiltinExtension=300]="BuiltinExtension",i[i.ExternalExtension=400]="ExternalExtension",i))(I||{});class g{_coreKeybindings;_extensionKeybindings;_cachedMergedKeybindings;constructor(){this._coreKeybindings=new p,this._extensionKeybindings=[],this._cachedMergedKeybindings=null}static bindToCurrentPlatform(n){if(o===y.Windows){if(n&&n.win)return n.win}else if(o===y.Macintosh){if(n&&n.mac)return n.mac}else if(n&&n.linux)return n.linux;return n}registerKeybindingRule(n){const t=g.bindToCurrentPlatform(n),r=new c;if(t&&t.primary){const e=m(t.primary,o);e&&r.add(this._registerDefaultKeybinding(e,n.id,n.args,n.weight,0,n.when))}if(t&&Array.isArray(t.secondary))for(let e=0,i=t.secondary.length;e<i;e++){const a=t.secondary[e],d=m(a,o);d&&r.add(this._registerDefaultKeybinding(d,n.id,n.args,n.weight,-e-1,n.when))}return r}setExtensionKeybindings(n){const t=[];let r=0;for(const e of n)e.keybinding&&(t[r++]={keybinding:e.keybinding,command:e.id,commandArgs:e.args,when:e.when,weight1:e.weight,weight2:0,extensionId:e.extensionId||null,isBuiltinExtension:e.isBuiltinExtension||!1});this._extensionKeybindings=t,this._cachedMergedKeybindings=null}registerCommandAndKeybindingRule(n){return b(this.registerKeybindingRule(n),l.registerCommand(n))}_registerDefaultKeybinding(n,t,r,e,i,a){const d=this._coreKeybindings.push({keybinding:n,command:t,commandArgs:r,when:a,weight1:e,weight2:i,extensionId:null,isBuiltinExtension:!1});return this._cachedMergedKeybindings=null,K(()=>{d(),this._cachedMergedKeybindings=null})}getDefaultKeybindings(){return this._cachedMergedKeybindings||(this._cachedMergedKeybindings=Array.from(this._coreKeybindings).concat(this._extensionKeybindings),this._cachedMergedKeybindings.sort(h)),this._cachedMergedKeybindings.slice(0)}}const f=new g,x={EditorModes:"platform.keybindingsRegistry"};u.add(x.EditorModes,f);function h(s,n){if(s.weight1!==n.weight1)return s.weight1-n.weight1;if(s.command&&n.command){if(s.command<n.command)return-1;if(s.command>n.command)return 1}return s.weight2-n.weight2}export{x as Extensions,I as KeybindingWeight,f as KeybindingsRegistry};
+import { decodeKeybinding } from '../../../base/common/keybindings.js';
+import { OS } from '../../../base/common/platform.js';
+import { CommandsRegistry } from '../../commands/common/commands.js';
+import { Registry } from '../../registry/common/platform.js';
+import { combinedDisposable, DisposableStore, toDisposable } from '../../../base/common/lifecycle.js';
+import { LinkedList } from '../../../base/common/linkedList.js';
+class KeybindingsRegistryImpl {
+    constructor() {
+        this._coreKeybindings = new LinkedList();
+        this._extensionKeybindings = [];
+        this._cachedMergedKeybindings = null;
+    }
+    static bindToCurrentPlatform(kb) {
+        if (OS === 1) {
+            if (kb && kb.win) {
+                return kb.win;
+            }
+        }
+        else if (OS === 2) {
+            if (kb && kb.mac) {
+                return kb.mac;
+            }
+        }
+        else {
+            if (kb && kb.linux) {
+                return kb.linux;
+            }
+        }
+        return kb;
+    }
+    registerKeybindingRule(rule) {
+        const actualKb = KeybindingsRegistryImpl.bindToCurrentPlatform(rule);
+        const result = new DisposableStore();
+        if (actualKb && actualKb.primary) {
+            const kk = decodeKeybinding(actualKb.primary, OS);
+            if (kk) {
+                result.add(this._registerDefaultKeybinding(kk, rule.id, rule.args, rule.weight, 0, rule.when));
+            }
+        }
+        if (actualKb && Array.isArray(actualKb.secondary)) {
+            for (let i = 0, len = actualKb.secondary.length; i < len; i++) {
+                const k = actualKb.secondary[i];
+                const kk = decodeKeybinding(k, OS);
+                if (kk) {
+                    result.add(this._registerDefaultKeybinding(kk, rule.id, rule.args, rule.weight, -i - 1, rule.when));
+                }
+            }
+        }
+        return result;
+    }
+    setExtensionKeybindings(rules) {
+        const result = [];
+        let keybindingsLen = 0;
+        for (const rule of rules) {
+            if (rule.keybinding) {
+                result[keybindingsLen++] = {
+                    keybinding: rule.keybinding,
+                    command: rule.id,
+                    commandArgs: rule.args,
+                    when: rule.when,
+                    weight1: rule.weight,
+                    weight2: 0,
+                    extensionId: rule.extensionId || null,
+                    isBuiltinExtension: rule.isBuiltinExtension || false
+                };
+            }
+        }
+        this._extensionKeybindings = result;
+        this._cachedMergedKeybindings = null;
+    }
+    registerCommandAndKeybindingRule(desc) {
+        return combinedDisposable(this.registerKeybindingRule(desc), CommandsRegistry.registerCommand(desc));
+    }
+    _registerDefaultKeybinding(keybinding, commandId, commandArgs, weight1, weight2, when) {
+        const remove = this._coreKeybindings.push({
+            keybinding: keybinding,
+            command: commandId,
+            commandArgs: commandArgs,
+            when: when,
+            weight1: weight1,
+            weight2: weight2,
+            extensionId: null,
+            isBuiltinExtension: false
+        });
+        this._cachedMergedKeybindings = null;
+        return toDisposable(() => {
+            remove();
+            this._cachedMergedKeybindings = null;
+        });
+    }
+    getDefaultKeybindings() {
+        if (!this._cachedMergedKeybindings) {
+            this._cachedMergedKeybindings = Array.from(this._coreKeybindings).concat(this._extensionKeybindings);
+            this._cachedMergedKeybindings.sort(sorter);
+        }
+        return this._cachedMergedKeybindings.slice(0);
+    }
+}
+export const KeybindingsRegistry = new KeybindingsRegistryImpl();
+export const Extensions = {
+    EditorModes: 'platform.keybindingsRegistry'
+};
+Registry.add(Extensions.EditorModes, KeybindingsRegistry);
+function sorter(a, b) {
+    if (a.weight1 !== b.weight1) {
+        return a.weight1 - b.weight1;
+    }
+    if (a.command && b.command) {
+        if (a.command < b.command) {
+            return -1;
+        }
+        if (a.command > b.command) {
+            return 1;
+        }
+    }
+    return a.weight2 - b.weight2;
+}

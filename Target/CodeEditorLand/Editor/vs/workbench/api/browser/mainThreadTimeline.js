@@ -1,1 +1,65 @@
-var v=Object.defineProperty;var T=Object.getOwnPropertyDescriptor;var a=(n,e,r,t)=>{for(var i=t>1?void 0:t?T(e,r):e,o=n.length-1,m;o>=0;o--)(m=n[o])&&(i=(t?m(e,r,i):m(i))||i);return t&&i&&v(e,r,i),i},l=(n,e)=>(r,t)=>e(r,t,n);import{Emitter as p}from"../../../base/common/event.js";import"../../../base/common/cancellation.js";import"../../../base/common/uri.js";import{ILogService as g}from"../../../platform/log/common/log.js";import{MainContext as c,ExtHostContext as h}from"../common/extHost.protocol.js";import{extHostNamedCustomer as x}from"../../services/extensions/common/extHostCustomers.js";import{ITimelineService as E}from"../../contrib/timeline/common/timeline.js";import{revive as S}from"../../../base/common/marshalling.js";let s=class{constructor(e,r,t){this.logService=r;this._timelineService=t;this._proxy=e.getProxy(h.ExtHostTimeline)}_proxy;_providerEmitters=new Map;$registerTimelineProvider(e){this.logService.trace(`MainThreadTimeline#registerTimelineProvider: id=${e.id}`);const r=this._proxy,t=this._providerEmitters;let i=t.get(e.id);i===void 0&&(i=new p,t.set(e.id,i)),this._timelineService.registerTimelineProvider({...e,onDidChange:i.event,async provideTimeline(o,m,d){return S(await r.$getTimeline(e.id,o,m,d))},dispose(){t.delete(e.id),i?.dispose()}})}$unregisterTimelineProvider(e){this.logService.trace(`MainThreadTimeline#unregisterTimelineProvider: id=${e}`),this._timelineService.unregisterTimelineProvider(e)}$emitTimelineChangeEvent(e){this.logService.trace(`MainThreadTimeline#emitChangeEvent: id=${e.id}, uri=${e.uri?.toString(!0)}`),this._providerEmitters.get(e.id)?.fire(e)}dispose(){}};s=a([x(c.MainThreadTimeline),l(1,g),l(2,E)],s);export{s as MainThreadTimeline};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Emitter } from '../../../base/common/event.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { MainContext, ExtHostContext } from '../common/extHost.protocol.js';
+import { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+import { ITimelineService } from '../../contrib/timeline/common/timeline.js';
+import { revive } from '../../../base/common/marshalling.js';
+let MainThreadTimeline = class MainThreadTimeline {
+    constructor(context, logService, _timelineService) {
+        this.logService = logService;
+        this._timelineService = _timelineService;
+        this._providerEmitters = new Map();
+        this._proxy = context.getProxy(ExtHostContext.ExtHostTimeline);
+    }
+    $registerTimelineProvider(provider) {
+        this.logService.trace(`MainThreadTimeline#registerTimelineProvider: id=${provider.id}`);
+        const proxy = this._proxy;
+        const emitters = this._providerEmitters;
+        let onDidChange = emitters.get(provider.id);
+        if (onDidChange === undefined) {
+            onDidChange = new Emitter();
+            emitters.set(provider.id, onDidChange);
+        }
+        this._timelineService.registerTimelineProvider({
+            ...provider,
+            onDidChange: onDidChange.event,
+            async provideTimeline(uri, options, token) {
+                return revive(await proxy.$getTimeline(provider.id, uri, options, token));
+            },
+            dispose() {
+                emitters.delete(provider.id);
+                onDidChange?.dispose();
+            }
+        });
+    }
+    $unregisterTimelineProvider(id) {
+        this.logService.trace(`MainThreadTimeline#unregisterTimelineProvider: id=${id}`);
+        this._timelineService.unregisterTimelineProvider(id);
+    }
+    $emitTimelineChangeEvent(e) {
+        this.logService.trace(`MainThreadTimeline#emitChangeEvent: id=${e.id}, uri=${e.uri?.toString(true)}`);
+        const emitter = this._providerEmitters.get(e.id);
+        emitter?.fire(e);
+    }
+    dispose() {
+    }
+};
+MainThreadTimeline = __decorate([
+    extHostNamedCustomer(MainContext.MainThreadTimeline),
+    __param(1, ILogService),
+    __param(2, ITimelineService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], MainThreadTimeline);
+export { MainThreadTimeline };

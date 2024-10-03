@@ -1,1 +1,121 @@
-import{Range as p}from"../../../common/range.js";function g(o,e){const n=[];for(const r of e){if(o.start>=r.range.end)continue;if(o.end<r.range.start)break;const t=p.intersect(o,r.range);p.isEmpty(t)||n.push({range:t,size:r.size})}return n}function c({start:o,end:e},n){return{start:o+n,end:e+n}}function m(o){const e=[];let n=null;for(const r of o){const t=r.range.start,s=r.range.end,i=r.size;if(n&&i===n.size){n.range.end=s;continue}n={range:{start:t,end:s},size:i},e.push(n)}return e}function f(...o){return m(o.reduce((e,n)=>e.concat(n),[]))}class b{groups=[];_size=0;_paddingTop=0;get paddingTop(){return this._paddingTop}set paddingTop(e){this._size=this._size+e-this._paddingTop,this._paddingTop=e}constructor(e){this._paddingTop=e??0,this._size=this._paddingTop}splice(e,n,r=[]){const t=r.length-n,s=g({start:0,end:e},this.groups),i=g({start:e+n,end:Number.POSITIVE_INFINITY},this.groups).map(u=>({range:c(u.range,t),size:u.size})),d=r.map((u,a)=>({range:{start:e+a,end:e+a+1},size:u.size}));this.groups=f(s,d,i),this._size=this._paddingTop+this.groups.reduce((u,a)=>u+a.size*(a.range.end-a.range.start),0)}get count(){const e=this.groups.length;return e?this.groups[e-1].range.end:0}get size(){return this._size}indexAt(e){if(e<0)return-1;if(e<this._paddingTop)return 0;let n=0,r=this._paddingTop;for(const t of this.groups){const s=t.range.end-t.range.start,i=r+s*t.size;if(e<i)return n+Math.floor((e-r)/t.size);n+=s,r=i}return n}indexAfter(e){return Math.min(this.indexAt(e)+1,this.count)}positionAt(e){if(e<0)return-1;let n=0,r=0;for(const t of this.groups){const s=t.range.end-t.range.start,i=r+s;if(e<i)return this._paddingTop+n+(e-r)*t.size;n+=s*t.size,r=i}return-1}}export{b as RangeMap,m as consolidate,g as groupIntersect,c as shift};
+import { Range } from '../../../common/range.js';
+export function groupIntersect(range, groups) {
+    const result = [];
+    for (const r of groups) {
+        if (range.start >= r.range.end) {
+            continue;
+        }
+        if (range.end < r.range.start) {
+            break;
+        }
+        const intersection = Range.intersect(range, r.range);
+        if (Range.isEmpty(intersection)) {
+            continue;
+        }
+        result.push({
+            range: intersection,
+            size: r.size
+        });
+    }
+    return result;
+}
+export function shift({ start, end }, much) {
+    return { start: start + much, end: end + much };
+}
+export function consolidate(groups) {
+    const result = [];
+    let previousGroup = null;
+    for (const group of groups) {
+        const start = group.range.start;
+        const end = group.range.end;
+        const size = group.size;
+        if (previousGroup && size === previousGroup.size) {
+            previousGroup.range.end = end;
+            continue;
+        }
+        previousGroup = { range: { start, end }, size };
+        result.push(previousGroup);
+    }
+    return result;
+}
+function concat(...groups) {
+    return consolidate(groups.reduce((r, g) => r.concat(g), []));
+}
+export class RangeMap {
+    get paddingTop() {
+        return this._paddingTop;
+    }
+    set paddingTop(paddingTop) {
+        this._size = this._size + paddingTop - this._paddingTop;
+        this._paddingTop = paddingTop;
+    }
+    constructor(topPadding) {
+        this.groups = [];
+        this._size = 0;
+        this._paddingTop = 0;
+        this._paddingTop = topPadding ?? 0;
+        this._size = this._paddingTop;
+    }
+    splice(index, deleteCount, items = []) {
+        const diff = items.length - deleteCount;
+        const before = groupIntersect({ start: 0, end: index }, this.groups);
+        const after = groupIntersect({ start: index + deleteCount, end: Number.POSITIVE_INFINITY }, this.groups)
+            .map(g => ({ range: shift(g.range, diff), size: g.size }));
+        const middle = items.map((item, i) => ({
+            range: { start: index + i, end: index + i + 1 },
+            size: item.size
+        }));
+        this.groups = concat(before, middle, after);
+        this._size = this._paddingTop + this.groups.reduce((t, g) => t + (g.size * (g.range.end - g.range.start)), 0);
+    }
+    get count() {
+        const len = this.groups.length;
+        if (!len) {
+            return 0;
+        }
+        return this.groups[len - 1].range.end;
+    }
+    get size() {
+        return this._size;
+    }
+    indexAt(position) {
+        if (position < 0) {
+            return -1;
+        }
+        if (position < this._paddingTop) {
+            return 0;
+        }
+        let index = 0;
+        let size = this._paddingTop;
+        for (const group of this.groups) {
+            const count = group.range.end - group.range.start;
+            const newSize = size + (count * group.size);
+            if (position < newSize) {
+                return index + Math.floor((position - size) / group.size);
+            }
+            index += count;
+            size = newSize;
+        }
+        return index;
+    }
+    indexAfter(position) {
+        return Math.min(this.indexAt(position) + 1, this.count);
+    }
+    positionAt(index) {
+        if (index < 0) {
+            return -1;
+        }
+        let position = 0;
+        let count = 0;
+        for (const group of this.groups) {
+            const groupCount = group.range.end - group.range.start;
+            const newCount = count + groupCount;
+            if (index < newCount) {
+                return this._paddingTop + position + ((index - count) * group.size);
+            }
+            position += groupCount * group.size;
+            count = newCount;
+        }
+        return -1;
+    }
+}

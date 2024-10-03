@@ -1,1 +1,221 @@
-import"../../../../base/common/event.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/marshallingIds.js";import{isLinux as l}from"../../../../base/common/platform.js";import"../../../../base/common/severity.js";import"../../../../base/common/themables.js";import"../../../../base/common/uri.js";import*as o from"../../../../nls.js";import{createDecorator as t}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../platform/terminal/common/capabilities/capabilities.js";import"../../../../platform/terminal/common/environmentVariable.js";import"../../../../platform/terminal/common/terminal.js";import{AccessibilityCommandId as s}from"../../accessibility/common/accessibilityCommands.js";import"./environmentVariable.js";import"../../../services/extensions/common/extensionsRegistry.js";import{defaultTerminalContribCommandsToSkipShell as d}from"../terminalContribExports.js";const ae="terminal",ce=["workbench.action.terminal.toggleTerminal","workbench.action.terminal.new","workbench.action.togglePanel","workbench.action.terminal.focus"],le="terminal.integrated",se=0,de=-5,me=l?1.1:1,he=1,ue=1e3,be="normal",pe="bold",we=["normal","bold","100","200","300","400","500","600","700","800","900"],fe=t("terminalProfileResolverService"),ge=633,ke=t("terminalProfileService"),ve=i=>typeof i.write=="function";var m=(n=>(n[n.Uninitialized=1]="Uninitialized",n[n.Launching=2]="Launching",n[n.Running=3]="Running",n[n.KilledDuringLaunch=4]="KilledDuringLaunch",n[n.KilledByUser=5]="KilledByUser",n[n.KilledByProcess=6]="KilledByProcess",n))(m||{});const Pe="workbench.action.terminal.profile.choice";var h=(e=>(e.Toggle="workbench.action.terminal.toggleTerminal",e.Kill="workbench.action.terminal.kill",e.KillViewOrEditor="workbench.action.terminal.killViewOrEditor",e.KillEditor="workbench.action.terminal.killEditor",e.KillActiveTab="workbench.action.terminal.killActiveTab",e.KillAll="workbench.action.terminal.killAll",e.QuickKill="workbench.action.terminal.quickKill",e.ConfigureTerminalSettings="workbench.action.terminal.openSettings",e.ShellIntegrationLearnMore="workbench.action.terminal.learnMore",e.RunRecentCommand="workbench.action.terminal.runRecentCommand",e.CopyLastCommand="workbench.action.terminal.copyLastCommand",e.CopyLastCommandOutput="workbench.action.terminal.copyLastCommandOutput",e.CopyLastCommandAndLastCommandOutput="workbench.action.terminal.copyLastCommandAndLastCommandOutput",e.GoToRecentDirectory="workbench.action.terminal.goToRecentDirectory",e.CopyAndClearSelection="workbench.action.terminal.copyAndClearSelection",e.CopySelection="workbench.action.terminal.copySelection",e.CopySelectionAsHtml="workbench.action.terminal.copySelectionAsHtml",e.SelectAll="workbench.action.terminal.selectAll",e.DeleteWordLeft="workbench.action.terminal.deleteWordLeft",e.DeleteWordRight="workbench.action.terminal.deleteWordRight",e.DeleteToLineStart="workbench.action.terminal.deleteToLineStart",e.MoveToLineStart="workbench.action.terminal.moveToLineStart",e.MoveToLineEnd="workbench.action.terminal.moveToLineEnd",e.New="workbench.action.terminal.new",e.NewWithCwd="workbench.action.terminal.newWithCwd",e.NewLocal="workbench.action.terminal.newLocal",e.NewInActiveWorkspace="workbench.action.terminal.newInActiveWorkspace",e.NewWithProfile="workbench.action.terminal.newWithProfile",e.Split="workbench.action.terminal.split",e.SplitActiveTab="workbench.action.terminal.splitActiveTab",e.SplitInActiveWorkspace="workbench.action.terminal.splitInActiveWorkspace",e.Unsplit="workbench.action.terminal.unsplit",e.JoinActiveTab="workbench.action.terminal.joinActiveTab",e.Join="workbench.action.terminal.join",e.Relaunch="workbench.action.terminal.relaunch",e.FocusPreviousPane="workbench.action.terminal.focusPreviousPane",e.CreateTerminalEditor="workbench.action.createTerminalEditor",e.CreateTerminalEditorSameGroup="workbench.action.createTerminalEditorSameGroup",e.CreateTerminalEditorSide="workbench.action.createTerminalEditorSide",e.FocusTabs="workbench.action.terminal.focusTabs",e.FocusNextPane="workbench.action.terminal.focusNextPane",e.ResizePaneLeft="workbench.action.terminal.resizePaneLeft",e.ResizePaneRight="workbench.action.terminal.resizePaneRight",e.ResizePaneUp="workbench.action.terminal.resizePaneUp",e.SizeToContentWidth="workbench.action.terminal.sizeToContentWidth",e.SizeToContentWidthActiveTab="workbench.action.terminal.sizeToContentWidthActiveTab",e.ResizePaneDown="workbench.action.terminal.resizePaneDown",e.Focus="workbench.action.terminal.focus",e.FocusNext="workbench.action.terminal.focusNext",e.FocusPrevious="workbench.action.terminal.focusPrevious",e.Paste="workbench.action.terminal.paste",e.PasteSelection="workbench.action.terminal.pasteSelection",e.SelectDefaultProfile="workbench.action.terminal.selectDefaultShell",e.RunSelectedText="workbench.action.terminal.runSelectedText",e.RunActiveFile="workbench.action.terminal.runActiveFile",e.SwitchTerminal="workbench.action.terminal.switchTerminal",e.ScrollDownLine="workbench.action.terminal.scrollDown",e.ScrollDownPage="workbench.action.terminal.scrollDownPage",e.ScrollToBottom="workbench.action.terminal.scrollToBottom",e.ScrollUpLine="workbench.action.terminal.scrollUp",e.ScrollUpPage="workbench.action.terminal.scrollUpPage",e.ScrollToTop="workbench.action.terminal.scrollToTop",e.Clear="workbench.action.terminal.clear",e.ClearSelection="workbench.action.terminal.clearSelection",e.ChangeIcon="workbench.action.terminal.changeIcon",e.ChangeIconActiveTab="workbench.action.terminal.changeIconActiveTab",e.ChangeColor="workbench.action.terminal.changeColor",e.ChangeColorActiveTab="workbench.action.terminal.changeColorActiveTab",e.Rename="workbench.action.terminal.rename",e.RenameActiveTab="workbench.action.terminal.renameActiveTab",e.RenameWithArgs="workbench.action.terminal.renameWithArg",e.ScrollToPreviousCommand="workbench.action.terminal.scrollToPreviousCommand",e.ScrollToNextCommand="workbench.action.terminal.scrollToNextCommand",e.SelectToPreviousCommand="workbench.action.terminal.selectToPreviousCommand",e.SelectToNextCommand="workbench.action.terminal.selectToNextCommand",e.SelectToPreviousLine="workbench.action.terminal.selectToPreviousLine",e.SelectToNextLine="workbench.action.terminal.selectToNextLine",e.SendSequence="workbench.action.terminal.sendSequence",e.AttachToSession="workbench.action.terminal.attachToSession",e.DetachSession="workbench.action.terminal.detachSession",e.MoveToEditor="workbench.action.terminal.moveToEditor",e.MoveToTerminalPanel="workbench.action.terminal.moveToTerminalPanel",e.MoveIntoNewWindow="workbench.action.terminal.moveIntoNewWindow",e.SetDimensions="workbench.action.terminal.setDimensions",e.ClearPreviousSessionHistory="workbench.action.terminal.clearPreviousSessionHistory",e.FocusHover="workbench.action.terminal.focusHover",e.ShowEnvironmentContributions="workbench.action.terminal.showEnvironmentContributions",e.StartVoice="workbench.action.terminal.startVoice",e.StopVoice="workbench.action.terminal.stopVoice",e))(h||{});const Te=["workbench.action.terminal.clearSelection","workbench.action.terminal.clear","workbench.action.terminal.copyAndClearSelection","workbench.action.terminal.copySelection","workbench.action.terminal.copySelectionAsHtml","workbench.action.terminal.copyLastCommand","workbench.action.terminal.copyLastCommandOutput","workbench.action.terminal.copyLastCommandAndLastCommandOutput","workbench.action.terminal.deleteToLineStart","workbench.action.terminal.deleteWordLeft","workbench.action.terminal.deleteWordRight","workbench.action.terminal.goToRecentDirectory","workbench.action.terminal.focusNextPane","workbench.action.terminal.focusNext","workbench.action.terminal.focusPreviousPane","workbench.action.terminal.focusPrevious","workbench.action.terminal.focus","workbench.action.terminal.sizeToContentWidth","workbench.action.terminal.kill","workbench.action.terminal.killEditor","workbench.action.terminal.moveToEditor","workbench.action.terminal.moveToLineEnd","workbench.action.terminal.moveToLineStart","workbench.action.terminal.moveToTerminalPanel","workbench.action.terminal.newInActiveWorkspace","workbench.action.terminal.new","workbench.action.terminal.paste","workbench.action.terminal.pasteSelection","workbench.action.terminal.resizePaneDown","workbench.action.terminal.resizePaneLeft","workbench.action.terminal.resizePaneRight","workbench.action.terminal.resizePaneUp","workbench.action.terminal.runActiveFile","workbench.action.terminal.runSelectedText","workbench.action.terminal.runRecentCommand","workbench.action.terminal.scrollDown","workbench.action.terminal.scrollDownPage","workbench.action.terminal.scrollToBottom","workbench.action.terminal.scrollToNextCommand","workbench.action.terminal.scrollToPreviousCommand","workbench.action.terminal.scrollToTop","workbench.action.terminal.scrollUp","workbench.action.terminal.scrollUpPage","workbench.action.terminal.sendSequence","workbench.action.terminal.selectAll","workbench.action.terminal.selectToNextCommand","workbench.action.terminal.selectToNextLine","workbench.action.terminal.selectToPreviousCommand","workbench.action.terminal.selectToPreviousLine","workbench.action.terminal.splitInActiveWorkspace","workbench.action.terminal.split","workbench.action.terminal.toggleTerminal","workbench.action.terminal.focusHover",s.OpenAccessibilityHelp,"editor.action.toggleTabFocusMode","notifications.hideList","notifications.hideToasts","workbench.action.closeQuickOpen","workbench.action.quickOpen","workbench.action.quickOpenPreviousEditor","workbench.action.showCommands","workbench.action.tasks.build","workbench.action.tasks.restartTask","workbench.action.tasks.runTask","workbench.action.tasks.reRunTask","workbench.action.tasks.showLog","workbench.action.tasks.showTasks","workbench.action.tasks.terminate","workbench.action.tasks.test","workbench.action.toggleFullScreen","workbench.action.terminal.focusAtIndex1","workbench.action.terminal.focusAtIndex2","workbench.action.terminal.focusAtIndex3","workbench.action.terminal.focusAtIndex4","workbench.action.terminal.focusAtIndex5","workbench.action.terminal.focusAtIndex6","workbench.action.terminal.focusAtIndex7","workbench.action.terminal.focusAtIndex8","workbench.action.terminal.focusAtIndex9","workbench.action.focusSecondEditorGroup","workbench.action.focusThirdEditorGroup","workbench.action.focusFourthEditorGroup","workbench.action.focusFifthEditorGroup","workbench.action.focusSixthEditorGroup","workbench.action.focusSeventhEditorGroup","workbench.action.focusEighthEditorGroup","workbench.action.focusNextPart","workbench.action.focusPreviousPart","workbench.action.nextPanelView","workbench.action.previousPanelView","workbench.action.nextSideBarView","workbench.action.previousSideBarView","workbench.action.debug.start","workbench.action.debug.stop","workbench.action.debug.run","workbench.action.debug.restart","workbench.action.debug.continue","workbench.action.debug.pause","workbench.action.debug.stepInto","workbench.action.debug.stepOut","workbench.action.debug.stepOver","workbench.action.nextEditor","workbench.action.previousEditor","workbench.action.nextEditorInGroup","workbench.action.previousEditorInGroup","workbench.action.openNextRecentlyUsedEditor","workbench.action.openPreviousRecentlyUsedEditor","workbench.action.openNextRecentlyUsedEditorInGroup","workbench.action.openPreviousRecentlyUsedEditorInGroup","workbench.action.quickOpenPreviousRecentlyUsedEditor","workbench.action.quickOpenLeastRecentlyUsedEditor","workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup","workbench.action.quickOpenLeastRecentlyUsedEditorInGroup","workbench.action.focusActiveEditorGroup","workbench.action.focusFirstEditorGroup","workbench.action.focusLastEditorGroup","workbench.action.firstEditorInGroup","workbench.action.lastEditorInGroup","workbench.action.navigateUp","workbench.action.navigateDown","workbench.action.navigateRight","workbench.action.navigateLeft","workbench.action.togglePanel","workbench.action.quickOpenView","workbench.action.toggleMaximizedPanel","notification.acceptPrimaryAction","runCommands","workbench.action.terminal.chat.start","workbench.action.terminal.chat.close","workbench.action.terminal.chat.discard","workbench.action.terminal.chat.makeRequest","workbench.action.terminal.chat.cancel","workbench.action.terminal.chat.feedbackHelpful","workbench.action.terminal.chat.feedbackUnhelpful","workbench.action.terminal.chat.feedbackReportIssue","workbench.action.terminal.chat.runCommand","workbench.action.terminal.chat.insertCommand","workbench.action.terminal.chat.viewInChat",...d],Ie={extensionPoint:"terminal",defaultExtensionKind:["workspace"],activationEventsGenerator:(i,r)=>{for(const a of i)for(const c of a.profiles??[])r.push(`onTerminalProfile:${c.id}`)},jsonSchema:{description:o.localize("vscode.extension.contributes.terminal","Contributes terminal functionality."),type:"object",properties:{profiles:{type:"array",description:o.localize("vscode.extension.contributes.terminal.profiles","Defines additional terminal profiles that the user can create."),items:{type:"object",required:["id","title"],defaultSnippets:[{body:{id:"$1",title:"$2"}}],properties:{id:{description:o.localize("vscode.extension.contributes.terminal.profiles.id","The ID of the terminal profile provider."),type:"string"},title:{description:o.localize("vscode.extension.contributes.terminal.profiles.title","Title for this terminal profile."),type:"string"},icon:{description:o.localize("vscode.extension.contributes.terminal.types.icon","A codicon, URI, or light and dark URIs to associate with this terminal type."),anyOf:[{type:"string"},{type:"object",properties:{light:{description:o.localize("vscode.extension.contributes.terminal.types.icon.light","Icon path when a light theme is used"),type:"string"},dark:{description:o.localize("vscode.extension.contributes.terminal.types.icon.dark","Icon path when a dark theme is used"),type:"string"}}}]}}}}}}};export{pe as DEFAULT_BOLD_FONT_WEIGHT,Te as DEFAULT_COMMANDS_TO_SKIP_SHELL,be as DEFAULT_FONT_WEIGHT,se as DEFAULT_LETTER_SPACING,me as DEFAULT_LINE_HEIGHT,fe as ITerminalProfileResolverService,ke as ITerminalProfileService,ue as MAXIMUM_FONT_WEIGHT,he as MINIMUM_FONT_WEIGHT,de as MINIMUM_LETTER_SPACING,m as ProcessState,Pe as QUICK_LAUNCH_PROFILE_CHOICE,we as SUGGESTIONS_FONT_WEIGHT,ge as ShellIntegrationExitCode,le as TERMINAL_CONFIG_SECTION,ce as TERMINAL_CREATION_COMMANDS,ae as TERMINAL_VIEW_ID,h as TerminalCommandId,ve as isTerminalProcessManager,Ie as terminalContributionsDescriptor};
+import { isLinux } from '../../../../base/common/platform.js';
+import * as nls from '../../../../nls.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { defaultTerminalContribCommandsToSkipShell } from '../terminalContribExports.js';
+export const TERMINAL_VIEW_ID = 'terminal';
+export const TERMINAL_CREATION_COMMANDS = ['workbench.action.terminal.toggleTerminal', 'workbench.action.terminal.new', 'workbench.action.togglePanel', 'workbench.action.terminal.focus'];
+export const TERMINAL_CONFIG_SECTION = 'terminal.integrated';
+export const DEFAULT_LETTER_SPACING = 0;
+export const MINIMUM_LETTER_SPACING = -5;
+export const DEFAULT_LINE_HEIGHT = isLinux ? 1.1 : 1;
+export const MINIMUM_FONT_WEIGHT = 1;
+export const MAXIMUM_FONT_WEIGHT = 1000;
+export const DEFAULT_FONT_WEIGHT = 'normal';
+export const DEFAULT_BOLD_FONT_WEIGHT = 'bold';
+export const SUGGESTIONS_FONT_WEIGHT = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
+export const ITerminalProfileResolverService = createDecorator('terminalProfileResolverService');
+export const ShellIntegrationExitCode = 633;
+export const ITerminalProfileService = createDecorator('terminalProfileService');
+export const isTerminalProcessManager = (t) => typeof t.write === 'function';
+export const QUICK_LAUNCH_PROFILE_CHOICE = 'workbench.action.terminal.profile.choice';
+export const DEFAULT_COMMANDS_TO_SKIP_SHELL = [
+    "workbench.action.terminal.clearSelection",
+    "workbench.action.terminal.clear",
+    "workbench.action.terminal.copyAndClearSelection",
+    "workbench.action.terminal.copySelection",
+    "workbench.action.terminal.copySelectionAsHtml",
+    "workbench.action.terminal.copyLastCommand",
+    "workbench.action.terminal.copyLastCommandOutput",
+    "workbench.action.terminal.copyLastCommandAndLastCommandOutput",
+    "workbench.action.terminal.deleteToLineStart",
+    "workbench.action.terminal.deleteWordLeft",
+    "workbench.action.terminal.deleteWordRight",
+    "workbench.action.terminal.goToRecentDirectory",
+    "workbench.action.terminal.focusNextPane",
+    "workbench.action.terminal.focusNext",
+    "workbench.action.terminal.focusPreviousPane",
+    "workbench.action.terminal.focusPrevious",
+    "workbench.action.terminal.focus",
+    "workbench.action.terminal.sizeToContentWidth",
+    "workbench.action.terminal.kill",
+    "workbench.action.terminal.killEditor",
+    "workbench.action.terminal.moveToEditor",
+    "workbench.action.terminal.moveToLineEnd",
+    "workbench.action.terminal.moveToLineStart",
+    "workbench.action.terminal.moveToTerminalPanel",
+    "workbench.action.terminal.newInActiveWorkspace",
+    "workbench.action.terminal.new",
+    "workbench.action.terminal.paste",
+    "workbench.action.terminal.pasteSelection",
+    "workbench.action.terminal.resizePaneDown",
+    "workbench.action.terminal.resizePaneLeft",
+    "workbench.action.terminal.resizePaneRight",
+    "workbench.action.terminal.resizePaneUp",
+    "workbench.action.terminal.runActiveFile",
+    "workbench.action.terminal.runSelectedText",
+    "workbench.action.terminal.runRecentCommand",
+    "workbench.action.terminal.scrollDown",
+    "workbench.action.terminal.scrollDownPage",
+    "workbench.action.terminal.scrollToBottom",
+    "workbench.action.terminal.scrollToNextCommand",
+    "workbench.action.terminal.scrollToPreviousCommand",
+    "workbench.action.terminal.scrollToTop",
+    "workbench.action.terminal.scrollUp",
+    "workbench.action.terminal.scrollUpPage",
+    "workbench.action.terminal.sendSequence",
+    "workbench.action.terminal.selectAll",
+    "workbench.action.terminal.selectToNextCommand",
+    "workbench.action.terminal.selectToNextLine",
+    "workbench.action.terminal.selectToPreviousCommand",
+    "workbench.action.terminal.selectToPreviousLine",
+    "workbench.action.terminal.splitInActiveWorkspace",
+    "workbench.action.terminal.split",
+    "workbench.action.terminal.toggleTerminal",
+    "workbench.action.terminal.focusHover",
+    "editor.action.accessibilityHelp",
+    'editor.action.toggleTabFocusMode',
+    'notifications.hideList',
+    'notifications.hideToasts',
+    'workbench.action.closeQuickOpen',
+    'workbench.action.quickOpen',
+    'workbench.action.quickOpenPreviousEditor',
+    'workbench.action.showCommands',
+    'workbench.action.tasks.build',
+    'workbench.action.tasks.restartTask',
+    'workbench.action.tasks.runTask',
+    'workbench.action.tasks.reRunTask',
+    'workbench.action.tasks.showLog',
+    'workbench.action.tasks.showTasks',
+    'workbench.action.tasks.terminate',
+    'workbench.action.tasks.test',
+    'workbench.action.toggleFullScreen',
+    'workbench.action.terminal.focusAtIndex1',
+    'workbench.action.terminal.focusAtIndex2',
+    'workbench.action.terminal.focusAtIndex3',
+    'workbench.action.terminal.focusAtIndex4',
+    'workbench.action.terminal.focusAtIndex5',
+    'workbench.action.terminal.focusAtIndex6',
+    'workbench.action.terminal.focusAtIndex7',
+    'workbench.action.terminal.focusAtIndex8',
+    'workbench.action.terminal.focusAtIndex9',
+    'workbench.action.focusSecondEditorGroup',
+    'workbench.action.focusThirdEditorGroup',
+    'workbench.action.focusFourthEditorGroup',
+    'workbench.action.focusFifthEditorGroup',
+    'workbench.action.focusSixthEditorGroup',
+    'workbench.action.focusSeventhEditorGroup',
+    'workbench.action.focusEighthEditorGroup',
+    'workbench.action.focusNextPart',
+    'workbench.action.focusPreviousPart',
+    'workbench.action.nextPanelView',
+    'workbench.action.previousPanelView',
+    'workbench.action.nextSideBarView',
+    'workbench.action.previousSideBarView',
+    'workbench.action.debug.start',
+    'workbench.action.debug.stop',
+    'workbench.action.debug.run',
+    'workbench.action.debug.restart',
+    'workbench.action.debug.continue',
+    'workbench.action.debug.pause',
+    'workbench.action.debug.stepInto',
+    'workbench.action.debug.stepOut',
+    'workbench.action.debug.stepOver',
+    'workbench.action.nextEditor',
+    'workbench.action.previousEditor',
+    'workbench.action.nextEditorInGroup',
+    'workbench.action.previousEditorInGroup',
+    'workbench.action.openNextRecentlyUsedEditor',
+    'workbench.action.openPreviousRecentlyUsedEditor',
+    'workbench.action.openNextRecentlyUsedEditorInGroup',
+    'workbench.action.openPreviousRecentlyUsedEditorInGroup',
+    'workbench.action.quickOpenPreviousRecentlyUsedEditor',
+    'workbench.action.quickOpenLeastRecentlyUsedEditor',
+    'workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup',
+    'workbench.action.quickOpenLeastRecentlyUsedEditorInGroup',
+    'workbench.action.focusActiveEditorGroup',
+    'workbench.action.focusFirstEditorGroup',
+    'workbench.action.focusLastEditorGroup',
+    'workbench.action.firstEditorInGroup',
+    'workbench.action.lastEditorInGroup',
+    'workbench.action.navigateUp',
+    'workbench.action.navigateDown',
+    'workbench.action.navigateRight',
+    'workbench.action.navigateLeft',
+    'workbench.action.togglePanel',
+    'workbench.action.quickOpenView',
+    'workbench.action.toggleMaximizedPanel',
+    'notification.acceptPrimaryAction',
+    'runCommands',
+    'workbench.action.terminal.chat.start',
+    'workbench.action.terminal.chat.close',
+    'workbench.action.terminal.chat.discard',
+    'workbench.action.terminal.chat.makeRequest',
+    'workbench.action.terminal.chat.cancel',
+    'workbench.action.terminal.chat.feedbackHelpful',
+    'workbench.action.terminal.chat.feedbackUnhelpful',
+    'workbench.action.terminal.chat.feedbackReportIssue',
+    'workbench.action.terminal.chat.runCommand',
+    'workbench.action.terminal.chat.insertCommand',
+    'workbench.action.terminal.chat.viewInChat',
+    ...defaultTerminalContribCommandsToSkipShell,
+];
+export const terminalContributionsDescriptor = {
+    extensionPoint: 'terminal',
+    defaultExtensionKind: ['workspace'],
+    activationEventsGenerator: (contribs, result) => {
+        for (const contrib of contribs) {
+            for (const profileContrib of (contrib.profiles ?? [])) {
+                result.push(`onTerminalProfile:${profileContrib.id}`);
+            }
+        }
+    },
+    jsonSchema: {
+        description: nls.localize('vscode.extension.contributes.terminal', 'Contributes terminal functionality.'),
+        type: 'object',
+        properties: {
+            profiles: {
+                type: 'array',
+                description: nls.localize('vscode.extension.contributes.terminal.profiles', "Defines additional terminal profiles that the user can create."),
+                items: {
+                    type: 'object',
+                    required: ['id', 'title'],
+                    defaultSnippets: [{
+                            body: {
+                                id: '$1',
+                                title: '$2'
+                            }
+                        }],
+                    properties: {
+                        id: {
+                            description: nls.localize('vscode.extension.contributes.terminal.profiles.id', "The ID of the terminal profile provider."),
+                            type: 'string',
+                        },
+                        title: {
+                            description: nls.localize('vscode.extension.contributes.terminal.profiles.title', "Title for this terminal profile."),
+                            type: 'string',
+                        },
+                        icon: {
+                            description: nls.localize('vscode.extension.contributes.terminal.types.icon', "A codicon, URI, or light and dark URIs to associate with this terminal type."),
+                            anyOf: [{
+                                    type: 'string',
+                                },
+                                {
+                                    type: 'object',
+                                    properties: {
+                                        light: {
+                                            description: nls.localize('vscode.extension.contributes.terminal.types.icon.light', 'Icon path when a light theme is used'),
+                                            type: 'string'
+                                        },
+                                        dark: {
+                                            description: nls.localize('vscode.extension.contributes.terminal.types.icon.dark', 'Icon path when a dark theme is used'),
+                                            type: 'string'
+                                        }
+                                    }
+                                }]
+                        },
+                    },
+                },
+            },
+        },
+    },
+};

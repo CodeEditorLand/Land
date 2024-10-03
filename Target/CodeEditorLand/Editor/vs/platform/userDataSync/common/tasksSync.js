@@ -1,1 +1,255 @@
-var P=Object.defineProperty;var x=Object.getOwnPropertyDescriptor;var C=(c,e,t,s)=>{for(var n=s>1?void 0:s?x(e,t):e,o=c.length-1,i;o>=0;o--)(i=c[o])&&(n=(s?i(e,t,n):i(n))||n);return s&&n&&P(e,t,n),n},r=(c,e)=>(t,s)=>e(t,s,c);import{VSBuffer as F}from"../../../base/common/buffer.js";import"../../../base/common/cancellation.js";import"../../../base/common/uri.js";import{IConfigurationService as T}from"../../configuration/common/configuration.js";import{IEnvironmentService as I}from"../../environment/common/environment.js";import{IFileService as w}from"../../files/common/files.js";import"../../log/common/log.js";import{IStorageService as U}from"../../storage/common/storage.js";import{ITelemetryService as M}from"../../telemetry/common/telemetry.js";import{IUriIdentityService as k}from"../../uriIdentity/common/uriIdentity.js";import{IUserDataProfilesService as N}from"../../userDataProfile/common/userDataProfile.js";import{AbstractFileSynchroniser as $,AbstractInitializer as A}from"./abstractSynchronizer.js";import{Change as a,IUserDataSyncLocalStoreService as q,IUserDataSyncLogService as L,IUserDataSyncEnablementService as z,IUserDataSyncStoreService as J,SyncResource as b,USER_DATA_SYNC_SCHEME as R}from"./userDataSync.js";function v(c,e){try{return JSON.parse(c).tasks??null}catch(t){return e.error(t),null}}let m=class extends ${version=1;previewResource=this.extUri.joinPath(this.syncPreviewFolder,"tasks.json");baseResource=this.previewResource.with({scheme:R,authority:"base"});localResource=this.previewResource.with({scheme:R,authority:"local"});remoteResource=this.previewResource.with({scheme:R,authority:"remote"});acceptedResource=this.previewResource.with({scheme:R,authority:"accepted"});constructor(e,t,s,n,o,i,l,u,h,g,f,d){super(e.tasksResource,{syncResource:b.Tasks,profile:e},t,u,h,g,s,n,l,f,o,i,d)}async generateSyncPreview(e,t,s,n){const o=e.syncData?v(e.syncData.content,this.logService):null;t=t===null&&s?e:t;const i=t?.syncData?v(t.syncData.content,this.logService):null,l=await this.getLocalFileContent();let u=null,h=!1,g=!1,f=!1;if(e.syncData){const y=l?l.value.toString():null;if(!i||i!==y||i!==o){this.logService.trace(`${this.syncResourceLogLabel}: Merging remote tasks with local tasks...`);const S=D(y,o,i);u=S.content,f=S.hasConflicts,h=S.hasLocalChanged,g=S.hasRemoteChanged}}else l&&(this.logService.trace(`${this.syncResourceLogLabel}: Remote tasks does not exist. Synchronizing tasks for the first time.`),u=l.value.toString(),g=!0);const d={content:f?i:u,localChange:h?l?a.Modified:a.Added:a.None,remoteChange:g?a.Modified:a.None,hasConflicts:f},E=l?l.value.toString():null;return[{fileContent:l,baseResource:this.baseResource,baseContent:i,localResource:this.localResource,localContent:E,localChange:d.localChange,remoteResource:this.remoteResource,remoteContent:o,remoteChange:d.remoteChange,previewResource:this.previewResource,previewResult:d,acceptedResource:this.acceptedResource}]}async hasRemoteChanged(e){const t=e?.syncData?v(e.syncData.content,this.logService):null;if(t===null)return!0;const s=await this.getLocalFileContent(),n=s?s.value.toString():null,o=D(n,t,t);return o.hasLocalChanged||o.hasRemoteChanged}async getMergeResult(e,t){return e.previewResult}async getAcceptResult(e,t,s,n){if(this.extUri.isEqual(t,this.localResource))return{content:e.fileContent?e.fileContent.value.toString():null,localChange:a.None,remoteChange:a.Modified};if(this.extUri.isEqual(t,this.remoteResource))return{content:e.remoteContent,localChange:a.Modified,remoteChange:a.None};if(this.extUri.isEqual(t,this.previewResource))return s===void 0?{content:e.previewResult.content,localChange:e.previewResult.localChange,remoteChange:e.previewResult.remoteChange}:{content:s,localChange:a.Modified,remoteChange:a.Modified};throw new Error(`Invalid Resource: ${t.toString()}`)}async applyResult(e,t,s,n){const{fileContent:o}=s[0][0],{content:i,localChange:l,remoteChange:u}=s[0][1];if(l===a.None&&u===a.None&&this.logService.info(`${this.syncResourceLogLabel}: No changes found during synchronizing tasks.`),l!==a.None&&(this.logService.trace(`${this.syncResourceLogLabel}: Updating local tasks...`),o&&await this.backupLocal(JSON.stringify(this.toTasksSyncContent(o.value.toString()))),i?await this.updateLocalFileContent(i,o,n):await this.deleteLocalFile(),this.logService.info(`${this.syncResourceLogLabel}: Updated local tasks`)),u!==a.None){this.logService.trace(`${this.syncResourceLogLabel}: Updating remote tasks...`);const h=JSON.stringify(this.toTasksSyncContent(i));e=await this.updateRemoteUserData(h,n?null:e.ref),this.logService.info(`${this.syncResourceLogLabel}: Updated remote tasks`)}try{await this.fileService.del(this.previewResource)}catch{}t?.ref!==e.ref&&(this.logService.trace(`${this.syncResourceLogLabel}: Updating last synchronized tasks...`),await this.updateLastSyncUserData(e),this.logService.info(`${this.syncResourceLogLabel}: Updated last synchronized tasks`))}async hasLocalData(){return this.fileService.exists(this.file)}async resolveContent(e){return this.extUri.isEqual(this.remoteResource,e)||this.extUri.isEqual(this.baseResource,e)||this.extUri.isEqual(this.localResource,e)||this.extUri.isEqual(this.acceptedResource,e)?this.resolvePreviewContent(e):null}toTasksSyncContent(e){return e?{tasks:e}:{}}};m=C([r(2,J),r(3,q),r(4,L),r(5,T),r(6,z),r(7,w),r(8,I),r(9,U),r(10,M),r(11,k)],m);let p=class extends A{tasksResource=this.userDataProfilesService.defaultProfile.tasksResource;constructor(e,t,s,n,o,i){super(b.Tasks,t,s,n,e,o,i)}async doInitialize(e){const t=e.syncData?v(e.syncData.content,this.logService):null;if(!t){this.logService.info("Skipping initializing tasks because remote tasks does not exist.");return}if(!await this.isEmpty()){this.logService.info("Skipping initializing tasks because local tasks exist.");return}await this.fileService.writeFile(this.tasksResource,F.fromString(t)),await this.updateLastSyncUserData(e)}async isEmpty(){return this.fileService.exists(this.tasksResource)}};p=C([r(0,w),r(1,N),r(2,I),r(3,L),r(4,U),r(5,k)],p);function D(c,e,t){if(c===null&&e===null&&t===null)return{content:null,hasLocalChanged:!1,hasRemoteChanged:!1,hasConflicts:!1};if(c===e)return{content:null,hasLocalChanged:!1,hasRemoteChanged:!1,hasConflicts:!1};const s=t!==c,n=t!==e;return!s&&!n?{content:null,hasLocalChanged:!1,hasRemoteChanged:!1,hasConflicts:!1}:s&&!n?{content:c,hasRemoteChanged:!0,hasLocalChanged:!1,hasConflicts:!1}:n&&!s?{content:e,hasLocalChanged:!0,hasRemoteChanged:!1,hasConflicts:!1}:{content:c,hasLocalChanged:!0,hasRemoteChanged:!0,hasConflicts:!0}}export{p as TasksInitializer,m as TasksSynchroniser,v as getTasksContentFromSyncContent};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { VSBuffer } from '../../../base/common/buffer.js';
+import { IConfigurationService } from '../../configuration/common/configuration.js';
+import { IEnvironmentService } from '../../environment/common/environment.js';
+import { IFileService } from '../../files/common/files.js';
+import { IStorageService } from '../../storage/common/storage.js';
+import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+import { IUriIdentityService } from '../../uriIdentity/common/uriIdentity.js';
+import { IUserDataProfilesService } from '../../userDataProfile/common/userDataProfile.js';
+import { AbstractFileSynchroniser, AbstractInitializer } from './abstractSynchronizer.js';
+import { IUserDataSyncLocalStoreService, IUserDataSyncLogService, IUserDataSyncEnablementService, IUserDataSyncStoreService, USER_DATA_SYNC_SCHEME } from './userDataSync.js';
+export function getTasksContentFromSyncContent(syncContent, logService) {
+    try {
+        const parsed = JSON.parse(syncContent);
+        return parsed.tasks ?? null;
+    }
+    catch (e) {
+        logService.error(e);
+        return null;
+    }
+}
+let TasksSynchroniser = class TasksSynchroniser extends AbstractFileSynchroniser {
+    constructor(profile, collection, userDataSyncStoreService, userDataSyncLocalStoreService, logService, configurationService, userDataSyncEnablementService, fileService, environmentService, storageService, telemetryService, uriIdentityService) {
+        super(profile.tasksResource, { syncResource: "tasks", profile }, collection, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncLocalStoreService, userDataSyncEnablementService, telemetryService, logService, configurationService, uriIdentityService);
+        this.version = 1;
+        this.previewResource = this.extUri.joinPath(this.syncPreviewFolder, 'tasks.json');
+        this.baseResource = this.previewResource.with({ scheme: USER_DATA_SYNC_SCHEME, authority: 'base' });
+        this.localResource = this.previewResource.with({ scheme: USER_DATA_SYNC_SCHEME, authority: 'local' });
+        this.remoteResource = this.previewResource.with({ scheme: USER_DATA_SYNC_SCHEME, authority: 'remote' });
+        this.acceptedResource = this.previewResource.with({ scheme: USER_DATA_SYNC_SCHEME, authority: 'accepted' });
+    }
+    async generateSyncPreview(remoteUserData, lastSyncUserData, isRemoteDataFromCurrentMachine, userDataSyncConfiguration) {
+        const remoteContent = remoteUserData.syncData ? getTasksContentFromSyncContent(remoteUserData.syncData.content, this.logService) : null;
+        lastSyncUserData = lastSyncUserData === null && isRemoteDataFromCurrentMachine ? remoteUserData : lastSyncUserData;
+        const lastSyncContent = lastSyncUserData?.syncData ? getTasksContentFromSyncContent(lastSyncUserData.syncData.content, this.logService) : null;
+        const fileContent = await this.getLocalFileContent();
+        let content = null;
+        let hasLocalChanged = false;
+        let hasRemoteChanged = false;
+        let hasConflicts = false;
+        if (remoteUserData.syncData) {
+            const localContent = fileContent ? fileContent.value.toString() : null;
+            if (!lastSyncContent
+                || lastSyncContent !== localContent
+                || lastSyncContent !== remoteContent) {
+                this.logService.trace(`${this.syncResourceLogLabel}: Merging remote tasks with local tasks...`);
+                const result = merge(localContent, remoteContent, lastSyncContent);
+                content = result.content;
+                hasConflicts = result.hasConflicts;
+                hasLocalChanged = result.hasLocalChanged;
+                hasRemoteChanged = result.hasRemoteChanged;
+            }
+        }
+        else if (fileContent) {
+            this.logService.trace(`${this.syncResourceLogLabel}: Remote tasks does not exist. Synchronizing tasks for the first time.`);
+            content = fileContent.value.toString();
+            hasRemoteChanged = true;
+        }
+        const previewResult = {
+            content: hasConflicts ? lastSyncContent : content,
+            localChange: hasLocalChanged ? fileContent ? 2 : 1 : 0,
+            remoteChange: hasRemoteChanged ? 2 : 0,
+            hasConflicts
+        };
+        const localContent = fileContent ? fileContent.value.toString() : null;
+        return [{
+                fileContent,
+                baseResource: this.baseResource,
+                baseContent: lastSyncContent,
+                localResource: this.localResource,
+                localContent,
+                localChange: previewResult.localChange,
+                remoteResource: this.remoteResource,
+                remoteContent,
+                remoteChange: previewResult.remoteChange,
+                previewResource: this.previewResource,
+                previewResult,
+                acceptedResource: this.acceptedResource,
+            }];
+    }
+    async hasRemoteChanged(lastSyncUserData) {
+        const lastSyncContent = lastSyncUserData?.syncData ? getTasksContentFromSyncContent(lastSyncUserData.syncData.content, this.logService) : null;
+        if (lastSyncContent === null) {
+            return true;
+        }
+        const fileContent = await this.getLocalFileContent();
+        const localContent = fileContent ? fileContent.value.toString() : null;
+        const result = merge(localContent, lastSyncContent, lastSyncContent);
+        return result.hasLocalChanged || result.hasRemoteChanged;
+    }
+    async getMergeResult(resourcePreview, token) {
+        return resourcePreview.previewResult;
+    }
+    async getAcceptResult(resourcePreview, resource, content, token) {
+        if (this.extUri.isEqual(resource, this.localResource)) {
+            return {
+                content: resourcePreview.fileContent ? resourcePreview.fileContent.value.toString() : null,
+                localChange: 0,
+                remoteChange: 2,
+            };
+        }
+        if (this.extUri.isEqual(resource, this.remoteResource)) {
+            return {
+                content: resourcePreview.remoteContent,
+                localChange: 2,
+                remoteChange: 0,
+            };
+        }
+        if (this.extUri.isEqual(resource, this.previewResource)) {
+            if (content === undefined) {
+                return {
+                    content: resourcePreview.previewResult.content,
+                    localChange: resourcePreview.previewResult.localChange,
+                    remoteChange: resourcePreview.previewResult.remoteChange,
+                };
+            }
+            else {
+                return {
+                    content,
+                    localChange: 2,
+                    remoteChange: 2,
+                };
+            }
+        }
+        throw new Error(`Invalid Resource: ${resource.toString()}`);
+    }
+    async applyResult(remoteUserData, lastSyncUserData, resourcePreviews, force) {
+        const { fileContent } = resourcePreviews[0][0];
+        const { content, localChange, remoteChange } = resourcePreviews[0][1];
+        if (localChange === 0 && remoteChange === 0) {
+            this.logService.info(`${this.syncResourceLogLabel}: No changes found during synchronizing tasks.`);
+        }
+        if (localChange !== 0) {
+            this.logService.trace(`${this.syncResourceLogLabel}: Updating local tasks...`);
+            if (fileContent) {
+                await this.backupLocal(JSON.stringify(this.toTasksSyncContent(fileContent.value.toString())));
+            }
+            if (content) {
+                await this.updateLocalFileContent(content, fileContent, force);
+            }
+            else {
+                await this.deleteLocalFile();
+            }
+            this.logService.info(`${this.syncResourceLogLabel}: Updated local tasks`);
+        }
+        if (remoteChange !== 0) {
+            this.logService.trace(`${this.syncResourceLogLabel}: Updating remote tasks...`);
+            const remoteContents = JSON.stringify(this.toTasksSyncContent(content));
+            remoteUserData = await this.updateRemoteUserData(remoteContents, force ? null : remoteUserData.ref);
+            this.logService.info(`${this.syncResourceLogLabel}: Updated remote tasks`);
+        }
+        try {
+            await this.fileService.del(this.previewResource);
+        }
+        catch (e) { }
+        if (lastSyncUserData?.ref !== remoteUserData.ref) {
+            this.logService.trace(`${this.syncResourceLogLabel}: Updating last synchronized tasks...`);
+            await this.updateLastSyncUserData(remoteUserData);
+            this.logService.info(`${this.syncResourceLogLabel}: Updated last synchronized tasks`);
+        }
+    }
+    async hasLocalData() {
+        return this.fileService.exists(this.file);
+    }
+    async resolveContent(uri) {
+        if (this.extUri.isEqual(this.remoteResource, uri)
+            || this.extUri.isEqual(this.baseResource, uri)
+            || this.extUri.isEqual(this.localResource, uri)
+            || this.extUri.isEqual(this.acceptedResource, uri)) {
+            return this.resolvePreviewContent(uri);
+        }
+        return null;
+    }
+    toTasksSyncContent(tasks) {
+        return tasks ? { tasks } : {};
+    }
+};
+TasksSynchroniser = __decorate([
+    __param(2, IUserDataSyncStoreService),
+    __param(3, IUserDataSyncLocalStoreService),
+    __param(4, IUserDataSyncLogService),
+    __param(5, IConfigurationService),
+    __param(6, IUserDataSyncEnablementService),
+    __param(7, IFileService),
+    __param(8, IEnvironmentService),
+    __param(9, IStorageService),
+    __param(10, ITelemetryService),
+    __param(11, IUriIdentityService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object])
+], TasksSynchroniser);
+export { TasksSynchroniser };
+let TasksInitializer = class TasksInitializer extends AbstractInitializer {
+    constructor(fileService, userDataProfilesService, environmentService, logService, storageService, uriIdentityService) {
+        super("tasks", userDataProfilesService, environmentService, logService, fileService, storageService, uriIdentityService);
+        this.tasksResource = this.userDataProfilesService.defaultProfile.tasksResource;
+    }
+    async doInitialize(remoteUserData) {
+        const tasksContent = remoteUserData.syncData ? getTasksContentFromSyncContent(remoteUserData.syncData.content, this.logService) : null;
+        if (!tasksContent) {
+            this.logService.info('Skipping initializing tasks because remote tasks does not exist.');
+            return;
+        }
+        const isEmpty = await this.isEmpty();
+        if (!isEmpty) {
+            this.logService.info('Skipping initializing tasks because local tasks exist.');
+            return;
+        }
+        await this.fileService.writeFile(this.tasksResource, VSBuffer.fromString(tasksContent));
+        await this.updateLastSyncUserData(remoteUserData);
+    }
+    async isEmpty() {
+        return this.fileService.exists(this.tasksResource);
+    }
+};
+TasksInitializer = __decorate([
+    __param(0, IFileService),
+    __param(1, IUserDataProfilesService),
+    __param(2, IEnvironmentService),
+    __param(3, IUserDataSyncLogService),
+    __param(4, IStorageService),
+    __param(5, IUriIdentityService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], TasksInitializer);
+export { TasksInitializer };
+function merge(originalLocalContent, originalRemoteContent, baseContent) {
+    if (originalLocalContent === null && originalRemoteContent === null && baseContent === null) {
+        return { content: null, hasLocalChanged: false, hasRemoteChanged: false, hasConflicts: false };
+    }
+    if (originalLocalContent === originalRemoteContent) {
+        return { content: null, hasLocalChanged: false, hasRemoteChanged: false, hasConflicts: false };
+    }
+    const localForwarded = baseContent !== originalLocalContent;
+    const remoteForwarded = baseContent !== originalRemoteContent;
+    if (!localForwarded && !remoteForwarded) {
+        return { content: null, hasLocalChanged: false, hasRemoteChanged: false, hasConflicts: false };
+    }
+    if (localForwarded && !remoteForwarded) {
+        return { content: originalLocalContent, hasRemoteChanged: true, hasLocalChanged: false, hasConflicts: false };
+    }
+    if (remoteForwarded && !localForwarded) {
+        return { content: originalRemoteContent, hasLocalChanged: true, hasRemoteChanged: false, hasConflicts: false };
+    }
+    return { content: originalLocalContent, hasLocalChanged: true, hasRemoteChanged: true, hasConflicts: true };
+}

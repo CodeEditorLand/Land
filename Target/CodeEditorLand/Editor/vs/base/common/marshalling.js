@@ -1,1 +1,49 @@
-import{VSBuffer as a}from"./buffer.js";import{URI as s}from"./uri.js";import{MarshalledId as t}from"./marshallingIds.js";function l(e){return JSON.stringify(e,f)}function o(e){let r=JSON.parse(e);return r=i(r),r}function f(e,r){return r instanceof RegExp?{$mid:t.Regexp,source:r.source,flags:r.flags}:r}function i(e,r=0){if(!e||r>200)return e;if(typeof e=="object"){switch(e.$mid){case t.Uri:return s.revive(e);case t.Regexp:return new RegExp(e.source,e.flags);case t.Date:return new Date(e.source)}if(e instanceof a||e instanceof Uint8Array)return e;if(Array.isArray(e))for(let n=0;n<e.length;++n)e[n]=i(e[n],r+1);else for(const n in e)Object.hasOwnProperty.call(e,n)&&(e[n]=i(e[n],r+1))}return e}export{o as parse,i as revive,l as stringify};
+import { VSBuffer } from './buffer.js';
+import { URI } from './uri.js';
+export function stringify(obj) {
+    return JSON.stringify(obj, replacer);
+}
+export function parse(text) {
+    let data = JSON.parse(text);
+    data = revive(data);
+    return data;
+}
+function replacer(key, value) {
+    if (value instanceof RegExp) {
+        return {
+            $mid: 2,
+            source: value.source,
+            flags: value.flags,
+        };
+    }
+    return value;
+}
+export function revive(obj, depth = 0) {
+    if (!obj || depth > 200) {
+        return obj;
+    }
+    if (typeof obj === 'object') {
+        switch (obj.$mid) {
+            case 1: return URI.revive(obj);
+            case 2: return new RegExp(obj.source, obj.flags);
+            case 17: return new Date(obj.source);
+        }
+        if (obj instanceof VSBuffer
+            || obj instanceof Uint8Array) {
+            return obj;
+        }
+        if (Array.isArray(obj)) {
+            for (let i = 0; i < obj.length; ++i) {
+                obj[i] = revive(obj[i], depth + 1);
+            }
+        }
+        else {
+            for (const key in obj) {
+                if (Object.hasOwnProperty.call(obj, key)) {
+                    obj[key] = revive(obj[key], depth + 1);
+                }
+            }
+        }
+    }
+    return obj;
+}

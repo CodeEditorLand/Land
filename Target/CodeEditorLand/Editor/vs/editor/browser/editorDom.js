@@ -1,3 +1,240 @@
-import*as r from"../../base/browser/dom.js";import{GlobalPointerMoveMonitor as p}from"../../base/browser/globalPointerMoveMonitor.js";import{StandardMouseEvent as b}from"../../base/browser/mouseEvent.js";import{RunOnceScheduler as v}from"../../base/common/async.js";import{Disposable as E,DisposableStore as m}from"../../base/common/lifecycle.js";import"./editorBrowser.js";import{asCssVariable as h}from"../../platform/theme/common/colorRegistry.js";import"../../base/common/themables.js";class u{constructor(e,t){this.x=e;this.y=t}_pageCoordinatesBrand=void 0;toClientCoordinates(e){return new M(this.x-e.scrollX,this.y-e.scrollY)}}class M{constructor(e,t){this.clientX=e;this.clientY=t}_clientCoordinatesBrand=void 0;toPageCoordinates(e){return new u(this.clientX+e.scrollX,this.clientY+e.scrollY)}}class g{constructor(e,t,o,s){this.x=e;this.y=t;this.width=o;this.height=s}_editorPagePositionBrand=void 0}class y{constructor(e,t){this.x=e;this.y=t}_positionRelativeToEditorBrand=void 0}function _(i){const e=r.getDomNodePagePosition(i);return new g(e.left,e.top,e.width,e.height)}function C(i,e,t){const o=e.width/i.offsetWidth,s=e.height/i.offsetHeight,l=(t.x-e.x)/o,n=(t.y-e.y)/s;return new y(l,n)}class a extends b{_editorMouseEventBrand=void 0;isFromPointerCapture;pos;editorPos;relativePos;constructor(e,t,o){super(r.getWindow(o),e),this.isFromPointerCapture=t,this.pos=new u(this.posx,this.posy),this.editorPos=_(o),this.relativePos=C(o,this.editorPos,this.pos)}}class O{_editorViewDomNode;constructor(e){this._editorViewDomNode=e}_create(e){return new a(e,!1,this._editorViewDomNode)}onContextMenu(e,t){return r.addDisposableListener(e,"contextmenu",o=>{t(this._create(o))})}onMouseUp(e,t){return r.addDisposableListener(e,"mouseup",o=>{t(this._create(o))})}onMouseDown(e,t){return r.addDisposableListener(e,r.EventType.MOUSE_DOWN,o=>{t(this._create(o))})}onPointerDown(e,t){return r.addDisposableListener(e,r.EventType.POINTER_DOWN,o=>{t(this._create(o),o.pointerId)})}onMouseLeave(e,t){return r.addDisposableListener(e,r.EventType.MOUSE_LEAVE,o=>{t(this._create(o))})}onMouseMove(e,t){return r.addDisposableListener(e,"mousemove",o=>t(this._create(o)))}}class V{_editorViewDomNode;constructor(e){this._editorViewDomNode=e}_create(e){return new a(e,!1,this._editorViewDomNode)}onPointerUp(e,t){return r.addDisposableListener(e,"pointerup",o=>{t(this._create(o))})}onPointerDown(e,t){return r.addDisposableListener(e,r.EventType.POINTER_DOWN,o=>{t(this._create(o),o.pointerId)})}onPointerLeave(e,t){return r.addDisposableListener(e,r.EventType.POINTER_LEAVE,o=>{t(this._create(o))})}onPointerMove(e,t){return r.addDisposableListener(e,"pointermove",o=>t(this._create(o)))}}class k extends E{_editorViewDomNode;_globalPointerMoveMonitor;_keydownListener;constructor(e){super(),this._editorViewDomNode=e,this._globalPointerMoveMonitor=this._register(new p),this._keydownListener=null}startMonitoring(e,t,o,s,l){this._keydownListener=r.addStandardDisposableListener(e.ownerDocument,"keydown",n=>{n.toKeyCodeChord().isModifierKey()||this._globalPointerMoveMonitor.stopMonitoring(!0,n.browserEvent)},!0),this._globalPointerMoveMonitor.startMonitoring(e,t,o,n=>{s(new a(n,!0,this._editorViewDomNode))},n=>{this._keydownListener.dispose(),l(n)})}stopMonitoring(){this._globalPointerMoveMonitor.stopMonitoring(!0)}}class c{constructor(e){this._editor=e}static _idPool=0;_instanceId=++c._idPool;_counter=0;_rules=new Map;_garbageCollectionScheduler=new v(()=>this.garbageCollect(),1e3);createClassNameRef(e){const t=this.getOrCreateRule(e);return t.increaseRefCount(),{className:t.className,dispose:()=>{t.decreaseRefCount(),this._garbageCollectionScheduler.schedule()}}}getOrCreateRule(e){const t=this.computeUniqueKey(e);let o=this._rules.get(t);if(!o){const s=this._counter++;o=new f(t,`dyn-rule-${this._instanceId}-${s}`,r.isInShadowDOM(this._editor.getContainerDomNode())?this._editor.getContainerDomNode():void 0,e),this._rules.set(t,o)}return o}computeUniqueKey(e){return JSON.stringify(e)}garbageCollect(){for(const e of this._rules.values())e.hasReferences()||(this._rules.delete(e.key),e.dispose())}}class f{constructor(e,t,o,s){this.key=e;this.className=t;this.properties=s;this._styleElementDisposables=new m,this._styleElement=r.createStyleSheet(o,void 0,this._styleElementDisposables),this._styleElement.textContent=this.getCssText(this.className,this.properties)}_referenceCount=0;_styleElement;_styleElementDisposables;getCssText(e,t){let o=`.${e} {`;for(const s in t){const l=t[s];let n;typeof l=="object"?n=h(l.id):n=l;const d=D(s);o+=`
-	${d}: ${n};`}return o+=`
-}`,o}dispose(){this._styleElementDisposables.dispose(),this._styleElement=void 0}increaseRefCount(){this._referenceCount++}decreaseRefCount(){this._referenceCount--}hasReferences(){return this._referenceCount>0}}function D(i){return i.replace(/(^[A-Z])/,([e])=>e.toLowerCase()).replace(/([A-Z])/g,([e])=>`-${e.toLowerCase()}`)}export{M as ClientCoordinates,y as CoordinatesRelativeToEditor,c as DynamicCssRules,a as EditorMouseEvent,O as EditorMouseEventFactory,g as EditorPagePosition,V as EditorPointerEventFactory,k as GlobalEditorPointerMoveMonitor,u as PageCoordinates,C as createCoordinatesRelativeToEditor,_ as createEditorPagePosition};
+import * as dom from '../../base/browser/dom.js';
+import { GlobalPointerMoveMonitor } from '../../base/browser/globalPointerMoveMonitor.js';
+import { StandardMouseEvent } from '../../base/browser/mouseEvent.js';
+import { RunOnceScheduler } from '../../base/common/async.js';
+import { Disposable, DisposableStore } from '../../base/common/lifecycle.js';
+import { asCssVariable } from '../../platform/theme/common/colorRegistry.js';
+export class PageCoordinates {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this._pageCoordinatesBrand = undefined;
+    }
+    toClientCoordinates(targetWindow) {
+        return new ClientCoordinates(this.x - targetWindow.scrollX, this.y - targetWindow.scrollY);
+    }
+}
+export class ClientCoordinates {
+    constructor(clientX, clientY) {
+        this.clientX = clientX;
+        this.clientY = clientY;
+        this._clientCoordinatesBrand = undefined;
+    }
+    toPageCoordinates(targetWindow) {
+        return new PageCoordinates(this.clientX + targetWindow.scrollX, this.clientY + targetWindow.scrollY);
+    }
+}
+export class EditorPagePosition {
+    constructor(x, y, width, height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this._editorPagePositionBrand = undefined;
+    }
+}
+export class CoordinatesRelativeToEditor {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this._positionRelativeToEditorBrand = undefined;
+    }
+}
+export function createEditorPagePosition(editorViewDomNode) {
+    const editorPos = dom.getDomNodePagePosition(editorViewDomNode);
+    return new EditorPagePosition(editorPos.left, editorPos.top, editorPos.width, editorPos.height);
+}
+export function createCoordinatesRelativeToEditor(editorViewDomNode, editorPagePosition, pos) {
+    const scaleX = editorPagePosition.width / editorViewDomNode.offsetWidth;
+    const scaleY = editorPagePosition.height / editorViewDomNode.offsetHeight;
+    const relativeX = (pos.x - editorPagePosition.x) / scaleX;
+    const relativeY = (pos.y - editorPagePosition.y) / scaleY;
+    return new CoordinatesRelativeToEditor(relativeX, relativeY);
+}
+export class EditorMouseEvent extends StandardMouseEvent {
+    constructor(e, isFromPointerCapture, editorViewDomNode) {
+        super(dom.getWindow(editorViewDomNode), e);
+        this._editorMouseEventBrand = undefined;
+        this.isFromPointerCapture = isFromPointerCapture;
+        this.pos = new PageCoordinates(this.posx, this.posy);
+        this.editorPos = createEditorPagePosition(editorViewDomNode);
+        this.relativePos = createCoordinatesRelativeToEditor(editorViewDomNode, this.editorPos, this.pos);
+    }
+}
+export class EditorMouseEventFactory {
+    constructor(editorViewDomNode) {
+        this._editorViewDomNode = editorViewDomNode;
+    }
+    _create(e) {
+        return new EditorMouseEvent(e, false, this._editorViewDomNode);
+    }
+    onContextMenu(target, callback) {
+        return dom.addDisposableListener(target, 'contextmenu', (e) => {
+            callback(this._create(e));
+        });
+    }
+    onMouseUp(target, callback) {
+        return dom.addDisposableListener(target, 'mouseup', (e) => {
+            callback(this._create(e));
+        });
+    }
+    onMouseDown(target, callback) {
+        return dom.addDisposableListener(target, dom.EventType.MOUSE_DOWN, (e) => {
+            callback(this._create(e));
+        });
+    }
+    onPointerDown(target, callback) {
+        return dom.addDisposableListener(target, dom.EventType.POINTER_DOWN, (e) => {
+            callback(this._create(e), e.pointerId);
+        });
+    }
+    onMouseLeave(target, callback) {
+        return dom.addDisposableListener(target, dom.EventType.MOUSE_LEAVE, (e) => {
+            callback(this._create(e));
+        });
+    }
+    onMouseMove(target, callback) {
+        return dom.addDisposableListener(target, 'mousemove', (e) => callback(this._create(e)));
+    }
+}
+export class EditorPointerEventFactory {
+    constructor(editorViewDomNode) {
+        this._editorViewDomNode = editorViewDomNode;
+    }
+    _create(e) {
+        return new EditorMouseEvent(e, false, this._editorViewDomNode);
+    }
+    onPointerUp(target, callback) {
+        return dom.addDisposableListener(target, 'pointerup', (e) => {
+            callback(this._create(e));
+        });
+    }
+    onPointerDown(target, callback) {
+        return dom.addDisposableListener(target, dom.EventType.POINTER_DOWN, (e) => {
+            callback(this._create(e), e.pointerId);
+        });
+    }
+    onPointerLeave(target, callback) {
+        return dom.addDisposableListener(target, dom.EventType.POINTER_LEAVE, (e) => {
+            callback(this._create(e));
+        });
+    }
+    onPointerMove(target, callback) {
+        return dom.addDisposableListener(target, 'pointermove', (e) => callback(this._create(e)));
+    }
+}
+export class GlobalEditorPointerMoveMonitor extends Disposable {
+    constructor(editorViewDomNode) {
+        super();
+        this._editorViewDomNode = editorViewDomNode;
+        this._globalPointerMoveMonitor = this._register(new GlobalPointerMoveMonitor());
+        this._keydownListener = null;
+    }
+    startMonitoring(initialElement, pointerId, initialButtons, pointerMoveCallback, onStopCallback) {
+        this._keydownListener = dom.addStandardDisposableListener(initialElement.ownerDocument, 'keydown', (e) => {
+            const chord = e.toKeyCodeChord();
+            if (chord.isModifierKey()) {
+                return;
+            }
+            this._globalPointerMoveMonitor.stopMonitoring(true, e.browserEvent);
+        }, true);
+        this._globalPointerMoveMonitor.startMonitoring(initialElement, pointerId, initialButtons, (e) => {
+            pointerMoveCallback(new EditorMouseEvent(e, true, this._editorViewDomNode));
+        }, (e) => {
+            this._keydownListener.dispose();
+            onStopCallback(e);
+        });
+    }
+    stopMonitoring() {
+        this._globalPointerMoveMonitor.stopMonitoring(true);
+    }
+}
+export class DynamicCssRules {
+    static { this._idPool = 0; }
+    constructor(_editor) {
+        this._editor = _editor;
+        this._instanceId = ++DynamicCssRules._idPool;
+        this._counter = 0;
+        this._rules = new Map();
+        this._garbageCollectionScheduler = new RunOnceScheduler(() => this.garbageCollect(), 1000);
+    }
+    createClassNameRef(options) {
+        const rule = this.getOrCreateRule(options);
+        rule.increaseRefCount();
+        return {
+            className: rule.className,
+            dispose: () => {
+                rule.decreaseRefCount();
+                this._garbageCollectionScheduler.schedule();
+            }
+        };
+    }
+    getOrCreateRule(properties) {
+        const key = this.computeUniqueKey(properties);
+        let existingRule = this._rules.get(key);
+        if (!existingRule) {
+            const counter = this._counter++;
+            existingRule = new RefCountedCssRule(key, `dyn-rule-${this._instanceId}-${counter}`, dom.isInShadowDOM(this._editor.getContainerDomNode())
+                ? this._editor.getContainerDomNode()
+                : undefined, properties);
+            this._rules.set(key, existingRule);
+        }
+        return existingRule;
+    }
+    computeUniqueKey(properties) {
+        return JSON.stringify(properties);
+    }
+    garbageCollect() {
+        for (const rule of this._rules.values()) {
+            if (!rule.hasReferences()) {
+                this._rules.delete(rule.key);
+                rule.dispose();
+            }
+        }
+    }
+}
+class RefCountedCssRule {
+    constructor(key, className, _containerElement, properties) {
+        this.key = key;
+        this.className = className;
+        this.properties = properties;
+        this._referenceCount = 0;
+        this._styleElementDisposables = new DisposableStore();
+        this._styleElement = dom.createStyleSheet(_containerElement, undefined, this._styleElementDisposables);
+        this._styleElement.textContent = this.getCssText(this.className, this.properties);
+    }
+    getCssText(className, properties) {
+        let str = `.${className} {`;
+        for (const prop in properties) {
+            const value = properties[prop];
+            let cssValue;
+            if (typeof value === 'object') {
+                cssValue = asCssVariable(value.id);
+            }
+            else {
+                cssValue = value;
+            }
+            const cssPropName = camelToDashes(prop);
+            str += `\n\t${cssPropName}: ${cssValue};`;
+        }
+        str += `\n}`;
+        return str;
+    }
+    dispose() {
+        this._styleElementDisposables.dispose();
+        this._styleElement = undefined;
+    }
+    increaseRefCount() {
+        this._referenceCount++;
+    }
+    decreaseRefCount() {
+        this._referenceCount--;
+    }
+    hasReferences() {
+        return this._referenceCount > 0;
+    }
+}
+function camelToDashes(str) {
+    return str.replace(/(^[A-Z])/, ([first]) => first.toLowerCase())
+        .replace(/([A-Z])/g, ([letter]) => `-${letter.toLowerCase()}`);
+}

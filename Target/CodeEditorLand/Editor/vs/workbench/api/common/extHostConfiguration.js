@@ -1,1 +1,281 @@
-var R=Object.defineProperty;var $=Object.getOwnPropertyDescriptor;var P=(r,e,t,o)=>{for(var n=o>1?void 0:o?$(e,t):e,a=r.length-1,d;a>=0;a--)(d=r[a])&&(n=(o?d(e,t,n):d(n))||n);return o&&n&&R(e,t,n),n},E=(r,e)=>(t,o)=>e(t,o,r);import{mixin as O,deepClone as g}from"../../../base/common/objects.js";import{Emitter as V}from"../../../base/common/event.js";import{IExtHostWorkspace as D}from"./extHostWorkspace.js";import{MainContext as L}from"./extHost.protocol.js";import{ConfigurationTarget as m}from"./extHostTypes.js";import{ConfigurationTarget as y}from"../../../platform/configuration/common/configuration.js";import{Configuration as W,ConfigurationChangeEvent as M}from"../../../platform/configuration/common/configurationModels.js";import{ConfigurationScope as w,OVERRIDE_PROPERTY_REGEX as j}from"../../../platform/configuration/common/configurationRegistry.js";import{isObject as H}from"../../../base/common/types.js";import"../../../platform/extensions/common/extensions.js";import{Barrier as K}from"../../../base/common/async.js";import{createDecorator as A}from"../../../platform/instantiation/common/instantiation.js";import{IExtHostRpcService as F}from"./extHostRpcService.js";import{ILogService as U}from"../../../platform/log/common/log.js";import"../../../platform/workspace/common/workspace.js";import{URI as T}from"../../../base/common/uri.js";function h(r,e){if(e){const t=e.split(".");let o=r;for(let n=0;o&&n<t.length;n++)o=o[t[n]];return o}}function z(r){return r instanceof T}function B(r){return r&&r.uri instanceof T&&r.languageId&&typeof r.languageId=="string"}function G(r){return r&&!r.uri&&r.languageId&&typeof r.languageId=="string"}function N(r){return r&&r.uri instanceof T&&(!r.name||typeof r.name=="string")&&(!r.index||typeof r.index=="number")}function b(r){if(z(r))return{resource:r};if(B(r))return{resource:r.uri,overrideIdentifier:r.languageId};if(G(r))return{overrideIdentifier:r.languageId};if(N(r))return{resource:r.uri};if(r===null)return{resource:null}}let I=class{_serviceBrand;_proxy;_logService;_extHostWorkspace;_barrier;_actual;constructor(e,t,o){this._proxy=e.getProxy(L.MainThreadConfiguration),this._extHostWorkspace=t,this._logService=o,this._barrier=new K,this._actual=null}getConfigProvider(){return this._barrier.wait().then(e=>this._actual)}$initializeConfiguration(e){this._actual=new X(this._proxy,this._extHostWorkspace,e,this._logService),this._barrier.open()}$acceptConfigurationChanged(e,t){this.getConfigProvider().then(o=>o.$acceptConfigurationChanged(e,t))}};I=P([E(0,F),E(1,D),E(2,U)],I);class X{_onDidChangeConfiguration=new V;_proxy;_extHostWorkspace;_configurationScopes;_configuration;_logService;constructor(e,t,o,n){this._proxy=e,this._logService=n,this._extHostWorkspace=t,this._configuration=W.parse(o,n),this._configurationScopes=this._toMap(o.configurationScopes)}get onDidChangeConfiguration(){return this._onDidChangeConfiguration&&this._onDidChangeConfiguration.event}$acceptConfigurationChanged(e,t){const o={data:this._configuration.toData(),workspace:this._extHostWorkspace.workspace};this._configuration=W.parse(e,this._logService),this._configurationScopes=this._toMap(e.configurationScopes),this._onDidChangeConfiguration.fire(this._toConfigurationChangeEvent(t,o))}getConfiguration(e,t,o){const n=b(t)||{},a=this._toReadonlyValue(e?h(this._configuration.getValue(void 0,n,this._extHostWorkspace.workspace),e):this._configuration.getValue(void 0,n,this._extHostWorkspace.workspace));e&&this._validateConfigurationAccess(e,n,o?.identifier);function d(i){if(i==null)return null;if(typeof i=="boolean")return i?y.USER:y.WORKSPACE;switch(i){case m.Global:return y.USER;case m.Workspace:return y.WORKSPACE;case m.WorkspaceFolder:return y.WORKSPACE_FOLDER}}const k={has(i){return typeof h(a,i)<"u"},get:(i,u)=>{this._validateConfigurationAccess(e?`${e}.${i}`:i,n,o?.identifier);let p=h(a,i);if(typeof p>"u")p=u;else{let c;const C=(v,S)=>{if(H(v)){let s;const _=()=>{c=c||g(a),s=s||h(c,S)};return new Proxy(v,{get:(x,f)=>{if(typeof f=="string"&&f.toLowerCase()==="tojson")return _(),()=>s;if(c)return s=s||h(c,S),s[f];const l=x[f];return typeof f=="string"?C(l,`${S}.${f}`):l},set:(x,f,l)=>(_(),s&&(s[f]=l),!0),deleteProperty:(x,f)=>(_(),s&&delete s[f],!0),defineProperty:(x,f,l)=>(_(),s&&Object.defineProperty(s,f,l),!0)})}return Array.isArray(v)?g(v):v};p=C(p,i)}return p},update:(i,u,p,c)=>{i=e?`${e}.${i}`:i;const C=d(p);return u!==void 0?this._proxy.$updateConfigurationOption(C,i,u,n,c):this._proxy.$removeConfigurationOption(C,i,n,c)},inspect:i=>{i=e?`${e}.${i}`:i;const u=this._configuration.inspect(i,n,this._extHostWorkspace.workspace);if(u)return{key:i,defaultValue:g(u.policy?.value??u.default?.value),globalValue:g(u.user?.value??u.application?.value),workspaceValue:g(u.workspace?.value),workspaceFolderValue:g(u.workspaceFolder?.value),defaultLanguageValue:g(u.default?.override),globalLanguageValue:g(u.user?.override??u.application?.override),workspaceLanguageValue:g(u.workspace?.override),workspaceFolderLanguageValue:g(u.workspaceFolder?.override),languageIds:g(u.overrideIdentifiers)}}};return typeof a=="object"&&O(k,a,!1),Object.freeze(k)}_toReadonlyValue(e){const t=o=>H(o)?new Proxy(o,{get:(n,a)=>t(n[a]),set:(n,a,d)=>{throw new Error(`TypeError: Cannot assign to read only property '${String(a)}' of object`)},deleteProperty:(n,a)=>{throw new Error(`TypeError: Cannot delete read only property '${String(a)}' of object`)},defineProperty:(n,a)=>{throw new Error(`TypeError: Cannot define property '${String(a)}' for a readonly object`)},setPrototypeOf:n=>{throw new Error("TypeError: Cannot set prototype for a readonly object")},isExtensible:()=>!1,preventExtensions:()=>!0}):o;return t(e)}_validateConfigurationAccess(e,t,o){const n=j.test(e)?w.RESOURCE:this._configurationScopes.get(e),a=o?`[${o.value}] `:"";if(w.RESOURCE===n){typeof t?.resource>"u"&&this._logService.warn(`${a}Accessing a resource scoped configuration without providing a resource is not expected. To get the effective value for '${e}', provide the URI of a resource or 'null' for any resource.`);return}if(w.WINDOW===n){t?.resource&&this._logService.warn(`${a}Accessing a window scoped configuration for a resource is not expected. To associate '${e}' to a resource, define its scope to 'resource' in configuration contributions in 'package.json'.`);return}}_toConfigurationChangeEvent(e,t){const o=new M(e,t,this._configuration,this._extHostWorkspace.workspace,this._logService);return Object.freeze({affectsConfiguration:(n,a)=>o.affectsConfiguration(n,b(a))})}_toMap(e){return e.reduce((t,o)=>(t.set(o[0],o[1]),t),new Map)}}const Se=A("IExtHostConfiguration");export{X as ExtHostConfigProvider,I as ExtHostConfiguration,Se as IExtHostConfiguration};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { mixin, deepClone } from '../../../base/common/objects.js';
+import { Emitter } from '../../../base/common/event.js';
+import { IExtHostWorkspace } from './extHostWorkspace.js';
+import { MainContext } from './extHost.protocol.js';
+import { ConfigurationTarget as ExtHostConfigurationTarget } from './extHostTypes.js';
+import { Configuration, ConfigurationChangeEvent } from '../../../platform/configuration/common/configurationModels.js';
+import { OVERRIDE_PROPERTY_REGEX } from '../../../platform/configuration/common/configurationRegistry.js';
+import { isObject } from '../../../base/common/types.js';
+import { Barrier } from '../../../base/common/async.js';
+import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
+import { IExtHostRpcService } from './extHostRpcService.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { URI } from '../../../base/common/uri.js';
+function lookUp(tree, key) {
+    if (key) {
+        const parts = key.split('.');
+        let node = tree;
+        for (let i = 0; node && i < parts.length; i++) {
+            node = node[parts[i]];
+        }
+        return node;
+    }
+}
+function isUri(thing) {
+    return thing instanceof URI;
+}
+function isResourceLanguage(thing) {
+    return thing
+        && thing.uri instanceof URI
+        && (thing.languageId && typeof thing.languageId === 'string');
+}
+function isLanguage(thing) {
+    return thing
+        && !thing.uri
+        && (thing.languageId && typeof thing.languageId === 'string');
+}
+function isWorkspaceFolder(thing) {
+    return thing
+        && thing.uri instanceof URI
+        && (!thing.name || typeof thing.name === 'string')
+        && (!thing.index || typeof thing.index === 'number');
+}
+function scopeToOverrides(scope) {
+    if (isUri(scope)) {
+        return { resource: scope };
+    }
+    if (isResourceLanguage(scope)) {
+        return { resource: scope.uri, overrideIdentifier: scope.languageId };
+    }
+    if (isLanguage(scope)) {
+        return { overrideIdentifier: scope.languageId };
+    }
+    if (isWorkspaceFolder(scope)) {
+        return { resource: scope.uri };
+    }
+    if (scope === null) {
+        return { resource: null };
+    }
+    return undefined;
+}
+let ExtHostConfiguration = class ExtHostConfiguration {
+    constructor(extHostRpc, extHostWorkspace, logService) {
+        this._proxy = extHostRpc.getProxy(MainContext.MainThreadConfiguration);
+        this._extHostWorkspace = extHostWorkspace;
+        this._logService = logService;
+        this._barrier = new Barrier();
+        this._actual = null;
+    }
+    getConfigProvider() {
+        return this._barrier.wait().then(_ => this._actual);
+    }
+    $initializeConfiguration(data) {
+        this._actual = new ExtHostConfigProvider(this._proxy, this._extHostWorkspace, data, this._logService);
+        this._barrier.open();
+    }
+    $acceptConfigurationChanged(data, change) {
+        this.getConfigProvider().then(provider => provider.$acceptConfigurationChanged(data, change));
+    }
+};
+ExtHostConfiguration = __decorate([
+    __param(0, IExtHostRpcService),
+    __param(1, IExtHostWorkspace),
+    __param(2, ILogService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], ExtHostConfiguration);
+export { ExtHostConfiguration };
+export class ExtHostConfigProvider {
+    constructor(proxy, extHostWorkspace, data, logService) {
+        this._onDidChangeConfiguration = new Emitter();
+        this._proxy = proxy;
+        this._logService = logService;
+        this._extHostWorkspace = extHostWorkspace;
+        this._configuration = Configuration.parse(data, logService);
+        this._configurationScopes = this._toMap(data.configurationScopes);
+    }
+    get onDidChangeConfiguration() {
+        return this._onDidChangeConfiguration && this._onDidChangeConfiguration.event;
+    }
+    $acceptConfigurationChanged(data, change) {
+        const previous = { data: this._configuration.toData(), workspace: this._extHostWorkspace.workspace };
+        this._configuration = Configuration.parse(data, this._logService);
+        this._configurationScopes = this._toMap(data.configurationScopes);
+        this._onDidChangeConfiguration.fire(this._toConfigurationChangeEvent(change, previous));
+    }
+    getConfiguration(section, scope, extensionDescription) {
+        const overrides = scopeToOverrides(scope) || {};
+        const config = this._toReadonlyValue(section
+            ? lookUp(this._configuration.getValue(undefined, overrides, this._extHostWorkspace.workspace), section)
+            : this._configuration.getValue(undefined, overrides, this._extHostWorkspace.workspace));
+        if (section) {
+            this._validateConfigurationAccess(section, overrides, extensionDescription?.identifier);
+        }
+        function parseConfigurationTarget(arg) {
+            if (arg === undefined || arg === null) {
+                return null;
+            }
+            if (typeof arg === 'boolean') {
+                return arg ? 2 : 5;
+            }
+            switch (arg) {
+                case ExtHostConfigurationTarget.Global: return 2;
+                case ExtHostConfigurationTarget.Workspace: return 5;
+                case ExtHostConfigurationTarget.WorkspaceFolder: return 6;
+            }
+        }
+        const result = {
+            has(key) {
+                return typeof lookUp(config, key) !== 'undefined';
+            },
+            get: (key, defaultValue) => {
+                this._validateConfigurationAccess(section ? `${section}.${key}` : key, overrides, extensionDescription?.identifier);
+                let result = lookUp(config, key);
+                if (typeof result === 'undefined') {
+                    result = defaultValue;
+                }
+                else {
+                    let clonedConfig = undefined;
+                    const cloneOnWriteProxy = (target, accessor) => {
+                        if (isObject(target)) {
+                            let clonedTarget = undefined;
+                            const cloneTarget = () => {
+                                clonedConfig = clonedConfig ? clonedConfig : deepClone(config);
+                                clonedTarget = clonedTarget ? clonedTarget : lookUp(clonedConfig, accessor);
+                            };
+                            return new Proxy(target, {
+                                get: (target, property) => {
+                                    if (typeof property === 'string' && property.toLowerCase() === 'tojson') {
+                                        cloneTarget();
+                                        return () => clonedTarget;
+                                    }
+                                    if (clonedConfig) {
+                                        clonedTarget = clonedTarget ? clonedTarget : lookUp(clonedConfig, accessor);
+                                        return clonedTarget[property];
+                                    }
+                                    const result = target[property];
+                                    if (typeof property === 'string') {
+                                        return cloneOnWriteProxy(result, `${accessor}.${property}`);
+                                    }
+                                    return result;
+                                },
+                                set: (_target, property, value) => {
+                                    cloneTarget();
+                                    if (clonedTarget) {
+                                        clonedTarget[property] = value;
+                                    }
+                                    return true;
+                                },
+                                deleteProperty: (_target, property) => {
+                                    cloneTarget();
+                                    if (clonedTarget) {
+                                        delete clonedTarget[property];
+                                    }
+                                    return true;
+                                },
+                                defineProperty: (_target, property, descriptor) => {
+                                    cloneTarget();
+                                    if (clonedTarget) {
+                                        Object.defineProperty(clonedTarget, property, descriptor);
+                                    }
+                                    return true;
+                                }
+                            });
+                        }
+                        if (Array.isArray(target)) {
+                            return deepClone(target);
+                        }
+                        return target;
+                    };
+                    result = cloneOnWriteProxy(result, key);
+                }
+                return result;
+            },
+            update: (key, value, extHostConfigurationTarget, scopeToLanguage) => {
+                key = section ? `${section}.${key}` : key;
+                const target = parseConfigurationTarget(extHostConfigurationTarget);
+                if (value !== undefined) {
+                    return this._proxy.$updateConfigurationOption(target, key, value, overrides, scopeToLanguage);
+                }
+                else {
+                    return this._proxy.$removeConfigurationOption(target, key, overrides, scopeToLanguage);
+                }
+            },
+            inspect: (key) => {
+                key = section ? `${section}.${key}` : key;
+                const config = this._configuration.inspect(key, overrides, this._extHostWorkspace.workspace);
+                if (config) {
+                    return {
+                        key,
+                        defaultValue: deepClone(config.policy?.value ?? config.default?.value),
+                        globalValue: deepClone(config.user?.value ?? config.application?.value),
+                        workspaceValue: deepClone(config.workspace?.value),
+                        workspaceFolderValue: deepClone(config.workspaceFolder?.value),
+                        defaultLanguageValue: deepClone(config.default?.override),
+                        globalLanguageValue: deepClone(config.user?.override ?? config.application?.override),
+                        workspaceLanguageValue: deepClone(config.workspace?.override),
+                        workspaceFolderLanguageValue: deepClone(config.workspaceFolder?.override),
+                        languageIds: deepClone(config.overrideIdentifiers)
+                    };
+                }
+                return undefined;
+            }
+        };
+        if (typeof config === 'object') {
+            mixin(result, config, false);
+        }
+        return Object.freeze(result);
+    }
+    _toReadonlyValue(result) {
+        const readonlyProxy = (target) => {
+            return isObject(target) ?
+                new Proxy(target, {
+                    get: (target, property) => readonlyProxy(target[property]),
+                    set: (_target, property, _value) => { throw new Error(`TypeError: Cannot assign to read only property '${String(property)}' of object`); },
+                    deleteProperty: (_target, property) => { throw new Error(`TypeError: Cannot delete read only property '${String(property)}' of object`); },
+                    defineProperty: (_target, property) => { throw new Error(`TypeError: Cannot define property '${String(property)}' for a readonly object`); },
+                    setPrototypeOf: (_target) => { throw new Error(`TypeError: Cannot set prototype for a readonly object`); },
+                    isExtensible: () => false,
+                    preventExtensions: () => true
+                }) : target;
+        };
+        return readonlyProxy(result);
+    }
+    _validateConfigurationAccess(key, overrides, extensionId) {
+        const scope = OVERRIDE_PROPERTY_REGEX.test(key) ? 4 : this._configurationScopes.get(key);
+        const extensionIdText = extensionId ? `[${extensionId.value}] ` : '';
+        if (4 === scope) {
+            if (typeof overrides?.resource === 'undefined') {
+                this._logService.warn(`${extensionIdText}Accessing a resource scoped configuration without providing a resource is not expected. To get the effective value for '${key}', provide the URI of a resource or 'null' for any resource.`);
+            }
+            return;
+        }
+        if (3 === scope) {
+            if (overrides?.resource) {
+                this._logService.warn(`${extensionIdText}Accessing a window scoped configuration for a resource is not expected. To associate '${key}' to a resource, define its scope to 'resource' in configuration contributions in 'package.json'.`);
+            }
+            return;
+        }
+    }
+    _toConfigurationChangeEvent(change, previous) {
+        const event = new ConfigurationChangeEvent(change, previous, this._configuration, this._extHostWorkspace.workspace, this._logService);
+        return Object.freeze({
+            affectsConfiguration: (section, scope) => event.affectsConfiguration(section, scopeToOverrides(scope))
+        });
+    }
+    _toMap(scopes) {
+        return scopes.reduce((result, scope) => { result.set(scope[0], scope[1]); return result; }, new Map());
+    }
+}
+export const IExtHostConfiguration = createDecorator('IExtHostConfiguration');

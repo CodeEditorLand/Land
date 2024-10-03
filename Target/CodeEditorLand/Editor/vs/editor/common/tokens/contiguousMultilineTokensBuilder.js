@@ -1,1 +1,52 @@
-import{readUInt32BE as o,writeUInt32BE as l}from"../../../base/common/buffer.js";import{ContiguousMultilineTokens as r}from"./contiguousMultilineTokens.js";class k{static deserialize(t){let e=0;const i=o(t,e);e+=4;const s=[];for(let n=0;n<i;n++)e=r.deserialize(t,e,s);return s}_tokens;constructor(){this._tokens=[]}add(t,e){if(this._tokens.length>0){const i=this._tokens[this._tokens.length-1];if(i.endLineNumber+1===t){i.appendLineTokens(e);return}}this._tokens.push(new r(t,[e]))}finalize(){return this._tokens}serialize(){const t=this._serializeSize(),e=new Uint8Array(t);return this._serialize(e),e}_serializeSize(){let t=0;t+=4;for(let e=0;e<this._tokens.length;e++)t+=this._tokens[e].serializeSize();return t}_serialize(t){let e=0;l(t,this._tokens.length,e),e+=4;for(let i=0;i<this._tokens.length;i++)e=this._tokens[i].serialize(t,e)}}export{k as ContiguousMultilineTokensBuilder};
+import { readUInt32BE, writeUInt32BE } from '../../../base/common/buffer.js';
+import { ContiguousMultilineTokens } from './contiguousMultilineTokens.js';
+export class ContiguousMultilineTokensBuilder {
+    static deserialize(buff) {
+        let offset = 0;
+        const count = readUInt32BE(buff, offset);
+        offset += 4;
+        const result = [];
+        for (let i = 0; i < count; i++) {
+            offset = ContiguousMultilineTokens.deserialize(buff, offset, result);
+        }
+        return result;
+    }
+    constructor() {
+        this._tokens = [];
+    }
+    add(lineNumber, lineTokens) {
+        if (this._tokens.length > 0) {
+            const last = this._tokens[this._tokens.length - 1];
+            if (last.endLineNumber + 1 === lineNumber) {
+                last.appendLineTokens(lineTokens);
+                return;
+            }
+        }
+        this._tokens.push(new ContiguousMultilineTokens(lineNumber, [lineTokens]));
+    }
+    finalize() {
+        return this._tokens;
+    }
+    serialize() {
+        const size = this._serializeSize();
+        const result = new Uint8Array(size);
+        this._serialize(result);
+        return result;
+    }
+    _serializeSize() {
+        let result = 0;
+        result += 4;
+        for (let i = 0; i < this._tokens.length; i++) {
+            result += this._tokens[i].serializeSize();
+        }
+        return result;
+    }
+    _serialize(destination) {
+        let offset = 0;
+        writeUInt32BE(destination, this._tokens.length, offset);
+        offset += 4;
+        for (let i = 0; i < this._tokens.length; i++) {
+            offset = this._tokens[i].serialize(destination, offset);
+        }
+    }
+}

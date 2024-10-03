@@ -1,1 +1,696 @@
-var k=Object.defineProperty;var D=Object.getOwnPropertyDescriptor;var x=(p,e,t,i)=>{for(var n=i>1?void 0:i?D(e,t):e,a=p.length-1,o;a>=0;a--)(o=p[a])&&(n=(i?o(e,t,n):o(n))||n);return i&&n&&k(e,t,n),n},b=(p,e)=>(t,i)=>e(t,i,p);import*as s from"../../../../base/browser/dom.js";import{StandardKeyboardEvent as T}from"../../../../base/browser/keyboardEvent.js";import*as P from"../../../../base/browser/ui/aria/aria.js";import"../../../../base/browser/ui/hover/hover.js";import{getBaseLayerHoverDelegate as A}from"../../../../base/browser/ui/hover/hoverDelegate2.js";import{getDefaultHoverDelegate as M}from"../../../../base/browser/ui/hover/hoverDelegateFactory.js";import{renderIcon as S}from"../../../../base/browser/ui/iconLabel/iconLabels.js";import"../../../../base/browser/ui/list/list.js";import{List as V}from"../../../../base/browser/ui/list/listWidget.js";import*as K from"../../../../base/common/arrays.js";import{DeferredPromise as O,raceCancellation as q}from"../../../../base/common/async.js";import{CancellationTokenSource as z}from"../../../../base/common/cancellation.js";import{Codicon as w}from"../../../../base/common/codicons.js";import{Emitter as G}from"../../../../base/common/event.js";import{KeyCode as f}from"../../../../base/common/keyCodes.js";import{DisposableStore as C,toDisposable as W}from"../../../../base/common/lifecycle.js";import{StopWatch as $}from"../../../../base/common/stopwatch.js";import{assertType as l,isDefined as U}from"../../../../base/common/types.js";import"./renameWidget.css";import*as X from"../../../browser/config/domFontInfo.js";import{ContentWidgetPositionPreference as v}from"../../../browser/editorBrowser.js";import{EditorOption as N}from"../../../common/config/editorOptions.js";import"../../../common/config/fontInfo.js";import"../../../common/core/dimension.js";import{Position as Y}from"../../../common/core/position.js";import{Range as R}from"../../../common/core/range.js";import{ScrollType as j}from"../../../common/editorCommon.js";import{NewSymbolNameTag as J,NewSymbolNameTriggerKind as B}from"../../../common/languages.js";import*as h from"../../../../nls.js";import{IContextKeyService as Q,RawContextKey as F}from"../../../../platform/contextkey/common/contextkey.js";import{IKeybindingService as Z}from"../../../../platform/keybinding/common/keybinding.js";import{ILogService as ee}from"../../../../platform/log/common/log.js";import{getListStyles as te}from"../../../../platform/theme/browser/defaultStyles.js";import{editorWidgetBackground as ie,inputBackground as H,inputBorder as ne,inputForeground as oe,quickInputListFocusBackground as se,quickInputListFocusForeground as ae,widgetBorder as de,widgetShadow as re}from"../../../../platform/theme/common/colorRegistry.js";import{IThemeService as le}from"../../../../platform/theme/common/themeService.js";const ue=!1,he=new F("renameInputVisible",!1,h.localize("renameInputVisible","Whether the rename input widget is visible")),st=new F("renameInputFocused",!1,h.localize("renameInputFocused","Whether the rename input widget is focused"));let y=class{constructor(e,t,i,n,a,o){this._editor=e;this._acceptKeybindings=t;this._themeService=i;this._keybindingService=n;this._logService=o;this._visibleContextKey=he.bindTo(a),this._isEditingRenameCandidate=!1,this._nRenameSuggestionsInvocations=0,this._hadAutomaticRenameSuggestionsInvocation=!1,this._candidates=new Set,this._beforeFirstInputFieldEditSW=new $,this._inputWithButton=new pe,this._disposables.add(this._inputWithButton),this._editor.addContentWidget(this),this._disposables.add(this._editor.onDidChangeConfiguration(u=>{u.hasChanged(N.fontInfo)&&this._updateFont()})),this._disposables.add(i.onDidColorThemeChange(this._updateStyles,this))}allowEditorOverflow=!0;_domNode;_inputWithButton;_renameCandidateListView;_label;_nPxAvailableAbove;_nPxAvailableBelow;_position;_currentName;_isEditingRenameCandidate;_candidates;_visible;_beforeFirstInputFieldEditSW;_timeBeforeFirstInputFieldEdit;_nRenameSuggestionsInvocations;_hadAutomaticRenameSuggestionsInvocation;_renameCandidateProvidersCts;_renameCts;_visibleContextKey;_disposables=new C;dispose(){this._disposables.dispose(),this._editor.removeContentWidget(this)}getId(){return"__renameInputWidget"}getDomNode(){return this._domNode||(this._domNode=document.createElement("div"),this._domNode.className="monaco-editor rename-box",this._domNode.appendChild(this._inputWithButton.domNode),this._renameCandidateListView=this._disposables.add(new E(this._domNode,{fontInfo:this._editor.getOption(N.fontInfo),onFocusChange:e=>{this._inputWithButton.input.value=e,this._isEditingRenameCandidate=!1},onSelectionChange:()=>{this._isEditingRenameCandidate=!1,this.acceptInput(!1)}})),this._disposables.add(this._inputWithButton.onDidInputChange(()=>{this._renameCandidateListView?.focusedCandidate!==void 0&&(this._isEditingRenameCandidate=!0),this._timeBeforeFirstInputFieldEdit??=this._beforeFirstInputFieldEditSW.elapsed(),this._renameCandidateProvidersCts?.token.isCancellationRequested===!1&&this._renameCandidateProvidersCts.cancel(),this._renameCandidateListView?.clearFocus()})),this._label=document.createElement("div"),this._label.className="rename-label",this._domNode.appendChild(this._label),this._updateFont(),this._updateStyles(this._themeService.getColorTheme())),this._domNode}_updateStyles(e){if(!this._domNode)return;const t=e.getColor(re),i=e.getColor(de);this._domNode.style.backgroundColor=String(e.getColor(ie)??""),this._domNode.style.boxShadow=t?` 0 0 8px 2px ${t}`:"",this._domNode.style.border=i?`1px solid ${i}`:"",this._domNode.style.color=String(e.getColor(oe)??"");const n=e.getColor(ne);this._inputWithButton.domNode.style.backgroundColor=String(e.getColor(H)??""),this._inputWithButton.input.style.backgroundColor=String(e.getColor(H)??""),this._inputWithButton.domNode.style.borderWidth=n?"1px":"0px",this._inputWithButton.domNode.style.borderStyle=n?"solid":"none",this._inputWithButton.domNode.style.borderColor=n?.toString()??"none"}_updateFont(){if(this._domNode===void 0)return;l(this._label!==void 0,"RenameWidget#_updateFont: _label must not be undefined given _domNode is defined"),this._editor.applyFontInfo(this._inputWithButton.input);const e=this._editor.getOption(N.fontInfo);this._label.style.fontSize=`${this._computeLabelFontSize(e.fontSize)}px`}_computeLabelFontSize(e){return e*.8}getPosition(){if(!this._visible||!this._editor.hasModel()||!this._editor.getDomNode())return null;const e=s.getClientArea(this.getDomNode().ownerDocument.body),t=s.getDomNodePagePosition(this._editor.getDomNode()),i=this._getTopForPosition();this._nPxAvailableAbove=i+t.top,this._nPxAvailableBelow=e.height-this._nPxAvailableAbove;const n=this._editor.getOption(N.lineHeight),{totalHeight:a}=c.getLayoutInfo({lineHeight:n}),o=this._nPxAvailableBelow>a*6?[v.BELOW,v.ABOVE]:[v.ABOVE,v.BELOW];return{position:this._position,preference:o}}beforeRender(){const[e,t]=this._acceptKeybindings;return this._label.innerText=h.localize({key:"label",comment:['placeholders are keybindings, e.g "F2 to Rename, Shift+F2 to Preview"']},"{0} to Rename, {1} to Preview",this._keybindingService.lookupKeybinding(e)?.getLabel(),this._keybindingService.lookupKeybinding(t)?.getLabel()),this._domNode.style.minWidth="200px",null}afterRender(e){if(e===null){this.cancelInput(!0,"afterRender (because position is null)");return}if(!this._editor.hasModel()||!this._editor.getDomNode())return;l(this._renameCandidateListView),l(this._nPxAvailableAbove!==void 0),l(this._nPxAvailableBelow!==void 0);const t=s.getTotalHeight(this._inputWithButton.domNode),i=s.getTotalHeight(this._label);let n;e===v.BELOW?n=this._nPxAvailableBelow:n=this._nPxAvailableAbove,this._renameCandidateListView.layout({height:n-i-t,width:s.getTotalWidth(this._inputWithButton.domNode)})}_currentAcceptInput;_currentCancelInput;_requestRenameCandidatesOnce;acceptInput(e){this._trace("invoking acceptInput"),this._currentAcceptInput?.(e)}cancelInput(e,t){this._currentCancelInput?.(e)}focusNextRenameSuggestion(){this._renameCandidateListView?.focusNext()||(this._inputWithButton.input.value=this._currentName)}focusPreviousRenameSuggestion(){this._renameCandidateListView?.focusPrevious()||(this._inputWithButton.input.value=this._currentName)}getInput(e,t,i,n,a){const{start:o,end:u}=this._getSelection(e,t);this._renameCts=a;const r=new C;this._nRenameSuggestionsInvocations=0,this._hadAutomaticRenameSuggestionsInvocation=!1,n===void 0?this._inputWithButton.button.style.display="none":(this._inputWithButton.button.style.display="flex",this._requestRenameCandidatesOnce=n,this._requestRenameCandidates(t,!1),r.add(s.addDisposableListener(this._inputWithButton.button,"click",()=>this._requestRenameCandidates(t,!0))),r.add(s.addDisposableListener(this._inputWithButton.button,s.EventType.KEY_DOWN,_=>{const m=new T(_);(m.equals(f.Enter)||m.equals(f.Space))&&(m.stopPropagation(),m.preventDefault(),this._requestRenameCandidates(t,!0))}))),this._isEditingRenameCandidate=!1,this._domNode.classList.toggle("preview",i),this._position=new Y(e.startLineNumber,e.startColumn),this._currentName=t,this._inputWithButton.input.value=t,this._inputWithButton.input.setAttribute("selectionStart",o.toString()),this._inputWithButton.input.setAttribute("selectionEnd",u.toString()),this._inputWithButton.input.size=Math.max((e.endColumn-e.startColumn)*1.1,20),this._beforeFirstInputFieldEditSW.reset(),r.add(W(()=>{this._renameCts=void 0,a.dispose(!0)})),r.add(W(()=>{this._renameCandidateProvidersCts!==void 0&&(this._renameCandidateProvidersCts.dispose(!0),this._renameCandidateProvidersCts=void 0)})),r.add(W(()=>this._candidates.clear()));const d=new O;return d.p.finally(()=>{r.dispose(),this._hide()}),this._currentCancelInput=_=>(this._trace("invoking _currentCancelInput"),this._currentAcceptInput=void 0,this._currentCancelInput=void 0,this._renameCandidateListView?.clearCandidates(),d.complete(_),!0),this._currentAcceptInput=_=>{this._trace("invoking _currentAcceptInput"),l(this._renameCandidateListView!==void 0);const m=this._renameCandidateListView.nCandidates;let g,I;const L=this._renameCandidateListView.focusedCandidate;if(L!==void 0?(this._trace("using new name from renameSuggestion"),g=L,I={k:"renameSuggestion"}):(this._trace("using new name from inputField"),g=this._inputWithButton.input.value,I=this._isEditingRenameCandidate?{k:"userEditedRenameSuggestion"}:{k:"inputField"}),g===t||g.trim().length===0){this.cancelInput(!0,"_currentAcceptInput (because newName === value || newName.trim().length === 0)");return}this._currentAcceptInput=void 0,this._currentCancelInput=void 0,this._renameCandidateListView.clearCandidates(),d.complete({newName:g,wantsPreview:i&&_,stats:{source:I,nRenameSuggestions:m,timeBeforeFirstInputFieldEdit:this._timeBeforeFirstInputFieldEdit,nRenameSuggestionsInvocations:this._nRenameSuggestionsInvocations,hadAutomaticRenameSuggestionsInvocation:this._hadAutomaticRenameSuggestionsInvocation}})},r.add(a.token.onCancellationRequested(()=>this.cancelInput(!0,"cts.token.onCancellationRequested"))),ue||r.add(this._editor.onDidBlurEditorWidget(()=>this.cancelInput(!this._domNode?.ownerDocument.hasFocus(),"editor.onDidBlurEditorWidget"))),this._show(),d.p}_requestRenameCandidates(e,t){if(this._requestRenameCandidatesOnce!==void 0&&(this._renameCandidateProvidersCts!==void 0&&this._renameCandidateProvidersCts.dispose(!0),l(this._renameCts),this._inputWithButton.buttonState!=="stop")){this._renameCandidateProvidersCts=new z;const i=t?B.Invoke:B.Automatic,n=this._requestRenameCandidatesOnce(i,this._renameCandidateProvidersCts.token);if(n.length===0){this._inputWithButton.setSparkleButton();return}t||(this._hadAutomaticRenameSuggestionsInvocation=!0),this._nRenameSuggestionsInvocations+=1,this._inputWithButton.setStopButton(),this._updateRenameCandidates(n,e,this._renameCts.token)}}_getSelection(e,t){l(this._editor.hasModel());const i=this._editor.getSelection();let n=0,a=t.length;return!R.isEmpty(i)&&!R.spansMultipleLines(i)&&R.containsRange(e,i)&&(n=Math.max(0,i.startColumn-e.startColumn),a=Math.min(e.endColumn,i.endColumn)-e.startColumn),{start:n,end:a}}_show(){this._trace("invoking _show"),this._editor.revealLineInCenterIfOutsideViewport(this._position.lineNumber,j.Smooth),this._visible=!0,this._visibleContextKey.set(!0),this._editor.layoutContentWidget(this),setTimeout(()=>{this._inputWithButton.input.focus(),this._inputWithButton.input.setSelectionRange(parseInt(this._inputWithButton.input.getAttribute("selectionStart")),parseInt(this._inputWithButton.input.getAttribute("selectionEnd")))},100)}async _updateRenameCandidates(e,t,i){const n=(...d)=>this._trace("_updateRenameCandidates",...d);n("start");const a=await q(Promise.allSettled(e),i);if(this._inputWithButton.setSparkleButton(),a===void 0){n("returning early - received updateRenameCandidates results - undefined");return}const o=a.flatMap(d=>d.status==="fulfilled"&&U(d.value)?d.value:[]);n(`received updateRenameCandidates results - total (unfiltered) ${o.length} candidates.`);const u=K.distinct(o,d=>d.newSymbolName);n(`distinct candidates - ${u.length} candidates.`);const r=u.filter(({newSymbolName:d})=>d.trim().length>0&&d!==this._inputWithButton.input.value&&d!==t&&!this._candidates.has(d));if(n(`valid distinct candidates - ${o.length} candidates.`),r.forEach(d=>this._candidates.add(d.newSymbolName)),r.length<1){n("returning early - no valid distinct candidates");return}n("setting candidates"),this._renameCandidateListView.setCandidates(r),n("asking editor to re-layout"),this._editor.layoutContentWidget(this)}_hide(){this._trace("invoked _hide"),this._visible=!1,this._visibleContextKey.reset(),this._editor.layoutContentWidget(this)}_getTopForPosition(){const e=this._editor.getVisibleRanges();let t;return e.length>0?t=e[0].startLineNumber:(this._logService.warn("RenameWidget#_getTopForPosition: this should not happen - visibleRanges is empty"),t=Math.max(1,this._position.lineNumber-5)),this._editor.getTopForLineNumber(this._position.lineNumber)-this._editor.getTopForLineNumber(t)}_trace(...e){this._logService.trace("RenameWidget",...e)}};y=x([b(2,le),b(3,Z),b(4,Q),b(5,ee)],y);class E{_listContainer;_listWidget;_lineHeight;_availableHeight;_minimumWidth;_typicalHalfwidthCharacterWidth;_disposables;constructor(e,t){this._disposables=new C,this._availableHeight=0,this._minimumWidth=0,this._lineHeight=t.fontInfo.lineHeight,this._typicalHalfwidthCharacterWidth=t.fontInfo.typicalHalfwidthCharacterWidth,this._listContainer=document.createElement("div"),this._listContainer.className="rename-box rename-candidate-list-container",e.appendChild(this._listContainer),this._listWidget=E._createListWidget(this._listContainer,this._candidateViewHeight,t.fontInfo),this._listWidget.onDidChangeFocus(i=>{i.elements.length===1&&t.onFocusChange(i.elements[0].newSymbolName)},this._disposables),this._listWidget.onDidChangeSelection(i=>{i.elements.length===1&&t.onSelectionChange()},this._disposables),this._disposables.add(this._listWidget.onDidBlur(i=>{this._listWidget.setFocus([])})),this._listWidget.style(te({listInactiveFocusForeground:ae,listInactiveFocusBackground:se}))}dispose(){this._listWidget.dispose(),this._disposables.dispose()}layout({height:e,width:t}){this._availableHeight=e,this._minimumWidth=t}setCandidates(e){this._listWidget.splice(0,0,e);const t=this._pickListHeight(this._listWidget.length),i=this._pickListWidth(e);this._listWidget.layout(t,i),this._listContainer.style.height=`${t}px`,this._listContainer.style.width=`${i}px`,P.status(h.localize("renameSuggestionsReceivedAria","Received {0} rename suggestions",e.length))}clearCandidates(){this._listContainer.style.height="0px",this._listContainer.style.width="0px",this._listWidget.splice(0,this._listWidget.length,[])}get nCandidates(){return this._listWidget.length}get focusedCandidate(){if(this._listWidget.length===0)return;const e=this._listWidget.getSelectedElements()[0];if(e!==void 0)return e.newSymbolName;const t=this._listWidget.getFocusedElements()[0];if(t!==void 0)return t.newSymbolName}focusNext(){if(this._listWidget.length===0)return!1;const e=this._listWidget.getFocus();if(e.length===0)return this._listWidget.focusFirst(),this._listWidget.reveal(0),!0;if(e[0]===this._listWidget.length-1)return this._listWidget.setFocus([]),this._listWidget.reveal(0),!1;{this._listWidget.focusNext();const t=this._listWidget.getFocus()[0];return this._listWidget.reveal(t),!0}}focusPrevious(){if(this._listWidget.length===0)return!1;const e=this._listWidget.getFocus();if(e.length===0){this._listWidget.focusLast();const t=this._listWidget.getFocus()[0];return this._listWidget.reveal(t),!0}else{if(e[0]===0)return this._listWidget.setFocus([]),!1;{this._listWidget.focusPrevious();const t=this._listWidget.getFocus()[0];return this._listWidget.reveal(t),!0}}}clearFocus(){this._listWidget.setFocus([])}get _candidateViewHeight(){const{totalHeight:e}=c.getLayoutInfo({lineHeight:this._lineHeight});return e}_pickListHeight(e){const t=this._candidateViewHeight*e;return Math.min(t,this._availableHeight,this._candidateViewHeight*7)}_pickListWidth(e){const t=Math.ceil(Math.max(...e.map(n=>n.newSymbolName.length))*this._typicalHalfwidthCharacterWidth);return Math.max(this._minimumWidth,25+t+10)}static _createListWidget(e,t,i){const n=new class{getTemplateId(o){return"candidate"}getHeight(o){return t}},a=new class{templateId="candidate";renderTemplate(o){return new c(o,i)}renderElement(o,u,r){r.populate(o)}disposeTemplate(o){o.dispose()}};return new V("NewSymbolNameCandidates",e,n,[a],{keyboardSupport:!1,mouseSupport:!0,multipleSelectionSupport:!1})}}class pe{_buttonState;_domNode;_inputNode;_buttonNode;_buttonHover;_buttonGenHoverText;_buttonCancelHoverText;_sparkleIcon;_stopIcon;_onDidInputChange=new G;onDidInputChange=this._onDidInputChange.event;_disposables=new C;get domNode(){return this._domNode||(this._domNode=document.createElement("div"),this._domNode.className="rename-input-with-button",this._domNode.style.display="flex",this._domNode.style.flexDirection="row",this._domNode.style.alignItems="center",this._inputNode=document.createElement("input"),this._inputNode.className="rename-input",this._inputNode.type="text",this._inputNode.style.border="none",this._inputNode.setAttribute("aria-label",h.localize("renameAriaLabel","Rename input. Type new name and press Enter to commit.")),this._domNode.appendChild(this._inputNode),this._buttonNode=document.createElement("div"),this._buttonNode.className="rename-suggestions-button",this._buttonNode.setAttribute("tabindex","0"),this._buttonGenHoverText=h.localize("generateRenameSuggestionsButton","Generate new name suggestions"),this._buttonCancelHoverText=h.localize("cancelRenameSuggestionsButton","Cancel"),this._buttonHover=A().setupManagedHover(M("element"),this._buttonNode,this._buttonGenHoverText),this._disposables.add(this._buttonHover),this._domNode.appendChild(this._buttonNode),this._disposables.add(s.addDisposableListener(this.input,s.EventType.INPUT,()=>this._onDidInputChange.fire())),this._disposables.add(s.addDisposableListener(this.input,s.EventType.KEY_DOWN,e=>{const t=new T(e);(t.keyCode===f.LeftArrow||t.keyCode===f.RightArrow)&&this._onDidInputChange.fire()})),this._disposables.add(s.addDisposableListener(this.input,s.EventType.CLICK,()=>this._onDidInputChange.fire())),this._disposables.add(s.addDisposableListener(this.input,s.EventType.FOCUS,()=>{this.domNode.style.outlineWidth="1px",this.domNode.style.outlineStyle="solid",this.domNode.style.outlineOffset="-1px",this.domNode.style.outlineColor="var(--vscode-focusBorder)"})),this._disposables.add(s.addDisposableListener(this.input,s.EventType.BLUR,()=>{this.domNode.style.outline="none"}))),this._domNode}get input(){return l(this._inputNode),this._inputNode}get button(){return l(this._buttonNode),this._buttonNode}get buttonState(){return this._buttonState}setSparkleButton(){this._buttonState="sparkle",this._sparkleIcon??=S(w.sparkle),s.clearNode(this.button),this.button.appendChild(this._sparkleIcon),this.button.setAttribute("aria-label","Generating new name suggestions"),this._buttonHover?.update(this._buttonGenHoverText),this.input.focus()}setStopButton(){this._buttonState="stop",this._stopIcon??=S(w.primitiveSquare),s.clearNode(this.button),this.button.appendChild(this._stopIcon),this.button.setAttribute("aria-label","Cancel generating new name suggestions"),this._buttonHover?.update(this._buttonCancelHoverText),this.input.focus()}dispose(){this._disposables.dispose()}}class c{static _PADDING=2;_domNode;_icon;_label;constructor(e,t){this._domNode=document.createElement("div"),this._domNode.className="rename-box rename-candidate",this._domNode.style.display="flex",this._domNode.style.columnGap="5px",this._domNode.style.alignItems="center",this._domNode.style.height=`${t.lineHeight}px`,this._domNode.style.padding=`${c._PADDING}px`;const i=document.createElement("div");i.style.display="flex",i.style.alignItems="center",i.style.width=i.style.height=`${t.lineHeight*.8}px`,this._domNode.appendChild(i),this._icon=S(w.sparkle),this._icon.style.display="none",i.appendChild(this._icon),this._label=document.createElement("div"),X.applyFontInfo(this._label,t),this._domNode.appendChild(this._label),e.appendChild(this._domNode)}populate(e){this._updateIcon(e),this._updateLabel(e)}_updateIcon(e){const t=!!e.tags?.includes(J.AIGenerated);this._icon.style.display=t?"inherit":"none"}_updateLabel(e){this._label.innerText=e.newSymbolName}static getLayoutInfo({lineHeight:e}){return{totalHeight:e+c._PADDING*2}}dispose(){}}export{st as CONTEXT_RENAME_INPUT_FOCUSED,he as CONTEXT_RENAME_INPUT_VISIBLE,y as RenameWidget};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import * as dom from '../../../../base/browser/dom.js';
+import { StandardKeyboardEvent } from '../../../../base/browser/keyboardEvent.js';
+import * as aria from '../../../../base/browser/ui/aria/aria.js';
+import { getBaseLayerHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegate2.js';
+import { getDefaultHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
+import { renderIcon } from '../../../../base/browser/ui/iconLabel/iconLabels.js';
+import { List } from '../../../../base/browser/ui/list/listWidget.js';
+import * as arrays from '../../../../base/common/arrays.js';
+import { DeferredPromise, raceCancellation } from '../../../../base/common/async.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { StopWatch } from '../../../../base/common/stopwatch.js';
+import { assertType, isDefined } from '../../../../base/common/types.js';
+import './renameWidget.css';
+import * as domFontInfo from '../../../browser/config/domFontInfo.js';
+import { Position } from '../../../common/core/position.js';
+import { Range } from '../../../common/core/range.js';
+import { NewSymbolNameTag, NewSymbolNameTriggerKind } from '../../../common/languages.js';
+import * as nls from '../../../../nls.js';
+import { IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { getListStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+import { editorWidgetBackground, inputBackground, inputBorder, inputForeground, quickInputListFocusBackground, quickInputListFocusForeground, widgetBorder, widgetShadow } from '../../../../platform/theme/common/colorRegistry.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
+const _sticky = false;
+export const CONTEXT_RENAME_INPUT_VISIBLE = new RawContextKey('renameInputVisible', false, nls.localize('renameInputVisible', "Whether the rename input widget is visible"));
+export const CONTEXT_RENAME_INPUT_FOCUSED = new RawContextKey('renameInputFocused', false, nls.localize('renameInputFocused', "Whether the rename input widget is focused"));
+let RenameWidget = class RenameWidget {
+    constructor(_editor, _acceptKeybindings, _themeService, _keybindingService, contextKeyService, _logService) {
+        this._editor = _editor;
+        this._acceptKeybindings = _acceptKeybindings;
+        this._themeService = _themeService;
+        this._keybindingService = _keybindingService;
+        this._logService = _logService;
+        this.allowEditorOverflow = true;
+        this._disposables = new DisposableStore();
+        this._visibleContextKey = CONTEXT_RENAME_INPUT_VISIBLE.bindTo(contextKeyService);
+        this._isEditingRenameCandidate = false;
+        this._nRenameSuggestionsInvocations = 0;
+        this._hadAutomaticRenameSuggestionsInvocation = false;
+        this._candidates = new Set();
+        this._beforeFirstInputFieldEditSW = new StopWatch();
+        this._inputWithButton = new InputWithButton();
+        this._disposables.add(this._inputWithButton);
+        this._editor.addContentWidget(this);
+        this._disposables.add(this._editor.onDidChangeConfiguration(e => {
+            if (e.hasChanged(52)) {
+                this._updateFont();
+            }
+        }));
+        this._disposables.add(_themeService.onDidColorThemeChange(this._updateStyles, this));
+    }
+    dispose() {
+        this._disposables.dispose();
+        this._editor.removeContentWidget(this);
+    }
+    getId() {
+        return '__renameInputWidget';
+    }
+    getDomNode() {
+        if (!this._domNode) {
+            this._domNode = document.createElement('div');
+            this._domNode.className = 'monaco-editor rename-box';
+            this._domNode.appendChild(this._inputWithButton.domNode);
+            this._renameCandidateListView = this._disposables.add(new RenameCandidateListView(this._domNode, {
+                fontInfo: this._editor.getOption(52),
+                onFocusChange: (newSymbolName) => {
+                    this._inputWithButton.input.value = newSymbolName;
+                    this._isEditingRenameCandidate = false;
+                },
+                onSelectionChange: () => {
+                    this._isEditingRenameCandidate = false;
+                    this.acceptInput(false);
+                }
+            }));
+            this._disposables.add(this._inputWithButton.onDidInputChange(() => {
+                if (this._renameCandidateListView?.focusedCandidate !== undefined) {
+                    this._isEditingRenameCandidate = true;
+                }
+                this._timeBeforeFirstInputFieldEdit ??= this._beforeFirstInputFieldEditSW.elapsed();
+                if (this._renameCandidateProvidersCts?.token.isCancellationRequested === false) {
+                    this._renameCandidateProvidersCts.cancel();
+                }
+                this._renameCandidateListView?.clearFocus();
+            }));
+            this._label = document.createElement('div');
+            this._label.className = 'rename-label';
+            this._domNode.appendChild(this._label);
+            this._updateFont();
+            this._updateStyles(this._themeService.getColorTheme());
+        }
+        return this._domNode;
+    }
+    _updateStyles(theme) {
+        if (!this._domNode) {
+            return;
+        }
+        const widgetShadowColor = theme.getColor(widgetShadow);
+        const widgetBorderColor = theme.getColor(widgetBorder);
+        this._domNode.style.backgroundColor = String(theme.getColor(editorWidgetBackground) ?? '');
+        this._domNode.style.boxShadow = widgetShadowColor ? ` 0 0 8px 2px ${widgetShadowColor}` : '';
+        this._domNode.style.border = widgetBorderColor ? `1px solid ${widgetBorderColor}` : '';
+        this._domNode.style.color = String(theme.getColor(inputForeground) ?? '');
+        const border = theme.getColor(inputBorder);
+        this._inputWithButton.domNode.style.backgroundColor = String(theme.getColor(inputBackground) ?? '');
+        this._inputWithButton.input.style.backgroundColor = String(theme.getColor(inputBackground) ?? '');
+        this._inputWithButton.domNode.style.borderWidth = border ? '1px' : '0px';
+        this._inputWithButton.domNode.style.borderStyle = border ? 'solid' : 'none';
+        this._inputWithButton.domNode.style.borderColor = border?.toString() ?? 'none';
+    }
+    _updateFont() {
+        if (this._domNode === undefined) {
+            return;
+        }
+        assertType(this._label !== undefined, 'RenameWidget#_updateFont: _label must not be undefined given _domNode is defined');
+        this._editor.applyFontInfo(this._inputWithButton.input);
+        const fontInfo = this._editor.getOption(52);
+        this._label.style.fontSize = `${this._computeLabelFontSize(fontInfo.fontSize)}px`;
+    }
+    _computeLabelFontSize(editorFontSize) {
+        return editorFontSize * 0.8;
+    }
+    getPosition() {
+        if (!this._visible) {
+            return null;
+        }
+        if (!this._editor.hasModel() ||
+            !this._editor.getDomNode()) {
+            return null;
+        }
+        const bodyBox = dom.getClientArea(this.getDomNode().ownerDocument.body);
+        const editorBox = dom.getDomNodePagePosition(this._editor.getDomNode());
+        const cursorBoxTop = this._getTopForPosition();
+        this._nPxAvailableAbove = cursorBoxTop + editorBox.top;
+        this._nPxAvailableBelow = bodyBox.height - this._nPxAvailableAbove;
+        const lineHeight = this._editor.getOption(69);
+        const { totalHeight: candidateViewHeight } = RenameCandidateView.getLayoutInfo({ lineHeight });
+        const positionPreference = this._nPxAvailableBelow > candidateViewHeight * 6
+            ? [2, 1]
+            : [1, 2];
+        return {
+            position: this._position,
+            preference: positionPreference,
+        };
+    }
+    beforeRender() {
+        const [accept, preview] = this._acceptKeybindings;
+        this._label.innerText = nls.localize({ key: 'label', comment: ['placeholders are keybindings, e.g "F2 to Rename, Shift+F2 to Preview"'] }, "{0} to Rename, {1} to Preview", this._keybindingService.lookupKeybinding(accept)?.getLabel(), this._keybindingService.lookupKeybinding(preview)?.getLabel());
+        this._domNode.style.minWidth = `200px`;
+        return null;
+    }
+    afterRender(position) {
+        if (position === null) {
+            this.cancelInput(true, 'afterRender (because position is null)');
+            return;
+        }
+        if (!this._editor.hasModel() ||
+            !this._editor.getDomNode()) {
+            return;
+        }
+        assertType(this._renameCandidateListView);
+        assertType(this._nPxAvailableAbove !== undefined);
+        assertType(this._nPxAvailableBelow !== undefined);
+        const inputBoxHeight = dom.getTotalHeight(this._inputWithButton.domNode);
+        const labelHeight = dom.getTotalHeight(this._label);
+        let totalHeightAvailable;
+        if (position === 2) {
+            totalHeightAvailable = this._nPxAvailableBelow;
+        }
+        else {
+            totalHeightAvailable = this._nPxAvailableAbove;
+        }
+        this._renameCandidateListView.layout({
+            height: totalHeightAvailable - labelHeight - inputBoxHeight,
+            width: dom.getTotalWidth(this._inputWithButton.domNode),
+        });
+    }
+    acceptInput(wantsPreview) {
+        this._trace(`invoking acceptInput`);
+        this._currentAcceptInput?.(wantsPreview);
+    }
+    cancelInput(focusEditor, caller) {
+        this._currentCancelInput?.(focusEditor);
+    }
+    focusNextRenameSuggestion() {
+        if (!this._renameCandidateListView?.focusNext()) {
+            this._inputWithButton.input.value = this._currentName;
+        }
+    }
+    focusPreviousRenameSuggestion() {
+        if (!this._renameCandidateListView?.focusPrevious()) {
+            this._inputWithButton.input.value = this._currentName;
+        }
+    }
+    getInput(where, currentName, supportPreview, requestRenameCandidates, cts) {
+        const { start: selectionStart, end: selectionEnd } = this._getSelection(where, currentName);
+        this._renameCts = cts;
+        const disposeOnDone = new DisposableStore();
+        this._nRenameSuggestionsInvocations = 0;
+        this._hadAutomaticRenameSuggestionsInvocation = false;
+        if (requestRenameCandidates === undefined) {
+            this._inputWithButton.button.style.display = 'none';
+        }
+        else {
+            this._inputWithButton.button.style.display = 'flex';
+            this._requestRenameCandidatesOnce = requestRenameCandidates;
+            this._requestRenameCandidates(currentName, false);
+            disposeOnDone.add(dom.addDisposableListener(this._inputWithButton.button, 'click', () => this._requestRenameCandidates(currentName, true)));
+            disposeOnDone.add(dom.addDisposableListener(this._inputWithButton.button, dom.EventType.KEY_DOWN, (e) => {
+                const keyEvent = new StandardKeyboardEvent(e);
+                if (keyEvent.equals(3) || keyEvent.equals(10)) {
+                    keyEvent.stopPropagation();
+                    keyEvent.preventDefault();
+                    this._requestRenameCandidates(currentName, true);
+                }
+            }));
+        }
+        this._isEditingRenameCandidate = false;
+        this._domNode.classList.toggle('preview', supportPreview);
+        this._position = new Position(where.startLineNumber, where.startColumn);
+        this._currentName = currentName;
+        this._inputWithButton.input.value = currentName;
+        this._inputWithButton.input.setAttribute('selectionStart', selectionStart.toString());
+        this._inputWithButton.input.setAttribute('selectionEnd', selectionEnd.toString());
+        this._inputWithButton.input.size = Math.max((where.endColumn - where.startColumn) * 1.1, 20);
+        this._beforeFirstInputFieldEditSW.reset();
+        disposeOnDone.add(toDisposable(() => {
+            this._renameCts = undefined;
+            cts.dispose(true);
+        }));
+        disposeOnDone.add(toDisposable(() => {
+            if (this._renameCandidateProvidersCts !== undefined) {
+                this._renameCandidateProvidersCts.dispose(true);
+                this._renameCandidateProvidersCts = undefined;
+            }
+        }));
+        disposeOnDone.add(toDisposable(() => this._candidates.clear()));
+        const inputResult = new DeferredPromise();
+        inputResult.p.finally(() => {
+            disposeOnDone.dispose();
+            this._hide();
+        });
+        this._currentCancelInput = (focusEditor) => {
+            this._trace('invoking _currentCancelInput');
+            this._currentAcceptInput = undefined;
+            this._currentCancelInput = undefined;
+            this._renameCandidateListView?.clearCandidates();
+            inputResult.complete(focusEditor);
+            return true;
+        };
+        this._currentAcceptInput = (wantsPreview) => {
+            this._trace('invoking _currentAcceptInput');
+            assertType(this._renameCandidateListView !== undefined);
+            const nRenameSuggestions = this._renameCandidateListView.nCandidates;
+            let newName;
+            let source;
+            const focusedCandidate = this._renameCandidateListView.focusedCandidate;
+            if (focusedCandidate !== undefined) {
+                this._trace('using new name from renameSuggestion');
+                newName = focusedCandidate;
+                source = { k: 'renameSuggestion' };
+            }
+            else {
+                this._trace('using new name from inputField');
+                newName = this._inputWithButton.input.value;
+                source = this._isEditingRenameCandidate ? { k: 'userEditedRenameSuggestion' } : { k: 'inputField' };
+            }
+            if (newName === currentName || newName.trim().length === 0) {
+                this.cancelInput(true, '_currentAcceptInput (because newName === value || newName.trim().length === 0)');
+                return;
+            }
+            this._currentAcceptInput = undefined;
+            this._currentCancelInput = undefined;
+            this._renameCandidateListView.clearCandidates();
+            inputResult.complete({
+                newName,
+                wantsPreview: supportPreview && wantsPreview,
+                stats: {
+                    source,
+                    nRenameSuggestions,
+                    timeBeforeFirstInputFieldEdit: this._timeBeforeFirstInputFieldEdit,
+                    nRenameSuggestionsInvocations: this._nRenameSuggestionsInvocations,
+                    hadAutomaticRenameSuggestionsInvocation: this._hadAutomaticRenameSuggestionsInvocation,
+                }
+            });
+        };
+        disposeOnDone.add(cts.token.onCancellationRequested(() => this.cancelInput(true, 'cts.token.onCancellationRequested')));
+        if (!_sticky) {
+            disposeOnDone.add(this._editor.onDidBlurEditorWidget(() => this.cancelInput(!this._domNode?.ownerDocument.hasFocus(), 'editor.onDidBlurEditorWidget')));
+        }
+        this._show();
+        return inputResult.p;
+    }
+    _requestRenameCandidates(currentName, isManuallyTriggered) {
+        if (this._requestRenameCandidatesOnce === undefined) {
+            return;
+        }
+        if (this._renameCandidateProvidersCts !== undefined) {
+            this._renameCandidateProvidersCts.dispose(true);
+        }
+        assertType(this._renameCts);
+        if (this._inputWithButton.buttonState !== 'stop') {
+            this._renameCandidateProvidersCts = new CancellationTokenSource();
+            const triggerKind = isManuallyTriggered ? NewSymbolNameTriggerKind.Invoke : NewSymbolNameTriggerKind.Automatic;
+            const candidates = this._requestRenameCandidatesOnce(triggerKind, this._renameCandidateProvidersCts.token);
+            if (candidates.length === 0) {
+                this._inputWithButton.setSparkleButton();
+                return;
+            }
+            if (!isManuallyTriggered) {
+                this._hadAutomaticRenameSuggestionsInvocation = true;
+            }
+            this._nRenameSuggestionsInvocations += 1;
+            this._inputWithButton.setStopButton();
+            this._updateRenameCandidates(candidates, currentName, this._renameCts.token);
+        }
+    }
+    _getSelection(where, currentName) {
+        assertType(this._editor.hasModel());
+        const selection = this._editor.getSelection();
+        let start = 0;
+        let end = currentName.length;
+        if (!Range.isEmpty(selection) && !Range.spansMultipleLines(selection) && Range.containsRange(where, selection)) {
+            start = Math.max(0, selection.startColumn - where.startColumn);
+            end = Math.min(where.endColumn, selection.endColumn) - where.startColumn;
+        }
+        return { start, end };
+    }
+    _show() {
+        this._trace('invoking _show');
+        this._editor.revealLineInCenterIfOutsideViewport(this._position.lineNumber, 0);
+        this._visible = true;
+        this._visibleContextKey.set(true);
+        this._editor.layoutContentWidget(this);
+        setTimeout(() => {
+            this._inputWithButton.input.focus();
+            this._inputWithButton.input.setSelectionRange(parseInt(this._inputWithButton.input.getAttribute('selectionStart')), parseInt(this._inputWithButton.input.getAttribute('selectionEnd')));
+        }, 100);
+    }
+    async _updateRenameCandidates(candidates, currentName, token) {
+        const trace = (...args) => this._trace('_updateRenameCandidates', ...args);
+        trace('start');
+        const namesListResults = await raceCancellation(Promise.allSettled(candidates), token);
+        this._inputWithButton.setSparkleButton();
+        if (namesListResults === undefined) {
+            trace('returning early - received updateRenameCandidates results - undefined');
+            return;
+        }
+        const newNames = namesListResults.flatMap(namesListResult => namesListResult.status === 'fulfilled' && isDefined(namesListResult.value)
+            ? namesListResult.value
+            : []);
+        trace(`received updateRenameCandidates results - total (unfiltered) ${newNames.length} candidates.`);
+        const distinctNames = arrays.distinct(newNames, v => v.newSymbolName);
+        trace(`distinct candidates - ${distinctNames.length} candidates.`);
+        const validDistinctNames = distinctNames.filter(({ newSymbolName }) => newSymbolName.trim().length > 0 && newSymbolName !== this._inputWithButton.input.value && newSymbolName !== currentName && !this._candidates.has(newSymbolName));
+        trace(`valid distinct candidates - ${newNames.length} candidates.`);
+        validDistinctNames.forEach(n => this._candidates.add(n.newSymbolName));
+        if (validDistinctNames.length < 1) {
+            trace('returning early - no valid distinct candidates');
+            return;
+        }
+        trace('setting candidates');
+        this._renameCandidateListView.setCandidates(validDistinctNames);
+        trace('asking editor to re-layout');
+        this._editor.layoutContentWidget(this);
+    }
+    _hide() {
+        this._trace('invoked _hide');
+        this._visible = false;
+        this._visibleContextKey.reset();
+        this._editor.layoutContentWidget(this);
+    }
+    _getTopForPosition() {
+        const visibleRanges = this._editor.getVisibleRanges();
+        let firstLineInViewport;
+        if (visibleRanges.length > 0) {
+            firstLineInViewport = visibleRanges[0].startLineNumber;
+        }
+        else {
+            this._logService.warn('RenameWidget#_getTopForPosition: this should not happen - visibleRanges is empty');
+            firstLineInViewport = Math.max(1, this._position.lineNumber - 5);
+        }
+        return this._editor.getTopForLineNumber(this._position.lineNumber) - this._editor.getTopForLineNumber(firstLineInViewport);
+    }
+    _trace(...args) {
+        this._logService.trace('RenameWidget', ...args);
+    }
+};
+RenameWidget = __decorate([
+    __param(2, IThemeService),
+    __param(3, IKeybindingService),
+    __param(4, IContextKeyService),
+    __param(5, ILogService),
+    __metadata("design:paramtypes", [Object, Array, Object, Object, Object, Object])
+], RenameWidget);
+export { RenameWidget };
+class RenameCandidateListView {
+    constructor(parent, opts) {
+        this._disposables = new DisposableStore();
+        this._availableHeight = 0;
+        this._minimumWidth = 0;
+        this._lineHeight = opts.fontInfo.lineHeight;
+        this._typicalHalfwidthCharacterWidth = opts.fontInfo.typicalHalfwidthCharacterWidth;
+        this._listContainer = document.createElement('div');
+        this._listContainer.className = 'rename-box rename-candidate-list-container';
+        parent.appendChild(this._listContainer);
+        this._listWidget = RenameCandidateListView._createListWidget(this._listContainer, this._candidateViewHeight, opts.fontInfo);
+        this._listWidget.onDidChangeFocus(e => {
+            if (e.elements.length === 1) {
+                opts.onFocusChange(e.elements[0].newSymbolName);
+            }
+        }, this._disposables);
+        this._listWidget.onDidChangeSelection(e => {
+            if (e.elements.length === 1) {
+                opts.onSelectionChange();
+            }
+        }, this._disposables);
+        this._disposables.add(this._listWidget.onDidBlur(e => {
+            this._listWidget.setFocus([]);
+        }));
+        this._listWidget.style(getListStyles({
+            listInactiveFocusForeground: quickInputListFocusForeground,
+            listInactiveFocusBackground: quickInputListFocusBackground,
+        }));
+    }
+    dispose() {
+        this._listWidget.dispose();
+        this._disposables.dispose();
+    }
+    layout({ height, width }) {
+        this._availableHeight = height;
+        this._minimumWidth = width;
+    }
+    setCandidates(candidates) {
+        this._listWidget.splice(0, 0, candidates);
+        const height = this._pickListHeight(this._listWidget.length);
+        const width = this._pickListWidth(candidates);
+        this._listWidget.layout(height, width);
+        this._listContainer.style.height = `${height}px`;
+        this._listContainer.style.width = `${width}px`;
+        aria.status(nls.localize('renameSuggestionsReceivedAria', "Received {0} rename suggestions", candidates.length));
+    }
+    clearCandidates() {
+        this._listContainer.style.height = '0px';
+        this._listContainer.style.width = '0px';
+        this._listWidget.splice(0, this._listWidget.length, []);
+    }
+    get nCandidates() {
+        return this._listWidget.length;
+    }
+    get focusedCandidate() {
+        if (this._listWidget.length === 0) {
+            return;
+        }
+        const selectedElement = this._listWidget.getSelectedElements()[0];
+        if (selectedElement !== undefined) {
+            return selectedElement.newSymbolName;
+        }
+        const focusedElement = this._listWidget.getFocusedElements()[0];
+        if (focusedElement !== undefined) {
+            return focusedElement.newSymbolName;
+        }
+        return;
+    }
+    focusNext() {
+        if (this._listWidget.length === 0) {
+            return false;
+        }
+        const focusedIxs = this._listWidget.getFocus();
+        if (focusedIxs.length === 0) {
+            this._listWidget.focusFirst();
+            this._listWidget.reveal(0);
+            return true;
+        }
+        else {
+            if (focusedIxs[0] === this._listWidget.length - 1) {
+                this._listWidget.setFocus([]);
+                this._listWidget.reveal(0);
+                return false;
+            }
+            else {
+                this._listWidget.focusNext();
+                const focused = this._listWidget.getFocus()[0];
+                this._listWidget.reveal(focused);
+                return true;
+            }
+        }
+    }
+    focusPrevious() {
+        if (this._listWidget.length === 0) {
+            return false;
+        }
+        const focusedIxs = this._listWidget.getFocus();
+        if (focusedIxs.length === 0) {
+            this._listWidget.focusLast();
+            const focused = this._listWidget.getFocus()[0];
+            this._listWidget.reveal(focused);
+            return true;
+        }
+        else {
+            if (focusedIxs[0] === 0) {
+                this._listWidget.setFocus([]);
+                return false;
+            }
+            else {
+                this._listWidget.focusPrevious();
+                const focused = this._listWidget.getFocus()[0];
+                this._listWidget.reveal(focused);
+                return true;
+            }
+        }
+    }
+    clearFocus() {
+        this._listWidget.setFocus([]);
+    }
+    get _candidateViewHeight() {
+        const { totalHeight } = RenameCandidateView.getLayoutInfo({ lineHeight: this._lineHeight });
+        return totalHeight;
+    }
+    _pickListHeight(nCandidates) {
+        const heightToFitAllCandidates = this._candidateViewHeight * nCandidates;
+        const MAX_N_CANDIDATES = 7;
+        const height = Math.min(heightToFitAllCandidates, this._availableHeight, this._candidateViewHeight * MAX_N_CANDIDATES);
+        return height;
+    }
+    _pickListWidth(candidates) {
+        const longestCandidateWidth = Math.ceil(Math.max(...candidates.map(c => c.newSymbolName.length)) * this._typicalHalfwidthCharacterWidth);
+        const width = Math.max(this._minimumWidth, 4 + 16 + 5 + longestCandidateWidth + 10);
+        return width;
+    }
+    static _createListWidget(container, candidateViewHeight, fontInfo) {
+        const virtualDelegate = new class {
+            getTemplateId(element) {
+                return 'candidate';
+            }
+            getHeight(element) {
+                return candidateViewHeight;
+            }
+        };
+        const renderer = new class {
+            constructor() {
+                this.templateId = 'candidate';
+            }
+            renderTemplate(container) {
+                return new RenameCandidateView(container, fontInfo);
+            }
+            renderElement(candidate, index, templateData) {
+                templateData.populate(candidate);
+            }
+            disposeTemplate(templateData) {
+                templateData.dispose();
+            }
+        };
+        return new List('NewSymbolNameCandidates', container, virtualDelegate, [renderer], {
+            keyboardSupport: false,
+            mouseSupport: true,
+            multipleSelectionSupport: false,
+        });
+    }
+}
+class InputWithButton {
+    constructor() {
+        this._onDidInputChange = new Emitter();
+        this.onDidInputChange = this._onDidInputChange.event;
+        this._disposables = new DisposableStore();
+    }
+    get domNode() {
+        if (!this._domNode) {
+            this._domNode = document.createElement('div');
+            this._domNode.className = 'rename-input-with-button';
+            this._domNode.style.display = 'flex';
+            this._domNode.style.flexDirection = 'row';
+            this._domNode.style.alignItems = 'center';
+            this._inputNode = document.createElement('input');
+            this._inputNode.className = 'rename-input';
+            this._inputNode.type = 'text';
+            this._inputNode.style.border = 'none';
+            this._inputNode.setAttribute('aria-label', nls.localize('renameAriaLabel', "Rename input. Type new name and press Enter to commit."));
+            this._domNode.appendChild(this._inputNode);
+            this._buttonNode = document.createElement('div');
+            this._buttonNode.className = 'rename-suggestions-button';
+            this._buttonNode.setAttribute('tabindex', '0');
+            this._buttonGenHoverText = nls.localize('generateRenameSuggestionsButton', "Generate new name suggestions");
+            this._buttonCancelHoverText = nls.localize('cancelRenameSuggestionsButton', "Cancel");
+            this._buttonHover = getBaseLayerHoverDelegate().setupManagedHover(getDefaultHoverDelegate('element'), this._buttonNode, this._buttonGenHoverText);
+            this._disposables.add(this._buttonHover);
+            this._domNode.appendChild(this._buttonNode);
+            this._disposables.add(dom.addDisposableListener(this.input, dom.EventType.INPUT, () => this._onDidInputChange.fire()));
+            this._disposables.add(dom.addDisposableListener(this.input, dom.EventType.KEY_DOWN, (e) => {
+                const keyEvent = new StandardKeyboardEvent(e);
+                if (keyEvent.keyCode === 15 || keyEvent.keyCode === 17) {
+                    this._onDidInputChange.fire();
+                }
+            }));
+            this._disposables.add(dom.addDisposableListener(this.input, dom.EventType.CLICK, () => this._onDidInputChange.fire()));
+            this._disposables.add(dom.addDisposableListener(this.input, dom.EventType.FOCUS, () => {
+                this.domNode.style.outlineWidth = '1px';
+                this.domNode.style.outlineStyle = 'solid';
+                this.domNode.style.outlineOffset = '-1px';
+                this.domNode.style.outlineColor = 'var(--vscode-focusBorder)';
+            }));
+            this._disposables.add(dom.addDisposableListener(this.input, dom.EventType.BLUR, () => {
+                this.domNode.style.outline = 'none';
+            }));
+        }
+        return this._domNode;
+    }
+    get input() {
+        assertType(this._inputNode);
+        return this._inputNode;
+    }
+    get button() {
+        assertType(this._buttonNode);
+        return this._buttonNode;
+    }
+    get buttonState() {
+        return this._buttonState;
+    }
+    setSparkleButton() {
+        this._buttonState = 'sparkle';
+        this._sparkleIcon ??= renderIcon(Codicon.sparkle);
+        dom.clearNode(this.button);
+        this.button.appendChild(this._sparkleIcon);
+        this.button.setAttribute('aria-label', 'Generating new name suggestions');
+        this._buttonHover?.update(this._buttonGenHoverText);
+        this.input.focus();
+    }
+    setStopButton() {
+        this._buttonState = 'stop';
+        this._stopIcon ??= renderIcon(Codicon.primitiveSquare);
+        dom.clearNode(this.button);
+        this.button.appendChild(this._stopIcon);
+        this.button.setAttribute('aria-label', 'Cancel generating new name suggestions');
+        this._buttonHover?.update(this._buttonCancelHoverText);
+        this.input.focus();
+    }
+    dispose() {
+        this._disposables.dispose();
+    }
+}
+class RenameCandidateView {
+    static { this._PADDING = 2; }
+    constructor(parent, fontInfo) {
+        this._domNode = document.createElement('div');
+        this._domNode.className = 'rename-box rename-candidate';
+        this._domNode.style.display = `flex`;
+        this._domNode.style.columnGap = `5px`;
+        this._domNode.style.alignItems = `center`;
+        this._domNode.style.height = `${fontInfo.lineHeight}px`;
+        this._domNode.style.padding = `${RenameCandidateView._PADDING}px`;
+        const iconContainer = document.createElement('div');
+        iconContainer.style.display = `flex`;
+        iconContainer.style.alignItems = `center`;
+        iconContainer.style.width = iconContainer.style.height = `${fontInfo.lineHeight * 0.8}px`;
+        this._domNode.appendChild(iconContainer);
+        this._icon = renderIcon(Codicon.sparkle);
+        this._icon.style.display = `none`;
+        iconContainer.appendChild(this._icon);
+        this._label = document.createElement('div');
+        domFontInfo.applyFontInfo(this._label, fontInfo);
+        this._domNode.appendChild(this._label);
+        parent.appendChild(this._domNode);
+    }
+    populate(value) {
+        this._updateIcon(value);
+        this._updateLabel(value);
+    }
+    _updateIcon(value) {
+        const isAIGenerated = !!value.tags?.includes(NewSymbolNameTag.AIGenerated);
+        this._icon.style.display = isAIGenerated ? 'inherit' : 'none';
+    }
+    _updateLabel(value) {
+        this._label.innerText = value.newSymbolName;
+    }
+    static getLayoutInfo({ lineHeight }) {
+        const totalHeight = lineHeight + RenameCandidateView._PADDING * 2;
+        return { totalHeight };
+    }
+    dispose() {
+    }
+}

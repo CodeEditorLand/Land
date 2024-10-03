@@ -1,1 +1,38 @@
-import"../../../../../base/common/cancellation.js";import{onUnexpectedExternalError as l}from"../../../../../base/common/errors.js";import{Emitter as s}from"../../../../../base/common/event.js";import{Disposable as d,toDisposable as m}from"../../../../../base/common/lifecycle.js";import"../../../../../base/common/uri.js";import"../../common/notebookCellStatusBarService.js";import"../../common/notebookCommon.js";class k extends d{_serviceBrand;_onDidChangeProviders=this._register(new s);onDidChangeProviders=this._onDidChangeProviders.event;_onDidChangeItems=this._register(new s);onDidChangeItems=this._onDidChangeItems.event;_providers=[];registerCellStatusBarItemProvider(e){this._providers.push(e);let t;return e.onDidChangeStatusBarItems&&(t=e.onDidChangeStatusBarItems(()=>this._onDidChangeItems.fire())),this._onDidChangeProviders.fire(),m(()=>{t?.dispose();const o=this._providers.findIndex(i=>i===e);this._providers.splice(o,1)})}async getStatusBarItemsForCell(e,t,o,i){const a=this._providers.filter(r=>r.viewType===o||r.viewType==="*");return await Promise.all(a.map(async r=>{try{return await r.provideCellStatusBarItems(e,t,i)??{items:[]}}catch(n){return l(n),{items:[]}}}))}}export{k as NotebookCellStatusBarService};
+import { onUnexpectedExternalError } from '../../../../../base/common/errors.js';
+import { Emitter } from '../../../../../base/common/event.js';
+import { Disposable, toDisposable } from '../../../../../base/common/lifecycle.js';
+export class NotebookCellStatusBarService extends Disposable {
+    constructor() {
+        super(...arguments);
+        this._onDidChangeProviders = this._register(new Emitter());
+        this.onDidChangeProviders = this._onDidChangeProviders.event;
+        this._onDidChangeItems = this._register(new Emitter());
+        this.onDidChangeItems = this._onDidChangeItems.event;
+        this._providers = [];
+    }
+    registerCellStatusBarItemProvider(provider) {
+        this._providers.push(provider);
+        let changeListener;
+        if (provider.onDidChangeStatusBarItems) {
+            changeListener = provider.onDidChangeStatusBarItems(() => this._onDidChangeItems.fire());
+        }
+        this._onDidChangeProviders.fire();
+        return toDisposable(() => {
+            changeListener?.dispose();
+            const idx = this._providers.findIndex(p => p === provider);
+            this._providers.splice(idx, 1);
+        });
+    }
+    async getStatusBarItemsForCell(docUri, cellIndex, viewType, token) {
+        const providers = this._providers.filter(p => p.viewType === viewType || p.viewType === '*');
+        return await Promise.all(providers.map(async (p) => {
+            try {
+                return await p.provideCellStatusBarItems(docUri, cellIndex, token) ?? { items: [] };
+            }
+            catch (e) {
+                onUnexpectedExternalError(e);
+                return { items: [] };
+            }
+        }));
+    }
+}

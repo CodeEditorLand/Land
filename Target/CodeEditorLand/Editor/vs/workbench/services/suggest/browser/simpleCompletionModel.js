@@ -1,1 +1,150 @@
-import"./simpleCompletionItem.js";import{quickSelect as x}from"../../../../base/common/arrays.js";import{CharCode as u}from"../../../../base/common/charCode.js";import{FuzzyScore as d,fuzzyScore as _,fuzzyScoreGracefulAggressive as S,FuzzyScoreOptions as L}from"../../../../base/common/filters.js";import{isWindows as w}from"../../../../base/common/platform.js";class F{constructor(n,a){this.leadingLineContent=n;this.characterCountDelta=a}}var z=(o=>(o[o.Nothing=0]="Nothing",o[o.All=1]="All",o[o.Incr=2]="Incr",o))(z||{});class k{constructor(n,a,o,r){this._items=n;this._lineContext=a;this.replacementIndex=o;this.replacementLength=r}_stats;_filteredItems;_refilterKind=1;_fuzzyScoreOptions=L.default;_options={};get items(){return this._ensureCachedState(),this._filteredItems}get stats(){return this._ensureCachedState(),this._stats}get lineContext(){return this._lineContext}set lineContext(n){(this._lineContext.leadingLineContent!==n.leadingLineContent||this._lineContext.characterCountDelta!==n.characterCountDelta)&&(this._refilterKind=this._lineContext.characterCountDelta<n.characterCountDelta&&this._filteredItems?2:1,this._lineContext=n)}_ensureCachedState(){this._refilterKind!==0&&this._createCachedState()}_createCachedState(){const n=[],{leadingLineContent:a,characterCountDelta:o}=this._lineContext;let r="",h="";const p=this._refilterKind===1?this._items:this._filteredItems,f=[],g=!this._options.filterGraceful||p.length>2e3?_:S;for(let i=0;i<p.length;i++){const e=p[i],t=this.replacementLength,l=t+o;if(r.length!==l&&(r=l===0?"":a.slice(-l),h=r.toLowerCase()),e.word=r,l===0)e.score=d.Default;else{let s=0;for(;s<t;){const c=r.charCodeAt(s);if(c===u.Space||c===u.Tab)s+=1;else break}if(s>=l)e.score=d.Default;else{const c=g(r,h,s,e.completion.label,e.labelLow,0,this._fuzzyScoreOptions);if(!c)continue;e.score=c}}e.idx=i,f.push(e),n.push(e.completion.label.length)}this._filteredItems=f.sort((i,e)=>{let t=0;if((i.completion.isKeyword&&i.labelLow!==h||e.completion.isKeyword&&e.labelLow!==h)&&(t=(i.completion.isKeyword?1:0)-(e.completion.isKeyword?1:0),t!==0)||(t=e.score[0]-i.score[0],t!==0))return t;if(!a.includes(" ")&&i.fileExtLow.length>0&&e.fileExtLow.length>0){if(t=i.labelLowExcludeFileExt.length-e.labelLowExcludeFileExt.length,t!==0||(t=C(e.fileExtLow)-C(i.fileExtLow),t!==0))return t;t=i.fileExtLow.length-e.fileExtLow.length}return t}),this._refilterKind=0,this._stats={pLabelLen:n.length?x(n.length-.85,n,(i,e)=>i-e):0}}}const y=new Map(w?[["ps1",.09],["exe",.08],["bat",.07],["cmd",.07],["sh",-.05],["bash",-.05],["zsh",-.05],["fish",-.05],["csh",-.06],["ksh",-.06]]:[["ps1",.05],["bat",-.05],["cmd",-.05],["exe",-.05],["sh",.05],["bash",.05],["zsh",.05],["fish",.05],["csh",.04],["ksh",.04],["py",.05],["pl",.05]]);function C(m){return y.get(m)||0}export{F as LineContext,k as SimpleCompletionModel};
+import { quickSelect } from '../../../../base/common/arrays.js';
+import { FuzzyScore, fuzzyScore, fuzzyScoreGracefulAggressive, FuzzyScoreOptions } from '../../../../base/common/filters.js';
+import { isWindows } from '../../../../base/common/platform.js';
+export class LineContext {
+    constructor(leadingLineContent, characterCountDelta) {
+        this.leadingLineContent = leadingLineContent;
+        this.characterCountDelta = characterCountDelta;
+    }
+}
+export class SimpleCompletionModel {
+    constructor(_items, _lineContext, replacementIndex, replacementLength) {
+        this._items = _items;
+        this._lineContext = _lineContext;
+        this.replacementIndex = replacementIndex;
+        this.replacementLength = replacementLength;
+        this._refilterKind = 1;
+        this._fuzzyScoreOptions = FuzzyScoreOptions.default;
+        this._options = {};
+    }
+    get items() {
+        this._ensureCachedState();
+        return this._filteredItems;
+    }
+    get stats() {
+        this._ensureCachedState();
+        return this._stats;
+    }
+    get lineContext() {
+        return this._lineContext;
+    }
+    set lineContext(value) {
+        if (this._lineContext.leadingLineContent !== value.leadingLineContent
+            || this._lineContext.characterCountDelta !== value.characterCountDelta) {
+            this._refilterKind = this._lineContext.characterCountDelta < value.characterCountDelta && this._filteredItems ? 2 : 1;
+            this._lineContext = value;
+        }
+    }
+    _ensureCachedState() {
+        if (this._refilterKind !== 0) {
+            this._createCachedState();
+        }
+    }
+    _createCachedState() {
+        const labelLengths = [];
+        const { leadingLineContent, characterCountDelta } = this._lineContext;
+        let word = '';
+        let wordLow = '';
+        const source = this._refilterKind === 1 ? this._items : this._filteredItems;
+        const target = [];
+        const scoreFn = (!this._options.filterGraceful || source.length > 2000) ? fuzzyScore : fuzzyScoreGracefulAggressive;
+        for (let i = 0; i < source.length; i++) {
+            const item = source[i];
+            const overwriteBefore = this.replacementLength;
+            const wordLen = overwriteBefore + characterCountDelta;
+            if (word.length !== wordLen) {
+                word = wordLen === 0 ? '' : leadingLineContent.slice(-wordLen);
+                wordLow = word.toLowerCase();
+            }
+            item.word = word;
+            if (wordLen === 0) {
+                item.score = FuzzyScore.Default;
+            }
+            else {
+                let wordPos = 0;
+                while (wordPos < overwriteBefore) {
+                    const ch = word.charCodeAt(wordPos);
+                    if (ch === 32 || ch === 9) {
+                        wordPos += 1;
+                    }
+                    else {
+                        break;
+                    }
+                }
+                if (wordPos >= wordLen) {
+                    item.score = FuzzyScore.Default;
+                }
+                else {
+                    const match = scoreFn(word, wordLow, wordPos, item.completion.label, item.labelLow, 0, this._fuzzyScoreOptions);
+                    if (!match) {
+                        continue;
+                    }
+                    item.score = match;
+                }
+            }
+            item.idx = i;
+            target.push(item);
+            labelLengths.push(item.completion.label.length);
+        }
+        this._filteredItems = target.sort((a, b) => {
+            let score = 0;
+            if (a.completion.isKeyword && a.labelLow !== wordLow || b.completion.isKeyword && b.labelLow !== wordLow) {
+                score = (a.completion.isKeyword ? 1 : 0) - (b.completion.isKeyword ? 1 : 0);
+                if (score !== 0) {
+                    return score;
+                }
+            }
+            score = b.score[0] - a.score[0];
+            if (score !== 0) {
+                return score;
+            }
+            const isArg = leadingLineContent.includes(' ');
+            if (!isArg && a.fileExtLow.length > 0 && b.fileExtLow.length > 0) {
+                score = a.labelLowExcludeFileExt.length - b.labelLowExcludeFileExt.length;
+                if (score !== 0) {
+                    return score;
+                }
+                score = fileExtScore(b.fileExtLow) - fileExtScore(a.fileExtLow);
+                if (score !== 0) {
+                    return score;
+                }
+                score = a.fileExtLow.length - b.fileExtLow.length;
+            }
+            return score;
+        });
+        this._refilterKind = 0;
+        this._stats = {
+            pLabelLen: labelLengths.length ?
+                quickSelect(labelLengths.length - .85, labelLengths, (a, b) => a - b)
+                : 0
+        };
+    }
+}
+const fileExtScores = new Map(isWindows ? [
+    ['ps1', 0.09],
+    ['exe', 0.08],
+    ['bat', 0.07],
+    ['cmd', 0.07],
+    ['sh', -0.05],
+    ['bash', -0.05],
+    ['zsh', -0.05],
+    ['fish', -0.05],
+    ['csh', -0.06],
+    ['ksh', -0.06],
+] : [
+    ['ps1', 0.05],
+    ['bat', -0.05],
+    ['cmd', -0.05],
+    ['exe', -0.05],
+    ['sh', 0.05],
+    ['bash', 0.05],
+    ['zsh', 0.05],
+    ['fish', 0.05],
+    ['csh', 0.04],
+    ['ksh', 0.04],
+    ['py', 0.05],
+    ['pl', 0.05],
+]);
+function fileExtScore(ext) {
+    return fileExtScores.get(ext) || 0;
+}

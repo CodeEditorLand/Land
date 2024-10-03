@@ -1,1 +1,94 @@
-import{splitLines as r}from"../../../base/common/strings.js";import"../../../base/common/uri.js";import{Position as l}from"../core/position.js";import"../core/range.js";import"../textModelEvents.js";import{PrefixSumComputer as o}from"./prefixSumComputer.js";class f{_uri;_lines;_eol;_versionId;_lineStarts;_cachedTextValue;constructor(e,i,t,n){this._uri=e,this._lines=i,this._eol=t,this._versionId=n,this._lineStarts=null,this._cachedTextValue=null}dispose(){this._lines.length=0}get version(){return this._versionId}getText(){return this._cachedTextValue===null&&(this._cachedTextValue=this._lines.join(this._eol)),this._cachedTextValue}onEvents(e){e.eol&&e.eol!==this._eol&&(this._eol=e.eol,this._lineStarts=null);const i=e.changes;for(const t of i)this._acceptDeleteRange(t.range),this._acceptInsertText(new l(t.range.startLineNumber,t.range.startColumn),t.text);this._versionId=e.versionId,this._cachedTextValue=null}_ensureLineStarts(){if(!this._lineStarts){const e=this._eol.length,i=this._lines.length,t=new Uint32Array(i);for(let n=0;n<i;n++)t[n]=this._lines[n].length+e;this._lineStarts=new o(t)}}_setLineText(e,i){this._lines[e]=i,this._lineStarts&&this._lineStarts.setValue(e,this._lines[e].length+this._eol.length)}_acceptDeleteRange(e){if(e.startLineNumber===e.endLineNumber){if(e.startColumn===e.endColumn)return;this._setLineText(e.startLineNumber-1,this._lines[e.startLineNumber-1].substring(0,e.startColumn-1)+this._lines[e.startLineNumber-1].substring(e.endColumn-1));return}this._setLineText(e.startLineNumber-1,this._lines[e.startLineNumber-1].substring(0,e.startColumn-1)+this._lines[e.endLineNumber-1].substring(e.endColumn-1)),this._lines.splice(e.startLineNumber,e.endLineNumber-e.startLineNumber),this._lineStarts&&this._lineStarts.removeValues(e.startLineNumber,e.endLineNumber-e.startLineNumber)}_acceptInsertText(e,i){if(i.length===0)return;const t=r(i);if(t.length===1){this._setLineText(e.lineNumber-1,this._lines[e.lineNumber-1].substring(0,e.column-1)+t[0]+this._lines[e.lineNumber-1].substring(e.column-1));return}t[t.length-1]+=this._lines[e.lineNumber-1].substring(e.column-1),this._setLineText(e.lineNumber-1,this._lines[e.lineNumber-1].substring(0,e.column-1)+t[0]);const n=new Uint32Array(t.length-1);for(let s=1;s<t.length;s++)this._lines.splice(e.lineNumber+s-1,0,t[s]),n[s-1]=t[s].length+this._eol.length;this._lineStarts&&this._lineStarts.insertValues(e.lineNumber,n)}}export{f as MirrorTextModel};
+import { splitLines } from '../../../base/common/strings.js';
+import { Position } from '../core/position.js';
+import { PrefixSumComputer } from './prefixSumComputer.js';
+export class MirrorTextModel {
+    constructor(uri, lines, eol, versionId) {
+        this._uri = uri;
+        this._lines = lines;
+        this._eol = eol;
+        this._versionId = versionId;
+        this._lineStarts = null;
+        this._cachedTextValue = null;
+    }
+    dispose() {
+        this._lines.length = 0;
+    }
+    get version() {
+        return this._versionId;
+    }
+    getText() {
+        if (this._cachedTextValue === null) {
+            this._cachedTextValue = this._lines.join(this._eol);
+        }
+        return this._cachedTextValue;
+    }
+    onEvents(e) {
+        if (e.eol && e.eol !== this._eol) {
+            this._eol = e.eol;
+            this._lineStarts = null;
+        }
+        const changes = e.changes;
+        for (const change of changes) {
+            this._acceptDeleteRange(change.range);
+            this._acceptInsertText(new Position(change.range.startLineNumber, change.range.startColumn), change.text);
+        }
+        this._versionId = e.versionId;
+        this._cachedTextValue = null;
+    }
+    _ensureLineStarts() {
+        if (!this._lineStarts) {
+            const eolLength = this._eol.length;
+            const linesLength = this._lines.length;
+            const lineStartValues = new Uint32Array(linesLength);
+            for (let i = 0; i < linesLength; i++) {
+                lineStartValues[i] = this._lines[i].length + eolLength;
+            }
+            this._lineStarts = new PrefixSumComputer(lineStartValues);
+        }
+    }
+    _setLineText(lineIndex, newValue) {
+        this._lines[lineIndex] = newValue;
+        if (this._lineStarts) {
+            this._lineStarts.setValue(lineIndex, this._lines[lineIndex].length + this._eol.length);
+        }
+    }
+    _acceptDeleteRange(range) {
+        if (range.startLineNumber === range.endLineNumber) {
+            if (range.startColumn === range.endColumn) {
+                return;
+            }
+            this._setLineText(range.startLineNumber - 1, this._lines[range.startLineNumber - 1].substring(0, range.startColumn - 1)
+                + this._lines[range.startLineNumber - 1].substring(range.endColumn - 1));
+            return;
+        }
+        this._setLineText(range.startLineNumber - 1, this._lines[range.startLineNumber - 1].substring(0, range.startColumn - 1)
+            + this._lines[range.endLineNumber - 1].substring(range.endColumn - 1));
+        this._lines.splice(range.startLineNumber, range.endLineNumber - range.startLineNumber);
+        if (this._lineStarts) {
+            this._lineStarts.removeValues(range.startLineNumber, range.endLineNumber - range.startLineNumber);
+        }
+    }
+    _acceptInsertText(position, insertText) {
+        if (insertText.length === 0) {
+            return;
+        }
+        const insertLines = splitLines(insertText);
+        if (insertLines.length === 1) {
+            this._setLineText(position.lineNumber - 1, this._lines[position.lineNumber - 1].substring(0, position.column - 1)
+                + insertLines[0]
+                + this._lines[position.lineNumber - 1].substring(position.column - 1));
+            return;
+        }
+        insertLines[insertLines.length - 1] += this._lines[position.lineNumber - 1].substring(position.column - 1);
+        this._setLineText(position.lineNumber - 1, this._lines[position.lineNumber - 1].substring(0, position.column - 1)
+            + insertLines[0]);
+        const newLengths = new Uint32Array(insertLines.length - 1);
+        for (let i = 1; i < insertLines.length; i++) {
+            this._lines.splice(position.lineNumber + i - 1, 0, insertLines[i]);
+            newLengths[i - 1] = insertLines[i].length + this._eol.length;
+        }
+        if (this._lineStarts) {
+            this._lineStarts.insertValues(position.lineNumber, newLengths);
+        }
+    }
+}

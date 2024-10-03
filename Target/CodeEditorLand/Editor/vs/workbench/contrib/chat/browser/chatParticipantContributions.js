@@ -1,3 +1,372 @@
-var R=Object.defineProperty;var S=Object.getOwnPropertyDescriptor;var f=(c,t,o,i)=>{for(var e=i>1?void 0:i?S(t,o):t,a=c.length-1,r;a>=0;a--)(r=c[a])&&(e=(i?r(t,o,e):r(e))||e);return i&&e&&R(t,o,e),e},m=(c,t)=>(o,i)=>t(o,i,c);import{coalesce as N,isNonEmptyArray as T}from"../../../../base/common/arrays.js";import{Codicon as b}from"../../../../base/common/codicons.js";import{Event as _}from"../../../../base/common/event.js";import{Disposable as k,DisposableMap as q,DisposableStore as W,toDisposable as v}from"../../../../base/common/lifecycle.js";import*as I from"../../../../base/common/strings.js";import{localize as n,localize2 as D}from"../../../../nls.js";import{ContextKeyExpr as $,IContextKeyService as M}from"../../../../platform/contextkey/common/contextkey.js";import"../../../../platform/extensions/common/extensions.js";import{SyncDescriptor as l}from"../../../../platform/instantiation/common/descriptors.js";import{ILogService as O}from"../../../../platform/log/common/log.js";import{IProductService as G}from"../../../../platform/product/common/productService.js";import{Registry as p}from"../../../../platform/registry/common/platform.js";import{ViewPaneContainer as x}from"../../../browser/parts/views/viewPaneContainer.js";import"../../../common/contributions.js";import{ViewContainerLocation as V,Extensions as d}from"../../../common/views.js";import{isProposedApiEnabled as w}from"../../../services/extensions/common/extensions.js";import*as H from"../../../services/extensions/common/extensionsRegistry.js";import{showExtensionsWithIdsCommandId as L}from"../../extensions/browser/extensionsActions.js";import{IExtensionsWorkbenchService as j}from"../../extensions/common/extensions.js";import{ChatAgentLocation as C,IChatAgentService as B}from"../common/chatAgents.js";import{CONTEXT_CHAT_EDITING_PARTICIPANT_REGISTERED as K,CONTEXT_CHAT_EXTENSION_INVALID as y,CONTEXT_CHAT_PANEL_PARTICIPANT_REGISTERED as U}from"../common/chatContextKeys.js";import"../common/chatParticipantContribTypes.js";import{CHAT_VIEW_ID as E}from"./chat.js";import{CHAT_EDITING_SIDEBAR_PANEL_ID as X,CHAT_SIDEBAR_PANEL_ID as z,ChatViewPane as A}from"./chatViewPane.js";const F=H.ExtensionsRegistry.registerExtensionPoint({extensionPoint:"chatParticipants",jsonSchema:{description:n("vscode.extension.contributes.chatParticipant","Contributes a chat participant"),type:"array",items:{additionalProperties:!1,type:"object",defaultSnippets:[{body:{name:"",description:""}}],required:["name","id"],properties:{id:{description:n("chatParticipantId","A unique id for this chat participant."),type:"string"},name:{description:n("chatParticipantName","User-facing name for this chat participant. The user will use '@' with this name to invoke the participant. Name must not contain whitespace."),type:"string",pattern:"^[\\w-]+$"},fullName:{markdownDescription:n("chatParticipantFullName","The full name of this chat participant, which is shown as the label for responses coming from this participant. If not provided, {0} is used.","`name`"),type:"string"},description:{description:n("chatParticipantDescription","A description of this chat participant, shown in the UI."),type:"string"},isSticky:{description:n("chatCommandSticky","Whether invoking the command puts the chat into a persistent mode, where the command is automatically added to the chat input for the next message."),type:"boolean"},sampleRequest:{description:n("chatSampleRequest","When the user clicks this participant in `/help`, this text will be submitted to the participant."),type:"string"},when:{description:n("chatParticipantWhen","A condition which must be true to enable this participant."),type:"string"},disambiguation:{description:n("chatParticipantDisambiguation","Metadata to help with automatically routing user questions to this chat participant."),type:"array",items:{additionalProperties:!1,type:"object",defaultSnippets:[{body:{category:"",description:"",examples:[]}}],required:["category","description","examples"],properties:{category:{markdownDescription:n("chatParticipantDisambiguationCategory","A detailed name for this category, e.g. `workspace_questions` or `web_questions`."),type:"string"},description:{description:n("chatParticipantDisambiguationDescription","A detailed description of the kinds of questions that are suitable for this chat participant."),type:"string"},examples:{description:n("chatParticipantDisambiguationExamples","A list of representative example questions that are suitable for this chat participant."),type:"array"}}}},commands:{markdownDescription:n("chatCommandsDescription","Commands available for this chat participant, which the user can invoke with a `/`."),type:"array",items:{additionalProperties:!1,type:"object",defaultSnippets:[{body:{name:"",description:""}}],required:["name"],properties:{name:{description:n("chatCommand","A short name by which this command is referred to in the UI, e.g. `fix` or * `explain` for commands that fix an issue or explain code. The name should be unique among the commands provided by this participant."),type:"string"},description:{description:n("chatCommandDescription","A description of this command."),type:"string"},when:{description:n("chatCommandWhen","A condition which must be true to enable this command."),type:"string"},sampleRequest:{description:n("chatCommandSampleRequest","When the user clicks this command in `/help`, this text will be submitted to the participant."),type:"string"},isSticky:{description:n("chatCommandSticky","Whether invoking the command puts the chat into a persistent mode, where the command is automatically added to the chat input for the next message."),type:"boolean"},disambiguation:{description:n("chatCommandDisambiguation","Metadata to help with automatically routing user questions to this chat command."),type:"array",items:{additionalProperties:!1,type:"object",defaultSnippets:[{body:{category:"",description:"",examples:[]}}],required:["category","description","examples"],properties:{category:{markdownDescription:n("chatCommandDisambiguationCategory","A detailed name for this category, e.g. `workspace_questions` or `web_questions`."),type:"string"},description:{description:n("chatCommandDisambiguationDescription","A detailed description of the kinds of questions that are suitable for this chat command."),type:"string"},examples:{description:n("chatCommandDisambiguationExamples","A list of representative example questions that are suitable for this chat command."),type:"array"}}}}}}},supportsToolReferences:{description:n("chatParticipantSupportsToolReferences","Whether this participant supports {0}.","ChatRequest#toolReferences"),type:"boolean"}}}},activationEventsGenerator:(c,t)=>{for(const o of c)t.push(`onChatParticipant:${o.id}`)}});let u=class{constructor(t,o){this._chatAgentService=t;this.logService=o;this._viewContainer=this.registerViewContainer(),this.registerDefaultParticipantView(),this.registerChatEditingView(),this.handleAndRegisterChatExtensions()}static ID="workbench.contrib.chatExtensionPointHandler";_viewContainer;_participantRegistrationDisposables=new q;handleAndRegisterChatExtensions(){F.setHandler((t,o)=>{for(const i of o.added)for(const e of i.value){if(!e.name?.match(/^[\w-]+$/)){this.logService.error(`Extension '${i.description.identifier.value}' CANNOT register participant with invalid name: ${e.name}. Name must match /^[\\w-]+$/.`);continue}if(e.fullName&&I.AmbiguousCharacters.getInstance(new Set).containsAmbiguousCharacter(e.fullName)){this.logService.error(`Extension '${i.description.identifier.value}' CANNOT register participant with fullName that contains ambiguous characters: ${e.fullName}.`);continue}if(e.fullName&&I.InvisibleCharacters.containsInvisibleCharacter(e.fullName.replace(/ /g,""))){this.logService.error(`Extension '${i.description.identifier.value}' CANNOT register participant with fullName that contains invisible characters: ${e.fullName}.`);continue}if(e.isDefault&&!w(i.description,"defaultChatParticipant")){this.logService.error(`Extension '${i.description.identifier.value}' CANNOT use API proposal: defaultChatParticipant.`);continue}if((e.defaultImplicitVariables||e.locations||e.supportsModelPicker)&&!w(i.description,"chatParticipantAdditions")){this.logService.error(`Extension '${i.description.identifier.value}' CANNOT use API proposal: chatParticipantAdditions.`);continue}if(!e.id||!e.name){this.logService.error(`Extension '${i.description.identifier.value}' CANNOT register participant without both id and name.`);continue}const a=[];if(w(i.description,"contribChatParticipantDetection")&&(e.disambiguation?.length&&a.push(...e.disambiguation.map(s=>({...s,category:s.category??s.categoryName}))),e.commands))for(const s of e.commands)s.disambiguation?.length&&a.push(...s.disambiguation.map(h=>({...h,category:h.category??h.categoryName})));const r=new W;r.add(this._chatAgentService.registerAgent(e.id,{extensionId:i.description.identifier,publisherDisplayName:i.description.publisherDisplayName??i.description.publisher,extensionPublisherId:i.description.publisher,extensionDisplayName:i.description.displayName??i.description.name,id:e.id,description:e.description,supportsModelPicker:e.supportsModelPicker,when:e.when,metadata:{isSticky:e.isSticky,sampleRequest:e.sampleRequest},name:e.name,fullName:e.fullName,isDefault:e.isDefault,locations:T(e.locations)?e.locations.map(C.fromRaw):[C.Panel],slashCommands:e.commands??[],disambiguation:N(a.flat()),supportsToolReferences:e.supportsToolReferences})),this._participantRegistrationDisposables.set(P(i.description.identifier,e.id),r)}for(const i of o.removed)for(const e of i.value)this._participantRegistrationDisposables.deleteAndDispose(P(i.description.identifier,e.id))})}registerViewContainer(){const t=D("chat.viewContainer.label","Chat"),o=b.commentDiscussion,i=z;return p.as(d.ViewContainersRegistry).registerViewContainer({id:i,title:t,icon:o,ctorDescriptor:new l(x,[i,{mergeViewWithContainerWhenSingleView:!0}]),storageId:i,hideIfEmpty:!0,order:100},V.Sidebar)}registerDefaultParticipantView(){const t="GitHub Copilot",o=[{id:E,containerIcon:this._viewContainer.icon,containerTitle:this._viewContainer.title.value,singleViewPaneContainerTitle:this._viewContainer.title.value,name:{value:t,original:t},canToggleVisibility:!1,canMoveView:!0,ctorDescriptor:new l(A),when:$.or(U,y)}];return p.as(d.ViewsRegistry).registerViews(o,this._viewContainer),v(()=>{p.as(d.ViewsRegistry).deregisterViews(o,this._viewContainer)})}registerChatEditingView(){const t=D("chatEditing.viewContainer.label","Copilot Edits"),o=b.requestChanges,i=X,e=p.as(d.ViewContainersRegistry).registerViewContainer({id:i,title:t,icon:o,ctorDescriptor:new l(x,[i,{mergeViewWithContainerWhenSingleView:!0}]),storageId:i,hideIfEmpty:!0,order:100},V.AuxiliaryBar),a="workbench.panel.chat.view.edits",r=[{id:a,containerIcon:e.icon,containerTitle:t.value,singleViewPaneContainerTitle:t.value,name:{value:t.value,original:t.value},canToggleVisibility:!1,canMoveView:!0,ctorDescriptor:new l(A,[{id:a,title:t.value},{location:C.EditingSession}]),when:K}];return p.as(d.ViewsRegistry).registerViews(r,e),v(()=>{p.as(d.ViewContainersRegistry).deregisterViewContainer(e),p.as(d.ViewsRegistry).deregisterViews(r,e)})}};u=f([m(0,B),m(1,O)],u);function P(c,t){return`${c.value}_${t}`}let g=class extends k{constructor(o,i,e){super();this.productService=e;const a=y.bindTo(i);this._register(_.runAndSubscribe(o.onDidChangeExtensionsNotification,()=>{const s=o.getExtensionsNotification()?.extensions.find(h=>h.identifier.id==="github.copilot-chat");s?(a.set(!0),this.registerWelcomeView(s)):a.set(!1)}))}static ID="workbench.contrib.chatCompatNotifier";registeredWelcomeView=!1;registerWelcomeView(o){if(this.registeredWelcomeView)return;this.registeredWelcomeView=!0;const i=n("showExtension","Show Extension"),e=n("chatFailErrorMessage","Chat failed to load because the installed version of the {0} extension is not compatible with this version of {1}. Please ensure that the GitHub Copilot Chat extension is up to date.","GitHub Copilot Chat",this.productService.nameLong),a=`[${i}](command:${L}?${encodeURIComponent(JSON.stringify([["GitHub.copilot-chat"]]))})`,r=`GitHub Copilot Chat version: ${o.version}`,s=p.as(d.ViewsRegistry);this._register(s.registerViewWelcomeContent(E,{content:[e,a,r].join(`
-
-`),when:y}))}};g=f([m(0,j),m(1,M),m(2,G)],g);export{g as ChatCompatibilityNotifier,u as ChatExtensionPointHandler};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { coalesce, isNonEmptyArray } from '../../../../base/common/arrays.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { Event } from '../../../../base/common/event.js';
+import { Disposable, DisposableMap, DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import * as strings from '../../../../base/common/strings.js';
+import { localize, localize2 } from '../../../../nls.js';
+import { ContextKeyExpr, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { SyncDescriptor } from '../../../../platform/instantiation/common/descriptors.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { ViewPaneContainer } from '../../../browser/parts/views/viewPaneContainer.js';
+import { Extensions as ViewExtensions } from '../../../common/views.js';
+import { isProposedApiEnabled } from '../../../services/extensions/common/extensions.js';
+import * as extensionsRegistry from '../../../services/extensions/common/extensionsRegistry.js';
+import { showExtensionsWithIdsCommandId } from '../../extensions/browser/extensionsActions.js';
+import { IExtensionsWorkbenchService } from '../../extensions/common/extensions.js';
+import { ChatAgentLocation, IChatAgentService } from '../common/chatAgents.js';
+import { CONTEXT_CHAT_EDITING_PARTICIPANT_REGISTERED, CONTEXT_CHAT_EXTENSION_INVALID, CONTEXT_CHAT_PANEL_PARTICIPANT_REGISTERED } from '../common/chatContextKeys.js';
+import { CHAT_VIEW_ID } from './chat.js';
+import { CHAT_EDITING_SIDEBAR_PANEL_ID, CHAT_SIDEBAR_PANEL_ID, ChatViewPane } from './chatViewPane.js';
+const chatParticipantExtensionPoint = extensionsRegistry.ExtensionsRegistry.registerExtensionPoint({
+    extensionPoint: 'chatParticipants',
+    jsonSchema: {
+        description: localize('vscode.extension.contributes.chatParticipant', 'Contributes a chat participant'),
+        type: 'array',
+        items: {
+            additionalProperties: false,
+            type: 'object',
+            defaultSnippets: [{ body: { name: '', description: '' } }],
+            required: ['name', 'id'],
+            properties: {
+                id: {
+                    description: localize('chatParticipantId', "A unique id for this chat participant."),
+                    type: 'string'
+                },
+                name: {
+                    description: localize('chatParticipantName', "User-facing name for this chat participant. The user will use '@' with this name to invoke the participant. Name must not contain whitespace."),
+                    type: 'string',
+                    pattern: '^[\\w-]+$'
+                },
+                fullName: {
+                    markdownDescription: localize('chatParticipantFullName', "The full name of this chat participant, which is shown as the label for responses coming from this participant. If not provided, {0} is used.", '`name`'),
+                    type: 'string'
+                },
+                description: {
+                    description: localize('chatParticipantDescription', "A description of this chat participant, shown in the UI."),
+                    type: 'string'
+                },
+                isSticky: {
+                    description: localize('chatCommandSticky', "Whether invoking the command puts the chat into a persistent mode, where the command is automatically added to the chat input for the next message."),
+                    type: 'boolean'
+                },
+                sampleRequest: {
+                    description: localize('chatSampleRequest', "When the user clicks this participant in `/help`, this text will be submitted to the participant."),
+                    type: 'string'
+                },
+                when: {
+                    description: localize('chatParticipantWhen', "A condition which must be true to enable this participant."),
+                    type: 'string'
+                },
+                disambiguation: {
+                    description: localize('chatParticipantDisambiguation', "Metadata to help with automatically routing user questions to this chat participant."),
+                    type: 'array',
+                    items: {
+                        additionalProperties: false,
+                        type: 'object',
+                        defaultSnippets: [{ body: { category: '', description: '', examples: [] } }],
+                        required: ['category', 'description', 'examples'],
+                        properties: {
+                            category: {
+                                markdownDescription: localize('chatParticipantDisambiguationCategory', "A detailed name for this category, e.g. `workspace_questions` or `web_questions`."),
+                                type: 'string'
+                            },
+                            description: {
+                                description: localize('chatParticipantDisambiguationDescription', "A detailed description of the kinds of questions that are suitable for this chat participant."),
+                                type: 'string'
+                            },
+                            examples: {
+                                description: localize('chatParticipantDisambiguationExamples', "A list of representative example questions that are suitable for this chat participant."),
+                                type: 'array'
+                            },
+                        }
+                    }
+                },
+                commands: {
+                    markdownDescription: localize('chatCommandsDescription', "Commands available for this chat participant, which the user can invoke with a `/`."),
+                    type: 'array',
+                    items: {
+                        additionalProperties: false,
+                        type: 'object',
+                        defaultSnippets: [{ body: { name: '', description: '' } }],
+                        required: ['name'],
+                        properties: {
+                            name: {
+                                description: localize('chatCommand', "A short name by which this command is referred to in the UI, e.g. `fix` or * `explain` for commands that fix an issue or explain code. The name should be unique among the commands provided by this participant."),
+                                type: 'string'
+                            },
+                            description: {
+                                description: localize('chatCommandDescription', "A description of this command."),
+                                type: 'string'
+                            },
+                            when: {
+                                description: localize('chatCommandWhen', "A condition which must be true to enable this command."),
+                                type: 'string'
+                            },
+                            sampleRequest: {
+                                description: localize('chatCommandSampleRequest', "When the user clicks this command in `/help`, this text will be submitted to the participant."),
+                                type: 'string'
+                            },
+                            isSticky: {
+                                description: localize('chatCommandSticky', "Whether invoking the command puts the chat into a persistent mode, where the command is automatically added to the chat input for the next message."),
+                                type: 'boolean'
+                            },
+                            disambiguation: {
+                                description: localize('chatCommandDisambiguation', "Metadata to help with automatically routing user questions to this chat command."),
+                                type: 'array',
+                                items: {
+                                    additionalProperties: false,
+                                    type: 'object',
+                                    defaultSnippets: [{ body: { category: '', description: '', examples: [] } }],
+                                    required: ['category', 'description', 'examples'],
+                                    properties: {
+                                        category: {
+                                            markdownDescription: localize('chatCommandDisambiguationCategory', "A detailed name for this category, e.g. `workspace_questions` or `web_questions`."),
+                                            type: 'string'
+                                        },
+                                        description: {
+                                            description: localize('chatCommandDisambiguationDescription', "A detailed description of the kinds of questions that are suitable for this chat command."),
+                                            type: 'string'
+                                        },
+                                        examples: {
+                                            description: localize('chatCommandDisambiguationExamples', "A list of representative example questions that are suitable for this chat command."),
+                                            type: 'array'
+                                        },
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                supportsToolReferences: {
+                    description: localize('chatParticipantSupportsToolReferences', "Whether this participant supports {0}.", 'ChatRequest#toolReferences'),
+                    type: 'boolean'
+                }
+            }
+        }
+    },
+    activationEventsGenerator: (contributions, result) => {
+        for (const contrib of contributions) {
+            result.push(`onChatParticipant:${contrib.id}`);
+        }
+    },
+});
+let ChatExtensionPointHandler = class ChatExtensionPointHandler {
+    static { this.ID = 'workbench.contrib.chatExtensionPointHandler'; }
+    constructor(_chatAgentService, logService) {
+        this._chatAgentService = _chatAgentService;
+        this.logService = logService;
+        this._participantRegistrationDisposables = new DisposableMap();
+        this._viewContainer = this.registerViewContainer();
+        this.registerDefaultParticipantView();
+        this.registerChatEditingView();
+        this.handleAndRegisterChatExtensions();
+    }
+    handleAndRegisterChatExtensions() {
+        chatParticipantExtensionPoint.setHandler((extensions, delta) => {
+            for (const extension of delta.added) {
+                for (const providerDescriptor of extension.value) {
+                    if (!providerDescriptor.name?.match(/^[\w-]+$/)) {
+                        this.logService.error(`Extension '${extension.description.identifier.value}' CANNOT register participant with invalid name: ${providerDescriptor.name}. Name must match /^[\\w-]+$/.`);
+                        continue;
+                    }
+                    if (providerDescriptor.fullName && strings.AmbiguousCharacters.getInstance(new Set()).containsAmbiguousCharacter(providerDescriptor.fullName)) {
+                        this.logService.error(`Extension '${extension.description.identifier.value}' CANNOT register participant with fullName that contains ambiguous characters: ${providerDescriptor.fullName}.`);
+                        continue;
+                    }
+                    if (providerDescriptor.fullName && strings.InvisibleCharacters.containsInvisibleCharacter(providerDescriptor.fullName.replace(/ /g, ''))) {
+                        this.logService.error(`Extension '${extension.description.identifier.value}' CANNOT register participant with fullName that contains invisible characters: ${providerDescriptor.fullName}.`);
+                        continue;
+                    }
+                    if (providerDescriptor.isDefault && !isProposedApiEnabled(extension.description, 'defaultChatParticipant')) {
+                        this.logService.error(`Extension '${extension.description.identifier.value}' CANNOT use API proposal: defaultChatParticipant.`);
+                        continue;
+                    }
+                    if ((providerDescriptor.defaultImplicitVariables || providerDescriptor.locations || providerDescriptor.supportsModelPicker) && !isProposedApiEnabled(extension.description, 'chatParticipantAdditions')) {
+                        this.logService.error(`Extension '${extension.description.identifier.value}' CANNOT use API proposal: chatParticipantAdditions.`);
+                        continue;
+                    }
+                    if (!providerDescriptor.id || !providerDescriptor.name) {
+                        this.logService.error(`Extension '${extension.description.identifier.value}' CANNOT register participant without both id and name.`);
+                        continue;
+                    }
+                    const participantsAndCommandsDisambiguation = [];
+                    if (isProposedApiEnabled(extension.description, 'contribChatParticipantDetection')) {
+                        if (providerDescriptor.disambiguation?.length) {
+                            participantsAndCommandsDisambiguation.push(...providerDescriptor.disambiguation.map((d) => ({
+                                ...d, category: d.category ?? d.categoryName
+                            })));
+                        }
+                        if (providerDescriptor.commands) {
+                            for (const command of providerDescriptor.commands) {
+                                if (command.disambiguation?.length) {
+                                    participantsAndCommandsDisambiguation.push(...command.disambiguation.map((d) => ({
+                                        ...d, category: d.category ?? d.categoryName
+                                    })));
+                                }
+                            }
+                        }
+                    }
+                    const store = new DisposableStore();
+                    store.add(this._chatAgentService.registerAgent(providerDescriptor.id, {
+                        extensionId: extension.description.identifier,
+                        publisherDisplayName: extension.description.publisherDisplayName ?? extension.description.publisher,
+                        extensionPublisherId: extension.description.publisher,
+                        extensionDisplayName: extension.description.displayName ?? extension.description.name,
+                        id: providerDescriptor.id,
+                        description: providerDescriptor.description,
+                        supportsModelPicker: providerDescriptor.supportsModelPicker,
+                        when: providerDescriptor.when,
+                        metadata: {
+                            isSticky: providerDescriptor.isSticky,
+                            sampleRequest: providerDescriptor.sampleRequest,
+                        },
+                        name: providerDescriptor.name,
+                        fullName: providerDescriptor.fullName,
+                        isDefault: providerDescriptor.isDefault,
+                        locations: isNonEmptyArray(providerDescriptor.locations) ?
+                            providerDescriptor.locations.map(ChatAgentLocation.fromRaw) :
+                            [ChatAgentLocation.Panel],
+                        slashCommands: providerDescriptor.commands ?? [],
+                        disambiguation: coalesce(participantsAndCommandsDisambiguation.flat()),
+                        supportsToolReferences: providerDescriptor.supportsToolReferences,
+                    }));
+                    this._participantRegistrationDisposables.set(getParticipantKey(extension.description.identifier, providerDescriptor.id), store);
+                }
+            }
+            for (const extension of delta.removed) {
+                for (const providerDescriptor of extension.value) {
+                    this._participantRegistrationDisposables.deleteAndDispose(getParticipantKey(extension.description.identifier, providerDescriptor.id));
+                }
+            }
+        });
+    }
+    registerViewContainer() {
+        const title = localize2('chat.viewContainer.label', "Chat");
+        const icon = Codicon.commentDiscussion;
+        const viewContainerId = CHAT_SIDEBAR_PANEL_ID;
+        const viewContainer = Registry.as(ViewExtensions.ViewContainersRegistry).registerViewContainer({
+            id: viewContainerId,
+            title,
+            icon,
+            ctorDescriptor: new SyncDescriptor(ViewPaneContainer, [viewContainerId, { mergeViewWithContainerWhenSingleView: true }]),
+            storageId: viewContainerId,
+            hideIfEmpty: true,
+            order: 100,
+        }, 0);
+        return viewContainer;
+    }
+    registerDefaultParticipantView() {
+        const name = 'GitHub Copilot';
+        const viewDescriptor = [{
+                id: CHAT_VIEW_ID,
+                containerIcon: this._viewContainer.icon,
+                containerTitle: this._viewContainer.title.value,
+                singleViewPaneContainerTitle: this._viewContainer.title.value,
+                name: { value: name, original: name },
+                canToggleVisibility: false,
+                canMoveView: true,
+                ctorDescriptor: new SyncDescriptor(ChatViewPane),
+                when: ContextKeyExpr.or(CONTEXT_CHAT_PANEL_PARTICIPANT_REGISTERED, CONTEXT_CHAT_EXTENSION_INVALID)
+            }];
+        Registry.as(ViewExtensions.ViewsRegistry).registerViews(viewDescriptor, this._viewContainer);
+        return toDisposable(() => {
+            Registry.as(ViewExtensions.ViewsRegistry).deregisterViews(viewDescriptor, this._viewContainer);
+        });
+    }
+    registerChatEditingView() {
+        const title = localize2('chatEditing.viewContainer.label', "Copilot Edits");
+        const icon = Codicon.requestChanges;
+        const viewContainerId = CHAT_EDITING_SIDEBAR_PANEL_ID;
+        const viewContainer = Registry.as(ViewExtensions.ViewContainersRegistry).registerViewContainer({
+            id: viewContainerId,
+            title,
+            icon,
+            ctorDescriptor: new SyncDescriptor(ViewPaneContainer, [viewContainerId, { mergeViewWithContainerWhenSingleView: true }]),
+            storageId: viewContainerId,
+            hideIfEmpty: true,
+            order: 100,
+        }, 2);
+        const id = 'workbench.panel.chat.view.edits';
+        const viewDescriptor = [{
+                id: id,
+                containerIcon: viewContainer.icon,
+                containerTitle: title.value,
+                singleViewPaneContainerTitle: title.value,
+                name: { value: title.value, original: title.value },
+                canToggleVisibility: false,
+                canMoveView: true,
+                ctorDescriptor: new SyncDescriptor(ChatViewPane, [{ id, title: title.value }, { location: ChatAgentLocation.EditingSession }]),
+                when: CONTEXT_CHAT_EDITING_PARTICIPANT_REGISTERED
+            }];
+        Registry.as(ViewExtensions.ViewsRegistry).registerViews(viewDescriptor, viewContainer);
+        return toDisposable(() => {
+            Registry.as(ViewExtensions.ViewContainersRegistry).deregisterViewContainer(viewContainer);
+            Registry.as(ViewExtensions.ViewsRegistry).deregisterViews(viewDescriptor, viewContainer);
+        });
+    }
+};
+ChatExtensionPointHandler = __decorate([
+    __param(0, IChatAgentService),
+    __param(1, ILogService),
+    __metadata("design:paramtypes", [Object, Object])
+], ChatExtensionPointHandler);
+export { ChatExtensionPointHandler };
+function getParticipantKey(extensionId, participantName) {
+    return `${extensionId.value}_${participantName}`;
+}
+let ChatCompatibilityNotifier = class ChatCompatibilityNotifier extends Disposable {
+    static { this.ID = 'workbench.contrib.chatCompatNotifier'; }
+    constructor(extensionsWorkbenchService, contextKeyService, productService) {
+        super();
+        this.productService = productService;
+        this.registeredWelcomeView = false;
+        const isInvalid = CONTEXT_CHAT_EXTENSION_INVALID.bindTo(contextKeyService);
+        this._register(Event.runAndSubscribe(extensionsWorkbenchService.onDidChangeExtensionsNotification, () => {
+            const notification = extensionsWorkbenchService.getExtensionsNotification();
+            const chatExtension = notification?.extensions.find(ext => ext.identifier.id === 'github.copilot-chat');
+            if (chatExtension) {
+                isInvalid.set(true);
+                this.registerWelcomeView(chatExtension);
+            }
+            else {
+                isInvalid.set(false);
+            }
+        }));
+    }
+    registerWelcomeView(chatExtension) {
+        if (this.registeredWelcomeView) {
+            return;
+        }
+        this.registeredWelcomeView = true;
+        const showExtensionLabel = localize('showExtension', "Show Extension");
+        const mainMessage = localize('chatFailErrorMessage', "Chat failed to load because the installed version of the {0} extension is not compatible with this version of {1}. Please ensure that the GitHub Copilot Chat extension is up to date.", 'GitHub Copilot Chat', this.productService.nameLong);
+        const commandButton = `[${showExtensionLabel}](command:${showExtensionsWithIdsCommandId}?${encodeURIComponent(JSON.stringify([['GitHub.copilot-chat']]))})`;
+        const versionMessage = `GitHub Copilot Chat version: ${chatExtension.version}`;
+        const viewsRegistry = Registry.as(ViewExtensions.ViewsRegistry);
+        this._register(viewsRegistry.registerViewWelcomeContent(CHAT_VIEW_ID, {
+            content: [mainMessage, commandButton, versionMessage].join('\n\n'),
+            when: CONTEXT_CHAT_EXTENSION_INVALID,
+        }));
+    }
+};
+ChatCompatibilityNotifier = __decorate([
+    __param(0, IExtensionsWorkbenchService),
+    __param(1, IContextKeyService),
+    __param(2, IProductService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], ChatCompatibilityNotifier);
+export { ChatCompatibilityNotifier };

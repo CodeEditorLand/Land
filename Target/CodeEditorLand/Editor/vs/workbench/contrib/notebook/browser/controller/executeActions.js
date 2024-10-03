@@ -1,1 +1,611 @@
-import{Iterable as G}from"../../../../../base/common/iterator.js";import{KeyCode as w,KeyMod as A}from"../../../../../base/common/keyCodes.js";import{isEqual as ie}from"../../../../../base/common/resources.js";import{ThemeIcon as U}from"../../../../../base/common/themables.js";import"../../../../../base/common/uri.js";import"../../../../../editor/browser/editorBrowser.js";import{ILanguageService as D}from"../../../../../editor/common/languages/language.js";import{localize as c,localize2 as q}from"../../../../../nls.js";import{MenuId as s,MenuRegistry as re,registerAction2 as a}from"../../../../../platform/actions/common/actions.js";import{IConfigurationService as le}from"../../../../../platform/configuration/common/configuration.js";import{ContextKeyExpr as t}from"../../../../../platform/contextkey/common/contextkey.js";import"../../../../../platform/instantiation/common/instantiation.js";import{EditorsOrder as ce}from"../../../../common/editor.js";import{IDebugService as se}from"../../../debug/common/debug.js";import{CTX_INLINE_CHAT_FOCUSED as P}from"../../../inlineChat/common/inlineChat.js";import{insertCell as h}from"./cellOperations.js";import{CTX_NOTEBOOK_CELL_CHAT_FOCUSED as de}from"./chat/notebookChatContext.js";import{NotebookChatController as ae}from"./chat/notebookChatController.js";import{CELL_TITLE_CELL_GROUP_ID as W,CellToolbarOrder as X,NOTEBOOK_EDITOR_WIDGET_ACTION_WEIGHT as R,NotebookAction as v,NotebookCellAction as H,NotebookMultiCellAction as I,cellExecutionArgs as V,executeNotebookCondition as $,getContextFromActiveEditor as j,getContextFromUri as z,parseMultiCellExecutionArgs as T}from"./coreActions.js";import{CellEditState as y,CellFocusMode as ue,EXECUTE_CELL_COMMAND_ID as Ce,ScrollToRevealBehavior as Y}from"../notebookBrowser.js";import*as C from"../notebookIcons.js";import{CellKind as S,CellUri as Ee,NotebookSetting as _}from"../../common/notebookCommon.js";import{NOTEBOOK_CELL_EXECUTING as be,NOTEBOOK_CELL_EXECUTION_STATE as J,NOTEBOOK_CELL_LIST_FOCUSED as M,NOTEBOOK_CELL_TYPE as B,NOTEBOOK_HAS_RUNNING_CELL as N,NOTEBOOK_HAS_SOMETHING_RUNNING as b,NOTEBOOK_INTERRUPTIBLE_KERNEL as k,NOTEBOOK_IS_ACTIVE_EDITOR as g,NOTEBOOK_KERNEL_COUNT as ke,NOTEBOOK_KERNEL_SOURCE_COUNT as ge,NOTEBOOK_LAST_CELL_FAILED as F,NOTEBOOK_MISSING_KERNEL_EXTENSION as pe}from"../../common/notebookContextKeys.js";import{NotebookEditorInput as Ne}from"../../common/notebookEditorInput.js";import{INotebookExecutionStateService as Q}from"../../common/notebookExecutionStateService.js";import{IEditorGroupsService as O}from"../../../../services/editor/common/editorGroupsService.js";import{IEditorService as K}from"../../../../services/editor/common/editorService.js";const me="notebook.execute",fe="notebook.cancelExecution",Ae="notebook.interruptExecution",ve="notebook.cell.cancelExecution",Ie="notebook.cell.executeAndFocusContainer",Z="notebook.cell.executeAndSelectBelow",ee="notebook.cell.executeAndInsertBelow",Te="notebook.cell.executeCellAndBelow",Se="notebook.cell.executeCellsAbove",_e="notebook.renderAllMarkdownCells",Oe="notebook.revealRunningCell",xe="notebook.revealLastFailedCell",p=t.and(B.isEqualTo("code"),t.or(t.greater(ke.key,0),t.greater(ge.key,0),pe)),x=t.and(p,be.toNegated());function oe(d){for(let o=0;o<d.notebookEditor.getLength();o++){const e=d.notebookEditor.cellAt(o);e.cellKind===S.Markup&&e.updateEditState(y.Preview,"renderAllMarkdownCells")}}async function L(d,o){const e=d.activeGroup;if(e&&e.activeEditor&&e.pinEditor(e.activeEditor),o.ui&&o.cell){if(await o.notebookEditor.executeNotebookCells(G.single(o.cell)),o.autoReveal){const n=o.notebookEditor.getCellIndex(o.cell);o.notebookEditor.revealCellRangeInView({start:n,end:n+1})}}else if(o.selectedCells?.length||o.cell){const n=o.selectedCells?.length?o.selectedCells:[o.cell];await o.notebookEditor.executeNotebookCells(n);const r=n[0];if(r&&o.autoReveal){const l=o.notebookEditor.getCellIndex(r);o.notebookEditor.revealCellRangeInView({start:l,end:l+1})}}let i;for(const[,n]of o.notebookEditor.codeEditors)if(ie(n.getModel()?.uri,(o.cell??o.selectedCells?.[0])?.uri)){i=n;break}}a(class extends v{constructor(){super({id:_e,title:c("notebookActions.renderMarkdown","Render All Markdown Cells")})}async runWithContext(o,e){oe(e)}}),a(class extends v{constructor(){super({id:me,title:c("notebookActions.executeNotebook","Run All"),icon:C.executeAllIcon,metadata:{description:c("notebookActions.executeNotebook","Run All"),args:[{name:"uri",description:"The document uri"}]},menu:[{id:s.EditorTitle,order:-1,group:"navigation",when:t.and(g,$,t.or(k.toNegated(),b.toNegated()),t.notEquals("config.notebook.globalToolbar",!0))},{id:s.NotebookToolbar,order:-1,group:"navigation/execute",when:t.and($,t.or(k.toNegated(),b.toNegated()),t.and(b,k.toNegated())?.negate(),t.equals("config.notebook.globalToolbar",!0))}]})}getEditorContextFromArgsOrActive(o,e){return z(o,e)??j(o.get(K))}async runWithContext(o,e){oe(e);const n=o.get(K).getEditors(ce.MOST_RECENTLY_ACTIVE).find(l=>l.editor instanceof Ne&&l.editor.viewType===e.notebookEditor.textModel.viewType&&l.editor.resource.toString()===e.notebookEditor.textModel.uri.toString()),r=o.get(O);return n&&r.getGroup(n.groupId)?.pinEditor(n.editor),e.notebookEditor.executeNotebookCells()}}),a(class extends I{constructor(){super({id:Ce,precondition:x,title:c("notebookActions.execute","Execute Cell"),keybinding:{when:t.or(M,t.and(de,P)),primary:A.WinCtrl|w.Enter,win:{primary:A.CtrlCmd|A.Alt|w.Enter},weight:R},menu:{id:s.NotebookCellExecutePrimary,when:x,group:"inline"},metadata:{description:c("notebookActions.execute","Execute Cell"),args:V},icon:C.executeIcon})}parseArgs(o,...e){return T(o,...e)}async runWithContext(o,e){const i=o.get(O);e.ui&&await e.notebookEditor.focusNotebookCell(e.cell,"container",{skipReveal:!0});const n=ae.get(e.notebookEditor),r=n?.getEditingCell();if(n?.hasFocus()&&r){const l=i.activeGroup;l&&l.activeEditor&&l.pinEditor(l.activeEditor),await e.notebookEditor.executeNotebookCells([r]);return}await L(i,e)}}),a(class extends I{constructor(){super({id:Se,precondition:p,title:c("notebookActions.executeAbove","Execute Above Cells"),menu:[{id:s.NotebookCellExecute,when:t.and(p,t.equals(`config.${_.consolidatedRunButton}`,!0))},{id:s.NotebookCellTitle,order:X.ExecuteAboveCells,group:W,when:t.and(p,t.equals(`config.${_.consolidatedRunButton}`,!1))}],icon:C.executeAboveIcon})}parseArgs(o,...e){return T(o,...e)}async runWithContext(o,e){let i;if(e.ui?(i=e.notebookEditor.getCellIndex(e.cell),await e.notebookEditor.focusNotebookCell(e.cell,"container",{skipReveal:!0})):i=Math.min(...e.selectedCells.map(n=>e.notebookEditor.getCellIndex(n))),typeof i=="number"){const n={start:0,end:i},r=e.notebookEditor.getCellsInRange(n);e.notebookEditor.executeNotebookCells(r)}}}),a(class extends I{constructor(){super({id:Te,precondition:p,title:c("notebookActions.executeBelow","Execute Cell and Below"),menu:[{id:s.NotebookCellExecute,when:t.and(p,t.equals(`config.${_.consolidatedRunButton}`,!0))},{id:s.NotebookCellTitle,order:X.ExecuteCellAndBelow,group:W,when:t.and(p,t.equals(`config.${_.consolidatedRunButton}`,!1))}],icon:C.executeBelowIcon})}parseArgs(o,...e){return T(o,...e)}async runWithContext(o,e){let i;if(e.ui?(i=e.notebookEditor.getCellIndex(e.cell),await e.notebookEditor.focusNotebookCell(e.cell,"container",{skipReveal:!0})):i=Math.min(...e.selectedCells.map(n=>e.notebookEditor.getCellIndex(n))),typeof i=="number"){const n={start:i,end:e.notebookEditor.getLength()},r=e.notebookEditor.getCellsInRange(n);e.notebookEditor.executeNotebookCells(r)}}}),a(class extends I{constructor(){super({id:Ie,precondition:x,title:c("notebookActions.executeAndFocusContainer","Execute Cell and Focus Container"),metadata:{description:c("notebookActions.executeAndFocusContainer","Execute Cell and Focus Container"),args:V},icon:C.executeIcon})}parseArgs(o,...e){return T(o,...e)}async runWithContext(o,e){const i=o.get(O);if(e.ui)await e.notebookEditor.focusNotebookCell(e.cell,"container",{skipReveal:!0});else{const n=e.selectedCells[0];n&&await e.notebookEditor.focusNotebookCell(n,"container",{skipReveal:!0})}await L(i,e)}});const te=t.or(t.equals(J.key,"executing"),t.equals(J.key,"pending"));a(class extends I{constructor(){super({id:ve,precondition:te,title:c("notebookActions.cancel","Stop Cell Execution"),icon:C.stopIcon,menu:{id:s.NotebookCellExecutePrimary,when:te,group:"inline"},metadata:{description:c("notebookActions.cancel","Stop Cell Execution"),args:[{name:"options",description:"The cell range options",schema:{type:"object",required:["ranges"],properties:{ranges:{type:"array",items:[{type:"object",required:["start","end"],properties:{start:{type:"number"},end:{type:"number"}}}]},document:{type:"object",description:"The document uri"}}}}]}})}parseArgs(o,...e){return T(o,...e)}async runWithContext(o,e){return e.ui?(await e.notebookEditor.focusNotebookCell(e.cell,"container",{skipReveal:!0}),e.notebookEditor.cancelNotebookCells(G.single(e.cell))):e.notebookEditor.cancelNotebookCells(e.selectedCells)}}),a(class extends H{constructor(){super({id:Z,precondition:t.or(x,B.isEqualTo("markup")),title:c("notebookActions.executeAndSelectBelow","Execute Notebook Cell and Select Below"),keybinding:{when:t.and(M,P.negate()),primary:A.Shift|w.Enter,weight:R}})}async runWithContext(o,e){const i=o.get(O),n=e.notebookEditor.getCellIndex(e.cell);if(typeof n!="number")return;const r=o.get(D),u=o.get(le).getValue(_.scrollToRevealCell);let E;if(u==="none"?E={skipReveal:!0}:E={revealBehavior:u==="fullCell"?Y.fullCell:Y.firstLine},e.cell.cellKind===S.Markup){const m=e.notebookEditor.cellAt(n+1);if(e.cell.updateEditState(y.Preview,Z),m)await e.notebookEditor.focusNotebookCell(m,"container",E);else{const f=h(r,e.notebookEditor,n,S.Markup,"below");f&&await e.notebookEditor.focusNotebookCell(f,"editor",E)}return}else{const m=e.notebookEditor.cellAt(n+1);if(m)await e.notebookEditor.focusNotebookCell(m,"container",E);else{const f=h(r,e.notebookEditor,n,S.Code,"below");f&&await e.notebookEditor.focusNotebookCell(f,"editor",E)}return L(i,e)}}}),a(class extends H{constructor(){super({id:ee,precondition:t.or(x,B.isEqualTo("markup")),title:c("notebookActions.executeAndInsertBelow","Execute Notebook Cell and Insert Below"),keybinding:{when:M,primary:A.Alt|w.Enter,weight:R}})}async runWithContext(o,e){const i=o.get(O),n=e.notebookEditor.getCellIndex(e.cell),r=o.get(D),l=e.cell.focusMode===ue.Editor?"editor":"container",u=h(r,e.notebookEditor,n,e.cell.cellKind,"below");u&&await e.notebookEditor.focusNotebookCell(u,l),e.cell.cellKind===S.Markup?e.cell.updateEditState(y.Preview,ee):L(i,e)}});class ne extends v{getEditorContextFromArgsOrActive(o,e){return z(o,e)??j(o.get(K))}async runWithContext(o,e){return e.notebookEditor.cancelNotebookCells()}}a(class extends ne{constructor(){super({id:fe,title:q("notebookActions.cancelNotebook","Stop Execution"),icon:C.stopIcon,menu:[{id:s.EditorTitle,order:-1,group:"navigation",when:t.and(g,b,k.toNegated(),t.notEquals("config.notebook.globalToolbar",!0))},{id:s.NotebookToolbar,order:-1,group:"navigation/execute",when:t.and(b,k.toNegated(),t.equals("config.notebook.globalToolbar",!0))}]})}}),a(class extends ne{constructor(){super({id:Ae,title:q("notebookActions.interruptNotebook","Interrupt"),precondition:t.and(b,k),icon:C.stopIcon,menu:[{id:s.EditorTitle,order:-1,group:"navigation",when:t.and(g,b,k,t.notEquals("config.notebook.globalToolbar",!0))},{id:s.NotebookToolbar,order:-1,group:"navigation/execute",when:t.and(b,k,t.equals("config.notebook.globalToolbar",!0))},{id:s.InteractiveToolbar,group:"navigation/execute"}]})}}),re.appendMenuItem(s.NotebookToolbar,{title:c("revealRunningCellShort","Go To"),submenu:s.NotebookCellExecuteGoTo,group:"navigation/execute",order:20,icon:U.modify(C.executingStateIcon,"spin")}),a(class extends v{constructor(){super({id:Oe,title:c("revealRunningCell","Go to Running Cell"),tooltip:c("revealRunningCell","Go to Running Cell"),shortTitle:c("revealRunningCell","Go to Running Cell"),precondition:N,menu:[{id:s.EditorTitle,when:t.and(g,N,t.notEquals("config.notebook.globalToolbar",!0)),group:"navigation",order:0},{id:s.NotebookCellExecuteGoTo,when:t.and(g,N,t.equals("config.notebook.globalToolbar",!0)),group:"navigation/execute",order:20},{id:s.InteractiveToolbar,when:t.and(N,t.equals("activeEditor","workbench.editor.interactive")),group:"navigation",order:10}],icon:U.modify(C.executingStateIcon,"spin")})}async runWithContext(o,e){const i=o.get(Q),n=e.notebookEditor.textModel.uri,r=i.getCellExecutionsForNotebook(n);if(r[0]){const u=this.findCellAtTopFrame(o,n)??r[0].cellHandle,E=e.notebookEditor.getCellByHandle(u);E&&e.notebookEditor.focusNotebookCell(E,"container")}}findCellAtTopFrame(o,e){const i=o.get(se);for(const n of i.getModel().getSessions())for(const r of n.getAllThreads()){const l=r.getTopStackFrame();if(l){const u=Ee.parse(l.source.uri);if(u&&u.notebook.toString()===e.toString())return u.handle}}}}),a(class extends v{constructor(){super({id:xe,title:c("revealLastFailedCell","Go to Most Recently Failed Cell"),tooltip:c("revealLastFailedCell","Go to Most Recently Failed Cell"),shortTitle:c("revealLastFailedCellShort","Go to Most Recently Failed Cell"),precondition:F,menu:[{id:s.EditorTitle,when:t.and(g,F,N.toNegated(),t.notEquals("config.notebook.globalToolbar",!0)),group:"navigation",order:0},{id:s.NotebookCellExecuteGoTo,when:t.and(g,F,N.toNegated(),t.equals("config.notebook.globalToolbar",!0)),group:"navigation/execute",order:20}],icon:C.errorStateIcon})}async runWithContext(o,e){const i=o.get(Q),n=e.notebookEditor.textModel.uri,r=i.getLastFailedCellForNotebook(n);if(r!==void 0){const l=e.notebookEditor.getCellByHandle(r);l&&e.notebookEditor.focusNotebookCell(l,"container")}}});export{p as executeCondition,x as executeThisCellCondition};
+import { Iterable } from '../../../../../base/common/iterator.js';
+import { isEqual } from '../../../../../base/common/resources.js';
+import { ThemeIcon } from '../../../../../base/common/themables.js';
+import { ILanguageService } from '../../../../../editor/common/languages/language.js';
+import { localize, localize2 } from '../../../../../nls.js';
+import { MenuId, MenuRegistry, registerAction2 } from '../../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
+import { ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
+import { IDebugService } from '../../../debug/common/debug.js';
+import { CTX_INLINE_CHAT_FOCUSED } from '../../../inlineChat/common/inlineChat.js';
+import { insertCell } from './cellOperations.js';
+import { CTX_NOTEBOOK_CELL_CHAT_FOCUSED } from './chat/notebookChatContext.js';
+import { NotebookChatController } from './chat/notebookChatController.js';
+import { CELL_TITLE_CELL_GROUP_ID, NOTEBOOK_EDITOR_WIDGET_ACTION_WEIGHT, NotebookAction, NotebookCellAction, NotebookMultiCellAction, cellExecutionArgs, executeNotebookCondition, getContextFromActiveEditor, getContextFromUri, parseMultiCellExecutionArgs } from './coreActions.js';
+import { CellEditState, CellFocusMode, EXECUTE_CELL_COMMAND_ID, ScrollToRevealBehavior } from '../notebookBrowser.js';
+import * as icons from '../notebookIcons.js';
+import { CellKind, CellUri, NotebookSetting } from '../../common/notebookCommon.js';
+import { NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE, NOTEBOOK_CELL_LIST_FOCUSED, NOTEBOOK_CELL_TYPE, NOTEBOOK_HAS_RUNNING_CELL, NOTEBOOK_HAS_SOMETHING_RUNNING, NOTEBOOK_INTERRUPTIBLE_KERNEL, NOTEBOOK_IS_ACTIVE_EDITOR, NOTEBOOK_KERNEL_COUNT, NOTEBOOK_KERNEL_SOURCE_COUNT, NOTEBOOK_LAST_CELL_FAILED, NOTEBOOK_MISSING_KERNEL_EXTENSION } from '../../common/notebookContextKeys.js';
+import { NotebookEditorInput } from '../../common/notebookEditorInput.js';
+import { INotebookExecutionStateService } from '../../common/notebookExecutionStateService.js';
+import { IEditorGroupsService } from '../../../../services/editor/common/editorGroupsService.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+const EXECUTE_NOTEBOOK_COMMAND_ID = 'notebook.execute';
+const CANCEL_NOTEBOOK_COMMAND_ID = 'notebook.cancelExecution';
+const INTERRUPT_NOTEBOOK_COMMAND_ID = 'notebook.interruptExecution';
+const CANCEL_CELL_COMMAND_ID = 'notebook.cell.cancelExecution';
+const EXECUTE_CELL_FOCUS_CONTAINER_COMMAND_ID = 'notebook.cell.executeAndFocusContainer';
+const EXECUTE_CELL_SELECT_BELOW = 'notebook.cell.executeAndSelectBelow';
+const EXECUTE_CELL_INSERT_BELOW = 'notebook.cell.executeAndInsertBelow';
+const EXECUTE_CELL_AND_BELOW = 'notebook.cell.executeCellAndBelow';
+const EXECUTE_CELLS_ABOVE = 'notebook.cell.executeCellsAbove';
+const RENDER_ALL_MARKDOWN_CELLS = 'notebook.renderAllMarkdownCells';
+const REVEAL_RUNNING_CELL = 'notebook.revealRunningCell';
+const REVEAL_LAST_FAILED_CELL = 'notebook.revealLastFailedCell';
+export const executeCondition = ContextKeyExpr.and(NOTEBOOK_CELL_TYPE.isEqualTo('code'), ContextKeyExpr.or(ContextKeyExpr.greater(NOTEBOOK_KERNEL_COUNT.key, 0), ContextKeyExpr.greater(NOTEBOOK_KERNEL_SOURCE_COUNT.key, 0), NOTEBOOK_MISSING_KERNEL_EXTENSION));
+export const executeThisCellCondition = ContextKeyExpr.and(executeCondition, NOTEBOOK_CELL_EXECUTING.toNegated());
+function renderAllMarkdownCells(context) {
+    for (let i = 0; i < context.notebookEditor.getLength(); i++) {
+        const cell = context.notebookEditor.cellAt(i);
+        if (cell.cellKind === CellKind.Markup) {
+            cell.updateEditState(CellEditState.Preview, 'renderAllMarkdownCells');
+        }
+    }
+}
+async function runCell(editorGroupsService, context) {
+    const group = editorGroupsService.activeGroup;
+    if (group) {
+        if (group.activeEditor) {
+            group.pinEditor(group.activeEditor);
+        }
+    }
+    if (context.ui && context.cell) {
+        await context.notebookEditor.executeNotebookCells(Iterable.single(context.cell));
+        if (context.autoReveal) {
+            const cellIndex = context.notebookEditor.getCellIndex(context.cell);
+            context.notebookEditor.revealCellRangeInView({ start: cellIndex, end: cellIndex + 1 });
+        }
+    }
+    else if (context.selectedCells?.length || context.cell) {
+        const selectedCells = context.selectedCells?.length ? context.selectedCells : [context.cell];
+        await context.notebookEditor.executeNotebookCells(selectedCells);
+        const firstCell = selectedCells[0];
+        if (firstCell && context.autoReveal) {
+            const cellIndex = context.notebookEditor.getCellIndex(firstCell);
+            context.notebookEditor.revealCellRangeInView({ start: cellIndex, end: cellIndex + 1 });
+        }
+    }
+    let foundEditor = undefined;
+    for (const [, codeEditor] of context.notebookEditor.codeEditors) {
+        if (isEqual(codeEditor.getModel()?.uri, (context.cell ?? context.selectedCells?.[0])?.uri)) {
+            foundEditor = codeEditor;
+            break;
+        }
+    }
+    if (!foundEditor) {
+        return;
+    }
+}
+registerAction2(class RenderAllMarkdownCellsAction extends NotebookAction {
+    constructor() {
+        super({
+            id: RENDER_ALL_MARKDOWN_CELLS,
+            title: localize('notebookActions.renderMarkdown', "Render All Markdown Cells"),
+        });
+    }
+    async runWithContext(accessor, context) {
+        renderAllMarkdownCells(context);
+    }
+});
+registerAction2(class ExecuteNotebookAction extends NotebookAction {
+    constructor() {
+        super({
+            id: EXECUTE_NOTEBOOK_COMMAND_ID,
+            title: localize('notebookActions.executeNotebook', "Run All"),
+            icon: icons.executeAllIcon,
+            metadata: {
+                description: localize('notebookActions.executeNotebook', "Run All"),
+                args: [
+                    {
+                        name: 'uri',
+                        description: 'The document uri'
+                    }
+                ]
+            },
+            menu: [
+                {
+                    id: MenuId.EditorTitle,
+                    order: -1,
+                    group: 'navigation',
+                    when: ContextKeyExpr.and(NOTEBOOK_IS_ACTIVE_EDITOR, executeNotebookCondition, ContextKeyExpr.or(NOTEBOOK_INTERRUPTIBLE_KERNEL.toNegated(), NOTEBOOK_HAS_SOMETHING_RUNNING.toNegated()), ContextKeyExpr.notEquals('config.notebook.globalToolbar', true))
+                },
+                {
+                    id: MenuId.NotebookToolbar,
+                    order: -1,
+                    group: 'navigation/execute',
+                    when: ContextKeyExpr.and(executeNotebookCondition, ContextKeyExpr.or(NOTEBOOK_INTERRUPTIBLE_KERNEL.toNegated(), NOTEBOOK_HAS_SOMETHING_RUNNING.toNegated()), ContextKeyExpr.and(NOTEBOOK_HAS_SOMETHING_RUNNING, NOTEBOOK_INTERRUPTIBLE_KERNEL.toNegated())?.negate(), ContextKeyExpr.equals('config.notebook.globalToolbar', true))
+                }
+            ]
+        });
+    }
+    getEditorContextFromArgsOrActive(accessor, context) {
+        return getContextFromUri(accessor, context) ?? getContextFromActiveEditor(accessor.get(IEditorService));
+    }
+    async runWithContext(accessor, context) {
+        renderAllMarkdownCells(context);
+        const editorService = accessor.get(IEditorService);
+        const editor = editorService.getEditors(0).find(editor => editor.editor instanceof NotebookEditorInput && editor.editor.viewType === context.notebookEditor.textModel.viewType && editor.editor.resource.toString() === context.notebookEditor.textModel.uri.toString());
+        const editorGroupService = accessor.get(IEditorGroupsService);
+        if (editor) {
+            const group = editorGroupService.getGroup(editor.groupId);
+            group?.pinEditor(editor.editor);
+        }
+        return context.notebookEditor.executeNotebookCells();
+    }
+});
+registerAction2(class ExecuteCell extends NotebookMultiCellAction {
+    constructor() {
+        super({
+            id: EXECUTE_CELL_COMMAND_ID,
+            precondition: executeThisCellCondition,
+            title: localize('notebookActions.execute', "Execute Cell"),
+            keybinding: {
+                when: ContextKeyExpr.or(NOTEBOOK_CELL_LIST_FOCUSED, ContextKeyExpr.and(CTX_NOTEBOOK_CELL_CHAT_FOCUSED, CTX_INLINE_CHAT_FOCUSED)),
+                primary: 256 | 3,
+                win: {
+                    primary: 2048 | 512 | 3
+                },
+                weight: NOTEBOOK_EDITOR_WIDGET_ACTION_WEIGHT
+            },
+            menu: {
+                id: MenuId.NotebookCellExecutePrimary,
+                when: executeThisCellCondition,
+                group: 'inline'
+            },
+            metadata: {
+                description: localize('notebookActions.execute', "Execute Cell"),
+                args: cellExecutionArgs
+            },
+            icon: icons.executeIcon
+        });
+    }
+    parseArgs(accessor, ...args) {
+        return parseMultiCellExecutionArgs(accessor, ...args);
+    }
+    async runWithContext(accessor, context) {
+        const editorGroupsService = accessor.get(IEditorGroupsService);
+        if (context.ui) {
+            await context.notebookEditor.focusNotebookCell(context.cell, 'container', { skipReveal: true });
+        }
+        const chatController = NotebookChatController.get(context.notebookEditor);
+        const editingCell = chatController?.getEditingCell();
+        if (chatController?.hasFocus() && editingCell) {
+            const group = editorGroupsService.activeGroup;
+            if (group) {
+                if (group.activeEditor) {
+                    group.pinEditor(group.activeEditor);
+                }
+            }
+            await context.notebookEditor.executeNotebookCells([editingCell]);
+            return;
+        }
+        await runCell(editorGroupsService, context);
+    }
+});
+registerAction2(class ExecuteAboveCells extends NotebookMultiCellAction {
+    constructor() {
+        super({
+            id: EXECUTE_CELLS_ABOVE,
+            precondition: executeCondition,
+            title: localize('notebookActions.executeAbove', "Execute Above Cells"),
+            menu: [
+                {
+                    id: MenuId.NotebookCellExecute,
+                    when: ContextKeyExpr.and(executeCondition, ContextKeyExpr.equals(`config.${NotebookSetting.consolidatedRunButton}`, true))
+                },
+                {
+                    id: MenuId.NotebookCellTitle,
+                    order: 1,
+                    group: CELL_TITLE_CELL_GROUP_ID,
+                    when: ContextKeyExpr.and(executeCondition, ContextKeyExpr.equals(`config.${NotebookSetting.consolidatedRunButton}`, false))
+                }
+            ],
+            icon: icons.executeAboveIcon
+        });
+    }
+    parseArgs(accessor, ...args) {
+        return parseMultiCellExecutionArgs(accessor, ...args);
+    }
+    async runWithContext(accessor, context) {
+        let endCellIdx = undefined;
+        if (context.ui) {
+            endCellIdx = context.notebookEditor.getCellIndex(context.cell);
+            await context.notebookEditor.focusNotebookCell(context.cell, 'container', { skipReveal: true });
+        }
+        else {
+            endCellIdx = Math.min(...context.selectedCells.map(cell => context.notebookEditor.getCellIndex(cell)));
+        }
+        if (typeof endCellIdx === 'number') {
+            const range = { start: 0, end: endCellIdx };
+            const cells = context.notebookEditor.getCellsInRange(range);
+            context.notebookEditor.executeNotebookCells(cells);
+        }
+    }
+});
+registerAction2(class ExecuteCellAndBelow extends NotebookMultiCellAction {
+    constructor() {
+        super({
+            id: EXECUTE_CELL_AND_BELOW,
+            precondition: executeCondition,
+            title: localize('notebookActions.executeBelow', "Execute Cell and Below"),
+            menu: [
+                {
+                    id: MenuId.NotebookCellExecute,
+                    when: ContextKeyExpr.and(executeCondition, ContextKeyExpr.equals(`config.${NotebookSetting.consolidatedRunButton}`, true))
+                },
+                {
+                    id: MenuId.NotebookCellTitle,
+                    order: 2,
+                    group: CELL_TITLE_CELL_GROUP_ID,
+                    when: ContextKeyExpr.and(executeCondition, ContextKeyExpr.equals(`config.${NotebookSetting.consolidatedRunButton}`, false))
+                }
+            ],
+            icon: icons.executeBelowIcon
+        });
+    }
+    parseArgs(accessor, ...args) {
+        return parseMultiCellExecutionArgs(accessor, ...args);
+    }
+    async runWithContext(accessor, context) {
+        let startCellIdx = undefined;
+        if (context.ui) {
+            startCellIdx = context.notebookEditor.getCellIndex(context.cell);
+            await context.notebookEditor.focusNotebookCell(context.cell, 'container', { skipReveal: true });
+        }
+        else {
+            startCellIdx = Math.min(...context.selectedCells.map(cell => context.notebookEditor.getCellIndex(cell)));
+        }
+        if (typeof startCellIdx === 'number') {
+            const range = { start: startCellIdx, end: context.notebookEditor.getLength() };
+            const cells = context.notebookEditor.getCellsInRange(range);
+            context.notebookEditor.executeNotebookCells(cells);
+        }
+    }
+});
+registerAction2(class ExecuteCellFocusContainer extends NotebookMultiCellAction {
+    constructor() {
+        super({
+            id: EXECUTE_CELL_FOCUS_CONTAINER_COMMAND_ID,
+            precondition: executeThisCellCondition,
+            title: localize('notebookActions.executeAndFocusContainer', "Execute Cell and Focus Container"),
+            metadata: {
+                description: localize('notebookActions.executeAndFocusContainer', "Execute Cell and Focus Container"),
+                args: cellExecutionArgs
+            },
+            icon: icons.executeIcon
+        });
+    }
+    parseArgs(accessor, ...args) {
+        return parseMultiCellExecutionArgs(accessor, ...args);
+    }
+    async runWithContext(accessor, context) {
+        const editorGroupsService = accessor.get(IEditorGroupsService);
+        if (context.ui) {
+            await context.notebookEditor.focusNotebookCell(context.cell, 'container', { skipReveal: true });
+        }
+        else {
+            const firstCell = context.selectedCells[0];
+            if (firstCell) {
+                await context.notebookEditor.focusNotebookCell(firstCell, 'container', { skipReveal: true });
+            }
+        }
+        await runCell(editorGroupsService, context);
+    }
+});
+const cellCancelCondition = ContextKeyExpr.or(ContextKeyExpr.equals(NOTEBOOK_CELL_EXECUTION_STATE.key, 'executing'), ContextKeyExpr.equals(NOTEBOOK_CELL_EXECUTION_STATE.key, 'pending'));
+registerAction2(class CancelExecuteCell extends NotebookMultiCellAction {
+    constructor() {
+        super({
+            id: CANCEL_CELL_COMMAND_ID,
+            precondition: cellCancelCondition,
+            title: localize('notebookActions.cancel', "Stop Cell Execution"),
+            icon: icons.stopIcon,
+            menu: {
+                id: MenuId.NotebookCellExecutePrimary,
+                when: cellCancelCondition,
+                group: 'inline'
+            },
+            metadata: {
+                description: localize('notebookActions.cancel', "Stop Cell Execution"),
+                args: [
+                    {
+                        name: 'options',
+                        description: 'The cell range options',
+                        schema: {
+                            'type': 'object',
+                            'required': ['ranges'],
+                            'properties': {
+                                'ranges': {
+                                    'type': 'array',
+                                    items: [
+                                        {
+                                            'type': 'object',
+                                            'required': ['start', 'end'],
+                                            'properties': {
+                                                'start': {
+                                                    'type': 'number'
+                                                },
+                                                'end': {
+                                                    'type': 'number'
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                'document': {
+                                    'type': 'object',
+                                    'description': 'The document uri',
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+        });
+    }
+    parseArgs(accessor, ...args) {
+        return parseMultiCellExecutionArgs(accessor, ...args);
+    }
+    async runWithContext(accessor, context) {
+        if (context.ui) {
+            await context.notebookEditor.focusNotebookCell(context.cell, 'container', { skipReveal: true });
+            return context.notebookEditor.cancelNotebookCells(Iterable.single(context.cell));
+        }
+        else {
+            return context.notebookEditor.cancelNotebookCells(context.selectedCells);
+        }
+    }
+});
+registerAction2(class ExecuteCellSelectBelow extends NotebookCellAction {
+    constructor() {
+        super({
+            id: EXECUTE_CELL_SELECT_BELOW,
+            precondition: ContextKeyExpr.or(executeThisCellCondition, NOTEBOOK_CELL_TYPE.isEqualTo('markup')),
+            title: localize('notebookActions.executeAndSelectBelow', "Execute Notebook Cell and Select Below"),
+            keybinding: {
+                when: ContextKeyExpr.and(NOTEBOOK_CELL_LIST_FOCUSED, CTX_INLINE_CHAT_FOCUSED.negate()),
+                primary: 1024 | 3,
+                weight: NOTEBOOK_EDITOR_WIDGET_ACTION_WEIGHT
+            },
+        });
+    }
+    async runWithContext(accessor, context) {
+        const editorGroupsService = accessor.get(IEditorGroupsService);
+        const idx = context.notebookEditor.getCellIndex(context.cell);
+        if (typeof idx !== 'number') {
+            return;
+        }
+        const languageService = accessor.get(ILanguageService);
+        const config = accessor.get(IConfigurationService);
+        const scrollBehavior = config.getValue(NotebookSetting.scrollToRevealCell);
+        let focusOptions;
+        if (scrollBehavior === 'none') {
+            focusOptions = { skipReveal: true };
+        }
+        else {
+            focusOptions = {
+                revealBehavior: scrollBehavior === 'fullCell' ? ScrollToRevealBehavior.fullCell : ScrollToRevealBehavior.firstLine
+            };
+        }
+        if (context.cell.cellKind === CellKind.Markup) {
+            const nextCell = context.notebookEditor.cellAt(idx + 1);
+            context.cell.updateEditState(CellEditState.Preview, EXECUTE_CELL_SELECT_BELOW);
+            if (nextCell) {
+                await context.notebookEditor.focusNotebookCell(nextCell, 'container', focusOptions);
+            }
+            else {
+                const newCell = insertCell(languageService, context.notebookEditor, idx, CellKind.Markup, 'below');
+                if (newCell) {
+                    await context.notebookEditor.focusNotebookCell(newCell, 'editor', focusOptions);
+                }
+            }
+            return;
+        }
+        else {
+            const nextCell = context.notebookEditor.cellAt(idx + 1);
+            if (nextCell) {
+                await context.notebookEditor.focusNotebookCell(nextCell, 'container', focusOptions);
+            }
+            else {
+                const newCell = insertCell(languageService, context.notebookEditor, idx, CellKind.Code, 'below');
+                if (newCell) {
+                    await context.notebookEditor.focusNotebookCell(newCell, 'editor', focusOptions);
+                }
+            }
+            return runCell(editorGroupsService, context);
+        }
+    }
+});
+registerAction2(class ExecuteCellInsertBelow extends NotebookCellAction {
+    constructor() {
+        super({
+            id: EXECUTE_CELL_INSERT_BELOW,
+            precondition: ContextKeyExpr.or(executeThisCellCondition, NOTEBOOK_CELL_TYPE.isEqualTo('markup')),
+            title: localize('notebookActions.executeAndInsertBelow', "Execute Notebook Cell and Insert Below"),
+            keybinding: {
+                when: NOTEBOOK_CELL_LIST_FOCUSED,
+                primary: 512 | 3,
+                weight: NOTEBOOK_EDITOR_WIDGET_ACTION_WEIGHT
+            },
+        });
+    }
+    async runWithContext(accessor, context) {
+        const editorGroupsService = accessor.get(IEditorGroupsService);
+        const idx = context.notebookEditor.getCellIndex(context.cell);
+        const languageService = accessor.get(ILanguageService);
+        const newFocusMode = context.cell.focusMode === CellFocusMode.Editor ? 'editor' : 'container';
+        const newCell = insertCell(languageService, context.notebookEditor, idx, context.cell.cellKind, 'below');
+        if (newCell) {
+            await context.notebookEditor.focusNotebookCell(newCell, newFocusMode);
+        }
+        if (context.cell.cellKind === CellKind.Markup) {
+            context.cell.updateEditState(CellEditState.Preview, EXECUTE_CELL_INSERT_BELOW);
+        }
+        else {
+            runCell(editorGroupsService, context);
+        }
+    }
+});
+class CancelNotebook extends NotebookAction {
+    getEditorContextFromArgsOrActive(accessor, context) {
+        return getContextFromUri(accessor, context) ?? getContextFromActiveEditor(accessor.get(IEditorService));
+    }
+    async runWithContext(accessor, context) {
+        return context.notebookEditor.cancelNotebookCells();
+    }
+}
+registerAction2(class CancelAllNotebook extends CancelNotebook {
+    constructor() {
+        super({
+            id: CANCEL_NOTEBOOK_COMMAND_ID,
+            title: localize2('notebookActions.cancelNotebook', "Stop Execution"),
+            icon: icons.stopIcon,
+            menu: [
+                {
+                    id: MenuId.EditorTitle,
+                    order: -1,
+                    group: 'navigation',
+                    when: ContextKeyExpr.and(NOTEBOOK_IS_ACTIVE_EDITOR, NOTEBOOK_HAS_SOMETHING_RUNNING, NOTEBOOK_INTERRUPTIBLE_KERNEL.toNegated(), ContextKeyExpr.notEquals('config.notebook.globalToolbar', true))
+                },
+                {
+                    id: MenuId.NotebookToolbar,
+                    order: -1,
+                    group: 'navigation/execute',
+                    when: ContextKeyExpr.and(NOTEBOOK_HAS_SOMETHING_RUNNING, NOTEBOOK_INTERRUPTIBLE_KERNEL.toNegated(), ContextKeyExpr.equals('config.notebook.globalToolbar', true))
+                }
+            ]
+        });
+    }
+});
+registerAction2(class InterruptNotebook extends CancelNotebook {
+    constructor() {
+        super({
+            id: INTERRUPT_NOTEBOOK_COMMAND_ID,
+            title: localize2('notebookActions.interruptNotebook', "Interrupt"),
+            precondition: ContextKeyExpr.and(NOTEBOOK_HAS_SOMETHING_RUNNING, NOTEBOOK_INTERRUPTIBLE_KERNEL),
+            icon: icons.stopIcon,
+            menu: [
+                {
+                    id: MenuId.EditorTitle,
+                    order: -1,
+                    group: 'navigation',
+                    when: ContextKeyExpr.and(NOTEBOOK_IS_ACTIVE_EDITOR, NOTEBOOK_HAS_SOMETHING_RUNNING, NOTEBOOK_INTERRUPTIBLE_KERNEL, ContextKeyExpr.notEquals('config.notebook.globalToolbar', true))
+                },
+                {
+                    id: MenuId.NotebookToolbar,
+                    order: -1,
+                    group: 'navigation/execute',
+                    when: ContextKeyExpr.and(NOTEBOOK_HAS_SOMETHING_RUNNING, NOTEBOOK_INTERRUPTIBLE_KERNEL, ContextKeyExpr.equals('config.notebook.globalToolbar', true))
+                },
+                {
+                    id: MenuId.InteractiveToolbar,
+                    group: 'navigation/execute'
+                }
+            ]
+        });
+    }
+});
+MenuRegistry.appendMenuItem(MenuId.NotebookToolbar, {
+    title: localize('revealRunningCellShort', "Go To"),
+    submenu: MenuId.NotebookCellExecuteGoTo,
+    group: 'navigation/execute',
+    order: 20,
+    icon: ThemeIcon.modify(icons.executingStateIcon, 'spin')
+});
+registerAction2(class RevealRunningCellAction extends NotebookAction {
+    constructor() {
+        super({
+            id: REVEAL_RUNNING_CELL,
+            title: localize('revealRunningCell', "Go to Running Cell"),
+            tooltip: localize('revealRunningCell', "Go to Running Cell"),
+            shortTitle: localize('revealRunningCell', "Go to Running Cell"),
+            precondition: NOTEBOOK_HAS_RUNNING_CELL,
+            menu: [
+                {
+                    id: MenuId.EditorTitle,
+                    when: ContextKeyExpr.and(NOTEBOOK_IS_ACTIVE_EDITOR, NOTEBOOK_HAS_RUNNING_CELL, ContextKeyExpr.notEquals('config.notebook.globalToolbar', true)),
+                    group: 'navigation',
+                    order: 0
+                },
+                {
+                    id: MenuId.NotebookCellExecuteGoTo,
+                    when: ContextKeyExpr.and(NOTEBOOK_IS_ACTIVE_EDITOR, NOTEBOOK_HAS_RUNNING_CELL, ContextKeyExpr.equals('config.notebook.globalToolbar', true)),
+                    group: 'navigation/execute',
+                    order: 20
+                },
+                {
+                    id: MenuId.InteractiveToolbar,
+                    when: ContextKeyExpr.and(NOTEBOOK_HAS_RUNNING_CELL, ContextKeyExpr.equals('activeEditor', 'workbench.editor.interactive')),
+                    group: 'navigation',
+                    order: 10
+                }
+            ],
+            icon: ThemeIcon.modify(icons.executingStateIcon, 'spin')
+        });
+    }
+    async runWithContext(accessor, context) {
+        const notebookExecutionStateService = accessor.get(INotebookExecutionStateService);
+        const notebook = context.notebookEditor.textModel.uri;
+        const executingCells = notebookExecutionStateService.getCellExecutionsForNotebook(notebook);
+        if (executingCells[0]) {
+            const topStackFrameCell = this.findCellAtTopFrame(accessor, notebook);
+            const focusHandle = topStackFrameCell ?? executingCells[0].cellHandle;
+            const cell = context.notebookEditor.getCellByHandle(focusHandle);
+            if (cell) {
+                context.notebookEditor.focusNotebookCell(cell, 'container');
+            }
+        }
+    }
+    findCellAtTopFrame(accessor, notebook) {
+        const debugService = accessor.get(IDebugService);
+        for (const session of debugService.getModel().getSessions()) {
+            for (const thread of session.getAllThreads()) {
+                const sf = thread.getTopStackFrame();
+                if (sf) {
+                    const parsed = CellUri.parse(sf.source.uri);
+                    if (parsed && parsed.notebook.toString() === notebook.toString()) {
+                        return parsed.handle;
+                    }
+                }
+            }
+        }
+        return undefined;
+    }
+});
+registerAction2(class RevealLastFailedCellAction extends NotebookAction {
+    constructor() {
+        super({
+            id: REVEAL_LAST_FAILED_CELL,
+            title: localize('revealLastFailedCell', "Go to Most Recently Failed Cell"),
+            tooltip: localize('revealLastFailedCell', "Go to Most Recently Failed Cell"),
+            shortTitle: localize('revealLastFailedCellShort', "Go to Most Recently Failed Cell"),
+            precondition: NOTEBOOK_LAST_CELL_FAILED,
+            menu: [
+                {
+                    id: MenuId.EditorTitle,
+                    when: ContextKeyExpr.and(NOTEBOOK_IS_ACTIVE_EDITOR, NOTEBOOK_LAST_CELL_FAILED, NOTEBOOK_HAS_RUNNING_CELL.toNegated(), ContextKeyExpr.notEquals('config.notebook.globalToolbar', true)),
+                    group: 'navigation',
+                    order: 0
+                },
+                {
+                    id: MenuId.NotebookCellExecuteGoTo,
+                    when: ContextKeyExpr.and(NOTEBOOK_IS_ACTIVE_EDITOR, NOTEBOOK_LAST_CELL_FAILED, NOTEBOOK_HAS_RUNNING_CELL.toNegated(), ContextKeyExpr.equals('config.notebook.globalToolbar', true)),
+                    group: 'navigation/execute',
+                    order: 20
+                },
+            ],
+            icon: icons.errorStateIcon,
+        });
+    }
+    async runWithContext(accessor, context) {
+        const notebookExecutionStateService = accessor.get(INotebookExecutionStateService);
+        const notebook = context.notebookEditor.textModel.uri;
+        const lastFailedCellHandle = notebookExecutionStateService.getLastFailedCellForNotebook(notebook);
+        if (lastFailedCellHandle !== undefined) {
+            const lastFailedCell = context.notebookEditor.getCellByHandle(lastFailedCellHandle);
+            if (lastFailedCell) {
+                context.notebookEditor.focusNotebookCell(lastFailedCell, 'container');
+            }
+        }
+    }
+});

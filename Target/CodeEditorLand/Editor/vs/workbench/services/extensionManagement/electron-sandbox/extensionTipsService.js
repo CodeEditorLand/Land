@@ -1,1 +1,44 @@
-var l=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var p=(n,e,r,i)=>{for(var t=i>1?void 0:i?m(e,r):e,a=n.length-1,c;a>=0;a--)(c=n[a])&&(t=(i?c(e,r,t):c(t))||t);return i&&t&&l(e,r,t),t},o=(n,e)=>(r,i)=>e(r,i,n);import{InstantiationType as d,registerSingleton as I}from"../../../../platform/instantiation/common/extensions.js";import{ISharedProcessService as x}from"../../../../platform/ipc/electron-sandbox/services.js";import"../../../../base/parts/ipc/common/ipc.js";import{IExtensionTipsService as h}from"../../../../platform/extensionManagement/common/extensionManagement.js";import"../../../../base/common/uri.js";import{ExtensionTipsService as u}from"../../../../platform/extensionManagement/common/extensionTipsService.js";import{IFileService as E}from"../../../../platform/files/common/files.js";import{IProductService as T}from"../../../../platform/product/common/productService.js";import{Schemas as g}from"../../../../base/common/network.js";let s=class extends u{channel;constructor(e,r,i){super(e,r),this.channel=i.getChannel("extensionTipsService")}getConfigBasedTips(e){return e.scheme===g.file?this.channel.call("getConfigBasedTips",[e]):super.getConfigBasedTips(e)}getImportantExecutableBasedTips(){return this.channel.call("getImportantExecutableBasedTips")}getOtherExecutableBasedTips(){return this.channel.call("getOtherExecutableBasedTips")}};s=p([o(0,E),o(1,T),o(2,x)],s),I(h,s,d.Delayed);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { ISharedProcessService } from '../../../../platform/ipc/electron-sandbox/services.js';
+import { IExtensionTipsService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { ExtensionTipsService } from '../../../../platform/extensionManagement/common/extensionTipsService.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { Schemas } from '../../../../base/common/network.js';
+let NativeExtensionTipsService = class NativeExtensionTipsService extends ExtensionTipsService {
+    constructor(fileService, productService, sharedProcessService) {
+        super(fileService, productService);
+        this.channel = sharedProcessService.getChannel('extensionTipsService');
+    }
+    getConfigBasedTips(folder) {
+        if (folder.scheme === Schemas.file) {
+            return this.channel.call('getConfigBasedTips', [folder]);
+        }
+        return super.getConfigBasedTips(folder);
+    }
+    getImportantExecutableBasedTips() {
+        return this.channel.call('getImportantExecutableBasedTips');
+    }
+    getOtherExecutableBasedTips() {
+        return this.channel.call('getOtherExecutableBasedTips');
+    }
+};
+NativeExtensionTipsService = __decorate([
+    __param(0, IFileService),
+    __param(1, IProductService),
+    __param(2, ISharedProcessService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], NativeExtensionTipsService);
+registerSingleton(IExtensionTipsService, NativeExtensionTipsService, 1);

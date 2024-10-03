@@ -1,1 +1,612 @@
-import{shuffle as c}from"./arrays.js";import{CharCode as o}from"./charCode.js";import{compare as m,compareIgnoreCase as v,compareSubstring as p,compareSubstringIgnoreCase as I}from"./strings.js";import"./uri.js";class y{_value="";_pos=0;reset(e){return this._value=e,this._pos=0,this}next(){return this._pos+=1,this}hasNext(){return this._pos<this._value.length-1}cmp(e){const s=e.charCodeAt(0),i=this._value.charCodeAt(this._pos);return s-i}value(){return this._value[this._pos]}}class K{constructor(e=!0){this._caseSensitive=e}_value;_from;_to;reset(e){return this._value=e,this._from=0,this._to=0,this.next()}hasNext(){return this._to<this._value.length}next(){this._from=this._to;let e=!0;for(;this._to<this._value.length;this._to++)if(this._value.charCodeAt(this._to)===o.Period)if(e)this._from++;else break;else e=!1;return this}cmp(e){return this._caseSensitive?p(e,this._value,0,e.length,this._from,this._to):I(e,this._value,0,e.length,this._from,this._to)}value(){return this._value.substring(this._from,this._to)}}class b{constructor(e=!0,s=!0){this._splitOnBackslash=e;this._caseSensitive=s}_value;_valueLen;_from;_to;reset(e){this._from=0,this._to=0,this._value=e,this._valueLen=e.length;for(let s=e.length-1;s>=0;s--,this._valueLen--){const i=this._value.charCodeAt(s);if(!(i===o.Slash||this._splitOnBackslash&&i===o.Backslash))break}return this.next()}hasNext(){return this._to<this._valueLen}next(){this._from=this._to;let e=!0;for(;this._to<this._valueLen;this._to++){const s=this._value.charCodeAt(this._to);if(s===o.Slash||this._splitOnBackslash&&s===o.Backslash)if(e)this._from++;else break;else e=!1}return this}cmp(e){return this._caseSensitive?p(e,this._value,0,e.length,this._from,this._to):I(e,this._value,0,e.length,this._from,this._to)}value(){return this._value.substring(this._from,this._to)}}var x=(t=>(t[t.Scheme=1]="Scheme",t[t.Authority=2]="Authority",t[t.Path=3]="Path",t[t.Query=4]="Query",t[t.Fragment=5]="Fragment",t))(x||{});class S{constructor(e,s){this._ignorePathCasing=e;this._ignoreQueryAndFragment=s}_pathIterator;_value;_states=[];_stateIdx=0;reset(e){return this._value=e,this._states=[],this._value.scheme&&this._states.push(1),this._value.authority&&this._states.push(2),this._value.path&&(this._pathIterator=new b(!1,!this._ignorePathCasing(e)),this._pathIterator.reset(e.path),this._pathIterator.value()&&this._states.push(3)),this._ignoreQueryAndFragment(e)||(this._value.query&&this._states.push(4),this._value.fragment&&this._states.push(5)),this._stateIdx=0,this}next(){return this._states[this._stateIdx]===3&&this._pathIterator.hasNext()?this._pathIterator.next():this._stateIdx+=1,this}hasNext(){return this._states[this._stateIdx]===3&&this._pathIterator.hasNext()||this._stateIdx<this._states.length-1}cmp(e){if(this._states[this._stateIdx]===1)return v(e,this._value.scheme);if(this._states[this._stateIdx]===2)return v(e,this._value.authority);if(this._states[this._stateIdx]===3)return this._pathIterator.cmp(e);if(this._states[this._stateIdx]===4)return m(e,this._value.query);if(this._states[this._stateIdx]===5)return m(e,this._value.fragment);throw new Error}value(){if(this._states[this._stateIdx]===1)return this._value.scheme;if(this._states[this._stateIdx]===2)return this._value.authority;if(this._states[this._stateIdx]===3)return this._pathIterator.value();if(this._states[this._stateIdx]===4)return this._value.query;if(this._states[this._stateIdx]===5)return this._value.fragment;throw new Error}}class g{height=1;segment;value;key;left;mid;right;isEmpty(){return!this.left&&!this.mid&&!this.right&&!this.value}rotateLeft(){const e=this.right;return this.right=e.left,e.left=this,this.updateHeight(),e.updateHeight(),e}rotateRight(){const e=this.left;return this.left=e.right,e.right=this,this.updateHeight(),e.updateHeight(),e}updateHeight(){this.height=1+Math.max(this.heightLeft,this.heightRight)}balanceFactor(){return this.heightRight-this.heightLeft}get heightLeft(){return this.left?.height??0}get heightRight(){return this.right?.height??0}}var V=(i=>(i[i.Left=-1]="Left",i[i.Mid=0]="Mid",i[i.Right=1]="Right",i))(V||{});class l{static forUris(e=()=>!1,s=()=>!1){return new l(new S(e,s))}static forPaths(e=!1){return new l(new b(void 0,!e))}static forStrings(){return new l(new y)}static forConfigKeys(){return new l(new K)}_iter;_root;constructor(e){this._iter=e}clear(){this._root=void 0}fill(e,s){if(s){const i=s.slice(0);c(i);for(const r of i)this.set(r,e)}else{const i=e.slice(0);c(i);for(const r of i)this.set(r[0],r[1])}}set(e,s){const i=this._iter.reset(e);let r;this._root||(this._root=new g,this._root.segment=i.value());const t=[];for(r=this._root;;){const a=i.cmp(r.segment);if(a>0)r.left||(r.left=new g,r.left.segment=i.value()),t.push([-1,r]),r=r.left;else if(a<0)r.right||(r.right=new g,r.right.segment=i.value()),t.push([1,r]),r=r.right;else if(i.hasNext())i.next(),r.mid||(r.mid=new g,r.mid.segment=i.value()),t.push([0,r]),r=r.mid;else break}const h=r.value;r.value=s,r.key=e;for(let a=t.length-1;a>=0;a--){const n=t[a][1];n.updateHeight();const f=n.balanceFactor();if(f<-1||f>1){const _=t[a][0],d=t[a+1][0];if(_===1&&d===1)t[a][1]=n.rotateLeft();else if(_===-1&&d===-1)t[a][1]=n.rotateRight();else if(_===1&&d===-1)n.right=t[a+1][1]=t[a+1][1].rotateRight(),t[a][1]=n.rotateLeft();else if(_===-1&&d===1)n.left=t[a+1][1]=t[a+1][1].rotateLeft(),t[a][1]=n.rotateRight();else throw new Error;if(a>0)switch(t[a-1][0]){case-1:t[a-1][1].left=t[a][1];break;case 1:t[a-1][1].right=t[a][1];break;case 0:t[a-1][1].mid=t[a][1];break}else this._root=t[0][1]}}return h}get(e){return this._getNode(e)?.value}_getNode(e){const s=this._iter.reset(e);let i=this._root;for(;i;){const r=s.cmp(i.segment);if(r>0)i=i.left;else if(r<0)i=i.right;else if(s.hasNext())s.next(),i=i.mid;else break}return i}has(e){const s=this._getNode(e);return!(s?.value===void 0&&s?.mid===void 0)}delete(e){return this._delete(e,!1)}deleteSuperstr(e){return this._delete(e,!0)}_delete(e,s){const i=this._iter.reset(e),r=[];let t=this._root;for(;t;){const h=i.cmp(t.segment);if(h>0)r.push([-1,t]),t=t.left;else if(h<0)r.push([1,t]),t=t.right;else if(i.hasNext())i.next(),r.push([0,t]),t=t.mid;else break}if(t){if(s?(t.left=void 0,t.mid=void 0,t.right=void 0,t.height=1):(t.key=void 0,t.value=void 0),!t.mid&&!t.value)if(t.left&&t.right){const h=this._min(t.right);if(h.key){const{key:a,value:n,segment:f}=h;this._delete(h.key,!1),t.key=a,t.value=n,t.segment=f}}else{const h=t.left??t.right;if(r.length>0){const[a,n]=r[r.length-1];switch(a){case-1:n.left=h;break;case 0:n.mid=h;break;case 1:n.right=h;break}}else this._root=h}for(let h=r.length-1;h>=0;h--){const a=r[h][1];a.updateHeight();const n=a.balanceFactor();if(n>1?(a.right.balanceFactor()>=0||(a.right=a.right.rotateRight()),r[h][1]=a.rotateLeft()):n<-1&&(a.left.balanceFactor()<=0||(a.left=a.left.rotateLeft()),r[h][1]=a.rotateRight()),h>0)switch(r[h-1][0]){case-1:r[h-1][1].left=r[h][1];break;case 1:r[h-1][1].right=r[h][1];break;case 0:r[h-1][1].mid=r[h][1];break}else this._root=r[0][1]}}}_min(e){for(;e.left;)e=e.left;return e}findSubstr(e){const s=this._iter.reset(e);let i=this._root,r;for(;i;){const t=s.cmp(i.segment);if(t>0)i=i.left;else if(t<0)i=i.right;else if(s.hasNext())s.next(),r=i.value||r,i=i.mid;else break}return i&&i.value||r}findSuperstr(e){return this._findSuperstrOrElement(e,!1)}_findSuperstrOrElement(e,s){const i=this._iter.reset(e);let r=this._root;for(;r;){const t=i.cmp(r.segment);if(t>0)r=r.left;else if(t<0)r=r.right;else if(i.hasNext())i.next(),r=r.mid;else return r.mid?this._entries(r.mid):s?r.value:void 0}}hasElementOrSubtree(e){return this._findSuperstrOrElement(e,!0)!==void 0}forEach(e){for(const[s,i]of this)e(i,s)}*[Symbol.iterator](){yield*this._entries(this._root)}_entries(e){const s=[];return this._dfsEntries(e,s),s[Symbol.iterator]()}_dfsEntries(e,s){e&&(e.left&&this._dfsEntries(e.left,s),e.value&&s.push([e.key,e.value]),e.mid&&this._dfsEntries(e.mid,s),e.right&&this._dfsEntries(e.right,s))}_isBalanced(){const e=s=>{if(!s)return!0;const i=s.balanceFactor();return i<-1||i>1?!1:e(s.left)&&e(s.right)};return e(this._root)}}export{K as ConfigKeysIterator,b as PathIterator,y as StringIterator,l as TernarySearchTree,S as UriIterator};
+import { shuffle } from './arrays.js';
+import { compare, compareIgnoreCase, compareSubstring, compareSubstringIgnoreCase } from './strings.js';
+export class StringIterator {
+    constructor() {
+        this._value = '';
+        this._pos = 0;
+    }
+    reset(key) {
+        this._value = key;
+        this._pos = 0;
+        return this;
+    }
+    next() {
+        this._pos += 1;
+        return this;
+    }
+    hasNext() {
+        return this._pos < this._value.length - 1;
+    }
+    cmp(a) {
+        const aCode = a.charCodeAt(0);
+        const thisCode = this._value.charCodeAt(this._pos);
+        return aCode - thisCode;
+    }
+    value() {
+        return this._value[this._pos];
+    }
+}
+export class ConfigKeysIterator {
+    constructor(_caseSensitive = true) {
+        this._caseSensitive = _caseSensitive;
+    }
+    reset(key) {
+        this._value = key;
+        this._from = 0;
+        this._to = 0;
+        return this.next();
+    }
+    hasNext() {
+        return this._to < this._value.length;
+    }
+    next() {
+        this._from = this._to;
+        let justSeps = true;
+        for (; this._to < this._value.length; this._to++) {
+            const ch = this._value.charCodeAt(this._to);
+            if (ch === 46) {
+                if (justSeps) {
+                    this._from++;
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                justSeps = false;
+            }
+        }
+        return this;
+    }
+    cmp(a) {
+        return this._caseSensitive
+            ? compareSubstring(a, this._value, 0, a.length, this._from, this._to)
+            : compareSubstringIgnoreCase(a, this._value, 0, a.length, this._from, this._to);
+    }
+    value() {
+        return this._value.substring(this._from, this._to);
+    }
+}
+export class PathIterator {
+    constructor(_splitOnBackslash = true, _caseSensitive = true) {
+        this._splitOnBackslash = _splitOnBackslash;
+        this._caseSensitive = _caseSensitive;
+    }
+    reset(key) {
+        this._from = 0;
+        this._to = 0;
+        this._value = key;
+        this._valueLen = key.length;
+        for (let pos = key.length - 1; pos >= 0; pos--, this._valueLen--) {
+            const ch = this._value.charCodeAt(pos);
+            if (!(ch === 47 || this._splitOnBackslash && ch === 92)) {
+                break;
+            }
+        }
+        return this.next();
+    }
+    hasNext() {
+        return this._to < this._valueLen;
+    }
+    next() {
+        this._from = this._to;
+        let justSeps = true;
+        for (; this._to < this._valueLen; this._to++) {
+            const ch = this._value.charCodeAt(this._to);
+            if (ch === 47 || this._splitOnBackslash && ch === 92) {
+                if (justSeps) {
+                    this._from++;
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                justSeps = false;
+            }
+        }
+        return this;
+    }
+    cmp(a) {
+        return this._caseSensitive
+            ? compareSubstring(a, this._value, 0, a.length, this._from, this._to)
+            : compareSubstringIgnoreCase(a, this._value, 0, a.length, this._from, this._to);
+    }
+    value() {
+        return this._value.substring(this._from, this._to);
+    }
+}
+export class UriIterator {
+    constructor(_ignorePathCasing, _ignoreQueryAndFragment) {
+        this._ignorePathCasing = _ignorePathCasing;
+        this._ignoreQueryAndFragment = _ignoreQueryAndFragment;
+        this._states = [];
+        this._stateIdx = 0;
+    }
+    reset(key) {
+        this._value = key;
+        this._states = [];
+        if (this._value.scheme) {
+            this._states.push(1);
+        }
+        if (this._value.authority) {
+            this._states.push(2);
+        }
+        if (this._value.path) {
+            this._pathIterator = new PathIterator(false, !this._ignorePathCasing(key));
+            this._pathIterator.reset(key.path);
+            if (this._pathIterator.value()) {
+                this._states.push(3);
+            }
+        }
+        if (!this._ignoreQueryAndFragment(key)) {
+            if (this._value.query) {
+                this._states.push(4);
+            }
+            if (this._value.fragment) {
+                this._states.push(5);
+            }
+        }
+        this._stateIdx = 0;
+        return this;
+    }
+    next() {
+        if (this._states[this._stateIdx] === 3 && this._pathIterator.hasNext()) {
+            this._pathIterator.next();
+        }
+        else {
+            this._stateIdx += 1;
+        }
+        return this;
+    }
+    hasNext() {
+        return (this._states[this._stateIdx] === 3 && this._pathIterator.hasNext())
+            || this._stateIdx < this._states.length - 1;
+    }
+    cmp(a) {
+        if (this._states[this._stateIdx] === 1) {
+            return compareIgnoreCase(a, this._value.scheme);
+        }
+        else if (this._states[this._stateIdx] === 2) {
+            return compareIgnoreCase(a, this._value.authority);
+        }
+        else if (this._states[this._stateIdx] === 3) {
+            return this._pathIterator.cmp(a);
+        }
+        else if (this._states[this._stateIdx] === 4) {
+            return compare(a, this._value.query);
+        }
+        else if (this._states[this._stateIdx] === 5) {
+            return compare(a, this._value.fragment);
+        }
+        throw new Error();
+    }
+    value() {
+        if (this._states[this._stateIdx] === 1) {
+            return this._value.scheme;
+        }
+        else if (this._states[this._stateIdx] === 2) {
+            return this._value.authority;
+        }
+        else if (this._states[this._stateIdx] === 3) {
+            return this._pathIterator.value();
+        }
+        else if (this._states[this._stateIdx] === 4) {
+            return this._value.query;
+        }
+        else if (this._states[this._stateIdx] === 5) {
+            return this._value.fragment;
+        }
+        throw new Error();
+    }
+}
+class TernarySearchTreeNode {
+    constructor() {
+        this.height = 1;
+    }
+    isEmpty() {
+        return !this.left && !this.mid && !this.right && !this.value;
+    }
+    rotateLeft() {
+        const tmp = this.right;
+        this.right = tmp.left;
+        tmp.left = this;
+        this.updateHeight();
+        tmp.updateHeight();
+        return tmp;
+    }
+    rotateRight() {
+        const tmp = this.left;
+        this.left = tmp.right;
+        tmp.right = this;
+        this.updateHeight();
+        tmp.updateHeight();
+        return tmp;
+    }
+    updateHeight() {
+        this.height = 1 + Math.max(this.heightLeft, this.heightRight);
+    }
+    balanceFactor() {
+        return this.heightRight - this.heightLeft;
+    }
+    get heightLeft() {
+        return this.left?.height ?? 0;
+    }
+    get heightRight() {
+        return this.right?.height ?? 0;
+    }
+}
+export class TernarySearchTree {
+    static forUris(ignorePathCasing = () => false, ignoreQueryAndFragment = () => false) {
+        return new TernarySearchTree(new UriIterator(ignorePathCasing, ignoreQueryAndFragment));
+    }
+    static forPaths(ignorePathCasing = false) {
+        return new TernarySearchTree(new PathIterator(undefined, !ignorePathCasing));
+    }
+    static forStrings() {
+        return new TernarySearchTree(new StringIterator());
+    }
+    static forConfigKeys() {
+        return new TernarySearchTree(new ConfigKeysIterator());
+    }
+    constructor(segments) {
+        this._iter = segments;
+    }
+    clear() {
+        this._root = undefined;
+    }
+    fill(values, keys) {
+        if (keys) {
+            const arr = keys.slice(0);
+            shuffle(arr);
+            for (const k of arr) {
+                this.set(k, values);
+            }
+        }
+        else {
+            const arr = values.slice(0);
+            shuffle(arr);
+            for (const entry of arr) {
+                this.set(entry[0], entry[1]);
+            }
+        }
+    }
+    set(key, element) {
+        const iter = this._iter.reset(key);
+        let node;
+        if (!this._root) {
+            this._root = new TernarySearchTreeNode();
+            this._root.segment = iter.value();
+        }
+        const stack = [];
+        node = this._root;
+        while (true) {
+            const val = iter.cmp(node.segment);
+            if (val > 0) {
+                if (!node.left) {
+                    node.left = new TernarySearchTreeNode();
+                    node.left.segment = iter.value();
+                }
+                stack.push([-1, node]);
+                node = node.left;
+            }
+            else if (val < 0) {
+                if (!node.right) {
+                    node.right = new TernarySearchTreeNode();
+                    node.right.segment = iter.value();
+                }
+                stack.push([1, node]);
+                node = node.right;
+            }
+            else if (iter.hasNext()) {
+                iter.next();
+                if (!node.mid) {
+                    node.mid = new TernarySearchTreeNode();
+                    node.mid.segment = iter.value();
+                }
+                stack.push([0, node]);
+                node = node.mid;
+            }
+            else {
+                break;
+            }
+        }
+        const oldElement = node.value;
+        node.value = element;
+        node.key = key;
+        for (let i = stack.length - 1; i >= 0; i--) {
+            const node = stack[i][1];
+            node.updateHeight();
+            const bf = node.balanceFactor();
+            if (bf < -1 || bf > 1) {
+                const d1 = stack[i][0];
+                const d2 = stack[i + 1][0];
+                if (d1 === 1 && d2 === 1) {
+                    stack[i][1] = node.rotateLeft();
+                }
+                else if (d1 === -1 && d2 === -1) {
+                    stack[i][1] = node.rotateRight();
+                }
+                else if (d1 === 1 && d2 === -1) {
+                    node.right = stack[i + 1][1] = stack[i + 1][1].rotateRight();
+                    stack[i][1] = node.rotateLeft();
+                }
+                else if (d1 === -1 && d2 === 1) {
+                    node.left = stack[i + 1][1] = stack[i + 1][1].rotateLeft();
+                    stack[i][1] = node.rotateRight();
+                }
+                else {
+                    throw new Error();
+                }
+                if (i > 0) {
+                    switch (stack[i - 1][0]) {
+                        case -1:
+                            stack[i - 1][1].left = stack[i][1];
+                            break;
+                        case 1:
+                            stack[i - 1][1].right = stack[i][1];
+                            break;
+                        case 0:
+                            stack[i - 1][1].mid = stack[i][1];
+                            break;
+                    }
+                }
+                else {
+                    this._root = stack[0][1];
+                }
+            }
+        }
+        return oldElement;
+    }
+    get(key) {
+        return this._getNode(key)?.value;
+    }
+    _getNode(key) {
+        const iter = this._iter.reset(key);
+        let node = this._root;
+        while (node) {
+            const val = iter.cmp(node.segment);
+            if (val > 0) {
+                node = node.left;
+            }
+            else if (val < 0) {
+                node = node.right;
+            }
+            else if (iter.hasNext()) {
+                iter.next();
+                node = node.mid;
+            }
+            else {
+                break;
+            }
+        }
+        return node;
+    }
+    has(key) {
+        const node = this._getNode(key);
+        return !(node?.value === undefined && node?.mid === undefined);
+    }
+    delete(key) {
+        return this._delete(key, false);
+    }
+    deleteSuperstr(key) {
+        return this._delete(key, true);
+    }
+    _delete(key, superStr) {
+        const iter = this._iter.reset(key);
+        const stack = [];
+        let node = this._root;
+        while (node) {
+            const val = iter.cmp(node.segment);
+            if (val > 0) {
+                stack.push([-1, node]);
+                node = node.left;
+            }
+            else if (val < 0) {
+                stack.push([1, node]);
+                node = node.right;
+            }
+            else if (iter.hasNext()) {
+                iter.next();
+                stack.push([0, node]);
+                node = node.mid;
+            }
+            else {
+                break;
+            }
+        }
+        if (!node) {
+            return;
+        }
+        if (superStr) {
+            node.left = undefined;
+            node.mid = undefined;
+            node.right = undefined;
+            node.height = 1;
+        }
+        else {
+            node.key = undefined;
+            node.value = undefined;
+        }
+        if (!node.mid && !node.value) {
+            if (node.left && node.right) {
+                const min = this._min(node.right);
+                if (min.key) {
+                    const { key, value, segment } = min;
+                    this._delete(min.key, false);
+                    node.key = key;
+                    node.value = value;
+                    node.segment = segment;
+                }
+            }
+            else {
+                const newChild = node.left ?? node.right;
+                if (stack.length > 0) {
+                    const [dir, parent] = stack[stack.length - 1];
+                    switch (dir) {
+                        case -1:
+                            parent.left = newChild;
+                            break;
+                        case 0:
+                            parent.mid = newChild;
+                            break;
+                        case 1:
+                            parent.right = newChild;
+                            break;
+                    }
+                }
+                else {
+                    this._root = newChild;
+                }
+            }
+        }
+        for (let i = stack.length - 1; i >= 0; i--) {
+            const node = stack[i][1];
+            node.updateHeight();
+            const bf = node.balanceFactor();
+            if (bf > 1) {
+                if (node.right.balanceFactor() >= 0) {
+                    stack[i][1] = node.rotateLeft();
+                }
+                else {
+                    node.right = node.right.rotateRight();
+                    stack[i][1] = node.rotateLeft();
+                }
+            }
+            else if (bf < -1) {
+                if (node.left.balanceFactor() <= 0) {
+                    stack[i][1] = node.rotateRight();
+                }
+                else {
+                    node.left = node.left.rotateLeft();
+                    stack[i][1] = node.rotateRight();
+                }
+            }
+            if (i > 0) {
+                switch (stack[i - 1][0]) {
+                    case -1:
+                        stack[i - 1][1].left = stack[i][1];
+                        break;
+                    case 1:
+                        stack[i - 1][1].right = stack[i][1];
+                        break;
+                    case 0:
+                        stack[i - 1][1].mid = stack[i][1];
+                        break;
+                }
+            }
+            else {
+                this._root = stack[0][1];
+            }
+        }
+    }
+    _min(node) {
+        while (node.left) {
+            node = node.left;
+        }
+        return node;
+    }
+    findSubstr(key) {
+        const iter = this._iter.reset(key);
+        let node = this._root;
+        let candidate = undefined;
+        while (node) {
+            const val = iter.cmp(node.segment);
+            if (val > 0) {
+                node = node.left;
+            }
+            else if (val < 0) {
+                node = node.right;
+            }
+            else if (iter.hasNext()) {
+                iter.next();
+                candidate = node.value || candidate;
+                node = node.mid;
+            }
+            else {
+                break;
+            }
+        }
+        return node && node.value || candidate;
+    }
+    findSuperstr(key) {
+        return this._findSuperstrOrElement(key, false);
+    }
+    _findSuperstrOrElement(key, allowValue) {
+        const iter = this._iter.reset(key);
+        let node = this._root;
+        while (node) {
+            const val = iter.cmp(node.segment);
+            if (val > 0) {
+                node = node.left;
+            }
+            else if (val < 0) {
+                node = node.right;
+            }
+            else if (iter.hasNext()) {
+                iter.next();
+                node = node.mid;
+            }
+            else {
+                if (!node.mid) {
+                    if (allowValue) {
+                        return node.value;
+                    }
+                    else {
+                        return undefined;
+                    }
+                }
+                else {
+                    return this._entries(node.mid);
+                }
+            }
+        }
+        return undefined;
+    }
+    hasElementOrSubtree(key) {
+        return this._findSuperstrOrElement(key, true) !== undefined;
+    }
+    forEach(callback) {
+        for (const [key, value] of this) {
+            callback(value, key);
+        }
+    }
+    *[Symbol.iterator]() {
+        yield* this._entries(this._root);
+    }
+    _entries(node) {
+        const result = [];
+        this._dfsEntries(node, result);
+        return result[Symbol.iterator]();
+    }
+    _dfsEntries(node, bucket) {
+        if (!node) {
+            return;
+        }
+        if (node.left) {
+            this._dfsEntries(node.left, bucket);
+        }
+        if (node.value) {
+            bucket.push([node.key, node.value]);
+        }
+        if (node.mid) {
+            this._dfsEntries(node.mid, bucket);
+        }
+        if (node.right) {
+            this._dfsEntries(node.right, bucket);
+        }
+    }
+    _isBalanced() {
+        const nodeIsBalanced = (node) => {
+            if (!node) {
+                return true;
+            }
+            const bf = node.balanceFactor();
+            if (bf < -1 || bf > 1) {
+                return false;
+            }
+            return nodeIsBalanced(node.left) && nodeIsBalanced(node.right);
+        };
+        return nodeIsBalanced(this._root);
+    }
+}

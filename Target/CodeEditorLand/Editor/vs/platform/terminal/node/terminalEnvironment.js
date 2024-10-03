@@ -1,1 +1,282 @@
-import*as w from"os";import{FileAccess as T}from"../../../base/common/network.js";import{getCaseInsensitive as y}from"../../../base/common/objects.js";import*as r from"../../../base/common/path.js";import{isMacintosh as O,isWindows as S}from"../../../base/common/platform.js";import*as P from"../../../base/common/process.js";import{format as b}from"../../../base/common/strings.js";import{isString as _}from"../../../base/common/types.js";import*as j from"../../../base/node/pfs.js";import"../../log/common/log.js";import"../../product/common/productService.js";import"../common/terminal.js";import{EnvironmentVariableMutatorType as V}from"../common/environmentVariable.js";import{deserializeEnvironmentVariableCollections as z}from"../common/environmentVariableShared.js";import{MergedEnvironmentVariableCollection as k}from"../common/environmentVariableCollection.js";function Z(){const n=/(\d+)\.(\d+)\.(\d+)/g.exec(w.release());let i=0;return n&&n.length===4&&(i=parseInt(n[3])),i}async function te(n,i,h,g=P.env,a=j.Promises.exists){if(r.isAbsolute(n))return await a(n)?n:void 0;if(i===void 0&&(i=P.cwd()),r.dirname(n)!=="."){const s=r.join(i,n);return await a(s)?s:void 0}const o=y(g,"PATH");if(h===void 0&&_(o)&&(h=o.split(r.delimiter)),h===void 0||h.length===0){const s=r.join(i,n);return await a(s)?s:void 0}for(const s of h){let e;if(r.isAbsolute(s)?e=r.join(s,n):e=r.join(i,s,n),await a(e))return e;if(S){let t=e+".com";if(await a(t)||(t=e+".exe",await a(t)))return t}}const c=r.join(i,n);return await a(c)?c:void 0}function ie(n,i,h,g,a){const f=S&&(!i.windowsEnableConpty||Z()<18309);if(!i.shellIntegration.enabled||!n.executable||n.isFeatureTerminal&&!n.forceShellIntegration||n.ignoreShellIntegration||f)return;const o=n.args,c=P.platform==="win32"?r.basename(n.executable).toLowerCase():r.basename(n.executable),s=r.dirname(T.asFileUri("").fsPath);let e;const t={VSCODE_INJECTION:"1"};if(i.shellIntegration.nonce&&(t.VSCODE_NONCE=i.shellIntegration.nonce),S){if(c==="pwsh.exe"||c==="powershell.exe")return!o||C(o)?e=l.get("windows-pwsh"):L(o)&&(e=l.get("windows-pwsh-login")),e?(e=[...e],e[e.length-1]=b(e[e.length-1],s,""),t.VSCODE_STABLE=a.quality==="stable"?"1":"0",i.shellIntegration.suggestEnabled&&(t.VSCODE_SUGGEST="1"),{newArgs:e,envMixin:t}):void 0;if(c==="bash.exe")return!o||o.length===0?e=l.get("bash"):x(o)&&(t.VSCODE_SHELL_LOGIN="1",I(i,t),e=l.get("bash")),e?(e=[...e],e[e.length-1]=b(e[e.length-1],s),t.VSCODE_STABLE=a.quality==="stable"?"1":"0",{newArgs:e,envMixin:t}):void 0;g.warn(`Shell integration cannot be enabled for executable "${n.executable}" and args`,n.args);return}switch(c){case"bash":return!o||o.length===0?e=l.get("bash"):x(o)&&(t.VSCODE_SHELL_LOGIN="1",I(i,t),e=l.get("bash")),e?(e=[...e],e[e.length-1]=b(e[e.length-1],s),t.VSCODE_STABLE=a.quality==="stable"?"1":"0",{newArgs:e,envMixin:t}):void 0;case"fish":{const d=h?.XDG_DATA_DIRS??"/usr/local/share:/usr/share",u=r.join(s,"out/vs/workbench/contrib/terminal/common/scripts/fish_xdg_data");return t.XDG_DATA_DIRS=`${d}:${u}`,I(i,t),{newArgs:void 0,envMixin:t}}case"pwsh":return!o||C(o)?e=l.get("pwsh"):L(o)&&(e=l.get("pwsh-login")),e?(i.shellIntegration.suggestEnabled&&(t.VSCODE_SUGGEST="1"),e=[...e],e[e.length-1]=b(e[e.length-1],s,""),t.VSCODE_STABLE=a.quality==="stable"?"1":"0",{newArgs:e,envMixin:t}):void 0;case"zsh":{if(!o||o.length===0?e=l.get("zsh"):x(o)?(e=l.get("zsh-login"),I(i,t)):(o===l.get("zsh")||o===l.get("zsh-login"))&&(e=o),!e)return;e=[...e],e[e.length-1]=b(e[e.length-1],s);let d;try{d=w.userInfo().username}catch{d="unknown"}const u=r.join(w.tmpdir(),`${d}-${a.applicationName}-zsh`);t.ZDOTDIR=u;const D=h?.ZDOTDIR??w.homedir()??"~";t.USER_ZDOTDIR=D;const m=[];return m.push({source:r.join(s,"out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"),dest:r.join(u,".zshrc")}),m.push({source:r.join(s,"out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-profile.zsh"),dest:r.join(u,".zprofile")}),m.push({source:r.join(s,"out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-env.zsh"),dest:r.join(u,".zshenv")}),m.push({source:r.join(s,"out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-login.zsh"),dest:r.join(u,".zlogin")}),{newArgs:e,envMixin:t,filesToCopy:m}}}g.warn(`Shell integration cannot be enabled for executable "${n.executable}" and args`,n.args)}function I(n,i){if(O&&n.environmentVariableCollections){const h=z(n.environmentVariableCollections),a=new k(h).getVariableMap({workspaceFolder:n.workspaceFolder}).get("PATH"),f=[];if(a)for(const o of a)o.type===V.Prepend&&f.push(o.value);f.length>0&&(i.VSCODE_PATH_PREFIX=f.join(""))}}var B=(c=>(c.WindowsPwsh="windows-pwsh",c.WindowsPwshLogin="windows-pwsh-login",c.Pwsh="pwsh",c.PwshLogin="pwsh-login",c.Zsh="zsh",c.ZshLogin="zsh-login",c.Bash="bash",c))(B||{});const l=new Map;l.set("windows-pwsh",["-noexit","-command",'try { . "{0}\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1" } catch {}{1}']),l.set("windows-pwsh-login",["-l","-noexit","-command",'try { . "{0}\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1" } catch {}{1}']),l.set("pwsh",["-noexit","-command",'. "{0}/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration.ps1"{1}']),l.set("pwsh-login",["-l","-noexit","-command",'. "{0}/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration.ps1"']),l.set("zsh",["-i"]),l.set("zsh-login",["-il"]),l.set("bash",["--init-file","{0}/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-bash.sh"]);const p=["-login","-l"],v=["--login","-l"],M=["-i","--interactive"],E=["-nol","-nologo"];function L(n){return typeof n=="string"?p.includes(n.toLowerCase()):n.length===1&&p.includes(n[0].toLowerCase())||n.length===2&&(p.includes(n[0].toLowerCase())||p.includes(n[1].toLowerCase()))&&(E.includes(n[0].toLowerCase())||E.includes(n[1].toLowerCase()))}function C(n){return typeof n=="string"?E.includes(n.toLowerCase()):n.length===0||n?.length===1&&E.includes(n[0].toLowerCase())}function x(n){return typeof n!="string"&&(n=n.filter(i=>!M.includes(i.toLowerCase()))),n==="string"&&v.includes(n.toLowerCase())||typeof n!="string"&&n.length===1&&v.includes(n[0].toLowerCase())}export{te as findExecutable,ie as getShellIntegrationInjection,Z as getWindowsBuildNumber};
+import * as os from 'os';
+import { FileAccess } from '../../../base/common/network.js';
+import { getCaseInsensitive } from '../../../base/common/objects.js';
+import * as path from '../../../base/common/path.js';
+import { isMacintosh, isWindows } from '../../../base/common/platform.js';
+import * as process from '../../../base/common/process.js';
+import { format } from '../../../base/common/strings.js';
+import { isString } from '../../../base/common/types.js';
+import * as pfs from '../../../base/node/pfs.js';
+import { EnvironmentVariableMutatorType } from '../common/environmentVariable.js';
+import { deserializeEnvironmentVariableCollections } from '../common/environmentVariableShared.js';
+import { MergedEnvironmentVariableCollection } from '../common/environmentVariableCollection.js';
+export function getWindowsBuildNumber() {
+    const osVersion = (/(\d+)\.(\d+)\.(\d+)/g).exec(os.release());
+    let buildNumber = 0;
+    if (osVersion && osVersion.length === 4) {
+        buildNumber = parseInt(osVersion[3]);
+    }
+    return buildNumber;
+}
+export async function findExecutable(command, cwd, paths, env = process.env, exists = pfs.Promises.exists) {
+    if (path.isAbsolute(command)) {
+        return await exists(command) ? command : undefined;
+    }
+    if (cwd === undefined) {
+        cwd = process.cwd();
+    }
+    const dir = path.dirname(command);
+    if (dir !== '.') {
+        const fullPath = path.join(cwd, command);
+        return await exists(fullPath) ? fullPath : undefined;
+    }
+    const envPath = getCaseInsensitive(env, 'PATH');
+    if (paths === undefined && isString(envPath)) {
+        paths = envPath.split(path.delimiter);
+    }
+    if (paths === undefined || paths.length === 0) {
+        const fullPath = path.join(cwd, command);
+        return await exists(fullPath) ? fullPath : undefined;
+    }
+    for (const pathEntry of paths) {
+        let fullPath;
+        if (path.isAbsolute(pathEntry)) {
+            fullPath = path.join(pathEntry, command);
+        }
+        else {
+            fullPath = path.join(cwd, pathEntry, command);
+        }
+        if (await exists(fullPath)) {
+            return fullPath;
+        }
+        if (isWindows) {
+            let withExtension = fullPath + '.com';
+            if (await exists(withExtension)) {
+                return withExtension;
+            }
+            withExtension = fullPath + '.exe';
+            if (await exists(withExtension)) {
+                return withExtension;
+            }
+        }
+    }
+    const fullPath = path.join(cwd, command);
+    return await exists(fullPath) ? fullPath : undefined;
+}
+export function getShellIntegrationInjection(shellLaunchConfig, options, env, logService, productService) {
+    const useWinpty = isWindows && (!options.windowsEnableConpty || getWindowsBuildNumber() < 18309);
+    if (!options.shellIntegration.enabled ||
+        !shellLaunchConfig.executable ||
+        (shellLaunchConfig.isFeatureTerminal && !shellLaunchConfig.forceShellIntegration) ||
+        shellLaunchConfig.ignoreShellIntegration ||
+        useWinpty) {
+        return undefined;
+    }
+    const originalArgs = shellLaunchConfig.args;
+    const shell = process.platform === 'win32' ? path.basename(shellLaunchConfig.executable).toLowerCase() : path.basename(shellLaunchConfig.executable);
+    const appRoot = path.dirname(FileAccess.asFileUri('').fsPath);
+    let newArgs;
+    const envMixin = {
+        'VSCODE_INJECTION': '1'
+    };
+    if (options.shellIntegration.nonce) {
+        envMixin['VSCODE_NONCE'] = options.shellIntegration.nonce;
+    }
+    if (isWindows) {
+        if (shell === 'pwsh.exe' || shell === 'powershell.exe') {
+            if (!originalArgs || arePwshImpliedArgs(originalArgs)) {
+                newArgs = shellIntegrationArgs.get(ShellIntegrationExecutable.WindowsPwsh);
+            }
+            else if (arePwshLoginArgs(originalArgs)) {
+                newArgs = shellIntegrationArgs.get(ShellIntegrationExecutable.WindowsPwshLogin);
+            }
+            if (!newArgs) {
+                return undefined;
+            }
+            newArgs = [...newArgs];
+            newArgs[newArgs.length - 1] = format(newArgs[newArgs.length - 1], appRoot, '');
+            envMixin['VSCODE_STABLE'] = productService.quality === 'stable' ? '1' : '0';
+            if (options.shellIntegration.suggestEnabled) {
+                envMixin['VSCODE_SUGGEST'] = '1';
+            }
+            return { newArgs, envMixin };
+        }
+        else if (shell === 'bash.exe') {
+            if (!originalArgs || originalArgs.length === 0) {
+                newArgs = shellIntegrationArgs.get(ShellIntegrationExecutable.Bash);
+            }
+            else if (areZshBashLoginArgs(originalArgs)) {
+                envMixin['VSCODE_SHELL_LOGIN'] = '1';
+                addEnvMixinPathPrefix(options, envMixin);
+                newArgs = shellIntegrationArgs.get(ShellIntegrationExecutable.Bash);
+            }
+            if (!newArgs) {
+                return undefined;
+            }
+            newArgs = [...newArgs];
+            newArgs[newArgs.length - 1] = format(newArgs[newArgs.length - 1], appRoot);
+            envMixin['VSCODE_STABLE'] = productService.quality === 'stable' ? '1' : '0';
+            return { newArgs, envMixin };
+        }
+        logService.warn(`Shell integration cannot be enabled for executable "${shellLaunchConfig.executable}" and args`, shellLaunchConfig.args);
+        return undefined;
+    }
+    switch (shell) {
+        case 'bash': {
+            if (!originalArgs || originalArgs.length === 0) {
+                newArgs = shellIntegrationArgs.get(ShellIntegrationExecutable.Bash);
+            }
+            else if (areZshBashLoginArgs(originalArgs)) {
+                envMixin['VSCODE_SHELL_LOGIN'] = '1';
+                addEnvMixinPathPrefix(options, envMixin);
+                newArgs = shellIntegrationArgs.get(ShellIntegrationExecutable.Bash);
+            }
+            if (!newArgs) {
+                return undefined;
+            }
+            newArgs = [...newArgs];
+            newArgs[newArgs.length - 1] = format(newArgs[newArgs.length - 1], appRoot);
+            envMixin['VSCODE_STABLE'] = productService.quality === 'stable' ? '1' : '0';
+            return { newArgs, envMixin };
+        }
+        case 'fish': {
+            const oldDataDirs = env?.XDG_DATA_DIRS ?? '/usr/local/share:/usr/share';
+            const newDataDir = path.join(appRoot, 'out/vs/workbench/contrib/terminal/common/scripts/fish_xdg_data');
+            envMixin['XDG_DATA_DIRS'] = `${oldDataDirs}:${newDataDir}`;
+            addEnvMixinPathPrefix(options, envMixin);
+            return { newArgs: undefined, envMixin };
+        }
+        case 'pwsh': {
+            if (!originalArgs || arePwshImpliedArgs(originalArgs)) {
+                newArgs = shellIntegrationArgs.get(ShellIntegrationExecutable.Pwsh);
+            }
+            else if (arePwshLoginArgs(originalArgs)) {
+                newArgs = shellIntegrationArgs.get(ShellIntegrationExecutable.PwshLogin);
+            }
+            if (!newArgs) {
+                return undefined;
+            }
+            if (options.shellIntegration.suggestEnabled) {
+                envMixin['VSCODE_SUGGEST'] = '1';
+            }
+            newArgs = [...newArgs];
+            newArgs[newArgs.length - 1] = format(newArgs[newArgs.length - 1], appRoot, '');
+            envMixin['VSCODE_STABLE'] = productService.quality === 'stable' ? '1' : '0';
+            return { newArgs, envMixin };
+        }
+        case 'zsh': {
+            if (!originalArgs || originalArgs.length === 0) {
+                newArgs = shellIntegrationArgs.get(ShellIntegrationExecutable.Zsh);
+            }
+            else if (areZshBashLoginArgs(originalArgs)) {
+                newArgs = shellIntegrationArgs.get(ShellIntegrationExecutable.ZshLogin);
+                addEnvMixinPathPrefix(options, envMixin);
+            }
+            else if (originalArgs === shellIntegrationArgs.get(ShellIntegrationExecutable.Zsh) || originalArgs === shellIntegrationArgs.get(ShellIntegrationExecutable.ZshLogin)) {
+                newArgs = originalArgs;
+            }
+            if (!newArgs) {
+                return undefined;
+            }
+            newArgs = [...newArgs];
+            newArgs[newArgs.length - 1] = format(newArgs[newArgs.length - 1], appRoot);
+            let username;
+            try {
+                username = os.userInfo().username;
+            }
+            catch {
+                username = 'unknown';
+            }
+            const zdotdir = path.join(os.tmpdir(), `${username}-${productService.applicationName}-zsh`);
+            envMixin['ZDOTDIR'] = zdotdir;
+            const userZdotdir = env?.ZDOTDIR ?? os.homedir() ?? `~`;
+            envMixin['USER_ZDOTDIR'] = userZdotdir;
+            const filesToCopy = [];
+            filesToCopy.push({
+                source: path.join(appRoot, 'out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh'),
+                dest: path.join(zdotdir, '.zshrc')
+            });
+            filesToCopy.push({
+                source: path.join(appRoot, 'out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-profile.zsh'),
+                dest: path.join(zdotdir, '.zprofile')
+            });
+            filesToCopy.push({
+                source: path.join(appRoot, 'out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-env.zsh'),
+                dest: path.join(zdotdir, '.zshenv')
+            });
+            filesToCopy.push({
+                source: path.join(appRoot, 'out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-login.zsh'),
+                dest: path.join(zdotdir, '.zlogin')
+            });
+            return { newArgs, envMixin, filesToCopy };
+        }
+    }
+    logService.warn(`Shell integration cannot be enabled for executable "${shellLaunchConfig.executable}" and args`, shellLaunchConfig.args);
+    return undefined;
+}
+function addEnvMixinPathPrefix(options, envMixin) {
+    if (isMacintosh && options.environmentVariableCollections) {
+        const deserialized = deserializeEnvironmentVariableCollections(options.environmentVariableCollections);
+        const merged = new MergedEnvironmentVariableCollection(deserialized);
+        const pathEntry = merged.getVariableMap({ workspaceFolder: options.workspaceFolder }).get('PATH');
+        const prependToPath = [];
+        if (pathEntry) {
+            for (const mutator of pathEntry) {
+                if (mutator.type === EnvironmentVariableMutatorType.Prepend) {
+                    prependToPath.push(mutator.value);
+                }
+            }
+        }
+        if (prependToPath.length > 0) {
+            envMixin['VSCODE_PATH_PREFIX'] = prependToPath.join('');
+        }
+    }
+}
+var ShellIntegrationExecutable;
+(function (ShellIntegrationExecutable) {
+    ShellIntegrationExecutable["WindowsPwsh"] = "windows-pwsh";
+    ShellIntegrationExecutable["WindowsPwshLogin"] = "windows-pwsh-login";
+    ShellIntegrationExecutable["Pwsh"] = "pwsh";
+    ShellIntegrationExecutable["PwshLogin"] = "pwsh-login";
+    ShellIntegrationExecutable["Zsh"] = "zsh";
+    ShellIntegrationExecutable["ZshLogin"] = "zsh-login";
+    ShellIntegrationExecutable["Bash"] = "bash";
+})(ShellIntegrationExecutable || (ShellIntegrationExecutable = {}));
+const shellIntegrationArgs = new Map();
+shellIntegrationArgs.set(ShellIntegrationExecutable.WindowsPwsh, ['-noexit', '-command', 'try { . \"{0}\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1\" } catch {}{1}']);
+shellIntegrationArgs.set(ShellIntegrationExecutable.WindowsPwshLogin, ['-l', '-noexit', '-command', 'try { . \"{0}\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1\" } catch {}{1}']);
+shellIntegrationArgs.set(ShellIntegrationExecutable.Pwsh, ['-noexit', '-command', '. "{0}/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration.ps1"{1}']);
+shellIntegrationArgs.set(ShellIntegrationExecutable.PwshLogin, ['-l', '-noexit', '-command', '. "{0}/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration.ps1"']);
+shellIntegrationArgs.set(ShellIntegrationExecutable.Zsh, ['-i']);
+shellIntegrationArgs.set(ShellIntegrationExecutable.ZshLogin, ['-il']);
+shellIntegrationArgs.set(ShellIntegrationExecutable.Bash, ['--init-file', '{0}/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-bash.sh']);
+const pwshLoginArgs = ['-login', '-l'];
+const shLoginArgs = ['--login', '-l'];
+const shInteractiveArgs = ['-i', '--interactive'];
+const pwshImpliedArgs = ['-nol', '-nologo'];
+function arePwshLoginArgs(originalArgs) {
+    if (typeof originalArgs === 'string') {
+        return pwshLoginArgs.includes(originalArgs.toLowerCase());
+    }
+    else {
+        return originalArgs.length === 1 && pwshLoginArgs.includes(originalArgs[0].toLowerCase()) ||
+            (originalArgs.length === 2 &&
+                (((pwshLoginArgs.includes(originalArgs[0].toLowerCase())) || pwshLoginArgs.includes(originalArgs[1].toLowerCase())))
+                && ((pwshImpliedArgs.includes(originalArgs[0].toLowerCase())) || pwshImpliedArgs.includes(originalArgs[1].toLowerCase())));
+    }
+}
+function arePwshImpliedArgs(originalArgs) {
+    if (typeof originalArgs === 'string') {
+        return pwshImpliedArgs.includes(originalArgs.toLowerCase());
+    }
+    else {
+        return originalArgs.length === 0 || originalArgs?.length === 1 && pwshImpliedArgs.includes(originalArgs[0].toLowerCase());
+    }
+}
+function areZshBashLoginArgs(originalArgs) {
+    if (typeof originalArgs !== 'string') {
+        originalArgs = originalArgs.filter(arg => !shInteractiveArgs.includes(arg.toLowerCase()));
+    }
+    return originalArgs === 'string' && shLoginArgs.includes(originalArgs.toLowerCase())
+        || typeof originalArgs !== 'string' && originalArgs.length === 1 && shLoginArgs.includes(originalArgs[0].toLowerCase());
+}

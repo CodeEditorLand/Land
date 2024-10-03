@@ -1,1 +1,8 @@
-import"../../../../base/common/lifecycle.js";import"../../../../platform/contextkey/common/contextkey.js";import{createDecorator as o}from"../../../../platform/instantiation/common/instantiation.js";import"./model/notebookCellTextModel.js";import"./notebookCommon.js";import"./notebookExecutionStateService.js";var t=(e=>(e[e.Output=1]="Output",e[e.OutputItems=2]="OutputItems",e[e.ExecutionState=3]="ExecutionState",e))(t||{});const d=o("INotebookExecutionService");export{t as CellExecutionUpdateType,d as INotebookExecutionService};
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+export var CellExecutionUpdateType;
+(function (CellExecutionUpdateType) {
+    CellExecutionUpdateType[CellExecutionUpdateType["Output"] = 1] = "Output";
+    CellExecutionUpdateType[CellExecutionUpdateType["OutputItems"] = 2] = "OutputItems";
+    CellExecutionUpdateType[CellExecutionUpdateType["ExecutionState"] = 3] = "ExecutionState";
+})(CellExecutionUpdateType || (CellExecutionUpdateType = {}));
+export const INotebookExecutionService = createDecorator('INotebookExecutionService');

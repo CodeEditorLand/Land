@@ -1,1 +1,45 @@
-var g=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var m=(o,r,e,t)=>{for(var i=t>1?void 0:t?h(r,e):r,c=o.length-1,s;c>=0;c--)(s=o[c])&&(i=(t?s(r,e,i):s(i))||i);return t&&i&&g(r,e,i),i},a=(o,r)=>(e,t)=>r(e,t,o);import{Disposable as v}from"../../../base/common/lifecycle.js";import{ILanguageService as S}from"../languages/language.js";import"./model.js";import{IThemeService as l}from"../../../platform/theme/common/themeService.js";import{ILogService as p}from"../../../platform/log/common/log.js";import{SemanticTokensProviderStyling as d}from"./semanticTokensProviderStyling.js";import{ISemanticTokensStylingService as u}from"./semanticTokensStyling.js";import{InstantiationType as _,registerSingleton as T}from"../../../platform/instantiation/common/extensions.js";let n=class extends v{constructor(e,t,i){super();this._themeService=e;this._logService=t;this._languageService=i;this._caches=new WeakMap,this._register(this._themeService.onDidColorThemeChange(()=>{this._caches=new WeakMap}))}_serviceBrand;_caches;getStyling(e){return this._caches.has(e)||this._caches.set(e,new d(e.getLegend(),this._themeService,this._languageService,this._logService)),this._caches.get(e)}};n=m([a(0,l),a(1,p),a(2,S)],n),T(u,n,_.Delayed);export{n as SemanticTokensStylingService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { ILanguageService } from '../languages/language.js';
+import { IThemeService } from '../../../platform/theme/common/themeService.js';
+import { ILogService } from '../../../platform/log/common/log.js';
+import { SemanticTokensProviderStyling } from './semanticTokensProviderStyling.js';
+import { ISemanticTokensStylingService } from './semanticTokensStyling.js';
+import { registerSingleton } from '../../../platform/instantiation/common/extensions.js';
+let SemanticTokensStylingService = class SemanticTokensStylingService extends Disposable {
+    constructor(_themeService, _logService, _languageService) {
+        super();
+        this._themeService = _themeService;
+        this._logService = _logService;
+        this._languageService = _languageService;
+        this._caches = new WeakMap();
+        this._register(this._themeService.onDidColorThemeChange(() => {
+            this._caches = new WeakMap();
+        }));
+    }
+    getStyling(provider) {
+        if (!this._caches.has(provider)) {
+            this._caches.set(provider, new SemanticTokensProviderStyling(provider.getLegend(), this._themeService, this._languageService, this._logService));
+        }
+        return this._caches.get(provider);
+    }
+};
+SemanticTokensStylingService = __decorate([
+    __param(0, IThemeService),
+    __param(1, ILogService),
+    __param(2, ILanguageService),
+    __metadata("design:paramtypes", [Object, Object, Object])
+], SemanticTokensStylingService);
+export { SemanticTokensStylingService };
+registerSingleton(ISemanticTokensStylingService, SemanticTokensStylingService, 1);

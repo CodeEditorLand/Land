@@ -1,1 +1,69 @@
-import{CharCode as d}from"../../../../base/common/charCode.js";import{isLowerAsciiLetter as m,isUpperAsciiLetter as h}from"../../../../base/common/strings.js";import"../../../common/core/position.js";import{Range as g}from"../../../common/core/range.js";import"../../../common/model.js";import"../../../common/languages.js";class w{constructor(n=!0){this.selectSubwords=n}provideSelectionRanges(n,t){const e=[];for(const i of t){const o=[];e.push(o),this.selectSubwords&&this._addInWordRanges(o,n,i),this._addWordRanges(o,n,i),this._addWhitespaceLine(o,n,i),o.push({range:n.getFullModelRange()})}return e}_addInWordRanges(n,t,e){const i=t.getWordAtPosition(e);if(!i)return;const{word:o,startColumn:c}=i,u=e.column-c;let a=u,s=u,l=0;for(;a>=0;a--){const r=o.charCodeAt(a);if(a!==u&&(r===d.Underline||r===d.Dash))break;if(m(r)&&h(l))break;l=r}for(a+=1;s<o.length;s++){const r=o.charCodeAt(s);if(h(r)&&m(l))break;if(r===d.Underline||r===d.Dash)break;l=r}a<s&&n.push({range:new g(e.lineNumber,c+a,e.lineNumber,c+s)})}_addWordRanges(n,t,e){const i=t.getWordAtPosition(e);i&&n.push({range:new g(e.lineNumber,i.startColumn,e.lineNumber,i.endColumn)})}_addWhitespaceLine(n,t,e){t.getLineLength(e.lineNumber)>0&&t.getLineFirstNonWhitespaceColumn(e.lineNumber)===0&&t.getLineLastNonWhitespaceColumn(e.lineNumber)===0&&n.push({range:new g(e.lineNumber,1,e.lineNumber,t.getLineMaxColumn(e.lineNumber))})}}export{w as WordSelectionRangeProvider};
+import { isLowerAsciiLetter, isUpperAsciiLetter } from '../../../../base/common/strings.js';
+import { Range } from '../../../common/core/range.js';
+export class WordSelectionRangeProvider {
+    constructor(selectSubwords = true) {
+        this.selectSubwords = selectSubwords;
+    }
+    provideSelectionRanges(model, positions) {
+        const result = [];
+        for (const position of positions) {
+            const bucket = [];
+            result.push(bucket);
+            if (this.selectSubwords) {
+                this._addInWordRanges(bucket, model, position);
+            }
+            this._addWordRanges(bucket, model, position);
+            this._addWhitespaceLine(bucket, model, position);
+            bucket.push({ range: model.getFullModelRange() });
+        }
+        return result;
+    }
+    _addInWordRanges(bucket, model, pos) {
+        const obj = model.getWordAtPosition(pos);
+        if (!obj) {
+            return;
+        }
+        const { word, startColumn } = obj;
+        const offset = pos.column - startColumn;
+        let start = offset;
+        let end = offset;
+        let lastCh = 0;
+        for (; start >= 0; start--) {
+            const ch = word.charCodeAt(start);
+            if ((start !== offset) && (ch === 95 || ch === 45)) {
+                break;
+            }
+            else if (isLowerAsciiLetter(ch) && isUpperAsciiLetter(lastCh)) {
+                break;
+            }
+            lastCh = ch;
+        }
+        start += 1;
+        for (; end < word.length; end++) {
+            const ch = word.charCodeAt(end);
+            if (isUpperAsciiLetter(ch) && isLowerAsciiLetter(lastCh)) {
+                break;
+            }
+            else if (ch === 95 || ch === 45) {
+                break;
+            }
+            lastCh = ch;
+        }
+        if (start < end) {
+            bucket.push({ range: new Range(pos.lineNumber, startColumn + start, pos.lineNumber, startColumn + end) });
+        }
+    }
+    _addWordRanges(bucket, model, pos) {
+        const word = model.getWordAtPosition(pos);
+        if (word) {
+            bucket.push({ range: new Range(pos.lineNumber, word.startColumn, pos.lineNumber, word.endColumn) });
+        }
+    }
+    _addWhitespaceLine(bucket, model, pos) {
+        if (model.getLineLength(pos.lineNumber) > 0
+            && model.getLineFirstNonWhitespaceColumn(pos.lineNumber) === 0
+            && model.getLineLastNonWhitespaceColumn(pos.lineNumber) === 0) {
+            bucket.push({ range: new Range(pos.lineNumber, 1, pos.lineNumber, model.getLineMaxColumn(pos.lineNumber)) });
+        }
+    }
+}

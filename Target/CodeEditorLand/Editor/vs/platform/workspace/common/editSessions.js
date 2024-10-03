@@ -1,1 +1,8 @@
-import"../../../base/common/cancellation.js";import"../../../base/common/lifecycle.js";import{createDecorator as i}from"../../instantiation/common/instantiation.js";import"./workspace.js";const c=i("editSessionIdentityService");var o=(e=>(e[e.Complete=100]="Complete",e[e.Partial=50]="Partial",e[e.None=0]="None",e))(o||{});export{o as EditSessionIdentityMatch,c as IEditSessionIdentityService};
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const IEditSessionIdentityService = createDecorator('editSessionIdentityService');
+export var EditSessionIdentityMatch;
+(function (EditSessionIdentityMatch) {
+    EditSessionIdentityMatch[EditSessionIdentityMatch["Complete"] = 100] = "Complete";
+    EditSessionIdentityMatch[EditSessionIdentityMatch["Partial"] = 50] = "Partial";
+    EditSessionIdentityMatch[EditSessionIdentityMatch["None"] = 0] = "None";
+})(EditSessionIdentityMatch || (EditSessionIdentityMatch = {}));

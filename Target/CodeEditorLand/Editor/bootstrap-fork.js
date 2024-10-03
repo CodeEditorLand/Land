@@ -1,2 +1,154 @@
-import*as O from"./vs/base/common/performance.js";import{removeGlobalNodeJsModuleLookupPaths as h,devInjectNodeModuleLookupPath as S}from"./bootstrap-node.js";import{bootstrapESM as m}from"./bootstrap-esm.js";O.mark("code/fork/start");function P(){function d(e){const s=[],i=[];if(e.length)for(let n=0;n<e.length;n++){let r=e[n];if(typeof r>"u")r="undefined";else if(r instanceof Error){const o=r;o.stack?r=o.stack:r=o.toString()}i.push(r)}try{const n=JSON.stringify(i,function(r,o){if(E(o)||Array.isArray(o)){if(s.indexOf(o)!==-1)return"[Circular]";s.push(o)}return o});return n.length>1e5?"Output omitted for a large object that exceeds the limits":n}catch(n){return`Output omitted for an object that cannot be inspected ('${n.toString()}')`}}function l(e){try{process.send&&process.send(e)}catch{}}function E(e){return typeof e=="object"&&e!==null&&!Array.isArray(e)&&!(e instanceof RegExp)&&!(e instanceof Date)}function g(e,s){l({type:"__$console",severity:e,arguments:s})}function c(e,s){Object.defineProperty(console,e,{set:()=>{},get:()=>function(){g(s,d(arguments))}})}function f(e,s){const i=process[e],n=i.write;let r="";Object.defineProperty(i,"write",{set:()=>{},get:()=>(o,p,_)=>{r+=o.toString(p);const u=r.length>1048576?r.length:r.lastIndexOf(`
-`);u!==-1&&(r=r.slice(u+1)),n.call(i,o,p,_)}})}process.env.VSCODE_VERBOSE_LOGGING==="true"?(c("info","log"),c("log","log"),c("warn","warn"),c("error","error")):(console.log=function(){},console.warn=function(){},console.info=function(){},c("error","error")),f("stderr","error"),f("stdout","log")}function y(){process.on("uncaughtException",function(t){}),process.on("unhandledRejection",function(t){})}function R(){const t=Number(process.env.VSCODE_PARENT_PID);typeof t=="number"&&!isNaN(t)&&setInterval(function(){try{process.kill(t,0)}catch{process.exit()}},5e3)}function N(){const t=process.env.VSCODE_CRASH_REPORTER_PROCESS_TYPE;if(t)try{process.crashReporter&&typeof process.crashReporter.addExtraParameter=="function"&&process.crashReporter.addExtraParameter("processType",t)}catch{}}N(),h(),process.env.VSCODE_DEV_INJECT_NODE_MODULE_LOOKUP_PATH&&S(process.env.VSCODE_DEV_INJECT_NODE_MODULE_LOOKUP_PATH),process.send&&process.env.VSCODE_PIPE_LOGGING==="true"&&P(),process.env.VSCODE_HANDLES_UNCAUGHT_ERRORS||y(),process.env.VSCODE_PARENT_PID&&R(),await m(),await import([`./${process.env.VSCODE_ESM_ENTRYPOINT}.js`].join("/"));
+import * as performance from './vs/base/common/performance.js';
+import { removeGlobalNodeJsModuleLookupPaths, devInjectNodeModuleLookupPath } from './bootstrap-node.js';
+import { bootstrapESM } from './bootstrap-esm.js';
+performance.mark('code/fork/start');
+function pipeLoggingToParent() {
+    const MAX_STREAM_BUFFER_LENGTH = 1024 * 1024;
+    const MAX_LENGTH = 100000;
+    function safeToString(args) {
+        const seen = [];
+        const argsArray = [];
+        if (args.length) {
+            for (let i = 0; i < args.length; i++) {
+                let arg = args[i];
+                if (typeof arg === 'undefined') {
+                    arg = 'undefined';
+                }
+                else if (arg instanceof Error) {
+                    const errorObj = arg;
+                    if (errorObj.stack) {
+                        arg = errorObj.stack;
+                    }
+                    else {
+                        arg = errorObj.toString();
+                    }
+                }
+                argsArray.push(arg);
+            }
+        }
+        try {
+            const res = JSON.stringify(argsArray, function (key, value) {
+                if (isObject(value) || Array.isArray(value)) {
+                    if (seen.indexOf(value) !== -1) {
+                        return '[Circular]';
+                    }
+                    seen.push(value);
+                }
+                return value;
+            });
+            if (res.length > MAX_LENGTH) {
+                return 'Output omitted for a large object that exceeds the limits';
+            }
+            return res;
+        }
+        catch (error) {
+            return `Output omitted for an object that cannot be inspected ('${error.toString()}')`;
+        }
+    }
+    function safeSend(arg) {
+        try {
+            if (process.send) {
+                process.send(arg);
+            }
+        }
+        catch (error) {
+        }
+    }
+    function isObject(obj) {
+        return typeof obj === 'object'
+            && obj !== null
+            && !Array.isArray(obj)
+            && !(obj instanceof RegExp)
+            && !(obj instanceof Date);
+    }
+    function safeSendConsoleMessage(severity, args) {
+        safeSend({ type: '__$console', severity, arguments: args });
+    }
+    function wrapConsoleMethod(method, severity) {
+        Object.defineProperty(console, method, {
+            set: () => { },
+            get: () => function () { safeSendConsoleMessage(severity, safeToString(arguments)); },
+        });
+    }
+    function wrapStream(streamName, severity) {
+        const stream = process[streamName];
+        const original = stream.write;
+        let buf = '';
+        Object.defineProperty(stream, 'write', {
+            set: () => { },
+            get: () => (chunk, encoding, callback) => {
+                buf += chunk.toString(encoding);
+                const eol = buf.length > MAX_STREAM_BUFFER_LENGTH ? buf.length : buf.lastIndexOf('\n');
+                if (eol !== -1) {
+                    console[severity](buf.slice(0, eol));
+                    buf = buf.slice(eol + 1);
+                }
+                original.call(stream, chunk, encoding, callback);
+            },
+        });
+    }
+    if (process.env['VSCODE_VERBOSE_LOGGING'] === 'true') {
+        wrapConsoleMethod('info', 'log');
+        wrapConsoleMethod('log', 'log');
+        wrapConsoleMethod('warn', 'warn');
+        wrapConsoleMethod('error', 'error');
+    }
+    else {
+        console.log = function () { };
+        console.warn = function () { };
+        console.info = function () { };
+        wrapConsoleMethod('error', 'error');
+    }
+    wrapStream('stderr', 'error');
+    wrapStream('stdout', 'log');
+}
+function handleExceptions() {
+    process.on('uncaughtException', function (err) {
+        console.error('Uncaught Exception: ', err);
+    });
+    process.on('unhandledRejection', function (reason) {
+        console.error('Unhandled Promise Rejection: ', reason);
+    });
+}
+function terminateWhenParentTerminates() {
+    const parentPid = Number(process.env['VSCODE_PARENT_PID']);
+    if (typeof parentPid === 'number' && !isNaN(parentPid)) {
+        setInterval(function () {
+            try {
+                process.kill(parentPid, 0);
+            }
+            catch (e) {
+                process.exit();
+            }
+        }, 5000);
+    }
+}
+function configureCrashReporter() {
+    const crashReporterProcessType = process.env['VSCODE_CRASH_REPORTER_PROCESS_TYPE'];
+    if (crashReporterProcessType) {
+        try {
+            if (process['crashReporter'] && typeof process['crashReporter'].addExtraParameter === 'function') {
+                process['crashReporter'].addExtraParameter('processType', crashReporterProcessType);
+            }
+        }
+        catch (error) {
+            console.error(error);
+        }
+    }
+}
+configureCrashReporter();
+removeGlobalNodeJsModuleLookupPaths();
+if (process.env['VSCODE_DEV_INJECT_NODE_MODULE_LOOKUP_PATH']) {
+    devInjectNodeModuleLookupPath(process.env['VSCODE_DEV_INJECT_NODE_MODULE_LOOKUP_PATH']);
+}
+if (!!process.send && process.env['VSCODE_PIPE_LOGGING'] === 'true') {
+    pipeLoggingToParent();
+}
+if (!process.env['VSCODE_HANDLES_UNCAUGHT_ERRORS']) {
+    handleExceptions();
+}
+if (process.env['VSCODE_PARENT_PID']) {
+    terminateWhenParentTerminates();
+}
+await bootstrapESM();
+await import([`./${process.env['VSCODE_ESM_ENTRYPOINT']}.js`].join('/'));

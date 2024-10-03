@@ -1,1 +1,29 @@
-import"../../../base/common/collections.js";import"../../../base/common/processes.js";import"../../../base/common/uri.js";import{createDecorator as r}from"../../instantiation/common/instantiation.js";import"../../workspace/common/workspace.js";const s="diagnosticsService",d=r(s);function l(o){return!!o.hostName&&!!o.errorMessage}class u{_serviceBrand;async getPerformanceInfo(e,n){return{}}async getSystemInfo(e,n){return{processArgs:"nullProcessArgs",gpuStatus:"nullGpuStatus",screenReader:"nullScreenReader",remoteData:[],os:"nullOs",memory:"nullMemory",vmHint:"nullVmHint"}}async getDiagnostics(e,n){return""}async getWorkspaceFileExtensions(e){return{extensions:[]}}async reportWorkspaceStats(e){}}export{s as ID,d as IDiagnosticsService,u as NullDiagnosticsService,l as isRemoteDiagnosticError};
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const ID = 'diagnosticsService';
+export const IDiagnosticsService = createDecorator(ID);
+export function isRemoteDiagnosticError(x) {
+    return !!x.hostName && !!x.errorMessage;
+}
+export class NullDiagnosticsService {
+    async getPerformanceInfo(mainProcessInfo, remoteInfo) {
+        return {};
+    }
+    async getSystemInfo(mainProcessInfo, remoteInfo) {
+        return {
+            processArgs: 'nullProcessArgs',
+            gpuStatus: 'nullGpuStatus',
+            screenReader: 'nullScreenReader',
+            remoteData: [],
+            os: 'nullOs',
+            memory: 'nullMemory',
+            vmHint: 'nullVmHint',
+        };
+    }
+    async getDiagnostics(mainProcessInfo, remoteInfo) {
+        return '';
+    }
+    async getWorkspaceFileExtensions(workspace) {
+        return { extensions: [] };
+    }
+    async reportWorkspaceStats(workspace) { }
+}

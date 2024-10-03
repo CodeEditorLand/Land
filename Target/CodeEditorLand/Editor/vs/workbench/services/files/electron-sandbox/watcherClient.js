@@ -1,1 +1,27 @@
-import"../../../../base/common/lifecycle.js";import{getDelayedChannel as c,ProxyChannel as a}from"../../../../base/parts/ipc/common/ipc.js";import"../../../../platform/files/common/files.js";import{AbstractUniversalWatcherClient as s}from"../../../../platform/files/common/watcher.js";import"../../utilityProcess/electron-sandbox/utilityProcessWorkerWorkbenchService.js";class b extends s{constructor(r,i,t,o){super(r,i,t);this.utilityProcessWorkerWorkbenchService=o;this.init()}createWatcher(r){return a.toService(c((async()=>{const{client:t,onDidTerminate:o}=r.add(await this.utilityProcessWorkerWorkbenchService.createWorker({moduleId:"vs/platform/files/node/watcher/watcherMain",type:"fileWatcher"}));return o.then(({reason:e})=>{e?.code===0?this.trace(`terminated by itself with code ${e.code}, signal: ${e.signal}`):this.onError(`terminated by itself unexpectedly with code ${e?.code}, signal: ${e?.signal} (ETERM)`)}),t.getChannel("watcher")})()))}}export{b as UniversalWatcherClient};
+import { getDelayedChannel, ProxyChannel } from '../../../../base/parts/ipc/common/ipc.js';
+import { AbstractUniversalWatcherClient } from '../../../../platform/files/common/watcher.js';
+export class UniversalWatcherClient extends AbstractUniversalWatcherClient {
+    constructor(onFileChanges, onLogMessage, verboseLogging, utilityProcessWorkerWorkbenchService) {
+        super(onFileChanges, onLogMessage, verboseLogging);
+        this.utilityProcessWorkerWorkbenchService = utilityProcessWorkerWorkbenchService;
+        this.init();
+    }
+    createWatcher(disposables) {
+        const watcher = ProxyChannel.toService(getDelayedChannel((async () => {
+            const { client, onDidTerminate } = disposables.add(await this.utilityProcessWorkerWorkbenchService.createWorker({
+                moduleId: 'vs/platform/files/node/watcher/watcherMain',
+                type: 'fileWatcher'
+            }));
+            onDidTerminate.then(({ reason }) => {
+                if (reason?.code === 0) {
+                    this.trace(`terminated by itself with code ${reason.code}, signal: ${reason.signal}`);
+                }
+                else {
+                    this.onError(`terminated by itself unexpectedly with code ${reason?.code}, signal: ${reason?.signal} (ETERM)`);
+                }
+            });
+            return client.getChannel('watcher');
+        })()));
+        return watcher;
+    }
+}

@@ -1,1 +1,62 @@
-import"../../../base/common/cancellation.js";import"../../../platform/extensions/common/extensions.js";import"../../contrib/chat/common/chatCodeMapperService.js";import*as a from"./extHost.protocol.js";import{ChatAgentResult as c,DocumentContextItem as v,TextEdit as l}from"./extHostTypeConverters.js";import{URI as u}from"../../../base/common/uri.js";class d{static _providerHandlePool=0;_proxy;providers=new Map;constructor(o){this._proxy=o.getProxy(a.MainContext.MainThreadCodeMapper)}async $mapCode(o,r,t){const p=this.providers.get(o);if(!p)throw new Error(`Received request to map code for unknown provider handle ${o}`);const i={textEdit:(e,s)=>{s=Array.isArray(s)?s:[s],this._proxy.$handleProgress(r.requestId,{uri:e,edits:s.map(l.from)})}},n={codeBlocks:r.codeBlocks.map(e=>({code:e.code,resource:u.revive(e.resource),markdownBeforeBlock:e.markdownBeforeBlock})),conversation:r.conversation.map(e=>e.type==="request"?{type:"request",message:e.message}:{type:"response",message:e.message,result:e.result?c.to(e.result):void 0,references:e.references?.map(v.to)})};return await p.provideMappedEdits(n,i,t)??null}registerMappedEditsProvider(o,r){const t=d._providerHandlePool++;return this._proxy.$registerCodeMapperProvider(t),this.providers.set(t,r),{dispose:()=>this._proxy.$unregisterCodeMapperProvider(t)}}}export{d as ExtHostCodeMapper};
+import * as extHostProtocol from './extHost.protocol.js';
+import { ChatAgentResult, DocumentContextItem, TextEdit } from './extHostTypeConverters.js';
+import { URI } from '../../../base/common/uri.js';
+export class ExtHostCodeMapper {
+    static { this._providerHandlePool = 0; }
+    constructor(mainContext) {
+        this.providers = new Map();
+        this._proxy = mainContext.getProxy(extHostProtocol.MainContext.MainThreadCodeMapper);
+    }
+    async $mapCode(handle, internalRequest, token) {
+        const provider = this.providers.get(handle);
+        if (!provider) {
+            throw new Error(`Received request to map code for unknown provider handle ${handle}`);
+        }
+        const stream = {
+            textEdit: (target, edits) => {
+                edits = (Array.isArray(edits) ? edits : [edits]);
+                this._proxy.$handleProgress(internalRequest.requestId, {
+                    uri: target,
+                    edits: edits.map(TextEdit.from)
+                });
+            }
+        };
+        const request = {
+            codeBlocks: internalRequest.codeBlocks.map(block => {
+                return {
+                    code: block.code,
+                    resource: URI.revive(block.resource),
+                    markdownBeforeBlock: block.markdownBeforeBlock
+                };
+            }),
+            conversation: internalRequest.conversation.map(item => {
+                if (item.type === 'request') {
+                    return {
+                        type: 'request',
+                        message: item.message
+                    };
+                }
+                else {
+                    return {
+                        type: 'response',
+                        message: item.message,
+                        result: item.result ? ChatAgentResult.to(item.result) : undefined,
+                        references: item.references?.map(DocumentContextItem.to)
+                    };
+                }
+            })
+        };
+        const result = await provider.provideMappedEdits(request, stream, token);
+        return result ?? null;
+    }
+    registerMappedEditsProvider(extension, provider) {
+        const handle = ExtHostCodeMapper._providerHandlePool++;
+        this._proxy.$registerCodeMapperProvider(handle);
+        this.providers.set(handle, provider);
+        return {
+            dispose: () => {
+                return this._proxy.$unregisterCodeMapperProvider(handle);
+            }
+        };
+    }
+}

@@ -1,1 +1,67 @@
-import*as f from"../../../../nls.js";import{Disposable as u}from"../../../../base/common/lifecycle.js";import{ContextKeyExpr as a}from"../../../../platform/contextkey/common/contextkey.js";import"../../../common/contributions.js";import"../../../services/extensions/common/extensionsRegistry.js";import{ViewIdentifierMap as b}from"./viewsWelcomeExtensionPoint.js";import{Registry as g}from"../../../../platform/registry/common/platform.js";import{Extensions as V}from"../../../common/views.js";import{isProposedApiEnabled as W}from"../../../services/extensions/common/extensions.js";const x=g.as(V.ViewsRegistry);class G extends u{viewWelcomeContents=new Map;constructor(n){super(),n.setHandler((t,{added:s,removed:r})=>{for(const i of r)for(const e of i.value)this.viewWelcomeContents.get(e)?.dispose();const l=new Map;for(const i of s)for(const e of i.value){const{group:p,order:d}=I(e,i),m=a.deserialize(e.enablement),w=b[e.view]??e.view;let c=l.get(w);c||(c=new Map,l.set(w,c)),c.set(e,{content:e.contents,when:a.deserialize(e.when),precondition:m,group:p,order:d})}for(const[i,e]of l){const p=x.registerViewWelcomeContent2(i,e);for(const[d,m]of p)this.viewWelcomeContents.set(d,m)}})}}function I(o,n){let t,s;if(o.group){if(!W(n.description,"contribViewsWelcome"))return n.collector.warn(f.localize("ViewsWelcomeExtensionPoint.proposedAPI",`The viewsWelcome contribution in '{0}' requires 'enabledApiProposals: ["contribViewsWelcome"]' in order to use the 'group' proposed property.`,n.description.identifier.value)),{group:t,order:s};const r=o.group.lastIndexOf("@");r>0?(t=o.group.substr(0,r),s=Number(o.group.substr(r+1))||void 0):t=o.group}return{group:t,order:s}}export{G as ViewsWelcomeContribution};
+import * as nls from '../../../../nls.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { ViewIdentifierMap } from './viewsWelcomeExtensionPoint.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { Extensions as ViewContainerExtensions } from '../../../common/views.js';
+import { isProposedApiEnabled } from '../../../services/extensions/common/extensions.js';
+const viewsRegistry = Registry.as(ViewContainerExtensions.ViewsRegistry);
+export class ViewsWelcomeContribution extends Disposable {
+    constructor(extensionPoint) {
+        super();
+        this.viewWelcomeContents = new Map();
+        extensionPoint.setHandler((_, { added, removed }) => {
+            for (const contribution of removed) {
+                for (const welcome of contribution.value) {
+                    const disposable = this.viewWelcomeContents.get(welcome);
+                    disposable?.dispose();
+                }
+            }
+            const welcomesByViewId = new Map();
+            for (const contribution of added) {
+                for (const welcome of contribution.value) {
+                    const { group, order } = parseGroupAndOrder(welcome, contribution);
+                    const precondition = ContextKeyExpr.deserialize(welcome.enablement);
+                    const id = ViewIdentifierMap[welcome.view] ?? welcome.view;
+                    let viewContentMap = welcomesByViewId.get(id);
+                    if (!viewContentMap) {
+                        viewContentMap = new Map();
+                        welcomesByViewId.set(id, viewContentMap);
+                    }
+                    viewContentMap.set(welcome, {
+                        content: welcome.contents,
+                        when: ContextKeyExpr.deserialize(welcome.when),
+                        precondition,
+                        group,
+                        order
+                    });
+                }
+            }
+            for (const [id, viewContentMap] of welcomesByViewId) {
+                const disposables = viewsRegistry.registerViewWelcomeContent2(id, viewContentMap);
+                for (const [welcome, disposable] of disposables) {
+                    this.viewWelcomeContents.set(welcome, disposable);
+                }
+            }
+        });
+    }
+}
+function parseGroupAndOrder(welcome, contribution) {
+    let group;
+    let order;
+    if (welcome.group) {
+        if (!isProposedApiEnabled(contribution.description, 'contribViewsWelcome')) {
+            contribution.collector.warn(nls.localize('ViewsWelcomeExtensionPoint.proposedAPI', "The viewsWelcome contribution in '{0}' requires 'enabledApiProposals: [\"contribViewsWelcome\"]' in order to use the 'group' proposed property.", contribution.description.identifier.value));
+            return { group, order };
+        }
+        const idx = welcome.group.lastIndexOf('@');
+        if (idx > 0) {
+            group = welcome.group.substr(0, idx);
+            order = Number(welcome.group.substr(idx + 1)) || undefined;
+        }
+        else {
+            group = welcome.group;
+        }
+    }
+    return { group, order };
+}

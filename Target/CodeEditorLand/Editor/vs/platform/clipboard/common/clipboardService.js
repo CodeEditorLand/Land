@@ -1,1 +1,2 @@
-import"../../../base/common/uri.js";import{createDecorator as e}from"../../instantiation/common/instantiation.js";const t=e("clipboardService");export{t as IClipboardService};
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+export const IClipboardService = createDecorator('clipboardService');

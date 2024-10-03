@@ -1,1 +1,104 @@
-import{Event as n}from"../../../../../base/common/event.js";import{patternsEquals as i}from"../../../../../base/common/glob.js";import{BaseWatcher as c}from"../baseWatcher.js";import{isLinux as a}from"../../../../../base/common/platform.js";import"../../../common/watcher.js";import{NodeJSFileWatcherLibrary as h}from"./nodejsWatcherLib.js";import{isEqual as u}from"../../../../../base/common/extpath.js";class N extends c{constructor(e){super();this.recursiveWatcher=e}onDidError=n.None;watchers=new Set;async doWatch(e){e=this.removeDuplicateRequests(e);const t=[],s=new Set(Array.from(this.watchers));for(const r of e){const o=this.findWatcher(r);o&&i(o.request.excludes,r.excludes)&&i(o.request.includes,r.includes)?s.delete(o):t.push(r)}t.length&&this.trace(`Request to start watching: ${t.map(r=>this.requestToString(r)).join(",")}`),s.size&&this.trace(`Request to stop watching: ${Array.from(s).map(r=>this.requestToString(r.request)).join(",")}`);for(const r of s)this.stopWatching(r);for(const r of t)this.startWatching(r)}findWatcher(e){for(const t of this.watchers)if(typeof e.correlationId=="number"||typeof t.request.correlationId=="number"){if(t.request.correlationId===e.correlationId)return t}else if(u(t.request.path,e.path,!a))return t}startWatching(e){const t=new h(e,this.recursiveWatcher,r=>this._onDidChangeFile.fire(r),()=>this._onDidWatchFail.fire(e),r=>this._onDidLogMessage.fire(r),this.verboseLogging),s={request:e,instance:t};this.watchers.add(s)}async stop(){await super.stop();for(const e of this.watchers)this.stopWatching(e)}stopWatching(e){this.trace("stopping file watcher",e),this.watchers.delete(e),e.instance.dispose()}removeDuplicateRequests(e){const t=new Map;for(const s of e){const r=a?s.path:s.path.toLowerCase();let o=t.get(s.correlationId);o||(o=new Map,t.set(s.correlationId,o)),o.has(r)&&this.trace(`ignoring a request for watching who's path is already watched: ${this.requestToString(s)}`),o.set(r,s)}return Array.from(t.values()).map(s=>Array.from(s.values())).flat()}async setVerboseLogging(e){super.setVerboseLogging(e);for(const t of this.watchers)t.instance.setVerboseLogging(e)}trace(e,t){this.verboseLogging&&this._onDidLogMessage.fire({type:"trace",message:this.toMessage(e,t)})}warn(e){this._onDidLogMessage.fire({type:"warn",message:this.toMessage(e)})}toMessage(e,t){return t?`[File Watcher (node.js)] ${e} (${this.requestToString(t.request)})`:`[File Watcher (node.js)] ${e}`}}export{N as NodeJSWatcher};
+import { Event } from '../../../../../base/common/event.js';
+import { patternsEquals } from '../../../../../base/common/glob.js';
+import { BaseWatcher } from '../baseWatcher.js';
+import { isLinux } from '../../../../../base/common/platform.js';
+import { NodeJSFileWatcherLibrary } from './nodejsWatcherLib.js';
+import { isEqual } from '../../../../../base/common/extpath.js';
+export class NodeJSWatcher extends BaseWatcher {
+    constructor(recursiveWatcher) {
+        super();
+        this.recursiveWatcher = recursiveWatcher;
+        this.onDidError = Event.None;
+        this.watchers = new Set();
+    }
+    async doWatch(requests) {
+        requests = this.removeDuplicateRequests(requests);
+        const requestsToStart = [];
+        const watchersToStop = new Set(Array.from(this.watchers));
+        for (const request of requests) {
+            const watcher = this.findWatcher(request);
+            if (watcher && patternsEquals(watcher.request.excludes, request.excludes) && patternsEquals(watcher.request.includes, request.includes)) {
+                watchersToStop.delete(watcher);
+            }
+            else {
+                requestsToStart.push(request);
+            }
+        }
+        if (requestsToStart.length) {
+            this.trace(`Request to start watching: ${requestsToStart.map(request => this.requestToString(request)).join(',')}`);
+        }
+        if (watchersToStop.size) {
+            this.trace(`Request to stop watching: ${Array.from(watchersToStop).map(watcher => this.requestToString(watcher.request)).join(',')}`);
+        }
+        for (const watcher of watchersToStop) {
+            this.stopWatching(watcher);
+        }
+        for (const request of requestsToStart) {
+            this.startWatching(request);
+        }
+    }
+    findWatcher(request) {
+        for (const watcher of this.watchers) {
+            if (typeof request.correlationId === 'number' || typeof watcher.request.correlationId === 'number') {
+                if (watcher.request.correlationId === request.correlationId) {
+                    return watcher;
+                }
+            }
+            else {
+                if (isEqual(watcher.request.path, request.path, !isLinux)) {
+                    return watcher;
+                }
+            }
+        }
+        return undefined;
+    }
+    startWatching(request) {
+        const instance = new NodeJSFileWatcherLibrary(request, this.recursiveWatcher, changes => this._onDidChangeFile.fire(changes), () => this._onDidWatchFail.fire(request), msg => this._onDidLogMessage.fire(msg), this.verboseLogging);
+        const watcher = { request, instance };
+        this.watchers.add(watcher);
+    }
+    async stop() {
+        await super.stop();
+        for (const watcher of this.watchers) {
+            this.stopWatching(watcher);
+        }
+    }
+    stopWatching(watcher) {
+        this.trace(`stopping file watcher`, watcher);
+        this.watchers.delete(watcher);
+        watcher.instance.dispose();
+    }
+    removeDuplicateRequests(requests) {
+        const mapCorrelationtoRequests = new Map();
+        for (const request of requests) {
+            const path = isLinux ? request.path : request.path.toLowerCase();
+            let requestsForCorrelation = mapCorrelationtoRequests.get(request.correlationId);
+            if (!requestsForCorrelation) {
+                requestsForCorrelation = new Map();
+                mapCorrelationtoRequests.set(request.correlationId, requestsForCorrelation);
+            }
+            if (requestsForCorrelation.has(path)) {
+                this.trace(`ignoring a request for watching who's path is already watched: ${this.requestToString(request)}`);
+            }
+            requestsForCorrelation.set(path, request);
+        }
+        return Array.from(mapCorrelationtoRequests.values()).map(requests => Array.from(requests.values())).flat();
+    }
+    async setVerboseLogging(enabled) {
+        super.setVerboseLogging(enabled);
+        for (const watcher of this.watchers) {
+            watcher.instance.setVerboseLogging(enabled);
+        }
+    }
+    trace(message, watcher) {
+        if (this.verboseLogging) {
+            this._onDidLogMessage.fire({ type: 'trace', message: this.toMessage(message, watcher) });
+        }
+    }
+    warn(message) {
+        this._onDidLogMessage.fire({ type: 'warn', message: this.toMessage(message) });
+    }
+    toMessage(message, watcher) {
+        return watcher ? `[File Watcher (node.js)] ${message} (${this.requestToString(watcher.request)})` : `[File Watcher (node.js)] ${message}`;
+    }
+}

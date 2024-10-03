@@ -1,1 +1,21 @@
-import"../../../../base/common/uri.js";class c{constructor(n,r){this.startLineNumber=n;this.endLineNumber=r}}class d{constructor(n,r,t){this.range=n;this.children=r;this.parent=t}}class u{constructor(n,r,t,i){this.uri=n;this.version=r;this.element=t;this.outlineProviderId=i}}export{d as StickyElement,u as StickyModel,c as StickyRange};
+export class StickyRange {
+    constructor(startLineNumber, endLineNumber) {
+        this.startLineNumber = startLineNumber;
+        this.endLineNumber = endLineNumber;
+    }
+}
+export class StickyElement {
+    constructor(range, children, parent) {
+        this.range = range;
+        this.children = children;
+        this.parent = parent;
+    }
+}
+export class StickyModel {
+    constructor(uri, version, element, outlineProviderId) {
+        this.uri = uri;
+        this.version = version;
+        this.element = element;
+        this.outlineProviderId = outlineProviderId;
+    }
+}

@@ -1,1 +1,87 @@
-import"../../../base/common/collections.js";import"../../../base/common/performance.js";import{isLinux as a,isMacintosh as i,isNative as d,isWeb as l}from"../../../base/common/platform.js";import"../../../base/common/uri.js";import"../../../base/parts/sandbox/common/sandboxTypes.js";import"../../configuration/common/configuration.js";import"../../editor/common/editor.js";import"../../environment/common/argv.js";import"../../files/common/files.js";import"../../log/common/log.js";import"../../policy/common/policy.js";import"../../theme/common/themeService.js";import"../../userDataProfile/common/userDataProfile.js";import"../../workspace/common/workspace.js";const Z={WIDTH:400,WIDTH_WITH_VERTICAL_PANEL:600,HEIGHT:270};function K(e){return typeof e.parentId=="number"}function j(e){return!!e.workspaceUri}function J(e){return!!e.folderUri}function Q(e){return!!e.fileUri}function X(e){const o=s(e),n=e.getValue("window.menuBarVisibility");return n==="default"||o&&n==="compact"||i&&d?"classic":n}var p=(n=>(n.TITLE_BAR_STYLE="window.titleBarStyle",n.CUSTOM_TITLE_BAR_VISIBILITY="window.customTitleBarVisibility",n))(p||{}),f=(n=>(n.NATIVE="native",n.CUSTOM="custom",n))(f||{}),I=(r=>(r.AUTO="auto",r.WINDOWED="windowed",r.NEVER="never",r))(I||{});function $(e,o){return!0}function s(e,o){return o||(o=u(e)),o==="native"}function u(e){if(l)return"custom";const o=e.getValue("window");if(o){if(i&&o.nativeTabs===!0||i&&o.nativeFullScreen===!1)return"native";const t=o.titleBarStyle;if(t==="native"||t==="custom")return t}return a?"native":"custom"}const ee=35;function oe(e){if(i||l||s(e))return!1;if(a){const o=e.getValue("window.experimentalControlOverlay");if(typeof o=="boolean")return o}return!0}function ne(e){const o=e.getValue("window");return!o||typeof o.nativeFullScreen!="boolean"||o.nativeTabs?!0:o.nativeFullScreen!==!1}function re(e=0){return Math.pow(1.2,e)}export{I as CustomTitleBarVisibility,ee as DEFAULT_CUSTOM_TITLEBAR_HEIGHT,p as TitleBarSetting,f as TitlebarStyle,Z as WindowMinimumSize,X as getMenuBarVisibility,u as getTitleBarStyle,$ as hasCustomTitlebar,s as hasNativeTitlebar,Q as isFileToOpen,J as isFolderToOpen,K as isOpenedAuxiliaryWindow,j as isWorkspaceToOpen,ne as useNativeFullScreen,oe as useWindowControlsOverlay,re as zoomLevelToZoomFactor};
+import { isLinux, isMacintosh, isNative, isWeb } from '../../../base/common/platform.js';
+export const WindowMinimumSize = {
+    WIDTH: 400,
+    WIDTH_WITH_VERTICAL_PANEL: 600,
+    HEIGHT: 270
+};
+export function isOpenedAuxiliaryWindow(candidate) {
+    return typeof candidate.parentId === 'number';
+}
+export function isWorkspaceToOpen(uriToOpen) {
+    return !!uriToOpen.workspaceUri;
+}
+export function isFolderToOpen(uriToOpen) {
+    return !!uriToOpen.folderUri;
+}
+export function isFileToOpen(uriToOpen) {
+    return !!uriToOpen.fileUri;
+}
+export function getMenuBarVisibility(configurationService) {
+    const nativeTitleBarEnabled = hasNativeTitlebar(configurationService);
+    const menuBarVisibility = configurationService.getValue('window.menuBarVisibility');
+    if (menuBarVisibility === 'default' || (nativeTitleBarEnabled && menuBarVisibility === 'compact') || (isMacintosh && isNative)) {
+        return 'classic';
+    }
+    else {
+        return menuBarVisibility;
+    }
+}
+export function hasCustomTitlebar(configurationService, titleBarStyle) {
+    return true;
+}
+export function hasNativeTitlebar(configurationService, titleBarStyle) {
+    if (!titleBarStyle) {
+        titleBarStyle = getTitleBarStyle(configurationService);
+    }
+    return titleBarStyle === "native";
+}
+export function getTitleBarStyle(configurationService) {
+    if (isWeb) {
+        return "custom";
+    }
+    const configuration = configurationService.getValue('window');
+    if (configuration) {
+        const useNativeTabs = isMacintosh && configuration.nativeTabs === true;
+        if (useNativeTabs) {
+            return "native";
+        }
+        const useSimpleFullScreen = isMacintosh && configuration.nativeFullScreen === false;
+        if (useSimpleFullScreen) {
+            return "native";
+        }
+        const style = configuration.titleBarStyle;
+        if (style === "native" || style === "custom") {
+            return style;
+        }
+    }
+    return isLinux ? "native" : "custom";
+}
+export const DEFAULT_CUSTOM_TITLEBAR_HEIGHT = 35;
+export function useWindowControlsOverlay(configurationService) {
+    if (isMacintosh || isWeb) {
+        return false;
+    }
+    if (hasNativeTitlebar(configurationService)) {
+        return false;
+    }
+    if (isLinux) {
+        const setting = configurationService.getValue('window.experimentalControlOverlay');
+        if (typeof setting === 'boolean') {
+            return setting;
+        }
+    }
+    return true;
+}
+export function useNativeFullScreen(configurationService) {
+    const windowConfig = configurationService.getValue('window');
+    if (!windowConfig || typeof windowConfig.nativeFullScreen !== 'boolean') {
+        return true;
+    }
+    if (windowConfig.nativeTabs) {
+        return true;
+    }
+    return windowConfig.nativeFullScreen !== false;
+}
+export function zoomLevelToZoomFactor(zoomLevel = 0) {
+    return Math.pow(1.2, zoomLevel);
+}

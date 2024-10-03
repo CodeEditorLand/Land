@@ -1,1 +1,447 @@
-var T=Object.defineProperty;var P=Object.getOwnPropertyDescriptor;var c=(a,i,e,t)=>{for(var r=t>1?void 0:t?P(i,e):i,s=a.length-1,n;s>=0;s--)(n=a[s])&&(r=(t?n(i,e,r):n(r))||r);return t&&r&&T(i,e,r),r},d=(a,i)=>(e,t)=>i(e,t,a);import{FileAccess as h,nodeModulesAsarUnpackedPath as y,nodeModulesPath as L}from"../../../../base/common/network.js";import{EDITOR_EXPERIMENTAL_PREFER_TREESITTER as m}from"../../../common/services/treeSitterParserService.js";import{IModelService as I}from"../../../common/services/model.js";import{Disposable as u,DisposableMap as C,DisposableStore as _,dispose as v}from"../../../../base/common/lifecycle.js";import"../../../common/model.js";import{IFileService as w}from"../../../../platform/files/common/files.js";import"../../../common/textModelEvents.js";import{ITelemetryService as M}from"../../../../platform/telemetry/common/telemetry.js";import{ILogService as D}from"../../../../platform/log/common/log.js";import{IConfigurationService as b}from"../../../../platform/configuration/common/configuration.js";import{setTimeout0 as E}from"../../../../base/common/platform.js";import{canASAR as R,importAMDNodeModule as x}from"../../../../amdX.js";import{Emitter as p,Event as A}from"../../../../base/common/event.js";import{cancelOnDispose as F}from"../../../../base/common/cancellation.js";import{IEnvironmentService as O}from"../../../../platform/environment/common/environment.js";import{CancellationError as k,isCancellationError as U}from"../../../../base/common/errors.js";import{PromiseResult as f}from"../../../../base/common/observable.js";import{Range as N}from"../../../common/core/range.js";const $="editor.experimental.treeSitterTelemetry",K="@vscode/tree-sitter-wasm/wasm",B="tree-sitter.wasm";function S(a){return`${R&&a.isBuilt?y:L}/${K}`}class G extends u{constructor(e,t,r,s,n){super();this.model=e;this._treeSitterLanguages=t;this._treeSitterImporter=r;this._logService=s;this._telemetryService=n;this._register(A.runAndSubscribe(this.model.onDidChangeLanguage,o=>this._onDidChangeLanguage(o?o.newLanguage:this.model.getLanguageId())))}_onDidChangeParseResult=this._register(new p);onDidChangeParseResult=this._onDidChangeParseResult.event;_parseResult;get parseResult(){return this._parseResult}_languageSessionDisposables=this._register(new _);async _onDidChangeLanguage(e){this._languageSessionDisposables.clear(),this._parseResult=void 0;const t=F(this._languageSessionDisposables);let r;try{r=await this._getLanguage(e,t)}catch(o){if(U(o))return;throw o}const s=await this._treeSitterImporter.getParserClass();if(t.isCancellationRequested)return;const n=this._languageSessionDisposables.add(new Q(new s,r,this._logService,this._telemetryService));this._languageSessionDisposables.add(this.model.onDidChangeContent(o=>this._onDidChangeContent(n,o.changes))),await this._onDidChangeContent(n,[]),!t.isCancellationRequested&&(this._parseResult=n)}_getLanguage(e,t){const r=this._treeSitterLanguages.getOrInitLanguage(e);if(r)return Promise.resolve(r);const s=[];return new Promise((n,o)=>{s.push(this._treeSitterLanguages.onDidAddLanguage(g=>{g.id===e&&(v(s),n(g.language))})),t.onCancellationRequested(()=>{v(s),o(new k)},void 0,s)})}async _onDidChangeContent(e,t){const r=await e.onDidChangeContent(this.model,t);if(!r||r.length>0){const s=r?r.map(n=>new N(n.startPosition.row+1,n.startPosition.column+1,n.endPosition.row+1,n.endPosition.column+1)):[this.model.getFullModelRange()];this._onDidChangeParseResult.fire(s)}}}var q=(e=>(e.Full="fullParse",e.Incremental="incrementalParse",e))(q||{});class Q{constructor(i,e,t,r){this.parser=i;this.language=e;this._logService=t;this._telemetryService=r;this.parser.setTimeoutMicros(50*1e3),this.parser.setLanguage(e)}_tree;_isDisposed=!1;dispose(){this._isDisposed=!0,this._tree?.delete(),this.parser?.delete()}get tree(){return this._tree}set tree(i){this._tree?.delete(),this._tree=i}get isDisposed(){return this._isDisposed}_onDidChangeContentQueue=Promise.resolve();async onDidChangeContent(i,e){const t=this.tree?.copy();return this._applyEdits(i,e),new Promise(r=>{this._onDidChangeContentQueue=this._onDidChangeContentQueue.then(async()=>{this.isDisposed||(await this._parseAndUpdateTree(i),r(this.tree&&t?t.getChangedRanges(this.tree):void 0))}).catch(s=>{this._logService.error("Error parsing tree-sitter tree",s)})})}_newEdits=!0;_applyEdits(i,e){for(const t of e){const r=t.rangeOffset+t.text.length,s=i.getPositionAt(r);this.tree?.edit({startIndex:t.rangeOffset,oldEndIndex:t.rangeOffset+t.rangeLength,newEndIndex:t.rangeOffset+t.text.length,startPosition:{row:t.range.startLineNumber-1,column:t.range.startColumn-1},oldEndPosition:{row:t.range.endLineNumber-1,column:t.range.endColumn-1},newEndPosition:{row:s.lineNumber-1,column:s.column-1}}),this._newEdits=!0}}async _parseAndUpdateTree(i){const e=await this._parse(i);this._newEdits||(this.tree=e)}_parse(i){let e="fullParse";return this.tree&&(e="incrementalParse"),this._parseAndYield(i,e)}async _parseAndYield(i,e){const t=i.getLanguageId();let r,s=0,n=0;this._newEdits=!1;do{const o=performance.now();try{r=this.parser.parse((g,H)=>this._parseCallback(i,g),this.tree)}catch{}finally{s+=performance.now()-o,n++}if(await new Promise(g=>E(g)),i.isDisposed()||this.isDisposed)return}while(!r&&!this._newEdits);return this.sendParseTimeTelemetry(e,t,s,n),r}_parseCallback(i,e){try{return i.getTextBuffer().getNearestChunk(e)}catch(t){this._logService.debug("Error getting chunk for tree-sitter parsing",t)}return null}sendParseTimeTelemetry(i,e,t,r){this._logService.debug(`Tree parsing (${i}) took ${t} ms and ${r} passes.`),i==="fullParse"?this._telemetryService.publicLog2("treeSitter.fullParse",{languageId:e,time:t,passes:r}):this._telemetryService.publicLog2("treeSitter.incrementalParse",{languageId:e,time:t,passes:r})}}class W extends u{constructor(e,t,r,s){super();this._treeSitterImporter=e;this._fileService=t;this._environmentService=r;this._registeredLanguages=s}_languages=new j;_onDidAddLanguage=this._register(new p);onDidAddLanguage=this._onDidAddLanguage.event;getOrInitLanguage(e){if(this._languages.isCached(e))return this._languages.getSyncIfCached(e);this._addLanguage(e)}async getLanguage(e){return this._languages.isCached(e)?this._languages.getSyncIfCached(e):(await this._addLanguage(e),this._languages.get(e))}async _addLanguage(e){if(!this._languages.get(e)){this._languages.set(e,this._fetchLanguage(e));const r=await this._languages.get(e);if(!r)return;this._onDidAddLanguage.fire({id:e,language:r})}}async _fetchLanguage(e){const t=this._registeredLanguages.get(e),r=this._getLanguageLocation(e);if(!t||!r)return;const s=`${r}/${t}.wasm`,n=await this._fileService.readFile(h.asFileUri(s));return(await this._treeSitterImporter.getParserClass()).Language.load(n.value.buffer)}_getLanguageLocation(e){if(this._registeredLanguages.get(e))return S(this._environmentService)}}class Y{_treeSitterImport;async _getTreeSitterImport(){return this._treeSitterImport||(this._treeSitterImport=await x("@vscode/tree-sitter-wasm","wasm/tree-sitter.js")),this._treeSitterImport}_parserClass;async getParserClass(){return this._parserClass||(this._parserClass=(await this._getTreeSitterImport()).Parser),this._parserClass}}let l=class extends u{constructor(e,t,r,s,n,o){super();this._modelService=e;this._telemetryService=r;this._logService=s;this._configurationService=n;this._environmentService=o;this._treeSitterLanguages=this._register(new W(this._treeSitterImporter,t,this._environmentService,this._registeredLanguages)),this.onDidAddLanguage=this._treeSitterLanguages.onDidAddLanguage,this._register(this._configurationService.onDidChangeConfiguration(g=>{g.affectsConfiguration(m)&&this._supportedLanguagesChanged()})),this._supportedLanguagesChanged()}_serviceBrand;_init;_textModelTreeSitters=this._register(new C);_registeredLanguages=new Map;_treeSitterImporter=new Y;_treeSitterLanguages;onDidAddLanguage;_onDidUpdateTree=this._register(new p);onDidUpdateTree=this._onDidUpdateTree.event;getOrInitLanguage(e){return this._treeSitterLanguages.getOrInitLanguage(e)}getParseResult(e){return this._textModelTreeSitters.get(e)?.textModelTreeSitter.parseResult}async getTree(e,t){await this._init;const r=await this._treeSitterLanguages.getLanguage(t),s=await this._treeSitterImporter.getParserClass();if(r){const n=new s;return n.setLanguage(r),n.parse(e)}}async _doInitParser(){const e=await this._treeSitterImporter.getParserClass(),t=this._environmentService;return await e.init({locateFile(r,s){return h.asBrowserUri(`${S(t)}/${B}`).toString(!0)}}),!0}_hasInit=!1;async _initParser(e){return this._hasInit?this._init:(e?(this._hasInit=!0,this._init=this._doInitParser(),this._init.then(()=>this._registerModelServiceListeners())):this._init=Promise.resolve(!1),this._init)}async _supportedLanguagesChanged(){const e=this._getSetting();let t=!0;return e.length===0&&(t=!1),e.includes("typescript")?this._addGrammar("typescript","tree-sitter-typescript"):this._removeGrammar("typescript"),this._initParser(t)}_getSetting(){const e=this._configurationService.getValue(m);return e&&e.length>0?e:this._configurationService.getValue($)?["typescript"]:[]}async _registerModelServiceListeners(){this._register(this._modelService.onModelAdded(e=>{this._createTextModelTreeSitter(e)})),this._register(this._modelService.onModelRemoved(e=>{this._textModelTreeSitters.deleteAndDispose(e)})),this._modelService.getModels().forEach(e=>this._createTextModelTreeSitter(e))}_createTextModelTreeSitter(e){const t=new G(e,this._treeSitterLanguages,this._treeSitterImporter,this._logService,this._telemetryService),r=new _;r.add(t),r.add(t.onDidChangeParseResult(s=>this._onDidUpdateTree.fire({textModel:e,ranges:s}))),this._textModelTreeSitters.set(e,{textModelTreeSitter:t,disposables:r,dispose:r.dispose.bind(r)})}_addGrammar(e,t){this._registeredLanguages.has(e)||this._registeredLanguages.set(e,t)}_removeGrammar(e){this._registeredLanguages.has(e)&&this._registeredLanguages.delete("typescript")}};l=c([d(0,I),d(1,w),d(2,M),d(3,D),d(4,b),d(5,O)],l);class V{constructor(i){this.promise=i;i.then(e=>{this._result=new f(e,void 0)}).catch(e=>{this._result=new f(void 0,e)})}_result;get result(){return this._result}}class j{_values=new Map;set(i,e){this._values.set(i,new V(e))}get(i){return this._values.get(i)?.promise}getSyncIfCached(i){return this._values.get(i)?.result?.data}isCached(i){return this._values.get(i)?.result!==void 0}}export{G as TextModelTreeSitter,Y as TreeSitterImporter,W as TreeSitterLanguages,Q as TreeSitterParseResult,l as TreeSitterTextModelService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { FileAccess, nodeModulesAsarUnpackedPath, nodeModulesPath } from '../../../../base/common/network.js';
+import { EDITOR_EXPERIMENTAL_PREFER_TREESITTER } from '../../../common/services/treeSitterParserService.js';
+import { IModelService } from '../../../common/services/model.js';
+import { Disposable, DisposableMap, DisposableStore, dispose } from '../../../../base/common/lifecycle.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { setTimeout0 } from '../../../../base/common/platform.js';
+import { canASAR, importAMDNodeModule } from '../../../../amdX.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { cancelOnDispose } from '../../../../base/common/cancellation.js';
+import { IEnvironmentService } from '../../../../platform/environment/common/environment.js';
+import { CancellationError, isCancellationError } from '../../../../base/common/errors.js';
+import { PromiseResult } from '../../../../base/common/observable.js';
+import { Range } from '../../../common/core/range.js';
+const EDITOR_TREESITTER_TELEMETRY = 'editor.experimental.treeSitterTelemetry';
+const MODULE_LOCATION_SUBPATH = `@vscode/tree-sitter-wasm/wasm`;
+const FILENAME_TREESITTER_WASM = `tree-sitter.wasm`;
+function getModuleLocation(environmentService) {
+    return `${(canASAR && environmentService.isBuilt) ? nodeModulesAsarUnpackedPath : nodeModulesPath}/${MODULE_LOCATION_SUBPATH}`;
+}
+export class TextModelTreeSitter extends Disposable {
+    get parseResult() { return this._parseResult; }
+    constructor(model, _treeSitterLanguages, _treeSitterImporter, _logService, _telemetryService) {
+        super();
+        this.model = model;
+        this._treeSitterLanguages = _treeSitterLanguages;
+        this._treeSitterImporter = _treeSitterImporter;
+        this._logService = _logService;
+        this._telemetryService = _telemetryService;
+        this._onDidChangeParseResult = this._register(new Emitter());
+        this.onDidChangeParseResult = this._onDidChangeParseResult.event;
+        this._languageSessionDisposables = this._register(new DisposableStore());
+        this._register(Event.runAndSubscribe(this.model.onDidChangeLanguage, (e => this._onDidChangeLanguage(e ? e.newLanguage : this.model.getLanguageId()))));
+    }
+    async _onDidChangeLanguage(languageId) {
+        this._languageSessionDisposables.clear();
+        this._parseResult = undefined;
+        const token = cancelOnDispose(this._languageSessionDisposables);
+        let language;
+        try {
+            language = await this._getLanguage(languageId, token);
+        }
+        catch (e) {
+            if (isCancellationError(e)) {
+                return;
+            }
+            throw e;
+        }
+        const Parser = await this._treeSitterImporter.getParserClass();
+        if (token.isCancellationRequested) {
+            return;
+        }
+        const treeSitterTree = this._languageSessionDisposables.add(new TreeSitterParseResult(new Parser(), language, this._logService, this._telemetryService));
+        this._languageSessionDisposables.add(this.model.onDidChangeContent(e => this._onDidChangeContent(treeSitterTree, e.changes)));
+        await this._onDidChangeContent(treeSitterTree, []);
+        if (token.isCancellationRequested) {
+            return;
+        }
+        this._parseResult = treeSitterTree;
+    }
+    _getLanguage(languageId, token) {
+        const language = this._treeSitterLanguages.getOrInitLanguage(languageId);
+        if (language) {
+            return Promise.resolve(language);
+        }
+        const disposables = [];
+        return new Promise((resolve, reject) => {
+            disposables.push(this._treeSitterLanguages.onDidAddLanguage(e => {
+                if (e.id === languageId) {
+                    dispose(disposables);
+                    resolve(e.language);
+                }
+            }));
+            token.onCancellationRequested(() => {
+                dispose(disposables);
+                reject(new CancellationError());
+            }, undefined, disposables);
+        });
+    }
+    async _onDidChangeContent(treeSitterTree, changes) {
+        const diff = await treeSitterTree.onDidChangeContent(this.model, changes);
+        if (!diff || diff.length > 0) {
+            const ranges = diff ? diff.map(r => new Range(r.startPosition.row + 1, r.startPosition.column + 1, r.endPosition.row + 1, r.endPosition.column + 1)) : [this.model.getFullModelRange()];
+            this._onDidChangeParseResult.fire(ranges);
+        }
+    }
+}
+export class TreeSitterParseResult {
+    constructor(parser, language, _logService, _telemetryService) {
+        this.parser = parser;
+        this.language = language;
+        this._logService = _logService;
+        this._telemetryService = _telemetryService;
+        this._isDisposed = false;
+        this._onDidChangeContentQueue = Promise.resolve();
+        this._newEdits = true;
+        this.parser.setTimeoutMicros(50 * 1000);
+        this.parser.setLanguage(language);
+    }
+    dispose() {
+        this._isDisposed = true;
+        this._tree?.delete();
+        this.parser?.delete();
+    }
+    get tree() { return this._tree; }
+    set tree(newTree) {
+        this._tree?.delete();
+        this._tree = newTree;
+    }
+    get isDisposed() { return this._isDisposed; }
+    async onDidChangeContent(model, changes) {
+        const oldTree = this.tree?.copy();
+        this._applyEdits(model, changes);
+        return new Promise(resolve => {
+            this._onDidChangeContentQueue = this._onDidChangeContentQueue.then(async () => {
+                if (this.isDisposed) {
+                    return;
+                }
+                await this._parseAndUpdateTree(model);
+                resolve((this.tree && oldTree) ? oldTree.getChangedRanges(this.tree) : undefined);
+            }).catch((e) => {
+                this._logService.error('Error parsing tree-sitter tree', e);
+            });
+        });
+    }
+    _applyEdits(model, changes) {
+        for (const change of changes) {
+            const newEndOffset = change.rangeOffset + change.text.length;
+            const newEndPosition = model.getPositionAt(newEndOffset);
+            this.tree?.edit({
+                startIndex: change.rangeOffset,
+                oldEndIndex: change.rangeOffset + change.rangeLength,
+                newEndIndex: change.rangeOffset + change.text.length,
+                startPosition: { row: change.range.startLineNumber - 1, column: change.range.startColumn - 1 },
+                oldEndPosition: { row: change.range.endLineNumber - 1, column: change.range.endColumn - 1 },
+                newEndPosition: { row: newEndPosition.lineNumber - 1, column: newEndPosition.column - 1 }
+            });
+            this._newEdits = true;
+        }
+    }
+    async _parseAndUpdateTree(model) {
+        const tree = await this._parse(model);
+        if (!this._newEdits) {
+            this.tree = tree;
+        }
+    }
+    _parse(model) {
+        let parseType = "fullParse";
+        if (this.tree) {
+            parseType = "incrementalParse";
+        }
+        return this._parseAndYield(model, parseType);
+    }
+    async _parseAndYield(model, parseType) {
+        const language = model.getLanguageId();
+        let tree;
+        let time = 0;
+        let passes = 0;
+        this._newEdits = false;
+        do {
+            const timer = performance.now();
+            try {
+                tree = this.parser.parse((index, position) => this._parseCallback(model, index), this.tree);
+            }
+            catch (e) {
+            }
+            finally {
+                time += performance.now() - timer;
+                passes++;
+            }
+            await new Promise(resolve => setTimeout0(resolve));
+            if (model.isDisposed() || this.isDisposed) {
+                return;
+            }
+        } while (!tree && !this._newEdits);
+        this.sendParseTimeTelemetry(parseType, language, time, passes);
+        return tree;
+    }
+    _parseCallback(textModel, index) {
+        try {
+            return textModel.getTextBuffer().getNearestChunk(index);
+        }
+        catch (e) {
+            this._logService.debug('Error getting chunk for tree-sitter parsing', e);
+        }
+        return null;
+    }
+    sendParseTimeTelemetry(parseType, languageId, time, passes) {
+        this._logService.debug(`Tree parsing (${parseType}) took ${time} ms and ${passes} passes.`);
+        if (parseType === "fullParse") {
+            this._telemetryService.publicLog2(`treeSitter.fullParse`, { languageId, time, passes });
+        }
+        else {
+            this._telemetryService.publicLog2(`treeSitter.incrementalParse`, { languageId, time, passes });
+        }
+    }
+}
+export class TreeSitterLanguages extends Disposable {
+    constructor(_treeSitterImporter, _fileService, _environmentService, _registeredLanguages) {
+        super();
+        this._treeSitterImporter = _treeSitterImporter;
+        this._fileService = _fileService;
+        this._environmentService = _environmentService;
+        this._registeredLanguages = _registeredLanguages;
+        this._languages = new AsyncCache();
+        this._onDidAddLanguage = this._register(new Emitter());
+        this.onDidAddLanguage = this._onDidAddLanguage.event;
+    }
+    getOrInitLanguage(languageId) {
+        if (this._languages.isCached(languageId)) {
+            return this._languages.getSyncIfCached(languageId);
+        }
+        else {
+            this._addLanguage(languageId);
+            return undefined;
+        }
+    }
+    async getLanguage(languageId) {
+        if (this._languages.isCached(languageId)) {
+            return this._languages.getSyncIfCached(languageId);
+        }
+        else {
+            await this._addLanguage(languageId);
+            return this._languages.get(languageId);
+        }
+    }
+    async _addLanguage(languageId) {
+        const languagePromise = this._languages.get(languageId);
+        if (!languagePromise) {
+            this._languages.set(languageId, this._fetchLanguage(languageId));
+            const language = await this._languages.get(languageId);
+            if (!language) {
+                return undefined;
+            }
+            this._onDidAddLanguage.fire({ id: languageId, language });
+        }
+    }
+    async _fetchLanguage(languageId) {
+        const grammarName = this._registeredLanguages.get(languageId);
+        const languageLocation = this._getLanguageLocation(languageId);
+        if (!grammarName || !languageLocation) {
+            return undefined;
+        }
+        const wasmPath = `${languageLocation}/${grammarName}.wasm`;
+        const languageFile = await (this._fileService.readFile(FileAccess.asFileUri(wasmPath)));
+        const Parser = await this._treeSitterImporter.getParserClass();
+        return Parser.Language.load(languageFile.value.buffer);
+    }
+    _getLanguageLocation(languageId) {
+        const grammarName = this._registeredLanguages.get(languageId);
+        if (!grammarName) {
+            return undefined;
+        }
+        return getModuleLocation(this._environmentService);
+    }
+}
+export class TreeSitterImporter {
+    async _getTreeSitterImport() {
+        if (!this._treeSitterImport) {
+            this._treeSitterImport = await importAMDNodeModule('@vscode/tree-sitter-wasm', 'wasm/tree-sitter.js');
+        }
+        return this._treeSitterImport;
+    }
+    async getParserClass() {
+        if (!this._parserClass) {
+            this._parserClass = (await this._getTreeSitterImport()).Parser;
+        }
+        return this._parserClass;
+    }
+}
+let TreeSitterTextModelService = class TreeSitterTextModelService extends Disposable {
+    constructor(_modelService, fileService, _telemetryService, _logService, _configurationService, _environmentService) {
+        super();
+        this._modelService = _modelService;
+        this._telemetryService = _telemetryService;
+        this._logService = _logService;
+        this._configurationService = _configurationService;
+        this._environmentService = _environmentService;
+        this._textModelTreeSitters = this._register(new DisposableMap());
+        this._registeredLanguages = new Map();
+        this._treeSitterImporter = new TreeSitterImporter();
+        this._onDidUpdateTree = this._register(new Emitter());
+        this.onDidUpdateTree = this._onDidUpdateTree.event;
+        this._hasInit = false;
+        this._treeSitterLanguages = this._register(new TreeSitterLanguages(this._treeSitterImporter, fileService, this._environmentService, this._registeredLanguages));
+        this.onDidAddLanguage = this._treeSitterLanguages.onDidAddLanguage;
+        this._register(this._configurationService.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration(EDITOR_EXPERIMENTAL_PREFER_TREESITTER)) {
+                this._supportedLanguagesChanged();
+            }
+        }));
+        this._supportedLanguagesChanged();
+    }
+    getOrInitLanguage(languageId) {
+        return this._treeSitterLanguages.getOrInitLanguage(languageId);
+    }
+    getParseResult(textModel) {
+        const textModelTreeSitter = this._textModelTreeSitters.get(textModel);
+        return textModelTreeSitter?.textModelTreeSitter.parseResult;
+    }
+    async getTree(content, languageId) {
+        await this._init;
+        const language = await this._treeSitterLanguages.getLanguage(languageId);
+        const Parser = await this._treeSitterImporter.getParserClass();
+        if (language) {
+            const parser = new Parser();
+            parser.setLanguage(language);
+            return parser.parse(content);
+        }
+        return undefined;
+    }
+    async _doInitParser() {
+        const Parser = await this._treeSitterImporter.getParserClass();
+        const environmentService = this._environmentService;
+        await Parser.init({
+            locateFile(_file, _folder) {
+                return FileAccess.asBrowserUri(`${getModuleLocation(environmentService)}/${FILENAME_TREESITTER_WASM}`).toString(true);
+            }
+        });
+        return true;
+    }
+    async _initParser(hasLanguages) {
+        if (this._hasInit) {
+            return this._init;
+        }
+        if (hasLanguages) {
+            this._hasInit = true;
+            this._init = this._doInitParser();
+            this._init.then(() => this._registerModelServiceListeners());
+        }
+        else {
+            this._init = Promise.resolve(false);
+        }
+        return this._init;
+    }
+    async _supportedLanguagesChanged() {
+        const setting = this._getSetting();
+        let hasLanguages = true;
+        if (setting.length === 0) {
+            hasLanguages = false;
+        }
+        if (setting.includes('typescript')) {
+            this._addGrammar('typescript', 'tree-sitter-typescript');
+        }
+        else {
+            this._removeGrammar('typescript');
+        }
+        return this._initParser(hasLanguages);
+    }
+    _getSetting() {
+        const setting = this._configurationService.getValue(EDITOR_EXPERIMENTAL_PREFER_TREESITTER);
+        if (setting && setting.length > 0) {
+            return setting;
+        }
+        else {
+            const expSetting = this._configurationService.getValue(EDITOR_TREESITTER_TELEMETRY);
+            if (expSetting) {
+                return ['typescript'];
+            }
+        }
+        return [];
+    }
+    async _registerModelServiceListeners() {
+        this._register(this._modelService.onModelAdded(model => {
+            this._createTextModelTreeSitter(model);
+        }));
+        this._register(this._modelService.onModelRemoved(model => {
+            this._textModelTreeSitters.deleteAndDispose(model);
+        }));
+        this._modelService.getModels().forEach(model => this._createTextModelTreeSitter(model));
+    }
+    _createTextModelTreeSitter(model) {
+        const textModelTreeSitter = new TextModelTreeSitter(model, this._treeSitterLanguages, this._treeSitterImporter, this._logService, this._telemetryService);
+        const disposables = new DisposableStore();
+        disposables.add(textModelTreeSitter);
+        disposables.add(textModelTreeSitter.onDidChangeParseResult((ranges) => this._onDidUpdateTree.fire({ textModel: model, ranges })));
+        this._textModelTreeSitters.set(model, {
+            textModelTreeSitter,
+            disposables,
+            dispose: disposables.dispose.bind(disposables)
+        });
+    }
+    _addGrammar(languageId, grammarName) {
+        if (!this._registeredLanguages.has(languageId)) {
+            this._registeredLanguages.set(languageId, grammarName);
+        }
+    }
+    _removeGrammar(languageId) {
+        if (this._registeredLanguages.has(languageId)) {
+            this._registeredLanguages.delete('typescript');
+        }
+    }
+};
+TreeSitterTextModelService = __decorate([
+    __param(0, IModelService),
+    __param(1, IFileService),
+    __param(2, ITelemetryService),
+    __param(3, ILogService),
+    __param(4, IConfigurationService),
+    __param(5, IEnvironmentService),
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+], TreeSitterTextModelService);
+export { TreeSitterTextModelService };
+class PromiseWithSyncAccess {
+    get result() {
+        return this._result;
+    }
+    constructor(promise) {
+        this.promise = promise;
+        promise.then(result => {
+            this._result = new PromiseResult(result, undefined);
+        }).catch(e => {
+            this._result = new PromiseResult(undefined, e);
+        });
+    }
+}
+class AsyncCache {
+    constructor() {
+        this._values = new Map();
+    }
+    set(key, promise) {
+        this._values.set(key, new PromiseWithSyncAccess(promise));
+    }
+    get(key) {
+        return this._values.get(key)?.promise;
+    }
+    getSyncIfCached(key) {
+        return this._values.get(key)?.result?.data;
+    }
+    isCached(key) {
+        return this._values.get(key)?.result !== undefined;
+    }
+}

@@ -1,1 +1,39 @@
-import{OperatingSystem as o,OS as s}from"../../../base/common/platform.js";function a(n){let t=n;t.includes("\\")&&(t=t.replace(/\\/g,"\\\\"));const e=/[\`\$\|\&\>\~\#\!\^\*\;\<\"\']/g;return t=t.replace(e,""),`'${t}'`}function g(n,t,e){if(!n)return"";if(!t)return n;t.match(/[\/\\]$/)&&(t=t.slice(0,t.length-1));const i=n.replace(/\\/g,"/").toLowerCase(),r=t.replace(/\\/g,"/").toLowerCase();return i.includes(r)?`~${e}${n.slice(t.length+1)}`:n}function f(n){return n.match(/^['"].*['"]$/)&&(n=n.substring(1,n.length-1)),s===o.Windows&&n&&n[1]===":"?n[0].toUpperCase()+n.substring(1):n}function c(n){return!n.strictEnv}export{g as collapseTildePath,a as escapeNonWindowsPath,f as sanitizeCwd,c as shouldUseEnvironmentVariableCollection};
+import { OS } from '../../../base/common/platform.js';
+export function escapeNonWindowsPath(path) {
+    let newPath = path;
+    if (newPath.includes('\\')) {
+        newPath = newPath.replace(/\\/g, '\\\\');
+    }
+    const bannedChars = /[\`\$\|\&\>\~\#\!\^\*\;\<\"\']/g;
+    newPath = newPath.replace(bannedChars, '');
+    return `'${newPath}'`;
+}
+export function collapseTildePath(path, userHome, separator) {
+    if (!path) {
+        return '';
+    }
+    if (!userHome) {
+        return path;
+    }
+    if (userHome.match(/[\/\\]$/)) {
+        userHome = userHome.slice(0, userHome.length - 1);
+    }
+    const normalizedPath = path.replace(/\\/g, '/').toLowerCase();
+    const normalizedUserHome = userHome.replace(/\\/g, '/').toLowerCase();
+    if (!normalizedPath.includes(normalizedUserHome)) {
+        return path;
+    }
+    return `~${separator}${path.slice(userHome.length + 1)}`;
+}
+export function sanitizeCwd(cwd) {
+    if (cwd.match(/^['"].*['"]$/)) {
+        cwd = cwd.substring(1, cwd.length - 1);
+    }
+    if (OS === 1 && cwd && cwd[1] === ':') {
+        return cwd[0].toUpperCase() + cwd.substring(1);
+    }
+    return cwd;
+}
+export function shouldUseEnvironmentVariableCollection(slc) {
+    return !slc.strictEnv;
+}

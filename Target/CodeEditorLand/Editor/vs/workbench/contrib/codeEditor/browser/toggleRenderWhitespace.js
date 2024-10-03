@@ -1,1 +1,38 @@
-import{localize as n,localize2 as c}from"../../../../nls.js";import{Action2 as s,MenuId as a,registerAction2 as d}from"../../../../platform/actions/common/actions.js";import{IConfigurationService as p}from"../../../../platform/configuration/common/configuration.js";import{ContextKeyExpr as g}from"../../../../platform/contextkey/common/contextkey.js";import{Categories as m}from"../../../../platform/action/common/actionCommonCategories.js";import"../../../../platform/instantiation/common/instantiation.js";class r extends s{static ID="editor.action.toggleRenderWhitespace";constructor(){super({id:r.ID,title:{...c("toggleRenderWhitespace","Toggle Render Whitespace"),mnemonicTitle:n({key:"miToggleRenderWhitespace",comment:["&& denotes a mnemonic"]},"&&Render Whitespace")},category:m.View,f1:!0,toggled:g.notEquals("config.editor.renderWhitespace","none"),menu:{id:a.MenubarAppearanceMenu,group:"4_editor",order:4}})}run(t){const o=t.get(p),i=o.getValue("editor.renderWhitespace");let e;return i==="none"?e="all":e="none",o.updateValue("editor.renderWhitespace",e)}}d(r);
+import { localize, localize2 } from '../../../../nls.js';
+import { Action2, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
+class ToggleRenderWhitespaceAction extends Action2 {
+    static { this.ID = 'editor.action.toggleRenderWhitespace'; }
+    constructor() {
+        super({
+            id: ToggleRenderWhitespaceAction.ID,
+            title: {
+                ...localize2('toggleRenderWhitespace', "Toggle Render Whitespace"),
+                mnemonicTitle: localize({ key: 'miToggleRenderWhitespace', comment: ['&& denotes a mnemonic'] }, "&&Render Whitespace"),
+            },
+            category: Categories.View,
+            f1: true,
+            toggled: ContextKeyExpr.notEquals('config.editor.renderWhitespace', 'none'),
+            menu: {
+                id: MenuId.MenubarAppearanceMenu,
+                group: '4_editor',
+                order: 4
+            }
+        });
+    }
+    run(accessor) {
+        const configurationService = accessor.get(IConfigurationService);
+        const renderWhitespace = configurationService.getValue('editor.renderWhitespace');
+        let newRenderWhitespace;
+        if (renderWhitespace === 'none') {
+            newRenderWhitespace = 'all';
+        }
+        else {
+            newRenderWhitespace = 'none';
+        }
+        return configurationService.updateValue('editor.renderWhitespace', newRenderWhitespace);
+    }
+}
+registerAction2(ToggleRenderWhitespaceAction);

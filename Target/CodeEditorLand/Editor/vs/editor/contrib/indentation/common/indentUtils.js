@@ -1,1 +1,27 @@
-function f(t,n){let r=0;for(let e=0;e<t.length;e++)t.charAt(e)==="	"?r+=n:r++;return r}function u(t,n,r){t=t<0?0:t;let e="";if(!r){const o=Math.floor(t/n);t=t%n;for(let l=0;l<o;l++)e+="	"}for(let o=0;o<t;o++)e+=" ";return e}export{u as generateIndent,f as getSpaceCnt};
+export function getSpaceCnt(str, tabSize) {
+    let spacesCnt = 0;
+    for (let i = 0; i < str.length; i++) {
+        if (str.charAt(i) === '\t') {
+            spacesCnt += tabSize;
+        }
+        else {
+            spacesCnt++;
+        }
+    }
+    return spacesCnt;
+}
+export function generateIndent(spacesCnt, tabSize, insertSpaces) {
+    spacesCnt = spacesCnt < 0 ? 0 : spacesCnt;
+    let result = '';
+    if (!insertSpaces) {
+        const tabsCnt = Math.floor(spacesCnt / tabSize);
+        spacesCnt = spacesCnt % tabSize;
+        for (let i = 0; i < tabsCnt; i++) {
+            result += '\t';
+        }
+    }
+    for (let i = 0; i < spacesCnt; i++) {
+        result += ' ';
+    }
+    return result;
+}

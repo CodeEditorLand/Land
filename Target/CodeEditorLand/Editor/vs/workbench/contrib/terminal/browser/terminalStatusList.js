@@ -1,1 +1,123 @@
-var S=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var u=(r,a,e,t)=>{for(var n=t>1?void 0:t?h(a,e):a,i=r.length-1,o;i>=0;i--)(o=r[i])&&(n=(t?o(a,e,n):o(n))||n);return t&&n&&S(a,e,n),n},l=(r,a)=>(e,t)=>a(e,t,r);import{Codicon as p}from"../../../../base/common/codicons.js";import{Emitter as d}from"../../../../base/common/event.js";import{Disposable as c}from"../../../../base/common/lifecycle.js";import v from"../../../../base/common/severity.js";import{IConfigurationService as y}from"../../../../platform/configuration/common/configuration.js";import{TerminalSettingId as I}from"../../../../platform/terminal/common/terminal.js";import{listErrorForeground as _,listWarningForeground as T}from"../../../../platform/theme/common/colorRegistry.js";import{spinningLoading as D}from"../../../../platform/theme/common/iconRegistry.js";import{ThemeIcon as f}from"../../../../base/common/themables.js";import"../common/terminal.js";import{mainWindow as g}from"../../../../base/browser/window.js";var E=(i=>(i.Bell="bell",i.Disconnected="disconnected",i.RelaunchNeeded="relaunch-needed",i.EnvironmentVariableInfoChangesActive="env-var-info-changes-active",i.ShellIntegrationAttentionNeeded="shell-integration-attention-needed",i))(E||{});let s=class extends c{constructor(e){super();this._configurationService=e}_statuses=new Map;_statusTimeouts=new Map;_onDidAddStatus=this._register(new d);get onDidAddStatus(){return this._onDidAddStatus.event}_onDidRemoveStatus=this._register(new d);get onDidRemoveStatus(){return this._onDidRemoveStatus.event}_onDidChangePrimaryStatus=this._register(new d);get onDidChangePrimaryStatus(){return this._onDidChangePrimaryStatus.event}get primary(){let e;for(const t of this._statuses.values())(!e||t.severity>=e.severity)&&(t.icon||!e?.icon)&&(e=t);return e}get statuses(){return Array.from(this._statuses.values())}add(e,t){e=this._applyAnimationSetting(e);const n=this._statusTimeouts.get(e.id);if(n&&(g.clearTimeout(n),this._statusTimeouts.delete(e.id)),t&&t>0){const o=g.setTimeout(()=>this.remove(e),t);this._statusTimeouts.set(e.id,o)}const i=this._statuses.get(e.id);if(i&&i!==e&&(this._onDidRemoveStatus.fire(i),this._statuses.delete(i.id)),!this._statuses.has(e.id)){const o=this.primary;this._statuses.set(e.id,e),this._onDidAddStatus.fire(e);const m=this.primary;o!==m&&this._onDidChangePrimaryStatus.fire(m)}}remove(e){const t=typeof e=="string"?this._statuses.get(e):e;if(t&&this._statuses.get(t.id)){const n=this.primary?.id===t.id;this._statuses.delete(t.id),this._onDidRemoveStatus.fire(t),n&&this._onDidChangePrimaryStatus.fire(this.primary)}}toggle(e,t){t?this.add(e):this.remove(e)}_applyAnimationSetting(e){if(!e.icon||f.getModifier(e.icon)!=="spin"||this._configurationService.getValue(I.TabsEnableAnimation))return e;let t;return e.icon.id===D.id?t=p.play:t=f.modify(e.icon,void 0),{...e,icon:t}}};s=u([l(0,y)],s);function k(r){switch(r){case v.Error:return _;case v.Warning:return T;default:return""}}export{E as TerminalStatus,s as TerminalStatusList,k as getColorForSeverity};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Codicon } from '../../../../base/common/codicons.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import Severity from '../../../../base/common/severity.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { listErrorForeground, listWarningForeground } from '../../../../platform/theme/common/colorRegistry.js';
+import { spinningLoading } from '../../../../platform/theme/common/iconRegistry.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import { mainWindow } from '../../../../base/browser/window.js';
+let TerminalStatusList = class TerminalStatusList extends Disposable {
+    get onDidAddStatus() { return this._onDidAddStatus.event; }
+    get onDidRemoveStatus() { return this._onDidRemoveStatus.event; }
+    get onDidChangePrimaryStatus() { return this._onDidChangePrimaryStatus.event; }
+    constructor(_configurationService) {
+        super();
+        this._configurationService = _configurationService;
+        this._statuses = new Map();
+        this._statusTimeouts = new Map();
+        this._onDidAddStatus = this._register(new Emitter());
+        this._onDidRemoveStatus = this._register(new Emitter());
+        this._onDidChangePrimaryStatus = this._register(new Emitter());
+    }
+    get primary() {
+        let result;
+        for (const s of this._statuses.values()) {
+            if (!result || s.severity >= result.severity) {
+                if (s.icon || !result?.icon) {
+                    result = s;
+                }
+            }
+        }
+        return result;
+    }
+    get statuses() { return Array.from(this._statuses.values()); }
+    add(status, duration) {
+        status = this._applyAnimationSetting(status);
+        const outTimeout = this._statusTimeouts.get(status.id);
+        if (outTimeout) {
+            mainWindow.clearTimeout(outTimeout);
+            this._statusTimeouts.delete(status.id);
+        }
+        if (duration && duration > 0) {
+            const timeout = mainWindow.setTimeout(() => this.remove(status), duration);
+            this._statusTimeouts.set(status.id, timeout);
+        }
+        const existingStatus = this._statuses.get(status.id);
+        if (existingStatus && existingStatus !== status) {
+            this._onDidRemoveStatus.fire(existingStatus);
+            this._statuses.delete(existingStatus.id);
+        }
+        if (!this._statuses.has(status.id)) {
+            const oldPrimary = this.primary;
+            this._statuses.set(status.id, status);
+            this._onDidAddStatus.fire(status);
+            const newPrimary = this.primary;
+            if (oldPrimary !== newPrimary) {
+                this._onDidChangePrimaryStatus.fire(newPrimary);
+            }
+        }
+    }
+    remove(statusOrId) {
+        const status = typeof statusOrId === 'string' ? this._statuses.get(statusOrId) : statusOrId;
+        if (status && this._statuses.get(status.id)) {
+            const wasPrimary = this.primary?.id === status.id;
+            this._statuses.delete(status.id);
+            this._onDidRemoveStatus.fire(status);
+            if (wasPrimary) {
+                this._onDidChangePrimaryStatus.fire(this.primary);
+            }
+        }
+    }
+    toggle(status, value) {
+        if (value) {
+            this.add(status);
+        }
+        else {
+            this.remove(status);
+        }
+    }
+    _applyAnimationSetting(status) {
+        if (!status.icon || ThemeIcon.getModifier(status.icon) !== 'spin' || this._configurationService.getValue("terminal.integrated.tabs.enableAnimation")) {
+            return status;
+        }
+        let icon;
+        if (status.icon.id === spinningLoading.id) {
+            icon = Codicon.play;
+        }
+        else {
+            icon = ThemeIcon.modify(status.icon, undefined);
+        }
+        return {
+            ...status,
+            icon
+        };
+    }
+};
+TerminalStatusList = __decorate([
+    __param(0, IConfigurationService),
+    __metadata("design:paramtypes", [Object])
+], TerminalStatusList);
+export { TerminalStatusList };
+export function getColorForSeverity(severity) {
+    switch (severity) {
+        case Severity.Error:
+            return listErrorForeground;
+        case Severity.Warning:
+            return listWarningForeground;
+        default:
+            return '';
+    }
+}

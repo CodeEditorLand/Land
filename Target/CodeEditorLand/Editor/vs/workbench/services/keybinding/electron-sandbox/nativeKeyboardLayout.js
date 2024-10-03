@@ -1,1 +1,108 @@
-var f=Object.defineProperty;var K=Object.getOwnPropertyDescriptor;var s=(r,e,o,a)=>{for(var n=a>1?void 0:a?K(e,o):e,d=r.length-1,p;d>=0;d--)(p=r[d])&&(n=(a?p(e,o,n):p(n))||n);return a&&n&&f(e,o,n),n},u=(r,e)=>(o,a)=>e(o,a,r);import{Disposable as c}from"../../../../base/common/lifecycle.js";import{IKeyboardLayoutService as l}from"../../../../platform/keyboardLayout/common/keyboardLayout.js";import{Emitter as I}from"../../../../base/common/event.js";import{OperatingSystem as i,OS as t}from"../../../../base/common/platform.js";import{CachedKeyboardMapper as g}from"../../../../platform/keyboardLayout/common/keyboardMapper.js";import{WindowsKeyboardMapper as M}from"../common/windowsKeyboardMapper.js";import{FallbackKeyboardMapper as b}from"../common/fallbackKeyboardMapper.js";import{MacLinuxKeyboardMapper as L}from"../common/macLinuxKeyboardMapper.js";import{DispatchConfig as m,readKeyboardConfig as h}from"../../../../platform/keyboardLayout/common/keyboardConfig.js";import"../../../../platform/keybinding/common/keybinding.js";import{IConfigurationService as v}from"../../../../platform/configuration/common/configuration.js";import{INativeKeyboardLayoutService as C}from"./nativeKeyboardLayoutService.js";import{InstantiationType as _,registerSingleton as k}from"../../../../platform/instantiation/common/extensions.js";let y=class extends c{constructor(o,a){super();this._nativeKeyboardLayoutService=o;this._configurationService=a;this._keyboardMapper=null,this._register(this._nativeKeyboardLayoutService.onDidChangeKeyboardLayout(async()=>{this._keyboardMapper=null,this._onDidChangeKeyboardLayout.fire()})),this._register(a.onDidChangeConfiguration(async n=>{n.affectsConfiguration("keyboard")&&(this._keyboardMapper=null,this._onDidChangeKeyboardLayout.fire())}))}_onDidChangeKeyboardLayout=this._register(new I);onDidChangeKeyboardLayout=this._onDidChangeKeyboardLayout.event;_keyboardMapper;getRawKeyboardMapping(){return this._nativeKeyboardLayoutService.getRawKeyboardMapping()}getCurrentKeyboardLayout(){return this._nativeKeyboardLayoutService.getCurrentKeyboardLayout()}getAllKeyboardLayouts(){return[]}getKeyboardMapper(){const o=h(this._configurationService);return o.dispatch===m.KeyCode?new b(o.mapAltGrToCtrlAlt,t):(this._keyboardMapper||(this._keyboardMapper=new g(S(this.getCurrentKeyboardLayout(),this.getRawKeyboardMapping(),o.mapAltGrToCtrlAlt))),this._keyboardMapper)}validateCurrentKeyboardMapping(o){}};y=s([u(0,C),u(1,v)],y);function S(r,e,o){const a=w(r);return t===i.Windows?new M(a,e,o):!e||Object.keys(e).length===0?new b(o,t):t===i.Macintosh&&r.id==="com.apple.keylayout.DVORAK-QWERTYCMD"?new b(o,t):new L(a,e,o,t)}function w(r){if(!r)return!1;if(t===i.Linux){const e=r;return e.layout.split(/,/g)[e.group]==="us"}return t===i.Macintosh?r.id==="com.apple.keylayout.US":t===i.Windows?r.name==="00000409":!1}k(l,y,_.Delayed);export{y as KeyboardLayoutService};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { IKeyboardLayoutService } from '../../../../platform/keyboardLayout/common/keyboardLayout.js';
+import { Emitter } from '../../../../base/common/event.js';
+import { OS } from '../../../../base/common/platform.js';
+import { CachedKeyboardMapper } from '../../../../platform/keyboardLayout/common/keyboardMapper.js';
+import { WindowsKeyboardMapper } from '../common/windowsKeyboardMapper.js';
+import { FallbackKeyboardMapper } from '../common/fallbackKeyboardMapper.js';
+import { MacLinuxKeyboardMapper } from '../common/macLinuxKeyboardMapper.js';
+import { readKeyboardConfig } from '../../../../platform/keyboardLayout/common/keyboardConfig.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { INativeKeyboardLayoutService } from './nativeKeyboardLayoutService.js';
+import { registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+let KeyboardLayoutService = class KeyboardLayoutService extends Disposable {
+    constructor(_nativeKeyboardLayoutService, _configurationService) {
+        super();
+        this._nativeKeyboardLayoutService = _nativeKeyboardLayoutService;
+        this._configurationService = _configurationService;
+        this._onDidChangeKeyboardLayout = this._register(new Emitter());
+        this.onDidChangeKeyboardLayout = this._onDidChangeKeyboardLayout.event;
+        this._keyboardMapper = null;
+        this._register(this._nativeKeyboardLayoutService.onDidChangeKeyboardLayout(async () => {
+            this._keyboardMapper = null;
+            this._onDidChangeKeyboardLayout.fire();
+        }));
+        this._register(_configurationService.onDidChangeConfiguration(async (e) => {
+            if (e.affectsConfiguration('keyboard')) {
+                this._keyboardMapper = null;
+                this._onDidChangeKeyboardLayout.fire();
+            }
+        }));
+    }
+    getRawKeyboardMapping() {
+        return this._nativeKeyboardLayoutService.getRawKeyboardMapping();
+    }
+    getCurrentKeyboardLayout() {
+        return this._nativeKeyboardLayoutService.getCurrentKeyboardLayout();
+    }
+    getAllKeyboardLayouts() {
+        return [];
+    }
+    getKeyboardMapper() {
+        const config = readKeyboardConfig(this._configurationService);
+        if (config.dispatch === 1) {
+            return new FallbackKeyboardMapper(config.mapAltGrToCtrlAlt, OS);
+        }
+        if (!this._keyboardMapper) {
+            this._keyboardMapper = new CachedKeyboardMapper(createKeyboardMapper(this.getCurrentKeyboardLayout(), this.getRawKeyboardMapping(), config.mapAltGrToCtrlAlt));
+        }
+        return this._keyboardMapper;
+    }
+    validateCurrentKeyboardMapping(keyboardEvent) {
+        return;
+    }
+};
+KeyboardLayoutService = __decorate([
+    __param(0, INativeKeyboardLayoutService),
+    __param(1, IConfigurationService),
+    __metadata("design:paramtypes", [Object, Object])
+], KeyboardLayoutService);
+export { KeyboardLayoutService };
+function createKeyboardMapper(layoutInfo, rawMapping, mapAltGrToCtrlAlt) {
+    const _isUSStandard = isUSStandard(layoutInfo);
+    if (OS === 1) {
+        return new WindowsKeyboardMapper(_isUSStandard, rawMapping, mapAltGrToCtrlAlt);
+    }
+    if (!rawMapping || Object.keys(rawMapping).length === 0) {
+        return new FallbackKeyboardMapper(mapAltGrToCtrlAlt, OS);
+    }
+    if (OS === 2) {
+        const kbInfo = layoutInfo;
+        if (kbInfo.id === 'com.apple.keylayout.DVORAK-QWERTYCMD') {
+            return new FallbackKeyboardMapper(mapAltGrToCtrlAlt, OS);
+        }
+    }
+    return new MacLinuxKeyboardMapper(_isUSStandard, rawMapping, mapAltGrToCtrlAlt, OS);
+}
+function isUSStandard(_kbInfo) {
+    if (!_kbInfo) {
+        return false;
+    }
+    if (OS === 3) {
+        const kbInfo = _kbInfo;
+        const layouts = kbInfo.layout.split(/,/g);
+        return (layouts[kbInfo.group] === 'us');
+    }
+    if (OS === 2) {
+        const kbInfo = _kbInfo;
+        return (kbInfo.id === 'com.apple.keylayout.US');
+    }
+    if (OS === 1) {
+        const kbInfo = _kbInfo;
+        return (kbInfo.name === '00000409');
+    }
+    return false;
+}
+registerSingleton(IKeyboardLayoutService, KeyboardLayoutService, 1);

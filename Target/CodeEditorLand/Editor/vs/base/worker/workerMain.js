@@ -1,1 +1,32 @@
-(function(){function n(e){return import(new URL(`${e}.js`,globalThis._VSCODE_FILE_ROOT).href)}function t(e){setTimeout(function(){const s=e.create((r,l)=>{globalThis.postMessage(r,l)});for(self.onmessage=r=>s.onmessage(r.data,r.ports);a.length>0;)self.onmessage(a.shift())},0)}let o=!0;const a=[];globalThis.onmessage=e=>{if(!o){a.push(e);return}o=!1,n(e.data).then(s=>{t(s)},s=>{})}})();
+"use strict";
+(function () {
+    function loadCode(moduleId) {
+        const moduleUrl = new URL(`${moduleId}.js`, globalThis._VSCODE_FILE_ROOT);
+        return import(moduleUrl.href);
+    }
+    function setupWorkerServer(ws) {
+        setTimeout(function () {
+            const messageHandler = ws.create((msg, transfer) => {
+                globalThis.postMessage(msg, transfer);
+            });
+            self.onmessage = (e) => messageHandler.onmessage(e.data, e.ports);
+            while (beforeReadyMessages.length > 0) {
+                self.onmessage(beforeReadyMessages.shift());
+            }
+        }, 0);
+    }
+    let isFirstMessage = true;
+    const beforeReadyMessages = [];
+    globalThis.onmessage = (message) => {
+        if (!isFirstMessage) {
+            beforeReadyMessages.push(message);
+            return;
+        }
+        isFirstMessage = false;
+        loadCode(message.data).then((ws) => {
+            setupWorkerServer(ws);
+        }, (err) => {
+            console.error(err);
+        });
+    };
+})();

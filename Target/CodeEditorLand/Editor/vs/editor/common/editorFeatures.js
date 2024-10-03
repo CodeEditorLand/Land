@@ -1,1 +1,7 @@
-import"../../platform/instantiation/common/instantiation.js";const e=[];function u(r){e.push(r)}function a(){return e.slice(0)}export{a as getEditorFeatures,u as registerEditorFeature};
+const editorFeatures = [];
+export function registerEditorFeature(ctor) {
+    editorFeatures.push(ctor);
+}
+export function getEditorFeatures() {
+    return editorFeatures.slice(0);
+}
